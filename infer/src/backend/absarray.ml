@@ -28,7 +28,7 @@ module StrexpMatch : sig
   (** create a path from a root and a list of offsets *)
   val path_from_exp_offsets : Sil.exp -> Sil.offset list -> path
 
-  (** path to the root, size, elements and type of a new_array *)
+  (** path to the root, length, elements and type of a new_array *)
   type strexp_data = path * Sil.strexp * Sil.typ
 
   (** sigma with info about a current array *)
@@ -73,7 +73,7 @@ end = struct
             (IList.find (fun (f', _, _) ->
                  Sil.fld_equal f' fld) instance_fields) in
         get_strexp_at_syn_offsets se' t' syn_offs'
-    | Sil.Earray (_, esel, _), Sil.Tarray(t', _), Index ind :: syn_offs' ->
+    | Sil.Earray (_, esel, _), Sil.Tarray (t', _), Index ind :: syn_offs' ->
         let se' = snd (IList.find (fun (i', _) -> Sil.exp_equal i' ind) esel) in
         get_strexp_at_syn_offsets se' t' syn_offs'
     | _ ->
@@ -95,11 +95,11 @@ end = struct
         let se_mod = replace_strexp_at_syn_offsets se' t' syn_offs' update in
         let fsel' = IList.map (fun (f'', se'') -> if Sil.fld_equal f'' fld then (fld, se_mod) else (f'', se'')) fsel in
         Sil.Estruct (fsel', inst)
-    | Sil.Earray (size, esel, inst), Sil.Tarray (t', _), Index idx :: syn_offs' ->
+    | Sil.Earray (len, esel, inst), Sil.Tarray (t', _), Index idx :: syn_offs' ->
         let se' = snd (IList.find (fun (i', _) -> Sil.exp_equal i' idx) esel) in
         let se_mod = replace_strexp_at_syn_offsets se' t' syn_offs' update in
         let esel' = IList.map (fun ese -> if Sil.exp_equal (fst ese) idx then (idx, se_mod) else ese) esel in
-        Sil.Earray (size, esel', inst)
+        Sil.Earray (len, esel', inst)
     | _ -> assert false
 
   (** convert a path into an expression *)
@@ -124,7 +124,7 @@ end = struct
     let syn_offs = IList.map offset_to_syn_offset offs in
     (root, syn_offs)
 
-  (** path to the root, size, elements and type of a new_array *)
+  (** path to the root, len, elements and type of a new_array *)
   type strexp_data = path * Sil.strexp * Sil.typ
 
   (** Store hpred using physical equality, and offset list for an array *)
@@ -205,13 +205,13 @@ end = struct
     let update se' =
       let se_in = update se' in
       match se', se_in with
-      | Sil.Earray (size, esel, _), Sil.Earray (_, esel_in, inst2) ->
+      | Sil.Earray (len, esel, _), Sil.Earray (_, esel_in, inst2) ->
           let orig_indices = IList.map fst esel in
           let index_is_not_new idx = IList.exists (Sil.exp_equal idx) orig_indices in
           let process_index idx =
             if index_is_not_new idx then idx else (Sil.array_clean_new_index footprint_part idx) in
           let esel_in' = IList.map (fun (idx, se) -> process_index idx, se) esel_in in
-          Sil.Earray (size, esel_in', inst2)
+          Sil.Earray (len, esel_in', inst2)
       | _, _ -> se_in in
     begin
       match hpred with
@@ -232,9 +232,9 @@ end = struct
   let replace_index footprint_part ((sigma, hpred, syn_offs) : t) (index: Sil.exp) (index': Sil.exp) =
     let update se' =
       match se' with
-      | Sil.Earray (size, esel, inst) ->
+      | Sil.Earray (len, esel, inst) ->
           let esel' = IList.map (fun (e', se') -> if Sil.exp_equal e' index then (index', se') else (e', se')) esel in
-          Sil.Earray (size, esel', inst)
+          Sil.Earray (len, esel', inst)
       | _ -> assert false in
     let hpred' = hpred_replace_strexp footprint_part hpred syn_offs update in
     replace_hpred (sigma, hpred, syn_offs) hpred'
@@ -413,11 +413,11 @@ let keep_only_indices
       let matched = StrexpMatch.find_path sigma path in
       let (_, se, _) = StrexpMatch.get_data matched in
       match se with
-      | Sil.Earray (size, esel, inst) ->
+      | Sil.Earray (len, esel, inst) ->
           let esel', esel_leftover' = IList.partition (fun (e, _) -> IList.exists (Sil.exp_equal e) indices) esel in
           if esel_leftover' == [] then (sigma, false)
           else begin
-            let se' = Sil.Earray (size, esel', inst) in
+            let se' = Sil.Earray (len, esel', inst) in
             let sigma' = StrexpMatch.replace_strexp footprint_part matched se' in
             (sigma', true)
           end
@@ -584,9 +584,9 @@ let remove_redundant_elements prop =
         remove () (* index unknown can be removed *)
     | _ -> true in
   let remove_redundant_se fp_part = function
-    | Sil.Earray (size, esel, inst) ->
+    | Sil.Earray (len, esel, inst) ->
         let esel' = IList.filter (filter_redundant_e_se fp_part) esel in
-        Sil.Earray (size, esel', inst)
+        Sil.Earray (len, esel', inst)
     | se -> se in
   let remove_redundant_hpred fp_part = function
     | Sil.Hpointsto (e, se, te) ->

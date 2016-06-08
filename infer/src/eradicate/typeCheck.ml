@@ -124,7 +124,6 @@ module ComplexExpressions = struct
           case_not_handled ()
       | Sil.Dunop (op, de) ->
           Sil.str_unop op ^ dexp_to_string de
-
       | Sil.Dsizeof _ ->
           case_not_handled ()
       | Sil.Dunknown ->
@@ -528,7 +527,7 @@ let typecheck_instr
         (typecheck_expr_simple typestate' e' typ TypeOrigin.ONone loc)
         typestate'
   | Sil.Call ([id], Sil.Const (Sil.Cfun pn), [(array_exp, t)], loc, _)
-    when Procname.equal pn ModelBuiltins.__get_array_size ->
+    when Procname.equal pn ModelBuiltins.__get_array_length ->
       let (_, ta, _) = typecheck_expr
           find_canonical_duplicate
           calls_this

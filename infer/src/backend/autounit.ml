@@ -307,8 +307,8 @@ let create_idmap sigma : idmap =
         do_exp e typ
     | Sil.Estruct (fsel, _), Sil.Tstruct { Sil.instance_fields } ->
         do_struct fsel instance_fields
-    | Sil.Earray (size, esel, _), Sil.Tarray (typ, _) ->
-        do_se (Sil.Eexp (size, Sil.inst_none)) (Sil.Tint Sil.IULong);
+    | Sil.Earray (len, esel, _), Sil.Tarray (typ, _) ->
+        do_se (Sil.Eexp (len, Sil.inst_none)) (Sil.Tint Sil.IULong);
         do_array esel typ
     | _ ->
         L.err "Unmatched sexp: %a : %a@." (Sil.pp_sexp pe) se (Sil.pp_typ_full pe) typ;
@@ -415,20 +415,20 @@ let mk_size_name id =
   "_size_" ^ string_of_int id
 
 let pp_texp_for_malloc fmt =
-  let rec handle_arr_size typ = match typ with
+  let rec handle_arr_len typ = match typ with
     | Sil.Tvar _ | Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ ->
         typ
     | Sil.Tptr (t, pk) ->
-        Sil.Tptr (handle_arr_size t, pk)
+        Sil.Tptr (handle_arr_len t, pk)
     | Sil.Tstruct struct_typ ->
         let instance_fields =
-          IList.map (fun (f, t, a) -> (f, handle_arr_size t, a)) struct_typ.Sil.instance_fields in
+          IList.map (fun (f, t, a) -> (f, handle_arr_len t, a)) struct_typ.Sil.instance_fields in
         Sil.Tstruct { struct_typ with Sil.instance_fields }
     | Sil.Tarray (t, e) ->
-        Sil.Tarray (handle_arr_size t, e) in
+        Sil.Tarray (handle_arr_len t, e) in
   function
   | Sil.Sizeof (typ, _, _) ->
-      let typ' = handle_arr_size typ in
+      let typ' = handle_arr_len typ in
       F.fprintf fmt "sizeof(%a)" (pp_typ_c pe) typ'
   | e -> pp_exp_c pe fmt e
 

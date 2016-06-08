@@ -877,6 +877,12 @@ let ident_partial_meet (id1: Ident.t) (id2: Ident.t) =
 
 (** {2 Join and Meet for Exps} *)
 
+let option_partial_join partial_join o1 o2 =
+  match o1, o2 with
+  | None, _ -> o2
+  | _, None -> o1
+  | Some x1, Some x2 -> partial_join x1 x2
+
 let const_partial_join c1 c2 =
   let is_int = function Sil.Cint _ -> true | _ -> false in
   if Sil.const_equal c1 c2 then Sil.Const c1
@@ -951,35 +957,36 @@ let rec exp_partial_join (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
       let e2'' = exp_partial_join e1' e2' in
       Sil.Lindex(e1'', e2'')
   | Sil.Sizeof (t1, len1, st1), Sil.Sizeof (t2, len2, st2) ->
-      Sil.Sizeof (typ_partial_join t1 t2, len_partial_join len1 len2, Sil.Subtype.join st1 st2)
+      Sil.Sizeof
+        (typ_partial_join t1 t2, dynamic_length_partial_join len1 len2, Sil.Subtype.join st1 st2)
   | _ ->
       L.d_str "exp_partial_join no match "; Sil.d_exp e1; L.d_str " "; Sil.d_exp e2; L.d_ln ();
       raise IList.Fail
 
-and len_partial_join len1 len2 =
-  match len1, len2 with
-  | None, _ -> len2
-  | _, None -> len1
-  | Some len1, Some len2 -> Some (size_partial_join len1 len2)
-
-and size_partial_join size1 size2 = match size1, size2 with
+and length_partial_join len1 len2 = match len1, len2 with
   | Sil.BinOp(Sil.PlusA, e1, Sil.Const c1), Sil.BinOp(Sil.PlusA, e2, Sil.Const c2) ->
       let e' = exp_partial_join e1 e2 in
       let c' = exp_partial_join (Sil.Const c1) (Sil.Const c2) in
       Sil.BinOp (Sil.PlusA, e', c')
   | Sil.BinOp(Sil.PlusA, _, _), Sil.BinOp(Sil.PlusA, _, _) ->
-      Rename.extend size1 size2 Rename.ExtFresh
+      Rename.extend len1 len2 Rename.ExtFresh
   | Sil.Var id1, Sil.Var id2 when Ident.equal id1 id2 ->
-      size1
-  | _ -> exp_partial_join size1 size2
+      len1
+  | _ -> exp_partial_join len1 len2
+
+and static_length_partial_join l1 l2 =
+  option_partial_join (fun len1 len2 -> if Sil.Int.eq len1 len2 then Some len1 else None) l1 l2
+
+and dynamic_length_partial_join l1 l2 =
+  option_partial_join (fun len1 len2 -> Some (length_partial_join len1 len2)) l1 l2
 
 and typ_partial_join t1 t2 = match t1, t2 with
   | Sil.Tptr (t1, pk1), Sil.Tptr (t2, pk2) when Sil.ptr_kind_compare pk1 pk2 = 0 ->
       Sil.Tptr (typ_partial_join t1 t2, pk1)
-  | Sil.Tarray (typ1, size1), Sil.Tarray(typ2, size2) ->
+  | Sil.Tarray (typ1, len1), Sil.Tarray (typ2, len2) ->
       let t = typ_partial_join typ1 typ2 in
-      let size = size_partial_join size1 size2 in
-      Sil.Tarray (t, size)
+      let len = static_length_partial_join len1 len2 in
+      Sil.Tarray (t, len)
   | _ when Sil.typ_equal t1 t2 -> t1 (* common case *)
   | _ ->
       L.d_str "typ_partial_join no match "; Sil.d_typ_full t1; L.d_str " "; Sil.d_typ_full t2; L.d_ln ();
@@ -1072,21 +1079,21 @@ let rec strexp_partial_join mode (strexp1: Sil.strexp) (strexp2: Sil.strexp) : S
                 assert false (* This case should not happen. *)
         end in
 
-  let rec f_idx_se_list inst size idx_se_list_acc idx_se_list1 idx_se_list2 =
+  let rec f_idx_se_list inst len idx_se_list_acc idx_se_list1 idx_se_list2 =
     match idx_se_list1, idx_se_list2 with
-    | [], [] -> Sil.Earray (size, IList.rev idx_se_list_acc, inst)
+    | [], [] -> Sil.Earray (len, IList.rev idx_se_list_acc, inst)
     | [], _ | _, [] ->
         begin
           match mode with
           | JoinState.Pre -> (L.d_strln "failure reason 44"; raise IList.Fail)
           | JoinState.Post ->
-              Sil.Earray (size, IList.rev idx_se_list_acc, inst)
+              Sil.Earray (len, IList.rev idx_se_list_acc, inst)
         end
     | (idx1, se1):: idx_se_list1', (idx2, se2):: idx_se_list2' ->
         let idx = exp_partial_join idx1 idx2 in
         let strexp' = strexp_partial_join mode se1 se2 in
         let idx_se_list_new = (idx, strexp') :: idx_se_list_acc in
-        f_idx_se_list inst size idx_se_list_new idx_se_list1' idx_se_list2' in
+        f_idx_se_list inst len idx_se_list_new idx_se_list1' idx_se_list2' in
 
   match strexp1, strexp2 with
   | Sil.Eexp (e1, inst1), Sil.Eexp (e2, inst2) ->
@@ -1094,10 +1101,10 @@ let rec strexp_partial_join mode (strexp1: Sil.strexp) (strexp2: Sil.strexp) : S
   | Sil.Estruct (fld_se_list1, inst1), Sil.Estruct (fld_se_list2, inst2) ->
       let inst = Sil.inst_partial_join inst1 inst2 in
       f_fld_se_list inst mode [] fld_se_list1 fld_se_list2
-  | Sil.Earray (size1, idx_se_list1, inst1), Sil.Earray (size2, idx_se_list2, inst2) ->
-      let size = size_partial_join size1 size2 in
+  | Sil.Earray (len1, idx_se_list1, inst1), Sil.Earray (len2, idx_se_list2, inst2) ->
+      let len = length_partial_join len1 len2 in
       let inst = Sil.inst_partial_join inst1 inst2 in
-      f_idx_se_list inst size [] idx_se_list1 idx_se_list2
+      f_idx_se_list inst len [] idx_se_list1 idx_se_list2
   | _ -> L.d_strln "no match in strexp_partial_join"; raise IList.Fail
 
 let rec strexp_partial_meet (strexp1: Sil.strexp) (strexp2: Sil.strexp) : Sil.strexp =
@@ -1130,19 +1137,19 @@ let rec strexp_partial_meet (strexp1: Sil.strexp) (strexp2: Sil.strexp) : Sil.st
           let acc_new = (fld1, strexp') :: acc in
           f_fld_se_list inst acc_new fld_se_list1' fld_se_list2' in
 
-  let rec f_idx_se_list inst size acc idx_se_list1 idx_se_list2 =
+  let rec f_idx_se_list inst len acc idx_se_list1 idx_se_list2 =
     match idx_se_list1, idx_se_list2 with
     | [],[] ->
-        Sil.Earray (size, IList.rev acc, inst)
+        Sil.Earray (len, IList.rev acc, inst)
     | [], _ ->
-        Sil.Earray (size, construct Rhs acc idx_se_list2, inst)
+        Sil.Earray (len, construct Rhs acc idx_se_list2, inst)
     | _, [] ->
-        Sil.Earray (size, construct Lhs acc idx_se_list1, inst)
+        Sil.Earray (len, construct Lhs acc idx_se_list1, inst)
     | (idx1, se1):: idx_se_list1', (idx2, se2):: idx_se_list2' ->
         let idx = exp_partial_meet idx1 idx2 in
         let se' = strexp_partial_meet se1 se2 in
         let acc_new = (idx, se') :: acc in
-        f_idx_se_list inst size acc_new idx_se_list1' idx_se_list2' in
+        f_idx_se_list inst len acc_new idx_se_list1' idx_se_list2' in
 
   match strexp1, strexp2 with
   | Sil.Eexp (e1, inst1), Sil.Eexp (e2, inst2) ->
@@ -1150,10 +1157,10 @@ let rec strexp_partial_meet (strexp1: Sil.strexp) (strexp2: Sil.strexp) : Sil.st
   | Sil.Estruct (fld_se_list1, inst1), Sil.Estruct (fld_se_list2, inst2) ->
       let inst = Sil.inst_partial_meet inst1 inst2 in
       f_fld_se_list inst [] fld_se_list1 fld_se_list2
-  | Sil.Earray (size1, idx_se_list1, inst1), Sil.Earray (size2, idx_se_list2, inst2)
-    when Sil.exp_equal size1 size2 ->
+  | Sil.Earray (len1, idx_se_list1, inst1), Sil.Earray (len2, idx_se_list2, inst2)
+    when Sil.exp_equal len1 len2 ->
       let inst = Sil.inst_partial_meet inst1 inst2 in
-      f_idx_se_list inst size1 [] idx_se_list1 idx_se_list2
+      f_idx_se_list inst len1 [] idx_se_list1 idx_se_list2
   | _ -> (L.d_strln "failure reason 52"; raise IList.Fail)
 
 (** {2 Join and Meet for kind, hpara, hpara_dll} *)
@@ -1554,26 +1561,26 @@ let pi_partial_join mode
     | Sil.Const _ -> true
     (* | Sil.Lvar _ -> true *)
     | _ -> false in
-  let get_array_size prop =
-    (* find some array size in the prop, to be used as heuritic for upper bound in widening *)
-    let size_list = ref [] in
+  let get_array_len prop =
+    (* find some array length in the prop, to be used as heuritic for upper bound in widening *)
+    let len_list = ref [] in
     let do_hpred = function
       | Sil.Hpointsto (_, Sil.Earray (Sil.Const (Sil.Cint n), _, _), _) ->
-          (if Sil.Int.geq n Sil.Int.one then size_list := n::!size_list)
+          (if Sil.Int.geq n Sil.Int.one then len_list := n :: !len_list)
       | _ -> () in
     IList.iter do_hpred (Prop.get_sigma prop);
-    !size_list in
+    !len_list in
   let bounds =
-    let bounds1 = get_array_size ep1 in
-    let bounds2 = get_array_size ep2 in
+    let bounds1 = get_array_len ep1 in
+    let bounds2 = get_array_len ep2 in
     let bounds_sorted = IList.sort Sil.Int.compare_value (bounds1@bounds2) in
     IList.rev (IList.remove_duplicates Sil.Int.compare_value bounds_sorted) in
   let widening_atom a =
-    (* widening heuristic for upper bound: take the size of some array, -2 and -1 *)
+    (* widening heuristic for upper bound: take the length of some array, -2 and -1 *)
     match Prop.atom_exp_le_const a, bounds with
-    | Some (e, n), size:: _ ->
-        let first_try = Sil.Int.sub size Sil.Int.one in
-        let second_try = Sil.Int.sub size Sil.Int.two in
+    | Some (e, n), len :: _ ->
+        let first_try = Sil.Int.sub len Sil.Int.one in
+        let second_try = Sil.Int.sub len Sil.Int.two in
         let bound =
           if Sil.Int.leq n first_try then
             if Sil.Int.leq n second_try then second_try else first_try
@@ -1629,14 +1636,14 @@ let pi_partial_join mode
           | Some (e, n) ->
               if IList.exists (is_stronger_le e n) pi_op then (widening_atom a_res) else Some a_res
         end in
-  let handle_atom_with_widening size p_op pi_op atom_list a =
+  let handle_atom_with_widening len p_op pi_op atom_list a =
     (* find a join for the atom, if it fails apply widening heuristing and try again *)
-    match join_atom size p_op pi_op a with
+    match join_atom len p_op pi_op a with
     | None ->
         (match widening_atom a with
          | None -> atom_list
          | Some a' ->
-             (match join_atom size p_op pi_op a' with
+             (match join_atom len p_op pi_op a' with
               | None -> atom_list
               | Some a' -> a' :: atom_list))
     | Some a' -> a' :: atom_list in

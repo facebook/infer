@@ -28,23 +28,23 @@ let rec list_rev_and_concat l1 l2 =
   | x1:: l1' -> list_rev_and_concat l1' (x1:: l2)
 
 (** Check whether the index is out of bounds.
-    If the size is - 1, no check is performed.
+    If the length is - 1, no check is performed.
     If the index is provably out of bound, a bound error is given.
-    If the size is a constant and the index is not provably in bound, a warning is given.
+    If the length is a constant and the index is not provably in bound, a warning is given.
 *)
-let check_bad_index pname p size index loc =
-  let size_is_constant = match size with
+let check_bad_index pname p len index loc =
+  let len_is_constant = match len with
     | Sil.Const _ -> true
     | _ -> false in
   let index_provably_out_of_bound () =
-    let index_too_large = Prop.mk_inequality (Sil.BinOp(Sil.Le, size, index)) in
-    let index_negative = Prop.mk_inequality (Sil.BinOp(Sil.Le, index, Sil.exp_minus_one)) in
+    let index_too_large = Prop.mk_inequality (Sil.BinOp (Sil.Le, len, index)) in
+    let index_negative = Prop.mk_inequality (Sil.BinOp (Sil.Le, index, Sil.exp_minus_one)) in
     (Prover.check_atom p index_too_large) || (Prover.check_atom p index_negative) in
   let index_provably_in_bound () =
-    let size_minus_one = Sil.BinOp(Sil.PlusA, size, Sil.exp_minus_one) in
-    let index_not_too_large = Prop.mk_inequality (Sil.BinOp(Sil.Le, index, size_minus_one)) in
+    let len_minus_one = Sil.BinOp(Sil.PlusA, len, Sil.exp_minus_one) in
+    let index_not_too_large = Prop.mk_inequality (Sil.BinOp(Sil.Le, index, len_minus_one)) in
     let index_nonnegative = Prop.mk_inequality (Sil.BinOp(Sil.Le, Sil.exp_zero, index)) in
-    Prover.check_zero index || (* index 0 always in bound, even when we know nothing about size *)
+    Prover.check_zero index || (* index 0 always in bound, even when we know nothing about len *)
     ((Prover.check_atom p index_not_too_large) && (Prover.check_atom p index_nonnegative)) in
   let index_has_bounds () =
     match Prover.get_bounds p index with
@@ -55,17 +55,17 @@ let check_bad_index pname p size index loc =
     | _ -> None in
   if not (index_provably_in_bound ()) then
     begin
-      let size_const_opt = get_const_opt size in
+      let len_const_opt = get_const_opt len in
       let index_const_opt = get_const_opt index in
       if index_provably_out_of_bound () then
-        let deref_str = Localise.deref_str_array_bound size_const_opt index_const_opt in
+        let deref_str = Localise.deref_str_array_bound len_const_opt index_const_opt in
         let exn =
           Exceptions.Array_out_of_bounds_l1
             (Errdesc.explain_array_access deref_str p loc, __POS__) in
         let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
         Reporting.log_warning pname ~pre: pre_opt exn
-      else if size_is_constant then
-        let deref_str = Localise.deref_str_array_bound size_const_opt index_const_opt in
+      else if len_is_constant then
+        let deref_str = Localise.deref_str_array_bound len_const_opt index_const_opt in
         let desc = Errdesc.explain_array_access deref_str p loc in
         let exn = if index_has_bounds ()
           then Exceptions.Array_out_of_bounds_l2 (desc, __POS__)
@@ -75,14 +75,14 @@ let check_bad_index pname p size index loc =
     end
 
 (** Perform bounds checking *)
-let bounds_check pname prop size e =
+let bounds_check pname prop len e =
   if Config.trace_rearrange then
     begin
       L.d_str "Bounds check index:"; Sil.d_exp e;
-      L.d_str " size: "; Sil.d_exp size;
+      L.d_str " len: "; Sil.d_exp len;
       L.d_ln()
     end;
-  check_bad_index pname prop size e
+  check_bad_index pname prop len e
 
 let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp t
     (off: Sil.offset list) inst : Sil.atom list * Sil.strexp * Sil.typ =
@@ -112,7 +112,8 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
           create_struct_values
             pname tenv orig_prop footprint_part kind max_stamp t' off' inst in
         let se = Sil.Estruct ([(f, se')], inst) in
-        let replace_typ_of_f (f', t', a') = if Ident.fieldname_equal f f' then (f, res_t', a') else (f', t', a') in
+        let replace_typ_of_f (f', t', a') =
+          if Ident.fieldname_equal f f' then (f, res_t', a') else (f', t', a') in
         let instance_fields' =
           IList.sort Sil.fld_typ_ann_compare (IList.map replace_typ_of_f instance_fields) in
         (atoms', se, Sil.Tstruct { struct_typ with Sil.instance_fields = instance_fields'})
@@ -121,25 +122,29 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
           create_struct_values
             pname tenv orig_prop footprint_part kind max_stamp t off' inst in
         let e' = Sil.array_clean_new_index footprint_part e in
-        let size = Sil.exp_get_undefined false in
-        let se = Sil.Earray (size, [(e', se')], inst) in
-        let res_t = Sil.Tarray (res_t', size) in
-        (Sil.Aeq(e, e'):: atoms', se, res_t)
-    | Sil.Tarray(_, size),[] ->
-        ([], Sil.Earray(size, [], inst), t)
-    | Sil.Tarray(t', size'), (Sil.Off_index e) :: off' ->
-        bounds_check pname orig_prop size' e (State.get_loc ());
-
-        let atoms', se', res_t' =
-          create_struct_values
-            pname tenv orig_prop footprint_part kind max_stamp t' off' inst in
-        let e' = Sil.array_clean_new_index footprint_part e in
-        let se = Sil.Earray(size', [(e', se')], inst) in
-        let res_t = Sil.Tarray(res_t', size') in
-        (Sil.Aeq(e, e'):: atoms', se, res_t)
-    | Sil.Tarray _, (Sil.Off_fld _) :: _ ->
-        assert false
-
+        let len = Sil.Var (new_id ()) in
+        let se = Sil.Earray (len, [(e', se')], inst) in
+        let res_t = Sil.Tarray (res_t', None) in
+        (Sil.Aeq(e, e') :: atoms', se, res_t)
+    | Sil.Tarray (t', len_), off ->
+        let len = match len_ with
+          | None -> Sil.Var (new_id ())
+          | Some len -> Sil.Const (Sil.Cint len) in
+        (match off with
+         | [] ->
+             ([], Sil.Earray (len, [], inst), t)
+         | (Sil.Off_index e) :: off' ->
+             bounds_check pname orig_prop len e (State.get_loc ());
+             let atoms', se', res_t' =
+               create_struct_values
+                 pname tenv orig_prop footprint_part kind max_stamp t' off' inst in
+             let e' = Sil.array_clean_new_index footprint_part e in
+             let se = Sil.Earray (len, [(e', se')], inst) in
+             let res_t = Sil.Tarray (res_t', len_) in
+             (Sil.Aeq(e, e') :: atoms', se, res_t)
+         | (Sil.Off_fld _) :: _ ->
+             assert false
+        )
     | Sil.Tint _, [] | Sil.Tfloat _, [] | Sil.Tvoid, [] | Sil.Tfun _, [] | Sil.Tptr _, [] ->
         let id = new_id () in
         ([], Sil.Eexp (Sil.Var id, inst), t)
@@ -150,14 +155,13 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         let t' = match t with
           | Sil.Tptr(t', _) -> t'
           | _ -> t in
-        let size = Sil.Var (new_id ()) in
-
+        let len = Sil.Var (new_id ()) in
         let atoms', se', res_t' =
           create_struct_values
             pname tenv orig_prop footprint_part kind max_stamp t' [] inst in
         let e' = Sil.array_clean_new_index footprint_part e in
-        let se = Sil.Earray(size, [(e', se')], inst) in
-        let res_t = Sil.Tarray(res_t', size) in
+        let se = Sil.Earray (len, [(e', se')], inst) in
+        let res_t = Sil.Tarray (res_t', None) in
         (Sil.Aeq(e, e'):: atoms', se, res_t)
     | Sil.Tint _, _ | Sil.Tfloat _, _ | Sil.Tvoid, _ | Sil.Tfun _, _ | Sil.Tptr _, _ ->
         L.d_str "create_struct_values type:"; Sil.d_typ_full t; L.d_str " off: "; Sil.d_offset_list off; L.d_ln();
@@ -185,6 +189,9 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
 let rec _strexp_extend_values
     pname tenv orig_prop footprint_part kind max_stamp
     se typ (off : Sil.offset list) inst =
+  let new_id () =
+    incr max_stamp;
+    Ident.create kind !max_stamp in
   match off, se, typ with
   | [], Sil.Eexp _, _
   | [], Sil.Estruct _, _ ->
@@ -193,7 +200,7 @@ let rec _strexp_extend_values
       let off_new = Sil.Off_index(Sil.exp_zero):: off in
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
-  | (Sil.Off_fld _):: _, Sil.Earray _, Sil.Tarray _ ->
+  | (Sil.Off_fld _) :: _, Sil.Earray _, Sil.Tarray _ ->
       let off_new = Sil.Off_index(Sil.exp_zero):: off in
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
@@ -243,18 +250,17 @@ let rec _strexp_extend_values
   | (Sil.Off_index _):: _, Sil.Eexp _, Sil.Tptr _
   | (Sil.Off_index _):: _, Sil.Estruct _, Sil.Tstruct _ ->
       (* L.d_strln_color Orange "turn into an array"; *)
-      let size = match se with
-        | Sil.Eexp (_, Sil.Ialloc) -> Sil.exp_one (* if allocated explicitly, we know size is 1 *)
+      let len = match se with
+        | Sil.Eexp (_, Sil.Ialloc) -> Sil.exp_one (* if allocated explicitly, we know len is 1 *)
         | _ ->
             if Config.type_size then Sil.exp_one (* Sil.Sizeof (typ, Sil.Subtype.exact) *)
-            else Sil.exp_get_undefined false in
-
-      let se_new = Sil.Earray(size, [(Sil.exp_zero, se)], inst) in
-      let typ_new = Sil.Tarray(typ, size) in
+            else Sil.Var (new_id ()) in
+      let se_new = Sil.Earray (len, [(Sil.exp_zero, se)], inst) in
+      let typ_new = Sil.Tarray (typ, None) in
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se_new typ_new off inst
-  | (Sil.Off_index e):: off', Sil.Earray(size, esel, inst_arr), Sil.Tarray(typ', size_for_typ') ->
-      bounds_check pname orig_prop size e (State.get_loc ());
+  | (Sil.Off_index e) :: off', Sil.Earray (len, esel, inst_arr), Sil.Tarray (typ', len_for_typ') ->
+      bounds_check pname orig_prop len e (State.get_loc ());
       begin
         try
           let _, se' = IList.find (fun (e', _) -> Sil.exp_equal e e') esel in
@@ -264,15 +270,19 @@ let rec _strexp_extend_values
           let replace acc (res_atoms', res_se', res_typ') =
             let replace_ise ise = if Sil.exp_equal e (fst ise) then (e, res_se') else ise in
             let res_esel' = IList.map replace_ise esel in
-            if (Sil.typ_equal res_typ' typ') || (IList.length res_esel' = 1)
-            then (res_atoms', Sil.Earray(size, res_esel', inst_arr), Sil.Tarray(res_typ', size_for_typ')) :: acc
-            else raise (Exceptions.Bad_footprint __POS__) in
+            if (Sil.typ_equal res_typ' typ') || (IList.length res_esel' = 1) then
+              ( res_atoms'
+              , Sil.Earray (len, res_esel', inst_arr)
+              , Sil.Tarray (res_typ', len_for_typ') )
+              :: acc
+            else
+              raise (Exceptions.Bad_footprint __POS__) in
           IList.fold_left replace [] atoms_se_typ_list'
         with Not_found ->
           array_case_analysis_index pname tenv orig_prop
             footprint_part kind max_stamp
-            size esel
-            size_for_typ' typ'
+            len esel
+            len_for_typ' typ'
             e off' inst_arr inst
       end
   | _, _, _ ->
@@ -280,8 +290,8 @@ let rec _strexp_extend_values
 
 and array_case_analysis_index pname tenv orig_prop
     footprint_part kind max_stamp
-    array_size array_cont
-    typ_array_size typ_cont
+    array_len array_cont
+    typ_array_len typ_cont
     index off inst_arr inst
   =
   let check_sound t' =
@@ -290,13 +300,13 @@ and array_case_analysis_index pname tenv orig_prop
   let index_in_array =
     IList.exists (fun (i, _) -> Prover.check_equal Prop.prop_emp index i) array_cont in
   let array_is_full =
-    match array_size with
+    match array_len with
     | Sil.Const (Sil.Cint n') -> Sil.Int.geq (Sil.Int.of_int (IList.length array_cont)) n'
     | _ -> false in
 
   if index_in_array then
-    let array_default = Sil.Earray(array_size, array_cont, inst_arr) in
-    let typ_default = Sil.Tarray(typ_cont, typ_array_size) in
+    let array_default = Sil.Earray (array_len, array_cont, inst_arr) in
+    let typ_default = Sil.Tarray (typ_cont, typ_array_len) in
     [([], array_default, typ_default)]
   else if !Config.footprint then begin
     let atoms, elem_se, elem_typ =
@@ -304,8 +314,8 @@ and array_case_analysis_index pname tenv orig_prop
         pname tenv orig_prop footprint_part kind max_stamp typ_cont off inst in
     check_sound elem_typ;
     let cont_new = IList.sort Sil.exp_strexp_compare ((index, elem_se):: array_cont) in
-    let array_new = Sil.Earray(array_size, cont_new, inst_arr) in
-    let typ_new = Sil.Tarray(elem_typ, typ_array_size) in
+    let array_new = Sil.Earray (array_len, cont_new, inst_arr) in
+    let typ_new = Sil.Tarray (elem_typ, typ_array_len) in
     [(atoms, array_new, typ_new)]
   end
   else begin
@@ -317,8 +327,8 @@ and array_case_analysis_index pname tenv orig_prop
             pname tenv orig_prop footprint_part kind max_stamp typ_cont off inst in
         check_sound elem_typ;
         let cont_new = IList.sort Sil.exp_strexp_compare ((index, elem_se):: array_cont) in
-        let array_new = Sil.Earray(array_size, cont_new, inst_arr) in
-        let typ_new = Sil.Tarray(elem_typ, typ_array_size) in
+        let array_new = Sil.Earray (array_len, cont_new, inst_arr) in
+        let typ_new = Sil.Tarray (elem_typ, typ_array_len) in
         [(atoms, array_new, typ_new)]
       end in
     let rec handle_case acc isel_seen_rev = function
@@ -330,10 +340,10 @@ and array_case_analysis_index pname tenv orig_prop
           let atoms_se_typ_list' =
             IList.fold_left (fun acc' (atoms', se', typ') ->
                 check_sound typ';
-                let atoms_new = Sil.Aeq(index, i) :: atoms' in
+                let atoms_new = Sil.Aeq (index, i) :: atoms' in
                 let isel_new = list_rev_and_concat isel_seen_rev ((i, se'):: isel_unseen) in
-                let array_new = Sil.Earray(array_size, isel_new, inst_arr) in
-                let typ_new = Sil.Tarray(typ', typ_array_size) in
+                let array_new = Sil.Earray (array_len, isel_new, inst_arr) in
+                let typ_new = Sil.Tarray (typ', typ_array_len) in
                 (atoms_new, array_new, typ_new):: acc'
               ) [] atoms_se_typ_list in
           let acc_new = atoms_se_typ_list' :: acc in
@@ -927,7 +937,7 @@ let type_at_offset texp off =
                (IList.find (fun (f', _, _) -> Ident.fieldname_equal f f') instance_fields) in
            strip_offset off' typ'
          with Not_found -> None)
-    | (Sil.Off_index _):: off', Sil.Tarray (typ', _) ->
+    | (Sil.Off_index _) :: off', Sil.Tarray (typ', _) ->
         strip_offset off' typ'
     | _ -> None in
   match texp with

@@ -33,11 +33,11 @@ void* g_realloc(void* ptr, size_t size) {
     return NULL;
   }
   int old_size;
-  old_size = __get_array_size(ptr); // force ptr to be an array
+  old_size = __get_array_length(ptr); // force ptr to be an array
   int can_enlarge; // nondeterministically choose whether the current block can
   // be enlarged
   if (can_enlarge) {
-    __set_array_size(ptr, size); // enlarge the block
+    __set_array_length(ptr, size); // enlarge the block
     return ptr;
   }
   int* newblock = (int*)malloc(size);

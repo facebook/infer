@@ -314,6 +314,10 @@ and struct_typ = {
   def_methods: list Procname.t, /** methods defined */
   struct_annotations: item_annotation /** annotations */
 }
+/** statically determined length of an array type, if any */
+and static_length = option Int.t
+/** dynamically determined length of an array value, if any */
+and dynamic_length = option exp
 /** Types for sil (structured) expressions. */
 and typ =
   | Tvar of Typename.t /** named type */
@@ -323,7 +327,7 @@ and typ =
   | Tfun of bool /** function type with noreturn attribute */
   | Tptr of typ ptr_kind /** pointer type */
   | Tstruct of struct_typ /** Type for a structured value */
-  | Tarray of typ exp /** array type with fixed size */
+  | Tarray of typ static_length /** array type with statically fixed length */
 /** Program expressions. */
 and exp =
   /** Pure variable: it is not an lvalue */
@@ -342,8 +346,14 @@ and exp =
   | Lfield of exp Ident.fieldname typ
   /** An array index offset: [exp1\[exp2\]] */
   | Lindex of exp exp
-  /** A sizeof expression */
-  | Sizeof of typ (option exp) Subtype.t;
+  /** A sizeof expression. [Sizeof typ (Some len)] represents the size of a value of type [typ]
+      which ends in an extensible array of length [len].  The length in [Tarray] records the
+      statically determined length, while the length in [Sizeof] records the dynamic length. */
+  | Sizeof of typ dynamic_length Subtype.t;
+
+
+/** the element typ of the final extensible array in the given typ, if any */
+let get_extensible_array_element_typ: typ => option typ;
 
 let struct_typ_equal: struct_typ => struct_typ => bool;
 
@@ -528,10 +538,10 @@ let inst_partial_meet: inst => inst => inst;
 type strexp =
   | Eexp of exp inst /** Base case: expression with instrumentation */
   | Estruct of (list (Ident.fieldname, strexp)) inst /** C structure */
-  | Earray of exp (list (exp, strexp)) inst /** Array of given size. */
+  | Earray of exp (list (exp, strexp)) inst /** Array of given length */
 /** There are two conditions imposed / used in the array case.
     First, if some index and value pair appears inside an array
-    in a strexp, then the index is less than the size of the array.
+    in a strexp, then the index is less than the length of the array.
     For instance, x |->[10 | e1: v1] implies that e1 <= 9.
     Second, if two indices appear in an array, they should be different.
     For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. */
@@ -886,9 +896,9 @@ let pp_typ_full: printenv => F.formatter => typ => unit;
 let typ_to_string: typ => string;
 
 
-/** [pp_type_decl pe pp_base pp_size f typ] pretty prints a type declaration.
+/** [pp_type_decl pe pp_base pp_len f typ] pretty prints a type declaration.
     pp_base prints the variable for a declaration, or can be skip to print only the type
-    pp_size prints the expression for the array size */
+    pp_len prints the expression for the array length */
 let pp_type_decl:
   printenv =>
   (F.formatter => unit => unit) =>

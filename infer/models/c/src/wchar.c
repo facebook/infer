@@ -127,7 +127,7 @@ int CLIBCALL swprintf(wchar_t* restrict s,
                       ...) {
   int res;
   int size1;
-  size1 = __get_array_size(s);
+  size1 = __get_array_length(s);
   res = __infer_nondet_int();
   INFER_EXCLUDE_CONDITION(res < 0);
   return res;

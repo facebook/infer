@@ -69,8 +69,7 @@ let rec get_named_type vt =
         match ot with
         | JBasics.TArray vt ->
             let content_type = get_named_type vt in
-            let size = Sil.exp_get_undefined false in
-            Sil.Tptr (Sil.Tarray (content_type, size), Sil.Pk_pointer) (* unknown size *)
+            Sil.Tptr (Sil.Tarray (content_type, None), Sil.Pk_pointer)
         | JBasics.TClass cn -> Sil.Tptr (Sil.Tvar (typename_of_classname cn), Sil.Pk_pointer)
       end
 
@@ -84,8 +83,7 @@ let extract_cn_type_np typ =
 let rec create_array_type typ dim =
   if dim > 0 then
     let content_typ = create_array_type typ (dim - 1) in
-    let size = Sil.exp_get_undefined false in
-    Sil.Tptr(Sil.Tarray (content_typ, size), Sil.Pk_pointer)
+    Sil.Tptr(Sil.Tarray (content_typ, None), Sil.Pk_pointer)
   else typ
 
 let extract_cn_no_obj typ =
@@ -384,9 +382,7 @@ let is_closeable program tenv typ =
 let rec object_type program tenv ot =
   match ot with
   | JBasics.TClass cn -> get_class_type program tenv cn
-  | JBasics.TArray at ->
-      let size = Sil.exp_get_undefined false in
-      Sil.Tptr (Sil.Tarray (value_type program tenv at, size), Sil.Pk_pointer)
+  | JBasics.TArray at -> Sil.Tptr (Sil.Tarray (value_type program tenv at, None), Sil.Pk_pointer)
 (** translate a value type *)
 and value_type program tenv vt =
   match vt with
@@ -397,9 +393,6 @@ and value_type program tenv vt =
 (**  Translate object types into Sil.Sizeof expressions *)
 let sizeof_of_object_type program tenv ot subtypes =
   match object_type program tenv ot with
-  | Sil.Tptr (Sil.Tarray (vtyp, len), Sil.Pk_pointer) ->
-      let typ = (Sil.Tarray (vtyp, len)) in
-      Sil.Sizeof (typ, Some len, subtypes)
   | Sil.Tptr (typ, _) ->
       Sil.Sizeof (typ, None, subtypes)
   | _ ->

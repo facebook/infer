@@ -28,24 +28,24 @@ let execute___builtin_va_arg { Builtin.pdesc; tenv; prop_; path; ret_ids; args; 
       SymExec.instrs ~mask_errors:true tenv pdesc [instr'] [(prop_, path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-let mk_empty_array size =
-  Sil.Earray (size, [], Sil.inst_none)
+let mk_empty_array len =
+  Sil.Earray (len, [], Sil.inst_none)
 
 (* Make a rearranged array. As it is rearranged when it appears in a precondition
    it requires that the function is called with the array allocated. If not infer
    return a null pointer deref *)
-let mk_empty_array_rearranged size =
-  Sil.Earray (size, [], Sil.inst_rearrange true (State.get_loc ()) (State.get_path_pos ()))
+let mk_empty_array_rearranged len =
+  Sil.Earray (len, [], Sil.inst_rearrange true (State.get_loc ()) (State.get_path_pos ()))
 
 let extract_array_type typ =
   if (!Config.curr_language = Config.Java) then
     match typ with
-    | Sil.Tptr ( Sil.Tarray (typ', _), _) -> Some typ'
+    | Sil.Tptr (Sil.Tarray _ as arr, _) -> Some arr
     | _ -> None
   else
     match typ with
-    | Sil.Tptr (typ', _) | Sil.Tarray (typ', _) ->
-        Some typ'
+    | Sil.Tarray _ as arr -> Some arr
+    | Sil.Tptr (elt, _) -> Some (Sil.Tarray (elt, None))
     | _ -> None
 
 (** Return a result from a procedure call. *)
@@ -54,8 +54,8 @@ let return_result e prop ret_ids =
   | [ret_id] -> Prop.conjoin_eq e (Sil.Var ret_id) prop
   | _ -> prop
 
-(* Add an array of typ pointed to by lexp to prop_ if it doesnt exist alread*)
-(*  Return the new prop and the array size *)
+(* Add an array of typ pointed to by lexp to prop_ if it doesn't already exist *)
+(*  Return the new prop and the array length *)
 (*  Return None if it fails to add the array *)
 let add_array_to_prop pdesc prop_ lexp typ =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
@@ -66,24 +66,21 @@ let add_array_to_prop pdesc prop_ lexp typ =
           | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e n_lexp
           | _ -> false) (Prop.get_sigma prop) in
       match hpred with
-      | Sil.Hpointsto(_, Sil.Earray(size, _, _), _) ->
-          Some (size, prop)
+      | Sil.Hpointsto(_, Sil.Earray (len, _, _), _) ->
+          Some (len, prop)
       | _ -> None (* e points to something but not an array *)
     with Not_found -> (* e is not allocated, so we can add the array *)
-      let otyp' = (extract_array_type typ) in
-      match otyp' with
-      | Some typ' ->
-          let size = Sil.Var(Ident.create_fresh Ident.kfootprint) in
-          let s = mk_empty_array_rearranged size in
-          let hpred =
-            Prop.mk_ptsto n_lexp s
-              (Sil.Sizeof (Sil.Tarray (typ', size), None, Sil.Subtype.exact)) in
-          let sigma = Prop.get_sigma prop in
-          let sigma_fp = Prop.get_sigma_footprint prop in
-          let prop'= Prop.replace_sigma (hpred:: sigma) prop in
-          let prop''= Prop.replace_sigma_footprint (hpred:: sigma_fp) prop' in
-          let prop''= Prop.normalize prop'' in
-          Some (size, prop'')
+    match extract_array_type typ with
+    | Some arr_typ ->
+        let len = Sil.Var (Ident.create_fresh Ident.kfootprint) in
+        let s = mk_empty_array_rearranged len in
+        let hpred = Prop.mk_ptsto n_lexp s (Sil.Sizeof (arr_typ, Some len, Sil.Subtype.exact)) in
+        let sigma = Prop.get_sigma prop in
+        let sigma_fp = Prop.get_sigma_footprint prop in
+        let prop'= Prop.replace_sigma (hpred:: sigma) prop in
+        let prop''= Prop.replace_sigma_footprint (hpred:: sigma_fp) prop' in
+        let prop''= Prop.normalize prop'' in
+        Some (len, prop'')
       | _ -> None
   end
 
@@ -97,31 +94,31 @@ let execute___require_allocated_array { Builtin.pdesc; prop_; path; ret_ids; arg
        | Some (_, prop) -> [(prop, path)])
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-let execute___get_array_size { Builtin.pdesc; prop_; path; ret_ids; args; }
+let execute___get_array_length { Builtin.pdesc; prop_; path; ret_ids; args; }
   : Builtin.ret_typ =
   match args with
   | [(lexp, typ)] when IList.length ret_ids <= 1 ->
       (match add_array_to_prop pdesc prop_ lexp typ with
        | None -> []
-       | Some (size, prop) -> [(return_result size prop ret_ids, path)])
+       | Some (len, prop) -> [(return_result len prop ret_ids, path)])
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-let execute___set_array_size { Builtin.pdesc; prop_; path; ret_ids; args; }
+let execute___set_array_length { Builtin.pdesc; prop_; path; ret_ids; args; }
   : Builtin.ret_typ =
   match args, ret_ids with
-  | [(lexp, typ); (size, _)], []->
+  | [(lexp, typ); (len, _)], []->
       (match add_array_to_prop pdesc prop_ lexp typ with
        | None -> []
        | Some (_, prop_a) -> (* Invariant: prop_a has an array pointed to by lexp *)
            let pname = Cfg.Procdesc.get_proc_name pdesc in
            let n_lexp, prop__ = check_arith_norm_exp pname lexp prop_a in
-           let n_size, prop = check_arith_norm_exp pname size prop__ in
+           let n_len, prop = check_arith_norm_exp pname len prop__ in
            let hpred, sigma' = IList.partition (function
                | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e n_lexp
                | _ -> false) (Prop.get_sigma prop) in
            (match hpred with
             | [Sil.Hpointsto(e, Sil.Earray(_, esel, inst), t)] ->
-                let hpred' = Sil.Hpointsto (e, Sil.Earray (n_size, esel, inst), t) in
+                let hpred' = Sil.Hpointsto (e, Sil.Earray (n_len, esel, inst), t) in
                 let prop' = Prop.replace_sigma (hpred':: sigma') prop in
                 [(Prop.normalize prop', path)]
             | _ -> [])) (* by construction of prop_a this case is impossible *)
@@ -162,8 +159,8 @@ let create_type tenv n_lexp typ prop =
             let hpred = Prop.mk_ptsto n_lexp sexp texp in
             Some hpred
         | Sil.Tarray _ ->
-            let size = Sil.Var(Ident.create_fresh Ident.kfootprint) in
-            let sexp = mk_empty_array size in
+            let len = Sil.Var (Ident.create_fresh Ident.kfootprint) in
+            let sexp = mk_empty_array len in
             let texp = Sil.Sizeof (typ, None, Sil.Subtype.subtypes) in
             let hpred = Prop.mk_ptsto n_lexp sexp texp in
             Some hpred
@@ -763,11 +760,9 @@ let execute_alloc mk can_return_null
     | Sil.Const _ | Sil.Cast _ | Sil.Lvar _ | Sil.Lfield _ | Sil.Lindex _ -> e
     | Sil.Sizeof (Sil.Tarray (Sil.Tint ik, _), Some len, _) when Sil.ikind_is_char ik ->
         evaluate_char_sizeof len
-    | Sil.Sizeof (Sil.Tarray (Sil.Tint ik, len), None, _) when Sil.ikind_is_char ik ->
-        evaluate_char_sizeof len
+    | Sil.Sizeof (Sil.Tarray (Sil.Tint ik, Some len), None, _) when Sil.ikind_is_char ik ->
+        evaluate_char_sizeof (Sil.Const (Sil.Cint len))
     | Sil.Sizeof _ -> e in
-  let handle_sizeof_exp len =
-    Sil.Sizeof (Sil.Tarray (Sil.Tint Sil.IChar, len), Some len, Sil.Subtype.exact) in
   let size_exp, procname = match args with
     | [(Sil.Sizeof
           (Sil.Tstruct
@@ -790,7 +785,8 @@ let execute_alloc mk can_return_null
     let n_size_exp, prop = check_arith_norm_exp pname size_exp prop_ in
     let n_size_exp' = evaluate_char_sizeof n_size_exp in
     Prop.exp_normalize_prop prop n_size_exp', prop in
-  let cnt_te = handle_sizeof_exp size_exp' in
+  let cnt_te =
+    Sil.Sizeof (Sil.Tarray (Sil.Tint Sil.IChar, None), Some size_exp', Sil.Subtype.exact) in
   let id_new = Ident.create_fresh Ident.kprimed in
   let exp_new = Sil.Var id_new in
   let ptsto_new =
@@ -989,9 +985,9 @@ let __delete_array = Builtin.register
 let __exit = Builtin.register
     (* _exit from C library *)
     "_exit" execute_exit
-let __get_array_size = Builtin.register
-    (* return the size of the array passed as a parameter *)
-    "__get_array_size" execute___get_array_size
+let __get_array_length = Builtin.register
+    (* return the length of the array passed as a parameter *)
+    "__get_array_length" execute___get_array_length
 let __require_allocated_array = Builtin.register
     (* require the parameter to point to an allocated array *)
     "__require_allocated_array" execute___require_allocated_array
@@ -1053,9 +1049,9 @@ let __placement_new = Builtin.register
 let _ = Builtin.register
     (* print a value as seen by the engine *)
     "__print_value" execute___print_value
-let __set_array_size = Builtin.register
-    (* set the size of the array passed as a parameter *)
-    "__set_array_size" execute___set_array_size
+let __set_array_length = Builtin.register
+    (* set the length of the array passed as a parameter *)
+    "__set_array_length" execute___set_array_length
 let __set_autorelease_attribute = Builtin.register
     (* set the attribute of the parameter as autorelease *)
     "__set_autorelease_attribute" execute___set_autorelease_attribute

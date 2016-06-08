@@ -170,11 +170,11 @@ let rec apply_offlist
       pp_error();
       assert false
 
-  | (Sil.Off_index idx):: offlist', Sil.Earray (size, esel, inst1) ->
+  | (Sil.Off_index idx) :: offlist', Sil.Earray (len, esel, inst1) ->
       let nidx = Prop.exp_normalize_prop p idx in
       begin
         let typ' = Tenv.expand_type tenv typ in
-        let t', size' = match typ' with Sil.Tarray (t', size') -> (t', size') | _ -> assert false in
+        let t', len' = match typ' with Sil.Tarray (t', len') -> (t', len') | _ -> assert false in
         try
           let idx_ese', se' = IList.find (fun ese -> Prover.check_equal p nidx (fst ese)) esel in
           let res_e', res_se', res_t', res_pred_insts_op' =
@@ -185,8 +185,8 @@ let rec apply_offlist
             if Sil.exp_equal idx_ese' (fst ese)
             then (idx_ese', res_se')
             else ese in
-          let res_se = Sil.Earray(size, IList.map replace_ese esel, inst1) in
-          let res_t = Sil.Tarray(res_t', size') in
+          let res_se = Sil.Earray (len, IList.map replace_ese esel, inst1) in
+          let res_t = Sil.Tarray (res_t', len') in
           (res_e', res_se, res_t, res_pred_insts_op')
         with Not_found ->
           (* return a nondeterministic value if the index is not found after rearrangement *)
@@ -264,9 +264,9 @@ let rec execute_nullify_se = function
   | Sil.Estruct (fsel, _) ->
       let fsel' = IList.map (fun (fld, se) -> (fld, execute_nullify_se se)) fsel in
       Sil.Estruct (fsel', Sil.inst_nullify)
-  | Sil.Earray (size, esel, _) ->
+  | Sil.Earray (len, esel, _) ->
       let esel' = IList.map (fun (idx, se) -> (idx, execute_nullify_se se)) esel in
-      Sil.Earray (size, esel', Sil.inst_nullify)
+      Sil.Earray (len, esel', Sil.inst_nullify)
 
 (** Do pruning for conditional [if (e1 != e2) ] if [positive] is true
     and [(if (e1 == e2)] if [positive] is false *)

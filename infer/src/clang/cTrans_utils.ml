@@ -684,7 +684,7 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
         let exp_types = zip lh_exprs lh_types in
         IList.map (fun (e, t) ->
             IList.flatten (var_or_zero_in_init_list' e t tns)) exp_types
-    | Sil.Tarray (arrtyp, Sil.Const (Sil.Cint n)) ->
+    | Sil.Tarray (arrtyp, Some n) ->
         let size = Sil.Int.to_int n in
         let indices = list_range 0 (size - 1) in
         let index_constants =

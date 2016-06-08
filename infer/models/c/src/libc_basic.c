@@ -84,9 +84,9 @@ char* strcpy(char* s1, const char* s2) {
   __infer_set_flag("ignore_return",
                    ""); // no warnings if the return value is ignored
   __require_allocated_array(s1);
-  size1 = __get_array_size(s1);
+  size1 = __get_array_length(s1);
   __require_allocated_array(s2);
-  size2 = __get_array_size(s2);
+  size2 = __get_array_length(s2);
   INFER_EXCLUDE_CONDITION(size2 > size1);
   return s1;
 }
@@ -96,7 +96,7 @@ char* strcpy(char* s1, const char* s2) {
 char* strdup(const char* s) {
   int size;
   __require_allocated_array(s);
-  size = __get_array_size(s);
+  size = __get_array_length(s);
   return (char*)malloc(size);
 }
 
@@ -106,9 +106,9 @@ char* strcat(char* s1, const char* s2) {
   int size1;
   int size2;
   __require_allocated_array(s1);
-  size1 = __get_array_size(s1);
+  size1 = __get_array_length(s1);
   __require_allocated_array(s2);
-  size2 = __get_array_size(s2);
+  size2 = __get_array_length(s2);
   INFER_EXCLUDE_CONDITION(size2 > size1);
   return s1;
 }
@@ -133,7 +133,7 @@ char* strchr(char* s, int c) throw() {
   offset = __infer_nondet_int();
 
   __require_allocated_array(s);
-  size = __get_array_size(s);
+  size = __get_array_length(s);
   if (nondet)
     return 0;
   INFER_EXCLUDE_CONDITION(offset < 0 || offset >= size);
@@ -167,7 +167,7 @@ int strcmp(const char* s1, const char* s2) {
 size_t strlen(const char* s) {
   int size;
   __require_allocated_array(s);
-  size = __get_array_size(s);
+  size = __get_array_length(s);
   return size - 1;
 }
 
@@ -185,9 +185,9 @@ char* strncat(char* s1, const char* s2, size_t n) {
   int size_s1;
   int size_s2;
   __require_allocated_array(s1);
-  size_s1 = __get_array_size(s1);
+  size_s1 = __get_array_length(s1);
   __require_allocated_array(s2);
-  size_s2 = __get_array_size(s2);
+  size_s2 = __get_array_length(s2);
   INFER_EXCLUDE_CONDITION((n > size_s1) || (n > size_s2));
   return s1;
 }
@@ -201,9 +201,9 @@ int strncmp(const char* s1, const char* s2, size_t n) {
   int res;
   res = __infer_nondet_int();
   __require_allocated_array(s1);
-  size_s1 = __get_array_size(s1);
+  size_s1 = __get_array_length(s1);
   __require_allocated_array(s2);
-  size_s2 = __get_array_size(s2);
+  size_s2 = __get_array_length(s2);
   INFER_EXCLUDE_CONDITION((n > size_s1) || (n > size_s2));
   return res;
 }
@@ -216,7 +216,7 @@ char* strncpy(char* s1, const char* s2, size_t n) {
   __infer_set_flag("ignore_return",
                    ""); // no warnings if the return value is ignored
   __require_allocated_array(s1);
-  size1 = __get_array_size(s1);
+  size1 = __get_array_length(s1);
   __require_allocated_array(s2);
   INFER_EXCLUDE_CONDITION(n > size1);
   return s1;
@@ -237,7 +237,7 @@ char* strpbrk(char* s1, const char* s2) throw() {
   nondet = __infer_nondet_int();
   offset = __infer_nondet_int();
   __require_allocated_array(s1);
-  size1 = __get_array_size(s1);
+  size1 = __get_array_length(s1);
   __require_allocated_array(s2);
   if (nondet)
     return 0;
@@ -252,7 +252,7 @@ size_t strspn(const char* s1, const char* s2) {
   int res;
   res = __infer_nondet_int();
   __require_allocated_array(s1);
-  size_s1 = __get_array_size(s1);
+  size_s1 = __get_array_length(s1);
   __require_allocated_array(s2);
   INFER_EXCLUDE_CONDITION(res < 0 || res > size_s1);
   return res;
@@ -274,7 +274,7 @@ char* strstr(char* s1, const char* s2) throw() {
   nondet = __infer_nondet_int();
   offset = __infer_nondet_int();
   __require_allocated_array(s1);
-  size1 = __get_array_size(s1);
+  size1 = __get_array_length(s1);
   __require_allocated_array(s2);
   if (nondet)
     return 0;
@@ -300,7 +300,7 @@ unsigned long strtoul(const char* str, char** endptr, int base) {
   int offset;
   int res;
   __require_allocated_array(str);
-  size = __get_array_size(str);
+  size = __get_array_length(str);
   offset = __infer_nondet_int();
   INFER_EXCLUDE_CONDITION(offset < 0 || offset >= size);
   if (endptr)
@@ -338,7 +338,7 @@ void* memchr(void* s, int c, size_t n) throw() {
   nondet = __infer_nondet_int();
   offset = __infer_nondet_int();
   __require_allocated_array(s);
-  size = __get_array_size(s);
+  size = __get_array_length(s);
   INFER_EXCLUDE_CONDITION(n > size);
   if (nondet)
     return 0;
@@ -353,9 +353,9 @@ int memcmp(const void* s1, const void* s2, size_t n) {
   int size_s1;
   int size_s2;
   __require_allocated_array(s1);
-  size_s1 = __get_array_size(s1);
+  size_s1 = __get_array_length(s1);
   __require_allocated_array(s2);
-  size_s2 = __get_array_size(s2);
+  size_s2 = __get_array_length(s2);
   INFER_EXCLUDE_CONDITION((n > size_s1) || (n > size_s2));
   return __infer_nondet_int();
 }
@@ -368,9 +368,9 @@ void* memcpy(void* s1, const void* s2, size_t n) {
   __infer_set_flag("ignore_return",
                    ""); // no warnings if the return value is ignored
   __require_allocated_array(s1);
-  size_s1 = __get_array_size(s1);
+  size_s1 = __get_array_length(s1);
   __require_allocated_array(s2);
-  size_s2 = __get_array_size(s2);
+  size_s2 = __get_array_length(s2);
   INFER_EXCLUDE_CONDITION((n < 0) || (n > size_s1) || (n > size_s2));
   return s1;
 }
@@ -389,7 +389,7 @@ void* memset(void* s, int c, size_t n) {
   __infer_set_flag("ignore_return",
                    ""); // no warnings if the return value is ignored
   __require_allocated_array(s);
-  size_s = __get_array_size(s);
+  size_s = __get_array_length(s);
   INFER_EXCLUDE_CONDITION(n > size_s);
   return s;
 }
@@ -434,7 +434,7 @@ char* tmpnam(char* s) {
     return NULL;
   if (s) {
     __require_allocated_array(s);
-    size = __get_array_size(s);
+    size = __get_array_length(s);
     INFER_EXCLUDE_CONDITION(size < L_tmpnam);
     return s;
   } else
@@ -535,7 +535,7 @@ char* fgets(char* str, int num, FILE* stream) {
 
   if (n > 0) {
     __require_allocated_array(str);
-    size1 = __get_array_size(str);
+    size1 = __get_array_length(str);
     INFER_EXCLUDE_CONDITION(num > size1);
     return str;
   } else
@@ -614,7 +614,7 @@ char* getcwd(char* buffer, size_t size) {
 
   if (n > 0) {
     __require_allocated_array(buffer);
-    size_buf = __get_array_size(buffer);
+    size_buf = __get_array_length(buffer);
     INFER_EXCLUDE_CONDITION(size > size_buf);
     return buffer;
   } else
@@ -753,7 +753,7 @@ void* realloc(void* ptr, size_t size) {
   can_enlarge = __infer_nondet_int(); // nondeterministically choose whether the
   // current block can be enlarged
   if (can_enlarge) {
-    __set_array_size(ptr, size); // enlarge the block
+    __set_array_length(ptr, size); // enlarge the block
     return ptr;
   }
   int* newblock = (int*)malloc(size);
@@ -1167,7 +1167,7 @@ size_t strlcpy(char* dst, const char* src, size_t size) {
 
   // force dst to be allocated for at least size
   __require_allocated_array(dst);
-  size_dst = __get_array_size(dst);
+  size_dst = __get_array_length(dst);
   INFER_EXCLUDE_CONDITION(size > size_dst);
 
   INFER_EXCLUDE_CONDITION(res > size || res < 0);
@@ -1188,7 +1188,7 @@ size_t strlcat(char* dst, const char* src, size_t size) {
 
   // force dst to be allocated for at least size
   __require_allocated_array(dst);
-  size_dst = __get_array_size(dst);
+  size_dst = __get_array_length(dst);
   INFER_EXCLUDE_CONDITION(size > size_dst);
 
   INFER_EXCLUDE_CONDITION(res > size || res < 0);
@@ -1533,7 +1533,7 @@ ssize_t read(int fildes, void* buf, size_t nbyte) {
   if (nbyte == 0)
     return 0;
   __require_allocated_array(buf);
-  INFER_EXCLUDE_CONDITION(__get_array_size(buf) < nbyte);
+  INFER_EXCLUDE_CONDITION(__get_array_length(buf) < nbyte);
 
   int ret = __infer_nondet_int();
   INFER_EXCLUDE_CONDITION(ret < -1 || ret > nbyte);
@@ -1665,7 +1665,7 @@ size_t strcspn(const char* s1, const char* s2) {
 #if defined __APPLE__ || (defined __USE_XOPEN2K && !defined __USE_GNU)
 int strerror_r(int errnum, char* strerrbuf, size_t buflen) {
   __require_allocated_array(strerrbuf);
-  INFER_EXCLUDE_CONDITION(__get_array_size(strerrbuf) < buflen);
+  INFER_EXCLUDE_CONDITION(__get_array_length(strerrbuf) < buflen);
 
   return __infer_nondet_int();
 }
@@ -1673,7 +1673,7 @@ int strerror_r(int errnum, char* strerrbuf, size_t buflen) {
 
 ssize_t write(int fildes, const void* buf, size_t nbyte) {
   __require_allocated_array(buf);
-  INFER_EXCLUDE_CONDITION(__get_array_size(buf) < nbyte);
+  INFER_EXCLUDE_CONDITION(__get_array_length(buf) < nbyte);
 
   int ret = __infer_nondet_int();
   INFER_EXCLUDE_CONDITION(ret < -1 || nbyte < ret);
@@ -1731,7 +1731,7 @@ void* bsearch(const void* key,
   nondet = __infer_nondet_int();
   offset = __infer_nondet_int();
   __require_allocated_array(base);
-  base_size = __get_array_size(base);
+  base_size = __get_array_length(base);
   INFER_EXCLUDE_CONDITION(nmemb > base_size);
   if (nondet)
     return 0;

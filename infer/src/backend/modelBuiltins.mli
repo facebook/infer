@@ -15,7 +15,7 @@ val __assert_fail : Procname.t
 val __delete : Procname.t
 val __delete_array : Procname.t
 val __exit : Procname.t
-val __get_array_size : Procname.t
+val __get_array_length : Procname.t
 val __get_type_of : Procname.t
 val __infer_fail : Procname.t
 val __instanceof : Procname.t (** [__instanceof(val,typ)] implements java's [val instanceof typ] *)
@@ -26,7 +26,7 @@ val __new : Procname.t
 val __new_array : Procname.t
 val __objc_alloc : Procname.t
 val __objc_alloc_no_fail : Procname.t
-val __set_array_size : Procname.t
+val __set_array_length : Procname.t
 val __unwrap_exception : Procname.t
 val __set_file_attribute : Procname.t
 val __set_mem_attribute : Procname.t

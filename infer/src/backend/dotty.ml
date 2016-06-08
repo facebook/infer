@@ -65,7 +65,7 @@ type dotty_node =
   (* Dotstruct(coo,e,l,c): struct box for expression e  with field list l at coordinate coo and color c *)
   | Dotstruct of coordinate * Sil.exp * (Ident.fieldname * Sil.strexp) list * string * Sil.exp
   (* Dotarray(coo,e1,e2,l,t,c): array box for expression e1  with field list l at coordinate coo and color c*)
-  (* e2 is the size and t is the type *)
+  (* e2 is the len and t is the type *)
   | Dotarray of coordinate * Sil.exp * Sil.exp * (Sil.exp * Sil.strexp) list * Sil.typ * string
   (* Dotlseg(coo,e1,e2,k,h,c): list box from e1 to e2 at coordinate coo and color c*)
   | Dotlseg of coordinate * Sil.exp * Sil.exp * Sil.lseg_kind * Sil.hpred list * string
@@ -294,7 +294,7 @@ let rec dotty_mk_node pe sigma =
   let n = !dotty_state_count in
   incr dotty_state_count;
   let do_hpred_lambda exp_color = function
-    | (Sil.Hpointsto (e, Sil.Earray (e', l, _), Sil.Sizeof (Sil.Tarray(t, _), _, _)), lambda) ->
+    | (Sil.Hpointsto (e, Sil.Earray (e', l, _), Sil.Sizeof (Sil.Tarray (t, _), _, _)), lambda) ->
         incr dotty_state_count;  (* increment once more n+1 is the box for the array *)
         let e_color_str = color_to_str (exp_color e) in
         let e_color_str'= color_to_str (exp_color e') in
@@ -1221,13 +1221,13 @@ let rec compute_target_nodes_from_sexp nodes se prop field_lab =
            compute_target_nodes_from_sexp nodes se2 prop (Ident.fieldname_to_string fn) @
            compute_target_nodes_from_sexp nodes (Sil.Estruct (l', inst)) prop ""
       )
-  | Sil.Earray(size, lie, inst) ->
+  | Sil.Earray (len, lie, inst) ->
       (match lie with
        | [] -> []
        | (idx, se2):: l' ->
            let lab ="["^exp_to_xml_string idx^"]" in
            compute_target_nodes_from_sexp nodes se2 prop lab @
-           compute_target_nodes_from_sexp nodes (Sil.Earray(size, l', inst)) prop ""
+           compute_target_nodes_from_sexp nodes (Sil.Earray (len, l', inst)) prop ""
       )
 
 
@@ -1291,9 +1291,9 @@ let rec pointsto_contents_to_xml (co: Sil.strexp) : Io_infer.Xml.node =
   | Sil.Estruct (fel, _) ->
       let f (fld, exp) = Io_infer.Xml.create_tree "struct-field" [("id", Ident.fieldname_to_string fld)] [(pointsto_contents_to_xml exp)] in
       Io_infer.Xml.create_tree "struct" [] (IList.map f fel)
-  | Sil.Earray (size, nel, _) ->
+  | Sil.Earray (len, nel, _) ->
       let f (e, se) = Io_infer.Xml.create_tree "array-element" [("index", exp_to_xml_string e)] [pointsto_contents_to_xml se] in
-      Io_infer.Xml.create_tree "array" [("size", exp_to_xml_string size)] (IList.map f nel)
+      Io_infer.Xml.create_tree "array" [("size", exp_to_xml_string len)] (IList.map f nel)
 
 (* Convert an atom to xml in a light version. Namely, the expressions are not fully blown-up into *)
 (* xml tree but visualized as strings *)

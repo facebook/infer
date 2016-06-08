@@ -61,10 +61,10 @@ let pointer_attribute_of_objc_attribute attr_info =
   | `OCL_Weak -> Sil.Pk_objc_weak
   | `OCL_Autoreleasing -> Sil.Pk_objc_autoreleasing
 
-let rec build_array_type translate_decl tenv type_ptr n =
+let rec build_array_type translate_decl tenv type_ptr n_opt =
   let array_type = type_ptr_to_sil_type translate_decl tenv type_ptr in
-  let exp = Sil.exp_int (Sil.Int.of_int64 (Int64.of_int n)) in
-  Sil.Tarray (array_type, exp)
+  let len = Option.map (fun n -> Sil.Int.of_int64 (Int64.of_int n)) n_opt in
+  Sil.Tarray (array_type, len)
 
 and sil_type_of_attr_type translate_decl tenv type_info attr_info =
   match type_info.Clang_ast_t.ti_desugared_type with
@@ -96,9 +96,9 @@ and sil_type_of_c_type translate_decl tenv c_type =
   | IncompleteArrayType (_, type_ptr)
   | DependentSizedArrayType (_, type_ptr)
   | VariableArrayType (_, type_ptr) ->
-      build_array_type translate_decl tenv type_ptr (-1)
+      build_array_type translate_decl tenv type_ptr None
   | ConstantArrayType (_, type_ptr, n) ->
-      build_array_type translate_decl tenv type_ptr n
+      build_array_type translate_decl tenv type_ptr (Some n)
   | FunctionProtoType _
   | FunctionNoProtoType _ ->
       Sil.Tfun false

@@ -400,8 +400,8 @@ let use_static_final_fields context =
 let builtin_new =
   Sil.Const (Sil.Cfun ModelBuiltins.__new)
 
-let builtin_get_array_size =
-  Sil.Const (Sil.Cfun ModelBuiltins.__get_array_size)
+let builtin_get_array_length =
+  Sil.Const (Sil.Cfun ModelBuiltins.__get_array_length)
 
 let create_sil_deref exp typ loc =
   let fresh_id = Ident.create_fresh Ident.knormal in
@@ -447,7 +447,8 @@ let rec expression context pc expr =
             let deref = create_sil_deref sil_ex array_typ_no_ptr loc in
             let args = [(sil_ex, type_of_ex)] in
             let ret_id = Ident.create_fresh Ident.knormal in
-            let call_instr = Sil.Call([ret_id], builtin_get_array_size, args, loc, Sil.cf_default) in
+            let call_instr =
+              Sil.Call ([ret_id], builtin_get_array_length, args, loc, Sil.cf_default) in
             (instrs @ [deref; call_instr], Sil.Var ret_id, type_of_expr)
         | JBir.Conv conv ->
             let cast_ex = Sil.Cast (JTransType.cast_type conv, sil_ex) in
@@ -478,7 +479,7 @@ let rec expression context pc expr =
         match binop with
         | JBir.ArrayLoad _ ->
             (* add an instruction that dereferences the array *)
-            let array_typ = Sil.Tarray(type_of_expr, Sil.Var (Ident.create_fresh Ident.kprimed)) in
+            let array_typ = Sil.Tarray (type_of_expr, None) in
             let deref_array_instr = create_sil_deref sil_ex1 array_typ loc in
             let id = Ident.create_fresh Ident.knormal in
             let letderef_instr =
@@ -638,17 +639,17 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
 
   (callee_procname, instrs)
 
-let get_array_size context pc expr_list content_type =
+let get_array_length context pc expr_list content_type =
   let get_expr_instr expr other_instrs =
-    let (instrs, sil_size_expr, _) = expression context pc expr in
+    let (instrs, sil_len_expr, _) = expression context pc expr in
     match other_instrs with
     | (other_instrs, other_exprs) ->
-        (instrs@other_instrs, sil_size_expr:: other_exprs) in
-  let (instrs, sil_size_exprs) = (IList.fold_right get_expr_instr expr_list ([],[])) in
-  let get_array_type_len sil_size_expr (content_type, _) =
-    (Sil.Tarray (content_type, sil_size_expr), Some sil_size_expr) in
+        (instrs @ other_instrs, sil_len_expr :: other_exprs) in
+  let (instrs, sil_len_exprs) = (IList.fold_right get_expr_instr expr_list ([],[])) in
+  let get_array_type_len sil_len_expr (content_type, _) =
+    (Sil.Tarray (content_type, None), Some sil_len_expr) in
   let array_type, array_len =
-    IList.fold_right get_array_type_len sil_size_exprs (content_type, None) in
+    IList.fold_right get_array_type_len sil_len_exprs (content_type, None) in
   let array_size = Sil.Sizeof (array_type, array_len, Sil.Subtype.exact) in
   (instrs, array_size)
 
@@ -925,7 +926,7 @@ let rec instruction context pc instr : translation =
         let content_type = JTransType.value_type program tenv vt in
         let array_type = JTransType.create_array_type content_type (IList.length expr_list) in
         let array_name = JContext.set_pvar context var array_type in
-        let (instrs, array_size) = get_array_size context pc expr_list content_type in
+        let (instrs, array_size) = get_array_length context pc expr_list content_type in
         let call_args = [(array_size, array_type)] in
         let ret_id = Ident.create_fresh Ident.knormal in
         let call_instr = Sil.Call([ret_id], builtin_new_array, call_args, loc, Sil.cf_default) in

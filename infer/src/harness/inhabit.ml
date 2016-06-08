@@ -84,10 +84,10 @@ let rec inhabit_typ typ cfg env =
   try (TypMap.find typ env.cache, env)
   with Not_found ->
     let inhabit_internal typ env = match typ with
-      | Sil.Tptr (Sil.Tarray (inner_typ, Sil.Const (Sil.Cint _)), Sil.Pk_pointer) ->
-          let arr_size = Sil.Const (Sil.Cint (Sil.Int.one)) in
-          let arr_typ = Sil.Tarray (inner_typ, arr_size) in
-          inhabit_alloc arr_typ (Some arr_size) typ ModelBuiltins.__new_array env
+      | Sil.Tptr (Sil.Tarray (inner_typ, Some _), Sil.Pk_pointer) ->
+          let len = Sil.Const (Sil.Cint (Sil.Int.one)) in
+          let arr_typ = Sil.Tarray (inner_typ, Some Sil.Int.one) in
+          inhabit_alloc arr_typ (Some len) typ ModelBuiltins.__new_array env
       | Sil.Tptr (typ, Sil.Pk_pointer) as ptr_to_typ ->
           (* TODO (t4575417): this case does not work correctly for enums, but they are currently
            * broken in Infer anyway (see t4592290) *)

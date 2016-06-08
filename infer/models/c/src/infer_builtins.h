@@ -61,13 +61,13 @@ clock_t __infer_nondet_clock_t();
 extern void __require_allocated_array(const void* arr);
 
 // builtin: return the size of arr
-extern size_t __get_array_size(const void* arr);
+extern size_t __get_array_length(const void* arr);
 
 // builtin: change the attribute of ret to a file attribute
 extern void __set_file_attribute(void* ret);
 
 // builtin: change the size of the array to size
-extern void __set_array_size(void* ptr, size_t size);
+extern void __set_array_length(void* ptr, size_t size);
 
 // builtin: set the flag to the given value for the procedure where this call
 // appears

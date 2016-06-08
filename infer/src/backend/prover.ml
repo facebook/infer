@@ -380,8 +380,8 @@ end = struct
       | Sil.Eexp _ -> ()
       | Sil.Estruct (fsel, _) ->
           IList.iter (fun (_, se) -> strexp_extract se) fsel
-      | Sil.Earray (size, isel, _) ->
-          add_lt_minus1_e size;
+      | Sil.Earray (len, isel, _) ->
+          add_lt_minus1_e len;
           IList.iter (fun (idx, se) ->
               add_lt_minus1_e idx;
               strexp_extract se) isel in
@@ -909,7 +909,7 @@ module ProverState : sig
   val checks : check list ref
 
   type bounds_check = (** type for array bounds checks *)
-    | BCsize_imply of Sil.exp * Sil.exp * Sil.exp list (** coming from array_size_imply *)
+    | BClen_imply of Sil.exp * Sil.exp * Sil.exp list (** coming from array_len_imply *)
     | BCfrom_pre of Sil.atom (** coming implicitly from preconditions *)
 
   val add_bounds_check : bounds_check -> unit
@@ -934,12 +934,12 @@ module ProverState : sig
   val d_implication_error : string * (Sil.subst * Sil.subst) * exc_body -> unit
 end = struct
   type bounds_check =
-    | BCsize_imply of Sil.exp * Sil.exp * Sil.exp list
+    | BClen_imply of Sil.exp * Sil.exp * Sil.exp list
     | BCfrom_pre of Sil.atom
 
   let implication_lhs = ref Prop.prop_emp
   let implication_rhs = ref (Prop.expose Prop.prop_emp)
-  let fav_in_array_size = ref (Sil.fav_new ()) (* free variables in array size position *)
+  let fav_in_array_len = ref (Sil.fav_new ()) (* free variables in array len position *)
   let bounds_checks = ref [] (* delayed bounds check for arrays *)
   let frame_fld = ref []
   let missing_fld = ref []
@@ -949,12 +949,12 @@ end = struct
   let missing_typ = ref []
   let checks = ref []
 
-  (** free vars in array size position in current part of prop *)
-  let prop_fav_size prop =
+  (** free vars in array len position in current strexp part of prop *)
+  let prop_fav_len prop =
     let fav = Sil.fav_new () in
     let do_hpred = function
-      | Sil.Hpointsto (_, Sil.Earray (Sil.Var _ as size, _, _), _) ->
-          Sil.exp_fav_add fav size
+      | Sil.Hpointsto (_, Sil.Earray (Sil.Var _ as len, _, _), _) ->
+          Sil.exp_fav_add fav len
       | _ -> () in
     IList.iter do_hpred (Prop.get_sigma prop);
     fav
@@ -963,7 +963,7 @@ end = struct
     checks := [];
     implication_lhs := lhs;
     implication_rhs := rhs;
-    fav_in_array_size := prop_fav_size rhs;
+    fav_in_array_len := prop_fav_len rhs;
     bounds_checks := [];
     frame_fld := [];
     frame_typ := [];
@@ -993,11 +993,12 @@ end = struct
   let add_missing_sigma sigma =
     missing_sigma := sigma @ !missing_sigma
 
-  (** atom considered array bounds check if it contains vars present in array size position in the pre *)
+  (** atom considered array bounds check if it contains vars present in array length position in the
+      pre *)
   let atom_is_array_bounds_check atom =
     let fav_a = Sil.atom_fav atom in
     Prop.atom_is_inequality atom &&
-    Sil.fav_exists fav_a (fun a -> Sil.fav_mem !fav_in_array_size a)
+    Sil.fav_exists fav_a (fun a -> Sil.fav_mem !fav_in_array_len a)
 
   let get_bounds_checks () = !bounds_checks
   let get_frame_fld () = !frame_fld
@@ -1213,18 +1214,18 @@ let path_to_id path =
     | None -> Ident.create_fresh Ident.kfootprint
     | Some s -> Ident.create_path s
 
-(** Implication for the size of arrays *)
-let array_size_imply calc_missing subs size1 size2 indices2 =
-  match size1, size2 with
+(** Implication for the length of arrays *)
+let array_len_imply calc_missing subs len1 len2 indices2 =
+  match len1, len2 with
   | _, Sil.Var _
   | _, Sil.BinOp (Sil.PlusA, Sil.Var _, _)
   | _, Sil.BinOp (Sil.PlusA, _, Sil.Var _)
   | Sil.BinOp (Sil.Mult, _, _), _ ->
-      (try exp_imply calc_missing subs size1 size2 with
+      (try exp_imply calc_missing subs len1 len2 with
        | IMPL_EXC (s, subs', x) ->
-           raise (IMPL_EXC ("array size:" ^ s, subs', x)))
+           raise (IMPL_EXC ("array len:" ^ s, subs', x)))
   | _ ->
-      ProverState.add_bounds_check (ProverState.BCsize_imply (size1, size2, indices2));
+      ProverState.add_bounds_check (ProverState.BClen_imply (len1, len2, indices2));
       subs
 
 (** Extend [sub1] and [sub2] to witnesses that each instance of
@@ -1252,18 +1253,18 @@ let rec sexp_imply source calc_index_frame calc_missing subs se1 se2 typ2 : subs
             d_impl_err ("sexp_imply not implemented", subs, (EXC_FALSE_SEXPS (se1, se2)));
             raise (Exceptions.Abduction_case_not_implemented __POS__)
       end
-  | Sil.Earray (size1, esel1, inst1), Sil.Earray (size2, esel2, _) ->
+  | Sil.Earray (len1, esel1, inst1), Sil.Earray (len2, esel2, _) ->
       let indices2 = IList.map fst esel2 in
-      let subs' = array_size_imply calc_missing subs size1 size2 indices2 in
+      let subs' = array_len_imply calc_missing subs len1 len2 indices2 in
       let subs'', index_frame, index_missing =
         array_imply source calc_index_frame calc_missing subs' esel1 esel2 typ2 in
       let index_frame_opt = if index_frame != []
-        then Some (Sil.Earray (size1, index_frame, inst1))
+        then Some (Sil.Earray (len1, index_frame, inst1))
         else None in
       let index_missing_opt =
         if index_missing != [] &&
            (Config.allow_missing_index_in_proc_call || !Config.footprint)
-        then Some (Sil.Earray (size1, index_missing, inst1))
+        then Some (Sil.Earray (len1, index_missing, inst1))
         else None in
       subs'', index_frame_opt, index_missing_opt
   | Sil.Eexp (_, inst), Sil.Estruct (fsel, inst') ->
@@ -1272,13 +1273,17 @@ let rec sexp_imply source calc_index_frame calc_missing subs se1 se2 typ2 : subs
         let g (f, _) = (f, Sil.Eexp (Sil.Var (Ident.create_fresh Ident.knormal), inst)) in
         IList.map g fsel in
       sexp_imply source calc_index_frame calc_missing subs (Sil.Estruct (fsel', inst')) se2 typ2
-  | Sil.Eexp _, Sil.Earray (size, _, inst)
-  | Sil.Estruct _, Sil.Earray (size, _, inst) ->
-      let se1' = Sil.Earray (size, [(Sil.exp_zero, se1)], inst) in
+  | Sil.Eexp _, Sil.Earray (len, _, inst)
+  | Sil.Estruct _, Sil.Earray (len, _, inst) ->
+      let se1' = Sil.Earray (len, [(Sil.exp_zero, se1)], inst) in
       sexp_imply source calc_index_frame calc_missing subs se1' se2 typ2
-  | Sil.Earray (size, _, _), Sil.Eexp (_, inst) ->
-      let se2' = Sil.Earray (size, [(Sil.exp_zero, se2)], inst) in
-      let typ2' = Sil.Tarray (typ2, size) in
+  | Sil.Earray (len, _, _), Sil.Eexp (_, inst) ->
+      let se2' = Sil.Earray (len, [(Sil.exp_zero, se2)], inst) in
+      let typ2' = Sil.Tarray (typ2, None) in
+      (* In the sexp_imply, struct_imply, array_imply, and sexp_imply_nolhs functions, the typ2
+         argument is only used by eventually passing its value to Sil.struct_typ_fld, Sil.Lfield,
+         Sil.struct_typ_fld, or Sil.array_typ_elem.  None of these are sensitive to the length field
+         of Tarray, so forgetting the length of typ2' here is not a problem. *)
       sexp_imply source true calc_missing subs se1 se2' typ2' (* calculate index_frame because the rhs is a singleton array *)
   | _ ->
       d_impl_err ("sexp_imply not implemented", subs, (EXC_FALSE_SEXPS (se1, se2)));
@@ -1442,18 +1447,19 @@ let expand_hpred_pointer calc_index_frame hpred : bool * bool * Sil.hpred =
         let hpred' = Sil.Hpointsto (e, Sil.Estruct ([(fld, se)], Sil.inst_none), t') in
         expand true true hpred'
     | Sil.Hpointsto (Sil.Lindex (e, ind), se, t) ->
-        let clen = Sil.exp_get_undefined false in
         let t' = match t with
-          | Sil.Sizeof (t_, vlen, st) ->
-              Sil.Sizeof (Sil.Tarray (t_, clen), vlen, st)
+          | Sil.Sizeof (t_, len, st) -> Sil.Sizeof (Sil.Tarray (t_, None), len, st)
           | _ -> raise (Failure "expand_hpred_pointer: Unexpected non-sizeof type in Lindex") in
-        let hpred' = Sil.Hpointsto (e, Sil.Earray (clen, [(ind, se)], Sil.inst_none), t') in
+        let len = match t' with
+          | Sil.Sizeof (_, Some len, _) -> len
+          | _ -> Sil.exp_get_undefined false in
+        let hpred' = Sil.Hpointsto (e, Sil.Earray (len, [(ind, se)], Sil.inst_none), t') in
         expand true true hpred'
-    | Sil.Hpointsto (Sil.BinOp (Sil.PlusPI, e1, e2), Sil.Earray (size, esel, inst), t) ->
+    | Sil.Hpointsto (Sil.BinOp (Sil.PlusPI, e1, e2), Sil.Earray (len, esel, inst), t) ->
         let shift_exp e = Sil.BinOp (Sil.PlusA, e, e2) in
-        let size' = shift_exp size in
+        let len' = shift_exp len in
         let esel' = IList.map (fun (e, se) -> (shift_exp e, se)) esel in
-        let hpred' = Sil.Hpointsto (e1, Sil.Earray (size', esel', inst), t) in
+        let hpred' = Sil.Hpointsto (e1, Sil.Earray (len', esel', inst), t) in
         expand true calc_index_frame hpred'
     | _ -> changed, calc_index_frame, hpred in
   expand false calc_index_frame hpred
@@ -1687,8 +1693,8 @@ let texp_imply tenv subs texp1 texp2 e1 calc_missing =
   else
     None, None
 
-(** pre-process implication between a non-array and an array: the non-array is turned into an array of size given by its type
-    only active in type_size mode *)
+(** pre-process implication between a non-array and an array: the non-array is turned into an array
+    of length given by its type only active in type_size mode *)
 let sexp_imply_preprocess se1 texp1 se2 = match se1, texp1, se2 with
   | Sil.Eexp (_, inst), Sil.Sizeof _, Sil.Earray _ when Config.type_size ->
       let se1' = Sil.Earray (texp1, [(Sil.exp_zero, se1)], inst) in
@@ -1941,13 +1947,14 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
          | _ -> None)
     | _ -> None in
   let mk_constant_string_hpred s = (* create an hpred from a constant string *)
-    let len = Sil.exp_int (Sil.Int.of_int (1 + String.length s)) in
+    let len = Sil.Int.of_int (1 + String.length s) in
     let root = Sil.Const (Sil.Cstr s) in
     let sexp =
       let index = Sil.exp_int (Sil.Int.of_int (String.length s)) in
       match !Config.curr_language with
       | Config.Clang ->
-          Sil.Earray (len, [(index, Sil.Eexp (Sil.exp_zero, Sil.inst_none))], Sil.inst_none)
+          Sil.Earray
+            (Sil.exp_int len, [(index, Sil.Eexp (Sil.exp_zero, Sil.inst_none))], Sil.inst_none)
       | Config.Java ->
           let mk_fld_sexp s =
             let fld = Ident.create_fieldname (Mangled.from_string s) 0 in
@@ -1958,7 +1965,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
     let const_string_texp =
       match !Config.curr_language with
       | Config.Clang ->
-          Sil.Sizeof (Sil.Tarray (Sil.Tint Sil.IChar, len), Some len, Sil.Subtype.exact)
+          Sil.Sizeof (Sil.Tarray (Sil.Tint Sil.IChar, Some len), None, Sil.Subtype.exact)
       | Config.Java ->
           let object_type =
             Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "java.lang.String") in
@@ -2107,13 +2114,14 @@ let check_array_bounds (sub1, sub2) prop =
     let lt_ineq = Prop.mk_inequality (Sil.BinOp(Sil.Le, e', e'')) in
     if check_atom prop lt_ineq then check_failed lt_ineq in
   let check_bound = function
-    | ProverState.BCsize_imply (_size1, _size2, _indices2) ->
-        let size1 = Sil.exp_sub sub1 _size1 in
-        let size2 = Sil.exp_sub sub2 _size2 in
-        (* L.d_strln_color Orange "check_bound "; Sil.d_exp size1; L.d_str " "; Sil.d_exp size2; L.d_ln(); *)
-        let indices_to_check = match size2 with
-          | _ -> [Sil.BinOp(Sil.PlusA, size2, Sil.exp_minus_one)] (* only check size *) in
-        IList.iter (fail_if_le size1) indices_to_check
+    | ProverState.BClen_imply (len1_, len2_, _indices2) ->
+        let len1 = Sil.exp_sub sub1 len1_ in
+        let len2 = Sil.exp_sub sub2 len2_ in
+        (* L.d_strln_color Orange "check_bound ";
+           Sil.d_exp len1; L.d_str " "; Sil.d_exp len2; L.d_ln(); *)
+        let indices_to_check = match len2 with
+          | _ -> [Sil.BinOp(Sil.PlusA, len2, Sil.exp_minus_one)] (* only check len *) in
+        IList.iter (fail_if_le len1) indices_to_check
     | ProverState.BCfrom_pre _atom ->
         let atom_neg = Prop.atom_negate (Sil.atom_sub sub2 _atom) in
         (* L.d_strln_color Orange "BCFrom_pre"; Sil.d_atom atom_neg; L.d_ln (); *)
@@ -2152,8 +2160,10 @@ let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2
     let sigma1' = Prop.sigma_sub sub1 sigma1 in
     L.d_ln ();
     let prop_for_impl = prepare_prop_for_implication (sub1, sub2) pi1' sigma1' in
-    imply_pi calc_missing (sub1, sub2) prop_for_impl pi2_nobcheck; (* only deal with pi2 without bound checks *)
-    check_array_bounds (sub1, sub2) prop_for_impl; (* handle implicit bound checks, plus those from array_size_imply *)
+    (* only deal with pi2 without bound checks *)
+    imply_pi calc_missing (sub1, sub2) prop_for_impl pi2_nobcheck;
+    (* handle implicit bound checks, plus those from array_len_imply *)
+    check_array_bounds (sub1, sub2) prop_for_impl;
     L.d_strln "Result of Abduction";
     L.d_increase_indent 1; d_impl (sub1, sub2) (prop1, prop2); L.d_decrease_indent 1; L.d_ln ();
     L.d_strln"returning TRUE";

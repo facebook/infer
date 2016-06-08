@@ -101,8 +101,8 @@ let rec strexp_match sexp1 sub vars sexp2 : (Sil.subst * Ident.t list) option =
       fsel_match fsel1 sub vars fsel2
   | Sil.Estruct _, _ | _, Sil.Estruct _ ->
       None
-  | Sil.Earray (size1, isel1, _), Sil.Earray (size2, isel2, _) ->
-      (match exp_match size1 sub vars size2 with
+  | Sil.Earray (len1, isel1, _), Sil.Earray (len2, isel2, _) ->
+      (match exp_match len1 sub vars len2 with
        | Some (sub', vars') -> isel_match isel1 sub' vars' isel2
        | None -> None)
 
@@ -497,8 +497,8 @@ let rec generate_todos_from_strexp mode todos sexp1 sexp2 =
       else generate_todos_from_fel mode todos fel1 fel2
   | Sil.Estruct _, _ ->
       None
-  | Sil.Earray (size1, iel1, _), Sil.Earray (size2, iel2, _) ->
-      if (not (Sil.exp_equal size1 size2) || IList.length iel1 <> IList.length iel2)
+  | Sil.Earray (len1, iel1, _), Sil.Earray (len2, iel2, _) ->
+      if (not (Sil.exp_equal len1 len2) || IList.length iel1 <> IList.length iel2)
       then None
       else generate_todos_from_iel mode todos iel1 iel2
   | Sil.Earray _, _ ->

@@ -10,7 +10,7 @@
 #import "NSString.h"
 #import <stdlib.h>
 
-void __get_array_size(const UInt8);
+void __get_array_length(const UInt8);
 
 @implementation NSString
 
@@ -41,7 +41,7 @@ void __get_array_size(const UInt8);
                        freeWhenDone:(BOOL)flag {
   if (flag == YES) {
     if (bytes) {
-      __get_array_size(bytes);
+      __get_array_length(bytes);
       free(bytes);
     }
   }

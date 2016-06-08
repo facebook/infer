@@ -903,14 +903,14 @@ let get_cycle root prop =
           let visited' = (fst et_src):: visited in
           let res = (match get_points_to e with
               | None -> path, false
-              | Some (Sil.Hpointsto(_, Sil.Estruct(fl, _), Sil.Sizeof(te, _, _))) ->
+              | Some (Sil.Hpointsto (_, Sil.Estruct (fl, _), Sil.Sizeof (te, _, _))) ->
                   dfs e_root (e, te) ((et_src, f, e):: path) fl visited'
               | _ -> path, false (* check for lists *)) in
           if snd res then res
           else dfs e_root et_src path el' visited') in
   L.d_strln "Looking for cycle with root expression: "; Sil.d_hpred root; L.d_strln "";
   match root with
-  | Sil.Hpointsto(e_root, Sil.Estruct(fl, _), Sil.Sizeof(te, _, _)) ->
+  | Sil.Hpointsto (e_root, Sil.Estruct (fl, _), Sil.Sizeof (te, _, _)) ->
       let se_root = Sil.Eexp(e_root, Sil.Inone) in
       (* start dfs with empty path and expr pointing to root *)
       let (pot_cycle, res) = dfs se_root (se_root, te) [] fl [] in
@@ -949,7 +949,7 @@ let get_var_retain_cycle _prop =
     | _ -> false in
   let is_hpred_block v h =
     match h, v with
-    | Sil.Hpointsto (e, _, Sil.Sizeof(typ, _, _)), Sil.Eexp (e', _)
+    | Sil.Hpointsto (e, _, Sil.Sizeof (typ, _, _)), Sil.Eexp (e', _)
       when Sil.exp_equal e e' && Sil.is_block_type typ -> true
     | _, _ -> false in
   let find v =

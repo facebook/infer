@@ -64,8 +64,8 @@ val split : ('a * 'b) list -> 'a list * 'b list
 val stable_sort : ('a -> 'a -> int) -> 'a list -> 'a list
 val tl : 'a list -> 'a list
 
-(** last element, raises invalid_arg if empty *)
-val last : 'a list -> 'a
+(** last element, if any *)
+val last : 'a list -> 'a option
 
 (* Drops the first n elements from a list. *)
 val drop_first : int -> 'a list -> 'a list

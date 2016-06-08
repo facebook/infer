@@ -57,9 +57,8 @@ let lookup_java_typ_from_string tenv typ_str => {
     | "double" => Some (Sil.Tfloat Sil.FDouble)
     | typ_str when String.contains typ_str '[' => {
         let stripped_typ = String.sub typ_str 0 (String.length typ_str - 2);
-        let array_typ_size = Sil.exp_get_undefined false;
         switch (loop stripped_typ) {
-        | Some typ => Some (Sil.Tptr (Sil.Tarray typ array_typ_size) Sil.Pk_pointer)
+        | Some typ => Some (Sil.Tptr (Sil.Tarray typ None) Sil.Pk_pointer)
         | None => None
         }
       }

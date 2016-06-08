@@ -413,8 +413,8 @@ let rec sexp_set_inst inst = function
       Sil.Eexp (e, inst)
   | Sil.Estruct (fsel, _) ->
       Sil.Estruct ((IList.map (fun (f, se) -> (f, sexp_set_inst inst se)) fsel), inst)
-  | Sil.Earray (size, esel, _) ->
-      Sil.Earray (size, IList.map (fun (e, se) -> (e, sexp_set_inst inst se)) esel, inst)
+  | Sil.Earray (len, esel, _) ->
+      Sil.Earray (len, IList.map (fun (e, se) -> (e, sexp_set_inst inst se)) esel, inst)
 
 let rec fsel_star_fld fsel1 fsel2 = match fsel1, fsel2 with
   | [], fsel2 -> fsel2
@@ -447,11 +447,11 @@ and sexp_star_fld se1 se2 : Sil.strexp =
   match se1, se2 with
   | Sil.Estruct (fsel1, _), Sil.Estruct (fsel2, inst2) ->
       Sil.Estruct (fsel_star_fld fsel1 fsel2, inst2)
-  | Sil.Earray (size1, esel1, _), Sil.Earray (_, esel2, inst2) ->
-      Sil.Earray (size1, esel_star_fld esel1 esel2, inst2)
-  | Sil.Eexp (_, inst1), Sil.Earray (size2, esel2, _) ->
+  | Sil.Earray (len1, esel1, _), Sil.Earray (_, esel2, inst2) ->
+      Sil.Earray (len1, esel_star_fld esel1 esel2, inst2)
+  | Sil.Eexp (_, inst1), Sil.Earray (len2, esel2, _) ->
       let esel1 = [(Sil.exp_zero, se1)] in
-      Sil.Earray (size2, esel_star_fld esel1 esel2, inst1)
+      Sil.Earray (len2, esel_star_fld esel1 esel2, inst1)
   | _ ->
       L.d_str "cannot star ";
       Sil.d_sexp se1; L.d_str " and "; Sil.d_sexp se2;

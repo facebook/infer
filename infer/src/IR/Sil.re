@@ -741,6 +741,10 @@ and struct_typ = {
   def_methods: list Procname.t, /** methods defined */
   struct_annotations: item_annotation /** annotations */
 }
+/** statically determined length of an array type, if any */
+and static_length = option Int.t
+/** dynamically determined length of an array value, if any */
+and dynamic_length = option exp
 /** types for sil (structured) expressions */
 and typ =
   | Tvar of Typename.t /** named type */
@@ -750,7 +754,7 @@ and typ =
   | Tfun of bool /** function type with noreturn attribute */
   | Tptr of typ ptr_kind /** pointer type */
   | Tstruct of struct_typ /** Type for a structured value */
-  | Tarray of typ exp /** array type with fixed size */
+  | Tarray of typ static_length /** array type with statically fixed length */
 /** Program expressions. */
 and exp =
   /** Pure variable: it is not an lvalue */
@@ -769,10 +773,24 @@ and exp =
   | Lfield of exp Ident.fieldname typ
   /** An array index offset: [exp1\[exp2\]] */
   | Lindex of exp exp
-  /** A sizeof expression. [Sizeof typ (Some len)] represents the size of a value of type [typ]
-      which ends in an extensible array of length [len].  The lengths in [Tarray] record the
-      statically determined lengths, while the lengths in [Sizeof] record the dynamic lengths. */
-  | Sizeof of typ (option exp) Subtype.t;
+  /** A sizeof expression. [Sizeof (Tarray elt (Some static_length)) (Some dynamic_length)]
+      represents the size of an array value consisting of [dynamic_length] elements of type [elt].
+      The [dynamic_length], tracked by symbolic execution, may differ from the [static_length]
+      obtained from the type definition, e.g. when an array is over-allocated.  For struct types,
+      the [dynamic_length] is that of the final extensible array, if any. */
+  | Sizeof of typ dynamic_length Subtype.t;
+
+
+/** the element typ of the final extensible array in the given typ, if any */
+let rec get_extensible_array_element_typ =
+  fun
+  | Tarray typ _ => Some typ
+  | Tstruct {instance_fields} =>
+    Option.map_default
+      (fun (_, fld_typ, _) => get_extensible_array_element_typ fld_typ)
+      None
+      (IList.last instance_fields)
+  | _ => None;
 
 
 /** Kind of prune instruction */
@@ -873,10 +891,10 @@ type inst =
 type strexp =
   | Eexp of exp inst /** Base case: expression with instrumentation */
   | Estruct of (list (Ident.fieldname, strexp)) inst /** C structure */
-  | Earray of exp (list (exp, strexp)) inst /** Array of given size. */
+  | Earray of exp (list (exp, strexp)) inst /** Array of given length */
 /** There are two conditions imposed / used in the array case.
     First, if some index and value pair appears inside an array
-    in a strexp, then the index is less than the size of the array.
+    in a strexp, then the index is less than the length of the array.
     For instance, x |->[10 | e1: v1] implies that e1 <= 9.
     Second, if two indices appear in an array, they should be different.
     For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. */
@@ -2343,8 +2361,8 @@ and pp_struct_typ pe pp_base f struct_typ =>
   }
 /** Pretty print a type declaration.
     pp_base prints the variable for a declaration, or can be skip to print only the type
-    pp_size prints the expression for the array size */
-and pp_type_decl pe pp_base pp_size f =>
+    pp_static_len prints the expression for the array length */
+and pp_type_decl pe pp_base pp_static_len f =>
   fun
   | Tvar tname => F.fprintf f "%s %a" (Typename.to_string tname) pp_base ()
   | Tint ik => F.fprintf f "%s %a" (ikind_to_string ik) pp_base ()
@@ -2354,16 +2372,21 @@ and pp_type_decl pe pp_base pp_size f =>
   | Tfun true => F.fprintf f "_fn_noreturn_ %a" pp_base ()
   | Tptr ((Tarray _ | Tfun _) as typ) pk => {
       let pp_base' fmt () => F.fprintf fmt "(%s%a)" (ptr_kind_string pk) pp_base ();
-      pp_type_decl pe pp_base' pp_size f typ
+      pp_type_decl pe pp_base' pp_static_len f typ
     }
   | Tptr typ pk => {
       let pp_base' fmt () => F.fprintf fmt "%s%a" (ptr_kind_string pk) pp_base ();
-      pp_type_decl pe pp_base' pp_size f typ
+      pp_type_decl pe pp_base' pp_static_len f typ
     }
   | Tstruct struct_typ => pp_struct_typ pe pp_base f struct_typ
-  | Tarray typ size => {
-      let pp_base' fmt () => F.fprintf fmt "%a[%a]" pp_base () (pp_size pe) size;
-      pp_type_decl pe pp_base' pp_size f typ
+  | Tarray typ static_len => {
+      let pp_array_static_len fmt => (
+        fun
+        | Some static_len => pp_static_len pe fmt (Const (Cint static_len))
+        | None => F.fprintf fmt "_"
+      );
+      let pp_base' fmt () => F.fprintf fmt "%a[%a]" pp_base () pp_array_static_len static_len;
+      pp_type_decl pe pp_base' pp_static_len f typ
     }
 /** Pretty print a type with all the details, using the C syntax. */
 and pp_typ_full pe => pp_type_decl pe (fun _ () => ()) pp_exp_full
@@ -2994,10 +3017,9 @@ let rec pp_sexp_env pe0 envo f se => {
         F.fprintf f "%a:%a" (Ident.pp_fieldname_latex Latex.Boldface) n (pp_sexp_env pe envo) se;
       F.fprintf f "\\{%a\\}%a" (pp_seq_diff pp_diff pe) fel (pp_inst_if_trace pe) inst
     }
-  | Earray size nel inst =>
+  | Earray len nel inst =>
     let pp_diff f (i, se) => F.fprintf f "%a:%a" (pp_exp pe) i (pp_sexp_env pe envo) se;
-    F.fprintf
-      f "[%a|%a]%a" (pp_exp pe) size (pp_seq_diff pp_diff pe) nel (pp_inst_if_trace pe) inst
+    F.fprintf f "[%a|%a]%a" (pp_exp pe) len (pp_seq_diff pp_diff pe) nel (pp_inst_if_trace pe) inst
   };
   color_post_wrapper changed pe0 f
 }
@@ -3205,13 +3227,13 @@ let rec strexp_expmap (f: (exp, option inst) => (exp, option inst)) => {
       let f_fld_se (fld, se) => (fld, strexp_expmap f se);
       Estruct (IList.map f_fld_se fld_se_list) inst
     }
-  | Earray size idx_se_list inst => {
-      let size' = fe size;
+  | Earray len idx_se_list inst => {
+      let len' = fe len;
       let f_idx_se (idx, se) => {
         let idx' = fe idx;
         (idx', strexp_expmap f se)
       };
-      Earray size' (IList.map f_idx_se idx_se_list) inst
+      Earray len' (IList.map f_idx_se idx_se_list) inst
     }
 };
 
@@ -3246,9 +3268,9 @@ let rec strexp_instmap (f: inst => inst) strexp =>
   | Estruct fld_se_list inst =>
     let f_fld_se (fld, se) => (fld, strexp_instmap f se);
     Estruct (IList.map f_fld_se fld_se_list) (f inst)
-  | Earray size idx_se_list inst =>
+  | Earray len idx_se_list inst =>
     let f_idx_se (idx, se) => (idx, strexp_instmap f se);
-    Earray size (IList.map f_idx_se idx_se_list) (f inst)
+    Earray len (IList.map f_idx_se idx_se_list) (f inst)
   }
 and hpara_instmap (f: inst => inst) hpara => {
   ...hpara,
@@ -3449,10 +3471,10 @@ let rec strexp_fpv =
       let f (_, se) => strexp_fpv se;
       IList.flatten (IList.map f fld_se_list)
     }
-  | Earray size idx_se_list _ => {
-      let fpv_in_size = exp_fpv size;
+  | Earray len idx_se_list _ => {
+      let fpv_in_len = exp_fpv len;
       let f (idx, se) => exp_fpv idx @ strexp_fpv se;
-      fpv_in_size @ IList.flatten (IList.map f idx_se_list)
+      fpv_in_len @ IList.flatten (IList.map f idx_se_list)
     }
 and hpred_fpv =
   fun
@@ -3662,8 +3684,8 @@ let rec strexp_fav_add fav =>
   fun
   | Eexp e _ => exp_fav_add fav e
   | Estruct fld_se_list _ => IList.iter (fun (_, se) => strexp_fav_add fav se) fld_se_list
-  | Earray size idx_se_list _ => {
-      exp_fav_add fav size;
+  | Earray len idx_se_list _ => {
+      exp_fav_add fav len;
       IList.iter
         (
           fun (e, se) => {
@@ -4015,18 +4037,7 @@ let sub_fpv (sub: subst) => IList.flatten (IList.map (fun (_, e) => exp_fpv e) s
 /** Substitutions do not contain binders */
 let sub_av_add = sub_fav_add;
 
-let rec typ_sub (subst: subst) typ =>
-  switch typ {
-  | Tvar _
-  | Tint _
-  | Tfloat _
-  | Tvoid
-  | Tstruct _
-  | Tfun _ => typ
-  | Tptr t' pk => Tptr (typ_sub subst t') pk
-  | Tarray t e => Tarray (typ_sub subst t) (exp_sub subst e)
-  }
-and exp_sub (subst: subst) e =>
+let rec exp_sub (subst: subst) e =>
   switch e {
   | Var id =>
     let rec apply_sub = (
@@ -4053,12 +4064,7 @@ and exp_sub (subst: subst) e =>
     Cast t e1'
   | UnOp op e1 typo =>
     let e1' = exp_sub subst e1;
-    let typo' =
-      switch typo {
-      | None => None
-      | Some typ => Some (typ_sub subst typ)
-      };
-    UnOp op e1' typo'
+    UnOp op e1' typo
   | BinOp op e1 e2 =>
     let e1' = exp_sub subst e1;
     let e2' = exp_sub subst e2;
@@ -4066,13 +4072,12 @@ and exp_sub (subst: subst) e =>
   | Lvar _ => e
   | Lfield e1 fld typ =>
     let e1' = exp_sub subst e1;
-    let typ' = typ_sub subst typ;
-    Lfield e1' fld typ'
+    Lfield e1' fld typ
   | Lindex e1 e2 =>
     let e1' = exp_sub subst e1;
     let e2' = exp_sub subst e2;
     Lindex e1' e2'
-  | Sizeof t l s => Sizeof (typ_sub subst t) (Option.map (exp_sub subst) l) s
+  | Sizeof t l s => Sizeof t (Option.map (exp_sub subst) l) s
   };
 
 let instr_sub (subst: subst) instr => {
@@ -4082,20 +4087,19 @@ let instr_sub (subst: subst) instr => {
     | _ => id
     };
   let exp_s = exp_sub subst;
-  let typ_s = typ_sub subst;
   switch instr {
-  | Letderef id e t loc => Letderef (id_s id) (exp_s e) (typ_s t) loc
-  | Set e1 t e2 loc => Set (exp_s e1) (typ_s t) (exp_s e2) loc
+  | Letderef id e t loc => Letderef (id_s id) (exp_s e) t loc
+  | Set e1 t e2 loc => Set (exp_s e1) t (exp_s e2) loc
   | Prune cond loc true_branch ik => Prune (exp_s cond) loc true_branch ik
   | Call ret_ids e arg_ts loc cf =>
-    let arg_s (e, t) => (exp_s e, typ_s t);
+    let arg_s (e, t) => (exp_s e, t);
     Call (IList.map id_s ret_ids) (exp_s e) (IList.map arg_s arg_ts) loc cf
   | Nullify _ => instr
   | Abstract _ => instr
   | Remove_temps temps loc => Remove_temps (IList.map id_s temps) loc
   | Stackop _ => instr
   | Declare_locals ptl loc =>
-    let pt_s (pv, t) => (pv, typ_s t);
+    let pt_s (pv, t) => (pv, t);
     Declare_locals (IList.map pt_s ptl) loc
   }
 };
@@ -4512,13 +4516,13 @@ let rec strexp_replace_exp epairs =>
       let f (fld, se) => (fld, strexp_replace_exp epairs se);
       Estruct (IList.map f fsel) inst
     }
-  | Earray size isel inst => {
-      let size' = exp_replace_exp epairs size;
+  | Earray len isel inst => {
+      let len' = exp_replace_exp epairs len;
       let f (idx, se) => {
         let idx' = exp_replace_exp epairs idx;
         (idx', strexp_replace_exp epairs se)
       };
-      Earray size' (IList.map f isel) inst
+      Earray len' (IList.map f isel) inst
     };
 
 let hpred_replace_exp epairs =>
