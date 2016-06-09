@@ -71,6 +71,7 @@ ALL_TESTS = [
     'unknown_ext',
     'utf8_in_pwd',
     'waf',
+    'ndk-build',
 ]
 
 to_test = ALL_TESTS
@@ -333,6 +334,19 @@ class BuildIntegrationTest(unittest.TestCase):
              clean_commands=[['make', 'clean']],
              enabled=enabled,
              report_fname=report_fname)
+
+    def test_ndkbuild_integration(self):
+        root = os.path.join(CODETOANALYZE_DIR, 'ndk-build', 'hello_app')
+        gen_lib_dir = os.path.join(root, 'libs')
+        gen_obj_dir = os.path.join(root, 'obj')
+        if test('ndk-build', 'ndk-build',
+                root,
+                [['ndk-build', '-B', 'NDK_LIBS_OUT=./libs', 'NDK_OUT=./obj']],
+                clean_commands=[['ndk-build', 'clean']],
+                available=lambda: is_tool_available(['ndk-build', '-v'])):
+            # remove libs/ and obj/ directories
+            shutil.rmtree(gen_lib_dir)
+            shutil.rmtree(gen_obj_dir)
 
     def test_wonky_locale_integration(self):
         env = os.environ.copy()
