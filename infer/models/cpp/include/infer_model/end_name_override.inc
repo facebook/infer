@@ -2,3 +2,4 @@
 #undef shared_ptr
 #undef unique_ptr
 #undef make_unique
+#undef private

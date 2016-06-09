@@ -22,6 +22,13 @@ template <class T>
 class shared_ptr : public std__shared_ptr<T> {
 
  public:
+#if INFER_USE_LIBCPP
+  using std__shared_ptr<T>::__ptr_;
+#define __data __ptr_
+#else
+  using __shared_ptr<T>::_M_ptr;
+#define __data _M_ptr
+#endif
   // Conversion constructors to allow implicit conversions.
   // it's here purely to avoid compilation errors
   template <class Y,
@@ -31,10 +38,8 @@ class shared_ptr : public std__shared_ptr<T> {
   template <class Y>
   shared_ptr(const std__shared_ptr<Y>& r, T* p) noexcept {}
 
-  T* data;
-
   // constructors:
-  constexpr shared_ptr() noexcept : data(nullptr) {}
+  constexpr shared_ptr() noexcept { __data = nullptr; }
 
   shared_ptr(nullptr_t) : shared_ptr() {}
 
@@ -47,7 +52,7 @@ class shared_ptr : public std__shared_ptr<T> {
   template <class Y,
             typename = typename enable_if<is_convertible<Y*, T*>::value>::type>
   explicit shared_ptr(Y* p) {
-    data = p;
+    __data = p;
   }
 
   template <class Y,
@@ -68,27 +73,28 @@ class shared_ptr : public std__shared_ptr<T> {
   shared_ptr(nullptr_t p, D d, A a) : shared_ptr<T>(p) {}
 
   template <class Y>
-  shared_ptr(const shared_ptr<Y>& r, T* p) noexcept : data(nullptr) { /* TODO */
+  shared_ptr(const shared_ptr<Y>& r, T* p) noexcept {
+    __data = nullptr; /* TODO */
   }
 
   shared_ptr(const shared_ptr& r) noexcept
-      : shared_ptr<T>(r.data) { /* TODO - increase refcount*/
+      : shared_ptr<T>(r.__data) { /* TODO - increase refcount*/
   }
 
   template <class Y,
             typename = typename enable_if<is_convertible<Y*, T*>::value>::type>
   shared_ptr(const shared_ptr<Y>& r) noexcept
-      : shared_ptr<T>(r.data) { /* TODO - increase refcount*/
+      : shared_ptr<T>(r.__data) { /* TODO - increase refcount*/
   }
 
-  shared_ptr(shared_ptr&& r) noexcept : shared_ptr<T>(r.data) {
-    r.data = nullptr;
+  shared_ptr(shared_ptr&& r) noexcept : shared_ptr<T>(r.__data) {
+    r.__data = nullptr;
   }
 
   template <class Y,
             typename = typename enable_if<is_convertible<Y*, T*>::value>::type>
-  shared_ptr(shared_ptr<Y>&& r) noexcept : shared_ptr<T>(r.data) {
-    r.data = nullptr;
+  shared_ptr(shared_ptr<Y>&& r) noexcept : shared_ptr<T>(r.__data) {
+    r.__data = nullptr;
   }
 
   template <class Y,
@@ -116,7 +122,7 @@ class shared_ptr : public std__shared_ptr<T> {
   // assignment:
   shared_ptr& operator=(const shared_ptr& r) noexcept {
     // shared_ptr<T>(r).swap(*this);
-    data = r.data;
+    __data = r.__data;
     return *this;
   }
 
@@ -124,13 +130,13 @@ class shared_ptr : public std__shared_ptr<T> {
             typename = typename enable_if<is_convertible<Y*, T*>::value>::type>
   shared_ptr& operator=(const shared_ptr<Y>& r) noexcept {
     // shared_ptr<T>(r).swap(*this);
-    data = r.data;
+    __data = r.__data;
     return *this;
   }
 
   shared_ptr& operator=(shared_ptr&& r) noexcept {
     // shared_ptr<T>(std::move(r)).swap(*this);
-    data = r.data;
+    __data = r.__data;
     return *this;
   }
 
@@ -138,7 +144,7 @@ class shared_ptr : public std__shared_ptr<T> {
             typename = typename enable_if<is_convertible<Y*, T*>::value>::type>
   shared_ptr& operator=(shared_ptr<Y>&& r) {
     // shared_ptr<T>(std::move(r)).swap(*this);
-    data = r.data;
+    __data = r.__data;
     return *this;
   }
 
@@ -156,9 +162,9 @@ class shared_ptr : public std__shared_ptr<T> {
 
   // modifiers:
   void swap(shared_ptr& r) noexcept {
-    T* tmp = r.data;
-    r.data = data;
-    data = tmp;
+    T* tmp = r.__data;
+    r.__data = __data;
+    __data = tmp;
   }
 
   void reset() noexcept { reset((T*)nullptr); }
@@ -168,10 +174,10 @@ class shared_ptr : public std__shared_ptr<T> {
   void reset(Y* p) {
     /*
     if (unique()) {
-      delete data;
+      delete __data;
     }
     */
-    data = p;
+    __data = p;
     // TODO adjust refcounts
   }
 
@@ -191,14 +197,14 @@ class shared_ptr : public std__shared_ptr<T> {
   }
 
   // observers:
-  T* get() const noexcept { return data; }
+  T* get() const noexcept { return __data; }
   typename add_lvalue_reference<T>::type operator*() const noexcept {
-    return *data;
+    return *__data;
   }
-  T* operator->() const noexcept { return data; }
+  T* operator->() const noexcept { return __data; }
   long use_count() const noexcept { return 2; /* FIXME */ }
   bool unique() const noexcept { return use_count() == 1; /* FIXME */ }
-  explicit operator bool() const noexcept { return (bool)data; }
+  explicit operator bool() const noexcept { return (bool)__data; }
   template <class U>
   bool owner_before(shared_ptr<U> const& b) const {
     return true; /* FIXME - use non-det*/
@@ -232,4 +238,5 @@ shared_ptr<T> make_shared(Args&&... args) {
   return shared_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
+#undef __data
 INFER_NAMESPACE_STD_END
