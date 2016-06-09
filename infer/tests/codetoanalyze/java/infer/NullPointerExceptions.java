@@ -15,6 +15,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
@@ -557,5 +558,10 @@ public class NullPointerExceptions {
     s = null;
     s.toString(); // Expect NPE here
   }
+
+  void optionalNPE(Optional<Object> o) {
+    o.orNull().toString();
+  }
+
 
 }

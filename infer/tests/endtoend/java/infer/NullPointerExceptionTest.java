@@ -74,6 +74,7 @@ public class NullPointerExceptionTest {
         "dereferenceAfterLoopOnList",
         "dereferenceAfterUnlock1",
         "dereferenceAfterUnlock2",
+        "optionalNPE",
     };
     assertThat(
         "Results should contain " + NULL_DEREFERENCE,
