@@ -17,6 +17,11 @@ AC_PREREQ([2.63])
 AC_INIT([Infer],
         [0.8.1],
         [https://github.com/facebook/infer/issues/])
+
+# this has to happen just after AC_INIT() because later macros may mess with the arguments passed to
+# this script
+config_flags="$*"
+
 AC_CONFIG_SRCDIR([infer/src/IR/Sil.re])
 
 # WARNING: keep in sync with above
@@ -273,5 +278,8 @@ AC_SUBST([NCPU])
 AC_CONFIG_FILES([
   Makefile.config
 ])
+
+AC_MSG_NOTICE([saving configure flags to ./config.flags])
+echo $config_flags > config.flags
 
 AC_OUTPUT

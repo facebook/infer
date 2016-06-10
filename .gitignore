@@ -24,6 +24,7 @@ _build
 /aclocal.m4
 /autom4te.cache
 /config.status
+/config.flags
 /configure
 /Makefile.config
 /.buckversion
