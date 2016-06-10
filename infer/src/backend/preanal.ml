@@ -220,5 +220,5 @@ let add_nullify_instrs pdesc tenv =
 
 let doit pdesc cg tenv =
   add_nullify_instrs pdesc tenv;
-  add_dispatch_calls pdesc cg tenv;
+  if not Config.lazy_dynamic_dispatch then add_dispatch_calls pdesc cg tenv;
   add_abstraction_instructions pdesc;
