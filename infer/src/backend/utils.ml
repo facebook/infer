@@ -56,7 +56,7 @@ let opt_compare cmp x1 x2 =
   | _, None -> 1
 
 (** Efficient comparison for integers *)
-let int_compare (i: int) (j: int) = i - j
+let int_compare (i: int) (j: int) = (Obj.magic (i > j)) - (Obj.magic (i < j))
 
 let int_equal (i: int) (j: int) = i = j
 
