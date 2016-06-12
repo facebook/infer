@@ -35,7 +35,7 @@ let rec unroll_type tenv typ off =
       end
   | Sil.Tarray (typ', _), Sil.Off_index _ ->
       typ'
-  | _, Sil.Off_index (Sil.Const (Sil.Cint i)) when Sil.Int.iszero i ->
+  | _, Sil.Off_index (Sil.Const (Sil.Cint i)) when IntLit.iszero i ->
       typ
   | _ ->
       L.d_strln ".... Invalid Field Access ....";
@@ -314,7 +314,7 @@ let rec prune ~positive condition prop =
   match condition with
   | Sil.Var _ | Sil.Lvar _ ->
       prune_ne ~positive condition Sil.exp_zero prop
-  | Sil.Const (Sil.Cint i) when Sil.Int.iszero i ->
+  | Sil.Const (Sil.Cint i) when IntLit.iszero i ->
       if positive then Propset.empty else Propset.singleton prop
   | Sil.Const (Sil.Cint _) | Sil.Sizeof _ | Sil.Const (Sil.Cstr _) | Sil.Const (Sil.Cclass _) ->
       if positive then Propset.singleton prop else Propset.empty
@@ -327,12 +327,12 @@ let rec prune ~positive condition prop =
   | Sil.UnOp _ ->
       assert false
   | Sil.BinOp (Sil.Eq, e, Sil.Const (Sil.Cint i))
-  | Sil.BinOp (Sil.Eq, Sil.Const (Sil.Cint i), e) when Sil.Int.iszero i && not (Sil.Int.isnull i) ->
+  | Sil.BinOp (Sil.Eq, Sil.Const (Sil.Cint i), e) when IntLit.iszero i && not (IntLit.isnull i) ->
       prune ~positive:(not positive) e prop
   | Sil.BinOp (Sil.Eq, e1, e2) ->
       prune_ne ~positive:(not positive) e1 e2 prop
   | Sil.BinOp (Sil.Ne, e, Sil.Const (Sil.Cint i))
-  | Sil.BinOp (Sil.Ne, Sil.Const (Sil.Cint i), e) when Sil.Int.iszero i && not (Sil.Int.isnull i) ->
+  | Sil.BinOp (Sil.Ne, Sil.Const (Sil.Cint i), e) when IntLit.iszero i && not (IntLit.isnull i) ->
       prune ~positive e prop
   | Sil.BinOp (Sil.Ne, e1, e2) ->
       prune_ne ~positive e1 e2 prop
@@ -392,20 +392,20 @@ let call_should_be_skipped callee_pname summary =
 (** In case of constant string dereference, return the result immediately *)
 let check_constant_string_dereference lexp =
   let string_lookup s n =
-    let c = try Char.code (String.get s (Sil.Int.to_int n)) with Invalid_argument _ -> 0 in
-    Sil.exp_int (Sil.Int.of_int c) in
+    let c = try Char.code (String.get s (IntLit.to_int n)) with Invalid_argument _ -> 0 in
+    Sil.exp_int (IntLit.of_int c) in
   match lexp with
   | Sil.BinOp(Sil.PlusPI, Sil.Const (Sil.Cstr s), e)
   | Sil.Lindex (Sil.Const (Sil.Cstr s), e) ->
       let value = match e with
         | Sil.Const (Sil.Cint n)
-          when Sil.Int.geq n Sil.Int.zero &&
-               Sil.Int.leq n (Sil.Int.of_int (String.length s)) ->
+          when IntLit.geq n IntLit.zero &&
+               IntLit.leq n (IntLit.of_int (String.length s)) ->
             string_lookup s n
         | _ -> Sil.exp_get_undefined false in
       Some value
   | Sil.Const (Sil.Cstr s) ->
-      Some (string_lookup s Sil.Int.zero)
+      Some (string_lookup s IntLit.zero)
   | _ -> None
 
 (** Normalize an expression and check for arithmetic problems *)
@@ -440,7 +440,7 @@ let check_already_dereferenced pname cond prop =
     | Sil.UnOp(Sil.LNot, e, _) ->
         is_check_zero e
     | Sil.BinOp ((Sil.Eq | Sil.Ne), Sil.Const Sil.Cint i, Sil.Var id)
-    | Sil.BinOp ((Sil.Eq | Sil.Ne), Sil.Var id, Sil.Const Sil.Cint i) when Sil.Int.iszero i ->
+    | Sil.BinOp ((Sil.Eq | Sil.Ne), Sil.Var id, Sil.Const Sil.Cint i) when IntLit.iszero i ->
         Some id
     | _ -> None in
   let dereferenced_line = match is_check_zero cond with
@@ -1027,7 +1027,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         let report_condition_always_true_false i =
           let skip_loop = match ik with
             | Sil.Ik_while | Sil.Ik_for ->
-                not (Sil.Int.iszero i) (* skip wile(1) and for (;1;) *)
+                not (IntLit.iszero i) (* skip wile(1) and for (;1;) *)
             | Sil.Ik_dowhile ->
                 true (* skip do..while *)
             | Sil.Ik_land_lor ->
@@ -1044,7 +1044,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
             let node = State.get_node () in
             let desc = Errdesc.explain_condition_always_true_false i cond node loc in
             let exn =
-              Exceptions.Condition_always_true_false (desc, not (Sil.Int.iszero i), __POS__) in
+              Exceptions.Condition_always_true_false (desc, not (IntLit.iszero i), __POS__) in
             let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop current_pname) in
             Reporting.log_warning current_pname ~pre: pre_opt exn
         | Sil.BinOp ((Sil.Eq | Sil.Ne), lhs, rhs)

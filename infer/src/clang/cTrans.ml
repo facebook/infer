@@ -345,7 +345,7 @@ struct
      So we implement it as the constant zero *)
   let gNUNullExpr_trans trans_state expr_info =
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
-    let exp = Sil.Const (Sil.Cint (Sil.Int.zero)) in
+    let exp = Sil.Const (Sil.Cint (IntLit.zero)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
   let nullPtrExpr_trans trans_state expr_info =
@@ -366,7 +366,7 @@ struct
 
   let characterLiteral_trans trans_state expr_info n =
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
-    let exp = Sil.Const (Sil.Cint (Sil.Int.of_int n)) in
+    let exp = Sil.Const (Sil.Cint (IntLit.of_int n)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
   let floatingLiteral_trans trans_state expr_info float_string =
@@ -381,7 +381,7 @@ struct
     let exp =
       try
         let i = Int64.of_string integer_literal_info.Clang_ast_t.ili_value in
-        let exp = Sil.exp_int (Sil.Int.of_int64 i) in
+        let exp = Sil.exp_int (IntLit.of_int64 i) in
         exp
       with
       | Failure _ ->
@@ -398,7 +398,7 @@ struct
     let zero_opt = match typ with
       | Sil.Tfloat _  | Sil.Tptr _ | Sil.Tint _ -> Some (Sil.zero_value_of_numerical_type typ)
       | Sil.Tvoid -> None
-      | _ -> Some (Sil.Const (Sil.Cint Sil.Int.zero)) in
+      | _ -> Some (Sil.Const (Sil.Cint IntLit.zero)) in
     match zero_opt with
     | Some zero -> { empty_res_trans with exps = [(zero, typ)] }
     | _ -> empty_res_trans
@@ -677,7 +677,7 @@ struct
 
   (* get the sil value of the enum constant from the map or by evaluating it *)
   and get_enum_constant_expr context enum_constant_pointer =
-    let zero = Sil.Const (Sil.Cint Sil.Int.zero) in
+    let zero = Sil.Const (Sil.Cint IntLit.zero) in
     try
       let (prev_enum_constant_opt, sil_exp_opt) =
         Ast_utils.get_enum_constant_exp enum_constant_pointer in
@@ -855,7 +855,7 @@ struct
                  NEED TO BE FIXED\n\n";
               fix_param_exps_mismatch params_stmt params) in
       let act_params = if is_cf_retain_release then
-          (Sil.Const (Sil.Cint Sil.Int.one), Sil.Tint Sil.IBool) :: act_params
+          (Sil.Const (Sil.Cint IntLit.one), Sil.Tint Sil.IBool) :: act_params
         else act_params in
       match
         CTrans_utils.builtin_trans trans_state_pri sil_loc si function_type callee_pname_opt with
@@ -1185,7 +1185,7 @@ struct
       Printing.log_out " No short-circuit condition\n";
       let res_trans_cond =
         if is_null_stmt cond then {
-          empty_res_trans with exps = [(Sil.Const (Sil.Cint Sil.Int.one), (Sil.Tint Sil.IBool))]
+          empty_res_trans with exps = [(Sil.Const (Sil.Cint IntLit.one), (Sil.Tint Sil.IBool))]
         }
         (* Assumption: If it's a null_stmt, it is a loop with no bound, so we set condition to 1 *)
         else
@@ -2034,7 +2034,7 @@ struct
     let (var_exp_inside, typ_inside) = match typ with
       | Sil.Tarray (t, _)
       | Sil.Tptr (t, _) when Sil.is_array_of_cpp_class typ || is_dyn_array ->
-          Sil.Lindex (var_exp, Sil.Const (Sil.Cint (Sil.Int.of_int n))), t
+          Sil.Lindex (var_exp, Sil.Const (Sil.Cint (IntLit.of_int n))), t
       | _ -> var_exp, typ in
     let trans_state' = { trans_state with var_exp_typ = Some (var_exp_inside, typ_inside) } in
     match stmts with
@@ -2085,7 +2085,7 @@ struct
             (match res_trans_size.exps with
              | [(exp, _)] -> Some exp, res_trans_size
              | _ -> None, empty_res_trans)
-        | None -> Some (Sil.Const (Sil.Cint (Sil.Int.minus_one))), empty_res_trans
+        | None -> Some (Sil.Const (Sil.Cint (IntLit.minus_one))), empty_res_trans
       else None, empty_res_trans in
     let res_trans_new = cpp_new_trans trans_state_pri sil_loc typ size_exp_opt in
     let stmt_opt = Ast_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_initializer_expr in
@@ -2099,8 +2099,8 @@ struct
       if is_dyn_array && Sil.is_pointer_to_cpp_class typ then
         let rec create_stmts stmt_opt size_exp_opt =
           match stmt_opt, size_exp_opt with
-          | Some stmt, Some (Sil.Const (Sil.Cint n)) when not (Sil.Int.iszero n) ->
-              let n_minus_1 = Some ((Sil.Const (Sil.Cint (Sil.Int.sub n Sil.Int.one)))) in
+          | Some stmt, Some (Sil.Const (Sil.Cint n)) when not (IntLit.iszero n) ->
+              let n_minus_1 = Some ((Sil.Const (Sil.Cint (IntLit.sub n IntLit.one)))) in
               stmt :: create_stmts stmt_opt n_minus_1
           | _ -> [] in
         let stmts = create_stmts stmt_opt size_exp_opt in

@@ -15,8 +15,8 @@ open! Utils
 module L = Logging
 module F = Format
 
-let (++) = Sil.Int.add
-let (--) = Sil.Int.sub
+let (++) = IntLit.add
+let (--) = IntLit.sub
 
 (** {2 Utility functions for ids} *)
 
@@ -466,14 +466,14 @@ end = struct
     let ineq_upper = Prop.mk_inequality (Sil.BinOp(Sil.Le, e, upper)) in
     ineq_lower:: ineq_upper:: acc
 
-  let minus2_to_2 = IList.map Sil.Int.of_int [-2; -1; 0; 1; 2]
+  let minus2_to_2 = IList.map IntLit.of_int [-2; -1; 0; 1; 2]
 
   let get_induced_pi () =
     let t_sorted = IList.sort entry_compare !t in
 
     let add_and_chk_eq e1 e1' n =
       match e1, e1' with
-      | Sil.Const (Sil.Cint n1), Sil.Const (Sil.Cint n1') -> Sil.Int.eq (n1 ++ n) n1'
+      | Sil.Const (Sil.Cint n1), Sil.Const (Sil.Cint n1') -> IntLit.eq (n1 ++ n) n1'
       | _ -> false in
     let add_and_gen_eq e e' n =
       let e_plus_n = Sil.BinOp(Sil.PlusA, e, Sil.exp_int n) in
@@ -500,7 +500,8 @@ end = struct
     let f_ineqs acc (e1, e2, e) =
       match e1, e2 with
       | Sil.Const (Sil.Cint n1), Sil.Const (Sil.Cint n2) ->
-          let strict_lower1, upper1 = if Sil.Int.leq n1 n2 then (n1 -- Sil.Int.one, n2) else (n2 -- Sil.Int.one, n1) in
+          let strict_lower1, upper1 =
+            if IntLit.leq n1 n2 then (n1 -- IntLit.one, n2) else (n2 -- IntLit.one, n1) in
           let e_strict_lower1 = Sil.exp_int strict_lower1 in
           let e_upper1 = Sil.exp_int upper1 in
           get_induced_atom acc e_strict_lower1 e_upper1 e
@@ -592,12 +593,12 @@ end = struct
     let f v = match v, side with
       | (Sil.BinOp (Sil.PlusA, e1', Sil.Const (Sil.Cint i)), e2, e'), Lhs
         when Sil.exp_equal e e1' ->
-          let c' = Sil.exp_int (Sil.Int.neg i) in
+          let c' = Sil.exp_int (IntLit.neg i) in
           let v' = (e1', Sil.BinOp(Sil.PlusA, e2, c'), Sil.BinOp (Sil.PlusA, e', c')) in
           res := v'::!res
       | (e1, Sil.BinOp (Sil.PlusA, e2', Sil.Const (Sil.Cint i)), e'), Rhs
         when Sil.exp_equal e e2' ->
-          let c' = Sil.exp_int (Sil.Int.neg i) in
+          let c' = Sil.exp_int (IntLit.neg i) in
           let v' = (Sil.BinOp(Sil.PlusA, e1, c'), e2', Sil.BinOp (Sil.PlusA, e', c')) in
           res := v'::!res
       | _ -> () in
@@ -723,13 +724,13 @@ end = struct
 
         | Sil.Aeq(Sil.BinOp(Sil.Le, e, e'), Sil.Const (Sil.Cint i))
         | Sil.Aeq(Sil.Const (Sil.Cint i), Sil.BinOp(Sil.Le, e, e'))
-          when Sil.Int.isone i && (exp_contains_only_normal_ids e') ->
+          when IntLit.isone i && (exp_contains_only_normal_ids e') ->
             let construct e0 = Prop.mk_inequality (Sil.BinOp(Sil.Le, e0, e')) in
             build_other_atoms construct side e
 
         | Sil.Aeq(Sil.BinOp(Sil.Lt, e', e), Sil.Const (Sil.Cint i))
         | Sil.Aeq(Sil.Const (Sil.Cint i), Sil.BinOp(Sil.Lt, e', e))
-          when Sil.Int.isone i && (exp_contains_only_normal_ids e') ->
+          when IntLit.isone i && (exp_contains_only_normal_ids e') ->
             let construct e0 = Prop.mk_inequality (Sil.BinOp(Sil.Lt, e', e0)) in
             build_other_atoms construct side e
 
@@ -975,7 +976,7 @@ and length_partial_join len1 len2 = match len1, len2 with
   | _ -> exp_partial_join len1 len2
 
 and static_length_partial_join l1 l2 =
-  option_partial_join (fun len1 len2 -> if Sil.Int.eq len1 len2 then Some len1 else None) l1 l2
+  option_partial_join (fun len1 len2 -> if IntLit.eq len1 len2 then Some len1 else None) l1 l2
 
 and dynamic_length_partial_join l1 l2 =
   option_partial_join (fun len1 len2 -> Some (length_partial_join len1 len2)) l1 l2
@@ -1548,8 +1549,12 @@ let rec sigma_partial_meet' (sigma_acc: Prop.sigma) (sigma1_in: Prop.sigma) (sig
 let sigma_partial_meet (sigma1: Prop.sigma) (sigma2: Prop.sigma) : Prop.sigma =
   sigma_partial_meet' [] sigma1 sigma2
 
-let widening_top = Sil.Int.of_int64 Int64.max_int -- Sil.Int.of_int 1000 (* nearly max_int but not so close to overflow *)
-let widening_bottom = Sil.Int.of_int64 Int64.min_int ++ Sil.Int.of_int 1000 (* nearly min_int but not so close to underflow *)
+let widening_top =
+  (* nearly max_int but not so close to overflow *)
+  IntLit.of_int64 Int64.max_int -- IntLit.of_int 1000
+let widening_bottom =
+  (* nearly min_int but not so close to underflow *)
+  IntLit.of_int64 Int64.min_int ++ IntLit.of_int 1000
 
 (** {2 Join and Meet for Pi} *)
 let pi_partial_join mode
@@ -1566,24 +1571,24 @@ let pi_partial_join mode
     let len_list = ref [] in
     let do_hpred = function
       | Sil.Hpointsto (_, Sil.Earray (Sil.Const (Sil.Cint n), _, _), _) ->
-          (if Sil.Int.geq n Sil.Int.one then len_list := n :: !len_list)
+          (if IntLit.geq n IntLit.one then len_list := n :: !len_list)
       | _ -> () in
     IList.iter do_hpred (Prop.get_sigma prop);
     !len_list in
   let bounds =
     let bounds1 = get_array_len ep1 in
     let bounds2 = get_array_len ep2 in
-    let bounds_sorted = IList.sort Sil.Int.compare_value (bounds1@bounds2) in
-    IList.rev (IList.remove_duplicates Sil.Int.compare_value bounds_sorted) in
+    let bounds_sorted = IList.sort IntLit.compare_value (bounds1@bounds2) in
+    IList.rev (IList.remove_duplicates IntLit.compare_value bounds_sorted) in
   let widening_atom a =
     (* widening heuristic for upper bound: take the length of some array, -2 and -1 *)
     match Prop.atom_exp_le_const a, bounds with
     | Some (e, n), len :: _ ->
-        let first_try = Sil.Int.sub len Sil.Int.one in
-        let second_try = Sil.Int.sub len Sil.Int.two in
+        let first_try = IntLit.sub len IntLit.one in
+        let second_try = IntLit.sub len IntLit.two in
         let bound =
-          if Sil.Int.leq n first_try then
-            if Sil.Int.leq n second_try then second_try else first_try
+          if IntLit.leq n first_try then
+            if IntLit.leq n second_try then second_try else first_try
           else widening_top in
         let a' = Prop.mk_inequality (Sil.BinOp(Sil.Le, e, Sil.exp_int bound)) in
         Some a'
@@ -1596,18 +1601,19 @@ let pi_partial_join mode
           match Prop.atom_const_lt_exp a with
           | None -> None
           | Some (n, e) ->
-              let bound = if Sil.Int.leq Sil.Int.minus_one n then Sil.Int.minus_one else widening_bottom in
+              let bound =
+                if IntLit.leq IntLit.minus_one n then IntLit.minus_one else widening_bottom in
               let a' = Prop.mk_inequality (Sil.BinOp(Sil.Lt, Sil.exp_int bound, e)) in
               Some a'
         end in
   let is_stronger_le e n a =
     match Prop.atom_exp_le_const a with
     | None -> false
-    | Some (e', n') -> Sil.exp_equal e e' && Sil.Int.lt n' n in
+    | Some (e', n') -> Sil.exp_equal e e' && IntLit.lt n' n in
   let is_stronger_lt n e a =
     match Prop.atom_const_lt_exp a with
     | None -> false
-    | Some (n', e') -> Sil.exp_equal e e' && Sil.Int.lt n n' in
+    | Some (n', e') -> Sil.exp_equal e e' && IntLit.lt n n' in
   let join_atom_check_pre p a =
     (* check for atoms in pre mode: fail if the negation is implied by the other side *)
     let not_a = Prop.atom_negate a in

@@ -156,7 +156,7 @@ val deref_str_freed : Sil.res_action -> deref_str
 val deref_str_dangling : Sil.dangling_kind option -> deref_str
 
 (** dereference strings for an array out of bound access *)
-val deref_str_array_bound : Sil.Int.t option -> Sil.Int.t option -> deref_str
+val deref_str_array_bound : IntLit.t option -> IntLit.t option -> deref_str
 
 (** dereference strings for an uninitialized access whose lhs has the given attribute *)
 val deref_str_uninitialized : Sil.attribute option -> deref_str
@@ -195,7 +195,7 @@ val desc_comparing_floats_for_equality : Location.t -> error_desc
 
 val desc_condition_is_assignment : Location.t -> error_desc
 
-val desc_condition_always_true_false : Sil.Int.t -> string option -> Location.t -> error_desc
+val desc_condition_always_true_false : IntLit.t -> string option -> Location.t -> error_desc
 
 val desc_deallocate_stack_variable : string -> Procname.t -> Location.t -> error_desc
 

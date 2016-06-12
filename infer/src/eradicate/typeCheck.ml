@@ -169,7 +169,7 @@ let rec typecheck_expr
       (match TypeState.lookup_id id typestate with
        | Some tr -> TypeState.range_add_locs tr [loc]
        | None -> tr_default)
-  | Sil.Const (Sil.Cint i) when Sil.Int.iszero i ->
+  | Sil.Const (Sil.Cint i) when IntLit.iszero i ->
       let (typ, _, locs) = tr_default in
       if PatternMatch.type_is_class typ
       then (typ, TypeAnnotation.const Annotations.Nullable true (TypeOrigin.Const loc), locs)
@@ -707,7 +707,7 @@ let typecheck_instr
           let do_instr = function
             | Sil.Prune (Sil.BinOp (Sil.Eq, _cond_e, Sil.Const (Sil.Cint i)), _, _, _)
             | Sil.Prune (Sil.BinOp (Sil.Eq, Sil.Const (Sil.Cint i), _cond_e), _, _, _)
-              when Sil.Int.iszero i ->
+              when IntLit.iszero i ->
                 let cond_e = Idenv.expand_expr_temps idenv cond_node _cond_e in
                 begin
                   match convert_complex_exp_to_pvar cond_node false cond_e typestate' loc with
@@ -946,7 +946,7 @@ let typecheck_instr
 
         match c with
         | Sil.BinOp (Sil.Eq, Sil.Const (Sil.Cint i), e)
-        | Sil.BinOp (Sil.Eq, e, Sil.Const (Sil.Cint i)) when Sil.Int.iszero i ->
+        | Sil.BinOp (Sil.Eq, e, Sil.Const (Sil.Cint i)) when IntLit.iszero i ->
             typecheck_expr_for_errors typestate e loc;
             let typestate1, e1, from_call = match from_is_true_on_null e with
               | Some e1 ->
@@ -975,7 +975,7 @@ let typecheck_instr
             end
 
         | Sil.BinOp (Sil.Ne, Sil.Const (Sil.Cint i), e)
-        | Sil.BinOp (Sil.Ne, e, Sil.Const (Sil.Cint i)) when Sil.Int.iszero i ->
+        | Sil.BinOp (Sil.Ne, e, Sil.Const (Sil.Cint i)) when IntLit.iszero i ->
             typecheck_expr_for_errors typestate e loc;
             let typestate1, e1, from_call = match from_instanceof e with
               | Some e1 -> (* (e1 instanceof C) implies (e1 != null) *)

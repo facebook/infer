@@ -722,7 +722,7 @@ let combine
       let id_assigned_to_null id =
         let filter = function
           | Sil.Aeq (Sil.Var id', Sil.Const (Sil.Cint i)) ->
-              Ident.equal id id' && Sil.Int.isnull i
+              Ident.equal id id' && IntLit.isnull i
           | _ -> false in
         IList.exists filter split.missing_pi in
       let f (e, inst_opt) = match e, inst_opt with

@@ -144,12 +144,12 @@ let unary_operation_instruction uoi e typ loc =
   | `PostInc ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
-      let e_plus_1 = Sil.BinOp(Sil.PlusA, Sil.Var id, Sil.Const(Sil.Cint (Sil.Int.one))) in
+      let e_plus_1 = Sil.BinOp(Sil.PlusA, Sil.Var id, Sil.Const(Sil.Cint (IntLit.one))) in
       (Sil.Var id, instr1::[Sil.Set (e, typ, e_plus_1, loc)])
   | `PreInc ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
-      let e_plus_1 = Sil.BinOp(Sil.PlusA, Sil.Var id, Sil.Const(Sil.Cint (Sil.Int.one))) in
+      let e_plus_1 = Sil.BinOp(Sil.PlusA, Sil.Var id, Sil.Const(Sil.Cint (IntLit.one))) in
       let exp = if General_utils.is_cpp_translation Config.clang_lang then
           e
         else
@@ -158,12 +158,12 @@ let unary_operation_instruction uoi e typ loc =
   | `PostDec ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
-      let e_minus_1 = Sil.BinOp(Sil.MinusA, Sil.Var id, Sil.Const(Sil.Cint (Sil.Int.one))) in
+      let e_minus_1 = Sil.BinOp(Sil.MinusA, Sil.Var id, Sil.Const(Sil.Cint (IntLit.one))) in
       (Sil.Var id, instr1::[Sil.Set (e, typ, e_minus_1, loc)])
   | `PreDec ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
-      let e_minus_1 = Sil.BinOp(Sil.MinusA, Sil.Var id, Sil.Const(Sil.Cint (Sil.Int.one))) in
+      let e_minus_1 = Sil.BinOp(Sil.MinusA, Sil.Var id, Sil.Const(Sil.Cint (IntLit.one))) in
       let exp = if General_utils.is_cpp_translation Config.clang_lang then
           e
         else
@@ -220,5 +220,5 @@ let bin_op_to_string boi =
 let sil_const_plus_one const =
   match const with
   | Sil.Const (Sil.Cint n) ->
-      Sil.Const (Sil.Cint (Sil.Int.add n Sil.Int.one))
-  | _ -> Sil.BinOp (Sil.PlusA, const, Sil.Const (Sil.Cint (Sil.Int.one)))
+      Sil.Const (Sil.Cint (IntLit.add n IntLit.one))
+  | _ -> Sil.BinOp (Sil.PlusA, const, Sil.Const (Sil.Cint (IntLit.one)))

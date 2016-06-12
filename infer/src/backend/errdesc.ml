@@ -175,7 +175,7 @@ let rec find_boolean_assignment node pvar true_branch : Cfg.Node.t option =
   let find_instr n =
     let filter = function
       | Sil.Set (Sil.Lvar _pvar, _, Sil.Const (Sil.Cint i), _) when Pvar.equal pvar _pvar ->
-          Sil.Int.iszero i <> true_branch
+          IntLit.iszero i <> true_branch
       | _ -> false in
     IList.exists filter (Cfg.Node.get_instrs n) in
   match Cfg.Node.get_preds node with

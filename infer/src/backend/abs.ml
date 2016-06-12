@@ -781,7 +781,7 @@ let abstract_pure_part p ~(from_abstract_footprint: bool) =
            | Sil.Aeq (Sil.Const (Sil.Cint i), Sil.BinOp (Sil.Lt, _, _))
            | Sil.Aeq (Sil.BinOp (Sil.Lt, _, _), Sil.Const (Sil.Cint i))
            | Sil.Aeq (Sil.Const (Sil.Cint i), Sil.BinOp (Sil.Le, _, _))
-           | Sil.Aeq (Sil.BinOp (Sil.Le, _, _), Sil.Const (Sil.Cint i)) when Sil.Int.isone i ->
+           | Sil.Aeq (Sil.BinOp (Sil.Le, _, _), Sil.Const (Sil.Cint i)) when IntLit.isone i ->
                a :: pi
            | Sil.Aeq (Sil.Var name, e) when not (Ident.is_primed name) ->
                (match e with
@@ -930,7 +930,7 @@ let should_raise_objc_leak hpred =
   match hpred with
   | Sil.Hpointsto(_, Sil.Estruct((fn, Sil.Eexp( (Sil.Const (Sil.Cint i)), _)):: _, _),
                   Sil.Sizeof (typ, _, _))
-    when Ident.fieldname_is_hidden fn && Sil.Int.gt i Sil.Int.zero (* counter > 0 *) ->
+    when Ident.fieldname_is_hidden fn && IntLit.gt i IntLit.zero (* counter > 0 *) ->
       Mleak_buckets.should_raise_objc_leak typ
   | _ -> None
 

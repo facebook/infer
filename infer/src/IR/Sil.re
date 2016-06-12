@@ -510,130 +510,6 @@ let module Subtype = {
 };
 
 
-/** module for signed and unsigned integers */
-let module Int: {
-  type t;
-  let add: t => t => t;
-  let compare: t => t => int;
-  let compare_value: t => t => int;
-  let div: t => t => t;
-  let eq: t => t => bool;
-  let of_int: int => t;
-  let of_int32: int32 => t;
-  let of_int64: int64 => t;
-  let of_int64_unsigned: int64 => bool => t;
-  let geq: t => t => bool;
-  let gt: t => t => bool;
-  let isminusone: t => bool;
-  let isone: t => bool;
-  let isnegative: t => bool;
-  let isnull: t => bool;
-  let iszero: t => bool;
-  let leq: t => t => bool;
-  let logand: t => t => t;
-  let lognot: t => t;
-  let logor: t => t => t;
-  let logxor: t => t => t;
-  let lt: t => t => bool;
-  let minus_one: t;
-  let mul: t => t => t;
-  let neg: t => t;
-  let neq: t => t => bool;
-  let null: t;
-  let one: t;
-  let pp: Format.formatter => t => unit;
-  let rem: t => t => t;
-  let sub: t => t => t;
-  let to_int: t => int;
-  let to_signed: t => option t;
-  let to_string: t => string;
-  let two: t;
-  let zero: t;
-} = {
-  /* the first bool indicates whether this is an unsigned value,
-     and the second whether it is a pointer */
-  type t = (bool, Int64.t, bool);
-  let area u i =>
-    switch (i < 0L, u) {
-    | (true, false) => 1 /* only representable as signed */
-    | (false, _) => 2 /* in the intersection between signed and unsigned */
-    | (true, true) => 3 /* only representable as unsigned */
-    };
-  let to_signed (unsigned, i, ptr) =>
-    if (area unsigned i == 3) {
-      None
-    } else {
-      Some
-        /* not representable as signed */
-        (false, i, ptr)
-    };
-  let compare (unsigned1, i1, _) (unsigned2, i2, _) => {
-    let n = bool_compare unsigned1 unsigned2;
-    if (n != 0) {
-      n
-    } else {
-      Int64.compare i1 i2
-    }
-  };
-  let compare_value (unsigned1, i1, _) (unsigned2, i2, _) => {
-    let area1 = area unsigned1 i1;
-    let area2 = area unsigned2 i2;
-    let n = int_compare area1 area2;
-    if (n != 0) {
-      n
-    } else {
-      Int64.compare i1 i2
-    }
-  };
-  let eq i1 i2 => compare_value i1 i2 == 0;
-  let neq i1 i2 => compare_value i1 i2 != 0;
-  let leq i1 i2 => compare_value i1 i2 <= 0;
-  let lt i1 i2 => compare_value i1 i2 < 0;
-  let geq i1 i2 => compare_value i1 i2 >= 0;
-  let gt i1 i2 => compare_value i1 i2 > 0;
-  let of_int64 i => (false, i, false);
-  let of_int32 i => of_int64 (Int64.of_int32 i);
-  let of_int64_unsigned i unsigned => (unsigned, i, false);
-  let of_int i => of_int64 (Int64.of_int i);
-  let to_int (_, i, _) => Int64.to_int i;
-  let null = (false, 0L, true);
-  let zero = of_int 0;
-  let one = of_int 1;
-  let two = of_int 2;
-  let minus_one = of_int (-1);
-  let isone (_, i, _) => i == 1L;
-  let iszero (_, i, _) => i == 0L;
-  let isnull (_, i, ptr) => i == 0L && ptr;
-  let isminusone (unsigned, i, _) => not unsigned && i == (-1L);
-  let isnegative (unsigned, i, _) => not unsigned && i < 0L;
-  let neg (unsigned, i, ptr) => (unsigned, Int64.neg i, ptr);
-  let lift binop (unsigned1, i1, ptr1) (unsigned2, i2, ptr2) => (
-    unsigned1 || unsigned2,
-    binop i1 i2,
-    ptr1 || ptr2
-  );
-  let lift1 unop (unsigned, i, ptr) => (unsigned, unop i, ptr);
-  let add i1 i2 => lift Int64.add i1 i2;
-  let mul i1 i2 => lift Int64.mul i1 i2;
-  let div i1 i2 => lift Int64.div i1 i2;
-  let rem i1 i2 => lift Int64.rem i1 i2;
-  let logand i1 i2 => lift Int64.logand i1 i2;
-  let logor i1 i2 => lift Int64.logor i1 i2;
-  let logxor i1 i2 => lift Int64.logxor i1 i2;
-  let lognot i => lift1 Int64.lognot i;
-  let sub i1 i2 => add i1 (neg i2);
-  let pp f (unsigned, n, ptr) =>
-    if (ptr && n == 0L) {
-      F.fprintf f "null"
-    } else if unsigned {
-      F.fprintf f "%Lu" n
-    } else {
-      F.fprintf f "%Ld" n
-    };
-  let to_string i => pp_to_string pp i;
-};
-
-
 /** Flags for a procedure call */
 type call_flags = {
   cf_virtual: bool,
@@ -720,7 +596,7 @@ and attribute_category =
 and closure = {name: Procname.t, captured_vars: list (exp, Pvar.t, typ)}
 /** Constants */
 and const =
-  | Cint of Int.t /** integer constants */
+  | Cint of IntLit.t /** integer constants */
   | Cfun of Procname.t /** function names */
   | Cstr of string /** string constants */
   | Cfloat of float /** float constants */
@@ -742,7 +618,7 @@ and struct_typ = {
   struct_annotations: item_annotation /** annotations */
 }
 /** statically determined length of an array type, if any */
-and static_length = option Int.t
+and static_length = option IntLit.t
 /** dynamically determined length of an array value, if any */
 and dynamic_length = option exp
 /** types for sil (structured) expressions */
@@ -1005,9 +881,9 @@ let typ_strip_ptr =
 
 let zero_value_of_numerical_type typ =>
   switch typ {
-  | Tint _ => Const (Cint Int.zero)
+  | Tint _ => Const (Cint IntLit.zero)
   | Tfloat _ => Const (Cfloat 0.0)
-  | Tptr _ => Const (Cint Int.null)
+  | Tptr _ => Const (Cint IntLit.null)
   | _ => assert false
   };
 
@@ -1033,12 +909,12 @@ let fld_equal fld1 fld2 => fld_compare fld1 fld2 == 0;
 
 let exp_is_zero =
   fun
-  | Const (Cint n) => Int.iszero n
+  | Const (Cint n) => IntLit.iszero n
   | _ => false;
 
 let exp_is_null_literal =
   fun
-  | Const (Cint n) => Int.isnull n
+  | Const (Cint n) => IntLit.isnull n
   | _ => false;
 
 let exp_is_this =
@@ -1062,7 +938,7 @@ let ikind_is_unsigned =
   | IULongLong => true
   | _ => false;
 
-let int_of_int64_kind i ik => Int.of_int64_unsigned i (ikind_is_unsigned ik);
+let int_of_int64_kind i ik => IntLit.of_int64_unsigned i (ikind_is_unsigned ik);
 
 let unop_compare o1 o2 =>
   switch (o1, o2) {
@@ -1414,7 +1290,7 @@ let const_kind_equal c1 c2 => {
 
 let rec const_compare (c1: const) (c2: const) :int =>
   switch (c1, c2) {
-  | (Cint i1, Cint i2) => Int.compare i1 i2
+  | (Cint i1, Cint i2) => IntLit.compare i1 i2
   | (Cint _, _) => (-1)
   | (_, Cint _) => 1
   | (Cfun fn1, Cfun fn2) => Procname.compare fn1 fn2
@@ -2311,7 +2187,7 @@ and attribute_to_string pe =>
   | Aunsubscribed_observer => "UNSUBSCRIBED_OBSERVER"
 and pp_const pe f =>
   fun
-  | Cint i => Int.pp f i
+  | Cint i => IntLit.pp f i
   | Cfun fn =>
     switch pe.pe_kind {
     | PP_HTML => F.fprintf f "_fun_%s" (Escape.escape_xml (Procname.to_string fn))
@@ -2629,7 +2505,7 @@ let d_instr_list (il: list instr) => L.add_print_action (L.PTinstr_list, Obj.rep
 let pp_atom pe0 f a => {
   let (pe, changed) = color_pre_wrapper pe0 f a;
   switch a {
-  | Aeq (BinOp op e1 e2) (Const (Cint i)) when Int.isone i =>
+  | Aeq (BinOp op e1 e2) (Const (Cint i)) when IntLit.isone i =>
     switch pe.pe_kind {
     | PP_TEXT
     | PP_HTML => F.fprintf f "%a" (pp_exp pe) (BinOp op e1 e2)
@@ -3400,19 +3276,19 @@ let exp_float v => Const (Cfloat v);
 
 
 /** Integer constant 0 */
-let exp_zero = exp_int Int.zero;
+let exp_zero = exp_int IntLit.zero;
 
 
 /** Null constant */
-let exp_null = exp_int Int.null;
+let exp_null = exp_int IntLit.null;
 
 
 /** Integer constant 1 */
-let exp_one = exp_int Int.one;
+let exp_one = exp_int IntLit.one;
 
 
 /** Integer constant -1 */
-let exp_minus_one = exp_int Int.minus_one;
+let exp_minus_one = exp_int IntLit.minus_one;
 
 
 /** Create integer constant corresponding to the boolean value */

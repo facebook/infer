@@ -168,49 +168,6 @@ let module Subtype: {
 };
 
 
-/** module for signed and unsigned integers */
-let module Int: {
-  type t;
-  let add: t => t => t;
-
-  /** compare the value of the integers, notice this is different from const compare,
-      which distinguished between signed and unsigned +1 */
-  let compare_value: t => t => int;
-  let div: t => t => t;
-  let eq: t => t => bool;
-  let of_int: int => t;
-  let of_int32: int32 => t;
-  let of_int64: int64 => t;
-  let geq: t => t => bool;
-  let gt: t => t => bool;
-  let isminusone: t => bool;
-  let isnegative: t => bool;
-  let isnull: t => bool;
-  let isone: t => bool;
-  let iszero: t => bool;
-  let leq: t => t => bool;
-  let logand: t => t => t;
-  let lognot: t => t;
-  let logor: t => t => t;
-  let logxor: t => t => t;
-  let lt: t => t => bool;
-  let minus_one: t;
-  let mul: t => t => t;
-  let neg: t => t;
-  let neq: t => t => bool;
-  let null: t; /** null behaves like zero except for the function isnull */
-  let one: t;
-  let pp: F.formatter => t => unit;
-  let rem: t => t => t;
-  let sub: t => t => t;
-  let to_int: t => int;
-  let to_signed: t => option t; /** convert to signed if the value is representable */
-  let to_string: t => string;
-  let two: t;
-  let zero: t;
-};
-
-
 /** Flags for a procedure call */
 type call_flags = {
   cf_virtual: bool,
@@ -293,7 +250,7 @@ and attribute_category =
 and closure = {name: Procname.t, captured_vars: list (exp, Pvar.t, typ)}
 /** Constants */
 and const =
-  | Cint of Int.t /** integer constants */
+  | Cint of IntLit.t /** integer constants */
   | Cfun of Procname.t /** function names */
   | Cstr of string /** string constants */
   | Cfloat of float /** float constants */
@@ -315,7 +272,7 @@ and struct_typ = {
   struct_annotations: item_annotation /** annotations */
 }
 /** statically determined length of an array type, if any */
-and static_length = option Int.t
+and static_length = option IntLit.t
 /** dynamically determined length of an array value, if any */
 and dynamic_length = option exp
 /** Types for sil (structured) expressions. */
@@ -674,9 +631,9 @@ let ikind_is_char: ikind => bool;
 let ikind_is_unsigned: ikind => bool;
 
 
-/** Convert an int64 into an Int.t given the kind:
+/** Convert an int64 into an IntLit.t given the kind:
     the int64 is interpreted as unsigned according to the kind */
-let int_of_int64_kind: int64 => ikind => Int.t;
+let int_of_int64_kind: int64 => ikind => IntLit.t;
 
 
 /** Comparision for ptr_kind */
@@ -1181,7 +1138,7 @@ let exp_minus_one: exp;
 
 
 /** Create integer constant */
-let exp_int: Int.t => exp;
+let exp_int: IntLit.t => exp;
 
 
 /** Create float constant */

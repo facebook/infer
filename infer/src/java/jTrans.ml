@@ -169,12 +169,12 @@ let locals_formals program tenv cn impl meth_kind =
 
 let get_constant (c : JBir.const) =
   match c with
-  | `Int i -> Sil.Cint (Sil.Int.of_int32 i)
-  | `ANull -> Sil.Cint Sil.Int.null
+  | `Int i -> Sil.Cint (IntLit.of_int32 i)
+  | `ANull -> Sil.Cint IntLit.null
   | `Class ot -> Sil.Cclass (Ident.string_to_name (JTransType.object_type_to_string ot))
   | `Double f -> Sil.Cfloat f
   | `Float f -> Sil.Cfloat f
-  | `Long i64 -> Sil.Cint (Sil.Int.of_int64 i64)
+  | `Long i64 -> Sil.Cint (IntLit.of_int64 i64)
   | `String jstr -> Sil.Cstr (JBasics.jstr_pp jstr)
 
 let get_binop binop =
@@ -653,14 +653,6 @@ let get_array_length context pc expr_list content_type =
   let array_size = Sil.Sizeof (array_type, array_len, Sil.Subtype.exact) in
   (instrs, array_size)
 
-module Int =
-struct
-  type t = int
-  let compare = (-)
-end
-
-module IntSet = Set.Make(Int)
-
 let detect_loop entry_pc impl =
   let code = (JBir.code impl) in
   let pc_bound = Array.length code in
@@ -1050,7 +1042,7 @@ let rec instruction context pc instr : translation =
           let sil_assume_in_bound =
             let sil_in_bound =
               let sil_positive_index =
-                Sil.BinOp (Sil.Ge, sil_index_expr, Sil.Const (Sil.Cint Sil.Int.zero))
+                Sil.BinOp (Sil.Ge, sil_index_expr, Sil.Const (Sil.Cint IntLit.zero))
               and sil_less_than_length =
                 Sil.BinOp (Sil.Lt, sil_index_expr, sil_length_expr) in
               Sil.BinOp (Sil.LAnd, sil_positive_index, sil_less_than_length) in
@@ -1063,7 +1055,7 @@ let rec instruction context pc instr : translation =
           let sil_assume_out_of_bound =
             let sil_out_of_bound =
               let sil_negative_index =
-                Sil.BinOp (Sil.Lt, sil_index_expr, Sil.Const (Sil.Cint Sil.Int.zero))
+                Sil.BinOp (Sil.Lt, sil_index_expr, Sil.Const (Sil.Cint IntLit.zero))
               and sil_greater_than_length =
                 Sil.BinOp (Sil.Gt, sil_index_expr, sil_length_expr) in
               Sil.BinOp (Sil.LOr, sil_negative_index, sil_greater_than_length) in

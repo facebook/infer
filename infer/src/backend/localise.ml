@@ -372,13 +372,13 @@ let deref_str_array_bound size_opt index_opt =
   let tags = Tags.create () in
   let size_str_opt = match size_opt with
     | Some n ->
-        let n_str = Sil.Int.to_string n in
+        let n_str = IntLit.to_string n in
         Tags.add tags Tags.array_size n_str;
         Some ("of size " ^ n_str)
     | None -> None in
   let index_str = match index_opt with
     | Some n ->
-        let n_str = Sil.Int.to_string n in
+        let n_str = IntLit.to_string n in
         Tags.add tags Tags.array_index n_str;
         "index " ^ n_str
     | None -> "an index" in
@@ -594,7 +594,7 @@ let desc_condition_always_true_false i cond_str_opt loc =
   let value = match cond_str_opt with
     | None -> ""
     | Some s -> s in
-  let tt_ff = if Sil.Int.iszero i then "false" else "true" in
+  let tt_ff = if IntLit.iszero i then "false" else "true" in
   Tags.add tags Tags.value value;
   let description = Format.sprintf
       "Boolean condition %s is always %s %s"

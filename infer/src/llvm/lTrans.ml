@@ -24,7 +24,7 @@ let ident_of_variable (var : LAst.variable) : Ident.t = (* TODO: use unique stam
 let trans_variable (var : LAst.variable) : Sil.exp = Sil.Var (ident_of_variable var)
 
 let trans_constant : LAst.constant -> Sil.exp = function
-  | Cint i -> Sil.Const (Sil.Cint (Sil.Int.of_int i))
+  | Cint i -> Sil.Const (Sil.Cint (IntLit.of_int i))
   | Cnull -> Sil.exp_null
 
 let trans_operand : LAst.operand -> Sil.exp = function
@@ -36,7 +36,7 @@ let rec trans_typ : LAst.typ -> Sil.typ = function
   | Tfloat -> Sil.Tfloat Sil.FFloat
   | Tptr tp -> Sil.Tptr (trans_typ tp, Sil.Pk_pointer)
   | Tvector (i, tp)
-  | Tarray (i, tp) -> Sil.Tarray (trans_typ tp, Some (Sil.Int.of_int i))
+  | Tarray (i, tp) -> Sil.Tarray (trans_typ tp, Some (IntLit.of_int i))
   | Tfunc _ -> Sil.Tfun false
   | Tlabel -> raise (ImproperTypeError "Tried to generate Sil type from LLVM label type.")
   | Tmetadata -> raise (ImproperTypeError "Tried to generate Sil type from LLVM metadata type.")

@@ -15,24 +15,24 @@ open! Utils
 module L = Logging
 module F = Format
 
-let (++) = Sil.Int.add
-let (--) = Sil.Int.sub
+let (++) = IntLit.add
+let (--) = IntLit.sub
 
 module IdMap = Map.Make (Ident) (** maps from identifiers *)
 
 (** Constraint solving module *)
 module Constraint : sig
   (** Collect constraints on [vars] from [pi], and return a satisfying instantiation *)
-  val solve_from_pure : Sil.atom list -> Ident.t list -> Sil.Int.t IdMap.t
+  val solve_from_pure : Sil.atom list -> Ident.t list -> IntLit.t IdMap.t
 end = struct
   (** flag for debug mode of the module *)
   let debug = false
 
   (** denote a range of values [bottom] <= val <= [top], except [excluded] *)
   type range =
-    { mutable bottom: Sil.Int.t option; (** lower bound *)
-      mutable excluded: Sil.Int.t list; (** individual values not in range *)
-      mutable top: Sil.Int.t option; (** upper bound *) }
+    { mutable bottom: IntLit.t option; (** lower bound *)
+      mutable excluded: IntLit.t list; (** individual values not in range *)
+      mutable top: IntLit.t option; (** upper bound *) }
 
   type eval = range IdMap.t (** evaluation for variables *)
 
@@ -44,8 +44,9 @@ end = struct
   let pp_range id fmt rng =
     let pp_opt fmt = function
       | None -> F.fprintf fmt "_"
-      | Some n -> Sil.Int.pp fmt n in
-    F.fprintf fmt "%a <= %a <= %a [%a]" pp_opt rng.bottom (Ident.pp pe_text) id pp_opt rng.top (pp_comma_seq Sil.Int.pp) rng.excluded
+      | Some n -> IntLit.pp fmt n in
+    F.fprintf fmt "%a <= %a <= %a [%a]"
+      pp_opt rng.bottom (Ident.pp pe_text) id pp_opt rng.top (pp_comma_seq IntLit.pp) rng.excluded
 
   (** pretty print an evaluation *)
   let pp_eval fmt ev =
@@ -64,22 +65,22 @@ end = struct
   let gt_bottom i r =
     match r.bottom with
     | None -> true
-    | Some j -> Sil.Int.gt i j
+    | Some j -> IntLit.gt i j
 
   let geq_bottom i r =
     match r.bottom with
     | None -> true
-    | Some j -> Sil.Int.geq i j
+    | Some j -> IntLit.geq i j
 
   let lt_top i r =
     match r.top with
     | None -> true
-    | Some j -> Sil.Int.lt i j
+    | Some j -> IntLit.lt i j
 
   let leq_top i r =
     match r.top with
     | None -> true
-    | Some j -> Sil.Int.leq i j
+    | Some j -> IntLit.leq i j
 
   (** normalize [r]: the excluded elements must be strictly between bottom and top *)
   let normalize r =
@@ -87,17 +88,17 @@ end = struct
     let rec normalize_bottom () = match r.bottom with
       | None -> ()
       | Some i ->
-          if IList.mem Sil.Int.eq i r.excluded then begin
-            r.excluded <- IList.filter (Sil.Int.neq i) r.excluded;
-            r.bottom <- Some (i ++ Sil.Int.one);
+          if IList.mem IntLit.eq i r.excluded then begin
+            r.excluded <- IList.filter (IntLit.neq i) r.excluded;
+            r.bottom <- Some (i ++ IntLit.one);
             normalize_bottom ()
           end in
     let rec normalize_top () = match r.top with
       | None -> ()
       | Some i ->
-          if IList.mem Sil.Int.eq i r.excluded then begin
-            r.excluded <- IList.filter (Sil.Int.neq i) r.excluded;
-            r.top <- Some (i -- Sil.Int.one);
+          if IList.mem IntLit.eq i r.excluded then begin
+            r.excluded <- IList.filter (IntLit.neq i) r.excluded;
+            r.top <- Some (i -- IntLit.one);
             normalize_top ()
           end in
     normalize_bottom ();
@@ -112,7 +113,7 @@ end = struct
 
   (** exclude one element from the range *)
   let add_excluded r id i =
-    if geq_bottom i r && leq_top i r && not (IList.mem Sil.Int.eq i r.excluded)
+    if geq_bottom i r && leq_top i r && not (IList.mem IntLit.eq i r.excluded)
     then begin
       r.excluded <- i :: r.excluded;
       normalize r;
@@ -143,42 +144,49 @@ end = struct
     let found = ref None in
     let num_iter = IList.length rng.excluded in
     let try_candidate candidate =
-      if geq_bottom candidate rng && leq_top candidate rng && not (IList.mem Sil.Int.eq candidate rng.excluded)
-      then (found := Some candidate; rng.bottom <- Some candidate; rng.top <- Some candidate; rng.excluded <- []) in
+      if geq_bottom candidate rng
+      && leq_top candidate rng
+      && not (IList.mem IntLit.eq candidate rng.excluded)
+      then (
+        found := Some candidate;
+        rng.bottom <- Some candidate;
+        rng.top <- Some candidate;
+        rng.excluded <- []
+      ) in
     let search_up () =
-      let base = match rng.bottom with None -> Sil.Int.zero | Some n -> n in
+      let base = match rng.bottom with None -> IntLit.zero | Some n -> n in
       for i = 0 to num_iter do
         if !found = None then
-          let candidate = Sil.Int.add base (Sil.Int.of_int i) in
+          let candidate = IntLit.add base (IntLit.of_int i) in
           try_candidate candidate
       done in
     let search_down () =
-      let base = match rng.top with None -> Sil.Int.zero | Some n -> n in
+      let base = match rng.top with None -> IntLit.zero | Some n -> n in
       for i = 0 to num_iter do
         if !found = None then
-          let candidate = Sil.Int.sub base (Sil.Int.of_int i) in
+          let candidate = IntLit.sub base (IntLit.of_int i) in
           try_candidate candidate
       done in
     search_up ();
     if !found = None then search_down ();
     if !found = None then
       (L.err "Constraint Error: empty range %a@." (pp_range id) rng;
-       rng.top <- Some Sil.Int.zero;
-       rng.bottom <- Some Sil.Int.zero;
+       rng.top <- Some IntLit.zero;
+       rng.bottom <- Some IntLit.zero;
        rng.excluded <- [])
 
   (** return the solution if the id is solved (has unique solution) *)
   let solved ev id =
     let rng = IdMap.find id ev in
     match rng.bottom, rng.top with
-    | Some n1, Some n2 when Sil.Int.eq n1 n2 -> Some n1
+    | Some n1, Some n2 when IntLit.eq n1 n2 -> Some n1
     | _ -> None
 
   let rec pi_iter do_le do_lt do_neq pi =
     let do_atom a = match a with
-      | Sil.Aeq (Sil.BinOp (Sil.Le, e1, e2), Sil.Const (Sil.Cint i)) when Sil.Int.isone i ->
+      | Sil.Aeq (Sil.BinOp (Sil.Le, e1, e2), Sil.Const (Sil.Cint i)) when IntLit.isone i ->
           do_le e1 e2
-      | Sil.Aeq (Sil.BinOp (Sil.Lt, e1, e2), Sil.Const (Sil.Cint i)) when Sil.Int.isone i ->
+      | Sil.Aeq (Sil.BinOp (Sil.Lt, e1, e2), Sil.Const (Sil.Cint i)) when IntLit.isone i ->
           do_lt e1 e2
       | Sil.Aeq _ -> ()
       | Sil.Aneq (e1, e2) ->
@@ -203,10 +211,10 @@ end = struct
       | Some _, Some n -> add_bottom rng id n
       | _ -> () in
     let (+++) n1_op n2_op = match n1_op, n2_op with
-      | Some n1, Some n2 -> Some (Sil.Int.add n1 n2)
+      | Some n1, Some n2 -> Some (IntLit.add n1 n2)
       | _ -> None in
     let (---) n1_op n2_op = match n1_op, n2_op with
-      | Some n1, Some n2 -> Some (Sil.Int.sub n1 n2)
+      | Some n1, Some n2 -> Some (IntLit.sub n1 n2)
       | _ -> None in
     let do_le e1 e2 = match e1, e2 with
       | Sil.Var id, Sil.Const (Sil.Cint n) ->
@@ -226,12 +234,12 @@ end = struct
     let do_lt e1 e2 = match e1, e2 with
       | Sil.Const (Sil.Cint n), Sil.Var id ->
           let rng = IdMap.find id ev in
-          add_bottom rng id (n ++ Sil.Int.one)
+          add_bottom rng id (n ++ IntLit.one)
       | Sil.Const (Sil.Cint n), Sil.BinOp (Sil.PlusA, Sil.Var id1, Sil.Var id2) ->
           let rng1 = IdMap.find id1 ev in
           let rng2 = IdMap.find id2 ev in
-          update_bottom rng1 id1 (Some (n ++ Sil.Int.one) --- rng2.top);
-          update_bottom rng2 id2 (Some (n ++ Sil.Int.one) --- rng1.top)
+          update_bottom rng1 id1 (Some (n ++ IntLit.one) --- rng2.top);
+          update_bottom rng2 id2 (Some (n ++ IntLit.one) --- rng1.top)
       | _ -> if debug then assert false in
     let rec do_neq e1 e2 = match e1, e2 with
       | Sil.Var id, Sil.Const (Sil.Cint n)
@@ -511,13 +519,13 @@ let gen_init_vars code solutions idmap =
     if not alloc then
       let const = match typ with
         | Sil.Tint _ | Sil.Tvoid ->
-            get_const id (Sil.Cint Sil.Int.zero)
+            get_const id (Sil.Cint IntLit.zero)
         | Sil.Tfloat _ ->
             Sil.Cfloat 0.0
         | Sil.Tptr _ ->
-            get_const id (Sil.Cint Sil.Int.zero)
+            get_const id (Sil.Cint IntLit.zero)
         | Sil.Tfun _ ->
-            Sil.Cint Sil.Int.zero
+            Sil.Cint IntLit.zero
         | typ ->
             L.err "do_vinfo type undefined: %a@." (Sil.pp_typ_full pe) typ;
             assert false in

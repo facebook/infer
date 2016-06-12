@@ -301,7 +301,7 @@ and array_case_analysis_index pname tenv orig_prop
     IList.exists (fun (i, _) -> Prover.check_equal Prop.prop_emp index i) array_cont in
   let array_is_full =
     match array_len with
-    | Sil.Const (Sil.Cint n') -> Sil.Int.geq (Sil.Int.of_int (IList.length array_cont)) n'
+    | Sil.Const (Sil.Cint n') -> IntLit.geq (IntLit.of_int (IList.length array_cont)) n'
     | _ -> false in
 
   if index_in_array then

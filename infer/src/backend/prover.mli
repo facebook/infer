@@ -59,7 +59,7 @@ val is_root : Prop.normal Prop.t -> exp -> exp -> offset list option
 val expand_hpred_pointer : bool -> Sil.hpred -> bool * bool * Sil.hpred
 
 (** Get upper and lower bounds of an expression, if any *)
-val get_bounds : Prop.normal Prop.t -> Sil.exp -> Sil.Int.t option * Sil.Int.t option
+val get_bounds : Prop.normal Prop.t -> Sil.exp -> IntLit.t option * IntLit.t option
 
 (** {2 Abduction prover} *)
 
@@ -91,7 +91,7 @@ val find_minimum_pure_cover : (Sil.atom list * 'a) list -> (Sil.atom list * 'a) 
 (** {2 Compute various lower or upper bounds} *)
 
 (** Computer an upper bound of an expression *)
-val compute_upper_bound_of_exp : Prop.normal Prop.t -> Sil.exp -> Sil.Int.t option
+val compute_upper_bound_of_exp : Prop.normal Prop.t -> Sil.exp -> IntLit.t option
 
 (** {2 Subtype checking} *)
 

@@ -492,7 +492,7 @@ let execute___objc_counter_update
    removed from the list of args. *)
 let get_suppress_npe_flag args =
   match args with
-  | (Sil.Const (Sil.Cint i), Sil.Tint Sil.IBool):: args' when Sil.Int.isone i ->
+  | (Sil.Const (Sil.Cint i), Sil.Tint Sil.IBool):: args' when IntLit.isone i ->
       false, args' (* this is a CFRelease/CFRetain *)
   | _ -> true, args
 
@@ -504,7 +504,7 @@ let execute___objc_retain_impl
   | [(lexp, _)] ->
       let prop = return_result lexp prop_ ret_ids in
       execute___objc_counter_update
-        ~mask_errors (Sil.PlusA) (Sil.Int.one)
+        ~mask_errors (Sil.PlusA) (IntLit.one)
         { builtin_args with Builtin.prop_ = prop; args = args'; }
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -524,7 +524,7 @@ let execute___objc_release_impl
   : Builtin.ret_typ =
   let mask_errors, args' = get_suppress_npe_flag args in
   execute___objc_counter_update
-    ~mask_errors Sil.MinusA Sil.Int.one
+    ~mask_errors Sil.MinusA IntLit.one
     { builtin_args with Builtin.args = args'; }
 
 let execute___objc_release builtin_args
@@ -906,7 +906,7 @@ let execute___split_get_nth { Builtin.pdesc; prop_; path; ret_ids; args; }
       let n_lexp3, prop = check_arith_norm_exp pname lexp3 prop___ in
       (match n_lexp1, n_lexp2, n_lexp3 with
        | Sil.Const (Sil.Cstr str1), Sil.Const (Sil.Cstr str2), Sil.Const (Sil.Cint n_sil) ->
-           (let n = Sil.Int.to_int n_sil in
+           (let n = IntLit.to_int n_sil in
             try
               let parts = Str.split (Str.regexp_string str2) str1 in
               let n_part = IList.nth parts n in

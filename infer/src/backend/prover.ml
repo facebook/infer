@@ -20,10 +20,10 @@ let decrease_indent_when_exception thunk =
   with exn when SymOp.exn_not_failure exn -> (L.d_decrease_indent 1; raise exn)
 
 let compute_max_from_nonempty_int_list l =
-  IList.hd (IList.rev (IList.sort Sil.Int.compare_value l))
+  IList.hd (IList.rev (IList.sort IntLit.compare_value l))
 
 let compute_min_from_nonempty_int_list l =
-  IList.hd (IList.sort Sil.Int.compare_value l)
+  IList.hd (IList.sort IntLit.compare_value l)
 
 let exp_pair_compare (e1, e2) (f1, f2) =
   let c1 = Sil.exp_compare e1 f1 in
@@ -47,8 +47,8 @@ let rec is_java_class = function
 
 (** {2 Ordinary Theorem Proving} *)
 
-let (++) = Sil.Int.add
-let (--) = Sil.Int.sub
+let (++) = IntLit.add
+let (--) = IntLit.sub
 
 (** Reasoning about constraints of the form x-y <= n *)
 
@@ -57,31 +57,31 @@ module DiffConstr : sig
   type t
   val to_leq : t -> Sil.exp * Sil.exp
   val to_lt : t -> Sil.exp * Sil.exp
-  val to_triple : t -> Sil.exp * Sil.exp * Sil.Int.t
+  val to_triple : t -> Sil.exp * Sil.exp * IntLit.t
   val from_leq : t list -> Sil.exp * Sil.exp -> t list
   val from_lt : t list -> Sil.exp * Sil.exp -> t list
   val saturate : t list -> bool * t list
 
 end = struct
 
-  type t = Sil.exp * Sil.exp * Sil.Int.t
+  type t = Sil.exp * Sil.exp * IntLit.t
 
   let compare (e1, e2, n) (f1, f2, m) =
     let c1 = exp_pair_compare (e1, e2) (f1, f2) in
-    if c1 <> 0 then c1 else Sil.Int.compare_value n m
+    if c1 <> 0 then c1 else IntLit.compare_value n m
   let equal entry1 entry2 = compare entry1 entry2 = 0
 
   let to_leq (e1, e2, n) =
     Sil.BinOp(Sil.MinusA, e1, e2), Sil.exp_int n
   let to_lt (e1, e2, n) =
-    Sil.exp_int (Sil.Int.zero -- n -- Sil.Int.one), Sil.BinOp(Sil.MinusA, e2, e1)
+    Sil.exp_int (IntLit.zero -- n -- IntLit.one), Sil.BinOp(Sil.MinusA, e2, e1)
   let to_triple entry = entry
 
   let from_leq acc (e1, e2) =
     match e1, e2 with
     | Sil.BinOp(Sil.MinusA, (Sil.Var id11 as e11), (Sil.Var id12 as e12)), Sil.Const (Sil.Cint n)
       when not (Ident.equal id11 id12) ->
-        (match Sil.Int.to_signed n with
+        (match IntLit.to_signed n with
          | None -> acc (* ignore: constraint algorithm only terminates on signed integers *)
          | Some n' ->
              (e11, e12, n') :: acc)
@@ -90,10 +90,10 @@ end = struct
     match e1, e2 with
     | Sil.Const (Sil.Cint n), Sil.BinOp(Sil.MinusA, (Sil.Var id21 as e21), (Sil.Var id22 as e22))
       when not (Ident.equal id21 id22) ->
-        (match Sil.Int.to_signed n with
+        (match IntLit.to_signed n with
          | None -> acc (* ignore: constraint algorithm only terminates on signed integers *)
          | Some n' ->
-             let m = Sil.Int.zero -- n' -- Sil.Int.one in
+             let m = IntLit.zero -- n' -- IntLit.one in
              (e22, e21, m) :: acc)
     | _ -> acc
 
@@ -102,7 +102,7 @@ end = struct
     | (f1, f2, m):: rest ->
         let equal_e2_f1 = Sil.exp_equal e2 f1 in
         let equal_e1_f2 = Sil.exp_equal e1 f2 in
-        if equal_e2_f1 && equal_e1_f2 && Sil.Int.lt (n ++ m) Sil.Int.zero then
+        if equal_e2_f1 && equal_e1_f2 && IntLit.lt (n ++ m) IntLit.zero then
           true, [] (* constraints are inconsistent *)
         else if equal_e2_f1 && equal_e1_f2 then
           generate constr acc rest
@@ -133,7 +133,7 @@ end = struct
         let e1, e2, n = constr in
         let f1, f2, m = constr' in
         let c1 = exp_pair_compare (e1, e2) (f1, f2) in
-        if c1 = 0 && Sil.Int.lt n m then
+        if c1 = 0 && IntLit.lt n m then
           combine acc_todos acc_seen constraints_new rest'
         else if c1 = 0 then
           combine acc_todos acc_seen rest constraints_old
@@ -212,11 +212,11 @@ module Inequalities : sig
   (** Check [t |- e1<e2]. Result [false] means "don't know". *)
   val check_lt : t -> Sil.exp -> Sil.exp -> bool
 
-  (** Find a Sil.Int.t n such that [t |- e<=n] if possible. *)
-  val compute_upper_bound : t -> Sil.exp -> Sil.Int.t option
+  (** Find a IntLit.t n such that [t |- e<=n] if possible. *)
+  val compute_upper_bound : t -> Sil.exp -> IntLit.t option
 
-  (** Find a Sil.Int.t n such that [t |- n<e] if possible. *)
-  val compute_lower_bound : t -> Sil.exp -> Sil.Int.t option
+  (** Find a IntLit.t n such that [t |- n<e] if possible. *)
+  val compute_lower_bound : t -> Sil.exp -> IntLit.t option
 
   (** Return [true] if a simple inconsistency is detected *)
   val inconsistent : t -> bool
@@ -265,7 +265,7 @@ end = struct
     let have_same_key leq1 leq2 =
       match leq1, leq2 with
       | (e1, Sil.Const (Sil.Cint n1)), (e2, Sil.Const (Sil.Cint n2)) ->
-          Sil.exp_equal e1 e2 && Sil.Int.leq n1 n2
+          Sil.exp_equal e1 e2 && IntLit.leq n1 n2
       | _, _ -> false in
     remove_redundancy have_same_key [] leqs_sorted
   let lts_sort_then_remove_redundancy lts =
@@ -273,7 +273,7 @@ end = struct
     let have_same_key lt1 lt2 =
       match lt1, lt2 with
       | (Sil.Const (Sil.Cint n1), e1), (Sil.Const (Sil.Cint n2), e2) ->
-          Sil.exp_equal e1 e2 && Sil.Int.geq n1 n2
+          Sil.exp_equal e1 e2 && IntLit.geq n1 n2
       | _, _ -> false in
     remove_redundancy have_same_key [] lts_sorted
 
@@ -289,12 +289,12 @@ end = struct
       let umap_add umap e new_upper =
         try
           let old_upper = Sil.ExpMap.find e umap in
-          if Sil.Int.leq old_upper new_upper then umap else Sil.ExpMap.add e new_upper umap
+          if IntLit.leq old_upper new_upper then umap else Sil.ExpMap.add e new_upper umap
         with Not_found -> Sil.ExpMap.add e new_upper umap in
       let lmap_add lmap e new_lower =
         try
           let old_lower = Sil.ExpMap.find e lmap in
-          if Sil.Int.geq old_lower new_lower then lmap else Sil.ExpMap.add e new_lower lmap
+          if IntLit.geq old_lower new_lower then lmap else Sil.ExpMap.add e new_lower lmap
         with Not_found -> Sil.ExpMap.add e new_lower lmap in
       let rec umap_create_from_leqs umap = function
         | [] -> umap
@@ -325,7 +325,7 @@ end = struct
             try
               let e1, e2, n = DiffConstr.to_triple constr (* e2 - e1 > -n-1 *) in
               let lower1 = Sil.ExpMap.find e1 lmap in
-              let new_lower2 = lower1 -- n -- Sil.Int.one in
+              let new_lower2 = lower1 -- n -- IntLit.one in
               let new_lmap = lmap_add lmap e2 new_lower2 in
               lmap_improve_by_difference_constraints new_lmap constrs_rest
             with Not_found ->
@@ -357,9 +357,9 @@ end = struct
     let process_atom = function
       | Sil.Aneq (e1, e2) -> (* != *)
           neqs := (e1, e2) :: !neqs
-      | Sil.Aeq (Sil.BinOp (Sil.Le, e1, e2), Sil.Const (Sil.Cint i)) when Sil.Int.isone i -> (* <= *)
+      | Sil.Aeq (Sil.BinOp (Sil.Le, e1, e2), Sil.Const (Sil.Cint i)) when IntLit.isone i -> (* <= *)
           leqs := (e1, e2) :: !leqs
-      | Sil.Aeq (Sil.BinOp (Sil.Lt, e1, e2), Sil.Const (Sil.Cint i)) when Sil.Int.isone i -> (* < *)
+      | Sil.Aeq (Sil.BinOp (Sil.Lt, e1, e2), Sil.Const (Sil.Cint i)) when IntLit.isone i -> (* < *)
           lts := (e1, e2) :: !lts
       | Sil.Aeq _ -> () in
     IList.iter process_atom pi;
@@ -414,18 +414,19 @@ end = struct
   let check_le { leqs = leqs; lts = lts; neqs = _ } e1 e2 =
     (* L.d_str "check_le "; Sil.d_exp e1; L.d_str " "; Sil.d_exp e2; L.d_ln (); *)
     match e1, e2 with
-    | Sil.Const (Sil.Cint n1), Sil.Const (Sil.Cint n2) -> Sil.Int.leq n1 n2
+    | Sil.Const (Sil.Cint n1), Sil.Const (Sil.Cint n2) -> IntLit.leq n1 n2
     | Sil.BinOp (Sil.MinusA, Sil.Sizeof (t1, None, _), Sil.Sizeof (t2, None, _)),
       Sil.Const(Sil.Cint n2)
-      when Sil.Int.isminusone n2 && type_size_comparable t1 t2 -> (* [ sizeof(t1) - sizeof(t2) <= -1 ] *)
+      when IntLit.isminusone n2 && type_size_comparable t1 t2 ->
+        (* [ sizeof(t1) - sizeof(t2) <= -1 ] *)
         check_type_size_lt t1 t2
     | e, Sil.Const (Sil.Cint n) -> (* [e <= n' <= n |- e <= n] *)
         IList.exists (function
-            | e', Sil.Const (Sil.Cint n') -> Sil.exp_equal e e' && Sil.Int.leq n' n
+            | e', Sil.Const (Sil.Cint n') -> Sil.exp_equal e e' && IntLit.leq n' n
             | _, _ -> false) leqs
     | Sil.Const (Sil.Cint n), e -> (* [ n-1 <= n' < e |- n <= e] *)
         IList.exists (function
-            | Sil.Const (Sil.Cint n'), e' -> Sil.exp_equal e e' && Sil.Int.leq (n -- Sil.Int.one) n'
+            | Sil.Const (Sil.Cint n'), e' -> Sil.exp_equal e e' && IntLit.leq (n -- IntLit.one) n'
             | _, _ -> false) lts
     | _ -> Sil.exp_equal e1 e2
 
@@ -433,14 +434,14 @@ end = struct
   let check_lt { leqs = leqs; lts = lts; neqs = _ } e1 e2 =
     (* L.d_str "check_lt "; Sil.d_exp e1; L.d_str " "; Sil.d_exp e2; L.d_ln (); *)
     match e1, e2 with
-    | Sil.Const (Sil.Cint n1), Sil.Const (Sil.Cint n2) -> Sil.Int.lt n1 n2
+    | Sil.Const (Sil.Cint n1), Sil.Const (Sil.Cint n2) -> IntLit.lt n1 n2
     | Sil.Const (Sil.Cint n), e -> (* [n <= n' < e  |- n < e] *)
         IList.exists (function
-            | Sil.Const (Sil.Cint n'), e' -> Sil.exp_equal e e' && Sil.Int.leq n n'
+            | Sil.Const (Sil.Cint n'), e' -> Sil.exp_equal e e' && IntLit.leq n n'
             | _, _ -> false) lts
     | e, Sil.Const (Sil.Cint n) -> (* [e <= n' <= n-1 |- e < n] *)
         IList.exists (function
-            | e', Sil.Const (Sil.Cint n') -> Sil.exp_equal e e' && Sil.Int.leq n' (n -- Sil.Int.one)
+            | e', Sil.Const (Sil.Cint n') -> Sil.exp_equal e e' && IntLit.leq n' (n -- IntLit.one)
             | _, _ -> false) leqs
     | _ -> false
 
@@ -449,7 +450,7 @@ end = struct
     let e1, e2 = if Sil.exp_compare _e1 _e2 <= 0 then _e1, _e2 else _e2, _e1 in
     IList.exists (exp_pair_eq (e1, e2)) ineq.neqs || check_lt ineq e1 e2 || check_lt ineq e2 e1
 
-  (** Find a Sil.Int.t n such that [t |- e<=n] if possible. *)
+  (** Find a IntLit.t n such that [t |- e<=n] if possible. *)
   let compute_upper_bound { leqs = leqs; lts = _; neqs = _ } e1 =
     match e1 with
     | Sil.Const (Sil.Cint n1) -> Some n1
@@ -465,11 +466,11 @@ end = struct
         if upper_list == [] then None
         else Some (compute_min_from_nonempty_int_list upper_list)
 
-  (** Find a Sil.Int.t n such that [t |- n < e] if possible. *)
+  (** Find a IntLit.t n such that [t |- n < e] if possible. *)
   let compute_lower_bound { leqs = _; lts = lts; neqs = _ } e1 =
     match e1 with
-    | Sil.Const (Sil.Cint n1) -> Some (n1 -- Sil.Int.one)
-    | Sil.Sizeof _ -> Some Sil.Int.zero
+    | Sil.Const (Sil.Cint n1) -> Some (n1 -- IntLit.one)
+    | Sil.Sizeof _ -> Some IntLit.zero
     | _ ->
         let e_lower_list =
           IList.filter (function
@@ -525,11 +526,11 @@ let check_equal prop e1 e2 =
     match n_e1, n_e2 with
     | Sil.BinOp (Sil.PlusA, e1, Sil.Const (Sil.Cint d)), e2
     | e2, Sil.BinOp (Sil.PlusA, e1, Sil.Const (Sil.Cint d)) ->
-        if Sil.exp_equal e1 e2 then Sil.Int.iszero d
+        if Sil.exp_equal e1 e2 then IntLit.iszero d
         else false
-    | Sil.Const c1, Sil.Lindex(Sil.Const c2, Sil.Const (Sil.Cint i)) when Sil.Int.iszero i ->
+    | Sil.Const c1, Sil.Lindex(Sil.Const c2, Sil.Const (Sil.Cint i)) when IntLit.iszero i ->
         Sil.const_equal c1 c2
-    | Sil.Lindex(Sil.Const c1, Sil.Const (Sil.Cint i)), Sil.Const c2 when Sil.Int.iszero i ->
+    | Sil.Lindex(Sil.Const c1, Sil.Const (Sil.Cint i)), Sil.Const c2 when IntLit.iszero i ->
         Sil.const_equal c1 c2
     | _, _ -> false in
   let check_equal_pi () =
@@ -564,11 +565,11 @@ let get_bounds prop _e =
   let e_norm = Prop.exp_normalize_prop prop _e in
   let e_root, off = match e_norm with
     | Sil.BinOp (Sil.PlusA, e, Sil.Const (Sil.Cint n1)) ->
-        e, Sil.Int.neg n1
+        e, IntLit.neg n1
     | Sil.BinOp (Sil.MinusA, e, Sil.Const (Sil.Cint n1)) ->
         e, n1
     | _ ->
-        e_norm, Sil.Int.zero in
+        e_norm, IntLit.zero in
   let ineq = Inequalities.from_prop prop in
   let upper_opt = Inequalities.compute_upper_bound ineq e_root in
   let lower_opt = Inequalities.compute_lower_bound ineq e_root in
@@ -587,18 +588,18 @@ let check_disequal prop e1 e2 =
     | Sil.Const c1, Sil.Const c2 ->
         (Sil.const_kind_equal c1 c2) && not (Sil.const_equal c1 c2)
     | Sil.Const c1, Sil.Lindex(Sil.Const c2, Sil.Const (Sil.Cint d)) ->
-        if Sil.Int.iszero d
+        if IntLit.iszero d
         then not (Sil.const_equal c1 c2) (* offset=0 is no offset *)
         else Sil.const_equal c1 c2 (* same base, different offsets *)
     | Sil.BinOp (Sil.PlusA, e1, Sil.Const (Sil.Cint d1)), Sil.BinOp (Sil.PlusA, e2, Sil.Const (Sil.Cint d2)) ->
-        if Sil.exp_equal e1 e2 then Sil.Int.neq d1 d2
+        if Sil.exp_equal e1 e2 then IntLit.neq d1 d2
         else false
     | Sil.BinOp (Sil.PlusA, e1, Sil.Const (Sil.Cint d)), e2
     | e2, Sil.BinOp (Sil.PlusA, e1, Sil.Const (Sil.Cint d)) ->
-        if Sil.exp_equal e1 e2 then not (Sil.Int.iszero d)
+        if Sil.exp_equal e1 e2 then not (IntLit.iszero d)
         else false
     | Sil.Lindex(Sil.Const c1, Sil.Const (Sil.Cint d)), Sil.Const c2 ->
-        if Sil.Int.iszero d then not (Sil.const_equal c1 c2) else Sil.const_equal c1 c2
+        if IntLit.iszero d then not (Sil.const_equal c1 c2) else Sil.const_equal c1 c2
     | Sil.Lindex(Sil.Const c1, Sil.Const d1), Sil.Lindex (Sil.Const c2, Sil.Const d2) ->
         Sil.const_equal c1 c2 && not (Sil.const_equal d1 d2)
     | _, _ -> false in
@@ -677,14 +678,14 @@ let check_le_normalized prop e1 e2 =
         then Sil.exp_zero, Sil.exp_zero, n
         else f1, f2, n
     | _ ->
-        e1, e2, Sil.Int.zero in
+        e1, e2, IntLit.zero in
   let ineq = Inequalities.from_prop prop in
   let upper_lower_check () =
     let upperL_opt = Inequalities.compute_upper_bound ineq eL in
     let lowerR_opt = Inequalities.compute_lower_bound ineq eR in
     match upperL_opt, lowerR_opt with
     | None, _ | _, None -> false
-    | Some upper1, Some lower2 -> Sil.Int.leq upper1 (lower2 ++ Sil.Int.one ++ off) in
+    | Some upper1, Some lower2 -> IntLit.leq upper1 (lower2 ++ IntLit.one ++ off) in
   (upper_lower_check ())
   || (Inequalities.check_le ineq e1 e2)
   || (check_equal prop e1 e2)
@@ -698,7 +699,7 @@ let check_lt_normalized prop e1 e2 =
     let lower2_opt = Inequalities.compute_lower_bound ineq e2 in
     match upper1_opt, lower2_opt with
     | None, _ | _, None -> false
-    | Some upper1, Some lower2 -> Sil.Int.leq upper1 lower2 in
+    | Some upper1, Some lower2 -> IntLit.leq upper1 lower2 in
   (upper_lower_check ()) || (Inequalities.check_lt ineq e1 e2)
 
 (** Given an atom and a proposition returns a unique identifier.
@@ -730,9 +731,9 @@ let check_atom prop a0 =
   end;
   match a with
   | Sil.Aeq (Sil.BinOp (Sil.Le, e1, e2), Sil.Const (Sil.Cint i))
-    when Sil.Int.isone i -> check_le_normalized prop e1 e2
+    when IntLit.isone i -> check_le_normalized prop e1 e2
   | Sil.Aeq (Sil.BinOp (Sil.Lt, e1, e2), Sil.Const (Sil.Cint i))
-    when Sil.Int.isone i -> check_lt_normalized prop e1 e2
+    when IntLit.isone i -> check_lt_normalized prop e1 e2
   | Sil.Aeq (e1, e2) -> check_equal prop e1 e2
   | Sil.Aneq (e1, e2) -> check_disequal prop e1 e2
 
@@ -776,7 +777,7 @@ let check_inconsistency_two_hpreds prop =
         if Sil.exp_equal iF e || Sil.exp_equal iB e then true
         else f e (hpred:: sigma_seen) sigma_rest
     | Sil.Hlseg (Sil.Lseg_PE, _, e1, Sil.Const (Sil.Cint i), _) as hpred :: sigma_rest
-      when Sil.Int.iszero i ->
+      when IntLit.iszero i ->
         if Sil.exp_equal e1 e then true
         else f e (hpred:: sigma_seen) sigma_rest
     | Sil.Hlseg (Sil.Lseg_PE, _, e1, e2, _) as hpred :: sigma_rest ->
@@ -789,7 +790,7 @@ let check_inconsistency_two_hpreds prop =
           in f e_new [] sigma_new
         else f e (hpred:: sigma_seen) sigma_rest
     | Sil.Hdllseg (Sil.Lseg_PE, _, e1, _, Sil.Const (Sil.Cint i), _, _) as hpred :: sigma_rest
-      when Sil.Int.iszero i ->
+      when IntLit.iszero i ->
         if Sil.exp_equal e1 e then true
         else f e (hpred:: sigma_seen) sigma_rest
     | Sil.Hdllseg (Sil.Lseg_PE, _, e1, _, e3, _, _) as hpred :: sigma_rest ->
@@ -1947,10 +1948,10 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
          | _ -> None)
     | _ -> None in
   let mk_constant_string_hpred s = (* create an hpred from a constant string *)
-    let len = Sil.Int.of_int (1 + String.length s) in
+    let len = IntLit.of_int (1 + String.length s) in
     let root = Sil.Const (Sil.Cstr s) in
     let sexp =
-      let index = Sil.exp_int (Sil.Int.of_int (String.length s)) in
+      let index = Sil.exp_int (IntLit.of_int (String.length s)) in
       match !Config.curr_language with
       | Config.Clang ->
           Sil.Earray

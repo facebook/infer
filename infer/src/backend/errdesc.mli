@@ -90,7 +90,7 @@ val explain_condition_is_assignment : Location.t -> Localise.error_desc
 
 (** explain a condition which is always true or false *)
 val explain_condition_always_true_false :
-  Sil.Int.t -> Sil.exp -> Cfg.Node.t -> Location.t -> Localise.error_desc
+  IntLit.t -> Sil.exp -> Cfg.Node.t -> Location.t -> Localise.error_desc
 
 (** explain the escape of a stack variable address from its scope *)
 val explain_stack_variable_address_escape :

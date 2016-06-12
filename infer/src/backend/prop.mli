@@ -151,10 +151,10 @@ val mk_inequality : Sil.exp -> Sil.atom
 val atom_is_inequality : Sil.atom -> bool
 
 (** If the atom is [e<=n] return [e,n] *)
-val atom_exp_le_const : Sil.atom -> (Sil.exp * Sil.Int.t) option
+val atom_exp_le_const : Sil.atom -> (Sil.exp * IntLit.t) option
 
 (** If the atom is [n<e] return [n,e] *)
-val atom_const_lt_exp : Sil.atom -> (Sil.Int.t * Sil.exp) option
+val atom_const_lt_exp : Sil.atom -> (IntLit.t * Sil.exp) option
 
 (** Negate an atom *)
 val atom_negate : Sil.atom -> Sil.atom

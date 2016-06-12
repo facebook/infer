@@ -85,8 +85,8 @@ let rec inhabit_typ typ cfg env =
   with Not_found ->
     let inhabit_internal typ env = match typ with
       | Sil.Tptr (Sil.Tarray (inner_typ, Some _), Sil.Pk_pointer) ->
-          let len = Sil.Const (Sil.Cint (Sil.Int.one)) in
-          let arr_typ = Sil.Tarray (inner_typ, Some Sil.Int.one) in
+          let len = Sil.Const (Sil.Cint (IntLit.one)) in
+          let arr_typ = Sil.Tarray (inner_typ, Some IntLit.one) in
           inhabit_alloc arr_typ (Some len) typ ModelBuiltins.__new_array env
       | Sil.Tptr (typ, Sil.Pk_pointer) as ptr_to_typ ->
           (* TODO (t4575417): this case does not work correctly for enums, but they are currently
@@ -130,7 +130,7 @@ let rec inhabit_typ typ cfg env =
           let fresh_id = Ident.create_fresh Ident.knormal in
           let read_from_local_instr = Sil.Letderef (fresh_id, fresh_local_exp, ptr_to_typ, env'.pc) in
           (Sil.Var fresh_id, env_add_instr read_from_local_instr env')
-      | Sil.Tint (_) -> (Sil.Const (Sil.Cint (Sil.Int.zero)), env)
+      | Sil.Tint (_) -> (Sil.Const (Sil.Cint (IntLit.zero)), env)
       | Sil.Tfloat (_) -> (Sil.Const (Sil.Cfloat 0.0), env)
       | typ ->
           L.err "Couldn't inhabit typ: %a@." (Sil.pp_typ pe_text) typ;

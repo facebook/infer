@@ -63,7 +63,7 @@ let pointer_attribute_of_objc_attribute attr_info =
 
 let rec build_array_type translate_decl tenv type_ptr n_opt =
   let array_type = type_ptr_to_sil_type translate_decl tenv type_ptr in
-  let len = Option.map (fun n -> Sil.Int.of_int64 (Int64.of_int n)) n_opt in
+  let len = Option.map (fun n -> IntLit.of_int64 (Int64.of_int n)) n_opt in
   Sil.Tarray (array_type, len)
 
 and sil_type_of_attr_type translate_decl tenv type_info attr_info =
