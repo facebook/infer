@@ -85,29 +85,33 @@ class vector {
   value_type* get() const { return beginPtr; }
 
   void allocate(size_type size) {
-    if (size > 0) {
-      beginPtr = __infer_skip__get_nondet_val<value_type>();
-    } else {
-      beginPtr = nullptr;
-    }
+    // assume that allocation will produce non-empty vector regardless of the
+    // size
+    // if (size > 0) {
+    beginPtr = __infer_skip__get_nondet_val<value_type>();
+    //} else {
+    //  deallocate();
+    //}
   }
+
+  void deallocate() { beginPtr = nullptr; }
 
   template <class Iter>
   void allocate_iter(Iter begin, Iter end) {
     if (begin != end) {
       allocate(1);
     } else {
-      allocate(0);
+      deallocate();
     }
   }
 
   /* std::vector implementation */
 
   vector() noexcept(is_nothrow_default_constructible<allocator_type>::value) {
-    allocate(0);
+    deallocate();
   }
 
-  explicit vector(const allocator_type& __a) noexcept { allocate(0); }
+  explicit vector(const allocator_type& __a) noexcept { deallocate(); }
 
   explicit vector(size_type __n);
   // introduced in C++14
@@ -251,7 +255,7 @@ class vector {
   iterator erase(const_iterator __position);
   iterator erase(const_iterator __first, const_iterator __last);
 
-  void clear() noexcept { allocate(0); }
+  void clear() noexcept { deallocate(); }
 
   void resize(size_type __sz);
   void resize(size_type __sz, const_reference __x);

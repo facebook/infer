@@ -37,6 +37,12 @@ int resize1_nonempty() {
   return vec[0];
 }
 
+int resize_n_nonempty(int n) {
+  std::vector<int> vec;
+  vec.resize(n);
+  return vec[0];
+}
+
 int push_back_nonempty() {
   std::vector<int> vec;
   vec.push_back(1);

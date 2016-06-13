@@ -50,7 +50,7 @@ public class VectorEmptyAccessTest {
     String[] procedures = {
         "access_empty",
         "clear_empty",
-        "resize0_empty",
+        //"resize0_empty", // resize(0) doesn't make vector empty
         "copy_empty",
         "assign_empty",
         "empty_check_access_empty",
