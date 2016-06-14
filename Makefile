@@ -232,7 +232,6 @@ conf-clean: clean
 	$(REMOVE) infer/lib/python/inferlib/*.pyc
 	$(REMOVE) infer/lib/python/inferlib/*/*.pyc
 	$(REMOVE) .buckversion
-	$(REMOVE) Makefile
 	$(REMOVE) Makefile.config
 	$(REMOVE) acinclude.m4
 	$(REMOVE) aclocal.m4
@@ -240,16 +239,10 @@ conf-clean: clean
 	$(REMOVE) config.log
 	$(REMOVE) config.status
 	$(REMOVE) configure
-	$(REMOVE) infer/models/Makefile
-	$(REMOVE) infer/models/c/Makefile
 	$(REMOVE_DIR) infer/models/c/out/
-	$(REMOVE) infer/models/cpp/Makefile
 	$(REMOVE_DIR) infer/models/cpp/out/
-	$(REMOVE) infer/models/java/Makefile
 	$(REMOVE_DIR) infer/models/java/infer-out/
-	$(REMOVE) infer/models/objc/Makefile
 	$(REMOVE_DIR) infer/models/objc/out/
-	$(REMOVE) infer/src/Makefile
 
 .PHONY: all buck_test buck_test_xml clean clang_plugin clang_setup infer inferTraceBugs
 .PHONY: inferTraceBugs_test ocaml_unit_test check_missing_mli test test_xml test_build install
