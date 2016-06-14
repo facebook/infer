@@ -206,15 +206,16 @@ byte: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MI
 	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) $(INFER_ALL_TARGETS:.native=.byte)
 
 # to build only the single module <Module> (and its dependencies) with extra flags execute:
-#   make INFER_CFLAGS=<flags> M=<Module>.cm{o,x} module
+#   make MFLAGS=<flags> M=<Module>.cm{o,x} module
+# for example, to build the assembly for the Ident module, execute
+#   make MFLAGS="-ocamlopt 'ocamlopt -S'" M=Ident.cmx module
 M=
-INFER_CFLAGS=
+MFLAGS=
 
 module: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) \
   $(LLVM_SOURCES)/lLexer.ml $(LLVM_SOURCES)/lParser.ml
 	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) \
-	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
-          -cflags $(INFER_CFLAGS) \
+          $(MFLAGS) \
 	  $(M)
 
 test_build: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) \
