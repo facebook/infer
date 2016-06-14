@@ -176,6 +176,7 @@ let log_analysis_symops_timeout = "S"
 let log_analysis_recursion_timeout = "R"
 let log_analysis_crash = "C"
 
+let buck_generated_folder = "buck-out/gen"
 
 (** Compile time configuration values *)
 

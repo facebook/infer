@@ -368,6 +368,15 @@ module BugsJson = struct
   let pp_json_open fmt () = F.fprintf fmt "[@?"
   let pp_json_close fmt () = F.fprintf fmt "]\n@?"
 
+  let expand_links_under_buck_out file =
+    if Utils.string_is_prefix Config.buck_generated_folder file then
+      try
+        let file = Unix.readlink file in
+        let source_file = DB.source_file_from_string file in
+        DB.source_file_to_rel_path source_file
+      with Unix.Unix_error _ -> file
+    else file
+
   (** Write bug report in JSON format *)
   let pp_bugs error_filter fmt summary =
     let pp x = F.fprintf fmt x in
@@ -381,6 +390,7 @@ module BugsJson = struct
         let procedure_id = Procname.to_filename (Specs.get_proc_name summary) in
         let file =
           DB.source_file_to_string summary.Specs.attributes.ProcAttributes.loc.Location.file in
+        let file = expand_links_under_buck_out file in
         let json_ml_loc = match ml_loc_opt with
           | Some (file, lnum, cnum, enum)  when Config.reports_include_ml_loc ->
               Some Jsonbug_j.{ file; lnum; cnum; enum; }

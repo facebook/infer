@@ -67,6 +67,7 @@ val log_analysis_wallclock_timeout : string
 val log_analysis_symops_timeout : string
 val log_analysis_recursion_timeout : string
 val log_analysis_crash : string
+val buck_generated_folder : string
 val max_recursion : int
 val meet_level : int
 val models_dir : string
