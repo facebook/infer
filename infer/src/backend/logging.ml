@@ -207,7 +207,7 @@ let log_progress_procedure () =
   log_progress_simple Config.log_analysis_procedure
 
 let log_progress_timeout_event failure_kind =
-  if Config.developer_mode then
+  if Config.stats_mode then
     begin
       match failure_kind with
       | SymOp.FKtimeout ->

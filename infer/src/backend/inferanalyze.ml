@@ -128,7 +128,7 @@ let print_prolog () =
       L.stdout "legend:@\n";
       L.stdout "  \"%s\" analyzing a file@\n" Config.log_analysis_file;
       L.stdout "  \"%s\" analyzing a procedure@\n" Config.log_analysis_procedure;
-      if Config.developer_mode then (
+      if Config.stats_mode then (
         L.stdout "  \"%s\" analyzer crashed@\n" Config.log_analysis_crash;
         L.stdout "  \"%s\" timeout: procedure analysis took too much time@\n"
           Config.log_analysis_wallclock_timeout;
