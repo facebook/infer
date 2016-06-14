@@ -42,7 +42,7 @@ clang_setup:
 	export CC="$(CC)" CFLAGS="$(CFLAGS)"; \
 	export CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)"; \
 	export CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)"; \
-	$(FCP_DIR)/clang/setup.sh
+	$(FCP_DIR)/clang/setup.sh $(INFER_FCP_SETUP_OPTS)
 
 clang_plugin: clang_setup
 ifeq ($(IS_RELEASE_TREE),no)
