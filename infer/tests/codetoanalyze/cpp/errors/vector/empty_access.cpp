@@ -115,15 +115,37 @@ int vector_param_access(std::vector<int>& v) {
   return v.back(); // shouldn't report anything here
 }
 
-/*
-// FIXME: analyzer reports it as NULL_DEREFERENCE (B5) instead
-// of EMPTY_VECTOR_ACCESS
 int vector_as_param_empty() {
   std::vector<int> v;
   return vector_param_access(v);
-}*/
+}
 
 int vector_as_param_nonempty() {
   std::vector<int> v(1);
   return vector_param_access(v);
+}
+
+int vector_param_by_value_access(std::vector<int> v) {
+  return v.back(); // shouldn't report anything here
+}
+
+int vector_as_param_by_value_empty() {
+  std::vector<int> v;
+  return vector_param_by_value_access(v);
+}
+
+void vector_param_by_value_clear(std::vector<int> v) { v.clear(); }
+
+int vector_as_param_by_value_clear_no_crash() {
+  std::vector<int> v(1);
+  vector_param_by_value_clear(v);
+  return v[0];
+}
+
+void vector_param_clear(std::vector<int>& v) { v.clear(); }
+
+int vector_as_param_clear() {
+  std::vector<int> v(1);
+  vector_param_clear(v);
+  return v[0];
 }

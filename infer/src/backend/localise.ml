@@ -650,9 +650,9 @@ let desc_divide_by_zero expr_str loc =
       (at_line tags loc) in
   { no_desc with descriptions = [description]; tags = !tags }
 
-let desc_empty_vector_access pname object_str loc =
+let desc_empty_vector_access pname_opt object_str loc =
   let vector_str = Format.sprintf "Vector %s" object_str in
-  let desc = access_str_empty (Some pname) in
+  let desc = access_str_empty pname_opt in
   let tags = desc.tags in
   Tags.add tags Tags.empty_vector_access object_str;
   let descriptions = [vector_str; desc.problem_str; (at_line tags loc)] in

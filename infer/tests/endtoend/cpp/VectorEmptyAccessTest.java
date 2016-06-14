@@ -55,7 +55,9 @@ public class VectorEmptyAccessTest {
         "assign_empty",
         "empty_check_access_empty",
         "size_check0_empty",
-        //"vector_as_param_empty",
+        "vector_as_param_empty",
+        "vector_as_param_clear",
+        "vector_as_param_by_value_empty"
     };
     InferResults inferResults = InferRunner.runInferCPP(inferCmd);
     assertThat(

@@ -43,6 +43,14 @@ let method_of_pointer_wrapper pname =
 let is_vector_method pname =
   is_method_of_objc_cpp_class pname [vector_class]
 
+let is_special_field class_names field_name_opt field =
+  let complete_fieldname = Ident.fieldname_to_complete_string field in
+  let field_ok =
+    match field_name_opt with
+    | Some field_name -> Utils.string_contains field_name complete_fieldname
+    | None -> true in
+  is_one_of_classes complete_fieldname class_names && field_ok
+
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
 let hpred_is_open_resource prop = function
   | Sil.Hpointsto(e, _, _) ->
@@ -798,9 +806,7 @@ let explain_dereference_access outermost_array is_nullable _de_opt prop =
         Some (if outermost_array then remove_outermost_array_access de else de) in
   let value_str = match de_opt with
     | Some (Sil.Darrow ((Sil.Dpvaraddr pvar), f) as de) ->
-        let complete_fieldname = Ident.fieldname_to_complete_string f in
-        if is_one_of_classes complete_fieldname smart_pointers &&
-           Utils.string_contains "data" complete_fieldname then
+        if is_special_field smart_pointers None f then
           Sil.dexp_to_string (Sil.Dpvaraddr pvar)
         else Sil.dexp_to_string de
     | Some de ->
@@ -835,7 +841,10 @@ let create_dereference_desc
            | _ -> desc)
       | Some (Sil.Dretcall (Dconst (Cfun pname), this_dexp :: _, loc, _ ))
         when is_vector_method pname ->
-          Localise.desc_empty_vector_access pname (Sil.dexp_to_string this_dexp) loc
+          Localise.desc_empty_vector_access (Some pname) (Sil.dexp_to_string this_dexp) loc
+      | Some (Sil.Darrow (dexp, fieldname))
+        when is_special_field [vector_class] (Some "beginPtr") fieldname ->
+          Localise.desc_empty_vector_access None (Sil.dexp_to_string dexp) loc
       | _ -> desc
     else desc in
   if use_buckets then Buckets.classify_access desc access_opt' de_opt is_nullable
