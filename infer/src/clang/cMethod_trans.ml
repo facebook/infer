@@ -64,7 +64,7 @@ let get_class_param function_method_decl_info =
 
 let should_add_return_param return_type ~is_objc_method =
   match return_type with
-  | Sil.Tstruct _ -> not is_objc_method
+  | Typ.Tstruct _ -> not is_objc_method
   | _ -> false
 
 let is_objc_method function_method_decl_info =
@@ -112,7 +112,7 @@ let get_parameters tenv function_method_decl_info =
         let name = General_utils.get_var_name_string name_info var_decl_info in
         let param_typ = CTypes_decl.type_ptr_to_sil_type tenv type_ptr in
         let type_ptr' = match param_typ with
-          | Sil.Tstruct _ when General_utils.is_cpp_translation Config.clang_lang ->
+          | Typ.Tstruct _ when General_utils.is_cpp_translation Config.clang_lang ->
               Ast_expressions.create_reference_type type_ptr
           | _ -> type_ptr in
         (name, type_ptr')
@@ -126,7 +126,7 @@ let get_return_type tenv function_method_decl_info =
   let return_typ = CTypes_decl.type_ptr_to_sil_type tenv return_type_ptr in
   let is_objc_method = is_objc_method function_method_decl_info in
   if should_add_return_param return_typ ~is_objc_method then
-    Ast_expressions.create_void_type, Some (Sil.Tptr (return_typ, Sil.Pk_pointer))
+    Ast_expressions.create_void_type, Some (Typ.Tptr (return_typ, Typ.Pk_pointer))
   else return_type_ptr, None
 
 let build_method_signature tenv decl_info procname function_method_decl_info
@@ -238,7 +238,7 @@ let get_superclass_curr_class_objc context =
     let iname = Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string cname) in
     Printing.log_out "Checking for superclass = '%s'\n\n%!" (Typename.to_string iname);
     match Tenv.lookup (CContext.get_tenv context) iname with
-    | Some { Sil.superclasses =  super_name :: _ } ->
+    | Some { Typ.superclasses =  super_name :: _ } ->
         Typename.name super_name
     | _ ->
         Printing.log_err "NOT FOUND superclass = '%s'\n\n%!" (Typename.to_string iname);
@@ -277,7 +277,7 @@ let get_class_name_method_call_from_receiver_kind context obj_c_message_expr_inf
       (CTypes.classname_of_type sil_type)
   | `Instance ->
       (match act_params with
-       | (_, Sil.Tptr(t, _)):: _
+       | (_, Typ.Tptr(t, _)):: _
        | (_, t):: _ -> CTypes.classname_of_type t
        | _ -> assert false)
   | `SuperInstance ->get_superclass_curr_class_objc context
@@ -343,10 +343,10 @@ let should_create_procdesc cfg procname defined =
       else false
   | None -> true
 
-let sil_method_annotation_of_args args : Sil.method_annotation =
+let sil_method_annotation_of_args args : Typ.method_annotation =
   let default_visibility = true in
   let mk_annot param_name annot_name =
-    let annot = { Sil.class_name = annot_name; Sil.parameters = [param_name]; } in
+    let annot = { Typ.class_name = annot_name; Typ.parameters = [param_name]; } in
     annot, default_visibility in
   let arg_to_sil_annot acc (arg_name, type_ptr) =
     if CFrontend_utils.Ast_utils.is_type_nullable type_ptr then
@@ -417,7 +417,7 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
         (match type_opt with
          | Some (ret_type, arg_types) ->
              ret_type, IList.map (fun typ -> (Mangled.from_string "x", typ)) arg_types
-         | None -> Sil.Tvoid, []) in
+         | None -> Typ.Tvoid, []) in
       let loc = Location.dummy in
       let proc_attributes =
         { (ProcAttributes.default proc_name Config.Clang) with

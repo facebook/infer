@@ -144,7 +144,7 @@ module ComplexExpressions = struct
 end (* ComplexExpressions *)
 
 type check_return_type =
-  Procname.t -> Cfg.Procdesc.t -> Sil.typ -> Sil.typ option -> Location.t -> unit
+  Procname.t -> Cfg.Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
 
 type find_canonical_duplicate = Cfg.Node.t -> Cfg.Node.t
 
@@ -467,7 +467,7 @@ let typecheck_instr
 
   (* check if there are errors in exp1 *)
   let typecheck_expr_for_errors typestate1 exp1 loc1 : unit =
-    ignore (typecheck_expr_simple typestate1 exp1 Sil.Tvoid TypeOrigin.Undef loc1) in
+    ignore (typecheck_expr_simple typestate1 exp1 Typ.Tvoid TypeOrigin.Undef loc1) in
 
   match instr with
   | Sil.Remove_temps (idl, _) ->
@@ -553,7 +553,7 @@ let typecheck_instr
       TypeState.add_id
         id
         (
-          Sil.Tint (Sil.IInt),
+          Typ.Tint (Typ.IInt),
           TypeAnnotation.const Annotations.Nullable false TypeOrigin.New,
           [loc]
         )
@@ -585,13 +585,13 @@ let typecheck_instr
                 etl_ in
             let ret_type =
               match Tenv.proc_extract_return_typ tenv callee_pname_java with
-              | Some (Sil.Tstruct _ as typ) ->
-                  Sil.Tptr (typ, Pk_pointer)
+              | Some (Typ.Tstruct _ as typ) ->
+                  Typ.Tptr (typ, Pk_pointer)
               | Some typ ->
                   typ
               | None ->
                   let ret_typ_string = Procname.java_get_return_type callee_pname_java in
-                  Sil.Tptr (Tvar (Typename.Java.from_string ret_typ_string), Pk_pointer) in
+                  Typ.Tptr (Tvar (Typename.Java.from_string ret_typ_string), Pk_pointer) in
             let proc_attributes =
               { (ProcAttributes.default callee_pname Config.Java) with
                 ProcAttributes.formals;
@@ -922,7 +922,7 @@ let typecheck_instr
                   Pvar.mk (Mangled.from_string e_str) curr_pname in
                 let e1 = Sil.Lvar pvar in
                 let (typ, ta, _) =
-                  typecheck_expr_simple typestate e1 Sil.Tvoid TypeOrigin.ONone loc in
+                  typecheck_expr_simple typestate e1 Typ.Tvoid TypeOrigin.ONone loc in
                 let range = (typ, ta, [loc]) in
                 let typestate1 = TypeState.add pvar range typestate in
                 typestate1, e1, EradicateChecks.From_containsKey
@@ -955,7 +955,7 @@ let typecheck_instr
                   typestate, e, EradicateChecks.From_condition in
             let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
             let (typ, ta, _) =
-              typecheck_expr_simple typestate2 e' Sil.Tvoid TypeOrigin.ONone loc in
+              typecheck_expr_simple typestate2 e' Typ.Tvoid TypeOrigin.ONone loc in
 
             if checks.eradicate then
               EradicateChecks.check_zero
@@ -1002,7 +1002,7 @@ let typecheck_instr
                   end in
             let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
             let (typ, ta, _) =
-              typecheck_expr_simple typestate2 e' Sil.Tvoid TypeOrigin.ONone loc in
+              typecheck_expr_simple typestate2 e' Typ.Tvoid TypeOrigin.ONone loc in
 
             if checks.eradicate then
               EradicateChecks.check_nonzero find_canonical_duplicate curr_pname

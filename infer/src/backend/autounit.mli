@@ -19,7 +19,7 @@ type code
 val pp_code : Format.formatter -> code -> unit
 
 (** generate a unit test form a spec *)
-val genunit : string -> Procname.t -> int -> (Mangled.t * Sil.typ) list
+val genunit : string -> Procname.t -> int -> (Mangled.t * Typ.t) list
   -> Prop.normal Specs.spec -> code
 
 (** generate code for a main calling all the unit test functions passed as argument *)

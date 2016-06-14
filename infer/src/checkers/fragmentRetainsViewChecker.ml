@@ -27,7 +27,7 @@ let callback_fragment_retains_view_java
   let is_on_destroy_view = Procname.java_get_method pname_java = "onDestroyView" in
   (* this is needlessly complicated because field types are Tvars instead of Tstructs *)
   let fld_typ_is_view = function
-    | Sil.Tptr (Sil.Tvar tname, _) ->
+    | Typ.Tptr (Typ.Tvar tname, _) ->
         begin
           match Tenv.lookup tenv tname with
           | Some struct_typ -> AndroidFramework.is_view tenv struct_typ
@@ -43,7 +43,7 @@ let callback_fragment_retains_view_java
       let class_typename =
         Typename.Java.from_string (Procname.java_get_class_name pname_java) in
       match Tenv.lookup tenv class_typename with
-      | Some ({ Sil.struct_name = Some _; instance_fields } as struct_typ)
+      | Some ({ Typ.struct_name = Some _; instance_fields } as struct_typ)
         when AndroidFramework.is_fragment tenv struct_typ ->
           let declared_view_fields =
             IList.filter (is_declared_view_typ class_typename) instance_fields in
@@ -53,7 +53,7 @@ let callback_fragment_retains_view_java
             (fun (fname, fld_typ, _) ->
                if not (Ident.FieldSet.mem fname fields_nullified) then
                  report_error
-                   (Sil.Tstruct struct_typ) fname fld_typ
+                   (Typ.Tstruct struct_typ) fname fld_typ
                    (Procname.Java pname_java) proc_desc)
             declared_view_fields
       | _ -> ()

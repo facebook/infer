@@ -18,32 +18,32 @@ open Sawja_pack
 exception Type_tranlsation_error of string
 
 let basic_type = function
-  | `Int -> Sil.Tint Sil.IInt
-  | `Bool -> Sil.Tint Sil.IBool
-  | `Byte -> Sil.Tint Sil.IChar
-  | `Char -> Sil.Tint Sil.IChar
-  | `Double -> Sil.Tfloat Sil.FDouble
-  | `Float -> Sil.Tfloat Sil.FFloat
-  | `Long -> Sil.Tint Sil.ILong
-  | `Short -> Sil.Tint Sil.IShort
+  | `Int -> Typ.Tint Typ.IInt
+  | `Bool -> Typ.Tint Typ.IBool
+  | `Byte -> Typ.Tint Typ.IChar
+  | `Char -> Typ.Tint Typ.IChar
+  | `Double -> Typ.Tfloat Typ.FDouble
+  | `Float -> Typ.Tfloat Typ.FFloat
+  | `Long -> Typ.Tint Typ.ILong
+  | `Short -> Typ.Tint Typ.IShort
 
 
 let cast_type = function
   | JBir.F2I
   | JBir.L2I
-  | JBir.D2I -> Sil.Tint Sil.IInt
+  | JBir.D2I -> Typ.Tint Typ.IInt
   | JBir.D2L
   | JBir.F2L
-  | JBir.I2L -> Sil.Tint Sil.ILong
+  | JBir.I2L -> Typ.Tint Typ.ILong
   | JBir.I2F
   | JBir.L2F
-  | JBir.D2F -> Sil.Tfloat Sil.FFloat
+  | JBir.D2F -> Typ.Tfloat Typ.FFloat
   | JBir.L2D
   | JBir.F2D
-  | JBir.I2D -> Sil.Tfloat Sil.FDouble
-  | JBir.I2B -> Sil.Tint Sil.IBool
-  | JBir.I2C -> Sil.Tint Sil.IChar
-  | JBir.I2S -> Sil.Tint Sil.IShort
+  | JBir.I2D -> Typ.Tfloat Typ.FDouble
+  | JBir.I2B -> Typ.Tint Typ.IBool
+  | JBir.I2C -> Typ.Tint Typ.IChar
+  | JBir.I2S -> Typ.Tint Typ.IShort
 
 
 let const_type const =
@@ -69,27 +69,27 @@ let rec get_named_type vt =
         match ot with
         | JBasics.TArray vt ->
             let content_type = get_named_type vt in
-            Sil.Tptr (Sil.Tarray (content_type, None), Sil.Pk_pointer)
-        | JBasics.TClass cn -> Sil.Tptr (Sil.Tvar (typename_of_classname cn), Sil.Pk_pointer)
+            Typ.Tptr (Typ.Tarray (content_type, None), Typ.Pk_pointer)
+        | JBasics.TClass cn -> Typ.Tptr (Typ.Tvar (typename_of_classname cn), Typ.Pk_pointer)
       end
 
 
 let extract_cn_type_np typ =
   match typ with
-  | Sil.Tptr(vtyp, Sil.Pk_pointer) ->
+  | Typ.Tptr(vtyp, Typ.Pk_pointer) ->
       vtyp
   | _ -> typ
 
 let rec create_array_type typ dim =
   if dim > 0 then
     let content_typ = create_array_type typ (dim - 1) in
-    Sil.Tptr(Sil.Tarray (content_typ, None), Sil.Pk_pointer)
+    Typ.Tptr(Typ.Tarray (content_typ, None), Typ.Pk_pointer)
   else typ
 
 let extract_cn_no_obj typ =
   match typ with
-  | Sil.Tptr (Sil.Tstruct { Sil.csu = Csu.Class _; struct_name = Some classname },
-              Sil.Pk_pointer) ->
+  | Typ.Tptr (Typ.Tstruct { Typ.csu = Csu.Class _; struct_name = Some classname },
+              Typ.Pk_pointer) ->
       let class_name = (Mangled.to_string classname) in
       if class_name = JConfig.object_cl then None
       else
@@ -237,14 +237,14 @@ let collect_interface_field cn inf l =
 
 let dummy_type cn =
   let classname = Mangled.from_string (JBasics.cn_name cn) in
-  Sil.Tstruct {
-    Sil.instance_fields = [];
+  Typ.Tstruct {
+    Typ.instance_fields = [];
     static_fields = [];
     csu = Csu.Class Csu.Java;
     struct_name = Some classname;
     superclasses = [];
     def_methods = [];
-    struct_annotations = Sil.item_annotation_empty;
+    struct_annotations = Typ.item_annotation_empty;
   }
 
 
@@ -253,13 +253,13 @@ let collect_models_class_fields classpath_field_map cn cf fields =
   let field_name, field_type, annotation = create_sil_class_field cn cf in
   try
     let classpath_ft = Ident.FieldMap.find field_name classpath_field_map in
-    if Sil.typ_equal classpath_ft field_type then fields
+    if Typ.equal classpath_ft field_type then fields
     else
       (* TODO (#6711750): fix type equality for arrays before failing here *)
       let () = Logging.stderr "Found inconsistent types for %s\n\tclasspath: %a\n\tmodels: %a\n@."
           (Ident.fieldname_to_string field_name)
-          (Sil.pp_typ_full pe_text) classpath_ft
-          (Sil.pp_typ_full pe_text) field_type in fields
+          (Typ.pp_full pe_text) classpath_ft
+          (Typ.pp_full pe_text) field_type in fields
   with Not_found ->
     if Javalib.is_static_field (Javalib.ClassField cf) then
       ((field_name, field_type, annotation):: static, nonstatic)
@@ -289,7 +289,7 @@ let add_model_fields program classpath_fields cn =
 let rec get_all_fields program tenv cn =
   let extract_class_fields classname =
     match get_class_type_no_pointer program tenv classname with
-    | Sil.Tstruct { Sil.instance_fields; static_fields } -> (static_fields, instance_fields)
+    | Typ.Tstruct { Typ.instance_fields; static_fields } -> (static_fields, instance_fields)
     | _ -> assert false in
   let trans_fields classname =
     match JClasspath.lookup_node classname program with
@@ -333,15 +333,15 @@ and create_sil_type program tenv cn =
               | Some super_cn ->
                   let super_classname =
                     match get_class_type_no_pointer program tenv super_cn with
-                    | Sil.Tstruct { Sil.struct_name =  Some classname } ->
+                    | Typ.Tstruct { Typ.struct_name =  Some classname } ->
                         Typename.TN_csu (Csu.Class Csu.Java, classname)
                     | _ -> assert false in
                   super_classname :: interface_list in
             (super_classname_list, nonstatic_fields, static_fields, item_annotation) in
       let classname = Mangled.from_string (JBasics.cn_name cn) in
       let def_methods = IList.map (fun j -> Procname.Java j) (get_class_procnames cn node) in
-      Sil.Tstruct {
-        Sil.instance_fields;
+      Typ.Tstruct {
+        Typ.instance_fields;
         static_fields;
         csu = Csu.Class Csu.Java;
         struct_name = Some classname;
@@ -355,15 +355,15 @@ and get_class_type_no_pointer program tenv cn =
   match Tenv.lookup tenv named_type with
   | None ->
       (match create_sil_type program tenv cn with
-       | (Sil.Tstruct struct_typ) as typ->
+       | (Typ.Tstruct struct_typ) as typ->
            Tenv.add tenv named_type struct_typ;
            typ
        | _ -> assert false)
-  | Some struct_typ -> Sil.Tstruct struct_typ
+  | Some struct_typ -> Typ.Tstruct struct_typ
 
 let get_class_type program tenv cn =
   let t = get_class_type_no_pointer program tenv cn in
-  Sil.Tptr (t, Sil.Pk_pointer)
+  Typ.Tptr (t, Typ.Pk_pointer)
 
 (** return true if [field_name] is the autogenerated C.$assertionsDisabled field for class C *)
 let is_autogenerated_assert_field field_name =
@@ -382,7 +382,7 @@ let is_closeable program tenv typ =
 let rec object_type program tenv ot =
   match ot with
   | JBasics.TClass cn -> get_class_type program tenv cn
-  | JBasics.TArray at -> Sil.Tptr (Sil.Tarray (value_type program tenv at, None), Sil.Pk_pointer)
+  | JBasics.TArray at -> Typ.Tptr (Typ.Tarray (value_type program tenv at, None), Typ.Pk_pointer)
 (** translate a value type *)
 and value_type program tenv vt =
   match vt with
@@ -393,7 +393,7 @@ and value_type program tenv vt =
 (**  Translate object types into Sil.Sizeof expressions *)
 let sizeof_of_object_type program tenv ot subtypes =
   match object_type program tenv ot with
-  | Sil.Tptr (typ, _) ->
+  | Typ.Tptr (typ, _) ->
       Sil.Sizeof (typ, None, subtypes)
   | _ ->
       raise (Type_tranlsation_error "Pointer or array type expected in tenv")
@@ -427,7 +427,7 @@ let get_var_type context var =
 
 let extract_array_type typ =
   match typ with
-  | Sil.Tptr(Sil.Tarray (vtyp, _), Sil.Pk_pointer) -> vtyp
+  | Typ.Tptr(Typ.Tarray (vtyp, _), Typ.Pk_pointer) -> vtyp
   | _ -> typ
 
 
@@ -456,7 +456,7 @@ let return_type program tenv ms meth_kind =
     get_class_type program tenv (JBasics.make_cn JConfig.object_cl)
   else
     match JBasics.ms_rtype ms with
-    | None -> Sil.Tvoid
+    | None -> Typ.Tvoid
     | Some vt -> value_type program tenv vt
 
 

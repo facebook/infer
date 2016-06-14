@@ -31,7 +31,8 @@ let is_alloc_model typ funct =
       else
         let funct = Procname.to_string procname in
         (* if (Core_foundation_model.is_core_lib_create typ funct) then
-           print_endline ("\nCore Foundation create not modelled "^(Sil.typ_to_string typ)^" "^(funct));*)
+           print_endline ("\nCore Foundation create not modelled "
+           ^(Typ.to_string typ)^" "^(funct));*)
         Core_foundation_model.is_core_lib_create typ funct
   | None -> false
 

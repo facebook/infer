@@ -29,7 +29,7 @@ module InstrRef : InstrRefT
 
 module Strict :
 sig
-  val signature_get_strict : Annotations.annotated_signature -> Sil.annotation option
+  val signature_get_strict : Annotations.annotated_signature -> Typ.annotation option
 end (* Strict *)
 
 

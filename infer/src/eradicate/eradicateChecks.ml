@@ -136,7 +136,7 @@ let check_condition case_zero find_canonical_duplicate curr_pname
     let throwable_found = ref false in
     let throwable_class = Mangled.from_string "java.lang.Throwable" in
     let typ_is_throwable = function
-      | Sil.Tstruct { Sil.csu = Csu.Class _; struct_name = Some c } ->
+      | Typ.Tstruct { Typ.csu = Csu.Class _; struct_name = Some c } ->
           Mangled.equal c throwable_class
       | _ -> false in
     let do_instr = function
@@ -257,7 +257,7 @@ let check_constructor_initialization
   if Procname.is_constructor curr_pname
   then begin
     match PatternMatch.get_this_type (Cfg.Procdesc.get_attributes curr_pdesc) with
-    | Some (Sil.Tptr (Sil.Tstruct { Sil.instance_fields; struct_name } as ts, _)) ->
+    | Some (Typ.Tptr (Typ.Tstruct { Typ.instance_fields; struct_name } as ts, _)) ->
         let do_field (fn, ft, _) =
           let annotated_with f = match get_field_annotation fn ts with
             | None -> false

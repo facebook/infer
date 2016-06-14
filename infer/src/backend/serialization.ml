@@ -26,7 +26,7 @@ let tenv_key, summary_key, cfg_key, trace_key, cg_key,
   799050016, 579094948, 972393003
 
 (** version of the binary files, to be incremented for each change *)
-let version = 25
+let version = 26
 
 
 (** Retry the function while an exception filtered is thrown,

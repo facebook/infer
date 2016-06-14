@@ -928,7 +928,7 @@ let rec exp_partial_join (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
       let e_res = Rename.extend (Sil.exp_int c1') (Sil.Var id2) Rename.ExtFresh in
       Sil.BinOp(Sil.PlusA, e_res, Sil.exp_int c2)
   | Sil.Cast(t1, e1), Sil.Cast(t2, e2) ->
-      if not (Sil.typ_equal t1 t2) then (L.d_strln "failure reason 22"; raise IList.Fail)
+      if not (Typ.equal t1 t2) then (L.d_strln "failure reason 22"; raise IList.Fail)
       else
         let e1'' = exp_partial_join e1 e2 in
         Sil.Cast (t1, e1'')
@@ -951,7 +951,7 @@ let rec exp_partial_join (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
       if not (Pvar.equal pvar1 pvar2) then (L.d_strln "failure reason 25"; raise IList.Fail)
       else e1
   | Sil.Lfield(e1, f1, t1), Sil.Lfield(e2, f2, _) ->
-      if not (Sil.fld_equal f1 f2) then (L.d_strln "failure reason 26"; raise IList.Fail)
+      if not (Ident.fieldname_equal f1 f2) then (L.d_strln "failure reason 26"; raise IList.Fail)
       else Sil.Lfield(exp_partial_join e1 e2, f1, t1) (* should be t1 = t2 *)
   | Sil.Lindex(e1, e1'), Sil.Lindex(e2, e2') ->
       let e1'' = exp_partial_join e1 e2 in
@@ -982,15 +982,16 @@ and dynamic_length_partial_join l1 l2 =
   option_partial_join (fun len1 len2 -> Some (length_partial_join len1 len2)) l1 l2
 
 and typ_partial_join t1 t2 = match t1, t2 with
-  | Sil.Tptr (t1, pk1), Sil.Tptr (t2, pk2) when Sil.ptr_kind_compare pk1 pk2 = 0 ->
-      Sil.Tptr (typ_partial_join t1 t2, pk1)
-  | Sil.Tarray (typ1, len1), Sil.Tarray (typ2, len2) ->
+  | Typ.Tptr (t1, pk1), Typ.Tptr (t2, pk2) when Typ.ptr_kind_compare pk1 pk2 = 0 ->
+      Typ.Tptr (typ_partial_join t1 t2, pk1)
+  | Typ.Tarray (typ1, len1), Typ.Tarray (typ2, len2) ->
       let t = typ_partial_join typ1 typ2 in
       let len = static_length_partial_join len1 len2 in
-      Sil.Tarray (t, len)
-  | _ when Sil.typ_equal t1 t2 -> t1 (* common case *)
+      Typ.Tarray (t, len)
+  | _ when Typ.equal t1 t2 -> t1 (* common case *)
   | _ ->
-      L.d_str "typ_partial_join no match "; Sil.d_typ_full t1; L.d_str " "; Sil.d_typ_full t2; L.d_ln ();
+      L.d_str "typ_partial_join no match ";
+      Typ.d_full t1; L.d_str " "; Typ.d_full t2; L.d_ln ();
       raise IList.Fail
 
 let rec exp_partial_meet (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
@@ -1008,7 +1009,7 @@ let rec exp_partial_meet (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
   | Sil.Const c1, Sil.Const c2 ->
       if (Sil.const_equal c1 c2) then e1 else (L.d_strln "failure reason 29"; raise IList.Fail)
   | Sil.Cast(t1, e1), Sil.Cast(t2, e2) ->
-      if not (Sil.typ_equal t1 t2) then (L.d_strln "failure reason 30"; raise IList.Fail)
+      if not (Typ.equal t1 t2) then (L.d_strln "failure reason 30"; raise IList.Fail)
       else
         let e1'' = exp_partial_meet e1 e2 in
         Sil.Cast (t1, e1'')
@@ -1033,7 +1034,7 @@ let rec exp_partial_meet (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
       if not (Pvar.equal pvar1 pvar2) then (L.d_strln "failure reason 35"; raise IList.Fail)
       else e1
   | Sil.Lfield(e1, f1, t1), Sil.Lfield(e2, f2, _) ->
-      if not (Sil.fld_equal f1 f2) then (L.d_strln "failure reason 36"; raise IList.Fail)
+      if not (Ident.fieldname_equal f1 f2) then (L.d_strln "failure reason 36"; raise IList.Fail)
       else Sil.Lfield(exp_partial_meet e1 e2, f1, t1) (* should be t1 = t2 *)
   | Sil.Lindex(e1, e1'), Sil.Lindex(e2, e2') ->
       let e1'' = exp_partial_meet e1 e2 in
@@ -1060,7 +1061,7 @@ let rec strexp_partial_join mode (strexp1: Sil.strexp) (strexp2: Sil.strexp) : S
           | JoinState.Post -> Sil.Estruct (IList.rev acc, inst)
         end
     | (fld1, se1):: fld_se_list1', (fld2, se2):: fld_se_list2' ->
-        let comparison = Sil.fld_compare fld1 fld2 in
+        let comparison = Ident.fieldname_compare fld1 fld2 in
         if comparison = 0 then
           let strexp' = strexp_partial_join mode se1 se2 in
           let fld_se_list_new = (fld1, strexp') :: acc in
@@ -1124,7 +1125,7 @@ let rec strexp_partial_meet (strexp1: Sil.strexp) (strexp2: Sil.strexp) : Sil.st
     | _, [] ->
         Sil.Estruct (construct Lhs acc fld_se_list1, inst)
     | (fld1, se1):: fld_se_list1', (fld2, se2):: fld_se_list2' ->
-        let comparison = Sil.fld_compare fld1 fld2 in
+        let comparison = Ident.fieldname_compare fld1 fld2 in
         if comparison < 0 then
           let se' = strexp_construct_fresh Lhs se1 in
           let acc_new = (fld1, se'):: acc in

@@ -91,7 +91,7 @@ let get_description origin =
       let strict = match TypeErr.Strict.signature_get_strict po.annotated_signature with
         | Some ann ->
             let str = "@Strict" in
-            (match ann.Sil.parameters with
+            (match ann.Typ.parameters with
              | par1 :: _ -> Printf.sprintf "%s(%s) " str par1
              | [] -> Printf.sprintf "%s " str)
         | None -> "" in

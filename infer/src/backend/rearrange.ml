@@ -85,12 +85,12 @@ let bounds_check pname prop len e =
   check_bad_index pname prop len e
 
 let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp t
-    (off: Sil.offset list) inst : Sil.atom list * Sil.strexp * Sil.typ =
+    (off: Sil.offset list) inst : Sil.atom list * Sil.strexp * Typ.t =
   if Config.trace_rearrange then
     begin
       L.d_increase_indent 1;
       L.d_strln "entering create_struct_values";
-      L.d_str "typ: "; Sil.d_typ_full t; L.d_ln ();
+      L.d_str "typ: "; Typ.d_full t; L.d_ln ();
       L.d_str "off: "; Sil.d_offset_list off; L.d_ln (); L.d_ln ()
     end;
   let new_id () =
@@ -98,9 +98,9 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
     Ident.create kind !max_stamp in
   let res =
     match t, off with
-    | Sil.Tstruct _, [] ->
+    | Typ.Tstruct _, [] ->
         ([], Sil.Estruct ([], inst), t)
-    | Sil.Tstruct ({ Sil.instance_fields; static_fields } as struct_typ ),
+    | Typ.Tstruct ({ Typ.instance_fields; static_fields } as struct_typ ),
       (Sil.Off_fld (f, _)):: off' ->
         let _, t', _ =
           try
@@ -115,18 +115,18 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         let replace_typ_of_f (f', t', a') =
           if Ident.fieldname_equal f f' then (f, res_t', a') else (f', t', a') in
         let instance_fields' =
-          IList.sort Sil.fld_typ_ann_compare (IList.map replace_typ_of_f instance_fields) in
-        (atoms', se, Sil.Tstruct { struct_typ with Sil.instance_fields = instance_fields'})
-    | Sil.Tstruct _, (Sil.Off_index e):: off' ->
+          IList.sort Typ.fld_typ_ann_compare (IList.map replace_typ_of_f instance_fields) in
+        (atoms', se, Typ.Tstruct { struct_typ with Typ.instance_fields = instance_fields'})
+    | Typ.Tstruct _, (Sil.Off_index e):: off' ->
         let atoms', se', res_t' =
           create_struct_values
             pname tenv orig_prop footprint_part kind max_stamp t off' inst in
         let e' = Sil.array_clean_new_index footprint_part e in
         let len = Sil.Var (new_id ()) in
         let se = Sil.Earray (len, [(e', se')], inst) in
-        let res_t = Sil.Tarray (res_t', None) in
+        let res_t = Typ.Tarray (res_t', None) in
         (Sil.Aeq(e, e') :: atoms', se, res_t)
-    | Sil.Tarray (t', len_), off ->
+    | Typ.Tarray (t', len_), off ->
         let len = match len_ with
           | None -> Sil.Var (new_id ())
           | Some len -> Sil.Const (Sil.Cint len) in
@@ -140,20 +140,20 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
                  pname tenv orig_prop footprint_part kind max_stamp t' off' inst in
              let e' = Sil.array_clean_new_index footprint_part e in
              let se = Sil.Earray (len, [(e', se')], inst) in
-             let res_t = Sil.Tarray (res_t', len_) in
+             let res_t = Typ.Tarray (res_t', len_) in
              (Sil.Aeq(e, e') :: atoms', se, res_t)
          | (Sil.Off_fld _) :: _ ->
              assert false
         )
-    | Sil.Tint _, [] | Sil.Tfloat _, [] | Sil.Tvoid, [] | Sil.Tfun _, [] | Sil.Tptr _, [] ->
+    | Typ.Tint _, [] | Typ.Tfloat _, [] | Typ.Tvoid, [] | Typ.Tfun _, [] | Typ.Tptr _, [] ->
         let id = new_id () in
         ([], Sil.Eexp (Sil.Var id, inst), t)
-    | Sil.Tint _, [Sil.Off_index e] | Sil.Tfloat _, [Sil.Off_index e]
-    | Sil.Tvoid, [Sil.Off_index e]
-    | Sil.Tfun _, [Sil.Off_index e] | Sil.Tptr _, [Sil.Off_index e] ->
+    | Typ.Tint _, [Sil.Off_index e] | Typ.Tfloat _, [Sil.Off_index e]
+    | Typ.Tvoid, [Sil.Off_index e]
+    | Typ.Tfun _, [Sil.Off_index e] | Typ.Tptr _, [Sil.Off_index e] ->
         (* In this case, we lift t to the t array. *)
         let t' = match t with
-          | Sil.Tptr(t', _) -> t'
+          | Typ.Tptr(t', _) -> t'
           | _ -> t in
         let len = Sil.Var (new_id ()) in
         let atoms', se', res_t' =
@@ -161,14 +161,16 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
             pname tenv orig_prop footprint_part kind max_stamp t' [] inst in
         let e' = Sil.array_clean_new_index footprint_part e in
         let se = Sil.Earray (len, [(e', se')], inst) in
-        let res_t = Sil.Tarray (res_t', None) in
+        let res_t = Typ.Tarray (res_t', None) in
         (Sil.Aeq(e, e'):: atoms', se, res_t)
-    | Sil.Tint _, _ | Sil.Tfloat _, _ | Sil.Tvoid, _ | Sil.Tfun _, _ | Sil.Tptr _, _ ->
-        L.d_str "create_struct_values type:"; Sil.d_typ_full t; L.d_str " off: "; Sil.d_offset_list off; L.d_ln();
+    | Typ.Tint _, _ | Typ.Tfloat _, _ | Typ.Tvoid, _ | Typ.Tfun _, _ | Typ.Tptr _, _ ->
+        L.d_str "create_struct_values type:"; Typ.d_full t;
+        L.d_str " off: "; Sil.d_offset_list off; L.d_ln();
         raise (Exceptions.Bad_footprint __POS__)
 
-    | Sil.Tvar _, _ ->
-        L.d_str "create_struct_values type:"; Sil.d_typ_full t; L.d_str " off: "; Sil.d_offset_list off; L.d_ln();
+    | Typ.Tvar _, _ ->
+        L.d_str "create_struct_values type:"; Typ.d_full t;
+        L.d_str " off: "; Sil.d_offset_list off; L.d_ln();
         assert false in
 
   if Config.trace_rearrange then
@@ -200,12 +202,12 @@ let rec _strexp_extend_values
       let off_new = Sil.Off_index(Sil.exp_zero):: off in
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
-  | (Sil.Off_fld _) :: _, Sil.Earray _, Sil.Tarray _ ->
+  | (Sil.Off_fld _) :: _, Sil.Earray _, Typ.Tarray _ ->
       let off_new = Sil.Off_index(Sil.exp_zero):: off in
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
   | (Sil.Off_fld (f, _)):: off', Sil.Estruct (fsel, inst'),
-    Sil.Tstruct ({ Sil.instance_fields; static_fields } as struct_typ) ->
+    Typ.Tstruct ({ Typ.instance_fields; static_fields } as struct_typ) ->
       let replace_fv new_v fv = if Ident.fieldname_equal (fst fv) f then (f, new_v) else fv in
       let _, typ', _ =
         try
@@ -224,9 +226,9 @@ let rec _strexp_extend_values
             let res_fsel' = IList.sort Sil.fld_strexp_compare (IList.map replace_fse fsel) in
             let replace_fta (f, t, a) = let f', t' = replace_fv res_typ' (f, t) in (f', t', a) in
             let instance_fields' =
-              IList.sort Sil.fld_typ_ann_compare (IList.map replace_fta instance_fields) in
+              IList.sort Typ.fld_typ_ann_compare (IList.map replace_fta instance_fields) in
             let struct_typ =
-              Sil.Tstruct { struct_typ with Sil.instance_fields = instance_fields' } in
+              Typ.Tstruct { struct_typ with Typ.instance_fields = instance_fields' } in
             (res_atoms', Sil.Estruct (res_fsel', inst'), struct_typ) :: acc in
           IList.fold_left replace [] atoms_se_typ_list'
         with Not_found ->
@@ -236,19 +238,19 @@ let rec _strexp_extend_values
           let res_fsel' = IList.sort Sil.fld_strexp_compare ((f, se'):: fsel) in
           let replace_fta (f', t', a') = if Ident.fieldname_equal f' f then (f, res_typ', a') else (f', t', a') in
           let instance_fields' =
-            IList.sort Sil.fld_typ_ann_compare (IList.map replace_fta instance_fields) in
-          let struct_typ = Sil.Tstruct { struct_typ with Sil.instance_fields = instance_fields' } in
+            IList.sort Typ.fld_typ_ann_compare (IList.map replace_fta instance_fields) in
+          let struct_typ = Typ.Tstruct { struct_typ with Typ.instance_fields = instance_fields' } in
           [(atoms', Sil.Estruct (res_fsel', inst'), struct_typ)]
       end
   | (Sil.Off_fld (_, _)):: _, _, _ ->
       raise (Exceptions.Bad_footprint __POS__)
 
-  | (Sil.Off_index _):: _, Sil.Eexp _, Sil.Tint _
-  | (Sil.Off_index _):: _, Sil.Eexp _, Sil.Tfloat _
-  | (Sil.Off_index _):: _, Sil.Eexp _, Sil.Tvoid
-  | (Sil.Off_index _):: _, Sil.Eexp _, Sil.Tfun _
-  | (Sil.Off_index _):: _, Sil.Eexp _, Sil.Tptr _
-  | (Sil.Off_index _):: _, Sil.Estruct _, Sil.Tstruct _ ->
+  | (Sil.Off_index _):: _, Sil.Eexp _, Typ.Tint _
+  | (Sil.Off_index _):: _, Sil.Eexp _, Typ.Tfloat _
+  | (Sil.Off_index _):: _, Sil.Eexp _, Typ.Tvoid
+  | (Sil.Off_index _):: _, Sil.Eexp _, Typ.Tfun _
+  | (Sil.Off_index _):: _, Sil.Eexp _, Typ.Tptr _
+  | (Sil.Off_index _):: _, Sil.Estruct _, Typ.Tstruct _ ->
       (* L.d_strln_color Orange "turn into an array"; *)
       let len = match se with
         | Sil.Eexp (_, Sil.Ialloc) -> Sil.exp_one (* if allocated explicitly, we know len is 1 *)
@@ -256,10 +258,10 @@ let rec _strexp_extend_values
             if Config.type_size then Sil.exp_one (* Sil.Sizeof (typ, Sil.Subtype.exact) *)
             else Sil.Var (new_id ()) in
       let se_new = Sil.Earray (len, [(Sil.exp_zero, se)], inst) in
-      let typ_new = Sil.Tarray (typ, None) in
+      let typ_new = Typ.Tarray (typ, None) in
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se_new typ_new off inst
-  | (Sil.Off_index e) :: off', Sil.Earray (len, esel, inst_arr), Sil.Tarray (typ', len_for_typ') ->
+  | (Sil.Off_index e) :: off', Sil.Earray (len, esel, inst_arr), Typ.Tarray (typ', len_for_typ') ->
       bounds_check pname orig_prop len e (State.get_loc ());
       begin
         try
@@ -270,10 +272,10 @@ let rec _strexp_extend_values
           let replace acc (res_atoms', res_se', res_typ') =
             let replace_ise ise = if Sil.exp_equal e (fst ise) then (e, res_se') else ise in
             let res_esel' = IList.map replace_ise esel in
-            if (Sil.typ_equal res_typ' typ') || (IList.length res_esel' = 1) then
+            if (Typ.equal res_typ' typ') || (IList.length res_esel' = 1) then
               ( res_atoms'
               , Sil.Earray (len, res_esel', inst_arr)
-              , Sil.Tarray (res_typ', len_for_typ') )
+              , Typ.Tarray (res_typ', len_for_typ') )
               :: acc
             else
               raise (Exceptions.Bad_footprint __POS__) in
@@ -295,7 +297,7 @@ and array_case_analysis_index pname tenv orig_prop
     index off inst_arr inst
   =
   let check_sound t' =
-    if not (Sil.typ_equal typ_cont t' || array_cont == [])
+    if not (Typ.equal typ_cont t' || array_cont == [])
     then raise (Exceptions.Bad_footprint __POS__) in
   let index_in_array =
     IList.exists (fun (i, _) -> Prover.check_equal Prop.prop_emp index i) array_cont in
@@ -306,7 +308,7 @@ and array_case_analysis_index pname tenv orig_prop
 
   if index_in_array then
     let array_default = Sil.Earray (array_len, array_cont, inst_arr) in
-    let typ_default = Sil.Tarray (typ_cont, typ_array_len) in
+    let typ_default = Typ.Tarray (typ_cont, typ_array_len) in
     [([], array_default, typ_default)]
   else if !Config.footprint then begin
     let atoms, elem_se, elem_typ =
@@ -315,7 +317,7 @@ and array_case_analysis_index pname tenv orig_prop
     check_sound elem_typ;
     let cont_new = IList.sort Sil.exp_strexp_compare ((index, elem_se):: array_cont) in
     let array_new = Sil.Earray (array_len, cont_new, inst_arr) in
-    let typ_new = Sil.Tarray (elem_typ, typ_array_len) in
+    let typ_new = Typ.Tarray (elem_typ, typ_array_len) in
     [(atoms, array_new, typ_new)]
   end
   else begin
@@ -328,7 +330,7 @@ and array_case_analysis_index pname tenv orig_prop
         check_sound elem_typ;
         let cont_new = IList.sort Sil.exp_strexp_compare ((index, elem_se):: array_cont) in
         let array_new = Sil.Earray (array_len, cont_new, inst_arr) in
-        let typ_new = Sil.Tarray (elem_typ, typ_array_len) in
+        let typ_new = Typ.Tarray (elem_typ, typ_array_len) in
         [(atoms, array_new, typ_new)]
       end in
     let rec handle_case acc isel_seen_rev = function
@@ -343,7 +345,7 @@ and array_case_analysis_index pname tenv orig_prop
                 let atoms_new = Sil.Aeq (index, i) :: atoms' in
                 let isel_new = list_rev_and_concat isel_seen_rev ((i, se'):: isel_unseen) in
                 let array_new = Sil.Earray (array_len, isel_new, inst_arr) in
-                let typ_new = Sil.Tarray (typ', typ_array_len) in
+                let typ_new = Typ.Tarray (typ', typ_array_len) in
                 (atoms_new, array_new, typ_new):: acc'
               ) [] atoms_se_typ_list in
           let acc_new = atoms_se_typ_list' :: acc in
@@ -391,7 +393,7 @@ let strexp_extend_values
     else off, [] in
   if Config.trace_rearrange then
     (L.d_str "entering strexp_extend_values se: "; Sil.d_sexp se; L.d_str " typ: ";
-     Sil.d_typ_full typ; L.d_str " off': "; Sil.d_offset_list off';
+     Typ.d_full typ; L.d_str " off': "; Sil.d_offset_list off';
      L.d_strln (if footprint_part then " FP" else " RE"));
   let atoms_se_typ_list =
     _strexp_extend_values
@@ -438,11 +440,11 @@ let mk_ptsto_exp_footprint
     | Config.Clang -> Sil.Subtype.exact
     | Config.Java -> Sil.Subtype.subtypes in
   let create_ptsto footprint_part off0 = match root, off0, typ with
-    | Sil.Lvar pvar, [], Sil.Tfun _ ->
+    | Sil.Lvar pvar, [], Typ.Tfun _ ->
         let fun_name = Procname.from_string_c_fun (Mangled.to_string (Pvar.get_name pvar)) in
         let fun_exp = Sil.Const (Sil.Cfun fun_name) in
         ([], Prop.mk_ptsto root (Sil.Eexp (fun_exp, inst)) (Sil.Sizeof (typ, None, st)))
-    | _, [], Sil.Tfun _ ->
+    | _, [], Typ.Tfun _ ->
         let atoms, se, t =
           create_struct_values
             pname tenv orig_prop footprint_part Ident.kfootprint max_stamp typ off0 inst in
@@ -472,7 +474,7 @@ let prop_iter_check_fields_ptsto_shallow iter lexp =
         (match se with
          | Sil.Estruct (fsel, _) ->
              (try
-                let _, se' = IList.find (fun (fld', _) -> Sil.fld_equal fld fld') fsel in
+                let _, se' = IList.find (fun (fld', _) -> Ident.fieldname_equal fld fld') fsel in
                 check_offset se' off'
               with Not_found -> Some fld)
          | _ -> Some fld)
@@ -621,7 +623,7 @@ let add_guarded_by_constraints prop lexp pdesc =
     let annot_extract_guarded_by_str (annot, _) =
       if Annotations.annot_ends_with annot Annotations.guarded_by
       then
-        match annot.Sil.parameters with
+        match annot.Typ.parameters with
         | [guarded_by_str] when not (excluded_guardedby_string guarded_by_str) ->
             Some guarded_by_str
         | _ ->
@@ -930,14 +932,14 @@ let iter_rearrange_pe_dllseg_last recurse_on_iters default_case_iter iter para_d
 let type_at_offset texp off =
   let rec strip_offset off typ = match off, typ with
     | [], _ -> Some typ
-    | (Sil.Off_fld (f, _)):: off', Sil.Tstruct { Sil.instance_fields } ->
+    | (Sil.Off_fld (f, _)):: off', Typ.Tstruct { Typ.instance_fields } ->
         (try
            let typ' =
              (fun (_, y, _) -> y)
                (IList.find (fun (f', _, _) -> Ident.fieldname_equal f f') instance_fields) in
            strip_offset off' typ'
          with Not_found -> None)
-    | (Sil.Off_index _) :: off', Sil.Tarray (typ', _) ->
+    | (Sil.Off_index _) :: off', Typ.Tarray (typ', _) ->
         strip_offset off' typ'
     | _ -> None in
   match texp with
@@ -950,10 +952,10 @@ let type_at_offset texp off =
 let check_type_size pname prop texp off typ_from_instr =
   L.d_strln_color Orange "check_type_size";
   L.d_str "off: "; Sil.d_offset_list off; L.d_ln ();
-  L.d_str "typ_from_instr: "; Sil.d_typ_full typ_from_instr; L.d_ln ();
+  L.d_str "typ_from_instr: "; Typ.d_full typ_from_instr; L.d_ln ();
   match type_at_offset texp off with
   | Some typ_of_object ->
-      L.d_str "typ_o: "; Sil.d_typ_full typ_of_object; L.d_ln ();
+      L.d_str "typ_o: "; Typ.d_full typ_of_object; L.d_ln ();
       if Prover.type_size_comparable typ_from_instr typ_of_object && Prover.check_type_size_leq typ_from_instr typ_of_object = false
       then begin
         let deref_str = Localise.deref_str_pointer_size_mismatch typ_from_instr typ_of_object in
@@ -980,12 +982,13 @@ let rec iter_rearrange
     pname tenv lexp typ_from_instr prop iter
     inst: (Sil.offset list) Prop.prop_iter list =
   let typ = match Sil.exp_get_offsets lexp with
-    | Sil.Off_fld (f, ((Sil.Tstruct _) as struct_typ)) :: _ -> (* access through field: get the struct type from the field *)
+    | Sil.Off_fld (f, ((Typ.Tstruct _) as struct_typ)) :: _ ->
+        (* access through field: get the struct type from the field *)
         if Config.trace_rearrange then begin
           L.d_increase_indent 1;
           L.d_str "iter_rearrange: root of lexp accesses field "; L.d_strln (Ident.fieldname_to_string f);
-          L.d_str "  type from instruction: "; Sil.d_typ_full typ_from_instr; L.d_ln();
-          L.d_str "  struct type from field: "; Sil.d_typ_full struct_typ; L.d_ln();
+          L.d_str "  type from instruction: "; Typ.d_full typ_from_instr; L.d_ln();
+          L.d_str "  struct type from field: "; Typ.d_full struct_typ; L.d_ln();
           L.d_decrease_indent 1;
           L.d_ln();
         end;
@@ -996,7 +999,7 @@ let rec iter_rearrange
     L.d_increase_indent 1;
     L.d_strln "entering iter_rearrange";
     L.d_str "lexp: "; Sil.d_exp lexp; L.d_ln ();
-    L.d_str "typ: "; Sil.d_typ_full typ; L.d_ln ();
+    L.d_str "typ: "; Typ.d_full typ; L.d_ln ();
     L.d_strln "prop:"; Prop.d_prop prop; L.d_ln ();
     L.d_strln "iter:"; Prop.d_prop (Prop.prop_iter_to_prop iter);
     L.d_ln (); L.d_ln ()
@@ -1279,6 +1282,6 @@ let pp_off fmt off =
       | Sil.Off_index e -> F.fprintf fmt "%a " (Sil.pp_exp pe_text) e) off
 
 let sort_ftl ftl =
-  let compare (f1, _) (f2, _) = Sil.fld_compare f1 f2 in
+  let compare (f1, _) (f2, _) = Ident.fieldname_compare f1 f2 in
   IList.sort compare ftl
 *)

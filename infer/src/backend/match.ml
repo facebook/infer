@@ -70,7 +70,7 @@ let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
       None (* Naive *)
   | Sil.Lvar _, _ | _, Sil.Lvar _ ->
       check_equal sub vars e1 e2
-  | Sil.Lfield(e1', fld1, _), Sil.Lfield(e2', fld2, _) when (Sil.fld_equal fld1 fld2) ->
+  | Sil.Lfield(e1', fld1, _), Sil.Lfield(e2', fld2, _) when (Ident.fieldname_equal fld1 fld2) ->
       exp_match e1' sub vars e2'
   | Sil.Lfield _, _ | _, Sil.Lfield _ ->
       None
@@ -117,7 +117,7 @@ and fsel_match fsel1 sub vars fsel2 =
       if (Config.abs_struct <= 0) then None
       else Some (sub, vars) (* This can lead to great information loss *)
   | (fld1, se1') :: fsel1', (fld2, se2') :: fsel2' ->
-      let n = Sil.fld_compare fld1 fld2 in
+      let n = Ident.fieldname_compare fld1 fld2 in
       if (n = 0) then begin
         match strexp_match se1' sub vars se2' with
         | None -> None
@@ -513,7 +513,7 @@ and generate_todos_from_fel mode todos fel1 fel2 =
   | _, [] ->
       if mode == LFieldForget then Some todos else None
   | (fld1, strexp1) :: fel1', (fld2, strexp2) :: fel2' ->
-      let n = Sil.fld_compare fld1 fld2 in
+      let n = Ident.fieldname_compare fld1 fld2 in
       if (n = 0) then
         begin
           match generate_todos_from_strexp mode todos strexp1 strexp2 with

@@ -16,10 +16,10 @@ module L = Logging
 module F = Format
 module P = Printf
 module IdSet = Ident.IdentSet
-module TypSet = Sil.TypSet
-module TypMap = Sil.TypMap
+module TypSet = Typ.Set
+module TypMap = Typ.Map
 
-type lifecycle_trace = (Procname.t * Sil.typ option) list
+type lifecycle_trace = (Procname.t * Typ.t option) list
 
 (** list of instrs and temporary variables created during inhabitation and a cache of types that
  * have already been inhabited *)
@@ -74,7 +74,7 @@ let inhabit_alloc sizeof_typ sizeof_len ret_typ alloc_kind env =
   let call_instr =
     let fun_new = fun_exp_from_name alloc_kind in
     let sizeof_exp = Sil.Sizeof (sizeof_typ, sizeof_len, Sil.Subtype.exact) in
-    let args = [(sizeof_exp, Sil.Tptr (ret_typ, Sil.Pk_pointer))] in
+    let args = [(sizeof_exp, Typ.Tptr (ret_typ, Typ.Pk_pointer))] in
     Sil.Call ([retval], fun_new, args, env.pc, cf_alloc) in
   (inhabited_exp, env_add_instr call_instr env)
 
@@ -84,18 +84,18 @@ let rec inhabit_typ typ cfg env =
   try (TypMap.find typ env.cache, env)
   with Not_found ->
     let inhabit_internal typ env = match typ with
-      | Sil.Tptr (Sil.Tarray (inner_typ, Some _), Sil.Pk_pointer) ->
+      | Typ.Tptr (Typ.Tarray (inner_typ, Some _), Typ.Pk_pointer) ->
           let len = Sil.Const (Sil.Cint (IntLit.one)) in
-          let arr_typ = Sil.Tarray (inner_typ, Some IntLit.one) in
+          let arr_typ = Typ.Tarray (inner_typ, Some IntLit.one) in
           inhabit_alloc arr_typ (Some len) typ ModelBuiltins.__new_array env
-      | Sil.Tptr (typ, Sil.Pk_pointer) as ptr_to_typ ->
+      | Typ.Tptr (typ, Typ.Pk_pointer) as ptr_to_typ ->
           (* TODO (t4575417): this case does not work correctly for enums, but they are currently
            * broken in Infer anyway (see t4592290) *)
           let (allocated_obj_exp, env) = inhabit_alloc typ None typ ModelBuiltins.__new env in
           (* select methods that are constructors and won't force us into infinite recursion because
            * we are already inhabiting one of their argument types *)
           let get_all_suitable_constructors typ = match typ with
-            | Sil.Tstruct { Sil.csu = Csu.Class _; def_methods } ->
+            | Typ.Tstruct { Typ.csu = Csu.Class _; def_methods } ->
                 let is_suitable_constructor p =
                   let try_get_non_receiver_formals p =
                     get_non_receiver_formals (formals_from_name cfg p) in
@@ -130,10 +130,10 @@ let rec inhabit_typ typ cfg env =
           let fresh_id = Ident.create_fresh Ident.knormal in
           let read_from_local_instr = Sil.Letderef (fresh_id, fresh_local_exp, ptr_to_typ, env'.pc) in
           (Sil.Var fresh_id, env_add_instr read_from_local_instr env')
-      | Sil.Tint (_) -> (Sil.Const (Sil.Cint (IntLit.zero)), env)
-      | Sil.Tfloat (_) -> (Sil.Const (Sil.Cfloat 0.0), env)
+      | Typ.Tint (_) -> (Sil.Const (Sil.Cint (IntLit.zero)), env)
+      | Typ.Tfloat (_) -> (Sil.Const (Sil.Cfloat 0.0), env)
       | typ ->
-          L.err "Couldn't inhabit typ: %a@." (Sil.pp_typ pe_text) typ;
+          L.err "Couldn't inhabit typ: %a@." (Typ.pp pe_text) typ;
           assert false in
     let (inhabited_exp, env') =
       inhabit_internal typ { env with cur_inhabiting = TypSet.add typ env.cur_inhabiting } in
@@ -164,7 +164,7 @@ and inhabit_constructor constr_name (allocated_obj, obj_type) cfg env =
 
 let inhabit_call_with_args procname procdesc args env =
   let retval =
-    let is_void = Cfg.Procdesc.get_ret_type procdesc = Sil.Tvoid in
+    let is_void = Cfg.Procdesc.get_ret_type procdesc = Typ.Tvoid in
     if is_void then [] else [Ident.create_fresh Ident.knormal] in
   let call_instr =
     let fun_exp = fun_exp_from_name procname in

@@ -28,13 +28,13 @@ val check_disequal : Prop.normal Prop.t -> exp -> exp -> bool
 val check_le : Prop.normal Prop.t -> exp -> exp -> bool
 
 (** Return true if the two types have sizes which can be compared *)
-val type_size_comparable : Sil.typ -> Sil.typ -> bool
+val type_size_comparable : Typ.t -> Typ.t -> bool
 
 (** Check <= on the size of comparable types *)
-val check_type_size_leq : Sil.typ -> Sil.typ -> bool
+val check_type_size_leq : Typ.t -> Typ.t -> bool
 
 (** Check < on the size of comparable types *)
-val check_type_size_lt : Sil.typ -> Sil.typ -> bool
+val check_type_size_lt : Typ.t -> Typ.t -> bool
 
 (** Check whether [prop |- a].  Result [false] means "don't know". *)
 val check_atom : Prop.normal Prop.t -> atom -> bool
@@ -99,7 +99,7 @@ module Subtyping_check :
 sig
 
   (** check_subtype t1 t2 checks whether t1 is a subtype of t2, given the type environment tenv. *)
-  val check_subtype : Tenv.t -> Sil.typ -> Sil.typ -> bool
+  val check_subtype : Tenv.t -> Typ.t -> Typ.t -> bool
 
   (** subtype_case_analysis tenv tecp1 texp2 performs case analysis on [texp1 <: texp2],
       and returns the updated types in the true and false case, if they are possible *)
@@ -107,7 +107,7 @@ sig
 
 end
 
-val get_overrides_of : Tenv.t -> Sil.typ -> Procname.t -> (typ * Procname.t) list
+val get_overrides_of : Tenv.t -> Typ.t -> Procname.t -> (Typ.t * Procname.t) list
 
 
 

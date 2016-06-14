@@ -206,10 +206,10 @@ struct
 
   let rec is_core_lib lib typ =
     match typ with
-    | Sil.Tptr (styp, _ ) ->
+    | Typ.Tptr (styp, _ ) ->
         is_core_lib lib styp
-    | Sil.Tvar (Typename.TN_csu (_, name) )
-    | Sil.Tstruct { Sil.struct_name = Some name } ->
+    | Typ.Tvar (Typename.TN_csu (_, name) )
+    | Typ.Tstruct { Typ.struct_name = Some name } ->
         let core_lib_types = core_lib_to_type_list lib in
         IList.mem (=) (Mangled.to_string name) core_lib_types
     | _ -> false

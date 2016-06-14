@@ -59,7 +59,7 @@ module StructuredSil = struct
 
   let pp_structured_program = pp_structured_instr_list
 
-  let dummy_typ = Sil.Tvoid
+  let dummy_typ = Typ.Tvoid
   let dummy_loc = Location.dummy
   let dummy_procname = Procname.empty_block
 
@@ -115,7 +115,7 @@ module StructuredSil = struct
 
   let var_assign_int lhs rhs =
     let rhs_exp = Sil.exp_int (IntLit.of_int rhs) in
-    let rhs_typ = Sil.Tint Sil.IInt in
+    let rhs_typ = Typ.Tint Typ.IInt in
     var_assign_exp ~rhs_typ lhs rhs_exp
 
   let var_assign_id ?(rhs_typ=dummy_typ) lhs rhs =

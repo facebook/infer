@@ -17,30 +17,30 @@ module F = Format
 
 let rec fldlist_assoc fld = function
   | [] -> raise Not_found
-  | (fld', x, _):: l -> if Sil.fld_equal fld fld' then x else fldlist_assoc fld l
+  | (fld', x, _):: l -> if Ident.fieldname_equal fld fld' then x else fldlist_assoc fld l
 
 let rec unroll_type tenv typ off =
   match (typ, off) with
-  | Sil.Tvar _, _ ->
+  | Typ.Tvar _, _ ->
       let typ' = Tenv.expand_type tenv typ in
       unroll_type tenv typ' off
-  | Sil.Tstruct { Sil.instance_fields; static_fields }, Sil.Off_fld (fld, _) ->
+  | Typ.Tstruct { Typ.instance_fields; static_fields }, Sil.Off_fld (fld, _) ->
       begin
         try fldlist_assoc fld (instance_fields @ static_fields)
         with Not_found ->
           L.d_strln ".... Invalid Field Access ....";
           L.d_strln ("Fld : " ^ Ident.fieldname_to_string fld);
-          L.d_str "Type : "; Sil.d_typ_full typ; L.d_ln ();
+          L.d_str "Type : "; Typ.d_full typ; L.d_ln ();
           raise (Exceptions.Bad_footprint __POS__)
       end
-  | Sil.Tarray (typ', _), Sil.Off_index _ ->
+  | Typ.Tarray (typ', _), Sil.Off_index _ ->
       typ'
   | _, Sil.Off_index (Sil.Const (Sil.Cint i)) when IntLit.iszero i ->
       typ
   | _ ->
       L.d_strln ".... Invalid Field Access ....";
       L.d_str "Fld : "; Sil.d_offset off; L.d_ln ();
-      L.d_str "Type : "; Sil.d_typ_full typ; L.d_ln ();
+      L.d_str "Type : "; Typ.d_full typ; L.d_ln ();
       assert false
 
 (** Given a node, returns a list of pvar of blocks that have been nullified in the block. *)
@@ -88,7 +88,7 @@ let rec apply_offlist
     L.d_strln ".... Invalid Field ....";
     L.d_str "strexp : "; Sil.d_sexp strexp; L.d_ln ();
     L.d_str "offlist : "; Sil.d_offset_list offlist; L.d_ln ();
-    L.d_str "type : "; Sil.d_typ_full typ; L.d_ln ();
+    L.d_str "type : "; Typ.d_full typ; L.d_ln ();
     L.d_str "prop : "; Prop.d_prop p; L.d_ln (); L.d_ln () in
   match offlist, strexp with
   | [], Sil.Eexp (e, inst_curr) ->
@@ -143,7 +143,7 @@ let rec apply_offlist
         let typ' = Tenv.expand_type tenv typ in
         let struct_typ =
           match typ' with
-          | Sil.Tstruct struct_typ ->
+          | Typ.Tstruct struct_typ ->
               struct_typ
           | _ -> assert false in
         let t' = unroll_type tenv typ (Sil.Off_fld (fld, fld_typ)) in
@@ -153,12 +153,14 @@ let rec apply_offlist
             apply_offlist
               pdesc tenv p fp_root nullify_struct
               (root_lexp, se', t') offlist' f inst lookup_inst in
-          let replace_fse fse = if Sil.fld_equal fld (fst fse) then (fld, res_se') else fse in
+          let replace_fse fse =
+            if Ident.fieldname_equal fld (fst fse) then (fld, res_se') else fse in
           let res_se = Sil.Estruct (IList.map replace_fse fsel, inst') in
-          let replace_fta (f, t, a) = if Sil.fld_equal fld f then (fld, res_t', a) else (f, t, a) in
-          let instance_fields' = IList.map replace_fta struct_typ.Sil.instance_fields in
+          let replace_fta (f, t, a) =
+            if Ident.fieldname_equal fld f then (fld, res_t', a) else (f, t, a) in
+          let instance_fields' = IList.map replace_fta struct_typ.Typ.instance_fields in
           let res_t =
-            Sil.Tstruct { struct_typ with Sil.instance_fields = instance_fields' } in
+            Typ.Tstruct { struct_typ with Typ.instance_fields = instance_fields' } in
           (res_e', res_se, res_t, res_pred_insts_op')
         with Not_found ->
           pp_error();
@@ -174,7 +176,7 @@ let rec apply_offlist
       let nidx = Prop.exp_normalize_prop p idx in
       begin
         let typ' = Tenv.expand_type tenv typ in
-        let t', len' = match typ' with Sil.Tarray (t', len') -> (t', len') | _ -> assert false in
+        let t', len' = match typ' with Typ.Tarray (t', len') -> (t', len') | _ -> assert false in
         try
           let idx_ese', se' = IList.find (fun ese -> Prover.check_equal p nidx (fst ese)) esel in
           let res_e', res_se', res_t', res_pred_insts_op' =
@@ -186,7 +188,7 @@ let rec apply_offlist
             then (idx_ese', res_se')
             else ese in
           let res_se = Sil.Earray (len, IList.map replace_ese esel, inst1) in
-          let res_t = Sil.Tarray (res_t', len') in
+          let res_t = Typ.Tarray (res_t', len') in
           (res_e', res_se, res_t, res_pred_insts_op')
         with Not_found ->
           (* return a nondeterministic value if the index is not found after rearrangement *)
@@ -498,7 +500,7 @@ let resolve_method tenv class_name proc_name =
       let right_proc_name =
         Procname.replace_class proc_name (Typename.name class_name) in
       match Tenv.lookup tenv class_name with
-      | Some { Sil.csu = Csu.Class _; def_methods; superclasses } ->
+      | Some { Typ.csu = Csu.Class _; def_methods; superclasses } ->
           if method_exists right_proc_name def_methods then
             Some right_proc_name
           else
@@ -526,8 +528,8 @@ let resolve_typename prop receiver_exp =
       | _ :: hpreds -> loop hpreds in
     loop (Prop.get_sigma prop) in
   match typexp_opt with
-  | Some (Sil.Sizeof (Sil.Tstruct { Sil.struct_name = None }, _, _)) -> None
-  | Some (Sil.Sizeof (Sil.Tstruct { Sil.csu = Csu.Class ck; struct_name = Some name }, _, _)) ->
+  | Some (Sil.Sizeof (Typ.Tstruct { Typ.struct_name = None }, _, _)) -> None
+  | Some (Sil.Sizeof (Typ.Tstruct { Typ.csu = Csu.Class ck; struct_name = Some name }, _, _)) ->
       Some (Typename.TN_csu (Csu.Class ck, name))
   | _ -> None
 
@@ -542,7 +544,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
     | Procname.Java pname_java ->
         begin
           match Tenv.proc_extract_declaring_class_typ tenv pname_java with
-          | Some struct_typ -> Sil.Tptr (Tstruct struct_typ, Pk_pointer)
+          | Some struct_typ -> Typ.Tptr (Tstruct struct_typ, Pk_pointer)
           | None -> fallback_typ
         end
     | _ ->
@@ -550,7 +552,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
   let receiver_types_equal pname actual_receiver_typ =
     (* the type of the receiver according to the function signature *)
     let formal_receiver_typ = get_receiver_typ pname actual_receiver_typ in
-    Sil.typ_equal formal_receiver_typ actual_receiver_typ in
+    Typ.equal formal_receiver_typ actual_receiver_typ in
   let do_resolve called_pname receiver_exp actual_receiver_typ =
     if receiver_types_equal called_pname actual_receiver_typ
     then resolve receiver_exp called_pname prop
@@ -823,7 +825,7 @@ let add_constraints_on_retval pdesc prop ret_exp ~has_nullable_annot typ callee_
         prop (* don't assume nonnull if the procedure is annotated with @Nullable *)
       else
         match typ with
-        | Sil.Tptr _ -> Prop.conjoin_neq exp Sil.exp_zero prop
+        | Typ.Tptr _ -> Prop.conjoin_neq exp Sil.exp_zero prop
         | _ -> prop in
     let add_tainted_post ret_exp callee_pname prop =
       Prop.add_or_replace_exp_attribute prop ret_exp (Sil.Ataint callee_pname) in
@@ -944,7 +946,7 @@ let load_ret_annots pname =
       let ret_annots, _ = attrs.ProcAttributes.method_annotation in
       ret_annots
   | None ->
-      Sil.item_annotation_empty
+      Typ.item_annotation_empty
 
 let execute_set ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_exp loc prop_ =
   let execute_set_ pdesc tenv rhs_exp acc_in iter =
@@ -1036,7 +1038,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
           true_branch && not skip_loop in
         (* in comparisons, nil is translated as (void * ) 0 rather than 0 *)
         let is_comparison_to_nil = function
-          | Sil.Cast ((Sil.Tptr (Sil.Tvoid, _)), exp) ->
+          | Sil.Cast ((Typ.Tptr (Typ.Tvoid, _)), exp) ->
               !Config.curr_language = Config.Clang && Sil.exp_is_zero exp
           | _ -> false in
         match Prop.exp_normalize_prop Prop.prop_emp cond with
@@ -1052,13 +1054,13 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
             (* iOS: check that NSNumber *'s are not used in conditionals without comparing to nil *)
             let lhs_normal = Prop.exp_normalize_prop prop__ lhs in
             let is_nsnumber = function
-              | Sil.Tvar (Typename.TN_csu (Csu.Class _, name)) ->
+              | Typ.Tvar (Typename.TN_csu (Csu.Class _, name)) ->
                   Mangled.to_string name = "NSNumber"
               | _ -> false in
             let lhs_is_ns_ptr () =
               IList.exists
                 (function
-                  | Sil.Hpointsto (_, Sil.Eexp (exp, _), Sil.Sizeof (Sil.Tptr (typ, _), _, _)) ->
+                  | Sil.Hpointsto (_, Sil.Eexp (exp, _), Sil.Sizeof (Typ.Tptr (typ, _), _, _)) ->
                       Sil.exp_equal exp lhs_normal && is_nsnumber typ
                   | _ -> false)
                 (Prop.get_sigma prop__) in
@@ -1091,9 +1093,9 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         | None ->
             let ret_typ =
               match Tenv.proc_extract_return_typ tenv callee_pname_java with
-              | Some (Sil.Tstruct _ as typ) -> Sil.Tptr (typ, Pk_pointer)
+              | Some (Typ.Tstruct _ as typ) -> Typ.Tptr (typ, Pk_pointer)
               | Some typ -> typ
-              | None -> Sil.Tvoid in
+              | None -> Typ.Tvoid in
             let ret_annots = load_ret_annots callee_pname in
             exec_skip_call resolved_pname ret_annots ret_typ
         | Some summary when call_should_be_skipped resolved_pname summary ->
@@ -1121,9 +1123,9 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         | None ->
             let ret_typ =
               match Tenv.proc_extract_return_typ tenv callee_pname_java with
-              | Some (Sil.Tstruct _ as typ) -> Sil.Tptr (typ, Pk_pointer)
+              | Some (Typ.Tstruct _ as typ) -> Typ.Tptr (typ, Pk_pointer)
               | Some typ -> typ
-              | None -> Sil.Tvoid in
+              | None -> Typ.Tvoid in
             let ret_annots = load_ret_annots callee_pname in
             exec_skip_call ret_annots ret_typ
         | Some summary when call_should_be_skipped pname summary ->
@@ -1204,7 +1206,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         L.d_str "Unknown function pointer "; Sil.d_exp fun_exp;
         L.d_strln ", returning undefined value.";
         let callee_pname = Procname.from_string_c_fun "__function_pointer__" in
-        unknown_or_scan_call ~is_scan:false None Sil.item_annotation_empty Builtin.{
+        unknown_or_scan_call ~is_scan:false None Typ.item_annotation_empty Builtin.{
             pdesc= current_pdesc; instr; tenv; prop_= prop_r; path; ret_ids; args= n_actual_params;
             proc_name= callee_pname; loc; }
       end
@@ -1304,11 +1306,11 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
           else
           if !Config.footprint then
             let prop', abduced_strexp = match actual_typ with
-              | Sil.Tptr ((Sil.Tstruct _) as typ, _) ->
+              | Typ.Tptr ((Typ.Tstruct _) as typ, _) ->
                   (* for struct types passed by reference, do abduction on the fields of the
                      struct *)
                   add_struct_value_to_footprint tenv abducted_ref_pv typ prop
-              | Sil.Tptr (typ, _) ->
+              | Typ.Tptr (typ, _) ->
                   (* for pointer types passed by reference, do abduction directly on the pointer *)
                   let (prop', fresh_fp_var) =
                     add_to_footprint abducted_ref_pv typ prop in
@@ -1316,7 +1318,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
               | typ ->
                   failwith
                     ("No need for abduction on non-pointer type " ^
-                     (Sil.typ_to_string typ)) in
+                     (Typ.to_string typ)) in
             (* replace [actual] |-> _ with [actual] |-> [fresh_fp_var] *)
             let filtered_sigma =
               IList.map
@@ -1353,7 +1355,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
     let havoc_actual_by_ref (actual, actual_typ) prop =
       let actual_pt_havocd_var =
         let havocd_var = Sil.Var (Ident.create_fresh Ident.kprimed) in
-        let sizeof_exp = Sil.Sizeof (Sil.typ_strip_ptr actual_typ, None, Sil.Subtype.subtypes) in
+        let sizeof_exp = Sil.Sizeof (Typ.strip_ptr actual_typ, None, Sil.Subtype.subtypes) in
         Prop.mk_ptsto actual (Sil.Eexp (havocd_var, Sil.Inone)) sizeof_exp in
       replace_actual_hpred actual actual_pt_havocd_var prop in
     IList.fold_left (fun p var -> havoc_actual_by_ref var p) prop actuals_by_ref
@@ -1421,7 +1423,7 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
   let actuals_by_ref =
     IList.filter
       (function
-        | Sil.Lvar _, Sil.Tptr _ -> true
+        | Sil.Lvar _, Typ.Tptr _ -> true
         | _ -> false)
       args in
   let has_nullable_annot = Annotations.ia_is_nullable ret_annots in
@@ -1513,8 +1515,8 @@ and sym_exec_objc_getter field_name ret_typ tenv ret_ids pdesc pname loc args pr
   match args with
   | [(lexp, typ)] ->
       let typ' = (match Tenv.expand_type tenv typ with
-          | Sil.Tstruct _ as s -> s
-          | Sil.Tptr (t, _) -> Tenv.expand_type tenv t
+          | Typ.Tstruct _ as s -> s
+          | Typ.Tptr (t, _) -> Tenv.expand_type tenv t
           | _ -> assert false) in
       let field_access_exp = Sil.Lfield (lexp, field_name, typ') in
       execute_letderef
@@ -1527,8 +1529,8 @@ and sym_exec_objc_setter field_name _ tenv _ pdesc pname loc args prop =
   match args with
   | (lexp1, typ1) :: (lexp2, typ2)::_ ->
       let typ1' = (match Tenv.expand_type tenv typ1 with
-          | Sil.Tstruct _ as s -> s
-          | Sil.Tptr (t, _) -> Tenv.expand_type tenv t
+          | Typ.Tstruct _ as s -> s
+          | Typ.Tptr (t, _) -> Tenv.expand_type tenv t
           | _ -> assert false) in
       let field_access_exp = Sil.Lfield (lexp1, field_name, typ1') in
       execute_set ~report_deref_errors:false pname pdesc tenv field_access_exp typ2 lexp2 loc prop
@@ -1554,8 +1556,8 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_ids; args= act
   let check_return_value_ignored () =
     (* check if the return value of the call is ignored, and issue a warning *)
     let is_ignored = match ret_typ, ret_ids with
-      | Sil.Tvoid, _ -> false
-      | Sil.Tint _, _ when not (proc_is_defined callee_pname) ->
+      | Typ.Tvoid, _ -> false
+      | Typ.Tint _, _ when not (proc_is_defined callee_pname) ->
           (* if the proc returns Tint and is not defined, *)
           (* don't report ignored return value *)
           false
@@ -1584,13 +1586,13 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_ids; args= act
             "likely use of variable-arguments function, or function prototype missing";
           L.d_ln();
           L.d_str "actual parameters: "; Sil.d_exp_list (IList.map fst actual_pars); L.d_ln ();
-          L.d_str "formal parameters: "; Sil.d_typ_list formal_types; L.d_ln ();
+          L.d_str "formal parameters: "; Typ.d_list formal_types; L.d_ln ();
           actual_pars
       | [], _ ->
           L.d_str ("**** ERROR: Procedure " ^ Procname.to_string callee_pname);
           L.d_strln (" mismatch in the number of parameters ****");
           L.d_str "actual parameters: "; Sil.d_exp_list (IList.map fst actual_pars); L.d_ln ();
-          L.d_str "formal parameters: "; Sil.d_typ_list formal_types; L.d_ln ();
+          L.d_str "formal parameters: "; Typ.d_list formal_types; L.d_ln ();
           raise (Exceptions.Wrong_argument_number __POS__) in
     let actual_params = comb actual_pars formal_types in
     (* Actual parameters are associated to their formal

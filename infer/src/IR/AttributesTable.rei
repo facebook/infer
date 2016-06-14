@@ -30,7 +30,7 @@ let find_tenv_from_class_of_proc: Procname.t => option Tenv.t;
 /** Given an ObjC class c, extract the type from the tenv where the class was */
 /** defined. We do this by adding a method that is unique to each class, and then */
 /** finding the tenv that corresponds to the class definition.  */
-let get_correct_type_from_objc_class_name: Mangled.t => option Sil.typ;
+let get_correct_type_from_objc_class_name: Mangled.t => option Typ.t;
 
 
 /** Returns true if the method is defined as a C++ model */

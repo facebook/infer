@@ -12,7 +12,7 @@ open! Utils
 (** Utility module to retrieve fields of structs of classes *)
 open CFrontend_utils
 
-type field_type = Ident.fieldname * Sil.typ * (Sil.annotation * bool) list
+type field_type = Ident.fieldname * Typ.t * (Typ.annotation * bool) list
 
 val get_fields : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> CContext.curr_class ->
   Clang_ast_t.decl list -> field_type list
@@ -25,4 +25,4 @@ val build_sil_field : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.na
 
 val add_missing_fields : Tenv.t -> string -> Csu.class_kind -> field_type list -> unit
 
-val is_ivar_atomic : Ident.fieldname -> Sil.struct_fields -> bool
+val is_ivar_atomic : Ident.fieldname -> Typ.struct_fields -> bool

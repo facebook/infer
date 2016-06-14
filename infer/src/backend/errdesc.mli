@@ -14,7 +14,7 @@ open! Utils
 
 (** find the dexp, if any, where the given value is stored
     also return the type of the value if found *)
-val vpath_find : 'a Prop.t -> Sil.exp -> Sil.vpath * Sil.typ option
+val vpath_find : 'a Prop.t -> Sil.exp -> Sil.vpath * Typ.t option
 
 (** Return true if [id] is assigned to a program variable which is then nullified *)
 val id_is_assigned_then_dead : Cfg.Node.t -> Ident.t -> bool
@@ -41,8 +41,8 @@ val find_boolean_assignment : Cfg.Node.t -> Pvar.t -> bool -> Cfg.Node.t option
 val exp_rv_dexp : Cfg.Node.t -> Sil.exp -> Sil.dexp option
 
 (** Produce a description of a persistent reference to an Android Context *)
-val explain_context_leak : Procname.t -> Sil.typ -> Ident.fieldname ->
-  (Ident.fieldname option * Sil.typ) list -> Localise.error_desc
+val explain_context_leak : Procname.t -> Typ.t -> Ident.fieldname ->
+  (Ident.fieldname option * Typ.t) list -> Localise.error_desc
 
 (** Produce a description of a pointer dangerously coerced to a boolean in a comparison *)
 val explain_bad_pointer_comparison : Sil.exp -> Cfg.Node.t -> Location.t -> Localise.error_desc
@@ -80,7 +80,7 @@ val explain_dereference_as_caller_expression :
 val explain_divide_by_zero : Sil.exp -> Cfg.Node.t -> Location.t -> Localise.error_desc
 
 (** explain a return expression required *)
-val explain_return_expression_required : Location.t -> Sil.typ -> Localise.error_desc
+val explain_return_expression_required : Location.t -> Typ.t -> Localise.error_desc
 
 (** explain a comparing floats for equality *)
 val explain_comparing_floats_for_equality : Location.t -> Localise.error_desc
@@ -104,12 +104,12 @@ val explain_return_statement_missing : Location.t -> Localise.error_desc
 
 (** explain a retain cycle *)
 val explain_retain_cycle :
-  Prop.normal Prop.t -> ((Sil.strexp * Sil.typ) * Ident.fieldname * Sil.strexp) list ->
+  Prop.normal Prop.t -> ((Sil.strexp * Typ.t) * Ident.fieldname * Sil.strexp) list ->
   Location.t -> string option -> Localise.error_desc
 
 (** explain unary minus applied to unsigned expression *)
 val explain_unary_minus_applied_to_unsigned_expression :
-  Sil.exp -> Sil.typ -> Cfg.Node.t -> Location.t -> Localise.error_desc
+  Sil.exp -> Typ.t -> Cfg.Node.t -> Location.t -> Localise.error_desc
 
 (** Explain a tainted value error *)
 val explain_tainted_value_reaching_sensitive_function :

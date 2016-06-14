@@ -103,10 +103,10 @@ val get_program : t -> JClasspath.program
 val get_node : t -> JCode.jcode Javalib.interface_or_class
 
 (** [set_pvar context var type] adds a variable with a type to the context  *)
-val set_pvar : t -> JBir.var -> Sil.typ -> Pvar.t
+val set_pvar : t -> JBir.var -> Typ.t -> Pvar.t
 
 (** [get_var_type context var] returns the type of the variable, if the variable is in the context *)
-val get_var_type : t -> JBir.var -> Sil.typ option
+val get_var_type : t -> JBir.var -> Typ.t option
 
 (** resets the dynamic type of the variables in the context. *)
 val reset_pvar_type : t -> unit

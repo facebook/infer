@@ -16,26 +16,26 @@ module L = Logging
 
 let get_name_from_struct s =
   match s with
-  | Sil.Tstruct { Sil.struct_name = Some n } -> n
+  | Typ.Tstruct { Typ.struct_name = Some n } -> n
   | _ -> assert false
 
 let add_pointer_to_typ typ =
-  Sil.Tptr(typ, Sil.Pk_pointer)
+  Typ.Tptr(typ, Typ.Pk_pointer)
 
 let remove_pointer_to_typ typ =
   match typ with
-  | Sil.Tptr(typ, Sil.Pk_pointer) -> typ
+  | Typ.Tptr(typ, Typ.Pk_pointer) -> typ
   | _ -> typ
 
 let classname_of_type typ =
   match typ with
-  | Sil.Tvar (Typename.TN_csu (_, name) )
-  | Sil.Tstruct { Sil.struct_name =  Some name }
-  | Sil.Tvar (Typename.TN_typedef name) -> Mangled.to_string name
-  | Sil.Tfun _ -> CFrontend_config.objc_object
+  | Typ.Tvar (Typename.TN_csu (_, name) )
+  | Typ.Tstruct { Typ.struct_name =  Some name }
+  | Typ.Tvar (Typename.TN_typedef name) -> Mangled.to_string name
+  | Typ.Tfun _ -> CFrontend_config.objc_object
   | _ ->
       Printing.log_out
-        "Classname of type cannot be extracted in type %s" (Sil.typ_to_string typ);
+        "Classname of type cannot be extracted in type %s" (Typ.to_string typ);
       "undefined"
 
 let mk_classname n ck = Typename.TN_csu (Csu.Class ck, Mangled.from_string n)
@@ -46,8 +46,8 @@ let mk_enumname n = Typename.TN_enum (Mangled.from_string n)
 
 let is_class typ =
   match typ with
-  | Sil.Tptr (Sil.Tstruct { Sil.struct_name = Some name }, _)
-  | Sil.Tptr (Sil.Tvar (Typename.TN_csu (_, name) ), _) ->
+  | Typ.Tptr (Typ.Tstruct { Typ.struct_name = Some name }, _)
+  | Typ.Tptr (Typ.Tvar (Typename.TN_csu (_, name) ), _) ->
       (Mangled.to_string name) = CFrontend_config.objc_class
   | _ -> false
 
@@ -86,16 +86,16 @@ let is_reference_type tp =
 (* Expand a named type Tvar if it has a definition in tenv. This is used for Tenum, Tstruct, etc. *)
 let rec expand_structured_type tenv typ =
   match typ with
-  | Sil.Tvar tn ->
+  | Typ.Tvar tn ->
       (match Tenv.lookup tenv tn with
        | Some ts ->
-           let t = Sil.Tstruct ts in
-           Printing.log_out "   Type expanded with type '%s' found in tenv@." (Sil.typ_to_string t);
-           if Sil.typ_equal t typ then
+           let t = Typ.Tstruct ts in
+           Printing.log_out "   Type expanded with type '%s' found in tenv@." (Typ.to_string t);
+           if Typ.equal t typ then
              typ
            else expand_structured_type tenv t
        | None -> typ)
-  | Sil.Tptr _ -> typ (*do not expand types under pointers *)
+  | Typ.Tptr _ -> typ (*do not expand types under pointers *)
   | _ -> typ
 
 (* To be called with strings of format "<pointer_type_info>*<class_name>" *)
@@ -111,7 +111,7 @@ let rec get_type_list nn ll =
   | (n, t):: ll' -> (* Printing.log_out ">>>>>Searching for type '%s'. Seen '%s'.@." nn n; *)
       if n = nn then (
         Printing.log_out ">>>>>>>>>>>>>>>>>>>>>>>NOW Found, Its type is: '%s'@."
-          (Sil.typ_to_string t);
+          (Typ.to_string t);
         [t]
       ) else get_type_list nn ll'
 *)

@@ -97,10 +97,10 @@ module ST = struct
           string_equal (normalize s1) (normalize s2) in
 
         let is_parameter_suppressed =
-          IList.mem string_equal a.Sil.class_name [Annotations.suppressLint] &&
-          IList.mem normalized_equal kind a.Sil.parameters in
+          IList.mem string_equal a.Typ.class_name [Annotations.suppressLint] &&
+          IList.mem normalized_equal kind a.Typ.parameters in
         let is_annotation_suppressed =
-          string_is_suffix (normalize (drop_prefix kind)) (normalize a.Sil.class_name) in
+          string_is_suffix (normalize (drop_prefix kind)) (normalize a.Typ.class_name) in
 
         is_parameter_suppressed || is_annotation_suppressed in
 
@@ -204,7 +204,7 @@ let callback_check_write_to_parcel_java
       let class_name =
         Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "android.os.Parcelable") in
       match this_type with
-      | Sil.Tptr (Sil.Tstruct struct_typ, _) | Sil.Tstruct struct_typ ->
+      | Typ.Tptr (Typ.Tstruct struct_typ, _) | Typ.Tstruct struct_typ ->
           PatternMatch.is_immediate_subtype struct_typ class_name
       | _ -> false in
     method_match () && expr_match () && type_match () in
@@ -215,7 +215,7 @@ let callback_check_write_to_parcel_java
       proc_desc pname_java ["android.os.Parcel"] in
 
   let parcel_constructors = function
-    | Sil.Tptr (Sil.Tstruct { Sil.def_methods }, _) ->
+    | Typ.Tptr (Typ.Tstruct { Typ.def_methods }, _) ->
         IList.filter is_parcel_constructor def_methods
     | _ -> [] in
 
@@ -319,10 +319,10 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
     let formals = Cfg.Procdesc.get_formals proc_desc in
     let class_formals =
       let is_class_type = function
-        | p, Sil.Tptr _ when Mangled.to_string p = "this" ->
+        | p, Typ.Tptr _ when Mangled.to_string p = "this" ->
             false (* no need to null check 'this' *)
-        | _, Sil.Tstruct _ -> true
-        | _, Sil.Tptr (Sil.Tstruct _, _) -> true
+        | _, Typ.Tstruct _ -> true
+        | _, Typ.Tptr (Typ.Tstruct _, _) -> true
         | _ -> false in
       IList.filter is_class_type formals in
     IList.map fst class_formals) in

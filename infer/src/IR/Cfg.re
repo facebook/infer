@@ -92,7 +92,7 @@ let module Node = {
         let id_map = ref IntMap.empty;
         /* formals are the same if their types are the same */
         let formals_eq formals1 formals2 =>
-          IList.equal (fun (_, typ1) (_, typ2) => Sil.typ_compare typ1 typ2) formals1 formals2;
+          IList.equal (fun (_, typ1) (_, typ2) => Typ.compare typ1 typ2) formals1 formals2;
         let nodes_eq n1s n2s =>
           /* nodes are the same if they have the same id, instructions, and succs/preds up to renaming
              with [exp_map] and [id_map] */
@@ -133,7 +133,7 @@ let module Node = {
         let att1 = pd1.pd_attributes
         and att2 = pd2.pd_attributes;
         att1.ProcAttributes.is_defined == att2.ProcAttributes.is_defined &&
-          Sil.typ_equal att1.ProcAttributes.ret_type att2.ProcAttributes.ret_type &&
+          Typ.equal att1.ProcAttributes.ret_type att2.ProcAttributes.ret_type &&
           formals_eq att1.ProcAttributes.formals att2.ProcAttributes.formals &&
           nodes_eq pd1.pd_nodes pd2.pd_nodes
       };
@@ -660,7 +660,7 @@ let module Node = {
       | exp => exp;
     let extract_class_name =
       fun
-      | Sil.Tptr (Sil.Tstruct {Sil.struct_name: struct_name}) _ when struct_name != None =>
+      | Typ.Tptr (Typ.Tstruct {Typ.struct_name: struct_name}) _ when struct_name != None =>
         Mangled.to_string (Option.get struct_name)
       | _ => failwith "Expecting classname for Java types";
     let subst_map = ref Ident.IdentMap.empty;
@@ -683,7 +683,7 @@ let module Node = {
       | Sil.Letderef id (Sil.Var origin_id as origin_exp) origin_typ loc => {
           let updated_typ =
             switch (Ident.IdentMap.find origin_id !subst_map) {
-            | Sil.Tptr typ _ => typ
+            | Typ.Tptr typ _ => typ
             | _ => failwith "Expecting a pointer type"
             | exception Not_found => origin_typ
             };

@@ -29,7 +29,7 @@ let assignment_arc_mode e1 typ e2 loc rhs_owning_method is_e1_decl =
     let bi_retain = Sil.Const (Sil.Cfun procname) in
     Sil.Call([], bi_retain, [(e, t)], loc, Sil.cf_default) in
   match typ with
-  | Sil.Tptr (_, Sil.Pk_pointer) when not rhs_owning_method && not is_e1_decl ->
+  | Typ.Tptr (_, Typ.Pk_pointer) when not rhs_owning_method && not is_e1_decl ->
       (* for __strong e1 = e2 the semantics is*)
       (* retain(e2); tmp=e1; e1=e2; release(tmp); *)
       let retain = mk_call retain_pname e2 typ in
@@ -37,15 +37,15 @@ let assignment_arc_mode e1 typ e2 loc rhs_owning_method is_e1_decl =
       let tmp_assign = Sil.Letderef(id, e1, typ, loc) in
       let release = mk_call release_pname (Sil.Var id) typ in
       (e1,[retain; tmp_assign; assign; release])
-  | Sil.Tptr (_, Sil.Pk_pointer) when not rhs_owning_method && is_e1_decl ->
+  | Typ.Tptr (_, Typ.Pk_pointer) when not rhs_owning_method && is_e1_decl ->
       (* for A __strong *e1 = e2 the semantics is*)
       (* retain(e2); e1=e2; *)
       let retain = mk_call retain_pname e2 typ in
       (e1,[retain; assign])
-  | Sil.Tptr (_, Sil.Pk_objc_weak)
-  | Sil.Tptr (_, Sil.Pk_objc_unsafe_unretained) ->
+  | Typ.Tptr (_, Typ.Pk_objc_weak)
+  | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) ->
       (e1, [assign])
-  | Sil.Tptr (_, Sil.Pk_objc_autoreleasing) ->
+  | Typ.Tptr (_, Typ.Pk_objc_autoreleasing) ->
       (* for __autoreleasing e1 = e2 the semantics is*)
       (* retain(e2); autorelease(e2); e1=e2; *)
       let retain = mk_call retain_pname e2 typ in

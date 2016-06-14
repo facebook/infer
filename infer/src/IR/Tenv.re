@@ -23,7 +23,7 @@ let module TypenameHash = Hashtbl.Make {
 
 
 /** Type for type environment. */
-type t = TypenameHash.t Sil.struct_typ;
+type t = TypenameHash.t Typ.struct_typ;
 
 
 /** Create a new type environment. */
@@ -46,19 +46,19 @@ let lookup_java_typ_from_string tenv typ_str => {
   let rec loop =
     fun
     | ""
-    | "void" => Some Sil.Tvoid
-    | "int" => Some (Sil.Tint Sil.IInt)
-    | "byte" => Some (Sil.Tint Sil.IShort)
-    | "short" => Some (Sil.Tint Sil.IShort)
-    | "boolean" => Some (Sil.Tint Sil.IBool)
-    | "char" => Some (Sil.Tint Sil.IChar)
-    | "long" => Some (Sil.Tint Sil.ILong)
-    | "float" => Some (Sil.Tfloat Sil.FFloat)
-    | "double" => Some (Sil.Tfloat Sil.FDouble)
+    | "void" => Some Typ.Tvoid
+    | "int" => Some (Typ.Tint Typ.IInt)
+    | "byte" => Some (Typ.Tint Typ.IShort)
+    | "short" => Some (Typ.Tint Typ.IShort)
+    | "boolean" => Some (Typ.Tint Typ.IBool)
+    | "char" => Some (Typ.Tint Typ.IChar)
+    | "long" => Some (Typ.Tint Typ.ILong)
+    | "float" => Some (Typ.Tfloat Typ.FFloat)
+    | "double" => Some (Typ.Tfloat Typ.FDouble)
     | typ_str when String.contains typ_str '[' => {
         let stripped_typ = String.sub typ_str 0 (String.length typ_str - 2);
         switch (loop stripped_typ) {
-        | Some typ => Some (Sil.Tptr (Sil.Tarray typ None) Sil.Pk_pointer)
+        | Some typ => Some (Typ.Tptr (Typ.Tarray typ None) Typ.Pk_pointer)
         | None => None
         }
       }
@@ -67,7 +67,7 @@ let lookup_java_typ_from_string tenv typ_str => {
       {
         let typename = Typename.Java.from_string typ_str;
         switch (lookup tenv typename) {
-        | Some struct_typ => Some (Sil.Tstruct struct_typ)
+        | Some struct_typ => Some (Typ.Tstruct struct_typ)
         | None => None
         }
       };
@@ -79,7 +79,7 @@ let lookup_java_typ_from_string tenv typ_str => {
     typs, use [lookup_java_typ_from_string] */
 let lookup_java_class_from_string tenv typ_str =>
   switch (lookup_java_typ_from_string tenv typ_str) {
-  | Some (Sil.Tstruct struct_typ) => Some struct_typ
+  | Some (Typ.Tstruct struct_typ) => Some struct_typ
   | _ => None
   };
 
@@ -102,7 +102,7 @@ let proc_extract_return_typ tenv pname_java =>
 let get_overriden_method tenv pname_java => {
   let struct_typ_get_def_method_by_name struct_typ method_name =>
     IList.find
-      (fun def_method => method_name == Procname.get_method def_method) struct_typ.Sil.def_methods;
+      (fun def_method => method_name == Procname.get_method def_method) struct_typ.Typ.def_methods;
   let rec get_overriden_method_in_superclasses pname_java superclasses =>
     switch superclasses {
     | [superclass, ...superclasses_tail] =>
@@ -113,7 +113,7 @@ let get_overriden_method tenv pname_java => {
         ) {
         | Not_found =>
           get_overriden_method_in_superclasses
-            pname_java (superclasses_tail @ struct_typ.Sil.superclasses)
+            pname_java (superclasses_tail @ struct_typ.Typ.superclasses)
         }
       | None => get_overriden_method_in_superclasses pname_java superclasses_tail
       }
@@ -130,10 +130,10 @@ let get_overriden_method tenv pname_java => {
 /** expand a type if it is a typename by looking it up in the type environment */
 let expand_type tenv typ =>
   switch typ {
-  | Sil.Tvar tname =>
+  | Typ.Tvar tname =>
     switch (lookup tenv tname) {
     | None => assert false
-    | Some struct_typ => Sil.Tstruct struct_typ
+    | Some struct_typ => Typ.Tstruct struct_typ
     }
   | _ => typ
   };
@@ -168,7 +168,7 @@ let pp fmt (tenv: t) =>
     (
       fun name typ => {
         Format.fprintf fmt "@[<6>NAME: %s@." (Typename.to_string name);
-        Format.fprintf fmt "@[<6>TYPE: %a@." (Sil.pp_struct_typ pe_text (fun _ () => ())) typ
+        Format.fprintf fmt "@[<6>TYPE: %a@." (Typ.pp_struct_typ pe_text (fun _ () => ())) typ
       }
     )
     tenv;

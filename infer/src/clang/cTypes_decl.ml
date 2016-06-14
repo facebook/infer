@@ -19,7 +19,7 @@ let add_predefined_objc_types tenv =
   let class_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCClass in
   let objc_class_type_info =
     {
-      Sil.instance_fields = [];
+      Typ.instance_fields = [];
       static_fields = [];
       csu = Csu.Struct;
       struct_name = Some (Mangled.from_string CFrontend_config.objc_class);
@@ -31,7 +31,7 @@ let add_predefined_objc_types tenv =
   let id_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCId in
   let objc_object_type_info =
     {
-      Sil.instance_fields = [];
+      Typ.instance_fields = [];
       static_fields = [];
       csu = Csu.Struct;
       struct_name = Some (Mangled.from_string CFrontend_config.objc_object);
@@ -56,7 +56,7 @@ let add_predefined_basic_types () =
     Ast_utils.update_sil_types_map tp return_type in
   let sil_void_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Void in
   let sil_char_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Char_S in
-  let sil_nsarray_type = Sil.Tvar (CTypes.mk_classname CFrontend_config.nsarray_cl Csu.Objc) in
+  let sil_nsarray_type = Typ.Tvar (CTypes.mk_classname CFrontend_config.nsarray_cl Csu.Objc) in
   let sil_id_type = CType_to_sil_type.get_builtin_objc_type `ObjCId in
   add_basic_type create_int_type `Int;
   add_basic_type create_void_type `Void;
@@ -140,7 +140,7 @@ let get_superclass_list_cpp decl =
 
 let add_struct_to_tenv tenv typ =
   let csu, struct_typ = match typ with
-    | Sil.Tstruct ({ Sil.csu } as struct_typ) -> csu, struct_typ
+    | Typ.Tstruct ({ Typ.csu } as struct_typ) -> csu, struct_typ
     | _ -> assert false in
   let mangled = CTypes.get_name_from_struct typ in
   let typename = Typename.TN_csu(csu, mangled) in
@@ -176,21 +176,21 @@ and get_struct_cpp_class_declaration_type tenv decl =
       let is_complete_definition = record_decl_info.Clang_ast_t.rdi_is_complete_definition in
       let sil_typename = Typename.TN_csu (csu, mangled_name) in
       let extra_fields = if CTrans_models.is_objc_memory_model_controlled name then
-          [Sil.objc_ref_counter_field]
+          [Typ.objc_ref_counter_field]
         else [] in
       let struct_annotations =
-        if csu = Csu.Class Csu.CPP then Sil.cpp_class_annotation
-        else Sil.item_annotation_empty in  (* No annotations for structs *)
+        if csu = Csu.Class Csu.CPP then Typ.cpp_class_annotation
+        else Typ.item_annotation_empty in  (* No annotations for structs *)
       if is_complete_definition then (
-        Ast_utils.update_sil_types_map type_ptr (Sil.Tvar sil_typename);
+        Ast_utils.update_sil_types_map type_ptr (Typ.Tvar sil_typename);
         let non_static_fields = get_struct_fields tenv decl in
         let non_static_fields =
           General_utils.append_no_duplicates_fields non_static_fields extra_fields in
         let static_fields = [] in (* Note: We treat static field same as global variables *)
         let def_methods = get_class_methods name decl_list in (* C++ methods only *)
         let superclasses = get_superclass_list_cpp decl in
-        let sil_type = Sil.Tstruct {
-            Sil.instance_fields = non_static_fields;
+        let sil_type = Typ.Tstruct {
+            Typ.instance_fields = non_static_fields;
             static_fields;
             csu;
             struct_name = Some mangled_name;
@@ -203,7 +203,7 @@ and get_struct_cpp_class_declaration_type tenv decl =
         sil_type
       ) else (
         match Tenv.lookup tenv sil_typename with
-        | Some struct_typ -> Sil.Tstruct struct_typ (* just reuse what is already in tenv *)
+        | Some struct_typ -> Typ.Tstruct struct_typ (* just reuse what is already in tenv *)
         | None ->
             (* This is first forward definition seen so far. Instead of adding *)
             (* empty Tstruct to sil_types_map add Tvar so that frontend doeasn't expand *)
@@ -211,9 +211,9 @@ and get_struct_cpp_class_declaration_type tenv decl =
             (* Later, when we see definition, it will be updated with a new value. *)
             (* Note: we know that this type will be wrapped with pointer type because *)
             (* there was no full definition of that type yet. *)
-            let tvar_type = Sil.Tvar sil_typename in
-            let empty_struct_type = Sil.Tstruct {
-                Sil.instance_fields = extra_fields;
+            let tvar_type = Typ.Tvar sil_typename in
+            let empty_struct_type = Typ.Tstruct {
+                Typ.instance_fields = extra_fields;
                 static_fields = [];
                 csu;
                 struct_name = Some mangled_name;
@@ -252,8 +252,8 @@ let get_type_from_expr_info ei tenv =
 
 let class_from_pointer_type tenv type_ptr =
   match type_ptr_to_sil_type tenv type_ptr with
-  | Sil.Tptr( Sil.Tvar (Typename.TN_typedef name), _) -> Mangled.to_string name
-  | Sil.Tptr( Sil.Tvar (Typename.TN_csu (_, name)), _) -> Mangled.to_string name
+  | Typ.Tptr( Typ.Tvar (Typename.TN_typedef name), _) -> Mangled.to_string name
+  | Typ.Tptr( Typ.Tvar (Typename.TN_csu (_, name)), _) -> Mangled.to_string name
   | _ -> assert false
 
 let get_class_type_np tenv expr_info obj_c_message_expr_info =
@@ -265,5 +265,5 @@ let get_class_type_np tenv expr_info obj_c_message_expr_info =
 
 let get_type_curr_class_objc tenv curr_class_opt =
   let name = CContext.get_curr_class_name curr_class_opt in
-  let typ = Sil.Tvar (Typename.TN_csu (Csu.Class Csu.Objc, (Mangled.from_string name))) in
+  let typ = Typ.Tvar (Typename.TN_csu (Csu.Class Csu.Objc, (Mangled.from_string name))) in
   CTypes.expand_structured_type tenv typ

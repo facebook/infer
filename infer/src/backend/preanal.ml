@@ -30,7 +30,7 @@ let add_dispatch_calls pdesc cg tenv =
           (* the frontend should not populate the list of targets *)
           assert (call_flags.Sil.cf_targets = []);
           let receiver_typ_no_ptr = match receiver_typ with
-            | Sil.Tptr (typ', _) ->
+            | Typ.Tptr (typ', _) ->
                 typ'
             | _ ->
                 receiver_typ in

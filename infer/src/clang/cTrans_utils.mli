@@ -26,16 +26,16 @@ type trans_state = {
   succ_nodes: Cfg.Node.t list;
   continuation: continuation option;
   priority: priority_node;
-  var_exp_typ: (Sil.exp * Sil.typ) option;
-  opaque_exp: (Sil.exp * Sil.typ) option;
-  obj_bridged_cast_typ : Sil.typ option
+  var_exp_typ: (Sil.exp * Typ.t) option;
+  opaque_exp: (Sil.exp * Typ.t) option;
+  obj_bridged_cast_typ : Typ.t option
 }
 
 type trans_result = {
   root_nodes: Cfg.Node.t list;
   leaf_nodes: Cfg.Node.t list;
   instrs: Sil.instr list;
-  exps: (Sil.exp * Sil.typ) list;
+  exps: (Sil.exp * Typ.t) list;
   initd_exps: Sil.exp list;
   is_cpp_call_virtual : bool;
 }
@@ -44,7 +44,7 @@ val empty_res_trans: trans_result
 
 val collect_res_trans : Cfg.cfg -> trans_result list -> trans_result
 
-val extract_var_exp_or_fail : trans_state -> Sil.exp * Sil.typ
+val extract_var_exp_or_fail : trans_state -> Sil.exp * Typ.t
 
 val is_return_temp: continuation option -> bool
 
@@ -56,15 +56,15 @@ val mk_cond_continuation : continuation option -> continuation option
 
 val extract_item_from_singleton : 'a list -> string -> 'a -> 'a
 
-val extract_exp_from_list : (Sil.exp * Sil.typ) list -> string -> (Sil.exp * Sil.typ)
+val extract_exp_from_list : (Sil.exp * Typ.t) list -> string -> (Sil.exp * Typ.t)
 
-val fix_param_exps_mismatch : 'a list -> (Sil.exp * Sil.typ) list -> (Sil.exp * Sil.typ)list
+val fix_param_exps_mismatch : 'a list -> (Sil.exp * Typ.t) list -> (Sil.exp * Typ.t)list
 
 val get_selector_receiver : Clang_ast_t.obj_c_message_expr_info -> string * Clang_ast_t.receiver_kind
 
 val define_condition_side_effects :
-  (Sil.exp * Sil.typ) list -> Sil.instr list -> Location.t ->
-  (Sil.exp * Sil.typ) list * Sil.instr list
+  (Sil.exp * Typ.t) list -> Sil.instr list -> Location.t ->
+  (Sil.exp * Typ.t) list * Sil.instr list
 
 val extract_stmt_from_singleton : Clang_ast_t.stmt list -> string -> Clang_ast_t.stmt
 
@@ -81,8 +81,8 @@ val get_type_from_exp_stmt : Clang_ast_t.stmt -> Clang_ast_t.type_ptr
 val dereference_value_from_result : Location.t -> trans_result -> strip_pointer:bool -> trans_result
 
 val cast_operation :
-  trans_state -> Clang_ast_t.cast_kind -> (Sil.exp * Sil.typ) list -> Sil.typ -> Location.t ->
-  bool -> Sil.instr list * (Sil.exp * Sil.typ)
+  trans_state -> Clang_ast_t.cast_kind -> (Sil.exp * Typ.t) list -> Typ.t -> Location.t ->
+  bool -> Sil.instr list * (Sil.exp * Typ.t)
 
 val trans_assertion: Location.t -> CContext.t -> Cfg.Node.t list ->  trans_result
 
@@ -97,22 +97,22 @@ val contains_opaque_value_expr : Clang_ast_t.stmt -> bool
 val get_decl_ref_info : Clang_ast_t.stmt -> Clang_ast_t.decl_ref
 
 val builtin_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
-  Sil.typ -> Procname.t option -> trans_result option
+  Typ.t -> Procname.t option -> trans_result option
 
 val alloc_trans :
-  trans_state -> Location.t -> Clang_ast_t.stmt_info -> Sil.typ -> bool ->
+  trans_state -> Location.t -> Clang_ast_t.stmt_info -> Typ.t -> bool ->
   Procname.t option -> trans_result
 
 val new_or_alloc_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
   Clang_ast_t.type_ptr -> string option -> string -> trans_result
 
-val cpp_new_trans : trans_state -> Location.t -> Sil.typ -> Sil.exp option -> trans_result
+val cpp_new_trans : trans_state -> Location.t -> Typ.t -> Sil.exp option -> trans_result
 
 val cast_trans :
-  CContext.t -> (Sil.exp * Sil.typ) list -> Location.t -> Procname.t option -> Sil.typ ->
+  CContext.t -> (Sil.exp * Typ.t) list -> Location.t -> Procname.t option -> Typ.t ->
   (Sil.instr * Sil.exp) option
 
-val dereference_var_sil : Sil.exp * Sil.typ -> Location.t -> Sil.instr list * Sil.exp
+val dereference_var_sil : Sil.exp * Typ.t -> Location.t -> Sil.instr list * Sil.exp
 
 (** Module for creating cfg nodes and other utility functions related to them.  *)
 module Nodes :
@@ -126,7 +126,7 @@ sig
   val is_join_node : Cfg.Node.t -> bool
 
   val create_prune_node :
-    bool -> (Sil.exp * Sil.typ) list -> Sil.instr list -> Location.t -> Sil.if_kind ->
+    bool -> (Sil.exp * Typ.t) list -> Sil.instr list -> Location.t -> Sil.if_kind ->
     CContext.t -> Cfg.Node.t
 
   val is_prune_node : Cfg.Node.t -> bool
@@ -216,5 +216,5 @@ val is_dispatch_function : Clang_ast_t.stmt list -> int option
 
 val is_block_enumerate_function : Clang_ast_t.obj_c_message_expr_info -> bool
 
-val var_or_zero_in_init_list : Tenv.t -> Sil.exp -> Sil.typ -> return_zero:bool ->
-  (Sil.exp * Sil.typ) list
+val var_or_zero_in_init_list : Tenv.t -> Sil.exp -> Typ.t -> return_zero:bool ->
+  (Sil.exp * Typ.t) list

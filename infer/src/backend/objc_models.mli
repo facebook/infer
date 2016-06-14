@@ -20,7 +20,7 @@ sig
 
   val is_core_lib_release : string -> string -> bool
 
-  val is_core_lib_create : Sil.typ -> string -> bool
+  val is_core_lib_create : Typ.t -> string -> bool
 
   val is_core_lib_retain : string -> string -> bool
 
@@ -31,4 +31,4 @@ sig
 
 end
 
-val is_core_lib_type : Sil.typ -> bool
+val is_core_lib_type : Typ.t -> bool

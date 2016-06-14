@@ -29,5 +29,5 @@ val check_call_to_objc_block_error :
     and the path (an [offsetlist]) which leads to [lexp] as the iterator state. *)
 val rearrange :
   ?report_deref_errors:bool -> Cfg.Procdesc.t -> Tenv.t -> Sil.exp ->
-  Sil.typ -> Prop.normal Prop.t ->
+  Typ.t -> Prop.normal Prop.t ->
   Location.t -> (Sil.offset list) Prop.prop_iter list

@@ -13,7 +13,7 @@ val is_cf_non_null_alloc : Procname.t option -> bool
 
 val is_alloc : Procname.t option -> bool
 
-val is_alloc_model : Sil.typ -> Procname.t option -> bool
+val is_alloc_model : Typ.t -> Procname.t option -> bool
 
 val is_objc_memory_model_controlled : string -> bool
 

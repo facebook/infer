@@ -31,10 +31,10 @@ type t =
     procdesc : Cfg.Procdesc.t;
     is_objc_method : bool;
     curr_class: curr_class;
-    return_param_typ : Sil.typ option;
+    return_param_typ : Typ.t option;
     is_callee_expression : bool;
     outer_context : t option; (* in case of objc blocks, the context of the method containing the block *)
-    mutable blocks_static_vars : ((Pvar.t * Sil.typ) list) Procname.Map.t;
+    mutable blocks_static_vars : ((Pvar.t * Typ.t) list) Procname.Map.t;
     label_map : str_node_map;
   }
 
@@ -123,7 +123,7 @@ let curr_class_hash curr_class =
 let create_curr_class tenv class_name ck =
   let class_tn_name = Typename.TN_csu (Csu.Class ck, (Mangled.from_string class_name)) in
   match Tenv.lookup tenv class_tn_name with
-  | Some { Sil.superclasses } ->
+  | Some { Typ.superclasses } ->
       (let superclasses_names = IList.map Typename.name superclasses in
        match superclasses_names with
        | superclass:: protocols ->

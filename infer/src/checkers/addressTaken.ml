@@ -40,7 +40,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         add_address_taken_pvars rhs_exp astate
     | Sil.Call (_, _, actuals, _, _) ->
         let add_actual_by_ref astate_acc = function
-          | actual_exp, Sil.Tptr _ -> add_address_taken_pvars actual_exp astate_acc
+          | actual_exp, Typ.Tptr _ -> add_address_taken_pvars actual_exp astate_acc
           | _ -> astate_acc in
         IList.fold_left add_actual_by_ref astate actuals
     | Sil.Set _ | Letderef _ | Prune _ | Nullify _ | Abstract _ | Remove_temps _ | Stackop _

@@ -19,21 +19,6 @@ let module F = Format;
 
 
 /** {2 Programs and Types} */
-/** Type to represent one @Annotation. */
-type annotation = {
-  class_name: string, /* name of the annotation */
-  parameters: list string
-  /* currently only one string parameter */
-};
-
-
-/** Annotation for one item: a list of annotations with visibility. */
-type item_annotation = list (annotation, bool);
-
-
-/** Annotation for a method: return value and list of parameters. */
-type method_annotation = (item_annotation, list item_annotation);
-
 type func_attribute = | FA_sentinel of int int;
 
 
@@ -74,31 +59,6 @@ type binop =
   | PtrFld /** field offset via pointer to field: takes the address of a
                Csu.t and a Cptr_to_fld constant to form an Lfield expression (see prop.ml) */;
 
-
-/** Kinds of integers */
-type ikind =
-  | IChar /** [char] */
-  | ISChar /** [signed char] */
-  | IUChar /** [unsigned char] */
-  | IBool /** [bool] */
-  | IInt /** [int] */
-  | IUInt /** [unsigned int] */
-  | IShort /** [short] */
-  | IUShort /** [unsigned short] */
-  | ILong /** [long] */
-  | IULong /** [unsigned long] */
-  | ILongLong /** [long long] (or [_int64] on Microsoft Visual C) */
-  | IULongLong /** [unsigned long long] (or [unsigned _int64] on Microsoft Visual C) */
-  | I128 /** [__int128_t] */
-  | IU128 /** [__uint128_t] */;
-
-
-/** Kinds of floating-point numbers*/
-type fkind =
-  | FFloat /** [float] */
-  | FDouble /** [double] */
-  | FLongDouble /** [long double] */;
-
 type mem_kind =
   | Mmalloc /** memory allocated with malloc */
   | Mnew /** memory allocated with new */
@@ -122,15 +82,6 @@ type dangling_kind =
   | DAaddr_stack_var
   /** pointer is -1 */
   | DAminusone;
-
-
-/** kind of pointer */
-type ptr_kind =
-  | Pk_pointer /* C/C++, Java, Objc standard/__strong pointer*/
-  | Pk_reference /* C++ reference */
-  | Pk_objc_weak /* Obj-C __weak pointer*/
-  | Pk_objc_unsafe_unretained /* Obj-C __unsafe_unretained pointer */
-  | Pk_objc_autoreleasing /* Obj-C __autoreleasing pointer */;
 
 
 /** position in a path: proc name, node id */
@@ -181,13 +132,22 @@ type call_flags = {
 /** Default value for call_flags where all fields are set to false */
 let cf_default: call_flags;
 
+type taint_kind =
+  | Tk_unverified_SSL_socket
+  | Tk_shared_preferences_data
+  | Tk_privacy_annotation
+  | Tk_integrity_annotation
+  | Tk_unknown;
+
+type taint_info = {taint_source: Procname.t, taint_kind: taint_kind};
+
 
 /** expression representing the result of decompilation */
 type dexp =
   | Darray of dexp dexp
   | Dbinop of binop dexp dexp
   | Dconst of const
-  | Dsizeof of typ (option exp) Subtype.t
+  | Dsizeof of Typ.t (option exp) Subtype.t
   | Dderef of dexp
   | Dfcall of dexp (list dexp) Location.t call_flags
   | Darrow of dexp Ident.fieldname
@@ -208,20 +168,13 @@ and res_action = {
   ra_loc: Location.t, /** location of the acquire/release */
   ra_vpath: vpath /** vpath of the resource value */
 }
-and taint_kind =
-  | Tk_unverified_SSL_socket
-  | Tk_shared_preferences_data
-  | Tk_privacy_annotation
-  | Tk_integrity_annotation
-  | Tk_unknown
-and taint_info = {taint_source: Procname.t, taint_kind: taint_kind}
 /** Attributes */
 and attribute =
   | Aresource of res_action /** resource acquire/release */
   | Aautorelease
   | Adangling of dangling_kind /** dangling pointer */
-  /** undefined value obtained by calling the given procedure */
-  | Aundef of Procname.t item_annotation Location.t path_pos
+  /** undefined value obtained by calling the given procedure, plus its return value annots */
+  | Aundef of Procname.t Typ.item_annotation Location.t path_pos
   | Ataint of taint_info
   | Auntaint of taint_info
   | Alocked
@@ -230,24 +183,13 @@ and attribute =
   | Adiv0 of path_pos
   /** the exp. is null because of a call to a method with exp as a null receiver */
   | Aobjc_null of exp
-  /** value was returned from a call to the given procedure */
-  | Aretval of Procname.t item_annotation
+  /** value was returned from a call to the given procedure, plus the annots of the return value */
+  | Aretval of Procname.t Typ.item_annotation
   /** denotes an object registered as an observers to a notification center */
   | Aobserver
   /** denotes an object unsubscribed from observers of a notification center */
   | Aunsubscribed_observer
-/** Categories of attributes */
-and attribute_category =
-  | ACresource
-  | ACautorelease
-  | ACtaint
-  | AClock
-  | ACdiv0
-  | ACobjc_null
-  | ACundef
-  | ACretval
-  | ACobserver
-and closure = {name: Procname.t, captured_vars: list (exp, Pvar.t, typ)}
+and closure = {name: Procname.t, captured_vars: list (exp, Pvar.t, Typ.t)}
 /** Constants */
 and const =
   | Cint of IntLit.t /** integer constants */
@@ -257,90 +199,35 @@ and const =
   | Cattribute of attribute /** attribute used in disequalities to annotate a value */
   | Cexn of exp /** exception */
   | Cclass of Ident.name /** class constant */
-  | Cptr_to_fld of Ident.fieldname typ /** pointer to field constant,
-                                           and type of the surrounding Csu.t type */
+  | Cptr_to_fld of Ident.fieldname Typ.t /** pointer to field constant,
+                                             and type of the surrounding Csu.t type */
   | Cclosure of closure /** anonymous function */
-and struct_fields = list (Ident.fieldname, typ, item_annotation)
-/** Type for a structured value. */
-and struct_typ = {
-  instance_fields: struct_fields, /** non-static fields */
-  static_fields: struct_fields, /** static fields */
-  csu: Csu.t, /** class/struct/union */
-  struct_name: option Mangled.t, /** name */
-  superclasses: list Typename.t, /** list of superclasses */
-  def_methods: list Procname.t, /** methods defined */
-  struct_annotations: item_annotation /** annotations */
-}
-/** statically determined length of an array type, if any */
-and static_length = option IntLit.t
 /** dynamically determined length of an array value, if any */
 and dynamic_length = option exp
-/** Types for sil (structured) expressions. */
-and typ =
-  | Tvar of Typename.t /** named type */
-  | Tint of ikind /** integer type */
-  | Tfloat of fkind /** float type */
-  | Tvoid /** void type */
-  | Tfun of bool /** function type with noreturn attribute */
-  | Tptr of typ ptr_kind /** pointer type */
-  | Tstruct of struct_typ /** Type for a structured value */
-  | Tarray of typ static_length /** array type with statically fixed length */
 /** Program expressions. */
 and exp =
   /** Pure variable: it is not an lvalue */
   | Var of Ident.t
   /** Unary operator with type of the result if known */
-  | UnOp of unop exp (option typ)
+  | UnOp of unop exp (option Typ.t)
   /** Binary operator */
   | BinOp of binop exp exp
   /** Constants */
   | Const of const
   /** Type cast */
-  | Cast of typ exp
+  | Cast of Typ.t exp
   /** The address of a program variable */
   | Lvar of Pvar.t
   /** A field offset, the type is the surrounding struct type */
-  | Lfield of exp Ident.fieldname typ
+  | Lfield of exp Ident.fieldname Typ.t
   /** An array index offset: [exp1\[exp2\]] */
   | Lindex of exp exp
-  /** A sizeof expression. [Sizeof typ (Some len)] represents the size of a value of type [typ]
-      which ends in an extensible array of length [len].  The length in [Tarray] records the
-      statically determined length, while the length in [Sizeof] records the dynamic length. */
-  | Sizeof of typ dynamic_length Subtype.t;
-
-
-/** the element typ of the final extensible array in the given typ, if any */
-let get_extensible_array_element_typ: typ => option typ;
-
-let struct_typ_equal: struct_typ => struct_typ => bool;
-
-
-/** if [struct_typ] is a class, return its class kind (Java, CPP, or Obj-C) */
-let struct_typ_get_class_kind: struct_typ => option Csu.class_kind;
-
-
-/** return true if [struct_typ] is a Java class */
-let struct_typ_is_java_class: struct_typ => bool;
-
-
-/** return true if [struct_typ] is a C++ class. Note that this returns false for raw structs. */
-let struct_typ_is_cpp_class: struct_typ => bool;
-
-
-/** return true if [struct_typ] is an Obj-C class. Note that this returns false for raw structs. */
-let struct_typ_is_objc_class: struct_typ => bool;
-
-
-/** Sets of types. */
-let module StructTypSet: Set.S with type elt = struct_typ;
-
-let module TypSet: Set.S with type elt = typ;
-
-
-/** Maps with type keys. */
-let module TypMap: Map.S with type key = typ;
-
-let module AnnotMap: PrettyPrintable.PPMap with type key = annotation;
+  /** A sizeof expression. [Sizeof (Tarray elt (Some static_length)) (Some dynamic_length)]
+      represents the size of an array value consisting of [dynamic_length] elements of type [elt].
+      The [dynamic_length], tracked by symbolic execution, may differ from the [static_length]
+      obtained from the type definition, e.g. when an array is over-allocated.  For struct types,
+      the [dynamic_length] is that of the final extensible array, if any. */
+  | Sizeof of Typ.t dynamic_length Subtype.t;
 
 
 /** Sets of expressions. */
@@ -380,21 +267,21 @@ type stackop =
 /** An instruction. */
 type instr =
   /** declaration [let x = *lexp:typ] where [typ] is the root type of [lexp] */
-  | Letderef of Ident.t exp typ Location.t
+  | Letderef of Ident.t exp Typ.t Location.t
   /** assignment [*lexp1:typ = exp2] where [typ] is the root type of [lexp1] */
-  | Set of exp typ exp Location.t
+  | Set of exp Typ.t exp Location.t
   /** prune the state based on [exp=1], the boolean indicates whether true branch */
   | Prune of exp Location.t bool if_kind
   /** [Call (ret_id1..ret_idn, e_fun, arg_ts, loc, call_flags)] represents an instructions
       [ret_id1..ret_idn = e_fun(arg_ts);]
       where n = 0 for void return and n > 1 for struct return */
-  | Call of (list Ident.t) exp (list (exp, typ)) Location.t call_flags
+  | Call of (list Ident.t) exp (list (exp, Typ.t)) Location.t call_flags
   /** nullify stack variable */
   | Nullify of Pvar.t Location.t
   | Abstract of Location.t /** apply abstraction */
   | Remove_temps of (list Ident.t) Location.t /** remove temporaries */
   | Stackop of stackop Location.t /** operation on the stack of propsets */
-  | Declare_locals of (list (Pvar.t, typ)) Location.t /** declare local variables */;
+  | Declare_locals of (list (Pvar.t, Typ.t)) Location.t /** declare local variables */;
 
 
 /** Check if an instruction is auxiliary, or if it comes from source instructions. */
@@ -402,7 +289,7 @@ let instr_is_auxiliary: instr => bool;
 
 
 /** Offset for an lvalue. */
-type offset = | Off_fld of Ident.fieldname typ | Off_index of exp;
+type offset = | Off_fld of Ident.fieldname Typ.t | Off_index of exp;
 
 
 /** {2 Components of Propositions} */
@@ -561,23 +448,7 @@ let hpred_compact: sharing_env => hpred => hpred;
 
 
 /** {2 Comparision And Inspection Functions} */
-let is_objc_ref_counter_field: (Ident.fieldname, typ, item_annotation) => bool;
-
 let has_objc_ref_counter: hpred => bool;
-
-let objc_class_annotation: list (annotation, bool);
-
-let cpp_class_annotation: list (annotation, bool);
-
-let is_objc_class: typ => bool;
-
-let is_cpp_class: typ => bool;
-
-let is_java_class: typ => bool;
-
-let is_array_of_cpp_class: typ => bool;
-
-let is_pointer_to_cpp_class: typ => bool;
 
 let exp_is_zero: exp => bool;
 
@@ -589,11 +460,7 @@ let exp_is_this: exp => bool;
 
 let path_pos_equal: path_pos => path_pos => bool;
 
-
-/** turn a *T into a T. fails if [typ] is not a pointer type */
-let typ_strip_ptr: typ => typ;
-
-let zero_value_of_numerical_type: typ => exp;
+let zero_value_of_numerical_type: Typ.t => exp;
 
 
 /** Make a static local name in objc */
@@ -609,48 +476,6 @@ let block_pvar: Pvar.t;
 
 /** Check if a pvar is a local pointing to a block in objc */
 let is_block_pvar: Pvar.t => bool;
-
-
-/** Check if type is a type for a block in objc */
-let is_block_type: typ => bool;
-
-
-/** Comparision for fieldnames. */
-let fld_compare: Ident.fieldname => Ident.fieldname => int;
-
-
-/** Equality for fieldnames. */
-let fld_equal: Ident.fieldname => Ident.fieldname => bool;
-
-
-/** Check wheter the integer kind is a char */
-let ikind_is_char: ikind => bool;
-
-
-/** Check wheter the integer kind is unsigned */
-let ikind_is_unsigned: ikind => bool;
-
-
-/** Convert an int64 into an IntLit.t given the kind:
-    the int64 is interpreted as unsigned according to the kind */
-let int_of_int64_kind: int64 => ikind => IntLit.t;
-
-
-/** Comparision for ptr_kind */
-let ptr_kind_compare: ptr_kind => ptr_kind => int;
-
-
-/** Comparision for types. */
-let typ_compare: typ => typ => int;
-
-
-/** Equality for types. */
-let typ_equal: typ => typ => bool;
-
-
-/** Comparision for fieldnames * types * item annotations. */
-let fld_typ_ann_compare:
-  (Ident.fieldname, typ, item_annotation) => (Ident.fieldname, typ, item_annotation) => int;
 
 let unop_equal: unop => unop => bool;
 
@@ -684,6 +509,19 @@ let attribute_compare: attribute => attribute => int;
 
 let attribute_equal: attribute => attribute => bool;
 
+
+/** Categories of attributes */
+type attribute_category =
+  | ACresource
+  | ACautorelease
+  | ACtaint
+  | AClock
+  | ACdiv0
+  | ACobjc_null
+  | ACundef
+  | ACretval
+  | ACobserver;
+
 let attribute_category_compare: attribute_category => attribute_category => int;
 
 let attribute_category_equal: attribute_category => attribute_category => bool;
@@ -712,7 +550,7 @@ let exp_is_array_index_of: exp => exp => bool;
 
 let call_flags_compare: call_flags => call_flags => int;
 
-let exp_typ_compare: (exp, typ) => (exp, typ) => int;
+let exp_typ_compare: (exp, Typ.t) => (exp, Typ.t) => int;
 
 let instr_compare: instr => instr => int;
 
@@ -762,38 +600,6 @@ let exp_strexp_compare: (exp, strexp) => (exp, strexp) => int;
 let hpred_get_lhs: hpred => exp;
 
 
-/** Field used for objective-c reference counting */
-let objc_ref_counter_field: (Ident.fieldname, typ, item_annotation);
-
-
-/** Compare function for annotations. */
-let annotation_compare: annotation => annotation => int;
-
-
-/** Compare function for annotation items. */
-let item_annotation_compare: item_annotation => item_annotation => int;
-
-
-/** Compare function for Method annotations. */
-let method_annotation_compare: method_annotation => method_annotation => int;
-
-
-/** Empty item annotation. */
-let item_annotation_empty: item_annotation;
-
-
-/** Empty method annotation. */
-let method_annotation_empty: method_annotation;
-
-
-/** Check if the item annodation is empty. */
-let item_annotation_is_empty: item_annotation => bool;
-
-
-/** Check if the method annodation is empty. */
-let method_annotation_is_empty: method_annotation => bool;
-
-
 /** Return the value of the FA_sentinel attribute in [attr_list] if it is found */
 let get_sentinel_func_attribute_value: list func_attribute => option (int, int);
 
@@ -823,54 +629,8 @@ let mem_alloc_pname: mem_kind => Procname.t;
 let mem_dealloc_pname: mem_kind => Procname.t;
 
 
-/** Pretty print an annotation. */
-let pp_annotation: F.formatter => annotation => unit;
-
-
 /** Pretty print a const. */
 let pp_const: printenv => F.formatter => const => unit;
-
-
-/** Pretty print an item annotation. */
-let pp_item_annotation: F.formatter => item_annotation => unit;
-
-let item_annotation_to_string: item_annotation => string;
-
-
-/** Pretty print a method annotation. */
-let pp_method_annotation: string => F.formatter => method_annotation => unit;
-
-
-/** Pretty print a type. */
-let pp_typ: printenv => F.formatter => typ => unit;
-
-let pp_struct_typ: printenv => (F.formatter => unit => unit) => F.formatter => struct_typ => unit;
-
-
-/** Pretty print a type with all the details. */
-let pp_typ_full: printenv => F.formatter => typ => unit;
-
-let typ_to_string: typ => string;
-
-
-/** [pp_type_decl pe pp_base pp_len f typ] pretty prints a type declaration.
-    pp_base prints the variable for a declaration, or can be skip to print only the type
-    pp_len prints the expression for the array length */
-let pp_type_decl:
-  printenv =>
-  (F.formatter => unit => unit) =>
-  (printenv => F.formatter => exp => unit) =>
-  F.formatter =>
-  typ =>
-  unit;
-
-
-/** Dump a type with all the details. */
-let d_typ_full: typ => unit;
-
-
-/** Dump a list of types. */
-let d_typ_list: list typ => unit;
 
 
 /** convert the attribute to a string */
@@ -890,7 +650,7 @@ let pp_exp: printenv => F.formatter => exp => unit;
 
 
 /** Pretty print an expression with type. */
-let pp_exp_typ: printenv => F.formatter => (exp, typ) => unit;
+let pp_exp_typ: printenv => F.formatter => (exp, Typ.t) => unit;
 
 
 /** Convert an expression to a string */
@@ -1094,17 +854,7 @@ let hpred_list_get_lexps: (exp => bool) => list hpred => list exp;
 /** {2 Utility Functions for Expressions} */
 /** Turn an expression representing a type into the type it represents
     If not a sizeof, return the default type if given, otherwise raise an exception */
-let texp_to_typ: option typ => exp => typ;
-
-
-/** If a struct type with field f, return the type of f.
-    If not, return the default type if given, otherwise raise an exception */
-let struct_typ_fld: option typ => Ident.fieldname => typ => typ;
-
-
-/** If an array type, return the type of the element.
-    If not, return the default type if given, otherwise raise an exception */
-let array_typ_elem: option typ => typ => typ;
+let texp_to_typ: option Typ.t => exp => Typ.t;
 
 
 /** Return the root of [lexp]. */

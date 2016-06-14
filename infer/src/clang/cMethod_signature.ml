@@ -23,7 +23,7 @@ type method_signature = {
   language : Config.clang_lang;
   pointer_to_parent : Clang_ast_t.pointer option;
   pointer_to_property_opt : Clang_ast_t.pointer option; (* If set then method is a getter/setter *)
-  return_param_typ : Sil.typ option;
+  return_param_typ : Typ.t option;
 }
 
 let ms_get_name { name } =

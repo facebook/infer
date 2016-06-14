@@ -31,13 +31,13 @@ let trans_operand : LAst.operand -> Sil.exp = function
   | Var var -> trans_variable var
   | Const const -> trans_constant const
 
-let rec trans_typ : LAst.typ -> Sil.typ = function
-  | Tint _i -> Sil.Tint Sil.IInt (* TODO: check what size int is needed here *)
-  | Tfloat -> Sil.Tfloat Sil.FFloat
-  | Tptr tp -> Sil.Tptr (trans_typ tp, Sil.Pk_pointer)
+let rec trans_typ : LAst.typ -> Typ.t = function
+  | Tint _i -> Typ.Tint Typ.IInt (* TODO: check what size int is needed here *)
+  | Tfloat -> Typ.Tfloat Typ.FFloat
+  | Tptr tp -> Typ.Tptr (trans_typ tp, Typ.Pk_pointer)
   | Tvector (i, tp)
-  | Tarray (i, tp) -> Sil.Tarray (trans_typ tp, Some (IntLit.of_int i))
-  | Tfunc _ -> Sil.Tfun false
+  | Tarray (i, tp) -> Typ.Tarray (trans_typ tp, Some (IntLit.of_int i))
+  | Tfunc _ -> Typ.Tfun false
   | Tlabel -> raise (ImproperTypeError "Tried to generate Sil type from LLVM label type.")
   | Tmetadata -> raise (ImproperTypeError "Tried to generate Sil type from LLVM metadata type.")
 
@@ -62,7 +62,7 @@ let procname_of_function_variable (func_var : LAst.variable) : Procname.t =
 (* Generate list of SIL instructions and list of local variables *)
 let rec trans_annotated_instructions
     (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t) (metadata : LAst.metadata_map)
-  : LAst.annotated_instruction list -> Sil.instr list * (Mangled.t * Sil.typ) list = function
+  : LAst.annotated_instruction list -> Sil.instr list * (Mangled.t * Typ.t) list = function
   | [] -> ([], [])
   | (instr, anno) :: t ->
       let (sil_instrs, locals) = trans_annotated_instructions cfg procdesc metadata t in
@@ -127,7 +127,7 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
       let proc_name = procname_of_function_variable func_name in
       let ret_type =
         match ret_tp_opt with
-        | None -> Sil.Tvoid
+        | None -> Typ.Tvoid
         | Some ret_tp -> trans_typ ret_tp in
       let (proc_attrs : ProcAttributes.t) =
         { (ProcAttributes.default proc_name Config.Clang) with

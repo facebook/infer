@@ -13,12 +13,12 @@ module F = Format
 module L = Logging
 
 module CallSiteSet = AbstractDomain.FiniteSet (Specs.CallSiteSet)
-module CallsDomain = AbstractDomain.Map (Sil.AnnotMap) (CallSiteSet)
+module CallsDomain = AbstractDomain.Map (Typ.AnnotMap) (CallSiteSet)
 
 let dummy_constructor_annot = "__infer_is_constructor"
 
 let annotation_of_str annot_str =
-  { Sil.class_name = annot_str; parameters = []; }
+  { Typ.class_name = annot_str; parameters = []; }
 
 (* TODO: read custom source/sink pairs from user code here *)
 let src_snk_pairs () =
@@ -136,7 +136,7 @@ let is_allocator tenv pname =
 let check_attributes check tenv pname =
   let check_class_attributes check tenv = function
     | Procname.Java java_pname ->
-        let check_class_annots { Sil.struct_annotations; } =
+        let check_class_annots { Typ.struct_annotations; } =
           check struct_annotations in
         begin
           match Tenv.proc_extract_declaring_class_typ tenv java_pname with
@@ -166,7 +166,7 @@ let method_overrides is_annotated tenv pname =
   overrides ()
 
 let method_has_annot annot tenv pname =
-  let has_annot ia = Annotations.ia_ends_with ia annot.Sil.class_name in
+  let has_annot ia = Annotations.ia_ends_with ia annot.Typ.class_name in
   if Annotations.annot_ends_with annot dummy_constructor_annot
   then is_allocator tenv pname
   else if Annotations.annot_ends_with annot Annotations.expensive
@@ -181,7 +181,7 @@ let lookup_annotation_calls annot pname =
   | Some { Specs.payload = { Specs.calls = Some call_map; }; } ->
       begin
         try
-          Sil.AnnotMap.find annot call_map
+          Typ.AnnotMap.find annot call_map
           |> Specs.CallSiteSet.elements
         with Not_found ->
           []
@@ -303,14 +303,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   (* TODO: generalize this to allow sanitizers for other annotation types, store it in [extras] so
      we can compute it just once *)
   let method_is_sanitizer annot tenv pname =
-    if annot.Sil.class_name = dummy_constructor_annot
+    if annot.Typ.class_name = dummy_constructor_annot
     then method_has_ignore_allocation_annot tenv pname
     else false
 
   let add_call call_map tenv callee_pname caller_pname call_site astate =
     let add_call_for_annot annot _ astate =
       let calls =
-        try Sil.AnnotMap.find annot call_map
+        try Typ.AnnotMap.find annot call_map
         with Not_found -> Specs.CallSiteSet.empty in
       if (not (Specs.CallSiteSet.is_empty calls) || method_has_annot annot tenv callee_pname) &&
          (not (method_is_sanitizer annot tenv caller_pname))
@@ -323,7 +323,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Domain.NonBottom (map, _) ->
         (* for each annotation type T in domain(astate), check if method calls something annotated
            with T *)
-        Sil.AnnotMap.fold add_call_for_annot map astate
+        Typ.AnnotMap.fold add_call_for_annot map astate
 
   let exec_instr astate { ProcData.pdesc; tenv; } _ = function
     | Sil.Call ([id], Const (Cfun callee_pname), _, _, _)
@@ -338,7 +338,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | Some Domain.NonBottom (call_map, _) ->
               add_call call_map tenv callee_pname caller_pname call_site astate
           | None ->
-              add_call Sil.AnnotMap.empty tenv callee_pname caller_pname call_site astate
+              add_call Typ.AnnotMap.empty tenv callee_pname caller_pname call_site astate
           | Some Domain.Bottom ->
               astate
         end
@@ -398,14 +398,14 @@ module Interprocedural = struct
     let report_src_snk_paths call_map (src_annot_list, snk_annot) =
       let extract_calls_with_annot annot call_map =
         try
-          Sil.AnnotMap.find annot call_map
+          Typ.AnnotMap.find annot call_map
           |> Specs.CallSiteSet.elements
         with Not_found -> [] in
       let report_src_snk_path calls src_annot =
         if method_overrides_annot src_annot tenv proc_name
         then
           let f_report =
-            report_annotation_stack src_annot.Sil.class_name snk_annot.Sil.class_name in
+            report_annotation_stack src_annot.Typ.class_name snk_annot.Typ.class_name in
           report_call_stack
             (method_has_annot snk_annot tenv)
             (lookup_annotation_calls snk_annot)

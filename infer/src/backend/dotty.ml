@@ -66,7 +66,7 @@ type dotty_node =
   | Dotstruct of coordinate * Sil.exp * (Ident.fieldname * Sil.strexp) list * string * Sil.exp
   (* Dotarray(coo,e1,e2,l,t,c): array box for expression e1  with field list l at coordinate coo and color c*)
   (* e2 is the len and t is the type *)
-  | Dotarray of coordinate * Sil.exp * Sil.exp * (Sil.exp * Sil.strexp) list * Sil.typ * string
+  | Dotarray of coordinate * Sil.exp * Sil.exp * (Sil.exp * Sil.strexp) list * Typ.t * string
   (* Dotlseg(coo,e1,e2,k,h,c): list box from e1 to e2 at coordinate coo and color c*)
   | Dotlseg of coordinate * Sil.exp * Sil.exp * Sil.lseg_kind * Sil.hpred list * string
   (* Dotlseg(coo,e1,e2,e3,e4,k,h,c): doubly linked-list box from with parameters (e1,e2,e3,e4) at coordinate coo and color c*)
@@ -294,7 +294,7 @@ let rec dotty_mk_node pe sigma =
   let n = !dotty_state_count in
   incr dotty_state_count;
   let do_hpred_lambda exp_color = function
-    | (Sil.Hpointsto (e, Sil.Earray (e', l, _), Sil.Sizeof (Sil.Tarray (t, _), _, _)), lambda) ->
+    | (Sil.Hpointsto (e, Sil.Earray (e', l, _), Sil.Sizeof (Typ.Tarray (t, _), _, _)), lambda) ->
         incr dotty_state_count;  (* increment once more n+1 is the box for the array *)
         let e_color_str = color_to_str (exp_color e) in
         let e_color_str'= color_to_str (exp_color e') in
@@ -675,7 +675,7 @@ let filter_useless_spec_dollar_box (nodes: dotty_node list) (links: link list) =
 let rec print_struct f pe e te l coo c =
   let print_type = match te with
     | Sil.Sizeof (t, _, _) ->
-        let str_t = Sil.typ_to_string t in
+        let str_t = Typ.to_string t in
         (match Str.split_delim (Str.regexp_string Config.anonymous_block_prefix) str_t with
          | [_; _] -> "BLOCK object"
          | _ -> str_t)
@@ -929,11 +929,11 @@ let pp_cfgnodename fmt (n : Cfg.Node.t) =
 
 let pp_etlist fmt etl =
   IList.iter (fun (id, ty) ->
-      Format.fprintf fmt " %a:%a" Mangled.pp id (Sil.pp_typ_full pe_text) ty) etl
+      Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full pe_text) ty) etl
 
 let pp_local_list fmt etl =
   IList.iter (fun (id, ty) ->
-      Format.fprintf fmt " %a:%a" Mangled.pp id (Sil.pp_typ_full pe_text) ty) etl
+      Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full pe_text) ty) etl
 
 let pp_cfgnodelabel fmt (n : Cfg.Node.t) =
   let pp_label fmt n =

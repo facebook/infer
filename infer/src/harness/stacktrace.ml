@@ -44,7 +44,7 @@ let try_resolve_frame (str_frame : str_frame) exe_env tenv =
      * in the stack trace. Note that the stack trace does not have any type or argument information;
      * the name is all that we have to go on *)
     match Tenv.lookup tenv (Typename.TN_csu (Csu.Class Csu.Java, class_name)) with
-    | Some Sil.Tstruct { Sil.csu = Csu.Class _; def_methods } ->
+    | Some Typ.Tstruct { Typ.csu = Csu.Class _; def_methods } ->
         let possible_calls =
           IList.filter
             (fun proc -> Procname.java_get_method proc = str_frame.method_str)

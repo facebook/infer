@@ -46,7 +46,7 @@ let enum_decl decl =
   match decl with
   | EnumDecl (_, _, _, type_ptr, decl_list, _, _) ->
       add_enum_constants_to_map (IList.rev decl_list);
-      let sil_type = Sil.Tint Sil.IInt in
+      let sil_type = Typ.Tint Typ.IInt in
       Ast_utils.update_sil_types_map type_ptr sil_type;
       sil_type
 

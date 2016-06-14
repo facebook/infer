@@ -165,7 +165,7 @@ type arith_problem =
   | Div0 of Sil.exp
 
   (* unary minus of unsigned type applied to the given expression *)
-  | UminusUnsigned of Sil.exp * Sil.typ
+  | UminusUnsigned of Sil.exp * Typ.t
 
 (** Look for an arithmetic problem in [exp] *)
 val find_arithmetic_problem : path_pos -> normal t -> Sil.exp -> arith_problem option * normal t
@@ -181,7 +181,7 @@ val exp_normalize_noabs : Sil.subst -> Sil.exp -> Sil.exp
 (** Collapse consecutive indices that should be added. For instance,
     this function reduces x[1][1] to x[2]. The [typ] argument is used
     to ensure the soundness of this collapsing. *)
-val exp_collapse_consecutive_indices_prop : Sil.typ -> Sil.exp -> Sil.exp
+val exp_collapse_consecutive_indices_prop : Typ.t -> Sil.exp -> Sil.exp
 
 (** Normalize [exp] used for the address of a heap cell.
     This normalization does not combine two offsets inside [exp]. *)
@@ -222,7 +222,7 @@ val mk_eq : exp -> exp -> atom
 
 (** create a strexp of the given type, populating the structures if [expand_structs] is true *)
 val create_strexp_of_type :
-  Tenv.t option -> struct_init_mode -> Sil.typ -> Sil.exp option -> Sil.inst -> Sil.strexp
+  Tenv.t option -> struct_init_mode -> Typ.t -> Sil.exp option -> Sil.inst -> Sil.strexp
 
 (** Construct a pointsto. *)
 val mk_ptsto : exp -> strexp -> exp -> hpred
@@ -320,7 +320,7 @@ val add_or_replace_exp_attribute_check_changed : (Sil.attribute -> Sil.attribute
 val add_or_replace_exp_attribute : normal t -> exp -> attribute -> normal t
 
 (** mark Sil.Var's or Sil.Lvar's as undefined *)
-val mark_vars_as_undefined : normal t -> Sil.exp list -> Procname.t -> Sil.item_annotation ->
+val mark_vars_as_undefined : normal t -> Sil.exp list -> Procname.t -> Typ.item_annotation ->
   Location.t -> Sil.path_pos -> normal t
 
 (** Remove an attribute from all the atoms in the heap *)
@@ -501,7 +501,7 @@ val compute_reachable_hpreds : hpred list -> Sil.ExpSet.t -> Sil.HpredSet.t * Si
 (** if possible, produce a (fieldname, typ) path from one of the [src_exps] to [snk_exp] using
     [reachable_hpreds]. *)
 val get_fld_typ_path_opt : Sil.ExpSet.t -> Sil.exp -> Sil.HpredSet.t ->
-  (Ident.fieldname option * Sil.typ) list option
+  (Ident.fieldname option * Typ.t) list option
 
 (** filter [pi] by removing the pure atoms that do not contain an expression in [exps] *)
 val compute_reachable_atoms : pi -> Sil.ExpSet.t -> pi

@@ -20,7 +20,7 @@ val accepts_sensitive_params : Procname.t -> ProcAttributes.t option -> (int * S
 val tainted_params : Procname.t -> (int * Sil.taint_kind) list
 
 (** returns the taint_kind of [fieldname] if it has a taint source annotation *)
-val has_taint_annotation : Ident.fieldname -> Sil.struct_typ -> bool
+val has_taint_annotation : Ident.fieldname -> Typ.struct_typ -> bool
 
 val add_tainting_attribute : Sil.attribute -> Pvar.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 

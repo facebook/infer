@@ -62,14 +62,14 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
             | None -> JBasics.make_cn "java.lang.Exception"
             | Some cn -> cn in
           match JTransType.get_class_type (JContext.get_program context) (JContext.get_tenv context) class_name with
-          | Sil.Tptr (typ, _) -> typ
+          | Typ.Tptr (typ, _) -> typ
           | _ -> assert false in
         let id_instanceof = Ident.create_fresh Ident.knormal in
         let instr_call_instanceof =
           let instanceof_builtin = Sil.Const (Sil.Cfun ModelBuiltins.__instanceof) in
           let args = [
-            (Sil.Var id_exn_val, Sil.Tptr(exn_type, Sil.Pk_pointer));
-            (Sil.Sizeof (exn_type, None, Sil.Subtype.exact), Sil.Tvoid)] in
+            (Sil.Var id_exn_val, Typ.Tptr(exn_type, Typ.Pk_pointer));
+            (Sil.Sizeof (exn_type, None, Sil.Subtype.exact), Typ.Tvoid)] in
           Sil.Call ([id_instanceof], instanceof_builtin, args, loc, Sil.cf_default) in
         let if_kind = Sil.Ik_switch in
         let instr_prune_true = Sil.Prune (Sil.Var id_instanceof, loc, true, if_kind) in

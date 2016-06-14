@@ -21,100 +21,12 @@ let module F = Format;
 
 
 /** {2 Programs and Types} */
-/** Type to represent one @Annotation. */
-type annotation = {
-  class_name: string, /* name of the annotation */
-  parameters: list string
-  /* currently only one string parameter */
-};
-
-
-/** Annotation for one item: a list of annotations with visibility. */
-type item_annotation = list (annotation, bool);
-
-
-/** Annotation for a method: return value and list of parameters. */
-type method_annotation = (item_annotation, list item_annotation);
-
 type func_attribute =
   | FA_sentinel of int int /** __attribute__((sentinel(int, int))) */;
 
 
 /** Visibility modifiers. */
 type access = | Default | Public | Private | Protected;
-
-
-/** Compare function for annotations. */
-let annotation_compare a1 a2 => {
-  let n = string_compare a1.class_name a2.class_name;
-  if (n != 0) {
-    n
-  } else {
-    IList.compare string_compare a1.parameters a2.parameters
-  }
-};
-
-
-/** Compare function for annotation items. */
-let item_annotation_compare ia1 ia2 => {
-  let cmp (a1, b1) (a2, b2) => {
-    let n = annotation_compare a1 a2;
-    if (n != 0) {
-      n
-    } else {
-      bool_compare b1 b2
-    }
-  };
-  IList.compare cmp ia1 ia2
-};
-
-
-/** Compare function for Method annotations. */
-let method_annotation_compare (ia1, ial1) (ia2, ial2) =>
-  IList.compare item_annotation_compare [ia1, ...ial1] [ia2, ...ial2];
-
-
-/** Empty item annotation. */
-let item_annotation_empty = [];
-
-
-/** Empty method annotation. */
-let method_annotation_empty = ([], []);
-
-
-/** Check if the item annodation is empty. */
-let item_annotation_is_empty ia => ia == [];
-
-
-/** Check if the method annodation is empty. */
-let method_annotation_is_empty (ia, ial) => IList.for_all item_annotation_is_empty [ia, ...ial];
-
-
-/** Pretty print an annotation. */
-let pp_annotation fmt annotation => F.fprintf fmt "@@%s" annotation.class_name;
-
-
-/** Pretty print an item annotation. */
-let pp_item_annotation fmt item_annotation => {
-  let pp fmt (a, _) => pp_annotation fmt a;
-  F.fprintf fmt "<%a>" (pp_seq pp) item_annotation
-};
-
-let item_annotation_to_string ann => {
-  let pp fmt () => pp_item_annotation fmt ann;
-  pp_to_string pp ()
-};
-
-
-/** Pretty print a method annotation. */
-let pp_method_annotation s fmt (ia, ial) =>
-  F.fprintf fmt "%a %s(%a)" pp_item_annotation ia s (pp_seq pp_item_annotation) ial;
-
-let module AnnotMap = PrettyPrintable.MakePPMap {
-  type t = annotation;
-  let compare = annotation_compare;
-  let pp_key = pp_annotation;
-};
 
 
 /** Return the value of the FA_sentinel attribute in [attr_list] if it is found */
@@ -158,31 +70,6 @@ type binop =
   | PtrFld /** field offset via pointer to field: takes the address of a
                Csu.t and a Cptr_to_fld constant to form an Lfield expression (see prop.ml) */;
 
-
-/** Kinds of integers */
-type ikind =
-  | IChar /** [char] */
-  | ISChar /** [signed char] */
-  | IUChar /** [unsigned char] */
-  | IBool /** [bool] */
-  | IInt /** [int] */
-  | IUInt /** [unsigned int] */
-  | IShort /** [short] */
-  | IUShort /** [unsigned short] */
-  | ILong /** [long] */
-  | IULong /** [unsigned long] */
-  | ILongLong /** [long long] (or [_int64] on Microsoft Visual C) */
-  | IULongLong /** [unsigned long long] (or [unsigned _int64] on Microsoft Visual C) */
-  | I128 /** [__int128_t] */
-  | IU128 /** [__uint128_t] */;
-
-
-/** Kinds of floating-point numbers*/
-type fkind =
-  | FFloat /** [float] */
-  | FDouble /** [double] */
-  | FLongDouble /** [long double] */;
-
 type mem_kind =
   | Mmalloc /** memory allocated with malloc */
   | Mnew /** memory allocated with new */
@@ -207,15 +94,6 @@ type dangling_kind =
   | DAaddr_stack_var
   /** pointer is -1 */
   | DAminusone;
-
-
-/** kind of pointer */
-type ptr_kind =
-  | Pk_pointer /* C/C++, Java, Objc standard/__strong pointer*/
-  | Pk_reference /* C++ reference */
-  | Pk_objc_weak /* Obj-C __weak pointer*/
-  | Pk_objc_unsafe_unretained /* Obj-C __unsafe_unretained pointer */
-  | Pk_objc_autoreleasing /* Obj-C __autoreleasing pointer */;
 
 
 /** position in a path: proc name, node id */
@@ -527,13 +405,22 @@ let cf_default = {
   cf_targets: []
 };
 
+type taint_kind =
+  | Tk_unverified_SSL_socket
+  | Tk_shared_preferences_data
+  | Tk_privacy_annotation
+  | Tk_integrity_annotation
+  | Tk_unknown;
+
+type taint_info = {taint_source: Procname.t, taint_kind: taint_kind};
+
 
 /** expression representing the result of decompilation */
 type dexp =
   | Darray of dexp dexp
   | Dbinop of binop dexp dexp
   | Dconst of const
-  | Dsizeof of typ (option exp) Subtype.t
+  | Dsizeof of Typ.t (option exp) Subtype.t
   | Dderef of dexp
   | Dfcall of dexp (list dexp) Location.t call_flags
   | Darrow of dexp Ident.fieldname
@@ -554,20 +441,13 @@ and res_action = {
   ra_loc: Location.t, /** location of the acquire/release */
   ra_vpath: vpath /** vpath of the resource value */
 }
-and taint_kind =
-  | Tk_unverified_SSL_socket
-  | Tk_shared_preferences_data
-  | Tk_privacy_annotation
-  | Tk_integrity_annotation
-  | Tk_unknown
-and taint_info = {taint_source: Procname.t, taint_kind: taint_kind}
 /** Attributes */
 and attribute =
   | Aresource of res_action /** resource acquire/release */
   | Aautorelease
   | Adangling of dangling_kind /** dangling pointer */
   /** undefined value obtained by calling the given procedure, plus its return value annots */
-  | Aundef of Procname.t item_annotation Location.t path_pos
+  | Aundef of Procname.t Typ.item_annotation Location.t path_pos
   | Ataint of taint_info
   | Auntaint of taint_info
   | Alocked
@@ -577,23 +457,12 @@ and attribute =
   /** the exp. is null because of a call to a method with exp as a null receiver */
   | Aobjc_null of exp
   /** value was returned from a call to the given procedure, plus the annots of the return value */
-  | Aretval of Procname.t item_annotation
+  | Aretval of Procname.t Typ.item_annotation
   /** denotes an object registered as an observers to a notification center */
   | Aobserver
   /** denotes an object unsubscribed from observers of a notification center */
   | Aunsubscribed_observer
-/** Categories of attributes */
-and attribute_category =
-  | ACresource
-  | ACautorelease
-  | ACtaint
-  | AClock
-  | ACdiv0
-  | ACobjc_null
-  | ACundef
-  | ACretval
-  | ACobserver
-and closure = {name: Procname.t, captured_vars: list (exp, Pvar.t, typ)}
+and closure = {name: Procname.t, captured_vars: list (exp, Pvar.t, Typ.t)}
 /** Constants */
 and const =
   | Cint of IntLit.t /** integer constants */
@@ -603,50 +472,27 @@ and const =
   | Cattribute of attribute /** attribute used in disequalities to annotate a value */
   | Cexn of exp /** exception */
   | Cclass of Ident.name /** class constant */
-  | Cptr_to_fld of Ident.fieldname typ /** pointer to field constant,
-                                           and type of the surrounding Csu.t type */
+  | Cptr_to_fld of Ident.fieldname Typ.t /** pointer to field constant,
+                                             and type of the surrounding Csu.t type */
   | Cclosure of closure /** anonymous function */
-and struct_fields = list (Ident.fieldname, typ, item_annotation)
-/** Type for a structured value. */
-and struct_typ = {
-  instance_fields: struct_fields, /** non-static fields */
-  static_fields: struct_fields, /** static fields */
-  csu: Csu.t, /** class/struct/union */
-  struct_name: option Mangled.t, /** name */
-  superclasses: list Typename.t, /** list of superclasses */
-  def_methods: list Procname.t, /** methods defined */
-  struct_annotations: item_annotation /** annotations */
-}
-/** statically determined length of an array type, if any */
-and static_length = option IntLit.t
 /** dynamically determined length of an array value, if any */
 and dynamic_length = option exp
-/** types for sil (structured) expressions */
-and typ =
-  | Tvar of Typename.t /** named type */
-  | Tint of ikind /** integer type */
-  | Tfloat of fkind /** float type */
-  | Tvoid /** void type */
-  | Tfun of bool /** function type with noreturn attribute */
-  | Tptr of typ ptr_kind /** pointer type */
-  | Tstruct of struct_typ /** Type for a structured value */
-  | Tarray of typ static_length /** array type with statically fixed length */
 /** Program expressions. */
 and exp =
   /** Pure variable: it is not an lvalue */
   | Var of Ident.t
   /** Unary operator with type of the result if known */
-  | UnOp of unop exp (option typ)
+  | UnOp of unop exp (option Typ.t)
   /** Binary operator */
   | BinOp of binop exp exp
   /** Constants */
   | Const of const
   /** Type cast */
-  | Cast of typ exp
+  | Cast of Typ.t exp
   /** The address of a program variable */
   | Lvar of Pvar.t
   /** A field offset, the type is the surrounding struct type */
-  | Lfield of exp Ident.fieldname typ
+  | Lfield of exp Ident.fieldname Typ.t
   /** An array index offset: [exp1\[exp2\]] */
   | Lindex of exp exp
   /** A sizeof expression. [Sizeof (Tarray elt (Some static_length)) (Some dynamic_length)]
@@ -654,19 +500,7 @@ and exp =
       The [dynamic_length], tracked by symbolic execution, may differ from the [static_length]
       obtained from the type definition, e.g. when an array is over-allocated.  For struct types,
       the [dynamic_length] is that of the final extensible array, if any. */
-  | Sizeof of typ dynamic_length Subtype.t;
-
-
-/** the element typ of the final extensible array in the given typ, if any */
-let rec get_extensible_array_element_typ =
-  fun
-  | Tarray typ _ => Some typ
-  | Tstruct {instance_fields} =>
-    Option.map_default
-      (fun (_, fld_typ, _) => get_extensible_array_element_typ fld_typ)
-      None
-      (IList.last instance_fields)
-  | _ => None;
+  | Sizeof of Typ.t dynamic_length Subtype.t;
 
 
 /** Kind of prune instruction */
@@ -690,21 +524,21 @@ type stackop =
 /** An instruction. */
 type instr =
   /** declaration [let x = *lexp:typ] where [typ] is the root type of [lexp] */
-  | Letderef of Ident.t exp typ Location.t
+  | Letderef of Ident.t exp Typ.t Location.t
   /** assignment [*lexp1:typ = exp2] where [typ] is the root type of [lexp1] */
-  | Set of exp typ exp Location.t
+  | Set of exp Typ.t exp Location.t
   /** prune the state based on [exp=1], the boolean indicates whether true branch */
   | Prune of exp Location.t bool if_kind
   /** [Call (ret_id1..ret_idn, e_fun, arg_ts, loc, call_flags)] represents an instructions
       [ret_id1..ret_idn = e_fun(arg_ts);]
       where n = 0 for void return and n > 1 for struct return */
-  | Call of (list Ident.t) exp (list (exp, typ)) Location.t call_flags
+  | Call of (list Ident.t) exp (list (exp, Typ.t)) Location.t call_flags
   /** nullify stack variable */
   | Nullify of Pvar.t Location.t
   | Abstract of Location.t /** apply abstraction */
   | Remove_temps of (list Ident.t) Location.t /** remove temporaries */
   | Stackop of stackop Location.t /** operation on the stack of propsets */
-  | Declare_locals of (list (Pvar.t, typ)) Location.t /** declare local variables */;
+  | Declare_locals of (list (Pvar.t, Typ.t)) Location.t /** declare local variables */;
 
 
 /** Check if an instruction is auxiliary, or if it comes from source instructions. */
@@ -722,7 +556,7 @@ let instr_is_auxiliary =
 
 
 /** offset for an lvalue */
-type offset = | Off_fld of Ident.fieldname typ | Off_index of exp;
+type offset = | Off_fld of Ident.fieldname Typ.t | Off_index of exp;
 
 
 /** {2 Components of Propositions} */
@@ -820,70 +654,20 @@ let hpred_get_lhs h =>
   | Hdllseg _ _ e _ _ _ _ => e
   };
 
-let objc_ref_counter_annot = [({class_name: "ref_counter", parameters: []}, false)];
-
-
-/** Field used for objective-c reference counting */
-let objc_ref_counter_field = (Ident.fieldname_hidden, Tint IInt, objc_ref_counter_annot);
-
 
 /** {2 Comparision and Inspection Functions} */
-let is_objc_ref_counter_field (fld, _, a) =>
-  Ident.fieldname_is_hidden fld && item_annotation_compare a objc_ref_counter_annot == 0;
-
 let has_objc_ref_counter hpred =>
   switch hpred {
   | Hpointsto _ _ (Sizeof (Tstruct struct_typ) _ _) =>
-    IList.exists is_objc_ref_counter_field struct_typ.instance_fields
+    IList.exists Typ.is_objc_ref_counter_field struct_typ.instance_fields
   | _ => false
   };
-
-let objc_class_str = "ObjC-Class";
-
-let cpp_class_str = "Cpp-Class";
-
-let class_annotation class_string => [({class_name: class_string, parameters: []}, true)];
-
-let objc_class_annotation = class_annotation objc_class_str;
-
-let cpp_class_annotation = class_annotation cpp_class_str;
-
-let is_class_of_kind typ ck =>
-  switch typ {
-  | Tstruct {csu: Csu.Class ck'} => ck == ck'
-  | _ => false
-  };
-
-let is_objc_class typ => is_class_of_kind typ Csu.Objc;
-
-let is_cpp_class typ => is_class_of_kind typ Csu.CPP;
-
-let is_java_class typ => is_class_of_kind typ Csu.Java;
-
-let rec is_array_of_cpp_class typ =>
-  switch typ {
-  | Tarray typ _ => is_array_of_cpp_class typ
-  | _ => is_cpp_class typ
-  };
-
-let is_pointer_to_cpp_class typ =>
-  switch typ {
-  | Tptr t _ => is_cpp_class t
-  | _ => false
-  };
-
-
-/** turn a *T into a T. fails if [typ] is not a pointer type */
-let typ_strip_ptr =
-  fun
-  | Tptr t _ => t
-  | _ => assert false;
 
 let zero_value_of_numerical_type typ =>
   switch typ {
-  | Tint _ => Const (Cint IntLit.zero)
-  | Tfloat _ => Const (Cfloat 0.0)
-  | Tptr _ => Const (Cint IntLit.null)
+  | Typ.Tint _ => Const (Cint IntLit.zero)
+  | Typ.Tfloat _ => Const (Cfloat 0.0)
+  | Typ.Tptr _ => Const (Cint IntLit.null)
   | _ => assert false
   };
 
@@ -903,10 +687,6 @@ let is_static_local_name pname pvar =>
     }
   };
 
-let fld_compare (fld1: Ident.fieldname) fld2 => Ident.fieldname_compare fld1 fld2;
-
-let fld_equal fld1 fld2 => fld_compare fld1 fld2 == 0;
-
 let exp_is_zero =
   fun
   | Const (Cint n) => IntLit.iszero n
@@ -921,24 +701,6 @@ let exp_is_this =
   fun
   | Lvar pvar => Pvar.is_this pvar
   | _ => false;
-
-let ikind_is_char =
-  fun
-  | IChar
-  | ISChar
-  | IUChar => true
-  | _ => false;
-
-let ikind_is_unsigned =
-  fun
-  | IUChar
-  | IUInt
-  | IUShort
-  | IULong
-  | IULongLong => true
-  | _ => false;
-
-let int_of_int64_kind i ik => IntLit.of_int64_unsigned i (ikind_is_unsigned ik);
 
 let unop_compare o1 o2 =>
   switch (o1, o2) {
@@ -1162,6 +924,19 @@ let taint_kind_compare tk1 tk2 =>
 let taint_info_compare {taint_source: ts1, taint_kind: tk1} {taint_source: ts2, taint_kind: tk2} =>
   taint_kind_compare tk1 tk2 |> next Procname.compare ts1 ts2;
 
+
+/** Categories of attributes */
+type attribute_category =
+  | ACresource
+  | ACautorelease
+  | ACtaint
+  | AClock
+  | ACdiv0
+  | ACobjc_null
+  | ACundef
+  | ACretval
+  | ACobserver;
+
 let attribute_category_compare (ac1: attribute_category) (ac2: attribute_category) :int =>
   Pervasives.compare ac1 ac2;
 
@@ -1189,90 +964,6 @@ let attr_is_undef =
   | Aundef _ => true
   | _ => false;
 
-let cname_opt_compare nameo1 nameo2 =>
-  switch (nameo1, nameo2) {
-  | (None, None) => 0
-  | (None, _) => (-1)
-  | (_, None) => 1
-  | (Some n1, Some n2) => Mangled.compare n1 n2
-  };
-
-
-/** comparison for ikind */
-let ikind_compare k1 k2 =>
-  switch (k1, k2) {
-  | (IChar, IChar) => 0
-  | (IChar, _) => (-1)
-  | (_, IChar) => 1
-  | (ISChar, ISChar) => 0
-  | (ISChar, _) => (-1)
-  | (_, ISChar) => 1
-  | (IUChar, IUChar) => 0
-  | (IUChar, _) => (-1)
-  | (_, IUChar) => 1
-  | (IBool, IBool) => 0
-  | (IBool, _) => (-1)
-  | (_, IBool) => 1
-  | (IInt, IInt) => 0
-  | (IInt, _) => (-1)
-  | (_, IInt) => 1
-  | (IUInt, IUInt) => 0
-  | (IUInt, _) => (-1)
-  | (_, IUInt) => 1
-  | (IShort, IShort) => 0
-  | (IShort, _) => (-1)
-  | (_, IShort) => 1
-  | (IUShort, IUShort) => 0
-  | (IUShort, _) => (-1)
-  | (_, IUShort) => 1
-  | (ILong, ILong) => 0
-  | (ILong, _) => (-1)
-  | (_, ILong) => 1
-  | (IULong, IULong) => 0
-  | (IULong, _) => (-1)
-  | (_, IULong) => 1
-  | (ILongLong, ILongLong) => 0
-  | (ILongLong, _) => (-1)
-  | (_, ILongLong) => 1
-  | (IULongLong, IULongLong) => 0
-  | (IULongLong, _) => (-1)
-  | (_, IULongLong) => 1
-  | (I128, I128) => 0
-  | (I128, _) => (-1)
-  | (_, I128) => 1
-  | (IU128, IU128) => 0
-  };
-
-
-/** comparison for fkind */
-let fkind_compare k1 k2 =>
-  switch (k1, k2) {
-  | (FFloat, FFloat) => 0
-  | (FFloat, _) => (-1)
-  | (_, FFloat) => 1
-  | (FDouble, FDouble) => 0
-  | (FDouble, _) => (-1)
-  | (_, FDouble) => 1
-  | (FLongDouble, FLongDouble) => 0
-  };
-
-let ptr_kind_compare pk1 pk2 =>
-  switch (pk1, pk2) {
-  | (Pk_pointer, Pk_pointer) => 0
-  | (Pk_pointer, _) => (-1)
-  | (_, Pk_pointer) => 1
-  | (Pk_reference, Pk_reference) => 0
-  | (_, Pk_reference) => (-1)
-  | (Pk_reference, _) => 1
-  | (Pk_objc_weak, Pk_objc_weak) => 0
-  | (Pk_objc_weak, _) => (-1)
-  | (_, Pk_objc_weak) => 1
-  | (Pk_objc_unsafe_unretained, Pk_objc_unsafe_unretained) => 0
-  | (Pk_objc_unsafe_unretained, _) => (-1)
-  | (_, Pk_objc_unsafe_unretained) => 1
-  | (Pk_objc_autoreleasing, Pk_objc_autoreleasing) => 0
-  };
-
 let const_kind_equal c1 c2 => {
   let const_kind_number =
     fun
@@ -1288,131 +979,7 @@ let const_kind_equal c1 c2 => {
   const_kind_number c1 == const_kind_number c2
 };
 
-let rec const_compare (c1: const) (c2: const) :int =>
-  switch (c1, c2) {
-  | (Cint i1, Cint i2) => IntLit.compare i1 i2
-  | (Cint _, _) => (-1)
-  | (_, Cint _) => 1
-  | (Cfun fn1, Cfun fn2) => Procname.compare fn1 fn2
-  | (Cfun _, _) => (-1)
-  | (_, Cfun _) => 1
-  | (Cstr s1, Cstr s2) => string_compare s1 s2
-  | (Cstr _, _) => (-1)
-  | (_, Cstr _) => 1
-  | (Cfloat f1, Cfloat f2) => float_compare f1 f2
-  | (Cfloat _, _) => (-1)
-  | (_, Cfloat _) => 1
-  | (Cattribute att1, Cattribute att2) => attribute_compare att1 att2
-  | (Cattribute _, _) => (-1)
-  | (_, Cattribute _) => 1
-  | (Cexn e1, Cexn e2) => exp_compare e1 e2
-  | (Cexn _, _) => (-1)
-  | (_, Cexn _) => 1
-  | (Cclass c1, Cclass c2) => Ident.name_compare c1 c2
-  | (Cclass _, _) => (-1)
-  | (_, Cclass _) => 1
-  | (Cptr_to_fld fn1 t1, Cptr_to_fld fn2 t2) =>
-    let n = fld_compare fn1 fn2;
-    if (n != 0) {
-      n
-    } else {
-      typ_compare t1 t2
-    }
-  | (Cptr_to_fld _, _) => (-1)
-  | (_, Cptr_to_fld _) => 1
-  | (Cclosure {name: n1, captured_vars: c1}, Cclosure {name: n2, captured_vars: c2}) =>
-    let captured_var_compare acc (e1, pvar1, typ1) (e2, pvar2, typ2) =>
-      if (acc != 0) {
-        acc
-      } else {
-        let n = exp_compare e1 e2;
-        if (n != 0) {
-          n
-        } else {
-          let n = Pvar.compare pvar1 pvar2;
-          if (n != 0) {
-            n
-          } else {
-            typ_compare typ1 typ2
-          }
-        }
-      };
-    let n = Procname.compare n1 n2;
-    if (n != 0) {
-      n
-    } else {
-      IList.fold_left2 captured_var_compare 0 c1 c2
-    }
-  }
-and struct_typ_compare struct_typ1 struct_typ2 =>
-  if (struct_typ1.csu == Csu.Class Csu.Java && struct_typ2.csu == Csu.Class Csu.Java) {
-    cname_opt_compare struct_typ1.struct_name struct_typ2.struct_name
-  } else {
-    let n = fld_typ_ann_list_compare struct_typ1.instance_fields struct_typ2.instance_fields;
-    if (n != 0) {
-      n
-    } else {
-      let n = fld_typ_ann_list_compare struct_typ1.static_fields struct_typ2.static_fields;
-      if (n != 0) {
-        n
-      } else {
-        let n = Csu.compare struct_typ1.csu struct_typ2.csu;
-        if (n != 0) {
-          n
-        } else {
-          cname_opt_compare struct_typ1.struct_name struct_typ2.struct_name
-        }
-      }
-    }
-  }
-and struct_typ_equal struct_typ1 struct_typ2 => struct_typ_compare struct_typ1 struct_typ2 == 0
-/** Comparision for types. */
-and typ_compare t1 t2 =>
-  if (t1 === t2) {
-    0
-  } else {
-    switch (t1, t2) {
-    | (Tvar tn1, Tvar tn2) => Typename.compare tn1 tn2
-    | (Tvar _, _) => (-1)
-    | (_, Tvar _) => 1
-    | (Tint ik1, Tint ik2) => ikind_compare ik1 ik2
-    | (Tint _, _) => (-1)
-    | (_, Tint _) => 1
-    | (Tfloat fk1, Tfloat fk2) => fkind_compare fk1 fk2
-    | (Tfloat _, _) => (-1)
-    | (_, Tfloat _) => 1
-    | (Tvoid, Tvoid) => 0
-    | (Tvoid, _) => (-1)
-    | (_, Tvoid) => 1
-    | (Tfun noreturn1, Tfun noreturn2) => bool_compare noreturn1 noreturn2
-    | (Tfun _, _) => (-1)
-    | (_, Tfun _) => 1
-    | (Tptr t1' pk1, Tptr t2' pk2) =>
-      let n = typ_compare t1' t2';
-      if (n != 0) {
-        n
-      } else {
-        ptr_kind_compare pk1 pk2
-      }
-    | (Tptr _, _) => (-1)
-    | (_, Tptr _) => 1
-    | (Tstruct struct_typ1, Tstruct struct_typ2) => struct_typ_compare struct_typ1 struct_typ2
-    | (Tstruct _, _) => (-1)
-    | (_, Tstruct _) => 1
-    | (Tarray t1 _, Tarray t2 _) => typ_compare t1 t2
-    }
-  }
-and typ_opt_compare to1 to2 =>
-  switch (to1, to2) {
-  | (None, None) => 0
-  | (None, Some _) => (-1)
-  | (Some _, None) => 1
-  | (Some t1, Some t2) => typ_compare t1 t2
-  }
-and fld_typ_ann_compare fta1 fta2 =>
-  triple_compare fld_compare typ_compare item_annotation_compare fta1 fta2
-and fld_typ_ann_list_compare ftal1 ftal2 => IList.compare fld_typ_ann_compare ftal1 ftal2
-and attribute_compare (att1: attribute) (att2: attribute) :int =>
+let rec attribute_compare (att1: attribute) (att2: attribute) :int =>
   switch (att1, att2) {
   | (Aresource ra1, Aresource ra2) =>
     let n = res_act_kind_compare ra1.ra_kind ra2.ra_kind;
@@ -1455,7 +1022,7 @@ and attribute_compare (att1: attribute) (att2: attribute) :int =>
     if (n != 0) {
       n
     } else {
-      item_annotation_compare annots1 annots2
+      Typ.item_annotation_compare annots1 annots2
     }
   | (Aretval _, _) => (-1)
   | (_, Aretval _) => 1
@@ -1465,6 +1032,62 @@ and attribute_compare (att1: attribute) (att2: attribute) :int =>
   | (Aunsubscribed_observer, Aunsubscribed_observer) => 0
   | (Aunsubscribed_observer, _) => (-1)
   | (_, Aunsubscribed_observer) => 1
+  }
+and const_compare (c1: const) (c2: const) :int =>
+  switch (c1, c2) {
+  | (Cint i1, Cint i2) => IntLit.compare i1 i2
+  | (Cint _, _) => (-1)
+  | (_, Cint _) => 1
+  | (Cfun fn1, Cfun fn2) => Procname.compare fn1 fn2
+  | (Cfun _, _) => (-1)
+  | (_, Cfun _) => 1
+  | (Cstr s1, Cstr s2) => string_compare s1 s2
+  | (Cstr _, _) => (-1)
+  | (_, Cstr _) => 1
+  | (Cfloat f1, Cfloat f2) => float_compare f1 f2
+  | (Cfloat _, _) => (-1)
+  | (_, Cfloat _) => 1
+  | (Cattribute att1, Cattribute att2) => attribute_compare att1 att2
+  | (Cattribute _, _) => (-1)
+  | (_, Cattribute _) => 1
+  | (Cexn e1, Cexn e2) => exp_compare e1 e2
+  | (Cexn _, _) => (-1)
+  | (_, Cexn _) => 1
+  | (Cclass c1, Cclass c2) => Ident.name_compare c1 c2
+  | (Cclass _, _) => (-1)
+  | (_, Cclass _) => 1
+  | (Cptr_to_fld fn1 t1, Cptr_to_fld fn2 t2) =>
+    let n = Ident.fieldname_compare fn1 fn2;
+    if (n != 0) {
+      n
+    } else {
+      Typ.compare t1 t2
+    }
+  | (Cptr_to_fld _, _) => (-1)
+  | (_, Cptr_to_fld _) => 1
+  | (Cclosure {name: n1, captured_vars: c1}, Cclosure {name: n2, captured_vars: c2}) =>
+    let captured_var_compare acc (e1, pvar1, typ1) (e2, pvar2, typ2) =>
+      if (acc != 0) {
+        acc
+      } else {
+        let n = exp_compare e1 e2;
+        if (n != 0) {
+          n
+        } else {
+          let n = Pvar.compare pvar1 pvar2;
+          if (n != 0) {
+            n
+          } else {
+            Typ.compare typ1 typ2
+          }
+        }
+      };
+    let n = Procname.compare n1 n2;
+    if (n != 0) {
+      n
+    } else {
+      IList.fold_left2 captured_var_compare 0 c1 c2
+    }
   }
 /** Compare epressions. Variables come before other expressions. */
 and exp_compare (e1: exp) (e2: exp) :int =>
@@ -1481,7 +1104,7 @@ and exp_compare (e1: exp) (e2: exp) :int =>
       if (n != 0) {
         n
       } else {
-        typ_opt_compare to1 to2
+        opt_compare Typ.compare to1 to2
       }
     }
   | (UnOp _, _) => (-1)
@@ -1508,7 +1131,7 @@ and exp_compare (e1: exp) (e2: exp) :int =>
     if (n != 0) {
       n
     } else {
-      typ_compare t1 t2
+      Typ.compare t1 t2
     }
   | (Cast _, _) => (-1)
   | (_, Cast _) => 1
@@ -1520,11 +1143,11 @@ and exp_compare (e1: exp) (e2: exp) :int =>
     if (n != 0) {
       n
     } else {
-      let n = fld_compare f1 f2;
+      let n = Ident.fieldname_compare f1 f2;
       if (n != 0) {
         n
       } else {
-        typ_compare t1 t2
+        Typ.compare t1 t2
       }
     }
   | (Lfield _, _) => (-1)
@@ -1539,7 +1162,7 @@ and exp_compare (e1: exp) (e2: exp) :int =>
   | (Lindex _, _) => (-1)
   | (_, Lindex _) => 1
   | (Sizeof t1 l1 s1, Sizeof t2 l2 s2) =>
-    let n = typ_compare t1 t2;
+    let n = Typ.compare t1 t2;
     if (n != 0) {
       n
     } else {
@@ -1553,8 +1176,6 @@ and exp_compare (e1: exp) (e2: exp) :int =>
   };
 
 let const_equal c1 c2 => const_compare c1 c2 == 0;
-
-let typ_equal t1 t2 => typ_compare t1 t2 == 0;
 
 let exp_equal e1 e2 => exp_compare e1 e2 == 0;
 
@@ -1633,7 +1254,7 @@ let rec strexp_compare se1 se2 =>
       }
     }
   }
-and fld_strexp_compare fse1 fse2 => pair_compare fld_compare strexp_compare fse1 fse2
+and fld_strexp_compare fse1 fse2 => pair_compare Ident.fieldname_compare strexp_compare fse1 fse2
 and fld_strexp_list_compare fsel1 fsel2 => IList.compare fld_strexp_compare fsel1 fsel2
 and exp_strexp_compare ese1 ese2 => pair_compare exp_compare strexp_compare ese1 ese2
 and exp_strexp_list_compare esel1 esel2 => IList.compare exp_strexp_compare esel1 esel2
@@ -1783,55 +1404,6 @@ let hpara_equal hpara1 hpara2 => hpara_compare hpara1 hpara2 == 0;
 let hpara_dll_equal hpara1 hpara2 => hpara_dll_compare hpara1 hpara2 == 0;
 
 
-/** if [struct_typ] is a class, return its class kind (Java, CPP, or Obj-C) */
-let struct_typ_get_class_kind struct_typ =>
-  switch struct_typ.csu {
-  | Csu.Class class_kind => Some class_kind
-  | _ => None
-  };
-
-
-/** return true if [struct_typ] is a Java class */
-let struct_typ_is_java_class struct_typ =>
-  switch (struct_typ_get_class_kind struct_typ) {
-  | Some Csu.Java => true
-  | _ => false
-  };
-
-
-/** return true if [struct_typ] is a C++ class. Note that this returns false for raw structs. */
-let struct_typ_is_cpp_class struct_typ =>
-  switch (struct_typ_get_class_kind struct_typ) {
-  | Some Csu.CPP => true
-  | _ => false
-  };
-
-
-/** return true if [struct_typ] is an Obj-C class. Note that this returns false for raw structs. */
-let struct_typ_is_objc_class struct_typ =>
-  switch (struct_typ_get_class_kind struct_typ) {
-  | Some Csu.Objc => true
-  | _ => false
-  };
-
-
-/** {2 Sets and maps of types} */
-let module StructTypSet = Set.Make {
-  type t = struct_typ;
-  let compare = struct_typ_compare;
-};
-
-let module TypSet = Set.Make {
-  type t = typ;
-  let compare = typ_compare;
-};
-
-let module TypMap = Map.Make {
-  type t = typ;
-  let compare = typ_compare;
-};
-
-
 /** {2 Sets of expressions} */
 let module ExpSet = Set.Make {
   type t = exp;
@@ -1970,37 +1542,6 @@ let str_binop pe binop =>
   | _ => text_binop binop
   };
 
-let ikind_to_string =
-  fun
-  | IChar => "char"
-  | ISChar => "signed char"
-  | IUChar => "unsigned char"
-  | IBool => "_Bool"
-  | IInt => "int"
-  | IUInt => "unsigned int"
-  | IShort => "short"
-  | IUShort => "unsigned short"
-  | ILong => "long"
-  | IULong => "unsigned long"
-  | ILongLong => "long long"
-  | IULongLong => "unsigned long long"
-  | I128 => "__int128_t"
-  | IU128 => "__uint128_t";
-
-let fkind_to_string =
-  fun
-  | FFloat => "float"
-  | FDouble => "double"
-  | FLongDouble => "long double";
-
-let ptr_kind_string =
-  fun
-  | Pk_reference => "&"
-  | Pk_pointer => "*"
-  | Pk_objc_weak => "__weak *"
-  | Pk_objc_unsafe_unretained => "__unsafe_unretained *"
-  | Pk_objc_autoreleasing => "__autoreleasing *";
-
 let java () => !Config.curr_language == Config.Java;
 
 let eradicate_java () => Config.eradicate && java ();
@@ -2091,7 +1632,7 @@ let rec dexp_to_string =
       ampersand ^ s
     }
   | Dunop op de => str_unop op ^ dexp_to_string de
-  | Dsizeof typ _ _ => pp_to_string (pp_typ_full pe_text) typ
+  | Dsizeof typ _ _ => pp_to_string (Typ.pp_full pe_text) typ
   | Dunknown => "unknown"
   | Dretcall de _ _ _ => "returned by " ^ dexp_to_string de
 /** Pretty print a dexp. */
@@ -2203,69 +1744,6 @@ and pp_const pe f =>
       let id_exps = IList.map (fun (id_exp, _, _) => id_exp) captured_vars;
       F.fprintf f "(%a)" (pp_comma_seq (pp_exp pe)) [Const (Cfun name), ...id_exps]
     }
-/** Pretty print a type. Do nothing by default. */
-and pp_typ pe f te =>
-  if Config.print_types {
-    pp_typ_full pe f te
-  } else {
-    ()
-  }
-and pp_struct_typ pe pp_base f struct_typ =>
-  switch struct_typ.struct_name {
-  | Some name when false =>
-    /* remove "when false" to print the details of struct */
-    F.fprintf
-      f
-      "%s %a {%a} %a"
-      (Csu.name struct_typ.csu)
-      Mangled.pp
-      name
-      (pp_seq (fun f (fld, t, _) => F.fprintf f "%a %a" (pp_typ_full pe) t Ident.pp_fieldname fld))
-      struct_typ.instance_fields
-      pp_base
-      ()
-  | Some name => F.fprintf f "%s %a %a" (Csu.name struct_typ.csu) Mangled.pp name pp_base ()
-  | None =>
-    F.fprintf
-      f
-      "%s {%a} %a"
-      (Csu.name struct_typ.csu)
-      (pp_seq (fun f (fld, t, _) => F.fprintf f "%a %a" (pp_typ_full pe) t Ident.pp_fieldname fld))
-      struct_typ.instance_fields
-      pp_base
-      ()
-  }
-/** Pretty print a type declaration.
-    pp_base prints the variable for a declaration, or can be skip to print only the type
-    pp_static_len prints the expression for the array length */
-and pp_type_decl pe pp_base pp_static_len f =>
-  fun
-  | Tvar tname => F.fprintf f "%s %a" (Typename.to_string tname) pp_base ()
-  | Tint ik => F.fprintf f "%s %a" (ikind_to_string ik) pp_base ()
-  | Tfloat fk => F.fprintf f "%s %a" (fkind_to_string fk) pp_base ()
-  | Tvoid => F.fprintf f "void %a" pp_base ()
-  | Tfun false => F.fprintf f "_fn_ %a" pp_base ()
-  | Tfun true => F.fprintf f "_fn_noreturn_ %a" pp_base ()
-  | Tptr ((Tarray _ | Tfun _) as typ) pk => {
-      let pp_base' fmt () => F.fprintf fmt "(%s%a)" (ptr_kind_string pk) pp_base ();
-      pp_type_decl pe pp_base' pp_static_len f typ
-    }
-  | Tptr typ pk => {
-      let pp_base' fmt () => F.fprintf fmt "%s%a" (ptr_kind_string pk) pp_base ();
-      pp_type_decl pe pp_base' pp_static_len f typ
-    }
-  | Tstruct struct_typ => pp_struct_typ pe pp_base f struct_typ
-  | Tarray typ static_len => {
-      let pp_array_static_len fmt => (
-        fun
-        | Some static_len => pp_static_len pe fmt (Const (Cint static_len))
-        | None => F.fprintf fmt "_"
-      );
-      let pp_base' fmt () => F.fprintf fmt "%a[%a]" pp_base () pp_array_static_len static_len;
-      pp_type_decl pe pp_base' pp_static_len f typ
-    }
-/** Pretty print a type with all the details, using the C syntax. */
-and pp_typ_full pe => pp_type_decl pe (fun _ () => ()) pp_exp_full
 /** Pretty print an expression. */
 and _pp_exp pe0 pp_t f e0 => {
   let (pe, changed) = color_pre_wrapper pe0 f e0;
@@ -2310,23 +1788,9 @@ and _pp_exp pe0 pp_t f e0 => {
   };
   color_post_wrapper changed pe0 f
 }
-and pp_exp pe f e => _pp_exp pe (pp_typ pe) f e
-and pp_exp_full pe f e => _pp_exp pe (pp_typ_full pe) f e
+and pp_exp pe f e => _pp_exp pe (Typ.pp pe) f e
 /** Convert an expression to a string */
 and exp_to_string e => pp_to_string (pp_exp pe_text) e;
-
-let typ_to_string typ => {
-  let pp fmt () => pp_typ_full pe_text fmt typ;
-  pp_to_string pp ()
-};
-
-
-/** dump a type with all the details. */
-let d_typ_full (t: typ) => L.add_print_action (L.PTtyp_full, Obj.repr t);
-
-
-/** dump a list of types. */
-let d_typ_list (tl: list typ) => L.add_print_action (L.PTtyp_list, Obj.repr tl);
 
 
 /** dump an expression. */
@@ -2344,7 +1808,7 @@ let pp_texp pe f =>
   fun
   | Sizeof t l s => {
       let pp_len f l => Option.map_default (F.fprintf f "[%a]" (pp_exp pe)) () l;
-      F.fprintf f "%a%a%a" (pp_typ pe) t pp_len l Subtype.pp s
+      F.fprintf f "%a%a%a" (Typ.pp pe) t pp_len l Subtype.pp s
     }
   | e => (pp_exp pe) f e;
 
@@ -2354,9 +1818,9 @@ let pp_texp_full pe f =>
   fun
   | Sizeof t l s => {
       let pp_len f l => Option.map_default (F.fprintf f "[%a]" (pp_exp pe)) () l;
-      F.fprintf f "%a%a%a" (pp_typ_full pe) t pp_len l Subtype.pp s
+      F.fprintf f "%a%a%a" (Typ.pp_full pe) t pp_len l Subtype.pp s
     }
-  | e => (_pp_exp pe) (pp_typ_full pe) f e;
+  | e => (_pp_exp pe) (Typ.pp_full pe) f e;
 
 
 /** Dump a type expression with all the details. */
@@ -2385,7 +1849,7 @@ let rec pp_offset_list pe f =>
 /** Dump a list of offsets */
 let d_offset_list (offl: list offset) => L.add_print_action (L.PToff_list, Obj.repr offl);
 
-let pp_exp_typ pe f (e, t) => F.fprintf f "%a:%a" (pp_exp pe) e (pp_typ pe) t;
+let pp_exp_typ pe f (e, t) => F.fprintf f "%a:%a" (pp_exp pe) e (Typ.pp pe) t;
 
 
 /** Get the location of the instruction */
@@ -2432,9 +1896,9 @@ let pp_instr pe0 f instr => {
   let (pe, changed) = color_pre_wrapper pe0 f instr;
   switch instr {
   | Letderef id e t loc =>
-    F.fprintf f "%a=*%a:%a %a" (Ident.pp pe) id (pp_exp pe) e (pp_typ pe) t Location.pp loc
+    F.fprintf f "%a=*%a:%a %a" (Ident.pp pe) id (pp_exp pe) e (Typ.pp pe) t Location.pp loc
   | Set e1 t e2 loc =>
-    F.fprintf f "*%a:%a=%a %a" (pp_exp pe) e1 (pp_typ pe) t (pp_exp pe) e2 Location.pp loc
+    F.fprintf f "*%a:%a=%a %a" (pp_exp pe) e1 (Typ.pp pe) t (pp_exp pe) e2 Location.pp loc
   | Prune cond loc true_branch _ =>
     F.fprintf f "PRUNE(%a, %b); %a" (pp_exp pe) cond true_branch Location.pp loc
   | Call ret_ids e arg_ts loc cf =>
@@ -2472,19 +1936,9 @@ let pp_instr pe0 f instr => {
   color_post_wrapper changed pe0 f
 };
 
-let has_block_prefix s =>
-  switch (Str.split_delim (Str.regexp_string Config.anonymous_block_prefix) s) {
-  | [_, _, ..._] => true
-  | _ => false
-  };
-
-
-/** Check if type is a type for a block in objc */
-let is_block_type typ => has_block_prefix (typ_to_string typ);
-
 
 /** Check if a pvar is a local pointing to a block in objc */
-let is_block_pvar pvar => has_block_prefix (Mangled.to_string (Pvar.get_name pvar));
+let is_block_pvar pvar => Typ.has_block_prefix (Mangled.to_string (Pvar.get_name pvar));
 
 /* A block pvar used to explain retain cycles */
 let block_pvar = Pvar.mk (Mangled.from_string "block") (Procname.from_string_c_fun "");
@@ -3190,46 +2644,12 @@ let hpred_list_get_lexps (filter: exp => bool) (hlist: list hpred) :list exp => 
 
 
 /** {2 Utility Functions for Expressions} */
-let unsome_typ s =>
-  fun
-  | Some default_typ => default_typ
-  | None => {
-      L.err "No default typ in %s@." s;
-      assert false
-    };
-
-
 /** Turn an expression representing a type into the type it represents
     If not a sizeof, return the default type if given, otherwise raise an exception */
 let texp_to_typ default_opt =>
   fun
   | Sizeof t _ _ => t
-  | _ => unsome_typ "texp_to_typ" default_opt;
-
-
-/** If a struct type with field f, return the type of f.
-    If not, return the default type if given, otherwise raise an exception */
-let struct_typ_fld default_opt f => {
-  let def () => unsome_typ "struct_typ_fld" default_opt;
-  fun
-  | Tstruct struct_typ =>
-    try (
-      (fun (_, y, _) => y) (
-        IList.find (fun (_f, _, _) => Ident.fieldname_equal _f f) struct_typ.instance_fields
-      )
-    ) {
-    | Not_found => def ()
-    }
-  | _ => def ()
-};
-
-
-/** If an array type, return the type of the element.
-    If not, return the default type if given, otherwise raise an exception */
-let array_typ_elem default_opt =>
-  fun
-  | Tarray t_el _ => t_el
-  | _ => unsome_typ "array_typ_elem" default_opt;
+  | _ => Typ.unsome "texp_to_typ" default_opt;
 
 
 /** Return the root of [lexp]. */
@@ -3833,12 +3253,6 @@ let sub_symmetric_difference sub1_in sub2_in => {
   diff [] [] [] sub1_in sub2_in
 };
 
-let module Typtbl = Hashtbl.Make {
-  type t = typ;
-  let equal = typ_equal;
-  let hash = Hashtbl.hash;
-};
-
 
 /** [sub_find filter sub] returns the expression associated to the first identifier
     that satisfies [filter]. Raise [Not_found] if there isn't one. */
@@ -3991,7 +3405,7 @@ let exp_typ_compare (exp1, typ1) (exp2, typ2) => {
   if (n != 0) {
     n
   } else {
-    typ_compare typ1 typ2
+    Typ.compare typ1 typ2
   }
 };
 
@@ -4006,7 +3420,7 @@ let instr_compare instr1 instr2 =>
       if (n != 0) {
         n
       } else {
-        let n = typ_compare t1 t2;
+        let n = Typ.compare t1 t2;
         if (n != 0) {
           n
         } else {
@@ -4021,7 +3435,7 @@ let instr_compare instr1 instr2 =>
     if (n != 0) {
       n
     } else {
-      let n = typ_compare t1 t2;
+      let n = Typ.compare t1 t2;
       if (n != 0) {
         n
       } else {
@@ -4114,7 +3528,7 @@ let instr_compare instr1 instr2 =>
       if (n != 0) {
         n
       } else {
-        typ_compare t1 t2
+        Typ.compare t1 t2
       }
     };
     let n = IList.compare pt_compare ptl1 ptl2;
@@ -4151,7 +3565,7 @@ let rec exp_compare_structural e1 e2 exp_map => {
         if (n != 0) {
           n
         } else {
-          typ_opt_compare to1 to2
+          opt_compare Typ.compare to1 to2
         },
         exp_map
       )
@@ -4174,7 +3588,7 @@ let rec exp_compare_structural e1 e2 exp_map => {
       if (n != 0) {
         n
       } else {
-        typ_compare t1 t2
+        Typ.compare t1 t2
       },
       exp_map
     )
@@ -4185,11 +3599,11 @@ let rec exp_compare_structural e1 e2 exp_map => {
       if (n != 0) {
         n
       } else {
-        let n = fld_compare f1 f2;
+        let n = Ident.fieldname_compare f1 f2;
         if (n != 0) {
           n
         } else {
-          typ_compare t1 t2
+          Typ.compare t1 t2
         }
       },
       exp_map
@@ -4211,7 +3625,7 @@ let exp_typ_compare_structural (e1, t1) (e2, t2) exp_map => {
     if (n != 0) {
       n
     } else {
-      typ_compare t1 t2
+      Typ.compare t1 t2
     },
     exp_map
   )
@@ -4252,7 +3666,7 @@ let instr_compare_structural instr1 instr2 exp_map => {
         if (n != 0) {
           n
         } else {
-          typ_compare t1 t2
+          Typ.compare t1 t2
         },
         exp_map
       )
@@ -4262,7 +3676,7 @@ let instr_compare_structural instr1 instr2 exp_map => {
     if (n != 0) {
       (n, exp_map)
     } else {
-      let n = typ_compare t1 t2;
+      let n = Typ.compare t1 t2;
       if (n != 0) {
         (n, exp_map)
       } else {
@@ -4343,7 +3757,7 @@ let instr_compare_structural instr1 instr2 exp_map => {
               if (n != 0) {
                 (n, exp_map)
               } else {
-                (typ_compare t1 t2, exp_map)
+                (Typ.compare t1 t2, exp_map)
               }
             }
         )

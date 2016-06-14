@@ -27,12 +27,12 @@ struct
 
 
   let annotation_to_string (annotation, _) =
-    "< " ^ annotation.Sil.class_name ^ " : " ^
-    (IList.to_string (fun x -> x) annotation.Sil.parameters) ^ " >"
+    "< " ^ annotation.Typ.class_name ^ " : " ^
+    (IList.to_string (fun x -> x) annotation.Typ.parameters) ^ " >"
 
   let field_to_string (fieldname, typ, annotation) =
     (Ident.fieldname_to_string fieldname) ^ " " ^
-    (Sil.typ_to_string typ) ^  (IList.to_string annotation_to_string annotation)
+    (Typ.to_string typ) ^  (IList.to_string annotation_to_string annotation)
 
   let log_stats fmt =
     let pp =
@@ -46,7 +46,7 @@ struct
         | Typename.TN_csu (Csu.Class _, _) | Typename.TN_csu (Csu.Protocol, _) ->
             print_endline (
               (Typename.to_string typname) ^ " " ^
-              (Sil.item_annotation_to_string struct_t.struct_annotations) ^ "\n" ^
+              (Typ.item_annotation_to_string struct_t.struct_annotations) ^ "\n" ^
               "---> superclass and protocols " ^ (IList.to_string (fun tn ->
                   "\t" ^ (Typename.to_string tn) ^ "\n") struct_t.superclasses) ^
               "---> methods " ^
@@ -64,15 +64,15 @@ struct
               (Typename.to_string typname)^"\n"^
               "\t---> fields "^(IList.to_string (fun (fieldname, typ, _) ->
                   match typ with
-                  | Sil.Tvar tname -> "tvar"^(Typename.to_string tname)
-                  | Sil.Tstruct _ | _ ->
+                  | Typ.Tvar tname -> "tvar"^(Typename.to_string tname)
+                  | Typ.Tstruct _ | _ ->
                       "\t struct "^(Ident.fieldname_to_string fieldname)^" "^
-                      (Sil.typ_to_string typ)^"\n") struct_t.instance_fields
+                      (Typ.to_string typ)^"\n") struct_t.instance_fields
                 )
             )
         | Typename.TN_typedef typname ->
             print_endline
-              ((Mangled.to_string typname)^"-->"^(Sil.typ_to_string (Sil.Tstruct struct_t)))
+              ((Mangled.to_string typname)^"-->"^(Typ.to_string (Typ.Tstruct struct_t)))
         | _ -> ()
       ) tenv
 
@@ -100,7 +100,7 @@ end
 
 module Ast_utils =
 struct
-  type type_ptr_to_sil_type = Tenv.t -> Clang_ast_t.type_ptr -> Sil.typ
+  type type_ptr_to_sil_type = Tenv.t -> Clang_ast_t.type_ptr -> Typ.t
 
   let string_of_decl decl =
     let name = Clang_ast_proj.get_decl_kind_string decl in
@@ -479,16 +479,16 @@ struct
     append_no_duplicates Procname.equal list1 list2
 
   let append_no_duplicated_vars list1 list2 =
-    let eq (m1, t1) (m2, t2) = (Mangled.equal m1 m2) && (Sil.typ_equal t1 t2) in
+    let eq (m1, t1) (m2, t2) = (Mangled.equal m1 m2) && (Typ.equal t1 t2) in
     append_no_duplicates eq list1 list2
 
   let append_no_duplicateds list1 list2 =
-    let eq (e1, t1) (e2, t2) = (Sil.exp_equal e1 e2) && (Sil.typ_equal t1 t2) in
+    let eq (e1, t1) (e2, t2) = (Sil.exp_equal e1 e2) && (Typ.equal t1 t2) in
     append_no_duplicates eq list1 list2
 
 
   let append_no_duplicates_annotations list1 list2 =
-    let eq (annot1, _) (annot2, _) = annot1.Sil.class_name = annot2.Sil.class_name in
+    let eq (annot1, _) (annot2, _) = annot1.Typ.class_name = annot2.Typ.class_name in
     append_no_duplicates eq list1 list2
 
   let add_no_duplicates_fields field_tuple l =
@@ -496,7 +496,7 @@ struct
       match field_tuple, l with
       | (field, typ, annot), ((old_field, old_typ, old_annot) as old_field_tuple :: rest) ->
           let ret_list, ret_found = replace_field field_tuple rest found in
-          if Ident.fieldname_equal field old_field && Sil.typ_equal typ old_typ then
+          if Ident.fieldname_equal field old_field && Typ.equal typ old_typ then
             let annotations = append_no_duplicates_annotations annot old_annot in
             (field, typ, annotations) :: ret_list, true
           else old_field_tuple :: ret_list, ret_found
@@ -520,7 +520,7 @@ struct
 
   let sort_fields_tenv tenv =
     let sort_fields_struct typname st =
-      let st' = { st with Sil.instance_fields = (sort_fields st.Sil.instance_fields) } in
+      let st' = { st with Typ.instance_fields = (sort_fields st.Typ.instance_fields) } in
       Tenv.add tenv typname st' in
     Tenv.iter sort_fields_struct tenv
 

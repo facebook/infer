@@ -306,11 +306,11 @@ let force_delayed_print fmt =
       let (te: Sil.exp) = Obj.obj te in
       Sil.pp_texp_full pe_default fmt te
   | (L.PTtyp_full, t) ->
-      let (t: Sil.typ) = Obj.obj t in
-      Sil.pp_typ_full pe_default fmt t
+      let (t: Typ.t) = Obj.obj t in
+      Typ.pp_full pe_default fmt t
   | (L.PTtyp_list, tl) ->
-      let (tl: Sil.typ list) = Obj.obj tl in
-      (pp_seq (Sil.pp_typ pe_default)) fmt tl
+      let (tl: Typ.t list) = Obj.obj tl in
+      (pp_seq (Typ.pp pe_default)) fmt tl
   | (L.PTerror, s) ->
       let (s: string) = Obj.obj s in
       if Config.write_html

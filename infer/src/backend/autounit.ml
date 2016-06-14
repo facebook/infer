@@ -275,7 +275,7 @@ end = struct
 end
 
 type varinfo =
-  { typ: Sil.typ; (* type of the variable *)
+  { typ: Typ.t; (* type of the variable *)
     alloc: bool (* whether the variable needs allocation (on lhs of |->, lists) *)
   }
 
@@ -303,23 +303,23 @@ let create_idmap sigma : idmap =
         do_exp e2 typ
     | Sil.BinOp (Sil.PlusPI, e1, e2), _ ->
         do_exp e1 typ;
-        do_exp e2 (Sil.Tint Sil.IULong)
+        do_exp e2 (Typ.Tint Typ.IULong)
     | Sil.Lfield (e1, _, _), _ ->
         do_exp e1 typ
     | Sil.Sizeof _, _ -> ()
     | _ ->
-        L.err "Unmatched exp: %a : %a@." (Sil.pp_exp pe) e (Sil.pp_typ_full pe) typ;
+        L.err "Unmatched exp: %a : %a@." (Sil.pp_exp pe) e (Typ.pp_full pe) typ;
         assert false in
   let rec do_se se typ = match se, typ with
     | Sil.Eexp (e, _), _ ->
         do_exp e typ
-    | Sil.Estruct (fsel, _), Sil.Tstruct { Sil.instance_fields } ->
+    | Sil.Estruct (fsel, _), Typ.Tstruct { Typ.instance_fields } ->
         do_struct fsel instance_fields
-    | Sil.Earray (len, esel, _), Sil.Tarray (typ, _) ->
-        do_se (Sil.Eexp (len, Sil.inst_none)) (Sil.Tint Sil.IULong);
+    | Sil.Earray (len, esel, _), Typ.Tarray (typ, _) ->
+        do_se (Sil.Eexp (len, Sil.inst_none)) (Typ.Tint Typ.IULong);
         do_array esel typ
     | _ ->
-        L.err "Unmatched sexp: %a : %a@." (Sil.pp_sexp pe) se (Sil.pp_typ_full pe) typ;
+        L.err "Unmatched sexp: %a : %a@." (Sil.pp_sexp pe) se (Typ.pp_full pe) typ;
         assert false
   and do_struct fsel ftal = match fsel, ftal with
     | [], _ -> ()
@@ -331,7 +331,7 @@ let create_idmap sigma : idmap =
     | _:: _, [] -> assert false
   and do_array esel typ = match esel with
     | (e, se):: esel' ->
-        do_se (Sil.Eexp (e, Sil.inst_none)) (Sil.Tint Sil.IULong);
+        do_se (Sil.Eexp (e, Sil.inst_none)) (Typ.Tint Typ.IULong);
         do_se se typ;
         do_array esel' typ
     | [] -> () in
@@ -341,12 +341,12 @@ let create_idmap sigma : idmap =
     | _ -> () in
   let do_hpred = function
     | Sil.Hpointsto (e, se, Sil.Sizeof (typ, _, _)) ->
-        do_lhs_e e (Sil.Tptr (typ, Sil.Pk_pointer));
+        do_lhs_e e (Typ.Tptr (typ, Typ.Pk_pointer));
         do_se se typ
     | Sil.Hlseg (_, _, e, f, el) ->
-        do_lhs_e e (Sil.Tptr (Sil.Tvoid, Sil.Pk_pointer));
-        do_se (Sil.Eexp (f, Sil.inst_none)) (Sil.Tptr (Sil.Tvoid, Sil.Pk_pointer));
-        IList.iter (fun e -> do_se (Sil.Eexp (e, Sil.inst_none)) Sil.Tvoid) el
+        do_lhs_e e (Typ.Tptr (Typ.Tvoid, Typ.Pk_pointer));
+        do_se (Sil.Eexp (f, Sil.inst_none)) (Typ.Tptr (Typ.Tvoid, Typ.Pk_pointer));
+        IList.iter (fun e -> do_se (Sil.Eexp (e, Sil.inst_none)) Typ.Tvoid) el
     | hpred ->
         L.err "do_hpred not implemented %a@." (Sil.pp_hpred pe) hpred in
   IList.iter do_hpred sigma;
@@ -405,7 +405,7 @@ let rec pp_exp_c pe fmt = function
 (** pretty print a type in C *)
 let pp_typ_c pe typ =
   let pp_nil _ () = () in
-  Sil.pp_type_decl pe pp_nil pp_exp_c typ
+  Typ.pp_decl pe pp_nil typ
 
 (** Convert a pvar to a string by just extracting the name *)
 let to_string pvar =
@@ -424,16 +424,16 @@ let mk_size_name id =
 
 let pp_texp_for_malloc fmt =
   let rec handle_arr_len typ = match typ with
-    | Sil.Tvar _ | Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ ->
+    | Typ.Tvar _ | Typ.Tint _ | Typ.Tfloat _ | Typ.Tvoid | Typ.Tfun _ ->
         typ
-    | Sil.Tptr (t, pk) ->
-        Sil.Tptr (handle_arr_len t, pk)
-    | Sil.Tstruct struct_typ ->
+    | Typ.Tptr (t, pk) ->
+        Typ.Tptr (handle_arr_len t, pk)
+    | Typ.Tstruct struct_typ ->
         let instance_fields =
-          IList.map (fun (f, t, a) -> (f, handle_arr_len t, a)) struct_typ.Sil.instance_fields in
-        Sil.Tstruct { struct_typ with Sil.instance_fields }
-    | Sil.Tarray (t, e) ->
-        Sil.Tarray (handle_arr_len t, e) in
+          IList.map (fun (f, t, a) -> (f, handle_arr_len t, a)) struct_typ.Typ.instance_fields in
+        Typ.Tstruct { struct_typ with Typ.instance_fields }
+    | Typ.Tarray (t, e) ->
+        Typ.Tarray (handle_arr_len t, e) in
   function
   | Sil.Sizeof (typ, _, _) ->
       let typ' = handle_arr_len typ in
@@ -501,11 +501,11 @@ let gen_init_equalities code pure =
 let gen_var_decl code idmap parameters =
   let do_parameter (name, typ) =
     let pp_name f () = Mangled.pp f name in
-    let pp f () = F.fprintf f "%a;" (Sil.pp_type_decl pe pp_name pp_exp_c) typ in
+    let pp f () = F.fprintf f "%a;" (Typ.pp_decl pe pp_name) typ in
     Code.add_from_pp code pp in
   let do_vinfo id { typ } =
     let pp_var f () = pp_id_c f id in
-    let pp f () = F.fprintf f "%a;" (Sil.pp_type_decl pe pp_var pp_exp_c) typ in
+    let pp f () = F.fprintf f "%a;" (Typ.pp_decl pe pp_var) typ in
     Code.add_from_pp code pp in
   IList.iter do_parameter parameters;
   IdMap.iter do_vinfo idmap
@@ -518,20 +518,20 @@ let gen_init_vars code solutions idmap =
   let do_vinfo id { typ = typ; alloc = alloc } =
     if not alloc then
       let const = match typ with
-        | Sil.Tint _ | Sil.Tvoid ->
+        | Typ.Tint _ | Typ.Tvoid ->
             get_const id (Sil.Cint IntLit.zero)
-        | Sil.Tfloat _ ->
+        | Typ.Tfloat _ ->
             Sil.Cfloat 0.0
-        | Sil.Tptr _ ->
+        | Typ.Tptr _ ->
             get_const id (Sil.Cint IntLit.zero)
-        | Sil.Tfun _ ->
+        | Typ.Tfun _ ->
             Sil.Cint IntLit.zero
         | typ ->
-            L.err "do_vinfo type undefined: %a@." (Sil.pp_typ_full pe) typ;
+            L.err "do_vinfo type undefined: %a@." (Typ.pp_full pe) typ;
             assert false in
       let pp fmt () =
         F.fprintf fmt "%a = (%a) %a;"
-          pp_id_c id (Sil.pp_typ_full pe) typ (Sil.pp_exp pe) (Sil.Const const) in
+          pp_id_c id (Typ.pp_full pe) typ (Sil.pp_exp pe) (Sil.Const const) in
       Code.add_from_pp code pp in
   IdMap.iter do_vinfo idmap
 
@@ -592,7 +592,7 @@ let gen_hpara code proc_name spec_num env id hpara =
 let gen_hpara_dll _ _ _ _ _ _ = assert false
 
 (** Generate epilog for the test case *)
-let gen_epilog code proc_name (parameters : (Mangled.t * Sil.typ) list) =
+let gen_epilog code proc_name (parameters : (Mangled.t * Typ.t) list) =
   let pp_parameter fmt (name, _) = Mangled.pp fmt name in
   let pp f () = F.fprintf f "%a(%a);" Procname.pp proc_name (pp_comma_seq pp_parameter) parameters in
   let line1 = pp_to_string pp () in

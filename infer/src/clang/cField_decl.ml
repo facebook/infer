@@ -15,16 +15,16 @@ open CFrontend_utils
 
 module L = Logging
 
-type field_type = Ident.fieldname * Sil.typ * (Sil.annotation * bool) list
+type field_type = Ident.fieldname * Typ.t * (Typ.annotation * bool) list
 
 let rec get_fields_super_classes tenv super_class =
   Printing.log_out "   ... Getting fields of superclass '%s'\n" (Typename.to_string super_class);
   match Tenv.lookup tenv super_class with
   | None -> []
-  | Some { Sil.instance_fields; superclasses = super_class :: _ } ->
+  | Some { Typ.instance_fields; superclasses = super_class :: _ } ->
       let sc_fields = get_fields_super_classes tenv super_class in
       General_utils.append_no_duplicates_fields instance_fields sc_fields
-  | Some { Sil.instance_fields } -> instance_fields
+  | Some { Typ.instance_fields } -> instance_fields
 
 let fields_superclass tenv interface_decl_info ck =
   match interface_decl_info.Clang_ast_t.otdi_super with
@@ -40,16 +40,16 @@ let build_sil_field type_ptr_to_sil_type tenv field_name type_ptr prop_attribute
   let prop_atts = IList.map Clang_ast_j.string_of_property_attribute prop_attributes in
   let annotation_from_type t =
     match t with
-    | Sil.Tptr (_, Sil.Pk_objc_weak) -> [Config.weak]
-    | Sil.Tptr (_, Sil.Pk_objc_unsafe_unretained) -> [Config.unsafe_unret]
+    | Typ.Tptr (_, Typ.Pk_objc_weak) -> [Config.weak]
+    | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) -> [Config.unsafe_unret]
     | _ -> [] in
   let fname = General_utils.mk_class_field_name field_name in
   let typ = type_ptr_to_sil_type tenv type_ptr in
   let item_annotations = match prop_atts with
     | [] ->
-        [({ Sil.class_name = Config.ivar_attributes; Sil.parameters = annotation_from_type typ }, true)]
+        [({ Typ.class_name = Config.ivar_attributes; parameters = annotation_from_type typ }, true)]
     | _ ->
-        [({ Sil.class_name = Config.property_attributes; Sil.parameters = prop_atts }, true)] in
+        [({ Typ.class_name = Config.property_attributes; parameters = prop_atts }, true)] in
   fname, typ, item_annotations
 
 (* Given a list of declarations in an interface returns a list of fields  *)
@@ -79,12 +79,12 @@ let add_missing_fields tenv class_name ck fields =
   let mang_name = Mangled.from_string class_name in
   let class_tn_name = Typename.TN_csu (Csu.Class ck, mang_name) in
   match Tenv.lookup tenv class_tn_name with
-  | Some ({ Sil.instance_fields } as struct_typ) ->
+  | Some ({ Typ.instance_fields } as struct_typ) ->
       let new_fields = General_utils.append_no_duplicates_fields instance_fields fields in
       let class_type_info =
         {
           struct_typ with
-          Sil.instance_fields = new_fields;
+          Typ.instance_fields = new_fields;
           static_fields = [];
           csu = Csu.Class ck;
           struct_name = Some mang_name;
@@ -96,8 +96,8 @@ let add_missing_fields tenv class_name ck fields =
 (* checks if ivar is defined among a set of fields and if it is atomic *)
 let is_ivar_atomic ivar fields =
   let do_one_annot a =
-    (a.Sil.class_name = Config.property_attributes) &&
-    IList.exists (fun p -> p = CFrontend_config.atomic_att) a.Sil.parameters in
+    (a.Typ.class_name = Config.property_attributes) &&
+    IList.exists (fun p -> p = CFrontend_config.atomic_att) a.Typ.parameters in
   let has_atomic_annot ans =
     IList.exists (fun (a, _) -> do_one_annot a) ans in
   try

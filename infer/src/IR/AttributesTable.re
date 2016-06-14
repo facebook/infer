@@ -92,7 +92,7 @@ let get_correct_type_from_objc_class_name c => {
   | None => None
   | Some tenv =>
     let type_name = Typename.TN_csu (Csu.Class Csu.Objc) c;
-    Option.map (fun st => Sil.Tstruct st) (Tenv.lookup tenv type_name)
+    Option.map (fun st => Typ.Tstruct st) (Tenv.lookup tenv type_name)
   }
 };
 

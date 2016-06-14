@@ -41,8 +41,8 @@ let rec remove_redundancy have_same_key acc = function
       else remove_redundancy have_same_key (x:: acc) l
 
 let rec is_java_class = function
-  | Sil.Tstruct struct_typ -> Sil.struct_typ_is_java_class struct_typ
-  | Sil.Tarray (inner_typ, _) | Tptr (inner_typ, _) -> is_java_class inner_typ
+  | Typ.Tstruct struct_typ -> Typ.struct_typ_is_java_class struct_typ
+  | Typ.Tarray (inner_typ, _) | Tptr (inner_typ, _) -> is_java_class inner_typ
   | _ -> false
 
 (** {2 Ordinary Theorem Proving} *)
@@ -164,24 +164,24 @@ end
 
 (** Return true if the two types have sizes which can be compared *)
 let type_size_comparable t1 t2 = match t1, t2 with
-  | Sil.Tint _, Sil.Tint _ -> true
+  | Typ.Tint _, Typ.Tint _ -> true
   | _ -> false
 
 (** Compare the size of comparable types *)
 let type_size_compare t1 t2 =
   let ik_compare ik1 ik2 =
     let ik_size = function
-      | Sil.IChar | Sil.ISChar | Sil.IUChar | Sil.IBool -> 1
-      | Sil.IShort | Sil.IUShort -> 2
-      | Sil.IInt | Sil.IUInt -> 3
-      | Sil.ILong | Sil.IULong -> 4
-      | Sil.ILongLong | Sil.IULongLong -> 5
-      | Sil.I128 | Sil.IU128 -> 6 in
+      | Typ.IChar | Typ.ISChar | Typ.IUChar | Typ.IBool -> 1
+      | Typ.IShort | Typ.IUShort -> 2
+      | Typ.IInt | Typ.IUInt -> 3
+      | Typ.ILong | Typ.IULong -> 4
+      | Typ.ILongLong | Typ.IULongLong -> 5
+      | Typ.I128 | Typ.IU128 -> 6 in
     let n1 = ik_size ik1 in
     let n2 = ik_size ik2 in
     n1 - n2 in
   match t1, t2 with
-  | Sil.Tint ik1, Sil.Tint ik2 ->
+  | Typ.Tint ik1, Typ.Tint ik2 ->
       Some (ik_compare ik1 ik2)
   | _ -> None
 
@@ -371,7 +371,7 @@ end = struct
     let add_lt_minus1_e e =
       lts := (Sil.exp_minus_one, e)::!lts in
     let texp_is_unsigned = function
-      | Sil.Sizeof (Sil.Tint ik, _, _) -> Sil.ikind_is_unsigned ik
+      | Sil.Sizeof (Typ.Tint ik, _, _) -> Typ.ikind_is_unsigned ik
       | _ -> false in
     let strexp_lt_minus1 = function
       | Sil.Eexp (e, _) -> add_lt_minus1_e e
@@ -1233,7 +1233,8 @@ let array_len_imply calc_missing subs len1 len2 indices2 =
     [se1[sub1]] is an instance of [se2[sub2]]. Raise IMPL_FALSE if not
     possible. *)
 let rec sexp_imply source calc_index_frame calc_missing subs se1 se2 typ2 : subst2 * (Sil.strexp option) * (Sil.strexp option) =
-  (* L.d_str "sexp_imply "; Sil.d_sexp se1; L.d_str " "; Sil.d_sexp se2; L.d_str " : "; Sil.d_typ_full typ2; L.d_ln(); *)
+  (* L.d_str "sexp_imply "; Sil.d_sexp se1; L.d_str " "; Sil.d_sexp se2;
+     L.d_str " : "; Typ.d_full typ2; L.d_ln(); *)
   match se1, se2 with
   | Sil.Eexp (e1, _), Sil.Eexp (e2, _) ->
       (exp_imply calc_missing subs e1 e2, None, None)
@@ -1280,10 +1281,10 @@ let rec sexp_imply source calc_index_frame calc_missing subs se1 se2 typ2 : subs
       sexp_imply source calc_index_frame calc_missing subs se1' se2 typ2
   | Sil.Earray (len, _, _), Sil.Eexp (_, inst) ->
       let se2' = Sil.Earray (len, [(Sil.exp_zero, se2)], inst) in
-      let typ2' = Sil.Tarray (typ2, None) in
+      let typ2' = Typ.Tarray (typ2, None) in
       (* In the sexp_imply, struct_imply, array_imply, and sexp_imply_nolhs functions, the typ2
-         argument is only used by eventually passing its value to Sil.struct_typ_fld, Sil.Lfield,
-         Sil.struct_typ_fld, or Sil.array_typ_elem.  None of these are sensitive to the length field
+         argument is only used by eventually passing its value to Typ.struct_typ_fld, Sil.Lfield,
+         Typ.struct_typ_fld, or Typ.array_elem.  None of these are sensitive to the length field
          of Tarray, so forgetting the length of typ2' here is not a problem. *)
       sexp_imply source true calc_missing subs se1 se2' typ2' (* calculate index_frame because the rhs is a singleton array *)
   | _ ->
@@ -1297,7 +1298,7 @@ and struct_imply source calc_missing subs fsel1 fsel2 typ2 : subst2 * ((Ident.fi
       begin
         match Ident.fieldname_compare f1 f2 with
         | 0 ->
-            let typ' = Sil.struct_typ_fld (Some Sil.Tvoid) f2 typ2 in
+            let typ' = Typ.struct_typ_fld (Some Typ.Tvoid) f2 typ2 in
             let subs', se_frame, se_missing = sexp_imply (Sil.Lfield (source, f2, typ2)) false calc_missing subs se1 se2 typ' in
             let subs'', fld_frame, fld_missing = struct_imply source calc_missing subs' fsel1' fsel2' typ2 in
             let fld_frame' = match se_frame with
@@ -1311,14 +1312,14 @@ and struct_imply source calc_missing subs fsel1 fsel2 typ2 : subst2 * ((Ident.fi
             let subs', fld_frame, fld_missing = struct_imply source calc_missing subs fsel1' fsel2 typ2 in
             subs', ((f1, se1) :: fld_frame), fld_missing
         | _ ->
-            let typ' = Sil.struct_typ_fld (Some Sil.Tvoid) f2 typ2 in
+            let typ' = Typ.struct_typ_fld (Some Typ.Tvoid) f2 typ2 in
             let subs' = sexp_imply_nolhs (Sil.Lfield (source, f2, typ2)) calc_missing subs se2 typ' in
             let subs', fld_frame, fld_missing = struct_imply source calc_missing subs' fsel1 fsel2' typ2 in
             let fld_missing' = (f2, se2) :: fld_missing in
             subs', fld_frame, fld_missing'
       end
   | [], (f2, se2) :: fsel2' ->
-      let typ' = Sil.struct_typ_fld (Some Sil.Tvoid) f2 typ2 in
+      let typ' = Typ.struct_typ_fld (Some Typ.Tvoid) f2 typ2 in
       let subs' = sexp_imply_nolhs (Sil.Lfield (source, f2, typ2)) calc_missing subs se2 typ' in
       let subs'', fld_frame, fld_missing = struct_imply source calc_missing subs' [] fsel2' typ2 in
       subs'', fld_frame, (f2, se2):: fld_missing
@@ -1326,7 +1327,7 @@ and struct_imply source calc_missing subs fsel1 fsel2 typ2 : subst2 * ((Ident.fi
 and array_imply source calc_index_frame calc_missing subs esel1 esel2 typ2
   : subst2 * ((Sil.exp * Sil.strexp) list) * ((Sil.exp * Sil.strexp) list)
   =
-  let typ_elem = Sil.array_typ_elem (Some Sil.Tvoid) typ2 in
+  let typ_elem = Typ.array_elem (Some Typ.Tvoid) typ2 in
   match esel1, esel2 with
   | _,[] -> subs, esel1, []
   | (e1, se1) :: esel1', (e2, se2) :: esel2' ->
@@ -1429,19 +1430,19 @@ let expand_hpred_pointer calc_index_frame hpred : bool * bool * Sil.hpred =
   let rec expand changed calc_index_frame hpred = match hpred with
     | Sil.Hpointsto (Sil.Lfield (e, fld, typ_fld), se, t) ->
         let t' = match t, typ_fld with
-          | _, Sil.Tstruct _ -> (* the struct type of fld is known *)
+          | _, Typ.Tstruct _ -> (* the struct type of fld is known *)
               Sil.Sizeof (typ_fld, None, Sil.Subtype.exact)
           | Sil.Sizeof (t1, len, st), _ ->
               (* the struct type of fld is not known -- typically Tvoid *)
               Sil.Sizeof
-                (Sil.Tstruct
-                   { Sil.instance_fields = [(fld, t1, Sil.item_annotation_empty)];
+                (Typ.Tstruct
+                   { Typ.instance_fields = [(fld, t1, Typ.item_annotation_empty)];
                      static_fields = [];
                      csu = Csu.Struct;
                      struct_name = None;
-                     Sil.superclasses = [];
-                     Sil.def_methods = [];
-                     Sil.struct_annotations = Sil.item_annotation_empty;
+                     Typ.superclasses = [];
+                     Typ.def_methods = [];
+                     Typ.struct_annotations = Typ.item_annotation_empty;
                    }, len, st)
           (* None as we don't know the stuct name *)
           | _ -> raise (Failure "expand_hpred_pointer: Unexpected non-sizeof type in Lfield") in
@@ -1449,7 +1450,7 @@ let expand_hpred_pointer calc_index_frame hpred : bool * bool * Sil.hpred =
         expand true true hpred'
     | Sil.Hpointsto (Sil.Lindex (e, ind), se, t) ->
         let t' = match t with
-          | Sil.Sizeof (t_, len, st) -> Sil.Sizeof (Sil.Tarray (t_, None), len, st)
+          | Sil.Sizeof (t_, len, st) -> Sil.Sizeof (Typ.Tarray (t_, None), len, st)
           | _ -> raise (Failure "expand_hpred_pointer: Unexpected non-sizeof type in Lindex") in
         let len = match t' with
           | Sil.Sizeof (_, Some len, _) -> len
@@ -1476,9 +1477,9 @@ struct
 
   let is_interface tenv class_name =
     match Tenv.lookup tenv class_name with
-    | Some ({ Sil.csu = Csu.Class Csu.Java; struct_name = Some _ } as struct_typ) ->
-        (IList.length struct_typ.Sil.instance_fields = 0) &&
-        (IList.length struct_typ.Sil.def_methods = 0)
+    | Some ({ Typ.csu = Csu.Class Csu.Java; struct_name = Some _ } as struct_typ) ->
+        (IList.length struct_typ.Typ.instance_fields = 0) &&
+        (IList.length struct_typ.Typ.def_methods = 0)
     | _ -> false
 
   let is_root_class class_name =
@@ -1494,7 +1495,7 @@ struct
     let rec check cn =
       Typename.equal cn c2 || is_root_class c2 ||
       match Tenv.lookup tenv cn with
-      | Some ({ Sil.struct_name = Some _; csu = Csu.Class _; superclasses }) ->
+      | Some ({ Typ.struct_name = Some _; csu = Csu.Class _; superclasses }) ->
           IList.exists check superclasses
       | _ -> false in
     check c1
@@ -1506,28 +1507,28 @@ struct
   (** check that t1 and t2 are the same primitive type *)
   let check_subtype_basic_type t1 t2 =
     match t2 with
-    | Sil.Tint Sil.IInt | Sil.Tint Sil.IBool
-    | Sil.Tint Sil.IChar | Sil.Tfloat Sil.FDouble
-    | Sil.Tfloat Sil.FFloat | Sil.Tint Sil.ILong
-    | Sil.Tint Sil.IShort -> Sil.typ_equal t1 t2
+    | Typ.Tint Typ.IInt | Typ.Tint Typ.IBool
+    | Typ.Tint Typ.IChar | Typ.Tfloat Typ.FDouble
+    | Typ.Tfloat Typ.FFloat | Typ.Tint Typ.ILong
+    | Typ.Tint Typ.IShort -> Typ.equal t1 t2
     | _ -> false
 
   (** check if t1 is a subtype of t2, in Java *)
   let rec check_subtype_java tenv t1 t2 =
     match t1, t2 with
-    | Sil.Tstruct { Sil.csu = Csu.Class Csu.Java; struct_name = Some c1 },
-      Sil.Tstruct { Sil.csu = Csu.Class Csu.Java; struct_name = Some c2 } ->
+    | Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; struct_name = Some c1 },
+      Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; struct_name = Some c2 } ->
         let cn1 = Typename.TN_csu (Csu.Class Csu.Java, c1)
         and cn2 = Typename.TN_csu (Csu.Class Csu.Java, c2) in
         check_subclass tenv cn1 cn2
 
-    | Sil.Tarray (dom_type1, _), Sil.Tarray (dom_type2, _) ->
+    | Typ.Tarray (dom_type1, _), Typ.Tarray (dom_type2, _) ->
         check_subtype_java tenv dom_type1 dom_type2
 
-    | Sil.Tptr (dom_type1, _), Sil.Tptr (dom_type2, _) ->
+    | Typ.Tptr (dom_type1, _), Typ.Tptr (dom_type2, _) ->
         check_subtype_java tenv dom_type1 dom_type2
 
-    | Sil.Tarray _, Sil.Tstruct { Sil.csu = Csu.Class Csu.Java; struct_name = Some c2 } ->
+    | Typ.Tarray _, Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; struct_name = Some c2 } ->
         let cn2 = Typename.TN_csu (Csu.Class Csu.Java, c2) in
         Typename.equal cn2 serializable_type
         || Typename.equal cn2 cloneable_type
@@ -1536,7 +1537,7 @@ struct
 
   let get_cpp_objc_type_name t =
     match t with
-    | Sil.Tstruct { Sil.csu = Csu.Class csu; struct_name = Some c }
+    | Typ.Tstruct { Typ.csu = Csu.Class csu; struct_name = Some c }
       when csu = Csu.CPP || csu = Csu.Objc ->
         Some (Typename.TN_csu (Csu.Class csu, c))
     | _ -> None
@@ -1553,20 +1554,20 @@ struct
 
   let rec case_analysis_type_java tenv (t1, st1) (t2, st2) =
     match t1, t2 with
-    | Sil.Tstruct { Sil.csu = Csu.Class Csu.Java; struct_name = Some c1 },
-      Sil.Tstruct { Sil.csu = Csu.Class Csu.Java; struct_name = Some c2 } ->
+    | Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; struct_name = Some c1 },
+      Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; struct_name = Some c2 } ->
         let cn1 = Typename.TN_csu (Csu.Class Csu.Java, c1)
         and cn2 = Typename.TN_csu (Csu.Class Csu.Java, c2) in
         Sil.Subtype.case_analysis (cn1, st1) (cn2, st2)
           (check_subclass tenv) (is_interface tenv)
 
-    | Sil.Tarray (dom_type1, _), Sil.Tarray (dom_type2, _) ->
+    | Typ.Tarray (dom_type1, _), Typ.Tarray (dom_type2, _) ->
         case_analysis_type_java tenv (dom_type1, st1) (dom_type2, st2)
 
-    | Sil.Tptr (dom_type1, _), Sil.Tptr (dom_type2, _) ->
+    | Typ.Tptr (dom_type1, _), Typ.Tptr (dom_type2, _) ->
         case_analysis_type_java tenv (dom_type1, st1) (dom_type2, st2)
 
-    | Sil.Tstruct { Sil.csu = Csu.Class Csu.Java; struct_name = Some c1 }, Sil.Tarray _ ->
+    | Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; struct_name = Some c1 }, Typ.Tarray _ ->
         let cn1 = Typename.TN_csu (Csu.Class Csu.Java, c1) in
         if (Typename.equal cn1 serializable_type
             || Typename.equal cn1 cloneable_type
@@ -1628,13 +1629,13 @@ let cast_exception tenv texp1 texp2 e1 subs =
     Note: [pname] wil never be included in the returned result *)
 let get_overrides_of tenv supertype pname =
   let typ_has_method pname = function
-    | Sil.Tstruct { Sil.def_methods } ->
+    | Typ.Tstruct { Typ.def_methods } ->
         IList.exists (fun m -> Procname.equal pname m) def_methods
     | _ -> false in
   let gather_overrides tname struct_typ overrides_acc =
-    let typ = Sil.Tstruct struct_typ in
+    let typ = Typ.Tstruct struct_typ in
     (* get all types in the type environment that are non-reflexive subtypes of [supertype] *)
-    if not (Sil.typ_equal typ supertype) && Subtyping_check.check_subtype tenv typ supertype then
+    if not (Typ.equal typ supertype) && Subtyping_check.check_subtype tenv typ supertype then
       (* only select the ones that implement [pname] as overrides *)
       let resolved_pname =
         Procname.replace_class pname (Typename.name tname) in
@@ -1646,7 +1647,7 @@ let get_overrides_of tenv supertype pname =
 (** Check the equality of two types ignoring flags in the subtyping components *)
 let texp_equal_modulo_subtype_flag texp1 texp2 = match texp1, texp2 with
   | Sil.Sizeof (t1, len1, st1), Sil.Sizeof (t2, len2, st2) ->
-      Sil.typ_equal t1 t2
+      Typ.equal t1 t2
       && (opt_equal Sil.exp_equal len1 len2)
       && Sil.Subtype.equal_modulo_flag st1 st2
   | _ -> Sil.exp_equal texp1 texp2
@@ -1657,15 +1658,15 @@ let texp_imply tenv subs texp1 texp2 e1 calc_missing =
   (* classes and arrays in Java, and just classes in C++ and ObjC *)
   let types_subject_to_dynamic_cast =
     match texp1, texp2 with
-    | Sil.Sizeof ((Sil.Tstruct _) as typ1, _, _), Sil.Sizeof (Sil.Tstruct _, _, _)
-    | Sil.Sizeof ((Sil.Tarray _) as typ1, _, _), Sil.Sizeof (Sil.Tarray _, _, _)
-    | Sil.Sizeof ((Sil.Tarray _) as typ1, _, _), Sil.Sizeof (Sil.Tstruct _, _, _)
-    | Sil.Sizeof ((Sil.Tstruct _) as typ1, _, _), Sil.Sizeof (Sil.Tarray _, _, _)
+    | Sil.Sizeof ((Typ.Tstruct _) as typ1, _, _), Sil.Sizeof (Typ.Tstruct _, _, _)
+    | Sil.Sizeof ((Typ.Tarray _) as typ1, _, _), Sil.Sizeof (Typ.Tarray _, _, _)
+    | Sil.Sizeof ((Typ.Tarray _) as typ1, _, _), Sil.Sizeof (Typ.Tstruct _, _, _)
+    | Sil.Sizeof ((Typ.Tstruct _) as typ1, _, _), Sil.Sizeof (Typ.Tarray _, _, _)
       when is_java_class typ1 -> true
 
     | Sil.Sizeof (typ1, _, _), Sil.Sizeof (typ2, _, _) ->
-        (Sil.is_cpp_class typ1 && Sil.is_cpp_class typ2) ||
-        (Sil.is_objc_class typ1 && Sil.is_objc_class typ2)
+        (Typ.is_cpp_class typ1 && Typ.is_cpp_class typ2) ||
+        (Typ.is_objc_class typ1 && Typ.is_objc_class typ2)
     | _ -> false in
   if types_subject_to_dynamic_cast then
     begin
@@ -1723,14 +1724,14 @@ let handle_parameter_subtype tenv prop1 sigma2 subs (e1, se1, texp1) (se2, texp2
       | _ -> false in
     if IList.exists filter sigma2 then !sub_opt else None in
   let add_subtype () = match texp1, texp2, se1, se2 with
-    | Sil.Sizeof (Sil.Tptr (t1_, _), None, _), Sil.Sizeof (Sil.Tptr (t2_, _), None, _),
+    | Sil.Sizeof (Typ.Tptr (t1_, _), None, _), Sil.Sizeof (Typ.Tptr (t2_, _), None, _),
       Sil.Eexp (e1', _), Sil.Eexp (e2', _)
       when not (is_allocated_lhs e1') ->
         begin
           let t1, t2 = Tenv.expand_type tenv t1_, Tenv.expand_type tenv t2_ in
           match type_rhs e2' with
           | Some (t2_ptsto, len2, sub2) ->
-              if not (Sil.typ_equal t1 t2) && Subtyping_check.check_subtype tenv t1 t2
+              if not (Typ.equal t1 t2) && Subtyping_check.check_subtype tenv t1 t2
               then begin
                 let pos_type_opt, _ =
                   Subtyping_check.subtype_case_analysis tenv
@@ -1765,7 +1766,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                 (match Prop.prop_iter_current iter1' with
                  | Sil.Hpointsto (e1, se1, texp1), _ ->
                      (try
-                        let typ2 = Sil.texp_to_typ (Some Sil.Tvoid) texp2 in
+                        let typ2 = Sil.texp_to_typ (Some Typ.Tvoid) texp2 in
                         let typing_frame, typing_missing = texp_imply tenv subs texp1 texp2 e1 calc_missing in
                         let se1' = sexp_imply_preprocess se1 texp1 se2 in
                         let subs', fld_frame, fld_missing = sexp_imply e1 calc_index_frame calc_missing subs se1' se2 typ2 in
@@ -1966,14 +1967,14 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
     let const_string_texp =
       match !Config.curr_language with
       | Config.Clang ->
-          Sil.Sizeof (Sil.Tarray (Sil.Tint Sil.IChar, Some len), None, Sil.Subtype.exact)
+          Sil.Sizeof (Typ.Tarray (Typ.Tint Typ.IChar, Some len), None, Sil.Subtype.exact)
       | Config.Java ->
           let object_type =
             Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "java.lang.String") in
           let typ = match Tenv.lookup tenv object_type with
             | Some typ -> typ
             | None -> assert false in
-          Sil.Sizeof (Sil.Tstruct typ, None, Sil.Subtype.exact) in
+          Sil.Sizeof (Typ.Tstruct typ, None, Sil.Subtype.exact) in
     Sil.Hpointsto (root, sexp, const_string_texp) in
   let mk_constant_class_hpred s = (* creat an hpred from a constant class *)
     let root = Sil.Const (Sil.Cclass (Ident.string_to_name s)) in
@@ -1985,7 +1986,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
       let typ = match Tenv.lookup tenv class_type with
         | Some typ -> typ
         | None -> assert false in
-      Sil.Sizeof (Sil.Tstruct typ, None, Sil.Subtype.exact) in
+      Sil.Sizeof (Typ.Tstruct typ, None, Sil.Subtype.exact) in
     Sil.Hpointsto (root, sexp, class_texp) in
   try
     (match move_primed_lhs_from_front subs sigma2 with
@@ -2019,7 +2020,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
                  | None ->
                      let subs' = match hpred2' with
                        | Sil.Hpointsto (e2, se2, te2) ->
-                           let typ2 = Sil.texp_to_typ (Some Sil.Tvoid) te2 in
+                           let typ2 = Sil.texp_to_typ (Some Typ.Tvoid) te2 in
                            sexp_imply_nolhs e2 calc_missing subs se2 typ2
                        | _ -> subs in
                      ProverState.add_missing_sigma [hpred2'];

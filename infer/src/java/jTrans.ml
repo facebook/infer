@@ -108,7 +108,7 @@ let retrieve_fieldname fieldname =
 
 let get_field_name program static tenv cn fs =
   match JTransType.get_class_type_no_pointer program tenv cn with
-  | Sil.Tstruct { Sil.instance_fields; static_fields; csu = Csu.Class _ } ->
+  | Typ.Tstruct { Typ.instance_fields; static_fields; csu = Csu.Class _ } ->
       let fieldname, _, _ =
         try
           IList.find
@@ -160,7 +160,7 @@ let locals_formals program tenv cn impl meth_kind =
     let vname = Mangled.from_string (JBir.var_name_g var) in
     let names = (fst (IList.split l)) in
     if not (is_formal vname) && (not (IList.mem Mangled.equal vname names)) then
-      (vname, Sil.Tvoid):: l
+      (vname, Typ.Tvoid):: l
     else
       l in
   let vars = JBir.vars impl in
@@ -373,7 +373,7 @@ let create_local_procdesc program linereader cfg tenv node m =
 let create_external_procdesc program cfg tenv cn ms kind =
   let return_type =
     match JBasics.ms_rtype ms with
-    | None -> Sil.Tvoid
+    | None -> Typ.Tvoid
     | Some vt -> JTransType.value_type program tenv vt in
   let formals = formals_from_signature program tenv cn ms kind in
   let proc_name_java = JTransType.get_method_procname cn ms kind in
@@ -442,7 +442,7 @@ let rec expression context pc expr =
         | JBir.ArrayLength ->
             let array_typ_no_ptr =
               match type_of_ex with
-              | Sil.Tptr (typ, _) -> typ
+              | Typ.Tptr (typ, _) -> typ
               | _ -> type_of_ex in
             let deref = create_sil_deref sil_ex array_typ_no_ptr loc in
             let args = [(sil_ex, type_of_ex)] in
@@ -466,7 +466,7 @@ let rec expression context pc expr =
                | JBir.InstanceOf _ -> Sil.Const (Sil.Cfun ModelBuiltins.__instanceof)
                | JBir.Cast _ -> Sil.Const (Sil.Cfun ModelBuiltins.__cast)
                | _ -> assert false) in
-            let args = [(sil_ex, type_of_ex); (sizeof_expr, Sil.Tvoid)] in
+            let args = [(sil_ex, type_of_ex); (sizeof_expr, Typ.Tvoid)] in
             let ret_id = Ident.create_fresh Ident.knormal in
             let call = Sil.Call([ret_id], builtin, args, loc, Sil.cf_default) in
             let res_ex = Sil.Var ret_id in
@@ -479,7 +479,7 @@ let rec expression context pc expr =
         match binop with
         | JBir.ArrayLoad _ ->
             (* add an instruction that dereferences the array *)
-            let array_typ = Sil.Tarray (type_of_expr, None) in
+            let array_typ = Typ.Tarray (type_of_expr, None) in
             let deref_array_instr = create_sil_deref sil_ex1 array_typ loc in
             let id = Ident.create_fresh Ident.knormal in
             let letderef_instr =
@@ -575,7 +575,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
           | Sil.Var _ when is_non_constructor_call && not Config.report_runtime_exceptions ->
               let obj_typ_no_ptr =
                 match sil_obj_type with
-                | Sil.Tptr (typ, _) -> typ
+                | Typ.Tptr (typ, _) -> typ
                 | _ -> sil_obj_type in
               [create_sil_deref sil_obj_expr obj_typ_no_ptr loc]
           | _ -> [] in
@@ -597,7 +597,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
     let callee_fun = Sil.Const (Sil.Cfun callee_procname) in
     let return_type =
       match JBasics.ms_rtype ms with
-      | None -> Sil.Tvoid
+      | None -> Typ.Tvoid
       | Some vt -> JTransType.value_type program tenv vt in
     let call_ret_instrs sil_var =
       let ret_id = Ident.create_fresh Ident.knormal in
@@ -647,7 +647,7 @@ let get_array_length context pc expr_list content_type =
         (instrs @ other_instrs, sil_len_expr :: other_exprs) in
   let (instrs, sil_len_exprs) = (IList.fold_right get_expr_instr expr_list ([],[])) in
   let get_array_type_len sil_len_expr (content_type, _) =
-    (Sil.Tarray (content_type, None), Some sil_len_expr) in
+    (Typ.Tarray (content_type, None), Some sil_len_expr) in
   let array_type, array_len =
     IList.fold_right get_array_type_len sil_len_exprs (content_type, None) in
   let array_size = Sil.Sizeof (array_type, array_len, Sil.Subtype.exact) in
@@ -764,7 +764,7 @@ let assume_not_null loc sil_expr =
   let not_null_expr =
     Sil.BinOp (Sil.Ne, sil_expr, Sil.exp_null) in
   let assume_call_flag = { Sil.cf_default with Sil.cf_noreturn = true; } in
-  let call_args = [(not_null_expr, Sil.Tint Sil.IBool)] in
+  let call_args = [(not_null_expr, Typ.Tint Typ.IBool)] in
   Sil.Call ([], builtin_infer_assume, call_args, loc, assume_call_flag)
 
 let rec instruction context pc instr : translation =
@@ -1087,7 +1087,7 @@ let rec instruction context pc instr : translation =
         and sizeof_expr =
           JTransType.sizeof_of_object_type program tenv object_type Sil.Subtype.subtypes_instof in
         let check_cast = Sil.Const (Sil.Cfun ModelBuiltins.__instanceof) in
-        let args = [(sil_expr, sil_type); (sizeof_expr, Sil.Tvoid)] in
+        let args = [(sil_expr, sil_type); (sizeof_expr, Typ.Tvoid)] in
         let call = Sil.Call([ret_id], check_cast, args, loc, Sil.cf_default) in
         let res_ex = Sil.Var ret_id in
         let is_instance_node =

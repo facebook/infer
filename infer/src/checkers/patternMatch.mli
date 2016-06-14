@@ -30,10 +30,10 @@ val get_java_method_call_formal_signature :
   Sil.instr -> (string * string * string list * string) option
 
 (** Get the this type of a procedure *)
-val get_this_type : ProcAttributes.t -> Sil.typ option
+val get_this_type : ProcAttributes.t -> Typ.t option
 
 (** Get the name of a type *)
-val get_type_name : Sil.typ -> string
+val get_type_name : Typ.t -> string
 
 (** Get the type names of a variable argument *)
 val get_vararg_type_names : Cfg.Node.t -> Pvar.t -> string list
@@ -51,19 +51,19 @@ val is_getter : Procname.java -> bool
 val is_setter : Procname.java -> bool
 
 (** Is the type a direct subtype of the typename? *)
-val is_immediate_subtype : Sil.struct_typ -> Typename.t -> bool
+val is_immediate_subtype : Typ.struct_typ -> Typename.t -> bool
 
 (** Is the type a transitive subtype of the typename? *)
-val is_subtype : Tenv.t -> Sil.struct_typ -> Sil.struct_typ -> bool
+val is_subtype : Tenv.t -> Typ.struct_typ -> Typ.struct_typ -> bool
 
 (** Resolve [typ_str] in [tenv], then check [typ] <: [typ_str] *)
 val is_subtype_of_str : Tenv.t -> Typename.t -> string -> bool
 
 (** get the superclasses of [typ]. does not include [typ] itself *)
-val strict_supertype_iter : Tenv.t -> (Sil.struct_typ -> unit) -> Sil.struct_typ -> unit
+val strict_supertype_iter : Tenv.t -> (Typ.struct_typ -> unit) -> Typ.struct_typ -> unit
 
 (** Return [true] if [f_typ] evaluates to true on a strict supertype of [orig_struct_typ] *)
-val strict_supertype_exists : Tenv.t -> (Sil.struct_typ -> bool) -> Sil.struct_typ -> bool
+val strict_supertype_exists : Tenv.t -> (Typ.struct_typ -> bool) -> Typ.struct_typ -> bool
 
 (** Get the name of the type of a constant *)
 val java_get_const_type_name : Sil.const -> string
@@ -84,27 +84,27 @@ val proc_calls :
     Only Java supported at the moment. *)
 val proc_iter_overridden_methods : (Procname.t -> unit) -> Tenv.t -> Procname.t -> unit
 
-val type_get_annotation : Sil.typ -> Sil.item_annotation option
+val type_get_annotation : Typ.t -> Typ.item_annotation option
 
 (** Get the class name of the type *)
-val type_get_class_name : Sil.typ -> Mangled.t option
+val type_get_class_name : Typ.t -> Mangled.t option
 
-val type_get_direct_supertypes : Sil.typ -> Typename.t list
+val type_get_direct_supertypes : Typ.t -> Typename.t list
 
 (** Is the type a class with the given name *)
-val type_has_class_name : Sil.typ -> Mangled.t -> bool
+val type_has_class_name : Typ.t -> Mangled.t -> bool
 
-val type_has_direct_supertype : Sil.typ -> Typename.t -> bool
+val type_has_direct_supertype : Typ.t -> Typename.t -> bool
 
 (** Is the type a class type *)
-val type_is_class : Sil.typ -> bool
+val type_is_class : Typ.t -> bool
 
-val type_is_nested_in_direct_supertype : Sil.typ -> Typename.t -> bool
+val type_is_nested_in_direct_supertype : Typ.t -> Typename.t -> bool
 
-val type_is_nested_in_type : Sil.typ -> Mangled.t -> bool
+val type_is_nested_in_type : Typ.t -> Mangled.t -> bool
 
 (** Is the type java.lang.Object *)
-val type_is_object : Sil.typ -> bool
+val type_is_object : Typ.t -> bool
 
 (** return the set of instance fields that are assigned to a null literal in [procdesc] *)
 val get_fields_nullified : Cfg.Procdesc.t -> Ident.FieldSet.t

@@ -24,11 +24,11 @@ type objc_accessor_type = | Objc_getter of Ident.fieldname | Objc_setter of Iden
 
 type t = {
   access: Sil.access, /** visibility access */
-  captured: list (Mangled.t, Sil.typ), /** name and type of variables captured in blocks */
+  captured: list (Mangled.t, Typ.t), /** name and type of variables captured in blocks */
   mutable changed: bool, /** true if proc has changed since last analysis */
   err_log: Errlog.t, /** Error log for the procedure */
   exceptions: list string, /** exceptions thrown by the procedure */
-  formals: list (Mangled.t, Sil.typ), /** name and type of formal parameters */
+  formals: list (Mangled.t, Typ.t), /** name and type of formal parameters */
   func_attributes: list Sil.func_attribute,
   is_abstract: bool, /** the procedure is abstract */
   mutable is_bridge_method: bool, /** the procedure is a bridge method */
@@ -39,12 +39,12 @@ type t = {
   mutable is_synthetic_method: bool, /** the procedure is a synthetic method */
   language: Config.language, /** language of the procedure */
   loc: Location.t, /** location of this procedure in the source code */
-  mutable locals: list (Mangled.t, Sil.typ), /** name and type of local variables */
-  method_annotation: Sil.method_annotation, /** annotations for java methods */
+  mutable locals: list (Mangled.t, Typ.t), /** name and type of local variables */
+  method_annotation: Typ.method_annotation, /** annotations for java methods */
   objc_accessor: option objc_accessor_type, /** type of ObjC accessor, if any */
   proc_flags: proc_flags, /** flags of the procedure */
   proc_name: Procname.t, /** name of the procedure */
-  ret_type: Sil.typ /** return type */
+  ret_type: Typ.t /** return type */
 };
 
 let default proc_name language => {
@@ -65,9 +65,9 @@ let default proc_name language => {
   language,
   loc: Location.dummy,
   locals: [],
-  method_annotation: Sil.method_annotation_empty,
+  method_annotation: Typ.method_annotation_empty,
   objc_accessor: None,
   proc_flags: proc_flags_empty (),
   proc_name,
-  ret_type: Sil.Tvoid
+  ret_type: Typ.Tvoid
 };

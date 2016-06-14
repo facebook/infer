@@ -27,7 +27,7 @@ type taint_spec = {
 let object_name = Mangled.from_string "java.lang.Object"
 
 let type_is_object = function
-  | Sil.Tptr (Sil.Tstruct { Sil.struct_name = Some name }, _) ->
+  | Typ.Tptr (Typ.Tstruct { Typ.struct_name = Some name }, _) ->
       Mangled.equal name object_name
   | _ -> false
 
@@ -38,7 +38,7 @@ let java_proc_name_with_class_method pn_java class_with_path method_name =
    with _ -> false)
 
 let get_direct_supers tenv = function
-  | { Sil.csu = Csu.Class _; superclasses } ->
+  | { Typ.csu = Csu.Class _; superclasses } ->
       IList.map (Tenv.lookup tenv) superclasses
       |> IList.flatten_options
   | _ ->
@@ -61,12 +61,12 @@ let strict_supertype_exists tenv f_typ orig_struct_typ =
   get_supers_rec orig_struct_typ
 
 let is_immediate_subtype this_type super_type_name =
-  IList.exists (Typename.equal super_type_name) this_type.Sil.superclasses
+  IList.exists (Typename.equal super_type_name) this_type.Typ.superclasses
 
 (** return true if [typ0] <: [typ1] *)
 let is_subtype tenv struct_typ0 struct_typ1 =
-  Sil.struct_typ_equal struct_typ0 struct_typ1 ||
-  strict_supertype_exists tenv (Sil.struct_typ_equal struct_typ1) struct_typ0
+  Typ.struct_typ_equal struct_typ0 struct_typ1 ||
+  strict_supertype_exists tenv (Typ.struct_typ_equal struct_typ1) struct_typ0
 
 let is_subtype_of_str tenv cn1 classname_str =
   let typename = Typename.Java.from_string classname_str in
@@ -81,61 +81,61 @@ let get_this_type proc_attributes = match proc_attributes.ProcAttributes.formals
   | _ -> None
 
 let type_get_direct_supertypes = function
-  | Sil.Tptr (Tstruct { superclasses }, _)
-  | Sil.Tstruct { superclasses } ->
+  | Typ.Tptr (Tstruct { superclasses }, _)
+  | Typ.Tstruct { superclasses } ->
       superclasses
   | _ ->
       []
 
 let type_get_class_name t = match t with
-  | Sil.Tptr (Sil.Tstruct { Sil.struct_name = Some cn }, _) ->
+  | Typ.Tptr (Typ.Tstruct { Typ.struct_name = Some cn }, _) ->
       Some cn
-  | Sil.Tptr (Sil.Tvar (Typename.TN_csu (Csu.Class _, cn)), _) ->
+  | Typ.Tptr (Typ.Tvar (Typename.TN_csu (Csu.Class _, cn)), _) ->
       Some cn
   | _ -> None
 
 let type_get_annotation
-    (t: Sil.typ): Sil.item_annotation option =
+    (t: Typ.t): Typ.item_annotation option =
   match t with
-  | Sil.Tptr (Sil.Tstruct { Sil.struct_annotations }, _)
-  | Sil.Tstruct { Sil.struct_annotations } ->
+  | Typ.Tptr (Typ.Tstruct { Typ.struct_annotations }, _)
+  | Typ.Tstruct { Typ.struct_annotations } ->
       Some struct_annotations
   | _ -> None
 
 let type_has_class_name t name =
   type_get_class_name t = Some name
 
-let type_has_direct_supertype (typ : Sil.typ) (class_name : Typename.t) =
+let type_has_direct_supertype (typ : Typ.t) (class_name : Typename.t) =
   IList.exists (fun cn -> Typename.equal cn class_name) (type_get_direct_supertypes typ)
 
 let type_has_supertype
     (tenv: Tenv.t)
-    (typ: Sil.typ)
+    (typ: Typ.t)
     (class_name: Typename.t): bool =
   let rec has_supertype typ visited =
-    if Sil.TypSet.mem typ visited then
+    if Typ.Set.mem typ visited then
       false
     else
       begin
         match Tenv.expand_type tenv typ with
-        | Sil.Tptr (Sil.Tstruct { Sil.superclasses }, _)
-        | Sil.Tstruct { Sil.superclasses } ->
+        | Typ.Tptr (Typ.Tstruct { Typ.superclasses }, _)
+        | Typ.Tstruct { Typ.superclasses } ->
             let match_supertype cn =
               let match_name () = Typename.equal cn class_name in
               let has_indirect_supertype () =
                 match Tenv.lookup tenv cn with
                 | Some supertype ->
-                    has_supertype (Sil.Tstruct supertype) (Sil.TypSet.add typ visited)
+                    has_supertype (Typ.Tstruct supertype) (Typ.Set.add typ visited)
                 | None -> false in
               (match_name () || has_indirect_supertype ()) in
             IList.exists match_supertype superclasses
         | _ -> false
       end in
-  has_supertype typ Sil.TypSet.empty
+  has_supertype typ Typ.Set.empty
 
 
 let type_is_nested_in_type t n = match t with
-  | Sil.Tptr (Sil.Tstruct { Sil.struct_name = Some name }, _) ->
+  | Typ.Tptr (Typ.Tstruct { Typ.struct_name = Some name }, _) ->
       string_is_prefix (Mangled.to_string n ^ "$") (Mangled.to_string name)
   | _ -> false
 
@@ -144,18 +144,18 @@ let type_is_nested_in_direct_supertype t n =
   IList.exists (is_nested_in n) (type_get_direct_supertypes t)
 
 let rec get_type_name = function
-  | Sil.Tstruct { Sil.struct_name = Some name } ->
+  | Typ.Tstruct { Typ.struct_name = Some name } ->
       Mangled.to_string name
-  | Sil.Tptr (t, _) -> get_type_name t
-  | Sil.Tvar tn -> Typename.name tn
+  | Typ.Tptr (t, _) -> get_type_name t
+  | Typ.Tvar tn -> Typename.name tn
   | _ -> "_"
 
 let get_field_type_name
-    (typ: Sil.typ)
+    (typ: Typ.t)
     (fieldname: Ident.fieldname): string option =
   match typ with
-  | Sil.Tstruct { Sil.instance_fields }
-  | Sil.Tptr (Sil.Tstruct { Sil.instance_fields }, _) -> (
+  | Typ.Tstruct { Typ.instance_fields }
+  | Typ.Tptr (Typ.Tstruct { Typ.instance_fields }, _) -> (
       try
         let _, ft, _ = IList.find
             (function | (fn, _, _) -> Ident.fieldname_equal fn fieldname)
@@ -265,10 +265,10 @@ let get_java_method_call_formal_signature = function
 
 
 let type_is_class = function
-  | Sil.Tptr (Sil.Tstruct _, _) -> true
-  | Sil.Tptr (Sil.Tvar _, _) -> true
-  | Sil.Tptr (Sil.Tarray _, _) -> true
-  | Sil.Tstruct _ -> true
+  | Typ.Tptr (Typ.Tstruct _, _) -> true
+  | Typ.Tptr (Typ.Tvar _, _) -> true
+  | Typ.Tptr (Typ.Tarray _, _) -> true
+  | Typ.Tstruct _ -> true
   | _ -> false
 
 let initializer_classes =
@@ -292,7 +292,7 @@ let initializer_methods = [
 (** Check if the type has in its supertypes from the initializer_classes list. *)
 let type_has_initializer
     (tenv: Tenv.t)
-    (t: Sil.typ): bool =
+    (t: Typ.t): bool =
   let check_candidate class_name = type_has_supertype tenv t class_name in
   IList.exists check_candidate initializer_classes
 
@@ -357,7 +357,7 @@ let proc_iter_overridden_methods f tenv proc_name =
     let super_proc_name =
       Procname.replace_class proc_name (Typename.name super_class_name) in
     match Tenv.lookup tenv super_class_name with
-    | Some ({ Sil.def_methods }) ->
+    | Some ({ Typ.def_methods }) ->
         let is_override pname =
           Procname.equal pname super_proc_name &&
           not (Procname.is_constructor pname) in
@@ -377,7 +377,7 @@ let proc_iter_overridden_methods f tenv proc_name =
        | Some curr_struct_typ ->
            IList.iter
              (do_super_type tenv)
-             (type_get_direct_supertypes (Sil.Tstruct curr_struct_typ))
+             (type_get_direct_supertypes (Typ.Tstruct curr_struct_typ))
        | None ->
            ())
   | _ ->

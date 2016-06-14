@@ -24,7 +24,7 @@ let extract_item_from_singleton l warning_string failure_val =
   | [item] -> item
   | _ -> Printing.log_err "%s" warning_string; failure_val
 
-let dummy_exp = (Sil.exp_minus_one, Sil.Tint Sil.IInt)
+let dummy_exp = (Sil.exp_minus_one, Typ.Tint Typ.IInt)
 
 (* Extract the element of a singleton list. If the list is not a singleton *)
 (* Gives a warning and return -1 as standard value indicating something    *)
@@ -130,9 +130,9 @@ type trans_state = {
   succ_nodes: Cfg.Node.t list; (* successor nodes in the cfg *)
   continuation: continuation option; (* current continuation *)
   priority: priority_node;
-  var_exp_typ: (Sil.exp * Sil.typ) option;
-  opaque_exp: (Sil.exp * Sil.typ) option;
-  obj_bridged_cast_typ : Sil.typ option
+  var_exp_typ: (Sil.exp * Typ.t) option;
+  opaque_exp: (Sil.exp * Typ.t) option;
+  obj_bridged_cast_typ : Typ.t option
 }
 
 (* A translation result. It is returned by the translation function. *)
@@ -140,7 +140,7 @@ type trans_result = {
   root_nodes: Cfg.Node.t list; (* Top cfg nodes (root) created by the translation *)
   leaf_nodes: Cfg.Node.t list; (* Bottom cfg nodes (leaf) created by the translate *)
   instrs: Sil.instr list; (* list of SIL instruction that need to be placed in cfg nodes of the parent*)
-  exps: (Sil.exp * Sil.typ) list; (* SIL expressions resulting from the translation of the clang stmt *)
+  exps: (Sil.exp * Typ.t) list; (* SIL expressions resulting from translation of clang stmt *)
   initd_exps: Sil.exp list;
   is_cpp_call_virtual : bool;
 }
@@ -289,20 +289,20 @@ end
 let create_alloc_instrs context sil_loc function_type fname size_exp_opt procname_opt =
   let function_type, function_type_np =
     match function_type with
-    | Sil.Tptr (styp, Sil.Pk_pointer)
-    | Sil.Tptr (styp, Sil.Pk_objc_weak)
-    | Sil.Tptr (styp, Sil.Pk_objc_unsafe_unretained)
-    | Sil.Tptr (styp, Sil.Pk_objc_autoreleasing) ->
+    | Typ.Tptr (styp, Typ.Pk_pointer)
+    | Typ.Tptr (styp, Typ.Pk_objc_weak)
+    | Typ.Tptr (styp, Typ.Pk_objc_unsafe_unretained)
+    | Typ.Tptr (styp, Typ.Pk_objc_autoreleasing) ->
         function_type, styp
-    | _ -> Sil.Tptr (function_type, Sil.Pk_pointer), function_type in
+    | _ -> Typ.Tptr (function_type, Typ.Pk_pointer), function_type in
   let function_type_np = CTypes.expand_structured_type context.CContext.tenv function_type_np in
   let sizeof_exp_ = Sil.Sizeof (function_type_np, None, Sil.Subtype.exact) in
   let sizeof_exp = match size_exp_opt with
     | Some exp -> Sil.BinOp (Sil.Mult, sizeof_exp_, exp)
     | None -> sizeof_exp_ in
-  let exp = (sizeof_exp, Sil.Tint Sil.IULong) in
+  let exp = (sizeof_exp, Typ.Tint Typ.IULong) in
   let procname_arg = match procname_opt with
-    | Some procname -> [Sil.Const (Sil.Cfun (procname)), Sil.Tvoid]
+    | Some procname -> [Sil.Const (Sil.Cfun (procname)), Typ.Tvoid]
     | None -> [] in
   let args = exp :: procname_arg in
   let ret_id = Ident.create_fresh Ident.knormal in
@@ -368,7 +368,7 @@ let create_cast_instrs context exp cast_from_typ cast_to_typ sil_loc =
   let cast_typ_no_pointer = CTypes.expand_structured_type context.CContext.tenv typ in
   let sizeof_exp = Sil.Sizeof (cast_typ_no_pointer, None, Sil.Subtype.exact) in
   let pname = ModelBuiltins.__objc_cast in
-  let args = [(exp, cast_from_typ); (sizeof_exp, Sil.Tint Sil.IULong)] in
+  let args = [(exp, cast_from_typ); (sizeof_exp, Typ.Tint Typ.IULong)] in
   let stmt_call = Sil.Call([ret_id], (Sil.Const (Sil.Cfun pname)), args, sil_loc, Sil.cf_default) in
   (stmt_call, Sil.Var ret_id)
 
@@ -398,7 +398,7 @@ let dereference_var_sil (exp, typ) sil_loc =
 let dereference_value_from_result sil_loc trans_result ~strip_pointer =
   let (obj_sil, class_typ) = extract_exp_from_list trans_result.exps "" in
   let cast_inst, cast_exp = dereference_var_sil (obj_sil, class_typ) sil_loc in
-  let typ_no_ptr = match class_typ with | Sil.Tptr (typ, _) -> typ | _ -> assert false in
+  let typ_no_ptr = match class_typ with | Typ.Tptr (typ, _) -> typ | _ -> assert false in
   let cast_typ = if strip_pointer then typ_no_ptr else class_typ in
   { trans_result with
     instrs = trans_result.instrs @ cast_inst;
@@ -441,7 +441,7 @@ let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
 
 let trans_assertion_failure sil_loc context =
   let assert_fail_builtin = Sil.Const (Sil.Cfun ModelBuiltins.__infer_fail) in
-  let args = [Sil.Const (Sil.Cstr Config.default_failure_name), Sil.Tvoid] in
+  let args = [Sil.Const (Sil.Cstr Config.default_failure_name), Typ.Tvoid] in
   let call_instr = Sil.Call ([], assert_fail_builtin, args, sil_loc, Sil.cf_default) in
   let exit_node = Cfg.Procdesc.get_exit_node (CContext.get_procdesc context)
   and failure_node =
@@ -621,7 +621,7 @@ let rec contains_opaque_value_expr s =
 (* checks if a unary operator is a logic negation applied to integers*)
 let is_logical_negation_of_int tenv ei uoi =
   match CTypes_decl.type_ptr_to_sil_type tenv ei.Clang_ast_t.ei_type_ptr, uoi.Clang_ast_t.uoi_kind with
-  | Sil.Tint Sil.IInt,`LNot -> true
+  | Typ.Tint Typ.IInt,`LNot -> true
   | _, _ -> false
 
 let rec is_block_stmt stmt =
@@ -673,18 +673,18 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
   let rec var_or_zero_in_init_list' e typ tns =
     let open General_utils in
     match typ with
-    | Sil.Tvar tn ->
+    | Typ.Tvar tn ->
         (match Tenv.lookup tenv tn with
-         | Some struct_typ -> var_or_zero_in_init_list' e (Sil.Tstruct struct_typ) tns
+         | Some struct_typ -> var_or_zero_in_init_list' e (Typ.Tstruct struct_typ) tns
          | _ -> [[(e, typ)]] (*This case is an error, shouldn't happen.*))
-    | Sil.Tstruct { Sil.instance_fields } as type_struct ->
+    | Typ.Tstruct { Typ.instance_fields } as type_struct ->
         let lh_exprs = IList.map ( fun (fieldname, _, _) ->
             Sil.Lfield (e, fieldname, type_struct) ) instance_fields in
         let lh_types = IList.map ( fun (_, fieldtype, _) -> fieldtype) instance_fields in
         let exp_types = zip lh_exprs lh_types in
         IList.map (fun (e, t) ->
             IList.flatten (var_or_zero_in_init_list' e t tns)) exp_types
-    | Sil.Tarray (arrtyp, Some n) ->
+    | Typ.Tarray (arrtyp, Some n) ->
         let size = IntLit.to_int n in
         let indices = list_range 0 (size - 1) in
         let index_constants =
@@ -695,10 +695,10 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
         let exp_types = zip lh_exprs lh_types in
         IList.map (fun (e, t) ->
             IList.flatten (var_or_zero_in_init_list' e t tns)) exp_types
-    | Sil.Tint _ | Sil.Tfloat _  | Sil.Tptr _ ->
+    | Typ.Tint _ | Typ.Tfloat _  | Typ.Tptr _ ->
         let exp = if return_zero then Sil.zero_value_of_numerical_type typ else e in
         [ [(exp, typ)] ]
-    | Sil.Tfun _ | Sil.Tvoid | Sil.Tarray _ -> assert false in
+    | Typ.Tfun _ | Typ.Tvoid | Typ.Tarray _ -> assert false in
   IList.flatten (var_or_zero_in_init_list' e typ StringSet.empty)
 
 (*

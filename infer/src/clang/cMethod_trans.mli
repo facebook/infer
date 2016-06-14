@@ -22,18 +22,18 @@ type method_call_type =
   | MCNoVirtual
   | MCStatic
 
-val should_add_return_param : Sil.typ -> is_objc_method:bool -> bool
+val should_add_return_param : Typ.t -> is_objc_method:bool -> bool
 
 val create_local_procdesc : Cfg.cfg -> Tenv.t -> CMethod_signature.method_signature ->
-  Clang_ast_t.stmt list -> (Pvar.t * Sil.typ) list -> bool -> bool
+  Clang_ast_t.stmt list -> (Pvar.t * Typ.t) list -> bool -> bool
 
-val create_external_procdesc : Cfg.cfg -> Procname.t -> bool -> (Sil.typ * Sil.typ list) option -> unit
+val create_external_procdesc : Cfg.cfg -> Procname.t -> bool -> (Typ.t * Typ.t list) option -> unit
 
 val get_objc_method_data : Clang_ast_t.obj_c_message_expr_info ->
   (string * Clang_ast_t.pointer option * method_call_type)
 
 val get_class_name_method_call_from_receiver_kind : CContext.t ->
-  Clang_ast_t.obj_c_message_expr_info -> (Sil.exp * Sil.typ) list -> string
+  Clang_ast_t.obj_c_message_expr_info -> (Sil.exp * Typ.t) list -> string
 
 val get_class_name_method_call_from_clang : Tenv.t -> Clang_ast_t.obj_c_message_expr_info ->
   string option

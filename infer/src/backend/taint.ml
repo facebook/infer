@@ -300,7 +300,7 @@ let func_with_tainted_params =
 
 let attrs_opt_get_annots = function
   | Some attrs -> attrs.ProcAttributes.method_annotation
-  | None -> Sil.method_annotation_empty
+  | None -> Typ.method_annotation_empty
 
 (* TODO: return a taint kind *)
 (** returns true if [callee_pname] returns a tainted value *)
@@ -356,8 +356,8 @@ let has_taint_annotation fieldname struct_typ =
   let fld_has_taint_annot (fname, _, annot) =
     Ident.fieldname_equal fieldname fname &&
     (Annotations.ia_is_privacy_source annot || Annotations.ia_is_integrity_source annot) in
-  IList.exists fld_has_taint_annot struct_typ.Sil.instance_fields ||
-  IList.exists fld_has_taint_annot struct_typ.Sil.static_fields
+  IList.exists fld_has_taint_annot struct_typ.Typ.instance_fields ||
+  IList.exists fld_has_taint_annot struct_typ.Typ.static_fields
 
 (* add tainting attributes to a list of paramenters *)
 let get_params_to_taint tainted_param_nums formal_params =

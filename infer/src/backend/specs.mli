@@ -122,7 +122,7 @@ type call_site = Procname.t * Location.t
 
 module CallSiteSet : PrettyPrintable.PPSet with type elt = call_site
 
-type call_summary = CallSiteSet.t Sil.AnnotMap.t
+type call_summary = CallSiteSet.t Typ.AnnotMap.t
 
 (** Payload: results of some analysis *)
 type payload =
@@ -164,10 +164,10 @@ val get_proc_name : summary -> Procname.t
 val get_attributes : summary -> ProcAttributes.t
 
 (** Get the return type of the procedure *)
-val get_ret_type : summary -> Sil.typ
+val get_ret_type : summary -> Typ.t
 
 (** Get the formal paramters of the procedure *)
-val get_formals : summary -> (Mangled.t * Sil.typ) list
+val get_formals : summary -> (Mangled.t * Typ.t) list
 
 (** Get the flag with the given key for the procedure, if any *)
 val get_flag : Procname.t -> string -> string option
@@ -185,7 +185,7 @@ val get_signature : summary -> string
 val get_specs : Procname.t -> Prop.normal spec list
 
 (** Return the specs and formal parameters for the proc in the spec table *)
-val get_specs_formals : Procname.t -> Prop.normal spec list * (Mangled.t * Sil.typ) list
+val get_specs_formals : Procname.t -> Prop.normal spec list * (Mangled.t * Typ.t) list
 
 (** Get the specs from the payload of the summary. *)
 val get_specs_from_payload : summary -> Prop.normal spec list

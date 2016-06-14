@@ -504,12 +504,12 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
     (Pvar.is_local pvar || Pvar.is_global pvar) &&
     not (pvar_is_frontend_tmp pvar) &&
     match hpred_typ_opt, find_typ_without_ptr prop pvar with
-    | Some (Sil.Sizeof (t1, _, _)), Some (Sil.Sizeof (Sil.Tptr (t2_, _), _, _)) ->
+    | Some (Sil.Sizeof (t1, _, _)), Some (Sil.Sizeof (Typ.Tptr (t2_, _), _, _)) ->
         (try
            let t2 = Tenv.expand_type tenv t2_ in
-           Sil.typ_equal t1 t2
+           Typ.equal t1 t2
          with exn when SymOp.exn_not_failure exn -> false)
-    | Some (Sil.Sizeof (Sil.Tint _, _, _)), Some (Sil.Sizeof (Sil.Tint _, _, _))
+    | Some (Sil.Sizeof (Typ.Tint _, _, _)), Some (Sil.Sizeof (Typ.Tint _, _, _))
       when is_file -> (* must be a file opened with "open" *)
         true
     | _ -> false in
@@ -568,7 +568,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
 
 (** find the dexp, if any, where the given value is stored
     also return the type of the value if found *)
-let vpath_find prop _exp : Sil.dexp option * Sil.typ option =
+let vpath_find prop _exp : Sil.dexp option * Typ.t option =
   if verbose then (L.d_str "in vpath_find exp:"; Sil.d_exp _exp; L.d_ln ());
   let rec find sigma_acc sigma_todo exp =
     let do_fse res sigma_acc' sigma_todo' lexp texp (f, se) = match se with
@@ -577,12 +577,12 @@ let vpath_find prop _exp : Sil.dexp option * Sil.typ option =
           (match lexp with
            | Sil.Lvar pv ->
                let typo = match texp with
-                 | Sil.Sizeof (Sil.Tstruct struct_typ, _, _) ->
+                 | Sil.Sizeof (Typ.Tstruct struct_typ, _, _) ->
                      (try
                         let _, t, _ =
                           IList.find (fun (f', _, _) ->
                               Ident.fieldname_equal f' f)
-                            struct_typ.Sil.instance_fields in
+                            struct_typ.Typ.instance_fields in
                         Some t
                       with Not_found -> None)
                  | _ -> None in
@@ -650,7 +650,7 @@ let vpath_find prop _exp : Sil.dexp option * Sil.typ option =
     | Some de, typo -> L.d_str "vpath_find: found "; L.d_str (Sil.dexp_to_string de); L.d_str " : ";
         match typo with
         | None -> L.d_str " No type"
-        | Some typ -> Sil.d_typ_full typ;
+        | Some typ -> Typ.d_full typ;
             L.d_ln ()
   end;
   res
@@ -1057,7 +1057,7 @@ let explain_divide_by_zero exp node loc =
 (** explain a return expression required *)
 let explain_return_expression_required loc typ =
   let typ_str =
-    let pp fmt () = Sil.pp_typ_full pe_text fmt typ in
+    let pp fmt () = Typ.pp_full pe_text fmt typ in
     pp_to_string pp () in
   Localise.desc_return_expression_required typ_str loc
 
@@ -1127,7 +1127,7 @@ let explain_unary_minus_applied_to_unsigned_expression exp typ node loc =
     | Some de -> Some (Sil.dexp_to_string de)
     | None -> None in
   let typ_str =
-    let pp fmt () = Sil.pp_typ_full pe_text fmt typ in
+    let pp fmt () = Typ.pp_full pe_text fmt typ in
     pp_to_string pp () in
   Localise.desc_unary_minus_applied_to_unsigned_expression exp_str_opt typ_str loc
 

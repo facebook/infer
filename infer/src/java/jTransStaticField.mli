@@ -18,7 +18,8 @@ val is_static_final_field : JContext.t -> JBasics.class_name -> JBasics.field_si
 
 val has_static_final_fields : JCode.jcode Javalib.interface_or_class -> bool
 
-val translate_instr_static_field : JContext.t -> Cfg.Procdesc.t -> JBasics.field_signature -> Sil.typ ->
+val translate_instr_static_field :
+  JContext.t -> Cfg.Procdesc.t -> JBasics.field_signature -> Typ.t ->
   Location.t -> Sil.instr list * Sil.exp
 
 

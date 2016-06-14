@@ -16,7 +16,7 @@ module P = Printf
 (** Module for typestates: maps from expressions to annotated types, with extensions. *)
 
 (** Parameters of a call. *)
-type parameters = (Sil.exp * Sil.typ) list
+type parameters = (Sil.exp * Typ.t) list
 
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 
@@ -36,7 +36,7 @@ module M = Map.Make (struct
     type t = Sil.exp
     let compare = Sil.exp_compare end)
 
-type range = Sil.typ * TypeAnnotation.t * (Location.t list)
+type range = Typ.t * TypeAnnotation.t * (Location.t list)
 
 type 'a t =
   {
@@ -54,7 +54,7 @@ let locs_compare = IList.compare Location.compare
 let locs_equal locs1 locs2 = locs_compare locs1 locs2 = 0
 
 let range_equal (typ1, ta1, locs1) (typ2, ta2, locs2) =
-  Sil.typ_equal typ1 typ2 && TypeAnnotation.equal ta1 ta2 && locs_equal locs1 locs2
+  Typ.equal typ1 typ2 && TypeAnnotation.equal ta1 ta2 && locs_equal locs1 locs2
 
 let equal t1 t2 =
   (* Ignore the calls field, which is a pure instrumentation *)
@@ -67,7 +67,7 @@ let pp ext fmt typestate =
     F.fprintf fmt "  %a -> [%s] %s %a%a@\n"
       (Sil.pp_exp pe_text) exp
       (TypeOrigin.to_string (TypeAnnotation.get_origin ta)) (TypeAnnotation.to_string ta)
-      (Sil.pp_typ_full pe_text) typ
+      (Typ.pp_full pe_text) typ
       pp_locs locs in
   let pp_map map = M.iter pp_one map in
 

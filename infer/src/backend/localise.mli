@@ -165,7 +165,7 @@ val deref_str_uninitialized : Sil.attribute option -> deref_str
 val deref_str_nil_argument_in_variadic_method : Procname.t -> int -> int -> deref_str
 
 (** dereference strings for a pointer size mismatch *)
-val deref_str_pointer_size_mismatch : Sil.typ -> Sil.typ -> deref_str
+val deref_str_pointer_size_mismatch : Typ.t -> Typ.t -> deref_str
 
 (** type of access *)
 type access =
@@ -218,11 +218,11 @@ val desc_null_test_after_dereference : string -> int -> Location.t -> error_desc
 val java_unchecked_exn_desc : Procname.t -> Typename.t -> string -> error_desc
 
 val desc_context_leak :
-  Procname.t -> Sil.typ -> Ident.fieldname ->
-  (Ident.fieldname option * Sil.typ) list -> error_desc
+  Procname.t -> Typ.t -> Ident.fieldname ->
+  (Ident.fieldname option * Typ.t) list -> error_desc
 
 val desc_fragment_retains_view :
-  Sil.typ -> Ident.fieldname -> Sil.typ -> Procname.t -> error_desc
+  Typ.t -> Ident.fieldname -> Typ.t -> Procname.t -> error_desc
 
 (* Create human-readable error description for assertion failures *)
 val desc_custom_error : Location.t -> error_desc
@@ -238,7 +238,7 @@ val desc_precondition_not_met : pnm_kind option -> Procname.t -> Location.t -> e
 val desc_return_expression_required : string -> Location.t -> error_desc
 
 val desc_retain_cycle :
-  Prop.normal Prop.t -> ((Sil.strexp * Sil.typ) * Ident.fieldname * Sil.strexp) list ->
+  Prop.normal Prop.t -> ((Sil.strexp * Typ.t) * Ident.fieldname * Sil.strexp) list ->
   Location.t -> string option -> error_desc
 
 val registered_observer_being_deallocated_str : string -> string

@@ -408,25 +408,25 @@ let mk_rules_for_dll (para : Sil.hpara_dll) : rule list =
 let typ_get_recursive_flds tenv typ_exp =
   let filter typ (_, t, _) =
     match t with
-    | Sil.Tvar _ | Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ -> false
-    | Sil.Tptr (Sil.Tvar tname', _) ->
+    | Typ.Tvar _ | Typ.Tint _ | Typ.Tfloat _ | Typ.Tvoid | Typ.Tfun _ -> false
+    | Typ.Tptr (Typ.Tvar tname', _) ->
         let typ' = match Tenv.lookup tenv tname' with
           | None ->
               L.err "@.typ_get_recursive: Undefined type %s@." (Typename.to_string tname');
               t
-          | Some st -> Sil.Tstruct st in
-        Sil.typ_equal typ' typ
-    | Sil.Tptr _ | Sil.Tstruct _ | Sil.Tarray _ ->
+          | Some st -> Typ.Tstruct st in
+        Typ.equal typ' typ
+    | Typ.Tptr _ | Typ.Tstruct _ | Typ.Tarray _ ->
         false
   in
   match typ_exp with
   | Sil.Sizeof (typ, _, _) ->
       (match Tenv.expand_type tenv typ with
-       | Sil.Tint _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ | Sil.Tfloat _ -> []
-       | Sil.Tstruct { Sil.instance_fields } ->
+       | Typ.Tint _ | Typ.Tvoid | Typ.Tfun _ | Typ.Tptr _ | Typ.Tfloat _ -> []
+       | Typ.Tstruct { Typ.instance_fields } ->
            IList.map (fun (x, _, _) -> x) (IList.filter (filter typ) instance_fields)
-       | Sil.Tarray _ -> []
-       | Sil.Tvar _ -> assert false)
+       | Typ.Tarray _ -> []
+       | Typ.Tvar _ -> assert false)
   | Sil.Var _ -> [] (* type of |-> not known yet *)
   | Sil.Const _ -> []
   | _ ->
@@ -469,7 +469,7 @@ let discover_para_candidates tenv p =
   let edges = ref [] in
   let add_edge edg = edges := edg :: !edges in
   let get_edges_strexp rec_flds root se =
-    let is_rec_fld fld = IList.exists (Sil.fld_equal fld) rec_flds in
+    let is_rec_fld fld = IList.exists (Ident.fieldname_equal fld) rec_flds in
     match se with
     | Sil.Eexp _ | Sil.Earray _ -> ()
     | Sil.Estruct (fsel, _) ->
@@ -505,7 +505,7 @@ let discover_para_dll_candidates tenv p =
   let edges = ref [] in
   let add_edge edg = (edges := edg :: !edges) in
   let get_edges_strexp rec_flds root se =
-    let is_rec_fld fld = IList.exists (Sil.fld_equal fld) rec_flds in
+    let is_rec_fld fld = IList.exists (Ident.fieldname_equal fld) rec_flds in
     match se with
     | Sil.Eexp _ | Sil.Earray _ -> ()
     | Sil.Estruct (fsel, _) ->
@@ -885,7 +885,8 @@ let get_cycle root prop =
      IList.iter (fun ((e, t), f, e') ->
          match e, e' with
          | Sil.Eexp (e, _), Sil.Eexp (e', _) ->
-             L.d_str ("("^(Sil.exp_to_string e)^": "^(Sil.typ_to_string t)^", "^(Ident.fieldname_to_string f)^", "^(Sil.exp_to_string e')^")")
+             L.d_str ("("^(Sil.exp_to_string e)^": "^(Typ.to_string t)^", "
+                      ^(Ident.fieldname_to_string f)^", "^(Sil.exp_to_string e')^")")
          | _ -> ()) cyc;
      L.d_strln "") in
   (* perform a dfs of a graph stopping when e_root is reached. *)
@@ -950,7 +951,7 @@ let get_var_retain_cycle _prop =
   let is_hpred_block v h =
     match h, v with
     | Sil.Hpointsto (e, _, Sil.Sizeof (typ, _, _)), Sil.Eexp (e', _)
-      when Sil.exp_equal e e' && Sil.is_block_type typ -> true
+      when Sil.exp_equal e e' && Typ.is_block_type typ -> true
     | _, _ -> false in
   let find v =
     try
@@ -994,7 +995,7 @@ let cycle_has_weak_or_unretained_or_assign_field cycle =
   (* returns items annotation for field fn in struct t *)
   let get_item_annotation t fn =
     match t with
-    | Sil.Tstruct { Sil.instance_fields; static_fields } ->
+    | Typ.Tstruct { Typ.instance_fields; static_fields } ->
         let ia = ref [] in
         IList.iter (fun (fn', _, ia') ->
             if Ident.fieldname_equal fn fn' then ia := ia')
@@ -1007,8 +1008,9 @@ let cycle_has_weak_or_unretained_or_assign_field cycle =
     | att:: _ when Config.unsafe_unret = att || Config.weak = att || Config.assign = att -> true
     | _:: params' -> has_weak_or_unretained_or_assign params' in
   let do_annotation (a, _) =
-    ((a.Sil.class_name = Config.property_attributes) ||
-     (a.Sil.class_name = Config.ivar_attributes)) && has_weak_or_unretained_or_assign a.Sil.parameters in
+    ((a.Typ.class_name = Config.property_attributes) ||
+     (a.Typ.class_name = Config.ivar_attributes))
+    && has_weak_or_unretained_or_assign a.Typ.parameters in
   let rec do_cycle c =
     match c with
     | [] -> false

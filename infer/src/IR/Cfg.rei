@@ -57,16 +57,16 @@ let module Procdesc: {
   let get_flags: t => proc_flags;
 
   /** Return name and type of formal parameters */
-  let get_formals: t => list (Mangled.t, Sil.typ);
+  let get_formals: t => list (Mangled.t, Typ.t);
 
   /** Return loc information for the procedure */
   let get_loc: t => Location.t;
 
   /** Return name and type of local variables */
-  let get_locals: t => list (Mangled.t, Sil.typ);
+  let get_locals: t => list (Mangled.t, Typ.t);
 
   /** Return name and type of block's captured variables */
-  let get_captured: t => list (Mangled.t, Sil.typ);
+  let get_captured: t => list (Mangled.t, Typ.t);
 
   /** Return the visibility attribute */
   let get_access: t => Sil.access;
@@ -80,7 +80,7 @@ let module Procdesc: {
   let get_proc_name: t => Procname.t;
 
   /** Return the return type of the procedure and type string */
-  let get_ret_type: t => Sil.typ;
+  let get_ret_type: t => Typ.t;
   let get_ret_var: t => Pvar.t;
   let get_start_node: t => node;
 
@@ -120,7 +120,7 @@ let module Procdesc: {
   let set_start_node: t => node => unit;
 
   /** append a list of new local variables to the existing list of local variables */
-  let append_locals: t => list (Mangled.t, Sil.typ) => unit;
+  let append_locals: t => list (Mangled.t, Typ.t) => unit;
 };
 
 
@@ -154,7 +154,7 @@ let module Node: {
   let prepend_instrs: t => list Sil.instr => unit;
 
   /** Add declarations for local variables and return variable to the node */
-  let add_locals_ret_declaration: t => list (Mangled.t, Sil.typ) => unit;
+  let add_locals_ret_declaration: t => list (Mangled.t, Typ.t) => unit;
 
   /** Compare two nodes */
   let compare: t => t => int;
@@ -331,4 +331,4 @@ let remove_seed_captured_vars_block: list Mangled.t => Prop.t Prop.normal => Pro
     (name, typ) where name is a parameter. The resulting procdesc is isomorphic but
     all the type of the parameters are replaced in the instructions according to the list.
     The virtual calls are also replaced to match the parameter types */
-let specialize_types: Procdesc.t => Procname.t => list (Sil.exp, Sil.typ) => Procdesc.t;
+let specialize_types: Procdesc.t => Procname.t => list (Sil.exp, Typ.t) => Procdesc.t;

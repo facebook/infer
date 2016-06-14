@@ -29,7 +29,7 @@ module StrexpMatch : sig
   val path_from_exp_offsets : Sil.exp -> Sil.offset list -> path
 
   (** path to the root, length, elements and type of a new_array *)
-  type strexp_data = path * Sil.strexp * Sil.typ
+  type strexp_data = path * Sil.strexp * Typ.t
 
   (** sigma with info about a current array *)
   type t
@@ -58,7 +58,7 @@ module StrexpMatch : sig
 end = struct
 
   (** syntactic offset *)
-  type syn_offset = Field of Ident.fieldname * Sil.typ | Index of Sil.exp
+  type syn_offset = Field of Ident.fieldname * Typ.t | Index of Sil.exp
 
   (** path through an Estruct *)
   type path = Sil.exp * (syn_offset list)
@@ -67,19 +67,19 @@ end = struct
   let rec get_strexp_at_syn_offsets se t syn_offs =
     match se, t, syn_offs with
     | _, _, [] -> (se, t)
-    | Sil.Estruct (fsel, _), Sil.Tstruct { Sil.instance_fields }, Field (fld, _) :: syn_offs' ->
-        let se' = snd (IList.find (fun (f', _) -> Sil.fld_equal f' fld) fsel) in
+    | Sil.Estruct (fsel, _), Typ.Tstruct { Typ.instance_fields }, Field (fld, _) :: syn_offs' ->
+        let se' = snd (IList.find (fun (f', _) -> Ident.fieldname_equal f' fld) fsel) in
         let t' = (fun (_,y,_) -> y)
             (IList.find (fun (f', _, _) ->
-                 Sil.fld_equal f' fld) instance_fields) in
+                 Ident.fieldname_equal f' fld) instance_fields) in
         get_strexp_at_syn_offsets se' t' syn_offs'
-    | Sil.Earray (_, esel, _), Sil.Tarray (t', _), Index ind :: syn_offs' ->
+    | Sil.Earray (_, esel, _), Typ.Tarray (t', _), Index ind :: syn_offs' ->
         let se' = snd (IList.find (fun (i', _) -> Sil.exp_equal i' ind) esel) in
         get_strexp_at_syn_offsets se' t' syn_offs'
     | _ ->
         L.d_strln "Failure of get_strexp_at_syn_offsets";
         L.d_str "se: "; Sil.d_sexp se; L.d_ln ();
-        L.d_str "t: "; Sil.d_typ_full t; L.d_ln ();
+        L.d_str "t: "; Typ.d_full t; L.d_ln ();
         assert false
 
   (** Replace a strexp at the given syntactic offset list *)
@@ -87,15 +87,18 @@ end = struct
     match se, t, syn_offs with
     | _, _, [] ->
         update se
-    | Sil.Estruct (fsel, inst), Sil.Tstruct { Sil.instance_fields }, Field (fld, _) :: syn_offs' ->
-        let se' = snd (IList.find (fun (f', _) -> Sil.fld_equal f' fld) fsel) in
+    | Sil.Estruct (fsel, inst), Typ.Tstruct { Typ.instance_fields }, Field (fld, _) :: syn_offs' ->
+        let se' = snd (IList.find (fun (f', _) -> Ident.fieldname_equal f' fld) fsel) in
         let t' = (fun (_,y,_) -> y)
             (IList.find (fun (f', _, _) ->
-                 Sil.fld_equal f' fld) instance_fields) in
+                 Ident.fieldname_equal f' fld) instance_fields) in
         let se_mod = replace_strexp_at_syn_offsets se' t' syn_offs' update in
-        let fsel' = IList.map (fun (f'', se'') -> if Sil.fld_equal f'' fld then (fld, se_mod) else (f'', se'')) fsel in
+        let fsel' =
+          IList.map (fun (f'', se'') ->
+              if Ident.fieldname_equal f'' fld then (fld, se_mod) else (f'', se'')
+            ) fsel in
         Sil.Estruct (fsel', inst)
-    | Sil.Earray (len, esel, inst), Sil.Tarray (t', _), Index idx :: syn_offs' ->
+    | Sil.Earray (len, esel, inst), Typ.Tarray (t', _), Index idx :: syn_offs' ->
         let se' = snd (IList.find (fun (i', _) -> Sil.exp_equal i' idx) esel) in
         let se_mod = replace_strexp_at_syn_offsets se' t' syn_offs' update in
         let esel' = IList.map (fun ese -> if Sil.exp_equal (fst ese) idx then (idx, se_mod) else ese) esel in
@@ -125,7 +128,7 @@ end = struct
     (root, syn_offs)
 
   (** path to the root, len, elements and type of a new_array *)
-  type strexp_data = path * Sil.strexp * Sil.typ
+  type strexp_data = path * Sil.strexp * Typ.t
 
   (** Store hpred using physical equality, and offset list for an array *)
   type t = sigma * Sil.hpred * (syn_offset list)
@@ -147,9 +150,9 @@ end = struct
       if pred (path, se, typ) then found := (sigma, hpred, offs') :: !found
       else begin
         match se, typ with
-        | Sil.Estruct (fsel, _), Sil.Tstruct { Sil.instance_fields } ->
+        | Sil.Estruct (fsel, _), Typ.Tstruct { Typ.instance_fields } ->
             find_offset_fsel sigma_other hpred root offs fsel instance_fields typ
-        | Sil.Earray (_, esel, _), Sil.Tarray (t, _) ->
+        | Sil.Earray (_, esel, _), Typ.Tarray (t, _) ->
             find_offset_esel sigma_other hpred root offs esel t
         | _ -> ()
       end
@@ -158,7 +161,7 @@ end = struct
       | (f, se) :: fsel' ->
           begin
             try
-              let t = (fun (_,y,_) -> y) (IList.find (fun (f', _, _) -> Sil.fld_equal f' f) ftal) in
+              let t = snd3 (IList.find (fun (f', _, _) -> Ident.fieldname_equal f' f) ftal) in
               find_offset_sexp sigma_other hpred root ((Field (f, typ)) :: offs) se t
             with Not_found ->
               L.d_strln ("Can't find field " ^ (Ident.fieldname_to_string f) ^ " in StrexpMatch.find")
@@ -428,7 +431,7 @@ let keep_only_indices
 
 (** If the type is array, check whether we should do abstraction *)
 let array_typ_can_abstract = function
-  | Sil.Tarray (Sil.Tptr (Sil.Tfun _, _), _) -> false (* don't abstract arrays of pointers *)
+  | Typ.Tarray (Typ.Tptr (Typ.Tfun _, _), _) -> false (* don't abstract arrays of pointers *)
   | _ -> true
 
 (** This function checks whether we can apply an abstraction to a strexp *)
@@ -524,18 +527,18 @@ let check_after_array_abstraction prop =
   let rec check_se root offs typ = function
     | Sil.Eexp _ -> ()
     | Sil.Earray (_, esel, _) -> (* check that no more than 2 elements are in the array *)
-        let typ_elem = Sil.array_typ_elem (Some Sil.Tvoid) typ in
+        let typ_elem = Typ.array_elem (Some Typ.Tvoid) typ in
         if IList.length esel > 2 && array_typ_can_abstract typ then
           if IList.for_all (check_index root offs) esel then ()
           else report_error prop
         else IList.iter (fun (ind, se) -> check_se root (offs @ [Sil.Off_index ind]) typ_elem se) esel
     | Sil.Estruct (fsel, _) ->
         IList.iter (fun (f, se) ->
-            let typ_f = Sil.struct_typ_fld (Some Sil.Tvoid) f typ in
+            let typ_f = Typ.struct_typ_fld (Some Typ.Tvoid) f typ in
             check_se root (offs @ [Sil.Off_fld (f, typ)]) typ_f se) fsel in
   let check_hpred = function
     | Sil.Hpointsto (root, se, texp) ->
-        let typ = Sil.texp_to_typ (Some Sil.Tvoid) texp in
+        let typ = Sil.texp_to_typ (Some Typ.Tvoid) texp in
         check_se root [] typ se
     | Sil.Hlseg _ | Sil.Hdllseg _ -> () in
   let check_sigma sigma = IList.iter check_hpred sigma in

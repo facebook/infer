@@ -244,14 +244,14 @@ let by_call_to_ra tags ra =
   "by " ^ call_to_at_line tags ra.Sil.ra_pname ra.Sil.ra_loc
 
 let rec format_typ = function
-  | Sil.Tptr (typ, _) when !Config.curr_language = Config.Java ->
+  | Typ.Tptr (typ, _) when !Config.curr_language = Config.Java ->
       format_typ typ
-  | Sil.Tstruct { Sil.struct_name = Some name } ->
+  | Typ.Tstruct { Typ.struct_name = Some name } ->
       Mangled.to_string name
-  | Sil.Tvar tname ->
+  | Typ.Tvar tname ->
       Typename.name tname
   | typ ->
-      Sil.typ_to_string typ
+      Typ.to_string typ
 
 let format_field f =
   if !Config.curr_language = Config.Java
@@ -360,7 +360,7 @@ let deref_str_dangling dangling_kind_opt =
 (** dereference strings for a pointer size mismatch *)
 let deref_str_pointer_size_mismatch typ_from_instr typ_of_object =
   let str_from_typ typ =
-    let pp f () = Sil.pp_typ_full pe_text f typ in
+    let pp f () = Typ.pp_full pe_text f typ in
     pp_to_string pp () in
   { tags = Tags.create ();
     value_pre = Some (pointer_or_object ());
@@ -413,10 +413,10 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
   let leak_path_entry_to_str acc entry =
     let entry_str = match entry with
       | (Some fld, _) -> Ident.fieldname_to_string fld
-      | (None, typ) -> Sil.typ_to_string typ in
+      | (None, typ) -> Typ.to_string typ in
     (* intentionally omit space; [typ_to_string] adds an extra space *)
     acc ^ entry_str ^ " |->\n " in
-  let context_str = Sil.typ_to_string context_typ in
+  let context_str = Typ.to_string context_typ in
   let path_str =
     let path_prefix =
       if leak_path = [] then "Leaked "
@@ -684,9 +684,9 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
           s, " to ", " on " in
     let typ_str =
       match hpred_type_opt with
-      | Some (Sil.Sizeof (Sil.Tstruct
-                            { Sil.csu = Csu.Class _;
-                              Sil.struct_name = Some classname;
+      | Some (Sil.Sizeof (Typ.Tstruct
+                            { Typ.csu = Csu.Class _;
+                              Typ.struct_name = Some classname;
                             }, _, _)) ->
           " of type " ^ Mangled.to_string classname ^ " "
       | _ -> " " in
@@ -773,7 +773,11 @@ let desc_retain_cycle prop cycle loc cycle_dotty =
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") object "^e_str^" retaining "^e_str^"."^(Ident.fieldname_to_string f)^", ";
         ct:=!ct +1
     | Sil.Eexp (Sil.Sizeof (typ, _, _), _) ->
-        str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") an object of "^(Sil.typ_to_string typ)^" retaining another object via instance variable "^(Ident.fieldname_to_string f)^", ";
+        let step =
+          " (" ^ (string_of_int !ct) ^ ") an object of "
+          ^ (Typ.to_string typ) ^ " retaining another object via instance variable "
+          ^ (Ident.fieldname_to_string f) ^ ", " in
+        str_cycle := !str_cycle ^ step;
         ct:=!ct +1
     | _ -> () in
   IList.iter do_edge cycle;

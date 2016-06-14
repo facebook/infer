@@ -85,7 +85,7 @@ let format_type_matches_given_type
 (* The format string and the nvar for the fixed arguments and the nvar of the varargs array *)
 let format_arguments
     (printf: printf_signature)
-    (args: (Sil.exp * Sil.typ) list): (string option * (Sil.exp list) * (Sil.exp option)) =
+    (args: (Sil.exp * Typ.t) list): (string option * (Sil.exp list) * (Sil.exp option)) =
 
   let format_string = match IList.nth args printf.format_pos with
     | Sil.Const (Sil.Cstr fmt), _ -> Some fmt

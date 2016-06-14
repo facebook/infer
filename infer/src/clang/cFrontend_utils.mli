@@ -33,7 +33,7 @@ sig
 
   val instrs_to_string : Sil.instr list -> string
 
-  val field_to_string : Ident.fieldname * Sil.typ * Sil.item_annotation -> string
+  val field_to_string : Ident.fieldname * Typ.t * Typ.item_annotation -> string
 end
 
 module Ast_utils :
@@ -86,7 +86,7 @@ sig
 
   val get_decl_opt_with_decl_ref : Clang_ast_t.decl_ref option -> Clang_ast_t.decl option
 
-  val update_sil_types_map : Clang_ast_t.type_ptr -> Sil.typ -> unit
+  val update_sil_types_map : Clang_ast_t.type_ptr -> Typ.t -> unit
 
   val update_enum_map : Clang_ast_t.pointer -> Sil.exp -> unit
 
@@ -120,7 +120,7 @@ sig
 
   val make_qual_name_decl : string list -> string -> Clang_ast_t.named_decl_info
 
-  type type_ptr_to_sil_type =  Tenv.t -> Clang_ast_t.type_ptr -> Sil.typ
+  type type_ptr_to_sil_type =  Tenv.t -> Clang_ast_t.type_ptr -> Typ.t
 
   val add_type_from_decl_ref : type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl_ref option ->
     bool -> unit
@@ -156,9 +156,9 @@ sig
 
   val string_from_list : string list -> string
 
-  val append_no_duplicates_fields : (Ident.fieldname * Sil.typ * Sil.item_annotation) list ->
-    (Ident.fieldname * Sil.typ * Sil.item_annotation) list ->
-    (Ident.fieldname * Sil.typ * Sil.item_annotation) list
+  val append_no_duplicates_fields : (Ident.fieldname * Typ.t * Typ.item_annotation) list ->
+    (Ident.fieldname * Typ.t * Typ.item_annotation) list ->
+    (Ident.fieldname * Typ.t * Typ.item_annotation) list
 
   val append_no_duplicates_csu :
     Typename.t list -> Typename.t list -> Typename.t list
@@ -166,14 +166,14 @@ sig
   val append_no_duplicates_methods : Procname.t list -> Procname.t list -> Procname.t list
 
   val append_no_duplicated_vars :
-    (Mangled.t * Sil.typ) list -> (Mangled.t * Sil.typ) list -> (Mangled.t * Sil.typ) list
+    (Mangled.t * Typ.t) list -> (Mangled.t * Typ.t) list -> (Mangled.t * Typ.t) list
 
   val append_no_duplicateds :
-    (Sil.exp * Sil.typ) list -> (Sil.exp * Sil.typ) list -> (Sil.exp * Sil.typ) list
+    (Sil.exp * Typ.t) list -> (Sil.exp * Typ.t) list -> (Sil.exp * Typ.t) list
 
   val sort_fields :
-    (Ident.fieldname * Sil.typ * Sil.item_annotation) list ->
-    (Ident.fieldname * Sil.typ * Sil.item_annotation) list
+    (Ident.fieldname * Typ.t * Typ.item_annotation) list ->
+    (Ident.fieldname * Typ.t * Typ.item_annotation) list
 
   val sort_fields_tenv : Tenv.t -> unit
 
