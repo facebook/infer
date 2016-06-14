@@ -40,9 +40,28 @@ public class GuardedByExample {
   @GuardedBy("ui_thread")
   Object t = new Object();
 
+  private static Object sLock = new Object();
+
+  @GuardedBy("sLock")
+  static Object sFld;
+
+  static {
+    // don't warn on class initializer
+    sFld = new Object();
+  }
+
+  public GuardedByExample() {
+    // don't warn on reads or writes of Guarded fields in constructor
+    f.toString();
+    g = new Object();
+  }
 
   void readFBad() {
     this.f.toString();
+  }
+
+  void writeFBad() {
+    this.f = new Object();
   }
 
   void readFBadWrongLock() {
@@ -51,10 +70,22 @@ public class GuardedByExample {
     }
   }
 
+  void writeFBadWrongLock() {
+    synchronized (mOtherLock) {
+      this.f = new Object(); // f is supposed to be protected by mLock
+    }
+  }
+
   void readFAfterBlockBad() {
     synchronized (mLock) {
     }
     this.f.toString();
+  }
+
+  void writeFAfterBlockBad() {
+    synchronized (mLock) {
+    }
+    this.f = new Object();
   }
 
   @GuardedBy("mOtherLock")
@@ -67,8 +98,12 @@ public class GuardedByExample {
     this.f.toString();
   }
 
-  synchronized void synchronizedMethodOk() {
+  synchronized void synchronizedMethodReadOk() {
     this.g.toString();
+  }
+
+  synchronized void synchronizedMethodWriteOk() {
+    this.g = new Object();
   }
 
   void readFOkSynchronized() {
@@ -77,8 +112,18 @@ public class GuardedByExample {
     }
   }
 
-  synchronized void synchronizedMethodBad() {
+  void writeFOkSynchronized() {
+    synchronized (mLock) {
+      this.f = new Object();
+    }
+  }
+
+  synchronized void synchronizedMethodReadBad() {
     this.f.toString(); // f is supposed to be protected by mLock, not this
+  }
+
+  synchronized void synchronizedMethodWriteBad() {
+    this.f = new Object(); // f is supposed to be protected by mLock, not this
   }
 
   void readGFromCopyBad() {
@@ -87,6 +132,13 @@ public class GuardedByExample {
       g.toString();
     }
     mCopyOfG.toString();  // should be an error; unprotected access to pt(g)
+  }
+
+  void reassignCopyOk() {
+    synchronized (this) {
+      mCopyOfG = g;  // these are ok: access of g guarded by this
+    }
+    mCopyOfG = new Object(); // ok; this doesn't change the value of g
   }
 
   void readHBad() {

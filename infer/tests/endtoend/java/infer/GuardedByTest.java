@@ -41,10 +41,14 @@ public class GuardedByTest {
       throws IOException, InterruptedException, InferException {
     String[] methods = {
       "readFBad",
+      "writeFBad",
       "readFBadWrongLock",
+      "writeFBadWrongLock",
       "readFAfterBlockBad",
+      "writeFAfterBlockBad",
       "readFBadWrongAnnotation",
-      "synchronizedMethodBad",
+      "synchronizedMethodReadBad",
+      "synchronizedMethodWriteBad",
       "readGFromCopyBad",
       "readHBad",
       "readHBadSynchronizedMethodShouldntHelp",

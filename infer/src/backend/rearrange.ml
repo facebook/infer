@@ -618,7 +618,6 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
 let add_guarded_by_constraints prop lexp pdesc =
   let excluded_guardedby_string str =
     str = "ui_thread" in (* don't warn on @GuardedBy("ui_thread") *)
-  let sigma = Prop.get_sigma prop in
   let extract_guarded_by_str item_annot =
     let annot_extract_guarded_by_str (annot, _) =
       if Annotations.annot_ends_with annot Annotations.guarded_by
@@ -658,7 +657,7 @@ let add_guarded_by_constraints prop lexp pdesc =
             None)
       sigma in
   (* warn if the access to [lexp] is not protected by the [guarded_by_fld_str] lock *)
-  let enforce_guarded_access accessed_fld guarded_by_str prop =
+  let enforce_guarded_access_ accessed_fld guarded_by_str prop =
     (* return true if [pdesc] has an annotation that matches [guarded_by_str] *)
     let proc_has_matching_annot pdesc guarded_by_str =
       let proc_signature =
@@ -716,21 +715,25 @@ let add_guarded_by_constraints prop lexp pdesc =
              lock in the current prop). so just be silent. *)
           ();
         prop in
+  let enforce_guarded_access fld typ prop =
+    match get_guarded_by_fld_str fld typ with
+    | Some guarded_by_fld_str -> enforce_guarded_access_ fld guarded_by_fld_str prop
+    | None -> prop in
   let check_fld_locks typ prop_acc (fld, strexp) = match strexp with
-    | Sil.Eexp (exp, _) when Sil.exp_equal exp lexp ->
-        begin
-          match get_guarded_by_fld_str fld typ with
-          | Some guarded_by_fld_str -> enforce_guarded_access fld guarded_by_fld_str prop_acc
-          | None -> prop_acc (* field not annotated; proceed as normal *)
-        end
-    | _ ->
-        prop_acc in
+    | Sil.Eexp (exp, _) when Sil.exp_equal exp lexp -> enforce_guarded_access fld typ prop_acc
+    | _ -> prop_acc in
   let hpred_check_flds prop_acc = function
     | Sil.Hpointsto (_, Estruct (flds, _), Sizeof (typ, _, _)) ->
         IList.fold_left (check_fld_locks typ) prop_acc flds
     | _ ->
         prop_acc in
-  IList.fold_left hpred_check_flds prop sigma
+  match lexp with
+  | Sil.Lfield (_, fld, typ) ->
+      (* check for direct access to field annotated with @GuardedBy *)
+      enforce_guarded_access fld typ prop
+  | _ ->
+      (* check for access via alias *)
+      IList.fold_left hpred_check_flds prop (Prop.get_sigma prop)
 
 (** Add a pointsto for [root(lexp): typ] to the iterator and to the
     footprint, if it's compatible with the allowed footprint
@@ -1261,7 +1264,8 @@ let rearrange ?(report_deref_errors=true) pdesc tenv lexp typ prop loc
   if report_deref_errors then check_dereference_error pdesc prop nlexp (State.get_loc ());
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let prop' =
-    if Config.csl_analysis && !Config.footprint && Procname.is_java pname
+    if Config.csl_analysis && !Config.footprint && Procname.is_java pname &&
+       not (Procname.is_constructor pname || Procname.is_class_initializer pname)
     then add_guarded_by_constraints prop lexp pdesc
     else prop in
   match Prop.prop_iter_create prop' with
