@@ -796,8 +796,12 @@ let rec instruction context pc instr : translation =
     let instrs, sil_expr, sil_type = expression context pc expr in
     let builtin_const = Sil.Const (Sil.Cfun builtin) in
     let instr = Sil.Call ([], builtin_const, [(sil_expr, sil_type)], loc, Sil.cf_default) in
+    let typ_no_ptr = match sil_type with
+      | Typ.Tptr (typ, _) -> typ
+      | _ -> sil_type in
+    let deref_instr = create_sil_deref sil_expr typ_no_ptr loc in
     let node_kind = Cfg.Node.Stmt_node node_desc in
-    Instr (create_node node_kind (instrs @ [instr])) in
+    Instr (create_node node_kind (instrs @ [deref_instr; instr] )) in
   try
     match instr with
     | JBir.AffectVar (var, expr) ->
