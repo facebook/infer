@@ -391,16 +391,24 @@ let parse ?(incomplete=false) ?config_file env_var exe_usage =
     Arg.usage !full_speclist usage_msg ;
     exit status
   in
-  let help_desc_list =
-    [ { long = "help"; short = ""; meta = ""; decode_json = (fun _ -> []);
-        spec = Arg.Unit (fun () -> curr_usage 0);
-        doc = "Display this list of options" }
-    ; { long = "help-full"; short = ""; meta = ""; decode_json = (fun _ -> []);
-        spec = Arg.Unit (fun () -> full_usage 0);
-        doc = "Display the full list of options, including internal and experimental options" }
-    ] in
+  let add_or_suppress_help speclist =
+    let unknown opt =
+      (opt, Arg.Unit (fun () -> raise (Arg.Bad ("unknown option '" ^ opt ^ "'"))), "") in
+    if incomplete then
+      speclist @ [
+        (unknown "--help") ;
+        (unknown "-help")
+      ]
+    else
+      speclist @ [
+        ("--help", Arg.Unit (fun () -> curr_usage 0),
+         "Display this list of options") ;
+        ("--help-full", Arg.Unit (fun () -> full_usage 0),
+         "Display the full list of options, including internal and experimental options") ;
+        (unknown "-help")
+      ]
+  in
   let normalize speclist =
-    let speclist = help_desc_list @ speclist in
     let norm k =
       let len = String.length k in
       if len > 3 && String.sub k 0 3 = "no-" then String.sub k 3 (len - 3) else k in
@@ -411,9 +419,7 @@ let parse ?(incomplete=false) ?config_file env_var exe_usage =
       | _, "--" -> -1
       | _ -> String.compare (norm x) (norm y) in
     let sort speclist = IList.sort compare_specs speclist in
-    let suppress_help speclist =
-      ("-help", Arg.Unit (fun () -> raise (Arg.Bad "unknown option '-help'")), "") :: speclist in
-    suppress_help (align ~limit:32 (sort speclist))
+    add_or_suppress_help (align ~limit:46 (sort speclist))
   in
   let curr_desc_list = IList.assoc ( = ) current_exe exe_desc_lists
   in
