@@ -53,7 +53,7 @@ public class InferRunner {
   };
 
   private static final String CXX_INCLUDE_DIR =
-      "/facebook-clang-plugins/clang/include/c++/v1/";
+      "/facebook-clang-plugins/clang/install/include/c++/v1/";
 
   private static final String IPHONESIMULATOR_ISYSROOT_SUFFIX =
       "/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk";

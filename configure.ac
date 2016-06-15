@@ -44,9 +44,9 @@ IS_FACEBOOK_TREE=$is_facebook_tree
 AC_SUBST([IS_FACEBOOK_TREE])
 
 # to compile the facebook-clang-plugins
-AC_ARG_VAR([CLANG_PREFIX], [directory where clang is installed (defaults=$PWD/facebook-clang-plugins/clang)])
+AC_ARG_VAR([CLANG_PREFIX], [directory where clang is installed (defaults=$PWD/facebook-clang-plugins/clang/install)])
 AS_IF([test "x$CLANG_PREFIX" = "x"], [
-  CLANG_PREFIX="$(pwd)/facebook-clang-plugins/clang"
+  CLANG_PREFIX="$(pwd)/facebook-clang-plugins/clang/install"
 ])
 
 AC_ARG_VAR([CLANG_INCLUDES], [clang headers directories (defaults=$CLANG_PREFIX/include)])

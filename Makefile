@@ -130,7 +130,7 @@ install: infer inferTraceBugs
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	test -d      $(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/ || \
 	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/
-	@for i in $$(find facebook-clang-plugins/clang/ -not -wholename 'src/*' -type d); do \
+	@for i in $$(find facebook-clang-plugins/clang/install -type d); do \
 	  test -d      $(DESTDIR)$(libdir)/infer/$$i || \
 	    $(MKDIR_P) $(DESTDIR)$(libdir)/infer/$$i; \
 	done
@@ -164,7 +164,7 @@ endif
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(INSTALL_DATA) -C          facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib \
 	  $(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib
-	@for i in $$(find facebook-clang-plugins/clang/ -not -wholename 'src/*' -not -name setup.sh -not -name installed.version -not -type d); do \
+	@for i in $$(find facebook-clang-plugins/clang/install -not -type d); do \
 	  $(INSTALL_PROGRAM) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
 	done
 	@for i in $$(find infer/lib/clang_wrappers/*); do \

@@ -40,8 +40,8 @@ from inferlib import config, issues, utils
 
 ROOT_DIR = os.path.join(SCRIPT_DIR, os.pardir, os.pardir, os.pardir)
 
-CLANG_BIN = os.path.join(ROOT_DIR,
-                         'facebook-clang-plugins', 'clang', 'bin', 'clang')
+CLANG_BIN = os.path.join(ROOT_DIR, 'facebook-clang-plugins', 'clang',
+                         'install', 'bin', 'clang')
 
 REPORT_JSON = 'report.json'
 

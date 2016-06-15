@@ -92,6 +92,7 @@ class BuckAnalyzer:
         clang_path = os.path.join(
             facebook_clang_plugins_root,
             'clang',
+            'install',
             'bin',
             'clang',
         )
