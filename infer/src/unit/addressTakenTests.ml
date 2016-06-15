@@ -31,12 +31,12 @@ let tests =
   let test_list = [
     "address_taken_set_instr",
     [
-      var_assign_var ~rhs_typ:int_ptr_typ "a" "b";
+      var_assign_addrof_var ~rhs_typ:int_ptr_typ "a" "b";
       invariant "{ &b }"
     ];
     "address_not_taken_set_instr",
     [
-      var_assign_var ~rhs_typ:int_typ "a" "b";
+      var_assign_addrof_var ~rhs_typ:int_typ "a" "b";
       assert_empty
     ];
     "address_not_taken_letderef_instr1",
@@ -51,23 +51,23 @@ let tests =
     ];
     "take_multiple_addresses",
     [
-      var_assign_var ~rhs_typ:int_ptr_typ "a" "b";
+      var_assign_addrof_var ~rhs_typ:int_ptr_typ "a" "b";
       invariant "{ &b }";
-      var_assign_var ~rhs_typ:int_ptr_typ "c" "d";
+      var_assign_addrof_var ~rhs_typ:int_ptr_typ "c" "d";
       invariant "{ &b, &d }";
-      var_assign_var ~rhs_typ:int_typ "e" "f";
+      var_assign_addrof_var ~rhs_typ:int_typ "e" "f";
       invariant "{ &b, &d }"
     ];
     "address_not_taken_closure",
     [
-      var_assign_var ~rhs_typ:int_ptr_typ "a" "b";
+      var_assign_addrof_var ~rhs_typ:int_ptr_typ "a" "b";
       var_assign_exp ~rhs_typ:fun_ptr_typ "c" (closure_exp ["d"; "e"]);
       invariant "{ &b }"
     ];
     "if_conservative1",
     [
       If (unknown_exp,
-          [var_assign_var ~rhs_typ:int_ptr_typ "a" "b"],
+          [var_assign_addrof_var ~rhs_typ:int_ptr_typ "a" "b"],
           []
          );
       invariant "{ &b }"
@@ -75,27 +75,27 @@ let tests =
     "if_conservative2",
     [
       If (unknown_exp,
-          [var_assign_var ~rhs_typ:int_ptr_typ "a" "b"],
-          [var_assign_var ~rhs_typ:int_ptr_typ "c" "d"]
+          [var_assign_addrof_var ~rhs_typ:int_ptr_typ "a" "b"],
+          [var_assign_addrof_var ~rhs_typ:int_ptr_typ "c" "d"]
          );
       invariant "{ &b, &d }"
     ];
     "loop_as_if",
     [
       While (unknown_exp,
-             [var_assign_var ~rhs_typ:int_ptr_typ "a" "b"]
+             [var_assign_addrof_var ~rhs_typ:int_ptr_typ "a" "b"]
             );
       invariant "{ &b }"
     ];
     "loop_before_after",
     [
-      var_assign_var ~rhs_typ:int_ptr_typ "a" "b";
+      var_assign_addrof_var ~rhs_typ:int_ptr_typ "a" "b";
       invariant "{ &b }";
       While (unknown_exp,
-             [var_assign_var ~rhs_typ:int_ptr_typ "c" "d"]
+             [var_assign_addrof_var ~rhs_typ:int_ptr_typ "c" "d"]
             );
       invariant "{ &b, &d }";
-      var_assign_var ~rhs_typ:int_ptr_typ "e" "f";
+      var_assign_addrof_var ~rhs_typ:int_ptr_typ "e" "f";
       invariant "{ &b, &d, &f }"
     ];
   ] |> TestInterpreter.create_tests ProcData.empty_extras in

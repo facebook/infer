@@ -89,11 +89,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Domain.gen (Var.of_id lhs_id) (Var.of_pvar rhs_pvar) astate
     | Sil.Set (Sil.Lvar lhs_pvar, _, Sil.Var rhs_id, _) when not (Pvar.is_global lhs_pvar) ->
         Domain.kill_then_gen (Var.of_pvar lhs_pvar) (Var.of_id rhs_id) astate
-    | Sil.Set (Sil.Lvar lhs_pvar, _, Sil.Lvar rhs_pvar, _)
-      when not (Pvar.is_global lhs_pvar || Pvar.is_global rhs_pvar)  ->
-        Domain.kill_then_gen (Var.of_pvar lhs_pvar) (Var.of_pvar rhs_pvar) astate
     | Sil.Set (Sil.Lvar lhs_pvar, _, _, _) ->
-        (* non-copy assignment (or assignment to global); can only kill *)
+        (* non-copy assignment; can only kill *)
         Domain.kill_copies_with_var (Var.of_pvar lhs_pvar) astate
     | Sil.Letderef _
     (* lhs = *rhs where rhs isn't a pvar (or is a global). in any case, not a copy *)
@@ -116,12 +113,3 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (* none of these can assign to program vars or logical vars *)
         astate
 end
-
-module Analyzer =
-  AbstractInterpreter.Make
-    (ProcCfg.Exceptional)
-    (Scheduler.ReversePostorder)
-    (TransferFunctions)
-
-let checker { Callbacks.proc_desc; tenv; } =
-  ignore(Analyzer.exec_pdesc (ProcData.make_default proc_desc tenv))

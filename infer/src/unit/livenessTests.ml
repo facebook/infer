@@ -33,32 +33,32 @@ let tests =
     "basic_live",
     [
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
     "basic_live_then_dead",
     [
       assert_empty;
       var_assign_int "b" 1;
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
     "iterative_live",
     [
       invariant "{ &b, &d, &f }";
-      var_assign_var "e" "f";
+      id_assign_var "e" "f";
       invariant "{ &b, &d }";
-      var_assign_var "c" "d";
+      id_assign_var "c" "d";
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
     "live_kill_live",
     [
       invariant "{ &b }";
-      var_assign_var "c" "b";
+      id_assign_var "c" "b";
       assert_empty;
       var_assign_int "b" 1;
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
     "basic_live_letderef",
     [
@@ -112,7 +112,7 @@ let tests =
     [
       invariant "{ &b }";
       If (unknown_cond,
-          [var_assign_var "a" "b"],
+          [id_assign_var "a" "b"],
           []
          )
     ];
@@ -120,8 +120,8 @@ let tests =
     [
       invariant "{ &b, &d }";
       If (unknown_cond,
-          [var_assign_var "a" "b"],
-          [var_assign_var "c" "d"]
+          [id_assign_var "a" "b"],
+          [id_assign_var "c" "d"]
          )
     ];
     "if_conservative_kill",
@@ -132,17 +132,17 @@ let tests =
           []
          );
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
     "if_conservative_kill_live",
     [
       invariant "{ &b, &d }";
       If (unknown_cond,
           [var_assign_int "b" 1],
-          [var_assign_var "c" "d"]
+          [id_assign_var "c" "d"]
          );
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
     "if_precise1",
     [
@@ -150,10 +150,10 @@ let tests =
       If (unknown_cond,
           [var_assign_int "b" 1;
            invariant "{ &b }";
-           var_assign_var "a" "b"],
+           id_assign_var "a" "b"],
           [var_assign_int "d" 1;
            invariant "{ &d }";
-           var_assign_var "c" "d"]
+           id_assign_var "c" "d"]
          )
     ];
     "if_precise2",
@@ -164,13 +164,13 @@ let tests =
           [var_assign_int "b" 1]
          );
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
     "loop_as_if1",
     [
       invariant "{ &b }";
       While (unknown_cond,
-             [var_assign_var "a" "b"]
+             [id_assign_var "a" "b"]
             )
     ];
     "loop_as_if2",
@@ -180,16 +180,16 @@ let tests =
              [var_assign_int "b" 1]
             );
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
     "loop_before_after",
     [
       invariant "{ &b, &d }";
       While (unknown_cond,
-             [var_assign_var "b" "d"]
+             [id_assign_var "b" "d"]
             );
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
   ] |> TestInterpreter.create_tests ProcData.empty_extras in
   "liveness_test_suite">:::test_list

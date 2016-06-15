@@ -123,7 +123,8 @@ module StructuredSil = struct
     let rhs_exp = Sil.Var (ident_of_str rhs) in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
-  let var_assign_var ?(rhs_typ=dummy_typ) lhs rhs =
+  (* x = &y *)
+  let var_assign_addrof_var ?(rhs_typ=dummy_typ) lhs rhs =
     let lhs_exp = var_of_str lhs in
     let rhs_exp = var_of_str rhs in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
