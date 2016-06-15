@@ -11,7 +11,6 @@ include $(ROOT_DIR)/Makefile.config
 #### Global declarations ####
 
 INFER_BUILD_DIR = $(BUILD_DIR)/infer
-TEST_BUILD_DIR = $(BUILD_DIR)/test
 LLVM_BUILD_DIR = $(BUILD_DIR)/llvm
 ANNOT_DIR = $(SRC_DIR)/_build
 ETC_DIR = $(INFER_DIR)/etc

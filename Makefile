@@ -27,16 +27,17 @@ $(INFER_BIN_RELPATH) $(INFERTRACEBUGS_BIN_RELPATH):
 	 cd $(@D) && \
 	 $(LN_S) ../lib/python/$(@F) $(@F))
 
-infer: $(INFER_BIN_RELPATH)
+src_build:
 	$(MAKE) -C $(SRC_DIR) infer
+ifeq ($(BUILD_C_ANALYZERS),yes)
+src_build: clang_plugin
+endif
+
+infer: $(INFER_BIN_RELPATH) src_build
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(MAKE) -C $(ANNOTATIONS_DIR)
 endif
 	$(MAKE) -C $(MODELS_DIR) all
-
-ifeq ($(BUILD_C_ANALYZERS),yes)
-infer: clang_plugin
-endif
 
 clang_setup:
 	export CC="$(CC)" CFLAGS="$(CFLAGS)"; \
@@ -77,8 +78,8 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 test_build: test_oss_build
 endif
 
-ocaml_unit_test: infer
-	$(INFERUNIT_BIN)
+ocaml_unit_test: test_this_build
+	$(TEST_BUILD_DIR)/unit/inferunit.byte
 
 buck_test: infer
 	NO_BUCKD=1 buck clean
@@ -115,6 +116,8 @@ test: test_build ocaml_unit_test buck_test inferTraceBugs_test
 
 test_xml: test_build ocaml_unit_test buck_test_xml inferTraceBugs_test
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot
+
+quick-test: test_this_build ocaml_unit_test
 
 uninstall:
 	$(REMOVE_DIR) $(DESTDIR)$(libdir)/infer/
@@ -245,5 +248,5 @@ conf-clean: clean
 	$(REMOVE_DIR) infer/models/objc/out/
 
 .PHONY: all buck_test buck_test_xml clean clang_plugin clang_setup infer inferTraceBugs
-.PHONY: inferTraceBugs_test ocaml_unit_test check_missing_mli test test_xml test_build install
-.PHONY: uninstall
+.PHONY: inferTraceBugs_test install ocaml_unit_test check_missing_mli src_build test test_xml
+.PHONY: test_build uninstall
