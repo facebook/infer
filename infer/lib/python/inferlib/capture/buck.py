@@ -160,8 +160,12 @@ class BuckAnalyzer:
         env_vars = utils.read_env()
         env_vars['FCP_RUN_SYNTAX_ONLY'] = '1'
         env = utils.encode_env(env_vars)
-        subprocess.check_call(
-            self.cmd + self.create_cxx_buck_configuration_args(), env=env)
+        command = self.cmd
+        command += ['-j', str(self.args.multicore)]
+        if self.args.load_average is not None:
+            command += ['-L', str(self.args.load_average)]
+        command += self.create_cxx_buck_configuration_args()
+        subprocess.check_call(command, env=env)
         return os.EX_OK
 
     def capture_with_flavors(self):

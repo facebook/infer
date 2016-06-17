@@ -115,7 +115,7 @@ base_group.add_argument('--android-harness', action='store_true',
                         help='''[experimental] Create harness to detect bugs
                         involving the Android lifecycle''')
 
-base_group.add_argument('-l', '--llvm', action='store_true',
+base_group.add_argument('--llvm', action='store_true',
                         help='''[experimental] Analyze C or C++ file using the
                         experimental LLVM frontend''')
 
@@ -134,6 +134,10 @@ infer_group.add_argument('-j', '--multicore', metavar='n', type=int,
                            default=multiprocessing.cpu_count(),
                            dest='multicore', help='Set the number of cores to '
                            'be used for the analysis (default uses all cores)')
+infer_group.add_argument('-l', '--load-average', metavar='<float>', type=float,
+                         help='Specifies that no new jobs (commands) should '
+                         'be started if there are others jobs running and the '
+                         'load average is at least <float>.')
 infer_group.add_argument('-x', '--project', metavar='<projectname>',
                            help='Project name, for recording purposes only')
 
@@ -410,7 +414,10 @@ class AnalyzerWrapper(object):
             self.timing['makefile_generation'] = elapsed
             exit_status += makefile_status
             if makefile_status == os.EX_OK:
-                make_cmd = ['make', '-k', '-j', str(self.args.multicore)]
+                make_cmd = ['make', '-k']
+                make_cmd += ['-j', str(self.args.multicore)]
+                if self.args.load_average is not None:
+                    make_cmd += ['-l', str(self.args.load_average)]
                 if not self.args.debug:
                     make_cmd += ['-s']
                 analysis_start_time = time.time()
