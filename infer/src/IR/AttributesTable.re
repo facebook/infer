@@ -136,7 +136,7 @@ let to_json at => {
     [
       ("num_bindings", `Int at.num_bindings),
       ("num_buckets", `Int at.num_buckets),
-      ("max_bucket_length", `Int at.num_buckets)
+      ("max_bucket_length", `Int at.max_bucket_length)
     ]
       @ extra_field
   )
