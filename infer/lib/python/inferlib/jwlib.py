@@ -70,6 +70,8 @@ def create_infer_command(args, javac_arguments):
         _get_javac_args(['javac'] + javac_arguments)
     )
 
+def is_special_arg(arg):
+    return arg.startswith('-J') or arg.startswith('@')
 
 class AnnotationProcessorNotFound(Exception):
 
@@ -93,7 +95,7 @@ class CompilerCall(object):
         if self.args.version:
             return subprocess.call([self.javac_cmd] + self.original_arguments)
         else:
-            javac_cmd = [self.javac_cmd, '-verbose', '-g']
+            javac_cmd = ['-verbose', '-g']
 
             if self.args.bootclasspath is not None:
                 javac_cmd += ['-bootclasspath', self.args.bootclasspath]
@@ -182,13 +184,28 @@ class CompilerCall(object):
                            self.suppress_warnings_out)]
 
             with tempfile.NamedTemporaryFile(
-                    mode='w',
-                    suffix='.out',
-                    prefix='javac_',
-                    delete=False) as file_out:
+                mode='w',
+                prefix='javac_args_',
+                delete=False) as command_line:
+
+                args = filter(lambda x: not is_special_arg(x), javac_cmd)
+                command_line.write(" ".join(args))
+                self.command_line_file = command_line.name
+                
+            with tempfile.NamedTemporaryFile(
+                mode='w',
+                suffix='.out',
+                prefix='javac_',
+                delete=False) as file_out:
+
                 self.verbose_out = file_out.name
+
+                special_args = filter(is_special_arg, javac_cmd)
+
+                command = [self.javac_cmd] + special_args + ['@' + str(self.command_line_file)]
+                
                 try:
-                    subprocess.check_call(javac_cmd, stderr=file_out)
+                    subprocess.check_call(command, stderr=file_out)
                 except subprocess.CalledProcessError:
                     error_msg = 'ERROR: failure during compilation command.' \
                                 + '\nYou can run the failing compilation ' \
@@ -199,8 +216,7 @@ class CompilerCall(object):
                                 + 'cmd = {}\n' \
                                 + 'subprocess.check_call(cmd)\n' \
                                 + 'EOF\n"""\n'
-                    failing_cmd = filter(lambda arg: arg != '-verbose',
-                                         javac_cmd)
+                    failing_cmd = filter(lambda arg: arg != '-verbose', command)
                     utils.stderr(error_msg.format(failing_cmd))
                     subprocess.check_call(failing_cmd)
 
