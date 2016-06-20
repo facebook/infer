@@ -339,11 +339,20 @@ class BuildIntegrationTest(unittest.TestCase):
         root = os.path.join(CODETOANALYZE_DIR, 'ndk-build', 'hello_app')
         gen_lib_dir = os.path.join(root, 'libs')
         gen_obj_dir = os.path.join(root, 'obj')
+        env = os.environ.copy()
+        ndk_dir = os.getenv('ANDROID_NDK',
+                            os.path.join(os.path.sep,
+                                         'opt',
+                                         'android_ndk',
+                                         'r10e'))
+        env['PATH'] = '{}:{}'.format(os.getenv('PATH'), ndk_dir)
         if test('ndk-build', 'ndk-build',
                 root,
                 [['ndk-build', '-B', 'NDK_LIBS_OUT=./libs', 'NDK_OUT=./obj']],
                 clean_commands=[['ndk-build', 'clean']],
-                available=lambda: is_tool_available(['ndk-build', '-v'])):
+                available=lambda: is_tool_available([
+                    os.path.join(ndk_dir, 'ndk-build'), '-v']),
+                env=env):
             # remove libs/ and obj/ directories
             shutil.rmtree(gen_lib_dir)
             shutil.rmtree(gen_obj_dir)
