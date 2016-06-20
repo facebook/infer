@@ -1074,11 +1074,11 @@ let post_parsing_initialization () =
 
   let set_minor_heap_size nMb = (* increase the minor heap size to speed up gc *)
     let ctrl = Gc.get () in
-    let oneMb = 1048576 in
-    let new_size = max ctrl.Gc.minor_heap_size (nMb * oneMb)
-    in Gc.set { ctrl with Gc.minor_heap_size = new_size }
+    let words_of_Mb nMb = nMb * 1024 * 1024 * 8 / Sys.word_size in
+    let new_size = max ctrl.Gc.minor_heap_size (words_of_Mb nMb) in
+    Gc.set { ctrl with Gc.minor_heap_size = new_size }
   in
-  set_minor_heap_size 1 ;
+  set_minor_heap_size 8 ;
 
   let symops_timeout, seconds_timeout =
     let default_symops_timeout = 333 in
