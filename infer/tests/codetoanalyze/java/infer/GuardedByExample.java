@@ -13,6 +13,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.io.Closeable;
 
 public class GuardedByExample {
 
@@ -22,9 +23,15 @@ public class GuardedByExample {
     String value();
   }
 
+  static class AutoCloseableReadWriteUpdateLock implements Closeable {
+    @Override public void close() {}
+  }
+
   private Object mLock = new Object();
 
   private Object mOtherLock = new Object();
+
+  private AutoCloseableReadWriteUpdateLock mReadWriteLock = new AutoCloseableReadWriteUpdateLock();
 
   @GuardedBy("mLock")
   Object f = new Object();
@@ -36,6 +43,9 @@ public class GuardedByExample {
 
   @GuardedBy("SomeLockThatDoesntExist")
   Object h = new Object();
+
+  @GuardedBy("mReadWriteLock")
+  Object i = new Object();
 
   @GuardedBy("ui_thread")
   Object t = new Object();
@@ -178,6 +188,12 @@ public class GuardedByExample {
 
   void readTok() {
     this.t.toString();
+  }
+
+  void readWriteLockOk() {
+    try (AutoCloseableReadWriteUpdateLock lock = mReadWriteLock) {
+      this.i.toString();
+    }
   }
 
   // TODO: report on these cases

@@ -639,20 +639,27 @@ let add_guarded_by_constraints prop lexp pdesc =
     guarded_by_str = "this" in
   (* find A.guarded_by_fld_str |-> B and return Some B, or None if there is no such hpred *)
   let find_guarded_by_exp guarded_by_str sigma =
-    let extract_guarded_by_strexp (fld, strexp) =
+    let is_guarded_by_strexp (fld, _) =
       (* this comparison needs to be somewhat fuzzy, since programmers are free to write
          @GuardedBy("mLock"), @GuardedBy("MyClass.mLock"), or use other conventions *)
-      if Ident.fieldname_to_flat_string fld = guarded_by_str ||
-         Ident.fieldname_to_string fld = guarded_by_str
-      then Some strexp
-      else None in
+      Ident.fieldname_to_flat_string fld = guarded_by_str ||
+      Ident.fieldname_to_string fld = guarded_by_str in
     IList.find_map_opt
       (function
-        | Sil.Hpointsto (_, Estruct (flds, _), _) ->
-            IList.find_map_opt extract_guarded_by_strexp flds
-        | Sil.Hpointsto (Lvar pvar, rhs_exp, _)
+        | Sil.Hpointsto (_, Estruct (flds, _), Sil.Sizeof (typ, _, _)) ->
+            begin
+              try
+                let fld, strexp = IList.find is_guarded_by_strexp flds in
+                begin
+                  match Annotations.get_field_type_and_annotation fld typ with
+                  | Some (fld_typ, _) -> Some (strexp, fld_typ)
+                  | None -> None
+                end
+              with Not_found -> None
+            end
+        | Sil.Hpointsto (Lvar pvar, rhs_exp, Sil.Sizeof (typ, _, _))
           when guarded_by_str_is_this guarded_by_str && Pvar.is_this pvar ->
-            Some rhs_exp
+            Some (rhs_exp, typ)
         | _ ->
             None)
       sigma in
@@ -675,18 +682,29 @@ let add_guarded_by_constraints prop lexp pdesc =
         Localise.desc_unsafe_guarded_by_access pname accessed_fld guarded_by_str loc in
       let exn = Exceptions.Unsafe_guarded_by_access (err_desc, __POS__) in
       Reporting.log_error pname exn in
+    let rec is_read_write_lock typ =
+      let str_is_read_write_lock str = string_is_suffix "ReadWriteUpdateLock" str in
+      match typ with
+      | Typ.Tstruct { struct_name=Some name} -> str_is_read_write_lock (Mangled.to_string name)
+      | Typ.Tvar name -> str_is_read_write_lock (Typename.to_string name)
+      | Typ.Tptr (typ, _) -> is_read_write_lock typ
+      | _ -> false in
+    let has_lock guarded_by_exp =
+      (* procedure is synchronized and guarded by this *)
+      (guarded_by_str_is_this guarded_by_str && Cfg.Procdesc.is_java_synchronized pdesc) ||
+      (* or the prop says we already have the lock *)
+      IList.exists
+        (function
+          | Sil.Alocked -> true
+          | _ -> false)
+        (Prop.get_exp_attributes prop guarded_by_exp) in
     match find_guarded_by_exp guarded_by_str (Prop.get_sigma prop) with
-    | Some (Sil.Eexp (guarded_by_exp, _)) ->
-        let has_lock =
-          (* procedure is synchronized and guarded by this *)
-          (guarded_by_str_is_this guarded_by_str && Cfg.Procdesc.is_java_synchronized pdesc) ||
-          (* or the prop says we already have the lock *)
-          IList.exists
-            (function
-              | Sil.Alocked -> true
-              | _ -> false)
-            (Prop.get_exp_attributes prop guarded_by_exp) in
-        if has_lock
+    | Some (Sil.Eexp (guarded_by_exp, _), typ) ->
+        if is_read_write_lock typ
+        then
+          (* TODO: model/understand read-write locks rather than ignoring them *)
+          prop
+        else if has_lock guarded_by_exp
         then
           (* we have the lock; no need to add a proof obligation *)
           (* TODO: materialize [fld], but don't add [fld] to the footprint. *)
