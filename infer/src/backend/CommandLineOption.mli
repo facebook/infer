@@ -11,7 +11,7 @@
 
 open! Utils
 
-type exe = A | C | J | L | P | StatsAggregator | T
+type exe = Analyze | Clang | Java | Llvm | Print | StatsAggregator | Toplevel
 
 val current_exe : exe
 

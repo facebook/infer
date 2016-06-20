@@ -325,13 +325,14 @@ let patterns_of_json_with_key json_key json =
 
 let inferconfig_home =
   CLOpt.mk_string_opt ~deprecated:["inferconfig_home"] ~long:"inferconfig-home"
-    ~exes:CLOpt.[A] ~meta:"dir" "Path to the .inferconfig file"
+    ~exes:CLOpt.[Analyze] ~meta:"dir" "Path to the .inferconfig file"
 
 and project_root =
   CLOpt.mk_string_opt ~deprecated:["project_root"] ~long:"project-root" ~short:"pr"
-    ?default:(if CLOpt.(current_exe = P) then Some (Sys.getcwd ()) else None)
+    ?default:(if CLOpt.(current_exe = Print) then Some (Sys.getcwd ()) else None)
     ~f:filename_to_absolute
-    ~exes:CLOpt.[A;C;J;L;P] ~meta:"dir" "Specify the root directory of the project"
+    ~exes:CLOpt.[Analyze;Clang;Java;Llvm;Print]
+    ~meta:"dir" "Specify the root directory of the project"
 
 (* Parse the phase 1 options, ignoring the rest *)
 
@@ -400,7 +401,7 @@ and (
       let deprecated =
         IList.map (Printf.sprintf "%s_%s" (string_of_analyzer analyzer)) deprecated_suffix in
       let help_string = Printf.sprintf "%s (%s only)" help (string_of_analyzer analyzer) in
-      CLOpt.mk_string_list ~deprecated ~long ~exes:CLOpt.[A] ~meta help_string in
+      CLOpt.mk_string_list ~deprecated ~long ~exes:CLOpt.[Analyze] ~meta help_string in
     IList.map (fun analyzer -> (analyzer, mk_option analyzer)) analyzers in
   (
     mk_filtering_options
@@ -526,7 +527,7 @@ and debug, print_types, write_dotty =
   (** flag: if true print full type info *)
   let print_types =
     CLOpt.mk_bool ~deprecated:["print_types"] ~long:"print-types"
-      ~default:(CLOpt.current_exe = CLOpt.C)
+      ~default:(CLOpt.current_exe = CLOpt.Clang)
       "Print types in symbolic heaps"
   (** flag: if true write dot files in db dir*)
   and write_dotty =
@@ -548,7 +549,7 @@ and dependencies =
 (** If true shows internal exceptions*)
 and developer_mode =
   CLOpt.mk_bool ~deprecated:["developer_mode"] ~long:"developer-mode"
-    ~default:(CLOpt.current_exe = CLOpt.P)
+    ~default:(CLOpt.current_exe = CLOpt.Print)
     "Reserved"
 
 and disable_checks =
@@ -580,7 +581,7 @@ and eradicate, checkers =
 
 and err_file =
   CLOpt.mk_string ~deprecated:["err_file"] ~long:"err-file" ~default:""
-    ~exes:CLOpt.[A] ~meta:"file" "use file for the err channel"
+    ~exes:CLOpt.[Analyze] ~meta:"file" "use file for the err channel"
 
 (* Generate harness for Android code *)
 and harness =
@@ -625,7 +626,7 @@ and load_results =
 (** name of the makefile to create with clusters and dependencies *)
 and makefile =
   CLOpt.mk_string ~deprecated:["makefile"] ~long:"makefile" ~default:""
-    ~exes:CLOpt.[A] ~meta:"file" "create a makefile to perform the analysis"
+    ~exes:CLOpt.[Analyze] ~meta:"file" "create a makefile to perform the analysis"
 
 (** Merge the captured results directories specified in the dependency file *)
 and merge =
@@ -650,7 +651,7 @@ and ml_buckets =
 
 and models_file =
   CLOpt.mk_string_opt ~deprecated:["models"] ~long:"models"
-    ~exes:CLOpt.[A;J] ~meta:"zip file" "add a zip file containing the models"
+    ~exes:CLOpt.[Analyze;Java] ~meta:"zip file" "add a zip file containing the models"
 
 and models_mode =
   CLOpt.mk_bool ~deprecated:["models_mode"] ~long:"models-mode"
@@ -691,7 +692,7 @@ and optimistic_cast =
 
 and out_file =
   CLOpt.mk_string ~deprecated:["out_file"] ~long:"out-file" ~default:""
-    ~exes:CLOpt.[A] ~meta:"file" "use file for the out channel"
+    ~exes:CLOpt.[Analyze] ~meta:"file" "use file for the out channel"
 
 and margin =
   CLOpt.mk_int ~deprecated:["set_pp_margin"] ~long:"margin" ~default:100
@@ -754,7 +755,8 @@ and reports_include_ml_loc =
 and results_dir =
   CLOpt.mk_string ~deprecated:["results_dir"] ~long:"results-dir"
     ~default:(Filename.concat (Sys.getcwd ()) "infer-out")
-    ~exes:CLOpt.[A;C;J;L;P;StatsAggregator] ~meta:"dir" "Specify the project results directory"
+    ~exes:CLOpt.[Analyze;Clang;Java;Llvm;Print;StatsAggregator]
+    ~meta:"dir" "Specify the project results directory"
 
 (** name of the file to load save results to *)
 and save_results =
@@ -768,7 +770,7 @@ and seconds_per_iteration =
 
 and skip_clang_analysis_in_path =
   CLOpt.mk_string_list ~long:"skip-clang-analysis-in-path"
-    ~exes:CLOpt.[C] ~meta:"path prefix" "Ignore files whose path matches the given prefix"
+    ~exes:CLOpt.[Clang] ~meta:"path prefix" "Ignore files whose path matches the given prefix"
 
 and skip_translation_headers =
   CLOpt.mk_string_list ~deprecated:["skip_translation_headers"] ~long:"skip-translation-headers"
@@ -796,7 +798,7 @@ and spec_abs_level =
 and specs_library =
   let specs_library =
     CLOpt.mk_string_list ~long:"specs-library" ~short:"lib" ~f:filename_to_absolute
-      ~exes:CLOpt.[A] ~meta:"dir"
+      ~exes:CLOpt.[Analyze] ~meta:"dir"
       "add dir to the list of directories to be searched for spec files" in
   let _ =
     (* Given a filename with a list of paths, convert it into a list of string iff they are
@@ -814,7 +816,7 @@ and specs_library =
     CLOpt.mk_string ~deprecated:["specs-dir-list-file"] ~long:"specs-library-index"
       ~default:""
       ~f:(fun file -> specs_library := (read_specs_dir_list_file file) @ !specs_library; "")
-      ~exes:CLOpt.[A] ~meta:"file"
+      ~exes:CLOpt.[Analyze] ~meta:"file"
       "add the newline-separated directories listed in <file> to the list of directories to be \
        searched for spec files" in
   specs_library
@@ -839,7 +841,7 @@ and subtype_multirange =
 
 and suppress_warnings_out =
   CLOpt.mk_string_opt ~deprecated:["suppress_warnings_out"] ~long:suppress_warnings_annotations_long
-    ~exes:CLOpt.[J] ~meta:"path" "Path to list of collected @SuppressWarnings annotations"
+    ~exes:CLOpt.[Java] ~meta:"path" "Path to list of collected @SuppressWarnings annotations"
 
 (** command line flag: if true, produce a svg file *)
 and svg =
@@ -898,11 +900,11 @@ and unit_test =
 
 and verbose_out =
   CLOpt.mk_string ~deprecated:["verbose_out"] ~long:"verbose-out" ~default:""
-    ~exes:CLOpt.[J] ~meta:"file" "Set the path to the javac verbose output"
+    ~exes:CLOpt.[Java] ~meta:"file" "Set the path to the javac verbose output"
 
 and version =
   CLOpt.mk_bool ~deprecated:["version"] ~long:"version"
-    ~exes:CLOpt.[A;C;J;L;P] "Print version information and exit"
+    ~exes:CLOpt.[Analyze;Clang;Java;Llvm;Print] "Print version information and exit"
 
 and version_json =
   CLOpt.mk_bool ~deprecated:["version_json"] ~long:"version-json"
@@ -919,7 +921,7 @@ and whole_seconds =
     2 least visited first *)
 and worklist_mode =
   let var = ref 0 in
-  CLOpt.mk_set var 2 ~long:"coverage" ~exes:CLOpt.[A]
+  CLOpt.mk_set var 2 ~long:"coverage" ~exes:CLOpt.[Analyze]
     "analysis mode to maximize coverage (can take longer)" ;
   CLOpt.mk_set var 1 ~long:"exit-node-bias" ~deprecated:["exit_node_bias"]
     "nodes nearest the exit node are analyzed first" ;
@@ -942,7 +944,7 @@ and zip_libraries : zip_library list ref = ref []
 
 and zip_specs_library =
   CLOpt.mk_string_list ~long:"zip-specs-library" ~short:"ziplib" ~f:filename_to_absolute
-    ~exes:CLOpt.[A] ~meta:"zip file" "add a zip file containing library spec files"
+    ~exes:CLOpt.[Analyze] ~meta:"zip file" "add a zip file containing library spec files"
 
 
 and (
@@ -951,7 +953,7 @@ and (
   patterns_modeled_expensive) =
   let mk_option ~deprecated ~long doc =
     CLOpt.mk_set_from_json ~deprecated ~long ~default:[] ~default_to_string:(fun _ -> "[]")
-      ~exes:CLOpt.[J]
+      ~exes:CLOpt.[Java]
       ~f:(patterns_of_json_with_key long) doc in
   (
     mk_option ~deprecated:["never_returning_null"] ~long:"never-returning-null"
@@ -1037,18 +1039,18 @@ let use_jar_cache = true
 
 let exe_usage (exe : CLOpt.exe) =
   match exe with
-  | A ->
+  | Analyze ->
       version_string ^ "\
       Usage: InferAnalyze [options]\n\
       Analyze the files captured in the project results directory, \
       which can be specified with the --results-dir option."
-  | C ->
+  | Clang ->
       "\nUsage: InferClang -c C Files -ast AST Files --results-dir <output-dir> [options] \n"
-  | J ->
+  | Java ->
       "Usage: InferJava -d compilation_dir -sources filename\n"
-  | L ->
+  | Llvm ->
       "Usage: InferLLVM -c <cfile> [options]\n"
-  | P ->
+  | Print ->
       "Usage: InferPrint [options] name1.specs ... namen.specs\n\
        Read, convert, and print .specs files. \
        To process all the .specs in the current directory, pass . as only parameter \
@@ -1057,7 +1059,7 @@ let exe_usage (exe : CLOpt.exe) =
   | StatsAggregator ->
       "Usage: InferStatsAggregator --results-dir <dir> --buck-out <dir>\n \
        Aggregates all the perf stats generated by Buck on each target"
-  | T ->
+  | Toplevel ->
       version_string
 
 let post_parsing_initialization () =
@@ -1149,7 +1151,7 @@ let post_parsing_initialization () =
 
 let parse_args_and_return_usage_exit =
   let usage_exit = CLOpt.parse ~config_file:inferconfig_path "INFER_ARGS" exe_usage in
-  if !debug || (!developer_mode && not (CLOpt.current_exe = CLOpt.P)) then
+  if !debug || (!developer_mode && not (CLOpt.current_exe = CLOpt.Print)) then
     prerr_endline
       ((Filename.basename Sys.executable_name) ^ " got args "
        ^ (try Unix.getenv "INFER_ARGS" with Not_found -> "")) ;
@@ -1295,5 +1297,5 @@ let patterns_suppress_warnings =
           | json -> patterns_of_json_with_key json_key json)
       | Error msg -> error ("Could not read or parse the supplied " ^ path ^ ":\n" ^ msg))
   | None ->
-      if CLOpt.(current_exe <> J) then []
+      if CLOpt.(current_exe <> Java) then []
       else error ("Error: The option " ^ suppress_warnings_annotations_long ^ " was not provided")
