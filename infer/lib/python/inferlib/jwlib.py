@@ -184,19 +184,19 @@ class CompilerCall(object):
                            self.suppress_warnings_out)]
 
             with tempfile.NamedTemporaryFile(
-                mode='w',
-                prefix='javac_args_',
-                delete=False) as command_line:
+                    mode='w',
+                    prefix='javac_args_',
+                    delete=False) as command_line:
 
-                args = filter(lambda x: not is_special_arg(x), javac_cmd)
-                command_line.write(utils.encode(" ".join(args)))
-                self.command_line_file = command_line.name
-                
+                    args = filter(lambda x: not is_special_arg(x), javac_cmd)
+                    command_line.write(utils.encode(" ".join(args)))
+                    self.command_line_file = command_line.name
+
             with tempfile.NamedTemporaryFile(
-                mode='w',
-                suffix='.out',
-                prefix='javac_',
-                delete=False) as file_out:
+                    mode='w',
+                    suffix='.out',
+                    prefix='javac_',
+                    delete=False) as file_out:
 
                 self.verbose_out = file_out.name
 
@@ -216,7 +216,8 @@ class CompilerCall(object):
                                 + 'cmd = {}\n' \
                                 + 'subprocess.check_call(cmd)\n' \
                                 + 'EOF\n"""\n'
-                    failing_cmd = filter(lambda arg: arg != '-verbose', command)
+                    failing_cmd = filter(lambda arg: arg != '-verbose',
+                                         command)
                     utils.stderr(error_msg.format(failing_cmd))
                     subprocess.check_call(failing_cmd)
 
