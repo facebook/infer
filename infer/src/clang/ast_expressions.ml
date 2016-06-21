@@ -86,6 +86,9 @@ let create_id_type =
 let create_nsarray_star_type =
   new_constant_type_ptr ()
 
+let create_char_type =
+  new_constant_type_ptr ()
+
 let create_char_star_type =
   new_constant_type_ptr ()
 

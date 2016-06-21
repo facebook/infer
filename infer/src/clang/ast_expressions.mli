@@ -19,6 +19,8 @@ val dummy_source_range : unit -> source_range
 
 val dummy_stmt_info : unit -> stmt_info
 
+val create_char_type : type_ptr
+
 val create_char_star_type : type_ptr
 
 val create_id_type : type_ptr

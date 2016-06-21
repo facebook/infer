@@ -60,11 +60,10 @@ let add_predefined_basic_types () =
   let sil_id_type = CType_to_sil_type.get_builtin_objc_type `ObjCId in
   add_basic_type create_int_type `Int;
   add_basic_type create_void_type `Void;
-  add_basic_type create_char_star_type `Char_S;
+  add_basic_type create_char_type `Char_S;
   add_basic_type create_BOOL_type `SChar;
   add_basic_type create_unsigned_long_type `ULong;
   add_pointer_type create_void_star_type sil_void_type;
-  add_pointer_type create_char_star_type sil_char_type;
   add_pointer_type create_char_star_type sil_char_type;
   add_pointer_type create_nsarray_star_type sil_nsarray_type;
   add_pointer_type create_id_type sil_id_type;
