@@ -55,6 +55,9 @@ public class GuardedByExample {
   @GuardedBy("sLock")
   static Object sFld;
 
+  @GuardedBy("GuardedByExample.class")
+  static Object sGuardedByClass;
+
   static {
     // don't warn on class initializer
     sFld = new Object();
@@ -194,6 +197,20 @@ public class GuardedByExample {
     try (AutoCloseableReadWriteUpdateLock lock = mReadWriteLock) {
       this.i.toString();
     }
+  }
+
+  synchronized static void staticSynchronizedOk() {
+    sGuardedByClass.toString();
+  }
+
+  static void synchronizeOnClassOk() {
+    synchronized(GuardedByExample.class) {
+      sGuardedByClass.toString(); // should not warn here
+    }
+  }
+
+  void synchronizedOnThisBad() {
+    sGuardedByClass.toString();
   }
 
   // TODO: report on these cases

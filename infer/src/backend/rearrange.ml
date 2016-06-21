@@ -616,6 +616,7 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
 (** If [lexp] is an access to a field that is annotated with @GuardedBy, add constraints to [prop]
     expressing the safety conditions for the access. Complain if these conditions cannot be met. *)
 let add_guarded_by_constraints prop lexp pdesc =
+  let pname = Cfg.Procdesc.get_proc_name pdesc in
   let excluded_guardedby_string str =
     str = "ui_thread" in (* don't warn on @GuardedBy("ui_thread") *)
   let extract_guarded_by_str item_annot =
@@ -637,6 +638,13 @@ let add_guarded_by_constraints prop lexp pdesc =
     | _ -> None in
   let guarded_by_str_is_this guarded_by_str =
     guarded_by_str = "this" in
+  let guarded_by_str_is_class guarded_by_str class_str =
+    string_is_suffix guarded_by_str (class_str ^ ".class") in
+  let guarded_by_str_is_current_class guarded_by_str = function
+    | Procname.Java java_pname ->
+        (* programmers write @GuardedBy("MyClass.class") when the field is guarded by the class *)
+        guarded_by_str_is_class guarded_by_str (Procname.java_get_class_name java_pname)
+    | _ -> false in
   (* find A.guarded_by_fld_str |-> B and return Some B, or None if there is no such hpred *)
   let find_guarded_by_exp guarded_by_str sigma =
     let is_guarded_by_strexp (fld, _) =
@@ -646,6 +654,9 @@ let add_guarded_by_constraints prop lexp pdesc =
       Ident.fieldname_to_string fld = guarded_by_str in
     IList.find_map_opt
       (function
+        | Sil.Hpointsto ((Const (Cclass clazz) as lhs_exp), _, Sil.Sizeof (typ, _, _))
+          when guarded_by_str_is_class guarded_by_str (Ident.name_to_string clazz) ->
+            Some (Sil.Eexp (lhs_exp, Sil.inst_none), typ)
         | Sil.Hpointsto (_, Estruct (flds, _), Sil.Sizeof (typ, _, _)) ->
             begin
               try
@@ -675,8 +686,10 @@ let add_guarded_by_constraints prop lexp pdesc =
           (* the lock is not held, but the procedure is annotated with @GuardedBy *)
           proc_guarded_by_str = guarded_by_str
       | None -> false in
-    let warn pdesc accessed_fld guarded_by_str =
-      let pname = Cfg.Procdesc.get_proc_name pdesc in
+    let is_synchronized_on_class guarded_by_str =
+      guarded_by_str_is_current_class guarded_by_str pname &&
+      Cfg.Procdesc.is_java_synchronized pdesc && Procname.java_is_static pname in
+    let warn accessed_fld guarded_by_str =
       let loc = State.get_loc () in
       let err_desc =
         Localise.desc_unsafe_guarded_by_access pname accessed_fld guarded_by_str loc in
@@ -692,6 +705,8 @@ let add_guarded_by_constraints prop lexp pdesc =
     let has_lock guarded_by_exp =
       (* procedure is synchronized and guarded by this *)
       (guarded_by_str_is_this guarded_by_str && Cfg.Procdesc.is_java_synchronized pdesc) ||
+      (guarded_by_str_is_current_class guarded_by_str pname &&
+       Cfg.Procdesc.is_java_synchronized pdesc && Procname.java_is_static pname) ||
       (* or the prop says we already have the lock *)
       IList.exists
         (function
@@ -715,7 +730,7 @@ let add_guarded_by_constraints prop lexp pdesc =
         then
           begin
             (* non-private method; can't ensure that the lock is held. warn. *)
-            warn pdesc accessed_fld guarded_by_str;
+            warn accessed_fld guarded_by_str;
             prop
           end
         else
@@ -723,10 +738,11 @@ let add_guarded_by_constraints prop lexp pdesc =
           let locked_attr = Sil.Const (Cattribute Alocked) in
           Prop.conjoin_neq ~footprint:true guarded_by_exp locked_attr prop
     | _ ->
-        if not (proc_has_matching_annot pdesc guarded_by_str)
+        if not (proc_has_matching_annot pdesc guarded_by_str
+                || is_synchronized_on_class guarded_by_str)
         then
           (* can't find the object the annotation refers to, and procedure is not annotated. warn *)
-          warn pdesc accessed_fld guarded_by_str
+          warn accessed_fld guarded_by_str
         else
           (* procedure has same GuardedBy annotation as the field. we would like to add a proof
              obligation, but we can't (because we can't find an expression corresponding to the

@@ -52,6 +52,7 @@ public class GuardedByTest {
       "readGFromCopyBad",
       "readHBad",
       "readHBadSynchronizedMethodShouldntHelp",
+      "synchronizedOnThisBad",
       // TODO: report these
       // "unguardedCallSiteBad1",
       // "unguardedCallSiteBad2",
