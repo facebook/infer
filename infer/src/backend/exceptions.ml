@@ -172,7 +172,7 @@ let recognize_exception exn =
         (Localise.from_string kind_s, desc, None, Exn_user, High, None, Prover)
     | Empty_vector_access (desc, ml_loc) ->
         (Localise.empty_vector_access,
-         desc, Some ml_loc, Exn_user, High, None, Prover)
+         desc, Some ml_loc, Exn_user, High, Some Kerror, Prover)
     | Field_not_null_checked (desc, ml_loc) ->
         (Localise.field_not_null_checked,
          desc, Some ml_loc, Exn_user, Medium, Some Kwarning, Nocat)
