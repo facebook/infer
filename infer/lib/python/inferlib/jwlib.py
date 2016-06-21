@@ -189,7 +189,7 @@ class CompilerCall(object):
                 delete=False) as command_line:
 
                 args = filter(lambda x: not is_special_arg(x), javac_cmd)
-                command_line.write(" ".join(args))
+                command_line.write(utils.encode(" ".join(args)))
                 self.command_line_file = command_line.name
                 
             with tempfile.NamedTemporaryFile(
