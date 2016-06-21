@@ -28,6 +28,7 @@ _build
 /configure
 /Makefile.config
 /.buckversion
+/*/.gitignore
 
 # IntelliJ files
 /scripts/.idea/

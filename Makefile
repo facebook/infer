@@ -28,6 +28,9 @@ $(INFER_BIN_RELPATH) $(INFERTRACEBUGS_BIN_RELPATH):
 	 $(LN_S) ../lib/python/$(@F) $(@F))
 
 src_build:
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(MAKE) -C facebook
+endif
 	$(MAKE) -C $(SRC_DIR) infer
 ifeq ($(BUILD_C_ANALYZERS),yes)
 src_build: clang_plugin
@@ -67,10 +70,16 @@ endif
 inferTraceBugs: $(INFERTRACEBUGS_BIN_RELPATH)
 
 test_this_build: clang_plugin
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(MAKE) -C facebook
+endif
 	$(MAKE) -C $(SRC_DIR) test_build
 
 test_oss_build: clang_plugin
 # make sure we don't break the opensource build
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(MAKE) -C facebook clean
+endif
 	$(MAKE) -C $(SRC_DIR) EXTRA_DEPS=opensource LLVM_BUILD_DIR=$(BUILD_DIR)/llvm_opensource TEST_BUILD_DIR=$(BUILD_DIR)/opensource test_build
 
 test_build: test_this_build
@@ -230,6 +239,9 @@ endif
 	$(MAKE) -C $(ANNOTATIONS_DIR) clean
 	$(MAKE) -C $(MODELS_DIR) clean
 	$(REMOVE) $(INFER_BIN_RELPATH) $(INFERTRACEBUGS_BIN_RELPATH)
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(MAKE) -C facebook clean
+endif
 
 conf-clean: clean
 	$(REMOVE) infer/lib/python/inferlib/*.pyc

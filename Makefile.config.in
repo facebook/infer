@@ -35,7 +35,6 @@ IS_RELEASE_TREE = @IS_RELEASE_TREE@
 LDFLAGS = @LDFLAGS@
 libdir = @libdir@
 LIBS = @LIBS@
-LN_S = @LN_S@
 MKDIR_P_CMD = case "@MKDIR_P@" in \
     ./*) printf "$(ROOT_DIR)/@MKDIR_P@\n";; \
     *) printf "@MKDIR_P@\n";; \
@@ -47,22 +46,28 @@ USER_JAVA_HOME = @USER_JAVA_HOME@
 XCODE_SELECT = @XCODE_SELECT@
 
 ifneq (,$(findstring s,$(MAKEFLAGS)))
+# quiet mode
+LN_S = @LN_S@
 REMOVE = rm -f
 REMOVE_DIR = rm -rf
+RSYNC_A = rsync -av
 else
+LN_S = @LN_S@ -v
 REMOVE = rm -vf
 REMOVE_DIR = rm -rvf
+RSYNC_A = rsync -aq
 endif
 COPY = cp -f -p
 COPY_DIR = cp -Rf
 
 ABSOLUTE_ROOT_DIR = $(shell cd $(ROOT_DIR) && pwd)
 
-EXAMPLES_DIR = $(ABSOLUTE_ROOT_DIR)/examples
-FCP_DIR = $(ABSOLUTE_ROOT_DIR)/facebook-clang-plugins
-INFER_DIR = $(ABSOLUTE_ROOT_DIR)/infer
 DEPENDENCIES_DIR = $(ABSOLUTE_ROOT_DIR)/dependencies
+DOCKER_DIR = $(ABSOLUTE_ROOT_DIR)/docker
+EXAMPLES_DIR = $(ABSOLUTE_ROOT_DIR)/examples
+INFER_DIR = $(ABSOLUTE_ROOT_DIR)/infer
 FCP_DIR = $(ABSOLUTE_ROOT_DIR)/facebook-clang-plugins
+M4_DIR = $(ABSOLUTE_ROOT_DIR)/m4
 SCRIPT_DIR = $(ABSOLUTE_ROOT_DIR)/scripts
 
 FCP_CLANG_OCAML_DIR = $(FCP_DIR)/clang-ocaml
