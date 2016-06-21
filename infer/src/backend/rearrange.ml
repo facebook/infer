@@ -713,6 +713,9 @@ let add_guarded_by_constraints prop lexp pdesc =
           | Sil.Alocked -> true
           | _ -> false)
         (Prop.get_exp_attributes prop guarded_by_exp) in
+    let should_warn pdesc =
+      Cfg.Procdesc.get_access pdesc <> Sil.Private &&
+      not (Procname.java_is_access_method (Cfg.Procdesc.get_proc_name pdesc)) in
     match find_guarded_by_exp guarded_by_str (Prop.get_sigma prop) with
     | Some (Sil.Eexp (guarded_by_exp, _), typ) ->
         if is_read_write_lock typ
@@ -726,7 +729,7 @@ let add_guarded_by_constraints prop lexp pdesc =
           prop
         else
           (* we don't know if we have the lock or not. *)
-        if Cfg.Procdesc.get_access pdesc <> Sil.Private
+        if should_warn pdesc
         then
           begin
             (* non-private method; can't ensure that the lock is held. warn. *)
@@ -739,7 +742,7 @@ let add_guarded_by_constraints prop lexp pdesc =
           Prop.conjoin_neq ~footprint:true guarded_by_exp locked_attr prop
     | _ ->
         if not (proc_has_matching_annot pdesc guarded_by_str
-                || is_synchronized_on_class guarded_by_str)
+                || is_synchronized_on_class guarded_by_str) && should_warn pdesc
         then
           (* can't find the object the annotation refers to, and procedure is not annotated. warn *)
           warn accessed_fld guarded_by_str

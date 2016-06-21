@@ -34,7 +34,7 @@ public class GuardedByExample {
   private AutoCloseableReadWriteUpdateLock mReadWriteLock = new AutoCloseableReadWriteUpdateLock();
 
   @GuardedBy("mLock")
-  Object f = new Object();
+  private Object f = new Object();
 
   @GuardedBy("this")
   Object g = new Object();
@@ -211,6 +211,16 @@ public class GuardedByExample {
 
   void synchronizedOnThisBad() {
     sGuardedByClass.toString();
+  }
+  
+  Object dontReportOnCompilerGenerated() {
+    return new Object() {
+      public void accessInAnonClassOk() {
+        synchronized (mLock) {
+          f.toString();
+        }
+      }
+    };
   }
 
   // TODO: report on these cases
