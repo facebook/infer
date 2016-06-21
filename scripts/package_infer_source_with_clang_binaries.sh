@@ -14,6 +14,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
 ROOT_INFER_DIR="$SCRIPT_DIR"/..
 CLANG_PLUGIN_DIR="$ROOT_INFER_DIR"/facebook-clang-plugins
+CLANG_PREFIX="$CLANG_PLUGIN_DIR"/clang/install
 PLATFORM=`uname`
 INFER_SOURCE="$ROOT_INFER_DIR"/infer-source
 
@@ -35,6 +36,7 @@ fi
 RELEASE_TARBALL="$RELEASE_NAME".tar.xz
 PKG_DIR="$ROOT_INFER_DIR"/"$RELEASE_NAME"
 PKG_PLUGIN_DIR="$PKG_DIR"/facebook-clang-plugins
+PKG_CLANG_PREFIX="$PKG_PLUGIN_DIR"/clang/install
 
 git checkout "$VERSION"
 git submodule update --init
@@ -51,13 +53,13 @@ rsync -a \
 touch "$PKG_DIR"/.release
 rsync -a "$ROOT_INFER_DIR"/configure "$PKG_DIR"/configure
 
-mkdir -pv "$PKG_PLUGIN_DIR"/clang/{bin,lib,include}
+mkdir -pv "$PKG_CLANG_PREFIX"/{bin,lib,include}
 mkdir -pv "$PKG_PLUGIN_DIR"/libtooling/build
 mkdir -pv "$PKG_PLUGIN_DIR"/clang-ocaml/build
 rsync -a "$CLANG_PLUGIN_DIR"/{CONTRIBUTING.md,LICENSE,LLVM-LICENSE,PATENTS,README.md} "$PKG_PLUGIN_DIR"
-rsync -a "$CLANG_PLUGIN_DIR"/clang/bin/clang* "$PKG_PLUGIN_DIR"/clang/bin/
-rsync -a --exclude '*.a' "$CLANG_PLUGIN_DIR"/clang/lib/ "$PKG_PLUGIN_DIR"/clang/lib/
-rsync -a "$CLANG_PLUGIN_DIR"/clang/include/ "$PKG_PLUGIN_DIR"/clang/include/
+rsync -a "$CLANG_PREFIX"/bin/clang* "$PKG_CLANG_PREFIX"/bin/
+rsync -a --exclude '*.a' "$CLANG_PREFIX"/lib/ "$PKG_CLANG_PREFIX"/lib/
+rsync -a "$CLANG_PLUGIN_DIR"/clang/include/ "$PKG_CLANG_PREFIX"/include/
 rsync -a "$CLANG_PLUGIN_DIR"/libtooling/build/ "$PKG_PLUGIN_DIR"/libtooling/build/
 rsync -a "$CLANG_PLUGIN_DIR"/clang-ocaml/build/ "$PKG_PLUGIN_DIR"/clang-ocaml/build/
 
@@ -67,8 +69,9 @@ grep -v -e '\bsrc/clang-.*\.tar\.*' \
   < "$CLANG_PLUGIN_DIR"/clang/installed.version \
   > "$PKG_PLUGIN_DIR"/clang/installed.version
 
-FBONLY=FB-ONLY
-if grep -Ir --exclude="$SCRIPT_NAME" "$FBONLY" "$PKG_DIR"; then
+# trick so that the String-Who-Must-Not-Be-Named doesn't appear verbatim in the script
+FBDASHONLY=$(printf "%s%s" 'FB-O' 'NLY')
+if grep -Ir "$FBDASHONLY" "$PKG_DIR"; then
     echo "Found files marked $FBONLY"
     exit 1
 fi

@@ -37,8 +37,6 @@ public class InferUndefined {
 
     public static native Object object_undefined();
 
-    public static native String string_undefined();
-
     public static void can_throw_ioexception_void() throws IOException {
         boolean undef = boolean_undefined();
         if (undef) {
@@ -113,7 +111,7 @@ public class InferUndefined {
     public static String can_throw_ioexception_string() throws IOException {
         boolean undef = boolean_undefined();
         if (undef) {
-            return string_undefined();
+            return (String)object_undefined();
         } else
             throw new IOException();
     }
