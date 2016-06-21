@@ -134,6 +134,7 @@ val bugs_xml : outfile option
 val calls_csv : outfile option
 val checkers : bool
 val checkers_enabled : bool
+val clang_include_to_override : string option
 val clang_lang : clang_lang
 val cluster_cmdline : string option
 val code_query : string option

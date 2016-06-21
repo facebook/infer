@@ -484,6 +484,12 @@ and calls_csv =
   CLOpt.mk_option ~deprecated:["calls"] ~long:"calls-csv" ~f:create_outfile
     ~meta:"calls.csv" "Write individual calls in csv format to calls.csv"
 
+and clang_include_to_override =
+  CLOpt.mk_string_opt ~long:"clang-include-to-override" ~meta:"dir"
+    "Use this option in the uncommon case where the normal compilation process overrides the \
+     location of internal compiler headers. This option should specify the path to those headers \
+     so that infer can use its own clang internal headers instead."
+
 (* Default is objc, since it's the default for clang (at least in Mac OS) *)
 and clang_lang =
   CLOpt.mk_symbol ~long:"clang-lang" ~short:"x" ~default:OBJC
@@ -1190,6 +1196,7 @@ and calls_csv = !calls_csv
 and checkers = !checkers
 (** should the checkers be run? *)
 and checkers_enabled = not !eradicate
+and clang_include_to_override = !clang_include_to_override
 and clang_lang = !clang_lang
 and cluster_cmdline = !cluster
 and code_query = !code_query
