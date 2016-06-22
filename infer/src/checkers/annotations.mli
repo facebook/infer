@@ -103,11 +103,9 @@ val ia_is_guarded_by : Typ.item_annotation -> bool
 
 val ia_iter : (Typ.annotation -> unit) -> Typ.item_annotation -> unit
 
-val ma_contains : Typ.method_annotation -> string list -> bool
-
 val ma_has_annotation_with : Typ.method_annotation -> (Typ.annotation -> bool) -> bool
 
-val ma_iter : (Typ.annotation -> unit) -> Typ.method_annotation -> unit
+val pdesc_has_annot : Cfg.Procdesc.t -> string -> bool
 
 (** Mark the return of the method_annotation with the given annotation. *)
 val method_annotation_mark_return :

@@ -13,6 +13,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import com.google.common.annotations.VisibleForTesting;
+
 import java.io.Closeable;
 
 public class GuardedByExample {
@@ -249,6 +251,16 @@ public class GuardedByExample {
         return g.toString(); // g is guarded by the outer class this, not this$0
       }
     };
+  }
+
+  @VisibleForTesting
+  public void visibleForTestingOk1() {
+    f.toString(); // should push proof obl to caller
+  }
+
+  @VisibleForTesting
+  void visibleForTestingOk2() {
+    f.toString(); // should push proof obl to caller
   }
 
   // TODO: report on these cases

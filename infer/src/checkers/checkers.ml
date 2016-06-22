@@ -396,8 +396,7 @@ let callback_test_state { Callbacks.proc_name } =
 
 (** Check the uses of VisibleForTesting *)
 let callback_checkVisibleForTesting { Callbacks.proc_desc } =
-  let ma = (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.method_annotation in
-  if Annotations.ma_contains ma [Annotations.visibleForTesting] then
+  if Annotations.pdesc_has_annot proc_desc Annotations.visibleForTesting then
     begin
       let loc = Cfg.Procdesc.get_loc proc_desc in
       let linereader = Printer.LineReader.create () in

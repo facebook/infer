@@ -741,6 +741,7 @@ let add_guarded_by_constraints prop lexp pdesc =
         (Prop.get_exp_attributes prop guarded_by_exp) in
     let should_warn pdesc =
       Cfg.Procdesc.get_access pdesc <> Sil.Private &&
+      not (Annotations.pdesc_has_annot pdesc Annotations.visibleForTesting) &&
       not (Procname.java_is_access_method (Cfg.Procdesc.get_proc_name pdesc)) in
     match find_guarded_by_exp guarded_by_str (Prop.get_sigma prop) with
     | Some (Sil.Eexp (guarded_by_exp, _), typ) ->
