@@ -269,3 +269,7 @@ val analyzer_of_string: string -> analyzer
 val read_optional_json_file : string -> (Yojson.Basic.json, string) result
 
 val write_json_to_file : string -> Yojson.Basic.json -> unit
+
+val failwithf : ('a, Format.formatter, unit, 'b) format4 -> 'a
+
+val invalid_argf : ('a, Format.formatter, unit, 'b) format4 -> 'a

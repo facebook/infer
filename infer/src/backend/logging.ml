@@ -14,7 +14,6 @@ open! Utils
 
 module F = Format
 
-(* =============== START of module MyErr =============== *)
 (** type of printable elements *)
 type print_type =
   | PTatom
@@ -64,35 +63,57 @@ let delayed_actions = ref []
 (** hook for the current printer of delayed print actions *)
 let printer_hook = ref (Obj.magic ())
 
-(** Current formatter for the out stream *)
-let current_out_formatter = ref F.std_formatter
-
-(** Current formatter for the err stream *)
-let current_err_formatter = ref F.err_formatter
-
-(** Get the current err formatter *)
-let get_err_formatter () = !current_err_formatter
-
-(** Set the current out formatter *)
-let set_out_formatter fmt =
-  current_out_formatter := fmt
-
-(** Set the current err formatter *)
-let set_err_formatter fmt =
-  current_err_formatter := fmt
-
-(** Flush the current streams *)
-let flush_streams () =
+let out_formatter, err_formatter =
+  (** Create a directory if it does not exist already. *)
+  (* This is the same as DB.create_dir, except for logging to stderr *)
+  let create_dir dir =
+    try
+      if (Unix.stat dir).Unix.st_kind != Unix.S_DIR then
+        failwithf "@.ERROR: file %s exists and is not a directory@." dir
+    with Unix.Unix_error _ ->
+    try Unix.mkdir dir 0o700
+    with Unix.Unix_error _ ->
+      let created_concurrently = (* check if another process created it meanwhile *)
+        (Unix.stat dir).Unix.st_kind = Unix.S_DIR in
+      if not created_concurrently then
+        failwithf "@.ERROR: cannot create directory %s@." dir
+  in
+  let open_output_file fname =
+    try
+      let cout = open_out fname in
+      let fmt = F.formatter_of_out_channel cout in
+      (fmt, cout)
+    with Sys_error _ ->
+      failwithf "@.ERROR: cannot open output file %s@." fname
+  in
   if Config.developer_mode then
-    begin
-      F.fprintf !current_out_formatter "@?";
-      F.fprintf !current_err_formatter "@?"
-    end
+    let log_dir_name = "log" in
+    let analyzer_out_name = "analyzer_out" in
+    let analyzer_err_name = "analyzer_err" in
+    let log_dir = Filename.concat Config.results_dir log_dir_name in
+    create_dir log_dir;
+    let analyzer_out_file =
+      if Config.out_file_cmdline = "" then Filename.concat log_dir analyzer_out_name
+      else Config.out_file_cmdline in
+    let analyzer_err_file =
+      if Config.err_file_cmdline = "" then Filename.concat log_dir analyzer_err_name
+      else Config.err_file_cmdline in
+    let out_fmt, out_chan = open_output_file analyzer_out_file in
+    let err_fmt, err_chan = open_output_file analyzer_err_file in
+    Pervasives.at_exit (fun () ->
+        F.pp_print_flush out_fmt () ;
+        F.pp_print_flush err_fmt () ;
+        close_out out_chan ;
+        close_out err_chan
+      );
+    (out_fmt, err_fmt)
+  else
+    (F.std_formatter, F.err_formatter)
 
 (** extend the current print log *)
 let add_print_action pact =
   if Config.write_html then delayed_actions := pact :: !delayed_actions
-  else if not Config.test then !printer_hook !current_out_formatter pact
+  else if not Config.test then !printer_hook out_formatter pact
 
 (** reset the delayed print actions *)
 let reset_delayed_prints () =
@@ -117,11 +138,11 @@ let do_print_in_developer_mode fmt fmt_string =
 
 (** print to the current out stream (note: only prints in developer mode) *)
 let out fmt_string =
-  do_print_in_developer_mode !current_out_formatter fmt_string
+  do_print_in_developer_mode out_formatter fmt_string
 
 (** print to the current err stream (note: only prints in developer mode) *)
 let err fmt_string =
-  do_print_in_developer_mode !current_err_formatter fmt_string
+  do_print_in_developer_mode err_formatter fmt_string
 
 (** print immediately to standard error *)
 let stderr fmt_string =

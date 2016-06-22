@@ -1148,16 +1148,7 @@ let explain_null_test_after_dereference exp node line loc =
       Localise.desc_null_test_after_dereference expr_str line loc
   | None -> Localise.no_desc
 
-let _warning loc fmt fmt_string =
-  if Config.developer_mode then
-    begin
-      F.fprintf
-        fmt "%s:%d: Warning: " (DB.source_file_to_string !DB.current_source) loc.Location.line;
-      F.fprintf fmt fmt_string
-    end
-  else
-    F.ifprintf fmt fmt_string
-
 (** Print a warning to the err stream at the given location (note: only prints in developer mode) *)
 let warning_err loc fmt_string =
-  _warning loc (Logging.get_err_formatter ()) fmt_string
+  L.err ("%s:%d: Warning: " ^^ fmt_string)
+    (DB.source_file_to_string !DB.current_source) loc.Location.line

@@ -217,7 +217,6 @@ let output_diff fname lines_arr cstart n cend len mono fb_year com_style prefix 
   done;
   L.stdout "-----@.";
   L.stdout "@[<v>%a@]" (pp_copyright mono fb_year com_style) prefix;
-  L.flush_streams ();
   if !update_files then
     update_file fname mono fb_year com_style prefix cstart cend lines_arr
 

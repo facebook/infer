@@ -599,3 +599,11 @@ let with_file file ~f =
 
 let write_json_to_file destfile json =
   with_file destfile ~f:(fun oc -> Yojson.Basic.pretty_to_channel oc json)
+
+let failwithf fmt =
+  Format.kfprintf (fun _ -> failwith (Format.flush_str_formatter ()))
+    Format.str_formatter fmt
+
+let invalid_argf fmt =
+  Format.kfprintf (fun _ -> invalid_arg (Format.flush_str_formatter ()))
+    Format.str_formatter fmt

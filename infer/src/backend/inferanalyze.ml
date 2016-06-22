@@ -64,48 +64,6 @@ let analyze_cluster cluster_num (cluster : Cluster.t) =
     (cluster_num + 1) num_procs;
   analyze_exe_env exe_env
 
-let open_output_file f fname =
-  try
-    let cout = open_out fname in
-    let fmt = Format.formatter_of_out_channel cout in
-    f fmt;
-    Some (fmt, cout)
-  with Sys_error _ ->
-    Format.fprintf Format.std_formatter "Error: cannot open output file %s@." fname;
-    exit(-1)
-
-let close_output_file = function
-  | None -> ()
-  | Some (_, cout) -> close_out cout
-
-let setup_logging () =
-  if Config.developer_mode then
-    let log_dir_name = "log" in
-    let analyzer_out_name = "analyzer_out" in
-    let analyzer_err_name = "analyzer_err" in
-    let log_dir =
-      DB.filename_to_string
-        (DB.Results_dir.path_to_filename DB.Results_dir.Abs_root [log_dir_name]) in
-    DB.create_dir log_dir;
-    let analyzer_out_file =
-      if Config.out_file_cmdline = "" then Filename.concat log_dir analyzer_out_name
-      else Config.out_file_cmdline in
-    let analyzer_err_file =
-      if Config.err_file_cmdline = "" then Filename.concat log_dir analyzer_err_name
-      else Config.err_file_cmdline in
-    let analyzer_out_of = open_output_file Logging.set_out_formatter analyzer_out_file in
-    let analyzer_err_of = open_output_file Logging.set_err_formatter analyzer_err_file in
-    analyzer_out_of, analyzer_err_of
-  else None, None
-
-let teardown_logging analyzer_out_of analyzer_err_of =
-  if Config.developer_mode then
-    begin
-      L.flush_streams ();
-      close_output_file analyzer_out_of;
-      close_output_file analyzer_err_of;
-    end
-
 let output_json_makefile_stats clusters =
   let clusters_to_analyze =
     IList.filter ClusterMakefile.cluster_should_be_analyzed clusters in
@@ -167,15 +125,9 @@ let () =
   if Config.allow_specs_cleanup = true && Config.cluster_cmdline = None then
     DB.Results_dir.clean_specs_dir ();
 
-  let analyzer_out_of, analyzer_err_of = setup_logging () in
-
-  let finish_logging () =
-    teardown_logging analyzer_out_of analyzer_err_of in
-
   match Config.cluster_cmdline with
   | Some fname ->
-      process_cluster_cmdline fname;
-      finish_logging ()
+      process_cluster_cmdline fname
   | None ->
       if Config.merge then MergeCapture.merge_captured_targets ();
       let clusters = DB.find_source_dirs () in
@@ -192,5 +144,4 @@ let () =
             clusters;
           L.stdout "Analysis finished in %as@." pp_elapsed_time ()
         end;
-      output_json_makefile_stats clusters;
-      finish_logging ()
+      output_json_makefile_stats clusters

@@ -83,18 +83,6 @@ val stderr : ('a, Format.formatter, unit) format -> 'a
 (** print immediately to standard output *)
 val stdout : ('a, Format.formatter, unit) format -> 'a
 
-(** Get the current err formatter *)
-val get_err_formatter : unit -> Format.formatter
-
-(** Set the current out formatter *)
-val set_out_formatter : Format.formatter -> unit
-
-(** Set the current err formatter *)
-val set_err_formatter : Format.formatter -> unit
-
-(** Flush the current streams *)
-val flush_streams : unit -> unit
-
 (** Type of location in ml source: __POS__ *)
 type ml_loc = string * int * int * int
 
