@@ -1599,8 +1599,11 @@ struct
       initListExpr_initializers_trans trans_state var_exp 0 stmts typ false stmt_info in
     let rh_exps = collect_exprs res_trans_subexpr_list in
     if IList.length rh_exps == 0 then
-      let exp = Sil.zero_value_of_numerical_type var_type in
-      { empty_res_trans with root_nodes = trans_state.succ_nodes; exps = [(exp, typ)]; }
+      let exps =
+        match Sil.zero_value_of_numerical_type_option var_type with
+        | Some zero_exp -> [(zero_exp, typ)]
+        | None -> [] in
+      { empty_res_trans with root_nodes = trans_state.succ_nodes; exps = exps; }
     else
       (* For arrays, the size in the type may be an overapproximation of the number *)
       (* of literals the array is initialized with *)

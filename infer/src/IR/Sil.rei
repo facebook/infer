@@ -460,6 +460,12 @@ let exp_is_this: exp => bool;
 
 let path_pos_equal: path_pos => path_pos => bool;
 
+
+/** Returns the zero value of a type, for int, float and ptr types, None othwewise */
+let zero_value_of_numerical_type_option: Typ.t => option exp;
+
+
+/** Returns the zero value of a type, for int, float and ptr types, fail otherwise */
 let zero_value_of_numerical_type: Typ.t => exp;
 
 

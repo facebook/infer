@@ -663,13 +663,19 @@ let has_objc_ref_counter hpred =>
   | _ => false
   };
 
-let zero_value_of_numerical_type typ =>
+
+/** Returns the zero value of a type, for int, float and ptr types, None othwewise */
+let zero_value_of_numerical_type_option typ =>
   switch typ {
-  | Typ.Tint _ => Const (Cint IntLit.zero)
-  | Typ.Tfloat _ => Const (Cfloat 0.0)
-  | Typ.Tptr _ => Const (Cint IntLit.null)
-  | _ => assert false
+  | Typ.Tint _ => Some (Const (Cint IntLit.zero))
+  | Typ.Tfloat _ => Some (Const (Cfloat 0.0))
+  | Typ.Tptr _ => Some (Const (Cint IntLit.null))
+  | _ => None
   };
+
+
+/** Returns the zero value of a type, for int, float and ptr types, fail otherwise */
+let zero_value_of_numerical_type typ => Option.get (zero_value_of_numerical_type_option typ);
 
 
 /** Make a static local name in objc */
