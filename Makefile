@@ -92,12 +92,12 @@ ocaml_unit_test: test_this_build
 
 buck_test: infer
 	NO_BUCKD=1 buck clean
-	NO_BUCKD=1 buck test $(TARGETS_TO_TEST)
+	NO_BUCKD=1 buck test -j $(NCPU) -L $(NCPU) $(TARGETS_TO_TEST)
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 
 buck_test_xml: infer
 	NO_BUCKD=1 buck clean
-	NO_BUCKD=1 buck test --xml test.xml $(TARGETS_TO_TEST)
+	NO_BUCKD=1 buck test -j $(NCPU) -L $(NCPU) --xml test.xml $(TARGETS_TO_TEST)
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 
 inferTraceBugs_test: infer
@@ -269,3 +269,8 @@ conf-clean: clean
 .PHONY: all buck_test buck_test_xml clean clang_plugin clang_setup infer inferTraceBugs
 .PHONY: inferTraceBugs_test install ocaml_unit_test check_missing_mli src_build test test_xml
 .PHONY: test_build uninstall
+
+
+# print any variable for Makefile debugging
+print-%:
+	@echo '$*=$($*)'
