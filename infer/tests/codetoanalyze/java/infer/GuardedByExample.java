@@ -223,6 +223,34 @@ public class GuardedByExample {
     };
   }
 
+  Object readFromInnerClassOkOuter() {
+    return new Object() {
+      public String readFromInnerClassOk() {
+        synchronized (GuardedByExample.this) {
+          return g.toString();
+        }
+      }
+    };
+  }
+
+  Object readFromInnerClassBad1Outer() {
+    return new Object() {
+      public String readFromInnerClassBad1() {
+        synchronized (this) {
+          return g.toString(); // g is guarded by the outer class this, not this$0
+        }
+      }
+    };
+  }
+
+  Object readFromInnerClassBad2Outer() {
+    return new Object() {
+      public synchronized String readFromInnerClassBad2() {
+        return g.toString(); // g is guarded by the outer class this, not this$0
+      }
+    };
+  }
+
   // TODO: report on these cases
   /*
   public void unguardedCallSiteBad1() {

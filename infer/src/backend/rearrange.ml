@@ -619,6 +619,20 @@ let add_guarded_by_constraints prop lexp pdesc =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let excluded_guardedby_string str =
     str = "ui_thread" in (* don't warn on @GuardedBy("ui_thread") *)
+  let guarded_by_str_is_this guarded_by_str =
+    string_is_suffix "this" guarded_by_str in
+  let guarded_by_str_is_class guarded_by_str class_str =
+    string_is_suffix guarded_by_str (class_str ^ ".class") in
+  let guarded_by_str_is_current_class guarded_by_str = function
+    | Procname.Java java_pname ->
+        (* programmers write @GuardedBy("MyClass.class") when the field is guarded by the class *)
+        guarded_by_str_is_class guarded_by_str (Procname.java_get_class_name java_pname)
+    | _ -> false in
+  (** return true if [guarded_by_str] is "<name_of_current_proc>.this" *)
+  let guarded_by_str_is_current_class_this guarded_by_str = function
+    | Procname.Java java_pname ->
+        guarded_by_str = (Printf.sprintf "%s.this" (Procname.java_get_class_name java_pname))
+    | _ -> false in
   let extract_guarded_by_str item_annot =
     let annot_extract_guarded_by_str (annot, _) =
       if Annotations.annot_ends_with annot Annotations.guarded_by
@@ -634,17 +648,16 @@ let add_guarded_by_constraints prop lexp pdesc =
   (** if [fld] is annotated with @GuardedBy("mLock"), return mLock *)
   let get_guarded_by_fld_str fld typ =
     match Annotations.get_field_type_and_annotation fld typ with
-    | Some (_, item_annot) -> extract_guarded_by_str item_annot
+    | Some (_, item_annot) ->
+        begin
+          match extract_guarded_by_str item_annot with
+          | Some "this" ->
+              (* expand "this" into <classname>.this *)
+              Some (Printf.sprintf "%s.this" (Ident.java_fieldname_get_class fld))
+          | guarded_by_str_opt ->
+              guarded_by_str_opt
+        end
     | _ -> None in
-  let guarded_by_str_is_this guarded_by_str =
-    guarded_by_str = "this" in
-  let guarded_by_str_is_class guarded_by_str class_str =
-    string_is_suffix guarded_by_str (class_str ^ ".class") in
-  let guarded_by_str_is_current_class guarded_by_str = function
-    | Procname.Java java_pname ->
-        (* programmers write @GuardedBy("MyClass.class") when the field is guarded by the class *)
-        guarded_by_str_is_class guarded_by_str (Procname.java_get_class_name java_pname)
-    | _ -> false in
   (* find A.guarded_by_fld_str |-> B and return Some B, or None if there is no such hpred *)
   let find_guarded_by_exp guarded_by_str sigma =
     let is_guarded_by_strexp (fld, _) =
@@ -658,18 +671,30 @@ let add_guarded_by_constraints prop lexp pdesc =
           when guarded_by_str_is_class guarded_by_str (Ident.name_to_string clazz) ->
             Some (Sil.Eexp (lhs_exp, Sil.inst_none), typ)
         | Sil.Hpointsto (_, Estruct (flds, _), Sil.Sizeof (typ, _, _)) ->
-            begin
+            let get_fld_strexp_and_typ f flds =
               try
-                let fld, strexp = IList.find is_guarded_by_strexp flds in
+                let fld, strexp = IList.find f flds in
                 begin
                   match Annotations.get_field_type_and_annotation fld typ with
                   | Some (fld_typ, _) -> Some (strexp, fld_typ)
                   | None -> None
                 end
-              with Not_found -> None
+              with Not_found -> None in
+            begin
+              (* first, try to find a field that exactly matches the guarded-by string *)
+              match get_fld_strexp_and_typ is_guarded_by_strexp flds with
+              | None when guarded_by_str_is_this guarded_by_str ->
+                  (* if the guarded-by string is "OuterClass.this", look for "this$n" for some n.
+                     note that this is a bit sketchy when there are mutliple this$n's, but there's
+                     nothing we can do to disambiguate them. *)
+                  get_fld_strexp_and_typ
+                    (fun (f, _) -> Ident.java_fieldname_is_outer_instance f)
+                    flds
+              | res ->
+                  res
             end
         | Sil.Hpointsto (Lvar pvar, rhs_exp, Sil.Sizeof (typ, _, _))
-          when guarded_by_str_is_this guarded_by_str && Pvar.is_this pvar ->
+          when guarded_by_str_is_current_class_this guarded_by_str pname && Pvar.is_this pvar ->
             Some (rhs_exp, typ)
         | _ ->
             None)
@@ -704,7 +729,8 @@ let add_guarded_by_constraints prop lexp pdesc =
       | _ -> false in
     let has_lock guarded_by_exp =
       (* procedure is synchronized and guarded by this *)
-      (guarded_by_str_is_this guarded_by_str && Cfg.Procdesc.is_java_synchronized pdesc) ||
+      (guarded_by_str_is_current_class_this guarded_by_str pname &&
+       Cfg.Procdesc.is_java_synchronized pdesc) ||
       (guarded_by_str_is_current_class guarded_by_str pname &&
        Cfg.Procdesc.is_java_synchronized pdesc && Procname.java_is_static pname) ||
       (* or the prop says we already have the lock *)
