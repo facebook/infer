@@ -23,10 +23,6 @@ let handle_source_file_copy_option () = match !source_file_copy with
       F.fprintf F.std_formatter "%s@." (DB.filename_to_string source_in_resdir);
       exit 0
 
-let canonic_path_from_string s =
-  if s = Filename.dir_sep then s
-  else Filename.concat (Filename.dirname s) (Filename.basename s) ^ Filename.dir_sep
-
 let print_usage_exit err_s =
   L.err "Load Error: %s@.@." err_s;
   Config.print_usage_exit ()
@@ -297,7 +293,6 @@ end
 module BugsCsv = struct
   let csv_bugs_id = ref 0
 
-  let timestamp = Unix.time ()
   let pp_header fmt () =
     Format.fprintf fmt "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s@\n"
       Io_infer.Xml.tag_class
