@@ -148,6 +148,10 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	done
 	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/clang_wrappers/ || \
 	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/lib/clang_wrappers/
+	@for i in $$(find infer/models/cpp/include/ -type d); do \
+	  test -d      $(DESTDIR)$(libdir)/infer/$$i || \
+	    $(MKDIR_P) $(DESTDIR)$(libdir)/infer/$$i; \
+	done
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/java/ || \
@@ -184,6 +188,9 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	done
 	@for i in $$(find infer/lib/specs/*); do \
 	  $(INSTALL_DATA) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
+	done
+	@for i in $$(find infer/models/cpp/include/ -not -type d); do \
+		$(INSTALL_DATA) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
 	done
 	$(INSTALL_PROGRAM) -C $(INFERCLANG_BIN) $(DESTDIR)$(libdir)/infer/infer/bin/
 endif
