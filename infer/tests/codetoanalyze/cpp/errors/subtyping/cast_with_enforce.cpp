@@ -8,12 +8,10 @@
  */
 
 #include <stdexcept>
-#include <string>
 
 class WrongParameterException : public std::runtime_error {
  public:
-  WrongParameterException(bool e, const std::string& message)
-      : std::runtime_error(message){};
+  WrongParameterException(bool e, const char* msg) : std::runtime_error(msg){};
 };
 
 #define ENFORCE(e, ...) \
