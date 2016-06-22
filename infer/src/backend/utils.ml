@@ -586,3 +586,16 @@ let read_optional_json_file path =
     with Sys_error msg | Yojson.Json_error msg ->
       Error msg
   else Ok (`Assoc [])
+
+let with_file file ~f =
+  let oc = open_out file in
+  try
+    let res = f oc in
+    close_out oc;
+    res
+  with exc ->
+    close_out oc;
+    raise exc
+
+let write_json_to_file destfile json =
+  with_file destfile ~f:(fun oc -> Yojson.Basic.pretty_to_channel oc json)
