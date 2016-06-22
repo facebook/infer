@@ -17,7 +17,7 @@ module L = Logging
 
 open CFrontend_utils
 
-let buffer_len = 16384
+let buffer_len = 262143
 
 (* This function reads the json file in fname, validates it, and encoded in the AST data structure*)
 (* defined in Clang_ast_t.  *)
