@@ -27,14 +27,13 @@ let set_env_for_clang_wrapper () =
 
 let () =
   set_env_for_clang_wrapper () ;
-  let ( / ) = Filename.concat in
   (* The infer executable in the bin directory is a symbolic link to the real binary in the lib
      directory, so that the python script in the lib directory can be found relative to it. *)
   let real_exe =
     match Unix.readlink Sys.executable_name with
     | link when Filename.is_relative link ->
         (* Sys.executable_name is a relative symbolic link *)
-        (Filename.dirname Sys.executable_name) / link
+        (Filename.dirname Sys.executable_name) // link
     | link ->
         (* Sys.executable_name is an absolute symbolic link *)
         link
@@ -42,12 +41,13 @@ let () =
         (* Sys.executable_name is not a symbolic link *)
         Sys.executable_name
   in
-  let infer_py = (Filename.dirname real_exe) / "python" / "infer.py" in
+  let infer_py = (Filename.dirname real_exe) // "python" // "infer.py" in
   let build_cmd = IList.rev Config.rest in
   let buck = match build_cmd with "buck" :: _ -> true | _ -> false in
   let args_py =
     Array.of_list (
       infer_py ::
+      Config.anon_args @
       (match Config.analyzer with None -> [] | Some a ->
         ["--analyzer"; Utils.string_of_analyzer a]) @
       (match Config.blacklist with
@@ -67,7 +67,7 @@ let () =
          ["--use-flavors"]) @
       (match Config.infer_cache with None -> [] | Some s ->
         ["--infer_cache"; s]) @
-      "--multicore" :: (string_of_int Config.multicore) ::
+      "--multicore" :: (string_of_int Config.jobs) ::
       "--out" :: Config.results_dir ::
       (match Config.project_root with None -> [] | Some pr ->
         ["--project_root"; pr]) @

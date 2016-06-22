@@ -45,6 +45,7 @@ endif
 
 #### Backend declarations ####
 
+INFER_MAIN = backend/infer
 INFERANALYZE_MAIN = backend/inferanalyze
 
 #### InferPrint declarations ####
@@ -130,6 +131,7 @@ OCAMLBUILD_ALL = $(OCAMLBUILD_BASE) $(JAVA_OCAMLBUILD_OPTIONS)
 
 # list of ocamlbuild targets common to all build targets -- native version
 INFER_BASE_TARGETS = \
+  $(INFER_MAIN).native \
   $(INFERANALYZE_MAIN).native \
   $(INFERPRINT_MAIN).native \
   $(INFERUNIT_MAIN).native \
@@ -166,6 +168,7 @@ all: infer
 
 infer: init $(INFERPRINT_ATDGEN_STUBS)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(INFER_CONFIG_TARGETS)
+	$(COPY) $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(INFER_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERANALYZE_MAIN).native $(INFERANALYZE_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERPRINT_MAIN).native $(INFERPRINT_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BIN)
@@ -226,7 +229,7 @@ test_build: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_
 $(DEPENDENCIES_DIR)/ocamldot/ocamldot:
 	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot
 
-roots:=Inferanalyze CMain JMain Inferprint
+roots:=Infer Inferanalyze CMain JMain Inferprint
 src_dirs:=$(shell find * -type d)
 src_files:=$(shell find $(src_dirs) -regex '.*\.ml\(i\)*' -not -path facebook/scripts/eradicate_stats.ml)
 inc_flags:=$(foreach dir,$(src_dirs),-I $(dir))
@@ -317,8 +320,9 @@ endif
 	$(REMOVE) backend/version.ml
 	$(REMOVE) backend/version.ml.tmp.*
 	$(REMOVE) backend/jsonbug_{j,t}.ml{,i}
-	$(REMOVE) $(INFERJAVA_BIN) $(INFERCLANG_BIN) $(INFERLLVM_BIN) $(INFERUNIT_BIN)
-	$(REMOVE) $(INFERANALYZE_BIN) $(INFERPRINT_BIN) $(CHECKCOPYRIGHT_BIN) $(STATSAGGREGATOR_BIN)
+	$(REMOVE) $(INFER_BIN) $(INFERANALYZE_BIN) $(INFERPRINT_BIN) $(STATSAGGREGATOR_BIN)
+	$(REMOVE) $(INFERJAVA_BIN) $(INFERCLANG_BIN) $(INFERLLVM_BIN)
+	$(REMOVE) $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN)
 	$(REMOVE) $(CLANG_ATDGEN_STUBS)
 	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(REMOVE) mod_dep.dot

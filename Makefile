@@ -22,7 +22,12 @@ TARGETS_TO_TEST := $(shell echo $(TARGETS_TO_TEST))
 
 all: infer inferTraceBugs
 
-$(INFER_BIN_RELPATH) $(INFERTRACEBUGS_BIN_RELPATH):
+$(INFER_BIN_SYMLINK):
+	($(REMOVE) $@ && \
+	 cd $(@D) && \
+	 $(LN_S) ../lib/$(@F) $(@F))
+
+$(INFERTRACEBUGS_BIN_RELPATH):
 	($(REMOVE) $@ && \
 	 cd $(@D) && \
 	 $(LN_S) ../lib/python/$(@F) $(@F))
@@ -36,7 +41,7 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 src_build: clang_plugin
 endif
 
-infer: $(INFER_BIN_RELPATH) src_build
+infer: $(INFER_BIN_SYMLINK) src_build
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(MAKE) -C $(ANNOTATIONS_DIR)
 endif
@@ -213,19 +218,20 @@ endif
 	@for i in $$(find infer/lib/python/inferlib/* -type f); do \
 	  $(INSTALL_DATA) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
 	done
-	$(INSTALL_PROGRAM) -C       infer/lib/python/infer \
-	  $(DESTDIR)$(libdir)/infer/infer/lib/python/infer
+	$(INSTALL_PROGRAM) -C       infer/lib/python/infer.py \
+	  $(DESTDIR)$(libdir)/infer/infer/lib/python/infer.py
 	$(INSTALL_PROGRAM) -C       infer/lib/python/inferTraceBugs \
 	  $(DESTDIR)$(libdir)/infer/infer/lib/python/inferTraceBugs
+	$(INSTALL_PROGRAM) -C $(INFER_BIN) $(DESTDIR)$(libdir)/infer/infer/lib/
 	$(INSTALL_PROGRAM) -C $(INFERANALYZE_BIN) $(DESTDIR)$(libdir)/infer/infer/bin/
 	$(INSTALL_PROGRAM) -C $(INFERPRINT_BIN) $(DESTDIR)$(libdir)/infer/infer/bin/
 	$(INSTALL_PROGRAM) -C $(INFERSTATS_BIN) $(DESTDIR)$(libdir)/infer/infer/bin/
 	(cd $(DESTDIR)$(libdir)/infer/infer/bin/ && \
 	 $(REMOVE) infer && \
-	 $(LN_S) $(libdir)/infer/infer/lib/python/infer infer)
+	 $(LN_S) $(libdir)/infer/infer/lib/infer infer)
 	(cd $(DESTDIR)$(bindir)/ && \
 	 $(REMOVE) infer && \
-	 $(LN_S) $(libdir)/infer/infer/lib/python/infer infer)
+	 $(LN_S) $(libdir)/infer/infer/lib/infer infer)
 	(cd $(DESTDIR)$(bindir)/ && \
 	 $(REMOVE) inferTraceBugs && \
 	 $(LN_S) $(libdir)/infer/infer/lib/python/inferTraceBugs inferTraceBugs)
@@ -245,7 +251,7 @@ endif
 	$(MAKE) -C $(SRC_DIR) clean
 	$(MAKE) -C $(ANNOTATIONS_DIR) clean
 	$(MAKE) -C $(MODELS_DIR) clean
-	$(REMOVE) $(INFER_BIN_RELPATH) $(INFERTRACEBUGS_BIN_RELPATH)
+	$(REMOVE) $(INFER_BIN_SYMLINK) $(INFERTRACEBUGS_BIN_RELPATH)
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(MAKE) -C facebook clean
 endif

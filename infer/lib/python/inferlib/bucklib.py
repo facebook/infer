@@ -49,7 +49,7 @@ INFER_SCRIPT = """\
 import subprocess
 import sys
 
-cmd = ['{0}'] + {1} + ['--', 'javac'] + sys.argv[1:]
+cmd = {1} + ['--', 'javac'] + sys.argv[1:]
 subprocess.check_call(cmd)
 """
 

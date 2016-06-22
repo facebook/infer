@@ -90,6 +90,13 @@ val mk_anon :
   unit ->
   string list ref
 
+(** [mk_rest doc] defines a [string list ref] of the command line arguments following ["--"], in the
+    reverse order they appeared on the command line.  For example, calling [mk_rest] and parsing
+    [exe -opt1 -opt2 -- arg1 arg2] will result in the returned ref containing [arg2; arg1]. *)
+val mk_rest :
+  ?exes:exe list -> string ->
+  string list ref
+
 (** [parse env_var exe_usage] parses command line arguments as specified by preceding calls to the
     [mk_*] functions, and returns a function that prints the usage message and help text then exits.
     The decoded values of the inferconfig file [config_file], if provided, and of the environment
@@ -97,6 +104,8 @@ val mk_anon :
     the command line supersede those specified in the environment variable, which themselves
     supersede those passed via the config file.  WARNING: An argument will be interpreted as many
     times as it appears in all of the config file, the environment variable, and the command
-    line. *)
-val parse : ?incomplete:bool -> ?config_file:string ->
+    line. The [env_var] is set to the full set of options parsed.  If [incomplete] is set, unknown
+    options are ignored, and [env_var] is not set.  If [accept_unknown] is set, unknown options are
+    treated the same as anonymous arguments. *)
+val parse : ?incomplete:bool -> ?accept_unknown:bool -> ?config_file:string ->
   string -> (exe -> Arg.usage_msg) -> (int -> 'a)

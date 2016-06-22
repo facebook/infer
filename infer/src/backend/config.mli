@@ -30,6 +30,10 @@ type pattern =
 
 type clang_lang = C | CPP | OBJC | OBJCPP
 
+val ml_bucket_symbols :
+  (string * [ `MLeak_all | `MLeak_arc | `MLeak_cf | `MLeak_cpp | `MLeak_no_arc | `MLeak_unknown ])
+    list
+
 type os_type = Unix | Win32 | Cygwin
 
 type zip_library = {
@@ -48,9 +52,12 @@ val assign : string
 val attributes_dir_name : string
 val backend_stats_dir_name : string
 val bound_error_allowed_in_procedure_call : bool
+val buck_generated_folder : string
 val buck_infer_deps_file_name : string
-val checks_disabled_by_default : string list
 val captured_dir_name : string
+val checks_disabled_by_default : string list
+val cpp_models_dir : string
+val csl_analysis : bool
 val default_failure_name : string
 val default_in_zip_results_dir : string
 val dotty_output : string
@@ -61,25 +68,24 @@ val idempotent_getters : bool
 val incremental_procs : bool
 val initial_analysis_time : float
 val ivar_attributes : string
+val load_average : float option
+val log_analysis_crash : string
 val log_analysis_file : string
 val log_analysis_procedure : string
-val log_analysis_wallclock_timeout : string
-val log_analysis_symops_timeout : string
 val log_analysis_recursion_timeout : string
-val log_analysis_crash : string
-val buck_generated_folder : string
+val log_analysis_symops_timeout : string
+val log_analysis_wallclock_timeout : string
 val max_recursion : int
 val meet_level : int
 val models_dir : string
-val cpp_models_dir : string
-val whitelisted_cpp_methods : string list list
+val ncpu : int
 val nsnotification_center_checker_backend : bool
 val objc_method_call_semantics : bool
 val os_type : os_type
-val patterns_never_returning_null : pattern list
-val patterns_suppress_warnings : pattern list
-val patterns_skip_translation : pattern list
 val patterns_modeled_expensive : pattern list
+val patterns_never_returning_null : pattern list
+val patterns_skip_translation : pattern list
+val patterns_suppress_warnings : pattern list
 val perf_stats_prefix : string
 val proc_stats_filename : string
 val property_attributes : string
@@ -94,11 +100,11 @@ val specs_dir_name : string
 val specs_files_suffix : string
 val start_filename : string
 val taint_analysis : bool
-val csl_analysis : bool
 val trace_absarray : bool
 val undo_join : bool
 val unsafe_unret : string
 val weak : string
+val whitelisted_cpp_methods : string list list
 
 
 (** Configuration values specified by environment variables *)
@@ -115,7 +121,9 @@ val sound_dynamic_dispatch : bool
 (** Configuration values specified by command-line options *)
 
 val anon_args : string list
+val rest : string list
 val abs_struct : int
+val absolute_paths : bool
 val allow_specs_cleanup : bool
 val analysis_path_regex_whitelist : analyzer -> string list
 val analysis_path_regex_blacklist : analyzer -> string list
@@ -126,6 +134,8 @@ val analyzer : analyzer option
 val angelic_execution : bool
 val array_level : int
 val ast_file : string option
+val blacklist : string option
+val buck : bool
 val buck_out : string option
 val bugs_csv : outfile option
 val bugs_json : outfile option
@@ -142,6 +152,7 @@ val continue_capture : bool
 val create_harness : bool
 val cxx_experimental : bool
 val debug_mode : bool
+val debug_exceptions : bool
 val dependency_mode : bool
 val developer_mode : bool
 val disable_checks : string list
@@ -149,12 +160,19 @@ val dotty_cfg_libs : bool
 val enable_checks : string list
 val eradicate : bool
 val err_file_cmdline : string
+val failures_allowed : bool
+val filtering : bool
+val flavors : bool
+val frontend_stats : bool
+val headers : bool
 val infer_cache : string option
 val iterations : int
 val javac_verbose_out : string
+val jobs : int
 val join_cond : int
 val latex : outfile option
 val load_analysis_results : string option
+val llvm : bool
 val makefile_cmdline : string
 val merge : bool
 val ml_buckets :

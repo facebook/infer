@@ -387,6 +387,8 @@ let do_outf outf_opt f =
 let close_outf outf =
   close_out outf.out_c
 
+let ( // ) = Filename.concat
+
 (** convert a filename to absolute path and normalize by removing occurrences of "." and ".." *)
 module FileNormalize = struct
   let rec fname_to_list_rev fname =
@@ -405,7 +407,7 @@ module FileNormalize = struct
   (* concatenate a list of strings representing a path into a filename *)
   let rec list_to_fname base path = match path with
     | [] -> base
-    | x :: path' -> list_to_fname (Filename.concat base x) path'
+    | x :: path' -> list_to_fname (base // x) path'
 
   (* normalize a path where done_l is a reversed path from the root already normalized *)
   (* and todo_l is the path still to normalize *)
@@ -429,7 +431,7 @@ module FileNormalize = struct
     let is_relative = Filename.is_relative fname in
     let must_normalize = fname_contains_current_parent fname in
     let simple_case () =
-      if is_relative then Filename.concat (Unix.getcwd ()) fname
+      if is_relative then Unix.getcwd () // fname
       else fname in
     if must_normalize then begin
       let done_l, todo_l =
@@ -473,7 +475,7 @@ let filename_to_relative root fname =
       String.sub s2 (n1 + 1) (n2 - (n1 + 1))
     else s2 in
   let norm_root = (* norm_root is root without any trailing / *)
-    Filename.concat (Filename.dirname root) (Filename.basename root) in
+    Filename.dirname root // Filename.basename root in
   let remainder = (* remove the path prefix to root including trailing / *)
     string_strict_subtract norm_root fname in
   remainder
@@ -506,7 +508,7 @@ let next compare =
 
 let directory_fold f init path =
   let collect current_dir (accu, dirs) path =
-    let full_path = (Filename.concat current_dir path) in
+    let full_path = current_dir // path in
     try
       if Sys.is_directory full_path then
         (accu, full_path:: dirs)
@@ -528,7 +530,7 @@ let directory_fold f init path =
 
 let directory_iter f path =
   let apply current_dir dirs path =
-    let full_path = (Filename.concat current_dir path) in
+    let full_path = current_dir // path in
     try
       if Sys.is_directory full_path then
         full_path:: dirs
@@ -548,10 +550,11 @@ let directory_iter f path =
   else
     f path
 
-type analyzer = Infer | Eradicate | Checkers | Tracing
+type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
 
 let string_to_analyzer =
-  [("infer", Infer); ("eradicate", Eradicate); ("checkers", Checkers); ("tracing", Tracing)]
+  [("capture", Capture); ("compile", Compile);
+   ("infer", Infer); ("eradicate", Eradicate); ("checkers", Checkers); ("tracing", Tracing)]
 
 let analyzers = IList.map snd string_to_analyzer
 
@@ -599,6 +602,18 @@ let with_file file ~f =
 
 let write_json_to_file destfile json =
   with_file destfile ~f:(fun oc -> Yojson.Basic.pretty_to_channel oc json)
+
+let with_process_in command read =
+  let chan = Unix.open_process_in command in
+  let res =
+    try
+      read chan
+    with exc ->
+      Unix.close_process_in chan |> ignore ;
+      raise exc
+  in
+  Unix.close_process_in chan |> ignore ;
+  res
 
 let failwithf fmt =
   Format.kfprintf (fun _ -> failwith (Format.flush_str_formatter ()))

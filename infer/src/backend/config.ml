@@ -35,6 +35,15 @@ let string_of_language = function
 
 type clang_lang = C | CPP | OBJC | OBJCPP
 
+let ml_bucket_symbols = [
+  ("all", `MLeak_all);
+  ("cf", `MLeak_cf);
+  ("arc", `MLeak_arc);
+  ("narc", `MLeak_no_arc);
+  ("cpp", `MLeak_cpp);
+  ("unknown_origin", `MLeak_unknown);
+]
+
 type os_type = Unix | Win32 | Cygwin
 
 type zip_library = {
@@ -42,6 +51,17 @@ type zip_library = {
   zip_channel: Zip.in_file Lazy.t;
   models: bool;
 }
+
+let whitelisted_cpp_methods = [
+  ["std"; "move"];
+  ["google"; "CheckNotNull"];
+  ["google"; "GetReferenceableValue"];
+  ["google"; "Check_NEImpl"];
+  ["google"; "Check_LEImpl"];
+  ["google"; "Check_GTImpl"];
+  ["google"; "Check_GEImpl"];
+  ["google"; "Check_EQImpl"]
+]
 
 
 (** Constant configuration values *)
@@ -183,7 +203,7 @@ let buck_generated_folder = "buck-out/gen"
 let version_string =
   "Infer version "
   ^ Version.versionString
-  ^ "\nCopyright 2009 - present Facebook. All Rights Reserved.\n"
+  ^ "\nCopyright 2009 - present Facebook. All Rights Reserved."
 
 
 (** System call configuration values *)
@@ -195,27 +215,21 @@ let initial_analysis_time = Unix.time ()
 (** Path to lib/specs to retrieve the default models *)
 let models_dir =
   let bin_dir = Filename.dirname Sys.executable_name in
-  let lib_dir = Filename.concat (Filename.concat bin_dir Filename.parent_dir_name) "lib" in
-  let lib_specs_dir = Filename.concat lib_dir specs_dir_name in
+  let lib_dir = bin_dir // Filename.parent_dir_name // "lib" in
+  let lib_specs_dir = lib_dir // specs_dir_name in
   lib_specs_dir
 
 let cpp_models_dir =
   let bin_dir = Filename.dirname Sys.executable_name in
-  let cpp_models_dir =
-    Filename.concat (Filename.concat bin_dir Filename.parent_dir_name)
-      "models/cpp/include" in
-  cpp_models_dir
+  bin_dir // Filename.parent_dir_name // "models" // "cpp" // "include"
 
-let whitelisted_cpp_methods = [
-  ["std"; "move"];
-  ["google"; "CheckNotNull"];
-  ["google"; "GetReferenceableValue"];
-  ["google"; "Check_NEImpl"];
-  ["google"; "Check_LEImpl"];
-  ["google"; "Check_GTImpl"];
-  ["google"; "Check_GEImpl"];
-  ["google"; "Check_EQImpl"]
-]
+let ncpu =
+  try
+    with_process_in
+      "getconf _NPROCESSORS_ONLN 2>/dev/null"
+      (fun chan -> Scanf.fscanf chan "%d" (fun n -> n))
+  with _ ->
+    1
 
 let os_type = match Sys.os_type with
   | "Win32" -> Win32
@@ -321,6 +335,38 @@ let patterns_of_json_with_key json_key json =
 
 (** Command Line options *)
 
+(* The working directory of the initial invocation of infer, to which paths passed as command line
+   options are relative. *)
+let init_work_dir =
+  try
+    Sys.getenv "INFER_CWD"
+  with Not_found ->
+    let cwd =
+      (* Use PWD if it denotes the same inode as ., to try to avoid paths with symlinks resolved *)
+      (* Approach is borrowed from llvm implementation of *)
+      (* llvm::sys::fs::current_path (implemented in Path.inc file) *)
+      try
+        let pwd = Unix.getenv "PWD" in
+        let pwd_stat = Unix.stat pwd in
+        let dot_stat = Unix.stat "." in
+        if pwd_stat.st_dev = dot_stat.st_dev && pwd_stat.st_ino = dot_stat.st_ino then
+          pwd
+        else
+          Sys.getcwd ()
+      with _ ->
+        Sys.getcwd ()
+    in
+    Unix.putenv "INFER_CWD" cwd ;
+    cwd
+
+(* Resolve relative paths passed as command line options, i.e., with respect to the working
+   directory of the initial invocation of infer. *)
+let resolve path =
+  if Filename.is_relative path then
+    init_work_dir // path
+  else
+    path
+
 (* Declare the phase 1 options *)
 
 let inferconfig_home =
@@ -328,10 +374,10 @@ let inferconfig_home =
     ~exes:CLOpt.[Analyze] ~meta:"dir" "Path to the .inferconfig file"
 
 and project_root =
-  CLOpt.mk_string_opt ~deprecated:["project_root"] ~long:"project-root" ~short:"pr"
-    ?default:(if CLOpt.(current_exe = Print) then Some (Sys.getcwd ()) else None)
+  CLOpt.mk_string_opt ~deprecated:["project_root"; "-project_root"] ~long:"project-root" ~short:"pr"
+    ?default:CLOpt.(match current_exe with Print | Toplevel -> Some (Sys.getcwd ()) | _ -> None)
     ~f:filename_to_absolute
-    ~exes:CLOpt.[Analyze;Clang;Java;Llvm;Print]
+    ~exes:CLOpt.[Analyze;Clang;Java;Llvm;Print;Toplevel]
     ~meta:"dir" "Specify the root directory of the project"
 
 (* Parse the phase 1 options, ignoring the rest *)
@@ -345,7 +391,7 @@ and project_root = !project_root
 
 let inferconfig_path =
   match inferconfig_home, project_root with
-  | Some dir, _ | _, Some dir -> Filename.concat dir inferconfig_file
+  | Some dir, _ | _, Some dir -> dir // inferconfig_file
   | None, None -> inferconfig_file
 
 (* Proceed to declare and parse the remaining options *)
@@ -360,6 +406,14 @@ let inferconfig_path =
 
 let anon_args =
   CLOpt.mk_anon ()
+
+and rest =
+  CLOpt.mk_rest
+    ~exes:CLOpt.[Toplevel] "Stop argument processing, use remaining arguments as a build command"
+
+and absolute_paths =
+  CLOpt.mk_bool ~long:"absolute-paths"
+    ~exes:CLOpt.[Toplevel] "Report errors using absolute paths"
 
 (** Flag for abstracting fields of structs
     0 = no
@@ -432,9 +486,13 @@ and analysis_stops =
 
 (** Setup the analyzer in order to filter out errors for this analyzer only *)
 and analyzer =
-  CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer"
+  CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:"a"
     "Specify the analyzer for the path filtering"
     ~symbols:Utils.string_to_analyzer
+
+and android_harness =
+  CLOpt.mk_bool ~deprecated:["harness"] ~long:"android-harness"
+    "Create harness to detect bugs involving the Android lifecycle"
 
 (** if true, completely ignore the possibility that errors can be caused by unknown procedures
     during the symbolic execution phase *)
@@ -454,6 +512,14 @@ and array_level =
 and ast_file =
   CLOpt.mk_string_opt ~long:"ast-file" ~short:"ast"
     ~meta:"file" "AST file for the translation"
+
+and blacklist =
+  CLOpt.mk_string_opt ~deprecated:["-blacklist-regex"] ~long:"blacklist"
+    ~meta:"regex" "Skip analysis of files matched by the specified regular expression"
+
+and buck =
+  CLOpt.mk_bool ~long:"buck"
+    "To use when run with buck"
 
 and buck_out =
   CLOpt.mk_string_opt ~long:"buck-out"
@@ -526,7 +592,7 @@ and curr_language =
   var
 
 and cxx_experimental =
-  CLOpt.mk_bool ~deprecated:["cxx-experimental"] ~long:"cxx-experimental"
+  CLOpt.mk_bool ~deprecated:["cxx-experimental"] ~long:"cxx"
     "Analyze C++ methods, still experimental"
 
 and debug, print_types, write_dotty =
@@ -546,6 +612,10 @@ and debug, print_types, write_dotty =
       [print_types; write_dotty]
   in
   (debug, print_types, write_dotty)
+
+and debug_exceptions =
+  CLOpt.mk_bool ~long:"debug-exceptions"
+    "Generate lightweight debugging information: just print the internal exceptions during analysis"
 
 (* The classes in the given jar file will be translated. No sources needed *)
 and dependencies =
@@ -589,17 +659,29 @@ and err_file =
   CLOpt.mk_string ~deprecated:["err_file"] ~long:"err-file" ~default:""
     ~exes:CLOpt.[Analyze] ~meta:"file" "use file for the err channel"
 
-(* Generate harness for Android code *)
-and harness =
-  CLOpt.mk_bool ~deprecated:["harness"] ~long:"harness"
-    "Create Android lifecycle harness"
+and failures_allowed =
+  CLOpt.mk_bool ~deprecated_no:["-no_failures_allowed"] ~long:"failures-allowed" ~default:true
+    "Fail if at least one of the translations fails"
+
+and filtering =
+  CLOpt.mk_bool ~long:"filtering" ~short:"f" ~default:true
+    "Also show the results from the experimental checks. Warning: some checks may contain many \
+     false alarms."
+
+and flavors =
+  CLOpt.mk_bool ~deprecated:["-use-flavors"] ~long:"flavors"
+    "Buck integration using flavors."
+
+and frontend_stats =
+  CLOpt.mk_bool ~long:"frontend-stats" ~short:"fs"
+    "Output statistics about the capture phase to *.o.astlog"
 
 and headers =
-  CLOpt.mk_bool ~deprecated:["headers"] ~deprecated_no:["no_headers"] ~long:"headers"
-    "Translate code in header files"
+  CLOpt.mk_bool ~deprecated:["headers"] ~deprecated_no:["no_headers"] ~long:"headers" ~short:"hd"
+    "Analyze code in header files"
 
 and infer_cache =
-  CLOpt.mk_string_opt ~deprecated:["infer_cache"] ~long:"infer-cache"
+  CLOpt.mk_string_opt ~deprecated:["infer_cache"; "-infer_cache"] ~long:"infer-cache"
     ~f:filename_to_absolute
     ~meta:"dir" "Select a directory to contain the infer cache"
 
@@ -610,6 +692,10 @@ and iterations =
     ~meta:"int"
     "Specify the maximum number of operations for each function, expressed as a multiple \
      of symbolic operations"
+
+and jobs =
+  CLOpt.mk_int ~deprecated:["-multicore"] ~long:"jobs" ~short:"j" ~default:ncpu
+    ~exes:CLOpt.[Toplevel] ~meta:"int" "Run the specified number of analysis jobs simultaneously"
 
 (** Flag to tune the final information-loss check used by the join
     0 = use the most aggressive join for preconditions
@@ -624,10 +710,18 @@ and latex =
   CLOpt.mk_option ~deprecated:["latex"] ~long:"latex" ~f:create_outfile
     ~meta:"file.tex" "Print latex report to file.tex"
 
+and load_average =
+  CLOpt.mk_option ~long:"load-average" ~short:"l" ~f:(fun s -> Some (float_of_string s))
+    ~meta:"float"
+    "Do not start new parallel jobs if the load average is greater than that specified"
+
 (** name of the file to load analysis results from *)
 and load_results =
   CLOpt.mk_string_opt ~deprecated:["load_results"] ~long:"load-results"
     ~meta:"file.iar" "Load analysis results from Infer Analysis Results file file.iar"
+
+and llvm =
+  CLOpt.mk_bool ~long:"llvm" "Analyze C or C++ using the experimental LLVM frontend"
 
 (** name of the makefile to create with clusters and dependencies *)
 and makefile =
@@ -641,26 +735,22 @@ and merge =
 
 (** List of obj memory leak buckets to be checked in Objective-C/C++ *)
 and ml_buckets =
-  CLOpt.mk_symbol_seq ~deprecated:["ml_buckets"] ~long:"ml-buckets" ~default:[`MLeak_cf]
+  CLOpt.mk_symbol_seq ~deprecated:["ml_buckets"; "-ml_buckets"] ~long:"ml-buckets"
+    ~default:[`MLeak_cf]
+    ~exes:CLOpt.[Toplevel]
     "Specify the memory leak buckets to be checked: \
      'cf' checks leaks from Core Foundation, \
      'arc' from code compiled in ARC mode, \
      'narc' from code not compiled in ARC mode, \
      'cpp' from C++ code"
-    ~symbols:[
-      ("all", `MLeak_all);
-      ("cf", `MLeak_cf);
-      ("arc", `MLeak_arc);
-      ("narc", `MLeak_no_arc);
-      ("cpp", `MLeak_cpp);
-      ("unknown_origin", `MLeak_unknown)]
+    ~symbols:ml_bucket_symbols
 
 and models_file =
   CLOpt.mk_string_opt ~deprecated:["models"] ~long:"models"
     ~exes:CLOpt.[Analyze;Java] ~meta:"zip file" "add a zip file containing the models"
 
 and models_mode =
-  CLOpt.mk_bool ~deprecated:["models_mode"] ~long:"models-mode"
+  CLOpt.mk_bool ~deprecated:["models_mode"; "-models_mode"] ~long:"models-mode"
     "Mode for computing the models"
 
 and modified_targets =
@@ -759,10 +849,10 @@ and reports_include_ml_loc =
     "Include the location (in the Infer source code) from where reports are generated"
 
 and results_dir =
-  CLOpt.mk_string ~deprecated:["results_dir"] ~long:"results-dir"
-    ~default:(Filename.concat (Sys.getcwd ()) "infer-out")
+  CLOpt.mk_string ~deprecated:["results_dir"; "-out"] ~long:"results-dir" ~short:"o"
+    ~default:(Sys.getcwd () // "infer-out")
     ~exes:CLOpt.[Analyze;Clang;Java;Llvm;Print;StatsAggregator]
-    ~meta:"dir" "Specify the project results directory"
+    ~meta:"dir" "Write results in the specified directory"
 
 (** name of the file to load save results to *)
 and save_results =
@@ -813,13 +903,14 @@ and specs_library =
       let validate_path path =
         if Filename.is_relative path then
           failwith ("Failing because path " ^ path ^ " is not absolute") in
-      match read_file fname with
+      match read_file (resolve fname) with
       | Some pathlist ->
           IList.iter validate_path pathlist;
           pathlist
-      | None -> failwith ("cannot read file " ^ fname)
+      | None -> failwith ("cannot read file " ^ fname ^ " from cwd " ^ (Sys.getcwd ()))
     in
-    CLOpt.mk_string ~deprecated:["specs-dir-list-file"] ~long:"specs-library-index"
+    CLOpt.mk_string ~deprecated:["specs-dir-list-file"; "-specs-dir-list-file"]
+      ~long:"specs-library-index"
       ~default:""
       ~f:(fun file -> specs_library := (read_specs_dir_list_file file) @ !specs_library; "")
       ~exes:CLOpt.[Analyze] ~meta:"file"
@@ -870,7 +961,7 @@ and test_filtering =
     "List all the files Infer can report on (should be call at the root of the project)"
 
 and testing_mode =
-  CLOpt.mk_bool ~deprecated:["testing_mode"] ~long:"testing-mode"
+  CLOpt.mk_bool ~deprecated:["testing_mode"; "-testing_mode"] ~long:"testing-mode" ~short:"tm"
     "Mode for testing, where no headers are translated, and dot files are created"
 
 (** Flag set to enable detailed tracing informatin during error explanation *)
@@ -1046,7 +1137,7 @@ let use_jar_cache = true
 let exe_usage (exe : CLOpt.exe) =
   match exe with
   | Analyze ->
-      version_string ^ "\
+      version_string ^ "\n\
       Usage: InferAnalyze [options]\n\
       Analyze the files captured in the project results directory, \
       which can be specified with the --results-dir option."
@@ -1063,7 +1154,7 @@ let exe_usage (exe : CLOpt.exe) =
        To process all the .specs in the results directory, use option --results-dir \
        Each spec is printed to standard output unless option -q is used."
   | StatsAggregator ->
-      "Usage: InferStatsAggregator --results-dir <dir> --buck-out <dir>\n \
+      "Usage: InferStatsAggregator --results-dir <dir> --buck-out <dir>\n\
        Aggregates all the perf stats generated by Buck on each target"
   | Toplevel ->
       version_string
@@ -1072,7 +1163,8 @@ let post_parsing_initialization () =
   F.set_margin !margin ;
 
   if !version then (
-    F.fprintf F.std_formatter "%s@." version_string ;
+    (* TODO(11791235) change back to stdout once buck integration is fixed *)
+    F.fprintf F.err_formatter "%s@." version_string ;
     exit 0
   );
   if !version_json then (
@@ -1115,7 +1207,7 @@ let post_parsing_initialization () =
           let zip_channel = Zip.open_in zip_filename in
           let entries = Zip.entries zip_channel in
           let extract_entry entry =
-            let dest_file = Filename.concat dest_dir (Filename.basename entry.Zip.filename) in
+            let dest_file = dest_dir // (Filename.basename entry.Zip.filename) in
             if Filename.check_suffix entry.Zip.filename specs_files_suffix
             then Zip.copy_entry_to_file zip_channel entry dest_file in
           IList.iter extract_entry entries;
@@ -1123,7 +1215,7 @@ let post_parsing_initialization () =
         in
         let basename = Filename.basename zip_filename in
         let key = basename ^ string_crc_hex32 zip_filename in
-        let key_dir = Filename.concat cache_dir key in
+        let key_dir = cache_dir // key in
         if (mkdir key_dir)
         then extract_specs key_dir zip_filename;
         specs_library := !specs_library @ [key_dir]
@@ -1156,7 +1248,8 @@ let post_parsing_initialization () =
 
 
 let parse_args_and_return_usage_exit =
-  let usage_exit = CLOpt.parse ~config_file:inferconfig_path "INFER_ARGS" exe_usage in
+  let usage_exit =
+    CLOpt.parse ~accept_unknown:true ~config_file:inferconfig_path "INFER_ARGS" exe_usage in
   if !debug || (!developer_mode && not (CLOpt.current_exe = CLOpt.Print)) then
     prerr_endline
       ((Filename.basename Sys.executable_name) ^ " got args "
@@ -1170,8 +1263,10 @@ let print_usage_exit () =
 
 (** Freeze initialized configuration values *)
 
-let anon_args = !anon_args
+let anon_args = IList.rev !anon_args
+and rest = !rest
 and abs_struct = !abs_struct
+and absolute_paths = !absolute_paths
 and allow_specs_cleanup = !allow_specs_cleanup
 and analysis_path_regex_whitelist_options =
   IList.map (fun (a, b) -> (a, !b)) analysis_path_regex_whitelist_options
@@ -1187,6 +1282,8 @@ and angelic_execution = !angelic_execution
 and arc_mode = objc_arc
 and array_level = !array_level
 and ast_file = !ast_file
+and blacklist = !blacklist
+and buck = !buck
 and buck_out = !buck_out
 and bugs_csv = !bugs_csv
 and bugs_json = !bugs_json
@@ -1201,9 +1298,10 @@ and clang_lang = !clang_lang
 and cluster_cmdline = !cluster
 and code_query = !code_query
 and continue_capture = !continue
-and create_harness = !harness
+and create_harness = !android_harness
 and cxx_experimental = !cxx_experimental
 and debug_mode = !debug
+and debug_exceptions = !debug_exceptions
 and dependency_mode = !dependencies
 and developer_mode = !developer_mode
 and disable_checks = !disable_checks
@@ -1211,12 +1309,20 @@ and dotty_cfg_libs = !dotty_cfg_libs
 and enable_checks = !enable_checks
 and eradicate = !eradicate
 and err_file_cmdline = !err_file
+and failures_allowed = !failures_allowed
+and filtering = !filtering
+and flavors = !flavors
+and frontend_stats = !frontend_stats
+and headers = !headers
 and infer_cache = !infer_cache
 and iterations = !iterations
 and javac_verbose_out = !verbose_out
+and jobs = !jobs
 and join_cond = !join_cond
 and latex = !latex
+and load_average = !load_average
 and load_analysis_results = !load_results
+and llvm = !llvm
 and makefile_cmdline = !makefile
 and merge = !merge
 and ml_buckets = !ml_buckets

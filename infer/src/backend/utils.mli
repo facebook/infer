@@ -193,6 +193,9 @@ val copy_file : string -> string -> int option
 (** read a source file and return a list of lines, or None in case of error *)
 val read_file : string -> string list option
 
+(** Filename.concat *)
+val ( // ) : string -> string -> string
+
 (** Convert a filename to an absolute one if it is relative, and normalize "." and ".." *)
 val filename_to_absolute : string -> string
 
@@ -254,7 +257,7 @@ val directory_fold : ('a -> string -> 'a) -> 'a -> string -> 'a
 val directory_iter : (string -> unit) -> string -> unit
 
 (** Various kind of analyzers *)
-type analyzer = Infer | Eradicate | Checkers | Tracing
+type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
 
 (** Association list of analyzers and their names *)
 val string_to_analyzer : (string * analyzer) list
@@ -269,6 +272,8 @@ val analyzer_of_string: string -> analyzer
 val read_optional_json_file : string -> (Yojson.Basic.json, string) result
 
 val write_json_to_file : string -> Yojson.Basic.json -> unit
+
+val with_process_in: string -> (in_channel -> 'a) -> 'a
 
 val failwithf : ('a, Format.formatter, unit, 'b) format4 -> 'a
 

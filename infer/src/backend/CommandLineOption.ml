@@ -144,7 +144,9 @@ let mk ?(deprecated=[]) ?(exes=[])
   let closure = mk_setter variable in
   let setter str =
     try closure str
-    with _ -> raise (Arg.Bad ("bad value " ^ str ^ " for flag " ^ long)) in
+    with exc ->
+      raise (Arg.Bad ("bad value " ^ str ^ " for flag " ^ long
+                      ^ " (" ^ (Printexc.to_string exc) ^ ")")) in
   let spec = mk_spec setter in
   let doc =
     let default_string = default_to_string default in
@@ -297,7 +299,7 @@ let mk_symbol_seq ?(default=[]) ~symbols ?(deprecated=[]) ~long ?short ?exes ?(m
   let sym_to_str = IList.map (fun (x,y) -> (y,x)) symbols in
   let of_string str = IList.assoc string_equal str symbols in
   let to_string sym = IList.assoc ( = ) sym sym_to_str in
-  mk ~deprecated ~long ?short ~default ?exes ~meta:(" ,-separated sequence" ^ meta) doc
+  mk ~deprecated ~long ?short ~default ?exes ~meta:(",-separated sequence" ^ meta) doc
     ~default_to_string:(fun syms -> String.concat " " (IList.map to_string syms))
     ~mk_setter:(fun var str_seq ->
         var := IList.map of_string (Str.split (Str.regexp_string ",") str_seq))
@@ -314,13 +316,22 @@ let mk_set_from_json ~default ~default_to_string ~f
     ~decode_json:(fun json -> [dashdash long; Yojson.Basic.to_string json])
     ~mk_spec:(fun set -> Arg.String set)
 
+(* A ref to a function used during argument parsing to process anonymous arguments. By default,
+   anonymous arguments are rejected. *)
 let anon_fun = ref (fun arg -> raise (Arg.Bad ("unexpected anonymous argument: " ^ arg)))
 
+(* Clients declare that anonymous arguments are acceptable by calling [mk_anon], which returns a ref
+   storing the anonymous arguments. *)
 let mk_anon () =
   let anon = ref [] in
   anon_fun := (fun arg -> anon := arg :: !anon) ;
   anon
 
+let mk_rest ?(exes=[]) doc =
+  let rest = ref [] in
+  let spec = Arg.Rest (fun arg -> rest := arg :: !rest) in
+  add exes {long = "--"; short = ""; meta = ""; doc; spec; decode_json = fun _ -> []} ;
+  rest
 
 let decode_inferconfig_to_argv path =
   let json = match read_optional_json_file path with
@@ -378,7 +389,7 @@ let prefix_before_rest args =
   prefix_before_rest_ [] args
 
 
-let parse ?(incomplete=false) ?config_file env_var exe_usage =
+let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var exe_usage =
   let curr_speclist = ref []
   and full_speclist = ref []
   in
@@ -446,13 +457,18 @@ let parse ?(incomplete=false) ?config_file env_var exe_usage =
         let json_args = decode_inferconfig_to_argv path in
         (* read .inferconfig first, as both env vars and command-line options overwrite it *)
         json_args @ env_cl_args in
+  let argv = Array.of_list (exe_name :: all_args) in
   let current = ref 0 in
+  (* tests if msg indicates an unknown option, as opposed to a known option with bad argument *)
+  let is_unknown msg =
+    let prefix = exe_name ^ ": unknown option" in
+    prefix = (String.sub msg 0 (String.length prefix)) in
   let rec parse_loop () =
     try
-      Arg.parse_argv_dynamic ~current (Array.of_list (exe_name :: all_args))
-        curr_speclist !anon_fun usage_msg
+      Arg.parse_argv_dynamic ~current argv curr_speclist !anon_fun usage_msg
     with
     | Arg.Bad _ when incomplete -> parse_loop ()
+    | Arg.Bad msg when accept_unknown && is_unknown msg -> !anon_fun argv.(!current) ; parse_loop ()
     | Arg.Bad usage_msg -> Pervasives.prerr_string usage_msg; exit 2
     | Arg.Help usage_msg -> Pervasives.print_string usage_msg; exit 0
   in

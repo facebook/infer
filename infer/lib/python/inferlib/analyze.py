@@ -153,7 +153,6 @@ infer_group.add_argument('--infer_cache', metavar='<directory>',
 infer_group.add_argument('-pr', '--project_root',
                          dest='project_root',
                          default=get_pwd(),
-                         type=utils.decode,
                          help='Location of the project root '
                          '(default is current directory)')
 
