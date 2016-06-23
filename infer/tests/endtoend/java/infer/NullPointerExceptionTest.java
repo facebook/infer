@@ -75,6 +75,8 @@ public class NullPointerExceptionTest {
         "dereferenceAfterUnlock1",
         "dereferenceAfterUnlock2",
         "optionalNPE",
+        "stringVarEqualsFalseNPE",
+        "stringConstantEqualsFalseNotNPE_FP",
     };
     assertThat(
         "Results should contain " + NULL_DEREFERENCE,

@@ -54,4 +54,12 @@ public final class String {
             throw new StringIndexOutOfBoundsException(offset + length);
     }
 
+    public boolean equals(Object anObject) {
+        if (this == anObject) {
+          return true;
+        } else {
+          return InferUndefined.boolean_undefined();
+        }
+    }
+
 }

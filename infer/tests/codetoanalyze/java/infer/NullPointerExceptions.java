@@ -563,5 +563,45 @@ public class NullPointerExceptions {
     o.orNull().toString();
   }
 
+  void stringConstantEqualsTrueNotNPE() {
+    final String c1 = "Test string!";
+    final String c2 = "Test string!";
+    String s = null;
+    if(c1.equals(c1)) {
+      s = "safe";
+    }
+    s.toString(); // No NPE
+    s = null;
+    if(c1.equals(c2)) {
+      s = "safe";
+    }
+    s.toString(); // No NPE
+  }
+
+  void stringConstantEqualsFalseNotNPE_FP() {
+    // This won't actually cause an NPE, but our current model for String.equals
+    // returns boolean_undefined for all cases other than String constant
+    // equality. Consider handling constant inequality in the future.
+    final String c1 = "Test string 1";
+    final String c2 = "Test string 2";
+    String s = null;
+    if(!c1.equals(c2)) {
+      s = "safe";
+    }
+    s.toString(); // No NPE
+  }
+
+  String getString2() {
+    return "string 2";
+  }
+
+  void stringVarEqualsFalseNPE() {
+    final String c1 = "Test string 1";
+    String c2 = "Test " + getString2();
+    String s = null;
+    if(!c1.equals(c2)) {
+      s.toString(); // NPE
+    }
+  }
 
 }

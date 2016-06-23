@@ -787,6 +787,16 @@
   {
     "bug_type": "NULL_DEREFERENCE",
     "file": "codetoanalyze/java/infer/NullPointerExceptions.java",
+    "procedure": "void NullPointerExceptions.stringConstantEqualsFalseNotNPE_FP()"
+  },
+  {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "codetoanalyze/java/infer/NullPointerExceptions.java",
+    "procedure": "void NullPointerExceptions.stringVarEqualsFalseNPE()"
+  },
+  {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "codetoanalyze/java/infer/NullPointerExceptions.java",
     "procedure": "String NullPointerExceptions.testSystemGetPropertyArgument()"
   },
   {
