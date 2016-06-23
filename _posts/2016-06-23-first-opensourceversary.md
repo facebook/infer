@@ -1,7 +1,7 @@
 ---
 title: Open Sourcing Infer, 1 Year On
 layout: post
-author: jvillard
+author: jul
 category: blog
 ---
 
