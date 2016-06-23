@@ -1161,9 +1161,17 @@ let exp_sub: subst => exp => exp;
 
 let atom_sub: subst => atom => atom;
 
+
+/** apply [subst] to all id's in [instr], including LHS id's */
 let instr_sub: subst => instr => instr;
 
 let hpred_sub: subst => hpred => hpred;
+
+let exp_sub_ids: (Ident.t => exp) => exp => exp;
+
+
+/** apply [f] to id's in [instr]. if [sub_id_binders] is false, [f] is only applied to bound id's */
+let instr_sub_ids: sub_id_binders::bool => (Ident.t => exp) => instr => instr;
 
 
 /** {2 Functions for replacing occurrences of expressions.} */

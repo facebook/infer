@@ -3333,72 +3333,187 @@ let sub_fpv (sub: subst) => IList.flatten (IList.map (fun (_, e) => exp_fpv e) s
 /** Substitutions do not contain binders */
 let sub_av_add = sub_fav_add;
 
-let rec exp_sub (subst: subst) e =>
-  switch e {
-  | Var id =>
-    let rec apply_sub = (
-      fun
-      | [] => e
-      | [(i, e), ...l] =>
-        if (Ident.equal i id) {
-          e
-        } else {
-          apply_sub l
-        }
-    );
-    apply_sub subst
-  | Const (Cexn e1) =>
-    let e1' = exp_sub subst e1;
-    Const (Cexn e1')
+let rec exp_sub_ids (f: Ident.t => exp) exp =>
+  switch exp {
+  | Var id => f id
+  | Lvar _ => exp
+  | Const (Cexn e) =>
+    let e' = exp_sub_ids f e;
+    if (e' === e) {
+      exp
+    } else {
+      Const (Cexn e')
+    }
   | Const (Cclosure c) =>
     let captured_vars =
-      IList.map (fun (exp, pvar, typ) => (exp_sub subst exp, pvar, typ)) c.captured_vars;
-    Const (Cclosure {...c, captured_vars})
-  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _) => e
-  | Cast t e1 =>
-    let e1' = exp_sub subst e1;
-    Cast t e1'
-  | UnOp op e1 typo =>
-    let e1' = exp_sub subst e1;
-    UnOp op e1' typo
+      IList.map_changed
+        (
+          fun ((e, pvar, typ) as captured) => {
+            let e' = exp_sub_ids f e;
+            if (e' === e) {
+              captured
+            } else {
+              (e', pvar, typ)
+            }
+          }
+        )
+        c.captured_vars;
+    if (captured_vars === c.captured_vars) {
+      exp
+    } else {
+      Const (Cclosure {...c, captured_vars})
+    }
+  | Const (Cattribute (Aobjc_null e)) =>
+    let e' = exp_sub_ids f e;
+    if (e' === e) {
+      exp
+    } else {
+      Const (Cattribute (Aobjc_null e'))
+    }
+  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _) => exp
+  | Cast t e =>
+    let e' = exp_sub_ids f e;
+    if (e' === e) {
+      exp
+    } else {
+      Cast t e'
+    }
+  | UnOp op e typ_opt =>
+    let e' = exp_sub_ids f e;
+    if (e' === e) {
+      exp
+    } else {
+      UnOp op e' typ_opt
+    }
   | BinOp op e1 e2 =>
-    let e1' = exp_sub subst e1;
-    let e2' = exp_sub subst e2;
-    BinOp op e1' e2'
-  | Lvar _ => e
-  | Lfield e1 fld typ =>
-    let e1' = exp_sub subst e1;
-    Lfield e1' fld typ
+    let e1' = exp_sub_ids f e1;
+    let e2' = exp_sub_ids f e2;
+    if (e1' === e1 && e2' === e2) {
+      exp
+    } else {
+      BinOp op e1' e2'
+    }
+  | Lfield e fld typ =>
+    let e' = exp_sub_ids f e;
+    if (e' === e) {
+      exp
+    } else {
+      Lfield e' fld typ
+    }
   | Lindex e1 e2 =>
-    let e1' = exp_sub subst e1;
-    let e2' = exp_sub subst e2;
-    Lindex e1' e2'
-  | Sizeof t l s => Sizeof t (Option.map (exp_sub subst) l) s
+    let e1' = exp_sub_ids f e1;
+    let e2' = exp_sub_ids f e2;
+    if (e1' === e1 && e2' === e2) {
+      exp
+    } else {
+      Lindex e1' e2'
+    }
+  | Sizeof t l_opt s =>
+    switch l_opt {
+    | Some l =>
+      let l' = exp_sub_ids f l;
+      if (l' === l) {
+        exp
+      } else {
+        Sizeof t (Some l') s
+      }
+    | None => exp
+    }
   };
 
-let instr_sub (subst: subst) instr => {
-  let id_s id =>
-    switch (exp_sub subst (Var id)) {
+let rec apply_sub subst id =>
+  switch subst {
+  | [] => Var id
+  | [(i, e), ...l] =>
+    if (Ident.equal i id) {
+      e
+    } else {
+      apply_sub l id
+    }
+  };
+
+let exp_sub (subst: subst) e => exp_sub_ids (apply_sub subst) e;
+
+
+/** apply [f] to id's in [instr]. if [sub_id_binders] is false, [f] is only applied to bound id's */
+let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => exp) instr => {
+  let sub_id id =>
+    switch (exp_sub_ids f (Var id)) {
     | Var id' => id'
     | _ => id
     };
-  let exp_s = exp_sub subst;
   switch instr {
-  | Letderef id e t loc => Letderef (id_s id) (exp_s e) t loc
-  | Set e1 t e2 loc => Set (exp_s e1) t (exp_s e2) loc
-  | Prune cond loc true_branch ik => Prune (exp_s cond) loc true_branch ik
-  | Call ret_ids e arg_ts loc cf =>
-    let arg_s (e, t) => (exp_s e, t);
-    Call (IList.map id_s ret_ids) (exp_s e) (IList.map arg_s arg_ts) loc cf
-  | Nullify _ => instr
-  | Abstract _ => instr
-  | Remove_temps temps loc => Remove_temps (IList.map id_s temps) loc
+  | Letderef id rhs_exp typ loc =>
+    let id' =
+      if sub_id_binders {
+        sub_id id
+      } else {
+        id
+      };
+    let rhs_exp' = exp_sub_ids f rhs_exp;
+    if (id' === id && rhs_exp' === rhs_exp) {
+      instr
+    } else {
+      Letderef id' rhs_exp' typ loc
+    }
+  | Set lhs_exp typ rhs_exp loc =>
+    let lhs_exp' = exp_sub_ids f lhs_exp;
+    let rhs_exp' = exp_sub_ids f rhs_exp;
+    if (lhs_exp' === lhs_exp && rhs_exp' === rhs_exp) {
+      instr
+    } else {
+      Set lhs_exp' typ rhs_exp' loc
+    }
+  | Call ret_ids fun_exp actuals call_flags loc =>
+    let ret_ids' =
+      if sub_id_binders {
+        IList.map_changed sub_id ret_ids
+      } else {
+        ret_ids
+      };
+    let fun_exp' = exp_sub_ids f fun_exp;
+    let actuals' =
+      IList.map_changed
+        (
+          fun ((actual, typ) as actual_pair) => {
+            let actual' = exp_sub_ids f actual;
+            if (actual' === actual) {
+              actual_pair
+            } else {
+              (actual', typ)
+            }
+          }
+        )
+        actuals;
+    if (ret_ids' === ret_ids && fun_exp' === fun_exp && actuals' === actuals) {
+      instr
+    } else {
+      Call ret_ids' fun_exp' actuals' call_flags loc
+    }
+  | Prune exp loc true_branch if_kind =>
+    let exp' = exp_sub_ids f exp;
+    if (exp' === exp) {
+      instr
+    } else {
+      Prune exp' loc true_branch if_kind
+    }
+  | Remove_temps ids loc =>
+    let ids' = IList.map_changed sub_id ids;
+    if (ids' === ids) {
+      instr
+    } else {
+      Remove_temps ids' loc
+    }
+  | Nullify _
+  | Abstract _
+  | Declare_locals _
   | Stackop _ => instr
-  | Declare_locals ptl loc =>
-    let pt_s (pv, t) => (pv, t);
-    Declare_locals (IList.map pt_s ptl) loc
   }
 };
+
+
+/** apply [subst] to all id's in [instr], including binder id's */
+let instr_sub (subst: subst) instr => instr_sub_ids sub_id_binders::true (apply_sub subst) instr;
 
 let call_flags_compare cflag1 cflag2 =>
   bool_compare cflag1.cf_virtual cflag2.cf_virtual |>

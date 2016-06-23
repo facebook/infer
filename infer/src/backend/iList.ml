@@ -105,6 +105,19 @@ let append l1 l2 =
 let map f l =
   rev (rev_map f l)
 
+(** like map, but returns the original list if unchanged *)
+let map_changed (f : 'a -> 'a) l =
+  let l', changed =
+    fold_left
+      (fun (l_acc, changed) e ->
+         let e' = f e in
+         e' :: l_acc, changed || e' != e)
+      ([], false)
+      l in
+  if changed
+  then rev l'
+  else l
+
 (** tail-recursive variant of List.mapi *)
 let mapi f l =
   let i = ref 0 in

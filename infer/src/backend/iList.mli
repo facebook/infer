@@ -45,6 +45,9 @@ val fold_right : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
 (** tail-recursive variant of List.map *)
 val map : ('a -> 'b) -> 'a list -> 'b list
 
+(** like map, but returns the original list if unchanged *)
+val map_changed : ('a -> 'a) -> 'a list -> 'a list
+
 (** tail-recursive variant of List.mapi *)
 val mapi : (int -> 'a -> 'b) -> 'a list -> 'b list
 
