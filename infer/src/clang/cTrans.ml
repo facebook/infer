@@ -2293,6 +2293,14 @@ struct
         conditionalOperator_trans trans_state stmt_info stmt_list' expr_info
     | _  -> binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list
 
+  and attributedStmt_trans trans_state stmts attrs =
+    let open Clang_ast_t in
+    match stmts, attrs with
+    | [stmt], [attr] ->
+        (match stmt, attr with
+         | NullStmt _, FallThroughAttr _ -> nullStmt_trans trans_state.succ_nodes
+         | _ -> assert false) (* More cases to come. With the assert false we can find them *)
+    | _ -> assert false (* Expect that this doesn't happen *)
 
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
@@ -2573,6 +2581,9 @@ struct
     | LambdaExpr(_, _, expr_info, decl) ->
         let trans_state' = { trans_state with priority = Free } in
         lambdaExpr_trans trans_state' expr_info decl
+
+    | AttributedStmt (_, stmts, attrs) ->
+        attributedStmt_trans trans_state stmts attrs
 
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: \
