@@ -92,6 +92,7 @@ let captured_dir_name = "captured"
 
 let checks_disabled_by_default = [
   "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL";
+  "UNSAFE_GUARDED_BY_ACCESS";
 ]
 
 let default_failure_name = "ASSERTION_FAILURE"
