@@ -141,6 +141,7 @@ val bugs_csv : outfile option
 val bugs_json : outfile option
 val bugs_txt : outfile option
 val bugs_xml : outfile option
+val changed_files_index : string option
 val calls_csv : outfile option
 val checkers : bool
 val checkers_enabled : bool

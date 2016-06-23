@@ -16,12 +16,9 @@ module F = Format
 
 let trace () = Config.from_env_variable "INFER_TRACE_ONDEMAND"
 
-(** Name of the ondemand file *)
-let ondemand_file () = Config.get_env_variable "INFER_ONDEMAND_FILE"
-
 (** Read the directories to analyze from the ondemand file. *)
 let read_dirs_to_analyze () =
-  let lines_opt = match ondemand_file () with
+  let lines_opt = match Config.changed_files_index with
     | None ->
         None
     | Some fname ->

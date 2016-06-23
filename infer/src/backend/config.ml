@@ -550,6 +550,10 @@ and calls_csv =
   CLOpt.mk_option ~deprecated:["calls"] ~long:"calls-csv" ~f:create_outfile
     ~meta:"calls.csv" "Write individual calls in csv format to calls.csv"
 
+and changed_files_index =
+  CLOpt.mk_string_opt ~long:"changed-files-index" ~exes:CLOpt.[Toplevel] ~meta:"file"
+    "Specify the file containing the list of files from which reactive analysis should start"
+
 and clang_include_to_override =
   CLOpt.mk_string_opt ~long:"clang-include-to-override" ~meta:"dir"
     "Use this option in the uncommon case where the normal compilation process overrides the \
@@ -1289,6 +1293,7 @@ and bugs_csv = !bugs_csv
 and bugs_json = !bugs_json
 and bugs_txt = !bugs_txt
 and bugs_xml = !bugs_xml
+and changed_files_index = !changed_files_index
 and calls_csv = !calls_csv
 and checkers = !checkers
 (** should the checkers be run? *)
