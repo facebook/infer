@@ -75,6 +75,8 @@ let fst3 (x,_,_) = x
 let snd3 (_,x,_) = x
 let trd3 (_,_,x) = x
 
+let int_of_bool b = if b then 1 else 0
+
 (** {2 Useful Modules} *)
 
 (** Set of integers *)

@@ -2585,6 +2585,10 @@ struct
     | AttributedStmt (_, stmts, attrs) ->
         attributedStmt_trans trans_state stmts attrs
 
+    | TypeTraitExpr (_, _, expr_info, type_trait_info) ->
+        let b = type_trait_info.Clang_ast_t.xtti_value in
+        characterLiteral_trans trans_state expr_info (Utils.int_of_bool b)
+
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: \
                Translation need to be defined. Statement ignored.... \n"

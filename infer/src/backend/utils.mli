@@ -71,6 +71,9 @@ val snd3 : 'a * 'b * 'c -> 'b
 (** Return the third component of a triple. *)
 val trd3 : 'a * 'b * 'c -> 'c
 
+(** Convert a bool into an int *)
+val int_of_bool : bool -> int
+
 (** {2 Useful Modules} *)
 
 (** Set of integers *)
