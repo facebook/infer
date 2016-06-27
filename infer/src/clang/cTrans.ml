@@ -369,6 +369,9 @@ struct
     let exp = Sil.Const (Sil.Cint (IntLit.of_int n)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
+  let booleanValue_trans trans_state expr_info b =
+    characterLiteral_trans trans_state expr_info (Utils.int_of_bool b)
+
   let floatingLiteral_trans trans_state expr_info float_string =
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     let exp = Sil.Const (Sil.Cfloat (float_of_string float_string)) in
@@ -2586,8 +2589,10 @@ struct
         attributedStmt_trans trans_state stmts attrs
 
     | TypeTraitExpr (_, _, expr_info, type_trait_info) ->
-        let b = type_trait_info.Clang_ast_t.xtti_value in
-        characterLiteral_trans trans_state expr_info (Utils.int_of_bool b)
+        booleanValue_trans trans_state expr_info type_trait_info.Clang_ast_t.xtti_value
+
+    | CXXNoexceptExpr (_, _, expr_info, cxx_noexcept_expr_info) ->
+        booleanValue_trans trans_state expr_info cxx_noexcept_expr_info.Clang_ast_t.xnee_value
 
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: \

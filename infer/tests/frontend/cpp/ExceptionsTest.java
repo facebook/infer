@@ -35,4 +35,10 @@ public class ExceptionsTest {
     frontendTest("Exceptions.cpp");
   }
 
+  @Test
+  public void testNoExceptionExprDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("noexception.cpp");
+  }
+
 }
