@@ -54,6 +54,10 @@ type zip_library = {
 
 let whitelisted_cpp_methods = [
   ["std"; "move"];
+  ["std"; "forward"];
+  ["std"; "min"];
+  ["std"; "max"];
+  ["std"; "__less"];
   ["google"; "CheckNotNull"];
   ["google"; "GetReferenceableValue"];
   ["google"; "Check_NEImpl"];
