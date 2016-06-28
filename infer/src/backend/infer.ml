@@ -57,6 +57,10 @@ let () =
          ["--android-harness"]) @
       (if not Config.buck then [] else
          ["--buck"]) @
+      (match IList.rev Config.buck_build_args with
+       | args when buck ->
+           IList.map (fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> IList.flatten
+       | _ -> []) @
       (if not Config.debug_mode then [] else
          ["--debug"]) @
       (if not Config.debug_exceptions then [] else

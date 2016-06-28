@@ -526,6 +526,10 @@ and buck =
   CLOpt.mk_bool ~long:"buck"
     "To use when run with buck"
 
+and buck_build_args =
+  CLOpt.mk_string_list ~long:"Xbuck"
+    "Pass values as command-line arguments to invocations of `buck build`"
+
 and buck_out =
   CLOpt.mk_string_opt ~long:"buck-out"
     ~exes:CLOpt.[StatsAggregator] ~meta:"dir" "Specify the root directory of buck-out"
@@ -1293,6 +1297,7 @@ and array_level = !array_level
 and ast_file = !ast_file
 and blacklist = !blacklist
 and buck = !buck
+and buck_build_args = !buck_build_args
 and buck_out = !buck_out
 and bugs_csv = !bugs_csv
 and bugs_json = !bugs_json

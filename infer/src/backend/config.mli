@@ -136,6 +136,7 @@ val array_level : int
 val ast_file : string option
 val blacklist : string option
 val buck : bool
+val buck_build_args : string list
 val buck_out : string option
 val bugs_csv : outfile option
 val bugs_json : outfile option
