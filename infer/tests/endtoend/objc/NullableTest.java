@@ -49,8 +49,9 @@ public class NullableTest {
   public void nullDereferenceTest() throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferC(inferCmdNPD);
     String[] procedures = {
-      "derefNullableParamDirect",
-      "derefNullableParamIndirect"
+        "derefNullableParamDirect",
+        "derefNullableParamIndirect",
+        "parameter_nullable_bug"
     };
     assertThat(
         "Results should contain null pointer dereference error",

@@ -348,11 +348,11 @@ let sil_method_annotation_of_args args : Typ.method_annotation =
   let mk_annot param_name annot_name =
     let annot = { Typ.class_name = annot_name; Typ.parameters = [param_name]; } in
     annot, default_visibility in
-  let arg_to_sil_annot acc (arg_name, type_ptr) =
+  let arg_to_sil_annot (arg_name, type_ptr) acc  =
     if CFrontend_utils.Ast_utils.is_type_nullable type_ptr then
       [mk_annot arg_name Annotations.nullable] :: acc
-    else acc in
-  let param_annots = IList.fold_left arg_to_sil_annot [] args in
+    else Typ.item_annotation_empty::acc in
+  let param_annots = IList.fold_right arg_to_sil_annot args []  in
   (* TODO: parse annotations on return value *)
   let retval_annot = [] in
   retval_annot, param_annots

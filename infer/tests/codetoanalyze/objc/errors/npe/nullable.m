@@ -38,6 +38,20 @@ A* derefNullableParamOk(A* __nullable param) {
   return param;
 }
 
+int parameter_nullable_ok(NSString* body,
+                          __nullable NSString* linkTapAction,
+                          A* options) {
+  return options->fld;
+}
+
+int parameter_nullable_bug(__nullable A* options,
+                           NSAttributedString* body,
+                           NSString* linkTapAction)
+
+{
+  return options->fld;
+}
+
 int readNullableParamPropertyOk(B* __nullable param) { return param.prop; }
 
 void writeNullableParamPropertyOk(B* __nullable param) { param.prop = 7; }
