@@ -361,12 +361,15 @@ let pp_failure_kind_opt fmt failure_kind_opt = match failure_kind_opt with
   | Some failure_kind -> SymOp.pp_failure_kind fmt failure_kind
   | None -> F.fprintf fmt "NONE"
 
-let pp_stats err_log whole_seconds fmt stats =
-  F.fprintf fmt "TIME:%a FAILURE:%a SYMOPS:%d CALLS:%d,%d@\n" (pp_time whole_seconds)
-    stats.stats_time pp_failure_kind_opt stats.stats_failure stats.symops
-    stats.stats_calls.Cg.in_calls stats.stats_calls.Cg.out_calls;
+let pp_errlog fmt err_log =
   F.fprintf fmt "ERRORS: @[<h>%a@]@." Errlog.pp_errors err_log;
   F.fprintf fmt "WARNINGS: @[<h>%a@]" Errlog.pp_warnings err_log
+
+let pp_stats whole_seconds fmt stats =
+  F.fprintf fmt "TIME:%a FAILURE:%a SYMOPS:%d CALLS:%d,%d@\n" (pp_time whole_seconds)
+    stats.stats_time pp_failure_kind_opt stats.stats_failure stats.symops
+    stats.stats_calls.Cg.in_calls stats.stats_calls.Cg.out_calls
+
 
 (** Print the spec *)
 let pp_spec pe num_opt fmt spec =
@@ -385,7 +388,7 @@ let pp_spec pe num_opt fmt spec =
   | PP_HTML ->
       F.fprintf fmt "--------------------------- %s ---------------------------@\n" num_str;
       F.fprintf fmt "PRE:@\n%a%a%a@\n" Io_infer.Html.pp_start_color Blue (Prop.pp_prop (pe_html Blue)) pre Io_infer.Html.pp_end_color ();
-      F.fprintf fmt "%a" (Propgraph.pp_proplist pe_post "POST" (Jprop.to_prop spec.pre, true)) post_list;
+      F.fprintf fmt "%a" (Propgraph.pp_proplist pe_post "POST" (pre, true)) post_list;
       F.fprintf fmt "----------------------------------------------------------------"
   | PP_LATEX ->
       F.fprintf fmt "\\textbf{\\large Requires}\\\\@\n@[%a%a%a@]\\\\@\n" Latex.pp_color Blue (Prop.pp_prop (pe_latex Blue)) pre Latex.pp_color pe.pe_color;
@@ -444,9 +447,6 @@ let pp_summary_no_stats_specs fmt summary =
   F.fprintf fmt "%a@\n" pp_pair (describe_phase summary);
   F.fprintf fmt "Dependency_map: @[%a@]@\n" pp_dependency_map summary.dependency_map
 
-let pp_stats_html err_log fmt =
-  Errlog.pp_html [] fmt err_log
-
 let get_specs_from_payload summary =
   match summary.payload.preposts with
   | Some specs -> NormSpec.tospecs specs
@@ -458,13 +458,15 @@ let pp_summary pe whole_seconds fmt summary =
   match pe.pe_kind with
   | PP_TEXT ->
       pp_summary_no_stats_specs fmt summary;
-      F.fprintf fmt "%a@\n" (pp_stats err_log whole_seconds) summary.stats;
+      F.fprintf fmt "%a@\n" pp_errlog err_log;
+      F.fprintf fmt "%a@\n" (pp_stats whole_seconds) summary.stats;
       F.fprintf fmt "%a" (pp_specs pe) (get_specs_from_payload summary)
   | PP_HTML ->
       Io_infer.Html.pp_start_color fmt Black;
       F.fprintf fmt "@\n%a" pp_summary_no_stats_specs summary;
       Io_infer.Html.pp_end_color fmt ();
-      pp_stats_html err_log fmt;
+      F.fprintf fmt "<br />%a<br />@\n" (pp_stats whole_seconds) summary.stats;
+      Errlog.pp_html [] fmt err_log;
       Io_infer.Html.pp_hline fmt ();
       F.fprintf fmt "<LISTING>@\n";
       pp_specs pe fmt (get_specs_from_payload summary);
@@ -472,7 +474,8 @@ let pp_summary pe whole_seconds fmt summary =
   | PP_LATEX ->
       F.fprintf fmt "\\begin{verbatim}@\n";
       pp_summary_no_stats_specs fmt summary;
-      F.fprintf fmt "%a@\n" (pp_stats err_log whole_seconds) summary.stats;
+      F.fprintf fmt "%a@\n" pp_errlog err_log;
+      F.fprintf fmt "%a@\n" (pp_stats whole_seconds) summary.stats;
       F.fprintf fmt "\\end{verbatim}@\n";
       F.fprintf fmt "%a@\n" (pp_specs pe) (get_specs_from_payload summary)
 
