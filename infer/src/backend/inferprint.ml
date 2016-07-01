@@ -24,7 +24,7 @@ let handle_source_file_copy_option () = match !source_file_copy with
       exit 0
 
 let print_usage_exit err_s =
-  L.err "Load Error: %s@.@." err_s;
+  L.stderr "Load Error: %s@.@." err_s;
   Config.print_usage_exit ()
 
 (** return the list of the .specs files in the results dir and libs, if they're defined *)
@@ -740,23 +740,23 @@ module PreconditionStats = struct
     match Prop.CategorizePreconditions.categorize preconditions with
     | Prop.CategorizePreconditions.Empty ->
         incr nr_empty;
-        L.out "Procedure: %a footprint:Empty@." Procname.pp proc_name
+        L.stdout "Procedure: %a footprint:Empty@." Procname.pp proc_name
     | Prop.CategorizePreconditions.OnlyAllocation ->
         incr nr_onlyallocation;
-        L.out "Procedure: %a footprint:OnlyAllocation@." Procname.pp proc_name
+        L.stdout "Procedure: %a footprint:OnlyAllocation@." Procname.pp proc_name
     | Prop.CategorizePreconditions.NoPres ->
         incr nr_nopres;
-        L.out "Procedure: %a footprint:NoPres@." Procname.pp proc_name
+        L.stdout "Procedure: %a footprint:NoPres@." Procname.pp proc_name
     | Prop.CategorizePreconditions.DataConstraints ->
         incr nr_dataconstraints;
-        L.out "Procedure: %a footprint:DataConstraints@." Procname.pp proc_name
+        L.stdout "Procedure: %a footprint:DataConstraints@." Procname.pp proc_name
 
   let pp_stats () =
-    L.out "@.Precondition stats@.";
-    L.out "Procedures with no preconditions: %d@." !nr_nopres;
-    L.out "Procedures with empty precondition: %d@." !nr_empty;
-    L.out "Procedures with only allocation conditions: %d@." !nr_onlyallocation;
-    L.out "Procedures with data constraints: %d@." !nr_dataconstraints
+    L.stdout "@.Precondition stats@.";
+    L.stdout "Procedures with no preconditions: %d@." !nr_nopres;
+    L.stdout "Procedures with empty precondition: %d@." !nr_empty;
+    L.stdout "Procedures with only allocation conditions: %d@." !nr_onlyallocation;
+    L.stdout "Procedures with data constraints: %d@." !nr_dataconstraints
 end
 
 (** Process a summary *)
@@ -766,7 +766,7 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
   let pp_simple_saved = !Config.pp_simple in
   Config.pp_simple := true;
   if Config.quiet then ()
-  else L.out "Procedure: %a@\n%a@."
+  else L.stdout "Procedure: %a@\n%a@."
       Procname.pp proc_name (Specs.pp_summary pe_text Config.whole_seconds) summary;
   let error_filter error_desc error_name =
     let always_report () =
@@ -863,7 +863,7 @@ module AnalysisResults = struct
     let load_file fname =
       match Specs.load_summary (DB.filename_from_string fname) with
       | None ->
-          L.err "Error: cannot open file %s@." fname;
+          L.stderr "Error: cannot open file %s@." fname;
           exit 0
       | Some summary ->
           summaries := (fname, summary) :: !summaries in
@@ -885,7 +885,7 @@ module AnalysisResults = struct
     let do_spec f fname =
       match Specs.load_summary (DB.filename_from_string fname) with
       | None ->
-          L.err "Error: cannot open file %s@." fname;
+          L.stderr "Error: cannot open file %s@." fname;
           exit 0
       | Some summary ->
           f (fname, summary) in
@@ -928,7 +928,7 @@ module AnalysisResults = struct
           | Some r ->
               iterator_of_summary_list r
           | None ->
-              L.err "Error: cannot open analysis results file %s@." fname;
+              L.stderr "Error: cannot open analysis results file %s@." fname;
               exit 0
         end
 end
