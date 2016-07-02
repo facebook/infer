@@ -15,6 +15,7 @@ let () =
   let open OUnit2 in
   let tests = [
     AbstractInterpreterTests.tests;
+    AccessPathTests.tests;
     AddressTakenTests.tests;
     CopyPropagationTests.tests;
     ProcCfgTests.tests;
