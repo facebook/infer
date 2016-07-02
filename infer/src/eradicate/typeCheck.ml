@@ -117,7 +117,7 @@ module ComplexExpressions = struct
       | Sil.Dretcall _ ->
           case_not_handled ()
       | Sil.Dpvar pv
-      | Sil.Dpvaraddr pv when not (Errdesc.pvar_is_frontend_tmp pv) ->
+      | Sil.Dpvaraddr pv when not (Pvar.is_frontend_tmp pv) ->
           Pvar.to_string pv
       | Sil.Dpvar _
       | Sil.Dpvaraddr _ (* front-end variable -- this should not happen) *) ->
@@ -328,8 +328,7 @@ let typecheck_instr
         Errdesc.find_normal_variable_funcall node' id <> None ->
         handle_function_call node' id
     | Sil.Lvar pvar when
-        ComplexExpressions.functions_idempotent () &&
-        Errdesc.pvar_is_frontend_tmp pvar ->
+        ComplexExpressions.functions_idempotent () && Pvar.is_frontend_tmp pvar ->
         let frontend_variable_assignment =
           Errdesc.find_program_variable_assignment node pvar in
         begin
@@ -441,7 +440,7 @@ let typecheck_instr
     let typestate' = handle_pvar typestate pvar in
     let curr_node = TypeErr.InstrRef.get_node instr_ref in
     let frontent_variable_assignment =
-      if Errdesc.pvar_is_frontend_tmp pvar
+      if Pvar.is_frontend_tmp pvar
       then Errdesc.find_program_variable_assignment curr_node pvar
       else None in
     match frontent_variable_assignment with
@@ -1058,7 +1057,7 @@ let typecheck_instr
             let c' = Idenv.expand_expr idenv _cond in
             if not (Sil.exp_equal c' _cond) then normalize_cond _node c'
             else _node, c'
-        | Sil.Lvar pvar when Errdesc.pvar_is_frontend_tmp pvar ->
+        | Sil.Lvar pvar when Pvar.is_frontend_tmp pvar ->
             (match handle_assignment_in_condition pvar with
              | None ->
                  (match Errdesc.find_program_variable_assignment _node pvar with

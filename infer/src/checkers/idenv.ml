@@ -50,7 +50,7 @@ let expand_expr idenv e = match e with
 let expand_expr_temps idenv node _exp =
   let exp = expand_expr idenv _exp in
   match exp with
-  | Sil.Lvar pvar when Errdesc.pvar_is_frontend_tmp pvar ->
+  | Sil.Lvar pvar when Pvar.is_frontend_tmp pvar ->
       (match Errdesc.find_program_variable_assignment node pvar with
        | None -> exp
        | Some (_, id) ->
@@ -61,5 +61,5 @@ let expand_expr_temps idenv node _exp =
 let exp_is_temp idenv e =
   match expand_expr idenv e with
   | Sil.Lvar pvar ->
-      Errdesc.pvar_is_frontend_tmp pvar
+      Pvar.is_frontend_tmp pvar
   | _ -> false

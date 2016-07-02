@@ -113,7 +113,7 @@ struct
       let filter_arg (e, _) = match e with
         | Sil.Lvar pvar ->
             (* same temporary variable does not imply same value *)
-            not (Errdesc.pvar_is_frontend_tmp pvar)
+            not (Pvar.is_frontend_tmp pvar)
         | _ -> true in
       IList.for_all filter_arg args in
 
