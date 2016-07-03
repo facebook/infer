@@ -11,7 +11,9 @@ open! Utils
 
 module F = Format
 
-module InstrCfg = ProcCfg.OneInstrPerNode (ProcCfg.Exceptional)
+module BackwardCfg = ProcCfg.Backward (ProcCfg.Normal)
+module InstrCfg = ProcCfg.OneInstrPerNode (ProcCfg.Normal)
+module BackwardInstrCfg = ProcCfg.Backward (InstrCfg)
 
 let tests =
   let cfg = Cfg.Node.create_cfg () in
@@ -41,6 +43,8 @@ let tests =
 
   let normal_proc_cfg = ProcCfg.Normal.from_pdesc test_pdesc in
   let exceptional_proc_cfg = ProcCfg.Exceptional.from_pdesc test_pdesc in
+  let backward_proc_cfg = BackwardCfg.from_pdesc test_pdesc in
+  let backward_instr_proc_cfg = BackwardInstrCfg.from_pdesc test_pdesc in
 
   let open OUnit2 in
   let cmp l1 l2 =
@@ -52,20 +56,87 @@ let tests =
     F.fprintf fmt "Expected output %a but got %a" pp_node_list expected pp_node_list actual in
   let create_test input expected _ =
     assert_equal ~cmp ~pp_diff input expected in
-  let normal_exceptional_tests = [
-    (* test the succs of the normal cfg *)
+  let instr_test =
+    let instr_test_ _ =
+      begin
+        match ProcCfg.Normal.instrs n1 with
+        | [instr1; instr2] ->
+            assert_bool "First instr should be dummy_instr1" (instr1 == dummy_instr1);
+            assert_bool "Second instr should be dummy_instr2" (instr2 == dummy_instr2);
+        | _ -> assert_failure "Expected exactly two instructions"
+      end;
+      begin
+        match BackwardCfg.instrs n1 with
+        | [instr1; instr2] ->
+            assert_bool "First instr should be dummy_instr2" (instr1 == dummy_instr2);
+            assert_bool "Second instr should be dummy_instr1" (instr2 == dummy_instr1);
+        | _ -> assert_failure "Expected exactly two instructions"
+      end;
+      begin
+        let node_id, _ = InstrCfg.id n1 in
+        match InstrCfg.instr_ids n1 with
+        | [ (instr1, Some (id1, ProcCfg.Instr_index 0));
+            (instr2, Some (id2, ProcCfg.Instr_index 1)); ] ->
+            assert_bool "First instr should be dummy_instr1" (instr1 == dummy_instr1);
+            assert_bool "Second instr should be dummy_instr2" (instr2 == dummy_instr2);
+            assert_bool "id1 should be id of underlying node" (id1 == node_id);
+            assert_bool "id2 should be id of underlying node" (id2 == node_id);
+        | _ -> assert_failure "Expected exactly two instructions with correct indices"
+      end;
+      let backward_node_id, _ = BackwardInstrCfg.id n1 in
+      match BackwardInstrCfg.instr_ids n1 with
+      | [ (instr1, Some (id1, ProcCfg.Instr_index 1));
+          (instr2, Some (id2, ProcCfg.Instr_index 0)); ] ->
+          assert_bool "First instr should be dummy_instr2" (instr1 == dummy_instr2);
+          assert_bool "Second instr should be dummy_instr1" (instr2 == dummy_instr1);
+          assert_bool "id1 should be id of underlying node" (id1 == backward_node_id);
+          assert_bool "id2 should be id of underlying node" (id2 == backward_node_id);
+      | _ -> assert_failure "Expected exactly two instructions with correct indices" in
+    "instr_test">::instr_test_ in
+
+  let graph_tests = [
+    (* test the succs of the normal cfg. forward... *)
     ("succs_n1", ProcCfg.Normal.succs normal_proc_cfg n1, [n2]);
     ("normal_succs_n1", ProcCfg.Normal.normal_succs normal_proc_cfg n1, [n2]);
     ("succs_n2", ProcCfg.Normal.succs normal_proc_cfg n2, [n4]);
     ("normal_succs_n2", ProcCfg.Normal.normal_succs normal_proc_cfg n2, [n4]);
     ("succs_n3", ProcCfg.Normal.succs normal_proc_cfg n3, [n4]);
     ("normal_succs_n3", ProcCfg.Normal.normal_succs normal_proc_cfg n3, [n4]);
-    (* test the preds of the normal cfg *)
+    (* ... and backward... *)
+    ("succs_n1_bw", BackwardCfg.preds backward_proc_cfg n1, [n2]);
+    ("normal_succs_n1_bw", BackwardCfg.normal_preds backward_proc_cfg n1, [n2]);
+    ("succs_n2_bw", BackwardCfg.preds backward_proc_cfg n2, [n4]);
+    ("normal_succs_n2_bw", BackwardCfg.normal_preds backward_proc_cfg n2, [n4]);
+    ("succs_n3_bw", BackwardCfg.preds backward_proc_cfg n3, [n4]);
+    ("normal_succs_n3_bw", BackwardCfg.normal_preds backward_proc_cfg n3, [n4]);
+    (* ...and make sure it all works when using backward + instr cfg *)
+    ("succs_n1_bw_instrcfg", BackwardInstrCfg.preds backward_instr_proc_cfg n1, [n2]);
+    ("normal_succs_n1_bw_instrcfg", BackwardInstrCfg.normal_preds backward_instr_proc_cfg n1, [n2]);
+    ("succs_n2_bw_instrcfg", BackwardInstrCfg.preds backward_instr_proc_cfg n2, [n4]);
+    ("normal_succs_n2_bw_instrcfg", BackwardInstrCfg.normal_preds backward_instr_proc_cfg n2, [n4]);
+    ("succs_n3_bw_instrcfg", BackwardInstrCfg.preds backward_instr_proc_cfg n3, [n4]);
+    ("normal_succs_n3_bw_instrcfg", BackwardInstrCfg.normal_preds backward_instr_proc_cfg n3, [n4]);
+
+    (* test the preds of the normal cfg... *)
     ("preds_n2", ProcCfg.Normal.normal_preds normal_proc_cfg n2, [n1]);
     ("normal_preds_n2", ProcCfg.Normal.normal_preds normal_proc_cfg n2, [n1]);
+    (* ...and the backward cfg... *)
+    ("preds_n2_bw", BackwardCfg.normal_succs backward_proc_cfg n2, [n1]);
+    ("normal_preds_n2_bw", BackwardCfg.normal_succs backward_proc_cfg n2, [n1]);
+    (* ...and again make sure it works with backward + instr cfg *)
+    ("preds_n2_bw_instr", BackwardInstrCfg.normal_succs backward_instr_proc_cfg n2, [n1]);
+    ("normal_preds_n2_bw_instr", BackwardInstrCfg.normal_succs backward_instr_proc_cfg n2, [n1]);
+
     (* we shouldn't see any exn succs or preds even though we added them *)
     ("no_exn_succs_n1", ProcCfg.Normal.exceptional_succs normal_proc_cfg n1, []);
     ("no_exn_preds_n3", ProcCfg.Normal.exceptional_preds normal_proc_cfg n3, []);
+    (* same in the backward cfg *)
+    ("no_exn_succs_n1_bw", BackwardCfg.exceptional_preds backward_proc_cfg n1, []);
+    ("no_exn_preds_n3_bw", BackwardCfg.exceptional_succs backward_proc_cfg n3, []);
+    (* same in backward + instr cfg *)
+    ("no_exn_succs_n1_bw_instr", BackwardInstrCfg.exceptional_preds backward_instr_proc_cfg n1, []);
+    ("no_exn_preds_n3_bw_instr", BackwardInstrCfg.exceptional_succs backward_instr_proc_cfg n3, []);
+
 
     (* now, test the exceptional succs in the exceptional cfg. *)
     ("exn_succs_n1", ProcCfg.Exceptional.exceptional_succs exceptional_proc_cfg n1, [n3]);
@@ -85,5 +156,5 @@ let tests =
     ("exn_normal_preds_n2", ProcCfg.Exceptional.normal_preds exceptional_proc_cfg n2, [n1]);
   ]
     |> IList.map (fun (name, test, expected) -> name>::create_test test expected) in
-  let tests = normal_exceptional_tests in
+  let tests = instr_test :: graph_tests in
   "procCfgSuite">:::tests
