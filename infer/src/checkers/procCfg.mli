@@ -11,11 +11,12 @@
     file). Defines useful wrappers that allows us to do tricks like turn a forward cfg to into a
     backward one, or view a cfg as having a single instruction per block *)
 
+type index = Node_index | Instr_index of int
+
 module type Node = sig
   type t
   type id
 
-  val instrs : t -> Sil.instr list
   val kind : t -> Cfg.Node.nodekind
   val id : t -> id
   val id_compare : id -> id -> int
@@ -27,6 +28,13 @@ module type S = sig
   type node
   include (Node with type t := node)
 
+  (** get the instructions from a node *)
+  val instrs : node -> Sil.instr list
+  (** explode a block into its instructions and an optional id for the instruction. the purpose of
+      this is to specify a policy for fine-grained storage of invariants by the abstract
+      interpreter. the interpreter will forget invariants at program points where the id is None,
+      and remember them otherwise *)
+  val instr_ids : node -> (Sil.instr * id option) list
   val succs : t -> node -> node list
   (** all predecessors (normal and exceptional) *)
   val preds : t -> node -> node list
@@ -47,10 +55,7 @@ end
 
 module DefaultNode : Node with type t = Cfg.Node.t and type id = Cfg.Node.id
 
-type instr_index = int
-type instr_node = { node: DefaultNode.t; instr_index: instr_index; num_instrs: int; }
-
-module OneInstrNode : Node with type t = instr_node and type id = Cfg.Node.id * instr_index
+module InstrNode : Node with type t = Cfg.Node.t and type id = Cfg.Node.id * index
 
 (** Forward CFG with no exceptional control-flow *)
 module Normal : S with type t = Cfg.Procdesc.t
@@ -67,10 +72,10 @@ module Backward (Base : S) : S with type t = Base.t
                                 and type node = Base.node
                                 and type id = Base.id
 
-module OneInstrPerNode (Base : S with type node = DefaultNode.t) :
+module OneInstrPerNode (Base : S with type node = DefaultNode.t and type id = DefaultNode.id) :
   S with type t = Base.t
-     and type node = OneInstrNode.t
-     and type id = OneInstrNode.id
+     and type node = Base.node
+     and type id = Base.id * index
 
 module NodeIdMap (CFG : S) : Map.S with type key = CFG.id
 

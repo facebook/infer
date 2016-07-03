@@ -41,61 +41,8 @@ let tests =
 
   let normal_proc_cfg = ProcCfg.Normal.from_pdesc test_pdesc in
   let exceptional_proc_cfg = ProcCfg.Exceptional.from_pdesc test_pdesc in
-  let instr_cfg = InstrCfg.from_pdesc test_pdesc in
 
   let open OUnit2 in
-  let instr_cfg_test =
-    let instr_cfg_test_ _ =
-      (* CFG should look like: dummy_instr1 -> dummy_instr2 -> dummy_instr3 *)
-      let assert_one_instr node =
-        let instrs = InstrCfg.instrs node in
-        assert_bool "Nodes should contain one instruction" ((IList.length instrs) = 1);
-        IList.hd instrs in
-      let assert_one_normal_succ node =
-        let succs = InstrCfg.normal_succs instr_cfg node in
-        assert_bool "Should only have one succ" ((IList.length succs) = 1);
-        IList.hd succs in
-      let assert_one_normal_pred node =
-        let preds = InstrCfg.normal_preds instr_cfg node in
-        assert_bool "Should only have one pred" ((IList.length preds) = 1);
-        IList.hd preds in
-      let assert_one_exceptional_succ node =
-        let exceptional_succs = InstrCfg.exceptional_succs instr_cfg node in
-        assert_bool "Should only have one exceptional succ" ((IList.length exceptional_succs) = 1);
-        IList.hd exceptional_succs in
-      (* walk forward through the CFG and make sure everything looks ok *)
-      let start_node = InstrCfg.start_node instr_cfg in
-      let instr1 = assert_one_instr start_node in
-      assert_bool "instr should be dummy_instr1" (instr1 = dummy_instr1);
-      let succ_node1 = assert_one_normal_succ start_node in
-      let instr2 = assert_one_instr succ_node1 in
-      assert_bool "instr should be dummy_instr2" (instr2 = dummy_instr2);
-      let succ_node2 = assert_one_normal_succ succ_node1 in
-      let instr3 = assert_one_instr succ_node2 in
-      assert_bool "instr should be dummy_instr3" (instr3 = dummy_instr3);
-      (* test exceptional edges *)
-      assert_bool
-        "internal nodes should have no exceptional succs"
-        ((InstrCfg.exceptional_succs instr_cfg start_node) = []);
-      assert_bool
-        "external nodes should have no exceptional preds"
-        ((InstrCfg.exceptional_preds instr_cfg succ_node1) = []);
-      let exceptional_succ = assert_one_exceptional_succ succ_node1 in
-      let exc_instr = assert_one_instr exceptional_succ in
-      assert_bool "instr should be dummy_inst4" (exc_instr = dummy_instr4);
-      let exceptional_preds = InstrCfg.exceptional_preds instr_cfg exceptional_succ in
-      assert_bool
-        "n3 should have two exceptional preds"
-        ((IList.length exceptional_preds) = 2);
-      (* now, do the same thing going backward *)
-      let pred_node1 = assert_one_normal_pred succ_node2 in
-      let instr2 = assert_one_instr pred_node1 in
-      assert_bool "instr should be dummy_instr2" (instr2 = dummy_instr2);
-      let start_node = assert_one_normal_pred pred_node1 in
-      let instr1 = assert_one_instr start_node in
-      assert_bool "instr should be dummy_instr1" (instr1 = dummy_instr1) in
-    "instr_cfg_test">::instr_cfg_test_ in
-
   let cmp l1 l2 =
     let sort = IList.sort Cfg.Node.compare in
     IList.equal Cfg.Node.compare (sort l1) (sort l2) in
@@ -138,5 +85,5 @@ let tests =
     ("exn_normal_preds_n2", ProcCfg.Exceptional.normal_preds exceptional_proc_cfg n2, [n1]);
   ]
     |> IList.map (fun (name, test, expected) -> name>::create_test test expected) in
-  let tests = instr_cfg_test :: normal_exceptional_tests in
+  let tests = normal_exceptional_tests in
   "procCfgSuite">:::tests

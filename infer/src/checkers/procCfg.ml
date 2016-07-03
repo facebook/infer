@@ -15,11 +15,12 @@ module F = Format
     file). Defines useful wrappers that allows us to do tricks like turn a forward cfg into a
     backward one, or view a cfg as having a single instruction per node. *)
 
+type index = Node_index | Instr_index of int
+
 module type Node = sig
   type t
   type id
 
-  val instrs : t -> Sil.instr list
   val kind : t -> Cfg.Node.nodekind
   val id : t -> id
   val id_compare : id -> id -> int
@@ -30,38 +31,34 @@ module DefaultNode = struct
   type t = Cfg.Node.t
   type id = Cfg.Node.id
 
-  let instrs = Cfg.Node.get_instrs
   let kind = Cfg.Node.get_kind
   let id = Cfg.Node.get_id
   let id_compare = Cfg.Node.id_compare
   let pp_id = Cfg.Node.pp_id
 end
 
-type instr_index = int
-type instr_node = { node: DefaultNode.t; instr_index: instr_index; num_instrs: int; }
+module InstrNode = struct
+  type t = Cfg.Node.t
+  type id = Cfg.Node.id * index
 
-module OneInstrNode = struct
-  type t = instr_node
-  type id = DefaultNode.id * instr_index
+  let kind = Cfg.Node.get_kind
 
-  let instrs t =
-    match DefaultNode.instrs t.node with
-    | [] -> []
-    | instrs -> [IList.nth instrs t.instr_index]
+  let id t = Cfg.Node.get_id t, Node_index
 
-  let kind t =
-    DefaultNode.kind t.node
+  let index_compare index1 index2 = match index1, index2 with
+    | Node_index, Node_index -> 0
+    | Instr_index i1, Instr_index i2 -> int_compare i1 i2
+    | Node_index, Instr_index _ -> 1
+    | Instr_index _, Node_index -> -1
 
-  let id t =
-    DefaultNode.id t.node, t.instr_index
-
-  let id_compare (t_id1, i_index1) (t_id2, i_index2) =
-    let n = DefaultNode.id_compare t_id1 t_id2 in
+  let id_compare (id1, index1) (id2, index2) =
+    let n = Cfg.Node.id_compare id1 id2 in
     if n <> 0 then n
-    else int_compare i_index1 i_index2
+    else index_compare index1 index2
 
-  let pp_id fmt (id, index) =
-    F.fprintf fmt "(%a: %d)" DefaultNode.pp_id id index
+  let pp_id fmt (id, index) = match index with
+    | Node_index -> Cfg.Node.pp_id fmt id
+    | Instr_index i -> F.fprintf fmt "(%a: %d)" Cfg.Node.pp_id id i
 end
 
 module type S = sig
@@ -69,6 +66,13 @@ module type S = sig
   type node
   include (Node with type t := node)
 
+  (** get the instructions from a node *)
+  val instrs : node -> Sil.instr list
+  (** explode a block into its instructions and an optional id for the instruction. the purpose of
+      this is to specify a policy for fine-grained storage of invariants by the abstract
+      interpreter. the interpreter will forget invariants at program points where the id is None,
+      and remember them otherwise *)
+  val instr_ids : node -> (Sil.instr * id option) list
   val succs : t -> node -> node list
   (** all predecessors (normal and exceptional) *)
   val preds : t -> node -> node list
@@ -93,6 +97,8 @@ module Normal = struct
   type node = DefaultNode.t
   include (DefaultNode : module type of DefaultNode with type t := node)
 
+  let instrs = Cfg.Node.get_instrs
+  let instr_ids n = IList.map (fun i -> i, None) (instrs n)
   let normal_succs _ n = Cfg.Node.get_succs n
   let normal_preds _ n = Cfg.Node.get_preds n
   (* prune away exceptional control flow *)
@@ -131,6 +137,10 @@ module Exceptional = struct
     let exceptional_preds =
       IList.fold_left add_exn_preds Cfg.IdMap.empty (Cfg.Procdesc.get_nodes pdesc) in
     pdesc, exceptional_preds
+
+  let instrs = Cfg.Node.get_instrs
+
+  let instr_ids n = IList.map (fun i -> i, None) (instrs n)
 
   let nodes (t, _) = Cfg.Procdesc.get_nodes t
 
@@ -175,6 +185,7 @@ end
 module Backward (Base : S) = struct
   include Base
   let instrs n = IList.rev (Base.instrs n)
+  let instr_ids n = IList.rev (Base.instr_ids n)
 
   let succs = Base.preds
   let preds = Base.succs
@@ -186,74 +197,19 @@ module Backward (Base : S) = struct
   let exceptional_preds = Base.exceptional_succs
 end
 
-(** Wrapper that views the CFG as if it has at most one instruction per node *)
-module OneInstrPerNode (Base : S with type node = DefaultNode.t) = struct
-  type t = Base.t
-  type node = OneInstrNode.t
-  include (OneInstrNode : module type of OneInstrNode with type t := node)
+module OneInstrPerNode (Base : S with type node = Cfg.Node.t
+                                  and type id = Cfg.Node.id) = struct
+  include (Base : module type of Base with type id := Cfg.Node.id and type t = Base.t)
+  type id = Base.id * index
+  include (InstrNode : module type of InstrNode with type t := node and type id := id)
 
-  let create_node cfg_node =
-    let num_instrs = IList.length (Base.instrs cfg_node) in
-    { node = cfg_node; instr_index = 0; num_instrs; }
-
-  let create_pred_node cfg_node =
-    let num_instrs = IList.length (Base.instrs cfg_node) in
-    { node = cfg_node; instr_index = num_instrs - 1; num_instrs; }
-
-  let get_succs n f_get_succs =
-    if n.instr_index >= n.num_instrs - 1 then
-      IList.map create_node (f_get_succs n.node)
-    else
-      let instr_index = n.instr_index + 1 in
-      [{ n with instr_index; }]
-
-  let succs t n =
-    get_succs n (Base.succs t)
-
-  let normal_succs t n =
-    get_succs n (Base.normal_succs t)
-
-  let exceptional_succs t n =
-    (* nodes are structured in such a way that exceptions should not occur in the middle. so if the
-       next instruction is in the same node as the current instruction, there are no exceptional
-       succs. *)
-    if n.instr_index < n.num_instrs - 1
-    then []
-    else get_succs n (Base.exceptional_succs t)
-
-  let get_preds n f_get_preds =
-    if n.instr_index <= 0 then
-      IList.map create_pred_node (f_get_preds n.node)
-    else
-      let instr_index = n.instr_index - 1 in
-      [{ n with instr_index; }]
-
-  let preds t n =
-    get_preds n (Base.preds t)
-
-  let normal_preds t n =
-    get_preds n (Base.normal_preds t)
-
-  let exceptional_preds t n =
-    (* nodes are structured in such a way that exceptions should not occur in the middle. so if the
-       last instruction is in the same node as the current instruction, there are no exceptional
-       preds. *)
-    if n.instr_index > 0
-    then []
-    else get_preds n (Base.exceptional_preds t)
-
-  let start_node t =
-    create_node (Base.start_node t)
-
-  let exit_node t =
-    create_node (Base.exit_node t)
-
-  let proc_desc = Base.proc_desc
-
-  let nodes t =
-    IList.map create_node (Base.nodes t)
-
-  let from_pdesc = Base.from_pdesc
+  (* keep the invariants before/after each instruction *)
+  let instr_ids t =
+    IList.mapi
+      (fun i instr ->
+         let id = Cfg.Node.get_id t, Instr_index i in
+         instr, Some id)
+      (instrs t)
 end
 
 module NodeIdMap (CFG : S) = Map.Make(struct

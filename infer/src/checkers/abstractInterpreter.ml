@@ -55,22 +55,23 @@ module MakeNoCFG
   let exec_node node astate_pre work_queue inv_map proc_data =
     let node_id = CFG.id node in
     L.out "Doing analysis of node %a from pre %a@." CFG.pp_id node_id A.pp astate_pre;
-    let update_inv_map astate_pre visit_count =
-      let astate_post =
-        let exec_instrs astate_acc instr =
-          if A.is_bottom astate_acc
-          then astate_acc
-          else TF.exec_instr astate_acc proc_data node instr in
-        (* hack to ensure that the transfer functions see every node *)
-        let node_instrs = match CFG.instrs node with
-          | [] ->
-              (* TODO: get rid of Stackop and replace it with Skip *)
-              [Sil.Stackop (Push, Location.dummy)]
-          | instrs -> instrs in
-        IList.fold_left exec_instrs astate_pre node_instrs in
+    let update_inv_map pre visit_count =
+      let compute_post (pre, inv_map) (instr, id_opt) =
+        let post = TF.exec_instr pre proc_data node instr in
+        match id_opt with
+        | Some id -> post, M.add id { pre; post; visit_count; } inv_map
+        | None -> post, inv_map in
+      (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
+      let instr_ids = match CFG.instr_ids node with
+        | [] ->
+            (* TODO: get rid of Stackop and replace it with Skip *)
+            [Sil.Stackop (Push, Location.dummy), None]
+        | l ->
+            l in
+      let astate_post, inv_map_post = IList.fold_left compute_post (pre, inv_map) instr_ids in
       L.out "Post for node %a is %a@." CFG.pp_id node_id A.pp astate_post;
-      let inv_map' = M.add node_id { pre=astate_pre; post=astate_post; visit_count; } inv_map in
-      inv_map', Sched.schedule_succs work_queue node in
+      let inv_map'' = M.add node_id { pre; post=astate_post; visit_count; } inv_map_post in
+      inv_map'', Sched.schedule_succs work_queue node in
     if M.mem node_id inv_map then
       let old_state = M.find node_id inv_map in
       let widened_pre =
