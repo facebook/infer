@@ -106,7 +106,24 @@ check_installed opam
 opam init --no-setup --yes > /dev/null || \
   opam init --no-setup --yes --comp=4.02.3
 
+OCAML_VERSION="4.02.3"
+OPAM_SWITCH=infer-$OCAML_VERSION
+
+if ! opam switch $OPAM_SWITCH >/dev/null 2>/dev/null; then
+  opam switch install $OPAM_SWITCH --alias-of $OCAML_VERSION
+fi
+
 eval $(SHELL=bash opam config env)
+
+echo "installing infer dependencies... "
+opam update
+
+opam pin add --yes merlin 'https://github.com/the-lambda-church/merlin.git#reason-0.0.1'
+opam pin add --yes merlin_extend 'https://github.com/let-def/merlin-extend.git#reason-0.0.1'
+opam pin add --yes --no-action reason 'https://github.com/facebook/reason.git#0.0.6'
+
+opam pin add --yes --no-action infer .
+opam install --yes --deps-only infer
 
 echo "preparing build... "
 if [ ! -f .release ]; then
