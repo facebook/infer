@@ -618,19 +618,24 @@ struct
     Procname.ObjC_Cpp
       (Procname.objc_cpp class_name method_name type_name_crc)
 
-  let get_var_name_string name_info var_decl_info =
+  let get_var_name_mangled name_info var_decl_info =
     let clang_name = Ast_utils.get_qualified_name name_info in
-    match clang_name, var_decl_info.Clang_ast_t.vdi_parm_index_in_function with
-    | "", Some index -> "__param_" ^ string_of_int index
-    | "", None -> assert false
-    | _ -> clang_name
+    let param_idx_opt = var_decl_info.Clang_ast_t.vdi_parm_index_in_function in
+    let name_string =
+      match clang_name, param_idx_opt with
+      | "", Some index -> "__param_" ^ string_of_int index
+      | "", None -> assert false
+      | _ -> clang_name in
+    let mangled = match param_idx_opt with
+      | Some index -> Mangled.mangled name_string (string_of_int index)
+      | None -> Mangled.from_string name_string in
+    name_string, mangled
 
   let mk_sil_var name decl_info_type_ptr_opt procname outer_procname =
     let name_string = Ast_utils.get_qualified_name name in
     match decl_info_type_ptr_opt with
     | Some (decl_info, type_ptr, var_decl_info, should_be_mangled) ->
-        let name_string = get_var_name_string name var_decl_info in
-        let simple_name = Mangled.from_string name_string in
+        let name_string, simple_name = get_var_name_mangled name var_decl_info in
         if var_decl_info.Clang_ast_t.vdi_is_global then
           let global_mangled_name =
             if var_decl_info.Clang_ast_t.vdi_is_static_local then

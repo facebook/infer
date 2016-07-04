@@ -308,13 +308,13 @@ let translate_dispatch_function stmt_info stmt_list n =
   | _ -> assert false
 
 (* Create declaration statement: tp vname = iexp *)
-let make_DeclStmt stmt_info di tp vname iexp =
+let make_DeclStmt stmt_info di tp vname old_vdi iexp =
   let init_expr_opt, init_expr_l = match iexp with
     | Some iexp' ->
         let ie = create_implicit_cast_expr stmt_info [iexp'] tp `IntegralCast in
         Some ie, [ie]
     | None -> None, [] in
-  let var_decl_info = { empty_var_decl_info with Clang_ast_t.vdi_init_expr = init_expr_opt } in
+  let var_decl_info = { old_vdi with Clang_ast_t.vdi_init_expr = init_expr_opt } in
   let di = fresh_decl_info di in
   let var_decl = Clang_ast_t.VarDecl (di, vname, tp, var_decl_info) in
   Clang_ast_t.DeclStmt (stmt_info, init_expr_l, [var_decl])
@@ -393,16 +393,18 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
 
   let build_idx_decl pidx =
     match pidx with
-    | Clang_ast_t.ParmVarDecl (di_idx, name_idx, tp_idx, _) ->
+    | Clang_ast_t.ParmVarDecl (di_idx, name_idx, tp_idx, vdi) ->
         let zero = create_integer_literal "0" in
         (* tp_idx idx = 0; *)
-        let idx_decl_stmt = make_DeclStmt (fresh_stmt_info stmt_info) di_idx tp_idx name_idx (Some zero) in
+        let idx_decl_stmt = make_DeclStmt (fresh_stmt_info stmt_info) di_idx tp_idx
+            name_idx vdi (Some zero) in
         let idx_ei = make_expr_info tp_idx in
         let pointer = di_idx.Clang_ast_t.di_pointer in
         let idx_decl_ref = make_decl_ref_tp `Var pointer name_idx false tp_idx in
         let idx_drei = make_decl_ref_expr_info idx_decl_ref in
         let idx_decl_ref_exp = make_decl_ref_exp stmt_info idx_ei idx_drei in
-        let idx_cast = create_implicit_cast_expr (fresh_stmt_info stmt_info) [idx_decl_ref_exp] tp_idx `LValueToRValue in
+        let idx_cast = create_implicit_cast_expr (fresh_stmt_info stmt_info) [idx_decl_ref_exp]
+            tp_idx `LValueToRValue in
         idx_decl_stmt, idx_decl_ref_exp, idx_cast, tp_idx
     | _ -> assert false in
 
@@ -415,7 +417,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
   (* build statement BOOL *stop = malloc(sizeof(BOOL)); *)
   let build_stop pstop =
     match pstop with
-    | Clang_ast_t.ParmVarDecl (di, name, tp, _) ->
+    | Clang_ast_t.ParmVarDecl (di, name, tp, vdi) ->
         let tp_fun = create_void_unsigned_long_type in
         let type_opt = Some create_BOOL_type in
         let parameter = Clang_ast_t.UnaryExprOrTypeTraitExpr
@@ -427,7 +429,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
         let malloc_name = Ast_utils.make_name_decl CFrontend_config.malloc in
         let malloc = create_call stmt_info pointer malloc_name tp_fun [parameter] in
         let init_exp = create_implicit_cast_expr (fresh_stmt_info stmt_info) [malloc] tp `BitCast in
-        make_DeclStmt (fresh_stmt_info stmt_info) di tp name (Some init_exp)
+        make_DeclStmt (fresh_stmt_info stmt_info) di tp name vdi (Some init_exp)
     | _ -> assert false in
 
   (* BOOL *stop =NO; *)
@@ -588,7 +590,7 @@ let trans_negation_with_conditional stmt_info expr_info stmt_list =
 let create_assume_not_null_call decl_info var_name var_type =
   let stmt_info = stmt_info_with_fresh_pointer (make_stmt_info decl_info) in
   let boi = { Clang_ast_t.boi_kind = `NE } in
-  let decl_ptr = Ast_utils.get_invalid_pointer () in
+  let decl_ptr = decl_info.Clang_ast_t.di_pointer in
   let decl_ref = make_decl_ref_tp `Var decl_ptr var_name false var_type in
   let stmt_info_var = dummy_stmt_info () in
   let decl_ref_info = make_decl_ref_expr_info decl_ref in

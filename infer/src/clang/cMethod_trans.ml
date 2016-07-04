@@ -54,10 +54,10 @@ let get_class_param function_method_decl_info =
     match function_method_decl_info with
     | Cpp_Meth_decl_info (_, _, class_name, _) ->
         let class_type = Ast_expressions.create_class_type (class_name, `CPP) in
-        [(CFrontend_config.this, class_type)]
+        [(Mangled.from_string CFrontend_config.this, class_type)]
     | ObjC_Meth_decl_info (_, class_name) ->
         let class_type = Ast_expressions.create_class_type (class_name, `OBJC) in
-        [(CFrontend_config.self, class_type)]
+        [(Mangled.from_string CFrontend_config.self, class_type)]
     | _ -> []
   else []
 
@@ -77,7 +77,8 @@ let get_return_param tenv function_method_decl_info =
   let return_type_ptr = get_original_return_type function_method_decl_info in
   let return_typ = CTypes_decl.type_ptr_to_sil_type tenv return_type_ptr in
   if should_add_return_param return_typ ~is_objc_method then
-    [(CFrontend_config.return_param, Ast_expressions.create_pointer_type return_type_ptr)]
+    [(Mangled.from_string CFrontend_config.return_param,
+      Ast_expressions.create_pointer_type return_type_ptr)]
   else
     []
 
@@ -109,13 +110,13 @@ let get_parameters tenv function_method_decl_info =
   let par_to_ms_par par =
     match par with
     | Clang_ast_t.ParmVarDecl (_, name_info, type_ptr, var_decl_info) ->
-        let name = General_utils.get_var_name_string name_info var_decl_info in
+        let _, mangled = General_utils.get_var_name_mangled name_info var_decl_info in
         let param_typ = CTypes_decl.type_ptr_to_sil_type tenv type_ptr in
         let type_ptr' = match param_typ with
           | Typ.Tstruct _ when General_utils.is_cpp_translation Config.clang_lang ->
               Ast_expressions.create_reference_type type_ptr
           | _ -> type_ptr in
-        (name, type_ptr')
+        (mangled, type_ptr')
     | _ -> assert false in
   let pars = IList.map par_to_ms_par (get_param_decls function_method_decl_info) in
   get_class_param function_method_decl_info @ pars @ get_return_param tenv function_method_decl_info
@@ -303,18 +304,18 @@ let get_formal_parameters tenv ms =
   let rec defined_parameters pl =
     match pl with
     | [] -> []
-    | (name, raw_type):: pl' ->
+    | (mangled, raw_type):: pl' ->
         let should_add_pointer name ms =
           let is_objc_self = name = CFrontend_config.self &&
                              CMethod_signature.ms_get_lang ms = Config.OBJC in
           let is_cxx_this = name = CFrontend_config.this &&
                             CMethod_signature.ms_get_lang ms = Config.CPP in
           (is_objc_self && CMethod_signature.ms_is_instance ms) || is_cxx_this in
-        let tp = if should_add_pointer name ms then
+        let tp = if should_add_pointer (Mangled.to_string mangled) ms then
             (Ast_expressions.create_pointer_type raw_type)
           else raw_type in
         let typ = CTypes_decl.type_ptr_to_sil_type tenv tp in
-        (Mangled.from_string name, typ):: defined_parameters pl' in
+        (mangled, typ):: defined_parameters pl' in
   defined_parameters (CMethod_signature.ms_get_args ms)
 
 let get_return_type tenv ms =
@@ -348,7 +349,8 @@ let sil_method_annotation_of_args args : Typ.method_annotation =
   let mk_annot param_name annot_name =
     let annot = { Typ.class_name = annot_name; Typ.parameters = [param_name]; } in
     annot, default_visibility in
-  let arg_to_sil_annot (arg_name, type_ptr) acc  =
+  let arg_to_sil_annot (arg_mangled, type_ptr) acc  =
+    let arg_name = Mangled.to_string arg_mangled in
     if CFrontend_utils.Ast_utils.is_type_nullable type_ptr then
       [mk_annot arg_name Annotations.nullable] :: acc
     else Typ.item_annotation_empty::acc in

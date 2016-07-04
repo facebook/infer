@@ -14,7 +14,7 @@ open! Utils
 
 type method_signature = {
   mutable name : Procname.t;
-  args : (string * Clang_ast_t.type_ptr) list;
+  args : (Mangled.t * Clang_ast_t.type_ptr) list;
   ret_type : Clang_ast_t.type_ptr;
   attributes : Clang_ast_t.attribute list;
   loc : Clang_ast_t.source_range;
@@ -99,7 +99,7 @@ let replace_name_ms ms name =
 let ms_to_string ms =
   "Method " ^ (Procname.to_string ms.name) ^ " " ^
   IList.to_string
-    (fun (s1, s2) -> s1 ^ ", " ^ (Clang_ast_j.string_of_type_ptr s2))
+    (fun (s1, s2) -> (Mangled.to_string s1) ^ ", " ^ (Clang_ast_j.string_of_type_ptr s2))
     ms.args
   ^ "->" ^ (Clang_ast_j.string_of_type_ptr ms.ret_type) ^ " " ^
   Clang_ast_j.string_of_source_range ms.loc
