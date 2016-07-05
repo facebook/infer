@@ -141,7 +141,8 @@ def run_infer_stats_aggregator(infer_out, buck_out=None):
     except subprocess.CalledProcessError as exc:
         output = 'Error while aggregating stats ({ec}): {output}'\
             .format(ec=exc.returncode, output=exc.output)
-        stderr(output)
+        stderr('Info: aggregated performance data are not available in '
+               'this run')
         return output
 
 
