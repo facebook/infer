@@ -2581,8 +2581,9 @@ struct
     | CXXStdInitializerListExpr (stmt_info, stmts, expr_info) ->
         cxxStdInitializerListExpr_trans trans_state stmt_info stmts expr_info
 
-    | LambdaExpr(_, _, expr_info, decl) ->
+    | LambdaExpr(_, _, expr_info, lambda_expr_info) ->
         let trans_state' = { trans_state with priority = Free } in
+        let decl = lambda_expr_info.Clang_ast_t.lei_lambda_decl in
         lambdaExpr_trans trans_state' expr_info decl
 
     | AttributedStmt (_, stmts, attrs) ->
