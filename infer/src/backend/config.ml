@@ -59,12 +59,6 @@ let whitelisted_cpp_methods = [
   ["std"; "max"];
   ["std"; "__less"];
   ["google"; "CheckNotNull"];
-  ["google"; "GetReferenceableValue"];
-  ["google"; "Check_NEImpl"];
-  ["google"; "Check_LEImpl"];
-  ["google"; "Check_GTImpl"];
-  ["google"; "Check_GEImpl"];
-  ["google"; "Check_EQImpl"]
 ]
 
 
