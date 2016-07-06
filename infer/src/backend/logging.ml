@@ -86,7 +86,10 @@ let out_formatter, err_formatter =
     with Sys_error _ ->
       failwithf "@.ERROR: cannot open output file %s@." fname
   in
-  if Config.developer_mode then
+  if Config.developer_mode
+  && Sys.file_exists Config.results_dir
+  && Sys.is_directory Config.results_dir
+  then
     let log_dir_name = "log" in
     let analyzer_out_name = "analyzer_out" in
     let analyzer_err_name = "analyzer_err" in
