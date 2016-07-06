@@ -32,7 +32,7 @@ let load_specfiles () =
   let specs_files_in_dir dir =
     let is_specs_file fname =
       not (Sys.is_directory fname) && Filename.check_suffix fname Config.specs_files_suffix in
-    let all_filenames = Array.to_list (Sys.readdir dir) in
+    let all_filenames = try Array.to_list (Sys.readdir dir) with Sys_error _ -> [] in
     let all_filepaths = IList.map (fun fname -> Filename.concat dir fname) all_filenames in
     IList.filter is_specs_file all_filepaths in
   let specs_dirs =
