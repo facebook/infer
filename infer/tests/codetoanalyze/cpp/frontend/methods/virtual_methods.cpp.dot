@@ -1,10 +1,10 @@
 /* @generated */
 digraph iCFG {
-53 [label="53:  DeclStmt \n   n$2=_fun___new(sizeof(class Triangle ):unsigned long ) [line 71]\n  _fun_Triangle_Triangle(n$2:class Triangle *) [line 71]\n  *&trgl:class Triangle *=n$2 [line 71]\n " shape="box"]
+53 [label="53:  DeclStmt \n   n$1=_fun___new(sizeof(class Triangle ):unsigned long ) [line 71]\n  _fun_Triangle_Triangle(n$1:class Triangle *) [line 71]\n  *&trgl:class Triangle *=n$1 [line 71]\n " shape="box"]
 	
 
 	 53 -> 52 ;
-52 [label="52:  Call delete \n   n$0=*&trgl:class Polygon * [line 72]\n  n$1=*n$0:class Polygon  [line 72]\n  _fun_Polygon_~Polygon(n$0:class Polygon *) virtual [line 72]\n  _fun___delete(n$0:class Polygon *) [line 72]\n " shape="box"]
+52 [label="52:  Call delete \n   n$0=*&trgl:class Polygon * [line 72]\n  _fun___delete(n$0:class Polygon *) [line 72]\n " shape="box"]
 	
 
 	 52 -> 51 ;

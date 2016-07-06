@@ -2134,19 +2134,25 @@ struct
     let result_trans_param = exec_with_self_exception instruction trans_state_param param in
     let exp = extract_exp_from_list result_trans_param.exps
         "WARNING: There should be one expression to delete. \n" in
-    let deleted_type = delete_expr_info.Clang_ast_t.xdei_destroyed_type in
-    (* create stmt_info with new pointer so that destructor call doesn't create a node *)
-    let destruct_stmt_info = { stmt_info with
-                               Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer () } in
-    (* use empty_res_trans to avoid ending up with same instruction twice *)
-    (* otherwise it would happen due to structutre of all_res_trans *)
-    let this_res_trans_destruct = { empty_res_trans with exps = result_trans_param.exps } in
-    let destruct_res_trans = cxx_destructor_call_trans trans_state_pri destruct_stmt_info
-        this_res_trans_destruct deleted_type in
-    (* function is void *)
     let call_instr = Sil.Call ([], (Sil.Const (Sil.Cfun fname)), [exp], sil_loc, Sil.cf_default) in
     let call_res_trans = { empty_res_trans with instrs = [call_instr] } in
-    let all_res_trans = [ result_trans_param; destruct_res_trans; call_res_trans] in
+    let all_res_trans = if false then
+        (* FIXME (t10135167): call destructor on deleted pointer if it's not null *)
+        (* Right now it's dead code hidden by the 'false' flag *)
+        let deleted_type = delete_expr_info.Clang_ast_t.xdei_destroyed_type in
+        (* create stmt_info with new pointer so that destructor call doesn't create a node *)
+        let destruct_stmt_info = { stmt_info with
+                                   Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer () } in
+        (* use empty_res_trans to avoid ending up with same instruction twice *)
+        (* otherwise it would happen due to structutre of all_res_trans *)
+        let this_res_trans_destruct = { empty_res_trans with exps = result_trans_param.exps } in
+        let destruct_res_trans = cxx_destructor_call_trans trans_state_pri destruct_stmt_info
+            this_res_trans_destruct deleted_type in
+        [ result_trans_param; destruct_res_trans; call_res_trans]
+        (* --- END OF DEAD CODE --- *)
+      else
+        [ result_trans_param; call_res_trans] in
+
     let res_trans = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
         "Call delete" stmt_info all_res_trans in
     { res_trans with exps = [] }
