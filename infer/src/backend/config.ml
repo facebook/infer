@@ -375,7 +375,7 @@ let inferconfig_home =
 and project_root =
   CLOpt.mk_string_opt ~deprecated:["project_root"; "-project_root"] ~long:"project-root" ~short:"pr"
     ?default:CLOpt.(match current_exe with Print | Toplevel -> Some (Sys.getcwd ()) | _ -> None)
-    ~f:filename_to_absolute
+    ~f:resolve
     ~exes:CLOpt.[Analyze;Clang;Java;Llvm;Print;Toplevel]
     ~meta:"dir" "Specify the root directory of the project"
 
@@ -688,8 +688,7 @@ and headers =
     "Analyze code in header files"
 
 and infer_cache =
-  CLOpt.mk_string_opt ~deprecated:["infer_cache"; "-infer_cache"] ~long:"infer-cache"
-    ~f:filename_to_absolute
+  CLOpt.mk_string_opt ~deprecated:["infer_cache"; "-infer_cache"] ~long:"infer-cache" ~f:resolve
     ~meta:"dir" "Select a directory to contain the infer cache"
 
 (** Set the timeout values in seconds and symops, computed as a multiple of the integer
@@ -857,7 +856,7 @@ and reports_include_ml_loc =
 
 and results_dir =
   CLOpt.mk_string ~deprecated:["results_dir"; "-out"] ~long:"results-dir" ~short:"o"
-    ~default:(Sys.getcwd () // "infer-out")
+    ~default:(init_work_dir // "infer-out")
     ~exes:CLOpt.[Analyze;Clang;Java;Llvm;Print;StatsAggregator]
     ~meta:"dir" "Write results in the specified directory"
 
@@ -900,7 +899,7 @@ and spec_abs_level =
 (** List of paths to the directories containing specs for library functions. *)
 and specs_library =
   let specs_library =
-    CLOpt.mk_string_list ~long:"specs-library" ~short:"lib" ~f:filename_to_absolute
+    CLOpt.mk_string_list ~long:"specs-library" ~short:"lib" ~f:resolve
       ~exes:CLOpt.[Analyze] ~meta:"dir"
       "add dir to the list of directories to be searched for spec files" in
   let _ =
@@ -1047,7 +1046,7 @@ and xml_specs =
 and zip_libraries : zip_library list ref = ref []
 
 and zip_specs_library =
-  CLOpt.mk_string_list ~long:"zip-specs-library" ~short:"ziplib" ~f:filename_to_absolute
+  CLOpt.mk_string_list ~long:"zip-specs-library" ~short:"ziplib" ~f:resolve
     ~exes:CLOpt.[Analyze] ~meta:"zip file" "add a zip file containing library spec files"
 
 
@@ -1248,7 +1247,7 @@ let post_parsing_initialization () =
     zip_models := zip_library :: !zip_models
   in
   (match !models_file with
-   | Some file -> add_models (filename_to_absolute file)
+   | Some file -> add_models (resolve file)
    | None -> ());
 
   zip_libraries := IList.rev_append !zip_models (IList.rev !zip_libraries)
