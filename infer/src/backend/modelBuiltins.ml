@@ -1114,7 +1114,7 @@ let _ = Builtin.register
     "fwscanf" (execute_scan_function 2)
 let _ = Builtin.register
     (* malloc from C library *)
-    "malloc" (execute_alloc Sil.Mmalloc true)
+    "malloc" (execute_alloc Sil.Mmalloc (not Config.unsafe_malloc))
 let malloc_no_fail = Builtin.register
     (* malloc from ObjC library *)
     "malloc_no_fail" (execute_alloc Sil.Mmalloc false)

@@ -227,6 +227,7 @@ val trace_join : bool
 val trace_rearrange : bool
 val type_size : bool
 val unit_test : bool
+val unsafe_malloc : bool
 val whole_seconds : bool
 val worklist_mode : int
 val write_dotty : bool

@@ -11,7 +11,6 @@ package endtoend.c;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static utils.matchers.ResultContainsExactly.containsExactly;
-import static utils.matchers.ResultContainsNoErrorInMethod.doesNotContain;
 
 import com.google.common.collect.ImmutableList;
 

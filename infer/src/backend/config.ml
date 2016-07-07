@@ -1005,6 +1005,11 @@ and unit_test =
   CLOpt.mk_bool ~deprecated:["unit_test"] ~long:"unit-test"
     "Print unit test code"
 
+and unsafe_malloc =
+  CLOpt.mk_bool ~long:"unsafe-malloc"
+    ~exes:CLOpt.[Analyze;Toplevel]
+    "Assume that malloc(3) never returns null."
+
 and verbose_out =
   CLOpt.mk_string ~deprecated:["verbose_out"] ~long:"verbose-out" ~default:""
     ~exes:CLOpt.[Java] ~meta:"file" "Set the path to the javac verbose output"
@@ -1347,6 +1352,7 @@ and trace_join = !trace_join
 and trace_rearrange = !trace_rearrange
 and type_size = !type_size
 and unit_test = !unit_test
+and unsafe_malloc = !unsafe_malloc
 and whole_seconds = !whole_seconds
 and worklist_mode = !worklist_mode
 and write_dotty = !write_dotty
