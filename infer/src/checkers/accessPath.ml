@@ -17,7 +17,11 @@ type access =
   | FieldAccess of Ident.fieldname * Typ.t
   | ArrayAccess of Typ.t
 
-type t = base * access list
+type raw = base * access list
+
+type t =
+  | Exact of raw
+  | Abstracted of raw
 
 let base_compare ((var1, typ1) as base1) ((var2, typ2) as base2) =
   if base1 == base2
@@ -45,12 +49,20 @@ let access_compare access1 access2 =
 let access_equal access1 access2 =
   access_compare access1 access2 = 0
 
-let compare ((base1, accesses1) as ap1) ((base2, accesses2) as ap2) =
+let raw_compare ((base1, accesses1) as ap1) ((base2, accesses2) as ap2) =
   if ap1 == ap2
   then 0
   else
     base_compare base1 base2
     |> next (IList.compare access_compare) accesses1 accesses2
+
+let raw_equal ap1 ap2 =
+  raw_compare ap1 ap2 = 0
+
+let compare ap1 ap2 = match ap1, ap2 with
+  | Exact ap1, Exact ap2 | Abstracted ap1, Abstracted ap2 -> raw_compare ap1 ap2
+  | Exact _, Abstracted _ -> 1
+  | Abstracted _, Exact _ -> (-1)
 
 let equal ap1 ap2 =
   compare ap1 ap2 = 0
@@ -76,6 +88,19 @@ let is_prefix ((base1, path1) as ap1) ((base2, path2) as ap2) =
   else
     base_equal base1 base2 && is_prefix_path path1 path2
 
+let extract = function
+  | Exact ap | Abstracted ap -> ap
+
+let is_exact = function
+  | Exact _ -> true
+  | Abstracted _ -> false
+
+let (<=) ~lhs ~rhs =
+  match lhs, rhs with
+  | Abstracted _, Exact _ -> false
+  | Exact lhs_ap, Exact rhs_ap -> raw_equal lhs_ap rhs_ap
+  | (Exact lhs_ap | Abstracted lhs_ap), Abstracted rhs_ap -> is_prefix rhs_ap lhs_ap
+
 let pp_base fmt (pvar, _) =
   (Pvar.pp pe_text) fmt pvar
 
@@ -83,7 +108,11 @@ let pp_access fmt = function
   | FieldAccess (field_name, _) -> F.fprintf fmt ".%a" Ident.pp_fieldname field_name
   | ArrayAccess _ -> F.fprintf fmt "[_]"
 
-let pp fmt (base, accesses) =
+let pp_raw fmt (base, accesses) =
   let pp_access_list fmt accesses =
     F.pp_print_list pp_access fmt accesses in
   F.fprintf fmt "%a%a" pp_base base pp_access_list accesses
+
+let pp fmt = function
+  | Exact access_path -> pp_raw fmt access_path
+  | Abstracted access_path -> F.fprintf fmt "%a*" pp_raw access_path
