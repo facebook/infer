@@ -839,16 +839,8 @@ let texp_normalize sub exp = match exp with
   | Sil.Sizeof (typ, len, st) -> Sil.Sizeof (typ, Option.map (exp_normalize sub) len, st)
   | _ -> exp_normalize sub exp
 
-let run_with_abs_val_eq_zero f =
-  let abs_val_old = !Config.abs_val in
-  Config.abs_val := 0;
-  let res = f () in
-  Config.abs_val := abs_val_old;
-  res
-
 let exp_normalize_noabs sub exp =
-  run_with_abs_val_eq_zero
-    (fun () -> exp_normalize sub exp)
+  Config.run_with_abs_val_equal_zero (exp_normalize sub) exp
 
 (** Return [true] if the atom is an inequality *)
 let atom_is_inequality = function
@@ -1372,8 +1364,7 @@ let footprint_normalize prop =
   { prop with foot_pi = npi'; foot_sigma = nsigma' }
 
 let exp_normalize_prop prop exp =
-  run_with_abs_val_eq_zero
-    (fun () -> exp_normalize prop.sub exp)
+  Config.run_with_abs_val_equal_zero (exp_normalize prop.sub) exp
 
 let lexp_normalize_prop p lexp =
   let root = Sil.root_of_lexp lexp in
@@ -1408,24 +1399,19 @@ let exp_collapse_consecutive_indices_prop typ exp =
   end
 
 let atom_normalize_prop prop atom =
-  run_with_abs_val_eq_zero
-    (fun () -> atom_normalize prop.sub atom)
+  Config.run_with_abs_val_equal_zero (atom_normalize prop.sub) atom
 
 let strexp_normalize_prop prop strexp =
-  run_with_abs_val_eq_zero
-    (fun () -> strexp_normalize prop.sub strexp)
+  Config.run_with_abs_val_equal_zero (strexp_normalize prop.sub) strexp
 
 let hpred_normalize_prop prop hpred =
-  run_with_abs_val_eq_zero
-    (fun () -> hpred_normalize prop.sub hpred)
+  Config.run_with_abs_val_equal_zero (hpred_normalize prop.sub) hpred
 
 let sigma_normalize_prop prop sigma =
-  run_with_abs_val_eq_zero
-    (fun () -> sigma_normalize prop.sub sigma)
+  Config.run_with_abs_val_equal_zero (sigma_normalize prop.sub) sigma
 
 let pi_normalize_prop prop pi =
-  run_with_abs_val_eq_zero
-    (fun () -> pi_normalize prop.sub prop.sigma pi)
+  Config.run_with_abs_val_equal_zero (pi_normalize prop.sub prop.sigma) pi
 
 (** {2 Compaction} *)
 (** Return a compact representation of the prop *)
@@ -1466,19 +1452,19 @@ let prop_is_emp p = match p.sigma with
 
 (** Sil.Construct a disequality. *)
 let mk_neq e1 e2 =
-  run_with_abs_val_eq_zero
+  Config.run_with_abs_val_equal_zero
     (fun () ->
        let ne1 = exp_normalize Sil.sub_empty e1 in
        let ne2 = exp_normalize Sil.sub_empty e2 in
-       atom_normalize Sil.sub_empty (Sil.Aneq (ne1, ne2)))
+       atom_normalize Sil.sub_empty (Sil.Aneq (ne1, ne2))) ()
 
 (** Sil.Construct an equality. *)
 let mk_eq e1 e2 =
-  run_with_abs_val_eq_zero
+  Config.run_with_abs_val_equal_zero
     (fun () ->
        let ne1 = exp_normalize Sil.sub_empty e1 in
        let ne2 = exp_normalize Sil.sub_empty e2 in
-       atom_normalize Sil.sub_empty (Sil.Aeq (ne1, ne2)))
+       atom_normalize Sil.sub_empty (Sil.Aeq (ne1, ne2))) ()
 
 (** Construct a points-to predicate for a single program variable.
     If [expand_structs] is true, initialize the fields of structs with fresh variables. *)

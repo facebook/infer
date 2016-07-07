@@ -1071,48 +1071,6 @@ and (
       ("Matcher or list of matchers for methods that should be considered expensive " ^
        "by the performance critical checker."))
 
-(** Global variables *)
-
-let set_reference_and_call_function reference value f x =
-  let saved = !reference in
-  let restore () =
-    reference := saved in
-  try
-    reference := value;
-    let res = f x in
-    restore ();
-    res
-  with
-  | exn ->
-      restore ();
-      raise exn
-
-(** Flag for footprint discovery mode *)
-let footprint = ref true
-
-let run_in_footprint_mode f x =
-  set_reference_and_call_function footprint true f x
-
-let run_in_re_execution_mode f x =
-  set_reference_and_call_function footprint false f x
-
-(** Set in the middle of forcing delayed prints *)
-let forcing_delayed_prints = ref false
-
-(** Number of lines of code in original file *)
-let nLOC = ref 0
-
-(** if true, user simple pretty printing *)
-let pp_simple = ref true
-
-let reset_abs_val =
-  let abs_val_default = !abs_val in
-  fun () ->
-    abs_val := abs_val_default
-
-let run_with_abs_val_equal_zero f x =
-  set_reference_and_call_function abs_val 0 f x
-
 
 (** Configuration values specified by environment variables *)
 
@@ -1276,6 +1234,7 @@ let print_usage_exit () =
 let anon_args = IList.rev !anon_args
 and rest = !rest
 and abs_struct = !abs_struct
+and abs_val_orig = !abs_val
 and absolute_paths = !absolute_paths
 and allow_specs_cleanup = !allow_specs_cleanup
 and analysis_path_regex_whitelist_options =
@@ -1425,3 +1384,43 @@ let patterns_suppress_warnings =
   | None ->
       if CLOpt.(current_exe <> Java) then []
       else error ("Error: The option " ^ suppress_warnings_annotations_long ^ " was not provided")
+
+(** Global variables *)
+
+let set_reference_and_call_function reference value f x =
+  let saved = !reference in
+  let restore () =
+    reference := saved in
+  try
+    reference := value;
+    let res = f x in
+    restore ();
+    res
+  with
+  | exn ->
+      restore ();
+      raise exn
+
+(** Flag for footprint discovery mode *)
+let footprint = ref true
+
+let run_in_footprint_mode f x =
+  set_reference_and_call_function footprint true f x
+
+let run_in_re_execution_mode f x =
+  set_reference_and_call_function footprint false f x
+
+(** Set in the middle of forcing delayed prints *)
+let forcing_delayed_prints = ref false
+
+(** Number of lines of code in original file *)
+let nLOC = ref 0
+
+(** if true, user simple pretty printing *)
+let pp_simple = ref true
+
+let reset_abs_val () =
+  abs_val := abs_val_orig
+
+let run_with_abs_val_equal_zero f x =
+  set_reference_and_call_function abs_val 0 f x
