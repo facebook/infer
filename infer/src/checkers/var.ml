@@ -11,11 +11,9 @@ open! Utils
 
 (** Single abstraction for all the kinds of variables in SIL *)
 
-type var =
+type t =
   | ProgramVar of Pvar.t
   | LogicalVar of Ident.t
-
-type t = var
 
 let of_id id =
   LogicalVar id
@@ -41,13 +39,13 @@ let pp fmt = function
   | LogicalVar id -> (Ident.pp pe_text) fmt id
 
 module Map = PrettyPrintable.MakePPMap(struct
-    type t = var
+    type nonrec t = t
     let compare = compare
     let pp_key = pp
   end)
 
 module Set = PrettyPrintable.MakePPSet(struct
-    type t = var
+    type nonrec t = t
     let compare = compare
     let pp_element = pp
   end)

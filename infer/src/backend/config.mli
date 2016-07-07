@@ -151,6 +151,7 @@ val clang_lang : clang_lang
 val cluster_cmdline : string option
 val code_query : string option
 val continue_capture : bool
+val copy_propagation : bool
 val create_harness : bool
 val cxx_experimental : bool
 val debug_mode : bool

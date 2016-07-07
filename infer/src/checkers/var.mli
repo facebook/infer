@@ -9,7 +9,9 @@
 
 (** Single abstraction for all the kinds of variables in SIL *)
 
-type t
+type t = private
+  | ProgramVar of Pvar.t
+  | LogicalVar of Ident.t
 
 val of_id : Ident.t -> t
 

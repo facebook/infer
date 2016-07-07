@@ -593,6 +593,10 @@ and continue =
     "Continue the capture for the reactive analysis,\
      increasing the changed files/procedures."
 
+and copy_propagation =
+  CLOpt.mk_bool ~deprecated:["copy-propagation"] ~long:"copy-propagation"
+    "Perform copy-propagation on the IR"
+
 and curr_language =
   let var = ref Clang in
   CLOpt.mk_set var Java ~deprecated:["java"] ~long:"java" "Set language to Java" ;
@@ -1306,6 +1310,7 @@ and clang_lang = !clang_lang
 and cluster_cmdline = !cluster
 and code_query = !code_query
 and continue_capture = !continue
+and copy_propagation = !copy_propagation
 and create_harness = !android_harness
 and cxx_experimental = !cxx_experimental
 and debug_mode = !debug

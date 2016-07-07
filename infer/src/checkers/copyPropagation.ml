@@ -13,6 +13,7 @@ module F = Format
 module L = Logging
 
 module Domain = struct
+  include Var.Map
   type astate = Var.t Var.Map.t
 
   let initial = Var.Map.empty

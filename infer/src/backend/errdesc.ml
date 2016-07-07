@@ -197,7 +197,7 @@ let rec find_boolean_assignment node pvar true_branch : Cfg.Node.t option =
 (** Find the Letderef instruction used to declare normal variable [id],
     and return the expression dereferenced to initialize [id] *)
 let rec _find_normal_variable_letderef (seen : Sil.ExpSet.t) node id : Sil.dexp option =
-  let is_infer = Config.analyzer = Some Infer in
+  let is_infer = not (Config.checkers || Config.eradicate) in
   let find_declaration node = function
     | Sil.Letderef (id0, e, _, _) when Ident.equal id id0 ->
         if verbose

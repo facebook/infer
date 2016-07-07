@@ -218,7 +218,60 @@ let add_nullify_instrs pdesc tenv =
     let exit_node = ProcCfg.Exceptional.exit_node nullify_proc_cfg in
     node_add_nullify_instructions exit_node (AddressTaken.Domain.elements address_taken_vars)
 
+module ExceptionalOneInstrPerNodeCfg = ProcCfg.OneInstrPerNode(ProcCfg.Exceptional)
+
+module CopyProp =
+  AbstractInterpreter.Make
+    (ExceptionalOneInstrPerNodeCfg)
+    (Scheduler.ReversePostorder)
+    (CopyPropagation.TransferFunctions)
+
+let do_copy_propagation pdesc tenv =
+  let proc_cfg = ExceptionalOneInstrPerNodeCfg.from_pdesc pdesc in
+  let copy_prop_inv_map = CopyProp.exec_cfg proc_cfg (ProcData.make_default pdesc tenv) in
+  (** [var_map] represents a chain of variable. copies v_0 -> v_1 ... -> v_n. starting from some
+      ident v_j, we want to walk backward through the chain to find the lowest v_i that is also an
+      ident. *)
+  let id_sub var_map id =
+    (* [last_id] is the highest identifier in the chain that we've seen so far *)
+    let rec id_sub_inner var_map var last_id =
+      try
+        let var' = CopyPropagation.Domain.find var var_map in
+        let last_id' = match var' with
+          | Var.LogicalVar id -> id
+          | _ -> last_id in
+        id_sub_inner var_map var' last_id'
+      with Not_found ->
+        Sil.Var last_id in
+    id_sub_inner var_map (Var.of_id id) id in
+
+  (** perform copy-propagation on each instruction in [node] *)
+  let rev_transform_node_instrs node =
+    IList.fold_left
+      (fun (instrs, changed) (instr, id_opt) ->
+         match id_opt with
+         | Some id ->
+             begin
+               match CopyProp.extract_pre id copy_prop_inv_map with
+               | Some pre when not (CopyPropagation.Domain.is_empty pre) ->
+                   let instr' = Sil.instr_sub_ids ~sub_id_binders:false (id_sub pre) instr in
+                   instr' :: instrs, changed || instr' != instr
+               | _ ->
+                   instr :: instrs, changed
+             end
+         | None -> instr :: instrs, changed)
+      ([], false)
+      (ExceptionalOneInstrPerNodeCfg.instr_ids node) in
+
+  IList.iter
+    (fun node ->
+       let instrs, changed = rev_transform_node_instrs node in
+       if changed
+       then Cfg.Node.replace_instrs node (IList.rev instrs))
+    (Cfg.Procdesc.get_nodes pdesc)
+
 let doit pdesc cg tenv =
+  if Config.copy_propagation then do_copy_propagation pdesc tenv;
   add_nullify_instrs pdesc tenv;
   if not Config.lazy_dynamic_dispatch then add_dispatch_calls pdesc cg tenv;
   add_abstraction_instructions pdesc;
