@@ -195,8 +195,7 @@ let inhabit_call (procname, receiver) cfg env =
 let create_dummy_harness_file harness_name =
   let dummy_file_name =
     let dummy_file_dir =
-      let sources_dir = DB.sources_dir () in
-      if Sys.file_exists sources_dir then sources_dir
+      if Sys.file_exists DB.sources_dir then DB.sources_dir
       else Filename.get_temp_dir_name () in
     let file_str =
       Procname.java_get_class_name

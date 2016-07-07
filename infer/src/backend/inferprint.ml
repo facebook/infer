@@ -36,7 +36,7 @@ let load_specfiles () =
     let all_filepaths = IList.map (fun fname -> Filename.concat dir fname) all_filenames in
     IList.filter is_specs_file all_filepaths in
   let specs_dirs =
-    let result_specs_dir = DB.filename_to_string (DB.Results_dir.specs_dir ()) in
+    let result_specs_dir = DB.filename_to_string DB.Results_dir.specs_dir in
     result_specs_dir :: Config.specs_library in
   IList.flatten (IList.map specs_files_in_dir specs_dirs)
 

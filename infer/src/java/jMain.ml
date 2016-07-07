@@ -92,35 +92,31 @@ let capture_libs linereader program tenv =
 
 (* load a stored global tenv if the file is found, and create a new one otherwise *)
 let load_tenv () =
-  let tenv_filename = DB.global_tenv_fname () in
-  let tenv =
-    if DB.file_exists tenv_filename then
-      begin
-        match Tenv.load_from_file tenv_filename with
-        | None ->
-            Tenv.create ()
-        | Some _ when Config.analyze_models ->
-            let error_msg =
-              "Unexpected tenv file "
-              ^ (DB.filename_to_string tenv_filename)
-              ^ " found while generating the models" in
-            failwith error_msg
-        | Some tenv ->
-            tenv
-      end
-    else
-      Tenv.create () in
-  tenv
+  if DB.file_exists DB.global_tenv_fname then
+    begin
+      match Tenv.load_from_file DB.global_tenv_fname with
+      | None ->
+          Tenv.create ()
+      | Some _ when Config.analyze_models ->
+          let error_msg =
+            "Unexpected tenv file "
+            ^ (DB.filename_to_string DB.global_tenv_fname)
+            ^ " found while generating the models" in
+          failwith error_msg
+      | Some tenv ->
+          tenv
+    end
+  else
+    Tenv.create ()
 
 
 (* Store to a file the type environment containing all the types required to perform the analysis *)
 let save_tenv tenv =
   if not Config.analyze_models then JTransType.add_models_types tenv;
-  let tenv_filename = DB.global_tenv_fname () in
   (* TODO: this prevents per compilation step incremental analysis at this stage *)
-  if DB.file_exists tenv_filename then DB.file_remove tenv_filename;
-  JUtils.log "writing new tenv %s@." (DB.filename_to_string tenv_filename);
-  Tenv.store_to_file tenv_filename tenv
+  if DB.file_exists DB.global_tenv_fname then DB.file_remove DB.global_tenv_fname;
+  JUtils.log "writing new tenv %s@." (DB.filename_to_string DB.global_tenv_fname);
+  Tenv.store_to_file DB.global_tenv_fname tenv
 
 
 (* The program is loaded and translated *)

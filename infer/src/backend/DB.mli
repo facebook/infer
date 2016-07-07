@@ -51,7 +51,7 @@ module Results_dir : sig
   val path_to_filename : path_kind -> path -> filename
 
   (** directory of spec files *)
-  val specs_dir : unit -> filename
+  val specs_dir : filename
 
   (** Initialize the results directory *)
   val init : unit -> unit
@@ -106,11 +106,6 @@ val source_file_to_string : source_file -> string
 (** convert a string obtained by source_file_to_string to a source file *)
 val source_file_from_string : string -> source_file
 
-exception No_project_root
-
-(** get the project root when it exists or raise No_project_root otherwise *)
-val project_root : unit -> string
-
 (** get the full path of a source file, raise No_project_root exception when used with a relative source file and no project root specified *)
 val source_file_to_abs_path : source_file -> string
 
@@ -125,7 +120,7 @@ type source_dir
 val source_dir_compare : source_dir -> source_dir -> int
 
 (** get the absolute path to the sources dir *)
-val sources_dir : unit -> string
+val sources_dir : string
 
 (** expose the source dir as a string *)
 val source_dir_to_string : source_dir -> string
@@ -140,7 +135,7 @@ val source_dir_from_source_file : source_file -> source_dir
 val source_file_in_resdir : source_file -> filename
 
 (** directory where the results of the capture phase are stored *)
-val captured_dir : unit -> filename
+val captured_dir : filename
 
 (** create the directory containing the file bane *)
 val filename_create_dir : filename -> unit
@@ -165,7 +160,7 @@ val read_file_with_lock : string -> string -> bytes option
 val update_file_with_lock : string -> string -> (bytes -> bytes) -> unit
 
 (** get the path of the global type environment (only used in Java) *)
-val global_tenv_fname : unit -> filename
+val global_tenv_fname : filename
 
 (** Check if a path is a Java, C, C++ or Objectve C source file according to the file extention *)
 val is_source_file: string -> bool

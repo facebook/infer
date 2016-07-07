@@ -31,7 +31,7 @@ let tenv_filename file_base =
   if Sys.file_exists (DB.filename_to_string per_source_tenv_filename) then
     per_source_tenv_filename
   else
-    DB.global_tenv_fname ()
+    DB.global_tenv_fname
 
 (** create a new file_data *)
 let new_file_data source nLOC cg_fname =

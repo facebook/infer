@@ -44,9 +44,8 @@ let store_icfg cg cfg =
     end
 
 let store_tenv tenv =
-  let tenv_filename = DB.global_tenv_fname () in
-  if DB.file_exists tenv_filename then DB.file_remove tenv_filename;
-  Tenv.store_to_file tenv_filename tenv
+  if DB.file_exists DB.global_tenv_fname then DB.file_remove DB.global_tenv_fname;
+  Tenv.store_to_file DB.global_tenv_fname tenv
 
 let () =
   begin match Config.source_file with

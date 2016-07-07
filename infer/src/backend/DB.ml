@@ -121,25 +121,24 @@ let source_dir_get_internal_file source_dir extension =
   let fname = source_dir_name ^ extension in
   Filename.concat source_dir fname
 
-let captured_dir () =
+let captured_dir =
   Filename.concat Config.results_dir Config.captured_dir_name
 
-let sources_dir () =
+let sources_dir =
   Filename.concat Config.results_dir Config.sources_dir_name
 
 (** get the source directory corresponding to a source file *)
 let source_dir_from_source_file source_file =
-  Filename.concat (captured_dir ()) (source_file_encoding source_file)
+  Filename.concat captured_dir (source_file_encoding source_file)
 
 (** get the path to the copy of the source file to be stored in the results directory *)
 let source_file_in_resdir source_file =
-  Filename.concat (sources_dir ()) (source_file_encoding source_file)
+  Filename.concat sources_dir (source_file_encoding source_file)
 
 (** Find the source directories in the results dir *)
 let find_source_dirs () =
   let source_dirs = ref [] in
-  let capt_dir = captured_dir () in
-  let files_in_results_dir = Array.to_list (Sys.readdir capt_dir) in
+  let files_in_results_dir = Array.to_list (Sys.readdir captured_dir) in
   let add_cg_files_from_dir dir =
     let files = Array.to_list (Sys.readdir dir) in
     IList.iter (fun fname ->
@@ -147,7 +146,7 @@ let find_source_dirs () =
         if Filename.check_suffix path ".cg" then source_dirs := dir :: !source_dirs)
       files in
   IList.iter (fun fname ->
-      let dir = Filename.concat capt_dir fname in
+      let dir = Filename.concat captured_dir fname in
       if Sys.is_directory dir then add_cg_files_from_dir dir)
     files_in_results_dir;
   IList.rev !source_dirs
@@ -303,12 +302,12 @@ module Results_dir = struct
     filename_from_base base path
 
   (** directory of spec files *)
-  let specs_dir () = path_to_filename Abs_root [Config.specs_dir_name]
+  let specs_dir = path_to_filename Abs_root [Config.specs_dir_name]
 
   (** initialize the results directory *)
   let init () =
     create_dir Config.results_dir;
-    create_dir (specs_dir ());
+    create_dir specs_dir;
     create_dir (path_to_filename Abs_root [Config.attributes_dir_name]);
     create_dir (path_to_filename Abs_root [Config.sources_dir_name]);
     create_dir (path_to_filename Abs_root [Config.captured_dir_name]);
@@ -316,9 +315,8 @@ module Results_dir = struct
       create_dir (path_to_filename Abs_source_dir [])
 
   let clean_specs_dir () =
-    let specs_dir_path = specs_dir () in
-    create_dir specs_dir_path; (* create dir just in case it doesn't exist to avoid errors *)
-    let files_to_remove = Array.map (Filename.concat specs_dir_path) (Sys.readdir specs_dir_path) in
+    create_dir specs_dir; (* create dir just in case it doesn't exist to avoid errors *)
+    let files_to_remove = Array.map (Filename.concat specs_dir) (Sys.readdir specs_dir) in
     Array.iter Sys.remove files_to_remove
 
   (** create a file at the given path, creating any missing directories *)
@@ -345,9 +343,9 @@ type origin =
   | Spec_lib
   | Models
 
-let global_tenv_fname () =
+let global_tenv_fname =
   let basename = Config.global_tenv_filename in
-  filename_concat (captured_dir ()) basename
+  filename_concat captured_dir basename
 
 let is_source_file path =
   IList.exists

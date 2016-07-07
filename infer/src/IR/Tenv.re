@@ -143,12 +143,12 @@ let expand_type tenv typ =>
 let tenv_serializer: Serialization.serializer t = Serialization.create_serializer Serialization.tenv_key;
 
 let global_tenv: Lazy.t (option t) =
-  lazy (Serialization.from_file tenv_serializer (DB.global_tenv_fname ()));
+  lazy (Serialization.from_file tenv_serializer DB.global_tenv_fname);
 
 
 /** Load a type environment from a file */
 let load_from_file (filename: DB.filename) :option t =>
-  if (filename == DB.global_tenv_fname ()) {
+  if (filename == DB.global_tenv_fname) {
     Lazy.force global_tenv
   } else {
     Serialization.from_file tenv_serializer filename
