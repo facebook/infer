@@ -228,7 +228,8 @@ let rec _find_normal_variable_letderef (seen : Sil.ExpSet.t) node id : Sil.dexp 
             let unNone = function Some x -> x | None -> assert false in
             IList.map unNone args_dexpo in
         Some (Sil.Dretcall (fun_dexp, args_dexp, loc, call_flags))
-    | Sil.Set (Sil.Lvar pvar, _, Sil.Var id0, _) when is_infer && Ident.equal id id0 ->
+    | Sil.Set (Sil.Lvar pvar, _, Sil.Var id0, _)
+      when is_infer && Ident.equal id id0 && not (Pvar.is_frontend_tmp pvar) ->
         (* this case is a hack to make bucketing continue to work in the presence of copy
            propagation. previously, we would have code like:
            n1 = foo(); x = n1; n2 = x; n2.toString(), but copy-propagation will optimize this to:
