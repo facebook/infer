@@ -97,7 +97,7 @@ ocaml_unit_test: test_this_build
 
 buck_test: infer
 	NO_BUCKD=1 buck clean
-	NO_BUCKD=1 buck test -j $(NCPU) -L $(NCPU) $(TARGETS_TO_TEST)
+	MAKEFLAGS= NO_BUCKD=1 buck test -j $(NCPU) -L $(NCPU) $(TARGETS_TO_TEST)
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 
 buck_test_xml: infer
