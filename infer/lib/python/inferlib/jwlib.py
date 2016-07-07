@@ -93,17 +93,17 @@ class CompilerCall(object):
         if self.args.version:
             return subprocess.call([self.javac_cmd] + self.original_arguments)
         else:
-            javac_cmd = [self.javac_cmd, '-verbose', '-g']
+            javac_args = ['-verbose', '-g']
 
             if self.args.bootclasspath is not None:
-                javac_cmd += ['-bootclasspath', self.args.bootclasspath]
+                javac_args += ['-bootclasspath', self.args.bootclasspath]
 
             if not os.path.isfile(config.ANNOT_PROCESSOR_JAR):
                 raise AnnotationProcessorNotFound(config.ANNOT_PROCESSOR_JAR)
             if self.args.classes_out is not None:
-                javac_cmd += ['-d', self.args.classes_out]
+                javac_args += ['-d', self.args.classes_out]
 
-            javac_cmd.append('-J-Duser.language=en')
+            javac_args.append('-J-Duser.language=en')
 
             classpath = self.args.classpath
             # the -processorpath option precludes searching the classpath for
@@ -112,7 +112,7 @@ class CompilerCall(object):
             if self.args.processorpath is not None:
                 processorpath = os.pathsep.join([config.ANNOT_PROCESSOR_JAR,
                                                  self.args.processorpath])
-                javac_cmd += ['-processorpath', processorpath]
+                javac_args += ['-processorpath', processorpath]
             else:
                 classpath = os.pathsep.join([config.ANNOT_PROCESSOR_JAR,
                                              classpath])
@@ -144,11 +144,11 @@ class CompilerCall(object):
                         found_classpath = True
                         break
 
-            javac_cmd += self.remaining_args
+            javac_args += self.remaining_args
 
             if not found_classpath:
                 # -classpath option not found in any args file
-                javac_cmd += ['-classpath', classpath]
+                javac_args += ['-classpath', classpath]
 
             # this overrides the default mechanism for discovering annotation
             # processors (checking the manifest of the annotation processor
@@ -156,7 +156,7 @@ class CompilerCall(object):
             if self.args.processor is not None:
                 processor = '%s,%s' % (config.ANNOT_PROCESSOR_NAMES,
                                        self.args.processor)
-                javac_cmd += ['-processor', processor]
+                javac_args += ['-processor', processor]
 
             with tempfile.NamedTemporaryFile(
                     mode='w',
@@ -164,7 +164,7 @@ class CompilerCall(object):
                     prefix='classSourceMap_',
                     delete=False) as class_source_map_out:
                 self.class_source_map = class_source_map_out.name
-            javac_cmd += ['-A%s=%s' %
+            javac_args += ['-A%s=%s' %
                           (config.CLASS_SOURCE_MAP_OUTPUT_FILENAME_OPTION,
                            self.class_source_map)]
 
@@ -177,9 +177,28 @@ class CompilerCall(object):
                 # json object.
                 annot_out.write('{}')
                 self.suppress_warnings_out = annot_out.name
-            javac_cmd += ['-A%s=%s' %
+            javac_args += ['-A%s=%s' %
                           (config.SUPRESS_WARNINGS_OUTPUT_FILENAME_OPTION,
                            self.suppress_warnings_out)]
+
+            def arg_must_go_on_cli(arg):
+                # as mandated by javac, argument files must not contain
+                # arguments
+                return arg.startswith('-J') or arg.startswith('@')
+            file_args = filter(lambda x: not arg_must_go_on_cli(x), javac_args)
+            cli_args = filter(arg_must_go_on_cli, javac_args)
+
+            # pass non-special args via a file to avoid blowing up the
+            # command line size limit
+            with tempfile.NamedTemporaryFile(
+                    mode='w',
+                    prefix='javac_args_',
+                    delete=False) as command_line:
+                escaped_args = map(lambda x: '"%s"' % (x.replace('"', '\\"')),
+                                   file_args)
+                command_line.write(utils.encode('\n'.join(escaped_args)))
+                command_line.write('\n')
+                self.command_line_file = command_line.name
 
             with tempfile.NamedTemporaryFile(
                     mode='w',
@@ -187,8 +206,11 @@ class CompilerCall(object):
                     prefix='javac_',
                     delete=False) as file_out:
                 self.verbose_out = file_out.name
+
+                command = [self.javac_cmd] + cli_args + \
+                          ['@' + str(self.command_line_file)]
                 try:
-                    subprocess.check_call(javac_cmd, stderr=file_out)
+                    subprocess.check_call(command, stderr=file_out)
                 except subprocess.CalledProcessError:
                     error_msg = 'ERROR: failure during compilation command.' \
                                 + '\nYou can run the failing compilation ' \
@@ -200,7 +222,7 @@ class CompilerCall(object):
                                 + 'subprocess.check_call(cmd)\n' \
                                 + 'EOF\n"""\n'
                     failing_cmd = filter(lambda arg: arg != '-verbose',
-                                         javac_cmd)
+                                         command)
                     utils.stderr(error_msg.format(failing_cmd))
                     subprocess.check_call(failing_cmd)
 
