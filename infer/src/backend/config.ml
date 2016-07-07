@@ -131,12 +131,6 @@ let meet_level = 1
 
 let nsnotification_center_checker_backend = false
 
-(** If true, it deals with messages (method calls) in objective-c using the objective-c
-    typical semantics. That is: if the receiver is nil then the method is nop and it
-    returns 0.  When the flag is false we deal with messages as standard method / function
-    calls *)
-let objc_method_call_semantics = true
-
 let perf_stats_prefix = "perf_stats"
 
 let proc_stats_filename = "proc_stats.json"

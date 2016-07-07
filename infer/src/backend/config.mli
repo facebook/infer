@@ -80,7 +80,6 @@ val meet_level : int
 val models_dir : string
 val ncpu : int
 val nsnotification_center_checker_backend : bool
-val objc_method_call_semantics : bool
 val os_type : os_type
 val patterns_modeled_expensive : pattern list
 val patterns_never_returning_null : pattern list

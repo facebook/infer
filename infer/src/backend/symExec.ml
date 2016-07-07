@@ -704,12 +704,13 @@ let call_constructor_url_update_args pname actual_params =
      | _ -> actual_params)
   else actual_params
 
-
-(* This method handles ObjC method calls, in particular the fact that calling a method with nil *)
-(* returns nil. The exec_call function is either standard call execution or execution of ObjC *)
-(* getters and setters using a builtin. *)
-let handle_objc_method_call actual_pars actual_params pre tenv ret_ids pdesc callee_pname loc
-    path exec_call =
+(* This method is used to handle the special semantics of ObjC instance method calls. *)
+(* res = [obj foo] *)
+(*  1. We know that obj is null, then we return null *)
+(*  2. We don't know, but obj could be null, we return both options, *)
+(* (obj = null, res = null), (obj != null, res = [obj foo]) *)
+(*  We want the same behavior even when we are going to skip the function. *)
+let handle_objc_instance_method_call_or_skip actual_pars path callee_pname pre ret_ids res =
   let path_description =
     "Message " ^
     (Procname.to_simplified_string callee_pname) ^
@@ -734,8 +735,8 @@ let handle_objc_method_call actual_pars actual_params pre tenv ret_ids pdesc cal
              Prop.add_or_replace_exp_attribute prop (Sil.Var ret_id) (Sil.Aobjc_null info)
          | None -> Prop.conjoin_eq (Sil.Var ret_id) Sil.exp_zero prop)
     | _ -> prop in
-  if is_receiver_null
-  then (* objective-c instance method with a null receiver just return objc_null(res) *)
+  if is_receiver_null then
+    (* objective-c instance method with a null receiver just return objc_null(res) *)
     let path = Paths.Path.add_description path path_description in
     L.d_strln
       ("Object-C method " ^
@@ -747,9 +748,7 @@ let handle_objc_method_call actual_pars actual_params pre tenv ret_ids pdesc cal
        so that in a NPE we can separate it into a different error type *)
     [(add_objc_null_attribute_or_nullify_result pre, path)]
   else
-    let res = exec_call tenv ret_ids pdesc callee_pname loc actual_params pre path in
-    let is_undef =
-      Option.is_some (Prop.get_undef_attribute pre receiver) in
+    let is_undef = Option.is_some (Prop.get_undef_attribute pre receiver) in
     if !Config.footprint && not is_undef then
       let res_null = (* returns: (objc_null(res) /\ receiver=0) or an empty list of results *)
         let pre_with_attr_or_null = add_objc_null_attribute_or_nullify_result pre in
@@ -759,8 +758,16 @@ let handle_objc_method_call actual_pars actual_params pre tenv ret_ids pdesc cal
           let prop = IList.hd (Propset.to_proplist propset) in
           let path = Paths.Path.add_description path path_description in
           [(prop, path)] in
-      res_null @ res
-    else res (* Not known if receiver = 0 and not footprint. Standard tabulation *)
+      res_null @ (res ())
+    else res () (* Not known if receiver = 0 and not footprint. Standard tabulation *)
+
+(* This method handles ObjC instance method calls, in particular the fact that calling a method *)
+(* with nil returns nil. The exec_call function is either standard call execution or execution *)
+(* of ObjC getters and setters using a builtin. *)
+let handle_objc_instance_method_call actual_pars actual_params pre tenv ret_ids pdesc callee_pname
+    loc path exec_call =
+  let res () = exec_call tenv ret_ids pdesc callee_pname loc actual_params pre path in
+  handle_objc_instance_method_call_or_skip actual_pars path callee_pname pre ret_ids res
 
 let normalize_params pdesc prop actual_params =
   let norm_arg (p, args) (e, t) =
@@ -999,21 +1006,26 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
               Sil.Call (ret, exp', par, loc, call_flags) in
         instr'
     | _ -> _instr in
-  let skip_call prop path callee_pname ret_annots loc ret_ids ret_typ_opt actual_args =
-    let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
-    Reporting.log_info current_pname exn;
-    L.d_strln
-      ("Undefined function " ^ Procname.to_string callee_pname
-       ^ ", returning undefined value.");
-    (match Specs.get_summary current_pname with
-     | None -> ()
-     | Some summary ->
-         Specs.CallStats.trace
-           summary.Specs.stats.Specs.call_stats callee_pname loc
-           (Specs.CallStats.CR_skip) !Config.footprint);
-    unknown_or_scan_call ~is_scan:false ret_typ_opt ret_annots Builtin.{
-        pdesc= current_pdesc; instr; tenv; prop_= prop; path; ret_ids; args= actual_args;
-        proc_name= callee_pname; loc; } in
+  let skip_call ?(is_objc_instance_method=false) prop path callee_pname ret_annots loc ret_ids
+      ret_typ_opt actual_args =
+    let skip_res () =
+      let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
+      Reporting.log_info current_pname exn;
+      L.d_strln
+        ("Undefined function " ^ Procname.to_string callee_pname
+         ^ ", returning undefined value.");
+      (match Specs.get_summary current_pname with
+       | None -> ()
+       | Some summary ->
+           Specs.CallStats.trace
+             summary.Specs.stats.Specs.call_stats callee_pname loc
+             (Specs.CallStats.CR_skip) !Config.footprint);
+      unknown_or_scan_call ~is_scan:false ret_typ_opt ret_annots Builtin.{
+          pdesc= current_pdesc; instr; tenv; prop_= prop; path; ret_ids; args= actual_args;
+          proc_name= callee_pname; loc; } in
+    if is_objc_instance_method then
+      handle_objc_instance_method_call_or_skip actual_args path callee_pname prop ret_ids skip_res
+    else skip_res () in
   let call_args prop_ proc_name args ret_ids loc = {
     Builtin.pdesc = current_pdesc; instr; tenv; prop_; path; ret_ids; args; proc_name; loc; } in
   match instr with
@@ -1177,7 +1189,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
             | None -> None in
           match objc_property_accessor_ret_typ_opt with
           | Some (objc_property_accessor, ret_typ) ->
-              handle_objc_method_call
+              handle_objc_instance_method_call
                 n_actual_params n_actual_params prop tenv ret_ids
                 current_pdesc callee_pname loc path
                 (sym_exec_objc_accessor objc_property_accessor ret_typ)
@@ -1188,7 +1200,12 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                     ret_annots
                 | None ->
                     load_ret_annots resolved_pname in
-              skip_call prop path resolved_pname ret_annots loc ret_ids ret_typ_opt n_actual_params
+              let is_objc_instance_method =
+                match attrs_opt with
+                | Some attrs -> attrs.ProcAttributes.is_objc_instance_method
+                | None -> false in
+              skip_call ~is_objc_instance_method prop path resolved_pname ret_annots loc ret_ids 
+							  ret_typ_opt n_actual_params
         else
           proc_call (Option.get summary)
             (call_args prop resolved_pname n_actual_params ret_ids loc) in
@@ -1603,10 +1620,10 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_ids; args= act
     (* In case we call an objc instance method we add and extra spec *)
     (* were the receiver is null and the semantics of the call is nop*)
     let callee_attrs = Specs.get_attributes summary in
-    if (!Config.curr_language <> Config.Java) && Config.objc_method_call_semantics &&
+    if (!Config.curr_language <> Config.Java)  &&
        (Specs.get_attributes summary).ProcAttributes.is_objc_instance_method then
-      handle_objc_method_call actual_pars actual_params pre tenv ret_ids pdesc callee_pname loc
-        path (Tabulation.exe_function_call callee_attrs)
+      handle_objc_instance_method_call actual_pars actual_params pre tenv ret_ids pdesc
+        callee_pname loc path (Tabulation.exe_function_call callee_attrs)
     else  (* non-objective-c method call. Standard tabulation *)
       Tabulation.exe_function_call
         callee_attrs tenv ret_ids pdesc callee_pname loc actual_params pre path
