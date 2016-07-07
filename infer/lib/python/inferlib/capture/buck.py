@@ -112,12 +112,12 @@ class BuckAnalyzer:
         )
         args = [
             '--config',
-            'infer.infer_bin={bin}'
+            '*//infer.infer_bin={bin}'
             .format(bin=config.BIN_DIRECTORY),
             '--config',
-            'infer.clang_compiler={clang}'.format(clang=clang_path),
+            '*//infer.clang_compiler={clang}'.format(clang=clang_path),
             '--config',
-            'infer.clang_plugin={plugin}'.format(plugin=plugin_path),
+            '*//infer.clang_plugin={plugin}'.format(plugin=plugin_path),
         ] + self.args.Xbuck
 
         if self.args.xcode_developer_dir is not None:
@@ -126,7 +126,7 @@ class BuckAnalyzer:
                 devdir=self.args.xcode_developer_dir))
         if self.args.blacklist_regex:
             args.append('--config')
-            args.append('infer.blacklist_regex={regex}'.format(
+            args.append('*//infer.blacklist_regex={regex}'.format(
                 regex=self.args.blacklist_regex))
         return args
 
