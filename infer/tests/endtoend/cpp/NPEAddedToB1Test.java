@@ -42,7 +42,10 @@ public class NPEAddedToB1Test {
 
   @BeforeClass
   public static void runInfer() throws InterruptedException, IOException {
-    inferCmd = InferRunner.createCPPInferCommandFilter(folder, FILE);
+    inferCmd = InferRunner.createCPPInferCommand(
+      folder,
+      FILE,
+      ImmutableList.<String>of("--filtering"));
   }
 
   @Test

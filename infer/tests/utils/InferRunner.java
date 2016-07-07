@@ -61,9 +61,6 @@ public class InferRunner {
   private static HashMap<String, InferResults> inferResultsMap =
       new HashMap<String, InferResults>();
 
-  private InferRunner() {
-  }
-
   private static String getXcodeRoot() throws IOException, InterruptedException {
     ProcessBuilder pb = new ProcessBuilder("xcode-select", "-p");
     Process process = pb.start();
@@ -256,58 +253,25 @@ public class InferRunner {
       TemporaryFolder folder,
       String sourceFile,
       Language lang,
-      boolean analyze,
       @Nullable String isysroot,
-      @Nullable String ml_buckets,
       boolean arc,
-      boolean headers,
-      boolean testingMode,
-      boolean filter) {
+      ImmutableList<String> inferOptions) {
     File resultsDir = createResultsDir(folder);
     String resultsDirName = resultsDir.getAbsolutePath();
     InferRunner.bugsFile = new File(resultsDir, BUGS_FILE_NAME);
 
-    ImmutableList.Builder<String> analyzeOption =
-        new ImmutableList.Builder<>();
-    if (!analyze) {
-      analyzeOption
-          .add("--analyzer")
-          .add("capture");
-    }
-    if (headers) {
-      analyzeOption
-          .add("--headers");
-    }
-    ImmutableList.Builder<String> ml_bucketsOption =
-        new ImmutableList.Builder<>();
-    ml_bucketsOption
-        .add("--ml_buckets")
-        .add(ml_buckets == null ? "all" : ml_buckets);
-
-    ImmutableList.Builder<String> testingModeOption =
-        new ImmutableList.Builder<>();
-    if (testingMode) {
-      testingModeOption.add("--testing_mode");
-    }
-    ImmutableList.Builder<String> doNotFilterOption =
-        new ImmutableList.Builder<>();
-    if (!filter) {
-      doNotFilterOption.add("--no-filtering");
-    }
-    ImmutableList<String> inferCmd = new ImmutableList.Builder<String>()
-        .add("infer")
-        .add("--no-progress-bar")
-        .addAll(doNotFilterOption.build())
-        .add("--out")
-        .add(resultsDirName)
-        .addAll(testingModeOption.build())
-        .add("--cxx")
-        .addAll(analyzeOption.build())
-        .addAll(ml_bucketsOption.build())
-        .add("--")
-        .addAll(createClangCommand(sourceFile, lang, isysroot, arc))
-        .build();
-    return inferCmd;
+    return new ImmutableList.Builder<String>()
+      .add("infer")
+      .add("--cxx")
+      .add("--no-filtering")
+      .add("--out")
+      .add(resultsDirName)
+      .add("--no-progress-bar")
+      .add("--testing-mode")
+      .addAll(inferOptions)
+      .add("--")
+      .addAll(createClangCommand(sourceFile, lang, isysroot, arc))
+      .build();
   }
 
   public static ImmutableList<String> createClangInferCommand(
@@ -318,44 +282,31 @@ public class InferRunner {
       @Nullable String isysroot,
       @Nullable String ml_buckets,
       boolean arc,
-      boolean headers,
-      boolean testingMode) {
-    return createClangInferCommand(
-        folder,
-        sourceFile,
-        lang,
-        analyze,
-        isysroot,
-        ml_buckets,
-        arc,
-        headers,
-        testingMode,
-        false);
-  }
+      ImmutableList<String> extraInferOptions) {
+    ImmutableList.Builder<String> inferOptionsBuilder = new ImmutableList.Builder<String>()
+      .addAll(extraInferOptions);
 
-  public static ImmutableList<String> createClangInferCommand(
-      TemporaryFolder folder,
-      String sourceFile,
-      Language lang,
-      boolean analyze,
-      @Nullable String isysroot,
-      @Nullable String ml_buckets,
-      boolean arc) {
+    if (!analyze) {
+      inferOptionsBuilder.add("--analyzer").add("capture");
+    }
+
+    inferOptionsBuilder
+      .add("--ml_buckets")
+      .add(ml_buckets == null ? "all" : ml_buckets);
+
     return createClangInferCommand(
         folder,
         sourceFile,
         lang,
-        analyze,
         isysroot,
-        ml_buckets,
         arc,
-        false,
-        true);
+        inferOptionsBuilder.build());
   }
 
   public static ImmutableList<String> createCInferCommandFrontend(
       TemporaryFolder folder,
-      String sourceFile) {
+      String sourceFile,
+      ImmutableList<String> extraInferOptions) {
     return createClangInferCommand(
         folder,
         sourceFile,
@@ -363,12 +314,20 @@ public class InferRunner {
         false,
         null,
         null,
-        false);
+        false,
+        extraInferOptions);
+  }
+
+  public static ImmutableList<String> createCInferCommandFrontend(
+      TemporaryFolder folder,
+      String sourceFile) {
+    return createCInferCommandFrontend(folder, sourceFile, ImmutableList.<String>of());
   }
 
   public static ImmutableList<String> createCPPInferCommandFrontend(
       TemporaryFolder folder,
-      String sourceFile) {
+      String sourceFile,
+      ImmutableList<String> extraInferOptions) {
     return createClangInferCommand(
         folder,
         sourceFile,
@@ -376,12 +335,41 @@ public class InferRunner {
         false,
         null,
         null,
-        false);
+        false,
+        extraInferOptions);
+  }
+
+  public static ImmutableList<String> createCPPInferCommandFrontend(
+      TemporaryFolder folder,
+      String sourceFile) {
+    return createCPPInferCommandFrontend(folder, sourceFile, ImmutableList.<String>of());
+  }
+
+  public static ImmutableList<String> createObjCInferCommandFrontend(
+      TemporaryFolder folder,
+      String sourceFile,
+      ImmutableList<String> extraInferOptions) throws IOException, InterruptedException {
+    return createClangInferCommand(
+        folder,
+        sourceFile,
+        Language.ObjC,
+        false,
+        getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
+        null,
+        false,
+        extraInferOptions);
   }
 
   public static ImmutableList<String> createObjCInferCommandFrontend(
       TemporaryFolder folder,
       String sourceFile) throws IOException, InterruptedException {
+    return createObjCInferCommandFrontend(folder, sourceFile, ImmutableList.<String>of());
+  }
+
+  public static ImmutableList<String> createObjCInferCommandFrontendArc(
+      TemporaryFolder folder,
+      String sourceFile,
+      ImmutableList<String> extraInferOptions) throws IOException, InterruptedException {
     return createClangInferCommand(
         folder,
         sourceFile,
@@ -389,25 +377,20 @@ public class InferRunner {
         false,
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
-        false);
+        true,
+        extraInferOptions);
   }
 
   public static ImmutableList<String> createObjCInferCommandFrontendArc(
       TemporaryFolder folder,
       String sourceFile) throws IOException, InterruptedException {
-    return createClangInferCommand(
-        folder,
-        sourceFile,
-        Language.ObjC,
-        false,
-        getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
-        null,
-        true);
+    return createObjCInferCommandFrontendArc(folder, sourceFile, ImmutableList.<String>of());
   }
 
   public static ImmutableList<String> createObjCPPInferCommandFrontend(
       TemporaryFolder folder,
-      String sourceFile) throws IOException, InterruptedException {
+      String sourceFile,
+      ImmutableList<String> extraInferOptions) throws IOException, InterruptedException {
     return createClangInferCommand(
         folder,
         sourceFile,
@@ -415,12 +398,20 @@ public class InferRunner {
         false,
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
-        false);
+        false,
+        extraInferOptions);
+  }
+
+  public static ImmutableList<String> createObjCPPInferCommandFrontend(
+      TemporaryFolder folder,
+      String sourceFile) throws IOException, InterruptedException {
+    return createObjCPPInferCommandFrontend(folder, sourceFile, ImmutableList.<String>of());
   }
 
   public static ImmutableList<String> createCInferCommand(
       TemporaryFolder folder,
-      String sourceFile) {
+      String sourceFile,
+      ImmutableList<String> extraInferOptions) {
     return createClangInferCommand(
         folder,
         sourceFile,
@@ -428,37 +419,48 @@ public class InferRunner {
         true,
         null,
         null,
-        false);
+        false,
+        extraInferOptions);
+  }
+
+  public static ImmutableList<String> createCInferCommand(
+      TemporaryFolder folder,
+      String sourceFile) {
+    return createCInferCommand(folder, sourceFile, ImmutableList.<String>of());
+  }
+
+  public static ImmutableList<String> createCPPInferCommand(
+      TemporaryFolder folder,
+      String sourceFile,
+      ImmutableList<String> extraInferOptions) {
+    ImmutableList<String> args = new ImmutableList.Builder<String> ()
+      .add("--no-testing-mode")
+      .addAll(extraInferOptions)
+      .build();
+    return createClangInferCommand(
+        folder,
+        sourceFile,
+        Language.CPP,
+        true,
+        null,
+        null,
+        false,
+        args);
   }
 
   public static ImmutableList<String> createCPPInferCommand(
       TemporaryFolder folder,
       String sourceFile) {
-    return createClangInferCommand(
-        folder,
-        sourceFile,
-        Language.CPP,
-        true,
-        null,
-        null,
-        false,
-        false,
-        false);
+    return createCPPInferCommand(folder, sourceFile, ImmutableList.<String>of());
   }
 
   public static ImmutableList<String> createCPPInferCommandIncludeHeaders(
       TemporaryFolder folder,
       String sourceFile) {
-    return createClangInferCommand(
+    return createCPPInferCommand(
         folder,
         sourceFile,
-        Language.CPP,
-        true,
-        null,
-        null,
-        false,
-        true,
-        true);
+        ImmutableList.<String>of("--testing-mode", "--headers"));
   }
 
   public static ImmutableList<String> createCPPInferCommandWithMLBuckets(
@@ -472,23 +474,8 @@ public class InferRunner {
         true,
         null,
         ml_bucket,
-        false);
-  }
-
-  public static ImmutableList<String> createCPPInferCommandFilter(
-      TemporaryFolder folder,
-      String sourceFile) throws IOException, InterruptedException {
-    return createClangInferCommand(
-        folder,
-        sourceFile,
-        Language.CPP,
-        true,
-        null,
-        null,
         false,
-        false,
-        false,
-        true);
+        ImmutableList.<String>of());
   }
 
   public static ImmutableList<String> createObjCInferCommand(
@@ -501,7 +488,8 @@ public class InferRunner {
         true,
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
-        false);
+        false,
+        ImmutableList.<String>of());
   }
 
   public static ImmutableList<String> createObjCInferCommandSimple(
@@ -515,7 +503,8 @@ public class InferRunner {
         true,
         null,
         ml_bucket,
-        false);
+        false,
+        ImmutableList.<String>of());
   }
 
   public static ImmutableList<String> createObjCInferCommandWithMLBuckets(
@@ -530,7 +519,8 @@ public class InferRunner {
         true,
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         ml_bucket,
-        arc);
+        arc,
+        ImmutableList.<String>of());
   }
 
   public static ImmutableList<String> createObjCPPInferCommand(
@@ -543,7 +533,8 @@ public class InferRunner {
         true,
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
-        false);
+        false,
+        ImmutableList.<String>of());
   }
 
   public static ImmutableList<String> createiOSInferCommandFrontend(
@@ -556,7 +547,8 @@ public class InferRunner {
         false,
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
-        false);
+        false,
+        ImmutableList.<String>of());
   }
 
   public static ImmutableList<String> createiOSInferCommand(
@@ -569,7 +561,8 @@ public class InferRunner {
         true,
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
-        false);
+        false,
+        ImmutableList.<String>of());
   }
 
   public static ImmutableList<String> createiOSInferCommandWithMLBuckets(
@@ -584,7 +577,8 @@ public class InferRunner {
         true,
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         bucket,
-        arc);
+        arc,
+        ImmutableList.<String>of());
   }
 
   @Nullable
