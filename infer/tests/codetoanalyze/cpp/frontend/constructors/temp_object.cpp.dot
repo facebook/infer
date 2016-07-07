@@ -81,7 +81,7 @@ digraph iCFG {
 	
 
 	 22 -> 21 ;
-21 [label="21:  Return Stmt \n   n$0=*&x:class X  [line 28]\n  n$1=_fun_X_div(&x:class X &) [line 28]\n  *&return:int =n$1 [line 28]\n " shape="box"]
+21 [label="21:  Return Stmt \n   NONEn$0=*&x:class X  [line 28]\n  n$1=_fun_X_div(&x:class X &) [line 28]\n  *&return:int =n$1 [line 28]\n " shape="box"]
 	
 
 	 21 -> 20 ;

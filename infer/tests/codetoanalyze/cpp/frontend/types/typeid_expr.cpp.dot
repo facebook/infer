@@ -20,7 +20,7 @@ digraph iCFG {
 	
 
 	 66 -> 68 ;
-65 [label="65:  BinaryOperatorStmt: EQ \n   n$0=_fun_template_typeid<Person>(&person:class Person &) [line 64]\n  n$1=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$1.__type_name:void ,&person:class Person ) [line 64]\n  n$2=*n$1:class std::type_info  [line 64]\n  n$3=_fun_std::type_info_name(n$1:class std::type_info &) [line 64]\n " shape="box"]
+65 [label="65:  BinaryOperatorStmt: EQ \n   n$0=_fun_template_typeid<Person>(&person:class Person &) [line 64]\n  n$1=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$1.__type_name:void ,&person:class Person ) [line 64]\n  NONEn$2=*n$1:class std::type_info  [line 64]\n  n$3=_fun_std::type_info_name(n$1:class std::type_info &) [line 64]\n " shape="box"]
 	
 
 	 65 -> 66 ;
@@ -44,7 +44,7 @@ digraph iCFG {
 	
 
 	 60 -> 59 ;
-59 [label="59:  Return Stmt \n   n$0=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$0.__type_name:void ) [line 59]\n  n$1=*n$0:class std::type_info  [line 59]\n  n$2=_fun_std::type_info_name(n$0:class std::type_info &) [line 59]\n  *&return:char *=n$2 [line 59]\n " shape="box"]
+59 [label="59:  Return Stmt \n   n$0=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$0.__type_name:void ) [line 59]\n  NONEn$1=*n$0:class std::type_info  [line 59]\n  n$2=_fun_std::type_info_name(n$0:class std::type_info &) [line 59]\n  *&return:char *=n$2 [line 59]\n " shape="box"]
 	
 
 	 59 -> 58 ;
@@ -75,7 +75,7 @@ digraph iCFG {
 	
 
 	 52 -> 54 ;
-51 [label="51:  BinaryOperatorStmt: EQ \n   n$0=*&ptr:class Person * [line 50]\n  n$1=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$1.__type_name:void ,n$0:class Person ) [line 50]\n  n$2=*n$1:class std::type_info  [line 50]\n  n$3=_fun_std::type_info_name(n$1:class std::type_info &) [line 50]\n  n$4=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$4.__type_name:void ,&person:class Person ) [line 50]\n  n$5=*n$4:class std::type_info  [line 50]\n  n$6=_fun_std::type_info_name(n$4:class std::type_info &) [line 50]\n " shape="box"]
+51 [label="51:  BinaryOperatorStmt: EQ \n   n$0=*&ptr:class Person * [line 50]\n  n$1=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$1.__type_name:void ,n$0:class Person ) [line 50]\n  NONEn$2=*n$1:class std::type_info  [line 50]\n  n$3=_fun_std::type_info_name(n$1:class std::type_info &) [line 50]\n  n$4=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$4.__type_name:void ,&person:class Person ) [line 50]\n  NONEn$5=*n$4:class std::type_info  [line 50]\n  n$6=_fun_std::type_info_name(n$4:class std::type_info &) [line 50]\n " shape="box"]
 	
 
 	 51 -> 52 ;
@@ -147,11 +147,11 @@ digraph iCFG {
 	
 
 	 34 -> 33 ;
-33 [label="33:  DeclStmt \n   n$5=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$5.__type_name:void ,&t:int ) [line 31]\n  n$6=*n$5:class std::type_info  [line 31]\n  n$7=_fun_std::type_info_name(n$5:class std::type_info &) [line 31]\n  *&t_type_info:char *=n$7 [line 31]\n " shape="box"]
+33 [label="33:  DeclStmt \n   n$5=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$5.__type_name:void ,&t:int ) [line 31]\n  NONEn$6=*n$5:class std::type_info  [line 31]\n  n$7=_fun_std::type_info_name(n$5:class std::type_info &) [line 31]\n  *&t_type_info:char *=n$7 [line 31]\n " shape="box"]
 	
 
 	 33 -> 32 ;
-32 [label="32:  DeclStmt \n   n$2=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$2.__type_name:void ,&person:class Person ) [line 32]\n  n$3=*n$2:class std::type_info  [line 32]\n  n$4=_fun_std::type_info_name(n$2:class std::type_info &) [line 32]\n  *&person_type_info:char *=n$4 [line 32]\n " shape="box"]
+32 [label="32:  DeclStmt \n   n$2=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$2.__type_name:void ,&person:class Person ) [line 32]\n  NONEn$3=*n$2:class std::type_info  [line 32]\n  n$4=_fun_std::type_info_name(n$2:class std::type_info &) [line 32]\n  *&person_type_info:char *=n$4 [line 32]\n " shape="box"]
 	
 
 	 32 -> 27 ;

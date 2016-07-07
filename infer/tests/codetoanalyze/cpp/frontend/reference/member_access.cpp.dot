@@ -4,7 +4,7 @@ digraph iCFG {
 	
 
 	 11 -> 10 ;
-10 [label="10:  DeclStmt \n   n$0=*&x:class X * [line 22]\n  n$1=*n$0:class X  [line 22]\n  n$2=_fun_X_call(n$0:class X *) [line 22]\n  *&c:int =n$2 [line 22]\n " shape="box"]
+10 [label="10:  DeclStmt \n   n$0=*&x:class X * [line 22]\n  NONEn$1=*n$0:class X  [line 22]\n  n$2=_fun_X_call(n$0:class X *) [line 22]\n  *&c:int =n$2 [line 22]\n " shape="box"]
 	
 
 	 10 -> 9 ;
@@ -19,7 +19,7 @@ digraph iCFG {
 	
 
 	 7 -> 6 ;
-6 [label="6:  DeclStmt \n   n$0=*&x:class X & [line 17]\n  n$1=*n$0:class X  [line 17]\n  n$2=_fun_X_call(n$0:class X &) [line 17]\n  *&c:int =n$2 [line 17]\n " shape="box"]
+6 [label="6:  DeclStmt \n   n$0=*&x:class X & [line 17]\n  NONEn$1=*n$0:class X  [line 17]\n  n$2=_fun_X_call(n$0:class X &) [line 17]\n  *&c:int =n$2 [line 17]\n " shape="box"]
 	
 
 	 6 -> 5 ;

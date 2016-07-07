@@ -105,6 +105,7 @@ let name_to_string: name => string;
 /** Convert a field name to a string. */
 let fieldname_to_string: fieldname => string;
 
+
 /** Convert a fieldname to a string, including the mangled part. */
 let fieldname_to_complete_string: fieldname => string;
 
@@ -145,16 +146,16 @@ let fieldname_is_hidden: fieldname => bool;
 let get_name: t => name;
 
 
-/** Kind of the identifier. */
-let get_kind: t => kind;
-
-
 /** Create an identifier with default name for the given kind */
 let create: kind => int => t;
 
 
 /** Generate a normal identifier with the given name and stamp. */
 let create_normal: name => int => t;
+
+
+/** Create a "null" identifier for situations where the IR requires an id that will never be read */
+let create_none: unit => t;
 
 
 /** Generate a primed identifier with the given name and stamp. */
@@ -191,6 +192,10 @@ let is_footprint: t => bool;
 
 /** Check whether an identifier represents a path or not. */
 let is_path: t => bool;
+
+
+/** Check whether an identifier is the special "none" identifier */
+let is_none: t => bool;
 
 
 /** Convert a primed ident into a nonprimed one, keeping the stamp. */

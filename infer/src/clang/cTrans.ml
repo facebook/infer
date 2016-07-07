@@ -575,7 +575,8 @@ struct
         (* calling a method with null *)
         | [(exp, Typ.Tptr (typ, _) )] when decl_kind <> `CXXConstructor ->
             let typ = CTypes.expand_structured_type context.tenv typ in
-            let extra_instrs, _ = CTrans_utils.dereference_var_sil (exp, typ) sil_loc in
+            let no_id = Ident.create_none () in
+            let extra_instrs = [Sil.Letderef (no_id, exp, typ, sil_loc)] in
             pre_trans_result.exps, extra_instrs
         | [(_, Typ.Tptr _ )] -> pre_trans_result.exps, []
         | [(sil, typ)] -> [(sil, Typ.Tptr (typ, Typ.Pk_reference))], []

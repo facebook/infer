@@ -404,8 +404,8 @@ let builtin_get_array_length =
   Sil.Const (Sil.Cfun ModelBuiltins.__get_array_length)
 
 let create_sil_deref exp typ loc =
-  let fresh_id = Ident.create_fresh Ident.knormal in
-  Sil.Letderef (fresh_id, exp, typ, loc)
+  let no_id = Ident.create_none () in
+  Sil.Letderef (no_id, exp, typ, loc)
 
 (** translate an expression used as an r-value *)
 let rec expression context pc expr =

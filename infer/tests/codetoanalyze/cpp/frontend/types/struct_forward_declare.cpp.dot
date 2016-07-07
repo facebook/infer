@@ -4,7 +4,7 @@ digraph iCFG {
 	
 
 	 41 -> 40 ;
-40 [label="40:  Return Stmt \n   n$0=*&z:class Z * [line 66]\n  n$1=*n$0:class Z  [line 66]\n  n$2=_fun_Z_getF(n$0:class Z *) [line 66]\n  *&return:int =(1 / n$2) [line 66]\n " shape="box"]
+40 [label="40:  Return Stmt \n   n$0=*&z:class Z * [line 66]\n  NONEn$1=*n$0:class Z  [line 66]\n  n$2=_fun_Z_getF(n$0:class Z *) [line 66]\n  *&return:int =(1 / n$2) [line 66]\n " shape="box"]
 	
 
 	 40 -> 39 ;
@@ -23,7 +23,7 @@ digraph iCFG {
 	
 
 	 36 -> 35 ;
-35 [label="35:  Return Stmt \n   n$0=*&z:class Z  [line 58]\n  n$1=_fun_Z_getF(&z:class Z &) [line 58]\n  *&return:int =(1 / n$1) [line 58]\n " shape="box"]
+35 [label="35:  Return Stmt \n   NONEn$0=*&z:class Z  [line 58]\n  n$1=_fun_Z_getF(&z:class Z &) [line 58]\n  *&return:int =(1 / n$1) [line 58]\n " shape="box"]
 	
 
 	 35 -> 34 ;
@@ -63,7 +63,7 @@ digraph iCFG {
 	
 
 	 26 -> 25 ;
-25 [label="25:  Return Stmt \n   n$0=*&x:class X  [line 52]\n  n$1=_fun_X_getF(&x:class X &) [line 52]\n  *&return:int =(1 / n$1) [line 52]\n " shape="box"]
+25 [label="25:  Return Stmt \n   NONEn$0=*&x:class X  [line 52]\n  n$1=_fun_X_getF(&x:class X &) [line 52]\n  *&return:int =(1 / n$1) [line 52]\n " shape="box"]
 	
 
 	 25 -> 24 ;
@@ -78,7 +78,7 @@ digraph iCFG {
 	
 
 	 22 -> 21 ;
-21 [label="21:  Return Stmt \n   n$0=*&x:class X * [line 42]\n  n$1=*n$0:class X  [line 42]\n  n$2=_fun_X_getF(n$0:class X *) [line 42]\n  *&return:int =(1 / n$2) [line 42]\n " shape="box"]
+21 [label="21:  Return Stmt \n   n$0=*&x:class X * [line 42]\n  NONEn$1=*n$0:class X  [line 42]\n  n$2=_fun_X_getF(n$0:class X *) [line 42]\n  *&return:int =(1 / n$2) [line 42]\n " shape="box"]
 	
 
 	 21 -> 20 ;
@@ -97,7 +97,7 @@ digraph iCFG {
 	
 
 	 17 -> 16 ;
-16 [label="16:  Return Stmt \n   n$0=*&x:class X  [line 37]\n  n$1=_fun_X_getF(&x:class X &) [line 37]\n  *&return:int =(1 / n$1) [line 37]\n " shape="box"]
+16 [label="16:  Return Stmt \n   NONEn$0=*&x:class X  [line 37]\n  n$1=_fun_X_getF(&x:class X &) [line 37]\n  *&return:int =(1 / n$1) [line 37]\n " shape="box"]
 	
 
 	 16 -> 15 ;

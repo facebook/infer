@@ -31,6 +31,14 @@ let knormal = 0;
 
 let kfootprint = 1;
 
+
+/** special kind of "null ident" (basically, a more compact way of implementing an ident option).
+    useful for situations when an instruction requires an id, but no one should read the result. */
+let knone = 2;
+
+/* timestamp for a path identifier */
+let path_ident_stamp = (-3);
+
 type t = {kind: int, name: name, stamp: int};
 
 type _ident = t;
@@ -146,6 +154,7 @@ let name_to_string (name: name) => name;
 
 /** Convert a fieldname to a string. */
 let fieldname_to_string fn => Mangled.to_string fn.fname;
+
 
 /** Convert a fieldname to a string, including the mangled part. */
 let fieldname_to_complete_string fn => Mangled.to_string_full fn.fname;
@@ -283,7 +292,7 @@ let name_return = Mangled.from_string "return";
 
 /** Return the standard name for the given kind */
 let standard_name kind =>
-  if (kind === knormal) {
+  if (kind === knormal || kind === knone) {
     name_normal
   } else if (kind === kfootprint) {
     name_footprint
@@ -307,6 +316,12 @@ let create kind stamp => create_with_stamp kind (standard_name kind) stamp;
 let create_normal name stamp => create_with_stamp knormal name stamp;
 
 
+/** Create a fresh identifier with default name for the given kind. */
+let create_fresh kind => NameGenerator.create_fresh_ident kind (standard_name kind);
+
+let create_none () => create_fresh knone;
+
+
 /** Generate a primed identifier with the given name and stamp */
 let create_primed name stamp => create_with_stamp kprimed name stamp;
 
@@ -319,22 +334,21 @@ let create_footprint name stamp => create_with_stamp kfootprint name stamp;
 /** Get a name of an identifier */
 let get_name id => id.name;
 
-let get_kind id => id.kind;
-
 let is_primed (id: t) => id.kind === kprimed;
 
-let is_normal (id: t) => id.kind === knormal;
+let is_normal (id: t) => id.kind === knormal || id.kind === knone;
 
 let is_footprint (id: t) => id.kind === kfootprint;
 
-/* timestamp for a path identifier */
-let path_ident_stamp = (-3);
+let is_none (id: t) => id.kind == knone;
 
 let is_path (id: t) => id.kind === knormal && id.stamp == path_ident_stamp;
 
 let make_unprimed id =>
   if (id.kind != kprimed) {
     assert false
+  } else if (id.kind === knone) {
+    {...id, kind: knone}
   } else {
     {...id, kind: knormal}
   };
@@ -345,10 +359,6 @@ let update_name_generator ids => {
   let upd id => ignore (create_with_stamp id.kind id.name id.stamp);
   IList.iter upd ids
 };
-
-
-/** Create a fresh identifier with default name for the given kind. */
-let create_fresh kind => NameGenerator.create_fresh_ident kind (standard_name kind);
 
 
 /** Generate a normal identifier whose name encodes a path given as a string. */
@@ -365,6 +375,10 @@ let to_string id => {
       "@"
     } else if (id.kind === knormal) {
       ""
+    } else if (
+      id.kind === knone
+    ) {
+      "NONE"
     } else {
       "_"
     };
@@ -412,9 +426,3 @@ let pp_list pe => pp_comma_seq (pp pe);
 
 /** pretty printer for lists of names */
 let pp_name_list = pp_comma_seq pp_name;
-
-/*
- let make_ident_primed id =
-   if id.kind == kprimed then assert false
-   else { id with kind = kprimed }
- */
