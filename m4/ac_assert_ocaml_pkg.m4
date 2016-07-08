@@ -30,12 +30,12 @@ AC_DEFUN([AC_ASSERT_OCAML_PKG],
     has_pkg=$AS_TR_SH[OCAML_PKG_$1]
     pkg=$1
     version=
-    AS_IF([test "x$3" = "x"], [dnl
+    AS_IF([test "x$3" != "x"], [dnl
       version=" version $3"
     ])
   ])
   AS_IF([test "$has_pkg" = "no"], [dnl
-    AC_MSG_ERROR([missing dependency: $pkg$version.
+    AC_MSG_ERROR([missing OCaml dependency: $pkg$version
 
 If you are using opam, please run
 
