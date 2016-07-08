@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name: "infer"
-version: "0.8.1"
+version: "0.9.0"
 maintainer: "opam-devel@lists.ocaml.org"
 authors: "Facebook"
 homepage: "https://github.com/facebook/infer"

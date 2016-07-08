@@ -15,7 +15,7 @@ AC_PREREQ([2.63])
 # - opam
 # - docker/Dockerfile
 AC_INIT([Infer],
-        [0.8.1],
+        [0.9.0],
         [https://github.com/facebook/infer/issues/])
 
 # this has to happen just after AC_INIT() because later macros may mess with the arguments passed to
@@ -26,8 +26,8 @@ AC_CONFIG_SRCDIR([infer/src/IR/Sil.re])
 
 # WARNING: keep in sync with above
 INFER_MAJOR=0
-INFER_MINOR=8
-INFER_PATCH=1
+INFER_MINOR=9
+INFER_PATCH=0
 
 AC_SUBST([INFER_MAJOR])
 AC_SUBST([INFER_MINOR])
