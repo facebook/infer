@@ -118,6 +118,20 @@ let is_initialized_with_expensive_call decl =
        | _ -> false)
   | _ -> false
 
+let captured_variables_cxx_ref captured_vars =
+  let capture_var_is_cxx_ref reference_captured_vars captured_var =
+    let decl_ref_opt = captured_var.Clang_ast_t.bcv_variable in
+    match Ast_utils.get_decl_opt_with_decl_ref decl_ref_opt with
+    | Some VarDecl (_, named_decl_info, type_ptr, _)
+    | Some ParmVarDecl (_, named_decl_info, type_ptr, _)
+    | Some ImplicitParamDecl (_, named_decl_info, type_ptr, _) ->
+        (match Ast_utils.get_desugared_type type_ptr with
+         | Some RValueReferenceType _ | Some LValueReferenceType _ ->
+             named_decl_info::reference_captured_vars
+         | _ -> reference_captured_vars)
+    | _ -> reference_captured_vars in
+  IList.fold_left capture_var_is_cxx_ref [] captured_vars
+
 (* === Warnings on properties === *)
 
 (* Assing Pointer Warning: a property with a pointer type should not be declared `assign` *)
@@ -216,19 +230,17 @@ let direct_atomic_property_access_warning context stmt_info ivar_name =
 (* CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK: C++ references
    should not be captured in blocks.  *)
 let captured_cxx_ref_in_objc_block_warning stmt_info captured_vars =
-  let is_cxx_ref (_, typ) =
-    match typ with
-    | Typ.Tptr(_, Typ.Pk_reference) -> true
-    | _ -> false in
-  let capt_refs = IList.filter is_cxx_ref captured_vars in
-  let pvar_descs =
-    IList.fold_left (fun s (v, _)  -> s ^ " '" ^ (Pvar.to_string v) ^ "' ") "" capt_refs in
+  let capt_refs = captured_variables_cxx_ref captured_vars in
+  let var_descs =
+    let var_desc vars var_named_decl_info =
+      vars ^ "'" ^ var_named_decl_info.Clang_ast_t.ni_name ^ "'" in
+    IList.fold_left var_desc "" capt_refs in
   (* Fire if the list of captured references is not empty *)
   let condition = IList.length capt_refs > 0 in
   if condition then
     Some {
       name = "CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK";
-      description = "C++ Reference variable(s) " ^ pvar_descs ^
+      description = "C++ Reference variable(s) " ^ var_descs ^
                     " captured by Objective-C block";
       suggestion = "C++ References are unmanaged and may be invalid " ^
                    "by the time the block executes.";

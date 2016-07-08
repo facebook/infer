@@ -114,8 +114,7 @@ let run_frontend_checkers_on_stmt trans_state instr =
       invoke_set_of_checkers call_checker_for_ivar cfg cg (Some pdesc) ivar_access_checker_list
   | BlockExpr(stmt_info, _ , _, Clang_ast_t.BlockDecl (_, block_decl_info)) ->
       let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
-      let captured_vars = CVar_decl.captured_vars_from_block_info context captured_block_vars in
-      let call_captured_vars_checker =  checkers_for_capture_vars stmt_info captured_vars in
+      let call_captured_vars_checker =  checkers_for_capture_vars stmt_info captured_block_vars in
       let pdesc_opt = Some pdesc in
       invoke_set_of_checkers call_captured_vars_checker cfg cg pdesc_opt captured_vars_checker_list
   | _ -> ()

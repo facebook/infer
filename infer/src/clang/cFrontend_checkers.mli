@@ -34,8 +34,8 @@ val direct_atomic_property_access_warning :
 
 (* CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK: C++ references
    should not be captured in blocks.  *)
-val captured_cxx_ref_in_objc_block_warning : Clang_ast_t.stmt_info -> (Pvar.t * Typ.t) list ->
-  warning_desc option
+val captured_cxx_ref_in_objc_block_warning : Clang_ast_t.stmt_info ->
+  Clang_ast_t.block_captured_variable list -> warning_desc option
 
 (* REGISTERED_OBSERVER_BEING_DEALLOCATED: an object is registered in a notification center
    but not removed before deallocation *)
