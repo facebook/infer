@@ -1127,11 +1127,14 @@ let exe_usage (exe : CLOpt.exe) =
       Analyze the files captured in the project results directory, \
       which can be specified with the --results-dir option."
   | Clang ->
-      "\nUsage: InferClang -c C Files -ast AST Files --results-dir <output-dir> [options] \n"
+      "Usage: InferClang -c <c files> -ast <ast files> --results-dir <output-dir> [options] \n\
+       Translate the given files using clang into infer internal representation for later analysis."
   | Java ->
-      "Usage: InferJava -d compilation_dir -sources filename\n"
+      "Usage: InferJava [options]\n\
+       Translate the given files using javac into infer internal representation for later analysis."
   | Llvm ->
-      "Usage: InferLLVM -c <cfile> [options]\n"
+      "Usage: InferLLVM -c <c file> [options]\n\
+       Translate the given files using llvm into infer internal representation for later analysis."
   | Print ->
       "Usage: InferPrint [options] name1.specs ... namen.specs\n\
        Read, convert, and print .specs files. \
