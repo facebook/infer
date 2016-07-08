@@ -389,7 +389,25 @@ let inferconfig_path =
 
 (* Proceed to declare and parse the remaining options *)
 
-(** The references representing the command line options are defined in a single
+(** HOWTO define a new command line and config file option.
+
+    1. Add an entry in the following let...and...and... binding.  See the documentation in
+       [CommandLineOption.mli], and use the existing options as a guide.  Preferably the identifer
+       and long option name are the same modulo underscores versus hyphens.
+
+       E.g. [and new_option = CLOpt.mk_bool ~long:"new-option"]
+
+    2. Add a line to the [Freeze initialized configuration values] section below.
+
+       E.g. [and new_option = !new_option]
+
+    3. Add a line to [config.mli].
+
+       E.g. [val new_option : bool]
+
+    These are all in alphabetical order as much as possible.
+
+    The references representing the command line options are defined in a single
     simultaneous let...and...and... binding in order to allow the type-checker to catch
     uses of one reference in code for another. This avoids being sensitive to
     initialization-order and unintended dependence on the order in which options appear on
@@ -438,9 +456,9 @@ and allow_specs_cleanup =
     "Allow to remove existing specs before running analysis when it's not incremental"
 
 and (
-  analysis_path_regex_whitelist_options,
-  analysis_path_regex_blacklist_options,
   analysis_blacklist_files_containing_options,
+  analysis_path_regex_blacklist_options,
+  analysis_path_regex_whitelist_options,
   analysis_suppress_errors_options) =
   let mk_filtering_options ~suffix ?(deprecated_suffix=[]) ~help ~meta =
     let mk_option analyzer =
@@ -452,20 +470,22 @@ and (
     IList.map (fun analyzer -> (analyzer, mk_option analyzer)) analyzers in
   (
     mk_filtering_options
-      ~suffix:"whitelist-path-regex"
-      ~deprecated_suffix:["whitelist"]
-      ~help:"whitelist the analysis of files whose relative path matches the specified OCaml-style regex"
-      ~meta:"path regex",
-    mk_filtering_options
-      ~suffix:"blacklist-path-regex"
-      ~deprecated_suffix:["blacklist"]
-      ~help:"blacklist the analysis of files whose relative path matches the specified OCaml-style regex"
-      ~meta:"path regex",
-    mk_filtering_options
       ~suffix:"blacklist-files-containing"
       ~deprecated_suffix:["blacklist_files_containing"]
       ~help:"blacklist files containing the specified string"
       ~meta:"string",
+    mk_filtering_options
+      ~suffix:"blacklist-path-regex"
+      ~deprecated_suffix:["blacklist"]
+      ~help:"blacklist the analysis of files whose relative path matches the specified OCaml-style \
+             regex"
+      ~meta:"path regex",
+    mk_filtering_options
+      ~suffix:"whitelist-path-regex"
+      ~deprecated_suffix:["whitelist"]
+      ~help:"whitelist the analysis of files whose relative path matches the specified OCaml-style \
+             regex"
+      ~meta:"path regex",
     mk_filtering_options
       ~suffix:"suppress-errors"
       ~deprecated_suffix:["suppress_errors"]
@@ -798,6 +818,22 @@ and margin =
   CLOpt.mk_int ~deprecated:["set_pp_margin"] ~long:"margin" ~default:100
     ~meta:"int" "Set right margin for the pretty printing functions"
 
+and (
+  patterns_modeled_expensive,
+  patterns_never_returning_null,
+  patterns_skip_translation) =
+  let mk_option ~deprecated ~long doc =
+    CLOpt.mk_set_from_json ~deprecated ~long ~default:[] ~default_to_string:(fun _ -> "[]")
+      ~exes:CLOpt.[Java]
+      ~f:(patterns_of_json_with_key long) doc in
+  ( mk_option ~deprecated:["modeled_expensive"] ~long:"modeled-expensive"
+      ("Matcher or list of matchers for methods that should be considered expensive " ^
+       "by the performance critical checker."),
+    mk_option ~deprecated:["never_returning_null"] ~long:"never-returning-null"
+      "Matcher or list of matchers for functions that never return `null`.",
+    mk_option ~deprecated:["skip_translation"] ~long:"skip-translation"
+      "Matcher or list of matchers for names of files that should be analyzed at all.")
+
 (** command line flag: if true, print stats about preconditions to standard output *)
 and precondition_stats =
   CLOpt.mk_bool ~deprecated:["precondition_stats"] ~long:"precondition-stats"
@@ -1051,24 +1087,6 @@ and zip_libraries : zip_library list ref = ref []
 and zip_specs_library =
   CLOpt.mk_string_list ~long:"zip-specs-library" ~short:"ziplib" ~f:resolve
     ~exes:CLOpt.[Analyze] ~meta:"zip file" "add a zip file containing library spec files"
-
-
-and (
-  patterns_never_returning_null,
-  patterns_skip_translation,
-  patterns_modeled_expensive) =
-  let mk_option ~deprecated ~long doc =
-    CLOpt.mk_set_from_json ~deprecated ~long ~default:[] ~default_to_string:(fun _ -> "[]")
-      ~exes:CLOpt.[Java]
-      ~f:(patterns_of_json_with_key long) doc in
-  (
-    mk_option ~deprecated:["never_returning_null"] ~long:"never-returning-null"
-      "Matcher or list of matchers for functions that never return `null`.",
-    mk_option ~deprecated:["skip_translation"] ~long:"skip-translation"
-      "Matcher or list of matchers for names of files that should be analyzed at all.",
-    mk_option ~deprecated:["modeled_expensive"] ~long:"modeled-expensive"
-      ("Matcher or list of matchers for methods that should be considered expensive " ^
-       "by the performance critical checker."))
 
 
 (** Configuration values specified by environment variables *)
