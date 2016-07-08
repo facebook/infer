@@ -19,15 +19,19 @@ module YBU = Yojson.Basic.Util
    specify which executables for which an option will be documented. *)
 type exe = Analyze | Clang | Java | Llvm | Print | StatsAggregator | Toplevel
 
+let exes = [
+  ("InferAnalyze", Analyze);
+  ("InferClang", Clang);
+  ("InferJava", Java);
+  ("InferLLVM", Llvm);
+  ("InferPrint", Print);
+  ("InferStatsAggregator", StatsAggregator);
+  ("infer", Toplevel);
+]
+
 let current_exe =
-  match Filename.basename Sys.executable_name with
-  | "InferAnalyze" -> Analyze
-  | "InferClang" -> Clang
-  | "InferJava" -> Java
-  | "InferLLVM" -> Llvm
-  | "InferPrint" -> Print
-  | "InferStatsAggregator" -> StatsAggregator
-  | _ -> Toplevel
+  try IList.assoc string_equal (Filename.basename Sys.executable_name) exes
+  with Not_found -> Toplevel
 
 
 type desc = {
@@ -116,15 +120,7 @@ let check_no_duplicates desc_list =
 
 let full_desc_list = ref []
 
-let exe_desc_lists = [
-  (Analyze, ref []);
-  (Clang, ref []);
-  (Java, ref []);
-  (Llvm, ref []);
-  (Print, ref []);
-  (StatsAggregator, ref []);
-  (Toplevel, ref []);
-]
+let exe_desc_lists = IList.map (fun (_, exe) -> (exe, ref [])) exes
 
 (* add desc to all desc_lists for the purposes of parsing, include desc in --help only for exes *)
 let add exes desc =
