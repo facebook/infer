@@ -387,7 +387,7 @@ and _exp_rv_dexp (_seen : Sil.ExpSet.t) node e : Sil.dexp option =
         _exp_rv_dexp seen node e1
     | Sil.Sizeof (typ, len, sub) ->
         if verbose then (L.d_str "exp_rv_dexp: type "; Sil.d_exp e; L.d_ln ());
-        Some (Sil.Dsizeof (typ, len, sub))
+        Some (Sil.Dsizeof (typ, Option.map_default (_exp_rv_dexp seen node) None len, sub))
     | _ ->
         if verbose then (L.d_str "exp_rv_dexp: no match for  "; Sil.d_exp e; L.d_ln ());
         None

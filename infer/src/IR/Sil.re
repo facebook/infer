@@ -420,7 +420,7 @@ type dexp =
   | Darray of dexp dexp
   | Dbinop of binop dexp dexp
   | Dconst of const
-  | Dsizeof of Typ.t (option exp) Subtype.t
+  | Dsizeof of Typ.t (option dexp) Subtype.t
   | Dderef of dexp
   | Dfcall of dexp (list dexp) Location.t call_flags
   | Darrow of dexp Ident.fieldname
