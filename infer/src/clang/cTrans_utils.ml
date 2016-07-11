@@ -621,7 +621,7 @@ let rec contains_opaque_value_expr s =
 (* checks if a unary operator is a logic negation applied to integers*)
 let is_logical_negation_of_int tenv ei uoi =
   match CTypes_decl.type_ptr_to_sil_type tenv ei.Clang_ast_t.ei_type_ptr, uoi.Clang_ast_t.uoi_kind with
-  | Typ.Tint Typ.IInt,`LNot -> true
+  | Typ.Tint _,`LNot -> true
   | _, _ -> false
 
 let rec is_block_stmt stmt =

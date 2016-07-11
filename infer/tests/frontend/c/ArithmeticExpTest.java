@@ -53,4 +53,10 @@ public class ArithmeticExpTest {
     frontendTest("int_const.c");
   }
 
+  @Test
+  public void whenCaptureRunOnNegateThenDotFilesAreTheSame()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("negate.c");
+  }
+
 }
