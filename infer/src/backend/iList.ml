@@ -118,6 +118,20 @@ let map_changed (f : 'a -> 'a) l =
   then rev l'
   else l
 
+(** like filter, but returns the original list if unchanged *)
+let filter_changed (f : 'a -> bool) l =
+  let l', changed =
+    fold_left
+      (fun (l_acc, changed) e ->
+         if f e
+         then e :: l_acc, changed
+         else l_acc, true)
+      ([], false)
+      l in
+  if changed
+  then rev l'
+  else l
+
 (** tail-recursive variant of List.mapi *)
 let mapi f l =
   let i = ref 0 in

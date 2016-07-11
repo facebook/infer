@@ -91,7 +91,7 @@ let add_abstraction_instructions pdesc =
     if node_requires_abstraction node then Node.append_instrs node [Sil.Abstract loc] in
   Cfg.Procdesc.iter_nodes do_node pdesc
 
-module BackwardCfg = ProcCfg.Backward(ProcCfg.Exceptional)
+module BackwardCfg = ProcCfg.OneInstrPerNode(ProcCfg.Backward(ProcCfg.Exceptional))
 
 module LivenessAnalysis =
   AbstractInterpreter.Make
@@ -115,9 +115,10 @@ module NullifyTransferFunctions = struct
   module CFG = ProcCfg.Exceptional
   type extras = LivenessAnalysis.inv_map
 
-  let postprocess ((reaching_defs, _) as astate) node_id { ProcData.extras; } =
+  let postprocess ((reaching_defs, _) as astate) node { ProcData.extras; } =
+    let node_id =  (CFG.underlying_id node), ProcCfg.Node_index in
     match LivenessAnalysis.extract_state node_id extras with
-    (* note: because the analysis backward, post and pre are reversed *)
+    (* note: because the analysis is backward, post and pre are reversed *)
     | Some { AbstractInterpreter.post = live_before; pre = live_after; } ->
         let to_nullify = VarDomain.diff (VarDomain.union live_before reaching_defs) live_after in
         let reaching_defs' = VarDomain.diff reaching_defs to_nullify in
@@ -150,7 +151,7 @@ module NullifyTransferFunctions = struct
       | Sil.Nullify _ ->
           failwith "Should not add nullify instructions before running nullify analysis!" in
     if is_last_instr_in_node instr node
-    then postprocess astate' (CFG.id node) extras
+    then postprocess astate' node extras
     else astate'
 end
 
@@ -159,16 +160,32 @@ module NullifyAnalysis =
     (Scheduler.ReversePostorder (ProcCfg.Exceptional))
     (NullifyTransferFunctions)
 
-let add_nullify_instrs pdesc tenv =
-  let liveness_proc_cfg = BackwardCfg.from_pdesc pdesc in
-  let proc_data_no_extras = ProcData.make_default pdesc tenv in
-  let liveness_inv_map = LivenessAnalysis.exec_cfg liveness_proc_cfg proc_data_no_extras in
+(** remove dead stores whose lhs is a frontend-created temporary variable. these dead stores are
+    created by copy-propagation *)
+let remove_dead_frontend_stores pdesc liveness_inv_map =
+  let is_live var instr_id liveness_inv_map =
+    match LivenessAnalysis.extract_pre instr_id liveness_inv_map with
+    | Some pre -> VarDomain.mem var pre
+    | None -> true in
+  let is_used_store (instr, instr_id_opt) =
+    match instr, instr_id_opt with
+    | Sil.Letderef (id, _, _, _), Some instr_id when not (Ident.is_none id) ->
+        is_live (Var.of_id id) instr_id liveness_inv_map
+    | _ -> true in
+  let node_remove_dead_stores node =
+    let instr_nodes = BackwardCfg.instr_ids node in
+    let instr_nodes' = IList.filter_changed is_used_store instr_nodes in
+    if instr_nodes' != instr_nodes
+    then
+      Cfg.Node.replace_instrs node (IList.rev_map fst instr_nodes') in
+  Cfg.Procdesc.iter_nodes node_remove_dead_stores pdesc
 
+let add_nullify_instrs pdesc tenv liveness_inv_map =
   let address_taken_vars =
     if Procname.is_java (Cfg.Procdesc.get_proc_name pdesc)
     then AddressTaken.Domain.empty (* can't take the address of a variable in Java *)
     else
-      match AddressTaken.Analyzer.compute_post proc_data_no_extras with
+      match AddressTaken.Analyzer.compute_post (ProcData.make_default pdesc tenv) with
       | Some post -> post
       | None -> AddressTaken.Domain.empty in
 
@@ -270,8 +287,16 @@ let do_copy_propagation pdesc tenv =
        then Cfg.Node.replace_instrs node (IList.rev instrs))
     (Cfg.Procdesc.get_nodes pdesc)
 
+let do_liveness pdesc tenv =
+  let liveness_proc_cfg = BackwardCfg.from_pdesc pdesc in
+  LivenessAnalysis.exec_cfg liveness_proc_cfg (ProcData.make_default pdesc tenv)
+
 let doit pdesc cg tenv =
   if Config.copy_propagation then do_copy_propagation pdesc tenv;
-  add_nullify_instrs pdesc tenv;
-  if not Config.lazy_dynamic_dispatch then add_dispatch_calls pdesc cg tenv;
+  let liveness_inv_map = do_liveness pdesc tenv in
+  if not (Config.lazy_dynamic_dispatch) && Config.copy_propagation
+  then remove_dead_frontend_stores pdesc liveness_inv_map;
+  add_nullify_instrs pdesc tenv liveness_inv_map;
+  if not Config.lazy_dynamic_dispatch
+  then add_dispatch_calls pdesc cg tenv;
   add_abstraction_instructions pdesc;

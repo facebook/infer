@@ -267,6 +267,8 @@ type stackop =
 /** An instruction. */
 type instr =
   /** declaration [let x = *lexp:typ] where [typ] is the root type of [lexp] */
+  /* note for frontend writers: [x] must be used in a subsequent instruction, otherwise the entire
+     `Letderef` instruction may be eliminated by copy-propagation */
   | Letderef of Ident.t exp Typ.t Location.t
   /** assignment [*lexp1:typ = exp2] where [typ] is the root type of [lexp1] */
   | Set of exp Typ.t exp Location.t

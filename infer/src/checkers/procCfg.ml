@@ -23,6 +23,7 @@ module type Node = sig
 
   val kind : t -> Cfg.Node.nodekind
   val id : t -> id
+  val underlying_id : t -> Cfg.Node.id
   val id_compare : id -> id -> int
   val pp_id : F.formatter -> id -> unit
 end
@@ -33,6 +34,7 @@ module DefaultNode = struct
 
   let kind = Cfg.Node.get_kind
   let id = Cfg.Node.get_id
+  let underlying_id = id
   let id_compare = Cfg.Node.id_compare
   let pp_id = Cfg.Node.pp_id
 end
@@ -43,7 +45,9 @@ module InstrNode = struct
 
   let kind = Cfg.Node.get_kind
 
-  let id t = Cfg.Node.get_id t, Node_index
+  let underlying_id t = Cfg.Node.get_id t
+
+  let id t = underlying_id t, Node_index
 
   let index_compare index1 index2 = match index1, index2 with
     | Node_index, Node_index -> 0
