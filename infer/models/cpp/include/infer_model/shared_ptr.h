@@ -214,6 +214,102 @@ class shared_ptr : public std__shared_ptr<T> {
     return true; /* FIXME - use non-det */
   }
 };
+template <class _Tp, class _Up>
+inline bool operator==(const shared_ptr<_Tp>& __x,
+                       const shared_ptr<_Up>& __y) noexcept {
+  return __x.get() == __y.get();
+}
+
+template <class _Tp, class _Up>
+inline bool operator!=(const shared_ptr<_Tp>& __x,
+                       const shared_ptr<_Up>& __y) noexcept {
+  return !(__x == __y);
+}
+
+template <class _Tp, class _Up>
+inline bool operator<(const shared_ptr<_Tp>& __x,
+                      const shared_ptr<_Up>& __y) noexcept {
+  typedef typename common_type<_Tp*, _Up*>::type _Vp;
+  return less<_Vp>()(__x.get(), __y.get());
+}
+
+template <class _Tp, class _Up>
+inline bool operator>(const shared_ptr<_Tp>& __x,
+                      const shared_ptr<_Up>& __y) noexcept {
+  return __y < __x;
+}
+
+template <class _Tp, class _Up>
+inline bool operator<=(const shared_ptr<_Tp>& __x,
+                       const shared_ptr<_Up>& __y) noexcept {
+  return !(__y < __x);
+}
+
+template <class _Tp, class _Up>
+inline bool operator>=(const shared_ptr<_Tp>& __x,
+                       const shared_ptr<_Up>& __y) noexcept {
+  return !(__x < __y);
+}
+
+template <class _Tp>
+inline bool operator==(const shared_ptr<_Tp>& __x, nullptr_t) noexcept {
+  return !__x;
+}
+
+template <class _Tp>
+inline bool operator==(nullptr_t, const shared_ptr<_Tp>& __x) noexcept {
+  return !__x;
+}
+
+template <class _Tp>
+inline bool operator!=(const shared_ptr<_Tp>& __x, nullptr_t) noexcept {
+  return static_cast<bool>(__x);
+}
+
+template <class _Tp>
+inline bool operator!=(nullptr_t, const shared_ptr<_Tp>& __x) noexcept {
+  return static_cast<bool>(__x);
+}
+
+template <class _Tp>
+inline bool operator<(const shared_ptr<_Tp>& __x, nullptr_t) noexcept {
+  return less<_Tp*>()(__x.get(), nullptr);
+}
+
+template <class _Tp>
+inline bool operator<(nullptr_t, const shared_ptr<_Tp>& __x) noexcept {
+  return less<_Tp*>()(nullptr, __x.get());
+}
+
+template <class _Tp>
+inline bool operator>(const shared_ptr<_Tp>& __x, nullptr_t) noexcept {
+  return nullptr < __x;
+}
+
+template <class _Tp>
+inline bool operator>(nullptr_t, const shared_ptr<_Tp>& __x) noexcept {
+  return __x < nullptr;
+}
+
+template <class _Tp>
+inline bool operator<=(const shared_ptr<_Tp>& __x, nullptr_t) noexcept {
+  return !(nullptr < __x);
+}
+
+template <class _Tp>
+inline bool operator<=(nullptr_t, const shared_ptr<_Tp>& __x) noexcept {
+  return !(__x < nullptr);
+}
+
+template <class _Tp>
+inline bool operator>=(const shared_ptr<_Tp>& __x, nullptr_t) noexcept {
+  return !(__x < nullptr);
+}
+
+template <class _Tp>
+inline bool operator>=(nullptr_t, const shared_ptr<_Tp>& __x) noexcept {
+  return !(nullptr < __x);
+}
 
 template <class T>
 struct hash<shared_ptr<T>> : public hash<std__shared_ptr<T>> {};

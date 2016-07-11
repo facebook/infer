@@ -107,3 +107,23 @@ int shared_ptr_move_null_deref() {
   std::shared_ptr<int> p2 = std::move(p1);
   return *p1;
 }
+
+int shared_ptr_check_null() {
+  std::shared_ptr<int> p;
+  if (p == nullptr)
+    return 1;
+  return *p;
+}
+
+int shared_ptr_check_notnull() {
+  std::shared_ptr<int> p;
+  if (p != nullptr)
+    return *p;
+  return 1;
+}
+
+int shared_ptr_check_null2(std::shared_ptr<int> p) {
+  if (p == nullptr)
+    return 1;
+  return *p;
+}
