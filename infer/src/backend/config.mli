@@ -14,9 +14,27 @@ open! Utils
     time by system calls, environment variables, or command line options *)
 
 
+(** Various kind of analyzers *)
+type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
+
+(** Association list of analyzers and their names *)
+val string_to_analyzer : (string * analyzer) list
+
+
+type clang_lang = C | CPP | OBJC | OBJCPP
+
 type language = Clang | Java
 
 val string_of_language : language -> string
+
+
+val ml_bucket_symbols :
+  (string * [ `MLeak_all | `MLeak_arc | `MLeak_cf | `MLeak_cpp | `MLeak_no_arc | `MLeak_unknown ])
+    list
+
+
+type os_type = Unix | Win32 | Cygwin
+
 
 type method_pattern = {
   class_name : string;
@@ -28,13 +46,6 @@ type pattern =
   | Method_pattern of language * method_pattern
   | Source_contains of language * string
 
-type clang_lang = C | CPP | OBJC | OBJCPP
-
-val ml_bucket_symbols :
-  (string * [ `MLeak_all | `MLeak_arc | `MLeak_cf | `MLeak_cpp | `MLeak_no_arc | `MLeak_unknown ])
-    list
-
-type os_type = Unix | Win32 | Cygwin
 
 type zip_library = {
   zip_filename : string;
@@ -43,7 +54,7 @@ type zip_library = {
 }
 
 
-(** Configuration values *)
+(** Constant configuration values *)
 
 val allow_missing_index_in_proc_call : bool
 val anonymous_block_num_sep : string

@@ -259,19 +259,6 @@ val directory_fold : ('a -> string -> 'a) -> 'a -> string -> 'a
 (** Functional iter function over all the file of a directory *)
 val directory_iter : (string -> unit) -> string -> unit
 
-(** Various kind of analyzers *)
-type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
-
-(** Association list of analyzers and their names *)
-val string_to_analyzer : (string * analyzer) list
-
-(** List of analyzers *)
-val analyzers: analyzer list
-
-val string_of_analyzer: analyzer -> string
-
-val analyzer_of_string: string -> analyzer
-
 val read_optional_json_file : string -> (Yojson.Basic.json, string) result
 
 val write_json_to_file : string -> Yojson.Basic.json -> unit

@@ -552,26 +552,6 @@ let directory_iter f path =
   else
     f path
 
-type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
-
-let string_to_analyzer =
-  [("capture", Capture); ("compile", Compile);
-   ("infer", Infer); ("eradicate", Eradicate); ("checkers", Checkers); ("tracing", Tracing)]
-
-let analyzers = IList.map snd string_to_analyzer
-
-let string_of_analyzer =
-  let analyzer_to_string = IList.map (fun (a,n) -> (n,a)) string_to_analyzer in
-  fun analyzer ->
-    IList.assoc ( = ) analyzer analyzer_to_string
-
-exception Unknown_analyzer
-
-let analyzer_of_string name =
-  try IList.assoc string_equal name string_to_analyzer
-  with Not_found -> raise Unknown_analyzer
-
-
 let string_crc_hex32 s = Digest.to_hex (Digest.string s)
 
 let string_append_crc_cutoff ?(cutoff=100) ?(key="") name =

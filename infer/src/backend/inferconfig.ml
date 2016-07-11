@@ -253,10 +253,12 @@ let is_checker_enabled checker_name =
 (* be reported on path/to/file.java both for infer and for eradicate *)
 let test () =
   let filters =
-    IList.map (fun analyzer -> (analyzer, create_filters analyzer)) analyzers in
+    IList.map
+      (fun (name, analyzer) -> (name, analyzer, create_filters analyzer))
+      Config.string_to_analyzer in
   let matching_analyzers path =
     IList.fold_left
-      (fun l (a, f) -> if f.path_filter path then a:: l else l)
+      (fun l (n, a, f) -> if f.path_filter path then (n,a) :: l else l)
       [] filters in
   directory_iter
     (fun path ->
@@ -264,9 +266,7 @@ let test () =
          let source_file = (DB.source_file_from_string path) in
          let matching = matching_analyzers source_file in
          if matching <> [] then
-           let matching_s =
-             join_strings ", "
-               (IList.map string_of_analyzer matching) in
+           let matching_s = join_strings ", " (IList.map fst matching) in
            L.stderr "%s -> {%s}@."
              (DB.source_file_to_rel_path source_file)
              matching_s)

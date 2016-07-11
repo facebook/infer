@@ -29,7 +29,7 @@ type filters =
 val do_not_filter : filters
 
 (** Create filters based on the config file *)
-val create_filters : analyzer -> filters
+val create_filters : Config.analyzer -> filters
 
 val never_return_null_matcher : DB.source_file -> Procname.t -> bool
 val suppress_warnings_matcher : DB.source_file -> Procname.t -> bool

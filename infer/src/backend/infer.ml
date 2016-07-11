@@ -49,7 +49,8 @@ let () =
       infer_py ::
       Config.anon_args @
       (match Config.analyzer with None -> [] | Some a ->
-        ["--analyzer"; Utils.string_of_analyzer a]) @
+          ["--analyzer";
+           IList.assoc (=) a (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)]) @
       (match Config.blacklist with
        | Some s when buck -> ["--blacklist-regex"; s]
        | _ -> []) @

@@ -17,7 +17,34 @@ module CLOpt = CommandLineOption
 module F = Format
 
 
+type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
+
+let string_to_analyzer =
+  [("capture", Capture); ("compile", Compile);
+   ("infer", Infer); ("eradicate", Eradicate); ("checkers", Checkers); ("tracing", Tracing)]
+
+
+type clang_lang = C | CPP | OBJC | OBJCPP
+
 type language = Clang | Java
+
+let string_of_language = function
+  | Java -> "Java"
+  | Clang -> "C_CPP"
+
+
+let ml_bucket_symbols = [
+  ("all", `MLeak_all);
+  ("cf", `MLeak_cf);
+  ("arc", `MLeak_arc);
+  ("narc", `MLeak_no_arc);
+  ("cpp", `MLeak_cpp);
+  ("unknown_origin", `MLeak_unknown);
+]
+
+
+type os_type = Unix | Win32 | Cygwin
+
 
 type method_pattern = {
   class_name : string;
@@ -29,37 +56,12 @@ type pattern =
   | Method_pattern of language * method_pattern
   | Source_contains of language * string
 
-let string_of_language = function
-  | Java -> "Java"
-  | Clang -> "C_CPP"
-
-type clang_lang = C | CPP | OBJC | OBJCPP
-
-let ml_bucket_symbols = [
-  ("all", `MLeak_all);
-  ("cf", `MLeak_cf);
-  ("arc", `MLeak_arc);
-  ("narc", `MLeak_no_arc);
-  ("cpp", `MLeak_cpp);
-  ("unknown_origin", `MLeak_unknown);
-]
-
-type os_type = Unix | Win32 | Cygwin
 
 type zip_library = {
   zip_filename: string;
   zip_channel: Zip.in_file Lazy.t;
   models: bool;
 }
-
-let whitelisted_cpp_methods = [
-  ["std"; "move"];
-  ["std"; "forward"];
-  ["std"; "min"];
-  ["std"; "max"];
-  ["std"; "__less"];
-  ["google"; "CheckNotNull"];
-]
 
 
 (** Constant configuration values *)
@@ -84,6 +86,8 @@ let backend_stats_dir_name = "backend_stats"
     continues *)
 let bound_error_allowed_in_procedure_call = true
 
+let buck_generated_folder = "buck-out/gen"
+
 let buck_infer_deps_file_name = "infer-deps.txt"
 
 let captured_dir_name = "captured"
@@ -92,6 +96,9 @@ let checks_disabled_by_default = [
   "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL";
   "UNSAFE_GUARDED_BY_ACCESS";
 ]
+
+(** Experimental: if true do some specialized analysis of concurrent constructs. *)
+let csl_analysis = true
 
 let default_failure_name = "ASSERTION_FAILURE"
 
@@ -119,6 +126,14 @@ let incremental_procs = true
 let inferconfig_file = ".inferconfig"
 
 let ivar_attributes = "ivar_attributes"
+
+(** letters used in the analysis output *)
+let log_analysis_file = "F"
+let log_analysis_procedure = "."
+let log_analysis_wallclock_timeout = "T"
+let log_analysis_symops_timeout = "S"
+let log_analysis_recursion_timeout = "R"
+let log_analysis_crash = "C"
 
 (** Maximum level of recursion during the analysis, after which a timeout is generated *)
 let max_recursion = 5
@@ -168,9 +183,6 @@ let suppress_warnings_annotations_long = "suppress-warnings-annotations"
 (** If true performs taint analysis *)
 let taint_analysis = true
 
-(** Experimental: if true do some specialized analysis of concurrent constructs. *)
-let csl_analysis = true
-
 (** Enable detailed tracing information during array abstraction *)
 let trace_absarray = false
 
@@ -181,15 +193,15 @@ let unsafe_unret = "<\"Unsafe_unretained\">"
 
 let weak = "<\"Weak\">"
 
-(** letters used in the analysis output *)
-let log_analysis_file = "F"
-let log_analysis_procedure = "."
-let log_analysis_wallclock_timeout = "T"
-let log_analysis_symops_timeout = "S"
-let log_analysis_recursion_timeout = "R"
-let log_analysis_crash = "C"
+let whitelisted_cpp_methods = [
+  ["std"; "move"];
+  ["std"; "forward"];
+  ["std"; "min"];
+  ["std"; "max"];
+  ["std"; "__less"];
+  ["google"; "CheckNotNull"];
+]
 
-let buck_generated_folder = "buck-out/gen"
 
 (** Compile time configuration values *)
 
@@ -461,13 +473,13 @@ and (
   analysis_path_regex_whitelist_options,
   analysis_suppress_errors_options) =
   let mk_filtering_options ~suffix ?(deprecated_suffix=[]) ~help ~meta =
-    let mk_option analyzer =
-      let long = Printf.sprintf "%s-%s" (string_of_analyzer analyzer) suffix in
+    let mk_option analyzer_name =
+      let long = Printf.sprintf "%s-%s" analyzer_name suffix in
       let deprecated =
-        IList.map (Printf.sprintf "%s_%s" (string_of_analyzer analyzer)) deprecated_suffix in
-      let help_string = Printf.sprintf "%s (%s only)" help (string_of_analyzer analyzer) in
+        IList.map (Printf.sprintf "%s_%s" analyzer_name) deprecated_suffix in
+      let help_string = Printf.sprintf "%s (%s only)" help analyzer_name in
       CLOpt.mk_string_list ~deprecated ~long ~exes:CLOpt.[Analyze] ~meta help_string in
-    IList.map (fun analyzer -> (analyzer, mk_option analyzer)) analyzers in
+    IList.map (fun (name, analyzer) -> (analyzer, mk_option name)) string_to_analyzer in
   (
     mk_filtering_options
       ~suffix:"blacklist-files-containing"
@@ -501,7 +513,7 @@ and analysis_stops =
 and analyzer =
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:"a"
     "Specify the analyzer for the path filtering"
-    ~symbols:Utils.string_to_analyzer
+    ~symbols:string_to_analyzer
 
 and android_harness =
   CLOpt.mk_bool ~deprecated:["harness"] ~long:"android-harness"
