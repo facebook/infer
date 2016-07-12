@@ -92,17 +92,3 @@ let add_missing_fields tenv class_name ck fields =
       Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
       Tenv.add tenv class_tn_name class_type_info
   | _ -> ()
-
-(* checks if ivar is defined among a set of fields and if it is atomic *)
-let is_ivar_atomic ivar fields =
-  let do_one_annot a =
-    (a.Typ.class_name = Config.property_attributes) &&
-    IList.exists (fun p -> p = CFrontend_config.atomic_att) a.Typ.parameters in
-  let has_atomic_annot ans =
-    IList.exists (fun (a, _) -> do_one_annot a) ans in
-  try
-    let _, _, annot = IList.find (fun (fn, _, _) -> Ident.fieldname_equal ivar fn) fields in
-    has_atomic_annot annot
-  with Not_found -> (
-      Printing.log_out "NOT Found field ivar = '%s' " (Ident.fieldname_to_string ivar);
-      false)

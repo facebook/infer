@@ -49,6 +49,8 @@ let pointer_decl_index = ref Clang_ast_main.PointerMap.empty
 
 let pointer_stmt_index = ref Clang_ast_main.PointerMap.empty
 
+let ivar_to_property_index = ref Clang_ast_main.PointerMap.empty
+
 let emtpy_name_category ="EMPTY_NAME_CATEGORY_FOR_"
 
 let objc_object = "objc_object"

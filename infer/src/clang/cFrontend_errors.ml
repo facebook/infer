@@ -109,8 +109,8 @@ let run_frontend_checkers_on_stmt trans_state instr =
   let cfg = context.CContext.cfg in
   match instr with
   | ObjCIvarRefExpr(stmt_info, _, _, obj_c_ivar_ref_expr_info) ->
-      let dr_name = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref.Clang_ast_t.dr_name in
-      let call_checker_for_ivar = checkers_for_ivar context stmt_info dr_name in
+      let dr_ref = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref in
+      let call_checker_for_ivar = checkers_for_ivar context stmt_info dr_ref in
       invoke_set_of_checkers call_checker_for_ivar cfg cg (Some pdesc) ivar_access_checker_list
   | BlockExpr(stmt_info, _ , _, Clang_ast_t.BlockDecl (_, block_decl_info)) ->
       let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in

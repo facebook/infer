@@ -31,6 +31,21 @@ type warning_desc = {
 
 (* Helper functions *)
 
+let get_ivar_attributes ivar_decl =
+  let open Clang_ast_t in
+  match ivar_decl with
+  | ObjCIvarDecl (ivar_decl_info, _, _, _, _) ->
+      (match Ast_utils.get_property_of_ivar ivar_decl_info.Clang_ast_t.di_pointer with
+       | Some ObjCPropertyDecl (_, _, obj_c_property_decl_info) ->
+           obj_c_property_decl_info.Clang_ast_t.opdi_property_attributes
+       | _ -> [])
+  | _ -> []
+
+
+(* checks if ivar is defined among a set of fields and if it is atomic *)
+let is_ivar_atomic attributes =
+  IList.exists (Ast_utils.property_attribute_eq `Atomic) attributes
+
 let name_contains_word pname word =
   let rexp = Str.regexp_string_case_fold word in
   try
@@ -195,36 +210,31 @@ let global_var_init_with_calls_warning decl =
 
 (* Direct Atomic Property access:
    a property declared atomic should not be accessed directly via its ivar *)
-let direct_atomic_property_access_warning context stmt_info ivar_name =
-  let tenv = CContext.get_tenv context in
-  let mname = proc_name_from_context context in
-  let ivar, cname = match ivar_name with
-    | Some n ->
-        General_utils.mk_class_field_name n,
-        Ast_utils.get_class_name_from_member n
-    | _ -> Ident.create_fieldname (Mangled.from_string "") 0, "" in
-  let tname = Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string cname) in
-  let condition = match Tenv.lookup tenv tname with
-    | Some { Typ.instance_fields; static_fields } ->
+let direct_atomic_property_access_warning context stmt_info ivar_decl_ref =
+  match Ast_utils.get_decl ivar_decl_ref.Clang_ast_t.dr_decl_pointer with
+  | Some (ObjCIvarDecl (_, named_decl_info, _, _, _) as d) ->
+      let ivar_name = named_decl_info.Clang_ast_t.ni_name in
+      let mname = proc_name_from_context context in
+      let condition =
         (* We give the warning when:
-             (1) the property has the atomic attribute and
-               (2) the access of the ivar is not in a getter or setter method.
-                 (3) the access of the ivar is not in the init method
-                   Last two conditions avoids false positives *)
-        (CField_decl.is_ivar_atomic ivar (instance_fields @ static_fields))
-        && not (CContext.is_curr_proc_objc_getter context ivar)
-        && not (CContext.is_curr_proc_objc_setter context ivar)
+           (1) the property has the atomic attribute and
+           (2) the access of the ivar is not in a getter or setter method.
+           (3) the access of the ivar is not in the init method
+           Last two conditions avoids false positives *)
+        is_ivar_atomic (get_ivar_attributes d)
+        && not (CContext.is_curr_proc_objc_getter context ivar_name)
+        && not (CContext.is_curr_proc_objc_setter context ivar_name)
         && not (Procname.is_constructor mname)
-        && not (Procname.is_objc_dealloc mname)
-    | _ -> false in
-  if condition then
-    Some {
-      name = "DIRECT_ATOMIC_PROPERTY_ACCESS";
-      description = "Direct access to ivar " ^ (Ident.fieldname_to_string ivar) ^
-                    " of an atomic property";
-      suggestion = "Accessing an ivar of an atomic property makes the property nonatomic";
-      loc = location_from_sinfo stmt_info; }
-  else None
+        && not (Procname.is_objc_dealloc mname) in
+      if condition then
+        Some {
+          name = "DIRECT_ATOMIC_PROPERTY_ACCESS";
+          description = "Direct access to ivar " ^ ivar_name ^
+                        " of an atomic property";
+          suggestion = "Accessing an ivar of an atomic property makes the property nonatomic";
+          loc = location_from_sinfo stmt_info; }
+      else None
+  | _ -> None
 
 
 (* CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK: C++ references

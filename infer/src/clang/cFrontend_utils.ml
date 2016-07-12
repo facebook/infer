@@ -291,6 +291,11 @@ struct
     | Some decl_ref -> get_decl decl_ref.Clang_ast_t.dr_decl_pointer
     | None -> None
 
+  let get_property_of_ivar decl_ptr =
+    try
+      Some (Clang_ast_main.PointerMap.find decl_ptr !CFrontend_config.ivar_to_property_index)
+    with Not_found -> Printing.log_stats "property with pointer %d not found\n" decl_ptr; None
+
   let update_sil_types_map type_ptr sil_type =
     CFrontend_config.sil_types_map :=
       Clang_ast_types.TypePointerMap.add type_ptr sil_type !CFrontend_config.sil_types_map
