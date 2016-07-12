@@ -170,6 +170,27 @@ let find_program_variable_assignment node pvar : (Cfg.Node.t * Ident.t) option =
         None in
   find_in_node_or_preds node find_instr
 
+(** Special case for C++, where we translate code like
+      `struct X; X getX() { X x; return X; }` as
+      `void getX(struct X * frontend_generated_pvar)`.
+    This lets us recognize that X was returned from getX *)
+let find_struct_by_value_assignment node pvar =
+  if Pvar.is_frontend_tmp pvar
+  then
+    let find_instr node = function
+      | Sil.Call (_, Const (Cfun pname), args, loc, cf) ->
+          begin
+            match IList.last args with
+            | Some (Sil.Lvar last_arg, _) when Pvar.equal pvar last_arg ->
+                Some (node, pname, loc, cf)
+            | _ ->
+                None
+          end
+      | _ ->
+          None in
+    find_in_node_or_preds node find_instr
+  else None
+
 (** Find a program variable assignment to id in the current node or predecessors. *)
 let find_ident_assignment node id : (Cfg.Node.t * Sil.exp) option =
   let find_instr node = function
@@ -273,7 +294,14 @@ and _exp_lv_dexp (_seen : Sil.ExpSet.t) node e : Sil.dexp option =
         if Pvar.is_frontend_tmp pvar then
           begin
             match find_program_variable_assignment node pvar with
-            | None -> None
+            | None ->
+                begin
+                  match find_struct_by_value_assignment node pvar with
+                  | Some (_, pname, loc, call_flags) ->
+                      Some (Sil.Dfcall (Sil.Dconst (Cfun pname), [], loc, call_flags))
+                  | None ->
+                      None
+                end
             | Some (node', id) ->
                 begin
                   match find_normal_variable_funcall node' id with
@@ -713,6 +741,8 @@ let explain_dexp_access prop dexp is_nullable =
          | None -> None
          | Some Sil.Estruct (fsel, _) ->
              lookup_fld fsel f
+         | Some ((Sil.Eexp (Const (Cfun _), _)) as fun_strexp) ->
+             Some fun_strexp
          | Some _ ->
              if verbose then (L.d_str "lookup: case not matched on Ddot "; L.d_ln ());
              None)

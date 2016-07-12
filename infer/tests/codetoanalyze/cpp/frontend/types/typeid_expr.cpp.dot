@@ -40,7 +40,7 @@ digraph iCFG {
 	
 
 	 61 -> 70 ;
-60 [label="60:  DeclStmt \n   n$4=*&value:class Person & [line 58]\n  _fun_Person_Person(&SIL_materialize_temp__n$3:class Person *,n$4:class Person &) [line 58]\n  _fun_Person_Person(&result:class Person *,&SIL_materialize_temp__n$3:class Person &) [line 58]\n " shape="box"]
+60 [label="60:  DeclStmt \n   n$4=*&value:class Person & [line 58]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$3:class Person *,n$4:class Person &) [line 58]\n  _fun_Person_Person(&result:class Person *,&0$?%__sil_tmpSIL_materialize_temp__n$3:class Person &) [line 58]\n " shape="box"]
 	
 
 	 60 -> 59 ;
@@ -51,7 +51,7 @@ digraph iCFG {
 58 [label="58: Exit template_typeid<Person> \n  " color=yellow style=filled]
 	
 
-57 [label="57: Start template_typeid<Person>\nFormals:  value:class Person &\nLocals:  result:class Person  SIL_materialize_temp__n$3:class Person  \n   DECLARE_LOCALS(&return,&result,&SIL_materialize_temp__n$3); [line 57]\n " color=yellow style=filled]
+57 [label="57: Start template_typeid<Person>\nFormals:  value:class Person &\nLocals:  result:class Person  0$?%__sil_tmpSIL_materialize_temp__n$3:class Person  \n   DECLARE_LOCALS(&return,&result,&0$?%__sil_tmpSIL_materialize_temp__n$3); [line 57]\n " color=yellow style=filled]
 	
 
 	 57 -> 60 ;

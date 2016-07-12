@@ -552,7 +552,7 @@ struct
   (* It does not update the global block_counter *)
   let get_next_block_pvar defining_proc =
     let name = block_procname_with_index defining_proc (!block_counter +1) in
-    Pvar.mk (Mangled.from_string (CFrontend_config.temp_var^"_"^name)) defining_proc
+    Pvar.mk_tmp name defining_proc
 
   (* Reset  block counter *)
   let reset_block_counter () =

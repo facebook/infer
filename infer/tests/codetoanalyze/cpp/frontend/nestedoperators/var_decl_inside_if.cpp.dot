@@ -76,16 +76,16 @@ digraph iCFG {
 	
 
 	 55 -> 44 ;
-54 [label="54:  DeclStmt \n   n$2=*&SIL_temp_conditional___n$1:int  [line 43]\n  *&a:int =n$2 [line 43]\n " shape="box"]
+54 [label="54:  DeclStmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int  [line 43]\n  *&a:int =n$2 [line 43]\n " shape="box"]
 	
 
 	 54 -> 47 ;
 	 54 -> 48 ;
-53 [label="53:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =0 [line 43]\n " shape="box"]
+53 [label="53:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int =0 [line 43]\n " shape="box"]
 	
 
 	 53 -> 49 ;
-52 [label="52:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =1 [line 43]\n " shape="box"]
+52 [label="52:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int =1 [line 43]\n " shape="box"]
 	
 
 	 52 -> 49 ;
@@ -120,7 +120,7 @@ digraph iCFG {
 44 [label="44: Exit conditional_init_div0 \n  " color=yellow style=filled]
 	
 
-43 [label="43: Start conditional_init_div0\nFormals: \nLocals:  a:int  SIL_temp_conditional___n$1:int  \n   DECLARE_LOCALS(&return,&a,&SIL_temp_conditional___n$1); [line 42]\n " color=yellow style=filled]
+43 [label="43: Start conditional_init_div0\nFormals: \nLocals:  a:int  0$?%__sil_tmpSIL_temp_conditional___n$1:int  \n   DECLARE_LOCALS(&return,&a,&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 42]\n " color=yellow style=filled]
 	
 
 	 43 -> 50 ;

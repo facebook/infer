@@ -77,8 +77,6 @@ let new_str = "new"
 
 let init = "init"
 
-let temp_var = "infer"
-
 let invalid_pointer = 0
 
 let void = "void"

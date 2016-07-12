@@ -15,18 +15,18 @@ digraph iCFG {
 	
 
 	 11 -> 14 ;
-10 [label="10:  Return Stmt \n   *&SIL_materialize_temp__n$0:int =0 [line 17]\n  n$1=_fun_div(&SIL_materialize_temp__n$0:int &) [line 17]\n  *&return:int =n$1 [line 17]\n " shape="box"]
+10 [label="10:  Return Stmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$0:int =0 [line 17]\n  n$1=_fun_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:int &) [line 17]\n  *&return:int =n$1 [line 17]\n " shape="box"]
 	
 
 	 10 -> 9 ;
 9 [label="9: Exit div0_function_param_cast \n  " color=yellow style=filled]
 	
 
-8 [label="8: Start div0_function_param_cast\nFormals: \nLocals:  SIL_materialize_temp__n$0:int  \n   DECLARE_LOCALS(&return,&SIL_materialize_temp__n$0); [line 17]\n " color=yellow style=filled]
+8 [label="8: Start div0_function_param_cast\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:int  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 17]\n " color=yellow style=filled]
 	
 
 	 8 -> 10 ;
-7 [label="7:  DeclStmt \n   *&SIL_materialize_temp__n$2:int =0 [line 13]\n  *&a:int &=&SIL_materialize_temp__n$2 [line 13]\n " shape="box"]
+7 [label="7:  DeclStmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$2:int =0 [line 13]\n  *&a:int &=&0$?%__sil_tmpSIL_materialize_temp__n$2 [line 13]\n " shape="box"]
 	
 
 	 7 -> 6 ;
@@ -37,7 +37,7 @@ digraph iCFG {
 5 [label="5: Exit div0_init_expr \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start div0_init_expr\nFormals: \nLocals:  a:int & SIL_materialize_temp__n$2:int  \n   DECLARE_LOCALS(&return,&a,&SIL_materialize_temp__n$2); [line 12]\n " color=yellow style=filled]
+4 [label="4: Start div0_init_expr\nFormals: \nLocals:  a:int & 0$?%__sil_tmpSIL_materialize_temp__n$2:int  \n   DECLARE_LOCALS(&return,&a,&0$?%__sil_tmpSIL_materialize_temp__n$2); [line 12]\n " color=yellow style=filled]
 	
 
 	 4 -> 7 ;

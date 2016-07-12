@@ -79,8 +79,6 @@ val new_str : string
 
 val init : string
 
-val temp_var : string
-
 val invalid_pointer : int
 
 val void : string

@@ -108,6 +108,10 @@ let mk_callee: Mangled.t => Procname.t => t;
 let mk_global: Mangled.t => t;
 
 
+/** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! */
+let mk_tmp: string => Procname.t => t;
+
+
 /** Pretty print a program variable. */
 let pp: printenv => F.formatter => t => unit;
 

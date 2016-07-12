@@ -262,11 +262,9 @@ struct
     F.translate_one_declaration context.tenv context.cg context.cfg `Translation decl;
     Ident.NameGenerator.set_current ident_state
 
-  let mk_temp_sil_var procdesc var_name_prefix =
+  let mk_temp_sil_var procdesc var_name_suffix =
     let procname = Cfg.Procdesc.get_proc_name procdesc in
-    let id = Ident.create_fresh Ident.knormal in
-    let pvar_mangled = Mangled.from_string (var_name_prefix ^ Ident.to_string id) in
-    Pvar.mk pvar_mangled procname
+    Pvar.mk_tmp var_name_suffix procname
 
   let mk_temp_sil_var_for_expr tenv procdesc var_name_prefix expr_info =
     let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
@@ -964,7 +962,7 @@ struct
       | Some exp_typ -> exp_typ
       | None ->
           let procdesc = trans_state.context.CContext.procdesc in
-          let pvar = mk_temp_sil_var procdesc "__temp_construct_" in
+          let pvar = Pvar.mk_tmp "__temp_construct_" (Cfg.Procdesc.get_proc_name procdesc) in
           let class_type = CTypes_decl.get_type_from_expr_info ei context.CContext.tenv in
           Cfg.Procdesc.append_locals procdesc [(Pvar.get_name pvar, class_type)];
           Sil.Lvar pvar, class_type in

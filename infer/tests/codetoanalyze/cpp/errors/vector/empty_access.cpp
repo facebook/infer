@@ -149,3 +149,10 @@ int vector_as_param_clear() {
   vector_param_clear(v);
   return v[0];
 }
+
+std::vector<int> get_vector() {
+  std::vector<int> x;
+  return x;
+}
+
+int getter_empty() { return get_vector()[0]; }

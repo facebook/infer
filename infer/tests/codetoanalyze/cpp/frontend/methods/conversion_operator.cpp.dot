@@ -92,7 +92,7 @@ digraph iCFG {
 	
 
 	 39 -> 34 ;
-38 [label="38:  DeclStmt \n   NONEn$13=*&y:class Y  [line 46]\n  _fun_Y_operator X(&y:class Y &,&SIL_materialize_temp__n$12:class X *) [line 46]\n  _fun_X_X(&__temp_construct_n$11:class X *,&SIL_materialize_temp__n$12:class X &) [line 46]\n  n$15=_fun_X_operator int(&__temp_construct_n$11:class X &) [line 46]\n  *&v:int =n$15 [line 46]\n " shape="box"]
+38 [label="38:  DeclStmt \n   NONEn$13=*&y:class Y  [line 46]\n  _fun_Y_operator X(&y:class Y &,&0$?%__sil_tmpSIL_materialize_temp__n$12:class X *) [line 46]\n  _fun_X_X(&0$?%__sil_tmp__temp_construct_n$11:class X *,&0$?%__sil_tmpSIL_materialize_temp__n$12:class X &) [line 46]\n  n$15=_fun_X_operator int(&0$?%__sil_tmp__temp_construct_n$11:class X &) [line 46]\n  *&v:int =n$15 [line 46]\n " shape="box"]
 	
 
 	 38 -> 37 ;
@@ -108,7 +108,7 @@ digraph iCFG {
 	
 
 	 35 -> 38 ;
-34 [label="34:  Call _fun_X_operator bool \n   NONEn$7=*&y:class Y  [line 45]\n  _fun_Y_operator X(&y:class Y &,&SIL_materialize_temp__n$6:class X *) [line 45]\n  _fun_X_X(&__temp_construct_n$5:class X *,&SIL_materialize_temp__n$6:class X &) [line 45]\n  n$9=_fun_X_operator bool(&__temp_construct_n$5:class X &) [line 45]\n " shape="box"]
+34 [label="34:  Call _fun_X_operator bool \n   NONEn$7=*&y:class Y  [line 45]\n  _fun_Y_operator X(&y:class Y &,&0$?%__sil_tmpSIL_materialize_temp__n$6:class X *) [line 45]\n  _fun_X_X(&0$?%__sil_tmp__temp_construct_n$5:class X *,&0$?%__sil_tmpSIL_materialize_temp__n$6:class X &) [line 45]\n  n$9=_fun_X_operator bool(&0$?%__sil_tmp__temp_construct_n$5:class X &) [line 45]\n " shape="box"]
 	
 
 	 34 -> 35 ;
@@ -117,14 +117,14 @@ digraph iCFG {
 	
 
 	 33 -> 32 ;
-32 [label="32:  Return Stmt \n   NONEn$2=*&y:class Y  [line 49]\n  _fun_Y_operator X(&y:class Y &,&SIL_materialize_temp__n$1:class X *) [line 49]\n  _fun_X_X(&__temp_construct_n$0:class X *,&SIL_materialize_temp__n$1:class X &) [line 49]\n  n$4=_fun_X_operator int(&__temp_construct_n$0:class X &) [line 49]\n  *&return:int =n$4 [line 49]\n " shape="box"]
+32 [label="32:  Return Stmt \n   NONEn$2=*&y:class Y  [line 49]\n  _fun_Y_operator X(&y:class Y &,&0$?%__sil_tmpSIL_materialize_temp__n$1:class X *) [line 49]\n  _fun_X_X(&0$?%__sil_tmp__temp_construct_n$0:class X *,&0$?%__sil_tmpSIL_materialize_temp__n$1:class X &) [line 49]\n  n$4=_fun_X_operator int(&0$?%__sil_tmp__temp_construct_n$0:class X &) [line 49]\n  *&return:int =n$4 [line 49]\n " shape="box"]
 	
 
 	 32 -> 31 ;
 31 [label="31: Exit y_branch_div0 \n  " color=yellow style=filled]
 	
 
-30 [label="30: Start y_branch_div0\nFormals: \nLocals:  __temp_construct_n$0:class X  SIL_materialize_temp__n$1:class X  __temp_construct_n$5:class X  SIL_materialize_temp__n$6:class X  v:int  __temp_construct_n$11:class X  SIL_materialize_temp__n$12:class X  y:class Y  \n   DECLARE_LOCALS(&return,&__temp_construct_n$0,&SIL_materialize_temp__n$1,&__temp_construct_n$5,&SIL_materialize_temp__n$6,&v,&__temp_construct_n$11,&SIL_materialize_temp__n$12,&y); [line 41]\n " color=yellow style=filled]
+30 [label="30: Start y_branch_div0\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$0:class X  0$?%__sil_tmpSIL_materialize_temp__n$1:class X  0$?%__sil_tmp__temp_construct_n$5:class X  0$?%__sil_tmpSIL_materialize_temp__n$6:class X  v:int  0$?%__sil_tmp__temp_construct_n$11:class X  0$?%__sil_tmpSIL_materialize_temp__n$12:class X  y:class Y  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$0,&0$?%__sil_tmpSIL_materialize_temp__n$1,&0$?%__sil_tmp__temp_construct_n$5,&0$?%__sil_tmpSIL_materialize_temp__n$6,&v,&0$?%__sil_tmp__temp_construct_n$11,&0$?%__sil_tmpSIL_materialize_temp__n$12,&y); [line 41]\n " color=yellow style=filled]
 	
 
 	 30 -> 41 ;
@@ -175,14 +175,14 @@ digraph iCFG {
 	
 
 	 18 -> 19 ;
-17 [label="17:  Return Stmt \n   n$0=*&__return_param:class X * [line 27]\n  n$2=*&this:class Y * [line 27]\n  n$3=*n$2.f:int  [line 27]\n  n$4=*&this:class Y * [line 27]\n  n$5=*n$4.b:int  [line 27]\n  _fun_X_X(&SIL_materialize_temp__n$1:class X *,n$3:int ,n$5:_Bool ) [line 27]\n  _fun_X_X(n$0:class X *,&SIL_materialize_temp__n$1:class X &) [line 27]\n " shape="box"]
+17 [label="17:  Return Stmt \n   n$0=*&__return_param:class X * [line 27]\n  n$2=*&this:class Y * [line 27]\n  n$3=*n$2.f:int  [line 27]\n  n$4=*&this:class Y * [line 27]\n  n$5=*n$4.b:int  [line 27]\n  _fun_X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:class X *,n$3:int ,n$5:_Bool ) [line 27]\n  _fun_X_X(n$0:class X *,&0$?%__sil_tmpSIL_materialize_temp__n$1:class X &) [line 27]\n " shape="box"]
 	
 
 	 17 -> 16 ;
 16 [label="16: Exit Y_operator X \n  " color=yellow style=filled]
 	
 
-15 [label="15: Start Y_operator X\nFormals:  this:class Y * __return_param:class X *\nLocals:  SIL_materialize_temp__n$1:class X  \n   DECLARE_LOCALS(&return,&SIL_materialize_temp__n$1); [line 27]\n " color=yellow style=filled]
+15 [label="15: Start Y_operator X\nFormals:  this:class Y * __return_param:class X *\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:class X  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 27]\n " color=yellow style=filled]
 	
 
 	 15 -> 17 ;
