@@ -987,6 +987,23 @@ let const_kind_equal c1 c2 => {
   const_kind_number c1 == const_kind_number c2
 };
 
+let rec dexp_has_tmp_var =
+  fun
+  | Dpvar pvar
+  | Dpvaraddr pvar => Pvar.is_frontend_tmp pvar
+  | Dderef dexp
+  | Ddot dexp _
+  | Darrow dexp _
+  | Dunop _ dexp
+  | Dsizeof _ (Some dexp) _ => dexp_has_tmp_var dexp
+  | Darray dexp1 dexp2
+  | Dbinop _ dexp1 dexp2 => dexp_has_tmp_var dexp1 || dexp_has_tmp_var dexp2
+  | Dretcall dexp dexp_list _ _
+  | Dfcall dexp dexp_list _ _ => dexp_has_tmp_var dexp || IList.exists dexp_has_tmp_var dexp_list
+  | Dconst _
+  | Dunknown
+  | Dsizeof _ None _ => false;
+
 let rec attribute_compare (att1: attribute) (att2: attribute) :int =>
   switch (att1, att2) {
   | (Aresource ra1, Aresource ra2) =>

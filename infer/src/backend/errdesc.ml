@@ -507,16 +507,16 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
         Some desc_string
       end
     else match vpath with
-      | Some de ->
+      | Some de when not (Sil.dexp_has_tmp_var de) ->
           Some (Sil.dexp_to_string de)
-      | None -> None in
+      | _ -> None in
   let res_action_opt, resource_opt, vpath = match alloc_att_opt with
     | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Racquire } as ra)) ->
         Some ra, Some ra.Sil.ra_res, ra.Sil.ra_vpath
     | _ -> (None, None, None) in
   let is_file = match resource_opt with
     | Some Sil.Rfile -> true
-    | _ -> false in
+    | _ -> false in 
   let check_pvar pvar =
     (* check that pvar is local or global and has the same type as the leaked hpred *)
     (Pvar.is_local pvar || Pvar.is_global pvar) &&
@@ -541,8 +541,8 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
           (L.d_str "explain_leak: current instruction is Nullify for pvar ";
            Pvar.d pvar; L.d_ln ());
         (match exp_lv_dexp (State.get_node ()) (Sil.Lvar pvar) with
-         | None -> None
-         | Some de -> Some (Sil.dexp_to_string de))
+         | Some de when not (Sil.dexp_has_tmp_var de)-> Some (Sil.dexp_to_string de)
+         | _ -> None)
     | Some (Sil.Abstract _) ->
         if verbose then (L.d_str "explain_leak: current instruction is Abstract"; L.d_ln ());
         let get_nullify = function
@@ -563,8 +563,8 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
           (L.d_str "explain_leak: current instruction Set for ";
            Sil.d_exp lexp; L.d_ln ());
         (match exp_lv_dexp node lexp with
-         | Some dexp -> Some (Sil.dexp_to_string dexp)
-         | None -> None)
+         | Some dexp when not (Sil.dexp_has_tmp_var dexp) -> Some (Sil.dexp_to_string dexp)
+         | _ -> None)
     | Some instr ->
         if verbose
         then

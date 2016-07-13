@@ -511,6 +511,10 @@ let binop_invert: binop => exp => exp => exp;
     The return value false means "don't know". */
 let binop_is_zero_runit: binop => bool;
 
+
+/** return true if [dexp] contains a temporary pvar */
+let dexp_has_tmp_var: dexp => bool;
+
 let mem_kind_compare: mem_kind => mem_kind => int;
 
 let attribute_compare: attribute => attribute => int;
