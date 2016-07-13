@@ -733,11 +733,13 @@ let handle_objc_instance_method_call_or_skip actual_pars path callee_pname pre r
     | _ -> false in
   let add_objc_null_attribute_or_nullify_result prop =
     match ret_ids with
-    | [ret_id] ->
-        (match Prop.find_equal_formal_path receiver prop with
-         | Some info ->
-             Prop.add_or_replace_exp_attribute prop (Sil.Var ret_id) (Sil.Aobjc_null info)
-         | None -> Prop.conjoin_eq (Sil.Var ret_id) Sil.exp_zero prop)
+    | [ret_id] -> (
+        match Prop.find_equal_formal_path receiver prop with
+        | Some (v,fs) ->
+            Prop.add_or_replace_exp_attribute prop (Sil.Var ret_id) (Sil.Aobjc_null (v,fs))
+        | None ->
+            Prop.conjoin_eq (Sil.Var ret_id) Sil.exp_zero prop
+      )
     | _ -> prop in
   if is_receiver_null then
     (* objective-c instance method with a null receiver just return objc_null(res) *)

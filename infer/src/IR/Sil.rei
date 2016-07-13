@@ -181,8 +181,8 @@ and attribute =
   | Aunlocked
   /** value appeared in second argument of division at given path position */
   | Adiv0 of path_pos
-  /** the exp. is null because of a call to a method with exp as a null receiver */
-  | Aobjc_null of exp
+  /** attributed exp is null due to a call to a method with given path as null receiver */
+  | Aobjc_null of Pvar.t (list Ident.fieldname)
   /** value was returned from a call to the given procedure, plus the annots of the return value */
   | Aretval of Procname.t Typ.item_annotation
   /** denotes an object registered as an observers to a notification center */

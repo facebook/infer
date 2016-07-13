@@ -485,7 +485,7 @@ val prop_iter_make_id_primed : Ident.t -> 'a prop_iter -> 'a prop_iter
 (** Collect garbage fields. *)
 val prop_iter_gc_fields : unit prop_iter -> unit prop_iter
 
-val find_equal_formal_path : exp -> 'a t -> Sil.exp option
+val find_equal_formal_path : exp -> 'a t -> (Pvar.t * Ident.fieldname list) option
 
 (** return the set of subexpressions of [strexp] *)
 val strexp_get_exps : Sil.strexp -> Sil.ExpSet.t

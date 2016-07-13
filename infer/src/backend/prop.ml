@@ -2786,7 +2786,7 @@ let trans_land_lor op ((idl1, stml1), e1) ((idl2, stml2), e2) loc =
       ((id:: idl1@idl2, stml1@instrs2), Sil.Var id)
     end
 
-(** Input of this mehtod is an exp in a prop. Output is a formal variable or path from a
+(** Input of this method is an exp in a prop. Output is a formal variable or path from a
     formal variable that is equal to the expression,
     or the OBJC_NULL attribute of the expression. *)
 let find_equal_formal_path e prop =
@@ -2803,7 +2803,7 @@ let find_equal_formal_path e prop =
               | Sil.Hpointsto (Sil.Lvar pvar1, Sil.Eexp (exp2, Sil.Iformal(_, _) ), _)
                 when Sil.exp_equal exp2 e &&
                      (Pvar.is_local pvar1 || Pvar.is_seed pvar1) ->
-                  Some (Sil.Lvar pvar1)
+                  Some (pvar1, [])
               | Sil.Hpointsto (exp1, Sil.Estruct (fields, _), _) ->
                   IList.fold_right (fun (field, strexp) res ->
                       match res with
@@ -2812,15 +2812,16 @@ let find_equal_formal_path e prop =
                           match strexp with
                           | Sil.Eexp (exp2, _) when Sil.exp_equal exp2 e ->
                               (match find_in_sigma exp1 seen_hpreds with
-                               | Some exp' -> Some (Sil.Lfield (exp', field, Typ.Tvoid))
+                               | Some (v, rev_fs) -> Some (v, field :: rev_fs)
                                | None -> None)
                           | _ -> None) fields None
               | _ -> None) (get_sigma prop) None in
   match find_in_sigma e [] with
-  | Some res -> Some res
-  | None -> match get_objc_null_attribute prop e with
-    | Some (Sil.Aobjc_null exp) -> Some exp
-    | _ -> None
+  | Some (v, rev_fs) -> Some (v, IList.rev rev_fs)
+  | None ->
+      match get_objc_null_attribute prop e with
+      | Some (Sil.Aobjc_null (v,fs)) -> Some (v,fs)
+      | _ -> None
 
 (** translate an if-then-else expression *)
 let trans_if_then_else ((idl1, stml1), e1) ((idl2, stml2), e2) ((idl3, stml3), e3) loc =

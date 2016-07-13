@@ -454,8 +454,8 @@ and attribute =
   | Aunlocked
   /** value appeared in second argument of division at given path position */
   | Adiv0 of path_pos
-  /** the exp. is null because of a call to a method with exp as a null receiver */
-  | Aobjc_null of exp
+  /** attributed exp is null due to a call to a method with given path as null receiver */
+  | Aobjc_null of Pvar.t (list Ident.fieldname)
   /** value was returned from a call to the given procedure, plus the annots of the return value */
   | Aretval of Procname.t Typ.item_annotation
   /** denotes an object registered as an observers to a notification center */
@@ -1039,7 +1039,13 @@ let rec attribute_compare (att1: attribute) (att2: attribute) :int =>
   | (Adiv0 pp1, Adiv0 pp2) => path_pos_compare pp1 pp2
   | (Adiv0 _, _) => (-1)
   | (_, Adiv0 _) => 1
-  | (Aobjc_null exp1, Aobjc_null exp2) => exp_compare exp1 exp2
+  | (Aobjc_null v1 fs1, Aobjc_null v2 fs2) =>
+    let n = Pvar.compare v1 v2;
+    if (n != 0) {
+      n
+    } else {
+      IList.compare Ident.fieldname_compare fs1 fs2
+    }
   | (Aobjc_null _, _) => (-1)
   | (_, Aobjc_null _) => 1
   | (Aretval pn1 annots1, Aretval pn2 annots2) =>
@@ -1739,15 +1745,9 @@ and attribute_to_string pe =>
   | Alocked => "LOCKED"
   | Aunlocked => "UNLOCKED"
   | Adiv0 (_, _) => "DIV0"
-  | Aobjc_null exp => {
-      let info_s =
-        switch exp {
-        | Lvar var => "FORMAL " ^ Pvar.to_string var
-        | Lfield _ => "FIELD " ^ exp_to_string exp
-        | _ => ""
-        };
-      "OBJC_NULL[" ^ info_s ^ "]"
-    }
+  | Aobjc_null v fs =>
+    "OBJC_NULL[" ^
+      String.concat "." [Pvar.to_string v, ...IList.map Ident.fieldname_to_string fs] ^ "]"
   | Aretval pn _ => "RET" ^ str_binop pe Lt ^ Procname.to_string pn ^ str_binop pe Gt
   | Aobserver => "OBSERVER"
   | Aunsubscribed_observer => "UNSUBSCRIBED_OBSERVER"
@@ -3381,13 +3381,6 @@ let rec exp_sub_ids (f: Ident.t => exp) exp =>
       exp
     } else {
       Closure {...c, captured_vars}
-    }
-  | Const (Cattribute (Aobjc_null e)) =>
-    let e' = exp_sub_ids f e;
-    if (e' === e) {
-      exp
-    } else {
-      Const (Cattribute (Aobjc_null e'))
     }
   | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _) => exp
   | Cast t e =>
