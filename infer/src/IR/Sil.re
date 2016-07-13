@@ -415,6 +415,17 @@ type taint_kind =
 type taint_info = {taint_source: Procname.t, taint_kind: taint_kind};
 
 
+/** Constants */
+type const =
+  | Cint of IntLit.t /** integer constants */
+  | Cfun of Procname.t /** function names */
+  | Cstr of string /** string constants */
+  | Cfloat of float /** float constants */
+  | Cclass of Ident.name /** class constant */
+  | Cptr_to_fld of Ident.fieldname Typ.t /** pointer to field constant,
+                                             and type of the surrounding Csu.t type */;
+
+
 /** expression representing the result of decompilation */
 type dexp =
   | Darray of dexp dexp
@@ -463,15 +474,6 @@ and attribute =
   /** denotes an object unsubscribed from observers of a notification center */
   | Aunsubscribed_observer
 and closure = {name: Procname.t, captured_vars: list (exp, Pvar.t, Typ.t)}
-/** Constants */
-and const =
-  | Cint of IntLit.t /** integer constants */
-  | Cfun of Procname.t /** function names */
-  | Cstr of string /** string constants */
-  | Cfloat of float /** float constants */
-  | Cclass of Ident.name /** class constant */
-  | Cptr_to_fld of Ident.fieldname Typ.t /** pointer to field constant,
-                                             and type of the surrounding Csu.t type */
 /** dynamically determined length of an array value, if any */
 and dynamic_length = option exp
 /** Program expressions. */
@@ -975,6 +977,34 @@ let attr_is_undef =
   | Aundef _ => true
   | _ => false;
 
+let const_compare (c1: const) (c2: const) :int =>
+  switch (c1, c2) {
+  | (Cint i1, Cint i2) => IntLit.compare i1 i2
+  | (Cint _, _) => (-1)
+  | (_, Cint _) => 1
+  | (Cfun fn1, Cfun fn2) => Procname.compare fn1 fn2
+  | (Cfun _, _) => (-1)
+  | (_, Cfun _) => 1
+  | (Cstr s1, Cstr s2) => string_compare s1 s2
+  | (Cstr _, _) => (-1)
+  | (_, Cstr _) => 1
+  | (Cfloat f1, Cfloat f2) => float_compare f1 f2
+  | (Cfloat _, _) => (-1)
+  | (_, Cfloat _) => 1
+  | (Cclass c1, Cclass c2) => Ident.name_compare c1 c2
+  | (Cclass _, _) => (-1)
+  | (_, Cclass _) => 1
+  | (Cptr_to_fld fn1 t1, Cptr_to_fld fn2 t2) =>
+    let n = Ident.fieldname_compare fn1 fn2;
+    if (n != 0) {
+      n
+    } else {
+      Typ.compare t1 t2
+    }
+  };
+
+let const_equal c1 c2 => const_compare c1 c2 == 0;
+
 let const_kind_equal c1 c2 => {
   let const_kind_number =
     fun
@@ -982,8 +1012,8 @@ let const_kind_equal c1 c2 => {
     | Cfun _ => 2
     | Cstr _ => 3
     | Cfloat _ => 4
-    | Cclass _ => 7
-    | Cptr_to_fld _ => 8;
+    | Cclass _ => 5
+    | Cptr_to_fld _ => 6;
   const_kind_number c1 == const_kind_number c2
 };
 
@@ -1063,31 +1093,6 @@ let rec attribute_compare (att1: attribute) (att2: attribute) :int =>
   | (Aunsubscribed_observer, Aunsubscribed_observer) => 0
   | (Aunsubscribed_observer, _) => (-1)
   | (_, Aunsubscribed_observer) => 1
-  }
-and const_compare (c1: const) (c2: const) :int =>
-  switch (c1, c2) {
-  | (Cint i1, Cint i2) => IntLit.compare i1 i2
-  | (Cint _, _) => (-1)
-  | (_, Cint _) => 1
-  | (Cfun fn1, Cfun fn2) => Procname.compare fn1 fn2
-  | (Cfun _, _) => (-1)
-  | (_, Cfun _) => 1
-  | (Cstr s1, Cstr s2) => string_compare s1 s2
-  | (Cstr _, _) => (-1)
-  | (_, Cstr _) => 1
-  | (Cfloat f1, Cfloat f2) => float_compare f1 f2
-  | (Cfloat _, _) => (-1)
-  | (_, Cfloat _) => 1
-  | (Cclass c1, Cclass c2) => Ident.name_compare c1 c2
-  | (Cclass _, _) => (-1)
-  | (_, Cclass _) => 1
-  | (Cptr_to_fld fn1 t1, Cptr_to_fld fn2 t2) =>
-    let n = Ident.fieldname_compare fn1 fn2;
-    if (n != 0) {
-      n
-    } else {
-      Typ.compare t1 t2
-    }
   }
 /** Compare epressions. Variables come before other expressions. */
 and exp_compare (e1: exp) (e2: exp) :int =>
@@ -1205,8 +1210,6 @@ and exp_compare (e1: exp) (e2: exp) :int =>
   | (Attribute _, _) => (-1)
   | (_, Attribute _) => 1
   };
-
-let const_equal c1 c2 => const_compare c1 c2 == 0;
 
 let exp_equal e1 e2 => exp_compare e1 e2 == 0;
 
@@ -1577,6 +1580,19 @@ let java () => !Config.curr_language == Config.Java;
 
 let eradicate_java () => Config.eradicate && java ();
 
+let pp_const pe f =>
+  fun
+  | Cint i => IntLit.pp f i
+  | Cfun fn =>
+    switch pe.pe_kind {
+    | PP_HTML => F.fprintf f "_fun_%s" (Escape.escape_xml (Procname.to_string fn))
+    | _ => F.fprintf f "_fun_%s" (Procname.to_string fn)
+    }
+  | Cstr s => F.fprintf f "\"%s\"" (String.escaped s)
+  | Cfloat v => F.fprintf f "%f" v
+  | Cclass c => F.fprintf f "%a" Ident.pp_name c
+  | Cptr_to_fld fn _ => F.fprintf f "__fld_%a" Ident.pp_fieldname fn;
+
 
 /** convert a dexp to a string */
 let rec dexp_to_string =
@@ -1751,18 +1767,6 @@ and attribute_to_string pe =>
   | Aretval pn _ => "RET" ^ str_binop pe Lt ^ Procname.to_string pn ^ str_binop pe Gt
   | Aobserver => "OBSERVER"
   | Aunsubscribed_observer => "UNSUBSCRIBED_OBSERVER"
-and pp_const pe f =>
-  fun
-  | Cint i => IntLit.pp f i
-  | Cfun fn =>
-    switch pe.pe_kind {
-    | PP_HTML => F.fprintf f "_fun_%s" (Escape.escape_xml (Procname.to_string fn))
-    | _ => F.fprintf f "_fun_%s" (Procname.to_string fn)
-    }
-  | Cstr s => F.fprintf f "\"%s\"" (String.escaped s)
-  | Cfloat v => F.fprintf f "%f" v
-  | Cclass c => F.fprintf f "%a" Ident.pp_name c
-  | Cptr_to_fld fn _ => F.fprintf f "__fld_%a" Ident.pp_fieldname fn
 /** Pretty print an expression. */
 and _pp_exp pe0 pp_t f e0 => {
   let (pe, changed) = color_pre_wrapper pe0 f e0;

@@ -142,6 +142,17 @@ type taint_kind =
 type taint_info = {taint_source: Procname.t, taint_kind: taint_kind};
 
 
+/** Constants */
+type const =
+  | Cint of IntLit.t /** integer constants */
+  | Cfun of Procname.t /** function names */
+  | Cstr of string /** string constants */
+  | Cfloat of float /** float constants */
+  | Cclass of Ident.name /** class constant */
+  | Cptr_to_fld of Ident.fieldname Typ.t /** pointer to field constant,
+                                             and type of the surrounding Csu.t type */;
+
+
 /** expression representing the result of decompilation */
 type dexp =
   | Darray of dexp dexp
@@ -190,15 +201,6 @@ and attribute =
   /** denotes an object unsubscribed from observers of a notification center */
   | Aunsubscribed_observer
 and closure = {name: Procname.t, captured_vars: list (exp, Pvar.t, Typ.t)}
-/** Constants */
-and const =
-  | Cint of IntLit.t /** integer constants */
-  | Cfun of Procname.t /** function names */
-  | Cstr of string /** string constants */
-  | Cfloat of float /** float constants */
-  | Cclass of Ident.name /** class constant */
-  | Cptr_to_fld of Ident.fieldname Typ.t /** pointer to field constant,
-                                             and type of the surrounding Csu.t type */
 /** dynamically determined length of an array value, if any */
 and dynamic_length = option exp
 /** Program expressions. */
