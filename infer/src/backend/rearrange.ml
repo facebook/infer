@@ -399,8 +399,7 @@ let strexp_extend_values
     _strexp_extend_values
       pname tenv orig_prop footprint_part kind max_stamp se typ off' inst in
   let atoms_se_typ_list_filtered =
-    let neg_atom = function Sil.Aeq(e1, e2) -> Sil.Aneq(e1, e2) | Sil.Aneq(e1, e2) -> Sil.Aeq(e1, e2) in
-    let check_neg_atom atom = Prover.check_atom Prop.prop_emp (neg_atom atom) in
+    let check_neg_atom atom = Prover.check_atom Prop.prop_emp (Prop.atom_negate atom) in
     let check_not_inconsistent (atoms, _, _) = not (IList.exists check_neg_atom atoms) in
     IList.filter check_not_inconsistent atoms_se_typ_list in
   if Config.trace_rearrange then L.d_strln "exiting strexp_extend_values";
