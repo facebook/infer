@@ -101,4 +101,35 @@ module Make (TraceDomain : AbstractDomain.S) = struct
           Some (join_all_traces trace subtree)
     | exception Not_found ->
         None
+
+  let rec access_tree_lteq ((lhs_trace, lhs_tree) as lhs) ((rhs_trace, rhs_tree) as rhs) =
+    if lhs == rhs
+    then true
+    else
+      TraceDomain.(<=) ~lhs:lhs_trace ~rhs:rhs_trace &&
+      match lhs_tree, rhs_tree with
+      | Subtree lhs_subtree, Subtree rhs_subtree ->
+          AccessMap.for_all
+            (fun k lhs_v ->
+               try
+                 let rhs_v = AccessMap.find k rhs_subtree in
+                 access_tree_lteq lhs_v rhs_v
+               with Not_found -> false)
+            lhs_subtree
+      | _, Star ->
+          true
+      | Star, Subtree _ ->
+          false
+
+  let (<=) ~lhs ~rhs =
+    if lhs == rhs
+    then true
+    else
+      BaseMap.for_all
+        (fun k lhs_v ->
+           try
+             let rhs_v = BaseMap.find k rhs in
+             access_tree_lteq lhs_v rhs_v
+           with Not_found -> false)
+        lhs
 end
