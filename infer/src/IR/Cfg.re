@@ -704,7 +704,7 @@ let module Node = {
           [(Sil.Var id, _), ...origin_args]
           loc
           call_flags
-          when call_flags.Sil.cf_virtual && redirected_class_name id != None => {
+          when call_flags.CallFlags.cf_virtual && redirected_class_name id != None => {
           let redirected_typ = Option.get (redirected_class_name id);
           let redirected_pname =
             Procname.replace_class

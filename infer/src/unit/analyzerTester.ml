@@ -92,7 +92,7 @@ module StructuredSil = struct
 
   let make_call ?(procname=dummy_procname) ret_ids args =
     let call_exp = Sil.Const (Const.Cfun procname) in
-    Cmd (Sil.Call (ret_ids, call_exp, args, dummy_loc, Sil.cf_default))
+    Cmd (Sil.Call (ret_ids, call_exp, args, dummy_loc, CallFlags.default))
 
   let id_assign_id ?(rhs_typ=dummy_typ) lhs rhs =
     let lhs_id = ident_of_str lhs in

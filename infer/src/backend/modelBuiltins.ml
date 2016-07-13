@@ -1165,7 +1165,8 @@ let execute_objc_alloc_no_fail
     | Some pname -> [Sil.Const (Const.Cfun pname), Typ.Tvoid]
     | None -> [] in
   let alloc_instr =
-    Sil.Call (ret_ids, alloc_fun, [(sizeof_typ, ptr_typ)] @ alloc_fun_exp, loc, Sil.cf_default) in
+    Sil.Call
+      (ret_ids, alloc_fun, [(sizeof_typ, ptr_typ)] @ alloc_fun_exp, loc, CallFlags.default) in
   SymExec.instrs tenv pdesc [alloc_instr] symb_state
 
 let mk_objc_class_method class_name method_name =

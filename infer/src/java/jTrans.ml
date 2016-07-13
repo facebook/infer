@@ -448,7 +448,7 @@ let rec expression context pc expr =
             let args = [(sil_ex, type_of_ex)] in
             let ret_id = Ident.create_fresh Ident.knormal in
             let call_instr =
-              Sil.Call ([ret_id], builtin_get_array_length, args, loc, Sil.cf_default) in
+              Sil.Call ([ret_id], builtin_get_array_length, args, loc, CallFlags.default) in
             (instrs @ [deref; call_instr], Sil.Var ret_id, type_of_expr)
         | JBir.Conv conv ->
             let cast_ex = Sil.Cast (JTransType.cast_type conv, sil_ex) in
@@ -468,7 +468,7 @@ let rec expression context pc expr =
                | _ -> assert false) in
             let args = [(sil_ex, type_of_ex); (sizeof_expr, Typ.Tvoid)] in
             let ret_id = Ident.create_fresh Ident.knormal in
-            let call = Sil.Call([ret_id], builtin, args, loc, Sil.cf_default) in
+            let call = Sil.Call([ret_id], builtin, args, loc, CallFlags.default) in
             let res_ex = Sil.Var ret_id in
             (instrs @ [call], res_ex, type_of_expr)
       end
@@ -559,8 +559,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
     | I_Virtual -> (true, false)
     | I_Interface -> (true, true)
     | _ -> (false, false) in
-  let call_flags =
-    { Sil.cf_default with Sil.cf_virtual = cf_virtual; Sil.cf_interface = cf_interface; } in
+  let call_flags = { CallFlags.default with cf_virtual; cf_interface; } in
   let init =
     match sil_obj_opt with
     | None -> [], []
@@ -621,7 +620,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
       when Procname.is_constructor callee_procname && JTransType.is_closeable program tenv typ ->
         let set_file_attr =
           let set_builtin = Sil.Const (Const.Cfun ModelBuiltins.__set_file_attribute) in
-          Sil.Call ([], set_builtin, [exp], loc, Sil.cf_default) in
+          Sil.Call ([], set_builtin, [exp], loc, CallFlags.default) in
         (* Exceptions thrown in the constructor should prevent adding the resource attribute *)
         call_instrs @ [set_file_attr]
 
@@ -630,7 +629,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
       when Procname.java_is_close callee_procname && JTransType.is_closeable program tenv typ ->
         let set_mem_attr =
           let set_builtin = Sil.Const (Const.Cfun ModelBuiltins.__set_mem_attribute) in
-          Sil.Call ([], set_builtin, [exp], loc, Sil.cf_default) in
+          Sil.Call ([], set_builtin, [exp], loc, CallFlags.default) in
         (* Exceptions thrown in the close method should not prevent the resource from being *)
         (* considered as closed *)
         [set_mem_attr] @ call_instrs
@@ -763,7 +762,7 @@ let assume_not_null loc sil_expr =
   let builtin_infer_assume = Sil.Const (Const.Cfun ModelBuiltins.__infer_assume) in
   let not_null_expr =
     Sil.BinOp (Binop.Ne, sil_expr, Sil.exp_null) in
-  let assume_call_flag = { Sil.cf_default with Sil.cf_noreturn = true; } in
+  let assume_call_flag = { CallFlags.default with CallFlags.cf_noreturn = true; } in
   let call_args = [(not_null_expr, Typ.Tint Typ.IBool)] in
   Sil.Call ([], builtin_infer_assume, call_args, loc, assume_call_flag)
 
@@ -795,7 +794,7 @@ let rec instruction context pc instr : translation =
   let trans_monitor_enter_exit context expr pc loc builtin node_desc =
     let instrs, sil_expr, sil_type = expression context pc expr in
     let builtin_const = Sil.Const (Const.Cfun builtin) in
-    let instr = Sil.Call ([], builtin_const, [(sil_expr, sil_type)], loc, Sil.cf_default) in
+    let instr = Sil.Call ([], builtin_const, [(sil_expr, sil_type)], loc, CallFlags.default) in
     let typ_no_ptr = match sil_type with
       | Typ.Tptr (typ, _) -> typ
       | _ -> sil_type in
@@ -903,7 +902,7 @@ let rec instruction context pc instr : translation =
         let sizeof_exp = Sil.Sizeof (class_type_np, None, Subtype.exact) in
         let args = [(sizeof_exp, class_type)] in
         let ret_id = Ident.create_fresh Ident.knormal in
-        let new_instr = Sil.Call([ret_id], builtin_new, args, loc, Sil.cf_default) in
+        let new_instr = Sil.Call([ret_id], builtin_new, args, loc, CallFlags.default) in
         let constr_ms = JBasics.make_ms JConfig.constructor_name constr_type_list None in
         let constr_procname, call_instrs =
           let ret_opt = Some (Sil.Var ret_id, class_type) in
@@ -925,7 +924,7 @@ let rec instruction context pc instr : translation =
         let (instrs, array_size) = get_array_length context pc expr_list content_type in
         let call_args = [(array_size, array_type)] in
         let ret_id = Ident.create_fresh Ident.knormal in
-        let call_instr = Sil.Call([ret_id], builtin_new_array, call_args, loc, Sil.cf_default) in
+        let call_instr = Sil.Call([ret_id], builtin_new_array, call_args, loc, CallFlags.default) in
         let set_instr = Sil.Set (Sil.Lvar array_name, array_type, Sil.Var ret_id, loc) in
         let node_kind = Cfg.Node.Stmt_node "method_body" in
         let node = create_node node_kind (instrs @ [call_instr; set_instr]) in
@@ -1017,7 +1016,7 @@ let rec instruction context pc instr : translation =
           let sizeof_exp = Sil.Sizeof (class_type_np, None, Subtype.exact) in
           let args = [(sizeof_exp, class_type)] in
           let ret_id = Ident.create_fresh Ident.knormal in
-          let new_instr = Sil.Call([ret_id], builtin_new, args, loc, Sil.cf_default) in
+          let new_instr = Sil.Call([ret_id], builtin_new, args, loc, CallFlags.default) in
           let constr_ms = JBasics.make_ms JConfig.constructor_name [] None in
           let _, call_instrs =
             let ret_opt = Some (Sil.Var ret_id, class_type) in
@@ -1070,7 +1069,7 @@ let rec instruction context pc instr : translation =
           let sizeof_exp = Sil.Sizeof (class_type_np, None, Subtype.exact) in
           let args = [(sizeof_exp, class_type)] in
           let ret_id = Ident.create_fresh Ident.knormal in
-          let new_instr = Sil.Call([ret_id], builtin_new, args, loc, Sil.cf_default) in
+          let new_instr = Sil.Call([ret_id], builtin_new, args, loc, CallFlags.default) in
           let constr_ms = JBasics.make_ms JConfig.constructor_name [] None in
           let _, call_instrs =
             method_invocation
@@ -1092,7 +1091,7 @@ let rec instruction context pc instr : translation =
           JTransType.sizeof_of_object_type program tenv object_type Subtype.subtypes_instof in
         let check_cast = Sil.Const (Const.Cfun ModelBuiltins.__instanceof) in
         let args = [(sil_expr, sil_type); (sizeof_expr, Typ.Tvoid)] in
-        let call = Sil.Call([ret_id], check_cast, args, loc, Sil.cf_default) in
+        let call = Sil.Call([ret_id], check_cast, args, loc, CallFlags.default) in
         let res_ex = Sil.Var ret_id in
         let is_instance_node =
           let check_is_false = Sil.BinOp (Binop.Ne, res_ex, Sil.exp_zero) in
@@ -1109,7 +1108,7 @@ let rec instruction context pc instr : translation =
           let sizeof_exp = Sil.Sizeof (class_type_np, None, Subtype.exact) in
           let args = [(sizeof_exp, class_type)] in
           let ret_id = Ident.create_fresh Ident.knormal in
-          let new_instr = Sil.Call([ret_id], builtin_new, args, loc, Sil.cf_default) in
+          let new_instr = Sil.Call([ret_id], builtin_new, args, loc, CallFlags.default) in
           let constr_ms = JBasics.make_ms JConfig.constructor_name [] None in
           let _, call_instrs =
             method_invocation context loc pc None cce_cn constr_ms

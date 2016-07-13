@@ -566,7 +566,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
     then resolve receiver_exp called_pname prop
     else called_pname in
   match actuals with
-  | _ when not (call_flags.Sil.cf_virtual || call_flags.Sil.cf_interface) ->
+  | _ when not (call_flags.CallFlags.cf_virtual || call_flags.CallFlags.cf_interface) ->
       (* if this is not a virtual or interface call, there's no need for resolution *)
       [callee_pname]
   | (receiver_exp, actual_receiver_typ) :: _ ->
@@ -575,13 +575,13 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
         [do_resolve callee_pname receiver_exp actual_receiver_typ]
       else if Config.sound_dynamic_dispatch then
         let targets =
-          if call_flags.Sil.cf_virtual
+          if call_flags.CallFlags.cf_virtual
           then
             (* virtual call--either [called_pname] or an override in some subtype may be called *)
-            callee_pname :: call_flags.Sil.cf_targets
+            callee_pname :: call_flags.CallFlags.cf_targets
           else
             (* interface call--[called_pname] has no implementation), we don't want to consider *)
-            call_flags.Sil.cf_targets in (* interface call, don't want to consider *)
+            call_flags.CallFlags.cf_targets in (* interface call, don't want to consider *)
         (* return true if (receiver typ of [target_pname]) <: [actual_receiver_typ] *)
         let may_dispatch_to target_pname =
           let target_receiver_typ = get_receiver_typ target_pname actual_receiver_typ in
@@ -594,8 +594,8 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
         else resolved_pname :: feasible_targets
       else
         begin
-          match call_flags.Sil.cf_targets with
-          | target :: _ when call_flags.Sil.cf_interface &&
+          match call_flags.CallFlags.cf_targets with
+          | target :: _ when call_flags.CallFlags.cf_interface &&
                              receiver_types_equal callee_pname actual_receiver_typ ->
               (* "production mode" of dynamic dispatch for Java: unsound, but faster. the handling
                  is restricted to interfaces: if we can't resolve an interface call, we pick the
@@ -628,7 +628,7 @@ let resolve_java_pname tenv prop args pname_java call_flags : Procname.java =
     match args with
     | [] ->
         pname_java, []
-    | (first_arg, _) :: other_args when call_flags.Sil.cf_virtual ->
+    | (first_arg, _) :: other_args when call_flags.CallFlags.cf_virtual ->
         let resolved =
           begin
             match resolve_typename prop first_arg with
@@ -1222,10 +1222,10 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       IList.flatten (IList.map do_call sentinel_result)
   | Sil.Call (ret_ids, fun_exp, actual_params, loc, call_flags) -> (** Call via function pointer *)
       let (prop_r, n_actual_params) = normalize_params current_pname prop_ actual_params in
-      if call_flags.Sil.cf_is_objc_block then
+      if call_flags.CallFlags.cf_is_objc_block then
         Rearrange.check_call_to_objc_block_error current_pdesc prop_r fun_exp loc;
       Rearrange.check_dereference_error current_pdesc prop_r fun_exp loc;
-      if call_flags.Sil.cf_noreturn then begin
+      if call_flags.CallFlags.cf_noreturn then begin
         L.d_str "Unknown function pointer with noreturn attribute ";
         Sil.d_exp fun_exp; L.d_strln ", diverging.";
         diverge prop_r path
@@ -1424,7 +1424,7 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
       IList.fold_left do_attribute p (Prop.get_exp_attributes p e) in
     let filtered_args =
       match args, instr with
-      | _:: other_args, Sil.Call (_, _, _, _, { Sil.cf_virtual }) when cf_virtual ->
+      | _:: other_args, Sil.Call (_, _, _, _, { CallFlags.cf_virtual }) when cf_virtual ->
           (* Do not remove the file attribute on the reciver for virtual calls *)
           other_args
       | _ -> args in

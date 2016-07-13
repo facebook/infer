@@ -145,7 +145,7 @@ let id_is_assigned_then_dead node id =
     and return the function name and arguments *)
 let find_normal_variable_funcall
     (node: Cfg.Node.t)
-    (id: Ident.t): (Sil.exp * (Sil.exp list) * Location.t * Sil.call_flags) option =
+    (id: Ident.t): (Sil.exp * (Sil.exp list) * Location.t * CallFlags.t) option =
   let find_declaration _ = function
     | Sil.Call ([id0], fun_exp, args, loc, call_flags) when Ident.equal id id0 ->
         Some (fun_exp, IList.map fst args, loc, call_flags)

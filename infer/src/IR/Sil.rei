@@ -53,20 +53,6 @@ type dangling_kind =
 /** position in a path: proc name, node id */
 type path_pos = (Procname.t, int);
 
-
-/** Flags for a procedure call */
-type call_flags = {
-  cf_virtual: bool,
-  cf_interface: bool,
-  cf_noreturn: bool,
-  cf_is_objc_block: bool,
-  cf_targets: list Procname.t
-};
-
-
-/** Default value for call_flags where all fields are set to false */
-let cf_default: call_flags;
-
 type taint_kind =
   | Tk_unverified_SSL_socket
   | Tk_shared_preferences_data
@@ -84,14 +70,14 @@ type dexp =
   | Dconst of Const.t
   | Dsizeof of Typ.t (option dexp) Subtype.t
   | Dderef of dexp
-  | Dfcall of dexp (list dexp) Location.t call_flags
+  | Dfcall of dexp (list dexp) Location.t CallFlags.t
   | Darrow of dexp Ident.fieldname
   | Ddot of dexp Ident.fieldname
   | Dpvar of Pvar.t
   | Dpvaraddr of Pvar.t
   | Dunop of Unop.t dexp
   | Dunknown
-  | Dretcall of dexp (list dexp) Location.t call_flags;
+  | Dretcall of dexp (list dexp) Location.t CallFlags.t;
 
 
 /** Value paths: identify an occurrence of a value in a symbolic heap
@@ -213,7 +199,7 @@ type instr =
   /** [Call (ret_id1..ret_idn, e_fun, arg_ts, loc, call_flags)] represents an instructions
       [ret_id1..ret_idn = e_fun(arg_ts);]
       where n = 0 for void return and n > 1 for struct return */
-  | Call of (list Ident.t) exp (list (exp, Typ.t)) Location.t call_flags
+  | Call of (list Ident.t) exp (list (exp, Typ.t)) Location.t CallFlags.t
   /** nullify stack variable */
   | Nullify of Pvar.t Location.t
   | Abstract of Location.t /** apply abstraction */
@@ -471,8 +457,6 @@ let exp_equal: exp => exp => bool;
 
 /** exp_is_array_index_of index arr returns true is index is an array index of arr. */
 let exp_is_array_index_of: exp => exp => bool;
-
-let call_flags_compare: call_flags => call_flags => int;
 
 let exp_typ_compare: (exp, Typ.t) => (exp, Typ.t) => int;
 

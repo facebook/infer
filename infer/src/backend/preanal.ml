@@ -16,8 +16,8 @@ let add_dispatch_calls pdesc cg tenv =
     (* TODO: handle dynamic dispatch for virtual calls as well *)
     let call_flags_is_dispatch call_flags =
       (* if sound dispatch is turned off, only consider dispatch for interface calls *)
-      (Config.sound_dynamic_dispatch && call_flags.Sil.cf_virtual) ||
-      call_flags.Sil.cf_interface in
+      (Config.sound_dynamic_dispatch && call_flags.CallFlags.cf_virtual) ||
+      call_flags.CallFlags.cf_interface in
     let instr_is_dispatch_call = function
       | Sil.Call (_, _, _, _, call_flags) -> call_flags_is_dispatch call_flags
       | _ -> false in
@@ -28,7 +28,7 @@ let add_dispatch_calls pdesc cg tenv =
                   (((_, receiver_typ) :: _) as args), loc, call_flags) as instr
         when call_flags_is_dispatch call_flags ->
           (* the frontend should not populate the list of targets *)
-          assert (call_flags.Sil.cf_targets = []);
+          assert (call_flags.CallFlags.cf_targets = []);
           let receiver_typ_no_ptr = match receiver_typ with
             | Typ.Tptr (typ', _) ->
                 typ'
@@ -49,7 +49,7 @@ let add_dispatch_calls pdesc cg tenv =
                IList.iter
                  (fun target_pname -> Cg.add_edge cg caller_pname target_pname)
                  targets_to_add;
-               let call_flags' = { call_flags with Sil.cf_targets = targets_to_add; } in
+               let call_flags' = { call_flags with CallFlags.cf_targets = targets_to_add; } in
                Sil.Call (ret_ids, call_exp, args, loc, call_flags')
            | [] -> instr)
 

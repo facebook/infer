@@ -29,7 +29,7 @@ struct
             (* ignore return ids and call flags *)
             let n = Sil.exp_compare e1 e2 in
             if n <> 0 then n else let n = IList.compare Sil.exp_typ_compare etl1 etl2 in
-              if n <> 0 then n else Sil.call_flags_compare cf1 cf2
+              if n <> 0 then n else CallFlags.compare cf1 cf2
         | _ -> Sil.instr_compare i1 i2
     end)
 

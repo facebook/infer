@@ -25,7 +25,7 @@ val hpred_is_open_resource : 'a Prop.t -> Sil.hpred -> Sil.resource option
 (** Find the function call instruction used to initialize normal variable [id],
     and return the function name and arguments *)
 val find_normal_variable_funcall :
-  Cfg.Node.t -> Ident.t -> (Sil.exp * (Sil.exp list) * Location.t * Sil.call_flags) option
+  Cfg.Node.t -> Ident.t -> (Sil.exp * (Sil.exp list) * Location.t * CallFlags.t) option
 
 (** Find a program variable assignment in the current node or straightline predecessor. *)
 val find_program_variable_assignment : Cfg.Node.t -> Pvar.t -> (Cfg.Node.t * Ident.t) option

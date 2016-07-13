@@ -104,8 +104,8 @@ module ComplexExpressions = struct
           pp_to_string (Const.pp pe_text) c
       | Sil.Dderef de ->
           dexp_to_string de
-      | Sil.Dfcall (fun_dexp, args, _, { Sil.cf_virtual = isvirtual })
-      | Sil.Dretcall (fun_dexp, args, _, { Sil.cf_virtual = isvirtual })
+      | Sil.Dfcall (fun_dexp, args, _, { CallFlags.cf_virtual = isvirtual })
+      | Sil.Dretcall (fun_dexp, args, _, { CallFlags.cf_virtual = isvirtual })
         when functions_idempotent () ->
           let pp_arg fmt de = F.fprintf fmt "%s" (dexp_to_string de) in
           let pp_args fmt des = (pp_comma_seq) pp_arg fmt des in
@@ -773,7 +773,7 @@ let typecheck_instr
                   let dexp_get = Sil.Dconst (Const.Cfun pname_get) in
                   let dexp_map = Sil.Dpvar pv_map in
                   let args = [dexp_map; dexp_key] in
-                  let call_flags = { Sil.cf_default with Sil.cf_virtual = true } in
+                  let call_flags = { CallFlags.default with CallFlags.cf_virtual = true } in
                   Some (Sil.Dretcall (dexp_get, args, loc, call_flags))
               | _ -> None in
             begin
@@ -801,7 +801,7 @@ let typecheck_instr
                   EradicateChecks.classify_procedure callee_attributes in
                 L.stdout "  %s unique id: %s@." classification unique_id
               end;
-            if cflags.Sil.cf_virtual && checks.eradicate then
+            if cflags.CallFlags.cf_virtual && checks.eradicate then
               EradicateChecks.check_call_receiver
                 find_canonical_duplicate
                 curr_pname

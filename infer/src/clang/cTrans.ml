@@ -84,7 +84,8 @@ struct
       let fname = ModelBuiltins.__set_autorelease_attribute in
       let ret_id = Ident.create_fresh Ident.knormal in
       let stmt_call =
-        Sil.Call ([ret_id], Sil.Const (Const.Cfun fname), [(exp, typ)], sil_loc, Sil.cf_default) in
+        Sil.Call
+          ([ret_id], Sil.Const (Const.Cfun fname), [(exp, typ)], sil_loc, CallFlags.default) in
       [stmt_call]
     else []
 
@@ -878,7 +879,7 @@ struct
                       exps = [(cast_exp, function_type)]; }
                 | None ->
                     let call_flags =
-                      { Sil.cf_default with Sil.cf_is_objc_block = is_call_to_block; } in
+                      { CallFlags.default with CallFlags.cf_is_objc_block = is_call_to_block; } in
                     create_call_instr trans_state function_type sil_fe act_params sil_loc
                       call_flags ~is_objc_method:false in
               let nname = "Call "^(Sil.exp_to_string sil_fe) in
@@ -919,11 +920,11 @@ struct
       (* first expr is method address, rest are params including 'this' parameter *)
       let actual_params = IList.tl (collect_exprs result_trans_subexprs) in
       let call_flags = {
-        Sil.cf_virtual = is_cpp_call_virtual;
-        Sil.cf_interface = false;
-        Sil.cf_noreturn = false;
-        Sil.cf_is_objc_block = false;
-        Sil.cf_targets = [];
+        CallFlags.cf_virtual = is_cpp_call_virtual;
+        CallFlags.cf_interface = false;
+        CallFlags.cf_noreturn = false;
+        CallFlags.cf_is_objc_block = false;
+        CallFlags.cf_targets = [];
       } in
       let res_trans_call = create_call_instr trans_state_pri function_type sil_method actual_params
           sil_loc call_flags ~is_objc_method:false in
@@ -1066,7 +1067,7 @@ struct
         let res_trans_block = { empty_res_trans with
                                 instrs = instr_block_param;
                               } in
-        let call_flags = { Sil.cf_default with Sil.cf_virtual = is_virtual; } in
+        let call_flags = { CallFlags.default with CallFlags.cf_virtual = is_virtual; } in
         let method_sil = Sil.Const (Const.Cfun callee_name) in
         let res_trans_call = create_call_instr trans_state method_type method_sil param_exps
             sil_loc call_flags ~is_objc_method:true in
@@ -1977,7 +1978,7 @@ struct
     let autorelease_pool_vars = CVar_decl.compute_autorelease_pool_vars context stmts in
     let stmt_call =
       Sil.Call([ret_id], (Sil.Const (Const.Cfun fname)),
-               autorelease_pool_vars, sil_loc, Sil.cf_default) in
+               autorelease_pool_vars, sil_loc, CallFlags.default) in
     let node_kind = Cfg.Node.Stmt_node ("Release the autorelease pool") in
     let call_node = create_node node_kind [stmt_call] sil_loc context in
     Cfg.Node.set_succs_exn context.cfg call_node trans_state.succ_nodes [];
@@ -2133,7 +2134,8 @@ struct
     let result_trans_param = exec_with_self_exception instruction trans_state_param param in
     let exp = extract_exp_from_list result_trans_param.exps
         "WARNING: There should be one expression to delete. \n" in
-    let call_instr = Sil.Call ([], Sil.Const (Const.Cfun fname), [exp], sil_loc, Sil.cf_default) in
+    let call_instr =
+      Sil.Call ([], Sil.Const (Const.Cfun fname), [exp], sil_loc, CallFlags.default) in
     let call_res_trans = { empty_res_trans with instrs = [call_instr] } in
     let all_res_trans = if false then
         (* FIXME (t10135167): call destructor on deleted pointer if it's not null *)
@@ -2193,7 +2195,7 @@ struct
     let exp = match res_trans_stmt.exps with | [e] -> e | _ -> assert false in
     let args = [exp; (sizeof_expr, Typ.Tvoid)] in
     let ret_id = Ident.create_fresh Ident.knormal in
-    let call = Sil.Call ([ret_id], builtin, args, sil_loc, Sil.cf_default) in
+    let call = Sil.Call ([ret_id], builtin, args, sil_loc, CallFlags.default) in
     let res_ex = Sil.Var ret_id in
     let res_trans_dynamic_cast = { empty_res_trans with instrs = [call]; } in
     let all_res_trans = [ res_trans_stmt; res_trans_dynamic_cast ] in
@@ -2216,7 +2218,7 @@ struct
     let params = collect_exprs res_trans_subexpr_list  in
     let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_gcc_ast_stmt in
     let sil_fun = Sil.Const (Const.Cfun fun_name) in
-    let call_instr = Sil.Call ([], sil_fun, params, sil_loc, Sil.cf_default) in
+    let call_instr = Sil.Call ([], sil_fun, params, sil_loc, CallFlags.default) in
     let res_trans_call = { empty_res_trans with
                            instrs = [call_instr];
                            exps = []; } in
@@ -2249,7 +2251,7 @@ struct
     let ret_exp = Sil.Var ret_id in
     let field_exp = Sil.Lfield (ret_exp, field_name, typ) in
     let args = [type_info_objc; (field_exp, Typ.Tvoid)] @ res_trans_subexpr.exps in
-    let call_instr = Sil.Call ([ret_id], sil_fun, args, sil_loc, Sil.cf_default) in
+    let call_instr = Sil.Call ([ret_id], sil_fun, args, sil_loc, CallFlags.default) in
     let res_trans_call = { empty_res_trans with
                            instrs = [call_instr];
                            exps = [(ret_exp, typ)]; } in
@@ -2272,7 +2274,7 @@ struct
     let sil_fun = Sil.Const (Const.Cfun fun_name) in
     let ret_id = Ident.create_fresh Ident.knormal in
     let ret_exp = Sil.Var ret_id in
-    let call_instr = Sil.Call ([ret_id], sil_fun, params, sil_loc, Sil.cf_default) in
+    let call_instr = Sil.Call ([ret_id], sil_fun, params, sil_loc, CallFlags.default) in
     let res_trans_call = { empty_res_trans with
                            instrs = [call_instr];
                            exps = [(ret_exp, typ)]; } in

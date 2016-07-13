@@ -306,7 +306,8 @@ let create_alloc_instrs context sil_loc function_type fname size_exp_opt procnam
     | None -> [] in
   let args = exp :: procname_arg in
   let ret_id = Ident.create_fresh Ident.knormal in
-  let stmt_call = Sil.Call([ret_id], Sil.Const (Const.Cfun fname), args, sil_loc, Sil.cf_default) in
+  let stmt_call =
+    Sil.Call([ret_id], Sil.Const (Const.Cfun fname), args, sil_loc, CallFlags.default) in
   (function_type, stmt_call, Sil.Var ret_id)
 
 let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc procname_opt =
@@ -328,7 +329,7 @@ let objc_new_trans trans_state loc stmt_info cls_name function_type =
     create_alloc_instrs trans_state.context loc function_type fname None None in
   let init_ret_id = Ident.create_fresh Ident.knormal in
   let is_instance = true in
-  let call_flags = { Sil.cf_default with Sil.cf_virtual = is_instance; } in
+  let call_flags = { CallFlags.default with CallFlags.cf_virtual = is_instance; } in
   let pname = General_utils.mk_procname_from_objc_method cls_name CFrontend_config.init Procname.Instance_objc_method in
   CMethod_trans.create_external_procdesc trans_state.context.CContext.cfg pname is_instance None;
   let args = [(alloc_ret_exp, alloc_ret_type)] in
@@ -371,7 +372,7 @@ let create_cast_instrs context exp cast_from_typ cast_to_typ sil_loc =
   let pname = ModelBuiltins.__objc_cast in
   let args = [(exp, cast_from_typ); (sizeof_exp, Typ.Tint Typ.IULong)] in
   let stmt_call =
-    Sil.Call ([ret_id], Sil.Const (Const.Cfun pname), args, sil_loc, Sil.cf_default) in
+    Sil.Call ([ret_id], Sil.Const (Const.Cfun pname), args, sil_loc, CallFlags.default) in
   (stmt_call, Sil.Var ret_id)
 
 let cast_trans context exps sil_loc callee_pname_opt function_type =
@@ -444,7 +445,7 @@ let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
 let trans_assertion_failure sil_loc context =
   let assert_fail_builtin = Sil.Const (Const.Cfun ModelBuiltins.__infer_fail) in
   let args = [Sil.Const (Const.Cstr Config.default_failure_name), Typ.Tvoid] in
-  let call_instr = Sil.Call ([], assert_fail_builtin, args, sil_loc, Sil.cf_default) in
+  let call_instr = Sil.Call ([], assert_fail_builtin, args, sil_loc, CallFlags.default) in
   let exit_node = Cfg.Procdesc.get_exit_node (CContext.get_procdesc context)
   and failure_node =
     Nodes.create_node (Cfg.Node.Stmt_node "Assertion failure") [call_instr] sil_loc context in

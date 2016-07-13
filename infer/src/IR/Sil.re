@@ -65,24 +65,6 @@ type dangling_kind =
 /** position in a path: proc name, node id */
 type path_pos = (Procname.t, int);
 
-
-/** Flags for a procedure call */
-type call_flags = {
-  cf_virtual: bool,
-  cf_interface: bool,
-  cf_noreturn: bool,
-  cf_is_objc_block: bool,
-  cf_targets: list Procname.t
-};
-
-let cf_default = {
-  cf_virtual: false,
-  cf_interface: false,
-  cf_noreturn: false,
-  cf_is_objc_block: false,
-  cf_targets: []
-};
-
 type taint_kind =
   | Tk_unverified_SSL_socket
   | Tk_shared_preferences_data
@@ -100,14 +82,14 @@ type dexp =
   | Dconst of Const.t
   | Dsizeof of Typ.t (option dexp) Subtype.t
   | Dderef of dexp
-  | Dfcall of dexp (list dexp) Location.t call_flags
+  | Dfcall of dexp (list dexp) Location.t CallFlags.t
   | Darrow of dexp Ident.fieldname
   | Ddot of dexp Ident.fieldname
   | Dpvar of Pvar.t
   | Dpvaraddr of Pvar.t
   | Dunop of Unop.t dexp
   | Dunknown
-  | Dretcall of dexp (list dexp) Location.t call_flags;
+  | Dretcall of dexp (list dexp) Location.t CallFlags.t;
 
 
 /** Value paths: identify an occurrence of a value in a symbolic heap
@@ -213,7 +195,7 @@ type instr =
   /** [Call (ret_id1..ret_idn, e_fun, arg_ts, loc, call_flags)] represents an instructions
       [ret_id1..ret_idn = e_fun(arg_ts);]
       where n = 0 for void return and n > 1 for struct return */
-  | Call of (list Ident.t) exp (list (exp, Typ.t)) Location.t call_flags
+  | Call of (list Ident.t) exp (list (exp, Typ.t)) Location.t CallFlags.t
   /** nullify stack variable */
   | Nullify of Pvar.t Location.t
   | Abstract of Location.t /** apply abstraction */
@@ -1363,17 +1345,6 @@ let instr_get_exps =
   | Declare_locals _ => [];
 
 
-/** Pretty print call flags */
-let pp_call_flags f cf => {
-  if cf.cf_virtual {
-    F.fprintf f " virtual"
-  };
-  if cf.cf_noreturn {
-    F.fprintf f " noreturn"
-  }
-};
-
-
 /** Pretty print an instruction. */
 let pp_instr pe0 f instr => {
   let (pe, changed) = color_pre_wrapper pe0 f instr;
@@ -1396,7 +1367,7 @@ let pp_instr pe0 f instr => {
       e
       (pp_comma_seq (pp_exp_typ pe))
       arg_ts
-      pp_call_flags
+      CallFlags.pp
       cf
       Location.pp
       loc
@@ -2995,12 +2966,6 @@ let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => exp) instr => {
 /** apply [subst] to all id's in [instr], including binder id's */
 let instr_sub (subst: subst) instr => instr_sub_ids sub_id_binders::true (apply_sub subst) instr;
 
-let call_flags_compare cflag1 cflag2 =>
-  bool_compare cflag1.cf_virtual cflag2.cf_virtual |>
-    next bool_compare cflag1.cf_interface cflag2.cf_interface |>
-    next bool_compare cflag1.cf_noreturn cflag2.cf_noreturn |>
-    next bool_compare cflag1.cf_is_objc_block cflag2.cf_is_objc_block;
-
 let exp_typ_compare (exp1, typ1) (exp2, typ2) => {
   let n = exp_compare exp1 exp2;
   if (n != 0) {
@@ -3086,7 +3051,7 @@ let instr_compare instr1 instr2 =>
           if (n != 0) {
             n
           } else {
-            call_flags_compare cf1 cf2
+            CallFlags.compare cf1 cf2
           }
         }
       }
@@ -3332,7 +3297,7 @@ let instr_compare_structural instr1 instr2 exp_map => {
           if (n != 0) {
             n
           } else {
-            call_flags_compare cf1 cf2
+            CallFlags.compare cf1 cf2
           },
           exp_map
         )

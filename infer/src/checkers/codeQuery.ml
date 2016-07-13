@@ -170,7 +170,8 @@ module Match = struct
         else false
     | CodeQueryAst.Call _, _ -> false
     | CodeQueryAst.MethodCall (ae1, ae2, ael_opt),
-      Sil.Call (_, Sil.Const (Const.Cfun pn), (_e1, _):: params, loc, { Sil.cf_virtual = true }) ->
+      Sil.Call (_, Sil.Const (Const.Cfun pn), (_e1, _) :: params,
+                loc, { CallFlags.cf_virtual = true }) ->
         let e1 = Idenv.expand_expr idenv _e1 in
         let vl = IList.map (function _e, _ -> Vval (Idenv.expand_expr idenv _e)) params in
         if exp_match env ae1 (Vval e1) && exp_match env ae2 (Vfun pn) && opt_match exp_list_match env ael_opt vl then

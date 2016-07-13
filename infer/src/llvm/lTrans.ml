@@ -99,7 +99,7 @@ let rec trans_annotated_instructions
                 [ident_of_variable ret_var],
                 Sil.Const (Const.Cfun (procname_of_function_variable func_var)),
                 IList.map (fun (tp, arg) -> (trans_operand arg, trans_typ tp)) typed_args,
-                location, Sil.cf_default) in
+                location, CallFlags.default) in
             (new_sil_instr :: sil_instrs, locals)
         | _ -> raise (Unimplemented "Need to translate instruction to SIL.")
       end
