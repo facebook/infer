@@ -16,6 +16,7 @@ let () =
   let tests = [
     AbstractInterpreterTests.tests;
     AccessPathTests.tests;
+    AccessTreeTests.tests;
     AddressTakenTests.tests;
     CopyPropagationTests.tests;
     ProcCfgTests.tests;

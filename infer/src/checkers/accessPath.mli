@@ -23,9 +23,17 @@ type t =
   | Exact of raw (** precise representation of an access path, e.g. x.f.g *)
   | Abstracted of raw (** abstraction of heap reachable from an access path, e.g. x.f* *)
 
+val base_compare : base -> base -> int
+
+val base_equal : base -> base -> bool
+
 val raw_compare : raw -> raw -> int
 
 val raw_equal : raw -> raw -> bool
+
+val access_compare : access -> access -> int
+
+val access_equal : access -> access -> bool
 
 (** create an access path from a pvar *)
 val of_pvar : Pvar.t -> Typ.t -> raw
@@ -35,6 +43,8 @@ val append : raw -> access -> raw
 
 (** return true if [ap1] is a prefix of [ap2]. returns true for equal access paths *)
 val is_prefix : raw -> raw -> bool
+
+val pp_access : Format.formatter -> access -> unit
 
 val pp_raw : Format.formatter -> raw -> unit
 
@@ -50,5 +60,7 @@ val is_exact : t -> bool
 
 (** return true if \gamma(lhs) \subseteq \gamma(rhs) *)
 val (<=) : lhs:t -> rhs:t -> bool
+
+val pp_base : Format.formatter -> base -> unit
 
 val pp : Format.formatter -> t -> unit
