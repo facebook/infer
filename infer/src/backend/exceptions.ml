@@ -28,7 +28,7 @@ type err_class = Checker | Prover | Nocat
 
 (** kind of error/warning *)
 type err_kind =
-    Kwarning | Kerror | Kinfo
+    Kwarning | Kerror | Kinfo | Kadvice
 
 exception Abduction_case_not_implemented of L.ml_loc
 exception Analysis_stops of Localise.error_desc * L.ml_loc option
@@ -323,6 +323,7 @@ let err_kind_string = function
   | Kwarning -> "WARNING"
   | Kerror -> "ERROR"
   | Kinfo -> "INFO"
+  | Kadvice -> "ADVICE"
 
 (** string describing an error class *)
 let err_class_string = function

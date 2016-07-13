@@ -603,6 +603,7 @@ module Stats = struct
     mutable ndefective : int;
     mutable nerrors : int;
     mutable ninfos : int;
+    mutable nadvice : int;
     mutable nLOC : int;
     mutable nprocs : int;
     mutable nspecs : int;
@@ -618,6 +619,7 @@ module Stats = struct
     ndefective = 0;
     nerrors = 0;
     ninfos = 0;
+    nadvice = 0;
     nLOC = 0;
     nprocs = 0;
     nspecs = 0;
@@ -676,7 +678,8 @@ module Stats = struct
             let trace = loc_trace_to_string_list linereader 1 ltr in
             stats.saved_errors <- IList.rev_append (error_strs @ trace @ [""]) stats.saved_errors
         | Exceptions.Kwarning -> stats.nwarnings <- stats.nwarnings + 1
-        | Exceptions.Kinfo -> stats.ninfos <- stats.ninfos + 1 in
+        | Exceptions.Kinfo -> stats.ninfos <- stats.ninfos + 1
+        | Exceptions.Kadvice -> stats.nadvice <- stats.nadvice + 1 in
     Errlog.iter process_row err_log;
     !found_errors
 

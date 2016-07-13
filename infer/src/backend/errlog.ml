@@ -208,7 +208,7 @@ let log_issue _ekind err_log loc node_id_key session ltr pre_opt exn =
         let d = match ekind with
           | Exceptions.Kerror -> L.d_error
           | Exceptions.Kwarning -> L.d_warning
-          | Exceptions.Kinfo -> L.d_info in
+          | Exceptions.Kinfo | Exceptions.Kadvice -> L.d_info in
         d warn_str; L.d_ln();
       end in
     if should_print_now then print_now ()
@@ -251,13 +251,15 @@ module Err_table = struct
     let map_warn_fp = ref LocMap.empty in
     let map_warn_re = ref LocMap.empty in
     let map_info = ref LocMap.empty in
+    let map_advice = ref LocMap.empty in
     let add_err nslm (ekind , in_fp, err_name, desc, _) =
       let map = match in_fp, ekind with
         | true, Exceptions.Kerror -> map_err_fp
         | false, Exceptions.Kerror -> map_err_re
         | true, Exceptions.Kwarning -> map_warn_fp
         | false, Exceptions.Kwarning -> map_warn_re
-        | _, Exceptions.Kinfo -> map_info in
+        | _, Exceptions.Kinfo -> map_info
+        | _, Exceptions.Kadvice -> map_advice in
       try
         let err_list = LocMap.find nslm !map in
         map := LocMap.add nslm ((err_name, desc) :: err_list) !map
