@@ -132,4 +132,63 @@ module Make (TraceDomain : AbstractDomain.S) = struct
              access_tree_lteq lhs_v rhs_v
            with Not_found -> false)
         lhs
+
+  let node_join f_node_merge f_trace_merge ((trace1, tree1) as node1) ((trace2, tree2) as node2) =
+    if node1 == node2
+    then node1
+    else
+      let trace' = f_trace_merge trace1 trace2 in
+      (* note: this is much-uglified by address equality optimization checks. skip to the else cases
+         for the actual semantics *)
+      match tree1, tree2 with
+      | Subtree subtree1, Subtree subtree2 ->
+          let tree' = AccessMap.merge (fun _ v1 v2 -> f_node_merge v1 v2) subtree1 subtree2 in
+          if trace' == trace1 && tree' == subtree1
+          then node1
+          else if trace' == trace2 && tree' == subtree2
+          then node2
+          else trace', Subtree tree'
+      | Star, Star ->
+          if trace' == trace1
+          then node1
+          else if trace' == trace2
+          then node2
+          else trace', Star
+      | Star, Subtree t ->
+          (* vacuum up all the traces associated with the subtree t and join them with trace' *)
+          let trace'' = join_all_traces trace' t in
+          if trace'' == trace1
+          then node1
+          else trace'', Star
+      | Subtree t, Star ->
+          (* same as above, but kind-of duplicated to allow address equality optimization *)
+          let trace'' = join_all_traces trace' t in
+          if trace'' == trace2
+          then node2
+          else trace'', Star
+
+  let join tree1 tree2 =
+    if tree1 == tree2
+    then tree1
+    else
+      let rec node_merge node1_opt node2_opt =
+        match node1_opt, node2_opt with
+        | Some node1, Some node2 ->
+            let joined_node = node_join node_merge TraceDomain.join node1 node2 in
+            if joined_node == node1
+            then node1_opt
+            else if joined_node == node2
+            then node2_opt
+            else Some joined_node
+        | None, node_opt | node_opt, None ->
+            node_opt in
+      BaseMap.merge (fun _ n1 n2 -> node_merge n1 n2) tree1 tree2
+
+  let pp fmt base_tree =
+    let rec pp_node fmt (trace, subtree) =
+      let pp_subtree fmt = function
+        | Subtree access_map -> AccessMap.pp ~pp_value:pp_node fmt access_map
+        | Star -> F.fprintf fmt "*" in
+      F.fprintf fmt "(%a, %a)" TraceDomain.pp trace pp_subtree subtree in
+    BaseMap.pp ~pp_value:pp_node fmt base_tree
 end

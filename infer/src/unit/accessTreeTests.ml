@@ -66,29 +66,32 @@ let tests =
   let xF_trace = MockTraceDomain.singleton "xF" in
   let yF_trace = MockTraceDomain.singleton "yF" in
   let xFG_trace = MockTraceDomain.singleton "xFG" in
+  let x_star_trace = MockTraceDomain.of_list ["x"; "xF"; "xFG"] in
 
-  let x_tree =
+  let x_subtree =
     let g_subtree = Domain.make_access_node xF_trace g xFG_trace in
     Domain.AccessMap.singleton f g_subtree
     |> Domain.make_node x_trace in
-  let y_tree =
+  let y_subtree =
     let yF_subtree = Domain.make_starred_leaf yF_trace in
     Domain.AccessMap.singleton f yF_subtree
     |> Domain.make_node y_trace in
-  let z_tree = Domain.make_starred_leaf z_trace in
-  let tree =
-    Domain.BaseMap.singleton x_base x_tree
-    |> Domain.BaseMap.add y_base y_tree
-    |> Domain.BaseMap.add z_base z_tree in
+  let z_subtree = Domain.make_starred_leaf z_trace in
 
-  (* [tree] is:
-     x |-> ("x",
-            f |-> ("Xf",
-                   g |-> ("xFG", {})))
-     y |-> ("y",
-            f |-> ("yF", * ))
-     z |-> ("z", * )
-  *)
+  let tree =
+    Domain.BaseMap.singleton x_base x_subtree
+    |> Domain.BaseMap.add y_base y_subtree
+    |> Domain.BaseMap.add z_base z_subtree in
+  let x_base_tree = Domain.BaseMap.singleton x_base Domain.empty_node in
+  let y_base_tree = Domain.BaseMap.singleton y_base Domain.empty_node in
+  let x_y_base_tree = Domain.BaseMap.add y_base Domain.empty_node x_base_tree in
+  let xFG_tree = Domain.BaseMap.singleton x_base x_subtree in
+
+  let x_star_tree = Domain.BaseMap.singleton x_base (Domain.make_starred_leaf x_trace) in
+  let yF_star_tree = Domain.BaseMap.singleton y_base y_subtree in
+  let x_yF_star_tree = Domain.BaseMap.add y_base y_subtree x_star_tree in
+  let x_star_tree_xFG_trace =
+    Domain.BaseMap.singleton x_base (Domain.make_starred_leaf x_star_trace) in
 
   let open OUnit2 in
   let no_trace = "NONE" in
@@ -134,14 +137,6 @@ let tests =
 
   let lteq_test =
     let lteq_test_ _ =
-      let x_base_tree = Domain.BaseMap.singleton x_base Domain.empty_node in
-      let y_base_tree = Domain.BaseMap.singleton y_base Domain.empty_node in
-      let x_y_base_tree = Domain.BaseMap.add y_base Domain.empty_node x_base_tree in
-      let xFG_tree = Domain.BaseMap.singleton x_base x_tree in
-
-      let x_star_tree = Domain.BaseMap.singleton x_base (Domain.make_starred_leaf x_trace) in
-      let yF_star_tree = Domain.BaseMap.singleton y_base y_tree in
-
       (* regular tree tests *)
       assert_bool "<= equal;" (Domain.(<=) ~lhs:tree ~rhs:tree);
       assert_bool "<= bases" (Domain.(<=) ~lhs:x_base_tree ~rhs:x_y_base_tree);
@@ -185,4 +180,35 @@ let tests =
         (not (Domain.(<=) ~lhs:x_star_tree ~rhs:x_star_tree_diff_trace)) in
     "lteq">::lteq_test_ in
 
-  "access_tree_suite">:::[get_trace_test; lteq_test]
+  let assert_trees_equal tree1 tree2 =
+    let rec access_tree_equal (trace1, subtree1) (trace2, subtree2) =
+      MockTraceDomain.equal trace1 trace2 && match subtree1, subtree2 with
+      | Domain.Star, Domain.Star -> true
+      | Domain.Subtree t1, Domain.Subtree t2 -> Domain.AccessMap.equal access_tree_equal t1 t2
+      | _ -> false in
+    let base_tree_equal tree1 tree2 =
+      Domain.BaseMap.equal access_tree_equal tree1 tree2 in
+    let pp_diff fmt (actual, expected) =
+      F.fprintf fmt "Expected to get tree %a but got %a" Domain.pp expected Domain.pp actual in
+    assert_equal ~cmp:base_tree_equal ~pp_diff tree1 tree2 in
+
+  let join_test =
+    let join_test_ _ =
+      (* normal |_| normal *)
+      assert_trees_equal (Domain.join x_base_tree y_base_tree) x_y_base_tree;
+      assert_trees_equal (Domain.join y_base_tree x_base_tree) x_y_base_tree;
+      assert_trees_equal (Domain.join x_y_base_tree x_base_tree) x_y_base_tree;
+      assert_trees_equal (Domain.join x_base_tree xFG_tree) xFG_tree;
+
+      (* starred |_| starred *)
+      assert_trees_equal (Domain.join x_star_tree yF_star_tree) x_yF_star_tree;
+
+      (* normal |_| starred *)
+      assert_trees_equal (Domain.join tree xFG_tree) tree;
+      (* [x_star_tree] and [x_base_tree] both have trace "{ x }" associated with x... *)
+      assert_trees_equal (Domain.join x_star_tree x_base_tree) x_star_tree;
+      (* ...but [xFG_tree] has some nested traces that should get joined with "{ x }" *)
+      assert_trees_equal (Domain.join x_star_tree xFG_tree) x_star_tree_xFG_trace in
+    "join">::join_test_ in
+
+  "access_tree_suite">:::[get_trace_test; lteq_test; join_test]
