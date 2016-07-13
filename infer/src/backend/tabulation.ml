@@ -474,7 +474,7 @@ let texp_star texp1 texp2 =
     | _ -> t1 in
   match texp1, texp2 with
   | Sil.Sizeof (t1, len1, st1), Sil.Sizeof (t2, _, st2) ->
-      Sil.Sizeof (typ_star t1 t2, len1, Sil.Subtype.join st1 st2)
+      Sil.Sizeof (typ_star t1 t2, len1, Subtype.join st1 st2)
   | _ ->
       texp1
 
@@ -868,7 +868,7 @@ let mk_actual_precondition prop actual_params formal_params =
     Prop.mk_ptsto
       (Sil.Lvar formal_var)
       (Sil.Eexp (actual_e, Sil.inst_actual_precondition))
-      (Sil.Sizeof (actual_t, None, Sil.Subtype.exact)) in
+      (Sil.Sizeof (actual_t, None, Subtype.exact)) in
   let instantiated_formals = IList.map mk_instantiation formals_actuals in
   let actual_pre = Prop.prop_sigma_star prop instantiated_formals in
   Prop.normalize actual_pre

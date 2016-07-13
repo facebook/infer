@@ -54,37 +54,6 @@ type dangling_kind =
 type path_pos = (Procname.t, int);
 
 
-/** module for subtypes, to be used with Sizeof info */
-let module Subtype: {
-  type t;
-  let exact: t; /** denotes the current type only */
-  let subtypes: t; /** denotes the current type and any subtypes */
-  let subtypes_cast: t;
-  let subtypes_instof: t;
-  let join: t => t => t;
-
-  /** [case_analysis (c1, st1) (c2,st2) f] performs case analysis on [c1 <: c2] according
-      to [st1] and [st2] where f c1 c2 is true if c1 is a subtype of c2.
-      get_subtypes returning a pair:
-      - whether [st1] and [st2] admit [c1 <: c2], and in case return the updated subtype [st1]
-      - whether [st1] and [st2] admit [not(c1 <: c2)], and in case return
-      the updated subtype [st1] */
-  let case_analysis:
-    (Typename.t, t) =>
-    (Typename.t, t) =>
-    (Typename.t => Typename.t => bool) =>
-    (Typename.t => bool) =>
-    (option t, option t);
-  let check_subtype: (Typename.t => Typename.t => bool) => Typename.t => Typename.t => bool;
-  let subtypes_to_string: t => string;
-  let is_cast: t => bool;
-  let is_instof: t => bool;
-
-  /** equality ignoring flags in the subtype */
-  let equal_modulo_flag: t => t => bool;
-};
-
-
 /** Flags for a procedure call */
 type call_flags = {
   cf_virtual: bool,

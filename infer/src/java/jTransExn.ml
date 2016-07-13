@@ -69,7 +69,7 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
           let instanceof_builtin = Sil.Const (Const.Cfun ModelBuiltins.__instanceof) in
           let args = [
             (Sil.Var id_exn_val, Typ.Tptr(exn_type, Typ.Pk_pointer));
-            (Sil.Sizeof (exn_type, None, Sil.Subtype.exact), Typ.Tvoid)] in
+            (Sil.Sizeof (exn_type, None, Subtype.exact), Typ.Tvoid)] in
           Sil.Call ([id_instanceof], instanceof_builtin, args, loc, Sil.cf_default) in
         let if_kind = Sil.Ik_switch in
         let instr_prune_true = Sil.Prune (Sil.Var id_instanceof, loc, true, if_kind) in

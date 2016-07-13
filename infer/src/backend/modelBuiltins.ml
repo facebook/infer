@@ -74,7 +74,7 @@ let add_array_to_prop pdesc prop_ lexp typ =
     | Some arr_typ ->
         let len = Sil.Var (Ident.create_fresh Ident.kfootprint) in
         let s = mk_empty_array_rearranged len in
-        let hpred = Prop.mk_ptsto n_lexp s (Sil.Sizeof (arr_typ, Some len, Sil.Subtype.exact)) in
+        let hpred = Prop.mk_ptsto n_lexp s (Sil.Sizeof (arr_typ, Some len, Subtype.exact)) in
         let sigma = Prop.get_sigma prop in
         let sigma_fp = Prop.get_sigma_footprint prop in
         let prop'= Prop.replace_sigma (hpred:: sigma) prop in
@@ -155,13 +155,13 @@ let create_type tenv n_lexp typ prop =
         | Typ.Tptr (typ', _) ->
             let sexp = Sil.Estruct ([], Sil.inst_none) in
             let typ'' = Tenv.expand_type tenv typ' in
-            let texp = Sil.Sizeof (typ'', None, Sil.Subtype.subtypes) in
+            let texp = Sil.Sizeof (typ'', None, Subtype.subtypes) in
             let hpred = Prop.mk_ptsto n_lexp sexp texp in
             Some hpred
         | Typ.Tarray _ ->
             let len = Sil.Var (Ident.create_fresh Ident.kfootprint) in
             let sexp = mk_empty_array len in
-            let texp = Sil.Sizeof (typ, None, Sil.Subtype.subtypes) in
+            let texp = Sil.Sizeof (typ, None, Subtype.subtypes) in
             let hpred = Prop.mk_ptsto n_lexp sexp texp in
             Some hpred
         | _ -> None in
@@ -788,7 +788,7 @@ let execute_alloc mk can_return_null
     let n_size_exp' = evaluate_char_sizeof n_size_exp in
     Prop.exp_normalize_prop prop n_size_exp', prop in
   let cnt_te =
-    Sil.Sizeof (Typ.Tarray (Typ.Tint Typ.IChar, None), Some size_exp', Sil.Subtype.exact) in
+    Sil.Sizeof (Typ.Tarray (Typ.Tint Typ.IChar, None), Some size_exp', Subtype.exact) in
   let id_new = Ident.create_fresh Ident.kprimed in
   let exp_new = Sil.Var id_new in
   let ptsto_new =
@@ -1159,7 +1159,7 @@ let execute_objc_alloc_no_fail
     { Builtin.pdesc; tenv; ret_ids; loc; } =
   let alloc_fun = Sil.Const (Const.Cfun __objc_alloc_no_fail) in
   let ptr_typ = Typ.Tptr (typ, Typ.Pk_pointer) in
-  let sizeof_typ = Sil.Sizeof (typ, None, Sil.Subtype.exact) in
+  let sizeof_typ = Sil.Sizeof (typ, None, Subtype.exact) in
   let alloc_fun_exp =
     match alloc_fun_opt with
     | Some pname -> [Sil.Const (Const.Cfun pname), Typ.Tvoid]

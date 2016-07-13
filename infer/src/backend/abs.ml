@@ -968,7 +968,7 @@ let get_var_retain_cycle _prop =
     | Some pvar -> [((sexp pvar, t), f, e')]
     | _ -> (match find_block e with
         | Some blk -> [((sexp blk, t), f, e')]
-        | _ -> [((sexp (Sil.Sizeof (t, None, Sil.Subtype.exact)), t), f, e')]) in
+        | _ -> [((sexp (Sil.Sizeof (t, None, Subtype.exact)), t), f, e')]) in
   (* returns the pvars of the first cycle we find in sigma. *)
   (* This is an heuristic that works if there is one cycle. *)
   (* In case there are more than one cycle we may return not necessarily*)

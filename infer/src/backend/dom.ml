@@ -963,7 +963,7 @@ let rec exp_partial_join (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
       Sil.Lindex(e1'', e2'')
   | Sil.Sizeof (t1, len1, st1), Sil.Sizeof (t2, len2, st2) ->
       Sil.Sizeof
-        (typ_partial_join t1 t2, dynamic_length_partial_join len1 len2, Sil.Subtype.join st1 st2)
+        (typ_partial_join t1 t2, dynamic_length_partial_join len1 len2, Subtype.join st1 st2)
   | _ ->
       L.d_str "exp_partial_join no match "; Sil.d_exp e1; L.d_str " "; Sil.d_exp e2; L.d_ln ();
       raise IList.Fail

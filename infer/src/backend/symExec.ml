@@ -796,7 +796,7 @@ let do_error_checks node_opt instr pname pdesc = match node_opt with
 let add_strexp_to_footprint strexp abducted_pv typ prop =
   let abducted_lvar = Sil.Lvar abducted_pv in
   let lvar_pt_fpvar =
-    let sizeof_exp = Sil.Sizeof (typ, None, Sil.Subtype.subtypes) in
+    let sizeof_exp = Sil.Sizeof (typ, None, Subtype.subtypes) in
     Prop.mk_ptsto abducted_lvar strexp sizeof_exp in
   let sigma_fp = Prop.get_sigma_footprint prop in
   Prop.normalize (Prop.replace_sigma_footprint (lvar_pt_fpvar :: sigma_fp) prop)
@@ -1271,7 +1271,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       ret_old_path [Prop.exist_quantify (Sil.fav_from_list temps) prop_]
   | Sil.Declare_locals (ptl, _) ->
       let sigma_locals =
-        let add_None (x, y) = (x, Sil.Sizeof (y, None, Sil.Subtype.exact), None) in
+        let add_None (x, y) = (x, Sil.Sizeof (y, None, Subtype.exact), None) in
         let sigma_locals () =
           IList.map
             (Prop.mk_ptsto_lvar (Some tenv) Prop.Fld_init Sil.inst_initial)
@@ -1382,7 +1382,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
     let havoc_actual_by_ref (actual, actual_typ) prop =
       let actual_pt_havocd_var =
         let havocd_var = Sil.Var (Ident.create_fresh Ident.kprimed) in
-        let sizeof_exp = Sil.Sizeof (Typ.strip_ptr actual_typ, None, Sil.Subtype.subtypes) in
+        let sizeof_exp = Sil.Sizeof (Typ.strip_ptr actual_typ, None, Subtype.subtypes) in
         Prop.mk_ptsto actual (Sil.Eexp (havocd_var, Sil.Inone)) sizeof_exp in
       replace_actual_hpred actual actual_pt_havocd_var prop in
     IList.fold_left (fun p var -> havoc_actual_by_ref var p) prop actuals_by_ref

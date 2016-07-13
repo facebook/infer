@@ -45,7 +45,7 @@ val is_closeable : JClasspath.program -> Tenv.t -> Typ.t -> bool
 val object_type : JClasspath.program -> Tenv.t -> JBasics.object_type -> Typ.t
 
 (** create sizeof expressions from the object type and the list of subtypes *)
-val sizeof_of_object_type : JClasspath.program -> Tenv.t -> JBasics.object_type -> Sil.Subtype.t
+val sizeof_of_object_type : JClasspath.program -> Tenv.t -> JBasics.object_type -> Subtype.t
   -> Sil.exp
 
 (** transforms a Java type to a Typ.t. *)

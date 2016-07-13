@@ -255,7 +255,7 @@ let rec _strexp_extend_values
       let len = match se with
         | Sil.Eexp (_, Sil.Ialloc) -> Sil.exp_one (* if allocated explicitly, we know len is 1 *)
         | _ ->
-            if Config.type_size then Sil.exp_one (* Sil.Sizeof (typ, Sil.Subtype.exact) *)
+            if Config.type_size then Sil.exp_one (* Sil.Sizeof (typ, Subtype.exact) *)
             else Sil.Var (new_id ()) in
       let se_new = Sil.Earray (len, [(Sil.exp_zero, se)], inst) in
       let typ_new = Typ.Tarray (typ, None) in
@@ -405,7 +405,7 @@ let strexp_extend_values
   if Config.trace_rearrange then L.d_strln "exiting strexp_extend_values";
   let len, st = match te with
     | Sil.Sizeof(_, len, st) -> (len, st)
-    | _ -> None, Sil.Subtype.exact in
+    | _ -> None, Subtype.exact in
   IList.map (fun (atoms', se', typ') -> (laundry_atoms @ atoms', se', Sil.Sizeof (typ', len, st)))
     atoms_se_typ_list_filtered
 
@@ -436,8 +436,8 @@ let mk_ptsto_exp_footprint
   end;
   let off_foot, eqs = laundry_offset_for_footprint max_stamp off in
   let st = match !Config.curr_language with
-    | Config.Clang -> Sil.Subtype.exact
-    | Config.Java -> Sil.Subtype.subtypes in
+    | Config.Clang -> Subtype.exact
+    | Config.Java -> Subtype.subtypes in
   let create_ptsto footprint_part off0 = match root, off0, typ with
     | Sil.Lvar pvar, [], Typ.Tfun _ ->
         let fun_name = Procname.from_string_c_fun (Mangled.to_string (Pvar.get_name pvar)) in

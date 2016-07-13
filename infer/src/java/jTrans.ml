@@ -456,8 +456,8 @@ let rec expression context pc expr =
         | JBir.InstanceOf ot | JBir.Cast ot ->
             let subtypes =
               (match unop with
-               | JBir.InstanceOf _ -> Sil.Subtype.subtypes_instof
-               | JBir.Cast _ -> Sil.Subtype.subtypes_cast
+               | JBir.InstanceOf _ -> Subtype.subtypes_instof
+               | JBir.Cast _ -> Subtype.subtypes_cast
                | _ -> assert false) in
             let sizeof_expr =
               JTransType.sizeof_of_object_type program tenv ot subtypes in
@@ -650,7 +650,7 @@ let get_array_length context pc expr_list content_type =
     (Typ.Tarray (content_type, None), Some sil_len_expr) in
   let array_type, array_len =
     IList.fold_right get_array_type_len sil_len_exprs (content_type, None) in
-  let array_size = Sil.Sizeof (array_type, array_len, Sil.Subtype.exact) in
+  let array_size = Sil.Sizeof (array_type, array_len, Subtype.exact) in
   (instrs, array_size)
 
 let detect_loop entry_pc impl =
@@ -900,7 +900,7 @@ let rec instruction context pc instr : translation =
         let builtin_new = Sil.Const (Const.Cfun ModelBuiltins.__new) in
         let class_type = JTransType.get_class_type program tenv cn in
         let class_type_np = JTransType.get_class_type_no_pointer program tenv cn in
-        let sizeof_exp = Sil.Sizeof (class_type_np, None, Sil.Subtype.exact) in
+        let sizeof_exp = Sil.Sizeof (class_type_np, None, Subtype.exact) in
         let args = [(sizeof_exp, class_type)] in
         let ret_id = Ident.create_fresh Ident.knormal in
         let new_instr = Sil.Call([ret_id], builtin_new, args, loc, Sil.cf_default) in
@@ -1014,7 +1014,7 @@ let rec instruction context pc instr : translation =
           and npe_cn = JBasics.make_cn JConfig.npe_cl in
           let class_type = JTransType.get_class_type program tenv npe_cn
           and class_type_np = JTransType.get_class_type_no_pointer program tenv npe_cn in
-          let sizeof_exp = Sil.Sizeof (class_type_np, None, Sil.Subtype.exact) in
+          let sizeof_exp = Sil.Sizeof (class_type_np, None, Subtype.exact) in
           let args = [(sizeof_exp, class_type)] in
           let ret_id = Ident.create_fresh Ident.knormal in
           let new_instr = Sil.Call([ret_id], builtin_new, args, loc, Sil.cf_default) in
@@ -1067,7 +1067,7 @@ let rec instruction context pc instr : translation =
           let out_of_bound_cn = JBasics.make_cn JConfig.out_of_bound_cl in
           let class_type = JTransType.get_class_type program tenv out_of_bound_cn
           and class_type_np = JTransType.get_class_type_no_pointer program tenv out_of_bound_cn in
-          let sizeof_exp = Sil.Sizeof (class_type_np, None, Sil.Subtype.exact) in
+          let sizeof_exp = Sil.Sizeof (class_type_np, None, Subtype.exact) in
           let args = [(sizeof_exp, class_type)] in
           let ret_id = Ident.create_fresh Ident.knormal in
           let new_instr = Sil.Call([ret_id], builtin_new, args, loc, Sil.cf_default) in
@@ -1089,7 +1089,7 @@ let rec instruction context pc instr : translation =
         and instrs, sil_expr, _ = expression context pc expr
         and ret_id = Ident.create_fresh Ident.knormal
         and sizeof_expr =
-          JTransType.sizeof_of_object_type program tenv object_type Sil.Subtype.subtypes_instof in
+          JTransType.sizeof_of_object_type program tenv object_type Subtype.subtypes_instof in
         let check_cast = Sil.Const (Const.Cfun ModelBuiltins.__instanceof) in
         let args = [(sil_expr, sil_type); (sizeof_expr, Typ.Tvoid)] in
         let call = Sil.Call([ret_id], check_cast, args, loc, Sil.cf_default) in
@@ -1106,7 +1106,7 @@ let rec instruction context pc instr : translation =
           and cce_cn = JBasics.make_cn JConfig.cce_cl in
           let class_type = JTransType.get_class_type program tenv cce_cn
           and class_type_np = JTransType.get_class_type_no_pointer program tenv cce_cn in
-          let sizeof_exp = Sil.Sizeof (class_type_np, None, Sil.Subtype.exact) in
+          let sizeof_exp = Sil.Sizeof (class_type_np, None, Subtype.exact) in
           let args = [(sizeof_exp, class_type)] in
           let ret_id = Ident.create_fresh Ident.knormal in
           let new_instr = Sil.Call([ret_id], builtin_new, args, loc, Sil.cf_default) in

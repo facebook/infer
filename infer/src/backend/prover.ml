@@ -1436,7 +1436,7 @@ let expand_hpred_pointer calc_index_frame hpred : bool * bool * Sil.hpred =
     | Sil.Hpointsto (Sil.Lfield (e, fld, typ_fld), se, t) ->
         let t' = match t, typ_fld with
           | _, Typ.Tstruct _ -> (* the struct type of fld is known *)
-              Sil.Sizeof (typ_fld, None, Sil.Subtype.exact)
+              Sil.Sizeof (typ_fld, None, Subtype.exact)
           | Sil.Sizeof (t1, len, st), _ ->
               (* the struct type of fld is not known -- typically Tvoid *)
               Sil.Sizeof
@@ -1507,7 +1507,7 @@ struct
 
   let check_subclass tenv c1 c2 =
     let f = check_subclass_tenv tenv in
-    Sil.Subtype.check_subtype f c1 c2
+    Subtype.check_subtype f c1 c2
 
   (** check that t1 and t2 are the same primitive type *)
   let check_subtype_basic_type t1 t2 =
@@ -1563,7 +1563,7 @@ struct
       Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; struct_name = Some c2 } ->
         let cn1 = Typename.TN_csu (Csu.Class Csu.Java, c1)
         and cn2 = Typename.TN_csu (Csu.Class Csu.Java, c2) in
-        Sil.Subtype.case_analysis (cn1, st1) (cn2, st2)
+        Subtype.case_analysis (cn1, st1) (cn2, st2)
           (check_subclass tenv) (is_interface tenv)
 
     | Typ.Tarray (dom_type1, _), Typ.Tarray (dom_type2, _) ->
@@ -1577,7 +1577,7 @@ struct
         if (Typename.equal cn1 serializable_type
             || Typename.equal cn1 cloneable_type
             || Typename.equal cn1 object_type) &&
-           st1 <> Sil.Subtype.exact then Some st1, None
+           st1 <> Subtype.exact then Some st1, None
         else (None, Some st1)
 
     | _ -> if check_subtype_basic_type t1 t2 then Some st1, None
@@ -1593,7 +1593,7 @@ struct
           (* and not in ObjC because of being weakly typed, *)
           (* and the algorithm will only work correctly if this is the case *)
           if check_subclass tenv cn1 cn2 || check_subclass tenv cn2 cn1 then
-            Sil.Subtype.case_analysis (cn1, st1) (cn2, st2) (check_subclass tenv)
+            Subtype.case_analysis (cn1, st1) (cn2, st2) (check_subclass tenv)
               (is_interface tenv)
           else None, Some st1
       | _ -> None, Some st1
@@ -1623,7 +1623,7 @@ let cast_exception tenv texp1 texp2 e1 subs =
   let _ = match texp1, texp2 with
     | Sil.Sizeof (t1, _, _), Sil.Sizeof (t2, _, st2) ->
         if Config.developer_mode ||
-           (Sil.Subtype.is_cast st2 &&
+           (Subtype.is_cast st2 &&
             not (Subtyping_check.check_subtype tenv t1 t2)) then
           ProverState.checks := Class_cast_check (texp1, texp2, e1) :: !ProverState.checks
     | _ -> () in
@@ -1654,7 +1654,7 @@ let texp_equal_modulo_subtype_flag texp1 texp2 = match texp1, texp2 with
   | Sil.Sizeof (t1, len1, st1), Sil.Sizeof (t2, len2, st2) ->
       Typ.equal t1 t2
       && (opt_equal Sil.exp_equal len1 len2)
-      && Sil.Subtype.equal_modulo_flag st1 st2
+      && Subtype.equal_modulo_flag st1 st2
   | _ -> Sil.exp_equal texp1 texp2
 
 (** check implication between type expressions *)
@@ -1740,7 +1740,7 @@ let handle_parameter_subtype tenv prop1 sigma2 subs (e1, se1, texp1) (se2, texp2
               then begin
                 let pos_type_opt, _ =
                   Subtyping_check.subtype_case_analysis tenv
-                    (Sil.Sizeof (t1, None, Sil.Subtype.subtypes))
+                    (Sil.Sizeof (t1, None, Subtype.subtypes))
                     (Sil.Sizeof (t2_ptsto, len2, sub2)) in
                 match pos_type_opt with
                 | Some t1_noptr ->
@@ -1972,14 +1972,14 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
     let const_string_texp =
       match !Config.curr_language with
       | Config.Clang ->
-          Sil.Sizeof (Typ.Tarray (Typ.Tint Typ.IChar, Some len), None, Sil.Subtype.exact)
+          Sil.Sizeof (Typ.Tarray (Typ.Tint Typ.IChar, Some len), None, Subtype.exact)
       | Config.Java ->
           let object_type =
             Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "java.lang.String") in
           let typ = match Tenv.lookup tenv object_type with
             | Some typ -> typ
             | None -> assert false in
-          Sil.Sizeof (Typ.Tstruct typ, None, Sil.Subtype.exact) in
+          Sil.Sizeof (Typ.Tstruct typ, None, Subtype.exact) in
     Sil.Hpointsto (root, sexp, const_string_texp) in
   let mk_constant_class_hpred s = (* creat an hpred from a constant class *)
     let root = Sil.Const (Const.Cclass (Ident.string_to_name s)) in
@@ -1993,7 +1993,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
       let typ = match Tenv.lookup tenv class_type with
         | Some typ -> typ
         | None -> assert false in
-      Sil.Sizeof (Typ.Tstruct typ, None, Sil.Subtype.exact) in
+      Sil.Sizeof (Typ.Tstruct typ, None, Subtype.exact) in
     Sil.Hpointsto (root, sexp, class_texp) in
   try
     (match move_primed_lhs_from_front subs sigma2 with

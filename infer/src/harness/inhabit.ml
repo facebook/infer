@@ -73,7 +73,7 @@ let inhabit_alloc sizeof_typ sizeof_len ret_typ alloc_kind env =
   let inhabited_exp = Sil.Var retval in
   let call_instr =
     let fun_new = fun_exp_from_name alloc_kind in
-    let sizeof_exp = Sil.Sizeof (sizeof_typ, sizeof_len, Sil.Subtype.exact) in
+    let sizeof_exp = Sil.Sizeof (sizeof_typ, sizeof_len, Subtype.exact) in
     let args = [(sizeof_exp, Typ.Tptr (ret_typ, Typ.Pk_pointer))] in
     Sil.Call ([retval], fun_new, args, env.pc, cf_alloc) in
   (inhabited_exp, env_add_instr call_instr env)
