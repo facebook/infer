@@ -167,20 +167,26 @@ type dexp =
   | Dpvaraddr of Pvar.t
   | Dunop of unop dexp
   | Dunknown
-  | Dretcall of dexp (list dexp) Location.t call_flags
+  | Dretcall of dexp (list dexp) Location.t call_flags;
+
+
 /** Value paths: identify an occurrence of a value in a symbolic heap
     each expression represents a path, with Dpvar being the simplest one */
-and vpath = option dexp
+type vpath = option dexp;
+
+
 /** acquire/release action on a resource */
-and res_action = {
+type res_action = {
   ra_kind: res_act_kind, /** kind of action */
   ra_res: resource, /** kind of resource */
   ra_pname: Procname.t, /** name of the procedure used to acquire/release the resource */
   ra_loc: Location.t, /** location of the acquire/release */
   ra_vpath: vpath /** vpath of the resource value */
-}
+};
+
+
 /** Attributes */
-and attribute =
+type attribute =
   | Aresource of res_action /** resource acquire/release */
   | Aautorelease
   | Adangling of dangling_kind /** dangling pointer */
@@ -199,8 +205,9 @@ and attribute =
   /** denotes an object registered as an observers to a notification center */
   | Aobserver
   /** denotes an object unsubscribed from observers of a notification center */
-  | Aunsubscribed_observer
-and closure = {name: Procname.t, captured_vars: list (exp, Pvar.t, Typ.t)}
+  | Aunsubscribed_observer;
+
+type closure = {name: Procname.t, captured_vars: list (exp, Pvar.t, Typ.t)}
 /** dynamically determined length of an array value, if any */
 and dynamic_length = option exp
 /** Program expressions. */

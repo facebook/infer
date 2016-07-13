@@ -440,20 +440,26 @@ type dexp =
   | Dpvaraddr of Pvar.t
   | Dunop of unop dexp
   | Dunknown
-  | Dretcall of dexp (list dexp) Location.t call_flags
+  | Dretcall of dexp (list dexp) Location.t call_flags;
+
+
 /** Value paths: identify an occurrence of a value in a symbolic heap
     each expression represents a path, with Dpvar being the simplest one */
-and vpath = option dexp
+type vpath = option dexp;
+
+
 /** acquire/release action on a resource */
-and res_action = {
+type res_action = {
   ra_kind: res_act_kind, /** kind of action */
   ra_res: resource, /** kind of resource */
   ra_pname: Procname.t, /** name of the procedure used to acquire/release the resource */
   ra_loc: Location.t, /** location of the acquire/release */
   ra_vpath: vpath /** vpath of the resource value */
-}
+};
+
+
 /** Attributes */
-and attribute =
+type attribute =
   | Aresource of res_action /** resource acquire/release */
   | Aautorelease
   | Adangling of dangling_kind /** dangling pointer */
@@ -472,8 +478,9 @@ and attribute =
   /** denotes an object registered as an observers to a notification center */
   | Aobserver
   /** denotes an object unsubscribed from observers of a notification center */
-  | Aunsubscribed_observer
-and closure = {name: Procname.t, captured_vars: list (exp, Pvar.t, Typ.t)}
+  | Aunsubscribed_observer;
+
+type closure = {name: Procname.t, captured_vars: list (exp, Pvar.t, Typ.t)}
 /** dynamically determined length of an array value, if any */
 and dynamic_length = option exp
 /** Program expressions. */
@@ -1600,7 +1607,7 @@ let rec dexp_to_string =
   | Darray de1 de2 => dexp_to_string de1 ^ "[" ^ dexp_to_string de2 ^ "]"
   | Dbinop op de1 de2 => "(" ^ dexp_to_string de1 ^ str_binop pe_text op ^ dexp_to_string de2 ^ ")"
   | Dconst (Cfun pn) => Procname.to_simplified_string pn
-  | Dconst c => exp_to_string (Const c)
+  | Dconst c => pp_to_string (pp_const pe_text) c
   | Dderef de => "*" ^ dexp_to_string de
   | Dfcall fun_dexp args _ {cf_virtual: isvirtual} => {
       let pp_arg fmt de => F.fprintf fmt "%s" (dexp_to_string de);
@@ -1681,11 +1688,15 @@ let rec dexp_to_string =
   | Dunop op de => str_unop op ^ dexp_to_string de
   | Dsizeof typ _ _ => pp_to_string (Typ.pp_full pe_text) typ
   | Dunknown => "unknown"
-  | Dretcall de _ _ _ => "returned by " ^ dexp_to_string de
+  | Dretcall de _ _ _ => "returned by " ^ dexp_to_string de;
+
+
 /** Pretty print a dexp. */
-and pp_dexp fmt de => F.fprintf fmt "%s" (dexp_to_string de)
+let pp_dexp fmt de => F.fprintf fmt "%s" (dexp_to_string de);
+
+
 /** Pretty print a value path */
-and pp_vpath pe fmt vpath => {
+let pp_vpath pe fmt vpath => {
   let pp fmt =>
     fun
     | Some de => pp_dexp fmt de
@@ -1703,9 +1714,11 @@ and pp_vpath pe fmt vpath => {
   } else {
     F.fprintf fmt "%a" pp vpath
   }
-}
+};
+
+
 /** convert the attribute to a string */
-and attribute_to_string pe =>
+let attribute_to_string pe =>
   fun
   | Aresource ra => {
       let mk_name = (
@@ -1766,9 +1779,11 @@ and attribute_to_string pe =>
       String.concat "." [Pvar.to_string v, ...IList.map Ident.fieldname_to_string fs] ^ "]"
   | Aretval pn _ => "RET" ^ str_binop pe Lt ^ Procname.to_string pn ^ str_binop pe Gt
   | Aobserver => "OBSERVER"
-  | Aunsubscribed_observer => "UNSUBSCRIBED_OBSERVER"
+  | Aunsubscribed_observer => "UNSUBSCRIBED_OBSERVER";
+
+
 /** Pretty print an expression. */
-and _pp_exp pe0 pp_t f e0 => {
+let rec _pp_exp pe0 pp_t f e0 => {
   let (pe, changed) = color_pre_wrapper pe0 f e0;
   let e =
     switch pe.pe_obj_sub {
