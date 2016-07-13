@@ -58,7 +58,7 @@ let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
       exp_match e1' sub vars e2'
   | Sil.Cast _, _ | _, Sil.Cast _ ->
       None
-  | Sil.UnOp(o1, e1', _), Sil.UnOp(o2, e2', _) when Sil.unop_equal o1 o2 ->
+  | Sil.UnOp(o1, e1', _), Sil.UnOp(o2, e2', _) when Unop.equal o1 o2 ->
       exp_match e1' sub vars e2'
   | Sil.UnOp _, _ | _, Sil.UnOp _ ->
       None  (* Naive *)

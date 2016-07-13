@@ -180,7 +180,7 @@ let create_type tenv n_lexp typ prop =
           prop''
       | None -> prop in
   let sil_is_null = Sil.BinOp (Sil.Eq, n_lexp, Sil.exp_zero) in
-  let sil_is_nonnull = Sil.UnOp (Sil.LNot, sil_is_null, None) in
+  let sil_is_nonnull = Sil.UnOp (Unop.LNot, sil_is_null, None) in
   let null_case = Propset.to_proplist (prune ~positive:true sil_is_null prop) in
   let non_null_case = Propset.to_proplist (prune ~positive:true sil_is_nonnull prop_type) in
   if ((IList.length non_null_case) > 0) && (!Config.footprint) then

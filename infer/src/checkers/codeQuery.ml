@@ -127,9 +127,9 @@ module Match = struct
         let e1 = Idenv.expand_expr idenv _e1 in
         let e2 = Idenv.expand_expr idenv _e2 in
         binop_match bop op && exp_match env ae1 (Vval e1) && exp_match env ae2 (Vval e2)
-    | Sil.UnOp (Sil.LNot, (Sil.BinOp (Sil.Eq, e1, e2)), _) ->
+    | Sil.UnOp (Unop.LNot, (Sil.BinOp (Sil.Eq, e1, e2)), _) ->
         cond_match env idenv (Sil.BinOp (Sil.Ne, e1, e2)) (ae1, op, ae2)
-    | Sil.UnOp (Sil.LNot, (Sil.BinOp (Sil.Ne, e1, e2)), _) ->
+    | Sil.UnOp (Unop.LNot, (Sil.BinOp (Sil.Ne, e1, e2)), _) ->
         cond_match env idenv (Sil.BinOp (Sil.Eq, e1, e2)) (ae1, op, ae2)
     | _ -> false
 

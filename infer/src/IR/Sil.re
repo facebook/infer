@@ -37,13 +37,6 @@ let get_sentinel_func_attribute_value attr_list =>
   };
 
 
-/** Unary operations */
-type unop =
-  | Neg /** Unary minus */
-  | BNot /** Bitwise complement (~) */
-  | LNot /** Logical Not (!) */;
-
-
 /** Binary operations */
 type binop =
   | PlusA /** arithmetic + */
@@ -427,7 +420,7 @@ type dexp =
   | Ddot of dexp Ident.fieldname
   | Dpvar of Pvar.t
   | Dpvaraddr of Pvar.t
-  | Dunop of unop dexp
+  | Dunop of Unop.t dexp
   | Dunknown
   | Dretcall of dexp (list dexp) Location.t call_flags;
 
@@ -477,7 +470,7 @@ and exp =
   /** Pure variable: it is not an lvalue */
   | Var of Ident.t
   /** Unary operator with type of the result if known */
-  | UnOp of unop exp (option Typ.t)
+  | UnOp of Unop.t exp (option Typ.t)
   /** Binary operator */
   | BinOp of binop exp exp
   /** Exception */
@@ -713,19 +706,6 @@ let exp_is_this =
   fun
   | Lvar pvar => Pvar.is_this pvar
   | _ => false;
-
-let unop_compare o1 o2 =>
-  switch (o1, o2) {
-  | (Neg, Neg) => 0
-  | (Neg, _) => (-1)
-  | (_, Neg) => 1
-  | (BNot, BNot) => 0
-  | (BNot, _) => (-1)
-  | (_, BNot) => 1
-  | (LNot, LNot) => 0
-  };
-
-let unop_equal o1 o2 => unop_compare o1 o2 == 0;
 
 let binop_compare o1 o2 =>
   switch (o1, o2) {
@@ -1062,7 +1042,7 @@ let rec exp_compare (e1: exp) (e2: exp) :int =>
   | (Var _, _) => (-1)
   | (_, Var _) => 1
   | (UnOp o1 e1 to1, UnOp o2 e2 to2) =>
-    let n = unop_compare o1 o2;
+    let n = Unop.compare o1 o2;
     if (n != 0) {
       n
     } else {
@@ -1509,14 +1489,6 @@ let text_binop =
   | PtrFld => "_ptrfld_";
 
 
-/** String representation of unary operator. */
-let str_unop =
-  fun
-  | Neg => "-"
-  | BNot => "~"
-  | LNot => "!";
-
-
 /** Pretty print a binary operator. */
 let str_binop pe binop =>
   switch pe.pe_kind {
@@ -1628,7 +1600,7 @@ let rec dexp_to_string =
         };
       ampersand ^ s
     }
-  | Dunop op de => str_unop op ^ dexp_to_string de
+  | Dunop op de => Unop.str op ^ dexp_to_string de
   | Dsizeof typ _ _ => pp_to_string (Typ.pp_full pe_text) typ
   | Dunknown => "unknown"
   | Dretcall de _ _ _ => "returned by " ^ dexp_to_string de;
@@ -1756,7 +1728,7 @@ let rec _pp_exp pe0 pp_t f e0 => {
     | Var id => (Ident.pp pe) f id
     | Const c => F.fprintf f "%a" (Const.pp pe) c
     | Cast typ e => F.fprintf f "(%a)%a" pp_t typ pp_exp e
-    | UnOp op e _ => F.fprintf f "%s%a" (str_unop op) pp_exp e
+    | UnOp op e _ => F.fprintf f "%s%a" (Unop.str op) pp_exp e
     | BinOp op (Const c) e2 when Config.smt_output => print_binop_stm_output (Const c) op e2
     | BinOp op e1 e2 => F.fprintf f "(%a %s %a)" pp_exp e1 (str_binop pe op) pp_exp e2
     | Exn e => F.fprintf f "EXN %a" pp_exp e
@@ -3663,7 +3635,7 @@ let rec exp_compare_structural e1 e2 exp_map => {
   switch (e1, e2) {
   | (Var _, Var _) => compare_exps_with_map e1 e2 exp_map
   | (UnOp o1 e1 to1, UnOp o2 e2 to2) =>
-    let n = unop_compare o1 o2;
+    let n = Unop.compare o1 o2;
     if (n != 0) {
       (n, exp_map)
     } else {

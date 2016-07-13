@@ -291,7 +291,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.BinOp (Sil.Eq, lhs, rhs)
       when is_tracking_exp astate lhs ->
         Sil.exp_equal rhs Sil.exp_one
-    | Sil.UnOp (Sil.LNot, Sil.BinOp (Sil.Eq, lhs, rhs), _)
+    | Sil.UnOp (Unop.LNot, Sil.BinOp (Sil.Eq, lhs, rhs), _)
       when is_tracking_exp astate lhs ->
         Sil.exp_equal rhs Sil.exp_zero
     | _ ->

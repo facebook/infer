@@ -26,13 +26,6 @@ type func_attribute = | FA_sentinel of int int;
 type access = | Default | Public | Private | Protected;
 
 
-/** Unary operations */
-type unop =
-  | Neg /** Unary minus */
-  | BNot /** Bitwise complement (~) */
-  | LNot /** Logical Not (!) */;
-
-
 /** Binary operations */
 type binop =
   | PlusA /** arithmetic + */
@@ -154,7 +147,7 @@ type dexp =
   | Ddot of dexp Ident.fieldname
   | Dpvar of Pvar.t
   | Dpvaraddr of Pvar.t
-  | Dunop of unop dexp
+  | Dunop of Unop.t dexp
   | Dunknown
   | Dretcall of dexp (list dexp) Location.t call_flags;
 
@@ -204,7 +197,7 @@ and exp =
   /** Pure variable: it is not an lvalue */
   | Var of Ident.t
   /** Unary operator with type of the result if known */
-  | UnOp of unop exp (option Typ.t)
+  | UnOp of Unop.t exp (option Typ.t)
   /** Binary operator */
   | BinOp of binop exp exp
   /** Exception */
@@ -489,8 +482,6 @@ let block_pvar: Pvar.t;
 /** Check if a pvar is a local pointing to a block in objc */
 let is_block_pvar: Pvar.t => bool;
 
-let unop_equal: unop => unop => bool;
-
 let binop_equal: binop => binop => bool;
 
 
@@ -619,10 +610,6 @@ let color_pre_wrapper: printenv => F.formatter => 'a => (printenv, bool);
 
 /** Close color annotation if changed */
 let color_post_wrapper: bool => printenv => F.formatter => unit;
-
-
-/** String representation of a unary operator. */
-let str_unop: unop => string;
 
 
 /** String representation of a binary operator. */

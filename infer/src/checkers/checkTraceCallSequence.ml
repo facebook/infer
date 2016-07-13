@@ -244,9 +244,9 @@ module BooleanVars = struct
     (** Normalize a boolean condition. *)
     let normalize_condition cond_e =
       match cond_e with
-      | Sil.UnOp (Sil.LNot, Sil.BinOp (Sil.Eq, e1, e2), _) ->
+      | Sil.UnOp (Unop.LNot, Sil.BinOp (Sil.Eq, e1, e2), _) ->
           Sil.BinOp (Sil.Ne, e1, e2)
-      | Sil.UnOp (Sil.LNot, Sil.BinOp (Sil.Ne, e1, e2), _) ->
+      | Sil.UnOp (Unop.LNot, Sil.BinOp (Sil.Ne, e1, e2), _) ->
           Sil.BinOp (Sil.Eq, e1, e2)
       | _ -> cond_e in
 

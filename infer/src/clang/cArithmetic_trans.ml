@@ -169,10 +169,10 @@ let unary_operation_instruction uoi e typ loc =
         else
           e_minus_1 in
       (exp, instr1::[Sil.Set (e, typ, e_minus_1, loc)])
-  | `Not -> (un_exp (Sil.BNot), [])
-  | `Minus -> (un_exp (Sil.Neg), [])
+  | `Not -> (un_exp (Unop.BNot), [])
+  | `Minus -> (un_exp (Unop.Neg), [])
   | `Plus -> (e, [])
-  | `LNot -> (un_exp (Sil.LNot), [])
+  | `LNot -> (un_exp (Unop.LNot), [])
   | `Deref ->
       (* Actual dereferencing is handled by implicit cast from rvalue to lvalue *)
       (e, [])

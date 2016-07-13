@@ -324,7 +324,7 @@ let rec prune ~positive condition prop =
       assert false
   | Sil.Cast (_, condition') ->
       prune ~positive condition' prop
-  | Sil.UnOp (Sil.LNot, condition', _) ->
+  | Sil.UnOp (Unop.LNot, condition', _) ->
       prune ~positive:(not positive) condition' prop
   | Sil.UnOp _ ->
       assert false
@@ -445,7 +445,7 @@ let check_already_dereferenced pname cond prop =
   let rec is_check_zero = function
     | Sil.Var id ->
         Some id
-    | Sil.UnOp(Sil.LNot, e, _) ->
+    | Sil.UnOp(Unop.LNot, e, _) ->
         is_check_zero e
     | Sil.BinOp ((Sil.Eq | Sil.Ne), Sil.Const Const.Cint i, Sil.Var id)
     | Sil.BinOp ((Sil.Eq | Sil.Ne), Sil.Var id, Sil.Const Const.Cint i) when IntLit.iszero i ->

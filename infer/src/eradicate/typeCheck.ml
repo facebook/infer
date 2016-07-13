@@ -123,7 +123,7 @@ module ComplexExpressions = struct
       | Sil.Dpvaraddr _ (* front-end variable -- this should not happen) *) ->
           case_not_handled ()
       | Sil.Dunop (op, de) ->
-          Sil.str_unop op ^ dexp_to_string de
+          Unop.str op ^ dexp_to_string de
       | Sil.Dsizeof _ ->
           case_not_handled ()
       | Sil.Dunknown ->
@@ -1023,9 +1023,9 @@ let typecheck_instr
                   else typestate2
             end
 
-        | Sil.UnOp (Sil.LNot, (Sil.BinOp (Sil.Eq, e1, e2)), _) ->
+        | Sil.UnOp (Unop.LNot, (Sil.BinOp (Sil.Eq, e1, e2)), _) ->
             check_condition node' (Sil.BinOp (Sil.Ne, e1, e2))
-        | Sil.UnOp (Sil.LNot, (Sil.BinOp (Sil.Ne, e1, e2)), _) ->
+        | Sil.UnOp (Unop.LNot, (Sil.BinOp (Sil.Ne, e1, e2)), _) ->
             check_condition node' (Sil.BinOp (Sil.Eq, e1, e2))
         | _ -> typestate in
 
@@ -1046,9 +1046,9 @@ let typecheck_instr
 
       (** Normalize the condition by resolving temp variables. *)
       let rec normalize_cond _node _cond = match _cond with
-        | Sil.UnOp (Sil.LNot, c, top) ->
+        | Sil.UnOp (Unop.LNot, c, top) ->
             let node', c' = normalize_cond _node c in
-            node', Sil.UnOp (Sil.LNot, c', top)
+            node', Sil.UnOp (Unop.LNot, c', top)
         | Sil.BinOp (bop, c1, c2) ->
             let node', c1' = normalize_cond _node c1 in
             let node'', c2' = normalize_cond node' c2 in

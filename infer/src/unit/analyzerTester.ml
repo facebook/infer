@@ -165,7 +165,7 @@ module Make
         create_node (Cfg.Node.Prune_node (true_branch, if_kind, "")) [prune_instr] in
       let true_prune_node = mk_prune_node cond_exp if_kind true in
       let false_prune_node =
-        let negated_cond_exp = Sil.UnOp (Sil.LNot, cond_exp, None) in
+        let negated_cond_exp = Sil.UnOp (Unop.LNot, cond_exp, None) in
         mk_prune_node negated_cond_exp if_kind false in
       true_prune_node, false_prune_node in
 

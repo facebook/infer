@@ -937,7 +937,7 @@ let rec exp_partial_join (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
         let e1'' = exp_partial_join e1 e2 in
         Sil.Cast (t1, e1'')
   | Sil.UnOp(unop1, e1, topt1), Sil.UnOp(unop2, e2, _) ->
-      if not (Sil.unop_equal unop1 unop2) then (L.d_strln "failure reason 23"; raise IList.Fail)
+      if not (Unop.equal unop1 unop2) then (L.d_strln "failure reason 23"; raise IList.Fail)
       else Sil.UnOp (unop1, exp_partial_join e1 e2, topt1) (* should be topt1 = topt2 *)
   | Sil.BinOp(Sil.PlusPI, e1, e1'), Sil.BinOp(Sil.PlusPI, e2, e2') ->
       let e1'' = exp_partial_join e1 e2 in
@@ -1018,7 +1018,7 @@ let rec exp_partial_meet (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
         let e1'' = exp_partial_meet e1 e2 in
         Sil.Cast (t1, e1'')
   | Sil.UnOp(unop1, e1, topt1), Sil.UnOp(unop2, e2, _) ->
-      if not (Sil.unop_equal unop1 unop2) then (L.d_strln "failure reason 31"; raise IList.Fail)
+      if not (Unop.equal unop1 unop2) then (L.d_strln "failure reason 31"; raise IList.Fail)
       else Sil.UnOp (unop1, exp_partial_meet e1 e2, topt1) (* should be topt1 = topt2 *)
   | Sil.BinOp(binop1, e1, e1'), Sil.BinOp(binop2, e2, e2') ->
       if not (Sil.binop_equal binop1 binop2) then (L.d_strln "failure reason 32"; raise IList.Fail)

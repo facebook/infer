@@ -400,7 +400,7 @@ let check_assignement_guard node =
       let leti = IList.filter is_letderef_instr ins in
       match pi, leti with
       | [Sil.Prune (Sil.Var(e1), _, _, _)], [Sil.Letderef(e2, e', _, _)]
-      | [Sil.Prune (Sil.UnOp(Sil.LNot, Sil.Var(e1), _), _, _, _)],
+      | [Sil.Prune (Sil.UnOp(Unop.LNot, Sil.Var(e1), _), _, _, _)],
         [Sil.Letderef(e2, e', _, _)]
         when (Ident.equal e1 e2) ->
           if verbose
@@ -430,7 +430,7 @@ let check_assignement_guard node =
   let succs_have_simple_guards () =
     let check_instr = function
       | Sil.Prune (Sil.Var _, _, _, _) -> true
-      | Sil.Prune (Sil.UnOp(Sil.LNot, Sil.Var _, _), _, _, _) -> true
+      | Sil.Prune (Sil.UnOp(Unop.LNot, Sil.Var _, _), _, _, _) -> true
       | Sil.Prune _ -> false
       | _ -> true in
     let check_guard n =

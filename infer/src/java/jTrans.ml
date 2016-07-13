@@ -438,7 +438,7 @@ let rec expression context pc expr =
       let (instrs, sil_ex, _) = expression context pc ex in
       begin
         match unop with
-        | JBir.Neg _ -> (instrs, Sil.UnOp (Sil.Neg, sil_ex, Some type_of_expr), type_of_expr)
+        | JBir.Neg _ -> (instrs, Sil.UnOp (Unop.Neg, sil_ex, Some type_of_expr), type_of_expr)
         | JBir.ArrayLength ->
             let array_typ_no_ptr =
               match type_of_ex with
@@ -874,7 +874,7 @@ let rec instruction context pc instr : translation =
         and (instrs2, sil_ex2, _) = expression context pc e2 in
         let sil_op = get_test_operator op in
         let sil_test_false = Sil.BinOp (sil_op, sil_ex1, sil_ex2) in
-        let sil_test_true = Sil.UnOp(Sil.LNot, sil_test_false, None) in
+        let sil_test_true = Sil.UnOp(Unop.LNot, sil_test_false, None) in
         let sil_instrs_true = Sil.Prune (sil_test_true, loc, true, Sil.Ik_if) in
         let sil_instrs_false = Sil.Prune (sil_test_false, loc, false, Sil.Ik_if) in
         let node_kind_true = Cfg.Node.Prune_node (true, Sil.Ik_if, "method_body") in

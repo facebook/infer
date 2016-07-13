@@ -73,7 +73,8 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
           Sil.Call ([id_instanceof], instanceof_builtin, args, loc, Sil.cf_default) in
         let if_kind = Sil.Ik_switch in
         let instr_prune_true = Sil.Prune (Sil.Var id_instanceof, loc, true, if_kind) in
-        let instr_prune_false = Sil.Prune (Sil.UnOp(Sil.LNot, Sil.Var id_instanceof, None), loc, false, if_kind) in
+        let instr_prune_false =
+          Sil.Prune (Sil.UnOp(Unop.LNot, Sil.Var id_instanceof, None), loc, false, if_kind) in
         let instr_set_catch_var =
           let catch_var = JContext.set_pvar context handler.JBir.e_catch_var ret_type in
           Sil.Set (Sil.Lvar catch_var, ret_type, Sil.Var id_exn_val, loc) in
