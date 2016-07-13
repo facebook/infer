@@ -470,7 +470,6 @@ and const =
   | Cstr of string /** string constants */
   | Cfloat of float /** float constants */
   | Cattribute of attribute /** attribute used in disequalities to annotate a value */
-  | Cexn of exp /** exception */
   | Cclass of Ident.name /** class constant */
   | Cptr_to_fld of Ident.fieldname Typ.t /** pointer to field constant,
                                              and type of the surrounding Csu.t type */
@@ -485,6 +484,8 @@ and exp =
   | UnOp of unop exp (option Typ.t)
   /** Binary operator */
   | BinOp of binop exp exp
+  /** Exception */
+  | Exn of exp
   /** Constants */
   | Const of const
   /** Type cast */
@@ -980,7 +981,6 @@ let const_kind_equal c1 c2 => {
     | Cstr _ => 3
     | Cfloat _ => 4
     | Cattribute _ => 5
-    | Cexn _ => 6
     | Cclass _ => 7
     | Cptr_to_fld _ => 8
     | Cclosure _ => 9;
@@ -1075,9 +1075,6 @@ and const_compare (c1: const) (c2: const) :int =>
   | (Cattribute att1, Cattribute att2) => attribute_compare att1 att2
   | (Cattribute _, _) => (-1)
   | (_, Cattribute _) => 1
-  | (Cexn e1, Cexn e2) => exp_compare e1 e2
-  | (Cexn _, _) => (-1)
-  | (_, Cexn _) => 1
   | (Cclass c1, Cclass c2) => Ident.name_compare c1 c2
   | (Cclass _, _) => (-1)
   | (_, Cclass _) => 1
@@ -1148,6 +1145,9 @@ and exp_compare (e1: exp) (e2: exp) :int =>
     }
   | (BinOp _, _) => (-1)
   | (_, BinOp _) => 1
+  | (Exn e1, Exn e2) => exp_compare e1 e2
+  | (Exn _, _) => (-1)
+  | (_, Exn _) => 1
   | (Const c1, Const c2) => const_compare c1 c2
   | (Const _, _) => (-1)
   | (_, Const _) => 1
@@ -1762,7 +1762,6 @@ and pp_const pe f =>
   | Cstr s => F.fprintf f "\"%s\"" (String.escaped s)
   | Cfloat v => F.fprintf f "%f" v
   | Cattribute att => F.fprintf f "%s" (attribute_to_string pe att)
-  | Cexn e => F.fprintf f "EXN %a" (pp_exp pe) e
   | Cclass c => F.fprintf f "%a" Ident.pp_name c
   | Cptr_to_fld fn _ => F.fprintf f "__fld_%a" Ident.pp_fieldname fn
   | Cclosure {name, captured_vars} => {
@@ -1803,6 +1802,7 @@ and _pp_exp pe0 pp_t f e0 => {
     | UnOp op e _ => F.fprintf f "%s%a" (str_unop op) pp_exp e
     | BinOp op (Const c) e2 when Config.smt_output => print_binop_stm_output (Const c) op e2
     | BinOp op e1 e2 => F.fprintf f "(%a %s %a)" pp_exp e1 (str_binop pe op) pp_exp e2
+    | Exn e => F.fprintf f "EXN %a" pp_exp e
     | Lvar pv => Pvar.pp pe f pv
     | Lfield e fld _ => F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld
     | Lindex e1 e2 => F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
@@ -2684,7 +2684,8 @@ let rec root_of_lexp lexp =>
   | Const _ => lexp
   | Cast _ e => root_of_lexp e
   | UnOp _
-  | BinOp _ => lexp
+  | BinOp _
+  | Exn _ => lexp
   | Lvar _ => lexp
   | Lfield e _ _ => root_of_lexp e
   | Lindex e _ => root_of_lexp e
@@ -2765,7 +2766,7 @@ let exp_lt e1 e2 => BinOp Lt e1 e2;
 let rec exp_fpv =
   fun
   | Var _ => []
-  | Const (Cexn e) => exp_fpv e
+  | Exn e => exp_fpv e
   | Const (Cclosure {captured_vars}) => IList.map (fun (_, pvar, _) => pvar) captured_vars
   | Const _ => []
   | Cast _ e
@@ -2956,7 +2957,7 @@ let fav_mem fav id => IList.exists (Ident.equal id) !fav;
 let rec exp_fav_add fav =>
   fun
   | Var id => fav ++ id
-  | Const (Cexn e) => exp_fav_add fav e
+  | Exn e => exp_fav_add fav e
   | Const (Cclosure {captured_vars}) =>
     IList.iter (fun (e, _, _) => exp_fav_add fav e) captured_vars
   | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _) => ()
@@ -3356,12 +3357,12 @@ let rec exp_sub_ids (f: Ident.t => exp) exp =>
   switch exp {
   | Var id => f id
   | Lvar _ => exp
-  | Const (Cexn e) =>
+  | Exn e =>
     let e' = exp_sub_ids f e;
     if (e' === e) {
       exp
     } else {
-      Const (Cexn e')
+      Exn e'
     }
   | Const (Cclosure c) =>
     let captured_vars =
@@ -4046,7 +4047,7 @@ let exp_get_vars exp => {
     | Cast _ e
     | UnOp _ e _
     | Lfield e _ _
-    | Const (Cexn e) => exp_get_vars_ e vars
+    | Exn e => exp_get_vars_ e vars
     | BinOp _ e1 e2
     | Lindex e1 e2 => exp_get_vars_ e1 vars |> exp_get_vars_ e2
     | Const (Cclosure {captured_vars}) =>
@@ -4072,6 +4073,7 @@ let exp_get_offsets exp => {
     | Const _
     | UnOp _
     | BinOp _
+    | Exn _
     | Lvar _
     | Sizeof _ None _ => offlist_past
     | Sizeof _ (Some l) _ => f offlist_past l

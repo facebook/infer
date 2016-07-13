@@ -77,7 +77,8 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
         let instr_set_catch_var =
           let catch_var = JContext.set_pvar context handler.JBir.e_catch_var ret_type in
           Sil.Set (Sil.Lvar catch_var, ret_type, Sil.Var id_exn_val, loc) in
-        let instr_rethrow_exn = Sil.Set (Sil.Lvar ret_var, ret_type, Sil.Const (Sil.Cexn (Sil.Var id_exn_val)), loc) in
+        let instr_rethrow_exn =
+          Sil.Set (Sil.Lvar ret_var, ret_type, Sil.Exn (Sil.Var id_exn_val), loc) in
         let node_kind_true = Cfg.Node.Prune_node (true, if_kind, exn_message) in
         let node_kind_false = Cfg.Node.Prune_node (false, if_kind, exn_message) in
         let node_true =

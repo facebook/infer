@@ -891,7 +891,7 @@ let rec instruction context pc instr : translation =
           Prune (prune_node_true, prune_node_false)
     | JBir.Throw expr ->
         let (instrs, sil_expr, _) = expression context pc expr in
-        let sil_exn = Sil.Const (Sil.Cexn sil_expr) in
+        let sil_exn = Sil.Exn sil_expr in
         let sil_instr = Sil.Set (Sil.Lvar ret_var, ret_type, sil_exn, loc) in
         let node = create_node Cfg.Node.throw_kind (instrs @ [sil_instr]) in
         JContext.add_goto_jump context pc JContext.Exit;
@@ -1022,7 +1022,7 @@ let rec instruction context pc instr : translation =
           let _, call_instrs =
             let ret_opt = Some (Sil.Var ret_id, class_type) in
             method_invocation context loc pc None npe_cn constr_ms ret_opt [] I_Special Procname.Static in
-          let sil_exn = Sil.Const (Sil.Cexn (Sil.Var ret_id)) in
+          let sil_exn = Sil.Exn (Sil.Var ret_id) in
           let set_instr = Sil.Set (Sil.Lvar ret_var, ret_type, sil_exn, loc) in
           let npe_instrs = instrs @ [sil_prune_null] @ (new_instr :: call_instrs) @ [set_instr] in
           create_node npe_kind npe_instrs in
@@ -1076,7 +1076,7 @@ let rec instruction context pc instr : translation =
             method_invocation
               context loc pc None out_of_bound_cn constr_ms
               (Some (Sil.Var ret_id, class_type)) [] I_Special Procname.Static in
-          let sil_exn = Sil.Const (Sil.Cexn (Sil.Var ret_id)) in
+          let sil_exn = Sil.Exn (Sil.Var ret_id) in
           let set_instr = Sil.Set (Sil.Lvar ret_var, ret_type, sil_exn, loc) in
           let out_of_bound_instrs =
             instrs @ [sil_assume_out_of_bound] @ (new_instr :: call_instrs) @ [set_instr] in
@@ -1114,7 +1114,7 @@ let rec instruction context pc instr : translation =
           let _, call_instrs =
             method_invocation context loc pc None cce_cn constr_ms
               (Some (Sil.Var ret_id, class_type)) [] I_Special Procname.Static in
-          let sil_exn = Sil.Const (Sil.Cexn (Sil.Var ret_id)) in
+          let sil_exn = Sil.Exn (Sil.Var ret_id) in
           let set_instr = Sil.Set (Sil.Lvar ret_var, ret_type, sil_exn, loc) in
           let cce_instrs =
             instrs @ [call; asssume_not_instance_of] @ (new_instr :: call_instrs) @ [set_instr] in

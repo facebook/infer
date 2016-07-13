@@ -906,7 +906,7 @@ let remove_abducted_retvars p =>
       let (sigma, pi) = (Prop.get_sigma p, Prop.get_pi p);
       let rec collect_exps exps =>
         fun
-        | Sil.Eexp (Sil.Const (Sil.Cexn e)) _ => Sil.ExpSet.add e exps
+        | Sil.Eexp (Sil.Exn e) _ => Sil.ExpSet.add e exps
         | Sil.Eexp e _ => Sil.ExpSet.add e exps
         | Sil.Estruct flds _ =>
           IList.fold_left (fun exps (_, strexp) => collect_exps exps strexp) exps flds

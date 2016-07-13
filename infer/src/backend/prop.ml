@@ -810,6 +810,8 @@ let sym_eval abs e =
               Sil.exp_zero (* cause a NULL dereference *)
           | _ -> Sil.BinOp (Sil.PtrFld, e1', e2')
         end
+    | Sil.Exn _ ->
+        e
     | Sil.Lvar _ ->
         e
     | Sil.Lfield (e1, fld, typ) ->
@@ -1524,7 +1526,7 @@ let prop_sigma_star (p : 'a t) (sigma : sigma) : exposed t =
 (** return the set of subexpressions of [strexp] *)
 let strexp_get_exps strexp =
   let rec strexp_get_exps_rec exps = function
-    | Sil.Eexp (Sil.Const (Sil.Cexn e), _) -> Sil.ExpSet.add e exps
+    | Sil.Eexp (Sil.Exn e, _) -> Sil.ExpSet.add e exps
     | Sil.Eexp (e, _) -> Sil.ExpSet.add e exps
     | Sil.Estruct (flds, _) ->
         IList.fold_left (fun exps (_, strexp) -> strexp_get_exps_rec exps strexp) exps flds
@@ -1975,6 +1977,7 @@ let find_arithmetic_problem proc_node_session prop exp =
     | Sil.BinOp(op, e1, e2) ->
         if op = Sil.Div || op = Sil.Mod then exps_divided := e2 :: !exps_divided;
         walk e1; walk e2
+    | Sil.Exn _ -> ()
     | Sil.Const _ -> ()
     | Sil.Cast (_, e) -> walk e
     | Sil.Lvar _ -> ()
@@ -2260,7 +2263,7 @@ let ident_captured_ren ren id =
 
 let rec exp_captured_ren ren = function
   | Sil.Var id -> Sil.Var (ident_captured_ren ren id)
-  | Sil.Const (Sil.Cexn e) -> Sil.Const (Sil.Cexn (exp_captured_ren ren e))
+  | Sil.Exn e -> Sil.Exn (exp_captured_ren ren e)
   | Sil.Const _ as e -> e
   | Sil.Sizeof (t, len, st) -> Sil.Sizeof (t, Option.map (exp_captured_ren ren) len, st)
   | Sil.Cast (t, e) -> Sil.Cast (t, exp_captured_ren ren e)

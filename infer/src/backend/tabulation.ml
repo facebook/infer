@@ -612,7 +612,7 @@ let prop_copy_footprint_pure p1 p2 =
 
 (** check if an expression is an exception *)
 let exp_is_exn = function
-  | Sil.Const Sil.Cexn _ -> true
+  | Sil.Exn _ -> true
   | _ -> false
 
 (** check if a prop is an exception *)
@@ -635,7 +635,7 @@ let prop_get_exn_name pname prop =
     | _ :: tl -> search_exn e tl in
   let rec find_exn_name hpreds = function
     | [] -> None
-    | Sil.Hpointsto (e1, Sil.Eexp(Sil.Const (Sil.Cexn e2), _), _) :: _
+    | Sil.Hpointsto (e1, Sil.Eexp (Sil.Exn e2, _), _) :: _
       when Sil.exp_equal e1 ret_pvar ->
         search_exn e2 hpreds
     | _ :: tl -> find_exn_name hpreds tl in

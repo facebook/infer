@@ -757,7 +757,7 @@ let execute_alloc mk can_return_null
         Sil.UnOp (uop, evaluate_char_sizeof e', typ)
     | Sil.BinOp (bop, e1', e2') ->
         Sil.BinOp (bop, evaluate_char_sizeof e1', evaluate_char_sizeof e2')
-    | Sil.Const _ | Sil.Cast _ | Sil.Lvar _ | Sil.Lfield _ | Sil.Lindex _ -> e
+    | Sil.Exn _ | Sil.Const _ | Sil.Cast _ | Sil.Lvar _ | Sil.Lfield _ | Sil.Lindex _ -> e
     | Sil.Sizeof (Typ.Tarray (Typ.Tint ik, _), Some len, _) when Typ.ikind_is_char ik ->
         evaluate_char_sizeof len
     | Sil.Sizeof (Typ.Tarray (Typ.Tint ik, Some len), None, _) when Typ.ikind_is_char ik ->
@@ -879,7 +879,7 @@ let execute__unwrap_exception { Builtin.pdesc; prop_; path; ret_ids; args; }
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let n_ret_exn, prop = check_arith_norm_exp pname ret_exn prop_ in
         match n_ret_exn with
-        | Sil.Const (Sil.Cexn exp) ->
+        | Sil.Exn exp ->
             let prop_with_exn = return_result exp prop ret_ids in
             [(prop_with_exn, path)]
         | _ -> assert false

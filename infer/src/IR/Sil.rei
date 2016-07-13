@@ -197,7 +197,6 @@ and const =
   | Cstr of string /** string constants */
   | Cfloat of float /** float constants */
   | Cattribute of attribute /** attribute used in disequalities to annotate a value */
-  | Cexn of exp /** exception */
   | Cclass of Ident.name /** class constant */
   | Cptr_to_fld of Ident.fieldname Typ.t /** pointer to field constant,
                                              and type of the surrounding Csu.t type */
@@ -212,6 +211,8 @@ and exp =
   | UnOp of unop exp (option Typ.t)
   /** Binary operator */
   | BinOp of binop exp exp
+  /** Exception */
+  | Exn of exp
   /** Constants */
   | Const of const
   /** Type cast */

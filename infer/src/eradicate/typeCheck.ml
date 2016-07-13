@@ -176,7 +176,7 @@ let rec typecheck_expr
       else
         let t, ta, ll = tr_default in
         (t, TypeAnnotation.with_origin ta (TypeOrigin.Const loc), ll)
-  | Sil.Const (Sil.Cexn e1) ->
+  | Sil.Exn e1 ->
       typecheck_expr
         find_canonical_duplicate visited checks
         node instr_ref curr_pname
@@ -481,7 +481,7 @@ let typecheck_instr
       TypeState.add_id id
         (typecheck_expr_simple typestate' e' typ TypeOrigin.Undef loc)
         typestate'
-  | Sil.Set (Sil.Lvar pvar, _, Sil.Const (Sil.Cexn _), _) when is_return pvar ->
+  | Sil.Set (Sil.Lvar pvar, _, Sil.Exn _, _) when is_return pvar ->
       (* skip assignment to return variable where it is an artifact of a throw instruction *)
       typestate
   | Sil.Set (e1, typ, e2, loc) ->

@@ -30,7 +30,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.BinOp (_, e1, e2) | Lindex (e1, e2) ->
         add_address_taken_pvars e1 astate
         |> add_address_taken_pvars e2
-    | Sil.Const (Cclosure _ | Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cexn _ | Cclass _
+    | Sil.Exn _
+    | Sil.Const (Cclosure _ | Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _
                 | Cptr_to_fld _)
     | Var _ | Sizeof _ ->
         astate

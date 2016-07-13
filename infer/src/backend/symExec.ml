@@ -350,6 +350,8 @@ let rec prune ~positive condition prop =
       pruner ~positive condition1 condition2 prop
   | Sil.BinOp _ | Sil.Lfield _ | Sil.Lindex _ ->
       prune_ne ~positive condition Sil.exp_zero prop
+  | Sil.Exn _ ->
+      assert false
 
 and prune_inter ~positive condition1 condition2 prop =
   let res = ref Propset.empty in
@@ -1204,8 +1206,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                 match attrs_opt with
                 | Some attrs -> attrs.ProcAttributes.is_objc_instance_method
                 | None -> false in
-              skip_call ~is_objc_instance_method prop path resolved_pname ret_annots loc ret_ids 
-							  ret_typ_opt n_actual_params
+              skip_call ~is_objc_instance_method prop path resolved_pname ret_annots loc ret_ids
+                ret_typ_opt n_actual_params
         else
           proc_call (Option.get summary)
             (call_args prop resolved_pname n_actual_params ret_ids loc) in

@@ -505,6 +505,7 @@ let callback_check_field_access { Callbacks.proc_desc } =
     | Sil.BinOp (_, e1, e2) ->
         do_exp is_read e1;
         do_exp is_read e2
+    | Sil.Exn _ -> ()
     | Sil.Const _ -> ()
     | Sil.Cast (_, e) ->
         do_exp is_read e

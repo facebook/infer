@@ -813,6 +813,7 @@ let rec exp_construct_fresh side e =
       let e1' = exp_construct_fresh side e1 in
       let e2' = exp_construct_fresh side e2 in
       Sil.BinOp(binop, e1', e2')
+  | Sil.Exn _ -> e
   | Sil.Lvar _ ->
       e
   | Sil.Lfield(e1, fld, typ) ->

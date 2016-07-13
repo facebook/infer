@@ -28,7 +28,7 @@ let from_prop p = p
 (** Return [true] if root node *)
 let rec is_root = function
   | Sil.Var id -> Ident.is_normal id
-  | Sil.Const _ | Sil.Lvar _ -> true
+  | Sil.Const _ | Sil.Exn _ | Sil.Lvar _ -> true
   | Sil.Cast (_, e) -> is_root e
   | Sil.UnOp _ | Sil.BinOp _ | Sil.Lfield _ | Sil.Lindex _ | Sil.Sizeof _ -> false
 
