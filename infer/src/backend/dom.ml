@@ -828,6 +828,8 @@ let rec exp_construct_fresh side e =
       e
   | Sil.Sizeof (typ, Some len, st) ->
       Sil.Sizeof (typ, Some (exp_construct_fresh side len), st)
+  | Sil.Attribute _ ->
+      e
 
 let strexp_construct_fresh side =
   let f (e, inst_opt) = (exp_construct_fresh side e, inst_opt) in

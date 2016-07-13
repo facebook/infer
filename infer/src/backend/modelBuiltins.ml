@@ -763,7 +763,8 @@ let execute_alloc mk can_return_null
         evaluate_char_sizeof len
     | Sil.Sizeof (Typ.Tarray (Typ.Tint ik, Some len), None, _) when Typ.ikind_is_char ik ->
         evaluate_char_sizeof (Sil.Const (Sil.Cint len))
-    | Sil.Sizeof _ -> e in
+    | Sil.Sizeof _ -> e
+    | Sil.Attribute _ -> e in
   let size_exp, procname = match args with
     | [(Sil.Sizeof
           (Typ.Tstruct

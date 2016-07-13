@@ -354,6 +354,8 @@ let rec prune ~positive condition prop =
       assert false
   | Sil.Closure _ ->
       assert false
+  | Sil.Attribute _ ->
+      assert false
 
 and prune_inter ~positive condition1 condition2 prop =
   let res = ref Propset.empty in
@@ -1401,7 +1403,7 @@ and check_untainted exp taint_kind caller_pname callee_pname prop =
   | _ ->
       if !Config.footprint then
         let taint_info = { Sil.taint_source = callee_pname; taint_kind; } in
-        let untaint_attr = Sil.Const (Sil.Cattribute (Sil.Auntaint taint_info)) in
+        let untaint_attr = Sil.Attribute (Sil.Auntaint taint_info) in
         (* add untained(n_lexp) to the footprint *)
         Prop.conjoin_neq ~footprint:true exp untaint_attr prop
       else prop

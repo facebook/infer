@@ -82,6 +82,8 @@ let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
       (match exp_match base1 sub vars base2 with
        | None -> None
        | Some (sub', vars') -> exp_match idx1 sub' vars' idx2)
+  | Sil.Attribute _, _ | _, Sil.Attribute _ ->
+      check_equal sub vars e1 e2
 
 let exp_list_match es1 sub vars es2 =
   let f res_acc (e1, e2) = match res_acc with

@@ -469,7 +469,6 @@ and const =
   | Cfun of Procname.t /** function names */
   | Cstr of string /** string constants */
   | Cfloat of float /** float constants */
-  | Cattribute of attribute /** attribute used in disequalities to annotate a value */
   | Cclass of Ident.name /** class constant */
   | Cptr_to_fld of Ident.fieldname Typ.t /** pointer to field constant,
                                              and type of the surrounding Csu.t type */
@@ -502,7 +501,9 @@ and exp =
       The [dynamic_length], tracked by symbolic execution, may differ from the [static_length]
       obtained from the type definition, e.g. when an array is over-allocated.  For struct types,
       the [dynamic_length] is that of the final extensible array, if any. */
-  | Sizeof of Typ.t dynamic_length Subtype.t;
+  | Sizeof of Typ.t dynamic_length Subtype.t
+  /** attribute used in disequalities to annotate a value */
+  | Attribute of attribute;
 
 
 /** Kind of prune instruction */
@@ -981,7 +982,6 @@ let const_kind_equal c1 c2 => {
     | Cfun _ => 2
     | Cstr _ => 3
     | Cfloat _ => 4
-    | Cattribute _ => 5
     | Cclass _ => 7
     | Cptr_to_fld _ => 8;
   const_kind_number c1 == const_kind_number c2
@@ -1078,9 +1078,6 @@ and const_compare (c1: const) (c2: const) :int =>
   | (Cfloat f1, Cfloat f2) => float_compare f1 f2
   | (Cfloat _, _) => (-1)
   | (_, Cfloat _) => 1
-  | (Cattribute att1, Cattribute att2) => attribute_compare att1 att2
-  | (Cattribute _, _) => (-1)
-  | (_, Cattribute _) => 1
   | (Cclass c1, Cclass c2) => Ident.name_compare c1 c2
   | (Cclass _, _) => (-1)
   | (_, Cclass _) => 1
@@ -1204,6 +1201,9 @@ and exp_compare (e1: exp) (e2: exp) :int =>
         Subtype.compare s1 s2
       }
     }
+  | (Attribute att1, Attribute att2) => attribute_compare att1 att2
+  | (Attribute _, _) => (-1)
+  | (_, Attribute _) => 1
   };
 
 let const_equal c1 c2 => const_compare c1 c2 == 0;
@@ -1761,7 +1761,6 @@ and pp_const pe f =>
     }
   | Cstr s => F.fprintf f "\"%s\"" (String.escaped s)
   | Cfloat v => F.fprintf f "%f" v
-  | Cattribute att => F.fprintf f "%s" (attribute_to_string pe att)
   | Cclass c => F.fprintf f "%a" Ident.pp_name c
   | Cptr_to_fld fn _ => F.fprintf f "__fld_%a" Ident.pp_fieldname fn
 /** Pretty print an expression. */
@@ -1808,6 +1807,7 @@ and _pp_exp pe0 pp_t f e0 => {
     | Sizeof t l s =>
       let pp_len f l => Option.map_default (F.fprintf f "[%a]" pp_exp) () l;
       F.fprintf f "sizeof(%a%a%a)" pp_t t pp_len l Subtype.pp s
+    | Attribute att => F.fprintf f "%s" (attribute_to_string pe att)
     }
   };
   color_post_wrapper changed pe0 f
@@ -1995,8 +1995,8 @@ let pp_atom pe0 f a => {
     | PP_HTML => F.fprintf f "%a = %a" (pp_exp pe) e1 (pp_exp pe) e2
     | PP_LATEX => F.fprintf f "%a{=}%a" (pp_exp pe) e1 (pp_exp pe) e2
     }
-  | Aneq (Const (Cattribute _) as ea) e
-  | Aneq e (Const (Cattribute _) as ea) => F.fprintf f "%a(%a)" (pp_exp pe) ea (pp_exp pe) e
+  | Aneq (Attribute _ as ea) e
+  | Aneq e (Attribute _ as ea) => F.fprintf f "%a(%a)" (pp_exp pe) ea (pp_exp pe) e
   | Aneq e1 e2 =>
     switch pe.pe_kind {
     | PP_TEXT
@@ -2690,6 +2690,7 @@ let rec root_of_lexp lexp =>
   | Lfield e _ _ => root_of_lexp e
   | Lindex e _ => root_of_lexp e
   | Sizeof _ => lexp
+  | Attribute _ => lexp
   };
 
 
@@ -2779,6 +2780,7 @@ let rec exp_fpv =
   /* | Sizeof _ None _ => [] */
   /* | Sizeof _ (Some l) _ => exp_fpv l */
   | Sizeof _ _ _ => []
+  | Attribute _ => []
 and exp_list_fpv el => IList.flatten (IList.map exp_fpv el);
 
 let atom_fpv =
@@ -2959,7 +2961,7 @@ let rec exp_fav_add fav =>
   | Var id => fav ++ id
   | Exn e => exp_fav_add fav e
   | Closure {captured_vars} => IList.iter (fun (e, _, _) => exp_fav_add fav e) captured_vars
-  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _) => ()
+  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _) => ()
   | Cast _ e
   | UnOp _ e _ => exp_fav_add fav e
   | BinOp _ e1 e2 => {
@@ -2975,7 +2977,8 @@ let rec exp_fav_add fav =>
   /* TODO: Sizeof length expressions may contain variables, do not ignore them. */
   /* | Sizeof _ None _ => () */
   /* | Sizeof _ (Some l) _ => exp_fav_add fav l; */
-  | Sizeof _ _ _ => ();
+  | Sizeof _ _ _ => ()
+  | Attribute _ => ();
 
 let exp_fav = fav_imperative_to_functional exp_fav_add;
 
@@ -3382,7 +3385,7 @@ let rec exp_sub_ids (f: Ident.t => exp) exp =>
     } else {
       Closure {...c, captured_vars}
     }
-  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _) => exp
+  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _) => exp
   | Cast t e =>
     let e' = exp_sub_ids f e;
     if (e' === e) {
@@ -3431,6 +3434,7 @@ let rec exp_sub_ids (f: Ident.t => exp) exp =>
       }
     | None => exp
     }
+  | Attribute _ => exp
   };
 
 let rec apply_sub subst id =>
@@ -4047,11 +4051,12 @@ let exp_get_vars exp => {
         (fun vars_acc (captured_exp, _, _) => exp_get_vars_ captured_exp vars_acc)
         vars
         captured_vars
-    | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _) => vars
+    | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _) => vars
     /* TODO: Sizeof length expressions may contain variables, do not ignore them. */
     /* | Sizeof _ None _ => vars */
     /* | Sizeof _ (Some l) _ => exp_get_vars_ l vars */
     | Sizeof _ _ _ => vars
+    | Attribute _ => vars
     };
   exp_get_vars_ exp ([], [])
 };
@@ -4068,6 +4073,7 @@ let exp_get_offsets exp => {
     | Exn _
     | Closure _
     | Lvar _
+    | Attribute _
     | Sizeof _ None _ => offlist_past
     | Sizeof _ (Some l) _ => f offlist_past l
     | Cast _ sub_exp => f offlist_past sub_exp

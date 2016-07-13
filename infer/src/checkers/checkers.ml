@@ -518,7 +518,8 @@ let callback_check_field_access { Callbacks.proc_desc } =
     | Sil.Lindex (e1, e2) ->
         do_exp is_read e1;
         do_exp is_read e2
-    | Sil.Sizeof _ -> () in
+    | Sil.Sizeof _ -> ()
+    | Sil.Attribute _ -> () in
   let do_read_exp = do_exp true in
   let do_write_exp = do_exp false in
   let do_instr _ = function

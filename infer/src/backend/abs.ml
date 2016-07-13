@@ -1093,7 +1093,7 @@ let check_junk ?original_prop pname tenv prop =
                   check_observer_is_unsubscribed_deallocation prop e;
                   match Prop.get_resource_attribute prop e with
                   | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Racquire }) as a) ->
-                      L.d_str "ATTRIBUTE: "; Sil.d_exp (Sil.Const (Sil.Cattribute a)); L.d_ln ();
+                      L.d_str "ATTRIBUTE: "; Sil.d_exp (Sil.Attribute a); L.d_ln ();
                       res := Some a
                   | _ ->
                       (match Prop.get_undef_attribute prop e with

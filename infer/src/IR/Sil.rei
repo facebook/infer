@@ -196,7 +196,6 @@ and const =
   | Cfun of Procname.t /** function names */
   | Cstr of string /** string constants */
   | Cfloat of float /** float constants */
-  | Cattribute of attribute /** attribute used in disequalities to annotate a value */
   | Cclass of Ident.name /** class constant */
   | Cptr_to_fld of Ident.fieldname Typ.t /** pointer to field constant,
                                              and type of the surrounding Csu.t type */
@@ -229,7 +228,9 @@ and exp =
       The [dynamic_length], tracked by symbolic execution, may differ from the [static_length]
       obtained from the type definition, e.g. when an array is over-allocated.  For struct types,
       the [dynamic_length] is that of the final extensible array, if any. */
-  | Sizeof of Typ.t dynamic_length Subtype.t;
+  | Sizeof of Typ.t dynamic_length Subtype.t
+  /** attribute used in disequalities to annotate a value */
+  | Attribute of attribute;
 
 
 /** Sets of expressions. */

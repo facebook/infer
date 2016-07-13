@@ -552,7 +552,7 @@ let check_zero e =
 let is_root prop base_exp exp =
   let rec f offlist_past e = match e with
     | Sil.Var _ | Sil.Const _ | Sil.UnOp _ | Sil.BinOp _ | Sil.Exn _ | Sil.Closure _ | Sil.Lvar _
-    | Sil.Sizeof _ ->
+    | Sil.Sizeof _ | Sil.Attribute _ ->
         if check_equal prop base_exp e
         then Some offlist_past
         else None
