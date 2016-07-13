@@ -74,6 +74,7 @@
 }
 
 - (int)readP {
+  int i = _q; // Bad access
   return _p; // Good access
 }
 

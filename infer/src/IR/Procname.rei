@@ -97,6 +97,10 @@ let is_anonymous_inner_class_name: string => bool;
 let is_c_method: t => bool;
 
 
+/** Check if this is a constructor method in Objective-C. */
+let is_obj_constructor: string => bool;
+
+
 /** Check if this is a constructor. */
 let is_constructor: t => bool;
 
@@ -106,7 +110,11 @@ let is_java: t => bool;
 
 
 /** Check if this is a dealloc method in Objective-C. */
-let is_objc_dealloc: t => bool;
+let is_objc_dealloc: string => bool;
+
+
+/** Check if this is a dealloc method. */
+let is_destructor: t => bool;
 
 
 /** Create a Java procedure name from its

@@ -70,7 +70,3 @@ val static_vars_for_block : t -> Procname.t -> (Pvar.t * Typ.t) list
 val is_objc_instance : t -> bool
 
 val get_outer_procname : t -> Procname.t
-
-val is_curr_proc_objc_getter : t -> string -> bool
-
-val is_curr_proc_objc_setter : t -> string -> bool

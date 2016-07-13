@@ -159,16 +159,3 @@ let rec get_outer_procname context =
   | Some outer_context -> get_outer_procname outer_context
   | None -> Cfg.Procdesc.get_proc_name context.procdesc
 
-let is_curr_proc_objc_getter context field_name =
-  let attrs = Cfg.Procdesc.get_attributes context.procdesc in
-  match attrs.ProcAttributes.objc_accessor with
-  | Some ProcAttributes.Objc_getter field ->
-      (Ident.fieldname_to_string field) = field_name
-  | _ -> false
-
-let is_curr_proc_objc_setter context field_name =
-  let attrs = Cfg.Procdesc.get_attributes context.procdesc in
-  match attrs.ProcAttributes.objc_accessor with
-  | Some ProcAttributes.Objc_setter field ->
-      (Ident.fieldname_to_string field) = field_name
-  | _ -> false

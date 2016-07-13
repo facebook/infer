@@ -2314,8 +2314,6 @@ struct
   (* a trans_state containing current info on the translation and it returns *)
   (* a result_state.*)
   and instruction trans_state instr =
-    (* Run the frontend checkers on this instruction *)
-    CFrontend_errors.run_frontend_checkers_on_stmt trans_state instr;
     let stmt_kind = Clang_ast_proj.get_stmt_kind_string instr in
     let stmt_info, _ = Clang_ast_proj.get_stmt_tuple instr in
     let stmt_pointer = stmt_info.Clang_ast_t.si_pointer in

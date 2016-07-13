@@ -23,8 +23,8 @@ let checkers_for_property decl_info pname_info pdi checker =
 let ivar_access_checker_list =  [CFrontend_checkers.direct_atomic_property_access_warning]
 
 (* Invocation of checker belonging to ivar_access_checker_list *)
-let checkers_for_ivar context stmt_info dr_name checker =
-  checker context stmt_info dr_name
+let checkers_for_ivar stmt_info method_decl ivar_decl_ref checker =
+  checker stmt_info method_decl ivar_decl_ref
 
 (* List of checkers for captured vars in objc blocks *)
 let captured_vars_checker_list = [CFrontend_checkers.captured_cxx_ref_in_objc_block_warning]
@@ -48,9 +48,10 @@ let checker_for_global_var dec checker =
   checker dec
 
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
-let log_frontend_warning pdesc warn_desc =
+let log_frontend_warning cfg cg warn_desc =
   let open CFrontend_checkers in
   let loc = warn_desc.loc in
+  let pdesc = CMethod_trans.get_method_for_frontend_checks cfg cg loc in
   let errlog = Cfg.Procdesc.get_err_log pdesc in
   let err_desc =
     Errdesc.explain_frontend_warning warn_desc.description warn_desc.suggestion loc in
@@ -68,17 +69,10 @@ let log_frontend_warning pdesc warn_desc =
    1. f a particular way to apply a checker, it's a partial function
    2. context
    3. the list of checkers to be applied *)
-let invoke_set_of_checkers f cfg cg pdesc_opt checkers  =
+let invoke_set_of_checkers f cfg cg checkers  =
   IList.iter (fun checker ->
       match f checker with
-      | Some warning_desc ->
-          let pdesc =
-            match pdesc_opt with
-            | Some pdesc -> pdesc
-            | None ->
-                let loc = warning_desc.CFrontend_checkers.loc in
-                CMethod_trans.get_method_for_frontend_checks cfg cg loc in
-          log_frontend_warning pdesc warning_desc
+      | Some warning_desc -> log_frontend_warning cfg cg warning_desc
       | None -> ()) checkers
 
 (* Call all checkers on properties of class c *)
@@ -86,7 +80,7 @@ let rec check_for_property_errors cfg cg decl_list =
   let open Clang_ast_t in
   let do_one_property decl_info pname_info pdi =
     let call_property_checker = checkers_for_property decl_info pname_info pdi in
-    invoke_set_of_checkers call_property_checker cfg cg None property_checkers_list in
+    invoke_set_of_checkers call_property_checker cfg cg property_checkers_list in
   match decl_list with
   | [] -> ()
   | ObjCPropertyDecl (decl_info, pname_info, pdi) :: rest ->
@@ -101,22 +95,17 @@ let get_categories_decls decl_ref =
   | Some ObjCInterfaceDecl (_, _, decls, _, _) -> decls
   | _ -> []
 
-let run_frontend_checkers_on_stmt trans_state instr =
+let run_frontend_checkers_on_stmt cfg cg method_decl instr =
   let open Clang_ast_t in
-  let context = trans_state.CTrans_utils.context in
-  let pdesc = CContext.get_procdesc context in
-  let cg = context.CContext.cg in
-  let cfg = context.CContext.cfg in
   match instr with
   | ObjCIvarRefExpr(stmt_info, _, _, obj_c_ivar_ref_expr_info) ->
       let dr_ref = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref in
-      let call_checker_for_ivar = checkers_for_ivar context stmt_info dr_ref in
-      invoke_set_of_checkers call_checker_for_ivar cfg cg (Some pdesc) ivar_access_checker_list
+      let call_checker_for_ivar = checkers_for_ivar method_decl stmt_info dr_ref in
+      invoke_set_of_checkers call_checker_for_ivar cfg cg ivar_access_checker_list
   | BlockExpr(stmt_info, _ , _, Clang_ast_t.BlockDecl (_, block_decl_info)) ->
       let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
-      let call_captured_vars_checker =  checkers_for_capture_vars stmt_info captured_block_vars in
-      let pdesc_opt = Some pdesc in
-      invoke_set_of_checkers call_captured_vars_checker cfg cg pdesc_opt captured_vars_checker_list
+      let call_captured_vars_checker = checkers_for_capture_vars stmt_info captured_block_vars in
+      invoke_set_of_checkers call_captured_vars_checker cfg cg captured_vars_checker_list
   | _ -> ()
 
 let rec run_frontend_checkers_on_decl cfg cg dec =
@@ -132,14 +121,14 @@ let rec run_frontend_checkers_on_decl cfg cg dec =
         let decls = (get_categories_decls idi.Clang_ast_t.oidi_class_interface) @ decl_list in
         check_for_property_errors cfg cg decls;
         let call_ns_checker = checkers_for_ns decl_info decl_list in
-        invoke_set_of_checkers call_ns_checker cfg cg None ns_notification_checker_list;
+        invoke_set_of_checkers call_ns_checker cfg cg ns_notification_checker_list;
         IList.iter (run_frontend_checkers_on_decl cfg cg) decl_list
     | ObjCProtocolDecl (decl_info, _, decl_list, _, _) ->
         check_for_property_errors cfg cg decl_list;
         let call_ns_checker = checkers_for_ns decl_info decl_list in
-        invoke_set_of_checkers call_ns_checker cfg cg None ns_notification_checker_list;
+        invoke_set_of_checkers call_ns_checker cfg cg ns_notification_checker_list;
         IList.iter (run_frontend_checkers_on_decl cfg cg) decl_list
     | VarDecl _ ->
         let call_global_checker = checker_for_global_var dec in
-        invoke_set_of_checkers call_global_checker cfg cg None global_var_checker_list
+        invoke_set_of_checkers call_global_checker cfg cg global_var_checker_list
     | _ -> ()

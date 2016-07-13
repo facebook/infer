@@ -11,6 +11,7 @@ package endtoend.objc;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static utils.matchers.ResultContainsExactly.containsExactly;
+import static utils.matchers.ResultContainsLineNumbers.containsLines;
 
 import com.google.common.collect.ImmutableList;
 
@@ -46,22 +47,19 @@ public class AtomicPropertyTest {
   }
 
   @Test
-  public void whenInferRunsOnAtomicProperty()
+  public void matchErrors()
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferObjC(inferCmd);
     assertThat(
-        "Results should contain a direct atomic property access",
+        "Results should contain the correct " + DIRECT_ATOMIC_PROPERTY_ACCESS,
         inferResults,
-        containsExactly(
-            DIRECT_ATOMIC_PROPERTY_ACCESS,
-            FILE,
-            new String[]{
-                "writeQ:",
-                "readQ",
-                "bla"
-            }
-        )
-    );
+        containsLines(new int[]{
+            77,
+            82,
+            86,
+            98,
+            99
+        }));
   }
 
 }

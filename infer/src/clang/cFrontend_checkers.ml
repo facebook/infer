@@ -41,6 +41,20 @@ let get_ivar_attributes ivar_decl =
        | _ -> [])
   | _ -> []
 
+let is_method_property_accessor_of_ivar method_decl ivar_pointer =
+  let open Clang_ast_t in
+  match method_decl with
+  | ObjCMethodDecl (_, _, obj_c_method_decl_info) ->
+      if obj_c_method_decl_info.Clang_ast_t.omdi_is_property_accessor then
+        let prperty_opt = obj_c_method_decl_info.Clang_ast_t.omdi_property_decl in
+        match Ast_utils.get_decl_opt_with_decl_ref prperty_opt with
+        | Some ObjCPropertyDecl (_, _, obj_c_property_decl_info) ->
+            (match obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl with
+             | Some decl_ref -> decl_ref.Clang_ast_t.dr_decl_pointer = ivar_pointer
+             | None -> false)
+        | _ -> false
+      else false
+  | _ -> false
 
 (* checks if ivar is defined among a set of fields and if it is atomic *)
 let is_ivar_atomic attributes =
@@ -57,9 +71,6 @@ let location_from_sinfo info =
 
 let location_from_dinfo info =
   CLocation.get_sil_location_from_range info.Clang_ast_t.di_source_range true
-
-let proc_name_from_context context =
-  Cfg.Procdesc.get_proc_name (CContext.get_procdesc context)
 
 let rec is_self s =
   let open Clang_ast_t in
@@ -210,11 +221,14 @@ let global_var_init_with_calls_warning decl =
 
 (* Direct Atomic Property access:
    a property declared atomic should not be accessed directly via its ivar *)
-let direct_atomic_property_access_warning context stmt_info ivar_decl_ref =
-  match Ast_utils.get_decl ivar_decl_ref.Clang_ast_t.dr_decl_pointer with
+let direct_atomic_property_access_warning method_decl stmt_info ivar_decl_ref =
+  let ivar_pointer = ivar_decl_ref.Clang_ast_t.dr_decl_pointer in
+  match Ast_utils.get_decl ivar_pointer with
   | Some (ObjCIvarDecl (_, named_decl_info, _, _, _) as d) ->
+      let method_name = match Clang_ast_proj.get_named_decl_tuple method_decl with
+        | Some (_, method_named_decl) -> method_named_decl.Clang_ast_t.ni_name
+        | _ -> "" in
       let ivar_name = named_decl_info.Clang_ast_t.ni_name in
-      let mname = proc_name_from_context context in
       let condition =
         (* We give the warning when:
            (1) the property has the atomic attribute and
@@ -222,10 +236,9 @@ let direct_atomic_property_access_warning context stmt_info ivar_decl_ref =
            (3) the access of the ivar is not in the init method
            Last two conditions avoids false positives *)
         is_ivar_atomic (get_ivar_attributes d)
-        && not (CContext.is_curr_proc_objc_getter context ivar_name)
-        && not (CContext.is_curr_proc_objc_setter context ivar_name)
-        && not (Procname.is_constructor mname)
-        && not (Procname.is_objc_dealloc mname) in
+        && not (is_method_property_accessor_of_ivar method_decl ivar_pointer)
+        && not (Procname.is_obj_constructor method_name)
+        && not (Procname.is_objc_dealloc method_name) in
       if condition then
         Some {
           name = "DIRECT_ATOMIC_PROPERTY_ACCESS";

@@ -28,8 +28,8 @@ val assign_pointer_warning : Clang_ast_t.decl_info -> Clang_ast_t.named_decl_inf
 
 (* Direct Atomic Property access:
    a property declared atomic should not be accesses directly via its iva *)
-val direct_atomic_property_access_warning :
-  CContext.t -> Clang_ast_t.stmt_info -> Clang_ast_t.decl_ref -> warning_desc option
+val direct_atomic_property_access_warning : Clang_ast_t.decl -> Clang_ast_t.stmt_info ->
+  Clang_ast_t.decl_ref -> warning_desc option
 
 (* CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK: C++ references
    should not be captured in blocks.  *)

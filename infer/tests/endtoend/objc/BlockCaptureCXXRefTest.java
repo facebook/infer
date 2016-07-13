@@ -11,6 +11,7 @@ package endtoend.objc;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static utils.matchers.ResultContainsExactly.containsExactly;
+import static utils.matchers.ResultContainsLineNumbers.containsLines;
 
 import com.google.common.collect.ImmutableList;
 
@@ -43,20 +44,15 @@ public class BlockCaptureCXXRefTest {
   }
 
   @Test
-  public void whenInferRunsOnNavigateToURLInBackgroundThenNPEIsFound()
+  public void matchErrors()
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    String[] procedures = {
-        "foo:", "foo3:param2:"
-    };
     assertThat(
-        "Results should contain the expected C++ reference captured in block",
+        "Results should contain the correct " + REFERENCE_CAPTURED,
         inferResults,
-        containsExactly(
-            REFERENCE_CAPTURED,
-            FILE,
-            procedures
-        )
-    );
+        containsLines(new int[]{
+            20,
+            37
+        }));
   }
 }

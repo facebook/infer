@@ -421,19 +421,25 @@ let java_is_vararg =
     }
   | _ => false;
 
+let is_obj_constructor method_name => method_name == "new" || string_is_prefix "init" method_name;
 
-/** [is_constructor pname] returns true if [pname] is a constructor */
+
+/** [is_constructor pname] returns true if [pname] is a constructor
+    TODO: add case for C++ */
 let is_constructor =
   fun
   | Java js => js.method_name == "<init>"
-  | ObjC_Cpp name => name.method_name == "new" || string_is_prefix "init" name.method_name
+  | ObjC_Cpp name => is_obj_constructor name.method_name
   | _ => false;
 
+let is_objc_dealloc method_name => method_name == "dealloc";
 
-/** [is_objc_dealloc pname] returns true if [pname] is the dealloc method in Objective-C */
-let is_objc_dealloc =
+
+/** [is_dealloc pname] returns true if [pname] is the dealloc method in Objective-C
+    TODO: add case for C++ */
+let is_destructor =
   fun
-  | ObjC_Cpp name => name.method_name == "dealloc"
+  | ObjC_Cpp name => is_objc_dealloc name.method_name
   | _ => false;
 
 let java_is_close =

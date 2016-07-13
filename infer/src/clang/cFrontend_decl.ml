@@ -166,9 +166,6 @@ struct
   (* Translate one global declaration *)
   let rec translate_one_declaration tenv cg cfg decl_trans_context dec =
     let open Clang_ast_t in
-    (* Run the frontend checkers on this declaration *)
-    if decl_trans_context = `DeclTraversal then
-      CFrontend_errors.run_frontend_checkers_on_decl cfg cg dec;
 
     (* each procedure has different scope: start names from id 0 *)
     Ident.NameGenerator.reset ();
