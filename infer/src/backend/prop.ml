@@ -450,10 +450,10 @@ let sym_eval abs e =
     match e with
     | Sil.Var _ ->
         e
-    | Sil.Const (Sil.Cclosure c) ->
+    | Sil.Closure c ->
         let captured_vars =
           IList.map (fun (exp, pvar, typ) -> (eval exp, pvar, typ)) c.captured_vars in
-        Sil.Const (Sil.Cclosure { c with captured_vars; })
+        Sil.Closure { c with captured_vars; }
     | Sil.Const _ ->
         e
     | Sil.Sizeof (Typ.Tarray (Typ.Tint ik, _), Some l, _)
@@ -1978,6 +1978,7 @@ let find_arithmetic_problem proc_node_session prop exp =
         if op = Sil.Div || op = Sil.Mod then exps_divided := e2 :: !exps_divided;
         walk e1; walk e2
     | Sil.Exn _ -> ()
+    | Sil.Closure _ -> ()
     | Sil.Const _ -> ()
     | Sil.Cast (_, e) -> walk e
     | Sil.Lvar _ -> ()
@@ -2264,6 +2265,7 @@ let ident_captured_ren ren id =
 let rec exp_captured_ren ren = function
   | Sil.Var id -> Sil.Var (ident_captured_ren ren id)
   | Sil.Exn e -> Sil.Exn (exp_captured_ren ren e)
+  | Sil.Closure _ as e -> e     (* TODO: why captured vars not renamed? *)
   | Sil.Const _ as e -> e
   | Sil.Sizeof (t, len, st) -> Sil.Sizeof (t, Option.map (exp_captured_ren ren) len, st)
   | Sil.Cast (t, e) -> Sil.Cast (t, exp_captured_ren ren e)

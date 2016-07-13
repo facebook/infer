@@ -757,7 +757,8 @@ let execute_alloc mk can_return_null
         Sil.UnOp (uop, evaluate_char_sizeof e', typ)
     | Sil.BinOp (bop, e1', e2') ->
         Sil.BinOp (bop, evaluate_char_sizeof e1', evaluate_char_sizeof e2')
-    | Sil.Exn _ | Sil.Const _ | Sil.Cast _ | Sil.Lvar _ | Sil.Lfield _ | Sil.Lindex _ -> e
+    | Sil.Exn _ | Sil.Closure _ | Sil.Const _ | Sil.Cast _ | Sil.Lvar _ | Sil.Lfield _
+    | Sil.Lindex _ -> e
     | Sil.Sizeof (Typ.Tarray (Typ.Tint ik, _), Some len, _) when Typ.ikind_is_char ik ->
         evaluate_char_sizeof len
     | Sil.Sizeof (Typ.Tarray (Typ.Tint ik, Some len), None, _) when Typ.ikind_is_char ik ->

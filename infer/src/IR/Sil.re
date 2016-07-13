@@ -473,7 +473,6 @@ and const =
   | Cclass of Ident.name /** class constant */
   | Cptr_to_fld of Ident.fieldname Typ.t /** pointer to field constant,
                                              and type of the surrounding Csu.t type */
-  | Cclosure of closure /** anonymous function */
 /** dynamically determined length of an array value, if any */
 and dynamic_length = option exp
 /** Program expressions. */
@@ -486,6 +485,8 @@ and exp =
   | BinOp of binop exp exp
   /** Exception */
   | Exn of exp
+  /** Anonymous function */
+  | Closure of closure
   /** Constants */
   | Const of const
   /** Type cast */
@@ -982,8 +983,7 @@ let const_kind_equal c1 c2 => {
     | Cfloat _ => 4
     | Cattribute _ => 5
     | Cclass _ => 7
-    | Cptr_to_fld _ => 8
-    | Cclosure _ => 9;
+    | Cptr_to_fld _ => 8;
   const_kind_number c1 == const_kind_number c2
 };
 
@@ -1085,31 +1085,6 @@ and const_compare (c1: const) (c2: const) :int =>
     } else {
       Typ.compare t1 t2
     }
-  | (Cptr_to_fld _, _) => (-1)
-  | (_, Cptr_to_fld _) => 1
-  | (Cclosure {name: n1, captured_vars: c1}, Cclosure {name: n2, captured_vars: c2}) =>
-    let captured_var_compare acc (e1, pvar1, typ1) (e2, pvar2, typ2) =>
-      if (acc != 0) {
-        acc
-      } else {
-        let n = exp_compare e1 e2;
-        if (n != 0) {
-          n
-        } else {
-          let n = Pvar.compare pvar1 pvar2;
-          if (n != 0) {
-            n
-          } else {
-            Typ.compare typ1 typ2
-          }
-        }
-      };
-    let n = Procname.compare n1 n2;
-    if (n != 0) {
-      n
-    } else {
-      IList.fold_left2 captured_var_compare 0 c1 c2
-    }
   }
 /** Compare epressions. Variables come before other expressions. */
 and exp_compare (e1: exp) (e2: exp) :int =>
@@ -1148,6 +1123,31 @@ and exp_compare (e1: exp) (e2: exp) :int =>
   | (Exn e1, Exn e2) => exp_compare e1 e2
   | (Exn _, _) => (-1)
   | (_, Exn _) => 1
+  | (Closure {name: n1, captured_vars: c1}, Closure {name: n2, captured_vars: c2}) =>
+    let captured_var_compare acc (e1, pvar1, typ1) (e2, pvar2, typ2) =>
+      if (acc != 0) {
+        acc
+      } else {
+        let n = exp_compare e1 e2;
+        if (n != 0) {
+          n
+        } else {
+          let n = Pvar.compare pvar1 pvar2;
+          if (n != 0) {
+            n
+          } else {
+            Typ.compare typ1 typ2
+          }
+        }
+      };
+    let n = Procname.compare n1 n2;
+    if (n != 0) {
+      n
+    } else {
+      IList.fold_left2 captured_var_compare 0 c1 c2
+    }
+  | (Closure _, _) => (-1)
+  | (_, Closure _) => 1
   | (Const c1, Const c2) => const_compare c1 c2
   | (Const _, _) => (-1)
   | (_, Const _) => 1
@@ -1764,10 +1764,6 @@ and pp_const pe f =>
   | Cattribute att => F.fprintf f "%s" (attribute_to_string pe att)
   | Cclass c => F.fprintf f "%a" Ident.pp_name c
   | Cptr_to_fld fn _ => F.fprintf f "__fld_%a" Ident.pp_fieldname fn
-  | Cclosure {name, captured_vars} => {
-      let id_exps = IList.map (fun (id_exp, _, _) => id_exp) captured_vars;
-      F.fprintf f "(%a)" (pp_comma_seq (pp_exp pe)) [Const (Cfun name), ...id_exps]
-    }
 /** Pretty print an expression. */
 and _pp_exp pe0 pp_t f e0 => {
   let (pe, changed) = color_pre_wrapper pe0 f e0;
@@ -1803,6 +1799,9 @@ and _pp_exp pe0 pp_t f e0 => {
     | BinOp op (Const c) e2 when Config.smt_output => print_binop_stm_output (Const c) op e2
     | BinOp op e1 e2 => F.fprintf f "(%a %s %a)" pp_exp e1 (str_binop pe op) pp_exp e2
     | Exn e => F.fprintf f "EXN %a" pp_exp e
+    | Closure {name, captured_vars} =>
+      let id_exps = IList.map (fun (id_exp, _, _) => id_exp) captured_vars;
+      F.fprintf f "(%a)" (pp_comma_seq pp_exp) [Const (Cfun name), ...id_exps]
     | Lvar pv => Pvar.pp pe f pv
     | Lfield e fld _ => F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld
     | Lindex e1 e2 => F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
@@ -2685,7 +2684,8 @@ let rec root_of_lexp lexp =>
   | Cast _ e => root_of_lexp e
   | UnOp _
   | BinOp _
-  | Exn _ => lexp
+  | Exn _
+  | Closure _ => lexp
   | Lvar _ => lexp
   | Lfield e _ _ => root_of_lexp e
   | Lindex e _ => root_of_lexp e
@@ -2767,7 +2767,7 @@ let rec exp_fpv =
   fun
   | Var _ => []
   | Exn e => exp_fpv e
-  | Const (Cclosure {captured_vars}) => IList.map (fun (_, pvar, _) => pvar) captured_vars
+  | Closure {captured_vars} => IList.map (fun (_, pvar, _) => pvar) captured_vars
   | Const _ => []
   | Cast _ e
   | UnOp _ e _ => exp_fpv e
@@ -2958,8 +2958,7 @@ let rec exp_fav_add fav =>
   fun
   | Var id => fav ++ id
   | Exn e => exp_fav_add fav e
-  | Const (Cclosure {captured_vars}) =>
-    IList.iter (fun (e, _, _) => exp_fav_add fav e) captured_vars
+  | Closure {captured_vars} => IList.iter (fun (e, _, _) => exp_fav_add fav e) captured_vars
   | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _) => ()
   | Cast _ e
   | UnOp _ e _ => exp_fav_add fav e
@@ -3364,7 +3363,7 @@ let rec exp_sub_ids (f: Ident.t => exp) exp =>
     } else {
       Exn e'
     }
-  | Const (Cclosure c) =>
+  | Closure c =>
     let captured_vars =
       IList.map_changed
         (
@@ -3381,7 +3380,7 @@ let rec exp_sub_ids (f: Ident.t => exp) exp =>
     if (captured_vars === c.captured_vars) {
       exp
     } else {
-      Const (Cclosure {...c, captured_vars})
+      Closure {...c, captured_vars}
     }
   | Const (Cattribute (Aobjc_null e)) =>
     let e' = exp_sub_ids f e;
@@ -4050,7 +4049,7 @@ let exp_get_vars exp => {
     | Exn e => exp_get_vars_ e vars
     | BinOp _ e1 e2
     | Lindex e1 e2 => exp_get_vars_ e1 vars |> exp_get_vars_ e2
-    | Const (Cclosure {captured_vars}) =>
+    | Closure {captured_vars} =>
       IList.fold_left
         (fun vars_acc (captured_exp, _, _) => exp_get_vars_ captured_exp vars_acc)
         vars
@@ -4074,6 +4073,7 @@ let exp_get_offsets exp => {
     | UnOp _
     | BinOp _
     | Exn _
+    | Closure _
     | Lvar _
     | Sizeof _ None _ => offlist_past
     | Sizeof _ (Some l) _ => f offlist_past l

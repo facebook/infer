@@ -200,7 +200,6 @@ and const =
   | Cclass of Ident.name /** class constant */
   | Cptr_to_fld of Ident.fieldname Typ.t /** pointer to field constant,
                                              and type of the surrounding Csu.t type */
-  | Cclosure of closure /** anonymous function */
 /** dynamically determined length of an array value, if any */
 and dynamic_length = option exp
 /** Program expressions. */
@@ -213,6 +212,8 @@ and exp =
   | BinOp of binop exp exp
   /** Exception */
   | Exn of exp
+  /** Anonymous function */
+  | Closure of closure
   /** Constants */
   | Const of const
   /** Type cast */

@@ -352,6 +352,8 @@ let rec prune ~positive condition prop =
       prune_ne ~positive condition Sil.exp_zero prop
   | Sil.Exn _ ->
       assert false
+  | Sil.Closure _ ->
+      assert false
 
 and prune_inter ~positive condition1 condition2 prop =
   let res = ref Propset.empty in
@@ -999,7 +1001,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
     | Sil.Call (ret, exp, par, loc, call_flags) ->
         let exp' = Prop.exp_normalize_prop prop_ exp in
         let instr' = match exp' with
-          | Sil.Const (Sil.Cclosure c) ->
+          | Sil.Closure c ->
               let proc_exp = Sil.Const (Sil.Cfun c.name) in
               let proc_exp' = Prop.exp_normalize_prop prop_ proc_exp in
               let par' = IList.map (fun (id_exp, _, typ) -> (id_exp, typ)) c.captured_vars in

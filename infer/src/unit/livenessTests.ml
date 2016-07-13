@@ -25,7 +25,7 @@ let tests =
     let mk_captured_var str = (Sil.Var (ident_of_str str), pvar_of_str str, dummy_typ) in
     let captured_vars = IList.map mk_captured_var captured_pvars in
     let closure = { Sil.name=dummy_procname; captured_vars; } in
-    Sil.Const (Cclosure closure) in
+    Sil.Closure closure in
   let unknown_cond =
     (* don't want to use AnalyzerTest.unknown_exp because we'll treat it as a live var! *)
     Sil.exp_zero in

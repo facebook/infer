@@ -174,7 +174,7 @@ struct
     let rec f es =
       match es with
       | [] -> []
-      | (Sil.Const (Sil.Cclosure { name; captured_vars}),
+      | (Sil.Closure {name; captured_vars},
          (Typ.Tptr((Typ.Tfun _), _ ) as t)) :: es' ->
           let app =
             let function_name = make_function_name t name in
@@ -2023,7 +2023,7 @@ struct
         Cfg.set_procname_priority context.cfg block_pname;
         let captured_vars =
           IList.map2 (fun id (pvar, typ) -> (Sil.Var id, pvar, typ)) ids captureds in
-        let closure = Sil.Cclosure { name=block_pname; captured_vars } in
+        let closure = Sil.Closure { name=block_pname; captured_vars } in
         let block_name = Procname.to_string block_pname in
         let static_vars = CContext.static_vars_for_block context block_pname in
         let captured_static_vars = captureds @ static_vars in
@@ -2031,7 +2031,7 @@ struct
           allocate_block trans_state block_name captured_static_vars loc in
         { empty_res_trans with
           instrs = alloc_block_instr @ instrs;
-          exps = [(Sil.Const closure, typ)];
+          exps = [(closure, typ)];
         }
     | _ -> assert false
 
@@ -2072,8 +2072,8 @@ struct
     (* defining procedure. We add an edge in the call graph.*)
     Cg.add_edge context.cg procname lambda_pname;
     let captured_vars = [] in  (* TODO *)
-    let closure = Sil.Cclosure { name = lambda_pname; captured_vars } in
-    { empty_res_trans with exps = [(Sil.Const closure, typ)] }
+    let closure = Sil.Closure { name = lambda_pname; captured_vars } in
+    { empty_res_trans with exps = [(closure, typ)] }
 
   and cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info =
     let context = trans_state.context in

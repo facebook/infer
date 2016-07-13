@@ -70,6 +70,8 @@ let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
       None (* Naive *)
   | Sil.Exn _, _ | _, Sil.Exn _ ->
       check_equal sub vars e1 e2
+  | Sil.Closure _, _ | _, Sil.Closure _ ->
+      check_equal sub vars e1 e2
   | Sil.Lvar _, _ | _, Sil.Lvar _ ->
       check_equal sub vars e1 e2
   | Sil.Lfield(e1', fld1, _), Sil.Lfield(e2', fld2, _) when (Ident.fieldname_equal fld1 fld2) ->
