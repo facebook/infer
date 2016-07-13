@@ -350,7 +350,7 @@ let generic_strexp_abstract
 (** Return [true] if there's a pointer to the index *)
 let index_is_pointed_to (p: Prop.normal Prop.t) (path: StrexpMatch.path) (index: Sil.exp) : bool =
   let indices =
-    let index_plus_one = Sil.BinOp(Sil.PlusA, index, Sil.exp_one) in
+    let index_plus_one = Sil.BinOp(Binop.PlusA, index, Sil.exp_one) in
     [index; index_plus_one] in
   let add_index_to_paths =
     let elist_path = StrexpMatch.path_to_exps path in
@@ -387,8 +387,8 @@ let blur_array_index
       let sigma' = StrexpMatch.replace_index false matched index fresh_index in
       Prop.replace_sigma sigma' p2 in
     let p4 =
-      let index_next = Sil.BinOp(Sil.PlusA, index, Sil.exp_one) in
-      let fresh_index_next = Sil.BinOp (Sil.PlusA, fresh_index, Sil.exp_one) in
+      let index_next = Sil.BinOp(Binop.PlusA, index, Sil.exp_one) in
+      let fresh_index_next = Sil.BinOp (Binop.PlusA, fresh_index, Sil.exp_one) in
       let map = [(index, fresh_index); (index_next, fresh_index_next)] in
       prop_replace_path_index p3 path map in
     Prop.normalize p4

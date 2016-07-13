@@ -118,8 +118,8 @@ module Match = struct
     | Some x -> match_elem env x y
 
   let binop_match op1 op2 = match op1, op2 with
-    | Sil.Eq, "==" -> true
-    | Sil.Ne, "!=" -> true
+    | Binop.Eq, "==" -> true
+    | Binop.Ne, "!=" -> true
     | _ -> false
 
   let rec cond_match env idenv cond (ae1, op, ae2) = match cond with
@@ -127,10 +127,10 @@ module Match = struct
         let e1 = Idenv.expand_expr idenv _e1 in
         let e2 = Idenv.expand_expr idenv _e2 in
         binop_match bop op && exp_match env ae1 (Vval e1) && exp_match env ae2 (Vval e2)
-    | Sil.UnOp (Unop.LNot, (Sil.BinOp (Sil.Eq, e1, e2)), _) ->
-        cond_match env idenv (Sil.BinOp (Sil.Ne, e1, e2)) (ae1, op, ae2)
-    | Sil.UnOp (Unop.LNot, (Sil.BinOp (Sil.Ne, e1, e2)), _) ->
-        cond_match env idenv (Sil.BinOp (Sil.Eq, e1, e2)) (ae1, op, ae2)
+    | Sil.UnOp (Unop.LNot, (Sil.BinOp (Binop.Eq, e1, e2)), _) ->
+        cond_match env idenv (Sil.BinOp (Binop.Ne, e1, e2)) (ae1, op, ae2)
+    | Sil.UnOp (Unop.LNot, (Sil.BinOp (Binop.Ne, e1, e2)), _) ->
+        cond_match env idenv (Sil.BinOp (Binop.Eq, e1, e2)) (ae1, op, ae2)
     | _ -> false
 
   (** Iterate over the instructions of the linearly succ nodes. *)

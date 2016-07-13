@@ -244,10 +244,10 @@ module BooleanVars = struct
     (** Normalize a boolean condition. *)
     let normalize_condition cond_e =
       match cond_e with
-      | Sil.UnOp (Unop.LNot, Sil.BinOp (Sil.Eq, e1, e2), _) ->
-          Sil.BinOp (Sil.Ne, e1, e2)
-      | Sil.UnOp (Unop.LNot, Sil.BinOp (Sil.Ne, e1, e2), _) ->
-          Sil.BinOp (Sil.Eq, e1, e2)
+      | Sil.UnOp (Unop.LNot, Sil.BinOp (Binop.Eq, e1, e2), _) ->
+          Sil.BinOp (Binop.Ne, e1, e2)
+      | Sil.UnOp (Unop.LNot, Sil.BinOp (Binop.Ne, e1, e2), _) ->
+          Sil.BinOp (Binop.Eq, e1, e2)
       | _ -> cond_e in
 
     (** Normalize an instruction. *)
@@ -258,7 +258,7 @@ module BooleanVars = struct
       | instr -> instr in
 
     match normalize_instr instr with
-    | Sil.Prune (Sil.BinOp (Sil.Eq, _cond_e, Sil.Const (Const.Cint i)), _, _, _)
+    | Sil.Prune (Sil.BinOp (Binop.Eq, _cond_e, Sil.Const (Const.Cint i)), _, _, _)
       when IntLit.iszero i ->
         let cond_e = Idenv.expand_expr idenv _cond_e in
         let state' = match exp_boolean_var cond_e with
@@ -267,7 +267,7 @@ module BooleanVars = struct
               State.prune state name false
           | None -> state in
         state'
-    | Sil.Prune (Sil.BinOp (Sil.Ne, _cond_e, Sil.Const (Const.Cint i)), _, _, _)
+    | Sil.Prune (Sil.BinOp (Binop.Ne, _cond_e, Sil.Const (Const.Cint i)), _, _, _)
       when IntLit.iszero i ->
         let cond_e = Idenv.expand_expr idenv _cond_e in
         let state' = match exp_boolean_var cond_e with

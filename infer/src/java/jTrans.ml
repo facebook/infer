@@ -179,23 +179,23 @@ let get_constant (c : JBir.const) =
 
 let get_binop binop =
   match binop with
-  | JBir.Add _ -> Sil.PlusA
-  | JBir.Sub _ -> Sil.MinusA
-  | JBir.Mult _ -> Sil.Mult
-  | JBir.Div _ -> Sil.Div
-  | JBir.Rem _ -> Sil.Mod
-  | JBir.IAnd -> Sil.BAnd
-  | JBir.IShl -> Sil.Shiftlt
-  | JBir.IShr -> Sil.Shiftrt
-  | JBir.IOr -> Sil.BOr
-  | JBir.IXor -> Sil.BXor
+  | JBir.Add _ -> Binop.PlusA
+  | JBir.Sub _ -> Binop.MinusA
+  | JBir.Mult _ -> Binop.Mult
+  | JBir.Div _ -> Binop.Div
+  | JBir.Rem _ -> Binop.Mod
+  | JBir.IAnd -> Binop.BAnd
+  | JBir.IShl -> Binop.Shiftlt
+  | JBir.IShr -> Binop.Shiftrt
+  | JBir.IOr -> Binop.BOr
+  | JBir.IXor -> Binop.BXor
   | JBir.IUshr ->
       raise (Frontend_error "Unsigned right shift operator")
-  | JBir.LShl -> Sil.Shiftlt
-  | JBir.LShr -> Sil.Shiftrt
-  | JBir.LAnd -> Sil.BAnd
-  | JBir.LOr -> Sil.BOr
-  | JBir.LXor -> Sil.BXor
+  | JBir.LShl -> Binop.Shiftlt
+  | JBir.LShr -> Binop.Shiftrt
+  | JBir.LAnd -> Binop.BAnd
+  | JBir.LOr -> Binop.BOr
+  | JBir.LXor -> Binop.BXor
   | JBir.LUshr ->
       raise (Frontend_error "Unsigned right shift operator")
   | JBir.CMP _ ->
@@ -205,12 +205,12 @@ let get_binop binop =
 
 let get_test_operator op =
   match op with
-  | `Eq -> Sil.Eq
-  | `Ge -> Sil.Ge
-  | `Gt -> Sil.Gt
-  | `Le -> Sil.Le
-  | `Lt -> Sil.Lt
-  | `Ne -> Sil.Ne
+  | `Eq -> Binop.Eq
+  | `Ge -> Binop.Ge
+  | `Gt -> Binop.Gt
+  | `Le -> Binop.Le
+  | `Lt -> Binop.Lt
+  | `Ne -> Binop.Ne
 
 type defined_status =
   | Defined of Cfg.Procdesc.t
@@ -762,7 +762,7 @@ let is_this expr =
 let assume_not_null loc sil_expr =
   let builtin_infer_assume = Sil.Const (Const.Cfun ModelBuiltins.__infer_assume) in
   let not_null_expr =
-    Sil.BinOp (Sil.Ne, sil_expr, Sil.exp_null) in
+    Sil.BinOp (Binop.Ne, sil_expr, Sil.exp_null) in
   let assume_call_flag = { Sil.cf_default with Sil.cf_noreturn = true; } in
   let call_args = [(not_null_expr, Typ.Tint Typ.IBool)] in
   Sil.Call ([], builtin_infer_assume, call_args, loc, assume_call_flag)
@@ -1003,12 +1003,12 @@ let rec instruction context pc instr : translation =
     | JBir.Check (JBir.CheckNullPointer expr) when Config.report_runtime_exceptions ->
         let (instrs, sil_expr, _) = expression context pc expr in
         let not_null_node =
-          let sil_not_null = Sil.BinOp (Sil.Ne, sil_expr, Sil.exp_null) in
+          let sil_not_null = Sil.BinOp (Binop.Ne, sil_expr, Sil.exp_null) in
           let sil_prune_not_null = Sil.Prune (sil_not_null, loc, true, Sil.Ik_if)
           and not_null_kind = Cfg.Node.Prune_node (true, Sil.Ik_if, "Not null") in
           create_node not_null_kind (instrs @ [sil_prune_not_null]) in
         let throw_npe_node =
-          let sil_is_null = Sil.BinOp (Sil.Eq, sil_expr, Sil.exp_null) in
+          let sil_is_null = Sil.BinOp (Binop.Eq, sil_expr, Sil.exp_null) in
           let sil_prune_null = Sil.Prune (sil_is_null, loc, true, Sil.Ik_if)
           and npe_kind = Cfg.Node.Stmt_node "Throw NPE"
           and npe_cn = JBasics.make_cn JConfig.npe_cl in
@@ -1046,10 +1046,10 @@ let rec instruction context pc instr : translation =
           let sil_assume_in_bound =
             let sil_in_bound =
               let sil_positive_index =
-                Sil.BinOp (Sil.Ge, sil_index_expr, Sil.Const (Const.Cint IntLit.zero))
+                Sil.BinOp (Binop.Ge, sil_index_expr, Sil.Const (Const.Cint IntLit.zero))
               and sil_less_than_length =
-                Sil.BinOp (Sil.Lt, sil_index_expr, sil_length_expr) in
-              Sil.BinOp (Sil.LAnd, sil_positive_index, sil_less_than_length) in
+                Sil.BinOp (Binop.Lt, sil_index_expr, sil_length_expr) in
+              Sil.BinOp (Binop.LAnd, sil_positive_index, sil_less_than_length) in
             Sil.Prune (sil_in_bound, loc, true, Sil.Ik_if) in
           create_node in_bound_node_kind (instrs @ [sil_assume_in_bound])
 
@@ -1059,10 +1059,10 @@ let rec instruction context pc instr : translation =
           let sil_assume_out_of_bound =
             let sil_out_of_bound =
               let sil_negative_index =
-                Sil.BinOp (Sil.Lt, sil_index_expr, Sil.Const (Const.Cint IntLit.zero))
+                Sil.BinOp (Binop.Lt, sil_index_expr, Sil.Const (Const.Cint IntLit.zero))
               and sil_greater_than_length =
-                Sil.BinOp (Sil.Gt, sil_index_expr, sil_length_expr) in
-              Sil.BinOp (Sil.LOr, sil_negative_index, sil_greater_than_length) in
+                Sil.BinOp (Binop.Gt, sil_index_expr, sil_length_expr) in
+              Sil.BinOp (Binop.LOr, sil_negative_index, sil_greater_than_length) in
             Sil.Prune (sil_out_of_bound, loc, true, Sil.Ik_if) in
           let out_of_bound_cn = JBasics.make_cn JConfig.out_of_bound_cl in
           let class_type = JTransType.get_class_type program tenv out_of_bound_cn
@@ -1095,12 +1095,12 @@ let rec instruction context pc instr : translation =
         let call = Sil.Call([ret_id], check_cast, args, loc, Sil.cf_default) in
         let res_ex = Sil.Var ret_id in
         let is_instance_node =
-          let check_is_false = Sil.BinOp (Sil.Ne, res_ex, Sil.exp_zero) in
+          let check_is_false = Sil.BinOp (Binop.Ne, res_ex, Sil.exp_zero) in
           let asssume_instance_of = Sil.Prune (check_is_false, loc, true, Sil.Ik_if)
           and instance_of_kind = Cfg.Node.Prune_node (true, Sil.Ik_if, "Is instance") in
           create_node instance_of_kind (instrs @ [call; asssume_instance_of])
         and throw_cast_exception_node =
-          let check_is_true = Sil.BinOp (Sil.Ne, res_ex, Sil.exp_one) in
+          let check_is_true = Sil.BinOp (Binop.Ne, res_ex, Sil.exp_one) in
           let asssume_not_instance_of = Sil.Prune (check_is_true, loc, true, Sil.Ik_if)
           and throw_cast_exception_kind = Cfg.Node.Stmt_node "Class cast exception"
           and cce_cn = JBasics.make_cn JConfig.cce_cl in

@@ -36,33 +36,6 @@ let get_sentinel_func_attribute_value attr_list =>
   | [] => None
   };
 
-
-/** Binary operations */
-type binop =
-  | PlusA /** arithmetic + */
-  | PlusPI /** pointer + integer */
-  | MinusA /** arithmetic - */
-  | MinusPI /** pointer - integer */
-  | MinusPP /** pointer - pointer */
-  | Mult /** * */
-  | Div /** / */
-  | Mod /** % */
-  | Shiftlt /** shift left */
-  | Shiftrt /** shift right */
-  | Lt /** <  (arithmetic comparison) */
-  | Gt /** >  (arithmetic comparison) */
-  | Le /** <= (arithmetic comparison) */
-  | Ge /** >  (arithmetic comparison) */
-  | Eq /** == (arithmetic comparison) */
-  | Ne /** != (arithmetic comparison) */
-  | BAnd /** bitwise and */
-  | BXor /** exclusive-or */
-  | BOr /** inclusive-or */
-  | LAnd /** logical and. Does not always evaluate both operands. */
-  | LOr /** logical or. Does not always evaluate both operands. */
-  | PtrFld /** field offset via pointer to field: takes the address of a
-               Csu.t and a Cptr_to_fld constant to form an Lfield expression (see prop.ml) */;
-
 type mem_kind =
   | Mmalloc /** memory allocated with malloc */
   | Mnew /** memory allocated with new */
@@ -411,7 +384,7 @@ type taint_info = {taint_source: Procname.t, taint_kind: taint_kind};
 /** expression representing the result of decompilation */
 type dexp =
   | Darray of dexp dexp
-  | Dbinop of binop dexp dexp
+  | Dbinop of Binop.t dexp dexp
   | Dconst of Const.t
   | Dsizeof of Typ.t (option dexp) Subtype.t
   | Dderef of dexp
@@ -472,7 +445,7 @@ and exp =
   /** Unary operator with type of the result if known */
   | UnOp of Unop.t exp (option Typ.t)
   /** Binary operator */
-  | BinOp of binop exp exp
+  | BinOp of Binop.t exp exp
   /** Exception */
   | Exn of exp
   /** Anonymous function */
@@ -707,127 +680,12 @@ let exp_is_this =
   | Lvar pvar => Pvar.is_this pvar
   | _ => false;
 
-let binop_compare o1 o2 =>
-  switch (o1, o2) {
-  | (PlusA, PlusA) => 0
-  | (PlusA, _) => (-1)
-  | (_, PlusA) => 1
-  | (PlusPI, PlusPI) => 0
-  | (PlusPI, _) => (-1)
-  | (_, PlusPI) => 1
-  | (MinusA, MinusA) => 0
-  | (MinusA, _) => (-1)
-  | (_, MinusA) => 1
-  | (MinusPI, MinusPI) => 0
-  | (MinusPI, _) => (-1)
-  | (_, MinusPI) => 1
-  | (MinusPP, MinusPP) => 0
-  | (MinusPP, _) => (-1)
-  | (_, MinusPP) => 1
-  | (Mult, Mult) => 0
-  | (Mult, _) => (-1)
-  | (_, Mult) => 1
-  | (Div, Div) => 0
-  | (Div, _) => (-1)
-  | (_, Div) => 1
-  | (Mod, Mod) => 0
-  | (Mod, _) => (-1)
-  | (_, Mod) => 1
-  | (Shiftlt, Shiftlt) => 0
-  | (Shiftlt, _) => (-1)
-  | (_, Shiftlt) => 1
-  | (Shiftrt, Shiftrt) => 0
-  | (Shiftrt, _) => (-1)
-  | (_, Shiftrt) => 1
-  | (Lt, Lt) => 0
-  | (Lt, _) => (-1)
-  | (_, Lt) => 1
-  | (Gt, Gt) => 0
-  | (Gt, _) => (-1)
-  | (_, Gt) => 1
-  | (Le, Le) => 0
-  | (Le, _) => (-1)
-  | (_, Le) => 1
-  | (Ge, Ge) => 0
-  | (Ge, _) => (-1)
-  | (_, Ge) => 1
-  | (Eq, Eq) => 0
-  | (Eq, _) => (-1)
-  | (_, Eq) => 1
-  | (Ne, Ne) => 0
-  | (Ne, _) => (-1)
-  | (_, Ne) => 1
-  | (BAnd, BAnd) => 0
-  | (BAnd, _) => (-1)
-  | (_, BAnd) => 1
-  | (BXor, BXor) => 0
-  | (BXor, _) => (-1)
-  | (_, BXor) => 1
-  | (BOr, BOr) => 0
-  | (BOr, _) => (-1)
-  | (_, BOr) => 1
-  | (LAnd, LAnd) => 0
-  | (LAnd, _) => (-1)
-  | (_, LAnd) => 1
-  | (LOr, LOr) => 0
-  | (LOr, _) => (-1)
-  | (_, LOr) => 1
-  | (PtrFld, PtrFld) => 0
-  };
-
-let binop_equal o1 o2 => binop_compare o1 o2 == 0;
-
-
-/** This function returns true if the operation is injective
-    wrt. each argument: op(e,-) and op(-, e) is injective for all e.
-    The return value false means "don't know". */
-let binop_injective =
-  fun
-  | PlusA
-  | PlusPI
-  | MinusA
-  | MinusPI
-  | MinusPP => true
-  | _ => false;
-
-
-/** This function returns true if the operation can be inverted. */
-let binop_invertible =
-  fun
-  | PlusA
-  | PlusPI
-  | MinusA
-  | MinusPI => true
-  | _ => false;
-
 
 /** This function inverts an injective binary operator
     with respect to the first argument. It returns an expression [e'] such that
     BinOp([binop], [e'], [exp1]) = [exp2]. If the [binop] operation is not invertible,
     the function raises an exception by calling "assert false". */
-let binop_invert bop e1 e2 => {
-  let inverted_bop =
-    switch bop {
-    | PlusA => MinusA
-    | PlusPI => MinusPI
-    | MinusA => PlusA
-    | MinusPI => PlusPI
-    | _ => assert false
-    };
-  BinOp inverted_bop e2 e1
-};
-
-
-/** This function returns true if 0 is the right unit of [binop].
-    The return value false means "don't know". */
-let binop_is_zero_runit =
-  fun
-  | PlusA
-  | PlusPI
-  | MinusA
-  | MinusPI
-  | MinusPP => true
-  | _ => false;
+let binop_invert bop e1 e2 => BinOp (Binop.invert bop) e2 e1;
 
 let path_pos_compare (pn1, nid1) (pn2, nid2) => {
   let n = Procname.compare pn1 pn2;
@@ -1056,7 +914,7 @@ let rec exp_compare (e1: exp) (e2: exp) :int =>
   | (UnOp _, _) => (-1)
   | (_, UnOp _) => 1
   | (BinOp o1 e1 f1, BinOp o2 e2 f2) =>
-    let n = binop_compare o1 o2;
+    let n = Binop.compare o1 o2;
     if (n != 0) {
       n
     } else {
@@ -1463,54 +1321,6 @@ let pp_seq_diff pp pe0 f =>
     doit
   };
 
-let text_binop =
-  fun
-  | PlusA => "+"
-  | PlusPI => "+"
-  | MinusA
-  | MinusPP => "-"
-  | MinusPI => "-"
-  | Mult => "*"
-  | Div => "/"
-  | Mod => "%"
-  | Shiftlt => "<<"
-  | Shiftrt => ">>"
-  | Lt => "<"
-  | Gt => ">"
-  | Le => "<="
-  | Ge => ">="
-  | Eq => "=="
-  | Ne => "!="
-  | BAnd => "&"
-  | BXor => "^"
-  | BOr => "|"
-  | LAnd => "&&"
-  | LOr => "||"
-  | PtrFld => "_ptrfld_";
-
-
-/** Pretty print a binary operator. */
-let str_binop pe binop =>
-  switch pe.pe_kind {
-  | PP_HTML =>
-    switch binop {
-    | Ge => " &gt;= "
-    | Le => " &lt;= "
-    | Gt => " &gt; "
-    | Lt => " &lt; "
-    | Shiftlt => " &lt;&lt; "
-    | Shiftrt => " &gt;&gt; "
-    | _ => text_binop binop
-    }
-  | PP_LATEX =>
-    switch binop {
-    | Ge => " \\geq "
-    | Le => " \\leq "
-    | _ => text_binop binop
-    }
-  | _ => text_binop binop
-  };
-
 let java () => !Config.curr_language == Config.Java;
 
 let eradicate_java () => Config.eradicate && java ();
@@ -1520,7 +1330,7 @@ let eradicate_java () => Config.eradicate && java ();
 let rec dexp_to_string =
   fun
   | Darray de1 de2 => dexp_to_string de1 ^ "[" ^ dexp_to_string de2 ^ "]"
-  | Dbinop op de1 de2 => "(" ^ dexp_to_string de1 ^ str_binop pe_text op ^ dexp_to_string de2 ^ ")"
+  | Dbinop op de1 de2 => "(" ^ dexp_to_string de1 ^ Binop.str pe_text op ^ dexp_to_string de2 ^ ")"
   | Dconst (Cfun pn) => Procname.to_simplified_string pn
   | Dconst c => Const.to_string c
   | Dderef de => "*" ^ dexp_to_string de
@@ -1660,11 +1470,11 @@ let attribute_to_string pe =>
           ""
         };
       name ^
-        str_binop pe Lt ^
+        Binop.str pe Lt ^
         Procname.to_string ra.ra_pname ^
         ":" ^
         string_of_int ra.ra_loc.Location.line ^
-        str_binop pe Gt ^
+        Binop.str pe Gt ^
         str_vpath
     }
   | Aautorelease => "AUTORELEASE"
@@ -1675,13 +1485,13 @@ let attribute_to_string pe =>
         | DAaddr_stack_var => "ADDR_STACK"
         | DAminusone => "MINUS1"
         };
-      "DANGL" ^ str_binop pe Lt ^ dks ^ str_binop pe Gt
+      "DANGL" ^ Binop.str pe Lt ^ dks ^ Binop.str pe Gt
     }
   | Aundef pn _ loc _ =>
     "UND" ^
-      str_binop pe Lt ^
+      Binop.str pe Lt ^
       Procname.to_string pn ^
-      str_binop pe Gt ^
+      Binop.str pe Gt ^
       ":" ^
       string_of_int loc.Location.line
   | Ataint {taint_source} => "TAINTED[" ^ Procname.to_string taint_source ^ "]"
@@ -1692,7 +1502,7 @@ let attribute_to_string pe =>
   | Aobjc_null v fs =>
     "OBJC_NULL[" ^
       String.concat "." [Pvar.to_string v, ...IList.map Ident.fieldname_to_string fs] ^ "]"
-  | Aretval pn _ => "RET" ^ str_binop pe Lt ^ Procname.to_string pn ^ str_binop pe Gt
+  | Aretval pn _ => "RET" ^ Binop.str pe Lt ^ Procname.to_string pn ^ Binop.str pe Gt
   | Aobserver => "OBSERVER"
   | Aunsubscribed_observer => "UNSUBSCRIBED_OBSERVER";
 
@@ -1713,16 +1523,16 @@ let rec _pp_exp pe0 pp_t f e0 => {
   } else {
     let pp_exp = _pp_exp pe pp_t;
     let print_binop_stm_output e1 op e2 =>
-      switch op {
+      switch (op: Binop.t) {
       | Eq
       | Ne
       | PlusA
-      | Mult => F.fprintf f "(%a %s %a)" pp_exp e2 (str_binop pe op) pp_exp e1
-      | Lt => F.fprintf f "(%a %s %a)" pp_exp e2 (str_binop pe Gt) pp_exp e1
-      | Gt => F.fprintf f "(%a %s %a)" pp_exp e2 (str_binop pe Lt) pp_exp e1
-      | Le => F.fprintf f "(%a %s %a)" pp_exp e2 (str_binop pe Ge) pp_exp e1
-      | Ge => F.fprintf f "(%a %s %a)" pp_exp e2 (str_binop pe Le) pp_exp e1
-      | _ => F.fprintf f "(%a %s %a)" pp_exp e1 (str_binop pe op) pp_exp e2
+      | Mult => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe op) pp_exp e1
+      | Lt => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Gt) pp_exp e1
+      | Gt => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Lt) pp_exp e1
+      | Le => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Ge) pp_exp e1
+      | Ge => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Le) pp_exp e1
+      | _ => F.fprintf f "(%a %s %a)" pp_exp e1 (Binop.str pe op) pp_exp e2
       };
     switch e {
     | Var id => (Ident.pp pe) f id
@@ -1730,7 +1540,7 @@ let rec _pp_exp pe0 pp_t f e0 => {
     | Cast typ e => F.fprintf f "(%a)%a" pp_t typ pp_exp e
     | UnOp op e _ => F.fprintf f "%s%a" (Unop.str op) pp_exp e
     | BinOp op (Const c) e2 when Config.smt_output => print_binop_stm_output (Const c) op e2
-    | BinOp op e1 e2 => F.fprintf f "(%a %s %a)" pp_exp e1 (str_binop pe op) pp_exp e2
+    | BinOp op e1 e2 => F.fprintf f "(%a %s %a)" pp_exp e1 (Binop.str pe op) pp_exp e2
     | Exn e => F.fprintf f "EXN %a" pp_exp e
     | Closure {name, captured_vars} =>
       let id_exps = IList.map (fun (id_exp, _, _) => id_exp) captured_vars;
@@ -2282,7 +2092,7 @@ let pp_inst pe f inst => {
   if (pe.pe_kind === PP_HTML) {
     F.fprintf f " %a%s%a" Io_infer.Html.pp_start_color Orange str Io_infer.Html.pp_end_color ()
   } else {
-    F.fprintf f "%s%s%s" (str_binop pe Lt) str (str_binop pe Gt)
+    F.fprintf f "%s%s%s" (Binop.str pe Lt) str (Binop.str pe Gt)
   }
 };
 
@@ -3650,7 +3460,7 @@ let rec exp_compare_structural e1 e2 exp_map => {
       )
     }
   | (BinOp o1 e1 f1, BinOp o2 e2 f2) =>
-    let n = binop_compare o1 o2;
+    let n = Binop.compare o1 o2;
     if (n != 0) {
       (n, exp_map)
     } else {

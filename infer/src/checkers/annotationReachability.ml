@@ -288,10 +288,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ -> false
 
   let prunes_tracking_var astate = function
-    | Sil.BinOp (Sil.Eq, lhs, rhs)
+    | Sil.BinOp (Binop.Eq, lhs, rhs)
       when is_tracking_exp astate lhs ->
         Sil.exp_equal rhs Sil.exp_one
-    | Sil.UnOp (Unop.LNot, Sil.BinOp (Sil.Eq, lhs, rhs), _)
+    | Sil.UnOp (Unop.LNot, Sil.BinOp (Binop.Eq, lhs, rhs), _)
       when is_tracking_exp astate lhs ->
         Sil.exp_equal rhs Sil.exp_zero
     | _ ->

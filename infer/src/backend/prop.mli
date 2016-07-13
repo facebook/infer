@@ -378,7 +378,7 @@ val prop_expand : normal t -> normal t list
 (** translate a logical and/or operation
     taking care of the non-strict semantics for side effects *)
 val trans_land_lor :
-  Sil.binop -> (Ident.t list * Sil.instr list) * Sil.exp ->
+  Binop.t -> (Ident.t list * Sil.instr list) * Sil.exp ->
   (Ident.t list * Sil.instr list) * Sil.exp -> Location.t ->
   (Ident.t list * Sil.instr list) * Sil.exp
 

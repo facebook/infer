@@ -184,9 +184,9 @@ end = struct
 
   let rec pi_iter do_le do_lt do_neq pi =
     let do_atom a = match a with
-      | Sil.Aeq (Sil.BinOp (Sil.Le, e1, e2), Sil.Const (Const.Cint i)) when IntLit.isone i ->
+      | Sil.Aeq (Sil.BinOp (Binop.Le, e1, e2), Sil.Const (Const.Cint i)) when IntLit.isone i ->
           do_le e1 e2
-      | Sil.Aeq (Sil.BinOp (Sil.Lt, e1, e2), Sil.Const (Const.Cint i)) when IntLit.isone i ->
+      | Sil.Aeq (Sil.BinOp (Binop.Lt, e1, e2), Sil.Const (Const.Cint i)) when IntLit.isone i ->
           do_lt e1 e2
       | Sil.Aeq _ -> ()
       | Sil.Aneq (e1, e2) ->
@@ -220,12 +220,12 @@ end = struct
       | Sil.Var id, Sil.Const (Const.Cint n) ->
           let rng = IdMap.find id ev in
           add_top rng id n
-      | Sil.BinOp (Sil.MinusA, Sil.Var id1, Sil.Var id2), Sil.Const (Const.Cint n) ->
+      | Sil.BinOp (Binop.MinusA, Sil.Var id1, Sil.Var id2), Sil.Const (Const.Cint n) ->
           let rng1 = IdMap.find id1 ev in
           let rng2 = IdMap.find id2 ev in
           update_top rng1 id1 (rng2.top +++ (Some n));
           update_bottom rng2 id2 (rng1.bottom --- (Some n))
-      | Sil.BinOp (Sil.PlusA, Sil.Var id1, Sil.Var id2), Sil.Const (Const.Cint n) ->
+      | Sil.BinOp (Binop.PlusA, Sil.Var id1, Sil.Var id2), Sil.Const (Const.Cint n) ->
           let rng1 = IdMap.find id1 ev in
           let rng2 = IdMap.find id2 ev in
           update_top rng1 id1 (Some n --- rng2.bottom);
@@ -235,7 +235,7 @@ end = struct
       | Sil.Const (Const.Cint n), Sil.Var id ->
           let rng = IdMap.find id ev in
           add_bottom rng id (n ++ IntLit.one)
-      | Sil.Const (Const.Cint n), Sil.BinOp (Sil.PlusA, Sil.Var id1, Sil.Var id2) ->
+      | Sil.Const (Const.Cint n), Sil.BinOp (Binop.PlusA, Sil.Var id1, Sil.Var id2) ->
           let rng1 = IdMap.find id1 ev in
           let rng2 = IdMap.find id2 ev in
           update_bottom rng1 id1 (Some (n ++ IntLit.one) --- rng2.top);
@@ -254,7 +254,7 @@ end = struct
                do_neq (Sil.exp_int n1) e2
            | None, Some n2 ->
                do_neq e1 (Sil.exp_int n2))
-      | Sil.Var id1, Sil.BinOp(Sil.PlusA, Sil.Var id2, Sil.Const (Const.Cint n)) ->
+      | Sil.Var id1, Sil.BinOp(Binop.PlusA, Sil.Var id2, Sil.Const (Const.Cint n)) ->
           (match solved ev id1, solved ev id2 with
            | None, None -> ()
            | Some _, Some _ -> ()
@@ -298,10 +298,10 @@ let create_idmap sigma : idmap =
     | Sil.Const _, _ -> ()
     | Sil.Var id, _ ->
         extend_idmap id { typ = typ; alloc = false } idmap
-    | Sil.BinOp (Sil.PlusA, e1, e2), _ ->
+    | Sil.BinOp (Binop.PlusA, e1, e2), _ ->
         do_exp e1 typ;
         do_exp e2 typ
-    | Sil.BinOp (Sil.PlusPI, e1, e2), _ ->
+    | Sil.BinOp (Binop.PlusPI, e1, e2), _ ->
         do_exp e1 typ;
         do_exp e2 (Typ.Tint Typ.IULong)
     | Sil.Lfield (e1, _, _), _ ->

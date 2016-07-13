@@ -1226,8 +1226,8 @@ struct
       (* prune_to_short_c is the prune node that is connected directly with the branch *)
       (* where the control flow goes in case of short circuit *)
       let prune_to_s2, prune_to_short_c = (match binop with
-          | Sil.LAnd -> prune_nodes_t, prune_nodes_f
-          | Sil.LOr -> prune_nodes_f, prune_nodes_t
+          | Binop.LAnd -> prune_nodes_t, prune_nodes_f
+          | Binop.LOr -> prune_nodes_f, prune_nodes_t
           | _ -> assert false) in
       IList.iter
         (fun n -> Cfg.Node.set_succs_exn context.cfg n res_trans_s2.root_nodes [])
@@ -1250,8 +1250,8 @@ struct
     match cond with
     | BinaryOperator(_, [s1; s2], _, boi) ->
         (match boi.Clang_ast_t.boi_kind with
-         | `LAnd -> short_circuit (Sil.LAnd) s1 s2
-         | `LOr -> short_circuit (Sil.LOr) s1 s2
+         | `LAnd -> short_circuit (Binop.LAnd) s1 s2
+         | `LOr -> short_circuit (Binop.LOr) s1 s2
          | _ -> no_short_circuit_cond ())
     | ParenExpr(_,[s], _) -> (* condition can be wrapped in parenthesys *)
         cond_trans trans_state s
@@ -1400,7 +1400,7 @@ struct
                   match e_const with
                   | [(head, _)] -> head
                   | _ -> assert false in
-                let sil_eq_cond = Sil.BinOp (Sil.Eq, switch_e_cond', e_const') in
+                let sil_eq_cond = Sil.BinOp (Binop.Eq, switch_e_cond', e_const') in
                 let sil_loc = CLocation.get_sil_location stmt_info context in
                 let true_prune_node =
                   create_prune_node true [(sil_eq_cond, switch_e_cond'_typ)]

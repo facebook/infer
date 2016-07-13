@@ -462,8 +462,8 @@ end = struct
       e
 
   let get_induced_atom acc strict_lower upper e =
-    let ineq_lower = Prop.mk_inequality (Sil.BinOp(Sil.Lt, strict_lower, e)) in
-    let ineq_upper = Prop.mk_inequality (Sil.BinOp(Sil.Le, e, upper)) in
+    let ineq_lower = Prop.mk_inequality (Sil.BinOp(Binop.Lt, strict_lower, e)) in
+    let ineq_upper = Prop.mk_inequality (Sil.BinOp(Binop.Le, e, upper)) in
     ineq_lower:: ineq_upper:: acc
 
   let minus2_to_2 = IList.map IntLit.of_int [-2; -1; 0; 1; 2]
@@ -476,7 +476,7 @@ end = struct
       | Sil.Const (Const.Cint n1), Sil.Const (Const.Cint n1') -> IntLit.eq (n1 ++ n) n1'
       | _ -> false in
     let add_and_gen_eq e e' n =
-      let e_plus_n = Sil.BinOp(Sil.PlusA, e, Sil.exp_int n) in
+      let e_plus_n = Sil.BinOp(Binop.PlusA, e, Sil.exp_int n) in
       Prop.mk_eq e_plus_n e' in
     let rec f_eqs_entry ((e1, e2, e) as entry) eqs_acc t_seen = function
       | [] -> eqs_acc, t_seen
@@ -572,7 +572,7 @@ end = struct
         match e with
         | Sil.Const _ -> []
         | Sil.Lvar _ | Sil.Var _
-        | Sil.BinOp (Sil.PlusA, Sil.Var _, _) ->
+        | Sil.BinOp (Binop.PlusA, Sil.Var _, _) ->
             let is_same_e (e1, e2, _) = Sil.exp_equal e (select side e1 e2) in
             let assoc = IList.filter is_same_e !tbl in
             IList.map (fun (e1, e2, _) -> select side_op e1 e2) assoc
@@ -591,15 +591,15 @@ end = struct
   let lookup_side_induced' side e =
     let res = ref [] in
     let f v = match v, side with
-      | (Sil.BinOp (Sil.PlusA, e1', Sil.Const (Const.Cint i)), e2, e'), Lhs
+      | (Sil.BinOp (Binop.PlusA, e1', Sil.Const (Const.Cint i)), e2, e'), Lhs
         when Sil.exp_equal e e1' ->
           let c' = Sil.exp_int (IntLit.neg i) in
-          let v' = (e1', Sil.BinOp(Sil.PlusA, e2, c'), Sil.BinOp (Sil.PlusA, e', c')) in
+          let v' = (e1', Sil.BinOp(Binop.PlusA, e2, c'), Sil.BinOp (Binop.PlusA, e', c')) in
           res := v'::!res
-      | (e1, Sil.BinOp (Sil.PlusA, e2', Sil.Const (Const.Cint i)), e'), Rhs
+      | (e1, Sil.BinOp (Binop.PlusA, e2', Sil.Const (Const.Cint i)), e'), Rhs
         when Sil.exp_equal e e2' ->
           let c' = Sil.exp_int (IntLit.neg i) in
-          let v' = (Sil.BinOp(Sil.PlusA, e1, c'), e2', Sil.BinOp (Sil.PlusA, e', c')) in
+          let v' = (Sil.BinOp(Binop.PlusA, e1, c'), e2', Sil.BinOp (Binop.PlusA, e', c')) in
           res := v'::!res
       | _ -> () in
     begin
@@ -722,16 +722,16 @@ end = struct
           when (exp_contains_only_normal_ids e' && not (Ident.is_normal id)) ->
             build_other_atoms (fun e0 -> Prop.mk_eq e0 e') side e
 
-        | Sil.Aeq(Sil.BinOp(Sil.Le, e, e'), Sil.Const (Const.Cint i))
-        | Sil.Aeq(Sil.Const (Const.Cint i), Sil.BinOp(Sil.Le, e, e'))
+        | Sil.Aeq(Sil.BinOp(Binop.Le, e, e'), Sil.Const (Const.Cint i))
+        | Sil.Aeq(Sil.Const (Const.Cint i), Sil.BinOp(Binop.Le, e, e'))
           when IntLit.isone i && (exp_contains_only_normal_ids e') ->
-            let construct e0 = Prop.mk_inequality (Sil.BinOp(Sil.Le, e0, e')) in
+            let construct e0 = Prop.mk_inequality (Sil.BinOp(Binop.Le, e0, e')) in
             build_other_atoms construct side e
 
-        | Sil.Aeq(Sil.BinOp(Sil.Lt, e', e), Sil.Const (Const.Cint i))
-        | Sil.Aeq(Sil.Const (Const.Cint i), Sil.BinOp(Sil.Lt, e', e))
+        | Sil.Aeq(Sil.BinOp(Binop.Lt, e', e), Sil.Const (Const.Cint i))
+        | Sil.Aeq(Sil.Const (Const.Cint i), Sil.BinOp(Binop.Lt, e', e))
           when IntLit.isone i && (exp_contains_only_normal_ids e') ->
-            let construct e0 = Prop.mk_inequality (Sil.BinOp(Sil.Lt, e', e0)) in
+            let construct e0 = Prop.mk_inequality (Sil.BinOp(Binop.Lt, e', e0)) in
             build_other_atoms construct side e
 
         | _ -> None
@@ -917,20 +917,20 @@ let rec exp_partial_join (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
       if Ident.is_normal id then (L.d_strln "failure reason 21"; raise IList.Fail)
       else Rename.extend e1 e2 Rename.ExtFresh
 
-  | Sil.BinOp(Sil.PlusA, Sil.Var id1, Sil.Const _), Sil.Var id2
-  | Sil.Var id1, Sil.BinOp(Sil.PlusA, Sil.Var id2, Sil.Const _)
+  | Sil.BinOp(Binop.PlusA, Sil.Var id1, Sil.Const _), Sil.Var id2
+  | Sil.Var id1, Sil.BinOp(Binop.PlusA, Sil.Var id2, Sil.Const _)
     when ident_same_kind_primed_footprint id1 id2 ->
       Rename.extend e1 e2 Rename.ExtFresh
-  | Sil.BinOp(Sil.PlusA, Sil.Var id1, Sil.Const (Const.Cint c1)), Sil.Const (Const.Cint c2)
+  | Sil.BinOp(Binop.PlusA, Sil.Var id1, Sil.Const (Const.Cint c1)), Sil.Const (Const.Cint c2)
     when can_rename id1 ->
       let c2' = c2 -- c1 in
       let e_res = Rename.extend (Sil.Var id1) (Sil.exp_int c2') Rename.ExtFresh in
-      Sil.BinOp(Sil.PlusA, e_res, Sil.exp_int c1)
-  | Sil.Const (Const.Cint c1), Sil.BinOp(Sil.PlusA, Sil.Var id2, Sil.Const (Const.Cint c2))
+      Sil.BinOp(Binop.PlusA, e_res, Sil.exp_int c1)
+  | Sil.Const (Const.Cint c1), Sil.BinOp(Binop.PlusA, Sil.Var id2, Sil.Const (Const.Cint c2))
     when can_rename id2 ->
       let c1' = c1 -- c2 in
       let e_res = Rename.extend (Sil.exp_int c1') (Sil.Var id2) Rename.ExtFresh in
-      Sil.BinOp(Sil.PlusA, e_res, Sil.exp_int c2)
+      Sil.BinOp(Binop.PlusA, e_res, Sil.exp_int c2)
   | Sil.Cast(t1, e1), Sil.Cast(t2, e2) ->
       if not (Typ.equal t1 t2) then (L.d_strln "failure reason 22"; raise IList.Fail)
       else
@@ -939,14 +939,14 @@ let rec exp_partial_join (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
   | Sil.UnOp(unop1, e1, topt1), Sil.UnOp(unop2, e2, _) ->
       if not (Unop.equal unop1 unop2) then (L.d_strln "failure reason 23"; raise IList.Fail)
       else Sil.UnOp (unop1, exp_partial_join e1 e2, topt1) (* should be topt1 = topt2 *)
-  | Sil.BinOp(Sil.PlusPI, e1, e1'), Sil.BinOp(Sil.PlusPI, e2, e2') ->
+  | Sil.BinOp(Binop.PlusPI, e1, e1'), Sil.BinOp(Binop.PlusPI, e2, e2') ->
       let e1'' = exp_partial_join e1 e2 in
       let e2'' = match e1', e2' with
         | Sil.Const _, Sil.Const _ -> exp_partial_join e1' e2'
         | _ -> FreshVarExp.get_fresh_exp e1 e2 in
-      Sil.BinOp(Sil.PlusPI, e1'', e2'')
+      Sil.BinOp(Binop.PlusPI, e1'', e2'')
   | Sil.BinOp(binop1, e1, e1'), Sil.BinOp(binop2, e2, e2') ->
-      if not (Sil.binop_equal binop1 binop2) then (L.d_strln "failure reason 24"; raise IList.Fail)
+      if not (Binop.equal binop1 binop2) then (L.d_strln "failure reason 24"; raise IList.Fail)
       else
         let e1'' = exp_partial_join e1 e2 in
         let e2'' = exp_partial_join e1' e2' in
@@ -969,11 +969,11 @@ let rec exp_partial_join (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
       raise IList.Fail
 
 and length_partial_join len1 len2 = match len1, len2 with
-  | Sil.BinOp(Sil.PlusA, e1, Sil.Const c1), Sil.BinOp(Sil.PlusA, e2, Sil.Const c2) ->
+  | Sil.BinOp(Binop.PlusA, e1, Sil.Const c1), Sil.BinOp(Binop.PlusA, e2, Sil.Const c2) ->
       let e' = exp_partial_join e1 e2 in
       let c' = exp_partial_join (Sil.Const c1) (Sil.Const c2) in
-      Sil.BinOp (Sil.PlusA, e', c')
-  | Sil.BinOp(Sil.PlusA, _, _), Sil.BinOp(Sil.PlusA, _, _) ->
+      Sil.BinOp (Binop.PlusA, e', c')
+  | Sil.BinOp(Binop.PlusA, _, _), Sil.BinOp(Binop.PlusA, _, _) ->
       Rename.extend len1 len2 Rename.ExtFresh
   | Sil.Var id1, Sil.Var id2 when Ident.equal id1 id2 ->
       len1
@@ -1021,7 +1021,7 @@ let rec exp_partial_meet (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
       if not (Unop.equal unop1 unop2) then (L.d_strln "failure reason 31"; raise IList.Fail)
       else Sil.UnOp (unop1, exp_partial_meet e1 e2, topt1) (* should be topt1 = topt2 *)
   | Sil.BinOp(binop1, e1, e1'), Sil.BinOp(binop2, e2, e2') ->
-      if not (Sil.binop_equal binop1 binop2) then (L.d_strln "failure reason 32"; raise IList.Fail)
+      if not (Binop.equal binop1 binop2) then (L.d_strln "failure reason 32"; raise IList.Fail)
       else
         let e1'' = exp_partial_meet e1 e2 in
         let e2'' = exp_partial_meet e1' e2' in
@@ -1595,11 +1595,11 @@ let pi_partial_join mode
           if IntLit.leq n first_try then
             if IntLit.leq n second_try then second_try else first_try
           else widening_top in
-        let a' = Prop.mk_inequality (Sil.BinOp(Sil.Le, e, Sil.exp_int bound)) in
+        let a' = Prop.mk_inequality (Sil.BinOp(Binop.Le, e, Sil.exp_int bound)) in
         Some a'
     | Some (e, _), [] ->
         let bound = widening_top in
-        let a' = Prop.mk_inequality (Sil.BinOp(Sil.Le, e, Sil.exp_int bound)) in
+        let a' = Prop.mk_inequality (Sil.BinOp(Binop.Le, e, Sil.exp_int bound)) in
         Some a'
     | _ ->
         begin
@@ -1608,7 +1608,7 @@ let pi_partial_join mode
           | Some (n, e) ->
               let bound =
                 if IntLit.leq IntLit.minus_one n then IntLit.minus_one else widening_bottom in
-              let a' = Prop.mk_inequality (Sil.BinOp(Sil.Lt, Sil.exp_int bound, e)) in
+              let a' = Prop.mk_inequality (Sil.BinOp(Binop.Lt, Sil.exp_int bound, e)) in
               Some a'
         end in
   let is_stronger_le e n a =

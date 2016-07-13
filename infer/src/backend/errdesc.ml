@@ -279,10 +279,10 @@ and _exp_lv_dexp (_seen : Sil.ExpSet.t) node e : Sil.dexp option =
     | Sil.Const c ->
         if verbose then (L.d_str "exp_lv_dexp: constant "; Sil.d_exp e; L.d_ln ());
         Some (Sil.Dderef (Sil.Dconst c))
-    | Sil.BinOp(Sil.PlusPI, e1, e2) ->
+    | Sil.BinOp(Binop.PlusPI, e1, e2) ->
         if verbose then (L.d_str "exp_lv_dexp: (e1 +PI e2) "; Sil.d_exp e; L.d_ln ());
         (match _exp_lv_dexp seen node e1, _exp_rv_dexp seen node e2 with
-         | Some de1, Some de2 -> Some (Sil.Dbinop(Sil.PlusPI, de1, de2))
+         | Some de1, Some de2 -> Some (Sil.Dbinop(Binop.PlusPI, de1, de2))
          | _ -> None)
     | Sil.Var id when Ident.is_normal id ->
         if verbose then (L.d_str "exp_lv_dexp: normal var "; Sil.d_exp e; L.d_ln ());
@@ -754,7 +754,7 @@ let explain_dexp_access prop dexp is_nullable =
          | None -> None
          | Some (Sil.Eexp (e, _)) -> find_ptsto e
          | Some _ -> None)
-    | (Sil.Dbinop(Sil.PlusPI, Sil.Dpvar _, Sil.Dconst _) as de) ->
+    | (Sil.Dbinop(Binop.PlusPI, Sil.Dpvar _, Sil.Dconst _) as de) ->
         if verbose then (L.d_strln ("lookup: case )pvar + constant) " ^ Sil.dexp_to_string de));
         None
     | Sil.Dfcall (Sil.Dconst c, _, loc, _) ->
@@ -801,7 +801,7 @@ let explain_dexp_access prop dexp is_nullable =
 let explain_dereference_access outermost_array is_nullable _de_opt prop =
   let de_opt =
     let rec remove_outermost_array_access = function (* remove outermost array access from [de] *)
-      | Sil.Dbinop(Sil.PlusPI, de1, _) -> (* remove pointer arithmetic before array access *)
+      | Sil.Dbinop(Binop.PlusPI, de1, _) -> (* remove pointer arithmetic before array access *)
           remove_outermost_array_access de1
       | Sil.Darray(Sil.Dderef de1, _) -> (* array access is a deref already: remove both *)
           de1
@@ -895,7 +895,7 @@ let _explain_access
     | Sil.Lvar _ ->
         if verbose then (L.d_str "find_outermost_dereference: Lvar "; Sil.d_exp e; L.d_ln ());
         exp_lv_dexp node e
-    | Sil.BinOp(Sil.PlusPI, Sil.Lvar _, _) ->
+    | Sil.BinOp(Binop.PlusPI, Sil.Lvar _, _) ->
         if verbose
         then
           (L.d_str "find_outermost_dereference: Lvar+index ";
@@ -904,7 +904,7 @@ let _explain_access
     | Sil.Cast (_, e') ->
         if verbose then (L.d_str "find_outermost_dereference: cast "; Sil.d_exp e; L.d_ln ());
         find_outermost_dereference node e'
-    | Sil.BinOp(Sil.PtrFld, _, e') ->
+    | Sil.BinOp(Binop.PtrFld, _, e') ->
         if verbose then (L.d_str "find_outermost_dereference: PtrFld "; Sil.d_exp e; L.d_ln ());
         find_outermost_dereference node e'
     | _ ->
@@ -918,7 +918,7 @@ let _explain_access
         if verbose then (L.d_str "explain_dereference Sil.Set "; Sil.d_exp e; L.d_ln ());
         Some e
     | Some Sil.Letderef (_, e, _, _) ->
-        if verbose then (L.d_str "explain_dereference Sil.Leteref "; Sil.d_exp e; L.d_ln ());
+        if verbose then (L.d_str "explain_dereference Binop.Leteref "; Sil.d_exp e; L.d_ln ());
         Some e
     | Some Sil.Call (_, Sil.Const (Const.Cfun fn), [(e, _)], _, _)
       when Procname.to_string fn = "free" ->

@@ -179,7 +179,7 @@ let create_type tenv n_lexp typ prop =
           let prop''= Prop.normalize prop'' in
           prop''
       | None -> prop in
-  let sil_is_null = Sil.BinOp (Sil.Eq, n_lexp, Sil.exp_zero) in
+  let sil_is_null = Sil.BinOp (Binop.Eq, n_lexp, Sil.exp_zero) in
   let sil_is_nonnull = Sil.UnOp (Unop.LNot, sil_is_null, None) in
   let null_case = Propset.to_proplist (prune ~positive:true sil_is_null prop) in
   let non_null_case = Propset.to_proplist (prune ~positive:true sil_is_nonnull prop_type) in
@@ -504,7 +504,7 @@ let execute___objc_retain_impl
   | [(lexp, _)] ->
       let prop = return_result lexp prop_ ret_ids in
       execute___objc_counter_update
-        ~mask_errors (Sil.PlusA) (IntLit.one)
+        ~mask_errors (Binop.PlusA) (IntLit.one)
         { builtin_args with Builtin.prop_ = prop; args = args'; }
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -524,7 +524,7 @@ let execute___objc_release_impl
   : Builtin.ret_typ =
   let mask_errors, args' = get_suppress_npe_flag args in
   execute___objc_counter_update
-    ~mask_errors Sil.MinusA IntLit.one
+    ~mask_errors Binop.MinusA IntLit.one
     { builtin_args with Builtin.args = args'; }
 
 let execute___objc_release builtin_args

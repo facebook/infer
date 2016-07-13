@@ -778,10 +778,10 @@ let abstract_pure_part p ~(from_abstract_footprint: bool) =
            match a with
            | Sil.Aneq (Sil.Var _, _) -> a:: pi
            (* we only use Lt and Le because Gt and Ge are inserted in terms of Lt and Le. *)
-           | Sil.Aeq (Sil.Const (Const.Cint i), Sil.BinOp (Sil.Lt, _, _))
-           | Sil.Aeq (Sil.BinOp (Sil.Lt, _, _), Sil.Const (Const.Cint i))
-           | Sil.Aeq (Sil.Const (Const.Cint i), Sil.BinOp (Sil.Le, _, _))
-           | Sil.Aeq (Sil.BinOp (Sil.Le, _, _), Sil.Const (Const.Cint i)) when IntLit.isone i ->
+           | Sil.Aeq (Sil.Const (Const.Cint i), Sil.BinOp (Binop.Lt, _, _))
+           | Sil.Aeq (Sil.BinOp (Binop.Lt, _, _), Sil.Const (Const.Cint i))
+           | Sil.Aeq (Sil.Const (Const.Cint i), Sil.BinOp (Binop.Le, _, _))
+           | Sil.Aeq (Sil.BinOp (Binop.Le, _, _), Sil.Const (Const.Cint i)) when IntLit.isone i ->
                a :: pi
            | Sil.Aeq (Sil.Var name, e) when not (Ident.is_primed name) ->
                (match e with

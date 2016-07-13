@@ -296,10 +296,10 @@ let prune_ineq ~is_strict ~positive prop e1 e2 =
     (* build the pruning condition and its negation, as explained in
        the comment above *)
     (* build [e1] CMP [e2] *)
-    let cmp = if is_strict then Sil.Lt else Sil.Le in
+    let cmp = if is_strict then Binop.Lt else Binop.Le in
     let e1_cmp_e2 = Sil.BinOp (cmp, e1, e2) in
     (* build !([e1] CMP [e2]) *)
-    let dual_cmp = if is_strict then Sil.Le else Sil.Lt in
+    let dual_cmp = if is_strict then Binop.Le else Binop.Lt in
     let not_e1_cmp_e2 = Sil.BinOp (dual_cmp, e2, e1) in
     (* take polarity into account *)
     let (prune_cond, not_prune_cond) =
@@ -328,24 +328,26 @@ let rec prune ~positive condition prop =
       prune ~positive:(not positive) condition' prop
   | Sil.UnOp _ ->
       assert false
-  | Sil.BinOp (Sil.Eq, e, Sil.Const (Const.Cint i))
-  | Sil.BinOp (Sil.Eq, Sil.Const (Const.Cint i), e) when IntLit.iszero i && not (IntLit.isnull i) ->
+  | Sil.BinOp (Binop.Eq, e, Sil.Const (Const.Cint i))
+  | Sil.BinOp (Binop.Eq, Sil.Const (Const.Cint i), e)
+    when IntLit.iszero i && not (IntLit.isnull i) ->
       prune ~positive:(not positive) e prop
-  | Sil.BinOp (Sil.Eq, e1, e2) ->
+  | Sil.BinOp (Binop.Eq, e1, e2) ->
       prune_ne ~positive:(not positive) e1 e2 prop
-  | Sil.BinOp (Sil.Ne, e, Sil.Const (Const.Cint i))
-  | Sil.BinOp (Sil.Ne, Sil.Const (Const.Cint i), e) when IntLit.iszero i && not (IntLit.isnull i) ->
+  | Sil.BinOp (Binop.Ne, e, Sil.Const (Const.Cint i))
+  | Sil.BinOp (Binop.Ne, Sil.Const (Const.Cint i), e)
+    when IntLit.iszero i && not (IntLit.isnull i) ->
       prune ~positive e prop
-  | Sil.BinOp (Sil.Ne, e1, e2) ->
+  | Sil.BinOp (Binop.Ne, e1, e2) ->
       prune_ne ~positive e1 e2 prop
-  | Sil.BinOp (Sil.Ge, e2, e1) | Sil.BinOp (Sil.Le, e1, e2) ->
+  | Sil.BinOp (Binop.Ge, e2, e1) | Sil.BinOp (Binop.Le, e1, e2) ->
       prune_ineq ~is_strict:false ~positive prop e1 e2
-  | Sil.BinOp (Sil.Gt, e2, e1) | Sil.BinOp (Sil.Lt, e1, e2) ->
+  | Sil.BinOp (Binop.Gt, e2, e1) | Sil.BinOp (Binop.Lt, e1, e2) ->
       prune_ineq ~is_strict:true ~positive prop e1 e2
-  | Sil.BinOp (Sil.LAnd, condition1, condition2) ->
+  | Sil.BinOp (Binop.LAnd, condition1, condition2) ->
       let pruner = if positive then prune_inter else prune_union in
       pruner ~positive condition1 condition2 prop
-  | Sil.BinOp (Sil.LOr, condition1, condition2) ->
+  | Sil.BinOp (Binop.LOr, condition1, condition2) ->
       let pruner = if positive then prune_union else prune_inter in
       pruner ~positive condition1 condition2 prop
   | Sil.BinOp _ | Sil.Lfield _ | Sil.Lindex _ ->
@@ -403,7 +405,7 @@ let check_constant_string_dereference lexp =
     let c = try Char.code (String.get s (IntLit.to_int n)) with Invalid_argument _ -> 0 in
     Sil.exp_int (IntLit.of_int c) in
   match lexp with
-  | Sil.BinOp(Sil.PlusPI, Sil.Const (Const.Cstr s), e)
+  | Sil.BinOp(Binop.PlusPI, Sil.Const (Const.Cstr s), e)
   | Sil.Lindex (Sil.Const (Const.Cstr s), e) ->
       let value = match e with
         | Sil.Const (Const.Cint n)
@@ -447,8 +449,8 @@ let check_already_dereferenced pname cond prop =
         Some id
     | Sil.UnOp(Unop.LNot, e, _) ->
         is_check_zero e
-    | Sil.BinOp ((Sil.Eq | Sil.Ne), Sil.Const Const.Cint i, Sil.Var id)
-    | Sil.BinOp ((Sil.Eq | Sil.Ne), Sil.Var id, Sil.Const Const.Cint i) when IntLit.iszero i ->
+    | Sil.BinOp ((Binop.Eq | Binop.Ne), Sil.Const Const.Cint i, Sil.Var id)
+    | Sil.BinOp ((Binop.Eq | Binop.Ne), Sil.Var id, Sil.Const Const.Cint i) when IntLit.iszero i ->
         Some id
     | _ -> None in
   let dereferenced_line = match is_check_zero cond with
@@ -1069,7 +1071,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
               Exceptions.Condition_always_true_false (desc, not (IntLit.iszero i), __POS__) in
             let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop current_pname) in
             Reporting.log_warning current_pname ~pre: pre_opt exn
-        | Sil.BinOp ((Sil.Eq | Sil.Ne), lhs, rhs)
+        | Sil.BinOp ((Binop.Eq | Binop.Ne), lhs, rhs)
           when true_branch && !Config.footprint && not (is_comparison_to_nil rhs) ->
             (* iOS: check that NSNumber *'s are not used in conditionals without comparing to nil *)
             let lhs_normal = Prop.exp_normalize_prop prop__ lhs in

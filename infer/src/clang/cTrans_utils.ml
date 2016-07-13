@@ -61,9 +61,9 @@ struct
         "\nWARNING: Missing expression for Conditional operator. Need to be fixed" in
     let e_cond'' =
       if branch then
-        Sil.BinOp(Sil.Ne, e_cond', Sil.exp_zero)
+        Sil.BinOp(Binop.Ne, e_cond', Sil.exp_zero)
       else
-        Sil.BinOp(Sil.Eq, e_cond', Sil.exp_zero) in
+        Sil.BinOp(Binop.Eq, e_cond', Sil.exp_zero) in
     let instrs_cond'= instrs_cond @ [Sil.Prune(e_cond'', loc, branch, ik)] in
     create_node (prune_kind branch) instrs_cond' loc context
 
@@ -298,7 +298,7 @@ let create_alloc_instrs context sil_loc function_type fname size_exp_opt procnam
   let function_type_np = CTypes.expand_structured_type context.CContext.tenv function_type_np in
   let sizeof_exp_ = Sil.Sizeof (function_type_np, None, Sil.Subtype.exact) in
   let sizeof_exp = match size_exp_opt with
-    | Some exp -> Sil.BinOp (Sil.Mult, sizeof_exp_, exp)
+    | Some exp -> Sil.BinOp (Binop.Mult, sizeof_exp_, exp)
     | None -> sizeof_exp_ in
   let exp = (sizeof_exp, Typ.Tint Typ.IULong) in
   let procname_arg = match procname_opt with

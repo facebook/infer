@@ -97,7 +97,7 @@ module ComplexExpressions = struct
       | Sil.Ddot (de, f) ->
           dexp_to_string de ^ "." ^ Ident.fieldname_to_string f
       | Sil.Dbinop (op, de1, de2) ->
-          "(" ^ dexp_to_string de1 ^ (Sil.str_binop pe_text op) ^ dexp_to_string de2 ^ ")"
+          "(" ^ dexp_to_string de1 ^ (Binop.str pe_text op) ^ dexp_to_string de2 ^ ")"
       | Sil.Dconst (Const.Cfun pn) ->
           Procname.to_unique_id pn
       | Sil.Dconst c ->
@@ -650,7 +650,7 @@ let typecheck_instr
                 not (TypeAnnotation.origin_is_fun_library ta) in
               if checks.eradicate && should_report then
                 begin
-                  let cond = Sil.BinOp (Sil.Ne, Sil.Lvar pvar, Sil.exp_null) in
+                  let cond = Sil.BinOp (Binop.Ne, Sil.Lvar pvar, Sil.exp_null) in
                   EradicateChecks.report_error
                     find_canonical_duplicate
                     node
@@ -704,8 +704,8 @@ let typecheck_instr
 
         let handle_negated_condition cond_node =
           let do_instr = function
-            | Sil.Prune (Sil.BinOp (Sil.Eq, _cond_e, Sil.Const (Const.Cint i)), _, _, _)
-            | Sil.Prune (Sil.BinOp (Sil.Eq, Sil.Const (Const.Cint i), _cond_e), _, _, _)
+            | Sil.Prune (Sil.BinOp (Binop.Eq, _cond_e, Sil.Const (Const.Cint i)), _, _, _)
+            | Sil.Prune (Sil.BinOp (Binop.Eq, Sil.Const (Const.Cint i), _cond_e), _, _, _)
               when IntLit.iszero i ->
                 let cond_e = Idenv.expand_expr_temps idenv cond_node _cond_e in
                 begin
@@ -944,8 +944,8 @@ let typecheck_instr
           | _ -> typestate2 in
 
         match c with
-        | Sil.BinOp (Sil.Eq, Sil.Const (Const.Cint i), e)
-        | Sil.BinOp (Sil.Eq, e, Sil.Const (Const.Cint i)) when IntLit.iszero i ->
+        | Sil.BinOp (Binop.Eq, Sil.Const (Const.Cint i), e)
+        | Sil.BinOp (Binop.Eq, e, Sil.Const (Const.Cint i)) when IntLit.iszero i ->
             typecheck_expr_for_errors typestate e loc;
             let typestate1, e1, from_call = match from_is_true_on_null e with
               | Some e1 ->
@@ -973,8 +973,8 @@ let typecheck_instr
                   typestate2
             end
 
-        | Sil.BinOp (Sil.Ne, Sil.Const (Const.Cint i), e)
-        | Sil.BinOp (Sil.Ne, e, Sil.Const (Const.Cint i)) when IntLit.iszero i ->
+        | Sil.BinOp (Binop.Ne, Sil.Const (Const.Cint i), e)
+        | Sil.BinOp (Binop.Ne, e, Sil.Const (Const.Cint i)) when IntLit.iszero i ->
             typecheck_expr_for_errors typestate e loc;
             let typestate1, e1, from_call = match from_instanceof e with
               | Some e1 -> (* (e1 instanceof C) implies (e1 != null) *)
@@ -1023,10 +1023,10 @@ let typecheck_instr
                   else typestate2
             end
 
-        | Sil.UnOp (Unop.LNot, (Sil.BinOp (Sil.Eq, e1, e2)), _) ->
-            check_condition node' (Sil.BinOp (Sil.Ne, e1, e2))
-        | Sil.UnOp (Unop.LNot, (Sil.BinOp (Sil.Ne, e1, e2)), _) ->
-            check_condition node' (Sil.BinOp (Sil.Eq, e1, e2))
+        | Sil.UnOp (Unop.LNot, (Sil.BinOp (Binop.Eq, e1, e2)), _) ->
+            check_condition node' (Sil.BinOp (Binop.Ne, e1, e2))
+        | Sil.UnOp (Unop.LNot, (Sil.BinOp (Binop.Ne, e1, e2)), _) ->
+            check_condition node' (Sil.BinOp (Binop.Eq, e1, e2))
         | _ -> typestate in
 
       (** Handle assigment fron a temp pvar in a condition.

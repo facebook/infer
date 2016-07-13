@@ -37,13 +37,13 @@ let check_bad_index pname p len index loc =
     | Sil.Const _ -> true
     | _ -> false in
   let index_provably_out_of_bound () =
-    let index_too_large = Prop.mk_inequality (Sil.BinOp (Sil.Le, len, index)) in
-    let index_negative = Prop.mk_inequality (Sil.BinOp (Sil.Le, index, Sil.exp_minus_one)) in
+    let index_too_large = Prop.mk_inequality (Sil.BinOp (Binop.Le, len, index)) in
+    let index_negative = Prop.mk_inequality (Sil.BinOp (Binop.Le, index, Sil.exp_minus_one)) in
     (Prover.check_atom p index_too_large) || (Prover.check_atom p index_negative) in
   let index_provably_in_bound () =
-    let len_minus_one = Sil.BinOp(Sil.PlusA, len, Sil.exp_minus_one) in
-    let index_not_too_large = Prop.mk_inequality (Sil.BinOp(Sil.Le, index, len_minus_one)) in
-    let index_nonnegative = Prop.mk_inequality (Sil.BinOp(Sil.Le, Sil.exp_zero, index)) in
+    let len_minus_one = Sil.BinOp(Binop.PlusA, len, Sil.exp_minus_one) in
+    let index_not_too_large = Prop.mk_inequality (Sil.BinOp(Binop.Le, index, len_minus_one)) in
+    let index_nonnegative = Prop.mk_inequality (Sil.BinOp(Binop.Le, Sil.exp_zero, index)) in
     Prover.check_zero index || (* index 0 always in bound, even when we know nothing about len *)
     ((Prover.check_atom p index_not_too_large) && (Prover.check_atom p index_nonnegative)) in
   let index_has_bounds () =
@@ -1202,7 +1202,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
     | Some att -> Some att
     | None -> (* try to remove an offset if any, and find the attribute there *)
         let root_no_offset = match root with
-          | Sil.BinOp((Sil.PlusPI | Sil.PlusA | Sil.MinusPI | Sil.MinusA), base, _) -> base
+          | Sil.BinOp((Binop.PlusPI | Binop.PlusA | Binop.MinusPI | Binop.MinusA), base, _) -> base
           | _ -> root in
         get_relevant_attributes root_no_offset in
   if Prover.check_zero (Sil.root_of_lexp root) || is_deref_of_nullable then
@@ -1315,7 +1315,7 @@ let rearrange ?(report_deref_errors=true) pdesc tenv lexp typ prop loc
   : (Sil.offset list) Prop.prop_iter list =
 
   let nlexp = match Prop.exp_normalize_prop prop lexp with
-    | Sil.BinOp(Sil.PlusPI, ep, e) -> (* array access with pointer arithmetic *)
+    | Sil.BinOp(Binop.PlusPI, ep, e) -> (* array access with pointer arithmetic *)
         Sil.Lindex(ep, e)
     | e -> e in
   let ptr_tested_for_zero =

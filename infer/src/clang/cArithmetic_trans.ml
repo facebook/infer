@@ -62,34 +62,34 @@ let compound_assignment_binary_operation_instruction boi e1 typ e2 loc =
   let instr1 = Sil.Letderef (id, e1, typ, loc) in
   let e_res, instr_op = match boi.Clang_ast_t.boi_kind with
     | `AddAssign ->
-        let e1_plus_e2 = Sil.BinOp(Sil.PlusA, Sil.Var id, e2) in
+        let e1_plus_e2 = Sil.BinOp(Binop.PlusA, Sil.Var id, e2) in
         (e1, [Sil.Set (e1, typ, e1_plus_e2, loc)])
     | `SubAssign ->
-        let e1_sub_e2 = Sil.BinOp(Sil.MinusA, Sil.Var id, e2) in
+        let e1_sub_e2 = Sil.BinOp(Binop.MinusA, Sil.Var id, e2) in
         (e1, [Sil.Set (e1, typ, e1_sub_e2, loc)])
     | `MulAssign ->
-        let e1_mul_e2 = Sil.BinOp(Sil.Mult, Sil.Var id, e2) in
+        let e1_mul_e2 = Sil.BinOp(Binop.Mult, Sil.Var id, e2) in
         (e1, [Sil.Set (e1, typ, e1_mul_e2, loc)])
     | `DivAssign ->
-        let e1_div_e2 = Sil.BinOp(Sil.Div, Sil.Var id, e2) in
+        let e1_div_e2 = Sil.BinOp(Binop.Div, Sil.Var id, e2) in
         (e1, [Sil.Set (e1, typ, e1_div_e2, loc)])
     | `ShlAssign ->
-        let e1_shl_e2 = Sil.BinOp(Sil.Shiftlt, Sil.Var id, e2) in
+        let e1_shl_e2 = Sil.BinOp(Binop.Shiftlt, Sil.Var id, e2) in
         (e1, [Sil.Set (e1, typ, e1_shl_e2, loc)])
     | `ShrAssign ->
-        let e1_shr_e2 = Sil.BinOp(Sil.Shiftrt, Sil.Var id, e2) in
+        let e1_shr_e2 = Sil.BinOp(Binop.Shiftrt, Sil.Var id, e2) in
         (e1, [Sil.Set (e1, typ, e1_shr_e2, loc)])
     | `RemAssign ->
-        let e1_mod_e2 = Sil.BinOp(Sil.Mod, Sil.Var id, e2) in
+        let e1_mod_e2 = Sil.BinOp(Binop.Mod, Sil.Var id, e2) in
         (e1, [Sil.Set (e1, typ, e1_mod_e2, loc)])
     | `AndAssign ->
-        let e1_and_e2 = Sil.BinOp(Sil.BAnd, Sil.Var id, e2) in
+        let e1_and_e2 = Sil.BinOp(Binop.BAnd, Sil.Var id, e2) in
         (e1, [Sil.Set (e1, typ, e1_and_e2, loc)])
     | `OrAssign ->
-        let e1_or_e2 = Sil.BinOp(Sil.BOr, Sil.Var id, e2) in
+        let e1_or_e2 = Sil.BinOp(Binop.BOr, Sil.Var id, e2) in
         (e1, [Sil.Set (e1, typ, e1_or_e2, loc)])
     | `XorAssign ->
-        let e1_xor_e2 = Sil.BinOp(Sil.BXor, Sil.Var id, e2) in
+        let e1_xor_e2 = Sil.BinOp(Binop.BXor, Sil.Var id, e2) in
         (e1, [Sil.Set (e1, typ, e1_xor_e2, loc)])
     | _ -> assert false in
   (e_res, instr1:: instr_op)
@@ -101,24 +101,24 @@ let compound_assignment_binary_operation_instruction boi e1 typ e2 loc =
 let binary_operation_instruction context boi e1 typ e2 loc rhs_owning_method =
   let binop_exp op = Sil.BinOp(op, e1, e2) in
   match boi.Clang_ast_t.boi_kind with
-  | `Add -> (binop_exp (Sil.PlusA), [])
-  | `Mul -> (binop_exp (Sil.Mult), [])
-  | `Div -> (binop_exp (Sil.Div), [])
-  | `Rem -> (binop_exp (Sil.Mod), [])
-  | `Sub -> (binop_exp (Sil.MinusA), [])
-  | `Shl -> (binop_exp (Sil.Shiftlt), [])
-  | `Shr -> (binop_exp(Sil.Shiftrt), [])
-  | `Or -> (binop_exp (Sil.BOr), [])
-  | `And -> (binop_exp (Sil.BAnd), [])
-  | `Xor -> (binop_exp (Sil.BXor), [])
-  | `LT -> (binop_exp (Sil.Lt), [])
-  | `GT -> (binop_exp (Sil.Gt), [])
-  | `LE -> (binop_exp (Sil.Le), [])
-  | `GE -> (binop_exp (Sil.Ge), [])
-  | `NE -> (binop_exp (Sil.Ne), [])
-  | `EQ -> (binop_exp (Sil.Eq), [])
-  | `LAnd -> (binop_exp (Sil.LAnd), [])
-  | `LOr -> (binop_exp (Sil.LOr), [])
+  | `Add -> (binop_exp (Binop.PlusA), [])
+  | `Mul -> (binop_exp (Binop.Mult), [])
+  | `Div -> (binop_exp (Binop.Div), [])
+  | `Rem -> (binop_exp (Binop.Mod), [])
+  | `Sub -> (binop_exp (Binop.MinusA), [])
+  | `Shl -> (binop_exp (Binop.Shiftlt), [])
+  | `Shr -> (binop_exp(Binop.Shiftrt), [])
+  | `Or -> (binop_exp (Binop.BOr), [])
+  | `And -> (binop_exp (Binop.BAnd), [])
+  | `Xor -> (binop_exp (Binop.BXor), [])
+  | `LT -> (binop_exp (Binop.Lt), [])
+  | `GT -> (binop_exp (Binop.Gt), [])
+  | `LE -> (binop_exp (Binop.Le), [])
+  | `GE -> (binop_exp (Binop.Ge), [])
+  | `NE -> (binop_exp (Binop.Ne), [])
+  | `EQ -> (binop_exp (Binop.Eq), [])
+  | `LAnd -> (binop_exp (Binop.LAnd), [])
+  | `LOr -> (binop_exp (Binop.LOr), [])
   | `Assign ->
       if !Config.arc_mode && ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv typ then
         assignment_arc_mode e1 typ e2 loc rhs_owning_method false
@@ -144,12 +144,12 @@ let unary_operation_instruction uoi e typ loc =
   | `PostInc ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
-      let e_plus_1 = Sil.BinOp(Sil.PlusA, Sil.Var id, Sil.Const(Const.Cint (IntLit.one))) in
+      let e_plus_1 = Sil.BinOp(Binop.PlusA, Sil.Var id, Sil.Const(Const.Cint (IntLit.one))) in
       (Sil.Var id, instr1::[Sil.Set (e, typ, e_plus_1, loc)])
   | `PreInc ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
-      let e_plus_1 = Sil.BinOp(Sil.PlusA, Sil.Var id, Sil.Const(Const.Cint (IntLit.one))) in
+      let e_plus_1 = Sil.BinOp(Binop.PlusA, Sil.Var id, Sil.Const(Const.Cint (IntLit.one))) in
       let exp = if General_utils.is_cpp_translation Config.clang_lang then
           e
         else
@@ -158,12 +158,12 @@ let unary_operation_instruction uoi e typ loc =
   | `PostDec ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
-      let e_minus_1 = Sil.BinOp(Sil.MinusA, Sil.Var id, Sil.Const(Const.Cint (IntLit.one))) in
+      let e_minus_1 = Sil.BinOp(Binop.MinusA, Sil.Var id, Sil.Const(Const.Cint (IntLit.one))) in
       (Sil.Var id, instr1::[Sil.Set (e, typ, e_minus_1, loc)])
   | `PreDec ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
-      let e_minus_1 = Sil.BinOp(Sil.MinusA, Sil.Var id, Sil.Const(Const.Cint (IntLit.one))) in
+      let e_minus_1 = Sil.BinOp(Binop.MinusA, Sil.Var id, Sil.Const(Const.Cint (IntLit.one))) in
       let exp = if General_utils.is_cpp_translation Config.clang_lang then
           e
         else
@@ -221,4 +221,4 @@ let sil_const_plus_one const =
   match const with
   | Sil.Const (Const.Cint n) ->
       Sil.Const (Const.Cint (IntLit.add n IntLit.one))
-  | _ -> Sil.BinOp (Sil.PlusA, const, Sil.Const (Const.Cint (IntLit.one)))
+  | _ -> Sil.BinOp (Binop.PlusA, const, Sil.Const (Const.Cint (IntLit.one)))

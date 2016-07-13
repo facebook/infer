@@ -62,7 +62,7 @@ let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
       exp_match e1' sub vars e2'
   | Sil.UnOp _, _ | _, Sil.UnOp _ ->
       None  (* Naive *)
-  | Sil.BinOp(b1, e1', e1''), Sil.BinOp(b2, e2', e2'') when Sil.binop_equal b1 b2 ->
+  | Sil.BinOp(b1, e1', e1''), Sil.BinOp(b2, e2', e2'') when Binop.equal b1 b2 ->
       (match exp_match e1' sub vars e2' with
        | None -> None
        | Some (sub', vars') -> exp_match e1'' sub' vars' e2'')

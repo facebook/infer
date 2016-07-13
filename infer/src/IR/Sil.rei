@@ -25,33 +25,6 @@ type func_attribute = | FA_sentinel of int int;
 /** Visibility modifiers. */
 type access = | Default | Public | Private | Protected;
 
-
-/** Binary operations */
-type binop =
-  | PlusA /** arithmetic + */
-  | PlusPI /** pointer + integer */
-  | MinusA /** arithmetic - */
-  | MinusPI /** pointer - integer */
-  | MinusPP /** pointer - pointer */
-  | Mult /** * */
-  | Div /** / */
-  | Mod /** % */
-  | Shiftlt /** shift left */
-  | Shiftrt /** shift right */
-  | Lt /** <  (arithmetic comparison) */
-  | Gt /** >  (arithmetic comparison) */
-  | Le /** <= (arithmetic comparison) */
-  | Ge /** >= (arithmetic comparison) */
-  | Eq /** == (arithmetic comparison) */
-  | Ne /** != (arithmetic comparison) */
-  | BAnd /** bitwise and */
-  | BXor /** exclusive-or */
-  | BOr /** inclusive-or */
-  | LAnd /** logical and. Does not always evaluate both operands. */
-  | LOr /** logical or. Does not always evaluate both operands. */
-  | PtrFld /** field offset via pointer to field: takes the address of a
-               Csu.t and a Cptr_to_fld constant to form an Lfield expression (see prop.ml) */;
-
 type mem_kind =
   | Mmalloc /** memory allocated with malloc */
   | Mnew /** memory allocated with new */
@@ -138,7 +111,7 @@ type taint_info = {taint_source: Procname.t, taint_kind: taint_kind};
 /** expression representing the result of decompilation */
 type dexp =
   | Darray of dexp dexp
-  | Dbinop of binop dexp dexp
+  | Dbinop of Binop.t dexp dexp
   | Dconst of Const.t
   | Dsizeof of Typ.t (option dexp) Subtype.t
   | Dderef of dexp
@@ -199,7 +172,7 @@ and exp =
   /** Unary operator with type of the result if known */
   | UnOp of Unop.t exp (option Typ.t)
   /** Binary operator */
-  | BinOp of binop exp exp
+  | BinOp of Binop.t exp exp
   /** Exception */
   | Exn of exp
   /** Anonymous function */
@@ -482,29 +455,12 @@ let block_pvar: Pvar.t;
 /** Check if a pvar is a local pointing to a block in objc */
 let is_block_pvar: Pvar.t => bool;
 
-let binop_equal: binop => binop => bool;
-
-
-/** This function returns true if the operation is injective
-    wrt. each argument: op(e,-) and op(-, e) is injective for all e.
-    The return value false means "don't know". */
-let binop_injective: binop => bool;
-
-
-/** This function returns true if the operation can be inverted. */
-let binop_invertible: binop => bool;
-
 
 /** This function inverts an injective binary operator
     with respect to the first argument. It returns an expression [e'] such that
     BinOp([binop], [e'], [exp1]) = [exp2]. If the [binop] operation is not invertible,
     the function raises an exception by calling "assert false". */
-let binop_invert: binop => exp => exp => exp;
-
-
-/** This function returns true if 0 is the right unit of [binop].
-    The return value false means "don't know". */
-let binop_is_zero_runit: binop => bool;
+let binop_invert: Binop.t => exp => exp => exp;
 
 
 /** return true if [dexp] contains a temporary pvar */
@@ -610,10 +566,6 @@ let color_pre_wrapper: printenv => F.formatter => 'a => (printenv, bool);
 
 /** Close color annotation if changed */
 let color_post_wrapper: bool => printenv => F.formatter => unit;
-
-
-/** String representation of a binary operator. */
-let str_binop: printenv => binop => string;
 
 
 /** name of the allocation function for the given memory kind */
