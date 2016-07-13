@@ -51,7 +51,7 @@ let check_bad_index pname p len index loc =
     | Some _, Some _ -> true
     | _ -> false in
   let get_const_opt = function
-    | Sil.Const (Sil.Cint n) -> Some n
+    | Sil.Const (Const.Cint n) -> Some n
     | _ -> None in
   if not (index_provably_in_bound ()) then
     begin
@@ -129,7 +129,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
     | Typ.Tarray (t', len_), off ->
         let len = match len_ with
           | None -> Sil.Var (new_id ())
-          | Some len -> Sil.Const (Sil.Cint len) in
+          | Some len -> Sil.Const (Const.Cint len) in
         (match off with
          | [] ->
              ([], Sil.Earray (len, [], inst), t)
@@ -303,7 +303,7 @@ and array_case_analysis_index pname tenv orig_prop
     IList.exists (fun (i, _) -> Prover.check_equal Prop.prop_emp index i) array_cont in
   let array_is_full =
     match array_len with
-    | Sil.Const (Sil.Cint n') -> IntLit.geq (IntLit.of_int (IList.length array_cont)) n'
+    | Sil.Const (Const.Cint n') -> IntLit.geq (IntLit.of_int (IList.length array_cont)) n'
     | _ -> false in
 
   if index_in_array then
@@ -441,7 +441,7 @@ let mk_ptsto_exp_footprint
   let create_ptsto footprint_part off0 = match root, off0, typ with
     | Sil.Lvar pvar, [], Typ.Tfun _ ->
         let fun_name = Procname.from_string_c_fun (Mangled.to_string (Pvar.get_name pvar)) in
-        let fun_exp = Sil.Const (Sil.Cfun fun_name) in
+        let fun_exp = Sil.Const (Const.Cfun fun_name) in
         ([], Prop.mk_ptsto root (Sil.Eexp (fun_exp, inst)) (Sil.Sizeof (typ, None, st)))
     | _, [], Typ.Tfun _ ->
         let atoms, se, t =

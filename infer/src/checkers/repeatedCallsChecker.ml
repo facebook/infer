@@ -73,7 +73,7 @@ struct
         Procname.equal pn ModelBuiltins.__new_array in
       let do_instr instr =
         match instr with
-        | Sil.Call (_, Sil.Const (Sil.Cfun pn), _, loc, _) when proc_is_new pn ->
+        | Sil.Call (_, Sil.Const (Const.Cfun pn), _, loc, _) when proc_is_new pn ->
             found := Some loc
         | _ -> () in
       IList.iter do_instr (Cfg.Node.get_instrs node);
@@ -118,11 +118,11 @@ struct
       IList.for_all filter_arg args in
 
     match instr with
-    | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), _, loc, call_flags)
+    | Sil.Call (ret_ids, Sil.Const (Const.Cfun callee_pname), _, loc, call_flags)
       when ret_ids <> [] && arguments_not_temp normalized_etl ->
         let instr_normalized_args = Sil.Call (
             ret_ids,
-            Sil.Const (Sil.Cfun callee_pname),
+            Sil.Const (Const.Cfun callee_pname),
             normalized_etl,
             loc,
             call_flags) in

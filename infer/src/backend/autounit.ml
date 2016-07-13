@@ -184,9 +184,9 @@ end = struct
 
   let rec pi_iter do_le do_lt do_neq pi =
     let do_atom a = match a with
-      | Sil.Aeq (Sil.BinOp (Sil.Le, e1, e2), Sil.Const (Sil.Cint i)) when IntLit.isone i ->
+      | Sil.Aeq (Sil.BinOp (Sil.Le, e1, e2), Sil.Const (Const.Cint i)) when IntLit.isone i ->
           do_le e1 e2
-      | Sil.Aeq (Sil.BinOp (Sil.Lt, e1, e2), Sil.Const (Sil.Cint i)) when IntLit.isone i ->
+      | Sil.Aeq (Sil.BinOp (Sil.Lt, e1, e2), Sil.Const (Const.Cint i)) when IntLit.isone i ->
           do_lt e1 e2
       | Sil.Aeq _ -> ()
       | Sil.Aneq (e1, e2) ->
@@ -217,33 +217,33 @@ end = struct
       | Some n1, Some n2 -> Some (IntLit.sub n1 n2)
       | _ -> None in
     let do_le e1 e2 = match e1, e2 with
-      | Sil.Var id, Sil.Const (Sil.Cint n) ->
+      | Sil.Var id, Sil.Const (Const.Cint n) ->
           let rng = IdMap.find id ev in
           add_top rng id n
-      | Sil.BinOp (Sil.MinusA, Sil.Var id1, Sil.Var id2), Sil.Const (Sil.Cint n) ->
+      | Sil.BinOp (Sil.MinusA, Sil.Var id1, Sil.Var id2), Sil.Const (Const.Cint n) ->
           let rng1 = IdMap.find id1 ev in
           let rng2 = IdMap.find id2 ev in
           update_top rng1 id1 (rng2.top +++ (Some n));
           update_bottom rng2 id2 (rng1.bottom --- (Some n))
-      | Sil.BinOp (Sil.PlusA, Sil.Var id1, Sil.Var id2), Sil.Const (Sil.Cint n) ->
+      | Sil.BinOp (Sil.PlusA, Sil.Var id1, Sil.Var id2), Sil.Const (Const.Cint n) ->
           let rng1 = IdMap.find id1 ev in
           let rng2 = IdMap.find id2 ev in
           update_top rng1 id1 (Some n --- rng2.bottom);
           update_top rng2 id2 (Some n --- rng1.bottom)
       | _ -> if debug then assert false in
     let do_lt e1 e2 = match e1, e2 with
-      | Sil.Const (Sil.Cint n), Sil.Var id ->
+      | Sil.Const (Const.Cint n), Sil.Var id ->
           let rng = IdMap.find id ev in
           add_bottom rng id (n ++ IntLit.one)
-      | Sil.Const (Sil.Cint n), Sil.BinOp (Sil.PlusA, Sil.Var id1, Sil.Var id2) ->
+      | Sil.Const (Const.Cint n), Sil.BinOp (Sil.PlusA, Sil.Var id1, Sil.Var id2) ->
           let rng1 = IdMap.find id1 ev in
           let rng2 = IdMap.find id2 ev in
           update_bottom rng1 id1 (Some (n ++ IntLit.one) --- rng2.top);
           update_bottom rng2 id2 (Some (n ++ IntLit.one) --- rng1.top)
       | _ -> if debug then assert false in
     let rec do_neq e1 e2 = match e1, e2 with
-      | Sil.Var id, Sil.Const (Sil.Cint n)
-      | Sil.Const(Sil.Cint n), Sil.Var id ->
+      | Sil.Var id, Sil.Const (Const.Cint n)
+      | Sil.Const(Const.Cint n), Sil.Var id ->
           let rng = IdMap.find id ev in
           add_excluded rng id n
       | Sil.Var id1, Sil.Var id2 ->
@@ -254,7 +254,7 @@ end = struct
                do_neq (Sil.exp_int n1) e2
            | None, Some n2 ->
                do_neq e1 (Sil.exp_int n2))
-      | Sil.Var id1, Sil.BinOp(Sil.PlusA, Sil.Var id2, Sil.Const (Sil.Cint n)) ->
+      | Sil.Var id1, Sil.BinOp(Sil.PlusA, Sil.Var id2, Sil.Const (Const.Cint n)) ->
           (match solved ev id1, solved ev id2 with
            | None, None -> ()
            | Some _, Some _ -> ()
@@ -513,19 +513,19 @@ let gen_var_decl code idmap parameters =
 (** initialize variables not requiring allocation *)
 let gen_init_vars code solutions idmap =
   let get_const id c =
-    try Sil.Cint (IdMap.find id solutions)
+    try Const.Cint (IdMap.find id solutions)
     with Not_found -> c in
   let do_vinfo id { typ = typ; alloc = alloc } =
     if not alloc then
       let const = match typ with
         | Typ.Tint _ | Typ.Tvoid ->
-            get_const id (Sil.Cint IntLit.zero)
+            get_const id (Const.Cint IntLit.zero)
         | Typ.Tfloat _ ->
-            Sil.Cfloat 0.0
+            Const.Cfloat 0.0
         | Typ.Tptr _ ->
-            get_const id (Sil.Cint IntLit.zero)
+            get_const id (Const.Cint IntLit.zero)
         | Typ.Tfun _ ->
-            Sil.Cint IntLit.zero
+            Const.Cint IntLit.zero
         | typ ->
             L.err "do_vinfo type undefined: %a@." (Typ.pp_full pe) typ;
             assert false in

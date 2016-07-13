@@ -169,13 +169,13 @@ let locals_formals program tenv cn impl meth_kind =
 
 let get_constant (c : JBir.const) =
   match c with
-  | `Int i -> Sil.Cint (IntLit.of_int32 i)
-  | `ANull -> Sil.Cint IntLit.null
-  | `Class ot -> Sil.Cclass (Ident.string_to_name (JTransType.object_type_to_string ot))
-  | `Double f -> Sil.Cfloat f
-  | `Float f -> Sil.Cfloat f
-  | `Long i64 -> Sil.Cint (IntLit.of_int64 i64)
-  | `String jstr -> Sil.Cstr (JBasics.jstr_pp jstr)
+  | `Int i -> Const.Cint (IntLit.of_int32 i)
+  | `ANull -> Const.Cint IntLit.null
+  | `Class ot -> Const.Cclass (Ident.string_to_name (JTransType.object_type_to_string ot))
+  | `Double f -> Const.Cfloat f
+  | `Float f -> Const.Cfloat f
+  | `Long i64 -> Const.Cint (IntLit.of_int64 i64)
+  | `String jstr -> Const.Cstr (JBasics.jstr_pp jstr)
 
 let get_binop binop =
   match binop with
@@ -398,10 +398,10 @@ let use_static_final_fields context =
   (not Config.no_static_final) && (JContext.get_meth_kind context) <> JContext.Init
 
 let builtin_new =
-  Sil.Const (Sil.Cfun ModelBuiltins.__new)
+  Sil.Const (Const.Cfun ModelBuiltins.__new)
 
 let builtin_get_array_length =
-  Sil.Const (Sil.Cfun ModelBuiltins.__get_array_length)
+  Sil.Const (Const.Cfun ModelBuiltins.__get_array_length)
 
 let create_sil_deref exp typ loc =
   let no_id = Ident.create_none () in
@@ -463,8 +463,8 @@ let rec expression context pc expr =
               JTransType.sizeof_of_object_type program tenv ot subtypes in
             let builtin =
               (match unop with
-               | JBir.InstanceOf _ -> Sil.Const (Sil.Cfun ModelBuiltins.__instanceof)
-               | JBir.Cast _ -> Sil.Const (Sil.Cfun ModelBuiltins.__cast)
+               | JBir.InstanceOf _ -> Sil.Const (Const.Cfun ModelBuiltins.__instanceof)
+               | JBir.Cast _ -> Sil.Const (Const.Cfun ModelBuiltins.__cast)
                | _ -> assert false) in
             let args = [(sil_ex, type_of_ex); (sizeof_expr, Typ.Tvoid)] in
             let ret_id = Ident.create_fresh Ident.knormal in
@@ -594,7 +594,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
     then proc
     else Procname.Java (JTransType.get_method_procname cn' ms method_kind) in
   let call_instrs =
-    let callee_fun = Sil.Const (Sil.Cfun callee_procname) in
+    let callee_fun = Sil.Const (Const.Cfun callee_procname) in
     let return_type =
       match JBasics.ms_rtype ms with
       | None -> Typ.Tvoid
@@ -620,7 +620,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
     | (_, typ) as exp :: _
       when Procname.is_constructor callee_procname && JTransType.is_closeable program tenv typ ->
         let set_file_attr =
-          let set_builtin = Sil.Const (Sil.Cfun ModelBuiltins.__set_file_attribute) in
+          let set_builtin = Sil.Const (Const.Cfun ModelBuiltins.__set_file_attribute) in
           Sil.Call ([], set_builtin, [exp], loc, Sil.cf_default) in
         (* Exceptions thrown in the constructor should prevent adding the resource attribute *)
         call_instrs @ [set_file_attr]
@@ -629,7 +629,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
     | (_, typ) as exp :: []
       when Procname.java_is_close callee_procname && JTransType.is_closeable program tenv typ ->
         let set_mem_attr =
-          let set_builtin = Sil.Const (Sil.Cfun ModelBuiltins.__set_mem_attribute) in
+          let set_builtin = Sil.Const (Const.Cfun ModelBuiltins.__set_mem_attribute) in
           Sil.Call ([], set_builtin, [exp], loc, Sil.cf_default) in
         (* Exceptions thrown in the close method should not prevent the resource from being *)
         (* considered as closed *)
@@ -760,7 +760,7 @@ let is_this expr =
 
 
 let assume_not_null loc sil_expr =
-  let builtin_infer_assume = Sil.Const (Sil.Cfun ModelBuiltins.__infer_assume) in
+  let builtin_infer_assume = Sil.Const (Const.Cfun ModelBuiltins.__infer_assume) in
   let not_null_expr =
     Sil.BinOp (Sil.Ne, sil_expr, Sil.exp_null) in
   let assume_call_flag = { Sil.cf_default with Sil.cf_noreturn = true; } in
@@ -794,7 +794,7 @@ let rec instruction context pc instr : translation =
       JTransType.never_returning_null in
   let trans_monitor_enter_exit context expr pc loc builtin node_desc =
     let instrs, sil_expr, sil_type = expression context pc expr in
-    let builtin_const = Sil.Const (Sil.Cfun builtin) in
+    let builtin_const = Sil.Const (Const.Cfun builtin) in
     let instr = Sil.Call ([], builtin_const, [(sil_expr, sil_type)], loc, Sil.cf_default) in
     let typ_no_ptr = match sil_type with
       | Typ.Tptr (typ, _) -> typ
@@ -897,7 +897,7 @@ let rec instruction context pc instr : translation =
         JContext.add_goto_jump context pc JContext.Exit;
         Instr node
     | JBir.New (var, cn, constr_type_list, constr_arg_list) ->
-        let builtin_new = Sil.Const (Sil.Cfun ModelBuiltins.__new) in
+        let builtin_new = Sil.Const (Const.Cfun ModelBuiltins.__new) in
         let class_type = JTransType.get_class_type program tenv cn in
         let class_type_np = JTransType.get_class_type_no_pointer program tenv cn in
         let sizeof_exp = Sil.Sizeof (class_type_np, None, Sil.Subtype.exact) in
@@ -918,7 +918,7 @@ let rec instruction context pc instr : translation =
         Cg.add_edge cg caller_procname constr_procname;
         Instr node
     | JBir.NewArray (var, vt, expr_list) ->
-        let builtin_new_array = Sil.Const (Sil.Cfun ModelBuiltins.__new_array) in
+        let builtin_new_array = Sil.Const (Const.Cfun ModelBuiltins.__new_array) in
         let content_type = JTransType.value_type program tenv vt in
         let array_type = JTransType.create_array_type content_type (IList.length expr_list) in
         let array_name = JContext.set_pvar context var array_type in
@@ -1046,7 +1046,7 @@ let rec instruction context pc instr : translation =
           let sil_assume_in_bound =
             let sil_in_bound =
               let sil_positive_index =
-                Sil.BinOp (Sil.Ge, sil_index_expr, Sil.Const (Sil.Cint IntLit.zero))
+                Sil.BinOp (Sil.Ge, sil_index_expr, Sil.Const (Const.Cint IntLit.zero))
               and sil_less_than_length =
                 Sil.BinOp (Sil.Lt, sil_index_expr, sil_length_expr) in
               Sil.BinOp (Sil.LAnd, sil_positive_index, sil_less_than_length) in
@@ -1059,7 +1059,7 @@ let rec instruction context pc instr : translation =
           let sil_assume_out_of_bound =
             let sil_out_of_bound =
               let sil_negative_index =
-                Sil.BinOp (Sil.Lt, sil_index_expr, Sil.Const (Sil.Cint IntLit.zero))
+                Sil.BinOp (Sil.Lt, sil_index_expr, Sil.Const (Const.Cint IntLit.zero))
               and sil_greater_than_length =
                 Sil.BinOp (Sil.Gt, sil_index_expr, sil_length_expr) in
               Sil.BinOp (Sil.LOr, sil_negative_index, sil_greater_than_length) in
@@ -1090,7 +1090,7 @@ let rec instruction context pc instr : translation =
         and ret_id = Ident.create_fresh Ident.knormal
         and sizeof_expr =
           JTransType.sizeof_of_object_type program tenv object_type Sil.Subtype.subtypes_instof in
-        let check_cast = Sil.Const (Sil.Cfun ModelBuiltins.__instanceof) in
+        let check_cast = Sil.Const (Const.Cfun ModelBuiltins.__instanceof) in
         let args = [(sil_expr, sil_type); (sizeof_expr, Typ.Tvoid)] in
         let call = Sil.Call([ret_id], check_cast, args, loc, Sil.cf_default) in
         let res_ex = Sil.Var ret_id in

@@ -142,22 +142,11 @@ type taint_kind =
 type taint_info = {taint_source: Procname.t, taint_kind: taint_kind};
 
 
-/** Constants */
-type const =
-  | Cint of IntLit.t /** integer constants */
-  | Cfun of Procname.t /** function names */
-  | Cstr of string /** string constants */
-  | Cfloat of float /** float constants */
-  | Cclass of Ident.name /** class constant */
-  | Cptr_to_fld of Ident.fieldname Typ.t /** pointer to field constant,
-                                             and type of the surrounding Csu.t type */;
-
-
 /** expression representing the result of decompilation */
 type dexp =
   | Darray of dexp dexp
   | Dbinop of binop dexp dexp
-  | Dconst of const
+  | Dconst of Const.t
   | Dsizeof of Typ.t (option dexp) Subtype.t
   | Dderef of dexp
   | Dfcall of dexp (list dexp) Location.t call_flags
@@ -223,7 +212,7 @@ and exp =
   /** Anonymous function */
   | Closure of closure
   /** Constants */
-  | Const of const
+  | Const of Const.t
   /** Type cast */
   | Cast of Typ.t exp
   /** The address of a program variable */
@@ -559,14 +548,6 @@ let attribute_to_category: attribute => attribute_category;
 
 let attr_is_undef: attribute => bool;
 
-let const_compare: const => const => int;
-
-let const_equal: const => const => bool;
-
-
-/** Return true if the constants have the same kind (both integers, ...) */
-let const_kind_equal: const => const => bool;
-
 let exp_compare: exp => exp => int;
 
 let exp_equal: exp => exp => bool;
@@ -654,10 +635,6 @@ let mem_alloc_pname: mem_kind => Procname.t;
 
 /** name of the deallocation function for the given memory kind */
 let mem_dealloc_pname: mem_kind => Procname.t;
-
-
-/** Pretty print a const. */
-let pp_const: printenv => F.formatter => const => unit;
 
 
 /** convert the attribute to a string */

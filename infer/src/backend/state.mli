@@ -18,7 +18,7 @@ type t
 (** Add diverging states *)
 val add_diverging_states : Paths.PathSet.t -> unit
 
-type const_map = Cfg.Node.t -> Sil.exp -> Sil.const option
+type const_map = Cfg.Node.t -> Sil.exp -> Const.t option
 
 (** Get the constant map for the current procedure. *)
 val get_const_map : unit -> const_map

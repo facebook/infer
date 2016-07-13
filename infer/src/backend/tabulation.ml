@@ -647,7 +647,7 @@ let prop_get_exn_name pname prop =
 let lookup_custom_errors prop =
   let rec search_error = function
     | [] -> None
-    | Sil.Hpointsto (Sil.Lvar var, Sil.Eexp (Sil.Const (Sil.Cstr error_str), _), _) :: _
+    | Sil.Hpointsto (Sil.Lvar var, Sil.Eexp (Sil.Const (Const.Cstr error_str), _), _) :: _
       when Pvar.equal var Sil.custom_error -> Some error_str
     | _ :: tl -> search_error tl in
   search_error (Prop.get_sigma prop)
@@ -721,7 +721,7 @@ let combine
     let handle_null_case_analysis sigma =
       let id_assigned_to_null id =
         let filter = function
-          | Sil.Aeq (Sil.Var id', Sil.Const (Sil.Cint i)) ->
+          | Sil.Aeq (Sil.Var id', Sil.Const (Const.Cint i)) ->
               Ident.equal id id' && IntLit.isnull i
           | _ -> false in
         IList.exists filter split.missing_pi in
@@ -1092,7 +1092,7 @@ let exe_spec
 
 let remove_constant_string_class prop =
   let filter = function
-    | Sil.Hpointsto (Sil.Const (Sil.Cstr _ | Sil.Cclass _), _, _) -> false
+    | Sil.Hpointsto (Sil.Const (Const.Cstr _ | Const.Cclass _), _, _) -> false
     | _ -> true in
   let sigma = IList.filter filter (Prop.get_sigma prop) in
   let sigmafp = IList.filter filter (Prop.get_sigma_footprint prop) in

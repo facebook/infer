@@ -282,7 +282,7 @@ let callback_check_write_to_parcel_java
     check_match (r_call_descs, w_call_descs) in
 
   let do_instr _ instr = match instr with
-    | Sil.Call (_, Sil.Const (Sil.Cfun _), (_this_exp, this_type):: _, _, _) ->
+    | Sil.Call (_, Sil.Const (Const.Cfun _), (_this_exp, this_type):: _, _, _) ->
         let this_exp = Idenv.expand_expr idenv _this_exp in
         if is_write_to_parcel this_exp this_type then begin
           if !verbose then
@@ -373,7 +373,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
       end in
 
   let do_instr _ instr = match instr with
-    | Sil.Call (_, Sil.Const (Sil.Cfun pn), (_arg1, _):: _, _, _) when is_nullcheck pn ->
+    | Sil.Call (_, Sil.Const (Const.Cfun pn), (_arg1, _):: _, _, _) when is_nullcheck pn ->
         let arg1 = Idenv.expand_expr idenv _arg1 in
         if is_formal_param arg1 then handle_check_of_formal arg1;
         if !verbose then
@@ -431,17 +431,17 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
             when Pvar.equal p (Cfg.Procdesc.get_ret_var proc_desc') -> true
           | _ -> false in
         (match reverse_find_instr is_return_instr (Cfg.Procdesc.get_exit_node proc_desc') with
-         | Some (Sil.Set (_, _, Sil.Const (Sil.Cclass n), _)) -> Ident.name_to_string n
+         | Some (Sil.Set (_, _, Sil.Const (Const.Cclass n), _)) -> Ident.name_to_string n
          | _ -> "<" ^ (Procname.to_string proc_name') ^ ">")
     | None -> "?" in
 
   let get_actual_arguments node instr = match instr with
-    | Sil.Call (_, Sil.Const (Sil.Cfun _), _:: args, _, _) ->
+    | Sil.Call (_, Sil.Const (Const.Cfun _), _:: args, _, _) ->
         (try
            let find_const exp =
              let expanded = Idenv.expand_expr idenv exp in
              match expanded with
-             | Sil.Const (Sil.Cclass n) -> Ident.name_to_string n
+             | Sil.Const (Const.Cclass n) -> Ident.name_to_string n
              | Sil.Lvar _ -> (
                  let is_call_instr set call = match set, call with
                    | Sil.Set (_, _, Sil.Var (i1), _), Sil.Call (i2::[], _, _, _, _)
@@ -455,7 +455,8 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
                  | Some s -> (
                      match reverse_find_instr (is_call_instr s) node with
                      (** Look for tmp := foo() *)
-                     | Some (Sil.Call (_, Sil.Const (Sil.Cfun pn), _, _, _)) -> get_return_const pn
+                     | Some (Sil.Call (_, Sil.Const (Const.Cfun pn), _, _, _)) ->
+                         get_return_const pn
                      | _ -> "?")
                  | _ -> "?")
              | _ -> "?" in
@@ -544,7 +545,7 @@ let callback_check_field_access { Callbacks.proc_desc } =
 (** Print c method calls. *)
 let callback_print_c_method_calls { Callbacks.proc_desc; proc_name } =
   let do_instr node = function
-    | Sil.Call (_, Sil.Const (Sil.Cfun pn), (e, _):: _, loc, _)
+    | Sil.Call (_, Sil.Const (Const.Cfun pn), (e, _):: _, loc, _)
       when Procname.is_c_method pn ->
         let receiver = match Errdesc.exp_rv_dexp node e with
           | Some de -> Sil.dexp_to_string de
@@ -557,7 +558,7 @@ let callback_print_c_method_calls { Callbacks.proc_desc; proc_name } =
           "CHECKERS_PRINT_OBJC_METHOD_CALLS"
           loc
           description
-    | Sil.Call (_, Sil.Const (Sil.Cfun pn), _, loc, _) ->
+    | Sil.Call (_, Sil.Const (Const.Cfun pn), _, loc, _) ->
         let description =
           Printf.sprintf "call to %s" (Procname.to_string pn) in
         ST.report_error

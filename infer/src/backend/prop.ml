@@ -430,18 +430,18 @@ let (--) = IntLit.sub
 let (++) = IntLit.add
 
 let iszero_int_float = function
-  | Sil.Cint i -> IntLit.iszero i
-  | Sil.Cfloat 0.0 -> true
+  | Const.Cint i -> IntLit.iszero i
+  | Const.Cfloat 0.0 -> true
   | _ -> false
 
 let isone_int_float = function
-  | Sil.Cint i -> IntLit.isone i
-  | Sil.Cfloat 1.0 -> true
+  | Const.Cint i -> IntLit.isone i
+  | Const.Cfloat 1.0 -> true
   | _ -> false
 
 let isminusone_int_float = function
-  | Sil.Cint i -> IntLit.isminusone i
-  | Sil.Cfloat (-1.0) -> true
+  | Const.Cint i -> IntLit.isminusone i
+  | Const.Cfloat (-1.0) -> true
   | _ -> false
 
 let sym_eval abs e =
@@ -461,7 +461,7 @@ let sym_eval abs e =
         eval l
     | Sil.Sizeof (Typ.Tarray (Typ.Tint ik, Some l), _, _)
       when Typ.ikind_is_char ik && !Config.curr_language = Config.Clang ->
-        Sil.Const (Sil.Cint l)
+        Sil.Const (Const.Cint l)
     | Sil.Sizeof _ ->
         e
     | Sil.Cast (_, e1) ->
@@ -469,9 +469,9 @@ let sym_eval abs e =
     | Sil.UnOp (Sil.LNot, e1, topt) ->
         begin
           match eval e1 with
-          | Sil.Const (Sil.Cint i) when IntLit.iszero i ->
+          | Sil.Const (Const.Cint i) when IntLit.iszero i ->
               Sil.exp_one
-          | Sil.Const (Sil.Cint _) ->
+          | Sil.Const (Const.Cint _) ->
               Sil.exp_zero
           | Sil.UnOp(Sil.LNot, e1', _) ->
               e1'
@@ -483,9 +483,9 @@ let sym_eval abs e =
           match eval e1 with
           | Sil.UnOp (Sil.Neg, e2', _) ->
               e2'
-          | Sil.Const (Sil.Cint i) ->
+          | Sil.Const (Const.Cint i) ->
               Sil.exp_int (IntLit.neg i)
-          | Sil.Const (Sil.Cfloat v) ->
+          | Sil.Const (Const.Cfloat v) ->
               Sil.exp_float (-. v)
           | Sil.Var id ->
               Sil.UnOp (Sil.Neg, Sil.Var id, topt)
@@ -497,7 +497,7 @@ let sym_eval abs e =
           match eval e1 with
           | Sil.UnOp(Sil.BNot, e2', _) ->
               e2'
-          | Sil.Const (Sil.Cint i) ->
+          | Sil.Const (Const.Cint i) ->
               Sil.exp_int (IntLit.lognot i)
           | e1' ->
               if abs then Sil.exp_get_undefined false else Sil.UnOp (Sil.BNot, e1', topt)
@@ -505,11 +505,11 @@ let sym_eval abs e =
     | Sil.BinOp (Sil.Le, e1, e2) ->
         begin
           match eval e1, eval e2 with
-          | Sil.Const (Sil.Cint n), Sil.Const (Sil.Cint m) ->
+          | Sil.Const (Const.Cint n), Sil.Const (Const.Cint m) ->
               Sil.exp_bool (IntLit.leq n m)
-          | Sil.Const (Sil.Cfloat v), Sil.Const (Sil.Cfloat w) ->
+          | Sil.Const (Const.Cfloat v), Sil.Const (Const.Cfloat w) ->
               Sil.exp_bool (v <= w)
-          | Sil.BinOp (Sil.PlusA, e3, Sil.Const (Sil.Cint n)), Sil.Const (Sil.Cint m) ->
+          | Sil.BinOp (Sil.PlusA, e3, Sil.Const (Const.Cint n)), Sil.Const (Const.Cint m) ->
               Sil.BinOp (Sil.Le, e3, Sil.exp_int (m -- n))
           | e1', e2' ->
               Sil.exp_le e1' e2'
@@ -517,16 +517,16 @@ let sym_eval abs e =
     | Sil.BinOp (Sil.Lt, e1, e2) ->
         begin
           match eval e1, eval e2 with
-          | Sil.Const (Sil.Cint n), Sil.Const (Sil.Cint m) ->
+          | Sil.Const (Const.Cint n), Sil.Const (Const.Cint m) ->
               Sil.exp_bool (IntLit.lt n m)
-          | Sil.Const (Sil.Cfloat v), Sil.Const (Sil.Cfloat w) ->
+          | Sil.Const (Const.Cfloat v), Sil.Const (Const.Cfloat w) ->
               Sil.exp_bool (v < w)
-          | Sil.Const (Sil.Cint n), Sil.BinOp (Sil.MinusA, f1, f2) ->
+          | Sil.Const (Const.Cint n), Sil.BinOp (Sil.MinusA, f1, f2) ->
               Sil.BinOp
                 (Sil.Le, Sil.BinOp (Sil.MinusA, f2, f1), Sil.exp_int (IntLit.minus_one -- n))
-          | Sil.BinOp(Sil.MinusA, f1 , f2), Sil.Const(Sil.Cint n) ->
+          | Sil.BinOp(Sil.MinusA, f1 , f2), Sil.Const(Const.Cint n) ->
               Sil.exp_le (Sil.BinOp(Sil.MinusA, f1 , f2)) (Sil.exp_int (n -- IntLit.one))
-          | Sil.BinOp (Sil.PlusA, e3, Sil.Const (Sil.Cint n)), Sil.Const (Sil.Cint m) ->
+          | Sil.BinOp (Sil.PlusA, e3, Sil.Const (Const.Cint n)), Sil.Const (Const.Cint m) ->
               Sil.BinOp (Sil.Lt, e3, Sil.exp_int (m -- n))
           | e1', e2' ->
               Sil.exp_lt e1' e2'
@@ -538,9 +538,9 @@ let sym_eval abs e =
     | Sil.BinOp (Sil.Eq, e1, e2) ->
         begin
           match eval e1, eval e2 with
-          | Sil.Const (Sil.Cint n), Sil.Const (Sil.Cint m) ->
+          | Sil.Const (Const.Cint n), Sil.Const (Const.Cint m) ->
               Sil.exp_bool (IntLit.eq n m)
-          | Sil.Const (Sil.Cfloat v), Sil.Const (Sil.Cfloat w) ->
+          | Sil.Const (Const.Cfloat v), Sil.Const (Const.Cfloat w) ->
               Sil.exp_bool (v = w)
           | e1', e2' ->
               Sil.exp_eq e1' e2'
@@ -548,9 +548,9 @@ let sym_eval abs e =
     | Sil.BinOp (Sil.Ne, e1, e2) ->
         begin
           match eval e1, eval e2 with
-          | Sil.Const (Sil.Cint n), Sil.Const (Sil.Cint m) ->
+          | Sil.Const (Const.Cint n), Sil.Const (Const.Cint m) ->
               Sil.exp_bool (IntLit.neq n m)
-          | Sil.Const (Sil.Cfloat v), Sil.Const (Sil.Cfloat w) ->
+          | Sil.Const (Const.Cfloat v), Sil.Const (Const.Cfloat w) ->
               Sil.exp_bool (v <> w)
           | e1', e2' ->
               Sil.exp_ne e1' e2'
@@ -559,13 +559,13 @@ let sym_eval abs e =
         let e1' = eval e1 in
         let e2' = eval e2 in
         begin match e1', e2' with
-          | Sil.Const (Sil.Cint i), _ when IntLit.iszero i ->
+          | Sil.Const (Const.Cint i), _ when IntLit.iszero i ->
               e1'
-          | Sil.Const (Sil.Cint _), _ ->
+          | Sil.Const (Const.Cint _), _ ->
               e2'
-          | _, Sil.Const (Sil.Cint i) when IntLit.iszero i ->
+          | _, Sil.Const (Const.Cint i) when IntLit.iszero i ->
               e2'
-          | _, Sil.Const (Sil.Cint _) ->
+          | _, Sil.Const (Const.Cint _) ->
               e1'
           | _ ->
               Sil.BinOp (Sil.LAnd, e1', e2')
@@ -575,13 +575,13 @@ let sym_eval abs e =
         let e2' = eval e2 in
         begin
           match e1', e2' with
-          | Sil.Const (Sil.Cint i), _ when IntLit.iszero i ->
+          | Sil.Const (Const.Cint i), _ when IntLit.iszero i ->
               e2'
-          | Sil.Const (Sil.Cint _), _ ->
+          | Sil.Const (Const.Cint _), _ ->
               e1'
-          | _, Sil.Const (Sil.Cint i) when IntLit.iszero i ->
+          | _, Sil.Const (Const.Cint i) when IntLit.iszero i ->
               e1'
-          | _, Sil.Const (Sil.Cint _) ->
+          | _, Sil.Const (Const.Cint _) ->
               e2'
           | _ ->
               Sil.BinOp (Sil.LOr, e1', e2')
@@ -601,12 +601,14 @@ let sym_eval abs e =
         let isPlusA = oplus = Sil.PlusA in
         let ominus = if isPlusA then Sil.MinusA else Sil.MinusPI in
         let (+++) x y = match x, y with
-          | _, Sil.Const (Sil.Cint i) when IntLit.iszero i -> x
-          | Sil.Const (Sil.Cint i), Sil.Const (Sil.Cint j) -> Sil.Const (Sil.Cint (IntLit.add i j))
+          | _, Sil.Const (Const.Cint i) when IntLit.iszero i -> x
+          | Sil.Const (Const.Cint i), Sil.Const (Const.Cint j) ->
+              Sil.Const (Const.Cint (IntLit.add i j))
           | _ -> Sil.BinOp (oplus, x, y) in
         let (---) x y = match x, y with
-          | _, Sil.Const (Sil.Cint i) when IntLit.iszero i -> x
-          | Sil.Const (Sil.Cint i), Sil.Const (Sil.Cint j) -> Sil.Const (Sil.Cint (IntLit.sub i j))
+          | _, Sil.Const (Const.Cint i) when IntLit.iszero i -> x
+          | Sil.Const (Const.Cint i), Sil.Const (Const.Cint j) ->
+              Sil.Const (Const.Cint (IntLit.sub i j))
           | _ -> Sil.BinOp (ominus, x, y) in
         (* test if the extensible array at the end of [typ] has elements of type [elt] *)
         let extensible_array_element_typ_equal elt typ =
@@ -623,20 +625,20 @@ let sym_eval abs e =
               e2'
           | _, Sil.Const c when iszero_int_float c ->
               e1'
-          | Sil.Const (Sil.Cint n), Sil.Const (Sil.Cint m) ->
+          | Sil.Const (Const.Cint n), Sil.Const (Const.Cint m) ->
               Sil.exp_int (n ++ m)
-          | Sil.Const (Sil.Cfloat v), Sil.Const (Sil.Cfloat w) ->
+          | Sil.Const (Const.Cfloat v), Sil.Const (Const.Cfloat w) ->
               Sil.exp_float (v +. w)
           | Sil.UnOp(Sil.Neg, f1, _), f2
           | f2, Sil.UnOp(Sil.Neg, f1, _) ->
               Sil.BinOp (ominus, f2, f1)
-          | Sil.BinOp (Sil.PlusA, e, Sil.Const (Sil.Cint n1)), Sil.Const (Sil.Cint n2)
-          | Sil.BinOp (Sil.PlusPI, e, Sil.Const (Sil.Cint n1)), Sil.Const (Sil.Cint n2)
-          | Sil.Const (Sil.Cint n2), Sil.BinOp (Sil.PlusA, e, Sil.Const (Sil.Cint n1))
-          | Sil.Const (Sil.Cint n2), Sil.BinOp (Sil.PlusPI, e, Sil.Const (Sil.Cint n1)) ->
+          | Sil.BinOp (Sil.PlusA, e, Sil.Const (Const.Cint n1)), Sil.Const (Const.Cint n2)
+          | Sil.BinOp (Sil.PlusPI, e, Sil.Const (Const.Cint n1)), Sil.Const (Const.Cint n2)
+          | Sil.Const (Const.Cint n2), Sil.BinOp (Sil.PlusA, e, Sil.Const (Const.Cint n1))
+          | Sil.Const (Const.Cint n2), Sil.BinOp (Sil.PlusPI, e, Sil.Const (Const.Cint n1)) ->
               e +++ (Sil.exp_int (n1 ++ n2))
-          | Sil.BinOp (Sil.MinusA, Sil.Const (Sil.Cint n1), e), Sil.Const (Sil.Cint n2)
-          | Sil.Const (Sil.Cint n2), Sil.BinOp (Sil.MinusA, Sil.Const (Sil.Cint n1), e) ->
+          | Sil.BinOp (Sil.MinusA, Sil.Const (Const.Cint n1), e), Sil.Const (Const.Cint n2)
+          | Sil.Const (Const.Cint n2), Sil.BinOp (Sil.MinusA, Sil.Const (Const.Cint n1), e) ->
               Sil.exp_int (n1 ++ n2) --- e
           | Sil.BinOp (Sil.MinusA, e1, e2), e3 -> (* (e1-e2)+e3 --> e1 + (e3-e2) *)
               (* progress: brings + to the outside *)
@@ -667,13 +669,13 @@ let sym_eval abs e =
               eval (Sil.UnOp(Sil.Neg, e2', None))
           | _, Sil.Const c when iszero_int_float c ->
               e1'
-          | Sil.Const (Sil.Cint n), Sil.Const (Sil.Cint m) ->
+          | Sil.Const (Const.Cint n), Sil.Const (Const.Cint m) ->
               Sil.exp_int (n -- m)
-          | Sil.Const (Sil.Cfloat v), Sil.Const (Sil.Cfloat w) ->
+          | Sil.Const (Const.Cfloat v), Sil.Const (Const.Cfloat w) ->
               Sil.exp_float (v -. w)
           | _, Sil.UnOp (Sil.Neg, f2, _) ->
               eval (e1 +++ f2)
-          | _ , Sil.Const(Sil.Cint n) ->
+          | _ , Sil.Const(Const.Cint n) ->
               eval (e1' +++ (Sil.exp_int (IntLit.neg n)))
           | Sil.Const _, _ ->
               e1' --- e2'
@@ -702,9 +704,9 @@ let sym_eval abs e =
               e1'
           | _, Sil.Const c when isminusone_int_float c ->
               eval (Sil.UnOp (Sil.Neg, e1', None))
-          | Sil.Const (Sil.Cint n), Sil.Const (Sil.Cint m) ->
+          | Sil.Const (Const.Cint n), Sil.Const (Const.Cint m) ->
               Sil.exp_int (IntLit.mul n m)
-          | Sil.Const (Sil.Cfloat v), Sil.Const (Sil.Cfloat w) ->
+          | Sil.Const (Const.Cfloat v), Sil.Const (Const.Cfloat w) ->
               Sil.exp_float (v *. w)
           | Sil.Var _, Sil.Var _ ->
               Sil.BinOp(Sil.Mult, e1', e2')
@@ -725,9 +727,9 @@ let sym_eval abs e =
               e1'
           | _, Sil.Const c when isone_int_float c ->
               e1'
-          | Sil.Const (Sil.Cint n), Sil.Const (Sil.Cint m) ->
+          | Sil.Const (Const.Cint n), Sil.Const (Const.Cint m) ->
               Sil.exp_int (IntLit.div n m)
-          | Sil.Const (Sil.Cfloat v), Sil.Const (Sil.Cfloat w) ->
+          | Sil.Const (Const.Cfloat v), Sil.Const (Const.Cfloat w) ->
               Sil.exp_float (v /.w)
           | Sil.Sizeof (Typ.Tarray (elt, _), Some len, _), Sil.Sizeof (elt2, None, _)
             (* pattern: sizeof(elt[len]) / sizeof(elt) = len *)
@@ -736,7 +738,7 @@ let sym_eval abs e =
           | Sil.Sizeof (Typ.Tarray (elt, Some len), None, _), Sil.Sizeof (elt2, None, _)
             (* pattern: sizeof(elt[len]) / sizeof(elt) = len *)
             when Typ.equal elt elt2 ->
-              Sil.Const (Sil.Cint len)
+              Sil.Const (Const.Cint len)
           | _ ->
               if abs then Sil.exp_get_undefined false else Sil.BinOp (Sil.Div, e1', e2')
         end
@@ -745,13 +747,13 @@ let sym_eval abs e =
         let e2' = eval e2 in
         begin
           match e1', e2' with
-          | _, Sil.Const (Sil.Cint i) when IntLit.iszero i ->
+          | _, Sil.Const (Const.Cint i) when IntLit.iszero i ->
               Sil.exp_get_undefined false
-          | Sil.Const (Sil.Cint i), _ when IntLit.iszero i ->
+          | Sil.Const (Const.Cint i), _ when IntLit.iszero i ->
               e1'
-          | _, Sil.Const (Sil.Cint i) when IntLit.isone i ->
+          | _, Sil.Const (Const.Cint i) when IntLit.isone i ->
               Sil.exp_zero
-          | Sil.Const (Sil.Cint n), Sil.Const (Sil.Cint m) ->
+          | Sil.Const (Const.Cint n), Sil.Const (Const.Cint m) ->
               Sil.exp_int (IntLit.rem n m)
           | _ ->
               if abs then Sil.exp_get_undefined false else Sil.BinOp (Sil.Mod, e1', e2')
@@ -764,11 +766,11 @@ let sym_eval abs e =
         let e1' = eval e1 in
         let e2' = eval e2 in
         begin match e1', e2' with
-          | Sil.Const (Sil.Cint i), _ when IntLit.iszero i ->
+          | Sil.Const (Const.Cint i), _ when IntLit.iszero i ->
               e1'
-          | _, Sil.Const (Sil.Cint i) when IntLit.iszero i ->
+          | _, Sil.Const (Const.Cint i) when IntLit.iszero i ->
               e2'
-          | Sil.Const (Sil.Cint i1), Sil.Const(Sil.Cint i2) ->
+          | Sil.Const (Const.Cint i1), Sil.Const(Const.Cint i2) ->
               Sil.exp_int (IntLit.logand i1 i2)
           | _ ->
               if abs then Sil.exp_get_undefined false else Sil.BinOp (Sil.BAnd, e1', e2')
@@ -777,11 +779,11 @@ let sym_eval abs e =
         let e1' = eval e1 in
         let e2' = eval e2 in
         begin match e1', e2' with
-          | Sil.Const (Sil.Cint i), _ when IntLit.iszero i ->
+          | Sil.Const (Const.Cint i), _ when IntLit.iszero i ->
               e2'
-          | _, Sil.Const (Sil.Cint i) when IntLit.iszero i ->
+          | _, Sil.Const (Const.Cint i) when IntLit.iszero i ->
               e1'
-          | Sil.Const (Sil.Cint i1), Sil.Const(Sil.Cint i2) ->
+          | Sil.Const (Const.Cint i1), Sil.Const(Const.Cint i2) ->
               Sil.exp_int (IntLit.logor i1 i2)
           | _ ->
               if abs then Sil.exp_get_undefined false else Sil.BinOp (Sil.BOr, e1', e2')
@@ -790,11 +792,11 @@ let sym_eval abs e =
         let e1' = eval e1 in
         let e2' = eval e2 in
         begin match e1', e2' with
-          | Sil.Const (Sil.Cint i), _ when IntLit.iszero i ->
+          | Sil.Const (Const.Cint i), _ when IntLit.iszero i ->
               e2'
-          | _, Sil.Const (Sil.Cint i) when IntLit.iszero i ->
+          | _, Sil.Const (Const.Cint i) when IntLit.iszero i ->
               e1'
-          | Sil.Const (Sil.Cint i1), Sil.Const(Sil.Cint i2) ->
+          | Sil.Const (Const.Cint i1), Sil.Const(Const.Cint i2) ->
               Sil.exp_int (IntLit.logxor i1 i2)
           | _ ->
               if abs then Sil.exp_get_undefined false else Sil.BinOp (Sil.BXor, e1', e2')
@@ -804,9 +806,9 @@ let sym_eval abs e =
         let e2' = eval e2 in
         begin
           match e2' with
-          | Sil.Const (Sil.Cptr_to_fld (fn, typ)) ->
+          | Sil.Const (Const.Cptr_to_fld (fn, typ)) ->
               eval (Sil.Lfield(e1', fn, typ))
-          | Sil.Const (Sil.Cint i) when IntLit.iszero i ->
+          | Sil.Const (Const.Cint i) when IntLit.iszero i ->
               Sil.exp_zero (* cause a NULL dereference *)
           | _ -> Sil.BinOp (Sil.PtrFld, e1', e2')
         end
@@ -848,20 +850,20 @@ let exp_normalize_noabs sub exp =
 
 (** Return [true] if the atom is an inequality *)
 let atom_is_inequality = function
-  | Sil.Aeq (Sil.BinOp (Sil.Le, _, _), Sil.Const (Sil.Cint i)) when IntLit.isone i -> true
-  | Sil.Aeq (Sil.BinOp (Sil.Lt, _, _), Sil.Const (Sil.Cint i)) when IntLit.isone i -> true
+  | Sil.Aeq (Sil.BinOp (Sil.Le, _, _), Sil.Const (Const.Cint i)) when IntLit.isone i -> true
+  | Sil.Aeq (Sil.BinOp (Sil.Lt, _, _), Sil.Const (Const.Cint i)) when IntLit.isone i -> true
   | _ -> false
 
 (** If the atom is [e<=n] return [e,n] *)
 let atom_exp_le_const = function
-  | Sil.Aeq(Sil.BinOp (Sil.Le, e1, Sil.Const (Sil.Cint n)), Sil.Const (Sil.Cint i))
+  | Sil.Aeq(Sil.BinOp (Sil.Le, e1, Sil.Const (Const.Cint n)), Sil.Const (Const.Cint i))
     when IntLit.isone i ->
       Some (e1, n)
   | _ -> None
 
 (** If the atom is [n<e] return [n,e] *)
 let atom_const_lt_exp = function
-  | Sil.Aeq(Sil.BinOp (Sil.Lt, Sil.Const (Sil.Cint n), e1), Sil.Const (Sil.Cint i))
+  | Sil.Aeq(Sil.BinOp (Sil.Lt, Sil.Const (Const.Cint n), e1), Sil.Const (Const.Cint i))
     when IntLit.isone i ->
       Some (n, e1)
   | _ -> None
@@ -869,23 +871,23 @@ let atom_const_lt_exp = function
 (** Turn an inequality expression into an atom *)
 let mk_inequality e =
   match e with
-  | Sil.BinOp (Sil.Le, base, Sil.Const (Sil.Cint n)) ->
+  | Sil.BinOp (Sil.Le, base, Sil.Const (Const.Cint n)) ->
       (* base <= n case *)
       let nbase = exp_normalize_noabs Sil.sub_empty base in
       (match nbase with
-       | Sil.BinOp(Sil.PlusA, base', Sil.Const (Sil.Cint n')) ->
+       | Sil.BinOp(Sil.PlusA, base', Sil.Const (Const.Cint n')) ->
            let new_offset = Sil.exp_int (n -- n') in
            let new_e = Sil.BinOp (Sil.Le, base', new_offset) in
            Sil.Aeq (new_e, Sil.exp_one)
-       | Sil.BinOp(Sil.PlusA, Sil.Const (Sil.Cint n'), base') ->
+       | Sil.BinOp(Sil.PlusA, Sil.Const (Const.Cint n'), base') ->
            let new_offset = Sil.exp_int (n -- n') in
            let new_e = Sil.BinOp (Sil.Le, base', new_offset) in
            Sil.Aeq (new_e, Sil.exp_one)
-       | Sil.BinOp(Sil.MinusA, base', Sil.Const (Sil.Cint n')) ->
+       | Sil.BinOp(Sil.MinusA, base', Sil.Const (Const.Cint n')) ->
            let new_offset = Sil.exp_int (n ++ n') in
            let new_e = Sil.BinOp (Sil.Le, base', new_offset) in
            Sil.Aeq (new_e, Sil.exp_one)
-       | Sil.BinOp(Sil.MinusA, Sil.Const (Sil.Cint n'), base') ->
+       | Sil.BinOp(Sil.MinusA, Sil.Const (Const.Cint n'), base') ->
            let new_offset = Sil.exp_int (n' -- n -- IntLit.one) in
            let new_e = Sil.BinOp (Sil.Lt, new_offset, base') in
            Sil.Aeq (new_e, Sil.exp_one)
@@ -895,23 +897,23 @@ let mk_inequality e =
            let new_e = Sil.BinOp (Sil.Lt, new_offset, new_base) in
            Sil.Aeq (new_e, Sil.exp_one)
        | _ -> Sil.Aeq (e, Sil.exp_one))
-  | Sil.BinOp (Sil.Lt, Sil.Const (Sil.Cint n), base) ->
+  | Sil.BinOp (Sil.Lt, Sil.Const (Const.Cint n), base) ->
       (* n < base case *)
       let nbase = exp_normalize_noabs Sil.sub_empty base in
       (match nbase with
-       | Sil.BinOp(Sil.PlusA, base', Sil.Const (Sil.Cint n')) ->
+       | Sil.BinOp(Sil.PlusA, base', Sil.Const (Const.Cint n')) ->
            let new_offset = Sil.exp_int (n -- n') in
            let new_e = Sil.BinOp (Sil.Lt, new_offset, base') in
            Sil.Aeq (new_e, Sil.exp_one)
-       | Sil.BinOp(Sil.PlusA, Sil.Const (Sil.Cint n'), base') ->
+       | Sil.BinOp(Sil.PlusA, Sil.Const (Const.Cint n'), base') ->
            let new_offset = Sil.exp_int (n -- n') in
            let new_e = Sil.BinOp (Sil.Lt, new_offset, base') in
            Sil.Aeq (new_e, Sil.exp_one)
-       | Sil.BinOp(Sil.MinusA, base', Sil.Const (Sil.Cint n')) ->
+       | Sil.BinOp(Sil.MinusA, base', Sil.Const (Const.Cint n')) ->
            let new_offset = Sil.exp_int (n ++ n') in
            let new_e = Sil.BinOp (Sil.Lt, new_offset, base') in
            Sil.Aeq (new_e, Sil.exp_one)
-       | Sil.BinOp(Sil.MinusA, Sil.Const (Sil.Cint n'), base') ->
+       | Sil.BinOp(Sil.MinusA, Sil.Const (Const.Cint n'), base') ->
            let new_offset = Sil.exp_int (n' -- n -- IntLit.one) in
            let new_e = Sil.BinOp (Sil.Le, base', new_offset) in
            Sil.Aeq (new_e, Sil.exp_one)
@@ -929,7 +931,7 @@ let inequality_normalize a =
       and integer offset *)
   (** representing inequality [sum(pos) - sum(neg) + off <= 0] *)
   let rec exp_to_posnegoff e = match e with
-    | Sil.Const (Sil.Cint n) -> [],[], n
+    | Sil.Const (Const.Cint n) -> [],[], n
     | Sil.BinOp(Sil.PlusA, e1, e2) | Sil.BinOp(Sil.PlusPI, e1, e2) ->
         let pos1, neg1, n1 = exp_to_posnegoff e1 in
         let pos2, neg2, n2 = exp_to_posnegoff e2 in
@@ -971,7 +973,7 @@ let inequality_normalize a =
         let lhs_e = Sil.BinOp(Sil.MinusA, exp_list_to_sum pos, exp_list_to_sum neg) in
         Sil.BinOp(Sil.Le, lhs_e, Sil.exp_int (IntLit.zero -- n)) in
   let ineq = match a with
-    | Sil.Aeq (ineq, Sil.Const (Sil.Cint i)) when IntLit.isone i ->
+    | Sil.Aeq (ineq, Sil.Const (Const.Cint i)) when IntLit.isone i ->
         ineq
     | _ -> assert false in
   match ineq with
@@ -991,15 +993,15 @@ let exp_reorder e1 e2 = if Sil.exp_compare e1 e2 <= 0 then (e1, e2) else (e2, e1
 let atom_normalize sub a0 =
   let a = Sil.atom_sub sub a0 in
   let rec normalize_eq eq = match eq with
-    | Sil.BinOp(Sil.PlusA, e1, Sil.Const (Sil.Cint n1)), Sil.Const (Sil.Cint n2)
+    | Sil.BinOp(Sil.PlusA, e1, Sil.Const (Const.Cint n1)), Sil.Const (Const.Cint n2)
     (* e1+n1==n2 ---> e1==n2-n1 *)
-    | Sil.BinOp(Sil.PlusPI, e1, Sil.Const (Sil.Cint n1)), Sil.Const (Sil.Cint n2) ->
+    | Sil.BinOp(Sil.PlusPI, e1, Sil.Const (Const.Cint n1)), Sil.Const (Const.Cint n2) ->
         (e1, Sil.exp_int (n2 -- n1))
-    | Sil.BinOp(Sil.MinusA, e1, Sil.Const (Sil.Cint n1)), Sil.Const (Sil.Cint n2)
+    | Sil.BinOp(Sil.MinusA, e1, Sil.Const (Const.Cint n1)), Sil.Const (Const.Cint n2)
     (* e1-n1==n2 ---> e1==n1+n2 *)
-    | Sil.BinOp(Sil.MinusPI, e1, Sil.Const (Sil.Cint n1)), Sil.Const (Sil.Cint n2) ->
+    | Sil.BinOp(Sil.MinusPI, e1, Sil.Const (Const.Cint n1)), Sil.Const (Const.Cint n2) ->
         (e1, Sil.exp_int (n1 ++ n2))
-    | Sil.BinOp(Sil.MinusA, Sil.Const (Sil.Cint n1), e1), Sil.Const (Sil.Cint n2) ->
+    | Sil.BinOp(Sil.MinusA, Sil.Const (Const.Cint n1), e1), Sil.Const (Const.Cint n2) ->
         (* n1-e1 == n2 -> e1==n1-n2 *)
         (e1, Sil.exp_int (n1 -- n2))
     | Sil.Lfield (e1', fld1, _), Sil.Lfield (e2', fld2, _) ->
@@ -1013,8 +1015,8 @@ let atom_normalize sub a0 =
     | _ -> eq in
   let handle_unary_negation e1 e2 =
     match e1, e2 with
-    | Sil.UnOp (Sil.LNot, e1', _), Sil.Const (Sil.Cint i)
-    | Sil.Const (Sil.Cint i), Sil.UnOp (Sil.LNot, e1', _) when IntLit.iszero i ->
+    | Sil.UnOp (Sil.LNot, e1', _), Sil.Const (Const.Cint i)
+    | Sil.Const (Const.Cint i), Sil.UnOp (Sil.LNot, e1', _) when IntLit.iszero i ->
         (e1', Sil.exp_zero, true)
     | _ -> (e1, e2, false) in
   let handle_boolean_operation from_equality e1 e2 =
@@ -1038,9 +1040,9 @@ let atom_normalize sub a0 =
 
 (** Negate an atom *)
 let atom_negate = function
-  | Sil.Aeq (Sil.BinOp (Sil.Le, e1, e2), Sil.Const (Sil.Cint i)) when IntLit.isone i ->
+  | Sil.Aeq (Sil.BinOp (Sil.Le, e1, e2), Sil.Const (Const.Cint i)) when IntLit.isone i ->
       mk_inequality (Sil.exp_lt e2 e1)
-  | Sil.Aeq (Sil.BinOp (Sil.Lt, e1, e2), Sil.Const (Sil.Cint i)) when IntLit.isone i ->
+  | Sil.Aeq (Sil.BinOp (Sil.Lt, e1, e2), Sil.Const (Const.Cint i)) when IntLit.isone i ->
       mk_inequality (Sil.exp_le e2 e1)
   | Sil.Aeq (e1, e2) -> Sil.Aneq (e1, e2)
   | Sil.Aneq (e1, e2) -> Sil.Aeq (e1, e2)
@@ -1086,7 +1088,7 @@ let rec create_strexp_of_type tenvo struct_init_mode typ len inst =
     if !Config.curr_language = Config.Java && inst = Sil.Ialloc
     then
       match typ with
-      | Typ.Tfloat _ -> Sil.Const (Sil.Cfloat 0.0)
+      | Typ.Tfloat _ -> Sil.Const (Const.Cfloat 0.0)
       | _ -> Sil.exp_zero
     else
       create_fresh_var () in
@@ -1111,7 +1113,7 @@ let rec create_strexp_of_type tenvo struct_init_mode typ len inst =
   | Typ.Tarray (_, len_opt), None ->
       let len = match len_opt with
         | None -> Sil.exp_get_undefined false
-        | Some len -> Sil.Const (Sil.Cint len) in
+        | Some len -> Sil.Const (Const.Cint len) in
       Sil.Earray (len, [], inst)
   | Typ.Tarray _, Some len ->
       Sil.Earray (len, [], inst)
@@ -1209,7 +1211,8 @@ let pi_tighten_ineq pi =
   let ineq_list, nonineq_list = IList.partition atom_is_inequality pi in
   let diseq_list =
     let get_disequality_info acc = function
-      | Sil.Aneq(Sil.Const (Sil.Cint n), e) | Sil.Aneq(e, Sil.Const (Sil.Cint n)) -> (e, n):: acc
+      | Sil.Aneq(Sil.Const (Const.Cint n), e)
+      | Sil.Aneq(e, Sil.Const (Const.Cint n)) -> (e, n) :: acc
       | _ -> acc in
     IList.fold_left get_disequality_info [] nonineq_list in
   let is_neq e n =
@@ -1252,8 +1255,8 @@ let pi_tighten_ineq pi =
   let nonineq_list' =
     IList.filter
       (function
-        | Sil.Aneq(Sil.Const (Sil.Cint n), e)
-        | Sil.Aneq(e, Sil.Const (Sil.Cint n)) ->
+        | Sil.Aneq(Sil.Const (Const.Cint n), e)
+        | Sil.Aneq(e, Sil.Const (Const.Cint n)) ->
             (not (IList.exists
                     (fun (e', n') -> Sil.exp_equal e e' && IntLit.lt n' n)
                     le_list_tightened)) &&
@@ -1266,13 +1269,13 @@ let pi_tighten_ineq pi =
 
 (** remove duplicate atoms and redundant inequalities from a sorted pi *)
 let rec pi_sorted_remove_redundant = function
-  | (Sil.Aeq(Sil.BinOp (Sil.Le, e1, Sil.Const (Sil.Cint n1)), Sil.Const (Sil.Cint i1)) as a1) ::
-    Sil.Aeq(Sil.BinOp (Sil.Le, e2, Sil.Const (Sil.Cint n2)), Sil.Const (Sil.Cint i2)) :: rest
+  | (Sil.Aeq(Sil.BinOp (Sil.Le, e1, Sil.Const (Const.Cint n1)), Sil.Const (Const.Cint i1)) as a1) ::
+    Sil.Aeq(Sil.BinOp (Sil.Le, e2, Sil.Const (Const.Cint n2)), Sil.Const (Const.Cint i2)) :: rest
     when IntLit.isone i1 && IntLit.isone i2 && Sil.exp_equal e1 e2 && IntLit.lt n1 n2 ->
       (* second inequality redundant *)
       pi_sorted_remove_redundant (a1 :: rest)
-  | Sil.Aeq(Sil.BinOp (Sil.Lt, Sil.Const (Sil.Cint n1), e1), Sil.Const (Sil.Cint i1)) ::
-    (Sil.Aeq(Sil.BinOp (Sil.Lt, Sil.Const (Sil.Cint n2), e2), Sil.Const (Sil.Cint i2)) as a2) ::
+  | Sil.Aeq(Sil.BinOp (Sil.Lt, Sil.Const (Const.Cint n1), e1), Sil.Const (Const.Cint i1)) ::
+    (Sil.Aeq(Sil.BinOp (Sil.Lt, Sil.Const (Const.Cint n2), e2), Sil.Const (Const.Cint i2)) as a2) ::
     rest
     when IntLit.isone i1 && IntLit.isone i2 && Sil.exp_equal e1 e2 && IntLit.lt n1 n2 ->
       (* first inequality redundant *)
@@ -1302,27 +1305,27 @@ let pi_normalize sub sigma pi0 =
   let syntactically_different = function
     | Sil.BinOp(op1, e1, Sil.Const(c1)), Sil.BinOp(op2, e2, Sil.Const(c2))
       when Sil.exp_equal e1 e2 ->
-        Sil.binop_equal op1 op2 && Sil.binop_injective op1 && not (Sil.const_equal c1 c2)
+        Sil.binop_equal op1 op2 && Sil.binop_injective op1 && not (Const.equal c1 c2)
     | e1, Sil.BinOp(op2, e2, Sil.Const(c2))
       when Sil.exp_equal e1 e2 ->
         Sil.binop_injective op2 &&
         Sil.binop_is_zero_runit op2 &&
-        not (Sil.const_equal (Sil.Cint IntLit.zero) c2)
+        not (Const.equal (Const.Cint IntLit.zero) c2)
     | Sil.BinOp(op1, e1, Sil.Const(c1)), e2
       when Sil.exp_equal e1 e2 ->
         Sil.binop_injective op1 &&
         Sil.binop_is_zero_runit op1 &&
-        not (Sil.const_equal (Sil.Cint IntLit.zero) c1)
+        not (Const.equal (Const.Cint IntLit.zero) c1)
     | _ -> false in
   let filter_useful_atom =
     let unsigned_exps = lazy (sigma_get_unsigned_exps sigma) in
     function
-    | Sil.Aneq ((Sil.Var _) as e, Sil.Const (Sil.Cint n)) when IntLit.isnegative n ->
+    | Sil.Aneq ((Sil.Var _) as e, Sil.Const (Const.Cint n)) when IntLit.isnegative n ->
         not (IList.exists (Sil.exp_equal e) (Lazy.force unsigned_exps))
     | Sil.Aneq(e1, e2) ->
         not (syntactically_different (e1, e2))
     | Sil.Aeq(Sil.Const c1, Sil.Const c2) ->
-        not (Sil.const_equal c1 c2)
+        not (Const.equal c1 c2)
     | _ -> true in
   let pi' =
     IList.stable_sort
@@ -1670,19 +1673,19 @@ let sigma_intro_nonemptylseg e1 e2 sigma =
 let normalize_and_strengthen_atom (p : normal t) (a : Sil.atom) : Sil.atom =
   let a' = atom_normalize p.sub a in
   match a' with
-  | Sil.Aeq (Sil.BinOp (Sil.Le, Sil.Var id, Sil.Const (Sil.Cint n)), Sil.Const (Sil.Cint i))
+  | Sil.Aeq (Sil.BinOp (Sil.Le, Sil.Var id, Sil.Const (Const.Cint n)), Sil.Const (Const.Cint i))
     when IntLit.isone i ->
       let lower = Sil.exp_int (n -- IntLit.one) in
       let a_lower = Sil.Aeq (Sil.BinOp (Sil.Lt, lower, Sil.Var id), Sil.exp_one) in
       if not (IList.mem Sil.atom_equal a_lower p.pi) then a'
       else Sil.Aeq (Sil.Var id, Sil.exp_int n)
-  | Sil.Aeq (Sil.BinOp (Sil.Lt, Sil.Const (Sil.Cint n), Sil.Var id), Sil.Const (Sil.Cint i))
+  | Sil.Aeq (Sil.BinOp (Sil.Lt, Sil.Const (Const.Cint n), Sil.Var id), Sil.Const (Const.Cint i))
     when IntLit.isone i ->
       let upper = Sil.exp_int (n ++ IntLit.one) in
       let a_upper = Sil.Aeq (Sil.BinOp (Sil.Le, Sil.Var id, upper), Sil.exp_one) in
       if not (IList.mem Sil.atom_equal a_upper p.pi) then a'
       else Sil.Aeq (Sil.Var id, upper)
-  | Sil.Aeq (Sil.BinOp (Sil.Ne, e1, e2), Sil.Const (Sil.Cint i)) when IntLit.isone i ->
+  | Sil.Aeq (Sil.BinOp (Sil.Ne, e1, e2), Sil.Const (Const.Cint i)) when IntLit.isone i ->
       Sil.Aneq (e1, e2)
   | _ -> a'
 
@@ -2191,7 +2194,7 @@ let compute_reindexing fav_add get_id_offset list =
 
 let compute_reindexing_from_indices indices =
   let get_id_offset = function
-    | Sil.BinOp (Sil.PlusA, Sil.Var id, Sil.Const(Sil.Cint offset)) ->
+    | Sil.BinOp (Sil.PlusA, Sil.Var id, Sil.Const(Const.Cint offset)) ->
         if Ident.is_primed id then Some (id, offset) else None
     | _ -> None in
   let fav_add = Sil.exp_fav_add in
@@ -2218,8 +2221,8 @@ let prop_rename_array_indices prop =
     let indices = sigma_get_array_indices prop.sigma in
     let not_same_base_lt_offsets e1 e2 =
       match e1, e2 with
-      | Sil.BinOp(Sil.PlusA, e1', Sil.Const (Sil.Cint n1')),
-        Sil.BinOp(Sil.PlusA, e2', Sil.Const (Sil.Cint n2')) ->
+      | Sil.BinOp(Sil.PlusA, e1', Sil.Const (Const.Cint n1')),
+        Sil.BinOp(Sil.PlusA, e2', Sil.Const (Const.Cint n2')) ->
           not (Sil.exp_equal e1' e2' && IntLit.lt n1' n2')
       | _ -> true in
     let rec select_minimal_indices indices_seen = function
@@ -2830,8 +2833,8 @@ let find_equal_formal_path e prop =
 (** translate an if-then-else expression *)
 let trans_if_then_else ((idl1, stml1), e1) ((idl2, stml2), e2) ((idl3, stml3), e3) loc =
   match sym_eval false e1 with
-  | Sil.Const (Sil.Cint i) when IntLit.iszero i -> (idl1@idl3, stml1@stml3), e3
-  | Sil.Const (Sil.Cint _) -> (idl1@idl2, stml1@stml2), e2
+  | Sil.Const (Const.Cint i) when IntLit.iszero i -> (idl1@idl3, stml1@stml3), e3
+  | Sil.Const (Const.Cint _) -> (idl1@idl2, stml1@stml2), e2
   | _ ->
       let e1not = Sil.UnOp(Sil.LNot, e1, None) in
       let id = Ident.create_fresh Ident.knormal in

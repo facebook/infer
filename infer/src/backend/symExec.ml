@@ -35,7 +35,7 @@ let rec unroll_type tenv typ off =
       end
   | Typ.Tarray (typ', _), Sil.Off_index _ ->
       typ'
-  | _, Sil.Off_index (Sil.Const (Sil.Cint i)) when IntLit.iszero i ->
+  | _, Sil.Off_index (Sil.Const (Const.Cint i)) when IntLit.iszero i ->
       typ
   | _ ->
       L.d_strln ".... Invalid Field Access ....";
@@ -316,9 +316,9 @@ let rec prune ~positive condition prop =
   match condition with
   | Sil.Var _ | Sil.Lvar _ ->
       prune_ne ~positive condition Sil.exp_zero prop
-  | Sil.Const (Sil.Cint i) when IntLit.iszero i ->
+  | Sil.Const (Const.Cint i) when IntLit.iszero i ->
       if positive then Propset.empty else Propset.singleton prop
-  | Sil.Const (Sil.Cint _) | Sil.Sizeof _ | Sil.Const (Sil.Cstr _) | Sil.Const (Sil.Cclass _) ->
+  | Sil.Const (Const.Cint _ | Const.Cstr _ | Const.Cclass _) | Sil.Sizeof _ ->
       if positive then Propset.singleton prop else Propset.empty
   | Sil.Const _ ->
       assert false
@@ -328,13 +328,13 @@ let rec prune ~positive condition prop =
       prune ~positive:(not positive) condition' prop
   | Sil.UnOp _ ->
       assert false
-  | Sil.BinOp (Sil.Eq, e, Sil.Const (Sil.Cint i))
-  | Sil.BinOp (Sil.Eq, Sil.Const (Sil.Cint i), e) when IntLit.iszero i && not (IntLit.isnull i) ->
+  | Sil.BinOp (Sil.Eq, e, Sil.Const (Const.Cint i))
+  | Sil.BinOp (Sil.Eq, Sil.Const (Const.Cint i), e) when IntLit.iszero i && not (IntLit.isnull i) ->
       prune ~positive:(not positive) e prop
   | Sil.BinOp (Sil.Eq, e1, e2) ->
       prune_ne ~positive:(not positive) e1 e2 prop
-  | Sil.BinOp (Sil.Ne, e, Sil.Const (Sil.Cint i))
-  | Sil.BinOp (Sil.Ne, Sil.Const (Sil.Cint i), e) when IntLit.iszero i && not (IntLit.isnull i) ->
+  | Sil.BinOp (Sil.Ne, e, Sil.Const (Const.Cint i))
+  | Sil.BinOp (Sil.Ne, Sil.Const (Const.Cint i), e) when IntLit.iszero i && not (IntLit.isnull i) ->
       prune ~positive e prop
   | Sil.BinOp (Sil.Ne, e1, e2) ->
       prune_ne ~positive e1 e2 prop
@@ -403,16 +403,16 @@ let check_constant_string_dereference lexp =
     let c = try Char.code (String.get s (IntLit.to_int n)) with Invalid_argument _ -> 0 in
     Sil.exp_int (IntLit.of_int c) in
   match lexp with
-  | Sil.BinOp(Sil.PlusPI, Sil.Const (Sil.Cstr s), e)
-  | Sil.Lindex (Sil.Const (Sil.Cstr s), e) ->
+  | Sil.BinOp(Sil.PlusPI, Sil.Const (Const.Cstr s), e)
+  | Sil.Lindex (Sil.Const (Const.Cstr s), e) ->
       let value = match e with
-        | Sil.Const (Sil.Cint n)
+        | Sil.Const (Const.Cint n)
           when IntLit.geq n IntLit.zero &&
                IntLit.leq n (IntLit.of_int (String.length s)) ->
             string_lookup s n
         | _ -> Sil.exp_get_undefined false in
       Some value
-  | Sil.Const (Sil.Cstr s) ->
+  | Sil.Const (Const.Cstr s) ->
       Some (string_lookup s IntLit.zero)
   | _ -> None
 
@@ -447,8 +447,8 @@ let check_already_dereferenced pname cond prop =
         Some id
     | Sil.UnOp(Sil.LNot, e, _) ->
         is_check_zero e
-    | Sil.BinOp ((Sil.Eq | Sil.Ne), Sil.Const Sil.Cint i, Sil.Var id)
-    | Sil.BinOp ((Sil.Eq | Sil.Ne), Sil.Var id, Sil.Const Sil.Cint i) when IntLit.iszero i ->
+    | Sil.BinOp ((Sil.Eq | Sil.Ne), Sil.Const Const.Cint i, Sil.Var id)
+    | Sil.BinOp ((Sil.Eq | Sil.Ne), Sil.Var id, Sil.Const Const.Cint i) when IntLit.iszero i ->
         Some id
     | _ -> None in
   let dereferenced_line = match is_check_zero cond with
@@ -480,7 +480,7 @@ let check_deallocate_static_memory prop_after =
       when Pvar.is_local pv || Pvar.is_global pv ->
         let freed_desc = Errdesc.explain_deallocate_stack_var pv ra in
         raise (Exceptions.Deallocate_stack_variable freed_desc)
-    | Sil.Const (Sil.Cstr s), Sil.Aresource ({ Sil.ra_kind = Sil.Rrelease } as ra) ->
+    | Sil.Const (Const.Cstr s), Sil.Aresource ({ Sil.ra_kind = Sil.Rrelease } as ra) ->
         let freed_desc = Errdesc.explain_deallocate_constant_string s ra in
         raise (Exceptions.Deallocate_static_memory freed_desc)
     | _ -> () in
@@ -693,7 +693,7 @@ let call_constructor_url_update_args pname actual_params =
          [(Some "java.lang"), "String"] Procname.Non_Static) in
   if (Procname.equal url_pname pname) then
     (match actual_params with
-     | [this; (Sil.Const (Sil.Cstr s), atype)] ->
+     | [this; (Sil.Const (Const.Cstr s), atype)] ->
          let parts = Str.split (Str.regexp_string "://") s in
          (match parts with
           | frst:: _ ->
@@ -703,10 +703,10 @@ let call_constructor_url_update_args pname actual_params =
                  frst = "mailto" ||
                  frst = "jar"
               then
-                [this; (Sil.Const (Sil.Cstr frst), atype)]
+                [this; (Sil.Const (Const.Cstr frst), atype)]
               else actual_params
           | _ -> actual_params)
-     | [this; _, atype] -> [this; (Sil.Const (Sil.Cstr "file"), atype)]
+     | [this; _, atype] -> [this; (Sil.Const (Const.Cstr "file"), atype)]
      | _ -> actual_params)
   else actual_params
 
@@ -1006,7 +1006,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         let exp' = Prop.exp_normalize_prop prop_ exp in
         let instr' = match exp' with
           | Sil.Closure c ->
-              let proc_exp = Sil.Const (Sil.Cfun c.name) in
+              let proc_exp = Sil.Const (Const.Cfun c.name) in
               let proc_exp' = Prop.exp_normalize_prop prop_ proc_exp in
               let par' = IList.map (fun (id_exp, _, typ) -> (id_exp, typ)) c.captured_vars in
               Sil.Call (ret, proc_exp', par' @ par, loc, call_flags)
@@ -1062,7 +1062,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
               !Config.curr_language = Config.Clang && Sil.exp_is_zero exp
           | _ -> false in
         match Prop.exp_normalize_prop Prop.prop_emp cond with
-        | Sil.Const (Sil.Cint i) when report_condition_always_true_false i ->
+        | Sil.Const (Const.Cint i) when report_condition_always_true_false i ->
             let node = State.get_node () in
             let desc = Errdesc.explain_condition_always_true_false i cond node loc in
             let exn =
@@ -1095,12 +1095,12 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       check_condition_always_true_false ();
       let n_cond, prop = check_arith_norm_exp current_pname cond prop__ in
       ret_old_path (Propset.to_proplist (prune ~positive:true n_cond prop))
-  | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), args, loc, _)
+  | Sil.Call (ret_ids, Sil.Const (Const.Cfun callee_pname), args, loc, _)
     when Builtin.is_registered callee_pname ->
       let sym_exe_builtin = Builtin.get callee_pname in
       sym_exe_builtin (call_args prop_ callee_pname args ret_ids loc)
   | Sil.Call (ret_ids,
-              Sil.Const (Sil.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
+              Sil.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
               actual_params, loc, call_flags)
     when Config.lazy_dynamic_dispatch ->
       let norm_prop, norm_args = normalize_params current_pname prop_ actual_params in
@@ -1127,7 +1127,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       end
 
   | Sil.Call (ret_ids,
-              Sil.Const (Sil.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
+              Sil.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
               actual_params, loc, call_flags) ->
       do_error_checks (Paths.Path.curr_node path) instr current_pname current_pdesc;
       let norm_prop, norm_args = normalize_params current_pname prop_ actual_params in
@@ -1156,7 +1156,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
             proc_call summary (call_args norm_prop pname url_handled_args ret_ids loc) in
       IList.fold_left (fun acc pname -> exec_one_pname pname @ acc) [] resolved_pnames
 
-  | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), actual_params, loc, call_flags) ->
+  | Sil.Call (ret_ids, Sil.Const (Const.Cfun callee_pname), actual_params, loc, call_flags) ->
       (** Generic fun call with known name *)
       let (prop_r, n_actual_params) = normalize_params current_pname prop_ actual_params in
       let resolved_pname =

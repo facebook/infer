@@ -480,7 +480,7 @@ let execute___objc_counter_update
         Sil.Set
           (hidden_field,
            typ',
-           Sil.BinOp(op, Sil.Var tmp, Sil.Const (Sil.Cint delta)),
+           Sil.BinOp(op, Sil.Var tmp, Sil.Const (Const.Cint delta)),
            loc) in
       let update_counter_instrs =
         [ counter_to_tmp; update_counter; Sil.Remove_temps([tmp], loc) ] in
@@ -492,7 +492,7 @@ let execute___objc_counter_update
    removed from the list of args. *)
 let get_suppress_npe_flag args =
   match args with
-  | (Sil.Const (Sil.Cint i), Typ.Tint Typ.IBool):: args' when IntLit.isone i ->
+  | (Sil.Const (Const.Cint i), Typ.Tint Typ.IBool):: args' when IntLit.isone i ->
       false, args' (* this is a CFRelease/CFRetain *)
   | _ -> true, args
 
@@ -631,7 +631,7 @@ let execute___set_taint_attribute
     ({ Builtin.pdesc; args; prop_; path; })
   : Builtin.ret_typ =
   match args with
-  | (exp, _) :: [(Sil.Const (Sil.Cstr taint_kind_str), _)] ->
+  | (exp, _) :: [(Sil.Const (Const.Cstr taint_kind_str), _)] ->
       let taint_source = Cfg.Procdesc.get_proc_name pdesc in
       let taint_kind = match taint_kind_str with
         | "UnverifiedSSLSocket" -> Sil.Tk_unverified_SSL_socket
@@ -762,7 +762,7 @@ let execute_alloc mk can_return_null
     | Sil.Sizeof (Typ.Tarray (Typ.Tint ik, _), Some len, _) when Typ.ikind_is_char ik ->
         evaluate_char_sizeof len
     | Sil.Sizeof (Typ.Tarray (Typ.Tint ik, Some len), None, _) when Typ.ikind_is_char ik ->
-        evaluate_char_sizeof (Sil.Const (Sil.Cint len))
+        evaluate_char_sizeof (Sil.Const (Const.Cint len))
     | Sil.Sizeof _ -> e
     | Sil.Attribute _ -> e in
   let size_exp, procname = match args with
@@ -776,7 +776,7 @@ let execute_alloc mk can_return_null
         Sil.Sizeof (struct_type, len, subt), pname
     | [(size_exp, _)] -> (* for malloc and __new *)
         size_exp, Sil.mem_alloc_pname mk
-    | [(size_exp, _); (Sil.Const (Sil.Cfun pname), _)] ->
+    | [(size_exp, _); (Sil.Const (Const.Cfun pname), _)] ->
         size_exp, pname
     | _ ->
         raise (Exceptions.Wrong_argument_number __POS__) in
@@ -828,7 +828,7 @@ let execute___cxx_typeid ({ Builtin.pdesc; tenv; prop_; args; loc} as r)
                | _ -> typ
              with Not_found -> typ in
            let typ_string = Typ.to_string typ in
-           let set_instr = Sil.Set (field_exp, Typ.Tvoid, Sil.Const (Sil.Cstr typ_string), loc) in
+           let set_instr = Sil.Set (field_exp, Typ.Tvoid, Sil.Const (Const.Cstr typ_string), loc) in
            SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] res
        | _ -> res)
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -907,12 +907,12 @@ let execute___split_get_nth { Builtin.pdesc; prop_; path; ret_ids; args; }
       let n_lexp2, prop___ = check_arith_norm_exp pname lexp2 prop__ in
       let n_lexp3, prop = check_arith_norm_exp pname lexp3 prop___ in
       (match n_lexp1, n_lexp2, n_lexp3 with
-       | Sil.Const (Sil.Cstr str1), Sil.Const (Sil.Cstr str2), Sil.Const (Sil.Cint n_sil) ->
+       | Sil.Const (Const.Cstr str1), Sil.Const (Const.Cstr str2), Sil.Const (Const.Cint n_sil) ->
            (let n = IntLit.to_int n_sil in
             try
               let parts = Str.split (Str.regexp_string str2) str1 in
               let n_part = IList.nth parts n in
-              let res = Sil.Const (Sil.Cstr n_part) in
+              let res = Sil.Const (Const.Cstr n_part) in
               [(return_result res prop ret_ids, path)]
             with Not_found -> assert false)
        | _ -> [(prop, path)])
@@ -938,13 +938,13 @@ let execute___infer_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
     | [(lexp_msg, _)] ->
         begin
           match Prop.exp_normalize_prop prop_ lexp_msg with
-          | Sil.Const (Sil.Cstr str) -> str
+          | Sil.Const (Const.Cstr str) -> str
           | _ -> assert false
         end
     | _ ->
         raise (Exceptions.Wrong_argument_number __POS__) in
   let set_instr =
-    Sil.Set (Sil.Lvar Sil.custom_error, Typ.Tvoid, Sil.Const (Sil.Cstr error_str), loc) in
+    Sil.Set (Sil.Lvar Sil.custom_error, Typ.Tvoid, Sil.Const (Const.Cstr error_str), loc) in
   SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] [(prop_, path)]
 
 (* translate builtin assertion failure *)
@@ -957,7 +957,7 @@ let execute___assert_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
     | _ ->
         raise (Exceptions.Wrong_argument_number __POS__) in
   let set_instr =
-    Sil.Set (Sil.Lvar Sil.custom_error, Typ.Tvoid, Sil.Const (Sil.Cstr error_str), loc) in
+    Sil.Set (Sil.Lvar Sil.custom_error, Typ.Tvoid, Sil.Const (Const.Cstr error_str), loc) in
   SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] [(prop_, path)]
 
 let __assert_fail = Builtin.register
@@ -1157,12 +1157,12 @@ let _ = Builtin.register
 let execute_objc_alloc_no_fail
     symb_state typ alloc_fun_opt
     { Builtin.pdesc; tenv; ret_ids; loc; } =
-  let alloc_fun = Sil.Const (Sil.Cfun __objc_alloc_no_fail) in
+  let alloc_fun = Sil.Const (Const.Cfun __objc_alloc_no_fail) in
   let ptr_typ = Typ.Tptr (typ, Typ.Pk_pointer) in
   let sizeof_typ = Sil.Sizeof (typ, None, Sil.Subtype.exact) in
   let alloc_fun_exp =
     match alloc_fun_opt with
-    | Some pname -> [Sil.Const (Sil.Cfun pname), Typ.Tvoid]
+    | Some pname -> [Sil.Const (Const.Cfun pname), Typ.Tvoid]
     | None -> [] in
   let alloc_instr =
     Sil.Call (ret_ids, alloc_fun, [(sizeof_typ, ptr_typ)] @ alloc_fun_exp, loc, Sil.cf_default) in

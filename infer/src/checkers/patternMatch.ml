@@ -165,11 +165,11 @@ let get_field_type_name
   | _ -> None
 
 let java_get_const_type_name
-    (const: Sil.const): string =
+    (const: Const.t): string =
   match const with
-  | Sil.Cstr _ -> "java.lang.String"
-  | Sil.Cint _ -> "java.lang.Integer"
-  | Sil.Cfloat _ -> "java.lang.Double"
+  | Const.Cstr _ -> "java.lang.String"
+  | Const.Cint _ -> "java.lang.Integer"
+  | Const.Cfloat _ -> "java.lang.Double"
   | _ -> "_"
 
 let get_vararg_type_names
@@ -178,7 +178,7 @@ let get_vararg_type_names
   (* Is this the node creating ivar? *)
   let rec initializes_array instrs =
     match instrs with
-    | Sil.Call ([t1], Sil.Const (Sil.Cfun pn), _, _, _)::
+    | Sil.Call ([t1], Sil.Const (Const.Cfun pn), _, _, _)::
       Sil.Set (Sil.Lvar iv, _, Sil.Var t2, _):: is ->
         (Pvar.equal ivar iv && Ident.equal t1 t2 &&
          Procname.equal pn (Procname.from_string_c_fun "__new_array"))
@@ -252,7 +252,7 @@ let get_java_field_access_signature = function
 (** Returns the formal signature (class name, method name,
     argument type names and return type name) *)
 let get_java_method_call_formal_signature = function
-  | Sil.Call (_, Sil.Const (Sil.Cfun pn), (_, tt):: args, _, _) ->
+  | Sil.Call (_, Sil.Const (Const.Cfun pn), (_, tt):: args, _, _) ->
       (match pn with
        | Procname.Java pn_java ->
            let arg_names = IList.map (function | _, t -> get_type_name t) args in
@@ -333,7 +333,7 @@ let java_get_vararg_values node pvar idenv =
 let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t) list =
   let res = ref [] in
   let do_instruction _ instr = match instr with
-    | Sil.Call (_, Sil.Const (Sil.Cfun callee_pn), _, _, _) ->
+    | Sil.Call (_, Sil.Const (Const.Cfun callee_pn), _, _, _) ->
         begin
           match resolve_attributes callee_pn with
           | Some callee_attributes ->

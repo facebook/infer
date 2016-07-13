@@ -84,7 +84,7 @@ struct
       let fname = ModelBuiltins.__set_autorelease_attribute in
       let ret_id = Ident.create_fresh Ident.knormal in
       let stmt_call =
-        Sil.Call ([ret_id], (Sil.Const (Sil.Cfun fname)), [(exp, typ)], sil_loc, Sil.cf_default) in
+        Sil.Call ([ret_id], Sil.Const (Const.Cfun fname), [(exp, typ)], sil_loc, Sil.cf_default) in
       [stmt_call]
     else []
 
@@ -330,7 +330,7 @@ struct
 
   let stringLiteral_trans trans_state expr_info str =
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
-    let exp = Sil.Const (Sil.Cstr (str)) in
+    let exp = Sil.Const (Const.Cstr (str)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
   (* FROM CLANG DOCS: "Implements the GNU __null extension,
@@ -343,7 +343,7 @@ struct
      So we implement it as the constant zero *)
   let gNUNullExpr_trans trans_state expr_info =
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
-    let exp = Sil.Const (Sil.Cint (IntLit.zero)) in
+    let exp = Sil.Const (Const.Cint (IntLit.zero)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
   let nullPtrExpr_trans trans_state expr_info =
@@ -364,7 +364,7 @@ struct
 
   let characterLiteral_trans trans_state expr_info n =
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
-    let exp = Sil.Const (Sil.Cint (IntLit.of_int n)) in
+    let exp = Sil.Const (Const.Cint (IntLit.of_int n)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
   let booleanValue_trans trans_state expr_info b =
@@ -372,7 +372,7 @@ struct
 
   let floatingLiteral_trans trans_state expr_info float_string =
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
-    let exp = Sil.Const (Sil.Cfloat (float_of_string float_string)) in
+    let exp = Sil.Const (Const.Cfloat (float_of_string float_string)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
   (* Note currently we don't have support for different qual     *)
@@ -399,7 +399,7 @@ struct
     let zero_opt = match typ with
       | Typ.Tfloat _  | Typ.Tptr _ | Typ.Tint _ -> Some (Sil.zero_value_of_numerical_type typ)
       | Typ.Tvoid -> None
-      | _ -> Some (Sil.Const (Sil.Cint IntLit.zero)) in
+      | _ -> Some (Sil.Const (Const.Cint IntLit.zero)) in
     match zero_opt with
     | Some zero -> { empty_res_trans with exps = [(zero, typ)] }
     | _ -> empty_res_trans
@@ -466,11 +466,11 @@ struct
       else Procname.from_string_c_fun name in
     let is_builtin = Builtin.is_registered non_mangled_func_name in
     if is_builtin then (* malloc, free, exit, scanf, ... *)
-      { empty_res_trans with exps = [(Sil.Const (Sil.Cfun non_mangled_func_name), typ)] }
+      { empty_res_trans with exps = [(Sil.Const (Const.Cfun non_mangled_func_name), typ)] }
     else
       begin
         if address_of_function then Cfg.set_procname_priority context.cfg pname;
-        { empty_res_trans with exps = [(Sil.Const (Sil.Cfun pname), typ)] }
+        { empty_res_trans with exps = [(Sil.Const (Const.Cfun pname), typ)] }
       end
 
   let var_deref_trans trans_state stmt_info decl_ref =
@@ -587,7 +587,7 @@ struct
     (* unlike field access, for method calls there is no need to expand class type *)
     let pname = CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_name)
         method_name type_ptr in
-    let method_exp = (Sil.Const (Sil.Cfun pname), method_typ) in
+    let method_exp = (Sil.Const (Const.Cfun pname), method_typ) in
     Cfg.set_procname_priority context.CContext.cfg pname;
     { pre_trans_result with
       is_cpp_call_virtual = is_cpp_virtual;
@@ -679,7 +679,7 @@ struct
 
   (* get the sil value of the enum constant from the map or by evaluating it *)
   and get_enum_constant_expr context enum_constant_pointer =
-    let zero = Sil.Const (Sil.Cint IntLit.zero) in
+    let zero = Sil.Const (Const.Cint IntLit.zero) in
     try
       let (prev_enum_constant_opt, sil_exp_opt) =
         Ast_utils.get_enum_constant_exp enum_constant_pointer in
@@ -828,7 +828,7 @@ struct
          Returning -1. NEED TO BE FIXED" in
     let callee_pname_opt =
       match sil_fe with
-      | Sil.Const (Sil.Cfun pn) ->
+      | Sil.Const (Const.Cfun pn) ->
           Some pn
       | _ -> None (* function pointer *) in
     let should_translate_args =
@@ -857,7 +857,7 @@ struct
                  NEED TO BE FIXED\n\n";
               fix_param_exps_mismatch params_stmt params) in
       let act_params = if is_cf_retain_release then
-          (Sil.Const (Sil.Cint IntLit.one), Typ.Tint Typ.IBool) :: act_params
+          (Sil.Const (Const.Cint IntLit.one), Typ.Tint Typ.IBool) :: act_params
         else act_params in
       match
         CTrans_utils.builtin_trans trans_state_pri sil_loc si function_type callee_pname_opt with
@@ -902,7 +902,7 @@ struct
     assert ((IList.length result_trans_callee.exps) = 2);
     let (sil_method, _) = IList.hd result_trans_callee.exps in
     let callee_pname = match sil_method with
-      | Sil.Const (Sil.Cfun pn) -> pn
+      | Sil.Const (Const.Cfun pn) -> pn
       | _ -> assert false (* method pointer not implemented, this shouldn't happen *) in
     if CTrans_models.is_assert_log sil_method then
       CTrans_utils.trans_assertion sil_loc context trans_state_pri.succ_nodes
@@ -1067,7 +1067,7 @@ struct
                                 instrs = instr_block_param;
                               } in
         let call_flags = { Sil.cf_default with Sil.cf_virtual = is_virtual; } in
-        let method_sil = Sil.Const (Sil.Cfun callee_name) in
+        let method_sil = Sil.Const (Const.Cfun callee_name) in
         let res_trans_call = create_call_instr trans_state method_type method_sil param_exps
             sil_loc call_flags ~is_objc_method:true in
         let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
@@ -1187,7 +1187,7 @@ struct
       Printing.log_out " No short-circuit condition\n";
       let res_trans_cond =
         if is_null_stmt cond then {
-          empty_res_trans with exps = [(Sil.Const (Sil.Cint IntLit.one), (Typ.Tint Typ.IBool))]
+          empty_res_trans with exps = [(Sil.Const (Const.Cint IntLit.one), (Typ.Tint Typ.IBool))]
         }
         (* Assumption: If it's a null_stmt, it is a loop with no bound, so we set condition to 1 *)
         else
@@ -1976,7 +1976,7 @@ struct
     let ret_id = Ident.create_fresh Ident.knormal in
     let autorelease_pool_vars = CVar_decl.compute_autorelease_pool_vars context stmts in
     let stmt_call =
-      Sil.Call([ret_id], (Sil.Const (Sil.Cfun fname)),
+      Sil.Call([ret_id], (Sil.Const (Const.Cfun fname)),
                autorelease_pool_vars, sil_loc, Sil.cf_default) in
     let node_kind = Cfg.Node.Stmt_node ("Release the autorelease pool") in
     let call_node = create_node node_kind [stmt_call] sil_loc context in
@@ -2039,7 +2039,7 @@ struct
     let (var_exp_inside, typ_inside) = match typ with
       | Typ.Tarray (t, _)
       | Typ.Tptr (t, _) when Typ.is_array_of_cpp_class typ || is_dyn_array ->
-          Sil.Lindex (var_exp, Sil.Const (Sil.Cint (IntLit.of_int n))), t
+          Sil.Lindex (var_exp, Sil.Const (Const.Cint (IntLit.of_int n))), t
       | _ -> var_exp, typ in
     let trans_state' = { trans_state with var_exp_typ = Some (var_exp_inside, typ_inside) } in
     match stmts with
@@ -2090,7 +2090,7 @@ struct
             (match res_trans_size.exps with
              | [(exp, _)] -> Some exp, res_trans_size
              | _ -> None, empty_res_trans)
-        | None -> Some (Sil.Const (Sil.Cint (IntLit.minus_one))), empty_res_trans
+        | None -> Some (Sil.Const (Const.Cint (IntLit.minus_one))), empty_res_trans
       else None, empty_res_trans in
     let res_trans_new = cpp_new_trans trans_state_pri sil_loc typ size_exp_opt in
     let stmt_opt = Ast_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_initializer_expr in
@@ -2104,8 +2104,8 @@ struct
       if is_dyn_array && Typ.is_pointer_to_cpp_class typ then
         let rec create_stmts stmt_opt size_exp_opt =
           match stmt_opt, size_exp_opt with
-          | Some stmt, Some (Sil.Const (Sil.Cint n)) when not (IntLit.iszero n) ->
-              let n_minus_1 = Some ((Sil.Const (Sil.Cint (IntLit.sub n IntLit.one)))) in
+          | Some stmt, Some (Sil.Const (Const.Cint n)) when not (IntLit.iszero n) ->
+              let n_minus_1 = Some ((Sil.Const (Const.Cint (IntLit.sub n IntLit.one)))) in
               stmt :: create_stmts stmt_opt n_minus_1
           | _ -> [] in
         let stmts = create_stmts stmt_opt size_exp_opt in
@@ -2133,7 +2133,7 @@ struct
     let result_trans_param = exec_with_self_exception instruction trans_state_param param in
     let exp = extract_exp_from_list result_trans_param.exps
         "WARNING: There should be one expression to delete. \n" in
-    let call_instr = Sil.Call ([], (Sil.Const (Sil.Cfun fname)), [exp], sil_loc, Sil.cf_default) in
+    let call_instr = Sil.Call ([], Sil.Const (Const.Cfun fname), [exp], sil_loc, Sil.cf_default) in
     let call_res_trans = { empty_res_trans with instrs = [call_instr] } in
     let all_res_trans = if false then
         (* FIXME (t10135167): call destructor on deleted pointer if it's not null *)
@@ -2187,7 +2187,7 @@ struct
     let sizeof_expr = match cast_type with
       | Typ.Tptr (typ, _) -> Sil.Sizeof (typ, None, subtypes)
       | _ -> assert false in
-    let builtin = Sil.Const (Sil.Cfun ModelBuiltins.__cast) in
+    let builtin = Sil.Const (Const.Cfun ModelBuiltins.__cast) in
     let stmt = match stmts with [stmt] -> stmt | _ -> assert false in
     let res_trans_stmt = exec_with_glvalue_as_reference instruction trans_state' stmt in
     let exp = match res_trans_stmt.exps with | [e] -> e | _ -> assert false in
@@ -2215,7 +2215,7 @@ struct
       IList.map (exec_with_glvalue_as_reference instruction trans_state_param) stmts in
     let params = collect_exprs res_trans_subexpr_list  in
     let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_gcc_ast_stmt in
-    let sil_fun = Sil.Const (Sil.Cfun fun_name) in
+    let sil_fun = Sil.Const (Const.Cfun fun_name) in
     let call_instr = Sil.Call ([], sil_fun, params, sil_loc, Sil.cf_default) in
     let res_trans_call = { empty_res_trans with
                            instrs = [call_instr];
@@ -2227,7 +2227,7 @@ struct
 
   and cxxPseudoDestructorExpr_trans () =
     let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_fun in
-    { empty_res_trans with exps = [(Sil.Const (Sil.Cfun fun_name), Typ.Tvoid)] }
+    { empty_res_trans with exps = [(Sil.Const (Const.Cfun fun_name), Typ.Tvoid)] }
 
   and cxxTypeidExpr_trans trans_state stmt_info stmts expr_info =
     let tenv = trans_state.context.CContext.tenv in
@@ -2241,7 +2241,7 @@ struct
           instruction trans_state_param stmt
       | _ -> empty_res_trans in
     let fun_name = ModelBuiltins.__cxx_typeid in
-    let sil_fun = Sil.Const (Sil.Cfun fun_name) in
+    let sil_fun = Sil.Const (Const.Cfun fun_name) in
     let ret_id = Ident.create_fresh Ident.knormal in
     let type_info_objc = (Sil.Sizeof (typ, None, Sil.Subtype.exact), Typ.Tvoid) in
     let field_name_decl = Ast_utils.make_qual_name_decl ["type_info"; "std"] "__type_name" in
@@ -2269,7 +2269,7 @@ struct
     let trans_state_param = { trans_state_pri with succ_nodes = [] } in
     let res_trans_subexpr_list = IList.map (instruction trans_state_param) stmts in
     let params = collect_exprs res_trans_subexpr_list  in
-    let sil_fun = Sil.Const (Sil.Cfun fun_name) in
+    let sil_fun = Sil.Const (Const.Cfun fun_name) in
     let ret_id = Ident.create_fresh Ident.knormal in
     let ret_exp = Sil.Var ret_id in
     let call_instr = Sil.Call ([ret_id], sil_fun, params, sil_loc, Sil.cf_default) in

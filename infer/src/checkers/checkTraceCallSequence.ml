@@ -210,7 +210,7 @@ module Automaton = struct
   (** Transfer function for an instruction. *)
   let do_instr pn pd (instr : Sil.instr) (state : State.t) : State.t =
     match instr with
-    | Sil.Call (_, Sil.Const (Sil.Cfun callee_pn), _, loc, _) ->
+    | Sil.Call (_, Sil.Const (Const.Cfun callee_pn), _, loc, _) ->
         do_call pn pd callee_pn state loc
     | _ -> state
 
@@ -258,7 +258,7 @@ module BooleanVars = struct
       | instr -> instr in
 
     match normalize_instr instr with
-    | Sil.Prune (Sil.BinOp (Sil.Eq, _cond_e, Sil.Const (Sil.Cint i)), _, _, _)
+    | Sil.Prune (Sil.BinOp (Sil.Eq, _cond_e, Sil.Const (Const.Cint i)), _, _, _)
       when IntLit.iszero i ->
         let cond_e = Idenv.expand_expr idenv _cond_e in
         let state' = match exp_boolean_var cond_e with
@@ -267,7 +267,7 @@ module BooleanVars = struct
               State.prune state name false
           | None -> state in
         state'
-    | Sil.Prune (Sil.BinOp (Sil.Ne, _cond_e, Sil.Const (Sil.Cint i)), _, _, _)
+    | Sil.Prune (Sil.BinOp (Sil.Ne, _cond_e, Sil.Const (Const.Cint i)), _, _, _)
       when IntLit.iszero i ->
         let cond_e = Idenv.expand_expr idenv _cond_e in
         let state' = match exp_boolean_var cond_e with
@@ -281,7 +281,7 @@ module BooleanVars = struct
         let state' = match exp_boolean_var e1 with
           | Some name ->
               let b_opt = match e2 with
-                | Sil.Const (Sil.Cint i) -> Some (not (IntLit.iszero i))
+                | Sil.Const (Const.Cint i) -> Some (not (IntLit.iszero i))
                 | _ -> None in
               if verbose then
                 begin

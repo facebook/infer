@@ -24,7 +24,7 @@ let ident_of_variable (var : LAst.variable) : Ident.t = (* TODO: use unique stam
 let trans_variable (var : LAst.variable) : Sil.exp = Sil.Var (ident_of_variable var)
 
 let trans_constant : LAst.constant -> Sil.exp = function
-  | Cint i -> Sil.Const (Sil.Cint (IntLit.of_int i))
+  | Cint i -> Sil.Const (Const.Cint (IntLit.of_int i))
   | Cnull -> Sil.exp_null
 
 let trans_operand : LAst.operand -> Sil.exp = function
@@ -97,7 +97,7 @@ let rec trans_annotated_instructions
         | Call (ret_var, func_var, typed_args) ->
             let new_sil_instr = Sil.Call (
                 [ident_of_variable ret_var],
-                Sil.Const (Sil.Cfun (procname_of_function_variable func_var)),
+                Sil.Const (Const.Cfun (procname_of_function_variable func_var)),
                 IList.map (fun (tp, arg) -> (trans_operand arg, trans_typ tp)) typed_args,
                 location, Sil.cf_default) in
             (new_sil_instr :: sil_instrs, locals)

@@ -107,19 +107,20 @@ let builtin_predefined_model fun_stmt sil_fe =
   | Some typ ->
       let typ = Ast_utils.string_of_type_ptr typ in
       (match sil_fe with
-       | Sil.Const (Sil.Cfun pn) when Specs.summary_exists pn -> sil_fe, false
-       | Sil.Const (Sil.Cfun pn) when is_retain_predefined_model typ (Procname.to_string pn) ->
-           Sil.Const (Sil.Cfun ModelBuiltins.__objc_retain_cf) , true
-       | Sil.Const (Sil.Cfun pn) when is_release_predefined_model typ (Procname.to_string pn) ->
-           Sil.Const (Sil.Cfun ModelBuiltins.__objc_release_cf), true
+       | Sil.Const (Const.Cfun pn) when Specs.summary_exists pn -> sil_fe, false
+       | Sil.Const (Const.Cfun pn) when is_retain_predefined_model typ (Procname.to_string pn) ->
+           Sil.Const (Const.Cfun ModelBuiltins.__objc_retain_cf) , true
+       | Sil.Const (Const.Cfun pn) when is_release_predefined_model typ (Procname.to_string pn) ->
+           Sil.Const (Const.Cfun ModelBuiltins.__objc_release_cf), true
        | _ -> sil_fe, false)
   | _ -> sil_fe, false
 
 (** If the function is a builtin model, return the model, otherwise return the function *)
 let is_assert_log sil_fe =
   match sil_fe with
-  | Sil.Const (Sil.Cfun (Procname.ObjC_Cpp _ as pn)) -> is_assert_log_method (Procname.to_string pn)
-  | Sil.Const (Sil.Cfun (Procname.C _ as pn)) -> is_assert_log_s (Procname.to_string pn)
+  | Sil.Const (Const.Cfun (Procname.ObjC_Cpp _ as pn)) ->
+      is_assert_log_method (Procname.to_string pn)
+  | Sil.Const (Const.Cfun (Procname.C _ as pn)) -> is_assert_log_s (Procname.to_string pn)
   | _ -> false
 
 

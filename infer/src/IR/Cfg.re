@@ -347,7 +347,7 @@ let module Node = {
       switch instr {
       | Sil.Call _ exp _ _ _ =>
         switch exp {
-        | Sil.Const (Sil.Cfun procname) => [procname, ...callees]
+        | Sil.Const (Const.Cfun procname) => [procname, ...callees]
         | _ => callees
         }
       | _ => callees
@@ -700,7 +700,7 @@ let module Node = {
         }
       | Sil.Call
           return_ids
-          (Sil.Const (Sil.Cfun (Procname.Java callee_pname_java)))
+          (Sil.Const (Const.Cfun (Procname.Java callee_pname_java)))
           [(Sil.Var id, _), ...origin_args]
           loc
           call_flags
@@ -714,7 +714,7 @@ let module Node = {
             [(Sil.Var id, redirected_typ), ...other_args]
           };
           let call_instr =
-            Sil.Call return_ids (Sil.Const (Sil.Cfun redirected_pname)) args loc call_flags;
+            Sil.Call return_ids (Sil.Const (Const.Cfun redirected_pname)) args loc call_flags;
           [call_instr, ...instrs]
         }
       | Sil.Call return_ids origin_call_exp origin_args loc call_flags => {
@@ -1198,11 +1198,11 @@ let inline_synthetic_method ret_ids etl proc_desc loc_call :option Sil.instr => 
       /* setter for static fields */
       let instr' = Sil.Set (Sil.Lfield (Sil.Lvar pvar) fn ft) bt e1 loc_call;
       found instr instr'
-    | (Sil.Call ret_ids' (Sil.Const (Sil.Cfun pn)) etl' _ cf, _, _)
+    | (Sil.Call ret_ids' (Sil.Const (Const.Cfun pn)) etl' _ cf, _, _)
         when IList.length ret_ids == IList.length ret_ids' && IList.length etl' == IList.length etl =>
-      let instr' = Sil.Call ret_ids (Sil.Const (Sil.Cfun pn)) etl loc_call cf;
+      let instr' = Sil.Call ret_ids (Sil.Const (Const.Cfun pn)) etl loc_call cf;
       found instr instr'
-    | (Sil.Call ret_ids' (Sil.Const (Sil.Cfun pn)) etl' _ cf, _, _)
+    | (Sil.Call ret_ids' (Sil.Const (Const.Cfun pn)) etl' _ cf, _, _)
         when
           IList.length ret_ids == IList.length ret_ids' &&
             IList.length etl' + 1 == IList.length etl =>
@@ -1212,7 +1212,7 @@ let inline_synthetic_method ret_ids etl proc_desc loc_call :option Sil.instr => 
         | [_, ...l] => IList.rev l
         | [] => assert false
         };
-      let instr' = Sil.Call ret_ids (Sil.Const (Sil.Cfun pn)) etl1 loc_call cf;
+      let instr' = Sil.Call ret_ids (Sil.Const (Const.Cfun pn)) etl1 loc_call cf;
       found instr instr'
     | _ => ()
     };
@@ -1225,7 +1225,7 @@ let inline_synthetic_method ret_ids etl proc_desc loc_call :option Sil.instr => 
 let proc_inline_synthetic_methods cfg proc_desc :unit => {
   let instr_inline_synthetic_method =
     fun
-    | Sil.Call ret_ids (Sil.Const (Sil.Cfun pn)) etl loc _ =>
+    | Sil.Call ret_ids (Sil.Const (Const.Cfun pn)) etl loc _ =>
       switch (Procdesc.find_from_name cfg pn) {
       | Some pd =>
         let is_access = Procname.java_is_access_method pn;

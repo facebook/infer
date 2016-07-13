@@ -88,7 +88,7 @@ let format_arguments
     (args: (Sil.exp * Typ.t) list): (string option * (Sil.exp list) * (Sil.exp option)) =
 
   let format_string = match IList.nth args printf.format_pos with
-    | Sil.Const (Sil.Cstr fmt), _ -> Some fmt
+    | Sil.Const (Const.Cstr fmt), _ -> Some fmt
     | _ -> None in
 
   let fixed_nvars = IList.map
@@ -175,7 +175,7 @@ let check_printf_args_ok
     | _ -> raise (Failure "Could not resolve fixed type name") in
 
   match instr with
-  | Sil.Call (_, Sil.Const (Sil.Cfun pn), args, cl, _) -> (
+  | Sil.Call (_, Sil.Const (Const.Cfun pn), args, cl, _) -> (
       match printf_like_function pn with
       | Some printf -> (
           try

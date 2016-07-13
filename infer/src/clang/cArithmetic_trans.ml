@@ -26,7 +26,7 @@ let assignment_arc_mode e1 typ e2 loc rhs_owning_method is_e1_decl =
   let release_pname = ModelBuiltins.__objc_release in
   let autorelease_pname = ModelBuiltins.__set_autorelease_attribute in
   let mk_call procname e t =
-    let bi_retain = Sil.Const (Sil.Cfun procname) in
+    let bi_retain = Sil.Const (Const.Cfun procname) in
     Sil.Call([], bi_retain, [(e, t)], loc, Sil.cf_default) in
   match typ with
   | Typ.Tptr (_, Typ.Pk_pointer) when not rhs_owning_method && not is_e1_decl ->
@@ -144,12 +144,12 @@ let unary_operation_instruction uoi e typ loc =
   | `PostInc ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
-      let e_plus_1 = Sil.BinOp(Sil.PlusA, Sil.Var id, Sil.Const(Sil.Cint (IntLit.one))) in
+      let e_plus_1 = Sil.BinOp(Sil.PlusA, Sil.Var id, Sil.Const(Const.Cint (IntLit.one))) in
       (Sil.Var id, instr1::[Sil.Set (e, typ, e_plus_1, loc)])
   | `PreInc ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
-      let e_plus_1 = Sil.BinOp(Sil.PlusA, Sil.Var id, Sil.Const(Sil.Cint (IntLit.one))) in
+      let e_plus_1 = Sil.BinOp(Sil.PlusA, Sil.Var id, Sil.Const(Const.Cint (IntLit.one))) in
       let exp = if General_utils.is_cpp_translation Config.clang_lang then
           e
         else
@@ -158,12 +158,12 @@ let unary_operation_instruction uoi e typ loc =
   | `PostDec ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
-      let e_minus_1 = Sil.BinOp(Sil.MinusA, Sil.Var id, Sil.Const(Sil.Cint (IntLit.one))) in
+      let e_minus_1 = Sil.BinOp(Sil.MinusA, Sil.Var id, Sil.Const(Const.Cint (IntLit.one))) in
       (Sil.Var id, instr1::[Sil.Set (e, typ, e_minus_1, loc)])
   | `PreDec ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
-      let e_minus_1 = Sil.BinOp(Sil.MinusA, Sil.Var id, Sil.Const(Sil.Cint (IntLit.one))) in
+      let e_minus_1 = Sil.BinOp(Sil.MinusA, Sil.Var id, Sil.Const(Const.Cint (IntLit.one))) in
       let exp = if General_utils.is_cpp_translation Config.clang_lang then
           e
         else
@@ -219,6 +219,6 @@ let bin_op_to_string boi =
 
 let sil_const_plus_one const =
   match const with
-  | Sil.Const (Sil.Cint n) ->
-      Sil.Const (Sil.Cint (IntLit.add n IntLit.one))
-  | _ -> Sil.BinOp (Sil.PlusA, const, Sil.Const (Sil.Cint (IntLit.one)))
+  | Sil.Const (Const.Cint n) ->
+      Sil.Const (Const.Cint (IntLit.add n IntLit.one))
+  | _ -> Sil.BinOp (Sil.PlusA, const, Sil.Const (Const.Cint (IntLit.one)))

@@ -778,10 +778,10 @@ let abstract_pure_part p ~(from_abstract_footprint: bool) =
            match a with
            | Sil.Aneq (Sil.Var _, _) -> a:: pi
            (* we only use Lt and Le because Gt and Ge are inserted in terms of Lt and Le. *)
-           | Sil.Aeq (Sil.Const (Sil.Cint i), Sil.BinOp (Sil.Lt, _, _))
-           | Sil.Aeq (Sil.BinOp (Sil.Lt, _, _), Sil.Const (Sil.Cint i))
-           | Sil.Aeq (Sil.Const (Sil.Cint i), Sil.BinOp (Sil.Le, _, _))
-           | Sil.Aeq (Sil.BinOp (Sil.Le, _, _), Sil.Const (Sil.Cint i)) when IntLit.isone i ->
+           | Sil.Aeq (Sil.Const (Const.Cint i), Sil.BinOp (Sil.Lt, _, _))
+           | Sil.Aeq (Sil.BinOp (Sil.Lt, _, _), Sil.Const (Const.Cint i))
+           | Sil.Aeq (Sil.Const (Const.Cint i), Sil.BinOp (Sil.Le, _, _))
+           | Sil.Aeq (Sil.BinOp (Sil.Le, _, _), Sil.Const (Const.Cint i)) when IntLit.isone i ->
                a :: pi
            | Sil.Aeq (Sil.Var name, e) when not (Ident.is_primed name) ->
                (match e with
@@ -929,7 +929,7 @@ let get_cycle root prop =
 (* specified buckets. In the positive case, it returns the bucket *)
 let should_raise_objc_leak hpred =
   match hpred with
-  | Sil.Hpointsto(_, Sil.Estruct((fn, Sil.Eexp( (Sil.Const (Sil.Cint i)), _)):: _, _),
+  | Sil.Hpointsto(_, Sil.Estruct((fn, Sil.Eexp( (Sil.Const (Const.Cint i)), _)):: _, _),
                   Sil.Sizeof (typ, _, _))
     when Ident.fieldname_is_hidden fn && IntLit.gt i IntLit.zero (* counter > 0 *) ->
       Mleak_buckets.should_raise_objc_leak typ

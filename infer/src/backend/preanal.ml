@@ -24,7 +24,7 @@ let add_dispatch_calls pdesc cg tenv =
     let has_dispatch_call instrs =
       IList.exists instr_is_dispatch_call instrs in
     let replace_dispatch_calls = function
-      | Sil.Call (ret_ids, (Sil.Const (Sil.Cfun callee_pname) as call_exp),
+      | Sil.Call (ret_ids, (Sil.Const (Const.Cfun callee_pname) as call_exp),
                   (((_, receiver_typ) :: _) as args), loc, call_flags) as instr
         when call_flags_is_dispatch call_flags ->
           (* the frontend should not populate the list of targets *)

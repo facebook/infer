@@ -719,7 +719,7 @@ let sigma_lift_to_pe sigma =
 let generic_para_create corres sigma1 elist1 =
   let corres_ids =
     let not_same_consts = function
-      | Sil.Const c1, Sil.Const c2 -> not (Sil.const_equal c1 c2)
+      | Sil.Const c1, Sil.Const c2 -> not (Const.equal c1 c2)
       | _ -> true in
     let new_corres' = IList.filter not_same_consts corres in
     let add_fresh_id pair = (pair, Ident.create_fresh Ident.kprimed) in

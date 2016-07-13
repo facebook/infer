@@ -72,13 +72,13 @@ let check_access access_opt de_opt =
     let formal_param_used_in_call = ref false in
     let has_call_or_sets_null node =
       let rec exp_is_null exp = match exp with
-        | Sil.Const (Sil.Cint n) -> IntLit.iszero n
+        | Sil.Const (Const.Cint n) -> IntLit.iszero n
         | Sil.Cast (_, e) -> exp_is_null e
         | Sil.Var _
         | Sil.Lvar _ ->
             begin
               match State.get_const_map () node exp with
-              | Some (Sil.Cint n) ->
+              | Some (Const.Cint n) ->
                   IntLit.iszero n
               | _ -> false
             end

@@ -473,7 +473,7 @@ end = struct
 
     let add_and_chk_eq e1 e1' n =
       match e1, e1' with
-      | Sil.Const (Sil.Cint n1), Sil.Const (Sil.Cint n1') -> IntLit.eq (n1 ++ n) n1'
+      | Sil.Const (Const.Cint n1), Sil.Const (Const.Cint n1') -> IntLit.eq (n1 ++ n) n1'
       | _ -> false in
     let add_and_gen_eq e e' n =
       let e_plus_n = Sil.BinOp(Sil.PlusA, e, Sil.exp_int n) in
@@ -499,7 +499,7 @@ end = struct
 
     let f_ineqs acc (e1, e2, e) =
       match e1, e2 with
-      | Sil.Const (Sil.Cint n1), Sil.Const (Sil.Cint n2) ->
+      | Sil.Const (Const.Cint n1), Sil.Const (Const.Cint n2) ->
           let strict_lower1, upper1 =
             if IntLit.leq n1 n2 then (n1 -- IntLit.one, n2) else (n2 -- IntLit.one, n1) in
           let e_strict_lower1 = Sil.exp_int strict_lower1 in
@@ -591,12 +591,12 @@ end = struct
   let lookup_side_induced' side e =
     let res = ref [] in
     let f v = match v, side with
-      | (Sil.BinOp (Sil.PlusA, e1', Sil.Const (Sil.Cint i)), e2, e'), Lhs
+      | (Sil.BinOp (Sil.PlusA, e1', Sil.Const (Const.Cint i)), e2, e'), Lhs
         when Sil.exp_equal e e1' ->
           let c' = Sil.exp_int (IntLit.neg i) in
           let v' = (e1', Sil.BinOp(Sil.PlusA, e2, c'), Sil.BinOp (Sil.PlusA, e', c')) in
           res := v'::!res
-      | (e1, Sil.BinOp (Sil.PlusA, e2', Sil.Const (Sil.Cint i)), e'), Rhs
+      | (e1, Sil.BinOp (Sil.PlusA, e2', Sil.Const (Const.Cint i)), e'), Rhs
         when Sil.exp_equal e e2' ->
           let c' = Sil.exp_int (IntLit.neg i) in
           let v' = (Sil.BinOp(Sil.PlusA, e1, c'), e2', Sil.BinOp (Sil.PlusA, e', c')) in
@@ -722,14 +722,14 @@ end = struct
           when (exp_contains_only_normal_ids e' && not (Ident.is_normal id)) ->
             build_other_atoms (fun e0 -> Prop.mk_eq e0 e') side e
 
-        | Sil.Aeq(Sil.BinOp(Sil.Le, e, e'), Sil.Const (Sil.Cint i))
-        | Sil.Aeq(Sil.Const (Sil.Cint i), Sil.BinOp(Sil.Le, e, e'))
+        | Sil.Aeq(Sil.BinOp(Sil.Le, e, e'), Sil.Const (Const.Cint i))
+        | Sil.Aeq(Sil.Const (Const.Cint i), Sil.BinOp(Sil.Le, e, e'))
           when IntLit.isone i && (exp_contains_only_normal_ids e') ->
             let construct e0 = Prop.mk_inequality (Sil.BinOp(Sil.Le, e0, e')) in
             build_other_atoms construct side e
 
-        | Sil.Aeq(Sil.BinOp(Sil.Lt, e', e), Sil.Const (Sil.Cint i))
-        | Sil.Aeq(Sil.Const (Sil.Cint i), Sil.BinOp(Sil.Lt, e', e))
+        | Sil.Aeq(Sil.BinOp(Sil.Lt, e', e), Sil.Const (Const.Cint i))
+        | Sil.Aeq(Sil.Const (Const.Cint i), Sil.BinOp(Sil.Lt, e', e))
           when IntLit.isone i && (exp_contains_only_normal_ids e') ->
             let construct e0 = Prop.mk_inequality (Sil.BinOp(Sil.Lt, e', e0)) in
             build_other_atoms construct side e
@@ -889,9 +889,9 @@ let option_partial_join partial_join o1 o2 =
   | Some x1, Some x2 -> partial_join x1 x2
 
 let const_partial_join c1 c2 =
-  let is_int = function Sil.Cint _ -> true | _ -> false in
-  if Sil.const_equal c1 c2 then Sil.Const c1
-  else if Sil.const_kind_equal c1 c2 && not (is_int c1) then
+  let is_int = function Const.Cint _ -> true | _ -> false in
+  if Const.equal c1 c2 then Sil.Const c1
+  else if Const.kind_equal c1 c2 && not (is_int c1) then
     (L.d_strln "failure reason 18"; raise IList.Fail)
   else if !Config.abs_val >= 2 then
     FreshVarExp.get_fresh_exp (Sil.Const c1) (Sil.Const c2)
@@ -921,12 +921,12 @@ let rec exp_partial_join (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
   | Sil.Var id1, Sil.BinOp(Sil.PlusA, Sil.Var id2, Sil.Const _)
     when ident_same_kind_primed_footprint id1 id2 ->
       Rename.extend e1 e2 Rename.ExtFresh
-  | Sil.BinOp(Sil.PlusA, Sil.Var id1, Sil.Const (Sil.Cint c1)), Sil.Const (Sil.Cint c2)
+  | Sil.BinOp(Sil.PlusA, Sil.Var id1, Sil.Const (Const.Cint c1)), Sil.Const (Const.Cint c2)
     when can_rename id1 ->
       let c2' = c2 -- c1 in
       let e_res = Rename.extend (Sil.Var id1) (Sil.exp_int c2') Rename.ExtFresh in
       Sil.BinOp(Sil.PlusA, e_res, Sil.exp_int c1)
-  | Sil.Const (Sil.Cint c1), Sil.BinOp(Sil.PlusA, Sil.Var id2, Sil.Const (Sil.Cint c2))
+  | Sil.Const (Const.Cint c1), Sil.BinOp(Sil.PlusA, Sil.Var id2, Sil.Const (Const.Cint c2))
     when can_rename id2 ->
       let c1' = c1 -- c2 in
       let e_res = Rename.extend (Sil.exp_int c1') (Sil.Var id2) Rename.ExtFresh in
@@ -1011,7 +1011,7 @@ let rec exp_partial_meet (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
         Rename.extend e1 e2 (Rename.ExtDefault(e1))
       else (L.d_strln "failure reason 28"; raise IList.Fail)
   | Sil.Const c1, Sil.Const c2 ->
-      if (Sil.const_equal c1 c2) then e1 else (L.d_strln "failure reason 29"; raise IList.Fail)
+      if (Const.equal c1 c2) then e1 else (L.d_strln "failure reason 29"; raise IList.Fail)
   | Sil.Cast(t1, e1), Sil.Cast(t2, e2) ->
       if not (Typ.equal t1 t2) then (L.d_strln "failure reason 30"; raise IList.Fail)
       else
@@ -1575,7 +1575,7 @@ let pi_partial_join mode
     (* find some array length in the prop, to be used as heuritic for upper bound in widening *)
     let len_list = ref [] in
     let do_hpred = function
-      | Sil.Hpointsto (_, Sil.Earray (Sil.Const (Sil.Cint n), _, _), _) ->
+      | Sil.Hpointsto (_, Sil.Earray (Sil.Const (Const.Cint n), _, _), _) ->
           (if IntLit.geq n IntLit.one then len_list := n :: !len_list)
       | _ -> () in
     IList.iter do_hpred (Prop.get_sigma prop);

@@ -581,7 +581,7 @@ let remove_redundant_elements prop =
       modified := true;
       false in
     match e, se with
-    | Sil.Const (Sil.Cint i), Sil.Eexp (Sil.Var id, _)
+    | Sil.Const (Const.Cint i), Sil.Eexp (Sil.Var id, _)
       when (not fp_part || IntLit.iszero i) && not (Ident.is_normal id) && occurs_at_most_once id ->
         remove () (* unknown value can be removed in re-execution mode or if the index is zero *)
     | Sil.Var id, Sil.Eexp _ when Ident.is_normal id = false && occurs_at_most_once id ->

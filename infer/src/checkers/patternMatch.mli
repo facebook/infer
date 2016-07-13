@@ -66,7 +66,7 @@ val strict_supertype_iter : Tenv.t -> (Typ.struct_typ -> unit) -> Typ.struct_typ
 val strict_supertype_exists : Tenv.t -> (Typ.struct_typ -> bool) -> Typ.struct_typ -> bool
 
 (** Get the name of the type of a constant *)
-val java_get_const_type_name : Sil.const -> string
+val java_get_const_type_name : Const.t -> string
 
 (** Get the values of a vararg parameter given the pvar used to assign the elements. *)
 val java_get_vararg_values : Cfg.Node.t -> Pvar.t -> Idenv.t -> Sil.exp list

@@ -73,7 +73,7 @@ let explain_deallocate_stack_var pvar ra =
 let explain_deallocate_constant_string s ra =
   let const_str =
     let pp fmt () =
-      Sil.pp_exp pe_text fmt (Sil.Const (Sil.Cstr s)) in
+      Sil.pp_exp pe_text fmt (Sil.Const (Const.Cstr s)) in
     pp_to_string pp () in
   Localise.desc_deallocate_static_memory const_str ra.Sil.ra_pname ra.Sil.ra_loc
 
@@ -203,7 +203,7 @@ let find_ident_assignment node id : (Cfg.Node.t * Sil.exp) option =
 let rec find_boolean_assignment node pvar true_branch : Cfg.Node.t option =
   let find_instr n =
     let filter = function
-      | Sil.Set (Sil.Lvar _pvar, _, Sil.Const (Sil.Cint i), _) when Pvar.equal pvar _pvar ->
+      | Sil.Set (Sil.Lvar _pvar, _, Sil.Const (Const.Cint i), _) when Pvar.equal pvar _pvar ->
           IntLit.iszero i <> true_branch
       | _ -> false in
     IList.exists filter (Cfg.Node.get_instrs n) in
@@ -226,21 +226,21 @@ let rec _find_normal_variable_letderef (seen : Sil.ExpSet.t) node id : Sil.dexp 
           (L.d_str "find_normal_variable_letderef defining ";
            Sil.d_exp e; L.d_ln ());
         _exp_lv_dexp seen node e
-    | Sil.Call ([id0], Sil.Const (Sil.Cfun pn), (e, _):: _, _, _)
+    | Sil.Call ([id0], Sil.Const (Const.Cfun pn), (e, _):: _, _, _)
       when Ident.equal id id0 && Procname.equal pn (Procname.from_string_c_fun "__cast") ->
         if verbose
         then
           (L.d_str "find_normal_variable_letderef cast on ";
            Sil.d_exp e; L.d_ln ());
         _exp_rv_dexp seen node e
-    | Sil.Call ([id0], (Sil.Const (Sil.Cfun pname) as fun_exp), args, loc, call_flags)
+    | Sil.Call ([id0], (Sil.Const (Const.Cfun pname) as fun_exp), args, loc, call_flags)
       when Ident.equal id id0 ->
         if verbose
         then
           (L.d_str "find_normal_variable_letderef function call ";
            Sil.d_exp fun_exp; L.d_ln ());
 
-        let fun_dexp = Sil.Dconst (Sil.Cfun pname) in
+        let fun_dexp = Sil.Dconst (Const.Cfun pname) in
         let args_dexp =
           let args_dexpo = IList.map (fun (e, _) -> _exp_rv_dexp seen node e) args in
           if IList.exists (fun x -> x = None) args_dexpo
@@ -760,10 +760,10 @@ let explain_dexp_access prop dexp is_nullable =
     | Sil.Dfcall (Sil.Dconst c, _, loc, _) ->
         if verbose then (L.d_strln "lookup: found Dfcall ");
         (match c with
-         | Sil.Cfun _ -> (* Treat function as an update *)
+         | Const.Cfun _ -> (* Treat function as an update *)
              Some (Sil.Eexp (Sil.Const c, Sil.Ireturn_from_call loc.Location.line))
          | _ -> None)
-    | Sil.Dretcall (Sil.Dconst (Sil.Cfun pname as c ) , _, loc, _ )
+    | Sil.Dretcall (Sil.Dconst (Const.Cfun pname as c ) , _, loc, _ )
       when method_of_pointer_wrapper pname ->
         if verbose then (L.d_strln "lookup: found Dretcall ");
         Some (Sil.Eexp (Sil.Const c, Sil.Ireturn_from_pointer_wrapper_call loc.Location.line))
@@ -920,7 +920,7 @@ let _explain_access
     | Some Sil.Letderef (_, e, _, _) ->
         if verbose then (L.d_str "explain_dereference Sil.Leteref "; Sil.d_exp e; L.d_ln ());
         Some e
-    | Some Sil.Call (_, Sil.Const (Sil.Cfun fn), [(e, _)], _, _)
+    | Some Sil.Call (_, Sil.Const (Const.Cfun fn), [(e, _)], _, _)
       when Procname.to_string fn = "free" ->
         if verbose then (L.d_str "explain_dereference Sil.Call "; Sil.d_exp e; L.d_ln ());
         Some e

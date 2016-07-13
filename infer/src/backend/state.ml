@@ -15,7 +15,7 @@ open! Utils
 module L = Logging
 module F = Format
 
-type const_map = Cfg.Node.t -> Sil.exp -> Sil.const option
+type const_map = Cfg.Node.t -> Sil.exp -> Const.t option
 
 (** failure statistics for symbolic execution on a given node *)
 type failure_stats = {

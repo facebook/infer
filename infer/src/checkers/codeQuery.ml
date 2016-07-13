@@ -161,7 +161,7 @@ module Match = struct
 
   let rec match_query show env idenv caller_pn (rule, action) proc_name node instr =
     match rule, instr with
-    | CodeQueryAst.Call (ae1, ae2), Sil.Call (_, Sil.Const (Sil.Cfun pn), _, loc, _) ->
+    | CodeQueryAst.Call (ae1, ae2), Sil.Call (_, Sil.Const (Const.Cfun pn), _, loc, _) ->
         if exp_match env ae1 (Vfun caller_pn) && exp_match env ae2 (Vfun pn) then
           begin
             if show then print_action env action proc_name node loc;
@@ -170,7 +170,7 @@ module Match = struct
         else false
     | CodeQueryAst.Call _, _ -> false
     | CodeQueryAst.MethodCall (ae1, ae2, ael_opt),
-      Sil.Call (_, Sil.Const (Sil.Cfun pn), (_e1, _):: params, loc, { Sil.cf_virtual = true }) ->
+      Sil.Call (_, Sil.Const (Const.Cfun pn), (_e1, _):: params, loc, { Sil.cf_virtual = true }) ->
         let e1 = Idenv.expand_expr idenv _e1 in
         let vl = IList.map (function _e, _ -> Vval (Idenv.expand_expr idenv _e)) params in
         if exp_match env ae1 (Vval e1) && exp_match env ae2 (Vfun pn) && opt_match exp_list_match env ael_opt vl then

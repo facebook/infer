@@ -98,10 +98,10 @@ module ComplexExpressions = struct
           dexp_to_string de ^ "." ^ Ident.fieldname_to_string f
       | Sil.Dbinop (op, de1, de2) ->
           "(" ^ dexp_to_string de1 ^ (Sil.str_binop pe_text op) ^ dexp_to_string de2 ^ ")"
-      | Sil.Dconst (Sil.Cfun pn) ->
+      | Sil.Dconst (Const.Cfun pn) ->
           Procname.to_unique_id pn
       | Sil.Dconst c ->
-          pp_to_string (Sil.pp_const pe_text) c
+          pp_to_string (Const.pp pe_text) c
       | Sil.Dderef de ->
           dexp_to_string de
       | Sil.Dfcall (fun_dexp, args, _, { Sil.cf_virtual = isvirtual })
@@ -169,7 +169,7 @@ let rec typecheck_expr
       (match TypeState.lookup_id id typestate with
        | Some tr -> TypeState.range_add_locs tr [loc]
        | None -> tr_default)
-  | Sil.Const (Sil.Cint i) when IntLit.iszero i ->
+  | Sil.Const (Const.Cint i) when IntLit.iszero i ->
       let (typ, _, locs) = tr_default in
       if PatternMatch.type_is_class typ
       then (typ, TypeAnnotation.const Annotations.Nullable true (TypeOrigin.Const loc), locs)
@@ -302,7 +302,7 @@ let typecheck_instr
     (* Convert a function call to a pvar. *)
     let handle_function_call call_node id =
       match Errdesc.find_normal_variable_funcall call_node id with
-      | Some (Sil.Const (Sil.Cfun pn), _, _, _)
+      | Some (Sil.Const (Const.Cfun pn), _, _, _)
         when not (ComplexExpressions.procname_used_in_condition pn) ->
           begin
             match ComplexExpressions.exp_to_string node' exp with
@@ -509,14 +509,14 @@ let typecheck_instr
             typestate1 in
       check_field_assign ();
       typestate2
-  | Sil.Call ([id], Sil.Const (Sil.Cfun pn), [(_, typ)], loc, _)
+  | Sil.Call ([id], Sil.Const (Const.Cfun pn), [(_, typ)], loc, _)
     when Procname.equal pn ModelBuiltins.__new ||
          Procname.equal pn ModelBuiltins.__new_array ->
       TypeState.add_id
         id
         (typ, TypeAnnotation.const Annotations.Nullable false TypeOrigin.New, [loc])
         typestate (* new never returns null *)
-  | Sil.Call ([id], Sil.Const (Sil.Cfun pn), (e, typ):: _, loc, _)
+  | Sil.Call ([id], Sil.Const (Const.Cfun pn), (e, typ):: _, loc, _)
     when Procname.equal pn ModelBuiltins.__cast ->
       typecheck_expr_for_errors typestate e loc;
       let e', typestate' =
@@ -525,7 +525,7 @@ let typecheck_instr
       TypeState.add_id id
         (typecheck_expr_simple typestate' e' typ TypeOrigin.ONone loc)
         typestate'
-  | Sil.Call ([id], Sil.Const (Sil.Cfun pn), [(array_exp, t)], loc, _)
+  | Sil.Call ([id], Sil.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
     when Procname.equal pn ModelBuiltins.__get_array_length ->
       let (_, ta, _) = typecheck_expr
           find_canonical_duplicate
@@ -557,11 +557,11 @@ let typecheck_instr
           [loc]
         )
         typestate
-  | Sil.Call (_, Sil.Const (Sil.Cfun pn), _, _, _) when Builtin.is_registered pn ->
+  | Sil.Call (_, Sil.Const (Const.Cfun pn), _, _, _) when Builtin.is_registered pn ->
       typestate (* skip othe builtins *)
   | Sil.Call
       (ret_ids,
-       Sil.Const (Sil.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
+       Sil.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
        etl_,
        loc,
        cflags)
@@ -704,8 +704,8 @@ let typecheck_instr
 
         let handle_negated_condition cond_node =
           let do_instr = function
-            | Sil.Prune (Sil.BinOp (Sil.Eq, _cond_e, Sil.Const (Sil.Cint i)), _, _, _)
-            | Sil.Prune (Sil.BinOp (Sil.Eq, Sil.Const (Sil.Cint i), _cond_e), _, _, _)
+            | Sil.Prune (Sil.BinOp (Sil.Eq, _cond_e, Sil.Const (Const.Cint i)), _, _, _)
+            | Sil.Prune (Sil.BinOp (Sil.Eq, Sil.Const (Const.Cint i), _cond_e), _, _, _)
               when IntLit.iszero i ->
                 let cond_e = Idenv.expand_expr_temps idenv cond_node _cond_e in
                 begin
@@ -740,7 +740,7 @@ let typecheck_instr
                         ()
                     | Some (node', id) ->
                         let () = match Errdesc.find_normal_variable_funcall node' id with
-                          | Some (Sil.Const (Sil.Cfun pn), [e], _, _)
+                          | Some (Sil.Const (Const.Cfun pn), [e], _, _)
                             when ComplexExpressions.procname_optional_isPresent pn ->
                               handle_optional_isPresent node' e
                           | _ -> () in
@@ -770,7 +770,7 @@ let typecheck_instr
               | Some dexp_key, Procname.Java callee_pname_java ->
                   let pname_get =
                     Procname.Java (pname_get_from_pname_put callee_pname_java) in
-                  let dexp_get = Sil.Dconst (Sil.Cfun pname_get) in
+                  let dexp_get = Sil.Dconst (Const.Cfun pname_get) in
                   let dexp_map = Sil.Dpvar pv_map in
                   let args = [dexp_map; dexp_key] in
                   let call_flags = { Sil.cf_default with Sil.cf_virtual = true } in
@@ -871,7 +871,7 @@ let typecheck_instr
           | Sil.Var id ->
               begin
                 match Errdesc.find_normal_variable_funcall node' id with
-                | Some (Sil.Const (Sil.Cfun pn), e1:: _, _, _) when
+                | Some (Sil.Const (Const.Cfun pn), e1:: _, _, _) when
                     filter_callee pn ->
                     Some e1
                 | _ -> None
@@ -905,13 +905,13 @@ let typecheck_instr
             | Some
                 (Sil.Dretcall
                    (Sil.Dconst
-                      (Sil.Cfun (Procname.Java pname_java)), args, loc, call_flags)) ->
+                      (Const.Cfun (Procname.Java pname_java)), args, loc, call_flags)) ->
                 let pname_java' =
                   let object_t = (Some "java.lang", "Object") in
                   Procname.java_replace_return_type
                     (Procname.java_replace_method pname_java "get")
                     object_t in
-                let fun_dexp = Sil.Dconst (Sil.Cfun (Procname.Java pname_java')) in
+                let fun_dexp = Sil.Dconst (Const.Cfun (Procname.Java pname_java')) in
                 Some (Sil.Dretcall (fun_dexp, args, loc, call_flags))
             | _ -> None in
           begin
@@ -944,8 +944,8 @@ let typecheck_instr
           | _ -> typestate2 in
 
         match c with
-        | Sil.BinOp (Sil.Eq, Sil.Const (Sil.Cint i), e)
-        | Sil.BinOp (Sil.Eq, e, Sil.Const (Sil.Cint i)) when IntLit.iszero i ->
+        | Sil.BinOp (Sil.Eq, Sil.Const (Const.Cint i), e)
+        | Sil.BinOp (Sil.Eq, e, Sil.Const (Const.Cint i)) when IntLit.iszero i ->
             typecheck_expr_for_errors typestate e loc;
             let typestate1, e1, from_call = match from_is_true_on_null e with
               | Some e1 ->
@@ -973,8 +973,8 @@ let typecheck_instr
                   typestate2
             end
 
-        | Sil.BinOp (Sil.Ne, Sil.Const (Sil.Cint i), e)
-        | Sil.BinOp (Sil.Ne, e, Sil.Const (Sil.Cint i)) when IntLit.iszero i ->
+        | Sil.BinOp (Sil.Ne, Sil.Const (Const.Cint i), e)
+        | Sil.BinOp (Sil.Ne, e, Sil.Const (Const.Cint i)) when IntLit.iszero i ->
             typecheck_expr_for_errors typestate e loc;
             let typestate1, e1, from_call = match from_instanceof e with
               | Some e1 -> (* (e1 instanceof C) implies (e1 != null) *)
@@ -1081,7 +1081,7 @@ let typecheck_node
 
   let typestates_exn = ref [] in
   let handle_exceptions typestate instr = match instr with
-    | Sil.Call (_, Sil.Const (Sil.Cfun callee_pname), _, _, _) ->
+    | Sil.Call (_, Sil.Const (Const.Cfun callee_pname), _, _, _) ->
         let callee_attributes_opt =
           Specs.proc_resolve_attributes callee_pname in
         (* check if the call might throw an exception *)

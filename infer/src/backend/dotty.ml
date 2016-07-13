@@ -327,7 +327,7 @@ let rec dotty_mk_node pe sigma =
 
 let set_exps_neq_zero pi =
   let f = function
-    | Sil.Aneq (e, Sil.Const (Sil.Cint i)) when IntLit.iszero i ->
+    | Sil.Aneq (e, Sil.Const (Const.Cint i)) when IntLit.iszero i ->
         exps_neq_zero := e :: !exps_neq_zero
     | _ -> () in
   exps_neq_zero := [];

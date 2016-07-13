@@ -52,7 +52,7 @@ let env_add_instr instr env =
 (** call flags for an allocation or call to a constructor *)
 let cf_alloc = Sil.cf_default
 
-let fun_exp_from_name proc_name = Sil.Const (Sil.Cfun (proc_name))
+let fun_exp_from_name proc_name = Sil.Const (Const.Cfun (proc_name))
 
 let local_name_cntr = ref 0
 
@@ -85,7 +85,7 @@ let rec inhabit_typ typ cfg env =
   with Not_found ->
     let inhabit_internal typ env = match typ with
       | Typ.Tptr (Typ.Tarray (inner_typ, Some _), Typ.Pk_pointer) ->
-          let len = Sil.Const (Sil.Cint (IntLit.one)) in
+          let len = Sil.Const (Const.Cint (IntLit.one)) in
           let arr_typ = Typ.Tarray (inner_typ, Some IntLit.one) in
           inhabit_alloc arr_typ (Some len) typ ModelBuiltins.__new_array env
       | Typ.Tptr (typ, Typ.Pk_pointer) as ptr_to_typ ->
@@ -130,8 +130,8 @@ let rec inhabit_typ typ cfg env =
           let fresh_id = Ident.create_fresh Ident.knormal in
           let read_from_local_instr = Sil.Letderef (fresh_id, fresh_local_exp, ptr_to_typ, env'.pc) in
           (Sil.Var fresh_id, env_add_instr read_from_local_instr env')
-      | Typ.Tint (_) -> (Sil.Const (Sil.Cint (IntLit.zero)), env)
-      | Typ.Tfloat (_) -> (Sil.Const (Sil.Cfloat 0.0), env)
+      | Typ.Tint (_) -> (Sil.Const (Const.Cint (IntLit.zero)), env)
+      | Typ.Tfloat (_) -> (Sil.Const (Const.Cfloat 0.0), env)
       | typ ->
           L.err "Couldn't inhabit typ: %a@." (Typ.pp pe_text) typ;
           assert false in
