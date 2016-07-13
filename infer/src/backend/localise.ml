@@ -469,7 +469,7 @@ let desc_custom_error loc : error_desc =
 
 let desc_bad_pointer_comparison dexp_opt loc : error_desc =
   let dexp_str = match dexp_opt with
-    | Some dexp -> (Sil.dexp_to_string dexp) ^ " "
+    | Some dexp -> (DecompiledExp.to_string dexp) ^ " "
     | None -> "" in
   let line_info = at_line (Tags.create ()) loc in
   let check_msg =

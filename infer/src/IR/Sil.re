@@ -75,35 +75,13 @@ type taint_kind =
 type taint_info = {taint_source: Procname.t, taint_kind: taint_kind};
 
 
-/** expression representing the result of decompilation */
-type dexp =
-  | Darray of dexp dexp
-  | Dbinop of Binop.t dexp dexp
-  | Dconst of Const.t
-  | Dsizeof of Typ.t (option dexp) Subtype.t
-  | Dderef of dexp
-  | Dfcall of dexp (list dexp) Location.t CallFlags.t
-  | Darrow of dexp Ident.fieldname
-  | Ddot of dexp Ident.fieldname
-  | Dpvar of Pvar.t
-  | Dpvaraddr of Pvar.t
-  | Dunop of Unop.t dexp
-  | Dunknown
-  | Dretcall of dexp (list dexp) Location.t CallFlags.t;
-
-
-/** Value paths: identify an occurrence of a value in a symbolic heap
-    each expression represents a path, with Dpvar being the simplest one */
-type vpath = option dexp;
-
-
 /** acquire/release action on a resource */
 type res_action = {
   ra_kind: res_act_kind, /** kind of action */
   ra_res: resource, /** kind of resource */
   ra_pname: Procname.t, /** name of the procedure used to acquire/release the resource */
   ra_loc: Location.t, /** location of the acquire/release */
-  ra_vpath: vpath /** vpath of the resource value */
+  ra_vpath: DecompiledExp.vpath /** vpath of the resource value */
 };
 
 
@@ -507,23 +485,6 @@ let attr_is_undef =
   fun
   | Aundef _ => true
   | _ => false;
-
-let rec dexp_has_tmp_var =
-  fun
-  | Dpvar pvar
-  | Dpvaraddr pvar => Pvar.is_frontend_tmp pvar
-  | Dderef dexp
-  | Ddot dexp _
-  | Darrow dexp _
-  | Dunop _ dexp
-  | Dsizeof _ (Some dexp) _ => dexp_has_tmp_var dexp
-  | Darray dexp1 dexp2
-  | Dbinop _ dexp1 dexp2 => dexp_has_tmp_var dexp1 || dexp_has_tmp_var dexp2
-  | Dretcall dexp dexp_list _ _
-  | Dfcall dexp dexp_list _ _ => dexp_has_tmp_var dexp || IList.exists dexp_has_tmp_var dexp_list
-  | Dconst _
-  | Dunknown
-  | Dsizeof _ None _ => false;
 
 let attribute_compare (att1: attribute) (att2: attribute) :int =>
   switch (att1, att2) {
@@ -1015,126 +976,6 @@ let pp_seq_diff pp pe0 f =>
     doit
   };
 
-let java () => !Config.curr_language == Config.Java;
-
-let eradicate_java () => Config.eradicate && java ();
-
-
-/** convert a dexp to a string */
-let rec dexp_to_string =
-  fun
-  | Darray de1 de2 => dexp_to_string de1 ^ "[" ^ dexp_to_string de2 ^ "]"
-  | Dbinop op de1 de2 => "(" ^ dexp_to_string de1 ^ Binop.str pe_text op ^ dexp_to_string de2 ^ ")"
-  | Dconst (Cfun pn) => Procname.to_simplified_string pn
-  | Dconst c => Const.to_string c
-  | Dderef de => "*" ^ dexp_to_string de
-  | Dfcall fun_dexp args _ {cf_virtual: isvirtual} => {
-      let pp_arg fmt de => F.fprintf fmt "%s" (dexp_to_string de);
-      let pp_args fmt des =>
-        if (eradicate_java ()) {
-          if (des != []) {
-            F.fprintf fmt "..."
-          }
-        } else {
-          pp_comma_seq pp_arg fmt des
-        };
-      let pp_fun fmt => (
-        fun
-        | Dconst (Cfun pname) => {
-            let s =
-              switch pname {
-              | Procname.Java pname_java => Procname.java_get_method pname_java
-              | _ => Procname.to_string pname
-              };
-            F.fprintf fmt "%s" s
-          }
-        | de => F.fprintf fmt "%s" (dexp_to_string de)
-      );
-      let (receiver, args') =
-        switch args {
-        | [Dpvar pv, ...args'] when isvirtual && Pvar.is_this pv => (None, args')
-        | [a, ...args'] when isvirtual => (Some a, args')
-        | _ => (None, args)
-        };
-      let pp fmt () => {
-        let pp_receiver fmt => (
-          fun
-          | None => ()
-          | Some arg => F.fprintf fmt "%a." pp_arg arg
-        );
-        F.fprintf fmt "%a%a(%a)" pp_receiver receiver pp_fun fun_dexp pp_args args'
-      };
-      pp_to_string pp ()
-    }
-  | Darrow (Dpvar pv) f when Pvar.is_this pv =>
-    /* this->fieldname */
-    Ident.fieldname_to_simplified_string f
-  | Darrow de f =>
-    if (Ident.fieldname_is_hidden f) {
-      dexp_to_string de
-    } else if (java ()) {
-      dexp_to_string de ^ "." ^ Ident.fieldname_to_flat_string f
-    } else {
-      dexp_to_string de ^ "->" ^ Ident.fieldname_to_string f
-    }
-  | Ddot (Dpvar _) fe when eradicate_java () =>
-    /* static field access */
-    Ident.fieldname_to_simplified_string fe
-  | Ddot de f =>
-    if (Ident.fieldname_is_hidden f) {
-      "&" ^ dexp_to_string de
-    } else if (java ()) {
-      dexp_to_string de ^ "." ^ Ident.fieldname_to_flat_string f
-    } else {
-      dexp_to_string de ^ "." ^ Ident.fieldname_to_string f
-    }
-  | Dpvar pv => Mangled.to_string (Pvar.get_name pv)
-  | Dpvaraddr pv => {
-      let s =
-        if (eradicate_java ()) {
-          Pvar.get_simplified_name pv
-        } else {
-          Mangled.to_string (Pvar.get_name pv)
-        };
-      let ampersand =
-        if (eradicate_java ()) {
-          ""
-        } else {
-          "&"
-        };
-      ampersand ^ s
-    }
-  | Dunop op de => Unop.str op ^ dexp_to_string de
-  | Dsizeof typ _ _ => pp_to_string (Typ.pp_full pe_text) typ
-  | Dunknown => "unknown"
-  | Dretcall de _ _ _ => "returned by " ^ dexp_to_string de;
-
-
-/** Pretty print a dexp. */
-let pp_dexp fmt de => F.fprintf fmt "%s" (dexp_to_string de);
-
-
-/** Pretty print a value path */
-let pp_vpath pe fmt vpath => {
-  let pp fmt =>
-    fun
-    | Some de => pp_dexp fmt de
-    | None => ();
-  if (pe.pe_kind === PP_HTML) {
-    F.fprintf
-      fmt
-      " %a{vpath: %a}%a"
-      Io_infer.Html.pp_start_color
-      Orange
-      pp
-      vpath
-      Io_infer.Html.pp_end_color
-      ()
-  } else {
-    F.fprintf fmt "%a" pp vpath
-  }
-};
-
 
 /** convert the attribute to a string */
 let attribute_to_string pe =>
@@ -1159,7 +1000,7 @@ let attribute_to_string pe =>
         };
       let str_vpath =
         if Config.trace_error {
-          pp_to_string (pp_vpath pe) ra.ra_vpath
+          pp_to_string (DecompiledExp.pp_vpath pe) ra.ra_vpath
         } else {
           ""
         };

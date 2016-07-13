@@ -11,6 +11,7 @@ open! Utils
 
 module L = Logging
 module F = Format
+module DExp = DecompiledExp
 
 (** Module for type checking. *)
 
@@ -91,21 +92,21 @@ module ComplexExpressions = struct
         raise Not_handled in
 
       match dexp with
-      | Sil.Darray (de1, de2) ->
+      | DExp.Darray (de1, de2) ->
           dexp_to_string de1 ^ "[" ^ dexp_to_string de2 ^ "]"
-      | Sil.Darrow (de, f)
-      | Sil.Ddot (de, f) ->
+      | DExp.Darrow (de, f)
+      | DExp.Ddot (de, f) ->
           dexp_to_string de ^ "." ^ Ident.fieldname_to_string f
-      | Sil.Dbinop (op, de1, de2) ->
+      | DExp.Dbinop (op, de1, de2) ->
           "(" ^ dexp_to_string de1 ^ (Binop.str pe_text op) ^ dexp_to_string de2 ^ ")"
-      | Sil.Dconst (Const.Cfun pn) ->
+      | DExp.Dconst (Const.Cfun pn) ->
           Procname.to_unique_id pn
-      | Sil.Dconst c ->
+      | DExp.Dconst c ->
           pp_to_string (Const.pp pe_text) c
-      | Sil.Dderef de ->
+      | DExp.Dderef de ->
           dexp_to_string de
-      | Sil.Dfcall (fun_dexp, args, _, { CallFlags.cf_virtual = isvirtual })
-      | Sil.Dretcall (fun_dexp, args, _, { CallFlags.cf_virtual = isvirtual })
+      | DExp.Dfcall (fun_dexp, args, _, { CallFlags.cf_virtual = isvirtual })
+      | DExp.Dretcall (fun_dexp, args, _, { CallFlags.cf_virtual = isvirtual })
         when functions_idempotent () ->
           let pp_arg fmt de = F.fprintf fmt "%s" (dexp_to_string de) in
           let pp_args fmt des = (pp_comma_seq) pp_arg fmt des in
@@ -113,20 +114,20 @@ module ComplexExpressions = struct
             let virt = if isvirtual then "V" else "" in
             F.fprintf fmt "%a(%a)%s" pp_arg fun_dexp pp_args args virt in
           pp_to_string pp ()
-      | Sil.Dfcall _
-      | Sil.Dretcall _ ->
+      | DExp.Dfcall _
+      | DExp.Dretcall _ ->
           case_not_handled ()
-      | Sil.Dpvar pv
-      | Sil.Dpvaraddr pv when not (Pvar.is_frontend_tmp pv) ->
+      | DExp.Dpvar pv
+      | DExp.Dpvaraddr pv when not (Pvar.is_frontend_tmp pv) ->
           Pvar.to_string pv
-      | Sil.Dpvar _
-      | Sil.Dpvaraddr _ (* front-end variable -- this should not happen) *) ->
+      | DExp.Dpvar _
+      | DExp.Dpvaraddr _ (* front-end variable -- this should not happen) *) ->
           case_not_handled ()
-      | Sil.Dunop (op, de) ->
+      | DExp.Dunop (op, de) ->
           Unop.str op ^ dexp_to_string de
-      | Sil.Dsizeof _ ->
+      | DExp.Dsizeof _ ->
           case_not_handled ()
-      | Sil.Dunknown ->
+      | DExp.Dunknown ->
           case_not_handled () in
 
     match map_dexp (Errdesc.exp_rv_dexp node' exp) with
@@ -770,11 +771,11 @@ let typecheck_instr
               | Some dexp_key, Procname.Java callee_pname_java ->
                   let pname_get =
                     Procname.Java (pname_get_from_pname_put callee_pname_java) in
-                  let dexp_get = Sil.Dconst (Const.Cfun pname_get) in
-                  let dexp_map = Sil.Dpvar pv_map in
+                  let dexp_get = DExp.Dconst (Const.Cfun pname_get) in
+                  let dexp_map = DExp.Dpvar pv_map in
                   let args = [dexp_map; dexp_key] in
                   let call_flags = { CallFlags.default with CallFlags.cf_virtual = true } in
-                  Some (Sil.Dretcall (dexp_get, args, loc, call_flags))
+                  Some (DExp.Dretcall (dexp_get, args, loc, call_flags))
               | _ -> None in
             begin
               match ComplexExpressions.exp_to_string_map_dexp
@@ -903,16 +904,15 @@ let typecheck_instr
         let handle_containsKey e =
           let map_dexp = function
             | Some
-                (Sil.Dretcall
-                   (Sil.Dconst
-                      (Const.Cfun (Procname.Java pname_java)), args, loc, call_flags)) ->
+                (DExp.Dretcall
+                   (DExp.Dconst (Const.Cfun (Procname.Java pname_java)), args, loc, call_flags)) ->
                 let pname_java' =
                   let object_t = (Some "java.lang", "Object") in
                   Procname.java_replace_return_type
                     (Procname.java_replace_method pname_java "get")
                     object_t in
-                let fun_dexp = Sil.Dconst (Const.Cfun (Procname.Java pname_java')) in
-                Some (Sil.Dretcall (fun_dexp, args, loc, call_flags))
+                let fun_dexp = DExp.Dconst (Const.Cfun (Procname.Java pname_java')) in
+                Some (DExp.Dretcall (fun_dexp, args, loc, call_flags))
             | _ -> None in
           begin
             match ComplexExpressions.exp_to_string_map_dexp map_dexp node' e with

@@ -124,7 +124,7 @@ let check_access access_opt de_opt =
   | _ ->
       begin
         match de_opt with
-        | Some (Sil.Dconst _) ->
+        | Some (DecompiledExp.Dconst _) ->
             Some Localise.BucketLevel.b1
         | _ -> None
       end

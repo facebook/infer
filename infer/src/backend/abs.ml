@@ -1022,7 +1022,7 @@ let cycle_has_weak_or_unretained_or_assign_field cycle =
 
 let check_observer_is_unsubscribed_deallocation prop e =
   let pvar_opt = match Prop.get_resource_attribute prop e with
-    | Some (Sil.Aresource ({Sil.ra_vpath =  Some (Sil.Dpvar pvar) })) -> Some pvar
+    | Some (Sil.Aresource ({Sil.ra_vpath =  Some (DecompiledExp.Dpvar pvar) })) -> Some pvar
     | _ -> None in
   let loc = State.get_loc () in
   match Prop.get_observer_attribute prop e with

@@ -14,7 +14,7 @@ open! Utils
 
 (** find the dexp, if any, where the given value is stored
     also return the type of the value if found *)
-val vpath_find : 'a Prop.t -> Sil.exp -> Sil.vpath * Typ.t option
+val vpath_find : 'a Prop.t -> Sil.exp -> DecompiledExp.vpath * Typ.t option
 
 (** Return true if [id] is assigned to a program variable which is then nullified *)
 val id_is_assigned_then_dead : Cfg.Node.t -> Ident.t -> bool
@@ -38,7 +38,7 @@ val find_ident_assignment : Cfg.Node.t -> Ident.t -> (Cfg.Node.t * Sil.exp) opti
 val find_boolean_assignment : Cfg.Node.t -> Pvar.t -> bool -> Cfg.Node.t option
 
 (** describe rvalue [e] as a dexp *)
-val exp_rv_dexp : Cfg.Node.t -> Sil.exp -> Sil.dexp option
+val exp_rv_dexp : Cfg.Node.t -> Sil.exp -> DecompiledExp.t option
 
 (** Produce a description of a persistent reference to an Android Context *)
 val explain_context_leak : Procname.t -> Typ.t -> Ident.fieldname ->
@@ -94,7 +94,7 @@ val explain_condition_always_true_false :
 
 (** explain the escape of a stack variable address from its scope *)
 val explain_stack_variable_address_escape :
-  Location.t -> Pvar.t -> Sil.dexp option -> Localise.error_desc
+  Location.t -> Pvar.t -> DecompiledExp.t option -> Localise.error_desc
 
 (** explain frontend warning *)
 val explain_frontend_warning : string -> string -> Location.t -> Localise.error_desc

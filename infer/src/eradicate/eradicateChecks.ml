@@ -57,7 +57,7 @@ let report_error =
 
 let explain_expr node e =
   match Errdesc.exp_rv_dexp node e with
-  | Some de -> Some (Sil.dexp_to_string de)
+  | Some de -> Some (DecompiledExp.to_string de)
   | None -> None
 
 (** Classify a procedure. *)

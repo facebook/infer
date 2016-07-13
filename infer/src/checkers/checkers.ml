@@ -548,7 +548,7 @@ let callback_print_c_method_calls { Callbacks.proc_desc; proc_name } =
     | Sil.Call (_, Sil.Const (Const.Cfun pn), (e, _):: _, loc, _)
       when Procname.is_c_method pn ->
         let receiver = match Errdesc.exp_rv_dexp node e with
-          | Some de -> Sil.dexp_to_string de
+          | Some de -> DecompiledExp.to_string de
           | None -> "?" in
         let description =
           Printf.sprintf "['%s' %s]" receiver (Procname.to_string pn) in

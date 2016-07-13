@@ -63,35 +63,13 @@ type taint_kind =
 type taint_info = {taint_source: Procname.t, taint_kind: taint_kind};
 
 
-/** expression representing the result of decompilation */
-type dexp =
-  | Darray of dexp dexp
-  | Dbinop of Binop.t dexp dexp
-  | Dconst of Const.t
-  | Dsizeof of Typ.t (option dexp) Subtype.t
-  | Dderef of dexp
-  | Dfcall of dexp (list dexp) Location.t CallFlags.t
-  | Darrow of dexp Ident.fieldname
-  | Ddot of dexp Ident.fieldname
-  | Dpvar of Pvar.t
-  | Dpvaraddr of Pvar.t
-  | Dunop of Unop.t dexp
-  | Dunknown
-  | Dretcall of dexp (list dexp) Location.t CallFlags.t;
-
-
-/** Value paths: identify an occurrence of a value in a symbolic heap
-    each expression represents a path, with Dpvar being the simplest one */
-type vpath = option dexp;
-
-
 /** acquire/release action on a resource */
 type res_action = {
   ra_kind: res_act_kind, /** kind of action */
   ra_res: resource, /** kind of resource */
   ra_pname: Procname.t, /** name of the procedure used to acquire/release the resource */
   ra_loc: Location.t, /** location of the acquire/release */
-  ra_vpath: vpath /** vpath of the resource value */
+  ra_vpath: DecompiledExp.vpath /** vpath of the resource value */
 };
 
 
@@ -417,10 +395,6 @@ let is_block_pvar: Pvar.t => bool;
     the function raises an exception by calling "assert false". */
 let binop_invert: Binop.t => exp => exp => exp;
 
-
-/** return true if [dexp] contains a temporary pvar */
-let dexp_has_tmp_var: dexp => bool;
-
 let mem_kind_compare: mem_kind => mem_kind => int;
 
 let attribute_compare: attribute => attribute => int;
@@ -533,14 +507,6 @@ let mem_dealloc_pname: mem_kind => Procname.t;
 let attribute_to_string: printenv => attribute => string;
 
 
-/** convert a dexp to a string */
-let dexp_to_string: dexp => string;
-
-
-/** Pretty print a dexp. */
-let pp_dexp: F.formatter => dexp => unit;
-
-
 /** Pretty print an expression. */
 let pp_exp: printenv => F.formatter => exp => unit;
 
@@ -615,10 +581,6 @@ let pp_instr_list: printenv => F.formatter => list instr => unit;
 
 /** Dump a list of instructions. */
 let d_instr_list: list instr => unit;
-
-
-/** Pretty print a value path */
-let pp_vpath: printenv => F.formatter => vpath => unit;
 
 
 /** Pretty print an atom. */
