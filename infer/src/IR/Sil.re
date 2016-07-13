@@ -615,15 +615,18 @@ type inst =
 type strexp =
   | Eexp of exp inst /** Base case: expression with instrumentation */
   | Estruct of (list (Ident.fieldname, strexp)) inst /** C structure */
-  | Earray of exp (list (exp, strexp)) inst /** Array of given length */
-/** There are two conditions imposed / used in the array case.
-    First, if some index and value pair appears inside an array
-    in a strexp, then the index is less than the length of the array.
-    For instance, x |->[10 | e1: v1] implies that e1 <= 9.
-    Second, if two indices appear in an array, they should be different.
-    For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. */
+  /** Array of given length
+      There are two conditions imposed / used in the array case.
+      First, if some index and value pair appears inside an array
+      in a strexp, then the index is less than the length of the array.
+      For instance, x |->[10 | e1: v1] implies that e1 <= 9.
+      Second, if two indices appear in an array, they should be different.
+      For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. */
+  | Earray of exp (list (exp, strexp)) inst;
+
+
 /** an atomic heap predicate */
-and hpred =
+type hpred =
   | Hpointsto of exp strexp exp
   /** represents [exp|->strexp:typexp] where [typexp]
       is an expression representing a type, e.h. [sizeof(t)]. */
@@ -1041,7 +1044,7 @@ let rec dexp_has_tmp_var =
   | Dunknown
   | Dsizeof _ None _ => false;
 
-let rec attribute_compare (att1: attribute) (att2: attribute) :int =>
+let attribute_compare (att1: attribute) (att2: attribute) :int =>
   switch (att1, att2) {
   | (Aresource ra1, Aresource ra2) =>
     let n = res_act_kind_compare ra1.ra_kind ra2.ra_kind;
@@ -1100,9 +1103,11 @@ let rec attribute_compare (att1: attribute) (att2: attribute) :int =>
   | (Aunsubscribed_observer, Aunsubscribed_observer) => 0
   | (Aunsubscribed_observer, _) => (-1)
   | (_, Aunsubscribed_observer) => 1
-  }
+  };
+
+
 /** Compare epressions. Variables come before other expressions. */
-and exp_compare (e1: exp) (e2: exp) :int =>
+let rec exp_compare (e1: exp) (e2: exp) :int =>
   switch (e1, e2) {
   | (Var id1, Var id2) => Ident.compare id2 id1
   | (Var _, _) => (-1)
@@ -1298,9 +1303,11 @@ let rec strexp_compare se1 se2 =>
 and fld_strexp_compare fse1 fse2 => pair_compare Ident.fieldname_compare strexp_compare fse1 fse2
 and fld_strexp_list_compare fsel1 fsel2 => IList.compare fld_strexp_compare fsel1 fsel2
 and exp_strexp_compare ese1 ese2 => pair_compare exp_compare strexp_compare ese1 ese2
-and exp_strexp_list_compare esel1 esel2 => IList.compare exp_strexp_compare esel1 esel2
+and exp_strexp_list_compare esel1 esel2 => IList.compare exp_strexp_compare esel1 esel2;
+
+
 /** Comparsion between heap predicates. Hpointsto comes before others. */
-and hpred_compare hpred1 hpred2 =>
+let rec hpred_compare hpred1 hpred2 =>
   if (hpred1 === hpred2) {
     0
   } else {
@@ -1830,10 +1837,13 @@ let rec _pp_exp pe0 pp_t f e0 => {
     }
   };
   color_post_wrapper changed pe0 f
-}
-and pp_exp pe f e => _pp_exp pe (Typ.pp pe) f e
+};
+
+let pp_exp pe f e => _pp_exp pe (Typ.pp pe) f e;
+
+
 /** Convert an expression to a string */
-and exp_to_string e => pp_to_string (pp_exp pe_text) e;
+let exp_to_string e => pp_to_string (pp_exp pe_text) e;
 
 
 /** dump an expression. */
@@ -2395,9 +2405,11 @@ let rec pp_sexp_env pe0 envo f se => {
     F.fprintf f "[%a|%a]%a" (pp_exp pe) len (pp_seq_diff pp_diff pe) nel (pp_inst_if_trace pe) inst
   };
   color_post_wrapper changed pe0 f
-}
+};
+
+
 /** Pretty print an hpred with an optional predicate env */
-and pp_hpred_env pe0 envo f hpred => {
+let rec pp_hpred_env pe0 envo f hpred => {
   let (pe, changed) = color_pre_wrapper pe0 f hpred;
   switch hpred {
   | Hpointsto e se te =>
@@ -2644,8 +2656,9 @@ let rec strexp_instmap (f: inst => inst) strexp =>
   | Earray len idx_se_list inst =>
     let f_idx_se (idx, se) => (idx, strexp_instmap f se);
     Earray len (IList.map f_idx_se idx_se_list) (f inst)
-  }
-and hpara_instmap (f: inst => inst) hpara => {
+  };
+
+let rec hpara_instmap (f: inst => inst) hpara => {
   ...hpara,
   body: IList.map (hpred_instmap f) hpara.body
 }
@@ -2799,8 +2812,9 @@ let rec exp_fpv =
   /* | Sizeof _ None _ => [] */
   /* | Sizeof _ (Some l) _ => exp_fpv l */
   | Sizeof _ _ _ => []
-  | Attribute _ => []
-and exp_list_fpv el => IList.flatten (IList.map exp_fpv el);
+  | Attribute _ => [];
+
+let exp_list_fpv el => IList.flatten (IList.map exp_fpv el);
 
 let atom_fpv =
   fun
@@ -2818,8 +2832,9 @@ let rec strexp_fpv =
       let fpv_in_len = exp_fpv len;
       let f (idx, se) => exp_fpv idx @ strexp_fpv se;
       fpv_in_len @ IList.flatten (IList.map f idx_se_list)
-    }
-and hpred_fpv =
+    };
+
+let rec hpred_fpv =
   fun
   | Hpointsto base se te => exp_fpv base @ strexp_fpv se @ exp_fpv te
   | Hlseg _ para e1 e2 elist => {

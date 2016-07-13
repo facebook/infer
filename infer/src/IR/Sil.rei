@@ -396,15 +396,18 @@ let inst_partial_meet: inst => inst => inst;
 type strexp =
   | Eexp of exp inst /** Base case: expression with instrumentation */
   | Estruct of (list (Ident.fieldname, strexp)) inst /** C structure */
-  | Earray of exp (list (exp, strexp)) inst /** Array of given length */
-/** There are two conditions imposed / used in the array case.
-    First, if some index and value pair appears inside an array
-    in a strexp, then the index is less than the length of the array.
-    For instance, x |->[10 | e1: v1] implies that e1 <= 9.
-    Second, if two indices appear in an array, they should be different.
-    For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. */
+  /** Array of given length
+      There are two conditions imposed / used in the array case.
+      First, if some index and value pair appears inside an array
+      in a strexp, then the index is less than the length of the array.
+      For instance, x |->[10 | e1: v1] implies that e1 <= 9.
+      Second, if two indices appear in an array, they should be different.
+      For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. */
+  | Earray of exp (list (exp, strexp)) inst;
+
+
 /** an atomic heap predicate */
-and hpred =
+type hpred =
   | Hpointsto of exp strexp exp
   /** represents [exp|->strexp:typexp] where [typexp]
       is an expression representing a type, e.g. [sizeof(t)]. */
