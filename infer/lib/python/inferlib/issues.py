@@ -37,6 +37,7 @@ csv.field_size_limit(sys.maxsize)
 ISSUE_KIND_ERROR = 'ERROR'
 ISSUE_KIND_WARNING = 'WARNING'
 ISSUE_KIND_INFO = 'INFO'
+ISSUE_KIND_ADVICE = 'ADVICE'
 
 ISSUE_TYPES = [
     'ASSERTION_FAILURE',
@@ -212,6 +213,8 @@ def _text_of_report_list(reports, formatter=colorize.TERMINAL_FORMATTER):
             msg = colorize.color(msg, colorize.ERROR, formatter)
         elif report[JSON_INDEX_KIND] == ISSUE_KIND_WARNING:
             msg = colorize.color(msg, colorize.WARNING, formatter)
+        elif report[JSON_INDEX_KIND] == ISSUE_KIND_ADVICE:
+            msg = colorize.color(msg, colorize.ADVICE, formatter)
         text = '%s%s' % (msg, source_context)
         text_errors_list.append(text)
 
@@ -263,7 +266,7 @@ def _is_user_visible(report):
     filename = report[JSON_INDEX_FILENAME]
     kind = report[JSON_INDEX_KIND]
     return (os.path.isfile(filename) and
-            kind in [ISSUE_KIND_ERROR, ISSUE_KIND_WARNING])
+            kind in [ISSUE_KIND_ERROR, ISSUE_KIND_WARNING, ISSUE_KIND_ADVICE])
 
 
 def print_and_save_errors(json_report, bugs_out, xml_out):
@@ -348,7 +351,7 @@ def _should_report(analyzer, error_kind, error_type, error_bucket):
         config.ANALYZER_CHECKERS,
         config.ANALYZER_TRACING,
     ]
-    error_kinds = [ISSUE_KIND_ERROR, ISSUE_KIND_WARNING]
+    error_kinds = [ISSUE_KIND_ERROR, ISSUE_KIND_WARNING, ISSUE_KIND_ADVICE]
     null_style_buckets = ['B1', 'B2']
 
     if analyzer in analyzers_whitelist:

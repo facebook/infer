@@ -45,6 +45,7 @@ ERROR = RED
 HEADER = BRIGHT
 SUCCESS = BLUE_BG + WHITE + BRIGHT
 WARNING = ''
+ADVICE = ''
 
 
 class Invalid_mode(Exception):
