@@ -120,3 +120,4 @@ infer/src/.project
 /dependencies/ocamldot/ocamldot
 /dependencies/ocamldot/ocamldot.ml
 /infer/src/mod_dep.dot
+/infer/src/mod_dep.pdf

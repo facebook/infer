@@ -231,13 +231,18 @@ $(DEPENDENCIES_DIR)/ocamldot/ocamldot:
 
 roots:=Infer Inferanalyze CMain JMain Inferprint
 src_dirs:=$(shell find * -type d)
-src_files:=$(shell find $(src_dirs) -regex '.*\.ml\(i\)*' -not -path facebook/scripts/eradicate_stats.ml)
+ml_src_files:=$(shell find $(src_dirs) -regex '.*\.ml\(i\)*' -not -path facebook/scripts/eradicate_stats.ml)
+re_src_files:=$(shell find $(src_dirs) -regex '.*\.re\(i\)*')
 inc_flags:=$(foreach dir,$(src_dirs),-I $(dir))
 root_flags:=$(foreach root,$(roots),-r $(root))
-mod_dep.dot: $(DEPENDENCIES_DIR)/ocamldot/ocamldot $(src_files)
-	ocamldep.opt $(inc_flags) $(src_files) \
+mod_dep.dot: $(DEPENDENCIES_DIR)/ocamldot/ocamldot $(ml_src_files) $(re_src_files)
+	{ ocamldep.opt $(inc_flags) -ml-synonym .re -mli-synonym .rei $(ml_src_files); \
+	  ocamldep.opt $(inc_flags) -ml-synonym .re -mli-synonym .rei -pp refmt $(re_src_files); } \
 	| $(DEPENDENCIES_DIR)/ocamldot/ocamldot -lr $(root_flags) \
         > mod_dep.dot
+
+mod_dep.pdf: mod_dep.dot
+	dot -Tpdf -o mod_dep.pdf mod_dep.dot
 
 define gen_atdgen_rules
 # generate files using atdgen
@@ -326,6 +331,7 @@ endif
 	$(REMOVE) $(CLANG_ATDGEN_STUBS)
 	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(REMOVE) mod_dep.dot
+	$(REMOVE) mod_dep.pdf
 
 # convert to reason
 %.re : %.ml
