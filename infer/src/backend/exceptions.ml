@@ -178,7 +178,7 @@ let recognize_exception exn =
          desc, Some ml_loc, Exn_user, Medium, Some Kwarning, Nocat)
     | Frontend_warning (name, desc, ml_loc) ->
         (Localise.from_string name,
-         desc, Some ml_loc, Exn_user, Medium, Some Kwarning, Nocat)
+         desc, Some ml_loc, Exn_user, Medium, None, Nocat)
     | Checkers (kind_s, desc) ->
         (Localise.from_string kind_s,
          desc, None, Exn_user, High, None, Prover)

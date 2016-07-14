@@ -22,11 +22,12 @@ open CFrontend_utils
 (*    run_frontend_checkers_on_stmt in CFrontend_error module.*)
 (*    - If it is a declaration invoke it from run_frontend_checkers_on_decl *)
 
-type warning_desc = {
+type issue_desc = {
   name : string; (* name for the checker, this will be a kind of bug *)
   description : string; (* Description in the error message *)
   suggestion : string; (* an optional suggestion or correction *)
   loc : Location.t; (* location in the code *)
+  kind : Exceptions.err_kind; (* issue kind *)
 }
 
 (* Helper functions *)
@@ -183,6 +184,7 @@ let assign_pointer_warning decl_info pname obj_c_property_decl_info =
             pname.ni_name;
         suggestion = "Use a different attribute like `strong` or `weak`.";
         loc = location_from_dinfo decl_info;
+        kind = Exceptions.Kwarning
       }
   else None
 
@@ -195,7 +197,9 @@ let strong_delegate_warning decl_info pname obj_c_property_decl_info =
     Some { name = "STRONG_DELEGATE_WARNING";
            description = "Property or ivar "^pname.Clang_ast_t.ni_name^" declared strong";
            suggestion = "In general delegates should be declared weak or assign";
-           loc = location_from_dinfo decl_info; }
+           loc = location_from_dinfo decl_info;
+           kind = Exceptions.Kwarning
+         }
   else None
 
 (* GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL warning: a global variable initialization should not *)
@@ -216,7 +220,9 @@ let global_var_init_with_calls_warning decl =
       description = "Global variable " ^ gvar ^ 
                     " is initialized using a function or method call";
       suggestion = "If the function/method call is expensive, it can affect the starting time of the app.";
-      loc = location_from_dinfo decl_info; }
+      loc = location_from_dinfo decl_info;
+      kind = Exceptions.Kwarning
+    }
   else None
 
 (* Direct Atomic Property access:
@@ -245,7 +251,8 @@ let direct_atomic_property_access_warning method_decl stmt_info ivar_decl_ref =
           description = "Direct access to ivar " ^ ivar_name ^
                         " of an atomic property";
           suggestion = "Accessing an ivar of an atomic property makes the property nonatomic";
-          loc = location_from_sinfo stmt_info; }
+          loc = location_from_sinfo stmt_info;
+          kind = Exceptions.Kwarning }
       else None
   | _ -> None
 
@@ -267,7 +274,8 @@ let captured_cxx_ref_in_objc_block_warning stmt_info captured_vars =
                     " captured by Objective-C block";
       suggestion = "C++ References are unmanaged and may be invalid " ^
                    "by the time the block executes.";
-      loc = location_from_sinfo stmt_info; }
+      loc = location_from_sinfo stmt_info;
+      kind = Exceptions.Kwarning}
   else None
 
 
@@ -291,5 +299,6 @@ let checker_NSNotificationCenter decl_info decls =
       name = Localise.to_string (Localise.registered_observer_being_deallocated);
       description = Localise.registered_observer_being_deallocated_str CFrontend_config.self;
       suggestion =  "Consider removing the object from the notification center before its deallocation.";
-      loc = location_from_dinfo decl_info; }
+      loc = location_from_dinfo decl_info;
+      kind = Exceptions.Kwarning }
   else None

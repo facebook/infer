@@ -48,21 +48,21 @@ let checker_for_global_var dec checker =
   checker dec
 
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
-let log_frontend_warning cfg cg warn_desc =
+let log_frontend_issue cfg cg issue_desc =
   let open CFrontend_checkers in
-  let loc = warn_desc.loc in
+  let loc = issue_desc.loc in
   let pdesc = CMethod_trans.get_method_for_frontend_checks cfg cg loc in
   let errlog = Cfg.Procdesc.get_err_log pdesc in
   let err_desc =
-    Errdesc.explain_frontend_warning warn_desc.description warn_desc.suggestion loc in
+    Errdesc.explain_frontend_warning issue_desc.description issue_desc.suggestion loc in
   let exn = Exceptions.Frontend_warning
-      (warn_desc.name, err_desc, __POS__) in
+      (issue_desc.name, err_desc, __POS__) in
   let trace = [
     { Errlog.lt_level = 0;
-      Errlog.lt_loc = warn_desc.loc;
+      Errlog.lt_loc = issue_desc.loc;
       Errlog.lt_description = "";
       Errlog.lt_node_tags = []}] in
-  Reporting.log_error_from_errlog errlog exn ~loc:(Some loc) ~ltr:(Some trace)
+  Reporting.log_issue_from_errlog issue_desc.kind errlog exn ~loc:(Some loc) ~ltr:(Some trace)
 
 (* General invocation function for checkers
    Takes
@@ -72,7 +72,7 @@ let log_frontend_warning cfg cg warn_desc =
 let invoke_set_of_checkers f cfg cg checkers  =
   IList.iter (fun checker ->
       match f checker with
-      | Some warning_desc -> log_frontend_warning cfg cg warning_desc
+      | Some issue_desc -> log_frontend_issue cfg cg issue_desc
       | None -> ()) checkers
 
 (* Call all checkers on properties of class c *)

@@ -33,6 +33,9 @@ val log_warning : log_issue
 (** Report an info in the given procedure. *)
 val log_info : log_issue
 
+(** Report an issue of a given kind  in the given error log. *)
+val log_issue_from_errlog : Exceptions.err_kind -> log_issue_from_errlog
+
 (** Report an error in the given error log. *)
 val log_error_from_errlog : log_issue_from_errlog
 
