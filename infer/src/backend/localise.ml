@@ -660,8 +660,11 @@ let desc_empty_vector_access pname_opt object_str loc =
 
 let is_empty_vector_access_desc desc = has_tag desc Tags.empty_vector_access
 
-let desc_frontend_warning desc sugg loc =
+let desc_frontend_warning desc sugg_opt loc =
   let tags = Tags.create () in
+  let sugg = match sugg_opt with
+    | Some sugg -> sugg
+    | None -> "" in
   let description = Format.sprintf
       "%s %s. %s"
       desc

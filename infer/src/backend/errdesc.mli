@@ -97,7 +97,7 @@ val explain_stack_variable_address_escape :
   Location.t -> Pvar.t -> DecompiledExp.t option -> Localise.error_desc
 
 (** explain frontend warning *)
-val explain_frontend_warning : string -> string -> Location.t -> Localise.error_desc
+val explain_frontend_warning : string -> string option -> Location.t -> Localise.error_desc
 
 (** explain a return statement missing *)
 val explain_return_statement_missing : Location.t -> Localise.error_desc

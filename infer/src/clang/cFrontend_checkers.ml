@@ -22,14 +22,6 @@ open CFrontend_utils
 (*    run_frontend_checkers_on_stmt in CFrontend_error module.*)
 (*    - If it is a declaration invoke it from run_frontend_checkers_on_decl *)
 
-type issue_desc = {
-  name : string; (* name for the checker, this will be a kind of bug *)
-  description : string; (* Description in the error message *)
-  suggestion : string; (* an optional suggestion or correction *)
-  loc : Location.t; (* location in the code *)
-  kind : Exceptions.err_kind; (* issue kind *)
-}
-
 (* Helper functions *)
 
 let get_ivar_attributes ivar_decl =
@@ -177,14 +169,13 @@ let assign_pointer_warning decl_info pname obj_c_property_decl_info =
     has_assign_property() && is_pointer_type () in
   if condition then
     Some
-      { name = "ASSIGN_POINTER_WARNING";
-        description =
+      { CIssue.issue = CIssue.Assign_pointer_warning;
+        CIssue.description =
           Printf.sprintf
             "Property `%s` is a pointer type marked with the `assign` attribute"
             pname.ni_name;
-        suggestion = "Use a different attribute like `strong` or `weak`.";
-        loc = location_from_dinfo decl_info;
-        kind = Exceptions.Kwarning
+        CIssue.suggestion = Some "Use a different attribute like `strong` or `weak`.";
+        CIssue.loc = location_from_dinfo decl_info
       }
   else None
 
@@ -194,11 +185,10 @@ let strong_delegate_warning decl_info pname obj_c_property_decl_info =
                   && not (name_contains_word pname "queue")
                   && ObjcProperty_decl.is_strong_property obj_c_property_decl_info in
   if condition then
-    Some { name = "STRONG_DELEGATE_WARNING";
-           description = "Property or ivar "^pname.Clang_ast_t.ni_name^" declared strong";
-           suggestion = "In general delegates should be declared weak or assign";
-           loc = location_from_dinfo decl_info;
-           kind = Exceptions.Kwarning
+    Some { CIssue.issue = CIssue.Strong_delegate_warning;
+           CIssue.description = "Property or ivar "^pname.Clang_ast_t.ni_name^" declared strong";
+           CIssue.suggestion = Some "In general delegates should be declared weak or assign";
+           CIssue.loc = location_from_dinfo decl_info
          }
   else None
 
@@ -216,12 +206,12 @@ let global_var_init_with_calls_warning decl =
                   && is_initialized_with_expensive_call decl in
   if condition then
     Some {
-      name = "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL";
-      description = "Global variable " ^ gvar ^ 
-                    " is initialized using a function or method call";
-      suggestion = "If the function/method call is expensive, it can affect the starting time of the app.";
-      loc = location_from_dinfo decl_info;
-      kind = Exceptions.Kwarning
+      CIssue.issue = CIssue.Global_variable_initialized_with_function_or_method_call;
+      CIssue.description = "Global variable " ^ gvar ^
+                           " is initialized using a function or method call";
+      CIssue.suggestion = Some
+          "If the function/method call is expensive, it can affect the starting time of the app.";
+      CIssue.loc = location_from_dinfo decl_info
     }
   else None
 
@@ -247,12 +237,13 @@ let direct_atomic_property_access_warning method_decl stmt_info ivar_decl_ref =
         && not (Procname.is_objc_dealloc method_name) in
       if condition then
         Some {
-          name = "DIRECT_ATOMIC_PROPERTY_ACCESS";
-          description = "Direct access to ivar " ^ ivar_name ^
-                        " of an atomic property";
-          suggestion = "Accessing an ivar of an atomic property makes the property nonatomic";
-          loc = location_from_sinfo stmt_info;
-          kind = Exceptions.Kwarning }
+          CIssue.issue = CIssue.Direct_atomic_property_access;
+          CIssue.description = "Direct access to ivar " ^ ivar_name ^
+                               " of an atomic property";
+          CIssue.suggestion =
+            Some "Accessing an ivar of an atomic property makes the property nonatomic";
+          CIssue.loc = location_from_sinfo stmt_info
+        }
       else None
   | _ -> None
 
@@ -269,13 +260,13 @@ let captured_cxx_ref_in_objc_block_warning stmt_info captured_vars =
   let condition = IList.length capt_refs > 0 in
   if condition then
     Some {
-      name = "CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK";
-      description = "C++ Reference variable(s) " ^ var_descs ^
-                    " captured by Objective-C block";
-      suggestion = "C++ References are unmanaged and may be invalid " ^
-                   "by the time the block executes.";
-      loc = location_from_sinfo stmt_info;
-      kind = Exceptions.Kwarning}
+      CIssue.issue = CIssue.Cxx_reference_captured_in_objc_block;
+      CIssue.description = "C++ Reference variable(s) " ^ var_descs ^
+                           " captured by Objective-C block";
+      CIssue.suggestion = Some ("C++ References are unmanaged and may be invalid " ^
+                                "by the time the block executes.");
+      CIssue.loc = location_from_sinfo stmt_info
+    }
   else None
 
 
@@ -296,9 +287,11 @@ let checker_NSNotificationCenter decl_info decls =
   let condition = eventually_addObserver && (not eventually_removeObserver) in
   if condition then
     Some {
-      name = Localise.to_string (Localise.registered_observer_being_deallocated);
-      description = Localise.registered_observer_being_deallocated_str CFrontend_config.self;
-      suggestion =  "Consider removing the object from the notification center before its deallocation.";
-      loc = location_from_dinfo decl_info;
-      kind = Exceptions.Kwarning }
+      CIssue.issue = CIssue.Registered_observer_being_deallocated;
+      CIssue.description =
+        Localise.registered_observer_being_deallocated_str CFrontend_config.self;
+      CIssue.suggestion =
+        Some "Consider removing the object from the notification center before its deallocation.";
+      CIssue.loc = location_from_dinfo decl_info
+    }
   else None
