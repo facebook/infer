@@ -118,13 +118,14 @@ let should_translate (loc_start, loc_end) decl_trans_context =
   in
   let file_in_project = map_path_of file_in_project loc_end
                         || map_path_of file_in_project loc_start in
+  let translate_on_demand = file_in_project || Config.models_mode in
   let file_in_models = map_path_of DB.file_is_in_cpp_model loc_end
                        || map_path_of DB.file_is_in_cpp_model loc_start in
   equal_current_source !curr_file
   || map_file_of equal_current_source loc_end
   || map_file_of equal_current_source loc_start
   || file_in_models
-  || (Config.cxx_experimental && decl_trans_context = `Translation && file_in_project
+  || (Config.cxx_experimental && decl_trans_context = `Translation && translate_on_demand
       && not Config.testing_mode)
 
 let should_translate_lib source_range decl_trans_context =

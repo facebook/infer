@@ -30,18 +30,32 @@
 
 #include "infer_builtins.h"
 
-#include <dirent.h>
+// use c++ headers if in C++ mode - they are mostly same as C headers,
+// but there are some subtle differences from time to time. For example,
+// 'getc' may be defined as macro in stdio.h, and a function in cstdio
+#ifdef __cplusplus
+#include <climits>
+#include <clocale>
+#include <csetjmp>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <csignal>
+#else
 #include <limits.h>
 #include <locale.h>
-#include <pwd.h>
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <pthread.h>
 #include <signal.h>
+#endif
+
+#include <dirent.h>
+#include <pwd.h>
+#include <pthread.h>
 #include <sys/shm.h>
 #include <sys/socket.h>
 #include <sys/stat.h>

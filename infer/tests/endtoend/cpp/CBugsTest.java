@@ -112,4 +112,23 @@ public class CBugsTest {
         doesNotContain(DIVIDE_BY_ZERO, FILE, "memcpy_spec_is_found"));
   }
 
+  @Test
+  public void whenInferRunsOnGetcCrashThenNullDereferenceIsFound()
+      throws InterruptedException, IOException, InferException {
+    InferResults inferResults = InferRunner.runInferCPP(inferCmd);
+    assertThat(
+        "Not checking malloc result should report null dereference",
+        inferResults,
+        contains(NULL_DEREFERENCE, FILE, "crash_getc"));
+  }
+
+  @Test
+  public void whenInferRunsOnFgetcCrashThenNullDereferenceIsFound()
+      throws InterruptedException, IOException, InferException {
+    InferResults inferResults = InferRunner.runInferCPP(inferCmd);
+    assertThat(
+        "Not checking malloc result should report null dereference",
+        inferResults,
+        contains(NULL_DEREFERENCE, FILE, "crash_fgetc"));
+  }
 }
