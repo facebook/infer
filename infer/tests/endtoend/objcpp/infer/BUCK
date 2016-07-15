@@ -1,0 +1,35 @@
+tests_dependencies = [
+    '//infer/lib/java/android:android',
+    '//dependencies/java/guava:guava',
+    '//dependencies/java/junit:hamcrest',
+    '//dependencies/java/jackson:jackson',
+    '//dependencies/java/jsr-305:jsr-305',
+    '//dependencies/java/junit:junit',
+    '//dependencies/java/opencsv:opencsv',
+    '//infer/tests/utils:utils',
+]
+
+objcpp_infer_test_sources = glob(['*.java'])
+objcpp_infer_test_deps = []
+for test_source in objcpp_infer_test_sources:
+    target_name = test_source.replace("/", "_")[:-len(".java")]
+    objcpp_infer_test_deps.append(target_name)
+
+    java_test(
+        name=target_name,
+        srcs=[test_source],
+        deps=tests_dependencies,
+        visibility=[
+            'PUBLIC',
+        ],
+        source='7',
+        target='7',
+    )
+
+java_test(
+    name='infer',
+    deps=[':' + x for x in objcpp_infer_test_deps],
+    visibility=[
+        'PUBLIC',
+    ],
+)
