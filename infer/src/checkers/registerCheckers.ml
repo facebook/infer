@@ -39,6 +39,7 @@ let active_procedure_checkers () =
         PrintfArgs.callback_printf_args, checkers_enabled;
         AnnotationReachability.Interprocedural.check_and_report, checkers_enabled;
         Checkers.callback_print_access_to_globals, false;
+        BoundedCallTree.checker, false;
       ] in
     IList.map (fun (x, y) -> (x, y, Some Config.Java)) l in
   let c_cpp_checkers =

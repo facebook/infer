@@ -22,6 +22,7 @@ let () =
     ProcCfgTests.tests;
     LivenessTests.tests;
     SchedulerTests.tests;
+    BoundedCallTreeTests.tests;
   ] in
   let test_suite = "all" >::: tests in
   OUnit2.run_test_tt_main test_suite
