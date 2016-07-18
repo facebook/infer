@@ -65,18 +65,16 @@ module Make (TraceDomain : AbstractDomain.S) = struct
   let make_empty_trace_access_node trace access =
     make_access_node TraceDomain.initial access trace
 
-  (** find all of the traces in [tree] and join them with [orig_trace] *)
-  let rec join_all_traces orig_trace tree =
-    let node_join_traces _ (trace, node) trace_acc =
-      let trace_acc' = TraceDomain.join trace_acc trace in
-      match node with
-      | Star -> trace_acc'
-      | Subtree subtree -> join_all_traces trace_acc' subtree in
-    AccessMap.fold node_join_traces tree orig_trace
-
-  let join_all_traces_subtree orig_trace = function
-    | Subtree subtree -> join_all_traces orig_trace subtree
-    | Star -> orig_trace
+  (** find all of the traces in the subtree and join them with [orig_trace] *)
+  let rec join_all_traces orig_trace = function
+    | Subtree subtree ->
+        let join_all_traces_ orig_trace tree =
+          let node_join_traces _ (trace, node) trace_acc =
+            join_all_traces (TraceDomain.join trace_acc trace) node in
+          AccessMap.fold node_join_traces tree orig_trace in
+        join_all_traces_ orig_trace subtree
+    | Star ->
+        orig_trace
 
   (** retrieve the trace associated with [ap] from [tree] *)
   let get_trace ap tree =
@@ -94,9 +92,7 @@ module Make (TraceDomain : AbstractDomain.S) = struct
       accesses_get_trace accesses base_trace base_tree in
     let base, accesses = AccessPath.extract ap in
     match get_trace_ base accesses tree with
-    | trace, Star ->
-        Some trace
-    | trace, Subtree subtree ->
+    | trace, subtree ->
         if AccessPath.is_exact ap
         then Some trace
         else
@@ -121,7 +117,7 @@ module Make (TraceDomain : AbstractDomain.S) = struct
               trace', subtree
           | _ ->
               (* adding x.f* or x[_]*, join with traces of subtree and replace it with * *)
-              let trace' = join_all_traces_subtree (TraceDomain.join last_trace trace) subtree in
+              let trace' = join_all_traces (TraceDomain.join last_trace trace) subtree in
               make_starred_leaf trace'
         end
     | _, Star ->
@@ -210,19 +206,13 @@ module Make (TraceDomain : AbstractDomain.S) = struct
           else if trace' == trace2 && tree' == subtree2
           then node2
           else trace', Subtree tree'
-      | Star, Star ->
-          if trace' == trace1
-          then node1
-          else if trace' == trace2
-          then node2
-          else trace', Star
-      | Star, Subtree t ->
+      | Star, t ->
           (* vacuum up all the traces associated with the subtree t and join them with trace' *)
           let trace'' = join_all_traces trace' t in
           if trace'' == trace1
           then node1
           else trace'', Star
-      | Subtree t, Star ->
+      | t, Star ->
           (* same as above, but kind-of duplicated to allow address equality optimization *)
           let trace'' = join_all_traces trace' t in
           if trace'' == trace2
