@@ -30,8 +30,8 @@ type method_call_type =
 
 type function_method_decl_info =
   | Func_decl_info of Clang_ast_t.function_decl_info * Clang_ast_t.type_ptr * Config.clang_lang
-  | Cpp_Meth_decl_info of Clang_ast_t.function_decl_info * Clang_ast_t.cxx_method_decl_info * string * Clang_ast_t.type_ptr
-  | ObjC_Meth_decl_info of Clang_ast_t.obj_c_method_decl_info * string
+  | Cpp_Meth_decl_info of Clang_ast_t.function_decl_info * Clang_ast_t.cxx_method_decl_info * Clang_ast_t.pointer * Clang_ast_t.type_ptr
+  | ObjC_Meth_decl_info of Clang_ast_t.obj_c_method_decl_info * Clang_ast_t.pointer
   | Block_decl_info of Clang_ast_t.block_decl_info * Clang_ast_t.type_ptr * CContext.t
 
 let is_instance_method function_method_decl_info =
@@ -52,11 +52,11 @@ let get_original_return_type function_method_decl_info =
 let get_class_param function_method_decl_info =
   if (is_instance_method function_method_decl_info) then
     match function_method_decl_info with
-    | Cpp_Meth_decl_info (_, _, class_name, _) ->
-        let class_type = Ast_expressions.create_class_type (class_name, `CPP) in
+    | Cpp_Meth_decl_info (_, _, class_decl_ptr, _) ->
+        let class_type = `DeclPtr class_decl_ptr in
         [(Mangled.from_string CFrontend_config.this, class_type)]
-    | ObjC_Meth_decl_info (_, class_name) ->
-        let class_type = Ast_expressions.create_class_type (class_name, `OBJC) in
+    | ObjC_Meth_decl_info (_, class_decl_ptr) ->
+        let class_type = `DeclPtr class_decl_ptr in
         [(Mangled.from_string CFrontend_config.self, class_type)]
     | _ -> []
   else []
@@ -181,7 +181,8 @@ let method_signature_of_decl tenv meth_decl block_data_opt =
       let method_name = Ast_utils.get_unqualified_name name_info in
       let class_name = Ast_utils.get_class_name_from_member name_info in
       let procname = General_utils.mk_procname_from_cpp_method class_name method_name tp in
-      let method_decl = Cpp_Meth_decl_info (fdi, mdi, class_name, tp)  in
+      let parent_ptr = Option.get decl_info.di_parent_pointer in
+      let method_decl = Cpp_Meth_decl_info (fdi, mdi, parent_ptr, tp)  in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
       let ms = build_method_signature tenv decl_info procname method_decl parent_pointer None in
       let non_null_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
@@ -190,7 +191,8 @@ let method_signature_of_decl tenv meth_decl block_data_opt =
   | ObjCMethodDecl (decl_info, name_info, mdi), _ ->
       let class_name = Ast_utils.get_class_name_from_member name_info in
       let procname = get_objc_method_name name_info mdi class_name in
-      let method_decl = ObjC_Meth_decl_info (mdi, class_name) in
+      let parent_ptr = Option.get decl_info.di_parent_pointer in
+      let method_decl = ObjC_Meth_decl_info (mdi, parent_ptr) in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
       let pointer_to_property_opt =
         match mdi.Clang_ast_t.omdi_property_decl with
@@ -252,6 +254,7 @@ let get_superclass_curr_class_objc context =
   | CContext.ContextCategory (_, cls) ->
       retrive_super cls None
   | CContext.ContextNoCls
+  | CContext.ContextClsDeclPtr _
   | CContext.ContextProtocol _ -> assert false
 
 (* Gets the class name from a method signature found by clang, if search is successful *)

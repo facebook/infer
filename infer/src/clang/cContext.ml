@@ -19,6 +19,7 @@ type curr_class =
   (*class name and name of (optional) super class , and a list of protocols *)
   | ContextCategory of string * string (* category name and corresponding class *)
   | ContextProtocol of string  (* category name and corresponding class *)
+  | ContextClsDeclPtr of Clang_ast_t.pointer
   | ContextNoCls
 
 type str_node_map = (string, Cfg.Node.t) Hashtbl.t
@@ -83,7 +84,13 @@ let get_curr_class_name curr_class =
   | ContextCls (name, _, _) -> name
   | ContextCategory (_, cls) -> cls
   | ContextProtocol name -> name
+  | ContextClsDeclPtr _ -> assert false
   | ContextNoCls -> assert false
+
+let get_curr_class_decl_ptr curr_class =
+  match curr_class with
+  | ContextClsDeclPtr ptr -> ptr
+  | _ -> assert false
 
 let curr_class_to_string curr_class =
   match curr_class with
@@ -92,6 +99,7 @@ let curr_class_to_string curr_class =
        ",  protocols: " ^ (IList.to_string (fun x -> x) protocols))
   | ContextCategory (name, cls) -> ("category " ^ name ^ " of class " ^ cls)
   | ContextProtocol name -> ("protocol " ^ name)
+  | ContextClsDeclPtr ptr -> ("decl_ptr: " ^ string_of_int ptr)
   | ContextNoCls -> "no class"
 
 let curr_class_compare curr_class1 curr_class2 =
@@ -108,17 +116,14 @@ let curr_class_compare curr_class1 curr_class2 =
       String.compare name1 name2
   | ContextProtocol _, _ -> -1
   | _, ContextProtocol _ -> 1
+  | ContextClsDeclPtr ptr1, ContextClsDeclPtr ptr2 ->
+      ptr1 - ptr2
+  | ContextClsDeclPtr _, _ -> -1
+  | _, ContextClsDeclPtr _ -> 1
   | ContextNoCls, ContextNoCls -> 0
 
 let curr_class_equal curr_class1 curr_class2 =
   curr_class_compare curr_class1 curr_class2 == 0
-
-let curr_class_hash curr_class =
-  match curr_class with
-  | ContextCls (name, _, _) -> Hashtbl.hash name
-  | ContextCategory (name, cls) -> Hashtbl.hash (name, cls)
-  | ContextProtocol name -> Hashtbl.hash name
-  | ContextNoCls -> Hashtbl.hash "no class"
 
 let create_curr_class tenv class_name ck =
   let class_tn_name = Typename.TN_csu (Csu.Class ck, (Mangled.from_string class_name)) in
@@ -158,4 +163,3 @@ let rec get_outer_procname context =
   match context.outer_context with
   | Some outer_context -> get_outer_procname outer_context
   | None -> Cfg.Procdesc.get_proc_name context.procdesc
-

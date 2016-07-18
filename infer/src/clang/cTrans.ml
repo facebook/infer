@@ -2610,7 +2610,7 @@ struct
   (* an input parameter. *)
   and cxx_constructor_init_trans ctor_init trans_state =
     (*let tenv = trans_state.context.CContext.tenv in*)
-    let class_name = CContext.get_curr_class_name trans_state.context.CContext.curr_class in
+    let class_ptr = CContext.get_curr_class_decl_ptr trans_state.context.CContext.curr_class in
     let source_range = ctor_init.Clang_ast_t.xci_source_range in
     let sil_loc = CLocation.get_sil_location_from_range source_range true in
     (* its pointer will be used in PriorityNode *)
@@ -2619,8 +2619,7 @@ struct
     let child_stmt_info =
       { (Ast_expressions.dummy_stmt_info ()) with Clang_ast_t.si_source_range = source_range } in
     let trans_state' = PriorityNode.try_claim_priority_node trans_state this_stmt_info in
-    let class_type_ptr = Ast_expressions.create_pointer_type
-        (Ast_expressions.create_class_type (class_name, `CPP)) in
+    let class_type_ptr = Ast_expressions.create_pointer_type (`DeclPtr class_ptr) in
     let this_res_trans = this_expr_trans trans_state' sil_loc class_type_ptr in
     let var_res_trans = match ctor_init.Clang_ast_t.xci_subject with
       | `Delegating _ | `BaseClass _ ->

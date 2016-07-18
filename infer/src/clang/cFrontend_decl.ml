@@ -213,16 +213,12 @@ struct
        | CXXConversionDecl (decl_info, _, _, _, _)
        | CXXDestructorDecl (decl_info, _, _, _, _) ->
            (* di_parent_pointer has pointer to lexical context such as class.*)
-           let class_decl = match decl_info.Clang_ast_t.di_parent_pointer with
-             | Some ptr ->
-                 Ast_utils.get_decl ptr
-             | None ->
-                 assert false in
+           let parent_ptr = Option.get decl_info.Clang_ast_t.di_parent_pointer in
+           let class_decl = Ast_utils.get_decl parent_ptr in
            (match class_decl with
-            | Some (CXXRecordDecl _ as d)
-            | Some (ClassTemplateSpecializationDecl _ as d) ->
-                let class_name = CTypes_decl.get_record_name d in
-                let curr_class = CContext.ContextCls(class_name, None, []) in
+            | Some (CXXRecordDecl _)
+            | Some (ClassTemplateSpecializationDecl _) ->
+                let curr_class = CContext.ContextClsDeclPtr parent_ptr in
                 if Config.cxx_experimental then
                   process_methods tenv cg cfg curr_class [dec]
             | Some dec ->
