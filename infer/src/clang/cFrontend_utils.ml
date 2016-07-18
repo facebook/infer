@@ -585,7 +585,30 @@ struct
          | None -> file)
     | None -> ""
 
-  let mk_procname_from_function name function_decl_info_opt tp language =
+  let is_cpp_translation language =
+    language = Config.CPP || language = Config.OBJCPP
+
+  let rec get_mangled_method_name function_decl_info method_decl_info =
+    (* For virtual methods return mangled name of the method from most base class
+       Go recursively until there is no method in any parent class. All names
+       of the same method need to be the same, otherwise dynamic dispatch won't
+       work. *)
+    let open Clang_ast_t in
+    match method_decl_info.xmdi_overriden_methods with
+    | [] -> function_decl_info.fdi_mangled_name
+    | base1_dr :: _ ->
+        (let base1 = match Ast_utils.get_decl base1_dr.dr_decl_pointer with
+            | Some b -> b
+            | _ -> assert false in
+         match base1 with
+         | CXXMethodDecl (_, _, _, fdi, mdi)
+         | CXXConstructorDecl (_, _, _, fdi, mdi)
+         | CXXConversionDecl (_, _, _, fdi, mdi)
+         | CXXDestructorDecl (_, _, _, fdi, mdi) ->
+             get_mangled_method_name fdi mdi
+         | _ -> assert false)
+
+  let mk_procname_from_function name function_decl_info_opt language =
     let file =
       match function_decl_info_opt with
       | Some (decl_info, function_decl_info) ->
@@ -595,33 +618,27 @@ struct
                get_rel_file_path file_opt
            | _ -> "")
       | None -> "" in
-    let type_string =
-      match language with
-      | Config.CPP
-      | Config.OBJCPP -> Ast_utils.string_of_type_ptr tp
+    let mangled_opt = match function_decl_info_opt with
+      | Some (_, function_decl_info) -> function_decl_info.Clang_ast_t.fdi_mangled_name
+      | _ -> None in
+    let mangled_name =
+      match mangled_opt with
+      | Some m when is_cpp_translation language -> m
       | _ -> "" in
-    (* remove __restrict from type name to avoid mismatches. Clang allows to declare function*)
-    (* with __restrict parameters and then define it without (it mostly applies to models).*)
-    (* We are not using this information right now so we can remove it to avoid dealing with*)
-    (* corner cases on different systems *)
-    let type_string_no_restrict = Str.global_replace (Str.regexp "__restrict") "" type_string in
-    let mangled = file ^ type_string_no_restrict in
-    if String.length mangled == 0 then
+    let mangled = (string_crc_hex32 file) ^ mangled_name in
+    if String.length file == 0 && String.length mangled_name == 0 then
       Procname.from_string_c_fun name
     else
-      let crc = string_crc_hex32 mangled in
-      Procname.C (Procname.c name crc)
+      Procname.C (Procname.c name mangled)
 
   let mk_procname_from_objc_method class_name method_name method_kind =
     let mangled = Procname.mangled_of_objc_method_kind method_kind in
     Procname.ObjC_Cpp
       (Procname.objc_cpp class_name method_name mangled)
 
-  let mk_procname_from_cpp_method class_name method_name tp =
-    let type_name = Ast_utils.string_of_type_ptr tp in
-    let type_name_crc = Some (string_crc_hex32 type_name) in
+  let mk_procname_from_cpp_method class_name method_name mangled_opt =
     Procname.ObjC_Cpp
-      (Procname.objc_cpp class_name method_name type_name_crc)
+      (Procname.objc_cpp class_name method_name mangled_opt)
 
   let get_var_name_mangled name_info var_decl_info =
     let clang_name = Ast_utils.get_qualified_name name_info in
@@ -657,8 +674,5 @@ struct
           let mangled_name = Mangled.mangled name_string mangled in
           Pvar.mk mangled_name procname
     | None -> Pvar.mk (Mangled.from_string name_string) procname
-
-  let is_cpp_translation language =
-    language = Config.CPP || language = Config.OBJCPP
 
 end

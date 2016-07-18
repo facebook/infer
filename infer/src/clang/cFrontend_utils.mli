@@ -202,9 +202,12 @@ sig
   val mk_procname_from_objc_method : string -> string -> Procname.objc_method_kind -> Procname.t
 
   val mk_procname_from_function : string -> (Clang_ast_t.decl_info * Clang_ast_t.function_decl_info)
-      option -> Clang_ast_t.type_ptr -> Config.clang_lang -> Procname.t
+      option -> Config.clang_lang -> Procname.t
 
-  val mk_procname_from_cpp_method : string -> string -> Clang_ast_t.type_ptr -> Procname.t
+  val get_mangled_method_name : Clang_ast_t.function_decl_info ->
+    Clang_ast_t.cxx_method_decl_info -> string option
+
+  val mk_procname_from_cpp_method : string -> string -> string option-> Procname.t
 
   val mk_class_field_name : Clang_ast_t.named_decl_info -> Ident.fieldname
 

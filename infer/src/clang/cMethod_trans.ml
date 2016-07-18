@@ -170,7 +170,7 @@ let method_signature_of_decl tenv meth_decl block_data_opt =
       let language = Config.clang_lang in
       let func_decl = Func_decl_info (fdi, tp, language) in
       let function_info = Some (decl_info, fdi) in
-      let procname = General_utils.mk_procname_from_function name function_info tp language in
+      let procname = General_utils.mk_procname_from_function name function_info language in
       let ms = build_method_signature tenv decl_info procname func_decl None None in
       let extra_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
@@ -180,7 +180,8 @@ let method_signature_of_decl tenv meth_decl block_data_opt =
   | CXXDestructorDecl (decl_info, name_info, tp, fdi, mdi), _ ->
       let method_name = Ast_utils.get_unqualified_name name_info in
       let class_name = Ast_utils.get_class_name_from_member name_info in
-      let procname = General_utils.mk_procname_from_cpp_method class_name method_name tp in
+      let mangled = General_utils.get_mangled_method_name fdi mdi in
+      let procname = General_utils.mk_procname_from_cpp_method class_name method_name mangled in
       let parent_ptr = Option.get decl_info.di_parent_pointer in
       let method_decl = Cpp_Meth_decl_info (fdi, mdi, parent_ptr, tp)  in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
@@ -433,7 +434,7 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
         } in
       ignore (Cfg.Procdesc.create cfg proc_attributes)
 
-let create_procdesc_with_pointer context pointer class_name_opt name tp =
+let create_procdesc_with_pointer context pointer class_name_opt name =
   let open CContext in
   match method_signature_of_pointer context.tenv pointer with
   | Some callee_ms ->
@@ -443,9 +444,9 @@ let create_procdesc_with_pointer context pointer class_name_opt name tp =
       let callee_name =
         match class_name_opt with
         | Some class_name ->
-            General_utils.mk_procname_from_cpp_method class_name name tp
+            General_utils.mk_procname_from_cpp_method class_name name None
         | None ->
-            General_utils.mk_procname_from_function name None tp Config.clang_lang in
+            General_utils.mk_procname_from_function name None Config.clang_lang in
       create_external_procdesc context.cfg callee_name false None;
       callee_name
 
@@ -479,8 +480,8 @@ let get_procname_from_cpp_lambda context dec =
   | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, cxx_rdi) ->
       (match cxx_rdi.xrdi_lambda_call_operator with
        | Some dr ->
-           let name_info, decl_ptr, type_ptr = Ast_utils.get_info_from_decl_ref dr in
-           create_procdesc_with_pointer context decl_ptr None name_info.ni_name type_ptr
+           let name_info, decl_ptr, _ = Ast_utils.get_info_from_decl_ref dr in
+           create_procdesc_with_pointer context decl_ptr None name_info.ni_name
        | _ -> assert false (* We should not get here *))
   | _ -> assert false (* We should not get here *)
 

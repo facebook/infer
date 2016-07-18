@@ -454,7 +454,7 @@ struct
     let pname =
       if CTrans_models.is_modeled_builtin name then
         Procname.from_string_c_fun (CFrontend_config.infer ^ name)
-      else CMethod_trans.create_procdesc_with_pointer context decl_ptr None name type_ptr in
+      else CMethod_trans.create_procdesc_with_pointer context decl_ptr None name in
     let address_of_function = not context.CContext.is_callee_expression in
     (* If we are not translating a callee expression, *)
     (* then the address of the function is being taken.*)
@@ -587,7 +587,7 @@ struct
     (* consider using context.CContext.is_callee_expression to deal with pointers to methods? *)
     (* unlike field access, for method calls there is no need to expand class type *)
     let pname = CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_name)
-        method_name type_ptr in
+        method_name in
     let method_exp = (Sil.Const (Const.Cfun pname), method_typ) in
     Cfg.set_procname_priority context.CContext.cfg pname;
     { pre_trans_result with

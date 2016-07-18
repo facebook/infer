@@ -17,8 +17,6 @@
 #endif
 #define _FORTIFY_SOURCE 0
 
-#define __asm(N)
-
 #ifdef __APPLE__ // disable block instructions on mac
 #ifdef __BLOCKS__
 #undef __BLOCKS__
@@ -136,7 +134,14 @@ char* strcat(char* s1, const char* s2) {
 #ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
 char* strchr(const char* s, int c) {
 #else
-const char* strchr(const char* s, int c) throw() { return strchr((char*)s, c); }
+// This overload is commented out on purpose.
+// Standard headers define both functions with same __asm symbol which
+// means they cannot be both defined. On the other hand, since both of them
+// have same __asm symbol, mangling will be the same and infer will have
+// specs for both functions (they both will have the same name)
+// NOTE: this was tested on couple of systems, it may not be always true.
+// const char* strchr(const char* s, int c) throw() { return strchr((char*)s,
+// c); }
 
 char* strchr(char* s, int c) throw() {
 #endif
@@ -158,9 +163,10 @@ char* strchr(char* s, int c) throw() {
 #ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
 char* strrchr(const char* s, int c) { return strchr(s, c); }
 #else
-const char* strrchr(const char* s, int c) throw() {
+// This overload is commented out on purpose. Look at strchr() for more info.
+/*const char* strrchr(const char* s, int c) throw() {
   return strchr((char*)s, c);
-}
+}*/
 
 char* strrchr(char* s, int c) throw() { return strchr(s, c); }
 #endif
@@ -239,9 +245,10 @@ char* strncpy(char* s1, const char* s2, size_t n) {
 #ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
 char* strpbrk(const char* s1, const char* s2) {
 #else
-const char* strpbrk(const char* s1, const char* s2) throw() {
+// This overload is commented out on purpose. Look at strchr() for more info.
+/*const char* strpbrk(const char* s1, const char* s2) throw() {
   return strpbrk((char*)s1, s2);
-}
+}*/
 
 char* strpbrk(char* s1, const char* s2) throw() {
 #endif
@@ -275,10 +282,10 @@ size_t strspn(const char* s1, const char* s2) {
 #ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
 char* strstr(const char* s1, const char* s2) {
 #else
-
-const char* strstr(const char* s1, const char* s2) throw() {
+// This overload is commented out on purpose. Look at strchr() for more info.
+/*const char* strstr(const char* s1, const char* s2) throw() {
   return strstr((char*)s1, s2);
-}
+}*/
 
 char* strstr(char* s1, const char* s2) throw() {
 #endif
@@ -339,10 +346,10 @@ char* strupr(char* s) {
 #ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
 void* memchr(const void* s, int c, size_t n) {
 #else
-
-const void* memchr(const void* s, int c, size_t n) throw() {
-  return memchr((void*)s, c, n);
-}
+// This overload is commented out on purpose. Look at strchr() for more info.
+// const void* memchr(const void* s, int c, size_t n) throw() {
+//  return memchr((void*)s, c, n);
+//}
 
 void* memchr(void* s, int c, size_t n) throw() {
 #endif
