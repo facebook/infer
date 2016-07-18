@@ -209,6 +209,10 @@ sig
 
   val mk_procname_from_cpp_method : string -> string -> string option-> Procname.t
 
+  val procname_of_decl : Clang_ast_t.decl -> Procname.t
+
+  val get_procname_for_frontend_checks : Location.t -> Procname.t
+
   val mk_class_field_name : Clang_ast_t.named_decl_info -> Ident.fieldname
 
   val get_var_name_mangled : Clang_ast_t.named_decl_info -> Clang_ast_t.var_decl_info ->

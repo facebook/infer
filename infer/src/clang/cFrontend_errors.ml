@@ -47,12 +47,26 @@ let global_var_checker_list = [CFrontend_checkers.global_var_init_with_calls_war
 let checker_for_global_var dec checker =
   checker dec
 
+let errLogMap = ref Procname.Map.empty
+
+let get_err_log cfg cg method_decl_opt loc =
+  if Config.linters_mode_enabled then
+    let procname = match method_decl_opt with
+      | Some method_decl -> General_utils.procname_of_decl method_decl
+      | None -> General_utils.get_procname_for_frontend_checks loc in
+    try Procname.Map.find procname !errLogMap
+    with Not_found ->
+      let errlog = Errlog.empty () in
+      errLogMap := Procname.Map.add procname errlog !errLogMap; errlog
+  else
+    let pdesc = CMethod_trans.get_method_for_frontend_checks cfg cg loc in
+    Cfg.Procdesc.get_err_log pdesc
+
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
-let log_frontend_issue cfg cg issue_desc =
+let log_frontend_issue cfg cg method_decl_opt issue_desc =
   let issue = issue_desc.CIssue.issue in
   let loc = issue_desc.CIssue.loc in
-  let pdesc = CMethod_trans.get_method_for_frontend_checks cfg cg loc in
-  let errlog = Cfg.Procdesc.get_err_log pdesc in
+  let errlog = get_err_log cfg cg method_decl_opt loc in
   let err_desc = Errdesc.explain_frontend_warning issue_desc.CIssue.description
       issue_desc.CIssue.suggestion loc in
   let name = CIssue.to_string issue in
@@ -70,10 +84,10 @@ let log_frontend_issue cfg cg issue_desc =
    1. f a particular way to apply a checker, it's a partial function
    2. context
    3. the list of checkers to be applied *)
-let invoke_set_of_checkers f cfg cg checkers  =
+let invoke_set_of_checkers f cfg cg method_decl_opt checkers  =
   IList.iter (fun checker ->
       match f checker with
-      | Some issue_desc -> log_frontend_issue cfg cg issue_desc
+      | Some issue_desc -> log_frontend_issue cfg cg method_decl_opt issue_desc
       | None -> ()) checkers
 
 (* Call all checkers on properties of class c *)
@@ -81,7 +95,7 @@ let rec check_for_property_errors cfg cg decl_list =
   let open Clang_ast_t in
   let do_one_property decl_info pname_info pdi =
     let call_property_checker = checkers_for_property decl_info pname_info pdi in
-    invoke_set_of_checkers call_property_checker cfg cg property_checkers_list in
+    invoke_set_of_checkers call_property_checker cfg cg None property_checkers_list in
   match decl_list with
   | [] -> ()
   | ObjCPropertyDecl (decl_info, pname_info, pdi) :: rest ->
@@ -102,11 +116,13 @@ let run_frontend_checkers_on_stmt cfg cg method_decl instr =
   | ObjCIvarRefExpr(stmt_info, _, _, obj_c_ivar_ref_expr_info) ->
       let dr_ref = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref in
       let call_checker_for_ivar = checkers_for_ivar method_decl stmt_info dr_ref in
-      invoke_set_of_checkers call_checker_for_ivar cfg cg ivar_access_checker_list
+      let method_decl_opt = Some method_decl in
+      invoke_set_of_checkers call_checker_for_ivar cfg cg method_decl_opt ivar_access_checker_list
   | BlockExpr(stmt_info, _ , _, Clang_ast_t.BlockDecl (_, block_decl_info)) ->
       let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
       let call_captured_vars_checker = checkers_for_capture_vars stmt_info captured_block_vars in
-      invoke_set_of_checkers call_captured_vars_checker cfg cg captured_vars_checker_list
+      let decl_opt = Some method_decl in
+      invoke_set_of_checkers call_captured_vars_checker cfg cg decl_opt captured_vars_checker_list
   | _ -> ()
 
 let rec run_frontend_checkers_on_decl cfg cg dec =
@@ -122,14 +138,14 @@ let rec run_frontend_checkers_on_decl cfg cg dec =
         let decls = (get_categories_decls idi.Clang_ast_t.oidi_class_interface) @ decl_list in
         check_for_property_errors cfg cg decls;
         let call_ns_checker = checkers_for_ns decl_info decl_list in
-        invoke_set_of_checkers call_ns_checker cfg cg ns_notification_checker_list;
+        invoke_set_of_checkers call_ns_checker cfg cg None ns_notification_checker_list;
         IList.iter (run_frontend_checkers_on_decl cfg cg) decl_list
     | ObjCProtocolDecl (decl_info, _, decl_list, _, _) ->
         check_for_property_errors cfg cg decl_list;
         let call_ns_checker = checkers_for_ns decl_info decl_list in
-        invoke_set_of_checkers call_ns_checker cfg cg ns_notification_checker_list;
+        invoke_set_of_checkers call_ns_checker cfg cg None ns_notification_checker_list;
         IList.iter (run_frontend_checkers_on_decl cfg cg) decl_list
     | VarDecl _ ->
         let call_global_checker = checker_for_global_var dec in
-        invoke_set_of_checkers call_global_checker cfg cg global_var_checker_list
+        invoke_set_of_checkers call_global_checker cfg cg None global_var_checker_list
     | _ -> ()

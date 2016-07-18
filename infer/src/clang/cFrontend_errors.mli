@@ -18,3 +18,4 @@ val run_frontend_checkers_on_stmt : Cfg.cfg -> Cg.t -> Clang_ast_t.decl -> Clang
 (* Run frontend checkers on a declaration *)
 val run_frontend_checkers_on_decl : Cfg.cfg -> Cg.t -> Clang_ast_t.decl -> unit
 
+val errLogMap : Errlog.t Procname.Map.t ref

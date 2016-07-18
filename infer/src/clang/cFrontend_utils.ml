@@ -640,6 +640,34 @@ struct
     Procname.ObjC_Cpp
       (Procname.objc_cpp class_name method_name mangled_opt)
 
+  let get_objc_method_name name_info mdi class_name =
+    let method_name = name_info.Clang_ast_t.ni_name in
+    let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
+    let method_kind = Procname.objc_method_kind_of_bool is_instance in
+    mk_procname_from_objc_method class_name method_name method_kind
+
+  let procname_of_decl meth_decl =
+    let open Clang_ast_t in
+    match meth_decl with
+    | FunctionDecl (decl_info, name_info, _, fdi) ->
+        let name = Ast_utils.get_qualified_name name_info in
+        let language = Config.clang_lang in
+        let function_info = Some (decl_info, fdi) in
+        mk_procname_from_function name function_info language
+    | CXXMethodDecl (_, name_info, _, fdi, mdi)
+    | CXXConstructorDecl (_, name_info, _, fdi, mdi)
+    | CXXConversionDecl (_, name_info, _, fdi, mdi)
+    | CXXDestructorDecl (_, name_info, _, fdi, mdi) ->
+        let mangled = get_mangled_method_name fdi mdi in
+        let method_name = Ast_utils.get_unqualified_name name_info in
+        let class_name = Ast_utils.get_class_name_from_member name_info in
+        mk_procname_from_cpp_method class_name method_name mangled
+    | ObjCMethodDecl (_, name_info, mdi) ->
+        let class_name = Ast_utils.get_class_name_from_member name_info in
+        get_objc_method_name name_info mdi class_name
+    | _ -> assert false
+
+
   let get_var_name_mangled name_info var_decl_info =
     let clang_name = Ast_utils.get_qualified_name name_info in
     let param_idx_opt = var_decl_info.Clang_ast_t.vdi_parm_index_in_function in
@@ -674,5 +702,9 @@ struct
           let mangled_name = Mangled.mangled name_string mangled in
           Pvar.mk mangled_name procname
     | None -> Pvar.mk (Mangled.from_string name_string) procname
+
+  let get_procname_for_frontend_checks loc =
+    let mangled = string_crc_hex32 (DB.source_file_to_string loc.Location.file) in
+    Procname.from_string_c_fun ("frontend_checks_" ^ mangled)
 
 end

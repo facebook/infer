@@ -79,6 +79,7 @@ val idempotent_getters : bool
 val incremental_procs : bool
 val initial_analysis_time : float
 val ivar_attributes : string
+val linters_mode_enabled : bool
 val load_average : float option
 val log_analysis_crash : string
 val log_analysis_file : string

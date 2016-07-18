@@ -102,7 +102,7 @@ struct
              let field_name = General_utils.mk_class_field_name named_decl_info in
              let process_accessor pointer ~getter =
                (match Ast_utils.get_decl_opt_with_decl_ref pointer with
-                | Some ObjCMethodDecl (decl_info, name_info, mdi) ->
+                | Some (ObjCMethodDecl (decl_info, _, _) as d) ->
                     let source_range = decl_info.Clang_ast_t.di_source_range in
                     let loc = CLocation.get_sil_location_from_range source_range true in
                     let property_accessor =
@@ -110,8 +110,7 @@ struct
                         Some (ProcAttributes.Objc_getter field_name)
                       else
                         Some (ProcAttributes.Objc_setter field_name) in
-                    let class_name = Ast_utils.get_class_name_from_member name_info in
-                    let procname = CMethod_trans.get_objc_method_name name_info mdi class_name in
+                    let procname = General_utils.procname_of_decl d in
                     let attrs = { (ProcAttributes.default procname Config.Clang) with
                                   loc = loc;
                                   objc_accessor = property_accessor; } in

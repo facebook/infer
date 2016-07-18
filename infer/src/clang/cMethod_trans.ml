@@ -156,32 +156,21 @@ let get_init_list_instrs method_decl_info =
   let create_custom_instr construct_instr = `CXXConstructorInit construct_instr in
   IList.map create_custom_instr method_decl_info.Clang_ast_t.xmdi_cxx_ctor_initializers
 
-let get_objc_method_name name_info mdi class_name =
-  let method_name = name_info.Clang_ast_t.ni_name in
-  let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
-  let method_kind = Procname.objc_method_kind_of_bool is_instance in
-  General_utils.mk_procname_from_objc_method class_name method_name method_kind
-
 let method_signature_of_decl tenv meth_decl block_data_opt =
   let open Clang_ast_t in
   match meth_decl, block_data_opt with
-  | FunctionDecl (decl_info, name_info, tp, fdi), _ ->
-      let name = Ast_utils.get_qualified_name name_info in
+  | FunctionDecl (decl_info, _, tp, fdi), _ ->
       let language = Config.clang_lang in
       let func_decl = Func_decl_info (fdi, tp, language) in
-      let function_info = Some (decl_info, fdi) in
-      let procname = General_utils.mk_procname_from_function name function_info language in
+      let procname = General_utils.procname_of_decl meth_decl in
       let ms = build_method_signature tenv decl_info procname func_decl None None in
       let extra_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
-  | CXXMethodDecl (decl_info, name_info, tp, fdi, mdi), _
-  | CXXConstructorDecl (decl_info, name_info, tp, fdi, mdi), _
-  | CXXConversionDecl (decl_info, name_info, tp, fdi, mdi), _
-  | CXXDestructorDecl (decl_info, name_info, tp, fdi, mdi), _ ->
-      let method_name = Ast_utils.get_unqualified_name name_info in
-      let class_name = Ast_utils.get_class_name_from_member name_info in
-      let mangled = General_utils.get_mangled_method_name fdi mdi in
-      let procname = General_utils.mk_procname_from_cpp_method class_name method_name mangled in
+  | CXXMethodDecl (decl_info, _, tp, fdi, mdi), _
+  | CXXConstructorDecl (decl_info, _, tp, fdi, mdi), _
+  | CXXConversionDecl (decl_info, _, tp, fdi, mdi), _
+  | CXXDestructorDecl (decl_info, _, tp, fdi, mdi), _ ->
+      let procname = General_utils.procname_of_decl meth_decl in
       let parent_ptr = Option.get decl_info.di_parent_pointer in
       let method_decl = Cpp_Meth_decl_info (fdi, mdi, parent_ptr, tp)  in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
@@ -189,9 +178,8 @@ let method_signature_of_decl tenv meth_decl block_data_opt =
       let non_null_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       let init_list_instrs = get_init_list_instrs mdi in (* it will be empty for methods *)
       ms, fdi.Clang_ast_t.fdi_body, (init_list_instrs @ non_null_instrs)
-  | ObjCMethodDecl (decl_info, name_info, mdi), _ ->
-      let class_name = Ast_utils.get_class_name_from_member name_info in
-      let procname = get_objc_method_name name_info mdi class_name in
+  | ObjCMethodDecl (decl_info, _, mdi), _ ->
+      let procname = General_utils.procname_of_decl meth_decl in
       let parent_ptr = Option.get decl_info.di_parent_pointer in
       let method_decl = ObjC_Meth_decl_info (mdi, parent_ptr) in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
@@ -451,8 +439,7 @@ let create_procdesc_with_pointer context pointer class_name_opt name =
       callee_name
 
 let get_method_for_frontend_checks cfg cg loc =
-  let mangled = string_crc_hex32 (DB.source_file_to_string loc.Location.file) in
-  let proc_name = Procname.from_string_c_fun ("frontend_checks_" ^ mangled) in
+  let proc_name = General_utils.get_procname_for_frontend_checks loc in
   match Cfg.Procdesc.find_from_name cfg proc_name with
   | Some pdesc -> pdesc
   | None ->

@@ -127,6 +127,8 @@ let inferconfig_file = ".inferconfig"
 
 let ivar_attributes = "ivar_attributes"
 
+let linters_mode_enabled = false
+
 (** letters used in the analysis output *)
 let log_analysis_file = "F"
 let log_analysis_procedure = "."

@@ -55,6 +55,3 @@ val get_method_for_frontend_checks : Cfg.cfg -> Cg.t -> Location.t -> Cfg.Procde
 val add_default_method_for_class : string -> Clang_ast_t.decl_info -> unit
 
 val get_procname_from_cpp_lambda : CContext.t -> Clang_ast_t.decl -> Procname.t
-
-val get_objc_method_name : Clang_ast_t.named_decl_info -> Clang_ast_t.obj_c_method_decl_info ->
-  string -> Procname.t
