@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 20 -> 22 ;
-19 [label="19:  Call _fun_XForward_call \n   n$0=*&x:class XForward * [line 35]\n  NONEn$1=*n$0:class XForward  [line 35]\n  n$2=_fun_XForward_call(n$0:class XForward *) [line 35]\n " shape="box"]
+19 [label="19:  Call _fun_XForward_call \n   n$0=*&x:class XForward * [line 35]\n  _=*n$0:class XForward  [line 35]\n  n$2=_fun_XForward_call(n$0:class XForward *) [line 35]\n " shape="box"]
 	
 
 	 19 -> 18 ;
@@ -33,7 +33,7 @@ digraph iCFG {
 	
 
 	 14 -> 16 ;
-13 [label="13:  Call _fun_X_call \n   n$0=_fun_getX() [line 22]\n  NONEn$1=*n$0:class X  [line 22]\n  n$2=_fun_X_call(n$0:class X *) [line 22]\n " shape="box"]
+13 [label="13:  Call _fun_X_call \n   n$0=_fun_getX() [line 22]\n  _=*n$0:class X  [line 22]\n  n$2=_fun_X_call(n$0:class X *) [line 22]\n " shape="box"]
 	
 
 	 13 -> 12 ;
@@ -59,7 +59,7 @@ digraph iCFG {
 	
 
 	 7 -> 6 ;
-6 [label="6:  Return Stmt \n   n$0=*&x:class X * [line 17]\n  NONEn$1=*n$0:class X  [line 17]\n  n$2=_fun_X_call(n$0:class X *) [line 17]\n  *&return:int =n$2 [line 17]\n " shape="box"]
+6 [label="6:  Return Stmt \n   n$0=*&x:class X * [line 17]\n  _=*n$0:class X  [line 17]\n  n$2=_fun_X_call(n$0:class X *) [line 17]\n  *&return:int =n$2 [line 17]\n " shape="box"]
 	
 
 	 6 -> 5 ;

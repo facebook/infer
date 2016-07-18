@@ -368,23 +368,22 @@ let create_path pathstring =>
 
 /** {2 Pretty Printing} */
 /** Convert an identifier to a string. */
-let to_string id => {
-  let base_name = name_to_string id.name;
-  let prefix =
-    if (id.kind === kfootprint) {
-      "@"
-    } else if (id.kind === knormal) {
-      ""
-    } else if (
-      id.kind === knone
-    ) {
-      "NONE"
-    } else {
-      "_"
-    };
-  let suffix = "$" ^ string_of_int id.stamp;
-  prefix ^ base_name ^ suffix
-};
+let to_string id =>
+  if (id.kind === knone) {
+    "_"
+  } else {
+    let base_name = name_to_string id.name;
+    let prefix =
+      if (id.kind === kfootprint) {
+        "@"
+      } else if (id.kind === knormal) {
+        ""
+      } else {
+        "_"
+      };
+    let suffix = "$" ^ string_of_int id.stamp;
+    prefix ^ base_name ^ suffix
+  };
 
 
 /** Pretty print a name. */

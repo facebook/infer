@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-123 [label="123:  Call _fun_X_zero \n   n$4=_fun_get_global_ref() [line 124]\n  NONEn$5=*n$4:class X  [line 124]\n  _fun_X_zero(n$4:class X &) [line 124]\n " shape="box"]
+123 [label="123:  Call _fun_X_zero \n   n$4=_fun_get_global_ref() [line 124]\n  _=*n$4:class X  [line 124]\n  _fun_X_zero(n$4:class X &) [line 124]\n " shape="box"]
 	
 
 	 123 -> 122 ;
@@ -8,7 +8,7 @@ digraph iCFG {
 	
 
 	 122 -> 121 ;
-121 [label="121:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 126]\n  NONEn$1=*n$0:class X  [line 126]\n  n$2=_fun_X_div(n$0:class X &) [line 126]\n " shape="box"]
+121 [label="121:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 126]\n  _=*n$0:class X  [line 126]\n  n$2=_fun_X_div(n$0:class X &) [line 126]\n " shape="box"]
 	
 
 	 121 -> 120 ;
@@ -19,7 +19,7 @@ digraph iCFG {
 	
 
 	 119 -> 123 ;
-118 [label="118:  Call _fun_X_nonzero \n   n$4=_fun_get_global_ref() [line 118]\n  NONEn$5=*n$4:class X  [line 118]\n  _fun_X_nonzero(n$4:class X &) [line 118]\n " shape="box"]
+118 [label="118:  Call _fun_X_nonzero \n   n$4=_fun_get_global_ref() [line 118]\n  _=*n$4:class X  [line 118]\n  _fun_X_nonzero(n$4:class X &) [line 118]\n " shape="box"]
 	
 
 	 118 -> 117 ;
@@ -27,7 +27,7 @@ digraph iCFG {
 	
 
 	 117 -> 116 ;
-116 [label="116:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 120]\n  NONEn$1=*n$0:class X  [line 120]\n  n$2=_fun_X_div(n$0:class X &) [line 120]\n " shape="box"]
+116 [label="116:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 120]\n  _=*n$0:class X  [line 120]\n  n$2=_fun_X_div(n$0:class X &) [line 120]\n " shape="box"]
 	
 
 	 116 -> 115 ;
@@ -42,11 +42,11 @@ digraph iCFG {
 	
 
 	 113 -> 112 ;
-112 [label="112:  Call _fun_X_nonzero \n   n$3=_fun_get_global_ref() [line 113]\n  NONEn$4=*n$3:class X  [line 113]\n  _fun_X_nonzero(n$3:class X &) [line 113]\n " shape="box"]
+112 [label="112:  Call _fun_X_nonzero \n   n$3=_fun_get_global_ref() [line 113]\n  _=*n$3:class X  [line 113]\n  _fun_X_nonzero(n$3:class X &) [line 113]\n " shape="box"]
 	
 
 	 112 -> 111 ;
-111 [label="111:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 114]\n  NONEn$1=*n$0:class X  [line 114]\n  n$2=_fun_X_div(n$0:class X &) [line 114]\n " shape="box"]
+111 [label="111:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 114]\n  _=*n$0:class X  [line 114]\n  n$2=_fun_X_div(n$0:class X &) [line 114]\n " shape="box"]
 	
 
 	 111 -> 110 ;
@@ -61,11 +61,11 @@ digraph iCFG {
 	
 
 	 108 -> 107 ;
-107 [label="107:  Call _fun_X_zero \n   n$3=_fun_get_global_ref() [line 107]\n  NONEn$4=*n$3:class X  [line 107]\n  _fun_X_zero(n$3:class X &) [line 107]\n " shape="box"]
+107 [label="107:  Call _fun_X_zero \n   n$3=_fun_get_global_ref() [line 107]\n  _=*n$3:class X  [line 107]\n  _fun_X_zero(n$3:class X &) [line 107]\n " shape="box"]
 	
 
 	 107 -> 106 ;
-106 [label="106:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 108]\n  NONEn$1=*n$0:class X  [line 108]\n  n$2=_fun_X_div(n$0:class X &) [line 108]\n " shape="box"]
+106 [label="106:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 108]\n  _=*n$0:class X  [line 108]\n  n$2=_fun_X_div(n$0:class X &) [line 108]\n " shape="box"]
 	
 
 	 106 -> 105 ;
@@ -80,7 +80,7 @@ digraph iCFG {
 	
 
 	 103 -> 102 ;
-102 [label="102:  Return Stmt \n   n$0=*&x:class X & [line 102]\n  NONEn$1=*n$0:class X  [line 102]\n  n$2=_fun_X_div(n$0:class X &) [line 102]\n  *&return:int =n$2 [line 102]\n " shape="box"]
+102 [label="102:  Return Stmt \n   n$0=*&x:class X & [line 102]\n  _=*n$0:class X  [line 102]\n  n$2=_fun_X_div(n$0:class X &) [line 102]\n  *&return:int =n$2 [line 102]\n " shape="box"]
 	
 
 	 102 -> 101 ;
@@ -95,7 +95,7 @@ digraph iCFG {
 	
 
 	 99 -> 98 ;
-98 [label="98:  Return Stmt \n   n$0=*&x:class X & [line 97]\n  NONEn$1=*n$0:class X  [line 97]\n  n$2=_fun_X_div(n$0:class X &) [line 97]\n  *&return:int =n$2 [line 97]\n " shape="box"]
+98 [label="98:  Return Stmt \n   n$0=*&x:class X & [line 97]\n  _=*n$0:class X  [line 97]\n  n$2=_fun_X_div(n$0:class X &) [line 97]\n  *&return:int =n$2 [line 97]\n " shape="box"]
 	
 
 	 98 -> 97 ;
@@ -110,7 +110,7 @@ digraph iCFG {
 	
 
 	 95 -> 94 ;
-94 [label="94:  Return Stmt \n   n$0=*&x:class X & [line 92]\n  NONEn$1=*n$0:class X  [line 92]\n  n$2=_fun_X_div(n$0:class X &) [line 92]\n  *&return:int =n$2 [line 92]\n " shape="box"]
+94 [label="94:  Return Stmt \n   n$0=*&x:class X & [line 92]\n  _=*n$0:class X  [line 92]\n  n$2=_fun_X_div(n$0:class X &) [line 92]\n  *&return:int =n$2 [line 92]\n " shape="box"]
 	
 
 	 94 -> 93 ;
@@ -125,7 +125,7 @@ digraph iCFG {
 	
 
 	 91 -> 90 ;
-90 [label="90:  Return Stmt \n   n$0=*&x:class X & [line 87]\n  NONEn$1=*n$0:class X  [line 87]\n  n$2=_fun_X_div(n$0:class X &) [line 87]\n  *&return:int =n$2 [line 87]\n " shape="box"]
+90 [label="90:  Return Stmt \n   n$0=*&x:class X & [line 87]\n  _=*n$0:class X  [line 87]\n  n$2=_fun_X_div(n$0:class X &) [line 87]\n  *&return:int =n$2 [line 87]\n " shape="box"]
 	
 
 	 90 -> 89 ;
@@ -136,7 +136,7 @@ digraph iCFG {
 	
 
 	 88 -> 91 ;
-87 [label="87:  Call _fun_X_zero \n   n$4=_fun_get_global_ptr() [line 80]\n  NONEn$5=*n$4:class X  [line 80]\n  _fun_X_zero(n$4:class X *) [line 80]\n " shape="box"]
+87 [label="87:  Call _fun_X_zero \n   n$4=_fun_get_global_ptr() [line 80]\n  _=*n$4:class X  [line 80]\n  _fun_X_zero(n$4:class X *) [line 80]\n " shape="box"]
 	
 
 	 87 -> 86 ;
@@ -144,7 +144,7 @@ digraph iCFG {
 	
 
 	 86 -> 85 ;
-85 [label="85:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 82]\n  NONEn$1=*n$0:class X  [line 82]\n  n$2=_fun_X_div(n$0:class X *) [line 82]\n " shape="box"]
+85 [label="85:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 82]\n  _=*n$0:class X  [line 82]\n  n$2=_fun_X_div(n$0:class X *) [line 82]\n " shape="box"]
 	
 
 	 85 -> 84 ;
@@ -155,7 +155,7 @@ digraph iCFG {
 	
 
 	 83 -> 87 ;
-82 [label="82:  Call _fun_X_nonzero \n   n$4=_fun_get_global_ptr() [line 74]\n  NONEn$5=*n$4:class X  [line 74]\n  _fun_X_nonzero(n$4:class X *) [line 74]\n " shape="box"]
+82 [label="82:  Call _fun_X_nonzero \n   n$4=_fun_get_global_ptr() [line 74]\n  _=*n$4:class X  [line 74]\n  _fun_X_nonzero(n$4:class X *) [line 74]\n " shape="box"]
 	
 
 	 82 -> 81 ;
@@ -163,7 +163,7 @@ digraph iCFG {
 	
 
 	 81 -> 80 ;
-80 [label="80:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 76]\n  NONEn$1=*n$0:class X  [line 76]\n  n$2=_fun_X_div(n$0:class X *) [line 76]\n " shape="box"]
+80 [label="80:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 76]\n  _=*n$0:class X  [line 76]\n  n$2=_fun_X_div(n$0:class X *) [line 76]\n " shape="box"]
 	
 
 	 80 -> 79 ;
@@ -178,11 +178,11 @@ digraph iCFG {
 	
 
 	 77 -> 76 ;
-76 [label="76:  Call _fun_X_nonzero \n   n$3=_fun_get_global_ptr() [line 69]\n  NONEn$4=*n$3:class X  [line 69]\n  _fun_X_nonzero(n$3:class X *) [line 69]\n " shape="box"]
+76 [label="76:  Call _fun_X_nonzero \n   n$3=_fun_get_global_ptr() [line 69]\n  _=*n$3:class X  [line 69]\n  _fun_X_nonzero(n$3:class X *) [line 69]\n " shape="box"]
 	
 
 	 76 -> 75 ;
-75 [label="75:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 70]\n  NONEn$1=*n$0:class X  [line 70]\n  n$2=_fun_X_div(n$0:class X *) [line 70]\n " shape="box"]
+75 [label="75:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 70]\n  _=*n$0:class X  [line 70]\n  n$2=_fun_X_div(n$0:class X *) [line 70]\n " shape="box"]
 	
 
 	 75 -> 74 ;
@@ -197,11 +197,11 @@ digraph iCFG {
 	
 
 	 72 -> 71 ;
-71 [label="71:  Call _fun_X_zero \n   n$3=_fun_get_global_ptr() [line 63]\n  NONEn$4=*n$3:class X  [line 63]\n  _fun_X_zero(n$3:class X *) [line 63]\n " shape="box"]
+71 [label="71:  Call _fun_X_zero \n   n$3=_fun_get_global_ptr() [line 63]\n  _=*n$3:class X  [line 63]\n  _fun_X_zero(n$3:class X *) [line 63]\n " shape="box"]
 	
 
 	 71 -> 70 ;
-70 [label="70:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 64]\n  NONEn$1=*n$0:class X  [line 64]\n  n$2=_fun_X_div(n$0:class X *) [line 64]\n " shape="box"]
+70 [label="70:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 64]\n  _=*n$0:class X  [line 64]\n  n$2=_fun_X_div(n$0:class X *) [line 64]\n " shape="box"]
 	
 
 	 70 -> 69 ;
@@ -216,7 +216,7 @@ digraph iCFG {
 	
 
 	 67 -> 66 ;
-66 [label="66:  Return Stmt \n   n$1=*&x:class X * [line 57]\n  NONEn$2=*n$1:class X  [line 57]\n  n$3=_fun_X_div(n$1:class X *) [line 57]\n  *&return:int =n$3 [line 57]\n " shape="box"]
+66 [label="66:  Return Stmt \n   n$1=*&x:class X * [line 57]\n  _=*n$1:class X  [line 57]\n  n$3=_fun_X_div(n$1:class X *) [line 57]\n  *&return:int =n$3 [line 57]\n " shape="box"]
 	
 
 	 66 -> 61 ;
@@ -248,7 +248,7 @@ digraph iCFG {
 	
 
 	 59 -> 58 ;
-58 [label="58:  Return Stmt \n   n$1=*&x:class X * [line 50]\n  NONEn$2=*n$1:class X  [line 50]\n  n$3=_fun_X_div(n$1:class X *) [line 50]\n  *&return:int =n$3 [line 50]\n " shape="box"]
+58 [label="58:  Return Stmt \n   n$1=*&x:class X * [line 50]\n  _=*n$1:class X  [line 50]\n  n$3=_fun_X_div(n$1:class X *) [line 50]\n  *&return:int =n$3 [line 50]\n " shape="box"]
 	
 
 	 58 -> 53 ;
@@ -280,7 +280,7 @@ digraph iCFG {
 	
 
 	 51 -> 50 ;
-50 [label="50:  Return Stmt \n   n$1=*&x:class X * [line 43]\n  NONEn$2=*n$1:class X  [line 43]\n  n$3=_fun_X_div(n$1:class X *) [line 43]\n  *&return:int =n$3 [line 43]\n " shape="box"]
+50 [label="50:  Return Stmt \n   n$1=*&x:class X * [line 43]\n  _=*n$1:class X  [line 43]\n  n$3=_fun_X_div(n$1:class X *) [line 43]\n  *&return:int =n$3 [line 43]\n " shape="box"]
 	
 
 	 50 -> 45 ;
@@ -312,7 +312,7 @@ digraph iCFG {
 	
 
 	 43 -> 42 ;
-42 [label="42:  Return Stmt \n   n$1=*&x:class X * [line 36]\n  NONEn$2=*n$1:class X  [line 36]\n  n$3=_fun_X_div(n$1:class X *) [line 36]\n  *&return:int =n$3 [line 36]\n " shape="box"]
+42 [label="42:  Return Stmt \n   n$1=*&x:class X * [line 36]\n  _=*n$1:class X  [line 36]\n  n$3=_fun_X_div(n$1:class X *) [line 36]\n  *&return:int =n$3 [line 36]\n " shape="box"]
 	
 
 	 42 -> 37 ;
@@ -373,7 +373,7 @@ digraph iCFG {
 	
 
 	 27 -> 29 ;
-26 [label="26:  Call _fun_X_nonzero \n   n$0=*&x:class X & [line 25]\n  NONEn$1=*n$0:class X  [line 25]\n  _fun_X_nonzero(n$0:class X &) [line 25]\n " shape="box"]
+26 [label="26:  Call _fun_X_nonzero \n   n$0=*&x:class X & [line 25]\n  _=*n$0:class X  [line 25]\n  _fun_X_nonzero(n$0:class X &) [line 25]\n " shape="box"]
 	
 
 	 26 -> 25 ;
@@ -384,7 +384,7 @@ digraph iCFG {
 	
 
 	 24 -> 26 ;
-23 [label="23:  Call _fun_X_zero \n   n$0=*&x:class X & [line 23]\n  NONEn$1=*n$0:class X  [line 23]\n  _fun_X_zero(n$0:class X &) [line 23]\n " shape="box"]
+23 [label="23:  Call _fun_X_zero \n   n$0=*&x:class X & [line 23]\n  _=*n$0:class X  [line 23]\n  _fun_X_zero(n$0:class X &) [line 23]\n " shape="box"]
 	
 
 	 23 -> 22 ;
@@ -406,7 +406,7 @@ digraph iCFG {
 	
 
 	 18 -> 20 ;
-17 [label="17:  Call _fun_X_nonzero \n   n$0=*&x:class X * [line 19]\n  NONEn$1=*n$0:class X  [line 19]\n  _fun_X_nonzero(n$0:class X *) [line 19]\n " shape="box"]
+17 [label="17:  Call _fun_X_nonzero \n   n$0=*&x:class X * [line 19]\n  _=*n$0:class X  [line 19]\n  _fun_X_nonzero(n$0:class X *) [line 19]\n " shape="box"]
 	
 
 	 17 -> 16 ;
@@ -417,7 +417,7 @@ digraph iCFG {
 	
 
 	 15 -> 17 ;
-14 [label="14:  Call _fun_X_zero \n   n$0=*&x:class X * [line 17]\n  NONEn$1=*n$0:class X  [line 17]\n  _fun_X_zero(n$0:class X *) [line 17]\n " shape="box"]
+14 [label="14:  Call _fun_X_zero \n   n$0=*&x:class X * [line 17]\n  _=*n$0:class X  [line 17]\n  _fun_X_zero(n$0:class X *) [line 17]\n " shape="box"]
 	
 
 	 14 -> 13 ;

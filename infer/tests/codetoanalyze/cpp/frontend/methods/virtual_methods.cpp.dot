@@ -27,11 +27,11 @@ digraph iCFG {
 	
 
 	 47 -> 46 ;
-46 [label="46:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:class Polygon * [line 63]\n  NONEn$4=*n$3:class Polygon  [line 63]\n  _fun_Polygon_set_values(n$3:class Polygon *,4:int ,5:int ) [line 63]\n " shape="box"]
+46 [label="46:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:class Polygon * [line 63]\n  _=*n$3:class Polygon  [line 63]\n  _fun_Polygon_set_values(n$3:class Polygon *,4:int ,5:int ) [line 63]\n " shape="box"]
 	
 
 	 46 -> 45 ;
-45 [label="45:  Return Stmt \n   n$0=*&ppoly2:class Polygon * [line 64]\n  NONEn$1=*n$0:class Polygon  [line 64]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) [line 64]\n  *&return:int =(1 / n$2) [line 64]\n " shape="box"]
+45 [label="45:  Return Stmt \n   n$0=*&ppoly2:class Polygon * [line 64]\n  _=*n$0:class Polygon  [line 64]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) [line 64]\n  *&return:int =(1 / n$2) [line 64]\n " shape="box"]
 	
 
 	 45 -> 44 ;
@@ -50,7 +50,7 @@ digraph iCFG {
 	
 
 	 41 -> 40 ;
-40 [label="40:  Return Stmt \n   n$0=*&ppoly3:class Polygon * [line 56]\n  NONEn$1=*n$0:class Polygon  [line 56]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) virtual [line 56]\n  *&return:int =(1 / n$2) [line 56]\n " shape="box"]
+40 [label="40:  Return Stmt \n   n$0=*&ppoly3:class Polygon * [line 56]\n  _=*n$0:class Polygon  [line 56]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) virtual [line 56]\n  *&return:int =(1 / n$2) [line 56]\n " shape="box"]
 	
 
 	 40 -> 39 ;
@@ -73,11 +73,11 @@ digraph iCFG {
 	
 
 	 35 -> 34 ;
-34 [label="34:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:class Polygon * [line 49]\n  NONEn$4=*n$3:class Polygon  [line 49]\n  _fun_Polygon_set_values(n$3:class Polygon *,4:int ,5:int ) [line 49]\n " shape="box"]
+34 [label="34:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:class Polygon * [line 49]\n  _=*n$3:class Polygon  [line 49]\n  _fun_Polygon_set_values(n$3:class Polygon *,4:int ,5:int ) [line 49]\n " shape="box"]
 	
 
 	 34 -> 33 ;
-33 [label="33:  Return Stmt \n   n$0=*&ppoly2:class Polygon * [line 50]\n  NONEn$1=*n$0:class Polygon  [line 50]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) virtual [line 50]\n  *&return:int =(1 / (n$2 - 10)) [line 50]\n " shape="box"]
+33 [label="33:  Return Stmt \n   n$0=*&ppoly2:class Polygon * [line 50]\n  _=*n$0:class Polygon  [line 50]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) virtual [line 50]\n  *&return:int =(1 / (n$2 - 10)) [line 50]\n " shape="box"]
 	
 
 	 33 -> 32 ;
@@ -96,11 +96,11 @@ digraph iCFG {
 	
 
 	 29 -> 28 ;
-28 [label="28:  Call _fun_Polygon_set_values \n   n$3=*&ppoly1:class Polygon * [line 41]\n  NONEn$4=*n$3:class Polygon  [line 41]\n  _fun_Polygon_set_values(n$3:class Polygon *,4:int ,5:int ) [line 41]\n " shape="box"]
+28 [label="28:  Call _fun_Polygon_set_values \n   n$3=*&ppoly1:class Polygon * [line 41]\n  _=*n$3:class Polygon  [line 41]\n  _fun_Polygon_set_values(n$3:class Polygon *,4:int ,5:int ) [line 41]\n " shape="box"]
 	
 
 	 28 -> 27 ;
-27 [label="27:  Return Stmt \n   n$0=*&ppoly1:class Polygon * [line 42]\n  NONEn$1=*n$0:class Polygon  [line 42]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) virtual [line 42]\n  *&return:int =(1 / (n$2 - 20)) [line 42]\n " shape="box"]
+27 [label="27:  Return Stmt \n   n$0=*&ppoly1:class Polygon * [line 42]\n  _=*n$0:class Polygon  [line 42]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) virtual [line 42]\n  *&return:int =(1 / (n$2 - 20)) [line 42]\n " shape="box"]
 	
 
 	 27 -> 26 ;

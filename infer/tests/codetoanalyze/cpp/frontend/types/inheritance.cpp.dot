@@ -12,27 +12,27 @@ digraph iCFG {
 	
 
 	 23 -> 22 ;
-22 [label="22:  Call _fun_Base_fun \n   n$15=*&b:class Base * [line 26]\n  NONEn$16=*n$15:class Base  [line 26]\n  n$17=_fun_Base_fun(n$15:class Base *) [line 26]\n " shape="box"]
+22 [label="22:  Call _fun_Base_fun \n   n$15=*&b:class Base * [line 26]\n  _=*n$15:class Base  [line 26]\n  n$17=_fun_Base_fun(n$15:class Base *) [line 26]\n " shape="box"]
 	
 
 	 22 -> 21 ;
-21 [label="21:  Call _fun_Base_fun \n   n$12=*&s1:class Base * [line 27]\n  NONEn$13=*n$12:class Base  [line 27]\n  n$14=_fun_Base_fun(n$12:class Base *) [line 27]\n " shape="box"]
+21 [label="21:  Call _fun_Base_fun \n   n$12=*&s1:class Base * [line 27]\n  _=*n$12:class Base  [line 27]\n  n$14=_fun_Base_fun(n$12:class Base *) [line 27]\n " shape="box"]
 	
 
 	 21 -> 20 ;
-20 [label="20:  Call _fun_Base_fun \n   n$9=*&s2:class Sub * [line 28]\n  NONEn$10=*n$9:class Sub  [line 28]\n  n$11=_fun_Base_fun(n$9:class Sub *) [line 28]\n " shape="box"]
+20 [label="20:  Call _fun_Base_fun \n   n$9=*&s2:class Sub * [line 28]\n  _=*n$9:class Sub  [line 28]\n  n$11=_fun_Base_fun(n$9:class Sub *) [line 28]\n " shape="box"]
 	
 
 	 20 -> 19 ;
-19 [label="19:  Call _fun_Base_fun_redefine \n   n$6=*&b:class Base * [line 30]\n  NONEn$7=*n$6:class Base  [line 30]\n  n$8=_fun_Base_fun_redefine(n$6:class Base *) [line 30]\n " shape="box"]
+19 [label="19:  Call _fun_Base_fun_redefine \n   n$6=*&b:class Base * [line 30]\n  _=*n$6:class Base  [line 30]\n  n$8=_fun_Base_fun_redefine(n$6:class Base *) [line 30]\n " shape="box"]
 	
 
 	 19 -> 18 ;
-18 [label="18:  Call _fun_Base_fun_redefine \n   n$3=*&s1:class Base * [line 31]\n  NONEn$4=*n$3:class Base  [line 31]\n  n$5=_fun_Base_fun_redefine(n$3:class Base *) [line 31]\n " shape="box"]
+18 [label="18:  Call _fun_Base_fun_redefine \n   n$3=*&s1:class Base * [line 31]\n  _=*n$3:class Base  [line 31]\n  n$5=_fun_Base_fun_redefine(n$3:class Base *) [line 31]\n " shape="box"]
 	
 
 	 18 -> 17 ;
-17 [label="17:  Call _fun_Sub_fun_redefine \n   n$0=*&s2:class Sub * [line 32]\n  NONEn$1=*n$0:class Sub  [line 32]\n  n$2=_fun_Sub_fun_redefine(n$0:class Sub *) [line 32]\n " shape="box"]
+17 [label="17:  Call _fun_Sub_fun_redefine \n   n$0=*&s2:class Sub * [line 32]\n  _=*n$0:class Sub  [line 32]\n  n$2=_fun_Sub_fun_redefine(n$0:class Sub *) [line 32]\n " shape="box"]
 	
 
 	 17 -> 16 ;

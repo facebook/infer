@@ -16,7 +16,7 @@ digraph iCFG {
 	
 
 	 116 -> 115 ;
-115 [label="115:  Return Stmt \n   NONEn$0=*&r:class Val  [line 141]\n  n$1=_fun_Val_getI(&r:class Val &) [line 141]\n  *&return:int =(1 / n$1) [line 141]\n " shape="box"]
+115 [label="115:  Return Stmt \n   _=*&r:class Val  [line 141]\n  n$1=_fun_Val_getI(&r:class Val &) [line 141]\n  *&return:int =(1 / n$1) [line 141]\n " shape="box"]
 	
 
 	 115 -> 114 ;
@@ -43,7 +43,7 @@ digraph iCFG {
 	
 
 	 109 -> 108 ;
-108 [label="108:  Return Stmt \n   NONEn$0=*&r:class Val  [line 133]\n  n$1=_fun_Val_getF(&r:class Val &) [line 133]\n  *&return:int =(1 / n$1) [line 133]\n " shape="box"]
+108 [label="108:  Return Stmt \n   _=*&r:class Val  [line 133]\n  n$1=_fun_Val_getF(&r:class Val &) [line 133]\n  *&return:int =(1 / n$1) [line 133]\n " shape="box"]
 	
 
 	 108 -> 107 ;
@@ -124,7 +124,7 @@ digraph iCFG {
 	
 
 	 88 -> 87 ;
-87 [label="87:  Return Stmt \n   NONEn$0=*&r:class Ptr  [line 108]\n  n$1=_fun_Ptr_getI(&r:class Ptr &) [line 108]\n  *&return:int =(1 / n$1) [line 108]\n " shape="box"]
+87 [label="87:  Return Stmt \n   _=*&r:class Ptr  [line 108]\n  n$1=_fun_Ptr_getI(&r:class Ptr &) [line 108]\n  *&return:int =(1 / n$1) [line 108]\n " shape="box"]
 	
 
 	 87 -> 86 ;
@@ -151,7 +151,7 @@ digraph iCFG {
 	
 
 	 81 -> 80 ;
-80 [label="80:  Return Stmt \n   NONEn$0=*&r:class Ptr  [line 100]\n  n$1=_fun_Ptr_getF(&r:class Ptr &) [line 100]\n  *&return:int =(1 / n$1) [line 100]\n " shape="box"]
+80 [label="80:  Return Stmt \n   _=*&r:class Ptr  [line 100]\n  n$1=_fun_Ptr_getF(&r:class Ptr &) [line 100]\n  *&return:int =(1 / n$1) [line 100]\n " shape="box"]
 	
 
 	 80 -> 79 ;
@@ -232,7 +232,7 @@ digraph iCFG {
 	
 
 	 60 -> 59 ;
-59 [label="59:  Return Stmt \n   NONEn$0=*&r:class Ref  [line 75]\n  n$1=_fun_Ref_getI(&r:class Ref &) [line 75]\n  *&return:int =(1 / n$1) [line 75]\n " shape="box"]
+59 [label="59:  Return Stmt \n   _=*&r:class Ref  [line 75]\n  n$1=_fun_Ref_getI(&r:class Ref &) [line 75]\n  *&return:int =(1 / n$1) [line 75]\n " shape="box"]
 	
 
 	 59 -> 58 ;
@@ -259,7 +259,7 @@ digraph iCFG {
 	
 
 	 53 -> 52 ;
-52 [label="52:  Return Stmt \n   NONEn$0=*&r:class Ref  [line 67]\n  n$1=_fun_Ref_getF(&r:class Ref &) [line 67]\n  *&return:int =(1 / n$1) [line 67]\n " shape="box"]
+52 [label="52:  Return Stmt \n   _=*&r:class Ref  [line 67]\n  n$1=_fun_Ref_getF(&r:class Ref &) [line 67]\n  *&return:int =(1 / n$1) [line 67]\n " shape="box"]
 	
 
 	 52 -> 51 ;

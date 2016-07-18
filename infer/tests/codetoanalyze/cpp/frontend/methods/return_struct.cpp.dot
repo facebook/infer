@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-13 [label="13:  DeclStmt \n   n$2=*&a:class A * [line 22]\n  NONEn$3=*n$2:class A  [line 22]\n  _fun_A_get(n$2:class A *,1:int ,&0$?%__sil_tmpSIL_materialize_temp__n$1:class X *) [line 22]\n  _fun_X_X(&x:class X *,&0$?%__sil_tmpSIL_materialize_temp__n$1:class X &) [line 22]\n " shape="box"]
+13 [label="13:  DeclStmt \n   n$2=*&a:class A * [line 22]\n  _=*n$2:class A  [line 22]\n  _fun_A_get(n$2:class A *,1:int ,&0$?%__sil_tmpSIL_materialize_temp__n$1:class X *) [line 22]\n  _fun_X_X(&x:class X *,&0$?%__sil_tmpSIL_materialize_temp__n$1:class X &) [line 22]\n " shape="box"]
 	
 
 	 13 -> 12 ;

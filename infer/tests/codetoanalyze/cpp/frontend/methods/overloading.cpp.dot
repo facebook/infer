@@ -1,10 +1,10 @@
 /* @generated */
 digraph iCFG {
-10 [label="10:  Call _fun_A_fun \n   n$3=*&a_ptr:class A * [line 22]\n  NONEn$4=*n$3:class A  [line 22]\n  n$5=_fun_A_fun(n$3:class A *,1:int ,2:int ) [line 22]\n " shape="box"]
+10 [label="10:  Call _fun_A_fun \n   n$3=*&a_ptr:class A * [line 22]\n  _=*n$3:class A  [line 22]\n  n$5=_fun_A_fun(n$3:class A *,1:int ,2:int ) [line 22]\n " shape="box"]
 	
 
 	 10 -> 9 ;
-9 [label="9:  Call _fun_A_fun \n   n$0=*&a_ptr:class A * [line 23]\n  NONEn$1=*n$0:class A  [line 23]\n  n$2=_fun_A_fun(n$0:class A *,1:int ,2:int ,3:int ) [line 23]\n " shape="box"]
+9 [label="9:  Call _fun_A_fun \n   n$0=*&a_ptr:class A * [line 23]\n  _=*n$0:class A  [line 23]\n  n$2=_fun_A_fun(n$0:class A *,1:int ,2:int ,3:int ) [line 23]\n " shape="box"]
 	
 
 	 9 -> 8 ;
