@@ -27,12 +27,28 @@ let make_base base_str =
 let make_field_access access_str =
   AccessPath.FieldAccess (Ident.create_fieldname (Mangled.from_string access_str) 0, Typ.Tvoid)
 
+let make_array_access () =
+  AccessPath.ArrayAccess Typ.Tvoid
+
+let rec make_accesses accesses_acc = function
+  | [] -> accesses_acc
+  | access_str :: l -> make_accesses ((make_field_access access_str) :: accesses_acc) l
+
 let make_access_path base_str accesses =
-  let rec make_accesses accesses_acc = function
-    | [] -> accesses_acc
-    | access_str :: l -> make_accesses ((make_field_access access_str) :: accesses_acc) l in
   let accesses = make_accesses [] accesses in
   make_base base_str, IList.rev accesses
+
+let assert_trees_equal tree1 tree2 =
+  let rec access_tree_equal (trace1, subtree1) (trace2, subtree2) =
+    MockTraceDomain.equal trace1 trace2 && match subtree1, subtree2 with
+    | Domain.Star, Domain.Star -> true
+    | Domain.Subtree t1, Domain.Subtree t2 -> Domain.AccessMap.equal access_tree_equal t1 t2
+    | _ -> false in
+  let base_tree_equal tree1 tree2 =
+    Domain.BaseMap.equal access_tree_equal tree1 tree2 in
+  let pp_diff fmt (actual, expected) =
+    F.fprintf fmt "Expected to get tree %a but got %a" Domain.pp expected Domain.pp actual in
+  OUnit2.assert_equal ~cmp:base_tree_equal ~pp_diff tree1 tree2
 
 let tests =
   let x_base = make_base "x" in
@@ -41,7 +57,9 @@ let tests =
 
   let f = make_field_access "f" in
   let g = make_field_access "g" in
+  let array = make_array_access () in
 
+  let x = AccessPath.Exact (make_access_path "x" []) in
   let xF = AccessPath.Exact (make_access_path "x" ["f"]) in
   let xG = AccessPath.Exact (make_access_path "x" ["g"]) in
   let xFG = AccessPath.Exact (make_access_path "x" ["f"; "g"]) in
@@ -51,6 +69,10 @@ let tests =
   let z = AccessPath.Exact (make_access_path "z" []) in
   let zF = AccessPath.Exact (make_access_path "z" ["f"]) in
   let zFG = AccessPath.Exact (make_access_path "z" ["f"; "g"]) in
+
+  let xArrF =
+    let accesses = IList.rev (make_accesses [array] ["f"]) in
+    AccessPath.Exact (make_base "x", accesses) in
 
   let a_star = AccessPath.Abstracted (make_access_path "a" []) in
   let x_star = AccessPath.Abstracted (make_access_path "x" []) in
@@ -66,6 +88,7 @@ let tests =
   let xF_trace = MockTraceDomain.singleton "xF" in
   let yF_trace = MockTraceDomain.singleton "yF" in
   let xFG_trace = MockTraceDomain.singleton "xFG" in
+  let array_f_trace = MockTraceDomain.singleton "arrayF" in
   let x_star_trace = MockTraceDomain.of_list ["x"; "xF"; "xFG"] in
 
   let x_subtree =
@@ -135,6 +158,100 @@ let tests =
       assert_trace_not_found yG tree in
     "get_trace">::get_trace_test_ in
 
+  let add_trace_test =
+    let add_trace_test_ _ =
+      (* special trace to indicate that we've added successfully *)
+      let added_trace = MockTraceDomain.singleton "added" in
+
+      let mk_x_y_base_tree trace =
+        Domain.BaseMap.singleton x_base (Domain.make_normal_leaf trace)
+        |> Domain.BaseMap.add y_base Domain.empty_node in
+
+      let mk_xFG_tree leaf_trace =
+        Domain.make_access_node MockTraceDomain.empty g leaf_trace
+        |> Domain.AccessMap.singleton f
+        |> Domain.make_node MockTraceDomain.empty
+        |> Domain.BaseMap.singleton x_base in
+
+      let mk_xArrF_tree leaf_trace =
+        Domain.make_access_node MockTraceDomain.empty f leaf_trace
+        |> Domain.AccessMap.singleton array
+        |> Domain.make_node MockTraceDomain.empty
+        |> Domain.BaseMap.singleton x_base in
+
+      (* normal tests *)
+      (* add base when absent *)
+      let x_y_base_tree_with_added_trace = mk_x_y_base_tree added_trace in
+      assert_trees_equal
+        (Domain.add_trace x added_trace y_base_tree)
+        x_y_base_tree_with_added_trace;
+      (* add base when present *)
+      assert_trees_equal
+        (Domain.add_trace x added_trace x_y_base_tree)
+        x_y_base_tree_with_added_trace;
+      let x_y_base_tree_with_y_trace = mk_x_y_base_tree y_trace in
+      assert_trees_equal
+        (Domain.add_trace x added_trace x_y_base_tree_with_y_trace)
+        x_y_base_tree_with_added_trace;
+      (* add path when absent *)
+      let xFG_tree_added_trace = mk_xFG_tree added_trace in
+      assert_trees_equal (Domain.add_trace xFG added_trace x_base_tree) xFG_tree_added_trace;
+      (* add path when present *)
+      let xFG_tree_y_trace = mk_xFG_tree y_trace in
+      assert_trees_equal (Domain.add_trace xFG added_trace xFG_tree_y_trace) xFG_tree_added_trace;
+      (* add starred path when base absent *)
+      let xF_star_tree_added_trace =
+        Domain.make_starred_leaf added_trace
+        |> Domain.AccessMap.singleton f
+        |> Domain.make_node MockTraceDomain.empty
+        |> Domain.BaseMap.singleton x_base in
+      assert_trees_equal
+        (Domain.add_trace xF_star added_trace Domain.empty)
+        xF_star_tree_added_trace;
+      (* add starred path when base present *)
+      assert_trees_equal
+        (Domain.add_trace xF_star added_trace x_base_tree)
+        xF_star_tree_added_trace;
+
+
+      (* adding array path should do weak updates *)
+      let aArrF_tree = mk_xArrF_tree array_f_trace in
+      let aArrF_tree_joined_trace =
+        mk_xArrF_tree (MockTraceDomain.join added_trace array_f_trace) in
+      assert_trees_equal (Domain.add_trace xArrF added_trace aArrF_tree) aArrF_tree_joined_trace;
+
+      (* starred tests *)
+      (* we should do a strong update when updating x.f* with x.f *)
+      let yF_tree_added_trace =
+        Domain.make_normal_leaf added_trace
+        |> Domain.AccessMap.singleton f
+        |> Domain.make_node y_trace
+        |> Domain.BaseMap.singleton y_base in
+      assert_trees_equal
+        (Domain.add_trace yF added_trace yF_star_tree)
+        yF_tree_added_trace;
+      (* but not when updating x* with x.f *)
+      let x_star_tree_added_trace =
+        let joined_trace = MockTraceDomain.join x_trace added_trace in
+        Domain.BaseMap.singleton x_base (Domain.make_starred_leaf joined_trace) in
+      assert_trees_equal (Domain.add_trace xF added_trace x_star_tree) x_star_tree_added_trace;
+
+      (* when updating x.f.g with x.f*, we should remember traces associated with f and g even as
+         we replace that subtree with a * *)
+      let xF_star_tree_joined_traces =
+        let joined_trace =
+          MockTraceDomain.join added_trace xFG_trace
+          |> MockTraceDomain.join xF_trace in
+        Domain.make_starred_leaf joined_trace
+        |> Domain.AccessMap.singleton f
+        |> Domain.make_node x_trace
+        |> Domain.BaseMap.singleton x_base in
+      assert_trees_equal
+        (Domain.add_trace xF_star added_trace xFG_tree)
+        xF_star_tree_joined_traces in
+
+    "add_trace">::add_trace_test_ in
+
   let lteq_test =
     let lteq_test_ _ =
       (* regular tree tests *)
@@ -180,18 +297,6 @@ let tests =
         (not (Domain.(<=) ~lhs:x_star_tree ~rhs:x_star_tree_diff_trace)) in
     "lteq">::lteq_test_ in
 
-  let assert_trees_equal tree1 tree2 =
-    let rec access_tree_equal (trace1, subtree1) (trace2, subtree2) =
-      MockTraceDomain.equal trace1 trace2 && match subtree1, subtree2 with
-      | Domain.Star, Domain.Star -> true
-      | Domain.Subtree t1, Domain.Subtree t2 -> Domain.AccessMap.equal access_tree_equal t1 t2
-      | _ -> false in
-    let base_tree_equal tree1 tree2 =
-      Domain.BaseMap.equal access_tree_equal tree1 tree2 in
-    let pp_diff fmt (actual, expected) =
-      F.fprintf fmt "Expected to get tree %a but got %a" Domain.pp expected Domain.pp actual in
-    assert_equal ~cmp:base_tree_equal ~pp_diff tree1 tree2 in
-
   let join_test =
     let join_test_ _ =
       (* normal |_| normal *)
@@ -211,4 +316,4 @@ let tests =
       assert_trees_equal (Domain.join x_star_tree xFG_tree) x_star_tree_xFG_trace in
     "join">::join_test_ in
 
-  "access_tree_suite">:::[get_trace_test; lteq_test; join_test]
+  "access_tree_suite">:::[get_trace_test; add_trace_test; lteq_test; join_test]
