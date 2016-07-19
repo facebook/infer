@@ -150,10 +150,10 @@ module Make
 
   type assert_map = string M.t
 
-  let structured_program_to_cfg program =
+  let structured_program_to_cfg program test_pname =
     let cfg = Cfg.Node.create_cfg () in
     let pdesc =
-      Cfg.Procdesc.create cfg (ProcAttributes.default dummy_procname !Config.curr_language) in
+      Cfg.Procdesc.create cfg (ProcAttributes.default test_pname !Config.curr_language) in
 
     let create_node kind cmds =
       Cfg.Node.create cfg dummy_loc kind cmds pdesc in
@@ -227,8 +227,8 @@ module Make
     Cfg.Procdesc.set_exit_node pdesc exit_node;
     pdesc, assert_map
 
-  let create_test test_program extras _ =
-    let pdesc, assert_map = structured_program_to_cfg test_program in
+  let create_test test_program extras test_pname _ =
+    let pdesc, assert_map = structured_program_to_cfg test_program test_pname in
     let inv_map = I.exec_pdesc (ProcData.make pdesc (Tenv.create ()) extras) in
 
     let collect_invariant_mismatches node_id (inv_str, inv_label) error_msgs_acc =
@@ -260,8 +260,8 @@ module Make
           |> F.flush_str_formatter in
         OUnit2.assert_failure assert_fail_message
 
-  let create_tests extras tests =
+  let create_tests ?(test_pname=Procname.empty_block) extras tests =
     let open OUnit2 in
-    IList.map (fun (name, test_program) -> name>::create_test test_program extras) tests
+    IList.map (fun (name, test_program) -> name>::create_test test_program extras test_pname) tests
 
 end
