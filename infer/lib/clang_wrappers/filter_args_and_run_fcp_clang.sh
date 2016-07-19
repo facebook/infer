@@ -23,7 +23,8 @@ COMMAND=("${CLANG_COMPILER}${XX}")
 PREV=""
 for X in "$@"
 do
-    if [ "$X" == "-fembed-bitcode-marker" ]; then
+    if [   "$X" == "-fembed-bitcode-marker" \
+        -o "$X" == "-fno-canonical-system-headers" ]; then
         continue
     elif [ "$X" == "armv7k" ] && [ "$PREV" == "-arch" ]; then
         # replace armv7k arch with armv7
