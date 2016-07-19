@@ -49,12 +49,12 @@ public class GuardedByTest {
       "readFBadWrongAnnotation",
       "synchronizedMethodReadBad",
       "synchronizedMethodWriteBad",
-      "readGFromCopyBad",
       "readHBad",
       "readHBadSynchronizedMethodShouldntHelp",
       "synchronizedOnThisBad",
       "readFromInnerClassBad1",
       "readFromInnerClassBad2",
+      "byRefTrickyBad",
       // TODO: report these
       // "unguardedCallSiteBad1",
       // "unguardedCallSiteBad2",

@@ -739,9 +739,29 @@ let add_guarded_by_constraints prop lexp pdesc =
           | _ -> false)
         (Prop.get_exp_attributes prop guarded_by_exp) in
     let should_warn pdesc =
+      (* adding this check implements "by reference" semantics for guarded-by rather than "by value"
+         semantics. if this access is through a local L or field V.f
+         (where f is not the @GuardedBy field!), we will not warn.
+      *)
+      let is_accessible_through_local_ref exp =
+        IList.exists
+          (function
+            | Sil.Hpointsto (Lvar _, Eexp (rhs_exp, _), _) ->
+                Sil.exp_equal exp rhs_exp
+            | Sil.Hpointsto (_, Estruct (flds, _), _) ->
+                IList.exists
+                  (fun (fld, strexp) -> match strexp with
+                     | Sil.Eexp (rhs_exp, _) ->
+                         Sil.exp_equal exp rhs_exp && not (Ident.fieldname_equal fld accessed_fld)
+                     | _ ->
+                         false)
+                  flds
+            | _ -> false)
+          (Prop.get_sigma prop) in
       Cfg.Procdesc.get_access pdesc <> Sil.Private &&
       not (Annotations.pdesc_has_annot pdesc Annotations.visibleForTesting) &&
-      not (Procname.java_is_access_method (Cfg.Procdesc.get_proc_name pdesc)) in
+      not (Procname.java_is_access_method (Cfg.Procdesc.get_proc_name pdesc)) &&
+      not (is_accessible_through_local_ref lexp) in
     match find_guarded_by_exp guarded_by_str (Prop.get_sigma prop) with
     | Some (Sil.Eexp (guarded_by_exp, _), typ) ->
         if is_read_write_lock typ

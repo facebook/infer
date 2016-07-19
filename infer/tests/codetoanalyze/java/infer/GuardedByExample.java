@@ -141,14 +141,6 @@ public class GuardedByExample {
     this.f = new Object(); // f is supposed to be protected by mLock, not this
   }
 
-  void readGFromCopyBad() {
-    synchronized (this) {
-      mCopyOfG = g;  // these are ok: access of g guarded by this
-      g.toString();
-    }
-    mCopyOfG.toString();  // should be an error; unprotected access to pt(g)
-  }
-
   void reassignCopyOk() {
     synchronized (this) {
       mCopyOfG = g;  // these are ok: access of g guarded by this
@@ -262,6 +254,44 @@ public class GuardedByExample {
   void visibleForTestingOk2() {
     f.toString(); // should push proof obl to caller
   }
+
+  synchronized Object returnPtG() {
+    return g;
+  }
+
+  // note: this test should raise an error under "by value" GuardedBy semantics, but not under
+  // "by reference" GuardedBy semantics
+  void readGFromCopyOk() {
+    synchronized (this) {
+      mCopyOfG = g;  // these are ok: access of g guarded by this
+      g.toString();
+    }
+    mCopyOfG.toString();  // should be an error; unprotected access to pt(g)
+  }
+
+  // another "by reference" vs "by value" test. buggy in "by value", but safe in "by reference"
+  void usePtG() {
+    Object ptG = returnPtG();
+    ptG.toString();
+  }
+
+  Object byRefTrickyBad() {
+    Object local = null;
+    synchronized(this) {
+      local = g; // we have a local pointer... to pt(G)
+    }
+    g.toString(); // ...but unsafe access is through g!
+    return local;
+  }
+
+  void byRefTrickyOk() {
+    Object local = null;
+    synchronized(this) {
+      local = g; // we have a local pointer... to pt(G)
+    }
+    local.toString(); // ...but unsafe access is through g!
+  }
+
 
   // TODO: report on these cases
   /*
