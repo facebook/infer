@@ -155,6 +155,8 @@ let empty_res_trans = {
   is_cpp_call_virtual = false;
 }
 
+let undefined_expression () = Sil.Var (Ident.create_fresh Ident.knormal)
+
 (** Collect the results of translating a list of instructions, and link up the nodes created. *)
 let collect_res_trans cfg l =
   let rec collect l rt =

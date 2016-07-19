@@ -2312,6 +2312,11 @@ struct
          | _ -> assert false) (* More cases to come. With the assert false we can find them *)
     | _ -> assert false (* Expect that this doesn't happen *)
 
+  and offsetOfExpr_trans trans_state expr_info =
+    let tenv = trans_state.context.CContext.tenv in
+    let typ = CTypes_decl.get_type_from_expr_info expr_info tenv in
+    { empty_res_trans with exps = [CTrans_utils.undefined_expression (), typ] }
+
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
   (* a result_state.*)
@@ -2599,6 +2604,9 @@ struct
 
     | CXXNoexceptExpr (_, _, expr_info, cxx_noexcept_expr_info) ->
         booleanValue_trans trans_state expr_info cxx_noexcept_expr_info.Clang_ast_t.xnee_value
+
+    | OffsetOfExpr (_, _, expr_info) ->
+        offsetOfExpr_trans trans_state expr_info
 
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: \

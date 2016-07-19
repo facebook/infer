@@ -42,6 +42,8 @@ type trans_result = {
 
 val empty_res_trans: trans_result
 
+val undefined_expression: unit -> Sil.exp
+
 val collect_res_trans : Cfg.cfg -> trans_result list -> trans_result
 
 val extract_var_exp_or_fail : trans_state -> Sil.exp * Typ.t
