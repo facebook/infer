@@ -226,7 +226,7 @@ struct
        | _ -> ());
     match dec with
     (* Currently C/C++ record decl treated in the same way *)
-    | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _)
+    | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _)
     | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
     | RecordDecl (_, _, _, _, decl_list, _, _) ->
         let is_method_decl decl = match decl with

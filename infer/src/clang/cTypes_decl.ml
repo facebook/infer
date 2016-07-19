@@ -92,7 +92,7 @@ let get_record_name_csu decl =
     | RecordDecl (_, name_info, opt_type, _, _, _, _) ->
         name_info, create_csu opt_type
     | CXXRecordDecl (_, name_info, _, _, _, _, _, _)
-    | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _) ->
+    | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _, _) ->
         (* we use Csu.Class for C++ because we expect Csu.Class csu from *)
         (* types that have methods. And in C++ struct/class/union can have methods *)
         name_info, Csu.Class Csu.CPP
@@ -121,7 +121,7 @@ let get_superclass_decls decl =
   let open Clang_ast_t in
   match decl with
   | CXXRecordDecl (_, _, _, _, _, _, _, cxx_rec_info)
-  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_rec_info) ->
+  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_rec_info, _) ->
       (* there is no concept of virtual inheritance in the backend right now *)
       let base_ptr = cxx_rec_info.Clang_ast_t.xrdi_bases @ cxx_rec_info.Clang_ast_t.xrdi_vbases in
       let get_decl_or_fail typ_ptr = match Ast_utils.get_decl_from_typ_ptr typ_ptr with
@@ -149,7 +149,7 @@ let add_struct_to_tenv tenv typ =
 let rec get_struct_fields tenv decl =
   let open Clang_ast_t in
   let decl_list = match decl with
-    | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _)
+    | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _)
     | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
     | RecordDecl (_, _, _, _, decl_list, _, _) -> decl_list
     | _ -> [] in
@@ -168,7 +168,7 @@ let rec get_struct_fields tenv decl =
 and get_struct_cpp_class_declaration_type tenv decl =
   let open Clang_ast_t in
   match decl with
-  | ClassTemplateSpecializationDecl (_, _, _, type_ptr, decl_list, _, record_decl_info, _)
+  | ClassTemplateSpecializationDecl (_, _, _, type_ptr, decl_list, _, record_decl_info, _, _)
   | CXXRecordDecl (_, _, _, type_ptr, decl_list, _, record_decl_info, _)
   | RecordDecl (_, _, _, type_ptr, decl_list, _, record_decl_info) ->
       let csu, name = get_record_name_csu decl in
