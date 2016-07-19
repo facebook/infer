@@ -11,7 +11,7 @@ open! Utils
 
 module F = Format
 
-type base = Pvar.t * Typ.t
+type base = Var.t * Typ.t
 
 type access =
   | FieldAccess of Ident.fieldname * Typ.t
@@ -27,7 +27,7 @@ let base_compare ((var1, typ1) as base1) ((var2, typ2) as base2) =
   if base1 == base2
   then 0
   else
-    Pvar.compare var1 var2
+    Var.compare var1 var2
     |> next Typ.compare typ1 typ2
 
 let base_equal base1 base2 =
@@ -68,7 +68,10 @@ let equal ap1 ap2 =
   compare ap1 ap2 = 0
 
 let of_pvar pvar typ =
-  (pvar, typ), []
+  (Var.of_pvar pvar, typ), []
+
+let of_id id typ =
+  (Var.of_id id, typ), []
 
 let append (base, accesses) access =
   base, accesses @ [access]
@@ -102,7 +105,7 @@ let (<=) ~lhs ~rhs =
   | (Exact lhs_ap | Abstracted lhs_ap), Abstracted rhs_ap -> is_prefix rhs_ap lhs_ap
 
 let pp_base fmt (pvar, _) =
-  (Pvar.pp pe_text) fmt pvar
+  Var.pp fmt pvar
 
 let pp_access fmt = function
   | FieldAccess (field_name, _) -> F.fprintf fmt ".%a" Ident.pp_fieldname field_name

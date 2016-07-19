@@ -9,7 +9,7 @@
 
 (** Module for naming heap locations via the path used to access them (e.g., x.f.g, y[a].b) *)
 
-type base = Pvar.t * Typ.t
+type base = Var.t * Typ.t
 
 type access =
   | FieldAccess of Ident.fieldname * Typ.t (* field name * field type *)
@@ -37,6 +37,9 @@ val access_equal : access -> access -> bool
 
 (** create an access path from a pvar *)
 val of_pvar : Pvar.t -> Typ.t -> raw
+
+(** create an access path from an ident *)
+val of_id : Ident.t -> Typ.t -> raw
 
 (** append a new access to an existing access path; e.g., `append_access g x.f` produces `x.f.g` *)
 val append : raw -> access -> raw

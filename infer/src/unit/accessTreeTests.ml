@@ -22,7 +22,7 @@ module MockTraceDomain =
 module Domain = AccessTree.Make (MockTraceDomain)
 
 let make_base base_str =
-  Pvar.mk (Mangled.from_string base_str) Procname.empty_block, Typ.Tvoid
+  Var.of_pvar (Pvar.mk (Mangled.from_string base_str) Procname.empty_block), Typ.Tvoid
 
 let make_field_access access_str =
   AccessPath.FieldAccess (Ident.create_fieldname (Mangled.from_string access_str) 0, Typ.Tvoid)
