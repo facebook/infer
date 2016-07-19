@@ -90,6 +90,7 @@ CSV_INDEX_ALWAYS_REPORT = 14
 CSV_INDEX_ADVICE = 15
 
 # field names in rows of json reports
+JSON_INDEX_DOTTY = 'dotty'
 JSON_INDEX_FILENAME = 'file'
 JSON_INDEX_HASH = 'hash'
 JSON_INDEX_KIND = 'kind'
