@@ -11,20 +11,8 @@ open !Utils
 
 module F = Format
 
-let make_base base_str =
-  Var.of_pvar (Pvar.mk (Mangled.from_string base_str) Procname.empty_block), Typ.Tvoid
-
-let make_field_access access_str =
-  AccessPath.FieldAccess (Ident.create_fieldname (Mangled.from_string access_str) 0, Typ.Tvoid)
-
-let make_access_path base_str accesses =
-  let rec make_accesses accesses_acc = function
-    | [] -> accesses_acc
-    | access_str :: l -> make_accesses ((make_field_access access_str) :: accesses_acc) l in
-  let accesses = make_accesses [] accesses in
-  make_base base_str, IList.rev accesses
-
 let tests =
+  let open AccessPathTestUtils in
   let x = make_access_path "x" [] in
   let y = make_access_path "y" [] in
   let f_access = make_field_access "f" in

@@ -21,23 +21,6 @@ module MockTraceDomain =
 
 module Domain = AccessTree.Make (MockTraceDomain)
 
-let make_base base_str =
-  Var.of_pvar (Pvar.mk (Mangled.from_string base_str) Procname.empty_block), Typ.Tvoid
-
-let make_field_access access_str =
-  AccessPath.FieldAccess (Ident.create_fieldname (Mangled.from_string access_str) 0, Typ.Tvoid)
-
-let make_array_access () =
-  AccessPath.ArrayAccess Typ.Tvoid
-
-let rec make_accesses accesses_acc = function
-  | [] -> accesses_acc
-  | access_str :: l -> make_accesses ((make_field_access access_str) :: accesses_acc) l
-
-let make_access_path base_str accesses =
-  let accesses = make_accesses [] accesses in
-  make_base base_str, IList.rev accesses
-
 let assert_trees_equal tree1 tree2 =
   let rec access_tree_equal (trace1, subtree1) (trace2, subtree2) =
     MockTraceDomain.equal trace1 trace2 && match subtree1, subtree2 with
@@ -51,6 +34,7 @@ let assert_trees_equal tree1 tree2 =
   OUnit2.assert_equal ~cmp:base_tree_equal ~pp_diff tree1 tree2
 
 let tests =
+  let open AccessPathTestUtils in
   let x_base = make_base "x" in
   let y_base = make_base "y" in
   let z_base = make_base "z" in
@@ -71,7 +55,7 @@ let tests =
   let zFG = AccessPath.Exact (make_access_path "z" ["f"; "g"]) in
 
   let xArrF =
-    let accesses = IList.rev (make_accesses [array] ["f"]) in
+    let accesses = [array; make_field_access "f"] in
     AccessPath.Exact (make_base "x", accesses) in
 
   let a_star = AccessPath.Abstracted (make_access_path "a" []) in
