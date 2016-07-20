@@ -39,9 +39,16 @@ type java = {
 /** Type of c procedure names. */
 type c = (string, option string);
 
+type objc_cpp_method_kind =
+  | CPPMethod of (option string) /** with mangling */
+  | CPPConstructor of (option string) /** with mangling */
+  | ObjCInstanceMethod
+  | ObjCInternalMethod
+  | ObjCClassMethod;
+
 
 /** Type of Objective C and C++ procedure names: method signatures. */
-type objc_cpp = {class_name: string, method_name: string, mangled: option string};
+type objc_cpp = {class_name: string, method_name: string, kind: objc_cpp_method_kind};
 
 
 /** Type of Objective C block names. */
@@ -55,19 +62,11 @@ type t = | Java of java | C of c | ObjC_Cpp of objc_cpp | Block of block;
 /** Level of verbosity of some to_string functions. */
 type detail_level = | Verbose | Non_verbose | Simple;
 
-type objc_method_kind = | Instance_objc_method | Class_objc_method;
-
-let mangled_of_objc_method_kind kind =>
-  switch kind {
-  | Instance_objc_method => Some "instance"
-  | Class_objc_method => Some "class"
-  };
-
 let objc_method_kind_of_bool is_instance =>
   if is_instance {
-    Instance_objc_method
+    ObjCInstanceMethod
   } else {
-    Class_objc_method
+    ObjCClassMethod
   };
 
 let empty_block = Block "";
@@ -156,12 +155,21 @@ let java_compare (j1: java) (j2: java) =>
     next java_return_type_compare j1.return_type j2.return_type |>
     next method_kind_compare j1.kind j2.kind;
 
-let c_function_mangled_compare mangled1 mangled2 =>
-  switch (mangled1, mangled2) {
-  | (Some _, None) => 1
-  | (None, Some _) => (-1)
-  | (None, None) => 0
-  | (Some mangled1, Some mangled2) => string_compare mangled1 mangled2
+let objc_cpp_method_kind_compare k1 k2 =>
+  switch (k1, k2) {
+  | (CPPMethod mangled1, CPPMethod mangled2) => mangled_compare mangled1 mangled2
+  | (CPPMethod _, _) => (-1)
+  | (_, CPPMethod _) => 1
+  | (CPPConstructor mangled1, CPPConstructor mangled2) => mangled_compare mangled1 mangled2
+  | (CPPConstructor _, _) => (-1)
+  | (_, CPPConstructor _) => 1
+  | (ObjCClassMethod, ObjCClassMethod) => 0
+  | (ObjCClassMethod, _) => (-1)
+  | (_, ObjCClassMethod) => 1
+  | (ObjCInstanceMethod, ObjCInstanceMethod) => 0
+  | (ObjCInstanceMethod, _) => (-1)
+  | (_, ObjCInstanceMethod) => 1
+  | (ObjCInternalMethod, ObjCInternalMethod) => 0
   };
 
 
@@ -169,7 +177,7 @@ let c_function_mangled_compare mangled1 mangled2 =>
 let c_meth_sig_compare osig1 osig2 =>
   string_compare osig1.method_name osig2.method_name |>
     next string_compare osig1.class_name osig2.class_name |>
-    next c_function_mangled_compare osig1.mangled osig2.mangled;
+    next objc_cpp_method_kind_compare osig1.kind osig2.kind;
 
 
 /** Given a package.class_name string, it looks for the latest dot and split the string
@@ -190,10 +198,10 @@ let java class_name return_type method_name parameters kind => {
 
 
 /** Create an objc procedure name from a class_name and method_name. */
-let objc_cpp class_name method_name mangled => {class_name, method_name, mangled};
+let objc_cpp class_name method_name kind => {class_name, method_name, kind};
 
 let get_default_objc_class_method objc_class => {
-  let objc_cpp = objc_cpp objc_class "__find_class_" (Some "internal");
+  let objc_cpp = objc_cpp objc_class "__find_class_" ObjCInternalMethod;
   ObjC_Cpp objc_cpp
 };
 
@@ -421,15 +429,22 @@ let java_is_vararg =
     }
   | _ => false;
 
-let is_obj_constructor method_name => method_name == "new" || string_is_prefix "init" method_name;
+let is_objc_constructor method_name => method_name == "new" || string_is_prefix "init" method_name;
+
+let is_objc_kind =
+  fun
+  | ObjCClassMethod
+  | ObjCInstanceMethod
+  | ObjCInternalMethod => true
+  | _ => false;
 
 
-/** [is_constructor pname] returns true if [pname] is a constructor
-    TODO: add case for C++ */
+/** [is_constructor pname] returns true if [pname] is a constructor */
 let is_constructor =
   fun
   | Java js => js.method_name == "<init>"
-  | ObjC_Cpp name => is_obj_constructor name.method_name
+  | ObjC_Cpp {kind: CPPConstructor _} => true
+  | ObjC_Cpp {kind, method_name} when is_objc_kind kind => is_objc_constructor method_name
   | _ => false;
 
 let is_objc_dealloc method_name => method_name == "dealloc";
@@ -486,9 +501,28 @@ let c_method_to_string osig detail_level =>
   | Non_verbose => osig.class_name ^ "_" ^ osig.method_name
   | Verbose =>
     let m_str =
-      switch osig.mangled {
-      | None => ""
-      | Some s => "{" ^ s ^ "}"
+      switch osig.kind {
+      | CPPMethod m =>
+        "(" ^
+          (
+            switch m {
+            | None => ""
+            | Some s => s
+            }
+          ) ^
+          ")"
+      | CPPConstructor m =>
+        "{" ^
+          (
+            switch m {
+            | None => ""
+            | Some s => s
+            }
+          ) ^
+          "}"
+      | ObjCClassMethod => "class"
+      | ObjCInstanceMethod => "instance"
+      | ObjCInternalMethod => "internal"
       };
     osig.class_name ^ "_" ^ osig.method_name ^ m_str
   };

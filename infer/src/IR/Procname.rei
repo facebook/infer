@@ -40,9 +40,12 @@ type method_kind =
   | Static /* in Java, procedures called with invokestatic */
   | Non_Static /* in Java, procedures called with invokevirtual, invokespecial, and invokeinterface */;
 
-type objc_method_kind =
-  | Instance_objc_method /* for instance methods in ObjC */
-  | Class_objc_method /* for class methods in ObjC */;
+type objc_cpp_method_kind =
+  | CPPMethod of (option string) /** with mangling */
+  | CPPConstructor of (option string) /** with mangling */
+  | ObjCInstanceMethod
+  | ObjCInternalMethod
+  | ObjCClassMethod;
 
 
 /** Hash tables with proc names as keys. */
@@ -98,7 +101,7 @@ let is_c_method: t => bool;
 
 
 /** Check if this is a constructor method in Objective-C. */
-let is_obj_constructor: string => bool;
+let is_objc_constructor: string => bool;
 
 
 /** Check if this is a constructor. */
@@ -134,12 +137,8 @@ let java_replace_return_type: java => java_type => java;
 let mangled_objc_block: string => t;
 
 
-/** Mangled string for method types. */
-let mangled_of_objc_method_kind: objc_method_kind => option string;
-
-
 /** Create an objc procedure name from a class_name and method_name. */
-let objc_cpp: string => string => option string => objc_cpp;
+let objc_cpp: string => string => objc_cpp_method_kind => objc_cpp;
 
 let get_default_objc_class_method: string => t;
 
@@ -149,7 +148,7 @@ let objc_cpp_get_class_name: objc_cpp => string;
 
 
 /** Create ObjC method type from a bool is_instance. */
-let objc_method_kind_of_bool: bool => objc_method_kind;
+let objc_method_kind_of_bool: bool => objc_cpp_method_kind;
 
 
 /** Return the class name of a java procedure name. */

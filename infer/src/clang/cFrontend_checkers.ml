@@ -233,7 +233,7 @@ let direct_atomic_property_access_warning method_decl stmt_info ivar_decl_ref =
            Last two conditions avoids false positives *)
         is_ivar_atomic (get_ivar_attributes d)
         && not (is_method_property_accessor_of_ivar method_decl ivar_pointer)
-        && not (Procname.is_obj_constructor method_name)
+        && not (Procname.is_objc_constructor method_name)
         && not (Procname.is_objc_dealloc method_name) in
       if condition then
         Some {

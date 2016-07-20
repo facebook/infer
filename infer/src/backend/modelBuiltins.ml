@@ -1170,7 +1170,7 @@ let execute_objc_alloc_no_fail
   SymExec.instrs tenv pdesc [alloc_instr] symb_state
 
 let mk_objc_class_method class_name method_name =
-  let method_kind = Procname.mangled_of_objc_method_kind Procname.Class_objc_method in
+  let method_kind = Procname.ObjCClassMethod in
   (Procname.ObjC_Cpp
      (Procname.objc_cpp class_name method_name method_kind))
 

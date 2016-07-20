@@ -199,7 +199,7 @@ sig
 
   val replicate: int -> 'a -> 'a list
 
-  val mk_procname_from_objc_method : string -> string -> Procname.objc_method_kind -> Procname.t
+  val mk_procname_from_objc_method : string -> string -> Procname.objc_cpp_method_kind -> Procname.t
 
   val mk_procname_from_function : string -> (Clang_ast_t.decl_info * Clang_ast_t.function_decl_info)
       option -> Config.clang_lang -> Procname.t
@@ -207,7 +207,8 @@ sig
   val get_mangled_method_name : Clang_ast_t.function_decl_info ->
     Clang_ast_t.cxx_method_decl_info -> string option
 
-  val mk_procname_from_cpp_method : string -> string -> string option-> Procname.t
+  val mk_procname_from_cpp_method :
+    string -> string -> ?meth_decl:Clang_ast_t.decl -> string option -> Procname.t
 
   val procname_of_decl : Clang_ast_t.decl -> Procname.t
 

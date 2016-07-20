@@ -632,13 +632,17 @@ struct
       Procname.C (Procname.c name mangled)
 
   let mk_procname_from_objc_method class_name method_name method_kind =
-    let mangled = Procname.mangled_of_objc_method_kind method_kind in
     Procname.ObjC_Cpp
-      (Procname.objc_cpp class_name method_name mangled)
+      (Procname.objc_cpp class_name method_name method_kind)
 
-  let mk_procname_from_cpp_method class_name method_name mangled_opt =
+  let mk_procname_from_cpp_method class_name method_name ?meth_decl mangled =
+    let method_kind = match meth_decl with
+      | Some (Clang_ast_t.CXXConstructorDecl _) ->
+          Procname.CPPConstructor mangled
+      | _ ->
+          Procname.CPPMethod mangled in
     Procname.ObjC_Cpp
-      (Procname.objc_cpp class_name method_name mangled_opt)
+      (Procname.objc_cpp class_name method_name method_kind)
 
   let get_objc_method_name name_info mdi class_name =
     let method_name = name_info.Clang_ast_t.ni_name in
@@ -661,7 +665,7 @@ struct
         let mangled = get_mangled_method_name fdi mdi in
         let method_name = Ast_utils.get_unqualified_name name_info in
         let class_name = Ast_utils.get_class_name_from_member name_info in
-        mk_procname_from_cpp_method class_name method_name mangled
+        mk_procname_from_cpp_method class_name method_name ~meth_decl mangled
     | ObjCMethodDecl (_, name_info, mdi) ->
         let class_name = Ast_utils.get_class_name_from_member name_info in
         get_objc_method_name name_info mdi class_name

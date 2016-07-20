@@ -103,7 +103,7 @@ let get_record_name_csu decl =
 let get_record_name decl = snd (get_record_name_csu decl)
 
 let get_class_methods class_name decl_list =
-  let process_method_decl = function
+  let process_method_decl meth_decl = match meth_decl with
     | Clang_ast_t.CXXMethodDecl (_, name_info, _, fdi, mdi)
     | Clang_ast_t.CXXConstructorDecl (_, name_info, _, fdi, mdi)
     | Clang_ast_t.CXXConversionDecl (_, name_info, _, fdi, mdi)
@@ -111,7 +111,8 @@ let get_class_methods class_name decl_list =
         let method_name = name_info.Clang_ast_t.ni_name in
         Printing.log_out "  ...Declaring method '%s'.\n" method_name;
         let mangled = General_utils.get_mangled_method_name fdi mdi in
-        let procname = General_utils.mk_procname_from_cpp_method class_name method_name mangled in
+        let procname =
+          General_utils.mk_procname_from_cpp_method class_name method_name ~meth_decl mangled in
         Some procname
     | _ -> None in
   (* poor mans list_filter_map *)
