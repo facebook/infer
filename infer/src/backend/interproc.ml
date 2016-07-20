@@ -767,6 +767,15 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
 let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let pathset = collect_analysis_result wl pdesc in
+
+  (* Assuming C++ developers use RAII, remove resources from the constructor posts *)
+  let pathset = match pname with
+    | Procname.ObjC_Cpp _ ->
+        if (Procname.is_constructor pname) then
+          Paths.PathSet.map (Prop.remove_resource_attribute Sil.Racquire Sil.Rfile) pathset
+        else pathset
+    | _ -> pathset in
+
   L.d_strln
     ("#### [FUNCTION " ^ Procname.to_string pname ^ "] Analysis result ####");
   Propset.d Prop.prop_emp (Paths.PathSet.to_propset pathset);

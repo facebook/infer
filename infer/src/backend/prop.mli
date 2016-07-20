@@ -326,6 +326,8 @@ val mark_vars_as_undefined : normal t -> Sil.exp list -> Procname.t -> Typ.item_
 (** Remove an attribute from all the atoms in the heap *)
 val remove_attribute : Sil.attribute -> 'a t -> normal t
 
+val remove_resource_attribute : Sil.res_act_kind -> Sil.resource -> 'a t -> normal t
+
 (** [replace_objc_null lhs rhs].
     If rhs has the objc_null attribute, replace the attribute and set the lhs = 0 *)
 val replace_objc_null : normal t -> exp -> exp -> normal t

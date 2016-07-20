@@ -397,6 +397,10 @@ let binop_invert: Binop.t => exp => exp => exp;
 
 let mem_kind_compare: mem_kind => mem_kind => int;
 
+let res_act_kind_compare: res_act_kind => res_act_kind => int;
+
+let resource_compare: resource => resource => int;
+
 let attribute_compare: attribute => attribute => int;
 
 let attribute_equal: attribute => attribute => bool;

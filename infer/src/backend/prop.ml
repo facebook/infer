@@ -1879,29 +1879,34 @@ let mark_vars_as_undefined prop vars_to_mark callee_pname ret_annots loc path_po
     | _ -> prop in
   IList.fold_left (fun prop id -> mark_var_as_undefined id prop) prop vars_to_mark
 
-(** Remove an attribute from all the atoms in the heap *)
-let remove_attribute att prop =
+let remove_attribute_by_filter ~f prop =
   let atom_remove atom pi = match atom with
-    | Sil.Aneq (_, Sil.Attribute att_old)
-    | Sil.Aneq (Sil.Attribute att_old, _) ->
-        if Sil.attribute_equal att_old att then
+    | Sil.Aneq (e, Sil.Attribute att_old)
+    | Sil.Aneq (Sil.Attribute att_old, e) ->
+        if f att_old e then
           pi
         else atom:: pi
     | _ -> atom:: pi in
   let pi' = IList.fold_right atom_remove (get_pi prop) [] in
   replace_pi pi' prop
 
+(** Remove an attribute from all the atoms in the heap *)
+let remove_attribute att =
+  let f att_old _ = Sil.attribute_equal att_old att in
+  remove_attribute_by_filter ~f
+
+let remove_resource_attribute ra_kind ra_res =
+  let f att_old _ = match att_old with
+    | Sil.Aresource res_action ->
+        Sil.res_act_kind_compare res_action.Sil.ra_kind ra_kind == 0
+        && Sil.resource_compare res_action.Sil.ra_res ra_res == 0
+    | _ -> false in
+  remove_attribute_by_filter ~f
+
 let remove_attribute_from_exp att prop exp =
   let nexp = exp_normalize_prop prop exp in
-  let atom_remove atom pi = match atom with
-    | Sil.Aneq (e, Sil.Attribute att_old)
-    | Sil.Aneq (Sil.Attribute att_old, e) ->
-        if Sil.attribute_equal att_old att && Sil.exp_equal nexp e then
-          pi
-        else atom:: pi
-    | _ -> atom:: pi in
-  let pi' = IList.fold_right atom_remove (get_pi prop) [] in
-  replace_pi pi' prop
+  let f att_old e = Sil.attribute_equal att_old att && Sil.exp_equal nexp e in
+  remove_attribute_by_filter ~f prop
 
 (* Replace an attribute OBJC_NULL($n1) with OBJC_NULL(var) when var = $n1, and also sets $n1 = 0 *)
 let replace_objc_null prop lhs_exp rhs_exp =
