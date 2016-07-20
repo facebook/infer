@@ -23,7 +23,15 @@ let tests =
   let g_proc_name = Procname.from_string_c_fun "g" in
   let g_args = [((Sil.Const (Const.Cint (IntLit.one))), (Typ.Tint IInt))] in
   let g_ret_ids = [(ident_of_str "r")] in
-  let test_list = [
+  let class_name = "com.example.SomeClass" in
+  let file_name = "SomeClass.java" in
+  let trace = Stacktrace.make "java.lang.NullPointerException"
+      [Stacktrace.make_frame class_name "foo" file_name 16;
+       Stacktrace.make_frame class_name "bar" file_name 20] in
+  let caller_foo_name = Procname.from_string_c_fun "foo" in
+  let caller_bar_name = Procname.from_string_c_fun "bar" in
+  let caller_baz_name = Procname.from_string_c_fun "baz" in
+  let test_list_from_foo = [
     "on_call_add_proc_name",
     [
       make_call ~procname:f_proc_name [] []; (* means f() *)
@@ -48,5 +56,22 @@ let tests =
       make_call ~procname:f_proc_name [] [];
       invariant "{ f }"
     ];
-  ] |> TestInterpreter.create_tests ProcData.empty_extras in
+  ] |> TestInterpreter.create_tests ~test_pname:caller_foo_name trace in
+  let test_list_from_bar = [
+    "on_call_anywhere_on_stack_add_proc_name",
+    [
+      make_call ~procname:f_proc_name [] []; (* means f() *)
+      invariant "{ f }"
+    ];
+  ] |> TestInterpreter.create_tests ~test_pname:caller_bar_name trace in
+  let test_list_from_baz = [
+    "ignore_procs_unrelated_to_trace",
+    [
+      make_call ~procname:f_proc_name [] []; (* means f() *)
+      invariant "{  }"
+    ];
+  ] |> TestInterpreter.create_tests ~test_pname:caller_baz_name trace in
+  let test_list = test_list_from_foo @
+                  test_list_from_bar @
+                  test_list_from_baz in
   "bounded_calltree_test_suite">:::test_list
