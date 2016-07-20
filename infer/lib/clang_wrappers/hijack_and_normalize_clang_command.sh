@@ -54,7 +54,17 @@ else
         sed -e 's#^\(^clang: error:.*$\)#echo "\1"; exit 1#g' | \
         # add trailing ; to each line
         sed -e 's/$/;/g')
-    eval $CC_COMMAND
+    if [ -n "$CC_COMMAND" ]; then
+        eval $CC_COMMAND
+    else
+        # No command to execute after -###, this is fishy, let's execute the original command
+        # instead.
+        #
+        # In particular, this can happen when the user tries to run `infer -- clang -c
+        # file_that_does_not_exist.c`. In this case, this will fail with the appropriate error
+        # message from clang instead of silently analyzing 0 files.
+        "$CLANG_COMPILER$XX" "$@"
+    fi
     STATUS=$?
 fi
 
