@@ -1286,7 +1286,7 @@ let check_call_to_objc_block_error pdesc prop fun_exp loc =
     match get_exp_called () with
     | Some (_, Sil.Lvar pvar) -> (* pvar is the block *)
         let name = Pvar.get_name pvar in
-        IList.exists (fun (cn, _) -> (Mangled.to_string name) = (Mangled.to_string cn)) (Cfg.Procdesc.get_captured pdesc)
+        IList.exists (fun (cn, _) -> (Mangled.equal name cn)) (Cfg.Procdesc.get_captured pdesc)
     | _ -> false in
   let is_field_deref () = (*Called expression is a field *)
     match get_exp_called () with
