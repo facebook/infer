@@ -45,8 +45,6 @@ CLANG_BIN = os.path.join(ROOT_DIR, 'facebook-clang-plugins', 'clang',
 
 REPORT_JSON = 'report.json'
 
-INFER_EXECUTABLE = 'infer'
-
 RECORD_ENV = 'INFER_RECORD_INTEGRATION_TESTS'
 
 REPORT_FIELDS = [
@@ -68,10 +66,11 @@ ALL_TESTS = [
     'locale',
     'make',
     'multiclang',
+    'ndk-build',
+    'reactive',
     'unknown_ext',
     'utf8_in_pwd',
     'waf',
-    'ndk-build',
 ]
 
 to_test = ALL_TESTS
@@ -113,14 +112,20 @@ def save_report(reports, filename):
                             separators=(',', ': '), sort_keys=True)
 
 
-def run_analysis(clean_cmds, build_cmds, analyzer, env=None):
+def run_analysis(clean_cmds, build_cmds, env=None):
     for clean_cmd in clean_cmds:
         subprocess.check_call(clean_cmd, env=env)
 
+    temp_out_dir = tempfile.mkdtemp(suffix='_out', prefix='infer_')
     for build_cmd in build_cmds:
-        temp_out_dir = tempfile.mkdtemp(suffix='_out', prefix='infer_')
-        infer_cmd = (['infer', '-a', analyzer, '-o', temp_out_dir, '--'] +
-                     build_cmd)
+        extra_args = (build_cmd['infer_args']
+                      if 'infer_args' in build_cmd
+                      else [])
+        infer_cmd = (['infer', '-o', temp_out_dir] +
+                     extra_args +
+                     ['--'] +
+                     build_cmd['compile'])
+        print(str(infer_cmd))
         # Only record the output of the last build command. We record
         # all of them but each command overwrites the output of the
         # previous one.
@@ -273,7 +278,6 @@ def test(name,
     errors = run_analysis(
         clean_commands,
         compile_commands,
-        INFER_EXECUTABLE,
         env=env)
     original = os.path.join(EXPECTED_OUTPUTS_DIR, report_fname)
     do_test(postprocess(errors), original)
@@ -284,7 +288,7 @@ class BuildIntegrationTest(unittest.TestCase):
     def test_ant_integration(self):
         test('ant', 'Ant',
              os.path.join(SCRIPT_DIR, os.pardir),
-             [['ant', 'compile']],
+             [{'compile': ['ant', 'compile']}],
              clean_commands=[['ant', 'clean']],
              available=lambda: is_tool_available(['ant', '-version']))
 
@@ -295,7 +299,7 @@ class BuildIntegrationTest(unittest.TestCase):
             report_fname='javac_report.json'):
         test('javac', 'javac',
              root,
-             [['javac', 'Hello.java']],
+             [{'compile': ['javac', 'Hello.java']}],
              enabled=enabled,
              report_fname=report_fname)
 
@@ -311,7 +315,7 @@ class BuildIntegrationTest(unittest.TestCase):
         )
         test('gradle', 'Gradle',
              root,
-             [['gradle', 'build']],
+             [{'compile': ['gradle', 'build']}],
              enabled=enabled,
              report_fname=report_fname,
              env=env)
@@ -319,7 +323,7 @@ class BuildIntegrationTest(unittest.TestCase):
     def test_buck_integration(self):
         test('buck', 'Buck',
              ROOT_DIR,
-             [['buck', 'build', 'infer']],
+             [{'compile': ['buck', 'build', 'infer']}],
              clean_commands=[['buck', 'clean']],
              available=lambda: is_tool_available(['buck', '--version']))
 
@@ -330,7 +334,7 @@ class BuildIntegrationTest(unittest.TestCase):
             report_fname='make_report.json'):
         test('make', 'make',
              root,
-             [['make', 'all']],
+             [{'compile': ['make', 'all']}],
              clean_commands=[['make', 'clean']],
              enabled=enabled,
              report_fname=report_fname)
@@ -348,7 +352,8 @@ class BuildIntegrationTest(unittest.TestCase):
         env['PATH'] = '{}:{}'.format(os.getenv('PATH'), ndk_dir)
         if test('ndk-build', 'ndk-build',
                 root,
-                [['ndk-build', '-B', 'NDK_LIBS_OUT=./libs', 'NDK_OUT=./obj']],
+                [{'compile': ['ndk-build', '-B',
+                              'NDK_LIBS_OUT=./libs', 'NDK_OUT=./obj']}],
                 clean_commands=[['ndk-build', 'clean']],
                 available=lambda: is_tool_available([
                     os.path.join(ndk_dir, 'ndk-build'), '-v']),
@@ -362,14 +367,14 @@ class BuildIntegrationTest(unittest.TestCase):
         env['LC_ALL'] = 'C'
         test('locale', 'wonky locale',
              os.path.join(CODETOANALYZE_DIR, 'make'),
-             [['clang', '-c', 'utf8_in_function_names.c'],
-              ['clang', '-c', 'utf8_in_function_names.c']],
+             [{'compile': ['clang', '-c', 'utf8_in_function_names.c']},
+              {'compile': ['clang', '-c', 'utf8_in_function_names.c']}],
              env=env)
 
     def test_waf_integration(self):
         test('waf', 'waf',
              os.path.join(CODETOANALYZE_DIR, 'make'),
-             [['./waf', 'build']],
+             [{'compile': ['./waf', 'build']}],
              clean_commands=[['make', 'clean']])
 
     def test_cmake_integration(
@@ -380,7 +385,8 @@ class BuildIntegrationTest(unittest.TestCase):
         build_root = os.path.join(root, 'build')
         if test('cmake', 'CMake',
                 build_root,
-                [['cmake', '..'], ['make', 'clean', 'all']],
+                [{'compile': ['cmake', '..']},
+                 {'compile': ['make', 'clean', 'all']}],
                 available=lambda: is_tool_available(['cmake', '--version']),
                 enabled=enabled,
                 # remove build/ directory just in case
@@ -427,12 +433,22 @@ class BuildIntegrationTest(unittest.TestCase):
     def test_unknown_extension(self):
         test('unknown_ext', 'unknown extension',
              CODETOANALYZE_DIR,
-             [['clang', '-x', 'c', '-c', 'hello.unknown_ext']])
+             [{'compile': ['clang', '-x', 'c', '-c', 'hello.unknown_ext']}])
 
     def test_clang_multiple_source_files(self):
         test('multiclang', 'clang multiple source files',
              CODETOANALYZE_DIR,
-             [['clang', '-c', 'hello.c', 'hello2.c']])
+             [{'compile': ['clang', '-c', 'hello.c', 'hello2.c']}])
+
+    def test_reactive_multiple_capture(self):
+        reactive_args = ['-a', 'capture', '--reactive', '--continue']
+        test('reactive', 'reactive with multiple capture',
+             CODETOANALYZE_DIR,
+             [{'compile': ['clang', '-c', 'hello.c'],
+               'infer_args': reactive_args},
+              {'compile': ['clang', '-c', 'hello2.c'],
+               'infer_args': reactive_args},
+              {'compile': ['analyze']}])
 
     def test_clang_cc1(self):
         def preprocess():
@@ -445,10 +461,10 @@ class BuildIntegrationTest(unittest.TestCase):
             cc1_line = filter(lambda s: s.find('"-cc1"') != -1,
                               hashhashhash.splitlines())[0]
             # [cc1_line] usually looks like ' "/foo/clang" "bar" "baz"'.
-            # return [['clang', 'bar', 'baz']]
+            # return ['clang', 'bar', 'baz']
             cmd = [s.strip('"') for s in cc1_line.strip().split('" "')]
             cmd[0] = 'clang'
-            return [cmd]
+            return [{'compile': cmd}]
         test('cc1', 'clang -cc1',
              CODETOANALYZE_DIR,
              [],

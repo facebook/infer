@@ -62,6 +62,8 @@ let () =
        | args when buck ->
            IList.map (fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> IList.flatten
        | _ -> []) @
+      (if not Config.continue_capture then [] else
+         ["--continue"]) @
       (if not Config.debug_mode then [] else
          ["--debug"]) @
       (if not Config.debug_exceptions then [] else
@@ -73,6 +75,8 @@ let () =
       (match Config.infer_cache with None -> [] | Some s ->
         ["--infer_cache"; s]) @
       "--multicore" :: (string_of_int Config.jobs) ::
+      (if not Config.reactive_mode then [] else
+         ["--reactive"]) @
       "--out" :: Config.results_dir ::
       (match Config.project_root with None -> [] | Some pr ->
         ["--project_root"; pr]) @
