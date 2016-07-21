@@ -817,13 +817,7 @@ struct
     (* claim priority if no ancestors has claimed priority before *)
     let context_callee = { context with CContext.is_callee_expression = true } in
     let trans_state_callee = { trans_state_pri with context = context_callee; succ_nodes = [] } in
-    let is_call_to_block = objc_exp_of_type_block fun_exp_stmt in
     let res_trans_callee = instruction trans_state_callee fun_exp_stmt in
-    (* As we may have nodes coming from different parameters we need to  *)
-    (* call instruction for each parameter and collect the results       *)
-    (* afterwards. The 'instructions' function does not do that          *)
-    let trans_state_param =
-      { trans_state_pri with succ_nodes = []; var_exp_typ = None  } in
     let (sil_fe, _) = extract_exp_from_list res_trans_callee.exps
         "WARNING: The translation of fun_exp did not return an expression.\
          Returning -1. NEED TO BE FIXED" in
@@ -832,66 +826,64 @@ struct
       | Sil.Const (Const.Cfun pn) ->
           Some pn
       | _ -> None (* function pointer *) in
+    (* we cannot translate the arguments of __builtin_object_size because preprocessing copies
+       them verbatim from a call to a different function, and they might be side-effecting *)
     let should_translate_args =
-      match callee_pname_opt with
-      | Some pn ->
-          (* we cannot translate the arguments of this builtin because preprocessing copies them *)
-          (* verbatim from a call to a different function, and they might be side-effecting *)
-          (Procname.to_string pn) <> CFrontend_config.builtin_object_size
-      | _ -> true in
+      not (Option.map_default CTrans_models.is_builtin_object_size false callee_pname_opt) in
     let params_stmt = if should_translate_args then params_stmt
       else [] in
+    (* As we may have nodes coming from different parameters we need to  *)
+    (* call instruction for each parameter and collect the results       *)
+    (* afterwards. The 'instructions' function does not do that          *)
+    let trans_state_param =
+      { trans_state_pri with succ_nodes = []; var_exp_typ = None  } in
     let result_trans_subexprs =
       let instruction' = exec_with_self_exception (exec_with_glvalue_as_reference instruction) in
       let res_trans_p = IList.map (instruction' trans_state_param) params_stmt in
       res_trans_callee :: res_trans_p in
-    let sil_fe, is_cf_retain_release = CTrans_models.builtin_predefined_model fun_exp_stmt sil_fe in
-    if CTrans_models.is_assert_log sil_fe then
-      CTrans_utils.trans_assertion sil_loc context trans_state.succ_nodes
-    else
-      let act_params =
-        let params = IList.tl (collect_exprs result_trans_subexprs) in
-        if IList.length params = IList.length params_stmt then
-          params
-        else (Printing.log_err
-                "WARNING: stmt_list and res_trans_par.exps must have same size. \
-                 NEED TO BE FIXED\n\n";
-              fix_param_exps_mismatch params_stmt params) in
-      let act_params = if is_cf_retain_release then
-          (Sil.Const (Const.Cint IntLit.one), Typ.Tint Typ.IBool) :: act_params
-        else act_params in
-      match
-        CTrans_utils.builtin_trans trans_state_pri sil_loc si function_type callee_pname_opt with
-      | Some builtin -> builtin
-      | None ->
-          (* Translate call to __builtin_expect as the first argument *)
-          (* for simpler symbolic execution *)
-          match callee_pname_opt, result_trans_subexprs with
-          | Some pname, [_; fst_arg_res; _]
-            when Procname.to_string pname = CFrontend_config.builtin_expect ->
-              fst_arg_res
+    match Option.map_default (CTrans_utils.builtin_trans trans_state_pri sil_loc si function_type
+                                result_trans_subexprs) None callee_pname_opt with
+    | Some builtin -> builtin
+    | None ->
+        let callee_pname_opt', is_cf_retain_release =
+          CTrans_models.builtin_predefined_model fun_exp_stmt callee_pname_opt in
+        let act_params =
+          let params = IList.tl (collect_exprs result_trans_subexprs) in
+          if IList.length params = IList.length params_stmt then
+            params
+          else (Printing.log_err
+                  "WARNING: stmt_list and res_trans_par.exps must have same size. \
+                   NEED TO BE FIXED\n\n";
+                fix_param_exps_mismatch params_stmt params) in
+        let act_params = if is_cf_retain_release then
+            (Sil.Const (Const.Cint IntLit.one), Typ.Tint Typ.IBool) :: act_params
+          else act_params in
+        let sil_fe' = match callee_pname_opt' with
+          | Some pn -> Sil.Const (Const.Cfun pn)
+          | _ -> sil_fe in
+        let res_trans_call =
+          let cast_trans_fun = cast_trans context act_params sil_loc function_type in
+          match Option.map_default cast_trans_fun None callee_pname_opt' with
+          | Some (instr, cast_exp) ->
+              { empty_res_trans with
+                instrs = [instr];
+                exps = [(cast_exp, function_type)]; }
           | _ ->
-              let res_trans_call =
-                match cast_trans context act_params sil_loc callee_pname_opt function_type with
-                | Some (instr, cast_exp) ->
-                    { empty_res_trans with
-                      instrs = [instr];
-                      exps = [(cast_exp, function_type)]; }
-                | None ->
-                    let call_flags =
-                      { CallFlags.default with CallFlags.cf_is_objc_block = is_call_to_block; } in
-                    create_call_instr trans_state function_type sil_fe act_params sil_loc
-                      call_flags ~is_objc_method:false in
-              let nname = "Call "^(Sil.exp_to_string sil_fe) in
-              let all_res_trans = result_trans_subexprs @ [res_trans_call] in
-              let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri
-                  sil_loc nname si all_res_trans in
-              (match callee_pname_opt with
-               | Some callee_pname ->
-                   if not (Builtin.is_registered callee_pname) then
-                     Cg.add_edge context.CContext.cg procname callee_pname
-               | None -> ());
-              { res_trans_to_parent with exps = res_trans_call.exps }
+              let is_call_to_block = objc_exp_of_type_block fun_exp_stmt in
+              let call_flags =
+                { CallFlags.default with CallFlags.cf_is_objc_block = is_call_to_block; } in
+              create_call_instr trans_state function_type sil_fe' act_params sil_loc
+                call_flags ~is_objc_method:false in
+        let nname = "Call "^(Sil.exp_to_string sil_fe') in
+        let all_res_trans = result_trans_subexprs @ [res_trans_call] in
+        let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri
+            sil_loc nname si all_res_trans in
+        let add_cg_edge callee_pname =
+          if not (Builtin.is_registered callee_pname) then
+            Cg.add_edge context.CContext.cg procname callee_pname
+        in
+        Option.may add_cg_edge callee_pname_opt';
+        { res_trans_to_parent with exps = res_trans_call.exps }
 
   and cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt
       si function_type is_cpp_call_virtual =
@@ -902,38 +894,36 @@ struct
     (* first for method address, second for 'this' expression *)
     assert ((IList.length result_trans_callee.exps) = 2);
     let (sil_method, _) = IList.hd result_trans_callee.exps in
-    let callee_pname = match sil_method with
+    let callee_pname =
+      match sil_method with
       | Sil.Const (Const.Cfun pn) -> pn
       | _ -> assert false (* method pointer not implemented, this shouldn't happen *) in
-    if CTrans_models.is_assert_log sil_method then
-      CTrans_utils.trans_assertion sil_loc context trans_state_pri.succ_nodes
-    else
-      (* As we may have nodes coming from different parameters we need to  *)
-      (* call instruction for each parameter and collect the results       *)
-      (* afterwards. The 'instructions' function does not do that          *)
+    (* As we may have nodes coming from different parameters we need to  *)
+    (* call instruction for each parameter and collect the results       *)
+    (* afterwards. The 'instructions' function does not do that          *)
+    let result_trans_subexprs =
       let trans_state_param =
         { trans_state_pri with succ_nodes = []; var_exp_typ = None } in
-      let result_trans_subexprs =
-        let instruction' = exec_with_self_exception (exec_with_glvalue_as_reference instruction) in
-        let res_trans_p = IList.map (instruction' trans_state_param) params_stmt in
-        result_trans_callee :: res_trans_p in
-      (* first expr is method address, rest are params including 'this' parameter *)
-      let actual_params = IList.tl (collect_exprs result_trans_subexprs) in
-      let call_flags = {
-        CallFlags.cf_virtual = is_cpp_call_virtual;
-        CallFlags.cf_interface = false;
-        CallFlags.cf_noreturn = false;
-        CallFlags.cf_is_objc_block = false;
-        CallFlags.cf_targets = [];
-      } in
-      let res_trans_call = create_call_instr trans_state_pri function_type sil_method actual_params
-          sil_loc call_flags ~is_objc_method:false in
-      let nname = "Call " ^ (Sil.exp_to_string sil_method) in
-      let all_res_trans = result_trans_subexprs @ [res_trans_call] in
-      let result_trans_to_parent =
-        PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans in
-      Cg.add_edge context.CContext.cg procname callee_pname;
-      { result_trans_to_parent with exps = res_trans_call.exps }
+      let instruction' = exec_with_self_exception (exec_with_glvalue_as_reference instruction) in
+      let res_trans_p = IList.map (instruction' trans_state_param) params_stmt in
+      result_trans_callee :: res_trans_p in
+    (* first expr is method address, rest are params including 'this' parameter *)
+    let actual_params = IList.tl (collect_exprs result_trans_subexprs) in
+    match cxx_method_builtin_trans trans_state_pri sil_loc callee_pname with
+    | Some builtin -> builtin
+    | _ ->
+        let call_flags = {
+          CallFlags.default with
+          CallFlags.cf_virtual = is_cpp_call_virtual;
+        } in
+        let res_trans_call = create_call_instr trans_state_pri function_type sil_method
+            actual_params sil_loc call_flags ~is_objc_method:false in
+        let nname = "Call " ^ (Sil.exp_to_string sil_method) in
+        let all_res_trans = result_trans_subexprs @ [res_trans_call] in
+        let result_trans_to_parent =
+          PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans in
+        Cg.add_edge context.CContext.cg procname callee_pname;
+        { result_trans_to_parent with exps = res_trans_call.exps }
 
 
   and cxxMemberCallExpr_trans trans_state si stmt_list expr_info =
@@ -1011,7 +1001,7 @@ struct
       | _ -> None
       (* assertions *)
     else if CTrans_models.is_handleFailureInMethod selector then
-      Some (CTrans_utils.trans_assertion sil_loc context trans_state.succ_nodes)
+      Some (CTrans_utils.trans_assertion trans_state sil_loc)
     else None
 
 

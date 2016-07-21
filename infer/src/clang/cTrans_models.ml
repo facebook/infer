@@ -12,29 +12,26 @@ open! Utils
 open CFrontend_utils
 open Objc_models
 
-let is_cf_non_null_alloc funct =
-  match funct with
-  | Some procname ->
-      Procname.to_string procname = CFrontend_config.cf_non_null_alloc
-  | None -> false
+let is_cf_non_null_alloc pname =
+  Procname.to_string pname = CFrontend_config.cf_non_null_alloc
 
-let is_alloc funct =
-  match funct with
-  | Some procname ->
-      Procname.to_string procname = CFrontend_config.cf_alloc
-  | None -> false
+let is_alloc pname =
+  Procname.to_string pname = CFrontend_config.cf_alloc
 
-let is_alloc_model typ funct =
-  match funct with
-  | Some procname ->
-      if Specs.summary_exists procname then false
-      else
-        let funct = Procname.to_string procname in
-        (* if (Core_foundation_model.is_core_lib_create typ funct) then
-           print_endline ("\nCore Foundation create not modelled "
-           ^(Typ.to_string typ)^" "^(funct));*)
-        Core_foundation_model.is_core_lib_create typ funct
-  | None -> false
+let is_alloc_model typ pname =
+  if Specs.summary_exists pname then false
+  else
+    let funct = Procname.to_string pname in
+    (* if (Core_foundation_model.is_core_lib_create typ funct) then
+       print_endline ("\nCore Foundation create not modelled "
+       ^(Typ.to_string typ)^" "^(funct));*)
+    Core_foundation_model.is_core_lib_create typ funct
+
+let is_builtin_expect pname =
+  Procname.to_string pname = CFrontend_config.builtin_expect
+
+let is_builtin_object_size pname =
+  (Procname.to_string pname) == CFrontend_config.builtin_object_size
 
 let rec get_func_type_from_stmt stmt =
   match stmt with
@@ -45,10 +42,12 @@ let rec get_func_type_from_stmt stmt =
       | stmt:: _ -> get_func_type_from_stmt stmt
       | [] -> None
 
-let is_retain_predefined_model typ funct =
+let is_retain_predefined_model typ pname =
+  let funct = Procname.to_string pname in
   Core_foundation_model.is_core_lib_retain typ funct
 
-let is_release_predefined_model typ funct =
+let is_release_predefined_model typ pname =
+  let funct = Procname.to_string pname in
   Core_foundation_model.is_core_lib_release typ funct ||
   Core_foundation_model.is_core_graphics_release typ funct
 
@@ -91,36 +90,33 @@ let is_retain_or_release funct =
   is_release_method funct ||
   is_autorelease_method funct
 
-let is_toll_free_bridging pn_opt =
-  match pn_opt with
-  | Some pn ->
-      let funct = (Procname.to_string pn) in
-      funct = CFrontend_config.cf_bridging_release ||
-      funct = CFrontend_config.cf_bridging_retain ||
-      funct = CFrontend_config.cf_autorelease ||
-      funct = CFrontend_config.ns_make_collectable
-  | None -> false
+let is_toll_free_bridging pn =
+  let funct = (Procname.to_string pn) in
+  funct = CFrontend_config.cf_bridging_release ||
+  funct = CFrontend_config.cf_bridging_retain ||
+  funct = CFrontend_config.cf_autorelease ||
+  funct = CFrontend_config.ns_make_collectable
 
 (** If the function is a builtin model, return the model, otherwise return the function *)
-let builtin_predefined_model fun_stmt sil_fe =
+let builtin_predefined_model fun_stmt pname_opt =
   match get_func_type_from_stmt fun_stmt with
   | Some typ ->
       let typ = Ast_utils.string_of_type_ptr typ in
-      (match sil_fe with
-       | Sil.Const (Const.Cfun pn) when Specs.summary_exists pn -> sil_fe, false
-       | Sil.Const (Const.Cfun pn) when is_retain_predefined_model typ (Procname.to_string pn) ->
-           Sil.Const (Const.Cfun ModelBuiltins.__objc_retain_cf) , true
-       | Sil.Const (Const.Cfun pn) when is_release_predefined_model typ (Procname.to_string pn) ->
-           Sil.Const (Const.Cfun ModelBuiltins.__objc_release_cf), true
-       | _ -> sil_fe, false)
-  | _ -> sil_fe, false
+      (match pname_opt with
+       | Some pn when Specs.summary_exists pn -> pname_opt, false
+       | Some pn when is_retain_predefined_model typ pn ->
+           Some ModelBuiltins.__objc_retain_cf, true
+       | Some pn when is_release_predefined_model typ pn ->
+           Some ModelBuiltins.__objc_release_cf, true
+       | _ -> pname_opt, false)
+  | _ -> pname_opt, false
 
 (** If the function is a builtin model, return the model, otherwise return the function *)
-let is_assert_log sil_fe =
-  match sil_fe with
-  | Sil.Const (Const.Cfun (Procname.ObjC_Cpp _ as pn)) ->
-      is_assert_log_method (Procname.to_string pn)
-  | Sil.Const (Const.Cfun (Procname.C _ as pn)) -> is_assert_log_s (Procname.to_string pn)
+let is_assert_log pname =
+  match pname with
+  | Procname.ObjC_Cpp _ ->
+      is_assert_log_method (Procname.to_string pname)
+  | Procname.C _ -> is_assert_log_s (Procname.to_string pname)
   | _ -> false
 
 

@@ -379,20 +379,12 @@ let create_cast_instrs context exp cast_from_typ cast_to_typ sil_loc =
     Sil.Call ([ret_id], Sil.Const (Const.Cfun pname), args, sil_loc, CallFlags.default) in
   (stmt_call, Sil.Var ret_id)
 
-let cast_trans context exps sil_loc callee_pname_opt function_type =
-  if CTrans_models.is_toll_free_bridging callee_pname_opt then
+let cast_trans context exps sil_loc function_type pname =
+  if CTrans_models.is_toll_free_bridging pname then
     match exps with
     | [exp, typ] ->
         Some (create_cast_instrs context exp typ function_type sil_loc)
     | _ -> assert false
-  else None
-
-let builtin_trans trans_state loc stmt_info function_type callee_pname_opt =
-  if CTrans_models.is_cf_non_null_alloc callee_pname_opt ||
-     CTrans_models.is_alloc_model function_type callee_pname_opt then
-    Some (alloc_trans trans_state loc stmt_info function_type true callee_pname_opt)
-  else if CTrans_models.is_alloc callee_pname_opt then
-    Some (alloc_trans trans_state loc stmt_info function_type false None)
   else None
 
 let dereference_var_sil (exp, typ) sil_loc =
@@ -462,10 +454,36 @@ let trans_assume_false sil_loc context succ_nodes =
   Cfg.Node.set_succs_exn context.CContext.cfg prune_node succ_nodes [];
   { empty_res_trans with root_nodes = [prune_node]; leaf_nodes = [prune_node] }
 
-let trans_assertion sil_loc context succ_nodes =
+let trans_assertion trans_state sil_loc =
+  let context = trans_state.context in
   if Config.report_custom_error then
     trans_assertion_failure sil_loc context
-  else trans_assume_false sil_loc context succ_nodes
+  else trans_assume_false sil_loc context trans_state.succ_nodes
+
+let trans_builtin_expect params_trans_res =
+  (* Translate call to __builtin_expect as the first argument *)
+  (* for simpler symbolic execution *)
+  match params_trans_res with
+  | [_; fst_arg_res; _] -> Some fst_arg_res
+  | _ -> None
+
+let builtin_trans trans_state loc stmt_info function_type params_trans_res pname =
+  if CTrans_models.is_cf_non_null_alloc pname ||
+     CTrans_models.is_alloc_model function_type pname then
+    Some (alloc_trans trans_state loc stmt_info function_type true (Some pname))
+  else if CTrans_models.is_alloc pname then
+    Some (alloc_trans trans_state loc stmt_info function_type false None)
+  else if CTrans_models.is_assert_log pname then
+    Some (trans_assertion trans_state loc)
+  else if CTrans_models.is_builtin_expect pname then
+    trans_builtin_expect params_trans_res
+  else None
+
+let cxx_method_builtin_trans trans_state loc pname =
+  if CTrans_models.is_assert_log pname then
+    Some (trans_assertion trans_state loc)
+  else
+    None
 
 let define_condition_side_effects e_cond instrs_cond sil_loc =
   let (e', typ) = extract_exp_from_list e_cond "\nWARNING: Missing expression in IfStmt. Need to be fixed\n" in

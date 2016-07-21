@@ -86,7 +86,7 @@ val cast_operation :
   trans_state -> Clang_ast_t.cast_kind -> (Sil.exp * Typ.t) list -> Typ.t -> Location.t ->
   bool -> Sil.instr list * (Sil.exp * Typ.t)
 
-val trans_assertion: Location.t -> CContext.t -> Cfg.Node.t list ->  trans_result
+val trans_assertion: trans_state -> Location.t ->  trans_result
 
 val is_owning_method : Clang_ast_t.stmt -> bool
 
@@ -99,7 +99,10 @@ val contains_opaque_value_expr : Clang_ast_t.stmt -> bool
 val get_decl_ref_info : Clang_ast_t.stmt -> Clang_ast_t.decl_ref
 
 val builtin_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
-  Typ.t -> Procname.t option -> trans_result option
+  Typ.t -> trans_result list -> Procname.t -> trans_result option
+
+val cxx_method_builtin_trans : trans_state -> Location.t -> Procname.t ->
+  trans_result option
 
 val alloc_trans :
   trans_state -> Location.t -> Clang_ast_t.stmt_info -> Typ.t -> bool ->
@@ -111,7 +114,7 @@ val new_or_alloc_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
 val cpp_new_trans : trans_state -> Location.t -> Typ.t -> Sil.exp option -> trans_result
 
 val cast_trans :
-  CContext.t -> (Sil.exp * Typ.t) list -> Location.t -> Procname.t option -> Typ.t ->
+  CContext.t -> (Sil.exp * Typ.t) list -> Location.t -> Typ.t -> Procname.t ->
   (Sil.instr * Sil.exp) option
 
 val dereference_var_sil : Sil.exp * Typ.t -> Location.t -> Sil.instr list * Sil.exp
