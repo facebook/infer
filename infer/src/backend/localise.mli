@@ -146,6 +146,9 @@ val deref_str_null : Procname.t option -> deref_str
 (** dereference strings for null dereference due to Nullable annotation *)
 val deref_str_nullable : Procname.t option -> string -> deref_str
 
+(** dereference strings for null dereference due to weak captured variable in block *)
+val deref_str_weak_variable_in_block : Procname.t option -> string -> deref_str
+
 (** dereference strings for an undefined value coming from the given procedure *)
 val deref_str_undef : Procname.t * Location.t -> deref_str
 

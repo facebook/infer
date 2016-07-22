@@ -136,6 +136,7 @@ module Tags = struct
   let parameter_not_null_checked = "parameter_not_null_checked" (* describes a NPE that comes from parameter not nullable *)
   let field_not_null_checked = "field_not_null_checked" (* describes a NPE that comes from field not nullable *)
   let nullable_src = "nullable_src" (* @Nullable-annoted field/param/retval that causes a warning *)
+  let weak_captured_var_src = "weak_captured_var_src" (* Weak variable captured in a block that causes a warning *)
   let empty_vector_access = "empty_vector_access"
   let create () = ref []
   let add tags tag value = tags := (tag, value) :: !tags
@@ -304,6 +305,13 @@ let deref_str_nullable proc_name_opt nullable_obj_str =
   let tags = Tags.create () in
   Tags.add tags Tags.nullable_src nullable_obj_str;
   (* to be completed once we know if the deref'd expression is directly or transitively @Nullable*)
+  let problem_str = "" in
+  _deref_str_null proc_name_opt problem_str tags
+
+(** dereference strings for null dereference due to weak captured variable in block *)
+let deref_str_weak_variable_in_block proc_name_opt nullable_obj_str =
+  let tags = Tags.create () in
+  Tags.add tags Tags.weak_captured_var_src nullable_obj_str;
   let problem_str = "" in
   _deref_str_null proc_name_opt problem_str tags
 
@@ -517,11 +525,16 @@ let dereference_string deref_str value_str access_opt loc =
   let problem_desc =
     let nullable_text = if !Config.curr_language = Config.Java then "@Nullable" else "__nullable" in
     let problem_str =
-      match Tags.get !tags Tags.nullable_src with
-      | Some nullable_src ->
+      match Tags.get !tags Tags.nullable_src, Tags.get !tags Tags.weak_captured_var_src with
+      | Some nullable_src, _ ->
           if nullable_src = value_str then "is annotated with " ^ nullable_text ^ " and is dereferenced without a null check"
           else "is indirectly marked " ^ nullable_text ^ " (source: " ^ nullable_src ^ ") and is dereferenced without a null check"
-      | None -> deref_str.problem_str in
+      | None, Some weak_var_str ->
+          if weak_var_str = value_str then
+            "is a weak pointer captured in the block and is dereferenced without a null check"
+          else "is equal to the variable " ^ weak_var_str ^
+               ", a weak pointer captured in the block, and is dereferenced without a null check"
+      | None, None -> deref_str.problem_str in
     [(problem_str ^ " " ^ at_line tags loc)] in
   { no_desc with descriptions = value_desc:: access_desc @ problem_desc; tags = !tags }
 

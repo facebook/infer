@@ -1156,9 +1156,23 @@ let rec iter_rearrange
   end;
   res
 
+let is_weak_captured_var pdesc pvar =
+  let pname = Cfg.Procdesc.get_proc_name pdesc in
+  match pname with
+  | Block _ ->
+      let is_weak_captured (var, typ) =
+        match typ with
+        | Typ.Tptr (_, Pk_objc_weak) ->
+            Mangled.equal (Pvar.get_name pvar) var
+        | _ -> false in
+      IList.exists is_weak_captured (Cfg.Procdesc.get_captured pdesc)
+  | _ -> false
+
+
 (** Check for dereference errors: dereferencing 0, a freed value, or an undefined value *)
 let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
   let nullable_obj_str = ref None in
+  let nullable_str_is_weak_captured_var = ref false in
   (* return true if deref_exp is only pointed to by fields/params with @Nullable annotations *)
   let is_only_pt_by_nullable_fld_or_param deref_exp =
     let ann_sig = Models.get_modelled_annotated_signature (Specs.pdesc_resolve_attributes pdesc) in
@@ -1167,11 +1181,13 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
          match hpred with
          | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (Sil.Var _ as exp, _), _)
            when Sil.exp_equal exp deref_exp ->
+             let is_weak_captured_var = is_weak_captured_var pdesc pvar in
              let is_nullable =
-               if Annotations.param_is_nullable pvar ann_sig
+               if Annotations.param_is_nullable pvar ann_sig || is_weak_captured_var
                then
                  begin
                    nullable_obj_str := Some (Pvar.to_string pvar);
+                   nullable_str_is_weak_captured_var := is_weak_captured_var;
                    true
                  end
                else
@@ -1230,7 +1246,10 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
       let deref_str =
         if is_deref_of_nullable then
           match !nullable_obj_str with
-          | Some str -> Localise.deref_str_nullable None str
+          | Some str ->
+              if !nullable_str_is_weak_captured_var then
+                Localise.deref_str_weak_variable_in_block None str
+              else Localise.deref_str_nullable None str
           | None -> Localise.deref_str_nullable None ""
         else Localise.deref_str_null None in
       let err_desc =
