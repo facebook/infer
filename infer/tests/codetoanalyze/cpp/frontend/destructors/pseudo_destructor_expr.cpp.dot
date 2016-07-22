@@ -4,7 +4,7 @@ digraph iCFG {
 	
 
 	 13 -> 12 ;
-12 [label="12:  Call _fun_destroy<int *> \n   n$0=_fun_destroy<int *>(&t:int **) [line 25]\n " shape="box"]
+12 [label="12:  Call _fun_destroy<int_*> \n   n$0=_fun_destroy<int_*>(&t:int **) [line 25]\n " shape="box"]
 	
 
 	 12 -> 11 ;
@@ -23,10 +23,10 @@ digraph iCFG {
 	
 
 	 8 -> 7 ;
-7 [label="7: Exit destroy<int *> \n  " color=yellow style=filled]
+7 [label="7: Exit destroy<int_*> \n  " color=yellow style=filled]
 	
 
-6 [label="6: Start destroy<int *>\nFormals:  ptr:int **\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+6 [label="6: Start destroy<int_*>\nFormals:  ptr:int **\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
 	 6 -> 9 ;

@@ -24,7 +24,7 @@ digraph iCFG {
 	
 
 	 29 -> 31 ;
-28 [label="28:  Call _fun_X_operator bool \n   _fun_getX(&0$?%__sil_tmp__temp_return_n$3:class X *) [line 27]\n  n$4=_fun_X_operator bool(&0$?%__sil_tmp__temp_return_n$3:class X &) [line 27]\n " shape="box"]
+28 [label="28:  Call _fun_X_operator_bool \n   _fun_getX(&0$?%__sil_tmp__temp_return_n$3:class X *) [line 27]\n  n$4=_fun_X_operator_bool(&0$?%__sil_tmp__temp_return_n$3:class X &) [line 27]\n " shape="box"]
 	
 
 	 28 -> 29 ;
@@ -68,7 +68,7 @@ digraph iCFG {
 	
 
 	 18 -> 20 ;
-17 [label="17:  Call _fun_X_operator bool \n   n$3=_fun_X_operator bool(&0$?%__sil_tmpSIL_materialize_temp__n$0:class X &) [line 22]\n " shape="box"]
+17 [label="17:  Call _fun_X_operator_bool \n   n$3=_fun_X_operator_bool(&0$?%__sil_tmpSIL_materialize_temp__n$0:class X &) [line 22]\n " shape="box"]
 	
 
 	 17 -> 18 ;
@@ -124,10 +124,10 @@ digraph iCFG {
 	
 
 	 3 -> 2 ;
-2 [label="2: Exit X_operator bool \n  " color=yellow style=filled]
+2 [label="2: Exit X_operator_bool \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start X_operator bool\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
+1 [label="1: Start X_operator_bool\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

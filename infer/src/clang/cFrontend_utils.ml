@@ -146,8 +146,8 @@ struct
     | [] -> ""
     | name :: quals ->
         let s = (IList.fold_right (fun el res -> res ^ el ^ "::") quals "") ^ name in
-        let no_slash = Str.global_replace (Str.regexp "/") "_" s in
-        no_slash
+        let no_slash_space = Str.global_replace (Str.regexp "[/ ]") "_" s in
+        no_slash_space
 
   let get_qualified_name name_info =
     fold_qual_name name_info.Clang_ast_t.ni_qual_name
