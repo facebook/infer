@@ -217,7 +217,7 @@ digraph iCFG {
 	
 
 	 43 -> 54 ;
-42 [label="42:  DeclStmt \n   n$2=_fun___new(sizeof(int ):unsigned long ) [line 58]\n  *n$2:int *=0 [line 58]\n  *&x1:int *=n$2 [line 58]\n " shape="box"]
+42 [label="42:  DeclStmt \n   n$2=_fun___new(sizeof(int ):unsigned long ) [line 58]\n  *n$2:int =0 [line 58]\n  *&x1:int *=n$2 [line 58]\n " shape="box"]
 	
 
 	 42 -> 41 ;

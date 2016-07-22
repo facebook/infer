@@ -957,10 +957,7 @@ struct
           let class_type = CTypes_decl.get_type_from_expr_info ei context.CContext.tenv in
           Cfg.Procdesc.append_locals procdesc [(Pvar.get_name pvar, class_type)];
           Sil.Lvar pvar, class_type in
-    let this_type =
-      match class_type with
-      | Typ.Tptr _ -> class_type
-      | _ -> Typ.Tptr (class_type, Typ.Pk_pointer) in
+    let this_type = Typ.Tptr (class_type, Typ.Pk_pointer) in
     let this_res_trans = { empty_res_trans with
                            exps = [(var_exp, this_type)];
                            initd_exps = [var_exp];
@@ -2028,9 +2025,10 @@ struct
 
   and initListExpr_initializers_trans trans_state var_exp n stmts typ is_dyn_array stmt_info =
     let (var_exp_inside, typ_inside) = match typ with
-      | Typ.Tarray (t, _)
-      | Typ.Tptr (t, _) when Typ.is_array_of_cpp_class typ || is_dyn_array ->
+      | Typ.Tarray (t, _) when Typ.is_array_of_cpp_class typ ->
           Sil.Lindex (var_exp, Sil.Const (Const.Cint (IntLit.of_int n))), t
+      | _ when is_dyn_array ->
+          Sil.Lindex (var_exp, Sil.Const (Const.Cint (IntLit.of_int n))), typ
       | _ -> var_exp, typ in
     let trans_state' = { trans_state with var_exp_typ = Some (var_exp_inside, typ_inside) } in
     match stmts with
@@ -2086,7 +2084,9 @@ struct
     let res_trans_new = cpp_new_trans trans_state_pri sil_loc typ size_exp_opt in
     let stmt_opt = Ast_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_initializer_expr in
     let trans_state_init = { trans_state_pri with succ_nodes = []; } in
-    let var_exp_typ = match res_trans_new.exps with [exp] -> exp | _ -> assert false in
+    let var_exp_typ = match res_trans_new.exps with
+      | [var_exp, Typ.Tptr (t, _)] -> (var_exp, t)
+      | _ -> assert false in
     (* Need a new stmt_info for the translation of the initializer, so that it can create nodes *)
     (* if it needs to, with the same stmt_info it doesn't work. *)
     let init_stmt_info = { stmt_info with
