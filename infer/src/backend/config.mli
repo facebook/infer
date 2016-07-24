@@ -16,6 +16,7 @@ open! Utils
 
 (** Various kind of analyzers *)
 type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
+              | Crashcontext
 
 (** Association list of analyzers and their names *)
 val string_to_analyzer : (string * analyzer) list
@@ -163,6 +164,7 @@ val cluster_cmdline : string option
 val code_query : string option
 val continue_capture : bool
 val copy_propagation : bool
+val crashcontext : bool
 val create_harness : bool
 val cxx_experimental : bool
 val debug_mode : bool
@@ -226,6 +228,7 @@ val source_file : string option
 val source_file_copy : string option
 val spec_abs_level : int
 val specs_library : string list
+val stacktrace : string option
 val stats_mode : bool
 val subtype_multirange : bool
 val svg : bool

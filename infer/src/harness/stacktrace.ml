@@ -59,3 +59,27 @@ let of_string s =
       let parsed = IList.map parse_stack_frame trace in
       make exception_name parsed
   | [] -> failwith "Empty stack trace"
+
+let of_json json =
+  let exception_name_key = "exception_type" in
+  let frames_key = "stack_trace" in
+  let extract_json_member key =
+    match Yojson.Basic.Util.member key json with
+    | `Null -> failwith ("Missing key in supplied JSON \
+                          data: " ^ key)
+    | item -> item in
+  let exception_name =
+    Yojson.Basic.Util.to_string (extract_json_member exception_name_key) in
+  let frames =
+    Yojson.Basic.Util.to_list (extract_json_member frames_key)
+    |> IList.map Yojson.Basic.Util.to_string
+    |> IList.map String.trim
+    |> IList.filter (fun s -> s <> "")
+    |> IList.map parse_stack_frame in
+  make exception_name frames
+
+let of_json_file filename =
+  match Utils.read_optional_json_file filename with
+  | Ok json -> of_json json
+  | Error msg -> failwith (Printf.sprintf "Could not read or parse the supplied JSON \
+                                           stacktrace file %s :\n %s" filename msg)

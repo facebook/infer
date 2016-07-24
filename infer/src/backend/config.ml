@@ -18,10 +18,12 @@ module F = Format
 
 
 type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
+              | Crashcontext
 
 let string_to_analyzer =
   [("capture", Capture); ("compile", Compile);
-   ("infer", Infer); ("eradicate", Eradicate); ("checkers", Checkers); ("tracing", Tracing)]
+   ("infer", Infer); ("eradicate", Eradicate); ("checkers", Checkers);
+   ("tracing", Tracing); ("crashcontext", Crashcontext)]
 
 
 type clang_lang = C | CPP | OBJC | OBJCPP
@@ -681,7 +683,7 @@ and enable_checks =
     "show reports coming from this type of errors"
 
 (** command line option to activate the eradicate checker. *)
-and eradicate, checkers =
+and checkers, eradicate, crashcontext =
   (** command line option: if true, run the analysis in checker mode *)
   let checkers =
     CLOpt.mk_bool ~deprecated:["checkers"] ~long:"checkers"
@@ -692,7 +694,13 @@ and eradicate, checkers =
       "Activate the eradicate checker for java annotations (also sets --checkers)"
       [checkers]
   in
-  (eradicate, checkers)
+  let crashcontext =
+    CLOpt.mk_bool_group ~deprecated:["crashcontext"] ~long:"crashcontext"
+      "Activate the crashcontext checker for java stack trace context \
+       reconstruction (also sets --checkers)"
+      [checkers]
+  in
+  (checkers, eradicate, crashcontext)
 
 and err_file =
   CLOpt.mk_string ~deprecated:["err_file"] ~long:"err-file" ~default:""
@@ -971,6 +979,12 @@ and specs_library =
       "add the newline-separated directories listed in <file> to the list of directories to be \
        searched for spec files" in
   specs_library
+
+(** JSON encoded Java stacktrace file, currently used only for -a crashcontext *)
+and stacktrace =
+  CLOpt.mk_string_opt ~long:"stacktrace" ~short:"st" ~f:resolve ~exes:CLOpt.[Analyze]
+    ~meta:"file" "File path containing a json encoded crash stacktrace. \
+                  Used to guide the analysis (currently acknowledged by -a crashcontext)"
 
 (** If active, enable special treatment of static final fields. *)
 and static_final =
@@ -1297,13 +1311,14 @@ and changed_files_index = !changed_files_index
 and calls_csv = !calls_csv
 and checkers = !checkers
 (** should the checkers be run? *)
-and checkers_enabled = not !eradicate
+and checkers_enabled = not (!eradicate || !crashcontext)
 and clang_include_to_override = !clang_include_to_override
 and clang_lang = !clang_lang
 and cluster_cmdline = !cluster
 and code_query = !code_query
 and continue_capture = !continue
 and copy_propagation = !copy_propagation
+and crashcontext = !crashcontext
 and create_harness = !android_harness
 and cxx_experimental = !cxx_experimental
 and debug_mode = !debug
@@ -1369,6 +1384,7 @@ and source_file = !source_file
 and source_file_copy = !source_file_copy
 and spec_abs_level = !spec_abs_level
 and specs_library = !specs_library
+and stacktrace = !stacktrace
 and stats_mode = !stats
 and subtype_multirange = !subtype_multirange
 and svg = !svg

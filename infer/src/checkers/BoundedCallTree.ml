@@ -36,7 +36,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let proc_in_trace = IList.exists
             matches_proc
             proc_data.ProcData.extras.Stacktrace.frames in
-        if proc_in_trace then Domain.add pn astate else astate
+        if proc_in_trace then begin
+          L.stderr "Detected method: %a@." Procname.pp pn;
+          Domain.add pn astate
+        end
+        else
+          astate
     | Sil.Call _ ->
         (** We currently ignore calls through function pointers in C and
          * other potential special kinds of procedure calls to be added later,
@@ -53,5 +58,25 @@ module Analyzer =
     (Scheduler.ReversePostorder)
     (TransferFunctions)
 
-let checker { Callbacks.proc_desc; tenv; } trace =
+(** Stacktrace lookup:
+ * 1) Check if trace_ref is already set and use that.
+ * 2) If not, load trace from the file specified in Config.stacktrace. *)
+let trace_ref = ref None
+
+let load_trace () =
+  (** Check Config.stacktrace is set and points to a file,
+   * call Stacktrace.of_json_file  *)
+  let filename = match Config.stacktrace with
+    | None -> failwith "Missing command line option: '--stacktrace stack.json' \
+                        must be used when running '-a crashcontext'. This option expects a JSON \
+                        formated stack trace." (** TODO: add example file in tests/... *)
+    | Some fname -> fname in
+  let new_trace = Stacktrace.of_json_file filename in
+  trace_ref := Some new_trace;
+  new_trace
+
+let checker { Callbacks.proc_desc; tenv; } =
+  let trace = match !trace_ref with
+    | None -> load_trace ()
+    | Some t -> t in
   ignore(Analyzer.exec_pdesc (ProcData.make proc_desc tenv trace))

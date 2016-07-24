@@ -26,3 +26,5 @@ val make : string -> frame list -> t
 val make_frame : string -> string -> string -> int -> frame
 
 val of_string : string -> t
+
+val of_json_file : string -> t
