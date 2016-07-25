@@ -25,6 +25,8 @@ val make : string -> frame list -> t
 
 val make_frame : string -> string -> string -> int -> frame
 
+val frame_matches_location : frame -> Location.t -> bool
+
 val of_string : string -> t
 
 val of_json_file : string -> t

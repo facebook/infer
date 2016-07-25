@@ -27,8 +27,34 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module Domain = Domain
   type extras = Stacktrace.t
 
+  let json_of_summary caller astate loc loc_type =
+    let procs = Domain.elements astate in
+    let json = `Assoc [
+        ("caller", `String (Procname.to_string caller));
+        ("location", `Assoc [
+            ("type", `String loc_type);
+            ("file", `String (DB.source_file_to_string loc.Location.file));
+            ("line", `Int loc.Location.line);
+          ]);
+        ("callees", `List (IList.map
+                             (fun pn -> `String (Procname.to_string pn))
+                             procs))
+      ] in
+    json
+
+  let output_summary caller astate loc loc_type =
+    let json = json_of_summary caller astate loc loc_type in
+    let dir = Filename.concat Config.results_dir "crashcontext" in
+    let suffix = F.sprintf "%s_%d" loc_type loc.Location.line in
+    let fname = F.sprintf "%s.%s.json"
+        (Procname.to_filename caller)
+        suffix in
+    let fpath = Filename.concat dir fname in
+    DB.create_dir dir;
+    Utils.write_json_to_file fpath json
+
   let exec_instr astate proc_data _ = function
-    | Sil.Call (_, Const (Const.Cfun pn), _, _, _) ->
+    | Sil.Call (_, Const (Const.Cfun pn), _, loc, _) ->
         (** TODO: Match class. *)
         let caller = Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc in
         let matches_proc frame =
@@ -37,8 +63,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             matches_proc
             proc_data.ProcData.extras.Stacktrace.frames in
         if proc_in_trace then begin
-          L.stderr "Detected method: %a@." Procname.pp pn;
-          Domain.add pn astate
+          let frame = IList.find
+              matches_proc
+              proc_data.ProcData.extras.Stacktrace.frames in
+          let new_astate = Domain.add pn astate in
+          if Stacktrace.frame_matches_location frame loc then begin
+            output_summary caller new_astate loc "call_site"
+          end;
+          new_astate
         end
         else
           astate
@@ -68,8 +100,10 @@ let load_trace () =
    * call Stacktrace.of_json_file  *)
   let filename = match Config.stacktrace with
     | None -> failwith "Missing command line option: '--stacktrace stack.json' \
-                        must be used when running '-a crashcontext'. This option expects a JSON \
-                        formated stack trace." (** TODO: add example file in tests/... *)
+                        must be used when running '-a crashcontext'. This \
+                        option expects a JSON formated stack trace. See \
+                        tests/codetoanalyze/java/crashcontext/*.json for \
+                        examples of the expected format."
     | Some fname -> fname in
   let new_trace = Stacktrace.of_json_file filename in
   trace_ref := Some new_trace;
