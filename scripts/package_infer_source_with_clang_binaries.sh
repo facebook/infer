@@ -24,7 +24,8 @@ cd "$ROOT_INFER_DIR"
 ./build-infer.sh
 
 # Get a copy of the github repo
-git clone https://github.com/facebook/infer.git "$INFER_SOURCE"
+git clone https://github.com/facebook/infer.git "$INFER_SOURCE" || \
+  git -C "$INFER_SOURCE" fetch origin master
 pushd "$INFER_SOURCE"
 # Name of the release package
 VERSION=`git describe --abbrev=0 --tags`
@@ -59,7 +60,7 @@ mkdir -pv "$PKG_PLUGIN_DIR"/clang-ocaml/build
 rsync -a "$CLANG_PLUGIN_DIR"/{CONTRIBUTING.md,LICENSE,LLVM-LICENSE,PATENTS,README.md} "$PKG_PLUGIN_DIR"
 rsync -a "$CLANG_PREFIX"/bin/clang* "$PKG_CLANG_PREFIX"/bin/
 rsync -a --exclude '*.a' "$CLANG_PREFIX"/lib/ "$PKG_CLANG_PREFIX"/lib/
-rsync -a "$CLANG_PLUGIN_DIR"/clang/include/ "$PKG_CLANG_PREFIX"/include/
+rsync -a "$CLANG_PREFIX"/include/ "$PKG_CLANG_PREFIX"/include/
 rsync -a "$CLANG_PLUGIN_DIR"/libtooling/build/ "$PKG_PLUGIN_DIR"/libtooling/build/
 rsync -a "$CLANG_PLUGIN_DIR"/clang-ocaml/build/ "$PKG_PLUGIN_DIR"/clang-ocaml/build/
 
