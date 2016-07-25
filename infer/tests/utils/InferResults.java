@@ -154,76 +154,64 @@ public class InferResults {
     return inferResults;
   }
 
-  public static InferResults loadInferResults(Class currentClass, String sourceFile) {
+  private static InferResults loadResultsFromPath(Class currentClass, String sourceFile,
+                                                  String csvPath, Pattern procnamePattern) {
     BufferedReader reader =
         new BufferedReader(
             new InputStreamReader(
-                currentClass.getResourceAsStream(
-                    "/infer/tests/codetoanalyze/java/infer/report.csv")));
+                currentClass.getResourceAsStream(csvPath)));
     return loadResultsFromReader(
         Preconditions.checkNotNull(reader),
         sourceFile,
-        InferResults.JAVA_METHOD_NAME);
+        procnamePattern);
+  }
+
+  public static InferResults loadInferResults(Class currentClass, String sourceFile) {
+    return loadResultsFromPath(
+      currentClass,
+      sourceFile,
+      "/infer/tests/codetoanalyze/java/infer/report.csv",
+      InferResults.JAVA_METHOD_NAME);
   }
 
   public static InferResults loadEradicateResults(Class currentClass, String sourceFile) {
-    BufferedReader reader =
-        new BufferedReader(
-            new InputStreamReader(
-                currentClass.getResourceAsStream(
-                    "/infer/tests/codetoanalyze/java/eradicate/report.csv")));
-    return loadResultsFromReader(
-        Preconditions.checkNotNull(reader),
-        sourceFile,
-        InferResults.JAVA_METHOD_NAME);
+    return loadResultsFromPath(
+      currentClass,
+      sourceFile,
+      "/infer/tests/codetoanalyze/java/eradicate/report.csv",
+      InferResults.JAVA_METHOD_NAME);
   }
 
   public static InferResults loadCheckersResults(Class currentClass, String sourceFile) {
-    BufferedReader reader =
-        new BufferedReader(
-            new InputStreamReader(
-                currentClass.getResourceAsStream(
-                    "/infer/tests/codetoanalyze/java/checkers/report.csv")));
-    return loadResultsFromReader(
-        Preconditions.checkNotNull(reader),
-        sourceFile,
-        InferResults.JAVA_METHOD_NAME);
+    return loadResultsFromPath(
+      currentClass,
+      sourceFile,
+      "/infer/tests/codetoanalyze/java/checkers/report.csv",
+      InferResults.JAVA_METHOD_NAME);
   }
 
   public static InferResults loadTracingResults(Class currentClass, String sourceFile) {
-    BufferedReader reader =
-        new BufferedReader(
-            new InputStreamReader(
-                currentClass.getResourceAsStream(
-                    "/infer/tests/codetoanalyze/java/tracing/report.csv")));
-    return loadResultsFromReader(
-        Preconditions.checkNotNull(reader),
-        sourceFile,
-        InferResults.JAVA_METHOD_NAME);
+    return loadResultsFromPath(
+      currentClass,
+      sourceFile,
+      "/infer/tests/codetoanalyze/java/tracing/report.csv",
+      InferResults.JAVA_METHOD_NAME);
   }
 
   public static InferResults loadTracingComparisonResults(Class currentClass, String sourceFile) {
-    BufferedReader reader =
-        new BufferedReader(
-            new InputStreamReader(
-                currentClass.getResourceAsStream(
-                    "/infer/tests/codetoanalyze/java/infer/comparison_report.csv")));
-    return loadResultsFromReader(
-        Preconditions.checkNotNull(reader),
-        sourceFile,
-        InferResults.JAVA_METHOD_NAME);
+    return loadResultsFromPath(
+      currentClass,
+      sourceFile,
+      "/infer/tests/codetoanalyze/java/infer/comparison_report.csv",
+      InferResults.JAVA_METHOD_NAME);
   }
 
   public static InferResults loadCInferResults(Class currentClass, String sourceFile) {
-    BufferedReader reader =
-        new BufferedReader(
-            new InputStreamReader(
-                currentClass.getResourceAsStream(
-                    "/infer/tests/codetoanalyze/c/errors/report.csv")));
-    return loadResultsFromReader(
-        Preconditions.checkNotNull(reader),
-        sourceFile,
-        InferResults.C_FUNCTION_NAME);
+    return loadResultsFromPath(
+      currentClass,
+      sourceFile,
+      "/infer/tests/codetoanalyze/c/errors/report.csv",
+      InferResults.C_FUNCTION_NAME);
   }
 
 }
