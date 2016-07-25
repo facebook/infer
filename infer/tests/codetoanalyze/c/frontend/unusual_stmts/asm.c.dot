@@ -4,7 +4,7 @@ digraph iCFG {
 	
 
 	 9 -> 8 ;
-8 [label="8:  GCCAstStmt \n   n$0=*&src:int  [line 27]\n  _fun___infer_skip_gcc_ast_stmt(&dst:int &,n$0:int ) [line 23]\n " shape="box"]
+8 [label="8:  GCCAsmStmt \n   n$0=*&src:int  [line 27]\n  _fun___infer_skip_gcc_asm_stmt(&dst:int &,n$0:int ) [line 23]\n " shape="box"]
 	
 
 	 8 -> 7 ;
@@ -19,7 +19,7 @@ digraph iCFG {
 	
 
 	 5 -> 9 ;
-4 [label="4:  GCCAstStmt \n   _fun___infer_skip_gcc_ast_stmt(&x:int &,&y:int &,&z:int &,&h:int &,0:int ) [line 15]\n " shape="box"]
+4 [label="4:  GCCAsmStmt \n   _fun___infer_skip_gcc_asm_stmt(&x:int &,&y:int &,&z:int &,&h:int &,0:int ) [line 15]\n " shape="box"]
 	
 
 	 4 -> 3 ;

@@ -202,13 +202,11 @@ struct
       f { trans_state with priority = Free } e)
     else f trans_state e
 
-  (* This is the standard way of dealing with self:Class or a call [a class].
-     We translate it as sizeof(<type pf a>) *)
-  (* The only time when we want to translate those expressions differently
-     is when they are the first argument of    *)
-  (* method calls. In that case they are not translated as expressions,
-     but we take the type and create a static     *)
-  (* method call from it. This is done in objcMessageExpr_trans. *)
+  (* This is the standard way of dealing with self:Class or a call [a class]. We translate it as
+     sizeof(<type pf a>) The only time when we want to translate those expressions differently is
+     when they are the first argument of method calls. In that case they are not translated as
+     expressions, but we take the type and create a static method call from it. This is done in
+     objcMessageExpr_trans. *)
   let exec_with_self_exception f trans_state stmt =
     try
       f trans_state stmt
@@ -2199,14 +2197,14 @@ struct
     | Some exp -> instruction trans_state exp
     | None -> assert false
 
-  and gccAstStmt_trans trans_state stmt_info stmts =
+  and gccAsmStmt_trans trans_state stmt_info stmts =
     let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let trans_state_param = { trans_state_pri with succ_nodes = [] } in
     let res_trans_subexpr_list =
       IList.map (exec_with_glvalue_as_reference instruction trans_state_param) stmts in
     let params = collect_exprs res_trans_subexpr_list  in
-    let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_gcc_ast_stmt in
+    let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_gcc_asm_stmt in
     let sil_fun = Sil.Const (Const.Cfun fun_name) in
     let call_instr = Sil.Call ([], sil_fun, params, sil_loc, CallFlags.default) in
     let res_trans_call = { empty_res_trans with
@@ -2214,7 +2212,7 @@ struct
                            exps = []; } in
     let all_res_trans = res_trans_subexpr_list @ [res_trans_call] in
     let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
-        "GCCAstStmt" stmt_info all_res_trans in
+        "GCCAsmStmt" stmt_info all_res_trans in
     { res_trans_to_parent with exps = res_trans_call.exps }
 
   and cxxPseudoDestructorExpr_trans () =
@@ -2570,7 +2568,7 @@ struct
         { empty_res_trans with exps = [(Sil.exp_get_undefined false, Typ.Tvoid)] }
 
     | GCCAsmStmt (stmt_info, stmts) ->
-        gccAstStmt_trans trans_state stmt_info stmts
+        gccAsmStmt_trans trans_state stmt_info stmts
 
     | CXXPseudoDestructorExpr _ ->
         cxxPseudoDestructorExpr_trans ()
