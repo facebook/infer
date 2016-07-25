@@ -20,6 +20,11 @@ let tests =
   let xF = make_access_path "x" ["f"] in
   let xFG = make_access_path "x" ["f"; "g";] in
   let yF = make_access_path "y" ["f"] in
+  let xArr =
+    let dummy_typ = Typ.Tvoid in
+    let dummy_arr_typ = Typ.Tarray (dummy_typ, None) in
+    let base =  make_base "x" ~typ:dummy_arr_typ in
+    base, [make_array_access dummy_typ] in
 
   let x_exact = AccessPath.Exact x in
   let y_exact = AccessPath.Exact y in
@@ -66,6 +71,45 @@ let tests =
       assert_bool "y.f is not prefix of x.f" (not (AccessPath.is_prefix yF xF));
       assert_bool "y.f is not prefix of x.f.g" (not (AccessPath.is_prefix yF xFG)) in
     "prefix">::prefix_test_ in
+
+  let of_exp_test =
+    let f_resolve_id _ = None in
+    let dummy_typ = Typ.Tvoid in
+
+    let check_make_ap exp expected_ap ~f_resolve_id =
+      let make_ap exp =
+        match AccessPath.of_exp exp dummy_typ ~f_resolve_id with
+        | Some ap -> ap
+        | None -> assert false in
+      let actual_ap = make_ap exp in
+      let pp_diff fmt (actual_ap, expected_ap) =
+        F.fprintf
+          fmt
+          "Expected to make access path %a from expression %a, but got %a"
+          AccessPath.pp_raw expected_ap
+          (Sil.pp_exp pe_text) exp
+          AccessPath.pp_raw actual_ap in
+      assert_equal ~cmp:AccessPath.raw_equal ~pp_diff actual_ap expected_ap in
+
+    let of_exp_test_ _ =
+      let f_fieldname = make_fieldname "f" in
+      let g_fieldname = make_fieldname "g" in
+      let x_exp = Sil.Lvar (make_var "x") in
+      check_make_ap x_exp x ~f_resolve_id;
+      let xF_exp = Sil.Lfield (x_exp, f_fieldname, dummy_typ) in
+      check_make_ap xF_exp xF ~f_resolve_id;
+      let xFG_exp = Sil.Lfield (xF_exp, g_fieldname, dummy_typ) in
+      check_make_ap xFG_exp xFG ~f_resolve_id;
+      let xArr_exp = Sil.Lindex (x_exp, Sil.exp_zero) in
+      check_make_ap xArr_exp xArr ~f_resolve_id;
+      (* make sure [f_resolve_id] works *)
+      let f_resolve_id_to_xF _ = Some xF in
+      let xFG_exp_with_id =
+        let id_exp = Sil.Var (Ident.create_normal (Ident.string_to_name "") 0) in
+        Sil.Lfield (id_exp, g_fieldname, dummy_typ) in
+      check_make_ap xFG_exp_with_id xFG ~f_resolve_id:f_resolve_id_to_xF;
+      () in
+    "of_exp">::of_exp_test_ in
 
   let abstraction_test =
     let abstraction_test_ _ =
@@ -134,4 +178,11 @@ let tests =
       assert_eq (AccessPathDomains.Set.normalize aps3) "{ &x*, &y.f }" in
     "domain">::domain_test_ in
 
-  "all_tests_suite">:::[equal_test; append_test; prefix_test; abstraction_test; domain_test]
+  "all_tests_suite">:::[
+    equal_test;
+    append_test;
+    prefix_test;
+    of_exp_test;
+    abstraction_test;
+    domain_test
+  ]

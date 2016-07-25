@@ -67,11 +67,41 @@ let compare ap1 ap2 = match ap1, ap2 with
 let equal ap1 ap2 =
   compare ap1 ap2 = 0
 
+let base_of_pvar pvar typ =
+  Var.of_pvar pvar, typ
+
+let base_of_id id typ =
+  Var.of_id id, typ
+
 let of_pvar pvar typ =
-  (Var.of_pvar pvar, typ), []
+  base_of_pvar pvar typ, []
 
 let of_id id typ =
-  (Var.of_id id, typ), []
+  base_of_id id typ, []
+
+let of_exp exp typ ~(f_resolve_id : Ident.t -> raw option) =
+  (* [typ] is the type of the last element of the access path (e.g., typeof(g) for x.f.g) *)
+  let rec of_exp_ exp typ accesses =
+    match exp with
+    | Sil.Var id ->
+        begin
+          match f_resolve_id id with
+          | Some (base, base_accesses) -> Some (base, base_accesses @ accesses)
+          | None -> Some (base_of_id id typ, accesses)
+        end
+    | Sil.Lvar pvar ->
+        Some (base_of_pvar pvar typ, accesses)
+    | Sil.Lfield (root_exp, fld, root_exp_typ) ->
+        let field_access = FieldAccess (fld, typ) in
+        of_exp_ root_exp root_exp_typ (field_access :: accesses)
+    | Sil.Lindex (root_exp, _) ->
+        let array_access = ArrayAccess typ in
+        let array_typ = Typ.Tarray (typ, None) in
+        of_exp_ root_exp array_typ (array_access :: accesses)
+    | _ ->
+        (* trying to make access path from an invalid expression (e.g., a constant) *)
+        None in
+  of_exp_ exp typ []
 
 let append (base, accesses) access =
   base, accesses @ [access]

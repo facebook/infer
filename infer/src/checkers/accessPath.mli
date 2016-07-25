@@ -35,11 +35,20 @@ val access_compare : access -> access -> int
 
 val access_equal : access -> access -> bool
 
+(** create a base from a pvar *)
+val base_of_pvar : Pvar.t -> Typ.t -> base
+
+(** create a base from an ident *)
+val base_of_id : Ident.t -> Typ.t -> base
+
 (** create an access path from a pvar *)
 val of_pvar : Pvar.t -> Typ.t -> raw
 
 (** create an access path from an ident *)
 val of_id : Ident.t -> Typ.t -> raw
+
+(** convert [exp] to a raw access path, resolving identifiers using [f_resolve_id] *)
+val of_exp : Sil.exp -> Typ.t -> f_resolve_id:(Ident.t -> raw option) -> raw option
 
 (** append a new access to an existing access path; e.g., `append_access g x.f` produces `x.f.g` *)
 val append : raw -> access -> raw

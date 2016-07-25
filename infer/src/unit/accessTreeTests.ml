@@ -41,7 +41,7 @@ let tests =
 
   let f = make_field_access "f" in
   let g = make_field_access "g" in
-  let array = make_array_access () in
+  let array = make_array_access Typ.Tvoid in
 
   let x = AccessPath.Exact (make_access_path "x" []) in
   let xF = AccessPath.Exact (make_access_path "x" ["f"]) in
