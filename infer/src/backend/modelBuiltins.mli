@@ -44,3 +44,4 @@ val __objc_cast : Procname.t
 val __objc_dictionary_literal : Procname.t
 val __cxx_typeid : Procname.t
 val malloc_no_fail : Procname.t
+val objc_cpp_throw : Procname.t

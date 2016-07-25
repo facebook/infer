@@ -125,7 +125,6 @@ def run_analysis(clean_cmds, build_cmds, env=None):
                      extra_args +
                      ['--'] +
                      build_cmd['compile'])
-        print(str(infer_cmd))
         # Only record the output of the last build command. We record
         # all of them but each command overwrites the output of the
         # previous one.

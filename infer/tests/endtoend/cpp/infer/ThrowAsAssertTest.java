@@ -25,10 +25,10 @@ import utils.InferException;
 import utils.InferResults;
 import utils.InferRunner;
 
-public class ThisNotNullTest {
+public class ThrowAsAssertTest {
 
   public static final String FILE =
-      "infer/tests/codetoanalyze/cpp/errors/npe/this_not_null.cpp";
+      "infer/tests/codetoanalyze/cpp/errors/npe/throw_as_assert.cpp";
 
   private static ImmutableList<String> inferCmd;
 
@@ -44,7 +44,7 @@ public class ThisNotNullTest {
   }
 
   @Test
-  public void whenInferRunsNoNullDerefErrorIsFound()
+  public void whenInferRunsOnMethodNoThisNullDerefErrorIsFound()
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferCPP(inferCmd);
     String[] proceduresWithNullDeref = {

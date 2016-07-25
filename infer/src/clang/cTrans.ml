@@ -2197,23 +2197,28 @@ struct
     | Some exp -> instruction trans_state exp
     | None -> assert false
 
-  and gccAsmStmt_trans trans_state stmt_info stmts =
+  and call_function_with_args instr_name pname trans_state stmt_info stmts =
     let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let trans_state_param = { trans_state_pri with succ_nodes = [] } in
     let res_trans_subexpr_list =
       IList.map (exec_with_glvalue_as_reference instruction trans_state_param) stmts in
     let params = collect_exprs res_trans_subexpr_list  in
-    let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_gcc_asm_stmt in
-    let sil_fun = Sil.Const (Const.Cfun fun_name) in
+    let sil_fun = Sil.Const (Const.Cfun pname) in
     let call_instr = Sil.Call ([], sil_fun, params, sil_loc, CallFlags.default) in
     let res_trans_call = { empty_res_trans with
                            instrs = [call_instr];
                            exps = []; } in
     let all_res_trans = res_trans_subexpr_list @ [res_trans_call] in
     let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
-        "GCCAsmStmt" stmt_info all_res_trans in
+        instr_name stmt_info all_res_trans in
     { res_trans_to_parent with exps = res_trans_call.exps }
+
+  and gccAsmStmt_trans trans_state =
+    let pname = Procname.from_string_c_fun CFrontend_config.infer_skip_gcc_asm_stmt in
+    call_function_with_args "GCCAsmStmt" pname trans_state
+  and objc_cxx_throw_trans trans_state =
+    call_function_with_args "ObjCCPPThrow" ModelBuiltins.objc_cpp_throw trans_state
 
   and cxxPseudoDestructorExpr_trans () =
     let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_fun in
@@ -2519,13 +2524,9 @@ struct
            (Ast_utils.string_of_stmt instr);
          compoundStmt_trans trans_state stmts)
 
-    | ObjCAtThrowStmt (stmt_info, stmts) ->
-        returnStmt_trans trans_state stmt_info stmts
+    | ObjCAtThrowStmt (stmt_info, stmts)
     | CXXThrowExpr (stmt_info, stmts, _) ->
-        (Printing.log_stats
-           "\n!!!!WARNING: found statement %s. \nTranslation need to be improved.... \n"
-           (Ast_utils.string_of_stmt instr);
-         returnStmt_trans trans_state stmt_info stmts)
+        objc_cxx_throw_trans trans_state stmt_info stmts
 
     | ObjCAtFinallyStmt (_, stmts) ->
         compoundStmt_trans trans_state stmts

@@ -33,10 +33,10 @@ digraph iCFG {
 	
 
 	 9 -> 11 ;
-8 [label="8:  Return Stmt \n   *&return:int =\"Null pointer!\" [line 12]\n " shape="box"]
+8 [label="8:  ObjCCPPThrow \n   _fun___infer_objc_cpp_throw(\"Null pointer!\":char *) [line 12]\n " shape="box"]
 	
 
-	 8 -> 2 ;
+	 8 -> 4 ;
 7 [label="7: Prune (false branch) \n   PRUNE(((n$2 == 0) == 0), false); [line 11]\n " shape="invhouse"]
 	
 

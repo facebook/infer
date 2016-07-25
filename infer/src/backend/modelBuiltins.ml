@@ -1094,6 +1094,9 @@ let __set_unlocked_attribute = Builtin.register
 let __delete_locked_attribute = Builtin.register
     (* delete the locked attribute, when it exists *)
     "__delete_locked_attribute" execute___delete_locked_attribute
+let objc_cpp_throw = Builtin.register
+    (* model throwing exception in objc/c++ as divergence *)
+    "__infer_objc_cpp_throw" execute_exit
 let _ = Builtin.register
     "__throw" execute_skip
 let __unwrap_exception = Builtin.register

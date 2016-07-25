@@ -5,10 +5,10 @@ digraph iCFG {
 
 	 12 -> 9 ;
 	 12 -> 10 ;
-11 [label="11:  Return Stmt \n   n$4=_fun_NSString_stringWithUTF8String:(\"Something is not right exception\":char *) [line 31]\n  n$5=_fun_NSString_stringWithUTF8String:(\"Can't perform this operation because of this or that\":char *) [line 33]\n  n$6=_fun_NSException_exceptionWithName:reason:userInfo:(n$4:class NSString *,n$5:class NSString *,0:class NSDictionary *) [line 30]\n  *&return:void =n$6 [line 30]\n " shape="box"]
+11 [label="11:  ObjCCPPThrow \n   n$4=_fun_NSString_stringWithUTF8String:(\"Something is not right exception\":char *) [line 31]\n  n$5=_fun_NSString_stringWithUTF8String:(\"Can't perform this operation because of this or that\":char *) [line 33]\n  n$6=_fun_NSException_exceptionWithName:reason:userInfo:(n$4:class NSString *,n$5:class NSString *,0:class NSDictionary *) [line 30]\n  _fun___infer_objc_cpp_throw(n$6:class NSException *) [line 30]\n " shape="box"]
 	
 
-	 11 -> 6 ;
+	 11 -> 7 ;
 10 [label="10: Prune (false branch) \n   n$3=*&s:class NSString * [line 29]\n  PRUNE((n$3 == 0), false); [line 29]\n " shape="invhouse"]
 	
 
