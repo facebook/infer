@@ -12,12 +12,41 @@ open !Utils
 module F = Format
 
 (* string set domain we use to ensure we're getting the expected traces *)
-module MockTraceDomain =
-  AbstractDomain.FiniteSet
+module MockTraceDomain = struct
+  include AbstractDomain.FiniteSet
     (PrettyPrintable.MakePPSet(struct
        include String
        let pp_element fmt s = Format.fprintf fmt "%s" s
      end))
+
+  let top_str = "T"
+
+  let top = singleton top_str
+
+  (* stop others from creating top by accident, adding to top, or removing it *)
+  let add e s =
+    assert (e <> top_str);
+    if s == top
+    then top
+    else add e s
+
+  let singleton e =
+    assert (e <> top_str);
+    singleton e
+
+  (* total hack of a widening just to test that widening of traces is working *)
+  let widen ~prev ~next ~num_iters:_ =
+    let trace_diff = diff next prev in
+    if not (is_empty trace_diff)
+    then top
+    else join prev next
+
+  (* similarly, hack printing so top looks different *)
+  let pp fmt s =
+    if s == top
+    then F.fprintf fmt "T"
+    else pp fmt s
+end
 
 module Domain = AccessTree.Make (MockTraceDomain)
 
@@ -300,4 +329,57 @@ let tests =
       assert_trees_equal (Domain.join x_star_tree xFG_tree) x_star_tree_xFG_trace in
     "join">::join_test_ in
 
-  "access_tree_suite">:::[get_trace_test; add_trace_test; lteq_test; join_test]
+  let widen_test =
+    let widen_test_ _ =
+      let make_x_base_tree trace =
+        Domain.BaseMap.singleton x_base (Domain.make_normal_leaf trace) in
+      let widen prev next =
+        Domain.widen ~prev ~next ~num_iters:0 in
+      (* a bit light on the tests here, since widen is implemented as a simple wrapper of join *)
+
+      (* widening traces works:
+         x |-> ("x", empty) \/ x |-> ("y", empty) =
+         x |-> (T, empty)
+      *)
+      let x_tree_x_trace = make_x_base_tree x_trace in
+      let x_tree_y_trace = make_x_base_tree y_trace in
+      let x_tree_top_trace = make_x_base_tree MockTraceDomain.top in
+      assert_trees_equal (widen x_tree_x_trace x_tree_y_trace) x_tree_top_trace;
+
+      (* adding stars to a base works:
+         x |-> ({}, empty) \/ y |-> ({}, empty) =
+         (x |-> ({}, empty), y |-> ({}, Star) )
+      *)
+      let x_y_star_base_tree =
+        Domain.BaseMap.add
+          y_base
+          (Domain.make_starred_leaf MockTraceDomain.initial)
+          x_base_tree in
+      assert_trees_equal (widen x_base_tree y_base_tree) x_y_star_base_tree;
+
+      (* adding stars to a subtree works:
+         x |-> ("y", empty) \/
+         x |-> ("x" , f |-> ("f", g |-> ("g", empty))) =
+         x |-> (T , f |-> ("f", g |-> ("g", Star)))
+      *)
+      let xFG_star_tree =
+        let g_subtree = Domain.make_starred_leaf xFG_trace in
+        Domain.AccessMap.singleton g g_subtree
+        |> Domain.make_node xF_trace
+        |> Domain.AccessMap.singleton f
+        |> Domain.make_node MockTraceDomain.top
+        |> Domain.BaseMap.singleton x_base in
+      assert_trees_equal (widen x_tree_y_trace xFG_tree) xFG_star_tree;
+
+      (* widening is not commutative, and is it not join:
+         x |-> ("x" , f |-> ("f", g |-> ("g", empty))) \/
+         x |-> ("y", empty) =
+         x |-> (T , f |-> ("f", g |-> ("g", empty)))
+      *)
+      let xFG_tree_widened_trace =
+        let _, xFG_node = x_subtree in
+        Domain.BaseMap.singleton x_base (MockTraceDomain.top, xFG_node) in
+      assert_trees_equal (widen xFG_tree x_tree_y_trace) xFG_tree_widened_trace in
+    "widen">::widen_test_ in
+
+  "access_tree_suite">:::[get_trace_test; add_trace_test; lteq_test; join_test; widen_test]

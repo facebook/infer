@@ -236,6 +236,42 @@ module Make (TraceDomain : AbstractDomain.S) = struct
             node_opt in
       BaseMap.merge (fun _ n1 n2 -> node_merge n1 n2) tree1 tree2
 
+  (* replace the normal leaves of [node] with starred leaves *)
+  let rec node_add_stars ((trace, tree) as node) = match tree with
+    | Subtree subtree ->
+        if AccessMap.is_empty subtree
+        then make_starred_leaf trace
+        else
+          let subtree' = AccessMap.map node_add_stars subtree in
+          if subtree' == subtree
+          then node
+          else trace, Subtree subtree'
+    | Star -> node
+
+  let widen ~prev ~next ~num_iters =
+    if prev == next
+    then prev
+    else
+      let trace_widen prev next =
+        TraceDomain.widen ~prev ~next ~num_iters in
+      let rec node_widen prev_node_opt next_node_opt =
+        match prev_node_opt, next_node_opt with
+        | Some prev_node, Some next_node ->
+            let widened_node = node_join node_widen trace_widen prev_node next_node in
+            if widened_node == prev_node
+            then prev_node_opt
+            else if widened_node == next_node
+            then next_node_opt
+            else Some widened_node
+        | None, Some next_node ->
+            let widened_node = node_add_stars next_node in
+            if widened_node == next_node
+            then next_node_opt
+            else Some widened_node
+        | Some _, None | None, None ->
+            prev_node_opt in
+      BaseMap.merge (fun _ prev_node next_node -> node_widen prev_node next_node) prev next
+
   let pp fmt base_tree =
     let rec pp_node fmt (trace, subtree) =
       let pp_subtree fmt = function
