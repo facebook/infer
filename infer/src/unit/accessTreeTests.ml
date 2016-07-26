@@ -83,6 +83,8 @@ let tests =
   let zF = AccessPath.Exact (make_access_path "z" ["f"]) in
   let zFG = AccessPath.Exact (make_access_path "z" ["f"; "g"]) in
 
+  let xArr =
+    AccessPath.Exact (make_base "x", [array]) in
   let xArrF =
     let accesses = [array; make_field_access "f"] in
     AccessPath.Exact (make_base "x", accesses) in
@@ -208,10 +210,13 @@ let tests =
         Domain.BaseMap.singleton x_base (Domain.make_normal_leaf trace)
         |> Domain.BaseMap.add y_base Domain.empty_node in
 
-      let mk_xFG_tree leaf_trace =
+      let mk_xFG_node leaf_trace =
         Domain.make_access_node MockTraceDomain.empty g leaf_trace
         |> Domain.AccessMap.singleton f
-        |> Domain.make_node MockTraceDomain.empty
+        |> Domain.make_node MockTraceDomain.empty in
+
+      let mk_xFG_tree leaf_trace =
+        mk_xFG_node leaf_trace
         |> Domain.BaseMap.singleton x_base in
 
       let mk_xArrF_tree leaf_trace =
@@ -254,7 +259,6 @@ let tests =
         (Domain.add_trace xF_star added_trace x_base_tree)
         xF_star_tree_added_trace;
 
-
       (* adding array path should do weak updates *)
       let aArrF_tree = mk_xArrF_tree array_f_trace in
       let aArrF_tree_joined_trace =
@@ -289,7 +293,27 @@ let tests =
         |> Domain.BaseMap.singleton x_base in
       assert_trees_equal
         (Domain.add_trace xF_star added_trace xFG_tree)
-        xF_star_tree_joined_traces in
+        xF_star_tree_joined_traces;
+
+      (* [add_node] tests are sparse, since [add_trace] is just [add_node] <empty node>. main things
+         to test are (1) adding a non-empty node works, (2) adding a non-empty node does the proper
+         joins in the weak update case *)
+      (* case (1): adding XFG to y base tree works *)
+      let y_xFG_tree =
+        Domain.BaseMap.add y_base Domain.empty_node (mk_xFG_tree xFG_trace) in
+      assert_trees_equal
+        (Domain.add_node x (mk_xFG_node xFG_trace) y_base_tree) y_xFG_tree;
+
+      (* case (2): adding a non-empty node does weak updates when required *)
+      let arr_tree =
+        let arr_subtree =
+          Domain.AccessMap.singleton f (Domain.make_normal_leaf array_f_trace)
+          |> Domain.AccessMap.add g (Domain.make_normal_leaf xFG_trace) in
+        Domain.AccessMap.singleton array (Domain.make_node xF_trace arr_subtree)
+        |> Domain.make_node MockTraceDomain.empty
+        |> Domain.BaseMap.singleton x_base in
+      assert_trees_equal
+        (Domain.add_node xArr g_subtree aArrF_tree) arr_tree in
 
     "add_trace">::add_trace_test_ in
 

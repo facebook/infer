@@ -106,64 +106,6 @@ module Make (TraceDomain : AbstractDomain.S) = struct
   let get_trace ap tree =
     Option.map fst (get_node ap tree)
 
-  (* helper for [add_access]. [last_trace] is the trace associated with [tree] in the parent. *)
-  let rec access_tree_add_trace ~last_trace ~seen_array_access ~is_exact trace access_list tree =
-    match access_list, tree with
-    | [], subtree ->
-        begin
-          match is_exact, seen_array_access with
-          | true, false ->
-              (* adding x.f, do strong update on both subtree and its traces *)
-              make_normal_leaf trace
-          | true, true ->
-              (* adding x[_], do weak update on subtree and on its immediate trace *)
-              let trace' = TraceDomain.join last_trace trace in
-              trace', subtree
-          | _ ->
-              (* adding x.f* or x[_]*, join with traces of subtree and replace it with * *)
-              let trace' = join_all_traces (TraceDomain.join last_trace trace) subtree in
-              make_starred_leaf trace'
-        end
-    | _, Star ->
-        let trace' = TraceDomain.join last_trace trace in
-        make_starred_leaf trace'
-    | access :: accesses, Subtree subtree ->
-        let access_trace, access_subtree =
-          try AccessMap.find access subtree
-          with Not_found -> make_normal_leaf TraceDomain.initial in
-        (* once we encounter a subtree rooted in an array access, we have to do weak updates in the
-           entire subtree. the reason: if I do x[i].f.g = <interesting trace>, then
-           x[j].f.g = <empty trace>, I don't want to overwrite <interesting trace>. instead, I
-           should get <interesting trace> |_| <empty trace> *)
-        let seen_array_access = seen_array_access || match access with
-          | AccessPath.ArrayAccess _ -> true
-          | AccessPath.FieldAccess _ -> false in
-        let access_node' =
-          access_tree_add_trace ~last_trace:access_trace
-            ~seen_array_access
-            ~is_exact
-            trace
-            accesses
-            access_subtree in
-        last_trace, Subtree (AccessMap.add access access_node' subtree)
-
-  (** add [ap] to [tree] and associate its leaf node with [trace].
-      if [ap] or a suffix of [ap] is not already present in the tree, it will be added with empty
-      traces associated with each of the inner nodes.
-      if [ap] is already present in the tree and contains no array accesses, this overwrites the
-      existing trace. if [ap] does contain array accesses, it joins the existing trace with [trace].
-  *)
-  let add_trace ap trace tree =
-    let base, accesses = AccessPath.extract ap in
-    let is_exact = AccessPath.is_exact ap in
-    let base_trace, base_tree =
-      try BaseMap.find base tree
-      with Not_found -> make_normal_leaf TraceDomain.initial in
-    let base_node' =
-      access_tree_add_trace
-        ~last_trace:base_trace ~seen_array_access:false ~is_exact trace accesses base_tree in
-    BaseMap.add base base_node' tree
-
   let rec access_tree_lteq ((lhs_trace, lhs_tree) as lhs) ((rhs_trace, rhs_tree) as rhs) =
     if lhs == rhs
     then true
@@ -223,22 +165,78 @@ module Make (TraceDomain : AbstractDomain.S) = struct
           then node2
           else trace'', Star
 
+  let rec node_merge node1_opt node2_opt =
+    match node1_opt, node2_opt with
+    | Some node1, Some node2 ->
+        let joined_node = node_join node_merge TraceDomain.join node1 node2 in
+        if joined_node == node1
+        then node1_opt
+        else if joined_node == node2
+        then node2_opt
+        else Some joined_node
+    | None, node_opt | node_opt, None ->
+        node_opt
+
+  (* helper for [add_access]. [last_trace] is the trace associated with [tree] in the parent. *)
+  let access_tree_add_trace ~node_to_add ~seen_array_access ~is_exact accesses node =
+    let rec access_tree_add_trace_ ~seen_array_access accesses node =
+      match accesses, node with
+      | [], (trace, tree) ->
+          begin
+            match is_exact, seen_array_access with
+            | true, false ->
+                (* adding x.f, do strong update on both subtree and its traces *)
+                node_to_add
+            | true, true ->
+                (* adding x[_], do weak update on subtree and on its immediate trace *)
+                node_join node_merge TraceDomain.join node_to_add node
+            | _ ->
+                (* adding x.f* or x[_]*, join with traces of subtree and replace it with * *)
+                let node_trace, node_tree = node_to_add in
+                let trace' = join_all_traces (TraceDomain.join trace node_trace) tree in
+                make_starred_leaf (join_all_traces trace' node_tree)
+          end
+      | _, (_, Star) ->
+          node_join node_merge TraceDomain.join node_to_add node
+      | access :: accesses, (trace, Subtree subtree) ->
+          let access_node =
+            try AccessMap.find access subtree
+            with Not_found -> make_normal_leaf TraceDomain.initial in
+          (* once we encounter a subtree rooted in an array access, we have to do weak updates in
+             the entire subtree. the reason: if I do x[i].f.g = <interesting trace>, then
+             x[j].f.g = <empty trace>, I don't want to overwrite <interesting trace>. instead, I
+             should get <interesting trace> |_| <empty trace> *)
+          let seen_array_access = seen_array_access || match access with
+            | AccessPath.ArrayAccess _ -> true
+            | AccessPath.FieldAccess _ -> false in
+          let access_node' = access_tree_add_trace_ ~seen_array_access accesses access_node in
+          trace, Subtree (AccessMap.add access access_node' subtree) in
+    access_tree_add_trace_ ~seen_array_access accesses node
+
+  (** add ([ap], [node]) to [tree]. *)
+  let add_node ap node_to_add tree =
+    let base, accesses = AccessPath.extract ap in
+    let is_exact = AccessPath.is_exact ap in
+    let base_node =
+      try BaseMap.find base tree
+      with Not_found -> make_normal_leaf TraceDomain.initial in
+    let base_node' =
+      access_tree_add_trace ~node_to_add ~seen_array_access:false ~is_exact accesses base_node in
+    BaseMap.add base base_node' tree
+
+  (** add [ap] to [tree] and associate its leaf node with [trace].
+      if [ap] or a suffix of [ap] is not already present in the tree, it will be added with empty
+      traces associated with each of the inner nodes.
+      if [ap] is already present in the tree and contains no array accesses, this overwrites the
+      existing trace. if [ap] does contain array accesses, it joins the existing trace with [trace].
+  *)
+  let add_trace ap trace tree =
+    add_node ap (make_normal_leaf trace) tree
+
   let join tree1 tree2 =
     if tree1 == tree2
     then tree1
-    else
-      let rec node_merge node1_opt node2_opt =
-        match node1_opt, node2_opt with
-        | Some node1, Some node2 ->
-            let joined_node = node_join node_merge TraceDomain.join node1 node2 in
-            if joined_node == node1
-            then node1_opt
-            else if joined_node == node2
-            then node2_opt
-            else Some joined_node
-        | None, node_opt | node_opt, None ->
-            node_opt in
-      BaseMap.merge (fun _ n1 n2 -> node_merge n1 n2) tree1 tree2
+    else BaseMap.merge (fun _ n1 n2 -> node_merge n1 n2) tree1 tree2
 
   (* replace the normal leaves of [node] with starred leaves *)
   let rec node_add_stars ((trace, tree) as node) = match tree with
