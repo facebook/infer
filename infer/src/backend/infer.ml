@@ -28,18 +28,23 @@ let set_env_for_clang_wrapper () =
 let () =
   set_env_for_clang_wrapper () ;
   (* The infer executable in the bin directory is a symbolic link to the real binary in the lib
-     directory, so that the python script in the lib directory can be found relative to it. *)
+     directory, so that the python script in the lib directory can be found relative to
+     it. Packaging may also create longer symlink chains to the real executable, hence the
+     recursion. *)
   let real_exe =
-    match Unix.readlink Sys.executable_name with
-    | link when Filename.is_relative link ->
-        (* Sys.executable_name is a relative symbolic link *)
-        (Filename.dirname Sys.executable_name) // link
-    | link ->
-        (* Sys.executable_name is an absolute symbolic link *)
-        link
-    | exception Unix.Unix_error(Unix.EINVAL, _, _) ->
-        (* Sys.executable_name is not a symbolic link *)
-        Sys.executable_name
+    let rec real_path path =
+      match Unix.readlink path with
+      | link when Filename.is_relative link ->
+          (* [path] is a relative symbolic link *)
+          real_path ((Filename.dirname path) // link)
+      | link ->
+          (* [path] is an absolute symbolic link *)
+          real_path link
+      | exception Unix.Unix_error(Unix.EINVAL, _, _) ->
+          (* [path] is not a symbolic link *)
+          path
+    in
+    real_path Sys.executable_name
   in
   let infer_py = (Filename.dirname real_exe) // "python" // "infer.py" in
   let build_cmd = IList.rev Config.rest in
