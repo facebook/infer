@@ -617,7 +617,14 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
 let add_guarded_by_constraints prop lexp pdesc =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let excluded_guardedby_string str =
-    str = "ui_thread" in (* don't warn on @GuardedBy("ui_thread") *)
+    (* nothing with a space in it can be a valid Java expression, shouldn't warn *)
+    let is_invalid_exp_str str =
+      String.contains str ' ' in
+    (* don't warn on @GuardedBy("ui_thread") in any form *)
+    let is_ui_thread str =
+      let lowercase_str = String.lowercase str in
+      lowercase_str = "ui_thread" || lowercase_str = "ui-thread" || lowercase_str = "uithread" in
+    is_invalid_exp_str str || is_ui_thread str in
   let guarded_by_str_is_this guarded_by_str =
     string_is_suffix "this" guarded_by_str in
   let guarded_by_str_is_class guarded_by_str class_str =

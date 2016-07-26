@@ -49,9 +49,6 @@ public class GuardedByExample {
   @GuardedBy("mReadWriteLock")
   Object i = new Object();
 
-  @GuardedBy("ui_thread")
-  Object t = new Object();
-
   private static Object sLock = new Object();
 
   @GuardedBy("sLock")
@@ -183,10 +180,6 @@ public class GuardedByExample {
     }
   }
 
-  void readTok() {
-    this.t.toString();
-  }
-
   void readWriteLockOk() {
     try (AutoCloseableReadWriteUpdateLock lock = mReadWriteLock) {
       this.i.toString();
@@ -290,6 +283,29 @@ public class GuardedByExample {
       local = g; // we have a local pointer... to pt(G)
     }
     local.toString(); // ...but unsafe access is through g!
+  }
+
+
+  @GuardedBy("ui_thread")
+  Object uiThread1;
+  @GuardedBy("ui-thread")
+  Object uiThread2;
+  @GuardedBy("uithread")
+  Object uiThread3;
+
+  @GuardedBy("something that's clearly not an expression")
+  Object nonExpression;
+
+  // tests for not reporting false alarms on unrecognized GuardedBy strings
+  void accessUnrecognizedGuardedByFieldsOk() {
+    uiThread1 = new Object();
+    uiThread1.toString();
+    uiThread2 = new Object();
+    uiThread2.toString();
+    uiThread3 = new Object();
+    uiThread3.toString();
+    nonExpression = new Object();
+    nonExpression.toString();
   }
 
 
