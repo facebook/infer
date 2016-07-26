@@ -76,9 +76,9 @@ module Make (TraceDomain : AbstractDomain.S) = struct
     | Star ->
         orig_trace
 
-  (** retrieve the trace associated with [ap] from [tree] *)
-  let get_trace ap tree =
-    let rec accesses_get_trace access_list trace tree =
+  (** retrieve the trace and subtree associated with [ap] from [tree] *)
+  let get_node ap tree =
+    let rec accesses_get_node access_list trace tree =
       match access_list, tree with
       | _, Star ->
           trace, Star
@@ -86,21 +86,25 @@ module Make (TraceDomain : AbstractDomain.S) = struct
           trace, tree
       | access :: accesses, Subtree subtree ->
           let access_trace, access_subtree = AccessMap.find access subtree in
-          accesses_get_trace accesses access_trace access_subtree in
-    let get_trace_ base accesses tree =
+          accesses_get_node accesses access_trace access_subtree in
+    let get_node_ base accesses tree =
       let base_trace, base_tree = BaseMap.find base tree in
-      accesses_get_trace accesses base_trace base_tree in
+      accesses_get_node accesses base_trace base_tree in
     let base, accesses = AccessPath.extract ap in
-    match get_trace_ base accesses tree with
+    match get_node_ base accesses tree with
     | trace, subtree ->
         if AccessPath.is_exact ap
-        then Some trace
+        then Some (trace, subtree)
         else
           (* input query was [ap]*, and [trace] is the trace associated with [ap]. get the traces
              associated with the children of [ap] in [tree] and join them with [trace] *)
-          Some (join_all_traces trace subtree)
+          Some (join_all_traces trace subtree, subtree)
     | exception Not_found ->
         None
+
+  (** retrieve the trace associated with [ap] from [tree] *)
+  let get_trace ap tree =
+    Option.map fst (get_node ap tree)
 
   (* helper for [add_access]. [last_trace] is the trace associated with [tree] in the parent. *)
   let rec access_tree_add_trace ~last_trace ~seen_array_access ~is_exact trace access_list tree =
@@ -272,11 +276,12 @@ module Make (TraceDomain : AbstractDomain.S) = struct
             prev_node_opt in
       BaseMap.merge (fun _ prev_node next_node -> node_widen prev_node next_node) prev next
 
+  let rec pp_node fmt (trace, subtree) =
+    let pp_subtree fmt = function
+      | Subtree access_map -> AccessMap.pp ~pp_value:pp_node fmt access_map
+      | Star -> F.fprintf fmt "*" in
+    F.fprintf fmt "(%a, %a)" TraceDomain.pp trace pp_subtree subtree
+
   let pp fmt base_tree =
-    let rec pp_node fmt (trace, subtree) =
-      let pp_subtree fmt = function
-        | Subtree access_map -> AccessMap.pp ~pp_value:pp_node fmt access_map
-        | Star -> F.fprintf fmt "*" in
-      F.fprintf fmt "(%a, %a)" TraceDomain.pp trace pp_subtree subtree in
     BaseMap.pp ~pp_value:pp_node fmt base_tree
 end

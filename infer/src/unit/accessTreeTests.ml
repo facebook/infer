@@ -104,12 +104,12 @@ let tests =
   let array_f_trace = MockTraceDomain.singleton "arrayF" in
   let x_star_trace = MockTraceDomain.of_list ["x"; "xF"; "xFG"] in
 
+  let g_subtree = Domain.make_access_node xF_trace g xFG_trace in
   let x_subtree =
-    let g_subtree = Domain.make_access_node xF_trace g xFG_trace in
     Domain.AccessMap.singleton f g_subtree
     |> Domain.make_node x_trace in
+  let yF_subtree = Domain.make_starred_leaf yF_trace in
   let y_subtree =
-    let yF_subtree = Domain.make_starred_leaf yF_trace in
     Domain.AccessMap.singleton f yF_subtree
     |> Domain.make_node y_trace in
   let z_subtree = Domain.make_starred_leaf z_trace in
@@ -146,6 +146,18 @@ let tests =
   let assert_trace_not_found access_path tree =
     assert_traces_eq access_path tree no_trace in
 
+  let assert_node_equal access_path tree expected_node =
+    match Domain.get_node access_path tree with
+    | Some actual_node ->
+        let pp_diff fmt (actual, expected) =
+          F.fprintf
+            fmt
+            "Expected to retrieve node %a but got %a"
+            Domain.pp_node expected
+            Domain.pp_node actual in
+        assert_equal ~pp_diff expected_node actual_node
+    | None -> assert false in
+
   let get_trace_test =
     let get_trace_test_ _ =
       (* exact access path tests *)
@@ -168,7 +180,23 @@ let tests =
       assert_traces_eq y_star tree "{ y, yF }";
       assert_traces_eq yF_star tree "{ yF }";
       assert_traces_eq yFG tree "{ yF }";
-      assert_trace_not_found yG tree in
+      assert_trace_not_found yG tree;
+
+      (* get_trace is just (fst get_node), so light tests here *)
+      (* exact access path tests *)
+      assert_node_equal z tree z_subtree;
+      assert_node_equal xF tree g_subtree;
+      assert_node_equal xFG tree (Domain.make_normal_leaf xFG_trace);
+
+      (* starred tree tests *)
+      assert_node_equal yFG tree yF_subtree;
+
+      (* starred access path tests *)
+      let joined_y_subtree =
+        Domain.AccessMap.singleton f yF_subtree
+        |> Domain.make_node (MockTraceDomain.join y_trace yF_trace) in
+      assert_node_equal y_star tree joined_y_subtree in
+
     "get_trace">::get_trace_test_ in
 
   let add_trace_test =
