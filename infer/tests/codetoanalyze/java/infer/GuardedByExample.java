@@ -308,6 +308,36 @@ public class GuardedByExample {
     nonExpression.toString();
   }
 
+  // outer class this tests
+  @GuardedBy("GuardedByExample.this")
+  Object guardedByOuterThis;
+
+  synchronized void okOuterAccess() {
+    guardedByOuterThis = null;
+  }
+
+  // inner class this tests
+  private class Inner {
+    @GuardedBy("this")
+    Object guardedByInnerThis1;
+    @GuardedBy("Inner.this")
+    Object guardedByInnerThis2;
+    @GuardedBy("GuardedByExample$Inner.this")
+    Object guardedByInnerThis3;
+
+    synchronized void okAccess1() {
+      guardedByInnerThis1 = null;
+    }
+
+    synchronized void okAccess2() {
+      guardedByInnerThis2 = null;
+    }
+
+    synchronized void okAccess3() {
+      guardedByInnerThis3 = null;
+    }
+  }
+
 
   // TODO: report on these cases
   /*
