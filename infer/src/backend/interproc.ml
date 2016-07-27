@@ -772,7 +772,11 @@ let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t 
   let pathset = match pname with
     | Procname.ObjC_Cpp _ ->
         if (Procname.is_constructor pname) then
-          Paths.PathSet.map (Prop.remove_resource_attribute Sil.Racquire Sil.Rfile) pathset
+          Paths.PathSet.map (fun prop ->
+              let prop = Prop.remove_resource_attribute Sil.Racquire Sil.Rfile prop in
+              let prop = Prop.remove_resource_attribute Sil.Racquire (Sil.Rmemory Sil.Mmalloc) prop in
+              Prop.remove_resource_attribute Sil.Racquire (Sil.Rmemory Sil.Mobjc) prop
+            ) pathset
         else pathset
     | _ -> pathset in
 
