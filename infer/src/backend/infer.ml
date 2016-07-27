@@ -78,7 +78,9 @@ let () =
       (if not Config.flavors || not buck then [] else
          ["--use-flavors"]) @
       (match Config.infer_cache with None -> [] | Some s ->
-        ["--infer_cache"; s]) @
+          ["--infer_cache"; s]) @
+      (match Config.stacktrace with None -> [] | Some s ->
+          ["--stacktrace"; s]) @
       "--multicore" :: (string_of_int Config.jobs) ::
       (if not Config.reactive_mode then [] else
          ["--reactive"]) @

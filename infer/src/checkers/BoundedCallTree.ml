@@ -30,14 +30,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let json_of_summary caller astate loc loc_type =
     let procs = Domain.elements astate in
     let json = `Assoc [
-        ("caller", `String (Procname.to_string caller));
+        ("method", `String (Procname.to_unique_id caller));
         ("location", `Assoc [
             ("type", `String loc_type);
             ("file", `String (DB.source_file_to_string loc.Location.file));
             ("line", `Int loc.Location.line);
           ]);
         ("callees", `List (IList.map
-                             (fun pn -> `String (Procname.to_string pn))
+                             (fun pn -> `Assoc [
+                                  ("method", `String (Procname.to_unique_id pn))
+                                ])
                              procs))
       ] in
     json

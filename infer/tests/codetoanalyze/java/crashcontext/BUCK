@@ -1,0 +1,73 @@
+sources = glob(['**/*.java','**/*.json'])
+
+dependencies = [
+    '//dependencies/java/android/support/v4:android-support-v4',
+    '//infer/annotations:annotations',
+    '//infer/lib/java/android:android',
+]
+
+java_library(
+  name = 'checkers',
+  srcs = sources,
+  deps = dependencies,
+  visibility = [
+      'PUBLIC'
+  ]
+)
+
+out = 'out'
+inferconfig_file = '$(location //infer/tests/codetoanalyze/java:inferconfig)'
+copy_inferconfig = ' '.join(['cp', inferconfig_file, '$SRCDIR'])
+clean_cmd = ' '.join(['rm', '-rf', out])
+classpath = ':'.join([('$(classpath ' + path + ')') for path in dependencies])
+
+def mk_infer_cmd(tag, srcs, stacktrace):
+    infer_cmd_main = ' '.join([
+        'infer',
+        '--no-progress-bar',
+        '--absolute-paths',
+        '-o', out,
+        '-a', 'crashcontext',
+        '--stacktrace', stacktrace,
+        '--',
+        'javac',
+        '-cp', classpath,
+        srcs])
+    out_rename = ' '.join(['cp',
+        out + '/crashcontext/crashcontext.json',
+        '$OUT' + "." + tag])
+    return ' && '.join([infer_cmd_main, out_rename])
+
+infer_cmds = [
+    mk_infer_cmd(
+        "MinimalCrashExample",
+        "MinimalCrashExample.java",
+        "MinimalCrashExample.stacktrace.json"
+    ),
+    mk_infer_cmd(
+        "MultiStackFrameCrashExample",
+        "MultiStackFrameCrashExample.java",
+        "MultiStackFrameCrashExample.stacktrace.json"
+    ),
+    mk_infer_cmd(
+        "BranchingCallsExample",
+        "BranchingCallsExample.java",
+        "BranchingCallsExample.stacktrace.json"
+    )
+]
+
+# Copy the last crashcontext.json because buck expects it as the output file.
+# This will only contain the results for the last run infer_cmd above.
+copy_cmd = ' '.join(['cp', out + '/crashcontext/crashcontext.json', '$OUT'])
+command = ' && '.join([clean_cmd, copy_inferconfig, ' && '.join(infer_cmds), copy_cmd])
+
+genrule(
+    name = 'analyze',
+    srcs = sources,
+    out = 'crashcontext.json',
+    cmd = command,
+    deps = dependencies + [':checkers'],
+    visibility = [
+        'PUBLIC',
+    ]
+)

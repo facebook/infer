@@ -1,0 +1,16 @@
+java_test(
+    name='crashcontext',
+    srcs=glob(['*.java']),
+    deps=[
+        '//dependencies/java/guava:guava',
+        '//dependencies/java/junit:hamcrest',
+        '//dependencies/java/junit:junit',
+        '//infer/tests/utils:utils',
+    ],
+    resources=[
+        '//infer/tests/codetoanalyze/java/crashcontext:analyze',
+    ],
+    visibility=[
+        'PUBLIC',
+    ],
+)
