@@ -93,7 +93,7 @@ let get_err_log cfg cg method_decl_opt loc =
     Cfg.Procdesc.get_err_log pdesc
 
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
-let log_frontend_issue cfg cg method_decl_opt issue_desc =
+let log_frontend_issue cfg cg method_decl_opt key issue_desc =
   let issue = issue_desc.CIssue.issue in
   let loc = issue_desc.CIssue.loc in
   let errlog = get_err_log cfg cg method_decl_opt loc in
@@ -107,44 +107,53 @@ let log_frontend_issue cfg cg method_decl_opt issue_desc =
       Errlog.lt_description = "";
       Errlog.lt_node_tags = []}] in
   let err_kind = CIssue.severity_of_issue issue in
+  let method_name = Ast_utils.full_name_of_decl_opt method_decl_opt in
+  let key = Hashtbl.hash (key ^ method_name) in
   Reporting.log_issue_from_errlog err_kind errlog exn ~loc:(Some loc) ~ltr:(Some trace)
+    ~node_id:(Some (0, key))
 
 (* General invocation function for checkers
    Takes
    1. f a particular way to apply a checker, it's a partial function
    2. context
    3. the list of checkers to be applied *)
-let invoke_set_of_checkers f cfg cg method_decl_opt checkers  =
+let invoke_set_of_checkers f cfg cg method_decl_opt key checkers =
   IList.iter (fun checker ->
       match f checker with
-      | Some issue_desc -> log_frontend_issue cfg cg method_decl_opt issue_desc
+      | Some issue_desc -> log_frontend_issue cfg cg method_decl_opt key issue_desc
       | None -> ()) checkers
 
 let run_frontend_checkers_on_stmt cfg cg method_decl instr =
   let open Clang_ast_t in
+  let decl_opt = Some method_decl in
   match instr with
-  | ObjCIvarRefExpr(stmt_info, _, _, obj_c_ivar_ref_expr_info) ->
+  | ObjCIvarRefExpr (stmt_info, _, _, obj_c_ivar_ref_expr_info) ->
       let dr_ref = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref in
       let call_checker_for_ivar = checkers_for_ivar method_decl stmt_info dr_ref in
-      let method_decl_opt = Some method_decl in
-      invoke_set_of_checkers call_checker_for_ivar cfg cg method_decl_opt ivar_access_checker_list
-  | BlockExpr(stmt_info, _ , _, Clang_ast_t.BlockDecl (_, block_decl_info)) ->
+      let key = Ast_utils.generate_key_stmt instr in
+      invoke_set_of_checkers call_checker_for_ivar cfg cg decl_opt key ivar_access_checker_list
+  | BlockExpr (stmt_info, _ , _, Clang_ast_t.BlockDecl (_, block_decl_info)) ->
       let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
       let call_captured_vars_checker = checkers_for_capture_vars stmt_info captured_block_vars in
-      let decl_opt = Some method_decl in
-      invoke_set_of_checkers call_captured_vars_checker cfg cg decl_opt captured_vars_checker_list
+      let key = Ast_utils.generate_key_stmt instr in
+      invoke_set_of_checkers call_captured_vars_checker cfg cg decl_opt key
+        captured_vars_checker_list
   | IfStmt (stmt_info, _ :: cond :: _) ->
       let call_checker = checker_for_if_stmt stmt_info [cond] in
-      invoke_set_of_checkers call_checker cfg cg None if_stmt_checker_list
+      let key = Ast_utils.generate_key_stmt cond in
+      invoke_set_of_checkers call_checker cfg cg decl_opt key if_stmt_checker_list
   | ConditionalOperator (stmt_info, first_stmt :: _, _) ->
       let call_checker = checker_for_conditional_op stmt_info [first_stmt] in
-      invoke_set_of_checkers call_checker cfg cg None conditional_op_checker_list
+      let key = Ast_utils.generate_key_stmt first_stmt in
+      invoke_set_of_checkers call_checker cfg cg decl_opt key conditional_op_checker_list
   | ForStmt (stmt_info, [_; _; cond; _; _]) ->
       let call_checker = checker_for_for_stmt stmt_info [cond] in
-      invoke_set_of_checkers call_checker cfg cg None for_stmt_checker_list
+      let key = Ast_utils.generate_key_stmt cond in
+      invoke_set_of_checkers call_checker cfg cg decl_opt key for_stmt_checker_list
   | WhileStmt (stmt_info, [_; cond; _]) ->
       let call_checker = checker_for_while_stmt stmt_info [cond] in
-      invoke_set_of_checkers call_checker cfg cg None while_stmt_checker_list
+      let key = Ast_utils.generate_key_stmt cond in
+      invoke_set_of_checkers call_checker cfg cg decl_opt key while_stmt_checker_list
   | _ -> ()
 
 let run_frontend_checkers_on_decl cfg cg dec =
@@ -155,11 +164,14 @@ let run_frontend_checkers_on_decl cfg cg dec =
     | ObjCImplementationDecl (decl_info, _, decl_list, _, _)
     | ObjCProtocolDecl (decl_info, _, decl_list, _, _) ->
         let call_ns_checker = checkers_for_ns decl_info decl_list in
-        invoke_set_of_checkers call_ns_checker cfg cg None ns_notification_checker_list
+        let key = Ast_utils.generate_key_decl dec in
+        invoke_set_of_checkers call_ns_checker cfg cg None key ns_notification_checker_list
     | VarDecl _ ->
         let call_global_checker = checker_for_global_var dec in
-        invoke_set_of_checkers call_global_checker cfg cg None global_var_checker_list
+        let key = Ast_utils.generate_key_decl dec in
+        invoke_set_of_checkers call_global_checker cfg cg None key global_var_checker_list
     | ObjCPropertyDecl (decl_info, pname_info, pdi) ->
         let call_property_checker = checkers_for_property decl_info pname_info pdi in
-        invoke_set_of_checkers call_property_checker cfg cg None property_checkers_list
+        let key = Ast_utils.generate_key_decl dec in
+        invoke_set_of_checkers call_property_checker cfg cg None key property_checkers_list
     | _ -> ()

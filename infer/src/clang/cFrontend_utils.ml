@@ -436,6 +436,39 @@ struct
          | _ -> false)
     | _ -> false
 
+  let full_name_of_decl_opt decl_opt =
+    match decl_opt with
+    | Some decl ->
+        (match Clang_ast_proj.get_named_decl_tuple decl with
+         | Some (_, name_info) -> get_qualified_name name_info
+         | None -> "")
+    | None -> ""
+
+  (* Generates a unique number for each variant of a type. *)
+  let get_tag ast_item =
+    let item_rep = Obj.repr ast_item in
+    if Obj.is_block item_rep then
+      Obj.tag item_rep
+    else -(Obj.obj item_rep)
+
+  (* Generates a key for a statement based on its sub-statements and the statement tag. *)
+  let rec generate_key_stmt stmt =
+    let tag_str = string_of_int (get_tag stmt) in
+    let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
+    let tags = IList.map generate_key_stmt stmts in
+    let buffer = Buffer.create 16 in
+    let tags = tag_str :: tags in
+    IList.iter (fun tag -> Buffer.add_string buffer tag) tags;
+    Buffer.contents buffer
+
+  (* Generates a key for a declaration based on its name and the declaration tag. *)
+  let generate_key_decl decl =
+    let buffer = Buffer.create 16 in
+    let name = full_name_of_decl_opt (Some decl) in
+    Buffer.add_string buffer (string_of_int (get_tag decl));
+    Buffer.add_string buffer name;
+    Buffer.contents buffer
+
 (*
   let rec getter_attribute_opt attributes =
     match attributes with

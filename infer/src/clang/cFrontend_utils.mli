@@ -151,6 +151,15 @@ sig
 
   val is_ptr_to_objc_class : Clang_ast_t.c_type option -> string -> bool
 
+  val full_name_of_decl_opt : Clang_ast_t.decl option -> string
+
+  (* Generates a key for a statement based on its sub-statements and the statement tag. *)
+  val generate_key_stmt : Clang_ast_t.stmt -> string
+
+  (* Generates a key for a declaration based on its name and the declaration tag. *)
+  val generate_key_decl : Clang_ast_t.decl -> string
+
+
 end
 
 module General_utils :
