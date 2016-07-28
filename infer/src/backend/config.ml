@@ -603,10 +603,6 @@ and _ =
   CLOpt.mk_string_opt ~deprecated:["classpath"] ~long:"classpath"
     ~meta:"path" "Specify where to find user class files and annotation processors"
 
-and _ =
-  CLOpt.mk_string_opt ~deprecated:["class_source_map"] ~long:"class-source-map"
-    ~meta:"file" "path to class -> source map in JSON format"
-
 (** optional command-line name of the .cluster file *)
 and cluster =
   CLOpt.mk_string_opt ~deprecated:["cluster"] ~long:"cluster"

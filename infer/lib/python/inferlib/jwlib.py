@@ -160,16 +160,6 @@ class CompilerCall(object):
 
             with tempfile.NamedTemporaryFile(
                     mode='w',
-                    suffix='.json',
-                    prefix='classSourceMap_',
-                    delete=False) as class_source_map_out:
-                self.class_source_map = class_source_map_out.name
-            javac_args += ['-A%s=%s' %
-                          (config.CLASS_SOURCE_MAP_OUTPUT_FILENAME_OPTION,
-                           self.class_source_map)]
-
-            with tempfile.NamedTemporaryFile(
-                    mode='w',
                     suffix='.out',
                     prefix='annotations_',
                     delete=False) as annot_out:
@@ -297,7 +287,6 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
     def _run_infer_frontend(self):
         infer_cmd = [utils.get_cmd_in_bin_dir('InferJava')]
         infer_cmd += ['-classpath', self._create_frontend_classpath()]
-        infer_cmd += ['-class_source_map', self.javac.class_source_map]
 
         if not self.args.absolute_paths:
             infer_cmd += ['-project_root', self.args.project_root]
