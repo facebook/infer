@@ -10,8 +10,7 @@
 package endtoend.objc.infer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsErrorInMethod.contains;
-import static utils.matchers.ResultContainsNoErrorInMethod.doesNotContain;
+import static utils.matchers.ResultContainsExactly.containsExactly;
 
 import com.google.common.collect.ImmutableList;
 
@@ -50,57 +49,18 @@ public class MemoryLeaksFromModelsTest {
   }
 
   @Test
-  public void whenInferRunsOnFBCreateURLQueryStringBodyEscapingThenMLIsNotFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should not contain memory leak",
-        inferResults,
-        doesNotContain(
-            MEMORY_LEAK,
-            memory_leak_file,
-            "FBCreateURLQueryStringBodyEscaping"));
-  }
-
-  @Test
-  public void whenInferRunsOnRandomBytesThenMLIsNotFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should not contain memory leak",
-        inferResults,
-        doesNotContain(
-            MEMORY_LEAK,
-            memory_leak_file,
-            "randomBytes:"));
-  }
-
-  @Test
-  public void whenInferRunsOn_macForIVThenMLIsFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should contain memory leak",
-        inferResults,
-        contains(
-            MEMORY_LEAK,
-            memory_leak_file,
-            "macForIV:"
-        )
-    );
-  }
-
-  @Test
-  public void whenInferRunsOnHexStringValueThenMLIsNotFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should not contain memory leak",
-        inferResults,
-        doesNotContain(
-            MEMORY_LEAK,
-            memory_leak_file,
-            "hexStringValue"));
-  }
-
+public void matchErrors()
+    throws InterruptedException, IOException, InferException {
+  InferResults inferResults = InferRunner.runInferObjC(inferCmd);
+  String[] procedures = {"macForIV:"};
+  assertThat(
+      "Results should contain the expected memory leak",
+      inferResults,
+      containsExactly(
+          MEMORY_LEAK,
+          memory_leak_file,
+          procedures
+      )
+  );
+}
 }

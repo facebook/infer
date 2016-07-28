@@ -98,7 +98,8 @@ let create_superclasses_fields type_ptr_to_sil_type tenv curr_class decl_list
   superclasses, fields
 
 (* Adds pairs (interface name, interface_type_info) to the global environment. *)
-let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name decl_list ocidi =
+let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info decl_list ocidi =
+  let class_name = Ast_utils.get_qualified_name name_info in
   Printing.log_out "ADDING: ObjCInterfaceDecl for '%s'\n" class_name;
   let interface_name = CTypes.mk_classname class_name Csu.Objc in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
@@ -122,13 +123,14 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name 
     | _ -> fields, superclasses, methods in
   let fields = General_utils.append_no_duplicates_fields fields fields_sc in
   (* We add the special hidden counter_field for implementing reference counting *)
-  let fields = General_utils.append_no_duplicates_fields [Typ.objc_ref_counter_field] fields in
+  let modelled_fields = Typ.objc_ref_counter_field :: CField_decl.modelled_field name_info in
+  let all_fields = General_utils.append_no_duplicates_fields modelled_fields fields in
   Printing.log_out "Class %s field:\n" class_name;
   IList.iter (fun (fn, _, _) ->
-      Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
+      Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) all_fields;
   let interface_type_info =
     {
-      Typ.instance_fields = fields;
+      Typ.instance_fields = all_fields;
       static_fields = [];
       csu = Csu.Class Csu.Objc;
       struct_name = Some (Mangled.from_string class_name);
@@ -170,8 +172,8 @@ let interface_declaration type_ptr_to_sil_type tenv decl =
   | ObjCInterfaceDecl (decl_info, name_info, decl_list, _, ocidi) ->
       let name = Ast_utils.get_qualified_name name_info in
       let curr_class = get_curr_class name ocidi in
-      let typ =
-        add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name decl_list ocidi in
+      let typ = add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info
+          decl_list ocidi in
       let _ = add_class_implementation type_ptr_to_sil_type tenv ocidi in
       let _ = add_super_class_decl type_ptr_to_sil_type tenv ocidi in
       let _ = add_protocols_decl type_ptr_to_sil_type tenv ocidi.Clang_ast_t.otdi_protocols in

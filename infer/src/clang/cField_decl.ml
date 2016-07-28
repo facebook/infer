@@ -92,3 +92,15 @@ let add_missing_fields tenv class_name ck fields =
       Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
       Tenv.add tenv class_tn_name class_type_info
   | _ -> ()
+
+let modelled_fields_in_classes = [("NSData", "_bytes", Typ.Tptr (Typ.Tvoid, Typ.Pk_pointer))]
+
+let modelled_field class_name_info =
+  let modelled_field_in_class res (class_name, field_name, typ) =
+    if class_name = class_name_info.Clang_ast_t.ni_name then
+      let class_name_qualified = class_name_info.Clang_ast_t.ni_qual_name in
+      let field_name_qualified = Ast_utils.make_qual_name_decl class_name_qualified field_name in
+      let name = General_utils.mk_class_field_name field_name_qualified in
+      (name, typ, Typ.item_annotation_empty) :: res
+    else res in
+  IList.fold_left modelled_field_in_class [] modelled_fields_in_classes
