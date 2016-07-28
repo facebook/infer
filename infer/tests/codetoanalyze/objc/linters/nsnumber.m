@@ -19,22 +19,52 @@ void bad2(NSNumber* isNum) {
   }
 }
 
-void ok1(NSNumber* isNum) {
-  if (isNum != nil) {
+void bad3(NSNumber* number1, NSNumber* number2) {
+  if (number1 == nil || number2) {
   }
 }
 
-void ok2(NSNumber* isNum) {
-  if (nil != isNum) {
+@interface TestClass : NSObject
+
+@property(atomic) int value;
+
+- (BOOL)doStuff:(NSNumber*)number;
+
+@end
+
+@implementation TestClass
+
+- (BOOL)doStuff:(NSNumber*)number {
+  return YES;
+}
+
+@end
+
+void bad4(NSNumber* number, TestClass* t) { t.value = number ? 1 : 0; }
+
+void ok1(NSNumber* number, TestClass* t) { t.value = number == nil ? 1 : 0; }
+
+void ok2(NSNumber* number, TestClass* t) {
+  if ([t doStuff:number]) {
   }
 }
 
 void ok3(NSNumber* isNum) {
-  if (nil == isNum) {
+  if (isNum != nil) {
   }
 }
 
 void ok4(NSNumber* isNum) {
+  if (nil != isNum) {
+  }
+}
+
+void ok5(NSNumber* isNum) {
+  if (nil == isNum) {
+  }
+}
+
+void ok6(NSNumber* isNum) {
   if (isNum == nil) {
   }
 }

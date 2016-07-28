@@ -475,18 +475,6 @@ let desc_fragment_retains_view fragment_typ fieldname fld_typ pname : error_desc
 let desc_custom_error loc : error_desc =
   { no_desc with descriptions = ["detected"; at_line (Tags.create ()) loc] }
 
-let desc_bad_pointer_comparison dexp_opt loc : error_desc =
-  let dexp_str = match dexp_opt with
-    | Some dexp -> (DecompiledExp.to_string dexp) ^ " "
-    | None -> "" in
-  let line_info = at_line (Tags.create ()) loc in
-  let check_msg =
-    "Implicitly checking whether NSNumber pointer " ^ dexp_str ^ "is nil " ^ line_info ^ "." in
-  let concern_msg = "Did you mean to compare against the unboxed value instead?" in
-  let fix_msg_rec1 = "Please either explicitly compare " ^ dexp_str ^ "to nil" in
-  let fix_msg_rec2 = "or use one of the NSNumber accessors before the comparison." in
-  { no_desc with descriptions = [check_msg; concern_msg; fix_msg_rec1; fix_msg_rec2] }
-
 (** type of access *)
 type access =
   | Last_assigned of int * bool (* line, null_case_flag *)

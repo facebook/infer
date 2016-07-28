@@ -7,10 +7,10 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-package endtoend.objc.infer;
+package endtoend.objc.linters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsExactly.containsExactly;
+import static utils.matchers.ResultContainsLineNumbers.containsLines;
 
 import com.google.common.collect.ImmutableList;
 
@@ -25,10 +25,10 @@ import utils.InferException;
 import utils.InferResults;
 import utils.InferRunner;
 
-public class NSNumber2Test {
+public class NSNumberTest {
 
   public static final String NSNUMBER_FILE =
-      "infer/tests/codetoanalyze/objc/errors/bad_ptr_comparisons/badpointer.m";
+      "infer/tests/codetoanalyze/objc/linters/nsnumber.m";
 
   private static ImmutableList<String> inferCmd;
 
@@ -48,19 +48,10 @@ public class NSNumber2Test {
   public void badNSNumberPointerComparisonShouldBeFound()
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    String[] methods = {
-      "bad1",
-      "bad2",
-      "bad3"
-    };
     assertThat(
         "Results should contain " + BAD_POINTER_COMPARISON,
         inferResults,
-        containsExactly(
-            BAD_POINTER_COMPARISON,
-            NSNUMBER_FILE,
-            methods
-        )
+        containsLines(new int[]{13, 18, 23, 43})
     );
   }
 

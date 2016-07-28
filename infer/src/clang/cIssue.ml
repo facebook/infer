@@ -9,6 +9,7 @@
 
 type issue =
   | Assign_pointer_warning
+  | Bad_pointer_comparison
   | Cxx_reference_captured_in_objc_block
   | Direct_atomic_property_access
   | Global_variable_initialized_with_function_or_method_call
@@ -18,6 +19,7 @@ type issue =
 let to_string issue =
   match issue with
   | Assign_pointer_warning -> "ASSIGN_POINTER_WARNING"
+  | Bad_pointer_comparison -> "BAD_POINTER_COMPARISON"
   | Cxx_reference_captured_in_objc_block ->
       "CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK"
   | Direct_atomic_property_access -> "DIRECT_ATOMIC_PROPERTY_ACCESS"
@@ -30,6 +32,7 @@ let to_string issue =
 let severity_of_issue issue =
   match issue with
   | Assign_pointer_warning
+  | Bad_pointer_comparison
   | Cxx_reference_captured_in_objc_block
   | Direct_atomic_property_access
   | Global_variable_initialized_with_function_or_method_call

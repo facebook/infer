@@ -44,9 +44,6 @@ val exp_rv_dexp : Cfg.Node.t -> Sil.exp -> DecompiledExp.t option
 val explain_context_leak : Procname.t -> Typ.t -> Ident.fieldname ->
   (Ident.fieldname option * Typ.t) list -> Localise.error_desc
 
-(** Produce a description of a pointer dangerously coerced to a boolean in a comparison *)
-val explain_bad_pointer_comparison : Sil.exp -> Cfg.Node.t -> Location.t -> Localise.error_desc
-
 (** Produce a description of a mismatch between an allocation function and a deallocation function *)
 val explain_allocation_mismatch : Sil.res_action -> Sil.res_action -> Localise.error_desc
 

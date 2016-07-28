@@ -36,7 +36,6 @@ exception Array_out_of_bounds_l1 of Localise.error_desc * Logging.ml_loc
 exception Array_out_of_bounds_l2 of Localise.error_desc * Logging.ml_loc
 exception Array_out_of_bounds_l3 of Localise.error_desc * Logging.ml_loc
 exception Bad_footprint of Logging.ml_loc
-exception Bad_pointer_comparison of Localise.error_desc * Logging.ml_loc
 exception Class_cast_exception of Localise.error_desc * Logging.ml_loc
 exception Codequery of Localise.error_desc
 exception Comparing_floats_for_equality of Localise.error_desc * Logging.ml_loc

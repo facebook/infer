@@ -67,6 +67,7 @@ public class InferResults {
             errorType.equals("PARAMETER_NOT_NULL_CHECKED") ||
             errorType.equals("DANGLING_POINTER_DEREFERENCE") ||
             errorType.equals("IVAR_NOT_NULL_CHECKED") ||
+            errorType.equals("BAD_POINTER_COMPARISON") ||
             errorType.startsWith("ERADICATE")) {
           Integer errorLine = Integer.parseInt(items[5].trim());
           String procedure = items[6];

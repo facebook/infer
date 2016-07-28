@@ -270,6 +270,44 @@ let captured_cxx_ref_in_objc_block_warning stmt_info captured_vars =
   else None
 
 
+(* BAD_POINTER_COMPARISON: Fires whenever a NSNumber is dangerously coerced to
+    a boolean in a comparison *)
+let bad_pointer_comparison_warning stmt_info stmts =
+  let rec condition stmts =
+    let condition_aux stmt =
+      match stmt with
+      | Clang_ast_t.CallExpr _
+      | Clang_ast_t.CXXMemberCallExpr _
+      | Clang_ast_t.CXXOperatorCallExpr _
+      | Clang_ast_t.ObjCMessageExpr _ -> false
+      | Clang_ast_t.BinaryOperator (_, _, _, boi)
+        when (boi.boi_kind = `NE) || (boi.boi_kind = `EQ) -> false
+      | Clang_ast_t.UnaryOperator (_, stmts, _, uoi) when uoi.uoi_kind = `LNot ->
+          condition stmts
+      | stmt ->
+          match Clang_ast_proj.get_expr_tuple stmt with
+          | Some (_, stmts, expr_info) ->
+              let typ = CFrontend_utils.Ast_utils.get_desugared_type expr_info.ei_type_ptr in
+              if CFrontend_utils.Ast_utils.is_ptr_to_objc_class typ "NSNumber" then
+                true
+              else
+                condition stmts
+          | _ -> false in
+    IList.exists condition_aux stmts in
+  if condition stmts then
+    Some { CIssue.
+           issue = CIssue.Bad_pointer_comparison;
+           description = "Implicitly checking whether NSNumber pointer is nil";
+           suggestion =
+             Some ("Did you mean to compare against the unboxed value instead? " ^
+                   "Please either explicitly compare the NSNumber instance to nil, " ^
+                   "or use one of the NSNumber accessors before the comparison.");
+           loc = location_from_sinfo stmt_info
+         }
+  else
+    None
+
+
 (* exist m1:  m1.body|- EF call_method(addObserver:) => exists m2 : m2.body |- EF call_method(removeObserver:) *)
 let checker_NSNotificationCenter decl_info decls =
   let exists_method_calling_addObserver =

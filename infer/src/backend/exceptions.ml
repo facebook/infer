@@ -37,7 +37,6 @@ exception Array_out_of_bounds_l2 of Localise.error_desc * L.ml_loc
 exception Array_out_of_bounds_l3 of Localise.error_desc * L.ml_loc
 exception Array_of_pointsto of L.ml_loc
 exception Bad_footprint of L.ml_loc
-exception Bad_pointer_comparison of Localise.error_desc * L.ml_loc
 exception Class_cast_exception of Localise.error_desc * L.ml_loc
 exception Codequery of Localise.error_desc
 exception Comparing_floats_for_equality of Localise.error_desc * L.ml_loc
@@ -121,9 +120,6 @@ let recognize_exception exn =
         let ml_loc = (f, l, c, c) in
         (Localise.from_string "Assert_failure",
          Localise.no_desc, Some ml_loc, Exn_developer, High, None, Nocat)
-    | Bad_pointer_comparison (desc, ml_loc) ->
-        (Localise.bad_pointer_comparison,
-         desc, Some ml_loc, Exn_user, High, Some Kerror, Prover)
     | Bad_footprint ml_loc ->
         (Localise.from_string "Bad_footprint",
          Localise.no_desc, Some ml_loc, Exn_developer, Low, None, Nocat)
@@ -351,4 +347,3 @@ let pp_err (_, node_key) loc ekind ex_name desc ml_loc_opt fmt () =
 let handle_exception exn =
   let _, _, _, visibility, _, _, _ = recognize_exception exn in
   visibility == Exn_user || visibility == Exn_developer
-

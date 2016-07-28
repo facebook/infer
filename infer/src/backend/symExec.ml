@@ -1058,11 +1058,6 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                 true (* skip subpart of a condition obtained from compilation of && and || *)
             | _ -> false in
           true_branch && not skip_loop in
-        (* in comparisons, nil is translated as (void * ) 0 rather than 0 *)
-        let is_comparison_to_nil = function
-          | Sil.Cast ((Typ.Tptr (Typ.Tvoid, _)), exp) ->
-              !Config.curr_language = Config.Clang && Sil.exp_is_zero exp
-          | _ -> false in
         match Prop.exp_normalize_prop Prop.prop_emp cond with
         | Sil.Const (Const.Cint i) when report_condition_always_true_false i ->
             let node = State.get_node () in
@@ -1071,26 +1066,6 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
               Exceptions.Condition_always_true_false (desc, not (IntLit.iszero i), __POS__) in
             let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop current_pname) in
             Reporting.log_warning current_pname ~pre: pre_opt exn
-        | Sil.BinOp ((Binop.Eq | Binop.Ne), lhs, rhs)
-          when true_branch && !Config.footprint && not (is_comparison_to_nil rhs) ->
-            (* iOS: check that NSNumber *'s are not used in conditionals without comparing to nil *)
-            let lhs_normal = Prop.exp_normalize_prop prop__ lhs in
-            let is_nsnumber = function
-              | Typ.Tvar (Typename.TN_csu (Csu.Class _, name)) ->
-                  Mangled.to_string name = "NSNumber"
-              | _ -> false in
-            let lhs_is_ns_ptr () =
-              IList.exists
-                (function
-                  | Sil.Hpointsto (_, Sil.Eexp (exp, _), Sil.Sizeof (Typ.Tptr (typ, _), _, _)) ->
-                      Sil.exp_equal exp lhs_normal && is_nsnumber typ
-                  | _ -> false)
-                (Prop.get_sigma prop__) in
-            if not (Sil.exp_is_zero lhs_normal) && lhs_is_ns_ptr () then
-              let node = State.get_node () in
-              let desc = Errdesc.explain_bad_pointer_comparison lhs node loc in
-              let exn = Exceptions.Bad_pointer_comparison (desc, __POS__) in
-              Reporting.log_warning current_pname exn
         | _ -> () in
       if not Config.report_runtime_exceptions then
         check_already_dereferenced current_pname cond prop__;

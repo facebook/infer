@@ -440,11 +440,6 @@ let explain_allocation_mismatch ra_alloc ra_dealloc =
   Localise.desc_allocation_mismatch
     (get_primitive_called true ra_alloc) (get_primitive_called false ra_dealloc)
 
-(** Produce a description of a pointer dangerously coerced to a boolean in a comparison *)
-let explain_bad_pointer_comparison exp node loc =
-  let dexp_opt = exp_rv_dexp node exp in
-  Localise.desc_bad_pointer_comparison dexp_opt loc
-
 (** check whether the type of leaked [hpred] appears as a predicate
     in an inductive predicate in [prop] *)
 let leak_from_list_abstraction hpred prop =
@@ -517,7 +512,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
     | _ -> (None, None, None) in
   let is_file = match resource_opt with
     | Some Sil.Rfile -> true
-    | _ -> false in 
+    | _ -> false in
   let check_pvar pvar =
     (* check that pvar is local or global and has the same type as the leaked hpred *)
     (Pvar.is_local pvar || Pvar.is_global pvar) &&

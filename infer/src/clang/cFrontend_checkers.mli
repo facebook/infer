@@ -29,6 +29,9 @@ val direct_atomic_property_access_warning : Clang_ast_t.decl -> Clang_ast_t.stmt
 val captured_cxx_ref_in_objc_block_warning : Clang_ast_t.stmt_info ->
   Clang_ast_t.block_captured_variable list -> CIssue.issue_desc option
 
+val bad_pointer_comparison_warning :
+  Clang_ast_t.stmt_info -> Clang_ast_t.stmt list -> CIssue.issue_desc option
+
 (* REGISTERED_OBSERVER_BEING_DEALLOCATED: an object is registered in a notification center
    but not removed before deallocation *)
 val checker_NSNotificationCenter : Clang_ast_t.decl_info -> Clang_ast_t.decl list ->

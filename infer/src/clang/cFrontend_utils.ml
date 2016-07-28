@@ -424,6 +424,18 @@ struct
     | Config.OBJCPP -> true
     | _ -> false
 
+  let is_ptr_to_objc_class typ class_name =
+    match typ with
+    | Some Clang_ast_t.ObjCObjectPointerType (_, typ_ptr) ->
+        (match get_desugared_type typ_ptr with
+         | Some ObjCInterfaceType (_, ptr) ->
+             (match get_decl ptr with
+              | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
+                  String.compare ndi.ni_name class_name = 0
+              | _ -> false)
+         | _ -> false)
+    | _ -> false
+
 (*
   let rec getter_attribute_opt attributes =
     match attributes with

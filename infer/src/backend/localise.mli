@@ -230,7 +230,6 @@ val desc_fragment_retains_view :
 (* Create human-readable error description for assertion failures *)
 val desc_custom_error : Location.t -> error_desc
 
-val desc_bad_pointer_comparison : DecompiledExp.t option -> Location.t -> error_desc
 (** kind of precondition not met *)
 type pnm_kind =
   | Pnm_bounds

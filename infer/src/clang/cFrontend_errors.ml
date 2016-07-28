@@ -47,6 +47,36 @@ let global_var_checker_list = [CFrontend_checkers.global_var_init_with_calls_war
 let checker_for_global_var dec checker =
   checker dec
 
+(* List of checkers on conditional operator *)
+let conditional_op_checker_list = [CFrontend_checkers.bad_pointer_comparison_warning]
+
+(* Invocation of checker belonging to conditional_op_checker_list *)
+let checker_for_conditional_op stmt_info first_stmt checker =
+  checker stmt_info first_stmt
+
+(* List of checkers on if-statement *)
+let if_stmt_checker_list = [CFrontend_checkers.bad_pointer_comparison_warning]
+
+(* Invocation of checker belonging to if_stmt_checker_list *)
+let checker_for_if_stmt stmt_info cond checker =
+  checker stmt_info cond
+
+(* List of checkers on for statement *)
+let for_stmt_checker_list = [CFrontend_checkers.bad_pointer_comparison_warning]
+
+(* Invocation of checker belonging to for_stmt_checker_list *)
+let checker_for_for_stmt stmt_info cond checker =
+  checker stmt_info cond
+
+(* List of checkers on while statement *)
+let while_stmt_checker_list = [CFrontend_checkers.bad_pointer_comparison_warning]
+
+(* Invocation of checker belonging to while_stmt_checker_list *)
+let checker_for_while_stmt stmt_info cond checker =
+  checker stmt_info cond
+
+
+
 let errLogMap = ref Procname.Map.empty
 
 let get_err_log cfg cg method_decl_opt loc =
@@ -103,6 +133,18 @@ let run_frontend_checkers_on_stmt cfg cg method_decl instr =
       let call_captured_vars_checker = checkers_for_capture_vars stmt_info captured_block_vars in
       let decl_opt = Some method_decl in
       invoke_set_of_checkers call_captured_vars_checker cfg cg decl_opt captured_vars_checker_list
+  | IfStmt (stmt_info, _ :: cond :: _) ->
+      let call_checker = checker_for_if_stmt stmt_info [cond] in
+      invoke_set_of_checkers call_checker cfg cg None if_stmt_checker_list
+  | ConditionalOperator (stmt_info, first_stmt :: _, _) ->
+      let call_checker = checker_for_conditional_op stmt_info [first_stmt] in
+      invoke_set_of_checkers call_checker cfg cg None conditional_op_checker_list
+  | ForStmt (stmt_info, [_; _; cond; _; _]) ->
+      let call_checker = checker_for_for_stmt stmt_info [cond] in
+      invoke_set_of_checkers call_checker cfg cg None for_stmt_checker_list
+  | WhileStmt (stmt_info, [_; cond; _]) ->
+      let call_checker = checker_for_while_stmt stmt_info [cond] in
+      invoke_set_of_checkers call_checker cfg cg None while_stmt_checker_list
   | _ -> ()
 
 let run_frontend_checkers_on_decl cfg cg dec =

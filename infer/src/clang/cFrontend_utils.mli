@@ -149,6 +149,8 @@ sig
   (* true if CFrontend_config.language is set ot ObjC *)
   val is_objcpp : unit -> bool
 
+  val is_ptr_to_objc_class : Clang_ast_t.c_type option -> string -> bool
+
 end
 
 module General_utils :

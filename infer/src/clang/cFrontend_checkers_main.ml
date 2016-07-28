@@ -9,7 +9,7 @@
 
 let rec do_frontend_checks_stmt cfg cg method_decl stmt =
   CFrontend_errors.run_frontend_checkers_on_stmt cfg cg method_decl stmt;
-  let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
+  let stmts = CFrontend_utils.Ast_utils.get_stmts_from_stmt stmt in
   IList.iter (do_frontend_checks_stmt cfg cg method_decl) stmts
 
 let rec do_frontend_checks_decl cfg cg decl =
