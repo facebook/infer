@@ -9,31 +9,32 @@
 
 type issue =
   | Assign_pointer_warning
-  | Strong_delegate_warning
-  | Global_variable_initialized_with_function_or_method_call
-  | Direct_atomic_property_access
   | Cxx_reference_captured_in_objc_block
+  | Direct_atomic_property_access
+  | Global_variable_initialized_with_function_or_method_call
   | Registered_observer_being_deallocated
+  | Strong_delegate_warning
 
 let to_string issue =
   match issue with
   | Assign_pointer_warning -> "ASSIGN_POINTER_WARNING"
-  | Strong_delegate_warning -> "STRONG_DELEGATE_WARNING"
+  | Cxx_reference_captured_in_objc_block ->
+      "CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK"
+  | Direct_atomic_property_access -> "DIRECT_ATOMIC_PROPERTY_ACCESS"
   | Global_variable_initialized_with_function_or_method_call ->
       "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"
-  | Direct_atomic_property_access -> "DIRECT_ATOMIC_PROPERTY_ACCESS"
-  | Cxx_reference_captured_in_objc_block -> "CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK"
   | Registered_observer_being_deallocated ->
       Localise.to_string (Localise.registered_observer_being_deallocated)
+  | Strong_delegate_warning -> "STRONG_DELEGATE_WARNING"
 
 let severity_of_issue issue =
   match issue with
   | Assign_pointer_warning
-  | Strong_delegate_warning
-  | Global_variable_initialized_with_function_or_method_call
-  | Direct_atomic_property_access
   | Cxx_reference_captured_in_objc_block
-  | Registered_observer_being_deallocated -> Exceptions.Kwarning
+  | Direct_atomic_property_access
+  | Global_variable_initialized_with_function_or_method_call
+  | Registered_observer_being_deallocated
+  | Strong_delegate_warning -> Exceptions.Kwarning
 
 
 type issue_desc = {

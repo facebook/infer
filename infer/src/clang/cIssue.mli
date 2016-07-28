@@ -9,11 +9,11 @@
 
 type issue =
   | Assign_pointer_warning
-  | Strong_delegate_warning
-  | Global_variable_initialized_with_function_or_method_call
-  | Direct_atomic_property_access
   | Cxx_reference_captured_in_objc_block
+  | Direct_atomic_property_access
+  | Global_variable_initialized_with_function_or_method_call
   | Registered_observer_being_deallocated
+  | Strong_delegate_warning
 
 val to_string : issue -> string
 
