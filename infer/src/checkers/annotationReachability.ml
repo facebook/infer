@@ -12,7 +12,7 @@ open! Utils
 module F = Format
 module L = Logging
 
-module CallSiteSet = AbstractDomain.FiniteSet (Specs.CallSiteSet)
+module CallSiteSet = AbstractDomain.FiniteSet (CallSite.Set)
 module CallsDomain = AbstractDomain.Map (Typ.AnnotMap) (CallSiteSet)
 
 let dummy_constructor_annot = "__infer_is_constructor"
@@ -176,13 +176,13 @@ let method_has_annot annot tenv pname =
 let method_overrides_annot annot tenv pname =
   method_overrides (method_has_annot annot) tenv pname
 
-let lookup_annotation_calls annot pname =
+let lookup_annotation_calls annot pname : CallSite.t list =
   match Specs.get_summary pname with
   | Some { Specs.payload = { Specs.calls = Some call_map; }; } ->
       begin
         try
           Typ.AnnotMap.find annot call_map
-          |> Specs.CallSiteSet.elements
+          |> CallSiteSet.elements
         with Not_found ->
           []
       end
@@ -240,7 +240,7 @@ let report_annotation_stack src_annot snk_annot src_pname loc trace stack_str sn
       Exceptions.Checkers (msg, Localise.verbatim_desc description) in
     Reporting.log_error src_pname ~loc: (Some loc) ~ltr: (Some final_trace) exn
 
-let report_call_stack end_of_stack lookup_next_calls report pname loc calls =
+let report_call_stack end_of_stack lookup_next_calls report call_site calls =
   (* TODO: stop using this; we can use the call site instead *)
   let lookup_location pname =
     match Specs.get_summary pname with
@@ -248,7 +248,7 @@ let report_call_stack end_of_stack lookup_next_calls report pname loc calls =
     | Some summary -> summary.Specs.attributes.ProcAttributes.loc in
   let rec loop fst_call_loc visited_pnames (trace, stack_str) (callee_pname, call_loc) =
     if end_of_stack callee_pname then
-      report pname fst_call_loc trace stack_str callee_pname call_loc
+      report (CallSite.pname call_site) fst_call_loc trace stack_str callee_pname call_loc
     else
       let callee_def_loc = lookup_location callee_pname in
       let next_calls = lookup_next_calls callee_pname in
@@ -257,14 +257,18 @@ let report_call_stack end_of_stack lookup_next_calls report pname loc calls =
       let new_trace = update_trace call_loc trace |> update_trace callee_def_loc in
       let unseen_pnames, updated_visited =
         IList.fold_left
-          (fun (accu, set) (p, loc) ->
+          (fun (accu, set) call_site ->
+             let p = CallSite.pname call_site in
+             let loc = CallSite.loc call_site in
              if Procname.Set.mem p set then (accu, set)
              else ((p, loc) :: accu, Procname.Set.add p set))
           ([], visited_pnames) next_calls in
       IList.iter (loop fst_call_loc updated_visited (new_trace, new_stack_str)) unseen_pnames in
   IList.iter
-    (fun (fst_callee_pname, fst_call_loc) ->
-       let start_trace = update_trace loc [] in
+    (fun fst_call_site ->
+       let fst_callee_pname = CallSite.pname fst_call_site in
+       let fst_call_loc = CallSite.loc fst_call_site in
+       let start_trace = update_trace (CallSite.loc call_site) [] in
        loop fst_call_loc Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc))
     calls
 
@@ -311,8 +315,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let add_call_for_annot annot _ astate =
       let calls =
         try Typ.AnnotMap.find annot call_map
-        with Not_found -> Specs.CallSiteSet.empty in
-      if (not (Specs.CallSiteSet.is_empty calls) || method_has_annot annot tenv callee_pname) &&
+        with Not_found -> CallSiteSet.empty in
+      if (not (CallSiteSet.is_empty calls) || method_has_annot annot tenv callee_pname) &&
          (not (method_is_sanitizer annot tenv caller_pname))
       then
         Domain.add_call annot call_site astate
@@ -331,7 +335,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Domain.add_tracking_var (Var.of_id id) astate
     | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
         let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
-        let call_site = callee_pname, call_loc in
+        let call_site = CallSite.make callee_pname call_loc in
         begin
           (* Runs the analysis of callee_pname if not already analyzed *)
           match Summary.read_summary pdesc callee_pname with
@@ -399,9 +403,9 @@ module Interprocedural = struct
       let extract_calls_with_annot annot call_map =
         try
           Typ.AnnotMap.find annot call_map
-          |> Specs.CallSiteSet.elements
+          |> CallSiteSet.elements
         with Not_found -> [] in
-      let report_src_snk_path calls src_annot =
+      let report_src_snk_path (calls : CallSite.t list) src_annot =
         if method_overrides_annot src_annot tenv proc_name
         then
           let f_report =
@@ -410,8 +414,7 @@ module Interprocedural = struct
             (method_has_annot snk_annot tenv)
             (lookup_annotation_calls snk_annot)
             f_report
-            proc_name
-            loc
+            (CallSite.make proc_name loc)
             calls in
       let calls = extract_calls_with_annot snk_annot call_map in
       if not (IList.length calls = 0)

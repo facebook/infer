@@ -307,24 +307,7 @@ type phase = FOOTPRINT | RE_EXECUTION
 
 type dependency_map_t = int Procname.Map.t
 
-(* name of callee + location of the call *)
-type call_site = Procname.t * Location.t
-
-let compare_call_site (pname1, loc1) (pname2, loc2) =
-  let n = Procname.compare pname1 pname2 in
-  if n <> 0
-  then n
-  else Location.compare loc1 loc2
-
-let pp_call_site fmt (pname, loc) = F.fprintf fmt "%a at %a" Procname.pp pname Location.pp loc
-
-module CallSiteSet = PrettyPrintable.MakePPSet(struct
-    type t = call_site
-    let compare = compare_call_site
-    let pp_element = pp_call_site
-  end)
-
-type call_summary = CallSiteSet.t Typ.AnnotMap.t
+type call_summary = CallSite.Set.t Typ.AnnotMap.t
 
 (** Payload: results of some analysis *)
 type payload =
