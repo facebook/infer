@@ -71,6 +71,17 @@ def create_infer_command(args, javac_arguments):
     )
 
 
+# return True if string is empty or an escaped variant of empty
+def _is_empty_classpath(string):
+    stripped = string.strip("'").strip('"')
+    if stripped == '':
+        return True
+    elif stripped == string:
+        return False
+    else:
+        return _is_empty_classpath(stripped)
+
+
 class AnnotationProcessorNotFound(Exception):
 
     def __init__(self, path):
@@ -131,13 +142,18 @@ class CompilerCall(object):
                     prefix, suffix = prefix_suffix
                     with tempfile.NamedTemporaryFile(
                             dir=self.args.infer_out,
-                            prefix=args_file_name + '_',
                             suffix='_cp',
                             delete=False) as args_file_cp:
-                        args_file_name_cp = args_file_cp.name
+                        cp_line, _, after_cp = suffix.partition('\n')
+                        # avoid errors the happen when we get -classpath '"',
+                        # -classpath '', or similar from the args file
+                        if _is_empty_classpath(cp_line):
+                            cp_line = '\n'
+                        else:
+                            cp_line = ':%s\n' % cp_line
                         args_file_cp.write(
-                            prefix + '-classpath\n' + classpath + ':' + suffix)
-                        at_arg_cp = '@' + args_file_name_cp
+                            prefix + '-classpath\n' + classpath + cp_line + after_cp)
+                        at_arg_cp = '@' + args_file_cp.name
                         self.remaining_args = [
                             at_arg_cp if arg == at_arg else arg
                             for arg in self.remaining_args]
