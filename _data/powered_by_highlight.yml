@@ -9,6 +9,9 @@
   - name: Kiuwan
     url: https://www.kiuwan.com/
     img: static/images/kiuwan.png
+  - name: Oculus
+    url: https://www.oculus.com/
+    img: static/images/oculus.png
   - name: Spotify
     url: blog/2016/03/17/collaboration-with-spotify.html
     img: static/images/spotify.png
