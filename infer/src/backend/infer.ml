@@ -82,6 +82,8 @@ let () =
       (match Config.stacktrace with None -> [] | Some s ->
           ["--stacktrace"; s]) @
       "--multicore" :: (string_of_int Config.jobs) ::
+      (if not Config.pmd_xml then [] else
+         ["--pmd-xml"]) @
       (if not Config.reactive_mode then [] else
          ["--reactive"]) @
       "--out" :: Config.results_dir ::

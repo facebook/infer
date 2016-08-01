@@ -852,6 +852,11 @@ and (
     mk_option ~deprecated:["skip_translation"] ~long:"skip-translation"
       "Matcher or list of matchers for names of files that should be analyzed at all.")
 
+and pmd_xml =
+  CLOpt.mk_bool  ~long:"pmd-xml"
+    ~exes:CLOpt.[Toplevel]
+    "Output issues in (PMD) XML format"
+
 (** command line flag: if true, print stats about preconditions to standard output *)
 and precondition_stats =
   CLOpt.mk_bool ~deprecated:["precondition_stats"] ~long:"precondition-stats"
@@ -1358,6 +1363,7 @@ and out_file_cmdline = !out_file
 and patterns_never_returning_null = !patterns_never_returning_null
 and patterns_skip_translation = !patterns_skip_translation
 and patterns_modeled_expensive = !patterns_modeled_expensive
+and pmd_xml = !pmd_xml
 and precondition_stats = !precondition_stats
 and print_builtins = !print_builtins
 and print_types = !print_types
