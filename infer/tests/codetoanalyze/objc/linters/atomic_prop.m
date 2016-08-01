@@ -100,4 +100,12 @@
   }
 }
 
+- (void)accessWithinSynchronizedIsOk {
+  @synchronized(self) {
+    if (self->_f > 0) {
+      self->_f += 1;
+    }
+  }
+}
+
 @end

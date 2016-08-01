@@ -7,12 +7,12 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-let rec do_frontend_checks_stmt cfg cg method_decl stmt =
-  CFrontend_errors.run_frontend_checkers_on_stmt cfg cg method_decl stmt;
+let rec do_frontend_checks_stmt (context:CLintersContext.context) cfg cg method_decl stmt =
+  let context' = CFrontend_errors.run_frontend_checkers_on_stmt context cfg cg method_decl stmt in
   let stmts = CFrontend_utils.Ast_utils.get_stmts_from_stmt stmt in
-  IList.iter (do_frontend_checks_stmt cfg cg method_decl) stmts
+  IList.iter (do_frontend_checks_stmt context' cfg cg method_decl) stmts
 
-let rec do_frontend_checks_decl cfg cg decl =
+let rec do_frontend_checks_decl context cfg cg decl =
   let open Clang_ast_t in
   let info = Clang_ast_proj.get_decl_tuple decl in
   CLocation.update_curr_file info;
@@ -23,20 +23,20 @@ let rec do_frontend_checks_decl cfg cg decl =
    | CXXConversionDecl (_, _, _, fdi, _)
    | CXXDestructorDecl (_, _, _, fdi, _) ->
        (match fdi.Clang_ast_t.fdi_body with
-        | Some stmt -> do_frontend_checks_stmt cfg cg decl stmt
+        | Some stmt -> do_frontend_checks_stmt context cfg cg decl stmt
         | None -> ())
    | ObjCMethodDecl (_, _, mdi) ->
        (match mdi.Clang_ast_t.omdi_body with
-        | Some stmt -> do_frontend_checks_stmt cfg cg decl stmt
+        | Some stmt -> do_frontend_checks_stmt context cfg cg decl stmt
         | None -> ())
    | _ -> ());
-  CFrontend_errors.run_frontend_checkers_on_decl cfg cg decl;
+  let context' = CFrontend_errors.run_frontend_checkers_on_decl context cfg cg decl in
   match Clang_ast_proj.get_decl_context_tuple decl with
-  | Some (decls, _) -> IList.iter (do_frontend_checks_decl cfg cg) decls
+  | Some (decls, _) -> IList.iter (do_frontend_checks_decl context' cfg cg) decls
   | None -> ()
 
 let do_frontend_checks cfg cg ast =
   match ast with
   | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
-      IList.iter (do_frontend_checks_decl cfg cg) decl_list
+      IList.iter (do_frontend_checks_decl CLintersContext.empty cfg cg) decl_list
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
