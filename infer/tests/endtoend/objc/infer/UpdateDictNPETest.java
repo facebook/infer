@@ -11,9 +11,6 @@ package endtoend.objc.infer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static utils.matchers.ResultContainsExactly.containsExactly;
-import static utils.matchers.ResultContainsLineNumbers.containsLines;
-import static utils.matchers.ResultContainsNoErrorInMethod.doesNotContain;
-import static utils.matchers.ResultContainsErrorInMethod.contains;
 
 import com.google.common.collect.ImmutableList;
 

@@ -10,7 +10,7 @@
 package endtoend.objcpp.linters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsLineNumbers.containsLines;
+import static utils.matchers.ResultContainsLineNumbers.containsOnlyLines;
 
 import com.google.common.collect.ImmutableList;
 
@@ -53,7 +53,7 @@ public class GlobalVarTest {
     assertThat(
         "Results should contain " + GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL,
         inferResults,
-        containsLines(new int[]{30, 32, 34}));
+        containsOnlyLines(new int[]{30, 32, 34}));
   }
 
 }

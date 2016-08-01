@@ -10,7 +10,7 @@
 package endtoend.objc.linters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsLineNumbers.containsLines;
+import static utils.matchers.ResultContainsLineNumbers.containsOnlyLines;
 
 import com.google.common.collect.ImmutableList;
 
@@ -55,11 +55,12 @@ public class AssignPointerTest {
     assertThat(
         "Results should contain the correct " + ASSIGN_POINTER_WARNING,
         inferResults,
-        containsLines(new int[]{
-            18,
-            20,
-            22
-          }));
+        containsOnlyLines(
+            new int[]{
+                18,
+                20,
+                22
+            }));
   }
 
 }

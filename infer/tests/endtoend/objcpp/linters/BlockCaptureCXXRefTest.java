@@ -10,8 +10,7 @@
 package endtoend.objcpp.linters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsExactly.containsExactly;
-import static utils.matchers.ResultContainsLineNumbers.containsLines;
+import static utils.matchers.ResultContainsLineNumbers.containsOnlyLines;
 
 import com.google.common.collect.ImmutableList;
 
@@ -51,9 +50,10 @@ public class BlockCaptureCXXRefTest {
     assertThat(
         "Results should contain the correct " + REFERENCE_CAPTURED,
         inferResults,
-        containsLines(new int[]{
-            20,
-            37
-        }));
+        containsOnlyLines(
+            new int[]{
+                20,
+                37
+            }));
   }
 }

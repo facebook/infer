@@ -10,7 +10,7 @@
 package endtoend.c;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsLineNumbers.containsLines;
+import static utils.matchers.ResultContainsLineNumbers.containsOnlyLines;
 
 import com.google.common.collect.ImmutableList;
 
@@ -53,7 +53,7 @@ public class OffsetOfExprTest {
     assertThat(
         "Results should contain the correct " + DIVIDE_BY_ZERO,
         inferResults,
-        containsLines(new int[] {21, 23}));
+        containsOnlyLines(new int[]{21, 23}));
   }
 
 }

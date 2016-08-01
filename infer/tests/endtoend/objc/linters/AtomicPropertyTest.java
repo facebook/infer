@@ -10,8 +10,7 @@
 package endtoend.objc.linters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsExactly.containsExactly;
-import static utils.matchers.ResultContainsLineNumbers.containsLines;
+import static utils.matchers.ResultContainsLineNumbers.containsOnlyLines;
 
 import com.google.common.collect.ImmutableList;
 
@@ -53,13 +52,14 @@ public class AtomicPropertyTest {
     assertThat(
         "Results should contain the correct " + DIRECT_ATOMIC_PROPERTY_ACCESS,
         inferResults,
-        containsLines(new int[]{
-            77,
-            82,
-            86,
-            98,
-            99
-        }));
+        containsOnlyLines(
+            new int[]{
+                77,
+                82,
+                86,
+                98,
+                99
+            }));
   }
 
 }

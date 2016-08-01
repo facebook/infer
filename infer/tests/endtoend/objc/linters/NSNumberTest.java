@@ -10,7 +10,7 @@
 package endtoend.objc.linters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsLineNumbers.containsLines;
+import static utils.matchers.ResultContainsLineNumbers.containsOnlyLines;
 
 import com.google.common.collect.ImmutableList;
 
@@ -51,7 +51,7 @@ public class NSNumberTest {
     assertThat(
         "Results should contain " + BAD_POINTER_COMPARISON,
         inferResults,
-        containsLines(new int[]{13, 18, 23, 43})
+        containsOnlyLines(new int[]{13, 18, 23, 43})
     );
   }
 

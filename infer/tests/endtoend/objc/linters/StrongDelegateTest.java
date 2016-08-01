@@ -10,7 +10,7 @@
 package endtoend.objc.linters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsLineNumbers.containsLines;
+import static utils.matchers.ResultContainsLineNumbers.containsOnlyLines;
 
 import com.google.common.collect.ImmutableList;
 
@@ -52,7 +52,7 @@ public class StrongDelegateTest {
     assertThat(
         "Results should contain " + STRONG_DELEGATE_WARNING,
         inferResults,
-        containsLines(new int[]{15, 19, 21, 23, 25}));
+        containsOnlyLines(new int[]{15, 19, 21, 23, 25}));
   }
 
 }
