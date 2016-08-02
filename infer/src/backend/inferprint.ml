@@ -540,32 +540,6 @@ module CallsCsv = struct
     Specs.CallStats.iter do_call stats.Specs.call_stats
 end
 
-module UnitTest = struct
-  (** Store the unit test functions generated, so that they can be called by main at the end *)
-  let procs_done = ref []
-
-  (** Print unit test for every spec in the summary *)
-  let print_unit_test proc_name summary =
-    let cnt = ref 0 in
-    let fmt = F.std_formatter in
-    let do_spec spec =
-      incr cnt;
-      let c_file = Filename.basename
-          (DB.source_file_to_string summary.Specs.attributes.ProcAttributes.loc.Location.file) in
-      let code =
-        Autounit.genunit c_file proc_name !cnt (Specs.get_formals summary) spec in
-      F.fprintf fmt "%a@." Autounit.pp_code code in
-    let specs = Specs.get_specs_from_payload summary in
-    IList.iter do_spec specs;
-    procs_done := (proc_name, IList.length specs) :: !procs_done
-
-  (** Print main function which calls all the unit test functions generated *)
-  let print_unit_test_main () =
-    let fmt = F.std_formatter in
-    let code = Autounit.genmain !procs_done in
-    F.fprintf fmt "%a@." Autounit.pp_code code
-end
-
 (** Module to compute the top procedures.
     A procedure is top if it has specs and any procedure calling it has no specs *)
 module TopProcedures : sig
@@ -788,7 +762,6 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
   do_outf Config.bugs_xml (fun outf -> BugsXml.pp_bugs error_filter linereader outf.fmt summary);
   do_outf Config.report (fun _ -> Stats.process_summary error_filter summary linereader stats);
   if Config.precondition_stats then PreconditionStats.do_summary proc_name summary;
-  if Config.unit_test then UnitTest.print_unit_test proc_name summary;
   Config.pp_simple := pp_simple_saved;
   do_outf Config.latex (fun outf -> write_summary_latex outf.fmt summary);
   if Config.svg then begin
@@ -972,7 +945,6 @@ let () =
   let linereader = Printer.LineReader.create () in
   let stats = Stats.create () in
   iterate_summaries (process_summary filters linereader stats top_proc_set);
-  if Config.unit_test then UnitTest.print_unit_test_main ();
   do_outf Config.procs_csv close_outf;
   do_outf Config.procs_xml (fun outf -> ProcsXml.pp_procs_close outf.fmt (); close_outf outf);
   do_outf Config.bugs_csv close_outf;

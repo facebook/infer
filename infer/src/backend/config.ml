@@ -1059,11 +1059,6 @@ and type_size =
   CLOpt.mk_bool ~deprecated:["type_size"] ~long:"type-size"
     "Consider the size of types during analysis"
 
-(** command line flag: if true, produce unit test for each spec *)
-and unit_test =
-  CLOpt.mk_bool ~deprecated:["unit_test"] ~long:"unit-test"
-    "Print unit test code"
-
 and unsafe_malloc =
   CLOpt.mk_bool ~long:"unsafe-malloc"
     ~exes:CLOpt.[Analyze;Toplevel]
@@ -1398,7 +1393,6 @@ and trace_error = !trace_error
 and trace_join = !trace_join
 and trace_rearrange = !trace_rearrange
 and type_size = !type_size
-and unit_test = !unit_test
 and unsafe_malloc = !unsafe_malloc
 and whole_seconds = !whole_seconds
 and worklist_mode = !worklist_mode
