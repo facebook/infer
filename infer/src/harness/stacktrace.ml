@@ -9,6 +9,8 @@
 
 (** Module for parsing stack traces and using them to guide Infer analysis *)
 
+open! Utils
+
 module F = Format
 
 type frame = {
@@ -42,11 +44,16 @@ let parse_stack_frame frame_str =
   ignore(Str.string_match (Str.regexp "\\(.*\\)\\.\\(.*\\)") qualified_procname 0);
   let class_str = Str.matched_group 1 qualified_procname in
   let method_str = Str.matched_group 2 qualified_procname in
-  (* separate the filename and line number *)
-  ignore(Str.string_match (Str.regexp "\\(.*\\):\\([0-9]+\\)") file_and_line 0);
-  let file_str = Str.matched_group 1 file_and_line in
-  let line_num = int_of_string (Str.matched_group 2 file_and_line) in
-  make_frame class_str method_str file_str line_num
+  (* Native methods don't have debugging info *)
+  if string_equal file_and_line "Native Method" then
+    make_frame class_str method_str "Native Method" (-1)
+  else begin
+    (* separate the filename and line number *)
+    ignore(Str.string_match (Str.regexp "\\(.*\\):\\([0-9]+\\)") file_and_line 0);
+    let file_str = Str.matched_group 1 file_and_line in
+    let line_num = int_of_string (Str.matched_group 2 file_and_line) in
+    make_frame class_str method_str file_str line_num
+  end
 
 let parse_exception_line exception_line =
   ignore(Str.string_match
