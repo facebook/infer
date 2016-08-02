@@ -10,9 +10,14 @@
 let rec do_frontend_checks_stmt (context:CLintersContext.context) cfg cg method_decl stmt =
   let context' = CFrontend_errors.run_frontend_checkers_on_stmt context cfg cg method_decl stmt in
   let stmts = CFrontend_utils.Ast_utils.get_stmts_from_stmt stmt in
-  IList.iter (do_frontend_checks_stmt context' cfg cg method_decl) stmts
-
-let rec do_frontend_checks_decl context cfg cg decl =
+  let do_all_checks_on_stmts stmt =
+    (match stmt with
+     | Clang_ast_t.DeclStmt (_, _, decl_list) ->
+         IList.iter (do_frontend_checks_decl context' cfg cg) decl_list
+     | _ -> ());
+    do_frontend_checks_stmt context' cfg cg method_decl stmt in
+  IList.iter (do_all_checks_on_stmts) stmts
+and do_frontend_checks_decl context cfg cg decl =
   let open Clang_ast_t in
   let info = Clang_ast_proj.get_decl_tuple decl in
   CLocation.update_curr_file info;
