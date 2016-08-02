@@ -37,12 +37,12 @@ public class CrashContextResults {
 
   public boolean hasStackFrame(String methodSignature, int pos) {
     return methodSignature.equals(
-      json.path("stack").get(pos).path("method").asText());
+      json.path("stack").get(pos).path("method_name").asText());
   }
 
   public boolean hasStackFrame(String methodSignature) {
     for (JsonNode frame : json.path("stack")) {
-      if(methodSignature.equals(frame.path("method").asText())) {
+      if (methodSignature.equals(frame.path("method_name").asText())) {
         return true;
       }
     }
@@ -52,10 +52,10 @@ public class CrashContextResults {
   private List<JsonNode> findNodesForMethod(JsonNode node,
                                             String methodSignature,
                                             List<JsonNode> accumulator) {
-    if(methodSignature.equals(node.path("method").asText())) {
+    if (methodSignature.equals(node.path("method_name").asText())) {
       accumulator.add(node);
     }
-    for(JsonNode callee : node.path("callees")) {
+    for (JsonNode callee : node.path("callees")) {
       findNodesForMethod(callee, methodSignature, accumulator);
     }
     return accumulator;
@@ -78,8 +78,8 @@ public class CrashContextResults {
   }
 
   public boolean hasPath(String methodFrom, String methodTo) {
-    for(JsonNode from : findNodesForMethod(methodFrom)) {
-      if(!findNodesForMethod(from, methodTo, new ArrayList()).isEmpty()) {
+    for (JsonNode from : findNodesForMethod(methodFrom)) {
+      if (!findNodesForMethod(from, methodTo, new ArrayList()).isEmpty()) {
         return true;
       }
     }

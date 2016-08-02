@@ -30,10 +30,6 @@ csv.field_size_limit(sys.maxsize)
 
 INFER_ANALYZE_BINARY = 'InferAnalyze'
 
-CRASHCONTEXT_METHOD_FIELD = 'method'
-CRASHCONTEXT_LOCATION_FIELD = 'location'
-CRASHCONTEXT_CALLEES_FIELD = 'callees'
-
 
 def get_infer_version():
     try:
@@ -492,54 +488,6 @@ class AnalyzerWrapper(object):
 
         return exit_status
 
-    def crashcontext_stitch_summaries(self):
-        """Take crashcontext per-method summaries and join them together to
-        produce the final crashcontext.json output file."""
-
-        crashcontext_dir = os.path.join(self.args.infer_out, 'crashcontext')
-        summaries_map_by_frame_id = {}
-        st_json = utils.load_json_from_path(self.args.stacktrace)
-        stacktrace = st_json['stack_trace']
-        k = 1   # Where k is the number of levels of inlined calls.
-        for f in os.listdir(crashcontext_dir):
-            if f.endswith('.json'):
-                path = os.path.join(crashcontext_dir, f)
-                method_summary = utils.load_json_from_path(path)
-                method_signature = method_summary[CRASHCONTEXT_METHOD_FIELD]
-                method_name = method_signature.split('(')[0]
-                src_path = method_summary[CRASHCONTEXT_LOCATION_FIELD]['file']
-                line = method_summary[CRASHCONTEXT_LOCATION_FIELD]['line']
-                frame_id = "{0}({1}:{2})".format(
-                    method_name,
-                    os.path.basename(src_path),
-                    line)
-                summaries_map_by_frame_id[frame_id] = method_summary
-
-        def expand(summary, k):
-            if k == 0:
-                # Make sure leaf nodes have an empty 'callees' field.
-                leaf_nodes = summary[CRASHCONTEXT_CALLEES_FIELD]
-                for leaf_node in leaf_nodes:
-                    if CRASHCONTEXT_CALLEES_FIELD not in leaf_node:
-                        leaf_node[CRASHCONTEXT_CALLEES_FIELD] = []
-                return summary
-            else:
-                NotImplementedError()  # TODO
-
-        json_frames = []
-        for frame in stacktrace:
-            frame_id = frame.strip()
-            if not frame_id:
-                continue
-            assert frame_id.startswith('at ')
-            frame_id = frame_id[3:]
-            assert frame_id in summaries_map_by_frame_id
-            summary = summaries_map_by_frame_id[frame_id]
-            json_frames.append(expand(summary, k - 1))
-        out_json = {}
-        out_json['stack'] = json_frames
-        out_file = os.path.join(crashcontext_dir, 'crashcontext.json')
-        utils.dump_json_to_path(out_json, out_file)
 
     def read_proc_stats(self):
         proc_stats_path = os.path.join(
@@ -573,8 +521,6 @@ class AnalyzerWrapper(object):
         if self.args.analyzer not in [config.ANALYZER_COMPILE,
                                       config.ANALYZER_CAPTURE]:
             if self.analyze() == os.EX_OK:
-                if self.args.analyzer == config.ANALYZER_CRASHCONTEXT:
-                    self.crashcontext_stitch_summaries()
                 reporting_start_time = time.time()
                 report_status = self.create_report()
                 elapsed = utils.elapsed_time(reporting_start_time)
