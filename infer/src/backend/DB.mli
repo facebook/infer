@@ -167,3 +167,6 @@ val is_source_file: string -> bool
 
 (** Returns true if the file is a C++ model *)
 val file_is_in_cpp_model : string -> bool
+
+(** Return all file paths recursively under the given directory which match the given predicate *)
+val paths_matching : string -> (string -> bool) -> string list
