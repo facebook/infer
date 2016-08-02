@@ -12,7 +12,6 @@ open! Utils
 
 module L = Logging
 module F = Format
-open Jsonbug_j
 
 let source_file_copy = ref None
 
@@ -94,9 +93,9 @@ let loc_trace_to_jsonbug_record trace_list ekind =
   | _ ->
       (* writes a trace as a record for atdgen conversion *)
       let node_tags_to_records tags_list =
-        IList.map (fun tag -> { tag = fst tag; value = snd tag }) tags_list in
+        IList.map (fun tag -> { Jsonbug_j.tag = fst tag; value = snd tag }) tags_list in
       let trace_item_to_record trace_item =
-        { level = trace_item.Errlog.lt_level;
+        { Jsonbug_j.level = trace_item.Errlog.lt_level;
           filename = DB.source_file_to_string trace_item.Errlog.lt_loc.Location.file;
           line_number = trace_item.Errlog.lt_loc.Location.line;
           description = trace_item.Errlog.lt_description;
@@ -108,7 +107,7 @@ let loc_trace_to_jsonbug_record trace_list ekind =
 let error_desc_to_qualifier_tags_records error_desc =
   let tag_value_pairs = Localise.error_desc_to_tag_value_pairs error_desc in
   let tag_value_to_record (tag, value) =
-    { tag = tag; value = value } in
+    { Jsonbug_j.tag = tag; value = value } in
   IList.map (fun tag_value -> tag_value_to_record tag_value) tag_value_pairs
 
 type summary_val =
@@ -337,7 +336,8 @@ module BugsCsv = struct
           | "" -> "false"
           | v -> v in
 
-        let trace = string_of_json_trace { trace = loc_trace_to_jsonbug_record ltr ekind } in
+        let trace =
+          Jsonbug_j.string_of_json_trace { trace = loc_trace_to_jsonbug_record ltr ekind } in
         incr csv_bugs_id;
         pp "%s," (Exceptions.err_class_string eclass);
         pp "%s," kind;
@@ -391,7 +391,7 @@ module BugsJson = struct
               Some Jsonbug_j.{ file; lnum; cnum; enum; }
           | _ -> None in
         let bug = {
-          bug_class = Exceptions.err_class_string eclass;
+          Jsonbug_j.bug_class = Exceptions.err_class_string eclass;
           kind = kind;
           bug_type = bug_type;
           qualifier = error_desc_to_plain_string error_desc;
@@ -408,7 +408,7 @@ module BugsJson = struct
           infer_source_loc = json_ml_loc;
         } in
         if not !is_first_item then pp "," else is_first_item := false;
-        pp "%s@?" (string_of_jsonbug bug) in
+        pp "%s@?" (Jsonbug_j.string_of_jsonbug bug) in
     Errlog.iter pp_row err_log
 end
 
