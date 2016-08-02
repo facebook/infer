@@ -90,6 +90,7 @@ buck-out/
 
 #atdgen stubs
 /infer/src/backend/jsonbug_*
+/infer/src/checkers/stacktree_*
 
 # intelliJ files
 /infer/src/backend/.projectSettings
