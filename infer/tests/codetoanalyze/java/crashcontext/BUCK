@@ -53,6 +53,11 @@ infer_cmds = [
         "BranchingCallsExample",
         "BranchingCallsExample.java",
         "BranchingCallsExample.stacktrace.json"
+    ),
+    mk_infer_cmd(
+        "MethodNameClashExample",
+        "MethodNameClashExample.java",
+        "MethodNameClashExample.stacktrace.json"
     )
 ]
 
