@@ -49,6 +49,16 @@ public class CrashContextResults {
     return false;
   }
 
+  public boolean hasLocationOnStack(String filename, int line) {
+    for (JsonNode frame : json.path("stack")) {
+      if (filename.equals(frame.path("location").path("file").asText()) &&
+         line == frame.path("location").path("line").asInt()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private List<JsonNode> findNodesForMethod(JsonNode node,
                                             String methodSignature,
                                             List<JsonNode> accumulator) {

@@ -58,6 +58,11 @@ infer_cmds = [
         "MethodNameClashExample",
         "MethodNameClashExample.java",
         "MethodNameClashExample.stacktrace.json"
+    ),
+    mk_infer_cmd(
+        "NativeMethodExample",
+        "NativeMethodExample.java",
+        "NativeMethodExample.stacktrace.json"
     )
 ]
 
