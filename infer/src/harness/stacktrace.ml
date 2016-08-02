@@ -25,6 +25,18 @@ type t = {
   frames: frame list;
 }
 
+let new_line_regexp = Str.regexp "\n"
+
+(* Pre-compute the regular expression matchers used to parse: *)
+(* Stack frames into (procedure, location) tuples. *)
+let frame_regexp = Str.regexp "\t*at \\(.*\\)(\\(.*\\))"
+(* procedures into class and method name. *)
+let procname_regexp = Str.regexp "\\(.*\\)\\.\\(.*\\)"
+(* locations into file and line number information. *)
+let file_and_line_regexp = Str.regexp "\\(.*\\):\\([0-9]+\\)"
+(* exception information lines into thread id and exception type *)
+let exception_regexp = Str.regexp "Exception in thread \"\\(.*\\)\" \\(.*\\)"
+
 let make exception_name frames = { exception_name; frames; }
 
 let make_frame class_str method_str file_str line_num =
@@ -37,11 +49,11 @@ let frame_matches_location frame_obj loc =
 
 let parse_stack_frame frame_str =
   (* separate the qualified method name and the parenthesized text/line number*)
-  ignore(Str.string_match (Str.regexp "\t*at \\(.*\\)(\\(.*\\))") frame_str 0);
+  ignore(Str.string_match frame_regexp frame_str 0);
   let qualified_procname = Str.matched_group 1 frame_str in
   let file_and_line = Str.matched_group 2 frame_str in
   (* separate the class name from the method name *)
-  ignore(Str.string_match (Str.regexp "\\(.*\\)\\.\\(.*\\)") qualified_procname 0);
+  ignore(Str.string_match procname_regexp qualified_procname 0);
   let class_str = Str.matched_group 1 qualified_procname in
   let method_str = Str.matched_group 2 qualified_procname in
   (* Native methods don't have debugging info *)
@@ -49,22 +61,19 @@ let parse_stack_frame frame_str =
     make_frame class_str method_str "Native Method" (-1)
   else begin
     (* separate the filename and line number *)
-    ignore(Str.string_match (Str.regexp "\\(.*\\):\\([0-9]+\\)") file_and_line 0);
+    ignore(Str.string_match file_and_line_regexp file_and_line 0);
     let file_str = Str.matched_group 1 file_and_line in
     let line_num = int_of_string (Str.matched_group 2 file_and_line) in
     make_frame class_str method_str file_str line_num
   end
 
 let parse_exception_line exception_line =
-  ignore(Str.string_match
-           (Str.regexp "Exception in thread \"\\(.*\\)\" \\(.*\\)")
-           exception_line
-           0);
+  ignore(Str.string_match exception_regexp exception_line 0);
   let exception_name = Str.matched_group 2 exception_line in
   exception_name
 
 let of_string s =
-  let lines = Str.split (Str.regexp "\n") s in
+  let lines = Str.split new_line_regexp s in
   match lines with
   | exception_line :: trace ->
       let exception_name = parse_exception_line exception_line in
