@@ -95,50 +95,61 @@ check_installed () {
   fi
 }
 
+setup_opam () {
+    OCAML_VERSION="4.02.3"
+
+    opam init -j $NCPU --no-setup --yes
+
+    OPAMSWITCH=infer-$OCAML_VERSION
+    opam switch install -j $NCPU $OPAMSWITCH --alias-of $OCAML_VERSION || true
+}
+
+add_opam_git_pin () {
+    PACKAGE_NAME=$1
+    REPO_URL=$2
+    PIN_HASH=$3
+
+    if [ "$(opam show -f pinned "$PACKAGE_NAME")" != "git ($PIN_HASH)" ]; then
+        opam pin add --yes --no-action "$PACKAGE_NAME" "$REPO_URL"
+    fi
+}
+
+install_opam_deps () {
+    add_opam_git_pin merlin 'https://github.com/the-lambda-church/merlin.git#reason-0.0.1' 87ea0e79
+    add_opam_git_pin merlin_extend 'https://github.com/let-def/merlin-extend.git#reason-0.0.1' ef634252
+    add_opam_git_pin reason 'https://github.com/jberdine/reason.git#infer' f04946f2
+
+    # trick to avoid rsync'inc the whole directory to opam since we are only interested in
+    # installing the dependencies
+    INFER_DEPS_DIR=$(mktemp -d infer-deps-XXXX)
+    cp opam "$INFER_DEPS_DIR"
+    # give unique name to the package to force opam to recheck the dependencies are all installed
+    opam pin add --yes --no-action "$INFER_DEPS_DIR" "$INFER_DEPS_DIR"
+    opam install -j $NCPU --yes --deps-only "$INFER_DEPS_DIR"
+    opam pin remove "$INFER_DEPS_DIR"
+    rm -fr "$INFER_DEPS_DIR"
+}
+
 echo "initializing opam... "
 check_installed opam
-
-# if the first command doesn't succeed it means that ocaml is not even
-# installed on the system, so we have to pick a compiler version ourselves
-#
-# opam is noisy, so we silence the first invocation which typically would be a
-# no-op
-opam init --no-setup --yes > /dev/null || \
-  opam init --no-setup --yes --comp=4.02.3
-
-OCAML_VERSION="4.02.3"
-OPAM_SWITCH=infer-$OCAML_VERSION
-
-if ! opam switch $OPAM_SWITCH >/dev/null 2>/dev/null; then
-  opam switch install $OPAM_SWITCH --alias-of $OCAML_VERSION
-fi
-
-eval $(SHELL=bash opam config env)
-
+setup_opam
+eval $(SHELL=bash opam config env --switch=$OPAMSWITCH)
 echo "installing infer dependencies... "
-opam update
-
-opam pin add --yes merlin 'https://github.com/the-lambda-church/merlin.git#reason-0.0.1'
-opam pin add --yes merlin_extend 'https://github.com/let-def/merlin-extend.git#reason-0.0.1'
-opam pin add --yes --no-action reason 'https://github.com/facebook/reason.git#0.0.6'
-
-opam pin add --yes --no-action infer .
-opam install --yes --deps-only infer
+install_opam_deps
 
 echo "preparing build... "
 if [ ! -f .release ]; then
   ./autogen.sh > /dev/null
 fi
 
-CONFIGURE_ARGS=
 if [ "$BUILD_CLANG" = "no" ]; then
-  CONFIGURE_ARGS+=" --disable-c-analyzers"
+  INFER_CONFIGURE_OPTS+=" --disable-c-analyzers"
 fi
 if [ "$BUILD_JAVA" = "no" ]; then
-  CONFIGURE_ARGS+=" --disable-java-analyzers"
+  INFER_CONFIGURE_OPTS+=" --disable-java-analyzers"
 fi
 
-./configure $CONFIGURE_ARGS
+./configure $INFER_CONFIGURE_OPTS
 
 if [ "$BUILD_CLANG" = "yes" ] && ! facebook-clang-plugins/clang/setup.sh --only-check-install; then
   echo ""
