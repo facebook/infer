@@ -115,6 +115,7 @@ let initializer_ = "Initializer"
 let inject = "Inject"
 let inject_view = "InjectView"
 let bind = "Bind"
+let bind_view = "BindView"
 let bind_array = "BindArray"
 let bind_bitmap = "BindBitmap"
 let bind_drawable = "BindDrawable"
@@ -167,6 +168,7 @@ let field_injector_readwrite_list =
   [
     inject_view;
     bind;
+    bind_view;
     bind_array;
     bind_bitmap;
     bind_drawable;

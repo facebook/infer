@@ -1,0 +1,15 @@
+type location_t = {
+  location_type : string;
+  file : string;
+  line : int;
+}
+
+type stacktree = {
+  method_name : string;
+  ?location : location_t option;
+  callees : stacktree list;
+}
+
+type crashcontext_t = {
+  stack : stacktree list;
+}

@@ -21,19 +21,26 @@ import utils.InferResults;
 
 public class ResultContainsLineNumbers extends BaseMatcher<InferResults> {
 
-  int[] lines;
+  private int[] lines;
+  private boolean strict;
 
-  public ResultContainsLineNumbers(int[] lines) {
+  public ResultContainsLineNumbers(
+      int[] lines,
+      boolean strict) {
     this.lines = lines;
+    this.strict = strict;
   }
 
   @Override
   public boolean matches(Object o) {
-    InferResults results = (InferResults) o;
+    Vector<InferError> errors = ((InferResults) o).getErrors();
+    if (strict && lines.length != errors.size()) {
+      return false;
+    }
     boolean allContained = true;
     for (int line : lines) {
       boolean isContained = false;
-      for (InferError error : results.getErrors()) {
+      for (InferError error : errors) {
         isContained = isContained || line == error.getErrorLine();
       }
       allContained = allContained && isContained;
@@ -58,7 +65,11 @@ public class ResultContainsLineNumbers extends BaseMatcher<InferResults> {
   }
 
   public static <T> Matcher<InferResults> containsLines(int[] lines) {
-    return new ResultContainsLineNumbers(lines);
+    return new ResultContainsLineNumbers(lines, false);
+  }
+
+  public static <T> Matcher<InferResults> containsOnlyLines(int[] lines) {
+    return new ResultContainsLineNumbers(lines, true);
   }
 
   private int[] findLineNumbersInReport(InferResults results) {

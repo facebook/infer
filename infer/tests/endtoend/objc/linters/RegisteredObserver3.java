@@ -10,7 +10,7 @@
 package endtoend.objc.linters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsLineNumbers.containsLines;
+import static utils.matchers.ResultContainsLineNumbers.containsOnlyLines;
 
 import com.google.common.collect.ImmutableList;
 
@@ -56,6 +56,6 @@ public class RegisteredObserver3 {
     assertThat(
         "Results should contain " + REGISTERED_OBSERVER,
         inferResults,
-        containsLines(new int[]{14}));
+        containsOnlyLines(new int[]{14}));
   }
 }

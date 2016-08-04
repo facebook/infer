@@ -154,7 +154,7 @@ let captured_variables_cxx_ref captured_vars =
 (* === Warnings on properties === *)
 
 (* Assing Pointer Warning: a property with a pointer type should not be declared `assign` *)
-let assign_pointer_warning decl_info pname obj_c_property_decl_info =
+let assign_pointer_warning _ decl_info pname obj_c_property_decl_info =
   let open Clang_ast_t in
   let condition =
     let has_assign_property () = ObjcProperty_decl.is_assign_property obj_c_property_decl_info in
@@ -180,7 +180,7 @@ let assign_pointer_warning decl_info pname obj_c_property_decl_info =
   else None
 
 (* Strong Delegate Warning: a property with name delegate should not be declared strong *)
-let strong_delegate_warning decl_info pname obj_c_property_decl_info =
+let strong_delegate_warning _ decl_info pname obj_c_property_decl_info =
   let condition = (name_contains_word pname "delegate")
                   && not (name_contains_word pname "queue")
                   && ObjcProperty_decl.is_strong_property obj_c_property_decl_info in
@@ -195,7 +195,7 @@ let strong_delegate_warning decl_info pname obj_c_property_decl_info =
 (* GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL warning: a global variable initialization should not *)
 (* contain calls to functions or methods as these can be expensive an delay the starting time *)
 (* of an app *)
-let global_var_init_with_calls_warning decl =
+let global_var_init_with_calls_warning _ decl =
   let decl_info, gvar =
     match Clang_ast_proj.get_named_decl_tuple decl with
     | Some (di, ndi) -> di, ndi.ni_name
@@ -217,7 +217,7 @@ let global_var_init_with_calls_warning decl =
 
 (* Direct Atomic Property access:
    a property declared atomic should not be accessed directly via its ivar *)
-let direct_atomic_property_access_warning method_decl stmt_info ivar_decl_ref =
+let direct_atomic_property_access_warning context method_decl stmt_info ivar_decl_ref =
   let ivar_pointer = ivar_decl_ref.Clang_ast_t.dr_decl_pointer in
   match Ast_utils.get_decl ivar_pointer with
   | Some (ObjCIvarDecl (_, named_decl_info, _, _, _) as d) ->
@@ -226,12 +226,14 @@ let direct_atomic_property_access_warning method_decl stmt_info ivar_decl_ref =
         | _ -> "" in
       let ivar_name = named_decl_info.Clang_ast_t.ni_name in
       let condition =
-        (* We give the warning when:
-           (1) the property has the atomic attribute and
-           (2) the access of the ivar is not in a getter or setter method.
-           (3) the access of the ivar is not in the init method
+        (* We warn when:
+           (1) we are not inside a @synchronized block
+           (2) the property has the atomic attribute and
+           (3) the access of the ivar is not in a getter or setter method
+           (4) the access of the ivar is not in the init method
            Last two conditions avoids false positives *)
-        is_ivar_atomic (get_ivar_attributes d)
+        not (context.CLintersContext.in_synchronized_block)
+        && is_ivar_atomic (get_ivar_attributes d)
         && not (is_method_property_accessor_of_ivar method_decl ivar_pointer)
         && not (Procname.is_objc_constructor method_name)
         && not (Procname.is_objc_dealloc method_name) in
@@ -250,7 +252,7 @@ let direct_atomic_property_access_warning method_decl stmt_info ivar_decl_ref =
 
 (* CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK: C++ references
    should not be captured in blocks.  *)
-let captured_cxx_ref_in_objc_block_warning stmt_info captured_vars =
+let captured_cxx_ref_in_objc_block_warning _ stmt_info captured_vars =
   let capt_refs = captured_variables_cxx_ref captured_vars in
   let var_descs =
     let var_desc vars var_named_decl_info =
@@ -272,7 +274,7 @@ let captured_cxx_ref_in_objc_block_warning stmt_info captured_vars =
 
 (* BAD_POINTER_COMPARISON: Fires whenever a NSNumber is dangerously coerced to
     a boolean in a comparison *)
-let bad_pointer_comparison_warning stmt_info stmts =
+let bad_pointer_comparison_warning _ stmt_info stmts =
   let rec condition stmts =
     let condition_aux stmt =
       match stmt with
@@ -309,7 +311,7 @@ let bad_pointer_comparison_warning stmt_info stmts =
 
 
 (* exist m1:  m1.body|- EF call_method(addObserver:) => exists m2 : m2.body |- EF call_method(removeObserver:) *)
-let checker_NSNotificationCenter decl_info decls =
+let checker_NSNotificationCenter _ decl_info decls =
   let exists_method_calling_addObserver =
     IList.exists (dec_body_eventually (call_method_on_nth is_self 1) "addObserver:selector:name:object:") decls in
   let exists_method_calling_addObserverForName =

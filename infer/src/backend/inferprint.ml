@@ -12,7 +12,6 @@ open! Utils
 
 module L = Logging
 module F = Format
-open Jsonbug_j
 
 let source_file_copy = ref None
 
@@ -94,9 +93,9 @@ let loc_trace_to_jsonbug_record trace_list ekind =
   | _ ->
       (* writes a trace as a record for atdgen conversion *)
       let node_tags_to_records tags_list =
-        IList.map (fun tag -> { tag = fst tag; value = snd tag }) tags_list in
+        IList.map (fun tag -> { Jsonbug_j.tag = fst tag; value = snd tag }) tags_list in
       let trace_item_to_record trace_item =
-        { level = trace_item.Errlog.lt_level;
+        { Jsonbug_j.level = trace_item.Errlog.lt_level;
           filename = DB.source_file_to_string trace_item.Errlog.lt_loc.Location.file;
           line_number = trace_item.Errlog.lt_loc.Location.line;
           description = trace_item.Errlog.lt_description;
@@ -108,7 +107,7 @@ let loc_trace_to_jsonbug_record trace_list ekind =
 let error_desc_to_qualifier_tags_records error_desc =
   let tag_value_pairs = Localise.error_desc_to_tag_value_pairs error_desc in
   let tag_value_to_record (tag, value) =
-    { tag = tag; value = value } in
+    { Jsonbug_j.tag = tag; value = value } in
   IList.map (fun tag_value -> tag_value_to_record tag_value) tag_value_pairs
 
 type summary_val =
@@ -337,7 +336,8 @@ module BugsCsv = struct
           | "" -> "false"
           | v -> v in
 
-        let trace = string_of_json_trace { trace = loc_trace_to_jsonbug_record ltr ekind } in
+        let trace =
+          Jsonbug_j.string_of_json_trace { trace = loc_trace_to_jsonbug_record ltr ekind } in
         incr csv_bugs_id;
         pp "%s," (Exceptions.err_class_string eclass);
         pp "%s," kind;
@@ -391,7 +391,7 @@ module BugsJson = struct
               Some Jsonbug_j.{ file; lnum; cnum; enum; }
           | _ -> None in
         let bug = {
-          bug_class = Exceptions.err_class_string eclass;
+          Jsonbug_j.bug_class = Exceptions.err_class_string eclass;
           kind = kind;
           bug_type = bug_type;
           qualifier = error_desc_to_plain_string error_desc;
@@ -408,7 +408,7 @@ module BugsJson = struct
           infer_source_loc = json_ml_loc;
         } in
         if not !is_first_item then pp "," else is_first_item := false;
-        pp "%s@?" (string_of_jsonbug bug) in
+        pp "%s@?" (Jsonbug_j.string_of_jsonbug bug) in
     Errlog.iter pp_row err_log
 end
 
@@ -538,32 +538,6 @@ module CallsCsv = struct
       pp "%d," loc.Location.line;
       pp "%a@\n" Specs.CallStats.pp_trace trace in
     Specs.CallStats.iter do_call stats.Specs.call_stats
-end
-
-module UnitTest = struct
-  (** Store the unit test functions generated, so that they can be called by main at the end *)
-  let procs_done = ref []
-
-  (** Print unit test for every spec in the summary *)
-  let print_unit_test proc_name summary =
-    let cnt = ref 0 in
-    let fmt = F.std_formatter in
-    let do_spec spec =
-      incr cnt;
-      let c_file = Filename.basename
-          (DB.source_file_to_string summary.Specs.attributes.ProcAttributes.loc.Location.file) in
-      let code =
-        Autounit.genunit c_file proc_name !cnt (Specs.get_formals summary) spec in
-      F.fprintf fmt "%a@." Autounit.pp_code code in
-    let specs = Specs.get_specs_from_payload summary in
-    IList.iter do_spec specs;
-    procs_done := (proc_name, IList.length specs) :: !procs_done
-
-  (** Print main function which calls all the unit test functions generated *)
-  let print_unit_test_main () =
-    let fmt = F.std_formatter in
-    let code = Autounit.genmain !procs_done in
-    F.fprintf fmt "%a@." Autounit.pp_code code
 end
 
 (** Module to compute the top procedures.
@@ -788,7 +762,6 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
   do_outf Config.bugs_xml (fun outf -> BugsXml.pp_bugs error_filter linereader outf.fmt summary);
   do_outf Config.report (fun _ -> Stats.process_summary error_filter summary linereader stats);
   if Config.precondition_stats then PreconditionStats.do_summary proc_name summary;
-  if Config.unit_test then UnitTest.print_unit_test proc_name summary;
   Config.pp_simple := pp_simple_saved;
   do_outf Config.latex (fun outf -> write_summary_latex outf.fmt summary);
   if Config.svg then begin
@@ -972,7 +945,6 @@ let () =
   let linereader = Printer.LineReader.create () in
   let stats = Stats.create () in
   iterate_summaries (process_summary filters linereader stats top_proc_set);
-  if Config.unit_test then UnitTest.print_unit_test_main ();
   do_outf Config.procs_csv close_outf;
   do_outf Config.procs_xml (fun outf -> ProcsXml.pp_procs_close outf.fmt (); close_outf outf);
   do_outf Config.bugs_csv close_outf;

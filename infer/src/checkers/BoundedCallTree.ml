@@ -27,25 +27,22 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module Domain = Domain
   type extras = Stacktrace.t
 
-  let json_of_summary caller astate loc loc_type =
+  let stacktree_of_summary caller astate loc location_type =
     let procs = Domain.elements astate in
-    let json = `Assoc [
-        ("method", `String (Procname.to_unique_id caller));
-        ("location", `Assoc [
-            ("type", `String loc_type);
-            ("file", `String (DB.source_file_to_string loc.Location.file));
-            ("line", `Int loc.Location.line);
-          ]);
-        ("callees", `List (IList.map
-                             (fun pn -> `Assoc [
-                                  ("method", `String (Procname.to_unique_id pn))
-                                ])
-                             procs))
-      ] in
-    json
+    let method_name = Procname.to_unique_id caller in
+    let file = DB.source_file_to_string loc.Location.file in
+    let line = loc.Location.line in
+    let location = Some { Stacktree_j.location_type ; file ; line } in
+    let callees = IList.map
+        (fun pn ->
+           { Stacktree_j.method_name = Procname.to_unique_id pn;
+             location = None;
+             callees = [] } )
+        procs in
+    { Stacktree_j.method_name; location; callees }
 
   let output_summary caller astate loc loc_type =
-    let json = json_of_summary caller astate loc loc_type in
+    let stacktree = stacktree_of_summary caller astate loc loc_type in
     let dir = Filename.concat Config.results_dir "crashcontext" in
     let suffix = F.sprintf "%s_%d" loc_type loc.Location.line in
     let fname = F.sprintf "%s.%s.json"
@@ -53,14 +50,26 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         suffix in
     let fpath = Filename.concat dir fname in
     DB.create_dir dir;
-    Utils.write_json_to_file fpath json
+    Ag_util.Json.to_file Stacktree_j.write_stacktree fpath stacktree
 
   let exec_instr astate proc_data _ = function
     | Sil.Call (_, Const (Const.Cfun pn), _, loc, _) ->
-        (** TODO: Match class. *)
         let caller = Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc in
         let matches_proc frame =
-          frame.Stacktrace.method_str = (Procname.get_method caller) in
+          let matches_class pname = match pname with
+            | Procname.Java java_proc ->
+                string_equal
+                  frame.Stacktrace.class_str
+                  (Procname.java_get_class_name java_proc)
+            | Procname.ObjC_Cpp objc_cpp_prod ->
+                string_equal
+                  frame.Stacktrace.class_str
+                  (Procname.objc_cpp_get_class_name objc_cpp_prod)
+            | Procname.C _ -> true (** Needed for test code. *)
+            | Procname.Block _ ->
+                failwith "Proc type not supported by crashcontext: block" in
+          frame.Stacktrace.method_str = (Procname.get_method caller) &&
+          matches_class caller in
         let proc_in_trace = IList.exists
             matches_proc
             proc_data.ProcData.extras.Stacktrace.frames in

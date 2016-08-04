@@ -67,6 +67,7 @@ ALL_TESTS = [
     'make',
     'multiclang',
     'ndk-build',
+    'pmd-xml',
     'reactive',
     'unknown_ext',
     'utf8_in_pwd',
@@ -112,7 +113,7 @@ def save_report(reports, filename):
                             separators=(',', ': '), sort_keys=True)
 
 
-def run_analysis(clean_cmds, build_cmds, env=None):
+def run_analysis(clean_cmds, build_cmds, extra_check, env=None):
     for clean_cmd in clean_cmds:
         subprocess.check_call(clean_cmd, env=env)
 
@@ -136,6 +137,7 @@ def run_analysis(clean_cmds, build_cmds, env=None):
 
     json_path = os.path.join(temp_out_dir, REPORT_JSON)
     found_errors = utils.load_json_from_path(json_path)
+    extra_check(temp_out_dir)
     shutil.rmtree(temp_out_dir)
     os.chdir(SCRIPT_DIR)
 
@@ -224,6 +226,7 @@ def test(name,
          available=lambda: True,
          enabled=None,
          report_fname=None,
+         extra_check=lambda x: None,
          preprocess=lambda: None,
          postprocess=lambda errors: errors):
     """Run a test.
@@ -277,6 +280,7 @@ def test(name,
     errors = run_analysis(
         clean_commands,
         compile_commands,
+        extra_check=extra_check,
         env=env)
     original = os.path.join(EXPECTED_OUTPUTS_DIR, report_fname)
     do_test(postprocess(errors), original)
@@ -468,6 +472,22 @@ class BuildIntegrationTest(unittest.TestCase):
              CODETOANALYZE_DIR,
              [],
              preprocess=preprocess)
+
+    def test_pmd_xml_output(self):
+        def pmd_check(infer_out):
+            assert os.path.exists(os.path.join(infer_out, 'report.xml'))
+        try:
+            from lxml import etree
+            has_lxml = True
+        except ImportError:
+            has_lxml = False
+
+        test('pmd-xml', 'PMD XML output',
+             CODETOANALYZE_DIR,
+             [{'compile': ['clang', '-c', 'hello.c'],
+               'infer_args': ['--pmd-xml']}],
+             extra_check=pmd_check,
+             available=lambda: has_lxml)
 
 
 if __name__ == '__main__':

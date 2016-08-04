@@ -15,6 +15,8 @@ LLVM_BUILD_DIR = $(BUILD_DIR)/llvm
 ANNOT_DIR = $(SRC_DIR)/_build
 ETC_DIR = $(INFER_DIR)/etc
 
+ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli
+
 #### ocamlbuild options ####
 
 OCAML_FATAL_WARNINGS = +5+6+8+10+11+12+18+19+20+26+29+27+32+33+34+35+37+38+39
@@ -28,7 +30,7 @@ OCAMLBUILD_OPTIONS = \
                      -cflags -strict-formats \
                      -cflags -strict-sequence \
                      -cflags -w,$(OCAML_FATAL_WARNINGS)-4-9-40-41-42-45-48-50 \
-                     -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*}>: warn(-27-32-35-39)" \
+                     -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*,checkers/stacktree_*}>: warn(-27-32-35-39)" \
                      -pkgs atdgen,extlib,oUnit,str,unix,yojson,zip
 
 ifeq ($(ENABLE_OCAML_ANNOT),yes)
@@ -48,12 +50,17 @@ endif
 INFER_MAIN = backend/infer
 INFERANALYZE_MAIN = backend/inferanalyze
 
+#### Checkers declarations ####
+
+STACKTREE_ATDGEN_STUB_BASE = checkers/stacktree
+STACKTREE_ATDGEN_STUB_ATD = $(STACKTREE_ATDGEN_STUB_BASE).atd
+STACKTREE_ATDGEN_STUBS = $(addprefix $(STACKTREE_ATDGEN_STUB_BASE), $(ATDGEN_SUFFIXES))
+
 #### InferPrint declarations ####
 
 INFERPRINT_ATDGEN_STUB_BASE = backend/jsonbug
 INFERPRINT_ATDGEN_STUB_ATD = $(INFERPRINT_ATDGEN_STUB_BASE).atd
-INFERPRINT_ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli
-INFERPRINT_ATDGEN_STUBS = $(addprefix $(INFERPRINT_ATDGEN_STUB_BASE), $(INFERPRINT_ATDGEN_SUFFIXES))
+INFERPRINT_ATDGEN_STUBS = $(addprefix $(INFERPRINT_ATDGEN_STUB_BASE), $(ATDGEN_SUFFIXES))
 
 INFERPRINT_MAIN = backend/inferprint
 
@@ -166,7 +173,7 @@ endif
 
 all: infer
 
-infer: init $(INFERPRINT_ATDGEN_STUBS)
+infer: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(INFER_CONFIG_TARGETS)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(INFER_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERANALYZE_MAIN).native $(INFERANALYZE_BIN)
@@ -203,7 +210,7 @@ $(LLVM_SOURCES)/lLexer.ml: $(MENHIR_SOURCES)/lLexer.mll
 # on the lexer
 $(LLVM_SOURCES)/lParser.ml: $(MENHIR_SOURCES)/lParser.mly $(LLVM_SOURCES)/lLexer.ml
 
-byte: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) \
+byte: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) \
   $(LLVM_SOURCES)/lLexer.ml $(LLVM_SOURCES)/lParser.ml
 	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) $(INFER_ALL_TARGETS:.native=.byte)
 
@@ -214,13 +221,13 @@ byte: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MI
 M=
 MFLAGS=
 
-module: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) \
+module: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) \
   $(LLVM_SOURCES)/lLexer.ml $(LLVM_SOURCES)/lParser.ml
 	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) \
           $(MFLAGS) \
 	  $(M)
 
-test_build: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) \
+test_build: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) \
   $(LLVM_SOURCES)/lLexer.ml $(LLVM_SOURCES)/lParser.ml
 	$(OCAMLBUILD_ALL) -build-dir $(TEST_BUILD_DIR) \
 	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
@@ -262,6 +269,10 @@ endef
 $(foreach atd_type,j t,\
     $(eval \
         $(call gen_atdgen_rules,$(INFERPRINT_ATDGEN_STUB_ATD),$(INFERPRINT_ATDGEN_STUB_BASE),$(atd_type))))
+
+$(foreach atd_type,j t,\
+		$(eval \
+				$(call gen_atdgen_rules,$(STACKTREE_ATDGEN_STUB_ATD),$(STACKTREE_ATDGEN_STUB_BASE),$(atd_type))))
 
 # rebuild the artifacts of the AST files whenever they're upated in FCP
 $(foreach atd_type,b j t v,\
@@ -325,6 +336,7 @@ endif
 	$(REMOVE) backend/version.ml
 	$(REMOVE) backend/version.ml.tmp.*
 	$(REMOVE) backend/jsonbug_{j,t}.ml{,i}
+	$(REMOVE) checkers/stacktree_{j,t}.ml{,i}
 	$(REMOVE) $(INFER_BIN) $(INFERANALYZE_BIN) $(INFERPRINT_BIN) $(STATSAGGREGATOR_BIN)
 	$(REMOVE) $(INFERJAVA_BIN) $(INFERCLANG_BIN) $(INFERLLVM_BIN)
 	$(REMOVE) $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN)

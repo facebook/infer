@@ -852,6 +852,11 @@ and (
     mk_option ~deprecated:["skip_translation"] ~long:"skip-translation"
       "Matcher or list of matchers for names of files that should be analyzed at all.")
 
+and pmd_xml =
+  CLOpt.mk_bool  ~long:"pmd-xml"
+    ~exes:CLOpt.[Toplevel]
+    "Output issues in (PMD) XML format"
+
 (** command line flag: if true, print stats about preconditions to standard output *)
 and precondition_stats =
   CLOpt.mk_bool ~deprecated:["precondition_stats"] ~long:"precondition-stats"
@@ -1053,11 +1058,6 @@ and tracing =
 and type_size =
   CLOpt.mk_bool ~deprecated:["type_size"] ~long:"type-size"
     "Consider the size of types during analysis"
-
-(** command line flag: if true, produce unit test for each spec *)
-and unit_test =
-  CLOpt.mk_bool ~deprecated:["unit_test"] ~long:"unit-test"
-    "Print unit test code"
 
 and unsafe_malloc =
   CLOpt.mk_bool ~long:"unsafe-malloc"
@@ -1358,6 +1358,7 @@ and out_file_cmdline = !out_file
 and patterns_never_returning_null = !patterns_never_returning_null
 and patterns_skip_translation = !patterns_skip_translation
 and patterns_modeled_expensive = !patterns_modeled_expensive
+and pmd_xml = !pmd_xml
 and precondition_stats = !precondition_stats
 and print_builtins = !print_builtins
 and print_types = !print_types
@@ -1392,7 +1393,6 @@ and trace_error = !trace_error
 and trace_join = !trace_join
 and trace_rearrange = !trace_rearrange
 and type_size = !type_size
-and unit_test = !unit_test
 and unsafe_malloc = !unsafe_malloc
 and whole_seconds = !whole_seconds
 and worklist_mode = !worklist_mode

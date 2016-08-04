@@ -10,8 +10,8 @@
 package endtoend.c.infer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsLineNumbers.containsLines;
 import static utils.matchers.ResultContainsExactly.containsExactly;
+import static utils.matchers.ResultContainsLineNumbers.containsOnlyLines;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -65,11 +65,11 @@ public class NullDereferenceTest {
   @Test
   public void whenInferRunsOnSimpleNpe_interprocThenCorrectLineIsReported()
       throws InterruptedException, IOException, InferException {
-    int[] lines = {20, 32};
+    int[] lines = {20, 32, 49, 60, 66, 79, 88, 93, 122};
     assertThat(
         "Results should contain null pointer dereference error",
         inferResults,
-        containsLines(lines));
+        containsOnlyLines(lines));
   }
 
 }
