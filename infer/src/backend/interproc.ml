@@ -252,7 +252,7 @@ let collect_preconditions tenv proc_name : Prop.normal Specs.Jprop.t list =
 let propagate
     (wl : Worklist.t) pname is_exception (pset: Paths.PathSet.t) (curr_node: Cfg.node) =
   let edgeset_todo =
-    (** prop must be a renamed prop by the invariant preserved by PropSet *)
+    (* prop must be a renamed prop by the invariant preserved by PropSet *)
     let f prop path edgeset_curr =
       let exn_opt =
         if is_exception
@@ -847,7 +847,7 @@ let initial_prop
   let new_formals =
     if add_formals
     then IList.map construct_decl (Cfg.Procdesc.get_formals curr_f)
-    else [] in (** no new formals added *)
+    else [] in (* no new formals added *)
   let prop1 =
     Prop.prop_reset_inst
       (fun inst_old -> Sil.update_inst inst_old Sil.inst_formal)
@@ -1420,7 +1420,7 @@ let do_analysis exe_env =
           assert false in
     let nodes = IList.map (fun n -> Cfg.Node.get_id n) (Cfg.Procdesc.get_nodes pdesc) in
     let proc_flags = Cfg.Procdesc.get_flags pdesc in
-    let static_err_log = Cfg.Procdesc.get_err_log pdesc in (** err log from translation *)
+    let static_err_log = Cfg.Procdesc.get_err_log pdesc in (* err log from translation *)
     let calls = get_calls pdesc in
     let attributes =
       { (Cfg.Procdesc.get_attributes pdesc) with
@@ -1573,7 +1573,7 @@ let print_stats exe_env =
     Exe_env.iter_files
       (fun fname cfg ->
          let proc_shadowed proc_desc =
-           (** return true if a proc with the same name in another module was analyzed instead *)
+           (* return true if a proc with the same name in another module was analyzed instead *)
            let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
            Exe_env.get_source exe_env proc_name <> Some fname in
          print_stats_cfg proc_shadowed cfg)

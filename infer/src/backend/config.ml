@@ -344,8 +344,8 @@ let patterns_of_json_with_key json_key json =
 
 (** Command Line options *)
 
-(* The working directory of the initial invocation of infer, to which paths passed as command line
-   options are relative. *)
+(** The working directory of the initial invocation of infer, to which paths passed as command line
+    options are relative. *)
 let init_work_dir =
   try
     Sys.getenv "INFER_CWD"
@@ -368,8 +368,8 @@ let init_work_dir =
     Unix.putenv "INFER_CWD" cwd ;
     cwd
 
-(* Resolve relative paths passed as command line options, i.e., with respect to the working
-   directory of the initial invocation of infer. *)
+(** Resolve relative paths passed as command line options, i.e., with respect to the working
+    directory of the initial invocation of infer. *)
 let resolve path =
   if Filename.is_relative path then
     init_work_dir // path
@@ -405,31 +405,31 @@ let inferconfig_path =
 
 (* Proceed to declare and parse the remaining options *)
 
-(** HOWTO define a new command line and config file option.
+(* HOWTO define a new command line and config file option.
 
-    1. Add an entry in the following let...and...and... binding.  See the documentation in
-       [CommandLineOption.mli], and use the existing options as a guide.  Preferably the identifer
-       and long option name are the same modulo underscores versus hyphens.
+   1. Add an entry in the following let...and...and... binding.  See the documentation in
+      [CommandLineOption.mli], and use the existing options as a guide.  Preferably the identifer
+      and long option name are the same modulo underscores versus hyphens.
 
-       E.g. [and new_option = CLOpt.mk_bool ~long:"new-option"]
+      E.g. [and new_option = CLOpt.mk_bool ~long:"new-option"]
 
-    2. Add a line to the [Freeze initialized configuration values] section below.
+   2. Add a line to the [Freeze initialized configuration values] section below.
 
-       E.g. [and new_option = !new_option]
+      E.g. [and new_option = !new_option]
 
-    3. Add a line to [config.mli].
+   3. Add a line to [config.mli].
 
-       E.g. [val new_option : bool]
+      E.g. [val new_option : bool]
 
-    These are all in alphabetical order as much as possible.
+   These are all in alphabetical order as much as possible.
 
-    The references representing the command line options are defined in a single
-    simultaneous let...and...and... binding in order to allow the type-checker to catch
-    uses of one reference in code for another. This avoids being sensitive to
-    initialization-order and unintended dependence on the order in which options appear on
-    the command line. For cases where order-dependence is desired, the interacting options
-    can be defined together sharing a reference. See debug and specs_library below for two
-    different examples. *)
+   The references representing the command line options are defined in a single
+   simultaneous let...and...and... binding in order to allow the type-checker to catch
+   uses of one reference in code for another. This avoids being sensitive to
+   initialization-order and unintended dependence on the order in which options appear on
+   the command line. For cases where order-dependence is desired, the interacting options
+   can be defined together sharing a reference. See debug and specs_library below for two
+   different examples. *)
 
 let anon_args =
   CLOpt.mk_anon ()
@@ -633,12 +633,10 @@ and cxx_experimental =
     "Analyze C++ methods, still experimental"
 
 and debug, print_types, write_dotty =
-  (** flag: if true print full type info *)
   let print_types =
     CLOpt.mk_bool ~deprecated:["print_types"] ~long:"print-types"
       ~default:(CLOpt.current_exe = CLOpt.Clang)
       "Print types in symbolic heaps"
-  (** flag: if true write dot files in db dir*)
   and write_dotty =
     CLOpt.mk_bool ~deprecated:["dotty"] ~long:"write-dotty"
       "Produce dotty files in the results directory"
@@ -680,7 +678,6 @@ and enable_checks =
 
 (** command line option to activate the eradicate checker. *)
 and checkers, eradicate, crashcontext =
-  (** command line option: if true, run the analysis in checker mode *)
   let checkers =
     CLOpt.mk_bool ~deprecated:["checkers"] ~long:"checkers"
       "Run only the checkers instead of the full analysis"
@@ -1306,6 +1303,7 @@ and bugs_xml = !bugs_xml
 and changed_files_index = !changed_files_index
 and calls_csv = !calls_csv
 and checkers = !checkers
+
 (** should the checkers be run? *)
 and checkers_enabled = not (!eradicate || !crashcontext)
 and clang_include_to_override = !clang_include_to_override

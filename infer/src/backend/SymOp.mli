@@ -57,10 +57,10 @@ val unset_wallclock_alarm : unit -> unit
 
 
 type failure_kind =
-  | FKtimeout (* max time exceeded *)
-  | FKsymops_timeout of int (* max symop's exceeded *)
-  | FKrecursion_timeout of int (* max recursion level exceeded *)
-  | FKcrash of string (* uncaught exception or failed assertion *)
+  | FKtimeout (** max time exceeded *)
+  | FKsymops_timeout of int (** max symop's exceeded *)
+  | FKrecursion_timeout of int (** max recursion level exceeded *)
+  | FKcrash of string (** uncaught exception or failed assertion *)
 
 (** Timeout exception *)
 exception Analysis_failure_exe of failure_kind

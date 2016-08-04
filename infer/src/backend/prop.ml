@@ -27,6 +27,7 @@ let unSome = function
   | _ -> assert false
 
 type normal (** kind for normal props, i.e. normalized *)
+
 type exposed (** kind for exposed props *)
 
 type pi = Sil.atom list
@@ -322,7 +323,7 @@ let pp_prop pe0 f prop =
       end
     else
       F.fprintf f "%a%a%a" pp_pure () (pp_sigma pe) prop.sigma (pp_footprint pe) prop in
-  if !Config.forcing_delayed_prints then (** print in html mode *)
+  if !Config.forcing_delayed_prints then (* print in html mode *)
     F.fprintf f "%a%a%a" Io_infer.Html.pp_start_color Blue do_print () Io_infer.Html.pp_end_color ()
   else
     do_print f () (** print in text mode *)
@@ -927,9 +928,8 @@ let mk_inequality e =
 
 (** Normalize an inequality *)
 let inequality_normalize a =
-  (** turn an expression into a triple (pos,neg,off) of positive and negative occurrences,
-      and integer offset *)
-  (** representing inequality [sum(pos) - sum(neg) + off <= 0] *)
+  (* turn an expression into a triple (pos,neg,off) of positive and negative occurrences, and
+     integer offset representing inequality [sum(pos) - sum(neg) + off <= 0] *)
   let rec exp_to_posnegoff e = match e with
     | Sil.Const (Const.Cint n) -> [],[], n
     | Sil.BinOp(Binop.PlusA, e1, e2) | Sil.BinOp(Binop.PlusPI, e1, e2) ->
@@ -946,7 +946,7 @@ let inequality_normalize a =
         let pos1, neg1, n1 = exp_to_posnegoff e1 in
         (neg1, pos1, IntLit.zero -- n1)
     | _ -> [e],[], IntLit.zero in
-  (** sort and filter out expressions appearing in both the positive and negative part *)
+  (* sort and filter out expressions appearing in both the positive and negative part *)
   let normalize_posnegoff (pos, neg, off) =
     let pos' = IList.sort Sil.exp_compare pos in
     let neg' = IList.sort Sil.exp_compare neg in
@@ -959,7 +959,7 @@ let inequality_normalize a =
       | ps, ng -> (IList.rev pacc) @ ps, (IList.rev nacc) @ ng in
     let pos'', neg'' = combine [] [] (pos', neg') in
     (pos'', neg'', off) in
-  (** turn a non-empty list of expressions into a sum expression *)
+  (* turn a non-empty list of expressions into a sum expression *)
   let rec exp_list_to_sum = function
     | [] -> assert false
     | [e] -> e
@@ -1423,6 +1423,7 @@ let pi_normalize_prop prop pi =
   Config.run_with_abs_val_equal_zero (pi_normalize prop.sub prop.sigma) pi
 
 (** {2 Compaction} *)
+
 (** Return a compact representation of the prop *)
 let prop_compact sh prop =
   let sigma' = IList.map (Sil.hpred_compact sh) prop.sigma in
@@ -2502,7 +2503,7 @@ type 'a prop_iter =
   { pit_sub : Sil.subst; (** substitution for equalities *)
     pit_pi : pi;    (** pure part *)
     pit_newpi : (bool * Sil.atom) list;   (** newly added atoms. *)
-    (** The first records !Config.footprint. *)
+    (* The first records !Config.footprint. *)
     pit_old : sigma; (** sigma already visited *)
     pit_curr : Sil.hpred;      (** current element *)
     pit_state : 'a; (** state of current element *)

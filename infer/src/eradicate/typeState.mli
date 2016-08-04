@@ -20,9 +20,10 @@ type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 type 'a ext =
   {
     empty : 'a; (** empty extension *)
-    check_instr : (** check the extension for an instruction *)
+    check_instr :
       Tenv.t -> get_proc_desc -> Procname.t ->
-      Cfg.Procdesc.t ->'a -> Sil.instr -> parameters -> 'a;
+      Cfg.Procdesc.t ->'a -> Sil.instr -> parameters ->
+      'a; (** check the extension for an instruction *)
     join : 'a -> 'a -> 'a; (** join two extensions *)
     pp : Format.formatter -> 'a -> unit (** pretty print an extension *)
   }

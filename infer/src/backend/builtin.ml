@@ -27,25 +27,25 @@ type ret_typ = (Prop.normal Prop.t * Paths.Path.t) list
 
 type t = args -> ret_typ
 
-(* builtin function names for which we do symbolic execution *)
+(** builtin function names for which we do symbolic execution *)
 let builtin_functions = Procname.Hash.create 4
 
-(* Check if the function is a builtin *)
+(** check if the function is a builtin *)
 let is_registered name =
   Procname.Hash.mem builtin_functions name
 
-(* get the symbolic execution handler associated to the builtin function name *)
+(** get the symbolic execution handler associated to the builtin function name *)
 let get name : t =
   try Procname.Hash.find builtin_functions name
   with Not_found -> assert false
 
-(* register a builtin function name and symbolic execution handler *)
+(** register a builtin function name and symbolic execution handler *)
 let register proc_name_str (sym_exe_fun: t) =
   let proc_name = Procname.from_string_c_fun proc_name_str in
   Procname.Hash.replace builtin_functions proc_name sym_exe_fun;
   proc_name
 
-(* register a builtin [Procname.t] and symbolic execution handler *)
+(** register a builtin [Procname.t] and symbolic execution handler *)
 let register_procname proc_name (sym_exe_fun: t) =
   Procname.Hash.replace builtin_functions proc_name sym_exe_fun
 

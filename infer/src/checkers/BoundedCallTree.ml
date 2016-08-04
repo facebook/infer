@@ -65,7 +65,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 string_equal
                   frame.Stacktrace.class_str
                   (Procname.objc_cpp_get_class_name objc_cpp_prod)
-            | Procname.C _ -> true (** Needed for test code. *)
+            | Procname.C _ -> true (* Needed for test code. *)
             | Procname.Block _ ->
                 failwith "Proc type not supported by crashcontext: block" in
           frame.Stacktrace.method_str = (Procname.get_method caller) &&
@@ -86,9 +86,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         else
           astate
     | Sil.Call _ ->
-        (** We currently ignore calls through function pointers in C and
-         * other potential special kinds of procedure calls to be added later,
-         * e.g. Java reflection. *)
+        (* We currently ignore calls through function pointers in C and
+           other potential special kinds of procedure calls to be added later,
+           e.g. Java reflection. *)
         astate
     | Sil.Letderef _ | Set _ | Prune _ | Declare_locals _
     | Stackop _ | Remove_temps _ | Abstract _ | Nullify _ ->
@@ -102,13 +102,12 @@ module Analyzer =
     (TransferFunctions)
 
 (** Stacktrace lookup:
- * 1) Check if trace_ref is already set and use that.
- * 2) If not, load trace from the file specified in Config.stacktrace. *)
+    1) Check if trace_ref is already set and use that.
+    2) If not, load trace from the file specified in Config.stacktrace. *)
 let trace_ref = ref None
 
 let load_trace () =
-  (** Check Config.stacktrace is set and points to a file,
-   * call Stacktrace.of_json_file  *)
+  (* Check Config.stacktrace is set and points to a file, call Stacktrace.of_json_file  *)
   let filename = match Config.stacktrace with
     | None -> failwith "Missing command line option: '--stacktrace stack.json' \
                         must be used when running '-a crashcontext'. This \

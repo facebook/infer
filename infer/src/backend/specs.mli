@@ -72,15 +72,17 @@ val visited_str : Visitedset.t -> string
     visited: a list of pairs (node_id, line) for the visited nodes *)
 type 'a spec = { pre: 'a Jprop.t; posts: ('a Prop.t * Paths.Path.t) list; visited : Visitedset.t }
 
-module NormSpec : sig (* encapsulate type for normalized specs *)
+(** encapsulate type for normalized specs *)
+module NormSpec : sig
   type t
 end
 
-module CallStats : (** module for tracing stats of function calls *)
-sig
+(** module for tracing stats of function calls *)
+module CallStats : sig
   type t
 
-  type call_result = (** kind of result of a procedure call *)
+  (** kind of result of a procedure call *)
+  type call_result =
     | CR_success (** successful call *)
     | CR_not_met (** precondition not met *)
     | CR_not_found (** the callee has no specs *)
@@ -206,13 +208,13 @@ val is_inactive : Procname.t -> bool
 (** Initialize the summary for [proc_name] given dependent procs in list [depend_list].
     Do nothing if a summary exists already. *)
 val init_summary :
-  (Procname.t list * (** depend list *)
-   Cfg.Node.id list * (** nodes *)
-   proc_flags * (** procedure flags *)
-   (Procname.t * Location.t) list * (** calls *)
-   (Cg.in_out_calls option) * (** in and out calls *)
-   ProcAttributes.t) (** attributes of the procedure *)
-  -> unit
+  (Procname.t list * (* depend list *)
+   Cfg.Node.id list * (* nodes *)
+   proc_flags * (* procedure flags *)
+   (Procname.t * Location.t) list * (* calls *)
+   (Cg.in_out_calls option) * (* in and out calls *)
+   ProcAttributes.t (* attributes of the procedure *)
+  ) -> unit
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 val reset_summary : Cg.t -> Procname.t -> ProcAttributes.t option -> unit

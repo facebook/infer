@@ -13,12 +13,14 @@ open! Utils
 module L = Logging
 module F = Format
 
-type exception_visibility = (** visibility of the exception *)
+(** visibility of the exception *)
+type exception_visibility =
   | Exn_user (** always add to error log *)
   | Exn_developer (** only add to error log in developer mode *)
   | Exn_system (** never add to error log *)
 
-type exception_severity = (** severity of bugs *)
+(** severity of bugs *)
+type exception_severity =
   | High (* high severity bug *)
   | Medium (* medium severity bug *)
   | Low (* low severity bug *)
@@ -234,7 +236,7 @@ let recognize_exception exn =
          desc, Some ml_loc, Exn_developer, Low, None, Nocat)
     | Precondition_not_met (desc, ml_loc) ->
         (Localise.precondition_not_met,
-         desc, Some ml_loc, Exn_user, Medium, Some Kwarning, Nocat) (** always a warning *)
+         desc, Some ml_loc, Exn_user, Medium, Some Kwarning, Nocat) (* always a warning *)
     | Retain_cycle (_, _, desc, ml_loc) ->
         (Localise.retain_cycle,
          desc, Some ml_loc, Exn_user, High, None, Prover)
@@ -260,7 +262,7 @@ let recognize_exception exn =
         (Localise.skip_function, desc, None, Exn_developer, Low, None, Nocat)
     | Skip_pointer_dereference (desc, ml_loc) ->
         (Localise.skip_pointer_dereference,
-         desc, Some ml_loc, Exn_user, Medium, Some Kinfo, Nocat) (** always an info *)
+         desc, Some ml_loc, Exn_user, Medium, Some Kinfo, Nocat) (* always an info *)
     | Symexec_memory_error ml_loc ->
         (Localise.from_string "Symexec_memory_error",
          Localise.no_desc, Some ml_loc, Exn_developer, Low, None, Nocat)

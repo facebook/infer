@@ -12,15 +12,17 @@ open! Utils
 
 (** Functions for logging and printing exceptions *)
 
-type exception_visibility = (** visibility of the exception *)
+(** visibility of the exception *)
+type exception_visibility =
   | Exn_user (** always add to error log *)
   | Exn_developer (** only add to error log in developer mode *)
   | Exn_system (** never add to error log *)
 
-type exception_severity = (** severity of bugs *)
-  | High (* high severity bug *)
-  | Medium (* medium severity bug *)
-  | Low (* low severity bug *)
+(** severity of bugs *)
+type exception_severity =
+  | High (** high severity bug *)
+  | Medium (** medium severity bug *)
+  | Low (** low severity bug *)
 
 (** kind of error/warning *)
 type err_kind =

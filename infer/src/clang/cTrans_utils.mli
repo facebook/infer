@@ -78,8 +78,8 @@ val is_member_exp : Clang_ast_t.stmt -> bool
 
 val get_type_from_exp_stmt : Clang_ast_t.stmt -> Clang_ast_t.type_ptr
 
-(** Given trans_result with ONE expression, create temporary variable with *)
-(** dereferenced value of an expression assigned to it *)
+(** Given trans_result with ONE expression, create temporary variable with dereferenced value of an
+    expression assigned to it *)
 val dereference_value_from_result : Location.t -> trans_result -> strip_pointer:bool -> trans_result
 
 val cast_operation :
@@ -142,18 +142,15 @@ sig
 
 end
 
-(** priority_node is used to enforce some kind of policy for creating nodes *)
-(** in the cfg. Certain elements of the AST _must_ create nodes therefore   *)
-(** there is no need for them to use priority_node. Certain elements        *)
-(** instead need or need not to create a node depending of certain factors. *)
-(** When an element of the latter kind wants to create a node it must claim *)
-(** priority first (like taking a lock). priority can be claimes only when  *)
-(** it is free. If an element of AST succedes in claiming priority its id   *)
-(** (pointer) is recorded in priority. After an element has finished it     *)
-(** frees the priority. In general an AST element E checks if an ancestor   *)
-(** has claimed priority. If priority is already claimed E does not have to *)
-(** create a node. If priority is free then it means E has to create the    *)
-(** node. Then E claims priority and release it afterward.                  *)
+(** priority_node is used to enforce some kind of policy for creating nodes in the cfg. Certain
+    elements of the AST _must_ create nodes therefore there is no need for them to use
+    priority_node. Certain elements instead need or need not to create a node depending of certain
+    factors.  When an element of the latter kind wants to create a node it must claim priority first
+    (like taking a lock). priority can be claimes only when it is free. If an element of AST
+    succedes in claiming priority its id (pointer) is recorded in priority. After an element has
+    finished it frees the priority. In general an AST element E checks if an ancestor has claimed
+    priority. If priority is already claimed E does not have to create a node. If priority is free
+    then it means E has to create the node. Then E claims priority and release it afterward. *)
 module PriorityNode :
 sig
 
@@ -200,8 +197,8 @@ sig
 
 end
 
-(** This module handles the translation of the variable self which is challenging because self *)
-(** is used both as a variable in instance method calls and also as a type in class method calls. *)
+(** This module handles the translation of the variable self which is challenging because self is
+    used both as a variable in instance method calls and also as a type in class method calls. *)
 module Self :
 sig
 

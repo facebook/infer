@@ -241,7 +241,7 @@ module BooleanVars = struct
 
   (** Transfer function for an instruction. *)
   let do_instr _ _ idenv (instr : Sil.instr) (state : State.t) : State.t =
-    (** Normalize a boolean condition. *)
+    (* Normalize a boolean condition. *)
     let normalize_condition cond_e =
       match cond_e with
       | Sil.UnOp (Unop.LNot, Sil.BinOp (Binop.Eq, e1, e2), _) ->
@@ -250,7 +250,7 @@ module BooleanVars = struct
           Sil.BinOp (Binop.Eq, e1, e2)
       | _ -> cond_e in
 
-    (** Normalize an instruction. *)
+    (* Normalize an instruction. *)
     let normalize_instr = function
       | Sil.Prune (cond_e, loc, tb, ik) ->
           let cond_e' = normalize_condition cond_e in

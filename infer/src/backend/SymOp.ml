@@ -16,10 +16,10 @@ module F = Format
 
 
 type failure_kind =
-  | FKtimeout (* max time exceeded *)
-  | FKsymops_timeout of int (* max symop's exceeded *)
-  | FKrecursion_timeout of int (* max recursion level exceeded *)
-  | FKcrash of string (* uncaught exception or failed assertion *)
+  | FKtimeout (** max time exceeded *)
+  | FKsymops_timeout of int (** max symop's exceeded *)
+  | FKrecursion_timeout of int (** max recursion level exceeded *)
+  | FKcrash of string (** uncaught exception or failed assertion *)
 
 (** failure that prevented analysis from finishing *)
 exception Analysis_failure_exe of failure_kind
@@ -68,19 +68,19 @@ let get_timeout_seconds () = !timeout_seconds
 (** Internal state of the module *)
 type t =
   {
-    (** Only throw timeout exception when alarm is active *)
     mutable alarm_active : bool;
+    (** Only throw timeout exception when alarm is active *)
 
-    (** last wallclock set by an alarm, if any *)
     mutable last_wallclock : float option;
+    (** last wallclock set by an alarm, if any *)
 
-    (** Number of symop's *)
     mutable symop_count : int;
+    (** Number of symop's *)
 
+    symop_total : int ref;
     (** Counter for the total number of symop's.
         The new state created when save_state is called shares this counter
         if keep_symop_total is true. Otherwise, a new counter is created. *)
-    symop_total : int ref;
   }
 
 let initial () : t =

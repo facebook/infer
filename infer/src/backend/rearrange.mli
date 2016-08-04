@@ -18,9 +18,8 @@ exception ARRAY_ACCESS
 val check_dereference_error :
   Cfg.Procdesc.t -> Prop.normal Prop.t -> Sil.exp -> Location.t -> unit
 
-(** Check that an expression representing an objc block
-    can be null and raise a [B1] null exception. *)
-(** It's used to check that we don't call possibly null blocks *)
+(** Check that an expression representing an objc block can be null and raise a [B1] null exception.
+    It's used to check that we don't call possibly null blocks *)
 val check_call_to_objc_block_error :
   Cfg.Procdesc.t -> Prop.normal Prop.t -> Sil.exp -> Location.t -> unit
 

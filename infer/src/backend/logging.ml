@@ -64,7 +64,7 @@ let delayed_actions = ref []
 let printer_hook = ref (Obj.magic ())
 
 let out_formatter, err_formatter =
-  (** Create a directory if it does not exist already. *)
+  (* Create a directory if it does not exist already. *)
   (* This is the same as DB.create_dir, except for logging to stderr *)
   let create_dir dir =
     try

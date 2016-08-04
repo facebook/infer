@@ -108,7 +108,7 @@ struct
   (** Check repeated calls to the same procedure. *)
   let check_instr tenv get_proc_desc curr_pname curr_pdesc extension instr normalized_etl =
 
-    (** Arguments are not temporary variables. *)
+    (* Arguments are not temporary variables. *)
     let arguments_not_temp args =
       let filter_arg (e, _) = match e with
         | Sil.Lvar pvar ->

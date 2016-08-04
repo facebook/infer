@@ -86,7 +86,7 @@ struct
       let typestate_empty = TypeState.empty Extension.ext in
       IList.fold_left add_formal typestate_empty annotated_signature.Annotations.params in
 
-    (** Check the nullable flag computed for the return value and report inconsistencies. *)
+    (* Check the nullable flag computed for the return value and report inconsistencies. *)
     let check_return find_canonical_duplicate exit_node final_typestate ret_ia ret_type loc : unit =
       let ret_pvar = Cfg.Procdesc.get_ret_var curr_pdesc in
       let ret_range = TypeState.lookup_pvar ret_pvar final_typestate in
@@ -190,7 +190,7 @@ struct
       type init = Procname.t * Cfg.Procdesc.t
 
       let final_typestates initializers_current_class =
-        (** Get the private methods, from the same class, directly called by the initializers. *)
+        (* Get the private methods, from the same class, directly called by the initializers. *)
         let get_private_called (initializers : init list) : init list =
           let res = ref [] in
           let do_proc (init_pn, init_pd) =
@@ -216,8 +216,8 @@ struct
           IList.iter do_proc initializers;
           !res in
 
-        (** Get the initializers recursively called by computing a fixpoint.
-            Start from the initializers of the current class and the current procedure. *)
+        (* Get the initializers recursively called by computing a fixpoint.
+           Start from the initializers of the current class and the current procedure. *)
         let initializers_recursive : init list =
           let initializers_base_case = initializers_current_class in
 
@@ -238,7 +238,7 @@ struct
           fixpoint initializers_base_case;
           !res in
 
-        (** Get the final typestates of all the initializers. *)
+        (* Get the final typestates of all the initializers. *)
         let final_typestates = ref [] in
         let get_final_typestate (pname, pdesc) =
           match typecheck_proc false pname pdesc None with

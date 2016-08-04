@@ -168,11 +168,16 @@ let visited_str vis =
     visited: a list of pairs (node_id, line) for the visited nodes *)
 type 'a spec = { pre: 'a Jprop.t; posts: ('a Prop.t * Paths.Path.t) list; visited : Visitedset.t }
 
-module NormSpec : sig (* encapsulate type for normalized specs *)
+(** encapsulate type for normalized specs *)
+module NormSpec : sig
   type t
+
   val normalize : Prop.normal spec -> t
+
   val tospecs : t list -> Prop.normal spec list
+
   val compact : Sil.sharing_env -> t -> t (** Return a compact representation of the spec *)
+
   val erase_join_info_pre : t -> t (** Erase join info from pre of spec *)
 end = struct
   type t = Prop.normal spec
@@ -226,7 +231,8 @@ module CallStats = struct (** module for tracing stats of function calls *)
         Location.equal loc1 loc2 && Procname.equal pname1 pname2
     end)
 
-  type call_result = (** kind of result of a procedure call *)
+  (** kind of result of a procedure call *)
+  type call_result =
     | CR_success (** successful call *)
     | CR_not_met (** precondition not met *)
     | CR_not_found (** the callee has no specs *)

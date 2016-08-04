@@ -31,32 +31,32 @@ type failure_stats = {
 module NodeHash = Cfg.NodeHash
 
 type t = {
-  (** Constant map for the procedure *)
   mutable const_map : const_map;
+  (** Constant map for the procedure *)
 
-  (** Diverging states since the last reset for the node *)
   mutable diverging_states_node : Paths.PathSet.t;
+  (** Diverging states since the last reset for the node *)
 
-  (** Diverging states since the last reset for the procedure *)
   mutable diverging_states_proc : Paths.PathSet.t;
+  (** Diverging states since the last reset for the procedure *)
 
-  (** Last instruction seen *)
   mutable last_instr : Sil.instr option;
+  (** Last instruction seen *)
 
-  (** Last node seen *)
   mutable last_node : Cfg.Node.t;
+  (** Last node seen *)
 
-  (** Last path seen *)
   mutable last_path : (Paths.Path.t * (Sil.path_pos option)) option;
+  (** Last path seen *)
 
-  (** Last prop,tenv,pdesc seen *)
   mutable last_prop_tenv_pdesc : (Prop.normal Prop.t * Tenv.t * Cfg.Procdesc.t) option;
+  (** Last prop,tenv,pdesc seen *)
 
-  (** Last session seen *)
   mutable last_session : int;
+  (** Last session seen *)
 
-  (** Map visited nodes to failure statistics *)
   failure_map : failure_stats NodeHash.t;
+  (** Map visited nodes to failure statistics *)
 }
 
 let initial () = {

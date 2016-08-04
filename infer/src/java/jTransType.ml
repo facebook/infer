@@ -383,6 +383,7 @@ let rec object_type program tenv ot =
   match ot with
   | JBasics.TClass cn -> get_class_type program tenv cn
   | JBasics.TArray at -> Typ.Tptr (Typ.Tarray (value_type program tenv at, None), Typ.Pk_pointer)
+
 (** translate a value type *)
 and value_type program tenv vt =
   match vt with

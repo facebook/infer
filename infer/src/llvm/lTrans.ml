@@ -133,7 +133,7 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
         { (ProcAttributes.default proc_name Config.Clang) with
           ProcAttributes.formals =
             IList.map (fun (tp, name) -> (Mangled.from_string name, trans_typ tp)) params;
-          is_defined = true; (** is defined and not just declared *)
+          is_defined = true; (* is defined and not just declared *)
           loc = source_only_location ();
           locals = []; (* TODO *)
           ret_type;

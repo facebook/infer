@@ -410,7 +410,7 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
   let ret_const_key = "return_const" in
 
   let reverse_find_instr f node =
-    (** this is not really sound but for the moment a sufficient approximation *)
+    (* this is not really sound but for the moment a sufficient approximation *)
     let has_instr node =
       try ignore(IList.find f (Cfg.Node.get_instrs node)); true
       with Not_found -> false in
@@ -451,10 +451,10 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
                    | Sil.Set (e1, _, _, _) when Sil.exp_equal expanded e1 -> true
                    | _ -> false in
                  match reverse_find_instr is_set_instr node with
-                 (** Look for ivar := tmp *)
+                 (* Look for ivar := tmp *)
                  | Some s -> (
                      match reverse_find_instr (is_call_instr s) node with
-                     (** Look for tmp := foo() *)
+                     (* Look for tmp := foo() *)
                      | Some (Sil.Call (_, Sil.Const (Const.Cfun pn), _, _, _)) ->
                          get_return_const pn
                      | _ -> "?")

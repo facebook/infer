@@ -246,9 +246,9 @@ module CopyProp =
 let do_copy_propagation pdesc tenv =
   let proc_cfg = ExceptionalOneInstrPerNodeCfg.from_pdesc pdesc in
   let copy_prop_inv_map = CopyProp.exec_cfg proc_cfg (ProcData.make_default pdesc tenv) in
-  (** [var_map] represents a chain of variable. copies v_0 -> v_1 ... -> v_n. starting from some
-      ident v_j, we want to walk backward through the chain to find the lowest v_i that is also an
-      ident. *)
+  (* [var_map] represents a chain of variable. copies v_0 -> v_1 ... -> v_n. starting from some
+     ident v_j, we want to walk backward through the chain to find the lowest v_i that is also an
+     ident. *)
   let id_sub var_map id =
     (* [last_id] is the highest identifier in the chain that we've seen so far *)
     let rec id_sub_inner var_map var last_id =
@@ -262,7 +262,7 @@ let do_copy_propagation pdesc tenv =
         Sil.Var last_id in
     id_sub_inner var_map (Var.of_id id) id in
 
-  (** perform copy-propagation on each instruction in [node] *)
+  (* perform copy-propagation on each instruction in [node] *)
   let rev_transform_node_instrs node =
     IList.fold_left
       (fun (instrs, changed) (instr, id_opt) ->

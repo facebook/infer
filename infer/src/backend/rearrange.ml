@@ -634,7 +634,7 @@ let add_guarded_by_constraints prop lexp pdesc =
         (* programmers write @GuardedBy("MyClass.class") when the field is guarded by the class *)
         guarded_by_str_is_class guarded_by_str (Procname.java_get_class_name java_pname)
     | _ -> false in
-  (** return true if [guarded_by_str] is as suffix of "<name_of_current_proc>.this" *)
+  (* return true if [guarded_by_str] is as suffix of "<name_of_current_proc>.this" *)
   let guarded_by_str_is_current_class_this guarded_by_str = function
     | Procname.Java java_pname ->
         let fully_qualified_this =
@@ -653,7 +653,7 @@ let add_guarded_by_constraints prop lexp pdesc =
       else
         None in
     IList.find_map_opt annot_extract_guarded_by_str item_annot in
-  (** if [fld] is annotated with @GuardedBy("mLock"), return mLock *)
+  (* if [fld] is annotated with @GuardedBy("mLock"), return mLock *)
   let get_guarded_by_fld_str fld typ =
     match Annotations.get_field_type_and_annotation fld typ with
     | Some (_, item_annot) ->

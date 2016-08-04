@@ -913,7 +913,8 @@ module ProverState : sig
   val reset : Prop.normal Prop.t -> Prop.exposed Prop.t -> unit
   val checks : check list ref
 
-  type bounds_check = (** type for array bounds checks *)
+  (** type for array bounds checks *)
+  type bounds_check =
     | BClen_imply of Sil.exp * Sil.exp * Sil.exp list (** coming from array_len_imply *)
     | BCfrom_pre of Sil.atom (** coming implicitly from preconditions *)
 
@@ -1800,7 +1801,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                       with
                       | IMPL_EXC (s, _, _) when calc_missing ->
                           raise (MISSING_EXC s))
-                 | Sil.Hlseg (Sil.Lseg_NE, para1, e1, f1, elist1), _ -> (** Unroll lseg *)
+                 | Sil.Hlseg (Sil.Lseg_NE, para1, e1, f1, elist1), _ -> (* Unroll lseg *)
                      let n' = Sil.Var (Ident.create_fresh Ident.kprimed) in
                      let (_, para_inst1) = Sil.hpara_instantiate para1 e1 n' elist1 in
                      let hpred_list1 = para_inst1@[Prop.mk_lseg Sil.Lseg_PE para1 n' f1 elist1] in
@@ -1812,7 +1813,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                      L.d_decrease_indent 1;
                      res
                  | Sil.Hdllseg (Sil.Lseg_NE, para1, iF1, oB1, oF1, iB1, elist1), _
-                   when Sil.exp_equal (Sil.exp_sub (fst subs) iF1) e2 -> (** Unroll dllseg forward *)
+                   when Sil.exp_equal (Sil.exp_sub (fst subs) iF1) e2 -> (* Unroll dllseg forward *)
                      let n' = Sil.Var (Ident.create_fresh Ident.kprimed) in
                      let (_, para_inst1) = Sil.hpara_dll_instantiate para1 iF1 oB1 n' elist1 in
                      let hpred_list1 = para_inst1@[Prop.mk_dllseg Sil.Lseg_PE para1 n' iF1 oF1 iB1 elist1] in
@@ -1824,7 +1825,8 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                      L.d_decrease_indent 1;
                      res
                  | Sil.Hdllseg (Sil.Lseg_NE, para1, iF1, oB1, oF1, iB1, elist1), _
-                   when Sil.exp_equal (Sil.exp_sub (fst subs) iB1) e2 -> (** Unroll dllseg backward *)
+                   when Sil.exp_equal (Sil.exp_sub (fst subs) iB1) e2 ->
+                     (* Unroll dllseg backward *)
                      let n' = Sil.Var (Ident.create_fresh Ident.kprimed) in
                      let (_, para_inst1) = Sil.hpara_dll_instantiate para1 iB1 n' oF1 elist1 in
                      let hpred_list1 = para_inst1@[Prop.mk_dllseg Sil.Lseg_PE para1 iF1 oB1 iB1 n' elist1] in
@@ -1924,7 +1926,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                 let _, para_inst2 =
                   if Sil.exp_equal iF2 iB2 then
                     Sil.hpara_dll_instantiate para2 iF2 oB2 oF2 elist2
-                  else assert false in  (** Only base case of rhs list considered for now *)
+                  else assert false in  (* Only base case of rhs list considered for now *)
                 L.d_increase_indent 1;
                 let res =
                   decrease_indent_when_exception
@@ -1932,7 +1934,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                 (* calc_missing is false as we're checking an instantiation of the original list *)
                 L.d_decrease_indent 1;
                 res
-            | Some iter1' -> (** Only consider implications between identical listsegs for now *)
+            | Some iter1' -> (* Only consider implications between identical listsegs for now *)
                 let elist2 = IList.map (fun e -> Sil.exp_sub (snd subs) e) elist2 in
                 let subs' = exp_list_imply calc_missing subs (iF2:: oB2:: oF2:: iB2:: elist2) (iF2:: oB2:: oF2:: iB2:: elist2) in (* force instantiation of existentials *)
                 let prop1' = Prop.prop_iter_remove_curr_then_to_prop iter1'

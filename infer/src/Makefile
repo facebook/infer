@@ -19,7 +19,7 @@ ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli
 
 #### ocamlbuild options ####
 
-OCAML_FATAL_WARNINGS = +5+6+8+10+11+12+18+19+20+26+29+27+32+33+34+35+37+38+39
+OCAML_FATAL_WARNINGS = +5+6+8+10+11+12+18+19+20+26+29+27+32+33+34+35+37+38+39+50
 
 OCAMLBUILD_OPTIONS = \
                      -r \
@@ -29,7 +29,7 @@ OCAMLBUILD_OPTIONS = \
                      -cflags -principal \
                      -cflags -strict-formats \
                      -cflags -strict-sequence \
-                     -cflags -w,$(OCAML_FATAL_WARNINGS)-4-9-40-41-42-45-48-50 \
+                     -cflags -w,$(OCAML_FATAL_WARNINGS)-4-9-40-41-42-45-48 \
                      -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*,checkers/stacktree_*}>: warn(-27-32-35-39)" \
                      -pkgs atdgen,extlib,oUnit,str,unix,yojson,zip
 

@@ -347,8 +347,8 @@ let copy_file fname_from fname_to =
       cleanup();
       None
 
-module FileLOC = (** count lines of code of files and keep processed results in a cache *)
-struct
+(** count lines of code of files and keep processed results in a cache *)
+module FileLOC = struct
   let include_loc_hash = Hashtbl.create 1
 
   let reset () = Hashtbl.clear include_loc_hash

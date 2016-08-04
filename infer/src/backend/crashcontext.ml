@@ -53,7 +53,7 @@ let stitch_summaries stacktrace_file summary_files out_file =
       StringMap.empty
       summaries in
   let expand_stack_frame frame =
-    (** TODO: Implement k > 1 case *)
+    (* TODO: Implement k > 1 case *)
     let frame_id = frame_id_of_stackframe frame in
     if StringMap.exists (fun key _ -> key = frame_id) summary_map then
       StringMap.find frame_id summary_map

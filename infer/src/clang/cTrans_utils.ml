@@ -392,8 +392,8 @@ let dereference_var_sil (exp, typ) sil_loc =
   let sil_instr = Sil.Letderef (id, exp, typ, sil_loc) in
   ([sil_instr], Sil.Var id)
 
-(** Given trans_result with ONE expression, create temporary variable with *)
-(** value of an expression assigned to it *)
+(** Given trans_result with ONE expression, create temporary variable with value of an expression
+    assigned to it *)
 let dereference_value_from_result sil_loc trans_result ~strip_pointer =
   let (obj_sil, class_typ) = extract_exp_from_list trans_result.exps "" in
   let cast_inst, cast_exp = dereference_var_sil (obj_sil, class_typ) sil_loc in

@@ -1134,7 +1134,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       IList.fold_left (fun acc pname -> exec_one_pname pname @ acc) [] resolved_pnames
 
   | Sil.Call (ret_ids, Sil.Const (Const.Cfun callee_pname), actual_params, loc, call_flags) ->
-      (** Generic fun call with known name *)
+      (* Generic fun call with known name *)
       let (prop_r, n_actual_params) = normalize_params current_pname prop_ actual_params in
       let resolved_pname =
         match resolve_virtual_pname tenv prop_r n_actual_params callee_pname call_flags with
@@ -1195,7 +1195,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
           proc_call (Option.get summary)
             (call_args prop resolved_pname n_actual_params ret_ids loc) in
       IList.flatten (IList.map do_call sentinel_result)
-  | Sil.Call (ret_ids, fun_exp, actual_params, loc, call_flags) -> (** Call via function pointer *)
+  | Sil.Call (ret_ids, fun_exp, actual_params, loc, call_flags) -> (* Call via function pointer *)
       let (prop_r, n_actual_params) = normalize_params current_pname prop_ actual_params in
       if call_flags.CallFlags.cf_is_objc_block then
         Rearrange.check_call_to_objc_block_error current_pdesc prop_r fun_exp loc;
@@ -1618,7 +1618,7 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_ids; args= act
 and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), path)
   : Paths.PathSet.t =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
-  let prop_primed_to_normal p = (** Rename primed vars with fresh normal vars, and return them *)
+  let prop_primed_to_normal p = (* Rename primed vars with fresh normal vars, and return them *)
     let fav = Prop.prop_fav p in
     Sil.fav_filter_ident fav Ident.is_primed;
     let ids_primed = Sil.fav_to_list fav in
@@ -1706,7 +1706,7 @@ let node handle_exn tenv node (pset : Paths.PathSet.t) : Paths.PathSet.t =
         end
       else sym_exec_wrapper handle_exn tenv pdesc instr (p, tr) in
     Paths.PathSet.union pset2 pset1 in
-  let exe_instr_pset (pset, stack) instr = (** handle a single instruction at the set level *)
+  let exe_instr_pset (pset, stack) instr = (* handle a single instruction at the set level *)
     let pp_stack_instr pset' =
       L.d_str "Stack Instruction "; Sil.d_instr instr; L.d_ln ();
       L.d_strln "Stack Instruction Returns";

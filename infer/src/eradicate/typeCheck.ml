@@ -247,9 +247,9 @@ let typecheck_instr
   (*     (TypeState.pp ext) typestate; *)
   (*   L.stdout "  %a@." (Sil.pp_instr pe_text) instr in *)
 
-  (** Handle the case where a field access X.f happens via a temporary variable $Txxx.
-      This has been observed in assignments this.f = exp when exp contains an ifthenelse.
-      Reconstuct the original expression knowing: the origin of $Txxx is 'this'. *)
+  (* Handle the case where a field access X.f happens via a temporary variable $Txxx.
+     This has been observed in assignments this.f = exp when exp contains an ifthenelse.
+     Reconstuct the original expression knowing: the origin of $Txxx is 'this'. *)
   let handle_field_access_via_temporary typestate exp =
     let name_is_temporary name =
       let prefix = "$T" in
@@ -278,8 +278,8 @@ let typecheck_instr
         exp'
     | _ -> exp in
 
-  (** Convert a complex expressions into a pvar.
-      When [is_assigment] is true, update the relevant annotations for the pvar. *)
+  (* Convert a complex expressions into a pvar.
+     When [is_assigment] is true, update the relevant annotations for the pvar. *)
   let convert_complex_exp_to_pvar node' is_assignment _exp typestate loc =
     let exp = handle_field_access_via_temporary typestate (Idenv.expand_expr idenv _exp) in
     let default = exp, typestate in
@@ -364,13 +364,13 @@ let typecheck_instr
               let typestate' = update_typestate_fld pvar fn typ in
               (Sil.Lvar pvar, typestate')
           | Sil.Lfield (_exp', fn', _) when Ident.java_fieldname_is_outer_instance fn' ->
-              (** handle double dereference when accessing a field from an outer class *)
+              (* handle double dereference when accessing a field from an outer class *)
               let fld_name = Ident.fieldname_to_string fn' ^ "_" ^ Ident.fieldname_to_string fn in
               let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
               let typestate' = update_typestate_fld pvar fn typ in
               (Sil.Lvar pvar, typestate')
           | Sil.Lvar _ | Sil.Lfield _ when ComplexExpressions.all_nested_fields () ->
-              (** treat var.field1. ... .fieldn as a constant *)
+              (* treat var.field1. ... .fieldn as a constant *)
               begin
                 match ComplexExpressions.exp_to_string node' exp with
                 | Some exp_str ->
@@ -638,7 +638,7 @@ let typecheck_instr
               typestate'
         | _ :: _ :: _ -> assert false in
 
-      (** Handle Preconditions.checkNotNull. *)
+      (* Handle Preconditions.checkNotNull. *)
       let do_preconditions_check_not_null parameter_num is_vararg typestate' =
         (* clear the nullable flag of the first parameter of the procedure *)
         let clear_nullable_flag typestate'' pvar =
@@ -686,7 +686,7 @@ let typecheck_instr
         | None -> typestate' in
 
 
-      (** Handle Preconditions.checkState for &&-separated conditions x!=null. *)
+      (* Handle Preconditions.checkState for &&-separated conditions x!=null. *)
       let do_preconditions_check_state typestate' =
         let handle_pvar ann b typestate1 pvar = (* handle the annotation flag for pvar *)
           match TypeState.lookup_pvar pvar typestate1 with
@@ -751,7 +751,7 @@ let typecheck_instr
             end
         | _ -> typestate' in
 
-      (** Handle m.put(k,v) as assignment pvar = v for the pvar associated to m.get(k) *)
+      (* Handle m.put(k,v) as assignment pvar = v for the pvar associated to m.get(k) *)
       let do_map_put typestate' =
         (* Get the proc name for map.get() from map.put() *)
         let pname_get_from_pname_put pname_put =
@@ -1029,8 +1029,8 @@ let typecheck_instr
             check_condition node' (Sil.BinOp (Binop.Eq, e1, e2))
         | _ -> typestate in
 
-      (** Handle assigment fron a temp pvar in a condition.
-          This recognizes the handling of temp variables in ((x = ...) != null) *)
+      (* Handle assigment fron a temp pvar in a condition.
+         This recognizes the handling of temp variables in ((x = ...) != null) *)
       let handle_assignment_in_condition pvar =
         match Cfg.Node.get_preds node with
         | [prev_node] ->
@@ -1044,7 +1044,7 @@ let typecheck_instr
             !found
         | _ -> None in
 
-      (** Normalize the condition by resolving temp variables. *)
+      (* Normalize the condition by resolving temp variables. *)
       let rec normalize_cond _node _cond = match _cond with
         | Sil.UnOp (Unop.LNot, c, top) ->
             let node', c' = normalize_cond _node c in

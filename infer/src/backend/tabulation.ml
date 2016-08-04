@@ -30,25 +30,25 @@ type deref_error =
   | Deref_freed of Sil.res_action (** dereference a freed pointer *)
   | Deref_minusone (** dereference -1 *)
   | Deref_null of Sil.path_pos (** dereference null *)
-  (** dereference a value coming from the given undefined function *)
   | Deref_undef of Procname.t * Location.t * Sil.path_pos
+  (** dereference a value coming from the given undefined function *)
   | Deref_undef_exp (** dereference an undefined expression *)
 
 type invalid_res =
-  (** dereference error and description *)
   | Dereference_error of deref_error * Localise.error_desc * Paths.Path.t option
+  (** dereference error and description *)
 
-  (** the abduction prover failed some checks *)
   | Prover_checks of Prover.check list
+  (** the abduction prover failed some checks *)
 
-  (** cannot combine actual pre with splitting and post *)
   | Cannot_combine
+  (** cannot combine actual pre with splitting and post *)
 
-  (** missing_fld not empty in re-execution mode *)
   | Missing_fld_not_empty
+  (** missing_fld not empty in re-execution mode *)
 
-  (** missing sigma not empty in re-execution mode *)
   | Missing_sigma_not_empty
+  (** missing sigma not empty in re-execution mode *)
 
 type valid_res =
   { incons_pre_missing : bool; (** whether the actual pre is consistent with the missing part *)
@@ -184,7 +184,7 @@ let process_splitting
     match Sil.exp_sub sub1_inverse (Sil.Var id) with
     | Sil.Var id' ->
         if Sil.fav_mem fav_actual_pre id' || Ident.is_path id'
-        (** a path id represents a position in the pre *)
+        (* a path id represents a position in the pre *)
         then Sil.Var id'
         else Sil.Var (Ident.create_fresh Ident.kprimed)
     | _ -> assert false in
@@ -355,7 +355,7 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
 let post_process_sigma (sigma: Sil.hpred list) loc : Sil.hpred list =
   let map_inst inst = Sil.inst_new_loc loc inst in
   let do_hpred (_, _, hpred) = Sil.hpred_instmap map_inst hpred in
-  (** update the location of instrumentations *)
+  (* update the location of instrumentations *)
   IList.map (fun hpred -> do_hpred (Prover.expand_hpred_pointer false hpred)) sigma
 
 (** check for interprocedural path errors in the post *)
@@ -603,7 +603,7 @@ let prop_copy_footprint_pure p1 p2 =
   let pi2_attr, pi2_noattr = IList.partition Prop.atom_is_attribute pi2 in
   let res_noattr = Prop.replace_pi (Prop.get_pure p1 @ pi2_noattr) p2' in
   let replace_attr prop atom = (* call replace_atom_attribute which deals with existing attibutes *)
-    (** if [atom] represents an attribute [att], add the attribure to [prop] *)
+    (* if [atom] represents an attribute [att], add the attribure to [prop] *)
     match Prop.atom_get_exp_attribute atom with
     | None -> prop
     | Some (exp, att) ->
@@ -738,7 +738,7 @@ let combine
       let post_p1' = Prop.replace_sigma post_p1_sigma' post_p1 in
       Prop.normalize (Prop.replace_pi (Prop.get_pi post_p1 @ split.missing_pi) post_p1') in
 
-    let post_p3 = (** replace [result|callee] with an aux variable dedicated to this proc *)
+    let post_p3 = (* replace [result|callee] with an aux variable dedicated to this proc *)
       let callee_ret_pvar =
         Sil.Lvar (Pvar.to_callee callee_pname (Pvar.get_ret_pvar callee_pname)) in
       match Prop.prop_iter_create post_p2 with
@@ -768,7 +768,7 @@ let combine
                     | _ -> p in
                   let p = Prop.prop_iter_remove_curr_then_to_prop iter' in
                   do_ftl_ids p (ftl, ret_ids)
-              | Sil.Hpointsto _ -> (** returning nothing or unexpected sexp, turning into nondet *)
+              | Sil.Hpointsto _ -> (* returning nothing or unexpected sexp, turning into nondet *)
                   Prop.prop_iter_remove_curr_then_to_prop iter'
               | _ -> assert false in
     let post_p4 =
@@ -1118,7 +1118,7 @@ let prop_pure_to_footprint (p: 'a Prop.t) : Prop.normal Prop.t =
   let new_footprint_atoms = IList.filter is_footprint_atom_not_attribute pure in
   if new_footprint_atoms == []
   then p
-  else (** add pure fact to footprint *)
+  else (* add pure fact to footprint *)
     Prop.normalize (Prop.replace_pi_footprint (Prop.get_pi_footprint p @ new_footprint_atoms) p)
 
 (** post-process the raw result of a function call *)

@@ -15,6 +15,7 @@ open! Utils
 open Sil
 
 type normal (** kind for normal props, i.e. normalized *)
+
 type exposed (** kind for exposed props *)
 
 (** Proposition. *)
@@ -204,6 +205,7 @@ val normalize : exposed t -> normal t
 val expose : normal t -> exposed t
 
 (** {2 Compaction} *)
+
 (** Return a compact representation of the prop *)
 val prop_compact : sharing_env -> normal t -> normal t
 

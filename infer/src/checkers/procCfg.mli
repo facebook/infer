@@ -31,26 +31,38 @@ module type S = sig
 
   (** get the instructions from a node *)
   val instrs : node -> Sil.instr list
+
   (** explode a block into its instructions and an optional id for the instruction. the purpose of
       this is to specify a policy for fine-grained storage of invariants by the abstract
       interpreter. the interpreter will forget invariants at program points where the id is None,
       and remember them otherwise *)
   val instr_ids : node -> (Sil.instr * id option) list
+
   val succs : t -> node -> node list
+
   (** all predecessors (normal and exceptional) *)
   val preds : t -> node -> node list
+
   (** non-exceptional successors *)
   val normal_succs : t -> node -> node list
+
   (** non-exceptional predecessors *)
   val normal_preds : t -> node -> node list
+
   (** exceptional successors *)
   val exceptional_succs : t -> node -> node list
+
   (** exceptional predescessors *)
   val exceptional_preds : t -> node -> node list
+
   val start_node : t -> node
+
   val exit_node : t -> node
+
   val proc_desc : t -> Cfg.Procdesc.t
+
   val nodes : t -> node list
+
   val from_pdesc : Cfg.Procdesc.t -> t
 end
 

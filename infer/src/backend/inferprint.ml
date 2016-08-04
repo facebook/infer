@@ -352,7 +352,7 @@ module BugsCsv = struct
         pp "\"%d\"," node_key;
         pp "\"%s\"," qualifier_tag_xml;
         pp "\"%d\"," (get_bug_hash kind type_str procedure_id filename node_key error_desc);
-        pp "\"%d\"," !csv_bugs_id; (** bug id *)
+        pp "\"%d\"," !csv_bugs_id; (* bug id *)
         pp "\"%s\"," always_report;
         pp "\"%s\"@\n" err_advice_string; in
     Errlog.iter pp_row err_log

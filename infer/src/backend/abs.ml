@@ -764,7 +764,7 @@ let abstract_pure_part p ~(from_abstract_footprint: bool) =
     let pi_filtered =
       let sigma = Prop.get_sigma p in
       let fav_sigma = Prop.sigma_fav sigma in
-      let fav_nonpure = Prop.prop_fav_nonpure p in (** vars in current and footprint sigma *)
+      let fav_nonpure = Prop.prop_fav_nonpure p in (* vars in current and footprint sigma *)
       let filter atom =
         let fav' = Sil.atom_fav atom in
         Sil.fav_for_all fav' (fun id ->
@@ -801,7 +801,7 @@ let abstract_pure_part p ~(from_abstract_footprint: bool) =
     else eprop' in
   Prop.normalize eprop''
 
-(* Collect symbolic garbage from pi and sigma *)
+(** Collect symbolic garbage from pi and sigma *)
 let abstract_gc p =
   let pi = Prop.get_pi p in
   let p_without_pi = Prop.normalize (Prop.replace_pi [] p) in
@@ -825,6 +825,7 @@ let abstract_gc p =
   | Some iter -> Prop.prop_iter_to_prop (Prop.prop_iter_gc_fields iter)
 
 module IdMap = Map.Make (Ident) (** maps from identifiers *)
+
 module HpredSet =
   Set.Make(struct
     type t = Sil.hpred
@@ -889,9 +890,9 @@ let get_cycle root prop =
                       ^(Ident.fieldname_to_string f)^", "^(Sil.exp_to_string e')^")")
          | _ -> ()) cyc;
      L.d_strln "") in
-  (* perform a dfs of a graph stopping when e_root is reached. *)
-  (* Returns a pair (path, bool) where path is a list of edges ((e1,type_e1),f,e2) *)
-  (* describing the path to e_root and bool is true if e_root is reached. *)
+  (* Perform a dfs of a graph stopping when e_root is reached.
+     Returns a pair (path, bool) where path is a list of edges ((e1,type_e1),f,e2)
+     describing the path to e_root and bool is true if e_root is reached. *)
   let rec dfs e_root et_src path el visited =
     match el with
     | [] -> path, false
@@ -924,9 +925,9 @@ let get_cycle root prop =
   | _ -> L.d_strln "Root exp is not an allocated object. No cycle found"; []
 
 
-(* Check whether the hidden counter field of a struct representing an *)
-(* objective-c object is positive, and whether the leak is part of the *)
-(* specified buckets. In the positive case, it returns the bucket *)
+(** Check whether the hidden counter field of a struct representing an objective-c object is
+    positive, and whether the leak is part of the specified buckets. In the positive case, it
+    returns the bucket *)
 let should_raise_objc_leak hpred =
   match hpred with
   | Sil.Hpointsto(_, Sil.Estruct((fn, Sil.Eexp( (Sil.Const (Const.Cint i)), _)):: _, _),
@@ -969,10 +970,10 @@ let get_var_retain_cycle _prop =
     | _ -> (match find_block e with
         | Some blk -> [((sexp blk, t), f, e')]
         | _ -> [((sexp (Sil.Sizeof (t, None, Subtype.exact)), t), f, e')]) in
-  (* returns the pvars of the first cycle we find in sigma. *)
-  (* This is an heuristic that works if there is one cycle. *)
-  (* In case there are more than one cycle we may return not necessarily*)
-  (* the one we are looking for. *)
+  (* returns the pvars of the first cycle we find in sigma.
+     This is an heuristic that works if there is one cycle.
+     In case there are more than one cycle we may return not necessarily
+     the one we are looking for. *)
   let rec do_sigma sigma_todo =
     match sigma_todo with
     | [] -> []
@@ -989,8 +990,8 @@ let remove_opt _prop =
   | Some (Some p) -> p
   | _ -> Prop.prop_emp
 
-(* Checks if cycle has fields (derived from a property or directly defined as ivar) *)
-(* with attributes weak/unsafe_unretained/assing *)
+(** Checks if cycle has fields (derived from a property or directly defined as ivar) with attributes
+    weak/unsafe_unretained/assing *)
 let cycle_has_weak_or_unretained_or_assign_field cycle =
   (* returns items annotation for field fn in struct t *)
   let get_item_annotation t fn =
@@ -1129,9 +1130,9 @@ let check_junk ?original_prop pname tenv prop =
               let ignore_resource, exn =
                 (match alloc_attribute, resource with
                  | Some _, Sil.Rmemory Sil.Mobjc when (hpred_in_cycle hpred) ->
-                     (* When there is a cycle in objc we ignore it *)
-                     (* only if it's empty or it has weak or unsafe_unretained fields. *)
-                     (* Otherwise we report a retain cycle. *)
+                     (* When there is a cycle in objc we ignore it
+                        only if it's empty or it has weak or unsafe_unretained fields.
+                        Otherwise we report a retain cycle. *)
                      let cycle = get_var_retain_cycle (remove_opt original_prop) in
                      let ignore_cycle =
                        (IList.length cycle = 0) ||
@@ -1146,9 +1147,9 @@ let check_junk ?original_prop pname tenv prop =
                  | Some _, Sil.Rfile -> false, exn_leak
                  | Some _, Sil.Rlock -> false, exn_leak
                  | _ when hpred_in_cycle hpred && Sil.has_objc_ref_counter hpred ->
-                     (* When its a cycle and the object has a ref counter then *)
-                     (* we have a retain cycle. Objc object may not have the *)
-                     (* Sil.Mobjc qualifier when added in footprint doing abduction *)
+                     (* When it's a cycle and the object has a ref counter then
+                        we have a retain cycle. Objc object may not have the
+                        Sil.Mobjc qualifier when added in footprint doing abduction *)
                      let cycle = get_var_retain_cycle (remove_opt original_prop) in
                      IList.length cycle = 0, exn_retain_cycle cycle
                  | _ -> !Config.curr_language = Config.Java, exn_leak) in
@@ -1208,7 +1209,7 @@ let abstract_prop pname tenv ~(rename_primed: bool) ~(from_abstract_footprint: b
     then pure_abs_p
     else abstract_pure_part ~from_abstract_footprint: from_abstract_footprint (Absarray.abstract_array_check pure_abs_p) in
   let abs_p = abs_rules_apply tenv array_abs_p in
-  let abs_p = abstract_gc abs_p in (** abstraction might enable more gc *)
+  let abs_p = abstract_gc abs_p in (* abstraction might enable more gc *)
   let abs_p = check_junk ~original_prop: (Some(p)) pname tenv abs_p in
   let ren_abs_p =
     if rename_primed

@@ -167,22 +167,23 @@ end = struct
     if include_subtrace then Pcall(p, pname, p_sub, get_dummy_stats ())
     else p
 
-  module Invariant = (** functions in this module either do not assume, or do not re-establish, the invariant on dummy stats *)
-  struct
+  (** functions in this module either do not assume, or do not re-establish, the invariant on dummy
+      stats *)
+  module Invariant = struct
     (** check whether a stats is the dummy stats *)
     let stats_is_dummy stats =
       stats.max_length == - 1
 
-    (** return the stats of the path *)
-    (** assumes that the stats are computed *)
+    (** return the stats of the path, assumes that the stats are computed *)
     let get_stats = function
       | Pstart (_, stats) -> stats
       | Pnode (_, _, _, _, stats, _) -> stats
       | Pjoin (_, _, stats) -> stats
       | Pcall (_, _, _, stats) -> stats
 
-    (** restore the invariant that all the stats are dummy, so the path is ready for another traversal *)
-    (** assumes that the stats are computed beforehand, and ensures that the invariant holds afterwards *)
+    (** restore the invariant that all the stats are dummy, so the path is ready for another
+        traversal assumes that the stats are computed beforehand, and ensures that the invariant
+        holds afterwards *)
     let rec reset_stats = function
       | Pstart (_, stats) ->
           if not (stats_is_dummy stats) then set_dummy_stats stats
@@ -207,12 +208,13 @@ end = struct
               set_dummy_stats stats
             end
 
-    (** Iterate [f] over the path and compute the stats, assuming the invariant: all the stats are dummy. *)
-    (** Function [f] (typically with side-effects) is applied once to every node, and max_length in the stats
-        is the length of a longest sequence of nodes in the path where [f] returned [true] on at least one node.
-        max_length is 0 if the path was visited but no node satisfying [f] was found. *)
-    (** Assumes that the invariant holds beforehand, and ensures that all the stats are computed afterwards. *)
-    (** Since this breaks the invariant, it must be followed by reset_stats. *)
+    (** Iterate [f] over the path and compute the stats, assuming the invariant: all the stats are
+        dummy.  Function [f] (typically with side-effects) is applied once to every node, and
+        max_length in the stats is the length of a longest sequence of nodes in the path where [f]
+        returned [true] on at least one node.  max_length is 0 if the path was visited but no node
+        satisfying [f] was found.  Assumes that the invariant holds beforehand, and ensures that all
+        the stats are computed afterwards.  Since this breaks the invariant, it must be followed by
+        reset_stats. *)
     let rec compute_stats do_calls (f : Cfg.Node.t -> bool) =
       let nodes_found stats = stats.max_length > 0 in
       function

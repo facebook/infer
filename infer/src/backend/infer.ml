@@ -94,23 +94,21 @@ let () =
     ) in
   let pid = Unix.create_process args_py.(0) args_py Unix.stdin Unix.stdout Unix.stderr in
   let _, status = Unix.waitpid [] pid in
-  (** Collect crashcontext summaries *)
+  (* collect crashcontext summaries *)
   let analysis_is_crashcontext = match Config.analyzer with
     | Some Crashcontext -> true
     | _ -> false in
   if analysis_is_crashcontext then
-    (** Check whether this is the top-level infer process *)
+    (* check whether this is the top-level infer process *)
     let top_level_infer =
-      (** if the '--buck' option was passed, then this is the top level process
-          iff the build command starts with 'buck' *)
+      (* if the '--buck' option was passed, then this is the top level process iff the build command
+         starts with 'buck' *)
       if Config.buck then buck
-      (** otherwise, we assume javac as the build command and thus only
-          one process *)
+      (* otherwise, we assume javac as the build command and thus only one process *)
       else true in
     if top_level_infer then
-      (** If we are the top-level process, then find the output directory and
-          collect all crashcontext summaries under it in a single
-          crashcontext.json file *)
+      (* if we are the top-level process, then find the output directory and collect all
+         crashcontext summaries under it in a single crashcontext.json file *)
       let root_out_dir = if buck then begin
           let project_root = match Config.project_root with
             | Some root -> root
