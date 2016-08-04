@@ -23,9 +23,10 @@ type annotation =
   | Present
 
 (** Method signature with annotations. *)
-type annotated_signature =
-  { ret : Typ.item_annotation * Typ.t; (** Annotated return type. *)
-    params: (Mangled.t * Typ.item_annotation * Typ.t) list } (** Annotated parameters. *)
+type annotated_signature = {
+  ret : Typ.item_annotation * Typ.t; (** Annotated return type. *)
+  params: (Mangled.t * Typ.item_annotation * Typ.t) list (** Annotated parameters. *)
+}
 
 (** Check if the annotated signature is for a wrapper of an anonymous inner class method.
     These wrappers have the same name as the original method, every type is Object, and the parameters
