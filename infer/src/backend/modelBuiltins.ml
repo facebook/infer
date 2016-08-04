@@ -121,7 +121,7 @@ let execute___set_array_length { Builtin.pdesc; prop_; path; ret_ids; args; }
                 let hpred' = Sil.Hpointsto (e, Sil.Earray (n_len, esel, inst), t) in
                 let prop' = Prop.replace_sigma (hpred':: sigma') prop in
                 [(Prop.normalize prop', path)]
-            | _ -> [])) (* by construction of prop_a this case is impossible *)
+            | _ -> [] (* by construction of prop_a this case is impossible *) ))
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 let execute___print_value { Builtin.pdesc; prop_; path; args; }

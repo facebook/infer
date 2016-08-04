@@ -630,7 +630,7 @@ let report_context_leaks pname sigma tenv =
            let leak_path =
              match Prop.get_fld_typ_path_opt fld_exps context_exp reachable_hpreds with
              | Some path -> path
-             | None -> assert false in (* a path must exist in order for a leak to be reported *)
+             | None -> assert false (* a path must exist in order for a leak to be reported *) in
            let err_desc =
              Errdesc.explain_context_leak pname (Typ.Tstruct struct_typ) fld_name leak_path in
            let exn = Exceptions.Context_leak (err_desc, __POS__) in
@@ -847,7 +847,7 @@ let initial_prop
   let new_formals =
     if add_formals
     then IList.map construct_decl (Cfg.Procdesc.get_formals curr_f)
-    else [] in (* no new formals added *)
+    else [] (* no new formals added *) in
   let prop1 =
     Prop.prop_reset_inst
       (fun inst_old -> Sil.update_inst inst_old Sil.inst_formal)

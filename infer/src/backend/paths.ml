@@ -292,7 +292,8 @@ end = struct
     let rec doit level session path prev_exn_opt = match path with
       | Pstart _ -> f level path session prev_exn_opt
       | Pnode (_, exn_opt, session', p, _, _) ->
-          let next_exn_opt = if prev_exn_opt <> None then None else exn_opt in (* no two consecutive exceptions *)
+          (* no two consecutive exceptions *)
+          let next_exn_opt = if prev_exn_opt <> None then None else exn_opt in
           doit level (session' :> int) p next_exn_opt;
           f level path session prev_exn_opt
       | Pjoin (p1, p2, _) ->

@@ -425,7 +425,7 @@ struct
         let sizeof_typ =
           match tp with
           | Some tp -> CTypes_decl.type_ptr_to_sil_type tenv tp
-          | None -> typ in (* Some default type since the type is missing *)
+          | None -> typ (* Some default type since the type is missing *) in
         { empty_res_trans with
           exps = [(Sil.Sizeof (sizeof_typ, None, Subtype.exact), sizeof_typ)] }
     | k -> Printing.log_stats
@@ -556,7 +556,7 @@ struct
     let ms_opt = CMethod_trans.method_signature_of_pointer context.tenv decl_ptr in
     let is_instance_method = match ms_opt with
       | Some ms -> CMethod_signature.ms_is_instance ms
-      | _ -> true in (* might happen for methods that are not exported yet (some templates). *)
+      | _ -> true (* might happen for methods that are not exported yet (some templates). *) in
     let is_cpp_virtual = match ms_opt with
       | Some ms -> CMethod_signature.ms_is_cpp_virtual ms
       | _ -> false in
@@ -702,7 +702,7 @@ struct
     let array_stmt, idx_stmt = (match stmt_list with
         | [a; i] -> a, i  (* Assumption: the statement list contains 2 elements,
                              the first is the array expr and the second the index *)
-        | _ -> assert false) in (* Let's get notified if the assumption is wrong...*)
+        | _ -> assert false (* Let's get notified if the assumption is wrong...*) ) in
     let res_trans_a = instruction trans_state array_stmt in
     let res_trans_idx = instruction trans_state idx_stmt in
     let (a_exp, _) = extract_exp_from_list res_trans_a.exps
@@ -2302,7 +2302,7 @@ struct
     | [stmt], [attr] ->
         (match stmt, attr with
          | NullStmt _, FallThroughAttr _ -> nullStmt_trans trans_state.succ_nodes
-         | _ -> assert false) (* More cases to come. With the assert false we can find them *)
+         | _ -> assert false (* More cases to come. With the assert false we can find them *) )
     | _ -> assert false (* Expect that this doesn't happen *)
 
   and trans_into_undefined_expr trans_state expr_info =

@@ -368,7 +368,7 @@ let check_path_errors_in_post caller_pname post post_path =
             let current_path, _ = State.get_path () in
             if Paths.Path.contains_position post_path path_pos
             then post_path, Some path_pos
-            else current_path, None in (* position not found, only use the path up to the callee *)
+            else current_path, None (* position not found, only use the path up to the callee *) in
           State.set_path new_path path_pos_opt;
           let exn = Exceptions.Divide_by_zero (desc, __POS__) in
           let pre_opt = State.get_normalized_pre (fun _ p -> p) (* Abs.abstract_no_symop *) in

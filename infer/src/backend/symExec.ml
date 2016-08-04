@@ -581,7 +581,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
             callee_pname :: call_flags.CallFlags.cf_targets
           else
             (* interface call--[called_pname] has no implementation), we don't want to consider *)
-            call_flags.CallFlags.cf_targets in (* interface call, don't want to consider *)
+            call_flags.CallFlags.cf_targets (* interface call, don't want to consider *) in
         (* return true if (receiver typ of [target_pname]) <: [actual_receiver_typ] *)
         let may_dispatch_to target_pname =
           let target_receiver_typ = get_receiver_typ target_pname actual_receiver_typ in

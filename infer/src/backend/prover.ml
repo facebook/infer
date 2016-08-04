@@ -1868,7 +1868,8 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                   res
               | Some iter1' ->
                   let elist2 = IList.map (fun e -> Sil.exp_sub (snd subs) e) _elist2 in
-                  let subs' = exp_list_imply calc_missing subs (f2:: elist2) (f2:: elist2) in (* force instantiation of existentials *)
+                  (* force instantiation of existentials *)
+                  let subs' = exp_list_imply calc_missing subs (f2:: elist2) (f2:: elist2) in
                   let prop1' = Prop.prop_iter_remove_curr_then_to_prop iter1' in
                   let hpred1 = match Prop.prop_iter_current iter1' with
                     | hpred1, b ->
@@ -1926,7 +1927,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                 let _, para_inst2 =
                   if Sil.exp_equal iF2 iB2 then
                     Sil.hpara_dll_instantiate para2 iF2 oB2 oF2 elist2
-                  else assert false in  (* Only base case of rhs list considered for now *)
+                  else assert false (* Only base case of rhs list considered for now *) in
                 L.d_increase_indent 1;
                 let res =
                   decrease_indent_when_exception
@@ -1936,7 +1937,10 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                 res
             | Some iter1' -> (* Only consider implications between identical listsegs for now *)
                 let elist2 = IList.map (fun e -> Sil.exp_sub (snd subs) e) elist2 in
-                let subs' = exp_list_imply calc_missing subs (iF2:: oB2:: oF2:: iB2:: elist2) (iF2:: oB2:: oF2:: iB2:: elist2) in (* force instantiation of existentials *)
+                (* force instantiation of existentials *)
+                let subs' =
+                  exp_list_imply calc_missing subs
+                    (iF2:: oB2:: oF2:: iB2:: elist2) (iF2:: oB2:: oF2:: iB2:: elist2) in
                 let prop1' = Prop.prop_iter_remove_curr_then_to_prop iter1'
                 in (subs', prop1')
            )

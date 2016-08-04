@@ -278,7 +278,7 @@ let make_dangling_boxes pe allocated_nodes (sigma_lambda: (Sil.hpred * int) list
     | Dotdangling(coo, e, color):: l' ->
         if (IList.exists (Sil.exp_equal e) seen_exp) then filter_duplicate l' seen_exp
         else Dotdangling(coo, e, color):: filter_duplicate l' (e:: seen_exp)
-    | box:: l' -> box:: filter_duplicate l' seen_exp in (* this case cannot happen*)
+    | box:: l' -> box:: filter_duplicate l' seen_exp (* this case cannot happen*) in
   let rec subtract_allocated candidate_dangling =
     match candidate_dangling with
     | [] -> []
@@ -423,7 +423,7 @@ let rec compute_target_struct_fields dotnodes list_fld p f lambda cycle =
            | _ -> (* by construction there must be at most 2 nodes for an expression*)
                L.out "@\n Too many nodes! Error! @\n@.@."; assert false)
     | Sil.Estruct (_, _) -> [] (* inner struct are printed by print_struc function *)
-    | Sil.Earray _ -> [] in (* inner arrays are printed by print_array function *)
+    | Sil.Earray _ -> [] (* inner arrays are printed by print_array function *) in
   match list_fld with
   | [] -> []
   | a:: list_fld' ->
@@ -819,7 +819,8 @@ and pp_dotty f kind (_prop: Prop.normal Prop.t) cycle =
         let cmap_norm = Propgraph.diff_get_colormap false diff in
         let cmap_foot = Propgraph.diff_get_colormap true diff in
         let pe = { (Prop.prop_update_obj_sub pe_text pre) with pe_cmap_norm = cmap_norm; pe_cmap_foot = cmap_foot } in
-        let pre_stack = fst (Prop.sigma_get_stack_nonstack true (Prop.get_sigma pre)) in (* add stack vars from pre *)
+        (* add stack vars from pre *)
+        let pre_stack = fst (Prop.sigma_get_stack_nonstack true (Prop.get_sigma pre)) in
         let prop = Prop.replace_sigma (pre_stack @ Prop.get_sigma _prop) _prop in
         pe, Prop.normalize prop
     | _ ->
@@ -1194,7 +1195,8 @@ let make_set_dangling_nodes allocated_nodes (sigma: Sil.hpred list) =
         else e:: filter_duplicate l' (e:: seen_exp) in
   let rhs_exp_list = IList.flatten (IList.map get_rhs_predicate sigma) in
   let candidate_dangling_exps = filter_duplicate rhs_exp_list [] in
-  let dangling_exps = IList.filter is_not_allocated candidate_dangling_exps in  (* get rid of allocated ones*)
+  (* get rid of allocated ones*)
+  let dangling_exps = IList.filter is_not_allocated candidate_dangling_exps in
   IList.map make_new_dangling dangling_exps
 
 (* return a list of pairs (n,field_lab) where n is a target node*)

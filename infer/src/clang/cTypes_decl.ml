@@ -181,7 +181,7 @@ and get_struct_cpp_class_declaration_type tenv decl =
         else [] in
       let struct_annotations =
         if csu = Csu.Class Csu.CPP then Typ.cpp_class_annotation
-        else Typ.item_annotation_empty in  (* No annotations for structs *)
+        else Typ.item_annotation_empty (* No annotations for structs *) in
       if is_complete_definition then (
         Ast_utils.update_sil_types_map type_ptr (Typ.Tvar sil_typename);
         let non_static_fields = get_struct_fields tenv decl in

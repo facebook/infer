@@ -35,7 +35,8 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
   let ret_var = Cfg.Procdesc.get_ret_var procdesc in
   let ret_type = Cfg.Procdesc.get_ret_type procdesc in
   let id_ret_val = Ident.create_fresh Ident.knormal in
-  let id_exn_val = Ident.create_fresh Ident.knormal in (* this is removed in the true branches, and in the false branch of the last handler *)
+  (* this is removed in the true branches, and in the false branch of the last handler *)
+  let id_exn_val = Ident.create_fresh Ident.knormal in
   let create_entry_node loc =
     let instr_get_ret_val = Sil.Letderef (id_ret_val, Sil.Lvar ret_var, ret_type, loc) in
     let id_deactivate = Ident.create_fresh Ident.knormal in
