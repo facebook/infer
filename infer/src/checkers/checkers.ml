@@ -16,7 +16,7 @@ module F = Format
 
 let verbose = ref true
 
-(** Convenience functions for chechers to print information *)
+(** Convenience functions for checkers to print information *)
 module PP = struct
   (** Print a range of lines of the source file in [loc], including [nbefore] lines before loc
       and [nafter] lines after [loc] *)
