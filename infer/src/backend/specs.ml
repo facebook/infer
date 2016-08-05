@@ -321,6 +321,8 @@ type payload =
     preposts : NormSpec.t list option; (** list of specs *)
     typestate : unit TypeState.t option; (** final typestate *)
     calls: call_summary option;
+    crashcontext_frame: Stacktree_j.stacktree option;
+    (** Proc location and blame_range info for crashcontext analysis *)
   }
 
 type summary =
@@ -753,6 +755,7 @@ let empty_payload =
     preposts = None;
     typestate = None;
     calls = None;
+    crashcontext_frame = None;
   }
 
 (** [init_summary (depend_list, nodes,

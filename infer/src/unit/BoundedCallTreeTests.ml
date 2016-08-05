@@ -16,6 +16,8 @@ module TestInterpreter = AnalyzerTester.Make
     (Scheduler.ReversePostorder)
     (BoundedCallTree.TransferFunctions)
 
+let mock_get_proc_desc _ = None
+
 let tests =
   let open OUnit2 in
   let open AnalyzerTester.StructuredSil in
@@ -28,6 +30,8 @@ let tests =
   let trace = Stacktrace.make "java.lang.NullPointerException"
       [Stacktrace.make_frame class_name "foo" file_name 16;
        Stacktrace.make_frame class_name "bar" file_name 20] in
+  let extras = { BoundedCallTree.get_proc_desc = mock_get_proc_desc;
+                 stacktrace = trace; } in
   let caller_foo_name = Procname.from_string_c_fun "foo" in
   let caller_bar_name = Procname.from_string_c_fun "bar" in
   let caller_baz_name = Procname.from_string_c_fun "baz" in
@@ -56,21 +60,21 @@ let tests =
       make_call ~procname:f_proc_name [] [];
       invariant "{ f }"
     ];
-  ] |> TestInterpreter.create_tests ~test_pname:caller_foo_name trace in
+  ] |> TestInterpreter.create_tests ~test_pname:caller_foo_name extras in
   let test_list_from_bar = [
     "on_call_anywhere_on_stack_add_proc_name",
     [
       make_call ~procname:f_proc_name [] []; (* means f() *)
       invariant "{ f }"
     ];
-  ] |> TestInterpreter.create_tests ~test_pname:caller_bar_name trace in
+  ] |> TestInterpreter.create_tests ~test_pname:caller_bar_name extras in
   let test_list_from_baz = [
     "ignore_procs_unrelated_to_trace",
     [
       make_call ~procname:f_proc_name [] []; (* means f() *)
       invariant "{  }"
     ];
-  ] |> TestInterpreter.create_tests ~test_pname:caller_baz_name trace in
+  ] |> TestInterpreter.create_tests ~test_pname:caller_baz_name extras in
   let test_list = test_list_from_foo @
                   test_list_from_bar @
                   test_list_from_baz in
