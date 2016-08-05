@@ -920,6 +920,22 @@ let remove_abducted_retvars p =>
               let exps' = collect_exps exps rhs;
               (reach', exps')
             }
+          | Sil.Hlseg _ _ exp1 exp2 exp_l as hpred => {
+              let reach' = Sil.HpredSet.add hpred reach;
+              let exps' =
+                IList.fold_left
+                  (fun exps_acc exp => Sil.ExpSet.add exp exps_acc) exps [exp1, exp2, ...exp_l];
+              (reach', exps')
+            }
+          | Sil.Hdllseg _ _ exp1 exp2 exp3 exp4 exp_l as hpred => {
+              let reach' = Sil.HpredSet.add hpred reach;
+              let exps' =
+                IList.fold_left
+                  (fun exps_acc exp => Sil.ExpSet.add exp exps_acc)
+                  exps
+                  [exp1, exp2, exp3, exp4, ...exp_l];
+              (reach', exps')
+            }
           | _ => (reach, exps);
         let (reach', exps') = IList.fold_left add_hpred_if_reachable (reach, exps) sigma;
         if (Sil.HpredSet.cardinal reach == Sil.HpredSet.cardinal reach') {

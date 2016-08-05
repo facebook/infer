@@ -36,7 +36,11 @@ public class ListsTest {
   @Test
   public void whenInferRunsOnDivideByZeroThenDivideByZeroIsFound()
       throws InterruptedException, IOException, InferException {
-    String[] procedures = {"main"};
+    String[] procedures =
+      { "main",
+        // TODO: fix me!
+        // "call_all"
+      };
     assertThat(
         "Results should contain divide by zero error",
         inferResults,
