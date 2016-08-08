@@ -399,7 +399,7 @@ let deref_str_array_bound size_opt index_opt =
 let deref_str_uninitialized alloc_att_opt =
   let tags = Tags.create () in
   let creation_str = match alloc_att_opt with
-    | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Racquire } as ra)) ->
+    | Some (true, Sil.Aresource ({ ra_kind = Racquire } as ra)) ->
         "after allocation " ^ by_call_to_ra tags ra
     | _ -> "after declaration" in
   { tags = tags;

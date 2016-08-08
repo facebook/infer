@@ -312,11 +312,12 @@ let execute___cast builtin_args
 
 let set_resource_attribute prop path n_lexp loc ra_res =
   let prop' = match Prop.get_resource_attribute prop n_lexp with
-    | Some (Sil.Aresource (_ as ra)) ->
+    | Some (true, Aresource ra) ->
         Prop.add_or_replace_exp_attribute
           prop
-          n_lexp
+          true
           (Sil.Aresource { ra with Sil.ra_res = ra_res })
+          n_lexp
     | _ ->
         ( let pname = Sil.mem_alloc_pname Sil.Mnew in
           let ra =
@@ -325,7 +326,7 @@ let set_resource_attribute prop path n_lexp loc ra_res =
               Sil.ra_pname = pname;
               Sil.ra_loc = loc;
               Sil.ra_vpath = None } in
-          Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Aresource ra)) in
+          Prop.add_or_replace_exp_attribute prop true (Aresource ra) n_lexp) in
   [(prop', path)]
 
 (** Set the attibute of the value as file *)
@@ -547,7 +548,7 @@ let execute___set_autorelease_attribute
       let prop = return_result lexp prop_ ret_ids in
       if Config.objc_memory_model_on then
         let n_lexp, prop = check_arith_norm_exp pname lexp prop in
-        let prop' = Prop.add_or_replace_exp_attribute prop n_lexp Sil.Aautorelease in
+        let prop' = Prop.add_or_replace_exp_attribute prop true Aautorelease n_lexp in
         [(prop', path)]
       else execute___no_op prop path
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -558,7 +559,7 @@ let execute___release_autorelease_pool
   : Builtin.ret_typ =
   if Config.objc_memory_model_on then
     let autoreleased_objects = Prop.get_atoms_with_attribute Sil.Aautorelease prop_ in
-    let prop_without_attribute = Prop.remove_attribute Sil.Aautorelease prop_ in
+    let prop_without_attribute = Prop.remove_attribute prop_ true Aautorelease in
     let call_release res exp =
       match res with
       | (prop', path'):: _ ->
@@ -584,12 +585,12 @@ let execute___release_autorelease_pool
 let set_attr pdesc prop path exp attr =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let n_lexp, prop = check_arith_norm_exp pname exp prop in
-  [(Prop.add_or_replace_exp_attribute prop n_lexp attr, path)]
+  [(Prop.add_or_replace_exp_attribute prop true attr n_lexp, path)]
 
 let delete_attr pdesc prop path exp attr =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let n_lexp, prop = check_arith_norm_exp pname exp prop in
-  [(Prop.remove_attribute_from_exp attr prop n_lexp, path)]
+  [(Prop.remove_attribute_from_exp prop true attr n_lexp, path)]
 
 
 (** Set attibute att *)
@@ -699,8 +700,9 @@ let _execute_free mk loc acc iter =
         Prop.add_or_replace_exp_attribute_check_changed
           Tabulation.check_attr_dealloc_mismatch
           prop
-          lexp
-          (Sil.Aresource ra) in
+          true
+          (Aresource ra)
+          lexp in
       p_res :: acc
   | (Sil.Hpointsto _, _ :: _) -> assert false (* alignment error *)
   | _ -> assert false (* should not happen *)
@@ -801,7 +803,7 @@ let execute_alloc mk can_return_null
         Sil.ra_loc = loc;
         Sil.ra_vpath = None } in
     (* mark value as allocated *)
-    Prop.add_or_replace_exp_attribute prop' exp_new (Sil.Aresource ra) in
+    Prop.add_or_replace_exp_attribute prop' true (Aresource ra) exp_new in
   let prop_alloc = Prop.conjoin_eq (Sil.Var ret_id) exp_new prop_plus_ptsto in
   if can_return_null then
     let prop_null = Prop.conjoin_eq (Sil.Var ret_id) Sil.exp_zero prop in

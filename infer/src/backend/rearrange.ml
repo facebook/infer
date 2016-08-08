@@ -744,7 +744,7 @@ let add_guarded_by_constraints prop lexp pdesc =
       (* or the prop says we already have the lock *)
       IList.exists
         (function
-          | Sil.Alocked -> true
+          | (true, Sil.Alocked) -> true
           | _ -> false)
         (Prop.get_exp_attributes prop guarded_by_exp) in
     let should_warn pdesc =
@@ -1200,8 +1200,9 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
                  end
                else
                  let is_nullable_attr = function
-                   | Sil.Aretval (pname, ret_attr)
-                   | Sil.Aundef (pname, ret_attr, _, _) when Annotations.ia_is_nullable ret_attr ->
+                   | (true, Sil.Aretval (pname, ret_attr))
+                   | (true, Sil.Aundef (pname, ret_attr, _, _))
+                     when Annotations.ia_is_nullable ret_attr ->
                        nullable_obj_str := Some (Procname.to_string pname);
                        true
                    | _ -> false in
@@ -1272,17 +1273,17 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
       else raise (Exceptions.Null_dereference (err_desc, __POS__))
     end;
   match attribute_opt with
-  | Some (Sil.Adangling dk) ->
+  | Some (true, Adangling dk) ->
       let deref_str = Localise.deref_str_dangling (Some dk) in
       let err_desc = Errdesc.explain_dereference deref_str prop (State.get_loc ()) in
       raise (Exceptions.Dangling_pointer_dereference (Some dk, err_desc, __POS__))
-  | Some (Sil.Aundef (s, _, undef_loc, _)) ->
+  | Some (true, Aundef (s, _, undef_loc, _)) ->
       if Config.angelic_execution then ()
       else
         let deref_str = Localise.deref_str_undef (s, undef_loc) in
         let err_desc = Errdesc.explain_dereference deref_str prop loc in
         raise (Exceptions.Skip_pointer_dereference (err_desc, __POS__))
-  | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Rrelease } as ra)) ->
+  | Some (true, Aresource ({ ra_kind = Rrelease } as ra)) ->
       let deref_str = Localise.deref_str_freed ra in
       let err_desc = Errdesc.explain_dereference ~use_buckets: true deref_str prop loc in
       raise (Exceptions.Use_after_free (err_desc, __POS__))

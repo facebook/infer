@@ -318,11 +318,11 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
     else if Sil.exp_equal e_sub Sil.exp_minus_one
     then Some (Deref_minusone, desc true (Localise.deref_str_dangling None))
     else match Prop.get_resource_attribute actual_pre e_sub with
-      | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Rrelease } as ra)) ->
+      | Some (true, Aresource ({ ra_kind = Rrelease } as ra)) ->
           Some (Deref_freed ra, desc true (Localise.deref_str_freed ra))
       | _ ->
           (match Prop.get_undef_attribute actual_pre e_sub with
-           | Some (Sil.Aundef (s, _, loc, pos)) ->
+           | Some (true, Aundef (s, _, loc, pos)) ->
                Some (Deref_undef (s, loc, pos), desc false (Localise.deref_str_undef (s, loc)))
            | _ -> None) in
   let check_hpred = function
@@ -360,8 +360,8 @@ let post_process_sigma (sigma: Sil.hpred list) loc : Sil.hpred list =
 
 (** check for interprocedural path errors in the post *)
 let check_path_errors_in_post caller_pname post post_path =
-  let check_attr (e, att) = match att with
-    | Sil.Adiv0 path_pos ->
+  let check_attr (pol, att, e) = match att with
+    | Sil.Adiv0 path_pos when pol ->
         if Prover.check_zero e then
           let desc = Errdesc.explain_divide_by_zero e (State.get_node ()) (State.get_loc ()) in
           let new_path, path_pos_opt =
@@ -382,7 +382,7 @@ let check_path_errors_in_post caller_pname post post_path =
 let post_process_post
     caller_pname callee_pname loc actual_pre ((post: Prop.exposed Prop.t), post_path) =
   let actual_pre_has_freed_attribute e = match Prop.get_resource_attribute actual_pre e with
-    | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Rrelease })) -> true
+    | Some (true, Aresource ({ ra_kind = Rrelease })) -> true
     | _ -> false in
   let atom_update_alloc_attribute = function
     | Sil.Apred (true, Aresource ra, e)
@@ -604,8 +604,9 @@ let prop_copy_footprint_pure p1 p2 =
     (* if [atom] represents an attribute [att], add the attribure to [prop] *)
     match Prop.atom_get_exp_attribute atom with
     | None -> prop
-    | Some (exp, att) ->
-        Prop.add_or_replace_exp_attribute_check_changed check_attr_dealloc_mismatch prop exp att in
+    | Some (pol, att, exp) ->
+        Prop.add_or_replace_exp_attribute_check_changed
+          check_attr_dealloc_mismatch prop pol att exp in
   IList.fold_left replace_attr (Prop.normalize res_noattr) pi2_attr
 
 (** check if an expression is an exception *)
@@ -836,7 +837,8 @@ let check_taint_on_variadic_function callee_pname caller_pname actual_params cal
       IList.iter(fun (e,_) ->
           L.d_str (" " ^ (Sil.exp_to_string e) ^ " ");
           match Prop.get_taint_attribute calling_prop e with
-          | Some (Sil.Ataint taint_info) -> report_taint_error e taint_info callee_pname caller_pname calling_prop
+          | Some (true, Ataint taint_info) ->
+              report_taint_error e taint_info callee_pname caller_pname calling_prop
           | _ -> ()) actual_params';
       L.d_strln" ]"
   | _ ->  ()
@@ -881,9 +883,9 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
            "if (get() != null) get().something()" pattern *)
         let last_call_ret_non_null =
           IList.exists
-            (fun (exp, attr) ->
+            (fun (pol, attr, exp) ->
                match attr with
-               | Sil.Aretval (pname, _) when Procname.equal callee_pname pname ->
+               | Sil.Aretval (pname, _) when pol && Procname.equal callee_pname pname ->
                    Prover.check_disequal prop exp Sil.exp_zero
                | _ -> false)
             (Prop.get_all_attributes prop) in
@@ -903,9 +905,9 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
             let taint_retval (prop, path) =
               let prop_normal = Prop.normalize prop in
               let prop' =
-                Prop.add_or_replace_exp_attribute prop_normal
-                  (Sil.Var ret_id)
-                  (Sil.Ataint { Sil.taint_source = callee_pname; taint_kind; })
+                Prop.add_or_replace_exp_attribute prop_normal true
+                  (Ataint { taint_source = callee_pname; taint_kind; })
+                  (Var ret_id)
                 |> Prop.expose in
               (prop', path) in
             IList.map taint_retval posts
@@ -936,10 +938,10 @@ let do_taint_check caller_pname callee_pname calling_prop missing_pi sub actual_
   (* build a map from exp -> [taint attrs, untaint attrs], keeping only exprs with both kinds of
      attrs (we will flag errors on those exprs) *)
   let collect_taint_untaint_exprs acc_map atom = match Prop.atom_get_exp_attribute atom with
-    | Some (e, Sil.Ataint _) ->
+    | Some (_, Ataint _, e) ->
         let taint_atoms, untaint_atoms = try Sil.ExpMap.find e acc_map with Not_found -> ([], []) in
         Sil.ExpMap.add e (atom :: taint_atoms, untaint_atoms) acc_map
-    | Some (e, Sil.Auntaint _) ->
+    | Some (_, Auntaint _, e) ->
         let taint_atoms, untaint_atoms = try Sil.ExpMap.find e acc_map with Not_found -> ([], []) in
         Sil.ExpMap.add e (taint_atoms, atom :: untaint_atoms) acc_map
     | _ -> acc_map in
@@ -955,7 +957,7 @@ let do_taint_check caller_pname callee_pname calling_prop missing_pi sub actual_
   let report_taint_errors e (taint_atoms, _untaint_atoms) =
     let report_one_error taint_atom =
       let taint_info = match Prop.atom_get_exp_attribute taint_atom with
-        | Some (_, Sil.Ataint taint_info) -> taint_info
+        | Some (_, Ataint taint_info, _) -> taint_info
         | _ -> failwith "Expected to get taint attr on atom" in
       report_taint_error e taint_info callee_pname caller_pname calling_prop in
     IList.iter report_one_error taint_atoms in

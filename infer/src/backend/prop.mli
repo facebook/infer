@@ -282,37 +282,37 @@ val atom_is_attribute : atom -> bool
 val attribute_map_resource : normal t -> (Sil.exp -> Sil.res_action -> Sil.res_action) -> normal t
 
 (** Return the exp and attribute marked in the atom if any, and return None otherwise *)
-val atom_get_exp_attribute : atom -> (Sil.exp * Sil.attribute) option
+val atom_get_exp_attribute : atom -> (bool * Sil.attribute * Sil.exp) option
 
 (** Get the attributes associated to the expression, if any *)
-val get_exp_attributes : 'a t -> exp -> attribute list
+val get_exp_attributes : 'a t -> exp -> (bool * attribute) list
 
 (** Get the undef attribute associated to the expression, if any *)
-val get_undef_attribute : 'a t -> exp -> attribute option
+val get_undef_attribute : 'a t -> exp -> (bool * attribute) option
 
 (** Get the resource attribute associated to the expression, if any *)
-val get_resource_attribute : 'a t -> exp -> attribute option
+val get_resource_attribute : 'a t -> exp -> (bool * attribute) option
 
 (** Get the taint attribute associated to the expression, if any *)
-val get_taint_attribute : 'a t -> exp -> attribute option
+val get_taint_attribute : 'a t -> exp -> (bool * attribute) option
 
 (** Get the autorelease attribute associated to the expression, if any *)
-val get_autorelease_attribute : 'a t -> exp -> attribute option
+val get_autorelease_attribute : 'a t -> exp -> (bool * attribute) option
 
 (** Get the div0 attribute associated to the expression, if any *)
-val get_div0_attribute : 'a t -> exp -> attribute option
+val get_div0_attribute : 'a t -> exp -> (bool * attribute) option
 
 (** Get the observer attribute associated to the expression, if any *)
-val get_observer_attribute : 'a t -> exp -> attribute option
+val get_observer_attribute : 'a t -> exp -> (bool * attribute) option
 
 (** Get the objc null attribute associated to the expression, if any *)
-val get_objc_null_attribute : 'a t -> exp -> attribute option
+val get_objc_null_attribute : 'a t -> exp -> (bool * attribute) option
 
 (** Get the retval null attribute associated to the expression, if any *)
-val get_retval_attribute : 'a t -> exp -> attribute option
+val get_retval_attribute : 'a t -> exp -> (bool * attribute) option
 
 (** Get all the attributes of the prop *)
-val get_all_attributes : 'a t -> (exp * attribute) list
+val get_all_attributes : 'a t -> (bool * attribute * exp) list
 
 val has_dangling_uninit_attribute : 'a t -> exp -> bool
 
@@ -321,17 +321,17 @@ val set_exp_attribute : ?footprint: bool -> ?polarity: bool ->
   normal t -> attribute -> exp -> normal t
 
 val add_or_replace_exp_attribute_check_changed : (Sil.attribute -> Sil.attribute -> unit) ->
-  normal t -> exp -> attribute -> normal t
+  normal t -> bool -> attribute -> exp -> normal t
 
 (** Replace an attribute associated to the expression *)
-val add_or_replace_exp_attribute : normal t -> exp -> attribute -> normal t
+val add_or_replace_exp_attribute : normal t -> bool -> attribute -> exp -> normal t
 
 (** mark Sil.Var's or Sil.Lvar's as undefined *)
 val mark_vars_as_undefined : normal t -> Sil.exp list -> Procname.t -> Typ.item_annotation ->
   Location.t -> Sil.path_pos -> normal t
 
 (** Remove an attribute from all the atoms in the heap *)
-val remove_attribute : Sil.attribute -> 'a t -> normal t
+val remove_attribute : 'a t -> bool -> Sil.attribute -> normal t
 
 val remove_resource_attribute : Sil.res_act_kind -> Sil.resource -> 'a t -> normal t
 
@@ -342,7 +342,7 @@ val replace_objc_null : normal t -> exp -> exp -> normal t
 val nullify_exp_with_objc_null : normal t -> exp -> normal t
 
 (** Remove an attribute from an exp in the heap *)
-val remove_attribute_from_exp : Sil.attribute -> 'a t -> exp -> normal t
+val remove_attribute_from_exp : 'a t -> bool -> Sil.attribute -> exp -> normal t
 
 (** Retireve all the atoms in the heap that contain a specific attribute *)
 val get_atoms_with_attribute : Sil.attribute -> 'a t -> Sil.exp list

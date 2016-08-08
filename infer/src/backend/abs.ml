@@ -1030,11 +1030,11 @@ let cycle_has_weak_or_unretained_or_assign_field cycle =
 
 let check_observer_is_unsubscribed_deallocation prop e =
   let pvar_opt = match Prop.get_resource_attribute prop e with
-    | Some (Sil.Aresource ({Sil.ra_vpath =  Some (DecompiledExp.Dpvar pvar) })) -> Some pvar
+    | Some (true, Aresource ({ ra_vpath =  Some (DecompiledExp.Dpvar pvar) })) -> Some pvar
     | _ -> None in
   let loc = State.get_loc () in
   match Prop.get_observer_attribute prop e with
-  | Some Sil.Aobserver ->
+  | Some (true, Aobserver) ->
       (match pvar_opt with
        |  Some pvar when Config.nsnotification_center_checker_backend ->
            L.d_strln (" ERROR: Object " ^ (Pvar.to_string pvar) ^
@@ -1100,12 +1100,12 @@ let check_junk ?original_prop pname tenv prop =
                 let do_entry e =
                   check_observer_is_unsubscribed_deallocation prop e;
                   match Prop.get_resource_attribute prop e with
-                  | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Racquire }) as a) ->
+                  | Some (true, (Aresource ({ ra_kind = Racquire }) as a)) ->
                       L.d_str "ATTRIBUTE: "; Sil.d_attribute a; L.d_ln ();
                       res := Some a
                   | _ ->
                       (match Prop.get_undef_attribute prop e with
-                       | Some (Sil.Aundef _ as a) ->
+                       | Some (true, (Aundef _ as a)) ->
                            res := Some a
                        | _ -> ()) in
                 IList.iter do_entry entries;
