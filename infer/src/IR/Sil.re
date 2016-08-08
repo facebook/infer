@@ -328,12 +328,6 @@ let exp_is_this =
   | _ => false;
 
 
-/** This function inverts an injective binary operator
-    with respect to the first argument. It returns an expression [e'] such that
-    BinOp([binop], [e'], [exp1]) = [exp2]. If the [binop] operation is not invertible,
-    the function raises an exception by calling "assert false". */
-let binop_invert bop e1 e2 => Exp.BinOp (Binop.invert bop) e2 e1;
-
 let path_pos_compare (pn1, nid1) (pn2, nid2) => {
   let n = Procname.compare pn1 pn2;
   if (n != 0) {

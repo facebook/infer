@@ -351,13 +351,6 @@ let block_pvar: Pvar.t;
 /** Check if a pvar is a local pointing to a block in objc */
 let is_block_pvar: Pvar.t => bool;
 
-
-/** This function inverts an injective binary operator
-    with respect to the first argument. It returns an expression [e'] such that
-    BinOp([binop], [e'], [exp1]) = [exp2]. If the [binop] operation is not invertible,
-    the function raises an exception by calling "assert false". */
-let binop_invert: Binop.t => Exp.t => Exp.t => Exp.t;
-
 let mem_kind_compare: mem_kind => mem_kind => int;
 
 let res_act_kind_compare: res_act_kind => res_act_kind => int;
