@@ -265,12 +265,12 @@ let rec _strexp_extend_values
       bounds_check pname orig_prop len e (State.get_loc ());
       begin
         try
-          let _, se' = IList.find (fun (e', _) -> Sil.exp_equal e e') esel in
+          let _, se' = IList.find (fun (e', _) -> Exp.equal e e') esel in
           let atoms_se_typ_list' =
             _strexp_extend_values
               pname tenv orig_prop footprint_part kind max_stamp se' typ' off' inst in
           let replace acc (res_atoms', res_se', res_typ') =
-            let replace_ise ise = if Sil.exp_equal e (fst ise) then (e, res_se') else ise in
+            let replace_ise ise = if Exp.equal e (fst ise) then (e, res_se') else ise in
             let res_esel' = IList.map replace_ise esel in
             if (Typ.equal res_typ' typ') || (IList.length res_esel' = 1) then
               ( res_atoms'
@@ -544,10 +544,10 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
           let footprint_sigma = Prop.prop_iter_get_footprint_sigma iter in
           let sigma_pto, sigma_rest =
             IList.partition (function
-                | Sil.Hpointsto(e', _, _) -> Sil.exp_equal e e'
-                | Sil.Hlseg (_, _, e1, _, _) -> Sil.exp_equal e e1
+                | Sil.Hpointsto(e', _, _) -> Exp.equal e e'
+                | Sil.Hlseg (_, _, e1, _, _) -> Exp.equal e e1
                 | Sil.Hdllseg (_, _, e_iF, _, _, e_iB, _) ->
-                    Sil.exp_equal e e_iF || Sil.exp_equal e e_iB
+                    Exp.equal e e_iF || Exp.equal e e_iB
               ) footprint_sigma in
           let atoms_sigma_list =
             match sigma_pto with
@@ -756,12 +756,12 @@ let add_guarded_by_constraints prop lexp pdesc =
         IList.exists
           (function
             | Sil.Hpointsto (Lvar _, Eexp (rhs_exp, _), _) ->
-                Sil.exp_equal exp rhs_exp
+                Exp.equal exp rhs_exp
             | Sil.Hpointsto (_, Estruct (flds, _), _) ->
                 IList.exists
                   (fun (fld, strexp) -> match strexp with
                      | Sil.Eexp (rhs_exp, _) ->
-                         Sil.exp_equal exp rhs_exp && not (Ident.fieldname_equal fld accessed_fld)
+                         Exp.equal exp rhs_exp && not (Ident.fieldname_equal fld accessed_fld)
                      | _ ->
                          false)
                   flds
@@ -811,7 +811,7 @@ let add_guarded_by_constraints prop lexp pdesc =
     | Some guarded_by_fld_str -> enforce_guarded_access_ fld guarded_by_fld_str prop
     | None -> prop in
   let check_fld_locks typ prop_acc (fld, strexp) = match strexp with
-    | Sil.Eexp (exp, _) when Sil.exp_equal exp lexp -> enforce_guarded_access fld typ prop_acc
+    | Sil.Eexp (exp, _) when Exp.equal exp lexp -> enforce_guarded_access fld typ prop_acc
     | _ -> prop_acc in
   let hpred_check_flds prop_acc = function
     | Sil.Hpointsto (_, Estruct (flds, _), Sizeof (typ, _, _)) ->
@@ -1188,7 +1188,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
       (fun hpred ->
          match hpred with
          | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (Exp.Var _ as exp, _), _)
-           when Sil.exp_equal exp deref_exp ->
+           when Exp.equal exp deref_exp ->
              let is_weak_captured_var = is_weak_captured_var pdesc pvar in
              let is_nullable =
                if Annotations.param_is_nullable pvar ann_sig || is_weak_captured_var
@@ -1215,7 +1215,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
                | _ -> false in
              let is_strexp_pt_by_nullable_fld (fld, strexp) =
                match strexp with
-               | Sil.Eexp (Exp.Var _ as exp, _) when Sil.exp_equal exp deref_exp ->
+               | Sil.Eexp (Exp.Var _ as exp, _) when Exp.equal exp deref_exp ->
                    let is_nullable = fld_is_nullable fld in
                    if is_nullable then
                      nullable_obj_str := Some (Ident.fieldname_to_simplified_string fld);

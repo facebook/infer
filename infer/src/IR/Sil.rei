@@ -403,10 +403,6 @@ let attribute_to_category: attribute => attribute_category;
 
 let attr_is_undef: attribute => bool;
 
-let exp_compare: Exp.t => Exp.t => int;
-
-let exp_equal: Exp.t => Exp.t => bool;
-
 
 /** exp_is_array_index_of index arr returns true is index is an array index of arr. */
 let exp_is_array_index_of: Exp.t => Exp.t => bool;

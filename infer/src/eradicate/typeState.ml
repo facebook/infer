@@ -35,7 +35,7 @@ type 'a ext =
 
 module M = Map.Make (struct
     type t = Exp.t
-    let compare = Sil.exp_compare end)
+    let compare = Exp.compare end)
 
 type range = Typ.t * TypeAnnotation.t * (Location.t list)
 

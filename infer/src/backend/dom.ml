@@ -39,7 +39,7 @@ let sigma_equal sigma1 sigma2 =
   f sigma1_sorted sigma2_sorted
 
 let sigma_get_start_lexps_sort sigma =
-  let exp_compare_neg e1 e2 = - (Sil.exp_compare e1 e2) in
+  let exp_compare_neg e1 e2 = - (Exp.compare e1 e2) in
   let filter e = Sil.fav_for_all (Sil.exp_fav e) Ident.is_normal in
   let lexps = Sil.hpred_list_get_lexps filter sigma in
   IList.sort exp_compare_neg lexps
@@ -69,9 +69,9 @@ module EPset = Set.Make
     (struct
       type t = Exp.t * Exp.t
       let compare (e1, e1') (e2, e2') =
-        match (Sil.exp_compare e1 e2) with
+        match (Exp.compare e1 e2) with
         | i when i <> 0 -> i
-        | _ -> Sil.exp_compare e1' e2'
+        | _ -> Exp.compare e1' e2'
     end)
 
 (** {2 Module for maintaining information about noninjectivity during join} *)
@@ -120,7 +120,7 @@ end = struct
     let e' = lookup_equiv' tbl e in
     match e' with
     | Exp.Var _ ->
-        if Sil.exp_equal e e' then e
+        if Exp.equal e e' then e
         else
           begin
             let root = find' tbl e' in
@@ -133,7 +133,7 @@ end = struct
     let r1 = find' tbl e1 in
     let r2 = find' tbl e2 in
     let new_r, old_r =
-      match (Sil.exp_compare r1 r2) with
+      match (Exp.compare r1 r2) with
       | i when i <= 0 -> r1, r2
       | _ -> r2, r1 in
     let new_c = lookup_const' const_tbl new_r in
@@ -171,7 +171,7 @@ end = struct
         if (can_rename id') then replace_const' tbl const_tbl e' e
         else (L.d_strln "failure reason 7"; raise IList.Fail)
     | _ ->
-        if not (Sil.exp_equal e e') then (L.d_strln "failure reason 8"; raise IList.Fail) else ()
+        if not (Exp.equal e e') then (L.d_strln "failure reason 8"; raise IList.Fail) else ()
 
   let check side es =
     let f = function Exp.Var id -> can_rename id | _ -> false in
@@ -188,7 +188,7 @@ end = struct
       | v:: vars', _ ->
           let r = find' tbl v in
           let set = lookup_const' const_tbl r in
-          (IList.for_all (fun v' -> Sil.exp_equal (find' tbl v') r) vars') &&
+          (IList.for_all (fun v' -> Exp.equal (find' tbl v') r) vars') &&
           (IList.for_all (fun c -> Sil.ExpSet.mem c set) nonvars)
 
 end
@@ -255,7 +255,7 @@ module CheckJoinPre : InfoLossCheckerSig = struct
     | Exp.Var id when Ident.is_normal id -> IList.length es >= 1
     | Exp.Var _ ->
         if Config.join_cond = 0 then
-          IList.exists (Sil.exp_equal Sil.exp_zero) es
+          IList.exists (Exp.equal Sil.exp_zero) es
         else if Dangling.check side e then
           begin
             let r = IList.exists (fun e' -> not (Dangling.check side_op e')) es in
@@ -449,12 +449,12 @@ end = struct
   let final () = t := []
 
   let entry_compare (e1, e2, _) (_, e2', _) =
-    let n1 = Sil.exp_compare e1 e2 in
-    if n1 <> 0 then n1 else Sil.exp_compare e2 e2'
+    let n1 = Exp.compare e1 e2 in
+    if n1 <> 0 then n1 else Exp.compare e2 e2'
 
   let get_fresh_exp e1 e2 =
     try
-      let (_, _, e) = IList.find (fun (e1', e2', _) -> Sil.exp_equal e1 e1' && Sil.exp_equal e2 e2') !t in
+      let (_, _, e) = IList.find (fun (e1', e2', _) -> Exp.equal e1 e1' && Exp.equal e2 e2') !t in
       e
     with Not_found ->
       let e = Sil.exp_get_undefined (JoinState.get_footprint ()) in
@@ -512,7 +512,7 @@ end = struct
   let lookup side e =
     try
       let (e1, e2, e) =
-        IList.find (fun (e1', e2', _) -> Sil.exp_equal e (select side e1' e2')) !t in
+        IList.find (fun (e1', e2', _) -> Exp.equal e (select side e1' e2')) !t in
       Some (e, select (opposite side) e1 e2)
     with Not_found ->
       None
@@ -573,7 +573,7 @@ end = struct
         | Exp.Const _ -> []
         | Exp.Lvar _ | Exp.Var _
         | Exp.BinOp (Binop.PlusA, Exp.Var _, _) ->
-            let is_same_e (e1, e2, _) = Sil.exp_equal e (select side e1 e2) in
+            let is_same_e (e1, e2, _) = Exp.equal e (select side e1 e2) in
             let assoc = IList.filter is_same_e !tbl in
             IList.map (fun (e1, e2, _) -> select side_op e1 e2) assoc
         | _ ->
@@ -585,19 +585,19 @@ end = struct
     (IList.for_all (f Rhs) rhs_es) && (IList.for_all (f Lhs) lhs_es)
 
   let lookup_side' side e =
-    let f (e1, e2, _) = Sil.exp_equal e (select side e1 e2) in
+    let f (e1, e2, _) = Exp.equal e (select side e1 e2) in
     IList.filter f !tbl
 
   let lookup_side_induced' side e =
     let res = ref [] in
     let f v = match v, side with
       | (Exp.BinOp (Binop.PlusA, e1', Exp.Const (Const.Cint i)), e2, e'), Lhs
-        when Sil.exp_equal e e1' ->
+        when Exp.equal e e1' ->
           let c' = Sil.exp_int (IntLit.neg i) in
           let v' = (e1', Exp.BinOp(Binop.PlusA, e2, c'), Exp.BinOp (Binop.PlusA, e', c')) in
           res := v'::!res
       | (e1, Exp.BinOp (Binop.PlusA, e2', Exp.Const (Const.Cint i)), e'), Rhs
-        when Sil.exp_equal e e2' ->
+        when Exp.equal e e2' ->
           let c' = Sil.exp_int (IntLit.neg i) in
           let v' = (Exp.BinOp(Binop.PlusA, e1, c'), e2', Exp.BinOp (Binop.PlusA, e', c')) in
           res := v'::!res
@@ -633,10 +633,10 @@ end = struct
         (function (e1, e2, Exp.Var i) -> (i, select side e1 e2) | _ -> assert false)
         renaming_restricted in
     let sub_list_side_sorted =
-      IList.sort (fun (_, e) (_, e') -> Sil.exp_compare e e') sub_list_side in
+      IList.sort (fun (_, e) (_, e') -> Exp.compare e e') sub_list_side in
     let rec find_duplicates =
       function
-      | (_, e):: ((_, e'):: _ as t) -> Sil.exp_equal e e' || find_duplicates t
+      | (_, e):: ((_, e'):: _ as t) -> Exp.equal e e' || find_duplicates t
       | _ -> false in
     if find_duplicates sub_list_side_sorted then (L.d_strln "failure reason 11"; raise IList.Fail)
     else Sil.sub_of_list sub_list_side
@@ -751,7 +751,7 @@ end = struct
    * should be a primed or footprint variable *)
   let extend e1 e2 default_op =
     try
-      let eq_to_e (f1, f2, _) = Sil.exp_equal e1 f1 && Sil.exp_equal e2 f2 in
+      let eq_to_e (f1, f2, _) = Exp.equal e1 f1 && Exp.equal e2 f2 in
       let _, _, res = IList.find eq_to_e !tbl in
       res
     with Not_found ->
@@ -762,7 +762,7 @@ end = struct
       let some_primed () = Sil.fav_exists fav1 Ident.is_primed || Sil.fav_exists fav2 Ident.is_primed in
       let e =
         if (no_ren1 && no_ren2) then
-          if (Sil.exp_equal e1 e2) then e1 else (L.d_strln "failure reason 13"; raise IList.Fail)
+          if (Exp.equal e1 e2) then e1 else (L.d_strln "failure reason 13"; raise IList.Fail)
         else
           match default_op with
           | ExtDefault e -> e
@@ -775,7 +775,7 @@ end = struct
       e
 (*
   let get e1 e2 =
-    let f (e1', e2', _) = Sil.exp_equal e1 e1' && Sil.exp_equal e2 e2' in
+    let f (e1', e2', _) = Exp.equal e1 e1' && Exp.equal e2 e2' in
     match (IList.filter f !tbl) with
     | [] -> None
     | (_, _, e):: _ -> Some e
@@ -1170,7 +1170,7 @@ let rec strexp_partial_meet (strexp1: Sil.strexp) (strexp2: Sil.strexp) : Sil.st
       let inst = Sil.inst_partial_meet inst1 inst2 in
       f_fld_se_list inst [] fld_se_list1 fld_se_list2
   | Sil.Earray (len1, idx_se_list1, inst1), Sil.Earray (len2, idx_se_list2, inst2)
-    when Sil.exp_equal len1 len2 ->
+    when Exp.equal len1 len2 ->
       let inst = Sil.inst_partial_meet inst1 inst2 in
       f_idx_se_list inst len1 [] idx_se_list1 idx_se_list2
   | _ -> (L.d_strln "failure reason 52"; raise IList.Fail)
@@ -1235,8 +1235,8 @@ let hpred_partial_join mode (todo: Exp.t * Exp.t * Exp.t) (hpred1: Sil.hpred) (h
       Prop.mk_lseg (kind_join k1 k2) hpara' e next' shared'
   | Sil.Hdllseg (k1, para1, iF1, oB1, oF1, iB1, shared1),
     Sil.Hdllseg (k2, para2, iF2, oB2, oF2, iB2, shared2) ->
-      let fwd1 = Sil.exp_equal e1 iF1 in
-      let fwd2 = Sil.exp_equal e2 iF2 in
+      let fwd1 = Exp.equal e1 iF1 in
+      let fwd2 = Exp.equal e2 iF2 in
       let hpara' = hpara_dll_partial_join para1 para2 in
       let iF', iB' =
         if (fwd1 && fwd2) then (e, exp_partial_join iB1 iB2)
@@ -1253,7 +1253,7 @@ let hpred_partial_meet (todo: Exp.t * Exp.t * Exp.t) (hpred1: Sil.hpred) (hpred2
   : Sil.hpred =
   let e1, e2, e = todo in
   match hpred1, hpred2 with
-  | Sil.Hpointsto (_, se1, te1), Sil.Hpointsto (_, se2, te2) when Sil.exp_equal te1 te2 ->
+  | Sil.Hpointsto (_, se1, te1), Sil.Hpointsto (_, se2, te2) when Exp.equal te1 te2 ->
       Prop.mk_ptsto e (strexp_partial_meet se1 se2) te1
   | Sil.Hpointsto _, _ | _, Sil.Hpointsto _ ->
       (L.d_strln "failure reason 58"; raise IList.Fail)
@@ -1264,8 +1264,8 @@ let hpred_partial_meet (todo: Exp.t * Exp.t * Exp.t) (hpred1: Sil.hpred) (hpred2
       Prop.mk_lseg (kind_meet k1 k2) hpara' e next' shared'
   | Sil.Hdllseg (k1, para1, iF1, oB1, oF1, iB1, shared1),
     Sil.Hdllseg (k2, para2, iF2, oB2, oF2, iB2, shared2) ->
-      let fwd1 = Sil.exp_equal e1 iF1 in
-      let fwd2 = Sil.exp_equal e2 iF2 in
+      let fwd1 = Exp.equal e1 iF1 in
+      let fwd2 = Exp.equal e2 iF2 in
       let hpara' = hpara_dll_partial_meet para1 para2 in
       let iF', iB' =
         if (fwd1 && fwd2) then (e, exp_partial_meet iB1 iB2)
@@ -1337,7 +1337,7 @@ let rec sigma_partial_join' mode (sigma_acc: Prop.sigma)
         Sil.Hlseg (Sil.Lseg_PE, hpara, root', next', shared')
 
     | Sil.Hdllseg (_, hpara, iF, oB, oF, iB, shared)
-      when Sil.exp_equal iF e ->
+      when Exp.equal iF e ->
         let oF' = do_side side exp_partial_join oF opposite in
         let shared' = Rename.lookup_list side shared in
         let oB', iB' = lookup_and_expand side oB iB in
@@ -1350,7 +1350,7 @@ let rec sigma_partial_join' mode (sigma_acc: Prop.sigma)
         Sil.Hdllseg (Sil.Lseg_PE, hpara, root', oB', oF', iB', shared')
 
     | Sil.Hdllseg (_, hpara, iF, oB, oF, iB, shared)
-      when Sil.exp_equal iB e ->
+      when Exp.equal iB e ->
         let oB' = do_side side exp_partial_join oB opposite in
         let shared' = Rename.lookup_list side shared in
         let oF', iF' = lookup_and_expand side oF iF in
@@ -1467,7 +1467,7 @@ let rec sigma_partial_join' mode (sigma_acc: Prop.sigma)
         sigma_partial_join' mode sigma_acc' sigma1' sigma2
 
     | Some (Sil.Hdllseg (_, _, iF1, _, _, iB1, _) as dllseg), Some (hpred2)
-      when Sil.exp_equal e1 iF1 ->
+      when Exp.equal e1 iF1 ->
         let iB_res = exp_partial_join iB1 e2 in
         let sigma2' = cut_dllseg Lhs todo_curr iF1 dllseg (hpred2:: sigma2) in
         let sigma_acc' = update_dllseg Lhs dllseg e iB_res :: sigma_acc in
@@ -1475,7 +1475,7 @@ let rec sigma_partial_join' mode (sigma_acc: Prop.sigma)
         sigma_partial_join' mode sigma_acc' sigma1 sigma2'
 
     | Some (Sil.Hdllseg (_, _, iF1, _, _, iB1, _) as dllseg), Some (hpred2)
-    (* when Sil.exp_equal e1 iB1 *) ->
+      (* when Exp.equal e1 iB1 *) ->
         let iF_res = exp_partial_join iF1 e2 in
         let sigma2' = cut_dllseg Lhs todo_curr iB1 dllseg (hpred2:: sigma2) in
         let sigma_acc' = update_dllseg Lhs dllseg iF_res e :: sigma_acc in
@@ -1483,7 +1483,7 @@ let rec sigma_partial_join' mode (sigma_acc: Prop.sigma)
         sigma_partial_join' mode sigma_acc' sigma1 sigma2'
 
     | Some (hpred1), Some (Sil.Hdllseg (_, _, iF2, _, _, iB2, _) as dllseg)
-      when Sil.exp_equal e2 iF2 ->
+      when Exp.equal e2 iF2 ->
         let iB_res = exp_partial_join e1 iB2 in
         let sigma1' = cut_dllseg Rhs todo_curr iF2 dllseg (hpred1:: sigma1) in
         let sigma_acc' = update_dllseg Rhs dllseg e iB_res :: sigma_acc in
@@ -1622,11 +1622,11 @@ let pi_partial_join mode
   let is_stronger_le e n a =
     match Prop.atom_exp_le_const a with
     | None -> false
-    | Some (e', n') -> Sil.exp_equal e e' && IntLit.lt n' n in
+    | Some (e', n') -> Exp.equal e e' && IntLit.lt n' n in
   let is_stronger_lt n e a =
     match Prop.atom_const_lt_exp a with
     | None -> false
-    | Some (n', e') -> Sil.exp_equal e e' && IntLit.lt n n' in
+    | Some (n', e') -> Exp.equal e e' && IntLit.lt n n' in
   let join_atom_check_pre p a =
     (* check for atoms in pre mode: fail if the negation is implied by the other side *)
     let not_a = Prop.atom_negate a in
@@ -1735,7 +1735,7 @@ let eprop_partial_meet (ep1: 'a Prop.t) (ep2: 'b Prop.t) : 'c Prop.t =
 
   let es1 = sigma_get_start_lexps_sort sigma1 in
   let es2 = sigma_get_start_lexps_sort sigma2 in
-  let es = IList.merge_sorted_nodup Sil.exp_compare [] es1 es2 in
+  let es = IList.merge_sorted_nodup Exp.compare [] es1 es2 in
 
   let sub_check _ =
     let sub1 = Prop.get_sub ep1 in
@@ -1785,7 +1785,7 @@ let eprop_partial_join' mode (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed Prop.
     | [], [] -> true
     | [], _:: _ | _:: _, [] -> false
     | e1:: es1'', e2:: es2'' ->
-        Sil.exp_equal e1 e2 && expensive_check es1'' es2'' in
+        Exp.equal e1 e2 && expensive_check es1'' es2'' in
   let sub_common, eqs_from_sub1, eqs_from_sub2 =
     let sub1 = Prop.get_sub ep1 in
     let sub2 = Prop.get_sub ep2 in

@@ -63,7 +63,7 @@ let add_array_to_prop pdesc prop_ lexp typ =
   begin
     try
       let hpred = IList.find (function
-          | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e n_lexp
+          | Sil.Hpointsto(e, _, _) -> Exp.equal e n_lexp
           | _ -> false) (Prop.get_sigma prop) in
       match hpred with
       | Sil.Hpointsto(_, Sil.Earray (len, _, _), _) ->
@@ -114,7 +114,7 @@ let execute___set_array_length { Builtin.pdesc; prop_; path; ret_ids; args; }
            let n_lexp, prop__ = check_arith_norm_exp pname lexp prop_a in
            let n_len, prop = check_arith_norm_exp pname len prop__ in
            let hpred, sigma' = IList.partition (function
-               | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e n_lexp
+               | Sil.Hpointsto(e, _, _) -> Exp.equal e n_lexp
                | _ -> false) (Prop.get_sigma prop) in
            (match hpred with
             | [Sil.Hpointsto(e, Sil.Earray(_, esel, inst), t)] ->
@@ -146,7 +146,7 @@ let create_type tenv n_lexp typ prop =
   let prop_type =
     try
       let _ = IList.find (function
-          | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e n_lexp
+          | Sil.Hpointsto(e, _, _) -> Exp.equal e n_lexp
           | _ -> false) (Prop.get_sigma prop) in
       prop
     with Not_found ->
@@ -200,7 +200,7 @@ let execute___get_type_of { Builtin.pdesc; tenv; prop_; path; ret_ids; args; }
         begin
           try
             let hpred = IList.find (function
-                | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e n_lexp
+                | Sil.Hpointsto(e, _, _) -> Exp.equal e n_lexp
                 | _ -> false) (Prop.get_sigma prop) in
             match hpred with
             | Sil.Hpointsto(_, _, texp) ->
@@ -216,7 +216,7 @@ let replace_ptsto_texp prop root_e texp =
   let process_sigma sigma =
     let sigma1, sigma2 =
       IList.partition (function
-          | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e root_e
+          | Sil.Hpointsto(e, _, _) -> Exp.equal e root_e
           | _ -> false) sigma in
     match sigma1 with
     | [Sil.Hpointsto(e, se, _)] -> (Sil.Hpointsto (e, se, texp)) :: sigma2
@@ -247,13 +247,13 @@ let execute___instanceof_cast ~instof
         Tabulation.raise_cast_exception
           __POS__ None texp1 texp2 val1 in
       let exe_one_prop prop =
-        if Sil.exp_equal texp2 Sil.exp_zero then
+        if Exp.equal texp2 Sil.exp_zero then
           [(return_result Sil.exp_zero prop ret_ids, path)]
         else
           begin
             try
               let hpred = IList.find (function
-                  | Sil.Hpointsto (e1, _, _) -> Sil.exp_equal e1 val1
+                  | Sil.Hpointsto (e1, _, _) -> Exp.equal e1 val1
                   | _ -> false) (Prop.get_sigma prop) in
               match hpred with
               | Sil.Hpointsto (_, _, texp1) ->
@@ -263,7 +263,7 @@ let execute___instanceof_cast ~instof
                     | None -> []
                     | Some texp1' ->
                         let prop' =
-                          if Sil.exp_equal texp1 texp1' then prop
+                          if Exp.equal texp1 texp1' then prop
                           else replace_ptsto_texp prop val1 texp1' in
                         [(return_result res_e prop' ret_ids, path)] in
                   if instof then (* instanceof *)
@@ -395,14 +395,14 @@ let execute___get_hidden_field { Builtin.pdesc; prop_; path; ret_ids; args; }
       let has_fld_hidden fsel = IList.exists filter_fld_hidden fsel in
       let do_hpred in_foot hpred = match hpred with
         | Sil.Hpointsto(e, Sil.Estruct (fsel, inst), texp)
-          when Sil.exp_equal e n_lexp && (not (has_fld_hidden fsel)) ->
+          when Exp.equal e n_lexp && (not (has_fld_hidden fsel)) ->
             let foot_e = Lazy.force foot_var in
             ret_val := Some foot_e;
             let se = Sil.Eexp(foot_e, Sil.inst_none) in
             let fsel' = (Ident.fieldname_hidden, se) :: fsel in
             Sil.Hpointsto(e, Sil.Estruct (fsel', inst), texp)
         | Sil.Hpointsto(e, Sil.Estruct (fsel, _), _)
-          when Sil.exp_equal e n_lexp && not in_foot && has_fld_hidden fsel ->
+          when Exp.equal e n_lexp && not in_foot && has_fld_hidden fsel ->
             let set_ret_val () =
               match IList.find filter_fld_hidden fsel with
               | _, Sil.Eexp(e, _) -> ret_val := Some e
@@ -431,14 +431,14 @@ let execute___set_hidden_field { Builtin.pdesc; prop_; path; args; }
       let has_fld_hidden fsel = IList.exists filter_fld_hidden fsel in
       let do_hpred in_foot hpred = match hpred with
         | Sil.Hpointsto(e, Sil.Estruct (fsel, inst), texp)
-          when Sil.exp_equal e n_lexp1 && not in_foot ->
+          when Exp.equal e n_lexp1 && not in_foot ->
             let se = Sil.Eexp(n_lexp2, Sil.inst_none) in
             let fsel' =
               (Ident.fieldname_hidden, se) ::
               (IList.filter (fun x -> not (filter_fld_hidden x)) fsel) in
             Sil.Hpointsto(e, Sil.Estruct (fsel', inst), texp)
         | Sil.Hpointsto(e, Sil.Estruct (fsel, inst), texp)
-          when Sil.exp_equal e n_lexp1 && in_foot && not (has_fld_hidden fsel) ->
+          when Exp.equal e n_lexp1 && in_foot && not (has_fld_hidden fsel) ->
             let foot_e = Lazy.force foot_var in
             let se = Sil.Eexp(foot_e, Sil.inst_none) in
             let fsel' = (Ident.fieldname_hidden, se) :: fsel in
@@ -562,7 +562,7 @@ let execute___release_autorelease_pool
       | ((prop', path') :: _, Sil.Apred (_, exp :: _)) ->
           (try
              let hpred = IList.find (function
-                 | Sil.Hpointsto(e1, _, _) -> Sil.exp_equal e1 exp
+                 | Sil.Hpointsto(e1, _, _) -> Exp.equal e1 exp
                  | _ -> false) (Prop.get_sigma prop_) in
              match hpred with
              | Sil.Hpointsto (_, _, Exp.Sizeof (typ, _, _)) ->
@@ -661,7 +661,7 @@ let execute___objc_cast { Builtin.pdesc; prop_; path; ret_ids; args; }
       let texp2, prop = check_arith_norm_exp pname texp2_ prop__ in
       (try
          let hpred = IList.find (function
-             | Sil.Hpointsto(e1, _, _) -> Sil.exp_equal e1 val1
+             | Sil.Hpointsto(e1, _, _) -> Exp.equal e1 val1
              | _ -> false) (Prop.get_sigma prop) in
          match hpred, texp2 with
          | Sil.Hpointsto (val1, _, _), Exp.Sizeof _ ->
@@ -815,7 +815,7 @@ let execute___cxx_typeid ({ Builtin.pdesc; tenv; prop_; args; loc} as r)
            let typ =
              try
                let hpred = IList.find (function
-                   | Sil.Hpointsto (e, _, _) -> Sil.exp_equal e n_lexp
+                   | Sil.Hpointsto (e, _, _) -> Exp.equal e n_lexp
                    | _ -> false) (Prop.get_sigma prop) in
                match hpred with
                | Sil.Hpointsto (_, _, Exp.Sizeof (dynamic_type, _, _)) -> dynamic_type

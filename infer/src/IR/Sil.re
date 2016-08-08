@@ -516,134 +516,17 @@ let attribute_compare (att1: attribute) (att2: attribute) :int =>
   | (_, Aunsubscribed_observer) => 1
   };
 
-
-/** Compare epressions. Variables come before other expressions. */
-let rec exp_compare (e1: Exp.t) (e2: Exp.t) :int =>
-  switch (e1, e2) {
-  | (Var id1, Var id2) => Ident.compare id2 id1
-  | (Var _, _) => (-1)
-  | (_, Var _) => 1
-  | (UnOp o1 e1 to1, UnOp o2 e2 to2) =>
-    let n = Unop.compare o1 o2;
-    if (n != 0) {
-      n
-    } else {
-      let n = exp_compare e1 e2;
-      if (n != 0) {
-        n
-      } else {
-        opt_compare Typ.compare to1 to2
-      }
-    }
-  | (UnOp _, _) => (-1)
-  | (_, UnOp _) => 1
-  | (BinOp o1 e1 f1, BinOp o2 e2 f2) =>
-    let n = Binop.compare o1 o2;
-    if (n != 0) {
-      n
-    } else {
-      let n = exp_compare e1 e2;
-      if (n != 0) {
-        n
-      } else {
-        exp_compare f1 f2
-      }
-    }
-  | (BinOp _, _) => (-1)
-  | (_, BinOp _) => 1
-  | (Exn e1, Exn e2) => exp_compare e1 e2
-  | (Exn _, _) => (-1)
-  | (_, Exn _) => 1
-  | (Closure {name: n1, captured_vars: c1}, Closure {name: n2, captured_vars: c2}) =>
-    let captured_var_compare acc (e1, pvar1, typ1) (e2, pvar2, typ2) =>
-      if (acc != 0) {
-        acc
-      } else {
-        let n = exp_compare e1 e2;
-        if (n != 0) {
-          n
-        } else {
-          let n = Pvar.compare pvar1 pvar2;
-          if (n != 0) {
-            n
-          } else {
-            Typ.compare typ1 typ2
-          }
-        }
-      };
-    let n = Procname.compare n1 n2;
-    if (n != 0) {
-      n
-    } else {
-      IList.fold_left2 captured_var_compare 0 c1 c2
-    }
-  | (Closure _, _) => (-1)
-  | (_, Closure _) => 1
-  | (Const c1, Const c2) => Const.compare c1 c2
-  | (Const _, _) => (-1)
-  | (_, Const _) => 1
-  | (Cast t1 e1, Cast t2 e2) =>
-    let n = exp_compare e1 e2;
-    if (n != 0) {
-      n
-    } else {
-      Typ.compare t1 t2
-    }
-  | (Cast _, _) => (-1)
-  | (_, Cast _) => 1
-  | (Lvar i1, Lvar i2) => Pvar.compare i1 i2
-  | (Lvar _, _) => (-1)
-  | (_, Lvar _) => 1
-  | (Lfield e1 f1 t1, Lfield e2 f2 t2) =>
-    let n = exp_compare e1 e2;
-    if (n != 0) {
-      n
-    } else {
-      let n = Ident.fieldname_compare f1 f2;
-      if (n != 0) {
-        n
-      } else {
-        Typ.compare t1 t2
-      }
-    }
-  | (Lfield _, _) => (-1)
-  | (_, Lfield _) => 1
-  | (Lindex e1 f1, Lindex e2 f2) =>
-    let n = exp_compare e1 e2;
-    if (n != 0) {
-      n
-    } else {
-      exp_compare f1 f2
-    }
-  | (Lindex _, _) => (-1)
-  | (_, Lindex _) => 1
-  | (Sizeof t1 l1 s1, Sizeof t2 l2 s2) =>
-    let n = Typ.compare t1 t2;
-    if (n != 0) {
-      n
-    } else {
-      let n = opt_compare exp_compare l1 l2;
-      if (n != 0) {
-        n
-      } else {
-        Subtype.compare s1 s2
-      }
-    }
-  };
-
-let exp_equal e1 e2 => exp_compare e1 e2 == 0;
-
 let rec exp_is_array_index_of exp1 exp2 =>
   switch exp1 {
   | Exp.Lindex exp _ => exp_is_array_index_of exp exp2
-  | _ => exp_equal exp1 exp2
+  | _ => Exp.equal exp1 exp2
   };
 
-let ident_exp_compare = pair_compare Ident.compare exp_compare;
+let ident_exp_compare = pair_compare Ident.compare Exp.compare;
 
 let ident_exp_equal ide1 ide2 => ident_exp_compare ide1 ide2 == 0;
 
-let exp_list_compare = IList.compare exp_compare;
+let exp_list_compare = IList.compare Exp.compare;
 
 let exp_list_equal el1 el2 => exp_list_compare el1 el2 == 0;
 
@@ -657,20 +540,20 @@ let atom_compare a b =>
   } else {
     switch (a, b) {
     | (Aeq e1 e2, Aeq f1 f2) =>
-      let n = exp_compare e1 f1;
+      let n = Exp.compare e1 f1;
       if (n != 0) {
         n
       } else {
-        exp_compare e2 f2
+        Exp.compare e2 f2
       }
     | (Aeq _, _) => (-1)
     | (_, Aeq _) => 1
     | (Aneq e1 e2, Aneq f1 f2) =>
-      let n = exp_compare e1 f1;
+      let n = Exp.compare e1 f1;
       if (n != 0) {
         n
       } else {
-        exp_compare e2 f2
+        Exp.compare e2 f2
       }
     | (Aneq _, _) => (-1)
     | (_, Aneq _) => 1
@@ -679,7 +562,7 @@ let atom_compare a b =>
       if (n != 0) {
         n
       } else {
-        IList.compare exp_compare es1 es2
+        IList.compare Exp.compare es1 es2
       }
     | (Apred _, _) => (-1)
     | (_, Apred _) => 1
@@ -688,7 +571,7 @@ let atom_compare a b =>
       if (n != 0) {
         n
       } else {
-        IList.compare exp_compare es1 es2
+        IList.compare Exp.compare es1 es2
       }
     }
   };
@@ -711,14 +594,14 @@ let rec strexp_compare se1 se2 =>
     0
   } else {
     switch (se1, se2) {
-    | (Eexp e1 _, Eexp e2 _) => exp_compare e1 e2
+    | (Eexp e1 _, Eexp e2 _) => Exp.compare e1 e2
     | (Eexp _, _) => (-1)
     | (_, Eexp _) => 1
     | (Estruct fel1 _, Estruct fel2 _) => fld_strexp_list_compare fel1 fel2
     | (Estruct _, _) => (-1)
     | (_, Estruct _) => 1
     | (Earray e1 esel1 _, Earray e2 esel2 _) =>
-      let n = exp_compare e1 e2;
+      let n = Exp.compare e1 e2;
       if (n != 0) {
         n
       } else {
@@ -728,7 +611,7 @@ let rec strexp_compare se1 se2 =>
   }
 and fld_strexp_compare fse1 fse2 => pair_compare Ident.fieldname_compare strexp_compare fse1 fse2
 and fld_strexp_list_compare fsel1 fsel2 => IList.compare fld_strexp_compare fsel1 fsel2
-and exp_strexp_compare ese1 ese2 => pair_compare exp_compare strexp_compare ese1 ese2
+and exp_strexp_compare ese1 ese2 => pair_compare Exp.compare strexp_compare ese1 ese2
 and exp_strexp_list_compare esel1 esel2 => IList.compare exp_strexp_compare esel1 esel2;
 
 
@@ -738,14 +621,14 @@ let rec hpred_compare hpred1 hpred2 =>
     0
   } else {
     switch (hpred1, hpred2) {
-    | (Hpointsto e1 _ _, Hlseg _ _ e2 _ _) when exp_compare e2 e1 != 0 => exp_compare e2 e1
-    | (Hpointsto e1 _ _, Hdllseg _ _ e2 _ _ _ _) when exp_compare e2 e1 != 0 => exp_compare e2 e1
-    | (Hlseg _ _ e1 _ _, Hpointsto e2 _ _) when exp_compare e2 e1 != 0 => exp_compare e2 e1
-    | (Hlseg _ _ e1 _ _, Hdllseg _ _ e2 _ _ _ _) when exp_compare e2 e1 != 0 => exp_compare e2 e1
-    | (Hdllseg _ _ e1 _ _ _ _, Hpointsto e2 _ _) when exp_compare e2 e1 != 0 => exp_compare e2 e1
-    | (Hdllseg _ _ e1 _ _ _ _, Hlseg _ _ e2 _ _) when exp_compare e2 e1 != 0 => exp_compare e2 e1
+    | (Hpointsto e1 _ _, Hlseg _ _ e2 _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
+    | (Hpointsto e1 _ _, Hdllseg _ _ e2 _ _ _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
+    | (Hlseg _ _ e1 _ _, Hpointsto e2 _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
+    | (Hlseg _ _ e1 _ _, Hdllseg _ _ e2 _ _ _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
+    | (Hdllseg _ _ e1 _ _ _ _, Hpointsto e2 _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
+    | (Hdllseg _ _ e1 _ _ _ _, Hlseg _ _ e2 _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
     | (Hpointsto e1 se1 te1, Hpointsto e2 se2 te2) =>
-      let n = exp_compare e2 e1;
+      let n = Exp.compare e2 e1;
       if (n != 0) {
         n
       } else {
@@ -753,13 +636,13 @@ let rec hpred_compare hpred1 hpred2 =>
         if (n != 0) {
           n
         } else {
-          exp_compare te2 te1
+          Exp.compare te2 te1
         }
       }
     | (Hpointsto _, _) => (-1)
     | (_, Hpointsto _) => 1
     | (Hlseg k1 hpar1 e1 f1 el1, Hlseg k2 hpar2 e2 f2 el2) =>
-      let n = exp_compare e2 e1;
+      let n = Exp.compare e2 e1;
       if (n != 0) {
         n
       } else {
@@ -771,7 +654,7 @@ let rec hpred_compare hpred1 hpred2 =>
           if (n != 0) {
             n
           } else {
-            let n = exp_compare f2 f1;
+            let n = Exp.compare f2 f1;
             if (n != 0) {
               n
             } else {
@@ -783,7 +666,7 @@ let rec hpred_compare hpred1 hpred2 =>
     | (Hlseg _, Hdllseg _) => (-1)
     | (Hdllseg _, Hlseg _) => 1
     | (Hdllseg k1 hpar1 e1 f1 g1 h1 el1, Hdllseg k2 hpar2 e2 f2 g2 h2 el2) =>
-      let n = exp_compare e2 e1;
+      let n = Exp.compare e2 e1;
       if (n != 0) {
         n
       } else {
@@ -795,15 +678,15 @@ let rec hpred_compare hpred1 hpred2 =>
           if (n != 0) {
             n
           } else {
-            let n = exp_compare f2 f1;
+            let n = Exp.compare f2 f1;
             if (n != 0) {
               n
             } else {
-              let n = exp_compare g2 g1;
+              let n = Exp.compare g2 g1;
               if (n != 0) {
                 n
               } else {
-                let n = exp_compare h2 h1;
+                let n = Exp.compare h2 h1;
                 if (n != 0) {
                   n
                 } else {
@@ -881,12 +764,12 @@ let hpara_dll_equal hpara1 hpara2 => hpara_dll_compare hpara1 hpara2 == 0;
 /** {2 Sets of expressions} */
 let module ExpSet = Set.Make {
   type t = Exp.t;
-  let compare = exp_compare;
+  let compare = Exp.compare;
 };
 
 let module ExpMap = Map.Make {
   type t = Exp.t;
-  let compare = exp_compare;
+  let compare = Exp.compare;
 };
 
 let elist_to_eset es => IList.fold_left (fun set e => ExpSet.add e set) ExpSet.empty es;
@@ -1032,7 +915,7 @@ let rec _pp_exp pe0 pp_t f e0 => {
     | Some sub => Obj.obj (sub (Obj.repr e0)) /* apply object substitution to expression */
     | None => e0
     };
-  if (not (exp_equal e0 e)) {
+  if (not (Exp.equal e0 e)) {
     switch e {
     | Exp.Lvar pvar => Pvar.pp_value pe f pvar
     | _ => assert false
@@ -2449,7 +2332,7 @@ let rec sub_compare (sub1: subst) (sub2: subst) =>
       if (n != 0) {
         n
       } else {
-        let n = exp_compare e1 e2;
+        let n = Exp.compare e1 e2;
         if (n != 0) {
           n
         } else {
@@ -2795,7 +2678,7 @@ let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => Exp.t) instr => 
 let instr_sub (subst: subst) instr => instr_sub_ids sub_id_binders::true (apply_sub subst) instr;
 
 let exp_typ_compare (exp1, typ1) (exp2, typ2) => {
-  let n = exp_compare exp1 exp2;
+  let n = Exp.compare exp1 exp2;
   if (n != 0) {
     n
   } else {
@@ -2810,7 +2693,7 @@ let instr_compare instr1 instr2 =>
     if (n != 0) {
       n
     } else {
-      let n = exp_compare e1 e2;
+      let n = Exp.compare e1 e2;
       if (n != 0) {
         n
       } else {
@@ -2825,7 +2708,7 @@ let instr_compare instr1 instr2 =>
   | (Letderef _, _) => (-1)
   | (_, Letderef _) => 1
   | (Set e11 t1 e21 loc1, Set e12 t2 e22 loc2) =>
-    let n = exp_compare e11 e12;
+    let n = Exp.compare e11 e12;
     if (n != 0) {
       n
     } else {
@@ -2833,7 +2716,7 @@ let instr_compare instr1 instr2 =>
       if (n != 0) {
         n
       } else {
-        let n = exp_compare e21 e22;
+        let n = Exp.compare e21 e22;
         if (n != 0) {
           n
         } else {
@@ -2844,7 +2727,7 @@ let instr_compare instr1 instr2 =>
   | (Set _, _) => (-1)
   | (_, Set _) => 1
   | (Prune cond1 loc1 true_branch1 ik1, Prune cond2 loc2 true_branch2 ik2) =>
-    let n = exp_compare cond1 cond2;
+    let n = Exp.compare cond1 cond2;
     if (n != 0) {
       n
     } else {
@@ -2867,7 +2750,7 @@ let instr_compare instr1 instr2 =>
     if (n != 0) {
       n
     } else {
-      let n = exp_compare e1 e2;
+      let n = Exp.compare e1 e2;
       if (n != 0) {
         n
       } else {
@@ -2941,7 +2824,7 @@ let rec exp_compare_structural e1 e2 exp_map => {
   let compare_exps_with_map e1 e2 exp_map =>
     try {
       let e1_mapping = ExpMap.find e1 exp_map;
-      (exp_compare e1_mapping e2, exp_map)
+      (Exp.compare e1_mapping e2, exp_map)
     } {
     | Not_found =>
       /* assume e1 and e2 equal, enforce by adding to [exp_map] */
@@ -3009,7 +2892,7 @@ let rec exp_compare_structural e1 e2 exp_map => {
     } else {
       exp_compare_structural f1 f2 exp_map
     }
-  | _ => (exp_compare e1 e2, exp_map)
+  | _ => (Exp.compare e1 e2, exp_map)
   }
 };
 
@@ -3174,7 +3057,7 @@ let hpred_sub subst => {
 /** {2 Functions for replacing occurrences of expressions.} */
 let exp_replace_exp epairs e =>
   try {
-    let (_, e') = IList.find (fun (e1, _) => exp_equal e e1) epairs;
+    let (_, e') = IList.find (fun (e1, _) => Exp.equal e e1) epairs;
     e'
   } {
   | Not_found => e
@@ -3225,7 +3108,7 @@ let hpred_replace_exp epairs =>
 /** {2 Compaction} */
 let module ExpHash = Hashtbl.Make {
   type t = Exp.t;
-  let equal = exp_equal;
+  let equal = Exp.equal;
   let hash = Hashtbl.hash;
 };
 

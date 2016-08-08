@@ -34,7 +34,7 @@ let rec is_root = function
 
 (** Return [true] if the nodes are connected. Used to compute reachability. *)
 let nodes_connected n1 n2 =
-  Sil.exp_equal n1 n2 (* Implemented as equality for now, later it might contain offset by a constant *)
+  Exp.equal n1 n2 (* Implemented as equality for now, later it might contain offset by a constant *)
 
 (** Return [true] if the edge is an hpred, and [false] if it is an atom *)
 let edge_is_hpred = function
@@ -77,7 +77,7 @@ let edge_from_source g n footprint_part is_hpred =
     else IList.map (fun a -> Eatom a) (get_pi footprint_part g) @ IList.map (fun entry -> Esub_entry entry) (get_subl footprint_part g) in
   let starts_from hpred =
     match edge_get_source hpred with
-    | Some e -> Sil.exp_equal n e
+    | Some e -> Exp.equal n e
     | None -> false in
   match IList.filter starts_from edges with
   | [] -> None
@@ -100,7 +100,7 @@ let get_edges footprint_part g =
 let edge_equal e1 e2 = match e1, e2 with
   | Ehpred hp1, Ehpred hp2 -> Sil.hpred_equal hp1 hp2
   | Eatom a1, Eatom a2 -> Sil.atom_equal a1 a2
-  | Esub_entry (x1, e1), Esub_entry (x2, e2) -> Ident.equal x1 x2 && Sil.exp_equal e1 e2
+  | Esub_entry (x1, e1), Esub_entry (x2, e2) -> Ident.equal x1 x2 && Exp.equal e1 e2
   | _ -> false
 
 (** [contains_edge footprint_part g e] returns true if the graph [g] contains edge [e],
@@ -124,12 +124,12 @@ type diff =
 
 (** Compute the subobjects in [e2] which are different from those in [e1] *)
 let compute_exp_diff (e1: Exp.t) (e2: Exp.t) : Obj.t list =
-  if Sil.exp_equal e1 e2 then [] else [Obj.repr e2]
+  if Exp.equal e1 e2 then [] else [Obj.repr e2]
 
 
 (** Compute the subobjects in [se2] which are different from those in [se1] *)
 let rec compute_sexp_diff (se1: Sil.strexp) (se2: Sil.strexp) : Obj.t list = match se1, se2 with
-  | Sil.Eexp (e1, _), Sil.Eexp (e2, _) -> if Sil.exp_equal e1 e2 then [] else [Obj.repr se2]
+  | Sil.Eexp (e1, _), Sil.Eexp (e2, _) -> if Exp.equal e1 e2 then [] else [Obj.repr se2]
   | Sil.Estruct (fsel1, _), Sil.Estruct (fsel2, _) ->
       compute_fsel_diff fsel1 fsel2
   | Sil.Earray (e1, esel1, _), Sil.Earray (e2, esel2, _) ->
@@ -148,7 +148,7 @@ and compute_fsel_diff fsel1 fsel2 : Obj.t list = match fsel1, fsel2 with
 
 and compute_esel_diff esel1 esel2 : Obj.t list = match esel1, esel2 with
   | ((e1, se1):: esel1'), (((e2, se2) as x):: esel2') ->
-      (match Sil.exp_compare e1 e2 with
+      (match Exp.compare e1 e2 with
        | n when n < 0 -> compute_esel_diff esel1' esel2
        | 0 -> compute_sexp_diff se1 se2 @ compute_esel_diff esel1' esel2'
        | _ -> (Obj.repr x) :: compute_esel_diff esel1 esel2')

@@ -766,7 +766,7 @@ struct
         let (sil_e2, _) = extract_exp_from_list res_trans_e2.exps
             "\nWARNING: Missing RHS operand in BinOp. Returning -1. Fix needed...\n" in
         let binop_res_trans, exp_to_parent =
-          if IList.exists (Sil.exp_equal var_exp) res_trans_e2.initd_exps then [], []
+          if IList.exists (Exp.equal var_exp) res_trans_e2.initd_exps then [], []
           else
             let exp_op, instr_bin =
               CArithmetic_trans.binary_operation_instruction
@@ -1653,7 +1653,7 @@ struct
         let rhs_owning_method = CTrans_utils.is_owning_method ie in
         let _, instrs_assign =
           (* variable might be initialized already - do nothing in that case*)
-          if IList.exists (Sil.exp_equal var_exp) res_trans_ie.initd_exps then ([], [])
+          if IList.exists (Exp.equal var_exp) res_trans_ie.initd_exps then ([], [])
           else if !Config.arc_mode &&
                   (CTrans_utils.is_method_call ie ||
                    ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv ie_typ)
@@ -1873,7 +1873,7 @@ struct
             let (sil_expr, _) = extract_exp_from_list res_trans_stmt.exps
                 "WARNING: There should be only one return expression.\n" in
 
-            let ret_instrs = if IList.exists (Sil.exp_equal ret_exp) res_trans_stmt.initd_exps
+            let ret_instrs = if IList.exists (Exp.equal ret_exp) res_trans_stmt.initd_exps
               then []
               else [Sil.Set (ret_exp, ret_type, sil_expr, sil_loc)] in
             let autorelease_instrs =

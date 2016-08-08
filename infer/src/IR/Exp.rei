@@ -50,3 +50,11 @@ and t =
       obtained from the type definition, e.g. when an array is over-allocated.  For struct types,
       the [dynamic_length] is that of the final extensible array, if any. */
   | Sizeof of Typ.t dynamic_length Subtype.t;
+
+
+/** Comparison for expressions. */
+let compare: t => t => int;
+
+
+/** Equality for expressions. */
+let equal: t => t => bool;

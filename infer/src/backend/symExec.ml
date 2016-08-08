@@ -184,7 +184,7 @@ let rec apply_offlist
               pdesc tenv p fp_root nullify_struct
               (root_lexp, se', t') offlist' f inst lookup_inst in
           let replace_ese ese =
-            if Sil.exp_equal idx_ese' (fst ese)
+            if Exp.equal idx_ese' (fst ese)
             then (idx_ese', res_se')
             else ese in
           let res_se = Sil.Earray (len, IList.map replace_ese esel, inst1) in
@@ -288,7 +288,7 @@ let prune_ne ~positive e1 e2 prop =
     is "<" if [is_strict] is true and "<=" if [is_strict] is false.
 *)
 let prune_ineq ~is_strict ~positive prop e1 e2 =
-  if Sil.exp_equal e1 e2 then
+  if Exp.equal e1 e2 then
     if (positive && not is_strict) || (not positive && is_strict) then
       Propset.singleton prop
     else Propset.empty
@@ -439,7 +439,7 @@ let check_arith_norm_exp pname exp prop =
 let check_already_dereferenced pname cond prop =
   let find_hpred lhs =
     try Some (IList.find (function
-        | Sil.Hpointsto (e, _, _) -> Sil.exp_equal e lhs
+        | Sil.Hpointsto (e, _, _) -> Exp.equal e lhs
         | _ -> false) (Prop.get_sigma prop))
     with Not_found -> None in
   let rec is_check_zero = function
@@ -530,7 +530,7 @@ let resolve_typename prop receiver_exp =
   let typexp_opt =
     let rec loop = function
       | [] -> None
-      | Sil.Hpointsto(e, _, typexp) :: _ when Sil.exp_equal e receiver_exp -> Some typexp
+      | Sil.Hpointsto(e, _, typexp) :: _ when Exp.equal e receiver_exp -> Some typexp
       | _ :: hpreds -> loop hpreds in
     loop (Prop.get_sigma prop) in
   match typexp_opt with
@@ -730,7 +730,7 @@ let handle_objc_instance_method_call_or_skip actual_pars path callee_pname pre r
   let is_receiver_null =
     match actual_pars with
     | (e, _) :: _
-      when Sil.exp_equal e Sil.exp_zero ||
+      when Exp.equal e Sil.exp_zero ||
            Option.is_some (Prop.get_objc_null_attribute pre e) -> true
     | _ -> false in
   let add_objc_null_attribute_or_nullify_result prop =
@@ -1285,7 +1285,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
     let sigma' =
       IList.map
         (function
-          | Sil.Hpointsto (lhs, _, _) when Sil.exp_equal lhs actual_var -> new_hpred
+          | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual_var -> new_hpred
           | hpred -> hpred)
         (Prop.get_sigma prop) in
     Prop.normalize (Prop.replace_sigma sigma' prop) in
@@ -1324,7 +1324,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
             let filtered_sigma =
               IList.map
                 (function
-                  | Sil.Hpointsto (lhs, _, typ_exp) when Sil.exp_equal lhs actual ->
+                  | Sil.Hpointsto (lhs, _, typ_exp) when Exp.equal lhs actual ->
                       Sil.Hpointsto (lhs, abduced_strexp, typ_exp)
                   | hpred -> hpred)
                 (Prop.get_sigma prop') in
@@ -1335,7 +1335,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
               let filtered_sigma =
                 IList.filter
                   (function
-                    | Sil.Hpointsto (lhs, _, _) when Sil.exp_equal lhs actual ->
+                    | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual ->
                         false
                     | _ -> true)
                   (Prop.get_sigma prop) in

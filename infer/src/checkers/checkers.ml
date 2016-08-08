@@ -448,7 +448,7 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
                      when Ident.equal i1 i2 -> true
                    | _ -> false in
                  let is_set_instr = function
-                   | Sil.Set (e1, _, _, _) when Sil.exp_equal expanded e1 -> true
+                   | Sil.Set (e1, _, _, _) when Exp.equal expanded e1 -> true
                    | _ -> false in
                  match reverse_find_instr is_set_instr node with
                  (* Look for ivar := tmp *)

@@ -434,8 +434,8 @@ let typ_get_recursive_flds tenv typ_exp =
       assert false
 
 let discover_para_roots p root1 next1 root2 next2 : Sil.hpara option =
-  let eq_arg1 = Sil.exp_equal root1 next1 in
-  let eq_arg2 = Sil.exp_equal root2 next2 in
+  let eq_arg1 = Exp.equal root1 next1 in
+  let eq_arg2 = Exp.equal root2 next2 in
   let precondition_check = (not eq_arg1 && not eq_arg2) in
   if not precondition_check then None
   else
@@ -449,10 +449,10 @@ let discover_para_roots p root1 next1 root2 next2 : Sil.hpara option =
         Some hpara
 
 let discover_para_dll_roots p root1 blink1 flink1 root2 blink2 flink2 : Sil.hpara_dll option =
-  let eq_arg1 = Sil.exp_equal root1 blink1 in
-  let eq_arg1' = Sil.exp_equal root1 flink1 in
-  let eq_arg2 = Sil.exp_equal root2 blink2 in
-  let eq_arg2' = Sil.exp_equal root2 flink2 in
+  let eq_arg1 = Exp.equal root1 blink1 in
+  let eq_arg1' = Exp.equal root1 flink1 in
+  let eq_arg2 = Exp.equal root2 blink2 in
+  let eq_arg2' = Exp.equal root2 flink2 in
   let precondition_check = not (eq_arg1 || eq_arg1' || eq_arg2 || eq_arg2') in
   if not precondition_check then None
   else
@@ -491,7 +491,7 @@ let discover_para_candidates tenv p =
     | [] -> IList.rev found
     | (e1, e2) :: edges_notseen ->
         let edges_others = (IList.rev edges_seen) @ edges_notseen in
-        let edges_matched = IList.filter (fun (e1', _) -> Sil.exp_equal e2 e1') edges_others in
+        let edges_matched = IList.filter (fun (e1', _) -> Exp.equal e2 e1') edges_others in
         let new_found =
           let f found_acc (_, e3) = (e1, e2, e3) :: found_acc in
           IList.fold_left f found edges_matched in
@@ -531,7 +531,7 @@ let discover_para_dll_candidates tenv p =
     | [] -> IList.rev found
     | (iF, blink, flink) :: edges_notseen ->
         let edges_others = (IList.rev edges_seen) @ edges_notseen in
-        let edges_matched = IList.filter (fun (e1', _, _) -> Sil.exp_equal flink e1') edges_others in
+        let edges_matched = IList.filter (fun (e1', _, _) -> Exp.equal flink e1') edges_others in
         let new_found =
           let f found_acc (_, _, flink2) = (iF, blink, flink, flink2) :: found_acc in
           IList.fold_left f found edges_matched in
@@ -608,7 +608,7 @@ let eqs_solve ids_in eqs_in =
         solve sub' eqs_rest' in
     match eqs with
     | [] -> Some sub
-    | (e1, e2) :: eqs_rest when Sil.exp_equal e1 e2 ->
+    | (e1, e2) :: eqs_rest when Exp.equal e1 e2 ->
         solve sub eqs_rest
     | (Exp.Var id1, (Exp.Const _ as e2)) :: eqs_rest ->
         do_default id1 e2 eqs_rest
@@ -884,7 +884,7 @@ let get_cycle root prop =
     | Sil.Eexp(e', _) ->
         (try
            Some(IList.find (fun hpred -> match hpred with
-               | Sil.Hpointsto(e'', _, _) -> Sil.exp_equal e'' e'
+               | Sil.Hpointsto(e'', _, _) -> Exp.equal e'' e'
                | _ -> false) sigma)
          with _ -> None)
     | _ -> None in
@@ -959,7 +959,7 @@ let get_var_retain_cycle _prop =
   let is_hpred_block v h =
     match h, v with
     | Sil.Hpointsto (e, _, Exp.Sizeof (typ, _, _)), Sil.Eexp (e', _)
-      when Sil.exp_equal e e' && Typ.is_block_type typ -> true
+      when Exp.equal e e' && Typ.is_block_type typ -> true
     | _, _ -> false in
   let find v =
     try

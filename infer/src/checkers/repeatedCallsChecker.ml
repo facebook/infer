@@ -27,7 +27,7 @@ struct
       let compare i1 i2 = match i1, i2 with
         | Sil.Call (_, e1, etl1, _, cf1), Sil.Call (_, e2, etl2, _, cf2) ->
             (* ignore return ids and call flags *)
-            let n = Sil.exp_compare e1 e2 in
+            let n = Exp.compare e1 e2 in
             if n <> 0 then n else let n = IList.compare Sil.exp_typ_compare etl1 etl2 in
               if n <> 0 then n else CallFlags.compare cf1 cf2
         | _ -> Sil.instr_compare i1 i2

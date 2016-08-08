@@ -38,7 +38,7 @@ let rec pp_hpat_list pe f = function
 let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
   let check_equal sub vars e1 e2 =
     let e2_inst = Sil.exp_sub sub e2
-    in if (Sil.exp_equal e1 e2_inst) then Some(sub, vars) else None in
+    in if (Exp.equal e1 e2_inst) then Some(sub, vars) else None in
   match e1, e2 with
   | _, Exp.Var id2 when (Ident.is_primed id2 && mem_idlist id2 vars) ->
       let vars_new = IList.filter (fun id -> not (Ident.equal id id2)) vars in
@@ -148,7 +148,7 @@ and isel_match isel1 sub vars isel2 =
         L.out "@[<4>    IDX2: %a, STREXP2: %a@\n@." (Sil.pp_exp pe) idx2 (Sil.pp_sexp pe) se2';
         assert false
       end
-      else if Sil.exp_equal idx1 idx2 then begin
+      else if Exp.equal idx1 idx2 then begin
         match strexp_match se1' sub vars se2' with
         | None -> None
         | Some (sub', vars') -> isel_match isel1' sub' vars' isel2'
@@ -246,7 +246,7 @@ let rec iter_match_with_impl iter condition sub vars hpat hpats =
     in prop_match_with_impl_sub p_rest condition sub_new vars_leftover hpat_next hpats_rest
   in
   let gen_filter_pointsto lexp2 strexp2 te2 = function
-    | Sil.Hpointsto (lexp1, strexp1, te1) when Sil.exp_equal te1 te2 ->
+    | Sil.Hpointsto (lexp1, strexp1, te1) when Exp.equal te1 te2 ->
         (match (exp_match lexp1 sub vars lexp2) with
          | None -> None
          | Some (sub', vars_leftover) -> strexp_match strexp1 sub' vars_leftover strexp2)
@@ -502,7 +502,7 @@ let rec generate_todos_from_strexp mode todos sexp1 sexp2 =
   | Sil.Estruct _, _ ->
       None
   | Sil.Earray (len1, iel1, _), Sil.Earray (len2, iel2, _) ->
-      if (not (Sil.exp_equal len1 len2) || IList.length iel1 <> IList.length iel2)
+      if (not (Exp.equal len1 len2) || IList.length iel1 <> IList.length iel2)
       then None
       else generate_todos_from_iel mode todos iel1 iel2
   | Sil.Earray _, _ ->
@@ -548,22 +548,22 @@ and generate_todos_from_iel mode todos iel1 iel2 =
 
 (** add (e1,e2) at the front of corres, if necessary. *)
 let corres_extend_front e1 e2 corres =
-  let filter (e1', e2') = (Sil.exp_equal e1 e1') || (Sil.exp_equal e2 e2') in
-  let checker e1' e2' = (Sil.exp_equal e1 e1') && (Sil.exp_equal e2 e2')
+  let filter (e1', e2') = (Exp.equal e1 e1') || (Exp.equal e2 e2') in
+  let checker e1' e2' = (Exp.equal e1 e1') && (Exp.equal e2 e2')
   in match (IList.filter filter corres) with
   | [] -> Some ((e1, e2) :: corres)
   | [(e1', e2')] when checker e1' e2' -> Some corres
   | _ -> None
 
 let corres_extensible corres e1 e2 =
-  let predicate (e1', e2') = (Sil.exp_equal e1 e1') || (Sil.exp_equal e2 e2')
-  in not (IList.exists predicate corres) && not (Sil.exp_equal e1 e2)
+  let predicate (e1', e2') = (Exp.equal e1 e1') || (Exp.equal e2 e2')
+  in not (IList.exists predicate corres) && not (Exp.equal e1 e2)
 
 let corres_related corres e1 e2 =
-  let filter (e1', e2') = (Sil.exp_equal e1 e1') || (Sil.exp_equal e2 e2') in
-  let checker e1' e2' = (Sil.exp_equal e1 e1') && (Sil.exp_equal e2 e2') in
+  let filter (e1', e2') = (Exp.equal e1 e1') || (Exp.equal e2 e2') in
+  let checker e1' e2' = (Exp.equal e1 e1') && (Exp.equal e2 e2') in
   match (IList.filter filter corres) with
-  | [] -> Sil.exp_equal e1 e2
+  | [] -> Exp.equal e1 e2
   | [(e1', e2')] when checker e1' e2' -> true
   | _ -> false
 
@@ -604,7 +604,7 @@ let rec generic_find_partial_iso mode update corres sigma_corres todos sigma_tod
         | None, _ | _, None ->
             None
         | Some (Sil.Hpointsto (_, _, te1)), Some (Sil.Hpointsto (_, _, te2))
-          when not (Sil.exp_equal te1 te2) ->
+          when not (Exp.equal te1 te2) ->
             None
         | Some (Sil.Hpointsto (_, se1, _) as hpred1),
           Some (Sil.Hpointsto (_, se2, _) as hpred2) ->
@@ -723,9 +723,9 @@ let generic_para_create corres sigma1 elist1 =
     let add_fresh_id pair = (pair, Ident.create_fresh Ident.kprimed) in
     IList.map add_fresh_id new_corres' in
   let (es_shared, ids_shared, ids_exists) =
-    let not_in_elist1 ((e1, _), _) = not (IList.exists (Sil.exp_equal e1) elist1) in
+    let not_in_elist1 ((e1, _), _) = not (IList.exists (Exp.equal e1) elist1) in
     let corres_ids_no_elist1 = IList.filter not_in_elist1 corres_ids in
-    let should_be_shared ((e1, e2), _) = Sil.exp_equal e1 e2 in
+    let should_be_shared ((e1, e2), _) = Exp.equal e1 e2 in
     let shared, exists = IList.partition should_be_shared corres_ids_no_elist1 in
     let es_shared = IList.map (fun ((e1, _), _) -> e1) shared in
     (es_shared, IList.map snd shared, IList.map snd exists) in
@@ -745,7 +745,7 @@ let hpara_create corres sigma1 root1 next1 =
     generic_para_create corres sigma1 [root1; next1] in
   let get_id1 e1 =
     try
-      let is_equal_to_e1 (e1', _) = Sil.exp_equal e1 e1' in
+      let is_equal_to_e1 (e1', _) = Exp.equal e1 e1' in
       let _, id = IList.find is_equal_to_e1 renaming in
       id
     with Not_found -> assert false in
@@ -768,7 +768,7 @@ let hpara_dll_create corres sigma1 root1 blink1 flink1 =
     generic_para_create corres sigma1 [root1; blink1; flink1] in
   let get_id1 e1 =
     try
-      let is_equal_to_e1 (e1', _) = Sil.exp_equal e1 e1' in
+      let is_equal_to_e1 (e1', _) = Exp.equal e1 e1' in
       let _, id = IList.find is_equal_to_e1 renaming in
       id
     with Not_found -> assert false in

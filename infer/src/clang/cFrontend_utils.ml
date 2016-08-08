@@ -533,7 +533,7 @@ struct
     append_no_duplicates eq list1 list2
 
   let append_no_duplicateds list1 list2 =
-    let eq (e1, t1) (e2, t2) = (Sil.exp_equal e1 e2) && (Typ.equal t1 t2) in
+    let eq (e1, t1) (e2, t2) = (Exp.equal e1 e2) && (Typ.equal t1 t2) in
     append_no_duplicates eq list1 list2
 
 

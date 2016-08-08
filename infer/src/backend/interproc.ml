@@ -409,7 +409,7 @@ let check_assignement_guard node =
           [e']
       | _ -> [] in
     let prune_vars = IList.flatten(IList.map (fun n -> prune_var n) succs) in
-    IList.for_all (fun e' -> Sil.exp_equal e' e) prune_vars in
+    IList.for_all (fun e' -> Exp.equal e' e) prune_vars in
   let succs_loc = IList.map (fun n -> Cfg.Node.get_loc n) succs in
   let succs_are_all_prune_nodes () =
     IList.for_all (fun n -> match Cfg.Node.get_kind n with
@@ -1120,7 +1120,7 @@ let remove_this_not_null prop =
     | hpred -> (var_option, hpred:: hpreds) in
   let collect_atom var atoms = function
     | Sil.Aneq (Exp.Var v, e)
-      when Ident.equal v var && Sil.exp_equal e Sil.exp_null -> atoms
+      when Ident.equal v var && Exp.equal e Sil.exp_null -> atoms
     | a -> a:: atoms in
   match IList.fold_left collect_hpred (None, []) (Prop.get_sigma prop) with
   | None, _ -> prop

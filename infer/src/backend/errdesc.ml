@@ -97,7 +97,7 @@ let find_in_node_or_preds start_node f_node_instr =
 (** Find the Set instruction used to assign [id] to a program variable, if any *)
 let find_variable_assigment node id : Sil.instr option =
   let find_set _ instr = match instr with
-    | Sil.Set (Exp.Lvar _, _, e, _) when Sil.exp_equal (Exp.Var id) e -> Some instr
+    | Sil.Set (Exp.Lvar _, _, e, _) when Exp.equal (Exp.Var id) e -> Some instr
     | _ -> None in
   find_in_node_or_preds node find_set
 
@@ -453,7 +453,7 @@ let leak_from_list_abstraction hpred prop =
     | _ -> None in
   let found = ref false in
   let check_hpred texp hp = match hpred_type hp with
-    | Some texp' when Sil.exp_equal texp texp' -> found := true
+    | Some texp' when Exp.equal texp texp' -> found := true
     | _ -> () in
   let check_hpara texp _ hpara =
     IList.iter (check_hpred texp) hpara.Sil.body in
@@ -479,7 +479,7 @@ let find_hpred_typ hpred = match hpred with
 let find_typ_without_ptr prop pvar =
   let res = ref None in
   let do_hpred = function
-    | Sil.Hpointsto (e, _, te) when Sil.exp_equal e (Exp.Lvar pvar) ->
+    | Sil.Hpointsto (e, _, te) when Exp.equal e (Exp.Lvar pvar) ->
         res := Some te
     | _ -> () in
   IList.iter do_hpred (Prop.get_sigma prop);
@@ -586,7 +586,7 @@ let vpath_find prop _exp : DExp.t option * Typ.t option =
   if verbose then (L.d_str "in vpath_find exp:"; Sil.d_exp _exp; L.d_ln ());
   let rec find sigma_acc sigma_todo exp =
     let do_fse res sigma_acc' sigma_todo' lexp texp (f, se) = match se with
-      | Sil.Eexp (e, _) when Sil.exp_equal exp e ->
+      | Sil.Eexp (e, _) when Exp.equal exp e ->
           let sigma' = (IList.rev_append sigma_acc' sigma_todo') in
           (match lexp with
            | Exp.Lvar pv ->
@@ -612,7 +612,7 @@ let vpath_find prop _exp : DExp.t option * Typ.t option =
                   Sil.d_exp lexp; L.d_ln ()))
       | _ -> () in
     let do_sexp sigma_acc' sigma_todo' lexp sexp texp = match sexp with
-      | Sil.Eexp (e, _) when Sil.exp_equal exp e ->
+      | Sil.Eexp (e, _) when Exp.equal exp e ->
           let sigma' = (IList.rev_append sigma_acc' sigma_todo') in
           (match lexp with
            | Exp.Lvar pv when not (Pvar.is_frontend_tmp pv) ->
@@ -682,7 +682,7 @@ let explain_dexp_access prop dexp is_nullable =
   let find_ptsto (e : Exp.t) : Sil.strexp option =
     let res = ref None in
     let do_hpred = function
-      | Sil.Hpointsto (e', se, _) when Sil.exp_equal e e' ->
+      | Sil.Hpointsto (e', se, _) when Exp.equal e e' ->
           res := Some se
       | _ -> () in
     IList.iter do_hpred sigma;
@@ -701,7 +701,7 @@ let explain_dexp_access prop dexp is_nullable =
         if verbose then (L.d_str "lookup_esel: can't find index "; Sil.d_exp e; L.d_ln ());
         None
     | (e1, se):: esel' ->
-        if Sil.exp_equal e1 e then Some se
+        if Exp.equal e1 e then Some se
         else lookup_esel esel' e in
   let rec lookup : DExp.t -> Sil.strexp option = function
     | DExp.Dconst c ->
@@ -1006,17 +1006,17 @@ let find_with_exp prop exp =
     if !res = None then res := Some (pv, Fstruct (IList.rev fld_lst)) in
   let rec search_struct pv fld_lst = function
     | Sil.Eexp (e, _) ->
-        if Sil.exp_equal e exp then found_in_struct pv fld_lst
+        if Exp.equal e exp then found_in_struct pv fld_lst
     | Sil.Estruct (fsel, _) ->
         IList.iter (fun (f, se) -> search_struct pv (f:: fld_lst) se) fsel
     | _ -> () in
   let do_hpred_pointed_by_pvar pv e = function
     | Sil.Hpointsto(e1, se, _) ->
-        if Sil.exp_equal e e1 then search_struct pv [] se
+        if Exp.equal e e1 then search_struct pv [] se
     | _ -> () in
   let do_hpred = function
     | Sil.Hpointsto(Exp.Lvar pv, Sil.Eexp (e, _), _) ->
-        if Sil.exp_equal e exp then found_in_pvar pv
+        if Exp.equal e exp then found_in_pvar pv
         else IList.iter (do_hpred_pointed_by_pvar pv e) (Prop.get_sigma prop)
     | _ -> () in
   IList.iter do_hpred (Prop.get_sigma prop);

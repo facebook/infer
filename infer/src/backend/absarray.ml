@@ -74,7 +74,7 @@ end = struct
                  Ident.fieldname_equal f' fld) instance_fields) in
         get_strexp_at_syn_offsets se' t' syn_offs'
     | Sil.Earray (_, esel, _), Typ.Tarray (t', _), Index ind :: syn_offs' ->
-        let se' = snd (IList.find (fun (i', _) -> Sil.exp_equal i' ind) esel) in
+        let se' = snd (IList.find (fun (i', _) -> Exp.equal i' ind) esel) in
         get_strexp_at_syn_offsets se' t' syn_offs'
     | _ ->
         L.d_strln "Failure of get_strexp_at_syn_offsets";
@@ -99,9 +99,10 @@ end = struct
             ) fsel in
         Sil.Estruct (fsel', inst)
     | Sil.Earray (len, esel, inst), Typ.Tarray (t', _), Index idx :: syn_offs' ->
-        let se' = snd (IList.find (fun (i', _) -> Sil.exp_equal i' idx) esel) in
+        let se' = snd (IList.find (fun (i', _) -> Exp.equal i' idx) esel) in
         let se_mod = replace_strexp_at_syn_offsets se' t' syn_offs' update in
-        let esel' = IList.map (fun ese -> if Sil.exp_equal (fst ese) idx then (idx, se_mod) else ese) esel in
+        let esel' =
+          IList.map (fun ese -> if Exp.equal (fst ese) idx then (idx, se_mod) else ese) esel in
         Sil.Earray (len, esel', inst)
     | _ -> assert false
 
@@ -136,7 +137,7 @@ end = struct
   (** Find an array at the given path. Can raise [Not_found] *)
   let find_path sigma (root, syn_offs) : t =
     let filter = function
-      | Sil.Hpointsto (e, _, _) -> Sil.exp_equal root e
+      | Sil.Hpointsto (e, _, _) -> Exp.equal root e
       | _ -> false in
     let hpred = IList.find filter sigma in
     (sigma, hpred, syn_offs)
@@ -210,7 +211,7 @@ end = struct
       match se', se_in with
       | Sil.Earray (len, esel, _), Sil.Earray (_, esel_in, inst2) ->
           let orig_indices = IList.map fst esel in
-          let index_is_not_new idx = IList.exists (Sil.exp_equal idx) orig_indices in
+          let index_is_not_new idx = IList.exists (Exp.equal idx) orig_indices in
           let process_index idx =
             if index_is_not_new idx then idx else (Sil.array_clean_new_index footprint_part idx) in
           let esel_in' = IList.map (fun (idx, se) -> process_index idx, se) esel_in in
@@ -236,7 +237,10 @@ end = struct
     let update se' =
       match se' with
       | Sil.Earray (len, esel, inst) ->
-          let esel' = IList.map (fun (e', se') -> if Sil.exp_equal e' index then (index', se') else (e', se')) esel in
+          let esel' =
+            IList.map (fun (e', se') ->
+                if Exp.equal e' index then (index', se') else (e', se')
+              ) esel in
           Sil.Earray (len, esel', inst)
       | _ -> assert false in
     let hpred' = hpred_replace_strexp footprint_part hpred syn_offs update in
@@ -273,7 +277,7 @@ let prop_replace_path_index
       ) [] elist_path in
   let expmap_fun e' =
     try
-      let _, fresh_e = IList.find (fun (e, _) -> Sil.exp_equal e e') expmap_list in
+      let _, fresh_e = IList.find (fun (e, _) -> Exp.equal e e') expmap_list in
       fresh_e
     with Not_found -> e' in
   Prop.prop_expmap expmap_fun p
@@ -358,7 +362,7 @@ let index_is_pointed_to (p: Prop.normal Prop.t) (path: StrexpMatch.path) (index:
     fun i -> IList.map (add_index i) elist_path in
   let pointers = IList.flatten (IList.map add_index_to_paths indices) in
   let filter = function
-    | Sil.Hpointsto (_, Sil.Eexp (e, _), _) -> IList.exists (Sil.exp_equal e) pointers
+    | Sil.Hpointsto (_, Sil.Eexp (e, _), _) -> IList.exists (Exp.equal e) pointers
     | _ -> false in
   IList.exists filter (Prop.get_sigma p)
 
@@ -419,7 +423,8 @@ let keep_only_indices
       let (_, se, _) = StrexpMatch.get_data matched in
       match se with
       | Sil.Earray (len, esel, inst) ->
-          let esel', esel_leftover' = IList.partition (fun (e, _) -> IList.exists (Sil.exp_equal e) indices) esel in
+          let esel', esel_leftover' =
+            IList.partition (fun (e, _) -> IList.exists (Exp.equal e) indices) esel in
           if esel_leftover' == [] then (sigma, false)
           else begin
             let se' = Sil.Earray (len, esel', inst) in

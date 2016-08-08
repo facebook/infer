@@ -173,7 +173,7 @@ and get_contents pe coo f = function
 (* true if node is the sorce node of the expression e*)
 let is_source_node_of_exp e node =
   match node with
-  | Dotpointsto (_, e', _) -> Sil.exp_compare e e' = 0
+  | Dotpointsto (_, e', _) -> Exp.compare e e' = 0
   | _ -> false
 
 (* given a node returns its coordinates and the expression. Return -1 in case the expressio doesn.t*)
@@ -203,7 +203,7 @@ let rec look_up_for_back_pointer e dotnodes lambda =
   match dotnodes with
   | [] -> []
   | Dotdllseg(coo, _, _, _, e4, _, _, _):: dotnodes' ->
-      if Sil.exp_compare e e4 = 0 && lambda = coo.lambda then [coo.id + 1]
+      if Exp.compare e e4 = 0 && lambda = coo.lambda then [coo.id + 1]
       else look_up_for_back_pointer e dotnodes' lambda
   | _:: dotnodes' -> look_up_for_back_pointer e dotnodes' lambda
 
@@ -213,7 +213,8 @@ let rec select_nodes_exp_lambda dotnodes e lambda =
   | [] -> []
   | node:: l' ->
       let (coo, e') = get_coordinate_and_exp node in
-      if (Sil.exp_compare e e' = 0) && lambda = coo.lambda then node:: select_nodes_exp_lambda l' e lambda
+      if (Exp.compare e e' = 0) && lambda = coo.lambda
+      then node:: select_nodes_exp_lambda l' e lambda
       else select_nodes_exp_lambda l' e lambda
 
 (* look-up the coordinate id in the list of dotnodes those nodes which correspond to expression e*)
@@ -245,19 +246,19 @@ let make_dangling_boxes pe allocated_nodes (sigma_lambda: (Sil.hpred * int) list
     let coo = mk_coordinate n lambda in
     (match hpred with
      | Sil.Hpointsto (_, Sil.Eexp (e, _), _)
-       when not (Sil.exp_equal e Sil.exp_zero)  && !print_full_prop ->
+       when not (Exp.equal e Sil.exp_zero)  && !print_full_prop ->
          let e_color_str = color_to_str (exp_color hpred e) in
          [Dotdangling(coo, e, e_color_str)]
-     | Sil.Hlseg (_, _, _, e2, _) when not (Sil.exp_equal e2 Sil.exp_zero) ->
+     | Sil.Hlseg (_, _, _, e2, _) when not (Exp.equal e2 Sil.exp_zero) ->
          let e2_color_str = color_to_str (exp_color hpred e2) in
          [Dotdangling(coo, e2, e2_color_str)]
      | Sil.Hdllseg (_, _, _, e2, e3, _, _) ->
          let e2_color_str = color_to_str (exp_color hpred e2) in
          let e3_color_str = color_to_str (exp_color hpred e3) in
-         let ll = if not (Sil.exp_equal e2 Sil.exp_zero) then
+         let ll = if not (Exp.equal e2 Sil.exp_zero) then
              [Dotdangling(coo, e2, e2_color_str)]
            else [] in
-         if not (Sil.exp_equal e3 Sil.exp_zero) then Dotdangling(coo, e3, e3_color_str):: ll
+         if not (Exp.equal e3 Sil.exp_zero) then Dotdangling(coo, e3, e3_color_str):: ll
          else ll
      | Sil.Hpointsto (_, _, _)
      | _ -> [] (* arrays and struct do not give danglings*)
@@ -269,7 +270,7 @@ let make_dangling_boxes pe allocated_nodes (sigma_lambda: (Sil.hpred * int) list
             | Dotpointsto(_, e', _)
             | Dotarray(_, _, e', _, _, _)
             | Dotlseg(_, e', _, _, _, _)
-            | Dotdllseg(_, e', _, _, _, _, _, _) -> Sil.exp_equal e e'
+            | Dotdllseg(_, e', _, _, _, _, _, _) -> Exp.equal e e'
             | _ -> false
           ) allocated_nodes
     | _ -> false (*this should never happen since d must be a dangling node *) in
@@ -277,7 +278,7 @@ let make_dangling_boxes pe allocated_nodes (sigma_lambda: (Sil.hpred * int) list
     match l with
     | [] -> []
     | Dotdangling(coo, e, color):: l' ->
-        if (IList.exists (Sil.exp_equal e) seen_exp) then filter_duplicate l' seen_exp
+        if (IList.exists (Exp.equal e) seen_exp) then filter_duplicate l' seen_exp
         else Dotdangling(coo, e, color):: filter_duplicate l' (e:: seen_exp)
     | box:: l' -> box:: filter_duplicate l' seen_exp (* this case cannot happen*) in
   let rec subtract_allocated candidate_dangling =
@@ -308,7 +309,7 @@ let rec dotty_mk_node pe sigma =
          Dotstruct((mk_coordinate (n + 1) lambda), e, l, e_color_str, te);]
     | (Sil.Hpointsto (e, _, _), lambda) ->
         let e_color_str = color_to_str (exp_color e) in
-        if IList.mem Sil.exp_equal e !struct_exp_nodes then [] else
+        if IList.mem Exp.equal e !struct_exp_nodes then [] else
           [Dotpointsto((mk_coordinate n lambda), e, e_color_str)]
     | (Sil.Hlseg (k, hpara, e1, e2, _), lambda) ->
         incr dotty_state_count; (* increment once more n+1 is the box for last element of the list *)
@@ -336,7 +337,7 @@ let set_exps_neq_zero pi =
 
 let box_dangling e =
   let entry_e = IList.filter (fun b -> match b with
-      | Dotdangling(_, e', _) -> Sil.exp_equal e e' | _ -> false ) !dangling_dotboxes in
+      | Dotdangling(_, e', _) -> Exp.equal e e' | _ -> false ) !dangling_dotboxes in
   match entry_e with
   |[] -> None
   | Dotdangling(coo, _, _):: _ -> Some coo.id
@@ -376,7 +377,7 @@ let compute_struct_exp_nodes sigma =
 let get_node_exp n = snd (get_coordinate_and_exp n)
 
 let is_nil e prop =
-  (Sil.exp_equal e Sil.exp_zero) || (Prover.check_equal prop e Sil.exp_zero)
+  (Exp.equal e Sil.exp_zero) || (Prover.check_equal prop e Sil.exp_zero)
 
 (* an edge is in cycle *)
 let in_cycle cycle edge =
@@ -413,7 +414,7 @@ let rec compute_target_struct_fields dotnodes list_fld p f lambda cycle =
                )
            | [node] | [Dotpointsto _ ; node] | [node; Dotpointsto _] ->
                let n = get_coordinate_id node in
-               if IList.mem Sil.exp_equal e !struct_exp_nodes then begin
+               if IList.mem Exp.equal e !struct_exp_nodes then begin
                  let e_no_special_char = strip_special_chars (Sil.exp_to_string e) in
                  let link_kind = if (in_cycle cycle (fn, se)) && (not !print_full_prop) then
                      LinkRetainCycle
@@ -449,7 +450,7 @@ let rec compute_target_array_elements dotnodes list_elements p f lambda =
                )
            | [node] | [Dotpointsto _ ; node] | [node; Dotpointsto _] ->
                let n = get_coordinate_id node in
-               if IList.mem Sil.exp_equal e !struct_exp_nodes then begin
+               if IList.mem Exp.equal e !struct_exp_nodes then begin
                  let e_no_special_char = strip_special_chars (Sil.exp_to_string e) in
                  [(LinkArrayToStruct, Sil.exp_to_string idx, n, e_no_special_char)]
                end else
@@ -1112,7 +1113,7 @@ let atom_to_xml_string a =
 (* return the dangling node corresponding to an expression it exists or None *)
 let exp_dangling_node e =
   let entry_e = IList.filter (fun b -> match b with
-      | VH_dangling(_, e') -> Sil.exp_equal e e' | _ -> false ) !set_dangling_nodes in
+      | VH_dangling(_, e') -> Exp.equal e e' | _ -> false ) !set_dangling_nodes in
   match entry_e with
   |[] -> None
   | VH_dangling(n, e') :: _ -> Some (VH_dangling(n, e'))
@@ -1156,7 +1157,7 @@ let rec select_node_at_address nodes e =
   | [] -> None
   | n:: l' ->
       let e' = get_node_addr n in
-      if (Sil.exp_compare e e' = 0) then Some n
+      if (Exp.compare e e' = 0) then Some n
       else select_node_at_address l' e
 
 (* look-up the ids in the list of nodes corresponding to expression e*)
@@ -1171,11 +1172,11 @@ let make_set_dangling_nodes allocated_nodes (sigma: Sil.hpred list) =
     VH_dangling(n, e) in
   let get_rhs_predicate hpred =
     (match hpred with
-     | Sil.Hpointsto (_, Sil.Eexp (e, _), _) when not (Sil.exp_equal e Sil.exp_zero) -> [e]
-     | Sil.Hlseg (_, _, _, e2, _) when not (Sil.exp_equal e2 Sil.exp_zero) -> [e2]
+     | Sil.Hpointsto (_, Sil.Eexp (e, _), _) when not (Exp.equal e Sil.exp_zero) -> [e]
+     | Sil.Hlseg (_, _, _, e2, _) when not (Exp.equal e2 Sil.exp_zero) -> [e2]
      | Sil.Hdllseg (_, _, _, e2, e3, _, _) ->
-         if (Sil.exp_equal e2 Sil.exp_zero) then
-           if (Sil.exp_equal e3 Sil.exp_zero) then []
+         if (Exp.equal e2 Sil.exp_zero) then
+           if (Exp.equal e3 Sil.exp_zero) then []
            else [e3]
          else [e2; e3]
      | Sil.Hpointsto (_, _, _)
@@ -1185,14 +1186,14 @@ let make_set_dangling_nodes allocated_nodes (sigma: Sil.hpred list) =
     let allocated = IList.exists (fun a -> match a with
         | VH_pointsto(_, e', _, _)
         | VH_lseg(_, e', _ , _)
-        | VH_dllseg(_, e', _, _, _, _) -> Sil.exp_equal e e'
+        | VH_dllseg(_, e', _, _, _, _) -> Exp.equal e e'
         | _ -> false ) allocated_nodes in
     not allocated in
   let rec filter_duplicate l seen_exp =
     match l with
     | [] -> []
     | e:: l' ->
-        if (IList.exists (Sil.exp_equal e) seen_exp) then filter_duplicate l' seen_exp
+        if (IList.exists (Exp.equal e) seen_exp) then filter_duplicate l' seen_exp
         else e:: filter_duplicate l' (e:: seen_exp) in
   let rhs_exp_list = IList.flatten (IList.map get_rhs_predicate sigma) in
   let candidate_dangling_exps = filter_duplicate rhs_exp_list [] in
@@ -1408,7 +1409,7 @@ let print_specs_xml signature specs loc fmt =
 
 (*
 let exp_is_neq_zero e =
-  IList.exists (fun e' -> Sil.exp_equal e e') !exps_neq_zero
+  IList.exists (fun e' -> Exp.equal e e') !exps_neq_zero
 
 let rec get_contents_range_single pe coo f range_se =
   let (e1, e2), se = range_se in
@@ -1454,5 +1455,5 @@ let rec get_color_exp dot_nodes e =
   | Dotlseg(_, e', _, _, _, c):: l'
   | Dotstruct(_, e', _, c, _):: l'
   | Dotdllseg(_, e', _, _, _, _, _, c):: l' ->
-      if (Sil.exp_equal e e') then c else get_color_exp l' e
+      if (Exp.equal e e') then c else get_color_exp l' e
 *)

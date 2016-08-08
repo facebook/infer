@@ -259,7 +259,7 @@ let create_pvar_env (sigma: sigma) : (Exp.t -> Exp.t) =
   IList.iter filter sigma;
   let find e =
     try
-      snd (IList.find (fun (e1, _) -> Sil.exp_equal e1 e) !env)
+      snd (IList.find (fun (e1, _) -> Exp.equal e1 e) !env)
     with Not_found -> e in
   find
 
@@ -663,7 +663,7 @@ let sym_eval abs e =
         let oplus = if isMinusA then Binop.PlusA else Binop.PlusPI in
         let (+++) x y = Exp.BinOp (oplus, x, y) in
         let (---) x y = Exp.BinOp (ominus, x, y) in
-        if Sil.exp_equal e1' e2' then Sil.exp_zero
+        if Exp.equal e1' e2' then Sil.exp_zero
         else begin
           match e1', e2' with
           | Exp.Const c, _ when iszero_int_float c ->
@@ -946,11 +946,11 @@ let inequality_normalize a =
     | _ -> [e],[], IntLit.zero in
   (* sort and filter out expressions appearing in both the positive and negative part *)
   let normalize_posnegoff (pos, neg, off) =
-    let pos' = IList.sort Sil.exp_compare pos in
-    let neg' = IList.sort Sil.exp_compare neg in
+    let pos' = IList.sort Exp.compare pos in
+    let neg' = IList.sort Exp.compare neg in
     let rec combine pacc nacc = function
       | x:: ps, y:: ng ->
-          (match Sil.exp_compare x y with
+          (match Exp.compare x y with
            | n when n < 0 -> combine (x:: pacc) nacc (ps, y :: ng)
            | 0 -> combine pacc nacc (ps, ng)
            | _ -> combine pacc (y:: nacc) (x :: ps, ng))
@@ -983,7 +983,7 @@ let inequality_normalize a =
       mk_inequality (norm_from_exp e)
   | _ -> a
 
-let exp_reorder e1 e2 = if Sil.exp_compare e1 e2 <= 0 then (e1, e2) else (e2, e1)
+let exp_reorder e1 e2 = if Exp.compare e1 e2 <= 0 then (e1, e2) else (e2, e1)
 
 (** Normalize an atom.
     We keep the convention that inequalities with constants
@@ -1007,8 +1007,8 @@ let atom_normalize sub a0 =
         then normalize_eq (e1', e2')
         else eq
     | Exp.Lindex (e1', idx1), Exp.Lindex (e2', idx2) ->
-        if Sil.exp_equal idx1 idx2 then normalize_eq (e1', e2')
-        else if Sil.exp_equal e1' e2' then normalize_eq (idx1, idx2)
+        if Exp.equal idx1 idx2 then normalize_eq (e1', e2')
+        else if Exp.equal e1' e2' then normalize_eq (idx1, idx2)
         else eq
     | _ -> eq in
   let handle_unary_negation e1 e2 =
@@ -1071,7 +1071,7 @@ let rec strexp_normalize sub se =
         let len' = exp_normalize_noabs sub len in
         match idx_cnts with
         | [] ->
-            if Sil.exp_equal len len' then se else Sil.Earray (len', idx_cnts, inst)
+            if Exp.equal len len' then se else Sil.Earray (len', idx_cnts, inst)
         | _ ->
             let idx_cnts' =
               IList.map (fun (idx, cnt) ->
@@ -1220,7 +1220,7 @@ let pi_tighten_ineq pi =
       | _ -> acc in
     IList.fold_left get_disequality_info [] nonineq_list in
   let is_neq e n =
-    IList.exists (fun (e', n') -> Sil.exp_equal e e' && IntLit.eq n n') diseq_list in
+    IList.exists (fun (e', n') -> Exp.equal e e' && IntLit.eq n n') diseq_list in
   let le_list_tightened =
     let get_le_inequality_info acc a =
       match atom_exp_le_const a with
@@ -1262,10 +1262,10 @@ let pi_tighten_ineq pi =
         | Sil.Aneq(Exp.Const (Const.Cint n), e)
         | Sil.Aneq(e, Exp.Const (Const.Cint n)) ->
             (not (IList.exists
-                    (fun (e', n') -> Sil.exp_equal e e' && IntLit.lt n' n)
+                    (fun (e', n') -> Exp.equal e e' && IntLit.lt n' n)
                     le_list_tightened)) &&
             (not (IList.exists
-                    (fun (n', e') -> Sil.exp_equal e e' && IntLit.leq n n')
+                    (fun (n', e') -> Exp.equal e e' && IntLit.leq n n')
                     lt_list_tightened))
         | _ -> true)
       nonineq_list in
@@ -1277,13 +1277,13 @@ let rec pi_sorted_remove_redundant = function
               Exp.Const (Const.Cint i1)) as a1) ::
     Sil.Aeq (Exp.BinOp (Binop.Le, e2, Exp.Const (Const.Cint n2)),
              Exp.Const (Const.Cint i2)) :: rest
-    when IntLit.isone i1 && IntLit.isone i2 && Sil.exp_equal e1 e2 && IntLit.lt n1 n2 ->
+    when IntLit.isone i1 && IntLit.isone i2 && Exp.equal e1 e2 && IntLit.lt n1 n2 ->
       (* second inequality redundant *)
       pi_sorted_remove_redundant (a1 :: rest)
   | Sil.Aeq (Exp.BinOp (Binop.Lt, Exp.Const (Const.Cint n1), e1), Exp.Const (Const.Cint i1)) ::
     (Sil.Aeq (Exp.BinOp (Binop.Lt, Exp.Const (Const.Cint n2), e2), Exp.Const (Const.Cint i2)) as a2)
     :: rest
-    when IntLit.isone i1 && IntLit.isone i2 && Sil.exp_equal e1 e2 && IntLit.lt n1 n2 ->
+    when IntLit.isone i1 && IntLit.isone i2 && Exp.equal e1 e2 && IntLit.lt n1 n2 ->
       (* first inequality redundant *)
       pi_sorted_remove_redundant (a2 :: rest)
   | a1:: a2:: rest ->
@@ -1310,15 +1310,15 @@ let pi_normalize sub sigma pi0 =
   let ineq_list, nonineq_list = pi_tighten_ineq pi in
   let syntactically_different = function
     | Exp.BinOp(op1, e1, Exp.Const(c1)), Exp.BinOp(op2, e2, Exp.Const(c2))
-      when Sil.exp_equal e1 e2 ->
+      when Exp.equal e1 e2 ->
         Binop.equal op1 op2 && Binop.injective op1 && not (Const.equal c1 c2)
     | e1, Exp.BinOp(op2, e2, Exp.Const(c2))
-      when Sil.exp_equal e1 e2 ->
+      when Exp.equal e1 e2 ->
         Binop.injective op2 &&
         Binop.is_zero_runit op2 &&
         not (Const.equal (Const.Cint IntLit.zero) c2)
     | Exp.BinOp(op1, e1, Exp.Const(c1)), e2
-      when Sil.exp_equal e1 e2 ->
+      when Exp.equal e1 e2 ->
         Binop.injective op1 &&
         Binop.is_zero_runit op1 &&
         not (Const.equal (Const.Cint IntLit.zero) c1)
@@ -1327,7 +1327,7 @@ let pi_normalize sub sigma pi0 =
     let unsigned_exps = lazy (sigma_get_unsigned_exps sigma) in
     function
     | Sil.Aneq ((Exp.Var _) as e, Exp.Const (Const.Cint n)) when IntLit.isnegative n ->
-        not (IList.exists (Sil.exp_equal e) (Lazy.force unsigned_exps))
+        not (IList.exists (Exp.equal e) (Lazy.force unsigned_exps))
     | Sil.Aneq(e1, e2) ->
         not (syntactically_different (e1, e2))
     | Sil.Aeq(Exp.Const c1, Exp.Const c2) ->
@@ -1574,7 +1574,7 @@ let compute_reachable_hpreds sigma exps =
     [reachable_hpreds]. *)
 let get_fld_typ_path_opt src_exps snk_exp_ reachable_hpreds_ =
   let strexp_matches target_exp = function
-    | (_, Sil.Eexp (e, _)) -> Sil.exp_equal target_exp e
+    | (_, Sil.Eexp (e, _)) -> Exp.equal target_exp e
     | _ -> false in
   let extend_path hpred (snk_exp, path, reachable_hpreds) = match hpred with
     | Sil.Hpointsto (lhs, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
@@ -1642,13 +1642,13 @@ let sigma_remove_emptylseg sigma =
     | Sil.Hpointsto _ as hpred :: sigma' ->
         f eqs_zero (hpred :: sigma_passed) sigma'
     | Sil.Hlseg (Sil.Lseg_PE, _, e1, e2, _) :: sigma'
-      when (Sil.exp_equal e1 Sil.exp_zero) || (Sil.ExpSet.mem e1 alloc_set) ->
+      when (Exp.equal e1 Sil.exp_zero) || (Sil.ExpSet.mem e1 alloc_set) ->
         f (Sil.Aeq(e1, e2) :: eqs_zero) sigma_passed sigma'
     | Sil.Hlseg _ as hpred :: sigma' ->
         f eqs_zero (hpred :: sigma_passed) sigma'
     | Sil.Hdllseg (Sil.Lseg_PE, _, iF, oB, oF, iB, _) :: sigma'
-      when (Sil.exp_equal iF Sil.exp_zero) || (Sil.ExpSet.mem iF alloc_set)
-           || (Sil.exp_equal iB Sil.exp_zero) || (Sil.ExpSet.mem iB alloc_set) ->
+      when (Exp.equal iF Sil.exp_zero) || (Sil.ExpSet.mem iF alloc_set)
+           || (Exp.equal iB Sil.exp_zero) || (Sil.ExpSet.mem iB alloc_set) ->
         f (Sil.Aeq(iF, oF):: Sil.Aeq(iB, oB):: eqs_zero) sigma_passed sigma'
     | Sil.Hdllseg _ as hpred :: sigma' ->
         f eqs_zero (hpred :: sigma_passed) sigma'
@@ -1662,16 +1662,16 @@ let sigma_intro_nonemptylseg e1 e2 sigma =
     | Sil.Hpointsto _ as hpred :: sigma' ->
         f (hpred :: sigma_passed) sigma'
     | Sil.Hlseg (Sil.Lseg_PE, para, f1, f2, shared) :: sigma'
-      when (Sil.exp_equal e1 f1 && Sil.exp_equal e2 f2)
-        || (Sil.exp_equal e2 f1 && Sil.exp_equal e1 f2) ->
+      when (Exp.equal e1 f1 && Exp.equal e2 f2)
+        || (Exp.equal e2 f1 && Exp.equal e1 f2) ->
         f (Sil.Hlseg (Sil.Lseg_NE, para, f1, f2, shared) :: sigma_passed) sigma'
     | Sil.Hlseg _ as hpred :: sigma' ->
         f (hpred :: sigma_passed) sigma'
     | Sil.Hdllseg (Sil.Lseg_PE, para, iF, oB, oF, iB, shared) :: sigma'
-      when (Sil.exp_equal e1 iF && Sil.exp_equal e2 oF)
-        || (Sil.exp_equal e2 iF && Sil.exp_equal e1 oF)
-        || (Sil.exp_equal e1 iB && Sil.exp_equal e2 oB)
-        || (Sil.exp_equal e2 iB && Sil.exp_equal e1 oB) ->
+      when (Exp.equal e1 iF && Exp.equal e2 oF)
+        || (Exp.equal e2 iF && Exp.equal e1 oF)
+        || (Exp.equal e1 iB && Exp.equal e2 oB)
+        || (Exp.equal e2 iB && Exp.equal e1 oB) ->
         f (Sil.Hdllseg (Sil.Lseg_NE, para, iF, oB, oF, iB, shared) :: sigma_passed) sigma'
     | Sil.Hdllseg _ as hpred :: sigma' ->
         f (hpred :: sigma_passed) sigma'
@@ -1716,7 +1716,7 @@ let rec prop_atom_and ?(footprint=false) (p : normal t) a : normal t =
           let (eqs_zero, nsigma'') = sigma_remove_emptylseg nsigma' in
           let p' = { p with sub = nsub'; pi = npi'; sigma = nsigma''} in
           IList.fold_left (prop_atom_and ~footprint) p' eqs_zero
-      | Sil.Aeq (e1, e2) when (Sil.exp_compare e1 e2 = 0) ->
+      | Sil.Aeq (e1, e2) when (Exp.compare e1 e2 = 0) ->
           p
       | Sil.Aneq (e1, e2) ->
           let sigma' = sigma_intro_nonemptylseg e1 e2 p.sigma in
@@ -1790,7 +1790,7 @@ let get_attributes prop exp =
   let nexp = exp_normalize_prop prop exp in
   let atom_get_attr attributes atom =
     match atom with
-    | Sil.Apred (_, es) | Anpred (_, es) when IList.mem Sil.exp_equal nexp es -> atom :: attributes
+    | Sil.Apred (_, es) | Anpred (_, es) when IList.mem Exp.equal nexp es -> atom :: attributes
     | _ -> attributes in
   IList.fold_left atom_get_attr [] prop.pi
 
@@ -1864,7 +1864,7 @@ let add_or_replace_attribute_check_changed check_attribute_change prop atom0 =
       let natom = Sil.atom_replace_exp (IList.combine exps0 nexps) atom0 in
       let atom_map = function
         | Sil.Apred (att, exp :: _) | Anpred (att, exp :: _)
-          when Sil.exp_equal nexp exp && attributes_in_same_category att att0 ->
+          when Exp.equal nexp exp && attributes_in_same_category att att0 ->
             check_attribute_change att att0;
             natom
         | atom ->
@@ -2089,7 +2089,7 @@ end = struct
 end
 
 let sigma_get_start_lexps_sort sigma =
-  let exp_compare_neg e1 e2 = - (Sil.exp_compare e1 e2) in
+  let exp_compare_neg e1 e2 = - (Exp.compare e1 e2) in
   let filter e = Sil.fav_for_all (Sil.exp_fav e) Ident.is_normal in
   let lexps = Sil.hpred_list_get_lexps filter sigma in
   IList.sort exp_compare_neg lexps
@@ -2114,14 +2114,14 @@ let sigma_dfs_sort sigma =
     | hpred :: cur ->
         begin
           match hpred with
-          | Sil.Hpointsto (e', se, _) when Sil.exp_equal e e' ->
+          | Sil.Hpointsto (e', se, _) when Exp.equal e e' ->
               handle_strexp se;
               (hpred:: visited, IList.rev_append cur seen)
-          | Sil.Hlseg (_, _, root, next, shared) when Sil.exp_equal e root ->
+          | Sil.Hlseg (_, _, root, next, shared) when Exp.equal e root ->
               IList.iter ExpStack.push (next:: shared);
               (hpred:: visited, IList.rev_append cur seen)
           | Sil.Hdllseg (_, _, iF, oB, oF, iB, shared)
-            when Sil.exp_equal e iF || Sil.exp_equal e iB ->
+            when Exp.equal e iF || Exp.equal e iB ->
               IList.iter ExpStack.push (oB:: oF:: shared);
               (hpred:: visited, IList.rev_append cur seen)
           | _ ->
@@ -2231,7 +2231,7 @@ let prop_rename_array_indices prop =
       match e1, e2 with
       | Exp.BinOp(Binop.PlusA, e1', Exp.Const (Const.Cint n1')),
         Exp.BinOp(Binop.PlusA, e2', Exp.Const (Const.Cint n2')) ->
-          not (Sil.exp_equal e1' e2' && IntLit.lt n1' n2')
+          not (Exp.equal e1' e2' && IntLit.lt n1' n2')
       | _ -> true in
     let rec select_minimal_indices indices_seen = function
       | [] -> IList.rev indices_seen
@@ -2819,7 +2819,7 @@ let find_equal_formal_path e prop =
           | None ->
               match hpred with
               | Sil.Hpointsto (Exp.Lvar pvar1, Sil.Eexp (exp2, Sil.Iformal(_, _) ), _)
-                when Sil.exp_equal exp2 e &&
+                when Exp.equal exp2 e &&
                      (Pvar.is_local pvar1 || Pvar.is_seed pvar1) ->
                   Some (Exp.Lvar pvar1)
               | Sil.Hpointsto (exp1, Sil.Estruct (fields, _), _) ->
@@ -2828,7 +2828,7 @@ let find_equal_formal_path e prop =
                       | Some _ -> res
                       | None ->
                           match strexp with
-                          | Sil.Eexp (exp2, _) when Sil.exp_equal exp2 e ->
+                          | Sil.Eexp (exp2, _) when Exp.equal exp2 e ->
                               (match find_in_sigma exp1 seen_hpreds with
                                | Some vfs -> Some (Exp.Lfield (vfs, field, Typ.Tvoid))
                                | None -> None)
@@ -3027,7 +3027,7 @@ let rec pp_ren pe f = function
   | (i, x):: ren -> F.fprintf f "%a->%a, %a" (Ident.pp pe) i (Ident.pp pe) x (pp_ren pe) ren
 
 let id_exp_compare (id1, e1) (id2, e2) =
-  let n = Sil.exp_compare e1 e2 in
+  let n = Exp.compare e1 e2 in
   if n <> 0 then n
   else Ident.compare id1 id2
 

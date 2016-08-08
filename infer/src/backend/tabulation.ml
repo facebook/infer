@@ -298,7 +298,7 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
       L.d_strln (" desc: " ^ (pp_to_string Localise.pp_error_desc error_desc));
       error_desc in
     let deref_no_null_check_pos =
-      if Sil.exp_equal e_sub Sil.exp_zero then
+      if Exp.equal e_sub Sil.exp_zero then
         match find_dereference_without_null_check_in_sexp sexp with
         | Some (_, pos) -> Some pos
         | None -> None
@@ -315,7 +315,7 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
       (* In that case it raise a dangling pointer dereferece *)
     if Prop.has_dangling_uninit_attribute spec_pre e then
       Some (Deref_undef_exp, desc false (Localise.deref_str_dangling (Some Sil.DAuninit)) )
-    else if Sil.exp_equal e_sub Sil.exp_minus_one
+    else if Exp.equal e_sub Sil.exp_minus_one
     then Some (Deref_minusone, desc true (Localise.deref_str_dangling None))
     else match Prop.get_resource_attribute actual_pre e_sub with
       | Some (Apred (Aresource ({ ra_kind = Rrelease } as ra), _)) ->
@@ -401,7 +401,7 @@ let post_process_post
   post', post_path
 
 let hpred_lhs_compare hpred1 hpred2 = match hpred1, hpred2 with
-  | Sil.Hpointsto(e1, _, _), Sil.Hpointsto(e2, _, _) -> Sil.exp_compare e1 e2
+  | Sil.Hpointsto(e1, _, _), Sil.Hpointsto(e2, _, _) -> Exp.compare e1 e2
   | Sil.Hpointsto _, _ -> - 1
   | _, Sil.Hpointsto _ -> 1
   | hpred1, hpred2 -> Sil.hpred_compare hpred1 hpred2
@@ -433,7 +433,7 @@ and esel_star_fld esel1 esel2 = match esel1, esel2 with
       IList.map (fun (e, se) -> (e, sexp_set_inst Sil.Inone se)) esel2
   | esel1,[] -> esel1
   | (e1, se1):: esel1', (e2, se2):: esel2' ->
-      (match Sil.exp_compare e1 e2 with
+      (match Exp.compare e1 e2 with
        | 0 -> (e1, array_content_star se1 se2) :: esel_star_fld esel1' esel2'
        | n when n < 0 -> (e1, se1) :: esel_star_fld esel1' esel2
        | _ ->
@@ -510,7 +510,7 @@ let sigma_star_fld (sigma1 : Sil.hpred list) (sigma2 : Sil.hpred list) : Sil.hpr
     raise (Prop.Cannot_star __POS__)
 
 let hpred_typing_lhs_compare hpred1 (e2, _) = match hpred1 with
-  | Sil.Hpointsto(e1, _, _) -> Sil.exp_compare e1 e2
+  | Sil.Hpointsto(e1, _, _) -> Exp.compare e1 e2
   | _ -> - 1
 
 let hpred_star_typing (hpred1 : Sil.hpred) (_, te2) : Sil.hpred =
@@ -521,7 +521,7 @@ let hpred_star_typing (hpred1 : Sil.hpred) (_, te2) : Sil.hpred =
 (** Implementation of [*] between predicates and typings *)
 let sigma_star_typ
     (sigma1 : Sil.hpred list) (typings2 : (Exp.t * Exp.t) list) : Sil.hpred list =
-  let typing_lhs_compare (e1, _) (e2, _) = Sil.exp_compare e1 e2 in
+  let typing_lhs_compare (e1, _) (e2, _) = Exp.compare e1 e2 in
   let sigma1 = IList.stable_sort hpred_lhs_compare sigma1 in
   let typings2 = IList.stable_sort typing_lhs_compare typings2 in
   let rec star sg1 typ2 : Sil.hpred list =
@@ -618,7 +618,7 @@ let exp_is_exn = function
 let prop_is_exn pname prop =
   let ret_pvar = Exp.Lvar (Pvar.get_ret_pvar pname) in
   let is_exn = function
-    | Sil.Hpointsto (e1, Sil.Eexp(e2, _), _) when Sil.exp_equal e1 ret_pvar ->
+    | Sil.Hpointsto (e1, Sil.Eexp(e2, _), _) when Exp.equal e1 ret_pvar ->
         exp_is_exn e2
     | _ -> false in
   IList.exists is_exn (Prop.get_sigma prop)
@@ -629,13 +629,13 @@ let prop_get_exn_name pname prop =
   let rec search_exn e = function
     | [] -> None
     | Sil.Hpointsto (e1, _, Exp.Sizeof (Typ.Tstruct  { Typ.struct_name = Some name }, _, _)) :: _
-      when Sil.exp_equal e1 e ->
+      when Exp.equal e1 e ->
         Some (Typename.TN_csu (Csu.Class Csu.Java, name))
     | _ :: tl -> search_exn e tl in
   let rec find_exn_name hpreds = function
     | [] -> None
     | Sil.Hpointsto (e1, Sil.Eexp (Exp.Exn e2, _), _) :: _
-      when Sil.exp_equal e1 ret_pvar ->
+      when Exp.equal e1 ret_pvar ->
         search_exn e2 hpreds
     | _ :: tl -> find_exn_name hpreds tl in
   let hpreds = Prop.get_sigma prop in
@@ -655,7 +655,7 @@ let lookup_custom_errors prop =
 let prop_set_exn pname prop se_exn =
   let ret_pvar = Exp.Lvar (Pvar.get_ret_pvar pname) in
   let map_hpred = function
-    | Sil.Hpointsto (e, _, t) when Sil.exp_equal e ret_pvar ->
+    | Sil.Hpointsto (e, _, t) when Exp.equal e ret_pvar ->
         Sil.Hpointsto(e, se_exn, t)
     | hpred -> hpred in
   let sigma' = IList.map map_hpred (Prop.get_sigma prop) in
@@ -744,7 +744,7 @@ let combine
       | None -> post_p2
       | Some iter ->
           let filter = function
-            | Sil.Hpointsto (e, _, _) when Sil.exp_equal e callee_ret_pvar -> Some ()
+            | Sil.Hpointsto (e, _, _) when Exp.equal e callee_ret_pvar -> Some ()
             | _ -> None in
           match Prop.prop_iter_find iter filter with
           | None -> post_p2
@@ -1321,7 +1321,7 @@ let check_splitting_precondition sub1 sub2 =
 let sigma_has_null_pointer sigma =
   let hpred_null_pointer = function
     | Sil.Hpointsto (e, _, _) ->
-        Sil.exp_equal e Sil.exp_zero
+        Exp.equal e Sil.exp_zero
     | _ -> false in
   IList.exists hpred_null_pointer sigma
 *)

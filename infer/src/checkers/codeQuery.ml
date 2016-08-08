@@ -76,7 +76,7 @@ module Match = struct
     | Vfun pn -> F.fprintf fmt "%s" (Procname.to_string pn)
 
   let value_equal v1 v2 = match v1, v2 with
-    | Vval e1, Vval e2 -> Sil.exp_equal e1 e2
+    | Vval e1, Vval e2 -> Exp.equal e1 e2
     | Vval _, _ -> false
     | _, Vval _ -> false
     | Vfun pn1, Vfun pn2 -> Procname.equal pn1 pn2
@@ -98,7 +98,7 @@ module Match = struct
     Hashtbl.iter pp_item env
 
   let exp_match env ae value = match ae, value with
-    | CodeQueryAst.Null, Vval e -> Sil.exp_equal e Sil.exp_zero
+    | CodeQueryAst.Null, Vval e -> Exp.equal e Sil.exp_zero
     | CodeQueryAst.Null, _ -> false
     | CodeQueryAst.ConstString s, (Vfun pn) -> string_contains s (Procname.to_string pn)
     | CodeQueryAst.ConstString _, _ -> false

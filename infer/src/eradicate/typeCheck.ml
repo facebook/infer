@@ -1037,7 +1037,7 @@ let typecheck_instr
             let found = ref None in
             let do_instr i = match i with
               | Sil.Set (e, _, e', _)
-                when Sil.exp_equal (Exp.Lvar pvar) (Idenv.expand_expr idenv e') ->
+                when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv e') ->
                   found := Some e
               | _ -> () in
             IList.iter do_instr (Cfg.Node.get_instrs prev_node);
@@ -1055,7 +1055,7 @@ let typecheck_instr
             node'', Exp.BinOp (bop, c1', c2')
         | Exp.Var _ ->
             let c' = Idenv.expand_expr idenv _cond in
-            if not (Sil.exp_equal c' _cond) then normalize_cond _node c'
+            if not (Exp.equal c' _cond) then normalize_cond _node c'
             else _node, c'
         | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar ->
             (match handle_assignment_in_condition pvar with
