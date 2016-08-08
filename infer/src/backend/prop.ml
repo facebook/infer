@@ -2821,7 +2821,7 @@ let find_equal_formal_path e prop =
               | Sil.Hpointsto (Sil.Lvar pvar1, Sil.Eexp (exp2, Sil.Iformal(_, _) ), _)
                 when Sil.exp_equal exp2 e &&
                      (Pvar.is_local pvar1 || Pvar.is_seed pvar1) ->
-                  Some (pvar1, [])
+                  Some (Sil.Lvar pvar1)
               | Sil.Hpointsto (exp1, Sil.Estruct (fields, _), _) ->
                   IList.fold_right (fun (field, strexp) res ->
                       match res with
@@ -2830,15 +2830,15 @@ let find_equal_formal_path e prop =
                           match strexp with
                           | Sil.Eexp (exp2, _) when Sil.exp_equal exp2 e ->
                               (match find_in_sigma exp1 seen_hpreds with
-                               | Some (v, rev_fs) -> Some (v, field :: rev_fs)
+                               | Some vfs -> Some (Sil.Lfield (vfs, field, Typ.Tvoid))
                                | None -> None)
                           | _ -> None) fields None
               | _ -> None) (get_sigma prop) None in
   match find_in_sigma e [] with
-  | Some (v, rev_fs) -> Some (v, IList.rev rev_fs)
+  | Some vfs -> Some vfs
   | None ->
       match get_objc_null_attribute prop e with
-      | Some (Apred (Aobjc_null (v,fs), _)) -> Some (v,fs)
+      | Some (Apred (Aobjc_null, [_; vfs])) -> Some vfs
       | _ -> None
 
 (** translate an if-then-else expression *)

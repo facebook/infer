@@ -848,9 +848,8 @@ let create_dereference_desc
       | Some (DExp.Dpvar pvar)
       | Some (DExp.Dpvaraddr pvar) ->
           (match Prop.get_objc_null_attribute prop (Sil.Lvar pvar) with
-           | Some (Apred (Aobjc_null (v,fs), _)) ->
-               let e = IList.fold_left (fun e f -> Sil.Lfield (e, f, Typ.Tvoid)) (Sil.Lvar v) fs in
-               Localise.parameter_field_not_null_checked_desc desc e
+           | Some (Apred (Aobjc_null, [_; vfs])) ->
+               Localise.parameter_field_not_null_checked_desc desc vfs
            | _ ->
                desc)
       | Some (DExp.Dretcall (Dconst (Cfun pname), this_dexp :: _, loc, _ ))

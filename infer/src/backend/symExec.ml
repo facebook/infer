@@ -737,8 +737,8 @@ let handle_objc_instance_method_call_or_skip actual_pars path callee_pname pre r
     match ret_ids with
     | [ret_id] -> (
         match Prop.find_equal_formal_path receiver prop with
-        | Some (v,fs) ->
-            Prop.add_or_replace_attribute prop (Apred (Aobjc_null (v,fs), [Sil.Var ret_id]))
+        | Some vfs ->
+            Prop.add_or_replace_attribute prop (Apred (Aobjc_null, [Sil.Var ret_id; vfs]))
         | None ->
             Prop.conjoin_eq (Sil.Var ret_id) Sil.exp_zero prop
       )

@@ -106,7 +106,7 @@ type attribute =
   /** value appeared in second argument of division at given path position */
   | Adiv0 of path_pos
   /** attributed exp is null due to a call to a method with given path as null receiver */
-  | Aobjc_null of Pvar.t (list Ident.fieldname)
+  | Aobjc_null
   /** value was returned from a call to the given procedure, plus the annots of the return value */
   | Aretval of Procname.t Typ.item_annotation
   /** denotes an object registered as an observers to a notification center */
@@ -481,7 +481,7 @@ let attribute_to_category att =>
   | Aunlocked => AClock
   | Aautorelease => ACautorelease
   | Adiv0 _ => ACdiv0
-  | Aobjc_null _ => ACobjc_null
+  | Aobjc_null => ACobjc_null
   | Aretval _ => ACretval
   | Aundef _ => ACundef
   | Aobserver
@@ -528,15 +528,9 @@ let attribute_compare (att1: attribute) (att2: attribute) :int =>
   | (Adiv0 pp1, Adiv0 pp2) => path_pos_compare pp1 pp2
   | (Adiv0 _, _) => (-1)
   | (_, Adiv0 _) => 1
-  | (Aobjc_null v1 fs1, Aobjc_null v2 fs2) =>
-    let n = Pvar.compare v1 v2;
-    if (n != 0) {
-      n
-    } else {
-      IList.compare Ident.fieldname_compare fs1 fs2
-    }
-  | (Aobjc_null _, _) => (-1)
-  | (_, Aobjc_null _) => 1
+  | (Aobjc_null, Aobjc_null) => 0
+  | (Aobjc_null, _) => (-1)
+  | (_, Aobjc_null) => 1
   | (Aretval pn1 annots1, Aretval pn2 annots2) =>
     let n = Procname.compare pn1 pn2;
     if (n != 0) {
@@ -1056,9 +1050,7 @@ let attribute_to_string pe =>
   | Alocked => "LOCKED"
   | Aunlocked => "UNLOCKED"
   | Adiv0 (_, _) => "DIV0"
-  | Aobjc_null v fs =>
-    "OBJC_NULL[" ^
-      String.concat "." [Pvar.to_string v, ...IList.map Ident.fieldname_to_string fs] ^ "]"
+  | Aobjc_null => "OBJC_NULL"
   | Aretval pn _ => "RET" ^ Binop.str pe Lt ^ Procname.to_string pn ^ Binop.str pe Gt
   | Aobserver => "OBSERVER"
   | Aunsubscribed_observer => "UNSUBSCRIBED_OBSERVER";
