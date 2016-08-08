@@ -1464,35 +1464,21 @@ let prop_is_emp p = match p.sigma with
 
 (** {2 Functions for changing and generating propositions} *)
 
+(** Construct an atom. *)
+let mk_atom atom =
+  Config.run_with_abs_val_equal_zero (fun () -> atom_normalize Sil.sub_empty atom) ()
+
 (** Sil.Construct a disequality. *)
-let mk_neq e1 e2 =
-  Config.run_with_abs_val_equal_zero
-    (fun () ->
-       let ne1 = exp_normalize Sil.sub_empty e1 in
-       let ne2 = exp_normalize Sil.sub_empty e2 in
-       atom_normalize Sil.sub_empty (Sil.Aneq (ne1, ne2))) ()
+let mk_neq e1 e2 = mk_atom (Aneq (e1, e2))
 
 (** Sil.Construct an equality. *)
-let mk_eq e1 e2 =
-  Config.run_with_abs_val_equal_zero
-    (fun () ->
-       let ne1 = exp_normalize Sil.sub_empty e1 in
-       let ne2 = exp_normalize Sil.sub_empty e2 in
-       atom_normalize Sil.sub_empty (Sil.Aeq (ne1, ne2))) ()
+let mk_eq e1 e2 = mk_atom (Aeq (e1, e2))
 
 (** Construct a pred. *)
-let mk_pred a e =
-  Config.run_with_abs_val_equal_zero
-    (fun () ->
-       let ne = exp_normalize Sil.sub_empty e in
-       atom_normalize Sil.sub_empty (Apred (a, ne))) ()
+let mk_pred a e = mk_atom (Apred (a, e))
 
 (** Construct a negated pred. *)
-let mk_npred a e =
-  Config.run_with_abs_val_equal_zero
-    (fun () ->
-       let ne = exp_normalize Sil.sub_empty e in
-       atom_normalize Sil.sub_empty (Anpred (a, ne))) ()
+let mk_npred a e = mk_atom (Anpred (a, e))
 
 (** Construct a points-to predicate for a single program variable.
     If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
