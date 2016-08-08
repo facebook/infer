@@ -162,7 +162,7 @@ val deref_str_dangling : Sil.dangling_kind option -> deref_str
 val deref_str_array_bound : IntLit.t option -> IntLit.t option -> deref_str
 
 (** dereference strings for an uninitialized access whose lhs has the given attribute *)
-val deref_str_uninitialized : (bool * Sil.attribute) option -> deref_str
+val deref_str_uninitialized : Sil.atom option -> deref_str
 
 (** dereference strings for nonterminal nil arguments in c/objc variadic methods *)
 val deref_str_nil_argument_in_variadic_method : Procname.t -> int -> int -> deref_str

@@ -476,11 +476,11 @@ let check_already_dereferenced pname cond prop =
     raising an exception in that case *)
 let check_deallocate_static_memory prop_after =
   let check_deallocated_attribute = function
-    | true, Sil.Aresource ({ ra_kind = Rrelease } as ra), Sil.Lvar pv
+    | Sil.Apred (Aresource ({ ra_kind = Rrelease } as ra), Lvar pv)
       when Pvar.is_local pv || Pvar.is_global pv ->
         let freed_desc = Errdesc.explain_deallocate_stack_var pv ra in
         raise (Exceptions.Deallocate_stack_variable freed_desc)
-    | true, Sil.Aresource ({ ra_kind = Rrelease } as ra), Sil.Const (Cstr s) ->
+    | Sil.Apred (Aresource ({ ra_kind = Rrelease } as ra), Const (Cstr s)) ->
         let freed_desc = Errdesc.explain_deallocate_constant_string s ra in
         raise (Exceptions.Deallocate_static_memory freed_desc)
     | _ -> () in
@@ -738,7 +738,7 @@ let handle_objc_instance_method_call_or_skip actual_pars path callee_pname pre r
     | [ret_id] -> (
         match Prop.find_equal_formal_path receiver prop with
         | Some (v,fs) ->
-            Prop.add_or_replace_exp_attribute prop true (Aobjc_null (v,fs)) (Var ret_id)
+            Prop.add_or_replace_exp_attribute prop (Apred (Aobjc_null (v,fs), Var ret_id))
         | None ->
             Prop.conjoin_eq (Sil.Var ret_id) Sil.exp_zero prop
       )
@@ -843,7 +843,7 @@ let add_constraints_on_retval pdesc prop ret_exp ~has_nullable_annot typ callee_
         | Typ.Tptr _ -> Prop.conjoin_neq exp Sil.exp_zero prop
         | _ -> prop in
     let add_tainted_post ret_exp callee_pname prop =
-      Prop.add_or_replace_exp_attribute prop true (Ataint callee_pname) ret_exp in
+      Prop.add_or_replace_exp_attribute prop (Apred (Ataint callee_pname, ret_exp)) in
 
     if Config.angelic_execution && not (is_rec_call callee_pname) then
       (* introduce a fresh program variable to allow abduction on the return value *)
@@ -872,7 +872,7 @@ let add_taint prop lhs_id rhs_exp pname tenv  =
     if Taint.has_taint_annotation fieldname struct_typ
     then
       let taint_info = { Sil.taint_source = pname; taint_kind = Tk_unknown; } in
-      Prop.add_or_replace_exp_attribute prop true (Ataint taint_info) (Var lhs_id)
+      Prop.add_or_replace_exp_attribute prop (Apred (Ataint taint_info, Var lhs_id))
     else
       prop in
   match rhs_exp with
@@ -903,7 +903,7 @@ let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ
           let prop' = Prop.prop_iter_to_prop iter' in
           let prop'' =
             if lookup_uninitialized then
-              Prop.add_or_replace_exp_attribute prop' true (Adangling DAuninit) (Var id)
+              Prop.add_or_replace_exp_attribute prop' (Apred (Adangling DAuninit, Var id))
             else prop' in
           let prop''' =
             if Config.taint_analysis
@@ -932,15 +932,16 @@ let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ
         [Prop.conjoin_eq (Sil.Var id) value prop]
     | None ->
         let exp_get_undef_attr exp =
-          let fold_undef_pname callee_opt (pol, attr) =
-            if Option.is_none callee_opt && pol && Sil.attr_is_undef attr then Some attr
-            else callee_opt in
+          let fold_undef_pname callee_opt atom =
+            match callee_opt, atom with
+            | None, Sil.Apred (Aundef _, _) -> Some atom
+            | _ -> callee_opt in
           IList.fold_left fold_undef_pname None (Prop.get_exp_attributes prop exp) in
         let prop' =
           if Config.angelic_execution then
             (* when we try to deref an undefined value, add it to the footprint *)
             match exp_get_undef_attr n_rhs_exp' with
-            | Some (Sil.Aundef (callee_pname, ret_annots, callee_loc, _)) ->
+            | Some (Apred (Aundef (callee_pname, ret_annots, callee_loc, _), _)) ->
                 let has_nullable_annot = Annotations.ia_is_nullable ret_annots in
                 add_constraints_on_retval
                   pdesc prop n_rhs_exp' ~has_nullable_annot typ callee_pname callee_loc
@@ -1362,7 +1363,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
 
 and check_untainted exp taint_kind caller_pname callee_pname prop =
   match Prop.get_taint_attribute prop exp with
-  | Some (true, Ataint taint_info) ->
+  | Some (Apred (Ataint taint_info, _)) ->
       let err_desc =
         Errdesc.explain_tainted_value_reaching_sensitive_function
           prop
@@ -1374,7 +1375,7 @@ and check_untainted exp taint_kind caller_pname callee_pname prop =
         Exceptions.Tainted_value_reaching_sensitive_function
           (err_desc, __POS__) in
       Reporting.log_warning caller_pname exn;
-      Prop.add_or_replace_exp_attribute prop true (Auntaint taint_info) exp
+      Prop.add_or_replace_exp_attribute prop (Apred (Auntaint taint_info, exp))
   | _ ->
       if !Config.footprint then
         let taint_info = { Sil.taint_source = callee_pname; taint_kind; } in
@@ -1388,10 +1389,9 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
       args; proc_name= callee_pname; loc; instr; } =
   let remove_file_attribute prop =
     let do_exp p (e, _) =
-      let do_attribute q = function
-        | (pol, (Sil.Aresource res_action as res))
-          when res_action.Sil.ra_res = Sil.Rfile ->
-            Prop.remove_attribute q pol res
+      let do_attribute q atom =
+        match atom with
+        | Sil.Apred ((Aresource {ra_res = Rfile} as res), _) -> Prop.remove_attribute q res
         | _ -> q in
       IList.fold_left do_attribute p (Prop.get_exp_attributes p e) in
     let filtered_args =

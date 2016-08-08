@@ -1790,9 +1790,9 @@ let prop_reset_inst inst_map prop =
 (** {2 Attributes} *)
 
 (** Return the exp and attribute marked in the atom if any, and return None otherwise *)
-let atom_get_exp_attribute = function
-  | Sil.Apred (a, e) -> Some (true, a, e)
-  | Sil.Anpred (a, e) -> Some (false, a, e)
+let atom_get_exp_attribute atom =
+  match atom with
+  | Sil.Apred _ | Anpred _ -> Some atom
   | _ -> None
 
 (** Check whether an atom is used to mark an attribute *)
@@ -1804,8 +1804,7 @@ let get_exp_attributes prop exp =
   let nexp = exp_normalize_prop prop exp in
   let atom_get_attr attributes atom =
     match atom with
-    | Sil.Apred (att, e) when Sil.exp_equal e nexp -> (true, att) :: attributes
-    | Sil.Anpred (att, e) when Sil.exp_equal e nexp -> (false, att) :: attributes
+    | Sil.Apred (_, e) | Anpred (_, e) when Sil.exp_equal e nexp -> atom :: attributes
     | _ -> attributes in
   IList.fold_left atom_get_attr [] prop.pi
 
@@ -1816,11 +1815,13 @@ let attributes_in_same_category attr1 attr2 =
 
 let get_attribute prop exp category =
   let atts = get_exp_attributes prop exp in
-  try Some (IList.find
-              (fun (_, att) ->
-                 Sil.attribute_category_equal
-                   (Sil.attribute_to_category att) category)
-              atts)
+  try
+    Some
+      (IList.find (function
+           | Sil.Apred (att, _) | Anpred (att, _) ->
+               Sil.attribute_category_equal (Sil.attribute_to_category att) category
+           | _ -> false
+         ) atts)
   with Not_found -> None
 
 let get_undef_attribute prop exp =
@@ -1849,7 +1850,10 @@ let get_retval_attribute prop exp =
 
 let has_dangling_uninit_attribute prop exp =
   let la = get_exp_attributes prop exp in
-  IList.exists (fun (pol, a) -> pol && Sil.attribute_equal a (Adangling DAuninit)) la
+  IList.exists (function
+      | Sil.Apred (a, _) -> Sil.attribute_equal a (Adangling DAuninit)
+      | _ -> false
+    ) la
 
 (** Get all the attributes of the prop *)
 let get_all_attributes prop =
@@ -1866,77 +1870,76 @@ let set_exp_attribute ?(footprint = false) ?(polarity = true) prop attr exp =
     (if polarity then Sil.Apred (attr, exp) else Sil.Anpred (attr, exp))
 
 (** Replace an attribute associated to the expression *)
-let add_or_replace_exp_attribute_check_changed check_attribute_change prop pol0 att0 exp =
-  let nexp = exp_normalize_prop prop exp in
-  let atom_map a = match a with
-    | Sil.Apred (att, e) | Anpred (att, e) ->
-        if Sil.exp_equal nexp e && attributes_in_same_category att att0 then
-          begin
+let add_or_replace_exp_attribute_check_changed check_attribute_change prop atom0 =
+  match atom0 with
+  | Sil.Apred (att0, exp0) | Anpred (att0, exp0) ->
+      let nexp = exp_normalize_prop prop exp0 in
+      let atom = Sil.atom_replace_exp [(exp0, nexp)] atom0 in
+      let atom_map = function
+        | Sil.Apred (att, exp) | Anpred (att, exp)
+          when Sil.exp_equal nexp exp && attributes_in_same_category att att0 ->
             check_attribute_change att att0;
-            if pol0 then Sil.Apred (att0, e) else Sil.Anpred (att0, e)
-          end
-        else a
-    | _ -> a in
-  let pi = get_pi prop in
-  let pi' = IList.map_changed atom_map pi in
-  if pi == pi'
-  then set_exp_attribute prop ~polarity:pol0 att0 nexp
-  else replace_pi pi' prop
+            atom
+        | a ->
+            a in
+      let pi = get_pi prop in
+      let pi' = IList.map_changed atom_map pi in
+      if pi == pi'
+      then prop_atom_and prop atom
+      else replace_pi pi' prop
+  | _ ->
+      prop
 
-let add_or_replace_exp_attribute prop pol att exp =
+let add_or_replace_exp_attribute prop atom =
   (* wrapper for the most common case: do nothing *)
   let check_attr_changed = (fun _ _ -> ()) in
-  add_or_replace_exp_attribute_check_changed check_attr_changed prop pol att exp
+  add_or_replace_exp_attribute_check_changed check_attr_changed prop atom
 
 (** mark Sil.Var's or Sil.Lvar's as undefined *)
 let mark_vars_as_undefined prop vars_to_mark callee_pname ret_annots loc path_pos =
   let att_undef = Sil.Aundef (callee_pname, ret_annots, loc, path_pos) in
   let mark_var_as_undefined exp prop =
     match exp with
-    | Sil.Var _ | Sil.Lvar _ -> add_or_replace_exp_attribute prop true att_undef exp
+    | Sil.Var _ | Lvar _ -> add_or_replace_exp_attribute prop (Apred (att_undef, exp))
     | _ -> prop in
   IList.fold_left (fun prop id -> mark_var_as_undefined id prop) prop vars_to_mark
 
-let remove_attribute_by_filter ~f prop =
-  let atom_remove atom pi = match atom with
-    | Sil.Apred (att_old, exp) ->
-        if f true att_old exp then
-          pi
-        else atom:: pi
-    | Sil.Anpred (att_old, exp) ->
-        if f false att_old exp then
-          pi
-        else atom:: pi
-    | _ -> atom:: pi in
-  let pi' = IList.fold_right atom_remove (get_pi prop) [] in
-  replace_pi pi' prop
+let filter_atoms ~f prop =
+  replace_pi (IList.filter f (get_pi prop)) prop
 
 (** Remove an attribute from all the atoms in the heap *)
-let remove_attribute prop pol0 att0 =
-  let f pol att _ = bool_equal pol0 pol && Sil.attribute_equal att0 att in
-  remove_attribute_by_filter ~f prop
+let remove_attribute prop att0 =
+  let f = function
+    | Sil.Apred (att, _) | Anpred (att, _) -> not (Sil.attribute_equal att0 att)
+    | _ -> true in
+  filter_atoms ~f prop
 
 let remove_resource_attribute ra_kind ra_res =
-  let f pol att_old _ = match att_old with
-    | Sil.Aresource res_action when pol ->
-        Sil.res_act_kind_compare res_action.Sil.ra_kind ra_kind == 0
-        && Sil.resource_compare res_action.Sil.ra_res ra_res == 0
-    | _ -> false in
-  remove_attribute_by_filter ~f
+  let f = function
+    | Sil.Apred (Aresource res_action, _) ->
+        Sil.res_act_kind_compare res_action.ra_kind ra_kind <> 0
+        || Sil.resource_compare res_action.ra_res ra_res <> 0
+    | _ -> true in
+  filter_atoms ~f
 
-let remove_attribute_from_exp prop pol att exp =
-  let nexp = exp_normalize_prop prop exp in
-  let f pol_old att_old e =
-    bool_equal pol pol_old && Sil.attribute_equal att_old att && Sil.exp_equal nexp e in
-  remove_attribute_by_filter ~f prop
+let remove_attribute_from_exp prop atom =
+  match atom with
+  | Sil.Apred (_, exp) | Anpred (_, exp) ->
+      let nexp = exp_normalize_prop prop exp in
+      let natom = Sil.atom_replace_exp [(exp,nexp)] atom in
+      let f a = not (Sil.atom_equal natom a) in
+      filter_atoms ~f prop
+  | _ ->
+      replace_pi (get_pi prop) prop
 
 (* Replace an attribute OBJC_NULL($n1) with OBJC_NULL(var) when var = $n1, and also sets $n1 = 0 *)
 let replace_objc_null prop lhs_exp rhs_exp =
   match get_objc_null_attribute prop rhs_exp, rhs_exp with
-  | Some (pol, att), Sil.Var _ ->
-      let prop = remove_attribute_from_exp prop pol att rhs_exp in
+  | Some atom, Sil.Var _ ->
+      let prop = remove_attribute_from_exp prop atom in
       let prop = conjoin_eq rhs_exp Sil.exp_zero prop in
-      add_or_replace_exp_attribute prop true att lhs_exp
+      let natom = Sil.atom_replace_exp [(rhs_exp, lhs_exp)] atom in
+      add_or_replace_exp_attribute prop natom
   | _ -> prop
 
 let rec nullify_exp_with_objc_null prop exp =
@@ -1948,8 +1951,8 @@ let rec nullify_exp_with_objc_null prop exp =
       nullify_exp_with_objc_null prop exp
   | Sil.Var _ ->
       (match get_objc_null_attribute prop exp with
-       | Some (pol, att) ->
-           let prop' = remove_attribute_from_exp prop pol att exp in
+       | Some atom ->
+           let prop' = remove_attribute_from_exp prop atom in
            conjoin_eq exp Sil.exp_zero prop'
        | _ -> prop)
   | _ -> prop
@@ -1992,7 +1995,7 @@ let find_arithmetic_problem proc_node_session prop exp =
     match exp_normalize_prop prop e with
     | Sil.Const c when iszero_int_float c -> true
     | _ ->
-        res := add_or_replace_exp_attribute !res true (Adiv0 proc_node_session) e;
+        res := add_or_replace_exp_attribute !res (Apred (Adiv0 proc_node_session, e));
         false in
   let rec walk = function
     | Sil.Var _ -> ()
@@ -2050,7 +2053,7 @@ let deallocate_stack_vars p pvars =
       if Sil.fav_mem p'_fav freshv then (* the address of a de-allocated stack var in in the post *)
         begin
           stack_vars_address_in_post := v :: !stack_vars_address_in_post;
-          res := add_or_replace_exp_attribute !res true (Adangling DAaddr_stack_var) (Var freshv)
+          res := add_or_replace_exp_attribute !res (Apred (Adangling DAaddr_stack_var, Var freshv))
         end in
     IList.iter do_var !fresh_address_vars;
     !res in
@@ -2850,7 +2853,7 @@ let find_equal_formal_path e prop =
   | Some (v, rev_fs) -> Some (v, IList.rev rev_fs)
   | None ->
       match get_objc_null_attribute prop e with
-      | Some (true, Aobjc_null (v,fs)) -> Some (v,fs)
+      | Some (Apred (Aobjc_null (v,fs), _)) -> Some (v,fs)
       | _ -> None
 
 (** translate an if-then-else expression *)

@@ -56,7 +56,7 @@ let is_special_field class_names field_name_opt field =
 let hpred_is_open_resource prop = function
   | Sil.Hpointsto(e, _, _) ->
       (match Prop.get_resource_attribute prop e with
-       | Some (true, Aresource { ra_kind = Racquire; ra_res = res }) -> Some res
+       | Some (Apred (Aresource { ra_kind = Racquire; ra_res = res }, _)) -> Some res
        | _ -> None)
   | _ ->
       None
@@ -848,7 +848,7 @@ let create_dereference_desc
       | Some (DExp.Dpvar pvar)
       | Some (DExp.Dpvaraddr pvar) ->
           (match Prop.get_objc_null_attribute prop (Sil.Lvar pvar) with
-           | Some (true, Aobjc_null (v,fs)) ->
+           | Some (Apred (Aobjc_null (v,fs), _)) ->
                let e = IList.fold_left (fun e f -> Sil.Lfield (e, f, Typ.Tvoid)) (Sil.Lvar v) fs in
                Localise.parameter_field_not_null_checked_desc desc e
            | _ ->
