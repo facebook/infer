@@ -61,9 +61,9 @@ struct
         "\nWARNING: Missing expression for Conditional operator. Need to be fixed" in
     let e_cond'' =
       if branch then
-        Sil.BinOp(Binop.Ne, e_cond', Sil.exp_zero)
+        Exp.BinOp(Binop.Ne, e_cond', Sil.exp_zero)
       else
-        Sil.BinOp(Binop.Eq, e_cond', Sil.exp_zero) in
+        Exp.BinOp(Binop.Eq, e_cond', Sil.exp_zero) in
     let instrs_cond'= instrs_cond @ [Sil.Prune(e_cond'', loc, branch, ik)] in
     create_node (prune_kind branch) instrs_cond' loc context
 
@@ -130,8 +130,8 @@ type trans_state = {
   succ_nodes: Cfg.Node.t list; (* successor nodes in the cfg *)
   continuation: continuation option; (* current continuation *)
   priority: priority_node;
-  var_exp_typ: (Sil.exp * Typ.t) option;
-  opaque_exp: (Sil.exp * Typ.t) option;
+  var_exp_typ: (Exp.t * Typ.t) option;
+  opaque_exp: (Exp.t * Typ.t) option;
   obj_bridged_cast_typ : Typ.t option
 }
 
@@ -140,8 +140,8 @@ type trans_result = {
   root_nodes: Cfg.Node.t list; (* Top cfg nodes (root) created by the translation *)
   leaf_nodes: Cfg.Node.t list; (* Bottom cfg nodes (leaf) created by the translate *)
   instrs: Sil.instr list; (* list of SIL instruction that need to be placed in cfg nodes of the parent*)
-  exps: (Sil.exp * Typ.t) list; (* SIL expressions resulting from translation of clang stmt *)
-  initd_exps: Sil.exp list;
+  exps: (Exp.t * Typ.t) list; (* SIL expressions resulting from translation of clang stmt *)
+  initd_exps: Exp.t list;
   is_cpp_call_virtual : bool;
 }
 
@@ -155,7 +155,7 @@ let empty_res_trans = {
   is_cpp_call_virtual = false;
 }
 
-let undefined_expression () = Sil.Var (Ident.create_fresh Ident.knormal)
+let undefined_expression () = Exp.Var (Ident.create_fresh Ident.knormal)
 
 (** Collect the results of translating a list of instructions, and link up the nodes created. *)
 let collect_res_trans cfg l =
@@ -298,19 +298,19 @@ let create_alloc_instrs context sil_loc function_type fname size_exp_opt procnam
         function_type, styp
     | _ -> Typ.Tptr (function_type, Typ.Pk_pointer), function_type in
   let function_type_np = CTypes.expand_structured_type context.CContext.tenv function_type_np in
-  let sizeof_exp_ = Sil.Sizeof (function_type_np, None, Subtype.exact) in
+  let sizeof_exp_ = Exp.Sizeof (function_type_np, None, Subtype.exact) in
   let sizeof_exp = match size_exp_opt with
-    | Some exp -> Sil.BinOp (Binop.Mult, sizeof_exp_, exp)
+    | Some exp -> Exp.BinOp (Binop.Mult, sizeof_exp_, exp)
     | None -> sizeof_exp_ in
   let exp = (sizeof_exp, Typ.Tint Typ.IULong) in
   let procname_arg = match procname_opt with
-    | Some procname -> [Sil.Const (Const.Cfun (procname)), Typ.Tvoid]
+    | Some procname -> [Exp.Const (Const.Cfun (procname)), Typ.Tvoid]
     | None -> [] in
   let args = exp :: procname_arg in
   let ret_id = Ident.create_fresh Ident.knormal in
   let stmt_call =
-    Sil.Call([ret_id], Sil.Const (Const.Cfun fname), args, sil_loc, CallFlags.default) in
-  (function_type, stmt_call, Sil.Var ret_id)
+    Sil.Call([ret_id], Exp.Const (Const.Cfun fname), args, sil_loc, CallFlags.default) in
+  (function_type, stmt_call, Exp.Var ret_id)
 
 let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc procname_opt =
   let fname = if is_cf_non_null_alloc then
@@ -338,13 +338,13 @@ let objc_new_trans trans_state loc stmt_info cls_name function_type =
   CMethod_trans.create_external_procdesc trans_state.context.CContext.cfg pname is_instance None;
   let args = [(alloc_ret_exp, alloc_ret_type)] in
   let init_stmt_call =
-    Sil.Call ([init_ret_id], Sil.Const (Const.Cfun pname), args, loc, call_flags) in
+    Sil.Call ([init_ret_id], Exp.Const (Const.Cfun pname), args, loc, call_flags) in
   let instrs = [alloc_stmt_call; init_stmt_call] in
   let res_trans_tmp = { empty_res_trans with instrs = instrs } in
   let res_trans =
     let nname = "Call objC new" in
     PriorityNode.compute_results_to_parent trans_state loc nname stmt_info [res_trans_tmp] in
-  { res_trans with exps = [(Sil.Var init_ret_id, alloc_ret_type)]}
+  { res_trans with exps = [(Exp.Var init_ret_id, alloc_ret_type)]}
 
 let new_or_alloc_trans trans_state loc stmt_info type_ptr class_name_opt selector =
   let tenv = trans_state.context.CContext.tenv in
@@ -372,12 +372,12 @@ let create_cast_instrs context exp cast_from_typ cast_to_typ sil_loc =
   let ret_id = Ident.create_fresh Ident.knormal in
   let typ = CTypes.remove_pointer_to_typ cast_to_typ in
   let cast_typ_no_pointer = CTypes.expand_structured_type context.CContext.tenv typ in
-  let sizeof_exp = Sil.Sizeof (cast_typ_no_pointer, None, Subtype.exact) in
+  let sizeof_exp = Exp.Sizeof (cast_typ_no_pointer, None, Subtype.exact) in
   let pname = ModelBuiltins.__objc_cast in
   let args = [(exp, cast_from_typ); (sizeof_exp, Typ.Tint Typ.IULong)] in
   let stmt_call =
-    Sil.Call ([ret_id], Sil.Const (Const.Cfun pname), args, sil_loc, CallFlags.default) in
-  (stmt_call, Sil.Var ret_id)
+    Sil.Call ([ret_id], Exp.Const (Const.Cfun pname), args, sil_loc, CallFlags.default) in
+  (stmt_call, Exp.Var ret_id)
 
 let cast_trans context exps sil_loc function_type pname =
   if CTrans_models.is_toll_free_bridging pname then
@@ -390,7 +390,7 @@ let cast_trans context exps sil_loc function_type pname =
 let dereference_var_sil (exp, typ) sil_loc =
   let id = Ident.create_fresh Ident.knormal in
   let sil_instr = Sil.Letderef (id, exp, typ, sil_loc) in
-  ([sil_instr], Sil.Var id)
+  ([sil_instr], Exp.Var id)
 
 (** Given trans_result with ONE expression, create temporary variable with value of an expression
     assigned to it *)
@@ -439,8 +439,8 @@ let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
       ([], (exp, cast_typ))
 
 let trans_assertion_failure sil_loc context =
-  let assert_fail_builtin = Sil.Const (Const.Cfun ModelBuiltins.__infer_fail) in
-  let args = [Sil.Const (Const.Cstr Config.default_failure_name), Typ.Tvoid] in
+  let assert_fail_builtin = Exp.Const (Const.Cfun ModelBuiltins.__infer_fail) in
+  let args = [Exp.Const (Const.Cstr Config.default_failure_name), Typ.Tvoid] in
   let call_instr = Sil.Call ([], assert_fail_builtin, args, sil_loc, CallFlags.default) in
   let exit_node = Cfg.Procdesc.get_exit_node (CContext.get_procdesc context)
   and failure_node =
@@ -488,10 +488,10 @@ let cxx_method_builtin_trans trans_state loc pname =
 let define_condition_side_effects e_cond instrs_cond sil_loc =
   let (e', typ) = extract_exp_from_list e_cond "\nWARNING: Missing expression in IfStmt. Need to be fixed\n" in
   match e' with
-  | Sil.Lvar pvar ->
+  | Exp.Lvar pvar ->
       let id = Ident.create_fresh Ident.knormal in
-      [(Sil.Var id, typ)],
-      [Sil.Letderef (id, Sil.Lvar pvar, typ, sil_loc)]
+      [(Exp.Var id, typ)],
+      [Sil.Letderef (id, Exp.Lvar pvar, typ, sil_loc)]
   | _ -> [(e', typ)], instrs_cond
 
 let fix_param_exps_mismatch params_stmt exps_param =
@@ -569,9 +569,9 @@ struct
         let t' = CTypes.add_pointer_to_typ
             (CTypes_decl.get_type_curr_class_objc
                context.CContext.tenv context.CContext.curr_class) in
-        let e = Sil.Lvar (Pvar.mk (Mangled.from_string CFrontend_config.self) procname) in
+        let e = Exp.Lvar (Pvar.mk (Mangled.from_string CFrontend_config.self) procname) in
         let id = Ident.create_fresh Ident.knormal in
-        t', Sil.Var id, [Sil.Letderef (id, e, t', loc)] in
+        t', Exp.Var id, [Sil.Letderef (id, e, t', loc)] in
       { empty_res_trans with
         exps = [(self_expr, typ)];
         instrs = ins }
@@ -704,7 +704,7 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
          | _ -> [[(e, typ)]] (*This case is an error, shouldn't happen.*))
     | Typ.Tstruct { Typ.instance_fields } as type_struct ->
         let lh_exprs = IList.map ( fun (fieldname, _, _) ->
-            Sil.Lfield (e, fieldname, type_struct) ) instance_fields in
+            Exp.Lfield (e, fieldname, type_struct) ) instance_fields in
         let lh_types = IList.map ( fun (_, fieldtype, _) -> fieldtype) instance_fields in
         let exp_types = zip lh_exprs lh_types in
         IList.map (fun (e, t) ->
@@ -713,9 +713,9 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
         let size = IntLit.to_int n in
         let indices = list_range 0 (size - 1) in
         let index_constants =
-          IList.map (fun i -> (Sil.Const (Const.Cint (IntLit.of_int i)))) indices in
+          IList.map (fun i -> (Exp.Const (Const.Cint (IntLit.of_int i)))) indices in
         let lh_exprs =
-          IList.map (fun index_expr -> Sil.Lindex (e, index_expr)) index_constants in
+          IList.map (fun index_expr -> Exp.Lindex (e, index_expr)) index_constants in
         let lh_types = replicate size arrtyp in
         let exp_types = zip lh_exprs lh_types in
         IList.map (fun (e, t) ->

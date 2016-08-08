@@ -162,30 +162,30 @@ type checks =
 let rec typecheck_expr
     find_canonical_duplicate visited checks node instr_ref curr_pname
     typestate e tr_default loc : TypeState.range = match e with
-  | Sil.Lvar pvar ->
+  | Exp.Lvar pvar ->
       (match TypeState.lookup_pvar pvar typestate with
        | Some tr -> TypeState.range_add_locs tr [loc]
        | None -> tr_default)
-  | Sil.Var id ->
+  | Exp.Var id ->
       (match TypeState.lookup_id id typestate with
        | Some tr -> TypeState.range_add_locs tr [loc]
        | None -> tr_default)
-  | Sil.Const (Const.Cint i) when IntLit.iszero i ->
+  | Exp.Const (Const.Cint i) when IntLit.iszero i ->
       let (typ, _, locs) = tr_default in
       if PatternMatch.type_is_class typ
       then (typ, TypeAnnotation.const Annotations.Nullable true (TypeOrigin.Const loc), locs)
       else
         let t, ta, ll = tr_default in
         (t, TypeAnnotation.with_origin ta (TypeOrigin.Const loc), ll)
-  | Sil.Exn e1 ->
+  | Exp.Exn e1 ->
       typecheck_expr
         find_canonical_duplicate visited checks
         node instr_ref curr_pname
         typestate e1 tr_default loc
-  | Sil.Const _ ->
+  | Exp.Const _ ->
       let (typ, _, locs) = tr_default in
       (typ, TypeAnnotation.const Annotations.Nullable false (TypeOrigin.Const loc), locs)
-  | Sil.Lfield (exp, fn, typ) ->
+  | Exp.Lfield (exp, fn, typ) ->
       let _, _, locs = tr_default in
       let (_, ta, locs') =
         typecheck_expr
@@ -203,7 +203,7 @@ let rec typecheck_expr
         EradicateChecks.check_field_access
           find_canonical_duplicate curr_pname node instr_ref exp fn ta loc;
       tr_new
-  | Sil.Lindex (array_exp, index_exp) ->
+  | Exp.Lindex (array_exp, index_exp) ->
       let (_, ta, _) =
         typecheck_expr
           find_canonical_duplicate
@@ -260,20 +260,20 @@ let typecheck_instr
           Some (TypeAnnotation.get_origin ta)
       | None -> None in
     let handle_temporary e = match Idenv.expand_expr idenv e with
-      | Sil.Lvar pvar when name_is_temporary (Pvar.to_string pvar) ->
+      | Exp.Lvar pvar when name_is_temporary (Pvar.to_string pvar) ->
           begin
             match pvar_get_origin pvar with
             | Some (TypeOrigin.Formal s) ->
                 let pvar' = Pvar.mk s curr_pname in
-                Some (Sil.Lvar pvar')
+                Some (Exp.Lvar pvar')
             | _ -> None
           end
       | _ -> None in
     match exp with
-    | Sil.Lfield (e, fn, typ) ->
+    | Exp.Lfield (e, fn, typ) ->
         let exp' = match handle_temporary e with
           | Some e' ->
-              Sil.Lfield (e', fn, typ)
+              Exp.Lfield (e', fn, typ)
           | None -> exp in
         exp'
     | _ -> exp in
@@ -303,7 +303,7 @@ let typecheck_instr
     (* Convert a function call to a pvar. *)
     let handle_function_call call_node id =
       match Errdesc.find_normal_variable_funcall call_node id with
-      | Some (Sil.Const (Const.Cfun pn), _, _, _)
+      | Some (Exp.Const (Const.Cfun pn), _, _, _)
         when not (ComplexExpressions.procname_used_in_condition pn) ->
           begin
             match ComplexExpressions.exp_to_string node' exp with
@@ -319,16 +319,16 @@ let typecheck_instr
 
                 if is_assignment && already_defined_in_typestate
                 then default (* Don't overwrite pvar representing result of function call. *)
-                else Sil.Lvar pvar, typestate
+                else Exp.Lvar pvar, typestate
           end
       | _ -> default in
 
     match exp with
-    | Sil.Var id when
+    | Exp.Var id when
         ComplexExpressions.functions_idempotent () &&
         Errdesc.find_normal_variable_funcall node' id <> None ->
         handle_function_call node' id
-    | Sil.Lvar pvar when
+    | Exp.Lvar pvar when
         ComplexExpressions.functions_idempotent () && Pvar.is_frontend_tmp pvar ->
         let frontend_variable_assignment =
           Errdesc.find_program_variable_assignment node pvar in
@@ -340,9 +340,9 @@ let typecheck_instr
           | _ -> default
         end
 
-    | Sil.Lvar _ ->
+    | Exp.Lvar _ ->
         default
-    | Sil.Lfield (_exp, fn, typ) when ComplexExpressions.parameter_and_static_field () ->
+    | Exp.Lfield (_exp, fn, typ) when ComplexExpressions.parameter_and_static_field () ->
         let exp' = Idenv.expand_expr_temps idenv node _exp in
 
         let is_parameter_field pvar = (* parameter.field *)
@@ -354,29 +354,29 @@ let typecheck_instr
           Pvar.is_global pvar in
 
         let pvar_to_str pvar =
-          if Sil.exp_is_this (Sil.Lvar pvar) then ""
+          if Sil.exp_is_this (Exp.Lvar pvar) then ""
           else Pvar.to_string pvar ^ "_" in
 
         let res = match exp' with
-          | Sil.Lvar pv when is_parameter_field pv || is_static_field pv ->
+          | Exp.Lvar pv when is_parameter_field pv || is_static_field pv ->
               let fld_name = pvar_to_str pv ^ Ident.fieldname_to_string fn in
               let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
               let typestate' = update_typestate_fld pvar fn typ in
-              (Sil.Lvar pvar, typestate')
-          | Sil.Lfield (_exp', fn', _) when Ident.java_fieldname_is_outer_instance fn' ->
+              (Exp.Lvar pvar, typestate')
+          | Exp.Lfield (_exp', fn', _) when Ident.java_fieldname_is_outer_instance fn' ->
               (* handle double dereference when accessing a field from an outer class *)
               let fld_name = Ident.fieldname_to_string fn' ^ "_" ^ Ident.fieldname_to_string fn in
               let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
               let typestate' = update_typestate_fld pvar fn typ in
-              (Sil.Lvar pvar, typestate')
-          | Sil.Lvar _ | Sil.Lfield _ when ComplexExpressions.all_nested_fields () ->
+              (Exp.Lvar pvar, typestate')
+          | Exp.Lvar _ | Exp.Lfield _ when ComplexExpressions.all_nested_fields () ->
               (* treat var.field1. ... .fieldn as a constant *)
               begin
                 match ComplexExpressions.exp_to_string node' exp with
                 | Some exp_str ->
                     let pvar = Pvar.mk (Mangled.from_string exp_str) curr_pname in
                     let typestate' = update_typestate_fld pvar fn typ in
-                    (Sil.Lvar pvar, typestate')
+                    (Exp.Lvar pvar, typestate')
                 | None ->
                     default
               end
@@ -449,10 +449,10 @@ let typecheck_instr
         typestate'
     | Some (node', id) ->
         (* handle the case where pvar is a frontend-generated program variable *)
-        let exp = Idenv.expand_expr idenv (Sil.Var id) in
+        let exp = Idenv.expand_expr idenv (Exp.Var id) in
         begin
           match convert_complex_exp_to_pvar node' false exp typestate' loc with
-          | Sil.Lvar pvar', _ -> handle_pvar typestate' pvar'
+          | Exp.Lvar pvar', _ -> handle_pvar typestate' pvar'
           | _ -> typestate'
         end in
 
@@ -482,14 +482,14 @@ let typecheck_instr
       TypeState.add_id id
         (typecheck_expr_simple typestate' e' typ TypeOrigin.Undef loc)
         typestate'
-  | Sil.Set (Sil.Lvar pvar, _, Sil.Exn _, _) when is_return pvar ->
+  | Sil.Set (Exp.Lvar pvar, _, Exp.Exn _, _) when is_return pvar ->
       (* skip assignment to return variable where it is an artifact of a throw instruction *)
       typestate
   | Sil.Set (e1, typ, e2, loc) ->
       typecheck_expr_for_errors typestate e1 loc;
       let e1', typestate1 = convert_complex_exp_to_pvar node true e1 typestate loc in
       let check_field_assign () = match e1 with
-        | Sil.Lfield (_, fn, f_typ) ->
+        | Exp.Lfield (_, fn, f_typ) ->
             let t_ia_opt = EradicateChecks.get_field_annotation fn f_typ in
             if checks.eradicate then
               EradicateChecks.check_field_assignment
@@ -499,25 +499,25 @@ let typecheck_instr
         | _ -> () in
       let typestate2 =
         match e1' with
-        | Sil.Lvar pvar ->
+        | Exp.Lvar pvar ->
             TypeState.add
               pvar
               (typecheck_expr_simple typestate1 e2 typ TypeOrigin.Undef loc)
               typestate1
-        | Sil.Lfield _ ->
+        | Exp.Lfield _ ->
             typestate1
         | _ ->
             typestate1 in
       check_field_assign ();
       typestate2
-  | Sil.Call ([id], Sil.Const (Const.Cfun pn), [(_, typ)], loc, _)
+  | Sil.Call ([id], Exp.Const (Const.Cfun pn), [(_, typ)], loc, _)
     when Procname.equal pn ModelBuiltins.__new ||
          Procname.equal pn ModelBuiltins.__new_array ->
       TypeState.add_id
         id
         (typ, TypeAnnotation.const Annotations.Nullable false TypeOrigin.New, [loc])
         typestate (* new never returns null *)
-  | Sil.Call ([id], Sil.Const (Const.Cfun pn), (e, typ):: _, loc, _)
+  | Sil.Call ([id], Exp.Const (Const.Cfun pn), (e, typ):: _, loc, _)
     when Procname.equal pn ModelBuiltins.__cast ->
       typecheck_expr_for_errors typestate e loc;
       let e', typestate' =
@@ -526,7 +526,7 @@ let typecheck_instr
       TypeState.add_id id
         (typecheck_expr_simple typestate' e' typ TypeOrigin.ONone loc)
         typestate'
-  | Sil.Call ([id], Sil.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
+  | Sil.Call ([id], Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
     when Procname.equal pn ModelBuiltins.__get_array_length ->
       let (_, ta, _) = typecheck_expr
           find_canonical_duplicate
@@ -558,11 +558,11 @@ let typecheck_instr
           [loc]
         )
         typestate
-  | Sil.Call (_, Sil.Const (Const.Cfun pn), _, _, _) when Builtin.is_registered pn ->
+  | Sil.Call (_, Exp.Const (Const.Cfun pn), _, _, _) when Builtin.is_registered pn ->
       typestate (* skip othe builtins *)
   | Sil.Call
       (ret_ids,
-       Sil.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
+       Exp.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
        etl_,
        loc,
        cflags)
@@ -651,7 +651,7 @@ let typecheck_instr
                 not (TypeAnnotation.origin_is_fun_library ta) in
               if checks.eradicate && should_report then
                 begin
-                  let cond = Sil.BinOp (Binop.Ne, Sil.Lvar pvar, Sil.exp_null) in
+                  let cond = Exp.BinOp (Binop.Ne, Exp.Lvar pvar, Sil.exp_null) in
                   EradicateChecks.report_error
                     find_canonical_duplicate
                     node
@@ -668,7 +668,7 @@ let typecheck_instr
               typestate' in
         let rec find_parameter n eetl1 = match n, eetl1 with
           | n, _ :: eetl2 when n > 1 -> find_parameter (n -1) eetl2
-          | 1, ((_, Sil.Lvar pvar), typ):: _ -> Some (pvar, typ)
+          | 1, ((_, Exp.Lvar pvar), typ):: _ -> Some (pvar, typ)
           | _ -> None in
 
         match find_parameter parameter_num call_params with
@@ -676,7 +676,7 @@ let typecheck_instr
             if is_vararg
             then
               let do_vararg_value e ts = match Idenv.expand_expr idenv e with
-                | Sil.Lvar pvar1 ->
+                | Exp.Lvar pvar1 ->
                     pvar_apply loc clear_nullable_flag ts pvar1
                 | _ -> ts in
               let vararg_values = PatternMatch.java_get_vararg_values node pvar idenv in
@@ -705,13 +705,13 @@ let typecheck_instr
 
         let handle_negated_condition cond_node =
           let do_instr = function
-            | Sil.Prune (Sil.BinOp (Binop.Eq, _cond_e, Sil.Const (Const.Cint i)), _, _, _)
-            | Sil.Prune (Sil.BinOp (Binop.Eq, Sil.Const (Const.Cint i), _cond_e), _, _, _)
+            | Sil.Prune (Exp.BinOp (Binop.Eq, _cond_e, Exp.Const (Const.Cint i)), _, _, _)
+            | Sil.Prune (Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), _cond_e), _, _, _)
               when IntLit.iszero i ->
                 let cond_e = Idenv.expand_expr_temps idenv cond_node _cond_e in
                 begin
                   match convert_complex_exp_to_pvar cond_node false cond_e typestate' loc with
-                  | Sil.Lvar pvar', _ ->
+                  | Exp.Lvar pvar', _ ->
                       set_flag pvar' Annotations.Nullable false
                   | _ -> ()
                 end
@@ -719,11 +719,11 @@ let typecheck_instr
           IList.iter do_instr (Cfg.Node.get_instrs cond_node) in
         let handle_optional_isPresent node' e =
           match convert_complex_exp_to_pvar node' false e typestate' loc with
-          | Sil.Lvar pvar', _ ->
+          | Exp.Lvar pvar', _ ->
               set_flag pvar' Annotations.Present true
           | _ -> () in
         match call_params with
-        | ((_, Sil.Lvar pvar), _):: _ ->
+        | ((_, Exp.Lvar pvar), _):: _ ->
             (* temporary variable for the value of the boolean condition *)
             begin
               let curr_node = TypeErr.InstrRef.get_node instr_ref in
@@ -741,7 +741,7 @@ let typecheck_instr
                         ()
                     | Some (node', id) ->
                         let () = match Errdesc.find_normal_variable_funcall node' id with
-                          | Some (Sil.Const (Const.Cfun pn), [e], _, _)
+                          | Some (Exp.Const (Const.Cfun pn), [e], _, _)
                             when ComplexExpressions.procname_optional_isPresent pn ->
                               handle_optional_isPresent node' e
                           | _ -> () in
@@ -763,7 +763,7 @@ let typecheck_instr
                object_t)
             parameters in
         match call_params with
-        | ((_, Sil.Lvar pv_map), _) ::
+        | ((_, Exp.Lvar pv_map), _) ::
           ((_, exp_key), _) ::
           ((_, exp_value), typ_value) :: _ ->
             (* Convert the dexp for k to the dexp for m.get(k) *)
@@ -867,12 +867,12 @@ let typecheck_instr
   | Sil.Prune (cond, loc, true_branch, _) ->
       let rec check_condition node' c : _ TypeState.t =
         (* check if the expression is coming from a call, and return the argument *)
-        let from_call filter_callee e : Sil.exp option =
+        let from_call filter_callee e : Exp.t option =
           match e with
-          | Sil.Var id ->
+          | Exp.Var id ->
               begin
                 match Errdesc.find_normal_variable_funcall node' id with
-                | Some (Sil.Const (Const.Cfun pn), e1:: _, _, _) when
+                | Some (Exp.Const (Const.Cfun pn), e1:: _, _, _) when
                     filter_callee pn ->
                     Some e1
                 | _ -> None
@@ -880,23 +880,23 @@ let typecheck_instr
           | _ -> None in
 
         (* check if the expression is coming from instanceof *)
-        let from_instanceof e : Sil.exp option =
+        let from_instanceof e : Exp.t option =
           from_call ComplexExpressions.procname_instanceof e in
 
         (* check if the expression is coming from Optional.isPresent *)
-        let from_optional_isPresent e : Sil.exp option =
+        let from_optional_isPresent e : Exp.t option =
           from_call ComplexExpressions.procname_optional_isPresent e in
 
         (* check if the expression is coming from a procedure returning false on null *)
-        let from_is_false_on_null e : Sil.exp option =
+        let from_is_false_on_null e : Exp.t option =
           from_call ComplexExpressions.procname_is_false_on_null e in
 
         (* check if the expression is coming from a procedure returning true on null *)
-        let from_is_true_on_null e : Sil.exp option =
+        let from_is_true_on_null e : Exp.t option =
           from_call ComplexExpressions.procname_is_true_on_null e in
 
         (* check if the expression is coming from Map.containsKey *)
-        let from_containsKey e : Sil.exp option =
+        let from_containsKey e : Exp.t option =
           from_call ComplexExpressions.procname_containsKey e in
 
         (* Turn x.containsKey(e) into the pvar for x.get(e) *)
@@ -919,7 +919,7 @@ let typecheck_instr
             | Some e_str ->
                 let pvar =
                   Pvar.mk (Mangled.from_string e_str) curr_pname in
-                let e1 = Sil.Lvar pvar in
+                let e1 = Exp.Lvar pvar in
                 let (typ, ta, _) =
                   typecheck_expr_simple typestate e1 Typ.Tvoid TypeOrigin.ONone loc in
                 let range = (typ, ta, [loc]) in
@@ -939,13 +939,13 @@ let typecheck_instr
                 else typestate'
             | None -> typestate' in
           match e' with
-          | Sil.Lvar pvar ->
+          | Exp.Lvar pvar ->
               pvar_apply loc handle_pvar typestate2 pvar
           | _ -> typestate2 in
 
         match c with
-        | Sil.BinOp (Binop.Eq, Sil.Const (Const.Cint i), e)
-        | Sil.BinOp (Binop.Eq, e, Sil.Const (Const.Cint i)) when IntLit.iszero i ->
+        | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), e)
+        | Exp.BinOp (Binop.Eq, e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
             typecheck_expr_for_errors typestate e loc;
             let typestate1, e1, from_call = match from_is_true_on_null e with
               | Some e1 ->
@@ -973,8 +973,8 @@ let typecheck_instr
                   typestate2
             end
 
-        | Sil.BinOp (Binop.Ne, Sil.Const (Const.Cint i), e)
-        | Sil.BinOp (Binop.Ne, e, Sil.Const (Const.Cint i)) when IntLit.iszero i ->
+        | Exp.BinOp (Binop.Ne, Exp.Const (Const.Cint i), e)
+        | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
             typecheck_expr_for_errors typestate e loc;
             let typestate1, e1, from_call = match from_instanceof e with
               | Some e1 -> (* (e1 instanceof C) implies (e1 != null) *)
@@ -1023,10 +1023,10 @@ let typecheck_instr
                   else typestate2
             end
 
-        | Sil.UnOp (Unop.LNot, (Sil.BinOp (Binop.Eq, e1, e2)), _) ->
-            check_condition node' (Sil.BinOp (Binop.Ne, e1, e2))
-        | Sil.UnOp (Unop.LNot, (Sil.BinOp (Binop.Ne, e1, e2)), _) ->
-            check_condition node' (Sil.BinOp (Binop.Eq, e1, e2))
+        | Exp.UnOp (Unop.LNot, (Exp.BinOp (Binop.Eq, e1, e2)), _) ->
+            check_condition node' (Exp.BinOp (Binop.Ne, e1, e2))
+        | Exp.UnOp (Unop.LNot, (Exp.BinOp (Binop.Ne, e1, e2)), _) ->
+            check_condition node' (Exp.BinOp (Binop.Eq, e1, e2))
         | _ -> typestate in
 
       (* Handle assigment fron a temp pvar in a condition.
@@ -1037,7 +1037,7 @@ let typecheck_instr
             let found = ref None in
             let do_instr i = match i with
               | Sil.Set (e, _, e', _)
-                when Sil.exp_equal (Sil.Lvar pvar) (Idenv.expand_expr idenv e') ->
+                when Sil.exp_equal (Exp.Lvar pvar) (Idenv.expand_expr idenv e') ->
                   found := Some e
               | _ -> () in
             IList.iter do_instr (Cfg.Node.get_instrs prev_node);
@@ -1046,22 +1046,22 @@ let typecheck_instr
 
       (* Normalize the condition by resolving temp variables. *)
       let rec normalize_cond _node _cond = match _cond with
-        | Sil.UnOp (Unop.LNot, c, top) ->
+        | Exp.UnOp (Unop.LNot, c, top) ->
             let node', c' = normalize_cond _node c in
-            node', Sil.UnOp (Unop.LNot, c', top)
-        | Sil.BinOp (bop, c1, c2) ->
+            node', Exp.UnOp (Unop.LNot, c', top)
+        | Exp.BinOp (bop, c1, c2) ->
             let node', c1' = normalize_cond _node c1 in
             let node'', c2' = normalize_cond node' c2 in
-            node'', Sil.BinOp (bop, c1', c2')
-        | Sil.Var _ ->
+            node'', Exp.BinOp (bop, c1', c2')
+        | Exp.Var _ ->
             let c' = Idenv.expand_expr idenv _cond in
             if not (Sil.exp_equal c' _cond) then normalize_cond _node c'
             else _node, c'
-        | Sil.Lvar pvar when Pvar.is_frontend_tmp pvar ->
+        | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar ->
             (match handle_assignment_in_condition pvar with
              | None ->
                  (match Errdesc.find_program_variable_assignment _node pvar with
-                  | Some (node', id) -> node', Sil.Var id
+                  | Some (node', id) -> node', Exp.Var id
                   | None -> _node, _cond)
              | Some e2 -> _node, e2)
         | c -> _node, c in
@@ -1081,7 +1081,7 @@ let typecheck_node
 
   let typestates_exn = ref [] in
   let handle_exceptions typestate instr = match instr with
-    | Sil.Call (_, Sil.Const (Const.Cfun callee_pname), _, _, _) ->
+    | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _) ->
         let callee_attributes_opt =
           Specs.proc_resolve_attributes callee_pname in
         (* check if the call might throw an exception *)
@@ -1091,7 +1091,7 @@ let typecheck_node
           | None -> false in
         if has_exceptions then
           typestates_exn := typestate :: !typestates_exn
-    | Sil.Set (Sil.Lvar pv, _, _, _) when
+    | Sil.Set (Exp.Lvar pv, _, _, _) when
         Pvar.is_return pv &&
         Cfg.Node.get_kind node = Cfg.Node.throw_kind ->
         (* throw instruction *)

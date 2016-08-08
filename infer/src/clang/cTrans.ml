@@ -85,7 +85,7 @@ struct
       let ret_id = Ident.create_fresh Ident.knormal in
       let stmt_call =
         Sil.Call
-          ([ret_id], Sil.Const (Const.Cfun fname), [(exp, typ)], sil_loc, CallFlags.default) in
+          ([ret_id], Exp.Const (Const.Cfun fname), [(exp, typ)], sil_loc, CallFlags.default) in
       [stmt_call]
     else []
 
@@ -142,19 +142,19 @@ struct
       CTrans_utils.alloc_trans
         trans_state loc (Ast_expressions.dummy_stmt_info ()) block_type true None in
     let id_block = match trans_res.exps with
-      | [(Sil.Var id, _)] -> id
+      | [(Exp.Var id, _)] -> id
       | _ -> assert false in
     let block_var = Pvar.mk mblock procname in
     let declare_block_local =
       Sil.Declare_locals ([(block_var, Typ.Tptr (block_type, Typ.Pk_pointer))], loc) in
-    let set_instr = Sil.Set (Sil.Lvar block_var, block_type, Sil.Var id_block, loc) in
+    let set_instr = Sil.Set (Exp.Lvar block_var, block_type, Exp.Var id_block, loc) in
     let create_field_exp (var, typ) =
       let id = Ident.create_fresh Ident.knormal in
-      id, Sil.Letderef (id, Sil.Lvar var, typ, loc) in
+      id, Sil.Letderef (id, Exp.Lvar var, typ, loc) in
     let ids, captured_instrs = IList.split (IList.map create_field_exp captured_vars) in
     let fields_ids = IList.combine fields ids in
     let set_fields = IList.map (fun ((f, t, _), id) ->
-        Sil.Set (Sil.Lfield (Sil.Var id_block, f, block_type), t, Sil.Var id, loc)) fields_ids in
+        Sil.Set (Exp.Lfield (Exp.Var id_block, f, block_type), t, Exp.Var id, loc)) fields_ids in
     (declare_block_local :: trans_res.instrs) @
     [set_instr] @
     captured_instrs @
@@ -167,15 +167,15 @@ struct
     let make_function_name typ bn =
       let bn'= Procname.to_string bn in
       let bn''= Mangled.from_string bn' in
-      let block = Sil.Lvar (Pvar.mk bn'' procname) in
+      let block = Exp.Lvar (Pvar.mk bn'' procname) in
       let id = Ident.create_fresh Ident.knormal in
       insts := Sil.Letderef (id, block, typ, loc) :: !insts;
-      (Sil.Var id, typ) in
+      (Exp.Var id, typ) in
     let make_arg typ (id, _, _) = (id, typ) in
     let rec f es =
       match es with
       | [] -> []
-      | (Sil.Closure {name; captured_vars},
+      | (Exp.Closure {name; captured_vars},
          (Typ.Tptr((Typ.Tfun _), _ ) as t)) :: es' ->
           let app =
             let function_name = make_function_name t name in
@@ -215,7 +215,7 @@ struct
         CTypes_decl.objc_class_name_to_sil_type trans_state.context.CContext.tenv class_name in
       let expanded_type = CTypes.expand_structured_type trans_state.context.CContext.tenv typ in
       { empty_res_trans with
-        exps = [(Sil.Sizeof(expanded_type, None, Subtype.exact), Typ.Tint Typ.IULong)] }
+        exps = [(Exp.Sizeof(expanded_type, None, Subtype.exact), Typ.Tint Typ.IULong)] }
 
   let add_reference_if_glvalue typ expr_info =
     (* glvalue definition per C++11:*)
@@ -276,7 +276,7 @@ struct
     let (pvar, typ) = mk_temp_sil_var_for_expr context.CContext.tenv procdesc
         var_name expr_info in
     Cfg.Procdesc.append_locals procdesc [(Pvar.get_name pvar, typ)];
-    Sil.Lvar pvar, typ
+    Exp.Lvar pvar, typ
 
   let create_call_instr trans_state return_type function_sil params_sil sil_loc
       call_flags ~is_objc_method =
@@ -292,7 +292,7 @@ struct
               let procdesc = trans_state.context.CContext.procdesc in
               let pvar = mk_temp_sil_var procdesc "__temp_return_" in
               Cfg.Procdesc.append_locals procdesc [(Pvar.get_name pvar, return_type)];
-              Sil.Lvar pvar in
+              Exp.Lvar pvar in
         (* It is very confusing - same expression has two different types in two contexts:*)
         (* 1. if passed as parameter it's RETURN_TYPE* since we are passing it as rvalue *)
         (* 2. for return expression it's RETURN_TYPE since backend allows to treat it as lvalue*)
@@ -310,7 +310,7 @@ struct
         let ret_param = (var_exp, param_type) in
         let ret_exp = (var_exp, return_type) in
         [], params_sil @ [ret_param], [var_exp], [ret_exp]
-      else ret_id, params_sil, [], match ret_id with [x] -> [(Sil.Var x, return_type)] | _ -> [] in
+      else ret_id, params_sil, [], match ret_id with [x] -> [(Exp.Var x, return_type)] | _ -> [] in
     let call_instr = Sil.Call (ret_id', function_sil, params, sil_loc, call_flags) in
     { empty_res_trans with
       instrs = [call_instr];
@@ -329,7 +329,7 @@ struct
 
   let stringLiteral_trans trans_state expr_info str =
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
-    let exp = Sil.Const (Const.Cstr (str)) in
+    let exp = Exp.Const (Const.Cstr (str)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
   (* FROM CLANG DOCS: "Implements the GNU __null extension,
@@ -342,7 +342,7 @@ struct
      So we implement it as the constant zero *)
   let gNUNullExpr_trans trans_state expr_info =
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
-    let exp = Sil.Const (Const.Cint (IntLit.zero)) in
+    let exp = Exp.Const (Const.Cint (IntLit.zero)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
   let nullPtrExpr_trans trans_state expr_info =
@@ -363,7 +363,7 @@ struct
 
   let characterLiteral_trans trans_state expr_info n =
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
-    let exp = Sil.Const (Const.Cint (IntLit.of_int n)) in
+    let exp = Exp.Const (Const.Cint (IntLit.of_int n)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
   let booleanValue_trans trans_state expr_info b =
@@ -371,7 +371,7 @@ struct
 
   let floatingLiteral_trans trans_state expr_info float_string =
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
-    let exp = Sil.Const (Const.Cfloat (float_of_string float_string)) in
+    let exp = Exp.Const (Const.Cfloat (float_of_string float_string)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
   (* Note currently we don't have support for different qual     *)
@@ -387,7 +387,7 @@ struct
       | Failure _ ->
           (* Parse error: return a nondeterministic value *)
           let id = Ident.create_fresh Ident.knormal in
-          Sil.Var id in
+          Exp.Var id in
     { empty_res_trans with
       exps = [(exp, typ)];
     }
@@ -398,7 +398,7 @@ struct
     let zero_opt = match typ with
       | Typ.Tfloat _  | Typ.Tptr _ | Typ.Tint _ -> Some (Sil.zero_value_of_numerical_type typ)
       | Typ.Tvoid -> None
-      | _ -> Some (Sil.Const (Const.Cint IntLit.zero)) in
+      | _ -> Some (Exp.Const (Const.Cint IntLit.zero)) in
     match zero_opt with
     | Some zero -> { empty_res_trans with exps = [(zero, typ)] }
     | _ -> empty_res_trans
@@ -427,7 +427,7 @@ struct
           | Some tp -> CTypes_decl.type_ptr_to_sil_type tenv tp
           | None -> typ (* Some default type since the type is missing *) in
         { empty_res_trans with
-          exps = [(Sil.Sizeof (sizeof_typ, None, Subtype.exact), sizeof_typ)] }
+          exps = [(Exp.Sizeof (sizeof_typ, None, Subtype.exact), sizeof_typ)] }
     | k -> Printing.log_stats
              "\nWARNING: Missing translation of Uniry_Expression_Or_Trait of kind: \
               %s . Expression ignored, returned -1... \n"
@@ -465,11 +465,11 @@ struct
       else Procname.from_string_c_fun name in
     let is_builtin = Builtin.is_registered non_mangled_func_name in
     if is_builtin then (* malloc, free, exit, scanf, ... *)
-      { empty_res_trans with exps = [(Sil.Const (Const.Cfun non_mangled_func_name), typ)] }
+      { empty_res_trans with exps = [(Exp.Const (Const.Cfun non_mangled_func_name), typ)] }
     else
       begin
         if address_of_function then Cfg.set_procname_priority context.cfg pname;
-        { empty_res_trans with exps = [(Sil.Const (Const.Cfun pname), typ)] }
+        { empty_res_trans with exps = [(Exp.Const (Const.Cfun pname), typ)] }
       end
 
   let var_deref_trans trans_state stmt_info decl_ref =
@@ -487,7 +487,7 @@ struct
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let pvar = CVar_decl.sil_var_of_decl_ref context decl_ref procname in
     CContext.add_block_static_var context procname (pvar, typ);
-    let e = Sil.Lvar pvar in
+    let e = Exp.Lvar pvar in
     let exps = if Self.is_var_self pvar (CContext.is_objc_method context) then
         let curr_class = CContext.get_curr_class context in
         if (CTypes.is_class typ) then
@@ -523,7 +523,7 @@ struct
       | t -> t in
     Printing.log_out "Type is  '%s' @." (Typ.to_string class_typ);
     let field_name = General_utils.mk_class_field_name name_info in
-    let field_exp = Sil.Lfield (obj_sil, field_name, class_typ) in
+    let field_exp = Exp.Lfield (obj_sil, field_name, class_typ) in
     (* In certain cases, there is be no LValueToRValue cast, but backend needs dereference*)
     (* there either way:*)
     (* 1. Class is not a pointer type - it means that it's rvalue struct most likely coming from*)
@@ -536,7 +536,7 @@ struct
     let exp, deref_instrs = if should_add_deref then
         let id = Ident.create_fresh Ident.knormal in
         let deref_instr = Sil.Letderef (id, field_exp, field_typ, sil_loc) in
-        Sil.Var id, [deref_instr]
+        Exp.Var id, [deref_instr]
       else
         field_exp, [] in
     let instrs = pre_trans_result.instrs @ deref_instrs in
@@ -586,7 +586,7 @@ struct
     (* unlike field access, for method calls there is no need to expand class type *)
     let pname = CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_name)
         method_name in
-    let method_exp = (Sil.Const (Const.Cfun pname), method_typ) in
+    let method_exp = (Exp.Const (Const.Cfun pname), method_typ) in
     Cfg.set_procname_priority context.CContext.cfg pname;
     { pre_trans_result with
       is_cpp_call_virtual = is_cpp_virtual;
@@ -610,7 +610,7 @@ struct
     let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
     let name = CFrontend_config.this in
     let pvar = Pvar.mk (Mangled.from_string name) procname in
-    let exp = Sil.Lvar pvar in
+    let exp = Exp.Lvar pvar in
     let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv class_type_ptr in
     let exps =  [(exp, typ)] in
     (* there is no cast operation in AST, but backend needs it *)
@@ -678,7 +678,7 @@ struct
 
   (* get the sil value of the enum constant from the map or by evaluating it *)
   and get_enum_constant_expr context enum_constant_pointer =
-    let zero = Sil.Const (Const.Cint IntLit.zero) in
+    let zero = Exp.Const (Const.Cint IntLit.zero) in
     try
       let (prev_enum_constant_opt, sil_exp_opt) =
         Ast_utils.get_enum_constant_exp enum_constant_pointer in
@@ -709,7 +709,7 @@ struct
         "WARNING: In ArraySubscriptExpr there was a problem in translating array exp.\n" in
     let (i_exp, _) = extract_exp_from_list res_trans_idx.exps
         "WARNING: In ArraySubscriptExpr there was a problem in translating index exp.\n" in
-    let array_exp = Sil.Lindex (a_exp, i_exp) in
+    let array_exp = Exp.Lindex (a_exp, i_exp) in
 
     let root_nodes =
       if res_trans_a.root_nodes <> []
@@ -788,7 +788,7 @@ struct
                 (* As no node is created here ids are passed to the parent *)
                 let id = Ident.create_fresh Ident.knormal in
                 let res_instr = Sil.Letderef (id, var_exp, var_exp_typ, sil_loc) in
-                [res_instr], Sil.Var id
+                [res_instr], Exp.Var id
               ) else (
                 [], exp_op) in
             let binop_res_trans = { empty_res_trans with
@@ -821,7 +821,7 @@ struct
          Returning -1. NEED TO BE FIXED" in
     let callee_pname_opt =
       match sil_fe with
-      | Sil.Const (Const.Cfun pn) ->
+      | Exp.Const (Const.Cfun pn) ->
           Some pn
       | _ -> None (* function pointer *) in
     (* we cannot translate the arguments of __builtin_object_size because preprocessing copies
@@ -854,10 +854,10 @@ struct
                    NEED TO BE FIXED\n\n";
                 fix_param_exps_mismatch params_stmt params) in
         let act_params = if is_cf_retain_release then
-            (Sil.Const (Const.Cint IntLit.one), Typ.Tint Typ.IBool) :: act_params
+            (Exp.Const (Const.Cint IntLit.one), Typ.Tint Typ.IBool) :: act_params
           else act_params in
         let sil_fe' = match callee_pname_opt' with
-          | Some pn -> Sil.Const (Const.Cfun pn)
+          | Some pn -> Exp.Const (Const.Cfun pn)
           | _ -> sil_fe in
         let res_trans_call =
           let cast_trans_fun = cast_trans context act_params sil_loc function_type in
@@ -894,7 +894,7 @@ struct
     let (sil_method, _) = IList.hd result_trans_callee.exps in
     let callee_pname =
       match sil_method with
-      | Sil.Const (Const.Cfun pn) -> pn
+      | Exp.Const (Const.Cfun pn) -> pn
       | _ -> assert false (* method pointer not implemented, this shouldn't happen *) in
     (* As we may have nodes coming from different parameters we need to  *)
     (* call instruction for each parameter and collect the results       *)
@@ -954,7 +954,7 @@ struct
           let pvar = Pvar.mk_tmp "__temp_construct_" (Cfg.Procdesc.get_proc_name procdesc) in
           let class_type = CTypes_decl.get_type_from_expr_info ei context.CContext.tenv in
           Cfg.Procdesc.append_locals procdesc [(Pvar.get_name pvar, class_type)];
-          Sil.Lvar pvar, class_type in
+          Exp.Lvar pvar, class_type in
     let this_type = Typ.Tptr (class_type, Typ.Pk_pointer) in
     let this_res_trans = { empty_res_trans with
                            exps = [(var_exp, this_type)];
@@ -1053,7 +1053,7 @@ struct
                                 instrs = instr_block_param;
                               } in
         let call_flags = { CallFlags.default with CallFlags.cf_virtual = is_virtual; } in
-        let method_sil = Sil.Const (Const.Cfun callee_name) in
+        let method_sil = Exp.Const (Const.Cfun callee_name) in
         let res_trans_call = create_call_instr trans_state method_type method_sil param_exps
             sil_loc call_flags ~is_objc_method:true in
         let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
@@ -1093,7 +1093,7 @@ struct
       let (e', _) = extract_exp_from_list res_trans_b.exps
           "\nWARNING: Missing branch expression for Conditional operator. Need to be fixed\n" in
       let set_temp_var = [
-        Sil.Set (Sil.Lvar pvar, var_typ, e', sil_loc)
+        Sil.Set (Exp.Lvar pvar, var_typ, e', sil_loc)
       ] in
       let tmp_var_res_trans = { empty_res_trans with instrs = set_temp_var } in
       let trans_state'' = { trans_state' with succ_nodes = [join_node] } in
@@ -1120,12 +1120,12 @@ struct
          do_branch true exp1 var_typ res_trans_cond.leaf_nodes join_node pvar;
          do_branch false exp2 var_typ res_trans_cond.leaf_nodes join_node pvar;
          let id = Ident.create_fresh Ident.knormal in
-         let instrs = [Sil.Letderef (id, Sil.Lvar pvar, var_typ, sil_loc)] in
+         let instrs = [Sil.Letderef (id, Exp.Lvar pvar, var_typ, sil_loc)] in
          { empty_res_trans with
            root_nodes = res_trans_cond.root_nodes;
            leaf_nodes = [join_node];
            instrs = instrs;
-           exps = [(Sil.Var id, typ)];
+           exps = [(Exp.Var id, typ)];
            initd_exps = []; (* TODO we should get exps from branches+cond *)
          }
      | _ -> assert false)
@@ -1173,7 +1173,7 @@ struct
       Printing.log_out " No short-circuit condition\n";
       let res_trans_cond =
         if is_null_stmt cond then {
-          empty_res_trans with exps = [(Sil.Const (Const.Cint IntLit.one), (Typ.Tint Typ.IBool))]
+          empty_res_trans with exps = [(Exp.Const (Const.Cint IntLit.one), (Typ.Tint Typ.IBool))]
         }
         (* Assumption: If it's a null_stmt, it is a loop with no bound, so we set condition to 1 *)
         else
@@ -1224,7 +1224,7 @@ struct
         else res_trans_s1.root_nodes in
       let (exp1, typ1) = extract_exp res_trans_s1.exps in
       let (exp2, _) = extract_exp res_trans_s2.exps in
-      let e_cond = Sil.BinOp (binop, exp1, exp2) in
+      let e_cond = Exp.BinOp (binop, exp1, exp2) in
       { empty_res_trans with
         root_nodes = root_nodes_to_parent;
         leaf_nodes = prune_to_short_c@res_trans_s2.leaf_nodes;
@@ -1386,7 +1386,7 @@ struct
                   match e_const with
                   | [(head, _)] -> head
                   | _ -> assert false in
-                let sil_eq_cond = Sil.BinOp (Binop.Eq, switch_e_cond', e_const') in
+                let sil_eq_cond = Exp.BinOp (Binop.Eq, switch_e_cond', e_const') in
                 let sil_loc = CLocation.get_sil_location stmt_info context in
                 let true_prune_node =
                   create_prune_node true [(sil_eq_cond, switch_e_cond'_typ)]
@@ -1685,7 +1685,7 @@ struct
       let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
       CVar_decl.add_var_to_locals procdesc var_decl typ pvar;
       let trans_state' = { trans_state with succ_nodes = next_node } in
-      init_expr_trans trans_state' (Sil.Lvar pvar, typ) stmt_info vdi.Clang_ast_t.vdi_init_expr in
+      init_expr_trans trans_state' (Exp.Lvar pvar, typ) stmt_info vdi.Clang_ast_t.vdi_init_expr in
 
     match var_decls with
     | [] -> { empty_res_trans with root_nodes = next_nodes }
@@ -1861,11 +1861,11 @@ struct
                   let procname = Cfg.Procdesc.get_proc_name procdesc in
                   let pvar = Pvar.mk (Mangled.from_string name) procname in
                   let id = Ident.create_fresh Ident.knormal in
-                  let instr = Sil.Letderef (id, Sil.Lvar pvar, ret_param_typ, sil_loc) in
+                  let instr = Sil.Letderef (id, Exp.Lvar pvar, ret_param_typ, sil_loc) in
                   let ret_typ = match ret_param_typ with Typ.Tptr (t, _) -> t | _ -> assert false in
-                  Sil.Var id, ret_typ, [instr]
+                  Exp.Var id, ret_typ, [instr]
               | None ->
-                  Sil.Lvar (Cfg.Procdesc.get_ret_var procdesc), ret_type, [] in
+                  Exp.Lvar (Cfg.Procdesc.get_ret_var procdesc), ret_type, [] in
             let trans_state' = { trans_state_pri with
                                  succ_nodes = [];
                                  var_exp_typ = Some (ret_exp, ret_typ) } in
@@ -1962,7 +1962,7 @@ struct
     let ret_id = Ident.create_fresh Ident.knormal in
     let autorelease_pool_vars = CVar_decl.compute_autorelease_pool_vars context stmts in
     let stmt_call =
-      Sil.Call([ret_id], (Sil.Const (Const.Cfun fname)),
+      Sil.Call([ret_id], (Exp.Const (Const.Cfun fname)),
                autorelease_pool_vars, sil_loc, CallFlags.default) in
     let node_kind = Cfg.Node.Stmt_node ("Release the autorelease pool") in
     let call_node = create_node node_kind [stmt_call] sil_loc context in
@@ -1989,7 +1989,7 @@ struct
     (* Given a captured var, return the instruction to assign it to a temp *)
     let assign_captured_var (cvar, typ) =
       let id = Ident.create_fresh Ident.knormal in
-      let instr = Sil.Letderef (id, (Sil.Lvar cvar), typ, loc) in
+      let instr = Sil.Letderef (id, (Exp.Lvar cvar), typ, loc) in
       (id, instr) in
     match decl with
     | Clang_ast_t.BlockDecl (_, block_decl_info) ->
@@ -2008,8 +2008,8 @@ struct
         F.function_decl context.tenv context.cfg context.cg decl (Some block_data);
         Cfg.set_procname_priority context.cfg block_pname;
         let captured_vars =
-          IList.map2 (fun id (pvar, typ) -> (Sil.Var id, pvar, typ)) ids captureds in
-        let closure = Sil.Closure { name=block_pname; captured_vars } in
+          IList.map2 (fun id (pvar, typ) -> (Exp.Var id, pvar, typ)) ids captureds in
+        let closure = Exp.Closure { name=block_pname; captured_vars } in
         let block_name = Procname.to_string block_pname in
         let static_vars = CContext.static_vars_for_block context block_pname in
         let captured_static_vars = captureds @ static_vars in
@@ -2024,9 +2024,9 @@ struct
   and initListExpr_initializers_trans trans_state var_exp n stmts typ is_dyn_array stmt_info =
     let (var_exp_inside, typ_inside) = match typ with
       | Typ.Tarray (t, _) when Typ.is_array_of_cpp_class typ ->
-          Sil.Lindex (var_exp, Sil.Const (Const.Cint (IntLit.of_int n))), t
+          Exp.Lindex (var_exp, Exp.Const (Const.Cint (IntLit.of_int n))), t
       | _ when is_dyn_array ->
-          Sil.Lindex (var_exp, Sil.Const (Const.Cint (IntLit.of_int n))), typ
+          Exp.Lindex (var_exp, Exp.Const (Const.Cint (IntLit.of_int n))), typ
       | _ -> var_exp, typ in
     let trans_state' = { trans_state with var_exp_typ = Some (var_exp_inside, typ_inside) } in
     match stmts with
@@ -2059,7 +2059,7 @@ struct
     (* defining procedure. We add an edge in the call graph.*)
     Cg.add_edge context.cg procname lambda_pname;
     let captured_vars = [] in  (* TODO *)
-    let closure = Sil.Closure { name = lambda_pname; captured_vars } in
+    let closure = Exp.Closure { name = lambda_pname; captured_vars } in
     { empty_res_trans with exps = [(closure, typ)] }
 
   and cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info =
@@ -2077,7 +2077,7 @@ struct
             (match res_trans_size.exps with
              | [(exp, _)] -> Some exp, res_trans_size
              | _ -> None, empty_res_trans)
-        | None -> Some (Sil.Const (Const.Cint (IntLit.minus_one))), empty_res_trans
+        | None -> Some (Exp.Const (Const.Cint (IntLit.minus_one))), empty_res_trans
       else None, empty_res_trans in
     let res_trans_new = cpp_new_trans trans_state_pri sil_loc typ size_exp_opt in
     let stmt_opt = Ast_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_initializer_expr in
@@ -2093,8 +2093,8 @@ struct
       if is_dyn_array && Typ.is_pointer_to_cpp_class typ then
         let rec create_stmts stmt_opt size_exp_opt =
           match stmt_opt, size_exp_opt with
-          | Some stmt, Some (Sil.Const (Const.Cint n)) when not (IntLit.iszero n) ->
-              let n_minus_1 = Some ((Sil.Const (Const.Cint (IntLit.sub n IntLit.one)))) in
+          | Some stmt, Some (Exp.Const (Const.Cint n)) when not (IntLit.iszero n) ->
+              let n_minus_1 = Some ((Exp.Const (Const.Cint (IntLit.sub n IntLit.one)))) in
               stmt :: create_stmts stmt_opt n_minus_1
           | _ -> [] in
         let stmts = create_stmts stmt_opt size_exp_opt in
@@ -2123,7 +2123,7 @@ struct
     let exp = extract_exp_from_list result_trans_param.exps
         "WARNING: There should be one expression to delete. \n" in
     let call_instr =
-      Sil.Call ([], Sil.Const (Const.Cfun fname), [exp], sil_loc, CallFlags.default) in
+      Sil.Call ([], Exp.Const (Const.Cfun fname), [exp], sil_loc, CallFlags.default) in
     let call_res_trans = { empty_res_trans with instrs = [call_instr] } in
     let all_res_trans = if false then
         (* FIXME (t10135167): call destructor on deleted pointer if it's not null *)
@@ -2153,7 +2153,7 @@ struct
         "SIL_materialize_temp__" expr_info in
     let temp_exp = match stmt_list with [p] -> p | _ -> assert false in
     Cfg.Procdesc.append_locals procdesc [(Pvar.get_name pvar, typ)];
-    let var_exp_typ = (Sil.Lvar pvar, typ) in
+    let var_exp_typ = (Exp.Lvar pvar, typ) in
     let res_trans = init_expr_trans trans_state var_exp_typ stmt_info (Some temp_exp) in
     { res_trans with exps = [var_exp_typ] }
 
@@ -2175,16 +2175,16 @@ struct
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let cast_type = CTypes_decl.type_ptr_to_sil_type tenv cast_type_ptr in
     let sizeof_expr = match cast_type with
-      | Typ.Tptr (typ, _) -> Sil.Sizeof (typ, None, subtypes)
+      | Typ.Tptr (typ, _) -> Exp.Sizeof (typ, None, subtypes)
       | _ -> assert false in
-    let builtin = Sil.Const (Const.Cfun ModelBuiltins.__cast) in
+    let builtin = Exp.Const (Const.Cfun ModelBuiltins.__cast) in
     let stmt = match stmts with [stmt] -> stmt | _ -> assert false in
     let res_trans_stmt = exec_with_glvalue_as_reference instruction trans_state' stmt in
     let exp = match res_trans_stmt.exps with | [e] -> e | _ -> assert false in
     let args = [exp; (sizeof_expr, Typ.Tvoid)] in
     let ret_id = Ident.create_fresh Ident.knormal in
     let call = Sil.Call ([ret_id], builtin, args, sil_loc, CallFlags.default) in
-    let res_ex = Sil.Var ret_id in
+    let res_ex = Exp.Var ret_id in
     let res_trans_dynamic_cast = { empty_res_trans with instrs = [call]; } in
     let all_res_trans = [ res_trans_stmt; res_trans_dynamic_cast ] in
     let nname = "CxxDynamicCast" in
@@ -2204,7 +2204,7 @@ struct
     let res_trans_subexpr_list =
       IList.map (exec_with_glvalue_as_reference instruction trans_state_param) stmts in
     let params = collect_exprs res_trans_subexpr_list  in
-    let sil_fun = Sil.Const (Const.Cfun pname) in
+    let sil_fun = Exp.Const (Const.Cfun pname) in
     let call_instr = Sil.Call ([], sil_fun, params, sil_loc, CallFlags.default) in
     let res_trans_call = { empty_res_trans with
                            instrs = [call_instr];
@@ -2222,7 +2222,7 @@ struct
 
   and cxxPseudoDestructorExpr_trans () =
     let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_fun in
-    { empty_res_trans with exps = [(Sil.Const (Const.Cfun fun_name), Typ.Tvoid)] }
+    { empty_res_trans with exps = [(Exp.Const (Const.Cfun fun_name), Typ.Tvoid)] }
 
   and cxxTypeidExpr_trans trans_state stmt_info stmts expr_info =
     let tenv = trans_state.context.CContext.tenv in
@@ -2236,13 +2236,13 @@ struct
           instruction trans_state_param stmt
       | _ -> empty_res_trans in
     let fun_name = ModelBuiltins.__cxx_typeid in
-    let sil_fun = Sil.Const (Const.Cfun fun_name) in
+    let sil_fun = Exp.Const (Const.Cfun fun_name) in
     let ret_id = Ident.create_fresh Ident.knormal in
-    let type_info_objc = (Sil.Sizeof (typ, None, Subtype.exact), Typ.Tvoid) in
+    let type_info_objc = (Exp.Sizeof (typ, None, Subtype.exact), Typ.Tvoid) in
     let field_name_decl = Ast_utils.make_qual_name_decl ["type_info"; "std"] "__type_name" in
     let field_name = General_utils.mk_class_field_name field_name_decl in
-    let ret_exp = Sil.Var ret_id in
-    let field_exp = Sil.Lfield (ret_exp, field_name, typ) in
+    let ret_exp = Exp.Var ret_id in
+    let field_exp = Exp.Lfield (ret_exp, field_name, typ) in
     let args = [type_info_objc; (field_exp, Typ.Tvoid)] @ res_trans_subexpr.exps in
     let call_instr = Sil.Call ([ret_id], sil_fun, args, sil_loc, CallFlags.default) in
     let res_trans_call = { empty_res_trans with
@@ -2264,9 +2264,9 @@ struct
     let trans_state_param = { trans_state_pri with succ_nodes = [] } in
     let res_trans_subexpr_list = IList.map (instruction trans_state_param) stmts in
     let params = collect_exprs res_trans_subexpr_list  in
-    let sil_fun = Sil.Const (Const.Cfun fun_name) in
+    let sil_fun = Exp.Const (Const.Cfun fun_name) in
     let ret_id = Ident.create_fresh Ident.knormal in
-    let ret_exp = Sil.Var ret_id in
+    let ret_exp = Exp.Var ret_id in
     let call_instr = Sil.Call ([ret_id], sil_fun, params, sil_loc, CallFlags.default) in
     let res_trans_call = { empty_res_trans with
                            instrs = [call_instr];

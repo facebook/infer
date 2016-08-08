@@ -375,7 +375,7 @@ let add_tainting_attribute att pvar_param prop =
   IList.fold_left
     (fun prop_acc hpred ->
        match hpred with
-       | Sil.Hpointsto (Sil.Lvar pvar, (Sil.Eexp (rhs, _)), _)
+       | Sil.Hpointsto (Exp.Lvar pvar, (Sil.Eexp (rhs, _)), _)
          when Pvar.equal pvar pvar_param ->
            L.d_strln ("TAINT ANALYSIS: setting taint/untaint attribute of parameter " ^
                       (Pvar.to_string pvar));

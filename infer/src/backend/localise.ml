@@ -536,8 +536,8 @@ let parameter_field_not_null_checked_desc (desc : error_desc) exp =
   let field_not_nullable_desc exp =
     let rec exp_to_string exp =
       match exp with
-      | Sil.Lfield (exp', field, _) -> (exp_to_string exp')^" -> "^(Ident.fieldname_to_string field)
-      | Sil.Lvar pvar -> Mangled.to_string (Pvar.get_name pvar)
+      | Exp.Lfield (exp', field, _) -> (exp_to_string exp')^" -> "^(Ident.fieldname_to_string field)
+      | Exp.Lvar pvar -> Mangled.to_string (Pvar.get_name pvar)
       | _ -> "" in
     let var_s = exp_to_string exp in
     let field_not_null_desc =
@@ -545,8 +545,8 @@ let parameter_field_not_null_checked_desc (desc : error_desc) exp =
     { desc with descriptions = field_not_null_desc :: desc.descriptions;
                 tags = (Tags.field_not_null_checked, var_s) :: desc.tags; } in
   match exp with
-  | Sil.Lvar var -> parameter_not_nullable_desc var
-  | Sil.Lfield _ -> field_not_nullable_desc exp
+  | Exp.Lvar var -> parameter_not_nullable_desc var
+  | Exp.Lfield _ -> field_not_nullable_desc exp
   | _ -> desc
 
 let has_tag (desc : error_desc) tag =
@@ -688,7 +688,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
           s, " to ", " on " in
     let typ_str =
       match hpred_type_opt with
-      | Some (Sil.Sizeof (Typ.Tstruct
+      | Some (Exp.Sizeof (Typ.Tstruct
                             { Typ.csu = Csu.Class _;
                               Typ.struct_name = Some classname;
                             }, _, _)) ->
@@ -766,17 +766,17 @@ let desc_retain_cycle prop cycle loc cycle_dotty =
     | _ -> s in
   let do_edge ((se, _), f, _) =
     match se with
-    | Sil.Eexp(Sil.Lvar pvar, _) when Pvar.equal pvar Sil.block_pvar ->
+    | Sil.Eexp(Exp.Lvar pvar, _) when Pvar.equal pvar Sil.block_pvar ->
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") a block capturing "^(Ident.fieldname_to_string f)^"; ";
         ct:=!ct +1;
-    | Sil.Eexp(Sil.Lvar pvar as e, _) ->
+    | Sil.Eexp(Exp.Lvar pvar as e, _) ->
         let e_str = Sil.exp_to_string e in
         let e_str = if Pvar.is_seed pvar then
             remove_old e_str
           else e_str in
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") object "^e_str^" retaining "^e_str^"."^(Ident.fieldname_to_string f)^", ";
         ct:=!ct +1
-    | Sil.Eexp (Sil.Sizeof (typ, _, _), _) ->
+    | Sil.Eexp (Exp.Sizeof (typ, _, _), _) ->
         let step =
           " (" ^ (string_of_int !ct) ^ ") an object of "
           ^ (Typ.to_string typ) ^ " retaining another object via instance variable "

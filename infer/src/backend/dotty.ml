@@ -59,18 +59,19 @@ type link = {
 type dotty_node =
   | Dotnil of coordinate (* nil box *)
   (* Dotdangling(coo,e,c): dangling box for expression e at coordinate coo and color c *)
-  | Dotdangling of coordinate * Sil.exp * string
+  | Dotdangling of coordinate * Exp.t * string
   (* Dotpointsto(coo,e,c): basic memory cell box for expression e at coordinate coo and color c *)
-  | Dotpointsto of coordinate * Sil.exp * string
+  | Dotpointsto of coordinate * Exp.t * string
   (* Dotstruct(coo,e,l,c): struct box for expression e  with field list l at coordinate coo and color c *)
-  | Dotstruct of coordinate * Sil.exp * (Ident.fieldname * Sil.strexp) list * string * Sil.exp
+  | Dotstruct of coordinate * Exp.t * (Ident.fieldname * Sil.strexp) list * string * Exp.t
   (* Dotarray(coo,e1,e2,l,t,c): array box for expression e1  with field list l at coordinate coo and color c*)
   (* e2 is the len and t is the type *)
-  | Dotarray of coordinate * Sil.exp * Sil.exp * (Sil.exp * Sil.strexp) list * Typ.t * string
+  | Dotarray of coordinate * Exp.t * Exp.t * (Exp.t * Sil.strexp) list * Typ.t * string
   (* Dotlseg(coo,e1,e2,k,h,c): list box from e1 to e2 at coordinate coo and color c*)
-  | Dotlseg of coordinate * Sil.exp * Sil.exp * Sil.lseg_kind * Sil.hpred list * string
+  | Dotlseg of coordinate * Exp.t * Exp.t * Sil.lseg_kind * Sil.hpred list * string
   (* Dotlseg(coo,e1,e2,e3,e4,k,h,c): doubly linked-list box from with parameters (e1,e2,e3,e4) at coordinate coo and color c*)
-  | Dotdllseg of coordinate * Sil.exp * Sil.exp * Sil.exp * Sil.exp * Sil.lseg_kind * Sil.hpred list * string
+  | Dotdllseg of
+      coordinate * Exp.t * Exp.t * Exp.t * Exp.t * Sil.lseg_kind * Sil.hpred list * string
 
 let mk_coordinate i l = { id = i; lambda = l }
 
@@ -127,8 +128,8 @@ let strip_special_chars s =
 
 let rec strexp_to_string pe coo f se =
   match se with
-  | Sil.Eexp (Sil.Lvar pvar, _) -> F.fprintf f "%a" (Pvar.pp pe) pvar
-  | Sil.Eexp (Sil.Var id, _) ->
+  | Sil.Eexp (Exp.Lvar pvar, _) -> F.fprintf f "%a" (Pvar.pp pe) pvar
+  | Sil.Eexp (Exp.Var id, _) ->
       if !print_full_prop then
         F.fprintf f "%a" (Ident.pp pe) id
       else  ()
@@ -235,7 +236,7 @@ let color_to_str c =
   | Red -> "red"
 
 let make_dangling_boxes pe allocated_nodes (sigma_lambda: (Sil.hpred * int) list) =
-  let exp_color hpred (exp : Sil.exp) =
+  let exp_color hpred (exp : Exp.t) =
     if pe.pe_cmap_norm (Obj.repr hpred) == Red then Red
     else pe.pe_cmap_norm (Obj.repr exp) in
   let get_rhs_predicate (hpred, lambda) =
@@ -294,7 +295,7 @@ let rec dotty_mk_node pe sigma =
   let n = !dotty_state_count in
   incr dotty_state_count;
   let do_hpred_lambda exp_color = function
-    | (Sil.Hpointsto (e, Sil.Earray (e', l, _), Sil.Sizeof (Typ.Tarray (t, _), _, _)), lambda) ->
+    | (Sil.Hpointsto (e, Sil.Earray (e', l, _), Exp.Sizeof (Typ.Tarray (t, _), _, _)), lambda) ->
         incr dotty_state_count;  (* increment once more n+1 is the box for the array *)
         let e_color_str = color_to_str (exp_color e) in
         let e_color_str'= color_to_str (exp_color e') in
@@ -320,14 +321,14 @@ let rec dotty_mk_node pe sigma =
   match sigma with
   | [] -> []
   | (hpred, lambda) :: sigma' ->
-      let exp_color (exp : Sil.exp) =
+      let exp_color (exp : Exp.t) =
         if pe.pe_cmap_norm (Obj.repr hpred) == Red then Red
         else pe.pe_cmap_norm (Obj.repr exp) in
       do_hpred_lambda exp_color (hpred, lambda) @ dotty_mk_node pe sigma'
 
 let set_exps_neq_zero pi =
   let f = function
-    | Sil.Aneq (e, Sil.Const (Const.Cint i)) when IntLit.iszero i ->
+    | Sil.Aneq (e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
         exps_neq_zero := e :: !exps_neq_zero
     | _ -> () in
   exps_neq_zero := [];
@@ -650,7 +651,7 @@ let filter_useless_spec_dollar_box (nodes: dotty_node list) (links: link list) =
           l:: boxes_pointing_at n ln' )
         else boxes_pointing_at n ln' in
   let is_spec_variable = function
-    | Sil.Var id ->
+    | Exp.Var id ->
         Ident.is_normal id && Ident.name_equal (Ident.get_name id) Ident.name_spec
     | _ -> false in
   let handle_one_node node =
@@ -674,7 +675,7 @@ let filter_useless_spec_dollar_box (nodes: dotty_node list) (links: link list) =
 (* print a struct node *)
 let rec print_struct f pe e te l coo c =
   let print_type = match te with
-    | Sil.Sizeof (t, _, _) ->
+    | Exp.Sizeof (t, _, _) ->
         let str_t = Typ.to_string t in
         (match Str.split_delim (Str.regexp_string Config.anonymous_block_prefix) str_t with
          | [_; _] -> "BLOCK object"
@@ -1076,11 +1077,11 @@ let pp_speclist_dotty_file (filename : DB.filename) spec_list =
 
 (* each node has an unique integer identifier *)
 type visual_heap_node =
-  | VH_dangling of int * Sil.exp
-  | VH_pointsto of int * Sil.exp * Sil.strexp * Sil.exp (* VH_pointsto(id,address,content,type) *)
-  | VH_lseg of int * Sil.exp * Sil.exp * Sil.lseg_kind (*VH_lseg(id,address,content last cell, kind) *)
+  | VH_dangling of int * Exp.t
+  | VH_pointsto of int * Exp.t * Sil.strexp * Exp.t (* VH_pointsto(id,address,content,type) *)
+  | VH_lseg of int * Exp.t * Exp.t * Sil.lseg_kind (*VH_lseg(id,address,content last cell, kind) *)
   (*VH_dllseg(id, address, content first cell, content last cell, address last cell, kind) *)
-  | VH_dllseg of int * Sil.exp * Sil.exp * Sil.exp * Sil.exp * Sil.lseg_kind
+  | VH_dllseg of int * Exp.t * Exp.t * Exp.t * Exp.t * Sil.lseg_kind
 
 (* an edge is a pair of node identifiers*)
 type visual_heap_edge = {
@@ -1321,7 +1322,7 @@ let xml_pure_info prop =
 
 (** Return a string describing the kind of a pointsto address *)
 let pointsto_addr_kind = function
-  | Sil.Lvar pv ->
+  | Exp.Lvar pv ->
       if Pvar.is_global pv
       then "global"
       else if Pvar.is_local pv && Mangled.equal (Pvar.get_name pv) Ident.name_return

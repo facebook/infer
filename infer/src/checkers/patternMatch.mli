@@ -69,7 +69,7 @@ val strict_supertype_exists : Tenv.t -> (Typ.struct_typ -> bool) -> Typ.struct_t
 val java_get_const_type_name : Const.t -> string
 
 (** Get the values of a vararg parameter given the pvar used to assign the elements. *)
-val java_get_vararg_values : Cfg.Node.t -> Pvar.t -> Idenv.t -> Sil.exp list
+val java_get_vararg_values : Cfg.Node.t -> Pvar.t -> Idenv.t -> Exp.t list
 
 val java_proc_name_with_class_method : Procname.java -> string -> string -> bool
 

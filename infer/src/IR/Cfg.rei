@@ -331,4 +331,4 @@ let remove_seed_captured_vars_block: list Mangled.t => Prop.t Prop.normal => Pro
     (name, typ) where name is a parameter. The resulting procdesc is isomorphic but
     all the type of the parameters are replaced in the instructions according to the list.
     The virtual calls are also replaced to match the parameter types */
-let specialize_types: Procdesc.t => Procname.t => list (Sil.exp, Typ.t) => Procdesc.t;
+let specialize_types: Procdesc.t => Procname.t => list (Exp.t, Typ.t) => Procdesc.t;

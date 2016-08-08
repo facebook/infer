@@ -21,8 +21,8 @@ module StructuredSil = struct
 
   type structured_instr =
     | Cmd of Sil.instr
-    | If of Sil.exp * structured_instr list * structured_instr list
-    | While of Sil.exp * structured_instr list
+    | If of Exp.t * structured_instr list * structured_instr list
+    | While of Exp.t * structured_instr list
     (* try/catch/finally. note: there is no throw. the semantics are that every command in the try
        block is assumed to be possibly-excepting, and the catch block captures all exceptions *)
     | Try of structured_instr list * structured_instr list * structured_instr list
@@ -76,7 +76,7 @@ module StructuredSil = struct
     Pvar.mk (Mangled.from_string str) dummy_procname
 
   let var_of_str str =
-    Sil.Lvar (pvar_of_str str)
+    Exp.Lvar (pvar_of_str str)
 
   let ident_of_str str =
     Ident.create_normal (Ident.string_to_name str) 0
@@ -91,12 +91,12 @@ module StructuredSil = struct
     Cmd (Sil.Set (lhs_exp, rhs_typ, rhs_exp, dummy_loc))
 
   let make_call ?(procname=dummy_procname) ret_ids args =
-    let call_exp = Sil.Const (Const.Cfun procname) in
+    let call_exp = Exp.Const (Const.Cfun procname) in
     Cmd (Sil.Call (ret_ids, call_exp, args, dummy_loc, CallFlags.default))
 
   let id_assign_id ?(rhs_typ=dummy_typ) lhs rhs =
     let lhs_id = ident_of_str lhs in
-    let rhs_exp = Sil.Var (ident_of_str rhs) in
+    let rhs_exp = Exp.Var (ident_of_str rhs) in
     make_letderef ~rhs_typ lhs_id rhs_exp
 
   let id_assign_var ?(rhs_typ=dummy_typ) lhs rhs =
@@ -105,8 +105,8 @@ module StructuredSil = struct
     make_letderef ~rhs_typ lhs_id rhs_exp
 
   let id_set_id ?(rhs_typ=dummy_typ) lhs_id rhs_id =
-    let lhs_exp = Sil.Var (ident_of_str lhs_id) in
-    let rhs_exp = Sil.Var (ident_of_str rhs_id) in
+    let lhs_exp = Exp.Var (ident_of_str lhs_id) in
+    let rhs_exp = Exp.Var (ident_of_str rhs_id) in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
   let var_assign_exp ~rhs_typ lhs rhs_exp =
@@ -120,7 +120,7 @@ module StructuredSil = struct
 
   let var_assign_id ?(rhs_typ=dummy_typ) lhs rhs =
     let lhs_exp = var_of_str lhs in
-    let rhs_exp = Sil.Var (ident_of_str rhs) in
+    let rhs_exp = Exp.Var (ident_of_str rhs) in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
   (* x = &y *)
@@ -165,7 +165,7 @@ module Make
         create_node (Cfg.Node.Prune_node (true_branch, if_kind, "")) [prune_instr] in
       let true_prune_node = mk_prune_node cond_exp if_kind true in
       let false_prune_node =
-        let negated_cond_exp = Sil.UnOp (Unop.LNot, cond_exp, None) in
+        let negated_cond_exp = Exp.UnOp (Unop.LNot, cond_exp, None) in
         mk_prune_node negated_cond_exp if_kind false in
       true_prune_node, false_prune_node in
 

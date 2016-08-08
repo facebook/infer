@@ -102,53 +102,21 @@ type attribute =
   /** denotes an object unsubscribed from observers of a notification center */
   | Aunsubscribed_observer;
 
-type closure = {name: Procname.t, captured_vars: list (exp, Pvar.t, Typ.t)}
-/** dynamically determined length of an array value, if any */
-and dynamic_length = option exp
-/** Program expressions. */
-and exp =
-  /** Pure variable: it is not an lvalue */
-  | Var of Ident.t
-  /** Unary operator with type of the result if known */
-  | UnOp of Unop.t exp (option Typ.t)
-  /** Binary operator */
-  | BinOp of Binop.t exp exp
-  /** Exception */
-  | Exn of exp
-  /** Anonymous function */
-  | Closure of closure
-  /** Constants */
-  | Const of Const.t
-  /** Type cast */
-  | Cast of Typ.t exp
-  /** The address of a program variable */
-  | Lvar of Pvar.t
-  /** A field offset, the type is the surrounding struct type */
-  | Lfield of exp Ident.fieldname Typ.t
-  /** An array index offset: [exp1\[exp2\]] */
-  | Lindex of exp exp
-  /** A sizeof expression. [Sizeof (Tarray elt (Some static_length)) (Some dynamic_length)]
-      represents the size of an array value consisting of [dynamic_length] elements of type [elt].
-      The [dynamic_length], tracked by symbolic execution, may differ from the [static_length]
-      obtained from the type definition, e.g. when an array is over-allocated.  For struct types,
-      the [dynamic_length] is that of the final extensible array, if any. */
-  | Sizeof of Typ.t dynamic_length Subtype.t;
-
 
 /** Sets of expressions. */
-let module ExpSet: Set.S with type elt = exp;
+let module ExpSet: Set.S with type elt = Exp.t;
 
 
 /** Maps with expression keys. */
-let module ExpMap: Map.S with type key = exp;
+let module ExpMap: Map.S with type key = Exp.t;
 
 
 /** Hashtable with expressions as keys. */
-let module ExpHash: Hashtbl.S with type key = exp;
+let module ExpHash: Hashtbl.S with type key = Exp.t;
 
 
 /** Convert expression lists to expression sets. */
-let elist_to_eset: list exp => ExpSet.t;
+let elist_to_eset: list Exp.t => ExpSet.t;
 
 
 /** Kind of prune instruction */
@@ -174,15 +142,15 @@ type instr =
   /** declaration [let x = *lexp:typ] where [typ] is the root type of [lexp] */
   /* note for frontend writers: [x] must be used in a subsequent instruction, otherwise the entire
      `Letderef` instruction may be eliminated by copy-propagation */
-  | Letderef of Ident.t exp Typ.t Location.t
+  | Letderef of Ident.t Exp.t Typ.t Location.t
   /** assignment [*lexp1:typ = exp2] where [typ] is the root type of [lexp1] */
-  | Set of exp Typ.t exp Location.t
+  | Set of Exp.t Typ.t Exp.t Location.t
   /** prune the state based on [exp=1], the boolean indicates whether true branch */
-  | Prune of exp Location.t bool if_kind
+  | Prune of Exp.t Location.t bool if_kind
   /** [Call (ret_id1..ret_idn, e_fun, arg_ts, loc, call_flags)] represents an instructions
       [ret_id1..ret_idn = e_fun(arg_ts);]
       where n = 0 for void return and n > 1 for struct return */
-  | Call of (list Ident.t) exp (list (exp, Typ.t)) Location.t CallFlags.t
+  | Call of (list Ident.t) Exp.t (list (Exp.t, Typ.t)) Location.t CallFlags.t
   /** nullify stack variable */
   | Nullify of Pvar.t Location.t
   | Abstract of Location.t /** apply abstraction */
@@ -196,16 +164,16 @@ let instr_is_auxiliary: instr => bool;
 
 
 /** Offset for an lvalue. */
-type offset = | Off_fld of Ident.fieldname Typ.t | Off_index of exp;
+type offset = | Off_fld of Ident.fieldname Typ.t | Off_index of Exp.t;
 
 
 /** {2 Components of Propositions} */
 /** an atom is a pure atomic formula */
 type atom =
-  | Aeq of exp exp /** equality */
-  | Aneq of exp exp /** disequality */
-  | Apred of attribute (list exp) /** predicate symbol applied to exps */
-  | Anpred of attribute (list exp) /** negated predicate symbol applied to exps */;
+  | Aeq of Exp.t Exp.t /** equality */
+  | Aneq of Exp.t Exp.t /** disequality */
+  | Apred of attribute (list Exp.t) /** predicate symbol applied to exps */
+  | Anpred of attribute (list Exp.t) /** negated predicate symbol applied to exps */;
 
 
 /** kind of lseg or dllseg predicates */
@@ -289,7 +257,7 @@ let inst_partial_meet: inst => inst => inst;
 
 /** structured expressions represent a value of structured type, such as an array or a struct. */
 type strexp =
-  | Eexp of exp inst /** Base case: expression with instrumentation */
+  | Eexp of Exp.t inst /** Base case: expression with instrumentation */
   | Estruct of (list (Ident.fieldname, strexp)) inst /** C structure */
   /** Array of given length
       There are two conditions imposed / used in the array case.
@@ -298,20 +266,20 @@ type strexp =
       For instance, x |->[10 | e1: v1] implies that e1 <= 9.
       Second, if two indices appear in an array, they should be different.
       For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. */
-  | Earray of exp (list (exp, strexp)) inst;
+  | Earray of Exp.t (list (Exp.t, strexp)) inst;
 
 
 /** an atomic heap predicate */
 type hpred =
-  | Hpointsto of exp strexp exp
+  | Hpointsto of Exp.t strexp Exp.t
   /** represents [exp|->strexp:typexp] where [typexp]
       is an expression representing a type, e.g. [sizeof(t)]. */
-  | Hlseg of lseg_kind hpara exp exp (list exp)
+  | Hlseg of lseg_kind hpara Exp.t Exp.t (list Exp.t)
   /** higher - order predicate for singly - linked lists.
       Should ensure that exp1!= exp2 implies that exp1 is allocated.
       This assumption is used in the rearrangement. The last [exp list] parameter
       is used to denote the shared links by all the nodes in the list.*/
-  | Hdllseg of lseg_kind hpara_dll exp exp exp exp (list exp)
+  | Hdllseg of lseg_kind hpara_dll Exp.t Exp.t Exp.t Exp.t (list Exp.t)
 /** higher-order predicate for doubly-linked lists. */
 /** parameter for the higher-order singly-linked list predicate.
     Means "lambda (root,next,svars). Exists evars. body".
@@ -352,7 +320,7 @@ let create_sharing_env: unit => sharing_env;
 
 
 /** Return a canonical representation of the exp */
-let exp_compact: sharing_env => exp => exp;
+let exp_compact: sharing_env => Exp.t => Exp.t;
 
 
 /** Return a compact representation of the exp */
@@ -362,23 +330,23 @@ let hpred_compact: sharing_env => hpred => hpred;
 /** {2 Comparision And Inspection Functions} */
 let has_objc_ref_counter: hpred => bool;
 
-let exp_is_zero: exp => bool;
+let exp_is_zero: Exp.t => bool;
 
-let exp_is_null_literal: exp => bool;
+let exp_is_null_literal: Exp.t => bool;
 
 
 /** return true if [exp] is the special this/self expression */
-let exp_is_this: exp => bool;
+let exp_is_this: Exp.t => bool;
 
 let path_pos_equal: path_pos => path_pos => bool;
 
 
 /** Returns the zero value of a type, for int, float and ptr types, None othwewise */
-let zero_value_of_numerical_type_option: Typ.t => option exp;
+let zero_value_of_numerical_type_option: Typ.t => option Exp.t;
 
 
 /** Returns the zero value of a type, for int, float and ptr types, fail otherwise */
-let zero_value_of_numerical_type: Typ.t => exp;
+let zero_value_of_numerical_type: Typ.t => Exp.t;
 
 
 /** Make a static local name in objc */
@@ -400,7 +368,7 @@ let is_block_pvar: Pvar.t => bool;
     with respect to the first argument. It returns an expression [e'] such that
     BinOp([binop], [e'], [exp1]) = [exp2]. If the [binop] operation is not invertible,
     the function raises an exception by calling "assert false". */
-let binop_invert: Binop.t => exp => exp => exp;
+let binop_invert: Binop.t => Exp.t => Exp.t => Exp.t;
 
 let mem_kind_compare: mem_kind => mem_kind => int;
 
@@ -435,15 +403,15 @@ let attribute_to_category: attribute => attribute_category;
 
 let attr_is_undef: attribute => bool;
 
-let exp_compare: exp => exp => int;
+let exp_compare: Exp.t => Exp.t => int;
 
-let exp_equal: exp => exp => bool;
+let exp_equal: Exp.t => Exp.t => bool;
 
 
 /** exp_is_array_index_of index arr returns true is index is an array index of arr. */
-let exp_is_array_index_of: exp => exp => bool;
+let exp_is_array_index_of: Exp.t => Exp.t => bool;
 
-let exp_typ_compare: (exp, Typ.t) => (exp, Typ.t) => int;
+let exp_typ_compare: (Exp.t, Typ.t) => (Exp.t, Typ.t) => int;
 
 let instr_compare: instr => instr => int;
 
@@ -451,11 +419,11 @@ let instr_compare: instr => instr => int;
 /** compare instructions from different procedures without considering loc's, ident's, and pvar's.
     the [exp_map] param gives a mapping of names used in the procedure of [instr1] to identifiers
     used in the procedure of [instr2] */
-let instr_compare_structural: instr => instr => ExpMap.t exp => (int, ExpMap.t exp);
+let instr_compare_structural: instr => instr => ExpMap.t Exp.t => (int, ExpMap.t Exp.t);
 
-let exp_list_compare: list exp => list exp => int;
+let exp_list_compare: list Exp.t => list Exp.t => int;
 
-let exp_list_equal: list exp => list exp => bool;
+let exp_list_equal: list Exp.t => list Exp.t => bool;
 
 let atom_compare: atom => atom => int;
 
@@ -486,11 +454,11 @@ let fld_strexp_compare: (Ident.fieldname, strexp) => (Ident.fieldname, strexp) =
 let fld_strexp_list_compare:
   list (Ident.fieldname, strexp) => list (Ident.fieldname, strexp) => int;
 
-let exp_strexp_compare: (exp, strexp) => (exp, strexp) => int;
+let exp_strexp_compare: (Exp.t, strexp) => (Exp.t, strexp) => int;
 
 
 /** Return the lhs expression of a hpred */
-let hpred_get_lhs: hpred => exp;
+let hpred_get_lhs: hpred => Exp.t;
 
 
 /** Return the value of the FA_sentinel attribute in [attr_list] if it is found */
@@ -519,39 +487,39 @@ let attribute_to_string: printenv => attribute => string;
 
 
 /** Pretty print an expression. */
-let pp_exp: printenv => F.formatter => exp => unit;
+let pp_exp: printenv => F.formatter => Exp.t => unit;
 
 
 /** Pretty print an expression with type. */
-let pp_exp_typ: printenv => F.formatter => (exp, Typ.t) => unit;
+let pp_exp_typ: printenv => F.formatter => (Exp.t, Typ.t) => unit;
 
 
 /** Convert an expression to a string */
-let exp_to_string: exp => string;
+let exp_to_string: Exp.t => string;
 
 
 /** dump an expression. */
-let d_exp: exp => unit;
+let d_exp: Exp.t => unit;
 
 
 /** Pretty print a type. */
-let pp_texp: printenv => F.formatter => exp => unit;
+let pp_texp: printenv => F.formatter => Exp.t => unit;
 
 
 /** Pretty print a type with all the details. */
-let pp_texp_full: printenv => F.formatter => exp => unit;
+let pp_texp_full: printenv => F.formatter => Exp.t => unit;
 
 
 /** Dump a type expression with all the details. */
-let d_texp_full: exp => unit;
+let d_texp_full: Exp.t => unit;
 
 
 /** Pretty print a list of expressions. */
-let pp_exp_list: printenv => F.formatter => list exp => unit;
+let pp_exp_list: printenv => F.formatter => list Exp.t => unit;
 
 
 /** Dump a list of expressions. */
-let d_exp_list: list exp => unit;
+let d_exp_list: list Exp.t => unit;
 
 
 /** Pretty print an offset */
@@ -575,7 +543,7 @@ let instr_get_loc: instr => Location.t;
 
 
 /** get the expressions occurring in the instruction */
-let instr_get_exps: instr => list exp;
+let instr_get_exps: instr => list Exp.t;
 
 
 /** Pretty print an instruction. */
@@ -688,17 +656,17 @@ let pp_hpred_env: printenv => option Predicates.env => F.formatter => hpred => u
     index. This function "cleans" [exp] according to whether it is the
     footprint or current part of the prop.
     The function faults in the re - execution mode, as an internal check of the tool. */
-let array_clean_new_index: bool => exp => exp;
+let array_clean_new_index: bool => Exp.t => Exp.t;
 
 
 /** Change exps in strexp using [f]. */
 /** WARNING: the result might not be normalized. */
-let strexp_expmap: ((exp, option inst) => (exp, option inst)) => strexp => strexp;
+let strexp_expmap: ((Exp.t, option inst) => (Exp.t, option inst)) => strexp => strexp;
 
 
 /** Change exps in hpred by [f]. */
 /** WARNING: the result might not be normalized. */
-let hpred_expmap: ((exp, option inst) => (exp, option inst)) => hpred => hpred;
+let hpred_expmap: ((Exp.t, option inst) => (Exp.t, option inst)) => hpred => hpred;
 
 
 /** Change instrumentations in hpred using [f]. */
@@ -707,89 +675,89 @@ let hpred_instmap: (inst => inst) => hpred => hpred;
 
 /** Change exps in hpred list by [f]. */
 /** WARNING: the result might not be normalized. */
-let hpred_list_expmap: ((exp, option inst) => (exp, option inst)) => list hpred => list hpred;
+let hpred_list_expmap: ((Exp.t, option inst) => (Exp.t, option inst)) => list hpred => list hpred;
 
 
 /** Change exps in atom by [f]. */
 /** WARNING: the result might not be normalized. */
-let atom_expmap: (exp => exp) => atom => atom;
+let atom_expmap: (Exp.t => Exp.t) => atom => atom;
 
 
 /** Change exps in atom list by [f]. */
 /** WARNING: the result might not be normalized. */
-let atom_list_expmap: (exp => exp) => list atom => list atom;
+let atom_list_expmap: (Exp.t => Exp.t) => list atom => list atom;
 
 
 /** {2 Function for computing lexps in sigma} */
-let hpred_list_get_lexps: (exp => bool) => list hpred => list exp;
+let hpred_list_get_lexps: (Exp.t => bool) => list hpred => list Exp.t;
 
 
 /** {2 Utility Functions for Expressions} */
 /** Turn an expression representing a type into the type it represents
     If not a sizeof, return the default type if given, otherwise raise an exception */
-let texp_to_typ: option Typ.t => exp => Typ.t;
+let texp_to_typ: option Typ.t => Exp.t => Typ.t;
 
 
 /** Return the root of [lexp]. */
-let root_of_lexp: exp => exp;
+let root_of_lexp: Exp.t => Exp.t;
 
 
 /** Get an expression "undefined", the boolean indicates
     whether the undefined value goest into the footprint */
-let exp_get_undefined: bool => exp;
+let exp_get_undefined: bool => Exp.t;
 
 
 /** Checks whether an expression denotes a location using pointer arithmetic.
     Currently, catches array - indexing expressions such as a[i] only. */
-let exp_pointer_arith: exp => bool;
+let exp_pointer_arith: Exp.t => bool;
 
 
 /** Integer constant 0 */
-let exp_zero: exp;
+let exp_zero: Exp.t;
 
 
 /** Null constant */
-let exp_null: exp;
+let exp_null: Exp.t;
 
 
 /** Integer constant 1 */
-let exp_one: exp;
+let exp_one: Exp.t;
 
 
 /** Integer constant -1 */
-let exp_minus_one: exp;
+let exp_minus_one: Exp.t;
 
 
 /** Create integer constant */
-let exp_int: IntLit.t => exp;
+let exp_int: IntLit.t => Exp.t;
 
 
 /** Create float constant */
-let exp_float: float => exp;
+let exp_float: float => Exp.t;
 
 
 /** Create integer constant corresponding to the boolean value */
-let exp_bool: bool => exp;
+let exp_bool: bool => Exp.t;
 
 
 /** Create expresstion [e1 == e2] */
-let exp_eq: exp => exp => exp;
+let exp_eq: Exp.t => Exp.t => Exp.t;
 
 
 /** Create expresstion [e1 != e2] */
-let exp_ne: exp => exp => exp;
+let exp_ne: Exp.t => Exp.t => Exp.t;
 
 
 /** Create expresstion [e1 <= e2] */
-let exp_le: exp => exp => exp;
+let exp_le: Exp.t => Exp.t => Exp.t;
 
 
 /** Create expression [e1 < e2] */
-let exp_lt: exp => exp => exp;
+let exp_lt: Exp.t => Exp.t => Exp.t;
 
 
 /** {2 Functions for computing program variables} */
-let exp_fpv: exp => list Pvar.t;
+let exp_fpv: Exp.t => list Pvar.t;
 
 let strexp_fpv: strexp => list Pvar.t;
 
@@ -870,13 +838,13 @@ let ident_list_fav_add: list Ident.t => fav => unit;
 
 
 /** [exp_fav_add fav exp] extends [fav] with the free variables of [exp] */
-let exp_fav_add: fav => exp => unit;
+let exp_fav_add: fav => Exp.t => unit;
 
-let exp_fav: exp => fav;
+let exp_fav: Exp.t => fav;
 
-let exp_fav_list: exp => list Ident.t;
+let exp_fav_list: Exp.t => list Ident.t;
 
-let ident_in_exp: Ident.t => exp => bool;
+let ident_in_exp: Ident.t => Exp.t => bool;
 
 let strexp_fav_add: fav => strexp => unit;
 
@@ -902,7 +870,7 @@ let hpara_dll_shallow_av: hpara_dll => fav;
     variables. Thus, the functions essentially compute all the
     identifiers occuring in a parameter. Some variables can appear more
     than once in the result. */
-let exp_av_add: fav => exp => unit;
+let exp_av_add: fav => Exp.t => unit;
 
 let strexp_av_add: fav => strexp => unit;
 
@@ -920,15 +888,15 @@ type subst;
 /** Create a substitution from a list of pairs.
     For all (id1, e1), (id2, e2) in the input list,
     if id1 = id2, then e1 = e2. */
-let sub_of_list: list (Ident.t, exp) => subst;
+let sub_of_list: list (Ident.t, Exp.t) => subst;
 
 
 /** like sub_of_list, but allow duplicate ids and only keep the first occurrence */
-let sub_of_list_duplicates: list (Ident.t, exp) => subst;
+let sub_of_list_duplicates: list (Ident.t, Exp.t) => subst;
 
 
 /** Convert a subst to a list of pairs. */
-let sub_to_list: subst => list (Ident.t, exp);
+let sub_to_list: subst => list (Ident.t, Exp.t);
 
 
 /** The empty substitution. */
@@ -960,7 +928,7 @@ let sub_symmetric_difference: subst => subst => (subst, subst, subst);
 /** [sub_find filter sub] returns the expression associated to the first identifier
     that satisfies [filter].
     Raise [Not_found] if there isn't one. */
-let sub_find: (Ident.t => bool) => subst => exp;
+let sub_find: (Ident.t => bool) => subst => Exp.t;
 
 
 /** [sub_filter filter sub] restricts the domain of [sub] to the
@@ -970,12 +938,12 @@ let sub_filter: (Ident.t => bool) => subst => subst;
 
 /** [sub_filter_exp filter sub] restricts the domain of [sub] to the
     identifiers satisfying [filter(id, sub(id))]. */
-let sub_filter_pair: ((Ident.t, exp) => bool) => subst => subst;
+let sub_filter_pair: ((Ident.t, Exp.t) => bool) => subst => subst;
 
 
 /** [sub_range_partition filter sub] partitions [sub] according to
     whether range expressions satisfy [filter]. */
-let sub_range_partition: (exp => bool) => subst => (subst, subst);
+let sub_range_partition: (Exp.t => bool) => subst => (subst, subst);
 
 
 /** [sub_domain_partition filter sub] partitions [sub] according to
@@ -988,16 +956,16 @@ let sub_domain: subst => list Ident.t;
 
 
 /** Return the list of expressions in the range of the substitution. */
-let sub_range: subst => list exp;
+let sub_range: subst => list Exp.t;
 
 
 /** [sub_range_map f sub] applies [f] to the expressions in the range of [sub]. */
-let sub_range_map: (exp => exp) => subst => subst;
+let sub_range_map: (Exp.t => Exp.t) => subst => subst;
 
 
 /** [sub_map f g sub] applies the renaming [f] to identifiers in the domain
     of [sub] and the substitution [g] to the expressions in the range of [sub]. */
-let sub_map: (Ident.t => Ident.t) => (exp => exp) => subst => subst;
+let sub_map: (Ident.t => Ident.t) => (Exp.t => Exp.t) => subst => subst;
 
 
 /** Checks whether [id] belongs to the domain of [subst]. */
@@ -1005,7 +973,7 @@ let mem_sub: Ident.t => subst => bool;
 
 
 /** Extend substitution and return [None] if not possible. */
-let extend_sub: subst => Ident.t => exp => option subst;
+let extend_sub: subst => Ident.t => Exp.t => option subst;
 
 
 /** Free auxilary variables in the domain and range of the
@@ -1024,7 +992,7 @@ let sub_fpv: subst => list Pvar.t;
 
 /** substitution functions */
 /** WARNING: these functions do not ensure that the results are normalized. */
-let exp_sub: subst => exp => exp;
+let exp_sub: subst => Exp.t => Exp.t;
 
 let atom_sub: subst => atom => atom;
 
@@ -1034,36 +1002,36 @@ let instr_sub: subst => instr => instr;
 
 let hpred_sub: subst => hpred => hpred;
 
-let exp_sub_ids: (Ident.t => exp) => exp => exp;
+let exp_sub_ids: (Ident.t => Exp.t) => Exp.t => Exp.t;
 
 
 /** apply [f] to id's in [instr]. if [sub_id_binders] is false, [f] is only applied to bound id's */
-let instr_sub_ids: sub_id_binders::bool => (Ident.t => exp) => instr => instr;
+let instr_sub_ids: sub_id_binders::bool => (Ident.t => Exp.t) => instr => instr;
 
 
 /** {2 Functions for replacing occurrences of expressions.} */
 /** The first parameter should define a partial function.
     No parts of hpara are replaced by these functions. */
-let exp_replace_exp: list (exp, exp) => exp => exp;
+let exp_replace_exp: list (Exp.t, Exp.t) => Exp.t => Exp.t;
 
-let strexp_replace_exp: list (exp, exp) => strexp => strexp;
+let strexp_replace_exp: list (Exp.t, Exp.t) => strexp => strexp;
 
-let atom_replace_exp: list (exp, exp) => atom => atom;
+let atom_replace_exp: list (Exp.t, Exp.t) => atom => atom;
 
-let hpred_replace_exp: list (exp, exp) => hpred => hpred;
+let hpred_replace_exp: list (Exp.t, Exp.t) => hpred => hpred;
 
 
 /** {2 Functions for constructing or destructing entities in this module} */
 /** Extract the ids and pvars from an expression */
-let exp_get_vars: exp => (list Ident.t, list Pvar.t);
+let exp_get_vars: Exp.t => (list Ident.t, list Pvar.t);
 
 
 /** Compute the offset list of an expression */
-let exp_get_offsets: exp => list offset;
+let exp_get_offsets: Exp.t => list offset;
 
 
 /** Add the offset list to an expression */
-let exp_add_offsets: exp => list offset => exp;
+let exp_add_offsets: Exp.t => list offset => Exp.t;
 
 let sigma_to_sigma_ne: list hpred => list (list atom, list hpred);
 
@@ -1072,7 +1040,7 @@ let sigma_to_sigma_ne: list hpred => list (list atom, list hpred);
     [e2] and [elist]. If [para = lambda (x, y, xs). exists zs. b],
     then the result of the instantiation is [b\[e1 / x, e2 / y, elist / xs, _zs'/ zs\]]
     for some fresh [_zs'].*/
-let hpara_instantiate: hpara => exp => exp => list exp => (list Ident.t, list hpred);
+let hpara_instantiate: hpara => Exp.t => Exp.t => list Exp.t => (list Ident.t, list hpred);
 
 
 /** [hpara_dll_instantiate para cell blink flink  elist] instantiates [para] with [cell],
@@ -1080,6 +1048,7 @@ let hpara_instantiate: hpara => exp => exp => list exp => (list Ident.t, list hp
     then the result of the instantiation is
     [b\[cell / x, blink / y, flink / z, elist / xs, _zs'/ zs\]]
     for some fresh [_zs'].*/
-let hpara_dll_instantiate: hpara_dll => exp => exp => exp => list exp => (list Ident.t, list hpred);
+let hpara_dll_instantiate:
+  hpara_dll => Exp.t => Exp.t => Exp.t => list Exp.t => (list Ident.t, list hpred);
 
 let custom_error: Pvar.t;

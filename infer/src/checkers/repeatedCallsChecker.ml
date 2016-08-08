@@ -73,7 +73,7 @@ struct
         Procname.equal pn ModelBuiltins.__new_array in
       let do_instr instr =
         match instr with
-        | Sil.Call (_, Sil.Const (Const.Cfun pn), _, loc, _) when proc_is_new pn ->
+        | Sil.Call (_, Exp.Const (Const.Cfun pn), _, loc, _) when proc_is_new pn ->
             found := Some loc
         | _ -> () in
       IList.iter do_instr (Cfg.Node.get_instrs node);
@@ -111,18 +111,18 @@ struct
     (* Arguments are not temporary variables. *)
     let arguments_not_temp args =
       let filter_arg (e, _) = match e with
-        | Sil.Lvar pvar ->
+        | Exp.Lvar pvar ->
             (* same temporary variable does not imply same value *)
             not (Pvar.is_frontend_tmp pvar)
         | _ -> true in
       IList.for_all filter_arg args in
 
     match instr with
-    | Sil.Call (ret_ids, Sil.Const (Const.Cfun callee_pname), _, loc, call_flags)
+    | Sil.Call (ret_ids, Exp.Const (Const.Cfun callee_pname), _, loc, call_flags)
       when ret_ids <> [] && arguments_not_temp normalized_etl ->
         let instr_normalized_args = Sil.Call (
             ret_ids,
-            Sil.Const (Const.Cfun callee_pname),
+            Exp.Const (Const.Cfun callee_pname),
             normalized_etl,
             loc,
             call_flags) in

@@ -22,8 +22,8 @@ type splitting = {
   missing_sigma: Sil.hpred list;
   frame_fld : Sil.hpred list;
   missing_fld : Sil.hpred list;
-  frame_typ : (Sil.exp * Sil.exp) list;
-  missing_typ : (Sil.exp * Sil.exp) list;
+  frame_typ : (Exp.t * Exp.t) list;
+  missing_typ : (Exp.t * Exp.t) list;
 }
 
 type deref_error =
@@ -93,8 +93,8 @@ let print_results actual_pre results =
 let spec_rename_vars pname spec =
   let prop_add_callee_suffix p =
     let f = function
-      | Sil.Lvar pv ->
-          Sil.Lvar (Pvar.to_callee pname pv)
+      | Exp.Lvar pv ->
+          Exp.Lvar (Pvar.to_callee pname pv)
       | e -> e in
     Prop.prop_expmap f p in
   let jprop_add_callee_suffix = function
@@ -107,7 +107,7 @@ let spec_rename_vars pname spec =
   IList.iter (fun (p, _) -> Prop.prop_fav_add fav p) spec.Specs.posts;
   let ids = Sil.fav_to_list fav in
   let ids' = IList.map (fun i -> (i, Ident.create_fresh Ident.kprimed)) ids in
-  let ren_sub = Sil.sub_of_list (IList.map (fun (i, i') -> (i, Sil.Var i')) ids') in
+  let ren_sub = Sil.sub_of_list (IList.map (fun (i, i') -> (i, Exp.Var i')) ids') in
   let pre' = Specs.Jprop.jprop_sub ren_sub spec.Specs.pre in
   let posts' = IList.map (fun (p, path) -> (Prop.prop_sub ren_sub p, path)) spec.Specs.posts in
   let pre'' = jprop_add_callee_suffix pre' in
@@ -156,10 +156,10 @@ let process_splitting
   let sub = Sil.sub_join sub1 sub2 in
   let sub1_inverse =
     let sub1_list = Sil.sub_to_list sub1 in
-    let sub1_list' = IList.filter (function (_, Sil.Var _) -> true | _ -> false) sub1_list in
+    let sub1_list' = IList.filter (function (_, Exp.Var _) -> true | _ -> false) sub1_list in
     let sub1_inverse_list =
       IList.map
-        (function (id, Sil.Var id') -> (id', Sil.Var id) | _ -> assert false)
+        (function (id, Exp.Var id') -> (id', Exp.Var id) | _ -> assert false)
         sub1_list'
     in Sil.sub_of_list_duplicates sub1_inverse_list in
   let fav_actual_pre =
@@ -181,12 +181,12 @@ let process_splitting
   let fav_missing_fld = Prop.sigma_fav (Prop.sigma_sub sub missing_fld) in
 
   let map_var_to_pre_var_or_fresh id =
-    match Sil.exp_sub sub1_inverse (Sil.Var id) with
-    | Sil.Var id' ->
+    match Sil.exp_sub sub1_inverse (Exp.Var id) with
+    | Exp.Var id' ->
         if Sil.fav_mem fav_actual_pre id' || Ident.is_path id'
         (* a path id represents a position in the pre *)
-        then Sil.Var id'
-        else Sil.Var (Ident.create_fresh Ident.kprimed)
+        then Exp.Var id'
+        else Exp.Var (Ident.create_fresh Ident.kprimed)
     | _ -> assert false in
 
   let sub_list = Sil.sub_to_list sub in
@@ -196,27 +196,27 @@ let process_splitting
     Sil.fav_to_list fav_sub in
   let sub1 =
     let f id =
-      if Sil.fav_mem fav_actual_pre id then (id, Sil.Var id)
+      if Sil.fav_mem fav_actual_pre id then (id, Exp.Var id)
       else if Ident.is_normal id then (id, map_var_to_pre_var_or_fresh id)
-      else if Sil.fav_mem fav_missing_fld id then (id, Sil.Var id)
-      else if Ident.is_footprint id then (id, Sil.Var id)
+      else if Sil.fav_mem fav_missing_fld id then (id, Exp.Var id)
+      else if Ident.is_footprint id then (id, Exp.Var id)
       else begin
         let dom1 = Sil.sub_domain sub1 in
         let rng1 = Sil.sub_range sub1 in
         let dom2 = Sil.sub_domain sub2 in
         let rng2 = Sil.sub_range sub2 in
-        let vars_actual_pre = IList.map (fun id -> Sil.Var id) (Sil.fav_to_list fav_actual_pre) in
+        let vars_actual_pre = IList.map (fun id -> Exp.Var id) (Sil.fav_to_list fav_actual_pre) in
         L.d_str "fav_actual_pre: "; Sil.d_exp_list vars_actual_pre; L.d_ln ();
-        L.d_str "Dom(Sub1): "; Sil.d_exp_list (IList.map (fun id -> Sil.Var id) dom1); L.d_ln ();
+        L.d_str "Dom(Sub1): "; Sil.d_exp_list (IList.map (fun id -> Exp.Var id) dom1); L.d_ln ();
         L.d_str "Ran(Sub1): "; Sil.d_exp_list rng1; L.d_ln ();
-        L.d_str "Dom(Sub2): "; Sil.d_exp_list (IList.map (fun id -> Sil.Var id) dom2); L.d_ln ();
+        L.d_str "Dom(Sub2): "; Sil.d_exp_list (IList.map (fun id -> Exp.Var id) dom2); L.d_ln ();
         L.d_str "Ran(Sub2): "; Sil.d_exp_list rng2; L.d_ln ();
-        L.d_str "Don't know about id: "; Sil.d_exp (Sil.Var id); L.d_ln ();
+        L.d_str "Don't know about id: "; Sil.d_exp (Exp.Var id); L.d_ln ();
         assert false;
       end
     in Sil.sub_of_list (IList.map f fav_sub_list) in
   let sub2_list =
-    let f id = (id, Sil.Var (Ident.create_fresh Ident.kfootprint))
+    let f id = (id, Exp.Var (Ident.create_fresh Ident.kfootprint))
     in IList.map f (Sil.fav_to_list fav_missing_primed) in
   let sub_list' =
     IList.map (fun (id, e) -> (id, Sil.exp_sub sub1 e)) sub_list in
@@ -238,8 +238,8 @@ let process_splitting
           false
         end
       else match hpred with
-        | Sil.Hpointsto(Sil.Var _, _, _) -> true
-        | Sil.Hpointsto(Sil.Lvar pvar, _, _) -> Pvar.is_global pvar
+        | Sil.Hpointsto(Exp.Var _, _, _) -> true
+        | Sil.Hpointsto(Exp.Lvar pvar, _, _) -> Pvar.is_global pvar
         | _ ->
             L.d_warning "Missing fields in complex pred: "; Sil.d_hpred hpred; L.d_ln ();
             false in
@@ -472,8 +472,8 @@ let texp_star texp1 texp2 =
         if ftal_sub instance_fields1 instance_fields2 then t2 else t1
     | _ -> t1 in
   match texp1, texp2 with
-  | Sil.Sizeof (t1, len1, st1), Sil.Sizeof (t2, _, st2) ->
-      Sil.Sizeof (typ_star t1 t2, len1, Subtype.join st1 st2)
+  | Exp.Sizeof (t1, len1, st1), Exp.Sizeof (t2, _, st2) ->
+      Exp.Sizeof (typ_star t1 t2, len1, Subtype.join st1 st2)
   | _ ->
       texp1
 
@@ -520,7 +520,7 @@ let hpred_star_typing (hpred1 : Sil.hpred) (_, te2) : Sil.hpred =
 
 (** Implementation of [*] between predicates and typings *)
 let sigma_star_typ
-    (sigma1 : Sil.hpred list) (typings2 : (Sil.exp * Sil.exp) list) : Sil.hpred list =
+    (sigma1 : Sil.hpred list) (typings2 : (Exp.t * Exp.t) list) : Sil.hpred list =
   let typing_lhs_compare (e1, _) (e2, _) = Sil.exp_compare e1 e2 in
   let sigma1 = IList.stable_sort hpred_lhs_compare sigma1 in
   let typings2 = IList.stable_sort typing_lhs_compare typings2 in
@@ -611,12 +611,12 @@ let prop_copy_footprint_pure p1 p2 =
 
 (** check if an expression is an exception *)
 let exp_is_exn = function
-  | Sil.Exn _ -> true
+  | Exp.Exn _ -> true
   | _ -> false
 
 (** check if a prop is an exception *)
 let prop_is_exn pname prop =
-  let ret_pvar = Sil.Lvar (Pvar.get_ret_pvar pname) in
+  let ret_pvar = Exp.Lvar (Pvar.get_ret_pvar pname) in
   let is_exn = function
     | Sil.Hpointsto (e1, Sil.Eexp(e2, _), _) when Sil.exp_equal e1 ret_pvar ->
         exp_is_exn e2
@@ -625,16 +625,16 @@ let prop_is_exn pname prop =
 
 (** when prop is an exception, return the exception name *)
 let prop_get_exn_name pname prop =
-  let ret_pvar = Sil.Lvar (Pvar.get_ret_pvar pname) in
+  let ret_pvar = Exp.Lvar (Pvar.get_ret_pvar pname) in
   let rec search_exn e = function
     | [] -> None
-    | Sil.Hpointsto (e1, _, Sil.Sizeof (Typ.Tstruct  { Typ.struct_name = Some name }, _, _)) :: _
+    | Sil.Hpointsto (e1, _, Exp.Sizeof (Typ.Tstruct  { Typ.struct_name = Some name }, _, _)) :: _
       when Sil.exp_equal e1 e ->
         Some (Typename.TN_csu (Csu.Class Csu.Java, name))
     | _ :: tl -> search_exn e tl in
   let rec find_exn_name hpreds = function
     | [] -> None
-    | Sil.Hpointsto (e1, Sil.Eexp (Sil.Exn e2, _), _) :: _
+    | Sil.Hpointsto (e1, Sil.Eexp (Exp.Exn e2, _), _) :: _
       when Sil.exp_equal e1 ret_pvar ->
         search_exn e2 hpreds
     | _ :: tl -> find_exn_name hpreds tl in
@@ -646,14 +646,14 @@ let prop_get_exn_name pname prop =
 let lookup_custom_errors prop =
   let rec search_error = function
     | [] -> None
-    | Sil.Hpointsto (Sil.Lvar var, Sil.Eexp (Sil.Const (Const.Cstr error_str), _), _) :: _
+    | Sil.Hpointsto (Exp.Lvar var, Sil.Eexp (Exp.Const (Const.Cstr error_str), _), _) :: _
       when Pvar.equal var Sil.custom_error -> Some error_str
     | _ :: tl -> search_error tl in
   search_error (Prop.get_sigma prop)
 
 (** set a prop to an exception sexp *)
 let prop_set_exn pname prop se_exn =
-  let ret_pvar = Sil.Lvar (Pvar.get_ret_pvar pname) in
+  let ret_pvar = Exp.Lvar (Pvar.get_ret_pvar pname) in
   let map_hpred = function
     | Sil.Hpointsto (e, _, t) when Sil.exp_equal e ret_pvar ->
         Sil.Hpointsto(e, se_exn, t)
@@ -720,12 +720,12 @@ let combine
     let handle_null_case_analysis sigma =
       let id_assigned_to_null id =
         let filter = function
-          | Sil.Aeq (Sil.Var id', Sil.Const (Const.Cint i)) ->
+          | Sil.Aeq (Exp.Var id', Exp.Const (Const.Cint i)) ->
               Ident.equal id id' && IntLit.isnull i
           | _ -> false in
         IList.exists filter split.missing_pi in
       let f (e, inst_opt) = match e, inst_opt with
-        | Sil.Var id, Some inst when id_assigned_to_null id ->
+        | Exp.Var id, Some inst when id_assigned_to_null id ->
             let inst' = Sil.inst_set_null_case_flag inst in
             (e, Some inst')
         | _ -> (e, inst_opt) in
@@ -739,7 +739,7 @@ let combine
 
     let post_p3 = (* replace [result|callee] with an aux variable dedicated to this proc *)
       let callee_ret_pvar =
-        Sil.Lvar (Pvar.to_callee callee_pname (Pvar.get_ret_pvar callee_pname)) in
+        Exp.Lvar (Pvar.to_callee callee_pname (Pvar.get_ret_pvar callee_pname)) in
       match Prop.prop_iter_create post_p2 with
       | None -> post_p2
       | Some iter ->
@@ -756,13 +756,13 @@ let combine
                   prop_set_exn caller_pname p (Sil.Eexp (e', inst))
               | Sil.Hpointsto (_, Sil.Eexp (e', _), _) when IList.length ret_ids = 1 ->
                   let p = Prop.prop_iter_remove_curr_then_to_prop iter' in
-                  Prop.conjoin_eq e' (Sil.Var (IList.hd ret_ids)) p
+                  Prop.conjoin_eq e' (Exp.Var (IList.hd ret_ids)) p
               | Sil.Hpointsto (_, Sil.Estruct (ftl, _), _)
                 when IList.length ftl = IList.length ret_ids ->
                   let rec do_ftl_ids p = function
                     | [], [] -> p
                     | (_, Sil.Eexp (e', _)):: ftl', ret_id:: ret_ids' ->
-                        let p' = Prop.conjoin_eq e' (Sil.Var ret_id) p in
+                        let p' = Prop.conjoin_eq e' (Exp.Var ret_id) p in
                         do_ftl_ids p' (ftl', ret_ids')
                     | _ -> p in
                   let p = Prop.prop_iter_remove_curr_then_to_prop iter' in
@@ -866,9 +866,9 @@ let mk_actual_precondition prop actual_params formal_params =
     comb formal_params actual_params in
   let mk_instantiation (formal_var, (actual_e, actual_t)) =
     Prop.mk_ptsto
-      (Sil.Lvar formal_var)
+      (Exp.Lvar formal_var)
       (Sil.Eexp (actual_e, Sil.inst_actual_precondition))
-      (Sil.Sizeof (actual_t, None, Subtype.exact)) in
+      (Exp.Sizeof (actual_t, None, Subtype.exact)) in
   let instantiated_formals = IList.map mk_instantiation formals_actuals in
   let actual_pre = Prop.prop_sigma_star prop instantiated_formals in
   Prop.normalize actual_pre
@@ -892,7 +892,7 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
           let returns_null prop =
             IList.exists
               (function
-                | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (e, _), _) when Pvar.is_return pvar ->
+                | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (e, _), _) when Pvar.is_return pvar ->
                     Prover.check_equal (Prop.normalize prop) e Sil.exp_zero
                 | _ -> false)
               (Prop.get_sigma prop) in
@@ -905,7 +905,7 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
               let prop_normal = Prop.normalize prop in
               let prop' =
                 Prop.add_or_replace_attribute prop_normal
-                  (Apred (Ataint { taint_source = callee_pname; taint_kind; }, [Sil.Var ret_id]))
+                  (Apred (Ataint { taint_source = callee_pname; taint_kind; }, [Exp.Var ret_id]))
                 |> Prop.expose in
               (prop', path) in
             IList.map taint_retval posts
@@ -1091,7 +1091,7 @@ let exe_spec
 
 let remove_constant_string_class prop =
   let filter = function
-    | Sil.Hpointsto (Sil.Const (Const.Cstr _ | Const.Cclass _), _, _) -> false
+    | Sil.Hpointsto (Exp.Const (Const.Cstr _ | Const.Cclass _), _, _) -> false
     | _ -> true in
   let sigma = IList.filter filter (Prop.get_sigma prop) in
   let sigmafp = IList.filter filter (Prop.get_sigma_footprint prop) in
@@ -1259,7 +1259,7 @@ let exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc result
   match ret_ids with
   | [ret_id] when should_add_ret_attr ()->
       (* add attribute to remember what function call a return id came from *)
-      let ret_var = Sil.Var ret_id in
+      let ret_var = Exp.Var ret_id in
       let mark_id_as_retval (p, path) =
         let att_retval = Sil.Aretval (callee_pname, ret_annot) in
         Prop.set_attribute p att_retval [ret_var], path in
@@ -1310,9 +1310,9 @@ let check_splitting_precondition sub1 sub2 =
   let rng2 = Sil.sub_range sub2 in
   let overlap = IList.exists (fun id -> IList.exists (Ident.equal id) dom1) dom2 in
   if overlap then begin
-    L.d_str "Dom(Sub1): "; Sil.d_exp_list (IList.map (fun id -> Sil.Var id) dom1); L.d_ln ();
+    L.d_str "Dom(Sub1): "; Sil.d_exp_list (IList.map (fun id -> Exp.Var id) dom1); L.d_ln ();
     L.d_str "Ran(Sub1): "; Sil.d_exp_list rng1; L.d_ln ();
-    L.d_str "Dom(Sub2): "; Sil.d_exp_list (IList.map (fun id -> Sil.Var id) dom2); L.d_ln ();
+    L.d_str "Dom(Sub2): "; Sil.d_exp_list (IList.map (fun id -> Exp.Var id) dom2); L.d_ln ();
     L.d_str "Ran(Sub2): "; Sil.d_exp_list rng2; L.d_ln ();
     assert false
   end

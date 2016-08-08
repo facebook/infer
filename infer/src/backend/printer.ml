@@ -179,10 +179,10 @@ let force_delayed_print fmt =
       let (n: int) = Obj.obj n in
       for _ = 1 to n do F.fprintf fmt "@]" done
   | (L.PTexp, e) ->
-      let (e: Sil.exp) = Obj.obj e in
+      let (e: Exp.t) = Obj.obj e in
       Sil.pp_exp pe_default fmt e
   | (L.PTexp_list, el) ->
-      let (el: Sil.exp list) = Obj.obj el in
+      let (el: Exp.t list) = Obj.obj el in
       Sil.pp_exp_list pe_default fmt el
   | (L.PThpred, hpred) ->
       let (hpred: Sil.hpred) = Obj.obj hpred in
@@ -306,7 +306,7 @@ let force_delayed_print fmt =
       let (sub: Sil.subst) = Obj.obj sub in
       Prop.pp_sub pe_default fmt sub
   | (L.PTtexp_full, te) ->
-      let (te: Sil.exp) = Obj.obj te in
+      let (te: Exp.t) = Obj.obj te in
       Sil.pp_texp_full pe_default fmt te
   | (L.PTtyp_full, t) ->
       let (t: Typ.t) = Obj.obj t in

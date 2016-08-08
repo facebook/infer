@@ -56,10 +56,10 @@ let create_fresh_primeds_ls para =
     let f _ = Ident.create_fresh Ident.kprimed in
     IList.map f svars in
   let ids_tuple = (id_base, id_next, id_end, ids_shared) in
-  let exp_base = Sil.Var id_base in
-  let exp_next = Sil.Var id_next in
-  let exp_end = Sil.Var id_end in
-  let exps_shared = IList.map (fun id -> Sil.Var id) ids_shared in
+  let exp_base = Exp.Var id_base in
+  let exp_next = Exp.Var id_next in
+  let exp_end = Exp.Var id_end in
+  let exps_shared = IList.map (fun id -> Exp.Var id) ids_shared in
   let exps_tuple = (exp_base, exp_next, exp_end, exps_shared) in
   (ids_tuple, exps_tuple)
 
@@ -243,11 +243,11 @@ let mk_rule_ptspts_dll impl_ok1 impl_ok2 para =
     let svars = para.Sil.svars_dll in
     let f _ = Ident.create_fresh Ident.kprimed in
     IList.map f svars in
-  let exp_iF = Sil.Var id_iF in
-  let exp_iF' = Sil.Var id_iF' in
-  let exp_oB = Sil.Var id_oB in
-  let exp_oF = Sil.Var id_oF in
-  let exps_shared = IList.map (fun id -> Sil.Var id) ids_shared in
+  let exp_iF = Exp.Var id_iF in
+  let exp_iF' = Exp.Var id_iF' in
+  let exp_oB = Exp.Var id_oB in
+  let exp_oF = Exp.Var id_oF in
+  let exps_shared = IList.map (fun id -> Exp.Var id) ids_shared in
   let (ids_exist_fst, para_fst) = Sil.hpara_dll_instantiate para exp_iF exp_oB exp_iF' exps_shared in
   let (para_fst_start, para_fst_rest) =
     let mark_impl_flag hpred = { Match.hpred = hpred; Match.flag = impl_ok1 } in
@@ -291,12 +291,12 @@ let mk_rule_ptsdll_dll k2 impl_ok1 impl_ok2 para =
     let svars = para.Sil.svars_dll in
     let f _ = Ident.create_fresh Ident.kprimed in
     IList.map f svars in
-  let exp_iF = Sil.Var id_iF in
-  let exp_iF' = Sil.Var id_iF' in
-  let exp_oB = Sil.Var id_oB in
-  let exp_oF = Sil.Var id_oF in
-  let exp_iB = Sil.Var id_iB in
-  let exps_shared = IList.map (fun id -> Sil.Var id) ids_shared in
+  let exp_iF = Exp.Var id_iF in
+  let exp_iF' = Exp.Var id_iF' in
+  let exp_oB = Exp.Var id_oB in
+  let exp_oF = Exp.Var id_oF in
+  let exp_iB = Exp.Var id_iB in
+  let exps_shared = IList.map (fun id -> Exp.Var id) ids_shared in
   let (ids_exist, para_inst) = Sil.hpara_dll_instantiate para exp_iF exp_oB exp_iF' exps_shared in
   let (para_inst_start, para_inst_rest) =
     match para_inst with
@@ -327,12 +327,12 @@ let mk_rule_dllpts_dll k1 impl_ok1 impl_ok2 para =
     let svars = para.Sil.svars_dll in
     let f _ = Ident.create_fresh Ident.kprimed in
     IList.map f svars in
-  let exp_iF = Sil.Var id_iF in
-  let exp_iF' = Sil.Var id_iF' in
-  let exp_oB = Sil.Var id_oB in
-  let exp_oB' = Sil.Var id_oB' in
-  let exp_oF = Sil.Var id_oF in
-  let exps_shared = IList.map (fun id -> Sil.Var id) ids_shared in
+  let exp_iF = Exp.Var id_iF in
+  let exp_iF' = Exp.Var id_iF' in
+  let exp_oB = Exp.Var id_oB in
+  let exp_oB' = Exp.Var id_oB' in
+  let exp_oF = Exp.Var id_oF in
+  let exps_shared = IList.map (fun id -> Exp.Var id) ids_shared in
   let (ids_exist, para_inst) = Sil.hpara_dll_instantiate para exp_iF' exp_oB' exp_oF exps_shared in
   let para_inst_pat =
     let allow_impl hpred = { Match.hpred = hpred; Match.flag = impl_ok2 } in
@@ -361,13 +361,13 @@ let mk_rule_dlldll_dll k1 k2 impl_ok1 impl_ok2 para =
     let svars = para.Sil.svars_dll in
     let f _ = Ident.create_fresh Ident.kprimed in
     IList.map f svars in
-  let exp_iF = Sil.Var id_iF in
-  let exp_iF' = Sil.Var id_iF' in
-  let exp_oB = Sil.Var id_oB in
-  let exp_oB' = Sil.Var id_oB' in
-  let exp_oF = Sil.Var id_oF in
-  let exp_iB = Sil.Var id_iB in
-  let exps_shared = IList.map (fun id -> Sil.Var id) ids_shared in
+  let exp_iF = Exp.Var id_iF in
+  let exp_iF' = Exp.Var id_iF' in
+  let exp_oB = Exp.Var id_oB in
+  let exp_oB' = Exp.Var id_oB' in
+  let exp_oF = Exp.Var id_oF in
+  let exp_iB = Exp.Var id_iB in
+  let exps_shared = IList.map (fun id -> Exp.Var id) ids_shared in
   let lseg_fst_pat = { Match.hpred = Prop.mk_dllseg k1 para exp_iF exp_oB exp_iF' exp_oB' exps_shared; Match.flag = impl_ok1 } in
   let lseg_snd_pat = { Match.hpred = Prop.mk_dllseg k2 para exp_iF' exp_oB' exp_oF exp_iB exps_shared; Match.flag = impl_ok2 } in
   let k_res = lseg_kind_add k1 k2 in
@@ -420,15 +420,15 @@ let typ_get_recursive_flds tenv typ_exp =
         false
   in
   match typ_exp with
-  | Sil.Sizeof (typ, _, _) ->
+  | Exp.Sizeof (typ, _, _) ->
       (match Tenv.expand_type tenv typ with
        | Typ.Tint _ | Typ.Tvoid | Typ.Tfun _ | Typ.Tptr _ | Typ.Tfloat _ -> []
        | Typ.Tstruct { Typ.instance_fields } ->
            IList.map (fun (x, _, _) -> x) (IList.filter (filter typ) instance_fields)
        | Typ.Tarray _ -> []
        | Typ.Tvar _ -> assert false)
-  | Sil.Var _ -> [] (* type of |-> not known yet *)
-  | Sil.Const _ -> []
+  | Exp.Var _ -> [] (* type of |-> not known yet *)
+  | Exp.Const _ -> []
   | _ ->
       L.err "@.typ_get_recursive: unexpected type expr: %a@." (Sil.pp_exp pe_text) typ_exp;
       assert false
@@ -597,7 +597,7 @@ let eqs_sub subst eqs =
   IList.map (fun (e1, e2) -> (Sil.exp_sub subst e1, Sil.exp_sub subst e2)) eqs
 
 let eqs_solve ids_in eqs_in =
-  let rec solve (sub: Sil.subst) (eqs: (Sil.exp * Sil.exp) list) : Sil.subst option =
+  let rec solve (sub: Sil.subst) (eqs: (Exp.t * Exp.t) list) : Sil.subst option =
     let do_default id e eqs_rest =
       if not (IList.exists (fun id' -> Ident.equal id id') ids_in) then None
       else
@@ -610,11 +610,11 @@ let eqs_solve ids_in eqs_in =
     | [] -> Some sub
     | (e1, e2) :: eqs_rest when Sil.exp_equal e1 e2 ->
         solve sub eqs_rest
-    | (Sil.Var id1, (Sil.Const _ as e2)) :: eqs_rest ->
+    | (Exp.Var id1, (Exp.Const _ as e2)) :: eqs_rest ->
         do_default id1 e2 eqs_rest
-    | ((Sil.Const _ as e1), (Sil.Var _ as e2)) :: eqs_rest ->
+    | ((Exp.Const _ as e1), (Exp.Var _ as e2)) :: eqs_rest ->
         solve sub ((e2, e1):: eqs_rest)
-    | ((Sil.Var id1 as e1), (Sil.Var id2 as e2)) :: eqs_rest ->
+    | ((Exp.Var id1 as e1), (Exp.Var id2 as e2)) :: eqs_rest ->
         let n = Ident.compare id1 id2 in
         begin
           if n = 0 then solve sub eqs_rest
@@ -777,15 +777,15 @@ let abstract_pure_part p ~(from_abstract_footprint: bool) =
         (fun pi a ->
            match a with
            (* we only use Lt and Le because Gt and Ge are inserted in terms of Lt and Le. *)
-           | Sil.Aeq (Sil.Const (Const.Cint i), Sil.BinOp (Binop.Lt, _, _))
-           | Sil.Aeq (Sil.BinOp (Binop.Lt, _, _), Sil.Const (Const.Cint i))
-           | Sil.Aeq (Sil.Const (Const.Cint i), Sil.BinOp (Binop.Le, _, _))
-           | Sil.Aeq (Sil.BinOp (Binop.Le, _, _), Sil.Const (Const.Cint i)) when IntLit.isone i ->
+           | Sil.Aeq (Exp.Const (Const.Cint i), Exp.BinOp (Binop.Lt, _, _))
+           | Sil.Aeq (Exp.BinOp (Binop.Lt, _, _), Exp.Const (Const.Cint i))
+           | Sil.Aeq (Exp.Const (Const.Cint i), Exp.BinOp (Binop.Le, _, _))
+           | Sil.Aeq (Exp.BinOp (Binop.Le, _, _), Exp.Const (Const.Cint i)) when IntLit.isone i ->
                a :: pi
-           | Sil.Aeq (Sil.Var name, e) when not (Ident.is_primed name) ->
+           | Sil.Aeq (Exp.Var name, e) when not (Ident.is_primed name) ->
                (match e with
-                | Sil.Var _
-                | Sil.Const _ -> a :: pi
+                | Exp.Var _
+                | Exp.Const _ -> a :: pi
                 | _ -> pi)
            | Sil.Aneq (Var _, _)
            | Sil.Apred (_, Var _ :: _) | Anpred (_, Var _ :: _) -> a :: pi
@@ -855,7 +855,7 @@ let sigma_reachable root_fav sigma =
     IList.iter add_entry (hpred_entries hpred) in
   IList.iter do_hpred sigma;
   let edge_fires (e, _) = match e with
-    | Sil.Var id ->
+    | Exp.Var id ->
         if (Ident.is_primed id || Ident.is_footprint id) then Ident.IdentSet.mem id !reach_set
         else true
     | _ -> true in
@@ -873,7 +873,7 @@ let sigma_reachable root_fav sigma =
     if modified then find_fixpoint edges_to_revisit in
   find_fixpoint !edges;
   (* L.d_str "reachable: ";
-     Ident.IdentSet.iter (fun id -> Sil.d_exp (Sil.Var id); L.d_str " ") !reach_set;
+     Ident.IdentSet.iter (fun id -> Sil.d_exp (Exp.Var id); L.d_str " ") !reach_set;
      L.d_ln (); *)
   !reach_set
 
@@ -912,14 +912,14 @@ let get_cycle root prop =
           let visited' = (fst et_src):: visited in
           let res = (match get_points_to e with
               | None -> path, false
-              | Some (Sil.Hpointsto (_, Sil.Estruct (fl, _), Sil.Sizeof (te, _, _))) ->
+              | Some (Sil.Hpointsto (_, Sil.Estruct (fl, _), Exp.Sizeof (te, _, _))) ->
                   dfs e_root (e, te) ((et_src, f, e):: path) fl visited'
               | _ -> path, false (* check for lists *)) in
           if snd res then res
           else dfs e_root et_src path el' visited') in
   L.d_strln "Looking for cycle with root expression: "; Sil.d_hpred root; L.d_strln "";
   match root with
-  | Sil.Hpointsto (e_root, Sil.Estruct (fl, _), Sil.Sizeof (te, _, _)) ->
+  | Sil.Hpointsto (e_root, Sil.Estruct (fl, _), Exp.Sizeof (te, _, _)) ->
       let se_root = Sil.Eexp(e_root, Sil.Inone) in
       (* start dfs with empty path and expr pointing to root *)
       let (pot_cycle, res) = dfs se_root (se_root, te) [] fl [] in
@@ -937,8 +937,8 @@ let get_cycle root prop =
     returns the bucket *)
 let should_raise_objc_leak hpred =
   match hpred with
-  | Sil.Hpointsto(_, Sil.Estruct((fn, Sil.Eexp( (Sil.Const (Const.Cint i)), _)):: _, _),
-                  Sil.Sizeof (typ, _, _))
+  | Sil.Hpointsto(_, Sil.Estruct((fn, Sil.Eexp( (Exp.Const (Const.Cint i)), _)):: _, _),
+                  Exp.Sizeof (typ, _, _))
     when Ident.fieldname_is_hidden fn && IntLit.gt i IntLit.zero (* counter > 0 *) ->
       Mleak_buckets.should_raise_objc_leak typ
   | _ -> None
@@ -954,11 +954,11 @@ let get_var_retain_cycle _prop =
   let sigma = Prop.get_sigma _prop in
   let is_pvar v h =
     match h with
-    | Sil.Hpointsto (Sil.Lvar _, v', _) when Sil.strexp_equal v v' -> true
+    | Sil.Hpointsto (Exp.Lvar _, v', _) when Sil.strexp_equal v v' -> true
     | _ -> false in
   let is_hpred_block v h =
     match h, v with
-    | Sil.Hpointsto (e, _, Sil.Sizeof (typ, _, _)), Sil.Eexp (e', _)
+    | Sil.Hpointsto (e, _, Exp.Sizeof (typ, _, _)), Sil.Eexp (e', _)
       when Sil.exp_equal e e' && Typ.is_block_type typ -> true
     | _, _ -> false in
   let find v =
@@ -968,7 +968,7 @@ let get_var_retain_cycle _prop =
     with Not_found -> None in
   let find_block v =
     if (IList.exists (is_hpred_block v) sigma) then
-      Some (Sil.Lvar Sil.block_pvar)
+      Some (Exp.Lvar Sil.block_pvar)
     else None in
   let sexp e = Sil.Eexp (e, Sil.Inone) in
   let find_or_block ((e, t), f, e') =
@@ -976,7 +976,7 @@ let get_var_retain_cycle _prop =
     | Some pvar -> [((sexp pvar, t), f, e')]
     | _ -> (match find_block e with
         | Some blk -> [((sexp blk, t), f, e')]
-        | _ -> [((sexp (Sil.Sizeof (t, None, Subtype.exact)), t), f, e')]) in
+        | _ -> [((sexp (Exp.Sizeof (t, None, Subtype.exact)), t), f, e')]) in
   (* returns the pvars of the first cycle we find in sigma.
      This is an heuristic that works if there is one cycle.
      In case there are more than one cycle we may return not necessarily
@@ -1056,7 +1056,7 @@ let check_junk ?original_prop pname tenv prop =
       fun id -> Ident.IdentSet.mem id reach_set in
     let should_remove_hpred entries =
       let predicate = function
-        | Sil.Var id ->
+        | Exp.Var id ->
             (Ident.is_primed id || Ident.is_footprint id)
             && not (Sil.fav_mem fav_root id) && not (id_considered_reachable id)
         | _ -> false in
@@ -1070,10 +1070,10 @@ let check_junk ?original_prop pname tenv prop =
         Ident.IdentSet.mem id set3 in
       let entries = hpred_entries hpred in
       let predicate = function
-        | Sil.Var id -> id_in_cycle id
+        | Exp.Var id -> id_in_cycle id
         | _ -> false in
       let hpred_is_loop = match hpred with (* true if hpred has a self loop, ie one field points to id *)
-        | Sil.Hpointsto (Sil.Var id, se, _) ->
+        | Sil.Hpointsto (Exp.Var id, se, _) ->
             let fav = Sil.fav_new () in
             Sil.strexp_fav_add fav se;
             Sil.fav_mem fav id
@@ -1226,13 +1226,13 @@ let abstract_prop pname tenv ~(rename_primed: bool) ~(from_abstract_footprint: b
 
 let get_local_stack cur_sigma init_sigma =
   let filter_stack = function
-    | Sil.Hpointsto (Sil.Lvar _, _, _) -> true
+    | Sil.Hpointsto (Exp.Lvar _, _, _) -> true
     | Sil.Hpointsto _ | Sil.Hlseg _ | Sil.Hdllseg _ -> false in
   let get_stack_var = function
-    | Sil.Hpointsto (Sil.Lvar pvar, _, _) -> pvar
+    | Sil.Hpointsto (Exp.Lvar pvar, _, _) -> pvar
     | Sil.Hpointsto _ | Sil.Hlseg _ | Sil.Hdllseg _ -> assert false in
   let filter_local_stack olds = function
-    | Sil.Hpointsto (Sil.Lvar pvar, _, _) -> not (IList.exists (Pvar.equal pvar) olds)
+    | Sil.Hpointsto (Exp.Lvar pvar, _, _) -> not (IList.exists (Pvar.equal pvar) olds)
     | Sil.Hpointsto _ | Sil.Hlseg _ | Sil.Hdllseg _ -> false in
   let init_stack = IList.filter filter_stack init_sigma in
   let init_stack_pvars = IList.map get_stack_var init_stack in
@@ -1252,7 +1252,7 @@ let extract_footprint_for_abs (p : 'a Prop.t) : Prop.exposed Prop.t * Pvar.t lis
 
 let remove_local_stack sigma pvars =
   let filter_non_stack = function
-    | Sil.Hpointsto (Sil.Lvar pvar, _, _) -> not (IList.exists (Pvar.equal pvar) pvars)
+    | Sil.Hpointsto (Exp.Lvar pvar, _, _) -> not (IList.exists (Pvar.equal pvar) pvars)
     | Sil.Hpointsto _ | Sil.Hlseg _ | Sil.Hdllseg _ -> true in
   IList.filter filter_non_stack sigma
 

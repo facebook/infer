@@ -180,7 +180,7 @@ type access =
 
 val dereference_string : deref_str -> string -> access option -> Location.t -> error_desc
 
-val parameter_field_not_null_checked_desc : error_desc -> Sil.exp -> error_desc
+val parameter_field_not_null_checked_desc : error_desc -> Exp.t -> error_desc
 
 val is_parameter_not_null_checked_desc : error_desc -> bool
 
@@ -213,7 +213,7 @@ val is_empty_vector_access_desc : error_desc -> bool
 val desc_frontend_warning : string -> string option -> Location.t -> error_desc
 
 val desc_leak :
-  Sil.exp option -> string option -> Sil.resource option -> Sil.res_action option ->
+  Exp.t option -> string option -> Sil.resource option -> Sil.res_action option ->
   Location.t -> string option -> error_desc
 
 val desc_null_test_after_dereference : string -> int -> Location.t -> error_desc

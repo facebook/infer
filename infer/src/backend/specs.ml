@@ -200,7 +200,9 @@ end = struct
     let fav = spec_fav spec in
     let idlist = Sil.fav_to_list fav in
     let count = ref 0 in
-    let sub = Sil.sub_of_list (IList.map (fun id -> incr count; (id, Sil.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
+    let sub =
+      Sil.sub_of_list (IList.map (fun id ->
+          incr count; (id, Exp.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
     spec_sub sub spec
 
   (** Return a compact representation of the spec *)

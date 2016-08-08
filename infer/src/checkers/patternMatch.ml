@@ -178,8 +178,8 @@ let get_vararg_type_names
   (* Is this the node creating ivar? *)
   let rec initializes_array instrs =
     match instrs with
-    | Sil.Call ([t1], Sil.Const (Const.Cfun pn), _, _, _)::
-      Sil.Set (Sil.Lvar iv, _, Sil.Var t2, _):: is ->
+    | Sil.Call ([t1], Exp.Const (Const.Cfun pn), _, _, _)::
+      Sil.Set (Exp.Lvar iv, _, Exp.Var t2, _):: is ->
         (Pvar.equal ivar iv && Ident.equal t1 t2 &&
          Procname.equal pn (Procname.from_string_c_fun "__new_array"))
         || initializes_array is
@@ -190,7 +190,7 @@ let get_vararg_type_names
   let added_type_name node =
     let rec nvar_type_name nvar instrs =
       match instrs with
-      | Sil.Letderef (nv, Sil.Lfield (_, id, t), _, _):: _
+      | Sil.Letderef (nv, Exp.Lfield (_, id, t), _, _):: _
         when Ident.equal nv nvar -> get_field_type_name t id
       | Sil.Letderef (nv, _, t, _):: _
         when Ident.equal nv nvar ->
@@ -199,15 +199,15 @@ let get_vararg_type_names
       | _ -> None in
     let rec added_nvar array_nvar instrs =
       match instrs with
-      | Sil.Set (Sil.Lindex (Sil.Var iv, _), _, Sil.Var nvar, _):: _
+      | Sil.Set (Exp.Lindex (Exp.Var iv, _), _, Exp.Var nvar, _):: _
         when Ident.equal iv array_nvar -> nvar_type_name nvar (Cfg.Node.get_instrs node)
-      | Sil.Set (Sil.Lindex (Sil.Var iv, _), _, Sil.Const c, _):: _
+      | Sil.Set (Exp.Lindex (Exp.Var iv, _), _, Exp.Const c, _):: _
         when Ident.equal iv array_nvar -> Some (java_get_const_type_name c)
       | _:: is -> added_nvar array_nvar is
       | _ -> None in
     let rec array_nvar instrs =
       match instrs with
-      | Sil.Letderef (nv, Sil.Lvar iv, _, _):: _
+      | Sil.Letderef (nv, Exp.Lvar iv, _, _):: _
         when Pvar.equal iv ivar ->
           added_nvar nv instrs
       | _:: is -> array_nvar is
@@ -245,14 +245,14 @@ let is_setter pname_java =
 
 (** Returns the signature of a field access (class name, field name, field type name) *)
 let get_java_field_access_signature = function
-  | Sil.Letderef (_, Sil.Lfield (_, fn, ft), bt, _) ->
+  | Sil.Letderef (_, Exp.Lfield (_, fn, ft), bt, _) ->
       Some (get_type_name bt, Ident.java_fieldname_get_field fn, get_type_name ft)
   | _ -> None
 
 (** Returns the formal signature (class name, method name,
     argument type names and return type name) *)
 let get_java_method_call_formal_signature = function
-  | Sil.Call (_, Sil.Const (Const.Cfun pn), (_, tt):: args, _, _) ->
+  | Sil.Call (_, Exp.Const (Const.Cfun pn), (_, tt):: args, _, _) ->
       (match pn with
        | Procname.Java pn_java ->
            let arg_names = IList.map (function | _, t -> get_type_name t) args in
@@ -317,8 +317,8 @@ let method_is_initializer
 let java_get_vararg_values node pvar idenv =
   let values = ref [] in
   let do_instr = function
-    | Sil.Set (Sil.Lindex (array_exp, _), _, content_exp, _)
-      when Sil.exp_equal (Sil.Lvar pvar) (Idenv.expand_expr idenv array_exp) ->
+    | Sil.Set (Exp.Lindex (array_exp, _), _, content_exp, _)
+      when Sil.exp_equal (Exp.Lvar pvar) (Idenv.expand_expr idenv array_exp) ->
         (* Each vararg argument is an assigment to a pvar denoting an array of objects. *)
         values := content_exp :: !values
     | _ -> () in
@@ -333,7 +333,7 @@ let java_get_vararg_values node pvar idenv =
 let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t) list =
   let res = ref [] in
   let do_instruction _ instr = match instr with
-    | Sil.Call (_, Sil.Const (Const.Cfun callee_pn), _, _, _) ->
+    | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _) ->
         begin
           match resolve_attributes callee_pn with
           | Some callee_attributes ->
@@ -387,7 +387,7 @@ let proc_iter_overridden_methods f tenv proc_name =
 let get_fields_nullified procdesc =
   (* walk through the instructions and look for instance fields that are assigned to null *)
   let collect_nullified_flds (nullified_flds, this_ids) _ = function
-    | Sil.Set (Sil.Lfield (Sil.Var lhs, fld, _), _, rhs, _)
+    | Sil.Set (Exp.Lfield (Exp.Var lhs, fld, _), _, rhs, _)
       when Sil.exp_is_null_literal rhs && Ident.IdentSet.mem lhs this_ids ->
         (Ident.FieldSet.add fld nullified_flds, this_ids)
     | Sil.Letderef (id, rhs, _, _) when Sil.exp_is_this rhs ->

@@ -40,45 +40,45 @@ let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
     let e2_inst = Sil.exp_sub sub e2
     in if (Sil.exp_equal e1 e2_inst) then Some(sub, vars) else None in
   match e1, e2 with
-  | _, Sil.Var id2 when (Ident.is_primed id2 && mem_idlist id2 vars) ->
+  | _, Exp.Var id2 when (Ident.is_primed id2 && mem_idlist id2 vars) ->
       let vars_new = IList.filter (fun id -> not (Ident.equal id id2)) vars in
       let sub_new = match (Sil.extend_sub sub id2 e1) with
         | None -> assert false (* happens when vars contains the same variable twice. *)
         | Some sub_new -> sub_new
       in Some (sub_new, vars_new)
-  | _, Sil.Var _ ->
+  | _, Exp.Var _ ->
       check_equal sub vars e1 e2
-  | Sil.Var _, _ ->
+  | Exp.Var _, _ ->
       None
-  | Sil.Const _, _ | _, Sil.Const _ ->
+  | Exp.Const _, _ | _, Exp.Const _ ->
       check_equal sub vars e1 e2
-  | Sil.Sizeof _, _ | _, Sil.Sizeof _ ->
+  | Exp.Sizeof _, _ | _, Exp.Sizeof _ ->
       check_equal sub vars e1 e2
-  | Sil.Cast (_, e1'), Sil.Cast (_, e2') -> (* we are currently ignoring cast *)
+  | Exp.Cast (_, e1'), Exp.Cast (_, e2') -> (* we are currently ignoring cast *)
       exp_match e1' sub vars e2'
-  | Sil.Cast _, _ | _, Sil.Cast _ ->
+  | Exp.Cast _, _ | _, Exp.Cast _ ->
       None
-  | Sil.UnOp(o1, e1', _), Sil.UnOp(o2, e2', _) when Unop.equal o1 o2 ->
+  | Exp.UnOp(o1, e1', _), Exp.UnOp(o2, e2', _) when Unop.equal o1 o2 ->
       exp_match e1' sub vars e2'
-  | Sil.UnOp _, _ | _, Sil.UnOp _ ->
+  | Exp.UnOp _, _ | _, Exp.UnOp _ ->
       None  (* Naive *)
-  | Sil.BinOp(b1, e1', e1''), Sil.BinOp(b2, e2', e2'') when Binop.equal b1 b2 ->
+  | Exp.BinOp(b1, e1', e1''), Exp.BinOp(b2, e2', e2'') when Binop.equal b1 b2 ->
       (match exp_match e1' sub vars e2' with
        | None -> None
        | Some (sub', vars') -> exp_match e1'' sub' vars' e2'')
-  | Sil.BinOp _, _ | _, Sil.BinOp _ ->
+  | Exp.BinOp _, _ | _, Exp.BinOp _ ->
       None (* Naive *)
-  | Sil.Exn _, _ | _, Sil.Exn _ ->
+  | Exp.Exn _, _ | _, Exp.Exn _ ->
       check_equal sub vars e1 e2
-  | Sil.Closure _, _ | _, Sil.Closure _ ->
+  | Exp.Closure _, _ | _, Exp.Closure _ ->
       check_equal sub vars e1 e2
-  | Sil.Lvar _, _ | _, Sil.Lvar _ ->
+  | Exp.Lvar _, _ | _, Exp.Lvar _ ->
       check_equal sub vars e1 e2
-  | Sil.Lfield(e1', fld1, _), Sil.Lfield(e2', fld2, _) when (Ident.fieldname_equal fld1 fld2) ->
+  | Exp.Lfield(e1', fld1, _), Exp.Lfield(e2', fld2, _) when (Ident.fieldname_equal fld1 fld2) ->
       exp_match e1' sub vars e2'
-  | Sil.Lfield _, _ | _, Sil.Lfield _ ->
+  | Exp.Lfield _, _ | _, Exp.Lfield _ ->
       None
-  | Sil.Lindex(base1, idx1), Sil.Lindex(base2, idx2) ->
+  | Exp.Lindex(base1, idx1), Exp.Lindex(base2, idx2) ->
       (match exp_match base1 sub vars base2 with
        | None -> None
        | Some (sub', vars') -> exp_match idx1 sub' vars' idx2)
@@ -165,7 +165,7 @@ let sub_extend_with_ren (sub: Sil.subst) vars =
   if overlap then assert false in
   check_precondition ();
   *)
-  let f id = (id, Sil.Var (Ident.create_fresh Ident.kprimed)) in
+  let f id = (id, Exp.Var (Ident.create_fresh Ident.kprimed)) in
   let renaming_for_vars = Sil.sub_of_list (IList.map f vars) in
   Sil.sub_join sub renaming_for_vars
 
@@ -414,13 +414,13 @@ and hpara_common_match_with_impl impl_ok ids1 sigma1 eids2 ids2 sigma2 =
   try
     let sub_ids =
       let ren_ids = IList.combine ids2 ids1 in
-      let f (id2, id1) = (id2, Sil.Var id1) in
+      let f (id2, id1) = (id2, Exp.Var id1) in
       IList.map f ren_ids in
     let (sub_eids, eids_fresh) =
       let f id = (id, Ident.create_fresh Ident.kprimed) in
       let ren_eids = IList.map f eids2 in
       let eids_fresh = IList.map snd ren_eids in
-      let sub_eids = IList.map (fun (id2, id1) -> (id2, Sil.Var id1)) ren_eids in
+      let sub_eids = IList.map (fun (id2, id1) -> (id2, Exp.Var id1)) ren_eids in
       (sub_eids, eids_fresh) in
     let sub = Sil.sub_of_list (sub_ids @ sub_eids) in
     match sigma2 with
@@ -717,7 +717,7 @@ let sigma_lift_to_pe sigma =
 let generic_para_create corres sigma1 elist1 =
   let corres_ids =
     let not_same_consts = function
-      | Sil.Const c1, Sil.Const c2 -> not (Const.equal c1 c2)
+      | Exp.Const c1, Exp.Const c2 -> not (Const.equal c1 c2)
       | _ -> true in
     let new_corres' = IList.filter not_same_consts corres in
     let add_fresh_id pair = (pair, Ident.create_fresh Ident.kprimed) in
@@ -732,7 +732,7 @@ let generic_para_create corres sigma1 elist1 =
   let renaming = IList.map (fun ((e1, _), id) -> (e1, id)) corres_ids in
   let body =
     let sigma1' = sigma_lift_to_pe sigma1 in
-    let renaming_exp = IList.map (fun (e1, id) -> (e1, Sil.Var id)) renaming in
+    let renaming_exp = IList.map (fun (e1, id) -> (e1, Exp.Var id)) renaming in
     Prop.sigma_replace_exp renaming_exp sigma1' in
   (renaming, body, ids_exists, ids_shared, es_shared)
 

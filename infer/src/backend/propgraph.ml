@@ -17,9 +17,9 @@ module L = Logging
 
 type t = Prop.normal Prop.t
 
-type node = Sil.exp
+type node = Exp.t
 
-type sub_entry = Ident.t * Sil.exp
+type sub_entry = Ident.t * Exp.t
 
 type edge = Ehpred of Sil.hpred | Eatom of Sil.atom | Esub_entry of sub_entry
 
@@ -27,10 +27,10 @@ let from_prop p = p
 
 (** Return [true] if root node *)
 let rec is_root = function
-  | Sil.Var id -> Ident.is_normal id
-  | Sil.Exn _ | Sil.Closure _ | Sil.Const _ | Sil.Lvar _ -> true
-  | Sil.Cast (_, e) -> is_root e
-  | Sil.UnOp _ | Sil.BinOp _ | Sil.Lfield _ | Sil.Lindex _ | Sil.Sizeof _ -> false
+  | Exp.Var id -> Ident.is_normal id
+  | Exp.Exn _ | Exp.Closure _ | Exp.Const _ | Exp.Lvar _ -> true
+  | Exp.Cast (_, e) -> is_root e
+  | Exp.UnOp _ | Exp.BinOp _ | Exp.Lfield _ | Exp.Lindex _ | Exp.Sizeof _ -> false
 
 (** Return [true] if the nodes are connected. Used to compute reachability. *)
 let nodes_connected n1 n2 =
@@ -51,7 +51,7 @@ let edge_get_source = function
   | Eatom (Sil.Aneq (e1, _)) -> Some e1
   | Eatom (Sil.Apred (_, e :: _) | Anpred (_, e :: _)) -> Some e
   | Eatom (Sil.Apred (_, []) | Anpred (_, [])) -> None
-  | Esub_entry (x, _) -> Some (Sil.Var x)
+  | Esub_entry (x, _) -> Some (Exp.Var x)
 
 (** Return the successor nodes of the edge *)
 let edge_get_succs = function
@@ -123,7 +123,7 @@ type diff =
     diff_cmap_foot : colormap (** colormap for the footprint part *) }
 
 (** Compute the subobjects in [e2] which are different from those in [e1] *)
-let compute_exp_diff (e1: Sil.exp) (e2: Sil.exp) : Obj.t list =
+let compute_exp_diff (e1: Exp.t) (e2: Exp.t) : Obj.t list =
   if Sil.exp_equal e1 e2 then [] else [Obj.repr e2]
 
 

@@ -69,7 +69,7 @@ end
 module Match = struct
   type value =
     | Vfun of Procname.t
-    | Vval of Sil.exp
+    | Vval of Exp.t
 
   let pp_value fmt = function
     | Vval e -> F.fprintf fmt "%a" (Sil.pp_exp pe_text) e
@@ -123,14 +123,14 @@ module Match = struct
     | _ -> false
 
   let rec cond_match env idenv cond (ae1, op, ae2) = match cond with
-    | Sil.BinOp (bop, _e1, _e2) ->
+    | Exp.BinOp (bop, _e1, _e2) ->
         let e1 = Idenv.expand_expr idenv _e1 in
         let e2 = Idenv.expand_expr idenv _e2 in
         binop_match bop op && exp_match env ae1 (Vval e1) && exp_match env ae2 (Vval e2)
-    | Sil.UnOp (Unop.LNot, (Sil.BinOp (Binop.Eq, e1, e2)), _) ->
-        cond_match env idenv (Sil.BinOp (Binop.Ne, e1, e2)) (ae1, op, ae2)
-    | Sil.UnOp (Unop.LNot, (Sil.BinOp (Binop.Ne, e1, e2)), _) ->
-        cond_match env idenv (Sil.BinOp (Binop.Eq, e1, e2)) (ae1, op, ae2)
+    | Exp.UnOp (Unop.LNot, (Exp.BinOp (Binop.Eq, e1, e2)), _) ->
+        cond_match env idenv (Exp.BinOp (Binop.Ne, e1, e2)) (ae1, op, ae2)
+    | Exp.UnOp (Unop.LNot, (Exp.BinOp (Binop.Ne, e1, e2)), _) ->
+        cond_match env idenv (Exp.BinOp (Binop.Eq, e1, e2)) (ae1, op, ae2)
     | _ -> false
 
   (** Iterate over the instructions of the linearly succ nodes. *)
@@ -161,7 +161,7 @@ module Match = struct
 
   let rec match_query show env idenv caller_pn (rule, action) proc_name node instr =
     match rule, instr with
-    | CodeQueryAst.Call (ae1, ae2), Sil.Call (_, Sil.Const (Const.Cfun pn), _, loc, _) ->
+    | CodeQueryAst.Call (ae1, ae2), Sil.Call (_, Exp.Const (Const.Cfun pn), _, loc, _) ->
         if exp_match env ae1 (Vfun caller_pn) && exp_match env ae2 (Vfun pn) then
           begin
             if show then print_action env action proc_name node loc;
@@ -170,7 +170,7 @@ module Match = struct
         else false
     | CodeQueryAst.Call _, _ -> false
     | CodeQueryAst.MethodCall (ae1, ae2, ael_opt),
-      Sil.Call (_, Sil.Const (Const.Cfun pn), (_e1, _) :: params,
+      Sil.Call (_, Exp.Const (Const.Cfun pn), (_e1, _) :: params,
                 loc, { CallFlags.cf_virtual = true }) ->
         let e1 = Idenv.expand_expr idenv _e1 in
         let vl = IList.map (function _e, _ -> Vval (Idenv.expand_expr idenv _e)) params in

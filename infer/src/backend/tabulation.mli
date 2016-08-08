@@ -28,7 +28,7 @@ val find_dereference_without_null_check_in_sexp : Sil.strexp -> (int * Sil.path_
 
 (** raise a cast exception *)
 val raise_cast_exception :
-  Logging.ml_loc -> Procname.t option -> Sil.exp -> Sil.exp -> Sil.exp -> 'a
+  Logging.ml_loc -> Procname.t option -> Exp.t -> Exp.t -> Exp.t -> 'a
 
 (** check if a prop is an exception *)
 val prop_is_exn : Procname.t -> 'a Prop.t -> bool
@@ -45,5 +45,5 @@ val d_splitting : splitting -> unit
 (** Execute the function call and return the list of results with return value *)
 val exe_function_call:
   ProcAttributes.t -> Tenv.t -> Ident.t list -> Cfg.Procdesc.t -> Procname.t -> Location.t ->
-  (Sil.exp * Typ.t) list -> Prop.normal Prop.t -> Paths.Path.t ->
+  (Exp.t * Typ.t) list -> Prop.normal Prop.t -> Paths.Path.t ->
   (Prop.normal Prop.t * Paths.Path.t) list

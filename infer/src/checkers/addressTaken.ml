@@ -23,17 +23,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   type extras = ProcData.no_extras
 
   let rec add_address_taken_pvars exp astate = match exp with
-    | Sil.Lvar pvar ->
+    | Exp.Lvar pvar ->
         Domain.add pvar astate
-    | Sil.Cast (_, e) | UnOp (_, e, _) | Lfield (e, _, _) ->
+    | Exp.Cast (_, e) | UnOp (_, e, _) | Lfield (e, _, _) ->
         add_address_taken_pvars e astate
-    | Sil.BinOp (_, e1, e2) | Lindex (e1, e2) ->
+    | Exp.BinOp (_, e1, e2) | Lindex (e1, e2) ->
         add_address_taken_pvars e1 astate
         |> add_address_taken_pvars e2
-    | Sil.Exn _
-    | Sil.Closure _
-    | Sil.Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _)
-    | Sil.Var _ | Sil.Sizeof _ ->
+    | Exp.Exn _
+    | Exp.Closure _
+    | Exp.Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _)
+    | Exp.Var _ | Exp.Sizeof _ ->
         astate
 
   let exec_instr astate _ _ = function

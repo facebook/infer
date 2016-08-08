@@ -15,7 +15,7 @@ open! Utils
 module L = Logging
 module F = Format
 
-type const_map = Cfg.Node.t -> Sil.exp -> Const.t option
+type const_map = Cfg.Node.t -> Exp.t -> Const.t option
 
 (** failure statistics for symbolic execution on a given node *)
 type failure_stats = {
@@ -156,7 +156,7 @@ let instrs_normalize instrs =
     let gensym id =
       incr count;
       Ident.set_stamp id !count in
-    Sil.sub_of_list (IList.map (fun id -> (id, Sil.Var (gensym id))) bound_ids) in
+    Sil.sub_of_list (IList.map (fun id -> (id, Exp.Var (gensym id))) bound_ids) in
   IList.map (Sil.instr_sub subst) instrs
 
 (** Create a function to find duplicate nodes.
@@ -254,7 +254,8 @@ let extract_pre p tenv pdesc abstract_fun =
     let fav = Prop.prop_fav p in
     let idlist = Sil.fav_to_list fav in
     let count = ref 0 in
-    Sil.sub_of_list (IList.map (fun id -> incr count; (id, Sil.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
+    Sil.sub_of_list (IList.map (fun id ->
+        incr count; (id, Exp.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
   let _, p' = Cfg.remove_locals_formals pdesc p in
   let pre, _ = Prop.extract_spec p' in
   let pre' = try abstract_fun tenv pre with exn when SymOp.exn_not_failure exn -> pre in

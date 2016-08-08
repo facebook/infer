@@ -51,7 +51,7 @@ let extract_array_type typ =
 (** Return a result from a procedure call. *)
 let return_result e prop ret_ids =
   match ret_ids with
-  | [ret_id] -> Prop.conjoin_eq e (Sil.Var ret_id) prop
+  | [ret_id] -> Prop.conjoin_eq e (Exp.Var ret_id) prop
   | _ -> prop
 
 (* Add an array of typ pointed to by lexp to prop_ if it doesn't already exist *)
@@ -72,9 +72,9 @@ let add_array_to_prop pdesc prop_ lexp typ =
     with Not_found -> (* e is not allocated, so we can add the array *)
     match extract_array_type typ with
     | Some arr_typ ->
-        let len = Sil.Var (Ident.create_fresh Ident.kfootprint) in
+        let len = Exp.Var (Ident.create_fresh Ident.kfootprint) in
         let s = mk_empty_array_rearranged len in
-        let hpred = Prop.mk_ptsto n_lexp s (Sil.Sizeof (arr_typ, Some len, Subtype.exact)) in
+        let hpred = Prop.mk_ptsto n_lexp s (Exp.Sizeof (arr_typ, Some len, Subtype.exact)) in
         let sigma = Prop.get_sigma prop in
         let sigma_fp = Prop.get_sigma_footprint prop in
         let prop'= Prop.replace_sigma (hpred:: sigma) prop in
@@ -155,13 +155,13 @@ let create_type tenv n_lexp typ prop =
         | Typ.Tptr (typ', _) ->
             let sexp = Sil.Estruct ([], Sil.inst_none) in
             let typ'' = Tenv.expand_type tenv typ' in
-            let texp = Sil.Sizeof (typ'', None, Subtype.subtypes) in
+            let texp = Exp.Sizeof (typ'', None, Subtype.subtypes) in
             let hpred = Prop.mk_ptsto n_lexp sexp texp in
             Some hpred
         | Typ.Tarray _ ->
-            let len = Sil.Var (Ident.create_fresh Ident.kfootprint) in
+            let len = Exp.Var (Ident.create_fresh Ident.kfootprint) in
             let sexp = mk_empty_array len in
-            let texp = Sil.Sizeof (typ, None, Subtype.subtypes) in
+            let texp = Exp.Sizeof (typ, None, Subtype.subtypes) in
             let hpred = Prop.mk_ptsto n_lexp sexp texp in
             Some hpred
         | _ -> None in
@@ -179,8 +179,8 @@ let create_type tenv n_lexp typ prop =
           let prop''= Prop.normalize prop'' in
           prop''
       | None -> prop in
-  let sil_is_null = Sil.BinOp (Binop.Eq, n_lexp, Sil.exp_zero) in
-  let sil_is_nonnull = Sil.UnOp (Unop.LNot, sil_is_null, None) in
+  let sil_is_null = Exp.BinOp (Binop.Eq, n_lexp, Sil.exp_zero) in
+  let sil_is_nonnull = Exp.UnOp (Unop.LNot, sil_is_null, None) in
   let null_case = Propset.to_proplist (prune ~positive:true sil_is_null prop) in
   let non_null_case = Propset.to_proplist (prune ~positive:true sil_is_nonnull prop_type) in
   if ((IList.length non_null_case) > 0) && (!Config.footprint) then
@@ -390,7 +390,7 @@ let execute___get_hidden_field { Builtin.pdesc; prop_; path; ret_ids; args; }
       let return_val p = match !ret_val with
         | Some e -> return_result e p ret_ids
         | None -> p in
-      let foot_var = lazy (Sil.Var (Ident.create_fresh Ident.kfootprint)) in
+      let foot_var = lazy (Exp.Var (Ident.create_fresh Ident.kfootprint)) in
       let filter_fld_hidden (f, _ ) = Ident.fieldname_is_hidden f in
       let has_fld_hidden fsel = IList.exists filter_fld_hidden fsel in
       let do_hpred in_foot hpred = match hpred with
@@ -426,7 +426,7 @@ let execute___set_hidden_field { Builtin.pdesc; prop_; path; args; }
       let pname = Cfg.Procdesc.get_proc_name pdesc in
       let n_lexp1, prop__ = check_arith_norm_exp pname lexp1 prop_ in
       let n_lexp2, prop = check_arith_norm_exp pname lexp2 prop__ in
-      let foot_var = lazy (Sil.Var (Ident.create_fresh Ident.kfootprint)) in
+      let foot_var = lazy (Exp.Var (Ident.create_fresh Ident.kfootprint)) in
       let filter_fld_hidden (f, _ ) = Ident.fieldname_is_hidden f in
       let has_fld_hidden fsel = IList.exists filter_fld_hidden fsel in
       let do_hpred in_foot hpred = match hpred with
@@ -471,14 +471,14 @@ let execute___objc_counter_update
       (* This is the case as a call f(o) it's translates as n$1=*&o; f(n$1) *)
       (* n$2 = *n$1.hidden *)
       let tmp = Ident.create_fresh Ident.knormal in
-      let hidden_field = Sil.Lfield(lexp, Ident.fieldname_hidden, typ') in
+      let hidden_field = Exp.Lfield(lexp, Ident.fieldname_hidden, typ') in
       let counter_to_tmp = Sil.Letderef(tmp, hidden_field, typ', loc) in
       (* *n$1.hidden = (n$2 +/- delta) *)
       let update_counter =
         Sil.Set
           (hidden_field,
            typ',
-           Sil.BinOp(op, Sil.Var tmp, Sil.Const (Const.Cint delta)),
+           Exp.BinOp(op, Exp.Var tmp, Exp.Const (Const.Cint delta)),
            loc) in
       let update_counter_instrs =
         [ counter_to_tmp; update_counter; Sil.Remove_temps([tmp], loc) ] in
@@ -490,7 +490,7 @@ let execute___objc_counter_update
    removed from the list of args. *)
 let get_suppress_npe_flag args =
   match args with
-  | (Sil.Const (Const.Cint i), Typ.Tint Typ.IBool):: args' when IntLit.isone i ->
+  | (Exp.Const (Const.Cint i), Typ.Tint Typ.IBool):: args' when IntLit.isone i ->
       false, args' (* this is a CFRelease/CFRetain *)
   | _ -> true, args
 
@@ -565,7 +565,7 @@ let execute___release_autorelease_pool
                  | Sil.Hpointsto(e1, _, _) -> Sil.exp_equal e1 exp
                  | _ -> false) (Prop.get_sigma prop_) in
              match hpred with
-             | Sil.Hpointsto (_, _, Sil.Sizeof (typ, _, _)) ->
+             | Sil.Hpointsto (_, _, Exp.Sizeof (typ, _, _)) ->
                  let res1 =
                    execute___objc_release
                      { builtin_args with
@@ -629,7 +629,7 @@ let execute___set_taint_attribute
     ({ Builtin.pdesc; args; prop_; path; })
   : Builtin.ret_typ =
   match args with
-  | (exp, _) :: [(Sil.Const (Const.Cstr taint_kind_str), _)] ->
+  | (exp, _) :: [(Exp.Const (Const.Cstr taint_kind_str), _)] ->
       let taint_source = Cfg.Procdesc.get_proc_name pdesc in
       let taint_kind = match taint_kind_str with
         | "UnverifiedSSLSocket" -> Sil.Tk_unverified_SSL_socket
@@ -664,7 +664,7 @@ let execute___objc_cast { Builtin.pdesc; prop_; path; ret_ids; args; }
              | Sil.Hpointsto(e1, _, _) -> Sil.exp_equal e1 val1
              | _ -> false) (Prop.get_sigma prop) in
          match hpred, texp2 with
-         | Sil.Hpointsto (val1, _, _), Sil.Sizeof _ ->
+         | Sil.Hpointsto (val1, _, _), Exp.Sizeof _ ->
              let prop' = replace_ptsto_texp prop val1 texp2 in
              [(return_result val1 prop' ret_ids, path)]
          | _ -> [(return_result val1 prop ret_ids, path)]
@@ -747,30 +747,30 @@ let execute_alloc mk can_return_null
   : Builtin.ret_typ =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let rec evaluate_char_sizeof e = match e with
-    | Sil.Var _ -> e
-    | Sil.UnOp (uop, e', typ) ->
-        Sil.UnOp (uop, evaluate_char_sizeof e', typ)
-    | Sil.BinOp (bop, e1', e2') ->
-        Sil.BinOp (bop, evaluate_char_sizeof e1', evaluate_char_sizeof e2')
-    | Sil.Exn _ | Sil.Closure _ | Sil.Const _ | Sil.Cast _ | Sil.Lvar _ | Sil.Lfield _
-    | Sil.Lindex _ -> e
-    | Sil.Sizeof (Typ.Tarray (Typ.Tint ik, _), Some len, _) when Typ.ikind_is_char ik ->
+    | Exp.Var _ -> e
+    | Exp.UnOp (uop, e', typ) ->
+        Exp.UnOp (uop, evaluate_char_sizeof e', typ)
+    | Exp.BinOp (bop, e1', e2') ->
+        Exp.BinOp (bop, evaluate_char_sizeof e1', evaluate_char_sizeof e2')
+    | Exp.Exn _ | Exp.Closure _ | Exp.Const _ | Exp.Cast _ | Exp.Lvar _ | Exp.Lfield _
+    | Exp.Lindex _ -> e
+    | Exp.Sizeof (Typ.Tarray (Typ.Tint ik, _), Some len, _) when Typ.ikind_is_char ik ->
         evaluate_char_sizeof len
-    | Sil.Sizeof (Typ.Tarray (Typ.Tint ik, Some len), None, _) when Typ.ikind_is_char ik ->
-        evaluate_char_sizeof (Sil.Const (Const.Cint len))
-    | Sil.Sizeof _ -> e in
+    | Exp.Sizeof (Typ.Tarray (Typ.Tint ik, Some len), None, _) when Typ.ikind_is_char ik ->
+        evaluate_char_sizeof (Exp.Const (Const.Cint len))
+    | Exp.Sizeof _ -> e in
   let size_exp, procname = match args with
-    | [(Sil.Sizeof
+    | [(Exp.Sizeof
           (Typ.Tstruct
              { Typ.csu = Csu.Class Csu.Objc; struct_name = Some c } as s, len, subt), _)] ->
         let struct_type =
           match AttributesTable.get_correct_type_from_objc_class_name c with
           | Some struct_type -> struct_type
           | None -> s in
-        Sil.Sizeof (struct_type, len, subt), pname
+        Exp.Sizeof (struct_type, len, subt), pname
     | [(size_exp, _)] -> (* for malloc and __new *)
         size_exp, Sil.mem_alloc_pname mk
-    | [(size_exp, _); (Sil.Const (Const.Cfun pname), _)] ->
+    | [(size_exp, _); (Exp.Const (Const.Cfun pname), _)] ->
         size_exp, pname
     | _ ->
         raise (Exceptions.Wrong_argument_number __POS__) in
@@ -782,9 +782,9 @@ let execute_alloc mk can_return_null
     let n_size_exp' = evaluate_char_sizeof n_size_exp in
     Prop.exp_normalize_prop prop n_size_exp', prop in
   let cnt_te =
-    Sil.Sizeof (Typ.Tarray (Typ.Tint Typ.IChar, None), Some size_exp', Subtype.exact) in
+    Exp.Sizeof (Typ.Tarray (Typ.Tint Typ.IChar, None), Some size_exp', Subtype.exact) in
   let id_new = Ident.create_fresh Ident.kprimed in
-  let exp_new = Sil.Var id_new in
+  let exp_new = Exp.Var id_new in
   let ptsto_new =
     Prop.mk_ptsto_exp (Some tenv) Prop.Fld_init (exp_new, cnt_te, None) Sil.Ialloc in
   let prop_plus_ptsto =
@@ -797,9 +797,9 @@ let execute_alloc mk can_return_null
         Sil.ra_vpath = None } in
     (* mark value as allocated *)
     Prop.add_or_replace_attribute prop' (Apred (Aresource ra, [exp_new])) in
-  let prop_alloc = Prop.conjoin_eq (Sil.Var ret_id) exp_new prop_plus_ptsto in
+  let prop_alloc = Prop.conjoin_eq (Exp.Var ret_id) exp_new prop_plus_ptsto in
   if can_return_null then
-    let prop_null = Prop.conjoin_eq (Sil.Var ret_id) Sil.exp_zero prop in
+    let prop_null = Prop.conjoin_eq (Exp.Var ret_id) Sil.exp_zero prop in
     [(prop_alloc, path); (prop_null, path)]
   else [(prop_alloc, path)]
 
@@ -818,11 +818,11 @@ let execute___cxx_typeid ({ Builtin.pdesc; tenv; prop_; args; loc} as r)
                    | Sil.Hpointsto (e, _, _) -> Sil.exp_equal e n_lexp
                    | _ -> false) (Prop.get_sigma prop) in
                match hpred with
-               | Sil.Hpointsto (_, _, Sil.Sizeof (dynamic_type, _, _)) -> dynamic_type
+               | Sil.Hpointsto (_, _, Exp.Sizeof (dynamic_type, _, _)) -> dynamic_type
                | _ -> typ
              with Not_found -> typ in
            let typ_string = Typ.to_string typ in
-           let set_instr = Sil.Set (field_exp, Typ.Tvoid, Sil.Const (Const.Cstr typ_string), loc) in
+           let set_instr = Sil.Set (field_exp, Typ.Tvoid, Exp.Const (Const.Cstr typ_string), loc) in
            SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] res
        | _ -> res)
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -834,7 +834,7 @@ let execute_pthread_create ({ Builtin.prop_; path; args; } as builtin_args)
       let routine_name = Prop.exp_normalize_prop prop_ (fst start_routine) in
       let routine_arg = Prop.exp_normalize_prop prop_ (fst arg) in
       (match routine_name, (snd start_routine) with
-       | Sil.Lvar pvar, _ ->
+       | Exp.Lvar pvar, _ ->
            let fun_name = Pvar.get_name pvar in
            let fun_string = Mangled.to_string fun_name in
            L.d_strln ("pthread_create: calling function " ^ fun_string);
@@ -875,7 +875,7 @@ let execute__unwrap_exception { Builtin.pdesc; prop_; path; ret_ids; args; }
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let n_ret_exn, prop = check_arith_norm_exp pname ret_exn prop_ in
         match n_ret_exn with
-        | Sil.Exn exp ->
+        | Exp.Exn exp ->
             let prop_with_exn = return_result exp prop ret_ids in
             [(prop_with_exn, path)]
         | _ -> assert false
@@ -901,12 +901,12 @@ let execute___split_get_nth { Builtin.pdesc; prop_; path; ret_ids; args; }
       let n_lexp2, prop___ = check_arith_norm_exp pname lexp2 prop__ in
       let n_lexp3, prop = check_arith_norm_exp pname lexp3 prop___ in
       (match n_lexp1, n_lexp2, n_lexp3 with
-       | Sil.Const (Const.Cstr str1), Sil.Const (Const.Cstr str2), Sil.Const (Const.Cint n_sil) ->
+       | Exp.Const (Const.Cstr str1), Exp.Const (Const.Cstr str2), Exp.Const (Const.Cint n_sil) ->
            (let n = IntLit.to_int n_sil in
             try
               let parts = Str.split (Str.regexp_string str2) str1 in
               let n_part = IList.nth parts n in
-              let res = Sil.Const (Const.Cstr n_part) in
+              let res = Exp.Const (Const.Cstr n_part) in
               [(return_result res prop ret_ids, path)]
             with Not_found -> assert false)
        | _ -> [(prop, path)])
@@ -932,13 +932,13 @@ let execute___infer_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
     | [(lexp_msg, _)] ->
         begin
           match Prop.exp_normalize_prop prop_ lexp_msg with
-          | Sil.Const (Const.Cstr str) -> str
+          | Exp.Const (Const.Cstr str) -> str
           | _ -> assert false
         end
     | _ ->
         raise (Exceptions.Wrong_argument_number __POS__) in
   let set_instr =
-    Sil.Set (Sil.Lvar Sil.custom_error, Typ.Tvoid, Sil.Const (Const.Cstr error_str), loc) in
+    Sil.Set (Exp.Lvar Sil.custom_error, Typ.Tvoid, Exp.Const (Const.Cstr error_str), loc) in
   SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] [(prop_, path)]
 
 (* translate builtin assertion failure *)
@@ -951,7 +951,7 @@ let execute___assert_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
     | _ ->
         raise (Exceptions.Wrong_argument_number __POS__) in
   let set_instr =
-    Sil.Set (Sil.Lvar Sil.custom_error, Typ.Tvoid, Sil.Const (Const.Cstr error_str), loc) in
+    Sil.Set (Exp.Lvar Sil.custom_error, Typ.Tvoid, Exp.Const (Const.Cstr error_str), loc) in
   SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] [(prop_, path)]
 
 let __assert_fail = Builtin.register
@@ -1154,12 +1154,12 @@ let _ = Builtin.register
 let execute_objc_alloc_no_fail
     symb_state typ alloc_fun_opt
     { Builtin.pdesc; tenv; ret_ids; loc; } =
-  let alloc_fun = Sil.Const (Const.Cfun __objc_alloc_no_fail) in
+  let alloc_fun = Exp.Const (Const.Cfun __objc_alloc_no_fail) in
   let ptr_typ = Typ.Tptr (typ, Typ.Pk_pointer) in
-  let sizeof_typ = Sil.Sizeof (typ, None, Subtype.exact) in
+  let sizeof_typ = Exp.Sizeof (typ, None, Subtype.exact) in
   let alloc_fun_exp =
     match alloc_fun_opt with
-    | Some pname -> [Sil.Const (Const.Cfun pname), Typ.Tvoid]
+    | Some pname -> [Exp.Const (Const.Cfun pname), Typ.Tvoid]
     | None -> [] in
   let alloc_instr =
     Sil.Call

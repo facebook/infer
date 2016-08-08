@@ -69,33 +69,33 @@ module ConstantFlow = Dataflow.MakeDF(struct
                 false in
 
           match instr with
-          | Sil.Letderef (i, Sil.Lvar p, _, _) ->        (* tmp = var *)
-              update (Sil.Var i) (ConstantMap.find (Sil.Lvar p) constants) constants
+          | Sil.Letderef (i, Exp.Lvar p, _, _) ->        (* tmp = var *)
+              update (Exp.Var i) (ConstantMap.find (Exp.Lvar p) constants) constants
 
-          | Sil.Set (Sil.Lvar p, _, Sil.Const c, _) ->   (* var = const *)
-              update (Sil.Lvar p) (Some c) constants
+          | Sil.Set (Exp.Lvar p, _, Exp.Const c, _) ->   (* var = const *)
+              update (Exp.Lvar p) (Some c) constants
 
-          | Sil.Set (Sil.Lvar p, _, Sil.Var i, _) ->     (* var = tmp *)
-              update (Sil.Lvar p) (ConstantMap.find (Sil.Var i) constants) constants
+          | Sil.Set (Exp.Lvar p, _, Exp.Var i, _) ->     (* var = tmp *)
+              update (Exp.Lvar p) (ConstantMap.find (Exp.Var i) constants) constants
 
           (* Handle propagation of string with StringBuilder. Does not handle null case *)
-          | Sil.Call (_, Sil.Const (Const.Cfun pn), (Sil.Var sb, _):: [], _, _)
+          | Sil.Call (_, Exp.Const (Const.Cfun pn), (Exp.Var sb, _):: [], _, _)
             when has_class pn "java.lang.StringBuilder"
               && has_method pn "<init>" ->  (* StringBuilder.<init> *)
-              update (Sil.Var sb) (Some (Const.Cstr "")) constants
+              update (Exp.Var sb) (Some (Const.Cstr "")) constants
 
-          | Sil.Call (i:: [], Sil.Const (Const.Cfun pn), (Sil.Var i1, _):: [], _, _)
+          | Sil.Call (i:: [], Exp.Const (Const.Cfun pn), (Exp.Var i1, _):: [], _, _)
             when has_class pn "java.lang.StringBuilder"
               && has_method pn "toString" -> (* StringBuilder.toString *)
-              update (Sil.Var i) (ConstantMap.find (Sil.Var i1) constants) constants
+              update (Exp.Var i) (ConstantMap.find (Exp.Var i1) constants) constants
 
           | Sil.Call
-              (i:: [], Sil.Const (Const.Cfun pn), (Sil.Var i1, _):: (Sil.Var i2, _):: [], _, _)
+              (i:: [], Exp.Const (Const.Cfun pn), (Exp.Var i1, _):: (Exp.Var i2, _):: [], _, _)
             when has_class pn "java.lang.StringBuilder"
               && has_method pn "append" -> (* StringBuilder.append *)
               (match
-                 ConstantMap.find (Sil.Var i1) constants,
-                 ConstantMap.find (Sil.Var i2) constants with
+                 ConstantMap.find (Exp.Var i1) constants,
+                 ConstantMap.find (Exp.Var i2) constants with
               | Some (Const.Cstr s1), Some (Const.Cstr s2) ->
                   begin
                     let s = s1 ^ s2 in
@@ -104,7 +104,7 @@ module ConstantFlow = Dataflow.MakeDF(struct
                         Some (Const.Cstr s)
                       else
                         None in
-                    update (Sil.Var i) u constants
+                    update (Exp.Var i) u constants
                   end
               | _ -> constants)
 
@@ -136,7 +136,7 @@ let run tenv proc_desc =
     | ConstantFlow.Dead_state -> ConstantMap.empty in
   get_constants
 
-type const_map = Cfg.Node.t -> Sil.exp -> Const.t option
+type const_map = Cfg.Node.t -> Exp.t -> Const.t option
 
 (** Build a const map lazily. *)
 let build_const_map tenv pdesc =

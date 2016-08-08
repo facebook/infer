@@ -38,13 +38,13 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
   (* this is removed in the true branches, and in the false branch of the last handler *)
   let id_exn_val = Ident.create_fresh Ident.knormal in
   let create_entry_node loc =
-    let instr_get_ret_val = Sil.Letderef (id_ret_val, Sil.Lvar ret_var, ret_type, loc) in
+    let instr_get_ret_val = Sil.Letderef (id_ret_val, Exp.Lvar ret_var, ret_type, loc) in
     let id_deactivate = Ident.create_fresh Ident.knormal in
-    let instr_deactivate_exn = Sil.Set (Sil.Lvar ret_var, ret_type, Sil.Var id_deactivate, loc) in
+    let instr_deactivate_exn = Sil.Set (Exp.Lvar ret_var, ret_type, Exp.Var id_deactivate, loc) in
     let instr_unwrap_ret_val =
-      let unwrap_builtin = Sil.Const (Const.Cfun ModelBuiltins.__unwrap_exception) in
+      let unwrap_builtin = Exp.Const (Const.Cfun ModelBuiltins.__unwrap_exception) in
       Sil.Call
-        ([id_exn_val], unwrap_builtin, [(Sil.Var id_ret_val, ret_type)], loc, CallFlags.default) in
+        ([id_exn_val], unwrap_builtin, [(Exp.Var id_ret_val, ret_type)], loc, CallFlags.default) in
     create_node
       loc
       Cfg.Node.exn_handler_kind
@@ -68,20 +68,20 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
           | _ -> assert false in
         let id_instanceof = Ident.create_fresh Ident.knormal in
         let instr_call_instanceof =
-          let instanceof_builtin = Sil.Const (Const.Cfun ModelBuiltins.__instanceof) in
+          let instanceof_builtin = Exp.Const (Const.Cfun ModelBuiltins.__instanceof) in
           let args = [
-            (Sil.Var id_exn_val, Typ.Tptr(exn_type, Typ.Pk_pointer));
-            (Sil.Sizeof (exn_type, None, Subtype.exact), Typ.Tvoid)] in
+            (Exp.Var id_exn_val, Typ.Tptr(exn_type, Typ.Pk_pointer));
+            (Exp.Sizeof (exn_type, None, Subtype.exact), Typ.Tvoid)] in
           Sil.Call ([id_instanceof], instanceof_builtin, args, loc, CallFlags.default) in
         let if_kind = Sil.Ik_switch in
-        let instr_prune_true = Sil.Prune (Sil.Var id_instanceof, loc, true, if_kind) in
+        let instr_prune_true = Sil.Prune (Exp.Var id_instanceof, loc, true, if_kind) in
         let instr_prune_false =
-          Sil.Prune (Sil.UnOp(Unop.LNot, Sil.Var id_instanceof, None), loc, false, if_kind) in
+          Sil.Prune (Exp.UnOp(Unop.LNot, Exp.Var id_instanceof, None), loc, false, if_kind) in
         let instr_set_catch_var =
           let catch_var = JContext.set_pvar context handler.JBir.e_catch_var ret_type in
-          Sil.Set (Sil.Lvar catch_var, ret_type, Sil.Var id_exn_val, loc) in
+          Sil.Set (Exp.Lvar catch_var, ret_type, Exp.Var id_exn_val, loc) in
         let instr_rethrow_exn =
-          Sil.Set (Sil.Lvar ret_var, ret_type, Sil.Exn (Sil.Var id_exn_val), loc) in
+          Sil.Set (Exp.Lvar ret_var, ret_type, Exp.Exn (Exp.Var id_exn_val), loc) in
         let node_kind_true = Cfg.Node.Prune_node (true, if_kind, exn_message) in
         let node_kind_false = Cfg.Node.Prune_node (false, if_kind, exn_message) in
         let node_true =

@@ -71,7 +71,7 @@ let rec compute_autorelease_pool_vars context stmts =
                 let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
                 let pvar = sil_var_of_decl_ref context decl_ref procname in
                 if Pvar.is_local pvar then
-                  General_utils.append_no_duplicateds [(Sil.Lvar pvar, typ)] res
+                  General_utils.append_no_duplicateds [(Exp.Lvar pvar, typ)] res
                 else res
             | _ -> res)
        | _ -> res)

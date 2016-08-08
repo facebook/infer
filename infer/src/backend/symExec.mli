@@ -31,13 +31,13 @@ val unknown_or_scan_call : is_scan:bool -> Typ.t option -> Typ.item_annotation -
 val check_variadic_sentinel : ?fails_on_nil:bool -> int -> int * int -> Builtin.t
 
 val check_untainted :
-  Sil.exp -> Sil.taint_kind -> Procname.t -> Procname.t -> Prop.normal Prop.t -> Prop.normal Prop.t
+  Exp.t -> Sil.taint_kind -> Procname.t -> Procname.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 
 (** Check for arithmetic problems and normalize an expression. *)
 val check_arith_norm_exp :
-  Procname.t -> Sil.exp -> Prop.normal Prop.t -> Sil.exp * Prop.normal Prop.t
+  Procname.t -> Exp.t -> Prop.normal Prop.t -> Exp.t * Prop.normal Prop.t
 
-val prune : positive:bool -> Sil.exp -> Prop.normal Prop.t -> Propset.t
+val prune : positive:bool -> Exp.t -> Prop.normal Prop.t -> Propset.t
 
 (** OO method resolution: given a class name and a method name, climb the class hierarchy to find
     the procname that the method name will actually resolve to at runtime. For example, if we have a

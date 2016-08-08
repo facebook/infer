@@ -23,7 +23,7 @@ let tests =
   let open AnalyzerTester.StructuredSil in
   let f_proc_name = Procname.from_string_c_fun "f" in
   let g_proc_name = Procname.from_string_c_fun "g" in
-  let g_args = [((Sil.Const (Const.Cint (IntLit.one))), (Typ.Tint IInt))] in
+  let g_args = [((Exp.Const (Const.Cint (IntLit.one))), (Typ.Tint IInt))] in
   let g_ret_ids = [(ident_of_str "r")] in
   let class_name = "com.example.SomeClass" in
   let file_name = "SomeClass.java" in

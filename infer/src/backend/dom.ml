@@ -67,7 +67,7 @@ let do_side side f e1 e2 =
 
 module EPset = Set.Make
     (struct
-      type t = Sil.exp * Sil.exp
+      type t = Exp.t * Exp.t
       let compare (e1, e1') (e2, e2') =
         match (Sil.exp_compare e1 e2) with
         | i when i <> 0 -> i
@@ -80,8 +80,8 @@ module NonInj : sig
 
   val init : unit -> unit
   val final : unit -> unit
-  val add : side -> Sil.exp -> Sil.exp -> unit
-  val check : side -> Sil.exp list -> bool
+  val add : side -> Exp.t -> Exp.t -> unit
+  val check : side -> Exp.t list -> bool
 
 end = struct
 
@@ -104,7 +104,7 @@ end = struct
 
   let lookup' tbl e default =
     match e with
-    | Sil.Var _ ->
+    | Exp.Var _ ->
         begin
           try Hashtbl.find tbl e
           with Not_found -> (Hashtbl.replace tbl e default; default)
@@ -119,7 +119,7 @@ end = struct
   let rec find' tbl e =
     let e' = lookup_equiv' tbl e in
     match e' with
-    | Sil.Var _ ->
+    | Exp.Var _ ->
         if Sil.exp_equal e e' then e
         else
           begin
@@ -156,7 +156,7 @@ end = struct
       | Rhs -> equiv_tbl2, const_tbl2
     in
     match e, e' with
-    | Sil.Var id, Sil.Var id' ->
+    | Exp.Var id, Exp.Var id' ->
         begin
           match can_rename id, can_rename id' with
           | true, true -> union' tbl const_tbl e e'
@@ -164,17 +164,17 @@ end = struct
           | false, true -> replace_const' tbl const_tbl e' e
           | _ -> L.d_strln "failure reason 5"; raise IList.Fail
         end
-    | Sil.Var id, Sil.Const _ | Sil.Var id, Sil.Lvar _ ->
+    | Exp.Var id, Exp.Const _ | Exp.Var id, Exp.Lvar _ ->
         if (can_rename id) then replace_const' tbl const_tbl e e'
         else (L.d_strln "failure reason 6"; raise IList.Fail)
-    | Sil.Const _, Sil.Var id' | Sil.Lvar _, Sil.Var id' ->
+    | Exp.Const _, Exp.Var id' | Exp.Lvar _, Exp.Var id' ->
         if (can_rename id') then replace_const' tbl const_tbl e' e
         else (L.d_strln "failure reason 7"; raise IList.Fail)
     | _ ->
         if not (Sil.exp_equal e e') then (L.d_strln "failure reason 8"; raise IList.Fail) else ()
 
   let check side es =
-    let f = function Sil.Var id -> can_rename id | _ -> false in
+    let f = function Exp.Var id -> can_rename id | _ -> false in
     let vars, nonvars = IList.partition f es in
     let tbl, const_tbl =
       match side with
@@ -199,15 +199,15 @@ module type InfoLossCheckerSig =
 sig
   val init : Prop.sigma -> Prop.sigma -> unit
   val final : unit -> unit
-  val lost_little : side -> Sil.exp -> Sil.exp list -> bool
-  val add : side -> Sil.exp -> Sil.exp -> unit
+  val lost_little : side -> Exp.t -> Exp.t list -> bool
+  val add : side -> Exp.t -> Exp.t -> unit
 end
 
 module Dangling : sig
 
   val init : Prop.sigma -> Prop.sigma -> unit
   val final : unit -> unit
-  val check : side -> Sil.exp -> bool
+  val check : side -> Exp.t -> bool
 
 end = struct
 
@@ -232,9 +232,9 @@ end = struct
       | Rhs -> !lexps2
     in
     match e with
-    | Sil.Var id -> can_rename id && not (Sil.ExpSet.mem e lexps)
-    | Sil.Const _ -> not (Sil.ExpSet.mem e lexps)
-    | Sil.BinOp _ -> not (Sil.ExpSet.mem e lexps)
+    | Exp.Var id -> can_rename id && not (Sil.ExpSet.mem e lexps)
+    | Exp.Const _ -> not (Sil.ExpSet.mem e lexps)
+    | Exp.BinOp _ -> not (Sil.ExpSet.mem e lexps)
     | _ -> false
 end
 
@@ -251,9 +251,9 @@ module CheckJoinPre : InfoLossCheckerSig = struct
   let fail_case side e es =
     let side_op = opposite side in
     match e with
-    | Sil.Lvar _ -> false
-    | Sil.Var id when Ident.is_normal id -> IList.length es >= 1
-    | Sil.Var _ ->
+    | Exp.Lvar _ -> false
+    | Exp.Var id when Ident.is_normal id -> IList.length es >= 1
+    | Exp.Var _ ->
         if Config.join_cond = 0 then
           IList.exists (Sil.exp_equal Sil.exp_zero) es
         else if Dangling.check side e then
@@ -280,7 +280,7 @@ module CheckJoinPre : InfoLossCheckerSig = struct
 
   let lost_little side e es =
     let side_op = opposite side in
-    let es = match e with Sil.Const _ -> [] | _ -> es in
+    let es = match e with Exp.Const _ -> [] | _ -> es in
     if (fail_case side e es) then false
     else
       match es with
@@ -300,14 +300,14 @@ module CheckJoinPost : InfoLossCheckerSig = struct
 
   let fail_case _ e es =
     match e with
-    | Sil.Lvar _ -> false
-    | Sil.Var id when Ident.is_normal id -> IList.length es >= 1
-    | Sil.Var _ -> false
+    | Exp.Lvar _ -> false
+    | Exp.Var id when Ident.is_normal id -> IList.length es >= 1
+    | Exp.Var _ -> false
     | _ -> false
 
   let lost_little side e es =
     let side_op = opposite side in
-    let es = match e with Sil.Const _ -> [] | _ -> es in
+    let es = match e with Exp.Const _ -> [] | _ -> es in
     if (fail_case side e es) then false
     else
       match es with
@@ -321,8 +321,8 @@ module CheckJoin : sig
 
   val init : JoinState.mode -> Prop.sigma -> Prop.sigma -> unit
   val final : unit -> unit
-  val lost_little : side -> Sil.exp -> Sil.exp list -> bool
-  val add : side -> Sil.exp -> Sil.exp -> unit
+  val lost_little : side -> Exp.t -> Exp.t list -> bool
+  val add : side -> Exp.t -> Exp.t -> unit
 
 end = struct
 
@@ -373,19 +373,19 @@ module CheckMeet : InfoLossCheckerSig = struct
     match es, e with
     | [], _ ->
         true
-    | [Sil.Const _], Sil.Lvar _ ->
+    | [Exp.Const _], Exp.Lvar _ ->
         false
-    | [Sil.Const _], Sil.Var _ ->
+    | [Exp.Const _], Exp.Var _ ->
         not (Sil.ExpSet.mem e lexps)
-    | [Sil.Const _], _ ->
+    | [Exp.Const _], _ ->
         assert false
-    | [_], Sil.Lvar _ | [_], Sil.Var _ ->
+    | [_], Exp.Lvar _ | [_], Exp.Var _ ->
         true
     | [_], _ ->
         assert false
-    | _, Sil.Lvar _ | _, Sil.Var _ ->
+    | _, Exp.Lvar _ | _, Exp.Var _ ->
         false
-    | _, Sil.Const _ ->
+    | _, Exp.Const _ ->
         assert false
     | _ -> assert false
 
@@ -400,16 +400,16 @@ module Todo : sig
   type t
   val init : unit -> unit
   val final : unit -> unit
-  val reset : (Sil.exp * Sil.exp * Sil.exp) list -> unit
-  val push : (Sil.exp * Sil.exp * Sil.exp) -> unit
-  val pop : unit -> (Sil.exp * Sil.exp * Sil.exp)
+  val reset : (Exp.t * Exp.t * Exp.t) list -> unit
+  val push : (Exp.t * Exp.t * Exp.t) -> unit
+  val pop : unit -> (Exp.t * Exp.t * Exp.t)
   val set : t -> unit
   val take : unit -> t
 
 end = struct
 
   exception Empty
-  type t = (Sil.exp * Sil.exp * Sil.exp) list
+  type t = (Exp.t * Exp.t * Exp.t) list
 
   let tbl = ref []
 
@@ -434,12 +434,12 @@ end
 module FreshVarExp : sig
 
   val init : unit -> unit
-  val get_fresh_exp : Sil.exp -> Sil.exp -> Sil.exp
+  val get_fresh_exp : Exp.t -> Exp.t -> Exp.t
   val get_induced_pi : unit -> Prop.pi
   val final : unit -> unit
 
 (*
-  val lookup : side -> Sil.exp -> (Sil.exp * Sil.exp) option
+  val lookup : side -> Exp.t -> (Exp.t * Exp.t) option
 *)
 end = struct
 
@@ -462,8 +462,8 @@ end = struct
       e
 
   let get_induced_atom acc strict_lower upper e =
-    let ineq_lower = Prop.mk_inequality (Sil.BinOp(Binop.Lt, strict_lower, e)) in
-    let ineq_upper = Prop.mk_inequality (Sil.BinOp(Binop.Le, e, upper)) in
+    let ineq_lower = Prop.mk_inequality (Exp.BinOp(Binop.Lt, strict_lower, e)) in
+    let ineq_upper = Prop.mk_inequality (Exp.BinOp(Binop.Le, e, upper)) in
     ineq_lower:: ineq_upper:: acc
 
   let minus2_to_2 = IList.map IntLit.of_int [-2; -1; 0; 1; 2]
@@ -473,10 +473,10 @@ end = struct
 
     let add_and_chk_eq e1 e1' n =
       match e1, e1' with
-      | Sil.Const (Const.Cint n1), Sil.Const (Const.Cint n1') -> IntLit.eq (n1 ++ n) n1'
+      | Exp.Const (Const.Cint n1), Exp.Const (Const.Cint n1') -> IntLit.eq (n1 ++ n) n1'
       | _ -> false in
     let add_and_gen_eq e e' n =
-      let e_plus_n = Sil.BinOp(Binop.PlusA, e, Sil.exp_int n) in
+      let e_plus_n = Exp.BinOp(Binop.PlusA, e, Sil.exp_int n) in
       Prop.mk_eq e_plus_n e' in
     let rec f_eqs_entry ((e1, e2, e) as entry) eqs_acc t_seen = function
       | [] -> eqs_acc, t_seen
@@ -499,7 +499,7 @@ end = struct
 
     let f_ineqs acc (e1, e2, e) =
       match e1, e2 with
-      | Sil.Const (Const.Cint n1), Sil.Const (Const.Cint n2) ->
+      | Exp.Const (Const.Cint n1), Exp.Const (Const.Cint n2) ->
           let strict_lower1, upper1 =
             if IntLit.leq n1 n2 then (n1 -- IntLit.one, n2) else (n2 -- IntLit.one, n1) in
           let e_strict_lower1 = Sil.exp_int strict_lower1 in
@@ -523,31 +523,31 @@ end
 
 module Rename : sig
 
-  type data_opt = ExtFresh | ExtDefault of Sil.exp
+  type data_opt = ExtFresh | ExtDefault of Exp.t
 
   val init : unit -> unit
   val final : unit -> unit
-  val reset : unit -> (Sil.exp * Sil.exp * Sil.exp) list
+  val reset : unit -> (Exp.t * Exp.t * Exp.t) list
 
-  val extend : Sil.exp -> Sil.exp -> data_opt -> Sil.exp
-  val check : (side -> Sil.exp -> Sil.exp list -> bool) -> bool
+  val extend : Exp.t -> Exp.t -> data_opt -> Exp.t
+  val check : (side -> Exp.t -> Exp.t list -> bool) -> bool
 
-  val get_others : side -> Sil.exp -> (Sil.exp * Sil.exp) option
+  val get_others : side -> Exp.t -> (Exp.t * Exp.t) option
   val get_other_atoms : side -> Sil.atom -> (Sil.atom * Sil.atom) option
 
-  val lookup : side -> Sil.exp -> Sil.exp
-  val lookup_list : side -> Sil.exp list -> Sil.exp list
-  val lookup_list_todo : side -> Sil.exp list -> Sil.exp list
+  val lookup : side -> Exp.t -> Exp.t
+  val lookup_list : side -> Exp.t list -> Exp.t list
+  val lookup_list_todo : side -> Exp.t list -> Exp.t list
 
   val to_subst_proj : side -> Sil.fav -> Sil.subst
   val to_subst_emb : side -> Sil.subst
 (*
-  val get : Sil.exp -> Sil.exp -> Sil.exp option
-  val pp : printenv -> Format.formatter -> (Sil.exp * Sil.exp * Sil.exp) list -> unit
+  val get : Exp.t -> Exp.t -> Exp.t option
+  val pp : printenv -> Format.formatter -> (Exp.t * Exp.t * Exp.t) list -> unit
 *)
 end = struct
 
-  type t = (Sil.exp * Sil.exp * Sil.exp) list
+  type t = (Exp.t * Exp.t * Exp.t) list
 
   let tbl : t ref = ref []
 
@@ -555,7 +555,7 @@ end = struct
   let final () = tbl := []
   let reset () =
     let f = function
-      | Sil.Var id, e, _ | e, Sil.Var id, _ ->
+      | Exp.Var id, e, _ | e, Exp.Var id, _ ->
           (Ident.is_footprint id) &&
           (Sil.fav_for_all (Sil.exp_fav e) (fun id -> not (Ident.is_primed id)))
       | _ -> false in
@@ -570,9 +570,9 @@ end = struct
       let side_op = opposite side in
       let assoc_es =
         match e with
-        | Sil.Const _ -> []
-        | Sil.Lvar _ | Sil.Var _
-        | Sil.BinOp (Binop.PlusA, Sil.Var _, _) ->
+        | Exp.Const _ -> []
+        | Exp.Lvar _ | Exp.Var _
+        | Exp.BinOp (Binop.PlusA, Exp.Var _, _) ->
             let is_same_e (e1, e2, _) = Sil.exp_equal e (select side e1 e2) in
             let assoc = IList.filter is_same_e !tbl in
             IList.map (fun (e1, e2, _) -> select side_op e1 e2) assoc
@@ -591,15 +591,15 @@ end = struct
   let lookup_side_induced' side e =
     let res = ref [] in
     let f v = match v, side with
-      | (Sil.BinOp (Binop.PlusA, e1', Sil.Const (Const.Cint i)), e2, e'), Lhs
+      | (Exp.BinOp (Binop.PlusA, e1', Exp.Const (Const.Cint i)), e2, e'), Lhs
         when Sil.exp_equal e e1' ->
           let c' = Sil.exp_int (IntLit.neg i) in
-          let v' = (e1', Sil.BinOp(Binop.PlusA, e2, c'), Sil.BinOp (Binop.PlusA, e', c')) in
+          let v' = (e1', Exp.BinOp(Binop.PlusA, e2, c'), Exp.BinOp (Binop.PlusA, e', c')) in
           res := v'::!res
-      | (e1, Sil.BinOp (Binop.PlusA, e2', Sil.Const (Const.Cint i)), e'), Rhs
+      | (e1, Exp.BinOp (Binop.PlusA, e2', Exp.Const (Const.Cint i)), e'), Rhs
         when Sil.exp_equal e e2' ->
           let c' = Sil.exp_int (IntLit.neg i) in
-          let v' = (Sil.BinOp(Binop.PlusA, e1, c'), e2', Sil.BinOp (Binop.PlusA, e', c')) in
+          let v' = (Exp.BinOp(Binop.PlusA, e1, c'), e2', Exp.BinOp (Binop.PlusA, e', c')) in
           res := v'::!res
       | _ -> () in
     begin
@@ -608,16 +608,16 @@ end = struct
     end
 
   (* Return the triple whose side is [e], if it exists unique *)
-  let lookup' todo side e : Sil.exp =
+  let lookup' todo side e : Exp.t =
     match e with
-    | Sil.Var id when can_rename id ->
+    | Exp.Var id when can_rename id ->
         begin
           let r = lookup_side' side e in
           match r with
           | [(_, _, id) as t] -> if todo then Todo.push t; id
           | _ -> L.d_strln "failure reason 9"; raise IList.Fail
         end
-    | Sil.Var _ | Sil.Const _ | Sil.Lvar _ -> if todo then Todo.push (e, e, e); e
+    | Exp.Var _ | Exp.Const _ | Exp.Lvar _ -> if todo then Todo.push (e, e, e); e
     | _ -> L.d_strln "failure reason 10"; raise IList.Fail
 
   let lookup side e = lookup' false side e
@@ -627,10 +627,10 @@ end = struct
 
   let to_subst_proj (side: side) vars =
     let renaming_restricted =
-      IList.filter (function (_, _, Sil.Var i) -> Sil.fav_mem vars i | _ -> assert false) !tbl in
+      IList.filter (function (_, _, Exp.Var i) -> Sil.fav_mem vars i | _ -> assert false) !tbl in
     let sub_list_side =
       IList.map
-        (function (e1, e2, Sil.Var i) -> (i, select side e1 e2) | _ -> assert false)
+        (function (e1, e2, Exp.Var i) -> (i, select side e1 e2) | _ -> assert false)
         renaming_restricted in
     let sub_list_side_sorted =
       IList.sort (fun (_, e) (_, e') -> Sil.exp_compare e e') sub_list_side in
@@ -645,13 +645,13 @@ end = struct
     let renaming_restricted =
       let pick_id_case (e1, e2, _) =
         match select side e1 e2 with
-        | Sil.Var i -> can_rename i
+        | Exp.Var i -> can_rename i
         | _ -> false in
       IList.filter pick_id_case !tbl in
     let sub_list =
       let project (e1, e2, e) =
         match select side e1 e2 with
-        | Sil.Var i -> (i, e)
+        | Exp.Var i -> (i, e)
         | _ -> assert false in
       IList.map project renaming_restricted in
     let sub_list_sorted =
@@ -677,14 +677,14 @@ end = struct
     | None -> get_others' lookup_side_induced' side e
     | Some _ -> others
   let get_others_deep side = function
-    | Sil.BinOp(op, e, e') ->
+    | Exp.BinOp(op, e, e') ->
         let others = get_others_direct_or_induced side e in
         let others' = get_others_direct_or_induced side e' in
         (match others, others' with
          | None, _ | _, None -> None
          | Some (e_res, e_op), Some(e_res', e_op') ->
-             let e_res'' = Sil.BinOp(op, e_res, e_res') in
-             let e_op'' = Sil.BinOp(op, e_op, e_op') in
+             let e_res'' = Exp.BinOp(op, e_res, e_res') in
+             let e_op'' = Exp.BinOp(op, e_op, e_op') in
              Some (e_res'', e_op''))
     | _ -> None
 
@@ -714,7 +714,7 @@ end = struct
     else
       begin
         match atom_in with
-        | Sil.Aneq((Sil.Var id as e), e') | Sil.Aneq(e', (Sil.Var id as e))
+        | Sil.Aneq((Exp.Var id as e), e') | Sil.Aneq(e', (Exp.Var id as e))
           when (exp_contains_only_normal_ids e' && not (Ident.is_normal id)) ->
             build_other_atoms (fun e0 -> Prop.mk_neq e0 e') side e
 
@@ -726,26 +726,26 @@ end = struct
           when not (Ident.is_normal id) && IList.for_all exp_contains_only_normal_ids es ->
             build_other_atoms (fun e0 -> Prop.mk_npred a (e0 :: es)) side e
 
-        | Sil.Aeq((Sil.Var id as e), e') | Sil.Aeq(e', (Sil.Var id as e))
+        | Sil.Aeq((Exp.Var id as e), e') | Sil.Aeq(e', (Exp.Var id as e))
           when (exp_contains_only_normal_ids e' && not (Ident.is_normal id)) ->
             build_other_atoms (fun e0 -> Prop.mk_eq e0 e') side e
 
-        | Sil.Aeq(Sil.BinOp(Binop.Le, e, e'), Sil.Const (Const.Cint i))
-        | Sil.Aeq(Sil.Const (Const.Cint i), Sil.BinOp(Binop.Le, e, e'))
+        | Sil.Aeq(Exp.BinOp(Binop.Le, e, e'), Exp.Const (Const.Cint i))
+        | Sil.Aeq(Exp.Const (Const.Cint i), Exp.BinOp(Binop.Le, e, e'))
           when IntLit.isone i && (exp_contains_only_normal_ids e') ->
-            let construct e0 = Prop.mk_inequality (Sil.BinOp(Binop.Le, e0, e')) in
+            let construct e0 = Prop.mk_inequality (Exp.BinOp(Binop.Le, e0, e')) in
             build_other_atoms construct side e
 
-        | Sil.Aeq(Sil.BinOp(Binop.Lt, e', e), Sil.Const (Const.Cint i))
-        | Sil.Aeq(Sil.Const (Const.Cint i), Sil.BinOp(Binop.Lt, e', e))
+        | Sil.Aeq(Exp.BinOp(Binop.Lt, e', e), Exp.Const (Const.Cint i))
+        | Sil.Aeq(Exp.Const (Const.Cint i), Exp.BinOp(Binop.Lt, e', e))
           when IntLit.isone i && (exp_contains_only_normal_ids e') ->
-            let construct e0 = Prop.mk_inequality (Sil.BinOp(Binop.Lt, e', e0)) in
+            let construct e0 = Prop.mk_inequality (Exp.BinOp(Binop.Lt, e', e0)) in
             build_other_atoms construct side e
 
         | Sil.Aeq _ | Aneq _ | Apred _ | Anpred _ -> None
       end
 
-  type data_opt = ExtFresh | ExtDefault of Sil.exp
+  type data_opt = ExtFresh | ExtDefault of Exp.t
 
   (* Extend the renaming relation. At least one of e1 and e2
    * should be a primed or footprint variable *)
@@ -768,7 +768,7 @@ end = struct
           | ExtDefault e -> e
           | ExtFresh ->
               let kind = if JoinState.get_footprint () && not (some_primed ()) then Ident.kfootprint else Ident.kprimed in
-              Sil.Var (Ident.create_fresh kind) in
+              Exp.Var (Ident.create_fresh kind) in
       let entry = e1, e2, e in
       push entry;
       Todo.push entry;
@@ -792,8 +792,8 @@ end
 let extend_side' kind side e =
   match Rename.get_others side e with
   | None ->
-      let e_op = Sil.Var (Ident.create_fresh kind) in
-      let e_new = Sil.Var (Ident.create_fresh kind) in
+      let e_op = Exp.Var (Ident.create_fresh kind) in
+      let e_new = Exp.Var (Ident.create_fresh kind) in
       let e1, e2 =
         match side with
         | Lhs -> e, e_op
@@ -803,39 +803,39 @@ let extend_side' kind side e =
 
 let rec exp_construct_fresh side e =
   match e with
-  | Sil.Var id ->
+  | Exp.Var id ->
       if Ident.is_normal id then
         (Todo.push (e, e, e); e)
       else if Ident.is_footprint id then
         extend_side' Ident.kfootprint side e
       else
         extend_side' Ident.kprimed side e
-  | Sil.Const _ -> e
-  | Sil.Cast (t, e1) ->
+  | Exp.Const _ -> e
+  | Exp.Cast (t, e1) ->
       let e1' = exp_construct_fresh side e1 in
-      Sil.Cast (t, e1')
-  | Sil.UnOp(unop, e1, topt) ->
+      Exp.Cast (t, e1')
+  | Exp.UnOp(unop, e1, topt) ->
       let e1' = exp_construct_fresh side e1 in
-      Sil.UnOp(unop, e1', topt)
-  | Sil.BinOp(binop, e1, e2) ->
-      let e1' = exp_construct_fresh side e1 in
-      let e2' = exp_construct_fresh side e2 in
-      Sil.BinOp(binop, e1', e2')
-  | Sil.Exn _ -> e
-  | Sil.Closure _ -> e
-  | Sil.Lvar _ ->
-      e
-  | Sil.Lfield(e1, fld, typ) ->
-      let e1' = exp_construct_fresh side e1 in
-      Sil.Lfield(e1', fld, typ)
-  | Sil.Lindex(e1, e2) ->
+      Exp.UnOp(unop, e1', topt)
+  | Exp.BinOp(binop, e1, e2) ->
       let e1' = exp_construct_fresh side e1 in
       let e2' = exp_construct_fresh side e2 in
-      Sil.Lindex(e1', e2')
-  | Sil.Sizeof (_, None, _) ->
+      Exp.BinOp(binop, e1', e2')
+  | Exp.Exn _ -> e
+  | Exp.Closure _ -> e
+  | Exp.Lvar _ ->
       e
-  | Sil.Sizeof (typ, Some len, st) ->
-      Sil.Sizeof (typ, Some (exp_construct_fresh side len), st)
+  | Exp.Lfield(e1, fld, typ) ->
+      let e1' = exp_construct_fresh side e1 in
+      Exp.Lfield(e1', fld, typ)
+  | Exp.Lindex(e1, e2) ->
+      let e1' = exp_construct_fresh side e1 in
+      let e2' = exp_construct_fresh side e2 in
+      Exp.Lindex(e1', e2')
+  | Exp.Sizeof (_, None, _) ->
+      e
+  | Exp.Sizeof (typ, Some len, st) ->
+      Exp.Sizeof (typ, Some (exp_construct_fresh side len), st)
 
 let strexp_construct_fresh side =
   let f (e, inst_opt) = (exp_construct_fresh side e, inst_opt) in
@@ -854,35 +854,35 @@ let ident_same_kind_primed_footprint id1 id2 =
 let ident_partial_join (id1: Ident.t) (id2: Ident.t) =
   match Ident.is_normal id1, Ident.is_normal id2 with
   | true, true ->
-      if Ident.equal id1 id2 then Sil.Var id1 else (L.d_strln "failure reason 14"; raise IList.Fail)
+      if Ident.equal id1 id2 then Exp.Var id1 else (L.d_strln "failure reason 14"; raise IList.Fail)
   | true, _ | _, true ->
-      Rename.extend (Sil.Var id1) (Sil.Var id2) Rename.ExtFresh
+      Rename.extend (Exp.Var id1) (Exp.Var id2) Rename.ExtFresh
   | _ ->
       begin
         if not (ident_same_kind_primed_footprint id1 id2) then
           (L.d_strln "failure reason 15"; raise IList.Fail)
         else
-          let e1 = Sil.Var id1 in
-          let e2 = Sil.Var id2 in
+          let e1 = Exp.Var id1 in
+          let e2 = Exp.Var id2 in
           Rename.extend e1 e2 Rename.ExtFresh
       end
 
 let ident_partial_meet (id1: Ident.t) (id2: Ident.t) =
   match Ident.is_normal id1, Ident.is_normal id2 with
   | true, true ->
-      if Ident.equal id1 id2 then Sil.Var id1
+      if Ident.equal id1 id2 then Exp.Var id1
       else (L.d_strln "failure reason 16"; raise IList.Fail)
   | true, _ ->
-      let e1, e2 = Sil.Var id1, Sil.Var id2 in
+      let e1, e2 = Exp.Var id1, Exp.Var id2 in
       Rename.extend e1 e2 (Rename.ExtDefault(e1))
   | _, true ->
-      let e1, e2 = Sil.Var id1, Sil.Var id2 in
+      let e1, e2 = Exp.Var id1, Exp.Var id2 in
       Rename.extend e1 e2 (Rename.ExtDefault(e2))
   | _ ->
       if Ident.is_primed id1 && Ident.is_primed id2 then
-        Rename.extend (Sil.Var id1) (Sil.Var id2) Rename.ExtFresh
+        Rename.extend (Exp.Var id1) (Exp.Var id2) Rename.ExtFresh
       else if Ident.is_footprint id1 && Ident.equal id1 id2 then
-        let e = Sil.Var id1 in Rename.extend e e (Rename.ExtDefault(e))
+        let e = Exp.Var id1 in Rename.extend e e (Rename.ExtDefault(e))
       else
         (L.d_strln "failure reason 17"; raise IList.Fail)
 
@@ -896,92 +896,92 @@ let option_partial_join partial_join o1 o2 =
 
 let const_partial_join c1 c2 =
   let is_int = function Const.Cint _ -> true | _ -> false in
-  if Const.equal c1 c2 then Sil.Const c1
+  if Const.equal c1 c2 then Exp.Const c1
   else if Const.kind_equal c1 c2 && not (is_int c1) then
     (L.d_strln "failure reason 18"; raise IList.Fail)
   else if !Config.abs_val >= 2 then
-    FreshVarExp.get_fresh_exp (Sil.Const c1) (Sil.Const c2)
+    FreshVarExp.get_fresh_exp (Exp.Const c1) (Exp.Const c2)
   else (L.d_strln "failure reason 19"; raise IList.Fail)
 
-let rec exp_partial_join (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
+let rec exp_partial_join (e1: Exp.t) (e2: Exp.t) : Exp.t =
   (* L.d_str "exp_partial_join "; Sil.d_exp e1; L.d_str " "; Sil.d_exp e2; L.d_ln (); *)
   match e1, e2 with
-  | Sil.Var id1, Sil.Var id2 ->
+  | Exp.Var id1, Exp.Var id2 ->
       ident_partial_join id1 id2
 
-  | Sil.Var id, Sil.Const _
-  | Sil.Const _, Sil.Var id ->
+  | Exp.Var id, Exp.Const _
+  | Exp.Const _, Exp.Var id ->
       if Ident.is_normal id then
         (L.d_strln "failure reason 20"; raise IList.Fail)
       else
         Rename.extend e1 e2 Rename.ExtFresh
-  | Sil.Const c1, Sil.Const c2 ->
+  | Exp.Const c1, Exp.Const c2 ->
       const_partial_join c1 c2
 
-  | Sil.Var id, Sil.Lvar _
-  | Sil.Lvar _, Sil.Var id ->
+  | Exp.Var id, Exp.Lvar _
+  | Exp.Lvar _, Exp.Var id ->
       if Ident.is_normal id then (L.d_strln "failure reason 21"; raise IList.Fail)
       else Rename.extend e1 e2 Rename.ExtFresh
 
-  | Sil.BinOp(Binop.PlusA, Sil.Var id1, Sil.Const _), Sil.Var id2
-  | Sil.Var id1, Sil.BinOp(Binop.PlusA, Sil.Var id2, Sil.Const _)
+  | Exp.BinOp(Binop.PlusA, Exp.Var id1, Exp.Const _), Exp.Var id2
+  | Exp.Var id1, Exp.BinOp(Binop.PlusA, Exp.Var id2, Exp.Const _)
     when ident_same_kind_primed_footprint id1 id2 ->
       Rename.extend e1 e2 Rename.ExtFresh
-  | Sil.BinOp(Binop.PlusA, Sil.Var id1, Sil.Const (Const.Cint c1)), Sil.Const (Const.Cint c2)
+  | Exp.BinOp(Binop.PlusA, Exp.Var id1, Exp.Const (Const.Cint c1)), Exp.Const (Const.Cint c2)
     when can_rename id1 ->
       let c2' = c2 -- c1 in
-      let e_res = Rename.extend (Sil.Var id1) (Sil.exp_int c2') Rename.ExtFresh in
-      Sil.BinOp(Binop.PlusA, e_res, Sil.exp_int c1)
-  | Sil.Const (Const.Cint c1), Sil.BinOp(Binop.PlusA, Sil.Var id2, Sil.Const (Const.Cint c2))
+      let e_res = Rename.extend (Exp.Var id1) (Sil.exp_int c2') Rename.ExtFresh in
+      Exp.BinOp(Binop.PlusA, e_res, Sil.exp_int c1)
+  | Exp.Const (Const.Cint c1), Exp.BinOp(Binop.PlusA, Exp.Var id2, Exp.Const (Const.Cint c2))
     when can_rename id2 ->
       let c1' = c1 -- c2 in
-      let e_res = Rename.extend (Sil.exp_int c1') (Sil.Var id2) Rename.ExtFresh in
-      Sil.BinOp(Binop.PlusA, e_res, Sil.exp_int c2)
-  | Sil.Cast(t1, e1), Sil.Cast(t2, e2) ->
+      let e_res = Rename.extend (Sil.exp_int c1') (Exp.Var id2) Rename.ExtFresh in
+      Exp.BinOp(Binop.PlusA, e_res, Sil.exp_int c2)
+  | Exp.Cast(t1, e1), Exp.Cast(t2, e2) ->
       if not (Typ.equal t1 t2) then (L.d_strln "failure reason 22"; raise IList.Fail)
       else
         let e1'' = exp_partial_join e1 e2 in
-        Sil.Cast (t1, e1'')
-  | Sil.UnOp(unop1, e1, topt1), Sil.UnOp(unop2, e2, _) ->
+        Exp.Cast (t1, e1'')
+  | Exp.UnOp(unop1, e1, topt1), Exp.UnOp(unop2, e2, _) ->
       if not (Unop.equal unop1 unop2) then (L.d_strln "failure reason 23"; raise IList.Fail)
-      else Sil.UnOp (unop1, exp_partial_join e1 e2, topt1) (* should be topt1 = topt2 *)
-  | Sil.BinOp(Binop.PlusPI, e1, e1'), Sil.BinOp(Binop.PlusPI, e2, e2') ->
+      else Exp.UnOp (unop1, exp_partial_join e1 e2, topt1) (* should be topt1 = topt2 *)
+  | Exp.BinOp(Binop.PlusPI, e1, e1'), Exp.BinOp(Binop.PlusPI, e2, e2') ->
       let e1'' = exp_partial_join e1 e2 in
       let e2'' = match e1', e2' with
-        | Sil.Const _, Sil.Const _ -> exp_partial_join e1' e2'
+        | Exp.Const _, Exp.Const _ -> exp_partial_join e1' e2'
         | _ -> FreshVarExp.get_fresh_exp e1 e2 in
-      Sil.BinOp(Binop.PlusPI, e1'', e2'')
-  | Sil.BinOp(binop1, e1, e1'), Sil.BinOp(binop2, e2, e2') ->
+      Exp.BinOp(Binop.PlusPI, e1'', e2'')
+  | Exp.BinOp(binop1, e1, e1'), Exp.BinOp(binop2, e2, e2') ->
       if not (Binop.equal binop1 binop2) then (L.d_strln "failure reason 24"; raise IList.Fail)
       else
         let e1'' = exp_partial_join e1 e2 in
         let e2'' = exp_partial_join e1' e2' in
-        Sil.BinOp(binop1, e1'', e2'')
-  | Sil.Lvar(pvar1), Sil.Lvar(pvar2) ->
+        Exp.BinOp(binop1, e1'', e2'')
+  | Exp.Lvar(pvar1), Exp.Lvar(pvar2) ->
       if not (Pvar.equal pvar1 pvar2) then (L.d_strln "failure reason 25"; raise IList.Fail)
       else e1
-  | Sil.Lfield(e1, f1, t1), Sil.Lfield(e2, f2, _) ->
+  | Exp.Lfield(e1, f1, t1), Exp.Lfield(e2, f2, _) ->
       if not (Ident.fieldname_equal f1 f2) then (L.d_strln "failure reason 26"; raise IList.Fail)
-      else Sil.Lfield(exp_partial_join e1 e2, f1, t1) (* should be t1 = t2 *)
-  | Sil.Lindex(e1, e1'), Sil.Lindex(e2, e2') ->
+      else Exp.Lfield(exp_partial_join e1 e2, f1, t1) (* should be t1 = t2 *)
+  | Exp.Lindex(e1, e1'), Exp.Lindex(e2, e2') ->
       let e1'' = exp_partial_join e1 e2 in
       let e2'' = exp_partial_join e1' e2' in
-      Sil.Lindex(e1'', e2'')
-  | Sil.Sizeof (t1, len1, st1), Sil.Sizeof (t2, len2, st2) ->
-      Sil.Sizeof
+      Exp.Lindex(e1'', e2'')
+  | Exp.Sizeof (t1, len1, st1), Exp.Sizeof (t2, len2, st2) ->
+      Exp.Sizeof
         (typ_partial_join t1 t2, dynamic_length_partial_join len1 len2, Subtype.join st1 st2)
   | _ ->
       L.d_str "exp_partial_join no match "; Sil.d_exp e1; L.d_str " "; Sil.d_exp e2; L.d_ln ();
       raise IList.Fail
 
 and length_partial_join len1 len2 = match len1, len2 with
-  | Sil.BinOp(Binop.PlusA, e1, Sil.Const c1), Sil.BinOp(Binop.PlusA, e2, Sil.Const c2) ->
+  | Exp.BinOp(Binop.PlusA, e1, Exp.Const c1), Exp.BinOp(Binop.PlusA, e2, Exp.Const c2) ->
       let e' = exp_partial_join e1 e2 in
-      let c' = exp_partial_join (Sil.Const c1) (Sil.Const c2) in
-      Sil.BinOp (Binop.PlusA, e', c')
-  | Sil.BinOp(Binop.PlusA, _, _), Sil.BinOp(Binop.PlusA, _, _) ->
+      let c' = exp_partial_join (Exp.Const c1) (Exp.Const c2) in
+      Exp.BinOp (Binop.PlusA, e', c')
+  | Exp.BinOp(Binop.PlusA, _, _), Exp.BinOp(Binop.PlusA, _, _) ->
       Rename.extend len1 len2 Rename.ExtFresh
-  | Sil.Var id1, Sil.Var id2 when Ident.equal id1 id2 ->
+  | Exp.Var id1, Exp.Var id2 when Ident.equal id1 id2 ->
       len1
   | _ -> exp_partial_join len1 len2
 
@@ -1004,52 +1004,52 @@ and typ_partial_join t1 t2 = match t1, t2 with
       Typ.d_full t1; L.d_str " "; Typ.d_full t2; L.d_ln ();
       raise IList.Fail
 
-let rec exp_partial_meet (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
+let rec exp_partial_meet (e1: Exp.t) (e2: Exp.t) : Exp.t =
   match e1, e2 with
-  | Sil.Var id1, Sil.Var id2 ->
+  | Exp.Var id1, Exp.Var id2 ->
       ident_partial_meet id1 id2
-  | Sil.Var id, Sil.Const _ ->
+  | Exp.Var id, Exp.Const _ ->
       if not (Ident.is_normal id) then
         Rename.extend e1 e2 (Rename.ExtDefault(e2))
       else (L.d_strln "failure reason 27"; raise IList.Fail)
-  | Sil.Const _, Sil.Var id ->
+  | Exp.Const _, Exp.Var id ->
       if not (Ident.is_normal id) then
         Rename.extend e1 e2 (Rename.ExtDefault(e1))
       else (L.d_strln "failure reason 28"; raise IList.Fail)
-  | Sil.Const c1, Sil.Const c2 ->
+  | Exp.Const c1, Exp.Const c2 ->
       if (Const.equal c1 c2) then e1 else (L.d_strln "failure reason 29"; raise IList.Fail)
-  | Sil.Cast(t1, e1), Sil.Cast(t2, e2) ->
+  | Exp.Cast(t1, e1), Exp.Cast(t2, e2) ->
       if not (Typ.equal t1 t2) then (L.d_strln "failure reason 30"; raise IList.Fail)
       else
         let e1'' = exp_partial_meet e1 e2 in
-        Sil.Cast (t1, e1'')
-  | Sil.UnOp(unop1, e1, topt1), Sil.UnOp(unop2, e2, _) ->
+        Exp.Cast (t1, e1'')
+  | Exp.UnOp(unop1, e1, topt1), Exp.UnOp(unop2, e2, _) ->
       if not (Unop.equal unop1 unop2) then (L.d_strln "failure reason 31"; raise IList.Fail)
-      else Sil.UnOp (unop1, exp_partial_meet e1 e2, topt1) (* should be topt1 = topt2 *)
-  | Sil.BinOp(binop1, e1, e1'), Sil.BinOp(binop2, e2, e2') ->
+      else Exp.UnOp (unop1, exp_partial_meet e1 e2, topt1) (* should be topt1 = topt2 *)
+  | Exp.BinOp(binop1, e1, e1'), Exp.BinOp(binop2, e2, e2') ->
       if not (Binop.equal binop1 binop2) then (L.d_strln "failure reason 32"; raise IList.Fail)
       else
         let e1'' = exp_partial_meet e1 e2 in
         let e2'' = exp_partial_meet e1' e2' in
-        Sil.BinOp(binop1, e1'', e2'')
-  | Sil.Var id, Sil.Lvar _ ->
+        Exp.BinOp(binop1, e1'', e2'')
+  | Exp.Var id, Exp.Lvar _ ->
       if not (Ident.is_normal id) then
         Rename.extend e1 e2 (Rename.ExtDefault(e2))
       else (L.d_strln "failure reason 33"; raise IList.Fail)
-  | Sil.Lvar _, Sil.Var id ->
+  | Exp.Lvar _, Exp.Var id ->
       if not (Ident.is_normal id) then
         Rename.extend e1 e2 (Rename.ExtDefault(e1))
       else (L.d_strln "failure reason 34"; raise IList.Fail)
-  | Sil.Lvar(pvar1), Sil.Lvar(pvar2) ->
+  | Exp.Lvar(pvar1), Exp.Lvar(pvar2) ->
       if not (Pvar.equal pvar1 pvar2) then (L.d_strln "failure reason 35"; raise IList.Fail)
       else e1
-  | Sil.Lfield(e1, f1, t1), Sil.Lfield(e2, f2, _) ->
+  | Exp.Lfield(e1, f1, t1), Exp.Lfield(e2, f2, _) ->
       if not (Ident.fieldname_equal f1 f2) then (L.d_strln "failure reason 36"; raise IList.Fail)
-      else Sil.Lfield(exp_partial_meet e1 e2, f1, t1) (* should be t1 = t2 *)
-  | Sil.Lindex(e1, e1'), Sil.Lindex(e2, e2') ->
+      else Exp.Lfield(exp_partial_meet e1 e2, f1, t1) (* should be t1 = t2 *)
+  | Exp.Lindex(e1, e1'), Exp.Lindex(e2, e2') ->
       let e1'' = exp_partial_meet e1 e2 in
       let e2'' = exp_partial_meet e1' e2' in
-      Sil.Lindex(e1'', e2'')
+      Exp.Lindex(e1'', e2'')
   | _ -> (L.d_strln "failure reason 37"; raise IList.Fail)
 
 let exp_list_partial_join = IList.map2 exp_partial_join
@@ -1221,7 +1221,8 @@ let hpara_dll_partial_meet (hpara1: Sil.hpara_dll) (hpara2: Sil.hpara_dll) : Sil
 
 (** {2 Join and Meet for hpred} *)
 
-let hpred_partial_join mode (todo: Sil.exp * Sil.exp * Sil.exp) (hpred1: Sil.hpred) (hpred2: Sil.hpred) : Sil.hpred =
+let hpred_partial_join mode (todo: Exp.t * Exp.t * Exp.t) (hpred1: Sil.hpred) (hpred2: Sil.hpred)
+  : Sil.hpred =
   let e1, e2, e = todo in
   match hpred1, hpred2 with
   | Sil.Hpointsto (_, se1, te1), Sil.Hpointsto (_, se2, te2) ->
@@ -1248,7 +1249,8 @@ let hpred_partial_join mode (todo: Sil.exp * Sil.exp * Sil.exp) (hpred1: Sil.hpr
   | _ ->
       assert false
 
-let hpred_partial_meet (todo: Sil.exp * Sil.exp * Sil.exp) (hpred1: Sil.hpred) (hpred2: Sil.hpred) : Sil.hpred =
+let hpred_partial_meet (todo: Exp.t * Exp.t * Exp.t) (hpred1: Sil.hpred) (hpred2: Sil.hpred)
+  : Sil.hpred =
   let e1, e2, e = todo in
   match hpred1, hpred2 with
   | Sil.Hpointsto (_, se1, te1), Sil.Hpointsto (_, se2, te2) when Sil.exp_equal te1 te2 ->
@@ -1278,7 +1280,7 @@ let hpred_partial_meet (todo: Sil.exp * Sil.exp * Sil.exp) (hpred1: Sil.hpred) (
 
 (** {2 Join and Meet for Sigma} *)
 
-let find_hpred_by_address (e: Sil.exp) (sigma: Prop.sigma) : Sil.hpred option * Prop.sigma =
+let find_hpred_by_address (e: Exp.t) (sigma: Prop.sigma) : Sil.hpred option * Prop.sigma =
   let is_root_for_e e' =
     match (Prover.is_root Prop.prop_emp e' e) with
     | None -> false
@@ -1573,15 +1575,15 @@ let pi_partial_join mode
     (pi1: Prop.pi) (pi2: Prop.pi) : Prop.pi
   =
   let exp_is_const = function
-    (* | Sil.Var id -> is_normal id *)
-    | Sil.Const _ -> true
-    (* | Sil.Lvar _ -> true *)
+    (* | Exp.Var id -> is_normal id *)
+    | Exp.Const _ -> true
+    (* | Exp.Lvar _ -> true *)
     | _ -> false in
   let get_array_len prop =
     (* find some array length in the prop, to be used as heuritic for upper bound in widening *)
     let len_list = ref [] in
     let do_hpred = function
-      | Sil.Hpointsto (_, Sil.Earray (Sil.Const (Const.Cint n), _, _), _) ->
+      | Sil.Hpointsto (_, Sil.Earray (Exp.Const (Const.Cint n), _, _), _) ->
           (if IntLit.geq n IntLit.one then len_list := n :: !len_list)
       | _ -> () in
     IList.iter do_hpred (Prop.get_sigma prop);
@@ -1601,11 +1603,11 @@ let pi_partial_join mode
           if IntLit.leq n first_try then
             if IntLit.leq n second_try then second_try else first_try
           else widening_top in
-        let a' = Prop.mk_inequality (Sil.BinOp(Binop.Le, e, Sil.exp_int bound)) in
+        let a' = Prop.mk_inequality (Exp.BinOp(Binop.Le, e, Sil.exp_int bound)) in
         Some a'
     | Some (e, _), [] ->
         let bound = widening_top in
-        let a' = Prop.mk_inequality (Sil.BinOp(Binop.Le, e, Sil.exp_int bound)) in
+        let a' = Prop.mk_inequality (Exp.BinOp(Binop.Le, e, Sil.exp_int bound)) in
         Some a'
     | _ ->
         begin
@@ -1614,7 +1616,7 @@ let pi_partial_join mode
           | Some (n, e) ->
               let bound =
                 if IntLit.leq IntLit.minus_one n then IntLit.minus_one else widening_bottom in
-              let a' = Prop.mk_inequality (Sil.BinOp(Binop.Lt, Sil.exp_int bound, e)) in
+              let a' = Prop.mk_inequality (Exp.BinOp(Binop.Lt, Sil.exp_int bound, e)) in
               Some a'
         end in
   let is_stronger_le e n a =
@@ -1668,8 +1670,8 @@ let pi_partial_join mode
     | Sil.Aneq(e, e') | Sil.Aeq(e, e')
       when (exp_is_const e && exp_is_const e') ->
         true
-    | Sil.Aneq(Sil.Var _, e') | Sil.Aneq(e', Sil.Var _)
-    | Sil.Aeq(Sil.Var _, e') | Sil.Aeq(e', Sil.Var _)
+    | Sil.Aneq(Exp.Var _, e') | Sil.Aneq(e', Exp.Var _)
+    | Sil.Aeq(Exp.Var _, e') | Sil.Aeq(e', Exp.Var _)
       when (exp_is_const e') ->
         true
     | Sil.Aneq _ -> false
@@ -1792,7 +1794,8 @@ let eprop_partial_join' mode (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed Prop.
       let f e = Sil.fav_for_all (Sil.exp_fav e) Ident.is_normal in
       Sil.sub_range_partition f sub_common in
     let eqs1, eqs2 =
-      let sub_to_eqs sub = IList.map (fun (id, e) -> Sil.Aeq(Sil.Var id, e)) (Sil.sub_to_list sub) in
+      let sub_to_eqs sub =
+        IList.map (fun (id, e) -> Sil.Aeq (Exp.Var id, e)) (Sil.sub_to_list sub) in
       let eqs1 = sub_to_eqs sub1_only @ sub_to_eqs sub_common_other in
       let eqs2 = sub_to_eqs sub2_only in
       (eqs1, eqs2) in

@@ -386,7 +386,7 @@ let check_assignement_guard node =
     | _ -> false in
   let is_frontend_tmp e =
     match e with
-    | Sil.Lvar pv ->
+    | Exp.Lvar pv ->
         Pvar.is_frontend_tmp pv
     | _ -> false in
   let succs = Cfg.Node.get_succs node in
@@ -399,8 +399,8 @@ let check_assignement_guard node =
       let pi = IList.filter is_prune_instr ins in
       let leti = IList.filter is_letderef_instr ins in
       match pi, leti with
-      | [Sil.Prune (Sil.Var(e1), _, _, _)], [Sil.Letderef(e2, e', _, _)]
-      | [Sil.Prune (Sil.UnOp(Unop.LNot, Sil.Var(e1), _), _, _, _)],
+      | [Sil.Prune (Exp.Var(e1), _, _, _)], [Sil.Letderef(e2, e', _, _)]
+      | [Sil.Prune (Exp.UnOp(Unop.LNot, Exp.Var(e1), _), _, _, _)],
         [Sil.Letderef(e2, e', _, _)]
         when (Ident.equal e1 e2) ->
           if verbose
@@ -429,8 +429,8 @@ let check_assignement_guard node =
   (* check that the guards of the succs are a var or its negation *)
   let succs_have_simple_guards () =
     let check_instr = function
-      | Sil.Prune (Sil.Var _, _, _, _) -> true
-      | Sil.Prune (Sil.UnOp(Unop.LNot, Sil.Var _, _), _, _, _) -> true
+      | Sil.Prune (Exp.Var _, _, _, _) -> true
+      | Sil.Prune (Exp.UnOp(Unop.LNot, Exp.Var _, _), _, _, _) -> true
       | Sil.Prune _ -> false
       | _ -> true in
     let check_guard n =
@@ -649,7 +649,7 @@ let report_context_leaks pname sigma tenv =
       sigma in
   IList.iter
     (function
-      | Sil.Hpointsto (Sil.Lvar pv, Sil.Estruct (static_flds, _), _)
+      | Sil.Hpointsto (Exp.Lvar pv, Sil.Estruct (static_flds, _), _)
         when Pvar.is_global pv ->
           IList.iter
             (fun (f_name, f_strexp) ->
@@ -665,7 +665,7 @@ let remove_locals_formals_and_check pdesc p =
   let pvars, p' = Cfg.remove_locals_formals pdesc p in
   let check_pvar pvar =
     let loc = Cfg.Node.get_loc (Cfg.Procdesc.get_exit_node pdesc) in
-    let dexp_opt, _ = Errdesc.vpath_find p (Sil.Lvar pvar) in
+    let dexp_opt, _ = Errdesc.vpath_find p (Exp.Lvar pvar) in
     let desc = Errdesc.explain_stack_variable_address_escape loc pvar dexp_opt in
     let exn = Exceptions.Stack_variable_address_escape (desc, __POS__) in
     Reporting.log_warning pname exn in
@@ -716,7 +716,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
       pathset;
     let sub_list =
       IList.map
-        (fun id -> (id, Sil.Var (Ident.create_fresh (Ident.knormal))))
+        (fun id -> (id, Exp.Var (Ident.create_fresh (Ident.knormal))))
         (Sil.fav_to_list fav) in
     Sil.sub_of_list sub_list in
   let pre_post_visited_list =
@@ -807,8 +807,8 @@ let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t 
 
 let create_seed_vars sigma =
   let hpred_add_seed sigma = function
-    | Sil.Hpointsto (Sil.Lvar pv, se, typ) when not (Pvar.is_abducted pv) ->
-        Sil.Hpointsto(Sil.Lvar (Pvar.to_seed pv), se, typ) :: sigma
+    | Sil.Hpointsto (Exp.Lvar pv, se, typ) when not (Pvar.is_abducted pv) ->
+        Sil.Hpointsto(Exp.Lvar (Pvar.to_seed pv), se, typ) :: sigma
     | _ -> sigma in
   IList.fold_left hpred_add_seed [] sigma
 
@@ -820,8 +820,8 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
   let sigma_new_formals =
     let do_formal (pv, typ) =
       let texp = match !Config.curr_language with
-        | Config.Clang -> Sil.Sizeof (typ, None, Subtype.exact)
-        | Config.Java -> Sil.Sizeof (typ, None, Subtype.subtypes) in
+        | Config.Clang -> Exp.Sizeof (typ, None, Subtype.exact)
+        | Config.Java -> Exp.Sizeof (typ, None, Subtype.subtypes) in
       Prop.mk_ptsto_lvar (Some tenv) Prop.Fld_init Sil.inst_formal (pv, texp, None) in
     IList.map do_formal new_formals in
   let sigma_seed =
@@ -866,7 +866,7 @@ let initial_prop_from_pre tenv curr_f pre =
     let vars = Sil.fav_to_list (Prop.prop_fav pre) in
     let sub_list =
       IList.map
-        (fun id -> (id, Sil.Var (Ident.create_fresh (Ident.kfootprint))))
+        (fun id -> (id, Exp.Var (Ident.create_fresh (Ident.kfootprint))))
         vars in
     let sub = Sil.sub_of_list sub_list in
     let pre2 = Prop.prop_sub sub pre in
@@ -1114,12 +1114,12 @@ let custom_error_preconditions summary =
 (* Remove the constrain of the form this != null which is true for all Java virtual calls *)
 let remove_this_not_null prop =
   let collect_hpred (var_option, hpreds) = function
-    | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (Sil.Var var, _), _)
+    | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (Exp.Var var, _), _)
       when !Config.curr_language = Config.Java && Pvar.is_this pvar ->
         (Some var, hpreds)
     | hpred -> (var_option, hpred:: hpreds) in
   let collect_atom var atoms = function
-    | Sil.Aneq (Sil.Var v, e)
+    | Sil.Aneq (Exp.Var v, e)
       when Ident.equal v var && Sil.exp_equal e Sil.exp_null -> atoms
     | a -> a:: atoms in
   match IList.fold_left collect_hpred (None, []) (Prop.get_sigma prop) with

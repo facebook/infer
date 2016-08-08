@@ -94,19 +94,19 @@ let tests =
     let of_exp_test_ _ =
       let f_fieldname = make_fieldname "f" in
       let g_fieldname = make_fieldname "g" in
-      let x_exp = Sil.Lvar (make_var "x") in
+      let x_exp = Exp.Lvar (make_var "x") in
       check_make_ap x_exp x ~f_resolve_id;
-      let xF_exp = Sil.Lfield (x_exp, f_fieldname, dummy_typ) in
+      let xF_exp = Exp.Lfield (x_exp, f_fieldname, dummy_typ) in
       check_make_ap xF_exp xF ~f_resolve_id;
-      let xFG_exp = Sil.Lfield (xF_exp, g_fieldname, dummy_typ) in
+      let xFG_exp = Exp.Lfield (xF_exp, g_fieldname, dummy_typ) in
       check_make_ap xFG_exp xFG ~f_resolve_id;
-      let xArr_exp = Sil.Lindex (x_exp, Sil.exp_zero) in
+      let xArr_exp = Exp.Lindex (x_exp, Sil.exp_zero) in
       check_make_ap xArr_exp xArr ~f_resolve_id;
       (* make sure [f_resolve_id] works *)
       let f_resolve_id_to_xF _ = Some xF in
       let xFG_exp_with_id =
-        let id_exp = Sil.Var (Ident.create_normal (Ident.string_to_name "") 0) in
-        Sil.Lfield (id_exp, g_fieldname, dummy_typ) in
+        let id_exp = Exp.Var (Ident.create_normal (Ident.string_to_name "") 0) in
+        Exp.Lfield (id_exp, g_fieldname, dummy_typ) in
       check_make_ap xFG_exp_with_id xFG ~f_resolve_id:f_resolve_id_to_xF;
       () in
     "of_exp">::of_exp_test_ in

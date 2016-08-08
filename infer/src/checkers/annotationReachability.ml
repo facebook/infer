@@ -287,15 +287,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ -> false
 
   let is_tracking_exp astate = function
-    | Sil.Var id -> Domain.is_tracked_var (Var.of_id id) astate
-    | Sil.Lvar pvar -> Domain.is_tracked_var (Var.of_pvar pvar) astate
+    | Exp.Var id -> Domain.is_tracked_var (Var.of_id id) astate
+    | Exp.Lvar pvar -> Domain.is_tracked_var (Var.of_pvar pvar) astate
     | _ -> false
 
   let prunes_tracking_var astate = function
-    | Sil.BinOp (Binop.Eq, lhs, rhs)
+    | Exp.BinOp (Binop.Eq, lhs, rhs)
       when is_tracking_exp astate lhs ->
         Sil.exp_equal rhs Sil.exp_one
-    | Sil.UnOp (Unop.LNot, Sil.BinOp (Binop.Eq, lhs, rhs), _)
+    | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Eq, lhs, rhs), _)
       when is_tracking_exp astate lhs ->
         Sil.exp_equal rhs Sil.exp_zero
     | _ ->
@@ -349,10 +349,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Letderef (id, exp, _, _)
       when is_tracking_exp astate exp ->
         Domain.add_tracking_var (Var.of_id id) astate
-    | Sil.Set (Sil.Lvar pvar, _, exp, _)
+    | Sil.Set (Exp.Lvar pvar, _, exp, _)
       when is_tracking_exp astate exp ->
         Domain.add_tracking_var (Var.of_pvar pvar) astate
-    | Sil.Set (Sil.Lvar pvar, _, _, _) ->
+    | Sil.Set (Exp.Lvar pvar, _, _, _) ->
         Domain.remove_tracking_var (Var.of_pvar pvar) astate
     | Sil.Prune (exp, _, _, _)
       when prunes_tracking_var astate exp ->

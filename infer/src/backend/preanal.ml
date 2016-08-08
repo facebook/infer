@@ -24,7 +24,7 @@ let add_dispatch_calls pdesc cg tenv =
     let has_dispatch_call instrs =
       IList.exists instr_is_dispatch_call instrs in
     let replace_dispatch_calls = function
-      | Sil.Call (ret_ids, (Sil.Const (Const.Cfun callee_pname) as call_exp),
+      | Sil.Call (ret_ids, (Exp.Const (Const.Cfun callee_pname) as call_exp),
                   (((_, receiver_typ) :: _) as args), loc, call_flags) as instr
         when call_flags_is_dispatch call_flags ->
           (* the frontend should not populate the list of targets *)
@@ -143,7 +143,7 @@ module NullifyTransferFunctions = struct
               active_defs
               lhs_ids in
           active_defs', to_nullify
-      | Sil.Set (Sil.Lvar lhs_pvar, _, _, _) ->
+      | Sil.Set (Exp.Lvar lhs_pvar, _, _, _) ->
           VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify
       | Sil.Set _ | Prune _ | Declare_locals _ | Stackop _ | Remove_temps _
       | Abstract _ ->
@@ -218,9 +218,9 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
              Var.Set.fold
                (fun var (pvars_acc, ids_acc) -> match Var.to_exp var with
                   (* we nullify all address taken variables at the end of the procedure *)
-                  | Sil.Lvar pvar when not (AddressTaken.Domain.mem pvar address_taken_vars) ->
+                  | Exp.Lvar pvar when not (AddressTaken.Domain.mem pvar address_taken_vars) ->
                       pvar :: pvars_acc, ids_acc
-                  | Sil.Var id ->
+                  | Exp.Var id ->
                       pvars_acc, id :: ids_acc
                   | _ -> pvars_acc, ids_acc)
                to_nullify
@@ -259,7 +259,7 @@ let do_copy_propagation pdesc tenv =
           | _ -> last_id in
         id_sub_inner var_map var' last_id'
       with Not_found ->
-        Sil.Var last_id in
+        Exp.Var last_id in
     id_sub_inner var_map (Var.of_id id) id in
 
   (* perform copy-propagation on each instruction in [node] *)

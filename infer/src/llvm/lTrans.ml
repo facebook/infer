@@ -21,13 +21,13 @@ let source_only_location () : Location.t =
 let ident_of_variable (var : LAst.variable) : Ident.t = (* TODO: use unique stamps *)
   Ident.create_normal (Ident.string_to_name (LAst.string_of_variable var)) 0
 
-let trans_variable (var : LAst.variable) : Sil.exp = Sil.Var (ident_of_variable var)
+let trans_variable (var : LAst.variable) : Exp.t = Exp.Var (ident_of_variable var)
 
-let trans_constant : LAst.constant -> Sil.exp = function
-  | Cint i -> Sil.Const (Const.Cint (IntLit.of_int i))
+let trans_constant : LAst.constant -> Exp.t = function
+  | Cint i -> Exp.Const (Const.Cint (IntLit.of_int i))
   | Cnull -> Sil.exp_null
 
-let trans_operand : LAst.operand -> Sil.exp = function
+let trans_operand : LAst.operand -> Exp.t = function
   | Var var -> trans_variable var
   | Const const -> trans_constant const
 
@@ -73,7 +73,7 @@ let rec trans_annotated_instructions
             let procname = Cfg.Procdesc.get_proc_name procdesc in
             let ret_var = Pvar.get_ret_pvar procname in
             let new_sil_instr =
-              Sil.Set (Sil.Lvar ret_var, trans_typ tp, trans_operand exp, location) in
+              Sil.Set (Exp.Lvar ret_var, trans_typ tp, trans_operand exp, location) in
             (new_sil_instr :: sil_instrs, locals)
         | Load (var, tp, ptr) ->
             let new_sil_instr =
@@ -97,7 +97,7 @@ let rec trans_annotated_instructions
         | Call (ret_var, func_var, typed_args) ->
             let new_sil_instr = Sil.Call (
                 [ident_of_variable ret_var],
-                Sil.Const (Const.Cfun (procname_of_function_variable func_var)),
+                Exp.Const (Const.Cfun (procname_of_function_variable func_var)),
                 IList.map (fun (tp, arg) -> (trans_operand arg, trans_typ tp)) typed_args,
                 location, CallFlags.default) in
             (new_sil_instr :: sil_instrs, locals)

@@ -23,10 +23,10 @@ module StrexpMatch : sig
   type path
 
   (** convert a path into a list of expressions *)
-  val path_to_exps : path -> Sil.exp list
+  val path_to_exps : path -> Exp.t list
 
   (** create a path from a root and a list of offsets *)
-  val path_from_exp_offsets : Sil.exp -> Sil.offset list -> path
+  val path_from_exp_offsets : Exp.t -> Sil.offset list -> path
 
   (** path to the root, length, elements and type of a new_array *)
   type strexp_data = path * Sil.strexp * Typ.t
@@ -47,7 +47,7 @@ module StrexpMatch : sig
   val replace_strexp : bool -> t -> Sil.strexp -> sigma
 
   (** Replace the index in the array at a given position with the new index *)
-  val replace_index : bool -> t -> Sil.exp -> Sil.exp -> sigma
+  val replace_index : bool -> t -> Exp.t -> Exp.t -> sigma
 (*
   (** Get the partition of the sigma: the unmatched part of the sigma and the matched hpred *)
   val get_sigma_partition : t -> sigma * Sil.hpred
@@ -58,10 +58,10 @@ module StrexpMatch : sig
 end = struct
 
   (** syntactic offset *)
-  type syn_offset = Field of Ident.fieldname * Typ.t | Index of Sil.exp
+  type syn_offset = Field of Ident.fieldname * Typ.t | Index of Exp.t
 
   (** path through an Estruct *)
-  type path = Sil.exp * (syn_offset list)
+  type path = Exp.t * (syn_offset list)
 
   (** Find a strexp and a type at the given syntactic offset list *)
   let rec get_strexp_at_syn_offsets se t syn_offs =
@@ -110,10 +110,10 @@ end = struct
     let rec convert acc = function
       | [] -> acc
       | Field (f, t) :: syn_offs' ->
-          let acc' = IList.map (fun e -> Sil.Lfield (e, f, t)) acc in
+          let acc' = IList.map (fun e -> Exp.Lfield (e, f, t)) acc in
           convert acc' syn_offs'
       | Index idx :: syn_offs' ->
-          let acc' = IList.map (fun e -> Sil.Lindex (e, idx)) acc in
+          let acc' = IList.map (fun e -> Exp.Lindex (e, idx)) acc in
           convert acc' syn_offs' in
     begin
       convert [root] syn_offs_in
@@ -232,7 +232,7 @@ end = struct
     replace_hpred (sigma, hpred, syn_offs) hpred'
 
   (** Replace the index in the array at a given position with the new index *)
-  let replace_index footprint_part ((sigma, hpred, syn_offs) : t) (index: Sil.exp) (index': Sil.exp) =
+  let replace_index footprint_part ((sigma, hpred, syn_offs) : t) (index: Exp.t) (index': Exp.t) =
     let update se' =
       match se' with
       | Sil.Earray (len, esel, inst) ->
@@ -260,14 +260,14 @@ end
 let prop_replace_path_index
     (p: Prop.exposed Prop.t)
     (path: StrexpMatch.path)
-    (map : (Sil.exp * Sil.exp) list) : Prop.exposed Prop.t
+    (map : (Exp.t * Exp.t) list) : Prop.exposed Prop.t
   =
   let elist_path = StrexpMatch.path_to_exps path in
   let expmap_list =
     IList.fold_left (fun acc_outer e_path ->
         IList.fold_left (fun acc_inner (old_index, new_index) ->
-            let old_e_path_index = Prop.exp_normalize_prop p (Sil.Lindex(e_path, old_index)) in
-            let new_e_path_index = Prop.exp_normalize_prop p (Sil.Lindex(e_path, new_index)) in
+            let old_e_path_index = Prop.exp_normalize_prop p (Exp.Lindex(e_path, old_index)) in
+            let new_e_path_index = Prop.exp_normalize_prop p (Exp.Lindex(e_path, new_index)) in
             (old_e_path_index, new_e_path_index) :: acc_inner
           ) acc_outer map
       ) [] elist_path in
@@ -348,13 +348,13 @@ let generic_strexp_abstract
 
 
 (** Return [true] if there's a pointer to the index *)
-let index_is_pointed_to (p: Prop.normal Prop.t) (path: StrexpMatch.path) (index: Sil.exp) : bool =
+let index_is_pointed_to (p: Prop.normal Prop.t) (path: StrexpMatch.path) (index: Exp.t) : bool =
   let indices =
-    let index_plus_one = Sil.BinOp(Binop.PlusA, index, Sil.exp_one) in
+    let index_plus_one = Exp.BinOp(Binop.PlusA, index, Sil.exp_one) in
     [index; index_plus_one] in
   let add_index_to_paths =
     let elist_path = StrexpMatch.path_to_exps path in
-    let add_index i e = Prop.exp_normalize_prop p (Sil.Lindex(e, i)) in
+    let add_index i e = Prop.exp_normalize_prop p (Exp.Lindex(e, i)) in
     fun i -> IList.map (add_index i) elist_path in
   let pointers = IList.flatten (IList.map add_index_to_paths indices) in
   let filter = function
@@ -367,10 +367,12 @@ let index_is_pointed_to (p: Prop.normal Prop.t) (path: StrexpMatch.path) (index:
 let blur_array_index
     (p: Prop.normal Prop.t)
     (path: StrexpMatch.path)
-    (index: Sil.exp) : Prop.normal Prop.t
+    (index: Exp.t) : Prop.normal Prop.t
   =
   try
-    let fresh_index = Sil.Var (Ident.create_fresh (if !Config.footprint then Ident.kfootprint else Ident.kprimed)) in
+    let fresh_index =
+      Exp.Var
+        (Ident.create_fresh (if !Config.footprint then Ident.kfootprint else Ident.kprimed)) in
     let p2 =
       try
         if !Config.footprint then
@@ -387,8 +389,8 @@ let blur_array_index
       let sigma' = StrexpMatch.replace_index false matched index fresh_index in
       Prop.replace_sigma sigma' p2 in
     let p4 =
-      let index_next = Sil.BinOp(Binop.PlusA, index, Sil.exp_one) in
-      let fresh_index_next = Sil.BinOp (Binop.PlusA, fresh_index, Sil.exp_one) in
+      let index_next = Exp.BinOp(Binop.PlusA, index, Sil.exp_one) in
+      let fresh_index_next = Exp.BinOp (Binop.PlusA, fresh_index, Sil.exp_one) in
       let map = [(index, fresh_index); (index_next, fresh_index_next)] in
       prop_replace_path_index p3 path map in
     Prop.normalize p4
@@ -399,7 +401,7 @@ let blur_array_index
 let blur_array_indices
     (p: Prop.normal Prop.t)
     (root: StrexpMatch.path)
-    (indices: Sil.exp list) : Prop.normal Prop.t * bool
+    (indices: Exp.t list) : Prop.normal Prop.t * bool
   =
   let f prop index = blur_array_index prop root index in
   (IList.fold_left f p indices, IList.length indices > 0)
@@ -409,7 +411,7 @@ let blur_array_indices
 let keep_only_indices
     (p: Prop.normal Prop.t)
     (path: StrexpMatch.path)
-    (indices: Sil.exp list) : Prop.normal Prop.t * bool
+    (indices: Exp.t list) : Prop.normal Prop.t * bool
   =
   let prune_sigma footprint_part sigma =
     try
@@ -496,8 +498,8 @@ let strexp_do_abstract
     (* array case re-execution: remove and blur constant and primed indices *)
     let is_pointed index = index_is_pointed_to p path index in
     let should_keep (index, _) = match index with
-      | Sil.Const _ -> is_pointed index
-      | Sil.Var id -> Ident.is_normal id || is_pointed index
+      | Exp.Const _ -> is_pointed index
+      | Exp.Var id -> Ident.is_normal id || is_pointed index
       | _ -> false in
     let abstract = prune_and_blur_indices path in
     filter_abstract Sil.d_exp_list should_keep abstract esel [] in
@@ -567,8 +569,8 @@ let remove_redundant_elements prop =
     let favl_curr = Sil.fav_to_list fav_curr in
     let favl_foot = Sil.fav_to_list fav_foot in
     Sil.fav_duplicates := false;
-    (* L.d_str "favl_curr "; IList.iter (fun id -> Sil.d_exp (Sil.Var id)) favl_curr; L.d_ln();
-       L.d_str "favl_foot "; IList.iter (fun id -> Sil.d_exp (Sil.Var id)) favl_foot; L.d_ln(); *)
+    (* L.d_str "favl_curr "; IList.iter (fun id -> Sil.d_exp (Exp.Var id)) favl_curr; L.d_ln();
+       L.d_str "favl_foot "; IList.iter (fun id -> Sil.d_exp (Exp.Var id)) favl_foot; L.d_ln(); *)
     let num_occur l id = IList.length (IList.filter (fun id' -> Ident.equal id id') l) in
     let at_most_once v =
       num_occur favl_curr v <= 1 && num_occur favl_foot v <= 1 in
@@ -581,10 +583,10 @@ let remove_redundant_elements prop =
       modified := true;
       false in
     match e, se with
-    | Sil.Const (Const.Cint i), Sil.Eexp (Sil.Var id, _)
+    | Exp.Const (Const.Cint i), Sil.Eexp (Exp.Var id, _)
       when (not fp_part || IntLit.iszero i) && not (Ident.is_normal id) && occurs_at_most_once id ->
         remove () (* unknown value can be removed in re-execution mode or if the index is zero *)
-    | Sil.Var id, Sil.Eexp _ when Ident.is_normal id = false && occurs_at_most_once id ->
+    | Exp.Var id, Sil.Eexp _ when Ident.is_normal id = false && occurs_at_most_once id ->
         remove () (* index unknown can be removed *)
     | _ -> true in
   let remove_redundant_se fp_part = function

@@ -347,7 +347,7 @@ let module Node = {
       switch instr {
       | Sil.Call _ exp _ _ _ =>
         switch exp {
-        | Sil.Const (Const.Cfun procname) => [procname, ...callees]
+        | Exp.Const (Const.Cfun procname) => [procname, ...callees]
         | _ => callees
         }
       | _ => callees
@@ -656,7 +656,7 @@ let module Node = {
     let convert_pvar pvar => Pvar.mk (Pvar.get_name pvar) resolved_proc_name;
     let convert_exp =
       fun
-      | Sil.Lvar origin_pvar => Sil.Lvar (convert_pvar origin_pvar)
+      | Exp.Lvar origin_pvar => Exp.Lvar (convert_pvar origin_pvar)
       | exp => exp;
     let extract_class_name =
       fun
@@ -670,7 +670,7 @@ let module Node = {
       };
     let convert_instr instrs =>
       fun
-      | Sil.Letderef id (Sil.Lvar origin_pvar as origin_exp) origin_typ loc => {
+      | Sil.Letderef id (Exp.Lvar origin_pvar as origin_exp) origin_typ loc => {
           let (_, specialized_typ) = {
             let pvar_name = Pvar.get_name origin_pvar;
             try (IList.find (fun (n, _) => Mangled.equal n pvar_name) substitutions) {
@@ -680,7 +680,7 @@ let module Node = {
           subst_map := Ident.IdentMap.add id specialized_typ !subst_map;
           [Sil.Letderef id (convert_exp origin_exp) specialized_typ loc, ...instrs]
         }
-      | Sil.Letderef id (Sil.Var origin_id as origin_exp) origin_typ loc => {
+      | Sil.Letderef id (Exp.Var origin_id as origin_exp) origin_typ loc => {
           let updated_typ =
             switch (Ident.IdentMap.find origin_id !subst_map) {
             | Typ.Tptr typ _ => typ
@@ -700,8 +700,8 @@ let module Node = {
         }
       | Sil.Call
           return_ids
-          (Sil.Const (Const.Cfun (Procname.Java callee_pname_java)))
-          [(Sil.Var id, _), ...origin_args]
+          (Exp.Const (Const.Cfun (Procname.Java callee_pname_java)))
+          [(Exp.Var id, _), ...origin_args]
           loc
           call_flags
           when call_flags.CallFlags.cf_virtual && redirected_class_name id != None => {
@@ -711,10 +711,10 @@ let module Node = {
               (Procname.Java callee_pname_java) (extract_class_name redirected_typ)
           and args = {
             let other_args = IList.map (fun (exp, typ) => (convert_exp exp, typ)) origin_args;
-            [(Sil.Var id, redirected_typ), ...other_args]
+            [(Exp.Var id, redirected_typ), ...other_args]
           };
           let call_instr =
-            Sil.Call return_ids (Sil.Const (Const.Cfun redirected_pname)) args loc call_flags;
+            Sil.Call return_ids (Exp.Const (Const.Cfun redirected_pname)) args loc call_flags;
           [call_instr, ...instrs]
         }
       | Sil.Call return_ids origin_call_exp origin_args loc call_flags => {
@@ -871,7 +871,7 @@ let get_name_of_objc_static_locals (curr_f: Procdesc.t) p => {
   let local_static e =>
     switch e {
     /* is a local static if it's a global and it has a static local name */
-    | Sil.Lvar pvar when Pvar.is_global pvar && Sil.is_static_local_name pname pvar => [pvar]
+    | Exp.Lvar pvar when Pvar.is_global pvar && Sil.is_static_local_name pname pvar => [pvar]
     | _ => []
     };
   let hpred_local_static hpred =>
@@ -887,7 +887,7 @@ let get_name_of_objc_static_locals (curr_f: Procdesc.t) p => {
 let get_name_of_objc_block_locals p => {
   let local_blocks e =>
     switch e {
-    | Sil.Lvar pvar when Sil.is_block_pvar pvar => [pvar]
+    | Exp.Lvar pvar when Sil.is_block_pvar pvar => [pvar]
     | _ => []
     };
   let hpred_local_blocks hpred =>
@@ -906,7 +906,7 @@ let remove_abducted_retvars p =>
       let (sigma, pi) = (Prop.get_sigma p, Prop.get_pi p);
       let rec collect_exps exps =>
         fun
-        | Sil.Eexp (Sil.Exn e) _ => Sil.ExpSet.add e exps
+        | Sil.Eexp (Exp.Exn e) _ => Sil.ExpSet.add e exps
         | Sil.Eexp e _ => Sil.ExpSet.add e exps
         | Sil.Estruct flds _ =>
           IList.fold_left (fun exps (_, strexp) => collect_exps exps strexp) exps flds
@@ -951,11 +951,11 @@ let remove_abducted_retvars p =>
         let rec exp_contains =
           fun
           | exp when Sil.ExpSet.mem exp reach_exps => true
-          | Sil.UnOp _ e _
-          | Sil.Cast _ e
-          | Sil.Lfield e _ _ => exp_contains e
-          | Sil.BinOp _ e0 e1
-          | Sil.Lindex e0 e1 => exp_contains e0 || exp_contains e1
+          | Exp.UnOp _ e _
+          | Exp.Cast _ e
+          | Exp.Lfield e _ _ => exp_contains e
+          | Exp.BinOp _ e0 e1
+          | Exp.Lindex e0 e1 => exp_contains e0 || exp_contains e1
           | _ => false;
         IList.filter
           (
@@ -975,7 +975,7 @@ let remove_abducted_retvars p =>
         (
           fun pvars hpred =>
             switch hpred {
-            | Sil.Hpointsto (Sil.Lvar pvar) _ _ =>
+            | Sil.Hpointsto (Exp.Lvar pvar) _ _ =>
               let (abducteds, normal_pvars) = pvars;
               if (Pvar.is_abducted pvar) {
                 ([pvar, ...abducteds], normal_pvars)
@@ -990,7 +990,7 @@ let remove_abducted_retvars p =>
     let (_, p') = Prop.deallocate_stack_vars p abducteds;
     let normal_pvar_set =
       IList.fold_left
-        (fun normal_pvar_set pvar => Sil.ExpSet.add (Sil.Lvar pvar) normal_pvar_set)
+        (fun normal_pvar_set pvar => Sil.ExpSet.add (Exp.Lvar pvar) normal_pvar_set)
         Sil.ExpSet.empty
         normal_pvars;
     /* walk forward from non-abducted pvars, keep everything reachable. remove everything else */
@@ -1053,7 +1053,7 @@ let remove_locals_formals (curr_f: Procdesc.t) p => {
 let remove_seed_vars (prop: Prop.t 'a) :Prop.t Prop.normal => {
   let hpred_not_seed =
     fun
-    | Sil.Hpointsto (Sil.Lvar pv) _ _ => not (Pvar.is_seed pv)
+    | Sil.Hpointsto (Exp.Lvar pv) _ _ => not (Pvar.is_seed pv)
     | _ => true;
   let sigma = Prop.get_sigma prop;
   let sigma' = IList.filter hpred_not_seed sigma;
@@ -1107,7 +1107,7 @@ let remove_seed_captured_vars_block captured_vars prop => {
   let is_captured pname vn => Mangled.equal pname vn;
   let hpred_seed_captured =
     fun
-    | Sil.Hpointsto (Sil.Lvar pv) _ _ => {
+    | Sil.Hpointsto (Exp.Lvar pv) _ _ => {
         let pname = Pvar.get_name pv;
         Pvar.is_seed pv && IList.mem is_captured pname captured_vars
       }
@@ -1194,33 +1194,33 @@ let inline_synthetic_method ret_ids etl proc_desc loc_call :option Sil.instr => 
   let do_instr _ instr =>
     switch (instr, ret_ids, etl) {
     | (
-        Sil.Letderef _ (Sil.Lfield (Sil.Var _) fn ft) bt _,
+        Sil.Letderef _ (Exp.Lfield (Exp.Var _) fn ft) bt _,
         [ret_id],
         [(e1, _)] /* getter for fields */
       ) =>
-      let instr' = Sil.Letderef ret_id (Sil.Lfield e1 fn ft) bt loc_call;
+      let instr' = Sil.Letderef ret_id (Exp.Lfield e1 fn ft) bt loc_call;
       found instr instr'
-    | (Sil.Letderef _ (Sil.Lfield (Sil.Lvar pvar) fn ft) bt _, [ret_id], [])
+    | (Sil.Letderef _ (Exp.Lfield (Exp.Lvar pvar) fn ft) bt _, [ret_id], [])
         when Pvar.is_global pvar =>
       /* getter for static fields */
-      let instr' = Sil.Letderef ret_id (Sil.Lfield (Sil.Lvar pvar) fn ft) bt loc_call;
+      let instr' = Sil.Letderef ret_id (Exp.Lfield (Exp.Lvar pvar) fn ft) bt loc_call;
       found instr instr'
     | (
-        Sil.Set (Sil.Lfield _ fn ft) bt _ _,
+        Sil.Set (Exp.Lfield _ fn ft) bt _ _,
         _,
         [(e1, _), (e2, _)] /* setter for fields */
       ) =>
-      let instr' = Sil.Set (Sil.Lfield e1 fn ft) bt e2 loc_call;
+      let instr' = Sil.Set (Exp.Lfield e1 fn ft) bt e2 loc_call;
       found instr instr'
-    | (Sil.Set (Sil.Lfield (Sil.Lvar pvar) fn ft) bt _ _, _, [(e1, _)]) when Pvar.is_global pvar =>
+    | (Sil.Set (Exp.Lfield (Exp.Lvar pvar) fn ft) bt _ _, _, [(e1, _)]) when Pvar.is_global pvar =>
       /* setter for static fields */
-      let instr' = Sil.Set (Sil.Lfield (Sil.Lvar pvar) fn ft) bt e1 loc_call;
+      let instr' = Sil.Set (Exp.Lfield (Exp.Lvar pvar) fn ft) bt e1 loc_call;
       found instr instr'
-    | (Sil.Call ret_ids' (Sil.Const (Const.Cfun pn)) etl' _ cf, _, _)
+    | (Sil.Call ret_ids' (Exp.Const (Const.Cfun pn)) etl' _ cf, _, _)
         when IList.length ret_ids == IList.length ret_ids' && IList.length etl' == IList.length etl =>
-      let instr' = Sil.Call ret_ids (Sil.Const (Const.Cfun pn)) etl loc_call cf;
+      let instr' = Sil.Call ret_ids (Exp.Const (Const.Cfun pn)) etl loc_call cf;
       found instr instr'
-    | (Sil.Call ret_ids' (Sil.Const (Const.Cfun pn)) etl' _ cf, _, _)
+    | (Sil.Call ret_ids' (Exp.Const (Const.Cfun pn)) etl' _ cf, _, _)
         when
           IList.length ret_ids == IList.length ret_ids' &&
             IList.length etl' + 1 == IList.length etl =>
@@ -1230,7 +1230,7 @@ let inline_synthetic_method ret_ids etl proc_desc loc_call :option Sil.instr => 
         | [_, ...l] => IList.rev l
         | [] => assert false
         };
-      let instr' = Sil.Call ret_ids (Sil.Const (Const.Cfun pn)) etl1 loc_call cf;
+      let instr' = Sil.Call ret_ids (Exp.Const (Const.Cfun pn)) etl1 loc_call cf;
       found instr instr'
     | _ => ()
     };
@@ -1243,7 +1243,7 @@ let inline_synthetic_method ret_ids etl proc_desc loc_call :option Sil.instr => 
 let proc_inline_synthetic_methods cfg proc_desc :unit => {
   let instr_inline_synthetic_method =
     fun
-    | Sil.Call ret_ids (Sil.Const (Const.Cfun pn)) etl loc _ =>
+    | Sil.Call ret_ids (Exp.Const (Const.Cfun pn)) etl loc _ =>
       switch (Procdesc.find_from_name cfg pn) {
       | Some pd =>
         let is_access = Procname.java_is_access_method pn;

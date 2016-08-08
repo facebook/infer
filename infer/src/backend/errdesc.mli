@@ -14,7 +14,7 @@ open! Utils
 
 (** find the dexp, if any, where the given value is stored
     also return the type of the value if found *)
-val vpath_find : 'a Prop.t -> Sil.exp -> DecompiledExp.vpath * Typ.t option
+val vpath_find : 'a Prop.t -> Exp.t -> DecompiledExp.vpath * Typ.t option
 
 (** Return true if [id] is assigned to a program variable which is then nullified *)
 val id_is_assigned_then_dead : Cfg.Node.t -> Ident.t -> bool
@@ -25,20 +25,20 @@ val hpred_is_open_resource : 'a Prop.t -> Sil.hpred -> Sil.resource option
 (** Find the function call instruction used to initialize normal variable [id],
     and return the function name and arguments *)
 val find_normal_variable_funcall :
-  Cfg.Node.t -> Ident.t -> (Sil.exp * (Sil.exp list) * Location.t * CallFlags.t) option
+  Cfg.Node.t -> Ident.t -> (Exp.t * (Exp.t list) * Location.t * CallFlags.t) option
 
 (** Find a program variable assignment in the current node or straightline predecessor. *)
 val find_program_variable_assignment : Cfg.Node.t -> Pvar.t -> (Cfg.Node.t * Ident.t) option
 
 (** Find a program variable assignment to id in the current node or predecessors. *)
-val find_ident_assignment : Cfg.Node.t -> Ident.t -> (Cfg.Node.t * Sil.exp) option
+val find_ident_assignment : Cfg.Node.t -> Ident.t -> (Cfg.Node.t * Exp.t) option
 
 (** Find a boolean assignment to a temporary variable holding a boolean condition.
     The boolean parameter indicates whether the true or false branch is required. *)
 val find_boolean_assignment : Cfg.Node.t -> Pvar.t -> bool -> Cfg.Node.t option
 
 (** describe rvalue [e] as a dexp *)
-val exp_rv_dexp : Cfg.Node.t -> Sil.exp -> DecompiledExp.t option
+val exp_rv_dexp : Cfg.Node.t -> Exp.t -> DecompiledExp.t option
 
 (** Produce a description of a persistent reference to an Android Context *)
 val explain_context_leak : Procname.t -> Typ.t -> Ident.fieldname ->
@@ -52,7 +52,7 @@ val explain_array_access : Localise.deref_str -> 'a Prop.t -> Location.t -> Loca
 
 (** explain a class cast exception *)
 val explain_class_cast_exception :
-  Procname.t option -> Sil.exp -> Sil.exp -> Sil.exp ->
+  Procname.t option -> Exp.t -> Exp.t -> Exp.t ->
   Cfg.Node.t -> Location.t -> Localise.error_desc
 
 (** Explain a deallocate stack variable error *)
@@ -70,11 +70,11 @@ val explain_dereference :
     using the formal parameters of the call *)
 val explain_dereference_as_caller_expression :
   ?use_buckets:bool ->
-  Localise.deref_str -> 'a Prop.t -> 'b Prop.t -> Sil.exp ->
+  Localise.deref_str -> 'a Prop.t -> 'b Prop.t -> Exp.t ->
   Cfg.Node.t -> Location.t -> Pvar.t list -> Localise.error_desc
 
 (** explain a division by zero *)
-val explain_divide_by_zero : Sil.exp -> Cfg.Node.t -> Location.t -> Localise.error_desc
+val explain_divide_by_zero : Exp.t -> Cfg.Node.t -> Location.t -> Localise.error_desc
 
 (** explain a return expression required *)
 val explain_return_expression_required : Location.t -> Typ.t -> Localise.error_desc
@@ -87,7 +87,7 @@ val explain_condition_is_assignment : Location.t -> Localise.error_desc
 
 (** explain a condition which is always true or false *)
 val explain_condition_always_true_false :
-  IntLit.t -> Sil.exp -> Cfg.Node.t -> Location.t -> Localise.error_desc
+  IntLit.t -> Exp.t -> Cfg.Node.t -> Location.t -> Localise.error_desc
 
 (** explain the escape of a stack variable address from its scope *)
 val explain_stack_variable_address_escape :
@@ -106,11 +106,11 @@ val explain_retain_cycle :
 
 (** explain unary minus applied to unsigned expression *)
 val explain_unary_minus_applied_to_unsigned_expression :
-  Sil.exp -> Typ.t -> Cfg.Node.t -> Location.t -> Localise.error_desc
+  Exp.t -> Typ.t -> Cfg.Node.t -> Location.t -> Localise.error_desc
 
 (** Explain a tainted value error *)
 val explain_tainted_value_reaching_sensitive_function :
-  Prop.normal Prop.t -> Sil.exp -> Sil.taint_info -> Procname.t -> Location.t -> Localise.error_desc
+  Prop.normal Prop.t -> Exp.t -> Sil.taint_info -> Procname.t -> Location.t -> Localise.error_desc
 
 (** Produce a description of a leak by looking at the current state.
     If the current instruction is a variable nullify, blame the variable.
@@ -125,7 +125,7 @@ val explain_memory_access : Localise.deref_str -> 'a Prop.t -> Location.t -> Loc
 
 (** explain a test for NULL of a dereferenced pointer *)
 val explain_null_test_after_dereference :
-  Sil.exp -> Cfg.Node.t -> int -> Location.t -> Localise.error_desc
+  Exp.t -> Cfg.Node.t -> int -> Location.t -> Localise.error_desc
 
 (** Print a warning to the err stream at the given location (note: only prints in developer mode) *)
 val warning_err : Location.t -> ('a, Format.formatter, unit) format -> 'a
@@ -136,4 +136,4 @@ type pvar_off =
   | Fstruct of Ident.fieldname list (* value obtained by dereferencing the pvar and following a sequence of fields *)
 
 (** Find a program variable whose value is [exp] or pointing to a struct containing [exp] *)
-val find_with_exp : 'a Prop.t -> Sil.exp -> (Pvar.t * pvar_off) option
+val find_with_exp : 'a Prop.t -> Exp.t -> (Pvar.t * pvar_off) option
