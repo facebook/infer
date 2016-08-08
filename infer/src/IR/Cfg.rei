@@ -69,7 +69,7 @@ let module Procdesc: {
   let get_captured: t => list (Mangled.t, Typ.t);
 
   /** Return the visibility attribute */
-  let get_access: t => Sil.access;
+  let get_access: t => PredSymb.access;
   let get_nodes: t => list node;
 
   /** Get the procedure's nodes up until the first branching */

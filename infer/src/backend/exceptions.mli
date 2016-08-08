@@ -46,7 +46,7 @@ exception Condition_is_assignment of Localise.error_desc * Logging.ml_loc
 exception Context_leak of Localise.error_desc * Logging.ml_loc
 exception Custom_error of string * Localise.error_desc
 exception Dangling_pointer_dereference of
-    Sil.dangling_kind option * Localise.error_desc * Logging.ml_loc
+    PredSymb.dangling_kind option * Localise.error_desc * Logging.ml_loc
 exception Deallocate_stack_variable of Localise.error_desc
 exception Deallocate_static_memory of Localise.error_desc
 exception Deallocation_mismatch of Localise.error_desc * Logging.ml_loc
@@ -61,7 +61,7 @@ exception Internal_error of Localise.error_desc
 exception Java_runtime_exception of Typename.t * string * Localise.error_desc
 exception Leak of
     bool * Prop.normal Prop.t * Sil.hpred * (exception_visibility * Localise.error_desc)
-    * bool * Sil.resource * Logging.ml_loc
+    * bool * PredSymb.resource * Logging.ml_loc
 exception Missing_fld of Ident.fieldname * Logging.ml_loc
 exception Premature_nil_termination of Localise.error_desc * Logging.ml_loc
 exception Null_dereference of Localise.error_desc * Logging.ml_loc

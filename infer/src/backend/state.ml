@@ -46,7 +46,7 @@ type t = {
   mutable last_node : Cfg.Node.t;
   (** Last node seen *)
 
-  mutable last_path : (Paths.Path.t * (Sil.path_pos option)) option;
+  mutable last_path : (Paths.Path.t * (PredSymb.path_pos option)) option;
   (** Last path seen *)
 
   mutable last_prop_tenv_pdesc : (Prop.normal Prop.t * Tenv.t * Cfg.Procdesc.t) option;

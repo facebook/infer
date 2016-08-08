@@ -153,10 +153,10 @@ val deref_str_weak_variable_in_block : Procname.t option -> string -> deref_str
 val deref_str_undef : Procname.t * Location.t -> deref_str
 
 (** dereference strings for a freed pointer dereference *)
-val deref_str_freed : Sil.res_action -> deref_str
+val deref_str_freed : PredSymb.res_action -> deref_str
 
 (** dereference strings for a dangling pointer dereference *)
-val deref_str_dangling : Sil.dangling_kind option -> deref_str
+val deref_str_dangling : PredSymb.dangling_kind option -> deref_str
 
 (** dereference strings for an array out of bound access *)
 val deref_str_array_bound : IntLit.t option -> IntLit.t option -> deref_str
@@ -213,7 +213,7 @@ val is_empty_vector_access_desc : error_desc -> bool
 val desc_frontend_warning : string -> string option -> Location.t -> error_desc
 
 val desc_leak :
-  Exp.t option -> string option -> Sil.resource option -> Sil.res_action option ->
+  Exp.t option -> string option -> PredSymb.resource option -> PredSymb.res_action option ->
   Location.t -> string option -> error_desc
 
 val desc_null_test_after_dereference : string -> int -> Location.t -> error_desc
@@ -264,6 +264,6 @@ val desc_unsafe_guarded_by_access :
   Procname.t -> Ident.fieldname -> string -> Location.t -> error_desc
 
 val desc_tainted_value_reaching_sensitive_function :
-  Sil.taint_kind -> string -> Procname.t -> Procname.t -> Location.t -> error_desc
+  PredSymb.taint_kind -> string -> Procname.t -> Procname.t -> Location.t -> error_desc
 
 val desc_uninitialized_dangling_pointer_deref : deref_str -> string -> Location.t -> error_desc

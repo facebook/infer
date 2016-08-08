@@ -20,7 +20,7 @@ type taint_spec = {
   ret_type : string;
   params : string list;
   is_static : bool;
-  taint_kind : Sil.taint_kind;
+  taint_kind : PredSymb.taint_kind;
   language : Config.language
 }
 

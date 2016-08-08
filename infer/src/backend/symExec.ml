@@ -862,7 +862,7 @@ let add_constraints_on_retval pdesc prop ret_exp ~has_nullable_annot typ callee_
         if Config.taint_analysis then
           match Taint.returns_tainted callee_pname None with
           | Some taint_kind ->
-              add_tainted_post ret_exp { Sil.taint_source = callee_pname; taint_kind; } prop''
+              add_tainted_post ret_exp { taint_source = callee_pname; taint_kind; } prop''
           | None -> prop''
         else prop''
     else add_ret_non_null ret_exp typ prop
@@ -871,7 +871,7 @@ let add_taint prop lhs_id rhs_exp pname tenv  =
   let add_attribute_if_field_tainted prop fieldname struct_typ =
     if Taint.has_taint_annotation fieldname struct_typ
     then
-      let taint_info = { Sil.taint_source = pname; taint_kind = Tk_unknown; } in
+      let taint_info = { PredSymb.taint_source = pname; taint_kind = Tk_unknown; } in
       Prop.add_or_replace_attribute prop (Apred (Ataint taint_info, [Exp.Var lhs_id]))
     else
       prop in
@@ -1378,7 +1378,7 @@ and check_untainted exp taint_kind caller_pname callee_pname prop =
       Prop.add_or_replace_attribute prop (Apred (Auntaint taint_info, [exp]))
   | _ ->
       if !Config.footprint then
-        let taint_info = { Sil.taint_source = callee_pname; taint_kind; } in
+        let taint_info = { PredSymb.taint_source = callee_pname; taint_kind; } in
         (* add untained(n_lexp) to the footprint *)
         Prop.set_attribute ~footprint:true prop (Auntaint taint_info) [exp]
       else prop
@@ -1497,7 +1497,7 @@ and check_variadic_sentinel_if_present
   | None ->
       [(prop_, path)]
   | Some callee_attributes ->
-      match Sil.get_sentinel_func_attribute_value
+      match PredSymb.get_sentinel_func_attribute_value
               callee_attributes.ProcAttributes.func_attributes with
       | None -> [(prop_, path)]
       | Some sentinel_arg ->
@@ -1639,7 +1639,7 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
       let p'' =
         let map_res_action e ra = (* update the vpath in resource attributes *)
           let vpath, _ = Errdesc.vpath_find p' e in
-          { ra with Sil.ra_vpath = vpath } in
+          { ra with PredSymb.ra_vpath = vpath } in
         Prop.attribute_map_resource p' map_res_action in
       p'', fav in
     let post_process_result fav_normal p path =

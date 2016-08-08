@@ -169,7 +169,8 @@ type arith_problem =
   | UminusUnsigned of Exp.t * Typ.t
 
 (** Look for an arithmetic problem in [exp] *)
-val find_arithmetic_problem : path_pos -> normal t -> Exp.t -> arith_problem option * normal t
+val find_arithmetic_problem :
+  PredSymb.path_pos -> normal t -> Exp.t -> arith_problem option * normal t
 
 (** Normalize [exp] using the pure part of [prop].  Later, we should
     change this such that the normalization exposes offsets of [exp]
@@ -223,10 +224,10 @@ val mk_neq : Exp.t -> Exp.t -> atom
 val mk_eq : Exp.t -> Exp.t -> atom
 
 (** Construct a positive pred. *)
-val mk_pred : attribute -> Exp.t list -> atom
+val mk_pred : PredSymb.t -> Exp.t list -> atom
 
 (** Construct a negative pred. *)
-val mk_npred : attribute -> Exp.t list -> atom
+val mk_npred : PredSymb.t -> Exp.t list -> atom
 
 (** create a strexp of the given type, populating the structures if [expand_structs] is true *)
 val create_strexp_of_type :
@@ -283,7 +284,8 @@ val conjoin_neq : ?footprint: bool -> Exp.t -> Exp.t -> normal t -> normal t
 val atom_is_attribute : atom -> bool
 
 (** Apply f to every resource attribute in the prop *)
-val attribute_map_resource : normal t -> (Exp.t -> Sil.res_action -> Sil.res_action) -> normal t
+val attribute_map_resource :
+  normal t -> (Exp.t -> PredSymb.res_action -> PredSymb.res_action) -> normal t
 
 (** Return the exp and attribute marked in the atom if any, and return None otherwise *)
 val atom_get_attribute : atom -> atom option
@@ -322,22 +324,22 @@ val has_dangling_uninit_attribute : 'a t -> Exp.t -> bool
 
 (** Set an attribute associated to the argument expressions *)
 val set_attribute : ?footprint: bool -> ?polarity: bool ->
-  normal t -> attribute -> Exp.t list -> normal t
+  normal t -> PredSymb.t -> Exp.t list -> normal t
 
 val add_or_replace_attribute_check_changed :
-  (Sil.attribute -> Sil.attribute -> unit) -> normal t -> atom -> normal t
+  (PredSymb.t -> PredSymb.t -> unit) -> normal t -> atom -> normal t
 
 (** Replace an attribute associated to the expression *)
 val add_or_replace_attribute : normal t -> atom -> normal t
 
 (** mark Exp.Var's or Exp.Lvar's as undefined *)
 val mark_vars_as_undefined : normal t -> Exp.t list -> Procname.t -> Typ.item_annotation ->
-  Location.t -> Sil.path_pos -> normal t
+  Location.t -> PredSymb.path_pos -> normal t
 
 (** Remove an attribute from all the atoms in the heap *)
-val remove_attribute : 'a t -> Sil.attribute -> normal t
+val remove_attribute : 'a t -> PredSymb.t -> normal t
 
-val remove_resource_attribute : Sil.res_act_kind -> Sil.resource -> 'a t -> normal t
+val remove_resource_attribute : PredSymb.res_act_kind -> PredSymb.resource -> 'a t -> normal t
 
 (** [replace_objc_null lhs rhs].
     If rhs has the objc_null attribute, replace the attribute and set the lhs = 0 *)
@@ -349,7 +351,7 @@ val nullify_exp_with_objc_null : normal t -> Exp.t -> normal t
 val remove_attribute_from_exp : 'a t -> atom -> normal t
 
 (** Retrieve all the atoms that contain a specific attribute *)
-val get_atoms_with_attribute : 'a t -> Sil.attribute -> Sil.atom list
+val get_atoms_with_attribute : 'a t -> PredSymb.t -> Sil.atom list
 
 (** Return the sub part of [prop]. *)
 val get_sub : 'a t -> subst

@@ -20,7 +20,7 @@ val vpath_find : 'a Prop.t -> Exp.t -> DecompiledExp.vpath * Typ.t option
 val id_is_assigned_then_dead : Cfg.Node.t -> Ident.t -> bool
 
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
-val hpred_is_open_resource : 'a Prop.t -> Sil.hpred -> Sil.resource option
+val hpred_is_open_resource : 'a Prop.t -> Sil.hpred -> PredSymb.resource option
 
 (** Find the function call instruction used to initialize normal variable [id],
     and return the function name and arguments *)
@@ -45,7 +45,8 @@ val explain_context_leak : Procname.t -> Typ.t -> Ident.fieldname ->
   (Ident.fieldname option * Typ.t) list -> Localise.error_desc
 
 (** Produce a description of a mismatch between an allocation function and a deallocation function *)
-val explain_allocation_mismatch : Sil.res_action -> Sil.res_action -> Localise.error_desc
+val explain_allocation_mismatch :
+  PredSymb.res_action -> PredSymb.res_action -> Localise.error_desc
 
 (** Produce a description of the array access performed in the current instruction, if any. *)
 val explain_array_access : Localise.deref_str -> 'a Prop.t -> Location.t -> Localise.error_desc
@@ -56,10 +57,10 @@ val explain_class_cast_exception :
   Cfg.Node.t -> Location.t -> Localise.error_desc
 
 (** Explain a deallocate stack variable error *)
-val explain_deallocate_stack_var : Pvar.t -> Sil.res_action -> Localise.error_desc
+val explain_deallocate_stack_var : Pvar.t -> PredSymb.res_action -> Localise.error_desc
 
 (** Explain a deallocate constant string error *)
-val explain_deallocate_constant_string : string -> Sil.res_action -> Localise.error_desc
+val explain_deallocate_constant_string : string -> PredSymb.res_action -> Localise.error_desc
 
 (** Produce a description of which expression is dereferenced in the current instruction, if any. *)
 val explain_dereference :
@@ -110,14 +111,15 @@ val explain_unary_minus_applied_to_unsigned_expression :
 
 (** Explain a tainted value error *)
 val explain_tainted_value_reaching_sensitive_function :
-  Prop.normal Prop.t -> Exp.t -> Sil.taint_info -> Procname.t -> Location.t -> Localise.error_desc
+  Prop.normal Prop.t -> Exp.t -> PredSymb.taint_info -> Procname.t -> Location.t ->
+  Localise.error_desc
 
 (** Produce a description of a leak by looking at the current state.
     If the current instruction is a variable nullify, blame the variable.
     If it is an abstraction, blame any variable nullify at the current node.
     If there is an alloc attribute, print the function call and line number. *)
 val explain_leak :
-  Tenv.t -> Sil.hpred -> 'a Prop.t -> Sil.attribute option -> string option ->
+  Tenv.t -> Sil.hpred -> 'a Prop.t -> PredSymb.t option -> string option ->
   Exceptions.exception_visibility * Localise.error_desc
 
 (** Produce a description of the memory access performed in the current instruction, if any. *)

@@ -1101,7 +1101,7 @@ let check_junk ?original_prop pname tenv prop =
                   check_observer_is_unsubscribed_deallocation prop e;
                   match Prop.get_resource_attribute prop e with
                   | Some (Apred (Aresource ({ ra_kind = Racquire }) as a, _)) ->
-                      L.d_str "ATTRIBUTE: "; Sil.d_attribute a; L.d_ln ();
+                      L.d_str "ATTRIBUTE: "; PredSymb.d_attribute a; L.d_ln ();
                       res := Some a
                   | _ ->
                       (match Prop.get_undef_attribute prop e with
@@ -1111,14 +1111,14 @@ let check_junk ?original_prop pname tenv prop =
                 IList.iter do_entry entries;
                 !res in
               L.d_decrease_indent 1;
-              let is_undefined = Option.map_default Sil.attr_is_undef false alloc_attribute in
+              let is_undefined = Option.map_default PredSymb.is_undef false alloc_attribute in
               let resource = match Errdesc.hpred_is_open_resource prop hpred with
                 | Some res -> res
-                | None -> Sil.Rmemory Sil.Mmalloc in
+                | None -> PredSymb.Rmemory PredSymb.Mmalloc in
               let ml_bucket_opt =
                 match resource with
-                | Sil.Rmemory Sil.Mobjc -> should_raise_objc_leak hpred
-                | Sil.Rmemory Sil.Mnew | Sil.Rmemory Sil.Mnew_array
+                | PredSymb.Rmemory PredSymb.Mobjc -> should_raise_objc_leak hpred
+                | PredSymb.Rmemory PredSymb.Mnew | PredSymb.Rmemory PredSymb.Mnew_array
                   when !Config.curr_language = Config.Clang ->
                     Mleak_buckets.should_raise_cpp_leak
                 | _ -> None in
@@ -1136,7 +1136,7 @@ let check_junk ?original_prop pname tenv prop =
                    __POS__) in
               let ignore_resource, exn =
                 (match alloc_attribute, resource with
-                 | Some _, Sil.Rmemory Sil.Mobjc when (hpred_in_cycle hpred) ->
+                 | Some _, Rmemory Mobjc when (hpred_in_cycle hpred) ->
                      (* When there is a cycle in objc we ignore it
                         only if it's empty or it has weak or unsafe_unretained fields.
                         Otherwise we report a retain cycle. *)
@@ -1145,25 +1145,25 @@ let check_junk ?original_prop pname tenv prop =
                        (IList.length cycle = 0) ||
                        (cycle_has_weak_or_unretained_or_assign_field cycle) in
                      ignore_cycle, exn_retain_cycle cycle
-                 | Some _, Sil.Rmemory Sil.Mobjc
-                 | Some _, Sil.Rmemory Sil.Mnew
-                 | Some _, Sil.Rmemory Sil.Mnew_array when !Config.curr_language = Config.Clang ->
+                 | Some _, Rmemory Mobjc
+                 | Some _, Rmemory Mnew
+                 | Some _, Rmemory Mnew_array when !Config.curr_language = Config.Clang ->
                      ml_bucket_opt = None, exn_leak
-                 | Some _, Sil.Rmemory _ -> !Config.curr_language = Config.Java, exn_leak
-                 | Some _, Sil.Rignore -> true, exn_leak
-                 | Some _, Sil.Rfile -> false, exn_leak
-                 | Some _, Sil.Rlock -> false, exn_leak
+                 | Some _, Rmemory _ -> !Config.curr_language = Config.Java, exn_leak
+                 | Some _, Rignore -> true, exn_leak
+                 | Some _, Rfile -> false, exn_leak
+                 | Some _, Rlock -> false, exn_leak
                  | _ when hpred_in_cycle hpred && Sil.has_objc_ref_counter hpred ->
                      (* When it's a cycle and the object has a ref counter then
                         we have a retain cycle. Objc object may not have the
-                        Sil.Mobjc qualifier when added in footprint doing abduction *)
+                        Mobjc qualifier when added in footprint doing abduction *)
                      let cycle = get_var_retain_cycle (remove_opt original_prop) in
                      IList.length cycle = 0, exn_retain_cycle cycle
                  | _ -> !Config.curr_language = Config.Java, exn_leak) in
               let already_reported () =
                 let attr_opt_equal ao1 ao2 = match ao1, ao2 with
                   | None, None -> true
-                  | Some a1, Some a2 -> Sil.attribute_equal a1 a2
+                  | Some a1, Some a2 -> PredSymb.equal a1 a2
                   | Some _, None
                   | None, Some _ -> false in
                 (alloc_attribute = None && !leaks_reported <> []) ||

@@ -10,19 +10,20 @@
 open! Utils
 
 (** returns true if [callee_pname] returns a tainted value *)
-val returns_tainted : Procname.t -> ProcAttributes.t option -> Sil.taint_kind option
+val returns_tainted : Procname.t -> ProcAttributes.t option -> PredSymb.taint_kind option
 
 (** returns list of zero-indexed argument numbers of [callee_pname] that may be tainted *)
-val accepts_sensitive_params : Procname.t -> ProcAttributes.t option -> (int * Sil.taint_kind) list
+val accepts_sensitive_params :
+  Procname.t -> ProcAttributes.t option -> (int * PredSymb.taint_kind) list
 
 (** returns list of zero-indexed parameter numbers of [callee_pname] that should be
     considered tainted during symbolic execution *)
-val tainted_params : Procname.t -> (int * Sil.taint_kind) list
+val tainted_params : Procname.t -> (int * PredSymb.taint_kind) list
 
 (** returns the taint_kind of [fieldname] if it has a taint source annotation *)
 val has_taint_annotation : Ident.fieldname -> Typ.struct_typ -> bool
 
-val add_tainting_attribute : Sil.attribute -> Pvar.t -> Prop.normal Prop.t -> Prop.normal Prop.t
+val add_tainting_attribute : PredSymb.t -> Pvar.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 
 val get_params_to_taint :
-  (int * Sil.taint_kind) list -> Pvar.t list -> (Pvar.t * Sil.taint_kind) list
+  (int * PredSymb.taint_kind) list -> Pvar.t list -> (Pvar.t * PredSymb.taint_kind) list

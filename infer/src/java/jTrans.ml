@@ -270,10 +270,10 @@ let create_local_procdesc program linereader cfg tenv node m =
     let proc_name = Procname.Java proc_name_java in
     let create_new_procdesc () =
       let trans_access = function
-        | `Default -> Sil.Default
-        | `Public -> Sil.Public
-        | `Private -> Sil.Private
-        | `Protected -> Sil.Protected in
+        | `Default -> PredSymb.Default
+        | `Public -> PredSymb.Public
+        | `Private -> PredSymb.Private
+        | `Protected -> PredSymb.Protected in
       try
         match m with
         | Javalib.AbstractMethod am -> (* create a procdesc with empty body *)

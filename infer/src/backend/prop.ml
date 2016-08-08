@@ -1795,9 +1795,9 @@ let get_attributes prop exp =
   IList.fold_left atom_get_attr [] prop.pi
 
 let attributes_in_same_category attr1 attr2 =
-  let cat1 = Sil.attribute_to_category attr1 in
-  let cat2 = Sil.attribute_to_category attr2 in
-  Sil.attribute_category_equal cat1 cat2
+  let cat1 = PredSymb.to_category attr1 in
+  let cat2 = PredSymb.to_category attr2 in
+  PredSymb.category_equal cat1 cat2
 
 let get_attribute prop exp category =
   let atts = get_attributes prop exp in
@@ -1805,39 +1805,39 @@ let get_attribute prop exp category =
     Some
       (IList.find (function
            | Sil.Apred (att, _) | Anpred (att, _) ->
-               Sil.attribute_category_equal (Sil.attribute_to_category att) category
+               PredSymb.category_equal (PredSymb.to_category att) category
            | _ -> false
          ) atts)
   with Not_found -> None
 
 let get_undef_attribute prop exp =
-  get_attribute prop exp Sil.ACundef
+  get_attribute prop exp PredSymb.ACundef
 
 let get_resource_attribute prop exp =
-  get_attribute prop exp Sil.ACresource
+  get_attribute prop exp PredSymb.ACresource
 
 let get_taint_attribute prop exp =
-  get_attribute prop exp Sil.ACtaint
+  get_attribute prop exp PredSymb.ACtaint
 
 let get_autorelease_attribute prop exp =
-  get_attribute prop exp Sil.ACautorelease
+  get_attribute prop exp PredSymb.ACautorelease
 
 let get_objc_null_attribute prop exp =
-  get_attribute prop exp Sil.ACobjc_null
+  get_attribute prop exp PredSymb.ACobjc_null
 
 let get_div0_attribute prop exp =
-  get_attribute prop exp Sil.ACdiv0
+  get_attribute prop exp PredSymb.ACdiv0
 
 let get_observer_attribute prop exp =
-  get_attribute prop exp Sil.ACobserver
+  get_attribute prop exp PredSymb.ACobserver
 
 let get_retval_attribute prop exp =
-  get_attribute prop exp Sil.ACretval
+  get_attribute prop exp PredSymb.ACretval
 
 let has_dangling_uninit_attribute prop exp =
   let la = get_attributes prop exp in
   IList.exists (function
-      | Sil.Apred (a, _) -> Sil.attribute_equal a (Adangling DAuninit)
+      | Sil.Apred (a, _) -> PredSymb.equal a (Adangling DAuninit)
       | _ -> false
     ) la
 
@@ -1884,7 +1884,7 @@ let add_or_replace_attribute prop atom =
 
 (** mark Exp.Var's or Exp.Lvar's as undefined *)
 let mark_vars_as_undefined prop vars_to_mark callee_pname ret_annots loc path_pos =
-  let att_undef = Sil.Aundef (callee_pname, ret_annots, loc, path_pos) in
+  let att_undef = PredSymb.Aundef (callee_pname, ret_annots, loc, path_pos) in
   let mark_var_as_undefined exp prop =
     match exp with
     | Exp.Var _ | Lvar _ -> add_or_replace_attribute prop (Apred (att_undef, [exp]))
@@ -1897,15 +1897,15 @@ let filter_atoms ~f prop =
 (** Remove an attribute from all the atoms in the heap *)
 let remove_attribute prop att0 =
   let f = function
-    | Sil.Apred (att, _) | Anpred (att, _) -> not (Sil.attribute_equal att0 att)
+    | Sil.Apred (att, _) | Anpred (att, _) -> not (PredSymb.equal att0 att)
     | _ -> true in
   filter_atoms ~f prop
 
 let remove_resource_attribute ra_kind ra_res =
   let f = function
     | Sil.Apred (Aresource res_action, _) ->
-        Sil.res_act_kind_compare res_action.ra_kind ra_kind <> 0
-        || Sil.resource_compare res_action.ra_res ra_res <> 0
+        PredSymb.res_act_kind_compare res_action.ra_kind ra_kind <> 0
+        || PredSymb.resource_compare res_action.ra_res ra_res <> 0
     | _ -> true in
   filter_atoms ~f
 
@@ -1947,14 +1947,14 @@ let rec nullify_exp_with_objc_null prop exp =
 (** Get all the attributes of the prop *)
 let get_atoms_with_attribute prop att =
   IList.filter (function
-      | Sil.Apred (att', _) | Anpred (att', _) -> Sil.attribute_equal att' att
+      | Sil.Apred (att', _) | Anpred (att', _) -> PredSymb.equal att' att
       | _ -> false
     ) (get_pi prop)
 
 (** Apply f to every resource attribute in the prop *)
 let attribute_map_resource prop f =
   let attribute_map e = function
-    | Sil.Aresource ra -> Sil.Aresource (f e ra)
+    | PredSymb.Aresource ra -> PredSymb.Aresource (f e ra)
     | att -> att in
   let atom_map = function
     | Sil.Apred (att, ([e] as es)) -> Sil.Apred (attribute_map e att, es)

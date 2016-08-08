@@ -27,10 +27,10 @@ type splitting = {
 }
 
 type deref_error =
-  | Deref_freed of Sil.res_action (** dereference a freed pointer *)
+  | Deref_freed of PredSymb.res_action (** dereference a freed pointer *)
   | Deref_minusone (** dereference -1 *)
-  | Deref_null of Sil.path_pos (** dereference null *)
-  | Deref_undef of Procname.t * Location.t * Sil.path_pos
+  | Deref_null of PredSymb.path_pos (** dereference null *)
+  | Deref_undef of Procname.t * Location.t * PredSymb.path_pos
   (** dereference a value coming from the given undefined function *)
   | Deref_undef_exp (** dereference an undefined expression *)
 
@@ -314,7 +314,7 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
       (* Check if the dereferenced expr has the dangling uninitialized attribute. *)
       (* In that case it raise a dangling pointer dereferece *)
     if Prop.has_dangling_uninit_attribute spec_pre e then
-      Some (Deref_undef_exp, desc false (Localise.deref_str_dangling (Some Sil.DAuninit)) )
+      Some (Deref_undef_exp, desc false (Localise.deref_str_dangling (Some PredSymb.DAuninit)) )
     else if Exp.equal e_sub Exp.minus_one
     then Some (Deref_minusone, desc true (Localise.deref_str_dangling None))
     else match Prop.get_resource_attribute actual_pre e_sub with
@@ -387,10 +387,10 @@ let post_process_post
     | _ -> false in
   let atom_update_alloc_attribute = function
     | Sil.Apred (Aresource ra, [e])
-      when not (ra.Sil.ra_kind = Sil.Rrelease && actual_pre_has_freed_attribute e) ->
+      when not (ra.ra_kind = PredSymb.Rrelease && actual_pre_has_freed_attribute e) ->
         (* unless it was already freed before the call *)
         let vpath, _ = Errdesc.vpath_find post e in
-        let ra' = { ra with Sil.ra_pname = callee_pname; Sil.ra_loc = loc; Sil.ra_vpath = vpath } in
+        let ra' = { ra with ra_pname = callee_pname; ra_loc = loc; ra_vpath = vpath } in
         Sil.Apred (Aresource ra', [e])
     | a -> a in
   let prop' = Prop.replace_sigma (post_process_sigma (Prop.get_sigma post) loc) post in
@@ -586,9 +586,9 @@ let prop_footprint_add_pi_sigma_starfld_sigma
 (** Check if the attribute change is a mismatch between a kind
     of allocation and a different kind of deallocation *)
 let check_attr_dealloc_mismatch att_old att_new = match att_old, att_new with
-  | Sil.Aresource ({ Sil.ra_kind = Sil.Racquire; Sil.ra_res = Sil.Rmemory mk_old } as ra_old),
-    Sil.Aresource ({ Sil.ra_kind = Sil.Rrelease; Sil.ra_res = Sil.Rmemory mk_new } as ra_new)
-    when Sil.mem_kind_compare mk_old mk_new <> 0 ->
+  | PredSymb.Aresource ({ ra_kind = Racquire; ra_res = Rmemory mk_old } as ra_old),
+    PredSymb.Aresource ({ ra_kind = Rrelease; ra_res = Rmemory mk_new } as ra_new)
+    when PredSymb.mem_kind_compare mk_old mk_new <> 0 ->
       let desc = Errdesc.explain_allocation_mismatch ra_old ra_new in
       raise (Exceptions.Deallocation_mismatch (desc, __POS__))
   | _ -> ()
@@ -801,7 +801,7 @@ let mk_pre pre formal_params callee_pname callee_attrs =
         Taint.get_params_to_taint tainted_param_nums formal_params
         |> IList.fold_left
           (fun prop_acc (param, taint_kind) ->
-             let attr = Sil.Auntaint { taint_source = callee_pname; taint_kind; } in
+             let attr = PredSymb.Auntaint { taint_source = callee_pname; taint_kind; } in
              Taint.add_tainting_attribute attr param prop_acc)
           (Prop.normalize pre)
         |> Prop.expose
@@ -998,7 +998,7 @@ let check_uninitialize_dangling_deref callee_pname actual_pre sub formal_params 
   IList.iter (fun (p, _ ) ->
       match check_dereferences callee_pname actual_pre sub p formal_params with
       | Some (Deref_undef_exp, desc) ->
-          raise (Exceptions.Dangling_pointer_dereference (Some Sil.DAuninit, desc, __POS__))
+          raise (Exceptions.Dangling_pointer_dereference (Some PredSymb.DAuninit, desc, __POS__))
       | _ -> ()) props
 
 (** Perform symbolic execution for a single spec *)
@@ -1159,12 +1159,12 @@ let exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc result
                   trace_call Specs.CallStats.CR_not_met;
                   extend_path path_opt None;
                   raise (Exceptions.Dangling_pointer_dereference
-                           (Some Sil.DAminusone, desc, __POS__))
+                           (Some PredSymb.DAminusone, desc, __POS__))
               | Dereference_error (Deref_undef_exp, desc, path_opt) ->
                   trace_call Specs.CallStats.CR_not_met;
                   extend_path path_opt None;
                   raise (Exceptions.Dangling_pointer_dereference
-                           (Some Sil.DAuninit, desc, __POS__))
+                           (Some PredSymb.DAuninit, desc, __POS__))
               | Dereference_error (Deref_null pos, desc, path_opt) ->
                   trace_call Specs.CallStats.CR_not_met;
                   extend_path path_opt (Some pos);
@@ -1261,7 +1261,7 @@ let exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc result
       (* add attribute to remember what function call a return id came from *)
       let ret_var = Exp.Var ret_id in
       let mark_id_as_retval (p, path) =
-        let att_retval = Sil.Aretval (callee_pname, ret_annot) in
+        let att_retval = PredSymb.Aretval (callee_pname, ret_annot) in
         Prop.set_attribute p att_retval [ret_var], path in
       IList.map mark_id_as_retval res
   | _ -> res

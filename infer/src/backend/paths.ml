@@ -30,10 +30,10 @@ module Path : sig
   val contains : t -> t -> bool
 
   (** check wether the path contains the given position *)
-  val contains_position : t -> Sil.path_pos -> bool
+  val contains_position : t -> PredSymb.path_pos -> bool
 
   (** Create the location trace of the path, up to the path position if specified *)
-  val create_loc_trace : t -> Sil.path_pos option -> Errlog.loc_trace
+  val create_loc_trace : t -> PredSymb.path_pos option -> Errlog.loc_trace
 
   (** return the current node of the path *)
   val curr_node : t -> Cfg.node option
@@ -57,7 +57,7 @@ module Path : sig
       Do not iterate past the given position.
       [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] *)
   val iter_longest_sequence :
-    (int -> t -> int -> Typename.t option -> unit) -> Sil.path_pos option -> t -> unit
+    (int -> t -> int -> Typename.t option -> unit) -> PredSymb.path_pos option -> t -> unit
 
   (** join two paths *)
   val join : t -> t -> t
@@ -278,7 +278,7 @@ end = struct
   let contains_position path pos =
     let found = ref false in
     let f node =
-      if Sil.path_pos_equal (get_path_pos node) pos then found := true;
+      if PredSymb.path_pos_equal (get_path_pos node) pos then found := true;
       true in
     Invariant.compute_stats true f path;
     Invariant.reset_stats path;
@@ -314,10 +314,10 @@ end = struct
       [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] and possible exception [exn_opt] *)
   let iter_longest_sequence
       (f : int -> t -> int -> Typename.t option -> unit)
-      (pos_opt : Sil.path_pos option) (path: t) : unit =
+      (pos_opt : PredSymb.path_pos option) (path: t) : unit =
     let filter node = match pos_opt with
       | None -> true
-      | Some pos -> Sil.path_pos_equal (get_path_pos node) pos in
+      | Some pos -> PredSymb.path_pos_equal (get_path_pos node) pos in
     let path_pos_at_path p =
       try
         match curr_node p with

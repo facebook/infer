@@ -19,90 +19,6 @@ let module F = Format;
 
 
 /** {2 Programs and Types} */
-type func_attribute = | FA_sentinel of int int;
-
-
-/** Visibility modifiers. */
-type access = | Default | Public | Private | Protected;
-
-type mem_kind =
-  | Mmalloc /** memory allocated with malloc */
-  | Mnew /** memory allocated with new */
-  | Mnew_array /** memory allocated with new[] */
-  | Mobjc /** memory allocated with objective-c alloc */;
-
-
-/** resource that can be allocated */
-type resource = | Rmemory of mem_kind | Rfile | Rignore | Rlock;
-
-
-/** kind of resource action */
-type res_act_kind = | Racquire | Rrelease;
-
-
-/** kind of dangling pointers */
-type dangling_kind =
-  /** pointer is dangling because it is uninitialized */
-  | DAuninit
-  /** pointer is dangling because it is the address of a stack variable which went out of scope */
-  | DAaddr_stack_var
-  /** pointer is -1 */
-  | DAminusone;
-
-
-/** position in a path: proc name, node id */
-type path_pos = (Procname.t, int);
-
-type taint_kind =
-  | Tk_unverified_SSL_socket
-  | Tk_shared_preferences_data
-  | Tk_privacy_annotation
-  | Tk_integrity_annotation
-  | Tk_unknown;
-
-type taint_info = {taint_source: Procname.t, taint_kind: taint_kind};
-
-
-/** acquire/release action on a resource */
-type res_action = {
-  ra_kind: res_act_kind, /** kind of action */
-  ra_res: resource, /** kind of resource */
-  ra_pname: Procname.t, /** name of the procedure used to acquire/release the resource */
-  ra_loc: Location.t, /** location of the acquire/release */
-  ra_vpath: DecompiledExp.vpath /** vpath of the resource value */
-};
-
-
-/** Attributes are nary function symbols that are applied to expression arguments in Apred and
-    Anpred atomic formulas.  Many operations don't make much sense for nullary predicates, and are
-    generally treated as no-ops.  The first argument is treated specially, as the "anchor" of the
-    predicate application.  For example, adding or removing an attribute uses the anchor to identify
-    the atom to operate on.  Also, abstraction and normalization operations treat the anchor
-    specially and maintain more information on it than other arguments.  Therefore when attaching an
-    attribute to an expression, that expression should be the first argument, optionally followed by
-    additional related expressions. */
-type attribute =
-  | Aresource of res_action /** resource acquire/release */
-  | Aautorelease
-  | Adangling of dangling_kind /** dangling pointer */
-  /** undefined value obtained by calling the given procedure, plus its return value annots */
-  | Aundef of Procname.t Typ.item_annotation Location.t path_pos
-  | Ataint of taint_info
-  | Auntaint of taint_info
-  | Alocked
-  | Aunlocked
-  /** value appeared in second argument of division at given path position */
-  | Adiv0 of path_pos
-  /** attributed exp is null due to a call to a method with given path as null receiver */
-  | Aobjc_null
-  /** value was returned from a call to the given procedure, plus the annots of the return value */
-  | Aretval of Procname.t Typ.item_annotation
-  /** denotes an object registered as an observers to a notification center */
-  | Aobserver
-  /** denotes an object unsubscribed from observers of a notification center */
-  | Aunsubscribed_observer;
-
-
 /** Convert expression lists to expression sets. */
 let elist_to_eset: list Exp.t => Exp.Set.t;
 
@@ -160,8 +76,8 @@ type offset = | Off_fld of Ident.fieldname Typ.t | Off_index of Exp.t;
 type atom =
   | Aeq of Exp.t Exp.t /** equality */
   | Aneq of Exp.t Exp.t /** disequality */
-  | Apred of attribute (list Exp.t) /** predicate symbol applied to exps */
-  | Anpred of attribute (list Exp.t) /** negated predicate symbol applied to exps */;
+  | Apred of PredSymb.t (list Exp.t) /** predicate symbol applied to exps */
+  | Anpred of PredSymb.t (list Exp.t) /** negated predicate symbol applied to exps */;
 
 
 /** kind of lseg or dllseg predicates */
@@ -188,9 +104,9 @@ type inst =
   | Ilookup
   | Inone
   | Inullify
-  | Irearrange of zero_flag null_case_flag int path_pos
+  | Irearrange of zero_flag null_case_flag int PredSymb.path_pos
   | Itaint
-  | Iupdate of zero_flag null_case_flag int path_pos
+  | Iupdate of zero_flag null_case_flag int PredSymb.path_pos
   | Ireturn_from_call of int
   | Ireturn_from_pointer_wrapper_call of int;
 
@@ -212,11 +128,11 @@ let inst_nullify: inst;
 
 
 /** the boolean indicates whether the pointer is known nonzero */
-let inst_rearrange: bool => Location.t => path_pos => inst;
+let inst_rearrange: bool => Location.t => PredSymb.path_pos => inst;
 
 let inst_taint: inst;
 
-let inst_update: Location.t => path_pos => inst;
+let inst_update: Location.t => PredSymb.path_pos => inst;
 
 
 /** Get the null case flag of the inst. */
@@ -318,8 +234,6 @@ let hpred_compact: sharing_env => hpred => hpred;
 /** {2 Comparision And Inspection Functions} */
 let has_objc_ref_counter: hpred => bool;
 
-let path_pos_equal: path_pos => path_pos => bool;
-
 
 /** Returns the zero value of a type, for int, float and ptr types, None othwewise */
 let zero_value_of_numerical_type_option: Typ.t => option Exp.t;
@@ -342,39 +256,6 @@ let block_pvar: Pvar.t;
 
 /** Check if a pvar is a local pointing to a block in objc */
 let is_block_pvar: Pvar.t => bool;
-
-let mem_kind_compare: mem_kind => mem_kind => int;
-
-let res_act_kind_compare: res_act_kind => res_act_kind => int;
-
-let resource_compare: resource => resource => int;
-
-let attribute_compare: attribute => attribute => int;
-
-let attribute_equal: attribute => attribute => bool;
-
-
-/** Categories of attributes */
-type attribute_category =
-  | ACresource
-  | ACautorelease
-  | ACtaint
-  | AClock
-  | ACdiv0
-  | ACobjc_null
-  | ACundef
-  | ACretval
-  | ACobserver;
-
-let attribute_category_compare: attribute_category => attribute_category => int;
-
-let attribute_category_equal: attribute_category => attribute_category => bool;
-
-
-/**  Return the category to which the attribute belongs. */
-let attribute_to_category: attribute => attribute_category;
-
-let attr_is_undef: attribute => bool;
 
 let exp_typ_compare: (Exp.t, Typ.t) => (Exp.t, Typ.t) => int;
 
@@ -422,10 +303,6 @@ let exp_strexp_compare: (Exp.t, strexp) => (Exp.t, strexp) => int;
 let hpred_get_lhs: hpred => Exp.t;
 
 
-/** Return the value of the FA_sentinel attribute in [attr_list] if it is found */
-let get_sentinel_func_attribute_value: list func_attribute => option (int, int);
-
-
 /** {2 Pretty Printing} */
 /** Begin change color if using diff printing, return updated printenv and change status */
 let color_pre_wrapper: printenv => F.formatter => 'a => (printenv, bool);
@@ -433,18 +310,6 @@ let color_pre_wrapper: printenv => F.formatter => 'a => (printenv, bool);
 
 /** Close color annotation if changed */
 let color_post_wrapper: bool => printenv => F.formatter => unit;
-
-
-/** name of the allocation function for the given memory kind */
-let mem_alloc_pname: mem_kind => Procname.t;
-
-
-/** name of the deallocation function for the given memory kind */
-let mem_dealloc_pname: mem_kind => Procname.t;
-
-
-/** convert the attribute to a string */
-let attribute_to_string: printenv => attribute => string;
 
 
 /** Pretty print an expression. */
@@ -525,10 +390,6 @@ let d_instr_list: list instr => unit;
 
 /** Pretty print an atom. */
 let pp_atom: printenv => F.formatter => atom => unit;
-
-
-/** Dump an attribute. */
-let d_attribute: attribute => unit;
 
 
 /** Dump an atom. */

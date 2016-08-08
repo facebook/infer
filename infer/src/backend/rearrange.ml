@@ -767,7 +767,7 @@ let add_guarded_by_constraints prop lexp pdesc =
                   flds
             | _ -> false)
           (Prop.get_sigma prop) in
-      Cfg.Procdesc.get_access pdesc <> Sil.Private &&
+      Cfg.Procdesc.get_access pdesc <> PredSymb.Private &&
       not (Annotations.pdesc_has_annot pdesc Annotations.visibleForTesting) &&
       not (Procname.java_is_access_method (Cfg.Procdesc.get_proc_name pdesc)) &&
       not (is_accessible_through_local_ref lexp) in

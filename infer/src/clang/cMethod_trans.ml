@@ -321,7 +321,7 @@ let sil_func_attributes_of_attributes attrs =
           | a:: b::[] -> (int_of_string a, int_of_string b)
           | _ -> assert false
         in
-        do_translation (Sil.FA_sentinel(sentinel, null_pos):: acc) tl
+        do_translation (PredSymb.FA_sentinel(sentinel, null_pos):: acc) tl
     | _:: tl -> do_translation acc tl in
   do_translation [] attrs
 

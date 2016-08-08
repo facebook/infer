@@ -551,7 +551,7 @@ let forward_tabulate tenv wl =
           |> IList.fold_left
             (fun prop_acc (param, taint_kind) ->
                let attr =
-                 Sil.Ataint { taint_source = proc_name; taint_kind; } in
+                 PredSymb.Ataint { taint_source = proc_name; taint_kind; } in
                Taint.add_tainting_attribute attr param prop_acc)
             prop in
     let doit () =
@@ -727,7 +727,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
       let pre, post = Prop.extract_spec prop'' in
       let pre' = Prop.normalize (Prop.prop_sub sub pre) in
       if !Config.curr_language =
-         Config.Java && Cfg.Procdesc.get_access pdesc <> Sil.Private then
+         Config.Java && Cfg.Procdesc.get_access pdesc <> PredSymb.Private then
         report_context_leaks pname (Prop.get_sigma post) tenv;
       let post' =
         if Prover.check_inconsistency_base prop then None
@@ -773,9 +773,9 @@ let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t 
     | Procname.ObjC_Cpp _ ->
         if (Procname.is_constructor pname) then
           Paths.PathSet.map (fun prop ->
-              let prop = Prop.remove_resource_attribute Sil.Racquire Sil.Rfile prop in
-              let prop = Prop.remove_resource_attribute Sil.Racquire (Sil.Rmemory Sil.Mmalloc) prop in
-              Prop.remove_resource_attribute Sil.Racquire (Sil.Rmemory Sil.Mobjc) prop
+              let prop = Prop.remove_resource_attribute Racquire Rfile prop in
+              let prop = Prop.remove_resource_attribute Racquire (Rmemory Mmalloc) prop in
+              Prop.remove_resource_attribute Racquire (Rmemory Mobjc) prop
             ) pathset
         else pathset
     | _ -> pathset in
@@ -1149,7 +1149,7 @@ let is_unavoidable pre =
 let report_runtime_exceptions tenv pdesc summary =
   let pname = Specs.get_proc_name summary in
   let is_public_method =
-    (Specs.get_attributes summary).ProcAttributes.access = Sil.Public in
+    (Specs.get_attributes summary).ProcAttributes.access = PredSymb.Public in
   let is_main =
     is_public_method
     &&

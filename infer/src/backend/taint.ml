@@ -22,7 +22,7 @@ let sources = [
     ret_type = "java.lang.Object";
     params = [];
     is_static = true;
-    taint_kind = Sil.Tk_unknown;
+    taint_kind = Tk_unknown;
     language = Config.Java;
   };
   {
@@ -31,7 +31,7 @@ let sources = [
     ret_type = "java.lang.Object";
     params = [];
     is_static = true;
-    taint_kind = Sil.Tk_unknown;
+    taint_kind = Tk_unknown;
     language = Config.Java
   };
   (* actual specs *)
@@ -41,7 +41,7 @@ let sources = [
     ret_type = "java.lang.String";
     params = ["java.lang.String"; "java.lang.String"];
     is_static = false;
-    taint_kind = Sil.Tk_shared_preferences_data;
+    taint_kind = Tk_shared_preferences_data;
     language = Config.Java
   };
   (* === iOS === *)
@@ -51,7 +51,7 @@ let sources = [
     ret_type = "NSString *";
     params = [];
     is_static = false;
-    taint_kind = Sil.Tk_privacy_annotation;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Clang
   };
 
@@ -68,7 +68,7 @@ let sinks = [
     ret_type = "void";
     params = ["java.lang.Object"];
     is_static = true;
-    taint_kind = Sil.Tk_unknown;
+    taint_kind = Tk_unknown;
     language = Config.Java
   }, [0]);
   ({
@@ -77,7 +77,7 @@ let sinks = [
     ret_type = "void";
     params = ["java.lang.Object"];
     is_static = true;
-    taint_kind = Sil.Tk_unknown;
+    taint_kind = Tk_unknown;
     language = Config.Java
   }, [0]);
   (* actual specs *)
@@ -87,7 +87,7 @@ let sinks = [
     ret_type = "int";
     params = ["java.lang.String"; "java.lang.String"];
     is_static = true;
-    taint_kind = Sil.Tk_privacy_annotation;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java
   }, [0;1]);
   ({
@@ -96,7 +96,7 @@ let sinks = [
     ret_type = "java.io.InputStream";
     params = ["android.net.Uri"];
     is_static = false;
-    taint_kind = Sil.Tk_privacy_annotation;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [1]);
   ({
@@ -105,7 +105,7 @@ let sinks = [
     ret_type = "java.io.OutputStream";
     params = ["android.net.Uri"];
     is_static = false;
-    taint_kind = Sil.Tk_privacy_annotation;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [0]);
   ({
@@ -114,7 +114,7 @@ let sinks = [
     ret_type = "java.io.OutputStream";
     params = ["android.net.Uri"; "java.lang.String"];
     is_static = false;
-    taint_kind = Sil.Tk_privacy_annotation;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [0]);
   ({
@@ -123,7 +123,7 @@ let sinks = [
     ret_type = "android.content.res.AssetFileDescriptor";
     params = ["android.net.Uri"; "java.lang.String"];
     is_static = false;
-    taint_kind = Sil.Tk_privacy_annotation;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [0]);
   ({
@@ -132,7 +132,7 @@ let sinks = [
     ret_type = "android.content.res.AssetFileDescriptor";
     params = ["android.net.Uri"; "java.lang.String"; "android.os.CancellationSignal"];
     is_static = false;
-    taint_kind = Sil.Tk_privacy_annotation;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [0]);
   ({
@@ -141,7 +141,7 @@ let sinks = [
     ret_type = "android.os.ParcelFileDescriptor";
     params = ["android.net.Uri"; "java.lang.String"; "android.os.CancellationSignal"];
     is_static = false;
-    taint_kind = Sil.Tk_privacy_annotation;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [0]);
   ({
@@ -150,7 +150,7 @@ let sinks = [
     ret_type = "android.os.ParcelFileDescriptor";
     params = ["android.net.Uri"; "java.lang.String"];
     is_static = false;
-    taint_kind = Sil.Tk_privacy_annotation;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [0]);
   ({
@@ -160,7 +160,7 @@ let sinks = [
     params = ["android.net.Uri"; "java.lang.String"; "android.os.Bundle";
               "android.os.CancellationSignal"];
     is_static = false;
-    taint_kind = Sil.Tk_privacy_annotation;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [0]);
   ({
@@ -169,7 +169,7 @@ let sinks = [
     ret_type = "android.content.res.AssetFileDescriptor";
     params = ["android.net.Uri"; "java.lang.String"; "android.os.Bundle"];
     is_static = false;
-    taint_kind = Sil.Tk_privacy_annotation;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [0]);
 
@@ -180,7 +180,7 @@ let sinks = [
     ret_type = "instancetype";
     params = [];
     is_static = true;
-    taint_kind = Sil.Tk_unknown;
+    taint_kind = Tk_unknown;
     language = Config.Clang;
   }, [-2]);
   ({
@@ -189,7 +189,7 @@ let sinks = [
     ret_type = "instancetype";
     params = [];
     is_static = true;
-    taint_kind = Sil.Tk_unknown;
+    taint_kind = Tk_unknown;
     language = Config.Clang
   }, [-2]);
   ({
@@ -198,7 +198,7 @@ let sinks = [
     ret_type = "instancetype";
     params = [];
     is_static = true;
-    taint_kind = Sil.Tk_unknown;
+    taint_kind = Tk_unknown;
     language = Config.Clang
   }, [-2]);
   ({
@@ -207,7 +207,7 @@ let sinks = [
     ret_type = "instancetype";
     params = [];
     is_static = false;
-    taint_kind = Sil.Tk_unknown;
+    taint_kind = Tk_unknown;
     language = Config.Clang
   }, [-2]);
   ({
@@ -216,7 +216,7 @@ let sinks = [
     ret_type = "instancetype";
     params = [];
     is_static = true;
-    taint_kind = Sil.Tk_unknown;
+    taint_kind = Tk_unknown;
     language = Config.Clang
   }, [0]);
 
@@ -227,7 +227,7 @@ let sinks = [
     ret_type = "void";
     params = [];
     is_static = false;
-    taint_kind = Sil.Tk_unknown;
+    taint_kind = Tk_unknown;
     language = Config.Clang;
   }, [1]); (* it's instance method *)
 ] @ FbTaint.sinks
@@ -240,7 +240,7 @@ let functions_with_tainted_params = [
     ret_type = "BOOL";
     params = [];
     is_static = false; (* it's instance method *)
-    taint_kind = Sil.Tk_unknown;
+    taint_kind = Tk_unknown;
     language = Config.Clang;
   }, [2]);
 
@@ -255,7 +255,7 @@ let functions_with_tainted_params = [
     ret_type = "BOOL";
     params = [];
     is_static = false; (* it's instance method *)
-    taint_kind = Sil.Tk_integrity_annotation;
+    taint_kind = Tk_integrity_annotation;
     language = Config.Clang;
   }, [2]);
 ] @ FbTaint.functions_with_tainted_params
@@ -281,7 +281,7 @@ let taint_spec_to_taint_info taint_spec =
     match taint_spec.language with
     | Config.Clang -> objc_method_to_procname taint_spec
     | Config.Java -> java_method_to_procname taint_spec in
-  { Sil.taint_source; taint_kind = taint_spec.taint_kind }
+  { PredSymb.taint_source; taint_kind = taint_spec.taint_kind }
 
 let sources =
   IList.map taint_spec_to_taint_info sources
@@ -305,23 +305,23 @@ let attrs_opt_get_annots = function
 (** returns true if [callee_pname] returns a tainted value *)
 let returns_tainted callee_pname callee_attrs_opt =
   let procname_matches taint_info =
-    Procname.equal taint_info.Sil.taint_source callee_pname in
+    Procname.equal taint_info.PredSymb.taint_source callee_pname in
   try
     let taint_info = IList.find procname_matches sources in
-    Some taint_info.Sil.taint_kind
+    Some taint_info.PredSymb.taint_kind
   with Not_found ->
     let ret_annot, _ = attrs_opt_get_annots callee_attrs_opt in
     if Annotations.ia_is_integrity_source ret_annot
-    then Some Sil.Tk_integrity_annotation
+    then Some PredSymb.Tk_integrity_annotation
     else if Annotations.ia_is_privacy_source ret_annot
-    then Some Sil.Tk_privacy_annotation
+    then Some PredSymb.Tk_privacy_annotation
     else None
 
 let find_callee taint_infos callee_pname =
   try
     Some
       (IList.find
-         (fun (taint_info, _) -> Procname.equal taint_info.Sil.taint_source callee_pname)
+         (fun (taint_info, _) -> Procname.equal taint_info.PredSymb.taint_source callee_pname)
          taint_infos)
   with Not_found -> None
 
@@ -335,20 +335,20 @@ let accepts_sensitive_params callee_pname callee_attrs_opt =
         IList.mapi (fun param_num attr  -> param_num + offset, attr) param_annots in
       let tag_tainted_indices acc (index, attr) =
         if Annotations.ia_is_integrity_sink attr
-        then (index, Sil.Tk_privacy_annotation) :: acc
+        then (index, PredSymb.Tk_privacy_annotation) :: acc
         else if Annotations.ia_is_privacy_sink attr
-        then (index, Sil.Tk_privacy_annotation) :: acc
+        then (index, PredSymb.Tk_privacy_annotation) :: acc
         else acc in
       IList.fold_left tag_tainted_indices [] indices_and_annots
   | Some (taint_info, tainted_param_indices) ->
-      IList.map (fun param_num -> param_num, taint_info.Sil.taint_kind) tainted_param_indices
+      IList.map (fun param_num -> param_num, taint_info.PredSymb.taint_kind) tainted_param_indices
 
 (** returns list of zero-indexed parameter numbers of [callee_pname] that should be
     considered tainted during symbolic execution *)
 let tainted_params callee_pname =
   match find_callee func_with_tainted_params callee_pname with
   | Some (taint_info, tainted_param_indices) ->
-      IList.map (fun param_num -> param_num, taint_info.Sil.taint_kind) tainted_param_indices
+      IList.map (fun param_num -> param_num, taint_info.PredSymb.taint_kind) tainted_param_indices
   | None -> []
 
 let has_taint_annotation fieldname struct_typ =

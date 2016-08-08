@@ -196,7 +196,7 @@ struct
           let do_proc (init_pn, init_pd) =
             let filter callee_pn callee_attributes =
               let is_private =
-                callee_attributes.ProcAttributes.access = Sil.Private in
+                callee_attributes.ProcAttributes.access = PredSymb.Private in
               let same_class =
                 let get_class_opt pn = match pn with
                   | Procname.Java pn_java ->

@@ -20,11 +20,11 @@ val remove_constant_string_class : 'a Prop.t -> Prop.normal Prop.t
 
 (** Check if the attribute change is a mismatch between a kind of allocation
     and a different kind of deallocation *)
-val check_attr_dealloc_mismatch : Sil.attribute -> Sil.attribute -> unit
+val check_attr_dealloc_mismatch : PredSymb.t -> PredSymb.t -> unit
 
 (** Check whether a sexp contains a dereference without null check,
     and return the line number and path position *)
-val find_dereference_without_null_check_in_sexp : Sil.strexp -> (int * Sil.path_pos) option
+val find_dereference_without_null_check_in_sexp : Sil.strexp -> (int * PredSymb.path_pos) option
 
 (** raise a cast exception *)
 val raise_cast_exception :

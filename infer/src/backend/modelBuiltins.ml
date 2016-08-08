@@ -315,9 +315,9 @@ let set_resource_attribute prop path n_lexp loc ra_res =
     | Some (Apred (Aresource ra, _)) ->
         Prop.add_or_replace_attribute prop (Apred (Aresource { ra with ra_res }, [n_lexp]))
     | _ ->
-        let pname = Sil.mem_alloc_pname Sil.Mnew in
+        let pname = PredSymb.mem_alloc_pname PredSymb.Mnew in
         let ra =
-          { Sil.
+          { PredSymb.
             ra_kind = Racquire;
             ra_res = ra_res;
             ra_pname = pname;
@@ -333,7 +333,7 @@ let execute___set_file_attribute { Builtin.pdesc; prop_; path; ret_ids; args; lo
   | [(lexp, _)], _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
       let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
-      set_resource_attribute prop path n_lexp loc Sil.Rfile
+      set_resource_attribute prop path n_lexp loc PredSymb.Rfile
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** Set the attibute of the value as lock *)
@@ -343,7 +343,7 @@ let execute___set_lock_attribute { Builtin.pdesc; prop_; path; ret_ids; args; lo
   | [(lexp, _)], _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
       let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
-      set_resource_attribute prop path n_lexp loc Sil.Rlock
+      set_resource_attribute prop path n_lexp loc PredSymb.Rlock
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** Set the resource attribute of the first real argument of method as ignore, the first argument is
@@ -355,7 +355,7 @@ let execute___method_set_ignore_attribute
   | [_ ; (lexp, _)], _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
       let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
-      set_resource_attribute prop path n_lexp loc Sil.Rignore
+      set_resource_attribute prop path n_lexp loc PredSymb.Rignore
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** Set the attibute of the value as memory *)
@@ -365,7 +365,7 @@ let execute___set_mem_attribute { Builtin.pdesc; prop_; path; ret_ids; args; loc
   | [(lexp, _)], _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
       let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
-      set_resource_attribute prop path n_lexp loc (Sil.Rmemory Sil.Mnew)
+      set_resource_attribute prop path n_lexp loc (PredSymb.Rmemory PredSymb.Mnew)
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** report an error if [lexp] is tainted; otherwise, add untained([lexp]) as a precondition *)
@@ -376,7 +376,7 @@ let execute___check_untainted
   | [(lexp, _)], _ ->
       let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
       let n_lexp, prop = check_arith_norm_exp caller_pname lexp prop_ in
-      [(check_untainted n_lexp Sil.Tk_unknown caller_pname callee_pname prop, path)]
+      [(check_untainted n_lexp PredSymb.Tk_unknown caller_pname callee_pname prop, path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** take a pointer to a struct, and return the value of a hidden field in the struct *)
@@ -555,7 +555,7 @@ let execute___release_autorelease_pool
     ({ Builtin.prop_; path; } as builtin_args)
   : Builtin.ret_typ =
   if Config.objc_memory_model_on then
-    let autoreleased_objects = Prop.get_atoms_with_attribute prop_ Sil.Aautorelease in
+    let autoreleased_objects = Prop.get_atoms_with_attribute prop_ PredSymb.Aautorelease in
     let prop_without_attribute = Prop.remove_attribute prop_ Aautorelease in
     let call_release res atom =
       match res, atom with
@@ -601,14 +601,14 @@ let execute___set_attr attr { Builtin.pdesc; prop_; path; args; }
 let execute___delete_locked_attribute { Builtin.prop_; pdesc; path; args; }
   : Builtin.ret_typ =
   match args with
-  | [(lexp, _)] -> delete_attr pdesc prop_ path lexp Sil.Alocked
+  | [(lexp, _)] -> delete_attr pdesc prop_ path lexp PredSymb.Alocked
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 
 (** Set the attibute of the value as locked*)
 let execute___set_locked_attribute builtin_args
   : Builtin.ret_typ =
-  execute___set_attr (Sil.Alocked) builtin_args
+  execute___set_attr (PredSymb.Alocked) builtin_args
 
 (** Set the attibute of the value as resource/unlocked*)
 let execute___set_unlocked_attribute
@@ -617,12 +617,12 @@ let execute___set_unlocked_attribute
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   (* ra_kind = Rrelease in following indicates unlocked *)
   let ra = {
-    Sil.ra_kind = Sil.Rrelease;
-    ra_res = Sil.Rlock;
+    PredSymb.ra_kind = PredSymb.Rrelease;
+    ra_res = PredSymb.Rlock;
     ra_pname = pname;
     ra_loc = loc;
     ra_vpath = None; } in
-  execute___set_attr (Sil.Aresource ra) builtin_args
+  execute___set_attr (PredSymb.Aresource ra) builtin_args
 
 (** Set the attibute of the value as tainted *)
 let execute___set_taint_attribute
@@ -632,10 +632,10 @@ let execute___set_taint_attribute
   | (exp, _) :: [(Exp.Const (Const.Cstr taint_kind_str), _)] ->
       let taint_source = Cfg.Procdesc.get_proc_name pdesc in
       let taint_kind = match taint_kind_str with
-        | "UnverifiedSSLSocket" -> Sil.Tk_unverified_SSL_socket
-        | "SharedPreferenceData" -> Sil.Tk_shared_preferences_data
+        | "UnverifiedSSLSocket" -> PredSymb.Tk_unverified_SSL_socket
+        | "SharedPreferenceData" -> PredSymb.Tk_shared_preferences_data
         | other_str -> failwith ("Unrecognized taint kind " ^ other_str) in
-      set_attr pdesc prop_ path exp (Sil.Ataint { Sil.taint_source; taint_kind})
+      set_attr pdesc prop_ path exp (PredSymb.Ataint { PredSymb.taint_source; taint_kind})
   | _ ->
       (* note: we can also get this if [taint_kind] is not a string literal *)
       raise (Exceptions.Wrong_argument_number __POS__)
@@ -647,8 +647,8 @@ let execute___set_untaint_attribute
   match args with
   | (exp, _) :: [] ->
       let taint_source = Cfg.Procdesc.get_proc_name pdesc in
-      let taint_kind = Sil.Tk_unknown in (* TODO: change builtin to specify taint kind *)
-      set_attr pdesc prop_ path exp (Sil.Auntaint { Sil.taint_source; taint_kind})
+      let taint_kind = PredSymb.Tk_unknown in (* TODO: change builtin to specify taint kind *)
+      set_attr pdesc prop_ path exp (PredSymb.Auntaint { PredSymb.taint_source; taint_kind})
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -685,13 +685,13 @@ let _execute_free mk loc acc iter =
   match Prop.prop_iter_current iter with
   | (Sil.Hpointsto(lexp, _, _), []) ->
       let prop = Prop.prop_iter_remove_curr_then_to_prop iter in
-      let pname = Sil.mem_dealloc_pname mk in
+      let pname = PredSymb.mem_dealloc_pname mk in
       let ra =
-        { Sil.ra_kind = Sil.Rrelease;
-          Sil.ra_res = Sil.Rmemory mk;
-          Sil.ra_pname = pname;
-          Sil.ra_loc = loc;
-          Sil.ra_vpath = None } in
+        { PredSymb.ra_kind = PredSymb.Rrelease;
+          PredSymb.ra_res = PredSymb.Rmemory mk;
+          PredSymb.ra_pname = pname;
+          PredSymb.ra_loc = loc;
+          PredSymb.ra_vpath = None } in
       (* mark value as freed *)
       let p_res =
         Prop.add_or_replace_attribute_check_changed
@@ -769,7 +769,7 @@ let execute_alloc mk can_return_null
           | None -> s in
         Exp.Sizeof (struct_type, len, subt), pname
     | [(size_exp, _)] -> (* for malloc and __new *)
-        size_exp, Sil.mem_alloc_pname mk
+        size_exp, PredSymb.mem_alloc_pname mk
     | [(size_exp, _); (Exp.Const (Const.Cfun pname), _)] ->
         size_exp, pname
     | _ ->
@@ -790,11 +790,11 @@ let execute_alloc mk can_return_null
   let prop_plus_ptsto =
     let prop' = Prop.normalize (Prop.prop_sigma_star prop [ptsto_new]) in
     let ra =
-      { Sil.ra_kind = Sil.Racquire;
-        Sil.ra_res = Sil.Rmemory mk;
-        Sil.ra_pname = procname;
-        Sil.ra_loc = loc;
-        Sil.ra_vpath = None } in
+      { PredSymb.ra_kind = PredSymb.Racquire;
+        PredSymb.ra_res = PredSymb.Rmemory mk;
+        PredSymb.ra_pname = procname;
+        PredSymb.ra_loc = loc;
+        PredSymb.ra_vpath = None } in
     (* mark value as allocated *)
     Prop.add_or_replace_attribute prop' (Apred (Aresource ra, [exp_new])) in
   let prop_alloc = Prop.conjoin_eq (Exp.Var ret_id) exp_new prop_plus_ptsto in
@@ -807,7 +807,7 @@ let execute___cxx_typeid ({ Builtin.pdesc; tenv; prop_; args; loc} as r)
   : Builtin.ret_typ =
   match args with
   | type_info_exp :: rest ->
-      (let res = execute_alloc Sil.Mnew false { r with args = [type_info_exp] } in
+      (let res = execute_alloc PredSymb.Mnew false { r with args = [type_info_exp] } in
        match rest with
        | [(field_exp, _); (lexp, typ)] ->
            let pname = Cfg.Procdesc.get_proc_name pdesc in
@@ -974,10 +974,10 @@ let _ = Builtin.register
     "__check_untainted" execute___check_untainted
 let __delete = Builtin.register
     (* like free *)
-    "__delete" (execute_free Sil.Mnew)
+    "__delete" (execute_free PredSymb.Mnew)
 let __delete_array = Builtin.register
     (* like free *)
-    "__delete_array" (execute_free Sil.Mnew_array)
+    "__delete_array" (execute_free PredSymb.Mnew_array)
 let __exit = Builtin.register
     (* _exit from C library *)
     "_exit" execute_exit
@@ -1006,16 +1006,16 @@ let _ = Builtin.register
     "__method_set_ignore_attribute" execute___method_set_ignore_attribute
 let __new = Builtin.register
     (* like malloc, but always succeeds *)
-    "__new" (execute_alloc Sil.Mnew false)
+    "__new" (execute_alloc PredSymb.Mnew false)
 let __new_array = Builtin.register
     (* like malloc, but always succeeds *)
-    "__new_array" (execute_alloc Sil.Mnew_array false)
+    "__new_array" (execute_alloc PredSymb.Mnew_array false)
 let __objc_alloc = Builtin.register
     (* Objective C alloc *)
-    "__objc_alloc" (execute_alloc Sil.Mobjc true)
+    "__objc_alloc" (execute_alloc PredSymb.Mobjc true)
 let __objc_alloc_no_fail = Builtin.register
     (* like __objc_alloc, but does not return nil *)
-    "__objc_alloc_no_fail" (execute_alloc Sil.Mobjc false)
+    "__objc_alloc_no_fail" (execute_alloc PredSymb.Mobjc false)
 let __objc_cast = Builtin.register
     (* objective-c "cast" *)
     "__objc_cast" execute___objc_cast
@@ -1062,11 +1062,11 @@ let __set_mem_attribute = Builtin.register
     "__set_mem_attribute" execute___set_mem_attribute
 let __set_observer_attribute = Builtin.register
     (* set the observer attribute of the parameter *)
-    "__set_observer_attribute" (execute___set_attr Sil.Aobserver)
+    "__set_observer_attribute" (execute___set_attr PredSymb.Aobserver)
 let __set_unsubscribed_observer_attribute = Builtin.register
     (* set the unregistered observer attribute of the parameter *)
     "__set_unsubscribed_observer_attribute"
-    (execute___set_attr Sil.Aunsubscribed_observer)
+    (execute___set_attr PredSymb.Aunsubscribed_observer)
 let __split_get_nth = Builtin.register
     (* splits a string given a separator and returns the nth string *)
     "__split_get_nth" execute___split_get_nth
@@ -1104,7 +1104,7 @@ let _ = Builtin.register
     "exit" execute_exit
 let _ = Builtin.register
     (* free from C library, requires allocated memory *)
-    "free" (execute_free Sil.Mmalloc)
+    "free" (execute_free PredSymb.Mmalloc)
 let _ = Builtin.register
     (* fscanf from C library *)
     "fscanf" (execute_scan_function 2)
@@ -1113,10 +1113,10 @@ let _ = Builtin.register
     "fwscanf" (execute_scan_function 2)
 let _ = Builtin.register
     (* malloc from C library *)
-    "malloc" (execute_alloc Sil.Mmalloc (not Config.unsafe_malloc))
+    "malloc" (execute_alloc PredSymb.Mmalloc (not Config.unsafe_malloc))
 let malloc_no_fail = Builtin.register
     (* malloc from ObjC library *)
-    "malloc_no_fail" (execute_alloc Sil.Mmalloc false)
+    "malloc_no_fail" (execute_alloc PredSymb.Mmalloc false)
 let _ = Builtin.register
     (* register execution handler for pthread_create *)
     "pthread_create" execute_pthread_create

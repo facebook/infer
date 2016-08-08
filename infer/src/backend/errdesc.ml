@@ -68,7 +68,7 @@ let explain_context_leak pname context_typ fieldname error_path =
 (** Explain a deallocate stack variable error *)
 let explain_deallocate_stack_var pvar ra =
   let pvar_str = Pvar.to_string pvar in
-  Localise.desc_deallocate_stack_variable pvar_str ra.Sil.ra_pname ra.Sil.ra_loc
+  Localise.desc_deallocate_stack_variable pvar_str ra.PredSymb.ra_pname ra.PredSymb.ra_loc
 
 (** Explain a deallocate constant string error *)
 let explain_deallocate_constant_string s ra =
@@ -76,7 +76,7 @@ let explain_deallocate_constant_string s ra =
     let pp fmt () =
       Sil.pp_exp pe_text fmt (Exp.Const (Const.Cstr s)) in
     pp_to_string pp () in
-  Localise.desc_deallocate_static_memory const_str ra.Sil.ra_pname ra.Sil.ra_loc
+  Localise.desc_deallocate_static_memory const_str ra.PredSymb.ra_pname ra.PredSymb.ra_loc
 
 let verbose = Config.trace_error
 
@@ -431,12 +431,12 @@ let explain_allocation_mismatch ra_alloc ra_dealloc =
   let get_primitive_called is_alloc ra =
     (* primitive alloc/dealloc function ultimately used, and function actually called  *)
     (* e.g. malloc and my_malloc *)
-    let primitive = match ra.Sil.ra_res with
-      | Sil.Rmemory mk_alloc ->
-          (if is_alloc then Sil.mem_alloc_pname else Sil.mem_dealloc_pname) mk_alloc
-      | _ -> ra_alloc.Sil.ra_pname in
-    let called = ra.Sil.ra_pname in
-    (primitive, called, ra.Sil.ra_loc) in
+    let primitive = match ra.PredSymb.ra_res with
+      | PredSymb.Rmemory mk_alloc ->
+          (if is_alloc then PredSymb.mem_alloc_pname else PredSymb.mem_dealloc_pname) mk_alloc
+      | _ -> ra_alloc.PredSymb.ra_pname in
+    let called = ra.PredSymb.ra_pname in
+    (primitive, called, ra.PredSymb.ra_loc) in
   Localise.desc_allocation_mismatch
     (get_primitive_called true ra_alloc) (get_primitive_called false ra_dealloc)
 
@@ -507,11 +507,11 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
           Some (DExp.to_string de)
       | _ -> None in
   let res_action_opt, resource_opt, vpath = match alloc_att_opt with
-    | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Racquire } as ra)) ->
-        Some ra, Some ra.Sil.ra_res, ra.Sil.ra_vpath
+    | Some (PredSymb.Aresource ({ ra_kind = Racquire } as ra)) ->
+        Some ra, Some ra.ra_res, ra.ra_vpath
     | _ -> (None, None, None) in
   let is_file = match resource_opt with
-    | Some Sil.Rfile -> true
+    | Some PredSymb.Rfile -> true
     | _ -> false in
   let check_pvar pvar =
     (* check that pvar is local or global and has the same type as the leaked hpred *)
@@ -1089,7 +1089,7 @@ let explain_retain_cycle prop cycle loc dotty_str =
 
 (** Explain a tainted value error *)
 let explain_tainted_value_reaching_sensitive_function
-    prop e { Sil.taint_source; taint_kind } sensitive_fun loc =
+    prop e { PredSymb.taint_source; taint_kind } sensitive_fun loc =
   let var_desc =
     match e with
     | Exp.Lvar pv -> Pvar.to_string pv

@@ -30,7 +30,7 @@ val get_diverging_states_node : unit -> Paths.PathSet.t
 val get_diverging_states_proc : unit -> Paths.PathSet.t
 
 (** Get update instrumentation for the current loc *)
-val get_inst_update : Sil.path_pos -> Sil.inst
+val get_inst_update : PredSymb.path_pos -> Sil.inst
 
 (** Get last instruction seen in symbolic execution *)
 val get_instr : unit -> Sil.instr option
@@ -56,10 +56,10 @@ val get_normalized_pre :
   (Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t) -> Prop.normal Prop.t option
 
 (** Get last path seen in symbolic execution *)
-val get_path : unit -> Paths.Path.t * (Sil.path_pos option)
+val get_path : unit -> Paths.Path.t * (PredSymb.path_pos option)
 
 (** Get the last path position seen in symbolic execution *)
-val get_path_pos : unit -> Sil.path_pos
+val get_path_pos : unit -> PredSymb.path_pos
 
 (** Get last last prop,tenv,pdesc seen in symbolic execution *)
 val get_prop_tenv_pdesc : unit -> (Prop.normal Prop.t * Tenv.t * Cfg.Procdesc.t) option
@@ -119,7 +119,7 @@ val set_instr : Sil.instr -> unit
 val set_node : Cfg.node -> unit
 
 (** Get last path seen in symbolic execution *)
-val set_path : Paths.Path.t -> Sil.path_pos option -> unit
+val set_path : Paths.Path.t -> PredSymb.path_pos option -> unit
 
 (** Set last prop,tenv,pdesc seen in symbolic execution *)
 val set_prop_tenv_pdesc : Prop.normal Prop.t -> Tenv.t -> Cfg.Procdesc.t -> unit
