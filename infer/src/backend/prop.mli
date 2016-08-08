@@ -223,10 +223,10 @@ val mk_neq : exp -> exp -> atom
 val mk_eq : exp -> exp -> atom
 
 (** Construct a positive pred. *)
-val mk_pred : attribute -> exp -> atom
+val mk_pred : attribute -> exp list -> atom
 
 (** Construct a negative pred. *)
-val mk_npred : attribute -> exp -> atom
+val mk_npred : attribute -> exp list -> atom
 
 (** create a strexp of the given type, populating the structures if [expand_structs] is true *)
 val create_strexp_of_type :
@@ -285,10 +285,10 @@ val atom_is_attribute : atom -> bool
 val attribute_map_resource : normal t -> (Sil.exp -> Sil.res_action -> Sil.res_action) -> normal t
 
 (** Return the exp and attribute marked in the atom if any, and return None otherwise *)
-val atom_get_exp_attribute : atom -> atom option
+val atom_get_attribute : atom -> atom option
 
 (** Get the attributes associated to the expression, if any *)
-val get_exp_attributes : 'a t -> exp -> atom list
+val get_attributes : 'a t -> exp -> atom list
 
 (** Get the undef attribute associated to the expression, if any *)
 val get_undef_attribute : 'a t -> exp -> atom option
@@ -319,15 +319,15 @@ val get_all_attributes : 'a t -> atom list
 
 val has_dangling_uninit_attribute : 'a t -> exp -> bool
 
-(** Set an attribute associated to the expression *)
-val set_exp_attribute : ?footprint: bool -> ?polarity: bool ->
-  normal t -> attribute -> exp -> normal t
+(** Set an attribute associated to the argument expressions *)
+val set_attribute : ?footprint: bool -> ?polarity: bool ->
+  normal t -> attribute -> exp list -> normal t
 
-val add_or_replace_exp_attribute_check_changed :
+val add_or_replace_attribute_check_changed :
   (Sil.attribute -> Sil.attribute -> unit) -> normal t -> atom -> normal t
 
 (** Replace an attribute associated to the expression *)
-val add_or_replace_exp_attribute : normal t -> atom -> normal t
+val add_or_replace_attribute : normal t -> atom -> normal t
 
 (** mark Sil.Var's or Sil.Lvar's as undefined *)
 val mark_vars_as_undefined : normal t -> Sil.exp list -> Procname.t -> Typ.item_annotation ->
@@ -347,8 +347,8 @@ val nullify_exp_with_objc_null : normal t -> exp -> normal t
 (** Remove an attribute from an exp in the heap *)
 val remove_attribute_from_exp : 'a t -> atom -> normal t
 
-(** Retireve all the atoms in the heap that contain a specific attribute *)
-val get_atoms_with_attribute : Sil.attribute -> 'a t -> Sil.exp list
+(** Retrieve all the atoms that contain a specific attribute *)
+val get_atoms_with_attribute : 'a t -> Sil.attribute -> Sil.atom list
 
 (** Return the sub part of [prop]. *)
 val get_sub : 'a t -> subst

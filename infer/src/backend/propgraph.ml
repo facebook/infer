@@ -44,13 +44,14 @@ let edge_is_hpred = function
 
 (** Return the source of the edge *)
 let edge_get_source = function
-  | Ehpred (Sil.Hpointsto(e, _, _)) -> e
-  | Ehpred (Sil.Hlseg(_, _, e, _, _)) -> e
-  | Ehpred (Sil.Hdllseg(_, _, e1, _, _, _, _)) -> e1 (* only one direction supported for now *)
-  | Eatom (Sil.Aeq (e1, _)) -> e1
-  | Eatom (Sil.Aneq (e1, _)) -> e1
-  | Eatom (Sil.Apred (_, e) | Anpred (_, e)) -> e
-  | Esub_entry (x, _) -> Sil.Var x
+  | Ehpred (Sil.Hpointsto(e, _, _)) -> Some e
+  | Ehpred (Sil.Hlseg(_, _, e, _, _)) -> Some e
+  | Ehpred (Sil.Hdllseg(_, _, e1, _, _, _, _)) -> Some e1 (* only one direction supported for now *)
+  | Eatom (Sil.Aeq (e1, _)) -> Some e1
+  | Eatom (Sil.Aneq (e1, _)) -> Some e1
+  | Eatom (Sil.Apred (_, e :: _) | Anpred (_, e :: _)) -> Some e
+  | Eatom (Sil.Apred (_, []) | Anpred (_, [])) -> None
+  | Esub_entry (x, _) -> Some (Sil.Var x)
 
 (** Return the successor nodes of the edge *)
 let edge_get_succs = function
@@ -74,7 +75,11 @@ let edge_from_source g n footprint_part is_hpred =
     if is_hpred
     then IList.map (fun hpred -> Ehpred hpred ) (get_sigma footprint_part g)
     else IList.map (fun a -> Eatom a) (get_pi footprint_part g) @ IList.map (fun entry -> Esub_entry entry) (get_subl footprint_part g) in
-  match IList.filter (fun hpred -> Sil.exp_equal n (edge_get_source hpred)) edges with
+  let starts_from hpred =
+    match edge_get_source hpred with
+    | Some e -> Sil.exp_equal n e
+    | None -> false in
+  match IList.filter starts_from edges with
   | [] -> None
   | edge:: _ -> Some edge
 
@@ -159,10 +164,9 @@ let compute_edge_diff (oldedge: edge) (newedge: edge) : Obj.t list = match olded
       compute_exp_diff e1 e2
   | Eatom (Sil.Aneq (_, e1)), Eatom (Sil.Aneq (_, e2)) ->
       compute_exp_diff e1 e2
-  | Eatom (Sil.Apred (_, e1)), Eatom (Sil.Apred (_, e2)) ->
-      compute_exp_diff e1 e2
-  | Eatom (Sil.Anpred (_, e1)), Eatom (Sil.Anpred (_, e2)) ->
-      compute_exp_diff e1 e2
+  | Eatom (Sil.Apred (_, es1)), Eatom (Sil.Apred (_, es2))
+  | Eatom (Sil.Anpred (_, es1)), Eatom (Sil.Anpred (_, es2)) ->
+      IList.flatten (try IList.map2 compute_exp_diff es1 es2 with IList.Fail -> [])
   | Esub_entry (_, e1), Esub_entry (_, e2) ->
       compute_exp_diff e1 e2
   | _ -> [Obj.repr newedge]
@@ -173,16 +177,20 @@ let compute_diff default_color oldgraph newgraph : diff =
     let newedges = get_edges footprint_part newgraph in
     let changed = ref [] in
     let build_changed edge =
-      if not (contains_edge footprint_part oldgraph edge) then begin
-        match edge_from_source oldgraph (edge_get_source edge) footprint_part (edge_is_hpred edge) with
+      if not (contains_edge footprint_part oldgraph edge) then
+        match edge_get_source edge with
+        | Some source -> (
+            match edge_from_source oldgraph source footprint_part (edge_is_hpred edge) with
+            | None ->
+                let changed_obj = match edge with
+                  | Ehpred hpred -> Obj.repr hpred
+                  | Eatom a -> Obj.repr a
+                  | Esub_entry entry -> Obj.repr entry in
+                changed := changed_obj :: !changed
+            | Some oldedge -> changed := compute_edge_diff oldedge edge @ !changed
+          )
         | None ->
-            let changed_obj = match edge with
-              | Ehpred hpred -> Obj.repr hpred
-              | Eatom a -> Obj.repr a
-              | Esub_entry entry -> Obj.repr entry in
-            changed := changed_obj :: !changed
-        | Some oldedge -> changed := compute_edge_diff oldedge edge @ !changed
-      end in
+            () in
     IList.iter build_changed newedges;
     let colormap (o: Obj.t) =
       if IList.exists (fun x -> x == o) !changed then Red

@@ -788,7 +788,7 @@ let abstract_pure_part p ~(from_abstract_footprint: bool) =
                 | Sil.Const _ -> a :: pi
                 | _ -> pi)
            | Sil.Aneq (Var _, _)
-           | Sil.Apred (_, Var _) | Anpred (_, Var _) -> a :: pi
+           | Sil.Apred (_, Var _ :: _) | Anpred (_, Var _ :: _) -> a :: pi
            | Sil.Aeq _ | Aneq _ | Apred _ | Anpred _ -> pi
         )
         [] pi_filtered in
@@ -820,11 +820,11 @@ let abstract_gc p =
         let no_fav_e1 = Sil.fav_is_empty fav_e1 in
         let no_fav_e2 = Sil.fav_is_empty fav_e2 in
         (no_fav_e1 || intersect_e1 ()) && (no_fav_e2 || intersect_e2 ())
-    | Sil.Apred (_, e) | Anpred (_, e) ->
-        let fav_e = Sil.exp_fav e in
-        Sil.fav_is_empty fav_e
+    | (Sil.Apred _ | Anpred _) as a ->
+        let fav_a = Sil.atom_fav a in
+        Sil.fav_is_empty fav_a
         ||
-        IList.intersect Ident.compare (Sil.fav_to_list fav_e) (Sil.fav_to_list fav_p_without_pi) in
+        IList.intersect Ident.compare (Sil.fav_to_list fav_a) (Sil.fav_to_list fav_p_without_pi) in
   let new_pi = IList.filter strong_filter pi in
   let prop = Prop.normalize (Prop.replace_pi new_pi p) in
   match Prop.prop_iter_create prop with

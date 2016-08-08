@@ -73,7 +73,14 @@ type res_action = {
 };
 
 
-/** Attributes */
+/** Attributes are nary function symbols that are applied to expression arguments in Apred and
+    Anpred atomic formulas.  Many operations don't make much sense for nullary predicates, and are
+    generally treated as no-ops.  The first argument is treated specially, as the "anchor" of the
+    predicate application.  For example, adding or removing an attribute uses the anchor to identify
+    the atom to operate on.  Also, abstraction and normalization operations treat the anchor
+    specially and maintain more information on it than other arguments.  Therefore when attaching an
+    attribute to an expression, that expression should be the first argument, optionally followed by
+    additional related expressions. */
 type attribute =
   | Aresource of res_action /** resource acquire/release */
   | Aautorelease
@@ -197,8 +204,8 @@ type offset = | Off_fld of Ident.fieldname Typ.t | Off_index of exp;
 type atom =
   | Aeq of exp exp /** equality */
   | Aneq of exp exp /** disequality */
-  | Apred of attribute exp /** predicate symbol applied to an exp */
-  | Anpred of attribute exp /** negated predicate symbol applied to an exp */;
+  | Apred of attribute (list exp) /** predicate symbol applied to exps */
+  | Anpred of attribute (list exp) /** negated predicate symbol applied to exps */;
 
 
 /** kind of lseg or dllseg predicates */

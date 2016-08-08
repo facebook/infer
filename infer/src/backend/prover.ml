@@ -2109,14 +2109,12 @@ let rec pre_check_pure_implication calc_missing subs pi1 pi2 =
              imply_atom calc_missing subs prop_for_impl (Sil.Aeq (e2_in, f2_in));
              pre_check_pure_implication calc_missing subs pi1 pi2'
         )
-  | Sil.Aeq _ :: pi2' -> (* must be an inequality *)
+  | (Sil.Aneq (e, _) | Apred (_, e :: _) | Anpred (_, e :: _)) :: _
+    when not calc_missing && (match e with Var v -> not (Ident.is_primed v) | _ -> true) ->
+      raise (IMPL_EXC ("ineq e2=f2 in rhs with e2 not primed var",
+                       (Sil.sub_empty, Sil.sub_empty), EXC_FALSE))
+  | (Sil.Aeq _ | Aneq _ | Apred _ | Anpred _) :: pi2' ->
       pre_check_pure_implication calc_missing subs pi1 pi2'
-  | (Sil.Aneq (e, _) | Apred (_, e) | Anpred (_, e)) :: pi2' ->
-      if calc_missing || (match e with Var v -> Ident.is_primed v | _ -> false) then
-        pre_check_pure_implication calc_missing subs pi1 pi2'
-      else
-        raise (IMPL_EXC ("ineq e2=f2 in rhs with e2 not primed var",
-                         (Sil.sub_empty, Sil.sub_empty), EXC_FALSE))
 
 (** Perform the array bound checks delayed (to instantiate variables) by the prover.
     If there is a provable violation of the array bounds, set the prover status to Bounds_check

@@ -85,7 +85,14 @@ type res_action = {
 };
 
 
-/** Attributes */
+/** Attributes are nary function symbols that are applied to expression arguments in Apred and
+    Anpred atomic formulas.  Many operations don't make much sense for nullary predicates, and are
+    generally treated as no-ops.  The first argument is treated specially, as the "anchor" of the
+    predicate application.  For example, adding or removing an attribute uses the anchor to identify
+    the atom to operate on.  Also, abstraction and normalization operations treat the anchor
+    specially and maintain more information on it than other arguments.  Therefore when attaching an
+    attribute to an expression, that expression should be the first argument, optionally followed by
+    additional related expressions. */
 type attribute =
   | Aresource of res_action /** resource acquire/release */
   | Aautorelease
@@ -203,8 +210,8 @@ type offset = | Off_fld of Ident.fieldname Typ.t | Off_index of exp;
 type atom =
   | Aeq of exp exp /** equality */
   | Aneq of exp exp /** disequality */
-  | Apred of attribute exp /** predicate symbol applied to an exp */
-  | Anpred of attribute exp /** negated predicate symbol applied to an exp */;
+  | Apred of attribute (list exp) /** predicate symbol applied to exps */
+  | Anpred of attribute (list exp) /** negated predicate symbol applied to exps */;
 
 
 /** kind of lseg or dllseg predicates */
@@ -705,21 +712,21 @@ let atom_compare a b =>
       }
     | (Aneq _, _) => (-1)
     | (_, Aneq _) => 1
-    | (Apred a1 e1, Apred a2 e2) =>
+    | (Apred a1 es1, Apred a2 es2) =>
       let n = attribute_compare a1 a2;
       if (n != 0) {
         n
       } else {
-        exp_compare e1 e2
+        IList.compare exp_compare es1 es2
       }
     | (Apred _, _) => (-1)
     | (_, Apred _) => 1
-    | (Anpred a1 e1, Anpred a2 e2) =>
+    | (Anpred a1 es1, Anpred a2 es2) =>
       let n = attribute_compare a1 a2;
       if (n != 0) {
         n
       } else {
-        exp_compare e1 e2
+        IList.compare exp_compare es1 es2
       }
     }
   };
@@ -1286,8 +1293,8 @@ let pp_atom pe0 f a => {
     | PP_HTML => F.fprintf f "%a != %a" (pp_exp pe) e1 (pp_exp pe) e2
     | PP_LATEX => F.fprintf f "%a{\\neq}%a" (pp_exp pe) e1 (pp_exp pe) e2
     }
-  | Apred a e => F.fprintf f "%s(%a)" (attribute_to_string pe a) (pp_exp pe) e
-  | Anpred a e => F.fprintf f "!%s(%a)" (attribute_to_string pe a) (pp_exp pe) e
+  | Apred a es => F.fprintf f "%s(%a)" (attribute_to_string pe a) (pp_comma_seq (pp_exp pe)) es
+  | Anpred a es => F.fprintf f "!%s(%a)" (attribute_to_string pe a) (pp_comma_seq (pp_exp pe)) es
   };
   color_post_wrapper changed pe0 f
 };
@@ -1942,8 +1949,8 @@ let atom_expmap (f: exp => exp) =>
   fun
   | Aeq e1 e2 => Aeq (f e1) (f e2)
   | Aneq e1 e2 => Aneq (f e1) (f e2)
-  | Apred a e => Apred a (f e)
-  | Anpred a e => Anpred a (f e);
+  | Apred a es => Apred a (IList.map f es)
+  | Anpred a es => Anpred a (IList.map f es);
 
 let atom_list_expmap (f: exp => exp) (alist: list atom) => IList.map (atom_expmap f) alist;
 
@@ -2080,8 +2087,8 @@ let atom_fpv =
   fun
   | Aeq e1 e2 => exp_fpv e1 @ exp_fpv e2
   | Aneq e1 e2 => exp_fpv e1 @ exp_fpv e2
-  | Apred _ e
-  | Anpred _ e => exp_fpv e;
+  | Apred _ es
+  | Anpred _ es => IList.fold_left (fun fpv e => IList.rev_append (exp_fpv e) fpv) [] es;
 
 let rec strexp_fpv =
   fun
@@ -2292,8 +2299,8 @@ let atom_fav_add fav =>
       exp_fav_add fav e1;
       exp_fav_add fav e2
     }
-  | Apred _ e
-  | Anpred _ e => exp_fav_add fav e;
+  | Apred _ es
+  | Anpred _ es => IList.iter (fun e => exp_fav_add fav e) es;
 
 let atom_fav = fav_imperative_to_functional atom_fav_add;
 

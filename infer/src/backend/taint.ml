@@ -379,6 +379,6 @@ let add_tainting_attribute att pvar_param prop =
          when Pvar.equal pvar pvar_param ->
            L.d_strln ("TAINT ANALYSIS: setting taint/untaint attribute of parameter " ^
                       (Pvar.to_string pvar));
-           Prop.add_or_replace_exp_attribute prop_acc (Apred (att, rhs))
+           Prop.add_or_replace_attribute prop_acc (Apred (att, [rhs]))
        | _ -> prop_acc)
     prop (Prop.get_sigma prop)

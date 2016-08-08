@@ -718,13 +718,13 @@ end = struct
           when (exp_contains_only_normal_ids e' && not (Ident.is_normal id)) ->
             build_other_atoms (fun e0 -> Prop.mk_neq e0 e') side e
 
-        | Sil.Apred (a, (Var id as e))
-          when not (Ident.is_normal id) ->
-            build_other_atoms (fun e0 -> Prop.mk_pred a e0) side e
+        | Sil.Apred (a, (Var id as e) :: es)
+          when not (Ident.is_normal id) && IList.for_all exp_contains_only_normal_ids es ->
+            build_other_atoms (fun e0 -> Prop.mk_pred a (e0 :: es)) side e
 
-        | Sil.Anpred (a, (Var id as e))
-          when not (Ident.is_normal id) ->
-            build_other_atoms (fun e0 -> Prop.mk_npred a e0) side e
+        | Sil.Anpred (a, (Var id as e) :: es)
+          when not (Ident.is_normal id) && IList.for_all exp_contains_only_normal_ids es ->
+            build_other_atoms (fun e0 -> Prop.mk_npred a (e0 :: es)) side e
 
         | Sil.Aeq((Sil.Var id as e), e') | Sil.Aeq(e', (Sil.Var id as e))
           when (exp_contains_only_normal_ids e' && not (Ident.is_normal id)) ->
@@ -1674,8 +1674,8 @@ let pi_partial_join mode
         true
     | Sil.Aneq _ -> false
     | Sil.Aeq _ as e -> Prop.atom_is_inequality e
-    | Sil.Apred (_, e) | Anpred (_, e) ->
-        exp_is_const e in
+    | Sil.Apred (_, es) | Anpred (_, es) ->
+        IList.for_all exp_is_const es in
   begin
     if Config.trace_join then begin
       L.d_str "pi1: "; Prop.d_pi pi1; L.d_ln ();
