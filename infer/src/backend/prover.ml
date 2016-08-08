@@ -363,7 +363,8 @@ end = struct
           leqs := (e1, e2) :: !leqs (* <= *)
       | Sil.Aeq (Sil.BinOp (Binop.Lt, e1, e2), Sil.Const (Const.Cint i)) when IntLit.isone i ->
           lts := (e1, e2) :: !lts (* < *)
-      | Sil.Aeq _ -> () in
+      | Sil.Aeq _
+      | Sil.Apred _ -> () in
     IList.iter process_atom pi;
     saturate { leqs = !leqs; lts = !lts; neqs = !neqs }
 
@@ -554,7 +555,7 @@ let check_zero e =
 let is_root prop base_exp exp =
   let rec f offlist_past e = match e with
     | Sil.Var _ | Sil.Const _ | Sil.UnOp _ | Sil.BinOp _ | Sil.Exn _ | Sil.Closure _ | Sil.Lvar _
-    | Sil.Sizeof _ | Sil.Attribute _ ->
+    | Sil.Sizeof _ ->
         if check_equal prop base_exp e
         then Some offlist_past
         else None
@@ -740,6 +741,7 @@ let check_atom prop a0 =
     when IntLit.isone i -> check_lt_normalized prop e1 e2
   | Sil.Aeq (e1, e2) -> check_equal prop e1 e2
   | Sil.Aneq (e1, e2) -> check_disequal prop e1 e2
+  | Sil.Apred _ -> IList.exists (Sil.atom_equal a) (Prop.get_pi prop)
 
 (** Check [prop |- e1<=e2]. Result [false] means "don't know". *)
 let check_le prop e1 e2 =
@@ -856,7 +858,8 @@ let check_inconsistency_base prop =
     | Sil.Aneq (e1, e2) ->
         (match e1, e2 with
          | Sil.Const c1, Sil.Const c2 -> Const.equal c1 c2
-         | _ -> (Sil.exp_compare e1 e2 = 0)) in
+         | _ -> (Sil.exp_compare e1 e2 = 0))
+    | Sil.Apred _ -> false in
   let inconsistent_inequalities () =
     let ineq = Inequalities.from_prop prop in
     (*
@@ -2108,13 +2111,12 @@ let rec pre_check_pure_implication calc_missing subs pi1 pi2 =
         )
   | Sil.Aeq _ :: pi2' -> (* must be an inequality *)
       pre_check_pure_implication calc_missing subs pi1 pi2'
-  | Sil.Aneq (Sil.Var v, _):: pi2' ->
-      if not (Ident.is_primed v || calc_missing)
-      then raise (IMPL_EXC("ineq e2=f2 in rhs with e2 not primed var", (Sil.sub_empty, Sil.sub_empty), EXC_FALSE))
-      else pre_check_pure_implication calc_missing subs pi1 pi2'
-  | Sil.Aneq _ :: pi2' ->
-      if calc_missing then pre_check_pure_implication calc_missing subs pi1 pi2'
-      else raise (IMPL_EXC ("ineq e2=f2 in rhs with e2 not primed var", (Sil.sub_empty, Sil.sub_empty), EXC_FALSE))
+  | (Sil.Aneq (e, _) | Apred (_, _, e)) :: pi2' ->
+      if calc_missing || (match e with Var v -> Ident.is_primed v | _ -> false) then
+        pre_check_pure_implication calc_missing subs pi1 pi2'
+      else
+        raise (IMPL_EXC ("ineq e2=f2 in rhs with e2 not primed var",
+                         (Sil.sub_empty, Sil.sub_empty), EXC_FALSE))
 
 (** Perform the array bound checks delayed (to instantiate variables) by the prover.
     If there is a provable violation of the array bounds, set the prover status to Bounds_check

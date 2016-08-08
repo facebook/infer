@@ -33,7 +33,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Exn _
     | Sil.Closure _
     | Sil.Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _)
-    | Sil.Var _ | Sil.Sizeof _ | Sil.Attribute _ ->
+    | Sil.Var _ | Sil.Sizeof _ ->
         astate
 
   let exec_instr astate _ _ = function

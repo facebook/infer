@@ -793,8 +793,7 @@ let add_guarded_by_constraints prop lexp pdesc =
           end
         else
           (* private method. add locked proof obligation to [pdesc] *)
-          let locked_attr = Sil.Attribute Alocked in
-          Prop.conjoin_neq ~footprint:true guarded_by_exp locked_attr prop
+          Prop.set_exp_attribute ~footprint:true prop Alocked guarded_by_exp
     | _ ->
         if not (proc_has_matching_annot pdesc guarded_by_str
                 || is_synchronized_on_class guarded_by_str) && should_warn pdesc

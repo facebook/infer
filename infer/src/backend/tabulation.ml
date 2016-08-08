@@ -385,14 +385,12 @@ let post_process_post
     | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Rrelease })) -> true
     | _ -> false in
   let atom_update_alloc_attribute = function
-    | Sil.Aneq (e , Sil.Attribute (Sil.Aresource ra))
-    | Sil.Aneq (Sil.Attribute (Sil.Aresource ra), e)
+    | Sil.Apred (true, Aresource ra, e)
       when not (ra.Sil.ra_kind = Sil.Rrelease && actual_pre_has_freed_attribute e) ->
         (* unless it was already freed before the call *)
         let vpath, _ = Errdesc.vpath_find post e in
         let ra' = { ra with Sil.ra_pname = callee_pname; Sil.ra_loc = loc; Sil.ra_vpath = vpath } in
-        let c = Sil.Attribute (Sil.Aresource ra') in
-        Sil.Aneq (e, c)
+        Sil.Apred (true, Aresource ra', e)
     | a -> a in
   let prop' = Prop.replace_sigma (post_process_sigma (Prop.get_sigma post) loc) post in
   let pi' = IList.map atom_update_alloc_attribute (Prop.get_pi prop') in
@@ -1263,7 +1261,7 @@ let exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc result
       let ret_var = Sil.Var ret_id in
       let mark_id_as_retval (p, path) =
         let att_retval = Sil.Aretval (callee_pname, ret_annot) in
-        Prop.set_exp_attribute p ret_var att_retval, path in
+        Prop.set_exp_attribute p att_retval ret_var, path in
       IList.map mark_id_as_retval res
   | _ -> res
 

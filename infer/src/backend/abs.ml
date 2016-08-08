@@ -776,7 +776,6 @@ let abstract_pure_part p ~(from_abstract_footprint: bool) =
       IList.fold_left
         (fun pi a ->
            match a with
-           | Sil.Aneq (Sil.Var _, _) -> a:: pi
            (* we only use Lt and Le because Gt and Ge are inserted in terms of Lt and Le. *)
            | Sil.Aeq (Sil.Const (Const.Cint i), Sil.BinOp (Binop.Lt, _, _))
            | Sil.Aeq (Sil.BinOp (Binop.Lt, _, _), Sil.Const (Const.Cint i))
@@ -788,7 +787,10 @@ let abstract_pure_part p ~(from_abstract_footprint: bool) =
                 | Sil.Var _
                 | Sil.Const _ -> a :: pi
                 | _ -> pi)
-           | _ -> pi)
+           | Sil.Aneq (Var _, _)
+           | Sil.Apred (_, _, Var _) -> a :: pi
+           | Sil.Aeq _ | Aneq _ | Apred _ -> pi
+        )
         [] pi_filtered in
     IList.rev new_pure in
 
@@ -817,7 +819,12 @@ let abstract_gc p =
         let intersect_e2 _ = IList.intersect Ident.compare (Sil.fav_to_list fav_e2) (Sil.fav_to_list fav_p_without_pi) in
         let no_fav_e1 = Sil.fav_is_empty fav_e1 in
         let no_fav_e2 = Sil.fav_is_empty fav_e2 in
-        (no_fav_e1 || intersect_e1 ()) && (no_fav_e2 || intersect_e2 ()) in
+        (no_fav_e1 || intersect_e1 ()) && (no_fav_e2 || intersect_e2 ())
+    | Sil.Apred (_, _, e) ->
+        let fav_e = Sil.exp_fav e in
+        Sil.fav_is_empty fav_e
+        ||
+        IList.intersect Ident.compare (Sil.fav_to_list fav_e) (Sil.fav_to_list fav_p_without_pi) in
   let new_pi = IList.filter strong_filter pi in
   let prop = Prop.normalize (Prop.replace_pi new_pi p) in
   match Prop.prop_iter_create prop with
@@ -1094,7 +1101,7 @@ let check_junk ?original_prop pname tenv prop =
                   check_observer_is_unsubscribed_deallocation prop e;
                   match Prop.get_resource_attribute prop e with
                   | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Racquire }) as a) ->
-                      L.d_str "ATTRIBUTE: "; Sil.d_exp (Sil.Attribute a); L.d_ln ();
+                      L.d_str "ATTRIBUTE: "; Sil.d_attribute a; L.d_ln ();
                       res := Some a
                   | _ ->
                       (match Prop.get_undef_attribute prop e with

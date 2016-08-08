@@ -28,7 +28,7 @@ let from_prop p = p
 (** Return [true] if root node *)
 let rec is_root = function
   | Sil.Var id -> Ident.is_normal id
-  | Sil.Exn _ | Sil.Closure _ | Sil.Const _ | Sil.Lvar _ | Sil.Attribute _ -> true
+  | Sil.Exn _ | Sil.Closure _ | Sil.Const _ | Sil.Lvar _ -> true
   | Sil.Cast (_, e) -> is_root e
   | Sil.UnOp _ | Sil.BinOp _ | Sil.Lfield _ | Sil.Lindex _ | Sil.Sizeof _ -> false
 
@@ -49,6 +49,7 @@ let edge_get_source = function
   | Ehpred (Sil.Hdllseg(_, _, e1, _, _, _, _)) -> e1 (* only one direction supported for now *)
   | Eatom (Sil.Aeq (e1, _)) -> e1
   | Eatom (Sil.Aneq (e1, _)) -> e1
+  | Eatom (Sil.Apred (_, _, e)) -> e
   | Esub_entry (x, _) -> Sil.Var x
 
 (** Return the successor nodes of the edge *)
@@ -56,6 +57,7 @@ let edge_get_succs = function
   | Ehpred hpred -> Sil.ExpSet.elements (Prop.hpred_get_targets hpred)
   | Eatom (Sil.Aeq (_, e2)) -> [e2]
   | Eatom (Sil.Aneq (_, e2)) -> [e2]
+  | Eatom (Sil.Apred _) -> []
   | Esub_entry (_, e) -> [e]
 
 let get_sigma footprint_part g =
@@ -156,6 +158,8 @@ let compute_edge_diff (oldedge: edge) (newedge: edge) : Obj.t list = match olded
   | Eatom (Sil.Aeq (_, e1)), Eatom (Sil.Aeq (_, e2)) ->
       compute_exp_diff e1 e2
   | Eatom (Sil.Aneq (_, e1)), Eatom (Sil.Aneq (_, e2)) ->
+      compute_exp_diff e1 e2
+  | Eatom (Sil.Apred (_, _, e1)), Eatom (Sil.Apred (_, _, e2)) ->
       compute_exp_diff e1 e2
   | Esub_entry (_, e1), Esub_entry (_, e2) ->
       compute_exp_diff e1 e2

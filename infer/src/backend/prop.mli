@@ -222,6 +222,9 @@ val mk_neq : exp -> exp -> atom
 (** Construct an equality. *)
 val mk_eq : exp -> exp -> atom
 
+(** Construct a pred. *)
+val mk_pred : bool -> attribute -> exp -> atom
+
 (** create a strexp of the given type, populating the structures if [expand_structs] is true *)
 val create_strexp_of_type :
   Tenv.t option -> struct_init_mode -> Typ.t -> Sil.exp option -> Sil.inst -> Sil.strexp
@@ -313,7 +316,9 @@ val get_all_attributes : 'a t -> (exp * attribute) list
 
 val has_dangling_uninit_attribute : 'a t -> exp -> bool
 
-val set_exp_attribute : normal t -> exp -> attribute -> normal t
+(** Set an attribute associated to the expression *)
+val set_exp_attribute : ?footprint: bool -> ?polarity: bool ->
+  normal t -> attribute -> exp -> normal t
 
 val add_or_replace_exp_attribute_check_changed : (Sil.attribute -> Sil.attribute -> unit) ->
   normal t -> exp -> attribute -> normal t

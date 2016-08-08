@@ -125,9 +125,7 @@ and exp =
       The [dynamic_length], tracked by symbolic execution, may differ from the [static_length]
       obtained from the type definition, e.g. when an array is over-allocated.  For struct types,
       the [dynamic_length] is that of the final extensible array, if any. */
-  | Sizeof of Typ.t dynamic_length Subtype.t
-  /** attribute used in disequalities to annotate a value */
-  | Attribute of attribute;
+  | Sizeof of Typ.t dynamic_length Subtype.t;
 
 
 /** Sets of expressions. */
@@ -198,7 +196,8 @@ type offset = | Off_fld of Ident.fieldname Typ.t | Off_index of exp;
 /** an atom is a pure atomic formula */
 type atom =
   | Aeq of exp exp /** equality */
-  | Aneq of exp exp /** disequality*/;
+  | Aneq of exp exp /** disequality */
+  | Apred of bool attribute exp /** possibly negated predicate symbol applied to an exp */;
 
 
 /** kind of lseg or dllseg predicates */
@@ -589,6 +588,10 @@ let d_instr_list: list instr => unit;
 
 /** Pretty print an atom. */
 let pp_atom: printenv => F.formatter => atom => unit;
+
+
+/** Dump an attribute. */
+let d_attribute: attribute => unit;
 
 
 /** Dump an atom. */

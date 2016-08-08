@@ -137,9 +137,7 @@ and exp =
       The [dynamic_length], tracked by symbolic execution, may differ from the [static_length]
       obtained from the type definition, e.g. when an array is over-allocated.  For struct types,
       the [dynamic_length] is that of the final extensible array, if any. */
-  | Sizeof of Typ.t dynamic_length Subtype.t
-  /** attribute used in disequalities to annotate a value */
-  | Attribute of attribute;
+  | Sizeof of Typ.t dynamic_length Subtype.t;
 
 
 /** Kind of prune instruction */
@@ -204,7 +202,8 @@ type offset = | Off_fld of Ident.fieldname Typ.t | Off_index of exp;
 /** an atom is a pure atomic formula */
 type atom =
   | Aeq of exp exp /** equality */
-  | Aneq of exp exp /** disequality*/;
+  | Aneq of exp exp /** disequality */
+  | Apred of bool attribute exp /** possibly negated predicate symbol applied to an exp */;
 
 
 /** kind of lseg or dllseg predicates */
@@ -660,9 +659,6 @@ let rec exp_compare (e1: exp) (e2: exp) :int =>
         Subtype.compare s1 s2
       }
     }
-  | (Attribute att1, Attribute att2) => attribute_compare att1 att2
-  | (Attribute _, _) => (-1)
-  | (_, Attribute _) => 1
   };
 
 let exp_equal e1 e2 => exp_compare e1 e2 == 0;
@@ -697,14 +693,28 @@ let atom_compare a b =>
       } else {
         exp_compare e2 f2
       }
-    | (Aeq _, Aneq _) => (-1)
-    | (Aneq _, Aeq _) => 1
+    | (Aeq _, _) => (-1)
+    | (_, Aeq _) => 1
     | (Aneq e1 e2, Aneq f1 f2) =>
       let n = exp_compare e1 f1;
       if (n != 0) {
         n
       } else {
         exp_compare e2 f2
+      }
+    | (Aneq _, _) => (-1)
+    | (_, Aneq _) => 1
+    | (Apred b1 a1 e1, Apred b2 a2 e2) =>
+      let n = bool_compare b1 b2;
+      if (n != 0) {
+        n
+      } else {
+        let n = attribute_compare a1 a2;
+        if (n != 0) {
+          n
+        } else {
+          exp_compare e1 e2
+        }
       }
     }
   };
@@ -1086,7 +1096,6 @@ let rec _pp_exp pe0 pp_t f e0 => {
     | Sizeof t l s =>
       let pp_len f l => Option.map_default (F.fprintf f "[%a]" pp_exp) () l;
       F.fprintf f "sizeof(%a%a%a)" pp_t t pp_len l Subtype.pp s
-    | Attribute att => F.fprintf f "%s" (attribute_to_string pe att)
     }
   };
   color_post_wrapper changed pe0 f
@@ -1266,17 +1275,20 @@ let pp_atom pe0 f a => {
     | PP_HTML => F.fprintf f "%a = %a" (pp_exp pe) e1 (pp_exp pe) e2
     | PP_LATEX => F.fprintf f "%a{=}%a" (pp_exp pe) e1 (pp_exp pe) e2
     }
-  | Aneq (Attribute _ as ea) e
-  | Aneq e (Attribute _ as ea) => F.fprintf f "%a(%a)" (pp_exp pe) ea (pp_exp pe) e
   | Aneq e1 e2 =>
     switch pe.pe_kind {
     | PP_TEXT
     | PP_HTML => F.fprintf f "%a != %a" (pp_exp pe) e1 (pp_exp pe) e2
     | PP_LATEX => F.fprintf f "%a{\\neq}%a" (pp_exp pe) e1 (pp_exp pe) e2
     }
+  | Apred b a e => F.fprintf f "%s%s(%a)" (b ? "" : "!") (attribute_to_string pe a) (pp_exp pe) e
   };
   color_post_wrapper changed pe0 f
 };
+
+
+/** dump an attribute */
+let d_attribute (a: attribute) => L.add_print_action (L.PTattribute, Obj.repr a);
 
 
 /** dump an atom */
@@ -1923,7 +1935,8 @@ let hpred_list_expmap (f: (exp, option inst) => (exp, option inst)) (hlist: list
 let atom_expmap (f: exp => exp) =>
   fun
   | Aeq e1 e2 => Aeq (f e1) (f e2)
-  | Aneq e1 e2 => Aneq (f e1) (f e2);
+  | Aneq e1 e2 => Aneq (f e1) (f e2)
+  | Apred b a e => Apred b a (f e);
 
 let atom_list_expmap (f: exp => exp) (alist: list atom) => IList.map (atom_expmap f) alist;
 
@@ -1964,7 +1977,6 @@ let rec root_of_lexp lexp =>
   | Lfield e _ _ => root_of_lexp e
   | Lindex e _ => root_of_lexp e
   | Sizeof _ => lexp
-  | Attribute _ => lexp
   };
 
 
@@ -2053,15 +2065,15 @@ let rec exp_fpv =
   /* TODO: Sizeof length expressions may contain variables, do not ignore them. */
   /* | Sizeof _ None _ => [] */
   /* | Sizeof _ (Some l) _ => exp_fpv l */
-  | Sizeof _ _ _ => []
-  | Attribute _ => [];
+  | Sizeof _ _ _ => [];
 
 let exp_list_fpv el => IList.flatten (IList.map exp_fpv el);
 
 let atom_fpv =
   fun
   | Aeq e1 e2 => exp_fpv e1 @ exp_fpv e2
-  | Aneq e1 e2 => exp_fpv e1 @ exp_fpv e2;
+  | Aneq e1 e2 => exp_fpv e1 @ exp_fpv e2
+  | Apred _ _ e => exp_fpv e;
 
 let rec strexp_fpv =
   fun
@@ -2253,8 +2265,7 @@ let rec exp_fav_add fav =>
   /* TODO: Sizeof length expressions may contain variables, do not ignore them. */
   /* | Sizeof _ None _ => () */
   /* | Sizeof _ (Some l) _ => exp_fav_add fav l; */
-  | Sizeof _ _ _ => ()
-  | Attribute _ => ();
+  | Sizeof _ _ _ => ();
 
 let exp_fav = fav_imperative_to_functional exp_fav_add;
 
@@ -2272,7 +2283,8 @@ let atom_fav_add fav =>
   | Aneq e1 e2 => {
       exp_fav_add fav e1;
       exp_fav_add fav e2
-    };
+    }
+  | Apred _ _ e => exp_fav_add fav e;
 
 let atom_fav = fav_imperative_to_functional atom_fav_add;
 
@@ -2710,7 +2722,6 @@ let rec exp_sub_ids (f: Ident.t => exp) exp =>
       }
     | None => exp
     }
-  | Attribute _ => exp
   };
 
 let rec apply_sub subst id =>
@@ -3204,7 +3215,8 @@ let atom_replace_exp epairs =>
       let e1' = exp_replace_exp epairs e1;
       let e2' = exp_replace_exp epairs e2;
       Aneq e1' e2'
-    };
+    }
+  | Apred b a e => Apred b a (exp_replace_exp epairs e);
 
 let rec strexp_replace_exp epairs =>
   fun
@@ -3326,7 +3338,6 @@ let exp_get_vars exp => {
     /* | Sizeof _ None _ => vars */
     /* | Sizeof _ (Some l) _ => exp_get_vars_ l vars */
     | Sizeof _ _ _ => vars
-    | Attribute _ => vars
     };
   exp_get_vars_ exp ([], [])
 };
@@ -3343,7 +3354,6 @@ let exp_get_offsets exp => {
     | Exn _
     | Closure _
     | Lvar _
-    | Attribute _
     | Sizeof _ None _ => offlist_past
     | Sizeof _ (Some l) _ => f offlist_past l
     | Cast _ sub_exp => f offlist_past sub_exp

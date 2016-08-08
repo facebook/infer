@@ -172,6 +172,9 @@ let force_delayed_print fmt =
   | (L.PTatom, a) ->
       let (a: Sil.atom) = Obj.obj a in
       Sil.pp_atom pe_default fmt a
+  | (L.PTattribute, a) ->
+      let (a: Sil.attribute) = Obj.obj a in
+      F.pp_print_string fmt (Sil.attribute_to_string pe_default a)
   | (L.PTdecrease_indent, n) ->
       let (n: int) = Obj.obj n in
       for _ = 1 to n do F.fprintf fmt "@]" done
