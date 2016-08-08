@@ -364,7 +364,7 @@ end = struct
       | Sil.Aeq (Sil.BinOp (Binop.Lt, e1, e2), Sil.Const (Const.Cint i)) when IntLit.isone i ->
           lts := (e1, e2) :: !lts (* < *)
       | Sil.Aeq _
-      | Sil.Apred _ -> () in
+      | Sil.Apred _ | Anpred _ -> () in
     IList.iter process_atom pi;
     saturate { leqs = !leqs; lts = !lts; neqs = !neqs }
 
@@ -741,7 +741,7 @@ let check_atom prop a0 =
     when IntLit.isone i -> check_lt_normalized prop e1 e2
   | Sil.Aeq (e1, e2) -> check_equal prop e1 e2
   | Sil.Aneq (e1, e2) -> check_disequal prop e1 e2
-  | Sil.Apred _ -> IList.exists (Sil.atom_equal a) (Prop.get_pi prop)
+  | Sil.Apred _ | Anpred _ -> IList.exists (Sil.atom_equal a) (Prop.get_pi prop)
 
 (** Check [prop |- e1<=e2]. Result [false] means "don't know". *)
 let check_le prop e1 e2 =
@@ -859,7 +859,7 @@ let check_inconsistency_base prop =
         (match e1, e2 with
          | Sil.Const c1, Sil.Const c2 -> Const.equal c1 c2
          | _ -> (Sil.exp_compare e1 e2 = 0))
-    | Sil.Apred _ -> false in
+    | Sil.Apred _ | Anpred _ -> false in
   let inconsistent_inequalities () =
     let ineq = Inequalities.from_prop prop in
     (*
@@ -2111,7 +2111,7 @@ let rec pre_check_pure_implication calc_missing subs pi1 pi2 =
         )
   | Sil.Aeq _ :: pi2' -> (* must be an inequality *)
       pre_check_pure_implication calc_missing subs pi1 pi2'
-  | (Sil.Aneq (e, _) | Apred (_, _, e)) :: pi2' ->
+  | (Sil.Aneq (e, _) | Apred (_, e) | Anpred (_, e)) :: pi2' ->
       if calc_missing || (match e with Var v -> Ident.is_primed v | _ -> false) then
         pre_check_pure_implication calc_missing subs pi1 pi2'
       else

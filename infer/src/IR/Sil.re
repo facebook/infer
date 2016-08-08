@@ -203,7 +203,8 @@ type offset = | Off_fld of Ident.fieldname Typ.t | Off_index of exp;
 type atom =
   | Aeq of exp exp /** equality */
   | Aneq of exp exp /** disequality */
-  | Apred of bool attribute exp /** possibly negated predicate symbol applied to an exp */;
+  | Apred of attribute exp /** predicate symbol applied to an exp */
+  | Anpred of attribute exp /** negated predicate symbol applied to an exp */;
 
 
 /** kind of lseg or dllseg predicates */
@@ -704,17 +705,21 @@ let atom_compare a b =>
       }
     | (Aneq _, _) => (-1)
     | (_, Aneq _) => 1
-    | (Apred b1 a1 e1, Apred b2 a2 e2) =>
-      let n = bool_compare b1 b2;
+    | (Apred a1 e1, Apred a2 e2) =>
+      let n = attribute_compare a1 a2;
       if (n != 0) {
         n
       } else {
-        let n = attribute_compare a1 a2;
-        if (n != 0) {
-          n
-        } else {
-          exp_compare e1 e2
-        }
+        exp_compare e1 e2
+      }
+    | (Apred _, _) => (-1)
+    | (_, Apred _) => 1
+    | (Anpred a1 e1, Anpred a2 e2) =>
+      let n = attribute_compare a1 a2;
+      if (n != 0) {
+        n
+      } else {
+        exp_compare e1 e2
       }
     }
   };
@@ -1281,7 +1286,8 @@ let pp_atom pe0 f a => {
     | PP_HTML => F.fprintf f "%a != %a" (pp_exp pe) e1 (pp_exp pe) e2
     | PP_LATEX => F.fprintf f "%a{\\neq}%a" (pp_exp pe) e1 (pp_exp pe) e2
     }
-  | Apred b a e => F.fprintf f "%s%s(%a)" (b ? "" : "!") (attribute_to_string pe a) (pp_exp pe) e
+  | Apred a e => F.fprintf f "%s(%a)" (attribute_to_string pe a) (pp_exp pe) e
+  | Anpred a e => F.fprintf f "!%s(%a)" (attribute_to_string pe a) (pp_exp pe) e
   };
   color_post_wrapper changed pe0 f
 };
@@ -1936,7 +1942,8 @@ let atom_expmap (f: exp => exp) =>
   fun
   | Aeq e1 e2 => Aeq (f e1) (f e2)
   | Aneq e1 e2 => Aneq (f e1) (f e2)
-  | Apred b a e => Apred b a (f e);
+  | Apred a e => Apred a (f e)
+  | Anpred a e => Anpred a (f e);
 
 let atom_list_expmap (f: exp => exp) (alist: list atom) => IList.map (atom_expmap f) alist;
 
@@ -2073,7 +2080,8 @@ let atom_fpv =
   fun
   | Aeq e1 e2 => exp_fpv e1 @ exp_fpv e2
   | Aneq e1 e2 => exp_fpv e1 @ exp_fpv e2
-  | Apred _ _ e => exp_fpv e;
+  | Apred _ e
+  | Anpred _ e => exp_fpv e;
 
 let rec strexp_fpv =
   fun
@@ -2284,7 +2292,8 @@ let atom_fav_add fav =>
       exp_fav_add fav e1;
       exp_fav_add fav e2
     }
-  | Apred _ _ e => exp_fav_add fav e;
+  | Apred _ e
+  | Anpred _ e => exp_fav_add fav e;
 
 let atom_fav = fav_imperative_to_functional atom_fav_add;
 
@@ -3204,19 +3213,7 @@ let exp_replace_exp epairs e =>
   | Not_found => e
   };
 
-let atom_replace_exp epairs =>
-  fun
-  | Aeq e1 e2 => {
-      let e1' = exp_replace_exp epairs e1;
-      let e2' = exp_replace_exp epairs e2;
-      Aeq e1' e2'
-    }
-  | Aneq e1 e2 => {
-      let e1' = exp_replace_exp epairs e1;
-      let e2' = exp_replace_exp epairs e2;
-      Aneq e1' e2'
-    }
-  | Apred b a e => Apred b a (exp_replace_exp epairs e);
+let atom_replace_exp epairs atom => atom_expmap (fun e => exp_replace_exp epairs e) atom;
 
 let rec strexp_replace_exp epairs =>
   fun

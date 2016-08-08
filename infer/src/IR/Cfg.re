@@ -962,7 +962,8 @@ let remove_abducted_retvars p =>
             fun
             | Sil.Aeq lhs rhs
             | Sil.Aneq lhs rhs => exp_contains lhs || exp_contains rhs
-            | Sil.Apred _ _ e => exp_contains e
+            | Sil.Apred _ e
+            | Sil.Anpred _ e => exp_contains e
           )
           pi
       };

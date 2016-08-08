@@ -788,8 +788,8 @@ let abstract_pure_part p ~(from_abstract_footprint: bool) =
                 | Sil.Const _ -> a :: pi
                 | _ -> pi)
            | Sil.Aneq (Var _, _)
-           | Sil.Apred (_, _, Var _) -> a :: pi
-           | Sil.Aeq _ | Aneq _ | Apred _ -> pi
+           | Sil.Apred (_, Var _) | Anpred (_, Var _) -> a :: pi
+           | Sil.Aeq _ | Aneq _ | Apred _ | Anpred _ -> pi
         )
         [] pi_filtered in
     IList.rev new_pure in
@@ -820,7 +820,7 @@ let abstract_gc p =
         let no_fav_e1 = Sil.fav_is_empty fav_e1 in
         let no_fav_e2 = Sil.fav_is_empty fav_e2 in
         (no_fav_e1 || intersect_e1 ()) && (no_fav_e2 || intersect_e2 ())
-    | Sil.Apred (_, _, e) ->
+    | Sil.Apred (_, e) | Anpred (_, e) ->
         let fav_e = Sil.exp_fav e in
         Sil.fav_is_empty fav_e
         ||

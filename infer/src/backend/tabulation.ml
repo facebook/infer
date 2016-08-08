@@ -385,12 +385,12 @@ let post_process_post
     | Some (true, Aresource ({ ra_kind = Rrelease })) -> true
     | _ -> false in
   let atom_update_alloc_attribute = function
-    | Sil.Apred (true, Aresource ra, e)
+    | Sil.Apred (Aresource ra, e)
       when not (ra.Sil.ra_kind = Sil.Rrelease && actual_pre_has_freed_attribute e) ->
         (* unless it was already freed before the call *)
         let vpath, _ = Errdesc.vpath_find post e in
         let ra' = { ra with Sil.ra_pname = callee_pname; Sil.ra_loc = loc; Sil.ra_vpath = vpath } in
-        Sil.Apred (true, Aresource ra', e)
+        Sil.Apred (Aresource ra', e)
     | a -> a in
   let prop' = Prop.replace_sigma (post_process_sigma (Prop.get_sigma post) loc) post in
   let pi' = IList.map atom_update_alloc_attribute (Prop.get_pi prop') in

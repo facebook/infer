@@ -718,9 +718,13 @@ end = struct
           when (exp_contains_only_normal_ids e' && not (Ident.is_normal id)) ->
             build_other_atoms (fun e0 -> Prop.mk_neq e0 e') side e
 
-        | Sil.Apred (b, a, (Var id as e))
+        | Sil.Apred (a, (Var id as e))
           when not (Ident.is_normal id) ->
-            build_other_atoms (fun e0 -> Prop.mk_pred b a e0) side e
+            build_other_atoms (fun e0 -> Prop.mk_pred a e0) side e
+
+        | Sil.Anpred (a, (Var id as e))
+          when not (Ident.is_normal id) ->
+            build_other_atoms (fun e0 -> Prop.mk_npred a e0) side e
 
         | Sil.Aeq((Sil.Var id as e), e') | Sil.Aeq(e', (Sil.Var id as e))
           when (exp_contains_only_normal_ids e' && not (Ident.is_normal id)) ->
@@ -738,7 +742,7 @@ end = struct
             let construct e0 = Prop.mk_inequality (Sil.BinOp(Binop.Lt, e', e0)) in
             build_other_atoms construct side e
 
-        | Sil.Aeq _ | Aneq _ | Apred _ -> None
+        | Sil.Aeq _ | Aneq _ | Apred _ | Anpred _ -> None
       end
 
   type data_opt = ExtFresh | ExtDefault of Sil.exp
@@ -1670,7 +1674,7 @@ let pi_partial_join mode
         true
     | Sil.Aneq _ -> false
     | Sil.Aeq _ as e -> Prop.atom_is_inequality e
-    | Sil.Apred (_, _, e) ->
+    | Sil.Apred (_, e) | Anpred (_, e) ->
         exp_is_const e in
   begin
     if Config.trace_join then begin

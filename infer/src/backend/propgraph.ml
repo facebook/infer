@@ -49,7 +49,7 @@ let edge_get_source = function
   | Ehpred (Sil.Hdllseg(_, _, e1, _, _, _, _)) -> e1 (* only one direction supported for now *)
   | Eatom (Sil.Aeq (e1, _)) -> e1
   | Eatom (Sil.Aneq (e1, _)) -> e1
-  | Eatom (Sil.Apred (_, _, e)) -> e
+  | Eatom (Sil.Apred (_, e) | Anpred (_, e)) -> e
   | Esub_entry (x, _) -> Sil.Var x
 
 (** Return the successor nodes of the edge *)
@@ -57,7 +57,7 @@ let edge_get_succs = function
   | Ehpred hpred -> Sil.ExpSet.elements (Prop.hpred_get_targets hpred)
   | Eatom (Sil.Aeq (_, e2)) -> [e2]
   | Eatom (Sil.Aneq (_, e2)) -> [e2]
-  | Eatom (Sil.Apred _) -> []
+  | Eatom (Sil.Apred _ | Anpred _) -> []
   | Esub_entry (_, e) -> [e]
 
 let get_sigma footprint_part g =
@@ -159,7 +159,9 @@ let compute_edge_diff (oldedge: edge) (newedge: edge) : Obj.t list = match olded
       compute_exp_diff e1 e2
   | Eatom (Sil.Aneq (_, e1)), Eatom (Sil.Aneq (_, e2)) ->
       compute_exp_diff e1 e2
-  | Eatom (Sil.Apred (_, _, e1)), Eatom (Sil.Apred (_, _, e2)) ->
+  | Eatom (Sil.Apred (_, e1)), Eatom (Sil.Apred (_, e2)) ->
+      compute_exp_diff e1 e2
+  | Eatom (Sil.Anpred (_, e1)), Eatom (Sil.Anpred (_, e2)) ->
       compute_exp_diff e1 e2
   | Esub_entry (_, e1), Esub_entry (_, e2) ->
       compute_exp_diff e1 e2

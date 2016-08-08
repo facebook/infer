@@ -1309,7 +1309,9 @@ let atom_to_xml_light (a: Sil.atom) : Io_infer.Xml.node =
     | Sil.Aneq _ ->
         "disequality"
     | Sil.Apred _ ->
-        "pred" in
+        "pred"
+    | Sil.Anpred _ ->
+        "npred" in
   Io_infer.Xml.create_tree "stack-variable" [("type", kind_info); ("instance", atom_to_xml_string a)] []
 
 let xml_pure_info prop =

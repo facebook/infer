@@ -197,7 +197,8 @@ type offset = | Off_fld of Ident.fieldname Typ.t | Off_index of exp;
 type atom =
   | Aeq of exp exp /** equality */
   | Aneq of exp exp /** disequality */
-  | Apred of bool attribute exp /** possibly negated predicate symbol applied to an exp */;
+  | Apred of attribute exp /** predicate symbol applied to an exp */
+  | Anpred of attribute exp /** negated predicate symbol applied to an exp */;
 
 
 /** kind of lseg or dllseg predicates */

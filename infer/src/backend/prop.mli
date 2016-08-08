@@ -222,8 +222,11 @@ val mk_neq : exp -> exp -> atom
 (** Construct an equality. *)
 val mk_eq : exp -> exp -> atom
 
-(** Construct a pred. *)
-val mk_pred : bool -> attribute -> exp -> atom
+(** Construct a positive pred. *)
+val mk_pred : attribute -> exp -> atom
+
+(** Construct a negative pred. *)
+val mk_npred : attribute -> exp -> atom
 
 (** create a strexp of the given type, populating the structures if [expand_structs] is true *)
 val create_strexp_of_type :
