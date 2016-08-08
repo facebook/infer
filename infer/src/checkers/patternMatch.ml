@@ -388,9 +388,9 @@ let get_fields_nullified procdesc =
   (* walk through the instructions and look for instance fields that are assigned to null *)
   let collect_nullified_flds (nullified_flds, this_ids) _ = function
     | Sil.Set (Exp.Lfield (Exp.Var lhs, fld, _), _, rhs, _)
-      when Sil.exp_is_null_literal rhs && Ident.IdentSet.mem lhs this_ids ->
+      when Exp.is_null_literal rhs && Ident.IdentSet.mem lhs this_ids ->
         (Ident.FieldSet.add fld nullified_flds, this_ids)
-    | Sil.Letderef (id, rhs, _, _) when Sil.exp_is_this rhs ->
+    | Sil.Letderef (id, rhs, _, _) when Exp.is_this rhs ->
         (nullified_flds, Ident.IdentSet.add id this_ids)
     | _ -> (nullified_flds, this_ids) in
   let (nullified_flds, _) =

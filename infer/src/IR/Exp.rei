@@ -74,3 +74,83 @@ let module Map: Map.S with type key = t;
 
 /** Hashtable with expression keys. */
 let module Hash: Hashtbl.S with type key = t;
+
+
+/** returns true is index is an array index of arr. */
+let is_array_index_of: t => t => bool;
+
+let is_null_literal: t => bool;
+
+
+/** return true if [exp] is the special this/self expression */
+let is_this: t => bool;
+
+let is_zero: t => bool;
+
+
+/** {2 Utility Functions for Expressions} */
+/** Turn an expression representing a type into the type it represents
+    If not a sizeof, return the default type if given, otherwise raise an exception */
+let texp_to_typ: option Typ.t => t => Typ.t;
+
+
+/** Return the root of [lexp]. */
+let root_of_lexp: t => t;
+
+
+/** Get an expression "undefined", the boolean indicates
+    whether the undefined value goest into the footprint */
+let get_undefined: bool => t;
+
+
+/** Checks whether an expression denotes a location using pointer arithmetic.
+    Currently, catches array - indexing expressions such as a[i] only. */
+let pointer_arith: t => bool;
+
+
+/** Integer constant 0 */
+let zero: t;
+
+
+/** Null constant */
+let null: t;
+
+
+/** Integer constant 1 */
+let one: t;
+
+
+/** Integer constant -1 */
+let minus_one: t;
+
+
+/** Create integer constant */
+let int: IntLit.t => t;
+
+
+/** Create float constant */
+let float: float => t;
+
+
+/** Create integer constant corresponding to the boolean value */
+let bool: bool => t;
+
+
+/** Create expresstion [e1 == e2] */
+let eq: t => t => t;
+
+
+/** Create expresstion [e1 != e2] */
+let ne: t => t => t;
+
+
+/** Create expresstion [e1 <= e2] */
+let le: t => t => t;
+
+
+/** Create expression [e1 < e2] */
+let lt: t => t => t;
+
+
+/** Extract the ids and pvars from an expression */
+let get_vars: t => (list Ident.t, list Pvar.t);

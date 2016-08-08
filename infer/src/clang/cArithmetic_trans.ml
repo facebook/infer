@@ -134,7 +134,7 @@ let binary_operation_instruction context boi e1 typ e2 loc rhs_owning_method =
       Printing.log_stats
         "\nWARNING: Missing translation for Binary Operator Kind %s. Construct ignored...\n"
         (Clang_ast_j.string_of_binary_operator_kind bok);
-      (Sil.exp_minus_one, [])
+      (Exp.minus_one, [])
 
 let unary_operation_instruction uoi e typ loc =
   let uok = Clang_ast_j.string_of_unary_operator_kind (uoi.Clang_ast_t.uoi_kind) in

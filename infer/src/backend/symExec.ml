@@ -131,11 +131,11 @@ let rec apply_offlist
           (f None, Prop.create_strexp_of_type (Some tenv) Prop.Fld_init typ None inst, typ, None)
         end
   | [], Sil.Earray _ ->
-      let offlist' = (Sil.Off_index Sil.exp_zero):: offlist in
+      let offlist' = (Sil.Off_index Exp.zero):: offlist in
       apply_offlist
         pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist' f inst lookup_inst
   | (Sil.Off_fld _):: _, Sil.Earray _ ->
-      let offlist_new = Sil.Off_index(Sil.exp_zero) :: offlist in
+      let offlist_new = Sil.Off_index(Exp.zero) :: offlist in
       apply_offlist
         pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist_new f inst lookup_inst
   | (Sil.Off_fld (fld, fld_typ)):: offlist', Sil.Estruct (fsel, inst') ->
@@ -262,7 +262,7 @@ let update_iter iter pi sigma =
     that could mean nonempty heaps. *)
 let rec execute_nullify_se = function
   | Sil.Eexp _ ->
-      Sil.Eexp (Sil.exp_zero, Sil.inst_nullify)
+      Sil.Eexp (Exp.zero, Sil.inst_nullify)
   | Sil.Estruct (fsel, _) ->
       let fsel' = IList.map (fun (fld, se) -> (fld, execute_nullify_se se)) fsel in
       Sil.Estruct (fsel', Sil.inst_nullify)
@@ -309,13 +309,13 @@ let prune_ineq ~is_strict ~positive prop e1 e2 =
     if is_inconsistent then Propset.empty
     else
       let footprint = !Config.footprint in
-      let prop_with_ineq = Prop.conjoin_eq ~footprint prune_cond Sil.exp_one prop in
+      let prop_with_ineq = Prop.conjoin_eq ~footprint prune_cond Exp.one prop in
       Propset.singleton prop_with_ineq
 
 let rec prune ~positive condition prop =
   match condition with
   | Exp.Var _ | Exp.Lvar _ ->
-      prune_ne ~positive condition Sil.exp_zero prop
+      prune_ne ~positive condition Exp.zero prop
   | Exp.Const (Const.Cint i) when IntLit.iszero i ->
       if positive then Propset.empty else Propset.singleton prop
   | Exp.Const (Const.Cint _ | Const.Cstr _ | Const.Cclass _) | Exp.Sizeof _ ->
@@ -351,7 +351,7 @@ let rec prune ~positive condition prop =
       let pruner = if positive then prune_union else prune_inter in
       pruner ~positive condition1 condition2 prop
   | Exp.BinOp _ | Exp.Lfield _ | Exp.Lindex _ ->
-      prune_ne ~positive condition Sil.exp_zero prop
+      prune_ne ~positive condition Exp.zero prop
   | Exp.Exn _ ->
       assert false
   | Exp.Closure _ ->
@@ -401,7 +401,7 @@ let call_should_be_skipped callee_pname summary =
 let check_constant_string_dereference lexp =
   let string_lookup s n =
     let c = try Char.code (String.get s (IntLit.to_int n)) with Invalid_argument _ -> 0 in
-    Sil.exp_int (IntLit.of_int c) in
+    Exp.int (IntLit.of_int c) in
   match lexp with
   | Exp.BinOp(Binop.PlusPI, Exp.Const (Const.Cstr s), e)
   | Exp.Lindex (Exp.Const (Const.Cstr s), e) ->
@@ -410,7 +410,7 @@ let check_constant_string_dereference lexp =
           when IntLit.geq n IntLit.zero &&
                IntLit.leq n (IntLit.of_int (String.length s)) ->
             string_lookup s n
-        | _ -> Sil.exp_get_undefined false in
+        | _ -> Exp.get_undefined false in
       Some value
   | Exp.Const (Const.Cstr s) ->
       Some (string_lookup s IntLit.zero)
@@ -730,7 +730,7 @@ let handle_objc_instance_method_call_or_skip actual_pars path callee_pname pre r
   let is_receiver_null =
     match actual_pars with
     | (e, _) :: _
-      when Exp.equal e Sil.exp_zero ||
+      when Exp.equal e Exp.zero ||
            Option.is_some (Prop.get_objc_null_attribute pre e) -> true
     | _ -> false in
   let add_objc_null_attribute_or_nullify_result prop =
@@ -740,7 +740,7 @@ let handle_objc_instance_method_call_or_skip actual_pars path callee_pname pre r
         | Some vfs ->
             Prop.add_or_replace_attribute prop (Apred (Aobjc_null, [Exp.Var ret_id; vfs]))
         | None ->
-            Prop.conjoin_eq (Exp.Var ret_id) Sil.exp_zero prop
+            Prop.conjoin_eq (Exp.Var ret_id) Exp.zero prop
       )
     | _ -> prop in
   if is_receiver_null then
@@ -760,7 +760,7 @@ let handle_objc_instance_method_call_or_skip actual_pars path callee_pname pre r
     if !Config.footprint && not is_undef then
       let res_null = (* returns: (objc_null(res) /\ receiver=0) or an empty list of results *)
         let pre_with_attr_or_null = add_objc_null_attribute_or_nullify_result pre in
-        let propset = prune_ne ~positive:false receiver Sil.exp_zero pre_with_attr_or_null in
+        let propset = prune_ne ~positive:false receiver Exp.zero pre_with_attr_or_null in
         if Propset.is_empty propset then []
         else
           let prop = IList.hd (Propset.to_proplist propset) in
@@ -840,7 +840,7 @@ let add_constraints_on_retval pdesc prop ret_exp ~has_nullable_annot typ callee_
         prop (* don't assume nonnull if the procedure is annotated with @Nullable *)
       else
         match typ with
-        | Typ.Tptr _ -> Prop.conjoin_neq exp Sil.exp_zero prop
+        | Typ.Tptr _ -> Prop.conjoin_neq exp Exp.zero prop
         | _ -> prop in
     let add_tainted_post ret_exp callee_pname prop =
       Prop.add_or_replace_attribute prop (Apred (Ataint callee_pname, [ret_exp])) in
@@ -953,7 +953,7 @@ let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ
   with Rearrange.ARRAY_ACCESS ->
     if (Config.array_level = 0) then assert false
     else
-      let undef = Sil.exp_get_undefined false in
+      let undef = Exp.get_undefined false in
       [Prop.conjoin_eq (Exp.Var id) undef prop_]
 
 let load_ret_annots pname =

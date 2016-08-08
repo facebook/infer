@@ -354,7 +354,7 @@ let typecheck_instr
           Pvar.is_global pvar in
 
         let pvar_to_str pvar =
-          if Sil.exp_is_this (Exp.Lvar pvar) then ""
+          if Exp.is_this (Exp.Lvar pvar) then ""
           else Pvar.to_string pvar ^ "_" in
 
         let res = match exp' with
@@ -651,7 +651,7 @@ let typecheck_instr
                 not (TypeAnnotation.origin_is_fun_library ta) in
               if checks.eradicate && should_report then
                 begin
-                  let cond = Exp.BinOp (Binop.Ne, Exp.Lvar pvar, Sil.exp_null) in
+                  let cond = Exp.BinOp (Binop.Ne, Exp.Lvar pvar, Exp.null) in
                   EradicateChecks.report_error
                     find_canonical_duplicate
                     node

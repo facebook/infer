@@ -255,7 +255,7 @@ module CheckJoinPre : InfoLossCheckerSig = struct
     | Exp.Var id when Ident.is_normal id -> IList.length es >= 1
     | Exp.Var _ ->
         if Config.join_cond = 0 then
-          IList.exists (Exp.equal Sil.exp_zero) es
+          IList.exists (Exp.equal Exp.zero) es
         else if Dangling.check side e then
           begin
             let r = IList.exists (fun e' -> not (Dangling.check side_op e')) es in
@@ -457,7 +457,7 @@ end = struct
       let (_, _, e) = IList.find (fun (e1', e2', _) -> Exp.equal e1 e1' && Exp.equal e2 e2') !t in
       e
     with Not_found ->
-      let e = Sil.exp_get_undefined (JoinState.get_footprint ()) in
+      let e = Exp.get_undefined (JoinState.get_footprint ()) in
       t := (e1, e2, e)::!t;
       e
 
@@ -476,7 +476,7 @@ end = struct
       | Exp.Const (Const.Cint n1), Exp.Const (Const.Cint n1') -> IntLit.eq (n1 ++ n) n1'
       | _ -> false in
     let add_and_gen_eq e e' n =
-      let e_plus_n = Exp.BinOp(Binop.PlusA, e, Sil.exp_int n) in
+      let e_plus_n = Exp.BinOp(Binop.PlusA, e, Exp.int n) in
       Prop.mk_eq e_plus_n e' in
     let rec f_eqs_entry ((e1, e2, e) as entry) eqs_acc t_seen = function
       | [] -> eqs_acc, t_seen
@@ -502,8 +502,8 @@ end = struct
       | Exp.Const (Const.Cint n1), Exp.Const (Const.Cint n2) ->
           let strict_lower1, upper1 =
             if IntLit.leq n1 n2 then (n1 -- IntLit.one, n2) else (n2 -- IntLit.one, n1) in
-          let e_strict_lower1 = Sil.exp_int strict_lower1 in
-          let e_upper1 = Sil.exp_int upper1 in
+          let e_strict_lower1 = Exp.int strict_lower1 in
+          let e_upper1 = Exp.int upper1 in
           get_induced_atom acc e_strict_lower1 e_upper1 e
       | _ -> acc in
     IList.fold_left f_ineqs eqs t_minimal
@@ -593,12 +593,12 @@ end = struct
     let f v = match v, side with
       | (Exp.BinOp (Binop.PlusA, e1', Exp.Const (Const.Cint i)), e2, e'), Lhs
         when Exp.equal e e1' ->
-          let c' = Sil.exp_int (IntLit.neg i) in
+          let c' = Exp.int (IntLit.neg i) in
           let v' = (e1', Exp.BinOp(Binop.PlusA, e2, c'), Exp.BinOp (Binop.PlusA, e', c')) in
           res := v'::!res
       | (e1, Exp.BinOp (Binop.PlusA, e2', Exp.Const (Const.Cint i)), e'), Rhs
         when Exp.equal e e2' ->
-          let c' = Sil.exp_int (IntLit.neg i) in
+          let c' = Exp.int (IntLit.neg i) in
           let v' = (Exp.BinOp(Binop.PlusA, e1, c'), e2', Exp.BinOp (Binop.PlusA, e', c')) in
           res := v'::!res
       | _ -> () in
@@ -930,13 +930,13 @@ let rec exp_partial_join (e1: Exp.t) (e2: Exp.t) : Exp.t =
   | Exp.BinOp(Binop.PlusA, Exp.Var id1, Exp.Const (Const.Cint c1)), Exp.Const (Const.Cint c2)
     when can_rename id1 ->
       let c2' = c2 -- c1 in
-      let e_res = Rename.extend (Exp.Var id1) (Sil.exp_int c2') Rename.ExtFresh in
-      Exp.BinOp(Binop.PlusA, e_res, Sil.exp_int c1)
+      let e_res = Rename.extend (Exp.Var id1) (Exp.int c2') Rename.ExtFresh in
+      Exp.BinOp(Binop.PlusA, e_res, Exp.int c1)
   | Exp.Const (Const.Cint c1), Exp.BinOp(Binop.PlusA, Exp.Var id2, Exp.Const (Const.Cint c2))
     when can_rename id2 ->
       let c1' = c1 -- c2 in
-      let e_res = Rename.extend (Sil.exp_int c1') (Exp.Var id2) Rename.ExtFresh in
-      Exp.BinOp(Binop.PlusA, e_res, Sil.exp_int c2)
+      let e_res = Rename.extend (Exp.int c1') (Exp.Var id2) Rename.ExtFresh in
+      Exp.BinOp(Binop.PlusA, e_res, Exp.int c2)
   | Exp.Cast(t1, e1), Exp.Cast(t2, e2) ->
       if not (Typ.equal t1 t2) then (L.d_strln "failure reason 22"; raise IList.Fail)
       else
@@ -1603,11 +1603,11 @@ let pi_partial_join mode
           if IntLit.leq n first_try then
             if IntLit.leq n second_try then second_try else first_try
           else widening_top in
-        let a' = Prop.mk_inequality (Exp.BinOp(Binop.Le, e, Sil.exp_int bound)) in
+        let a' = Prop.mk_inequality (Exp.BinOp(Binop.Le, e, Exp.int bound)) in
         Some a'
     | Some (e, _), [] ->
         let bound = widening_top in
-        let a' = Prop.mk_inequality (Exp.BinOp(Binop.Le, e, Sil.exp_int bound)) in
+        let a' = Prop.mk_inequality (Exp.BinOp(Binop.Le, e, Exp.int bound)) in
         Some a'
     | _ ->
         begin
@@ -1616,7 +1616,7 @@ let pi_partial_join mode
           | Some (n, e) ->
               let bound =
                 if IntLit.leq IntLit.minus_one n then IntLit.minus_one else widening_bottom in
-              let a' = Prop.mk_inequality (Exp.BinOp(Binop.Lt, Sil.exp_int bound, e)) in
+              let a' = Prop.mk_inequality (Exp.BinOp(Binop.Lt, Exp.int bound, e)) in
               Some a'
         end in
   let is_stronger_le e n a =

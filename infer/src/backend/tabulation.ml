@@ -298,7 +298,7 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
       L.d_strln (" desc: " ^ (pp_to_string Localise.pp_error_desc error_desc));
       error_desc in
     let deref_no_null_check_pos =
-      if Exp.equal e_sub Sil.exp_zero then
+      if Exp.equal e_sub Exp.zero then
         match find_dereference_without_null_check_in_sexp sexp with
         | Some (_, pos) -> Some pos
         | None -> None
@@ -315,7 +315,7 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
       (* In that case it raise a dangling pointer dereferece *)
     if Prop.has_dangling_uninit_attribute spec_pre e then
       Some (Deref_undef_exp, desc false (Localise.deref_str_dangling (Some Sil.DAuninit)) )
-    else if Exp.equal e_sub Sil.exp_minus_one
+    else if Exp.equal e_sub Exp.minus_one
     then Some (Deref_minusone, desc true (Localise.deref_str_dangling None))
     else match Prop.get_resource_attribute actual_pre e_sub with
       | Some (Apred (Aresource ({ ra_kind = Rrelease } as ra), _)) ->
@@ -327,7 +327,7 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
            | _ -> None) in
   let check_hpred = function
     | Sil.Hpointsto (lexp, se, _) ->
-        check_dereference (Sil.root_of_lexp lexp) se
+        check_dereference (Exp.root_of_lexp lexp) se
     | _ -> None in
   let deref_err_list = IList.fold_left (fun deref_errs hpred -> match check_hpred hpred with
       | Some reason -> reason :: deref_errs
@@ -449,7 +449,7 @@ and sexp_star_fld se1 se2 : Sil.strexp =
   | Sil.Earray (len1, esel1, _), Sil.Earray (_, esel2, inst2) ->
       Sil.Earray (len1, esel_star_fld esel1 esel2, inst2)
   | Sil.Eexp (_, inst1), Sil.Earray (len2, esel2, _) ->
-      let esel1 = [(Sil.exp_zero, se1)] in
+      let esel1 = [(Exp.zero, se1)] in
       Sil.Earray (len2, esel_star_fld esel1 esel2, inst1)
   | _ ->
       L.d_str "cannot star ";
@@ -678,7 +678,7 @@ let combine
       if !Config.footprint && posts = []
       then (* in case of divergence, produce a prop *)
         (* with updated footprint and inconsistent current *)
-        [(Prop.replace_pi [Sil.Aneq (Sil.exp_zero, Sil.exp_zero)] Prop.prop_emp, path_pre)]
+        [(Prop.replace_pi [Sil.Aneq (Exp.zero, Exp.zero)] Prop.prop_emp, path_pre)]
       else
         IList.map
           (fun (p, path_post) ->
@@ -885,7 +885,7 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
           IList.exists
             (function
               | Sil.Apred (Aretval (pname, _), [exp]) when Procname.equal callee_pname pname ->
-                  Prover.check_disequal prop exp Sil.exp_zero
+                  Prover.check_disequal prop exp Exp.zero
               | _ -> false)
             (Prop.get_all_attributes prop) in
         if last_call_ret_non_null then
@@ -893,7 +893,7 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
             IList.exists
               (function
                 | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (e, _), _) when Pvar.is_return pvar ->
-                    Prover.check_equal (Prop.normalize prop) e Sil.exp_zero
+                    Prover.check_equal (Prop.normalize prop) e Exp.zero
                 | _ -> false)
               (Prop.get_sigma prop) in
           IList.filter (fun (prop, _) -> not (returns_null prop)) posts
@@ -1321,7 +1321,7 @@ let check_splitting_precondition sub1 sub2 =
 let sigma_has_null_pointer sigma =
   let hpred_null_pointer = function
     | Sil.Hpointsto (e, _, _) ->
-        Exp.equal e Sil.exp_zero
+        Exp.equal e Exp.zero
     | _ -> false in
   IList.exists hpred_null_pointer sigma
 *)

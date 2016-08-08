@@ -282,7 +282,7 @@ let propagate_nodes_divergence
         let mk_incons prop =
           let p_abs = Abs.abstract pname tenv prop in
           let p_zero = Prop.replace_sigma [] (Prop.replace_sub Sil.sub_empty p_abs) in
-          Prop.normalize (Prop.replace_pi [Sil.Aneq (Sil.exp_zero, Sil.exp_zero)] p_zero) in
+          Prop.normalize (Prop.replace_pi [Sil.Aneq (Exp.zero, Exp.zero)] p_zero) in
         Paths.PathSet.map mk_incons diverging_states in
       (L.d_strln_color Orange) "Propagating Divergence -- diverging states:";
       Propgraph.d_proplist Prop.prop_emp (Paths.PathSet.to_proplist prop_incons); L.d_ln ();
@@ -1120,7 +1120,7 @@ let remove_this_not_null prop =
     | hpred -> (var_option, hpred:: hpreds) in
   let collect_atom var atoms = function
     | Sil.Aneq (Exp.Var v, e)
-      when Ident.equal v var && Exp.equal e Sil.exp_null -> atoms
+      when Ident.equal v var && Exp.equal e Exp.null -> atoms
     | a -> a:: atoms in
   match IList.fold_left collect_hpred (None, []) (Prop.get_sigma prop) with
   | None, _ -> prop

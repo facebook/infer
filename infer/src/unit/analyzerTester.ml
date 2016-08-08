@@ -114,7 +114,7 @@ module StructuredSil = struct
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
   let var_assign_int lhs rhs =
-    let rhs_exp = Sil.exp_int (IntLit.of_int rhs) in
+    let rhs_exp = Exp.int (IntLit.of_int rhs) in
     let rhs_typ = Typ.Tint Typ.IInt in
     var_assign_exp ~rhs_typ lhs rhs_exp
 

@@ -38,12 +38,12 @@ let check_bad_index pname p len index loc =
     | _ -> false in
   let index_provably_out_of_bound () =
     let index_too_large = Prop.mk_inequality (Exp.BinOp (Binop.Le, len, index)) in
-    let index_negative = Prop.mk_inequality (Exp.BinOp (Binop.Le, index, Sil.exp_minus_one)) in
+    let index_negative = Prop.mk_inequality (Exp.BinOp (Binop.Le, index, Exp.minus_one)) in
     (Prover.check_atom p index_too_large) || (Prover.check_atom p index_negative) in
   let index_provably_in_bound () =
-    let len_minus_one = Exp.BinOp(Binop.PlusA, len, Sil.exp_minus_one) in
+    let len_minus_one = Exp.BinOp(Binop.PlusA, len, Exp.minus_one) in
     let index_not_too_large = Prop.mk_inequality (Exp.BinOp(Binop.Le, index, len_minus_one)) in
-    let index_nonnegative = Prop.mk_inequality (Exp.BinOp(Binop.Le, Sil.exp_zero, index)) in
+    let index_nonnegative = Prop.mk_inequality (Exp.BinOp(Binop.Le, Exp.zero, index)) in
     Prover.check_zero index || (* index 0 always in bound, even when we know nothing about len *)
     ((Prover.check_atom p index_not_too_large) && (Prover.check_atom p index_nonnegative)) in
   let index_has_bounds () =
@@ -199,11 +199,11 @@ let rec _strexp_extend_values
   | [], Sil.Estruct _, _ ->
       [([], se, typ)]
   | [], Sil.Earray _, _ ->
-      let off_new = Sil.Off_index(Sil.exp_zero):: off in
+      let off_new = Sil.Off_index(Exp.zero):: off in
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
   | (Sil.Off_fld _) :: _, Sil.Earray _, Typ.Tarray _ ->
-      let off_new = Sil.Off_index(Sil.exp_zero):: off in
+      let off_new = Sil.Off_index(Exp.zero):: off in
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
   | (Sil.Off_fld (f, _)):: off', Sil.Estruct (fsel, inst'),
@@ -253,11 +253,11 @@ let rec _strexp_extend_values
   | (Sil.Off_index _):: _, Sil.Estruct _, Typ.Tstruct _ ->
       (* L.d_strln_color Orange "turn into an array"; *)
       let len = match se with
-        | Sil.Eexp (_, Sil.Ialloc) -> Sil.exp_one (* if allocated explicitly, we know len is 1 *)
+        | Sil.Eexp (_, Sil.Ialloc) -> Exp.one (* if allocated explicitly, we know len is 1 *)
         | _ ->
-            if Config.type_size then Sil.exp_one (* Exp.Sizeof (typ, Subtype.exact) *)
+            if Config.type_size then Exp.one (* Exp.Sizeof (typ, Subtype.exact) *)
             else Exp.Var (new_id ()) in
-      let se_new = Sil.Earray (len, [(Sil.exp_zero, se)], inst) in
+      let se_new = Sil.Earray (len, [(Exp.zero, se)], inst) in
       let typ_new = Typ.Tarray (typ, None) in
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se_new typ_new off inst
@@ -384,7 +384,7 @@ let laundry_offset_for_footprint max_stamp offs_in =
 let strexp_extend_values
     pname tenv orig_prop footprint_part kind max_stamp
     se te (off : Sil.offset list) inst =
-  let typ = Sil.texp_to_typ None te in
+  let typ = Exp.texp_to_typ None te in
   let off', laundry_atoms =
     let off', eqs = laundry_offset_for_footprint max_stamp off in
     (* do laundry_offset whether footprint_part is true or not, so max_stamp is modified anyway *)
@@ -410,7 +410,7 @@ let strexp_extend_values
     atoms_se_typ_list_filtered
 
 let collect_root_offset exp =
-  let root = Sil.root_of_lexp exp in
+  let root = Exp.root_of_lexp exp in
   let offsets = Sil.exp_get_offsets exp in
   (root, offsets)
 
@@ -854,7 +854,7 @@ let rearrange_arith lexp prop =
   end;
   if (Config.array_level >= 2) then raise ARRAY_ACCESS
   else
-    let root = Sil.root_of_lexp lexp in
+    let root = Exp.root_of_lexp lexp in
     if Prover.check_allocatedness prop root then
       raise ARRAY_ACCESS
     else
@@ -1103,7 +1103,7 @@ let rec iter_rearrange
     if !Config.footprint then
       prop_iter_add_hpred_footprint pname tenv prop iter' (lexp, typ) inst
     else
-    if (Config.array_level >= 1 && not !Config.footprint && Sil.exp_pointer_arith lexp)
+    if (Config.array_level >= 1 && not !Config.footprint && Exp.pointer_arith lexp)
     then rearrange_arith lexp prop
     else begin
       pp_rearrangement_error "cannot find predicate with root" prop lexp;
@@ -1225,10 +1225,10 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
          | _ -> true)
       (Prop.get_sigma prop) &&
     !nullable_obj_str <> None in
-  let root = Sil.root_of_lexp lexp in
+  let root = Exp.root_of_lexp lexp in
   let is_deref_of_nullable =
     let is_definitely_non_null exp prop =
-      Prover.check_disequal prop exp Sil.exp_zero in
+      Prover.check_disequal prop exp Exp.zero in
     Config.report_nullable_inconsistency && not (is_definitely_non_null root prop)
     && is_only_pt_by_nullable_fld_or_param root in
   let relevant_attributes_getters = [
@@ -1249,7 +1249,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
           | Exp.BinOp((Binop.PlusPI | Binop.PlusA | Binop.MinusPI | Binop.MinusA), base, _) -> base
           | _ -> root in
         get_relevant_attributes root_no_offset in
-  if Prover.check_zero (Sil.root_of_lexp root) || is_deref_of_nullable then
+  if Prover.check_zero (Exp.root_of_lexp root) || is_deref_of_nullable then
     begin
       let deref_str =
         if is_deref_of_nullable then
@@ -1287,7 +1287,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
       let err_desc = Errdesc.explain_dereference ~use_buckets: true deref_str prop loc in
       raise (Exceptions.Use_after_free (err_desc, __POS__))
   | _ ->
-      if Prover.check_equal Prop.prop_emp (Sil.root_of_lexp root) Sil.exp_minus_one then
+      if Prover.check_equal Prop.prop_emp (Exp.root_of_lexp root) Exp.minus_one then
         let deref_str = Localise.deref_str_dangling None in
         let err_desc = Errdesc.explain_dereference deref_str prop loc in
         raise (Exceptions.Dangling_pointer_dereference (None, err_desc, __POS__))
@@ -1296,7 +1296,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
 (* It's used to check that we don't call possibly null blocks *)
 let check_call_to_objc_block_error pdesc prop fun_exp loc =
   let fun_exp_may_be_null () = (* may be null if we don't know if it is definitely not null *)
-    not (Prover.check_disequal prop (Sil.root_of_lexp fun_exp) Sil.exp_zero) in
+    not (Prover.check_disequal prop (Exp.root_of_lexp fun_exp) Exp.zero) in
   let try_explaining_exp e = (* when e is a temp var, try to find the pvar defining e*)
     match e with
     | Exp.Var id ->
@@ -1366,7 +1366,7 @@ let rearrange ?(report_deref_errors=true) pdesc tenv lexp typ prop loc
         Exp.Lindex(ep, e)
     | e -> e in
   let ptr_tested_for_zero =
-    Prover.check_disequal prop (Sil.root_of_lexp nlexp) Sil.exp_zero in
+    Prover.check_disequal prop (Exp.root_of_lexp nlexp) Exp.zero in
   let inst = Sil.inst_rearrange (not ptr_tested_for_zero) loc (State.get_path_pos ()) in
   L.d_strln ".... Rearrangement Start ....";
   L.d_str "Exp: "; Sil.d_exp nlexp; L.d_ln ();

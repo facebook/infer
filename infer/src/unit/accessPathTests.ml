@@ -100,7 +100,7 @@ let tests =
       check_make_ap xF_exp xF ~f_resolve_id;
       let xFG_exp = Exp.Lfield (xF_exp, g_fieldname, dummy_typ) in
       check_make_ap xFG_exp xFG ~f_resolve_id;
-      let xArr_exp = Exp.Lindex (x_exp, Sil.exp_zero) in
+      let xArr_exp = Exp.Lindex (x_exp, Exp.zero) in
       check_make_ap xArr_exp xArr ~f_resolve_id;
       (* make sure [f_resolve_id] works *)
       let f_resolve_id_to_xF _ = Some xF in

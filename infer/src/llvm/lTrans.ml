@@ -25,7 +25,7 @@ let trans_variable (var : LAst.variable) : Exp.t = Exp.Var (ident_of_variable va
 
 let trans_constant : LAst.constant -> Exp.t = function
   | Cint i -> Exp.Const (Const.Cint (IntLit.of_int i))
-  | Cnull -> Sil.exp_null
+  | Cnull -> Exp.null
 
 let trans_operand : LAst.operand -> Exp.t = function
   | Var var -> trans_variable var

@@ -182,7 +182,7 @@ end = struct
             match hpred with
             | Sil.Hpointsto (root, se, te) ->
                 let sigma_other = sigma_seen @ sigma_rest in
-                find_offset_sexp sigma_other hpred root [] se (Sil.texp_to_typ None te)
+                find_offset_sexp sigma_other hpred root [] se (Exp.texp_to_typ None te)
             | _ -> ()
           end;
           iterate (hpred:: sigma_seen) sigma_rest in
@@ -194,7 +194,7 @@ end = struct
   (** Get the matched strexp *)
   let get_data ((_ , hpred, syn_offs) : t) = match hpred with
     | Sil.Hpointsto (root, se, te) ->
-        let t = Sil.texp_to_typ None te in
+        let t = Exp.texp_to_typ None te in
         let se', t' = get_strexp_at_syn_offsets se t syn_offs in
         let path' = (root, syn_offs) in
         (path', se', t')
@@ -220,7 +220,7 @@ end = struct
     begin
       match hpred with
       | Sil.Hpointsto (root, se, te) ->
-          let t = Sil.texp_to_typ None te in
+          let t = Exp.texp_to_typ None te in
           let se' = replace_strexp_at_syn_offsets se t syn_offs update in
           Sil.Hpointsto (root, se', te)
       | _ -> assert false
@@ -354,7 +354,7 @@ let generic_strexp_abstract
 (** Return [true] if there's a pointer to the index *)
 let index_is_pointed_to (p: Prop.normal Prop.t) (path: StrexpMatch.path) (index: Exp.t) : bool =
   let indices =
-    let index_plus_one = Exp.BinOp(Binop.PlusA, index, Sil.exp_one) in
+    let index_plus_one = Exp.BinOp(Binop.PlusA, index, Exp.one) in
     [index; index_plus_one] in
   let add_index_to_paths =
     let elist_path = StrexpMatch.path_to_exps path in
@@ -393,8 +393,8 @@ let blur_array_index
       let sigma' = StrexpMatch.replace_index false matched index fresh_index in
       Prop.replace_sigma sigma' p2 in
     let p4 =
-      let index_next = Exp.BinOp(Binop.PlusA, index, Sil.exp_one) in
-      let fresh_index_next = Exp.BinOp (Binop.PlusA, fresh_index, Sil.exp_one) in
+      let index_next = Exp.BinOp(Binop.PlusA, index, Exp.one) in
+      let fresh_index_next = Exp.BinOp (Binop.PlusA, fresh_index, Exp.one) in
       let map = [(index, fresh_index); (index_next, fresh_index_next)] in
       prop_replace_path_index p3 path map in
     Prop.normalize p4
@@ -545,7 +545,7 @@ let check_after_array_abstraction prop =
             check_se root (offs @ [Sil.Off_fld (f, typ)]) typ_f se) fsel in
   let check_hpred = function
     | Sil.Hpointsto (root, se, texp) ->
-        let typ = Sil.texp_to_typ (Some Typ.Tvoid) texp in
+        let typ = Exp.texp_to_typ (Some Typ.Tvoid) texp in
         check_se root [] typ se
     | Sil.Hlseg _ | Sil.Hdllseg _ -> () in
   let check_sigma sigma = IList.iter check_hpred sigma in

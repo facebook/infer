@@ -318,14 +318,6 @@ let hpred_compact: sharing_env => hpred => hpred;
 /** {2 Comparision And Inspection Functions} */
 let has_objc_ref_counter: hpred => bool;
 
-let exp_is_zero: Exp.t => bool;
-
-let exp_is_null_literal: Exp.t => bool;
-
-
-/** return true if [exp] is the special this/self expression */
-let exp_is_this: Exp.t => bool;
-
 let path_pos_equal: path_pos => path_pos => bool;
 
 
@@ -384,10 +376,6 @@ let attribute_to_category: attribute => attribute_category;
 
 let attr_is_undef: attribute => bool;
 
-
-/** exp_is_array_index_of index arr returns true is index is an array index of arr. */
-let exp_is_array_index_of: Exp.t => Exp.t => bool;
-
 let exp_typ_compare: (Exp.t, Typ.t) => (Exp.t, Typ.t) => int;
 
 let instr_compare: instr => instr => int;
@@ -397,10 +385,6 @@ let instr_compare: instr => instr => int;
     the [exp_map] param gives a mapping of names used in the procedure of [instr1] to identifiers
     used in the procedure of [instr2] */
 let instr_compare_structural: instr => instr => Exp.Map.t Exp.t => (int, Exp.Map.t Exp.t);
-
-let exp_list_compare: list Exp.t => list Exp.t => int;
-
-let exp_list_equal: list Exp.t => list Exp.t => bool;
 
 let atom_compare: atom => atom => int;
 
@@ -669,70 +653,6 @@ let atom_list_expmap: (Exp.t => Exp.t) => list atom => list atom;
 let hpred_list_get_lexps: (Exp.t => bool) => list hpred => list Exp.t;
 
 
-/** {2 Utility Functions for Expressions} */
-/** Turn an expression representing a type into the type it represents
-    If not a sizeof, return the default type if given, otherwise raise an exception */
-let texp_to_typ: option Typ.t => Exp.t => Typ.t;
-
-
-/** Return the root of [lexp]. */
-let root_of_lexp: Exp.t => Exp.t;
-
-
-/** Get an expression "undefined", the boolean indicates
-    whether the undefined value goest into the footprint */
-let exp_get_undefined: bool => Exp.t;
-
-
-/** Checks whether an expression denotes a location using pointer arithmetic.
-    Currently, catches array - indexing expressions such as a[i] only. */
-let exp_pointer_arith: Exp.t => bool;
-
-
-/** Integer constant 0 */
-let exp_zero: Exp.t;
-
-
-/** Null constant */
-let exp_null: Exp.t;
-
-
-/** Integer constant 1 */
-let exp_one: Exp.t;
-
-
-/** Integer constant -1 */
-let exp_minus_one: Exp.t;
-
-
-/** Create integer constant */
-let exp_int: IntLit.t => Exp.t;
-
-
-/** Create float constant */
-let exp_float: float => Exp.t;
-
-
-/** Create integer constant corresponding to the boolean value */
-let exp_bool: bool => Exp.t;
-
-
-/** Create expresstion [e1 == e2] */
-let exp_eq: Exp.t => Exp.t => Exp.t;
-
-
-/** Create expresstion [e1 != e2] */
-let exp_ne: Exp.t => Exp.t => Exp.t;
-
-
-/** Create expresstion [e1 <= e2] */
-let exp_le: Exp.t => Exp.t => Exp.t;
-
-
-/** Create expression [e1 < e2] */
-let exp_lt: Exp.t => Exp.t => Exp.t;
-
-
 /** {2 Functions for computing program variables} */
 let exp_fpv: Exp.t => list Pvar.t;
 
@@ -999,10 +919,6 @@ let hpred_replace_exp: list (Exp.t, Exp.t) => hpred => hpred;
 
 
 /** {2 Functions for constructing or destructing entities in this module} */
-/** Extract the ids and pvars from an expression */
-let exp_get_vars: Exp.t => (list Ident.t, list Pvar.t);
-
-
 /** Compute the offset list of an expression */
 let exp_get_offsets: Exp.t => list offset;
 

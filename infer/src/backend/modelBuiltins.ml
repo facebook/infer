@@ -24,7 +24,7 @@ let execute___builtin_va_arg { Builtin.pdesc; tenv; prop_; path; ret_ids; args; 
   : Builtin.ret_typ =
   match args, ret_ids with
   | [_; _; (lexp3, typ3)], _ ->
-      let instr' = Sil.Set (lexp3, typ3, Sil.exp_zero, loc) in
+      let instr' = Sil.Set (lexp3, typ3, Exp.zero, loc) in
       SymExec.instrs ~mask_errors:true tenv pdesc [instr'] [(prop_, path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -179,7 +179,7 @@ let create_type tenv n_lexp typ prop =
           let prop''= Prop.normalize prop'' in
           prop''
       | None -> prop in
-  let sil_is_null = Exp.BinOp (Binop.Eq, n_lexp, Sil.exp_zero) in
+  let sil_is_null = Exp.BinOp (Binop.Eq, n_lexp, Exp.zero) in
   let sil_is_nonnull = Exp.UnOp (Unop.LNot, sil_is_null, None) in
   let null_case = Propset.to_proplist (prune ~positive:true sil_is_null prop) in
   let non_null_case = Propset.to_proplist (prune ~positive:true sil_is_nonnull prop_type) in
@@ -206,7 +206,7 @@ let execute___get_type_of { Builtin.pdesc; tenv; prop_; path; ret_ids; args; }
             | Sil.Hpointsto(_, _, texp) ->
                 (return_result texp prop ret_ids), path
             | _ -> assert false
-          with Not_found -> (return_result Sil.exp_zero prop ret_ids), path
+          with Not_found -> (return_result Exp.zero prop ret_ids), path
         end in
       (IList.map aux props)
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -247,8 +247,8 @@ let execute___instanceof_cast ~instof
         Tabulation.raise_cast_exception
           __POS__ None texp1 texp2 val1 in
       let exe_one_prop prop =
-        if Exp.equal texp2 Sil.exp_zero then
-          [(return_result Sil.exp_zero prop ret_ids, path)]
+        if Exp.equal texp2 Exp.zero then
+          [(return_result Exp.zero prop ret_ids, path)]
         else
           begin
             try
@@ -268,14 +268,14 @@ let execute___instanceof_cast ~instof
                         [(return_result res_e prop' ret_ids, path)] in
                   if instof then (* instanceof *)
                     begin
-                      let pos_res = mk_res pos_type_opt Sil.exp_one in
-                      let neg_res = mk_res neg_type_opt Sil.exp_zero in
+                      let pos_res = mk_res pos_type_opt Exp.one in
+                      let neg_res = mk_res neg_type_opt Exp.zero in
                       pos_res @ neg_res
                     end
                   else (* cast *)
                   if not should_throw_exception then (* C++ case when negative cast returns 0 *)
                     let pos_res = mk_res pos_type_opt val1 in
-                    let neg_res = mk_res neg_type_opt Sil.exp_zero in
+                    let neg_res = mk_res neg_type_opt Exp.zero in
                     pos_res @ neg_res
                   else
                     begin
@@ -799,7 +799,7 @@ let execute_alloc mk can_return_null
     Prop.add_or_replace_attribute prop' (Apred (Aresource ra, [exp_new])) in
   let prop_alloc = Prop.conjoin_eq (Exp.Var ret_id) exp_new prop_plus_ptsto in
   if can_return_null then
-    let prop_null = Prop.conjoin_eq (Exp.Var ret_id) Sil.exp_zero prop in
+    let prop_null = Prop.conjoin_eq (Exp.Var ret_id) Exp.zero prop in
     [(prop_alloc, path); (prop_null, path)]
   else [(prop_alloc, path)]
 
@@ -918,7 +918,7 @@ let execute___infer_assume { Builtin.prop_; path; args; }
   : Builtin.ret_typ =
   match args with
   | [(lexp, _)] ->
-      let prop_assume = Prop.conjoin_eq lexp (Sil.exp_bool true) prop_ in
+      let prop_assume = Prop.conjoin_eq lexp (Exp.bool true) prop_ in
       if Prover.check_inconsistency prop_assume
       then SymExec.diverge prop_assume path
       else [(prop_assume, path)]

@@ -347,7 +347,7 @@ struct
 
   let nullPtrExpr_trans trans_state expr_info =
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
-    { empty_res_trans with exps = [(Sil.exp_null, typ)]}
+    { empty_res_trans with exps = [(Exp.null, typ)]}
 
   let objCSelectorExpr_trans trans_state expr_info selector =
     stringLiteral_trans trans_state expr_info selector
@@ -381,7 +381,7 @@ struct
     let exp =
       try
         let i = Int64.of_string integer_literal_info.Clang_ast_t.ili_value in
-        let exp = Sil.exp_int (IntLit.of_int64 i) in
+        let exp = Exp.int (IntLit.of_int64 i) in
         exp
       with
       | Failure _ ->
@@ -432,7 +432,7 @@ struct
              "\nWARNING: Missing translation of Uniry_Expression_Or_Trait of kind: \
               %s . Expression ignored, returned -1... \n"
              (Clang_ast_j.string_of_unary_expr_or_type_trait_kind k);
-        { empty_res_trans with exps =[(Sil.exp_minus_one, typ)]}
+        { empty_res_trans with exps =[(Exp.minus_one, typ)]}
 
   (* search the label into the hashtbl - create a fake node eventually *)
   (* connect that node with this stmt *)
@@ -1610,7 +1610,7 @@ struct
           (* in initd_exps, then we assume that all the indices were initialized and *)
           (* we don't need any assignments. *)
           if IList.exists
-              ((fun arr index -> Sil.exp_is_array_index_of index arr) var_exp)
+              ((fun arr index -> Exp.is_array_index_of index arr) var_exp)
               initd_exps
           then []
           else IList.map2 assign_instr lh rh_exps in
@@ -2566,7 +2566,7 @@ struct
         implicitValueInitExpr_trans trans_state expr_info
     | GenericSelectionExpr _ (* to be fixed when we dump the right info in the ast *)
     | SizeOfPackExpr _ ->
-        { empty_res_trans with exps = [(Sil.exp_get_undefined false, Typ.Tvoid)] }
+        { empty_res_trans with exps = [(Exp.get_undefined false, Typ.Tvoid)] }
 
     | GCCAsmStmt (stmt_info, stmts) ->
         gccAsmStmt_trans trans_state stmt_info stmts

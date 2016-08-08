@@ -180,8 +180,8 @@ let is_source_node_of_exp e node =
 (* make sense for that case *)
 let get_coordinate_and_exp dotnode =
   match dotnode with
-  | Dotnil(coo) -> (coo, Sil.exp_minus_one)
-  | Dotarray (coo, _, _, _, _, _) -> (coo, Sil.exp_minus_one)
+  | Dotnil(coo) -> (coo, Exp.minus_one)
+  | Dotarray (coo, _, _, _, _, _) -> (coo, Exp.minus_one)
   | Dotpointsto (coo, b, _)
   | Dotlseg (coo, b, _, _, _, _)
   | Dotdllseg (coo, b, _, _, _, _, _, _)
@@ -246,19 +246,19 @@ let make_dangling_boxes pe allocated_nodes (sigma_lambda: (Sil.hpred * int) list
     let coo = mk_coordinate n lambda in
     (match hpred with
      | Sil.Hpointsto (_, Sil.Eexp (e, _), _)
-       when not (Exp.equal e Sil.exp_zero)  && !print_full_prop ->
+       when not (Exp.equal e Exp.zero)  && !print_full_prop ->
          let e_color_str = color_to_str (exp_color hpred e) in
          [Dotdangling(coo, e, e_color_str)]
-     | Sil.Hlseg (_, _, _, e2, _) when not (Exp.equal e2 Sil.exp_zero) ->
+     | Sil.Hlseg (_, _, _, e2, _) when not (Exp.equal e2 Exp.zero) ->
          let e2_color_str = color_to_str (exp_color hpred e2) in
          [Dotdangling(coo, e2, e2_color_str)]
      | Sil.Hdllseg (_, _, _, e2, e3, _, _) ->
          let e2_color_str = color_to_str (exp_color hpred e2) in
          let e3_color_str = color_to_str (exp_color hpred e3) in
-         let ll = if not (Exp.equal e2 Sil.exp_zero) then
+         let ll = if not (Exp.equal e2 Exp.zero) then
              [Dotdangling(coo, e2, e2_color_str)]
            else [] in
-         if not (Exp.equal e3 Sil.exp_zero) then Dotdangling(coo, e3, e3_color_str):: ll
+         if not (Exp.equal e3 Exp.zero) then Dotdangling(coo, e3, e3_color_str):: ll
          else ll
      | Sil.Hpointsto (_, _, _)
      | _ -> [] (* arrays and struct do not give danglings*)
@@ -377,7 +377,7 @@ let compute_struct_exp_nodes sigma =
 let get_node_exp n = snd (get_coordinate_and_exp n)
 
 let is_nil e prop =
-  (Exp.equal e Sil.exp_zero) || (Prover.check_equal prop e Sil.exp_zero)
+  (Exp.equal e Exp.zero) || (Prover.check_equal prop e Exp.zero)
 
 (* an edge is in cycle *)
 let in_cycle cycle edge =
@@ -1172,11 +1172,11 @@ let make_set_dangling_nodes allocated_nodes (sigma: Sil.hpred list) =
     VH_dangling(n, e) in
   let get_rhs_predicate hpred =
     (match hpred with
-     | Sil.Hpointsto (_, Sil.Eexp (e, _), _) when not (Exp.equal e Sil.exp_zero) -> [e]
-     | Sil.Hlseg (_, _, _, e2, _) when not (Exp.equal e2 Sil.exp_zero) -> [e2]
+     | Sil.Hpointsto (_, Sil.Eexp (e, _), _) when not (Exp.equal e Exp.zero) -> [e]
+     | Sil.Hlseg (_, _, _, e2, _) when not (Exp.equal e2 Exp.zero) -> [e2]
      | Sil.Hdllseg (_, _, _, e2, e3, _, _) ->
-         if (Exp.equal e2 Sil.exp_zero) then
-           if (Exp.equal e3 Sil.exp_zero) then []
+         if (Exp.equal e2 Exp.zero) then
+           if (Exp.equal e3 Exp.zero) then []
            else [e3]
          else [e2; e3]
      | Sil.Hpointsto (_, _, _)

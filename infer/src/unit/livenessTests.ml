@@ -28,7 +28,7 @@ let tests =
     Exp.Closure closure in
   let unknown_cond =
     (* don't want to use AnalyzerTest.unknown_exp because we'll treat it as a live var! *)
-    Sil.exp_zero in
+    Exp.zero in
   let test_list = [
     "basic_live",
     [

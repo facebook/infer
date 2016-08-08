@@ -98,7 +98,7 @@ module Match = struct
     Hashtbl.iter pp_item env
 
   let exp_match env ae value = match ae, value with
-    | CodeQueryAst.Null, Vval e -> Exp.equal e Sil.exp_zero
+    | CodeQueryAst.Null, Vval e -> Exp.equal e Exp.zero
     | CodeQueryAst.Null, _ -> false
     | CodeQueryAst.ConstString s, (Vfun pn) -> string_contains s (Procname.to_string pn)
     | CodeQueryAst.ConstString _, _ -> false

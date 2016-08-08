@@ -199,7 +199,7 @@ let callback_check_write_to_parcel_java
   let is_write_to_parcel this_expr this_type =
     let method_match () =
       Procname.java_get_method pname_java = "writeToParcel" in
-    let expr_match () = Sil.exp_is_this this_expr in
+    let expr_match () = Exp.is_this this_expr in
     let type_match () =
       let class_name =
         Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "android.os.Parcelable") in

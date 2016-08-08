@@ -24,7 +24,7 @@ let extract_item_from_singleton l warning_string failure_val =
   | [item] -> item
   | _ -> Printing.log_err "%s" warning_string; failure_val
 
-let dummy_exp = (Sil.exp_minus_one, Typ.Tint Typ.IInt)
+let dummy_exp = (Exp.minus_one, Typ.Tint Typ.IInt)
 
 (* Extract the element of a singleton list. If the list is not a singleton *)
 (* Gives a warning and return -1 as standard value indicating something    *)
@@ -61,9 +61,9 @@ struct
         "\nWARNING: Missing expression for Conditional operator. Need to be fixed" in
     let e_cond'' =
       if branch then
-        Exp.BinOp(Binop.Ne, e_cond', Sil.exp_zero)
+        Exp.BinOp(Binop.Ne, e_cond', Exp.zero)
       else
-        Exp.BinOp(Binop.Eq, e_cond', Sil.exp_zero) in
+        Exp.BinOp(Binop.Eq, e_cond', Exp.zero) in
     let instrs_cond'= instrs_cond @ [Sil.Prune(e_cond'', loc, branch, ik)] in
     create_node (prune_kind branch) instrs_cond' loc context
 
@@ -449,7 +449,7 @@ let trans_assertion_failure sil_loc context =
   { empty_res_trans with root_nodes = [failure_node]; }
 
 let trans_assume_false sil_loc context succ_nodes =
-  let instrs_cond = [Sil.Prune (Sil.exp_zero, sil_loc, true, Sil.Ik_land_lor)] in
+  let instrs_cond = [Sil.Prune (Exp.zero, sil_loc, true, Sil.Ik_land_lor)] in
   let prune_node = Nodes.create_node (Nodes.prune_kind true) instrs_cond sil_loc context in
   Cfg.Node.set_succs_exn context.CContext.cfg prune_node succ_nodes [];
   { empty_res_trans with root_nodes = [prune_node]; leaf_nodes = [prune_node] }

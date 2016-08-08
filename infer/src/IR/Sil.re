@@ -312,22 +312,6 @@ let is_static_local_name pname pvar =>
     }
   };
 
-let exp_is_zero =
-  fun
-  | Exp.Const (Cint n) => IntLit.iszero n
-  | _ => false;
-
-let exp_is_null_literal =
-  fun
-  | Exp.Const (Cint n) => IntLit.isnull n
-  | _ => false;
-
-let exp_is_this =
-  fun
-  | Exp.Lvar pvar => Pvar.is_this pvar
-  | _ => false;
-
-
 let path_pos_compare (pn1, nid1) (pn2, nid2) => {
   let n = Procname.compare pn1 pn2;
   if (n != 0) {
@@ -510,19 +494,11 @@ let attribute_compare (att1: attribute) (att2: attribute) :int =>
   | (_, Aunsubscribed_observer) => 1
   };
 
-let rec exp_is_array_index_of exp1 exp2 =>
-  switch exp1 {
-  | Exp.Lindex exp _ => exp_is_array_index_of exp exp2
-  | _ => Exp.equal exp1 exp2
-  };
-
 let ident_exp_compare = pair_compare Ident.compare Exp.compare;
 
 let ident_exp_equal ide1 ide2 => ident_exp_compare ide1 ide2 == 0;
 
 let exp_list_compare = IList.compare Exp.compare;
-
-let exp_list_equal el1 el2 => exp_list_compare el1 el2 == 0;
 
 let attribute_equal att1 att2 => attribute_compare att1 att2 == 0;
 
@@ -1795,101 +1771,6 @@ let hpred_list_get_lexps (filter: Exp.t => bool) (hlist: list hpred) :list Exp.t
 };
 
 
-/** {2 Utility Functions for Expressions} */
-/** Turn an expression representing a type into the type it represents
-    If not a sizeof, return the default type if given, otherwise raise an exception */
-let texp_to_typ default_opt =>
-  fun
-  | Exp.Sizeof t _ _ => t
-  | _ => Typ.unsome "texp_to_typ" default_opt;
-
-
-/** Return the root of [lexp]. */
-let rec root_of_lexp lexp =>
-  switch (lexp: Exp.t) {
-  | Var _ => lexp
-  | Const _ => lexp
-  | Cast _ e => root_of_lexp e
-  | UnOp _
-  | BinOp _
-  | Exn _
-  | Closure _ => lexp
-  | Lvar _ => lexp
-  | Lfield e _ _ => root_of_lexp e
-  | Lindex e _ => root_of_lexp e
-  | Sizeof _ => lexp
-  };
-
-
-/** Checks whether an expression denotes a location by pointer arithmetic.
-    Currently, catches array - indexing expressions such as a[i] only. */
-let rec exp_pointer_arith =
-  fun
-  | Exp.Lfield e _ _ => exp_pointer_arith e
-  | Exp.Lindex _ => true
-  | _ => false;
-
-let exp_get_undefined footprint =>
-  Exp.Var (
-    Ident.create_fresh (
-      if footprint {
-        Ident.kfootprint
-      } else {
-        Ident.kprimed
-      }
-    )
-  );
-
-
-/** Create integer constant */
-let exp_int i => Exp.Const (Cint i);
-
-
-/** Create float constant */
-let exp_float v => Exp.Const (Cfloat v);
-
-
-/** Integer constant 0 */
-let exp_zero = exp_int IntLit.zero;
-
-
-/** Null constant */
-let exp_null = exp_int IntLit.null;
-
-
-/** Integer constant 1 */
-let exp_one = exp_int IntLit.one;
-
-
-/** Integer constant -1 */
-let exp_minus_one = exp_int IntLit.minus_one;
-
-
-/** Create integer constant corresponding to the boolean value */
-let exp_bool b =>
-  if b {
-    exp_one
-  } else {
-    exp_zero
-  };
-
-
-/** Create expresstion [e1 == e2] */
-let exp_eq e1 e2 => Exp.BinOp Eq e1 e2;
-
-
-/** Create expresstion [e1 != e2] */
-let exp_ne e1 e2 => Exp.BinOp Ne e1 e2;
-
-
-/** Create expression [e1 <= e2] */
-let exp_le e1 e2 => Exp.BinOp Le e1 e2;
-
-
-/** Create expression [e1 < e2] */
-let exp_lt e1 e2 => Exp.BinOp Lt e1 e2;
-
-
 /** {2 Functions for computing program variables} */
 let rec exp_fpv e =>
   switch (e: Exp.t) {
@@ -3141,33 +3022,6 @@ let hpred_compact sh hpred =>
 
 
 /** {2 Functions for constructing or destructing entities in this module} */
-/** Extract the ids and pvars from an expression */
-let exp_get_vars exp => {
-  let rec exp_get_vars_ exp vars =>
-    switch (exp: Exp.t) {
-    | Lvar pvar => (fst vars, [pvar, ...snd vars])
-    | Var id => ([id, ...fst vars], snd vars)
-    | Cast _ e
-    | UnOp _ e _
-    | Lfield e _ _
-    | Exn e => exp_get_vars_ e vars
-    | BinOp _ e1 e2
-    | Lindex e1 e2 => exp_get_vars_ e1 vars |> exp_get_vars_ e2
-    | Closure {captured_vars} =>
-      IList.fold_left
-        (fun vars_acc (captured_exp, _, _) => exp_get_vars_ captured_exp vars_acc)
-        vars
-        captured_vars
-    | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _) => vars
-    /* TODO: Sizeof length expressions may contain variables, do not ignore them. */
-    /* | Sizeof _ None _ => vars */
-    /* | Sizeof _ (Some l) _ => exp_get_vars_ l vars */
-    | Sizeof _ _ _ => vars
-    };
-  exp_get_vars_ exp ([], [])
-};
-
-
 /** Compute the offset list of an expression */
 let exp_get_offsets exp => {
   let rec f offlist_past e =>
