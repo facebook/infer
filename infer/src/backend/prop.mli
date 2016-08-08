@@ -501,23 +501,23 @@ val prop_iter_gc_fields : unit prop_iter -> unit prop_iter
 val find_equal_formal_path : Exp.t -> 'a t -> Exp.t option
 
 (** return the set of subexpressions of [strexp] *)
-val strexp_get_exps : Sil.strexp -> Sil.ExpSet.t
+val strexp_get_exps : Sil.strexp -> Exp.Set.t
 
 (** get the set of expressions on the righthand side of [hpred] *)
-val hpred_get_targets : Sil.hpred -> Sil.ExpSet.t
+val hpred_get_targets : Sil.hpred -> Exp.Set.t
 
 (** return the set of hpred's and exp's in [sigma] that are reachable from an expression in
     [exps] *)
-val compute_reachable_hpreds : hpred list -> Sil.ExpSet.t -> Sil.HpredSet.t * Sil.ExpSet.t
+val compute_reachable_hpreds : hpred list -> Exp.Set.t -> Sil.HpredSet.t * Exp.Set.t
 
 
 (** if possible, produce a (fieldname, typ) path from one of the [src_exps] to [snk_exp] using
     [reachable_hpreds]. *)
-val get_fld_typ_path_opt : Sil.ExpSet.t -> Exp.t -> Sil.HpredSet.t ->
+val get_fld_typ_path_opt : Exp.Set.t -> Exp.t -> Sil.HpredSet.t ->
   (Ident.fieldname option * Typ.t) list option
 
 (** filter [pi] by removing the pure atoms that do not contain an expression in [exps] *)
-val compute_reachable_atoms : pi -> Sil.ExpSet.t -> pi
+val compute_reachable_atoms : pi -> Exp.Set.t -> pi
 
 (** {2 Internal modules} *)
 

@@ -23,7 +23,7 @@ let merge_values _ c1_opt c2_opt =
   | None, Some c -> Some c
   | _ -> Some None
 
-module ConstantMap = Sil.ExpMap
+module ConstantMap = Exp.Map
 
 (** Dataflow struct *)
 module ConstantFlow = Dataflow.MakeDF(struct

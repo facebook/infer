@@ -114,7 +114,7 @@ end = struct
   let lookup_equiv' tbl e =
     lookup' tbl e e
   let lookup_const' tbl e =
-    lookup' tbl e Sil.ExpSet.empty
+    lookup' tbl e Exp.Set.empty
 
   let rec find' tbl e =
     let e' = lookup_equiv' tbl e in
@@ -138,15 +138,15 @@ end = struct
       | _ -> r2, r1 in
     let new_c = lookup_const' const_tbl new_r in
     let old_c = lookup_const' const_tbl old_r in
-    let res_c = Sil.ExpSet.union new_c old_c in
-    if Sil.ExpSet.cardinal res_c > 1 then (L.d_strln "failure reason 3"; raise IList.Fail);
+    let res_c = Exp.Set.union new_c old_c in
+    if Exp.Set.cardinal res_c > 1 then (L.d_strln "failure reason 3"; raise IList.Fail);
     Hashtbl.replace tbl old_r new_r;
     Hashtbl.replace const_tbl new_r res_c
 
   let replace_const' tbl const_tbl e c =
     let r = find' tbl e in
-    let set = Sil.ExpSet.add c (lookup_const' const_tbl r) in
-    if Sil.ExpSet.cardinal set > 1 then (L.d_strln "failure reason 4"; raise IList.Fail);
+    let set = Exp.Set.add c (lookup_const' const_tbl r) in
+    if Exp.Set.cardinal set > 1 then (L.d_strln "failure reason 4"; raise IList.Fail);
     Hashtbl.replace const_tbl r set
 
   let add side e e' =
@@ -189,7 +189,7 @@ end = struct
           let r = find' tbl v in
           let set = lookup_const' const_tbl r in
           (IList.for_all (fun v' -> Exp.equal (find' tbl v') r) vars') &&
-          (IList.for_all (fun c -> Sil.ExpSet.mem c set) nonvars)
+          (IList.for_all (fun c -> Exp.Set.mem c set) nonvars)
 
 end
 
@@ -211,18 +211,18 @@ module Dangling : sig
 
 end = struct
 
-  let lexps1 = ref Sil.ExpSet.empty
-  let lexps2 = ref Sil.ExpSet.empty
+  let lexps1 = ref Exp.Set.empty
+  let lexps2 = ref Exp.Set.empty
 
   let get_lexp_set' sigma =
     let lexp_lst = Sil.hpred_list_get_lexps (fun _ -> true) sigma in
-    IList.fold_left (fun set e -> Sil.ExpSet.add e set) Sil.ExpSet.empty lexp_lst
+    IList.fold_left (fun set e -> Exp.Set.add e set) Exp.Set.empty lexp_lst
   let init sigma1 sigma2 =
     lexps1 := get_lexp_set' sigma1;
     lexps2 := get_lexp_set' sigma2
   let final () =
-    lexps1 := Sil.ExpSet.empty;
-    lexps2 := Sil.ExpSet.empty
+    lexps1 := Exp.Set.empty;
+    lexps2 := Exp.Set.empty
 
   (* conservatively checks whether e is dangling *)
   let check side e =
@@ -232,9 +232,9 @@ end = struct
       | Rhs -> !lexps2
     in
     match e with
-    | Exp.Var id -> can_rename id && not (Sil.ExpSet.mem e lexps)
-    | Exp.Const _ -> not (Sil.ExpSet.mem e lexps)
-    | Exp.BinOp _ -> not (Sil.ExpSet.mem e lexps)
+    | Exp.Var id -> can_rename id && not (Exp.Set.mem e lexps)
+    | Exp.Const _ -> not (Exp.Set.mem e lexps)
+    | Exp.BinOp _ -> not (Exp.Set.mem e lexps)
     | _ -> false
 end
 
@@ -352,8 +352,8 @@ end
 
 module CheckMeet : InfoLossCheckerSig = struct
 
-  let lexps1 = ref Sil.ExpSet.empty
-  let lexps2 = ref Sil.ExpSet.empty
+  let lexps1 = ref Exp.Set.empty
+  let lexps2 = ref Exp.Set.empty
 
   let init sigma1 sigma2 =
     let lexps1_lst = Sil.hpred_list_get_lexps (fun _ -> true) sigma1 in
@@ -362,8 +362,8 @@ module CheckMeet : InfoLossCheckerSig = struct
     lexps2 := Sil.elist_to_eset lexps2_lst
 
   let final () =
-    lexps1 := Sil.ExpSet.empty;
-    lexps2 := Sil.ExpSet.empty
+    lexps1 := Exp.Set.empty;
+    lexps2 := Exp.Set.empty
 
   let lost_little side e es =
     let lexps = match side with
@@ -376,7 +376,7 @@ module CheckMeet : InfoLossCheckerSig = struct
     | [Exp.Const _], Exp.Lvar _ ->
         false
     | [Exp.Const _], Exp.Var _ ->
-        not (Sil.ExpSet.mem e lexps)
+        not (Exp.Set.mem e lexps)
     | [Exp.Const _], _ ->
         assert false
     | [_], Exp.Lvar _ | [_], Exp.Var _ ->

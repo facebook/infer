@@ -342,24 +342,24 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
     | _ ->
         false in
 
-  let checks_to_formals = ref Sil.ExpSet.empty in
+  let checks_to_formals = ref Exp.Set.empty in
 
   let handle_check_of_formal e =
-    let repeated = Sil.ExpSet.mem e !checks_to_formals in
+    let repeated = Exp.Set.mem e !checks_to_formals in
     if repeated && !verbose then L.stdout "Repeated Null Check of Formal: %a@." (Sil.pp_exp pe_text) e
     else begin
-      checks_to_formals := Sil.ExpSet.add e !checks_to_formals;
+      checks_to_formals := Exp.Set.add e !checks_to_formals;
       if !verbose then L.stdout "Null Check of Formal: %a@." (Sil.pp_exp pe_text) e
     end in
 
   let summary_checks_of_formals () =
     let formal_names = Lazy.force class_formal_names in
-    let nchecks = Sil.ExpSet.cardinal !checks_to_formals in
+    let nchecks = Exp.Set.cardinal !checks_to_formals in
     let nformals = IList.length formal_names in
     if (nchecks > 0 && nchecks < nformals) then
       begin
         let was_not_found formal_name =
-          not (Sil.ExpSet.exists (fun exp -> equal_formal_param exp formal_name) !checks_to_formals) in
+          not (Exp.Set.exists (fun exp -> equal_formal_param exp formal_name) !checks_to_formals) in
         let missing = IList.filter was_not_found formal_names in
         let loc = Cfg.Procdesc.get_loc proc_desc in
         let pp_file_loc fmt () =

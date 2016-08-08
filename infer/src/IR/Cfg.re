@@ -87,7 +87,7 @@ let module Node = {
     let pdescs_eq pd1 pd2 =>
       /* map of exp names in pd1 -> exp names in pd2 */
       {
-        let exp_map = ref Sil.ExpMap.empty;
+        let exp_map = ref Exp.Map.empty;
         /* map of node id's in pd1 -> node id's in pd2 */
         let id_map = ref IntMap.empty;
         /* formals are the same if their types are the same */
@@ -906,8 +906,8 @@ let remove_abducted_retvars p =>
       let (sigma, pi) = (Prop.get_sigma p, Prop.get_pi p);
       let rec collect_exps exps =>
         fun
-        | Sil.Eexp (Exp.Exn e) _ => Sil.ExpSet.add e exps
-        | Sil.Eexp e _ => Sil.ExpSet.add e exps
+        | Sil.Eexp (Exp.Exn e) _ => Exp.Set.add e exps
+        | Sil.Eexp e _ => Exp.Set.add e exps
         | Sil.Estruct flds _ =>
           IList.fold_left (fun exps (_, strexp) => collect_exps exps strexp) exps flds
         | Sil.Earray _ elems _ =>
@@ -915,7 +915,7 @@ let remove_abducted_retvars p =>
       let rec compute_reachable_hpreds_rec sigma (reach, exps) => {
         let add_hpred_if_reachable (reach, exps) =>
           fun
-          | Sil.Hpointsto lhs rhs _ as hpred when Sil.ExpSet.mem lhs exps => {
+          | Sil.Hpointsto lhs rhs _ as hpred when Exp.Set.mem lhs exps => {
               let reach' = Sil.HpredSet.add hpred reach;
               let exps' = collect_exps exps rhs;
               (reach', exps')
@@ -924,14 +924,14 @@ let remove_abducted_retvars p =>
               let reach' = Sil.HpredSet.add hpred reach;
               let exps' =
                 IList.fold_left
-                  (fun exps_acc exp => Sil.ExpSet.add exp exps_acc) exps [exp1, exp2, ...exp_l];
+                  (fun exps_acc exp => Exp.Set.add exp exps_acc) exps [exp1, exp2, ...exp_l];
               (reach', exps')
             }
           | Sil.Hdllseg _ _ exp1 exp2 exp3 exp4 exp_l as hpred => {
               let reach' = Sil.HpredSet.add hpred reach;
               let exps' =
                 IList.fold_left
-                  (fun exps_acc exp => Sil.ExpSet.add exp exps_acc)
+                  (fun exps_acc exp => Exp.Set.add exp exps_acc)
                   exps
                   [exp1, exp2, exp3, exp4, ...exp_l];
               (reach', exps')
@@ -950,7 +950,7 @@ let remove_abducted_retvars p =>
       let reach_pi = {
         let rec exp_contains =
           fun
-          | exp when Sil.ExpSet.mem exp reach_exps => true
+          | exp when Exp.Set.mem exp reach_exps => true
           | Exp.UnOp _ e _
           | Exp.Cast _ e
           | Exp.Lfield e _ _ => exp_contains e
@@ -990,8 +990,8 @@ let remove_abducted_retvars p =>
     let (_, p') = Prop.deallocate_stack_vars p abducteds;
     let normal_pvar_set =
       IList.fold_left
-        (fun normal_pvar_set pvar => Sil.ExpSet.add (Exp.Lvar pvar) normal_pvar_set)
-        Sil.ExpSet.empty
+        (fun normal_pvar_set pvar => Exp.Set.add (Exp.Lvar pvar) normal_pvar_set)
+        Exp.Set.empty
         normal_pvars;
     /* walk forward from non-abducted pvars, keep everything reachable. remove everything else */
     let (sigma_reach, pi_reach) = compute_reachable p' normal_pvar_set;

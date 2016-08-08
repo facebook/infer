@@ -167,3 +167,21 @@ let rec compare e1 e2 =>
   };
 
 let equal e1 e2 => compare e1 e2 == 0;
+
+let hash = Hashtbl.hash;
+
+let module Set = Set.Make {
+  type nonrec t = t;
+  let compare = compare;
+};
+
+let module Map = Map.Make {
+  type nonrec t = t;
+  let compare = compare;
+};
+
+let module Hash = Hashtbl.Make {
+  type nonrec t = t;
+  let equal = equal;
+  let hash = hash;
+};

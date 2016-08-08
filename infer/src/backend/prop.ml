@@ -1538,32 +1538,32 @@ let prop_sigma_star (p : 'a t) (sigma : sigma) : exposed t =
 (** return the set of subexpressions of [strexp] *)
 let strexp_get_exps strexp =
   let rec strexp_get_exps_rec exps = function
-    | Sil.Eexp (Exp.Exn e, _) -> Sil.ExpSet.add e exps
-    | Sil.Eexp (e, _) -> Sil.ExpSet.add e exps
+    | Sil.Eexp (Exp.Exn e, _) -> Exp.Set.add e exps
+    | Sil.Eexp (e, _) -> Exp.Set.add e exps
     | Sil.Estruct (flds, _) ->
         IList.fold_left (fun exps (_, strexp) -> strexp_get_exps_rec exps strexp) exps flds
     | Sil.Earray (_, elems, _) ->
         IList.fold_left (fun exps (_, strexp) -> strexp_get_exps_rec exps strexp) exps elems in
-  strexp_get_exps_rec Sil.ExpSet.empty strexp
+  strexp_get_exps_rec Exp.Set.empty strexp
 
 (** get the set of expressions on the righthand side of [hpred] *)
 let hpred_get_targets = function
   | Sil.Hpointsto (_, rhs, _) -> strexp_get_exps rhs
   | Sil.Hlseg (_, _, _, e, el) ->
-      IList.fold_left (fun exps e -> Sil.ExpSet.add e exps) Sil.ExpSet.empty (e :: el)
+      IList.fold_left (fun exps e -> Exp.Set.add e exps) Exp.Set.empty (e :: el)
   | Sil.Hdllseg (_, _, _, oB, oF, iB, el) ->
       (* only one direction supported for now *)
-      IList.fold_left (fun exps e -> Sil.ExpSet.add e exps) Sil.ExpSet.empty (oB :: oF :: iB :: el)
+      IList.fold_left (fun exps e -> Exp.Set.add e exps) Exp.Set.empty (oB :: oF :: iB :: el)
 
 (** return the set of hpred's and exp's in [sigma] that are reachable from an expression in
     [exps] *)
 let compute_reachable_hpreds sigma exps =
   let rec compute_reachable_hpreds_rec sigma (reach, exps) =
     let add_hpred_if_reachable (reach, exps) = function
-      | Sil.Hpointsto (lhs, _, _) as hpred when Sil.ExpSet.mem lhs exps->
+      | Sil.Hpointsto (lhs, _, _) as hpred when Exp.Set.mem lhs exps->
           let reach' = Sil.HpredSet.add hpred reach in
           let reach_exps = hpred_get_targets hpred in
-          (reach', Sil.ExpSet.union exps reach_exps)
+          (reach', Exp.Set.union exps reach_exps)
       | _ -> reach, exps in
     let reach', exps' = IList.fold_left add_hpred_if_reachable (reach, exps) sigma in
     if (Sil.HpredSet.cardinal reach) = (Sil.HpredSet.cardinal reach') then (reach, exps)
@@ -1595,7 +1595,7 @@ let get_fld_typ_path_opt src_exps snk_exp_ reachable_hpreds_ =
   let rec get_fld_typ_path snk_exp path reachable_hpreds =
     let (snk_exp', path', reachable_hpreds') =
       Sil.HpredSet.fold extend_path reachable_hpreds (snk_exp, path, reachable_hpreds) in
-    if Sil.ExpSet.mem snk_exp' src_exps
+    if Exp.Set.mem snk_exp' src_exps
     then Some path'
     else
     if Sil.HpredSet.cardinal reachable_hpreds' >= Sil.HpredSet.cardinal reachable_hpreds
@@ -1606,7 +1606,7 @@ let get_fld_typ_path_opt src_exps snk_exp_ reachable_hpreds_ =
 (** filter [pi] by removing the pure atoms that do not contain an expression in [exps] *)
 let compute_reachable_atoms pi exps =
   let rec exp_contains = function
-    | exp when Sil.ExpSet.mem exp exps -> true
+    | exp when Exp.Set.mem exp exps -> true
     | Exp.UnOp (_, e, _) | Exp.Cast (_, e) | Exp.Lfield (e, _, _) -> exp_contains e
     | Exp.BinOp (_, e0, e1) | Exp.Lindex (e0, e1) -> exp_contains e0 || exp_contains e1
     | _ -> false in
@@ -1629,12 +1629,12 @@ let sigma_remove_emptylseg sigma =
       | [] ->
           set
       | Sil.Hpointsto (e, _, _) :: sigma' | Sil.Hlseg (Sil.Lseg_NE, _, e, _, _) :: sigma' ->
-          f_alloc (Sil.ExpSet.add e set) sigma'
+          f_alloc (Exp.Set.add e set) sigma'
       | Sil.Hdllseg (Sil.Lseg_NE, _, iF, _, _, iB, _) :: sigma' ->
-          f_alloc (Sil.ExpSet.add iF (Sil.ExpSet.add iB set)) sigma'
+          f_alloc (Exp.Set.add iF (Exp.Set.add iB set)) sigma'
       | _ :: sigma' ->
           f_alloc set sigma' in
-    f_alloc Sil.ExpSet.empty sigma
+    f_alloc Exp.Set.empty sigma
   in
   let rec f eqs_zero sigma_passed = function
     | [] ->
@@ -1642,13 +1642,13 @@ let sigma_remove_emptylseg sigma =
     | Sil.Hpointsto _ as hpred :: sigma' ->
         f eqs_zero (hpred :: sigma_passed) sigma'
     | Sil.Hlseg (Sil.Lseg_PE, _, e1, e2, _) :: sigma'
-      when (Exp.equal e1 Sil.exp_zero) || (Sil.ExpSet.mem e1 alloc_set) ->
+      when (Exp.equal e1 Sil.exp_zero) || (Exp.Set.mem e1 alloc_set) ->
         f (Sil.Aeq(e1, e2) :: eqs_zero) sigma_passed sigma'
     | Sil.Hlseg _ as hpred :: sigma' ->
         f eqs_zero (hpred :: sigma_passed) sigma'
     | Sil.Hdllseg (Sil.Lseg_PE, _, iF, oB, oF, iB, _) :: sigma'
-      when (Exp.equal iF Sil.exp_zero) || (Sil.ExpSet.mem iF alloc_set)
-           || (Exp.equal iB Sil.exp_zero) || (Sil.ExpSet.mem iB alloc_set) ->
+      when (Exp.equal iF Sil.exp_zero) || (Exp.Set.mem iF alloc_set)
+           || (Exp.equal iB Sil.exp_zero) || (Exp.Set.mem iB alloc_set) ->
         f (Sil.Aeq(iF, oF):: Sil.Aeq(iB, oB):: eqs_zero) sigma_passed sigma'
     | Sil.Hdllseg _ as hpred :: sigma' ->
         f eqs_zero (hpred :: sigma_passed) sigma'
@@ -2897,31 +2897,6 @@ end = struct
   let prop_chain_size p =
     let fp_size = pi_size p.foot_pi + sigma_size p.foot_sigma in
     pi_size p.pi + sigma_size p.sigma + fp_size
-
-(*
-  (** Approximate the size of the longest chain by counting the max
-      number of |-> with the same type and whose lhs is primed or
-      footprint *)
-  let sigma_chain_size sigma =
-    let tbl = ref Sil.ExpMap.empty in
-    let add t =
-      try
-        let count = Sil.ExpMap.find t !tbl in
-        tbl := Sil.ExpMap.add t (count + 1) !tbl
-      with
-      | Not_found ->
-          tbl := Sil.ExpMap.add t 1 !tbl in
-    let process_hpred = function
-      | Sil.Hpointsto (e, _, te) ->
-          (match e with
-           | Exp.Var id when Ident.is_primed id || Ident.is_footprint id -> add te
-           | _ -> ())
-      | Sil.Hlseg _ | Sil.Hdllseg _ -> () in
-    IList.iter process_hpred sigma;
-    let size = ref 0 in
-    Sil.ExpMap.iter (fun t n -> size := max n !size) !tbl;
-    !size
-*)
 end
 (*** END of module Metrics ***)
 

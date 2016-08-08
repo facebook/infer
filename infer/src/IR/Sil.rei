@@ -103,20 +103,8 @@ type attribute =
   | Aunsubscribed_observer;
 
 
-/** Sets of expressions. */
-let module ExpSet: Set.S with type elt = Exp.t;
-
-
-/** Maps with expression keys. */
-let module ExpMap: Map.S with type key = Exp.t;
-
-
-/** Hashtable with expressions as keys. */
-let module ExpHash: Hashtbl.S with type key = Exp.t;
-
-
 /** Convert expression lists to expression sets. */
-let elist_to_eset: list Exp.t => ExpSet.t;
+let elist_to_eset: list Exp.t => Exp.Set.t;
 
 
 /** Kind of prune instruction */
@@ -415,7 +403,7 @@ let instr_compare: instr => instr => int;
 /** compare instructions from different procedures without considering loc's, ident's, and pvar's.
     the [exp_map] param gives a mapping of names used in the procedure of [instr1] to identifiers
     used in the procedure of [instr2] */
-let instr_compare_structural: instr => instr => ExpMap.t Exp.t => (int, ExpMap.t Exp.t);
+let instr_compare_structural: instr => instr => Exp.Map.t Exp.t => (int, Exp.Map.t Exp.t);
 
 let exp_list_compare: list Exp.t => list Exp.t => int;
 

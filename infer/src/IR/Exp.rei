@@ -58,3 +58,19 @@ let compare: t => t => int;
 
 /** Equality for expressions. */
 let equal: t => t => bool;
+
+
+/** Hash function for expressions. */
+let hash: t => int;
+
+
+/** Set of expressions. */
+let module Set: Set.S with type elt = t;
+
+
+/** Map with expression keys. */
+let module Map: Map.S with type key = t;
+
+
+/** Hashtable with expression keys. */
+let module Hash: Hashtbl.S with type key = t;

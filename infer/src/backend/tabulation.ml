@@ -938,18 +938,18 @@ let do_taint_check caller_pname callee_pname calling_prop missing_pi sub actual_
   let collect_taint_untaint_exprs acc_map atom =
     match Prop.atom_get_attribute atom with
     | Some (Apred (Ataint _, [e])) ->
-        let taint_atoms, untaint_atoms = try Sil.ExpMap.find e acc_map with Not_found -> ([], []) in
-        Sil.ExpMap.add e (atom :: taint_atoms, untaint_atoms) acc_map
+        let taint_atoms, untaint_atoms = try Exp.Map.find e acc_map with Not_found -> ([], []) in
+        Exp.Map.add e (atom :: taint_atoms, untaint_atoms) acc_map
     | Some (Apred (Auntaint _, [e])) ->
-        let taint_atoms, untaint_atoms = try Sil.ExpMap.find e acc_map with Not_found -> ([], []) in
-        Sil.ExpMap.add e (taint_atoms, atom :: untaint_atoms) acc_map
+        let taint_atoms, untaint_atoms = try Exp.Map.find e acc_map with Not_found -> ([], []) in
+        Exp.Map.add e (taint_atoms, atom :: untaint_atoms) acc_map
     | _ -> acc_map in
   let taint_untaint_exp_map =
     IList.fold_left
       collect_taint_untaint_exprs
-      Sil.ExpMap.empty
+      Exp.Map.empty
       combined_pi
-    |> Sil.ExpMap.filter (fun _ (taint, untaint) -> taint <> []  && untaint <> []) in
+    |> Exp.Map.filter (fun _ (taint, untaint) -> taint <> []  && untaint <> []) in
   (* TODO: in the future, we will have a richer taint domain that will require making sure that the
      "kind" (e.g. security, privacy) of the taint and untaint match, but for now we don't look at
      the untaint atoms *)
@@ -960,7 +960,7 @@ let do_taint_check caller_pname callee_pname calling_prop missing_pi sub actual_
         | _ -> failwith "Expected to get taint attr on atom" in
       report_taint_error e taint_info callee_pname caller_pname calling_prop in
     IList.iter report_one_error taint_atoms in
-  Sil.ExpMap.iter report_taint_errors taint_untaint_exp_map;
+  Exp.Map.iter report_taint_errors taint_untaint_exp_map;
   (* filter out UNTAINT(e) atoms from [missing_pi] such that we have already reported a taint
      error on e. without doing this, we will get PRECONDITION_NOT_MET (and failed spec
      inference), which is bad. instead, what this does is effectively assume that the UNTAINT(e)
@@ -968,7 +968,7 @@ let do_taint_check caller_pname callee_pname calling_prop missing_pi sub actual_
      because we are reporting the taint error, but propagating a *safe* postcondition w.r.t to
      tainting. *)
   let not_untaint_atom atom = not
-      (Sil.ExpMap.exists
+      (Exp.Map.exists
          (fun _ (_, untaint_atoms) ->
             IList.exists
               (fun a -> Sil.atom_equal atom a)

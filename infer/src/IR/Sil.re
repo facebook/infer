@@ -762,17 +762,7 @@ let hpara_dll_equal hpara1 hpara2 => hpara_dll_compare hpara1 hpara2 == 0;
 
 
 /** {2 Sets of expressions} */
-let module ExpSet = Set.Make {
-  type t = Exp.t;
-  let compare = Exp.compare;
-};
-
-let module ExpMap = Map.Make {
-  type t = Exp.t;
-  let compare = Exp.compare;
-};
-
-let elist_to_eset es => IList.fold_left (fun set e => ExpSet.add e set) ExpSet.empty es;
+let elist_to_eset es => IList.fold_left (fun set e => Exp.Set.add e set) Exp.Set.empty es;
 
 
 /** {2 Sets of heap predicates} */
@@ -2823,12 +2813,12 @@ let instr_compare instr1 instr2 =>
 let rec exp_compare_structural e1 e2 exp_map => {
   let compare_exps_with_map e1 e2 exp_map =>
     try {
-      let e1_mapping = ExpMap.find e1 exp_map;
+      let e1_mapping = Exp.Map.find e1 exp_map;
       (Exp.compare e1_mapping e2, exp_map)
     } {
     | Not_found =>
       /* assume e1 and e2 equal, enforce by adding to [exp_map] */
-      (0, ExpMap.add e1 e2 exp_map)
+      (0, Exp.Map.add e1 e2 exp_map)
     };
   switch (e1: Exp.t, e2: Exp.t) {
   | (Var _, Var _) => compare_exps_with_map e1 e2 exp_map
@@ -3106,30 +3096,24 @@ let hpred_replace_exp epairs =>
 
 
 /** {2 Compaction} */
-let module ExpHash = Hashtbl.Make {
-  type t = Exp.t;
-  let equal = Exp.equal;
-  let hash = Hashtbl.hash;
-};
-
 let module HpredHash = Hashtbl.Make {
   type t = hpred;
   let equal = hpred_equal;
   let hash = Hashtbl.hash;
 };
 
-type sharing_env = {exph: ExpHash.t Exp.t, hpredh: HpredHash.t hpred};
+type sharing_env = {exph: Exp.Hash.t Exp.t, hpredh: HpredHash.t hpred};
 
 
 /** Create a sharing env to store canonical representations */
-let create_sharing_env () => {exph: ExpHash.create 3, hpredh: HpredHash.create 3};
+let create_sharing_env () => {exph: Exp.Hash.create 3, hpredh: HpredHash.create 3};
 
 
 /** Return a canonical representation of the exp */
 let exp_compact sh e =>
-  try (ExpHash.find sh.exph e) {
+  try (Exp.Hash.find sh.exph e) {
   | Not_found =>
-    ExpHash.add sh.exph e e;
+    Exp.Hash.add sh.exph e e;
     e
   };
 

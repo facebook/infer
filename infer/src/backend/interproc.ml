@@ -626,7 +626,7 @@ let report_context_leaks pname sigma tenv =
     (* raise an error if any Context expression is in [reachable_exps] *)
     IList.iter
       (fun (context_exp, struct_typ) ->
-         if Sil.ExpSet.mem context_exp reachable_exps then
+         if Exp.Set.mem context_exp reachable_exps then
            let leak_path =
              match Prop.get_fld_typ_path_opt fld_exps context_exp reachable_hpreds with
              | Some path -> path

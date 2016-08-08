@@ -290,14 +290,14 @@ end = struct
     else begin
       let umap_add umap e new_upper =
         try
-          let old_upper = Sil.ExpMap.find e umap in
-          if IntLit.leq old_upper new_upper then umap else Sil.ExpMap.add e new_upper umap
-        with Not_found -> Sil.ExpMap.add e new_upper umap in
+          let old_upper = Exp.Map.find e umap in
+          if IntLit.leq old_upper new_upper then umap else Exp.Map.add e new_upper umap
+        with Not_found -> Exp.Map.add e new_upper umap in
       let lmap_add lmap e new_lower =
         try
-          let old_lower = Sil.ExpMap.find e lmap in
-          if IntLit.geq old_lower new_lower then lmap else Sil.ExpMap.add e new_lower lmap
-        with Not_found -> Sil.ExpMap.add e new_lower lmap in
+          let old_lower = Exp.Map.find e lmap in
+          if IntLit.geq old_lower new_lower then lmap else Exp.Map.add e new_lower lmap
+        with Not_found -> Exp.Map.add e new_lower lmap in
       let rec umap_create_from_leqs umap = function
         | [] -> umap
         | (e1, Exp.Const (Const.Cint upper1)):: leqs_rest ->
@@ -315,7 +315,7 @@ end = struct
         | constr:: constrs_rest ->
             try
               let e1, e2, n = DiffConstr.to_triple constr (* e1 - e2 <= n *) in
-              let upper2 = Sil.ExpMap.find e2 umap in
+              let upper2 = Exp.Map.find e2 umap in
               let new_upper1 = upper2 ++ n in
               let new_umap = umap_add umap e1 new_upper1 in
               umap_improve_by_difference_constraints new_umap constrs_rest
@@ -326,24 +326,24 @@ end = struct
         | constr:: constrs_rest -> (* e2 - e1 > -n-1 *)
             try
               let e1, e2, n = DiffConstr.to_triple constr (* e2 - e1 > -n-1 *) in
-              let lower1 = Sil.ExpMap.find e1 lmap in
+              let lower1 = Exp.Map.find e1 lmap in
               let new_lower2 = lower1 -- n -- IntLit.one in
               let new_lmap = lmap_add lmap e2 new_lower2 in
               lmap_improve_by_difference_constraints new_lmap constrs_rest
             with Not_found ->
               lmap_improve_by_difference_constraints lmap constrs_rest in
       let leqs_res =
-        let umap = umap_create_from_leqs Sil.ExpMap.empty leqs in
+        let umap = umap_create_from_leqs Exp.Map.empty leqs in
         let umap' = umap_improve_by_difference_constraints umap diff_constraints2 in
-        let leqs' = Sil.ExpMap.fold
+        let leqs' = Exp.Map.fold
             (fun e upper acc_leqs -> (e, Sil.exp_int upper):: acc_leqs)
             umap' [] in
         let leqs'' = (IList.map DiffConstr.to_leq diff_constraints2) @ leqs' in
         leqs_sort_then_remove_redundancy leqs'' in
       let lts_res =
-        let lmap = lmap_create_from_lts Sil.ExpMap.empty lts in
+        let lmap = lmap_create_from_lts Exp.Map.empty lts in
         let lmap' = lmap_improve_by_difference_constraints lmap diff_constraints2 in
-        let lts' = Sil.ExpMap.fold
+        let lts' = Exp.Map.fold
             (fun e lower acc_lts -> (Sil.exp_int lower, e):: acc_lts)
             lmap' [] in
         let lts'' = (IList.map DiffConstr.to_lt diff_constraints2) @ lts' in

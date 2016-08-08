@@ -218,7 +218,7 @@ let rec find_boolean_assignment node pvar true_branch : Cfg.Node.t option =
 
 (** Find the Letderef instruction used to declare normal variable [id],
     and return the expression dereferenced to initialize [id] *)
-let rec _find_normal_variable_letderef (seen : Sil.ExpSet.t) node id : DExp.t option =
+let rec _find_normal_variable_letderef (seen : Exp.Set.t) node id : DExp.t option =
   let is_infer = not (Config.checkers || Config.eradicate) in
   let find_declaration node = function
     | Sil.Letderef (id0, e, _, _) when Ident.equal id id0 ->
@@ -271,11 +271,11 @@ let rec _find_normal_variable_letderef (seen : Sil.ExpSet.t) node id : DExp.t op
   res
 
 (** describe lvalue [e] as a dexp *)
-and _exp_lv_dexp (_seen : Sil.ExpSet.t) node e : DExp.t option =
-  if Sil.ExpSet.mem e _seen then
+and _exp_lv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
+  if Exp.Set.mem e _seen then
     (L.d_str "exp_lv_dexp: cycle detected"; Sil.d_exp e; L.d_ln (); None)
   else
-    let seen = Sil.ExpSet.add e _seen in
+    let seen = Exp.Set.add e _seen in
     match Prop.exp_normalize_noabs Sil.sub_empty e with
     | Exp.Const c ->
         if verbose then (L.d_str "exp_lv_dexp: constant "; Sil.d_exp e; L.d_ln ());
@@ -361,11 +361,11 @@ and _exp_lv_dexp (_seen : Sil.ExpSet.t) node e : DExp.t option =
         None
 
 (** describe rvalue [e] as a dexp *)
-and _exp_rv_dexp (_seen : Sil.ExpSet.t) node e : DExp.t option =
-  if Sil.ExpSet.mem e _seen then
+and _exp_rv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
+  if Exp.Set.mem e _seen then
     (L.d_str "exp_rv_dexp: cycle detected"; Sil.d_exp e; L.d_ln (); None)
   else
-    let seen = Sil.ExpSet.add e _seen in
+    let seen = Exp.Set.add e _seen in
     match e with
     | Exp.Const c ->
         if verbose then (L.d_str "exp_rv_dexp: constant "; Sil.d_exp e; L.d_ln ());
@@ -421,9 +421,9 @@ and _exp_rv_dexp (_seen : Sil.ExpSet.t) node e : DExp.t option =
         if verbose then (L.d_str "exp_rv_dexp: no match for  "; Sil.d_exp e; L.d_ln ());
         None
 
-let find_normal_variable_letderef = _find_normal_variable_letderef Sil.ExpSet.empty
-let exp_lv_dexp = _exp_lv_dexp Sil.ExpSet.empty
-let exp_rv_dexp = _exp_rv_dexp Sil.ExpSet.empty
+let find_normal_variable_letderef = _find_normal_variable_letderef Exp.Set.empty
+let exp_lv_dexp = _exp_lv_dexp Exp.Set.empty
+let exp_rv_dexp = _exp_rv_dexp Exp.Set.empty
 
 (** Produce a description of a mismatch between an allocation function
     and a deallocation function *)
