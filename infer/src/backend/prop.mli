@@ -160,18 +160,6 @@ val atom_const_lt_exp : Sil.atom -> (IntLit.t * Exp.t) option
 (** Negate an atom *)
 val atom_negate : Sil.atom -> Sil.atom
 
-(** type for arithmetic problems *)
-type arith_problem =
-  (* division by zero *)
-  | Div0 of Exp.t
-
-  (* unary minus of unsigned type applied to the given expression *)
-  | UminusUnsigned of Exp.t * Typ.t
-
-(** Look for an arithmetic problem in [exp] *)
-val find_arithmetic_problem :
-  PredSymb.path_pos -> normal t -> Exp.t -> arith_problem option * normal t
-
 (** Normalize [exp] using the pure part of [prop].  Later, we should
     change this such that the normalization exposes offsets of [exp]
     as much as possible. *)
@@ -280,85 +268,6 @@ val conjoin_eq : ?footprint: bool -> Exp.t -> Exp.t -> normal t -> normal t
 (** Conjoin [exp1]!=[exp2] with a symbolic heap [prop]. *)
 val conjoin_neq : ?footprint: bool -> Exp.t -> Exp.t -> normal t -> normal t
 
-module Attribute : sig
-
-  (** Check whether an atom is used to mark an attribute *)
-  val is_pred : atom -> bool
-
-  (** Add an attribute associated to the argument expressions *)
-  val add : ?footprint: bool -> ?polarity: bool -> normal t -> PredSymb.t -> Exp.t list -> normal t
-
-  (** Replace an attribute associated to the expression *)
-  val add_or_replace : normal t -> atom -> normal t
-
-  (** Replace an attribute associated to the expression, and call the given function with new and
-      old attributes if they changed. *)
-  val add_or_replace_check_changed :
-    (PredSymb.t -> PredSymb.t -> unit) -> normal t -> atom -> normal t
-
-  (** Get all the attributes of the prop *)
-  val get_all : 'a t -> atom list
-
-  (** Get the attributes associated to the expression, if any *)
-  val get_for_exp : 'a t -> Exp.t -> atom list
-
-  (** Retrieve all the atoms that contain a specific attribute *)
-  val get_for_symb : 'a t -> PredSymb.t -> Sil.atom list
-
-  (** Get the autorelease attribute associated to the expression, if any *)
-  val get_autorelease : 'a t -> Exp.t -> atom option
-
-  (** Get the div0 attribute associated to the expression, if any *)
-  val get_div0 : 'a t -> Exp.t -> atom option
-
-  (** Get the objc null attribute associated to the expression, if any *)
-  val get_objc_null : 'a t -> Exp.t -> atom option
-
-  (** Get the observer attribute associated to the expression, if any *)
-  val get_observer : 'a t -> Exp.t -> atom option
-
-  (** Get the resource attribute associated to the expression, if any *)
-  val get_resource : 'a t -> Exp.t -> atom option
-
-  (** Get the retval null attribute associated to the expression, if any *)
-  val get_retval : 'a t -> Exp.t -> atom option
-
-  (** Get the taint attribute associated to the expression, if any *)
-  val get_taint : 'a t -> Exp.t -> atom option
-
-  (** Get the undef attribute associated to the expression, if any *)
-  val get_undef : 'a t -> Exp.t -> atom option
-
-  (** Test for existence of an Adangling DAuninit attribute associated to the exp *)
-  val has_dangling_uninit : 'a t -> Exp.t -> bool
-
-  (** Remove an attribute *)
-  val remove : 'a t -> atom -> normal t
-
-  (** Remove all attributes for the given attr *)
-  val remove_for_attr : 'a t -> PredSymb.t -> normal t
-
-  (** Remove all attributes for the given resource and kind *)
-  val remove_resource : PredSymb.res_act_kind -> PredSymb.resource -> 'a t -> normal t
-
-  (** Apply f to every resource attribute in the prop *)
-  val map_resource : normal t -> (Exp.t -> PredSymb.res_action -> PredSymb.res_action) -> normal t
-
-  (** [replace_objc_null lhs rhs].
-      If rhs has the objc_null attribute, replace the attribute and set the lhs = 0 *)
-  val replace_objc_null : normal t -> Exp.t -> Exp.t -> normal t
-
-  (** For each Var subexp of the argument with an Aobjc_null attribute,
-      remove the attribute and conjoin an equality to zero. *)
-  val nullify_exp_with_objc_null : normal t -> Exp.t -> normal t
-
-  (** mark Exp.Var's or Exp.Lvar's as undefined *)
-  val mark_vars_as_undefined :
-    normal t -> Exp.t list -> Procname.t -> Typ.item_annotation -> Location.t ->
-    PredSymb.path_pos -> normal t
-
-end
-
 (** Return the sub part of [prop]. *)
 val get_sub : 'a t -> subst
 
@@ -376,10 +285,6 @@ val get_pi_footprint : 'a t -> atom list
 
 (** Return the sigma part of the footprint of [prop] *)
 val get_sigma_footprint : 'a t -> hpred list
-
-(** Deallocate the stack variables in [pvars], and replace them by normal variables.
-    Return the list of stack variables whose address was still present after deallocation. *)
-val deallocate_stack_vars : normal t -> Pvar.t list -> Pvar.t list * normal t
 
 (** Canonicalize the names of primed variables. *)
 val prop_rename_primed_footprint_vars : normal t -> normal t
@@ -505,8 +410,6 @@ val prop_iter_make_id_primed : Ident.t -> 'a prop_iter -> 'a prop_iter
 
 (** Collect garbage fields. *)
 val prop_iter_gc_fields : unit prop_iter -> unit prop_iter
-
-val find_equal_formal_path : Exp.t -> 'a t -> Exp.t option
 
 (** return the set of subexpressions of [strexp] *)
 val strexp_get_exps : Sil.strexp -> Exp.Set.t

@@ -987,7 +987,7 @@ let remove_abducted_retvars p =>
         )
         ([], [])
         (Prop.get_sigma p);
-    let (_, p') = Prop.deallocate_stack_vars p abducteds;
+    let (_, p') = Attribute.deallocate_stack_vars p abducteds;
     let normal_pvar_set =
       IList.fold_left
         (fun normal_pvar_set pvar => Exp.Set.add (Exp.Lvar pvar) normal_pvar_set)
@@ -1009,7 +1009,7 @@ let remove_locals (curr_f: Procdesc.t) p => {
       names_of_block_locals @ names_of_locals @ names_of_static_locals
     | _ => names_of_locals
     };
-  let (removed, p') = Prop.deallocate_stack_vars p names_of_locals';
+  let (removed, p') = Attribute.deallocate_stack_vars p names_of_locals';
   (
     removed,
     if Config.angelic_execution {
@@ -1023,7 +1023,7 @@ let remove_locals (curr_f: Procdesc.t) p => {
 let remove_formals (curr_f: Procdesc.t) p => {
   let pname = Procdesc.get_proc_name curr_f;
   let formal_vars = IList.map (fun (n, _) => Pvar.mk n pname) (Procdesc.get_formals curr_f);
-  Prop.deallocate_stack_vars p formal_vars
+  Attribute.deallocate_stack_vars p formal_vars
 };
 
 
@@ -1031,7 +1031,7 @@ let remove_formals (curr_f: Procdesc.t) p => {
 let remove_ret (curr_f: Procdesc.t) (p: Prop.t Prop.normal) => {
   let pname = Procdesc.get_proc_name curr_f;
   let name_of_ret = Procdesc.get_ret_var curr_f;
-  let (_, p') = Prop.deallocate_stack_vars p [Pvar.to_callee pname name_of_ret];
+  let (_, p') = Attribute.deallocate_stack_vars p [Pvar.to_callee pname name_of_ret];
   p'
 };
 

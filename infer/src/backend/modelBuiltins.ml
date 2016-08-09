@@ -137,7 +137,7 @@ let execute___print_value { Builtin.pdesc; prop_; path; args; }
 
 let is_undefined_opt prop n_lexp =
   let is_undef =
-    Option.is_some (Prop.Attribute.get_undef prop n_lexp) in
+    Option.is_some (Attribute.get_undef prop n_lexp) in
   is_undef && (Config.angelic_execution || Config.optimistic_cast)
 
 (** Creates an object in the heap with a given type, when the object is not known to be null or when
@@ -311,9 +311,9 @@ let execute___cast builtin_args
   execute___instanceof_cast ~instof:false builtin_args
 
 let set_resource_attribute prop path n_lexp loc ra_res =
-  let prop' = match Prop.Attribute.get_resource prop n_lexp with
+  let prop' = match Attribute.get_resource prop n_lexp with
     | Some (Apred (Aresource ra, _)) ->
-        Prop.Attribute.add_or_replace prop (Apred (Aresource { ra with ra_res }, [n_lexp]))
+        Attribute.add_or_replace prop (Apred (Aresource { ra with ra_res }, [n_lexp]))
     | _ ->
         let pname = PredSymb.mem_alloc_pname PredSymb.Mnew in
         let ra =
@@ -323,7 +323,7 @@ let set_resource_attribute prop path n_lexp loc ra_res =
             ra_pname = pname;
             ra_loc = loc;
             ra_vpath = None } in
-        Prop.Attribute.add_or_replace prop (Apred (Aresource ra, [n_lexp])) in
+        Attribute.add_or_replace prop (Apred (Aresource ra, [n_lexp])) in
   [(prop', path)]
 
 (** Set the attibute of the value as file *)
@@ -545,7 +545,7 @@ let execute___set_autorelease_attribute
       let prop = return_result lexp prop_ ret_ids in
       if Config.objc_memory_model_on then
         let n_lexp, prop = check_arith_norm_exp pname lexp prop in
-        let prop' = Prop.Attribute.add_or_replace prop (Apred (Aautorelease, [n_lexp])) in
+        let prop' = Attribute.add_or_replace prop (Apred (Aautorelease, [n_lexp])) in
         [(prop', path)]
       else execute___no_op prop path
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -555,8 +555,8 @@ let execute___release_autorelease_pool
     ({ Builtin.prop_; path; } as builtin_args)
   : Builtin.ret_typ =
   if Config.objc_memory_model_on then
-    let autoreleased_objects = Prop.Attribute.get_for_symb prop_ Aautorelease in
-    let prop_without_attribute = Prop.Attribute.remove_for_attr prop_ Aautorelease in
+    let autoreleased_objects = Attribute.get_for_symb prop_ Aautorelease in
+    let prop_without_attribute = Attribute.remove_for_attr prop_ Aautorelease in
     let call_release res atom =
       match res, atom with
       | ((prop', path') :: _, Sil.Apred (_, exp :: _)) ->
@@ -582,12 +582,12 @@ let execute___release_autorelease_pool
 let set_attr pdesc prop path exp attr =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let n_lexp, prop = check_arith_norm_exp pname exp prop in
-  [(Prop.Attribute.add_or_replace prop (Apred (attr, [n_lexp])), path)]
+  [(Attribute.add_or_replace prop (Apred (attr, [n_lexp])), path)]
 
 let delete_attr pdesc prop path exp attr =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let n_lexp, prop = check_arith_norm_exp pname exp prop in
-  [(Prop.Attribute.remove prop (Apred (attr, [n_lexp])), path)]
+  [(Attribute.remove prop (Apred (attr, [n_lexp])), path)]
 
 
 (** Set attibute att *)
@@ -694,7 +694,7 @@ let _execute_free mk loc acc iter =
           PredSymb.ra_vpath = None } in
       (* mark value as freed *)
       let p_res =
-        Prop.Attribute.add_or_replace_check_changed
+        Attribute.add_or_replace_check_changed
           Tabulation.check_attr_dealloc_mismatch prop (Apred (Aresource ra, [lexp])) in
       p_res :: acc
   | (Sil.Hpointsto _, _ :: _) -> assert false (* alignment error *)
@@ -796,7 +796,7 @@ let execute_alloc mk can_return_null
         PredSymb.ra_loc = loc;
         PredSymb.ra_vpath = None } in
     (* mark value as allocated *)
-    Prop.Attribute.add_or_replace prop' (Apred (Aresource ra, [exp_new])) in
+    Attribute.add_or_replace prop' (Apred (Aresource ra, [exp_new])) in
   let prop_alloc = Prop.conjoin_eq (Exp.Var ret_id) exp_new prop_plus_ptsto in
   if can_return_null then
     let prop_null = Prop.conjoin_eq (Exp.Var ret_id) Exp.zero prop in

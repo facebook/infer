@@ -746,7 +746,7 @@ let add_guarded_by_constraints prop lexp pdesc =
         (function
           | Sil.Apred (Alocked, _) -> true
           | _ -> false)
-        (Prop.Attribute.get_for_exp prop guarded_by_exp) in
+        (Attribute.get_for_exp prop guarded_by_exp) in
     let should_warn pdesc =
       (* adding this check implements "by reference" semantics for guarded-by rather than "by value"
          semantics. if this access is through a local L or field V.f
@@ -793,7 +793,7 @@ let add_guarded_by_constraints prop lexp pdesc =
           end
         else
           (* private method. add locked proof obligation to [pdesc] *)
-          Prop.Attribute.add ~footprint:true prop Alocked [guarded_by_exp]
+          Attribute.add ~footprint:true prop Alocked [guarded_by_exp]
     | _ ->
         if not (proc_has_matching_annot pdesc guarded_by_str
                 || is_synchronized_on_class guarded_by_str) && should_warn pdesc
@@ -1205,7 +1205,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
                        nullable_obj_str := Some (Procname.to_string pname);
                        true
                    | _ -> false in
-                 IList.exists is_nullable_attr (Prop.Attribute.get_for_exp prop exp) in
+                 IList.exists is_nullable_attr (Attribute.get_for_exp prop exp) in
              (* it's ok for a non-nullable local to point to deref_exp *)
              is_nullable || Pvar.is_local pvar
          | Sil.Hpointsto (_, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
@@ -1232,8 +1232,8 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
     Config.report_nullable_inconsistency && not (is_definitely_non_null root prop)
     && is_only_pt_by_nullable_fld_or_param root in
   let relevant_attributes_getters = [
-    Prop.Attribute.get_resource;
-    Prop.Attribute.get_undef;
+    Attribute.get_resource;
+    Attribute.get_undef;
   ] in
   let get_relevant_attributes exp =
     let rec fold_getters = function
