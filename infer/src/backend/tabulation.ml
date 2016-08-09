@@ -313,15 +313,15 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
     else
       (* Check if the dereferenced expr has the dangling uninitialized attribute. *)
       (* In that case it raise a dangling pointer dereferece *)
-    if Prop.has_dangling_uninit_attribute spec_pre e then
+    if Prop.Attribute.has_dangling_uninit spec_pre e then
       Some (Deref_undef_exp, desc false (Localise.deref_str_dangling (Some PredSymb.DAuninit)) )
     else if Exp.equal e_sub Exp.minus_one
     then Some (Deref_minusone, desc true (Localise.deref_str_dangling None))
-    else match Prop.get_resource_attribute actual_pre e_sub with
+    else match Prop.Attribute.get_resource actual_pre e_sub with
       | Some (Apred (Aresource ({ ra_kind = Rrelease } as ra), _)) ->
           Some (Deref_freed ra, desc true (Localise.deref_str_freed ra))
       | _ ->
-          (match Prop.get_undef_attribute actual_pre e_sub with
+          (match Prop.Attribute.get_undef actual_pre e_sub with
            | Some (Apred (Aundef (s, _, loc, pos), _)) ->
                Some (Deref_undef (s, loc, pos), desc false (Localise.deref_str_undef (s, loc)))
            | _ -> None) in
@@ -375,14 +375,14 @@ let check_path_errors_in_post caller_pname post post_path =
           let pre_opt = State.get_normalized_pre (fun _ p -> p) (* Abs.abstract_no_symop *) in
           Reporting.log_warning caller_pname ~pre: pre_opt exn
     | _ -> () in
-  IList.iter check_attr (Prop.get_all_attributes post)
+  IList.iter check_attr (Prop.Attribute.get_all post)
 
 (** Post process the instantiated post after the function call so that
     x.f |-> se becomes x |-> \{ f: se \}.
     Also, update any Aresource attributes to refer to the caller *)
 let post_process_post
     caller_pname callee_pname loc actual_pre ((post: Prop.exposed Prop.t), post_path) =
-  let actual_pre_has_freed_attribute e = match Prop.get_resource_attribute actual_pre e with
+  let actual_pre_has_freed_attribute e = match Prop.Attribute.get_resource actual_pre e with
     | Some (Apred (Aresource ({ ra_kind = Rrelease }), _)) -> true
     | _ -> false in
   let atom_update_alloc_attribute = function
@@ -599,14 +599,14 @@ let prop_copy_footprint_pure p1 p2 =
     Prop.replace_sigma_footprint
       (Prop.get_sigma_footprint p1) (Prop.replace_pi_footprint (Prop.get_pi_footprint p1) p2) in
   let pi2 = Prop.get_pi p2' in
-  let pi2_attr, pi2_noattr = IList.partition Prop.atom_is_attribute pi2 in
+  let pi2_attr, pi2_noattr = IList.partition Prop.Attribute.atom_is pi2 in
   let res_noattr = Prop.replace_pi (Prop.get_pure p1 @ pi2_noattr) p2' in
   let replace_attr prop atom = (* call replace_atom_attribute which deals with existing attibutes *)
     (* if [atom] represents an attribute [att], add the attribure to [prop] *)
-    match Prop.atom_get_attribute atom with
+    match Prop.Attribute.atom_get atom with
     | None -> prop
     | Some atom ->
-        Prop.add_or_replace_attribute_check_changed check_attr_dealloc_mismatch prop atom in
+        Prop.Attribute.add_or_replace_check_changed check_attr_dealloc_mismatch prop atom in
   IList.fold_left replace_attr (Prop.normalize res_noattr) pi2_attr
 
 (** check if an expression is an exception *)
@@ -836,7 +836,7 @@ let check_taint_on_variadic_function callee_pname caller_pname actual_params cal
       L.d_str "Paramters to be checked:  [ ";
       IList.iter(fun (e,_) ->
           L.d_str (" " ^ (Sil.exp_to_string e) ^ " ");
-          match Prop.get_taint_attribute calling_prop e with
+          match Prop.Attribute.get_taint calling_prop e with
           | Some (Apred (Ataint taint_info, _)) ->
               report_taint_error e taint_info callee_pname caller_pname calling_prop
           | _ -> ()) actual_params';
@@ -887,7 +887,7 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
               | Sil.Apred (Aretval (pname, _), [exp]) when Procname.equal callee_pname pname ->
                   Prover.check_disequal prop exp Exp.zero
               | _ -> false)
-            (Prop.get_all_attributes prop) in
+            (Prop.Attribute.get_all prop) in
         if last_call_ret_non_null then
           let returns_null prop =
             IList.exists
@@ -904,7 +904,7 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
             let taint_retval (prop, path) =
               let prop_normal = Prop.normalize prop in
               let prop' =
-                Prop.add_or_replace_attribute prop_normal
+                Prop.Attribute.add_or_replace prop_normal
                   (Apred (Ataint { taint_source = callee_pname; taint_kind; }, [Exp.Var ret_id]))
                 |> Prop.expose in
               (prop', path) in
@@ -936,7 +936,7 @@ let do_taint_check caller_pname callee_pname calling_prop missing_pi sub actual_
   (* build a map from exp -> [taint attrs, untaint attrs], keeping only exprs with both kinds of
      attrs (we will flag errors on those exprs) *)
   let collect_taint_untaint_exprs acc_map atom =
-    match Prop.atom_get_attribute atom with
+    match Prop.Attribute.atom_get atom with
     | Some (Apred (Ataint _, [e])) ->
         let taint_atoms, untaint_atoms = try Exp.Map.find e acc_map with Not_found -> ([], []) in
         Exp.Map.add e (atom :: taint_atoms, untaint_atoms) acc_map
@@ -955,7 +955,7 @@ let do_taint_check caller_pname callee_pname calling_prop missing_pi sub actual_
      the untaint atoms *)
   let report_taint_errors e (taint_atoms, _untaint_atoms) =
     let report_one_error taint_atom =
-      let taint_info = match Prop.atom_get_attribute taint_atom with
+      let taint_info = match Prop.Attribute.atom_get taint_atom with
         | Some (Apred (Ataint taint_info, _)) -> taint_info
         | _ -> failwith "Expected to get taint attr on atom" in
       report_taint_error e taint_info callee_pname caller_pname calling_prop in
@@ -1109,7 +1109,7 @@ let quantify_path_idents_remove_constant_strings (prop: Prop.normal Prop.t) : Pr
 (** Strengthen the footprint by adding pure facts from the current part *)
 let prop_pure_to_footprint (p: 'a Prop.t) : Prop.normal Prop.t =
   let is_footprint_atom_not_attribute a =
-    not (Prop.atom_is_attribute a)
+    not (Prop.Attribute.atom_is a)
     &&
     let a_fav = Sil.atom_fav a in
     Sil.fav_for_all a_fav Ident.is_footprint in
@@ -1262,7 +1262,7 @@ let exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc result
       let ret_var = Exp.Var ret_id in
       let mark_id_as_retval (p, path) =
         let att_retval = PredSymb.Aretval (callee_pname, ret_annot) in
-        Prop.set_attribute p att_retval [ret_var], path in
+        Prop.Attribute.add p att_retval [ret_var], path in
       IList.map mark_id_as_retval res
   | _ -> res
 

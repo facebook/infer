@@ -1029,11 +1029,11 @@ let cycle_has_weak_or_unretained_or_assign_field cycle =
   do_cycle cycle
 
 let check_observer_is_unsubscribed_deallocation prop e =
-  let pvar_opt = match Prop.get_resource_attribute prop e with
+  let pvar_opt = match Prop.Attribute.get_resource prop e with
     | Some (Apred (Aresource ({ ra_vpath =  Some (Dpvar pvar) }), _)) -> Some pvar
     | _ -> None in
   let loc = State.get_loc () in
-  match Prop.get_observer_attribute prop e with
+  match Prop.Attribute.get_observer prop e with
   | Some (Apred (Aobserver, _)) ->
       (match pvar_opt with
        |  Some pvar when Config.nsnotification_center_checker_backend ->
@@ -1099,12 +1099,12 @@ let check_junk ?original_prop pname tenv prop =
                 let res = ref None in
                 let do_entry e =
                   check_observer_is_unsubscribed_deallocation prop e;
-                  match Prop.get_resource_attribute prop e with
+                  match Prop.Attribute.get_resource prop e with
                   | Some (Apred (Aresource ({ ra_kind = Racquire }) as a, _)) ->
                       L.d_str "ATTRIBUTE: "; PredSymb.d_attribute a; L.d_ln ();
                       res := Some a
                   | _ ->
-                      (match Prop.get_undef_attribute prop e with
+                      (match Prop.Attribute.get_undef prop e with
                        | Some (Apred (Aundef _ as a, _)) ->
                            res := Some a
                        | _ -> ()) in

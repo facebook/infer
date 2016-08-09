@@ -109,7 +109,7 @@ let rec apply_offlist
             lookup_inst := Some inst_curr;
             let alloc_attribute_opt =
               if inst_curr = Sil.Iinitial then None
-              else Prop.get_undef_attribute p root_lexp in
+              else Prop.Attribute.get_undef p root_lexp in
             let deref_str = Localise.deref_str_uninitialized alloc_attribute_opt in
             let err_desc = Errdesc.explain_memory_access deref_str p (State.get_loc ()) in
             let exn = (Exceptions.Uninitialized_value (err_desc, __POS__)) in
@@ -484,7 +484,7 @@ let check_deallocate_static_memory prop_after =
         let freed_desc = Errdesc.explain_deallocate_constant_string s ra in
         raise (Exceptions.Deallocate_static_memory freed_desc)
     | _ -> () in
-  let exp_att_list = Prop.get_all_attributes prop_after in
+  let exp_att_list = Prop.Attribute.get_all prop_after in
   IList.iter check_deallocated_attribute exp_att_list;
   prop_after
 
@@ -731,14 +731,14 @@ let handle_objc_instance_method_call_or_skip actual_pars path callee_pname pre r
     match actual_pars with
     | (e, _) :: _
       when Exp.equal e Exp.zero ||
-           Option.is_some (Prop.get_objc_null_attribute pre e) -> true
+           Option.is_some (Prop.Attribute.get_objc_null pre e) -> true
     | _ -> false in
   let add_objc_null_attribute_or_nullify_result prop =
     match ret_ids with
     | [ret_id] -> (
         match Prop.find_equal_formal_path receiver prop with
         | Some vfs ->
-            Prop.add_or_replace_attribute prop (Apred (Aobjc_null, [Exp.Var ret_id; vfs]))
+            Prop.Attribute.add_or_replace prop (Apred (Aobjc_null, [Exp.Var ret_id; vfs]))
         | None ->
             Prop.conjoin_eq (Exp.Var ret_id) Exp.zero prop
       )
@@ -756,7 +756,7 @@ let handle_objc_instance_method_call_or_skip actual_pars path callee_pname pre r
        so that in a NPE we can separate it into a different error type *)
     [(add_objc_null_attribute_or_nullify_result pre, path)]
   else
-    let is_undef = Option.is_some (Prop.get_undef_attribute pre receiver) in
+    let is_undef = Option.is_some (Prop.Attribute.get_undef pre receiver) in
     if !Config.footprint && not is_undef then
       let res_null = (* returns: (objc_null(res) /\ receiver=0) or an empty list of results *)
         let pre_with_attr_or_null = add_objc_null_attribute_or_nullify_result pre in
@@ -843,7 +843,7 @@ let add_constraints_on_retval pdesc prop ret_exp ~has_nullable_annot typ callee_
         | Typ.Tptr _ -> Prop.conjoin_neq exp Exp.zero prop
         | _ -> prop in
     let add_tainted_post ret_exp callee_pname prop =
-      Prop.add_or_replace_attribute prop (Apred (Ataint callee_pname, [ret_exp])) in
+      Prop.Attribute.add_or_replace prop (Apred (Ataint callee_pname, [ret_exp])) in
 
     if Config.angelic_execution && not (is_rec_call callee_pname) then
       (* introduce a fresh program variable to allow abduction on the return value *)
@@ -872,7 +872,7 @@ let add_taint prop lhs_id rhs_exp pname tenv  =
     if Taint.has_taint_annotation fieldname struct_typ
     then
       let taint_info = { PredSymb.taint_source = pname; taint_kind = Tk_unknown; } in
-      Prop.add_or_replace_attribute prop (Apred (Ataint taint_info, [Exp.Var lhs_id]))
+      Prop.Attribute.add_or_replace prop (Apred (Ataint taint_info, [Exp.Var lhs_id]))
     else
       prop in
   match rhs_exp with
@@ -903,7 +903,7 @@ let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ
           let prop' = Prop.prop_iter_to_prop iter' in
           let prop'' =
             if lookup_uninitialized then
-              Prop.add_or_replace_attribute prop' (Apred (Adangling DAuninit, [Exp.Var id]))
+              Prop.Attribute.add_or_replace prop' (Apred (Adangling DAuninit, [Exp.Var id]))
             else prop' in
           let prop''' =
             if Config.taint_analysis
@@ -936,7 +936,7 @@ let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ
             match callee_opt, atom with
             | None, Sil.Apred (Aundef _, _) -> Some atom
             | _ -> callee_opt in
-          IList.fold_left fold_undef_pname None (Prop.get_attributes prop exp) in
+          IList.fold_left fold_undef_pname None (Prop.Attribute.get_for_exp prop exp) in
         let prop' =
           if Config.angelic_execution then
             (* when we try to deref an undefined value, add it to the footprint *)
@@ -985,7 +985,7 @@ let execute_set ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_exp
   try
     let n_lhs_exp, prop_' = check_arith_norm_exp pname lhs_exp prop_ in
     let n_rhs_exp, prop = check_arith_norm_exp pname rhs_exp prop_' in
-    let prop = Prop.replace_objc_null prop n_lhs_exp n_rhs_exp in
+    let prop = Prop.Attribute.replace_objc_null prop n_lhs_exp n_rhs_exp in
     let n_lhs_exp' = Prop.exp_collapse_consecutive_indices_prop typ n_lhs_exp in
     let iter_list = Rearrange.rearrange ~report_deref_errors pdesc tenv n_lhs_exp' typ prop loc in
     IList.rev (IList.fold_left (execute_set_ pdesc tenv n_rhs_exp) [] iter_list)
@@ -1045,7 +1045,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       execute_set current_pname current_pdesc tenv lhs_exp typ rhs_exp loc prop_
       |> ret_old_path
   | Sil.Prune (cond, loc, true_branch, ik) ->
-      let prop__ = Prop.nullify_exp_with_objc_null prop_ cond in
+      let prop__ = Prop.Attribute.nullify_exp_with_objc_null prop_ cond in
       let check_condition_always_true_false () =
         let report_condition_always_true_false i =
           let skip_loop = match ik with
@@ -1362,7 +1362,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
     IList.fold_left (fun p var -> havoc_actual_by_ref var p) prop actuals_by_ref
 
 and check_untainted exp taint_kind caller_pname callee_pname prop =
-  match Prop.get_taint_attribute prop exp with
+  match Prop.Attribute.get_taint prop exp with
   | Some (Apred (Ataint taint_info, _)) ->
       let err_desc =
         Errdesc.explain_tainted_value_reaching_sensitive_function
@@ -1375,12 +1375,12 @@ and check_untainted exp taint_kind caller_pname callee_pname prop =
         Exceptions.Tainted_value_reaching_sensitive_function
           (err_desc, __POS__) in
       Reporting.log_warning caller_pname exn;
-      Prop.add_or_replace_attribute prop (Apred (Auntaint taint_info, [exp]))
+      Prop.Attribute.add_or_replace prop (Apred (Auntaint taint_info, [exp]))
   | _ ->
       if !Config.footprint then
         let taint_info = { PredSymb.taint_source = callee_pname; taint_kind; } in
         (* add untained(n_lexp) to the footprint *)
-        Prop.set_attribute ~footprint:true prop (Auntaint taint_info) [exp]
+        Prop.Attribute.add ~footprint:true prop (Auntaint taint_info) [exp]
       else prop
 
 (** execute a call for an unknown or scan function *)
@@ -1391,9 +1391,9 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
     let do_exp p (e, _) =
       let do_attribute q atom =
         match atom with
-        | Sil.Apred ((Aresource {ra_res = Rfile} as res), _) -> Prop.remove_attribute q res
+        | Sil.Apred ((Aresource {ra_res = Rfile} as res), _) -> Prop.Attribute.remove_for_attr q res
         | _ -> q in
-      IList.fold_left do_attribute p (Prop.get_attributes p e) in
+      IList.fold_left do_attribute p (Prop.Attribute.get_for_exp p e) in
     let filtered_args =
       match args, instr with
       | _:: other_args, Sil.Call (_, _, _, _, { CallFlags.cf_virtual }) when cf_virtual ->
@@ -1451,7 +1451,8 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
         (fun exps_to_mark (exp, _) -> exp :: exps_to_mark) ret_exps actuals_by_ref in
     let prop_with_undef_attr =
       let path_pos = State.get_path_pos () in
-      Prop.mark_vars_as_undefined pre_final exps_to_mark callee_pname ret_annots loc path_pos in
+      Prop.Attribute.mark_vars_as_undefined
+        pre_final exps_to_mark callee_pname ret_annots loc path_pos in
     [(prop_with_undef_attr, path)]
 
 and check_variadic_sentinel
@@ -1640,7 +1641,7 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
         let map_res_action e ra = (* update the vpath in resource attributes *)
           let vpath, _ = Errdesc.vpath_find p' e in
           { ra with PredSymb.ra_vpath = vpath } in
-        Prop.attribute_map_resource p' map_res_action in
+        Prop.Attribute.map_resource p' map_res_action in
       p'', fav in
     let post_process_result fav_normal p path =
       let p' = prop_normal_to_primed fav_normal p in

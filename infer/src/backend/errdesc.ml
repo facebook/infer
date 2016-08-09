@@ -55,7 +55,7 @@ let is_special_field class_names field_name_opt field =
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
 let hpred_is_open_resource prop = function
   | Sil.Hpointsto(e, _, _) ->
-      (match Prop.get_resource_attribute prop e with
+      (match Prop.Attribute.get_resource prop e with
        | Some (Apred (Aresource { ra_kind = Racquire; ra_res = res }, _)) -> Some res
        | _ -> None)
   | _ ->
@@ -847,7 +847,7 @@ let create_dereference_desc
       match de_opt with
       | Some (DExp.Dpvar pvar)
       | Some (DExp.Dpvaraddr pvar) ->
-          (match Prop.get_objc_null_attribute prop (Exp.Lvar pvar) with
+          (match Prop.Attribute.get_objc_null prop (Exp.Lvar pvar) with
            | Some (Apred (Aobjc_null, [_; vfs])) ->
                Localise.parameter_field_not_null_checked_desc desc vfs
            | _ ->
@@ -1047,7 +1047,7 @@ let explain_dereference_as_caller_expression
         if verbose then L.d_strln ("parameter number: " ^ string_of_int position);
         explain_nth_function_parameter use_buckets deref_str actual_pre position pvar_off
       else
-      if Prop.has_dangling_uninit_attribute spec_pre exp then
+      if Prop.Attribute.has_dangling_uninit spec_pre exp then
         Localise.desc_uninitialized_dangling_pointer_deref deref_str (Pvar.to_string pv) loc
       else Localise.no_desc
   | None ->

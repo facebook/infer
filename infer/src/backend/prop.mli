@@ -280,78 +280,87 @@ val conjoin_eq : ?footprint: bool -> Exp.t -> Exp.t -> normal t -> normal t
 (** Conjoin [exp1]!=[exp2] with a symbolic heap [prop]. *)
 val conjoin_neq : ?footprint: bool -> Exp.t -> Exp.t -> normal t -> normal t
 
-(** Check whether an atom is used to mark an attribute *)
-val atom_is_attribute : atom -> bool
+module Attribute : sig
 
-(** Apply f to every resource attribute in the prop *)
-val attribute_map_resource :
-  normal t -> (Exp.t -> PredSymb.res_action -> PredSymb.res_action) -> normal t
+  (** Check whether an atom is used to mark an attribute *)
+  val atom_is : atom -> bool
 
-(** Return the exp and attribute marked in the atom if any, and return None otherwise *)
-val atom_get_attribute : atom -> atom option
+  (** Return the exp and attribute marked in the atom if any, and return None otherwise *)
+  val atom_get : atom -> atom option
 
-(** Get the attributes associated to the expression, if any *)
-val get_attributes : 'a t -> Exp.t -> atom list
+  (** Add an attribute associated to the argument expressions *)
+  val add : ?footprint: bool -> ?polarity: bool -> normal t -> PredSymb.t -> Exp.t list -> normal t
 
-(** Get the undef attribute associated to the expression, if any *)
-val get_undef_attribute : 'a t -> Exp.t -> atom option
+  (** Replace an attribute associated to the expression *)
+  val add_or_replace : normal t -> atom -> normal t
 
-(** Get the resource attribute associated to the expression, if any *)
-val get_resource_attribute : 'a t -> Exp.t -> atom option
+  (** Replace an attribute associated to the expression, and call the given function with new and
+      old attributes if they changed. *)
+  val add_or_replace_check_changed :
+    (PredSymb.t -> PredSymb.t -> unit) -> normal t -> atom -> normal t
 
-(** Get the taint attribute associated to the expression, if any *)
-val get_taint_attribute : 'a t -> Exp.t -> atom option
+  (** Get all the attributes of the prop *)
+  val get_all : 'a t -> atom list
 
-(** Get the autorelease attribute associated to the expression, if any *)
-val get_autorelease_attribute : 'a t -> Exp.t -> atom option
+  (** Get the attributes associated to the expression, if any *)
+  val get_for_exp : 'a t -> Exp.t -> atom list
 
-(** Get the div0 attribute associated to the expression, if any *)
-val get_div0_attribute : 'a t -> Exp.t -> atom option
+  (** Retrieve all the atoms that contain a specific attribute *)
+  val get_for_symb : 'a t -> PredSymb.t -> Sil.atom list
 
-(** Get the observer attribute associated to the expression, if any *)
-val get_observer_attribute : 'a t -> Exp.t -> atom option
+  (** Get the autorelease attribute associated to the expression, if any *)
+  val get_autorelease : 'a t -> Exp.t -> atom option
 
-(** Get the objc null attribute associated to the expression, if any *)
-val get_objc_null_attribute : 'a t -> Exp.t -> atom option
+  (** Get the div0 attribute associated to the expression, if any *)
+  val get_div0 : 'a t -> Exp.t -> atom option
 
-(** Get the retval null attribute associated to the expression, if any *)
-val get_retval_attribute : 'a t -> Exp.t -> atom option
+  (** Get the objc null attribute associated to the expression, if any *)
+  val get_objc_null : 'a t -> Exp.t -> atom option
 
-(** Get all the attributes of the prop *)
-val get_all_attributes : 'a t -> atom list
+  (** Get the observer attribute associated to the expression, if any *)
+  val get_observer : 'a t -> Exp.t -> atom option
 
-val has_dangling_uninit_attribute : 'a t -> Exp.t -> bool
+  (** Get the resource attribute associated to the expression, if any *)
+  val get_resource : 'a t -> Exp.t -> atom option
 
-(** Set an attribute associated to the argument expressions *)
-val set_attribute : ?footprint: bool -> ?polarity: bool ->
-  normal t -> PredSymb.t -> Exp.t list -> normal t
+  (** Get the retval null attribute associated to the expression, if any *)
+  val get_retval : 'a t -> Exp.t -> atom option
 
-val add_or_replace_attribute_check_changed :
-  (PredSymb.t -> PredSymb.t -> unit) -> normal t -> atom -> normal t
+  (** Get the taint attribute associated to the expression, if any *)
+  val get_taint : 'a t -> Exp.t -> atom option
 
-(** Replace an attribute associated to the expression *)
-val add_or_replace_attribute : normal t -> atom -> normal t
+  (** Get the undef attribute associated to the expression, if any *)
+  val get_undef : 'a t -> Exp.t -> atom option
 
-(** mark Exp.Var's or Exp.Lvar's as undefined *)
-val mark_vars_as_undefined : normal t -> Exp.t list -> Procname.t -> Typ.item_annotation ->
-  Location.t -> PredSymb.path_pos -> normal t
+  (** Test for existence of an Adangling DAuninit attribute associated to the exp *)
+  val has_dangling_uninit : 'a t -> Exp.t -> bool
 
-(** Remove an attribute from all the atoms in the heap *)
-val remove_attribute : 'a t -> PredSymb.t -> normal t
+  (** Remove an attribute *)
+  val remove : 'a t -> atom -> normal t
 
-val remove_resource_attribute : PredSymb.res_act_kind -> PredSymb.resource -> 'a t -> normal t
+  (** Remove all attributes for the given attr *)
+  val remove_for_attr : 'a t -> PredSymb.t -> normal t
 
-(** [replace_objc_null lhs rhs].
-    If rhs has the objc_null attribute, replace the attribute and set the lhs = 0 *)
-val replace_objc_null : normal t -> Exp.t -> Exp.t -> normal t
+  (** Remove all attributes for the given resource and kind *)
+  val remove_resource : PredSymb.res_act_kind -> PredSymb.resource -> 'a t -> normal t
 
-val nullify_exp_with_objc_null : normal t -> Exp.t -> normal t
+  (** Apply f to every resource attribute in the prop *)
+  val map_resource : normal t -> (Exp.t -> PredSymb.res_action -> PredSymb.res_action) -> normal t
 
-(** Remove an attribute from an exp in the heap *)
-val remove_attribute_from_exp : 'a t -> atom -> normal t
+  (** [replace_objc_null lhs rhs].
+      If rhs has the objc_null attribute, replace the attribute and set the lhs = 0 *)
+  val replace_objc_null : normal t -> Exp.t -> Exp.t -> normal t
 
-(** Retrieve all the atoms that contain a specific attribute *)
-val get_atoms_with_attribute : 'a t -> PredSymb.t -> Sil.atom list
+  (** For each Var subexp of the argument with an Aobjc_null attribute,
+      remove the attribute and conjoin an equality to zero. *)
+  val nullify_exp_with_objc_null : normal t -> Exp.t -> normal t
+
+  (** mark Exp.Var's or Exp.Lvar's as undefined *)
+  val mark_vars_as_undefined :
+    normal t -> Exp.t list -> Procname.t -> Typ.item_annotation -> Location.t ->
+    PredSymb.path_pos -> normal t
+
+end
 
 (** Return the sub part of [prop]. *)
 val get_sub : 'a t -> subst
