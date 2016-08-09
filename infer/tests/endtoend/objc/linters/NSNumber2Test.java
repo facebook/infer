@@ -51,7 +51,7 @@ public class NSNumber2Test {
     assertThat(
         "Results should contain " + BAD_POINTER_COMPARISON,
         inferResults,
-        containsOnlyLines(new int[]{17, 26, 33}));
+        containsOnlyLines(new int[]{17, 26, 33, 85, 99, 106, 121, 128, 135, 139}));
   }
 
 }

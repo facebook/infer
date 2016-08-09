@@ -277,23 +277,20 @@ let captured_cxx_ref_in_objc_block_warning _ stmt_info captured_vars =
 let bad_pointer_comparison_warning _ stmt_info stmts =
   let rec condition stmts =
     let condition_aux stmt =
-      match stmt with
-      | Clang_ast_t.CallExpr _
-      | Clang_ast_t.CXXMemberCallExpr _
-      | Clang_ast_t.CXXOperatorCallExpr _
-      | Clang_ast_t.ObjCMessageExpr _ -> false
-      | Clang_ast_t.BinaryOperator (_, _, _, boi)
-        when (boi.boi_kind = `NE) || (boi.boi_kind = `EQ) -> false
-      | Clang_ast_t.UnaryOperator (_, stmts, _, uoi) when uoi.uoi_kind = `LNot ->
+      match (stmt: Clang_ast_t.stmt) with
+      | BinaryOperator (_, _, _, boi) when
+          (boi.boi_kind = `EQ) || (boi.boi_kind = `NE) -> false
+      | BinaryOperator (_, stmts, _, _) -> condition stmts
+      | UnaryOperator (_, stmts, _, uoi) when uoi.uoi_kind = `LNot ->
+          condition stmts
+      | ImplicitCastExpr (_, stmts, _, _)
+      | ExprWithCleanups (_, stmts, _, _) ->
           condition stmts
       | stmt ->
           match Clang_ast_proj.get_expr_tuple stmt with
-          | Some (_, stmts, expr_info) ->
+          | Some (_, _, expr_info) ->
               let typ = CFrontend_utils.Ast_utils.get_desugared_type expr_info.ei_type_ptr in
-              if CFrontend_utils.Ast_utils.is_ptr_to_objc_class typ "NSNumber" then
-                true
-              else
-                condition stmts
+              CFrontend_utils.Ast_utils.is_ptr_to_objc_class typ "NSNumber"
           | _ -> false in
     IList.exists condition_aux stmts in
   if condition stmts then
