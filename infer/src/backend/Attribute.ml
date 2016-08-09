@@ -133,14 +133,12 @@ let filter_atoms ~f prop =
     Prop.normalize (Prop.replace_pi pi1 prop)
 
 let remove prop atom =
-  match atom with
-  | Sil.Apred (_, exps) | Anpred (_, exps) ->
-      let nexps = IList.map (fun e -> Prop.exp_normalize_prop prop e) exps in
-      let natom = Sil.atom_replace_exp (IList.combine exps nexps) atom in
-      let f a = not (Sil.atom_equal natom a) in
-      filter_atoms ~f prop
-  | _ ->
-      prop
+  if is_pred atom then
+    let natom = Prop.atom_normalize_prop prop atom in
+    let f a = not (Sil.atom_equal natom a) in
+    filter_atoms ~f prop
+  else
+    prop
 
 (** Remove an attribute from all the atoms in the heap *)
 let remove_for_attr prop att0 =
