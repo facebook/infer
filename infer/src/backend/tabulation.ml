@@ -599,14 +599,14 @@ let prop_copy_footprint_pure p1 p2 =
     Prop.replace_sigma_footprint
       (Prop.get_sigma_footprint p1) (Prop.replace_pi_footprint (Prop.get_pi_footprint p1) p2) in
   let pi2 = Prop.get_pi p2' in
-  let pi2_attr, pi2_noattr = IList.partition Prop.Attribute.atom_is pi2 in
+  let pi2_attr, pi2_noattr = IList.partition Prop.Attribute.is_pred pi2 in
   let res_noattr = Prop.replace_pi (Prop.get_pure p1 @ pi2_noattr) p2' in
   let replace_attr prop atom = (* call replace_atom_attribute which deals with existing attibutes *)
     (* if [atom] represents an attribute [att], add the attribure to [prop] *)
-    match Prop.Attribute.atom_get atom with
-    | None -> prop
-    | Some atom ->
-        Prop.Attribute.add_or_replace_check_changed check_attr_dealloc_mismatch prop atom in
+    if Prop.Attribute.is_pred atom then
+      Prop.Attribute.add_or_replace_check_changed check_attr_dealloc_mismatch prop atom
+    else
+      prop in
   IList.fold_left replace_attr (Prop.normalize res_noattr) pi2_attr
 
 (** check if an expression is an exception *)
@@ -935,12 +935,12 @@ let do_taint_check caller_pname callee_pname calling_prop missing_pi sub actual_
   let combined_pi = calling_pi @ missing_pi_sub in
   (* build a map from exp -> [taint attrs, untaint attrs], keeping only exprs with both kinds of
      attrs (we will flag errors on those exprs) *)
-  let collect_taint_untaint_exprs acc_map atom =
-    match Prop.Attribute.atom_get atom with
-    | Some (Apred (Ataint _, [e])) ->
+  let collect_taint_untaint_exprs acc_map (atom: Sil.atom) =
+    match atom with
+    | Apred (Ataint _, [e]) ->
         let taint_atoms, untaint_atoms = try Exp.Map.find e acc_map with Not_found -> ([], []) in
         Exp.Map.add e (atom :: taint_atoms, untaint_atoms) acc_map
-    | Some (Apred (Auntaint _, [e])) ->
+    | Apred (Auntaint _, [e]) ->
         let taint_atoms, untaint_atoms = try Exp.Map.find e acc_map with Not_found -> ([], []) in
         Exp.Map.add e (taint_atoms, atom :: untaint_atoms) acc_map
     | _ -> acc_map in
@@ -954,9 +954,9 @@ let do_taint_check caller_pname callee_pname calling_prop missing_pi sub actual_
      "kind" (e.g. security, privacy) of the taint and untaint match, but for now we don't look at
      the untaint atoms *)
   let report_taint_errors e (taint_atoms, _untaint_atoms) =
-    let report_one_error taint_atom =
-      let taint_info = match Prop.Attribute.atom_get taint_atom with
-        | Some (Apred (Ataint taint_info, _)) -> taint_info
+    let report_one_error (taint_atom: Sil.atom) =
+      let taint_info = match taint_atom with
+        | Apred (Ataint taint_info, _) -> taint_info
         | _ -> failwith "Expected to get taint attr on atom" in
       report_taint_error e taint_info callee_pname caller_pname calling_prop in
     IList.iter report_one_error taint_atoms in
@@ -1109,7 +1109,7 @@ let quantify_path_idents_remove_constant_strings (prop: Prop.normal Prop.t) : Pr
 (** Strengthen the footprint by adding pure facts from the current part *)
 let prop_pure_to_footprint (p: 'a Prop.t) : Prop.normal Prop.t =
   let is_footprint_atom_not_attribute a =
-    not (Prop.Attribute.atom_is a)
+    not (Prop.Attribute.is_pred a)
     &&
     let a_fav = Sil.atom_fav a in
     Sil.fav_for_all a_fav Ident.is_footprint in

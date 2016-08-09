@@ -1642,7 +1642,7 @@ let pi_partial_join mode
     | None -> None
     | Some (a_res, a_op) ->
         if mode = JoinState.Pre then join_atom_check_pre p_op a_op;
-        if Prop.Attribute.atom_is a then join_atom_check_attribute p_op a_op;
+        if Prop.Attribute.is_pred a then join_atom_check_attribute p_op a_op;
         if not (Prover.check_atom p_op a_op) then None
         else begin
           match Prop.atom_exp_le_const a_op with

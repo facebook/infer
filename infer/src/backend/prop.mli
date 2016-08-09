@@ -283,10 +283,7 @@ val conjoin_neq : ?footprint: bool -> Exp.t -> Exp.t -> normal t -> normal t
 module Attribute : sig
 
   (** Check whether an atom is used to mark an attribute *)
-  val atom_is : atom -> bool
-
-  (** Return the exp and attribute marked in the atom if any, and return None otherwise *)
-  val atom_get : atom -> atom option
+  val is_pred : atom -> bool
 
   (** Add an attribute associated to the argument expressions *)
   val add : ?footprint: bool -> ?polarity: bool -> normal t -> PredSymb.t -> Exp.t list -> normal t

@@ -1776,15 +1776,11 @@ let prop_reset_inst inst_map prop =
 (** {2 Attributes} *)
 module Attribute = struct
 
-  (** Return the exp and attribute marked in the atom if any, and return None otherwise *)
-  let atom_get atom =
-    match atom with
-    | Sil.Apred _ | Anpred _ -> Some atom
-    | _ -> None
-
   (** Check whether an atom is used to mark an attribute *)
-  let atom_is a =
-    atom_get a <> None
+  let is_pred atom =
+    match atom with
+    | Sil.Apred _ | Anpred _ -> true
+    | _ -> false
 
   (** Add an attribute associated to the argument expressions *)
   let add ?(footprint = false) ?(polarity = true) prop attr args =
@@ -1826,9 +1822,7 @@ module Attribute = struct
   (** Get all the attributes of the prop *)
   let get_all prop =
     let res = ref [] in
-    let do_atom a = match atom_get a with
-      | Some attr -> res := attr :: !res
-      | None -> () in
+    let do_atom a = if is_pred a then res := a :: !res in
     IList.iter do_atom prop.pi;
     IList.rev !res
 
