@@ -19,7 +19,7 @@ ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli
 
 #### ocamlbuild options ####
 
-OCAML_FATAL_WARNINGS = +5+6+8+10+11+12+18+19+20+26+29+27+32+33+34+35+37+38+39+50
+OCAML_FATAL_WARNINGS = +5+6+8+10+11+12+18+19+20+23+26+29+27+32+33+34+35+37+38+39+50
 
 OCAMLBUILD_OPTIONS = \
                      -r \

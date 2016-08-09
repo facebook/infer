@@ -162,7 +162,7 @@ let run_frontend_checkers_on_stmt context cfg cg method_decl instr =
       invoke_set_of_checkers call_checker context cfg cg decl_opt key while_stmt_checker_list;
       context
   | ObjCAtSynchronizedStmt _ ->
-      { context with CLintersContext.in_synchronized_block = true }
+      { (* context with *) CLintersContext.in_synchronized_block = true }
   | _ -> context
 
 let run_frontend_checkers_on_decl context cfg cg dec =
