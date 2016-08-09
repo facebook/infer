@@ -469,6 +469,26 @@ struct
     Buffer.add_string buffer name;
     Buffer.contents buffer
 
+  let get_super impl_decl_info =
+    let objc_interface_decl_current =
+      get_decl_opt_with_decl_ref
+        impl_decl_info.Clang_ast_t.oidi_class_interface in
+    let objc_interface_decl_super =
+      match objc_interface_decl_current with
+      | Some Clang_ast_t.ObjCInterfaceDecl(_, _, _, _, interface_decl_info) ->
+          get_decl_opt_with_decl_ref interface_decl_info.otdi_super
+      | _ -> None in
+    let objc_implementation_decl_super =
+      match objc_interface_decl_super with
+      | Some ObjCInterfaceDecl(_, _, _, _, interface_decl_info) ->
+          get_decl_opt_with_decl_ref
+            interface_decl_info.otdi_implementation
+      | _ -> None in
+    match objc_implementation_decl_super with
+    | Some ObjCImplementationDecl(_, _, decl_list, _, impl_decl_info) ->
+        Some (decl_list, impl_decl_info)
+    | _ -> None
+
 (*
   let rec getter_attribute_opt attributes =
     match attributes with
@@ -486,6 +506,7 @@ struct
         | `Setter setter -> setter.Clang_ast_t.dr_name
         | _ -> (setter_attribute_opt rest)
 *)
+
 end
 
 (* Global counter for anonymous block*)

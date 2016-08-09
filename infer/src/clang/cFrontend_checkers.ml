@@ -330,30 +330,11 @@ let checker_NSNotificationCenter _ decl_info impl_decl_info decls =
            "removeObserver:name:object:") decls in
     exists_method_calling_removeObserver || exists_method_calling_removeObserverName in
 
-  let get_super impl_decl_info =
-    let objc_interface_decl_current =
-      CFrontend_utils.Ast_utils.get_decl_opt_with_decl_ref
-        impl_decl_info.Clang_ast_t.oidi_class_interface in
-    let objc_interface_decl_super =
-      match objc_interface_decl_current with
-      | Some Clang_ast_t.ObjCInterfaceDecl(_, _, _, _, interface_decl_info) ->
-          CFrontend_utils.Ast_utils.get_decl_opt_with_decl_ref interface_decl_info.otdi_super
-      | _ -> None in
-    let objc_implementation_decl_super =
-      match objc_interface_decl_super with
-      | Some ObjCInterfaceDecl(_, _, _, _, interface_decl_info) ->
-          CFrontend_utils.Ast_utils.get_decl_opt_with_decl_ref
-            interface_decl_info.otdi_implementation
-      | _ -> None in
-    match objc_implementation_decl_super with
-    | Some ObjCImplementationDecl(_, _, decl_list, _, impl_decl_info) ->
-        Some (decl_list, impl_decl_info)
-    | _ -> None in
-
   let rec exists_on_hierarchy f super =
     match super with
     | Some (decl_list, impl_decl_info) ->
-        f decl_list || exists_on_hierarchy f (get_super impl_decl_info)
+        (f decl_list
+         || exists_on_hierarchy f (Ast_utils.get_super impl_decl_info))
     | None -> false in
 
   let eventually_removeObserver_in_whole_hierarchy decls impl_decl_info =
