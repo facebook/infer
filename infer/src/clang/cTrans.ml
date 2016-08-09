@@ -1679,10 +1679,12 @@ struct
     let context = trans_state.context in
     let procdesc = context.CContext.procdesc in
     let procname = Cfg.Procdesc.get_proc_name procdesc in
-    let do_var_dec (di, var_name, type_ptr, vdi) next_node =
-      let var_decl = VarDecl (di, var_name, type_ptr, vdi) in
+    let do_var_dec (di, var_name, qual_type, vdi) next_node =
+      let var_decl = VarDecl (di, var_name, qual_type, vdi) in
       let pvar = CVar_decl.sil_var_of_decl context var_decl procname in
-      let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
+      let typ = CTypes_decl.type_ptr_to_sil_type
+          context.CContext.tenv
+          qual_type.Clang_ast_t.type_ptr in
       CVar_decl.add_var_to_locals procdesc var_decl typ pvar;
       let trans_state' = { trans_state with succ_nodes = next_node } in
       init_expr_trans trans_state' (Exp.Lvar pvar, typ) stmt_info vdi.Clang_ast_t.vdi_init_expr in

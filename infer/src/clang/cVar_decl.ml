@@ -23,13 +23,15 @@ let sil_var_of_decl context var_decl procname =
   let outer_procname = CContext.get_outer_procname context in
   let open Clang_ast_t in
   match var_decl with
-  | VarDecl (decl_info, name_info, type_ptr, var_decl_info) ->
+  | VarDecl (decl_info, name_info, qual_type, var_decl_info) ->
       let shoud_be_mangled =
         not (is_custom_var_pointer decl_info.Clang_ast_t.di_pointer) in
-      let var_decl_details = Some (decl_info, type_ptr, var_decl_info, shoud_be_mangled) in
+      let var_decl_details = Some
+          (decl_info, qual_type.Clang_ast_t.type_ptr, var_decl_info, shoud_be_mangled) in
       General_utils.mk_sil_var name_info var_decl_details procname outer_procname
-  | ParmVarDecl (decl_info, name_info, type_ptr, var_decl_info) ->
-      let var_decl_details = Some (decl_info, type_ptr, var_decl_info, false) in
+  | ParmVarDecl (decl_info, name_info, qual_type, var_decl_info) ->
+      let var_decl_details = Some
+          (decl_info, qual_type.Clang_ast_t.type_ptr, var_decl_info, false) in
       General_utils.mk_sil_var name_info var_decl_details procname outer_procname
   | _ -> assert false
 

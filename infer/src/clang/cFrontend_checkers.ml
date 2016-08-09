@@ -141,10 +141,10 @@ let captured_variables_cxx_ref captured_vars =
   let capture_var_is_cxx_ref reference_captured_vars captured_var =
     let decl_ref_opt = captured_var.Clang_ast_t.bcv_variable in
     match Ast_utils.get_decl_opt_with_decl_ref decl_ref_opt with
-    | Some VarDecl (_, named_decl_info, type_ptr, _)
-    | Some ParmVarDecl (_, named_decl_info, type_ptr, _)
-    | Some ImplicitParamDecl (_, named_decl_info, type_ptr, _) ->
-        (match Ast_utils.get_desugared_type type_ptr with
+    | Some VarDecl (_, named_decl_info, qual_type, _)
+    | Some ParmVarDecl (_, named_decl_info, qual_type, _)
+    | Some ImplicitParamDecl (_, named_decl_info, qual_type, _) ->
+        (match Ast_utils.get_desugared_type qual_type.Clang_ast_t.type_ptr with
          | Some RValueReferenceType _ | Some LValueReferenceType _ ->
              named_decl_info::reference_captured_vars
          | _ -> reference_captured_vars)
