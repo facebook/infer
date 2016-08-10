@@ -596,9 +596,9 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
   Prop.d_prop (Prop.prop_hpred_star Prop.prop_emp ptsto);
   L.d_ln (); L.d_ln ();
   let eprop = Prop.expose prop in
-  let foot_sigma = ptsto_foot :: Prop.get_sigma_footprint eprop in
-  let nfoot_sigma = Prop.sigma_normalize_prop Prop.prop_emp foot_sigma in
-  let prop' = Prop.normalize (Prop.replace_sigma_footprint nfoot_sigma eprop) in
+  let sigma_fp = ptsto_foot :: eprop.Prop.sigma_fp in
+  let nsigma_fp = Prop.sigma_normalize_prop Prop.prop_emp sigma_fp in
+  let prop' = Prop.normalize (Prop.set eprop ~sigma_fp:nsigma_fp) in
   let prop_new = IList.fold_left (Prop.prop_atom_and ~footprint:!Config.footprint) prop' atoms in
   let iter = match (Prop.prop_iter_create prop_new) with
     | None ->
@@ -766,12 +766,12 @@ let add_guarded_by_constraints prop lexp pdesc =
                          false)
                   flds
             | _ -> false)
-          (Prop.get_sigma prop) in
+          prop.Prop.sigma in
       Cfg.Procdesc.get_access pdesc <> PredSymb.Private &&
       not (Annotations.pdesc_has_annot pdesc Annotations.visibleForTesting) &&
       not (Procname.java_is_access_method (Cfg.Procdesc.get_proc_name pdesc)) &&
       not (is_accessible_through_local_ref lexp) in
-    match find_guarded_by_exp guarded_by_str (Prop.get_sigma prop) with
+    match find_guarded_by_exp guarded_by_str prop.Prop.sigma with
     | Some (Sil.Eexp (guarded_by_exp, _), typ) ->
         if is_read_write_lock typ
         then
@@ -824,7 +824,7 @@ let add_guarded_by_constraints prop lexp pdesc =
       enforce_guarded_access fld typ prop
   | _ ->
       (* check for access via alias *)
-      IList.fold_left hpred_check_flds prop (Prop.get_sigma prop)
+      IList.fold_left hpred_check_flds prop prop.Prop.sigma
 
 (** Add a pointsto for [root(lexp): typ] to the iterator and to the
     footprint, if it's compatible with the allowed footprint
@@ -837,10 +837,10 @@ let prop_iter_add_hpred_footprint pname tenv orig_prop iter (lexp, typ) inst =
   L.d_strln "++++ Adding footprint frame";
   Prop.d_prop (Prop.prop_hpred_star Prop.prop_emp ptsto);
   L.d_ln (); L.d_ln ();
-  let foot_sigma = ptsto_foot :: (Prop.prop_iter_get_footprint_sigma iter) in
+  let sigma_fp = ptsto_foot :: (Prop.prop_iter_get_footprint_sigma iter) in
   let iter_foot = Prop.prop_iter_prev_then_insert iter ptsto in
   let iter_foot_atoms = IList.fold_left (Prop.prop_iter_add_atom (!Config.footprint)) iter_foot atoms in
-  let iter' = Prop.prop_iter_replace_footprint_sigma iter_foot_atoms foot_sigma in
+  let iter' = Prop.prop_iter_replace_footprint_sigma iter_foot_atoms sigma_fp in
   let offsets_default = Sil.exp_get_offsets lexp in
   Prop.prop_iter_set_state iter' offsets_default
 
@@ -1223,7 +1223,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
                | _ -> true in
              IList.for_all is_strexp_pt_by_nullable_fld flds
          | _ -> true)
-      (Prop.get_sigma prop) &&
+      prop.Prop.sigma &&
     !nullable_obj_str <> None in
   let root = Exp.root_of_lexp lexp in
   let is_deref_of_nullable =

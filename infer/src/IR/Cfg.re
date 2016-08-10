@@ -879,7 +879,7 @@ let get_name_of_objc_static_locals (curr_f: Procdesc.t) p => {
     | Sil.Hpointsto e _ _ => [local_static e]
     | _ => []
     };
-  let vars_sigma = IList.map hpred_local_static (Prop.get_sigma p);
+  let vars_sigma = IList.map hpred_local_static p.Prop.sigma;
   IList.flatten (IList.flatten vars_sigma)
 };
 
@@ -895,7 +895,7 @@ let get_name_of_objc_block_locals p => {
     | Sil.Hpointsto e _ _ => [local_blocks e]
     | _ => []
     };
-  let vars_sigma = IList.map hpred_local_blocks (Prop.get_sigma p);
+  let vars_sigma = IList.map hpred_local_blocks p.Prop.sigma;
   IList.flatten (IList.flatten vars_sigma)
 };
 
@@ -903,7 +903,7 @@ let remove_abducted_retvars p =>
   /* compute the hpreds and pure atoms reachable from the set of seed expressions in [exps] */
   {
     let compute_reachable p seed_exps => {
-      let (sigma, pi) = (Prop.get_sigma p, Prop.get_pi p);
+      let (sigma, pi) = (p.Prop.sigma, p.Prop.pi);
       let rec collect_exps exps =>
         fun
         | Sil.Eexp (Exp.Exn e) _ => Exp.Set.add e exps
@@ -986,7 +986,7 @@ let remove_abducted_retvars p =>
             }
         )
         ([], [])
-        (Prop.get_sigma p);
+        p.Prop.sigma;
     let (_, p') = Attribute.deallocate_stack_vars p abducteds;
     let normal_pvar_set =
       IList.fold_left
@@ -995,7 +995,7 @@ let remove_abducted_retvars p =>
         normal_pvars;
     /* walk forward from non-abducted pvars, keep everything reachable. remove everything else */
     let (sigma_reach, pi_reach) = compute_reachable p' normal_pvar_set;
-    Prop.normalize (Prop.replace_pi pi_reach (Prop.replace_sigma sigma_reach p'))
+    Prop.normalize (Prop.set p' pi::pi_reach sigma::sigma_reach)
   };
 
 let remove_locals (curr_f: Procdesc.t) p => {
@@ -1055,9 +1055,9 @@ let remove_seed_vars (prop: Prop.t 'a) :Prop.t Prop.normal => {
     fun
     | Sil.Hpointsto (Exp.Lvar pv) _ _ => not (Pvar.is_seed pv)
     | _ => true;
-  let sigma = Prop.get_sigma prop;
+  let sigma = prop.sigma;
   let sigma' = IList.filter hpred_not_seed sigma;
-  Prop.normalize (Prop.replace_sigma sigma' prop)
+  Prop.normalize (Prop.set prop sigma::sigma')
 };
 
 
@@ -1112,9 +1112,9 @@ let remove_seed_captured_vars_block captured_vars prop => {
         Pvar.is_seed pv && IList.mem is_captured pname captured_vars
       }
     | _ => false;
-  let sigma = Prop.get_sigma prop;
+  let sigma = prop.Prop.sigma;
   let sigma' = IList.filter (fun hpred => not (hpred_seed_captured hpred)) sigma;
-  Prop.normalize (Prop.replace_sigma sigma' prop)
+  Prop.normalize (Prop.set prop sigma::sigma')
 };
 
 

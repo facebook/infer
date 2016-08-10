@@ -482,7 +482,7 @@ let find_typ_without_ptr prop pvar =
     | Sil.Hpointsto (e, _, te) when Exp.equal e (Exp.Lvar pvar) ->
         res := Some te
     | _ -> () in
-  IList.iter do_hpred (Prop.get_sigma prop);
+  IList.iter do_hpred prop.Prop.sigma;
   !res
 
 (** Produce a description of a leak by looking at the current state.
@@ -641,7 +641,7 @@ let vpath_find prop _exp : DExp.t option * Typ.t option =
         let filter = function
           | (ni, Exp.Var id') -> Ident.is_normal ni && Ident.equal id' id
           | _ -> false in
-        IList.exists filter (Sil.sub_to_list (Prop.get_sub prop)) in
+        IList.exists filter (Sil.sub_to_list prop.Prop.sub) in
       function
       | Sil.Hpointsto (Exp.Lvar pv, sexp, texp)
         when (Pvar.is_local pv || Pvar.is_global pv || Pvar.is_seed pv) ->
@@ -657,7 +657,7 @@ let vpath_find prop _exp : DExp.t option * Typ.t option =
         (match do_hpred sigma_acc sigma_todo' hpred with
          | Some de, typo -> Some de, typo
          | None, _ -> find (hpred:: sigma_acc) sigma_todo' exp) in
-  let res = find [] (Prop.get_sigma prop) _exp in
+  let res = find [] prop.Prop.sigma _exp in
   if verbose then begin
     match res with
     | None, _ -> L.d_str "vpath_find: cannot find "; Sil.d_exp _exp; L.d_ln ()
@@ -672,7 +672,7 @@ let vpath_find prop _exp : DExp.t option * Typ.t option =
 
 (** produce a description of the access from the instrumentation at position [dexp] in [prop] *)
 let explain_dexp_access prop dexp is_nullable =
-  let sigma = Prop.get_sigma prop in
+  let sigma = prop.Prop.sigma in
   let sexpo_to_inst = function
     | None -> None
     | Some (Sil.Eexp (_, inst)) -> Some inst
@@ -1017,9 +1017,9 @@ let find_with_exp prop exp =
   let do_hpred = function
     | Sil.Hpointsto(Exp.Lvar pv, Sil.Eexp (e, _), _) ->
         if Exp.equal e exp then found_in_pvar pv
-        else IList.iter (do_hpred_pointed_by_pvar pv e) (Prop.get_sigma prop)
+        else IList.iter (do_hpred_pointed_by_pvar pv e) prop.Prop.sigma
     | _ -> () in
-  IList.iter do_hpred (Prop.get_sigma prop);
+  IList.iter do_hpred prop.Prop.sigma;
   !res
 
 (** return a description explaining value [exp] in [prop] in terms of a source expression

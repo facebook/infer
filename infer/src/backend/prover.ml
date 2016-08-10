@@ -403,8 +403,8 @@ end = struct
     saturate { leqs = leqs_new; lts = lts_new; neqs = neqs_new }
 
   let from_prop prop =
-    let sigma = Prop.get_sigma prop in
-    let pi = Prop.get_pi prop in
+    let sigma = prop.Prop.sigma in
+    let pi = prop.Prop.pi in
     let ineq_sigma = from_sigma sigma in
     let ineq_pi = from_pi pi in
     saturate (join ineq_sigma ineq_pi)
@@ -539,7 +539,7 @@ let check_equal prop e1 e2 =
   let check_equal_pi () =
     let eq = Sil.Aeq(n_e1, n_e2) in
     let n_eq = Prop.atom_normalize_prop prop eq in
-    let pi = Prop.get_pi prop in
+    let pi = prop.Prop.pi in
     IList.exists (Sil.atom_equal n_eq) pi in
   check_equal () || check_equal_const () || check_equal_pi ()
 
@@ -584,7 +584,7 @@ let get_bounds prop _e =
 
 (** Check whether [prop |- e1!=e2]. *)
 let check_disequal prop e1 e2 =
-  let spatial_part = Prop.get_sigma prop in
+  let spatial_part = prop.Prop.sigma in
   let n_e1 = Prop.exp_normalize_prop prop e1 in
   let n_e2 = Prop.exp_normalize_prop prop e2 in
   let check_disequal_const () =
@@ -720,7 +720,7 @@ let get_smt_key a p =
 (** Check whether [prop |- a]. False means dont know. *)
 let check_atom prop a0 =
   let a = Prop.atom_normalize_prop prop a0 in
-  let prop_no_fp = Prop.replace_sigma_footprint [] (Prop.replace_pi_footprint [] prop) in
+  let prop_no_fp = Prop.set prop ~pi_fp:[] ~sigma_fp:[] in
   if Config.smt_output then begin
     let key = get_smt_key a prop_no_fp in
     let key_filename =
@@ -741,7 +741,7 @@ let check_atom prop a0 =
     when IntLit.isone i -> check_lt_normalized prop e1 e2
   | Sil.Aeq (e1, e2) -> check_equal prop e1 e2
   | Sil.Aneq (e1, e2) -> check_disequal prop e1 e2
-  | Sil.Apred _ | Anpred _ -> IList.exists (Sil.atom_equal a) (Prop.get_pi prop)
+  | Sil.Apred _ | Anpred _ -> IList.exists (Sil.atom_equal a) prop.Prop.pi
 
 (** Check [prop |- e1<=e2]. Result [false] means "don't know". *)
 let check_le prop e1 e2 =
@@ -751,7 +751,7 @@ let check_le prop e1 e2 =
 (** Check whether [prop |- allocated(e)]. *)
 let check_allocatedness prop e =
   let n_e = Prop.exp_normalize_prop prop e in
-  let spatial_part = Prop.get_sigma prop in
+  let spatial_part = prop.Prop.sigma in
   let f = function
     | Sil.Hpointsto (base, _, _) ->
         is_root prop base n_e != None
@@ -772,7 +772,7 @@ let compute_upper_bound_of_exp p e =
 
 (** Check if two hpreds have the same allocated lhs *)
 let check_inconsistency_two_hpreds prop =
-  let sigma = Prop.get_sigma prop in
+  let sigma = prop.Prop.sigma in
   let rec f e sigma_seen = function
     | [] -> false
     | (Sil.Hpointsto (e1, _, _) as hpred) :: sigma_rest
@@ -791,7 +791,7 @@ let check_inconsistency_two_hpreds prop =
         then
           let prop' = Prop.normalize (Prop.from_sigma (sigma_seen@sigma_rest)) in
           let prop_new = Prop.conjoin_eq e1 e2 prop' in
-          let sigma_new = Prop.get_sigma prop_new in
+          let sigma_new = prop_new.Prop.sigma in
           let e_new = Prop.exp_normalize_prop prop_new e
           in f e_new [] sigma_new
         else f e (hpred:: sigma_seen) sigma_rest
@@ -804,7 +804,7 @@ let check_inconsistency_two_hpreds prop =
         then
           let prop' = Prop.normalize (Prop.from_sigma (sigma_seen@sigma_rest)) in
           let prop_new = Prop.conjoin_eq e1 e3 prop' in
-          let sigma_new = Prop.get_sigma prop_new in
+          let sigma_new = prop_new.Prop.sigma in
           let e_new = Prop.exp_normalize_prop prop_new e
           in f e_new [] sigma_new
         else f e (hpred:: sigma_seen) sigma_rest in
@@ -824,8 +824,8 @@ let check_inconsistency_two_hpreds prop =
 
 (** Inconsistency checking ignoring footprint. *)
 let check_inconsistency_base prop =
-  let pi = Prop.get_pi prop in
-  let sigma = Prop.get_sigma prop in
+  let pi = prop.Prop.pi in
+  let sigma = prop.Prop.sigma in
   let inconsistent_ptsto _ =
     check_allocatedness prop Exp.zero in
   let inconsistent_this_self_var () =
@@ -965,7 +965,7 @@ end = struct
       | Sil.Hpointsto (_, Sil.Earray (Exp.Var _ as len, _, _), _) ->
           Sil.exp_fav_add fav len
       | _ -> () in
-    IList.iter do_hpred (Prop.get_sigma prop);
+    IList.iter do_hpred prop.Prop.sigma;
     fav
 
   let reset lhs rhs =
@@ -1728,7 +1728,7 @@ let handle_parameter_subtype tenv prop1 sigma2 subs (e1, se1, texp1) (se2, texp2
     let filter = function
       | Sil.Hpointsto(e', _, _) -> Exp.equal e' e
       | _ -> false in
-    IList.exists filter (Prop.get_sigma prop1) in
+    IList.exists filter prop1.Prop.sigma in
   let type_rhs e =
     let sub_opt = ref None in
     let filter = function
@@ -2033,7 +2033,8 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
                  match is_constant_string_class subs hpred2' with
                  | Some (s, is_string) -> (* allocate constant string hpred1', do implication, then add hpred1' as missing *)
                      let hpred1' = if is_string then mk_constant_string_hpred s else mk_constant_class_hpred s in
-                     let prop1' = Prop.normalize (Prop.replace_sigma (hpred1' :: Prop.get_sigma prop1) prop1) in
+                     let prop1' =
+                       Prop.normalize (Prop.set prop1 ~sigma:(hpred1' :: prop1.Prop.sigma)) in
                      let subs', frame_prop = hpred_imply tenv calc_index_frame calc_missing subs prop1' sigma2 hpred2' in
                      (* ProverState.add_missing_sigma [hpred1']; *)
                      subs', frame_prop
@@ -2068,7 +2069,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
 let prepare_prop_for_implication (_, sub2) pi1 sigma1 =
   let pi1' = (Prop.pi_sub sub2 (ProverState.get_missing_pi ())) @ pi1 in
   let sigma1' = (Prop.sigma_sub sub2 (ProverState.get_missing_sigma ())) @ sigma1 in
-  let ep = Prop.replace_sub sub2 (Prop.replace_sigma sigma1' (Prop.from_pi pi1')) in
+  let ep = Prop.set Prop.prop_emp ~sub:sub2 ~sigma:sigma1' ~pi:pi1' in
   Prop.normalize ep
 
 let imply_pi calc_missing (sub1, sub2) prop pi2 =
@@ -2155,10 +2156,10 @@ let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2
     let filter (id, e) =
       Ident.is_normal id && Sil.fav_for_all (Sil.exp_fav e) Ident.is_normal in
     let sub1_base =
-      Sil.sub_filter_pair filter (Prop.get_sub prop1) in
+      Sil.sub_filter_pair filter prop1.Prop.sub in
     let pi1, pi2 = Prop.get_pure prop1, Prop.get_pure prop2 in
-    let sigma1, sigma2 = Prop.get_sigma prop1, Prop.get_sigma prop2 in
-    let subs = pre_check_pure_implication calc_missing (Prop.get_sub prop1, sub1_base) pi1 pi2 in
+    let sigma1, sigma2 = prop1.Prop.sigma, prop2.Prop.sigma in
+    let subs = pre_check_pure_implication calc_missing (prop1.Prop.sub, sub1_base) pi1 pi2 in
     let pi2_bcheck, pi2_nobcheck = (* find bounds checks implicit in pi2 *)
       IList.partition ProverState.atom_is_array_bounds_check pi2 in
     IList.iter (fun a -> ProverState.add_bounds_check (ProverState.BCfrom_pre a)) pi2_bcheck;
@@ -2186,7 +2187,7 @@ let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2
     L.d_strln "Result of Abduction";
     L.d_increase_indent 1; d_impl (sub1, sub2) (prop1, prop2); L.d_decrease_indent 1; L.d_ln ();
     L.d_strln"returning TRUE";
-    let frame = Prop.get_sigma frame_prop in
+    let frame = frame_prop.Prop.sigma in
     if check_frame_empty && frame != [] then raise (IMPL_EXC("frame not empty", subs, EXC_FALSE));
     Some ((sub1, sub2), frame)
   with

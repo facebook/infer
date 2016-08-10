@@ -46,11 +46,11 @@ let add_or_replace_check_changed check_attribute_change prop atom0 =
             natom
         | atom ->
             atom in
-      let pi = Prop.get_pi prop in
+      let pi = prop.Prop.pi in
       let pi' = IList.map_changed atom_map pi in
       if pi == pi'
       then Prop.prop_atom_and prop natom
-      else Prop.normalize (Prop.replace_pi pi' prop)
+      else Prop.normalize (Prop.set prop ~pi:pi')
   | _ ->
       prop
 
@@ -63,7 +63,7 @@ let add_or_replace prop atom =
 let get_all (prop: 'a Prop.t) =
   let res = ref [] in
   let do_atom a = if is_pred a then res := a :: !res in
-  IList.iter do_atom (Prop.get_pi prop);
+  IList.iter do_atom prop.pi;
   IList.rev !res
 
 (** Get all the attributes of the prop *)
@@ -71,7 +71,7 @@ let get_for_symb prop att =
   IList.filter (function
       | Sil.Apred (att', _) | Anpred (att', _) -> PredSymb.equal att' att
       | _ -> false
-    ) (Prop.get_pi prop)
+    ) prop.Prop.pi
 
 (** Get the attribute associated to the expression, if any *)
 let get_for_exp (prop: 'a Prop.t) exp =
@@ -80,7 +80,7 @@ let get_for_exp (prop: 'a Prop.t) exp =
     match atom with
     | Sil.Apred (_, es) | Anpred (_, es) when IList.mem Exp.equal nexp es -> atom :: attributes
     | _ -> attributes in
-  IList.fold_left atom_get_attr [] (Prop.get_pi prop)
+  IList.fold_left atom_get_attr [] prop.pi
 
 let get prop exp category =
   let atts = get_for_exp prop exp in
@@ -125,12 +125,12 @@ let has_dangling_uninit prop exp =
     ) la
 
 let filter_atoms ~f prop =
-  let pi0 = Prop.get_pi prop in
+  let pi0 = prop.Prop.pi in
   let pi1 = IList.filter_changed f pi0 in
   if pi1 == pi0 then
     prop
   else
-    Prop.normalize (Prop.replace_pi pi1 prop)
+    Prop.normalize (Prop.set prop ~pi:pi1)
 
 let remove prop atom =
   if is_pred atom then
@@ -164,12 +164,12 @@ let map_resource prop f =
     | Sil.Apred (att, ([e] as es)) -> Sil.Apred (attribute_map e att, es)
     | Sil.Anpred (att, ([e] as es)) -> Sil.Anpred (attribute_map e att, es)
     | atom -> atom in
-  let pi0 = Prop.get_pi prop in
+  let pi0 = prop.Prop.pi in
   let pi1 = IList.map_changed atom_map pi0 in
   if pi1 == pi0 then
     prop
   else
-    Prop.normalize (Prop.replace_pi pi1 prop)
+    Prop.normalize (Prop.set prop ~pi:pi1)
 
 (* Replace an attribute OBJC_NULL($n1) with OBJC_NULL(var) when var = $n1, and also sets $n1 =
    0 *)
@@ -258,7 +258,7 @@ let deallocate_stack_vars (p: 'a Prop.t) pvars =
     | Sil.Hpointsto (Exp.Lvar v, _, _) ->
         IList.exists (Pvar.equal v) pvars
     | _ -> false in
-  let sigma_stack, sigma_other = IList.partition filter (Prop.get_sigma p) in
+  let sigma_stack, sigma_other = IList.partition filter p.sigma in
   let fresh_address_vars = ref [] in (* fresh vars substituted for the address of stack vars *)
   let stack_vars_address_in_post = ref [] in (* stack vars whose address is still present *)
   let exp_replace = IList.map (function
@@ -267,12 +267,13 @@ let deallocate_stack_vars (p: 'a Prop.t) pvars =
           fresh_address_vars := (v, freshv) :: !fresh_address_vars;
           (Exp.Lvar v, Exp.Var freshv)
       | _ -> assert false) sigma_stack in
-  let pi1 = IList.map (fun (id, e) -> Sil.Aeq (Exp.Var id, e)) (Sil.sub_to_list (Prop.get_sub p)) in
-  let pi = IList.map (Sil.atom_replace_exp exp_replace) ((Prop.get_pi p) @ pi1) in
+  let pi1 = IList.map (fun (id, e) -> Sil.Aeq (Exp.Var id, e)) (Sil.sub_to_list p.sub) in
+  let pi = IList.map (Sil.atom_replace_exp exp_replace) (p.pi @ pi1) in
   let p' =
     Prop.normalize
-      (Prop.replace_sub Sil.sub_empty
-         (Prop.replace_sigma (Prop.sigma_replace_exp exp_replace sigma_other) p)) in
+      (Prop.set p
+         ~sub:Sil.sub_empty
+         ~sigma: (Prop.sigma_replace_exp exp_replace sigma_other)) in
   let p'' =
     let res = ref p' in
     let p'_fav = Prop.prop_fav p' in
@@ -316,7 +317,7 @@ let find_equal_formal_path e prop =
                                | Some vfs -> Some (Exp.Lfield (vfs, field, Typ.Tvoid))
                                | None -> None)
                           | _ -> None) fields None
-              | _ -> None) (Prop.get_sigma prop) None in
+              | _ -> None) prop.Prop.sigma None in
   match find_in_sigma e [] with
   | Some vfs -> Some vfs
   | None ->

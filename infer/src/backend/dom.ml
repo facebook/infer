@@ -1586,7 +1586,7 @@ let pi_partial_join mode
       | Sil.Hpointsto (_, Sil.Earray (Exp.Const (Const.Cint n), _, _), _) ->
           (if IntLit.geq n IntLit.one then len_list := n :: !len_list)
       | _ -> () in
-    IList.iter do_hpred (Prop.get_sigma prop);
+    IList.iter do_hpred prop.Prop.sigma;
     !len_list in
   let bounds =
     let bounds1 = get_array_len ep1 in
@@ -1718,8 +1718,8 @@ let pi_partial_meet (p: Prop.normal Prop.t) (ep1: 'a Prop.t) (ep2: 'b Prop.t) : 
   let f2 p' atom =
     Prop.prop_atom_and p' (handle_atom sub2 dom2 atom) in
 
-  let pi1 = Prop.get_pi ep1 in
-  let pi2 = Prop.get_pi ep2 in
+  let pi1 = ep1.Prop.pi in
+  let pi2 = ep2.Prop.pi in
 
   let p_pi1 = IList.fold_left f1 p pi1 in
   let p_pi2 = IList.fold_left f2 p_pi1 pi2 in
@@ -1730,16 +1730,16 @@ let pi_partial_meet (p: Prop.normal Prop.t) (ep1: 'a Prop.t) (ep2: 'b Prop.t) : 
 
 let eprop_partial_meet (ep1: 'a Prop.t) (ep2: 'b Prop.t) : 'c Prop.t =
   SymOp.pay(); (* pay one symop *)
-  let sigma1 = Prop.get_sigma ep1 in
-  let sigma2 = Prop.get_sigma ep2 in
+  let sigma1 = ep1.Prop.sigma in
+  let sigma2 = ep2.Prop.sigma in
 
   let es1 = sigma_get_start_lexps_sort sigma1 in
   let es2 = sigma_get_start_lexps_sort sigma2 in
   let es = IList.merge_sorted_nodup Exp.compare [] es1 es2 in
 
   let sub_check _ =
-    let sub1 = Prop.get_sub ep1 in
-    let sub2 = Prop.get_sub ep2 in
+    let sub1 = ep1.Prop.sub in
+    let sub2 = ep2.Prop.sub in
     let range1 = Sil.sub_range sub1 in
     let f e = Sil.fav_for_all (Sil.exp_fav e) Ident.is_normal in
     Sil.sub_equal sub1 sub2 && IList.for_all f range1 in
@@ -1750,8 +1750,8 @@ let eprop_partial_meet (ep1: 'a Prop.t) (ep2: 'b Prop.t) : 'c Prop.t =
     let todos = IList.map (fun x -> (x, x, x)) es in
     IList.iter Todo.push todos;
     let sigma_new = sigma_partial_meet sigma1 sigma2 in
-    let ep = Prop.replace_sigma sigma_new ep1 in
-    let ep' = Prop.replace_pi [] ep in
+    let ep = Prop.set ep1 ~sigma:sigma_new in
+    let ep' = Prop.set ep ~pi:[] in
     let p' = Prop.normalize ep' in
     let p'' = pi_partial_meet p' ep1 ep2 in
     let res = Prop.prop_rename_primed_footprint_vars p'' in
@@ -1774,8 +1774,8 @@ let prop_partial_meet p1 p2 =
 
 let eprop_partial_join' mode (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed Prop.t) : Prop.normal Prop.t =
   SymOp.pay(); (* pay one symop *)
-  let sigma1 = Prop.get_sigma ep1 in
-  let sigma2 = Prop.get_sigma ep2 in
+  let sigma1 = ep1.Prop.sigma in
+  let sigma2 = ep2.Prop.sigma in
   let es1 = sigma_get_start_lexps_sort sigma1 in
   let es2 = sigma_get_start_lexps_sort sigma2 in
 
@@ -1787,8 +1787,8 @@ let eprop_partial_join' mode (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed Prop.
     | e1:: es1'', e2:: es2'' ->
         Exp.equal e1 e2 && expensive_check es1'' es2'' in
   let sub_common, eqs_from_sub1, eqs_from_sub2 =
-    let sub1 = Prop.get_sub ep1 in
-    let sub2 = Prop.get_sub ep2 in
+    let sub1 = ep1.Prop.sub in
+    let sub2 = ep2.Prop.sub in
     let sub_common, sub1_only, sub2_only = Sil.sub_symmetric_difference sub1 sub2 in
     let sub_common_normal, sub_common_other =
       let f e = Sil.fav_for_all (Sil.exp_fav e) Ident.is_normal in
@@ -1813,13 +1813,13 @@ let eprop_partial_join' mode (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed Prop.
   | sigma_new, [], [] ->
       L.d_strln "sigma_partial_join succeeded";
       let ep_sub =
-        let ep = Prop.replace_pi [] ep1 in
-        Prop.replace_sub sub_common ep in
+        let ep = Prop.set ep1 ~pi:[] in
+        Prop.set ep ~sub:sub_common in
       let p_sub_sigma =
-        Prop.normalize (Prop.replace_sigma sigma_new ep_sub) in
+        Prop.normalize (Prop.set ep_sub ~sigma:sigma_new) in
       let p_sub_sigma_pi =
-        let pi1 = (Prop.get_pi ep1) @ eqs_from_sub1 in
-        let pi2 = (Prop.get_pi ep2) @ eqs_from_sub2 in
+        let pi1 = ep1.Prop.pi @ eqs_from_sub1 in
+        let pi2 = ep2.Prop.pi @ eqs_from_sub2 in
         let pi' = pi_partial_join mode ep1 ep2 pi1 pi2 in
         L.d_strln "pi_partial_join succeeded";
         let pi_from_fresh_vars = FreshVarExp.get_induced_pi () in
@@ -1835,17 +1835,17 @@ let footprint_partial_join' (p1: Prop.normal Prop.t) (p2: Prop.normal Prop.t) : 
     let fp1 = Prop.extract_footprint p1 in
     let fp2 = Prop.extract_footprint p2 in
     let efp = eprop_partial_join' JoinState.Pre fp1 fp2 in
-    let fp_pi = (* Prop.get_pure efp in *)
-      let fp_pi0 = Prop.get_pure efp in
+    let pi_fp =
+      let pi_fp0 = Prop.get_pure efp in
       let f a = Sil.fav_for_all (Sil.atom_fav a) Ident.is_footprint in
-      IList.filter f fp_pi0 in
-    let fp_sigma = (* Prop.get_sigma efp in *)
-      let fp_sigma0 = Prop.get_sigma efp in
+      IList.filter f pi_fp0 in
+    let sigma_fp =
+      let sigma_fp0 = efp.Prop.sigma in
       let f a = Sil.fav_exists (Sil.hpred_fav a) (fun a -> not (Ident.is_footprint a)) in
-      if IList.exists f fp_sigma0 then (L.d_strln "failure reason 66"; raise IList.Fail);
-      fp_sigma0 in
-    let ep1' = Prop.replace_sigma_footprint fp_sigma (Prop.replace_pi_footprint fp_pi p1) in
-    let ep2' = Prop.replace_sigma_footprint fp_sigma (Prop.replace_pi_footprint fp_pi p2) in
+      if IList.exists f sigma_fp0 then (L.d_strln "failure reason 66"; raise IList.Fail);
+      sigma_fp0 in
+    let ep1' = Prop.set p1 ~pi_fp ~sigma_fp in
+    let ep2' = Prop.set p2 ~pi_fp ~sigma_fp in
     Prop.normalize ep1', Prop.normalize ep2'
   end
 

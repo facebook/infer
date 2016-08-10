@@ -23,7 +23,15 @@ type exposed (** kind for exposed props *)
 type pi = Sil.atom list
 type sigma = Sil.hpred list
 
-type 'a t (** the kind 'a should range over [normal] and [exposed] *)
+(** the kind 'a should range over [normal] and [exposed] *)
+type 'a t = private
+  {
+    sigma: sigma;  (** spatial part *)
+    sub: Sil.subst;  (** substitution *)
+    pi: pi;  (** pure part *)
+    sigma_fp : sigma;  (** abduced spatial part *)
+    pi_fp: pi;  (** abduced pure part *)
+  }
 
 (** type to describe different strategies for initializing fields of a structure. [No_init] does not
     initialize any fields of the struct. [Fld_init] initializes the fields of the struct with fresh
@@ -266,23 +274,8 @@ val conjoin_eq : ?footprint: bool -> Exp.t -> Exp.t -> normal t -> normal t
 (** Conjoin [exp1]!=[exp2] with a symbolic heap [prop]. *)
 val conjoin_neq : ?footprint: bool -> Exp.t -> Exp.t -> normal t -> normal t
 
-(** Return the sub part of [prop]. *)
-val get_sub : 'a t -> subst
-
-(** Return the pi part of [prop]. *)
-val get_pi : 'a t -> atom list
-
 (** Return the pure part of [prop]. *)
 val get_pure : 'a t -> atom list
-
-(** Return the sigma part of [prop] *)
-val get_sigma : 'a t -> hpred list
-
-(** Return the pi part of the footprint of [prop] *)
-val get_pi_footprint : 'a t -> atom list
-
-(** Return the sigma part of the footprint of [prop] *)
-val get_sigma_footprint : 'a t -> hpred list
 
 (** Canonicalize the names of primed variables. *)
 val prop_rename_primed_footprint_vars : normal t -> normal t
@@ -329,20 +322,9 @@ val from_pi : pi -> exposed t
 (** Build an exposed prop from sigma *)
 val from_sigma : sigma -> exposed t
 
-(** Replace the substitution part of a prop *)
-val replace_sub : Sil.subst -> 'a t -> exposed t
-
-(** Replace the pi part of a prop *)
-val replace_pi : pi -> 'a t -> exposed t
-
-(** Replace the sigma part of a prop *)
-val replace_sigma : sigma -> 'a t -> exposed t
-
-(** Replace the sigma part of the footprint of a prop *)
-val replace_sigma_footprint : sigma -> 'a t -> exposed t
-
-(** Replace the pi part of the footprint of a prop *)
-val replace_pi_footprint : pi -> 'a t -> exposed t
+(** Set individual fields of the prop. *)
+val set : ?sub:Sil.subst -> ?pi:pi -> ?sigma:sigma -> ?pi_fp:pi -> ?sigma_fp:sigma ->
+  'a t -> exposed t
 
 (** Rename free variables in a prop replacing them with existentially quantified vars *)
 val prop_rename_fav_with_existentials : normal t -> normal t

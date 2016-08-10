@@ -62,11 +62,11 @@ let edge_get_succs = function
   | Esub_entry (_, e) -> [e]
 
 let get_sigma footprint_part g =
-  if footprint_part then Prop.get_sigma_footprint g else Prop.get_sigma g
+  if footprint_part then g.Prop.sigma_fp else g.Prop.sigma
 let get_pi footprint_part g =
-  if footprint_part then Prop.get_pi_footprint g else Prop.get_pi g
+  if footprint_part then g.Prop.pi_fp else g.Prop.pi
 let get_subl footprint_part g =
-  if footprint_part then [] else Sil.sub_to_list (Prop.get_sub g)
+  if footprint_part then [] else Sil.sub_to_list g.Prop.sub
 
 (** [edge_from_source g n footprint_part is_hpred] finds and edge with the given source [n] in prop [g].
     [footprint_part] indicates whether to search the edge in the footprint part, and [is_pred] whether it is an hpred edge. *)
@@ -214,9 +214,9 @@ let diff_get_colormap footprint_part diff =
     extracting its local stack vars if the boolean is true. *)
 let pp_proplist pe0 s (base_prop, extract_stack) f plist =
   let num = IList.length plist in
-  let base_stack = fst (Prop.sigma_get_stack_nonstack true (Prop.get_sigma base_prop)) in
+  let base_stack = fst (Prop.sigma_get_stack_nonstack true base_prop.Prop.sigma) in
   let add_base_stack prop =
-    if extract_stack then Prop.replace_sigma (base_stack @ Prop.get_sigma prop) prop
+    if extract_stack then Prop.set prop ~sigma:(base_stack @ prop.Prop.sigma)
     else Prop.expose prop in
   let update_pe_diff (prop: Prop.normal Prop.t) : printenv =
     if Config.print_using_diff then

@@ -64,7 +64,7 @@ let add_array_to_prop pdesc prop_ lexp typ =
     try
       let hpred = IList.find (function
           | Sil.Hpointsto(e, _, _) -> Exp.equal e n_lexp
-          | _ -> false) (Prop.get_sigma prop) in
+          | _ -> false) prop.Prop.sigma in
       match hpred with
       | Sil.Hpointsto(_, Sil.Earray (len, _, _), _) ->
           Some (len, prop)
@@ -75,10 +75,10 @@ let add_array_to_prop pdesc prop_ lexp typ =
         let len = Exp.Var (Ident.create_fresh Ident.kfootprint) in
         let s = mk_empty_array_rearranged len in
         let hpred = Prop.mk_ptsto n_lexp s (Exp.Sizeof (arr_typ, Some len, Subtype.exact)) in
-        let sigma = Prop.get_sigma prop in
-        let sigma_fp = Prop.get_sigma_footprint prop in
-        let prop'= Prop.replace_sigma (hpred:: sigma) prop in
-        let prop''= Prop.replace_sigma_footprint (hpred:: sigma_fp) prop' in
+        let sigma = prop.Prop.sigma in
+        let sigma_fp = prop.Prop.sigma_fp in
+        let prop'= Prop.set prop ~sigma:(hpred:: sigma) in
+        let prop''= Prop.set prop' ~sigma_fp:(hpred:: sigma_fp) in
         let prop''= Prop.normalize prop'' in
         Some (len, prop'')
       | _ -> None
@@ -115,11 +115,11 @@ let execute___set_array_length { Builtin.pdesc; prop_; path; ret_ids; args; }
            let n_len, prop = check_arith_norm_exp pname len prop__ in
            let hpred, sigma' = IList.partition (function
                | Sil.Hpointsto(e, _, _) -> Exp.equal e n_lexp
-               | _ -> false) (Prop.get_sigma prop) in
+               | _ -> false) prop.Prop.sigma in
            (match hpred with
             | [Sil.Hpointsto(e, Sil.Earray(_, esel, inst), t)] ->
                 let hpred' = Sil.Hpointsto (e, Sil.Earray (n_len, esel, inst), t) in
-                let prop' = Prop.replace_sigma (hpred':: sigma') prop in
+                let prop' = Prop.set prop ~sigma:(hpred':: sigma') in
                 [(Prop.normalize prop', path)]
             | _ -> [] (* by construction of prop_a this case is impossible *) ))
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -147,7 +147,7 @@ let create_type tenv n_lexp typ prop =
     try
       let _ = IList.find (function
           | Sil.Hpointsto(e, _, _) -> Exp.equal e n_lexp
-          | _ -> false) (Prop.get_sigma prop) in
+          | _ -> false) prop.Prop.sigma in
       prop
     with Not_found ->
       let mhpred =
@@ -167,15 +167,15 @@ let create_type tenv n_lexp typ prop =
         | _ -> None in
       match mhpred with
       | Some hpred ->
-          let sigma = Prop.get_sigma prop in
-          let sigma_fp = Prop.get_sigma_footprint prop in
-          let prop'= Prop.replace_sigma (hpred:: sigma) prop in
+          let sigma = prop.Prop.sigma in
+          let sigma_fp = prop.Prop.sigma_fp in
+          let prop'= Prop.set prop ~sigma:(hpred:: sigma) in
           let prop''=
             let has_normal_variables =
               Sil.fav_exists (Sil.exp_fav n_lexp) Ident.is_normal in
             if (is_undefined_opt prop n_lexp) || has_normal_variables
             then prop'
-            else Prop.replace_sigma_footprint (hpred:: sigma_fp) prop' in
+            else Prop.set prop' ~sigma_fp:(hpred:: sigma_fp) in
           let prop''= Prop.normalize prop'' in
           prop''
       | None -> prop in
@@ -201,7 +201,7 @@ let execute___get_type_of { Builtin.pdesc; tenv; prop_; path; ret_ids; args; }
           try
             let hpred = IList.find (function
                 | Sil.Hpointsto(e, _, _) -> Exp.equal e n_lexp
-                | _ -> false) (Prop.get_sigma prop) in
+                | _ -> false) prop.Prop.sigma in
             match hpred with
             | Sil.Hpointsto(_, _, texp) ->
                 (return_result texp prop ret_ids), path
@@ -221,10 +221,10 @@ let replace_ptsto_texp prop root_e texp =
     match sigma1 with
     | [Sil.Hpointsto(e, se, _)] -> (Sil.Hpointsto (e, se, texp)) :: sigma2
     | _ -> sigma in
-  let sigma = Prop.get_sigma prop in
-  let sigma_fp = Prop.get_sigma_footprint prop in
-  let prop'= Prop.replace_sigma (process_sigma sigma) prop in
-  let prop''= Prop.replace_sigma_footprint (process_sigma sigma_fp) prop' in
+  let sigma = prop.Prop.sigma in
+  let sigma_fp = prop.Prop.sigma_fp in
+  let prop'= Prop.set prop ~sigma:(process_sigma sigma) in
+  let prop''= Prop.set prop' ~sigma_fp:(process_sigma sigma_fp) in
   Prop.normalize prop''
 
 let execute___instanceof_cast ~instof
@@ -254,7 +254,7 @@ let execute___instanceof_cast ~instof
             try
               let hpred = IList.find (function
                   | Sil.Hpointsto (e1, _, _) -> Exp.equal e1 val1
-                  | _ -> false) (Prop.get_sigma prop) in
+                  | _ -> false) prop.Prop.sigma in
               match hpred with
               | Sil.Hpointsto (_, _, texp1) ->
                   let pos_type_opt, neg_type_opt =
@@ -410,9 +410,9 @@ let execute___get_hidden_field { Builtin.pdesc; prop_; path; ret_ids; args; }
             set_ret_val();
             hpred
         | _ -> hpred in
-      let sigma' = IList.map (do_hpred false) (Prop.get_sigma prop) in
-      let sigma_fp' = IList.map (do_hpred true) (Prop.get_sigma_footprint prop) in
-      let prop' = Prop.replace_sigma_footprint sigma_fp' (Prop.replace_sigma sigma' prop) in
+      let sigma' = IList.map (do_hpred false) prop.Prop.sigma in
+      let sigma_fp' = IList.map (do_hpred true) prop.Prop.sigma_fp in
+      let prop' = Prop.set prop ~sigma:sigma' ~sigma_fp:sigma_fp' in
       let prop'' = return_val (Prop.normalize prop') in
       [(prop'', path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -444,9 +444,9 @@ let execute___set_hidden_field { Builtin.pdesc; prop_; path; args; }
             let fsel' = (Ident.fieldname_hidden, se) :: fsel in
             Sil.Hpointsto(e, Sil.Estruct (fsel', inst), texp)
         | _ -> hpred in
-      let sigma' = IList.map (do_hpred false) (Prop.get_sigma prop) in
-      let sigma_fp' = IList.map (do_hpred true) (Prop.get_sigma_footprint prop) in
-      let prop' = Prop.replace_sigma_footprint sigma_fp' (Prop.replace_sigma sigma' prop) in
+      let sigma' = IList.map (do_hpred false) prop.Prop.sigma in
+      let sigma_fp' = IList.map (do_hpred true) prop.Prop.sigma_fp in
+      let prop' = Prop.set prop ~sigma:sigma' ~sigma_fp:sigma_fp' in
       let prop'' = Prop.normalize prop' in
       [(prop'', path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -563,7 +563,7 @@ let execute___release_autorelease_pool
           (try
              let hpred = IList.find (function
                  | Sil.Hpointsto(e1, _, _) -> Exp.equal e1 exp
-                 | _ -> false) (Prop.get_sigma prop_) in
+                 | _ -> false) prop_.Prop.sigma in
              match hpred with
              | Sil.Hpointsto (_, _, Exp.Sizeof (typ, _, _)) ->
                  let res1 =
@@ -662,7 +662,7 @@ let execute___objc_cast { Builtin.pdesc; prop_; path; ret_ids; args; }
       (try
          let hpred = IList.find (function
              | Sil.Hpointsto(e1, _, _) -> Exp.equal e1 val1
-             | _ -> false) (Prop.get_sigma prop) in
+             | _ -> false) prop.Prop.sigma in
          match hpred, texp2 with
          | Sil.Hpointsto (val1, _, _), Exp.Sizeof _ ->
              let prop' = replace_ptsto_texp prop val1 texp2 in
@@ -816,7 +816,7 @@ let execute___cxx_typeid ({ Builtin.pdesc; tenv; prop_; args; loc} as r)
              try
                let hpred = IList.find (function
                    | Sil.Hpointsto (e, _, _) -> Exp.equal e n_lexp
-                   | _ -> false) (Prop.get_sigma prop) in
+                   | _ -> false) prop.Prop.sigma in
                match hpred with
                | Sil.Hpointsto (_, _, Exp.Sizeof (dynamic_type, _, _)) -> dynamic_type
                | _ -> typ

@@ -440,7 +440,7 @@ let check_already_dereferenced pname cond prop =
   let find_hpred lhs =
     try Some (IList.find (function
         | Sil.Hpointsto (e, _, _) -> Exp.equal e lhs
-        | _ -> false) (Prop.get_sigma prop))
+        | _ -> false) prop.Prop.sigma)
     with Not_found -> None in
   let rec is_check_zero = function
     | Exp.Var id ->
@@ -532,7 +532,7 @@ let resolve_typename prop receiver_exp =
       | [] -> None
       | Sil.Hpointsto(e, _, typexp) :: _ when Exp.equal e receiver_exp -> Some typexp
       | _ :: hpreds -> loop hpreds in
-    loop (Prop.get_sigma prop) in
+    loop prop.Prop.sigma in
   match typexp_opt with
   | Some (Exp.Sizeof (Typ.Tstruct { Typ.struct_name = None }, _, _)) -> None
   | Some (Exp.Sizeof (Typ.Tstruct { Typ.csu = Csu.Class ck; struct_name = Some name }, _, _)) ->
@@ -796,8 +796,8 @@ let add_strexp_to_footprint strexp abducted_pv typ prop =
   let lvar_pt_fpvar =
     let sizeof_exp = Exp.Sizeof (typ, None, Subtype.subtypes) in
     Prop.mk_ptsto abducted_lvar strexp sizeof_exp in
-  let sigma_fp = Prop.get_sigma_footprint prop in
-  Prop.normalize (Prop.replace_sigma_footprint (lvar_pt_fpvar :: sigma_fp) prop)
+  let sigma_fp = prop.Prop.sigma_fp in
+  Prop.normalize (Prop.set prop ~sigma_fp:(lvar_pt_fpvar :: sigma_fp))
 
 let add_to_footprint abducted_pv typ prop =
   let fresh_fp_var = Exp.Var (Ident.create_fresh Ident.kfootprint) in
@@ -824,7 +824,7 @@ let add_constraints_on_retval pdesc prop ret_exp ~has_nullable_annot typ callee_
         (fun hpred -> match hpred with
            | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abducted_ret_pv
            | _ -> false)
-        (Prop.get_sigma_footprint p) in
+        p.Prop.sigma_fp in
     (* find an hpred [abducted] |-> A in [prop] and add [exp] = A to prop *)
     let bind_exp_to_abducted_val exp_to_bind abducted prop =
       let bind_exp prop = function
@@ -832,7 +832,7 @@ let add_constraints_on_retval pdesc prop ret_exp ~has_nullable_annot typ callee_
           when Pvar.equal pv abducted ->
             Prop.conjoin_eq exp_to_bind rhs prop
         | _ -> prop in
-      IList.fold_left bind_exp prop (Prop.get_sigma prop) in
+      IList.fold_left bind_exp prop prop.Prop.sigma in
     (* To avoid obvious false positives, assume skip functions do not return null pointers *)
     let add_ret_non_null exp typ prop =
       if has_nullable_annot
@@ -1217,12 +1217,12 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         match IList.partition
                 (function
                   | Sil.Hpointsto (Exp.Lvar pvar', _, _) -> Pvar.equal pvar pvar'
-                  | _ -> false) (Prop.get_sigma eprop) with
+                  | _ -> false) eprop.Prop.sigma with
         | [Sil.Hpointsto(e, se, typ)], sigma' ->
             let sigma'' =
               let se' = execute_nullify_se se in
               Sil.Hpointsto(e, se', typ):: sigma' in
-            let eprop_res = Prop.replace_sigma sigma'' eprop in
+            let eprop_res = Prop.set eprop ~sigma:sigma'' in
             ret_old_path [Prop.normalize eprop_res]
         | [], _ ->
             ret_old_path [prop_]
@@ -1252,8 +1252,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
             (IList.map add_None ptl) in
         Config.run_in_re_execution_mode (* no footprint vars for locals *)
           sigma_locals () in
-      let sigma' = Prop.get_sigma prop_ @ sigma_locals in
-      let prop' = Prop.normalize (Prop.replace_sigma sigma' prop_) in
+      let sigma' = prop_.Prop.sigma @ sigma_locals in
+      let prop' = Prop.normalize (Prop.set prop_ ~sigma:sigma') in
       ret_old_path [prop']
   | Sil.Stackop _ -> (* this should be handled at the propset level *)
       assert false
@@ -1287,8 +1287,8 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
         (function
           | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual_var -> new_hpred
           | hpred -> hpred)
-        (Prop.get_sigma prop) in
-    Prop.normalize (Prop.replace_sigma sigma' prop) in
+        prop.Prop.sigma in
+    Prop.normalize (Prop.set prop ~sigma:sigma') in
   if Config.angelic_execution then
     let add_actual_by_ref_to_footprint prop (actual, actual_typ) =
       match actual with
@@ -1301,7 +1301,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
               (fun hpred -> match hpred with
                  | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abducted_ref_pv
                  | _ -> false)
-              (Prop.get_sigma_footprint p) in
+              p.Prop.sigma_fp in
           (* prevent introducing multiple abducted retvals for a single call site in a loop *)
           if already_has_abducted_retval prop then prop
           else
@@ -1327,8 +1327,8 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
                   | Sil.Hpointsto (lhs, _, typ_exp) when Exp.equal lhs actual ->
                       Sil.Hpointsto (lhs, abduced_strexp, typ_exp)
                   | hpred -> hpred)
-                (Prop.get_sigma prop') in
-            Prop.normalize (Prop.replace_sigma filtered_sigma prop')
+                prop'.Prop.sigma in
+            Prop.normalize (Prop.set prop' ~sigma:filtered_sigma)
           else
             (* bind actual passed by ref to the abducted value pointed to by the synthetic pvar *)
             let prop' =
@@ -1338,17 +1338,17 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
                     | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual ->
                         false
                     | _ -> true)
-                  (Prop.get_sigma prop) in
-              Prop.normalize (Prop.replace_sigma filtered_sigma prop) in
+                  prop.Prop.sigma in
+              Prop.normalize (Prop.set prop ~sigma:filtered_sigma) in
             IList.fold_left
               (fun p hpred ->
                  match hpred with
                  | Sil.Hpointsto (Exp.Lvar pv, rhs, texp) when Pvar.equal pv abducted_ref_pv ->
                      let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
-                     Prop.normalize (Prop.replace_sigma (new_hpred :: (Prop.get_sigma prop')) p)
+                     Prop.normalize (Prop.set p ~sigma:(new_hpred :: prop'.Prop.sigma))
                  | _ -> p)
               prop'
-              (Prop.get_sigma prop')
+              prop'.Prop.sigma
       | _ -> assert false in
     IList.fold_left add_actual_by_ref_to_footprint prop actuals_by_ref
   else

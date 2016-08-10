@@ -332,7 +332,7 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
   let deref_err_list = IList.fold_left (fun deref_errs hpred -> match check_hpred hpred with
       | Some reason -> reason :: deref_errs
       | None -> deref_errs
-    ) [] (Prop.get_sigma spec_pre) in
+    ) [] spec_pre.Prop.sigma in
   match deref_err_list with
   | [] -> None
   | deref_err :: _ ->
@@ -393,10 +393,10 @@ let post_process_post
         let ra' = { ra with ra_pname = callee_pname; ra_loc = loc; ra_vpath = vpath } in
         Sil.Apred (Aresource ra', [e])
     | a -> a in
-  let prop' = Prop.replace_sigma (post_process_sigma (Prop.get_sigma post) loc) post in
-  let pi' = IList.map atom_update_alloc_attribute (Prop.get_pi prop') in
+  let prop' = Prop.set post ~sigma:(post_process_sigma post.Prop.sigma loc) in
+  let pi' = IList.map atom_update_alloc_attribute prop'.Prop.pi in
   (* update alloc attributes to refer to the caller *)
-  let post' = Prop.replace_pi pi' prop' in
+  let post' = Prop.set prop' ~pi:pi' in
   check_path_errors_in_post caller_pname post' post_path;
   post', post_path
 
@@ -571,17 +571,14 @@ let prop_footprint_add_pi_sigma_starfld_sigma
           extend_pi current_pi new_pi'
         end
         else extend_pi (a :: current_pi) new_pi' in
-  let foot_pi' = extend_pi (Prop.get_pi_footprint prop) pi_new in
-  match extend_sigma (Prop.get_sigma_footprint prop) sigma_new with
+  let pi_fp' = extend_pi prop.Prop.pi_fp pi_new in
+  match extend_sigma prop.Prop.sigma_fp sigma_new with
   | None -> None
   | Some sigma' ->
-      let foot_sigma' = sigma_star_fld sigma' missing_fld in
-      let foot_sigma'' = sigma_star_typ foot_sigma' missing_typ in
-      let pi' = pi_new @ Prop.get_pi prop in
-      let prop' =
-        Prop.replace_sigma_footprint foot_sigma'' (Prop.replace_pi_footprint foot_pi' prop) in
-      let prop'' = Prop.replace_pi pi' prop' in
-      Some (Prop.normalize prop'')
+      let sigma_fp' = sigma_star_fld sigma' missing_fld in
+      let sigma_fp'' = sigma_star_typ sigma_fp' missing_typ in
+      let pi' = pi_new @ prop.Prop.pi in
+      Some (Prop.normalize (Prop.set prop ~pi:pi' ~pi_fp:pi_fp' ~sigma_fp:sigma_fp''))
 
 (** Check if the attribute change is a mismatch between a kind
     of allocation and a different kind of deallocation *)
@@ -596,11 +593,10 @@ let check_attr_dealloc_mismatch att_old att_new = match att_old, att_new with
 (** [prop_copy_footprint p1 p2] copies the footprint and pure part of [p1] into [p2] *)
 let prop_copy_footprint_pure p1 p2 =
   let p2' =
-    Prop.replace_sigma_footprint
-      (Prop.get_sigma_footprint p1) (Prop.replace_pi_footprint (Prop.get_pi_footprint p1) p2) in
-  let pi2 = Prop.get_pi p2' in
+    Prop.set p2 ~pi_fp:p1.Prop.pi_fp ~sigma_fp:p1.Prop.sigma_fp in
+  let pi2 = p2'.Prop.pi in
   let pi2_attr, pi2_noattr = IList.partition Attribute.is_pred pi2 in
-  let res_noattr = Prop.replace_pi (Prop.get_pure p1 @ pi2_noattr) p2' in
+  let res_noattr = Prop.set p2' ~pi:(Prop.get_pure p1 @ pi2_noattr) in
   let replace_attr prop atom = (* call replace_atom_attribute which deals with existing attibutes *)
     (* if [atom] represents an attribute [att], add the attribure to [prop] *)
     if Attribute.is_pred atom then
@@ -621,7 +617,7 @@ let prop_is_exn pname prop =
     | Sil.Hpointsto (e1, Sil.Eexp(e2, _), _) when Exp.equal e1 ret_pvar ->
         exp_is_exn e2
     | _ -> false in
-  IList.exists is_exn (Prop.get_sigma prop)
+  IList.exists is_exn prop.Prop.sigma
 
 (** when prop is an exception, return the exception name *)
 let prop_get_exn_name pname prop =
@@ -638,7 +634,7 @@ let prop_get_exn_name pname prop =
       when Exp.equal e1 ret_pvar ->
         search_exn e2 hpreds
     | _ :: tl -> find_exn_name hpreds tl in
-  let hpreds = Prop.get_sigma prop in
+  let hpreds = prop.Prop.sigma in
   find_exn_name hpreds hpreds
 
 
@@ -649,7 +645,7 @@ let lookup_custom_errors prop =
     | Sil.Hpointsto (Exp.Lvar var, Sil.Eexp (Exp.Const (Const.Cstr error_str), _), _) :: _
       when Pvar.equal var Sil.custom_error -> Some error_str
     | _ :: tl -> search_error tl in
-  search_error (Prop.get_sigma prop)
+  search_error prop.Prop.sigma
 
 (** set a prop to an exception sexp *)
 let prop_set_exn pname prop se_exn =
@@ -658,8 +654,8 @@ let prop_set_exn pname prop se_exn =
     | Sil.Hpointsto (e, _, t) when Exp.equal e ret_pvar ->
         Sil.Hpointsto(e, se_exn, t)
     | hpred -> hpred in
-  let sigma' = IList.map map_hpred (Prop.get_sigma prop) in
-  Prop.normalize (Prop.replace_sigma sigma' prop)
+  let sigma' = IList.map map_hpred prop.Prop.sigma in
+  Prop.normalize (Prop.set prop ~sigma:sigma')
 
 (** Include a subtrace for a procedure call if the callee is not a model. *)
 let include_subtrace callee_pname =
@@ -678,7 +674,7 @@ let combine
       if !Config.footprint && posts = []
       then (* in case of divergence, produce a prop *)
         (* with updated footprint and inconsistent current *)
-        [(Prop.replace_pi [Sil.Aneq (Exp.zero, Exp.zero)] Prop.prop_emp, path_pre)]
+        [(Prop.set Prop.prop_emp ~pi:[Sil.Aneq (Exp.zero, Exp.zero)], path_pre)]
       else
         IList.map
           (fun (p, path_post) ->
@@ -712,9 +708,9 @@ let combine
   L.d_decrease_indent 1; L.d_ln ();
   let compute_result post_p =
     let post_p' =
-      let post_sigma = sigma_star_fld (Prop.get_sigma post_p) split.frame_fld in
+      let post_sigma = sigma_star_fld post_p.Prop.sigma split.frame_fld in
       let post_sigma' = sigma_star_typ post_sigma split.frame_typ in
-      Prop.replace_sigma post_sigma' post_p in
+      Prop.set post_p ~sigma:post_sigma' in
     let post_p1 = Prop.prop_sigma_star (prop_copy_footprint_pure actual_pre post_p') split.frame in
 
     let handle_null_case_analysis sigma =
@@ -732,10 +728,10 @@ let combine
       Sil.hpred_list_expmap f sigma in
 
     let post_p2 =
-      let post_p1_sigma = Prop.get_sigma post_p1 in
+      let post_p1_sigma = post_p1.Prop.sigma in
       let post_p1_sigma' = handle_null_case_analysis post_p1_sigma in
-      let post_p1' = Prop.replace_sigma post_p1_sigma' post_p1 in
-      Prop.normalize (Prop.replace_pi (Prop.get_pi post_p1 @ split.missing_pi) post_p1') in
+      let post_p1' = Prop.set post_p1 ~sigma:post_p1_sigma' in
+      Prop.normalize (Prop.set post_p1' ~pi:(post_p1.Prop.pi @ split.missing_pi)) in
 
     let post_p3 = (* replace [result|callee] with an aux variable dedicated to this proc *)
       let callee_ret_pvar =
@@ -895,7 +891,7 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
                 | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (e, _), _) when Pvar.is_return pvar ->
                     Prover.check_equal (Prop.normalize prop) e Exp.zero
                 | _ -> false)
-              (Prop.get_sigma prop) in
+              prop.Prop.sigma in
           IList.filter (fun (prop, _) -> not (returns_null prop)) posts
         else posts in
       let mk_retval_tainted posts =
@@ -929,7 +925,7 @@ let inconsistent_actualpre_missing actual_pre split_opt =
 (* perform the taint analysis check by comparing the taint atoms in [calling_pi] with the untaint
    atoms required by the [missing_pi] computed during abduction *)
 let do_taint_check caller_pname callee_pname calling_prop missing_pi sub actual_params =
-  let calling_pi = Prop.get_pi calling_prop in
+  let calling_pi = calling_prop.Prop.pi in
   (* get a version of [missing_pi] whose var names match the names in calling pi *)
   let missing_pi_sub = Prop.pi_sub sub missing_pi in
   let combined_pi = calling_pi @ missing_pi_sub in
@@ -1093,9 +1089,9 @@ let remove_constant_string_class prop =
   let filter = function
     | Sil.Hpointsto (Exp.Const (Const.Cstr _ | Const.Cclass _), _, _) -> false
     | _ -> true in
-  let sigma = IList.filter filter (Prop.get_sigma prop) in
-  let sigmafp = IList.filter filter (Prop.get_sigma_footprint prop) in
-  let prop' = Prop.replace_sigma_footprint sigmafp (Prop.replace_sigma sigma prop) in
+  let sigma = IList.filter filter prop.Prop.sigma in
+  let sigmafp = IList.filter filter prop.Prop.sigma_fp in
+  let prop' = Prop.set prop ~sigma ~sigma_fp:sigmafp in
   Prop.normalize prop'
 
 (** existentially quantify the path identifier generated
@@ -1118,7 +1114,7 @@ let prop_pure_to_footprint (p: 'a Prop.t) : Prop.normal Prop.t =
   if new_footprint_atoms == []
   then p
   else (* add pure fact to footprint *)
-    Prop.normalize (Prop.replace_pi_footprint (Prop.get_pi_footprint p @ new_footprint_atoms) p)
+    Prop.normalize (Prop.set p ~pi_fp:(p.Prop.pi_fp @ new_footprint_atoms))
 
 (** post-process the raw result of a function call *)
 let exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc results =

@@ -281,8 +281,8 @@ let propagate_nodes_divergence
       let prop_incons =
         let mk_incons prop =
           let p_abs = Abs.abstract pname tenv prop in
-          let p_zero = Prop.replace_sigma [] (Prop.replace_sub Sil.sub_empty p_abs) in
-          Prop.normalize (Prop.replace_pi [Sil.Aneq (Exp.zero, Exp.zero)] p_zero) in
+          let p_zero = Prop.set p_abs ~sub:Sil.sub_empty ~sigma:[] in
+          Prop.normalize (Prop.set p_zero ~pi:[Sil.Aneq (Exp.zero, Exp.zero)]) in
         Paths.PathSet.map mk_incons diverging_states in
       (L.d_strln_color Orange) "Propagating Divergence -- diverging states:";
       Propgraph.d_proplist Prop.prop_emp (Paths.PathSet.to_proplist prop_incons); L.d_ln ();
@@ -728,7 +728,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
       let pre' = Prop.normalize (Prop.prop_sub sub pre) in
       if !Config.curr_language =
          Config.Java && Cfg.Procdesc.get_access pdesc <> PredSymb.Private then
-        report_context_leaks pname (Prop.get_sigma post) tenv;
+        report_context_leaks pname post.Prop.sigma tenv;
       let post' =
         if Prover.check_inconsistency_base prop then None
         else Some (Prop.normalize (Prop.prop_sub sub post), path) in
@@ -827,15 +827,13 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
   let sigma_seed =
     create_seed_vars
       (* formals already there plus new ones *)
-      (Prop.get_sigma prop @ sigma_new_formals) in
+      (prop.Prop.sigma @ sigma_new_formals) in
   let sigma = sigma_seed @ sigma_new_formals in
   let new_pi =
-    Prop.get_pi prop in
+    prop.Prop.pi in
   let prop' =
-    Prop.replace_pi new_pi (Prop.prop_sigma_star prop sigma) in
-  Prop.replace_sigma_footprint
-    (Prop.get_sigma_footprint prop' @ sigma_new_formals)
-    prop'
+    Prop.set (Prop.prop_sigma_star prop sigma) ~pi:new_pi in
+  Prop.set prop' ~sigma_fp:(prop'.Prop.sigma_fp @ sigma_new_formals)
 
 (** Construct an initial prop by extending [prop] with locals, and formals if [add_formals] is true
     as well as seed variables *)
@@ -871,9 +869,7 @@ let initial_prop_from_pre tenv curr_f pre =
     let sub = Sil.sub_of_list sub_list in
     let pre2 = Prop.prop_sub sub pre in
     let pre3 =
-      Prop.replace_sigma_footprint
-        (Prop.get_sigma pre2)
-        (Prop.replace_pi_footprint (Prop.get_pure pre2) pre2) in
+      Prop.set pre2 ~pi_fp:(Prop.get_pure pre2) ~sigma_fp:pre2.Prop.sigma in
     initial_prop tenv curr_f pre3 false
   else
     initial_prop tenv curr_f pre false
@@ -1122,14 +1118,13 @@ let remove_this_not_null prop =
     | Sil.Aneq (Exp.Var v, e)
       when Ident.equal v var && Exp.equal e Exp.null -> atoms
     | a -> a:: atoms in
-  match IList.fold_left collect_hpred (None, []) (Prop.get_sigma prop) with
+  match IList.fold_left collect_hpred (None, []) prop.Prop.sigma with
   | None, _ -> prop
   | Some var, filtered_hpreds ->
       let filtered_atoms =
-        IList.fold_left (collect_atom var) [] (Prop.get_pi prop) in
-      let prop' = Prop.replace_pi filtered_atoms Prop.prop_emp in
-      let prop'' = Prop.replace_sigma filtered_hpreds prop' in
-      Prop.normalize prop''
+        IList.fold_left (collect_atom var) [] prop.Prop.pi in
+      let prop' = Prop.set Prop.prop_emp ~pi:filtered_atoms ~sigma:filtered_hpreds in
+      Prop.normalize prop'
 
 
 (** Is true when the precondition does not contain constrains that can be false at call site.

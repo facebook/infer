@@ -74,7 +74,7 @@ let create_condition_ls ids_private id_base p_leftover (inst: Sil.subst) =
   let fav_insts_of_public_ids = IList.flatten (IList.map Sil.exp_fav_list insts_of_public_ids) in
   let fav_insts_of_private_ids = IList.flatten (IList.map Sil.exp_fav_list insts_of_private_ids) in
   let (fav_p_leftover, _) =
-    let sigma = Prop.get_sigma p_leftover in
+    let sigma = p_leftover.Prop.sigma in
     (sigma_fav_list sigma, sigma_fav_in_pvars_list sigma) in
   let fpv_inst_of_base = Sil.exp_fpv inst_of_base in
   let fpv_insts_of_private_ids = IList.flatten (IList.map Sil.exp_fpv insts_of_private_ids) in
@@ -441,7 +441,7 @@ let discover_para_roots p root1 next1 root2 next2 : Sil.hpara option =
   else
     let corres = [(next1, next2)] in
     let todos = [(root1, root2)] in
-    let sigma = Prop.get_sigma p in
+    let sigma = p.Prop.sigma in
     match Match.find_partial_iso (Prover.check_equal p) corres todos sigma with
     | None -> None
     | Some (new_corres, new_sigma1, _, _) ->
@@ -458,7 +458,7 @@ let discover_para_dll_roots p root1 blink1 flink1 root2 blink2 flink2 : Sil.hpar
   else
     let corres = [(blink1, blink2); (flink1, flink2)] in
     let todos = [(root1, root2)] in
-    let sigma = Prop.get_sigma p in
+    let sigma = p.Prop.sigma in
     match Match.find_partial_iso (Prover.check_equal p) corres todos sigma with
     | None -> None
     | Some (new_corres, new_sigma1, _, _) ->
@@ -497,7 +497,7 @@ let discover_para_candidates tenv p =
           IList.fold_left f found edges_matched in
         let new_edges_seen = (e1, e2) :: edges_seen in
         find_all_consecutive_edges new_found new_edges_seen edges_notseen in
-  let sigma = Prop.get_sigma p in
+  let sigma = p.Prop.sigma in
   get_edges_sigma sigma;
   find_all_consecutive_edges [] [] !edges
 
@@ -537,7 +537,7 @@ let discover_para_dll_candidates tenv p =
           IList.fold_left f found edges_matched in
         let new_edges_seen = (iF, blink, flink) :: edges_seen in
         find_all_consecutive_edges new_found new_edges_seen edges_notseen in
-  let sigma = Prop.get_sigma p in
+  let sigma = p.Prop.sigma in
   get_edges_sigma sigma;
   find_all_consecutive_edges [] [] !edges
 
@@ -762,7 +762,7 @@ let abs_rules_apply tenv (p_in: Prop.normal Prop.t) : Prop.normal Prop.t =
 let abstract_pure_part p ~(from_abstract_footprint: bool) =
   let do_pure pure =
     let pi_filtered =
-      let sigma = Prop.get_sigma p in
+      let sigma = p.Prop.sigma in
       let fav_sigma = Prop.sigma_fav sigma in
       let fav_nonpure = Prop.prop_fav_nonpure p in (* vars in current and footprint sigma *)
       let filter atom =
@@ -795,18 +795,18 @@ let abstract_pure_part p ~(from_abstract_footprint: bool) =
     IList.rev new_pure in
 
   let new_pure = do_pure (Prop.get_pure p) in
-  let eprop' = Prop.replace_pi new_pure (Prop.replace_sub Sil.sub_empty p) in
+  let eprop' = Prop.set p ~pi:new_pure ~sub:Sil.sub_empty in
   let eprop'' =
     if !Config.footprint && not from_abstract_footprint then
-      let new_pi_footprint = do_pure (Prop.get_pi_footprint p) in
-      Prop.replace_pi_footprint new_pi_footprint eprop'
+      let new_pi_footprint = do_pure p.Prop.pi_fp in
+      Prop.set eprop' ~pi_fp:new_pi_footprint
     else eprop' in
   Prop.normalize eprop''
 
 (** Collect symbolic garbage from pi and sigma *)
 let abstract_gc p =
-  let pi = Prop.get_pi p in
-  let p_without_pi = Prop.normalize (Prop.replace_pi [] p) in
+  let pi = p.Prop.pi in
+  let p_without_pi = Prop.normalize (Prop.set p ~pi:[]) in
   let fav_p_without_pi = Prop.prop_fav p_without_pi in
   (* let weak_filter atom =
      let fav_atom = atom_fav atom in
@@ -826,7 +826,7 @@ let abstract_gc p =
         ||
         IList.intersect Ident.compare (Sil.fav_to_list fav_a) (Sil.fav_to_list fav_p_without_pi) in
   let new_pi = IList.filter strong_filter pi in
-  let prop = Prop.normalize (Prop.replace_pi new_pi p) in
+  let prop = Prop.normalize (Prop.set p ~pi:new_pi) in
   match Prop.prop_iter_create prop with
   | None -> prop
   | Some iter -> Prop.prop_iter_to_prop (Prop.prop_iter_gc_fields iter)
@@ -878,7 +878,7 @@ let sigma_reachable root_fav sigma =
   !reach_set
 
 let get_cycle root prop =
-  let sigma = Prop.get_sigma prop in
+  let sigma = prop.Prop.sigma in
   let get_points_to e =
     match e with
     | Sil.Eexp(e', _) ->
@@ -950,8 +950,8 @@ let get_retain_cycle_dotty _prop cycle =
       Dotty.dotty_prop_to_str _prop cycle
   | _ -> None
 
-let get_var_retain_cycle _prop =
-  let sigma = Prop.get_sigma _prop in
+let get_var_retain_cycle prop_ =
+  let sigma = prop_.Prop.sigma in
   let is_pvar v h =
     match h with
     | Sil.Hpointsto (Exp.Lvar _, v', _) when Sil.strexp_equal v v' -> true
@@ -985,7 +985,7 @@ let get_var_retain_cycle _prop =
     match sigma_todo with
     | [] -> []
     | hp:: sigma' ->
-        let cycle = get_cycle hp _prop in
+        let cycle = get_cycle hp prop_ in
         L.d_strln "Filtering pvar in cycle ";
         let cycle' = IList.flatten (IList.map find_or_block cycle) in
         if cycle' = [] then do_sigma sigma'
@@ -1046,8 +1046,8 @@ let check_observer_is_unsubscribed_deallocation prop e =
 
 let check_junk ?original_prop pname tenv prop =
   let fav_sub_sigmafp = Sil.fav_new () in
-  Sil.sub_fav_add fav_sub_sigmafp (Prop.get_sub prop);
-  Prop.sigma_fav_add fav_sub_sigmafp (Prop.get_sigma_footprint prop);
+  Sil.sub_fav_add fav_sub_sigmafp prop.Prop.sub;
+  Prop.sigma_fav_add fav_sub_sigmafp prop.Prop.sigma_fp;
   let leaks_reported = ref [] in
 
   let remove_junk_once fp_part fav_root sigma =
@@ -1190,11 +1190,13 @@ let check_junk ?original_prop pname tenv prop =
     let sigma' = remove_junk_once fp_part fav_root sigma in
     if IList.length sigma' = IList.length sigma then sigma'
     else remove_junk fp_part fav_root sigma' in
-  let sigma_new = remove_junk false fav_sub_sigmafp (Prop.get_sigma prop) in
-  let sigma_fp_new = remove_junk true (Sil.fav_new ()) (Prop.get_sigma_footprint prop) in
-  if Prop.sigma_equal (Prop.get_sigma prop) sigma_new && Prop.sigma_equal (Prop.get_sigma_footprint prop) sigma_fp_new
+  let sigma_new = remove_junk false fav_sub_sigmafp prop.Prop.sigma in
+  let sigma_fp_new = remove_junk true (Sil.fav_new ()) prop.Prop.sigma_fp in
+  if
+    Prop.sigma_equal prop.Prop.sigma sigma_new
+    && Prop.sigma_equal prop.Prop.sigma_fp sigma_fp_new
   then prop
-  else Prop.normalize (Prop.replace_sigma sigma_new (Prop.replace_sigma_footprint sigma_fp_new prop))
+  else Prop.normalize (Prop.set prop ~sigma:sigma_new ~sigma_fp:sigma_fp_new)
 
 (** Check whether the prop contains junk.
     If it does, and [Config.allowleak] is true, remove the junk, otherwise raise a Leak exception. *)
@@ -1242,12 +1244,12 @@ let get_local_stack cur_sigma init_sigma =
 
 (** Extract the footprint, add a local stack and return it as a prop *)
 let extract_footprint_for_abs (p : 'a Prop.t) : Prop.exposed Prop.t * Pvar.t list =
-  let sigma = Prop.get_sigma p in
-  let foot_pi = Prop.get_pi_footprint p in
-  let foot_sigma = Prop.get_sigma_footprint p in
-  let (local_stack, local_stack_pvars) = get_local_stack sigma foot_sigma in
-  let p0 = Prop.from_sigma (local_stack @ foot_sigma) in
-  let p1 = Prop.replace_pi foot_pi p0 in
+  let sigma = p.Prop.sigma in
+  let pi_fp = p.Prop.pi_fp in
+  let sigma_fp = p.Prop.sigma_fp in
+  let (local_stack, local_stack_pvars) = get_local_stack sigma sigma_fp in
+  let p0 = Prop.from_sigma (local_stack @ sigma_fp) in
+  let p1 = Prop.set p0 ~pi:pi_fp in
   (p1, local_stack_pvars)
 
 let remove_local_stack sigma pvars =
@@ -1260,10 +1262,10 @@ let remove_local_stack sigma pvars =
     and sets proposition [p_foot] as footprint of [p]. *)
 let set_footprint_for_abs (p : 'a Prop.t) (p_foot : 'a Prop.t) local_stack_pvars : Prop.exposed Prop.t =
   let p_foot_pure = Prop.get_pure p_foot in
-  let p_foot_sigma = Prop.get_sigma p_foot in
+  let p_sigma_fp = p_foot.Prop.sigma in
   let pi = p_foot_pure in
-  let sigma = remove_local_stack p_foot_sigma local_stack_pvars in
-  Prop.replace_sigma_footprint sigma (Prop.replace_pi_footprint pi p)
+  let sigma = remove_local_stack p_sigma_fp local_stack_pvars in
+  Prop.set p ~pi_fp:pi ~sigma_fp:sigma
 
 (** Abstract the footprint of prop *)
 let abstract_footprint pname (tenv : Tenv.t) (prop : Prop.normal Prop.t) : Prop.normal Prop.t =

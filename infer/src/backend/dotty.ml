@@ -581,7 +581,9 @@ let print_kind f kind =
       print_stack_info:= true;
   | Generic_proposition ->
       if !print_full_prop then
-      F.fprintf f "\n HEAP%iL0 [label=\"HEAP %i \",  style=filled, color= yellow]\n" !dotty_state_count !proposition_counter
+        F.fprintf f "\n HEAP%iL0 [label=\"HEAP %i \",  style=filled, color= yellow]\n"
+          !dotty_state_count
+          !proposition_counter
   | Lambda_pred (no, lev, array) ->
       match array with
       | false ->
@@ -689,12 +691,12 @@ let rec print_struct f pe e te l coo c =
   if !print_full_prop then
     F.fprintf f
       " node [shape=record]; \n struct%iL%i \
-        [label=\"{<%s%iL%i> STRUCT: %a } | %a\" ] fontcolor=%s\n"
+       [label=\"{<%s%iL%i> STRUCT: %a } | %a\" ] fontcolor=%s\n"
       n lambda e_no_special_char n lambda (Sil.pp_exp pe) e (struct_to_dotty_str pe coo) l c
   else
     F.fprintf f
       " node [shape=record]; \n struct%iL%i \
-        [label=\"{<%s%iL%i> OBJECT: %s } | %a\" ] fontcolor=%s\n"
+       [label=\"{<%s%iL%i> OBJECT: %s } | %a\" ] fontcolor=%s\n"
       n lambda e_no_special_char n lambda print_type (struct_to_dotty_str pe coo) l c;
   F.fprintf f "}\n"
 
@@ -778,7 +780,7 @@ and dotty_pp_state f pe cycle dotnode =
 
 (* Build the graph data structure to be printed *)
 and build_visual_graph f pe p cycle =
-  let sigma = Prop.get_sigma p in
+  let sigma = p.Prop.sigma in
   compute_fields_struct sigma;
   compute_struct_exp_nodes sigma;
   (* L.out "@\n@\n Computed fields structs: ";
@@ -822,15 +824,15 @@ and pp_dotty f kind (_prop: Prop.normal Prop.t) cycle =
         let cmap_foot = Propgraph.diff_get_colormap true diff in
         let pe = { (Prop.prop_update_obj_sub pe_text pre) with pe_cmap_norm = cmap_norm; pe_cmap_foot = cmap_foot } in
         (* add stack vars from pre *)
-        let pre_stack = fst (Prop.sigma_get_stack_nonstack true (Prop.get_sigma pre)) in
-        let prop = Prop.replace_sigma (pre_stack @ Prop.get_sigma _prop) _prop in
+        let pre_stack = fst (Prop.sigma_get_stack_nonstack true pre.Prop.sigma) in
+        let prop = Prop.set _prop ~sigma:(pre_stack @ _prop.Prop.sigma) in
         pe, Prop.normalize prop
     | _ ->
         let pe = Prop.prop_update_obj_sub pe_text _prop in
         pe, _prop in
   dangling_dotboxes := [];
   nil_dotboxes :=[];
-  set_exps_neq_zero (Prop.get_pi prop);
+  set_exps_neq_zero prop.Prop.pi;
   incr dotty_state_count;
   F.fprintf f "\n subgraph cluster_prop_%i { color=black \n" !proposition_counter;
   print_kind f kind;
@@ -863,10 +865,15 @@ let pp_dotty_one_spec f pre posts =
   pp_dotty f (Spec_precondition) pre None;
   invisible_arrows:= false;
   IList.iter (fun (po, _) -> incr post_counter ; pp_dotty f (Spec_postcondition pre) po None;
-              for j = 1 to 4 do
-                F.fprintf f "  inv_%i%i%i%i -> state_pi_%i [style=invis]\n" !spec_counter j j j !target_invisible_arrow_pre;
-              done
-            ) posts;
+               for j = 1 to 4 do
+                 F.fprintf f "  inv_%i%i%i%i -> state_pi_%i [style=invis]\n"
+                   !spec_counter
+                   j
+                   j
+                   j
+                   !target_invisible_arrow_pre;
+               done
+             ) posts;
   F.fprintf f "\n } \n"
 
 (* this is used to print a list of proposition when considered in a path of nodes *)
@@ -1276,7 +1283,7 @@ let rec make_visual_heap_edges nodes sigma prop =
 (* from a prop generate and return visual proposition *)
 let prop_to_set_of_visual_heaps prop =
   let result = ref [] in
-  working_list:=[(!global_node_counter, Prop.get_sigma prop)];
+  working_list := [(!global_node_counter, prop.Prop.sigma)];
   incr global_node_counter;
   while (!working_list!=[]) do
     set_dangling_nodes:=[];
@@ -1381,8 +1388,8 @@ let print_specs_xml signature specs loc fmt =
   let do_one_spec pre posts n =
     let add_stack_to_prop _prop =
       (* add stack vars from pre *)
-      let pre_stack = fst (Prop.sigma_get_stack_nonstack true (Prop.get_sigma pre)) in
-      let _prop' = Prop.replace_sigma (pre_stack @ Prop.get_sigma _prop) _prop in
+      let pre_stack = fst (Prop.sigma_get_stack_nonstack true pre.Prop.sigma) in
+      let _prop' = Prop.set _prop ~sigma:(pre_stack @ _prop.Prop.sigma) in
       Prop.normalize _prop' in
     let jj = ref 0 in
     let xml_pre = prop_to_xml pre "precondition" !jj in

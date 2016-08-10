@@ -381,4 +381,4 @@ let add_tainting_attribute att pvar_param prop =
                       (Pvar.to_string pvar));
            Attribute.add_or_replace prop_acc (Apred (att, [rhs]))
        | _ -> prop_acc)
-    prop (Prop.get_sigma prop)
+    prop prop.Prop.sigma
