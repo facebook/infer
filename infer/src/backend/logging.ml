@@ -17,6 +17,7 @@ module F = Format
 (** type of printable elements *)
 type print_type =
   | PTatom
+  | PTattribute
   | PTdecrease_indent
   | PTexp
   | PTexp_list

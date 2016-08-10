@@ -1,7 +1,13 @@
+type line_range_t = {
+  start_line : int;
+  end_line : int;
+}
+
 type location_t = {
   location_type : string;
   file : string;
   line : int;
+  blame_range : line_range_t list;
 }
 
 type stacktree = {

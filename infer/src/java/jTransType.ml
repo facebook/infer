@@ -391,11 +391,11 @@ and value_type program tenv vt =
   | JBasics.TObject ot -> object_type program tenv ot
 
 
-(**  Translate object types into Sil.Sizeof expressions *)
+(**  Translate object types into Exp.Sizeof expressions *)
 let sizeof_of_object_type program tenv ot subtypes =
   match object_type program tenv ot with
   | Typ.Tptr (typ, _) ->
-      Sil.Sizeof (typ, None, subtypes)
+      Exp.Sizeof (typ, None, subtypes)
   | _ ->
       raise (Type_tranlsation_error "Pointer or array type expected in tenv")
 

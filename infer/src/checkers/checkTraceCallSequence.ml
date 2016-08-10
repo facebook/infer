@@ -210,7 +210,7 @@ module Automaton = struct
   (** Transfer function for an instruction. *)
   let do_instr pn pd (instr : Sil.instr) (state : State.t) : State.t =
     match instr with
-    | Sil.Call (_, Sil.Const (Const.Cfun callee_pn), _, loc, _) ->
+    | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, loc, _) ->
         do_call pn pd callee_pn state loc
     | _ -> state
 
@@ -232,7 +232,7 @@ module BooleanVars = struct
 
   (** Check if the expression exp is one of the listed boolean variables. *)
   let exp_boolean_var exp = match exp with
-    | Sil.Lvar pvar when Pvar.is_local pvar ->
+    | Exp.Lvar pvar when Pvar.is_local pvar ->
         let name = Mangled.to_string (Pvar.get_name pvar) in
         if IList.mem string_equal name boolean_variables
         then Some name
@@ -244,10 +244,10 @@ module BooleanVars = struct
     (* Normalize a boolean condition. *)
     let normalize_condition cond_e =
       match cond_e with
-      | Sil.UnOp (Unop.LNot, Sil.BinOp (Binop.Eq, e1, e2), _) ->
-          Sil.BinOp (Binop.Ne, e1, e2)
-      | Sil.UnOp (Unop.LNot, Sil.BinOp (Binop.Ne, e1, e2), _) ->
-          Sil.BinOp (Binop.Eq, e1, e2)
+      | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Eq, e1, e2), _) ->
+          Exp.BinOp (Binop.Ne, e1, e2)
+      | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Ne, e1, e2), _) ->
+          Exp.BinOp (Binop.Eq, e1, e2)
       | _ -> cond_e in
 
     (* Normalize an instruction. *)
@@ -258,7 +258,7 @@ module BooleanVars = struct
       | instr -> instr in
 
     match normalize_instr instr with
-    | Sil.Prune (Sil.BinOp (Binop.Eq, _cond_e, Sil.Const (Const.Cint i)), _, _, _)
+    | Sil.Prune (Exp.BinOp (Binop.Eq, _cond_e, Exp.Const (Const.Cint i)), _, _, _)
       when IntLit.iszero i ->
         let cond_e = Idenv.expand_expr idenv _cond_e in
         let state' = match exp_boolean_var cond_e with
@@ -267,7 +267,7 @@ module BooleanVars = struct
               State.prune state name false
           | None -> state in
         state'
-    | Sil.Prune (Sil.BinOp (Binop.Ne, _cond_e, Sil.Const (Const.Cint i)), _, _, _)
+    | Sil.Prune (Exp.BinOp (Binop.Ne, _cond_e, Exp.Const (Const.Cint i)), _, _, _)
       when IntLit.iszero i ->
         let cond_e = Idenv.expand_expr idenv _cond_e in
         let state' = match exp_boolean_var cond_e with
@@ -281,7 +281,7 @@ module BooleanVars = struct
         let state' = match exp_boolean_var e1 with
           | Some name ->
               let b_opt = match e2 with
-                | Sil.Const (Const.Cint i) -> Some (not (IntLit.iszero i))
+                | Exp.Const (Const.Cint i) -> Some (not (IntLit.iszero i))
                 | _ -> None in
               if verbose then
                 begin

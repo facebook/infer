@@ -43,3 +43,9 @@ let kind_equal: t => t => bool;
 let pp: printenv => F.formatter => t => unit;
 
 let to_string: t => string;
+
+let iszero_int_float: t => bool;
+
+let isone_int_float: t => bool;
+
+let isminusone_int_float: t => bool;

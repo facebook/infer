@@ -37,7 +37,8 @@ let stracktree_of_frame frame =
         frame.Stacktrace.method_str;
     location = Some { Stacktree_j.location_type = "call_site";
                       file = frame.Stacktrace.file_str;
-                      line = frame.Stacktrace.line_num };
+                      line = frame.Stacktrace.line_num;
+                      blame_range = [] };
     callees = [];
   }
 

@@ -9,7 +9,7 @@
 
 open! Utils
 
-type const_map = Cfg.Node.t -> Sil.exp -> Const.t option
+type const_map = Cfg.Node.t -> Exp.t -> Const.t option
 
 (** Build a const map lazily. *)
 val build_const_map : Tenv.t -> Cfg.Procdesc.t -> const_map

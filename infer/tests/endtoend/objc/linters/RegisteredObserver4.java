@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 - present Facebook, Inc.
+ * Copyright (c) 2016 - present Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD style license found in the
@@ -25,33 +25,35 @@ import utils.InferException;
 import utils.InferResults;
 import utils.InferRunner;
 
-public class NSNumber2Test {
+public class RegisteredObserver4 {
 
-  public static final String NSNUMBER_FILE =
-      "infer/tests/codetoanalyze/objc/linters/badpointer.m";
+  public static final String VCFile =
+      "infer/tests/codetoanalyze/objc/linters/registered_observer/Person.m";
 
   private static ImmutableList<String> inferCmd;
 
-  public static final String BAD_POINTER_COMPARISON = "BAD_POINTER_COMPARISON";
+  public static final String REGISTERED_OBSERVER = "REGISTERED_OBSERVER_BEING_DEALLOCATED";
 
   @ClassRule
   public static DebuggableTemporaryFolder folder = new DebuggableTemporaryFolder();
 
   @BeforeClass
   public static void runInfer() throws InterruptedException, IOException {
-    inferCmd = InferRunner.createObjCInferCommand(
+    inferCmd = InferRunner.createObjCInferCommandSimple(
         folder,
-        NSNUMBER_FILE);
+        VCFile,
+        "cf");
   }
 
   @Test
-  public void badNSNumberPointerComparisonShouldBeFound()
+  public void RegisteredObserverShouldBeFound()
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferObjC(inferCmd);
     assertThat(
-        "Results should contain " + BAD_POINTER_COMPARISON,
+        "Results should contain " + REGISTERED_OBSERVER,
         inferResults,
-        containsOnlyLines(new int[]{17, 26, 33, 85, 99, 106, 121, 128, 135, 139}));
+        containsOnlyLines(new int[] {80, 97})
+    );
   }
 
 }

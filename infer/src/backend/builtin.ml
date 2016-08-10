@@ -18,7 +18,7 @@ type args = {
   prop_ : Prop.normal Prop.t;
   path : Paths.Path.t;
   ret_ids : Ident.t list;
-  args : (Sil.exp * Typ.t) list;
+  args : (Exp.t * Typ.t) list;
   proc_name : Procname.t;
   loc : Location.t;
 }

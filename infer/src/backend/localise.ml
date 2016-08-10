@@ -242,7 +242,7 @@ let by_call_to tags proc_name =
   "by " ^ call_to tags proc_name
 
 let by_call_to_ra tags ra =
-  "by " ^ call_to_at_line tags ra.Sil.ra_pname ra.Sil.ra_loc
+  "by " ^ call_to_at_line tags ra.PredSymb.ra_pname ra.PredSymb.ra_loc
 
 let rec format_typ = function
   | Typ.Tptr (typ, _) when !Config.curr_language = Config.Java ->
@@ -342,11 +342,11 @@ let deref_str_undef (proc_name, loc) =
 let deref_str_freed ra =
   let tags = Tags.create () in
   let freed_or_closed_by_call =
-    let freed_or_closed = match ra.Sil.ra_res with
-      | Sil.Rmemory _ -> "freed"
-      | Sil.Rfile -> "closed"
-      | Sil.Rignore -> "freed"
-      | Sil.Rlock -> "locked" in
+    let freed_or_closed = match ra.PredSymb.ra_res with
+      | PredSymb.Rmemory _ -> "freed"
+      | PredSymb.Rfile -> "closed"
+      | PredSymb.Rignore -> "freed"
+      | PredSymb.Rlock -> "locked" in
     freed_or_closed ^ " " ^ by_call_to_ra tags ra in
   { tags = tags;
     value_pre = Some (pointer_or_object ());
@@ -356,9 +356,9 @@ let deref_str_freed ra =
 (** dereference strings for a dangling pointer dereference *)
 let deref_str_dangling dangling_kind_opt =
   let dangling_kind_prefix = match dangling_kind_opt with
-    | Some Sil.DAuninit -> "uninitialized "
-    | Some Sil.DAaddr_stack_var -> "deallocated stack "
-    | Some Sil.DAminusone -> "-1 "
+    | Some PredSymb.DAuninit -> "uninitialized "
+    | Some PredSymb.DAaddr_stack_var -> "deallocated stack "
+    | Some PredSymb.DAminusone -> "-1 "
     | None -> "" in
   { tags = Tags.create ();
     value_pre = Some (dangling_kind_prefix ^ (pointer_or_object ()));
@@ -399,7 +399,7 @@ let deref_str_array_bound size_opt index_opt =
 let deref_str_uninitialized alloc_att_opt =
   let tags = Tags.create () in
   let creation_str = match alloc_att_opt with
-    | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Racquire } as ra)) ->
+    | Some (Sil.Apred (Aresource ({ ra_kind = Racquire } as ra), _)) ->
         "after allocation " ^ by_call_to_ra tags ra
     | _ -> "after declaration" in
   { tags = tags;
@@ -536,8 +536,8 @@ let parameter_field_not_null_checked_desc (desc : error_desc) exp =
   let field_not_nullable_desc exp =
     let rec exp_to_string exp =
       match exp with
-      | Sil.Lfield (exp', field, _) -> (exp_to_string exp')^" -> "^(Ident.fieldname_to_string field)
-      | Sil.Lvar pvar -> Mangled.to_string (Pvar.get_name pvar)
+      | Exp.Lfield (exp', field, _) -> (exp_to_string exp')^" -> "^(Ident.fieldname_to_string field)
+      | Exp.Lvar pvar -> Mangled.to_string (Pvar.get_name pvar)
       | _ -> "" in
     let var_s = exp_to_string exp in
     let field_not_null_desc =
@@ -545,8 +545,8 @@ let parameter_field_not_null_checked_desc (desc : error_desc) exp =
     { desc with descriptions = field_not_null_desc :: desc.descriptions;
                 tags = (Tags.field_not_null_checked, var_s) :: desc.tags; } in
   match exp with
-  | Sil.Lvar var -> parameter_not_nullable_desc var
-  | Sil.Lfield _ -> field_not_nullable_desc exp
+  | Exp.Lvar var -> parameter_not_nullable_desc var
+  | Exp.Lfield _ -> field_not_nullable_desc exp
   | _ -> desc
 
 let has_tag (desc : error_desc) tag =
@@ -688,7 +688,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
           s, " to ", " on " in
     let typ_str =
       match hpred_type_opt with
-      | Some (Sil.Sizeof (Typ.Tstruct
+      | Some (Exp.Sizeof (Typ.Tstruct
                             { Typ.csu = Csu.Class _;
                               Typ.struct_name = Some classname;
                             }, _, _)) ->
@@ -696,10 +696,10 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
       | _ -> " " in
     let desc_str =
       match resource_opt with
-      | Some Sil.Rmemory _ -> mem_dyn_allocated ^ _to ^ value_str
-      | Some Sil.Rfile -> "resource" ^ typ_str ^ "acquired" ^ _to ^ value_str
-      | Some Sil.Rlock -> lock_acquired ^ _on ^ value_str
-      | Some Sil.Rignore
+      | Some PredSymb.Rmemory _ -> mem_dyn_allocated ^ _to ^ value_str
+      | Some PredSymb.Rfile -> "resource" ^ typ_str ^ "acquired" ^ _to ^ value_str
+      | Some PredSymb.Rlock -> lock_acquired ^ _on ^ value_str
+      | Some PredSymb.Rignore
       | None -> if value_str_opt = None then "memory" else value_str in
     if desc_str = "" then [] else [desc_str] in
   let by_call_to = match resource_action_opt with
@@ -707,10 +707,10 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
     | None -> [] in
   let is_not_rxxx_after =
     let rxxx = match resource_opt with
-      | Some Sil.Rmemory _ -> reachable
-      | Some Sil.Rfile
-      | Some Sil.Rlock -> released
-      | Some Sil.Rignore
+      | Some PredSymb.Rmemory _ -> reachable
+      | Some PredSymb.Rfile
+      | Some PredSymb.Rlock -> released
+      | Some PredSymb.Rignore
       | None -> reachable in
     [("is not " ^ rxxx ^ " after " ^ _line tags loc)] in
   let bucket_str =
@@ -766,17 +766,17 @@ let desc_retain_cycle prop cycle loc cycle_dotty =
     | _ -> s in
   let do_edge ((se, _), f, _) =
     match se with
-    | Sil.Eexp(Sil.Lvar pvar, _) when Pvar.equal pvar Sil.block_pvar ->
+    | Sil.Eexp(Exp.Lvar pvar, _) when Pvar.equal pvar Sil.block_pvar ->
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") a block capturing "^(Ident.fieldname_to_string f)^"; ";
         ct:=!ct +1;
-    | Sil.Eexp(Sil.Lvar pvar as e, _) ->
+    | Sil.Eexp(Exp.Lvar pvar as e, _) ->
         let e_str = Sil.exp_to_string e in
         let e_str = if Pvar.is_seed pvar then
             remove_old e_str
           else e_str in
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") object "^e_str^" retaining "^e_str^"."^(Ident.fieldname_to_string f)^", ";
         ct:=!ct +1
-    | Sil.Eexp (Sil.Sizeof (typ, _, _), _) ->
+    | Sil.Eexp (Exp.Sizeof (typ, _, _), _) ->
         let step =
           " (" ^ (string_of_int !ct) ^ ") an object of "
           ^ (Typ.to_string typ) ^ " retaining another object via instance variable "
@@ -855,35 +855,35 @@ let desc_tainted_value_reaching_sensitive_function
   Tags.add tags Tags.value expr_str;
   let description =
     match taint_kind with
-    | Sil.Tk_unverified_SSL_socket ->
+    | PredSymb.Tk_unverified_SSL_socket ->
         F.sprintf
           "The hostname of SSL socket `%s` (returned from %s) has not been verified! Reading from the socket via the call to %s %s is dangerous. You should verify the hostname of the socket using a HostnameVerifier before reading; otherwise, you may be vulnerable to a man-in-the-middle attack."
           expr_str
           (format_method tainting_fun)
           (format_method sensitive_fun)
           (at_line tags loc)
-    | Sil.Tk_shared_preferences_data ->
+    | PredSymb.Tk_shared_preferences_data ->
         F.sprintf
           "`%s` holds sensitive data read from a SharedPreferences object (via call to %s). This data may leak via the call to %s %s."
           expr_str
           (format_method tainting_fun)
           (format_method sensitive_fun)
           (at_line tags loc)
-    | Sil.Tk_privacy_annotation ->
+    | PredSymb.Tk_privacy_annotation ->
         F.sprintf
           "`%s` holds privacy-sensitive data (source: call to %s). This data may leak via the call to %s %s."
           expr_str
           (format_method tainting_fun)
           (format_method sensitive_fun)
           (at_line tags loc)
-    | Sil.Tk_integrity_annotation ->
+    | PredSymb.Tk_integrity_annotation ->
         F.sprintf
           "`%s` holds untrusted user-controlled data (source: call to %s). This data may flow into a security-sensitive sink via the call to %s %s."
           expr_str
           (format_method tainting_fun)
           (format_method sensitive_fun)
           (at_line tags loc)
-    | Sil.Tk_unknown ->
+    | PredSymb.Tk_unknown ->
         F.sprintf
           "Value `%s` could be insecure (tainted) due to call to function %s %s %s %s. Function %s %s"
           expr_str
