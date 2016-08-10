@@ -76,6 +76,7 @@ let tests =
   let xF = AccessPath.Exact (make_access_path "x" ["f"]) in
   let xG = AccessPath.Exact (make_access_path "x" ["g"]) in
   let xFG = AccessPath.Exact (make_access_path "x" ["f"; "g"]) in
+  let y = AccessPath.Exact (make_access_path "y" []) in
   let yF = AccessPath.Exact (make_access_path "y" ["f"]) in
   let yG = AccessPath.Exact (make_access_path "y" ["g"]) in
   let yFG = AccessPath.Exact (make_access_path "y" ["f"; "g"]) in
@@ -434,4 +435,28 @@ let tests =
       assert_trees_equal (widen xFG_tree x_tree_y_trace) xFG_tree_widened_trace in
     "widen">::widen_test_ in
 
-  "access_tree_suite">:::[get_trace_test; add_trace_test; lteq_test; join_test; widen_test]
+  let fold_test =
+    let fold_test_ _ =
+      let collect_ap_traces acc ap trace =
+        (ap, trace) :: acc in
+      let ap_traces = Domain.fold collect_ap_traces tree [] in
+      let has_ap_trace_pair ap_in trace_in =
+        IList.exists
+          (fun (ap, trace) -> AccessPath.equal ap ap_in && MockTraceDomain.equal trace trace_in)
+          ap_traces in
+
+      assert_bool "Should have six ap/trace pairs" (IList.length ap_traces = 6);
+      assert_bool "has x pair" (has_ap_trace_pair x x_trace);
+      assert_bool "has xF pair" (has_ap_trace_pair xF xF_trace);
+      assert_bool "has xFG pair" (has_ap_trace_pair xFG xFG_trace);
+      assert_bool "has y pair" (has_ap_trace_pair y y_trace);
+      assert_bool "has yF* pair" (has_ap_trace_pair yF_star yF_trace);
+      assert_bool "has z pair" (has_ap_trace_pair z_star z_trace) in
+    "fold">::fold_test_ in
+
+  "access_tree_suite">:::[get_trace_test;
+                          add_trace_test;
+                          lteq_test;
+                          join_test;
+                          widen_test;
+                          fold_test;]
