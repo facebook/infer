@@ -469,15 +469,25 @@ struct
     Buffer.add_string buffer name;
     Buffer.contents buffer
 
-  let get_super impl_decl_info =
+  let rec get_super_if decl =
+    match decl with
+    | Some Clang_ast_t.ObjCImplementationDecl(_, _, _, _, impl_decl_info) ->
+        (* Try getting the super ref through the impl info, and fall back to
+           getting the if decl first and getting the super ref through it. *)
+        let super_ref = get_decl_opt_with_decl_ref impl_decl_info.oidi_super in
+        if Option.is_some super_ref then
+          super_ref
+        else
+          get_super_if (get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface)
+    | Some Clang_ast_t.ObjCInterfaceDecl(_, _, _, _, interface_decl_info) ->
+        get_decl_opt_with_decl_ref interface_decl_info.otdi_super
+    | _ -> None
+
+  let get_super_impl impl_decl_info =
     let objc_interface_decl_current =
       get_decl_opt_with_decl_ref
         impl_decl_info.Clang_ast_t.oidi_class_interface in
-    let objc_interface_decl_super =
-      match objc_interface_decl_current with
-      | Some Clang_ast_t.ObjCInterfaceDecl(_, _, _, _, interface_decl_info) ->
-          get_decl_opt_with_decl_ref interface_decl_info.otdi_super
-      | _ -> None in
+    let objc_interface_decl_super = get_super_if objc_interface_decl_current in
     let objc_implementation_decl_super =
       match objc_interface_decl_super with
       | Some ObjCInterfaceDecl(_, _, _, _, interface_decl_info) ->

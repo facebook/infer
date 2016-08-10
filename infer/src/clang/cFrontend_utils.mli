@@ -159,11 +159,15 @@ sig
   (* Generates a key for a declaration based on its name and the declaration tag. *)
   val generate_key_decl : Clang_ast_t.decl -> string
 
+  (* Given an objc impl or interface decl, returns the objc interface decl of
+     the superclass, if any. *)
+  val get_super_if : Clang_ast_t.decl option -> Clang_ast_t.decl option
+
   (*
    * Given an objc impl decl info, return the super class's list of decls and
    * its objc impl decl info.
    *)
-  val get_super :
+  val get_super_impl :
     Clang_ast_t.obj_c_implementation_decl_info ->
     (Clang_ast_t.decl list *
      Clang_ast_t.obj_c_implementation_decl_info)
