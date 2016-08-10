@@ -14,6 +14,9 @@ open! Utils
 
 open Sil
 
+(** Negate an atom *)
+val atom_negate : Sil.atom -> Sil.atom
+
 (** {2 Ordinary Theorem Proving} *)
 
 (** Check [ |- e=0].  Result [false] means "don't know". *)
