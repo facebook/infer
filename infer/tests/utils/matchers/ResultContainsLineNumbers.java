@@ -14,6 +14,7 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Vector;
 
 import utils.InferError;
@@ -23,12 +24,15 @@ public class ResultContainsLineNumbers extends BaseMatcher<InferResults> {
 
   private int[] lines;
   private boolean strict;
+  private Optional<String> bugType;
 
   public ResultContainsLineNumbers(
       int[] lines,
-      boolean strict) {
+      boolean strict,
+      String bugType) {
     this.lines = lines;
     this.strict = strict;
+    this.bugType = Optional.ofNullable(bugType);
   }
 
   @Override
@@ -41,7 +45,9 @@ public class ResultContainsLineNumbers extends BaseMatcher<InferResults> {
     for (int line : lines) {
       boolean isContained = false;
       for (InferError error : errors) {
-        isContained = isContained || line == error.getErrorLine();
+        String bugType = this.bugType.orElse(error.getErrorType());
+        boolean isSameErrType = bugType.equals(error.getErrorType());
+        isContained = isContained || (line == error.getErrorLine() && isSameErrType);
       }
       allContained = allContained && isContained;
     }
@@ -65,11 +71,19 @@ public class ResultContainsLineNumbers extends BaseMatcher<InferResults> {
   }
 
   public static <T> Matcher<InferResults> containsLines(int[] lines) {
-    return new ResultContainsLineNumbers(lines, false);
+    return new ResultContainsLineNumbers(lines, false, null);
   }
 
   public static <T> Matcher<InferResults> containsOnlyLines(int[] lines) {
-    return new ResultContainsLineNumbers(lines, true);
+    return new ResultContainsLineNumbers(lines, true, null);
+  }
+
+  public static <T> Matcher<InferResults> containsLinesOfError(int[] lines, String bugType) {
+    return new ResultContainsLineNumbers(lines, false, bugType);
+  }
+
+  public static <T> Matcher<InferResults> containsOnlyLinesOfError(int[] lines, String bugType) {
+    return new ResultContainsLineNumbers(lines, true, bugType);
   }
 
   private int[] findLineNumbersInReport(InferResults results) {
