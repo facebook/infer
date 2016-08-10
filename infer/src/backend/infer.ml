@@ -53,6 +53,8 @@ let () =
     Array.of_list (
       infer_py ::
       Config.anon_args @
+      (if not Config.absolute_paths then [] else
+         ["--absolute-paths"]) @
       (match Config.analyzer with None -> [] | Some a ->
           ["--analyzer";
            IList.assoc (=) a (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)]) @
@@ -73,8 +75,14 @@ let () =
          ["--debug"]) @
       (if not Config.debug_exceptions then [] else
          ["--debug-exceptions"]) @
+      (if not Config.fail_on_bug then [] else
+         ["--fail-on-bug"]) @
       (if Config.filtering then [] else
          ["--no-filtering"]) @
+      (if not Config.frontend_debug then [] else
+         ["--frontend-debug"]) @
+      (if not Config.frontend_stats then [] else
+         ["--frontend-stats"]) @
       (if not Config.flavors || not buck then [] else
          ["--use-flavors"]) @
       (match Config.infer_cache with None -> [] | Some s ->
@@ -88,7 +96,9 @@ let () =
          ["--reactive"]) @
       "--out" :: Config.results_dir ::
       (match Config.project_root with None -> [] | Some pr ->
-        ["--project_root"; pr]) @
+          ["--project_root"; pr]) @
+      (match Config.xcode_developer_dir with None -> [] | Some d ->
+          ["--xcode-developer-dir"; d]) @
       (if Config.rest = [] then [] else
          ("--" :: build_cmd))
     ) in

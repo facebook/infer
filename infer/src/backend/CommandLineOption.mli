@@ -15,6 +15,8 @@ type exe = Analyze | Clang | Java | Llvm | Print | StatsAggregator | Toplevel
 
 val current_exe : exe
 
+val all_exes : exe list
+
 (** The [mk_*] functions declare command line options, while [parse] parses then according to the
     declared options.
 
