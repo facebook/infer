@@ -9,12 +9,9 @@
 
 type context = {
   in_synchronized_block: bool;
-
-  (*
-   * True if the translation unit contains an ObjC class impl that's a subclass
-   * of CKComponent or CKComponentController.
-   *)
   is_ck_translation_unit: bool;
+  (** True if the translation unit contains an ObjC class impl that's a subclass
+      of CKComponent or CKComponentController. *)
 }
 
 let empty = {
