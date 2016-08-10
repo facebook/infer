@@ -141,8 +141,6 @@ val prop_expmap : (Exp.t -> Exp.t) -> 'a t -> exposed t
     No expressions inside hpara are replaced. *)
 val sigma_replace_exp : (Exp.t * Exp.t) list -> hpred list -> hpred list
 
-val sigma_map : 'a t -> (hpred -> hpred) -> 'a t
-
 (** {2 Normalization} *)
 
 (** Turn an inequality expression into an atom *)

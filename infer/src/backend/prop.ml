@@ -33,21 +33,71 @@ type exposed (** kind for exposed props *)
 type pi = Sil.atom list
 type sigma = Sil.hpred list
 
-(** A proposition. The following invariants are mantained. [sub] is of
-    the form id1 = e1 ... idn = en where: the id's are distinct and do not
-    occur in the e's nor in [pi] or [sigma]; the id's are in sorted
-    order; the id's are not existentials; if idn = yn (for yn not
-    existential) then idn < yn in the order on ident's. [pi] is sorted
-    and normalized, and does not contain x = e. [sigma] is sorted and
-    normalized. *)
-type 'a t =
-  {
-    sigma: sigma;  (** spatial part *)
-    sub: Sil.subst;  (** substitution *)
-    pi: pi;  (** pure part *)
-    foot_sigma : sigma;  (** abduced spatial part *)
-    foot_pi: pi;  (** abduced pure part *)
-  }
+
+module Core : sig
+
+  (** the kind 'a should range over [normal] and [exposed] *)
+  type 'a t = private
+    {
+      sigma: sigma;  (** spatial part *)
+      sub: Sil.subst;  (** substitution *)
+      pi: pi;  (** pure part *)
+      foot_sigma : sigma;  (** abduced spatial part *)
+      foot_pi: pi;  (** abduced pure part *)
+    }
+
+  (** Proposition [true /\ emp]. *)
+  val prop_emp : normal t
+
+  (** Set individual fields of the prop. *)
+  val set : ?sub:Sil.subst -> ?pi:pi -> ?sigma:sigma -> ?foot_pi:pi -> ?foot_sigma:sigma ->
+    'a t -> exposed t
+
+  (** Cast an exposed prop to a normalized one by just changing the type *)
+  val unsafe_cast_to_normal : exposed t -> normal t
+
+end = struct
+
+  (** A proposition. The following invariants are mantained. [sub] is of
+      the form id1 = e1 ... idn = en where: the id's are distinct and do not
+      occur in the e's nor in [pi] or [sigma]; the id's are in sorted
+      order; the id's are not existentials; if idn = yn (for yn not
+      existential) then idn < yn in the order on ident's. [pi] is sorted
+      and normalized, and does not contain x = e. [sigma] is sorted and
+      normalized. *)
+  type 'a t =
+    {
+      sigma: sigma;  (** spatial part *)
+      sub: Sil.subst;  (** substitution *)
+      pi: pi;  (** pure part *)
+      foot_sigma : sigma;  (** abduced spatial part *)
+      foot_pi: pi;  (** abduced pure part *)
+    }
+
+  (** Proposition [true /\ emp]. *)
+  let prop_emp : normal t =
+    {
+      sub = Sil.sub_empty;
+      pi = [];
+      sigma = [];
+      foot_pi = [];
+      foot_sigma = [];
+    }
+
+  let set ?sub ?pi ?sigma ?foot_pi ?foot_sigma p =
+    let set_ p
+        ?(sub=p.sub) ?(pi=p.pi) ?(sigma=p.sigma) ?(foot_pi=p.foot_pi) ?(foot_sigma=p.foot_sigma) ()
+      =
+      { sub; pi; sigma; foot_pi; foot_sigma }
+    in
+    set_ p ?sub ?pi ?sigma ?foot_pi ?foot_sigma ()
+
+  let unsafe_cast_to_normal (p: exposed t) : normal t =
+    (p :> normal t)
+
+end
+
+include Core
 
 exception Cannot_star of L.ml_loc
 
@@ -1359,7 +1409,7 @@ let footprint_normalize prop =
       let nsigma' = sigma_normalize Sil.sub_empty (sigma_sub ren_sub nsigma) in
       let npi' = pi_normalize Sil.sub_empty nsigma' (pi_sub ren_sub npi) in
       (npi', nsigma') in
-  { prop with foot_pi = npi'; foot_sigma = nsigma' }
+  set prop ~foot_pi:npi' ~foot_sigma:nsigma'
 
 let exp_normalize_prop prop exp =
   Config.run_with_abs_val_equal_zero (exp_normalize prop.sub) exp
@@ -1414,31 +1464,27 @@ let pi_normalize_prop prop pi =
 (** {2 Compaction} *)
 
 (** Return a compact representation of the prop *)
-let prop_compact sh prop =
+let prop_compact sh (prop : normal t) : normal t =
   let sigma' = IList.map (Sil.hpred_compact sh) prop.sigma in
-  { prop with sigma = sigma'}
+  unsafe_cast_to_normal (set prop ~sigma:sigma')
 
 (** {2 Function for replacing occurrences of expressions.} *)
 
-let replace_pi pi eprop =
-  { eprop with pi = pi }
+let replace_pi pi prop: exposed t =
+  set prop ~pi
 
-let replace_sigma sigma eprop =
-  { eprop with sigma = sigma }
+let replace_sigma sigma prop : exposed t =
+  set prop ~sigma
 
-let replace_sigma_footprint sigma (prop : 'a t) : exposed t =
-  { prop with foot_sigma = sigma }
+let replace_sigma_footprint foot_sigma prop : exposed t =
+  set prop ~foot_sigma
 
-let replace_pi_footprint pi (prop : 'a t) : exposed t =
-  { prop with foot_pi = pi }
+let replace_pi_footprint foot_pi prop : exposed t =
+  set prop ~foot_pi
 
 let sigma_replace_exp epairs sigma =
   let sigma' = IList.map (Sil.hpred_replace_exp epairs) sigma in
   sigma_normalize Sil.sub_empty sigma'
-
-let sigma_map prop f =
-  let sigma' = IList.map f prop.sigma in
-  { prop with sigma = sigma' }
 
 (** {2 Query about Proposition} *)
 
@@ -1501,24 +1547,14 @@ let mk_dll_hpara iF oB oF svars evars body =
       body_dll = body } in
   hpara_dll_normalize para
 
-(** Proposition [true /\ emp]. *)
-let prop_emp : normal t =
-  {
-    sub = Sil.sub_empty;
-    pi = [];
-    sigma = [];
-    foot_pi = [];
-    foot_sigma = [];
-  }
-
 (** Conjoin a heap predicate by separating conjunction. *)
 let prop_hpred_star (p : 'a t) (h : Sil.hpred) : exposed t =
   let sigma' = h:: p.sigma in
-  { p with sigma = sigma'}
+  set p ~sigma:sigma'
 
 let prop_sigma_star (p : 'a t) (sigma : sigma) : exposed t =
   let sigma' = sigma @ p.sigma in
-  { p with sigma = sigma' }
+  set p ~sigma:sigma'
 
 (** return the set of subexpressions of [strexp] *)
 let strexp_get_exps strexp =
@@ -1699,17 +1735,21 @@ let rec prop_atom_and ?(footprint=false) (p : normal t) a : normal t =
             let nsigma' = sigma_normalize sub' p.sigma in
             (sub_normalize sub', pi_normalize sub' nsigma' p.pi, nsigma') in
           let (eqs_zero, nsigma'') = sigma_remove_emptylseg nsigma' in
-          let p' = { p with sub = nsub'; pi = npi'; sigma = nsigma''} in
+          let p' =
+            unsafe_cast_to_normal
+              (set p ~sub:nsub' ~pi:npi' ~sigma:nsigma'') in
           IList.fold_left (prop_atom_and ~footprint) p' eqs_zero
       | Sil.Aeq (e1, e2) when (Exp.compare e1 e2 = 0) ->
           p
       | Sil.Aneq (e1, e2) ->
           let sigma' = sigma_intro_nonemptylseg e1 e2 p.sigma in
           let pi' = pi_normalize p.sub sigma' (a':: p.pi) in
-          { p with pi = pi'; sigma = sigma'}
+          unsafe_cast_to_normal
+            (set p ~pi:pi' ~sigma:sigma')
       | _ ->
           let pi' = pi_normalize p.sub p.sigma (a':: p.pi) in
-          { p with pi = pi'} in
+          unsafe_cast_to_normal
+            (set p ~pi:pi') in
     if not footprint then p'
     else begin
       let fav_a' = Sil.atom_fav a' in
@@ -1725,11 +1765,13 @@ let rec prop_atom_and ?(footprint=false) (p : normal t) a : normal t =
               let mysub = Sil.sub_of_list [(i, e)] in
               let foot_sigma' = sigma_normalize mysub p'.foot_sigma in
               let foot_pi' = a' :: pi_normalize mysub foot_sigma' p'.foot_pi in
-              footprint_normalize { p' with foot_pi = foot_pi'; foot_sigma = foot_sigma' }
+              footprint_normalize
+                (set p' ~foot_pi:foot_pi' ~foot_sigma:foot_sigma')
           | _ ->
-              footprint_normalize { p' with foot_pi = a' :: p'.foot_pi } in
+              footprint_normalize
+                (set p' ~foot_pi:(a' :: p'.foot_pi)) in
       if predicate_warning then (L.d_warning "dropping non-footprint "; Sil.d_atom a'; L.d_ln ());
-      p''
+      unsafe_cast_to_normal p''
     end
   end
 
@@ -1767,13 +1809,13 @@ let prop_reset_inst inst_map prop =
 
 (** Extract the footprint and return it as a prop *)
 let extract_footprint p =
-  { prop_emp with pi = p.foot_pi; sigma = p.foot_sigma }
+  set prop_emp ~pi:p.foot_pi ~sigma:p.foot_sigma
 
 (** Extract the (footprint,current) pair *)
-let extract_spec p =
+let extract_spec (p : normal t) : normal t * normal t =
   let pre = extract_footprint p in
-  let post = { p with foot_pi = []; foot_sigma = [] } in
-  (pre, post)
+  let post = set p ~foot_pi:[] ~foot_sigma:[] in
+  (unsafe_cast_to_normal pre, unsafe_cast_to_normal post)
 
 (** [prop_set_fooprint p p_foot] sets proposition [p_foot] as footprint of [p]. *)
 let prop_set_footprint p p_foot =
@@ -1781,7 +1823,7 @@ let prop_set_footprint p p_foot =
     (IList.map
        (fun (i, e) -> Sil.Aeq(Exp.Var i, e))
        (Sil.sub_to_list p_foot.sub)) @ p_foot.pi in
-  { p with foot_pi = pi; foot_sigma = p_foot.sigma }
+  set p ~foot_pi:pi ~foot_sigma:p_foot.sigma
 
 (** {2 Functions for renaming primed variables by "canonical names"} *)
 
@@ -1863,7 +1905,7 @@ let prop_dfs_sort p =
   let sigma' = sigma_dfs_sort sigma in
   let sigma_fp = get_sigma_footprint p in
   let sigma_fp' = sigma_dfs_sort sigma_fp in
-  let p' = { p with sigma = sigma'; foot_sigma = sigma_fp'} in
+  let p' = set p ~sigma:sigma' ~foot_sigma:sigma_fp' in
   (* L.err "@[<2>P SORTED:@\n%a@\n@." pp_prop p'; *)
   p'
 
@@ -1934,7 +1976,9 @@ let apply_reindexing subst prop =
     let eqs = Sil.sub_to_list sub_eqs in
     let atoms = IList.map (fun (id, e) -> Sil.Aeq (Exp.Var id, exp_normalize subst e)) eqs in
     (sub_keep, atoms) in
-  let p' = { prop with sub = nsub; pi = npi; sigma = nsigma } in
+  let p' =
+    unsafe_cast_to_normal
+      (set prop ~sub:nsub ~pi:npi ~sigma:nsigma) in
   IList.fold_left prop_atom_and p' atoms
 
 let prop_rename_array_indices prop =
@@ -2089,7 +2133,7 @@ let sub_captured_ren ren sub =
   Sil.sub_map (ident_captured_ren ren) (exp_captured_ren ren) sub
 
 (** Canonicalize the names of primed variables and footprint vars. *)
-let prop_rename_primed_footprint_vars p =
+let prop_rename_primed_footprint_vars (p : normal t) : normal t =
   let p = prop_rename_array_indices p in
   let bound_vars =
     let filter id = Ident.is_footprint id || Ident.is_primed id in
@@ -2110,14 +2154,9 @@ let prop_rename_primed_footprint_vars p =
   let nsub' = sub_normalize sub' in
   let nsigma' = sigma_normalize sub_for_normalize sigma' in
   let npi' = pi_normalize sub_for_normalize nsigma' pi' in
-  let p' = footprint_normalize {
-      sub = nsub';
-      pi = npi';
-      sigma = nsigma';
-      foot_pi = foot_pi';
-      foot_sigma = foot_sigma';
-    } in
-  p'
+  let p' = footprint_normalize
+      (set prop_emp ~sub:nsub' ~pi:npi' ~sigma:nsigma' ~foot_pi:foot_pi' ~foot_sigma:foot_sigma') in
+  unsafe_cast_to_normal p'
 
 (** {2 Functions for changing and generating propositions} *)
 
@@ -2128,9 +2167,12 @@ let expose (p : normal t) : exposed t = Obj.magic p
 
 (** normalize a prop *)
 let normalize (eprop : 'a t) : normal t =
-  let p0 = { prop_emp with sigma = sigma_normalize Sil.sub_empty eprop.sigma } in
+  let p0 =
+    unsafe_cast_to_normal
+      (set prop_emp ~sigma: (sigma_normalize Sil.sub_empty eprop.sigma)) in
   let nprop = IList.fold_left prop_atom_and p0 (get_pure eprop) in
-  footprint_normalize { nprop with foot_pi = eprop.foot_pi; foot_sigma = eprop.foot_sigma }
+  unsafe_cast_to_normal
+    (footprint_normalize (set nprop ~foot_pi:eprop.foot_pi ~foot_sigma:eprop.foot_sigma))
 
 (** Apply subsitution to prop. *)
 let prop_sub subst (prop: 'a t) : exposed t =
@@ -2138,7 +2180,7 @@ let prop_sub subst (prop: 'a t) : exposed t =
   let sigma = sigma_sub subst prop.sigma in
   let foot_pi = pi_sub subst prop.foot_pi in
   let foot_sigma = sigma_sub subst prop.foot_sigma in
-  { prop_emp with pi; sigma; foot_pi; foot_sigma; }
+  set prop_emp ~pi ~sigma ~foot_pi ~foot_sigma
 
 (** Apply renaming substitution to a proposition. *)
 let prop_ren_sub (ren_sub: Sil.subst) (prop: normal t) : normal t =
@@ -2146,7 +2188,7 @@ let prop_ren_sub (ren_sub: Sil.subst) (prop: normal t) : normal t =
 
 (** Existentially quantify the [fav] in [prop].
     [fav] should not contain any primed variables. *)
-let exist_quantify fav prop =
+let exist_quantify fav (prop : normal t) : normal t =
   let ids = Sil.fav_to_list fav in
   if IList.exists Ident.is_primed ids then assert false; (* sanity check *)
   if ids == [] then prop else
@@ -2156,7 +2198,7 @@ let exist_quantify fav prop =
       (* throw away x=E if x becomes _x *)
       let sub = Sil.sub_filter (fun i -> not (mem_idlist i ids)) prop.sub in
       if Sil.sub_equal sub prop.sub then prop
-      else { prop with sub = sub } in
+      else unsafe_cast_to_normal (set prop ~sub) in
     (*
     L.out "@[<2>.... Existential Quantification ....\n";
     L.out "SUB:%a\n" pp_sub prop'.sub;
@@ -2172,7 +2214,7 @@ let prop_expmap (fe: Exp.t -> Exp.t) prop =
   let sigma = IList.map (Sil.hpred_expmap f) prop.sigma in
   let foot_pi = IList.map (Sil.atom_expmap fe) prop.foot_pi in
   let foot_sigma = IList.map (Sil.hpred_expmap f) prop.foot_sigma in
-  { prop with pi; sigma; foot_pi; foot_sigma; }
+  set prop ~pi ~sigma ~foot_pi ~foot_sigma
 
 (** convert identifiers in fav to kind [k] *)
 let vars_make_unprimed fav prop =
@@ -2195,12 +2237,14 @@ let prop_primed_vars_to_normal_vars (p : normal t) : normal t =
   Sil.fav_filter_ident fav Ident.is_primed;
   vars_make_unprimed fav p
 
-let from_pi pi = { prop_emp with pi = pi }
+let from_pi pi =
+  set prop_emp ~pi
 
-let from_sigma sigma = { prop_emp with sigma = sigma }
+let from_sigma sigma =
+  set prop_emp ~sigma
 
-let replace_sub sub eprop =
-  { eprop with sub = sub }
+let replace_sub sub prop =
+  set prop ~sub
 
 (** Rename free variables in a prop replacing them with existentially quantified vars *)
 let prop_rename_fav_with_existentials (p : normal t) : normal t =
@@ -2248,11 +2292,12 @@ let prop_iter_to_prop iter =
   let sigma = IList.rev_append iter.pit_old (iter.pit_curr:: iter.pit_new) in
   let prop =
     normalize
-      { sub = iter.pit_sub;
-        pi = iter.pit_pi;
-        sigma = sigma;
-        foot_pi = iter.pit_foot_pi;
-        foot_sigma = iter.pit_foot_sigma } in
+      (set prop_emp
+         ~sub:iter.pit_sub
+         ~pi:iter.pit_pi
+         ~sigma:sigma
+         ~foot_pi:iter.pit_foot_pi
+         ~foot_sigma:iter.pit_foot_sigma) in
   IList.fold_left
     (fun p (footprint, atom) -> prop_atom_and ~footprint: footprint p atom)
     prop iter.pit_newpi
@@ -2265,19 +2310,24 @@ let prop_iter_add_atom footprint iter atom =
 
 (** Remove the current element of the iterator, and return the prop
     associated to the resulting iterator *)
-let prop_iter_remove_curr_then_to_prop iter =
+let prop_iter_remove_curr_then_to_prop iter : normal t =
   let sigma = IList.rev_append iter.pit_old iter.pit_new in
   let normalized_sigma = sigma_normalize iter.pit_sub sigma in
-  { sub = iter.pit_sub;
-    pi = iter.pit_pi;
-    sigma = normalized_sigma;
-    foot_pi = iter.pit_foot_pi;
-    foot_sigma = iter.pit_foot_sigma }
+  let prop =
+    set prop_emp
+      ~sub:iter.pit_sub
+      ~pi:iter.pit_pi
+      ~sigma:normalized_sigma
+      ~foot_pi:iter.pit_foot_pi
+      ~foot_sigma:iter.pit_foot_sigma in
+  unsafe_cast_to_normal prop
 
 (** Return the current hpred and state. *)
 let prop_iter_current iter =
   let curr = hpred_normalize iter.pit_sub iter.pit_curr in
-  let prop = { prop_emp with sigma = [curr] } in
+  let prop =
+    unsafe_cast_to_normal
+      (set prop_emp ~sigma:[curr]) in
   let prop' =
     IList.fold_left
       (fun p (footprint, atom) -> prop_atom_and ~footprint: footprint p atom)
@@ -2476,7 +2526,9 @@ let prop_case_split prop =
   let pi_sigma_list = Sil.sigma_to_sigma_ne prop.sigma in
   let f props_acc (pi, sigma) =
     let sigma' = sigma_normalize_prop prop sigma in
-    let prop' = { prop with sigma = sigma' } in
+    let prop' =
+      unsafe_cast_to_normal
+        (set prop ~sigma:sigma') in
     (IList.fold_left prop_atom_and prop' pi):: props_acc in
   IList.fold_left f [] pi_sigma_list
 
