@@ -499,6 +499,11 @@ struct
         Some (decl_list, impl_decl_info)
     | _ -> None
 
+  let is_in_main_file decl =
+    let decl_info = Clang_ast_proj.get_decl_tuple decl in
+    let file_opt = (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file in
+    opt_equal string_equal file_opt Config.source_file && Option.is_some file_opt
+
 (*
   let rec getter_attribute_opt attributes =
     match attributes with

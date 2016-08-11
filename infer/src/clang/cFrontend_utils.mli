@@ -171,6 +171,11 @@ sig
      Clang_ast_t.obj_c_implementation_decl_info)
       option
 
+  (** Returns true if the declaration or statement is inside the main source
+      file, as opposed to an imported header file. For statements, this refers
+      to the parent decl. *)
+  val is_in_main_file : Clang_ast_t.decl -> bool
+
 end
 
 module General_utils :
