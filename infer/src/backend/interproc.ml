@@ -281,8 +281,8 @@ let propagate_nodes_divergence
       let prop_incons =
         let mk_incons prop =
           let p_abs = Abs.abstract pname tenv prop in
-          let p_zero = Prop.replace_sigma [] (Prop.replace_sub Sil.sub_empty p_abs) in
-          Prop.normalize (Prop.replace_pi [Sil.Aneq (Sil.exp_zero, Sil.exp_zero)] p_zero) in
+          let p_zero = Prop.set p_abs ~sub:Sil.sub_empty ~sigma:[] in
+          Prop.normalize (Prop.set p_zero ~pi:[Sil.Aneq (Exp.zero, Exp.zero)]) in
         Paths.PathSet.map mk_incons diverging_states in
       (L.d_strln_color Orange) "Propagating Divergence -- diverging states:";
       Propgraph.d_proplist Prop.prop_emp (Paths.PathSet.to_proplist prop_incons); L.d_ln ();
@@ -386,7 +386,7 @@ let check_assignement_guard node =
     | _ -> false in
   let is_frontend_tmp e =
     match e with
-    | Sil.Lvar pv ->
+    | Exp.Lvar pv ->
         Pvar.is_frontend_tmp pv
     | _ -> false in
   let succs = Cfg.Node.get_succs node in
@@ -399,8 +399,8 @@ let check_assignement_guard node =
       let pi = IList.filter is_prune_instr ins in
       let leti = IList.filter is_letderef_instr ins in
       match pi, leti with
-      | [Sil.Prune (Sil.Var(e1), _, _, _)], [Sil.Letderef(e2, e', _, _)]
-      | [Sil.Prune (Sil.UnOp(Unop.LNot, Sil.Var(e1), _), _, _, _)],
+      | [Sil.Prune (Exp.Var(e1), _, _, _)], [Sil.Letderef(e2, e', _, _)]
+      | [Sil.Prune (Exp.UnOp(Unop.LNot, Exp.Var(e1), _), _, _, _)],
         [Sil.Letderef(e2, e', _, _)]
         when (Ident.equal e1 e2) ->
           if verbose
@@ -409,7 +409,7 @@ let check_assignement_guard node =
           [e']
       | _ -> [] in
     let prune_vars = IList.flatten(IList.map (fun n -> prune_var n) succs) in
-    IList.for_all (fun e' -> Sil.exp_equal e' e) prune_vars in
+    IList.for_all (fun e' -> Exp.equal e' e) prune_vars in
   let succs_loc = IList.map (fun n -> Cfg.Node.get_loc n) succs in
   let succs_are_all_prune_nodes () =
     IList.for_all (fun n -> match Cfg.Node.get_kind n with
@@ -429,8 +429,8 @@ let check_assignement_guard node =
   (* check that the guards of the succs are a var or its negation *)
   let succs_have_simple_guards () =
     let check_instr = function
-      | Sil.Prune (Sil.Var _, _, _, _) -> true
-      | Sil.Prune (Sil.UnOp(Unop.LNot, Sil.Var _, _), _, _, _) -> true
+      | Sil.Prune (Exp.Var _, _, _, _) -> true
+      | Sil.Prune (Exp.UnOp(Unop.LNot, Exp.Var _, _), _, _, _) -> true
       | Sil.Prune _ -> false
       | _ -> true in
     let check_guard n =
@@ -551,7 +551,7 @@ let forward_tabulate tenv wl =
           |> IList.fold_left
             (fun prop_acc (param, taint_kind) ->
                let attr =
-                 Sil.Ataint { taint_source = proc_name; taint_kind; } in
+                 PredSymb.Ataint { taint_source = proc_name; taint_kind; } in
                Taint.add_tainting_attribute attr param prop_acc)
             prop in
     let doit () =
@@ -616,6 +616,40 @@ let forward_tabulate tenv wl =
   L.d_strln ".... Work list empty. Stop ...."; L.d_ln ()
 
 
+(** if possible, produce a (fieldname, typ) path from one of the [src_exps] to [sink_exp] using
+    [reachable_hpreds]. *)
+let get_fld_typ_path_opt src_exps sink_exp_ reachable_hpreds_ =
+  let strexp_matches target_exp = function
+    | (_, Sil.Eexp (e, _)) -> Exp.equal target_exp e
+    | _ -> false in
+  let extend_path hpred (sink_exp, path, reachable_hpreds) = match hpred with
+    | Sil.Hpointsto (lhs, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
+        (try
+           let fld, _ = IList.find (fun fld -> strexp_matches sink_exp fld) flds in
+           let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
+           (lhs, (Some fld, typ) :: path, reachable_hpreds')
+         with Not_found -> (sink_exp, path, reachable_hpreds))
+    | Sil.Hpointsto (lhs, Sil.Earray (_, elems, _), Exp.Sizeof (typ, _, _)) ->
+        if IList.exists (fun pair -> strexp_matches sink_exp pair) elems
+        then
+          let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
+          (* None means "no field name" ~=~ nameless array index *)
+          (lhs, (None, typ) :: path, reachable_hpreds')
+        else (sink_exp, path, reachable_hpreds)
+    | _ -> (sink_exp, path, reachable_hpreds) in
+  (* terminates because [reachable_hpreds] is shrinking on each recursive call *)
+  let rec get_fld_typ_path sink_exp path reachable_hpreds =
+    let (sink_exp', path', reachable_hpreds') =
+      Sil.HpredSet.fold extend_path reachable_hpreds (sink_exp, path, reachable_hpreds) in
+    if Exp.Set.mem sink_exp' src_exps
+    then Some path'
+    else
+    if Sil.HpredSet.cardinal reachable_hpreds' >= Sil.HpredSet.cardinal reachable_hpreds
+    then None (* can't find a path from [src_exps] to [sink_exp] *)
+    else get_fld_typ_path sink_exp' path' reachable_hpreds' in
+  get_fld_typ_path sink_exp_ [] reachable_hpreds_
+
+
 (** report an error if any Context is reachable from a static field *)
 let report_context_leaks pname sigma tenv =
   (* report an error if an expression in [context_exps] is reachable from [field_strexp] *)
@@ -626,9 +660,9 @@ let report_context_leaks pname sigma tenv =
     (* raise an error if any Context expression is in [reachable_exps] *)
     IList.iter
       (fun (context_exp, struct_typ) ->
-         if Sil.ExpSet.mem context_exp reachable_exps then
+         if Exp.Set.mem context_exp reachable_exps then
            let leak_path =
-             match Prop.get_fld_typ_path_opt fld_exps context_exp reachable_hpreds with
+             match get_fld_typ_path_opt fld_exps context_exp reachable_hpreds with
              | Some path -> path
              | None -> assert false (* a path must exist in order for a leak to be reported *) in
            let err_desc =
@@ -649,7 +683,7 @@ let report_context_leaks pname sigma tenv =
       sigma in
   IList.iter
     (function
-      | Sil.Hpointsto (Sil.Lvar pv, Sil.Estruct (static_flds, _), _)
+      | Sil.Hpointsto (Exp.Lvar pv, Sil.Estruct (static_flds, _), _)
         when Pvar.is_global pv ->
           IList.iter
             (fun (f_name, f_strexp) ->
@@ -665,7 +699,7 @@ let remove_locals_formals_and_check pdesc p =
   let pvars, p' = Cfg.remove_locals_formals pdesc p in
   let check_pvar pvar =
     let loc = Cfg.Node.get_loc (Cfg.Procdesc.get_exit_node pdesc) in
-    let dexp_opt, _ = Errdesc.vpath_find p (Sil.Lvar pvar) in
+    let dexp_opt, _ = Errdesc.vpath_find p (Exp.Lvar pvar) in
     let desc = Errdesc.explain_stack_variable_address_escape loc pvar dexp_opt in
     let exn = Exceptions.Stack_variable_address_escape (desc, __POS__) in
     Reporting.log_warning pname exn in
@@ -716,7 +750,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
       pathset;
     let sub_list =
       IList.map
-        (fun id -> (id, Sil.Var (Ident.create_fresh (Ident.knormal))))
+        (fun id -> (id, Exp.Var (Ident.create_fresh (Ident.knormal))))
         (Sil.fav_to_list fav) in
     Sil.sub_of_list sub_list in
   let pre_post_visited_list =
@@ -727,8 +761,8 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
       let pre, post = Prop.extract_spec prop'' in
       let pre' = Prop.normalize (Prop.prop_sub sub pre) in
       if !Config.curr_language =
-         Config.Java && Cfg.Procdesc.get_access pdesc <> Sil.Private then
-        report_context_leaks pname (Prop.get_sigma post) tenv;
+         Config.Java && Cfg.Procdesc.get_access pdesc <> PredSymb.Private then
+        report_context_leaks pname post.Prop.sigma tenv;
       let post' =
         if Prover.check_inconsistency_base prop then None
         else Some (Prop.normalize (Prop.prop_sub sub post), path) in
@@ -773,9 +807,9 @@ let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t 
     | Procname.ObjC_Cpp _ ->
         if (Procname.is_constructor pname) then
           Paths.PathSet.map (fun prop ->
-              let prop = Prop.remove_resource_attribute Sil.Racquire Sil.Rfile prop in
-              let prop = Prop.remove_resource_attribute Sil.Racquire (Sil.Rmemory Sil.Mmalloc) prop in
-              Prop.remove_resource_attribute Sil.Racquire (Sil.Rmemory Sil.Mobjc) prop
+              Attribute.remove_resource Racquire (Rmemory Mobjc)
+                (Attribute.remove_resource Racquire (Rmemory Mmalloc)
+                   (Attribute.remove_resource Racquire Rfile prop))
             ) pathset
         else pathset
     | _ -> pathset in
@@ -807,8 +841,8 @@ let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t 
 
 let create_seed_vars sigma =
   let hpred_add_seed sigma = function
-    | Sil.Hpointsto (Sil.Lvar pv, se, typ) when not (Pvar.is_abducted pv) ->
-        Sil.Hpointsto(Sil.Lvar (Pvar.to_seed pv), se, typ) :: sigma
+    | Sil.Hpointsto (Exp.Lvar pv, se, typ) when not (Pvar.is_abducted pv) ->
+        Sil.Hpointsto(Exp.Lvar (Pvar.to_seed pv), se, typ) :: sigma
     | _ -> sigma in
   IList.fold_left hpred_add_seed [] sigma
 
@@ -820,22 +854,20 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
   let sigma_new_formals =
     let do_formal (pv, typ) =
       let texp = match !Config.curr_language with
-        | Config.Clang -> Sil.Sizeof (typ, None, Subtype.exact)
-        | Config.Java -> Sil.Sizeof (typ, None, Subtype.subtypes) in
+        | Config.Clang -> Exp.Sizeof (typ, None, Subtype.exact)
+        | Config.Java -> Exp.Sizeof (typ, None, Subtype.subtypes) in
       Prop.mk_ptsto_lvar (Some tenv) Prop.Fld_init Sil.inst_formal (pv, texp, None) in
     IList.map do_formal new_formals in
   let sigma_seed =
     create_seed_vars
       (* formals already there plus new ones *)
-      (Prop.get_sigma prop @ sigma_new_formals) in
+      (prop.Prop.sigma @ sigma_new_formals) in
   let sigma = sigma_seed @ sigma_new_formals in
   let new_pi =
-    Prop.get_pi prop in
+    prop.Prop.pi in
   let prop' =
-    Prop.replace_pi new_pi (Prop.prop_sigma_star prop sigma) in
-  Prop.replace_sigma_footprint
-    (Prop.get_sigma_footprint prop' @ sigma_new_formals)
-    prop'
+    Prop.set (Prop.prop_sigma_star prop sigma) ~pi:new_pi in
+  Prop.set prop' ~sigma_fp:(prop'.Prop.sigma_fp @ sigma_new_formals)
 
 (** Construct an initial prop by extending [prop] with locals, and formals if [add_formals] is true
     as well as seed variables *)
@@ -866,14 +898,12 @@ let initial_prop_from_pre tenv curr_f pre =
     let vars = Sil.fav_to_list (Prop.prop_fav pre) in
     let sub_list =
       IList.map
-        (fun id -> (id, Sil.Var (Ident.create_fresh (Ident.kfootprint))))
+        (fun id -> (id, Exp.Var (Ident.create_fresh (Ident.kfootprint))))
         vars in
     let sub = Sil.sub_of_list sub_list in
     let pre2 = Prop.prop_sub sub pre in
     let pre3 =
-      Prop.replace_sigma_footprint
-        (Prop.get_sigma pre2)
-        (Prop.replace_pi_footprint (Prop.get_pure pre2) pre2) in
+      Prop.set pre2 ~pi_fp:(Prop.get_pure pre2) ~sigma_fp:pre2.Prop.sigma in
     initial_prop tenv curr_f pre3 false
   else
     initial_prop tenv curr_f pre false
@@ -1114,22 +1144,21 @@ let custom_error_preconditions summary =
 (* Remove the constrain of the form this != null which is true for all Java virtual calls *)
 let remove_this_not_null prop =
   let collect_hpred (var_option, hpreds) = function
-    | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (Sil.Var var, _), _)
+    | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (Exp.Var var, _), _)
       when !Config.curr_language = Config.Java && Pvar.is_this pvar ->
         (Some var, hpreds)
     | hpred -> (var_option, hpred:: hpreds) in
   let collect_atom var atoms = function
-    | Sil.Aneq (Sil.Var v, e)
-      when Ident.equal v var && Sil.exp_equal e Sil.exp_null -> atoms
+    | Sil.Aneq (Exp.Var v, e)
+      when Ident.equal v var && Exp.equal e Exp.null -> atoms
     | a -> a:: atoms in
-  match IList.fold_left collect_hpred (None, []) (Prop.get_sigma prop) with
+  match IList.fold_left collect_hpred (None, []) prop.Prop.sigma with
   | None, _ -> prop
   | Some var, filtered_hpreds ->
       let filtered_atoms =
-        IList.fold_left (collect_atom var) [] (Prop.get_pi prop) in
-      let prop' = Prop.replace_pi filtered_atoms Prop.prop_emp in
-      let prop'' = Prop.replace_sigma filtered_hpreds prop' in
-      Prop.normalize prop''
+        IList.fold_left (collect_atom var) [] prop.Prop.pi in
+      let prop' = Prop.set Prop.prop_emp ~pi:filtered_atoms ~sigma:filtered_hpreds in
+      Prop.normalize prop'
 
 
 (** Is true when the precondition does not contain constrains that can be false at call site.
@@ -1149,7 +1178,7 @@ let is_unavoidable pre =
 let report_runtime_exceptions tenv pdesc summary =
   let pname = Specs.get_proc_name summary in
   let is_public_method =
-    (Specs.get_attributes summary).ProcAttributes.access = Sil.Public in
+    (Specs.get_attributes summary).ProcAttributes.access = PredSymb.Public in
   let is_main =
     is_public_method
     &&

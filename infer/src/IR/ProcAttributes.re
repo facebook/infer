@@ -23,13 +23,13 @@ let module F = Format;
 type objc_accessor_type = | Objc_getter of Ident.fieldname | Objc_setter of Ident.fieldname;
 
 type t = {
-  access: Sil.access, /** visibility access */
+  access: PredSymb.access, /** visibility access */
   captured: list (Mangled.t, Typ.t), /** name and type of variables captured in blocks */
   mutable changed: bool, /** true if proc has changed since last analysis */
   err_log: Errlog.t, /** Error log for the procedure */
   exceptions: list string, /** exceptions thrown by the procedure */
   formals: list (Mangled.t, Typ.t), /** name and type of formal parameters */
-  func_attributes: list Sil.func_attribute,
+  func_attributes: list PredSymb.func_attribute,
   is_abstract: bool, /** the procedure is abstract */
   mutable is_bridge_method: bool, /** the procedure is a bridge method */
   is_defined: bool, /** true if the procedure is defined, and not just declared */
@@ -48,7 +48,7 @@ type t = {
 };
 
 let default proc_name language => {
-  access: Sil.Default,
+  access: PredSymb.Default,
   captured: [],
   changed: true,
   err_log: Errlog.empty (),

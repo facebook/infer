@@ -37,8 +37,8 @@ let checkers_for_capture_vars stmt_info captured_vars checker context =
 let ns_notification_checker_list = [CFrontend_checkers.checker_NSNotificationCenter]
 
 (* Invocation of checker belonging to ns_notification_center_list *)
-let checkers_for_ns decl_info decls checker context =
-  checker context decl_info decls
+let checkers_for_ns decl_info impl_decl_info decls checker context =
+  checker context decl_info impl_decl_info decls
 
 (* List of checkers on global variables *)
 let global_var_checker_list = [CFrontend_checkers.global_var_init_with_calls_warning]
@@ -172,7 +172,10 @@ let run_frontend_checkers_on_decl context cfg cg dec =
     match dec with
     | ObjCImplementationDecl (decl_info, _, decl_list, _, _)
     | ObjCProtocolDecl (decl_info, _, decl_list, _, _) ->
-        let call_ns_checker = checkers_for_ns decl_info decl_list in
+        let idi = match dec with
+          | ObjCImplementationDecl (_, _, _, _, impl_decl_info) -> Some impl_decl_info
+          | _ -> None in
+        let call_ns_checker = checkers_for_ns decl_info idi decl_list in
         let key = Ast_utils.generate_key_decl dec in
         invoke_set_of_checkers call_ns_checker context cfg cg None key ns_notification_checker_list;
         context

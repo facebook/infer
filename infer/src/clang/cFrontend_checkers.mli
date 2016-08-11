@@ -41,7 +41,8 @@ val bad_pointer_comparison_warning :
    but not removed before deallocation *)
 val checker_NSNotificationCenter :
   CLintersContext.context ->
-  Clang_ast_t.decl_info -> Clang_ast_t.decl list -> CIssue.issue_desc option
+  Clang_ast_t.decl_info -> Clang_ast_t.obj_c_implementation_decl_info option ->
+  Clang_ast_t.decl list -> CIssue.issue_desc option
 
 (* GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL warning: a global variable initialization should not *)
 (* contain calls to functions or methods as these can be expensive an delay the starting time *)

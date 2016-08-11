@@ -155,9 +155,9 @@ let rec get_struct_fields tenv decl =
     | RecordDecl (_, _, _, _, decl_list, _, _) -> decl_list
     | _ -> [] in
   let do_one_decl decl = match decl with
-    | FieldDecl (_, name_info, type_ptr, _) ->
+    | FieldDecl (_, name_info, qt, _) ->
         let id = General_utils.mk_class_field_name name_info in
-        let typ = type_ptr_to_sil_type tenv type_ptr in
+        let typ = type_ptr_to_sil_type tenv qt.Clang_ast_t.type_ptr in
         let annotation_items = [] in (* For the moment we don't use them*)
         [(id, typ, annotation_items)]
     | _ -> [] in

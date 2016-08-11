@@ -90,11 +90,11 @@ sig
 
   val update_sil_types_map : Clang_ast_t.type_ptr -> Typ.t -> unit
 
-  val update_enum_map : Clang_ast_t.pointer -> Sil.exp -> unit
+  val update_enum_map : Clang_ast_t.pointer -> Exp.t -> unit
 
   val add_enum_constant : Clang_ast_t.pointer -> Clang_ast_t.pointer option -> unit
 
-  val get_enum_constant_exp : Clang_ast_t.pointer -> Clang_ast_t.pointer option * Sil.exp option
+  val get_enum_constant_exp : Clang_ast_t.pointer -> Clang_ast_t.pointer option * Exp.t option
 
   (** returns sanitized, fully qualified name given name info *)
   val get_qualified_name : Clang_ast_t.named_decl_info -> string
@@ -137,28 +137,39 @@ sig
 
   val exists_eventually_st : ('a -> Clang_ast_t.stmt -> bool) -> 'a -> Clang_ast_t.stmt -> bool
 
-  (* true if a declaration is a global variable *)
+  (** true if a declaration is a global variable *)
   val is_global_var : Clang_ast_t.decl -> bool
 
-  (* true if a declaration is a constexpr variable *)
+  (** true if a declaration is a constexpr variable *)
   val is_const_expr_var : Clang_ast_t.decl -> bool
 
-  (* true if CFrontend_config.language is set ot ObjC *)
+  (** true if CFrontend_config.language is set ot ObjC *)
   val is_objc : unit -> bool
 
-  (* true if CFrontend_config.language is set ot ObjC *)
+  (** true if CFrontend_config.language is set ot ObjC *)
   val is_objcpp : unit -> bool
 
   val is_ptr_to_objc_class : Clang_ast_t.c_type option -> string -> bool
 
   val full_name_of_decl_opt : Clang_ast_t.decl option -> string
 
-  (* Generates a key for a statement based on its sub-statements and the statement tag. *)
+  (** Generates a key for a statement based on its sub-statements and the statement tag. *)
   val generate_key_stmt : Clang_ast_t.stmt -> string
 
-  (* Generates a key for a declaration based on its name and the declaration tag. *)
+  (** Generates a key for a declaration based on its name and the declaration tag. *)
   val generate_key_decl : Clang_ast_t.decl -> string
 
+  (** Given an objc impl or interface decl, returns the objc interface decl of
+     the superclass, if any. *)
+  val get_super_if : Clang_ast_t.decl option -> Clang_ast_t.decl option
+
+  (** Given an objc impl decl info, return the super class's list of decls and
+      its objc impl decl info. *)
+  val get_super_impl :
+    Clang_ast_t.obj_c_implementation_decl_info ->
+    (Clang_ast_t.decl list *
+     Clang_ast_t.obj_c_implementation_decl_info)
+      option
 
 end
 
@@ -182,7 +193,7 @@ sig
     (Mangled.t * Typ.t) list -> (Mangled.t * Typ.t) list -> (Mangled.t * Typ.t) list
 
   val append_no_duplicateds :
-    (Sil.exp * Typ.t) list -> (Sil.exp * Typ.t) list -> (Sil.exp * Typ.t) list
+    (Exp.t * Typ.t) list -> (Exp.t * Typ.t) list -> (Exp.t * Typ.t) list
 
   val sort_fields :
     (Ident.fieldname * Typ.t * Typ.item_annotation) list ->

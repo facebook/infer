@@ -96,6 +96,22 @@ public class CrashContextResults {
     return false;
   }
 
+  public boolean hasMethodWithLocation(String methodSignature, String filename,
+                                       int line, int start, int end) {
+    for (JsonNode frame : findNodesForMethod(methodSignature)) {
+      if (frame.path("location").path("file").asText().endsWith(filename) &&
+         line == frame.path("location").path("line").asInt()) {
+        for (JsonNode blameRange : frame.path("location").path("blame_range")) {
+          if (blameRange.path("start_line").asInt() == start &&
+              blameRange.path("end_line").asInt() == end) {
+                return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   public static CrashContextResults loadJSONResults(String tag) throws IOException {
     return new CrashContextResults(tag);
   }

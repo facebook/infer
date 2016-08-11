@@ -85,10 +85,10 @@ let format_type_matches_given_type
 (* The format string and the nvar for the fixed arguments and the nvar of the varargs array *)
 let format_arguments
     (printf: printf_signature)
-    (args: (Sil.exp * Typ.t) list): (string option * (Sil.exp list) * (Sil.exp option)) =
+    (args: (Exp.t * Typ.t) list): (string option * (Exp.t list) * (Exp.t option)) =
 
   let format_string = match IList.nth args printf.format_pos with
-    | Sil.Const (Const.Cstr fmt), _ -> Some fmt
+    | Exp.Const (Const.Cstr fmt), _ -> Some fmt
     | _ -> None in
 
   let fixed_nvars = IList.map
@@ -158,24 +158,24 @@ let check_printf_args_ok
   (* Get the array ivar for a given nvar *)
   let rec array_ivar instrs nvar =
     match instrs, nvar with
-    | Sil.Letderef (id, Sil.Lvar iv, _, _):: _, Sil.Var nid
+    | Sil.Letderef (id, Exp.Lvar iv, _, _):: _, Exp.Var nid
       when Ident.equal id nid -> iv
     | _:: is, _ -> array_ivar is nvar
     | _ -> raise Not_found in
 
   let rec fixed_nvar_type_name instrs nvar =
     match nvar with
-    | Sil.Var nid -> (
+    | Exp.Var nid -> (
         match instrs with
-        | Sil.Letderef (id, Sil.Lvar _, t, _):: _
+        | Sil.Letderef (id, Exp.Lvar _, t, _):: _
           when Ident.equal id nid -> PatternMatch.get_type_name t
         | _:: is -> fixed_nvar_type_name is nvar
         | _ -> raise Not_found)
-    | Sil.Const c -> PatternMatch.java_get_const_type_name c
+    | Exp.Const c -> PatternMatch.java_get_const_type_name c
     | _ -> raise (Failure "Could not resolve fixed type name") in
 
   match instr with
-  | Sil.Call (_, Sil.Const (Const.Cfun pn), args, cl, _) -> (
+  | Sil.Call (_, Exp.Const (Const.Cfun pn), args, cl, _) -> (
       match printf_like_function pn with
       | Some printf -> (
           try

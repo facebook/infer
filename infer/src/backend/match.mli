@@ -46,11 +46,11 @@ val prop_match_with_impl : Prop.normal Prop.t -> sidecondition -> Ident.t list -
     and it uses expressions in the range of the isomorphism. The third is the unused
     part of the input sigma. *)
 val find_partial_iso :
-  (Sil.exp -> Sil.exp -> bool) ->
-  (Sil.exp * Sil.exp) list ->
-  (Sil.exp * Sil.exp) list ->
+  (Exp.t -> Exp.t -> bool) ->
+  (Exp.t * Exp.t) list ->
+  (Exp.t * Exp.t) list ->
   Sil.hpred list ->
-  ((Sil.exp * Sil.exp) list * Sil.hpred list * Sil.hpred list * Sil.hpred list) option
+  ((Exp.t * Exp.t) list * Sil.hpred list * Sil.hpred list * Sil.hpred list) option
 
 (** This mode expresses the flexibility allowed during the isomorphism check *)
 type iso_mode = Exact | LFieldForget | RFieldForget
@@ -64,12 +64,13 @@ type iso_mode = Exact | LFieldForget | RFieldForget
     are the unused parts of the two input sigmas. *)
 val find_partial_iso_from_two_sigmas :
   iso_mode ->
-  (Sil.exp -> Sil.exp -> bool) ->
-  (Sil.exp * Sil.exp) list ->
-  (Sil.exp * Sil.exp) list ->
+  (Exp.t -> Exp.t -> bool) ->
+  (Exp.t * Exp.t) list ->
+  (Exp.t * Exp.t) list ->
   Sil.hpred list ->
   Sil.hpred list ->
-  ((Sil.exp * Sil.exp) list * Sil.hpred list * Sil.hpred list * (Sil.hpred list * Sil.hpred list)) option
+  ((Exp.t * Exp.t) list * Sil.hpred list * Sil.hpred list * (Sil.hpred list * Sil.hpred list))
+    option
 
 (** [hpara_iso] soundly checks whether two hparas are isomorphic. *)
 val hpara_iso : Sil.hpara -> Sil.hpara -> bool
@@ -83,20 +84,20 @@ val hpara_dll_iso : Sil.hpara_dll -> Sil.hpara_dll -> bool
     hpara and discovers a list of shared expressions that are
     passed as arguments to hpara. Both of them are returned as a result. *)
 val hpara_create :
-  (Sil.exp * Sil.exp) list ->
+  (Exp.t * Exp.t) list ->
   Sil.hpred list ->
-  Sil.exp ->
-  Sil.exp ->
-  Sil.hpara * Sil.exp list
+  Exp.t ->
+  Exp.t ->
+  Sil.hpara * Exp.t list
 
 (** [hpara_dll_create] takes a correspondence, and a sigma, a root,
     a blink and a flink for the first part of this correspondence. Then,
     it creates a hpara_dll and discovers a list of shared expressions that are
     passed as arguments to hpara. Both of them are returned as a result. *)
 val hpara_dll_create :
-  (Sil.exp * Sil.exp) list ->
+  (Exp.t * Exp.t) list ->
   Sil.hpred list ->
-  Sil.exp ->
-  Sil.exp ->
-  Sil.exp ->
-  Sil.hpara_dll * Sil.exp list
+  Exp.t ->
+  Exp.t ->
+  Exp.t ->
+  Sil.hpara_dll * Exp.t list

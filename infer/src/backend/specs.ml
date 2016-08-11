@@ -200,7 +200,9 @@ end = struct
     let fav = spec_fav spec in
     let idlist = Sil.fav_to_list fav in
     let count = ref 0 in
-    let sub = Sil.sub_of_list (IList.map (fun id -> incr count; (id, Sil.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
+    let sub =
+      Sil.sub_of_list (IList.map (fun id ->
+          incr count; (id, Exp.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
     spec_sub sub spec
 
   (** Return a compact representation of the spec *)
@@ -321,6 +323,8 @@ type payload =
     preposts : NormSpec.t list option; (** list of specs *)
     typestate : unit TypeState.t option; (** final typestate *)
     calls: call_summary option;
+    crashcontext_frame: Stacktree_j.stacktree option;
+    (** Proc location and blame_range info for crashcontext analysis *)
   }
 
 type summary =
@@ -753,6 +757,7 @@ let empty_payload =
     preposts = None;
     typestate = None;
     calls = None;
+    crashcontext_frame = None;
   }
 
 (** [init_summary (depend_list, nodes,

@@ -24,10 +24,10 @@ let tests =
   let int_ptr_typ = Typ.Tptr (int_typ, Pk_pointer) in
   let fun_ptr_typ = Typ.Tptr (Tfun false, Pk_pointer) in
   let closure_exp captureds =
-    let mk_captured_var str = (Sil.Var (ident_of_str str), pvar_of_str str, int_ptr_typ) in
+    let mk_captured_var str = (Exp.Var (ident_of_str str), pvar_of_str str, int_ptr_typ) in
     let captured_vars = IList.map mk_captured_var captureds in
-    let closure = { Sil.name=dummy_procname; captured_vars; } in
-    Sil.Closure closure in
+    let closure = { Exp.name=dummy_procname; captured_vars; } in
+    Exp.Closure closure in
   let test_list = [
     "address_taken_set_instr",
     [

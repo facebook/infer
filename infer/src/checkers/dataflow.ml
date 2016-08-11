@@ -54,15 +54,15 @@ let node_throws node (proc_throws : Procname.t -> throws) : throws =
       let ret_pvar = Cfg.Procdesc.get_ret_var pdesc in
       Pvar.equal pvar ret_pvar in
     match instr with
-    | Sil.Set (Sil.Lvar pvar, _, Sil.Exn _, _) when is_return pvar ->
+    | Sil.Set (Exp.Lvar pvar, _, Exp.Exn _, _) when is_return pvar ->
         (* assignment to return variable is an artifact of a throw instruction *)
         Throws
-    | Sil.Call (_, Sil.Const (Const.Cfun callee_pn), _, _, _)
+    | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _)
       when Builtin.is_registered callee_pn ->
         if Procname.equal callee_pn ModelBuiltins.__cast
         then DontKnow
         else DoesNotThrow
-    | Sil.Call (_, Sil.Const (Const.Cfun callee_pn), _, _, _) ->
+    | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _) ->
         proc_throws callee_pn
     | _ ->
         DoesNotThrow in

@@ -21,127 +21,6 @@ let module F = Format;
 
 
 /** {2 Programs and Types} */
-type func_attribute =
-  | FA_sentinel of int int /** __attribute__((sentinel(int, int))) */;
-
-
-/** Visibility modifiers. */
-type access = | Default | Public | Private | Protected;
-
-
-/** Return the value of the FA_sentinel attribute in [attr_list] if it is found */
-let get_sentinel_func_attribute_value attr_list =>
-  switch attr_list {
-  | [FA_sentinel sentinel null_pos, ..._] => Some (sentinel, null_pos)
-  | [] => None
-  };
-
-type mem_kind =
-  | Mmalloc /** memory allocated with malloc */
-  | Mnew /** memory allocated with new */
-  | Mnew_array /** memory allocated with new[] */
-  | Mobjc /** memory allocated with objective-c alloc */;
-
-
-/** resource that can be allocated */
-type resource = | Rmemory of mem_kind | Rfile | Rignore | Rlock;
-
-
-/** kind of resource action */
-type res_act_kind = | Racquire | Rrelease;
-
-
-/** kind of dangling pointers */
-type dangling_kind =
-  /** pointer is dangling because it is uninitialized */
-  | DAuninit
-  /** pointer is dangling because it is the address
-      of a stack variable which went out of scope */
-  | DAaddr_stack_var
-  /** pointer is -1 */
-  | DAminusone;
-
-
-/** position in a path: proc name, node id */
-type path_pos = (Procname.t, int);
-
-type taint_kind =
-  | Tk_unverified_SSL_socket
-  | Tk_shared_preferences_data
-  | Tk_privacy_annotation
-  | Tk_integrity_annotation
-  | Tk_unknown;
-
-type taint_info = {taint_source: Procname.t, taint_kind: taint_kind};
-
-
-/** acquire/release action on a resource */
-type res_action = {
-  ra_kind: res_act_kind, /** kind of action */
-  ra_res: resource, /** kind of resource */
-  ra_pname: Procname.t, /** name of the procedure used to acquire/release the resource */
-  ra_loc: Location.t, /** location of the acquire/release */
-  ra_vpath: DecompiledExp.vpath /** vpath of the resource value */
-};
-
-
-/** Attributes */
-type attribute =
-  | Aresource of res_action /** resource acquire/release */
-  | Aautorelease
-  | Adangling of dangling_kind /** dangling pointer */
-  /** undefined value obtained by calling the given procedure, plus its return value annots */
-  | Aundef of Procname.t Typ.item_annotation Location.t path_pos
-  | Ataint of taint_info
-  | Auntaint of taint_info
-  | Alocked
-  | Aunlocked
-  /** value appeared in second argument of division at given path position */
-  | Adiv0 of path_pos
-  /** attributed exp is null due to a call to a method with given path as null receiver */
-  | Aobjc_null of Pvar.t (list Ident.fieldname)
-  /** value was returned from a call to the given procedure, plus the annots of the return value */
-  | Aretval of Procname.t Typ.item_annotation
-  /** denotes an object registered as an observers to a notification center */
-  | Aobserver
-  /** denotes an object unsubscribed from observers of a notification center */
-  | Aunsubscribed_observer;
-
-type closure = {name: Procname.t, captured_vars: list (exp, Pvar.t, Typ.t)}
-/** dynamically determined length of an array value, if any */
-and dynamic_length = option exp
-/** Program expressions. */
-and exp =
-  /** Pure variable: it is not an lvalue */
-  | Var of Ident.t
-  /** Unary operator with type of the result if known */
-  | UnOp of Unop.t exp (option Typ.t)
-  /** Binary operator */
-  | BinOp of Binop.t exp exp
-  /** Exception */
-  | Exn of exp
-  /** Anonymous function */
-  | Closure of closure
-  /** Constants */
-  | Const of Const.t
-  /** Type cast */
-  | Cast of Typ.t exp
-  /** The address of a program variable */
-  | Lvar of Pvar.t
-  /** A field offset, the type is the surrounding struct type */
-  | Lfield of exp Ident.fieldname Typ.t
-  /** An array index offset: [exp1\[exp2\]] */
-  | Lindex of exp exp
-  /** A sizeof expression. [Sizeof (Tarray elt (Some static_length)) (Some dynamic_length)]
-      represents the size of an array value consisting of [dynamic_length] elements of type [elt].
-      The [dynamic_length], tracked by symbolic execution, may differ from the [static_length]
-      obtained from the type definition, e.g. when an array is over-allocated.  For struct types,
-      the [dynamic_length] is that of the final extensible array, if any. */
-  | Sizeof of Typ.t dynamic_length Subtype.t
-  /** attribute used in disequalities to annotate a value */
-  | Attribute of attribute;
-
-
 /** Kind of prune instruction */
 type if_kind =
   | Ik_bexp /* boolean expressions, and exp ? exp : exp */
@@ -165,15 +44,15 @@ type instr =
   /** declaration [let x = *lexp:typ] where [typ] is the root type of [lexp] */
   /* note for frontend writers: [x] must be used in a subsequent instruction, otherwise the entire
      `Letderef` instruction may be eliminated by copy-propagation */
-  | Letderef of Ident.t exp Typ.t Location.t
+  | Letderef of Ident.t Exp.t Typ.t Location.t
   /** assignment [*lexp1:typ = exp2] where [typ] is the root type of [lexp1] */
-  | Set of exp Typ.t exp Location.t
+  | Set of Exp.t Typ.t Exp.t Location.t
   /** prune the state based on [exp=1], the boolean indicates whether true branch */
-  | Prune of exp Location.t bool if_kind
+  | Prune of Exp.t Location.t bool if_kind
   /** [Call (ret_id1..ret_idn, e_fun, arg_ts, loc, call_flags)] represents an instructions
       [ret_id1..ret_idn = e_fun(arg_ts);]
       where n = 0 for void return and n > 1 for struct return */
-  | Call of (list Ident.t) exp (list (exp, Typ.t)) Location.t CallFlags.t
+  | Call of (list Ident.t) Exp.t (list (Exp.t, Typ.t)) Location.t CallFlags.t
   /** nullify stack variable */
   | Nullify of Pvar.t Location.t
   | Abstract of Location.t /** apply abstraction */
@@ -197,14 +76,16 @@ let instr_is_auxiliary =
 
 
 /** offset for an lvalue */
-type offset = | Off_fld of Ident.fieldname Typ.t | Off_index of exp;
+type offset = | Off_fld of Ident.fieldname Typ.t | Off_index of Exp.t;
 
 
 /** {2 Components of Propositions} */
 /** an atom is a pure atomic formula */
 type atom =
-  | Aeq of exp exp /** equality */
-  | Aneq of exp exp /** disequality*/;
+  | Aeq of Exp.t Exp.t /** equality */
+  | Aneq of Exp.t Exp.t /** disequality */
+  | Apred of PredSymb.t (list Exp.t) /** predicate symbol applied to exps */
+  | Anpred of PredSymb.t (list Exp.t) /** negated predicate symbol applied to exps */;
 
 
 /** kind of lseg or dllseg predicates */
@@ -231,16 +112,16 @@ type inst =
   | Ilookup
   | Inone
   | Inullify
-  | Irearrange of zero_flag null_case_flag int path_pos
+  | Irearrange of zero_flag null_case_flag int PredSymb.path_pos
   | Itaint
-  | Iupdate of zero_flag null_case_flag int path_pos
+  | Iupdate of zero_flag null_case_flag int PredSymb.path_pos
   | Ireturn_from_call of int
   | Ireturn_from_pointer_wrapper_call of int;
 
 
 /** structured expressions represent a value of structured type, such as an array or a struct. */
 type strexp =
-  | Eexp of exp inst /** Base case: expression with instrumentation */
+  | Eexp of Exp.t inst /** Base case: expression with instrumentation */
   | Estruct of (list (Ident.fieldname, strexp)) inst /** C structure */
   /** Array of given length
       There are two conditions imposed / used in the array case.
@@ -249,20 +130,20 @@ type strexp =
       For instance, x |->[10 | e1: v1] implies that e1 <= 9.
       Second, if two indices appear in an array, they should be different.
       For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. */
-  | Earray of exp (list (exp, strexp)) inst;
+  | Earray of Exp.t (list (Exp.t, strexp)) inst;
 
 
 /** an atomic heap predicate */
 type hpred =
-  | Hpointsto of exp strexp exp
+  | Hpointsto of Exp.t strexp Exp.t
   /** represents [exp|->strexp:typexp] where [typexp]
       is an expression representing a type, e.h. [sizeof(t)]. */
-  | Hlseg of lseg_kind hpara exp exp (list exp)
+  | Hlseg of lseg_kind hpara Exp.t Exp.t (list Exp.t)
   /** higher - order predicate for singly - linked lists.
       Should ensure that exp1!= exp2 implies that exp1 is allocated.
       This assumption is used in the rearrangement. The last [exp list] parameter
       is used to denote the shared links by all the nodes in the list. */
-  | Hdllseg of lseg_kind hpara_dll exp exp exp exp (list exp)
+  | Hdllseg of lseg_kind hpara_dll Exp.t Exp.t Exp.t Exp.t (list Exp.t)
 /** higher-order predicate for doubly-linked lists. */
 /** parameter for the higher-order singly-linked list predicate.
     Means "lambda (root,next,svars). Exists evars. body".
@@ -311,9 +192,9 @@ let has_objc_ref_counter hpred =>
 /** Returns the zero value of a type, for int, float and ptr types, None othwewise */
 let zero_value_of_numerical_type_option typ =>
   switch typ {
-  | Typ.Tint _ => Some (Const (Cint IntLit.zero))
-  | Typ.Tfloat _ => Some (Const (Cfloat 0.0))
-  | Typ.Tptr _ => Some (Const (Cint IntLit.null))
+  | Typ.Tint _ => Some (Exp.Const (Cint IntLit.zero))
+  | Typ.Tfloat _ => Some (Exp.Const (Cfloat 0.0))
+  | Typ.Tptr _ => Some (Exp.Const (Cint IntLit.null))
   | _ => None
   };
 
@@ -337,351 +218,11 @@ let is_static_local_name pname pvar =>
     }
   };
 
-let exp_is_zero =
-  fun
-  | Const (Cint n) => IntLit.iszero n
-  | _ => false;
-
-let exp_is_null_literal =
-  fun
-  | Const (Cint n) => IntLit.isnull n
-  | _ => false;
-
-let exp_is_this =
-  fun
-  | Lvar pvar => Pvar.is_this pvar
-  | _ => false;
-
-
-/** This function inverts an injective binary operator
-    with respect to the first argument. It returns an expression [e'] such that
-    BinOp([binop], [e'], [exp1]) = [exp2]. If the [binop] operation is not invertible,
-    the function raises an exception by calling "assert false". */
-let binop_invert bop e1 e2 => BinOp (Binop.invert bop) e2 e1;
-
-let path_pos_compare (pn1, nid1) (pn2, nid2) => {
-  let n = Procname.compare pn1 pn2;
-  if (n != 0) {
-    n
-  } else {
-    int_compare nid1 nid2
-  }
-};
-
-let path_pos_equal pp1 pp2 => path_pos_compare pp1 pp2 == 0;
-
-let mem_kind_to_num =
-  fun
-  | Mmalloc => 0
-  | Mnew => 1
-  | Mnew_array => 2
-  | Mobjc => 3;
-
-
-/** name of the allocation function for the given memory kind */
-let mem_alloc_pname =
-  fun
-  | Mmalloc => Procname.from_string_c_fun "malloc"
-  | Mnew => Procname.from_string_c_fun "new"
-  | Mnew_array => Procname.from_string_c_fun "new[]"
-  | Mobjc => Procname.from_string_c_fun "alloc";
-
-
-/** name of the deallocation function for the given memory kind */
-let mem_dealloc_pname =
-  fun
-  | Mmalloc => Procname.from_string_c_fun "free"
-  | Mnew => Procname.from_string_c_fun "delete"
-  | Mnew_array => Procname.from_string_c_fun "delete[]"
-  | Mobjc => Procname.from_string_c_fun "dealloc";
-
-let mem_kind_compare mk1 mk2 => int_compare (mem_kind_to_num mk1) (mem_kind_to_num mk2);
-
-let resource_compare r1 r2 => {
-  let res_to_num =
-    fun
-    | Rmemory mk => mem_kind_to_num mk
-    | Rfile => 100
-    | Rignore => 200
-    | Rlock => 300;
-  int_compare (res_to_num r1) (res_to_num r2)
-};
-
-let res_act_kind_compare rak1 rak2 =>
-  switch (rak1, rak2) {
-  | (Racquire, Racquire) => 0
-  | (Racquire, Rrelease) => (-1)
-  | (Rrelease, Racquire) => 1
-  | (Rrelease, Rrelease) => 0
-  };
-
-let dangling_kind_compare dk1 dk2 =>
-  switch (dk1, dk2) {
-  | (DAuninit, DAuninit) => 0
-  | (DAuninit, _) => (-1)
-  | (_, DAuninit) => 1
-  | (DAaddr_stack_var, DAaddr_stack_var) => 0
-  | (DAaddr_stack_var, _) => (-1)
-  | (_, DAaddr_stack_var) => 1
-  | (DAminusone, DAminusone) => 0
-  };
-
-let taint_kind_compare tk1 tk2 =>
-  switch (tk1, tk2) {
-  | (Tk_unverified_SSL_socket, Tk_unverified_SSL_socket) => 0
-  | (Tk_unverified_SSL_socket, _) => (-1)
-  | (_, Tk_unverified_SSL_socket) => 1
-  | (Tk_shared_preferences_data, Tk_shared_preferences_data) => 0
-  | (Tk_shared_preferences_data, _) => 1
-  | (_, Tk_shared_preferences_data) => (-1)
-  | (Tk_privacy_annotation, Tk_privacy_annotation) => 0
-  | (Tk_privacy_annotation, _) => 1
-  | (_, Tk_privacy_annotation) => (-1)
-  | (Tk_integrity_annotation, Tk_integrity_annotation) => 0
-  | (Tk_integrity_annotation, _) => 1
-  | (_, Tk_integrity_annotation) => (-1)
-  | (Tk_unknown, Tk_unknown) => 0
-  };
-
-let taint_info_compare {taint_source: ts1, taint_kind: tk1} {taint_source: ts2, taint_kind: tk2} =>
-  taint_kind_compare tk1 tk2 |> next Procname.compare ts1 ts2;
-
-
-/** Categories of attributes */
-type attribute_category =
-  | ACresource
-  | ACautorelease
-  | ACtaint
-  | AClock
-  | ACdiv0
-  | ACobjc_null
-  | ACundef
-  | ACretval
-  | ACobserver;
-
-let attribute_category_compare (ac1: attribute_category) (ac2: attribute_category) :int =>
-  Pervasives.compare ac1 ac2;
-
-let attribute_category_equal att1 att2 => attribute_category_compare att1 att2 == 0;
-
-let attribute_to_category att =>
-  switch att {
-  | Aresource _
-  | Adangling _ => ACresource
-  | Ataint _
-  | Auntaint _ => ACtaint
-  | Alocked
-  | Aunlocked => AClock
-  | Aautorelease => ACautorelease
-  | Adiv0 _ => ACdiv0
-  | Aobjc_null _ => ACobjc_null
-  | Aretval _ => ACretval
-  | Aundef _ => ACundef
-  | Aobserver
-  | Aunsubscribed_observer => ACobserver
-  };
-
-let attr_is_undef =
-  fun
-  | Aundef _ => true
-  | _ => false;
-
-let attribute_compare (att1: attribute) (att2: attribute) :int =>
-  switch (att1, att2) {
-  | (Aresource ra1, Aresource ra2) =>
-    let n = res_act_kind_compare ra1.ra_kind ra2.ra_kind;
-    if (n != 0) {
-      n
-    } else {
-      /* ignore other values beside resources: arbitrary merging into one */
-      resource_compare
-        ra1.ra_res ra2.ra_res
-    }
-  | (Aresource _, _) => (-1)
-  | (_, Aresource _) => 1
-  | (Aautorelease, Aautorelease) => 0
-  | (Aautorelease, _) => (-1)
-  | (_, Aautorelease) => 1
-  | (Adangling dk1, Adangling dk2) => dangling_kind_compare dk1 dk2
-  | (Adangling _, _) => (-1)
-  | (_, Adangling _) => 1
-  | (Aundef pn1 _ _ _, Aundef pn2 _ _ _) => Procname.compare pn1 pn2
-  | (Ataint ti1, Ataint ti2) => taint_info_compare ti1 ti2
-  | (Ataint _, _) => (-1)
-  | (_, Ataint _) => 1
-  | (Auntaint ti1, Auntaint ti2) => taint_info_compare ti1 ti2
-  | (Auntaint _, _) => (-1)
-  | (_, Auntaint _) => 1
-  | (Alocked, Alocked) => 0
-  | (Alocked, _) => (-1)
-  | (_, Alocked) => 1
-  | (Aunlocked, Aunlocked) => 0
-  | (Aunlocked, _) => (-1)
-  | (_, Aunlocked) => 1
-  | (Adiv0 pp1, Adiv0 pp2) => path_pos_compare pp1 pp2
-  | (Adiv0 _, _) => (-1)
-  | (_, Adiv0 _) => 1
-  | (Aobjc_null v1 fs1, Aobjc_null v2 fs2) =>
-    let n = Pvar.compare v1 v2;
-    if (n != 0) {
-      n
-    } else {
-      IList.compare Ident.fieldname_compare fs1 fs2
-    }
-  | (Aobjc_null _, _) => (-1)
-  | (_, Aobjc_null _) => 1
-  | (Aretval pn1 annots1, Aretval pn2 annots2) =>
-    let n = Procname.compare pn1 pn2;
-    if (n != 0) {
-      n
-    } else {
-      Typ.item_annotation_compare annots1 annots2
-    }
-  | (Aretval _, _) => (-1)
-  | (_, Aretval _) => 1
-  | (Aobserver, Aobserver) => 0
-  | (Aobserver, _) => (-1)
-  | (_, Aobserver) => 1
-  | (Aunsubscribed_observer, Aunsubscribed_observer) => 0
-  | (Aunsubscribed_observer, _) => (-1)
-  | (_, Aunsubscribed_observer) => 1
-  };
-
-
-/** Compare epressions. Variables come before other expressions. */
-let rec exp_compare (e1: exp) (e2: exp) :int =>
-  switch (e1, e2) {
-  | (Var id1, Var id2) => Ident.compare id2 id1
-  | (Var _, _) => (-1)
-  | (_, Var _) => 1
-  | (UnOp o1 e1 to1, UnOp o2 e2 to2) =>
-    let n = Unop.compare o1 o2;
-    if (n != 0) {
-      n
-    } else {
-      let n = exp_compare e1 e2;
-      if (n != 0) {
-        n
-      } else {
-        opt_compare Typ.compare to1 to2
-      }
-    }
-  | (UnOp _, _) => (-1)
-  | (_, UnOp _) => 1
-  | (BinOp o1 e1 f1, BinOp o2 e2 f2) =>
-    let n = Binop.compare o1 o2;
-    if (n != 0) {
-      n
-    } else {
-      let n = exp_compare e1 e2;
-      if (n != 0) {
-        n
-      } else {
-        exp_compare f1 f2
-      }
-    }
-  | (BinOp _, _) => (-1)
-  | (_, BinOp _) => 1
-  | (Exn e1, Exn e2) => exp_compare e1 e2
-  | (Exn _, _) => (-1)
-  | (_, Exn _) => 1
-  | (Closure {name: n1, captured_vars: c1}, Closure {name: n2, captured_vars: c2}) =>
-    let captured_var_compare acc (e1, pvar1, typ1) (e2, pvar2, typ2) =>
-      if (acc != 0) {
-        acc
-      } else {
-        let n = exp_compare e1 e2;
-        if (n != 0) {
-          n
-        } else {
-          let n = Pvar.compare pvar1 pvar2;
-          if (n != 0) {
-            n
-          } else {
-            Typ.compare typ1 typ2
-          }
-        }
-      };
-    let n = Procname.compare n1 n2;
-    if (n != 0) {
-      n
-    } else {
-      IList.fold_left2 captured_var_compare 0 c1 c2
-    }
-  | (Closure _, _) => (-1)
-  | (_, Closure _) => 1
-  | (Const c1, Const c2) => Const.compare c1 c2
-  | (Const _, _) => (-1)
-  | (_, Const _) => 1
-  | (Cast t1 e1, Cast t2 e2) =>
-    let n = exp_compare e1 e2;
-    if (n != 0) {
-      n
-    } else {
-      Typ.compare t1 t2
-    }
-  | (Cast _, _) => (-1)
-  | (_, Cast _) => 1
-  | (Lvar i1, Lvar i2) => Pvar.compare i1 i2
-  | (Lvar _, _) => (-1)
-  | (_, Lvar _) => 1
-  | (Lfield e1 f1 t1, Lfield e2 f2 t2) =>
-    let n = exp_compare e1 e2;
-    if (n != 0) {
-      n
-    } else {
-      let n = Ident.fieldname_compare f1 f2;
-      if (n != 0) {
-        n
-      } else {
-        Typ.compare t1 t2
-      }
-    }
-  | (Lfield _, _) => (-1)
-  | (_, Lfield _) => 1
-  | (Lindex e1 f1, Lindex e2 f2) =>
-    let n = exp_compare e1 e2;
-    if (n != 0) {
-      n
-    } else {
-      exp_compare f1 f2
-    }
-  | (Lindex _, _) => (-1)
-  | (_, Lindex _) => 1
-  | (Sizeof t1 l1 s1, Sizeof t2 l2 s2) =>
-    let n = Typ.compare t1 t2;
-    if (n != 0) {
-      n
-    } else {
-      let n = opt_compare exp_compare l1 l2;
-      if (n != 0) {
-        n
-      } else {
-        Subtype.compare s1 s2
-      }
-    }
-  | (Attribute att1, Attribute att2) => attribute_compare att1 att2
-  | (Attribute _, _) => (-1)
-  | (_, Attribute _) => 1
-  };
-
-let exp_equal e1 e2 => exp_compare e1 e2 == 0;
-
-let rec exp_is_array_index_of exp1 exp2 =>
-  switch exp1 {
-  | Lindex exp _ => exp_is_array_index_of exp exp2
-  | _ => exp_equal exp1 exp2
-  };
-
-let ident_exp_compare = pair_compare Ident.compare exp_compare;
+let ident_exp_compare = pair_compare Ident.compare Exp.compare;
 
 let ident_exp_equal ide1 ide2 => ident_exp_compare ide1 ide2 == 0;
 
-let exp_list_compare = IList.compare exp_compare;
-
-let exp_list_equal el1 el2 => exp_list_compare el1 el2 == 0;
-
-let attribute_equal att1 att2 => attribute_compare att1 att2 == 0;
+let exp_list_compare = IList.compare Exp.compare;
 
 
 /** Compare atoms. Equalities come before disequalities */
@@ -691,20 +232,38 @@ let atom_compare a b =>
   } else {
     switch (a, b) {
     | (Aeq e1 e2, Aeq f1 f2) =>
-      let n = exp_compare e1 f1;
+      let n = Exp.compare e1 f1;
       if (n != 0) {
         n
       } else {
-        exp_compare e2 f2
+        Exp.compare e2 f2
       }
-    | (Aeq _, Aneq _) => (-1)
-    | (Aneq _, Aeq _) => 1
+    | (Aeq _, _) => (-1)
+    | (_, Aeq _) => 1
     | (Aneq e1 e2, Aneq f1 f2) =>
-      let n = exp_compare e1 f1;
+      let n = Exp.compare e1 f1;
       if (n != 0) {
         n
       } else {
-        exp_compare e2 f2
+        Exp.compare e2 f2
+      }
+    | (Aneq _, _) => (-1)
+    | (_, Aneq _) => 1
+    | (Apred a1 es1, Apred a2 es2) =>
+      let n = PredSymb.compare a1 a2;
+      if (n != 0) {
+        n
+      } else {
+        IList.compare Exp.compare es1 es2
+      }
+    | (Apred _, _) => (-1)
+    | (_, Apred _) => 1
+    | (Anpred a1 es1, Anpred a2 es2) =>
+      let n = PredSymb.compare a1 a2;
+      if (n != 0) {
+        n
+      } else {
+        IList.compare Exp.compare es1 es2
       }
     }
   };
@@ -727,14 +286,14 @@ let rec strexp_compare se1 se2 =>
     0
   } else {
     switch (se1, se2) {
-    | (Eexp e1 _, Eexp e2 _) => exp_compare e1 e2
+    | (Eexp e1 _, Eexp e2 _) => Exp.compare e1 e2
     | (Eexp _, _) => (-1)
     | (_, Eexp _) => 1
     | (Estruct fel1 _, Estruct fel2 _) => fld_strexp_list_compare fel1 fel2
     | (Estruct _, _) => (-1)
     | (_, Estruct _) => 1
     | (Earray e1 esel1 _, Earray e2 esel2 _) =>
-      let n = exp_compare e1 e2;
+      let n = Exp.compare e1 e2;
       if (n != 0) {
         n
       } else {
@@ -744,7 +303,7 @@ let rec strexp_compare se1 se2 =>
   }
 and fld_strexp_compare fse1 fse2 => pair_compare Ident.fieldname_compare strexp_compare fse1 fse2
 and fld_strexp_list_compare fsel1 fsel2 => IList.compare fld_strexp_compare fsel1 fsel2
-and exp_strexp_compare ese1 ese2 => pair_compare exp_compare strexp_compare ese1 ese2
+and exp_strexp_compare ese1 ese2 => pair_compare Exp.compare strexp_compare ese1 ese2
 and exp_strexp_list_compare esel1 esel2 => IList.compare exp_strexp_compare esel1 esel2;
 
 
@@ -754,14 +313,14 @@ let rec hpred_compare hpred1 hpred2 =>
     0
   } else {
     switch (hpred1, hpred2) {
-    | (Hpointsto e1 _ _, Hlseg _ _ e2 _ _) when exp_compare e2 e1 != 0 => exp_compare e2 e1
-    | (Hpointsto e1 _ _, Hdllseg _ _ e2 _ _ _ _) when exp_compare e2 e1 != 0 => exp_compare e2 e1
-    | (Hlseg _ _ e1 _ _, Hpointsto e2 _ _) when exp_compare e2 e1 != 0 => exp_compare e2 e1
-    | (Hlseg _ _ e1 _ _, Hdllseg _ _ e2 _ _ _ _) when exp_compare e2 e1 != 0 => exp_compare e2 e1
-    | (Hdllseg _ _ e1 _ _ _ _, Hpointsto e2 _ _) when exp_compare e2 e1 != 0 => exp_compare e2 e1
-    | (Hdllseg _ _ e1 _ _ _ _, Hlseg _ _ e2 _ _) when exp_compare e2 e1 != 0 => exp_compare e2 e1
+    | (Hpointsto e1 _ _, Hlseg _ _ e2 _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
+    | (Hpointsto e1 _ _, Hdllseg _ _ e2 _ _ _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
+    | (Hlseg _ _ e1 _ _, Hpointsto e2 _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
+    | (Hlseg _ _ e1 _ _, Hdllseg _ _ e2 _ _ _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
+    | (Hdllseg _ _ e1 _ _ _ _, Hpointsto e2 _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
+    | (Hdllseg _ _ e1 _ _ _ _, Hlseg _ _ e2 _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
     | (Hpointsto e1 se1 te1, Hpointsto e2 se2 te2) =>
-      let n = exp_compare e2 e1;
+      let n = Exp.compare e2 e1;
       if (n != 0) {
         n
       } else {
@@ -769,13 +328,13 @@ let rec hpred_compare hpred1 hpred2 =>
         if (n != 0) {
           n
         } else {
-          exp_compare te2 te1
+          Exp.compare te2 te1
         }
       }
     | (Hpointsto _, _) => (-1)
     | (_, Hpointsto _) => 1
     | (Hlseg k1 hpar1 e1 f1 el1, Hlseg k2 hpar2 e2 f2 el2) =>
-      let n = exp_compare e2 e1;
+      let n = Exp.compare e2 e1;
       if (n != 0) {
         n
       } else {
@@ -787,7 +346,7 @@ let rec hpred_compare hpred1 hpred2 =>
           if (n != 0) {
             n
           } else {
-            let n = exp_compare f2 f1;
+            let n = Exp.compare f2 f1;
             if (n != 0) {
               n
             } else {
@@ -799,7 +358,7 @@ let rec hpred_compare hpred1 hpred2 =>
     | (Hlseg _, Hdllseg _) => (-1)
     | (Hdllseg _, Hlseg _) => 1
     | (Hdllseg k1 hpar1 e1 f1 g1 h1 el1, Hdllseg k2 hpar2 e2 f2 g2 h2 el2) =>
-      let n = exp_compare e2 e1;
+      let n = Exp.compare e2 e1;
       if (n != 0) {
         n
       } else {
@@ -811,15 +370,15 @@ let rec hpred_compare hpred1 hpred2 =>
           if (n != 0) {
             n
           } else {
-            let n = exp_compare f2 f1;
+            let n = Exp.compare f2 f1;
             if (n != 0) {
               n
             } else {
-              let n = exp_compare g2 g1;
+              let n = Exp.compare g2 g1;
               if (n != 0) {
                 n
               } else {
-                let n = exp_compare h2 h1;
+                let n = Exp.compare h2 h1;
                 if (n != 0) {
                   n
                 } else {
@@ -895,17 +454,7 @@ let hpara_dll_equal hpara1 hpara2 => hpara_dll_compare hpara1 hpara2 == 0;
 
 
 /** {2 Sets of expressions} */
-let module ExpSet = Set.Make {
-  type t = exp;
-  let compare = exp_compare;
-};
-
-let module ExpMap = Map.Make {
-  type t = exp;
-  let compare = exp_compare;
-};
-
-let elist_to_eset es => IList.fold_left (fun set e => ExpSet.add e set) ExpSet.empty es;
+let elist_to_eset es => IList.fold_left (fun set e => Exp.Set.add e set) Exp.Set.empty es;
 
 
 /** {2 Sets of heap predicates} */
@@ -977,71 +526,6 @@ let pp_seq_diff pp pe0 f =>
   };
 
 
-/** convert the attribute to a string */
-let attribute_to_string pe =>
-  fun
-  | Aresource ra => {
-      let mk_name = (
-        fun
-        | Mmalloc => "ma"
-        | Mnew => "ne"
-        | Mnew_array => "na"
-        | Mobjc => "oc"
-      );
-      let name =
-        switch (ra.ra_kind, ra.ra_res) {
-        | (Racquire, Rmemory mk) => "MEM" ^ mk_name mk
-        | (Racquire, Rfile) => "FILE"
-        | (Rrelease, Rmemory mk) => "FREED" ^ mk_name mk
-        | (Rrelease, Rfile) => "CLOSED"
-        | (_, Rignore) => "IGNORE"
-        | (Racquire, Rlock) => "LOCKED"
-        | (Rrelease, Rlock) => "UNLOCKED"
-        };
-      let str_vpath =
-        if Config.trace_error {
-          pp_to_string (DecompiledExp.pp_vpath pe) ra.ra_vpath
-        } else {
-          ""
-        };
-      name ^
-        Binop.str pe Lt ^
-        Procname.to_string ra.ra_pname ^
-        ":" ^
-        string_of_int ra.ra_loc.Location.line ^
-        Binop.str pe Gt ^
-        str_vpath
-    }
-  | Aautorelease => "AUTORELEASE"
-  | Adangling dk => {
-      let dks =
-        switch dk {
-        | DAuninit => "UNINIT"
-        | DAaddr_stack_var => "ADDR_STACK"
-        | DAminusone => "MINUS1"
-        };
-      "DANGL" ^ Binop.str pe Lt ^ dks ^ Binop.str pe Gt
-    }
-  | Aundef pn _ loc _ =>
-    "UND" ^
-      Binop.str pe Lt ^
-      Procname.to_string pn ^
-      Binop.str pe Gt ^
-      ":" ^
-      string_of_int loc.Location.line
-  | Ataint {taint_source} => "TAINTED[" ^ Procname.to_string taint_source ^ "]"
-  | Auntaint _ => "UNTAINTED"
-  | Alocked => "LOCKED"
-  | Aunlocked => "UNLOCKED"
-  | Adiv0 (_, _) => "DIV0"
-  | Aobjc_null v fs =>
-    "OBJC_NULL[" ^
-      String.concat "." [Pvar.to_string v, ...IList.map Ident.fieldname_to_string fs] ^ "]"
-  | Aretval pn _ => "RET" ^ Binop.str pe Lt ^ Procname.to_string pn ^ Binop.str pe Gt
-  | Aobserver => "OBSERVER"
-  | Aunsubscribed_observer => "UNSUBSCRIBED_OBSERVER";
-
-
 /** Pretty print an expression. */
 let rec _pp_exp pe0 pp_t f e0 => {
   let (pe, changed) = color_pre_wrapper pe0 f e0;
@@ -1050,9 +534,9 @@ let rec _pp_exp pe0 pp_t f e0 => {
     | Some sub => Obj.obj (sub (Obj.repr e0)) /* apply object substitution to expression */
     | None => e0
     };
-  if (not (exp_equal e0 e)) {
+  if (not (Exp.equal e0 e)) {
     switch e {
-    | Lvar pvar => Pvar.pp_value pe f pvar
+    | Exp.Lvar pvar => Pvar.pp_value pe f pvar
     | _ => assert false
     }
   } else {
@@ -1069,24 +553,23 @@ let rec _pp_exp pe0 pp_t f e0 => {
       | Ge => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Le) pp_exp e1
       | _ => F.fprintf f "(%a %s %a)" pp_exp e1 (Binop.str pe op) pp_exp e2
       };
-    switch e {
+    switch (e: Exp.t) {
     | Var id => (Ident.pp pe) f id
     | Const c => F.fprintf f "%a" (Const.pp pe) c
     | Cast typ e => F.fprintf f "(%a)%a" pp_t typ pp_exp e
     | UnOp op e _ => F.fprintf f "%s%a" (Unop.str op) pp_exp e
-    | BinOp op (Const c) e2 when Config.smt_output => print_binop_stm_output (Const c) op e2
+    | BinOp op (Const c) e2 when Config.smt_output => print_binop_stm_output (Exp.Const c) op e2
     | BinOp op e1 e2 => F.fprintf f "(%a %s %a)" pp_exp e1 (Binop.str pe op) pp_exp e2
     | Exn e => F.fprintf f "EXN %a" pp_exp e
     | Closure {name, captured_vars} =>
       let id_exps = IList.map (fun (id_exp, _, _) => id_exp) captured_vars;
-      F.fprintf f "(%a)" (pp_comma_seq pp_exp) [Const (Cfun name), ...id_exps]
+      F.fprintf f "(%a)" (pp_comma_seq pp_exp) [Exp.Const (Cfun name), ...id_exps]
     | Lvar pv => Pvar.pp pe f pv
     | Lfield e fld _ => F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld
     | Lindex e1 e2 => F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
     | Sizeof t l s =>
       let pp_len f l => Option.map_default (F.fprintf f "[%a]" pp_exp) () l;
       F.fprintf f "sizeof(%a%a%a)" pp_t t pp_len l Subtype.pp s
-    | Attribute att => F.fprintf f "%s" (attribute_to_string pe att)
     }
   };
   color_post_wrapper changed pe0 f
@@ -1100,7 +583,7 @@ let exp_to_string e => pp_to_string (pp_exp pe_text) e;
 
 
 /** dump an expression. */
-let d_exp (e: exp) => L.add_print_action (L.PTexp, Obj.repr e);
+let d_exp (e: Exp.t) => L.add_print_action (L.PTexp, Obj.repr e);
 
 
 /** Pretty print a list of expressions. */
@@ -1108,11 +591,11 @@ let pp_exp_list pe f expl => (pp_seq (pp_exp pe)) f expl;
 
 
 /** dump a list of expressions. */
-let d_exp_list (el: list exp) => L.add_print_action (L.PTexp_list, Obj.repr el);
+let d_exp_list (el: list Exp.t) => L.add_print_action (L.PTexp_list, Obj.repr el);
 
 let pp_texp pe f =>
   fun
-  | Sizeof t l s => {
+  | Exp.Sizeof t l s => {
       let pp_len f l => Option.map_default (F.fprintf f "[%a]" (pp_exp pe)) () l;
       F.fprintf f "%a%a%a" (Typ.pp pe) t pp_len l Subtype.pp s
     }
@@ -1122,7 +605,7 @@ let pp_texp pe f =>
 /** Pretty print a type with all the details. */
 let pp_texp_full pe f =>
   fun
-  | Sizeof t l s => {
+  | Exp.Sizeof t l s => {
       let pp_len f l => Option.map_default (F.fprintf f "[%a]" (pp_exp pe)) () l;
       F.fprintf f "%a%a%a" (Typ.pp_full pe) t pp_len l Subtype.pp s
     }
@@ -1130,7 +613,7 @@ let pp_texp_full pe f =>
 
 
 /** Dump a type expression with all the details. */
-let d_texp_full (te: exp) => L.add_print_action (L.PTtexp_full, Obj.repr te);
+let d_texp_full (te: Exp.t) => L.add_print_action (L.PTtexp_full, Obj.repr te);
 
 
 /** Pretty print an offset */
@@ -1175,13 +658,13 @@ let instr_get_loc =
 /** get the expressions occurring in the instruction */
 let instr_get_exps =
   fun
-  | Letderef id e _ _ => [Var id, e]
+  | Letderef id e _ _ => [Exp.Var id, e]
   | Set e1 _ e2 _ => [e1, e2]
   | Prune cond _ _ _ => [cond]
-  | Call ret_ids e _ _ _ => [e, ...(IList.map (fun id => Var id)) ret_ids]
-  | Nullify pvar _ => [Lvar pvar]
+  | Call ret_ids e _ _ _ => [e, ...(IList.map (fun id => Exp.Var id)) ret_ids]
+  | Nullify pvar _ => [Exp.Lvar pvar]
   | Abstract _ => []
-  | Remove_temps temps _ => IList.map (fun id => Var id) temps
+  | Remove_temps temps _ => IList.map (fun id => Exp.Var id) temps
   | Stackop _ => []
   | Declare_locals _ => [];
 
@@ -1257,8 +740,8 @@ let pp_atom pe0 f a => {
   | Aeq (BinOp op e1 e2) (Const (Cint i)) when IntLit.isone i =>
     switch pe.pe_kind {
     | PP_TEXT
-    | PP_HTML => F.fprintf f "%a" (pp_exp pe) (BinOp op e1 e2)
-    | PP_LATEX => F.fprintf f "%a" (pp_exp pe) (BinOp op e1 e2)
+    | PP_HTML => F.fprintf f "%a" (pp_exp pe) (Exp.BinOp op e1 e2)
+    | PP_LATEX => F.fprintf f "%a" (pp_exp pe) (Exp.BinOp op e1 e2)
     }
   | Aeq e1 e2 =>
     switch pe.pe_kind {
@@ -1266,14 +749,14 @@ let pp_atom pe0 f a => {
     | PP_HTML => F.fprintf f "%a = %a" (pp_exp pe) e1 (pp_exp pe) e2
     | PP_LATEX => F.fprintf f "%a{=}%a" (pp_exp pe) e1 (pp_exp pe) e2
     }
-  | Aneq (Attribute _ as ea) e
-  | Aneq e (Attribute _ as ea) => F.fprintf f "%a(%a)" (pp_exp pe) ea (pp_exp pe) e
   | Aneq e1 e2 =>
     switch pe.pe_kind {
     | PP_TEXT
     | PP_HTML => F.fprintf f "%a != %a" (pp_exp pe) e1 (pp_exp pe) e2
     | PP_LATEX => F.fprintf f "%a{\\neq}%a" (pp_exp pe) e1 (pp_exp pe) e2
     }
+  | Apred a es => F.fprintf f "%s(%a)" (PredSymb.to_string pe a) (pp_comma_seq (pp_exp pe)) es
+  | Anpred a es => F.fprintf f "!%s(%a)" (PredSymb.to_string pe a) (pp_comma_seq (pp_exp pe)) es
   };
   color_post_wrapper changed pe0 f
 };
@@ -1838,7 +1321,7 @@ let d_hpred (hpred: hpred) => L.add_print_action (L.PThpred, Obj.repr hpred);
 
 
 /** {2 Functions for traversing SIL data types} */
-let rec strexp_expmap (f: (exp, option inst) => (exp, option inst)) => {
+let rec strexp_expmap (f: (Exp.t, option inst) => (Exp.t, option inst)) => {
   let fe e => fst (f (e, None));
   let fei (e, inst) =>
     switch (f (e, Some inst)) {
@@ -1864,7 +1347,7 @@ let rec strexp_expmap (f: (exp, option inst) => (exp, option inst)) => {
     }
 };
 
-let hpred_expmap (f: (exp, option inst) => (exp, option inst)) => {
+let hpred_expmap (f: (Exp.t, option inst) => (Exp.t, option inst)) => {
   let fe e => fst (f (e, None));
   fun
   | Hpointsto e se te => {
@@ -1917,15 +1400,17 @@ and hpred_instmap (fn: inst => inst) (hpred: hpred) :hpred =>
   | Hdllseg k hpar_dll e f g h el => Hdllseg k (hpara_dll_instmap fn hpar_dll) e f g h el
   };
 
-let hpred_list_expmap (f: (exp, option inst) => (exp, option inst)) (hlist: list hpred) =>
+let hpred_list_expmap (f: (Exp.t, option inst) => (Exp.t, option inst)) (hlist: list hpred) =>
   IList.map (hpred_expmap f) hlist;
 
-let atom_expmap (f: exp => exp) =>
+let atom_expmap (f: Exp.t => Exp.t) =>
   fun
   | Aeq e1 e2 => Aeq (f e1) (f e2)
-  | Aneq e1 e2 => Aneq (f e1) (f e2);
+  | Aneq e1 e2 => Aneq (f e1) (f e2)
+  | Apred a es => Apred a (IList.map f es)
+  | Anpred a es => Anpred a (IList.map f es);
 
-let atom_list_expmap (f: exp => exp) (alist: list atom) => IList.map (atom_expmap f) alist;
+let atom_list_expmap (f: Exp.t => Exp.t) (alist: list atom) => IList.map (atom_expmap f) alist;
 
 
 /** {2 Function for computing lexps in sigma} */
@@ -1935,111 +1420,15 @@ let hpred_get_lexp acc =>
   | Hlseg _ _ e _ _ => [e, ...acc]
   | Hdllseg _ _ e1 _ _ e2 _ => [e1, e2, ...acc];
 
-let hpred_list_get_lexps (filter: exp => bool) (hlist: list hpred) :list exp => {
+let hpred_list_get_lexps (filter: Exp.t => bool) (hlist: list hpred) :list Exp.t => {
   let lexps = IList.fold_left hpred_get_lexp [] hlist;
   IList.filter filter lexps
 };
 
 
-/** {2 Utility Functions for Expressions} */
-/** Turn an expression representing a type into the type it represents
-    If not a sizeof, return the default type if given, otherwise raise an exception */
-let texp_to_typ default_opt =>
-  fun
-  | Sizeof t _ _ => t
-  | _ => Typ.unsome "texp_to_typ" default_opt;
-
-
-/** Return the root of [lexp]. */
-let rec root_of_lexp lexp =>
-  switch lexp {
-  | Var _ => lexp
-  | Const _ => lexp
-  | Cast _ e => root_of_lexp e
-  | UnOp _
-  | BinOp _
-  | Exn _
-  | Closure _ => lexp
-  | Lvar _ => lexp
-  | Lfield e _ _ => root_of_lexp e
-  | Lindex e _ => root_of_lexp e
-  | Sizeof _ => lexp
-  | Attribute _ => lexp
-  };
-
-
-/** Checks whether an expression denotes a location by pointer arithmetic.
-    Currently, catches array - indexing expressions such as a[i] only. */
-let rec exp_pointer_arith =
-  fun
-  | Lfield e _ _ => exp_pointer_arith e
-  | Lindex _ => true
-  | _ => false;
-
-let exp_get_undefined footprint =>
-  Var (
-    Ident.create_fresh (
-      if footprint {
-        Ident.kfootprint
-      } else {
-        Ident.kprimed
-      }
-    )
-  );
-
-
-/** Create integer constant */
-let exp_int i => Const (Cint i);
-
-
-/** Create float constant */
-let exp_float v => Const (Cfloat v);
-
-
-/** Integer constant 0 */
-let exp_zero = exp_int IntLit.zero;
-
-
-/** Null constant */
-let exp_null = exp_int IntLit.null;
-
-
-/** Integer constant 1 */
-let exp_one = exp_int IntLit.one;
-
-
-/** Integer constant -1 */
-let exp_minus_one = exp_int IntLit.minus_one;
-
-
-/** Create integer constant corresponding to the boolean value */
-let exp_bool b =>
-  if b {
-    exp_one
-  } else {
-    exp_zero
-  };
-
-
-/** Create expresstion [e1 == e2] */
-let exp_eq e1 e2 => BinOp Eq e1 e2;
-
-
-/** Create expresstion [e1 != e2] */
-let exp_ne e1 e2 => BinOp Ne e1 e2;
-
-
-/** Create expression [e1 <= e2] */
-let exp_le e1 e2 => BinOp Le e1 e2;
-
-
-/** Create expression [e1 < e2] */
-let exp_lt e1 e2 => BinOp Lt e1 e2;
-
-
 /** {2 Functions for computing program variables} */
-let rec exp_fpv =
-  fun
+let rec exp_fpv e =>
+  switch (e: Exp.t) {
   | Var _ => []
   | Exn e => exp_fpv e
   | Closure {captured_vars} => IList.map (fun (_, pvar, _) => pvar) captured_vars
@@ -2054,14 +1443,16 @@ let rec exp_fpv =
   /* | Sizeof _ None _ => [] */
   /* | Sizeof _ (Some l) _ => exp_fpv l */
   | Sizeof _ _ _ => []
-  | Attribute _ => [];
+  };
 
 let exp_list_fpv el => IList.flatten (IList.map exp_fpv el);
 
 let atom_fpv =
   fun
   | Aeq e1 e2 => exp_fpv e1 @ exp_fpv e2
-  | Aneq e1 e2 => exp_fpv e1 @ exp_fpv e2;
+  | Aneq e1 e2 => exp_fpv e1 @ exp_fpv e2
+  | Apred _ es
+  | Anpred _ es => IList.fold_left (fun fpv e => IList.rev_append (exp_fpv e) fpv) [] es;
 
 let rec strexp_fpv =
   fun
@@ -2232,29 +1623,27 @@ let fav_subset_ident fav1 fav2 => ident_sorted_list_subset (fav_to_list fav1) (f
 
 let fav_mem fav id => IList.exists (Ident.equal id) !fav;
 
-let rec exp_fav_add fav =>
-  fun
+let rec exp_fav_add fav e =>
+  switch (e: Exp.t) {
   | Var id => fav ++ id
   | Exn e => exp_fav_add fav e
   | Closure {captured_vars} => IList.iter (fun (e, _, _) => exp_fav_add fav e) captured_vars
   | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _) => ()
   | Cast _ e
   | UnOp _ e _ => exp_fav_add fav e
-  | BinOp _ e1 e2 => {
-      exp_fav_add fav e1;
-      exp_fav_add fav e2
-    }
+  | BinOp _ e1 e2 =>
+    exp_fav_add fav e1;
+    exp_fav_add fav e2
   | Lvar _ => () /* do nothing since we only count non-program variables */
   | Lfield e _ _ => exp_fav_add fav e
-  | Lindex e1 e2 => {
-      exp_fav_add fav e1;
-      exp_fav_add fav e2
-    }
+  | Lindex e1 e2 =>
+    exp_fav_add fav e1;
+    exp_fav_add fav e2
   /* TODO: Sizeof length expressions may contain variables, do not ignore them. */
   /* | Sizeof _ None _ => () */
   /* | Sizeof _ (Some l) _ => exp_fav_add fav l; */
   | Sizeof _ _ _ => ()
-  | Attribute _ => ();
+  };
 
 let exp_fav = fav_imperative_to_functional exp_fav_add;
 
@@ -2272,7 +1661,9 @@ let atom_fav_add fav =>
   | Aneq e1 e2 => {
       exp_fav_add fav e1;
       exp_fav_add fav e2
-    };
+    }
+  | Apred _ es
+  | Anpred _ es => IList.iter (fun e => exp_fav_add fav e) es;
 
 let atom_fav = fav_imperative_to_functional atom_fav_add;
 
@@ -2336,7 +1727,7 @@ let array_clean_new_index footprint_part new_idx => {
     );
     L.d_ln ();
     let id = Ident.create_fresh Ident.kfootprint;
-    Var id
+    Exp.Var id
   } else {
     new_idx
   }
@@ -2445,7 +1836,7 @@ let rec sorted_list_check_consecutives f =>
 
 
 /** substitution */
-type subst = list (Ident.t, exp);
+type subst = list (Ident.t, Exp.t);
 
 
 /** Comparison between substitutions. */
@@ -2461,7 +1852,7 @@ let rec sub_compare (sub1: subst) (sub2: subst) =>
       if (n != 0) {
         n
       } else {
-        let n = exp_compare e1 e2;
+        let n = Exp.compare e1 e2;
         if (n != 0) {
           n
         } else {
@@ -2631,8 +2022,8 @@ let sub_fpv (sub: subst) => IList.flatten (IList.map (fun (_, e) => exp_fpv e) s
 /** Substitutions do not contain binders */
 let sub_av_add = sub_fav_add;
 
-let rec exp_sub_ids (f: Ident.t => exp) exp =>
-  switch exp {
+let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
+  switch (exp: Exp.t) {
   | Var id => f id
   | Lvar _ => exp
   | Exn e =>
@@ -2640,7 +2031,7 @@ let rec exp_sub_ids (f: Ident.t => exp) exp =>
     if (e' === e) {
       exp
     } else {
-      Exn e'
+      Exp.Exn e'
     }
   | Closure c =>
     let captured_vars =
@@ -2659,7 +2050,7 @@ let rec exp_sub_ids (f: Ident.t => exp) exp =>
     if (captured_vars === c.captured_vars) {
       exp
     } else {
-      Closure {...c, captured_vars}
+      Exp.Closure {...c, captured_vars}
     }
   | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _) => exp
   | Cast t e =>
@@ -2667,14 +2058,14 @@ let rec exp_sub_ids (f: Ident.t => exp) exp =>
     if (e' === e) {
       exp
     } else {
-      Cast t e'
+      Exp.Cast t e'
     }
   | UnOp op e typ_opt =>
     let e' = exp_sub_ids f e;
     if (e' === e) {
       exp
     } else {
-      UnOp op e' typ_opt
+      Exp.UnOp op e' typ_opt
     }
   | BinOp op e1 e2 =>
     let e1' = exp_sub_ids f e1;
@@ -2682,14 +2073,14 @@ let rec exp_sub_ids (f: Ident.t => exp) exp =>
     if (e1' === e1 && e2' === e2) {
       exp
     } else {
-      BinOp op e1' e2'
+      Exp.BinOp op e1' e2'
     }
   | Lfield e fld typ =>
     let e' = exp_sub_ids f e;
     if (e' === e) {
       exp
     } else {
-      Lfield e' fld typ
+      Exp.Lfield e' fld typ
     }
   | Lindex e1 e2 =>
     let e1' = exp_sub_ids f e1;
@@ -2697,7 +2088,7 @@ let rec exp_sub_ids (f: Ident.t => exp) exp =>
     if (e1' === e1 && e2' === e2) {
       exp
     } else {
-      Lindex e1' e2'
+      Exp.Lindex e1' e2'
     }
   | Sizeof t l_opt s =>
     switch l_opt {
@@ -2706,16 +2097,15 @@ let rec exp_sub_ids (f: Ident.t => exp) exp =>
       if (l' === l) {
         exp
       } else {
-        Sizeof t (Some l') s
+        Exp.Sizeof t (Some l') s
       }
     | None => exp
     }
-  | Attribute _ => exp
   };
 
 let rec apply_sub subst id =>
   switch subst {
-  | [] => Var id
+  | [] => Exp.Var id
   | [(i, e), ...l] =>
     if (Ident.equal i id) {
       e
@@ -2728,7 +2118,7 @@ let exp_sub (subst: subst) e => exp_sub_ids (apply_sub subst) e;
 
 
 /** apply [f] to id's in [instr]. if [sub_id_binders] is false, [f] is only applied to bound id's */
-let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => exp) instr => {
+let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => Exp.t) instr => {
   let sub_id id =>
     switch (exp_sub_ids f (Var id)) {
     | Var id' => id'
@@ -2808,7 +2198,7 @@ let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => exp) instr => {
 let instr_sub (subst: subst) instr => instr_sub_ids sub_id_binders::true (apply_sub subst) instr;
 
 let exp_typ_compare (exp1, typ1) (exp2, typ2) => {
-  let n = exp_compare exp1 exp2;
+  let n = Exp.compare exp1 exp2;
   if (n != 0) {
     n
   } else {
@@ -2823,7 +2213,7 @@ let instr_compare instr1 instr2 =>
     if (n != 0) {
       n
     } else {
-      let n = exp_compare e1 e2;
+      let n = Exp.compare e1 e2;
       if (n != 0) {
         n
       } else {
@@ -2838,7 +2228,7 @@ let instr_compare instr1 instr2 =>
   | (Letderef _, _) => (-1)
   | (_, Letderef _) => 1
   | (Set e11 t1 e21 loc1, Set e12 t2 e22 loc2) =>
-    let n = exp_compare e11 e12;
+    let n = Exp.compare e11 e12;
     if (n != 0) {
       n
     } else {
@@ -2846,7 +2236,7 @@ let instr_compare instr1 instr2 =>
       if (n != 0) {
         n
       } else {
-        let n = exp_compare e21 e22;
+        let n = Exp.compare e21 e22;
         if (n != 0) {
           n
         } else {
@@ -2857,7 +2247,7 @@ let instr_compare instr1 instr2 =>
   | (Set _, _) => (-1)
   | (_, Set _) => 1
   | (Prune cond1 loc1 true_branch1 ik1, Prune cond2 loc2 true_branch2 ik2) =>
-    let n = exp_compare cond1 cond2;
+    let n = Exp.compare cond1 cond2;
     if (n != 0) {
       n
     } else {
@@ -2880,7 +2270,7 @@ let instr_compare instr1 instr2 =>
     if (n != 0) {
       n
     } else {
-      let n = exp_compare e1 e2;
+      let n = Exp.compare e1 e2;
       if (n != 0) {
         n
       } else {
@@ -2953,14 +2343,14 @@ let instr_compare instr1 instr2 =>
 let rec exp_compare_structural e1 e2 exp_map => {
   let compare_exps_with_map e1 e2 exp_map =>
     try {
-      let e1_mapping = ExpMap.find e1 exp_map;
-      (exp_compare e1_mapping e2, exp_map)
+      let e1_mapping = Exp.Map.find e1 exp_map;
+      (Exp.compare e1_mapping e2, exp_map)
     } {
     | Not_found =>
       /* assume e1 and e2 equal, enforce by adding to [exp_map] */
-      (0, ExpMap.add e1 e2 exp_map)
+      (0, Exp.Map.add e1 e2 exp_map)
     };
-  switch (e1, e2) {
+  switch (e1: Exp.t, e2: Exp.t) {
   | (Var _, Var _) => compare_exps_with_map e1 e2 exp_map
   | (UnOp o1 e1 to1, UnOp o2 e2 to2) =>
     let n = Unop.compare o1 o2;
@@ -3022,7 +2412,7 @@ let rec exp_compare_structural e1 e2 exp_map => {
     } else {
       exp_compare_structural f1 f2 exp_map
     }
-  | _ => (exp_compare e1 e2, exp_map)
+  | _ => (Exp.compare e1 e2, exp_map)
   }
 };
 
@@ -3187,24 +2577,13 @@ let hpred_sub subst => {
 /** {2 Functions for replacing occurrences of expressions.} */
 let exp_replace_exp epairs e =>
   try {
-    let (_, e') = IList.find (fun (e1, _) => exp_equal e e1) epairs;
+    let (_, e') = IList.find (fun (e1, _) => Exp.equal e e1) epairs;
     e'
   } {
   | Not_found => e
   };
 
-let atom_replace_exp epairs =>
-  fun
-  | Aeq e1 e2 => {
-      let e1' = exp_replace_exp epairs e1;
-      let e2' = exp_replace_exp epairs e2;
-      Aeq e1' e2'
-    }
-  | Aneq e1 e2 => {
-      let e1' = exp_replace_exp epairs e1;
-      let e2' = exp_replace_exp epairs e2;
-      Aneq e1' e2'
-    };
+let atom_replace_exp epairs atom => atom_expmap (fun e => exp_replace_exp epairs e) atom;
 
 let rec strexp_replace_exp epairs =>
   fun
@@ -3247,30 +2626,24 @@ let hpred_replace_exp epairs =>
 
 
 /** {2 Compaction} */
-let module ExpHash = Hashtbl.Make {
-  type t = exp;
-  let equal = exp_equal;
-  let hash = Hashtbl.hash;
-};
-
 let module HpredHash = Hashtbl.Make {
   type t = hpred;
   let equal = hpred_equal;
   let hash = Hashtbl.hash;
 };
 
-type sharing_env = {exph: ExpHash.t exp, hpredh: HpredHash.t hpred};
+type sharing_env = {exph: Exp.Hash.t Exp.t, hpredh: HpredHash.t hpred};
 
 
 /** Create a sharing env to store canonical representations */
-let create_sharing_env () => {exph: ExpHash.create 3, hpredh: HpredHash.create 3};
+let create_sharing_env () => {exph: Exp.Hash.create 3, hpredh: HpredHash.create 3};
 
 
 /** Return a canonical representation of the exp */
 let exp_compact sh e =>
-  try (ExpHash.find sh.exph e) {
+  try (Exp.Hash.find sh.exph e) {
   | Not_found =>
-    ExpHash.add sh.exph e e;
+    Exp.Hash.add sh.exph e e;
     e
   };
 
@@ -3304,38 +2677,10 @@ let hpred_compact sh hpred =>
 
 
 /** {2 Functions for constructing or destructing entities in this module} */
-/** Extract the ids and pvars from an expression */
-let exp_get_vars exp => {
-  let rec exp_get_vars_ exp vars =>
-    switch exp {
-    | Lvar pvar => (fst vars, [pvar, ...snd vars])
-    | Var id => ([id, ...fst vars], snd vars)
-    | Cast _ e
-    | UnOp _ e _
-    | Lfield e _ _
-    | Exn e => exp_get_vars_ e vars
-    | BinOp _ e1 e2
-    | Lindex e1 e2 => exp_get_vars_ e1 vars |> exp_get_vars_ e2
-    | Closure {captured_vars} =>
-      IList.fold_left
-        (fun vars_acc (captured_exp, _, _) => exp_get_vars_ captured_exp vars_acc)
-        vars
-        captured_vars
-    | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _) => vars
-    /* TODO: Sizeof length expressions may contain variables, do not ignore them. */
-    /* | Sizeof _ None _ => vars */
-    /* | Sizeof _ (Some l) _ => exp_get_vars_ l vars */
-    | Sizeof _ _ _ => vars
-    | Attribute _ => vars
-    };
-  exp_get_vars_ exp ([], [])
-};
-
-
 /** Compute the offset list of an expression */
 let exp_get_offsets exp => {
   let rec f offlist_past e =>
-    switch e {
+    switch (e: Exp.t) {
     | Var _
     | Const _
     | UnOp _
@@ -3343,7 +2688,6 @@ let exp_get_offsets exp => {
     | Exn _
     | Closure _
     | Lvar _
-    | Attribute _
     | Sizeof _ None _ => offlist_past
     | Sizeof _ (Some l) _ => f offlist_past l
     | Cast _ sub_exp => f offlist_past sub_exp
@@ -3357,8 +2701,8 @@ let exp_add_offsets exp offsets => {
   let rec f acc =>
     fun
     | [] => acc
-    | [Off_fld fld typ, ...offs'] => f (Lfield acc fld typ) offs'
-    | [Off_index e, ...offs'] => f (Lindex acc e) offs';
+    | [Off_fld fld typ, ...offs'] => f (Exp.Lfield acc fld typ) offs'
+    | [Off_index e, ...offs'] => f (Exp.Lindex acc e) offs';
   f exp offsets
 };
 
@@ -3408,7 +2752,7 @@ let hpara_instantiate para e1 e2 elist => {
     IList.map g para.evars
   };
   let subst_for_evars = {
-    let g id id' => (id, Var id');
+    let g id id' => (id, Exp.Var id');
     try (IList.map2 g para.evars ids_evars) {
     | Invalid_argument _ => assert false
     }
@@ -3437,7 +2781,7 @@ let hpara_dll_instantiate (para: hpara_dll) cell blink flink elist => {
     IList.map g para.evars_dll
   };
   let subst_for_evars = {
-    let g id id' => (id, Var id');
+    let g id id' => (id, Exp.Var id');
     try (IList.map2 g para.evars_dll ids_evars) {
     | Invalid_argument _ => assert false
     }

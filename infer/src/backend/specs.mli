@@ -127,6 +127,8 @@ type payload =
     preposts : NormSpec.t list option; (** list of specs *)
     typestate : unit TypeState.t option; (** final typestate *)
     calls:  call_summary option; (** list of calls of the form (call, loc) *)
+    crashcontext_frame: Stacktree_j.stacktree option;
+    (** Procedure location and blame_range info for crashcontext analysis *)
   }
 
 (** Procedure summary *)

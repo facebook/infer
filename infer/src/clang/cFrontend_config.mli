@@ -76,7 +76,7 @@ val void : string
 (** Global state *)
 
 (** Map from enum constants pointers to their predecesor and their sil value *)
-val enum_map : (Clang_ast_t.pointer option * Sil.exp option) Clang_ast_main.PointerMap.t ref
+val enum_map : (Clang_ast_t.pointer option * Exp.t option) Clang_ast_main.PointerMap.t ref
 val global_translation_unit_decls : Clang_ast_t.decl list ref
 val ivar_to_property_index : Clang_ast_t.decl Clang_ast_main.PointerMap.t ref
 val json : string ref

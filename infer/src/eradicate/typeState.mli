@@ -12,7 +12,7 @@ open! Utils
 (** Module for typestates: maps from expressions to annotated types, with extensions. *)
 
 (** Parameters of a call. *)
-type parameters = (Sil.exp * Typ.t) list
+type parameters = (Exp.t * Typ.t) list
 
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 

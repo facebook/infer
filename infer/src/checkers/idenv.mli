@@ -17,10 +17,10 @@ type t
 
 val create : Cfg.Procdesc.t -> t
 val create_from_idenv : t -> Cfg.Procdesc.t -> t
-val lookup : t -> Ident.t -> Sil.exp option
-val expand_expr : t -> Sil.exp -> Sil.exp
+val lookup : t -> Ident.t -> Exp.t option
+val expand_expr : t -> Exp.t -> Exp.t
 
-val exp_is_temp : t -> Sil.exp -> bool
+val exp_is_temp : t -> Exp.t -> bool
 
 (** Stronger version of expand_expr which also expands a temporary variable. *)
-val expand_expr_temps : t -> Cfg.Node.t -> Sil.exp -> Sil.exp
+val expand_expr_temps : t -> Cfg.Node.t -> Exp.t -> Exp.t

@@ -25,7 +25,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   (* add all of the vars read in [exp] to the live set *)
   let exp_add_live exp astate =
-    let (ids, pvars) = Sil.exp_get_vars exp in
+    let (ids, pvars) = Exp.get_vars exp in
     let astate' =
       IList.fold_left (fun astate_acc id -> Domain.add (Var.of_id id) astate_acc) astate ids in
     IList.fold_left (fun astate_acc pvar -> Domain.add (Var.of_pvar pvar) astate_acc) astate' pvars

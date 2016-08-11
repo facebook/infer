@@ -141,10 +141,10 @@ let captured_variables_cxx_ref captured_vars =
   let capture_var_is_cxx_ref reference_captured_vars captured_var =
     let decl_ref_opt = captured_var.Clang_ast_t.bcv_variable in
     match Ast_utils.get_decl_opt_with_decl_ref decl_ref_opt with
-    | Some VarDecl (_, named_decl_info, type_ptr, _)
-    | Some ParmVarDecl (_, named_decl_info, type_ptr, _)
-    | Some ImplicitParamDecl (_, named_decl_info, type_ptr, _) ->
-        (match Ast_utils.get_desugared_type type_ptr with
+    | Some VarDecl (_, named_decl_info, qual_type, _)
+    | Some ParmVarDecl (_, named_decl_info, qual_type, _)
+    | Some ImplicitParamDecl (_, named_decl_info, qual_type, _) ->
+        (match Ast_utils.get_desugared_type qual_type.Clang_ast_t.type_ptr with
          | Some RValueReferenceType _ | Some LValueReferenceType _ ->
              named_decl_info::reference_captured_vars
          | _ -> reference_captured_vars)
@@ -277,23 +277,20 @@ let captured_cxx_ref_in_objc_block_warning _ stmt_info captured_vars =
 let bad_pointer_comparison_warning _ stmt_info stmts =
   let rec condition stmts =
     let condition_aux stmt =
-      match stmt with
-      | Clang_ast_t.CallExpr _
-      | Clang_ast_t.CXXMemberCallExpr _
-      | Clang_ast_t.CXXOperatorCallExpr _
-      | Clang_ast_t.ObjCMessageExpr _ -> false
-      | Clang_ast_t.BinaryOperator (_, _, _, boi)
-        when (boi.boi_kind = `NE) || (boi.boi_kind = `EQ) -> false
-      | Clang_ast_t.UnaryOperator (_, stmts, _, uoi) when uoi.uoi_kind = `LNot ->
+      match (stmt: Clang_ast_t.stmt) with
+      | BinaryOperator (_, _, _, boi) when
+          (boi.boi_kind = `EQ) || (boi.boi_kind = `NE) -> false
+      | BinaryOperator (_, stmts, _, _) -> condition stmts
+      | UnaryOperator (_, stmts, _, uoi) when uoi.uoi_kind = `LNot ->
+          condition stmts
+      | ImplicitCastExpr (_, stmts, _, _)
+      | ExprWithCleanups (_, stmts, _, _) ->
           condition stmts
       | stmt ->
           match Clang_ast_proj.get_expr_tuple stmt with
-          | Some (_, stmts, expr_info) ->
+          | Some (_, _, expr_info) ->
               let typ = CFrontend_utils.Ast_utils.get_desugared_type expr_info.ei_type_ptr in
-              if CFrontend_utils.Ast_utils.is_ptr_to_objc_class typ "NSNumber" then
-                true
-              else
-                condition stmts
+              CFrontend_utils.Ast_utils.is_ptr_to_objc_class typ "NSNumber"
           | _ -> false in
     IList.exists condition_aux stmts in
   if condition stmts then
@@ -310,21 +307,48 @@ let bad_pointer_comparison_warning _ stmt_info stmts =
     None
 
 
-(* exist m1:  m1.body|- EF call_method(addObserver:) => exists m2 : m2.body |- EF call_method(removeObserver:) *)
-let checker_NSNotificationCenter _ decl_info decls =
+(* exist m1:  m1.body |- EF call_method(addObserver:) =>
+   exists m2 : m2.body |- EF call_method(removeObserver:) *)
+let checker_NSNotificationCenter _ decl_info impl_decl_info decls =
   let exists_method_calling_addObserver =
-    IList.exists (dec_body_eventually (call_method_on_nth is_self 1) "addObserver:selector:name:object:") decls in
+    IList.exists
+      (dec_body_eventually (call_method_on_nth is_self 1)
+         "addObserver:selector:name:object:") decls in
   let exists_method_calling_addObserverForName =
-    IList.exists (dec_body_eventually (call_method_on_nth is_self 1) "addObserverForName:object:queue:usingBlock:") decls in
+    IList.exists
+      (dec_body_eventually (call_method_on_nth is_self 1)
+         "addObserverForName:object:queue:usingBlock:") decls in
   let eventually_addObserver = exists_method_calling_addObserver
                                || exists_method_calling_addObserverForName in
-  let exists_method_calling_removeObserver =
-    IList.exists (dec_body_eventually (call_method_on_nth is_self 1) "removeObserver:") decls in
-  let exists_method_calling_removeObserverName =
-    IList.exists (dec_body_eventually (call_method_on_nth is_self 1) "removeObserver:name:object:") decls in
-  let eventually_removeObserver = exists_method_calling_removeObserver
-                                  || exists_method_calling_removeObserverName in
-  let condition = eventually_addObserver && (not eventually_removeObserver) in
+
+  let eventually_removeObserver decls =
+    let exists_method_calling_removeObserver =
+      IList.exists (dec_body_eventually (call_method_on_nth is_self 1) "removeObserver:") decls in
+    let exists_method_calling_removeObserverName =
+      IList.exists
+        (dec_body_eventually (call_method_on_nth is_self 1)
+           "removeObserver:name:object:") decls in
+    exists_method_calling_removeObserver || exists_method_calling_removeObserverName in
+
+  let rec exists_on_hierarchy f super =
+    match super with
+    | Some (decl_list, impl_decl_info) ->
+        (f decl_list
+         || exists_on_hierarchy f (Ast_utils.get_super_impl impl_decl_info))
+    | None -> false in
+
+  let eventually_removeObserver_in_whole_hierarchy decls impl_decl_info =
+    exists_on_hierarchy eventually_removeObserver (Some (decls, impl_decl_info)) in
+
+  (* if registration happens among the given decls, then search for removeObserver across the *)
+  (* whole hierarchy of classes *)
+  let condition =
+    eventually_addObserver &&
+    match impl_decl_info with
+    | Some idi ->
+        not (eventually_removeObserver_in_whole_hierarchy decls idi)
+    | None -> not (eventually_removeObserver decls) in
+
   if condition then
     Some {
       CIssue.issue = CIssue.Registered_observer_being_deallocated;

@@ -20,7 +20,7 @@ val has_static_final_fields : JCode.jcode Javalib.interface_or_class -> bool
 
 val translate_instr_static_field :
   JContext.t -> Cfg.Procdesc.t -> JBasics.field_signature -> Typ.t ->
-  Location.t -> Sil.instr list * Sil.exp
+  Location.t -> Sil.instr list * Exp.t
 
 
 val static_field_init : JCode.jcode Javalib.interface_or_class -> JBasics.class_name -> JBir.instr array -> JBir.instr array

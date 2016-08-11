@@ -23,10 +23,10 @@ module StrexpMatch : sig
   type path
 
   (** convert a path into a list of expressions *)
-  val path_to_exps : path -> Sil.exp list
+  val path_to_exps : path -> Exp.t list
 
   (** create a path from a root and a list of offsets *)
-  val path_from_exp_offsets : Sil.exp -> Sil.offset list -> path
+  val path_from_exp_offsets : Exp.t -> Sil.offset list -> path
 
   (** path to the root, length, elements and type of a new_array *)
   type strexp_data = path * Sil.strexp * Typ.t
@@ -47,7 +47,7 @@ module StrexpMatch : sig
   val replace_strexp : bool -> t -> Sil.strexp -> sigma
 
   (** Replace the index in the array at a given position with the new index *)
-  val replace_index : bool -> t -> Sil.exp -> Sil.exp -> sigma
+  val replace_index : bool -> t -> Exp.t -> Exp.t -> sigma
 (*
   (** Get the partition of the sigma: the unmatched part of the sigma and the matched hpred *)
   val get_sigma_partition : t -> sigma * Sil.hpred
@@ -58,10 +58,10 @@ module StrexpMatch : sig
 end = struct
 
   (** syntactic offset *)
-  type syn_offset = Field of Ident.fieldname * Typ.t | Index of Sil.exp
+  type syn_offset = Field of Ident.fieldname * Typ.t | Index of Exp.t
 
   (** path through an Estruct *)
-  type path = Sil.exp * (syn_offset list)
+  type path = Exp.t * (syn_offset list)
 
   (** Find a strexp and a type at the given syntactic offset list *)
   let rec get_strexp_at_syn_offsets se t syn_offs =
@@ -74,7 +74,7 @@ end = struct
                  Ident.fieldname_equal f' fld) instance_fields) in
         get_strexp_at_syn_offsets se' t' syn_offs'
     | Sil.Earray (_, esel, _), Typ.Tarray (t', _), Index ind :: syn_offs' ->
-        let se' = snd (IList.find (fun (i', _) -> Sil.exp_equal i' ind) esel) in
+        let se' = snd (IList.find (fun (i', _) -> Exp.equal i' ind) esel) in
         get_strexp_at_syn_offsets se' t' syn_offs'
     | _ ->
         L.d_strln "Failure of get_strexp_at_syn_offsets";
@@ -99,9 +99,10 @@ end = struct
             ) fsel in
         Sil.Estruct (fsel', inst)
     | Sil.Earray (len, esel, inst), Typ.Tarray (t', _), Index idx :: syn_offs' ->
-        let se' = snd (IList.find (fun (i', _) -> Sil.exp_equal i' idx) esel) in
+        let se' = snd (IList.find (fun (i', _) -> Exp.equal i' idx) esel) in
         let se_mod = replace_strexp_at_syn_offsets se' t' syn_offs' update in
-        let esel' = IList.map (fun ese -> if Sil.exp_equal (fst ese) idx then (idx, se_mod) else ese) esel in
+        let esel' =
+          IList.map (fun ese -> if Exp.equal (fst ese) idx then (idx, se_mod) else ese) esel in
         Sil.Earray (len, esel', inst)
     | _ -> assert false
 
@@ -110,10 +111,10 @@ end = struct
     let rec convert acc = function
       | [] -> acc
       | Field (f, t) :: syn_offs' ->
-          let acc' = IList.map (fun e -> Sil.Lfield (e, f, t)) acc in
+          let acc' = IList.map (fun e -> Exp.Lfield (e, f, t)) acc in
           convert acc' syn_offs'
       | Index idx :: syn_offs' ->
-          let acc' = IList.map (fun e -> Sil.Lindex (e, idx)) acc in
+          let acc' = IList.map (fun e -> Exp.Lindex (e, idx)) acc in
           convert acc' syn_offs' in
     begin
       convert [root] syn_offs_in
@@ -136,7 +137,7 @@ end = struct
   (** Find an array at the given path. Can raise [Not_found] *)
   let find_path sigma (root, syn_offs) : t =
     let filter = function
-      | Sil.Hpointsto (e, _, _) -> Sil.exp_equal root e
+      | Sil.Hpointsto (e, _, _) -> Exp.equal root e
       | _ -> false in
     let hpred = IList.find filter sigma in
     (sigma, hpred, syn_offs)
@@ -181,7 +182,7 @@ end = struct
             match hpred with
             | Sil.Hpointsto (root, se, te) ->
                 let sigma_other = sigma_seen @ sigma_rest in
-                find_offset_sexp sigma_other hpred root [] se (Sil.texp_to_typ None te)
+                find_offset_sexp sigma_other hpred root [] se (Exp.texp_to_typ None te)
             | _ -> ()
           end;
           iterate (hpred:: sigma_seen) sigma_rest in
@@ -193,7 +194,7 @@ end = struct
   (** Get the matched strexp *)
   let get_data ((_ , hpred, syn_offs) : t) = match hpred with
     | Sil.Hpointsto (root, se, te) ->
-        let t = Sil.texp_to_typ None te in
+        let t = Exp.texp_to_typ None te in
         let se', t' = get_strexp_at_syn_offsets se t syn_offs in
         let path' = (root, syn_offs) in
         (path', se', t')
@@ -210,7 +211,7 @@ end = struct
       match se', se_in with
       | Sil.Earray (len, esel, _), Sil.Earray (_, esel_in, inst2) ->
           let orig_indices = IList.map fst esel in
-          let index_is_not_new idx = IList.exists (Sil.exp_equal idx) orig_indices in
+          let index_is_not_new idx = IList.exists (Exp.equal idx) orig_indices in
           let process_index idx =
             if index_is_not_new idx then idx else (Sil.array_clean_new_index footprint_part idx) in
           let esel_in' = IList.map (fun (idx, se) -> process_index idx, se) esel_in in
@@ -219,7 +220,7 @@ end = struct
     begin
       match hpred with
       | Sil.Hpointsto (root, se, te) ->
-          let t = Sil.texp_to_typ None te in
+          let t = Exp.texp_to_typ None te in
           let se' = replace_strexp_at_syn_offsets se t syn_offs update in
           Sil.Hpointsto (root, se', te)
       | _ -> assert false
@@ -232,11 +233,14 @@ end = struct
     replace_hpred (sigma, hpred, syn_offs) hpred'
 
   (** Replace the index in the array at a given position with the new index *)
-  let replace_index footprint_part ((sigma, hpred, syn_offs) : t) (index: Sil.exp) (index': Sil.exp) =
+  let replace_index footprint_part ((sigma, hpred, syn_offs) : t) (index: Exp.t) (index': Exp.t) =
     let update se' =
       match se' with
       | Sil.Earray (len, esel, inst) ->
-          let esel' = IList.map (fun (e', se') -> if Sil.exp_equal e' index then (index', se') else (e', se')) esel in
+          let esel' =
+            IList.map (fun (e', se') ->
+                if Exp.equal e' index then (index', se') else (e', se')
+              ) esel in
           Sil.Earray (len, esel', inst)
       | _ -> assert false in
     let hpred' = hpred_replace_strexp footprint_part hpred syn_offs update in
@@ -260,20 +264,20 @@ end
 let prop_replace_path_index
     (p: Prop.exposed Prop.t)
     (path: StrexpMatch.path)
-    (map : (Sil.exp * Sil.exp) list) : Prop.exposed Prop.t
+    (map : (Exp.t * Exp.t) list) : Prop.exposed Prop.t
   =
   let elist_path = StrexpMatch.path_to_exps path in
   let expmap_list =
     IList.fold_left (fun acc_outer e_path ->
         IList.fold_left (fun acc_inner (old_index, new_index) ->
-            let old_e_path_index = Prop.exp_normalize_prop p (Sil.Lindex(e_path, old_index)) in
-            let new_e_path_index = Prop.exp_normalize_prop p (Sil.Lindex(e_path, new_index)) in
+            let old_e_path_index = Prop.exp_normalize_prop p (Exp.Lindex(e_path, old_index)) in
+            let new_e_path_index = Prop.exp_normalize_prop p (Exp.Lindex(e_path, new_index)) in
             (old_e_path_index, new_e_path_index) :: acc_inner
           ) acc_outer map
       ) [] elist_path in
   let expmap_fun e' =
     try
-      let _, fresh_e = IList.find (fun (e, _) -> Sil.exp_equal e e') expmap_list in
+      let _, fresh_e = IList.find (fun (e, _) -> Exp.equal e e') expmap_list in
       fresh_e
     with Not_found -> e' in
   Prop.prop_expmap expmap_fun p
@@ -284,12 +288,12 @@ let prop_update_sigma_and_fp_sigma
     (p : Prop.normal Prop.t)
     (update : bool -> sigma -> sigma * bool) : Prop.normal Prop.t * bool
   =
-  let sigma', changed = update false (Prop.get_sigma p) in
-  let ep1 = Prop.replace_sigma sigma' p in
+  let sigma', changed = update false p.Prop.sigma in
+  let ep1 = Prop.set p ~sigma:sigma' in
   let ep2, changed2 =
     if !Config.footprint then
-      let sigma_fp', changed' = update true (Prop.get_sigma_footprint ep1) in
-      (Prop.replace_sigma_footprint sigma_fp' ep1, changed')
+      let sigma_fp', changed' = update true ep1.Prop.sigma_fp in
+      (Prop.set ep1 ~sigma_fp:sigma_fp', changed')
     else (ep1, false) in
   (Prop.normalize ep2, changed || changed2)
 
@@ -312,8 +316,8 @@ let generic_strexp_abstract
     r in
   let find_strexp_to_abstract p0 =
     let find sigma = StrexpMatch.find sigma can_abstract in
-    let matchings_cur = find (Prop.get_sigma p0) in
-    let matchings_fp = find (Prop.get_sigma_footprint p0) in
+    let matchings_cur = find p0.Prop.sigma in
+    let matchings_fp = find p0.Prop.sigma_fp in
     matchings_cur, matchings_fp in
   let match_select_next (matchings_cur, matchings_fp) =
     match matchings_cur, matchings_fp with
@@ -348,47 +352,49 @@ let generic_strexp_abstract
 
 
 (** Return [true] if there's a pointer to the index *)
-let index_is_pointed_to (p: Prop.normal Prop.t) (path: StrexpMatch.path) (index: Sil.exp) : bool =
+let index_is_pointed_to (p: Prop.normal Prop.t) (path: StrexpMatch.path) (index: Exp.t) : bool =
   let indices =
-    let index_plus_one = Sil.BinOp(Binop.PlusA, index, Sil.exp_one) in
+    let index_plus_one = Exp.BinOp(Binop.PlusA, index, Exp.one) in
     [index; index_plus_one] in
   let add_index_to_paths =
     let elist_path = StrexpMatch.path_to_exps path in
-    let add_index i e = Prop.exp_normalize_prop p (Sil.Lindex(e, i)) in
+    let add_index i e = Prop.exp_normalize_prop p (Exp.Lindex(e, i)) in
     fun i -> IList.map (add_index i) elist_path in
   let pointers = IList.flatten (IList.map add_index_to_paths indices) in
   let filter = function
-    | Sil.Hpointsto (_, Sil.Eexp (e, _), _) -> IList.exists (Sil.exp_equal e) pointers
+    | Sil.Hpointsto (_, Sil.Eexp (e, _), _) -> IList.exists (Exp.equal e) pointers
     | _ -> false in
-  IList.exists filter (Prop.get_sigma p)
+  IList.exists filter p.Prop.sigma
 
 
 (** Given [p] containing an array at [path], blur [index] in it *)
 let blur_array_index
     (p: Prop.normal Prop.t)
     (path: StrexpMatch.path)
-    (index: Sil.exp) : Prop.normal Prop.t
+    (index: Exp.t) : Prop.normal Prop.t
   =
   try
-    let fresh_index = Sil.Var (Ident.create_fresh (if !Config.footprint then Ident.kfootprint else Ident.kprimed)) in
+    let fresh_index =
+      Exp.Var
+        (Ident.create_fresh (if !Config.footprint then Ident.kfootprint else Ident.kprimed)) in
     let p2 =
       try
         if !Config.footprint then
           begin
-            let sigma_fp = Prop.get_sigma_footprint p in
+            let sigma_fp = p.Prop.sigma_fp in
             let matched_fp = StrexpMatch.find_path sigma_fp path in
             let sigma_fp' = StrexpMatch.replace_index true matched_fp index fresh_index in
-            Prop.replace_sigma_footprint sigma_fp' p
+            Prop.set p ~sigma_fp:sigma_fp'
           end
         else Prop.expose p
       with Not_found -> Prop.expose p in
     let p3 =
-      let matched = StrexpMatch.find_path (Prop.get_sigma p) path in
+      let matched = StrexpMatch.find_path p.Prop.sigma path in
       let sigma' = StrexpMatch.replace_index false matched index fresh_index in
-      Prop.replace_sigma sigma' p2 in
+      Prop.set p2 ~sigma:sigma' in
     let p4 =
-      let index_next = Sil.BinOp(Binop.PlusA, index, Sil.exp_one) in
-      let fresh_index_next = Sil.BinOp (Binop.PlusA, fresh_index, Sil.exp_one) in
+      let index_next = Exp.BinOp(Binop.PlusA, index, Exp.one) in
+      let fresh_index_next = Exp.BinOp (Binop.PlusA, fresh_index, Exp.one) in
       let map = [(index, fresh_index); (index_next, fresh_index_next)] in
       prop_replace_path_index p3 path map in
     Prop.normalize p4
@@ -399,7 +405,7 @@ let blur_array_index
 let blur_array_indices
     (p: Prop.normal Prop.t)
     (root: StrexpMatch.path)
-    (indices: Sil.exp list) : Prop.normal Prop.t * bool
+    (indices: Exp.t list) : Prop.normal Prop.t * bool
   =
   let f prop index = blur_array_index prop root index in
   (IList.fold_left f p indices, IList.length indices > 0)
@@ -409,7 +415,7 @@ let blur_array_indices
 let keep_only_indices
     (p: Prop.normal Prop.t)
     (path: StrexpMatch.path)
-    (indices: Sil.exp list) : Prop.normal Prop.t * bool
+    (indices: Exp.t list) : Prop.normal Prop.t * bool
   =
   let prune_sigma footprint_part sigma =
     try
@@ -417,7 +423,8 @@ let keep_only_indices
       let (_, se, _) = StrexpMatch.get_data matched in
       match se with
       | Sil.Earray (len, esel, inst) ->
-          let esel', esel_leftover' = IList.partition (fun (e, _) -> IList.exists (Sil.exp_equal e) indices) esel in
+          let esel', esel_leftover' =
+            IList.partition (fun (e, _) -> IList.exists (Exp.equal e) indices) esel in
           if esel_leftover' == [] then (sigma, false)
           else begin
             let se' = Sil.Earray (len, esel', inst) in
@@ -496,8 +503,8 @@ let strexp_do_abstract
     (* array case re-execution: remove and blur constant and primed indices *)
     let is_pointed index = index_is_pointed_to p path index in
     let should_keep (index, _) = match index with
-      | Sil.Const _ -> is_pointed index
-      | Sil.Var id -> Ident.is_normal id || is_pointed index
+      | Exp.Const _ -> is_pointed index
+      | Exp.Var id -> Ident.is_normal id || is_pointed index
       | _ -> false in
     let abstract = prune_and_blur_indices path in
     filter_abstract Sil.d_exp_list should_keep abstract esel [] in
@@ -538,13 +545,13 @@ let check_after_array_abstraction prop =
             check_se root (offs @ [Sil.Off_fld (f, typ)]) typ_f se) fsel in
   let check_hpred = function
     | Sil.Hpointsto (root, se, texp) ->
-        let typ = Sil.texp_to_typ (Some Typ.Tvoid) texp in
+        let typ = Exp.texp_to_typ (Some Typ.Tvoid) texp in
         check_se root [] typ se
     | Sil.Hlseg _ | Sil.Hdllseg _ -> () in
   let check_sigma sigma = IList.iter check_hpred sigma in
   (* check_footprint_pure prop; *)
-  check_sigma (Prop.get_sigma prop);
-  check_sigma (Prop.get_sigma_footprint prop)
+  check_sigma prop.Prop.sigma;
+  check_sigma prop.Prop.sigma_fp
 
 (** Apply array abstraction and check the result *)
 let abstract_array_check p =
@@ -559,16 +566,16 @@ let remove_redundant_elements prop =
     let fav_curr = Sil.fav_new () in
     let fav_foot = Sil.fav_new () in
     Sil.fav_duplicates := true;
-    Sil.sub_fav_add fav_curr (Prop.get_sub prop);
-    Prop.pi_fav_add fav_curr (Prop.get_pi prop);
-    Prop.sigma_fav_add fav_curr (Prop.get_sigma prop);
-    Prop.pi_fav_add fav_foot (Prop.get_pi_footprint prop);
-    Prop.sigma_fav_add fav_foot (Prop.get_sigma_footprint prop);
+    Sil.sub_fav_add fav_curr prop.Prop.sub;
+    Prop.pi_fav_add fav_curr prop.Prop.pi;
+    Prop.sigma_fav_add fav_curr prop.Prop.sigma;
+    Prop.pi_fav_add fav_foot prop.Prop.pi_fp;
+    Prop.sigma_fav_add fav_foot prop.Prop.sigma_fp;
     let favl_curr = Sil.fav_to_list fav_curr in
     let favl_foot = Sil.fav_to_list fav_foot in
     Sil.fav_duplicates := false;
-    (* L.d_str "favl_curr "; IList.iter (fun id -> Sil.d_exp (Sil.Var id)) favl_curr; L.d_ln();
-       L.d_str "favl_foot "; IList.iter (fun id -> Sil.d_exp (Sil.Var id)) favl_foot; L.d_ln(); *)
+    (* L.d_str "favl_curr "; IList.iter (fun id -> Sil.d_exp (Exp.Var id)) favl_curr; L.d_ln();
+       L.d_str "favl_foot "; IList.iter (fun id -> Sil.d_exp (Exp.Var id)) favl_foot; L.d_ln(); *)
     let num_occur l id = IList.length (IList.filter (fun id' -> Ident.equal id id') l) in
     let at_most_once v =
       num_occur favl_curr v <= 1 && num_occur favl_foot v <= 1 in
@@ -581,10 +588,10 @@ let remove_redundant_elements prop =
       modified := true;
       false in
     match e, se with
-    | Sil.Const (Const.Cint i), Sil.Eexp (Sil.Var id, _)
+    | Exp.Const (Const.Cint i), Sil.Eexp (Exp.Var id, _)
       when (not fp_part || IntLit.iszero i) && not (Ident.is_normal id) && occurs_at_most_once id ->
         remove () (* unknown value can be removed in re-execution mode or if the index is zero *)
-    | Sil.Var id, Sil.Eexp _ when Ident.is_normal id = false && occurs_at_most_once id ->
+    | Exp.Var id, Sil.Eexp _ when Ident.is_normal id = false && occurs_at_most_once id ->
         remove () (* index unknown can be removed *)
     | _ -> true in
   let remove_redundant_se fp_part = function
@@ -598,42 +605,9 @@ let remove_redundant_elements prop =
         Sil.Hpointsto (e, se', te)
     | hpred -> hpred in
   let remove_redundant_sigma fp_part sigma = IList.map (remove_redundant_hpred fp_part) sigma in
-  let sigma' = remove_redundant_sigma false (Prop.get_sigma prop) in
-  let foot_sigma' = remove_redundant_sigma true (Prop.get_sigma_footprint prop) in
+  let sigma' = remove_redundant_sigma false prop.Prop.sigma in
+  let sigma_fp' = remove_redundant_sigma true prop.Prop.sigma_fp in
   if !modified then
-    let prop' = Prop.replace_sigma sigma' (Prop.replace_sigma_footprint foot_sigma' prop) in
+    let prop' = Prop.set prop ~sigma:sigma' ~sigma_fp:sigma_fp'  in
     Prop.normalize prop'
   else prop
-
-(*
-(** This function uses [update] and transforms the sigma of the
-    current SH of [p] or that of the footprint of [p], depending on
-    [footprint_part]. *)
-let prop_update_sigma_or_fp_sigma
-    (footprint_part : bool) (p : Prop.normal Prop.t) (update : bool -> sigma -> sigma * bool)
-  : Prop.normal Prop.t * bool =
-  let ep1, changed1 =
-    if footprint_part then (Prop.expose p, false)
-    else
-      let sigma', changed = update false (Prop.get_sigma p) in
-      (Prop.replace_sigma sigma' p, changed) in
-  let ep2, changed2 =
-    if not footprint_part then (ep1, false)
-    else
-      begin
-        (if not !Config.footprint then assert false); (* always run in the footprint mode *)
-        let sigma_fp', changed = update true (Prop.get_sigma_footprint ep1) in
-        (Prop.replace_sigma_footprint sigma_fp' ep1, changed)
-      end in
-  (Prop.normalize ep2, changed1 || changed2)
-
-let check_footprint_pure prop =
-  let fav_pure = Sil.fav_new () in
-  Prop.pi_fav_add fav_pure (Prop.get_pure prop @ Prop.get_pi_footprint prop);
-  let fav_sigma = Sil.fav_new () in
-  Prop.sigma_fav_add fav_sigma (Prop.get_sigma prop @ Prop.get_sigma_footprint prop);
-  Sil.fav_filter_ident fav_pure Ident.is_footprint;
-  Sil.fav_filter_ident fav_sigma Ident.is_footprint;
-  if not (Sil.fav_subset_ident fav_pure fav_sigma)
-  then (L.d_strln "footprint vars in pure and not in sigma"; report_error prop)
-*)

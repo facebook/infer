@@ -29,6 +29,8 @@ let exes = [
   ("infer", Toplevel);
 ]
 
+let all_exes = IList.map snd exes
+
 let current_exe =
   try IList.assoc string_equal (Filename.basename Sys.executable_name) exes
   with Not_found -> Toplevel
@@ -89,21 +91,84 @@ let xdesc {long; short; spec; doc} =
   in
   (key long short, xspec long spec, doc)
 
-let pad_and_xform left_width desc =
+let wrap_line indent_string wrap_length line =
+  let indent_length = String.length indent_string in
+  let word_sep = " " in
+  let words = Str.split (Str.regexp_string word_sep) line in
+  let add_word_to_paragraph (rev_lines, non_empty, line, line_length) word =
+    let word_length = String.length word in
+    let new_length = line_length + (String.length word_sep) + word_length in
+    let new_non_empty = non_empty || word <> "" in
+    if new_length > wrap_length && non_empty then
+      (line::rev_lines, true, indent_string ^ word, indent_length + word_length)
+    else
+      let sep = if line_length = indent_length then "" else word_sep in
+      let new_line = line ^ sep ^ word in
+      if new_length > wrap_length && new_non_empty then
+        (new_line::rev_lines, false, indent_string, indent_length)
+      else
+        (rev_lines, new_non_empty, new_line, String.length new_line) in
+  let (rev_lines, _, line, _) = IList.fold_left add_word_to_paragraph ([], false, "", 0) words in
+  IList.rev (line::rev_lines)
+
+let pad_and_xform doc_width left_width desc =
   match desc with
   | {doc = ""} ->
       xdesc desc
   | {long; doc} ->
-      let short_meta = short_meta desc in
-      let gap = left_width - (left_length long short_meta) in
-      if gap < 0 then
-        xdesc {desc with doc = short_meta ^ "\n" ^ (String.make (4 + left_width) ' ') ^ doc}
-      else
-        xdesc {desc with doc = short_meta ^ (String.make (gap + 1) ' ') ^ doc}
+      let indent_doc doc =
+        (* 2 blank columns before option + 2 columns of gap between flag and doc *)
+        let left_indent = 4 + left_width in
+        (* align every line after the first one of [doc] *)
+        let doc = Str.global_replace (Str.regexp_string "\n")
+            ("\n" ^ String.make left_indent ' ') doc in
+        (* align the first line of [doc] *)
+        let short_meta = short_meta desc in
+        let gap = left_width - (left_length long short_meta) in
+        if gap < 0 then
+          short_meta ^ "\n" ^ (String.make left_indent ' ') ^ doc
+        else
+          short_meta ^ (String.make (gap + 1) ' ') ^ doc
+      in
+      let wrapped_lines =
+        let lines = Str.split (Str.regexp_string "\n") doc in
+        let wrap_line s =
+          if String.length s > doc_width then
+            wrap_line "" doc_width s
+          else [s] in
+        IList.map wrap_line lines in
+      let doc = indent_doc (String.concat "\n" (IList.flatten wrapped_lines)) in
+      xdesc {desc with doc}
 
-let align ?(limit=max_int) desc_list =
-  let left_width = IList.fold_left (max_left_length limit) 0 desc_list in
-  (IList.map (pad_and_xform left_width) desc_list)
+let align desc_list =
+  let min_term_width = 80 in
+  (* Try to prevent `tput` from complaining about $TERM not being set as it pollutes stderr. We
+     cannot redirect stderr as `tput` needs access to the tty and we are already redirecting stdout
+     to read the result from `tput`. *)
+  (try Unix.getenv "TERM" |> ignore
+   with Not_found -> Unix.putenv "TERM" "ansi");
+  let cur_term_width = try int_of_string (with_process_in "tput cols" input_line)
+    with
+    | End_of_file (* tput is unhappy *)
+    | Failure "int_of_string" (* not sure if possible *) -> min_term_width in
+  (* 2 blank columns before option + 2 columns of gap between flag and doc *)
+  let extra_space = 4 in
+  let min_left_width = 15 in
+  let max_left_width = 49 in
+  let doc_width term_width left_width = term_width - extra_space - left_width in
+  let term_width doc_width left_width = left_width + extra_space + doc_width in
+  let max_doc_width = 100 in
+  let max_term_width = term_width max_left_width max_doc_width in
+  (* how many columns to reserve for the option names *)
+  let left_width =
+    let opt_left_width = IList.fold_left (max_left_length max_left_width) 0 desc_list in
+    let (--) a b = float_of_int a -. float_of_int b in
+    let multiplier = (max_left_width -- min_left_width) /. (max_term_width -- min_term_width) in
+    (* at 80 columns use min_left_width then use extra columns until opt_left_width *)
+    let cols_after_min_width = float_of_int (max 0 (cur_term_width - min_term_width)) in
+    min (int_of_float (cols_after_min_width *. multiplier) + min_left_width) opt_left_width in
+  let doc_width = min max_doc_width (doc_width cur_term_width left_width) in
+  (IList.map (pad_and_xform doc_width left_width) desc_list)
 
 
 let check_no_duplicates desc_list =
@@ -398,6 +463,8 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var exe_u
     Arg.usage !full_speclist usage_msg ;
     exit status
   in
+  (* "-help" and "--help" are automatically recognized by Arg.parse, so we have to give them special
+     treatment *)
   let add_or_suppress_help speclist =
     let unknown opt =
       (opt, Arg.Unit (fun () -> raise (Arg.Bad ("unknown option '" ^ opt ^ "'"))), "") in
@@ -417,27 +484,59 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var exe_u
   in
   let normalize speclist =
     let norm k =
-      let len = String.length k in
-      if len > 3 && String.sub k 0 3 = "no-" then String.sub k 3 (len - 3) else k in
+      let remove_no s =
+        let len = String.length k in
+        if len > 3 && String.sub s 0 3 = "no-" then String.sub s 3 (len - 3) else s in
+      let remove_weird_chars = Str.global_replace (Str.regexp "[^a-z0-9-]") "" in
+      remove_weird_chars @@ String.lowercase @@ remove_no k in
     let compare_specs {long = x} {long = y} =
       match x, y with
       | "--", "--" -> 0
       | "--", _ -> 1
       | _, "--" -> -1
-      | _ -> String.compare (norm x) (norm y) in
+      | _ ->
+          let lower_norm s = String.lowercase @@ norm s in
+          String.compare (lower_norm x) (lower_norm y) in
     let sort speclist = IList.sort compare_specs speclist in
-    add_or_suppress_help (align ~limit:46 (sort speclist))
+    align (sort speclist)
   in
-  let curr_desc_list = IList.assoc ( = ) current_exe exe_desc_lists
+  let add_to_curr_speclist ?header exe =
+    let mk_header_spec heading =
+      ("", Arg.Unit (fun () -> ()), "\n  " ^ heading ^ "\n") in
+    let exe_descs = IList.assoc ( = ) exe exe_desc_lists in
+    let exe_speclist = normalize !exe_descs in
+    (* Return false if the same option appears in [speclist], unless [doc] is non-empty and the
+       documentation in [speclist] is empty. The goal is to keep only one instance of each option,
+       and that instance is the one that has a non-empty docstring if there is one. *)
+    let is_not_dup_with_doc speclist (opt, _, doc) =
+      opt = "" ||
+      IList.for_all (fun (opt', _, doc') ->
+          (doc <> "" && doc' = "") || (not (string_equal opt opt'))) speclist in
+    let unique_exe_speclist = IList.filter (is_not_dup_with_doc !curr_speclist) exe_speclist in
+    curr_speclist := IList.filter (is_not_dup_with_doc unique_exe_speclist) !curr_speclist @
+                     (match header with
+                      | Some s -> mk_header_spec s:: unique_exe_speclist
+                      | None -> unique_exe_speclist)
   in
-  (* curr_speclist includes args for current exe with docs, and all other args without docs, so
+  (* speclist includes args for current exe with docs, and all other args without docs, so
      that all args can be parsed, but --help and parse failures only show external args for
      current exe *)
-  curr_speclist := normalize !curr_desc_list
+  if current_exe = Toplevel then
+    add_to_curr_speclist ~header:"Toplevel options" current_exe
+  else
+    add_to_curr_speclist current_exe
+  ;
+  curr_speclist := add_or_suppress_help !curr_speclist
+  ;
+  if current_exe = Toplevel then (
+    add_to_curr_speclist ~header:"Analysis (backend) options" Analyze;
+    add_to_curr_speclist ~header:"Clang frontend options" Clang;
+    add_to_curr_speclist ~header:"Java frontend options" Java;
+  )
   ;
   assert( check_no_duplicates !curr_speclist )
   ;
-  full_speclist := normalize !full_desc_list
+  full_speclist := add_or_suppress_help (normalize !full_desc_list)
   ;
   let env_args = decode_env_to_argv (try Unix.getenv env_var with Not_found -> "") in
   (* begin transitional support for INFERCLANG_ARGS *)

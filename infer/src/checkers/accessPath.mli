@@ -48,7 +48,7 @@ val of_pvar : Pvar.t -> Typ.t -> raw
 val of_id : Ident.t -> Typ.t -> raw
 
 (** convert [exp] to a raw access path, resolving identifiers using [f_resolve_id] *)
-val of_exp : Sil.exp -> Typ.t -> f_resolve_id:(Ident.t -> raw option) -> raw option
+val of_exp : Exp.t -> Typ.t -> f_resolve_id:(Ident.t -> raw option) -> raw option
 
 (** append a new access to an existing access path; e.g., `append_access g x.f` produces `x.f.g` *)
 val append : raw -> access -> raw

@@ -17,7 +17,7 @@ val of_id : Ident.t -> t
 
 val of_pvar : Pvar.t -> t
 
-val to_exp : t -> Sil.exp
+val to_exp : t -> Exp.t
 
 val equal : t -> t -> bool
 

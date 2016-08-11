@@ -14,13 +14,13 @@ open! Utils
 val bin_op_to_string : Clang_ast_t.binary_operator_info -> string
 
 val binary_operation_instruction :
-  CContext.t -> Clang_ast_t.binary_operator_info -> Sil.exp -> Typ.t -> Sil.exp ->
-  Location.t -> bool -> Sil.exp * Sil.instr list
+  CContext.t -> Clang_ast_t.binary_operator_info -> Exp.t -> Typ.t -> Exp.t ->
+  Location.t -> bool -> Exp.t * Sil.instr list
 
 val unary_operation_instruction :
-  Clang_ast_t.unary_operator_info -> Sil.exp -> Typ.t -> Location.t -> Sil.exp * Sil.instr list
+  Clang_ast_t.unary_operator_info -> Exp.t -> Typ.t -> Location.t -> Exp.t * Sil.instr list
 
 val assignment_arc_mode :
-  Sil.exp -> Typ.t -> Sil.exp -> Location.t -> bool -> bool -> Sil.exp * Sil.instr list
+  Exp.t -> Typ.t -> Exp.t -> Location.t -> bool -> bool -> Exp.t * Sil.instr list
 
-val sil_const_plus_one : Sil.exp -> Sil.exp
+val sil_const_plus_one : Exp.t -> Exp.t
