@@ -214,4 +214,4 @@ let code_query_callback { Callbacks.proc_desc; idenv; proc_name } =
   in
   if verbose then L.stdout "code_query_callback on %a@." Procname.pp proc_name;
   Cfg.Procdesc.iter_instrs do_instr proc_desc;
-  Err.update_summary proc_name proc_desc;
+  Err.update_summary proc_name proc_desc
