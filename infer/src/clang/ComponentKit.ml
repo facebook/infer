@@ -48,3 +48,47 @@ let rec is_component_or_controller_descendant_impl decl =
     Does not recurse into hierarchy. *)
 and contains_ck_impl decl_list =
   IList.exists is_component_or_controller_descendant_impl decl_list
+
+(** An easy way to fix the component kit best practice
+    http://componentkit.org/docs/avoid-local-variables.html
+
+    Local variables that are const or const pointers by definition cannot be
+    assigned to after declaration, which means the entire class of bugs stemming
+    from value mutation after assignment are gone.
+
+    Note we want const pointers, not mutable pointers to const instances.
+
+    OK:
+
+    ```
+    const int a;
+    int *const b;
+    NSString *const c;
+    const int *const d;
+    ```
+
+    Not OK:
+
+    ```
+    const int *z;
+    const NSString *y;
+    ``` *)
+let mutable_local_vars_advice context decl =
+  let open CFrontend_utils.Ast_utils in
+  match decl with
+  | Clang_ast_t.VarDecl(decl_info, _, qual_type, _) ->
+      let condition = context.CLintersContext.is_ck_translation_unit
+                      && is_in_main_file decl
+                      && (is_objc () || is_objcpp ())
+                      && (not (is_global_var decl))
+                      && (not qual_type.is_const) in
+      if condition then
+        Some {
+          CIssue.issue = CIssue.Mutable_local_variable_in_component_file;
+          CIssue.description = "Local variables should be const to avoid reassignment";
+          CIssue.suggestion = Some "Add a const (after the asterisk for pointer types). \
+                                    http://componentkit.org/docs/avoid-local-variables.html";
+          CIssue.loc = CFrontend_checkers.location_from_dinfo decl_info
+        }
+      else None
+  | _ -> assert false (* Should only be called with a VarDecl *)

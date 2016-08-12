@@ -41,7 +41,8 @@ let checkers_for_ns decl_info impl_decl_info decls checker context =
   checker context decl_info impl_decl_info decls
 
 (* List of checkers on global variables *)
-let global_var_checker_list = [CFrontend_checkers.global_var_init_with_calls_warning]
+let global_var_checker_list = [CFrontend_checkers.global_var_init_with_calls_warning;
+                               ComponentKit.mutable_local_vars_advice]
 
 (* Invocation of checker belonging to global_var_checker_list *)
 let checker_for_global_var dec checker context =
