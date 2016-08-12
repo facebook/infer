@@ -86,3 +86,12 @@ java_test(
         '//infer/tests/endtoend/objcpp/linters:linters',
     ],
 )
+
+# ############### ComponentKit tests ########################
+
+java_test(
+    name='componentkit',
+    deps=[
+        '//infer/tests/endtoend/objcpp/componentkit:componentkit',
+    ],
+)

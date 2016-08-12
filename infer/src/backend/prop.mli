@@ -163,9 +163,6 @@ val atom_exp_le_const : Sil.atom -> (Exp.t * IntLit.t) option
 (** If the atom is [n<e] return [n,e] *)
 val atom_const_lt_exp : Sil.atom -> (IntLit.t * Exp.t) option
 
-(** Negate an atom *)
-val atom_negate : Sil.atom -> Sil.atom
-
 (** Normalize [exp] using the pure part of [prop].  Later, we should
     change this such that the normalization exposes offsets of [exp]
     as much as possible. *)
@@ -292,19 +289,6 @@ val prop_set_footprint : 'a t -> 'b t -> exposed t
 (** Expand PE listsegs if the flag is on. *)
 val prop_expand : normal t -> normal t list
 
-(** translate a logical and/or operation
-    taking care of the non-strict semantics for side effects *)
-val trans_land_lor :
-  Binop.t -> (Ident.t list * Sil.instr list) * Exp.t ->
-  (Ident.t list * Sil.instr list) * Exp.t -> Location.t ->
-  (Ident.t list * Sil.instr list) * Exp.t
-
-(** translate an if-then-else expression *)
-val trans_if_then_else :
-  (Ident.t list * Sil.instr list) * Exp.t -> (Ident.t list * Sil.instr list) * Exp.t ->
-  (Ident.t list * Sil.instr list) * Exp.t -> Location.t ->
-  (Ident.t list * Sil.instr list) * Exp.t
-
 (** {2 Functions for existentially quantifying and unquantifying variables} *)
 
 (** Existentially quantify the [ids] in [prop]. *)
@@ -400,15 +384,6 @@ val hpred_get_targets : Sil.hpred -> Exp.Set.t
 (** return the set of hpred's and exp's in [sigma] that are reachable from an expression in
     [exps] *)
 val compute_reachable_hpreds : hpred list -> Exp.Set.t -> Sil.HpredSet.t * Exp.Set.t
-
-
-(** if possible, produce a (fieldname, typ) path from one of the [src_exps] to [snk_exp] using
-    [reachable_hpreds]. *)
-val get_fld_typ_path_opt : Exp.Set.t -> Exp.t -> Sil.HpredSet.t ->
-  (Ident.fieldname option * Typ.t) list option
-
-(** filter [pi] by removing the pure atoms that do not contain an expression in [exps] *)
-val compute_reachable_atoms : pi -> Exp.Set.t -> pi
 
 (** {2 Internal modules} *)
 

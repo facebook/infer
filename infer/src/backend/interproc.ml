@@ -616,6 +616,40 @@ let forward_tabulate tenv wl =
   L.d_strln ".... Work list empty. Stop ...."; L.d_ln ()
 
 
+(** if possible, produce a (fieldname, typ) path from one of the [src_exps] to [sink_exp] using
+    [reachable_hpreds]. *)
+let get_fld_typ_path_opt src_exps sink_exp_ reachable_hpreds_ =
+  let strexp_matches target_exp = function
+    | (_, Sil.Eexp (e, _)) -> Exp.equal target_exp e
+    | _ -> false in
+  let extend_path hpred (sink_exp, path, reachable_hpreds) = match hpred with
+    | Sil.Hpointsto (lhs, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
+        (try
+           let fld, _ = IList.find (fun fld -> strexp_matches sink_exp fld) flds in
+           let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
+           (lhs, (Some fld, typ) :: path, reachable_hpreds')
+         with Not_found -> (sink_exp, path, reachable_hpreds))
+    | Sil.Hpointsto (lhs, Sil.Earray (_, elems, _), Exp.Sizeof (typ, _, _)) ->
+        if IList.exists (fun pair -> strexp_matches sink_exp pair) elems
+        then
+          let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
+          (* None means "no field name" ~=~ nameless array index *)
+          (lhs, (None, typ) :: path, reachable_hpreds')
+        else (sink_exp, path, reachable_hpreds)
+    | _ -> (sink_exp, path, reachable_hpreds) in
+  (* terminates because [reachable_hpreds] is shrinking on each recursive call *)
+  let rec get_fld_typ_path sink_exp path reachable_hpreds =
+    let (sink_exp', path', reachable_hpreds') =
+      Sil.HpredSet.fold extend_path reachable_hpreds (sink_exp, path, reachable_hpreds) in
+    if Exp.Set.mem sink_exp' src_exps
+    then Some path'
+    else
+    if Sil.HpredSet.cardinal reachable_hpreds' >= Sil.HpredSet.cardinal reachable_hpreds
+    then None (* can't find a path from [src_exps] to [sink_exp] *)
+    else get_fld_typ_path sink_exp' path' reachable_hpreds' in
+  get_fld_typ_path sink_exp_ [] reachable_hpreds_
+
+
 (** report an error if any Context is reachable from a static field *)
 let report_context_leaks pname sigma tenv =
   (* report an error if an expression in [context_exps] is reachable from [field_strexp] *)
@@ -628,7 +662,7 @@ let report_context_leaks pname sigma tenv =
       (fun (context_exp, struct_typ) ->
          if Exp.Set.mem context_exp reachable_exps then
            let leak_path =
-             match Prop.get_fld_typ_path_opt fld_exps context_exp reachable_hpreds with
+             match get_fld_typ_path_opt fld_exps context_exp reachable_hpreds with
              | Some path -> path
              | None -> assert false (* a path must exist in order for a leak to be reported *) in
            let err_desc =

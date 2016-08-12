@@ -7,14 +7,14 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-type context = {
-  in_synchronized_block: bool;
-  is_ck_translation_unit: bool;
-  (** True if the translation unit contains an ObjC class impl that's a subclass
-      of CKComponent or CKComponentController. *)
-}
+module F = Format
 
-let empty = {
-  in_synchronized_block = false;
-  is_ck_translation_unit = false;
-}
+type t
+
+val make : CallSite.t -> t
+
+val compare : t -> t -> int
+
+val pp : F.formatter -> t -> unit
+
+module Set : PrettyPrintable.PPSet with type elt = t

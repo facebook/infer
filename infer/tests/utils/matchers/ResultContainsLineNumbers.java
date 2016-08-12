@@ -9,6 +9,8 @@
 
 package utils.matchers;
 
+import com.google.common.base.Optional;
+
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -23,12 +25,15 @@ public class ResultContainsLineNumbers extends BaseMatcher<InferResults> {
 
   private int[] lines;
   private boolean strict;
+  private Optional<String> bugType;
 
   public ResultContainsLineNumbers(
       int[] lines,
-      boolean strict) {
+      boolean strict,
+      Optional<String> bugType) {
     this.lines = lines;
     this.strict = strict;
+    this.bugType = bugType;
   }
 
   @Override
@@ -41,7 +46,9 @@ public class ResultContainsLineNumbers extends BaseMatcher<InferResults> {
     for (int line : lines) {
       boolean isContained = false;
       for (InferError error : errors) {
-        isContained = isContained || line == error.getErrorLine();
+        String bugType = this.bugType.or(error.getErrorType());
+        boolean isSameErrType = bugType.equals(error.getErrorType());
+        isContained = isContained || (line == error.getErrorLine() && isSameErrType);
       }
       allContained = allContained && isContained;
     }
@@ -65,11 +72,19 @@ public class ResultContainsLineNumbers extends BaseMatcher<InferResults> {
   }
 
   public static <T> Matcher<InferResults> containsLines(int[] lines) {
-    return new ResultContainsLineNumbers(lines, false);
+    return new ResultContainsLineNumbers(lines, false, Optional.<String>absent());
   }
 
   public static <T> Matcher<InferResults> containsOnlyLines(int[] lines) {
-    return new ResultContainsLineNumbers(lines, true);
+    return new ResultContainsLineNumbers(lines, true, Optional.<String>absent());
+  }
+
+  public static <T> Matcher<InferResults> containsLinesOfError(int[] lines, String bugType) {
+    return new ResultContainsLineNumbers(lines, false, Optional.of(bugType));
+  }
+
+  public static <T> Matcher<InferResults> containsOnlyLinesOfError(int[] lines, String bugType) {
+    return new ResultContainsLineNumbers(lines, true, Optional.of(bugType));
   }
 
   private int[] findLineNumbersInReport(InferResults results) {

@@ -176,9 +176,11 @@ val dotty_cfg_libs : bool
 val enable_checks : string list
 val eradicate : bool
 val err_file_cmdline : string
+val fail_on_bug : bool
 val failures_allowed : bool
 val filtering : bool
 val flavors : bool
+val frontend_debug : bool
 val frontend_stats : bool
 val headers : bool
 val infer_cache : string option
@@ -246,6 +248,7 @@ val whole_seconds : bool
 val worklist_mode : int
 val write_dotty : bool
 val write_html : bool
+val xcode_developer_dir : string option
 val xml_specs : bool
 val zip_libraries : zip_library list
 

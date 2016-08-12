@@ -22,6 +22,7 @@
   tracing = //infer/tests/endtoend/java/tracing:tracing
 
   linters = //infer/tests/endtoend:linters
+  componentkit = //infer/tests/endtoend:componentkit
 
 [project]
   ignore = .git, .ml, .mli
