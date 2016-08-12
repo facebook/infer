@@ -38,9 +38,9 @@ let severity_of_issue issue =
   | Cxx_reference_captured_in_objc_block
   | Direct_atomic_property_access
   | Global_variable_initialized_with_function_or_method_call
-  | Mutable_local_variable_in_component_file -> Exceptions.Kadvice
   | Registered_observer_being_deallocated
   | Strong_delegate_warning -> Exceptions.Kwarning
+  | Mutable_local_variable_in_component_file -> Exceptions.Kadvice
 
 
 type issue_desc = {
