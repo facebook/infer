@@ -19,7 +19,9 @@ val __get_array_length : Procname.t
 val __get_type_of : Procname.t
 val __infer_fail : Procname.t
 val __instanceof : Procname.t (** [__instanceof(val,typ)] implements java's [val instanceof typ] *)
+
 val __cast : Procname.t (** [__cast(val,typ)] implements java's [typ(val)] *)
+
 val __placement_delete : Procname.t
 val __placement_new : Procname.t
 val __new : Procname.t

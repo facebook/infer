@@ -9,8 +9,8 @@
 
 open! Utils
 
-(** Methods for creating a procdesc from a method or function declaration *)
-(**   and for resolving a method call and finding the right callee *)
+(** Methods for creating a procdesc from a method or function declaration
+    and for resolving a method call and finding the right callee *)
 
 open CFrontend_utils
 
@@ -18,11 +18,10 @@ module L = Logging
 
 exception Invalid_declaration
 
-(** When the methoc call is MCStatic, means that it is a class method. *)
-(** When it is MCVirtual, it means that it is an instance method and that *)
-(** the method to be called will be determined at runtime. If it is MCNoVirtual *)
-(** it means that it is an instance method but that the method to be called will *)
-(** be determined at compile time *)
+(** When the methoc call is MCStatic, means that it is a class method.  When it is MCVirtual, it
+    means that it is an instance method and that the method to be called will be determined at
+    runtime. If it is MCNoVirtual it means that it is an instance method but that the method to be
+    called will be determined at compile time *)
 type method_call_type =
   | MCVirtual
   | MCNoVirtual
@@ -109,8 +108,9 @@ let is_cpp_virtual function_method_decl_info =
 let get_parameters tenv function_method_decl_info =
   let par_to_ms_par par =
     match par with
-    | Clang_ast_t.ParmVarDecl (_, name_info, type_ptr, var_decl_info) ->
+    | Clang_ast_t.ParmVarDecl (_, name_info, qt, var_decl_info) ->
         let _, mangled = General_utils.get_var_name_mangled name_info var_decl_info in
+        let type_ptr = qt.Clang_ast_t.type_ptr in
         let param_typ = CTypes_decl.type_ptr_to_sil_type tenv type_ptr in
         let type_ptr' = match param_typ with
           | Typ.Tstruct _ when General_utils.is_cpp_translation Config.clang_lang ->
@@ -145,9 +145,10 @@ let build_method_signature tenv decl_info procname function_method_decl_info
 
 let get_assume_not_null_calls param_decls =
   let do_one_param decl = match decl with
-    | Clang_ast_t.ParmVarDecl (decl_info, name, tp, _)
-      when CFrontend_utils.Ast_utils.is_type_nonnull tp ->
-        let assume_call = Ast_expressions.create_assume_not_null_call decl_info name tp in
+    | Clang_ast_t.ParmVarDecl (decl_info, name, qt, _)
+      when CFrontend_utils.Ast_utils.is_type_nonnull qt.Clang_ast_t.type_ptr ->
+        let assume_call = Ast_expressions.create_assume_not_null_call
+            decl_info name qt.Clang_ast_t.type_ptr in
         [(`ClangStmt assume_call)]
     | _ -> [] in
   IList.flatten (IList.map do_one_param param_decls)
@@ -159,20 +160,20 @@ let get_init_list_instrs method_decl_info =
 let method_signature_of_decl tenv meth_decl block_data_opt =
   let open Clang_ast_t in
   match meth_decl, block_data_opt with
-  | FunctionDecl (decl_info, _, tp, fdi), _ ->
+  | FunctionDecl (decl_info, _, qt, fdi), _ ->
       let language = Config.clang_lang in
-      let func_decl = Func_decl_info (fdi, tp, language) in
+      let func_decl = Func_decl_info (fdi, qt.Clang_ast_t.type_ptr, language) in
       let procname = General_utils.procname_of_decl meth_decl in
       let ms = build_method_signature tenv decl_info procname func_decl None None in
       let extra_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
-  | CXXMethodDecl (decl_info, _, tp, fdi, mdi), _
-  | CXXConstructorDecl (decl_info, _, tp, fdi, mdi), _
-  | CXXConversionDecl (decl_info, _, tp, fdi, mdi), _
-  | CXXDestructorDecl (decl_info, _, tp, fdi, mdi), _ ->
+  | CXXMethodDecl (decl_info, _, qt, fdi, mdi), _
+  | CXXConstructorDecl (decl_info, _, qt, fdi, mdi), _
+  | CXXConversionDecl (decl_info, _, qt, fdi, mdi), _
+  | CXXDestructorDecl (decl_info, _, qt, fdi, mdi), _ ->
       let procname = General_utils.procname_of_decl meth_decl in
       let parent_ptr = Option.get decl_info.di_parent_pointer in
-      let method_decl = Cpp_Meth_decl_info (fdi, mdi, parent_ptr, tp)  in
+      let method_decl = Cpp_Meth_decl_info (fdi, mdi, parent_ptr, qt.Clang_ast_t.type_ptr)  in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
       let ms = build_method_signature tenv decl_info procname method_decl parent_pointer None in
       let non_null_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
@@ -322,7 +323,7 @@ let sil_func_attributes_of_attributes attrs =
           | a:: b::[] -> (int_of_string a, int_of_string b)
           | _ -> assert false
         in
-        do_translation (Sil.FA_sentinel(sentinel, null_pos):: acc) tl
+        do_translation (PredSymb.FA_sentinel(sentinel, null_pos):: acc) tl
     | _:: tl -> do_translation acc tl in
   do_translation [] attrs
 

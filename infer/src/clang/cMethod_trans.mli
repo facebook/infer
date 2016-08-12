@@ -12,11 +12,10 @@ open! Utils
 (** Methods for creating a procdesc from a method or function declaration
     and for resolving a method call and finding the right callee *)
 
-(** When the methoc call is MCStatic, means that it is a class method. *)
-(** When it is MCVirtual, it means that it is an instance method and that *)
-(** the method to be called will be determined at runtime. If it is MCNoVirtual *)
-(** it means that it is an instance method but that the method to be called will *)
-(** be determined at compile time *)
+(** When the methoc call is MCStatic, means that it is a class method.  When it is MCVirtual, it
+    means that it is an instance method and that the method to be called will be determined at
+    runtime. If it is MCNoVirtual it means that it is an instance method but that the method to be
+    called will be determined at compile time *)
 type method_call_type =
   | MCVirtual
   | MCNoVirtual
@@ -33,7 +32,7 @@ val get_objc_method_data : Clang_ast_t.obj_c_message_expr_info ->
   (string * Clang_ast_t.pointer option * method_call_type)
 
 val get_class_name_method_call_from_receiver_kind : CContext.t ->
-  Clang_ast_t.obj_c_message_expr_info -> (Sil.exp * Typ.t) list -> string
+  Clang_ast_t.obj_c_message_expr_info -> (Exp.t * Typ.t) list -> string
 
 val get_class_name_method_call_from_clang : Tenv.t -> Clang_ast_t.obj_c_message_expr_info ->
   string option

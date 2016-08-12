@@ -205,9 +205,10 @@ val filename_to_absolute : string -> string
 (** Convert an absolute filename to one relative to a root directory *)
 val filename_to_relative : string -> string -> string
 
-module FileLOC : (** count lines of code of files and keep processed results in a cache *)
-sig
+(** count lines of code of files and keep processed results in a cache *)
+module FileLOC : sig
   val reset: unit -> unit (** reset the cache *)
+
   val file_get_loc : string -> int (** get the LOC of the file *)
 end
 
@@ -230,7 +231,9 @@ val close_outf : outfile -> unit
 type proc_flags = (string, string) Hashtbl.t
 
 (** keys for proc_flags *)
+
 val proc_flag_skip : string (** key to specify that a function should be treated as a skip function *)
+
 val proc_flag_ignore_return : string (** key to specify that it is OK to ignore the return value *)
 
 (** empty proc flags *)

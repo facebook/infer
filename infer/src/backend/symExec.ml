@@ -35,7 +35,7 @@ let rec unroll_type tenv typ off =
       end
   | Typ.Tarray (typ', _), Sil.Off_index _ ->
       typ'
-  | _, Sil.Off_index (Sil.Const (Const.Cint i)) when IntLit.iszero i ->
+  | _, Sil.Off_index (Exp.Const (Const.Cint i)) when IntLit.iszero i ->
       typ
   | _ ->
       L.d_strln ".... Invalid Field Access ....";
@@ -82,7 +82,7 @@ let check_block_retain_cycle tenv caller_pname prop block_nullified =
     false cases for field and array accesses. *)
 let rec apply_offlist
     pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist
-    (f: Sil.exp option -> Sil.exp) inst lookup_inst =
+    (f: Exp.t option -> Exp.t) inst lookup_inst =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let pp_error () =
     L.d_strln ".... Invalid Field ....";
@@ -100,7 +100,7 @@ let rec apply_offlist
         | _ -> false in
       let is_hidden_field () =
         match State.get_instr () with
-        | Some (Sil.Letderef (_, Sil.Lfield (_, fieldname, _), _, _)) ->
+        | Some (Sil.Letderef (_, Exp.Lfield (_, fieldname, _), _, _)) ->
             Ident.fieldname_is_hidden fieldname
         | _ -> false in
       let inst_new = match inst with
@@ -109,7 +109,7 @@ let rec apply_offlist
             lookup_inst := Some inst_curr;
             let alloc_attribute_opt =
               if inst_curr = Sil.Iinitial then None
-              else Prop.get_undef_attribute p root_lexp in
+              else Attribute.get_undef p root_lexp in
             let deref_str = Localise.deref_str_uninitialized alloc_attribute_opt in
             let err_desc = Errdesc.explain_memory_access deref_str p (State.get_loc ()) in
             let exn = (Exceptions.Uninitialized_value (err_desc, __POS__)) in
@@ -131,11 +131,11 @@ let rec apply_offlist
           (f None, Prop.create_strexp_of_type (Some tenv) Prop.Fld_init typ None inst, typ, None)
         end
   | [], Sil.Earray _ ->
-      let offlist' = (Sil.Off_index Sil.exp_zero):: offlist in
+      let offlist' = (Sil.Off_index Exp.zero):: offlist in
       apply_offlist
         pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist' f inst lookup_inst
   | (Sil.Off_fld _):: _, Sil.Earray _ ->
-      let offlist_new = Sil.Off_index(Sil.exp_zero) :: offlist in
+      let offlist_new = Sil.Off_index(Exp.zero) :: offlist in
       apply_offlist
         pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist_new f inst lookup_inst
   | (Sil.Off_fld (fld, fld_typ)):: offlist', Sil.Estruct (fsel, inst') ->
@@ -184,7 +184,7 @@ let rec apply_offlist
               pdesc tenv p fp_root nullify_struct
               (root_lexp, se', t') offlist' f inst lookup_inst in
           let replace_ese ese =
-            if Sil.exp_equal idx_ese' (fst ese)
+            if Exp.equal idx_ese' (fst ese)
             then (idx_ese', res_se')
             else ese in
           let res_se = Sil.Earray (len, IList.map replace_ese esel, inst1) in
@@ -194,7 +194,7 @@ let rec apply_offlist
           (* return a nondeterministic value if the index is not found after rearrangement *)
           L.d_str "apply_offlist: index "; Sil.d_exp idx;
           L.d_strln " not materialized -- returning nondeterministic value";
-          let res_e' = Sil.Var (Ident.create_fresh Ident.kprimed) in
+          let res_e' = Exp.Var (Ident.create_fresh Ident.kprimed) in
           (res_e', strexp, typ, None)
       end
   | (Sil.Off_index _):: _, _ ->
@@ -217,9 +217,9 @@ let rec apply_offlist
     extensions of se are done before this function. *)
 let ptsto_lookup pdesc tenv p (lexp, se, typ, len, st) offlist id =
   let f =
-    function Some exp -> exp | None -> Sil.Var id in
+    function Some exp -> exp | None -> Exp.Var id in
   let fp_root =
-    match lexp with Sil.Var id -> Ident.is_footprint id | _ -> false in
+    match lexp with Exp.Var id -> Ident.is_footprint id | _ -> false in
   let lookup_inst = ref None in
   let e', se', typ', pred_insts_op' =
     apply_offlist
@@ -228,7 +228,7 @@ let ptsto_lookup pdesc tenv p (lexp, se, typ, len, st) offlist id =
     match !lookup_inst with
     | Some (Sil.Iinitial | Sil.Ialloc | Sil.Ilookup) -> true
     | _ -> false in
-  let ptsto' = Prop.mk_ptsto lexp se' (Sil.Sizeof (typ', len, st)) in
+  let ptsto' = Prop.mk_ptsto lexp se' (Exp.Sizeof (typ', len, st)) in
   (e', ptsto', pred_insts_op', lookup_uninitialized)
 
 (** [ptsto_update p (lexp,se,typ) offlist exp] takes
@@ -245,13 +245,13 @@ let ptsto_lookup pdesc tenv p (lexp, se, typ, len, st) offlist id =
 let ptsto_update pdesc tenv p (lexp, se, typ, len, st) offlist exp =
   let f _ = exp in
   let fp_root =
-    match lexp with Sil.Var id -> Ident.is_footprint id | _ -> false in
+    match lexp with Exp.Var id -> Ident.is_footprint id | _ -> false in
   let lookup_inst = ref None in
   let _, se', typ', pred_insts_op' =
     let pos = State.get_path_pos () in
     apply_offlist
       pdesc tenv p fp_root true (lexp, se, typ) offlist f (State.get_inst_update pos) lookup_inst in
-  let ptsto' = Prop.mk_ptsto lexp se' (Sil.Sizeof (typ', len, st)) in
+  let ptsto' = Prop.mk_ptsto lexp se' (Exp.Sizeof (typ', len, st)) in
   (ptsto', pred_insts_op')
 
 let update_iter iter pi sigma =
@@ -262,7 +262,7 @@ let update_iter iter pi sigma =
     that could mean nonempty heaps. *)
 let rec execute_nullify_se = function
   | Sil.Eexp _ ->
-      Sil.Eexp (Sil.exp_zero, Sil.inst_nullify)
+      Sil.Eexp (Exp.zero, Sil.inst_nullify)
   | Sil.Estruct (fsel, _) ->
       let fsel' = IList.map (fun (fld, se) -> (fld, execute_nullify_se se)) fsel in
       Sil.Estruct (fsel', Sil.inst_nullify)
@@ -288,7 +288,7 @@ let prune_ne ~positive e1 e2 prop =
     is "<" if [is_strict] is true and "<=" if [is_strict] is false.
 *)
 let prune_ineq ~is_strict ~positive prop e1 e2 =
-  if Sil.exp_equal e1 e2 then
+  if Exp.equal e1 e2 then
     if (positive && not is_strict) || (not positive && is_strict) then
       Propset.singleton prop
     else Propset.empty
@@ -297,10 +297,10 @@ let prune_ineq ~is_strict ~positive prop e1 e2 =
        the comment above *)
     (* build [e1] CMP [e2] *)
     let cmp = if is_strict then Binop.Lt else Binop.Le in
-    let e1_cmp_e2 = Sil.BinOp (cmp, e1, e2) in
+    let e1_cmp_e2 = Exp.BinOp (cmp, e1, e2) in
     (* build !([e1] CMP [e2]) *)
     let dual_cmp = if is_strict then Binop.Le else Binop.Lt in
-    let not_e1_cmp_e2 = Sil.BinOp (dual_cmp, e2, e1) in
+    let not_e1_cmp_e2 = Exp.BinOp (dual_cmp, e2, e1) in
     (* take polarity into account *)
     let (prune_cond, not_prune_cond) =
       if positive then (e1_cmp_e2, not_e1_cmp_e2)
@@ -309,54 +309,52 @@ let prune_ineq ~is_strict ~positive prop e1 e2 =
     if is_inconsistent then Propset.empty
     else
       let footprint = !Config.footprint in
-      let prop_with_ineq = Prop.conjoin_eq ~footprint prune_cond Sil.exp_one prop in
+      let prop_with_ineq = Prop.conjoin_eq ~footprint prune_cond Exp.one prop in
       Propset.singleton prop_with_ineq
 
 let rec prune ~positive condition prop =
   match condition with
-  | Sil.Var _ | Sil.Lvar _ ->
-      prune_ne ~positive condition Sil.exp_zero prop
-  | Sil.Const (Const.Cint i) when IntLit.iszero i ->
+  | Exp.Var _ | Exp.Lvar _ ->
+      prune_ne ~positive condition Exp.zero prop
+  | Exp.Const (Const.Cint i) when IntLit.iszero i ->
       if positive then Propset.empty else Propset.singleton prop
-  | Sil.Const (Const.Cint _ | Const.Cstr _ | Const.Cclass _) | Sil.Sizeof _ ->
+  | Exp.Const (Const.Cint _ | Const.Cstr _ | Const.Cclass _) | Exp.Sizeof _ ->
       if positive then Propset.singleton prop else Propset.empty
-  | Sil.Const _ ->
+  | Exp.Const _ ->
       assert false
-  | Sil.Cast (_, condition') ->
+  | Exp.Cast (_, condition') ->
       prune ~positive condition' prop
-  | Sil.UnOp (Unop.LNot, condition', _) ->
+  | Exp.UnOp (Unop.LNot, condition', _) ->
       prune ~positive:(not positive) condition' prop
-  | Sil.UnOp _ ->
+  | Exp.UnOp _ ->
       assert false
-  | Sil.BinOp (Binop.Eq, e, Sil.Const (Const.Cint i))
-  | Sil.BinOp (Binop.Eq, Sil.Const (Const.Cint i), e)
+  | Exp.BinOp (Binop.Eq, e, Exp.Const (Const.Cint i))
+  | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), e)
     when IntLit.iszero i && not (IntLit.isnull i) ->
       prune ~positive:(not positive) e prop
-  | Sil.BinOp (Binop.Eq, e1, e2) ->
+  | Exp.BinOp (Binop.Eq, e1, e2) ->
       prune_ne ~positive:(not positive) e1 e2 prop
-  | Sil.BinOp (Binop.Ne, e, Sil.Const (Const.Cint i))
-  | Sil.BinOp (Binop.Ne, Sil.Const (Const.Cint i), e)
+  | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i))
+  | Exp.BinOp (Binop.Ne, Exp.Const (Const.Cint i), e)
     when IntLit.iszero i && not (IntLit.isnull i) ->
       prune ~positive e prop
-  | Sil.BinOp (Binop.Ne, e1, e2) ->
+  | Exp.BinOp (Binop.Ne, e1, e2) ->
       prune_ne ~positive e1 e2 prop
-  | Sil.BinOp (Binop.Ge, e2, e1) | Sil.BinOp (Binop.Le, e1, e2) ->
+  | Exp.BinOp (Binop.Ge, e2, e1) | Exp.BinOp (Binop.Le, e1, e2) ->
       prune_ineq ~is_strict:false ~positive prop e1 e2
-  | Sil.BinOp (Binop.Gt, e2, e1) | Sil.BinOp (Binop.Lt, e1, e2) ->
+  | Exp.BinOp (Binop.Gt, e2, e1) | Exp.BinOp (Binop.Lt, e1, e2) ->
       prune_ineq ~is_strict:true ~positive prop e1 e2
-  | Sil.BinOp (Binop.LAnd, condition1, condition2) ->
+  | Exp.BinOp (Binop.LAnd, condition1, condition2) ->
       let pruner = if positive then prune_inter else prune_union in
       pruner ~positive condition1 condition2 prop
-  | Sil.BinOp (Binop.LOr, condition1, condition2) ->
+  | Exp.BinOp (Binop.LOr, condition1, condition2) ->
       let pruner = if positive then prune_union else prune_inter in
       pruner ~positive condition1 condition2 prop
-  | Sil.BinOp _ | Sil.Lfield _ | Sil.Lindex _ ->
-      prune_ne ~positive condition Sil.exp_zero prop
-  | Sil.Exn _ ->
+  | Exp.BinOp _ | Exp.Lfield _ | Exp.Lindex _ ->
+      prune_ne ~positive condition Exp.zero prop
+  | Exp.Exn _ ->
       assert false
-  | Sil.Closure _ ->
-      assert false
-  | Sil.Attribute _ ->
+  | Exp.Closure _ ->
       assert false
 
 and prune_inter ~positive condition1 condition2 prop =
@@ -403,31 +401,31 @@ let call_should_be_skipped callee_pname summary =
 let check_constant_string_dereference lexp =
   let string_lookup s n =
     let c = try Char.code (String.get s (IntLit.to_int n)) with Invalid_argument _ -> 0 in
-    Sil.exp_int (IntLit.of_int c) in
+    Exp.int (IntLit.of_int c) in
   match lexp with
-  | Sil.BinOp(Binop.PlusPI, Sil.Const (Const.Cstr s), e)
-  | Sil.Lindex (Sil.Const (Const.Cstr s), e) ->
+  | Exp.BinOp(Binop.PlusPI, Exp.Const (Const.Cstr s), e)
+  | Exp.Lindex (Exp.Const (Const.Cstr s), e) ->
       let value = match e with
-        | Sil.Const (Const.Cint n)
+        | Exp.Const (Const.Cint n)
           when IntLit.geq n IntLit.zero &&
                IntLit.leq n (IntLit.of_int (String.length s)) ->
             string_lookup s n
-        | _ -> Sil.exp_get_undefined false in
+        | _ -> Exp.get_undefined false in
       Some value
-  | Sil.Const (Const.Cstr s) ->
+  | Exp.Const (Const.Cstr s) ->
       Some (string_lookup s IntLit.zero)
   | _ -> None
 
 (** Normalize an expression and check for arithmetic problems *)
 let check_arith_norm_exp pname exp prop =
-  match Prop.find_arithmetic_problem (State.get_path_pos ()) prop exp with
-  | Some (Prop.Div0 div), prop' ->
+  match Attribute.find_arithmetic_problem (State.get_path_pos ()) prop exp with
+  | Some (Attribute.Div0 div), prop' ->
       let desc = Errdesc.explain_divide_by_zero div (State.get_node ()) (State.get_loc ()) in
       let exn = Exceptions.Divide_by_zero (desc, __POS__) in
       let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
       Reporting.log_warning pname ~pre: pre_opt exn;
       Prop.exp_normalize_prop prop exp, prop'
-  | Some (Prop.UminusUnsigned (e, typ)), prop' ->
+  | Some (Attribute.UminusUnsigned (e, typ)), prop' ->
       let desc =
         Errdesc.explain_unary_minus_applied_to_unsigned_expression
           e typ (State.get_node ()) (State.get_loc ()) in
@@ -441,21 +439,21 @@ let check_arith_norm_exp pname exp prop =
 let check_already_dereferenced pname cond prop =
   let find_hpred lhs =
     try Some (IList.find (function
-        | Sil.Hpointsto (e, _, _) -> Sil.exp_equal e lhs
-        | _ -> false) (Prop.get_sigma prop))
+        | Sil.Hpointsto (e, _, _) -> Exp.equal e lhs
+        | _ -> false) prop.Prop.sigma)
     with Not_found -> None in
   let rec is_check_zero = function
-    | Sil.Var id ->
+    | Exp.Var id ->
         Some id
-    | Sil.UnOp(Unop.LNot, e, _) ->
+    | Exp.UnOp(Unop.LNot, e, _) ->
         is_check_zero e
-    | Sil.BinOp ((Binop.Eq | Binop.Ne), Sil.Const Const.Cint i, Sil.Var id)
-    | Sil.BinOp ((Binop.Eq | Binop.Ne), Sil.Var id, Sil.Const Const.Cint i) when IntLit.iszero i ->
+    | Exp.BinOp ((Binop.Eq | Binop.Ne), Exp.Const Const.Cint i, Exp.Var id)
+    | Exp.BinOp ((Binop.Eq | Binop.Ne), Exp.Var id, Exp.Const Const.Cint i) when IntLit.iszero i ->
         Some id
     | _ -> None in
   let dereferenced_line = match is_check_zero cond with
     | Some id ->
-        (match find_hpred (Prop.exp_normalize_prop prop (Sil.Var id)) with
+        (match find_hpred (Prop.exp_normalize_prop prop (Exp.Var id)) with
          | Some (Sil.Hpointsto (_, se, _)) ->
              (match Tabulation.find_dereference_without_null_check_in_sexp se with
               | Some n -> Some (id, n)
@@ -467,7 +465,7 @@ let check_already_dereferenced pname cond prop =
   | Some (id, (n, _)) ->
       let desc =
         Errdesc.explain_null_test_after_dereference
-          (Sil.Var id) (State.get_node ()) n (State.get_loc ()) in
+          (Exp.Var id) (State.get_node ()) n (State.get_loc ()) in
       let exn =
         (Exceptions.Null_test_after_dereference (desc, __POS__)) in
       let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
@@ -478,15 +476,15 @@ let check_already_dereferenced pname cond prop =
     raising an exception in that case *)
 let check_deallocate_static_memory prop_after =
   let check_deallocated_attribute = function
-    | Sil.Lvar pv, Sil.Aresource ({ Sil.ra_kind = Sil.Rrelease } as ra)
+    | Sil.Apred (Aresource ({ ra_kind = Rrelease } as ra), [Lvar pv])
       when Pvar.is_local pv || Pvar.is_global pv ->
         let freed_desc = Errdesc.explain_deallocate_stack_var pv ra in
         raise (Exceptions.Deallocate_stack_variable freed_desc)
-    | Sil.Const (Const.Cstr s), Sil.Aresource ({ Sil.ra_kind = Sil.Rrelease } as ra) ->
+    | Sil.Apred (Aresource ({ ra_kind = Rrelease } as ra), [Const (Cstr s)]) ->
         let freed_desc = Errdesc.explain_deallocate_constant_string s ra in
         raise (Exceptions.Deallocate_static_memory freed_desc)
     | _ -> () in
-  let exp_att_list = Prop.get_all_attributes prop_after in
+  let exp_att_list = Attribute.get_all prop_after in
   IList.iter check_deallocated_attribute exp_att_list;
   prop_after
 
@@ -532,12 +530,12 @@ let resolve_typename prop receiver_exp =
   let typexp_opt =
     let rec loop = function
       | [] -> None
-      | Sil.Hpointsto(e, _, typexp) :: _ when Sil.exp_equal e receiver_exp -> Some typexp
+      | Sil.Hpointsto(e, _, typexp) :: _ when Exp.equal e receiver_exp -> Some typexp
       | _ :: hpreds -> loop hpreds in
-    loop (Prop.get_sigma prop) in
+    loop prop.Prop.sigma in
   match typexp_opt with
-  | Some (Sil.Sizeof (Typ.Tstruct { Typ.struct_name = None }, _, _)) -> None
-  | Some (Sil.Sizeof (Typ.Tstruct { Typ.csu = Csu.Class ck; struct_name = Some name }, _, _)) ->
+  | Some (Exp.Sizeof (Typ.Tstruct { Typ.struct_name = None }, _, _)) -> None
+  | Some (Exp.Sizeof (Typ.Tstruct { Typ.csu = Csu.Class ck; struct_name = Some name }, _, _)) ->
       Some (Typename.TN_csu (Csu.Class ck, name))
   | _ -> None
 
@@ -581,7 +579,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
             callee_pname :: call_flags.CallFlags.cf_targets
           else
             (* interface call--[called_pname] has no implementation), we don't want to consider *)
-            call_flags.CallFlags.cf_targets in (* interface call, don't want to consider *)
+            call_flags.CallFlags.cf_targets (* interface call, don't want to consider *) in
         (* return true if (receiver typ of [target_pname]) <: [actual_receiver_typ] *)
         let may_dispatch_to target_pname =
           let target_receiver_typ = get_receiver_typ target_pname actual_receiver_typ in
@@ -695,7 +693,7 @@ let call_constructor_url_update_args pname actual_params =
          [(Some "java.lang"), "String"] Procname.Non_Static) in
   if (Procname.equal url_pname pname) then
     (match actual_params with
-     | [this; (Sil.Const (Const.Cstr s), atype)] ->
+     | [this; (Exp.Const (Const.Cstr s), atype)] ->
          let parts = Str.split (Str.regexp_string "://") s in
          (match parts with
           | frst:: _ ->
@@ -705,10 +703,10 @@ let call_constructor_url_update_args pname actual_params =
                  frst = "mailto" ||
                  frst = "jar"
               then
-                [this; (Sil.Const (Const.Cstr frst), atype)]
+                [this; (Exp.Const (Const.Cstr frst), atype)]
               else actual_params
           | _ -> actual_params)
-     | [this; _, atype] -> [this; (Sil.Const (Const.Cstr "file"), atype)]
+     | [this; _, atype] -> [this; (Exp.Const (Const.Cstr "file"), atype)]
      | _ -> actual_params)
   else actual_params
 
@@ -732,17 +730,17 @@ let handle_objc_instance_method_call_or_skip actual_pars path callee_pname pre r
   let is_receiver_null =
     match actual_pars with
     | (e, _) :: _
-      when Sil.exp_equal e Sil.exp_zero ||
-           Option.is_some (Prop.get_objc_null_attribute pre e) -> true
+      when Exp.equal e Exp.zero ||
+           Option.is_some (Attribute.get_objc_null pre e) -> true
     | _ -> false in
   let add_objc_null_attribute_or_nullify_result prop =
     match ret_ids with
     | [ret_id] -> (
-        match Prop.find_equal_formal_path receiver prop with
-        | Some (v,fs) ->
-            Prop.add_or_replace_exp_attribute prop (Sil.Var ret_id) (Sil.Aobjc_null (v,fs))
+        match Attribute.find_equal_formal_path receiver prop with
+        | Some vfs ->
+            Attribute.add_or_replace prop (Apred (Aobjc_null, [Exp.Var ret_id; vfs]))
         | None ->
-            Prop.conjoin_eq (Sil.Var ret_id) Sil.exp_zero prop
+            Prop.conjoin_eq (Exp.Var ret_id) Exp.zero prop
       )
     | _ -> prop in
   if is_receiver_null then
@@ -758,11 +756,11 @@ let handle_objc_instance_method_call_or_skip actual_pars path callee_pname pre r
        so that in a NPE we can separate it into a different error type *)
     [(add_objc_null_attribute_or_nullify_result pre, path)]
   else
-    let is_undef = Option.is_some (Prop.get_undef_attribute pre receiver) in
+    let is_undef = Option.is_some (Attribute.get_undef pre receiver) in
     if !Config.footprint && not is_undef then
       let res_null = (* returns: (objc_null(res) /\ receiver=0) or an empty list of results *)
         let pre_with_attr_or_null = add_objc_null_attribute_or_nullify_result pre in
-        let propset = prune_ne ~positive:false receiver Sil.exp_zero pre_with_attr_or_null in
+        let propset = prune_ne ~positive:false receiver Exp.zero pre_with_attr_or_null in
         if Propset.is_empty propset then []
         else
           let prop = IList.hd (Propset.to_proplist propset) in
@@ -794,15 +792,15 @@ let do_error_checks node_opt instr pname pdesc = match node_opt with
       ()
 
 let add_strexp_to_footprint strexp abducted_pv typ prop =
-  let abducted_lvar = Sil.Lvar abducted_pv in
+  let abducted_lvar = Exp.Lvar abducted_pv in
   let lvar_pt_fpvar =
-    let sizeof_exp = Sil.Sizeof (typ, None, Subtype.subtypes) in
+    let sizeof_exp = Exp.Sizeof (typ, None, Subtype.subtypes) in
     Prop.mk_ptsto abducted_lvar strexp sizeof_exp in
-  let sigma_fp = Prop.get_sigma_footprint prop in
-  Prop.normalize (Prop.replace_sigma_footprint (lvar_pt_fpvar :: sigma_fp) prop)
+  let sigma_fp = prop.Prop.sigma_fp in
+  Prop.normalize (Prop.set prop ~sigma_fp:(lvar_pt_fpvar :: sigma_fp))
 
 let add_to_footprint abducted_pv typ prop =
-  let fresh_fp_var = Sil.Var (Ident.create_fresh Ident.kfootprint) in
+  let fresh_fp_var = Exp.Var (Ident.create_fresh Ident.kfootprint) in
   let prop' = add_strexp_to_footprint (Sil.Eexp (fresh_fp_var, Sil.Inone)) abducted_pv typ prop in
   prop', fresh_fp_var
 
@@ -824,17 +822,17 @@ let add_constraints_on_retval pdesc prop ret_exp ~has_nullable_annot typ callee_
     let already_has_abducted_retval p abducted_ret_pv =
       IList.exists
         (fun hpred -> match hpred with
-           | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Pvar.equal pv abducted_ret_pv
+           | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abducted_ret_pv
            | _ -> false)
-        (Prop.get_sigma_footprint p) in
+        p.Prop.sigma_fp in
     (* find an hpred [abducted] |-> A in [prop] and add [exp] = A to prop *)
     let bind_exp_to_abducted_val exp_to_bind abducted prop =
       let bind_exp prop = function
-        | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (rhs, _), _)
+        | Sil.Hpointsto (Exp.Lvar pv, Sil.Eexp (rhs, _), _)
           when Pvar.equal pv abducted ->
             Prop.conjoin_eq exp_to_bind rhs prop
         | _ -> prop in
-      IList.fold_left bind_exp prop (Prop.get_sigma prop) in
+      IList.fold_left bind_exp prop prop.Prop.sigma in
     (* To avoid obvious false positives, assume skip functions do not return null pointers *)
     let add_ret_non_null exp typ prop =
       if has_nullable_annot
@@ -842,10 +840,10 @@ let add_constraints_on_retval pdesc prop ret_exp ~has_nullable_annot typ callee_
         prop (* don't assume nonnull if the procedure is annotated with @Nullable *)
       else
         match typ with
-        | Typ.Tptr _ -> Prop.conjoin_neq exp Sil.exp_zero prop
+        | Typ.Tptr _ -> Prop.conjoin_neq exp Exp.zero prop
         | _ -> prop in
     let add_tainted_post ret_exp callee_pname prop =
-      Prop.add_or_replace_exp_attribute prop ret_exp (Sil.Ataint callee_pname) in
+      Attribute.add_or_replace prop (Apred (Ataint callee_pname, [ret_exp])) in
 
     if Config.angelic_execution && not (is_rec_call callee_pname) then
       (* introduce a fresh program variable to allow abduction on the return value *)
@@ -864,7 +862,7 @@ let add_constraints_on_retval pdesc prop ret_exp ~has_nullable_annot typ callee_
         if Config.taint_analysis then
           match Taint.returns_tainted callee_pname None with
           | Some taint_kind ->
-              add_tainted_post ret_exp { Sil.taint_source = callee_pname; taint_kind; } prop''
+              add_tainted_post ret_exp { taint_source = callee_pname; taint_kind; } prop''
           | None -> prop''
         else prop''
     else add_ret_non_null ret_exp typ prop
@@ -873,16 +871,16 @@ let add_taint prop lhs_id rhs_exp pname tenv  =
   let add_attribute_if_field_tainted prop fieldname struct_typ =
     if Taint.has_taint_annotation fieldname struct_typ
     then
-      let taint_info = { Sil.taint_source = pname; taint_kind = Tk_unknown; } in
-      Prop.add_or_replace_exp_attribute prop (Sil.Var lhs_id) (Sil.Ataint taint_info)
+      let taint_info = { PredSymb.taint_source = pname; taint_kind = Tk_unknown; } in
+      Attribute.add_or_replace prop (Apred (Ataint taint_info, [Exp.Var lhs_id]))
     else
       prop in
   match rhs_exp with
-  | Sil.Lfield (_, fieldname, Tptr (Tstruct struct_typ, _))
-  | Sil.Lfield (_, fieldname, Tstruct struct_typ) ->
+  | Exp.Lfield (_, fieldname, Tptr (Tstruct struct_typ, _))
+  | Exp.Lfield (_, fieldname, Tstruct struct_typ) ->
       add_attribute_if_field_tainted prop fieldname struct_typ
-  | Sil.Lfield (_, fieldname, Tptr (Tvar typname, _))
-  | Sil.Lfield (_, fieldname, Tvar typname) ->
+  | Exp.Lfield (_, fieldname, Tptr (Tvar typname, _))
+  | Exp.Lfield (_, fieldname, Tvar typname) ->
       begin
         match Tenv.lookup tenv typname with
         | Some struct_typ -> add_attribute_if_field_tainted prop fieldname struct_typ
@@ -895,17 +893,17 @@ let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ
     let iter_ren = Prop.prop_iter_make_id_primed id iter in
     let prop_ren = Prop.prop_iter_to_prop iter_ren in
     match Prop.prop_iter_current iter_ren with
-    | (Sil.Hpointsto(lexp, strexp, Sil.Sizeof (typ, len, st)), offlist) ->
+    | (Sil.Hpointsto(lexp, strexp, Exp.Sizeof (typ, len, st)), offlist) ->
         let contents, new_ptsto, pred_insts_op, lookup_uninitialized =
           ptsto_lookup pdesc tenv prop_ren (lexp, strexp, typ, len, st) offlist id in
         let update acc (pi, sigma) =
-          let pi' = Sil.Aeq (Sil.Var(id), contents):: pi in
+          let pi' = Sil.Aeq (Exp.Var(id), contents):: pi in
           let sigma' = new_ptsto:: sigma in
           let iter' = update_iter iter_ren pi' sigma' in
           let prop' = Prop.prop_iter_to_prop iter' in
           let prop'' =
             if lookup_uninitialized then
-              Prop.add_or_replace_exp_attribute prop' (Sil.Var id) (Sil.Adangling Sil.DAuninit)
+              Attribute.add_or_replace prop' (Apred (Adangling DAuninit, [Exp.Var id]))
             else prop' in
           let prop''' =
             if Config.taint_analysis
@@ -931,18 +929,19 @@ let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ
     let n_rhs_exp' = Prop.exp_collapse_consecutive_indices_prop typ n_rhs_exp in
     match check_constant_string_dereference n_rhs_exp' with
     | Some value ->
-        [Prop.conjoin_eq (Sil.Var id) value prop]
+        [Prop.conjoin_eq (Exp.Var id) value prop]
     | None ->
         let exp_get_undef_attr exp =
-          let fold_undef_pname callee_opt attr =
-            if Option.is_none callee_opt && Sil.attr_is_undef attr then Some attr
-            else callee_opt in
-          IList.fold_left fold_undef_pname None (Prop.get_exp_attributes prop exp) in
+          let fold_undef_pname callee_opt atom =
+            match callee_opt, atom with
+            | None, Sil.Apred (Aundef _, _) -> Some atom
+            | _ -> callee_opt in
+          IList.fold_left fold_undef_pname None (Attribute.get_for_exp prop exp) in
         let prop' =
           if Config.angelic_execution then
             (* when we try to deref an undefined value, add it to the footprint *)
             match exp_get_undef_attr n_rhs_exp' with
-            | Some (Sil.Aundef (callee_pname, ret_annots, callee_loc, _)) ->
+            | Some (Apred (Aundef (callee_pname, ret_annots, callee_loc, _), _)) ->
                 let has_nullable_annot = Annotations.ia_is_nullable ret_annots in
                 add_constraints_on_retval
                   pdesc prop n_rhs_exp' ~has_nullable_annot typ callee_pname callee_loc
@@ -954,8 +953,8 @@ let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ
   with Rearrange.ARRAY_ACCESS ->
     if (Config.array_level = 0) then assert false
     else
-      let undef = Sil.exp_get_undefined false in
-      [Prop.conjoin_eq (Sil.Var id) undef prop_]
+      let undef = Exp.get_undefined false in
+      [Prop.conjoin_eq (Exp.Var id) undef prop_]
 
 let load_ret_annots pname =
   match AttributesTable.load_attributes pname with
@@ -969,7 +968,7 @@ let execute_set ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_exp
   let execute_set_ pdesc tenv rhs_exp acc_in iter =
     let (lexp, strexp, typ, len, st, offlist) =
       match Prop.prop_iter_current iter with
-      | (Sil.Hpointsto(lexp, strexp, Sil.Sizeof (typ, len, st)), offlist) ->
+      | (Sil.Hpointsto(lexp, strexp, Exp.Sizeof (typ, len, st)), offlist) ->
           (lexp, strexp, typ, len, st, offlist)
       | _ -> assert false in
     let p = Prop.prop_iter_to_prop iter in
@@ -986,7 +985,7 @@ let execute_set ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_exp
   try
     let n_lhs_exp, prop_' = check_arith_norm_exp pname lhs_exp prop_ in
     let n_rhs_exp, prop = check_arith_norm_exp pname rhs_exp prop_' in
-    let prop = Prop.replace_objc_null prop n_lhs_exp n_rhs_exp in
+    let prop = Attribute.replace_objc_null prop n_lhs_exp n_rhs_exp in
     let n_lhs_exp' = Prop.exp_collapse_consecutive_indices_prop typ n_lhs_exp in
     let iter_list = Rearrange.rearrange ~report_deref_errors pdesc tenv n_lhs_exp' typ prop loc in
     IList.rev (IList.fold_left (execute_set_ pdesc tenv n_rhs_exp) [] iter_list)
@@ -1007,8 +1006,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
     | Sil.Call (ret, exp, par, loc, call_flags) ->
         let exp' = Prop.exp_normalize_prop prop_ exp in
         let instr' = match exp' with
-          | Sil.Closure c ->
-              let proc_exp = Sil.Const (Const.Cfun c.name) in
+          | Exp.Closure c ->
+              let proc_exp = Exp.Const (Const.Cfun c.name) in
               let proc_exp' = Prop.exp_normalize_prop prop_ proc_exp in
               let par' = IList.map (fun (id_exp, _, typ) -> (id_exp, typ)) c.captured_vars in
               Sil.Call (ret, proc_exp', par' @ par, loc, call_flags)
@@ -1046,7 +1045,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       execute_set current_pname current_pdesc tenv lhs_exp typ rhs_exp loc prop_
       |> ret_old_path
   | Sil.Prune (cond, loc, true_branch, ik) ->
-      let prop__ = Prop.nullify_exp_with_objc_null prop_ cond in
+      let prop__ = Attribute.nullify_exp_with_objc_null prop_ cond in
       let check_condition_always_true_false () =
         let report_condition_always_true_false i =
           let skip_loop = match ik with
@@ -1059,7 +1058,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
             | _ -> false in
           true_branch && not skip_loop in
         match Prop.exp_normalize_prop Prop.prop_emp cond with
-        | Sil.Const (Const.Cint i) when report_condition_always_true_false i ->
+        | Exp.Const (Const.Cint i) when report_condition_always_true_false i ->
             let node = State.get_node () in
             let desc = Errdesc.explain_condition_always_true_false i cond node loc in
             let exn =
@@ -1072,12 +1071,12 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       check_condition_always_true_false ();
       let n_cond, prop = check_arith_norm_exp current_pname cond prop__ in
       ret_old_path (Propset.to_proplist (prune ~positive:true n_cond prop))
-  | Sil.Call (ret_ids, Sil.Const (Const.Cfun callee_pname), args, loc, _)
+  | Sil.Call (ret_ids, Exp.Const (Const.Cfun callee_pname), args, loc, _)
     when Builtin.is_registered callee_pname ->
       let sym_exe_builtin = Builtin.get callee_pname in
       sym_exe_builtin (call_args prop_ callee_pname args ret_ids loc)
   | Sil.Call (ret_ids,
-              Sil.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
+              Exp.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
               actual_params, loc, call_flags)
     when Config.lazy_dynamic_dispatch ->
       let norm_prop, norm_args = normalize_params current_pname prop_ actual_params in
@@ -1104,7 +1103,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       end
 
   | Sil.Call (ret_ids,
-              Sil.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
+              Exp.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
               actual_params, loc, call_flags) ->
       do_error_checks (Paths.Path.curr_node path) instr current_pname current_pdesc;
       let norm_prop, norm_args = normalize_params current_pname prop_ actual_params in
@@ -1133,8 +1132,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
             proc_call summary (call_args norm_prop pname url_handled_args ret_ids loc) in
       IList.fold_left (fun acc pname -> exec_one_pname pname @ acc) [] resolved_pnames
 
-  | Sil.Call (ret_ids, Sil.Const (Const.Cfun callee_pname), actual_params, loc, call_flags) ->
-      (** Generic fun call with known name *)
+  | Sil.Call (ret_ids, Exp.Const (Const.Cfun callee_pname), actual_params, loc, call_flags) ->
+      (* Generic fun call with known name *)
       let (prop_r, n_actual_params) = normalize_params current_pname prop_ actual_params in
       let resolved_pname =
         match resolve_virtual_pname tenv prop_r n_actual_params callee_pname call_flags with
@@ -1195,7 +1194,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
           proc_call (Option.get summary)
             (call_args prop resolved_pname n_actual_params ret_ids loc) in
       IList.flatten (IList.map do_call sentinel_result)
-  | Sil.Call (ret_ids, fun_exp, actual_params, loc, call_flags) -> (** Call via function pointer *)
+  | Sil.Call (ret_ids, fun_exp, actual_params, loc, call_flags) -> (* Call via function pointer *)
       let (prop_r, n_actual_params) = normalize_params current_pname prop_ actual_params in
       if call_flags.CallFlags.cf_is_objc_block then
         Rearrange.check_call_to_objc_block_error current_pdesc prop_r fun_exp loc;
@@ -1217,13 +1216,13 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         let eprop = Prop.expose prop_ in
         match IList.partition
                 (function
-                  | Sil.Hpointsto (Sil.Lvar pvar', _, _) -> Pvar.equal pvar pvar'
-                  | _ -> false) (Prop.get_sigma eprop) with
+                  | Sil.Hpointsto (Exp.Lvar pvar', _, _) -> Pvar.equal pvar pvar'
+                  | _ -> false) eprop.Prop.sigma with
         | [Sil.Hpointsto(e, se, typ)], sigma' ->
             let sigma'' =
               let se' = execute_nullify_se se in
               Sil.Hpointsto(e, se', typ):: sigma' in
-            let eprop_res = Prop.replace_sigma sigma'' eprop in
+            let eprop_res = Prop.set eprop ~sigma:sigma'' in
             ret_old_path [Prop.normalize eprop_res]
         | [], _ ->
             ret_old_path [prop_]
@@ -1246,15 +1245,15 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       ret_old_path [Prop.exist_quantify (Sil.fav_from_list temps) prop_]
   | Sil.Declare_locals (ptl, _) ->
       let sigma_locals =
-        let add_None (x, y) = (x, Sil.Sizeof (y, None, Subtype.exact), None) in
+        let add_None (x, y) = (x, Exp.Sizeof (y, None, Subtype.exact), None) in
         let sigma_locals () =
           IList.map
             (Prop.mk_ptsto_lvar (Some tenv) Prop.Fld_init Sil.inst_initial)
             (IList.map add_None ptl) in
         Config.run_in_re_execution_mode (* no footprint vars for locals *)
           sigma_locals () in
-      let sigma' = Prop.get_sigma prop_ @ sigma_locals in
-      let prop' = Prop.normalize (Prop.replace_sigma sigma' prop_) in
+      let sigma' = prop_.Prop.sigma @ sigma_locals in
+      let prop' = Prop.normalize (Prop.set prop_ ~sigma:sigma') in
       ret_old_path [prop']
   | Sil.Stackop _ -> (* this should be handled at the propset level *)
       assert false
@@ -1286,23 +1285,23 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
     let sigma' =
       IList.map
         (function
-          | Sil.Hpointsto (lhs, _, _) when Sil.exp_equal lhs actual_var -> new_hpred
+          | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual_var -> new_hpred
           | hpred -> hpred)
-        (Prop.get_sigma prop) in
-    Prop.normalize (Prop.replace_sigma sigma' prop) in
+        prop.Prop.sigma in
+    Prop.normalize (Prop.set prop ~sigma:sigma') in
   if Config.angelic_execution then
     let add_actual_by_ref_to_footprint prop (actual, actual_typ) =
       match actual with
-      | Sil.Lvar actual_pv ->
+      | Exp.Lvar actual_pv ->
           (* introduce a fresh program variable to allow abduction on the return value *)
           let abducted_ref_pv =
             Pvar.mk_abducted_ref_param callee_pname actual_pv callee_loc in
           let already_has_abducted_retval p =
             IList.exists
               (fun hpred -> match hpred with
-                 | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Pvar.equal pv abducted_ref_pv
+                 | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abducted_ref_pv
                  | _ -> false)
-              (Prop.get_sigma_footprint p) in
+              p.Prop.sigma_fp in
           (* prevent introducing multiple abducted retvals for a single call site in a loop *)
           if already_has_abducted_retval prop then prop
           else
@@ -1325,46 +1324,46 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
             let filtered_sigma =
               IList.map
                 (function
-                  | Sil.Hpointsto (lhs, _, typ_exp) when Sil.exp_equal lhs actual ->
+                  | Sil.Hpointsto (lhs, _, typ_exp) when Exp.equal lhs actual ->
                       Sil.Hpointsto (lhs, abduced_strexp, typ_exp)
                   | hpred -> hpred)
-                (Prop.get_sigma prop') in
-            Prop.normalize (Prop.replace_sigma filtered_sigma prop')
+                prop'.Prop.sigma in
+            Prop.normalize (Prop.set prop' ~sigma:filtered_sigma)
           else
             (* bind actual passed by ref to the abducted value pointed to by the synthetic pvar *)
             let prop' =
               let filtered_sigma =
                 IList.filter
                   (function
-                    | Sil.Hpointsto (lhs, _, _) when Sil.exp_equal lhs actual ->
+                    | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual ->
                         false
                     | _ -> true)
-                  (Prop.get_sigma prop) in
-              Prop.normalize (Prop.replace_sigma filtered_sigma prop) in
+                  prop.Prop.sigma in
+              Prop.normalize (Prop.set prop ~sigma:filtered_sigma) in
             IList.fold_left
               (fun p hpred ->
                  match hpred with
-                 | Sil.Hpointsto (Sil.Lvar pv, rhs, texp) when Pvar.equal pv abducted_ref_pv ->
+                 | Sil.Hpointsto (Exp.Lvar pv, rhs, texp) when Pvar.equal pv abducted_ref_pv ->
                      let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
-                     Prop.normalize (Prop.replace_sigma (new_hpred :: (Prop.get_sigma prop')) p)
+                     Prop.normalize (Prop.set p ~sigma:(new_hpred :: prop'.Prop.sigma))
                  | _ -> p)
               prop'
-              (Prop.get_sigma prop')
+              prop'.Prop.sigma
       | _ -> assert false in
     IList.fold_left add_actual_by_ref_to_footprint prop actuals_by_ref
   else
     (* non-angelic mode; havoc each var passed by reference by assigning it to a fresh id *)
     let havoc_actual_by_ref (actual, actual_typ) prop =
       let actual_pt_havocd_var =
-        let havocd_var = Sil.Var (Ident.create_fresh Ident.kprimed) in
-        let sizeof_exp = Sil.Sizeof (Typ.strip_ptr actual_typ, None, Subtype.subtypes) in
+        let havocd_var = Exp.Var (Ident.create_fresh Ident.kprimed) in
+        let sizeof_exp = Exp.Sizeof (Typ.strip_ptr actual_typ, None, Subtype.subtypes) in
         Prop.mk_ptsto actual (Sil.Eexp (havocd_var, Sil.Inone)) sizeof_exp in
       replace_actual_hpred actual actual_pt_havocd_var prop in
     IList.fold_left (fun p var -> havoc_actual_by_ref var p) prop actuals_by_ref
 
 and check_untainted exp taint_kind caller_pname callee_pname prop =
-  match Prop.get_taint_attribute prop exp with
-  | Some (Sil.Ataint taint_info) ->
+  match Attribute.get_taint prop exp with
+  | Some (Apred (Ataint taint_info, _)) ->
       let err_desc =
         Errdesc.explain_tainted_value_reaching_sensitive_function
           prop
@@ -1376,13 +1375,12 @@ and check_untainted exp taint_kind caller_pname callee_pname prop =
         Exceptions.Tainted_value_reaching_sensitive_function
           (err_desc, __POS__) in
       Reporting.log_warning caller_pname exn;
-      Prop.add_or_replace_exp_attribute prop exp (Sil.Auntaint taint_info)
+      Attribute.add_or_replace prop (Apred (Auntaint taint_info, [exp]))
   | _ ->
       if !Config.footprint then
-        let taint_info = { Sil.taint_source = callee_pname; taint_kind; } in
-        let untaint_attr = Sil.Attribute (Sil.Auntaint taint_info) in
+        let taint_info = { PredSymb.taint_source = callee_pname; taint_kind; } in
         (* add untained(n_lexp) to the footprint *)
-        Prop.conjoin_neq ~footprint:true exp untaint_attr prop
+        Attribute.add ~footprint:true prop (Auntaint taint_info) [exp]
       else prop
 
 (** execute a call for an unknown or scan function *)
@@ -1391,12 +1389,11 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
       args; proc_name= callee_pname; loc; instr; } =
   let remove_file_attribute prop =
     let do_exp p (e, _) =
-      let do_attribute q = function
-        | Sil.Aresource res_action as res
-          when res_action.Sil.ra_res = Sil.Rfile ->
-            Prop.remove_attribute res q
+      let do_attribute q atom =
+        match atom with
+        | Sil.Apred ((Aresource {ra_res = Rfile} as res), _) -> Attribute.remove_for_attr q res
         | _ -> q in
-      IList.fold_left do_attribute p (Prop.get_exp_attributes p e) in
+      IList.fold_left do_attribute p (Attribute.get_for_exp p e) in
     let filtered_args =
       match args, instr with
       | _:: other_args, Sil.Call (_, _, _, _, { CallFlags.cf_virtual }) when cf_virtual ->
@@ -1425,7 +1422,7 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
   let actuals_by_ref =
     IList.filter
       (function
-        | Sil.Lvar _, Typ.Tptr _ -> true
+        | Exp.Lvar _, Typ.Tptr _ -> true
         | _ -> false)
       args in
   let has_nullable_annot = Annotations.ia_is_nullable ret_annots in
@@ -1438,7 +1435,7 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
     let pre_2 = match ret_ids, ret_type_option with
       | [ret_id], Some ret_typ ->
           add_constraints_on_retval
-            pdesc pre_1 (Sil.Var ret_id) ret_typ ~has_nullable_annot callee_pname loc
+            pdesc pre_1 (Exp.Var ret_id) ret_typ ~has_nullable_annot callee_pname loc
       | _ ->
           pre_1 in
     let pre_3 = add_constraints_on_actuals_by_ref tenv pre_2 actuals_by_ref callee_pname loc in
@@ -1449,12 +1446,13 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
   else
     (* otherwise, add undefined attribute to retvals and actuals passed by ref *)
     let exps_to_mark =
-      let ret_exps = IList.map (fun ret_id -> Sil.Var ret_id) ret_ids in
+      let ret_exps = IList.map (fun ret_id -> Exp.Var ret_id) ret_ids in
       IList.fold_left
         (fun exps_to_mark (exp, _) -> exp :: exps_to_mark) ret_exps actuals_by_ref in
     let prop_with_undef_attr =
       let path_pos = State.get_path_pos () in
-      Prop.mark_vars_as_undefined pre_final exps_to_mark callee_pname ret_annots loc path_pos in
+      Attribute.mark_vars_as_undefined
+        pre_final exps_to_mark callee_pname ret_annots loc path_pos in
     [(prop_with_undef_attr, path)]
 
 and check_variadic_sentinel
@@ -1500,7 +1498,7 @@ and check_variadic_sentinel_if_present
   | None ->
       [(prop_, path)]
   | Some callee_attributes ->
-      match Sil.get_sentinel_func_attribute_value
+      match PredSymb.get_sentinel_func_attribute_value
               callee_attributes.ProcAttributes.func_attributes with
       | None -> [(prop_, path)]
       | Some sentinel_arg ->
@@ -1520,7 +1518,7 @@ and sym_exec_objc_getter field_name ret_typ tenv ret_ids pdesc pname loc args pr
           | Typ.Tstruct _ as s -> s
           | Typ.Tptr (t, _) -> Tenv.expand_type tenv t
           | _ -> assert false) in
-      let field_access_exp = Sil.Lfield (lexp, field_name, typ') in
+      let field_access_exp = Exp.Lfield (lexp, field_name, typ') in
       execute_letderef
         ~report_deref_errors:false pname pdesc tenv ret_id field_access_exp ret_typ loc prop
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -1534,7 +1532,7 @@ and sym_exec_objc_setter field_name _ tenv _ pdesc pname loc args prop =
           | Typ.Tstruct _ as s -> s
           | Typ.Tptr (t, _) -> Tenv.expand_type tenv t
           | _ -> assert false) in
-      let field_access_exp = Sil.Lfield (lexp1, field_name, typ1') in
+      let field_access_exp = Exp.Lfield (lexp1, field_name, typ1') in
       execute_set ~report_deref_errors:false pname pdesc tenv field_access_exp typ2 lexp2 loc prop
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -1618,7 +1616,7 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_ids; args= act
 and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), path)
   : Paths.PathSet.t =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
-  let prop_primed_to_normal p = (** Rename primed vars with fresh normal vars, and return them *)
+  let prop_primed_to_normal p = (* Rename primed vars with fresh normal vars, and return them *)
     let fav = Prop.prop_fav p in
     Sil.fav_filter_ident fav Ident.is_primed;
     let ids_primed = Sil.fav_to_list fav in
@@ -1626,7 +1624,7 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
       IList.map (fun id -> (id, Ident.create_fresh Ident.knormal)) ids_primed in
     let ren_sub =
       Sil.sub_of_list (IList.map
-                         (fun (id1, id2) -> (id1, Sil.Var id2)) ids_primed_normal) in
+                         (fun (id1, id2) -> (id1, Exp.Var id2)) ids_primed_normal) in
     let p' = Prop.normalize (Prop.prop_sub ren_sub p) in
     let fav_normal = Sil.fav_from_list (IList.map snd ids_primed_normal) in
     p', fav_normal in
@@ -1642,8 +1640,8 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
       let p'' =
         let map_res_action e ra = (* update the vpath in resource attributes *)
           let vpath, _ = Errdesc.vpath_find p' e in
-          { ra with Sil.ra_vpath = vpath } in
-        Prop.attribute_map_resource p' map_res_action in
+          { ra with PredSymb.ra_vpath = vpath } in
+        Attribute.map_resource p' map_res_action in
       p'', fav in
     let post_process_result fav_normal p path =
       let p' = prop_normal_to_primed fav_normal p in
@@ -1706,7 +1704,7 @@ let node handle_exn tenv node (pset : Paths.PathSet.t) : Paths.PathSet.t =
         end
       else sym_exec_wrapper handle_exn tenv pdesc instr (p, tr) in
     Paths.PathSet.union pset2 pset1 in
-  let exe_instr_pset (pset, stack) instr = (** handle a single instruction at the set level *)
+  let exe_instr_pset (pset, stack) instr = (* handle a single instruction at the set level *)
     let pp_stack_instr pset' =
       L.d_str "Stack Instruction "; Sil.d_instr instr; L.d_ln ();
       L.d_strln "Stack Instruction Returns";

@@ -15,8 +15,8 @@ module F = Format
 module YBU = Yojson.Basic.Util
 
 
-(* Each command line option may appear in the --help list of any executable, these tags are used to
-   specify which executables for which an option will be documented. *)
+(** Each command line option may appear in the --help list of any executable, these tags are used to
+    specify which executables for which an option will be documented. *)
 type exe = Analyze | Clang | Java | Llvm | Print | StatsAggregator | Toplevel
 
 let exes = [
@@ -122,7 +122,7 @@ let full_desc_list = ref []
 
 let exe_desc_lists = IList.map (fun (_, exe) -> (exe, ref [])) exes
 
-(* add desc to all desc_lists for the purposes of parsing, include desc in --help only for exes *)
+(** add desc to all desc_lists for the purposes of parsing, include desc in --help only for exes *)
 let add exes desc =
   full_desc_list := desc :: !full_desc_list ;
   IList.iter (fun (exe, desc_list) ->
@@ -312,12 +312,12 @@ let mk_set_from_json ~default ~default_to_string ~f
     ~decode_json:(fun json -> [dashdash long; Yojson.Basic.to_string json])
     ~mk_spec:(fun set -> Arg.String set)
 
-(* A ref to a function used during argument parsing to process anonymous arguments. By default,
-   anonymous arguments are rejected. *)
+(** A ref to a function used during argument parsing to process anonymous arguments. By default,
+    anonymous arguments are rejected. *)
 let anon_fun = ref (fun arg -> raise (Arg.Bad ("unexpected anonymous argument: " ^ arg)))
 
-(* Clients declare that anonymous arguments are acceptable by calling [mk_anon], which returns a ref
-   storing the anonymous arguments. *)
+(** Clients declare that anonymous arguments are acceptable by calling [mk_anon], which returns a
+    ref storing the anonymous arguments. *)
 let mk_anon () =
   let anon = ref [] in
   anon_fun := (fun arg -> anon := arg :: !anon) ;

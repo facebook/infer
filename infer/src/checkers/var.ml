@@ -22,8 +22,8 @@ let of_pvar pvar =
   ProgramVar pvar
 
 let to_exp = function
-  | ProgramVar pvar -> Sil.Lvar pvar
-  | LogicalVar id -> Sil.Var id
+  | ProgramVar pvar -> Exp.Lvar pvar
+  | LogicalVar id -> Exp.Var id
 
 let compare v1 v2 = match v1, v2 with
   | ProgramVar pv1, ProgramVar pv2 -> Pvar.compare pv1 pv2

@@ -55,9 +55,10 @@ let build_sil_field type_ptr_to_sil_type tenv field_name type_ptr prop_attribute
 (* Given a list of declarations in an interface returns a list of fields  *)
 let rec get_fields type_ptr_to_sil_type tenv curr_class decl_list =
   let open Clang_ast_t in
-  let add_field name_info type_ptr attributes decl_list' =
+  let add_field name_info qt attributes decl_list' =
     let fields = get_fields type_ptr_to_sil_type tenv curr_class decl_list' in
-    let field_tuple = build_sil_field type_ptr_to_sil_type tenv name_info type_ptr attributes in
+    let field_tuple = build_sil_field type_ptr_to_sil_type tenv
+        name_info qt.Clang_ast_t.type_ptr attributes in
     General_utils.append_no_duplicates_fields [field_tuple] fields in
   match decl_list with
   | [] -> []

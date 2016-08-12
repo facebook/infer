@@ -46,7 +46,7 @@ val object_type : JClasspath.program -> Tenv.t -> JBasics.object_type -> Typ.t
 
 (** create sizeof expressions from the object type and the list of subtypes *)
 val sizeof_of_object_type : JClasspath.program -> Tenv.t -> JBasics.object_type -> Subtype.t
-  -> Sil.exp
+  -> Exp.t
 
 (** transforms a Java type to a Typ.t. *)
 val value_type : JClasspath.program -> Tenv.t -> JBasics.value_type -> Typ.t

@@ -110,13 +110,16 @@ module Xml : sig
     | String of string
     (** create a tree *)
   val create_tree : string -> (string * string) list -> node list -> node
+
   (** print an xml document, if the first parameter is false on a single line without preamble *)
   val pp_document : bool -> Format.formatter -> node -> unit
 
   (** print the opening lines of an xml document consisting of a main tree with the given name *)
   val pp_open : Format.formatter -> string -> unit
+
   (** print the closing lines of an xml document consisting of a main tree with the given name *)
   val pp_close : Format.formatter -> string -> unit
+
   (** print a node between a [pp_open] and a [pp_close] *)
   val pp_inner_node : Format.formatter -> node -> unit
 end

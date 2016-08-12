@@ -82,3 +82,21 @@ let pp pe f =>
   | Cptr_to_fld fn _ => F.fprintf f "__fld_%a" Ident.pp_fieldname fn;
 
 let to_string c => pp_to_string (pp pe_text) c;
+
+let iszero_int_float =
+  fun
+  | Cint i => IntLit.iszero i
+  | Cfloat 0.0 => true
+  | _ => false;
+
+let isone_int_float =
+  fun
+  | Cint i => IntLit.isone i
+  | Cfloat 1.0 => true
+  | _ => false;
+
+let isminusone_int_float =
+  fun
+  | Cint i => IntLit.isminusone i
+  | Cfloat (-1.0) => true
+  | _ => false;

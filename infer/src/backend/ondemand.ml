@@ -122,7 +122,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
   let callee_pname = Cfg.Procdesc.get_proc_name callee_pdesc in
 
-  (** Dot means start of a procedure *)
+  (* Dot means start of a procedure *)
   L.log_progress_procedure ();
   if trace () then L.stderr "[%d] run_proc_analysis %a -> %a@."
       !nesting

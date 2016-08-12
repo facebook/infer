@@ -199,7 +199,7 @@ let callback_check_write_to_parcel_java
   let is_write_to_parcel this_expr this_type =
     let method_match () =
       Procname.java_get_method pname_java = "writeToParcel" in
-    let expr_match () = Sil.exp_is_this this_expr in
+    let expr_match () = Exp.is_this this_expr in
     let type_match () =
       let class_name =
         Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "android.os.Parcelable") in
@@ -282,7 +282,7 @@ let callback_check_write_to_parcel_java
     check_match (r_call_descs, w_call_descs) in
 
   let do_instr _ instr = match instr with
-    | Sil.Call (_, Sil.Const (Const.Cfun _), (_this_exp, this_type):: _, _, _) ->
+    | Sil.Call (_, Exp.Const (Const.Cfun _), (_this_exp, this_type):: _, _, _) ->
         let this_exp = Idenv.expand_expr idenv _this_exp in
         if is_write_to_parcel this_exp this_type then begin
           if !verbose then
@@ -327,7 +327,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
       IList.filter is_class_type formals in
     IList.map fst class_formals) in
   let equal_formal_param exp formal_name = match exp with
-    | Sil.Lvar pvar ->
+    | Exp.Lvar pvar ->
         let name = Pvar.get_name pvar in
         Mangled.equal name formal_name
     | _ -> false in
@@ -342,24 +342,24 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
     | _ ->
         false in
 
-  let checks_to_formals = ref Sil.ExpSet.empty in
+  let checks_to_formals = ref Exp.Set.empty in
 
   let handle_check_of_formal e =
-    let repeated = Sil.ExpSet.mem e !checks_to_formals in
+    let repeated = Exp.Set.mem e !checks_to_formals in
     if repeated && !verbose then L.stdout "Repeated Null Check of Formal: %a@." (Sil.pp_exp pe_text) e
     else begin
-      checks_to_formals := Sil.ExpSet.add e !checks_to_formals;
+      checks_to_formals := Exp.Set.add e !checks_to_formals;
       if !verbose then L.stdout "Null Check of Formal: %a@." (Sil.pp_exp pe_text) e
     end in
 
   let summary_checks_of_formals () =
     let formal_names = Lazy.force class_formal_names in
-    let nchecks = Sil.ExpSet.cardinal !checks_to_formals in
+    let nchecks = Exp.Set.cardinal !checks_to_formals in
     let nformals = IList.length formal_names in
     if (nchecks > 0 && nchecks < nformals) then
       begin
         let was_not_found formal_name =
-          not (Sil.ExpSet.exists (fun exp -> equal_formal_param exp formal_name) !checks_to_formals) in
+          not (Exp.Set.exists (fun exp -> equal_formal_param exp formal_name) !checks_to_formals) in
         let missing = IList.filter was_not_found formal_names in
         let loc = Cfg.Procdesc.get_loc proc_desc in
         let pp_file_loc fmt () =
@@ -373,7 +373,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
       end in
 
   let do_instr _ instr = match instr with
-    | Sil.Call (_, Sil.Const (Const.Cfun pn), (_arg1, _):: _, _, _) when is_nullcheck pn ->
+    | Sil.Call (_, Exp.Const (Const.Cfun pn), (_arg1, _):: _, _, _) when is_nullcheck pn ->
         let arg1 = Idenv.expand_expr idenv _arg1 in
         if is_formal_param arg1 then handle_check_of_formal arg1;
         if !verbose then
@@ -410,7 +410,7 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
   let ret_const_key = "return_const" in
 
   let reverse_find_instr f node =
-    (** this is not really sound but for the moment a sufficient approximation *)
+    (* this is not really sound but for the moment a sufficient approximation *)
     let has_instr node =
       try ignore(IList.find f (Cfg.Node.get_instrs node)); true
       with Not_found -> false in
@@ -427,35 +427,35 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
     match get_proc_desc proc_name' with
       Some proc_desc' ->
         let is_return_instr = function
-          | Sil.Set (Sil.Lvar p, _, _, _)
+          | Sil.Set (Exp.Lvar p, _, _, _)
             when Pvar.equal p (Cfg.Procdesc.get_ret_var proc_desc') -> true
           | _ -> false in
         (match reverse_find_instr is_return_instr (Cfg.Procdesc.get_exit_node proc_desc') with
-         | Some (Sil.Set (_, _, Sil.Const (Const.Cclass n), _)) -> Ident.name_to_string n
+         | Some (Sil.Set (_, _, Exp.Const (Const.Cclass n), _)) -> Ident.name_to_string n
          | _ -> "<" ^ (Procname.to_string proc_name') ^ ">")
     | None -> "?" in
 
   let get_actual_arguments node instr = match instr with
-    | Sil.Call (_, Sil.Const (Const.Cfun _), _:: args, _, _) ->
+    | Sil.Call (_, Exp.Const (Const.Cfun _), _:: args, _, _) ->
         (try
            let find_const exp =
              let expanded = Idenv.expand_expr idenv exp in
              match expanded with
-             | Sil.Const (Const.Cclass n) -> Ident.name_to_string n
-             | Sil.Lvar _ -> (
+             | Exp.Const (Const.Cclass n) -> Ident.name_to_string n
+             | Exp.Lvar _ -> (
                  let is_call_instr set call = match set, call with
-                   | Sil.Set (_, _, Sil.Var (i1), _), Sil.Call (i2::[], _, _, _, _)
+                   | Sil.Set (_, _, Exp.Var (i1), _), Sil.Call (i2::[], _, _, _, _)
                      when Ident.equal i1 i2 -> true
                    | _ -> false in
                  let is_set_instr = function
-                   | Sil.Set (e1, _, _, _) when Sil.exp_equal expanded e1 -> true
+                   | Sil.Set (e1, _, _, _) when Exp.equal expanded e1 -> true
                    | _ -> false in
                  match reverse_find_instr is_set_instr node with
-                 (** Look for ivar := tmp *)
+                 (* Look for ivar := tmp *)
                  | Some s -> (
                      match reverse_find_instr (is_call_instr s) node with
-                     (** Look for tmp := foo() *)
-                     | Some (Sil.Call (_, Sil.Const (Const.Cfun pn), _, _, _)) ->
+                     (* Look for tmp := foo() *)
+                     | Some (Sil.Call (_, Exp.Const (Const.Cfun pn), _, _, _)) ->
                          get_return_const pn
                      | _ -> "?")
                  | _ -> "?")
@@ -500,27 +500,26 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
 (** Check field accesses. *)
 let callback_check_field_access { Callbacks.proc_desc } =
   let rec do_exp is_read = function
-    | Sil.Var _ -> ()
-    | Sil.UnOp (_, e, _) ->
+    | Exp.Var _ -> ()
+    | Exp.UnOp (_, e, _) ->
         do_exp is_read e
-    | Sil.BinOp (_, e1, e2) ->
+    | Exp.BinOp (_, e1, e2) ->
         do_exp is_read e1;
         do_exp is_read e2
-    | Sil.Exn _ -> ()
-    | Sil.Closure _ -> ()
-    | Sil.Const _ -> ()
-    | Sil.Cast (_, e) ->
+    | Exp.Exn _ -> ()
+    | Exp.Closure _ -> ()
+    | Exp.Const _ -> ()
+    | Exp.Cast (_, e) ->
         do_exp is_read e
-    | Sil.Lvar _ -> ()
-    | Sil.Lfield (e, fn, _) ->
+    | Exp.Lvar _ -> ()
+    | Exp.Lfield (e, fn, _) ->
         if not (Ident.java_fieldname_is_outer_instance fn) then
           L.stdout "field %s %s@." (Ident.fieldname_to_string fn) (if is_read then "reading" else "writing");
         do_exp is_read e
-    | Sil.Lindex (e1, e2) ->
+    | Exp.Lindex (e1, e2) ->
         do_exp is_read e1;
         do_exp is_read e2
-    | Sil.Sizeof _ -> ()
-    | Sil.Attribute _ -> () in
+    | Exp.Sizeof _ -> () in
   let do_read_exp = do_exp true in
   let do_write_exp = do_exp false in
   let do_instr _ = function
@@ -545,7 +544,7 @@ let callback_check_field_access { Callbacks.proc_desc } =
 (** Print c method calls. *)
 let callback_print_c_method_calls { Callbacks.proc_desc; proc_name } =
   let do_instr node = function
-    | Sil.Call (_, Sil.Const (Const.Cfun pn), (e, _):: _, loc, _)
+    | Sil.Call (_, Exp.Const (Const.Cfun pn), (e, _):: _, loc, _)
       when Procname.is_c_method pn ->
         let receiver = match Errdesc.exp_rv_dexp node e with
           | Some de -> DecompiledExp.to_string de
@@ -558,7 +557,7 @@ let callback_print_c_method_calls { Callbacks.proc_desc; proc_name } =
           "CHECKERS_PRINT_OBJC_METHOD_CALLS"
           loc
           description
-    | Sil.Call (_, Sil.Const (Const.Cfun pn), _, loc, _) ->
+    | Sil.Call (_, Exp.Const (Const.Cfun pn), _, loc, _) ->
         let description =
           Printf.sprintf "call to %s" (Procname.to_string pn) in
         ST.report_error
@@ -584,9 +583,9 @@ let callback_print_access_to_globals { Callbacks.proc_desc; proc_name } =
       loc
       description in
   let rec get_global_var = function
-    | Sil.Lvar pvar when Pvar.is_global pvar ->
+    | Exp.Lvar pvar when Pvar.is_global pvar ->
         Some pvar
-    | Sil.Lfield (e, _, _) ->
+    | Exp.Lfield (e, _, _) ->
         get_global_var e
     | _ ->
         None in

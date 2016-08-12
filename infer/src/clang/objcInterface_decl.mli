@@ -9,9 +9,8 @@
 
 open! Utils
 
-(** In this module an ObjC interface declaration is processed. The class  *)
-(** is saved in the tenv as a struct with the corresponding fields, potential superclass and *)
-(** list of defined methods *)
+(** In this module an ObjC interface declaration is processed. The class is saved in the tenv as a
+    struct with the corresponding fields, potential superclass and list of defined methods *)
 open CFrontend_utils
 
 val interface_declaration : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl ->

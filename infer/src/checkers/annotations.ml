@@ -15,9 +15,10 @@ module L = Logging
 (** Annotations. *)
 
 (** Method signature with annotations. *)
-type annotated_signature =
-  { ret : Typ.item_annotation * Typ.t; (** Annotated return type. *)
-    params: (Mangled.t * Typ.item_annotation * Typ.t) list } (** Annotated parameters. *)
+type annotated_signature = {
+  ret : Typ.item_annotation * Typ.t; (** Annotated return type. *)
+  params: (Mangled.t * Typ.item_annotation * Typ.t) list (** Annotated parameters. *)
+}
 
 let param_equal (s1, ia1, t1) (s2, ia2, t2) =
   Mangled.equal s1 s2 &&

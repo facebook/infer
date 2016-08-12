@@ -238,6 +238,26 @@ module Make (TraceDomain : AbstractDomain.S) = struct
     then tree1
     else BaseMap.merge (fun _ n1 n2 -> node_merge n1 n2) tree1 tree2
 
+  let rec access_map_fold_ f base accesses m acc =
+    AccessMap.fold (fun access node acc -> node_fold_ f base (accesses @ [access]) node acc) m acc
+  and node_fold_ f base accesses (trace, tree) acc =
+    let cur_ap_raw = base, accesses in
+    match tree with
+    | Subtree access_map ->
+        let acc' = f acc (AccessPath.Exact cur_ap_raw) trace in
+        access_map_fold_ f base accesses access_map acc'
+    | Star ->
+        f acc (AccessPath.Abstracted cur_ap_raw) trace
+
+  let node_fold (f : 'a -> AccessPath.t -> TraceDomain.astate -> 'a) base node acc =
+    node_fold_ f base [] node acc
+
+  let access_map_fold (f : 'a -> AccessPath.t -> TraceDomain.astate -> 'a) base m acc =
+    access_map_fold_ f base [] m acc
+
+  let fold (f : 'a ->  AccessPath.t -> TraceDomain.astate -> 'a) tree acc_ =
+    BaseMap.fold (fun base node acc -> node_fold f base node acc) tree acc_
+
   (* replace the normal leaves of [node] with starred leaves *)
   let rec node_add_stars ((trace, tree) as node) = match tree with
     | Subtree subtree ->

@@ -155,9 +155,9 @@ let rec get_struct_fields tenv decl =
     | RecordDecl (_, _, _, _, decl_list, _, _) -> decl_list
     | _ -> [] in
   let do_one_decl decl = match decl with
-    | FieldDecl (_, name_info, type_ptr, _) ->
+    | FieldDecl (_, name_info, qt, _) ->
         let id = General_utils.mk_class_field_name name_info in
-        let typ = type_ptr_to_sil_type tenv type_ptr in
+        let typ = type_ptr_to_sil_type tenv qt.Clang_ast_t.type_ptr in
         let annotation_items = [] in (* For the moment we don't use them*)
         [(id, typ, annotation_items)]
     | _ -> [] in
@@ -181,7 +181,7 @@ and get_struct_cpp_class_declaration_type tenv decl =
         else [] in
       let struct_annotations =
         if csu = Csu.Class Csu.CPP then Typ.cpp_class_annotation
-        else Typ.item_annotation_empty in  (* No annotations for structs *)
+        else Typ.item_annotation_empty (* No annotations for structs *) in
       if is_complete_definition then (
         Ast_utils.update_sil_types_map type_ptr (Typ.Tvar sil_typename);
         let non_static_fields = get_struct_fields tenv decl in

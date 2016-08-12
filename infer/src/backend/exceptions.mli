@@ -12,15 +12,17 @@ open! Utils
 
 (** Functions for logging and printing exceptions *)
 
-type exception_visibility = (** visibility of the exception *)
+(** visibility of the exception *)
+type exception_visibility =
   | Exn_user (** always add to error log *)
   | Exn_developer (** only add to error log in developer mode *)
   | Exn_system (** never add to error log *)
 
-type exception_severity = (** severity of bugs *)
-  | High (* high severity bug *)
-  | Medium (* medium severity bug *)
-  | Low (* low severity bug *)
+(** severity of bugs *)
+type exception_severity =
+  | High (** high severity bug *)
+  | Medium (** medium severity bug *)
+  | Low (** low severity bug *)
 
 (** kind of error/warning *)
 type err_kind =
@@ -44,7 +46,7 @@ exception Condition_is_assignment of Localise.error_desc * Logging.ml_loc
 exception Context_leak of Localise.error_desc * Logging.ml_loc
 exception Custom_error of string * Localise.error_desc
 exception Dangling_pointer_dereference of
-    Sil.dangling_kind option * Localise.error_desc * Logging.ml_loc
+    PredSymb.dangling_kind option * Localise.error_desc * Logging.ml_loc
 exception Deallocate_stack_variable of Localise.error_desc
 exception Deallocate_static_memory of Localise.error_desc
 exception Deallocation_mismatch of Localise.error_desc * Logging.ml_loc
@@ -59,7 +61,7 @@ exception Internal_error of Localise.error_desc
 exception Java_runtime_exception of Typename.t * string * Localise.error_desc
 exception Leak of
     bool * Prop.normal Prop.t * Sil.hpred * (exception_visibility * Localise.error_desc)
-    * bool * Sil.resource * Logging.ml_loc
+    * bool * PredSymb.resource * Logging.ml_loc
 exception Missing_fld of Ident.fieldname * Logging.ml_loc
 exception Premature_nil_termination of Localise.error_desc * Logging.ml_loc
 exception Null_dereference of Localise.error_desc * Logging.ml_loc

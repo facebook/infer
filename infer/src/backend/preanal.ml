@@ -24,7 +24,7 @@ let add_dispatch_calls pdesc cg tenv =
     let has_dispatch_call instrs =
       IList.exists instr_is_dispatch_call instrs in
     let replace_dispatch_calls = function
-      | Sil.Call (ret_ids, (Sil.Const (Const.Cfun callee_pname) as call_exp),
+      | Sil.Call (ret_ids, (Exp.Const (Const.Cfun callee_pname) as call_exp),
                   (((_, receiver_typ) :: _) as args), loc, call_flags) as instr
         when call_flags_is_dispatch call_flags ->
           (* the frontend should not populate the list of targets *)
@@ -143,7 +143,7 @@ module NullifyTransferFunctions = struct
               active_defs
               lhs_ids in
           active_defs', to_nullify
-      | Sil.Set (Sil.Lvar lhs_pvar, _, _, _) ->
+      | Sil.Set (Exp.Lvar lhs_pvar, _, _, _) ->
           VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify
       | Sil.Set _ | Prune _ | Declare_locals _ | Stackop _ | Remove_temps _
       | Abstract _ ->
@@ -218,9 +218,9 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
              Var.Set.fold
                (fun var (pvars_acc, ids_acc) -> match Var.to_exp var with
                   (* we nullify all address taken variables at the end of the procedure *)
-                  | Sil.Lvar pvar when not (AddressTaken.Domain.mem pvar address_taken_vars) ->
+                  | Exp.Lvar pvar when not (AddressTaken.Domain.mem pvar address_taken_vars) ->
                       pvar :: pvars_acc, ids_acc
-                  | Sil.Var id ->
+                  | Exp.Var id ->
                       pvars_acc, id :: ids_acc
                   | _ -> pvars_acc, ids_acc)
                to_nullify
@@ -246,9 +246,9 @@ module CopyProp =
 let do_copy_propagation pdesc tenv =
   let proc_cfg = ExceptionalOneInstrPerNodeCfg.from_pdesc pdesc in
   let copy_prop_inv_map = CopyProp.exec_cfg proc_cfg (ProcData.make_default pdesc tenv) in
-  (** [var_map] represents a chain of variable. copies v_0 -> v_1 ... -> v_n. starting from some
-      ident v_j, we want to walk backward through the chain to find the lowest v_i that is also an
-      ident. *)
+  (* [var_map] represents a chain of variable. copies v_0 -> v_1 ... -> v_n. starting from some
+     ident v_j, we want to walk backward through the chain to find the lowest v_i that is also an
+     ident. *)
   let id_sub var_map id =
     (* [last_id] is the highest identifier in the chain that we've seen so far *)
     let rec id_sub_inner var_map var last_id =
@@ -259,10 +259,10 @@ let do_copy_propagation pdesc tenv =
           | _ -> last_id in
         id_sub_inner var_map var' last_id'
       with Not_found ->
-        Sil.Var last_id in
+        Exp.Var last_id in
     id_sub_inner var_map (Var.of_id id) id in
 
-  (** perform copy-propagation on each instruction in [node] *)
+  (* perform copy-propagation on each instruction in [node] *)
   let rev_transform_node_instrs node =
     IList.fold_left
       (fun (instrs, changed) (instr, id_opt) ->

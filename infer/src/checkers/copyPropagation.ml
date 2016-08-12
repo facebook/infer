@@ -86,11 +86,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   type extras = ProcData.no_extras
 
   let exec_instr astate _ _ = function
-    | Sil.Letderef (lhs_id, Sil.Lvar rhs_pvar, _, _) when not (Pvar.is_global rhs_pvar) ->
+    | Sil.Letderef (lhs_id, Exp.Lvar rhs_pvar, _, _) when not (Pvar.is_global rhs_pvar) ->
         Domain.gen (Var.of_id lhs_id) (Var.of_pvar rhs_pvar) astate
-    | Sil.Set (Sil.Lvar lhs_pvar, _, Sil.Var rhs_id, _) when not (Pvar.is_global lhs_pvar) ->
+    | Sil.Set (Exp.Lvar lhs_pvar, _, Exp.Var rhs_id, _) when not (Pvar.is_global lhs_pvar) ->
         Domain.kill_then_gen (Var.of_pvar lhs_pvar) (Var.of_id rhs_id) astate
-    | Sil.Set (Sil.Lvar lhs_pvar, _, _, _) ->
+    | Sil.Set (Exp.Lvar lhs_pvar, _, _, _) ->
         (* non-copy assignment; can only kill *)
         Domain.kill_copies_with_var (Var.of_pvar lhs_pvar) astate
     | Sil.Letderef _
@@ -103,7 +103,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let kill_ret_ids astate_acc id =
           Domain.kill_copies_with_var (Var.of_id id) astate_acc in
         let kill_actuals_by_ref astate_acc = function
-          | (Sil.Lvar pvar, Typ.Tptr _) -> Domain.kill_copies_with_var (Var.of_pvar pvar) astate_acc
+          | (Exp.Lvar pvar, Typ.Tptr _) -> Domain.kill_copies_with_var (Var.of_pvar pvar) astate_acc
           | _ -> astate_acc in
         let astate' = IList.fold_left kill_ret_ids astate ret_ids in
         if !Config.curr_language = Config.Java

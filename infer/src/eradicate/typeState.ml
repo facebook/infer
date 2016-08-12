@@ -16,7 +16,7 @@ module P = Printf
 (** Module for typestates: maps from expressions to annotated types, with extensions. *)
 
 (** Parameters of a call. *)
-type parameters = (Sil.exp * Typ.t) list
+type parameters = (Exp.t * Typ.t) list
 
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 
@@ -24,17 +24,18 @@ type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 type 'a ext =
   {
     empty : 'a; (** empty extension *)
-    check_instr : (** check the extension for an instruction *)
+    check_instr :
       Tenv.t -> get_proc_desc -> Procname.t ->
-      Cfg.Procdesc.t -> 'a -> Sil.instr -> parameters -> 'a;
+      Cfg.Procdesc.t -> 'a -> Sil.instr -> parameters ->
+      'a; (** check the extension for an instruction *)
     join : 'a -> 'a -> 'a; (** join two extensions *)
     pp : Format.formatter -> 'a -> unit (** pretty print an extension *)
   }
 
 
 module M = Map.Make (struct
-    type t = Sil.exp
-    let compare = Sil.exp_compare end)
+    type t = Exp.t
+    let compare = Exp.compare end)
 
 type range = Typ.t * TypeAnnotation.t * (Location.t list)
 
@@ -129,25 +130,25 @@ let join ext t1 t2 =
   }
 
 let lookup_id id typestate =
-  try Some (M.find (Sil.Var id) typestate.map)
+  try Some (M.find (Exp.Var id) typestate.map)
   with Not_found -> None
 
 let lookup_pvar pvar typestate =
-  try Some (M.find (Sil.Lvar pvar) typestate.map)
+  try Some (M.find (Exp.Lvar pvar) typestate.map)
   with Not_found -> None
 
 let add_id id range typestate =
-  let map' = M.add (Sil.Var id) range typestate.map in
+  let map' = M.add (Exp.Var id) range typestate.map in
   if map' == typestate.map then typestate
   else { typestate with map = map' }
 
 let add pvar range typestate =
-  let map' = M.add (Sil.Lvar pvar) range typestate.map in
+  let map' = M.add (Exp.Lvar pvar) range typestate.map in
   if map' == typestate.map then typestate
   else { typestate with map = map' }
 
 let remove_id id typestate =
-  let map' = M.remove (Sil.Var id) typestate.map in
+  let map' = M.remove (Exp.Var id) typestate.map in
   if map' == typestate.map then typestate
   else { typestate with map = map' }
 

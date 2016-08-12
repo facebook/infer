@@ -24,7 +24,7 @@ type lifecycle_trace = (Procname.t * Typ.t option) list
 (** list of instrs and temporary variables created during inhabitation and a cache of types that
  * have already been inhabited *)
 type env = { instrs : Sil.instr list;
-             cache : Sil.exp TypMap.t;
+             cache : Exp.t TypMap.t;
              (* set of types currently being inhabited. consult to prevent infinite recursion *)
              cur_inhabiting : TypSet.t;
              pc : Location.t;
@@ -52,7 +52,7 @@ let env_add_instr instr env =
 (** call flags for an allocation or call to a constructor *)
 let cf_alloc = CallFlags.default
 
-let fun_exp_from_name proc_name = Sil.Const (Const.Cfun (proc_name))
+let fun_exp_from_name proc_name = Exp.Const (Const.Cfun (proc_name))
 
 let local_name_cntr = ref 0
 
@@ -70,10 +70,10 @@ let get_non_receiver_formals formals = tl_or_empty formals
  * component but the size component of ret_typ is always -1. *)
 let inhabit_alloc sizeof_typ sizeof_len ret_typ alloc_kind env =
   let retval = Ident.create_fresh Ident.knormal in
-  let inhabited_exp = Sil.Var retval in
+  let inhabited_exp = Exp.Var retval in
   let call_instr =
     let fun_new = fun_exp_from_name alloc_kind in
-    let sizeof_exp = Sil.Sizeof (sizeof_typ, sizeof_len, Subtype.exact) in
+    let sizeof_exp = Exp.Sizeof (sizeof_typ, sizeof_len, Subtype.exact) in
     let args = [(sizeof_exp, Typ.Tptr (ret_typ, Typ.Pk_pointer))] in
     Sil.Call ([retval], fun_new, args, env.pc, cf_alloc) in
   (inhabited_exp, env_add_instr call_instr env)
@@ -85,7 +85,7 @@ let rec inhabit_typ typ cfg env =
   with Not_found ->
     let inhabit_internal typ env = match typ with
       | Typ.Tptr (Typ.Tarray (inner_typ, Some _), Typ.Pk_pointer) ->
-          let len = Sil.Const (Const.Cint (IntLit.one)) in
+          let len = Exp.Const (Const.Cint (IntLit.one)) in
           let arr_typ = Typ.Tarray (inner_typ, Some IntLit.one) in
           inhabit_alloc arr_typ (Some len) typ ModelBuiltins.__new_array env
       | Typ.Tptr (typ, Typ.Pk_pointer) as ptr_to_typ ->
@@ -123,15 +123,15 @@ let rec inhabit_typ typ cfg env =
            * both fresh. the only point of this is to add a descriptive local name that makes error
            * reports from the harness look nicer -- it's not necessary to make symbolic execution work *)
           let fresh_local_exp =
-            Sil.Lvar (Pvar.mk typ_class_name (Procname.Java env.harness_name)) in
+            Exp.Lvar (Pvar.mk typ_class_name (Procname.Java env.harness_name)) in
           let write_to_local_instr =
             Sil.Set (fresh_local_exp, ptr_to_typ, allocated_obj_exp, env.pc) in
           let env' = env_add_instr write_to_local_instr env in
           let fresh_id = Ident.create_fresh Ident.knormal in
           let read_from_local_instr = Sil.Letderef (fresh_id, fresh_local_exp, ptr_to_typ, env'.pc) in
-          (Sil.Var fresh_id, env_add_instr read_from_local_instr env')
-      | Typ.Tint (_) -> (Sil.Const (Const.Cint (IntLit.zero)), env)
-      | Typ.Tfloat (_) -> (Sil.Const (Const.Cfloat 0.0), env)
+          (Exp.Var fresh_id, env_add_instr read_from_local_instr env')
+      | Typ.Tint (_) -> (Exp.Const (Const.Cint (IntLit.zero)), env)
+      | Typ.Tfloat (_) -> (Exp.Const (Const.Cfloat 0.0), env)
       | typ ->
           L.err "Couldn't inhabit typ: %a@." (Typ.pp pe_text) typ;
           assert false in

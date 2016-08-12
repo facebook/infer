@@ -17,11 +17,11 @@ module F = Format
 (** status of a timeout instance *)
 type status =
   {
-    (** Seconds remaining in the current timeout *)
     seconds_remaining : float;
+    (** Seconds remaining in the current timeout *)
 
-    (** Internal State of SymOp *)
     symop_state : SymOp.t
+    (** Internal State of SymOp *)
   }
 
 (** stack of suspended timeout instances *)
