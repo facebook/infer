@@ -13,6 +13,7 @@ type issue =
   | Cxx_reference_captured_in_objc_block
   | Direct_atomic_property_access
   | Global_variable_initialized_with_function_or_method_call
+  | Mutable_local_variable_in_component_file
   | Registered_observer_being_deallocated
   | Strong_delegate_warning
 
@@ -25,6 +26,7 @@ let to_string issue =
   | Direct_atomic_property_access -> "DIRECT_ATOMIC_PROPERTY_ACCESS"
   | Global_variable_initialized_with_function_or_method_call ->
       "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"
+  | Mutable_local_variable_in_component_file -> "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE"
   | Registered_observer_being_deallocated ->
       Localise.to_string (Localise.registered_observer_being_deallocated)
   | Strong_delegate_warning -> "STRONG_DELEGATE_WARNING"
@@ -36,6 +38,7 @@ let severity_of_issue issue =
   | Cxx_reference_captured_in_objc_block
   | Direct_atomic_property_access
   | Global_variable_initialized_with_function_or_method_call
+  | Mutable_local_variable_in_component_file -> Exceptions.Kadvice
   | Registered_observer_being_deallocated
   | Strong_delegate_warning -> Exceptions.Kwarning
 

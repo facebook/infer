@@ -28,6 +28,8 @@ val cf_autorelease : string
 val cf_bridging_release : string
 val cf_bridging_retain : string
 val cf_non_null_alloc : string
+val ckcomponent_cl : string
+val ckcomponentcontroller_cl : string
 val class_method : string
 val class_type : string
 val copy : string
@@ -55,6 +57,7 @@ val next_object : string
 val ns_make_collectable : string
 val nsarray_cl : string
 val nsautorelease_pool_cl : string
+val nsproxy_cl : string
 val nsobject_cl : string
 val nsstring_cl : string
 val objc_class : string

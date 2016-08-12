@@ -1629,7 +1629,7 @@ let pi_partial_join mode
     | Some (n', e') -> Exp.equal e e' && IntLit.lt n n' in
   let join_atom_check_pre p a =
     (* check for atoms in pre mode: fail if the negation is implied by the other side *)
-    let not_a = Prop.atom_negate a in
+    let not_a = Prover.atom_negate a in
     if (Prover.check_atom p not_a) then
       (L.d_str "join_atom_check failed on "; Sil.d_atom a; L.d_ln (); raise IList.Fail) in
   let join_atom_check_attribute p a =

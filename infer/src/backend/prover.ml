@@ -45,6 +45,17 @@ let rec is_java_class = function
   | Typ.Tarray (inner_typ, _) | Tptr (inner_typ, _) -> is_java_class inner_typ
   | _ -> false
 
+(** Negate an atom *)
+let atom_negate = function
+  | Sil.Aeq (Exp.BinOp (Binop.Le, e1, e2), Exp.Const (Const.Cint i)) when IntLit.isone i ->
+      Prop.mk_inequality (Exp.lt e2 e1)
+  | Sil.Aeq (Exp.BinOp (Binop.Lt, e1, e2), Exp.Const (Const.Cint i)) when IntLit.isone i ->
+      Prop.mk_inequality (Exp.le e2 e1)
+  | Sil.Aeq (e1, e2) -> Sil.Aneq (e1, e2)
+  | Sil.Aneq (e1, e2) -> Sil.Aeq (e1, e2)
+  | Sil.Apred (a, es) -> Sil.Anpred (a, es)
+  | Sil.Anpred (a, es) -> Sil.Apred (a, es)
+
 (** {2 Ordinary Theorem Proving} *)
 
 let (++) = IntLit.add
@@ -2143,7 +2154,7 @@ let check_array_bounds (sub1, sub2) prop =
           | _ -> [Exp.BinOp(Binop.PlusA, len2, Exp.minus_one)] (* only check len *) in
         IList.iter (fail_if_le len1) indices_to_check
     | ProverState.BCfrom_pre _atom ->
-        let atom_neg = Prop.atom_negate (Sil.atom_sub sub2 _atom) in
+        let atom_neg = atom_negate (Sil.atom_sub sub2 _atom) in
         (* L.d_strln_color Orange "BCFrom_pre"; Sil.d_atom atom_neg; L.d_ln (); *)
         if check_atom prop atom_neg then check_failed atom_neg in
   IList.iter check_bound (ProverState.get_bounds_checks ())
@@ -2243,7 +2254,7 @@ let is_cover cases =
     match cases with
     | [] -> check_inconsistency_pi acc_pi
     | (pi, _):: cases' ->
-        IList.for_all (fun a -> _is_cover ((Prop.atom_negate a) :: acc_pi) cases') pi in
+        IList.for_all (fun a -> _is_cover ((atom_negate a) :: acc_pi) cases') pi in
   _is_cover [] cases
 
 exception NO_COVER

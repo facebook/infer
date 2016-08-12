@@ -41,7 +41,8 @@ let checkers_for_ns decl_info impl_decl_info decls checker context =
   checker context decl_info impl_decl_info decls
 
 (* List of checkers on global variables *)
-let global_var_checker_list = [CFrontend_checkers.global_var_init_with_calls_warning]
+let global_var_checker_list = [CFrontend_checkers.global_var_init_with_calls_warning;
+                               ComponentKit.mutable_local_vars_advice]
 
 (* Invocation of checker belonging to global_var_checker_list *)
 let checker_for_global_var dec checker context =
@@ -162,7 +163,7 @@ let run_frontend_checkers_on_stmt context cfg cg method_decl instr =
       invoke_set_of_checkers call_checker context cfg cg decl_opt key while_stmt_checker_list;
       context
   | ObjCAtSynchronizedStmt _ ->
-      { (* context with *) CLintersContext.in_synchronized_block = true }
+      { context with CLintersContext.in_synchronized_block = true }
   | _ -> context
 
 let run_frontend_checkers_on_decl context cfg cg dec =

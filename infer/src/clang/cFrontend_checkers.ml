@@ -334,7 +334,7 @@ let checker_NSNotificationCenter _ decl_info impl_decl_info decls =
     match super with
     | Some (decl_list, impl_decl_info) ->
         (f decl_list
-         || exists_on_hierarchy f (Ast_utils.get_super impl_decl_info))
+         || exists_on_hierarchy f (Ast_utils.get_super_impl impl_decl_info))
     | None -> false in
 
   let eventually_removeObserver_in_whole_hierarchy decls impl_decl_info =

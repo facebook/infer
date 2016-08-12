@@ -463,423 +463,10 @@ let sigma_sub subst sigma =
   let f = Sil.hpred_sub subst in
   IList.map f sigma
 
-(** {2 Functions for normalization} *)
-
-(** This function assumes that if (x,Exp.Var(y)) in sub, then compare x y = 1 *)
-let sub_normalize sub =
-  let f (id, e) = (not (Ident.is_primed id)) && (not (Sil.ident_in_exp id e)) in
-  let sub' = Sil.sub_filter_pair f sub in
-  if Sil.sub_equal sub sub' then sub else sub'
-
-let (--) = IntLit.sub
-let (++) = IntLit.add
-
-let sym_eval abs e =
-  let rec eval e =
-    (* L.d_str " ["; Sil.d_exp e; L.d_str"] "; *)
-    match e with
-    | Exp.Var _ ->
-        e
-    | Exp.Closure c ->
-        let captured_vars =
-          IList.map (fun (exp, pvar, typ) -> (eval exp, pvar, typ)) c.captured_vars in
-        Exp.Closure { c with captured_vars; }
-    | Exp.Const _ ->
-        e
-    | Exp.Sizeof (Typ.Tarray (Typ.Tint ik, _), Some l, _)
-      when Typ.ikind_is_char ik && !Config.curr_language = Config.Clang ->
-        eval l
-    | Exp.Sizeof (Typ.Tarray (Typ.Tint ik, Some l), _, _)
-      when Typ.ikind_is_char ik && !Config.curr_language = Config.Clang ->
-        Exp.Const (Const.Cint l)
-    | Exp.Sizeof _ ->
-        e
-    | Exp.Cast (_, e1) ->
-        eval e1
-    | Exp.UnOp (Unop.LNot, e1, topt) ->
-        begin
-          match eval e1 with
-          | Exp.Const (Const.Cint i) when IntLit.iszero i ->
-              Exp.one
-          | Exp.Const (Const.Cint _) ->
-              Exp.zero
-          | Exp.UnOp(Unop.LNot, e1', _) ->
-              e1'
-          | e1' ->
-              if abs then Exp.get_undefined false else Exp.UnOp(Unop.LNot, e1', topt)
-        end
-    | Exp.UnOp (Unop.Neg, e1, topt) ->
-        begin
-          match eval e1 with
-          | Exp.UnOp (Unop.Neg, e2', _) ->
-              e2'
-          | Exp.Const (Const.Cint i) ->
-              Exp.int (IntLit.neg i)
-          | Exp.Const (Const.Cfloat v) ->
-              Exp.float (-. v)
-          | Exp.Var id ->
-              Exp.UnOp (Unop.Neg, Exp.Var id, topt)
-          | e1' ->
-              if abs then Exp.get_undefined false else Exp.UnOp (Unop.Neg, e1', topt)
-        end
-    | Exp.UnOp (Unop.BNot, e1, topt) ->
-        begin
-          match eval e1 with
-          | Exp.UnOp(Unop.BNot, e2', _) ->
-              e2'
-          | Exp.Const (Const.Cint i) ->
-              Exp.int (IntLit.lognot i)
-          | e1' ->
-              if abs then Exp.get_undefined false else Exp.UnOp (Unop.BNot, e1', topt)
-        end
-    | Exp.BinOp (Binop.Le, e1, e2) ->
-        begin
-          match eval e1, eval e2 with
-          | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
-              Exp.bool (IntLit.leq n m)
-          | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
-              Exp.bool (v <= w)
-          | Exp.BinOp (Binop.PlusA, e3, Exp.Const (Const.Cint n)), Exp.Const (Const.Cint m) ->
-              Exp.BinOp (Binop.Le, e3, Exp.int (m -- n))
-          | e1', e2' ->
-              Exp.le e1' e2'
-        end
-    | Exp.BinOp (Binop.Lt, e1, e2) ->
-        begin
-          match eval e1, eval e2 with
-          | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
-              Exp.bool (IntLit.lt n m)
-          | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
-              Exp.bool (v < w)
-          | Exp.Const (Const.Cint n), Exp.BinOp (Binop.MinusA, f1, f2) ->
-              Exp.BinOp
-                (Binop.Le, Exp.BinOp (Binop.MinusA, f2, f1), Exp.int (IntLit.minus_one -- n))
-          | Exp.BinOp(Binop.MinusA, f1 , f2), Exp.Const(Const.Cint n) ->
-              Exp.le (Exp.BinOp(Binop.MinusA, f1 , f2)) (Exp.int (n -- IntLit.one))
-          | Exp.BinOp (Binop.PlusA, e3, Exp.Const (Const.Cint n)), Exp.Const (Const.Cint m) ->
-              Exp.BinOp (Binop.Lt, e3, Exp.int (m -- n))
-          | e1', e2' ->
-              Exp.lt e1' e2'
-        end
-    | Exp.BinOp (Binop.Ge, e1, e2) ->
-        eval (Exp.le e2 e1)
-    | Exp.BinOp (Binop.Gt, e1, e2) ->
-        eval (Exp.lt e2 e1)
-    | Exp.BinOp (Binop.Eq, e1, e2) ->
-        begin
-          match eval e1, eval e2 with
-          | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
-              Exp.bool (IntLit.eq n m)
-          | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
-              Exp.bool (v = w)
-          | e1', e2' ->
-              Exp.eq e1' e2'
-        end
-    | Exp.BinOp (Binop.Ne, e1, e2) ->
-        begin
-          match eval e1, eval e2 with
-          | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
-              Exp.bool (IntLit.neq n m)
-          | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
-              Exp.bool (v <> w)
-          | e1', e2' ->
-              Exp.ne e1' e2'
-        end
-    | Exp.BinOp (Binop.LAnd, e1, e2) ->
-        let e1' = eval e1 in
-        let e2' = eval e2 in
-        begin match e1', e2' with
-          | Exp.Const (Const.Cint i), _ when IntLit.iszero i ->
-              e1'
-          | Exp.Const (Const.Cint _), _ ->
-              e2'
-          | _, Exp.Const (Const.Cint i) when IntLit.iszero i ->
-              e2'
-          | _, Exp.Const (Const.Cint _) ->
-              e1'
-          | _ ->
-              Exp.BinOp (Binop.LAnd, e1', e2')
-        end
-    | Exp.BinOp (Binop.LOr, e1, e2) ->
-        let e1' = eval e1 in
-        let e2' = eval e2 in
-        begin
-          match e1', e2' with
-          | Exp.Const (Const.Cint i), _ when IntLit.iszero i ->
-              e2'
-          | Exp.Const (Const.Cint _), _ ->
-              e1'
-          | _, Exp.Const (Const.Cint i) when IntLit.iszero i ->
-              e1'
-          | _, Exp.Const (Const.Cint _) ->
-              e2'
-          | _ ->
-              Exp.BinOp (Binop.LOr, e1', e2')
-        end
-    | Exp.BinOp(Binop.PlusPI, Exp.Lindex (ep, e1), e2) -> (* array access with pointer arithmetic *)
-        let e' = Exp.BinOp (Binop.PlusA, e1, e2) in
-        eval (Exp.Lindex (ep, e'))
-    | Exp.BinOp (Binop.PlusPI, (Exp.BinOp (Binop.PlusPI, e11, e12)), e2) ->
-        (* take care of pattern ((ptr + off1) + off2) *)
-        (* progress: convert inner +I to +A *)
-        let e2' = Exp.BinOp (Binop.PlusA, e12, e2) in
-        eval (Exp.BinOp (Binop.PlusPI, e11, e2'))
-    | Exp.BinOp (Binop.PlusA as oplus, e1, e2)
-    | Exp.BinOp (Binop.PlusPI as oplus, e1, e2) ->
-        let e1' = eval e1 in
-        let e2' = eval e2 in
-        let isPlusA = oplus = Binop.PlusA in
-        let ominus = if isPlusA then Binop.MinusA else Binop.MinusPI in
-        let (+++) x y = match x, y with
-          | _, Exp.Const (Const.Cint i) when IntLit.iszero i -> x
-          | Exp.Const (Const.Cint i), Exp.Const (Const.Cint j) ->
-              Exp.Const (Const.Cint (IntLit.add i j))
-          | _ -> Exp.BinOp (oplus, x, y) in
-        let (---) x y = match x, y with
-          | _, Exp.Const (Const.Cint i) when IntLit.iszero i -> x
-          | Exp.Const (Const.Cint i), Exp.Const (Const.Cint j) ->
-              Exp.Const (Const.Cint (IntLit.sub i j))
-          | _ -> Exp.BinOp (ominus, x, y) in
-        (* test if the extensible array at the end of [typ] has elements of type [elt] *)
-        let extensible_array_element_typ_equal elt typ =
-          Option.map_default (Typ.equal elt) false (Typ.get_extensible_array_element_typ typ) in
-        begin
-          match e1', e2' with
-          (* pattern for arrays and extensible structs:
-             sizeof(struct s {... t[l]}) + k * sizeof(t)) = sizeof(struct s {... t[l + k]}) *)
-          | Exp.Sizeof (typ, len1_opt, st), Exp.BinOp (Binop.Mult, len2, Exp.Sizeof (elt, None, _))
-            when isPlusA && (extensible_array_element_typ_equal elt typ) ->
-              let len = match len1_opt with Some len1 -> len1 +++ len2 | None -> len2 in
-              Exp.Sizeof (typ, Some len, st)
-          | Exp.Const c, _ when Const.iszero_int_float c ->
-              e2'
-          | _, Exp.Const c when Const.iszero_int_float c ->
-              e1'
-          | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
-              Exp.int (n ++ m)
-          | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
-              Exp.float (v +. w)
-          | Exp.UnOp(Unop.Neg, f1, _), f2
-          | f2, Exp.UnOp(Unop.Neg, f1, _) ->
-              Exp.BinOp (ominus, f2, f1)
-          | Exp.BinOp (Binop.PlusA, e, Exp.Const (Const.Cint n1)), Exp.Const (Const.Cint n2)
-          | Exp.BinOp (Binop.PlusPI, e, Exp.Const (Const.Cint n1)), Exp.Const (Const.Cint n2)
-          | Exp.Const (Const.Cint n2), Exp.BinOp (Binop.PlusA, e, Exp.Const (Const.Cint n1))
-          | Exp.Const (Const.Cint n2), Exp.BinOp (Binop.PlusPI, e, Exp.Const (Const.Cint n1)) ->
-              e +++ (Exp.int (n1 ++ n2))
-          | Exp.BinOp (Binop.MinusA, Exp.Const (Const.Cint n1), e), Exp.Const (Const.Cint n2)
-          | Exp.Const (Const.Cint n2), Exp.BinOp (Binop.MinusA, Exp.Const (Const.Cint n1), e) ->
-              Exp.int (n1 ++ n2) --- e
-          | Exp.BinOp (Binop.MinusA, e1, e2), e3 -> (* (e1-e2)+e3 --> e1 + (e3-e2) *)
-              (* progress: brings + to the outside *)
-              eval (e1 +++ (e3 --- e2))
-          | _, Exp.Const _ ->
-              e1' +++ e2'
-          | Exp.Const _, _ ->
-              if isPlusA then e2' +++ e1' else e1' +++ e2'
-          | Exp.Var _, Exp.Var _ ->
-              e1' +++ e2'
-          | _ ->
-              if abs && isPlusA then Exp.get_undefined false else
-              if abs && not isPlusA then e1' +++ (Exp.get_undefined false)
-              else e1' +++ e2'
-        end
-    | Exp.BinOp (Binop.MinusA as ominus, e1, e2)
-    | Exp.BinOp (Binop.MinusPI as ominus, e1, e2) ->
-        let e1' = eval e1 in
-        let e2' = eval e2 in
-        let isMinusA = ominus = Binop.MinusA in
-        let oplus = if isMinusA then Binop.PlusA else Binop.PlusPI in
-        let (+++) x y = Exp.BinOp (oplus, x, y) in
-        let (---) x y = Exp.BinOp (ominus, x, y) in
-        if Exp.equal e1' e2' then Exp.zero
-        else begin
-          match e1', e2' with
-          | Exp.Const c, _ when Const.iszero_int_float c ->
-              eval (Exp.UnOp(Unop.Neg, e2', None))
-          | _, Exp.Const c when Const.iszero_int_float c ->
-              e1'
-          | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
-              Exp.int (n -- m)
-          | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
-              Exp.float (v -. w)
-          | _, Exp.UnOp (Unop.Neg, f2, _) ->
-              eval (e1 +++ f2)
-          | _ , Exp.Const(Const.Cint n) ->
-              eval (e1' +++ (Exp.int (IntLit.neg n)))
-          | Exp.Const _, _ ->
-              e1' --- e2'
-          | Exp.Var _, Exp.Var _ ->
-              e1' --- e2'
-          | _, _ ->
-              if abs then Exp.get_undefined false else e1' --- e2'
-        end
-    | Exp.BinOp (Binop.MinusPP, e1, e2) ->
-        if abs then Exp.get_undefined false
-        else Exp.BinOp (Binop.MinusPP, eval e1, eval e2)
-    | Exp.BinOp (Binop.Mult, e1, e2) ->
-        let e1' = eval e1 in
-        let e2' = eval e2 in
-        begin
-          match e1', e2' with
-          | Exp.Const c, _ when Const.iszero_int_float c ->
-              Exp.zero
-          | Exp.Const c, _ when Const.isone_int_float c ->
-              e2'
-          | Exp.Const c, _ when Const.isminusone_int_float c ->
-              eval (Exp.UnOp (Unop.Neg, e2', None))
-          | _, Exp.Const c when Const.iszero_int_float c ->
-              Exp.zero
-          | _, Exp.Const c when Const.isone_int_float c ->
-              e1'
-          | _, Exp.Const c when Const.isminusone_int_float c ->
-              eval (Exp.UnOp (Unop.Neg, e1', None))
-          | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
-              Exp.int (IntLit.mul n m)
-          | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
-              Exp.float (v *. w)
-          | Exp.Var _, Exp.Var _ ->
-              Exp.BinOp(Binop.Mult, e1', e2')
-          | _, Exp.Sizeof _
-          | Exp.Sizeof _, _ ->
-              Exp.BinOp(Binop.Mult, e1', e2')
-          | _, _ ->
-              if abs then Exp.get_undefined false else Exp.BinOp(Binop.Mult, e1', e2')
-        end
-    | Exp.BinOp (Binop.Div, e1, e2) ->
-        let e1' = eval e1 in
-        let e2' = eval e2 in
-        begin
-          match e1', e2' with
-          | _, Exp.Const c when Const.iszero_int_float c ->
-              Exp.get_undefined false
-          | Exp.Const c, _ when Const.iszero_int_float c ->
-              e1'
-          | _, Exp.Const c when Const.isone_int_float c ->
-              e1'
-          | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
-              Exp.int (IntLit.div n m)
-          | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
-              Exp.float (v /.w)
-          | Exp.Sizeof (Typ.Tarray (elt, _), Some len, _), Exp.Sizeof (elt2, None, _)
-            (* pattern: sizeof(elt[len]) / sizeof(elt) = len *)
-            when Typ.equal elt elt2 ->
-              len
-          | Exp.Sizeof (Typ.Tarray (elt, Some len), None, _), Exp.Sizeof (elt2, None, _)
-            (* pattern: sizeof(elt[len]) / sizeof(elt) = len *)
-            when Typ.equal elt elt2 ->
-              Exp.Const (Const.Cint len)
-          | _ ->
-              if abs then Exp.get_undefined false else Exp.BinOp (Binop.Div, e1', e2')
-        end
-    | Exp.BinOp (Binop.Mod, e1, e2) ->
-        let e1' = eval e1 in
-        let e2' = eval e2 in
-        begin
-          match e1', e2' with
-          | _, Exp.Const (Const.Cint i) when IntLit.iszero i ->
-              Exp.get_undefined false
-          | Exp.Const (Const.Cint i), _ when IntLit.iszero i ->
-              e1'
-          | _, Exp.Const (Const.Cint i) when IntLit.isone i ->
-              Exp.zero
-          | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
-              Exp.int (IntLit.rem n m)
-          | _ ->
-              if abs then Exp.get_undefined false else Exp.BinOp (Binop.Mod, e1', e2')
-        end
-    | Exp.BinOp (Binop.Shiftlt, e1, e2) ->
-        if abs then Exp.get_undefined false else Exp.BinOp (Binop.Shiftlt, eval e1, eval e2)
-    | Exp.BinOp (Binop.Shiftrt, e1, e2) ->
-        if abs then Exp.get_undefined false else Exp.BinOp (Binop.Shiftrt, eval e1, eval e2)
-    | Exp.BinOp (Binop.BAnd, e1, e2) ->
-        let e1' = eval e1 in
-        let e2' = eval e2 in
-        begin match e1', e2' with
-          | Exp.Const (Const.Cint i), _ when IntLit.iszero i ->
-              e1'
-          | _, Exp.Const (Const.Cint i) when IntLit.iszero i ->
-              e2'
-          | Exp.Const (Const.Cint i1), Exp.Const(Const.Cint i2) ->
-              Exp.int (IntLit.logand i1 i2)
-          | _ ->
-              if abs then Exp.get_undefined false else Exp.BinOp (Binop.BAnd, e1', e2')
-        end
-    | Exp.BinOp (Binop.BOr, e1, e2) ->
-        let e1' = eval e1 in
-        let e2' = eval e2 in
-        begin match e1', e2' with
-          | Exp.Const (Const.Cint i), _ when IntLit.iszero i ->
-              e2'
-          | _, Exp.Const (Const.Cint i) when IntLit.iszero i ->
-              e1'
-          | Exp.Const (Const.Cint i1), Exp.Const(Const.Cint i2) ->
-              Exp.int (IntLit.logor i1 i2)
-          | _ ->
-              if abs then Exp.get_undefined false else Exp.BinOp (Binop.BOr, e1', e2')
-        end
-    | Exp.BinOp (Binop.BXor, e1, e2) ->
-        let e1' = eval e1 in
-        let e2' = eval e2 in
-        begin match e1', e2' with
-          | Exp.Const (Const.Cint i), _ when IntLit.iszero i ->
-              e2'
-          | _, Exp.Const (Const.Cint i) when IntLit.iszero i ->
-              e1'
-          | Exp.Const (Const.Cint i1), Exp.Const(Const.Cint i2) ->
-              Exp.int (IntLit.logxor i1 i2)
-          | _ ->
-              if abs then Exp.get_undefined false else Exp.BinOp (Binop.BXor, e1', e2')
-        end
-    | Exp.BinOp (Binop.PtrFld, e1, e2) ->
-        let e1' = eval e1 in
-        let e2' = eval e2 in
-        begin
-          match e2' with
-          | Exp.Const (Const.Cptr_to_fld (fn, typ)) ->
-              eval (Exp.Lfield(e1', fn, typ))
-          | Exp.Const (Const.Cint i) when IntLit.iszero i ->
-              Exp.zero (* cause a NULL dereference *)
-          | _ -> Exp.BinOp (Binop.PtrFld, e1', e2')
-        end
-    | Exp.Exn _ ->
-        e
-    | Exp.Lvar _ ->
-        e
-    | Exp.Lfield (e1, fld, typ) ->
-        let e1' = eval e1 in
-        Exp.Lfield (e1', fld, typ)
-    | Exp.Lindex(Exp.Lvar pv, e2) when false
-      (* removed: it interferes with re-arrangement and error messages *)
-      -> (* &x[n]  -->  &x + n *)
-        eval (Exp.BinOp (Binop.PlusPI, Exp.Lvar pv, e2))
-    | Exp.Lindex (Exp.BinOp(Binop.PlusPI, ep, e1), e2) -> (* array access with pointer arithmetic *)
-        let e' = Exp.BinOp (Binop.PlusA, e1, e2) in
-        eval (Exp.Lindex (ep, e'))
-    | Exp.Lindex (e1, e2) ->
-        let e1' = eval e1 in
-        let e2' = eval e2 in
-        Exp.Lindex(e1', e2') in
-  let e' = eval e in
-  (* L.d_str "sym_eval "; Sil.d_exp e; L.d_str" --> "; Sil.d_exp e'; L.d_ln (); *)
-  e'
-
-let exp_normalize sub exp =
-  let exp' = Sil.exp_sub sub exp in
-  if !Config.abs_val >= 1 then sym_eval true exp'
-  else sym_eval false exp'
-
-let texp_normalize sub exp = match exp with
-  | Exp.Sizeof (typ, len, st) -> Exp.Sizeof (typ, Option.map (exp_normalize sub) len, st)
-  | _ -> exp_normalize sub exp
-
-let exp_normalize_noabs sub exp =
-  Config.run_with_abs_val_equal_zero (exp_normalize sub) exp
-
 (** Return [true] if the atom is an inequality *)
 let atom_is_inequality = function
-  | Sil.Aeq (Exp.BinOp (Binop.Le, _, _), Exp.Const (Const.Cint i)) when IntLit.isone i -> true
-  | Sil.Aeq (Exp.BinOp (Binop.Lt, _, _), Exp.Const (Const.Cint i)) when IntLit.isone i -> true
+  | Sil.Aeq (Exp.BinOp ((Binop.Le | Binop.Lt), _, _), Exp.Const (Const.Cint i))
+    when IntLit.isone i -> true
   | _ -> false
 
 (** If the atom is [e<=n] return [e,n] *)
@@ -896,220 +483,7 @@ let atom_const_lt_exp = function
       Some (n, e1)
   | _ -> None
 
-(** Turn an inequality expression into an atom *)
-let mk_inequality e =
-  match e with
-  | Exp.BinOp (Binop.Le, base, Exp.Const (Const.Cint n)) ->
-      (* base <= n case *)
-      let nbase = exp_normalize_noabs Sil.sub_empty base in
-      (match nbase with
-       | Exp.BinOp(Binop.PlusA, base', Exp.Const (Const.Cint n')) ->
-           let new_offset = Exp.int (n -- n') in
-           let new_e = Exp.BinOp (Binop.Le, base', new_offset) in
-           Sil.Aeq (new_e, Exp.one)
-       | Exp.BinOp(Binop.PlusA, Exp.Const (Const.Cint n'), base') ->
-           let new_offset = Exp.int (n -- n') in
-           let new_e = Exp.BinOp (Binop.Le, base', new_offset) in
-           Sil.Aeq (new_e, Exp.one)
-       | Exp.BinOp(Binop.MinusA, base', Exp.Const (Const.Cint n')) ->
-           let new_offset = Exp.int (n ++ n') in
-           let new_e = Exp.BinOp (Binop.Le, base', new_offset) in
-           Sil.Aeq (new_e, Exp.one)
-       | Exp.BinOp(Binop.MinusA, Exp.Const (Const.Cint n'), base') ->
-           let new_offset = Exp.int (n' -- n -- IntLit.one) in
-           let new_e = Exp.BinOp (Binop.Lt, new_offset, base') in
-           Sil.Aeq (new_e, Exp.one)
-       | Exp.UnOp(Unop.Neg, new_base, _) ->
-           (* In this case, base = -new_base. Construct -n-1 < new_base. *)
-           let new_offset = Exp.int (IntLit.zero -- n -- IntLit.one) in
-           let new_e = Exp.BinOp (Binop.Lt, new_offset, new_base) in
-           Sil.Aeq (new_e, Exp.one)
-       | _ -> Sil.Aeq (e, Exp.one))
-  | Exp.BinOp (Binop.Lt, Exp.Const (Const.Cint n), base) ->
-      (* n < base case *)
-      let nbase = exp_normalize_noabs Sil.sub_empty base in
-      (match nbase with
-       | Exp.BinOp(Binop.PlusA, base', Exp.Const (Const.Cint n')) ->
-           let new_offset = Exp.int (n -- n') in
-           let new_e = Exp.BinOp (Binop.Lt, new_offset, base') in
-           Sil.Aeq (new_e, Exp.one)
-       | Exp.BinOp(Binop.PlusA, Exp.Const (Const.Cint n'), base') ->
-           let new_offset = Exp.int (n -- n') in
-           let new_e = Exp.BinOp (Binop.Lt, new_offset, base') in
-           Sil.Aeq (new_e, Exp.one)
-       | Exp.BinOp(Binop.MinusA, base', Exp.Const (Const.Cint n')) ->
-           let new_offset = Exp.int (n ++ n') in
-           let new_e = Exp.BinOp (Binop.Lt, new_offset, base') in
-           Sil.Aeq (new_e, Exp.one)
-       | Exp.BinOp(Binop.MinusA, Exp.Const (Const.Cint n'), base') ->
-           let new_offset = Exp.int (n' -- n -- IntLit.one) in
-           let new_e = Exp.BinOp (Binop.Le, base', new_offset) in
-           Sil.Aeq (new_e, Exp.one)
-       | Exp.UnOp(Unop.Neg, new_base, _) ->
-           (* In this case, base = -new_base. Construct new_base <= -n-1 *)
-           let new_offset = Exp.int (IntLit.zero -- n -- IntLit.one) in
-           let new_e = Exp.BinOp (Binop.Le, new_base, new_offset) in
-           Sil.Aeq (new_e, Exp.one)
-       | _ -> Sil.Aeq (e, Exp.one))
-  | _ -> Sil.Aeq (e, Exp.one)
-
-(** Normalize an inequality *)
-let inequality_normalize a =
-  (* turn an expression into a triple (pos,neg,off) of positive and negative occurrences, and
-     integer offset representing inequality [sum(pos) - sum(neg) + off <= 0] *)
-  let rec exp_to_posnegoff e = match e with
-    | Exp.Const (Const.Cint n) -> [],[], n
-    | Exp.BinOp(Binop.PlusA, e1, e2) | Exp.BinOp(Binop.PlusPI, e1, e2) ->
-        let pos1, neg1, n1 = exp_to_posnegoff e1 in
-        let pos2, neg2, n2 = exp_to_posnegoff e2 in
-        (pos1@pos2, neg1@neg2, n1 ++ n2)
-    | Exp.BinOp(Binop.MinusA, e1, e2)
-    | Exp.BinOp(Binop.MinusPI, e1, e2)
-    | Exp.BinOp(Binop.MinusPP, e1, e2) ->
-        let pos1, neg1, n1 = exp_to_posnegoff e1 in
-        let pos2, neg2, n2 = exp_to_posnegoff e2 in
-        (pos1@neg2, neg1@pos2, n1 -- n2)
-    | Exp.UnOp(Unop.Neg, e1, _) ->
-        let pos1, neg1, n1 = exp_to_posnegoff e1 in
-        (neg1, pos1, IntLit.zero -- n1)
-    | _ -> [e],[], IntLit.zero in
-  (* sort and filter out expressions appearing in both the positive and negative part *)
-  let normalize_posnegoff (pos, neg, off) =
-    let pos' = IList.sort Exp.compare pos in
-    let neg' = IList.sort Exp.compare neg in
-    let rec combine pacc nacc = function
-      | x:: ps, y:: ng ->
-          (match Exp.compare x y with
-           | n when n < 0 -> combine (x:: pacc) nacc (ps, y :: ng)
-           | 0 -> combine pacc nacc (ps, ng)
-           | _ -> combine pacc (y:: nacc) (x :: ps, ng))
-      | ps, ng -> (IList.rev pacc) @ ps, (IList.rev nacc) @ ng in
-    let pos'', neg'' = combine [] [] (pos', neg') in
-    (pos'', neg'', off) in
-  (* turn a non-empty list of expressions into a sum expression *)
-  let rec exp_list_to_sum = function
-    | [] -> assert false
-    | [e] -> e
-    | e:: el -> Exp.BinOp(Binop.PlusA, e, exp_list_to_sum el) in
-  let norm_from_exp e =
-    match normalize_posnegoff (exp_to_posnegoff e) with
-    | [],[], n -> Exp.BinOp(Binop.Le, Exp.int n, Exp.zero)
-    | [], neg, n -> Exp.BinOp(Binop.Lt, Exp.int (n -- IntLit.one), exp_list_to_sum neg)
-    | pos, [], n -> Exp.BinOp(Binop.Le, exp_list_to_sum pos, Exp.int (IntLit.zero -- n))
-    | pos, neg, n ->
-        let lhs_e = Exp.BinOp(Binop.MinusA, exp_list_to_sum pos, exp_list_to_sum neg) in
-        Exp.BinOp(Binop.Le, lhs_e, Exp.int (IntLit.zero -- n)) in
-  let ineq = match a with
-    | Sil.Aeq (ineq, Exp.Const (Const.Cint i)) when IntLit.isone i ->
-        ineq
-    | _ -> assert false in
-  match ineq with
-  | Exp.BinOp(Binop.Le, e1, e2) ->
-      let e = Exp.BinOp(Binop.MinusA, e1, e2) in
-      mk_inequality (norm_from_exp e)
-  | Exp.BinOp(Binop.Lt, e1, e2) ->
-      let e = Exp.BinOp(Binop.MinusA, Exp.BinOp(Binop.MinusA, e1, e2), Exp.minus_one) in
-      mk_inequality (norm_from_exp e)
-  | _ -> a
-
 let exp_reorder e1 e2 = if Exp.compare e1 e2 <= 0 then (e1, e2) else (e2, e1)
-
-(** Normalize an atom.
-    We keep the convention that inequalities with constants
-    are only of the form [e <= n] and [n < e]. *)
-let atom_normalize sub a0 =
-  let a = Sil.atom_sub sub a0 in
-  let rec normalize_eq eq = match eq with
-    | Exp.BinOp(Binop.PlusA, e1, Exp.Const (Const.Cint n1)), Exp.Const (Const.Cint n2)
-    (* e1+n1==n2 ---> e1==n2-n1 *)
-    | Exp.BinOp(Binop.PlusPI, e1, Exp.Const (Const.Cint n1)), Exp.Const (Const.Cint n2) ->
-        (e1, Exp.int (n2 -- n1))
-    | Exp.BinOp(Binop.MinusA, e1, Exp.Const (Const.Cint n1)), Exp.Const (Const.Cint n2)
-    (* e1-n1==n2 ---> e1==n1+n2 *)
-    | Exp.BinOp(Binop.MinusPI, e1, Exp.Const (Const.Cint n1)), Exp.Const (Const.Cint n2) ->
-        (e1, Exp.int (n1 ++ n2))
-    | Exp.BinOp(Binop.MinusA, Exp.Const (Const.Cint n1), e1), Exp.Const (Const.Cint n2) ->
-        (* n1-e1 == n2 -> e1==n1-n2 *)
-        (e1, Exp.int (n1 -- n2))
-    | Exp.Lfield (e1', fld1, _), Exp.Lfield (e2', fld2, _) ->
-        if Ident.fieldname_equal fld1 fld2
-        then normalize_eq (e1', e2')
-        else eq
-    | Exp.Lindex (e1', idx1), Exp.Lindex (e2', idx2) ->
-        if Exp.equal idx1 idx2 then normalize_eq (e1', e2')
-        else if Exp.equal e1' e2' then normalize_eq (idx1, idx2)
-        else eq
-    | _ -> eq in
-  let handle_unary_negation e1 e2 =
-    match e1, e2 with
-    | Exp.UnOp (Unop.LNot, e1', _), Exp.Const (Const.Cint i)
-    | Exp.Const (Const.Cint i), Exp.UnOp (Unop.LNot, e1', _) when IntLit.iszero i ->
-        (e1', Exp.zero, true)
-    | _ -> (e1, e2, false) in
-  let handle_boolean_operation from_equality e1 e2 =
-    let ne1 = exp_normalize sub e1 in
-    let ne2 = exp_normalize sub e2 in
-    let ne1', ne2', op_negated = handle_unary_negation ne1 ne2 in
-    let (e1', e2') = normalize_eq (ne1', ne2') in
-    let (e1'', e2'') = exp_reorder e1' e2' in
-    let use_equality =
-      if op_negated then not from_equality else from_equality in
-    if use_equality then
-      Sil.Aeq (e1'', e2'')
-    else
-      Sil.Aneq (e1'', e2'') in
-  let a' = match a with
-    | Sil.Aeq (e1, e2) ->
-        handle_boolean_operation true e1 e2
-    | Sil.Aneq (e1, e2) ->
-        handle_boolean_operation false e1 e2
-    | Sil.Apred (a, es) ->
-        Sil.Apred (a, IList.map (fun e -> exp_normalize sub e) es)
-    | Sil.Anpred (a, es) ->
-        Sil.Anpred (a, IList.map (fun e -> exp_normalize sub e) es) in
-  if atom_is_inequality a' then inequality_normalize a' else a'
-
-(** Negate an atom *)
-let atom_negate = function
-  | Sil.Aeq (Exp.BinOp (Binop.Le, e1, e2), Exp.Const (Const.Cint i)) when IntLit.isone i ->
-      mk_inequality (Exp.lt e2 e1)
-  | Sil.Aeq (Exp.BinOp (Binop.Lt, e1, e2), Exp.Const (Const.Cint i)) when IntLit.isone i ->
-      mk_inequality (Exp.le e2 e1)
-  | Sil.Aeq (e1, e2) -> Sil.Aneq (e1, e2)
-  | Sil.Aneq (e1, e2) -> Sil.Aeq (e1, e2)
-  | Sil.Apred (a, es) -> Sil.Anpred (a, es)
-  | Sil.Anpred (a, es) -> Sil.Apred (a, es)
-
-let rec strexp_normalize sub se =
-  match se with
-  | Sil.Eexp (e, inst) ->
-      Sil.Eexp (exp_normalize sub e, inst)
-  | Sil.Estruct (fld_cnts, inst) ->
-      begin
-        match fld_cnts with
-        | [] -> se
-        | _ ->
-            let fld_cnts' =
-              IList.map (fun (fld, cnt) ->
-                  fld, strexp_normalize sub cnt) fld_cnts in
-            let fld_cnts'' = IList.sort Sil.fld_strexp_compare fld_cnts' in
-            Sil.Estruct (fld_cnts'', inst)
-      end
-  | Sil.Earray (len, idx_cnts, inst) ->
-      begin
-        let len' = exp_normalize_noabs sub len in
-        match idx_cnts with
-        | [] ->
-            if Exp.equal len len' then se else Sil.Earray (len', idx_cnts, inst)
-        | _ ->
-            let idx_cnts' =
-              IList.map (fun (idx, cnt) ->
-                  let idx' = exp_normalize sub idx in
-                  idx', strexp_normalize sub cnt) idx_cnts in
-            let idx_cnts'' =
-              IList.sort Sil.exp_strexp_compare idx_cnts' in
-            Sil.Earray (len', idx_cnts'', inst)
-      end
 
 (** create a strexp of the given type, populating the structures if [expand_structs] is true *)
 let rec create_strexp_of_type tenvo struct_init_mode typ len inst =
@@ -1154,151 +528,10 @@ let rec create_strexp_of_type tenvo struct_init_mode typ len inst =
   | (Typ.Tint _ | Typ.Tfloat _ | Typ.Tvoid | Typ.Tfun _ | Typ.Tptr _), Some _ ->
       assert false
 
-(** Exp.Construct a pointsto. *)
-let mk_ptsto lexp sexp te =
-  let nsexp = strexp_normalize Sil.sub_empty sexp in
-  Sil.Hpointsto(lexp, nsexp, te)
-
-(** Construct a points-to predicate for an expression using
-    either the provided expression [name] as
-    base for fresh identifiers. If [expand_structs] is true,
-    initialize the fields of structs with fresh variables. *)
-let mk_ptsto_exp tenvo struct_init_mode (exp, te, expo) inst : Sil.hpred =
-  let default_strexp () = match te with
-    | Exp.Sizeof (typ, len, _) ->
-        create_strexp_of_type tenvo struct_init_mode typ len inst
-    | Exp.Var _ ->
-        Sil.Estruct ([], inst)
-    | te ->
-        L.err "trying to create ptsto with type: %a@\n@." (Sil.pp_texp_full pe_text) te;
-        assert false in
-  let strexp = match expo with
-    | Some e -> Sil.Eexp (e, inst)
-    | None -> default_strexp () in
-  mk_ptsto exp strexp te
-
 let replace_array_contents hpred esel = match hpred with
   | Sil.Hpointsto (root, Sil.Earray (len, [], inst), te) ->
       Sil.Hpointsto (root, Sil.Earray (len, esel, inst), te)
   | _ -> assert false
-
-let rec hpred_normalize sub hpred =
-  let replace_hpred hpred' =
-    L.d_strln "found array with sizeof(..) size";
-    L.d_str "converting original hpred: "; Sil.d_hpred hpred; L.d_ln ();
-    L.d_str "into the following: "; Sil.d_hpred hpred'; L.d_ln ();
-    hpred' in
-  match hpred with
-  | Sil.Hpointsto (root, cnt, te) ->
-      let normalized_root = exp_normalize sub root in
-      let normalized_cnt = strexp_normalize sub cnt in
-      let normalized_te = texp_normalize sub te in
-      begin match normalized_cnt, normalized_te with
-        | Sil.Earray (Exp.Sizeof _ as size, [], inst), Exp.Sizeof (Typ.Tarray _, _, _) ->
-            (* check for an empty array whose size expression is (Sizeof type), and turn the array
-               into a strexp of the given type *)
-            let hpred' = mk_ptsto_exp None Fld_init (root, size, None) inst in
-            replace_hpred hpred'
-        | ( Sil.Earray (Exp.BinOp (Binop.Mult, Exp.Sizeof (t, None, st1), x), esel, inst)
-          | Sil.Earray (Exp.BinOp (Binop.Mult, x, Exp.Sizeof (t, None, st1)), esel, inst)),
-          Exp.Sizeof (Typ.Tarray (elt, _) as arr, _, _)
-          when Typ.equal t elt ->
-            let len = Some x in
-            let hpred' = mk_ptsto_exp None Fld_init (root, Exp.Sizeof (arr, len, st1), None) inst in
-            replace_hpred (replace_array_contents hpred' esel)
-        | ( Sil.Earray (Exp.BinOp (Binop.Mult, Exp.Sizeof (t, Some len, st1), x), esel, inst)
-          | Sil.Earray (Exp.BinOp (Binop.Mult, x, Exp.Sizeof (t, Some len, st1)), esel, inst)),
-          Exp.Sizeof (Typ.Tarray (elt, _) as arr, _, _)
-          when Typ.equal t elt ->
-            let len = Some (Exp.BinOp(Binop.Mult, x, len)) in
-            let hpred' = mk_ptsto_exp None Fld_init (root, Exp.Sizeof (arr, len, st1), None) inst in
-            replace_hpred (replace_array_contents hpred' esel)
-        | _ -> Sil.Hpointsto (normalized_root, normalized_cnt, normalized_te)
-      end
-  | Sil.Hlseg (k, para, e1, e2, elist) ->
-      let normalized_e1 = exp_normalize sub e1 in
-      let normalized_e2 = exp_normalize sub e2 in
-      let normalized_elist = IList.map (exp_normalize sub) elist in
-      let normalized_para = hpara_normalize para in
-      Sil.Hlseg (k, normalized_para, normalized_e1, normalized_e2, normalized_elist)
-  | Sil.Hdllseg (k, para, e1, e2, e3, e4, elist) ->
-      let norm_e1 = exp_normalize sub e1 in
-      let norm_e2 = exp_normalize sub e2 in
-      let norm_e3 = exp_normalize sub e3 in
-      let norm_e4 = exp_normalize sub e4 in
-      let norm_elist = IList.map (exp_normalize sub) elist in
-      let norm_para = hpara_dll_normalize para in
-      Sil.Hdllseg (k, norm_para, norm_e1, norm_e2, norm_e3, norm_e4, norm_elist)
-
-and hpara_normalize para =
-  let normalized_body = IList.map (hpred_normalize Sil.sub_empty) (para.Sil.body) in
-  let sorted_body = IList.sort Sil.hpred_compare normalized_body in
-  { para with Sil.body = sorted_body }
-
-and hpara_dll_normalize para =
-  let normalized_body = IList.map (hpred_normalize Sil.sub_empty) (para.Sil.body_dll) in
-  let sorted_body = IList.sort Sil.hpred_compare normalized_body in
-  { para with Sil.body_dll = sorted_body }
-
-let pi_tighten_ineq pi =
-  let ineq_list, nonineq_list = IList.partition atom_is_inequality pi in
-  let diseq_list =
-    let get_disequality_info acc = function
-      | Sil.Aneq(Exp.Const (Const.Cint n), e)
-      | Sil.Aneq(e, Exp.Const (Const.Cint n)) -> (e, n) :: acc
-      | _ -> acc in
-    IList.fold_left get_disequality_info [] nonineq_list in
-  let is_neq e n =
-    IList.exists (fun (e', n') -> Exp.equal e e' && IntLit.eq n n') diseq_list in
-  let le_list_tightened =
-    let get_le_inequality_info acc a =
-      match atom_exp_le_const a with
-      | Some (e, n) -> (e, n):: acc
-      | _ -> acc in
-    let rec le_tighten le_list_done = function
-      | [] -> IList.rev le_list_done
-      | (e, n):: le_list_todo -> (* e <= n *)
-          if is_neq e n then le_tighten le_list_done ((e, n -- IntLit.one):: le_list_todo)
-          else le_tighten ((e, n):: le_list_done) (le_list_todo) in
-    let le_list = IList.rev (IList.fold_left get_le_inequality_info [] ineq_list) in
-    le_tighten [] le_list in
-  let lt_list_tightened =
-    let get_lt_inequality_info acc a =
-      match atom_const_lt_exp a with
-      | Some (n, e) -> (n, e):: acc
-      | _ -> acc in
-    let rec lt_tighten lt_list_done = function
-      | [] -> IList.rev lt_list_done
-      | (n, e):: lt_list_todo -> (* n < e *)
-          let n_plus_one = n ++ IntLit.one in
-          if is_neq e n_plus_one then lt_tighten lt_list_done ((n ++ IntLit.one, e):: lt_list_todo)
-          else lt_tighten ((n, e):: lt_list_done) (lt_list_todo) in
-    let lt_list = IList.rev (IList.fold_left get_lt_inequality_info [] ineq_list) in
-    lt_tighten [] lt_list in
-  let ineq_list' =
-    let le_ineq_list =
-      IList.map
-        (fun (e, n) -> mk_inequality (Exp.BinOp(Binop.Le, e, Exp.int n)))
-        le_list_tightened in
-    let lt_ineq_list =
-      IList.map
-        (fun (n, e) -> mk_inequality (Exp.BinOp(Binop.Lt, Exp.int n, e)))
-        lt_list_tightened in
-    le_ineq_list @ lt_ineq_list in
-  let nonineq_list' =
-    IList.filter
-      (function
-        | Sil.Aneq(Exp.Const (Const.Cint n), e)
-        | Sil.Aneq(e, Exp.Const (Const.Cint n)) ->
-            (not (IList.exists
-                    (fun (e', n') -> Exp.equal e e' && IntLit.lt n' n)
-                    le_list_tightened)) &&
-            (not (IList.exists
-                    (fun (n', e') -> Exp.equal e e' && IntLit.leq n n')
-                    lt_list_tightened))
-        | _ -> true)
-      nonineq_list in
-  (ineq_list', nonineq_list')
 
 (** remove duplicate atoms and redundant inequalities from a sorted pi *)
 let rec pi_sorted_remove_redundant = function
@@ -1332,93 +565,6 @@ let sigma_get_unsigned_exps sigma =
   IList.iter do_hpred sigma;
   !uexps
 
-(** Normalization of pi.
-    The normalization filters out obviously - true disequalities, such as e <> e + 1. *)
-let pi_normalize sub sigma pi0 =
-  let pi = IList.map (atom_normalize sub) pi0 in
-  let ineq_list, nonineq_list = pi_tighten_ineq pi in
-  let syntactically_different = function
-    | Exp.BinOp(op1, e1, Exp.Const(c1)), Exp.BinOp(op2, e2, Exp.Const(c2))
-      when Exp.equal e1 e2 ->
-        Binop.equal op1 op2 && Binop.injective op1 && not (Const.equal c1 c2)
-    | e1, Exp.BinOp(op2, e2, Exp.Const(c2))
-      when Exp.equal e1 e2 ->
-        Binop.injective op2 &&
-        Binop.is_zero_runit op2 &&
-        not (Const.equal (Const.Cint IntLit.zero) c2)
-    | Exp.BinOp(op1, e1, Exp.Const(c1)), e2
-      when Exp.equal e1 e2 ->
-        Binop.injective op1 &&
-        Binop.is_zero_runit op1 &&
-        not (Const.equal (Const.Cint IntLit.zero) c1)
-    | _ -> false in
-  let filter_useful_atom =
-    let unsigned_exps = lazy (sigma_get_unsigned_exps sigma) in
-    function
-    | Sil.Aneq ((Exp.Var _) as e, Exp.Const (Const.Cint n)) when IntLit.isnegative n ->
-        not (IList.exists (Exp.equal e) (Lazy.force unsigned_exps))
-    | Sil.Aneq(e1, e2) ->
-        not (syntactically_different (e1, e2))
-    | Sil.Aeq(Exp.Const c1, Exp.Const c2) ->
-        not (Const.equal c1 c2)
-    | _ -> true in
-  let pi' =
-    IList.stable_sort
-      Sil.atom_compare
-      ((IList.filter filter_useful_atom nonineq_list) @ ineq_list) in
-  let pi'' = pi_sorted_remove_redundant pi' in
-  if pi_equal pi0 pi'' then pi0 else pi''
-
-let sigma_normalize sub sigma =
-  let sigma' =
-    IList.stable_sort Sil.hpred_compare (IList.map (hpred_normalize sub) sigma) in
-  if sigma_equal sigma sigma' then sigma else sigma'
-
-(** normalize the footprint part, and rename any primed vars
-    in the footprint with fresh footprint vars *)
-let footprint_normalize prop =
-  let nsigma = sigma_normalize Sil.sub_empty prop.sigma_fp in
-  let npi = pi_normalize Sil.sub_empty nsigma prop.pi_fp in
-  let fp_vars =
-    let fav = pi_fav npi in
-    sigma_fav_add fav nsigma;
-    fav in
-  (* TODO (t4893479): make this check less angelic *)
-  if Sil.fav_exists fp_vars Ident.is_normal && not Config.angelic_execution then
-    begin
-      L.d_strln "footprint part contains normal variables";
-      d_pi npi; L.d_ln ();
-      d_sigma nsigma; L.d_ln ();
-      assert false
-    end;
-  Sil.fav_filter_ident fp_vars Ident.is_primed; (* only keep primed vars *)
-  let npi', nsigma' =
-    if Sil.fav_is_empty fp_vars then npi, nsigma
-    else (* replace primed vars by fresh footprint vars *)
-      let ids_primed = Sil.fav_to_list fp_vars in
-      let ids_footprint =
-        IList.map (fun id -> (id, Ident.create_fresh Ident.kfootprint)) ids_primed in
-      let ren_sub =
-        Sil.sub_of_list (IList.map (fun (id1, id2) -> (id1, Exp.Var id2)) ids_footprint) in
-      let nsigma' = sigma_normalize Sil.sub_empty (sigma_sub ren_sub nsigma) in
-      let npi' = pi_normalize Sil.sub_empty nsigma' (pi_sub ren_sub npi) in
-      (npi', nsigma') in
-  set prop ~pi_fp:npi' ~sigma_fp:nsigma'
-
-let exp_normalize_prop prop exp =
-  Config.run_with_abs_val_equal_zero (exp_normalize prop.sub) exp
-
-let lexp_normalize_prop p lexp =
-  let root = Exp.root_of_lexp lexp in
-  let offsets = Sil.exp_get_offsets lexp in
-  let nroot = exp_normalize_prop p root in
-  let noffsets =
-    IList.map (fun n -> match n with
-        | Sil.Off_fld _ -> n
-        | Sil.Off_index e -> Sil.Off_index (exp_normalize_prop p e)
-      ) offsets in
-  Sil.exp_add_offsets nroot noffsets
-
 (** Collapse consecutive indices that should be added. For instance,
     this function reduces x[1][1] to x[2]. The [typ] argument is used
     to ensure the soundness of this collapsing. *)
@@ -1440,33 +586,12 @@ let exp_collapse_consecutive_indices_prop typ exp =
     if typ_is_one_step_from_base then exp_remove exp else exp
   end
 
-let atom_normalize_prop prop atom =
-  Config.run_with_abs_val_equal_zero (atom_normalize prop.sub) atom
-
-let strexp_normalize_prop prop strexp =
-  Config.run_with_abs_val_equal_zero (strexp_normalize prop.sub) strexp
-
-let hpred_normalize_prop prop hpred =
-  Config.run_with_abs_val_equal_zero (hpred_normalize prop.sub) hpred
-
-let sigma_normalize_prop prop sigma =
-  Config.run_with_abs_val_equal_zero (sigma_normalize prop.sub) sigma
-
-let pi_normalize_prop prop pi =
-  Config.run_with_abs_val_equal_zero (pi_normalize prop.sub prop.sigma) pi
-
 (** {2 Compaction} *)
 
 (** Return a compact representation of the prop *)
 let prop_compact sh (prop : normal t) : normal t =
   let sigma' = IList.map (Sil.hpred_compact sh) prop.sigma in
   unsafe_cast_to_normal (set prop ~sigma:sigma')
-
-(** {2 Function for replacing occurrences of expressions.} *)
-
-let sigma_replace_exp epairs sigma =
-  let sigma' = IList.map (Sil.hpred_replace_exp epairs) sigma in
-  sigma_normalize Sil.sub_empty sigma'
 
 (** {2 Query about Proposition} *)
 
@@ -1476,58 +601,6 @@ let prop_is_emp p = match p.sigma with
   | _ -> false
 
 (** {2 Functions for changing and generating propositions} *)
-
-(** Construct an atom. *)
-let mk_atom atom =
-  Config.run_with_abs_val_equal_zero (fun () -> atom_normalize Sil.sub_empty atom) ()
-
-(** Exp.Construct a disequality. *)
-let mk_neq e1 e2 = mk_atom (Aneq (e1, e2))
-
-(** Exp.Construct an equality. *)
-let mk_eq e1 e2 = mk_atom (Aeq (e1, e2))
-
-(** Construct a pred. *)
-let mk_pred a es = mk_atom (Apred (a, es))
-
-(** Construct a negated pred. *)
-let mk_npred a es = mk_atom (Anpred (a, es))
-
-(** Construct a points-to predicate for a single program variable.
-    If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
-let mk_ptsto_lvar tenv expand_structs inst ((pvar: Pvar.t), texp, expo) : Sil.hpred =
-  mk_ptsto_exp tenv expand_structs (Exp.Lvar pvar, texp, expo) inst
-
-(** Exp.Construct a lseg predicate *)
-let mk_lseg k para e_start e_end es_shared =
-  let npara = hpara_normalize para in
-  Sil.Hlseg (k, npara, e_start, e_end, es_shared)
-
-(** Exp.Construct a dllseg predicate *)
-let mk_dllseg k para exp_iF exp_oB exp_oF exp_iB exps_shared =
-  let npara = hpara_dll_normalize para in
-  Sil.Hdllseg (k, npara, exp_iF, exp_oB , exp_oF, exp_iB, exps_shared)
-
-(** Exp.Construct a hpara *)
-let mk_hpara root next svars evars body =
-  let para =
-    { Sil.root = root;
-      next = next;
-      svars = svars;
-      evars = evars;
-      body = body } in
-  hpara_normalize para
-
-(** Exp.Construct a dll_hpara *)
-let mk_dll_hpara iF oB oF svars evars body =
-  let para =
-    { Sil.cell = iF;
-      blink = oB;
-      flink = oF;
-      svars_dll = svars;
-      evars_dll = evars;
-      body_dll = body } in
-  hpara_dll_normalize para
 
 (** Conjoin a heap predicate by separating conjunction. *)
 let prop_hpred_star (p : 'a t) (h : Sil.hpred) : exposed t =
@@ -1573,197 +646,1085 @@ let compute_reachable_hpreds sigma exps =
     else compute_reachable_hpreds_rec sigma (reach', exps') in
   compute_reachable_hpreds_rec sigma (Sil.HpredSet.empty, exps)
 
-(** if possible, produce a (fieldname, typ) path from one of the [src_exps] to [snk_exp] using
-    [reachable_hpreds]. *)
-let get_fld_typ_path_opt src_exps snk_exp_ reachable_hpreds_ =
-  let strexp_matches target_exp = function
-    | (_, Sil.Eexp (e, _)) -> Exp.equal target_exp e
-    | _ -> false in
-  let extend_path hpred (snk_exp, path, reachable_hpreds) = match hpred with
-    | Sil.Hpointsto (lhs, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
-        (try
-           let fld, _ = IList.find (fun fld -> strexp_matches snk_exp fld) flds in
-           let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
-           (lhs, (Some fld, typ) :: path, reachable_hpreds')
-         with Not_found -> (snk_exp, path, reachable_hpreds))
-    | Sil.Hpointsto (lhs, Sil.Earray (_, elems, _), Exp.Sizeof (typ, _, _)) ->
-        if IList.exists (fun pair -> strexp_matches snk_exp pair) elems
-        then
-          let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
-          (* None means "no field name" ~=~ nameless array index *)
-          (lhs, (None, typ) :: path, reachable_hpreds')
-        else (snk_exp, path, reachable_hpreds)
-    | _ -> (snk_exp, path, reachable_hpreds) in
-  (* terminates because [reachable_hpreds] is shrinking on each recursive call *)
-  let rec get_fld_typ_path snk_exp path reachable_hpreds =
-    let (snk_exp', path', reachable_hpreds') =
-      Sil.HpredSet.fold extend_path reachable_hpreds (snk_exp, path, reachable_hpreds) in
-    if Exp.Set.mem snk_exp' src_exps
-    then Some path'
-    else
-    if Sil.HpredSet.cardinal reachable_hpreds' >= Sil.HpredSet.cardinal reachable_hpreds
-    then None (* can't find a path from [src_exps] to [snk_exp] *)
-    else get_fld_typ_path snk_exp' path' reachable_hpreds' in
-  get_fld_typ_path snk_exp_ [] reachable_hpreds_
 
-(** filter [pi] by removing the pure atoms that do not contain an expression in [exps] *)
-let compute_reachable_atoms pi exps =
-  let rec exp_contains = function
-    | exp when Exp.Set.mem exp exps -> true
-    | Exp.UnOp (_, e, _) | Exp.Cast (_, e) | Exp.Lfield (e, _, _) -> exp_contains e
-    | Exp.BinOp (_, e0, e1) | Exp.Lindex (e0, e1) -> exp_contains e0 || exp_contains e1
-    | _ -> false in
-  IList.filter
-    (function
-      | Sil.Aeq (lhs, rhs) | Aneq (lhs, rhs) -> exp_contains lhs || exp_contains rhs
-      | Sil.Apred (_, es) | Anpred (_, es) -> IList.exists exp_contains es)
-    pi
-
-(** Eliminates all empty lsegs from sigma, and collect equalities
-    The empty lsegs include
-    (a) "lseg_pe para 0 e elist",
-    (b) "dllseg_pe para iF oB oF iB elist" with iF = 0 or iB = 0,
-    (c) "lseg_pe para e1 e2 elist" and the rest of sigma contains the "cell" e1,
-    (d) "dllseg_pe para iF oB oF iB elist" and the rest of sigma contains
-    cell iF or iB. *)
-let sigma_remove_emptylseg sigma =
-  let alloc_set =
-    let rec f_alloc set = function
+(* Module for normalization *)
+module Normalize = struct
+  (** Eliminates all empty lsegs from sigma, and collect equalities
+      The empty lsegs include
+      (a) "lseg_pe para 0 e elist",
+      (b) "dllseg_pe para iF oB oF iB elist" with iF = 0 or iB = 0,
+      (c) "lseg_pe para e1 e2 elist" and the rest of sigma contains the "cell" e1,
+      (d) "dllseg_pe para iF oB oF iB elist" and the rest of sigma contains
+      cell iF or iB. *)
+  let sigma_remove_emptylseg sigma =
+    let alloc_set =
+      let rec f_alloc set = function
+        | [] ->
+            set
+        | Sil.Hpointsto (e, _, _) :: sigma' | Sil.Hlseg (Sil.Lseg_NE, _, e, _, _) :: sigma' ->
+            f_alloc (Exp.Set.add e set) sigma'
+        | Sil.Hdllseg (Sil.Lseg_NE, _, iF, _, _, iB, _) :: sigma' ->
+            f_alloc (Exp.Set.add iF (Exp.Set.add iB set)) sigma'
+        | _ :: sigma' ->
+            f_alloc set sigma' in
+      f_alloc Exp.Set.empty sigma
+    in
+    let rec f eqs_zero sigma_passed = function
       | [] ->
-          set
-      | Sil.Hpointsto (e, _, _) :: sigma' | Sil.Hlseg (Sil.Lseg_NE, _, e, _, _) :: sigma' ->
-          f_alloc (Exp.Set.add e set) sigma'
-      | Sil.Hdllseg (Sil.Lseg_NE, _, iF, _, _, iB, _) :: sigma' ->
-          f_alloc (Exp.Set.add iF (Exp.Set.add iB set)) sigma'
-      | _ :: sigma' ->
-          f_alloc set sigma' in
-    f_alloc Exp.Set.empty sigma
-  in
-  let rec f eqs_zero sigma_passed = function
-    | [] ->
-        (IList.rev eqs_zero, IList.rev sigma_passed)
-    | Sil.Hpointsto _ as hpred :: sigma' ->
-        f eqs_zero (hpred :: sigma_passed) sigma'
-    | Sil.Hlseg (Sil.Lseg_PE, _, e1, e2, _) :: sigma'
-      when (Exp.equal e1 Exp.zero) || (Exp.Set.mem e1 alloc_set) ->
-        f (Sil.Aeq(e1, e2) :: eqs_zero) sigma_passed sigma'
-    | Sil.Hlseg _ as hpred :: sigma' ->
-        f eqs_zero (hpred :: sigma_passed) sigma'
-    | Sil.Hdllseg (Sil.Lseg_PE, _, iF, oB, oF, iB, _) :: sigma'
-      when (Exp.equal iF Exp.zero) || (Exp.Set.mem iF alloc_set)
-           || (Exp.equal iB Exp.zero) || (Exp.Set.mem iB alloc_set) ->
-        f (Sil.Aeq(iF, oF):: Sil.Aeq(iB, oB):: eqs_zero) sigma_passed sigma'
-    | Sil.Hdllseg _ as hpred :: sigma' ->
-        f eqs_zero (hpred :: sigma_passed) sigma'
-  in
-  f [] [] sigma
+          (IList.rev eqs_zero, IList.rev sigma_passed)
+      | Sil.Hpointsto _ as hpred :: sigma' ->
+          f eqs_zero (hpred :: sigma_passed) sigma'
+      | Sil.Hlseg (Sil.Lseg_PE, _, e1, e2, _) :: sigma'
+        when (Exp.equal e1 Exp.zero) || (Exp.Set.mem e1 alloc_set) ->
+          f (Sil.Aeq(e1, e2) :: eqs_zero) sigma_passed sigma'
+      | Sil.Hlseg _ as hpred :: sigma' ->
+          f eqs_zero (hpred :: sigma_passed) sigma'
+      | Sil.Hdllseg (Sil.Lseg_PE, _, iF, oB, oF, iB, _) :: sigma'
+        when (Exp.equal iF Exp.zero) || (Exp.Set.mem iF alloc_set)
+             || (Exp.equal iB Exp.zero) || (Exp.Set.mem iB alloc_set) ->
+          f (Sil.Aeq(iF, oF):: Sil.Aeq(iB, oB):: eqs_zero) sigma_passed sigma'
+      | Sil.Hdllseg _ as hpred :: sigma' ->
+          f eqs_zero (hpred :: sigma_passed) sigma'
+    in
+    f [] [] sigma
 
-let sigma_intro_nonemptylseg e1 e2 sigma =
-  let rec f sigma_passed = function
-    | [] ->
-        IList.rev sigma_passed
-    | Sil.Hpointsto _ as hpred :: sigma' ->
-        f (hpred :: sigma_passed) sigma'
-    | Sil.Hlseg (Sil.Lseg_PE, para, f1, f2, shared) :: sigma'
-      when (Exp.equal e1 f1 && Exp.equal e2 f2)
-        || (Exp.equal e2 f1 && Exp.equal e1 f2) ->
-        f (Sil.Hlseg (Sil.Lseg_NE, para, f1, f2, shared) :: sigma_passed) sigma'
-    | Sil.Hlseg _ as hpred :: sigma' ->
-        f (hpred :: sigma_passed) sigma'
-    | Sil.Hdllseg (Sil.Lseg_PE, para, iF, oB, oF, iB, shared) :: sigma'
-      when (Exp.equal e1 iF && Exp.equal e2 oF)
-        || (Exp.equal e2 iF && Exp.equal e1 oF)
-        || (Exp.equal e1 iB && Exp.equal e2 oB)
-        || (Exp.equal e2 iB && Exp.equal e1 oB) ->
-        f (Sil.Hdllseg (Sil.Lseg_NE, para, iF, oB, oF, iB, shared) :: sigma_passed) sigma'
-    | Sil.Hdllseg _ as hpred :: sigma' ->
-        f (hpred :: sigma_passed) sigma'
-  in
-  f [] sigma
+  let sigma_intro_nonemptylseg e1 e2 sigma =
+    let rec f sigma_passed = function
+      | [] ->
+          IList.rev sigma_passed
+      | Sil.Hpointsto _ as hpred :: sigma' ->
+          f (hpred :: sigma_passed) sigma'
+      | Sil.Hlseg (Sil.Lseg_PE, para, f1, f2, shared) :: sigma'
+        when (Exp.equal e1 f1 && Exp.equal e2 f2)
+          || (Exp.equal e2 f1 && Exp.equal e1 f2) ->
+          f (Sil.Hlseg (Sil.Lseg_NE, para, f1, f2, shared) :: sigma_passed) sigma'
+      | Sil.Hlseg _ as hpred :: sigma' ->
+          f (hpred :: sigma_passed) sigma'
+      | Sil.Hdllseg (Sil.Lseg_PE, para, iF, oB, oF, iB, shared) :: sigma'
+        when (Exp.equal e1 iF && Exp.equal e2 oF)
+          || (Exp.equal e2 iF && Exp.equal e1 oF)
+          || (Exp.equal e1 iB && Exp.equal e2 oB)
+          || (Exp.equal e2 iB && Exp.equal e1 oB) ->
+          f (Sil.Hdllseg (Sil.Lseg_NE, para, iF, oB, oF, iB, shared) :: sigma_passed) sigma'
+      | Sil.Hdllseg _ as hpred :: sigma' ->
+          f (hpred :: sigma_passed) sigma'
+    in
+    f [] sigma
 
-let normalize_and_strengthen_atom (p : normal t) (a : Sil.atom) : Sil.atom =
-  let a' = atom_normalize p.sub a in
-  match a' with
-  | Sil.Aeq (Exp.BinOp (Binop.Le, Exp.Var id, Exp.Const (Const.Cint n)), Exp.Const (Const.Cint i))
-    when IntLit.isone i ->
-      let lower = Exp.int (n -- IntLit.one) in
-      let a_lower = Sil.Aeq (Exp.BinOp (Binop.Lt, lower, Exp.Var id), Exp.one) in
-      if not (IList.mem Sil.atom_equal a_lower p.pi) then a'
-      else Sil.Aeq (Exp.Var id, Exp.int n)
-  | Sil.Aeq (Exp.BinOp (Binop.Lt, Exp.Const (Const.Cint n), Exp.Var id), Exp.Const (Const.Cint i))
-    when IntLit.isone i ->
-      let upper = Exp.int (n ++ IntLit.one) in
-      let a_upper = Sil.Aeq (Exp.BinOp (Binop.Le, Exp.Var id, upper), Exp.one) in
-      if not (IList.mem Sil.atom_equal a_upper p.pi) then a'
-      else Sil.Aeq (Exp.Var id, upper)
-  | Sil.Aeq (Exp.BinOp (Binop.Ne, e1, e2), Exp.Const (Const.Cint i)) when IntLit.isone i ->
-      Sil.Aneq (e1, e2)
-  | _ -> a'
+  let (--) = IntLit.sub
+  let (++) = IntLit.add
 
-(** Conjoin a pure atomic predicate by normal conjunction. *)
-let rec prop_atom_and ?(footprint=false) (p : normal t) a : normal t =
-  let a' = normalize_and_strengthen_atom p a in
-  if IList.mem Sil.atom_equal a' p.pi then p
-  else begin
-    let p' =
-      match a' with
-      | Sil.Aeq (Exp.Var i, e) when Sil.ident_in_exp i e -> p
-      | Sil.Aeq (Exp.Var i, e) ->
-          let sub_list = [(i, e)] in
-          let mysub = Sil.sub_of_list sub_list in
-          let p_sub = Sil.sub_filter (fun i' -> not (Ident.equal i i')) p.sub in
-          let sub' = Sil.sub_join mysub (Sil.sub_range_map (Sil.exp_sub mysub) p_sub) in
-          let (nsub', npi', nsigma') =
-            let nsigma' = sigma_normalize sub' p.sigma in
-            (sub_normalize sub', pi_normalize sub' nsigma' p.pi, nsigma') in
-          let (eqs_zero, nsigma'') = sigma_remove_emptylseg nsigma' in
-          let p' =
-            unsafe_cast_to_normal
-              (set p ~sub:nsub' ~pi:npi' ~sigma:nsigma'') in
-          IList.fold_left (prop_atom_and ~footprint) p' eqs_zero
-      | Sil.Aeq (e1, e2) when (Exp.compare e1 e2 = 0) ->
-          p
+  let sym_eval abs e =
+    let rec eval e =
+      (* L.d_str " ["; Sil.d_exp e; L.d_str"] "; *)
+      match e with
+      | Exp.Var _ ->
+          e
+      | Exp.Closure c ->
+          let captured_vars =
+            IList.map (fun (exp, pvar, typ) -> (eval exp, pvar, typ)) c.captured_vars in
+          Exp.Closure { c with captured_vars; }
+      | Exp.Const _ ->
+          e
+      | Exp.Sizeof (Typ.Tarray (Typ.Tint ik, _), Some l, _)
+        when Typ.ikind_is_char ik && !Config.curr_language = Config.Clang ->
+          eval l
+      | Exp.Sizeof (Typ.Tarray (Typ.Tint ik, Some l), _, _)
+        when Typ.ikind_is_char ik && !Config.curr_language = Config.Clang ->
+          Exp.Const (Const.Cint l)
+      | Exp.Sizeof _ ->
+          e
+      | Exp.Cast (_, e1) ->
+          eval e1
+      | Exp.UnOp (Unop.LNot, e1, topt) ->
+          begin
+            match eval e1 with
+            | Exp.Const (Const.Cint i) when IntLit.iszero i ->
+                Exp.one
+            | Exp.Const (Const.Cint _) ->
+                Exp.zero
+            | Exp.UnOp(Unop.LNot, e1', _) ->
+                e1'
+            | e1' ->
+                if abs then Exp.get_undefined false else Exp.UnOp(Unop.LNot, e1', topt)
+          end
+      | Exp.UnOp (Unop.Neg, e1, topt) ->
+          begin
+            match eval e1 with
+            | Exp.UnOp (Unop.Neg, e2', _) ->
+                e2'
+            | Exp.Const (Const.Cint i) ->
+                Exp.int (IntLit.neg i)
+            | Exp.Const (Const.Cfloat v) ->
+                Exp.float (-. v)
+            | Exp.Var id ->
+                Exp.UnOp (Unop.Neg, Exp.Var id, topt)
+            | e1' ->
+                if abs then Exp.get_undefined false else Exp.UnOp (Unop.Neg, e1', topt)
+          end
+      | Exp.UnOp (Unop.BNot, e1, topt) ->
+          begin
+            match eval e1 with
+            | Exp.UnOp(Unop.BNot, e2', _) ->
+                e2'
+            | Exp.Const (Const.Cint i) ->
+                Exp.int (IntLit.lognot i)
+            | e1' ->
+                if abs then Exp.get_undefined false else Exp.UnOp (Unop.BNot, e1', topt)
+          end
+      | Exp.BinOp (Binop.Le, e1, e2) ->
+          begin
+            match eval e1, eval e2 with
+            | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
+                Exp.bool (IntLit.leq n m)
+            | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
+                Exp.bool (v <= w)
+            | Exp.BinOp (Binop.PlusA, e3, Exp.Const (Const.Cint n)), Exp.Const (Const.Cint m) ->
+                Exp.BinOp (Binop.Le, e3, Exp.int (m -- n))
+            | e1', e2' ->
+                Exp.le e1' e2'
+          end
+      | Exp.BinOp (Binop.Lt, e1, e2) ->
+          begin
+            match eval e1, eval e2 with
+            | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
+                Exp.bool (IntLit.lt n m)
+            | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
+                Exp.bool (v < w)
+            | Exp.Const (Const.Cint n), Exp.BinOp (Binop.MinusA, f1, f2) ->
+                Exp.BinOp
+                  (Binop.Le, Exp.BinOp (Binop.MinusA, f2, f1), Exp.int (IntLit.minus_one -- n))
+            | Exp.BinOp(Binop.MinusA, f1 , f2), Exp.Const(Const.Cint n) ->
+                Exp.le (Exp.BinOp(Binop.MinusA, f1 , f2)) (Exp.int (n -- IntLit.one))
+            | Exp.BinOp (Binop.PlusA, e3, Exp.Const (Const.Cint n)), Exp.Const (Const.Cint m) ->
+                Exp.BinOp (Binop.Lt, e3, Exp.int (m -- n))
+            | e1', e2' ->
+                Exp.lt e1' e2'
+          end
+      | Exp.BinOp (Binop.Ge, e1, e2) ->
+          eval (Exp.le e2 e1)
+      | Exp.BinOp (Binop.Gt, e1, e2) ->
+          eval (Exp.lt e2 e1)
+      | Exp.BinOp (Binop.Eq, e1, e2) ->
+          begin
+            match eval e1, eval e2 with
+            | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
+                Exp.bool (IntLit.eq n m)
+            | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
+                Exp.bool (v = w)
+            | e1', e2' ->
+                Exp.eq e1' e2'
+          end
+      | Exp.BinOp (Binop.Ne, e1, e2) ->
+          begin
+            match eval e1, eval e2 with
+            | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
+                Exp.bool (IntLit.neq n m)
+            | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
+                Exp.bool (v <> w)
+            | e1', e2' ->
+                Exp.ne e1' e2'
+          end
+      | Exp.BinOp (Binop.LAnd, e1, e2) ->
+          let e1' = eval e1 in
+          let e2' = eval e2 in
+          begin match e1', e2' with
+            | Exp.Const (Const.Cint i), _ when IntLit.iszero i ->
+                e1'
+            | Exp.Const (Const.Cint _), _ ->
+                e2'
+            | _, Exp.Const (Const.Cint i) when IntLit.iszero i ->
+                e2'
+            | _, Exp.Const (Const.Cint _) ->
+                e1'
+            | _ ->
+                Exp.BinOp (Binop.LAnd, e1', e2')
+          end
+      | Exp.BinOp (Binop.LOr, e1, e2) ->
+          let e1' = eval e1 in
+          let e2' = eval e2 in
+          begin
+            match e1', e2' with
+            | Exp.Const (Const.Cint i), _ when IntLit.iszero i ->
+                e2'
+            | Exp.Const (Const.Cint _), _ ->
+                e1'
+            | _, Exp.Const (Const.Cint i) when IntLit.iszero i ->
+                e1'
+            | _, Exp.Const (Const.Cint _) ->
+                e2'
+            | _ ->
+                Exp.BinOp (Binop.LOr, e1', e2')
+          end
+      | Exp.BinOp(Binop.PlusPI, Exp.Lindex (ep, e1), e2) ->
+          (* array access with pointer arithmetic *)
+          let e' = Exp.BinOp (Binop.PlusA, e1, e2) in
+          eval (Exp.Lindex (ep, e'))
+      | Exp.BinOp (Binop.PlusPI, (Exp.BinOp (Binop.PlusPI, e11, e12)), e2) ->
+          (* take care of pattern ((ptr + off1) + off2) *)
+          (* progress: convert inner +I to +A *)
+          let e2' = Exp.BinOp (Binop.PlusA, e12, e2) in
+          eval (Exp.BinOp (Binop.PlusPI, e11, e2'))
+      | Exp.BinOp (Binop.PlusA as oplus, e1, e2)
+      | Exp.BinOp (Binop.PlusPI as oplus, e1, e2) ->
+          let e1' = eval e1 in
+          let e2' = eval e2 in
+          let isPlusA = oplus = Binop.PlusA in
+          let ominus = if isPlusA then Binop.MinusA else Binop.MinusPI in
+          let (+++) x y = match x, y with
+            | _, Exp.Const (Const.Cint i) when IntLit.iszero i -> x
+            | Exp.Const (Const.Cint i), Exp.Const (Const.Cint j) ->
+                Exp.Const (Const.Cint (IntLit.add i j))
+            | _ -> Exp.BinOp (oplus, x, y) in
+          let (---) x y = match x, y with
+            | _, Exp.Const (Const.Cint i) when IntLit.iszero i -> x
+            | Exp.Const (Const.Cint i), Exp.Const (Const.Cint j) ->
+                Exp.Const (Const.Cint (IntLit.sub i j))
+            | _ -> Exp.BinOp (ominus, x, y) in
+          (* test if the extensible array at the end of [typ] has elements of type [elt] *)
+          let extensible_array_element_typ_equal elt typ =
+            Option.map_default (Typ.equal elt) false (Typ.get_extensible_array_element_typ typ) in
+          begin
+            match e1', e2' with
+            (* pattern for arrays and extensible structs:
+               sizeof(struct s {... t[l]}) + k * sizeof(t)) = sizeof(struct s {... t[l + k]}) *)
+            | Exp.Sizeof (typ, len1_opt, st),
+              Exp.BinOp (Binop.Mult, len2, Exp.Sizeof (elt, None, _))
+              when isPlusA && (extensible_array_element_typ_equal elt typ) ->
+                let len = match len1_opt with Some len1 -> len1 +++ len2 | None -> len2 in
+                Exp.Sizeof (typ, Some len, st)
+            | Exp.Const c, _ when Const.iszero_int_float c ->
+                e2'
+            | _, Exp.Const c when Const.iszero_int_float c ->
+                e1'
+            | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
+                Exp.int (n ++ m)
+            | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
+                Exp.float (v +. w)
+            | Exp.UnOp(Unop.Neg, f1, _), f2
+            | f2, Exp.UnOp(Unop.Neg, f1, _) ->
+                Exp.BinOp (ominus, f2, f1)
+            | Exp.BinOp (Binop.PlusA, e, Exp.Const (Const.Cint n1)), Exp.Const (Const.Cint n2)
+            | Exp.BinOp (Binop.PlusPI, e, Exp.Const (Const.Cint n1)), Exp.Const (Const.Cint n2)
+            | Exp.Const (Const.Cint n2), Exp.BinOp (Binop.PlusA, e, Exp.Const (Const.Cint n1))
+            | Exp.Const (Const.Cint n2), Exp.BinOp (Binop.PlusPI, e, Exp.Const (Const.Cint n1)) ->
+                e +++ (Exp.int (n1 ++ n2))
+            | Exp.BinOp (Binop.MinusA, Exp.Const (Const.Cint n1), e), Exp.Const (Const.Cint n2)
+            | Exp.Const (Const.Cint n2), Exp.BinOp (Binop.MinusA, Exp.Const (Const.Cint n1), e) ->
+                Exp.int (n1 ++ n2) --- e
+            | Exp.BinOp (Binop.MinusA, e1, e2), e3 -> (* (e1-e2)+e3 --> e1 + (e3-e2) *)
+                (* progress: brings + to the outside *)
+                eval (e1 +++ (e3 --- e2))
+            | _, Exp.Const _ ->
+                e1' +++ e2'
+            | Exp.Const _, _ ->
+                if isPlusA then e2' +++ e1' else e1' +++ e2'
+            | Exp.Var _, Exp.Var _ ->
+                e1' +++ e2'
+            | _ ->
+                if abs && isPlusA then Exp.get_undefined false else
+                if abs && not isPlusA then e1' +++ (Exp.get_undefined false)
+                else e1' +++ e2'
+          end
+      | Exp.BinOp (Binop.MinusA as ominus, e1, e2)
+      | Exp.BinOp (Binop.MinusPI as ominus, e1, e2) ->
+          let e1' = eval e1 in
+          let e2' = eval e2 in
+          let isMinusA = ominus = Binop.MinusA in
+          let oplus = if isMinusA then Binop.PlusA else Binop.PlusPI in
+          let (+++) x y = Exp.BinOp (oplus, x, y) in
+          let (---) x y = Exp.BinOp (ominus, x, y) in
+          if Exp.equal e1' e2' then Exp.zero
+          else begin
+            match e1', e2' with
+            | Exp.Const c, _ when Const.iszero_int_float c ->
+                eval (Exp.UnOp(Unop.Neg, e2', None))
+            | _, Exp.Const c when Const.iszero_int_float c ->
+                e1'
+            | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
+                Exp.int (n -- m)
+            | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
+                Exp.float (v -. w)
+            | _, Exp.UnOp (Unop.Neg, f2, _) ->
+                eval (e1 +++ f2)
+            | _ , Exp.Const(Const.Cint n) ->
+                eval (e1' +++ (Exp.int (IntLit.neg n)))
+            | Exp.Const _, _ ->
+                e1' --- e2'
+            | Exp.Var _, Exp.Var _ ->
+                e1' --- e2'
+            | _, _ ->
+                if abs then Exp.get_undefined false else e1' --- e2'
+          end
+      | Exp.BinOp (Binop.MinusPP, e1, e2) ->
+          if abs then Exp.get_undefined false
+          else Exp.BinOp (Binop.MinusPP, eval e1, eval e2)
+      | Exp.BinOp (Binop.Mult, e1, e2) ->
+          let e1' = eval e1 in
+          let e2' = eval e2 in
+          begin
+            match e1', e2' with
+            | Exp.Const c, _ when Const.iszero_int_float c ->
+                Exp.zero
+            | Exp.Const c, _ when Const.isone_int_float c ->
+                e2'
+            | Exp.Const c, _ when Const.isminusone_int_float c ->
+                eval (Exp.UnOp (Unop.Neg, e2', None))
+            | _, Exp.Const c when Const.iszero_int_float c ->
+                Exp.zero
+            | _, Exp.Const c when Const.isone_int_float c ->
+                e1'
+            | _, Exp.Const c when Const.isminusone_int_float c ->
+                eval (Exp.UnOp (Unop.Neg, e1', None))
+            | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
+                Exp.int (IntLit.mul n m)
+            | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
+                Exp.float (v *. w)
+            | Exp.Var _, Exp.Var _ ->
+                Exp.BinOp(Binop.Mult, e1', e2')
+            | _, Exp.Sizeof _
+            | Exp.Sizeof _, _ ->
+                Exp.BinOp(Binop.Mult, e1', e2')
+            | _, _ ->
+                if abs then Exp.get_undefined false else Exp.BinOp(Binop.Mult, e1', e2')
+          end
+      | Exp.BinOp (Binop.Div, e1, e2) ->
+          let e1' = eval e1 in
+          let e2' = eval e2 in
+          begin
+            match e1', e2' with
+            | _, Exp.Const c when Const.iszero_int_float c ->
+                Exp.get_undefined false
+            | Exp.Const c, _ when Const.iszero_int_float c ->
+                e1'
+            | _, Exp.Const c when Const.isone_int_float c ->
+                e1'
+            | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
+                Exp.int (IntLit.div n m)
+            | Exp.Const (Const.Cfloat v), Exp.Const (Const.Cfloat w) ->
+                Exp.float (v /.w)
+            | Exp.Sizeof (Typ.Tarray (elt, _), Some len, _), Exp.Sizeof (elt2, None, _)
+              (* pattern: sizeof(elt[len]) / sizeof(elt) = len *)
+              when Typ.equal elt elt2 ->
+                len
+            | Exp.Sizeof (Typ.Tarray (elt, Some len), None, _), Exp.Sizeof (elt2, None, _)
+              (* pattern: sizeof(elt[len]) / sizeof(elt) = len *)
+              when Typ.equal elt elt2 ->
+                Exp.Const (Const.Cint len)
+            | _ ->
+                if abs then Exp.get_undefined false else Exp.BinOp (Binop.Div, e1', e2')
+          end
+      | Exp.BinOp (Binop.Mod, e1, e2) ->
+          let e1' = eval e1 in
+          let e2' = eval e2 in
+          begin
+            match e1', e2' with
+            | _, Exp.Const (Const.Cint i) when IntLit.iszero i ->
+                Exp.get_undefined false
+            | Exp.Const (Const.Cint i), _ when IntLit.iszero i ->
+                e1'
+            | _, Exp.Const (Const.Cint i) when IntLit.isone i ->
+                Exp.zero
+            | Exp.Const (Const.Cint n), Exp.Const (Const.Cint m) ->
+                Exp.int (IntLit.rem n m)
+            | _ ->
+                if abs then Exp.get_undefined false else Exp.BinOp (Binop.Mod, e1', e2')
+          end
+      | Exp.BinOp (Binop.Shiftlt, e1, e2) ->
+          if abs then Exp.get_undefined false else Exp.BinOp (Binop.Shiftlt, eval e1, eval e2)
+      | Exp.BinOp (Binop.Shiftrt, e1, e2) ->
+          if abs then Exp.get_undefined false else Exp.BinOp (Binop.Shiftrt, eval e1, eval e2)
+      | Exp.BinOp (Binop.BAnd, e1, e2) ->
+          let e1' = eval e1 in
+          let e2' = eval e2 in
+          begin match e1', e2' with
+            | Exp.Const (Const.Cint i), _ when IntLit.iszero i ->
+                e1'
+            | _, Exp.Const (Const.Cint i) when IntLit.iszero i ->
+                e2'
+            | Exp.Const (Const.Cint i1), Exp.Const(Const.Cint i2) ->
+                Exp.int (IntLit.logand i1 i2)
+            | _ ->
+                if abs then Exp.get_undefined false else Exp.BinOp (Binop.BAnd, e1', e2')
+          end
+      | Exp.BinOp (Binop.BOr, e1, e2) ->
+          let e1' = eval e1 in
+          let e2' = eval e2 in
+          begin match e1', e2' with
+            | Exp.Const (Const.Cint i), _ when IntLit.iszero i ->
+                e2'
+            | _, Exp.Const (Const.Cint i) when IntLit.iszero i ->
+                e1'
+            | Exp.Const (Const.Cint i1), Exp.Const(Const.Cint i2) ->
+                Exp.int (IntLit.logor i1 i2)
+            | _ ->
+                if abs then Exp.get_undefined false else Exp.BinOp (Binop.BOr, e1', e2')
+          end
+      | Exp.BinOp (Binop.BXor, e1, e2) ->
+          let e1' = eval e1 in
+          let e2' = eval e2 in
+          begin match e1', e2' with
+            | Exp.Const (Const.Cint i), _ when IntLit.iszero i ->
+                e2'
+            | _, Exp.Const (Const.Cint i) when IntLit.iszero i ->
+                e1'
+            | Exp.Const (Const.Cint i1), Exp.Const(Const.Cint i2) ->
+                Exp.int (IntLit.logxor i1 i2)
+            | _ ->
+                if abs then Exp.get_undefined false else Exp.BinOp (Binop.BXor, e1', e2')
+          end
+      | Exp.BinOp (Binop.PtrFld, e1, e2) ->
+          let e1' = eval e1 in
+          let e2' = eval e2 in
+          begin
+            match e2' with
+            | Exp.Const (Const.Cptr_to_fld (fn, typ)) ->
+                eval (Exp.Lfield(e1', fn, typ))
+            | Exp.Const (Const.Cint i) when IntLit.iszero i ->
+                Exp.zero (* cause a NULL dereference *)
+            | _ -> Exp.BinOp (Binop.PtrFld, e1', e2')
+          end
+      | Exp.Exn _ ->
+          e
+      | Exp.Lvar _ ->
+          e
+      | Exp.Lfield (e1, fld, typ) ->
+          let e1' = eval e1 in
+          Exp.Lfield (e1', fld, typ)
+      | Exp.Lindex(Exp.Lvar pv, e2) when false
+        (* removed: it interferes with re-arrangement and error messages *)
+        -> (* &x[n]  -->  &x + n *)
+          eval (Exp.BinOp (Binop.PlusPI, Exp.Lvar pv, e2))
+      | Exp.Lindex (Exp.BinOp(Binop.PlusPI, ep, e1), e2) ->
+          (* array access with pointer arithmetic *)
+          let e' = Exp.BinOp (Binop.PlusA, e1, e2) in
+          eval (Exp.Lindex (ep, e'))
+      | Exp.Lindex (e1, e2) ->
+          let e1' = eval e1 in
+          let e2' = eval e2 in
+          Exp.Lindex(e1', e2') in
+    let e' = eval e in
+    (* L.d_str "sym_eval "; Sil.d_exp e; L.d_str" --> "; Sil.d_exp e'; L.d_ln (); *)
+    e'
+
+  let exp_normalize sub exp =
+    let exp' = Sil.exp_sub sub exp in
+    if !Config.abs_val >= 1 then sym_eval true exp'
+    else sym_eval false exp'
+
+  let texp_normalize sub exp = match exp with
+    | Exp.Sizeof (typ, len, st) -> Exp.Sizeof (typ, Option.map (exp_normalize sub) len, st)
+    | _ -> exp_normalize sub exp
+
+  let exp_normalize_noabs sub exp =
+    Config.run_with_abs_val_equal_zero (exp_normalize sub) exp
+
+  (** Turn an inequality expression into an atom *)
+  let mk_inequality e =
+    match e with
+    | Exp.BinOp (Binop.Le, base, Exp.Const (Const.Cint n)) ->
+        (* base <= n case *)
+        let nbase = exp_normalize_noabs Sil.sub_empty base in
+        (match nbase with
+         | Exp.BinOp(Binop.PlusA, base', Exp.Const (Const.Cint n')) ->
+             let new_offset = Exp.int (n -- n') in
+             let new_e = Exp.BinOp (Binop.Le, base', new_offset) in
+             Sil.Aeq (new_e, Exp.one)
+         | Exp.BinOp(Binop.PlusA, Exp.Const (Const.Cint n'), base') ->
+             let new_offset = Exp.int (n -- n') in
+             let new_e = Exp.BinOp (Binop.Le, base', new_offset) in
+             Sil.Aeq (new_e, Exp.one)
+         | Exp.BinOp(Binop.MinusA, base', Exp.Const (Const.Cint n')) ->
+             let new_offset = Exp.int (n ++ n') in
+             let new_e = Exp.BinOp (Binop.Le, base', new_offset) in
+             Sil.Aeq (new_e, Exp.one)
+         | Exp.BinOp(Binop.MinusA, Exp.Const (Const.Cint n'), base') ->
+             let new_offset = Exp.int (n' -- n -- IntLit.one) in
+             let new_e = Exp.BinOp (Binop.Lt, new_offset, base') in
+             Sil.Aeq (new_e, Exp.one)
+         | Exp.UnOp(Unop.Neg, new_base, _) ->
+             (* In this case, base = -new_base. Construct -n-1 < new_base. *)
+             let new_offset = Exp.int (IntLit.zero -- n -- IntLit.one) in
+             let new_e = Exp.BinOp (Binop.Lt, new_offset, new_base) in
+             Sil.Aeq (new_e, Exp.one)
+         | _ -> Sil.Aeq (e, Exp.one))
+    | Exp.BinOp (Binop.Lt, Exp.Const (Const.Cint n), base) ->
+        (* n < base case *)
+        let nbase = exp_normalize_noabs Sil.sub_empty base in
+        (match nbase with
+         | Exp.BinOp(Binop.PlusA, base', Exp.Const (Const.Cint n')) ->
+             let new_offset = Exp.int (n -- n') in
+             let new_e = Exp.BinOp (Binop.Lt, new_offset, base') in
+             Sil.Aeq (new_e, Exp.one)
+         | Exp.BinOp(Binop.PlusA, Exp.Const (Const.Cint n'), base') ->
+             let new_offset = Exp.int (n -- n') in
+             let new_e = Exp.BinOp (Binop.Lt, new_offset, base') in
+             Sil.Aeq (new_e, Exp.one)
+         | Exp.BinOp(Binop.MinusA, base', Exp.Const (Const.Cint n')) ->
+             let new_offset = Exp.int (n ++ n') in
+             let new_e = Exp.BinOp (Binop.Lt, new_offset, base') in
+             Sil.Aeq (new_e, Exp.one)
+         | Exp.BinOp(Binop.MinusA, Exp.Const (Const.Cint n'), base') ->
+             let new_offset = Exp.int (n' -- n -- IntLit.one) in
+             let new_e = Exp.BinOp (Binop.Le, base', new_offset) in
+             Sil.Aeq (new_e, Exp.one)
+         | Exp.UnOp(Unop.Neg, new_base, _) ->
+             (* In this case, base = -new_base. Construct new_base <= -n-1 *)
+             let new_offset = Exp.int (IntLit.zero -- n -- IntLit.one) in
+             let new_e = Exp.BinOp (Binop.Le, new_base, new_offset) in
+             Sil.Aeq (new_e, Exp.one)
+         | _ -> Sil.Aeq (e, Exp.one))
+    | _ -> Sil.Aeq (e, Exp.one)
+
+  (** Normalize an inequality *)
+  let inequality_normalize a =
+    (* turn an expression into a triple (pos,neg,off) of positive and negative occurrences, and
+       integer offset representing inequality [sum(pos) - sum(neg) + off <= 0] *)
+    let rec exp_to_posnegoff e = match e with
+      | Exp.Const (Const.Cint n) -> [],[], n
+      | Exp.BinOp(Binop.PlusA, e1, e2) | Exp.BinOp(Binop.PlusPI, e1, e2) ->
+          let pos1, neg1, n1 = exp_to_posnegoff e1 in
+          let pos2, neg2, n2 = exp_to_posnegoff e2 in
+          (pos1@pos2, neg1@neg2, n1 ++ n2)
+      | Exp.BinOp(Binop.MinusA, e1, e2)
+      | Exp.BinOp(Binop.MinusPI, e1, e2)
+      | Exp.BinOp(Binop.MinusPP, e1, e2) ->
+          let pos1, neg1, n1 = exp_to_posnegoff e1 in
+          let pos2, neg2, n2 = exp_to_posnegoff e2 in
+          (pos1@neg2, neg1@pos2, n1 -- n2)
+      | Exp.UnOp(Unop.Neg, e1, _) ->
+          let pos1, neg1, n1 = exp_to_posnegoff e1 in
+          (neg1, pos1, IntLit.zero -- n1)
+      | _ -> [e],[], IntLit.zero in
+    (* sort and filter out expressions appearing in both the positive and negative part *)
+    let normalize_posnegoff (pos, neg, off) =
+      let pos' = IList.sort Exp.compare pos in
+      let neg' = IList.sort Exp.compare neg in
+      let rec combine pacc nacc = function
+        | x:: ps, y:: ng ->
+            (match Exp.compare x y with
+             | n when n < 0 -> combine (x:: pacc) nacc (ps, y :: ng)
+             | 0 -> combine pacc nacc (ps, ng)
+             | _ -> combine pacc (y:: nacc) (x :: ps, ng))
+        | ps, ng -> (IList.rev pacc) @ ps, (IList.rev nacc) @ ng in
+      let pos'', neg'' = combine [] [] (pos', neg') in
+      (pos'', neg'', off) in
+    (* turn a non-empty list of expressions into a sum expression *)
+    let rec exp_list_to_sum = function
+      | [] -> assert false
+      | [e] -> e
+      | e:: el -> Exp.BinOp(Binop.PlusA, e, exp_list_to_sum el) in
+    let norm_from_exp e =
+      match normalize_posnegoff (exp_to_posnegoff e) with
+      | [],[], n -> Exp.BinOp(Binop.Le, Exp.int n, Exp.zero)
+      | [], neg, n -> Exp.BinOp(Binop.Lt, Exp.int (n -- IntLit.one), exp_list_to_sum neg)
+      | pos, [], n -> Exp.BinOp(Binop.Le, exp_list_to_sum pos, Exp.int (IntLit.zero -- n))
+      | pos, neg, n ->
+          let lhs_e = Exp.BinOp(Binop.MinusA, exp_list_to_sum pos, exp_list_to_sum neg) in
+          Exp.BinOp(Binop.Le, lhs_e, Exp.int (IntLit.zero -- n)) in
+    let ineq = match a with
+      | Sil.Aeq (ineq, Exp.Const (Const.Cint i)) when IntLit.isone i ->
+          ineq
+      | _ -> assert false in
+    match ineq with
+    | Exp.BinOp(Binop.Le, e1, e2) ->
+        let e = Exp.BinOp(Binop.MinusA, e1, e2) in
+        mk_inequality (norm_from_exp e)
+    | Exp.BinOp(Binop.Lt, e1, e2) ->
+        let e = Exp.BinOp(Binop.MinusA, Exp.BinOp(Binop.MinusA, e1, e2), Exp.minus_one) in
+        mk_inequality (norm_from_exp e)
+    | _ -> a
+
+  (** Normalize an atom.
+      We keep the convention that inequalities with constants
+      are only of the form [e <= n] and [n < e]. *)
+  let atom_normalize sub a0 =
+    let a = Sil.atom_sub sub a0 in
+    let rec normalize_eq eq = match eq with
+      | Exp.BinOp(Binop.PlusA, e1, Exp.Const (Const.Cint n1)), Exp.Const (Const.Cint n2)
+      (* e1+n1==n2 ---> e1==n2-n1 *)
+      | Exp.BinOp(Binop.PlusPI, e1, Exp.Const (Const.Cint n1)), Exp.Const (Const.Cint n2) ->
+          (e1, Exp.int (n2 -- n1))
+      | Exp.BinOp(Binop.MinusA, e1, Exp.Const (Const.Cint n1)), Exp.Const (Const.Cint n2)
+      (* e1-n1==n2 ---> e1==n1+n2 *)
+      | Exp.BinOp(Binop.MinusPI, e1, Exp.Const (Const.Cint n1)), Exp.Const (Const.Cint n2) ->
+          (e1, Exp.int (n1 ++ n2))
+      | Exp.BinOp(Binop.MinusA, Exp.Const (Const.Cint n1), e1), Exp.Const (Const.Cint n2) ->
+          (* n1-e1 == n2 -> e1==n1-n2 *)
+          (e1, Exp.int (n1 -- n2))
+      | Exp.Lfield (e1', fld1, _), Exp.Lfield (e2', fld2, _) ->
+          if Ident.fieldname_equal fld1 fld2
+          then normalize_eq (e1', e2')
+          else eq
+      | Exp.Lindex (e1', idx1), Exp.Lindex (e2', idx2) ->
+          if Exp.equal idx1 idx2 then normalize_eq (e1', e2')
+          else if Exp.equal e1' e2' then normalize_eq (idx1, idx2)
+          else eq
+      | _ -> eq in
+    let handle_unary_negation e1 e2 =
+      match e1, e2 with
+      | Exp.UnOp (Unop.LNot, e1', _), Exp.Const (Const.Cint i)
+      | Exp.Const (Const.Cint i), Exp.UnOp (Unop.LNot, e1', _) when IntLit.iszero i ->
+          (e1', Exp.zero, true)
+      | _ -> (e1, e2, false) in
+    let handle_boolean_operation from_equality e1 e2 =
+      let ne1 = exp_normalize sub e1 in
+      let ne2 = exp_normalize sub e2 in
+      let ne1', ne2', op_negated = handle_unary_negation ne1 ne2 in
+      let (e1', e2') = normalize_eq (ne1', ne2') in
+      let (e1'', e2'') = exp_reorder e1' e2' in
+      let use_equality =
+        if op_negated then not from_equality else from_equality in
+      if use_equality then
+        Sil.Aeq (e1'', e2'')
+      else
+        Sil.Aneq (e1'', e2'') in
+    let a' = match a with
+      | Sil.Aeq (e1, e2) ->
+          handle_boolean_operation true e1 e2
       | Sil.Aneq (e1, e2) ->
-          let sigma' = sigma_intro_nonemptylseg e1 e2 p.sigma in
-          let pi' = pi_normalize p.sub sigma' (a':: p.pi) in
-          unsafe_cast_to_normal
-            (set p ~pi:pi' ~sigma:sigma')
-      | _ ->
-          let pi' = pi_normalize p.sub p.sigma (a':: p.pi) in
-          unsafe_cast_to_normal
-            (set p ~pi:pi') in
-    if not footprint then p'
-    else begin
-      let fav_a' = Sil.atom_fav a' in
-      let fav_nofootprint_a' =
-        Sil.fav_copy_filter_ident fav_a' (fun id -> not (Ident.is_footprint id)) in
-      let predicate_warning =
-        not (Sil.fav_is_empty fav_nofootprint_a') in
-      let p'' =
-        if predicate_warning then footprint_normalize p'
-        else
-          match a' with
-          | Sil.Aeq (Exp.Var i, e) when not (Sil.ident_in_exp i e) ->
-              let mysub = Sil.sub_of_list [(i, e)] in
-              let sigma_fp' = sigma_normalize mysub p'.sigma_fp in
-              let pi_fp' = a' :: pi_normalize mysub sigma_fp' p'.pi_fp in
-              footprint_normalize
-                (set p' ~pi_fp:pi_fp' ~sigma_fp:sigma_fp')
+          handle_boolean_operation false e1 e2
+      | Sil.Apred (a, es) ->
+          Sil.Apred (a, IList.map (fun e -> exp_normalize sub e) es)
+      | Sil.Anpred (a, es) ->
+          Sil.Anpred (a, IList.map (fun e -> exp_normalize sub e) es) in
+    if atom_is_inequality a' then inequality_normalize a' else a'
+
+  let normalize_and_strengthen_atom (p : normal t) (a : Sil.atom) : Sil.atom =
+    let a' = atom_normalize p.sub a in
+    match a' with
+    | Sil.Aeq (Exp.BinOp (Binop.Le, Exp.Var id, Exp.Const (Const.Cint n)), Exp.Const (Const.Cint i))
+      when IntLit.isone i ->
+        let lower = Exp.int (n -- IntLit.one) in
+        let a_lower = Sil.Aeq (Exp.BinOp (Binop.Lt, lower, Exp.Var id), Exp.one) in
+        if not (IList.mem Sil.atom_equal a_lower p.pi) then a'
+        else Sil.Aeq (Exp.Var id, Exp.int n)
+    | Sil.Aeq (Exp.BinOp (Binop.Lt, Exp.Const (Const.Cint n), Exp.Var id), Exp.Const (Const.Cint i))
+      when IntLit.isone i ->
+        let upper = Exp.int (n ++ IntLit.one) in
+        let a_upper = Sil.Aeq (Exp.BinOp (Binop.Le, Exp.Var id, upper), Exp.one) in
+        if not (IList.mem Sil.atom_equal a_upper p.pi) then a'
+        else Sil.Aeq (Exp.Var id, upper)
+    | Sil.Aeq (Exp.BinOp (Binop.Ne, e1, e2), Exp.Const (Const.Cint i)) when IntLit.isone i ->
+        Sil.Aneq (e1, e2)
+    | _ -> a'
+
+  let rec strexp_normalize sub se =
+    match se with
+    | Sil.Eexp (e, inst) ->
+        Sil.Eexp (exp_normalize sub e, inst)
+    | Sil.Estruct (fld_cnts, inst) ->
+        begin
+          match fld_cnts with
+          | [] -> se
           | _ ->
-              footprint_normalize
-                (set p' ~pi_fp:(a' :: p'.pi_fp)) in
-      if predicate_warning then (L.d_warning "dropping non-footprint "; Sil.d_atom a'; L.d_ln ());
-      unsafe_cast_to_normal p''
+              let fld_cnts' =
+                IList.map (fun (fld, cnt) ->
+                    fld, strexp_normalize sub cnt) fld_cnts in
+              let fld_cnts'' = IList.sort Sil.fld_strexp_compare fld_cnts' in
+              Sil.Estruct (fld_cnts'', inst)
+        end
+    | Sil.Earray (len, idx_cnts, inst) ->
+        begin
+          let len' = exp_normalize_noabs sub len in
+          match idx_cnts with
+          | [] ->
+              if Exp.equal len len' then se else Sil.Earray (len', idx_cnts, inst)
+          | _ ->
+              let idx_cnts' =
+                IList.map (fun (idx, cnt) ->
+                    let idx' = exp_normalize sub idx in
+                    idx', strexp_normalize sub cnt) idx_cnts in
+              let idx_cnts'' =
+                IList.sort Sil.exp_strexp_compare idx_cnts' in
+              Sil.Earray (len', idx_cnts'', inst)
+        end
+
+  (** Exp.Construct a pointsto. *)
+  let mk_ptsto lexp sexp te =
+    let nsexp = strexp_normalize Sil.sub_empty sexp in
+    Sil.Hpointsto(lexp, nsexp, te)
+
+  (** Construct a points-to predicate for an expression using
+      either the provided expression [name] as
+      base for fresh identifiers. If [expand_structs] is true,
+      initialize the fields of structs with fresh variables. *)
+  let mk_ptsto_exp tenvo struct_init_mode (exp, te, expo) inst : Sil.hpred =
+    let default_strexp () = match te with
+      | Exp.Sizeof (typ, len, _) ->
+          create_strexp_of_type tenvo struct_init_mode typ len inst
+      | Exp.Var _ ->
+          Sil.Estruct ([], inst)
+      | te ->
+          L.err "trying to create ptsto with type: %a@\n@." (Sil.pp_texp_full pe_text) te;
+          assert false in
+    let strexp = match expo with
+      | Some e -> Sil.Eexp (e, inst)
+      | None -> default_strexp () in
+    mk_ptsto exp strexp te
+
+  let rec hpred_normalize sub hpred =
+    let replace_hpred hpred' =
+      L.d_strln "found array with sizeof(..) size";
+      L.d_str "converting original hpred: "; Sil.d_hpred hpred; L.d_ln ();
+      L.d_str "into the following: "; Sil.d_hpred hpred'; L.d_ln ();
+      hpred' in
+    match hpred with
+    | Sil.Hpointsto (root, cnt, te) ->
+        let normalized_root = exp_normalize sub root in
+        let normalized_cnt = strexp_normalize sub cnt in
+        let normalized_te = texp_normalize sub te in
+        begin match normalized_cnt, normalized_te with
+          | Sil.Earray (Exp.Sizeof _ as size, [], inst), Exp.Sizeof (Typ.Tarray _, _, _) ->
+              (* check for an empty array whose size expression is (Sizeof type), and turn the array
+                 into a strexp of the given type *)
+              let hpred' = mk_ptsto_exp None Fld_init (root, size, None) inst in
+              replace_hpred hpred'
+          | ( Sil.Earray (Exp.BinOp (Binop.Mult, Exp.Sizeof (t, None, st1), x), esel, inst)
+            | Sil.Earray (Exp.BinOp (Binop.Mult, x, Exp.Sizeof (t, None, st1)), esel, inst)),
+            Exp.Sizeof (Typ.Tarray (elt, _) as arr, _, _)
+            when Typ.equal t elt ->
+              let len = Some x in
+              let hpred' =
+                mk_ptsto_exp None Fld_init (root, Exp.Sizeof (arr, len, st1), None) inst in
+              replace_hpred (replace_array_contents hpred' esel)
+          | ( Sil.Earray (Exp.BinOp (Binop.Mult, Exp.Sizeof (t, Some len, st1), x), esel, inst)
+            | Sil.Earray (Exp.BinOp (Binop.Mult, x, Exp.Sizeof (t, Some len, st1)), esel, inst)),
+            Exp.Sizeof (Typ.Tarray (elt, _) as arr, _, _)
+            when Typ.equal t elt ->
+              let len = Some (Exp.BinOp(Binop.Mult, x, len)) in
+              let hpred' =
+                mk_ptsto_exp None Fld_init (root, Exp.Sizeof (arr, len, st1), None) inst in
+              replace_hpred (replace_array_contents hpred' esel)
+          | _ -> Sil.Hpointsto (normalized_root, normalized_cnt, normalized_te)
+        end
+    | Sil.Hlseg (k, para, e1, e2, elist) ->
+        let normalized_e1 = exp_normalize sub e1 in
+        let normalized_e2 = exp_normalize sub e2 in
+        let normalized_elist = IList.map (exp_normalize sub) elist in
+        let normalized_para = hpara_normalize para in
+        Sil.Hlseg (k, normalized_para, normalized_e1, normalized_e2, normalized_elist)
+    | Sil.Hdllseg (k, para, e1, e2, e3, e4, elist) ->
+        let norm_e1 = exp_normalize sub e1 in
+        let norm_e2 = exp_normalize sub e2 in
+        let norm_e3 = exp_normalize sub e3 in
+        let norm_e4 = exp_normalize sub e4 in
+        let norm_elist = IList.map (exp_normalize sub) elist in
+        let norm_para = hpara_dll_normalize para in
+        Sil.Hdllseg (k, norm_para, norm_e1, norm_e2, norm_e3, norm_e4, norm_elist)
+
+  and hpara_normalize para =
+    let normalized_body = IList.map (hpred_normalize Sil.sub_empty) (para.Sil.body) in
+    let sorted_body = IList.sort Sil.hpred_compare normalized_body in
+    { para with Sil.body = sorted_body }
+
+  and hpara_dll_normalize para =
+    let normalized_body = IList.map (hpred_normalize Sil.sub_empty) (para.Sil.body_dll) in
+    let sorted_body = IList.sort Sil.hpred_compare normalized_body in
+    { para with Sil.body_dll = sorted_body }
+
+
+  let sigma_normalize sub sigma =
+    let sigma' =
+      IList.stable_sort Sil.hpred_compare (IList.map (hpred_normalize sub) sigma) in
+    if sigma_equal sigma sigma' then sigma else sigma'
+
+  let pi_tighten_ineq pi =
+    let ineq_list, nonineq_list = IList.partition atom_is_inequality pi in
+    let diseq_list =
+      let get_disequality_info acc = function
+        | Sil.Aneq(Exp.Const (Const.Cint n), e)
+        | Sil.Aneq(e, Exp.Const (Const.Cint n)) -> (e, n) :: acc
+        | _ -> acc in
+      IList.fold_left get_disequality_info [] nonineq_list in
+    let is_neq e n =
+      IList.exists (fun (e', n') -> Exp.equal e e' && IntLit.eq n n') diseq_list in
+    let le_list_tightened =
+      let get_le_inequality_info acc a =
+        match atom_exp_le_const a with
+        | Some (e, n) -> (e, n):: acc
+        | _ -> acc in
+      let rec le_tighten le_list_done = function
+        | [] -> IList.rev le_list_done
+        | (e, n):: le_list_todo -> (* e <= n *)
+            if is_neq e n then le_tighten le_list_done ((e, n -- IntLit.one):: le_list_todo)
+            else le_tighten ((e, n):: le_list_done) (le_list_todo) in
+      let le_list = IList.rev (IList.fold_left get_le_inequality_info [] ineq_list) in
+      le_tighten [] le_list in
+    let lt_list_tightened =
+      let get_lt_inequality_info acc a =
+        match atom_const_lt_exp a with
+        | Some (n, e) -> (n, e):: acc
+        | _ -> acc in
+      let rec lt_tighten lt_list_done = function
+        | [] -> IList.rev lt_list_done
+        | (n, e):: lt_list_todo -> (* n < e *)
+            let n_plus_one = n ++ IntLit.one in
+            if is_neq e n_plus_one
+            then lt_tighten lt_list_done ((n ++ IntLit.one, e):: lt_list_todo)
+            else lt_tighten ((n, e):: lt_list_done) (lt_list_todo) in
+      let lt_list = IList.rev (IList.fold_left get_lt_inequality_info [] ineq_list) in
+      lt_tighten [] lt_list in
+    let ineq_list' =
+      let le_ineq_list =
+        IList.map
+          (fun (e, n) -> mk_inequality (Exp.BinOp(Binop.Le, e, Exp.int n)))
+          le_list_tightened in
+      let lt_ineq_list =
+        IList.map
+          (fun (n, e) -> mk_inequality (Exp.BinOp(Binop.Lt, Exp.int n, e)))
+          lt_list_tightened in
+      le_ineq_list @ lt_ineq_list in
+    let nonineq_list' =
+      IList.filter
+        (function
+          | Sil.Aneq(Exp.Const (Const.Cint n), e)
+          | Sil.Aneq(e, Exp.Const (Const.Cint n)) ->
+              (not (IList.exists
+                      (fun (e', n') -> Exp.equal e e' && IntLit.lt n' n)
+                      le_list_tightened)) &&
+              (not (IList.exists
+                      (fun (n', e') -> Exp.equal e e' && IntLit.leq n n')
+                      lt_list_tightened))
+          | _ -> true)
+        nonineq_list in
+    (ineq_list', nonineq_list')
+
+  (** Normalization of pi.
+      The normalization filters out obviously - true disequalities, such as e <> e + 1. *)
+  let pi_normalize sub sigma pi0 =
+    let pi = IList.map (atom_normalize sub) pi0 in
+    let ineq_list, nonineq_list = pi_tighten_ineq pi in
+    let syntactically_different = function
+      | Exp.BinOp(op1, e1, Exp.Const(c1)), Exp.BinOp(op2, e2, Exp.Const(c2))
+        when Exp.equal e1 e2 ->
+          Binop.equal op1 op2 && Binop.injective op1 && not (Const.equal c1 c2)
+      | e1, Exp.BinOp(op2, e2, Exp.Const(c2))
+        when Exp.equal e1 e2 ->
+          Binop.injective op2 &&
+          Binop.is_zero_runit op2 &&
+          not (Const.equal (Const.Cint IntLit.zero) c2)
+      | Exp.BinOp(op1, e1, Exp.Const(c1)), e2
+        when Exp.equal e1 e2 ->
+          Binop.injective op1 &&
+          Binop.is_zero_runit op1 &&
+          not (Const.equal (Const.Cint IntLit.zero) c1)
+      | _ -> false in
+    let filter_useful_atom =
+      let unsigned_exps = lazy (sigma_get_unsigned_exps sigma) in
+      function
+      | Sil.Aneq ((Exp.Var _) as e, Exp.Const (Const.Cint n)) when IntLit.isnegative n ->
+          not (IList.exists (Exp.equal e) (Lazy.force unsigned_exps))
+      | Sil.Aneq(e1, e2) ->
+          not (syntactically_different (e1, e2))
+      | Sil.Aeq(Exp.Const c1, Exp.Const c2) ->
+          not (Const.equal c1 c2)
+      | _ -> true in
+    let pi' =
+      IList.stable_sort
+        Sil.atom_compare
+        ((IList.filter filter_useful_atom nonineq_list) @ ineq_list) in
+    let pi'' = pi_sorted_remove_redundant pi' in
+    if pi_equal pi0 pi'' then pi0 else pi''
+
+  (** normalize the footprint part, and rename any primed vars
+      in the footprint with fresh footprint vars *)
+  let footprint_normalize prop =
+    let nsigma = sigma_normalize Sil.sub_empty prop.sigma_fp in
+    let npi = pi_normalize Sil.sub_empty nsigma prop.pi_fp in
+    let fp_vars =
+      let fav = pi_fav npi in
+      sigma_fav_add fav nsigma;
+      fav in
+    (* TODO (t4893479): make this check less angelic *)
+    if Sil.fav_exists fp_vars Ident.is_normal && not Config.angelic_execution then
+      begin
+        L.d_strln "footprint part contains normal variables";
+        d_pi npi; L.d_ln ();
+        d_sigma nsigma; L.d_ln ();
+        assert false
+      end;
+    Sil.fav_filter_ident fp_vars Ident.is_primed; (* only keep primed vars *)
+    let npi', nsigma' =
+      if Sil.fav_is_empty fp_vars then npi, nsigma
+      else (* replace primed vars by fresh footprint vars *)
+        let ids_primed = Sil.fav_to_list fp_vars in
+        let ids_footprint =
+          IList.map (fun id -> (id, Ident.create_fresh Ident.kfootprint)) ids_primed in
+        let ren_sub =
+          Sil.sub_of_list (IList.map (fun (id1, id2) -> (id1, Exp.Var id2)) ids_footprint) in
+        let nsigma' = sigma_normalize Sil.sub_empty (sigma_sub ren_sub nsigma) in
+        let npi' = pi_normalize Sil.sub_empty nsigma' (pi_sub ren_sub npi) in
+        (npi', nsigma') in
+    set prop ~pi_fp:npi' ~sigma_fp:nsigma'
+
+  (** This function assumes that if (x,Exp.Var(y)) in sub, then compare x y = 1 *)
+  let sub_normalize sub =
+    let f (id, e) = (not (Ident.is_primed id)) && (not (Sil.ident_in_exp id e)) in
+    let sub' = Sil.sub_filter_pair f sub in
+    if Sil.sub_equal sub sub' then sub else sub'
+
+  (** Conjoin a pure atomic predicate by normal conjunction. *)
+  let rec prop_atom_and ?(footprint=false) (p : normal t) a : normal t =
+    let a' = normalize_and_strengthen_atom p a in
+    if IList.mem Sil.atom_equal a' p.pi then p
+    else begin
+      let p' =
+        match a' with
+        | Sil.Aeq (Exp.Var i, e) when Sil.ident_in_exp i e -> p
+        | Sil.Aeq (Exp.Var i, e) ->
+            let sub_list = [(i, e)] in
+            let mysub = Sil.sub_of_list sub_list in
+            let p_sub = Sil.sub_filter (fun i' -> not (Ident.equal i i')) p.sub in
+            let sub' = Sil.sub_join mysub (Sil.sub_range_map (Sil.exp_sub mysub) p_sub) in
+            let (nsub', npi', nsigma') =
+              let nsigma' = sigma_normalize sub' p.sigma in
+              (sub_normalize sub', pi_normalize sub' nsigma' p.pi, nsigma') in
+            let (eqs_zero, nsigma'') = sigma_remove_emptylseg nsigma' in
+            let p' =
+              unsafe_cast_to_normal
+                (set p ~sub:nsub' ~pi:npi' ~sigma:nsigma'') in
+            IList.fold_left (prop_atom_and ~footprint) p' eqs_zero
+        | Sil.Aeq (e1, e2) when (Exp.compare e1 e2 = 0) ->
+            p
+        | Sil.Aneq (e1, e2) ->
+            let sigma' = sigma_intro_nonemptylseg e1 e2 p.sigma in
+            let pi' = pi_normalize p.sub sigma' (a':: p.pi) in
+            unsafe_cast_to_normal
+              (set p ~pi:pi' ~sigma:sigma')
+        | _ ->
+            let pi' = pi_normalize p.sub p.sigma (a':: p.pi) in
+            unsafe_cast_to_normal
+              (set p ~pi:pi') in
+      if not footprint then p'
+      else begin
+        let fav_a' = Sil.atom_fav a' in
+        let fav_nofootprint_a' =
+          Sil.fav_copy_filter_ident fav_a' (fun id -> not (Ident.is_footprint id)) in
+        let predicate_warning =
+          not (Sil.fav_is_empty fav_nofootprint_a') in
+        let p'' =
+          if predicate_warning then footprint_normalize p'
+          else
+            match a' with
+            | Sil.Aeq (Exp.Var i, e) when not (Sil.ident_in_exp i e) ->
+                let mysub = Sil.sub_of_list [(i, e)] in
+                let sigma_fp' = sigma_normalize mysub p'.sigma_fp in
+                let pi_fp' = a' :: pi_normalize mysub sigma_fp' p'.pi_fp in
+                footprint_normalize
+                  (set p' ~pi_fp:pi_fp' ~sigma_fp:sigma_fp')
+            | _ ->
+                footprint_normalize
+                  (set p' ~pi_fp:(a' :: p'.pi_fp)) in
+        if predicate_warning then (L.d_warning "dropping non-footprint "; Sil.d_atom a'; L.d_ln ());
+        unsafe_cast_to_normal p''
+      end
     end
-  end
+
+  (** normalize a prop *)
+  let normalize (eprop : 'a t) : normal t =
+    let p0 =
+      unsafe_cast_to_normal
+        (set prop_emp ~sigma: (sigma_normalize Sil.sub_empty eprop.sigma)) in
+    let nprop = IList.fold_left prop_atom_and p0 (get_pure eprop) in
+    unsafe_cast_to_normal
+      (footprint_normalize (set nprop ~pi_fp:eprop.pi_fp ~sigma_fp:eprop.sigma_fp))
+
+end
+(* End of module Normalize *)
+
+let exp_normalize_prop prop exp =
+  Config.run_with_abs_val_equal_zero (Normalize.exp_normalize prop.sub) exp
+
+let lexp_normalize_prop p lexp =
+  let root = Exp.root_of_lexp lexp in
+  let offsets = Sil.exp_get_offsets lexp in
+  let nroot = exp_normalize_prop p root in
+  let noffsets =
+    IList.map (fun n -> match n with
+        | Sil.Off_fld _ -> n
+        | Sil.Off_index e -> Sil.Off_index (exp_normalize_prop p e)
+      ) offsets in
+  Sil.exp_add_offsets nroot noffsets
+
+let atom_normalize_prop prop atom =
+  Config.run_with_abs_val_equal_zero (Normalize.atom_normalize prop.sub) atom
+
+let strexp_normalize_prop prop strexp =
+  Config.run_with_abs_val_equal_zero (Normalize.strexp_normalize prop.sub) strexp
+
+let hpred_normalize_prop prop hpred =
+  Config.run_with_abs_val_equal_zero (Normalize.hpred_normalize prop.sub) hpred
+
+let sigma_normalize_prop prop sigma =
+  Config.run_with_abs_val_equal_zero (Normalize.sigma_normalize prop.sub) sigma
+
+let pi_normalize_prop prop pi =
+  Config.run_with_abs_val_equal_zero (Normalize.pi_normalize prop.sub prop.sigma) pi
+
+let sigma_replace_exp epairs sigma =
+  let sigma' = IList.map (Sil.hpred_replace_exp epairs) sigma in
+  Normalize.sigma_normalize Sil.sub_empty sigma'
+
+(** Construct an atom. *)
+let mk_atom atom =
+  Config.run_with_abs_val_equal_zero (fun () -> Normalize.atom_normalize Sil.sub_empty atom) ()
+
+(** Exp.Construct a disequality. *)
+let mk_neq e1 e2 = mk_atom (Aneq (e1, e2))
+
+(** Exp.Construct an equality. *)
+let mk_eq e1 e2 = mk_atom (Aeq (e1, e2))
+
+(** Construct a pred. *)
+let mk_pred a es = mk_atom (Apred (a, es))
+
+(** Construct a negated pred. *)
+let mk_npred a es = mk_atom (Anpred (a, es))
+
+(** Exp.Construct a lseg predicate *)
+let mk_lseg k para e_start e_end es_shared =
+  let npara = Normalize.hpara_normalize para in
+  Sil.Hlseg (k, npara, e_start, e_end, es_shared)
+
+(** Exp.Construct a dllseg predicate *)
+let mk_dllseg k para exp_iF exp_oB exp_oF exp_iB exps_shared =
+  let npara = Normalize.hpara_dll_normalize para in
+  Sil.Hdllseg (k, npara, exp_iF, exp_oB , exp_oF, exp_iB, exps_shared)
+
+(** Exp.Construct a hpara *)
+let mk_hpara root next svars evars body =
+  let para =
+    { Sil.root = root;
+      next = next;
+      svars = svars;
+      evars = evars;
+      body = body } in
+  Normalize.hpara_normalize para
+
+(** Exp.Construct a dll_hpara *)
+let mk_dll_hpara iF oB oF svars evars body =
+  let para =
+    { Sil.cell = iF;
+      blink = oB;
+      flink = oF;
+      svars_dll = svars;
+      evars_dll = evars;
+      body_dll = body } in
+  Normalize.hpara_dll_normalize para
+
+(** Construct a points-to predicate for a single program variable.
+    If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
+let mk_ptsto_lvar tenv expand_structs inst ((pvar: Pvar.t), texp, expo) : Sil.hpred =
+  Normalize.mk_ptsto_exp tenv expand_structs (Exp.Lvar pvar, texp, expo) inst
 
 (** Conjoin [exp1]=[exp2] with a symbolic heap [prop]. *)
 let conjoin_eq ?(footprint = false) exp1 exp2 prop =
-  prop_atom_and ~footprint prop (Sil.Aeq(exp1, exp2))
+  Normalize.prop_atom_and ~footprint prop (Sil.Aeq(exp1, exp2))
 
 (** Conjoin [exp1!=exp2] with a symbolic heap [prop]. *)
 let conjoin_neq ?(footprint = false) exp1 exp2 prop =
-  prop_atom_and ~footprint prop (Sil.Aneq (exp1, exp2))
+  Normalize.prop_atom_and ~footprint prop (Sil.Aneq (exp1, exp2))
 
 (** Reset every inst in the prop using the given map *)
 let prop_reset_inst inst_map prop =
@@ -1859,7 +1820,7 @@ let sigma_dfs_sort sigma =
     | [] -> IList.rev visited
     | cur ->
         if ExpStack.is_empty () then
-          let cur' = sigma_normalize Sil.sub_empty cur in
+          let cur' = Normalize.sigma_normalize Sil.sub_empty cur in
           IList.rev_append cur' visited
         else
           let e = ExpStack.pop () in
@@ -1936,8 +1897,8 @@ let compute_reindexing_from_indices indices =
   compute_reindexing fav_add get_id_offset indices
 
 let apply_reindexing subst prop =
-  let nsigma = sigma_normalize subst prop.sigma in
-  let npi = pi_normalize subst nsigma prop.pi in
+  let nsigma = Normalize.sigma_normalize subst prop.sigma in
+  let npi = Normalize.pi_normalize subst nsigma prop.pi in
   let nsub, atoms =
     let dom_subst = IList.map fst (Sil.sub_to_list subst) in
     let in_dom_subst id = IList.exists (Ident.equal id) dom_subst in
@@ -1945,12 +1906,15 @@ let apply_reindexing subst prop =
     let contains_substituted_id e = Sil.fav_exists (Sil.exp_fav e) in_dom_subst in
     let sub_eqs, sub_keep = Sil.sub_range_partition contains_substituted_id sub' in
     let eqs = Sil.sub_to_list sub_eqs in
-    let atoms = IList.map (fun (id, e) -> Sil.Aeq (Exp.Var id, exp_normalize subst e)) eqs in
+    let atoms =
+      IList.map
+        (fun (id, e) -> Sil.Aeq (Exp.Var id, Normalize.exp_normalize subst e))
+        eqs in
     (sub_keep, atoms) in
   let p' =
     unsafe_cast_to_normal
       (set prop ~sub:nsub ~pi:npi ~sigma:nsigma) in
-  IList.fold_left prop_atom_and p' atoms
+  IList.fold_left Normalize.prop_atom_and p' atoms
 
 let prop_rename_array_indices prop =
   if !Config.footprint then prop
@@ -2122,28 +2086,14 @@ let prop_rename_primed_footprint_vars (p : normal t) : normal t =
   let sub_for_normalize = Sil.sub_empty in
   (* It is fine to use the empty substituion during normalization
      because the renaming maintains that a substitution is normalized *)
-  let nsub' = sub_normalize sub' in
-  let nsigma' = sigma_normalize sub_for_normalize sigma' in
-  let npi' = pi_normalize sub_for_normalize nsigma' pi' in
-  let p' = footprint_normalize
+  let nsub' = Normalize.sub_normalize sub' in
+  let nsigma' = Normalize.sigma_normalize sub_for_normalize sigma' in
+  let npi' = Normalize.pi_normalize sub_for_normalize nsigma' pi' in
+  let p' = Normalize.footprint_normalize
       (set prop_emp ~sub:nsub' ~pi:npi' ~sigma:nsigma' ~pi_fp:pi_fp' ~sigma_fp:sigma_fp') in
   unsafe_cast_to_normal p'
 
-(** {2 Functions for changing and generating propositions} *)
-
-let mem_idlist i l =
-  IList.exists (fun id -> Ident.equal i id) l
-
 let expose (p : normal t) : exposed t = Obj.magic p
-
-(** normalize a prop *)
-let normalize (eprop : 'a t) : normal t =
-  let p0 =
-    unsafe_cast_to_normal
-      (set prop_emp ~sigma: (sigma_normalize Sil.sub_empty eprop.sigma)) in
-  let nprop = IList.fold_left prop_atom_and p0 (get_pure eprop) in
-  unsafe_cast_to_normal
-    (footprint_normalize (set nprop ~pi_fp:eprop.pi_fp ~sigma_fp:eprop.sigma_fp))
 
 (** Apply subsitution to prop. *)
 let prop_sub subst (prop: 'a t) : exposed t =
@@ -2155,7 +2105,7 @@ let prop_sub subst (prop: 'a t) : exposed t =
 
 (** Apply renaming substitution to a proposition. *)
 let prop_ren_sub (ren_sub: Sil.subst) (prop: normal t) : normal t =
-  normalize (prop_sub ren_sub prop)
+  Normalize.normalize (prop_sub ren_sub prop)
 
 (** Existentially quantify the [fav] in [prop].
     [fav] should not contain any primed variables. *)
@@ -2167,6 +2117,7 @@ let exist_quantify fav (prop : normal t) : normal t =
     let ren_sub = Sil.sub_of_list (IList.map gen_fresh_id_sub ids) in
     let prop' =
       (* throw away x=E if x becomes _x *)
+      let mem_idlist i = IList.exists (fun id -> Ident.equal i id) in
       let sub = Sil.sub_filter (fun i -> not (mem_idlist i ids)) prop.sub in
       if Sil.sub_equal sub prop.sub then prop
       else unsafe_cast_to_normal (set prop ~sub) in
@@ -2223,7 +2174,7 @@ let prop_rename_fav_with_existentials (p : normal t) : normal t =
   let ren_sub = Sil.sub_of_list (IList.map (fun (i, i') -> (i, Exp.Var i')) ids') in
   let p' = prop_sub ren_sub p in
   (*L.d_strln "Prop after renaming:"; d_prop p'; L.d_strln "";*)
-  normalize p'
+  Normalize.normalize p'
 
 (** {2 Prop iterators} *)
 
@@ -2259,7 +2210,7 @@ let prop_iter_create prop =
 let prop_iter_to_prop iter =
   let sigma = IList.rev_append iter.pit_old (iter.pit_curr:: iter.pit_new) in
   let prop =
-    normalize
+    Normalize.normalize
       (set prop_emp
          ~sub:iter.pit_sub
          ~pi:iter.pit_pi
@@ -2267,7 +2218,7 @@ let prop_iter_to_prop iter =
          ~pi_fp:iter.pit_pi_fp
          ~sigma_fp:iter.pit_sigma_fp) in
   IList.fold_left
-    (fun p (footprint, atom) -> prop_atom_and ~footprint: footprint p atom)
+    (fun p (footprint, atom) -> Normalize.prop_atom_and ~footprint: footprint p atom)
     prop iter.pit_newpi
 
 (** Add an atom to the pi part of prop iter. The
@@ -2280,7 +2231,7 @@ let prop_iter_add_atom footprint iter atom =
     associated to the resulting iterator *)
 let prop_iter_remove_curr_then_to_prop iter : normal t =
   let sigma = IList.rev_append iter.pit_old iter.pit_new in
-  let normalized_sigma = sigma_normalize iter.pit_sub sigma in
+  let normalized_sigma = Normalize.sigma_normalize iter.pit_sub sigma in
   let prop =
     set prop_emp
       ~sub:iter.pit_sub
@@ -2292,13 +2243,13 @@ let prop_iter_remove_curr_then_to_prop iter : normal t =
 
 (** Return the current hpred and state. *)
 let prop_iter_current iter =
-  let curr = hpred_normalize iter.pit_sub iter.pit_curr in
+  let curr = Normalize.hpred_normalize iter.pit_sub iter.pit_curr in
   let prop =
     unsafe_cast_to_normal
       (set prop_emp ~sigma:[curr]) in
   let prop' =
     IList.fold_left
-      (fun p (footprint, atom) -> prop_atom_and ~footprint: footprint p atom)
+      (fun p (footprint, atom) -> Normalize.prop_atom_and ~footprint: footprint p atom)
       prop iter.pit_newpi in
   match prop'.sigma with
   | [curr'] -> (curr', iter.pit_state)
@@ -2360,7 +2311,7 @@ let prop_iter_make_id_primed id iter =
 
   let normalize (id, e) =
     let eq' = Sil.Aeq(Sil.exp_sub sub_id (Exp.Var id), Sil.exp_sub sub_id e) in
-    atom_normalize Sil.sub_empty eq' in
+    Normalize.atom_normalize Sil.sub_empty eq' in
 
   let rec split pairs_unpid pairs_pid = function
     | [] -> (IList.rev pairs_unpid, IList.rev pairs_pid)
@@ -2402,7 +2353,7 @@ let prop_iter_make_id_primed id iter =
         let sub_unpid = Sil.sub_of_list pairs_unpid' in
         let pairs = (id, e1) :: pairs_unpid' in
         sub_unpid, Sil.sub_of_list pairs, get_eqs [] pairs_pid in
-  let nsub_new = sub_normalize sub_new in
+  let nsub_new = Normalize.sub_normalize sub_new in
 
   { iter with
     pit_sub = nsub_new;
@@ -2497,7 +2448,7 @@ let prop_case_split prop =
     let prop' =
       unsafe_cast_to_normal
         (set prop ~sigma:sigma') in
-    (IList.fold_left prop_atom_and prop' pi):: props_acc in
+    (IList.fold_left Normalize.prop_atom_and prop' pi):: props_acc in
   IList.fold_left f [] pi_sigma_list
 
 let prop_expand prop =
@@ -2505,57 +2456,6 @@ let prop_expand prop =
   let _ = check_prop_normalized prop in
   *)
   prop_case_split prop
-
-let mk_nondet il1 il2 loc =
-  Sil.Stackop (Sil.Push, loc) :: (* save initial state *)
-  il1 @ (* compute result1 *)
-  [Sil.Stackop (Sil.Swap, loc)] @ (* save result1 and restore initial state *)
-  il2 @ (* compute result2 *)
-  [Sil.Stackop (Sil.Pop, loc)] (* combine result1 and result2 *)
-
-(** translate a logical and/or operation taking care of the non-strict semantics for side effects *)
-let trans_land_lor op ((idl1, stml1), e1) ((idl2, stml2), e2) loc =
-  let no_side_effects stml =
-    stml = [] in
-  if no_side_effects stml2 then
-    ((idl1@idl2, stml1@stml2), Exp.BinOp(op, e1, e2))
-  else
-    begin
-      let id = Ident.create_fresh Ident.knormal in
-      let prune_instr1, prune_res1, prune_instr2, prune_res2 =
-        let cond1, cond2, res = match op with
-          | Binop.LAnd -> e1, Exp.UnOp(Unop.LNot, e1, None), IntLit.zero
-          | Binop.LOr -> Exp.UnOp(Unop.LNot, e1, None), e1, IntLit.one
-          | _ -> assert false in
-        let cond_res1 = Exp.BinOp(Binop.Eq, Exp.Var id, e2) in
-        let cond_res2 = Exp.BinOp(Binop.Eq, Exp.Var id, Exp.int res) in
-        let mk_prune cond =
-          (* don't report always true/false *)
-          Sil.Prune (cond, loc, true, Sil.Ik_land_lor) in
-        mk_prune cond1, mk_prune cond_res1, mk_prune cond2, mk_prune cond_res2 in
-      let instrs2 =
-        mk_nondet (prune_instr1 :: stml2 @ [prune_res1]) ([prune_instr2; prune_res2]) loc in
-      ((id:: idl1@idl2, stml1@instrs2), Exp.Var id)
-    end
-
-(** translate an if-then-else expression *)
-let trans_if_then_else ((idl1, stml1), e1) ((idl2, stml2), e2) ((idl3, stml3), e3) loc =
-  match sym_eval false e1 with
-  | Exp.Const (Const.Cint i) when IntLit.iszero i -> (idl1@idl3, stml1@stml3), e3
-  | Exp.Const (Const.Cint _) -> (idl1@idl2, stml1@stml2), e2
-  | _ ->
-      let e1not = Exp.UnOp(Unop.LNot, e1, None) in
-      let id = Ident.create_fresh Ident.knormal in
-      let mk_prune_res e =
-        let mk_prune cond = Sil.Prune (cond, loc, true, Sil.Ik_land_lor)
-        (* don't report always true/false *) in
-        mk_prune (Exp.BinOp(Binop.Eq, Exp.Var id, e)) in
-      let prune1 = Sil.Prune (e1, loc, true, Sil.Ik_bexp) in
-      let prune1not = Sil.Prune (e1not, loc, false, Sil.Ik_bexp) in
-      let stml' =
-        mk_nondet
-          (prune1 :: stml2 @ [mk_prune_res e2]) (prune1not :: stml3 @ [mk_prune_res e3]) loc in
-      (id:: idl1@idl2@idl3, stml1@stml'), Exp.Var id
 
 (*** START of module Metrics ***)
 module Metrics : sig
@@ -2654,3 +2554,11 @@ module CategorizePreconditions = struct
     | _:: _, [], [] ->
         DataConstraints
 end
+
+(* Export for interface *)
+let exp_normalize_noabs = Normalize.exp_normalize_noabs
+let mk_inequality = Normalize.mk_inequality
+let mk_ptsto_exp = Normalize.mk_ptsto_exp
+let mk_ptsto = Normalize.mk_ptsto
+let normalize = Normalize.normalize
+let prop_atom_and = Normalize.prop_atom_and

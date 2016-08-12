@@ -7,14 +7,10 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-type context = {
-  in_synchronized_block: bool;
-  is_ck_translation_unit: bool;
-  (** True if the translation unit contains an ObjC class impl that's a subclass
-      of CKComponent or CKComponentController. *)
-}
+module type S = sig
+  include TraceElem.S
 
-let empty = {
-  in_synchronized_block = false;
-  is_ck_translation_unit = false;
-}
+  val to_callee : t -> CallSite.t -> t
+  (** ith param * ith source kind *)
+  val get : CallSite.t -> (int * t) list
+end

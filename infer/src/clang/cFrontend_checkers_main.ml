@@ -40,8 +40,17 @@ and do_frontend_checks_decl context cfg cg decl =
   | Some (decls, _) -> IList.iter (do_frontend_checks_decl context' cfg cg) decls
   | None -> ()
 
+let context_with_ck_set context decl_list =
+  let is_ck = context.CLintersContext.is_ck_translation_unit
+              || ComponentKit.contains_ck_impl decl_list in
+  if is_ck then
+    { context with CLintersContext.is_ck_translation_unit = true }
+  else
+    context
+
 let do_frontend_checks cfg cg ast =
   match ast with
   | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
-      IList.iter (do_frontend_checks_decl CLintersContext.empty cfg cg) decl_list
+      let context = context_with_ck_set CLintersContext.empty decl_list in
+      IList.iter (do_frontend_checks_decl context cfg cg) decl_list
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
