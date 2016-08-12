@@ -1,0 +1,7 @@
+[
+  {
+    "bug_type": "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE",
+    "file": "TestIgnoreImports.mm",
+    "procedure": "frontend_checks_8553f84118792da22c2edad39b882724"
+  }
+]

@@ -24,6 +24,7 @@ from __future__ import unicode_literals
 
 import json
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -472,6 +473,13 @@ class BuildIntegrationTest(unittest.TestCase):
              CODETOANALYZE_DIR,
              [],
              preprocess=preprocess)
+
+    def test_clang_component_kit_imports(self):
+        test('componentkit', 'component quality analyzer  skips imports',
+             os.path.join(CODETOANALYZE_DIR, 'componentkit'),
+             [{'compile': ['clang', '-x', 'objective-c++', '-std=c++11', '-c',
+                           'TestIgnoreImports.mm'],
+               'infer_args': ['--cxx', '--no-filtering']}])
 
     def test_pmd_xml_output(self):
         def pmd_check(infer_out):
