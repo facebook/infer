@@ -683,6 +683,16 @@ unsigned sleep(unsigned seconds) {
 #define __WAIT_STATUS int*
 #endif
 
+// glibc 2.24 did away with 'union wait' and replaced it with int*.
+// Hence, we re-define __WAIT_STATUS if glibc is >= 2.24.
+#ifndef __GLIBC_PREREQ
+#define __GLIBC_PREREQ(x, y) 0
+#endif
+
+#if defined(__GLIBC__) && __GLIBC_PREREQ(2, 24)
+#define __WAIT_STATUS int*
+#endif
+
 // the waiting is modeled as skip. Then the return value is a random value of a
 // process or
 // -1 in case of an error
