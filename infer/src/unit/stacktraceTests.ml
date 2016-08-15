@@ -69,5 +69,23 @@ let tests =
       assert_equal trace expected in
     "multi_frame_trace_test">::multi_frame_trace_test_ in
 
+  let missing_line_info_test =
+    let missing_line_info_test_s =
+      "Exception in thread \"main\" java.lang.NullPointerException\n" ^
+      "\tat endtoend.java.checkers.crashcontext.MinimalCrashTest.main" ^
+      "(MinimalCrashTest.java)" in
+    let trace = Stacktrace.of_string missing_line_info_test_s in
+    let expected = Stacktrace.make
+        "java.lang.NullPointerException"
+        [Stacktrace.make_frame
+           "endtoend.java.checkers.crashcontext.MinimalCrashTest"
+           "main"
+           "MinimalCrashTest.java"
+           (-1)] in
+    let missing_line_info_test_ _ =
+      assert_equal trace expected in
+    "missing_line_info_test">::missing_line_info_test_ in
+
   "all_tests_suite">:::[empty_string_test; empty_trace_test;
-                        one_frame_trace_test; multi_frame_trace_test]
+                        one_frame_trace_test; multi_frame_trace_test;
+                        missing_line_info_test]

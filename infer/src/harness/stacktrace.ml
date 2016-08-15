@@ -60,10 +60,16 @@ let parse_stack_frame frame_str =
   if string_equal file_and_line "Native Method" then
     make_frame class_str method_str "Native Method" (-1)
   else begin
-    (* separate the filename and line number *)
-    ignore(Str.string_match file_and_line_regexp file_and_line 0);
-    let file_str = Str.matched_group 1 file_and_line in
-    let line_num = int_of_string (Str.matched_group 2 file_and_line) in
+    (* Separate the filename and line number.
+       note that a few methods might not have line number information,
+       for those, file_and_line includes only the filename. *)
+    let is_file_line = Str.string_match file_and_line_regexp file_and_line 0 in
+    let file_str = if is_file_line
+      then Str.matched_group 1 file_and_line
+      else file_and_line in
+    let line_num = if is_file_line
+      then int_of_string (Str.matched_group 2 file_and_line)
+      else -1 in
     make_frame class_str method_str file_str line_num
   end
 
