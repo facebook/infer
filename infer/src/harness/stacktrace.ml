@@ -17,7 +17,7 @@ type frame = {
   class_str : string;
   method_str : string;
   file_str : string;
-  line_num : int;
+  line_num : int option;
 }
 
 type t = {
@@ -44,8 +44,11 @@ let make_frame class_str method_str file_str line_num =
 
 let frame_matches_location frame_obj loc =
   let lfname = DB.source_file_to_string loc.Location.file in
-  Utils.string_is_suffix frame_obj.file_str lfname &&
-  frame_obj.line_num = loc.Location.line
+  let matches_file = Utils.string_is_suffix frame_obj.file_str lfname in
+  let matches_line = match frame_obj.line_num with
+    | None -> false
+    | Some line -> line = loc.Location.line in
+  matches_file && matches_line
 
 let parse_stack_frame frame_str =
   (* separate the qualified method name and the parenthesized text/line number*)
@@ -58,18 +61,16 @@ let parse_stack_frame frame_str =
   let method_str = Str.matched_group 2 qualified_procname in
   (* Native methods don't have debugging info *)
   if string_equal file_and_line "Native Method" then
-    make_frame class_str method_str "Native Method" (-1)
+    make_frame class_str method_str "Native Method" None
   else begin
     (* Separate the filename and line number.
        note that a few methods might not have line number information,
        for those, file_and_line includes only the filename. *)
     let is_file_line = Str.string_match file_and_line_regexp file_and_line 0 in
-    let file_str = if is_file_line
-      then Str.matched_group 1 file_and_line
-      else file_and_line in
-    let line_num = if is_file_line
-      then int_of_string (Str.matched_group 2 file_and_line)
-      else -1 in
+    let file_str, line_num = if is_file_line
+      then Str.matched_group 1 file_and_line,
+           Some (int_of_string (Str.matched_group 2 file_and_line))
+      else file_and_line, None in
     make_frame class_str method_str file_str line_num
   end
 

@@ -61,7 +61,7 @@ let stacktree_of_pdesc
   let frame_loc =
     Some { Stacktree_j.location_type = location_type;
            file = DB.source_file_to_string loc.Location.file;
-           line = loc.Location.line;
+           line = Some loc.Location.line;
            blame_range = [line_range_of_pdesc pdesc] } in
   { Stacktree_j.method_name = Procname.to_unique_id procname;
     location = frame_loc;

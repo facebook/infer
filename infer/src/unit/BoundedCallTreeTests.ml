@@ -28,8 +28,8 @@ let tests =
   let class_name = "com.example.SomeClass" in
   let file_name = "SomeClass.java" in
   let trace = Stacktrace.make "java.lang.NullPointerException"
-      [Stacktrace.make_frame class_name "foo" file_name 16;
-       Stacktrace.make_frame class_name "bar" file_name 20] in
+      [Stacktrace.make_frame class_name "foo" file_name (Some 16);
+       Stacktrace.make_frame class_name "bar" file_name (Some 20)] in
   let extras = { BoundedCallTree.get_proc_desc = mock_get_proc_desc;
                  stacktrace = trace; } in
   let caller_foo_name = Procname.from_string_c_fun "foo" in

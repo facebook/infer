@@ -41,7 +41,7 @@ let tests =
            "endtoend.java.checkers.crashcontext.MinimalCrashTest"
            "main"
            "MinimalCrashTest.java"
-           16] in
+           (Some 16)] in
     let one_frame_trace_test_ _ =
       assert_equal trace expected in
     "one_frame_trace">::one_frame_trace_test_ in
@@ -62,9 +62,9 @@ let tests =
     let file_name = "MultiStackFrameCrashTest.java" in
     let expected = Stacktrace.make
         "java.lang.NullPointerException"
-        [Stacktrace.make_frame class_name "bar" file_name 16;
-         Stacktrace.make_frame class_name "foo" file_name 20;
-         Stacktrace.make_frame class_name "main" file_name 24] in
+        [Stacktrace.make_frame class_name "bar" file_name (Some 16);
+         Stacktrace.make_frame class_name "foo" file_name (Some 20);
+         Stacktrace.make_frame class_name "main" file_name (Some 24)] in
     let multi_frame_trace_test_ _ =
       assert_equal trace expected in
     "multi_frame_trace_test">::multi_frame_trace_test_ in
@@ -81,7 +81,7 @@ let tests =
            "endtoend.java.checkers.crashcontext.MinimalCrashTest"
            "main"
            "MinimalCrashTest.java"
-           (-1)] in
+           None] in
     let missing_line_info_test_ _ =
       assert_equal trace expected in
     "missing_line_info_test">::missing_line_info_test_ in

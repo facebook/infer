@@ -13,12 +13,14 @@ module F = Format
 module L = Logging
 
 let frame_id_of_stackframe frame =
+  let loc_str = match frame.Stacktrace.line_num with
+    | None -> frame.Stacktrace.file_str
+    | Some line -> F.sprintf "%s:%d" frame.Stacktrace.file_str line in
   F.sprintf
-    "%s.%s(%s:%d)"
+    "%s.%s(%s)"
     frame.Stacktrace.class_str
     frame.Stacktrace.method_str
-    frame.Stacktrace.file_str
-    frame.Stacktrace.line_num
+    loc_str
 
 let frame_id_of_summary stacktree =
   let short_name = IList.hd
@@ -27,8 +29,10 @@ let frame_id_of_summary stacktree =
   | None ->
       failwith "Attempted to take signature of a frame without location \
                 information. This is undefined."
-  | Some loc ->
-      F.sprintf "%s(%s:%d)" short_name (Filename.basename loc.file) loc.line
+  | Some { line = Some line_num; file } ->
+      F.sprintf "%s(%s:%d)" short_name (Filename.basename file) line_num
+  | Some { file } ->
+      F.sprintf "%s(%s)" short_name (Filename.basename file)
 
 let stracktree_of_frame frame =
   { Stacktree_j.method_name = F.sprintf

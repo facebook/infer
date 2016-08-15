@@ -6,7 +6,7 @@ type line_range_t = {
 type location_t = {
   location_type : string;
   file : string;
-  line : int;
+  ?line : int option;
   blame_range : line_range_t list;
 }
 

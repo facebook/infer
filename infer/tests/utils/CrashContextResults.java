@@ -59,6 +59,16 @@ public class CrashContextResults {
     return false;
   }
 
+  public boolean hasNativeMethodOnStack() {
+    for (JsonNode frame : json.path("stack")) {
+      if (frame.path("location").path("file").asText()
+            .equals("Native Method")) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private List<JsonNode> findNodesForMethod(JsonNode node,
                                             String methodSignature,
                                             List<JsonNode> accumulator) {

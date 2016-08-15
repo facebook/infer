@@ -13,7 +13,7 @@ type frame = {
   class_str : string;
   method_str : string;
   file_str : string;
-  line_num : int;
+  line_num : int option;
 }
 
 type t = {
@@ -23,7 +23,7 @@ type t = {
 
 val make : string -> frame list -> t
 
-val make_frame : string -> string -> string -> int -> frame
+val make_frame : string -> string -> string -> int option -> frame
 
 val frame_matches_location : frame -> Location.t -> bool
 

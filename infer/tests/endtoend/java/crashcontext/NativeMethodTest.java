@@ -45,7 +45,7 @@ public class NativeMethodTest {
       assertThat("The stack trace should contain " + FOO_METHOD,
                  crashcontext.hasStackFrame(FOO_METHOD));
       assertThat("The trace should contain at least one native method ",
-                 crashcontext.hasLocationOnStack("Native Method", -1));
+                 crashcontext.hasNativeMethodOnStack());
       assertThat("The stack trace should contain " + REFLECTION_INVOKE_METHOD,
                  crashcontext.hasStackFrame(REFLECTION_INVOKE_METHOD));
       assertThat("The stack trace should contain " + MAIN_METHOD,
