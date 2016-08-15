@@ -18,8 +18,6 @@ module Domain = struct
 
   let initial = Var.Map.empty
 
-  let is_bottom _ = false
-
   (* return true if the key-value bindings in [rhs] are a subset of the key-value bindings in
      [lhs] *)
   let (<=) ~lhs ~rhs =

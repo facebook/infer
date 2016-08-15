@@ -22,8 +22,6 @@ module Set = struct
 
   let initial = APSet.empty
 
-  let is_bottom _ = false
-
   let pp = APSet.pp
 
   let normalize aps =

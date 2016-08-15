@@ -15,7 +15,6 @@ module type S = sig
   type astate
 
   val initial : astate
-  val is_bottom : astate -> bool
   val (<=) : lhs:astate -> rhs:astate -> bool (* fst \sqsubseteq snd? *)
   val join : astate -> astate -> astate
   val widen : prev:astate -> next:astate -> num_iters:int -> astate
@@ -27,9 +26,6 @@ module BottomLifted (Domain : S) = struct
   type astate =
     | Bottom
     | NonBottom of Domain.astate
-
-  let is_bottom astate =
-    astate = Bottom
 
   let initial = NonBottom Domain.initial
 
@@ -69,29 +65,18 @@ end
 module Pair (Domain1 : S) (Domain2 : S) = struct
   type astate = Domain1.astate * Domain2.astate
 
-  let is_bottom (astate1, astate2) =
-    Domain1.is_bottom astate1 || Domain2.is_bottom astate2
-
   let initial = Domain1.initial, Domain2.initial
 
   let (<=) ~lhs ~rhs =
     if lhs == rhs
     then true
     else
-      match is_bottom lhs, is_bottom rhs with
-      | true, _ -> true
-      | _, true -> false
-      | _ ->
-          Domain1.(<=) ~lhs:(fst lhs) ~rhs:(fst rhs) && Domain2.(<=) ~lhs:(snd lhs) ~rhs:(snd rhs)
+      Domain1.(<=) ~lhs:(fst lhs) ~rhs:(fst rhs) && Domain2.(<=) ~lhs:(snd lhs) ~rhs:(snd rhs)
 
   let join astate1 astate2 =
     if astate1 == astate2
     then astate1
-    else
-      match is_bottom astate1, is_bottom astate2 with
-      | true, _ -> astate2
-      | _, true -> astate1
-      | _ -> Domain1.join (fst astate1) (fst astate2), Domain2.join (snd astate1) (snd astate2)
+    else Domain1.join (fst astate1) (fst astate2), Domain2.join (snd astate1) (snd astate2)
 
   let widen ~prev ~next ~num_iters =
     if prev == next
@@ -111,8 +96,6 @@ module FiniteSet (S : PrettyPrintable.PPSet) = struct
   type astate = t
 
   let initial = empty
-
-  let is_bottom _ = false
 
   let (<=) ~lhs ~rhs =
     if lhs == rhs
@@ -134,8 +117,6 @@ module Map (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
   type astate = ValueDomain.astate M.t
 
   let initial = M.empty
-
-  let is_bottom _ = false
 
   (** true if all keys in [lhs] are in [rhs], and each lhs value <= corresponding rhs value *)
   let (<=) ~lhs ~rhs =
