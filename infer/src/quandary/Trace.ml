@@ -24,70 +24,81 @@ module type S = sig
   include Spec
   type t
 
-  (** get the source of the trace *)
-  val source : t -> Source.t
+  (** get the sources of the trace. this should never be empty *)
+  val sources : t -> Source.Set.t
 
-  (** get the sink of the trace, if any *)
-  val sink : t -> Sink.t option
+  (** get the sinks of the trace *)
+  val sinks : t -> Sink.Set.t
 
-  (** return true if this trace represent a dangerous flow *)
-  val should_report : t -> bool
+  (** get the reportable source-sink flows in this trace *)
+  val get_reports : t -> (Source.t * Sink.t * Passthrough.Set.t) list
 
   (** create a trace from a source *)
   val of_source : Source.t -> t
 
+  (** ad a source to the current trace *)
+  val add_source : Source.t -> t -> t
+
   (** add a sink to the current trace. *)
-  val add_sink : t -> Sink.t -> t
+  val add_sink : Sink.t -> t -> t
 
   val compare : t -> t -> int
+
   val pp : F.formatter -> t -> unit
 end
 
 module Make (Spec : Spec) = struct
   include Spec
 
+  module Sources = Source.Set
+  module Sinks = Sink.Set
+
   type t =
     {
-      source : Source.t; (** last function in the trace that returned tainted data *)
-      sink : Sink.t option;
-      (** last callee in the trace that transitively called a tainted function (if any) *)
+      sources : Sources.t; (** last functions in the trace that returned tainted data *)
+      sinks : Sinks.t;
+      (** last callees in the trace that transitively called a tainted function (if any) *)
       passthroughs : Passthrough.Set.t; (** calls that occurred between source and sink *)
     }
 
   let compare t1 t2 =
-    let compare_sink_opts sink1_opt sink2_opt = match sink1_opt, sink2_opt with
-      | Some sink1, Some sink2 -> Sink.compare sink1 sink2
-      | None, None -> 0
-      | Some _, None -> (-1)
-      | None, Some _ -> 1 in
-    Source.compare t1.source t2.source
-    |> next compare_sink_opts t1.sink t2.sink
+    Sources.compare t1.sources t2.sources
+    |> next Sinks.compare t1.sinks t2.sinks
     |> next Passthrough.Set.compare t1.passthroughs t2.passthroughs
 
   let pp fmt t =
-    let pp_sink_opt fmt = function
-      | None -> F.fprintf fmt "?"
-      | Some sink -> Sink.pp fmt sink in
     F.fprintf
       fmt
       "%a -> %a via %a"
-      Source.pp t.source pp_sink_opt t.sink Passthrough.Set.pp t.passthroughs
+      Sources.pp t.sources Sinks.pp t.sinks Passthrough.Set.pp t.passthroughs
 
-  let source t =
-    t.source
+  let sources t =
+    t.sources
 
-  let sink t =
-    t.sink
+  let sinks t =
+    t.sinks
 
-  let should_report t = match t.sink with
-    | Some sink -> Spec.should_report t.source sink
-    | None -> false
+  let get_reports t =
+    if Sinks.is_empty t.sinks
+    then []
+    else
+      let report_one source sink acc =
+        if Spec.should_report source sink
+        then (source, sink, t.passthroughs) :: acc
+        else acc in
+      Sources.fold (fun source acc -> Sinks.fold (report_one source) t.sinks acc) t.sources []
 
   let of_source source =
+    let sources = Sources.singleton source in
     let passthroughs = Passthrough.Set.empty in
-    let sink = None in
-    { source; passthroughs; sink; }
+    let sinks = Sinks.empty in
+    { sources; passthroughs; sinks; }
 
-  let add_sink t sink =
-    { t with sink = Some sink; }
+  let add_source source t =
+    let sources = Sources.add source t.sources in
+    { t with sources; }
+
+  let add_sink sink t =
+    let sinks = Sinks.add sink t.sinks in
+    { t with sinks; }
 end

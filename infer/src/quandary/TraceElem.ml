@@ -15,12 +15,12 @@ module type S = sig
 
   val call_site : t -> CallSite.t
   val kind : t -> kind
-  val is_empty : t -> bool
 
   val make : kind -> CallSite.t -> t
-  val make_empty : CallSite.t -> t
 
   val compare : t -> t -> int
   val equal : t -> t -> bool
   val pp : F.formatter -> t -> unit
+
+  module Set : PrettyPrintable.PPSet with type elt = t
 end
