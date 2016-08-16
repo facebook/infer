@@ -54,6 +54,7 @@ java_test(
   deps=[
       '//infer/tests/endtoend/objcpp/infer:infer',
       '//infer/tests/endtoend/objcpp/linters:linters',
+      '//infer/tests/endtoend/objcpp/componentkit:componentkit',
   ],
   visibility=[
     'PUBLIC',
