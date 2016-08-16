@@ -21,6 +21,7 @@ let active_procedure_checkers () =
   let java_checkers =
     let l =
       [
+        CatchChecker.checker, checkers_enabled;
         Checkers.callback_check_access, false;
         Checkers.callback_monitor_nullcheck, false;
         Checkers.callback_test_state , false;
@@ -29,17 +30,17 @@ let active_procedure_checkers () =
         Checkers.callback_find_deserialization, false;
         CheckTraceCallSequence.callback_check_trace_call_sequence, false;
         Dataflow.callback_test_dataflow, false;
-        FragmentRetainsViewChecker.callback_fragment_retains_view, checkers_enabled;
+        FragmentRetainsViewChecker.callback_fragment_retains_view, false;
         SqlChecker.callback_sql, false;
         Eradicate.callback_eradicate, Config.eradicate;
         BoundedCallTree.checker, Config.crashcontext;
         CodeQuery.code_query_callback, Config.code_query <> None;
         Checkers.callback_check_field_access, false;
-        ImmutableChecker.callback_check_immutable_cast, checkers_enabled;
-        RepeatedCallsChecker.callback_check_repeated_calls, checkers_enabled;
-        PrintfArgs.callback_printf_args, checkers_enabled;
-        AnnotationReachability.Interprocedural.check_and_report, checkers_enabled;
-        Checkers.callback_print_access_to_globals, false;
+        ImmutableChecker.callback_check_immutable_cast, false;
+        RepeatedCallsChecker.callback_check_repeated_calls, false;
+        PrintfArgs.callback_printf_args, false;
+        AnnotationReachability.Interprocedural.check_and_report, false;
+        Checkers.callback_print_access_to_globals, checkers_enabled;
       ] in
     IList.map (fun (x, y) -> (x, y, Some Config.Java)) l in
   let c_cpp_checkers =
