@@ -32,7 +32,7 @@ digraph iCFG {
 	
 
 	 17 -> 16 ;
-16 [label="16:  BinaryOperatorStmt: Assign \n   n$0=*&#GB$bar::pi:double  [line 57]\n  *&j:double =n$0 [line 57]\n " shape="box"]
+16 [label="16:  BinaryOperatorStmt: Assign \n   *&#GB$bar::pi:double =3.141600 [line 57]\n  n$0=*&#GB$bar::pi:double  [line 57]\n  *&j:double =n$0 [line 57]\n " shape="box"]
 	
 
 	 16 -> 15 ;
@@ -54,7 +54,7 @@ digraph iCFG {
 	
 
 	 11 -> 12 ;
-10 [label="10:  Return Stmt \n   n$0=*&#GB$bar::pi:double  [line 30]\n  *&return:double =(2 * n$0) [line 30]\n " shape="box"]
+10 [label="10:  Return Stmt \n   *&#GB$bar::pi:double =3.141600 [line 30]\n  n$0=*&#GB$bar::pi:double  [line 30]\n  *&return:double =(2 * n$0) [line 30]\n " shape="box"]
 	
 
 	 10 -> 9 ;

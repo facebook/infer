@@ -472,39 +472,6 @@ struct
         { empty_res_trans with exps = [(Exp.Const (Const.Cfun pname), typ)] }
       end
 
-  let var_deref_trans trans_state stmt_info decl_ref =
-    let open CContext in
-    let context = trans_state.context in
-    let _, _, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
-    let ast_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
-    let typ = match ast_typ with
-      | Typ.Tstruct _ when decl_ref.Clang_ast_t.dr_kind = `ParmVar ->
-          if General_utils.is_cpp_translation Config.clang_lang then
-            Typ.Tptr (ast_typ, Typ.Pk_reference)
-          else ast_typ
-      | _ -> ast_typ in
-    let procname = Cfg.Procdesc.get_proc_name context.procdesc in
-    let sil_loc = CLocation.get_sil_location stmt_info context in
-    let pvar = CVar_decl.sil_var_of_decl_ref context decl_ref procname in
-    CContext.add_block_static_var context procname (pvar, typ);
-    let e = Exp.Lvar pvar in
-    let exps = if Self.is_var_self pvar (CContext.is_objc_method context) then
-        let curr_class = CContext.get_curr_class context in
-        if (CTypes.is_class typ) then
-          raise (Self.SelfClassException (CContext.get_curr_class_name curr_class))
-        else
-          let typ = CTypes.add_pointer_to_typ
-              (CTypes_decl.get_type_curr_class_objc context.tenv curr_class) in
-          [(e, typ)]
-      else [(e, typ)] in
-    Printing.log_out "\n\n PVAR ='%s'\n\n" (Pvar.to_string pvar);
-    let res_trans = { empty_res_trans with exps = exps } in
-    match typ with
-    | Typ.Tptr (_, Typ.Pk_reference) ->
-        (* dereference pvar due to the behavior of reference types in clang's AST *)
-        dereference_value_from_result sil_loc res_trans ~strip_pointer:true
-    | _ -> res_trans
-
   let field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init =
     let open CContext in
     let context = trans_state.context in
@@ -631,6 +598,57 @@ struct
     let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
     Cfg.Node.set_succs_exn trans_state.context.cfg root_node' res_trans.root_nodes [];
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
+
+  and var_deref_trans trans_state stmt_info (decl_ref : Clang_ast_t.decl_ref) =
+    let context = trans_state.context in
+    let _, _, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
+    let ast_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let typ = match ast_typ with
+      | Tstruct _ when decl_ref.dr_kind = `ParmVar ->
+          if General_utils.is_cpp_translation Config.clang_lang then
+            Typ.Tptr (ast_typ, Pk_reference)
+          else ast_typ
+      | _ -> ast_typ in
+    let procname = Cfg.Procdesc.get_proc_name context.procdesc in
+    let sil_loc = CLocation.get_sil_location stmt_info context in
+    let pvar = CVar_decl.sil_var_of_decl_ref context decl_ref procname in
+    CContext.add_block_static_var context procname (pvar, typ);
+    let var_exp = Exp.Lvar pvar in
+    (* handle references to global const *)
+    (* if there's a reference to a global const, add a fake instruction that *)
+    (* assigns the global again to its initialization value right before the *)
+    (* place where it is used *)
+    let trans_result' =
+      let is_global_const, init_expr =
+        match Ast_utils.get_decl decl_ref.dr_decl_pointer with
+        | Some VarDecl (_, _, qual_type, vdi) ->
+            (match ast_typ with
+             | Tstruct _
+               when not (General_utils.is_cpp_translation Config.clang_lang) ->
+                 (* Do not convert a global struct to a local because SIL
+                    values do not include structs, they must all be heap-allocated  *)
+                 false, None
+             | _ -> vdi.vdi_is_global && qual_type.is_const, vdi.vdi_init_expr)
+        | _ -> false, None in
+      if is_global_const then
+        init_expr_trans trans_state (var_exp, typ) stmt_info init_expr
+      else empty_res_trans in
+    let exps = if Self.is_var_self pvar (CContext.is_objc_method context) then
+        let curr_class = CContext.get_curr_class context in
+        if (CTypes.is_class typ) then
+          raise (Self.SelfClassException (CContext.get_curr_class_name curr_class))
+        else
+          let typ = CTypes.add_pointer_to_typ
+              (CTypes_decl.get_type_curr_class_objc context.tenv curr_class) in
+          [(var_exp, typ)]
+      else [(var_exp, typ)] in
+    Printing.log_out "\n\n PVAR ='%s'\n\n" (Pvar.to_string pvar);
+    let res_trans = { trans_result' with exps } in
+    match typ with
+    | Tptr (_, Pk_reference) ->
+        (* dereference pvar due to the behavior of reference types in clang's AST *)
+        dereference_value_from_result sil_loc res_trans ~strip_pointer:true
+    | _ -> res_trans
 
   and decl_ref_trans trans_state pre_trans_result stmt_info decl_ref ~is_constructor_init =
     Printing.log_out "  priority node free = '%s'\n@."

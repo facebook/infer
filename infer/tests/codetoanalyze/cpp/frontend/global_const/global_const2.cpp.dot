@@ -1,0 +1,35 @@
+/* @generated */
+digraph iCFG {
+8 [label="8:  Return Stmt \n   n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int  [line 10]\n  *&#GB$global:int =n$1 [line 11]\n  n$2=*&#GB$global:int  [line 11]\n  *&return:int =n$2 [line 11]\n " shape="box"]
+	
+
+	 8 -> 2 ;
+7 [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =3 [line 10]\n " shape="box"]
+	
+
+	 7 -> 3 ;
+6 [label="6:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =2 [line 10]\n " shape="box"]
+	
+
+	 6 -> 3 ;
+5 [label="5: Prune (false branch) \n   PRUNE((1 == 0), false); [line 10]\n " shape="invhouse"]
+	
+
+	 5 -> 7 ;
+4 [label="4: Prune (true branch) \n   PRUNE((1 != 0), true); [line 10]\n " shape="invhouse"]
+	
+
+	 4 -> 6 ;
+3 [label="3: + \n  " ]
+	
+
+	 3 -> 8 ;
+2 [label="2: Exit test \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start test\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 11]\n " color=yellow style=filled]
+	
+
+	 1 -> 4 ;
+	 1 -> 5 ;
+}
