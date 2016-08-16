@@ -11,8 +11,12 @@ module type S = sig
   include TraceElem.S
 
   val is_footprint : t -> bool
+
+  val make_footprint : AccessPath.t -> CallSite.t -> t
+
+  val get_footprint_access_path: t -> AccessPath.t option
+
   val to_return : t -> CallSite.t -> t
-  val make_footprint : CallSite.t -> t
 
   (** ith return value * ith sink kind *)
   val get : CallSite.t -> (int * t) list
