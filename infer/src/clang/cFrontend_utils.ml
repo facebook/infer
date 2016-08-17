@@ -363,8 +363,13 @@ struct
 
   let string_of_type_ptr type_ptr =
     match get_desugared_type type_ptr with
-    | Some typ -> (Clang_ast_proj.get_type_tuple typ).Clang_ast_t.ti_raw
+    | Some typ ->
+        let type_info = Clang_ast_proj.get_type_tuple typ in
+        type_info.Clang_ast_t.ti_raw
     | None -> ""
+
+  let string_of_qual_type {Clang_ast_t.qt_type_ptr; qt_is_const} =
+    Printf.sprintf "%s%s" (if qt_is_const then "is_const " else "") (string_of_type_ptr qt_type_ptr)
 
   let add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt fail_if_not_found =
     match decl_ref_opt with (* translate interface first if found *)
@@ -426,8 +431,8 @@ struct
 
   let is_ptr_to_objc_class typ class_name =
     match typ with
-    | Some Clang_ast_t.ObjCObjectPointerType (_, typ_ptr) ->
-        (match get_desugared_type typ_ptr with
+    | Some Clang_ast_t.ObjCObjectPointerType (_, {Clang_ast_t.qt_type_ptr}) ->
+        (match get_desugared_type qt_type_ptr with
          | Some ObjCInterfaceType (_, ptr) ->
              (match get_decl ptr with
               | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->

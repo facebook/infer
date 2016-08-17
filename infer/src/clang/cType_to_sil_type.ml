@@ -70,8 +70,8 @@ and sil_type_of_attr_type translate_decl tenv type_info attr_info =
   match type_info.Clang_ast_t.ti_desugared_type with
   | Some type_ptr ->
       (match Ast_utils.get_type type_ptr with
-       | Some Clang_ast_t.ObjCObjectPointerType (_, type_ptr') ->
-           let typ = type_ptr_to_sil_type translate_decl tenv type_ptr' in
+       | Some Clang_ast_t.ObjCObjectPointerType (_, {Clang_ast_t.qt_type_ptr}) ->
+           let typ = type_ptr_to_sil_type translate_decl tenv qt_type_ptr in
            Typ.Tptr (typ, pointer_attribute_of_objc_attribute attr_info)
        | _ -> type_ptr_to_sil_type translate_decl tenv type_ptr)
   | None -> Typ.Tvoid
@@ -82,9 +82,9 @@ and sil_type_of_c_type translate_decl tenv c_type =
   | NoneType _ -> Typ.Tvoid
   | BuiltinType (_, builtin_type_kind) ->
       sil_type_of_builtin_type_kind builtin_type_kind
-  | PointerType (_, type_ptr)
-  | ObjCObjectPointerType (_, type_ptr) ->
-      let typ = type_ptr_to_sil_type translate_decl tenv type_ptr in
+  | PointerType (_, {Clang_ast_t.qt_type_ptr})
+  | ObjCObjectPointerType (_, {Clang_ast_t.qt_type_ptr}) ->
+      let typ = type_ptr_to_sil_type translate_decl tenv qt_type_ptr in
       if Typ.equal typ (get_builtin_objc_type `ObjCClass) then
         typ
       else Typ.Tptr (typ, Typ.Pk_pointer)
@@ -115,9 +115,9 @@ and sil_type_of_c_type translate_decl tenv c_type =
        | None -> Typ.Tvoid)
   | ObjCInterfaceType (_, pointer) ->
       decl_ptr_to_sil_type translate_decl tenv pointer
-  | RValueReferenceType (_, type_ptr)
-  | LValueReferenceType (_, type_ptr) ->
-      let typ = type_ptr_to_sil_type translate_decl tenv type_ptr in
+  | RValueReferenceType (_, {Clang_ast_t.qt_type_ptr})
+  | LValueReferenceType (_, {Clang_ast_t.qt_type_ptr}) ->
+      let typ = type_ptr_to_sil_type translate_decl tenv qt_type_ptr in
       Typ.Tptr (typ, Typ.Pk_reference)
   | AttributedType (type_info, attr_info) ->
       sil_type_of_attr_type translate_decl tenv type_info attr_info

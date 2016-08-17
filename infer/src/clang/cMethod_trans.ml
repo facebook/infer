@@ -52,10 +52,10 @@ let get_class_param function_method_decl_info =
   if (is_instance_method function_method_decl_info) then
     match function_method_decl_info with
     | Cpp_Meth_decl_info (_, _, class_decl_ptr, _) ->
-        let class_type = `DeclPtr class_decl_ptr in
+        let class_type = Ast_expressions.create_qual_type (`DeclPtr class_decl_ptr) in
         [(Mangled.from_string CFrontend_config.this, class_type)]
     | ObjC_Meth_decl_info (_, class_decl_ptr) ->
-        let class_type = `DeclPtr class_decl_ptr in
+        let class_type = Ast_expressions.create_qual_type (`DeclPtr class_decl_ptr) in
         [(Mangled.from_string CFrontend_config.self, class_type)]
     | _ -> []
   else []
@@ -77,7 +77,7 @@ let get_return_param tenv function_method_decl_info =
   let return_typ = CTypes_decl.type_ptr_to_sil_type tenv return_type_ptr in
   if should_add_return_param return_typ ~is_objc_method then
     [(Mangled.from_string CFrontend_config.return_param,
-      Ast_expressions.create_pointer_type return_type_ptr)]
+      Ast_expressions.create_pointer_qual_type ~is_const:false return_type_ptr)]
   else
     []
 
@@ -110,13 +110,12 @@ let get_parameters tenv function_method_decl_info =
     match par with
     | Clang_ast_t.ParmVarDecl (_, name_info, qt, var_decl_info) ->
         let _, mangled = General_utils.get_var_name_mangled name_info var_decl_info in
-        let type_ptr = qt.Clang_ast_t.qt_type_ptr in
-        let param_typ = CTypes_decl.type_ptr_to_sil_type tenv type_ptr in
-        let type_ptr' = match param_typ with
+        let param_typ = CTypes_decl.type_ptr_to_sil_type tenv qt.Clang_ast_t.qt_type_ptr in
+        let qt_type_ptr = match param_typ with
           | Typ.Tstruct _ when General_utils.is_cpp_translation Config.clang_lang ->
-              Ast_expressions.create_reference_type type_ptr
-          | _ -> type_ptr in
-        (mangled, type_ptr')
+              Ast_expressions.create_reference_type qt.Clang_ast_t.qt_type_ptr
+          | _ -> qt.Clang_ast_t.qt_type_ptr in
+        (mangled, {qt with qt_type_ptr})
     | _ -> assert false in
   let pars = IList.map par_to_ms_par (get_param_decls function_method_decl_info) in
   get_class_param function_method_decl_info @ pars @ get_return_param tenv function_method_decl_info
@@ -297,7 +296,7 @@ let get_formal_parameters tenv ms =
   let rec defined_parameters pl =
     match pl with
     | [] -> []
-    | (mangled, raw_type):: pl' ->
+    | (mangled, {Clang_ast_t.qt_type_ptr}):: pl' ->
         let should_add_pointer name ms =
           let is_objc_self = name = CFrontend_config.self &&
                              CMethod_signature.ms_get_lang ms = Config.OBJC in
@@ -305,8 +304,8 @@ let get_formal_parameters tenv ms =
                             CMethod_signature.ms_get_lang ms = Config.CPP in
           (is_objc_self && CMethod_signature.ms_is_instance ms) || is_cxx_this in
         let tp = if should_add_pointer (Mangled.to_string mangled) ms then
-            (Ast_expressions.create_pointer_type raw_type)
-          else raw_type in
+            (Ast_expressions.create_pointer_type qt_type_ptr)
+          else qt_type_ptr in
         let typ = CTypes_decl.type_ptr_to_sil_type tenv tp in
         (mangled, typ):: defined_parameters pl' in
   defined_parameters (CMethod_signature.ms_get_args ms)
@@ -342,15 +341,40 @@ let sil_method_annotation_of_args args : Typ.method_annotation =
   let mk_annot param_name annot_name =
     let annot = { Typ.class_name = annot_name; Typ.parameters = [param_name]; } in
     annot, default_visibility in
-  let arg_to_sil_annot (arg_mangled, type_ptr) acc  =
+  let arg_to_sil_annot (arg_mangled, {Clang_ast_t.qt_type_ptr}) acc  =
     let arg_name = Mangled.to_string arg_mangled in
-    if CFrontend_utils.Ast_utils.is_type_nullable type_ptr then
+    if CFrontend_utils.Ast_utils.is_type_nullable qt_type_ptr then
       [mk_annot arg_name Annotations.nullable] :: acc
     else Typ.item_annotation_empty::acc in
   let param_annots = IList.fold_right arg_to_sil_annot args []  in
   (* TODO: parse annotations on return value *)
   let retval_annot = [] in
   retval_annot, param_annots
+
+
+let is_pointer_to_const type_ptr = match Ast_utils.get_type type_ptr with
+  | Some PointerType (_, {Clang_ast_t.qt_is_const})
+  | Some ObjCObjectPointerType (_, {Clang_ast_t.qt_is_const})
+  | Some RValueReferenceType (_, {Clang_ast_t.qt_is_const})
+  | Some LValueReferenceType (_, {Clang_ast_t.qt_is_const}) ->
+      qt_is_const
+  | _ ->
+      false
+
+(** Returns a list of the indices of expressions in [args] which point to const-typed values. Each
+    index is offset by [shift]. *)
+let get_const_args_indices ~shift args =
+  let i = ref shift in
+  let rec aux result = function
+    | [] ->
+        IList.rev result
+    | (_, {Clang_ast_t.qt_type_ptr})::tl ->
+        incr i;
+        if is_pointer_to_const qt_type_ptr then
+          aux (!i - 1::result) tl
+        else
+          aux result tl in
+  aux [] args
 
 (** Creates a procedure description. *)
 let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
@@ -367,19 +391,23 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
     let captured_mangled = IList.map (fun (var, t) -> (Pvar.get_name var), t) captured in
     (* Captured variables for blocks are treated as parameters *)
     let formals = captured_mangled @ formals in
+    let const_formals = get_const_args_indices
+        ~shift:(IList.length captured_mangled)
+        (CMethod_signature.ms_get_args ms) in
     let source_range = CMethod_signature.ms_get_loc ms in
     Printing.log_out "\nCreating a new procdesc for function: '%s'\n@." pname;
+    Printing.log_out "\nms = %s\n@." (CMethod_signature.ms_to_string ms);
     let loc_start = CLocation.get_sil_location_from_range source_range true in
     let loc_exit = CLocation.get_sil_location_from_range source_range false in
     let ret_type = get_return_type tenv ms in
-    let captured' = IList.map (fun (var, t) -> (Pvar.get_name var, t)) captured in
     if skip_property_accessor ms then ()
     else
       let procdesc =
         let proc_attributes =
           { (ProcAttributes.default proc_name Config.Clang) with
-            ProcAttributes.captured = captured';
+            ProcAttributes.captured = captured_mangled;
             formals;
+            const_formals;
             func_attributes = attributes;
             is_defined = defined;
             is_objc_instance_method = is_objc_inst_method;

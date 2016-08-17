@@ -23,6 +23,7 @@ type t = {
   err_log: Errlog.t, /** Error log for the procedure */
   exceptions: list string, /** exceptions thrown by the procedure */
   formals: list (Mangled.t, Typ.t), /** name and type of formal parameters */
+  const_formals: list int, /** list of indices of formals that are const-qualified */
   func_attributes: list PredSymb.func_attribute,
   is_abstract: bool, /** the procedure is abstract */
   mutable is_bridge_method: bool, /** the procedure is a bridge method */

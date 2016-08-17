@@ -94,6 +94,7 @@ let create_char_type =
 
 let create_char_star_type =
   new_constant_type_ptr ()
+let create_char_star_qual_type ~is_const = create_qual_type ~is_const create_char_star_type
 
 let create_BOOL_type =
   new_constant_type_ptr ()
@@ -108,10 +109,13 @@ let create_void_void_type =
   new_constant_type_ptr ()
 
 let create_class_type class_info = `ClassType class_info
+let create_class_qual_type ?(is_const=false) class_info =
+  create_qual_type ~is_const @@ create_class_type class_info
 
 let create_struct_type struct_name = `StructType struct_name
 
 let create_pointer_type typ = `PointerOf typ
+let create_pointer_qual_type ~is_const typ = create_qual_type ~is_const @@ create_pointer_type typ
 
 let create_reference_type typ = `ReferenceOf typ
 

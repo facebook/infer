@@ -1289,77 +1289,91 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
           | hpred -> hpred)
         prop.Prop.sigma in
     Prop.normalize (Prop.set prop ~sigma:sigma') in
-  if Config.angelic_execution then
-    let add_actual_by_ref_to_footprint prop (actual, actual_typ) =
-      match actual with
-      | Exp.Lvar actual_pv ->
-          (* introduce a fresh program variable to allow abduction on the return value *)
-          let abducted_ref_pv =
-            Pvar.mk_abducted_ref_param callee_pname actual_pv callee_loc in
-          let already_has_abducted_retval p =
-            IList.exists
-              (fun hpred -> match hpred with
-                 | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abducted_ref_pv
-                 | _ -> false)
-              p.Prop.sigma_fp in
-          (* prevent introducing multiple abducted retvals for a single call site in a loop *)
-          if already_has_abducted_retval prop then prop
-          else
-          if !Config.footprint then
-            let prop', abduced_strexp = match actual_typ with
-              | Typ.Tptr ((Typ.Tstruct _) as typ, _) ->
-                  (* for struct types passed by reference, do abduction on the fields of the
-                     struct *)
-                  add_struct_value_to_footprint tenv abducted_ref_pv typ prop
-              | Typ.Tptr (typ, _) ->
-                  (* for pointer types passed by reference, do abduction directly on the pointer *)
-                  let (prop', fresh_fp_var) =
-                    add_to_footprint abducted_ref_pv typ prop in
-                  prop', Sil.Eexp (fresh_fp_var, Sil.Inone)
-              | typ ->
-                  failwith
-                    ("No need for abduction on non-pointer type " ^
-                     (Typ.to_string typ)) in
-            (* replace [actual] |-> _ with [actual] |-> [fresh_fp_var] *)
+  let add_actual_by_ref_to_footprint prop (actual, actual_typ, _) =
+    match actual with
+    | Exp.Lvar actual_pv ->
+        (* introduce a fresh program variable to allow abduction on the return value *)
+        let abducted_ref_pv =
+          Pvar.mk_abducted_ref_param callee_pname actual_pv callee_loc in
+        let already_has_abducted_retval p =
+          IList.exists
+            (fun hpred -> match hpred with
+               | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abducted_ref_pv
+               | _ -> false)
+            p.Prop.sigma_fp in
+        (* prevent introducing multiple abducted retvals for a single call site in a loop *)
+        if already_has_abducted_retval prop then prop
+        else
+        if !Config.footprint then
+          let prop', abduced_strexp = match actual_typ with
+            | Typ.Tptr ((Typ.Tstruct _) as typ, _) ->
+                (* for struct types passed by reference, do abduction on the fields of the
+                   struct *)
+                add_struct_value_to_footprint tenv abducted_ref_pv typ prop
+            | Typ.Tptr (typ, _) ->
+                (* for pointer types passed by reference, do abduction directly on the pointer *)
+                let (prop', fresh_fp_var) =
+                  add_to_footprint abducted_ref_pv typ prop in
+                prop', Sil.Eexp (fresh_fp_var, Sil.Inone)
+            | typ ->
+                failwith
+                  ("No need for abduction on non-pointer type " ^
+                   (Typ.to_string typ)) in
+          (* replace [actual] |-> _ with [actual] |-> [fresh_fp_var] *)
+          let filtered_sigma =
+            IList.map
+              (function
+                | Sil.Hpointsto (lhs, _, typ_exp) when Exp.equal lhs actual ->
+                    Sil.Hpointsto (lhs, abduced_strexp, typ_exp)
+                | hpred -> hpred)
+              prop'.Prop.sigma in
+          Prop.normalize (Prop.set prop' ~sigma:filtered_sigma)
+        else
+          (* bind actual passed by ref to the abducted value pointed to by the synthetic pvar *)
+          let prop' =
             let filtered_sigma =
-              IList.map
+              IList.filter
                 (function
-                  | Sil.Hpointsto (lhs, _, typ_exp) when Exp.equal lhs actual ->
-                      Sil.Hpointsto (lhs, abduced_strexp, typ_exp)
-                  | hpred -> hpred)
-                prop'.Prop.sigma in
-            Prop.normalize (Prop.set prop' ~sigma:filtered_sigma)
-          else
-            (* bind actual passed by ref to the abducted value pointed to by the synthetic pvar *)
-            let prop' =
-              let filtered_sigma =
-                IList.filter
-                  (function
-                    | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual ->
-                        false
-                    | _ -> true)
-                  prop.Prop.sigma in
-              Prop.normalize (Prop.set prop ~sigma:filtered_sigma) in
-            IList.fold_left
-              (fun p hpred ->
-                 match hpred with
-                 | Sil.Hpointsto (Exp.Lvar pv, rhs, texp) when Pvar.equal pv abducted_ref_pv ->
-                     let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
-                     Prop.normalize (Prop.set p ~sigma:(new_hpred :: prop'.Prop.sigma))
-                 | _ -> p)
-              prop'
-              prop'.Prop.sigma
-      | _ -> assert false in
-    IList.fold_left add_actual_by_ref_to_footprint prop actuals_by_ref
-  else
-    (* non-angelic mode; havoc each var passed by reference by assigning it to a fresh id *)
-    let havoc_actual_by_ref (actual, actual_typ) prop =
-      let actual_pt_havocd_var =
-        let havocd_var = Exp.Var (Ident.create_fresh Ident.kprimed) in
-        let sizeof_exp = Exp.Sizeof (Typ.strip_ptr actual_typ, None, Subtype.subtypes) in
-        Prop.mk_ptsto actual (Sil.Eexp (havocd_var, Sil.Inone)) sizeof_exp in
-      replace_actual_hpred actual actual_pt_havocd_var prop in
-    IList.fold_left (fun p var -> havoc_actual_by_ref var p) prop actuals_by_ref
+                  | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual ->
+                      false
+                  | _ -> true)
+                prop.Prop.sigma in
+            Prop.normalize (Prop.set prop ~sigma:filtered_sigma) in
+          IList.fold_left
+            (fun p hpred ->
+               match hpred with
+               | Sil.Hpointsto (Exp.Lvar pv, rhs, texp) when Pvar.equal pv abducted_ref_pv ->
+                   let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
+                   Prop.normalize (Prop.set p ~sigma:(new_hpred :: prop'.Prop.sigma))
+               | _ -> p)
+            prop'
+            prop'.Prop.sigma
+    | _ -> assert false in
+  (* non-angelic mode; havoc each var passed by reference by assigning it to a fresh id *)
+  let havoc_actual_by_ref prop (actual, actual_typ, _) =
+    let actual_pt_havocd_var =
+      let havocd_var = Exp.Var (Ident.create_fresh Ident.kprimed) in
+      let sizeof_exp = Exp.Sizeof (Typ.strip_ptr actual_typ, None, Subtype.subtypes) in
+      Prop.mk_ptsto actual (Sil.Eexp (havocd_var, Sil.Inone)) sizeof_exp in
+    replace_actual_hpred actual actual_pt_havocd_var prop in
+  let do_actual_by_ref =
+    if Config.angelic_execution then add_actual_by_ref_to_footprint
+    else havoc_actual_by_ref in
+  let non_const_actuals_by_ref =
+    let is_not_const (e, _, i) =
+      match AttributesTable.load_attributes callee_pname with
+      | Some attrs ->
+          let is_const = IList.mem int_equal i attrs.ProcAttributes.const_formals in
+          if is_const then (
+            L.d_str (Printf.sprintf "Not havocing const argument number %d: " i);
+            Sil.d_exp e;
+            L.d_ln ()
+          );
+          not is_const
+      | None ->
+          true in
+    IList.filter is_not_const actuals_by_ref in
+  IList.fold_left do_actual_by_ref prop non_const_actuals_by_ref
 
 and check_untainted exp taint_kind caller_pname callee_pname prop =
   match Attribute.get_taint prop exp with
@@ -1420,11 +1434,11 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
           |> fst
     else prop in
   let actuals_by_ref =
-    IList.filter
-      (function
-        | Exp.Lvar _, Typ.Tptr _ -> true
-        | _ -> false)
-      args in
+    IList.flatten_options (IList.mapi
+                             (fun i actual -> match actual with
+                                | (Exp.Lvar _ as e, (Typ.Tptr _ as t)) -> Some (e, t, i)
+                                | _ -> None)
+                             args) in
   let has_nullable_annot = Annotations.ia_is_nullable ret_annots in
   let pre_final =
     (* in Java, assume that skip functions close resources passed as params *)
@@ -1448,7 +1462,7 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
     let exps_to_mark =
       let ret_exps = IList.map (fun ret_id -> Exp.Var ret_id) ret_ids in
       IList.fold_left
-        (fun exps_to_mark (exp, _) -> exp :: exps_to_mark) ret_exps actuals_by_ref in
+        (fun exps_to_mark (exp, _, _) -> exp :: exps_to_mark) ret_exps actuals_by_ref in
     let prop_with_undef_attr =
       let path_pos = State.get_path_pos () in
       Attribute.mark_vars_as_undefined

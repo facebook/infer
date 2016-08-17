@@ -19,9 +19,12 @@ val dummy_source_range : unit -> source_range
 
 val dummy_stmt_info : unit -> stmt_info
 
+val create_qual_type : ?is_const:bool -> type_ptr -> qual_type
+
 val create_char_type : type_ptr
 
 val create_char_star_type : type_ptr
+val create_char_star_qual_type : is_const:bool -> qual_type
 
 val create_id_type : type_ptr
 
@@ -42,10 +45,12 @@ val create_void_unsigned_long_type : type_ptr
 val create_void_void_type : type_ptr
 
 val create_class_type : Clang_ast_types.class_info -> type_ptr
+val create_class_qual_type : ?is_const:bool -> Clang_ast_types.class_info -> qual_type
 
 val create_struct_type : string -> type_ptr
 
 val create_pointer_type : type_ptr -> type_ptr
+val create_pointer_qual_type : is_const:bool -> type_ptr -> qual_type
 
 val create_integer_literal : string -> stmt
 

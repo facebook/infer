@@ -117,6 +117,7 @@ sig
   val get_decl_from_typ_ptr : Clang_ast_t.type_ptr -> Clang_ast_t.decl option
 
   val string_of_type_ptr : Clang_ast_t.type_ptr -> string
+  val string_of_qual_type : Clang_ast_t.qual_type -> string
 
   val make_name_decl : string -> Clang_ast_t.named_decl_info
 
