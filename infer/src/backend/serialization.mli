@@ -54,3 +54,6 @@ val to_file : 'a serializer -> DB.filename -> 'a -> unit
 
 (** current key for an error trace *)
 val trace_key : key
+
+(** current key for lint issues *)
+val lint_issues_key : key

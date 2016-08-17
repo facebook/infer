@@ -129,6 +129,7 @@ let inferconfig_file = ".inferconfig"
 
 let ivar_attributes = "ivar_attributes"
 
+let lint_issues_dir_name = "lint_issues"
 let linters_mode_enabled = false
 
 (** letters used in the analysis output *)

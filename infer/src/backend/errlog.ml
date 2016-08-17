@@ -167,7 +167,6 @@ let update errlog_old errlog_new =
     (fun (ekind, infp, s, desc, severity) l ->
        ignore (add_issue errlog_old (ekind, infp, s, desc, severity) l)) errlog_new
 
-
 let log_issue _ekind err_log loc node_id_key session ltr pre_opt exn =
   let err_name, desc, ml_loc_opt, visibility, severity, force_kind, eclass =
     Exceptions.recognize_exception exn in

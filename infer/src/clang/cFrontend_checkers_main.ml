@@ -48,9 +48,18 @@ let context_with_ck_set context decl_list =
   else
     context
 
-let do_frontend_checks cfg cg ast =
+let store_issues source_file =
+  let abbrev_source_file = DB.source_file_encoding source_file in
+  let lint_issues_dir = Filename.concat Config.results_dir Config.lint_issues_dir_name in
+  DB.create_dir lint_issues_dir;
+  let lint_issues_file =
+    DB.filename_from_string (Filename.concat lint_issues_dir (abbrev_source_file ^ ".issue")) in
+  LintIssues.store_issues lint_issues_file !LintIssues.errLogMap
+
+let do_frontend_checks cfg cg source_file ast =
   match ast with
   | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
       let context = context_with_ck_set CLintersContext.empty decl_list in
-      IList.iter (do_frontend_checks_decl context cfg cg) decl_list
+      IList.iter (do_frontend_checks_decl context cfg cg) decl_list;
+      if Config.linters_mode_enabled then store_issues source_file
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)

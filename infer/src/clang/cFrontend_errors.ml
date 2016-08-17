@@ -76,19 +76,12 @@ let while_stmt_checker_list = [CFrontend_checkers.bad_pointer_comparison_warning
 let checker_for_while_stmt stmt_info cond checker context =
   checker context stmt_info cond
 
-
-
-let errLogMap = ref Procname.Map.empty
-
 let get_err_log cfg cg method_decl_opt loc =
+  let procname = match method_decl_opt with
+    | Some method_decl -> General_utils.procname_of_decl method_decl
+    | None -> General_utils.get_procname_for_frontend_checks loc in
   if Config.linters_mode_enabled then
-    let procname = match method_decl_opt with
-      | Some method_decl -> General_utils.procname_of_decl method_decl
-      | None -> General_utils.get_procname_for_frontend_checks loc in
-    try Procname.Map.find procname !errLogMap
-    with Not_found ->
-      let errlog = Errlog.empty () in
-      errLogMap := Procname.Map.add procname errlog !errLogMap; errlog
+    LintIssues.get_err_log procname
   else
     let pdesc = CMethod_trans.get_method_for_frontend_checks cfg cg loc in
     Cfg.Procdesc.get_err_log pdesc

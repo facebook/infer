@@ -27,8 +27,9 @@ let compute_icfg tenv ast =
       Printing.log_out "\n Start creating icfg\n";
       let cg = Cg.create () in
       let cfg = Cfg.Node.create_cfg () in
-      IList.iter (CFrontend_declImpl.translate_one_declaration tenv cg cfg `DeclTraversal)
-        decl_list;
+      if not Config.linters_mode_enabled then
+        IList.iter (CFrontend_declImpl.translate_one_declaration tenv cg cfg `DeclTraversal)
+          decl_list;
       Printing.log_out "\n Finished creating icfg\n";
       (cg, cfg)
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
@@ -60,7 +61,7 @@ let do_source_file source_file ast =
   let call_graph, cfg = compute_icfg tenv ast in
   Printing.log_out "\n End building call/cfg graph for '%s'.\n"
     (DB.source_file_to_string source_file);
-  CFrontend_checkers_main.do_frontend_checks cfg call_graph ast;
+  CFrontend_checkers_main.do_frontend_checks cfg call_graph source_file ast;
   (* This part below is a boilerplate in every frontends. *)
   (* This could be moved in the cfg_infer module *)
   let source_dir = DB.source_dir_from_source_file !DB.current_source in

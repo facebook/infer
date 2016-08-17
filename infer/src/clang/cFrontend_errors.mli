@@ -18,7 +18,5 @@ val run_frontend_checkers_on_stmt :
   Cfg.cfg -> Cg.t -> Clang_ast_t.decl -> Clang_ast_t.stmt -> CLintersContext.context
 
 (* Run frontend checkers on a declaration *)
-val run_frontend_checkers_on_decl :
-  CLintersContext.context -> Cfg.cfg -> Cg.t -> Clang_ast_t.decl -> CLintersContext.context
-
-val errLogMap : Errlog.t Procname.Map.t ref
+val run_frontend_checkers_on_decl : CLintersContext.context -> Cfg.cfg -> Cg.t ->
+  Clang_ast_t.decl -> CLintersContext.context

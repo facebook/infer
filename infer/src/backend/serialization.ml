@@ -21,9 +21,9 @@ type key = int
 
 (** current key for tenv, procedure summary, cfg, error trace, call graph *)
 let tenv_key, summary_key, cfg_key, trace_key, cg_key,
-    analysis_results_key, cluster_key, attributes_key =
+    analysis_results_key, cluster_key, attributes_key, lint_issues_key =
   425184201, 160179325, 1062389858, 221487792, 477305409,
-  799050016, 579094948, 972393003
+  799050016, 579094948, 972393003, 852343110
 
 (** version of the binary files, to be incremented for each change *)
 let version = 26

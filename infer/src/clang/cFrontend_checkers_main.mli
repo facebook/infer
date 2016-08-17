@@ -7,4 +7,4 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-val do_frontend_checks : Cfg.cfg -> Cg.t -> Clang_ast_t.decl -> unit
+val do_frontend_checks : Cfg.cfg -> Cg.t -> DB.source_file -> Clang_ast_t.decl -> unit
