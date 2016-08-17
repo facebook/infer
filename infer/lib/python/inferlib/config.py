@@ -14,8 +14,11 @@ import locale
 import os
 
 
-locale.setlocale(locale.LC_ALL, '')
-CODESET = locale.getlocale(locale.LC_CTYPE)[1]
+try:
+    locale.setlocale(locale.LC_ALL, '')
+    CODESET = locale.getlocale(locale.LC_CTYPE)[1]
+except locale.Error:
+    CODESET = None
 if CODESET is None:
     CODESET = 'ascii'
 
