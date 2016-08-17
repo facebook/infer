@@ -41,7 +41,7 @@ public class GlobalVarTest {
 
   @BeforeClass
   public static void runInfer() throws InterruptedException, IOException {
-    inferCmdFraction = InferRunner.createObjCPPInferCommand(
+    inferCmdFraction = InferRunner.createObjCPPLintersCommand(
         folder,
         FILE);
   }

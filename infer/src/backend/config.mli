@@ -16,7 +16,7 @@ open! Utils
 
 (** Various kind of analyzers *)
 type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
-              | Crashcontext
+              | Crashcontext | Linters
 
 (** Association list of analyzers and their names *)
 val string_to_analyzer : (string * analyzer) list
@@ -81,7 +81,6 @@ val incremental_procs : bool
 val initial_analysis_time : float
 val ivar_attributes : string
 val lint_issues_dir_name : string
-val linters_mode_enabled : bool
 val load_average : float option
 val log_analysis_crash : string
 val log_analysis_file : string

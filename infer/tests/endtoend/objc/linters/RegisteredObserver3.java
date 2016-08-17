@@ -40,10 +40,9 @@ public class RegisteredObserver3 {
   @BeforeClass
   public static void runInfer() throws InterruptedException, IOException {
 
-    inferCmd = InferRunner.createObjCInferCommandSimple(
+    inferCmd = InferRunner.createObjCLintersCommandSimple(
         folder,
-        VCFile3,
-        "cf");
+        VCFile3);
   }
 
   @Test

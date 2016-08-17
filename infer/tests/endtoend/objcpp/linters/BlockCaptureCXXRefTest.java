@@ -40,7 +40,7 @@ public class BlockCaptureCXXRefTest {
 
   @BeforeClass
   public static void runInfer() throws InterruptedException, IOException {
-    inferCmd = InferRunner.createObjCPPInferCommand(folder, FILE);
+    inferCmd = InferRunner.createObjCPPLintersCommand(folder, FILE);
   }
 
   @Test

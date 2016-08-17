@@ -18,12 +18,12 @@ module F = Format
 
 
 type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
-              | Crashcontext
+              | Crashcontext | Linters
 
 let string_to_analyzer =
   [("capture", Capture); ("compile", Compile);
    ("infer", Infer); ("eradicate", Eradicate); ("checkers", Checkers);
-   ("tracing", Tracing); ("crashcontext", Crashcontext)]
+   ("tracing", Tracing); ("crashcontext", Crashcontext); ("linters", Linters)]
 
 
 type clang_lang = C | CPP | OBJC | OBJCPP
@@ -130,7 +130,6 @@ let inferconfig_file = ".inferconfig"
 let ivar_attributes = "ivar_attributes"
 
 let lint_issues_dir_name = "lint_issues"
-let linters_mode_enabled = false
 
 (** letters used in the analysis output *)
 let log_analysis_file = "F"
@@ -517,14 +516,15 @@ and analyzer =
   let () = match Infer with
     (* NOTE: if compilation fails here, it means you have added a new analyzer without updating the
        documentation of this option *)
-    | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext -> () in
+    | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters -> () in
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:"a"
     ~exes:CLOpt.[Toplevel]
     "Specify which analyzer to run (only one at a time is supported):\n\
      - infer, eradicate, checkers: run the specified analysis\n\
      - capture: run capture phase only (no analysis)\n\
      - compile: run compilation command without interfering (Java only)\n\
-     - crashcontext, tracing: experimental (see --crashcontext and --tracing)"
+     - crashcontext, tracing: experimental (see --crashcontext and --tracing)\n\
+     - linters: run linters based on the ast only (Objective-C and Objective-C++ only)"
     ~symbols:string_to_analyzer
 
 and android_harness =

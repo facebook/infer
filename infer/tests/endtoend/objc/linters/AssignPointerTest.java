@@ -40,12 +40,9 @@ public class AssignPointerTest {
 
   @BeforeClass
   public static void runInfer() throws InterruptedException, IOException {
-    inferCmd = InferRunner.createiOSInferCommandWithMLBuckets(
+    inferCmd = InferRunner.createObjCLintersCommand(
       folder,
-      FILE,
-      "cf",
-      true);
-
+      FILE);
   }
 
   @Test

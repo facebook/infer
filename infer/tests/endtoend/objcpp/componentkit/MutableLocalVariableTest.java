@@ -38,7 +38,7 @@ public class MutableLocalVariableTest {
 
   @BeforeClass
   public static void runInfer() throws InterruptedException, IOException {
-    inferCmd = InferRunner.createObjCPPInferCommand(
+    inferCmd = InferRunner.createObjCPPLintersCommand(
         folder,
         FILE);
   }

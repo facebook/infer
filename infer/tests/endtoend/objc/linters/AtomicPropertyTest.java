@@ -40,7 +40,7 @@ public class AtomicPropertyTest {
 
   @BeforeClass
   public static void runInfer() throws InterruptedException, IOException {
-    inferCmd = InferRunner.createObjCInferCommand(
+    inferCmd = InferRunner.createObjCLintersCommand(
         folder,
         FILE);
   }

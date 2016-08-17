@@ -17,6 +17,7 @@ let rec do_frontend_checks_stmt (context:CLintersContext.context) cfg cg method_
      | _ -> ());
     do_frontend_checks_stmt context' cfg cg method_decl stmt in
   IList.iter (do_all_checks_on_stmts) stmts
+
 and do_frontend_checks_decl context cfg cg decl =
   let open Clang_ast_t in
   let info = Clang_ast_proj.get_decl_tuple decl in
@@ -61,5 +62,6 @@ let do_frontend_checks cfg cg source_file ast =
   | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
       let context = context_with_ck_set CLintersContext.empty decl_list in
       IList.iter (do_frontend_checks_decl context cfg cg) decl_list;
-      if Config.linters_mode_enabled then store_issues source_file
+      (* TODO (t12740727): Remove condition once the transition to linters mode is finished *)
+      if Config.analyzer = Some Config.Linters then store_issues source_file
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)

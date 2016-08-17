@@ -278,17 +278,14 @@ public class InferRunner {
       TemporaryFolder folder,
       String sourceFile,
       Language lang,
-      boolean analyze,
+      String analyzer,
       @Nullable String isysroot,
       @Nullable String ml_buckets,
       boolean arc,
       ImmutableList<String> extraInferOptions) {
     ImmutableList.Builder<String> inferOptionsBuilder = new ImmutableList.Builder<String>()
       .addAll(extraInferOptions);
-
-    if (!analyze) {
-      inferOptionsBuilder.add("--analyzer").add("capture");
-    }
+    inferOptionsBuilder.add("--analyzer").add(analyzer);
 
     inferOptionsBuilder
       .add("--ml_buckets")
@@ -311,7 +308,7 @@ public class InferRunner {
         folder,
         sourceFile,
         Language.C,
-        false,
+        "capture",
         null,
         null,
         false,
@@ -332,7 +329,7 @@ public class InferRunner {
         folder,
         sourceFile,
         Language.CPP,
-        false,
+        "capture",
         null,
         null,
         false,
@@ -353,7 +350,7 @@ public class InferRunner {
         folder,
         sourceFile,
         Language.ObjC,
-        false,
+        "capture",
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
         false,
@@ -374,7 +371,7 @@ public class InferRunner {
         folder,
         sourceFile,
         Language.ObjC,
-        false,
+        "capture",
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
         true,
@@ -395,7 +392,7 @@ public class InferRunner {
         folder,
         sourceFile,
         Language.ObjCPP,
-        false,
+        "capture",
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
         false,
@@ -416,7 +413,7 @@ public class InferRunner {
         folder,
         sourceFile,
         Language.C,
-        true,
+        "infer",
         null,
         null,
         false,
@@ -441,7 +438,7 @@ public class InferRunner {
         folder,
         sourceFile,
         Language.CPP,
-        true,
+        "infer",
         null,
         null,
         false,
@@ -471,7 +468,7 @@ public class InferRunner {
         folder,
         sourceFile,
         Language.CPP,
-        true,
+        "infer",
         null,
         ml_bucket,
         false,
@@ -485,24 +482,9 @@ public class InferRunner {
         folder,
         sourceFile,
         Language.ObjC,
-        true,
+        "infer",
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
-        false,
-        ImmutableList.<String>of());
-  }
-
-  public static ImmutableList<String> createObjCInferCommandSimple(
-      TemporaryFolder folder,
-      String sourceFile,
-      String ml_bucket) throws IOException, InterruptedException {
-    return createClangInferCommand(
-        folder,
-        sourceFile,
-        Language.ObjC,
-        true,
-        null,
-        ml_bucket,
         false,
         ImmutableList.<String>of());
   }
@@ -516,7 +498,7 @@ public class InferRunner {
         folder,
         sourceFile,
         Language.ObjC,
-        true,
+        "infer",
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         ml_bucket,
         arc,
@@ -530,7 +512,7 @@ public class InferRunner {
         folder,
         sourceFile,
         Language.ObjCPP,
-        true,
+        "infer",
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
         false,
@@ -544,7 +526,7 @@ public class InferRunner {
         folder,
         sourceFile,
         Language.ObjC,
-        false,
+        "infer",
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
         false,
@@ -558,7 +540,7 @@ public class InferRunner {
         folder,
         sourceFile,
         Language.ObjC,
-        true,
+        "infer",
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
         false,
@@ -574,12 +556,54 @@ public class InferRunner {
         folder,
         sourceFile,
         Language.ObjC,
-        true,
+        "infer",
         getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         bucket,
         arc,
         ImmutableList.<String>of());
   }
+
+  public static ImmutableList<String> createLintersCommand(
+      TemporaryFolder folder,
+      String sourceFile,
+      Language lang) throws IOException, InterruptedException {
+    return createClangInferCommand(
+        folder,
+        sourceFile,
+        lang,
+        "linters",
+        getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
+        null,
+        true,
+        ImmutableList.<String>of());
+  }
+
+  public static ImmutableList<String> createObjCLintersCommand(
+      TemporaryFolder folder,
+      String sourceFile) throws IOException, InterruptedException {
+    return createLintersCommand(folder, sourceFile, Language.ObjC);
+  }
+
+  public static ImmutableList<String> createObjCLintersCommandSimple(
+      TemporaryFolder folder,
+      String sourceFile) throws IOException, InterruptedException {
+    return createClangInferCommand(
+        folder,
+        sourceFile,
+        Language.ObjC,
+        "linters",
+        null,
+        null,
+        true,
+        ImmutableList.<String>of());
+  }
+
+  public static ImmutableList<String> createObjCPPLintersCommand(
+      TemporaryFolder folder,
+      String sourceFile) throws IOException, InterruptedException {
+    return createLintersCommand(folder, sourceFile, Language.ObjCPP);
+  }
+
 
   @Nullable
   public static File runInferFrontend(ImmutableList<String> inferCmd)

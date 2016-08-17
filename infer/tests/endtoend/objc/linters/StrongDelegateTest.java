@@ -40,7 +40,7 @@ public class StrongDelegateTest {
 
   @BeforeClass
   public static void runInfer() throws InterruptedException, IOException {
-    inferCmdFraction = InferRunner.createObjCInferCommand(
+    inferCmdFraction = InferRunner.createObjCLintersCommand(
         folder,
         FILE);
   }
