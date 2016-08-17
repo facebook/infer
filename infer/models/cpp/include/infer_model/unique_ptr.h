@@ -11,12 +11,14 @@
 
 #include <infer_model/common.h>
 
-INFER_NAMESPACE_STD_BEGIN
+// define unique_ptr outside of std namespace. It will be aliased as
+// std::unique_ptr via 'using' clause later
+namespace infer_std_model {
 
 // IMPORTANT
 // There is specialization of unique_ptr below and it's mosly copy paste.
 // When changing model, remember to change it for specialization as well!
-template <class _Tp, class _Dp = default_delete<_Tp>>
+template <class _Tp, class _Dp>
 struct unique_ptr {
   // use SFINAE to determine whether _Del::pointer exists
   class _Pointer {
@@ -26,7 +28,7 @@ struct unique_ptr {
     template <typename _Up>
     static _Tp* __test(...);
 
-    typedef typename remove_reference<_Dp>::type _Del;
+    typedef typename std::remove_reference<_Dp>::type _Del;
 
    public:
     typedef decltype(__test<_Del>(0)) type;
@@ -39,44 +41,45 @@ struct unique_ptr {
 
   pointer data;
   template <class Y>
-  unique_ptr(const std__unique_ptr<Y>& u) {}
+  unique_ptr(const std::std__unique_ptr<Y>& u) {}
 
   constexpr unique_ptr() noexcept : data(nullptr) {}
 
-  constexpr unique_ptr(nullptr_t) noexcept : unique_ptr<_Tp, _Dp>() {}
+  constexpr unique_ptr(std::nullptr_t) noexcept : unique_ptr<_Tp, _Dp>() {}
 
   explicit unique_ptr(pointer ptr) : data(ptr) {}
 
   unique_ptr(pointer ptr,
-             typename conditional<
-                 is_reference<deleter_type>::value,
-                 deleter_type,
-                 typename add_lvalue_reference<const deleter_type>::type>::type
-                 __d) noexcept : data(ptr) {}
+      typename std::conditional<
+          std::is_reference<deleter_type>::value,
+          deleter_type,
+          typename std::add_lvalue_reference<const deleter_type>::type>::type
+          __d) noexcept : data(ptr) {}
 
   unique_ptr(pointer ptr,
-             typename remove_reference<deleter_type>::type&& __d) noexcept
+             typename std::remove_reference<deleter_type>::type&& __d) noexcept
       : data(ptr) {}
 
   unique_ptr(unique_ptr&& u) noexcept : data(u.data) { u.data = nullptr; }
 
   template <class _Up,
             class _Ep,
-            typename = typename enable_if<
-                !is_array<_Up>::value &&
-                is_convertible<typename unique_ptr<_Up, _Ep>::pointer,
-                               pointer>::value &&
-                is_convertible<_Ep, deleter_type>::value &&
-                (!is_reference<deleter_type>::value ||
-                 is_same<deleter_type, _Ep>::value)>::type>
+            typename = typename std::enable_if<
+                !std::is_array<_Up>::value &&
+                std::is_convertible<typename unique_ptr<_Up, _Ep>::pointer,
+                                    pointer>::value &&
+                std::is_convertible<_Ep, deleter_type>::value &&
+                (!std::is_reference<deleter_type>::value ||
+                 std::is_same<deleter_type, _Ep>::value)>::type>
   unique_ptr(unique_ptr<_Up, _Ep>&& u) noexcept : data(u.data) {
     u.data = nullptr;
   }
 
   template <
       class _Up,
-      typename = typename enable_if<is_convertible<_Up*, _Tp*>::value>::type>
-  unique_ptr(auto_ptr<_Up>&& __p) noexcept;
+            typename = typename std::enable_if<
+                std::is_convertible<_Up*, _Tp*>::value>::type>
+  unique_ptr(std::auto_ptr<_Up>&& __p) noexcept;
 
   ~unique_ptr() { reset(); }
 
@@ -87,28 +90,30 @@ struct unique_ptr {
 
   template <class _Up,
             class _Ep,
-            typename = typename enable_if<
-                !is_array<_Up>::value &&
-                is_convertible<typename unique_ptr<_Up, _Ep>::pointer,
-                               pointer>::value &&
-                is_assignable<deleter_type&, _Ep&&>::value>::type>
+            typename = typename std::enable_if<
+                !std::is_array<_Up>::value &&
+                std::is_convertible<typename unique_ptr<_Up, _Ep>::pointer,
+                                    pointer>::value &&
+                std::is_assignable<deleter_type&, _Ep&&>::value>::type>
   unique_ptr& operator=(unique_ptr<_Up, _Ep>&& __u) noexcept {
     reset(__u.data);
     return *this;
   }
 
-  unique_ptr& operator=(nullptr_t) noexcept {
+  unique_ptr& operator=(std::nullptr_t) noexcept {
     reset();
     return *this;
   }
-  typename add_lvalue_reference<_Tp>::type operator*() const { return *data; }
+  typename std::add_lvalue_reference<_Tp>::type operator*() const {
+    return *data;
+  }
 
   pointer operator->() const { return data; }
 
   pointer get() const { return data; }
 
-  typedef typename remove_reference<deleter_type>::type& _Dp_reference;
-  typedef const typename remove_reference<deleter_type>::type&
+  typedef typename std::remove_reference<deleter_type>::type& _Dp_reference;
+  typedef const typename std::remove_reference<deleter_type>::type&
       _Dp_const_reference;
   _Dp_const_reference get_deleter() const {}
   _Dp_reference get_deleter() {}
@@ -135,7 +140,7 @@ struct unique_ptr<_Tp[], _Dp> {
     template <typename _Up>
     static _Tp* __test(...);
 
-    typedef typename remove_reference<_Dp>::type _Del;
+    typedef typename std::remove_reference<_Dp>::type _Del;
 
    public:
     typedef decltype(__test<_Del>(0)) type;
@@ -150,40 +155,42 @@ struct unique_ptr<_Tp[], _Dp> {
 
   constexpr unique_ptr() noexcept : data(nullptr) {}
 
-  constexpr unique_ptr(nullptr_t) noexcept : data(nullptr) {}
+  constexpr unique_ptr(std::nullptr_t) noexcept : data(nullptr) {}
 
   explicit unique_ptr(pointer ptr) : data(ptr) {}
 
   unique_ptr(
       pointer ptr,
-      typename conditional<
-          is_reference<deleter_type>::value,
-          deleter_type,
-          typename add_lvalue_reference<const deleter_type>::type>::type __d)
+             typename std::conditional<std::is_reference<deleter_type>::value,
+                                       deleter_type,
+                                       typename std::add_lvalue_reference<
+                                           const deleter_type>::type>::type __d)
       : data(ptr) {}
 
-  unique_ptr(pointer ptr, typename remove_reference<deleter_type>::type&& __d)
+  unique_ptr(pointer ptr,
+             typename std::remove_reference<deleter_type>::type&& __d)
       : data(ptr) {}
 
   unique_ptr(unique_ptr&& u) : data(u.data) { u.data = nullptr; }
 
   template <class _Up,
             class _Ep,
-            typename = typename enable_if<
-                is_array<_Up>::value &&
-                is_convertible<typename unique_ptr<_Up, _Ep>::pointer,
-                               pointer>::value &&
-                is_convertible<_Ep, deleter_type>::value &&
-                (!is_reference<deleter_type>::value ||
-                 is_same<deleter_type, _Ep>::value)>::type>
+            typename = typename std::enable_if<
+                std::is_array<_Up>::value &&
+                std::is_convertible<typename unique_ptr<_Up, _Ep>::pointer,
+                                    pointer>::value &&
+                std::is_convertible<_Ep, deleter_type>::value &&
+                (!std::is_reference<deleter_type>::value ||
+                 std::is_same<deleter_type, _Ep>::value)>::type>
   unique_ptr(unique_ptr<_Up, _Ep>&& u) : data(u.data) {
     u.data = nullptr;
   }
 
   template <
       class _Up,
-      typename = typename enable_if<is_convertible<_Up*, _Tp*>::value>::type>
-  unique_ptr(auto_ptr<_Up>&& __p) noexcept;
+            typename = typename std::enable_if<
+                std::is_convertible<_Up*, _Tp*>::value>::type>
+  unique_ptr(std::auto_ptr<_Up>&& __p) noexcept;
 
   ~unique_ptr() { reset(); }
 
@@ -194,27 +201,27 @@ struct unique_ptr<_Tp[], _Dp> {
 
   template <class _Up,
             class _Ep,
-            typename = typename enable_if<
-                is_array<_Up>::value &&
-                is_convertible<typename unique_ptr<_Up, _Ep>::pointer,
-                               pointer>::value &&
-                is_assignable<deleter_type&, _Ep&&>::value>::type>
+            typename = typename std::enable_if<
+                std::is_array<_Up>::value &&
+                std::is_convertible<typename unique_ptr<_Up, _Ep>::pointer,
+                                    pointer>::value &&
+                std::is_assignable<deleter_type&, _Ep&&>::value>::type>
   unique_ptr& operator=(unique_ptr<_Up, _Ep>&& __u) {
     reset(__u.data);
     return *this;
   }
 
-  unique_ptr& operator=(nullptr_t) {
+  unique_ptr& operator=(std::nullptr_t) {
     reset();
     return *this;
   }
 
-  typename add_lvalue_reference<_Tp>::type operator[](size_t i) const {}
+  typename std::add_lvalue_reference<_Tp>::type operator[](size_t i) const {}
 
   pointer get() const { return data; }
 
-  typedef typename remove_reference<deleter_type>::type& _Dp_reference;
-  typedef const typename remove_reference<deleter_type>::type&
+  typedef typename std::remove_reference<deleter_type>::type& _Dp_reference;
+  typedef const typename std::remove_reference<deleter_type>::type&
       _Dp_const_reference;
   _Dp_const_reference get_deleter() const {}
   _Dp_reference get_deleter() {}
@@ -271,66 +278,74 @@ inline bool operator>=(const unique_ptr<_T1, _D1>& __x,
 }
 
 template <class _T1, class _D1>
-inline bool operator==(const unique_ptr<_T1, _D1>& __x, nullptr_t) {
+inline bool operator==(const unique_ptr<_T1, _D1>& __x, std::nullptr_t) {
   return !__x;
 }
 
 template <class _T1, class _D1>
-inline bool operator==(nullptr_t, const unique_ptr<_T1, _D1>& __x) {
+inline bool operator==(std::nullptr_t, const unique_ptr<_T1, _D1>& __x) {
   return !__x;
 }
 
 template <class _T1, class _D1>
-inline bool operator!=(const unique_ptr<_T1, _D1>& __x, nullptr_t) {
+inline bool operator!=(const unique_ptr<_T1, _D1>& __x, std::nullptr_t) {
   return static_cast<bool>(__x);
 }
 
 template <class _T1, class _D1>
-inline bool operator!=(nullptr_t, const unique_ptr<_T1, _D1>& __x) {
+inline bool operator!=(std::nullptr_t, const unique_ptr<_T1, _D1>& __x) {
   return static_cast<bool>(__x);
 }
 
 template <class _T1, class _D1>
-inline bool operator<(const unique_ptr<_T1, _D1>& __x, nullptr_t) {
+inline bool operator<(const unique_ptr<_T1, _D1>& __x, std::nullptr_t) {
   /*typedef typename unique_ptr<_T1, _D1>::pointer _P1;
   return less<_P1>()(__x.get(), nullptr);*/
 }
 
 template <class _T1, class _D1>
-inline bool operator<(nullptr_t, const unique_ptr<_T1, _D1>& __x) {
+inline bool operator<(std::nullptr_t, const unique_ptr<_T1, _D1>& __x) {
   /*typedef typename unique_ptr<_T1, _D1>::pointer _P1;
   return less<_P1>()(nullptr, __x.get());*/
 }
 
 template <class _T1, class _D1>
-inline bool operator>(const unique_ptr<_T1, _D1>& __x, nullptr_t) {
+inline bool operator>(const unique_ptr<_T1, _D1>& __x, std::nullptr_t) {
   return nullptr < __x;
 }
 
 template <class _T1, class _D1>
-inline bool operator>(nullptr_t, const unique_ptr<_T1, _D1>& __x) {
+inline bool operator>(std::nullptr_t, const unique_ptr<_T1, _D1>& __x) {
   return __x < nullptr;
 }
 
 template <class _T1, class _D1>
-inline bool operator<=(const unique_ptr<_T1, _D1>& __x, nullptr_t) {
+inline bool operator<=(const unique_ptr<_T1, _D1>& __x, std::nullptr_t) {
   return !(nullptr < __x);
 }
 
 template <class _T1, class _D1>
-inline bool operator<=(nullptr_t, const unique_ptr<_T1, _D1>& __x) {
+inline bool operator<=(std::nullptr_t, const unique_ptr<_T1, _D1>& __x) {
   return !(__x < nullptr);
 }
 
 template <class _T1, class _D1>
-inline bool operator>=(const unique_ptr<_T1, _D1>& __x, nullptr_t) {
+inline bool operator>=(const unique_ptr<_T1, _D1>& __x, std::nullptr_t) {
   return !(__x < nullptr);
 }
 
 template <class _T1, class _D1>
-inline bool operator>=(nullptr_t, const unique_ptr<_T1, _D1>& __x) {
+inline bool operator>=(std::nullptr_t, const unique_ptr<_T1, _D1>& __x) {
   return !(nullptr < __x);
 }
+} // namespace infer_std_model
+
+INFER_NAMESPACE_STD_BEGIN
+
+// make std::unique_ptr alias of infer_std_model::unique_ptr
+template <class _Tp, class _Dp = default_delete<_Tp>>
+using unique_ptr = infer_std_model::unique_ptr<_Tp, _Dp>;
+
 
 template <class T, class D>
 struct hash<unique_ptr<T, D>> : public hash<std__unique_ptr<T, D>> {
