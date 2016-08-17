@@ -144,7 +144,7 @@ let captured_variables_cxx_ref captured_vars =
     | Some VarDecl (_, named_decl_info, qual_type, _)
     | Some ParmVarDecl (_, named_decl_info, qual_type, _)
     | Some ImplicitParamDecl (_, named_decl_info, qual_type, _) ->
-        (match Ast_utils.get_desugared_type qual_type.Clang_ast_t.type_ptr with
+        (match Ast_utils.get_desugared_type qual_type.Clang_ast_t.qt_type_ptr with
          | Some RValueReferenceType _ | Some LValueReferenceType _ ->
              named_decl_info::reference_captured_vars
          | _ -> reference_captured_vars)

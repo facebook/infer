@@ -81,7 +81,7 @@ let mutable_local_vars_advice context decl =
                       && is_in_main_file decl
                       && (is_objc () || is_objcpp ())
                       && (not (is_global_var decl))
-                      && (not qual_type.is_const) in
+                      && (not qual_type.qt_is_const) in
       if condition then
         Some {
           CIssue.issue = CIssue.Mutable_local_variable_in_component_file;

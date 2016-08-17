@@ -58,7 +58,7 @@ let rec get_fields type_ptr_to_sil_type tenv curr_class decl_list =
   let add_field name_info qt attributes decl_list' =
     let fields = get_fields type_ptr_to_sil_type tenv curr_class decl_list' in
     let field_tuple = build_sil_field type_ptr_to_sil_type tenv
-        name_info qt.Clang_ast_t.type_ptr attributes in
+        name_info qt.Clang_ast_t.qt_type_ptr attributes in
     General_utils.append_no_duplicates_fields [field_tuple] fields in
   match decl_list with
   | [] -> []

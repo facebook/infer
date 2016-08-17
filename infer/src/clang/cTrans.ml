@@ -628,7 +628,7 @@ struct
                  (* Do not convert a global struct to a local because SIL
                     values do not include structs, they must all be heap-allocated  *)
                  false, None
-             | _ -> vdi.vdi_is_global && qual_type.is_const, vdi.vdi_init_expr)
+             | _ -> vdi.vdi_is_global && qual_type.qt_is_const, vdi.vdi_init_expr)
         | _ -> false, None in
       if is_global_const then
         init_expr_trans trans_state (var_exp, typ) stmt_info init_expr
@@ -1702,7 +1702,7 @@ struct
       let pvar = CVar_decl.sil_var_of_decl context var_decl procname in
       let typ = CTypes_decl.type_ptr_to_sil_type
           context.CContext.tenv
-          qual_type.Clang_ast_t.type_ptr in
+          qual_type.Clang_ast_t.qt_type_ptr in
       CVar_decl.add_var_to_locals procdesc var_decl typ pvar;
       let trans_state' = { trans_state with succ_nodes = next_node } in
       init_expr_trans trans_state' (Exp.Lvar pvar, typ) stmt_info vdi.Clang_ast_t.vdi_init_expr in

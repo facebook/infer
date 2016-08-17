@@ -110,7 +110,7 @@ let get_parameters tenv function_method_decl_info =
     match par with
     | Clang_ast_t.ParmVarDecl (_, name_info, qt, var_decl_info) ->
         let _, mangled = General_utils.get_var_name_mangled name_info var_decl_info in
-        let type_ptr = qt.Clang_ast_t.type_ptr in
+        let type_ptr = qt.Clang_ast_t.qt_type_ptr in
         let param_typ = CTypes_decl.type_ptr_to_sil_type tenv type_ptr in
         let type_ptr' = match param_typ with
           | Typ.Tstruct _ when General_utils.is_cpp_translation Config.clang_lang ->
@@ -146,9 +146,9 @@ let build_method_signature tenv decl_info procname function_method_decl_info
 let get_assume_not_null_calls param_decls =
   let do_one_param decl = match decl with
     | Clang_ast_t.ParmVarDecl (decl_info, name, qt, _)
-      when CFrontend_utils.Ast_utils.is_type_nonnull qt.Clang_ast_t.type_ptr ->
+      when CFrontend_utils.Ast_utils.is_type_nonnull qt.Clang_ast_t.qt_type_ptr ->
         let assume_call = Ast_expressions.create_assume_not_null_call
-            decl_info name qt.Clang_ast_t.type_ptr in
+            decl_info name qt.Clang_ast_t.qt_type_ptr in
         [(`ClangStmt assume_call)]
     | _ -> [] in
   IList.flatten (IList.map do_one_param param_decls)
@@ -162,7 +162,7 @@ let method_signature_of_decl tenv meth_decl block_data_opt =
   match meth_decl, block_data_opt with
   | FunctionDecl (decl_info, _, qt, fdi), _ ->
       let language = Config.clang_lang in
-      let func_decl = Func_decl_info (fdi, qt.Clang_ast_t.type_ptr, language) in
+      let func_decl = Func_decl_info (fdi, qt.Clang_ast_t.qt_type_ptr, language) in
       let procname = General_utils.procname_of_decl meth_decl in
       let ms = build_method_signature tenv decl_info procname func_decl None None in
       let extra_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
@@ -173,7 +173,7 @@ let method_signature_of_decl tenv meth_decl block_data_opt =
   | CXXDestructorDecl (decl_info, _, qt, fdi, mdi), _ ->
       let procname = General_utils.procname_of_decl meth_decl in
       let parent_ptr = Option.get decl_info.di_parent_pointer in
-      let method_decl = Cpp_Meth_decl_info (fdi, mdi, parent_ptr, qt.Clang_ast_t.type_ptr)  in
+      let method_decl = Cpp_Meth_decl_info (fdi, mdi, parent_ptr, qt.Clang_ast_t.qt_type_ptr)  in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
       let ms = build_method_signature tenv decl_info procname method_decl parent_pointer None in
       let non_null_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
@@ -329,10 +329,10 @@ let sil_func_attributes_of_attributes attrs =
 
 let should_create_procdesc cfg procname defined =
   match Cfg.Procdesc.find_from_name cfg procname with
-  | Some prevoius_procdesc ->
-      let is_defined_previous = Cfg.Procdesc.is_defined prevoius_procdesc in
+  | Some previous_procdesc ->
+      let is_defined_previous = Cfg.Procdesc.is_defined previous_procdesc in
       if defined && (not is_defined_previous) then
-        (Cfg.Procdesc.remove cfg (Cfg.Procdesc.get_proc_name prevoius_procdesc) true;
+        (Cfg.Procdesc.remove cfg (Cfg.Procdesc.get_proc_name previous_procdesc) true;
          true)
       else false
   | None -> true
