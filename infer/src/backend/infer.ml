@@ -104,6 +104,9 @@ let () =
     ) in
   let pid = Unix.create_process args_py.(0) args_py Unix.stdin Unix.stdout Unix.stderr in
   let _, status = Unix.waitpid [] pid in
+  if status = Unix.WEXITED 22 then
+    (* swallow infer.py argument parsing error *)
+    Config.print_usage_exit ();
   (* collect crashcontext summaries *)
   let analysis_is_crashcontext = match Config.analyzer with
     | Some Crashcontext -> true

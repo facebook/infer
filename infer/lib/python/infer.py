@@ -78,8 +78,23 @@ def split_args_to_parse():
     return (sys_argv[1:dd_index], cmd_raw)
 
 
+class FailSilentlyArgumentParser(argparse.ArgumentParser):
+    '''We want to leave the handling of printing usage messages to the
+    OCaml code. To do so, swallow error messages from ArgumentParser
+    and exit with a special error code (101) that infer.ml looks for.
+    '''
+
+    def error(self, message):
+        utils.stderr(message)
+        utils.stderr('')
+        exit(22)  # in sync with infer.ml
+
+    def print_help(self, file=None):
+        exit(22)  # in sync with infer.ml
+
+
 def create_argparser(parents=[]):
-    parser = argparse.ArgumentParser(
+    parser = FailSilentlyArgumentParser(
         parents=[analyze.infer_parser] + parents,
         add_help=False,
         formatter_class=argparse.RawDescriptionHelpFormatter,
