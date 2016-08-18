@@ -62,6 +62,8 @@ ALL_TESTS = [
     'buck',
     'cc1',
     'cmake',
+    'componentkit',
+    'fail',
     'gradle',
     'javac',
     'locale',
@@ -114,7 +116,7 @@ def save_report(reports, filename):
                             separators=(',', ': '), sort_keys=True)
 
 
-def run_analysis(clean_cmds, build_cmds, extra_check, env=None):
+def run_analysis(clean_cmds, build_cmds, extra_check, should_fail, env=None):
     for clean_cmd in clean_cmds:
         subprocess.check_call(clean_cmd, env=env)
 
@@ -134,7 +136,16 @@ def run_analysis(clean_cmds, build_cmds, extra_check, env=None):
                 mode='w',
                 suffix='.out',
                 prefix='analysis_') as analysis_output:
-            subprocess.check_call(infer_cmd, stdout=analysis_output, env=env)
+            try:
+                subprocess.check_call(infer_cmd,
+                                      stdout=analysis_output, env=env)
+                if should_fail is not None:
+                    # hacky since we should clean up infer-out, etc. as below
+                    # if you made the test fails, this is your punishment
+                    assert False
+            except subprocess.CalledProcessError, exn:
+                if exn.returncode != should_fail:
+                    raise
 
     json_path = os.path.join(temp_out_dir, REPORT_JSON)
     found_errors = utils.load_json_from_path(json_path)
@@ -228,6 +239,7 @@ def test(name,
          enabled=None,
          report_fname=None,
          extra_check=lambda x: None,
+         should_fail=None,
          preprocess=lambda: None,
          postprocess=lambda errors: errors):
     """Run a test.
@@ -244,6 +256,10 @@ def test(name,
     - [enabled] whether the test should attempt to run. By default it
       is enabled if [[name] in [to_test]]
     - [report_fname] where to find the expected Infer results
+    - [extra_check] some function that will be given the temporary
+      results directory as argument
+    - [should_fail] if not None then running infer is expected to fail
+      with [should_fail] error code
     - [preprocess] a function to run before the clean and compile
       commands. If the function returns something non-None, use that as
       the compile commands.
@@ -251,6 +267,7 @@ def test(name,
       modify them. It must return an Infer report.
 
     Returns [True] if the test ran, [False] otherwise.
+
     """
     # python can't into using values of arguments in the default
     # values of other arguments
@@ -282,6 +299,7 @@ def test(name,
         clean_commands,
         compile_commands,
         extra_check=extra_check,
+        should_fail=should_fail,
         env=env)
     original = os.path.join(EXPECTED_OUTPUTS_DIR, report_fname)
     do_test(postprocess(errors), original)
@@ -480,6 +498,13 @@ class BuildIntegrationTest(unittest.TestCase):
              [{'compile': ['clang', '-x', 'objective-c++', '-std=c++11', '-c',
                            'TestIgnoreImports.mm'],
                'infer_args': ['--cxx', '--no-filtering']}])
+
+    def test_fail_on_issue(self):
+        test('fail', '--fail-on-issue flag',
+             CODETOANALYZE_DIR,
+             [{'compile': ['clang', '-c', 'hello.c'],
+               'infer_args': ['--fail-on-issue']}],
+             should_fail=2)
 
     def test_pmd_xml_output(self):
         def pmd_check(infer_out):
