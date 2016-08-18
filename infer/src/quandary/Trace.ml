@@ -23,6 +23,8 @@ end
 module type S = sig
   include Spec
   type t
+  type astate = t
+  include AbstractDomain.S with type astate := astate
 
   (** get the sources of the trace. *)
   val sources : t -> Source.Set.t
@@ -41,6 +43,9 @@ module type S = sig
 
   (** add a sink to the current trace. *)
   val add_sink : Sink.t -> t -> t
+
+  (** return true if this trace has no source or sink data *)
+  val is_empty : t -> bool
 
   val compare : t -> t -> int
 
@@ -79,6 +84,10 @@ module Make (Spec : Spec) = struct
 
   let sinks t =
     t.sinks
+
+  let is_empty t =
+    (* sources empty => sinks empty and passthroughs empty *)
+    Sources.is_empty t.sources
 
   let get_reports t =
     if Sinks.is_empty t.sinks

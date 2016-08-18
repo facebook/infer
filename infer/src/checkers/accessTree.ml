@@ -34,6 +34,7 @@ module Make (TraceDomain : AbstractDomain.S) = struct
 
   (* map from base var -> access subtree *)
   type t = node BaseMap.t
+  type astate = t
 
   (** Here's how to represent a few different kinds of trace * access path associations:
       (x, T)               := { x |-> (T, Subtree {}) }
@@ -46,6 +47,8 @@ module Make (TraceDomain : AbstractDomain.S) = struct
   *)
 
   let empty = BaseMap.empty
+
+  let initial = empty
 
   let make_node trace subtree =
     trace, Subtree subtree
