@@ -91,7 +91,7 @@ let callback_my_simple_checker { Callbacks.proc_desc; proc_name } =
 ```
 The `checkers/PatternMatch.ml` module contains the `java_proc_name_with_class_method` function which we can use for matching the required pattern.
 
-Each node is represented using the type ```instr``` from the Smallfoot Intermediate Language (SIL). Take a look at ```IR/sil.rei``` to get familiar with all the types. All source code languages supported by Infer are converted to this representation.
+Each node is represented using the type ```instr``` from the Smallfoot Intermediate Language (SIL). Take a look at ```IR/Sil.rei``` to get familiar with all the types. All source code languages supported by Infer are converted to this representation.
 
 In this particular example, `Sil.Call` has the following information:
 
@@ -105,7 +105,7 @@ Sil.Call (
 )
 ```
 
-I hope this looks straight forward. Argument ```call_flags``` holds information about the function, such as whether it is virtual or not. Again, this is specified in the file ```sil.rei```.
+I hope this looks straight forward. Argument ```call_flags``` holds information about the function, such as whether it is virtual or not. Again, this is specified in the file ```Sil.rei```.
 
 The Checker we have written so far is able to detect every single function call. Now, we have to detect whether a specific function call is actually calling ```java.io.PrintStream.println```.
 
