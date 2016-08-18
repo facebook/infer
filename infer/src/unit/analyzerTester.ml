@@ -94,10 +94,22 @@ module StructuredSil = struct
     let call_exp = Exp.Const (Const.Cfun procname) in
     Cmd (Sil.Call (ret_ids, call_exp, args, dummy_loc, CallFlags.default))
 
-  let id_assign_id ?(rhs_typ=dummy_typ) lhs rhs =
+  let make_store ~rhs_typ root_exp fld_str ~rhs_exp =
+    let fld = AccessPathTestUtils.make_fieldname fld_str in
+    let lhs_exp = Exp.Lfield (root_exp, fld, rhs_typ) in
+    make_set ~rhs_typ ~lhs_exp ~rhs_exp
+
+  let make_load ~rhs_typ lhs_str fld_str root_exp =
+    let fld = AccessPathTestUtils.make_fieldname fld_str in
+    let rhs_exp = Exp.Lfield (root_exp, fld, rhs_typ) in
+    make_letderef ~rhs_typ (ident_of_str lhs_str) rhs_exp
+
+  let id_assign_exp ?(rhs_typ=dummy_typ) lhs rhs_exp =
     let lhs_id = ident_of_str lhs in
-    let rhs_exp = Exp.Var (ident_of_str rhs) in
     make_letderef ~rhs_typ lhs_id rhs_exp
+
+  let id_assign_id ?(rhs_typ=dummy_typ) lhs rhs =
+    id_assign_exp ~rhs_typ lhs (Exp.Var (ident_of_str rhs))
 
   let id_assign_var ?(rhs_typ=dummy_typ) lhs rhs =
     let lhs_id = ident_of_str lhs in
@@ -227,7 +239,8 @@ module Make
     Cfg.Procdesc.set_exit_node pdesc exit_node;
     pdesc, assert_map
 
-  let create_test test_program extras test_pname _ =
+  let create_test test_program extras pp_opt test_pname _ =
+    let pp_state = Option.default I.A.pp pp_opt in
     let pdesc, assert_map = structured_program_to_cfg test_program test_pname in
     let inv_map = I.exec_pdesc (ProcData.make pdesc (Tenv.create ()) extras) in
 
@@ -235,7 +248,7 @@ module Make
       let post_str =
         try
           let state = M.find node_id inv_map in
-          pp_to_string I.A.pp state.post
+          pp_to_string pp_state state.post
         with Not_found -> "_|_" in
       if inv_str <> post_str then
         let error_msg =
@@ -260,8 +273,9 @@ module Make
           |> F.flush_str_formatter in
         OUnit2.assert_failure assert_fail_message
 
-  let create_tests ?(test_pname=Procname.empty_block) extras tests =
+  let create_tests ?(test_pname=Procname.empty_block) ?pp_opt extras tests =
     let open OUnit2 in
-    IList.map (fun (name, test_program) -> name>::create_test test_program extras test_pname) tests
+    IList.map (fun (name, test_program) ->
+        name>::create_test test_program extras pp_opt test_pname) tests
 
 end
