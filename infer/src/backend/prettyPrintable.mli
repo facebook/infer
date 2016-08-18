@@ -13,6 +13,8 @@ module F = Format
 
 (** Wrappers for making pretty-printable modules *)
 
+val pp_collection : pp_item:(F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
+
 module type SetOrderedType = sig
   type t
   val compare : t -> t -> int

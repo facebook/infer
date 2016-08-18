@@ -24,6 +24,7 @@ let () =
     LivenessTests.tests;
     SchedulerTests.tests;
     StacktraceTests.tests;
+    TaintTests.tests;
     TraceTests.tests;
   ] in
   let test_suite = "all" >::: tests in
