@@ -17,8 +17,8 @@ module F = Format
 module DExp = DecompiledExp
 
 let smart_pointers = [
-  ["infer_std_model"; "shared_ptr"];
-  ["infer_std_model"; "unique_ptr"]
+  ["std"; "shared_ptr"];
+  ["std"; "unique_ptr"]
 ]
 
 let pointer_wrapper_classes = smart_pointers
