@@ -60,7 +60,9 @@ class MavenCapture:
                 for src_root in src_roots:
                     for root, dirs, files in os.walk(src_root):
                         for name in files:
-                            files_to_compile.append(os.path.join(root, name))
+                            if name.endswith(".java"):
+                                path = os.path.join(root, name)
+                                files_to_compile.append(path)
                 source_roots_next = False
 
             elif options_pattern in line:
