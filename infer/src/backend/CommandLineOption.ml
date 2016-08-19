@@ -159,7 +159,9 @@ let align desc_list =
   let term_width doc_width left_width = left_width + extra_space + doc_width in
   let max_doc_width = 100 in
   let max_term_width = term_width max_left_width max_doc_width in
-  (* how many columns to reserve for the option names *)
+  (* how many columns to reserve for the option names
+     NOTE: this doesn't take into account "--help | -h" nor "--help-full", but fortunately these
+     have short names *)
   let left_width =
     let opt_left_width = IList.fold_left (max_left_length max_left_width) 0 desc_list in
     let (--) a b = float_of_int a -. float_of_int b in
@@ -168,7 +170,7 @@ let align desc_list =
     let cols_after_min_width = float_of_int (max 0 (cur_term_width - min_term_width)) in
     min (int_of_float (cols_after_min_width *. multiplier) + min_left_width) opt_left_width in
   let doc_width = min max_doc_width (doc_width cur_term_width left_width) in
-  (IList.map (pad_and_xform doc_width left_width) desc_list)
+  (IList.map (pad_and_xform doc_width left_width) desc_list, (doc_width, left_width))
 
 
 let check_no_duplicates desc_list =
@@ -465,9 +467,12 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var exe_u
   in
   (* "-help" and "--help" are automatically recognized by Arg.parse, so we have to give them special
      treatment *)
-  let add_or_suppress_help speclist =
+  let add_or_suppress_help (speclist, (doc_width,left_width)) =
     let unknown opt =
       (opt, Arg.Unit (fun () -> raise (Arg.Bad ("unknown option '" ^ opt ^ "'"))), "") in
+    let mk_spec ~long ?(short="") spec doc =
+      pad_and_xform doc_width left_width { long; short; meta=""; spec; doc;
+                                           decode_json=fun _ -> raise (Arg.Bad long)} in
     if incomplete then
       speclist @ [
         (unknown "--help") ;
@@ -475,10 +480,12 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var exe_u
       ]
     else
       speclist @ [
-        ("--help", Arg.Unit (fun () -> curr_usage 0),
-         "Display this list of options") ;
-        ("--help-full", Arg.Unit (fun () -> full_usage 0),
-         "Display the full list of options, including internal and experimental options") ;
+        mk_spec ~long:"help" ~short:"h"
+          (Arg.Unit (fun () -> curr_usage 0))
+          "Display this list of options";
+        mk_spec ~long:"help-full"
+          (Arg.Unit (fun () -> full_usage 0))
+          "Display the full list of options, including internal and experimental options";
         (unknown "-help")
       ]
   in
@@ -500,11 +507,14 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var exe_u
     let sort speclist = IList.sort compare_specs speclist in
     align (sort speclist)
   in
-  let add_to_curr_speclist ?header exe =
+  let add_to_curr_speclist ?(add_help=false) ?header exe =
     let mk_header_spec heading =
       ("", Arg.Unit (fun () -> ()), "\n  " ^ heading ^ "\n") in
     let exe_descs = IList.assoc ( = ) exe exe_desc_lists in
-    let exe_speclist = normalize !exe_descs in
+    let (exe_speclist, widths) = normalize !exe_descs in
+    let exe_speclist = if add_help
+      then add_or_suppress_help (exe_speclist, widths)
+      else exe_speclist in
     (* Return false if the same option appears in [speclist], unless [doc] is non-empty and the
        documentation in [speclist] is empty. The goal is to keep only one instance of each option,
        and that instance is the one that has a non-empty docstring if there is one. *)
@@ -522,11 +532,9 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var exe_u
      that all args can be parsed, but --help and parse failures only show external args for
      current exe *)
   if current_exe = Toplevel then
-    add_to_curr_speclist ~header:"Toplevel options" current_exe
+    add_to_curr_speclist ~add_help:true ~header:"Toplevel options" current_exe
   else
-    add_to_curr_speclist current_exe
-  ;
-  curr_speclist := add_or_suppress_help !curr_speclist
+    add_to_curr_speclist ~add_help:true current_exe
   ;
   if current_exe = Toplevel then (
     add_to_curr_speclist ~header:"Analysis (backend) options" Analyze;
