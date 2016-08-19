@@ -63,6 +63,7 @@ ALL_TESTS = [
     'cc1',
     'cmake',
     'componentkit',
+    'delete',
     'fail',
     'gradle',
     'javac',
@@ -521,6 +522,15 @@ class BuildIntegrationTest(unittest.TestCase):
                'infer_args': ['--pmd-xml']}],
              extra_check=pmd_check,
              available=lambda: has_lxml)
+
+    def test_infer_deletes_infer_out(self):
+        # Test that two consecutive analyses do not pollute each other:
+        # the expected results of running infer on hello.c then on
+        # hello2.c is that only the bug in hello2.c is reported.
+        test('delete', 'infer deletes infer-out',
+             CODETOANALYZE_DIR,
+             [{'compile': ['clang', '-c', 'hello.c']},
+              {'compile': ['clang', '-c', 'hello2.c']}])
 
 
 if __name__ == '__main__':
