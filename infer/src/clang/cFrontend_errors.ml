@@ -23,8 +23,8 @@ let checkers_for_property decl_info pname_info pdi checker context =
 let ivar_access_checker_list =  [CFrontend_checkers.direct_atomic_property_access_warning]
 
 (* Invocation of checker belonging to ivar_access_checker_list *)
-let checkers_for_ivar stmt_info method_decl ivar_decl_ref checker context =
-  checker context stmt_info method_decl ivar_decl_ref
+let checkers_for_ivar stmt_info ivar_decl_ref checker context =
+  checker context stmt_info ivar_decl_ref
 
 (* List of checkers for captured vars in objc blocks *)
 let captured_vars_checker_list = [CFrontend_checkers.captured_cxx_ref_in_objc_block_warning]
@@ -40,12 +40,12 @@ let ns_notification_checker_list = [CFrontend_checkers.checker_NSNotificationCen
 let checkers_for_ns decl_info impl_decl_info decls checker context =
   checker context decl_info impl_decl_info decls
 
-(* List of checkers on global variables *)
-let global_var_checker_list = [CFrontend_checkers.global_var_init_with_calls_warning;
-                               ComponentKit.mutable_local_vars_advice]
+(* List of checkers on variables *)
+let var_checker_list = [CFrontend_checkers.global_var_init_with_calls_warning;
+                        ComponentKit.mutable_local_vars_advice]
 
-(* Invocation of checker belonging to global_var_checker_list *)
-let checker_for_global_var dec checker context =
+(* Invocation of checker belonging to var_checker_list *)
+let checker_for_var dec checker context =
   checker context dec
 
 (* List of checkers on conditional operator *)
@@ -111,49 +111,49 @@ let log_frontend_issue cfg cg method_decl_opt key issue_desc =
    1. f a particular way to apply a checker, it's a partial function
    2. context
    3. the list of checkers to be applied *)
-let invoke_set_of_checkers f context cfg cg method_decl_opt key checkers  =
+let invoke_set_of_checkers f context cfg cg key checkers  =
   IList.iter (fun checker ->
       match f checker context with
-      | Some issue_desc -> log_frontend_issue cfg cg method_decl_opt key issue_desc
+      | Some issue_desc ->
+          log_frontend_issue cfg cg context.CLintersContext.current_method key issue_desc
       | None -> ()) checkers
 
-let run_frontend_checkers_on_stmt context cfg cg method_decl instr =
+let run_frontend_checkers_on_stmt context cfg cg instr =
   let open Clang_ast_t in
-  let decl_opt = Some method_decl in
   match instr with
   | ObjCIvarRefExpr (stmt_info, _, _, obj_c_ivar_ref_expr_info) ->
       let dr_ref = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref in
-      let call_checker_for_ivar = checkers_for_ivar method_decl stmt_info dr_ref in
+      let call_checker_for_ivar = checkers_for_ivar stmt_info dr_ref in
       let key = Ast_utils.generate_key_stmt instr in
       invoke_set_of_checkers
-        call_checker_for_ivar context cfg cg decl_opt key ivar_access_checker_list;
+        call_checker_for_ivar context cfg cg key ivar_access_checker_list;
       context
   | BlockExpr (stmt_info, _ , _, Clang_ast_t.BlockDecl (_, block_decl_info)) ->
       let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
       let call_captured_vars_checker = checkers_for_capture_vars stmt_info captured_block_vars in
       let key = Ast_utils.generate_key_stmt instr in
-      invoke_set_of_checkers call_captured_vars_checker context cfg cg decl_opt key
+      invoke_set_of_checkers call_captured_vars_checker context cfg cg key
         captured_vars_checker_list;
       context
   | IfStmt (stmt_info, _ :: cond :: _) ->
       let call_checker = checker_for_if_stmt stmt_info [cond] in
       let key = Ast_utils.generate_key_stmt cond in
-      invoke_set_of_checkers call_checker context cfg cg decl_opt key if_stmt_checker_list;
+      invoke_set_of_checkers call_checker context cfg cg key if_stmt_checker_list;
       context
   | ConditionalOperator (stmt_info, first_stmt :: _, _) ->
       let call_checker = checker_for_conditional_op stmt_info [first_stmt] in
       let key = Ast_utils.generate_key_stmt first_stmt in
-      invoke_set_of_checkers call_checker context cfg cg decl_opt key conditional_op_checker_list;
+      invoke_set_of_checkers call_checker context cfg cg key conditional_op_checker_list;
       context
   | ForStmt (stmt_info, [_; _; cond; _; _]) ->
       let call_checker = checker_for_for_stmt stmt_info [cond] in
       let key = Ast_utils.generate_key_stmt cond in
-      invoke_set_of_checkers call_checker context cfg cg decl_opt key for_stmt_checker_list;
+      invoke_set_of_checkers call_checker context cfg cg key for_stmt_checker_list;
       context
   | WhileStmt (stmt_info, [_; cond; _]) ->
       let call_checker = checker_for_while_stmt stmt_info [cond] in
       let key = Ast_utils.generate_key_stmt cond in
-      invoke_set_of_checkers call_checker context cfg cg decl_opt key while_stmt_checker_list;
+      invoke_set_of_checkers call_checker context cfg cg key while_stmt_checker_list;
       context
   | ObjCAtSynchronizedStmt _ ->
       { context with CLintersContext.in_synchronized_block = true }
@@ -171,17 +171,17 @@ let run_frontend_checkers_on_decl context cfg cg dec =
           | _ -> None in
         let call_ns_checker = checkers_for_ns decl_info idi decl_list in
         let key = Ast_utils.generate_key_decl dec in
-        invoke_set_of_checkers call_ns_checker context cfg cg None key ns_notification_checker_list;
+        invoke_set_of_checkers call_ns_checker context cfg cg key ns_notification_checker_list;
         context
     | VarDecl _ ->
-        let call_global_checker = checker_for_global_var dec in
+        let call_var_checker = checker_for_var dec in
         let key = Ast_utils.generate_key_decl dec in
-        invoke_set_of_checkers call_global_checker context cfg cg None key global_var_checker_list;
+        invoke_set_of_checkers call_var_checker context cfg cg key var_checker_list;
         context
     | ObjCPropertyDecl (decl_info, pname_info, pdi) ->
         let call_property_checker = checkers_for_property decl_info pname_info pdi in
         let key = Ast_utils.generate_key_decl dec in
-        invoke_set_of_checkers call_property_checker context cfg cg None key property_checkers_list;
+        invoke_set_of_checkers call_property_checker context cfg cg key property_checkers_list;
         context
     | _ -> context
   else context

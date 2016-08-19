@@ -217,10 +217,10 @@ let global_var_init_with_calls_warning _ decl =
 
 (* Direct Atomic Property access:
    a property declared atomic should not be accessed directly via its ivar *)
-let direct_atomic_property_access_warning context method_decl stmt_info ivar_decl_ref =
+let direct_atomic_property_access_warning context stmt_info ivar_decl_ref =
   let ivar_pointer = ivar_decl_ref.Clang_ast_t.dr_decl_pointer in
-  match Ast_utils.get_decl ivar_pointer with
-  | Some (ObjCIvarDecl (_, named_decl_info, _, _, _) as d) ->
+  match Ast_utils.get_decl ivar_pointer, context.CLintersContext.current_method with
+  | Some (ObjCIvarDecl (_, named_decl_info, _, _, _) as d), Some method_decl ->
       let method_name = match Clang_ast_proj.get_named_decl_tuple method_decl with
         | Some (_, method_named_decl) -> method_named_decl.Clang_ast_t.ni_name
         | _ -> "" in

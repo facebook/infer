@@ -11,6 +11,7 @@ package endtoend.objcpp.componentkit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static utils.matchers.ResultContainsLineNumbers.containsLines;
+import static utils.matchers.ResultContainsErrorInMethod.contains;
 
 import com.google.common.collect.ImmutableList;
 
@@ -51,5 +52,15 @@ public class MutableLocalVariableTest {
         "Results should contain " + MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE,
         inferResults,
         containsLines(new int[]{58, 69, 74, 76, 80, 85}));
+  }
+
+  @Test
+  public void MLVsInNewWithString()
+      throws InterruptedException, IOException, InferException {
+    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
+    assertThat(
+        "Results should contain " + MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE,
+        inferResults,
+        contains(MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE, FILE, "newWithString:"));
   }
 }

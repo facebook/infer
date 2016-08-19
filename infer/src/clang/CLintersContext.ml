@@ -8,6 +8,7 @@
  *)
 
 type context = {
+  current_method : Clang_ast_t.decl option;
   in_synchronized_block: bool;
   is_ck_translation_unit: bool;
   (** True if the translation unit contains an ObjC class impl that's a subclass
@@ -15,6 +16,7 @@ type context = {
 }
 
 let empty = {
+  current_method = None;
   in_synchronized_block = false;
   is_ck_translation_unit = false;
 }
