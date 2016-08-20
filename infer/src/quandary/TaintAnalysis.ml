@@ -65,22 +65,106 @@ module Make (TraceDomain : Trace.S) = struct
     type formal_list = AccessPath.base list
     type extras = formal_list
 
+    let is_formal base proc_data =
+      IList.exists (AccessPath.base_equal base) proc_data.ProcData.extras
+
+    let is_rooted_in_formal ap proc_data =
+      let root, _ = AccessPath.extract ap in
+      is_formal root proc_data
+
+    let resolve_id id_map id =
+      try Some (IdMapDomain.find id id_map)
+      with Not_found -> None
+
+    (* get the node associated with [access_path] in [access_tree] *)
+    let access_path_get_node access_path access_tree proc_data loc =
+      match TaintDomain.get_node access_path access_tree with
+      | Some _ as node_opt ->
+          node_opt
+      | None when is_rooted_in_formal access_path proc_data ->
+          let call_site = CallSite.make (Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc) loc in
+          let trace =
+            TraceDomain.of_source (TraceDomain.Source.make_footprint access_path call_site) in
+          Some (TaintDomain.make_normal_leaf trace)
+      | None ->
+          None
+
+    (* get the node associated with [exp] in [access_tree] *)
+    let exp_get_node exp typ { Domain.access_tree; id_map; } proc_data loc =
+      let f_resolve_id = resolve_id id_map in
+      match AccessPath.of_exp exp typ ~f_resolve_id with
+      | Some access_path ->
+          access_path_get_node (AccessPath.Exact access_path) access_tree proc_data loc
+      | None ->
+          (* can't make an access path from [exp] *)
+          None
+
+    let analyze_assignment lhs_access_path rhs_exp rhs_typ astate proc_data loc =
+      let rhs_node =
+        match exp_get_node rhs_exp rhs_typ astate proc_data loc with
+        | Some node -> node
+        | None -> TaintDomain.empty_node in
+      let access_tree = TaintDomain.add_node lhs_access_path rhs_node astate.Domain.access_tree in
+      { astate with Domain.access_tree; }
+
     let add_source source ret_id ret_typ access_tree =
       let trace = TraceDomain.of_source source in
       let id_ap = AccessPath.Exact (AccessPath.of_id ret_id ret_typ) in
       TaintDomain.add_trace id_ap trace access_tree
 
-    let exec_instr ({ Domain.access_tree; } as astate) proc_data _ instr =
+    let exec_instr ({ Domain.access_tree; id_map; } as astate) proc_data _ instr =
+      let f_resolve_id = resolve_id id_map in
       match instr with
+      | Sil.Letderef (lhs_id, rhs_exp, rhs_typ, _loc) ->
+          begin
+            match AccessPath.of_exp rhs_exp rhs_typ ~f_resolve_id with
+            | Some rhs_access_path ->
+                let id_map' = IdMapDomain.add lhs_id rhs_access_path id_map in
+                { astate with Domain.id_map = id_map'; }
+            | None ->
+                astate
+          end
+      | Sil.Set (lhs_exp, lhs_typ, rhs_exp, loc) ->
+          let lhs_access_path =
+            match AccessPath.of_exp lhs_exp lhs_typ ~f_resolve_id with
+            | Some access_path ->
+                access_path
+            | None ->
+                failwithf
+                  "Assignment to unexpected lhs expression %a in proc %a at loc %a"
+                  (Sil.pp_exp pe_text) lhs_exp
+                  Procname.pp (Cfg.Procdesc.get_proc_name (proc_data.ProcData.pdesc))
+                  Location.pp loc in
+          let astate' =
+            analyze_assignment
+              (AccessPath.Exact lhs_access_path) rhs_exp lhs_typ astate proc_data loc in
+          begin
+            (* direct `exp = id` assignments are treated specially; we update the id map too. this
+               is so future reads of `exp` will get the subtree associated with `id` (needed to
+               handle the `id = foo(); exp = id case` and similar). *)
+            match rhs_exp with
+            | Exp.Var rhs_id ->
+                let existing_accesses =
+                  try snd (IdMapDomain.find rhs_id astate'.Domain.id_map)
+                  with Not_found -> [] in
+                let lhs_ap' = AccessPath.append lhs_access_path existing_accesses in
+                let id_map' = IdMapDomain.add rhs_id lhs_ap' astate'.Domain.id_map in
+                { astate' with Domain.id_map = id_map'; }
+            | _ ->
+                astate'
+          end
       | Sil.Call (ret_ids, Const (Cfun callee_pname), _, callee_loc, _) ->
           let call_site = CallSite.make callee_pname callee_loc in
           let ret_typ =
             match callee_pname with
             | Procname.Java java_pname ->
                 let ret_typ_str = Procname.java_get_return_type java_pname in
-                Option.default
-                  Typ.Tvoid
-                  (Tenv.lookup_java_typ_from_string (proc_data.ProcData.tenv) ret_typ_str)
+                begin
+                  match Tenv.lookup_java_typ_from_string (proc_data.ProcData.tenv) ret_typ_str with
+                  | Some (Typ.Tstruct _ as typ) -> Typ.Tptr (typ, Typ.Pk_pointer)
+                  | Some typ -> typ
+                  | None -> Typ.Tvoid
+                end
             | Procname.C _ ->
                 Typ.Tvoid (* for tests only, since tests use C-style procnames *)
             | _ ->
@@ -99,8 +183,6 @@ module Make (TraceDomain : Trace.S) = struct
           astate_with_source
       | Sil.Call _ ->
           failwith "Unimp: non-pname call expressions"
-      | Sil.Letderef _ | Set _ ->
-          failwith "Unimp: assignment, load, and store"
       | Sil.Prune _ | Remove_temps _ | Nullify _ | Abstract _ | Stackop _ | Declare_locals _ ->
           astate
   end

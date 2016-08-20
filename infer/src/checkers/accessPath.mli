@@ -50,8 +50,9 @@ val of_id : Ident.t -> Typ.t -> raw
 (** convert [exp] to a raw access path, resolving identifiers using [f_resolve_id] *)
 val of_exp : Exp.t -> Typ.t -> f_resolve_id:(Ident.t -> raw option) -> raw option
 
-(** append a new access to an existing access path; e.g., `append_access g x.f` produces `x.f.g` *)
-val append : raw -> access -> raw
+(** append new accesses to an existing access path; e.g., `append_access x.f [g, h]` produces
+    `x.f.g.h` *)
+val append : raw -> access list -> raw
 
 (** return true if [ap1] is a prefix of [ap2]. returns true for equal access paths *)
 val is_prefix : raw -> raw -> bool

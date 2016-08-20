@@ -55,8 +55,8 @@ let tests =
     let assert_eq input expected =
       assert_equal ~cmp:AccessPath.raw_equal ~pp_diff input expected in
     let append_test_ _ =
-      assert_eq xF (AccessPath.append x f_access);
-      assert_eq xFG (AccessPath.append xF g_access) in
+      assert_eq xF (AccessPath.append x [f_access]);
+      assert_eq xFG (AccessPath.append xF [g_access]) in
     "append">::append_test_ in
 
   let prefix_test =

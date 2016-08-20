@@ -103,8 +103,8 @@ let of_exp exp typ ~(f_resolve_id : Ident.t -> raw option) =
         None in
   of_exp_ exp typ []
 
-let append (base, accesses) access =
-  base, accesses @ [access]
+let append (base, old_accesses) new_accesses =
+  base, old_accesses @ new_accesses
 
 let rec is_prefix_path path1 path2 =
   if path1 == path2
@@ -143,7 +143,8 @@ let pp_access fmt = function
 
 let pp_raw fmt (base, accesses) =
   let pp_access_list fmt accesses =
-    F.pp_print_list pp_access fmt accesses in
+    let pp_sep _ _ = () in
+    F.pp_print_list ~pp_sep pp_access fmt accesses in
   F.fprintf fmt "%a%a" pp_base base pp_access_list accesses
 
 let pp fmt = function

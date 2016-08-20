@@ -112,6 +112,11 @@ let tests =
   let assign_to_non_source ret_str =
     let procname = Procname.from_string_c_fun "NON-SOURCE" in
     make_call ~procname [ident_of_str ret_str] [] in
+  let assign_id_to_field root_str fld_str rhs_id_str =
+    let rhs_exp = Exp.Var (ident_of_str rhs_id_str) in
+    make_store ~rhs_typ:Typ.Tvoid (Exp.Var (ident_of_str root_str)) fld_str ~rhs_exp in
+  let read_field_to_id lhs_id_str root_str fld_str =
+    make_load ~rhs_typ:Typ.Tvoid lhs_id_str fld_str (Exp.Var (ident_of_str root_str)) in
   let assert_empty = invariant "{  }" in
   let test_list = [
     "source recorded",
@@ -123,6 +128,85 @@ let tests =
     [
       assign_to_non_source "ret_id";
       assert_empty;
+    ];
+    "source flows to var",
+    [
+      assign_to_source "ret_id";
+      var_assign_id "var" "ret_id";
+      invariant "{ ret_id$0 => (SOURCE -> ?), &var => (SOURCE -> ?) }";
+    ];
+    "source flows to field",
+    [
+      assign_to_source "ret_id";
+      assign_id_to_field "base_id" "f" "ret_id";
+      invariant "{ base_id$0.f => (SOURCE -> ?), ret_id$0 => (SOURCE -> ?) }";
+    ];
+    "source flows to field then var",
+    [
+      assign_to_source "ret_id";
+      assign_id_to_field "base_id" "f" "ret_id";
+      read_field_to_id "read_id" "base_id" "f";
+      var_assign_id "var" "read_id";
+      invariant
+        "{ base_id$0.f => (SOURCE -> ?), ret_id$0 => (SOURCE -> ?), &var => (SOURCE -> ?) }";
+    ];
+    "source flows to var then cleared",
+    [
+      assign_to_source "ret_id";
+      var_assign_id "var" "ret_id";
+      invariant "{ ret_id$0 => (SOURCE -> ?), &var => (SOURCE -> ?) }";
+      assign_to_non_source "non_source_id";
+      var_assign_id "var" "non_source_id";
+      invariant "{ ret_id$0 => (SOURCE -> ?) }";
+    ];
+    "source flows to field then cleared",
+    [
+      assign_to_source "ret_id";
+      assign_id_to_field "base_id" "f" "ret_id";
+      invariant "{ base_id$0.f => (SOURCE -> ?), ret_id$0 => (SOURCE -> ?) }";
+      assign_to_non_source "non_source_id";
+      assign_id_to_field "base_id" "f" "non_source_id";
+      invariant "{ ret_id$0 => (SOURCE -> ?) }";
+    ];
+    "var id alias test",
+    [
+      assign_to_non_source "ret_id";
+      var_assign_id "var1" "ret_id";
+      assign_to_source "source_id";
+      assign_id_to_field "ret_id" "f" "source_id";
+      invariant "{ source_id$0 => (SOURCE -> ?), &var1.f => (SOURCE -> ?) }";
+      read_field_to_id "read_id" "ret_id" "f";
+      invariant "{ source_id$0 => (SOURCE -> ?), &var1.f => (SOURCE -> ?) }";
+      var_assign_id "var2" "read_id";
+      invariant
+        "{ source_id$0 => (SOURCE -> ?), &var1.f => (SOURCE -> ?), &var2 => (SOURCE -> ?) }";
+    ];
+    "field id alias test1",
+    [
+      assign_to_non_source "ret_id";
+      assign_to_source "source_id";
+      assign_id_to_field "ret_id" "g" "source_id";
+      assign_to_non_source "var_id";
+      var_assign_id "var" "var_id";
+      assign_id_to_field "var_id" "f" "ret_id";
+      invariant
+        "{ ret_id$0.g => (SOURCE -> ?), source_id$0 => (SOURCE -> ?), &var.f.g => (SOURCE -> ?) }";
+    ];
+    "field id alias test2",
+    [
+      assign_to_non_source "ret_id";
+      read_field_to_id "g_id" "ret_id" "g";
+      var_assign_id "var1" "g_id";
+      assign_to_source "source_id";
+      invariant "{ source_id$0 => (SOURCE -> ?) }";
+      assign_id_to_field "g_id" "f" "source_id";
+      invariant "{ source_id$0 => (SOURCE -> ?), &var1.g.f => (SOURCE -> ?) }";
+      id_assign_var "var_id" "var1";
+      read_field_to_id "var_g_id" "var_id" "g";
+      read_field_to_id "var_g_f_id" "var_g_id" "f";
+      var_assign_id "var2" "var_g_f_id";
+      invariant
+        "{ source_id$0 => (SOURCE -> ?), &var1.g.f => (SOURCE -> ?), &var2 => (SOURCE -> ?) }";
     ];
   ] |> TestInterpreter.create_tests ~pp_opt:pp_sparse [] in
   "taint_test_suite">:::test_list
