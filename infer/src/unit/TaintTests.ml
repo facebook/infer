@@ -112,6 +112,11 @@ let tests =
   let assign_to_non_source ret_str =
     let procname = Procname.from_string_c_fun "NON-SOURCE" in
     make_call ~procname [ident_of_str ret_str] [] in
+  let call_sink_with_exp exp =
+    let procname = Procname.from_string_c_fun "SINK" in
+    make_call ~procname [] [(exp, dummy_typ)] in
+  let call_sink actual_str =
+    call_sink_with_exp (Exp.Var (ident_of_str actual_str)) in
   let assign_id_to_field root_str fld_str rhs_id_str =
     let rhs_exp = Exp.Var (ident_of_str rhs_id_str) in
     make_store ~rhs_typ:Typ.Tvoid (Exp.Var (ident_of_str root_str)) fld_str ~rhs_exp in
@@ -207,6 +212,52 @@ let tests =
       var_assign_id "var2" "var_g_f_id";
       invariant
         "{ source_id$0 => (SOURCE -> ?), &var1.g.f => (SOURCE -> ?), &var2 => (SOURCE -> ?) }";
+    ];
+    "sink without source not tracked",
+    [
+      assign_to_non_source "ret_id";
+      call_sink "ret_id";
+      assert_empty;
+    ];
+    "source -> sink direct",
+    [
+      assign_to_source "ret_id";
+      call_sink "ret_id";
+      invariant "{ ret_id$0 => (SOURCE -> SINK) }";
+    ];
+    "source -> sink via var",
+    [
+      assign_to_source "ret_id";
+      var_assign_id "actual" "ret_id";
+      call_sink_with_exp (var_of_str "actual");
+      invariant "{ ret_id$0 => (SOURCE -> ?), &actual => (SOURCE -> SINK) }";
+    ];
+    "source -> sink via var then ident",
+    [
+      assign_to_source "ret_id";
+      var_assign_id "x" "ret_id";
+      id_assign_var "actual_id" "x";
+      call_sink "actual_id";
+      invariant "{ ret_id$0 => (SOURCE -> ?), &x => (SOURCE -> SINK) }";
+    ];
+    "source -> sink via field",
+    [
+      assign_to_source "ret_id";
+      assign_id_to_field "base_id" "f" "ret_id";
+      read_field_to_id "actual_id" "base_id" "f";
+      call_sink "actual_id";
+      invariant "{ base_id$0.f => (SOURCE -> SINK), ret_id$0 => (SOURCE -> ?) }";
+    ];
+    "source -> sink via field read from var",
+    [
+      assign_to_source "ret_id";
+      assign_id_to_field "base_id" "f" "ret_id";
+      var_assign_id "var" "base_id";
+      id_assign_var "var_id" "var";
+      read_field_to_id "read_id" "var_id" "f";
+      call_sink "read_id";
+      invariant
+        "{ base_id$0.f => (SOURCE -> ?), ret_id$0 => (SOURCE -> ?), &var.f => (SOURCE -> SINK) }";
     ];
   ] |> TestInterpreter.create_tests ~pp_opt:pp_sparse [] in
   "taint_test_suite">:::test_list

@@ -112,7 +112,29 @@ module Make (TraceDomain : Trace.S) = struct
       let id_ap = AccessPath.Exact (AccessPath.of_id ret_id ret_typ) in
       TaintDomain.add_trace id_ap trace access_tree
 
-    let exec_instr ({ Domain.access_tree; id_map; } as astate) proc_data _ instr =
+    let add_sinks sinks actuals ({ Domain.access_tree; id_map; } as astate) proc_data loc =
+      let f_resolve_id = resolve_id id_map in
+      (* add [sink] to the trace associated with the [formal_num]th actual *)
+      let add_sink_to_actual access_tree_acc (formal_num, sink) =
+        let actual_exp, actual_typ = IList.nth actuals formal_num in
+        match AccessPath.of_exp actual_exp actual_typ ~f_resolve_id with
+        | Some actual_ap ->
+            let actual_ap = AccessPath.Exact actual_ap in
+            begin
+              match access_path_get_node actual_ap access_tree_acc proc_data loc with
+              | Some (actual_trace, _) ->
+                  (* add callee_pname to actual trace as a sink *)
+                  let actual_trace' = TraceDomain.add_sink sink actual_trace in
+                  TaintDomain.add_trace actual_ap actual_trace' access_tree_acc
+              | None ->
+                  access_tree_acc
+            end
+        | None ->
+            access_tree_acc in
+      let access_tree' = IList.fold_left add_sink_to_actual access_tree sinks in
+      { astate with Domain.access_tree = access_tree'; }
+
+    let exec_instr ({ Domain.id_map; } as astate) proc_data _ instr =
       let f_resolve_id = resolve_id id_map in
       match instr with
       | Sil.Letderef (lhs_id, rhs_exp, rhs_typ, _loc) ->
@@ -153,8 +175,14 @@ module Make (TraceDomain : Trace.S) = struct
             | _ ->
                 astate'
           end
-      | Sil.Call (ret_ids, Const (Cfun callee_pname), _, callee_loc, _) ->
+      | Sil.Call (ret_ids, Const (Cfun callee_pname), actuals, callee_loc, _) ->
           let call_site = CallSite.make callee_pname callee_loc in
+
+          let astate_with_sink =
+            match TraceDomain.Sink.get call_site with
+            | [] -> astate
+            | sinks -> add_sinks sinks actuals astate proc_data callee_loc in
+
           let ret_typ =
             match callee_pname with
             | Procname.Java java_pname ->
@@ -173,10 +201,10 @@ module Make (TraceDomain : Trace.S) = struct
           let astate_with_source =
             match TraceDomain.Source.get call_site, ret_ids with
             | [(0, source)], [ret_id] ->
-                let access_tree' = add_source source ret_id ret_typ access_tree in
-                { astate with Domain.access_tree = access_tree'; }
+                let access_tree = add_source source ret_id ret_typ astate_with_sink.access_tree in
+                { astate_with_sink with access_tree; }
             | [], _ |  _, [] ->
-                astate
+                astate_with_sink
             | _ ->
                 (* this is allowed by SIL, but not currently used in any frontends *)
                 failwith "Unimp: handling multiple return ids" in
