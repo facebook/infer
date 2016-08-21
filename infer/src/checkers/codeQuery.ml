@@ -210,9 +210,8 @@ end
 let code_query_callback { Callbacks.proc_desc; idenv; proc_name } =
   let do_instr node instr =
     let env = Match.init_env () in
-    let _found =
-      Match.match_query true env idenv proc_name (Lazy.force query_ast) proc_name node instr in
-    () in
+    ignore (Match.match_query true env idenv proc_name (Lazy.force query_ast) proc_name node instr)
+  in
   if verbose then L.stdout "code_query_callback on %a@." Procname.pp proc_name;
   Cfg.Procdesc.iter_instrs do_instr proc_desc;
   Err.update_summary proc_name proc_desc
