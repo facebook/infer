@@ -259,5 +259,13 @@ let tests =
       invariant
         "{ base_id$0.f => (SOURCE -> ?), ret_id$0 => (SOURCE -> ?), &var.f => (SOURCE -> SINK) }";
     ];
+    "source -> sink via cast",
+    [
+      assign_to_source "ret_id";
+      cast_id_to_id "cast_id" Typ.Tvoid "ret_id";
+      call_sink "cast_id";
+      invariant "{ ret_id$0 => (SOURCE -> SINK) }";
+    ];
+
   ] |> TestInterpreter.create_tests ~pp_opt:pp_sparse [] in
   "taint_test_suite">:::test_list

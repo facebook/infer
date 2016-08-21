@@ -107,6 +107,15 @@ module Make (TraceDomain : Trace.S) = struct
       let access_tree = TaintDomain.add_node lhs_access_path rhs_node astate.Domain.access_tree in
       { astate with Domain.access_tree; }
 
+    let analyze_id_assignment lhs_id rhs_exp rhs_typ ({ Domain.id_map; } as astate) =
+      let f_resolve_id = resolve_id id_map in
+      match AccessPath.of_exp rhs_exp rhs_typ ~f_resolve_id with
+      | Some rhs_access_path ->
+          let id_map' = IdMapDomain.add lhs_id rhs_access_path id_map in
+          { astate with Domain.id_map = id_map'; }
+      | None ->
+          astate
+
     let add_source source ret_id ret_typ access_tree =
       let trace = TraceDomain.of_source source in
       let id_ap = AccessPath.Exact (AccessPath.of_id ret_id ret_typ) in
@@ -137,15 +146,8 @@ module Make (TraceDomain : Trace.S) = struct
     let exec_instr ({ Domain.id_map; } as astate) proc_data _ instr =
       let f_resolve_id = resolve_id id_map in
       match instr with
-      | Sil.Letderef (lhs_id, rhs_exp, rhs_typ, _loc) ->
-          begin
-            match AccessPath.of_exp rhs_exp rhs_typ ~f_resolve_id with
-            | Some rhs_access_path ->
-                let id_map' = IdMapDomain.add lhs_id rhs_access_path id_map in
-                { astate with Domain.id_map = id_map'; }
-            | None ->
-                astate
-          end
+      | Sil.Letderef (lhs_id, rhs_exp, rhs_typ, _) ->
+          analyze_id_assignment lhs_id rhs_exp rhs_typ astate
       | Sil.Set (lhs_exp, lhs_typ, rhs_exp, loc) ->
           let lhs_access_path =
             match AccessPath.of_exp lhs_exp lhs_typ ~f_resolve_id with
@@ -175,6 +177,21 @@ module Make (TraceDomain : Trace.S) = struct
             | _ ->
                 astate'
           end
+      | Sil.Call ([ret_id], Const (Cfun callee_pname), args, loc, _)
+        when Builtin.is_registered callee_pname ->
+          if Procname.equal callee_pname ModelBuiltins.__cast
+          then
+            match args with
+            | (cast_target, cast_typ) :: _ ->
+                analyze_id_assignment ret_id cast_target cast_typ astate
+            | _ ->
+                failwithf
+                  "Unexpected cast %a in procedure %a at line %a"
+                  (Sil.pp_instr pe_text) instr
+                  Procname.pp (Cfg.Procdesc.get_proc_name (proc_data.ProcData.pdesc))
+                  Location.pp loc
+          else
+            astate
       | Sil.Call (ret_ids, Const (Cfun callee_pname), actuals, callee_loc, _) ->
           let call_site = CallSite.make callee_pname callee_loc in
 
