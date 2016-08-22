@@ -73,11 +73,13 @@ val csl_analysis : bool
 val default_failure_name : string
 val default_in_zip_results_dir : string
 val dotty_output : string
+val fail_on_issue_exit_code : int
 val filter_buckets : bool
 val frontend_stats_dir_name : string
 val global_tenv_filename : string
 val idempotent_getters : bool
 val incremental_procs : bool
+val infer_py_argparse_error_exit_code : int
 val initial_analysis_time : float
 val ivar_attributes : string
 val lint_issues_dir_name : string

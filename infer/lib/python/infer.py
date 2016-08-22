@@ -224,15 +224,5 @@ def main():
             args.infer_out, buck_out_for_stats_aggregator)
         logging.info(output)
 
-    if args.fail_on_bug:
-        bugs_filename = os.path.join(args.infer_out,
-                                     config.JSON_REPORT_FILENAME)
-        try:
-            bugs = utils.load_json_from_path(bugs_filename)
-            if len(bugs) > 0:
-                sys.exit(config.BUG_FOUND_ERROR_CODE)
-        except OSError:
-            pass
-
 if __name__ == '__main__':
     main()

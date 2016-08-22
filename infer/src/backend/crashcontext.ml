@@ -76,4 +76,30 @@ let collect_all_summaries root_out_dir stacktrace_file =
   let path_matcher path =  Str.string_match path_regexp path 0 in
   let method_summaries =
     DB.paths_matching root_out_dir path_matcher in
-  stitch_summaries stacktrace_file method_summaries out_file;
+  stitch_summaries stacktrace_file method_summaries out_file
+
+let crashcontext_epilogue ~in_buck_mode =
+  (* check whether this is the top-level infer process *)
+  let top_level_infer =
+    (* if the '--buck' option was passed, then this is the top level process iff the build
+       command starts with 'buck' *)
+    if Config.buck then in_buck_mode
+    (* otherwise, we assume javac as the build command and thus only one process *)
+    else true in
+  if top_level_infer then
+    (* if we are the top-level process, then find the output directory and collect all
+       crashcontext summaries under it in a single crashcontext.json file *)
+    let root_out_dir = if in_buck_mode then begin
+        let project_root = match Config.project_root with
+          | Some root -> root
+          | None -> Filename.dirname Config.results_dir in
+        let buck_out = match Config.buck_out with
+          | Some dir -> dir
+          | None -> "buck-out" in
+        Filename.concat project_root buck_out
+      end
+      else Config.results_dir in
+    match Config.stacktrace with
+    | None -> failwith "Detected -a crashcontext without --stacktrace, this should have been \
+                        checked earlier."
+    | Some s -> collect_all_summaries root_out_dir s

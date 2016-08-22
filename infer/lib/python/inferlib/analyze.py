@@ -113,10 +113,6 @@ base_group.add_argument('-st', '--stacktrace',
                         use with e.g. -a crashcontext. See
                         tests/codetoanalyze/java/crashcontext/*.json for
                         examples of the expected format.''')
-base_group.add_argument('--fail-on-bug', action='store_true',
-                        help='''Exit with error code %d if Infer found
-                        something to report'''
-                        % config.BUG_FOUND_ERROR_CODE)
 
 base_group.add_argument('--android-harness', action='store_true',
                         help='''[experimental] Create harness to detect bugs

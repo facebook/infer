@@ -61,10 +61,6 @@ BUCK_INFER_OUT = 'infer'
 SUPRESS_WARNINGS_OUTPUT_FILENAME_OPTION = 'SuppressWarningsOutputFilename'
 
 
-# exit value when infer finds something to report
-BUG_FOUND_ERROR_CODE = 2
-
-
 # list of possible analyzers
 ANALYZER_INFER = 'infer'
 ANALYZER_ERADICATE = 'eradicate'

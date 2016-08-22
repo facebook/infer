@@ -109,6 +109,9 @@ let default_in_zip_results_dir = "infer"
 (** Dotty output filename **)
 let dotty_output = "icfg.dot"
 
+(** exit code to use for the --fail-on-issue option *)
+let fail_on_issue_exit_code = 2
+
 (** If true, filter out errors in low likelyhood buckets, and only show then in developer
     mode *)
 let filter_buckets = false
@@ -123,6 +126,9 @@ let idempotent_getters = true
 (** If true, changes to code are checked at the procedure level; if false, at the file
     level *)
 let incremental_procs = true
+
+(** Our Python script does its own argument parsing and will fail with this error on failure *)
+let infer_py_argparse_error_exit_code = 22
 
 (** Name of the infer configuration file *)
 let inferconfig_file = ".inferconfig"
@@ -716,7 +722,8 @@ and err_file =
 and fail_on_bug =
   CLOpt.mk_bool ~deprecated:["-fail-on-bug"] ~long:"fail-on-issue" ~default:false
     ~exes:CLOpt.[Toplevel]
-    "Exit with error code 2 if Infer found something to report"
+    (Printf.sprintf "Exit with error code %d if Infer found something to report"
+       fail_on_issue_exit_code)
 
 and failures_allowed =
   CLOpt.mk_bool ~deprecated_no:["-no_failures_allowed"] ~long:"failures-allowed" ~default:true

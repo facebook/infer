@@ -25,6 +25,15 @@ let set_env_for_clang_wrapper () =
   if Config.llvm then
     Unix.putenv "LLVM_MODE" "1"
 
+(** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)
+let fail_on_issue_epilogue () =
+  let issues_json = DB.Results_dir.(path_to_filename Abs_root ["report.json"]) in
+  match read_file (DB.filename_to_string issues_json) with
+  | Some lines ->
+      let issues = Jsonbug_j.report_of_string @@ String.concat "" lines in
+      if issues <> [] then exit Config.fail_on_issue_exit_code
+  | None -> ()
+
 let () =
   set_env_for_clang_wrapper () ;
   (* The infer executable in the bin directory is a symbolic link to the real binary in the lib
@@ -48,7 +57,7 @@ let () =
   in
   let infer_py = (Filename.dirname real_exe) // "python" // "infer.py" in
   let build_cmd = IList.rev Config.rest in
-  let buck = match build_cmd with "buck" :: _ -> true | _ -> false in
+  let in_buck_mode = match build_cmd with "buck" :: _ -> true | _ -> false in
   let args_py =
     Array.of_list (
       infer_py ::
@@ -59,14 +68,14 @@ let () =
           ["--analyzer";
            IList.assoc (=) a (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)]) @
       (match Config.blacklist with
-       | Some s when buck -> ["--blacklist-regex"; s]
+       | Some s when in_buck_mode -> ["--blacklist-regex"; s]
        | _ -> []) @
       (if not Config.create_harness then [] else
          ["--android-harness"]) @
       (if not Config.buck then [] else
          ["--buck"]) @
       (match IList.rev Config.buck_build_args with
-       | args when buck ->
+       | args when in_buck_mode ->
            IList.map (fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> IList.flatten
        | _ -> []) @
       (if not Config.continue_capture then [] else
@@ -75,15 +84,13 @@ let () =
          ["--debug"]) @
       (if not Config.debug_exceptions then [] else
          ["--debug-exceptions"]) @
-      (if not Config.fail_on_bug then [] else
-         ["--fail-on-bug"]) @
       (if Config.filtering then [] else
          ["--no-filtering"]) @
       (if not Config.frontend_debug then [] else
          ["--frontend-debug"]) @
       (if not Config.frontend_stats then [] else
          ["--frontend-stats"]) @
-      (if not Config.flavors || not buck then [] else
+      (if not Config.flavors || not in_buck_mode then [] else
          ["--use-flavors"]) @
       (match Config.infer_cache with None -> [] | Some s ->
           ["--infer_cache"; s]) @
@@ -104,44 +111,16 @@ let () =
     ) in
   let pid = Unix.create_process args_py.(0) args_py Unix.stdin Unix.stdout Unix.stderr in
   let _, status = Unix.waitpid [] pid in
-  if status = Unix.WEXITED 22 then
-    (* swallow infer.py argument parsing error *)
-    Config.print_usage_exit ();
-  (* collect crashcontext summaries *)
-  let analysis_is_crashcontext = match Config.analyzer with
-    | Some Crashcontext -> true
-    | _ -> false in
-  (if analysis_is_crashcontext then
-     (* check whether this is the top-level infer process *)
-     let top_level_infer =
-       (* if the '--buck' option was passed, then this is the top level process iff the build
-          command starts with 'buck' *)
-       if Config.buck then buck
-       (* otherwise, we assume javac as the build command and thus only one process *)
-       else true in
-     if top_level_infer then
-       (* if we are the top-level process, then find the output directory and collect all
-          crashcontext summaries under it in a single crashcontext.json file *)
-       let root_out_dir = if buck then begin
-           let project_root = match Config.project_root with
-             | Some root -> root
-             | None -> Filename.dirname Config.results_dir in
-           let buck_out = match Config.buck_out with
-             | Some dir -> dir
-             | None -> "buck-out" in
-           Filename.concat project_root buck_out
-         end
-         else Config.results_dir in
-       match Config.stacktrace with
-       | None -> failwith "Detected -a crashcontext without --stacktrace, \
-                           this should have been checked earlier."
-       | Some s -> Crashcontext.collect_all_summaries root_out_dir s
-  );
   let exit_code = match status with
     | Unix.WEXITED i -> i
     | _ -> 1 in
+  if exit_code = Config.infer_py_argparse_error_exit_code then
+    (* swallow infer.py argument parsing error *)
+    Config.print_usage_exit ();
+  if Config.analyzer = Some Config.Crashcontext then
+    Crashcontext.crashcontext_epilogue ~in_buck_mode;
   if exit_code <> 0 then (
-    if not (exit_code = 2 && Config.fail_on_bug) then
-      prerr_endline ("Failed to execute: " ^ (String.concat " " (Array.to_list args_py))) ;
+    prerr_endline ("Failed to execute: " ^ (String.concat " " (Array.to_list args_py))) ;
     exit exit_code
-  )
+  );
+  if Config.fail_on_bug then fail_on_issue_epilogue ()
