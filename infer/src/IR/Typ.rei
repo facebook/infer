@@ -228,6 +228,10 @@ let get_extensible_array_element_typ: t => option t;
 let struct_typ_fld: option t => Ident.fieldname => t => t;
 
 
+/** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] */
+let get_field_type_and_annotation: Ident.fieldname => t => option (t, item_annotation);
+
+
 /** if [struct_typ] is a class, return its class kind (Java, CPP, or Obj-C) */
 let struct_typ_get_class_kind: struct_typ => option Csu.class_kind;
 

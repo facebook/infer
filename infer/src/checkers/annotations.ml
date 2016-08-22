@@ -36,17 +36,6 @@ let visibleForTesting = "com.google.common.annotations.VisibleForTesting"
 let suppressLint = "android.annotation.SuppressLint"
 
 
-let get_field_type_and_annotation fn = function
-  | Typ.Tptr (Typ.Tstruct struct_typ, _)
-  | Typ.Tstruct struct_typ ->
-      (try
-         let (_, t, a) = IList.find (fun (f, _, _) ->
-             Ident.fieldname_equal f fn)
-             (struct_typ.Typ.instance_fields @ struct_typ.Typ.static_fields) in
-         Some (t, a)
-       with Not_found -> None)
-  | _ -> None
-
 (** Return the annotations on the declaring class of [pname]. Only works for Java *)
 let get_declaring_class_annotations pname tenv =
   match Tenv.proc_extract_declaring_class_typ tenv pname with

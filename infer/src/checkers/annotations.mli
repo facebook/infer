@@ -53,10 +53,6 @@ val equal : annotated_signature -> annotated_signature -> bool
 (** Get a method signature with annotations from a proc_attributes. *)
 val get_annotated_signature : ProcAttributes.t -> annotated_signature
 
-(** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] *)
-val get_field_type_and_annotation :
-  Ident.fieldname -> Typ.t -> (Typ.t * Typ.item_annotation) option
-
 (** Return the annotations on the declaring class of [java_pname]. *)
 val get_declaring_class_annotations : Procname.java -> Tenv.t -> Typ.item_annotation option
 

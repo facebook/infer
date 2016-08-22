@@ -526,6 +526,21 @@ let struct_typ_fld default_opt f => {
   | _ => def ()
 };
 
+let get_field_type_and_annotation fn =>
+  fun
+  | Tptr (Tstruct struct_typ) _
+  | Tstruct struct_typ =>
+    try {
+      let (_, t, a) =
+        IList.find
+          (fun (f, _, _) => Ident.fieldname_equal f fn)
+          (struct_typ.instance_fields @ struct_typ.static_fields);
+      Some (t, a)
+    } {
+    | Not_found => None
+    }
+  | _ => None;
+
 
 /** if [struct_typ] is a class, return its class kind (Java, CPP, or Obj-C) */
 let struct_typ_get_class_kind struct_typ =>

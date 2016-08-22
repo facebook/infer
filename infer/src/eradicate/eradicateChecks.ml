@@ -40,7 +40,7 @@ let check_library_calls = false
 
 
 let get_field_annotation fn typ =
-  match Annotations.get_field_type_and_annotation fn typ with
+  match Typ.get_field_type_and_annotation fn typ with
   | None -> None
   | Some (t, ia) ->
       let ia' =

@@ -655,7 +655,7 @@ let add_guarded_by_constraints prop lexp pdesc =
     IList.find_map_opt annot_extract_guarded_by_str item_annot in
   (* if [fld] is annotated with @GuardedBy("mLock"), return mLock *)
   let get_guarded_by_fld_str fld typ =
-    match Annotations.get_field_type_and_annotation fld typ with
+    match Typ.get_field_type_and_annotation fld typ with
     | Some (_, item_annot) ->
         begin
           match extract_guarded_by_str item_annot with
@@ -683,7 +683,7 @@ let add_guarded_by_constraints prop lexp pdesc =
               try
                 let fld, strexp = IList.find f flds in
                 begin
-                  match Annotations.get_field_type_and_annotation fld typ with
+                  match Typ.get_field_type_and_annotation fld typ with
                   | Some (fld_typ, _) -> Some (strexp, fld_typ)
                   | None -> None
                 end
@@ -1210,7 +1210,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
              is_nullable || Pvar.is_local pvar
          | Sil.Hpointsto (_, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
              let fld_is_nullable fld =
-               match Annotations.get_field_type_and_annotation fld typ with
+               match Typ.get_field_type_and_annotation fld typ with
                | Some (_, annot) -> Annotations.ia_is_nullable annot
                | _ -> false in
              let is_strexp_pt_by_nullable_fld (fld, strexp) =

@@ -384,25 +384,36 @@ end = struct
     let lts = ref [] in
     let add_lt_minus1_e e =
       lts := (Exp.minus_one, e)::!lts in
-    let texp_is_unsigned = function
-      | Exp.Sizeof (Typ.Tint ik, _, _) -> Typ.ikind_is_unsigned ik
+    let type_opt_is_unsigned = function
+      | Some Typ.Tint ik -> Typ.ikind_is_unsigned ik
       | _ -> false in
+    let type_of_texp = function
+      | Exp.Sizeof (t, _, _) -> Some t
+      | _ -> None in
+    let texp_is_unsigned texp = type_opt_is_unsigned @@ type_of_texp texp in
     let strexp_lt_minus1 = function
       | Sil.Eexp (e, _) -> add_lt_minus1_e e
       | _ -> () in
     let rec strexp_extract = function
-      | Sil.Eexp _ -> ()
-      | Sil.Estruct (fsel, _) ->
-          IList.iter (fun (_, se) -> strexp_extract se) fsel
-      | Sil.Earray (len, isel, _) ->
+      | Sil.Eexp (e, _), t ->
+          if type_opt_is_unsigned t then add_lt_minus1_e e
+      | Sil.Estruct (fsel, _), t ->
+          let get_field_type f =
+            Option.map_default
+              (fun t' -> Option.map fst @@ Typ.get_field_type_and_annotation f t') None t in
+          IList.iter (fun (f, se) -> strexp_extract (se, get_field_type f)) fsel
+      | Sil.Earray (len, isel, _), t ->
+          let elt_t = match t with
+            | Some Typ.Tarray (t, _) -> Some t
+            | _ -> None in
           add_lt_minus1_e len;
           IList.iter (fun (idx, se) ->
               add_lt_minus1_e idx;
-              strexp_extract se) isel in
+              strexp_extract (se, elt_t)) isel in
     let hpred_extract = function
       | Sil.Hpointsto(_, se, texp) ->
           if texp_is_unsigned texp then strexp_lt_minus1 se;
-          strexp_extract se
+          strexp_extract (se, type_of_texp texp)
       | Sil.Hlseg _ | Sil.Hdllseg _ -> () in
     IList.iter hpred_extract sigma;
     saturate { leqs = !leqs; lts = !lts; neqs = [] }

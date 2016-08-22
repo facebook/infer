@@ -112,7 +112,7 @@ module ST = struct
       let is_field_suppressed =
         match field_name, PatternMatch.get_this_type proc_attributes with
         | Some field_name, Some t -> begin
-            match (Annotations.get_field_type_and_annotation field_name t) with
+            match (Typ.get_field_type_and_annotation field_name t) with
             | Some (_, ia) -> Annotations.ia_has_annotation_with ia annotation_matches
             | None -> false
           end
