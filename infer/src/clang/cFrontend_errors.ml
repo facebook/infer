@@ -161,27 +161,24 @@ let run_frontend_checkers_on_stmt context cfg cg instr =
 
 let run_frontend_checkers_on_decl context cfg cg dec =
   let open Clang_ast_t in
-  let decl_info = Clang_ast_proj.get_decl_tuple dec in
-  if CLocation.should_do_frontend_check decl_info.Clang_ast_t.di_source_range then
-    match dec with
-    | ObjCImplementationDecl (decl_info, _, decl_list, _, _)
-    | ObjCProtocolDecl (decl_info, _, decl_list, _, _) ->
-        let idi = match dec with
-          | ObjCImplementationDecl (_, _, _, _, impl_decl_info) -> Some impl_decl_info
-          | _ -> None in
-        let call_ns_checker = checkers_for_ns decl_info idi decl_list in
-        let key = Ast_utils.generate_key_decl dec in
-        invoke_set_of_checkers call_ns_checker context cfg cg key ns_notification_checker_list;
-        context
-    | VarDecl _ ->
-        let call_var_checker = checker_for_var dec in
-        let key = Ast_utils.generate_key_decl dec in
-        invoke_set_of_checkers call_var_checker context cfg cg key var_checker_list;
-        context
-    | ObjCPropertyDecl (decl_info, pname_info, pdi) ->
-        let call_property_checker = checkers_for_property decl_info pname_info pdi in
-        let key = Ast_utils.generate_key_decl dec in
-        invoke_set_of_checkers call_property_checker context cfg cg key property_checkers_list;
-        context
-    | _ -> context
-  else context
+  match dec with
+  | ObjCImplementationDecl (decl_info, _, decl_list, _, _)
+  | ObjCProtocolDecl (decl_info, _, decl_list, _, _) ->
+      let idi = match dec with
+        | ObjCImplementationDecl (_, _, _, _, impl_decl_info) -> Some impl_decl_info
+        | _ -> None in
+      let call_ns_checker = checkers_for_ns decl_info idi decl_list in
+      let key = Ast_utils.generate_key_decl dec in
+      invoke_set_of_checkers call_ns_checker context cfg cg key ns_notification_checker_list;
+      context
+  | VarDecl _ ->
+      let call_var_checker = checker_for_var dec in
+      let key = Ast_utils.generate_key_decl dec in
+      invoke_set_of_checkers call_var_checker context cfg cg key var_checker_list;
+      context
+  | ObjCPropertyDecl (decl_info, pname_info, pdi) ->
+      let call_property_checker = checkers_for_property decl_info pname_info pdi in
+      let key = Ast_utils.generate_key_decl dec in
+      invoke_set_of_checkers call_property_checker context cfg cg key property_checkers_list;
+      context
+  | _ -> context

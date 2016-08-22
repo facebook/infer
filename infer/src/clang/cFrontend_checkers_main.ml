@@ -76,7 +76,11 @@ let do_frontend_checks cfg cg source_file ast =
   match ast with
   | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
       let context = context_with_ck_set CLintersContext.empty decl_list in
-      IList.iter (do_frontend_checks_decl context cfg cg) decl_list;
+      let is_decl_allowed decl =
+        let decl_info = Clang_ast_proj.get_decl_tuple decl in
+        CLocation.should_do_frontend_check decl_info.Clang_ast_t.di_source_range in
+      let allowed_decls = IList.filter is_decl_allowed decl_list in
+      IList.iter (do_frontend_checks_decl context cfg cg) allowed_decls;
       (* TODO (t12740727): Remove condition once the transition to linters mode is finished *)
       if Config.analyzer = Some Config.Linters then store_issues source_file
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
