@@ -48,7 +48,7 @@ endif
 #### Backend declarations ####
 
 INFER_MAIN = backend/infer
-INFERANALYZE_MAIN = backend/inferanalyze
+INFERANALYZE_MAIN = backend/InferAnalyze
 
 #### Checkers declarations ####
 
@@ -62,7 +62,7 @@ INFERPRINT_ATDGEN_STUB_BASE = backend/jsonbug
 INFERPRINT_ATDGEN_STUB_ATD = $(INFERPRINT_ATDGEN_STUB_BASE).atd
 INFERPRINT_ATDGEN_STUBS = $(addprefix $(INFERPRINT_ATDGEN_STUB_BASE), $(ATDGEN_SUFFIXES))
 
-INFERPRINT_MAIN = backend/inferprint
+INFERPRINT_MAIN = backend/InferPrint
 
 ### InferUnit declarations ###
 
