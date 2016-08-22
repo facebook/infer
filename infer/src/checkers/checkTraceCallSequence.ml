@@ -276,7 +276,7 @@ module BooleanVars = struct
               State.prune state name true
           | None -> state in
         state'
-    | Sil.Set (_e1, _, e2, _) ->
+    | Sil.Store (_e1, _, e2, _) ->
         let e1 = Idenv.expand_expr idenv _e1 in
         let state' = match exp_boolean_var e1 with
           | Some name ->

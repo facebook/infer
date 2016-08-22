@@ -100,7 +100,7 @@ let rec apply_offlist
         | _ -> false in
       let is_hidden_field () =
         match State.get_instr () with
-        | Some (Sil.Letderef (_, Exp.Lfield (_, fieldname, _), _, _)) ->
+        | Some (Sil.Load (_, Exp.Lfield (_, fieldname, _), _, _)) ->
             Ident.fieldname_is_hidden fieldname
         | _ -> false in
       let inst_new = match inst with
@@ -888,8 +888,8 @@ let add_taint prop lhs_id rhs_exp pname tenv  =
       end
   | _ -> prop
 
-let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ loc prop_ =
-  let execute_letderef_ pdesc tenv id loc acc_in iter =
+let execute_load ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ loc prop_ =
+  let execute_load_ pdesc tenv id loc acc_in iter =
     let iter_ren = Prop.prop_iter_make_id_primed id iter in
     let prop_ren = Prop.prop_iter_to_prop iter_ren in
     match Prop.prop_iter_current iter_ren with
@@ -916,7 +916,7 @@ let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ
           | Some pred_insts -> IList.rev (IList.fold_left update acc_in pred_insts)
         end
     | (Sil.Hpointsto _, _) ->
-        Errdesc.warning_err loc "no offset access in execute_letderef -- treating as skip@.";
+        Errdesc.warning_err loc "no offset access in execute_load -- treating as skip@.";
         (Prop.prop_iter_to_prop iter_ren) :: acc_in
     | _ ->
         (* The implementation of this case means that we
@@ -949,7 +949,7 @@ let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ
           else prop in
         let iter_list =
           Rearrange.rearrange ~report_deref_errors pdesc tenv n_rhs_exp' typ prop' loc in
-        IList.rev (IList.fold_left (execute_letderef_ pdesc tenv id loc) [] iter_list)
+        IList.rev (IList.fold_left (execute_load_ pdesc tenv id loc) [] iter_list)
   with Rearrange.ARRAY_ACCESS ->
     if (Config.array_level = 0) then assert false
     else
@@ -964,8 +964,8 @@ let load_ret_annots pname =
   | None ->
       Typ.item_annotation_empty
 
-let execute_set ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_exp loc prop_ =
-  let execute_set_ pdesc tenv rhs_exp acc_in iter =
+let execute_store ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_exp loc prop_ =
+  let execute_store_ pdesc tenv rhs_exp acc_in iter =
     let (lexp, strexp, typ, len, st, offlist) =
       match Prop.prop_iter_current iter with
       | (Sil.Hpointsto(lexp, strexp, Exp.Sizeof (typ, len, st)), offlist) ->
@@ -988,7 +988,7 @@ let execute_set ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_exp
     let prop = Attribute.replace_objc_null prop n_lhs_exp n_rhs_exp in
     let n_lhs_exp' = Prop.exp_collapse_consecutive_indices_prop typ n_lhs_exp in
     let iter_list = Rearrange.rearrange ~report_deref_errors pdesc tenv n_lhs_exp' typ prop loc in
-    IList.rev (IList.fold_left (execute_set_ pdesc tenv n_rhs_exp) [] iter_list)
+    IList.rev (IList.fold_left (execute_store_ pdesc tenv n_rhs_exp) [] iter_list)
   with Rearrange.ARRAY_ACCESS ->
     if (Config.array_level = 0) then assert false
     else [prop_]
@@ -1038,11 +1038,11 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
   let call_args prop_ proc_name args ret_ids loc = {
     Builtin.pdesc = current_pdesc; instr; tenv; prop_; path; ret_ids; args; proc_name; loc; } in
   match instr with
-  | Sil.Letderef (id, rhs_exp, typ, loc) ->
-      execute_letderef current_pname current_pdesc tenv id rhs_exp typ loc prop_
+  | Sil.Load (id, rhs_exp, typ, loc) ->
+      execute_load current_pname current_pdesc tenv id rhs_exp typ loc prop_
       |> ret_old_path
-  | Sil.Set (lhs_exp, typ, rhs_exp, loc) ->
-      execute_set current_pname current_pdesc tenv lhs_exp typ rhs_exp loc prop_
+  | Sil.Store (lhs_exp, typ, rhs_exp, loc) ->
+      execute_store current_pname current_pdesc tenv lhs_exp typ rhs_exp loc prop_
       |> ret_old_path
   | Sil.Prune (cond, loc, true_branch, ik) ->
       let prop__ = Attribute.nullify_exp_with_objc_null prop_ cond in
@@ -1488,11 +1488,11 @@ and check_variadic_sentinel
   (* IList.fold_left reverses the arguments *)
   let non_terminal_argsi = fst (IList.fold_left mk_non_terminal_argsi ([], 0) args) in
   let check_allocated result ((lexp, typ), i) =
-    (* simulate a Letderef for [lexp] *)
+    (* simulate a Load for [lexp] *)
     let tmp_id_deref = Ident.create_fresh Ident.kprimed in
-    let letderef = Sil.Letderef (tmp_id_deref, lexp, typ, loc) in
+    let load_instr = Sil.Load (tmp_id_deref, lexp, typ, loc) in
     try
-      instrs tenv pdesc [letderef] result
+      instrs tenv pdesc [load_instr] result
     with e when SymOp.exn_not_failure e ->
       if not fails_on_nil then
         let deref_str = Localise.deref_str_nil_argument_in_variadic_method proc_name nargs i in
@@ -1533,7 +1533,7 @@ and sym_exec_objc_getter field_name ret_typ tenv ret_ids pdesc pname loc args pr
           | Typ.Tptr (t, _) -> Tenv.expand_type tenv t
           | _ -> assert false) in
       let field_access_exp = Exp.Lfield (lexp, field_name, typ') in
-      execute_letderef
+      execute_load
         ~report_deref_errors:false pname pdesc tenv ret_id field_access_exp ret_typ loc prop
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -1547,7 +1547,7 @@ and sym_exec_objc_setter field_name _ tenv _ pdesc pname loc args prop =
           | Typ.Tptr (t, _) -> Tenv.expand_type tenv t
           | _ -> assert false) in
       let field_access_exp = Exp.Lfield (lexp1, field_name, typ1') in
-      execute_set ~report_deref_errors:false pname pdesc tenv field_access_exp typ2 lexp2 loc prop
+      execute_store ~report_deref_errors:false pname pdesc tenv field_access_exp typ2 lexp2 loc prop
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 and sym_exec_objc_accessor property_accesor ret_typ tenv ret_ids pdesc _ loc args prop path

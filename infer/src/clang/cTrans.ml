@@ -147,14 +147,14 @@ struct
     let block_var = Pvar.mk mblock procname in
     let declare_block_local =
       Sil.Declare_locals ([(block_var, Typ.Tptr (block_type, Typ.Pk_pointer))], loc) in
-    let set_instr = Sil.Set (Exp.Lvar block_var, block_type, Exp.Var id_block, loc) in
+    let set_instr = Sil.Store (Exp.Lvar block_var, block_type, Exp.Var id_block, loc) in
     let create_field_exp (var, typ) =
       let id = Ident.create_fresh Ident.knormal in
-      id, Sil.Letderef (id, Exp.Lvar var, typ, loc) in
+      id, Sil.Load (id, Exp.Lvar var, typ, loc) in
     let ids, captured_instrs = IList.split (IList.map create_field_exp captured_vars) in
     let fields_ids = IList.combine fields ids in
     let set_fields = IList.map (fun ((f, t, _), id) ->
-        Sil.Set (Exp.Lfield (Exp.Var id_block, f, block_type), t, Exp.Var id, loc)) fields_ids in
+        Sil.Store (Exp.Lfield (Exp.Var id_block, f, block_type), t, Exp.Var id, loc)) fields_ids in
     (declare_block_local :: trans_res.instrs) @
     [set_instr] @
     captured_instrs @
@@ -169,7 +169,7 @@ struct
       let bn''= Mangled.from_string bn' in
       let block = Exp.Lvar (Pvar.mk bn'' procname) in
       let id = Ident.create_fresh Ident.knormal in
-      insts := Sil.Letderef (id, block, typ, loc) :: !insts;
+      insts := Sil.Load (id, block, typ, loc) :: !insts;
       (Exp.Var id, typ) in
     let make_arg typ (id, _, _) = (id, typ) in
     let rec f es =
@@ -304,7 +304,7 @@ struct
         (*          equivalent of value of ret_param. Since ret_exp has type RETURN_TYPE,*)
         (*          we optionally add pointer there to avoid backend confusion. *)
         (*          It works either way *)
-        (* Passing by value: may cause problems - there needs to be extra Sil.Letderef, but*)
+        (* Passing by value: may cause problems - there needs to be extra Sil.Load, but*)
         (*                   doing so would create problems with methods. Passing structs by*)
         (*                   value doesn't work good anyway. This may need to be revisited later*)
         let ret_param = (var_exp, param_type) in
@@ -502,7 +502,7 @@ struct
                            (not is_constructor_init && CTypes.is_reference_type type_ptr) in
     let exp, deref_instrs = if should_add_deref then
         let id = Ident.create_fresh Ident.knormal in
-        let deref_instr = Sil.Letderef (id, field_exp, field_typ, sil_loc) in
+        let deref_instr = Sil.Load (id, field_exp, field_typ, sil_loc) in
         Exp.Var id, [deref_instr]
       else
         field_exp, [] in
@@ -540,7 +540,7 @@ struct
         | [(exp, Typ.Tptr (typ, _) )] when decl_kind <> `CXXConstructor ->
             let typ = CTypes.expand_structured_type context.tenv typ in
             let no_id = Ident.create_none () in
-            let extra_instrs = [Sil.Letderef (no_id, exp, typ, sil_loc)] in
+            let extra_instrs = [Sil.Load (no_id, exp, typ, sil_loc)] in
             pre_trans_result.exps, extra_instrs
         | [(_, Typ.Tptr _ )] -> pre_trans_result.exps, []
         | [(sil, typ)] -> [(sil, Typ.Tptr (typ, Typ.Pk_reference))], []
@@ -805,7 +805,7 @@ struct
                 (* assignment.  *)
                 (* As no node is created here ids are passed to the parent *)
                 let id = Ident.create_fresh Ident.knormal in
-                let res_instr = Sil.Letderef (id, var_exp, var_exp_typ, sil_loc) in
+                let res_instr = Sil.Load (id, var_exp, var_exp_typ, sil_loc) in
                 [res_instr], Exp.Var id
               ) else (
                 [], exp_op) in
@@ -1111,7 +1111,7 @@ struct
       let (e', _) = extract_exp_from_list res_trans_b.exps
           "\nWARNING: Missing branch expression for Conditional operator. Need to be fixed\n" in
       let set_temp_var = [
-        Sil.Set (Exp.Lvar pvar, var_typ, e', sil_loc)
+        Sil.Store (Exp.Lvar pvar, var_typ, e', sil_loc)
       ] in
       let tmp_var_res_trans = { empty_res_trans with instrs = set_temp_var } in
       let trans_state'' = { trans_state' with succ_nodes = [join_node] } in
@@ -1138,7 +1138,7 @@ struct
          do_branch true exp1 var_typ res_trans_cond.leaf_nodes join_node pvar;
          do_branch false exp2 var_typ res_trans_cond.leaf_nodes join_node pvar;
          let id = Ident.create_fresh Ident.knormal in
-         let instrs = [Sil.Letderef (id, Exp.Lvar pvar, var_typ, sil_loc)] in
+         let instrs = [Sil.Load (id, Exp.Lvar pvar, var_typ, sil_loc)] in
          { empty_res_trans with
            root_nodes = res_trans_cond.root_nodes;
            leaf_nodes = [join_node];
@@ -1620,7 +1620,7 @@ struct
         else lh in
       if IList.length rh_exps == IList.length lh then
         (* Creating new instructions by assigning right hand side to left hand side expressions *)
-        let assign_instr (lh_exp, lh_t) (rh_exp, _) = Sil.Set (lh_exp, lh_t, rh_exp, sil_loc) in
+        let assign_instr (lh_exp, lh_t) (rh_exp, _) = Sil.Store (lh_exp, lh_t, rh_exp, sil_loc) in
         let assign_instrs =
           let initd_exps = collect_initid_exprs res_trans_subexpr_list in
           (* If the variable var_exp is of type array, and some of its indices were initialized *)
@@ -1684,7 +1684,7 @@ struct
                 var_exp ie_typ sil_e1' sil_loc rhs_owning_method true in
             ([(e, ie_typ)], instrs)
           else
-            ([], [Sil.Set (var_exp, ie_typ, sil_e1', sil_loc)]) in
+            ([], [Sil.Store (var_exp, ie_typ, sil_e1', sil_loc)]) in
         let res_trans_assign = { empty_res_trans with
                                  instrs = instrs_assign } in
         let all_res_trans = [res_trans_ie; res_trans_assign] in
@@ -1881,7 +1881,7 @@ struct
                   let procname = Cfg.Procdesc.get_proc_name procdesc in
                   let pvar = Pvar.mk (Mangled.from_string name) procname in
                   let id = Ident.create_fresh Ident.knormal in
-                  let instr = Sil.Letderef (id, Exp.Lvar pvar, ret_param_typ, sil_loc) in
+                  let instr = Sil.Load (id, Exp.Lvar pvar, ret_param_typ, sil_loc) in
                   let ret_typ = match ret_param_typ with Typ.Tptr (t, _) -> t | _ -> assert false in
                   Exp.Var id, ret_typ, [instr]
               | None ->
@@ -1895,7 +1895,7 @@ struct
 
             let ret_instrs = if IList.exists (Exp.equal ret_exp) res_trans_stmt.initd_exps
               then []
-              else [Sil.Set (ret_exp, ret_type, sil_expr, sil_loc)] in
+              else [Sil.Store (ret_exp, ret_type, sil_expr, sil_loc)] in
             let autorelease_instrs =
               add_autorelease_call context sil_expr ret_type sil_loc in
             let instrs = var_instrs @ res_trans_stmt.instrs @ ret_instrs @ autorelease_instrs in
@@ -2009,7 +2009,7 @@ struct
     (* Given a captured var, return the instruction to assign it to a temp *)
     let assign_captured_var (cvar, typ) =
       let id = Ident.create_fresh Ident.knormal in
-      let instr = Sil.Letderef (id, (Exp.Lvar cvar), typ, loc) in
+      let instr = Sil.Load (id, (Exp.Lvar cvar), typ, loc) in
       (id, instr) in
     match decl with
     | Clang_ast_t.BlockDecl (_, block_decl_info) ->

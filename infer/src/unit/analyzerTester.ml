@@ -84,11 +84,11 @@ module StructuredSil = struct
   let unknown_exp =
     var_of_str "__unknown__"
 
-  let make_letderef ~rhs_typ lhs_id rhs_exp =
-    Cmd (Sil.Letderef (lhs_id, rhs_exp, rhs_typ, dummy_loc))
+  let make_load ~rhs_typ lhs_id rhs_exp =
+    Cmd (Sil.Load (lhs_id, rhs_exp, rhs_typ, dummy_loc))
 
   let make_set ~rhs_typ ~lhs_exp ~rhs_exp =
-    Cmd (Sil.Set (lhs_exp, rhs_typ, rhs_exp, dummy_loc))
+    Cmd (Sil.Store (lhs_exp, rhs_typ, rhs_exp, dummy_loc))
 
   let make_call ?(procname=dummy_procname) ret_ids args =
     let call_exp = Exp.Const (Const.Cfun procname) in
@@ -99,14 +99,14 @@ module StructuredSil = struct
     let lhs_exp = Exp.Lfield (root_exp, fld, rhs_typ) in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
-  let make_load ~rhs_typ lhs_str fld_str root_exp =
+  let make_load_fld ~rhs_typ lhs_str fld_str root_exp =
     let fld = AccessPathTestUtils.make_fieldname fld_str in
     let rhs_exp = Exp.Lfield (root_exp, fld, rhs_typ) in
-    make_letderef ~rhs_typ (ident_of_str lhs_str) rhs_exp
+    make_load ~rhs_typ (ident_of_str lhs_str) rhs_exp
 
   let id_assign_exp ?(rhs_typ=dummy_typ) lhs rhs_exp =
     let lhs_id = ident_of_str lhs in
-    make_letderef ~rhs_typ lhs_id rhs_exp
+    make_load ~rhs_typ lhs_id rhs_exp
 
   let id_assign_id ?(rhs_typ=dummy_typ) lhs rhs =
     id_assign_exp ~rhs_typ lhs (Exp.Var (ident_of_str rhs))
@@ -114,7 +114,7 @@ module StructuredSil = struct
   let id_assign_var ?(rhs_typ=dummy_typ) lhs rhs =
     let lhs_id = ident_of_str lhs in
     let rhs_exp = var_of_str rhs in
-    make_letderef ~rhs_typ lhs_id rhs_exp
+    make_load ~rhs_typ lhs_id rhs_exp
 
   let id_set_id ?(rhs_typ=dummy_typ) lhs_id rhs_id =
     let lhs_exp = Exp.Var (ident_of_str lhs_id) in

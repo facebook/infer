@@ -18,7 +18,7 @@ type t = (Exp.t Ident.IdentHash.t) Lazy.t
 let create_ proc_desc =
   let map = Ident.IdentHash.create 1 in
   let do_instr _ = function
-    | Sil.Letderef (id, e, _, _) ->
+    | Sil.Load (id, e, _, _) ->
         Ident.IdentHash.add map id e
     | _ -> () in
   Cfg.Procdesc.iter_instrs do_instr proc_desc;

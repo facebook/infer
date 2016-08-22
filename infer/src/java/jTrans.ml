@@ -405,7 +405,7 @@ let builtin_get_array_length =
 
 let create_sil_deref exp typ loc =
   let no_id = Ident.create_none () in
-  Sil.Letderef (no_id, exp, typ, loc)
+  Sil.Load (no_id, exp, typ, loc)
 
 (** translate an expression used as an r-value *)
 let rec expression context pc expr =
@@ -417,7 +417,7 @@ let rec expression context pc expr =
   let type_of_expr = JTransType.expr_type context expr in
   let trans_var pvar =
     let id = Ident.create_fresh Ident.knormal in
-    let sil_instr = Sil.Letderef (id, Exp.Lvar pvar, type_of_expr, loc) in
+    let sil_instr = Sil.Load (id, Exp.Lvar pvar, type_of_expr, loc) in
     ([sil_instr], Exp.Var id, type_of_expr) in
   match expr with
   | JBir.Var (_, var) ->
@@ -482,9 +482,9 @@ let rec expression context pc expr =
             let array_typ = Typ.Tarray (type_of_expr, None) in
             let deref_array_instr = create_sil_deref sil_ex1 array_typ loc in
             let id = Ident.create_fresh Ident.knormal in
-            let letderef_instr =
-              Sil.Letderef (id, Exp.Lindex (sil_ex1, sil_ex2), type_of_expr, loc) in
-            let instrs = (instrs1 @ (deref_array_instr :: instrs2)) @ [letderef_instr] in
+            let load_instr =
+              Sil.Load (id, Exp.Lindex (sil_ex1, sil_ex2), type_of_expr, loc) in
+            let instrs = (instrs1 @ (deref_array_instr :: instrs2)) @ [load_instr] in
             instrs, Exp.Var id, type_of_expr
         | other_binop ->
             let sil_binop = get_binop other_binop in
@@ -497,7 +497,7 @@ let rec expression context pc expr =
       let sil_type = JTransType.get_class_type_no_pointer program tenv cn in
       let sil_expr = Exp.Lfield (sil_expr, field_name, sil_type) in
       let tmp_id = Ident.create_fresh Ident.knormal in
-      let lderef_instr = Sil.Letderef (tmp_id, sil_expr, sil_type, loc) in
+      let lderef_instr = Sil.Load (tmp_id, sil_expr, sil_type, loc) in
       (instrs @ [lderef_instr], Exp.Var tmp_id, type_of_expr)
   | JBir.StaticField (cn, fs) ->
       let class_exp =
@@ -529,7 +529,7 @@ let rec expression context pc expr =
       else
         let sil_expr = Exp.Lfield (sil_expr, field_name, sil_type) in
         let tmp_id = Ident.create_fresh Ident.knormal in
-        let lderef_instr = Sil.Letderef (tmp_id, sil_expr, sil_type, loc) in
+        let lderef_instr = Sil.Load (tmp_id, sil_expr, sil_type, loc) in
         (instrs @ [lderef_instr], Exp.Var tmp_id, type_of_expr)
 
 let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_code method_kind =
@@ -601,7 +601,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
     let call_ret_instrs sil_var =
       let ret_id = Ident.create_fresh Ident.knormal in
       let call_instr = Sil.Call ([ret_id], callee_fun, call_args, loc, call_flags) in
-      let set_instr = Sil.Set (Exp.Lvar sil_var, return_type, Exp.Var ret_id, loc) in
+      let set_instr = Sil.Store (Exp.Lvar sil_var, return_type, Exp.Var ret_id, loc) in
       (instrs @ [call_instr; set_instr]) in
     match var_opt with
     | None ->
@@ -806,7 +806,7 @@ let rec instruction context pc instr : translation =
     | JBir.AffectVar (var, expr) ->
         let (stml, sil_expr, sil_type) = expression context pc expr in
         let pvar = (JContext.set_pvar context var sil_type) in
-        let sil_instr = Sil.Set (Exp.Lvar pvar, sil_type, sil_expr, loc) in
+        let sil_instr = Sil.Store (Exp.Lvar pvar, sil_type, sil_expr, loc) in
         let node_kind = Cfg.Node.Stmt_node "method_body" in
         let node = create_node node_kind (stml @ [sil_instr]) in
         Instr node
@@ -819,7 +819,7 @@ let rec instruction context pc instr : translation =
           | Some expr ->
               let (stml, sil_expr, _) = expression context pc expr in
               let sil_instrs =
-                let return_instr = Sil.Set (Exp.Lvar ret_var, ret_type, sil_expr, loc) in
+                let return_instr = Sil.Store (Exp.Lvar ret_var, ret_type, sil_expr, loc) in
                 if return_not_null () then
                   [assume_not_null loc sil_expr; return_instr]
                 else
@@ -833,7 +833,8 @@ let rec instruction context pc instr : translation =
         and (instrs_value, sil_expr_value, _) = expression context pc value_ex in
         let arr_type_np = JTransType.extract_cn_type_np arr_type in
         let sil_instr =
-          Sil.Set (Exp.Lindex (sil_expr_array, sil_expr_index), arr_type_np, sil_expr_value, loc) in
+          Sil.Store (
+            Exp.Lindex (sil_expr_array, sil_expr_index), arr_type_np, sil_expr_value, loc) in
         let final_instrs = instrs_array @ instrs_index @ instrs_value @ [sil_instr] in
         let node_kind = Cfg.Node.Stmt_node "method_body" in
         let node = create_node node_kind final_instrs in
@@ -845,7 +846,7 @@ let rec instruction context pc instr : translation =
         let type_of_the_surrounding_class = JTransType.get_class_type_no_pointer program tenv cn in
         let type_of_the_root_of_e_lhs = type_of_the_surrounding_class in
         let expr_off = Exp.Lfield(sil_expr_lhs, field_name, type_of_the_surrounding_class) in
-        let sil_instr = Sil.Set (expr_off, type_of_the_root_of_e_lhs, sil_expr_rhs, loc) in
+        let sil_instr = Sil.Store (expr_off, type_of_the_root_of_e_lhs, sil_expr_rhs, loc) in
         let node_kind = Cfg.Node.Stmt_node "method_body" in
         let node = create_node node_kind (stml1 @ stml2 @ [sil_instr]) in
         Instr node
@@ -860,7 +861,7 @@ let rec instruction context pc instr : translation =
         let type_of_the_surrounding_class = JTransType.get_class_type_no_pointer program tenv cn in
         let type_of_the_root_of_e_lhs = type_of_the_surrounding_class in
         let expr_off = Exp.Lfield(sil_expr_lhs, field_name, type_of_the_surrounding_class) in
-        let sil_instr = Sil.Set (expr_off, type_of_the_root_of_e_lhs, sil_expr_rhs, loc) in
+        let sil_instr = Sil.Store (expr_off, type_of_the_root_of_e_lhs, sil_expr_rhs, loc) in
         let node_kind = Cfg.Node.Stmt_node "method_body" in
         let node = create_node node_kind (stml1 @ stml2 @ [sil_instr]) in
         Instr node
@@ -892,7 +893,7 @@ let rec instruction context pc instr : translation =
     | JBir.Throw expr ->
         let (instrs, sil_expr, _) = expression context pc expr in
         let sil_exn = Exp.Exn sil_expr in
-        let sil_instr = Sil.Set (Exp.Lvar ret_var, ret_type, sil_exn, loc) in
+        let sil_instr = Sil.Store (Exp.Lvar ret_var, ret_type, sil_exn, loc) in
         let node = create_node Cfg.Node.throw_kind (instrs @ [sil_instr]) in
         JContext.add_goto_jump context pc JContext.Exit;
         Instr node
@@ -910,7 +911,7 @@ let rec instruction context pc instr : translation =
           method_invocation
             context loc pc None cn constr_ms ret_opt constr_arg_list I_Special Procname.Non_Static in
         let pvar = JContext.set_pvar context var class_type in
-        let set_instr = Sil.Set (Exp.Lvar pvar, class_type, Exp.Var ret_id, loc) in
+        let set_instr = Sil.Store (Exp.Lvar pvar, class_type, Exp.Var ret_id, loc) in
         let instrs = (new_instr :: call_instrs) @ [set_instr] in
         let node_kind = Cfg.Node.Stmt_node ("Call "^(Procname.to_string constr_procname)) in
         let node = create_node node_kind instrs in
@@ -926,7 +927,7 @@ let rec instruction context pc instr : translation =
         let call_args = [(array_size, array_type)] in
         let ret_id = Ident.create_fresh Ident.knormal in
         let call_instr = Sil.Call([ret_id], builtin_new_array, call_args, loc, CallFlags.default) in
-        let set_instr = Sil.Set (Exp.Lvar array_name, array_type, Exp.Var ret_id, loc) in
+        let set_instr = Sil.Store (Exp.Lvar array_name, array_type, Exp.Var ret_id, loc) in
         let node_kind = Cfg.Node.Stmt_node "method_body" in
         let node = create_node node_kind (instrs @ [call_instr; set_instr]) in
         Instr node
@@ -1023,7 +1024,7 @@ let rec instruction context pc instr : translation =
             let ret_opt = Some (Exp.Var ret_id, class_type) in
             method_invocation context loc pc None npe_cn constr_ms ret_opt [] I_Special Procname.Static in
           let sil_exn = Exp.Exn (Exp.Var ret_id) in
-          let set_instr = Sil.Set (Exp.Lvar ret_var, ret_type, sil_exn, loc) in
+          let set_instr = Sil.Store (Exp.Lvar ret_var, ret_type, sil_exn, loc) in
           let npe_instrs = instrs @ [sil_prune_null] @ (new_instr :: call_instrs) @ [set_instr] in
           create_node npe_kind npe_instrs in
         Prune (not_null_node, throw_npe_node)
@@ -1077,7 +1078,7 @@ let rec instruction context pc instr : translation =
               context loc pc None out_of_bound_cn constr_ms
               (Some (Exp.Var ret_id, class_type)) [] I_Special Procname.Static in
           let sil_exn = Exp.Exn (Exp.Var ret_id) in
-          let set_instr = Sil.Set (Exp.Lvar ret_var, ret_type, sil_exn, loc) in
+          let set_instr = Sil.Store (Exp.Lvar ret_var, ret_type, sil_exn, loc) in
           let out_of_bound_instrs =
             instrs @ [sil_assume_out_of_bound] @ (new_instr :: call_instrs) @ [set_instr] in
           create_node out_of_bound_node_kind out_of_bound_instrs in
@@ -1115,7 +1116,7 @@ let rec instruction context pc instr : translation =
             method_invocation context loc pc None cce_cn constr_ms
               (Some (Exp.Var ret_id, class_type)) [] I_Special Procname.Static in
           let sil_exn = Exp.Exn (Exp.Var ret_id) in
-          let set_instr = Sil.Set (Exp.Lvar ret_var, ret_type, sil_exn, loc) in
+          let set_instr = Sil.Store (Exp.Lvar ret_var, ret_type, sil_exn, loc) in
           let cce_instrs =
             instrs @ [call; asssume_not_instance_of] @ (new_instr :: call_instrs) @ [set_instr] in
           create_node throw_cast_exception_kind cce_instrs in

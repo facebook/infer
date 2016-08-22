@@ -134,7 +134,7 @@ module NullifyTransferFunctions = struct
 
   let exec_instr ((active_defs, to_nullify) as astate) extras node instr =
     let astate' = match instr with
-      | Sil.Letderef (lhs_id, _, _, _) ->
+      | Sil.Load (lhs_id, _, _, _) ->
           VarDomain.add (Var.of_id lhs_id) active_defs, to_nullify
       | Sil.Call (lhs_ids, _, _, _, _) ->
           let active_defs' =
@@ -143,9 +143,9 @@ module NullifyTransferFunctions = struct
               active_defs
               lhs_ids in
           active_defs', to_nullify
-      | Sil.Set (Exp.Lvar lhs_pvar, _, _, _) ->
+      | Sil.Store (Exp.Lvar lhs_pvar, _, _, _) ->
           VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify
-      | Sil.Set _ | Prune _ | Declare_locals _ | Stackop _ | Remove_temps _
+      | Sil.Store _ | Prune _ | Declare_locals _ | Stackop _ | Remove_temps _
       | Abstract _ ->
           astate
       | Sil.Nullify _ ->
@@ -169,7 +169,7 @@ let remove_dead_frontend_stores pdesc liveness_inv_map =
     | None -> true in
   let is_used_store (instr, instr_id_opt) =
     match instr, instr_id_opt with
-    | Sil.Letderef (id, _, _, _), Some instr_id when not (Ident.is_none id) ->
+    | Sil.Load (id, _, _, _), Some instr_id when not (Ident.is_none id) ->
         is_live (Var.of_id id) instr_id liveness_inv_map
     | _ -> true in
   let node_remove_dead_stores node =

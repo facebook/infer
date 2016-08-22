@@ -38,9 +38,9 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
   (* this is removed in the true branches, and in the false branch of the last handler *)
   let id_exn_val = Ident.create_fresh Ident.knormal in
   let create_entry_node loc =
-    let instr_get_ret_val = Sil.Letderef (id_ret_val, Exp.Lvar ret_var, ret_type, loc) in
+    let instr_get_ret_val = Sil.Load (id_ret_val, Exp.Lvar ret_var, ret_type, loc) in
     let id_deactivate = Ident.create_fresh Ident.knormal in
-    let instr_deactivate_exn = Sil.Set (Exp.Lvar ret_var, ret_type, Exp.Var id_deactivate, loc) in
+    let instr_deactivate_exn = Sil.Store (Exp.Lvar ret_var, ret_type, Exp.Var id_deactivate, loc) in
     let instr_unwrap_ret_val =
       let unwrap_builtin = Exp.Const (Const.Cfun ModelBuiltins.__unwrap_exception) in
       Sil.Call
@@ -79,9 +79,9 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
           Sil.Prune (Exp.UnOp(Unop.LNot, Exp.Var id_instanceof, None), loc, false, if_kind) in
         let instr_set_catch_var =
           let catch_var = JContext.set_pvar context handler.JBir.e_catch_var ret_type in
-          Sil.Set (Exp.Lvar catch_var, ret_type, Exp.Var id_exn_val, loc) in
+          Sil.Store (Exp.Lvar catch_var, ret_type, Exp.Var id_exn_val, loc) in
         let instr_rethrow_exn =
-          Sil.Set (Exp.Lvar ret_var, ret_type, Exp.Exn (Exp.Var id_exn_val), loc) in
+          Sil.Store (Exp.Lvar ret_var, ret_type, Exp.Exn (Exp.Var id_exn_val), loc) in
         let node_kind_true = Cfg.Node.Prune_node (true, if_kind, exn_message) in
         let node_kind_false = Cfg.Node.Prune_node (false, if_kind, exn_message) in
         let node_true =

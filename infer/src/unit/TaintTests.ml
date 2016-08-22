@@ -121,7 +121,7 @@ let tests =
     let rhs_exp = Exp.Var (ident_of_str rhs_id_str) in
     make_store ~rhs_typ:Typ.Tvoid (Exp.Var (ident_of_str root_str)) fld_str ~rhs_exp in
   let read_field_to_id lhs_id_str root_str fld_str =
-    make_load ~rhs_typ:Typ.Tvoid lhs_id_str fld_str (Exp.Var (ident_of_str root_str)) in
+    make_load_fld ~rhs_typ:Typ.Tvoid lhs_id_str fld_str (Exp.Var (ident_of_str root_str)) in
   let assert_empty = invariant "{  }" in
   let test_list = [
     "source recorded",

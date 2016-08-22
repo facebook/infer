@@ -31,16 +31,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     IList.fold_left (fun astate_acc pvar -> Domain.add (Var.of_pvar pvar) astate_acc) astate' pvars
 
   let exec_instr astate _ _ = function
-    | Sil.Letderef (lhs_id, rhs_exp, _, _) ->
+    | Sil.Load (lhs_id, rhs_exp, _, _) ->
         Domain.remove (Var.of_id lhs_id) astate
         |> exp_add_live rhs_exp
-    | Sil.Set (Lvar lhs_pvar, _, rhs_exp, _) ->
+    | Sil.Store (Lvar lhs_pvar, _, rhs_exp, _) ->
         let astate' =
           if Pvar.is_global lhs_pvar
           then astate (* never kill globals *)
           else Domain.remove (Var.of_pvar lhs_pvar) astate in
         exp_add_live rhs_exp astate'
-    | Sil.Set (lhs_exp, _, rhs_exp, _) ->
+    | Sil.Store (lhs_exp, _, rhs_exp, _) ->
         exp_add_live lhs_exp astate
         |> exp_add_live rhs_exp
     | Sil.Prune (exp, _, _, _) ->

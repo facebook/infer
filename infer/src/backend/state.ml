@@ -125,8 +125,8 @@ let node_simple_key node =
     if Sil.instr_is_auxiliary instr then ()
     else
       match instr with
-      | Sil.Letderef _ -> add_key 1
-      | Sil.Set _ -> add_key 2
+      | Sil.Load _ -> add_key 1
+      | Sil.Store _ -> add_key 2
       | Sil.Prune _ -> add_key 3
       | Sil.Call _ -> add_key 4
       | Sil.Nullify _ -> add_key 5
@@ -148,7 +148,7 @@ let node_key node =
 let instrs_normalize instrs =
   let bound_ids =
     let do_instr ids = function
-      | Sil.Letderef (id, _, _, _) -> id :: ids
+      | Sil.Load (id, _, _, _) -> id :: ids
       | _ -> ids in
     IList.fold_left do_instr [] instrs in
   let subst =

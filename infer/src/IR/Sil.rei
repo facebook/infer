@@ -43,12 +43,20 @@ type stackop =
 
 /** An instruction. */
 type instr =
-  /** declaration [let x = *lexp:typ] where [typ] is the root type of [lexp] */
-  /* note for frontend writers: [x] must be used in a subsequent instruction, otherwise the entire
-     `Letderef` instruction may be eliminated by copy-propagation */
-  | Letderef of Ident.t Exp.t Typ.t Location.t
-  /** assignment [*lexp1:typ = exp2] where [typ] is the root type of [lexp1] */
-  | Set of Exp.t Typ.t Exp.t Location.t
+  /** Load a value from the heap into an identifier.
+      [x = *lexp:typ] where
+        [lexp] is an expression denoting a heap address
+        [typ] is the root type of [lexp]. */
+  /* Note for frontend writers:
+     [x] must be used in a subsequent instruction, otherwise the entire
+     `Load` instruction may be eliminated by copy-propagation. */
+  | Load of Ident.t Exp.t Typ.t Location.t
+  /** Store the value of an expression into the heap.
+      [*lexp1:typ = exp2] where
+        [lexp1] is an expression denoting a heap address
+        [typ] is the root type of [lexp1]
+        [exp2] is the expression whose value is store. */
+  | Store of Exp.t Typ.t Exp.t Location.t
   /** prune the state based on [exp=1], the boolean indicates whether true branch */
   | Prune of Exp.t Location.t bool if_kind
   /** [Call (ret_id1..ret_idn, e_fun, arg_ts, loc, call_flags)] represents an instructions

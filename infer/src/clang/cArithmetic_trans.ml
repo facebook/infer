@@ -21,7 +21,7 @@ open CFrontend_utils
 (* case we need to add proper retain/release.*)
 (* See document: "Objective-C Automatic Reference Counting" describing the semantics *)
 let assignment_arc_mode e1 typ e2 loc rhs_owning_method is_e1_decl =
-  let assign = Sil.Set (e1, typ, e2, loc) in
+  let assign = Sil.Store (e1, typ, e2, loc) in
   let retain_pname = ModelBuiltins.__objc_retain in
   let release_pname = ModelBuiltins.__objc_release in
   let autorelease_pname = ModelBuiltins.__set_autorelease_attribute in
@@ -34,7 +34,7 @@ let assignment_arc_mode e1 typ e2 loc rhs_owning_method is_e1_decl =
       (* retain(e2); tmp=e1; e1=e2; release(tmp); *)
       let retain = mk_call retain_pname e2 typ in
       let id = Ident.create_fresh Ident.knormal in
-      let tmp_assign = Sil.Letderef(id, e1, typ, loc) in
+      let tmp_assign = Sil.Load (id, e1, typ, loc) in
       let release = mk_call release_pname (Exp.Var id) typ in
       (e1,[retain; tmp_assign; assign; release])
   | Typ.Tptr (_, Typ.Pk_pointer) when not rhs_owning_method && is_e1_decl ->
@@ -59,38 +59,38 @@ let assignment_arc_mode e1 typ e2 loc rhs_owning_method is_e1_decl =
 (* assignment. *)
 let compound_assignment_binary_operation_instruction boi e1 typ e2 loc =
   let id = Ident.create_fresh Ident.knormal in
-  let instr1 = Sil.Letderef (id, e1, typ, loc) in
+  let instr1 = Sil.Load (id, e1, typ, loc) in
   let e_res, instr_op = match boi.Clang_ast_t.boi_kind with
     | `AddAssign ->
         let e1_plus_e2 = Exp.BinOp(Binop.PlusA, Exp.Var id, e2) in
-        (e1, [Sil.Set (e1, typ, e1_plus_e2, loc)])
+        (e1, [Sil.Store (e1, typ, e1_plus_e2, loc)])
     | `SubAssign ->
         let e1_sub_e2 = Exp.BinOp(Binop.MinusA, Exp.Var id, e2) in
-        (e1, [Sil.Set (e1, typ, e1_sub_e2, loc)])
+        (e1, [Sil.Store (e1, typ, e1_sub_e2, loc)])
     | `MulAssign ->
         let e1_mul_e2 = Exp.BinOp(Binop.Mult, Exp.Var id, e2) in
-        (e1, [Sil.Set (e1, typ, e1_mul_e2, loc)])
+        (e1, [Sil.Store (e1, typ, e1_mul_e2, loc)])
     | `DivAssign ->
         let e1_div_e2 = Exp.BinOp(Binop.Div, Exp.Var id, e2) in
-        (e1, [Sil.Set (e1, typ, e1_div_e2, loc)])
+        (e1, [Sil.Store (e1, typ, e1_div_e2, loc)])
     | `ShlAssign ->
         let e1_shl_e2 = Exp.BinOp(Binop.Shiftlt, Exp.Var id, e2) in
-        (e1, [Sil.Set (e1, typ, e1_shl_e2, loc)])
+        (e1, [Sil.Store (e1, typ, e1_shl_e2, loc)])
     | `ShrAssign ->
         let e1_shr_e2 = Exp.BinOp(Binop.Shiftrt, Exp.Var id, e2) in
-        (e1, [Sil.Set (e1, typ, e1_shr_e2, loc)])
+        (e1, [Sil.Store (e1, typ, e1_shr_e2, loc)])
     | `RemAssign ->
         let e1_mod_e2 = Exp.BinOp(Binop.Mod, Exp.Var id, e2) in
-        (e1, [Sil.Set (e1, typ, e1_mod_e2, loc)])
+        (e1, [Sil.Store (e1, typ, e1_mod_e2, loc)])
     | `AndAssign ->
         let e1_and_e2 = Exp.BinOp(Binop.BAnd, Exp.Var id, e2) in
-        (e1, [Sil.Set (e1, typ, e1_and_e2, loc)])
+        (e1, [Sil.Store (e1, typ, e1_and_e2, loc)])
     | `OrAssign ->
         let e1_or_e2 = Exp.BinOp(Binop.BOr, Exp.Var id, e2) in
-        (e1, [Sil.Set (e1, typ, e1_or_e2, loc)])
+        (e1, [Sil.Store (e1, typ, e1_or_e2, loc)])
     | `XorAssign ->
         let e1_xor_e2 = Exp.BinOp(Binop.BXor, Exp.Var id, e2) in
-        (e1, [Sil.Set (e1, typ, e1_xor_e2, loc)])
+        (e1, [Sil.Store (e1, typ, e1_xor_e2, loc)])
     | _ -> assert false in
   (e_res, instr1:: instr_op)
 
@@ -123,7 +123,7 @@ let binary_operation_instruction context boi e1 typ e2 loc rhs_owning_method =
       if !Config.arc_mode && ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv typ then
         assignment_arc_mode e1 typ e2 loc rhs_owning_method false
       else
-        (e1, [Sil.Set (e1, typ, e2, loc)])
+        (e1, [Sil.Store (e1, typ, e2, loc)])
   | `Comma -> (e2, []) (* C99 6.5.17-2 *)
   | `MulAssign | `DivAssign | `RemAssign | `AddAssign | `SubAssign
   | `ShlAssign | `ShrAssign | `AndAssign | `XorAssign | `OrAssign ->
@@ -143,32 +143,32 @@ let unary_operation_instruction uoi e typ loc =
   match uoi.Clang_ast_t.uoi_kind with
   | `PostInc ->
       let id = Ident.create_fresh Ident.knormal in
-      let instr1 = Sil.Letderef (id, e, typ, loc) in
+      let instr1 = Sil.Load (id, e, typ, loc) in
       let e_plus_1 = Exp.BinOp(Binop.PlusA, Exp.Var id, Exp.Const(Const.Cint (IntLit.one))) in
-      (Exp.Var id, instr1::[Sil.Set (e, typ, e_plus_1, loc)])
+      (Exp.Var id, instr1::[Sil.Store (e, typ, e_plus_1, loc)])
   | `PreInc ->
       let id = Ident.create_fresh Ident.knormal in
-      let instr1 = Sil.Letderef (id, e, typ, loc) in
+      let instr1 = Sil.Load (id, e, typ, loc) in
       let e_plus_1 = Exp.BinOp(Binop.PlusA, Exp.Var id, Exp.Const(Const.Cint (IntLit.one))) in
       let exp = if General_utils.is_cpp_translation Config.clang_lang then
           e
         else
           e_plus_1 in
-      (exp, instr1::[Sil.Set (e, typ, e_plus_1, loc)])
+      (exp, instr1::[Sil.Store (e, typ, e_plus_1, loc)])
   | `PostDec ->
       let id = Ident.create_fresh Ident.knormal in
-      let instr1 = Sil.Letderef (id, e, typ, loc) in
+      let instr1 = Sil.Load (id, e, typ, loc) in
       let e_minus_1 = Exp.BinOp(Binop.MinusA, Exp.Var id, Exp.Const(Const.Cint (IntLit.one))) in
-      (Exp.Var id, instr1::[Sil.Set (e, typ, e_minus_1, loc)])
+      (Exp.Var id, instr1::[Sil.Store (e, typ, e_minus_1, loc)])
   | `PreDec ->
       let id = Ident.create_fresh Ident.knormal in
-      let instr1 = Sil.Letderef (id, e, typ, loc) in
+      let instr1 = Sil.Load (id, e, typ, loc) in
       let e_minus_1 = Exp.BinOp(Binop.MinusA, Exp.Var id, Exp.Const(Const.Cint (IntLit.one))) in
       let exp = if General_utils.is_cpp_translation Config.clang_lang then
           e
         else
           e_minus_1 in
-      (exp, instr1::[Sil.Set (e, typ, e_minus_1, loc)])
+      (exp, instr1::[Sil.Store (e, typ, e_minus_1, loc)])
   | `Not -> (un_exp (Unop.BNot), [])
   | `Minus -> (un_exp (Unop.Neg), [])
   | `Plus -> (e, [])

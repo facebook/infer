@@ -54,7 +54,7 @@ let node_throws node (proc_throws : Procname.t -> throws) : throws =
       let ret_pvar = Cfg.Procdesc.get_ret_var pdesc in
       Pvar.equal pvar ret_pvar in
     match instr with
-    | Sil.Set (Exp.Lvar pvar, _, Exp.Exn _, _) when is_return pvar ->
+    | Sil.Store (Exp.Lvar pvar, _, Exp.Exn _, _) when is_return pvar ->
         (* assignment to return variable is an artifact of a throw instruction *)
         Throws
     | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _)

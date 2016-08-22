@@ -62,7 +62,7 @@ let check_access access_opt de_opt =
         IList.exists (Mangled.equal name) formal_names in
       let formal_ids = ref [] in
       let process_formal_letref = function
-        | Sil.Letderef (id, Exp.Lvar pvar, _, _) ->
+        | Sil.Load (id, Exp.Lvar pvar, _, _) ->
             let is_java_this =
               !Config.curr_language = Config.Java && Pvar.is_this pvar in
             if not is_java_this && is_formal pvar then formal_ids := id :: !formal_ids
@@ -91,7 +91,7 @@ let check_access access_opt de_opt =
               | _ -> false in
             if IList.exists arg_is_formal_param etl then formal_param_used_in_call := true;
             true
-        | Sil.Set (_, _, e, _) ->
+        | Sil.Store (_, _, e, _) ->
             exp_is_null e
         | _ -> false in
       IList.exists filter (Cfg.Node.get_instrs node) in

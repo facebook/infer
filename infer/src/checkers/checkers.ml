@@ -427,11 +427,11 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
     match get_proc_desc proc_name' with
       Some proc_desc' ->
         let is_return_instr = function
-          | Sil.Set (Exp.Lvar p, _, _, _)
+          | Sil.Store (Exp.Lvar p, _, _, _)
             when Pvar.equal p (Cfg.Procdesc.get_ret_var proc_desc') -> true
           | _ -> false in
         (match reverse_find_instr is_return_instr (Cfg.Procdesc.get_exit_node proc_desc') with
-         | Some (Sil.Set (_, _, Exp.Const (Const.Cclass n), _)) -> Ident.name_to_string n
+         | Some (Sil.Store (_, _, Exp.Const (Const.Cclass n), _)) -> Ident.name_to_string n
          | _ -> "<" ^ (Procname.to_string proc_name') ^ ">")
     | None -> "?" in
 
@@ -444,11 +444,11 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
              | Exp.Const (Const.Cclass n) -> Ident.name_to_string n
              | Exp.Lvar _ -> (
                  let is_call_instr set call = match set, call with
-                   | Sil.Set (_, _, Exp.Var (i1), _), Sil.Call (i2::[], _, _, _, _)
+                   | Sil.Store (_, _, Exp.Var (i1), _), Sil.Call (i2::[], _, _, _, _)
                      when Ident.equal i1 i2 -> true
                    | _ -> false in
                  let is_set_instr = function
-                   | Sil.Set (e1, _, _, _) when Exp.equal expanded e1 -> true
+                   | Sil.Store (e1, _, _, _) when Exp.equal expanded e1 -> true
                    | _ -> false in
                  match reverse_find_instr is_set_instr node with
                  (* Look for ivar := tmp *)
@@ -523,9 +523,9 @@ let callback_check_field_access { Callbacks.proc_desc } =
   let do_read_exp = do_exp true in
   let do_write_exp = do_exp false in
   let do_instr _ = function
-    | Sil.Letderef (_, e, _, _) ->
+    | Sil.Load (_, e, _, _) ->
         do_read_exp e
-    | Sil.Set (e1, _, e2, _) ->
+    | Sil.Store (e1, _, e2, _) ->
         do_write_exp e1;
         do_read_exp e2
     | Sil.Prune (e, _, _, _) ->
@@ -590,9 +590,9 @@ let callback_print_access_to_globals { Callbacks.proc_desc; proc_name } =
     | _ ->
         None in
   let do_instr _ = function
-    | Sil.Letderef (_, e, _, loc) when get_global_var e <> None ->
+    | Sil.Load (_, e, _, loc) when get_global_var e <> None ->
         Option.may (fun pvar -> do_pvar true pvar loc) (get_global_var e)
-    | Sil.Set (e, _, _, loc) when get_global_var e <> None ->
+    | Sil.Store (e, _, _, loc) when get_global_var e <> None ->
         Option.may (fun pvar -> do_pvar false pvar loc) (get_global_var e)
     | _ -> () in
   Cfg.Procdesc.iter_instrs do_instr proc_desc

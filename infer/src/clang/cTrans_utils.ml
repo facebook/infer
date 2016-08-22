@@ -389,7 +389,7 @@ let cast_trans context exps sil_loc function_type pname =
 
 let dereference_var_sil (exp, typ) sil_loc =
   let id = Ident.create_fresh Ident.knormal in
-  let sil_instr = Sil.Letderef (id, exp, typ, sil_loc) in
+  let sil_instr = Sil.Load (id, exp, typ, sil_loc) in
   ([sil_instr], Exp.Var id)
 
 (** Given trans_result with ONE expression, create temporary variable with value of an expression
@@ -491,7 +491,7 @@ let define_condition_side_effects e_cond instrs_cond sil_loc =
   | Exp.Lvar pvar ->
       let id = Ident.create_fresh Ident.knormal in
       [(Exp.Var id, typ)],
-      [Sil.Letderef (id, Exp.Lvar pvar, typ, sil_loc)]
+      [Sil.Load (id, Exp.Lvar pvar, typ, sil_loc)]
   | _ -> [(e', typ)], instrs_cond
 
 let fix_param_exps_mismatch params_stmt exps_param =
@@ -571,7 +571,7 @@ struct
                context.CContext.tenv context.CContext.curr_class) in
         let e = Exp.Lvar (Pvar.mk (Mangled.from_string CFrontend_config.self) procname) in
         let id = Ident.create_fresh Ident.knormal in
-        t', Exp.Var id, [Sil.Letderef (id, e, t', loc)] in
+        t', Exp.Var id, [Sil.Load (id, e, t', loc)] in
       { empty_res_trans with
         exps = [(self_expr, typ)];
         instrs = ins }

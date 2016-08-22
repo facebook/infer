@@ -146,9 +146,9 @@ module Make (TraceDomain : Trace.S) = struct
     let exec_instr ({ Domain.id_map; } as astate) proc_data _ instr =
       let f_resolve_id = resolve_id id_map in
       match instr with
-      | Sil.Letderef (lhs_id, rhs_exp, rhs_typ, _) ->
+      | Sil.Load (lhs_id, rhs_exp, rhs_typ, _) ->
           analyze_id_assignment lhs_id rhs_exp rhs_typ astate
-      | Sil.Set (lhs_exp, lhs_typ, rhs_exp, loc) ->
+      | Sil.Store (lhs_exp, lhs_typ, rhs_exp, loc) ->
           let lhs_access_path =
             match AccessPath.of_exp lhs_exp lhs_typ ~f_resolve_id with
             | Some access_path ->

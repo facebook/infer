@@ -125,10 +125,10 @@ let rec inhabit_typ typ cfg env =
           let fresh_local_exp =
             Exp.Lvar (Pvar.mk typ_class_name (Procname.Java env.harness_name)) in
           let write_to_local_instr =
-            Sil.Set (fresh_local_exp, ptr_to_typ, allocated_obj_exp, env.pc) in
+            Sil.Store (fresh_local_exp, ptr_to_typ, allocated_obj_exp, env.pc) in
           let env' = env_add_instr write_to_local_instr env in
           let fresh_id = Ident.create_fresh Ident.knormal in
-          let read_from_local_instr = Sil.Letderef (fresh_id, fresh_local_exp, ptr_to_typ, env'.pc) in
+          let read_from_local_instr = Sil.Load (fresh_id, fresh_local_exp, ptr_to_typ, env'.pc) in
           (Exp.Var fresh_id, env_add_instr read_from_local_instr env')
       | Typ.Tint (_) -> (Exp.Const (Const.Cint (IntLit.zero)), env)
       | Typ.Tfloat (_) -> (Exp.Const (Const.Cfloat 0.0), env)

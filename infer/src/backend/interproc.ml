@@ -374,15 +374,15 @@ let check_assignement_guard node =
     IList.exists is_call instrs in
   let is_set_instr i =
     match i with
-    | Sil.Set _ -> true
+    | Sil.Store _ -> true
     | _ -> false in
   let is_prune_instr i =
     match i with
     | Sil.Prune _ -> true
     | _ -> false in
-  let is_letderef_instr i =
+  let is_load_instr i =
     match i with
-    | Sil.Letderef _ -> true
+    | Sil.Load _ -> true
     | _ -> false in
   let is_frontend_tmp e =
     match e with
@@ -397,11 +397,11 @@ let check_assignement_guard node =
     let prune_var n =
       let ins = Cfg.Node.get_instrs n in
       let pi = IList.filter is_prune_instr ins in
-      let leti = IList.filter is_letderef_instr ins in
+      let leti = IList.filter is_load_instr ins in
       match pi, leti with
-      | [Sil.Prune (Exp.Var(e1), _, _, _)], [Sil.Letderef(e2, e', _, _)]
-      | [Sil.Prune (Exp.UnOp(Unop.LNot, Exp.Var(e1), _), _, _, _)],
-        [Sil.Letderef(e2, e', _, _)]
+      | [Sil.Prune (Exp.Var (e1), _, _, _)], [Sil.Load (e2, e', _, _)]
+      | [Sil.Prune (Exp.UnOp (Unop.LNot, Exp.Var e1, _), _, _, _)],
+        [Sil.Load (e2, e', _, _)]
         when (Ident.equal e1 e2) ->
           if verbose
           then
@@ -451,7 +451,7 @@ let check_assignement_guard node =
                 is_set_instr i)
              instr in
          (match set_instr_at_succs_loc with
-          | [Sil.Set(e, _, _, _)] ->
+          | [Sil.Store (e, _, _, _)] ->
               (* we now check if e is the same expression used to prune*)
               if (is_prune_exp e) && not ((node_contains_call node) && (is_frontend_tmp e)) then (
                 let desc = Errdesc.explain_condition_is_assignment l_node in

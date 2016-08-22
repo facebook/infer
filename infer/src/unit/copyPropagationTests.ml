@@ -21,7 +21,7 @@ let tests =
   let open AnalyzerTester.StructuredSil in
   let assert_empty = invariant "{  }" in
   let test_list = [
-    "id_letderef_id_no_gen",
+    "id_load_id_no_gen",
     [
       id_assign_id "b" "a"; (* means b = *a *)
       assert_empty

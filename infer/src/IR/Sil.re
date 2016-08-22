@@ -41,12 +41,20 @@ type stackop =
 
 /** An instruction. */
 type instr =
-  /** declaration [let x = *lexp:typ] where [typ] is the root type of [lexp] */
-  /* note for frontend writers: [x] must be used in a subsequent instruction, otherwise the entire
-     `Letderef` instruction may be eliminated by copy-propagation */
-  | Letderef of Ident.t Exp.t Typ.t Location.t
-  /** assignment [*lexp1:typ = exp2] where [typ] is the root type of [lexp1] */
-  | Set of Exp.t Typ.t Exp.t Location.t
+  /** Load a value from the heap into an identifier.
+      [x = *lexp:typ] where
+        [lexp] is an expression denoting a heap address
+        [typ] is the root type of [lexp]. */
+  /* Note for frontend writers:
+     [x] must be used in a subsequent instruction, otherwise the entire
+     `Load` instruction may be eliminated by copy-propagation. */
+  | Load of Ident.t Exp.t Typ.t Location.t
+  /** Store the value of an expression into the heap.
+      [*lexp1:typ = exp2] where
+        [lexp1] is an expression denoting a heap address
+        [typ] is the root type of [lexp1]
+        [exp2] is the expression whose value is store. */
+  | Store of Exp.t Typ.t Exp.t Location.t
   /** prune the state based on [exp=1], the boolean indicates whether true branch */
   | Prune of Exp.t Location.t bool if_kind
   /** [Call (ret_id1..ret_idn, e_fun, arg_ts, loc, call_flags)] represents an instructions
@@ -64,8 +72,8 @@ type instr =
 /** Check if an instruction is auxiliary, or if it comes from source instructions. */
 let instr_is_auxiliary =
   fun
-  | Letderef _
-  | Set _
+  | Load _
+  | Store _
   | Prune _
   | Call _ => false
   | Nullify _
@@ -644,8 +652,8 @@ let pp_exp_typ pe f (e, t) => F.fprintf f "%a:%a" (pp_exp pe) e (Typ.pp pe) t;
 /** Get the location of the instruction */
 let instr_get_loc =
   fun
-  | Letderef _ _ _ loc
-  | Set _ _ _ loc
+  | Load _ _ _ loc
+  | Store _ _ _ loc
   | Prune _ loc _ _
   | Call _ _ _ loc _
   | Nullify _ loc
@@ -658,8 +666,8 @@ let instr_get_loc =
 /** get the expressions occurring in the instruction */
 let instr_get_exps =
   fun
-  | Letderef id e _ _ => [Exp.Var id, e]
-  | Set e1 _ e2 _ => [e1, e2]
+  | Load id e _ _ => [Exp.Var id, e]
+  | Store e1 _ e2 _ => [e1, e2]
   | Prune cond _ _ _ => [cond]
   | Call ret_ids e _ _ _ => [e, ...(IList.map (fun id => Exp.Var id)) ret_ids]
   | Nullify pvar _ => [Exp.Lvar pvar]
@@ -673,9 +681,9 @@ let instr_get_exps =
 let pp_instr pe0 f instr => {
   let (pe, changed) = color_pre_wrapper pe0 f instr;
   switch instr {
-  | Letderef id e t loc =>
+  | Load id e t loc =>
     F.fprintf f "%a=*%a:%a %a" (Ident.pp pe) id (pp_exp pe) e (Typ.pp pe) t Location.pp loc
-  | Set e1 t e2 loc =>
+  | Store e1 t e2 loc =>
     F.fprintf f "*%a:%a=%a %a" (pp_exp pe) e1 (Typ.pp pe) t (pp_exp pe) e2 Location.pp loc
   | Prune cond loc true_branch _ =>
     F.fprintf f "PRUNE(%a, %b); %a" (pp_exp pe) cond true_branch Location.pp loc
@@ -2125,7 +2133,7 @@ let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => Exp.t) instr => 
     | _ => id
     };
   switch instr {
-  | Letderef id rhs_exp typ loc =>
+  | Load id rhs_exp typ loc =>
     let id' =
       if sub_id_binders {
         sub_id id
@@ -2136,15 +2144,15 @@ let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => Exp.t) instr => 
     if (id' === id && rhs_exp' === rhs_exp) {
       instr
     } else {
-      Letderef id' rhs_exp' typ loc
+      Load id' rhs_exp' typ loc
     }
-  | Set lhs_exp typ rhs_exp loc =>
+  | Store lhs_exp typ rhs_exp loc =>
     let lhs_exp' = exp_sub_ids f lhs_exp;
     let rhs_exp' = exp_sub_ids f rhs_exp;
     if (lhs_exp' === lhs_exp && rhs_exp' === rhs_exp) {
       instr
     } else {
-      Set lhs_exp' typ rhs_exp' loc
+      Store lhs_exp' typ rhs_exp' loc
     }
   | Call ret_ids fun_exp actuals call_flags loc =>
     let ret_ids' =
@@ -2208,7 +2216,7 @@ let exp_typ_compare (exp1, typ1) (exp2, typ2) => {
 
 let instr_compare instr1 instr2 =>
   switch (instr1, instr2) {
-  | (Letderef id1 e1 t1 loc1, Letderef id2 e2 t2 loc2) =>
+  | (Load id1 e1 t1 loc1, Load id2 e2 t2 loc2) =>
     let n = Ident.compare id1 id2;
     if (n != 0) {
       n
@@ -2225,9 +2233,9 @@ let instr_compare instr1 instr2 =>
         }
       }
     }
-  | (Letderef _, _) => (-1)
-  | (_, Letderef _) => 1
-  | (Set e11 t1 e21 loc1, Set e12 t2 e22 loc2) =>
+  | (Load _, _) => (-1)
+  | (_, Load _) => 1
+  | (Store e11 t1 e21 loc1, Store e12 t2 e22 loc2) =>
     let n = Exp.compare e11 e12;
     if (n != 0) {
       n
@@ -2244,8 +2252,8 @@ let instr_compare instr1 instr2 =>
         }
       }
     }
-  | (Set _, _) => (-1)
-  | (_, Set _) => 1
+  | (Store _, _) => (-1)
+  | (_, Store _) => 1
   | (Prune cond1 loc1 true_branch1 ik1, Prune cond2 loc2 true_branch2 ik2) =>
     let n = Exp.compare cond1 cond2;
     if (n != 0) {
@@ -2453,7 +2461,7 @@ let instr_compare_structural instr1 instr2 exp_map => {
     }
   };
   switch (instr1, instr2) {
-  | (Letderef id1 e1 t1 _, Letderef id2 e2 t2 _) =>
+  | (Load id1 e1 t1 _, Load id2 e2 t2 _) =>
     let (n, exp_map) = exp_compare_structural (Var id1) (Var id2) exp_map;
     if (n != 0) {
       (n, exp_map)
@@ -2468,7 +2476,7 @@ let instr_compare_structural instr1 instr2 exp_map => {
         exp_map
       )
     }
-  | (Set e11 t1 e21 _, Set e12 t2 e22 _) =>
+  | (Store e11 t1 e21 _, Store e12 t2 e22 _) =>
     let (n, exp_map) = exp_compare_structural e11 e12 exp_map;
     if (n != 0) {
       (n, exp_map)

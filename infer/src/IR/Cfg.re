@@ -670,7 +670,7 @@ let module Node = {
       };
     let convert_instr instrs =>
       fun
-      | Sil.Letderef id (Exp.Lvar origin_pvar as origin_exp) origin_typ loc => {
+      | Sil.Load id (Exp.Lvar origin_pvar as origin_exp) origin_typ loc => {
           let (_, specialized_typ) = {
             let pvar_name = Pvar.get_name origin_pvar;
             try (IList.find (fun (n, _) => Mangled.equal n pvar_name) substitutions) {
@@ -678,24 +678,24 @@ let module Node = {
             }
           };
           subst_map := Ident.IdentMap.add id specialized_typ !subst_map;
-          [Sil.Letderef id (convert_exp origin_exp) specialized_typ loc, ...instrs]
+          [Sil.Load id (convert_exp origin_exp) specialized_typ loc, ...instrs]
         }
-      | Sil.Letderef id (Exp.Var origin_id as origin_exp) origin_typ loc => {
+      | Sil.Load id (Exp.Var origin_id as origin_exp) origin_typ loc => {
           let updated_typ =
             switch (Ident.IdentMap.find origin_id !subst_map) {
             | Typ.Tptr typ _ => typ
             | _ => failwith "Expecting a pointer type"
             | exception Not_found => origin_typ
             };
-          [Sil.Letderef id (convert_exp origin_exp) updated_typ loc, ...instrs]
+          [Sil.Load id (convert_exp origin_exp) updated_typ loc, ...instrs]
         }
-      | Sil.Letderef id origin_exp origin_typ loc => [
-          Sil.Letderef id (convert_exp origin_exp) origin_typ loc,
+      | Sil.Load id origin_exp origin_typ loc => [
+          Sil.Load id (convert_exp origin_exp) origin_typ loc,
           ...instrs
         ]
-      | Sil.Set assignee_exp origin_typ origin_exp loc => {
+      | Sil.Store assignee_exp origin_typ origin_exp loc => {
           let set_instr =
-            Sil.Set (convert_exp assignee_exp) origin_typ (convert_exp origin_exp) loc;
+            Sil.Store (convert_exp assignee_exp) origin_typ (convert_exp origin_exp) loc;
           [set_instr, ...instrs]
         }
       | Sil.Call
@@ -1194,27 +1194,26 @@ let inline_synthetic_method ret_ids etl proc_desc loc_call :option Sil.instr => 
   let do_instr _ instr =>
     switch (instr, ret_ids, etl) {
     | (
-        Sil.Letderef _ (Exp.Lfield (Exp.Var _) fn ft) bt _,
+        Sil.Load _ (Exp.Lfield (Exp.Var _) fn ft) bt _,
         [ret_id],
         [(e1, _)] /* getter for fields */
       ) =>
-      let instr' = Sil.Letderef ret_id (Exp.Lfield e1 fn ft) bt loc_call;
+      let instr' = Sil.Load ret_id (Exp.Lfield e1 fn ft) bt loc_call;
       found instr instr'
-    | (Sil.Letderef _ (Exp.Lfield (Exp.Lvar pvar) fn ft) bt _, [ret_id], [])
-        when Pvar.is_global pvar =>
+    | (Sil.Load _ (Exp.Lfield (Exp.Lvar pvar) fn ft) bt _, [ret_id], []) when Pvar.is_global pvar =>
       /* getter for static fields */
-      let instr' = Sil.Letderef ret_id (Exp.Lfield (Exp.Lvar pvar) fn ft) bt loc_call;
+      let instr' = Sil.Load ret_id (Exp.Lfield (Exp.Lvar pvar) fn ft) bt loc_call;
       found instr instr'
     | (
-        Sil.Set (Exp.Lfield _ fn ft) bt _ _,
+        Sil.Store (Exp.Lfield _ fn ft) bt _ _,
         _,
         [(e1, _), (e2, _)] /* setter for fields */
       ) =>
-      let instr' = Sil.Set (Exp.Lfield e1 fn ft) bt e2 loc_call;
+      let instr' = Sil.Store (Exp.Lfield e1 fn ft) bt e2 loc_call;
       found instr instr'
-    | (Sil.Set (Exp.Lfield (Exp.Lvar pvar) fn ft) bt _ _, _, [(e1, _)]) when Pvar.is_global pvar =>
+    | (Sil.Store (Exp.Lfield (Exp.Lvar pvar) fn ft) bt _ _, _, [(e1, _)]) when Pvar.is_global pvar =>
       /* setter for static fields */
-      let instr' = Sil.Set (Exp.Lfield (Exp.Lvar pvar) fn ft) bt e1 loc_call;
+      let instr' = Sil.Store (Exp.Lfield (Exp.Lvar pvar) fn ft) bt e1 loc_call;
       found instr instr'
     | (Sil.Call ret_ids' (Exp.Const (Const.Cfun pn)) etl' _ cf, _, _)
         when IList.length ret_ids == IList.length ret_ids' && IList.length etl' == IList.length etl =>

@@ -179,7 +179,7 @@ let get_vararg_type_names
   let rec initializes_array instrs =
     match instrs with
     | Sil.Call ([t1], Exp.Const (Const.Cfun pn), _, _, _)::
-      Sil.Set (Exp.Lvar iv, _, Exp.Var t2, _):: is ->
+      Sil.Store (Exp.Lvar iv, _, Exp.Var t2, _):: is ->
         (Pvar.equal ivar iv && Ident.equal t1 t2 &&
          Procname.equal pn (Procname.from_string_c_fun "__new_array"))
         || initializes_array is
@@ -190,24 +190,24 @@ let get_vararg_type_names
   let added_type_name node =
     let rec nvar_type_name nvar instrs =
       match instrs with
-      | Sil.Letderef (nv, Exp.Lfield (_, id, t), _, _):: _
+      | Sil.Load (nv, Exp.Lfield (_, id, t), _, _):: _
         when Ident.equal nv nvar -> get_field_type_name t id
-      | Sil.Letderef (nv, _, t, _):: _
+      | Sil.Load (nv, _, t, _):: _
         when Ident.equal nv nvar ->
           Some (get_type_name t)
       | _:: is -> nvar_type_name nvar is
       | _ -> None in
     let rec added_nvar array_nvar instrs =
       match instrs with
-      | Sil.Set (Exp.Lindex (Exp.Var iv, _), _, Exp.Var nvar, _):: _
+      | Sil.Store (Exp.Lindex (Exp.Var iv, _), _, Exp.Var nvar, _):: _
         when Ident.equal iv array_nvar -> nvar_type_name nvar (Cfg.Node.get_instrs node)
-      | Sil.Set (Exp.Lindex (Exp.Var iv, _), _, Exp.Const c, _):: _
+      | Sil.Store (Exp.Lindex (Exp.Var iv, _), _, Exp.Const c, _):: _
         when Ident.equal iv array_nvar -> Some (java_get_const_type_name c)
       | _:: is -> added_nvar array_nvar is
       | _ -> None in
     let rec array_nvar instrs =
       match instrs with
-      | Sil.Letderef (nv, Exp.Lvar iv, _, _):: _
+      | Sil.Load (nv, Exp.Lvar iv, _, _):: _
         when Pvar.equal iv ivar ->
           added_nvar nv instrs
       | _:: is -> array_nvar is
@@ -245,7 +245,7 @@ let is_setter pname_java =
 
 (** Returns the signature of a field access (class name, field name, field type name) *)
 let get_java_field_access_signature = function
-  | Sil.Letderef (_, Exp.Lfield (_, fn, ft), bt, _) ->
+  | Sil.Load (_, Exp.Lfield (_, fn, ft), bt, _) ->
       Some (get_type_name bt, Ident.java_fieldname_get_field fn, get_type_name ft)
   | _ -> None
 
@@ -317,7 +317,7 @@ let method_is_initializer
 let java_get_vararg_values node pvar idenv =
   let values = ref [] in
   let do_instr = function
-    | Sil.Set (Exp.Lindex (array_exp, _), _, content_exp, _)
+    | Sil.Store (Exp.Lindex (array_exp, _), _, content_exp, _)
       when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv array_exp) ->
         (* Each vararg argument is an assigment to a pvar denoting an array of objects. *)
         values := content_exp :: !values
@@ -387,10 +387,10 @@ let proc_iter_overridden_methods f tenv proc_name =
 let get_fields_nullified procdesc =
   (* walk through the instructions and look for instance fields that are assigned to null *)
   let collect_nullified_flds (nullified_flds, this_ids) _ = function
-    | Sil.Set (Exp.Lfield (Exp.Var lhs, fld, _), _, rhs, _)
+    | Sil.Store (Exp.Lfield (Exp.Var lhs, fld, _), _, rhs, _)
       when Exp.is_null_literal rhs && Ident.IdentSet.mem lhs this_ids ->
         (Ident.FieldSet.add fld nullified_flds, this_ids)
-    | Sil.Letderef (id, rhs, _, _) when Exp.is_this rhs ->
+    | Sil.Load (id, rhs, _, _) when Exp.is_this rhs ->
         (nullified_flds, Ident.IdentSet.add id this_ids)
     | _ -> (nullified_flds, this_ids) in
   let (nullified_flds, _) =

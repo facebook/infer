@@ -158,7 +158,7 @@ let check_printf_args_ok
   (* Get the array ivar for a given nvar *)
   let rec array_ivar instrs nvar =
     match instrs, nvar with
-    | Sil.Letderef (id, Exp.Lvar iv, _, _):: _, Exp.Var nid
+    | Sil.Load (id, Exp.Lvar iv, _, _):: _, Exp.Var nid
       when Ident.equal id nid -> iv
     | _:: is, _ -> array_ivar is nvar
     | _ -> raise Not_found in
@@ -167,7 +167,7 @@ let check_printf_args_ok
     match nvar with
     | Exp.Var nid -> (
         match instrs with
-        | Sil.Letderef (id, Exp.Lvar _, t, _):: _
+        | Sil.Load (id, Exp.Lvar _, t, _):: _
           when Ident.equal id nid -> PatternMatch.get_type_name t
         | _:: is -> fixed_nvar_type_name is nvar
         | _ -> raise Not_found)

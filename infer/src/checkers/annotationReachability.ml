@@ -346,13 +346,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | Some Domain.Bottom ->
               astate
         end
-    | Sil.Letderef (id, exp, _, _)
+    | Sil.Load (id, exp, _, _)
       when is_tracking_exp astate exp ->
         Domain.add_tracking_var (Var.of_id id) astate
-    | Sil.Set (Exp.Lvar pvar, _, exp, _)
+    | Sil.Store (Exp.Lvar pvar, _, exp, _)
       when is_tracking_exp astate exp ->
         Domain.add_tracking_var (Var.of_pvar pvar) astate
-    | Sil.Set (Exp.Lvar pvar, _, _, _) ->
+    | Sil.Store (Exp.Lvar pvar, _, _, _) ->
         Domain.remove_tracking_var (Var.of_pvar pvar) astate
     | Sil.Prune (exp, _, _, _)
       when prunes_tracking_var astate exp ->

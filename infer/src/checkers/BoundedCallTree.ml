@@ -144,7 +144,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            other potential special kinds of procedure calls to be added later,
            e.g. Java reflection. *)
         astate
-    | Sil.Letderef _ | Set _ | Prune _ | Declare_locals _
+    | Sil.Load _ | Store _ | Prune _ | Declare_locals _
     | Stackop _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
 end

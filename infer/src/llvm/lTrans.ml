@@ -73,15 +73,15 @@ let rec trans_annotated_instructions
             let procname = Cfg.Procdesc.get_proc_name procdesc in
             let ret_var = Pvar.get_ret_pvar procname in
             let new_sil_instr =
-              Sil.Set (Exp.Lvar ret_var, trans_typ tp, trans_operand exp, location) in
+              Sil.Store (Exp.Lvar ret_var, trans_typ tp, trans_operand exp, location) in
             (new_sil_instr :: sil_instrs, locals)
         | Load (var, tp, ptr) ->
             let new_sil_instr =
-              Sil.Letderef (ident_of_variable var, trans_variable ptr, trans_typ tp, location) in
+              Sil.Load (ident_of_variable var, trans_variable ptr, trans_typ tp, location) in
             (new_sil_instr :: sil_instrs, locals)
         | Store (op, tp, var) ->
             let new_sil_instr =
-              Sil.Set (trans_variable var, trans_typ tp, trans_operand op, location) in
+              Sil.Store (trans_variable var, trans_typ tp, trans_operand op, location) in
             (new_sil_instr :: sil_instrs, locals)
         | Alloc (var, tp, _num_elems) ->
             (* num_elems currently ignored *)

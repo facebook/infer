@@ -84,17 +84,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   type extras = ProcData.no_extras
 
   let exec_instr astate _ _ = function
-    | Sil.Letderef (lhs_id, Exp.Lvar rhs_pvar, _, _) when not (Pvar.is_global rhs_pvar) ->
+    | Sil.Load (lhs_id, Exp.Lvar rhs_pvar, _, _) when not (Pvar.is_global rhs_pvar) ->
         Domain.gen (Var.of_id lhs_id) (Var.of_pvar rhs_pvar) astate
-    | Sil.Set (Exp.Lvar lhs_pvar, _, Exp.Var rhs_id, _) when not (Pvar.is_global lhs_pvar) ->
+    | Sil.Store (Exp.Lvar lhs_pvar, _, Exp.Var rhs_id, _) when not (Pvar.is_global lhs_pvar) ->
         Domain.kill_then_gen (Var.of_pvar lhs_pvar) (Var.of_id rhs_id) astate
-    | Sil.Set (Exp.Lvar lhs_pvar, _, _, _) ->
+    | Sil.Store (Exp.Lvar lhs_pvar, _, _, _) ->
         (* non-copy assignment; can only kill *)
         Domain.kill_copies_with_var (Var.of_pvar lhs_pvar) astate
-    | Sil.Letderef _
+    | Sil.Load _
     (* lhs = *rhs where rhs isn't a pvar (or is a global). in any case, not a copy *)
     (* note: since logical vars can't be reassigned, don't need to kill bindings for lhs id *)
-    | Sil.Set (Var _, _, _, _) ->
+    | Sil.Store (Var _, _, _, _) ->
         (* *lhs = rhs. not a copy, and not a write to lhs *)
         astate
     | Sil.Call (ret_ids, _, actuals, _, _) ->
@@ -107,7 +107,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         if !Config.curr_language = Config.Java
         then astate' (* Java doesn't have pass-by-reference *)
         else IList.fold_left kill_actuals_by_ref astate' actuals
-    | Sil.Set _ | Sil.Prune _ | Sil.Nullify _ | Sil.Abstract _ | Sil.Remove_temps _
+    | Sil.Store _ | Sil.Prune _ | Sil.Nullify _ | Sil.Abstract _ | Sil.Remove_temps _
     | Sil.Declare_locals _ | Sil.Stackop _ ->
         (* none of these can assign to program vars or logical vars *)
         astate

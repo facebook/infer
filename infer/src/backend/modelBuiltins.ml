@@ -24,7 +24,7 @@ let execute___builtin_va_arg { Builtin.pdesc; tenv; prop_; path; ret_ids; args; 
   : Builtin.ret_typ =
   match args, ret_ids with
   | [_; _; (lexp3, typ3)], _ ->
-      let instr' = Sil.Set (lexp3, typ3, Exp.zero, loc) in
+      let instr' = Sil.Store (lexp3, typ3, Exp.zero, loc) in
       SymExec.instrs ~mask_errors:true tenv pdesc [instr'] [(prop_, path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -471,11 +471,11 @@ let execute___objc_counter_update
       (* This is the case as a call f(o) it's translates as n$1=*&o; f(n$1) *)
       (* n$2 = *n$1.hidden *)
       let tmp = Ident.create_fresh Ident.knormal in
-      let hidden_field = Exp.Lfield(lexp, Ident.fieldname_hidden, typ') in
-      let counter_to_tmp = Sil.Letderef(tmp, hidden_field, typ', loc) in
+      let hidden_field = Exp.Lfield (lexp, Ident.fieldname_hidden, typ') in
+      let counter_to_tmp = Sil.Load (tmp, hidden_field, typ', loc) in
       (* *n$1.hidden = (n$2 +/- delta) *)
       let update_counter =
-        Sil.Set
+        Sil.Store
           (hidden_field,
            typ',
            Exp.BinOp(op, Exp.Var tmp, Exp.Const (Const.Cint delta)),
@@ -822,7 +822,8 @@ let execute___cxx_typeid ({ Builtin.pdesc; tenv; prop_; args; loc} as r)
                | _ -> typ
              with Not_found -> typ in
            let typ_string = Typ.to_string typ in
-           let set_instr = Sil.Set (field_exp, Typ.Tvoid, Exp.Const (Const.Cstr typ_string), loc) in
+           let set_instr =
+             Sil.Store (field_exp, Typ.Tvoid, Exp.Const (Const.Cstr typ_string), loc) in
            SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] res
        | _ -> res)
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -938,7 +939,7 @@ let execute___infer_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
     | _ ->
         raise (Exceptions.Wrong_argument_number __POS__) in
   let set_instr =
-    Sil.Set (Exp.Lvar Sil.custom_error, Typ.Tvoid, Exp.Const (Const.Cstr error_str), loc) in
+    Sil.Store (Exp.Lvar Sil.custom_error, Typ.Tvoid, Exp.Const (Const.Cstr error_str), loc) in
   SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] [(prop_, path)]
 
 (* translate builtin assertion failure *)
@@ -951,7 +952,7 @@ let execute___assert_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
     | _ ->
         raise (Exceptions.Wrong_argument_number __POS__) in
   let set_instr =
-    Sil.Set (Exp.Lvar Sil.custom_error, Typ.Tvoid, Exp.Const (Const.Cstr error_str), loc) in
+    Sil.Store (Exp.Lvar Sil.custom_error, Typ.Tvoid, Exp.Const (Const.Cstr error_str), loc) in
   SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] [(prop_, path)]
 
 let __assert_fail = Builtin.register

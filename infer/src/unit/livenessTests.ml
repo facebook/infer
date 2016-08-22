@@ -60,12 +60,12 @@ let tests =
       invariant "{ &b }";
       id_assign_var "a" "b"
     ];
-    "basic_live_letderef",
+    "basic_live_load",
     [
       invariant "{ y$0 }";
       id_assign_id "x" "y"
     ];
-    "basic_live_then_kill_letderef",
+    "basic_live_then_kill_load",
     [
       invariant "{ z$0 }";
       id_assign_id "y" "z";

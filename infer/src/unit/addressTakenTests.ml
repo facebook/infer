@@ -39,12 +39,12 @@ let tests =
       var_assign_addrof_var ~rhs_typ:int_typ "a" "b";
       assert_empty
     ];
-    "address_not_taken_letderef_instr1",
+    "address_not_taken_load_instr1",
     [
       id_assign_var ~rhs_typ:int_ptr_typ "a" "b";
       assert_empty
     ];
-    "address_not_taken_letderef_instr2",
+    "address_not_taken_load_instr2",
     [
       id_assign_var ~rhs_typ:int_typ "a" "b";
       assert_empty

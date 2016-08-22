@@ -476,16 +476,16 @@ let typecheck_instr
   | Sil.Declare_locals _
   | Sil.Abstract _
   | Sil.Nullify _ -> typestate
-  | Sil.Letderef (id, e, typ, loc) ->
+  | Sil.Load (id, e, typ, loc) ->
       typecheck_expr_for_errors typestate e loc;
       let e', typestate' = convert_complex_exp_to_pvar node false e typestate loc in
       TypeState.add_id id
         (typecheck_expr_simple typestate' e' typ TypeOrigin.Undef loc)
         typestate'
-  | Sil.Set (Exp.Lvar pvar, _, Exp.Exn _, _) when is_return pvar ->
+  | Sil.Store (Exp.Lvar pvar, _, Exp.Exn _, _) when is_return pvar ->
       (* skip assignment to return variable where it is an artifact of a throw instruction *)
       typestate
-  | Sil.Set (e1, typ, e2, loc) ->
+  | Sil.Store (e1, typ, e2, loc) ->
       typecheck_expr_for_errors typestate e1 loc;
       let e1', typestate1 = convert_complex_exp_to_pvar node true e1 typestate loc in
       let check_field_assign () = match e1 with
@@ -1036,7 +1036,7 @@ let typecheck_instr
         | [prev_node] ->
             let found = ref None in
             let do_instr i = match i with
-              | Sil.Set (e, _, e', _)
+              | Sil.Store (e, _, e', _)
                 when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv e') ->
                   found := Some e
               | _ -> () in
@@ -1091,7 +1091,7 @@ let typecheck_node
           | None -> false in
         if has_exceptions then
           typestates_exn := typestate :: !typestates_exn
-    | Sil.Set (Exp.Lvar pv, _, _, _) when
+    | Sil.Store (Exp.Lvar pv, _, _, _) when
         Pvar.is_return pv &&
         Cfg.Node.get_kind node = Cfg.Node.throw_kind ->
         (* throw instruction *)

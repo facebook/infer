@@ -69,13 +69,13 @@ module ConstantFlow = Dataflow.MakeDF(struct
                 false in
 
           match instr with
-          | Sil.Letderef (i, Exp.Lvar p, _, _) ->        (* tmp = var *)
+          | Sil.Load (i, Exp.Lvar p, _, _) ->        (* tmp = var *)
               update (Exp.Var i) (ConstantMap.find (Exp.Lvar p) constants) constants
 
-          | Sil.Set (Exp.Lvar p, _, Exp.Const c, _) ->   (* var = const *)
+          | Sil.Store (Exp.Lvar p, _, Exp.Const c, _) ->   (* var = const *)
               update (Exp.Lvar p) (Some c) constants
 
-          | Sil.Set (Exp.Lvar p, _, Exp.Var i, _) ->     (* var = tmp *)
+          | Sil.Store (Exp.Lvar p, _, Exp.Var i, _) ->     (* var = tmp *)
               update (Exp.Lvar p) (ConstantMap.find (Exp.Var i) constants) constants
 
           (* Handle propagation of string with StringBuilder. Does not handle null case *)

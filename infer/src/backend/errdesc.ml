@@ -97,7 +97,7 @@ let find_in_node_or_preds start_node f_node_instr =
 (** Find the Set instruction used to assign [id] to a program variable, if any *)
 let find_variable_assigment node id : Sil.instr option =
   let find_set _ instr = match instr with
-    | Sil.Set (Exp.Lvar _, _, e, _) when Exp.equal (Exp.Var id) e -> Some instr
+    | Sil.Store (Exp.Lvar _, _, e, _) when Exp.equal (Exp.Var id) e -> Some instr
     | _ -> None in
   find_in_node_or_preds node find_set
 
@@ -126,7 +126,7 @@ let find_other_prune_node node =
 (** Return true if [id] is assigned to a program variable which is then nullified *)
 let id_is_assigned_then_dead node id =
   match find_variable_assigment node id with
-  | Some (Sil.Set (Exp.Lvar pvar, _, _, _) as instr)
+  | Some (Sil.Store (Exp.Lvar pvar, _, _, _) as instr)
     when Pvar.is_local pvar || Pvar.is_callee pvar ->
       let is_prune = match Cfg.Node.get_kind node with
         | Cfg.Node.Prune_node _ -> true
@@ -165,7 +165,8 @@ let find_normal_variable_funcall
 (** Find a program variable assignment in the current node or predecessors. *)
 let find_program_variable_assignment node pvar : (Cfg.Node.t * Ident.t) option =
   let find_instr node = function
-    | Sil.Set (Exp.Lvar _pvar, _, Exp.Var id, _) when Pvar.equal pvar _pvar && Ident.is_normal id ->
+    | Sil.Store (Exp.Lvar _pvar, _, Exp.Var id, _)
+      when Pvar.equal pvar _pvar && Ident.is_normal id ->
         Some (node, id)
     | _ ->
         None in
@@ -195,7 +196,7 @@ let find_struct_by_value_assignment node pvar =
 (** Find a program variable assignment to id in the current node or predecessors. *)
 let find_ident_assignment node id : (Cfg.Node.t * Exp.t) option =
   let find_instr node = function
-    | Sil.Letderef(_id, e, _, _) when Ident.equal _id id -> Some (node, e)
+    | Sil.Load (_id, e, _, _) when Ident.equal _id id -> Some (node, e)
     | _ -> None in
   find_in_node_or_preds node find_instr
 
@@ -204,7 +205,7 @@ let find_ident_assignment node id : (Cfg.Node.t * Exp.t) option =
 let rec find_boolean_assignment node pvar true_branch : Cfg.Node.t option =
   let find_instr n =
     let filter = function
-      | Sil.Set (Exp.Lvar _pvar, _, Exp.Const (Const.Cint i), _) when Pvar.equal pvar _pvar ->
+      | Sil.Store (Exp.Lvar _pvar, _, Exp.Const (Const.Cint i), _) when Pvar.equal pvar _pvar ->
           IntLit.iszero i <> true_branch
       | _ -> false in
     IList.exists filter (Cfg.Node.get_instrs n) in
@@ -216,29 +217,29 @@ let rec find_boolean_assignment node pvar true_branch : Cfg.Node.t option =
       else None
   | _ -> None
 
-(** Find the Letderef instruction used to declare normal variable [id],
+(** Find the Load instruction used to declare normal variable [id],
     and return the expression dereferenced to initialize [id] *)
-let rec _find_normal_variable_letderef (seen : Exp.Set.t) node id : DExp.t option =
+let rec _find_normal_variable_load (seen : Exp.Set.t) node id : DExp.t option =
   let is_infer = not (Config.checkers || Config.eradicate) in
   let find_declaration node = function
-    | Sil.Letderef (id0, e, _, _) when Ident.equal id id0 ->
+    | Sil.Load (id0, e, _, _) when Ident.equal id id0 ->
         if verbose
         then
-          (L.d_str "find_normal_variable_letderef defining ";
+          (L.d_str "find_normal_variable_load defining ";
            Sil.d_exp e; L.d_ln ());
         _exp_lv_dexp seen node e
     | Sil.Call ([id0], Exp.Const (Const.Cfun pn), (e, _):: _, _, _)
       when Ident.equal id id0 && Procname.equal pn (Procname.from_string_c_fun "__cast") ->
         if verbose
         then
-          (L.d_str "find_normal_variable_letderef cast on ";
+          (L.d_str "find_normal_variable_load cast on ";
            Sil.d_exp e; L.d_ln ());
         _exp_rv_dexp seen node e
     | Sil.Call ([id0], (Exp.Const (Const.Cfun pname) as fun_exp), args, loc, call_flags)
       when Ident.equal id id0 ->
         if verbose
         then
-          (L.d_str "find_normal_variable_letderef function call ";
+          (L.d_str "find_normal_variable_load function call ";
            Sil.d_exp fun_exp; L.d_ln ());
 
         let fun_dexp = DExp.Dconst (Const.Cfun pname) in
@@ -250,7 +251,7 @@ let rec _find_normal_variable_letderef (seen : Exp.Set.t) node id : DExp.t optio
             let unNone = function Some x -> x | None -> assert false in
             IList.map unNone args_dexpo in
         Some (DExp.Dretcall (fun_dexp, args_dexp, loc, call_flags))
-    | Sil.Set (Exp.Lvar pvar, _, Exp.Var id0, _)
+    | Sil.Store (Exp.Lvar pvar, _, Exp.Var id0, _)
       when is_infer && Ident.equal id id0 && not (Pvar.is_frontend_tmp pvar) ->
         (* this case is a hack to make bucketing continue to work in the presence of copy
            propagation. previously, we would have code like:
@@ -263,7 +264,7 @@ let rec _find_normal_variable_letderef (seen : Exp.Set.t) node id : DExp.t optio
   if verbose && res == None
   then
     (L.d_str
-       ("find_normal_variable_letderef could not find " ^
+       ("find_normal_variable_load could not find " ^
         Ident.to_string id ^
         " in node " ^
         string_of_int (Cfg.Node.get_id node :> int));
@@ -287,7 +288,7 @@ and _exp_lv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
          | _ -> None)
     | Exp.Var id when Ident.is_normal id ->
         if verbose then (L.d_str "exp_lv_dexp: normal var "; Sil.d_exp e; L.d_ln ());
-        (match _find_normal_variable_letderef seen node id with
+        (match _find_normal_variable_load seen node id with
          | None -> None
          | Some de -> Some (DExp.Dderef de))
     | Exp.Lvar pvar ->
@@ -327,7 +328,7 @@ and _exp_lv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
             L.d_str (" " ^ Ident.fieldname_to_string f);
             L.d_ln ()
           end;
-        (match _find_normal_variable_letderef seen node id with
+        (match _find_normal_variable_load seen node id with
          | None -> None
          | Some de -> Some (DExp.Darrow (de, f)))
     | Exp.Lfield (e1, f, _) ->
@@ -377,7 +378,7 @@ and _exp_rv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
         else Some (DExp.Dpvaraddr pv)
     | Exp.Var id when Ident.is_normal id ->
         if verbose then (L.d_str "exp_rv_dexp: normal var "; Sil.d_exp e; L.d_ln ());
-        _find_normal_variable_letderef seen node id
+        _find_normal_variable_load seen node id
     | Exp.Lfield (e1, f, _) ->
         if verbose then
           begin
@@ -421,7 +422,7 @@ and _exp_rv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
         if verbose then (L.d_str "exp_rv_dexp: no match for  "; Sil.d_exp e; L.d_ln ());
         None
 
-let find_normal_variable_letderef = _find_normal_variable_letderef Exp.Set.empty
+let find_normal_variable_load = _find_normal_variable_load Exp.Set.empty
 let exp_lv_dexp = _exp_lv_dexp Exp.Set.empty
 let exp_rv_dexp = _exp_rv_dexp Exp.Set.empty
 
@@ -553,7 +554,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
         let nullify_pvars_notmp =
           IList.filter (fun pvar -> not (Pvar.is_frontend_tmp pvar)) nullify_pvars in
         value_str_from_pvars_vpath nullify_pvars_notmp vpath
-    | Some (Sil.Set (lexp, _, _, _)) when vpath = None ->
+    | Some (Sil.Store (lexp, _, _, _)) when vpath = None ->
         if verbose
         then
           (L.d_str "explain_leak: current instruction Set for ";
@@ -883,7 +884,7 @@ let _explain_access
         then
           (L.d_str "find_outermost_dereference: normal var ";
            Sil.d_exp e; L.d_ln ());
-        find_normal_variable_letderef node id
+        find_normal_variable_load node id
     | Exp.Lfield (e', _, _) ->
         if verbose then (L.d_str "find_outermost_dereference: Lfield "; Sil.d_exp e; L.d_ln ());
         find_outermost_dereference node e'
@@ -912,10 +913,10 @@ let _explain_access
            Sil.d_exp e; L.d_ln ());
         None in
   let find_exp_dereferenced () = match State.get_instr () with
-    | Some Sil.Set (e, _, _, _) ->
-        if verbose then (L.d_str "explain_dereference Sil.Set "; Sil.d_exp e; L.d_ln ());
+    | Some Sil.Store (e, _, _, _) ->
+        if verbose then (L.d_str "explain_dereference Sil.Store "; Sil.d_exp e; L.d_ln ());
         Some e
-    | Some Sil.Letderef (_, e, _, _) ->
+    | Some Sil.Load (_, e, _, _) ->
         if verbose then (L.d_str "explain_dereference Binop.Leteref "; Sil.d_exp e; L.d_ln ());
         Some e
     | Some Sil.Call (_, Exp.Const (Const.Cfun fn), [(e, _)], _, _)
