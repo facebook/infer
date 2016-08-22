@@ -33,7 +33,6 @@ let active_procedure_checkers () =
         SqlChecker.callback_sql, false;
         Eradicate.callback_eradicate, Config.eradicate;
         BoundedCallTree.checker, Config.crashcontext;
-        CodeQuery.code_query_callback, Config.code_query <> None;
         Checkers.callback_check_field_access, false;
         ImmutableChecker.callback_check_immutable_cast, checkers_enabled;
         RepeatedCallsChecker.callback_check_repeated_calls, checkers_enabled;
