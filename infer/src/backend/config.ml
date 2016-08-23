@@ -583,6 +583,11 @@ and bugs_json =
     ~exes:CLOpt.[Print]
     ~meta:"file" "Create a file containing a list of issues in JSON format"
 
+and bugs_tests =
+  CLOpt.mk_option ~long:"issues-tests" ~f:create_outfile
+    ~exes:CLOpt.[Print]
+    ~meta:"file" "Create a file containing issues in a format suitable for tests"
+
 and bugs_txt =
   CLOpt.mk_option ~deprecated:["bugs_txt"] ~long:"issues-txt" ~f:create_outfile
     ~exes:CLOpt.[Print]
@@ -1316,6 +1321,7 @@ and buck_build_args = !buck_build_args
 and buck_out = !buck_out
 and bugs_csv = !bugs_csv
 and bugs_json = !bugs_json
+and bugs_tests = !bugs_tests
 and bugs_txt = !bugs_txt
 and bugs_xml = !bugs_xml
 and changed_files_index = !changed_files_index

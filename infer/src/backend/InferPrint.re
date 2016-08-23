@@ -342,12 +342,12 @@ let module IssuesCsv = {
       "advice";
 
   /** Write bug report in csv format */
-  let pp_issues_of_error_log fmt error_filter _ file_opt procname err_log => {
+  let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname err_log => {
     let pp x => F.fprintf fmt x;
     let pp_row (_, node_key) loc _ ekind in_footprint error_name error_desc severity ltr _ eclass => {
       let source_file =
-        switch file_opt {
-        | Some file => file
+        switch proc_loc_opt {
+        | Some proc_loc => proc_loc.Location.file
         | None => loc.Location.file
         };
       if (in_footprint && error_filter source_file error_desc error_name) {
@@ -412,7 +412,7 @@ let module IssuesJson = {
     };
 
   /** Write bug report in JSON format */
-  let pp_issues_of_error_log fmt error_filter _ file_opt procname err_log => {
+  let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname err_log => {
     let pp x => F.fprintf fmt x;
     let pp_row
         (_, node_key)
@@ -427,8 +427,8 @@ let module IssuesJson = {
         _
         eclass => {
       let source_file =
-        switch file_opt {
-        | Some file => file
+        switch proc_loc_opt {
+        | Some proc_loc => proc_loc.Location.file
         | None => loc.Location.file
         };
       if (in_footprint && error_filter source_file error_desc error_name) {
@@ -472,13 +472,40 @@ let module IssuesJson = {
   };
 };
 
+let module IssuesTests = {
+  /** Write bug report in a format suitable for tests on analysis results. */
+  let pp_issues_of_error_log fmt error_filter _ proc_loc_opt proc_name err_log => {
+    let pp_row _ loc _ _ in_footprint error_name error_desc _ _ _ _ => {
+      let (source_file, line_offset) =
+        switch proc_loc_opt {
+        | Some proc_loc =>
+          let line_offset = loc.Location.line - proc_loc.Location.line;
+          (proc_loc.Location.file, line_offset)
+        | None => (loc.Location.file, 0)
+        };
+      if (in_footprint && error_filter source_file error_desc error_name) {
+        F.fprintf
+          fmt
+          "%s, %a, %d, %a@."
+          (DB.source_file_to_string source_file)
+          Procname.pp
+          proc_name
+          line_offset
+          Localise.pp
+          error_name
+      }
+    };
+    Errlog.iter pp_row err_log
+  };
+};
+
 let module IssuesTxt = {
   /** Write bug report in text format */
-  let pp_issues_of_error_log fmt error_filter _ file_opt _ err_log => {
+  let pp_issues_of_error_log fmt error_filter _ proc_loc_opt _ err_log => {
     let pp_row (node_id, node_key) loc _ ekind in_footprint error_name error_desc _ _ _ _ => {
       let source_file =
-        switch file_opt {
-        | Some file => file
+        switch proc_loc_opt {
+        | Some proc_loc => proc_loc.Location.file
         | None => loc.Location.file
         };
       if (in_footprint && error_filter source_file error_desc error_name) {
@@ -528,7 +555,7 @@ let module IssuesXml = {
   };
 
   /** print issues from summary in xml */
-  let pp_issues_of_error_log fmt error_filter linereader file_opt proc_name err_log => {
+  let pp_issues_of_error_log fmt error_filter linereader proc_loc_opt proc_name err_log => {
     let do_row
         (_, node_key)
         loc
@@ -542,8 +569,8 @@ let module IssuesXml = {
         pre_opt
         eclass => {
       let source_file =
-        switch file_opt {
-        | Some file => file
+        switch proc_loc_opt {
+        | Some proc_loc => proc_loc.Location.file
         | None => loc.Location.file
         };
       if (in_footprint && error_filter source_file error_desc error_name) {
@@ -932,67 +959,71 @@ let error_filter filters proc_name file error_desc error_name => {
 
 type report_kind = | Issues | Procs | Stats | Calls | Summary;
 
-type bug_format =
-  | Json of outfile | Csv of outfile | Text of outfile | Xml of outfile | Latex of outfile;
+type bug_format_kind = | Json | Csv | Tests | Text | Xml | Latex;
 
-let pp_issues_in_format format =>
-  switch format {
-  | Json outf => IssuesJson.pp_issues_of_error_log outf.fmt
-  | Csv outf => IssuesCsv.pp_issues_of_error_log outf.fmt
-  | Text outf => IssuesTxt.pp_issues_of_error_log outf.fmt
-  | Xml outf => IssuesXml.pp_issues_of_error_log outf.fmt
-  | Latex _ => failwith "Printing issues in latex is not implemented"
+type bug_format = (bug_format_kind, outfile);
+
+let pp_issues_in_format (format_kind, outf) =>
+  switch format_kind {
+  | Json => IssuesJson.pp_issues_of_error_log outf.fmt
+  | Csv => IssuesCsv.pp_issues_of_error_log outf.fmt
+  | Tests => IssuesTests.pp_issues_of_error_log outf.fmt
+  | Text => IssuesTxt.pp_issues_of_error_log outf.fmt
+  | Xml => IssuesXml.pp_issues_of_error_log outf.fmt
+  | Latex => failwith "Printing issues in latex is not implemented"
   };
 
-let pp_procs_in_format format =>
-  switch format {
-  | Csv outf => ProcsCsv.pp_summary outf.fmt
-  | Xml outf => ProcsXml.pp_proc outf.fmt
-  | Json _
-  | Latex _
-  | Text _ => failwith "Printing procs in json/latex/text is not implemented"
+let pp_procs_in_format (format_kind, outf) =>
+  switch format_kind {
+  | Csv => ProcsCsv.pp_summary outf.fmt
+  | Xml => ProcsXml.pp_proc outf.fmt
+  | Json
+  | Latex
+  | Tests
+  | Text => failwith "Printing procs in json/latex/tests/text is not implemented"
   };
 
-let pp_calls_in_format format =>
-  switch format {
-  | Csv outf => CallsCsv.pp_calls outf.fmt
-  | Json _
-  | Text _
-  | Xml _
-  | Latex _ => failwith "Printing calls in json/text/xml/latex is not implemented"
+let pp_calls_in_format (format_kind, outf) =>
+  switch format_kind {
+  | Csv => CallsCsv.pp_calls outf.fmt
+  | Json
+  | Tests
+  | Text
+  | Xml
+  | Latex => failwith "Printing calls in json/tests/text/xml/latex is not implemented"
   };
 
-let pp_stats_in_format format =>
-  switch format {
-  | Csv _ => Stats.process_summary
-  | Json _
-  | Text _
-  | Xml _
-  | Latex _ => failwith "Printing stats in json/text/xml/latex is not implemented"
+let pp_stats_in_format (format_kind, _) =>
+  switch format_kind {
+  | Csv => Stats.process_summary
+  | Json
+  | Tests
+  | Text
+  | Xml
+  | Latex => failwith "Printing stats in json/tests/text/xml/latex is not implemented"
   };
 
-let pp_summary_in_format format =>
-  switch format {
-  | Latex outfile => Summary.write_summary_latex outfile.fmt
-  | Json _
-  | Csv _
-  | Text _
-  | Xml _ => failwith "Printing summary in json/csv/text/xml is not implemented"
+let pp_summary_in_format (format_kind, outf) =>
+  switch format_kind {
+  | Latex => Summary.write_summary_latex outf.fmt
+  | Json
+  | Csv
+  | Tests
+  | Text
+  | Xml => failwith "Printing summary in json/csv/tests/text/xml is not implemented"
   };
 
-let pp_issues_of_error_log error_filter linereader file_opt procname err_log bug_format_list => {
-  let pp_issues_in_format format => {
-    let pp_issues = pp_issues_in_format format;
-    pp_issues error_filter linereader file_opt procname err_log
-  };
+let pp_issues_of_error_log error_filter linereader proc_loc_opt procname err_log bug_format_list => {
+  let pp_issues_in_format format =>
+    pp_issues_in_format format error_filter linereader proc_loc_opt procname err_log;
   IList.iter pp_issues_in_format bug_format_list
 };
 
 let pp_issues error_filter linereader summary bug_format_list => {
   let err_log = summary.Specs.attributes.ProcAttributes.err_log;
   let procname = Specs.get_proc_name summary;
-  let file = summary.Specs.attributes.ProcAttributes.loc.Location.file;
-  pp_issues_of_error_log error_filter linereader (Some file) procname err_log bug_format_list
+  let loc = summary.Specs.attributes.ProcAttributes.loc;
+  pp_issues_of_error_log error_filter linereader (Some loc) procname err_log bug_format_list
 };
 
 let pp_procs top_proc_set summary procs_format_list => {
@@ -1217,46 +1248,49 @@ let register_perf_stats_report () => {
   PerfStats.register_report_at_exit stats_file
 };
 
+let mk_format format_kind out_file => [(format_kind, out_file)];
+
 let init_issues_format_list () => {
-  let csv_format = Option.map_default (fun out_file => [Csv out_file]) [] Config.bugs_csv;
-  let json_format = Option.map_default (fun out_file => [Json out_file]) [] Config.bugs_json;
-  let txt_format = Option.map_default (fun out_file => [Text out_file]) [] Config.bugs_txt;
-  let xml_format = Option.map_default (fun out_file => [Xml out_file]) [] Config.bugs_xml;
-  csv_format @ json_format @ txt_format @ xml_format
+  let csv_format = Option.map_default (mk_format Csv) [] Config.bugs_csv;
+  let json_format = Option.map_default (mk_format Json) [] Config.bugs_json;
+  let tests_format = Option.map_default (mk_format Tests) [] Config.bugs_tests;
+  let txt_format = Option.map_default (mk_format Text) [] Config.bugs_txt;
+  let xml_format = Option.map_default (mk_format Xml) [] Config.bugs_xml;
+  csv_format @ json_format @ tests_format @ txt_format @ xml_format
 };
 
 let init_procs_format_list () => {
-  let csv_format = Option.map_default (fun out_file => [Csv out_file]) [] Config.procs_csv;
-  let xml_format = Option.map_default (fun out_file => [Xml out_file]) [] Config.procs_xml;
+  let csv_format = Option.map_default (mk_format Csv) [] Config.procs_csv;
+  let xml_format = Option.map_default (mk_format Xml) [] Config.procs_xml;
   csv_format @ xml_format
 };
 
 let init_calls_format_list () => {
-  let csv_format = Option.map_default (fun out_file => [Csv out_file]) [] Config.calls_csv;
+  let csv_format = Option.map_default (mk_format Csv) [] Config.calls_csv;
   csv_format
 };
 
 let init_stats_format_list () => {
-  let csv_format = Option.map_default (fun out_file => [Csv out_file]) [] Config.report;
+  let csv_format = Option.map_default (mk_format Csv) [] Config.report;
   csv_format
 };
 
 let init_summary_format_list () => {
-  let latex_format = Option.map_default (fun out_file => [Latex out_file]) [] Config.latex;
+  let latex_format = Option.map_default (mk_format Latex) [] Config.latex;
   latex_format
 };
 
 let init_files format_list_by_kind => {
   let init_files_of_report_kind (report_kind, format_list) => {
-    let init_files_of_format format =>
-      switch (format, report_kind) {
-      | (Csv outfile, Stats) => Report.pp_header outfile.fmt ()
-      | (Csv outfile, Issues) => IssuesCsv.pp_header outfile.fmt ()
-      | (Json outfile, Issues) => IssuesJson.pp_json_open outfile.fmt ()
-      | (Xml outfile, Issues) => IssuesXml.pp_issues_open outfile.fmt ()
-      | (Xml outfile, Procs) => ProcsXml.pp_procs_open outfile.fmt ()
-      | (Latex outfile, Summary) => begin_latex_file outfile.fmt
-      | _ => ()
+    let init_files_of_format (format_kind, outfile) =>
+      switch (format_kind, report_kind) {
+      | (Csv, Stats) => Report.pp_header outfile.fmt ()
+      | (Csv, Issues) => IssuesCsv.pp_header outfile.fmt ()
+      | (Json, Issues) => IssuesJson.pp_json_open outfile.fmt ()
+      | (Xml, Issues) => IssuesXml.pp_issues_open outfile.fmt ()
+      | (Xml, Procs) => ProcsXml.pp_procs_open outfile.fmt ()
+      | (Latex, Summary) => begin_latex_file outfile.fmt
+      | (Csv | Json | Latex | Tests | Text | Xml, _) => ()
       };
     IList.iter init_files_of_format format_list
   };
@@ -1265,31 +1299,24 @@ let init_files format_list_by_kind => {
 
 let finalize_and_close_files format_list_by_kind stats pdflatex => {
   let close_files_of_report_kind (report_kind, format_list) => {
-    let close_files_of_format format =>
-      switch (format, report_kind) {
-      | (Csv outfile, Stats) =>
-        F.fprintf outfile.fmt "%a@?" Report.pp_stats stats;
-        close_outf outfile
-      | (Csv outfile, _)
-      | (Text outfile, _) => close_outf outfile
-      | (Json outfile, Issues) =>
-        IssuesJson.pp_json_close outfile.fmt ();
-        close_outf outfile
-      | (Xml outfile, Issues) =>
-        IssuesXml.pp_issues_close outfile.fmt ();
-        close_outf outfile
-      | (Xml outfile, Procs) =>
-        ProcsXml.pp_procs_close outfile.fmt ();
-        close_outf outfile
-      | (Latex outfile, Summary) =>
-        Latex.pp_end outfile.fmt ();
-        close_outf outfile;
+    let close_files_of_format (format_kind, outfile) => {
+      switch (format_kind, report_kind) {
+      | (Csv, Stats) => F.fprintf outfile.fmt "%a@?" Report.pp_stats stats
+      | (Json, Issues) => IssuesJson.pp_json_close outfile.fmt ()
+      | (Xml, Issues) => IssuesXml.pp_issues_close outfile.fmt ()
+      | (Xml, Procs) => ProcsXml.pp_procs_close outfile.fmt ()
+      | (Latex, Summary) => Latex.pp_end outfile.fmt ()
+      | (Csv | Latex | Tests | Text | Xml | Json, _) => ()
+      };
+      close_outf outfile;
+      if ((format_kind, report_kind) == (Latex, Summary)) {
         pdflatex outfile.fname;
         let pdf_name = Filename.chop_extension outfile.fname ^ ".pdf";
         ignore (Sys.command ("open " ^ pdf_name))
-      | _ => ()
-      };
-    IList.iter close_files_of_format format_list
+      }
+    };
+    IList.iter close_files_of_format format_list;
+    ()
   };
   IList.iter close_files_of_report_kind format_list_by_kind
 };

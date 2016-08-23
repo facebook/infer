@@ -154,6 +154,7 @@ val buck_build_args : string list
 val buck_out : string option
 val bugs_csv : outfile option
 val bugs_json : outfile option
+val bugs_tests : outfile option
 val bugs_txt : outfile option
 val bugs_xml : outfile option
 val changed_files_index : string option
