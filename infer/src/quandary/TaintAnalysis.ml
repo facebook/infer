@@ -246,3 +246,5 @@ module Make (TraceDomain : Trace.S) = struct
     let proc_data = ProcData.make proc_desc tenv formals in
     ignore (Analyzer.compute_post proc_data)
 end
+
+module Java = Make(JavaTrace)
