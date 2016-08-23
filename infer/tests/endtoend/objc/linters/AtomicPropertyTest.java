@@ -58,7 +58,8 @@ public class AtomicPropertyTest {
                 82,
                 86,
                 98,
-                99
+                99,
+                114
             }));
   }
 

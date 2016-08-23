@@ -108,4 +108,12 @@
   }
 }
 
+- (void)accessInBlock {
+  void (^b)();
+  b = ^() {
+    self->_f += 1;
+  };
+  b();
+}
+
 @end

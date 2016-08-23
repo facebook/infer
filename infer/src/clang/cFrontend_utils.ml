@@ -756,6 +756,10 @@ struct
     | ObjCMethodDecl (_, name_info, mdi) ->
         let class_name = Ast_utils.get_class_name_from_member name_info in
         get_objc_method_name name_info mdi class_name
+    | BlockDecl _ ->
+        let name = Config.anonymous_block_prefix ^ Config.anonymous_block_num_sep ^
+                   (string_of_int (get_fresh_block_index ())) in
+        Procname.mangled_objc_block name
     | _ -> assert false
 
 
