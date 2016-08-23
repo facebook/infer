@@ -96,7 +96,9 @@ let () =
           ["--infer_cache"; s]) @
       (match Config.stacktrace with None -> [] | Some s ->
           ["--stacktrace"; s]) @
-      "--multicore" :: (string_of_int Config.jobs) ::
+      "-j" :: (string_of_int Config.jobs) ::
+      (match Config.load_average with None -> [] | Some f ->
+          ["-l"; string_of_float f]) @
       (if not Config.pmd_xml then [] else
          ["--pmd-xml"]) @
       (if not Config.reactive_mode then [] else
