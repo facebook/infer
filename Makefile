@@ -125,13 +125,19 @@ check_missing_mli:
 	for x in `find infer/src -name "*.ml"`; do \
 		test -f "$$x"i || echo Missing "$$x"i; done'
 
-test: test_build ocaml_unit_test buck_test inferTraceBugs_test
+inferScriptMode_test: toplevel
+	INFER_REPL_BINARY=ocaml ./scripts/infer_repl ./infer/tests/repl/infer_batch_script.ml
+
+test: test_build ocaml_unit_test buck_test inferTraceBugs_test inferScriptMode_test
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot
 
 test_xml: test_build ocaml_unit_test buck_test_xml inferTraceBugs_test
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot
 
 quick-test: test_this_build ocaml_unit_test
+
+toplevel:
+	$(MAKE) -C $(SRC_DIR) toplevel
 
 uninstall:
 	$(REMOVE_DIR) $(DESTDIR)$(libdir)/infer/
@@ -274,7 +280,7 @@ conf-clean: clean
 
 .PHONY: all buck_test buck_test_xml clean clang_plugin clang_setup infer inferTraceBugs
 .PHONY: inferTraceBugs_test install ocaml_unit_test check_missing_mli src_build test test_xml
-.PHONY: test_build uninstall
+.PHONY: test_build toplevel uninstall
 
 
 # print any variable for Makefile debugging

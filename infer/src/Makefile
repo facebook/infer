@@ -169,7 +169,7 @@ INFER_CONFIG_TARGETS += $(INFERLLVM_MAIN).native
 DEPENDENCIES += llvm
 endif
 
-.PHONY: all infer init version sanitize clean
+.PHONY: all infer init version sanitize clean toplevel
 
 all: infer
 
@@ -250,6 +250,27 @@ mod_dep.dot: $(DEPENDENCIES_DIR)/ocamldot/ocamldot $(ml_src_files) $(re_src_file
 
 mod_dep.pdf: mod_dep.dot
 	dot -Tpdf -o mod_dep.pdf mod_dep.dot
+
+roots_grep_regex:=$(foreach root,$(roots),-e $(root)$$)
+dirs_find_regex:=$(foreach dir, $(DEPENDENCIES),-path "./$(dir)/*" -o)
+toplevel: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
+	# We need to pack all infer modules into another module to avoid name clashes
+	# with some of them coming from ocaml libraries (Ident for example).
+	# To do that, we generate .mlpack file with source files. Steps:
+	# 1. find all interesting .re and .ml files - they need to be in one of
+	#    directories listed in $(DEPENDENCIES)
+	# 2. remove './' from the beginning of each line
+	# 3. remove extension from all files
+	# 4. make first letter of filename uppercase to produce valid ocaml module
+	# 5. filter out root modules since they run code when loading the module.
+	find . \( -name "*.ml" -o -name "*.mly" -o -name "*.mll" -o -name "*.re" \) \
+		\( $(dirs_find_regex) -false \) \
+		-not \( -path "./unit/*" -o -path "./llvm/*" -o -path "./facebook/scripts/eradicate_stats.ml" \) \
+	| cut -c 3- \
+	| rev | cut -f 2- -d '.' | rev \
+	| awk 'BEGIN { FS = "/"; OFS = "/" } ; {$$NF=toupper(substr($$NF,1,1))substr($$NF,2); print $$0}' \
+	| grep -v $(roots_grep_regex) > toplevel.mlpack
+	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) toplevel.cmo
 
 define gen_atdgen_rules
 # generate files using atdgen

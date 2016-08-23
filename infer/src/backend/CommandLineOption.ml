@@ -17,7 +17,7 @@ module YBU = Yojson.Basic.Util
 
 (** Each command line option may appear in the --help list of any executable, these tags are used to
     specify which executables for which an option will be documented. *)
-type exe = Analyze | Clang | Java | Llvm | Print | StatsAggregator | Toplevel
+type exe = Analyze | Clang | Java | Llvm | Print | StatsAggregator | Toplevel | Interactive
 
 let exes = [
   ("InferAnalyze", Analyze);
@@ -27,13 +27,16 @@ let exes = [
   ("InferPrint", Print);
   ("InferStatsAggregator", StatsAggregator);
   ("infer", Toplevel);
+  ("interactive", Interactive);
 ]
 
 let all_exes = IList.map snd exes
 
 let current_exe =
-  try IList.assoc string_equal (Filename.basename Sys.executable_name) exes
-  with Not_found -> Toplevel
+  if !Sys.interactive then Interactive
+  else
+    try IList.assoc string_equal (Filename.basename Sys.executable_name) exes
+    with Not_found -> Toplevel
 
 
 type desc = {
@@ -442,7 +445,7 @@ let decode_env_to_argv env =
 
 let prepend_to_argv args =
   let cl_args = match Array.to_list Sys.argv with _ :: tl -> tl | [] -> [] in
-  (Sys.executable_name, args @ cl_args)
+  args @ cl_args
 
 (** [prefix_before_rest (prefix @ ["--" :: rest])] is [prefix] where "--" is not in [prefix]. *)
 let prefix_before_rest args =
@@ -553,7 +556,10 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var exe_u
       (try Unix.getenv "INFERCLANG_ARGS" with Not_found -> "") in
   let env_args = c_args @ env_args in
   (* end transitional support for INFERCLANG_ARGS *)
-  let exe_name, env_cl_args = prepend_to_argv env_args in
+  let exe_name = Sys.executable_name in
+  let env_cl_args = match current_exe with
+    | Interactive -> env_args
+    | _ -> prepend_to_argv env_args in
   let all_args = match config_file with
     | None -> env_cl_args
     | Some path ->
@@ -575,7 +581,7 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var exe_u
     | Arg.Bad usage_msg -> Pervasives.prerr_string usage_msg; exit 2
     | Arg.Help usage_msg -> Pervasives.print_string usage_msg; exit 0
   in
-  parse_loop () ;
+  parse_loop ();
   if not incomplete then
     Unix.putenv env_var (encode_argv_to_env (prefix_before_rest all_args)) ;
   curr_usage

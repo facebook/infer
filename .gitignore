@@ -87,6 +87,7 @@ buck-out/
 /infer/lib/specs/clean_models
 /scripts/checkCopyright
 /infer/etc/clang_ast.dict
+/infer/src/toplevel.mlpack
 
 #atdgen stubs
 /infer/src/backend/jsonbug_*
