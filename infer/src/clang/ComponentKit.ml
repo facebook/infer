@@ -80,7 +80,7 @@ let mutable_local_vars_advice context decl =
       let condition = context.CLintersContext.is_ck_translation_unit
                       && is_in_main_file decl
                       && (is_objc () || is_objcpp ())
-                      && (not (is_global_var decl))
+                      && (not (is_syntactically_global_var decl))
                       && (not qual_type.qt_is_const) in
       if condition then
         Some {

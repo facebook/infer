@@ -200,9 +200,9 @@ let global_var_init_with_calls_warning _ decl =
     match Clang_ast_proj.get_named_decl_tuple decl with
     | Some (di, ndi) -> di, ndi.ni_name
     | None -> assert false (* we cannot be here *) in
-  let condition = (CFrontend_utils.Ast_utils.is_objc () || CFrontend_utils.Ast_utils.is_objcpp ())
-                  && CFrontend_utils.Ast_utils.is_global_var decl
-                  && (not (CFrontend_utils.Ast_utils.is_const_expr_var decl))
+  let condition = (Ast_utils.is_objc () || Ast_utils.is_objcpp ())
+                  && Ast_utils.is_syntactically_global_var decl
+                  && (not (Ast_utils.is_const_expr_var decl))
                   && is_initialized_with_expensive_call decl in
   if condition then
     Some {

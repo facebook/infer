@@ -53,7 +53,7 @@ public class GlobalVarTest {
     assertThat(
         "Results should contain " + GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL,
         inferResults,
-        containsOnlyLines(new int[]{30, 32, 34, 52, 54, 56}));
+        containsOnlyLines(new int[]{30, 32, 34}));
   }
 
 }

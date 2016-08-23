@@ -409,9 +409,10 @@ struct
       let _, st_list = Clang_ast_proj.get_stmt_tuple st in
       IList.exists (exists_eventually_st atomic_pred param) st_list
 
-  let is_global_var decl =
+  let is_syntactically_global_var decl =
     match decl with
-    | Clang_ast_t.VarDecl (_, _ ,_, vdi) -> vdi.vdi_is_global
+    | Clang_ast_t.VarDecl (_, _ ,_, vdi) ->
+        vdi.vdi_is_global && not vdi.vdi_is_static_local
     | _ -> false
 
   let is_const_expr_var decl =

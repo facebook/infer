@@ -139,7 +139,7 @@ sig
   val exists_eventually_st : ('a -> Clang_ast_t.stmt -> bool) -> 'a -> Clang_ast_t.stmt -> bool
 
   (** true if a declaration is a global variable *)
-  val is_global_var : Clang_ast_t.decl -> bool
+  val is_syntactically_global_var : Clang_ast_t.decl -> bool
 
   (** true if a declaration is a constexpr variable *)
   val is_const_expr_var : Clang_ast_t.decl -> bool

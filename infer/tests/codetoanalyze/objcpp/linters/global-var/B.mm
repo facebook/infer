@@ -49,11 +49,11 @@ const int dmv = 17;
 constexpr double max1 = 1.4 * square(dmv); // OK
 
 void bla() {
-  static const int kInsets = foo(); // Error
+  static const int kInsets = foo(); // OK
 
-  static float kPadding = [A bar] ? 10.0 : 11.0; // Error
+  static float kPadding = [A bar] ? 10.0 : 11.0; // OK
 
-  static const float kLineSize = 1 / [A scale]; // Error
+  static const float kLineSize = 1 / [A scale]; // OK
 
   static const float ok = 37;
 }
