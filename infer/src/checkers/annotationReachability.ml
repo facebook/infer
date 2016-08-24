@@ -25,7 +25,7 @@ let src_snk_pairs () =
   let specs =
     [
       ([Annotations.performance_critical], Annotations.expensive);
-      ([Annotations.no_allocation], dummy_constructor_annot);
+      ([Annotations.no_allocation; Annotations.on_bind], dummy_constructor_annot);
     ] in
   IList.map
     (fun (src_annot_str_list, snk_annot_str) ->
@@ -202,14 +202,15 @@ let update_trace loc trace =
 let string_of_pname =
   Procname.to_simplified_string ~withclass:true
 
-let report_allocation_stack pname fst_call_loc trace stack_str constructor_pname call_loc =
+let report_allocation_stack
+    src_annot pname fst_call_loc trace stack_str constructor_pname call_loc =
   let final_trace = IList.rev (update_trace call_loc trace) in
   let constr_str = string_of_pname constructor_pname in
   let description =
     Printf.sprintf
       "Method `%s` annotated with `@%s` allocates `%s` via `%s%s`"
       (Procname.to_simplified_string pname)
-      Annotations.no_allocation
+      src_annot
       constr_str
       stack_str
       ("new "^constr_str) in
@@ -218,8 +219,8 @@ let report_allocation_stack pname fst_call_loc trace stack_str constructor_pname
   Reporting.log_error pname ~loc: (Some fst_call_loc) ~ltr: (Some final_trace) exn
 
 let report_annotation_stack src_annot snk_annot src_pname loc trace stack_str snk_pname call_loc =
-  if src_annot = Annotations.no_allocation
-  then report_allocation_stack src_pname loc trace stack_str snk_pname call_loc
+  if snk_annot = dummy_constructor_annot
+  then report_allocation_stack src_annot src_pname loc trace stack_str snk_pname call_loc
   else
     let final_trace = IList.rev (update_trace call_loc trace) in
     let exp_pname_str = string_of_pname snk_pname in

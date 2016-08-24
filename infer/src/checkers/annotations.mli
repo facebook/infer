@@ -16,6 +16,7 @@ val suppressLint : string
 val expensive : string
 val performance_critical : string
 val no_allocation : string
+val on_bind : string
 val suppress_warnings : string
 
 type annotation =
