@@ -19,6 +19,7 @@ module type Node = sig
 
   val kind : t -> Cfg.Node.nodekind
   val id : t -> id
+  val loc : t -> Location.t
   val underlying_id : t -> Cfg.Node.id
   val id_compare : id -> id -> int
   val pp_id : Format.formatter -> id -> unit

@@ -22,6 +22,7 @@ module MockNode = struct
   let instr_ids _ = []
   let to_instr_nodes _ = assert false
   let id n = n
+  let loc _ = assert false
   let underlying_id _ = assert false
   let kind _ = Cfg.Node.Stmt_node ""
   let id_compare = int_compare
