@@ -236,7 +236,7 @@ test_build: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_AT
 $(DEPENDENCIES_DIR)/ocamldot/ocamldot:
 	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot
 
-roots:=Infer Inferanalyze CMain JMain Inferprint
+roots:=Infer InferAnalyze CMain JMain InferPrint
 src_dirs:=$(shell find * -type d)
 ml_src_files:=$(shell find $(src_dirs) -regex '.*\.ml\(i\)*' -not -path facebook/scripts/eradicate_stats.ml)
 re_src_files:=$(shell find $(src_dirs) -regex '.*\.re\(i\)*')
