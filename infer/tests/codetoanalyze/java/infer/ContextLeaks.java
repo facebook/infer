@@ -9,6 +9,8 @@
 
 package codetoanalyze.java.infer;
 
+import java.lang.ref.WeakReference;
+
 import android.content.Context;
 import android.app.Activity;
 
@@ -88,6 +90,32 @@ public class ContextLeaks extends Activity {
 
   public Singleton singletonNoLeak() {
     return Singleton.getInstance(this.getApplicationContext());
+  }
+
+  // testing that we don't report on static field -> ... -> Context paths broken by weak refs
+  static WeakReference<Context> sDirectWeakReference;
+
+  static WeakReference<Obj> sIndirectWeakReference1;
+
+  static Obj sIndirectWeakReference2;
+
+  // sDirectWeakReference |-> WeakReference.referent |-> Context
+  public void directWeakReferenceOk() {
+    sDirectWeakReference = new WeakReference(this);
+  }
+
+  // sIndirectWeakReference1 |-> WeakReference.referent |-> Obj.f |-> Context
+  public void indirectWeakReferenceOk1() {
+    Obj obj = new Obj();
+    obj.f = this;
+    sIndirectWeakReference1 = new WeakReference(obj);
+  }
+
+  // sIndirectWeakReference2.|-> Obj.f |-> WeakReference.referent |-> Context
+  public void indirectWeakReferenceOk2() {
+    Obj obj = new Obj();
+    obj.f = new WeakReference(this);
+    sIndirectWeakReference2 = obj;
   }
 
 }
