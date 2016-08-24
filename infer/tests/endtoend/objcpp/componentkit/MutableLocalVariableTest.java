@@ -10,7 +10,7 @@
 package endtoend.objcpp.componentkit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsLineNumbers.containsLines;
+import static utils.matchers.ResultContainsLineNumbers.containsOnlyLines;
 import static utils.matchers.ResultContainsErrorInMethod.contains;
 
 import com.google.common.collect.ImmutableList;
@@ -51,7 +51,7 @@ public class MutableLocalVariableTest {
     assertThat(
         "Results should contain " + MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE,
         inferResults,
-        containsLines(new int[]{58, 69, 74, 76, 80, 85}));
+        containsOnlyLines(new int[]{58, 69, 74, 76, 80, 85, 103, 105}));
   }
 
   @Test

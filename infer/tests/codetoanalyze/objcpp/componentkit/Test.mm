@@ -92,3 +92,17 @@ typedef struct { int thisStructIsEmpty; } CKSize;
                                      size:{}]];
 }
 @end
+
+typedef struct { int a; } BarStruct;
+
+@interface BarComponent : CKCompositeComponent
+@end
+@implementation BarComponent
++ (instancetype) new {
+  // C++ structs
+  BarStruct s1; // error
+  const BarStruct& s2 = s1; // no error
+  BarStruct& s3 = s1; // error
+  const BarStruct s4 = {.a = 3}; // no error
+}
+@end

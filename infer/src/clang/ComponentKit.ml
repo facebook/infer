@@ -77,11 +77,16 @@ let mutable_local_vars_advice context decl =
   let open CFrontend_utils.Ast_utils in
   match decl with
   | Clang_ast_t.VarDecl(decl_info, _, qual_type, _) ->
+      let is_const_ref = match Ast_utils.get_type qual_type.qt_type_ptr with
+        | Some LValueReferenceType (_, {Clang_ast_t.qt_is_const}) ->
+            qt_is_const
+        | _ -> false in
+      let is_const = qual_type.qt_is_const || is_const_ref in
       let condition = context.CLintersContext.is_ck_translation_unit
                       && is_in_main_file decl
                       && (is_objc () || is_objcpp ())
                       && (not (is_syntactically_global_var decl))
-                      && (not qual_type.qt_is_const) in
+                      && (not is_const) in
       if condition then
         Some {
           CIssue.issue = CIssue.Mutable_local_variable_in_component_file;
