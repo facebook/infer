@@ -20,6 +20,7 @@ module type S = sig
 
   val compare : t -> t -> int
   val equal : t -> t -> bool
+  val pp_kind : F.formatter -> kind -> unit
   val pp : F.formatter -> t -> unit
 
   module Set : PrettyPrintable.PPSet with type elt = t

@@ -82,10 +82,13 @@ module JavaSource = struct
   let equal t1 t2 =
     compare t1 t2 = 0
 
-  let pp fmt s = match s.kind with
-    | SharedPreferences -> F.fprintf fmt "SharedPreferences(%a)" CallSite.pp s.site
-    | Footprint ap -> F.fprintf fmt "Footprint(%a)" AccessPath.pp ap
-    | Other -> F.fprintf fmt "Other(%a)" CallSite.pp s.site
+  let pp_kind fmt (kind : kind) = match kind with
+    | SharedPreferences -> F.fprintf fmt "SharedPreferences"
+    | SourceKind.Footprint ap -> F.fprintf fmt "Footprint[%a]" AccessPath.pp ap
+    | SourceKind.Other -> F.fprintf fmt "Other"
+
+  let pp fmt s =
+    F.fprintf fmt "%a(%a)" pp_kind s.kind CallSite.pp s.site
 
   module Set = PrettyPrintable.MakePPSet(struct
       type nonrec t = t
@@ -154,9 +157,12 @@ module JavaSink = struct
   let equal t1 t2 =
     compare t1 t2 = 0
 
-  let pp fmt s = match s.kind with
-    | Logging -> F.fprintf fmt "Logging(%a)" CallSite.pp s.site
-    | Other -> F.fprintf fmt "%a" CallSite.pp s.site
+  let pp_kind fmt (kind : kind) = match kind with
+    | Logging -> F.fprintf fmt "Logging"
+    | Other -> F.fprintf fmt "Other"
+
+  let pp fmt s =
+    F.fprintf fmt "%a(%a)" pp_kind s.kind CallSite.pp s.site
 
   module Set = PrettyPrintable.MakePPSet(struct
       type nonrec t = t

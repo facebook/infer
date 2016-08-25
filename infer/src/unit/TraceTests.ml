@@ -35,9 +35,11 @@ module MockTraceElem = struct
   let equal t1 t2 =
     compare t1 t2 = 0
 
-  let pp fmt = function
+  let pp_kind fmt = function
     | Kind1 -> F.fprintf fmt "Kind1"
     | Kind2 -> F.fprintf fmt "Kind2"
+
+  let pp = pp_kind
 
   module Set = PrettyPrintable.MakePPSet(struct
       type nonrec t = t

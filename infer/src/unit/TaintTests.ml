@@ -21,6 +21,7 @@ module MockTrace = Trace.Make(struct
       let compare = CallSite.compare
       let equal = CallSite.equal
       let pp = CallSite.pp
+      let pp_kind _ _ = assert false
 
       let to_callee t _ = t
 
