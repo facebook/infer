@@ -77,6 +77,13 @@ struct __dirstream {
 };
 #endif
 
+// this condition checks whether to use C++ const-overloads of C functions
+// for example strchr.
+#if defined(__CORRECT_ISO_CPP_STRING_H_PROTO) || \
+    defined(_LIBCPP_PREFERRED_OVERLOAD)
+#define INFER_USE_CPP_CONST_OVERLOAD
+#endif
+
 // modelling of errno
 // errno expands to different function calls on mac or other systems
 // the function call returns the address of a global variable called "errno"
@@ -131,7 +138,7 @@ char* strcat(char* s1, const char* s2) {
 
 // The string s must be allocated
 // nondeterministically return 0 or a pointer inside the buffer
-#ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
+#ifndef INFER_USE_CPP_CONST_OVERLOAD
 char* strchr(const char* s, int c) {
 #else
 // This overload is commented out on purpose.
@@ -160,7 +167,7 @@ char* strchr(char* s, int c) throw() {
 }
 
 // modelled like strchr
-#ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
+#ifndef INFER_USE_CPP_CONST_OVERLOAD
 char* strrchr(const char* s, int c) { return strchr(s, c); }
 #else
 // This overload is commented out on purpose. Look at strchr() for more info.
@@ -242,7 +249,7 @@ char* strncpy(char* s1, const char* s2, size_t n) {
   return s1;
 }
 
-#ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
+#ifndef INFER_USE_CPP_CONST_OVERLOAD
 char* strpbrk(const char* s1, const char* s2) {
 #else
 // This overload is commented out on purpose. Look at strchr() for more info.
@@ -279,7 +286,7 @@ size_t strspn(const char* s1, const char* s2) {
   return res;
 }
 
-#ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
+#ifndef INFER_USE_CPP_CONST_OVERLOAD
 char* strstr(const char* s1, const char* s2) {
 #else
 // This overload is commented out on purpose. Look at strchr() for more info.
@@ -343,7 +350,7 @@ char* strupr(char* s) {
 // the array s must be allocated
 // n should not be greater than the size of s
 // nondeterministically return 0 or a pointer within the first n elements of s
-#ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
+#ifndef INFER_USE_CPP_CONST_OVERLOAD
 void* memchr(const void* s, int c, size_t n) {
 #else
 // This overload is commented out on purpose. Look at strchr() for more info.

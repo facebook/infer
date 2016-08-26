@@ -13,7 +13,7 @@ CLANG_COMPILER="${SCRIPT_DIR}/../../../facebook-clang-plugins/clang/install/bin/
 # path to infer's clang internal headers.
 CLANG_INCLUDE_TO_REPLACE="${FCP_CLANG_INCLUDE_TO_REPLACE}"
 
-CLANG_LIB_INCLUDE="${SCRIPT_DIR}/../../../facebook-clang-plugins/clang/install/lib/clang/3.8.0/include"
+CLANG_LIB_INCLUDE="${SCRIPT_DIR}/../../../facebook-clang-plugins/clang/install/lib/clang/4.0.0/include"
 
 if [ "${0%++}" != "$0" ]; then XX="++"; else XX=""; fi
 

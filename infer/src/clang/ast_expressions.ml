@@ -566,7 +566,8 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
     let unary_op = Clang_ast_t.UnaryOperator (fresh_stmt_info stmt_info, [stop_cast], ei, { Clang_ast_t.uoi_kind = `Deref; uoi_is_postfix = true }) in
     let cond = create_implicit_cast_expr (fresh_stmt_info stmt_info) [unary_op] bool_tp `LValueToRValue in
     let break_stmt = Clang_ast_t.BreakStmt (fresh_stmt_info stmt_info, []) in
-    Clang_ast_t.IfStmt (fresh_stmt_info stmt_info, [dummy_stmt (); cond; break_stmt; dummy_stmt ()]) in
+    Clang_ast_t.IfStmt
+      (fresh_stmt_info stmt_info, [dummy_stmt(); dummy_stmt (); cond; break_stmt; dummy_stmt ()]) in
 
   let translate params array_cast_decl_ref_exp block_decl block_tp =
     match params with

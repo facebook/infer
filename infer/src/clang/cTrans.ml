@@ -1327,7 +1327,7 @@ struct
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
       IList.iter (fun n -> Cfg.Node.set_succs_exn context.cfg n nodes_branch []) prune_nodes' in
     (match stmt_list with
-     | [decl_stmt; cond; stmt1; stmt2] ->
+     | [_; decl_stmt; cond; stmt1; stmt2] ->
          (* set the flat to inform that we are translating a condition of a if *)
          let continuation' = mk_cond_continuation trans_state.continuation in
          let trans_state'' = { trans_state with
@@ -1353,7 +1353,7 @@ struct
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let open Clang_ast_t in
     match switch_stmt_list with
-    | [decl_stmt; cond; CompoundStmt(stmt_info, stmt_list)] ->
+    | [_; decl_stmt; cond; CompoundStmt(stmt_info, stmt_list)] ->
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
         let trans_state' ={ trans_state_pri with succ_nodes = []} in
         let res_trans_cond_tmp = instruction trans_state' cond in
@@ -1598,11 +1598,12 @@ struct
   and cxxForRangeStmt_trans trans_state stmt_info stmt_list =
     let open Clang_ast_t in
     match stmt_list with
-    | [iterator_decl; initial_cond; exit_cond; increment; assign_current_index; loop_body] ->
+    | [iterator_decl; begin_stmt; end_stmt; exit_cond; increment; assign_current_index; loop_body] ->
         let loop_body' = CompoundStmt (stmt_info, [assign_current_index; loop_body]) in
         let null_stmt = NullStmt (stmt_info, []) in
+        let beginend_stmt = CompoundStmt (stmt_info, [begin_stmt; end_stmt]) in
         let for_loop =
-          ForStmt (stmt_info, [initial_cond; null_stmt; exit_cond; increment; loop_body']) in
+          ForStmt (stmt_info, [beginend_stmt; null_stmt; exit_cond; increment; loop_body']) in
         instruction trans_state (CompoundStmt (stmt_info, [iterator_decl; for_loop]))
     | _ -> assert false
 

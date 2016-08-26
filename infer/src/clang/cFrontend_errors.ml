@@ -135,7 +135,7 @@ let run_frontend_checkers_on_stmt context cfg cg instr =
       invoke_set_of_checkers call_captured_vars_checker context cfg cg key
         captured_vars_checker_list;
       context
-  | IfStmt (stmt_info, _ :: cond :: _) ->
+  | IfStmt (stmt_info, _ :: _ :: cond :: _) ->
       let call_checker = checker_for_if_stmt stmt_info [cond] in
       let key = Ast_utils.generate_key_stmt cond in
       invoke_set_of_checkers call_checker context cfg cg key if_stmt_checker_list;
