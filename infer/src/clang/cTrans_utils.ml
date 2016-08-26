@@ -467,6 +467,17 @@ let trans_builtin_expect params_trans_res =
   | [_; fst_arg_res; _] -> Some fst_arg_res
   | _ -> None
 
+let trans_replace_with_deref_first_arg sil_loc params_trans_res ~cxx_method_call =
+  let first_arg_res_trans = match params_trans_res with
+    | _ :: fst_arg_res :: _ when not cxx_method_call -> fst_arg_res
+    | ({exps= _method_exp :: this_exp} as fst_arg_res) :: _ when cxx_method_call ->
+        (* method_deref_trans uses different format to store first argument - it stores
+           two things in exps: [method_exp; this_exp].
+           We need to get rid of first exp before calling dereference_value_from_result *)
+        { fst_arg_res with exps = this_exp }
+    | _ -> assert false in
+  dereference_value_from_result sil_loc first_arg_res_trans ~strip_pointer:true
+
 let builtin_trans trans_state loc stmt_info function_type params_trans_res pname =
   if CTrans_models.is_cf_non_null_alloc pname ||
      CTrans_models.is_alloc_model function_type pname then
@@ -477,11 +488,15 @@ let builtin_trans trans_state loc stmt_info function_type params_trans_res pname
     Some (trans_assertion trans_state loc)
   else if CTrans_models.is_builtin_expect pname then
     trans_builtin_expect params_trans_res
+  else if CTrans_models.is_replace_with_deref_first_arg pname then
+    Some (trans_replace_with_deref_first_arg loc params_trans_res ~cxx_method_call:false)
   else None
 
-let cxx_method_builtin_trans trans_state loc pname =
+let cxx_method_builtin_trans trans_state loc params_trans_res pname =
   if CTrans_models.is_assert_log pname then
     Some (trans_assertion trans_state loc)
+  else if CTrans_models.is_replace_with_deref_first_arg pname then
+    Some (trans_replace_with_deref_first_arg loc params_trans_res ~cxx_method_call:true)
   else
     None
 

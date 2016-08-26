@@ -441,6 +441,29 @@ struct
     let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
 
+  let get_builtin_pname_opt name decl_opt =
+    let get_deprecated_attr_arg decl =
+      let open Clang_ast_t in
+      let decl_info = Clang_ast_proj.get_decl_tuple decl in
+      let get_attr_opt = function DeprecatedAttr a -> Some a | _ -> None in
+      match IList.find_map_opt get_attr_opt decl_info.di_attributes with
+      | Some attribute_info ->
+          (match attribute_info.ai_parameters with
+           | [_; arg; _] -> Some arg
+           | _ ->
+               (* it's not supposed to happen due to hardcoded exporting logic
+                  coming from ASTExporter.h in facebook-clang-plugins *)
+               assert false)
+      | None -> None in
+    let function_attr_opt = Option.map_default get_deprecated_attr_arg None decl_opt in
+    match function_attr_opt with
+    | Some attr when CTrans_models.is_modeled_attribute attr ->
+        Some (Procname.from_string_c_fun attr)
+    | _ when CTrans_models.is_modeled_builtin name ->
+        Some (Procname.from_string_c_fun (CFrontend_config.infer ^ name))
+    | _ -> None
+
+
   let function_deref_trans trans_state decl_ref =
     let open CContext in
     let context = trans_state.context in
@@ -449,10 +472,9 @@ struct
     Option.may (call_translation context) decl_opt;
     let name = Ast_utils.get_qualified_name name_info in
     let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
-    let pname =
-      if CTrans_models.is_modeled_builtin name then
-        Procname.from_string_c_fun (CFrontend_config.infer ^ name)
-      else CMethod_trans.create_procdesc_with_pointer context decl_ptr None name in
+    let pname = match get_builtin_pname_opt name decl_opt with
+      | Some builtin_pname -> builtin_pname
+      | None -> CMethod_trans.create_procdesc_with_pointer context decl_ptr None name in
     let address_of_function = not context.CContext.is_callee_expression in
     (* If we are not translating a callee expression, *)
     (* then the address of the function is being taken.*)
@@ -551,10 +573,17 @@ struct
         [], [] in
     (* consider using context.CContext.is_callee_expression to deal with pointers to methods? *)
     (* unlike field access, for method calls there is no need to expand class type *)
-    let pname = CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_name)
-        method_name in
+
+    (* use qualified method name for builtin matching, but use unqualified name elsewhere *)
+    let qual_method_name = Ast_utils.get_qualified_name name_info in
+    let pname = match get_builtin_pname_opt qual_method_name decl_opt with
+      | Some builtin_pname -> builtin_pname
+      | None ->
+          let pname = CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_name)
+              method_name in
+          Cfg.set_procname_priority context.CContext.cfg pname;
+          pname in
     let method_exp = (Exp.Const (Const.Cfun pname), method_typ) in
-    Cfg.set_procname_priority context.CContext.cfg pname;
     { pre_trans_result with
       is_cpp_call_virtual = is_cpp_virtual;
       exps = [method_exp] @ extra_exps;
@@ -925,7 +954,7 @@ struct
       result_trans_callee :: res_trans_p in
     (* first expr is method address, rest are params including 'this' parameter *)
     let actual_params = IList.tl (collect_exprs result_trans_subexprs) in
-    match cxx_method_builtin_trans trans_state_pri sil_loc callee_pname with
+    match cxx_method_builtin_trans trans_state_pri sil_loc result_trans_subexprs callee_pname with
     | Some builtin -> builtin
     | _ ->
         let call_flags = {

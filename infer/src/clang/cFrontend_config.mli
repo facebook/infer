@@ -73,7 +73,8 @@ val static : string
 val string_with_utf8_m : string
 val this : string
 val void : string
-
+val replace_with_deref_first_arg_attr : string
+val modeled_function_attributes : string list
 
 
 (** Global state *)
@@ -93,4 +94,3 @@ val pointer_type_index : Clang_ast_t.c_type Clang_ast_main.PointerMap.t ref
 (** Map from type pointers (clang pointers and types created later by frontend) to sil types
     Populated during frontend execution when new type is found *)
 val sil_types_map : (Typ.t Clang_ast_types.TypePointerMap.t) ref
-

@@ -240,13 +240,17 @@ class shared_ptr : public std__shared_ptr<T> {
   }
 
   // observers:
-
-  T* get() const noexcept { return model_get(__cast_to_infer_ptr(this)); }
-  typename add_lvalue_reference<T>::type operator*() const noexcept {
-    return *model_get(__cast_to_infer_ptr(this));
+  T* get() const noexcept __attribute__((deprecated(
+      "__infer_replace_with_deref_first_arg"))) { /* return
+                                        model_get(__cast_to_infer_ptr(this)); */
   }
-  T* operator->() const noexcept {
-    return model_get(__cast_to_infer_ptr(this));
+  typename std::add_lvalue_reference<T>::type operator*() const noexcept
+      __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {
+    /*return *model_get(__cast_to_infer_ptr(this));*/
+  }
+  T* operator->() const noexcept
+      __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {
+    /*return model_get(__cast_to_infer_ptr(this));*/
   }
   long use_count() const noexcept { return 2; /* FIXME */ }
   bool unique() const noexcept { return use_count() == 1; /* FIXME */ }

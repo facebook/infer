@@ -31,7 +31,10 @@ let is_builtin_expect pname =
   Procname.to_string pname = CFrontend_config.builtin_expect
 
 let is_builtin_object_size pname =
-  (Procname.to_string pname) == CFrontend_config.builtin_object_size
+  (Procname.to_string pname) = CFrontend_config.builtin_object_size
+
+let is_replace_with_deref_first_arg pname =
+  (Procname.to_string pname) = CFrontend_config.replace_with_deref_first_arg_attr
 
 let rec get_func_type_from_stmt stmt =
   match stmt with
@@ -71,6 +74,9 @@ let get_builtinname method_name =
 
 let is_modeled_builtin funct =
   funct = CFrontend_config.builtin_memset_chk
+
+let is_modeled_attribute attr_name =
+  IList.mem string_equal attr_name CFrontend_config.modeled_function_attributes
 
 let is_assert_log_s funct =
   funct = CFrontend_config.assert_rtn ||

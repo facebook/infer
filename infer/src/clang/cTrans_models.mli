@@ -19,6 +19,8 @@ val is_builtin_expect : Procname.t -> bool
 
 val is_builtin_object_size : Procname.t -> bool
 
+val is_replace_with_deref_first_arg : Procname.t -> bool
+
 val is_objc_memory_model_controlled : string -> bool
 
 val builtin_predefined_model : Clang_ast_t.stmt -> Procname.t option -> Procname.t option * bool
@@ -28,6 +30,8 @@ val is_assert_log : Procname.t -> bool
 val is_handleFailureInMethod : string -> bool
 
 val is_modeled_builtin : string -> bool
+
+val is_modeled_attribute : string -> bool
 
 val is_toll_free_bridging : Procname.t -> bool
 

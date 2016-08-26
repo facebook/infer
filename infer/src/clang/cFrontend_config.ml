@@ -73,7 +73,8 @@ let static = "static"
 let string_with_utf8_m = "stringWithUTF8String:"
 let this = "this"
 let void = "void"
-
+let replace_with_deref_first_arg_attr = "__infer_replace_with_deref_first_arg"
+let modeled_function_attributes = [replace_with_deref_first_arg_attr]
 
 (** Global state *)
 

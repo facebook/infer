@@ -35,4 +35,9 @@ public class AttributesTest {
     frontendTest("clang_fallthrough.cpp");
   }
 
+    @Test
+    public void testDeprecatedHackDotFilesMatch()
+        throws InterruptedException, IOException, InferException {
+      frontendTest("deprecated_hack.cpp");
+    }
 }

@@ -101,8 +101,8 @@ val get_decl_ref_info : Clang_ast_t.stmt -> Clang_ast_t.decl_ref
 val builtin_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
   Typ.t -> trans_result list -> Procname.t -> trans_result option
 
-val cxx_method_builtin_trans : trans_state -> Location.t -> Procname.t ->
-  trans_result option
+val cxx_method_builtin_trans : trans_state -> Location.t -> trans_result list ->
+  Procname.t -> trans_result option
 
 val alloc_trans :
   trans_state -> Location.t -> Clang_ast_t.stmt_info -> Typ.t -> bool ->
