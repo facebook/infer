@@ -84,8 +84,8 @@ module JavaSource = struct
 
   let pp_kind fmt (kind : kind) = match kind with
     | SharedPreferences -> F.fprintf fmt "SharedPreferences"
-    | SourceKind.Footprint ap -> F.fprintf fmt "Footprint[%a]" AccessPath.pp ap
-    | SourceKind.Other -> F.fprintf fmt "Other"
+    | Footprint ap -> F.fprintf fmt "Footprint[%a]" AccessPath.pp ap
+    | Other -> F.fprintf fmt "Other"
 
   let pp fmt s =
     F.fprintf fmt "%a(%a)" pp_kind s.kind CallSite.pp s.site
