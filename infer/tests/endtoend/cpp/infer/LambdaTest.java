@@ -50,6 +50,7 @@ public class LambdaTest {
     String[] procedures = {
         "bar",
         "foo",
+        "foo::lambda_infer_tests_codetoanalyze_cpp_frontend_lambda_lambda1.cpp:19:17_operator()",
     };
     InferResults inferResults = InferRunner.runInferCPP(inferCmd);
     assertThat(

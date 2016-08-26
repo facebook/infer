@@ -225,10 +225,13 @@ struct
             | None -> ())
        | _ -> ());
     match dec with
-    (* Currently C/C++ record decl treated in the same way *)
-    | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _)
-    | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
-    | RecordDecl (_, _, _, _, decl_list, _, _) ->
+    (* Note that C and C++ records are treated the same way
+       Skip translating implicit struct declarations, unless they have
+       full definition (which happens with C++ lambdas) *)
+    | ClassTemplateSpecializationDecl (di, _, _, _, decl_list, _, rdi, _, _)
+    | CXXRecordDecl (di, _, _, _, decl_list, _, rdi, _)
+    | RecordDecl (di, _, _, _, decl_list, _, rdi)
+      when (not di.di_is_implicit) || rdi.rdi_is_complete_definition ->
         let is_method_decl decl = match decl with
           | CXXMethodDecl _ | CXXConstructorDecl _ | CXXConversionDecl _
           | CXXDestructorDecl _ | FunctionTemplateDecl _ ->

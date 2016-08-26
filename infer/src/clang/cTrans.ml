@@ -902,7 +902,7 @@ struct
         { res_trans_to_parent with exps = res_trans_call.exps }
 
   and cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt
-      si function_type is_cpp_call_virtual =
+      si function_type is_cpp_call_virtual extra_res_trans =
     let open CContext in
     let context = trans_state_pri.context in
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
@@ -935,12 +935,11 @@ struct
         let res_trans_call = create_call_instr trans_state_pri function_type sil_method
             actual_params sil_loc call_flags ~is_objc_method:false in
         let nname = "Call " ^ (Sil.exp_to_string sil_method) in
-        let all_res_trans = result_trans_subexprs @ [res_trans_call] in
+        let all_res_trans = result_trans_subexprs @ [res_trans_call; extra_res_trans] in
         let result_trans_to_parent =
           PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans in
         Cg.add_edge context.CContext.cg procname callee_pname;
         { result_trans_to_parent with exps = res_trans_call.exps }
-
 
   and cxxMemberCallExpr_trans trans_state si stmt_list expr_info =
     let context = trans_state.context in
@@ -959,11 +958,12 @@ struct
     let fn_type_no_ref = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let function_type = add_reference_if_glvalue fn_type_no_ref expr_info in
     cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt
-      si function_type is_cpp_call_virtual
+      si function_type is_cpp_call_virtual empty_res_trans
 
   and cxxConstructExpr_trans trans_state si params_stmt ei cxx_constr_info =
     let context = trans_state.context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
+    let sil_loc = CLocation.get_sil_location si context in
     let decl_ref = cxx_constr_info.Clang_ast_t.xcei_decl_ref in
     let var_exp, class_type = match trans_state.var_exp_typ with
       | Some exp_typ -> exp_typ
@@ -978,11 +978,19 @@ struct
                            exps = [(var_exp, this_type)];
                            initd_exps = [var_exp];
                          } in
+    let tmp_res_trans = { empty_res_trans with exps = [(var_exp, class_type)] } in
+    (* When class type is translated as pointer (std::shared_ptr for example), there needs
+       to be extra Load instruction before returning the trans_result of constructorExpr.
+       There is no LValueToRvalue cast in the AST afterwards since clang doesn't know
+       that class type is translated as pointer type. It gets added here instead. *)
+    let extra_res_trans = match class_type with
+      | Typ.Tptr _ -> dereference_value_from_result sil_loc tmp_res_trans ~strip_pointer:false
+      | _ -> tmp_res_trans in
     let res_trans_callee = decl_ref_trans trans_state this_res_trans si decl_ref
         ~is_constructor_init:false in
     let res_trans = cxx_method_construct_call_trans trans_state_pri res_trans_callee
-        params_stmt si Typ.Tvoid false in
-    { res_trans with exps = [(var_exp, class_type)] }
+        params_stmt si Typ.Tvoid false extra_res_trans in
+    { res_trans with exps=extra_res_trans.exps }
 
   and cxx_destructor_call_trans trans_state si this_res_trans class_type_ptr =
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
@@ -990,7 +998,7 @@ struct
     let is_cpp_call_virtual = res_trans_callee.is_cpp_call_virtual in
     if res_trans_callee.exps <> [] then
       cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si Typ.Tvoid
-        is_cpp_call_virtual
+        is_cpp_call_virtual empty_res_trans
     else empty_res_trans
 
   and objCMessageExpr_trans_special_cases trans_state si obj_c_message_expr_info

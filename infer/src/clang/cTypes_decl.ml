@@ -147,6 +147,25 @@ let add_struct_to_tenv tenv typ =
   let typename = Typename.TN_csu(csu, mangled) in
   Tenv.add tenv typename struct_typ
 
+let get_translate_as_friend_decl decl_list =
+  let is_translate_as_friend_name (_, name_info) =
+    let translate_as_str = "infer_traits::TranslateAsType" in
+    string_contains translate_as_str (Ast_utils.get_qualified_name name_info) in
+  let get_friend_decl_opt (decl : Clang_ast_t.decl) = match decl with
+    | FriendDecl (_, `Type type_ptr) -> Ast_utils.get_decl_from_typ_ptr type_ptr
+    | _ -> None in
+  let is_translate_as_friend_decl decl =
+    match get_friend_decl_opt decl with
+    | Some decl ->
+        let named_decl_tuple_opt = Clang_ast_proj.get_named_decl_tuple decl in
+        Option.map_default is_translate_as_friend_name false named_decl_tuple_opt
+    | None -> false in
+  match get_friend_decl_opt (IList.find is_translate_as_friend_decl decl_list) with
+  | Some (Clang_ast_t.ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, _, [`Type t_ptr])) ->
+      Some t_ptr
+  | _ -> None
+  | exception Not_found -> None
+
 let rec get_struct_fields tenv decl =
   let open Clang_ast_t in
   let decl_list = match decl with
@@ -166,7 +185,20 @@ let rec get_struct_fields tenv decl =
   IList.flatten (base_class_fields @ (IList.map do_one_decl decl_list))
 
 (* For a record declaration it returns/constructs the type *)
-and get_struct_cpp_class_declaration_type tenv decl =
+and get_record_declaration_type tenv decl =
+  match get_record_custom_type tenv decl with
+  | Some t -> t
+  | None -> get_record_declaration_struct_type tenv decl
+
+and get_record_custom_type tenv decl =
+  let open Clang_ast_t in
+  match decl with
+  | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _)
+  | CXXRecordDecl (_, _, _, _, decl_list, _, _, _) ->
+      Option.map (type_ptr_to_sil_type tenv) (get_translate_as_friend_decl decl_list)
+  | _ -> None
+
+and get_record_declaration_struct_type tenv decl =
   let open Clang_ast_t in
   match decl with
   | ClassTemplateSpecializationDecl (_, _, _, type_ptr, decl_list, _, record_decl_info, _, _)
@@ -231,7 +263,7 @@ and add_types_from_decl_to_tenv tenv decl =
   let open Clang_ast_t in
   match decl with
   | ClassTemplateSpecializationDecl _ | CXXRecordDecl _ | RecordDecl _ ->
-      get_struct_cpp_class_declaration_type tenv decl
+      get_record_declaration_type tenv decl
   | ObjCInterfaceDecl _ -> ObjcInterface_decl.interface_declaration type_ptr_to_sil_type tenv decl
   | ObjCImplementationDecl _ ->
       ObjcInterface_decl.interface_impl_declaration type_ptr_to_sil_type tenv decl
