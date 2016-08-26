@@ -352,9 +352,9 @@ let patterns_of_json_with_key json_key json =
 
 (** The working directory of the initial invocation of infer, to which paths passed as command line
     options are relative. *)
-let init_work_dir =
+let init_work_dir, is_originator =
   try
-    Sys.getenv "INFER_CWD"
+    (Sys.getenv "INFER_CWD", false)
   with Not_found ->
     let cwd =
       (* Use PWD if it denotes the same inode as ., to try to avoid paths with symlinks resolved *)
@@ -372,7 +372,7 @@ let init_work_dir =
         Sys.getcwd ()
     in
     Unix.putenv "INFER_CWD" cwd ;
-    cwd
+    (cwd, true)
 
 (** Resolve relative paths passed as command line options, i.e., with respect to the working
     directory of the initial invocation of infer. *)

@@ -117,10 +117,13 @@ let () =
   if exit_code = Config.infer_py_argparse_error_exit_code then
     (* swallow infer.py argument parsing error *)
     Config.print_usage_exit ();
-  if Config.analyzer = Some Config.Crashcontext then
-    Crashcontext.crashcontext_epilogue ~in_buck_mode;
   if exit_code <> 0 then (
     prerr_endline ("Failed to execute: " ^ (String.concat " " (Array.to_list args_py))) ;
     exit exit_code
   );
-  if Config.fail_on_bug then fail_on_issue_epilogue ()
+  if Config.is_originator then (
+    if Config.analyzer = Some Config.Crashcontext then
+      Crashcontext.crashcontext_epilogue ~in_buck_mode;
+    if Config.fail_on_bug then
+      fail_on_issue_epilogue ();
+  )

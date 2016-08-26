@@ -110,30 +110,21 @@ let collect_all_summaries root_summaries_dir stacktrace_file stacktraces_dir =
   IList.iter process_stacktrace input_output_file_pairs
 
 let crashcontext_epilogue ~in_buck_mode =
-  (* check whether this is the top-level infer process *)
-  let top_level_infer =
-    (* if the '--buck' option was passed, then this is the top level process
-       iff the build command starts with 'buck' *)
-    if Config.buck then in_buck_mode
-    (* otherwise, we assume javac as the build command and thus only one
-       process *)
-    else true in
-  if top_level_infer then
-    (* if we are the top-level process, then find the output directory and
-       collect all crashcontext summaries under it in a single
-       crashcontext.json file.
-       Important: Note that when running under buck, this is not the final
-       infer-out/ directory, but instead it is buck-out/, which contains the
-       infer output directories for every buck target. *)
-    let root_summaries_dir = if in_buck_mode then begin
-        let project_root = match Config.project_root with
-          | Some root -> root
-          | None -> Filename.dirname Config.results_dir in
-        let buck_out = match Config.buck_out with
-          | Some dir -> dir
-          | None -> "buck-out" in
-        project_root // buck_out
-      end
-      else Config.results_dir in
-    collect_all_summaries
-      root_summaries_dir Config.stacktrace Config.stacktraces_dir
+  (* if we are the top-level process, then find the output directory and
+     collect all crashcontext summaries under it in a single
+     crashcontext.json file.
+     Important: Note that when running under buck, this is not the final
+     infer-out/ directory, but instead it is buck-out/, which contains the
+     infer output directories for every buck target. *)
+  let root_summaries_dir = if in_buck_mode then begin
+      let project_root = match Config.project_root with
+        | Some root -> root
+        | None -> Filename.dirname Config.results_dir in
+      let buck_out = match Config.buck_out with
+        | Some dir -> dir
+        | None -> "buck-out" in
+      project_root // buck_out
+    end
+    else Config.results_dir in
+  collect_all_summaries
+    root_summaries_dir Config.stacktrace Config.stacktraces_dir

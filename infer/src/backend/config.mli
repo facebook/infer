@@ -131,6 +131,8 @@ val lazy_dynamic_dispatch : bool
 val report_custom_error : bool
 val sound_dynamic_dispatch : bool
 
+val is_originator : bool
+
 
 (** Configuration values specified by command-line options *)
 
