@@ -86,11 +86,11 @@ val mk_find_duplicate_nodes: Cfg.Procdesc.t -> (Cfg.Node.t -> Cfg.NodeSet.t)
 
 type log_issue =
   Procname.t ->
-  ?loc: Location.t option ->
-  ?node_id: (int * int) option ->
-  ?session: int option ->
-  ?ltr: Errlog.loc_trace option ->
-  ?pre: Prop.normal Prop.t option ->
+  ?loc: Location.t ->
+  ?node_id: (int * int) ->
+  ?session: int ->
+  ?ltr: Errlog.loc_trace ->
+  ?pre: Prop.normal Prop.t ->
   exn ->
   unit
 

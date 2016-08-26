@@ -216,7 +216,7 @@ let report_allocation_stack
       ("new "^constr_str) in
   let exn =
     Exceptions.Checkers (allocates_memory, Localise.verbatim_desc description) in
-  Reporting.log_error pname ~loc: (Some fst_call_loc) ~ltr: (Some final_trace) exn
+  Reporting.log_error pname ~loc:fst_call_loc ~ltr:final_trace exn
 
 let report_annotation_stack src_annot snk_annot src_pname loc trace stack_str snk_pname call_loc =
   if snk_annot = dummy_constructor_annot
@@ -239,7 +239,7 @@ let report_annotation_stack src_annot snk_annot src_pname loc trace stack_str sn
       else annotation_reachability_error in
     let exn =
       Exceptions.Checkers (msg, Localise.verbatim_desc description) in
-    Reporting.log_error src_pname ~loc: (Some loc) ~ltr: (Some final_trace) exn
+    Reporting.log_error src_pname ~loc ~ltr:final_trace exn
 
 let report_call_stack end_of_stack lookup_next_calls report call_site calls =
   (* TODO: stop using this; we can use the call site instead *)
@@ -394,7 +394,7 @@ module Interprocedural = struct
         let exn =
           Exceptions.Checkers
             (expensive_overrides_unexpensive, Localise.verbatim_desc description) in
-        Reporting.log_error proc_name ~loc: (Some loc) ~ltr: None exn in
+        Reporting.log_error proc_name ~loc exn in
 
     if expensive then
       PatternMatch.proc_iter_overridden_methods

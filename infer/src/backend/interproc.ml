@@ -458,7 +458,7 @@ let check_assignement_guard node =
                 let desc = Errdesc.explain_condition_is_assignment l_node in
                 let exn = Exceptions.Condition_is_assignment (desc, __POS__) in
                 let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
-                Reporting.log_warning pname ~loc: (Some l_node) ~pre: pre_opt exn
+                Reporting.log_warning pname ~loc:l_node ?pre:pre_opt exn
               )
               else ()
           | _ ->
@@ -508,7 +508,7 @@ let forward_tabulate tenv wl =
      | None -> ());
     L.d_strln "SIL INSTR:";
     Cfg.Node.d_instrs ~sub_instrs: true (State.get_instr ()) curr_node; L.d_ln ();
-    Reporting.log_error ~pre: pre_opt curr_pname exn;
+    Reporting.log_error ?pre:pre_opt curr_pname exn;
     State.mark_instr_fail pre_opt exn;
     handled_some_exception := true in
 
@@ -1044,7 +1044,7 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t)
               Exceptions.Internal_error
                 (Localise.verbatim_desc "Leak_while_collecting_specs_after_footprint") in
             let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
-            Reporting.log_error pname ~pre: pre_opt exn;
+            Reporting.log_error pname ?pre:pre_opt exn;
             [] (* retuning no specs *) in
       specs, Specs.FOOTPRINT in
     let wl = path_set_create_worklist pdesc in
@@ -1204,7 +1204,7 @@ let report_runtime_exceptions tenv pdesc summary =
         pp_to_string (Prop.pp_prop pe_text) (Specs.Jprop.to_prop pre) in
       let exn_desc = Localise.java_unchecked_exn_desc pname runtime_exception pre_str in
       let exn = Exceptions.Java_runtime_exception (runtime_exception, pre_str, exn_desc) in
-      Reporting.log_error pname ~pre: (Some (Specs.Jprop.to_prop pre)) exn in
+      Reporting.log_error pname ~pre:(Specs.Jprop.to_prop pre) exn in
   IList.iter report exn_preconditions
 
 
@@ -1217,7 +1217,7 @@ let report_custom_errors summary =
       let loc = summary.Specs.attributes.ProcAttributes.loc in
       let err_desc = Localise.desc_custom_error loc in
       let exn = Exceptions.Custom_error (custom_error, err_desc) in
-      Reporting.log_error pname ~pre: (Some (Specs.Jprop.to_prop pre)) exn in
+      Reporting.log_error pname ~pre:(Specs.Jprop.to_prop pre) exn in
   IList.iter report error_preconditions
 
 module SpecMap = Map.Make (struct

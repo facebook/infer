@@ -12,11 +12,11 @@ open! Utils
 (** Type of functions to report issues to the error_log in a spec. *)
 
 type log_t =
-  ?loc: Location.t option ->
-  ?node_id: (int * int) option ->
-  ?session: int option ->
-  ?ltr: Errlog.loc_trace option ->
-  ?pre: Prop.normal Prop.t option ->
+  ?loc: Location.t ->
+  ?node_id: (int * int) ->
+  ?session: int ->
+  ?ltr: Errlog.loc_trace ->
+  ?pre: Prop.normal Prop.t ->
   exn ->
   unit
 

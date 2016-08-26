@@ -114,7 +114,7 @@ let rec apply_offlist
             let err_desc = Errdesc.explain_memory_access deref_str p (State.get_loc ()) in
             let exn = (Exceptions.Uninitialized_value (err_desc, __POS__)) in
             let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
-            Reporting.log_warning pname ~pre: pre_opt exn;
+            Reporting.log_warning pname ?pre:pre_opt exn;
             Sil.update_inst inst_curr inst
         | Sil.Ilookup -> (* a lookup does not change an inst unless it is inst_initial *)
             lookup_inst := Some inst_curr;
@@ -380,7 +380,7 @@ let check_inherently_dangerous_function caller_pname callee_pname =
       Exceptions.Inherently_dangerous_function
         (Localise.desc_inherently_dangerous_function callee_pname) in
     let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop caller_pname) in
-    Reporting.log_warning caller_pname ~pre: pre_opt exn
+    Reporting.log_warning caller_pname ?pre:pre_opt exn
 
 let proc_is_defined proc_name =
   match AttributesTable.load_attributes proc_name with
@@ -423,7 +423,7 @@ let check_arith_norm_exp pname exp prop =
       let desc = Errdesc.explain_divide_by_zero div (State.get_node ()) (State.get_loc ()) in
       let exn = Exceptions.Divide_by_zero (desc, __POS__) in
       let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
-      Reporting.log_warning pname ~pre: pre_opt exn;
+      Reporting.log_warning pname ?pre:pre_opt exn;
       Prop.exp_normalize_prop prop exp, prop'
   | Some (Attribute.UminusUnsigned (e, typ)), prop' ->
       let desc =
@@ -431,7 +431,7 @@ let check_arith_norm_exp pname exp prop =
           e typ (State.get_node ()) (State.get_loc ()) in
       let exn = Exceptions.Unary_minus_applied_to_unsigned_expression (desc, __POS__) in
       let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
-      Reporting.log_warning pname ~pre: pre_opt exn;
+      Reporting.log_warning pname ?pre:pre_opt exn;
       Prop.exp_normalize_prop prop exp, prop'
   | None, prop' -> Prop.exp_normalize_prop prop exp, prop'
 
@@ -469,7 +469,7 @@ let check_already_dereferenced pname cond prop =
       let exn =
         (Exceptions.Null_test_after_dereference (desc, __POS__)) in
       let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
-      Reporting.log_warning pname ~pre: pre_opt exn
+      Reporting.log_warning pname ?pre:pre_opt exn
   | None -> ()
 
 (** Check whether symbolic execution de-allocated a stack variable or a constant string,
@@ -1064,7 +1064,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
             let exn =
               Exceptions.Condition_always_true_false (desc, not (IntLit.iszero i), __POS__) in
             let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop current_pname) in
-            Reporting.log_warning current_pname ~pre: pre_opt exn
+            Reporting.log_warning current_pname ?pre:pre_opt exn
         | _ -> () in
       if not Config.report_runtime_exceptions then
         check_already_dereferenced current_pname cond prop__;
@@ -1583,7 +1583,7 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_ids; args= act
       let err_desc = Localise.desc_return_value_ignored callee_pname loc in
       let exn = (Exceptions.Return_value_ignored (err_desc, __POS__)) in
       let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop caller_pname) in
-      Reporting.log_warning caller_pname ~pre: pre_opt exn in
+      Reporting.log_warning caller_pname ?pre:pre_opt exn in
   check_inherently_dangerous_function caller_pname callee_pname;
   begin
     let formal_types = IList.map (fun (_, typ) -> typ) (Specs.get_formals summary) in

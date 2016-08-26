@@ -12,11 +12,11 @@ open! Utils
 module L = Logging
 
 type log_t =
-  ?loc: Location.t option ->
-  ?node_id: (int * int) option ->
-  ?session: int option ->
-  ?ltr: Errlog.loc_trace option ->
-  ?pre: Prop.normal Prop.t option ->
+  ?loc: Location.t ->
+  ?node_id: (int * int) ->
+  ?session: int ->
+  ?ltr: Errlog.loc_trace ->
+  ?pre: Prop.normal Prop.t ->
   exn ->
   unit
 
@@ -24,15 +24,7 @@ type log_issue = Procname.t -> log_t
 
 type log_issue_from_errlog = Errlog.t -> log_t
 
-let log_issue_from_errlog
-    err_kind
-    err_log
-    ?(loc = None)
-    ?(node_id = None)
-    ?(session = None)
-    ?(ltr = None)
-    ?(pre = None)
-    exn =
+let log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?pre exn =
   let loc = match loc with
     | None -> State.get_loc ()
     | Some loc -> loc in
@@ -56,11 +48,11 @@ let log_issue_from_errlog
 let log_issue
     err_kind
     proc_name
-    ?(loc = None)
-    ?(node_id = None)
-    ?(session = None)
-    ?(ltr = None)
-    ?(pre = None)
+    ?loc
+    ?node_id
+    ?session
+    ?ltr
+    ?pre
     exn =
   let should_suppress_warnings summary =
     !Config.curr_language = Config.Java &&
@@ -72,8 +64,7 @@ let log_issue
   | Some summary when should_suppress_warnings summary -> ()
   | Some summary ->
       let err_log = summary.Specs.attributes.ProcAttributes.err_log in
-      log_issue_from_errlog err_kind err_log ~loc:loc ~node_id:node_id
-        ~session:session ~ltr:ltr ~pre:pre exn
+      log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?pre exn
   | None -> ()
 
 let log_error = log_issue Exceptions.Kerror

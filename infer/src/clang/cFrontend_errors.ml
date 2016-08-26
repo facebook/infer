@@ -103,8 +103,8 @@ let log_frontend_issue cfg cg method_decl_opt key issue_desc =
   let err_kind = CIssue.severity_of_issue issue in
   let method_name = Ast_utils.full_name_of_decl_opt method_decl_opt in
   let key = Hashtbl.hash (key ^ method_name) in
-  Reporting.log_issue_from_errlog err_kind errlog exn ~loc:(Some loc) ~ltr:(Some trace)
-    ~node_id:(Some (0, key))
+  Reporting.log_issue_from_errlog err_kind errlog exn ~loc ~ltr:trace
+    ~node_id:(0, key)
 
 (* General invocation function for checkers
    Takes

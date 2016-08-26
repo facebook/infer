@@ -309,11 +309,11 @@ let mark_instr_fail pre_opt exn =
 
 type log_issue =
   Procname.t ->
-  ?loc: Location.t option ->
-  ?node_id: (int * int) option ->
-  ?session: int option ->
-  ?ltr: Errlog.loc_trace option ->
-  ?pre: Prop.normal Prop.t option ->
+  ?loc: Location.t ->
+  ?node_id: (int * int) ->
+  ?session: int ->
+  ?ltr: Errlog.loc_trace ->
+  ?pre: Prop.normal Prop.t ->
   exn ->
   unit
 
@@ -326,7 +326,7 @@ let process_execution_failures (log_issue : log_issue) pname =
         let desc' = Localise.verbatim_desc ("exception: " ^ Localise.to_string ex_name) in
         let exn' = Exceptions.Analysis_stops (desc', ml_loc_opt) in
         log_issue
-          pname ~loc: (Some loc) ~node_id: (Some key) ~ltr: (Some loc_trace) ~pre: pre_opt exn'
+          pname ~loc ~node_id:key ~ltr:loc_trace ?pre:pre_opt exn'
     | _ -> () in
   NodeHash.iter do_failure !gs.failure_map
 

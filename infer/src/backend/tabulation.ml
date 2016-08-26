@@ -373,7 +373,7 @@ let check_path_errors_in_post caller_pname post post_path =
           State.set_path new_path path_pos_opt;
           let exn = Exceptions.Divide_by_zero (desc, __POS__) in
           let pre_opt = State.get_normalized_pre (fun _ p -> p) (* Abs.abstract_no_symop *) in
-          Reporting.log_warning caller_pname ~pre: pre_opt exn
+          Reporting.log_warning caller_pname ?pre:pre_opt exn
     | _ -> () in
   IList.iter check_attr (Attribute.get_all post)
 

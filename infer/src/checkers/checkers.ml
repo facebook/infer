@@ -154,7 +154,7 @@ module ST = struct
               (Procname.to_string proc_name);
             L.stdout "%s@." description
           end;
-        Reporting.log_error proc_name ~loc: (Some loc) ~ltr: (Some trace) exn
+        Reporting.log_error proc_name ~loc ~ltr:trace exn
       end
 end
 
