@@ -68,38 +68,72 @@ let stitch_summaries stacktrace_file summary_files out_file =
   let crashcontext = { Stacktree_j.stack = expanded_frames} in
   Ag_util.Json.to_file Stacktree_j.write_crashcontext_t out_file crashcontext
 
-let collect_all_summaries root_out_dir stacktrace_file =
-  let out_dir = Filename.concat root_out_dir "crashcontext" in
-  DB.create_dir out_dir;
-  let out_file = Filename.concat out_dir "crashcontext.json" in
-  let path_regexp = Str.regexp ".*crashcontext/.*\\..*\\.json" in
-  let path_matcher path =  Str.string_match path_regexp path 0 in
+let collect_all_summaries root_summaries_dir stacktrace_file stacktraces_dir =
   let method_summaries =
-    DB.paths_matching root_out_dir path_matcher in
-  stitch_summaries stacktrace_file method_summaries out_file
+    let path_regexp = Str.regexp ".*crashcontext/.*\\..*\\.json" in
+    let path_matcher path =  Str.string_match path_regexp path 0 in
+    DB.paths_matching root_summaries_dir path_matcher in
+  let pair_for_stacktrace_file = match stacktrace_file with
+    | None -> None
+    | Some file -> begin
+        let crashcontext_dir =
+          Config.results_dir // "crashcontext" in
+        DB.create_dir crashcontext_dir;
+        Some (file, crashcontext_dir // "crashcontext.json")
+      end in
+  let trace_file_regexp = Str.regexp "\\(.*\\)\\.json" in
+  let pairs_for_stactrace_dir = match stacktraces_dir with
+    | None -> []
+    | Some s -> begin
+        let dir = DB.filename_from_string s in
+        let trace_file_matcher path =
+          let path_str = DB.filename_to_string path in
+          Str.string_match trace_file_regexp path_str 0 in
+        let trace_fold stacktrace_file acc =
+          let stacktrace_file_str = DB.filename_to_string stacktrace_file in
+          let out_file =
+            (Str.matched_group 1 stacktrace_file_str) ^ ".crashcontext.json" in
+          (stacktrace_file_str, out_file) :: acc in
+        try
+          DB.fold_paths_matching ~dir ~p:trace_file_matcher ~init:[] ~f:trace_fold
+        with
+        (* trace_fold runs immediately after trace_file_matcher in the
+           DB.fold_paths_matching statement below, so we don't need to
+           call Str.string_match again. *)
+        | Not_found -> assert false
+      end in
+  let input_output_file_pairs = match pair_for_stacktrace_file with
+    | None -> pairs_for_stactrace_dir
+    | Some pair -> pair :: pairs_for_stactrace_dir in
+  let process_stacktrace (stacktrace_file, out_file) =
+    stitch_summaries stacktrace_file method_summaries out_file in
+  IList.iter process_stacktrace input_output_file_pairs
 
 let crashcontext_epilogue ~in_buck_mode =
   (* check whether this is the top-level infer process *)
   let top_level_infer =
-    (* if the '--buck' option was passed, then this is the top level process iff the build
-       command starts with 'buck' *)
+    (* if the '--buck' option was passed, then this is the top level process
+       iff the build command starts with 'buck' *)
     if Config.buck then in_buck_mode
-    (* otherwise, we assume javac as the build command and thus only one process *)
+    (* otherwise, we assume javac as the build command and thus only one
+       process *)
     else true in
   if top_level_infer then
-    (* if we are the top-level process, then find the output directory and collect all
-       crashcontext summaries under it in a single crashcontext.json file *)
-    let root_out_dir = if in_buck_mode then begin
+    (* if we are the top-level process, then find the output directory and
+       collect all crashcontext summaries under it in a single
+       crashcontext.json file.
+       Important: Note that when running under buck, this is not the final
+       infer-out/ directory, but instead it is buck-out/, which contains the
+       infer output directories for every buck target. *)
+    let root_summaries_dir = if in_buck_mode then begin
         let project_root = match Config.project_root with
           | Some root -> root
           | None -> Filename.dirname Config.results_dir in
         let buck_out = match Config.buck_out with
           | Some dir -> dir
           | None -> "buck-out" in
-        Filename.concat project_root buck_out
+        project_root // buck_out
       end
       else Config.results_dir in
-    match Config.stacktrace with
-    | None -> failwith "Detected -a crashcontext without --stacktrace, this should have been \
-                        checked earlier."
-    | Some s -> collect_all_summaries root_out_dir s
+    collect_all_summaries
+      root_summaries_dir Config.stacktrace Config.stacktraces_dir

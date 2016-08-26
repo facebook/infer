@@ -235,6 +235,7 @@ val source_file_copy : string option
 val spec_abs_level : int
 val specs_library : string list
 val stacktrace : string option
+val stacktraces_dir : string option
 val stats_mode : bool
 val subtype_multirange : bool
 val svg : bool

@@ -370,15 +370,20 @@ let file_is_in_cpp_model file =
   let normalized_cpp_models_dir = filename_to_absolute Config.cpp_models_dir in
   string_is_prefix normalized_cpp_models_dir normalized_file_dir
 
-(** Return all absolute paths recursively under root_dir, matching the given
-    matcher function f *)
-let paths_matching root_dir f =
-  let rec paths path_list dir = Array.fold_left
+(** Fold over all file paths recursively under [dir] which match [p]. *)
+let fold_paths_matching ~dir ~p ~init ~f =
+  let rec paths path_list dir =
+    Array.fold_left
       (fun acc file ->
-         let p = Filename.concat dir file in
-         if Sys.is_directory p then (paths acc p)
-         else if f p then p :: acc
+         let path = dir // file in
+         if Sys.is_directory path then (paths acc path)
+         else if p path then f path acc
          else acc)
       path_list
       (Sys.readdir dir) in
-  paths [] root_dir
+  paths init dir
+
+(** Return all absolute paths recursively under root_dir, matching the given
+    matcher function p *)
+let paths_matching dir p =
+  fold_paths_matching ~dir ~p ~init:[] ~f:(fun x xs -> x :: xs)

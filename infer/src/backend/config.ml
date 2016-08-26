@@ -1004,10 +1004,16 @@ and specs_library =
   specs_library
 
 and stacktrace =
-  CLOpt.mk_string_opt ~long:"stacktrace" ~short:"st" ~f:resolve
+  CLOpt.mk_string_opt ~long:"stacktrace" ~short:"st" ~f:resolve ~exes:CLOpt.[Toplevel]
     ~meta:"file" "File path containing a json-encoded Java crash stacktrace. Used to guide the \
                   analysis (only with '-a crashcontext').  See \
-                  tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format"
+                  tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
+
+and stacktraces_dir =
+  CLOpt.mk_string_opt ~long:"stacktraces-dir" ~f:resolve ~exes:CLOpt.[Toplevel]
+    ~meta:"dir" "Directory path containing multiple json-encoded Java crash stacktraces. \
+                 Used to guide the  analysis (only with '-a crashcontext').  See \
+                 tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
 
 and static_final =
   CLOpt.mk_bool ~deprecated_no:["no-static_final"] ~long:"static-final" ~default:true
@@ -1406,6 +1412,7 @@ and source_file_copy = !source_file_copy
 and spec_abs_level = !spec_abs_level
 and specs_library = !specs_library
 and stacktrace = !stacktrace
+and stacktraces_dir = !stacktraces_dir
 and stats_mode = !stats
 and subtype_multirange = !subtype_multirange
 and svg = !svg

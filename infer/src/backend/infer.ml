@@ -94,8 +94,6 @@ let () =
          ["--use-flavors"]) @
       (match Config.infer_cache with None -> [] | Some s ->
           ["--infer_cache"; s]) @
-      (match Config.stacktrace with None -> [] | Some s ->
-          ["--stacktrace"; s]) @
       "-j" :: (string_of_int Config.jobs) ::
       (match Config.load_average with None -> [] | Some f ->
           ["-l"; string_of_float f]) @

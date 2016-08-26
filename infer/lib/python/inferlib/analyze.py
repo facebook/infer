@@ -106,13 +106,6 @@ base_group.add_argument('-nf', '--no-filtering', action='store_true',
                         help='''Also show the results from the experimental
                         checks. Warning: some checks may contain many false
                         alarms''')
-base_group.add_argument('-st', '--stacktrace',
-                        dest='stacktrace',
-                        default='',
-                        help='''File containing a JSON encoded stacktrace. For
-                        use with e.g. -a crashcontext. See
-                        tests/codetoanalyze/java/crashcontext/*.json for
-                        examples of the expected format.''')
 
 base_group.add_argument('--android-harness', action='store_true',
                         help='''[experimental] Create harness to detect bugs

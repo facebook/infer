@@ -38,7 +38,7 @@ module SpecSummary = Summary.Make (struct
 
 type extras_t = {
   get_proc_desc : Procname.t -> Cfg.Procdesc.t option;
-  stacktrace : Stacktrace.t;
+  stacktraces : Stacktrace.t list;
 }
 
 let line_range_of_pdesc pdesc =
@@ -110,7 +110,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let exec_instr astate proc_data _ = function
     | Sil.Call (_, Const (Const.Cfun pn), _, loc, _) ->
         let get_proc_desc = proc_data.ProcData.extras.get_proc_desc in
-        let trace = proc_data.ProcData.extras.stacktrace in
+        let traces = proc_data.ProcData.extras.stacktraces in
         let caller = Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc in
         let matches_proc frame =
           let matches_class pname = match pname with
@@ -127,18 +127,20 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 failwith "Proc type not supported by crashcontext: block" in
           frame.Stacktrace.method_str = (Procname.get_method caller) &&
           matches_class caller in
-        let proc_in_trace = IList.exists matches_proc trace.Stacktrace.frames in
-        if proc_in_trace then begin
-          let frame = IList.find matches_proc trace.Stacktrace.frames in
-          let new_astate = Domain.add pn astate in
-          if Stacktrace.frame_matches_location frame loc then begin
-            let pdesc = proc_data.ProcData.pdesc in
-            output_json_summary pdesc new_astate loc "call_site" get_proc_desc
-          end;
-          new_astate
+        let all_frames = IList.flatten
+            (IList.map (fun trace -> trace.Stacktrace.frames) traces) in
+        begin
+          try
+            let frame = IList.find matches_proc all_frames in
+            let new_astate = Domain.add pn astate in
+            if Stacktrace.frame_matches_location frame loc then begin
+              let pdesc = proc_data.ProcData.pdesc in
+              output_json_summary pdesc new_astate loc "call_site" get_proc_desc
+            end;
+            new_astate
+          with
+            Not_found -> astate
         end
-        else
-          astate
     | Sil.Call _ ->
         (* We currently ignore calls through function pointers in C and
            other potential special kinds of procedure calls to be added later,
@@ -155,31 +157,36 @@ module Analyzer =
     (Scheduler.ReversePostorder)
     (TransferFunctions)
 
-(* Stacktrace lookup:
-   1) Check if trace_ref is already set and use that.
-   2) If not, load trace from the file specified in Config.stacktrace. *)
-let trace_ref = ref None
-
-let load_trace () =
-  (* Check Config.stacktrace is set and points to a file,
-     call Stacktrace.of_json_file  *)
-  let filename = match Config.stacktrace with
-    | None -> failwith "Missing command line option: '--stacktrace stack.json' \
-                        must be used when running '-a crashcontext'. This \
-                        option expects a JSON formated stack trace. See \
-                        tests/codetoanalyze/java/crashcontext/*.json for \
-                        examples of the expected format."
-    | Some fname -> fname in
-  let new_trace = Stacktrace.of_json_file filename in
-  trace_ref := Some new_trace;
-  new_trace
+let loaded_stacktraces =
+  (* Load all stacktraces defined in either Config.stacktrace or
+     Config.stacktraces_dir.  *)
+  let json_files_in_dir dir =
+    let stacktrace_path_regexp = Str.regexp ".*\\.json" in
+    let path_matcher path =  Str.string_match stacktrace_path_regexp path 0 in
+    DB.paths_matching dir path_matcher in
+  let filenames = match Config.stacktrace, Config.stacktraces_dir  with
+    | None, None -> None
+    | Some fname, None -> Some [fname]
+    | None, Some dir -> Some (json_files_in_dir dir)
+    | Some fname, Some dir -> Some (fname :: (json_files_in_dir dir)) in
+  match filenames with
+  | None -> None
+  | Some files -> Some (IList.map Stacktrace.of_json_file files)
 
 let checker { Callbacks.proc_desc; tenv; get_proc_desc; } =
-  let stacktrace = match !trace_ref with
-    | None -> load_trace ()
-    | Some t -> t in
-  let extras = { get_proc_desc; stacktrace; } in
-  SpecSummary.write_summary
-    (Cfg.Procdesc.get_proc_name proc_desc)
-    (Some (stacktree_of_pdesc proc_desc "proc_start"));
-  ignore(Analyzer.exec_pdesc (ProcData.make proc_desc tenv extras))
+  match loaded_stacktraces with
+  | None -> failwith "Missing command line option. Either \
+                      '--stacktrace stack.json' or '--stacktrace-dir ./dir' \
+                      must be used when running '-a crashcontext'. This \
+                      options expects a JSON formated stack trace or a \
+                      directory containing multiple such traces, \
+                      respectively. See \
+                      tests/codetoanalyze/java/crashcontext/*.json for \
+                      examples of the expected format."
+  | Some stacktraces -> begin
+      let extras = { get_proc_desc; stacktraces; } in
+      SpecSummary.write_summary
+        (Cfg.Procdesc.get_proc_name proc_desc)
+        (Some (stacktree_of_pdesc proc_desc "proc_start"));
+      ignore(Analyzer.exec_pdesc (ProcData.make proc_desc tenv extras))
+    end

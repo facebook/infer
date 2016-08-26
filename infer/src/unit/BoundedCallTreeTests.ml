@@ -31,7 +31,13 @@ let tests =
       [Stacktrace.make_frame class_name "foo" file_name (Some 16);
        Stacktrace.make_frame class_name "bar" file_name (Some 20)] in
   let extras = { BoundedCallTree.get_proc_desc = mock_get_proc_desc;
-                 stacktrace = trace; } in
+                 stacktraces = [trace]; } in
+  let multi_trace_1 = Stacktrace.make "java.lang.NullPointerException"
+      [Stacktrace.make_frame class_name "foo" file_name (Some 16)] in
+  let multi_trace_2 = Stacktrace.make "java.lang.NullPointerException"
+      [Stacktrace.make_frame class_name "bar" file_name (Some 20)] in
+  let multi_trace_extras = { BoundedCallTree.get_proc_desc = mock_get_proc_desc;
+                             stacktraces = [multi_trace_1; multi_trace_2]; } in
   let caller_foo_name = Procname.from_string_c_fun "foo" in
   let caller_bar_name = Procname.from_string_c_fun "bar" in
   let caller_baz_name = Procname.from_string_c_fun "baz" in
@@ -75,7 +81,25 @@ let tests =
       invariant "{  }"
     ];
   ] |> TestInterpreter.create_tests ~test_pname:caller_baz_name extras in
+  let test_list_multiple_traces_from_foo = [
+    "on_call_add_proc_name_in_any_stack_1",
+    [
+      make_call ~procname:f_proc_name [] []; (* means f() *)
+      invariant "{ f }"
+    ];
+  ] |> TestInterpreter.create_tests
+      ~test_pname:caller_foo_name multi_trace_extras in
+  let test_list_multiple_traces_from_bar = [
+    "on_call_add_proc_name_in_any_stack_2",
+    [
+      make_call ~procname:f_proc_name [] []; (* means f() *)
+      invariant "{ f }"
+    ];
+  ] |> TestInterpreter.create_tests
+      ~test_pname:caller_bar_name multi_trace_extras in
   let test_list = test_list_from_foo @
                   test_list_from_bar @
-                  test_list_from_baz in
+                  test_list_from_baz @
+                  test_list_multiple_traces_from_foo @
+                  test_list_multiple_traces_from_bar in
   "bounded_calltree_test_suite">:::test_list
