@@ -1,0 +1,14 @@
+{
+  "modeled_expensive": [
+    {
+      "language": "Java",
+      "class": "android.app.Activity",
+      "method": "findViewById"
+    },
+    {
+      "language": "Java",
+      "class": "android.view.View",
+      "method": "findViewById"
+    }
+  ]
+}

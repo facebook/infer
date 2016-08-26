@@ -8,12 +8,14 @@
 ROOT_DIR = .
 include $(ROOT_DIR)/Makefile.config
 
+DIRECT_TESTS=
 TARGETS_TO_TEST=
 ifeq ($(BUILD_C_ANALYZERS),yes)
 TARGETS_TO_TEST += c cpp
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 TARGETS_TO_TEST += java
+DIRECT_TESTS += checkers_test eradicate_test
 endif
 ifneq ($(XCODE_SELECT),no)
 TARGETS_TO_TEST += objc objcpp
@@ -95,12 +97,20 @@ endif
 ocaml_unit_test: test_this_build
 	$(TEST_BUILD_DIR)/unit/inferunit.byte
 
+checkers_test:
+	make -C ./infer/tests/codetoanalyze/java/checkers test
+
+eradicate_test:
+	make -C ./infer/tests/codetoanalyze/java/eradicate test
+
 buck_test: infer
+	make $(DIRECT_TESTS)
 	NO_BUCKD=1 buck clean
 	MAKEFLAGS= NO_BUCKD=1 buck test -j $(NCPU) -L $(NCPU) $(TARGETS_TO_TEST)
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 
 buck_test_xml: infer
+	make $(DIRECT_TESTS)
 	NO_BUCKD=1 buck clean
 	NO_BUCKD=1 buck test -j $(NCPU) -L $(NCPU) --xml test.xml $(TARGETS_TO_TEST)
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py

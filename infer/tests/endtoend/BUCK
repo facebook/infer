@@ -7,9 +7,7 @@ tests_dependencies = [
     '//dependencies/java/junit:junit',
     '//dependencies/java/opencsv:opencsv',
     '//infer/tests/utils:utils',
-    '//infer/tests/codetoanalyze/java/checkers:checkers',
     '//infer/tests/codetoanalyze/java/crashcontext:crashcontext',
-    '//infer/tests/codetoanalyze/java/eradicate:eradicate',
     '//infer/tests/codetoanalyze/java/infer:infer',
     '//infer/tests/codetoanalyze/java/tracing:tracing',
 ]
@@ -66,8 +64,6 @@ java_test(
     name='java_endtoend_tests',
     deps=[
         '//infer/tests/endtoend/java/infer:infer',
-        '//infer/tests/endtoend/java/eradicate:eradicate',
-        '//infer/tests/endtoend/java/checkers:checkers',
         '//infer/tests/endtoend/java/crashcontext:crashcontext',
         '//infer/tests/endtoend/java/harness:harness',
         '//infer/tests/endtoend/java/tracing:tracing',

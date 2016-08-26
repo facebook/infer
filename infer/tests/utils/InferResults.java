@@ -68,8 +68,7 @@ public class InferResults {
             errorType.equals("DANGLING_POINTER_DEREFERENCE") ||
             errorType.equals("IVAR_NOT_NULL_CHECKED") ||
             errorType.equals("BAD_POINTER_COMPARISON") ||
-            errorType.equals("MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE") ||
-            errorType.startsWith("ERADICATE")) {
+            errorType.equals("MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE")) {
           Integer errorLine = Integer.parseInt(items[5].trim());
           String procedure = items[6];
           Path path = Paths.get(items[8]);
@@ -173,22 +172,6 @@ public class InferResults {
       currentClass,
       sourceFile,
       "/infer/tests/codetoanalyze/java/infer/report.csv",
-      InferResults.JAVA_METHOD_NAME);
-  }
-
-  public static InferResults loadEradicateResults(Class currentClass, String sourceFile) {
-    return loadResultsFromPath(
-      currentClass,
-      sourceFile,
-      "/infer/tests/codetoanalyze/java/eradicate/report.csv",
-      InferResults.JAVA_METHOD_NAME);
-  }
-
-  public static InferResults loadCheckersResults(Class currentClass, String sourceFile) {
-    return loadResultsFromPath(
-      currentClass,
-      sourceFile,
-      "/infer/tests/codetoanalyze/java/checkers/report.csv",
       InferResults.JAVA_METHOD_NAME);
   }
 
