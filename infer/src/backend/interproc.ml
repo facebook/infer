@@ -250,7 +250,7 @@ let collect_preconditions tenv proc_name : Prop.normal Specs.Jprop.t list =
 
 (** propagate a set of results to the given node *)
 let propagate
-    (wl : Worklist.t) pname is_exception (pset: Paths.PathSet.t) (curr_node: Cfg.node) =
+    (wl : Worklist.t) pname ~is_exception (pset: Paths.PathSet.t) (curr_node: Cfg.node) =
   let edgeset_todo =
     (* prop must be a renamed prop by the invariant preserved by PropSet *)
     let f prop path edgeset_curr =
@@ -286,10 +286,10 @@ let propagate_nodes_divergence
         Paths.PathSet.map mk_incons diverging_states in
       (L.d_strln_color Orange) "Propagating Divergence -- diverging states:";
       Propgraph.d_proplist Prop.prop_emp (Paths.PathSet.to_proplist prop_incons); L.d_ln ();
-      propagate wl pname false prop_incons exit_node
+      propagate wl pname ~is_exception:false prop_incons exit_node
     end;
-  IList.iter (propagate wl pname false pset_ok) succ_nodes;
-  IList.iter (propagate wl pname true pset_exn) exn_nodes
+  IList.iter (propagate wl pname ~is_exception:false pset_ok) succ_nodes;
+  IList.iter (propagate wl pname ~is_exception:true pset_exn) exn_nodes
 
 (* ===================== END of symbolic execution ===================== *)
 
@@ -308,7 +308,8 @@ let do_symexec_join pname tenv wl curr_node (edgeset_todo : Paths.PathSet.t) =
   IList.iter (fun node ->
       Paths.PathSet.iter (fun prop path ->
           State.set_path path None;
-          propagate wl pname false (Paths.PathSet.from_renamed_list [(prop, path)]) node)
+          propagate wl pname ~is_exception:false
+            (Paths.PathSet.from_renamed_list [(prop, path)]) node)
         new_dset') succ_nodes
 
 let prop_max_size = ref (0, Prop.prop_emp)
