@@ -449,7 +449,7 @@ struct
       match IList.find_map_opt get_attr_opt decl_info.di_attributes with
       | Some attribute_info ->
           (match attribute_info.ai_parameters with
-           | [_; arg; _] -> Some arg
+           | [_; arg; _; _; _; _] -> Some arg
            | _ ->
                (* it's not supposed to happen due to hardcoded exporting logic
                   coming from ASTExporter.h in facebook-clang-plugins *)
