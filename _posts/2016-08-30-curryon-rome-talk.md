@@ -5,7 +5,7 @@ author: peteroh
 category: blog
 ---
 
-<iframe width="560" height="315" src="https://youtu.be/xc72SYVU2QY?t=1m51s"></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/xc72SYVU2QY" frameborder="0" allowfullscreen></iframe>
 
 Here is the video for Peter's talk
 [Move Fast to Fix More Things](https://www.youtube.com/watch?v=xc72SYVU2QY&t=1m50s) given at the 
