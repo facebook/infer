@@ -1,7 +1,7 @@
 ---
-title: Video of CurryOn Rome talk: Move Fast to Fix More Things
+title: Video of CurryOn Rome talk. Move Fast to Fix More Things
 layout: post
-author: peterogithub
+author: peteroh
 category: blog
 ---
 
