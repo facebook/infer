@@ -7,6 +7,8 @@
 
 include ../Makefile
 
+ANALYZER = checkers
+
 FILES = \
   Branch.java \
   FragmentRetainsViewExample.java \
@@ -25,4 +27,4 @@ compile:
 	javac -cp $(CLASSPATH) $(FILES)
 
 analyze:
-	$(INFER_BIN) -a checkers -- javac -cp $(CLASSPATH) $(FILES) >/dev/null 2>/dev/null
+	$(INFER_BIN) -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(FILES) >/dev/null 2>/dev/null

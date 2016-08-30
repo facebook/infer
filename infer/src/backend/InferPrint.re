@@ -475,7 +475,7 @@ let module IssuesJson = {
 let module IssuesTests = {
   /** Write bug report in a format suitable for tests on analysis results. */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt proc_name err_log => {
-    let pp_row _ loc _ _ in_footprint error_name error_desc _ _ _ _ => {
+    let pp_row _ loc _ ekind in_footprint error_name error_desc _ _ _ _ => {
       let (source_file, line_offset) =
         switch proc_loc_opt {
         | Some proc_loc =>
@@ -483,7 +483,10 @@ let module IssuesTests = {
           (proc_loc.Location.file, line_offset)
         | None => (loc.Location.file, 0)
         };
-      if (in_footprint && error_filter source_file error_desc error_name) {
+      let should_report =
+        ekind == Exceptions.Kerror ||
+          IList.exists (Localise.equal error_name) [Localise.return_value_ignored];
+      if (in_footprint && should_report && error_filter source_file error_desc error_name) {
         F.fprintf
           fmt
           "%s, %a, %d, %a@."

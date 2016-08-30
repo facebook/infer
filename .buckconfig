@@ -17,8 +17,6 @@
   java_libraries = //dependencies/java:java_libraries
 
   infer = //infer/tests/endtoend/java/infer:infer
-  eradicate = //infer/tests/endtoend/java/eradicate:eradicate
-  checkers = //infer/tests/endtoend/java/checkers:checkers
   tracing = //infer/tests/endtoend/java/tracing:tracing
 
   linters = //infer/tests/endtoend:linters

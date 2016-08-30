@@ -7,6 +7,8 @@
 
 include ../Makefile
 
+ANALYZER = eradicate
+
 FILES = \
   ActivityFieldNotInitialized.java \
   FieldNotInitialized.java \
@@ -27,4 +29,4 @@ compile:
 
 analyze:
 	ERADICATE_RETURN_OVER_ANNOTATED=1 \
-	$(INFER_BIN) -a eradicate -- javac -cp $(CLASSPATH) $(FILES) >/dev/null 2>/dev/null
+	$(INFER_BIN) -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(FILES) >/dev/null 2>/dev/null

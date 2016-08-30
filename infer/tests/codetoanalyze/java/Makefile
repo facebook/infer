@@ -12,15 +12,17 @@ ANDROID19 = $(JAVA_LIB_DIR)/android/android-19.jar
 ANDROIDSUPPORT = $(DEPENDENCIES_DIR)/java/android/support/v4/android-support-v4.jar
 ANNOTATIONS = $(ANNOTATIONS_DIR)/annotations.jar
 BUTTERKNIFE = $(DEPENDENCIES_DIR)/java/butterknife/butterknife-7.0.1.jar
+JACKSON = $(DEPENDENCIES_DIR)/java/jackson/jackson-2.2.3.jar
 JSR305 = $(DEPENDENCIES_DIR)/java/jsr-305/jsr305.jar
 INJECT = $(DEPENDENCIES_DIR)/java/jsr-330/javax.inject.jar
+MODELS = $(JAVA_LIB_DIR)/models.jar
 
-CLASSPATH=$(ANDROID19):$(ANDROIDSUPPORT):$(ANNOTATIONS):$(BUTTERKNIFE):$(JSR305):$(INJECT):.
+CLASSPATH=$(ANDROID19):$(ANDROIDSUPPORT):$(ANNOTATIONS):$(BUTTERKNIFE):$(JACKSON):$(JSR305):$(INJECT):$(MODELS):.
 
 default: compile
 
 print: analyze
-	$(INFERPRINT_BIN) -q --issues-tests issues.exp.test
+	$(INFERPRINT_BIN) -q -a $(ANALYZER) --issues-tests issues.exp.test
 	LC_ALL=C sort -o issues.exp.test issues.exp.test
 
 test: analyze print
