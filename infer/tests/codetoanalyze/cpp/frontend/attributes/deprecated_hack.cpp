@@ -16,12 +16,9 @@
 /* Test for passing function attributes to infer via __deprecated__ attribute */
 
 // basic test of C function with __infer_replace_with_deref_first_arg attribute
-int derefFirstArg(int* a, int* b)
-    __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {
-  /* equivalent in real code:
-  return *a; */
-}
+int derefFirstArg(int* a, int* b) INFER_MODEL_AS_DEREF_FIRST_ARG;
 
+// test directly with deprecated attribute
 int derefFirstArg2(int* a, int* b)
     __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {
   /* equivalent in real code:
@@ -30,6 +27,7 @@ int derefFirstArg2(int* a, int* b)
   // should be used
 }
 
+// test with wrong deprecated attribute
 int derefFirstArg3(int* a, int* b) __attribute__((deprecated("__infer_typo"))) {
   /* equivalent in real code: */
   return *b; // there isn't any known attribute with this name, use semantics
@@ -77,17 +75,12 @@ struct TranslateAsPtr {
   friend class infer_traits::TranslateAsType<T*>;
   TranslateAsPtr(T* t = nullptr) { setPtr(t); }
   /* calls to those functions are supposed to be translated as `*this` */
-  T* getPtr()
-      __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {}
-  T* getPtr(int a, int b)
-      __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {}
+  T* getPtr() INFER_MODEL_AS_DEREF_FIRST_ARG;
+  T* getPtr(int a, int b) INFER_MODEL_AS_DEREF_FIRST_ARG;
   /* calls to those functions are supposed to be translated as `**this` */
-  T& operator*()
-      __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {}
-  T& getRef()
-      __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {}
-  T& getRef(int a, int b)
-      __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {}
+  T& operator*() INFER_MODEL_AS_DEREF_FIRST_ARG;
+  T& getRef() INFER_MODEL_AS_DEREF_FIRST_ARG;
+  T& getRef(int a, int b) INFER_MODEL_AS_DEREF_FIRST_ARG;
 
   // same trick we do for setting value of shared_ptr, look there for details
   void setPtr(T* v) { *((void**)(this)) = v; }

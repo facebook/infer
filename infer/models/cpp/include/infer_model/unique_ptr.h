@@ -142,13 +142,11 @@ struct unique_ptr {
     return *this;
   }
   typename add_lvalue_reference<_Tp>::type operator*() const
-      __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {}
+      INFER_MODEL_AS_DEREF_FIRST_ARG;
 
-  pointer operator->() const
-      __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {}
+  pointer operator->() const INFER_MODEL_AS_DEREF_FIRST_ARG;
 
-  pointer get() const
-      __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {}
+  pointer get() const INFER_MODEL_AS_DEREF_FIRST_ARG;
 
   typedef typename remove_reference<deleter_type>::type& _Dp_reference;
   typedef const typename remove_reference<deleter_type>::type&
@@ -159,8 +157,7 @@ struct unique_ptr {
   explicit operator bool() const {
     return !!(bool)(model_get(__cast_to_infer_ptr(this)));
   }
-  pointer release()
-      __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {}
+  pointer release() INFER_MODEL_AS_DEREF_FIRST_ARG;
 
   void reset(pointer p = nullptr) { model_set(__cast_to_infer_ptr(this), p); }
 
@@ -288,11 +285,9 @@ struct unique_ptr<_Tp[], _Dp> {
   }
 
   typename add_lvalue_reference<_Tp>::type operator[](size_t i) const
-      __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {}
+      INFER_MODEL_AS_DEREF_FIRST_ARG;
 
-  pointer get() const
-      __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {}
-
+  pointer get() const INFER_MODEL_AS_DEREF_FIRST_ARG;
   typedef typename remove_reference<deleter_type>::type& _Dp_reference;
   typedef const typename remove_reference<deleter_type>::type&
       _Dp_const_reference;
@@ -302,8 +297,7 @@ struct unique_ptr<_Tp[], _Dp> {
   explicit operator bool() const {
     return !!(bool)(model_get(__cast_to_infer_ptr(this)));
   }
-  pointer release()
-      __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {}
+  pointer release() INFER_MODEL_AS_DEREF_FIRST_ARG;
 
   void reset(pointer p = nullptr) { model_set(__cast_to_infer_ptr(this), p); }
 

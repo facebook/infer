@@ -15,3 +15,6 @@ namespace infer_traits {
 template <class T>
 class TranslateAsType {};
 } // namespace infer_traits
+
+#define INFER_MODEL_AS_DEREF_FIRST_ARG \
+  __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {}
