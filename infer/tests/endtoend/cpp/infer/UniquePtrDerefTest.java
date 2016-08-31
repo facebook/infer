@@ -49,7 +49,9 @@ public class UniquePtrDerefTest {
       throws InterruptedException, IOException, InferException {
     String[] procedures = {
         "empty_ptr_deref",
+        "empty_array_ptr_deref",
         "nullptr_ptr_deref",
+        "nullptr_array_ptr_deref",
         "empty_ptr_field_deref",
         "empty_ptr_field_deref2",
         "empty_ptr_method_deref",

@@ -29,9 +29,19 @@ int empty_ptr_deref() {
   return *x;
 }
 
+int empty_array_ptr_deref() {
+  std::unique_ptr<int[]> x;
+  return x[0];
+}
+
 int nullptr_ptr_deref() {
   std::unique_ptr<int> x(nullptr);
   return *x;
+}
+
+int nullptr_array_ptr_deref() {
+  std::unique_ptr<int[]> x(nullptr);
+  return x[2];
 }
 
 int empty_ptr_field_deref() {
