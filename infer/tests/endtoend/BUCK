@@ -9,7 +9,6 @@ tests_dependencies = [
     '//infer/tests/utils:utils',
     '//infer/tests/codetoanalyze/java/crashcontext:crashcontext',
     '//infer/tests/codetoanalyze/java/infer:infer',
-    '//infer/tests/codetoanalyze/java/tracing:tracing',
 ]
 
 # ############### C endtoend tests ########################
@@ -66,8 +65,6 @@ java_test(
         '//infer/tests/endtoend/java/infer:infer',
         '//infer/tests/endtoend/java/crashcontext:crashcontext',
         '//infer/tests/endtoend/java/harness:harness',
-        '//infer/tests/endtoend/java/tracing:tracing',
-        '//infer/tests/endtoend/java/comparison:comparison',
     ],
     visibility=[
         'PUBLIC',

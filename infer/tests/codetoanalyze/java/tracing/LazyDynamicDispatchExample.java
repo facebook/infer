@@ -10,20 +10,20 @@
 package codetoanalyze.java.tracing;
 
 interface I {
-  T get();
+  T2 get();
 }
 
 class A implements I {
 
-  public T get() {
-    return new T();
+  public T2 get() {
+    return new T2();
   }
 
 }
 
 class B extends A {
 
-  public T get() {
+  public T2 get() {
     return null;
   }
 
@@ -31,11 +31,11 @@ class B extends A {
 
 public class LazyDynamicDispatchExample {
 
-  static T fromSupertype(A a) {
+  static T2 fromSupertype(A a) {
     return a.get();
   }
 
-  static T fromInterface(I i) {
+  static T2 fromInterface(I i) {
     return i.get();
   }
 

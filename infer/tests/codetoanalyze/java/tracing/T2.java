@@ -7,24 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+
 package codetoanalyze.java.tracing;
 
-public class ReportOnMainExample {
-
-  T2 t;
-
-  native boolean test();
-
-  void foo() {
-    if (test() && t == null) {
-      return;
-    }
-    t.f();
+public class T2 {
+  int x;
+  void f() {
   }
-
-  public static void main(String[] args) {
-    ReportOnMainExample example = new ReportOnMainExample();
-    example.foo();
-  }
-
 }

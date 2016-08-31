@@ -1,3 +1,4 @@
+# TODO: this file exists only to support buck integration in infer/tests/build_systems/build_integration_tests.py
 java_test(
     name='infer',
     srcs=glob(['*.java']),

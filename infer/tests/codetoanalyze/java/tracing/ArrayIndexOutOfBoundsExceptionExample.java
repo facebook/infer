@@ -13,14 +13,14 @@ import com.facebook.infer.annotation.Verify;
 
 public class ArrayIndexOutOfBoundsExceptionExample {
 
-  void callMethodFromArray(T[] array, int index) {
+  void callMethodFromArray(T2[] array, int index) {
     if (array[index] != null) {
       array[index].f();
     }
   }
 
   @Verify
-  public void missingCheckOnIndex(T[] array, int index) {
+  public void missingCheckOnIndex(T2[] array, int index) {
     if (array != null) {
       if (index < array.length) {
         callMethodFromArray(array, index);
@@ -29,17 +29,17 @@ public class ArrayIndexOutOfBoundsExceptionExample {
   }
 
   void callOutOfBound() {
-    T[] array = new T[42];
+    T2[] array = new T2[42];
     callMethodFromArray(array, -5);
   }
 
-  void withFixedIndex(T[] array) {
+  void withFixedIndex(T2[] array) {
     int index = 9;
     callMethodFromArray(array, index);
   }
 
   void arrayIndexOutOfBoundsInCallee() {
-    T[] array = new T[8];
+    T2[] array = new T2[8];
     withFixedIndex(array);
   }
 
