@@ -39,8 +39,10 @@ BUILD_CLANG=no
 BUILD_JAVA=no
 INTERACTIVE=yes
 ORIG_ARGS="$*"
+# ocaml version that is supported
+SUPP_OCAML_VERSION="4.02.3"
 
-while [[ $# > 0 ]]; do
+while [[ $# -gt 0 ]]; do
   opt_key="$1"
   case $opt_key in
     all)
@@ -96,12 +98,21 @@ check_installed () {
 }
 
 setup_opam () {
-    OCAML_VERSION="4.02.3"
-
     opam init -j $NCPU --no-setup --yes
 
-    OPAMSWITCH=infer-$OCAML_VERSION
-    opam switch install -j $NCPU $OPAMSWITCH --alias-of $OCAML_VERSION || true
+    # get the present ocaml version, the idea here is to avoid installing ocaml compiler if the
+    # default is $SUPP_OCAML_VERSION.
+    present=$(opam config var ocaml-version)
+    if [[ $present == $SUPP_OCAML_VERSION ]];then
+        # get the switch corresponding the version
+        ALIAS_SWITCH=$(opam config var switch)
+    else
+        # if the default is not $SUPP_OCAML_VERSION, download ocaml compiler corresponding to it
+        ALIAS_SWITCH=$SUPP_OCAML_VERSION
+    fi
+
+    OPAMSWITCH=infer-$SUPP_OCAML_VERSION
+    opam switch install -j $NCPU $OPAMSWITCH --alias-of $ALIAS_SWITCH || true
 }
 
 add_opam_git_pin () {
