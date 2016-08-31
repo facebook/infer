@@ -148,9 +148,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
     | Typ.Tint _, [] | Typ.Tfloat _, [] | Typ.Tvoid, [] | Typ.Tfun _, [] | Typ.Tptr _, [] ->
         let id = new_id () in
         ([], Sil.Eexp (Exp.Var id, inst), t)
-    | Typ.Tint _, [Sil.Off_index e] | Typ.Tfloat _, [Sil.Off_index e]
-    | Typ.Tvoid, [Sil.Off_index e]
-    | Typ.Tfun _, [Sil.Off_index e] | Typ.Tptr _, [Sil.Off_index e] ->
+    | (Typ.Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _), (Sil.Off_index e)::off' ->
         (* In this case, we lift t to the t array. *)
         let t' = match t with
           | Typ.Tptr(t', _) -> t'
@@ -158,7 +156,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         let len = Exp.Var (new_id ()) in
         let atoms', se', res_t' =
           create_struct_values
-            pname tenv orig_prop footprint_part kind max_stamp t' [] inst in
+            pname tenv orig_prop footprint_part kind max_stamp t' off' inst in
         let e' = Sil.array_clean_new_index footprint_part e in
         let se = Sil.Earray (len, [(e', se')], inst) in
         let res_t = Typ.Tarray (res_t', None) in
@@ -831,6 +829,11 @@ let add_guarded_by_constraints prop lexp pdesc =
     variables. This function ensures that [root(lexp): typ] is the
     current hpred of the iterator. typ is the type of the root of lexp. *)
 let prop_iter_add_hpred_footprint pname tenv orig_prop iter (lexp, typ) inst =
+  if Config.trace_rearrange then (
+    L.d_strln "entering prop_iter_add_hpred_footprint";
+    L.d_str "lexp: "; Sil.d_exp lexp; L.d_ln ();
+    L.d_str "typ:"; Typ.d_full typ; L.d_ln ();
+  );
   let max_stamp = fav_max_stamp (Prop.prop_iter_footprint_fav iter) in
   let ptsto, ptsto_foot, atoms =
     mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst in
@@ -1075,25 +1078,30 @@ let check_type_size pname prop texp off typ_from_instr =
 let rec iter_rearrange
     pname tenv lexp typ_from_instr prop iter
     inst: (Sil.offset list) Prop.prop_iter list =
-  let typ = match Sil.exp_get_offsets lexp with
+  let rec root_typ_of_offsets = function
     | Sil.Off_fld (f, ((Typ.Tstruct _) as struct_typ)) :: _ ->
         (* access through field: get the struct type from the field *)
         if Config.trace_rearrange then begin
           L.d_increase_indent 1;
           L.d_str "iter_rearrange: root of lexp accesses field "; L.d_strln (Ident.fieldname_to_string f);
-          L.d_str "  type from instruction: "; Typ.d_full typ_from_instr; L.d_ln();
           L.d_str "  struct type from field: "; Typ.d_full struct_typ; L.d_ln();
           L.d_decrease_indent 1;
           L.d_ln();
         end;
         struct_typ
+    | Sil.Off_index _ :: off
+      when !Config.curr_language = Config.Clang
+      (* TODO(t7651424): turn on for Java. Needs fixing in the frontend *) ->
+        Typ.Tarray (root_typ_of_offsets off, None)
     | _ ->
         typ_from_instr in
+  let typ = root_typ_of_offsets (Sil.exp_get_offsets lexp) in
   if Config.trace_rearrange then begin
     L.d_increase_indent 1;
     L.d_strln "entering iter_rearrange";
     L.d_str "lexp: "; Sil.d_exp lexp; L.d_ln ();
     L.d_str "typ: "; Typ.d_full typ; L.d_ln ();
+    L.d_str "type from instruction: "; Typ.d_full typ_from_instr; L.d_ln();
     L.d_strln "prop:"; Prop.d_prop prop; L.d_ln ();
     L.d_strln "iter:"; Prop.d_prop (Prop.prop_iter_to_prop iter);
     L.d_ln (); L.d_ln ()
@@ -1113,8 +1121,10 @@ let rec iter_rearrange
   let recurse_on_iters iters =
     let f_one_iter iter' =
       let prop' = Prop.prop_iter_to_prop iter' in
-      if Prover.check_inconsistency prop' then []
-      else iter_rearrange pname tenv (Prop.lexp_normalize_prop prop' lexp) typ prop' iter' inst in
+      if Prover.check_inconsistency prop' then
+        []
+      else
+        iter_rearrange pname tenv (Prop.lexp_normalize_prop prop' lexp) typ prop' iter' inst in
     let rec f_many_iters iters_lst = function
       | [] -> IList.flatten (IList.rev iters_lst)
       | iter':: iters' ->
