@@ -441,7 +441,7 @@ struct
     let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
 
-  let get_builtin_pname_opt name decl_opt =
+  let get_builtin_pname_opt name decl_opt type_ptr =
     let get_deprecated_attr_arg decl =
       let open Clang_ast_t in
       let decl_info = Clang_ast_proj.get_decl_tuple decl in
@@ -461,6 +461,10 @@ struct
         Some (Procname.from_string_c_fun attr)
     | _ when CTrans_models.is_modeled_builtin name ->
         Some (Procname.from_string_c_fun (CFrontend_config.infer ^ name))
+    | _ when CTrans_models.is_release_builtin name type_ptr ->
+        Some ModelBuiltins.__objc_release_cf
+    | _ when CTrans_models.is_retain_builtin name type_ptr ->
+        Some ModelBuiltins.__objc_retain_cf
     | _ -> None
 
 
@@ -472,13 +476,14 @@ struct
     Option.may (call_translation context) decl_opt;
     let name = Ast_utils.get_qualified_name name_info in
     let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
-    let pname = match get_builtin_pname_opt name decl_opt with
+    let pname = match get_builtin_pname_opt name decl_opt type_ptr with
       | Some builtin_pname -> builtin_pname
       | None -> CMethod_trans.create_procdesc_with_pointer context decl_ptr None name in
     let address_of_function = not context.CContext.is_callee_expression in
     (* If we are not translating a callee expression, *)
     (* then the address of the function is being taken.*)
     (* As e.g. in fun_ptr = foo; *)
+    let name = Procname.to_string pname in
     let non_mangled_func_name =
       if name = CFrontend_config.malloc &&
          (Config.clang_lang = Config.OBJC ||
@@ -576,7 +581,7 @@ struct
 
     (* use qualified method name for builtin matching, but use unqualified name elsewhere *)
     let qual_method_name = Ast_utils.get_qualified_name name_info in
-    let pname = match get_builtin_pname_opt qual_method_name decl_opt with
+    let pname = match get_builtin_pname_opt qual_method_name decl_opt type_ptr with
       | Some builtin_pname -> builtin_pname
       | None ->
           let pname = CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_name)
@@ -890,8 +895,8 @@ struct
                                 result_trans_subexprs) None callee_pname_opt with
     | Some builtin -> builtin
     | None ->
-        let callee_pname_opt', is_cf_retain_release =
-          CTrans_models.builtin_predefined_model fun_exp_stmt callee_pname_opt in
+        let is_cf_retain_release = Option.map_default
+            CTrans_models.is_cf_retain_release false callee_pname_opt in
         let act_params =
           let params = IList.tl (collect_exprs result_trans_subexprs) in
           if IList.length params = IList.length params_stmt then
@@ -903,12 +908,9 @@ struct
         let act_params = if is_cf_retain_release then
             (Exp.Const (Const.Cint IntLit.one), Typ.Tint Typ.IBool) :: act_params
           else act_params in
-        let sil_fe' = match callee_pname_opt' with
-          | Some pn -> Exp.Const (Const.Cfun pn)
-          | _ -> sil_fe in
         let res_trans_call =
           let cast_trans_fun = cast_trans context act_params sil_loc function_type in
-          match Option.map_default cast_trans_fun None callee_pname_opt' with
+          match Option.map_default cast_trans_fun None callee_pname_opt with
           | Some (instr, cast_exp) ->
               { empty_res_trans with
                 instrs = [instr];
@@ -917,9 +919,9 @@ struct
               let is_call_to_block = objc_exp_of_type_block fun_exp_stmt in
               let call_flags =
                 { CallFlags.default with CallFlags.cf_is_objc_block = is_call_to_block; } in
-              create_call_instr trans_state function_type sil_fe' act_params sil_loc
+              create_call_instr trans_state function_type sil_fe act_params sil_loc
                 call_flags ~is_objc_method:false in
-        let nname = "Call "^(Sil.exp_to_string sil_fe') in
+        let nname = "Call "^(Sil.exp_to_string sil_fe) in
         let all_res_trans = result_trans_subexprs @ [res_trans_call] in
         let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri
             sil_loc nname si all_res_trans in
@@ -927,7 +929,7 @@ struct
           if not (Builtin.is_registered callee_pname) then
             Cg.add_edge context.CContext.cg procname callee_pname
         in
-        Option.may add_cg_edge callee_pname_opt';
+        Option.may add_cg_edge callee_pname_opt;
         { res_trans_to_parent with exps = res_trans_call.exps }
 
   and cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt

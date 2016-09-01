@@ -36,15 +36,6 @@ let is_builtin_object_size pname =
 let is_replace_with_deref_first_arg pname =
   (Procname.to_string pname) = CFrontend_config.replace_with_deref_first_arg_attr
 
-let rec get_func_type_from_stmt stmt =
-  match stmt with
-  | Clang_ast_t.DeclRefExpr(_, _, expr_info, _) ->
-      Some expr_info.Clang_ast_t.ei_type_ptr
-  | _ ->
-      match CFrontend_utils.Ast_utils.get_stmts_from_stmt stmt with
-      | stmt:: _ -> get_func_type_from_stmt stmt
-      | [] -> None
-
 let is_retain_predefined_model typ pname =
   let funct = Procname.to_string pname in
   Core_foundation_model.is_core_lib_retain typ funct
@@ -78,6 +69,18 @@ let is_modeled_builtin funct =
 let is_modeled_attribute attr_name =
   IList.mem string_equal attr_name CFrontend_config.modeled_function_attributes
 
+let is_release_builtin funct fun_type =
+  let pn = Procname.from_string_c_fun funct in
+  let typ = Ast_utils.string_of_type_ptr fun_type in
+  if Specs.summary_exists pn then false
+  else is_release_predefined_model typ pn
+
+let is_retain_builtin funct fun_type =
+  let pn = Procname.from_string_c_fun funct in
+  let typ = Ast_utils.string_of_type_ptr fun_type in
+  if Specs.summary_exists pn then false
+  else is_retain_predefined_model typ pn
+
 let is_assert_log_s funct =
   funct = CFrontend_config.assert_rtn ||
   funct = CFrontend_config.assert_fail ||
@@ -103,19 +106,9 @@ let is_toll_free_bridging pn =
   funct = CFrontend_config.cf_autorelease ||
   funct = CFrontend_config.ns_make_collectable
 
-(** If the function is a builtin model, return the model, otherwise return the function *)
-let builtin_predefined_model fun_stmt pname_opt =
-  match get_func_type_from_stmt fun_stmt with
-  | Some typ ->
-      let typ = Ast_utils.string_of_type_ptr typ in
-      (match pname_opt with
-       | Some pn when Specs.summary_exists pn -> pname_opt, false
-       | Some pn when is_retain_predefined_model typ pn ->
-           Some ModelBuiltins.__objc_retain_cf, true
-       | Some pn when is_release_predefined_model typ pn ->
-           Some ModelBuiltins.__objc_release_cf, true
-       | _ -> pname_opt, false)
-  | _ -> pname_opt, false
+let is_cf_retain_release pn =
+  Procname.equal pn ModelBuiltins.__objc_retain_cf
+  || Procname.equal pn ModelBuiltins.__objc_release_cf
 
 (** If the function is a builtin model, return the model, otherwise return the function *)
 let is_assert_log pname =
