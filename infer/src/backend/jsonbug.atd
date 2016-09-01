@@ -25,6 +25,7 @@ type jsonbug = {
   qualifier : string;
   severity : string;
   line: int;
+  column: int;
   procedure : string;
   procedure_id : string;
   file : string;

@@ -450,6 +450,7 @@ let module IssuesJson = {
           qualifier: error_desc_to_plain_string error_desc,
           severity,
           line: loc.Location.line,
+          column: loc.Location.col,
           procedure: Procname.to_string procname,
           procedure_id,
           file,
