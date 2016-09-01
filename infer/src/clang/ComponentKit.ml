@@ -74,7 +74,6 @@ and contains_ck_impl decl_list =
     const NSString *y;
     ``` *)
 let mutable_local_vars_advice context decl =
-  let open CFrontend_utils.Ast_utils in
   match decl with
   | Clang_ast_t.VarDecl(decl_info, _, qual_type, _) ->
       let is_const_ref = match Ast_utils.get_type qual_type.qt_type_ptr with
@@ -83,9 +82,9 @@ let mutable_local_vars_advice context decl =
         | _ -> false in
       let is_const = qual_type.qt_is_const || is_const_ref in
       let condition = context.CLintersContext.is_ck_translation_unit
-                      && is_in_main_file decl
-                      && (is_objc () || is_objcpp ())
-                      && (not (is_syntactically_global_var decl))
+                      && Ast_utils.is_in_main_file decl
+                      && General_utils.is_objc_extention
+                      && (not (Ast_utils.is_syntactically_global_var decl))
                       && (not is_const) in
       if condition then
         Some {

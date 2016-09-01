@@ -127,12 +127,6 @@ sig
   (** true if a declaration is a constexpr variable *)
   val is_const_expr_var : Clang_ast_t.decl -> bool
 
-  (** true if CFrontend_config.language is set ot ObjC *)
-  val is_objc : unit -> bool
-
-  (** true if CFrontend_config.language is set ot ObjC *)
-  val is_objcpp : unit -> bool
-
   val is_ptr_to_objc_class : Clang_ast_t.c_type option -> string -> bool
 
   val full_name_of_decl_opt : Clang_ast_t.decl option -> string
@@ -213,7 +207,7 @@ sig
   val mk_procname_from_objc_method : string -> string -> Procname.objc_cpp_method_kind -> Procname.t
 
   val mk_procname_from_function : string -> (Clang_ast_t.decl_info * Clang_ast_t.function_decl_info)
-      option -> Config.clang_lang -> Procname.t
+      option -> Procname.t
 
   val get_mangled_method_name : Clang_ast_t.function_decl_info ->
     Clang_ast_t.cxx_method_decl_info -> string option
@@ -233,6 +227,10 @@ sig
   val mk_sil_var : Clang_ast_t.named_decl_info -> var_info option -> Procname.t -> Procname.t ->
     Pvar.t
 
-  val is_cpp_translation : Config.clang_lang -> bool
+  (** true if Config.clang_lang is C++ or ObjC++ *)
+  val is_cpp_translation : bool
+
+  (** true if Config.clang_lang is ObjC or ObjC++ *)
+  val is_objc_extention : bool
 
 end

@@ -344,16 +344,6 @@ struct
     | Clang_ast_t.VarDecl (_, _ ,_, vdi) -> vdi.vdi_is_const_expr
     | _ -> false
 
-  let is_objc () =
-    match Config.clang_lang with
-    | Config.OBJC -> true
-    | _ -> false
-
-  let is_objcpp () =
-    match Config.clang_lang with
-    | Config.OBJCPP -> true
-    | _ -> false
-
   let is_ptr_to_objc_class typ class_name =
     match typ with
     | Some Clang_ast_t.ObjCObjectPointerType (_, {Clang_ast_t.qt_type_ptr}) ->
@@ -596,8 +586,11 @@ struct
          | None -> file)
     | None -> ""
 
-  let is_cpp_translation language =
-    language = Config.CPP || language = Config.OBJCPP
+  let is_cpp_translation =
+    Config.clang_lang = Config.CPP || Config.clang_lang = Config.OBJCPP
+
+  let is_objc_extention =
+    Config.clang_lang = Config.OBJC || Config.clang_lang = Config.OBJCPP
 
   let rec get_mangled_method_name function_decl_info method_decl_info =
     (* For virtual methods return mangled name of the method from most base class
@@ -619,7 +612,7 @@ struct
              get_mangled_method_name fdi mdi
          | _ -> assert false)
 
-  let mk_procname_from_function name function_decl_info_opt language =
+  let mk_procname_from_function name function_decl_info_opt =
     let file =
       match function_decl_info_opt with
       | Some (decl_info, function_decl_info) ->
@@ -634,7 +627,7 @@ struct
       | _ -> None in
     let mangled_name =
       match mangled_opt with
-      | Some m when is_cpp_translation language -> m
+      | Some m when is_cpp_translation -> m
       | _ -> "" in
     let mangled = (string_crc_hex32 file) ^ mangled_name in
     if String.length file == 0 && String.length mangled_name == 0 then
@@ -666,9 +659,8 @@ struct
     match meth_decl with
     | FunctionDecl (decl_info, name_info, _, fdi) ->
         let name = Ast_utils.get_qualified_name name_info in
-        let language = Config.clang_lang in
         let function_info = Some (decl_info, fdi) in
-        mk_procname_from_function name function_info language
+        mk_procname_from_function name function_info
     | CXXMethodDecl (_, name_info, _, fdi, mdi)
     | CXXConstructorDecl (_, name_info, _, fdi, mdi)
     | CXXConversionDecl (_, name_info, _, fdi, mdi)

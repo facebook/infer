@@ -640,7 +640,7 @@ struct
     let ast_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let typ = match ast_typ with
       | Tstruct _ when decl_ref.dr_kind = `ParmVar ->
-          if General_utils.is_cpp_translation Config.clang_lang then
+          if General_utils.is_cpp_translation then
             Typ.Tptr (ast_typ, Pk_reference)
           else ast_typ
       | _ -> ast_typ in
@@ -659,7 +659,7 @@ struct
         | Some VarDecl (_, _, qual_type, vdi) ->
             (match ast_typ with
              | Tstruct _
-               when not (General_utils.is_cpp_translation Config.clang_lang) ->
+               when not General_utils.is_cpp_translation ->
                  (* Do not convert a global struct to a local because SIL
                     values do not include structs, they must all be heap-allocated  *)
                  false, None
@@ -833,7 +833,7 @@ struct
               if (is_binary_assign_op binary_operator_info)
               (* assignment operator result is lvalue in CPP, rvalue in C, *)
               (* hence the difference *)
-              && (not (General_utils.is_cpp_translation Config.clang_lang))
+              && (not General_utils.is_cpp_translation)
               && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
                 (* We are in this case when an assignment is inside        *)
                 (* another operator that creates a node. Eg. another       *)

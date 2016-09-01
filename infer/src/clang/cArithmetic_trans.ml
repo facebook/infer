@@ -150,7 +150,7 @@ let unary_operation_instruction uoi e typ loc =
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Load (id, e, typ, loc) in
       let e_plus_1 = Exp.BinOp(Binop.PlusA, Exp.Var id, Exp.Const(Const.Cint (IntLit.one))) in
-      let exp = if General_utils.is_cpp_translation Config.clang_lang then
+      let exp = if General_utils.is_cpp_translation then
           e
         else
           e_plus_1 in
@@ -164,7 +164,7 @@ let unary_operation_instruction uoi e typ loc =
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Load (id, e, typ, loc) in
       let e_minus_1 = Exp.BinOp(Binop.MinusA, Exp.Var id, Exp.Const(Const.Cint (IntLit.one))) in
-      let exp = if General_utils.is_cpp_translation Config.clang_lang then
+      let exp = if General_utils.is_cpp_translation then
           e
         else
           e_minus_1 in

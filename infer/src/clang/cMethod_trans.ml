@@ -28,7 +28,7 @@ type method_call_type =
   | MCStatic
 
 type function_method_decl_info =
-  | Func_decl_info of Clang_ast_t.function_decl_info * Clang_ast_t.type_ptr * Config.clang_lang
+  | Func_decl_info of Clang_ast_t.function_decl_info * Clang_ast_t.type_ptr
   | Cpp_Meth_decl_info of Clang_ast_t.function_decl_info * Clang_ast_t.cxx_method_decl_info * Clang_ast_t.pointer * Clang_ast_t.type_ptr
   | ObjC_Meth_decl_info of Clang_ast_t.obj_c_method_decl_info * Clang_ast_t.pointer
   | Block_decl_info of Clang_ast_t.block_decl_info * Clang_ast_t.type_ptr * CContext.t
@@ -43,7 +43,7 @@ let is_instance_method function_method_decl_info =
 
 let get_original_return_type function_method_decl_info =
   match function_method_decl_info with
-  | Func_decl_info (_, typ, _)
+  | Func_decl_info (_, typ)
   | Cpp_Meth_decl_info (_, _, _, typ)
   | Block_decl_info (_, typ, _) -> CTypes.return_type_of_function_type typ
   | ObjC_Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_result_type
@@ -83,7 +83,7 @@ let get_return_param tenv function_method_decl_info =
 
 let get_param_decls function_method_decl_info =
   match function_method_decl_info with
-  | Func_decl_info (function_decl_info, _, _)
+  | Func_decl_info (function_decl_info, _)
   | Cpp_Meth_decl_info (function_decl_info, _, _, _) ->
       function_decl_info.Clang_ast_t.fdi_parameters
   | ObjC_Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_parameters
@@ -91,7 +91,7 @@ let get_param_decls function_method_decl_info =
 
 let get_language function_method_decl_info =
   match function_method_decl_info with
-  | Func_decl_info (_, _, language) -> language
+  | Func_decl_info (_, _) -> Config.clang_lang
   | Cpp_Meth_decl_info _ -> Config.CPP
   | ObjC_Meth_decl_info _ -> Config.OBJC
   | Block_decl_info _ -> Config.OBJC
@@ -112,7 +112,7 @@ let get_parameters tenv function_method_decl_info =
         let _, mangled = General_utils.get_var_name_mangled name_info var_decl_info in
         let param_typ = CTypes_decl.type_ptr_to_sil_type tenv qt.Clang_ast_t.qt_type_ptr in
         let qt_type_ptr = match param_typ with
-          | Typ.Tstruct _ when General_utils.is_cpp_translation Config.clang_lang ->
+          | Typ.Tstruct _ when General_utils.is_cpp_translation ->
               Ast_expressions.create_reference_type qt.Clang_ast_t.qt_type_ptr
           | _ -> qt.Clang_ast_t.qt_type_ptr in
         (mangled, {qt with qt_type_ptr})
@@ -160,8 +160,7 @@ let method_signature_of_decl tenv meth_decl block_data_opt =
   let open Clang_ast_t in
   match meth_decl, block_data_opt with
   | FunctionDecl (decl_info, _, qt, fdi), _ ->
-      let language = Config.clang_lang in
-      let func_decl = Func_decl_info (fdi, qt.Clang_ast_t.qt_type_ptr, language) in
+      let func_decl = Func_decl_info (fdi, qt.Clang_ast_t.qt_type_ptr) in
       let procname = General_utils.procname_of_decl meth_decl in
       let ms = build_method_signature tenv decl_info procname func_decl None None in
       let extra_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
@@ -462,7 +461,7 @@ let create_procdesc_with_pointer context pointer class_name_opt name =
         | Some class_name ->
             General_utils.mk_procname_from_cpp_method class_name name None
         | None ->
-            General_utils.mk_procname_from_function name None Config.clang_lang in
+            General_utils.mk_procname_from_function name None in
       create_external_procdesc context.cfg callee_name false None;
       callee_name
 
