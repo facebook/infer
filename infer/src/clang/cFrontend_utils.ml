@@ -278,12 +278,19 @@ struct
     | Some AttributedType (_, attr_info) -> attr_info.ati_attr_kind = `Nullable
     | _ -> false
 
-  let string_of_type_ptr type_ptr =
-    match get_desugared_type type_ptr with
-    | Some typ ->
-        let type_info = Clang_ast_proj.get_type_tuple typ in
-        type_info.Clang_ast_t.ti_raw
-    | None -> ""
+  let string_of_type_ptr type_ptr = Clang_ast_j.string_of_type_ptr type_ptr
+
+  let name_of_typedef_type_info {Clang_ast_t.tti_decl_ptr} =
+    match get_decl tti_decl_ptr with
+    | Some TypedefDecl (_, name_decl_info, _, _, _) ->
+        get_qualified_name name_decl_info
+    | _ -> ""
+
+  let name_opt_of_typedef_type_ptr type_ptr =
+    match get_type type_ptr with
+    | Some Clang_ast_t.TypedefType (_, typedef_type_info) ->
+        Some (name_of_typedef_type_info typedef_type_info)
+    | _ -> None
 
   let string_of_qual_type {Clang_ast_t.qt_type_ptr; qt_is_const} =
     Printf.sprintf "%s%s" (if qt_is_const then "is_const " else "") (string_of_type_ptr qt_type_ptr)
@@ -696,7 +703,7 @@ struct
   let mk_sil_var name decl_info_type_ptr_opt procname outer_procname =
     let name_string = Ast_utils.get_qualified_name name in
     match decl_info_type_ptr_opt with
-    | Some (decl_info, type_ptr, var_decl_info, should_be_mangled) ->
+    | Some (decl_info, _, var_decl_info, should_be_mangled) ->
         let name_string, simple_name = get_var_name_mangled name var_decl_info in
         if var_decl_info.Clang_ast_t.vdi_is_global then
           let global_mangled_name =
@@ -706,11 +713,10 @@ struct
           Pvar.mk_global global_mangled_name
         else if not should_be_mangled then Pvar.mk simple_name procname
         else
-          let type_name = Ast_utils.string_of_type_ptr type_ptr in
           let start_location = fst decl_info.Clang_ast_t.di_source_range in
           let line_opt = start_location.Clang_ast_t.sl_line in
           let line_str = match line_opt with | Some line -> string_of_int line | None -> "" in
-          let mangled = string_crc_hex32 (type_name ^ line_str) in
+          let mangled = string_crc_hex32 line_str in
           let mangled_name = Mangled.mangled name_string mangled in
           Pvar.mk mangled_name procname
     | None -> Pvar.mk (Mangled.from_string name_string) procname

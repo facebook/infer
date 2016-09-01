@@ -352,8 +352,9 @@ struct
   let objCSelectorExpr_trans trans_state expr_info selector =
     stringLiteral_trans trans_state expr_info selector
 
-  let objCEncodeExpr_trans trans_state expr_info type_ptr =
-    stringLiteral_trans trans_state expr_info (Ast_utils.string_of_type_ptr type_ptr)
+  let objCEncodeExpr_trans trans_state expr_info objc_encode_expr_info =
+    let type_raw = objc_encode_expr_info.Clang_ast_t.oeei_raw in
+    stringLiteral_trans trans_state expr_info type_raw
 
   let objCProtocolExpr_trans trans_state expr_info decl_ref =
     let name = (match decl_ref.Clang_ast_t.dr_name with
@@ -2504,8 +2505,8 @@ struct
     | ObjCSelectorExpr(_, _, expr_info, selector) ->
         objCSelectorExpr_trans trans_state expr_info selector
 
-    | ObjCEncodeExpr(_, _, expr_info, type_ptr) ->
-        objCEncodeExpr_trans trans_state expr_info type_ptr
+    | ObjCEncodeExpr(_, _, expr_info, objc_encode_expr_info) ->
+        objCEncodeExpr_trans trans_state expr_info objc_encode_expr_info
 
     | ObjCProtocolExpr(_, _, expr_info, decl_ref) ->
         objCProtocolExpr_trans trans_state expr_info decl_ref

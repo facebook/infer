@@ -69,17 +69,25 @@ let is_modeled_builtin funct =
 let is_modeled_attribute attr_name =
   IList.mem string_equal attr_name CFrontend_config.modeled_function_attributes
 
+let get_first_param_typedef_string_opt type_ptr =
+  match Ast_utils.get_desugared_type type_ptr with
+  | Some Clang_ast_t.FunctionProtoType (_, _, {pti_params_type = [param_ptr]}) ->
+      Ast_utils.name_opt_of_typedef_type_ptr param_ptr
+  | _ -> None
+
 let is_release_builtin funct fun_type =
   let pn = Procname.from_string_c_fun funct in
-  let typ = Ast_utils.string_of_type_ptr fun_type in
   if Specs.summary_exists pn then false
-  else is_release_predefined_model typ pn
+  else match get_first_param_typedef_string_opt fun_type with
+    | Some typ -> is_release_predefined_model typ pn
+    | _ -> false
 
 let is_retain_builtin funct fun_type =
   let pn = Procname.from_string_c_fun funct in
-  let typ = Ast_utils.string_of_type_ptr fun_type in
   if Specs.summary_exists pn then false
-  else is_retain_predefined_model typ pn
+  else match get_first_param_typedef_string_opt fun_type with
+    | Some typ -> is_retain_predefined_model typ pn
+    | _ -> false
 
 let is_assert_log_s funct =
   funct = CFrontend_config.assert_rtn ||

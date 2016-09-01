@@ -163,7 +163,7 @@ let assign_pointer_warning _ decl_info pname obj_c_property_decl_info =
       let raw_ptr = Clang_ast_types.type_ptr_to_clang_pointer type_ptr in
       match Clang_ast_main.PointerMap.find raw_ptr !CFrontend_config.pointer_type_index with
       | MemberPointerType _ | ObjCObjectPointerType _ | BlockPointerType _ -> true
-      | TypedefType (type_info, _) -> type_info.ti_raw = "id"
+      | TypedefType (_, tti) -> (Ast_utils.name_of_typedef_type_info tti) = CFrontend_config.id_cl
       | exception Not_found -> false
       | _ -> false in
     has_assign_property() && is_pointer_type () in
