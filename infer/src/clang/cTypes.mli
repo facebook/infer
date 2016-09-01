@@ -19,8 +19,6 @@ val mk_classname : string -> Csu.class_kind -> Typename.t
 
 val mk_structname : string -> Typename.t
 
-val mk_enumname : string -> Typename.t
-
 val get_name_from_struct: Typ.t -> Mangled.t
 
 val remove_pointer_to_typ : Typ.t -> Typ.t

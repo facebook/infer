@@ -285,7 +285,6 @@ let get_type_from_expr_info ei tenv =
 
 let class_from_pointer_type tenv type_ptr =
   match type_ptr_to_sil_type tenv type_ptr with
-  | Typ.Tptr( Typ.Tvar (Typename.TN_typedef name), _) -> Mangled.to_string name
   | Typ.Tptr( Typ.Tvar (Typename.TN_csu (_, name)), _) -> Mangled.to_string name
   | _ -> assert false
 

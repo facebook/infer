@@ -30,8 +30,7 @@ let remove_pointer_to_typ typ =
 let classname_of_type typ =
   match typ with
   | Typ.Tvar (Typename.TN_csu (_, name) )
-  | Typ.Tstruct { Typ.struct_name =  Some name }
-  | Typ.Tvar (Typename.TN_typedef name) -> Mangled.to_string name
+  | Typ.Tstruct { struct_name =  Some name } -> Mangled.to_string name
   | Typ.Tfun _ -> CFrontend_config.objc_object
   | _ ->
       Printing.log_out
@@ -41,8 +40,6 @@ let classname_of_type typ =
 let mk_classname n ck = Typename.TN_csu (Csu.Class ck, Mangled.from_string n)
 
 let mk_structname n = Typename.TN_csu (Csu.Struct, Mangled.from_string n)
-
-let mk_enumname n = Typename.TN_enum (Mangled.from_string n)
 
 let is_class typ =
   match typ with

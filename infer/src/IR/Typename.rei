@@ -14,7 +14,7 @@ open! Utils;
 
 
 /** Named types. */
-type t = | TN_typedef of Mangled.t | TN_enum of Mangled.t | TN_csu of Csu.t Mangled.t;
+type t = | TN_csu of Csu.t Mangled.t;
 
 
 /** convert the typename to a string */

@@ -65,9 +65,6 @@ let print_tenv_struct_unions tenv =
                     (Typ.to_string typ)^"\n") struct_t.instance_fields
               )
           )
-      | Typename.TN_typedef typname ->
-          print_endline
-            ((Mangled.to_string typname)^"-->"^(Typ.to_string (Typ.Tstruct struct_t)))
       | _ -> ()
     ) tenv
 
