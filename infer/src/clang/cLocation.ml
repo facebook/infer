@@ -101,7 +101,7 @@ let should_do_frontend_check (loc_start, _) =
 (* the headers because the dot files in the frontend tests should contain nothing *)
 (* else than the source file to avoid conflicts between different versions of the *)
 (* libraries in the CI *)
-let should_translate (loc_start, loc_end) decl_trans_context =
+let should_translate (loc_start, loc_end) decl_trans_context ~translate_when_used =
   let map_path_of pred loc =
     match loc.Clang_ast_t.sl_file with
     | Some f -> pred f
@@ -116,7 +116,7 @@ let should_translate (loc_start, loc_end) decl_trans_context =
   in
   let file_in_project = map_path_of file_in_project loc_end
                         || map_path_of file_in_project loc_start in
-  let translate_on_demand = file_in_project || Config.models_mode in
+  let translate_on_demand = translate_when_used || file_in_project || Config.models_mode in
   let file_in_models = map_path_of DB.file_is_in_cpp_model loc_end
                        || map_path_of DB.file_is_in_cpp_model loc_start in
   equal_current_source !curr_file
@@ -126,9 +126,9 @@ let should_translate (loc_start, loc_end) decl_trans_context =
   || (Config.cxx_experimental && decl_trans_context = `Translation && translate_on_demand
       && not Config.testing_mode)
 
-let should_translate_lib source_range decl_trans_context =
+let should_translate_lib source_range decl_trans_context ~translate_when_used =
   not Config.no_translate_libs
-  || should_translate source_range decl_trans_context
+  || should_translate source_range decl_trans_context ~translate_when_used
 
 let is_file_blacklisted file =
   let paths = Config.skip_clang_analysis_in_path in

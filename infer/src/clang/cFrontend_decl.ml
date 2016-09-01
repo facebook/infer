@@ -144,8 +144,7 @@ struct
     let info = Clang_ast_proj.get_decl_tuple dec in
     CLocation.update_curr_file info;
     let source_range = info.Clang_ast_t.di_source_range in
-    let translate_location = CLocation.should_translate_lib source_range decl_trans_context in
-    let always_translate_decl = match dec with
+    let translate_when_used = match dec with
       | Clang_ast_t.FunctionDecl (_, name_info, _, _)
       | Clang_ast_t.CXXMethodDecl (_, name_info, _, _, _) ->
           (* named_decl_info.ni_name has name without template parameters.*)
@@ -154,13 +153,15 @@ struct
           let name = Ast_utils.get_qualified_name name_info in
           AttributesTable.is_whitelisted_cpp_method name
       | _ -> false in
+    let translate_location =
+      CLocation.should_translate_lib source_range decl_trans_context ~translate_when_used in
     let never_translate_decl = match dec with
       | Clang_ast_t.FunctionDecl (_, name_info, _, _)
       | Clang_ast_t.CXXMethodDecl (_, name_info, _, _, _) ->
           let fun_name = name_info.Clang_ast_t.ni_name in
           Str.string_match (Str.regexp "__infer_skip__" ) fun_name 0
       | _ -> false in
-    (not never_translate_decl) && (translate_location || always_translate_decl)
+    (not never_translate_decl) && translate_location
 
   (* Translate one global declaration *)
   let rec translate_one_declaration tenv cg cfg decl_trans_context dec =
