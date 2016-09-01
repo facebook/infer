@@ -16,13 +16,6 @@ module L = Logging
 module F = Format
 module DExp = DecompiledExp
 
-let smart_pointers = [
-  ["std"; "shared_ptr"];
-  ["std"; "unique_ptr"]
-]
-
-let pointer_wrapper_classes = smart_pointers
-
 let vector_class = ["std"; "vector"]
 
 let is_one_of_classes class_name classes =
@@ -37,9 +30,6 @@ let is_method_of_objc_cpp_class pname classes =
       let class_name = Procname.objc_cpp_get_class_name name in
       is_one_of_classes class_name classes
   | _ -> false
-
-let method_of_pointer_wrapper pname =
-  is_method_of_objc_cpp_class pname pointer_wrapper_classes
 
 let is_vector_method pname =
   is_method_of_objc_cpp_class pname [vector_class]
@@ -761,10 +751,6 @@ let explain_dexp_access prop dexp is_nullable =
          | Const.Cfun _ -> (* Treat function as an update *)
              Some (Sil.Eexp (Exp.Const c, Sil.Ireturn_from_call loc.Location.line))
          | _ -> None)
-    | DExp.Dretcall (DExp.Dconst (Const.Cfun pname as c ) , _, loc, _ )
-      when method_of_pointer_wrapper pname ->
-        if verbose then (L.d_strln "lookup: found Dretcall ");
-        Some (Sil.Eexp (Exp.Const c, Sil.Ireturn_from_pointer_wrapper_call loc.Location.line))
     | DExp.Dpvaraddr pvar ->
         (L.d_strln ("lookup: found Dvaraddr " ^ DExp.to_string (DExp.Dpvaraddr pvar)));
         find_ptsto (Exp.Lvar pvar)
@@ -783,8 +769,6 @@ let explain_dexp_access prop dexp is_nullable =
         Some (Localise.Last_accessed (n, is_nullable))
     | Some (Sil.Ireturn_from_call n) ->
         Some (Localise.Returned_from_call n)
-    | Some (Sil.Ireturn_from_pointer_wrapper_call n) ->
-        Some (Localise.Returned_from_pointer_wrapper_call n)
     | Some Sil.Ialloc when !Config.curr_language = Config.Java ->
         Some Localise.Initialized_automatically
     | Some inst ->
@@ -817,10 +801,6 @@ let explain_dereference_access outermost_array is_nullable _de_opt prop =
     | Some de ->
         Some (if outermost_array then remove_outermost_array_access de else de) in
   let value_str = match de_opt with
-    | Some (DExp.Darrow ((DExp.Dpvaraddr pvar), f) as de) ->
-        if is_special_field smart_pointers None f then
-          DExp.to_string (DExp.Dpvaraddr pvar)
-        else DExp.to_string de
     | Some de ->
         DExp.to_string de
     | None -> "" in

@@ -115,8 +115,7 @@ type inst =
   | Irearrange of zero_flag null_case_flag int PredSymb.path_pos
   | Itaint
   | Iupdate of zero_flag null_case_flag int PredSymb.path_pos
-  | Ireturn_from_call of int
-  | Ireturn_from_pointer_wrapper_call of int;
+  | Ireturn_from_call of int;
 
 let inst_abstraction: inst;
 

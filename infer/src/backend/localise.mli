@@ -176,7 +176,6 @@ type access =
   | Last_accessed of int * bool (* line, is_nullable flag *)
   | Initialized_automatically
   | Returned_from_call of int
-  | Returned_from_pointer_wrapper_call of int
 
 val dereference_string : deref_str -> string -> access option -> Location.t -> error_desc
 

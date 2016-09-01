@@ -123,8 +123,7 @@ type inst =
   | Irearrange of zero_flag null_case_flag int PredSymb.path_pos
   | Itaint
   | Iupdate of zero_flag null_case_flag int PredSymb.path_pos
-  | Ireturn_from_call of int
-  | Ireturn_from_pointer_wrapper_call of int;
+  | Ireturn_from_call of int;
 
 
 /** structured expressions represent a value of structured type, such as an array or a struct. */
@@ -965,7 +964,6 @@ let inst_new_loc loc inst =>
   | Itaint => inst
   | Iupdate zf ncf _ pos => Iupdate zf ncf loc.Location.line pos
   | Ireturn_from_call _ => Ireturn_from_call loc.Location.line
-  | Ireturn_from_pointer_wrapper_call _ => Ireturn_from_pointer_wrapper_call loc.Location.line
   };
 
 
@@ -996,7 +994,6 @@ let inst_to_string inst => {
   | Iupdate zf ncf n _ =>
     "update:" ^ zero_flag_to_string zf ^ null_case_flag_to_string ncf ^ string_of_int n
   | Ireturn_from_call n => "return_from_call: " ^ string_of_int n
-  | Ireturn_from_pointer_wrapper_call n => "Ireturn_from_pointer_wrapper_call: " ^ string_of_int n
   }
 };
 
@@ -1048,8 +1045,7 @@ let inst_zero_flag =
   | Irearrange zf _ _ _ => zf
   | Itaint => None
   | Iupdate zf _ _ _ => zf
-  | Ireturn_from_call _
-  | Ireturn_from_pointer_wrapper_call _ => None;
+  | Ireturn_from_call _ => None;
 
 
 /** Set the null case flag of the inst. */
@@ -1096,7 +1092,6 @@ let update_inst inst_old inst_new => {
     let zf' = combine_zero_flags (inst_zero_flag inst_old) zf;
     Iupdate zf' ncf n pos
   | Ireturn_from_call _ => inst_new
-  | Ireturn_from_pointer_wrapper_call _ => inst_new
   }
 };
 
