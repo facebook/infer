@@ -82,17 +82,27 @@ let add_cg (exe_env: t) (source_dir : DB.source_dir) =
       Cg.extend exe_env.cg cg;
       let file_data = new_file_data source nLOC cg_fname in
       let defined_procs = Cg.get_defined_nodes cg in
-      IList.iter (fun pname ->
-          let should_update =
-            if Procname.Hash.mem exe_env.proc_map pname then
-              let old_source =
-                (Procname.Hash.find exe_env.proc_map pname).source in
-              (* when a procedure is defined in several files, *)
-              (* map to the first alphabetically *)
-              source < old_source
-            else true in
-          if should_update
-          then Procname.Hash.replace exe_env.proc_map pname file_data)
+
+      (* Find the file where `pname` is defined according to the attributes,
+         if a cfg for that file exist. *)
+      let defined_in_according_to_attributes pname =
+        match AttributesTable.load_attributes pname with
+        | None ->
+            None
+        | Some proc_attributes ->
+            let loc = proc_attributes.ProcAttributes.loc in
+            let source_file = loc.Location.file in
+            let source_dir = DB.source_dir_from_source_file source_file in
+            let cfg_fname = DB.source_dir_get_internal_file source_dir ".cfg" in
+            let cfg_fname_exists = Sys.file_exists (DB.filename_to_string cfg_fname) in
+            if cfg_fname_exists
+            then Some source_file
+            else None in
+
+      IList.iter
+        (fun pname ->
+           if (defined_in_according_to_attributes pname = None)
+           then Procname.Hash.replace exe_env.proc_map pname file_data)
         defined_procs;
       Some cg
 

@@ -54,11 +54,8 @@ let analyze_exe_env exe_env => {
 /** Create an exe_env from a cluster. */
 let exe_env_from_cluster cluster => {
   let _exe_env = Exe_env.create ();
-  let source_dirs = [cluster];
-  let sorted_dirs = IList.sort DB.source_dir_compare source_dirs;
-  IList.iter (fun src_dir => ignore (Exe_env.add_cg _exe_env src_dir)) sorted_dirs;
-  let exe_env = Exe_env.freeze _exe_env;
-  exe_env
+  ignore (Exe_env.add_cg _exe_env cluster);
+  Exe_env.freeze _exe_env
 };
 
 

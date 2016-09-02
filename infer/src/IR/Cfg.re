@@ -250,7 +250,6 @@ let module Node = {
     NodeSet.elements (slice_nodes node.nd_preds)
   };
   let get_exn node => node.nd_exn;
-  let set_proc_desc node proc => node.nd_proc = Some proc;
 
   /** Get the proc desc of the node */
   let get_proc_desc node =>

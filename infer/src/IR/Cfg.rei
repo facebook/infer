@@ -259,9 +259,6 @@ let module Node: {
   /** Set the source location of the node */
   let set_loc: t => Location.t => unit;
 
-  /** Set the proc desc associated to the node */
-  let set_proc_desc: t => Procdesc.t => unit;
-
   /** Set the successor nodes and exception nodes, and build predecessor links */
   let set_succs_exn: cfg => t => list t => list t => unit;
 };

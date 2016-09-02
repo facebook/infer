@@ -1288,8 +1288,9 @@ let init_files format_list_by_kind => {
   let init_files_of_report_kind (report_kind, format_list) => {
     let init_files_of_format (format_kind, outfile) =>
       switch (format_kind, report_kind) {
-      | (Csv, Stats) => Report.pp_header outfile.fmt ()
       | (Csv, Issues) => IssuesCsv.pp_header outfile.fmt ()
+      | (Csv, Procs) => ProcsCsv.pp_header outfile.fmt ()
+      | (Csv, Stats) => Report.pp_header outfile.fmt ()
       | (Json, Issues) => IssuesJson.pp_json_open outfile.fmt ()
       | (Xml, Issues) => IssuesXml.pp_issues_open outfile.fmt ()
       | (Xml, Procs) => ProcsXml.pp_procs_open outfile.fmt ()
