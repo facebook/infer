@@ -16,7 +16,7 @@ open! Utils
 
 (** Various kind of analyzers *)
 type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
-              | Crashcontext | Linters
+              | Crashcontext | Linters | Quandary
 
 (** Association list of analyzers and their names *)
 val string_to_analyzer : (string * analyzer) list
@@ -220,6 +220,7 @@ val print_using_diff : bool
 val procs_csv : outfile option
 val procs_xml : outfile option
 val project_root : string option
+val quandary : bool
 val quiet : bool
 val reactive_mode : bool
 val report : outfile option

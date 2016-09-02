@@ -18,12 +18,13 @@ module F = Format
 
 
 type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
-              | Crashcontext | Linters
+              | Crashcontext | Linters | Quandary
 
 let string_to_analyzer =
   [("capture", Capture); ("compile", Compile);
    ("infer", Infer); ("eradicate", Eradicate); ("checkers", Checkers);
-   ("tracing", Tracing); ("crashcontext", Crashcontext); ("linters", Linters)]
+   ("tracing", Tracing); ("crashcontext", Crashcontext); ("linters", Linters);
+   ("quandary", Quandary);]
 
 
 type clang_lang = C | CPP | OBJC | OBJCPP
@@ -522,11 +523,12 @@ and analyzer =
   let () = match Infer with
     (* NOTE: if compilation fails here, it means you have added a new analyzer without updating the
        documentation of this option *)
-    | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters -> () in
+    | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters
+    | Quandary -> () in
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:"a"
     ~exes:CLOpt.[Toplevel]
     "Specify which analyzer to run (only one at a time is supported):\n\
-     - infer, eradicate, checkers: run the specified analysis\n\
+     - infer, eradicate, checkers, quandary: run the specified analysis\n\
      - capture: run capture phase only (no analysis)\n\
      - compile: run compilation command without interfering (Java only)\n\
      - crashcontext, tracing: experimental (see --crashcontext and --tracing)\n\
@@ -699,7 +701,7 @@ and enable_checks =
   CLOpt.mk_string_list ~deprecated:["enable_checks"] ~long:"enable-checks" ~meta:"error name"
     "Show reports coming from this type of errors"
 
-and checkers, eradicate, crashcontext =
+and checkers, eradicate, crashcontext, quandary =
   (* Run only the checkers instead of the full analysis *)
   let checkers =
     CLOpt.mk_bool ~deprecated:["checkers"] ~long:"checkers"
@@ -717,7 +719,13 @@ and checkers, eradicate, crashcontext =
       ""
       [checkers]
   in
-  (checkers, eradicate, crashcontext)
+  (* Activate the quandary taint analysis *)
+  let quandary =
+    CLOpt.mk_bool_group ~deprecated:["quandary"] ~long:"quandary"
+      ""
+      [checkers]
+  in
+  (checkers, eradicate, crashcontext, quandary)
 
 (* Use file for the err channel *)
 and err_file =
@@ -1335,7 +1343,7 @@ and calls_csv = !calls_csv
 and checkers = !checkers
 
 (** should the checkers be run? *)
-and checkers_enabled = not (!eradicate || !crashcontext)
+and checkers_enabled = not (!eradicate || !crashcontext || !quandary)
 and clang_include_to_override = !clang_include_to_override
 and clang_lang = !clang_lang
 and cluster_cmdline = !cluster
@@ -1395,6 +1403,7 @@ and print_types = !print_types
 and print_using_diff = !print_using_diff
 and procs_csv = !procs_csv
 and procs_xml = !procs_xml
+and quandary = !quandary
 and quiet = !quiet
 and reactive_mode = !reactive
 and report = !report

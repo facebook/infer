@@ -306,6 +306,8 @@ class AnalyzerWrapper(object):
             infer_options += ['-crashcontext']
         elif self.args.analyzer == config.ANALYZER_CHECKERS:
             infer_options += ['-checkers']
+        elif self.args.analyzer == config.ANALYZER_QUANDARY:
+            infer_options += ['-quandary']
         else:
             if self.args.analyzer == config.ANALYZER_TRACING:
                 infer_options.append('-tracing')
