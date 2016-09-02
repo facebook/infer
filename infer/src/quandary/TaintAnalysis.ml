@@ -134,6 +134,10 @@ module Make (TraceDomain : Trace.S) = struct
               | Some (actual_trace, _) ->
                   (* add callee_pname to actual trace as a sink *)
                   let actual_trace' = TraceDomain.add_sink sink actual_trace in
+                  TraceDomain.log_reports
+                    actual_trace'
+                    (Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc)
+                    loc;
                   TaintDomain.add_trace actual_ap actual_trace' access_tree_acc
               | None ->
                   access_tree_acc
