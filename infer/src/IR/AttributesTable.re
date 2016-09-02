@@ -45,12 +45,21 @@ let res_dir_attr_filename pname => {
   filename
 };
 
-let store_attributes proc_attributes => {
-  let proc_name = proc_attributes.ProcAttributes.proc_name;
+let store_attributes (proc_attributes: ProcAttributes.t) => {
+  let proc_name = proc_attributes.proc_name;
   let attributes_file = res_dir_attr_filename proc_name;
-  let should_write =
-    /* only overwrite defined procedures */
-    proc_attributes.ProcAttributes.is_defined || not (DB.file_exists attributes_file);
+  let should_write = not (DB.file_exists attributes_file) || (
+    switch (Serialization.from_file serializer attributes_file) {
+    | None => true
+    | Some proc_attributes_on_disk =>
+      let higher_rank_than_on_disk () =>
+        DB.source_file_compare proc_attributes.loc.file proc_attributes_on_disk.loc.file > 0;
+      let becomes_defined = proc_attributes.is_defined && not proc_attributes_on_disk.is_defined;
+      /* Only overwrite the attribute file if the procedure becomes defined
+         or its associated file has higher rank (alphabetically) than on disk. */
+      becomes_defined || higher_rank_than_on_disk ()
+    }
+  );
   if should_write {
     Serialization.to_file serializer attributes_file proc_attributes
   }
