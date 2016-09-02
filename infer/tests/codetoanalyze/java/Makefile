@@ -19,10 +19,12 @@ MODELS = $(JAVA_LIB_DIR)/models.jar
 
 CLASSPATH=$(ANDROID19):$(ANDROIDSUPPORT):$(ANNOTATIONS):$(BUTTERKNIFE):$(JACKSON):$(JSR305):$(INJECT):$(MODELS):.
 
+INFERPRINT_OPTIONS = --issues-tests
+
 default: compile
 
 print: analyze
-	$(INFERPRINT_BIN) -q -a $(ANALYZER) --issues-tests issues.exp.test
+	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) issues.exp.test
 	LC_ALL=C sort -o issues.exp.test issues.exp.test
 
 test: analyze print

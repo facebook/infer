@@ -15,7 +15,7 @@ TARGETS_TO_TEST += c cpp
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 TARGETS_TO_TEST += java
-DIRECT_TESTS += java_checkers_test java_eradicate_test java_infer_test java_tracing_test
+DIRECT_TESTS += java_checkers_test java_eradicate_test java_infer_test java_tracing_test java_quandary_test
 endif
 ifneq ($(XCODE_SELECT),no)
 TARGETS_TO_TEST += objc objcpp
@@ -109,6 +109,8 @@ java_infer_test:
 java_tracing_test:
 	make -C ./infer/tests/codetoanalyze/java/tracing test
 
+java_quandary_test:
+	make -C ./infer/tests/codetoanalyze/java/quandary test
 
 buck_test: infer
 	make $(DIRECT_TESTS)
