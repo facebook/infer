@@ -466,6 +466,9 @@ struct
         Some ModelBuiltins.__objc_release_cf
     | _ when CTrans_models.is_retain_builtin name type_ptr ->
         Some ModelBuiltins.__objc_retain_cf
+    | _ when name = CFrontend_config.malloc &&
+             General_utils.is_objc_extension ->
+        Some ModelBuiltins.malloc_no_fail
     | _ -> None
 
 
@@ -484,21 +487,9 @@ struct
     (* If we are not translating a callee expression, *)
     (* then the address of the function is being taken.*)
     (* As e.g. in fun_ptr = foo; *)
-    let name = Procname.to_string pname in
-    let non_mangled_func_name =
-      if name = CFrontend_config.malloc &&
-         (Config.clang_lang = Config.OBJC ||
-          Config.clang_lang = Config.OBJCPP) then
-        ModelBuiltins.malloc_no_fail
-      else Procname.from_string_c_fun name in
-    let is_builtin = Builtin.is_registered non_mangled_func_name in
-    if is_builtin then (* malloc, free, exit, scanf, ... *)
-      { empty_res_trans with exps = [(Exp.Const (Const.Cfun non_mangled_func_name), typ)] }
-    else
-      begin
-        if address_of_function then Cfg.set_procname_priority context.cfg pname;
-        { empty_res_trans with exps = [(Exp.Const (Const.Cfun pname), typ)] }
-      end
+    let is_builtin = Builtin.is_registered pname in
+    if address_of_function && not is_builtin then Cfg.set_procname_priority context.cfg pname;
+    { empty_res_trans with exps = [(Exp.Const (Const.Cfun pname), typ)] }
 
   let field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init =
     let open CContext in

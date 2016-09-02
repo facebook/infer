@@ -589,7 +589,7 @@ struct
   let is_cpp_translation =
     Config.clang_lang = Config.CPP || Config.clang_lang = Config.OBJCPP
 
-  let is_objc_extention =
+  let is_objc_extension =
     Config.clang_lang = Config.OBJC || Config.clang_lang = Config.OBJCPP
 
   let rec get_mangled_method_name function_decl_info method_decl_info =

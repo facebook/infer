@@ -200,7 +200,7 @@ let global_var_init_with_calls_warning _ decl =
     match Clang_ast_proj.get_named_decl_tuple decl with
     | Some (di, ndi) -> di, ndi.ni_name
     | None -> assert false (* we cannot be here *) in
-  let condition = General_utils.is_objc_extention
+  let condition = General_utils.is_objc_extension
                   && Ast_utils.is_syntactically_global_var decl
                   && (not (Ast_utils.is_const_expr_var decl))
                   && is_initialized_with_expensive_call decl in

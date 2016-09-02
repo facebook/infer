@@ -83,7 +83,7 @@ let mutable_local_vars_advice context decl =
       let is_const = qual_type.qt_is_const || is_const_ref in
       let condition = context.CLintersContext.is_ck_translation_unit
                       && Ast_utils.is_in_main_file decl
-                      && General_utils.is_objc_extention
+                      && General_utils.is_objc_extension
                       && (not (Ast_utils.is_syntactically_global_var decl))
                       && (not is_const) in
       if condition then

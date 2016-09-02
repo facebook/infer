@@ -14,6 +14,12 @@
 #include <stdlib.h>
 #include <time.h>
 
+#ifdef __cplusplus
+// specify C linkage to avoid mangling of names of infer builtins
+// they need to have plain C name so backend can recognise it
+extern "C" {
+#endif
+
 // model returning an arbitrary (nondeterministic) short
 short __infer_nondet_short();
 
@@ -72,3 +78,7 @@ extern void __set_array_length(void* ptr, size_t size);
 // builtin: set the flag to the given value for the procedure where this call
 // appears
 extern void __infer_set_flag(char* flag, char* value);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif

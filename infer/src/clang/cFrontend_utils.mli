@@ -231,6 +231,6 @@ sig
   val is_cpp_translation : bool
 
   (** true if Config.clang_lang is ObjC or ObjC++ *)
-  val is_objc_extention : bool
+  val is_objc_extension : bool
 
 end
