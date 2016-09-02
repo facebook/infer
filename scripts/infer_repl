@@ -12,9 +12,9 @@ BUILD_DIR=$SCRIPT_DIR/../infer/_build/infer
 #       so they can be located anywhere and still find toplevel_init
 #       file. In interactive mode $SCRIPT_DIR isn't needed
 
-# by default utop is used, pass `INFER_UTOP_BINARY` to change the toplevel
+# by default utop is used, pass `INFER_REPL_BINARY` to change the toplevel
 # binary (to `ocaml` for example)
-if [ -z "$INFER_UTOP_BINARY" ]; then
+if [ -z "$INFER_REPL_BINARY" ]; then
   INFER_REPL_BINARY="utop"
 fi
 $INFER_REPL_BINARY -init $SCRIPT_DIR/toplevel_init -I $BUILD_DIR -I $SCRIPT_DIR $@
