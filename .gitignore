@@ -68,6 +68,7 @@ buck-out/
 /infer/bin/InferLLVM
 /infer/bin/InferPrint
 /infer/bin/InferStatsAggregator
+/infer/bin/InferBuckCompilationDatabase
 /infer/bin/InferUnit
 /infer/bin/Typeprop
 /infer/bin/infer

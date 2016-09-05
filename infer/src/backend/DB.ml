@@ -387,3 +387,9 @@ let fold_paths_matching ~dir ~p ~init ~f =
     matcher function p *)
 let paths_matching dir p =
   fold_paths_matching ~dir ~p ~init:[] ~f:(fun x xs -> x :: xs)
+
+let read_changed_files_index =
+  match Config.changed_files_index with
+  | None -> None
+  | Some fname ->
+      read_file (source_file_to_abs_path (source_file_from_string fname))

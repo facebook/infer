@@ -70,6 +70,11 @@ UNIT_SOURCES = unit
 
 INFERUNIT_MAIN = $(UNIT_SOURCES)/inferunit
 
+#### Infer integration declarations ####
+INTEGRATION_SOURCES = integration
+
+BUCK_COMPILATION_DATABASE_MAIN = $(INTEGRATION_SOURCES)/BuckCompilationDatabase
+
 #### Java declarations ####
 
 JAVA_OCAMLBUILD_OPTIONS = -pkgs javalib,ptrees,sawja
@@ -149,7 +154,8 @@ INFER_BASE_TARGETS = \
 INFER_ALL_TARGETS = $(INFER_BASE_TARGETS) \
   $(INFERJAVA_MAIN).native \
   $(INFERCLANG_MAIN).native \
-  $(INFERLLVM_MAIN).native
+  $(INFERLLVM_MAIN).native \
+	$(BUCK_COMPILATION_DATABASE_MAIN).native
 
 # configure-aware ocamlbuild commands and targets
 OCAMLBUILD_CONFIG = $(OCAMLBUILD_BASE)
@@ -162,6 +168,7 @@ DEPENDENCIES += java
 endif
 ifeq ($(BUILD_C_ANALYZERS),yes)
 INFER_CONFIG_TARGETS += $(INFERCLANG_MAIN).native
+INFER_CONFIG_TARGETS += $(BUCK_COMPILATION_DATABASE_MAIN).native
 DEPENDENCIES += clang
 endif
 ifeq ($(BUILD_LLVM_ANALYZERS),yes)
@@ -181,6 +188,7 @@ infer: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS)
 	$(COPY) $(INFER_BUILD_DIR)/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(STATSAGGREGATOR_MAIN).native $(STATSAGGREGATOR_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERUNIT_MAIN).native $(INFERUNIT_BIN)
+	$(COPY) $(INFER_BUILD_DIR)/$(BUCK_COMPILATION_DATABASE_MAIN).native $(INFER_BUCK_COMPILATION_DATABASE_BIN)
 ifeq ($(BUILD_LLVM_ANALYZERS),yes)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERLLVM_MAIN).native $(INFERLLVM_BIN)
 endif
@@ -189,6 +197,7 @@ ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 endif
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERCLANG_MAIN).native $(INFERCLANG_BIN)
+	$(COPY) $(INFER_BUILD_DIR)/$(BUCK_COMPILATION_DATABASE_MAIN).native $(INFER_BUCK_COMPILATION_DATABASE_BIN)
 endif
 ifeq ($(ENABLE_OCAML_ANNOT),yes)
 	rsync -a --include '*/' --include '*.annot' --exclude '*' $(INFER_BUILD_DIR)/ $(ANNOT_DIR)/
@@ -236,7 +245,8 @@ test_build: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_AT
 $(DEPENDENCIES_DIR)/ocamldot/ocamldot:
 	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot
 
-roots:=Infer InferAnalyze CMain JMain InferPrint
+roots:=Infer InferAnalyze CMain JMain InferPrint BuckCompilationDatabase
+
 src_dirs:=$(shell find * -type d)
 ml_src_files:=$(shell find $(src_dirs) -regex '.*\.ml\(i\)*' -not -path facebook/scripts/eradicate_stats.ml)
 re_src_files:=$(shell find $(src_dirs) -regex '.*\.re\(i\)*')
@@ -360,7 +370,7 @@ endif
 	$(REMOVE) checkers/stacktree_{j,t}.ml{,i}
 	$(REMOVE) $(INFER_BIN) $(INFERANALYZE_BIN) $(INFERPRINT_BIN) $(STATSAGGREGATOR_BIN)
 	$(REMOVE) $(INFERJAVA_BIN) $(INFERCLANG_BIN) $(INFERLLVM_BIN)
-	$(REMOVE) $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN)
+	$(REMOVE) $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN) $(INFER_BUCK_COMPILATION_DATABASE_BIN)
 	$(REMOVE) $(CLANG_ATDGEN_STUBS)
 	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(REMOVE) mod_dep.dot

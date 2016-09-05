@@ -56,6 +56,12 @@ def create_argparser(group_name=MODULE_NAME):
                             'and not for Java. Note: this flag should be used '
                             'in combination with passing the #infer flavor '
                             'to the Buck target.')
+    group.add_argument('--use-compilation-database', action='store_true',
+                       help='Run Infer analysis through the use of the flavor '
+                            'compilation database. Currently this is '
+                            'supported only for the cxx_* targets of Buck '
+                            '- e.g. cxx_library, cxx_binary - and not for '
+                            'Java.')
     group.add_argument('--xcode-developer-dir',
                        help='Specify the path to Xcode developer directory '
                             '(requires --use-flavors to work)')
@@ -84,8 +90,11 @@ class BuckAnalyzer:
 
     def capture(self):
         try:
-            if self.args.use_flavors:
+            if self.args.use_flavors and \
+                    not self.args.use_compilation_database:
                 return self.capture_with_flavors()
+            elif self.args.use_compilation_database:
+                return self.capture_with_compilation_database()
             else:
                 return self.capture_without_flavors()
         except subprocess.CalledProcessError as exc:
@@ -195,6 +204,15 @@ class BuckAnalyzer:
                 self.args.infer_out, config.PMD_XML_FILENAME)
         issues.print_and_save_errors(merged_reports_path, bugs_out, xml_out)
         return os.EX_OK
+
+    def capture_with_compilation_database(self):
+        buck_args = self.cmd
+        cmd = [utils.get_cmd_in_bin_dir('InferBuckCompilationDatabase')]
+        for arg in buck_args:
+            cmd += ['--Xbuck'] + [arg]
+        if self.args.project_root:
+            cmd += ['--project-root'] + [self.args.project_root]
+        return subprocess.check_call(cmd)
 
     def capture_without_flavors(self):
         # Java is a special case, and we run the analysis from here

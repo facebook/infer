@@ -65,8 +65,8 @@ let () =
       (if not Config.absolute_paths then [] else
          ["--absolute-paths"]) @
       (match Config.analyzer with None -> [] | Some a ->
-          ["--analyzer";
-           IList.assoc (=) a (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)]) @
+        ["--analyzer";
+         IList.assoc (=) a (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)]) @
       (match Config.blacklist with
        | Some s when in_buck_mode -> ["--blacklist-regex"; s]
        | _ -> []) @
@@ -92,20 +92,22 @@ let () =
          ["--frontend-stats"]) @
       (if not Config.flavors || not in_buck_mode then [] else
          ["--use-flavors"]) @
+      (if Option.is_none Config.use_compilation_database || not in_buck_mode then [] else
+         ["--use-compilation-database"]) @
       (match Config.infer_cache with None -> [] | Some s ->
-          ["--infer_cache"; s]) @
+        ["--infer_cache"; s]) @
       "-j" :: (string_of_int Config.jobs) ::
       (match Config.load_average with None -> [] | Some f ->
-          ["-l"; string_of_float f]) @
+        ["-l"; string_of_float f]) @
       (if not Config.pmd_xml then [] else
          ["--pmd-xml"]) @
       (if not Config.reactive_mode then [] else
          ["--reactive"]) @
       "--out" :: Config.results_dir ::
       (match Config.project_root with None -> [] | Some pr ->
-          ["--project_root"; pr]) @
+        ["--project_root"; pr]) @
       (match Config.xcode_developer_dir with None -> [] | Some d ->
-          ["--xcode-developer-dir"; d]) @
+        ["--xcode-developer-dir"; d]) @
       (if Config.rest = [] then [] else
          ("--" :: build_cmd))
     ) in

@@ -100,6 +100,8 @@ let checks_disabled_by_default = [
   "UNSAFE_GUARDED_BY_ACCESS";
 ]
 
+let clang_build_output_dir_name = "build_output"
+
 (** Experimental: if true do some specialized analysis of concurrent constructs. *)
 let csl_analysis = true
 
@@ -145,6 +147,8 @@ let log_analysis_wallclock_timeout = "T"
 let log_analysis_symops_timeout = "S"
 let log_analysis_recursion_timeout = "R"
 let log_analysis_crash = "C"
+
+let log_dir_name = "log"
 
 (** Maximum level of recursion during the analysis, after which a timeout is generated *)
 let max_recursion = 5
@@ -228,16 +232,20 @@ let version_string =
     Unix.time *)
 let initial_analysis_time = Unix.time ()
 
-(** Path to lib/specs to retrieve the default models *)
-let models_dir =
+let lib_dir =
   let bin_dir = Filename.dirname Sys.executable_name in
   let lib_dir = bin_dir // Filename.parent_dir_name // "lib" in
-  let lib_specs_dir = lib_dir // specs_dir_name in
-  lib_specs_dir
+  lib_dir
+
+(** Path to lib/specs to retrieve the default models *)
+let models_dir =
+  lib_dir // specs_dir_name
 
 let cpp_models_dir =
-  let bin_dir = Filename.dirname Sys.executable_name in
-  bin_dir // Filename.parent_dir_name // "models" // "cpp" // "include"
+  lib_dir // "models" // "cpp" // "include"
+
+let wrappers_dir =
+  lib_dir // "wrappers"
 
 let ncpu =
   try
@@ -391,7 +399,8 @@ let inferconfig_home =
 
 and project_root =
   CLOpt.mk_string_opt ~deprecated:["project_root"; "-project_root"] ~long:"project-root" ~short:"pr"
-    ?default:CLOpt.(match current_exe with Print | Toplevel -> Some (Sys.getcwd ()) | _ -> None)
+    ?default:CLOpt.(match current_exe with Print | Toplevel | StatsAggregator ->
+        Some (Sys.getcwd ()) | _ -> None)
     ~f:resolve
     ~exes:CLOpt.[Analyze;Clang;Java;Llvm;Print;Toplevel]
     ~meta:"dir" "Specify the root directory of the project"
@@ -568,7 +577,7 @@ and buck =
 
 and buck_build_args =
   CLOpt.mk_string_list ~long:"Xbuck"
-    ~exes:CLOpt.[Toplevel]
+    ~exes:CLOpt.[Toplevel;BuckCompilationDatabase]
     "Pass values as command-line arguments to invocations of `buck build` (Buck flavors only)"
 
 and buck_out =
@@ -1092,6 +1101,11 @@ and unsafe_malloc =
     ~exes:CLOpt.[Analyze]
     "Assume that malloc(3) never returns null."
 
+and use_compilation_database =
+  CLOpt.mk_symbol_opt ~long:"use-compilation-database"
+    "Buck integration using the compilation database, with or without dependencies."
+    ~symbols:[("deps", `Deps); ("no-deps", `NoDeps)]
+
 (** Set the path to the javac verbose output *)
 and verbose_out =
   CLOpt.mk_string ~deprecated:["verbose_out"] ~long:"verbose-out" ~default:""
@@ -1179,9 +1193,9 @@ let exe_usage (exe : CLOpt.exe) =
   match exe with
   | Analyze ->
       version_string ^ "\n\
-      Usage: InferAnalyze [options]\n\
-      Analyze the files captured in the project results directory, \
-      which can be specified with the --results-dir option."
+                        Usage: InferAnalyze [options]\n\
+                        Analyze the files captured in the project results directory, \
+                        which can be specified with the --results-dir option."
   | Clang ->
       "Usage: InferClang -c <c files> -ast <ast files> --results-dir <output-dir> [options] \n\
        Translate the given files using clang into infer internal representation for later analysis."
@@ -1204,6 +1218,11 @@ let exe_usage (exe : CLOpt.exe) =
       version_string
   | Interactive ->
       "Usage: interactive ocaml toplevel. To pass infer config options use env variable"
+  | BuckCompilationDatabase ->
+      "Usage: BuckCompilationDatabase --Xbuck //target \n\
+       Runs buck with the flavor compilation-database or uber-compilation-database. It then \n\
+       reads the compilation database emited in json and runs the capture in parallel for \n\
+       those commands"
 
 let post_parsing_initialization () =
   F.set_margin !margin ;
@@ -1434,6 +1453,7 @@ and trace_join = !trace_join
 and trace_rearrange = !trace_rearrange
 and type_size = !type_size
 and unsafe_malloc = !unsafe_malloc
+and use_compilation_database = !use_compilation_database
 and whole_seconds = !whole_seconds
 and worklist_mode = !worklist_mode
 and write_dotty = !write_dotty
@@ -1472,6 +1492,42 @@ let patterns_suppress_warnings =
   | None ->
       if CLOpt.(current_exe <> Java) then []
       else error ("Error: The option " ^ suppress_warnings_annotations_long ^ " was not provided")
+
+(** Name of files for logging the output in the specific executable *)
+let log_files_of_current_exe =
+  let prefix =
+    match CLOpt.current_exe with
+    | Analyze -> "analyze"
+    | BuckCompilationDatabase -> "buck_compilation_database"
+    | Clang -> "clang"
+    | Interactive -> "interactive"
+    | Java -> "java"
+    | Llvm -> "llvm"
+    | Print -> "print"
+    | StatsAggregator -> "stats_agregator"
+    | Toplevel -> "top_level" in
+  prefix ^ "_out", prefix ^ "_err"
+
+(** should_log_exe exe = true means that files for logging in the log folder will be created
+    and uses of Logging.out or Logging.err will log in those files *)
+let should_log_current_exe =
+  match CLOpt.current_exe with
+  | Analyze -> debug_mode || stats_mode
+  | BuckCompilationDatabase -> true
+  | _ -> false
+
+let tmp_log_files_of_current_exe () =
+  let out_name, err_name = log_files_of_current_exe in
+  let log_dir = results_dir // log_dir_name in
+  let out_file =
+    if out_file_cmdline = "" then
+      Filename.temp_file ~temp_dir:log_dir out_name ""
+    else out_file_cmdline in
+  let err_file =
+    if err_file_cmdline = "" then
+      Filename.temp_file ~temp_dir:log_dir err_name ""
+    else err_file_cmdline in
+  out_file, err_file
 
 (** Global variables *)
 

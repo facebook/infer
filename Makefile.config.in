@@ -98,6 +98,7 @@ INFERJAVA_BIN = $(BIN_DIR)/InferJava
 INFERSTATS_BIN = $(BIN_DIR)/InferStatsAggregator
 INFERPRINT_BIN = $(BIN_DIR)/InferPrint
 INFERUNIT_BIN = $(BIN_DIR)/InferUnit
+INFER_BUCK_COMPILATION_DATABASE_BIN = $(BIN_DIR)/InferBuckCompilationDatabase
 INFER_BIN = $(LIB_DIR)/infer
 INFERTRACEBUGS_BIN = $(BIN_DIR)/inferTraceBugs
 # paths relative to $(ROOT_DIR)

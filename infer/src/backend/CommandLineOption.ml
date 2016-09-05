@@ -17,9 +17,12 @@ module YBU = Yojson.Basic.Util
 
 (** Each command line option may appear in the --help list of any executable, these tags are used to
     specify which executables for which an option will be documented. *)
-type exe = Analyze | Clang | Java | Llvm | Print | StatsAggregator | Toplevel | Interactive
+type exe = Analyze | BuckCompilationDatabase | Clang | Interactive | Java | Llvm | Print |
+           StatsAggregator | Toplevel
+
 
 let exes = [
+  ("InferBuckCompilationDatabase", BuckCompilationDatabase);
   ("InferAnalyze", Analyze);
   ("InferClang", Clang);
   ("InferJava", Java);
@@ -37,7 +40,6 @@ let current_exe =
   else
     try IList.assoc string_equal (Filename.basename Sys.executable_name) exes
     with Not_found -> Toplevel
-
 
 type desc = {
   long: string; short: string; meta: string; doc: string; spec: Arg.spec;

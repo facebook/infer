@@ -18,12 +18,7 @@ let trace () = Config.from_env_variable "INFER_TRACE_ONDEMAND"
 
 (** Read the directories to analyze from the ondemand file. *)
 let read_dirs_to_analyze () =
-  let lines_opt = match Config.changed_files_index with
-    | None ->
-        None
-    | Some fname ->
-        read_file (DB.source_file_to_abs_path (DB.source_file_from_string fname)) in
-  match lines_opt with
+  match DB.read_changed_files_index with
   | None ->
       None
   | Some lines ->

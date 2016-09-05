@@ -68,6 +68,7 @@ val buck_generated_folder : string
 val buck_infer_deps_file_name : string
 val captured_dir_name : string
 val checks_disabled_by_default : string list
+val clang_build_output_dir_name : string
 val cpp_models_dir : string
 val csl_analysis : bool
 val default_failure_name : string
@@ -90,6 +91,7 @@ val log_analysis_procedure : string
 val log_analysis_recursion_timeout : string
 val log_analysis_symops_timeout : string
 val log_analysis_wallclock_timeout : string
+val log_dir_name : string
 val max_recursion : int
 val meet_level : int
 val models_dir : string
@@ -119,6 +121,7 @@ val undo_join : bool
 val unsafe_unret : string
 val weak : string
 val whitelisted_cpp_methods : string list list
+val wrappers_dir : string
 
 
 (** Configuration values specified by environment variables *)
@@ -251,6 +254,7 @@ val trace_join : bool
 val trace_rearrange : bool
 val type_size : bool
 val unsafe_malloc : bool
+val use_compilation_database : [ `Deps | `NoDeps ] option
 val whole_seconds : bool
 val worklist_mode : int
 val write_dotty : bool
@@ -281,6 +285,7 @@ val nLOC : int ref
 val pp_simple : bool ref
 
 
+
 (** Global variables with initial values specified by command-line options *)
 
 val abs_val : int ref
@@ -299,3 +304,13 @@ val curr_language : language ref
 (** Command Line Interface Documentation *)
 
 val print_usage_exit : unit -> 'a
+
+(** Name of files for logging the output in the current executable *)
+val log_files_of_current_exe : string * string
+
+(** Name of current temporary files for logging the output in the current executable *)
+val tmp_log_files_of_current_exe : unit -> string * string
+
+(** should_log_exe = true means that files for logging in the log folder will be created
+    and uses of Logging.out or Logging.err will log in those files *)
+val should_log_current_exe : bool

@@ -87,23 +87,15 @@ let out_formatter, err_formatter =
     with Sys_error _ ->
       failwithf "@.ERROR: cannot open output file %s@." fname
   in
-  if Config.developer_mode
-  && Sys.file_exists Config.results_dir
+  if Sys.file_exists Config.results_dir
   && Sys.is_directory Config.results_dir
+  && Config.should_log_current_exe
   then
-    let log_dir_name = "log" in
-    let analyzer_out_name = "analyzer_out" in
-    let analyzer_err_name = "analyzer_err" in
-    let log_dir = Filename.concat Config.results_dir log_dir_name in
+    let log_dir = Config.results_dir // Config.log_dir_name in
     create_dir log_dir;
-    let analyzer_out_file =
-      if Config.out_file_cmdline = "" then Filename.concat log_dir analyzer_out_name
-      else Config.out_file_cmdline in
-    let analyzer_err_file =
-      if Config.err_file_cmdline = "" then Filename.concat log_dir analyzer_err_name
-      else Config.err_file_cmdline in
-    let out_fmt, out_chan = open_output_file analyzer_out_file in
-    let err_fmt, err_chan = open_output_file analyzer_err_file in
+    let out_file, err_file = Config.tmp_log_files_of_current_exe () in
+    let out_fmt, out_chan = open_output_file out_file in
+    let err_fmt, err_chan = open_output_file err_file in
     Pervasives.at_exit (fun () ->
         F.pp_print_flush out_fmt () ;
         F.pp_print_flush err_fmt () ;
@@ -134,19 +126,27 @@ let set_delayed_prints new_delayed_actions =
 let do_print fmt fmt_string =
   F.fprintf fmt fmt_string
 
-let do_print_in_developer_mode fmt fmt_string =
-  if Config.developer_mode then
+let do_print_in_debug_mode fmt fmt_string =
+  if Config.debug_mode || Config.stats_mode then
     F.fprintf fmt fmt_string
   else
     F.ifprintf fmt fmt_string
 
-(** print to the current out stream (note: only prints in developer mode) *)
+(** print to the current out stream (note: only prints in debug mode) *)
 let out fmt_string =
-  do_print_in_developer_mode out_formatter fmt_string
+  do_print_in_debug_mode out_formatter fmt_string
 
-(** print to the current err stream (note: only prints in developer mode) *)
+(** print to the current out stream  *)
+let do_out fmt_string =
+  do_print out_formatter fmt_string
+
+(** print to the current err stream (note: only prints in debug mode) *)
 let err fmt_string =
-  do_print_in_developer_mode err_formatter fmt_string
+  do_print_in_debug_mode err_formatter fmt_string
+
+(** print to the current err stream  *)
+let do_err fmt_string =
+  do_print err_formatter fmt_string
 
 (** print immediately to standard error *)
 let stderr fmt_string =
