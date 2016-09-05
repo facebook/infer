@@ -198,7 +198,8 @@ let create_dir dir =
     (try Unix.mkdir dir 0o700 with
        Unix.Unix_error _ ->
          let created_concurrently = (* check if another process created it meanwhile *)
-           (Unix.stat dir).Unix.st_kind = Unix.S_DIR in
+           try (Unix.stat dir).Unix.st_kind = Unix.S_DIR
+           with Unix.Unix_error _ -> false in
          if not created_concurrently then
            (L.err "@.ERROR: cannot create directory %s@." dir;
             assert false))
