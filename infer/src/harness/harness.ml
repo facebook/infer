@@ -18,7 +18,7 @@ module F = Format
     constituting a lifecycle trace *)
 let try_create_lifecycle_trace struct_typ lifecycle_struct_typ lifecycle_procs tenv =
   match struct_typ with
-  | { Typ.csu = Class Java; name } ->
+  | { Typ.name = TN_csu (Class Java, _) as name } ->
       if PatternMatch.is_subtype tenv struct_typ lifecycle_struct_typ &&
          not (AndroidFramework.is_android_lib_class name) then
         let ptr_to_struct_typ = Some (Typ.Tptr (Tstruct struct_typ, Pk_pointer)) in

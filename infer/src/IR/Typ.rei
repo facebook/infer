@@ -141,7 +141,6 @@ and struct_typ = {
   name: Typename.t, /** name */
   instance_fields: struct_fields, /** non-static fields */
   static_fields: struct_fields, /** static fields */
-  csu: Csu.t, /** class/struct/union */
   superclasses: list Typename.t, /** list of superclasses */
   def_methods: list Procname.t, /** methods defined */
   struct_annotations: item_annotation /** annotations */

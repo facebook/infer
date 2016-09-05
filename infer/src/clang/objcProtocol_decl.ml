@@ -33,11 +33,9 @@ let protocol_decl type_ptr_to_sil_type tenv decl =
       let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
       Ast_utils.update_sil_types_map decl_key (Typ.Tvar protocol_name);
       let def_methods = ObjcProperty_decl.get_methods curr_class decl_list in
-      let protocol_type_info =
-        {
-          Typ.instance_fields = [];
+      let protocol_type_info = Typ.{
+          instance_fields = [];
           static_fields = [];
-          csu = Csu.Protocol;
           name = protocol_name;
           superclasses = [];
           def_methods;

@@ -88,7 +88,7 @@ let rec create_array_type typ dim =
 
 let extract_cn_no_obj typ =
   match typ with
-  | Typ.Tptr (Tstruct { csu = Class _; name }, Pk_pointer) ->
+  | Typ.Tptr (Tstruct { name = TN_csu (Class _, _) as name }, Pk_pointer) ->
       let class_name = Typename.name name in
       if class_name = JConfig.object_cl then None
       else
@@ -238,7 +238,6 @@ let dummy_type cn =
   Typ.Tstruct {
     Typ.instance_fields = [];
     static_fields = [];
-    csu = Csu.Class Csu.Java;
     name = Typename.Java.from_string (JBasics.cn_name cn);
     superclasses = [];
     def_methods = [];
@@ -339,7 +338,6 @@ and create_sil_type program tenv cn =
       Typ.Tstruct {
         Typ.instance_fields;
         static_fields;
-        csu = Csu.Class Csu.Java;
         name = Typename.Java.from_string (JBasics.cn_name cn);
         superclasses;
         def_methods;

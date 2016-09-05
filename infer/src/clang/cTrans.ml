@@ -130,7 +130,6 @@ struct
       {
         Typ.instance_fields = fields;
         static_fields = [];
-        csu = Csu.Class Csu.Objc;
         name = block_name;
         superclasses = [];
         def_methods = [];

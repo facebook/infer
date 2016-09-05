@@ -286,7 +286,6 @@ and struct_typ = {
   name: Typename.t, /** name */
   instance_fields: struct_fields, /** non-static fields */
   static_fields: struct_fields, /** static fields */
-  csu: Csu.t, /** class/struct/union */
   superclasses: list Typename.t, /** list of superclasses */
   def_methods: list Procname.t, /** methods defined */
   struct_annotations: item_annotation /** annotations */
@@ -306,9 +305,10 @@ let rec fld_typ_ann_compare fta1 fta2 =>
   triple_compare Ident.fieldname_compare compare item_annotation_compare fta1 fta2
 and fld_typ_ann_list_compare ftal1 ftal2 => IList.compare fld_typ_ann_compare ftal1 ftal2
 and struct_typ_compare struct_typ1 struct_typ2 =>
-  if (struct_typ1.csu == Csu.Class Csu.Java && struct_typ2.csu == Csu.Class Csu.Java) {
+  switch (struct_typ1.name, struct_typ2.name) {
+  | (TN_csu (Class Java) _, TN_csu (Class Java) _) =>
     Typename.compare struct_typ1.name struct_typ2.name
-  } else {
+  | _ =>
     let n = fld_typ_ann_list_compare struct_typ1.instance_fields struct_typ2.instance_fields;
     if (n != 0) {
       n
@@ -317,12 +317,7 @@ and struct_typ_compare struct_typ1 struct_typ2 =>
       if (n != 0) {
         n
       } else {
-        let n = Csu.compare struct_typ1.csu struct_typ2.csu;
-        if (n != 0) {
-          n
-        } else {
-          Typename.compare struct_typ1.name struct_typ2.name
-        }
+        Typename.compare struct_typ1.name struct_typ2.name
       }
     }
   }
@@ -367,13 +362,12 @@ let struct_typ_equal struct_typ1 struct_typ2 => struct_typ_compare struct_typ1 s
 
 let equal t1 t2 => compare t1 t2 == 0;
 
-let rec pp_struct_typ pe pp_base f {csu, instance_fields, name} =>
+let rec pp_struct_typ pe pp_base f {instance_fields, name} =>
   if false {
     /* change false to true to print the details of struct */
     F.fprintf
       f
-      "%s %a {%a} %a"
-      (Csu.name csu)
+      "%a {%a} %a"
       Typename.pp
       name
       (pp_seq (fun f (fld, t, _) => F.fprintf f "%a %a" (pp_full pe) t Ident.pp_fieldname fld))
@@ -534,8 +528,8 @@ let get_field_type_and_annotation fn =>
 
 /** if [struct_typ] is a class, return its class kind (Java, CPP, or Obj-C) */
 let struct_typ_get_class_kind struct_typ =>
-  switch struct_typ.csu {
-  | Csu.Class class_kind => Some class_kind
+  switch struct_typ.name {
+  | TN_csu (Class class_kind) _ => Some class_kind
   | _ => None
   };
 
@@ -565,7 +559,7 @@ let struct_typ_is_objc_class struct_typ =>
 
 let is_class_of_kind typ ck =>
   switch typ {
-  | Tstruct {csu: Csu.Class ck'} => ck == ck'
+  | Tstruct {name: TN_csu (Class ck') _} => ck == ck'
   | _ => false
   };
 

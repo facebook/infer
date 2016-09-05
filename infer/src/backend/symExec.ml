@@ -506,7 +506,7 @@ let resolve_method tenv class_name proc_name =
       let right_proc_name =
         Procname.replace_class proc_name (Typename.name class_name) in
       match Tenv.lookup tenv class_name with
-      | Some { Typ.csu = Csu.Class _; def_methods; superclasses } ->
+      | Some { name = TN_csu (Class _, _); def_methods; superclasses } ->
           if method_exists right_proc_name def_methods then
             Some right_proc_name
           else

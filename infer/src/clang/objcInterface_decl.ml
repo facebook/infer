@@ -128,15 +128,13 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
   Printing.log_out "Class %s field:\n" class_name;
   IList.iter (fun (fn, _, _) ->
       Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) all_fields;
-  let interface_type_info =
-    {
-      Typ.instance_fields = all_fields;
+  let interface_type_info = Typ.{
+      instance_fields = all_fields;
       static_fields = [];
-      csu = Csu.Class Csu.Objc;
       name = interface_name;
       superclasses;
       def_methods = methods;
-      struct_annotations = Typ.objc_class_annotation;
+      struct_annotations = objc_class_annotation;
     } in
   Tenv.add tenv interface_name interface_type_info;
   Printing.log_out
@@ -153,10 +151,7 @@ let add_missing_methods tenv class_name ck decl_info decl_list curr_class =
   Ast_utils.update_sil_types_map decl_key (Typ.Tvar class_tn_name);
   begin
     match Tenv.lookup tenv class_tn_name with
-    | Some ({ Typ.static_fields = [];
-              csu = Csu.Class _;
-              def_methods;
-            } as struct_typ) ->
+    | Some ({ static_fields = []; name = TN_csu (Class _, _); def_methods; } as struct_typ) ->
         let methods = General_utils.append_no_duplicates_methods def_methods methods in
         let struct_typ' = { struct_typ with Typ.def_methods = methods; } in
         Tenv.add tenv class_tn_name struct_typ'

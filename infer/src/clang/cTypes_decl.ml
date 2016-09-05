@@ -21,7 +21,6 @@ let add_predefined_objc_types tenv =
     {
       Typ.instance_fields = [];
       static_fields = [];
-      csu = Csu.Struct;
       name = TN_csu (Struct, Mangled.from_string CFrontend_config.objc_class);
       superclasses = [];
       def_methods = [];
@@ -33,7 +32,6 @@ let add_predefined_objc_types tenv =
     {
       Typ.instance_fields = [];
       static_fields = [];
-      csu = Csu.Struct;
       name = TN_csu (Struct, Mangled.from_string CFrontend_config.objc_object);
       superclasses = [];
       def_methods = [];
@@ -223,7 +221,6 @@ and get_record_declaration_struct_type tenv decl =
         let sil_type = Typ.Tstruct {
             Typ.instance_fields = non_static_fields;
             static_fields;
-            csu;
             name = sil_typename;
             superclasses;
             def_methods;
@@ -246,7 +243,6 @@ and get_record_declaration_struct_type tenv decl =
             let empty_struct_type = Typ.Tstruct {
                 Typ.instance_fields = extra_fields;
                 static_fields = [];
-                csu;
                 name = sil_typename;
                 superclasses = [];
                 def_methods = [];

@@ -467,8 +467,9 @@ let texp_star texp1 texp2 =
           | 0 -> ftal_sub ftal1' ftal2'
           | _ -> ftal_sub ftal1 ftal2' end in
   let typ_star t1 t2 = match t1, t2 with
-    | Typ.Tstruct { Typ.instance_fields = instance_fields1; csu = csu1 },
-      Typ.Tstruct { Typ.instance_fields = instance_fields2; csu = csu2 } when csu1 = csu2 ->
+    | Typ.Tstruct { instance_fields = instance_fields1; name = TN_csu (csu1, _) },
+      Typ.Tstruct { instance_fields = instance_fields2; name = TN_csu (csu2, _) }
+      when csu1 = csu2 ->
         if ftal_sub instance_fields1 instance_fields2 then t2 else t1
     | _ -> t1 in
   match texp1, texp2 with

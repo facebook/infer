@@ -35,7 +35,7 @@ let java_proc_name_with_class_method pn_java class_with_path method_name =
    with _ -> false)
 
 let get_direct_supers tenv = function
-  | { Typ.csu = Csu.Class _; superclasses } ->
+  | { Typ.name = TN_csu (Class _, _); superclasses } ->
       IList.map (Tenv.lookup tenv) superclasses
       |> IList.flatten_options
   | _ ->

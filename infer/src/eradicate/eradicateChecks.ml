@@ -135,7 +135,7 @@ let check_condition case_zero find_canonical_duplicate curr_pname
     let loc = Cfg.Node.get_loc node in
     let throwable_found = ref false in
     let typ_is_throwable = function
-      | Typ.Tstruct { csu = Class _; name } ->
+      | Typ.Tstruct { name = TN_csu (Class _, _) as name } ->
           string_equal (Typename.name name) "java.lang.Throwable"
       | _ -> false in
     let do_instr = function

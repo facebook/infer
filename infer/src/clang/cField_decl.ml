@@ -82,14 +82,12 @@ let add_missing_fields tenv class_name ck fields =
   match Tenv.lookup tenv class_tn_name with
   | Some ({ Typ.instance_fields } as struct_typ) ->
       let new_fields = General_utils.append_no_duplicates_fields instance_fields fields in
-      let class_type_info =
-        {
-          struct_typ with
-          Typ.instance_fields = new_fields;
-          static_fields = [];
-          csu = Csu.Class ck;
-          name = class_tn_name;
-        } in
+      let class_type_info = {
+        struct_typ with
+        instance_fields = new_fields;
+        static_fields = [];
+        name = class_tn_name;
+      } in
       Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
       Tenv.add tenv class_tn_name class_type_info
   | _ -> ()

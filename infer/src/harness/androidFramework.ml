@@ -87,7 +87,7 @@ let is_android_lib_class class_name =
     a list of method names [lifecycle_procs_strs], get the appropriate typ and procnames *)
 let get_lifecycle_for_framework_typ_opt tenv lifecycle_typ lifecycle_proc_strs =
   match Tenv.lookup tenv (Typename.TN_csu (Csu.Class Csu.Java, lifecycle_typ)) with
-  | Some ({ Typ.csu = Csu.Class _; def_methods } as lifecycle_typ) ->
+  | Some ({ name = TN_csu (Class _, _); def_methods } as lifecycle_typ) ->
       (* TODO (t4645631): collect the procedures for which is_java is returning false *)
       let lookup_proc lifecycle_proc =
         IList.find (fun decl_proc ->

@@ -95,7 +95,7 @@ let rec inhabit_typ typ cfg env =
           (* select methods that are constructors and won't force us into infinite recursion because
            * we are already inhabiting one of their argument types *)
           let get_all_suitable_constructors typ = match typ with
-            | Typ.Tstruct { Typ.csu = Csu.Class _; def_methods } ->
+            | Typ.Tstruct { name = TN_csu (Class _, _); def_methods } ->
                 let is_suitable_constructor p =
                   let try_get_non_receiver_formals p =
                     get_non_receiver_formals (formals_from_name cfg p) in

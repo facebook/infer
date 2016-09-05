@@ -108,7 +108,7 @@ let retrieve_fieldname fieldname =
 
 let get_field_name program static tenv cn fs =
   match JTransType.get_class_type_no_pointer program tenv cn with
-  | Typ.Tstruct { Typ.instance_fields; static_fields; csu = Csu.Class _ } ->
+  | Typ.Tstruct { Typ.instance_fields; static_fields; name = TN_csu (Class _, _) } ->
       let fieldname, _, _ =
         try
           IList.find

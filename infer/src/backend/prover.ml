@@ -1476,7 +1476,6 @@ let expand_hpred_pointer calc_index_frame hpred : bool * bool * Sil.hpred =
                 (Tstruct
                    { instance_fields = [(fld, cnt_typ, Typ.item_annotation_empty)];
                      static_fields = [];
-                     csu = Struct;
                      name = TN_csu (Struct, Mangled.from_string "counterfeit");
                      superclasses = [];
                      def_methods = [];
@@ -1516,7 +1515,7 @@ struct
 
   let is_interface tenv class_name =
     match Tenv.lookup tenv class_name with
-    | Some ({ csu = Class Java } as struct_typ) ->
+    | Some ({ name = TN_csu (Class Java, _) } as struct_typ) ->
         (IList.length struct_typ.Typ.instance_fields = 0) &&
         (IList.length struct_typ.Typ.def_methods = 0)
     | _ -> false
@@ -1534,7 +1533,7 @@ struct
     let rec check cn =
       Typename.equal cn c2 || is_root_class c2 ||
       match Tenv.lookup tenv cn with
-      | Some ({ csu = Class _; superclasses }) ->
+      | Some ({ name = TN_csu (Class _, _); superclasses }) ->
           IList.exists check superclasses
       | _ -> false in
     check c1
@@ -1555,7 +1554,8 @@ struct
   (** check if t1 is a subtype of t2, in Java *)
   let rec check_subtype_java tenv t1 t2 =
     match t1, t2 with
-    | Typ.Tstruct { csu = Class Java; name = cn1 }, Typ.Tstruct { csu = Class Java; name = cn2 } ->
+    | Typ.Tstruct { name = TN_csu (Class Java, _) as cn1 },
+      Typ.Tstruct { name = TN_csu (Class Java, _) as cn2 } ->
         check_subclass tenv cn1 cn2
 
     | Typ.Tarray (dom_type1, _), Typ.Tarray (dom_type2, _) ->
@@ -1564,7 +1564,7 @@ struct
     | Typ.Tptr (dom_type1, _), Typ.Tptr (dom_type2, _) ->
         check_subtype_java tenv dom_type1 dom_type2
 
-    | Typ.Tarray _, Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; name = cn2 } ->
+    | Typ.Tarray _, Typ.Tstruct { name = TN_csu (Class Java, _) as cn2 } ->
         Typename.equal cn2 serializable_type
         || Typename.equal cn2 cloneable_type
         || Typename.equal cn2 object_type
@@ -1587,7 +1587,8 @@ struct
 
   let rec case_analysis_type_java tenv (t1, st1) (t2, st2) =
     match t1, t2 with
-    | Typ.Tstruct { csu = Class Java; name = cn1 }, Typ.Tstruct { csu = Class Java; name = cn2 } ->
+    | Typ.Tstruct { name = TN_csu (Class Java, _) as cn1 },
+      Typ.Tstruct { name = TN_csu (Class Java, _) as cn2 } ->
         Subtype.case_analysis (cn1, st1) (cn2, st2)
           (check_subclass tenv) (is_interface tenv)
 
@@ -1597,7 +1598,7 @@ struct
     | Typ.Tptr (dom_type1, _), Typ.Tptr (dom_type2, _) ->
         case_analysis_type_java tenv (dom_type1, st1) (dom_type2, st2)
 
-    | Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; name = cn1 }, Typ.Tarray _ ->
+    | Typ.Tstruct { name = TN_csu (Class Java, _) as cn1 }, Typ.Tarray _ ->
         if (Typename.equal cn1 serializable_type
             || Typename.equal cn1 cloneable_type
             || Typename.equal cn1 object_type) &&
