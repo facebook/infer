@@ -729,8 +729,8 @@ let add_guarded_by_constraints prop lexp pdesc =
     let rec is_read_write_lock typ =
       let str_is_read_write_lock str = string_is_suffix "ReadWriteUpdateLock" str in
       match typ with
-      | Typ.Tstruct { struct_name=Some name} -> str_is_read_write_lock (Mangled.to_string name)
-      | Typ.Tvar name -> str_is_read_write_lock (Typename.to_string name)
+      | Typ.Tvar name
+      | Typ.Tstruct { name } -> str_is_read_write_lock (Typename.name name)
       | Typ.Tptr (typ, _) -> is_read_write_lock typ
       | _ -> false in
     let has_lock guarded_by_exp =

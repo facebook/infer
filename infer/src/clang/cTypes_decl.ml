@@ -22,7 +22,7 @@ let add_predefined_objc_types tenv =
       Typ.instance_fields = [];
       static_fields = [];
       csu = Csu.Struct;
-      struct_name = Some (Mangled.from_string CFrontend_config.objc_class);
+      name = TN_csu (Struct, Mangled.from_string CFrontend_config.objc_class);
       superclasses = [];
       def_methods = [];
       struct_annotations = [];
@@ -34,7 +34,7 @@ let add_predefined_objc_types tenv =
       Typ.instance_fields = [];
       static_fields = [];
       csu = Csu.Struct;
-      struct_name = Some (Mangled.from_string CFrontend_config.objc_object);
+      name = TN_csu (Struct, Mangled.from_string CFrontend_config.objc_object);
       superclasses = [];
       def_methods = [];
       struct_annotations = [];
@@ -140,12 +140,10 @@ let get_superclass_list_cpp decl =
   IList.map get_super_field base_decls
 
 let add_struct_to_tenv tenv typ =
-  let csu, struct_typ = match typ with
-    | Typ.Tstruct ({ Typ.csu } as struct_typ) -> csu, struct_typ
-    | _ -> assert false in
-  let mangled = CTypes.get_name_from_struct typ in
-  let typename = Typename.TN_csu(csu, mangled) in
-  Tenv.add tenv typename struct_typ
+  match typ with
+  | Typ.Tstruct ({name} as struct_typ) ->
+      Tenv.add tenv name struct_typ
+  | _ -> assert false
 
 let get_translate_as_friend_decl decl_list =
   let is_translate_as_friend_name (_, name_info) =
@@ -226,7 +224,7 @@ and get_record_declaration_struct_type tenv decl =
             Typ.instance_fields = non_static_fields;
             static_fields;
             csu;
-            struct_name = Some mangled_name;
+            name = sil_typename;
             superclasses;
             def_methods;
             struct_annotations;
@@ -249,7 +247,7 @@ and get_record_declaration_struct_type tenv decl =
                 Typ.instance_fields = extra_fields;
                 static_fields = [];
                 csu;
-                struct_name = Some mangled_name;
+                name = sil_typename;
                 superclasses = [];
                 def_methods = [];
                 struct_annotations;

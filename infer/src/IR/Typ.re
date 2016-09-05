@@ -283,10 +283,10 @@ type static_length = option IntLit.t;
 type struct_fields = list (Ident.fieldname, t, item_annotation)
 /** Type for a structured value. */
 and struct_typ = {
+  name: Typename.t, /** name */
   instance_fields: struct_fields, /** non-static fields */
   static_fields: struct_fields, /** static fields */
   csu: Csu.t, /** class/struct/union */
-  struct_name: option Mangled.t, /** name */
   superclasses: list Typename.t, /** list of superclasses */
   def_methods: list Procname.t, /** methods defined */
   struct_annotations: item_annotation /** annotations */
@@ -302,20 +302,12 @@ and t =
   | Tstruct of struct_typ /** Type for a structured value */
   | Tarray of t static_length /** array type with statically fixed length */;
 
-let cname_opt_compare nameo1 nameo2 =>
-  switch (nameo1, nameo2) {
-  | (None, None) => 0
-  | (None, _) => (-1)
-  | (_, None) => 1
-  | (Some n1, Some n2) => Mangled.compare n1 n2
-  };
-
 let rec fld_typ_ann_compare fta1 fta2 =>
   triple_compare Ident.fieldname_compare compare item_annotation_compare fta1 fta2
 and fld_typ_ann_list_compare ftal1 ftal2 => IList.compare fld_typ_ann_compare ftal1 ftal2
 and struct_typ_compare struct_typ1 struct_typ2 =>
   if (struct_typ1.csu == Csu.Class Csu.Java && struct_typ2.csu == Csu.Class Csu.Java) {
-    cname_opt_compare struct_typ1.struct_name struct_typ2.struct_name
+    Typename.compare struct_typ1.name struct_typ2.name
   } else {
     let n = fld_typ_ann_list_compare struct_typ1.instance_fields struct_typ2.instance_fields;
     if (n != 0) {
@@ -329,7 +321,7 @@ and struct_typ_compare struct_typ1 struct_typ2 =>
         if (n != 0) {
           n
         } else {
-          cname_opt_compare struct_typ1.struct_name struct_typ2.struct_name
+          Typename.compare struct_typ1.name struct_typ2.name
         }
       }
     }
@@ -375,30 +367,21 @@ let struct_typ_equal struct_typ1 struct_typ2 => struct_typ_compare struct_typ1 s
 
 let equal t1 t2 => compare t1 t2 == 0;
 
-let rec pp_struct_typ pe pp_base f struct_typ =>
-  switch struct_typ.struct_name {
-  | Some name when false =>
-    /* remove "when false" to print the details of struct */
+let rec pp_struct_typ pe pp_base f {csu, instance_fields, name} =>
+  if false {
+    /* change false to true to print the details of struct */
     F.fprintf
       f
       "%s %a {%a} %a"
-      (Csu.name struct_typ.csu)
-      Mangled.pp
+      (Csu.name csu)
+      Typename.pp
       name
       (pp_seq (fun f (fld, t, _) => F.fprintf f "%a %a" (pp_full pe) t Ident.pp_fieldname fld))
-      struct_typ.instance_fields
+      instance_fields
       pp_base
       ()
-  | Some name => F.fprintf f "%s %a %a" (Csu.name struct_typ.csu) Mangled.pp name pp_base ()
-  | None =>
-    F.fprintf
-      f
-      "%s {%a} %a"
-      (Csu.name struct_typ.csu)
-      (pp_seq (fun f (fld, t, _) => F.fprintf f "%a %a" (pp_full pe) t Ident.pp_fieldname fld))
-      struct_typ.instance_fields
-      pp_base
-      ()
+  } else {
+    F.fprintf f "%a %a" Typename.pp name pp_base ()
   }
 /** Pretty print a type declaration.
     pp_base prints the variable for a declaration, or can be skip to print only the type */
@@ -473,6 +456,13 @@ let module Tbl = Hashtbl.Make {
   let equal = equal;
   let hash = Hashtbl.hash;
 };
+
+let name t =>
+  switch t {
+  | Tvar name
+  | Tstruct {name} => Some name
+  | _ => None
+  };
 
 let unsome s =>
   fun

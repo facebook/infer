@@ -18,16 +18,15 @@ module F = Format
     constituting a lifecycle trace *)
 let try_create_lifecycle_trace struct_typ lifecycle_struct_typ lifecycle_procs tenv =
   match struct_typ with
-  | { Typ.csu = Csu.Class Java; struct_name = Some name } ->
-      let class_name = Typename.TN_csu (Csu.Class Java, name) in
+  | { Typ.csu = Class Java; name } ->
       if PatternMatch.is_subtype tenv struct_typ lifecycle_struct_typ &&
-         not (AndroidFramework.is_android_lib_class class_name) then
+         not (AndroidFramework.is_android_lib_class name) then
         let ptr_to_struct_typ = Some (Typ.Tptr (Tstruct struct_typ, Pk_pointer)) in
         IList.fold_left
           (fun trace lifecycle_proc ->
              (* given a lifecycle subclass T, resolve the call T.lifecycle_proc() to the procname
               * that will actually be called at runtime *)
-             let resolved_proc = SymExec.resolve_method tenv class_name lifecycle_proc in
+             let resolved_proc = SymExec.resolve_method tenv name lifecycle_proc in
              (resolved_proc, ptr_to_struct_typ) :: trace)
           []
           lifecycle_procs
@@ -50,9 +49,7 @@ let create_harness cfg cg tenv =
               | [] -> ()
               | lifecycle_trace ->
                   let harness_procname =
-                    let harness_cls_name = match struct_typ.Typ.struct_name with
-                      | Some name -> Mangled.to_string name
-                      | None -> "NONE" in
+                    let harness_cls_name = Typename.name struct_typ.name in
                     let pname =
                       Procname.Java
                         (Procname.java

@@ -79,8 +79,8 @@ let load_attributes proc_name =>
   };
 
 
-/** Given a procdesure name, find the file where it is defined and */
-/** its corresponding type environment */
+/** Given a procedure name, find the file where it is defined and its corresponding type
+    environment */
 let find_tenv_from_class_of_proc procname =>
   switch (load_attributes procname) {
   | None => None
@@ -92,16 +92,14 @@ let find_tenv_from_class_of_proc procname =>
   };
 
 
-/** Given an ObjC class c, extract the type from the tenv where the class was */
-/** defined. We do this by adding a method that is unique to each class, and then */
-/** finding the tenv that corresponds to the class definition.  */
-let get_correct_type_from_objc_class_name c => {
-  let class_method = Procname.get_default_objc_class_method (Mangled.to_string c);
+/** Given the name of an ObjC class, extract the type from the tenv where the class was defined. We
+    do this by adding a method that is unique to each class, and then finding the tenv that
+    corresponds to the class definition. */
+let get_correct_type_from_objc_class_name type_name => {
+  let class_method = Procname.get_default_objc_class_method (Typename.name type_name);
   switch (find_tenv_from_class_of_proc class_method) {
   | None => None
-  | Some tenv =>
-    let type_name = Typename.TN_csu (Csu.Class Csu.Objc) c;
-    Option.map (fun st => Typ.Tstruct st) (Tenv.lookup tenv type_name)
+  | Some tenv => Option.map (fun st => Typ.Tstruct st) (Tenv.lookup tenv type_name)
   }
 };
 

@@ -38,7 +38,7 @@ let protocol_decl type_ptr_to_sil_type tenv decl =
           Typ.instance_fields = [];
           static_fields = [];
           csu = Csu.Protocol;
-          struct_name = Some mang_name;
+          name = protocol_name;
           superclasses = [];
           def_methods;
           struct_annotations = [];

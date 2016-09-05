@@ -43,7 +43,7 @@ let callback_fragment_retains_view_java
       let class_typename =
         Typename.Java.from_string (Procname.java_get_class_name pname_java) in
       match Tenv.lookup tenv class_typename with
-      | Some ({ Typ.struct_name = Some _; instance_fields } as struct_typ)
+      | Some ({ instance_fields } as struct_typ)
         when AndroidFramework.is_fragment tenv struct_typ ->
           let declared_view_fields =
             IList.filter (is_declared_view_typ class_typename) instance_fields in

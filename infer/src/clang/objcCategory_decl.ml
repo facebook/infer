@@ -87,7 +87,7 @@ let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
            Typ.instance_fields = new_fields;
            static_fields = [];
            csu = Csu.Class Csu.Objc;
-           struct_name = Some mang_name;
+           name = class_tn_name;
            def_methods = new_methods;
          } in
        Printing.log_out " Updating info for class '%s' in tenv\n" class_name;

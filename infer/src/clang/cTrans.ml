@@ -125,18 +125,18 @@ struct
     IList.iter (fun (fn, _, _) ->
         Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
     let mblock = Mangled.from_string block_name in
+    let block_name = Typename.TN_csu (Csu.Class Csu.Objc, mblock) in
     let block_struct_typ =
       {
         Typ.instance_fields = fields;
         static_fields = [];
         csu = Csu.Class Csu.Objc;
-        struct_name = Some mblock;
+        name = block_name;
         superclasses = [];
         def_methods = [];
         struct_annotations = [];
       } in
     let block_type = Typ.Tstruct block_struct_typ in
-    let block_name = Typename.TN_csu (Csu.Class Csu.Objc, mblock) in
     Tenv.add tenv block_name block_struct_typ;
     let trans_res =
       CTrans_utils.alloc_trans

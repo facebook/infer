@@ -624,9 +624,7 @@ let prop_get_exn_name pname prop =
   let ret_pvar = Exp.Lvar (Pvar.get_ret_pvar pname) in
   let rec search_exn e = function
     | [] -> None
-    | Sil.Hpointsto (e1, _, Exp.Sizeof (Typ.Tstruct  { Typ.struct_name = Some name }, _, _)) :: _
-      when Exp.equal e1 e ->
-        Some (Typename.TN_csu (Csu.Class Csu.Java, name))
+    | Sil.Hpointsto (e1, _, Sizeof (Tstruct { name }, _, _)) :: _ when Exp.equal e1 e -> Some name
     | _ :: tl -> search_exn e tl in
   let rec find_exn_name hpreds = function
     | [] -> None

@@ -138,10 +138,10 @@ type static_length = option IntLit.t;
 type struct_fields = list (Ident.fieldname, t, item_annotation)
 /** Type for a structured value. */
 and struct_typ = {
+  name: Typename.t, /** name */
   instance_fields: struct_fields, /** non-static fields */
   static_fields: struct_fields, /** static fields */
   csu: Csu.t, /** class/struct/union */
-  struct_name: option Mangled.t, /** name */
   superclasses: list Typename.t, /** list of superclasses */
   def_methods: list Procname.t, /** methods defined */
   struct_annotations: item_annotation /** annotations */
@@ -208,6 +208,10 @@ let module Set: Set.S with type elt = t;
 let module Map: Map.S with type key = t;
 
 let module Tbl: Hashtbl.S with type key = t;
+
+
+/** The name of a type */
+let name: t => option Typename.t;
 
 
 /** turn a *T into a T. fails if [t] is not a pointer type */

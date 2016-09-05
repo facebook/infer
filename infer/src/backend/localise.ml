@@ -247,10 +247,9 @@ let by_call_to_ra tags ra =
 let rec format_typ = function
   | Typ.Tptr (typ, _) when !Config.curr_language = Config.Java ->
       format_typ typ
-  | Typ.Tstruct { Typ.struct_name = Some name } ->
-      Mangled.to_string name
-  | Typ.Tvar tname ->
-      Typename.name tname
+  | Typ.Tstruct { name }
+  | Typ.Tvar name ->
+      Typename.name name
   | typ ->
       Typ.to_string typ
 
@@ -686,11 +685,8 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
           s, " to ", " on " in
     let typ_str =
       match hpred_type_opt with
-      | Some (Exp.Sizeof (Typ.Tstruct
-                            { Typ.csu = Csu.Class _;
-                              Typ.struct_name = Some classname;
-                            }, _, _)) ->
-          " of type " ^ Mangled.to_string classname ^ " "
+      | Some (Exp.Sizeof (Tstruct { csu = Class _; name; }, _, _)) ->
+          " of type " ^ Typename.name name ^ " "
       | _ -> " " in
     let desc_str =
       match resource_opt with

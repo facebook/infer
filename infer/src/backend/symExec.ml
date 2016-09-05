@@ -534,9 +534,7 @@ let resolve_typename prop receiver_exp =
       | _ :: hpreds -> loop hpreds in
     loop prop.Prop.sigma in
   match typexp_opt with
-  | Some (Exp.Sizeof (Typ.Tstruct { Typ.struct_name = None }, _, _)) -> None
-  | Some (Exp.Sizeof (Typ.Tstruct { Typ.csu = Csu.Class ck; struct_name = Some name }, _, _)) ->
-      Some (Typename.TN_csu (Csu.Class ck, name))
+  | Some (Exp.Sizeof (Tstruct { name }, _, _)) -> Some name
   | _ -> None
 
 (** If the dynamic type of the receiver actual T_actual is a subtype of the reciever type T_formal

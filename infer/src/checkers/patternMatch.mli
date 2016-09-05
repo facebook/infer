@@ -87,12 +87,9 @@ val proc_iter_overridden_methods : (Procname.t -> unit) -> Tenv.t -> Procname.t 
 val type_get_annotation : Typ.t -> Typ.item_annotation option
 
 (** Get the class name of the type *)
-val type_get_class_name : Typ.t -> Mangled.t option
+val type_get_class_name : Typ.t -> Typename.t option
 
 val type_get_direct_supertypes : Typ.t -> Typename.t list
-
-(** Is the type a class with the given name *)
-val type_has_class_name : Typ.t -> Mangled.t -> bool
 
 val type_has_direct_supertype : Typ.t -> Typename.t -> bool
 
@@ -100,8 +97,6 @@ val type_has_direct_supertype : Typ.t -> Typename.t -> bool
 val type_is_class : Typ.t -> bool
 
 val type_is_nested_in_direct_supertype : Typ.t -> Typename.t -> bool
-
-val type_is_nested_in_type : Typ.t -> Mangled.t -> bool
 
 (** Is the type java.lang.Object *)
 val type_is_object : Typ.t -> bool

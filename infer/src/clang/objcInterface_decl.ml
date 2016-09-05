@@ -133,7 +133,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
       Typ.instance_fields = all_fields;
       static_fields = [];
       csu = Csu.Class Csu.Objc;
-      struct_name = Some (Mangled.from_string class_name);
+      name = interface_name;
       superclasses;
       def_methods = methods;
       struct_annotations = Typ.objc_class_annotation;
@@ -155,7 +155,6 @@ let add_missing_methods tenv class_name ck decl_info decl_list curr_class =
     match Tenv.lookup tenv class_tn_name with
     | Some ({ Typ.static_fields = [];
               csu = Csu.Class _;
-              struct_name = Some _;
               def_methods;
             } as struct_typ) ->
         let methods = General_utils.append_no_duplicates_methods def_methods methods in

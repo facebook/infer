@@ -88,9 +88,8 @@ let rec create_array_type typ dim =
 
 let extract_cn_no_obj typ =
   match typ with
-  | Typ.Tptr (Typ.Tstruct { Typ.csu = Csu.Class _; struct_name = Some classname },
-              Typ.Pk_pointer) ->
-      let class_name = (Mangled.to_string classname) in
+  | Typ.Tptr (Tstruct { csu = Class _; name }, Pk_pointer) ->
+      let class_name = Typename.name name in
       if class_name = JConfig.object_cl then None
       else
         let jbir_class_name = (JBasics.make_cn class_name) in
@@ -236,12 +235,11 @@ let collect_interface_field cn inf l =
 
 
 let dummy_type cn =
-  let classname = Mangled.from_string (JBasics.cn_name cn) in
   Typ.Tstruct {
     Typ.instance_fields = [];
     static_fields = [];
     csu = Csu.Class Csu.Java;
-    struct_name = Some classname;
+    name = Typename.Java.from_string (JBasics.cn_name cn);
     superclasses = [];
     def_methods = [];
     struct_annotations = Typ.item_annotation_empty;
@@ -333,18 +331,16 @@ and create_sil_type program tenv cn =
               | Some super_cn ->
                   let super_classname =
                     match get_class_type_no_pointer program tenv super_cn with
-                    | Typ.Tstruct { Typ.struct_name =  Some classname } ->
-                        Typename.TN_csu (Csu.Class Csu.Java, classname)
+                    | Typ.Tstruct { name } -> name
                     | _ -> assert false in
                   super_classname :: interface_list in
             (super_classname_list, nonstatic_fields, static_fields, item_annotation) in
-      let classname = Mangled.from_string (JBasics.cn_name cn) in
       let def_methods = IList.map (fun j -> Procname.Java j) (get_class_procnames cn node) in
       Typ.Tstruct {
         Typ.instance_fields;
         static_fields;
         csu = Csu.Class Csu.Java;
-        struct_name = Some classname;
+        name = Typename.Java.from_string (JBasics.cn_name cn);
         superclasses;
         def_methods;
         struct_annotations;

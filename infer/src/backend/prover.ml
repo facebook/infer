@@ -1464,25 +1464,28 @@ let move_primed_lhs_from_front subs sigma = match sigma with
     Return [(changed, calc_index_frame', hpred')] where [changed] indicates whether the predicate has changed. *)
 let expand_hpred_pointer calc_index_frame hpred : bool * bool * Sil.hpred =
   let rec expand changed calc_index_frame hpred = match hpred with
-    | Sil.Hpointsto (Exp.Lfield (e, fld, typ_fld), se, t) ->
-        let t' = match t, typ_fld with
-          | _, Typ.Tstruct _ -> (* the struct type of fld is known *)
-              Exp.Sizeof (typ_fld, None, Subtype.exact)
-          | Exp.Sizeof (t1, len, st), _ ->
-              (* the struct type of fld is not known -- typically Tvoid *)
+    | Sil.Hpointsto (Lfield (adr_base, fld, adr_typ), cnt, cnt_texp) ->
+        let cnt_texp' = match adr_typ, cnt_texp with
+          | Tstruct _, _ ->
+              (* type of struct at adr_base is known *)
+              Exp.Sizeof (adr_typ, None, Subtype.exact)
+          | _, Sizeof (cnt_typ, len, st) ->
+              (* type of struct at adr_base is unknown (typically Tvoid), but
+                 type of contents is known, so construct struct type for single fld:cnt_typ *)
               Exp.Sizeof
-                (Typ.Tstruct
-                   { Typ.instance_fields = [(fld, t1, Typ.item_annotation_empty)];
+                (Tstruct
+                   { instance_fields = [(fld, cnt_typ, Typ.item_annotation_empty)];
                      static_fields = [];
-                     csu = Csu.Struct;
-                     struct_name = None;
-                     Typ.superclasses = [];
-                     Typ.def_methods = [];
-                     Typ.struct_annotations = Typ.item_annotation_empty;
+                     csu = Struct;
+                     name = TN_csu (Struct, Mangled.from_string "counterfeit");
+                     superclasses = [];
+                     def_methods = [];
+                     struct_annotations = Typ.item_annotation_empty;
                    }, len, st)
-          (* None as we don't know the stuct name *)
-          | _ -> raise (Failure "expand_hpred_pointer: Unexpected non-sizeof type in Lfield") in
-        let hpred' = Sil.Hpointsto (e, Sil.Estruct ([(fld, se)], Sil.inst_none), t') in
+          | _ ->
+              (* type of struct at adr_base and of contents are both unknown: give up *)
+              raise (Failure "expand_hpred_pointer: Unexpected non-sizeof type in Lfield") in
+        let hpred' = Sil.Hpointsto (adr_base, Estruct ([(fld, cnt)], Sil.inst_none), cnt_texp') in
         expand true true hpred'
     | Sil.Hpointsto (Exp.Lindex (e, ind), se, t) ->
         let t' = match t with
@@ -1505,7 +1508,7 @@ let expand_hpred_pointer calc_index_frame hpred : bool * bool * Sil.hpred =
 module Subtyping_check =
 struct
 
-  let object_type = Typename.Java.from_string "java.lang.Object"
+  let object_type = Typename.Java.from_string JConfig.object_cl
 
   let serializable_type = Typename.Java.from_string "java.io.Serializable"
 
@@ -1513,7 +1516,7 @@ struct
 
   let is_interface tenv class_name =
     match Tenv.lookup tenv class_name with
-    | Some ({ Typ.csu = Csu.Class Csu.Java; struct_name = Some _ } as struct_typ) ->
+    | Some ({ csu = Class Java } as struct_typ) ->
         (IList.length struct_typ.Typ.instance_fields = 0) &&
         (IList.length struct_typ.Typ.def_methods = 0)
     | _ -> false
@@ -1531,7 +1534,7 @@ struct
     let rec check cn =
       Typename.equal cn c2 || is_root_class c2 ||
       match Tenv.lookup tenv cn with
-      | Some ({ Typ.struct_name = Some _; csu = Csu.Class _; superclasses }) ->
+      | Some ({ csu = Class _; superclasses }) ->
           IList.exists check superclasses
       | _ -> false in
     check c1
@@ -1552,10 +1555,7 @@ struct
   (** check if t1 is a subtype of t2, in Java *)
   let rec check_subtype_java tenv t1 t2 =
     match t1, t2 with
-    | Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; struct_name = Some c1 },
-      Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; struct_name = Some c2 } ->
-        let cn1 = Typename.TN_csu (Csu.Class Csu.Java, c1)
-        and cn2 = Typename.TN_csu (Csu.Class Csu.Java, c2) in
+    | Typ.Tstruct { csu = Class Java; name = cn1 }, Typ.Tstruct { csu = Class Java; name = cn2 } ->
         check_subclass tenv cn1 cn2
 
     | Typ.Tarray (dom_type1, _), Typ.Tarray (dom_type2, _) ->
@@ -1564,18 +1564,15 @@ struct
     | Typ.Tptr (dom_type1, _), Typ.Tptr (dom_type2, _) ->
         check_subtype_java tenv dom_type1 dom_type2
 
-    | Typ.Tarray _, Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; struct_name = Some c2 } ->
-        let cn2 = Typename.TN_csu (Csu.Class Csu.Java, c2) in
+    | Typ.Tarray _, Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; name = cn2 } ->
         Typename.equal cn2 serializable_type
         || Typename.equal cn2 cloneable_type
         || Typename.equal cn2 object_type
     | _ -> check_subtype_basic_type t1 t2
 
-  let get_cpp_objc_type_name t =
+  let get_type_name (t: Typ.t) =
     match t with
-    | Typ.Tstruct { Typ.csu = Csu.Class csu; struct_name = Some c }
-      when csu = Csu.CPP || csu = Csu.Objc ->
-        Some (Typename.TN_csu (Csu.Class csu, c))
+    | Tstruct { name } -> Some name
     | _ -> None
 
   (** check if t1 is a subtype of t2 *)
@@ -1584,16 +1581,13 @@ struct
     then
       check_subtype_java tenv t1 t2
     else
-      match get_cpp_objc_type_name t1, get_cpp_objc_type_name t2 with
+      match get_type_name t1, get_type_name t2 with
       | Some cn1, Some cn2 -> check_subclass tenv cn1 cn2
       | _ -> false
 
   let rec case_analysis_type_java tenv (t1, st1) (t2, st2) =
     match t1, t2 with
-    | Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; struct_name = Some c1 },
-      Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; struct_name = Some c2 } ->
-        let cn1 = Typename.TN_csu (Csu.Class Csu.Java, c1)
-        and cn2 = Typename.TN_csu (Csu.Class Csu.Java, c2) in
+    | Typ.Tstruct { csu = Class Java; name = cn1 }, Typ.Tstruct { csu = Class Java; name = cn2 } ->
         Subtype.case_analysis (cn1, st1) (cn2, st2)
           (check_subclass tenv) (is_interface tenv)
 
@@ -1603,8 +1597,7 @@ struct
     | Typ.Tptr (dom_type1, _), Typ.Tptr (dom_type2, _) ->
         case_analysis_type_java tenv (dom_type1, st1) (dom_type2, st2)
 
-    | Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; struct_name = Some c1 }, Typ.Tarray _ ->
-        let cn1 = Typename.TN_csu (Csu.Class Csu.Java, c1) in
+    | Typ.Tstruct { Typ.csu = Csu.Class Csu.Java; name = cn1 }, Typ.Tarray _ ->
         if (Typename.equal cn1 serializable_type
             || Typename.equal cn1 cloneable_type
             || Typename.equal cn1 object_type) &&
@@ -1617,7 +1610,7 @@ struct
   let case_analysis_type tenv (t1, st1) (t2, st2) =
     if is_java_class t1 then
       case_analysis_type_java tenv (t1, st1) (t2, st2)
-    else match get_cpp_objc_type_name t1, get_cpp_objc_type_name t2 with
+    else match get_type_name t1, get_type_name t2 with
       | Some cn1, Some cn2 ->
           (* cn1 <: cn2 or cn2 <: cn1 is implied in Java when we get two types compared *)
           (* that get through the type system, but not in C++ because of multiple inheritance, *)

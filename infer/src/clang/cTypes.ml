@@ -14,11 +14,6 @@ open! Utils
 open CFrontend_utils
 module L = Logging
 
-let get_name_from_struct s =
-  match s with
-  | Typ.Tstruct { Typ.struct_name = Some n } -> n
-  | _ -> assert false
-
 let add_pointer_to_typ typ =
   Typ.Tptr(typ, Typ.Pk_pointer)
 
@@ -29,8 +24,8 @@ let remove_pointer_to_typ typ =
 
 let classname_of_type typ =
   match typ with
-  | Typ.Tvar (Typename.TN_csu (_, name) )
-  | Typ.Tstruct { struct_name =  Some name } -> Mangled.to_string name
+  | Typ.Tvar name
+  | Typ.Tstruct { name } -> Typename.name name
   | Typ.Tfun _ -> CFrontend_config.objc_object
   | _ ->
       Printing.log_out
@@ -43,9 +38,9 @@ let mk_structname n = Typename.TN_csu (Csu.Struct, Mangled.from_string n)
 
 let is_class typ =
   match typ with
-  | Typ.Tptr (Typ.Tstruct { Typ.struct_name = Some name }, _)
-  | Typ.Tptr (Typ.Tvar (Typename.TN_csu (_, name) ), _) ->
-      (Mangled.to_string name) = CFrontend_config.objc_class
+  | Typ.Tptr (Tvar ((TN_csu _) as name), _)
+  | Typ.Tptr (Tstruct { name }, _) ->
+      string_equal (Typename.name name) CFrontend_config.objc_class
   | _ -> false
 
 let rec return_type_of_function_type_ptr type_ptr =

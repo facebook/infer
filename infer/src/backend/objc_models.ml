@@ -208,10 +208,10 @@ struct
     match typ with
     | Typ.Tptr (styp, _ ) ->
         is_core_lib lib styp
-    | Typ.Tvar (Typename.TN_csu (_, name) )
-    | Typ.Tstruct { Typ.struct_name = Some name } ->
+    | Typ.Tvar name
+    | Typ.Tstruct { name } ->
         let core_lib_types = core_lib_to_type_list lib in
-        IList.mem (=) (Mangled.to_string name) core_lib_types
+        IList.mem string_equal (Typename.name name) core_lib_types
     | _ -> false
 
   let is_core_foundation_type typ =

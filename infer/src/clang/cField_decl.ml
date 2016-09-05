@@ -88,7 +88,7 @@ let add_missing_fields tenv class_name ck fields =
           Typ.instance_fields = new_fields;
           static_fields = [];
           csu = Csu.Class ck;
-          struct_name = Some mang_name;
+          name = class_tn_name;
         } in
       Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
       Tenv.add tenv class_tn_name class_type_info

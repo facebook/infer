@@ -24,11 +24,8 @@ type taint_spec = {
   language : Config.language
 }
 
-let object_name = Mangled.from_string "java.lang.Object"
-
 let type_is_object = function
-  | Typ.Tptr (Typ.Tstruct { Typ.struct_name = Some name }, _) ->
-      Mangled.equal name object_name
+  | Typ.Tptr (Tstruct { name }, _) -> string_equal (Typename.name name) JConfig.object_cl
   | _ -> false
 
 let java_proc_name_with_class_method pn_java class_with_path method_name =
@@ -87,11 +84,8 @@ let type_get_direct_supertypes = function
   | _ ->
       []
 
-let type_get_class_name t = match t with
-  | Typ.Tptr (Typ.Tstruct { Typ.struct_name = Some cn }, _) ->
-      Some cn
-  | Typ.Tptr (Typ.Tvar (Typename.TN_csu (Csu.Class _, cn)), _) ->
-      Some cn
+let type_get_class_name = function
+  | Typ.Tptr (typ, _) -> Typ.name typ
   | _ -> None
 
 let type_get_annotation
@@ -101,9 +95,6 @@ let type_get_annotation
   | Typ.Tstruct { Typ.struct_annotations } ->
       Some struct_annotations
   | _ -> None
-
-let type_has_class_name t name =
-  type_get_class_name t = Some name
 
 let type_has_direct_supertype (typ : Typ.t) (class_name : Typename.t) =
   IList.exists (fun cn -> Typename.equal cn class_name) (type_get_direct_supertypes typ)
@@ -133,21 +124,15 @@ let type_has_supertype
       end in
   has_supertype typ Typ.Set.empty
 
-
-let type_is_nested_in_type t n = match t with
-  | Typ.Tptr (Typ.Tstruct { Typ.struct_name = Some name }, _) ->
-      string_is_prefix (Mangled.to_string n ^ "$") (Mangled.to_string name)
-  | _ -> false
-
 let type_is_nested_in_direct_supertype t n =
   let is_nested_in cn1 cn2 = string_is_prefix (Typename.name cn1 ^ "$") (Typename.name cn2) in
   IList.exists (is_nested_in n) (type_get_direct_supertypes t)
 
 let rec get_type_name = function
-  | Typ.Tstruct { Typ.struct_name = Some name } ->
-      Mangled.to_string name
+  | Typ.Tvar name
+  | Typ.Tstruct { name } ->
+      Typename.name name
   | Typ.Tptr (t, _) -> get_type_name t
-  | Typ.Tvar tn -> Typename.name tn
   | _ -> "_"
 
 let get_field_type_name
