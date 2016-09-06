@@ -59,7 +59,7 @@ let print_status f pid (status : Unix. process_status) =
      | WSIGNALED signal ->
          Logging.err "%s killed by signal %d\n%!" program signal
      | WSTOPPED _ ->
-         Logging.err "%s stopped (???)\n%!" program);
+         Logging.err "%s stopped \n%!" program);
   Logging.stdout ".%!"
 
 let start_current_jobs_count () = ref 0
