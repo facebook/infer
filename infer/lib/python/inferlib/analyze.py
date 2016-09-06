@@ -507,28 +507,36 @@ class AnalyzerWrapper(object):
         stats_path = os.path.join(self.args.infer_out, config.STATS_FILENAME)
         utils.dump_json_to_path(self.stats, stats_path)
 
+    def report_proc_stats(self):
+        self.read_proc_stats()
+        self.print_analysis_stats()
+
+    def report(self):
+        reporting_start_time = time.time()
+        report_status = self.create_report()
+        elapsed = utils.elapsed_time(reporting_start_time)
+        self.timing['reporting'] = elapsed
+        if report_status == os.EX_OK and not self.args.buck:
+            json_report = os.path.join(self.args.infer_out,
+                                       config.JSON_REPORT_FILENAME)
+            bugs_out = os.path.join(self.args.infer_out,
+                                    config.BUGS_FILENAME)
+            xml_out = None
+            if self.args.pmd_xml:
+                xml_out = os.path.join(self.args.infer_out,
+                                       config.PMD_XML_FILENAME)
+            issues.print_and_save_errors(json_report,
+                                         bugs_out, xml_out)
+
     def analyze_and_report(self):
         should_print_errors = False
         if self.args.analyzer not in [config.ANALYZER_COMPILE,
                                       config.ANALYZER_CAPTURE]:
-            if self.analyze() == os.EX_OK:
-                reporting_start_time = time.time()
-                report_status = self.create_report()
-                elapsed = utils.elapsed_time(reporting_start_time)
-                self.timing['reporting'] = elapsed
-                self.read_proc_stats()
-                self.print_analysis_stats()
-                if report_status == os.EX_OK and not self.args.buck:
-                    json_report = os.path.join(self.args.infer_out,
-                                               config.JSON_REPORT_FILENAME)
-                    bugs_out = os.path.join(self.args.infer_out,
-                                            config.BUGS_FILENAME)
-                    xml_out = None
-                    if self.args.pmd_xml:
-                        xml_out = os.path.join(self.args.infer_out,
-                                               config.PMD_XML_FILENAME)
-                    issues.print_and_save_errors(json_report,
-                                                 bugs_out, xml_out)
+            if self.args.analyzer == config.ANALYZER_LINTERS:
+                self.report()
+            elif self.analyze() == os.EX_OK:
+                self.report_proc_stats()
+                self.report()
 
     def print_analysis_stats(self):
         files_total = self.stats['int']['files']
