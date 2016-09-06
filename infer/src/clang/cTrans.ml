@@ -279,11 +279,12 @@ struct
 
   let create_call_instr trans_state return_type function_sil params_sil sil_loc
       call_flags ~is_objc_method =
+    let {context = {tenv}} = trans_state in
     let ret_id = if (Typ.equal return_type Typ.Tvoid) then []
       else [Ident.create_fresh Ident.knormal] in
     let ret_id', params, initd_exps, ret_exps =
       (* Assumption: should_add_return_param will return true only for struct types *)
-      if CMethod_trans.should_add_return_param return_type ~is_objc_method then
+      if CMethod_trans.should_add_return_param tenv return_type ~is_objc_method then
         let param_type = Typ.Tptr (return_type, Typ.Pk_pointer) in
         let var_exp = match trans_state.var_exp_typ with
           | Some (exp, _) -> exp
@@ -626,6 +627,7 @@ struct
 
   and var_deref_trans trans_state stmt_info (decl_ref : Clang_ast_t.decl_ref) =
     let context = trans_state.context in
+    let _tenv = context.tenv in
     let _, _, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
     let ast_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let typ = match ast_typ with

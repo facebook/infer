@@ -61,13 +61,13 @@ let do_node _ node (s : State.t) : (State.t list) * (State.t list) =
 
 
 (** Report an error. *)
-let report_error description pn pd loc =
+let report_error tenv description pn pd loc =
   if verbose then L.stderr "ERROR: %s@." description;
-  Checkers.ST.report_error pn pd "CHECKERS_DEAD_CODE" loc description
+  Checkers.ST.report_error tenv pn pd "CHECKERS_DEAD_CODE" loc description
 
 
 (** Check the final state at the end of the analysis. *)
-let check_final_state proc_name proc_desc final_s =
+let check_final_state tenv proc_name proc_desc final_s =
   let proc_nodes = Cfg.Procdesc.get_nodes proc_desc in
   let tot_nodes = IList.length proc_nodes in
   let tot_visited = State.num_visited final_s in
@@ -84,7 +84,7 @@ let check_final_state proc_name proc_desc final_s =
           | k when k = Cfg.Node.exn_sink_kind -> false
           | _ -> true in
         if report
-        then report_error description proc_name proc_desc loc in
+        then report_error tenv description proc_name proc_desc loc in
       IList.iter do_node not_visited
     end
 
@@ -107,7 +107,7 @@ let callback_check_dead_code { Callbacks.proc_desc; proc_name; tenv } =
       match transitions exit_node with
       | DFDead.Transition (pre_final_s, _, _) ->
           let final_s = State.add_visited exit_node pre_final_s in
-          check_final_state proc_name proc_desc final_s
+          check_final_state tenv proc_name proc_desc final_s
       | DFDead.Dead_state -> ()
     end in
 

@@ -188,7 +188,7 @@ let hpred_get_lhs h =>
 
 
 /** {2 Comparision and Inspection Functions} */
-let has_objc_ref_counter hpred =>
+let has_objc_ref_counter _tenv hpred =>
   switch hpred {
   | Hpointsto _ _ (Sizeof (Tstruct struct_typ) _ _) =>
     IList.exists Typ.is_objc_ref_counter_field struct_typ.instance_fields

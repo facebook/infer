@@ -963,7 +963,7 @@ let rec instruction context pc instr : translation =
           match instruction_thread_start context original_cn ms obj args var_opt with
           | Some start_call -> instruction context pc start_call
           | None ->
-              let cn' = match JTransType.extract_cn_no_obj sil_obj_type with
+              let cn' = match JTransType.extract_cn_no_obj tenv sil_obj_type with
                 | Some cn -> cn
                 | None -> original_cn in
               let call_node = create_call_node cn' invoke_kind in

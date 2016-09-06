@@ -49,17 +49,17 @@ let extract_array_type typ =
     | _ -> None
 
 (** Return a result from a procedure call. *)
-let return_result e prop ret_ids =
+let return_result tenv e prop ret_ids =
   match ret_ids with
-  | [ret_id] -> Prop.conjoin_eq e (Exp.Var ret_id) prop
+  | [ret_id] -> Prop.conjoin_eq tenv e (Exp.Var ret_id) prop
   | _ -> prop
 
 (* Add an array of typ pointed to by lexp to prop_ if it doesn't already exist *)
 (*  Return the new prop and the array length *)
 (*  Return None if it fails to add the array *)
-let add_array_to_prop pdesc prop_ lexp typ =
+let add_array_to_prop tenv pdesc prop_ lexp typ =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
-  let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
+  let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
   begin
     try
       let hpred = IList.find (function
@@ -74,45 +74,45 @@ let add_array_to_prop pdesc prop_ lexp typ =
     | Some arr_typ ->
         let len = Exp.Var (Ident.create_fresh Ident.kfootprint) in
         let s = mk_empty_array_rearranged len in
-        let hpred = Prop.mk_ptsto n_lexp s (Exp.Sizeof (arr_typ, Some len, Subtype.exact)) in
+        let hpred = Prop.mk_ptsto tenv n_lexp s (Exp.Sizeof (arr_typ, Some len, Subtype.exact)) in
         let sigma = prop.Prop.sigma in
         let sigma_fp = prop.Prop.sigma_fp in
         let prop'= Prop.set prop ~sigma:(hpred:: sigma) in
         let prop''= Prop.set prop' ~sigma_fp:(hpred:: sigma_fp) in
-        let prop''= Prop.normalize prop'' in
+        let prop''= Prop.normalize tenv prop'' in
         Some (len, prop'')
       | _ -> None
   end
 
 (* Add an array in prop if it is not allocated.*)
-let execute___require_allocated_array { Builtin.pdesc; prop_; path; ret_ids; args; }
+let execute___require_allocated_array { Builtin.tenv; pdesc; prop_; path; ret_ids; args; }
   : Builtin.ret_typ =
   match args with
   | [(lexp, typ)] when IList.length ret_ids <= 1 ->
-      (match add_array_to_prop pdesc prop_ lexp typ with
+      (match add_array_to_prop tenv pdesc prop_ lexp typ with
        | None -> []
        | Some (_, prop) -> [(prop, path)])
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-let execute___get_array_length { Builtin.pdesc; prop_; path; ret_ids; args; }
+let execute___get_array_length { Builtin.tenv; pdesc; prop_; path; ret_ids; args; }
   : Builtin.ret_typ =
   match args with
   | [(lexp, typ)] when IList.length ret_ids <= 1 ->
-      (match add_array_to_prop pdesc prop_ lexp typ with
+      (match add_array_to_prop tenv pdesc prop_ lexp typ with
        | None -> []
-       | Some (len, prop) -> [(return_result len prop ret_ids, path)])
+       | Some (len, prop) -> [(return_result tenv len prop ret_ids, path)])
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-let execute___set_array_length { Builtin.pdesc; prop_; path; ret_ids; args; }
+let execute___set_array_length { Builtin.tenv; pdesc; prop_; path; ret_ids; args; }
   : Builtin.ret_typ =
   match args, ret_ids with
   | [(lexp, typ); (len, _)], []->
-      (match add_array_to_prop pdesc prop_ lexp typ with
+      (match add_array_to_prop tenv pdesc prop_ lexp typ with
        | None -> []
        | Some (_, prop_a) -> (* Invariant: prop_a has an array pointed to by lexp *)
            let pname = Cfg.Procdesc.get_proc_name pdesc in
-           let n_lexp, prop__ = check_arith_norm_exp pname lexp prop_a in
-           let n_len, prop = check_arith_norm_exp pname len prop__ in
+           let n_lexp, prop__ = check_arith_norm_exp tenv pname lexp prop_a in
+           let n_len, prop = check_arith_norm_exp tenv pname len prop__ in
            let hpred, sigma' = IList.partition (function
                | Sil.Hpointsto(e, _, _) -> Exp.equal e n_lexp
                | _ -> false) prop.Prop.sigma in
@@ -120,24 +120,24 @@ let execute___set_array_length { Builtin.pdesc; prop_; path; ret_ids; args; }
             | [Sil.Hpointsto(e, Sil.Earray(_, esel, inst), t)] ->
                 let hpred' = Sil.Hpointsto (e, Sil.Earray (n_len, esel, inst), t) in
                 let prop' = Prop.set prop ~sigma:(hpred':: sigma') in
-                [(Prop.normalize prop', path)]
+                [(Prop.normalize tenv prop', path)]
             | _ -> [] (* by construction of prop_a this case is impossible *) ))
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-let execute___print_value { Builtin.pdesc; prop_; path; args; }
+let execute___print_value { Builtin.tenv; pdesc; prop_; path; args; }
   : Builtin.ret_typ =
   L.err "__print_value: ";
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let do_arg (lexp, _) =
-    let n_lexp, _ = check_arith_norm_exp pname lexp prop_ in
+    let n_lexp, _ = check_arith_norm_exp tenv pname lexp prop_ in
     L.err "%a " (Sil.pp_exp pe_text) n_lexp in
   IList.iter do_arg args;
   L.err "@.";
   [(prop_, path)]
 
-let is_undefined_opt prop n_lexp =
+let is_undefined_opt tenv prop n_lexp =
   let is_undef =
-    Option.is_some (Attribute.get_undef prop n_lexp) in
+    Option.is_some (Attribute.get_undef tenv prop n_lexp) in
   is_undef && (Config.angelic_execution || Config.optimistic_cast)
 
 (** Creates an object in the heap with a given type, when the object is not known to be null or when
@@ -156,13 +156,13 @@ let create_type tenv n_lexp typ prop =
             let sexp = Sil.Estruct ([], Sil.inst_none) in
             let typ'' = Tenv.expand_type tenv typ' in
             let texp = Exp.Sizeof (typ'', None, Subtype.subtypes) in
-            let hpred = Prop.mk_ptsto n_lexp sexp texp in
+            let hpred = Prop.mk_ptsto tenv n_lexp sexp texp in
             Some hpred
         | Typ.Tarray _ ->
             let len = Exp.Var (Ident.create_fresh Ident.kfootprint) in
             let sexp = mk_empty_array len in
             let texp = Exp.Sizeof (typ, None, Subtype.subtypes) in
-            let hpred = Prop.mk_ptsto n_lexp sexp texp in
+            let hpred = Prop.mk_ptsto tenv n_lexp sexp texp in
             Some hpred
         | _ -> None in
       match mhpred with
@@ -173,19 +173,19 @@ let create_type tenv n_lexp typ prop =
           let prop''=
             let has_normal_variables =
               Sil.fav_exists (Sil.exp_fav n_lexp) Ident.is_normal in
-            if (is_undefined_opt prop n_lexp) || has_normal_variables
+            if (is_undefined_opt tenv prop n_lexp) || has_normal_variables
             then prop'
             else Prop.set prop' ~sigma_fp:(hpred:: sigma_fp) in
-          let prop''= Prop.normalize prop'' in
+          let prop''= Prop.normalize tenv prop'' in
           prop''
       | None -> prop in
   let sil_is_null = Exp.BinOp (Binop.Eq, n_lexp, Exp.zero) in
   let sil_is_nonnull = Exp.UnOp (Unop.LNot, sil_is_null, None) in
-  let null_case = Propset.to_proplist (prune ~positive:true sil_is_null prop) in
-  let non_null_case = Propset.to_proplist (prune ~positive:true sil_is_nonnull prop_type) in
+  let null_case = Propset.to_proplist (prune tenv ~positive:true sil_is_null prop) in
+  let non_null_case = Propset.to_proplist (prune tenv ~positive:true sil_is_nonnull prop_type) in
   if ((IList.length non_null_case) > 0) && (!Config.footprint) then
     non_null_case
-  else if ((IList.length non_null_case) > 0) && (is_undefined_opt prop n_lexp) then
+  else if ((IList.length non_null_case) > 0) && (is_undefined_opt tenv prop n_lexp) then
     non_null_case
   else null_case @ non_null_case
 
@@ -194,7 +194,7 @@ let execute___get_type_of { Builtin.pdesc; tenv; prop_; path; ret_ids; args; }
   match args with
   | [(lexp, typ)] when IList.length ret_ids <= 1 ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
+      let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
       let props = create_type tenv n_lexp typ prop in
       let aux prop =
         begin
@@ -204,15 +204,15 @@ let execute___get_type_of { Builtin.pdesc; tenv; prop_; path; ret_ids; args; }
                 | _ -> false) prop.Prop.sigma in
             match hpred with
             | Sil.Hpointsto(_, _, texp) ->
-                (return_result texp prop ret_ids), path
+                (return_result tenv texp prop ret_ids), path
             | _ -> assert false
-          with Not_found -> (return_result Exp.zero prop ret_ids), path
+          with Not_found -> (return_result tenv Exp.zero prop ret_ids), path
         end in
       (IList.map aux props)
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** replace the type of the ptsto rooted at [root_e] with [texp] in [prop] *)
-let replace_ptsto_texp prop root_e texp =
+let replace_ptsto_texp tenv prop root_e texp =
   let process_sigma sigma =
     let sigma1, sigma2 =
       IList.partition (function
@@ -225,7 +225,7 @@ let replace_ptsto_texp prop root_e texp =
   let sigma_fp = prop.Prop.sigma_fp in
   let prop'= Prop.set prop ~sigma:(process_sigma sigma) in
   let prop''= Prop.set prop' ~sigma_fp:(process_sigma sigma_fp) in
-  Prop.normalize prop''
+  Prop.normalize tenv prop''
 
 let execute___instanceof_cast ~instof
     { Builtin.pdesc; tenv; prop_; path; ret_ids; args; }
@@ -233,8 +233,8 @@ let execute___instanceof_cast ~instof
   match args with
   | [(val1_, typ1); (texp2_, _)] when IList.length ret_ids <= 1 ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let val1, prop__ = check_arith_norm_exp pname val1_ prop_ in
-      let texp2, prop = check_arith_norm_exp pname texp2_ prop__ in
+      let val1, prop__ = check_arith_norm_exp tenv pname val1_ prop_ in
+      let texp2, prop = check_arith_norm_exp tenv pname texp2_ prop__ in
       let is_cast_to_reference =
         match typ1 with
         | Typ.Tptr (_, Typ.Pk_reference) -> true
@@ -244,11 +244,11 @@ let execute___instanceof_cast ~instof
       let should_throw_exception =
         !Config.curr_language = Config.Java || is_cast_to_reference in
       let deal_with_failed_cast val1 _ texp1 texp2 =
-        Tabulation.raise_cast_exception
+        Tabulation.raise_cast_exception tenv
           __POS__ None texp1 texp2 val1 in
       let exe_one_prop prop =
         if Exp.equal texp2 Exp.zero then
-          [(return_result Exp.zero prop ret_ids, path)]
+          [(return_result tenv Exp.zero prop ret_ids, path)]
         else
           begin
             try
@@ -264,8 +264,8 @@ let execute___instanceof_cast ~instof
                     | Some texp1' ->
                         let prop' =
                           if Exp.equal texp1 texp1' then prop
-                          else replace_ptsto_texp prop val1 texp1' in
-                        [(return_result res_e prop' ret_ids, path)] in
+                          else replace_ptsto_texp tenv prop val1 texp1' in
+                        [(return_result tenv res_e prop' ret_ids, path)] in
                   if instof then (* instanceof *)
                     begin
                       let pos_res = mk_res pos_type_opt Exp.one in
@@ -289,14 +289,14 @@ let execute___instanceof_cast ~instof
                         begin
                           match neg_type_opt with
                           | Some _ ->
-                              if is_undefined_opt prop val1 then mk_res pos_type_opt val1
+                              if is_undefined_opt tenv prop val1 then mk_res pos_type_opt val1
                               else deal_with_failed_cast val1 typ1 texp1 texp2
                           | None -> mk_res pos_type_opt val1
                         end
                     end
               | _ -> []
             with Not_found ->
-              [(return_result val1 prop ret_ids, path)]
+              [(return_result tenv val1 prop ret_ids, path)]
           end in
       let props = create_type tenv val1 typ1 prop in
       IList.flatten (IList.map exe_one_prop props)
@@ -310,10 +310,10 @@ let execute___cast builtin_args
   : Builtin.ret_typ =
   execute___instanceof_cast ~instof:false builtin_args
 
-let set_resource_attribute prop path n_lexp loc ra_res =
-  let prop' = match Attribute.get_resource prop n_lexp with
+let set_resource_attribute tenv prop path n_lexp loc ra_res =
+  let prop' = match Attribute.get_resource tenv prop n_lexp with
     | Some (Apred (Aresource ra, _)) ->
-        Attribute.add_or_replace prop (Apred (Aresource { ra with ra_res }, [n_lexp]))
+        Attribute.add_or_replace tenv prop (Apred (Aresource { ra with ra_res }, [n_lexp]))
     | _ ->
         let pname = PredSymb.mem_alloc_pname PredSymb.Mnew in
         let ra =
@@ -323,72 +323,71 @@ let set_resource_attribute prop path n_lexp loc ra_res =
             ra_pname = pname;
             ra_loc = loc;
             ra_vpath = None } in
-        Attribute.add_or_replace prop (Apred (Aresource ra, [n_lexp])) in
+        Attribute.add_or_replace tenv prop (Apred (Aresource ra, [n_lexp])) in
   [(prop', path)]
 
 (** Set the attibute of the value as file *)
-let execute___set_file_attribute { Builtin.pdesc; prop_; path; ret_ids; args; loc; }
+let execute___set_file_attribute { Builtin.tenv; pdesc; prop_; path; ret_ids; args; loc; }
   : Builtin.ret_typ =
   match args, ret_ids with
   | [(lexp, _)], _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
-      set_resource_attribute prop path n_lexp loc PredSymb.Rfile
+      let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
+      set_resource_attribute tenv prop path n_lexp loc PredSymb.Rfile
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** Set the attibute of the value as lock *)
-let execute___set_lock_attribute { Builtin.pdesc; prop_; path; ret_ids; args; loc; }
+let execute___set_lock_attribute { Builtin.tenv; pdesc; prop_; path; ret_ids; args; loc; }
   : Builtin.ret_typ =
   match args, ret_ids with
   | [(lexp, _)], _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
-      set_resource_attribute prop path n_lexp loc PredSymb.Rlock
+      let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
+      set_resource_attribute tenv prop path n_lexp loc PredSymb.Rlock
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** Set the resource attribute of the first real argument of method as ignore, the first argument is
     assumed to be "this" *)
-let execute___method_set_ignore_attribute
-    { Builtin.pdesc; prop_; path; ret_ids; args; loc; }
+let execute___method_set_ignore_attribute { Builtin.tenv; pdesc; prop_; path; ret_ids; args; loc; }
   : Builtin.ret_typ =
   match args, ret_ids with
   | [_ ; (lexp, _)], _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
-      set_resource_attribute prop path n_lexp loc PredSymb.Rignore
+      let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
+      set_resource_attribute tenv prop path n_lexp loc PredSymb.Rignore
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** Set the attibute of the value as memory *)
-let execute___set_mem_attribute { Builtin.pdesc; prop_; path; ret_ids; args; loc; }
+let execute___set_mem_attribute { Builtin.tenv; pdesc; prop_; path; ret_ids; args; loc; }
   : Builtin.ret_typ =
   match args, ret_ids with
   | [(lexp, _)], _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
-      set_resource_attribute prop path n_lexp loc (PredSymb.Rmemory PredSymb.Mnew)
+      let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
+      set_resource_attribute tenv prop path n_lexp loc (PredSymb.Rmemory PredSymb.Mnew)
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** report an error if [lexp] is tainted; otherwise, add untained([lexp]) as a precondition *)
 let execute___check_untainted
-    { Builtin.pdesc; prop_; path; ret_ids; args; proc_name = callee_pname; }
+    { Builtin.tenv; pdesc; prop_; path; ret_ids; args; proc_name = callee_pname; }
   : Builtin.ret_typ =
   match args, ret_ids with
   | [(lexp, _)], _ ->
       let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = check_arith_norm_exp caller_pname lexp prop_ in
-      [(check_untainted n_lexp PredSymb.Tk_unknown caller_pname callee_pname prop, path)]
+      let n_lexp, prop = check_arith_norm_exp tenv caller_pname lexp prop_ in
+      [(check_untainted tenv n_lexp PredSymb.Tk_unknown caller_pname callee_pname prop, path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** take a pointer to a struct, and return the value of a hidden field in the struct *)
-let execute___get_hidden_field { Builtin.pdesc; prop_; path; ret_ids; args; }
+let execute___get_hidden_field { Builtin.tenv; pdesc; prop_; path; ret_ids; args; }
   : Builtin.ret_typ =
   match args with
   | [(lexp, _)] ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
+      let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
       let ret_val = ref None in
       let return_val p = match !ret_val with
-        | Some e -> return_result e p ret_ids
+        | Some e -> return_result tenv e p ret_ids
         | None -> p in
       let foot_var = lazy (Exp.Var (Ident.create_fresh Ident.kfootprint)) in
       let filter_fld_hidden (f, _ ) = Ident.fieldname_is_hidden f in
@@ -413,19 +412,19 @@ let execute___get_hidden_field { Builtin.pdesc; prop_; path; ret_ids; args; }
       let sigma' = IList.map (do_hpred false) prop.Prop.sigma in
       let sigma_fp' = IList.map (do_hpred true) prop.Prop.sigma_fp in
       let prop' = Prop.set prop ~sigma:sigma' ~sigma_fp:sigma_fp' in
-      let prop'' = return_val (Prop.normalize prop') in
+      let prop'' = return_val (Prop.normalize tenv prop') in
       [(prop'', path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** take a pointer to a struct and a value,
     and set a hidden field in the struct to the given value *)
-let execute___set_hidden_field { Builtin.pdesc; prop_; path; args; }
+let execute___set_hidden_field { Builtin.tenv; pdesc; prop_; path; args; }
   : Builtin.ret_typ =
   match args with
   | [(lexp1, _); (lexp2, _)] ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp1, prop__ = check_arith_norm_exp pname lexp1 prop_ in
-      let n_lexp2, prop = check_arith_norm_exp pname lexp2 prop__ in
+      let n_lexp1, prop__ = check_arith_norm_exp tenv pname lexp1 prop_ in
+      let n_lexp2, prop = check_arith_norm_exp tenv pname lexp2 prop__ in
       let foot_var = lazy (Exp.Var (Ident.create_fresh Ident.kfootprint)) in
       let filter_fld_hidden (f, _ ) = Ident.fieldname_is_hidden f in
       let has_fld_hidden fsel = IList.exists filter_fld_hidden fsel in
@@ -447,7 +446,7 @@ let execute___set_hidden_field { Builtin.pdesc; prop_; path; args; }
       let sigma' = IList.map (do_hpred false) prop.Prop.sigma in
       let sigma_fp' = IList.map (do_hpred true) prop.Prop.sigma_fp in
       let prop' = Prop.set prop ~sigma:sigma' ~sigma_fp:sigma_fp' in
-      let prop'' = Prop.normalize prop' in
+      let prop'' = Prop.normalize tenv prop' in
       [(prop'', path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -494,13 +493,12 @@ let get_suppress_npe_flag args =
       false, args' (* this is a CFRelease/CFRetain *)
   | _ -> true, args
 
-let execute___objc_retain_impl
-    ({ Builtin.prop_; args; ret_ids; } as builtin_args)
+let execute___objc_retain_impl ({ Builtin.tenv; prop_; args; ret_ids; } as builtin_args)
   : Builtin.ret_typ =
   let mask_errors, args' = get_suppress_npe_flag args in
   match args' with
   | [(lexp, _)] ->
-      let prop = return_result lexp prop_ ret_ids in
+      let prop = return_result tenv lexp prop_ ret_ids in
       execute___objc_counter_update
         ~mask_errors (Binop.PlusA) (IntLit.one)
         { builtin_args with Builtin.prop_ = prop; args = args'; }
@@ -537,26 +535,26 @@ let execute___objc_release_cf builtin_args
 
 (** Set the attibute of the value as objc autoreleased *)
 let execute___set_autorelease_attribute
-    { Builtin.pdesc; prop_; path; ret_ids; args; }
+    { Builtin.tenv; pdesc; prop_; path; ret_ids; args; }
   : Builtin.ret_typ =
   match args, ret_ids with
   | [(lexp, _)], _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let prop = return_result lexp prop_ ret_ids in
+      let prop = return_result tenv lexp prop_ ret_ids in
       if Config.objc_memory_model_on then
-        let n_lexp, prop = check_arith_norm_exp pname lexp prop in
-        let prop' = Attribute.add_or_replace prop (Apred (Aautorelease, [n_lexp])) in
+        let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop in
+        let prop' = Attribute.add_or_replace tenv prop (Apred (Aautorelease, [n_lexp])) in
         [(prop', path)]
       else execute___no_op prop path
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** Release all the objects in the pool *)
 let execute___release_autorelease_pool
-    ({ Builtin.prop_; path; } as builtin_args)
+    ({ Builtin.tenv; prop_; path; } as builtin_args)
   : Builtin.ret_typ =
   if Config.objc_memory_model_on then
     let autoreleased_objects = Attribute.get_for_symb prop_ Aautorelease in
-    let prop_without_attribute = Attribute.remove_for_attr prop_ Aautorelease in
+    let prop_without_attribute = Attribute.remove_for_attr tenv prop_ Aautorelease in
     let call_release res atom =
       match res, atom with
       | ((prop', path') :: _, Sil.Apred (_, exp :: _)) ->
@@ -579,29 +577,29 @@ let execute___release_autorelease_pool
     IList.fold_left call_release [(prop_without_attribute, path)] autoreleased_objects
   else execute___no_op prop_ path
 
-let set_attr pdesc prop path exp attr =
+let set_attr tenv pdesc prop path exp attr =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
-  let n_lexp, prop = check_arith_norm_exp pname exp prop in
-  [(Attribute.add_or_replace prop (Apred (attr, [n_lexp])), path)]
+  let n_lexp, prop = check_arith_norm_exp tenv pname exp prop in
+  [(Attribute.add_or_replace tenv prop (Apred (attr, [n_lexp])), path)]
 
-let delete_attr pdesc prop path exp attr =
+let delete_attr tenv pdesc prop path exp attr =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
-  let n_lexp, prop = check_arith_norm_exp pname exp prop in
-  [(Attribute.remove prop (Apred (attr, [n_lexp])), path)]
+  let n_lexp, prop = check_arith_norm_exp tenv pname exp prop in
+  [(Attribute.remove tenv prop (Apred (attr, [n_lexp])), path)]
 
 
 (** Set attibute att *)
-let execute___set_attr attr { Builtin.pdesc; prop_; path; args; }
+let execute___set_attr attr { Builtin.tenv; pdesc; prop_; path; args; }
   : Builtin.ret_typ =
   match args with
-  | [(lexp, _)] -> set_attr pdesc prop_ path lexp attr
+  | [(lexp, _)] -> set_attr tenv pdesc prop_ path lexp attr
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** Delete the locked attibute of the value*)
-let execute___delete_locked_attribute { Builtin.prop_; pdesc; path; args; }
+let execute___delete_locked_attribute { Builtin.tenv; prop_; pdesc; path; args; }
   : Builtin.ret_typ =
   match args with
-  | [(lexp, _)] -> delete_attr pdesc prop_ path lexp PredSymb.Alocked
+  | [(lexp, _)] -> delete_attr tenv pdesc prop_ path lexp PredSymb.Alocked
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 
@@ -626,7 +624,7 @@ let execute___set_unlocked_attribute
 
 (** Set the attibute of the value as tainted *)
 let execute___set_taint_attribute
-    ({ Builtin.pdesc; args; prop_; path; })
+    ({ Builtin.tenv; pdesc; args; prop_; path; })
   : Builtin.ret_typ =
   match args with
   | (exp, _) :: [(Exp.Const (Const.Cstr taint_kind_str), _)] ->
@@ -635,40 +633,40 @@ let execute___set_taint_attribute
         | "UnverifiedSSLSocket" -> PredSymb.Tk_unverified_SSL_socket
         | "SharedPreferenceData" -> PredSymb.Tk_shared_preferences_data
         | other_str -> failwith ("Unrecognized taint kind " ^ other_str) in
-      set_attr pdesc prop_ path exp (PredSymb.Ataint { PredSymb.taint_source; taint_kind})
+      set_attr tenv pdesc prop_ path exp (PredSymb.Ataint { PredSymb.taint_source; taint_kind})
   | _ ->
       (* note: we can also get this if [taint_kind] is not a string literal *)
       raise (Exceptions.Wrong_argument_number __POS__)
 
 (** Set the attibute of the value as tainted *)
 let execute___set_untaint_attribute
-    ({ Builtin.pdesc; args; prop_; path; })
+    ({ Builtin.tenv; pdesc; args; prop_; path; })
   : Builtin.ret_typ =
   match args with
   | (exp, _) :: [] ->
       let taint_source = Cfg.Procdesc.get_proc_name pdesc in
       let taint_kind = PredSymb.Tk_unknown in (* TODO: change builtin to specify taint kind *)
-      set_attr pdesc prop_ path exp (PredSymb.Auntaint { PredSymb.taint_source; taint_kind})
+      set_attr tenv pdesc prop_ path exp (PredSymb.Auntaint { PredSymb.taint_source; taint_kind})
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
-let execute___objc_cast { Builtin.pdesc; prop_; path; ret_ids; args; }
+let execute___objc_cast { Builtin.tenv; pdesc; prop_; path; ret_ids; args; }
   : Builtin.ret_typ =
   match args with
   | [(val1_, _); (texp2_, _)] when IList.length ret_ids <= 1 ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let val1, prop__ = check_arith_norm_exp pname val1_ prop_ in
-      let texp2, prop = check_arith_norm_exp pname texp2_ prop__ in
+      let val1, prop__ = check_arith_norm_exp tenv pname val1_ prop_ in
+      let texp2, prop = check_arith_norm_exp tenv pname texp2_ prop__ in
       (try
          let hpred = IList.find (function
              | Sil.Hpointsto(e1, _, _) -> Exp.equal e1 val1
              | _ -> false) prop.Prop.sigma in
          match hpred, texp2 with
          | Sil.Hpointsto (val1, _, _), Exp.Sizeof _ ->
-             let prop' = replace_ptsto_texp prop val1 texp2 in
-             [(return_result val1 prop' ret_ids, path)]
-         | _ -> [(return_result val1 prop ret_ids, path)]
-       with Not_found -> [(return_result val1 prop ret_ids, path)])
+             let prop' = replace_ptsto_texp tenv prop val1 texp2 in
+             [(return_result tenv val1 prop' ret_ids, path)]
+         | _ -> [(return_result tenv val1 prop ret_ids, path)]
+       with Not_found -> [(return_result tenv val1 prop ret_ids, path)])
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 let execute_abort { Builtin.proc_name; }
@@ -681,10 +679,10 @@ let execute_exit { Builtin.prop_; path; }
   : Builtin.ret_typ =
   SymExec.diverge prop_ path
 
-let _execute_free mk loc acc iter =
-  match Prop.prop_iter_current iter with
+let _execute_free tenv mk loc acc iter =
+  match Prop.prop_iter_current tenv iter with
   | (Sil.Hpointsto(lexp, _, _), []) ->
-      let prop = Prop.prop_iter_remove_curr_then_to_prop iter in
+      let prop = Prop.prop_iter_remove_curr_then_to_prop tenv iter in
       let pname = PredSymb.mem_dealloc_pname mk in
       let ra =
         { PredSymb.ra_kind = PredSymb.Rrelease;
@@ -694,7 +692,7 @@ let _execute_free mk loc acc iter =
           PredSymb.ra_vpath = None } in
       (* mark value as freed *)
       let p_res =
-        Attribute.add_or_replace_check_changed
+        Attribute.add_or_replace_check_changed tenv
           Tabulation.check_attr_dealloc_mismatch prop (Apred (Aresource ra, [lexp])) in
       p_res :: acc
   | (Sil.Hpointsto _, _ :: _) -> assert false (* alignment error *)
@@ -703,13 +701,13 @@ let _execute_free mk loc acc iter =
 let _execute_free_nonzero mk pdesc tenv instr prop lexp typ loc =
   try
     begin
-      match Prover.is_root prop lexp lexp with
+      match Prover.is_root tenv prop lexp lexp with
       | None ->
           L.d_strln ".... Alignment Error: Freed a non root ....";
           assert false
       | Some _ ->
           let prop_list =
-            IList.fold_left (_execute_free mk loc) []
+            IList.fold_left (_execute_free tenv mk loc) []
               (Rearrange.rearrange pdesc tenv lexp typ prop loc) in
           IList.rev prop_list
     end
@@ -728,16 +726,16 @@ let execute_free mk { Builtin.pdesc; instr; tenv; prop_; path; args; loc; }
   | [(lexp, typ)] ->
       begin
         let pname = Cfg.Procdesc.get_proc_name pdesc in
-        let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
+        let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
         let prop_nonzero = (* case n_lexp!=0 *)
-          Propset.to_proplist (prune ~positive:true n_lexp prop) in
+          Propset.to_proplist (prune tenv ~positive:true n_lexp prop) in
         let prop_zero = (* case n_lexp==0 *)
-          Propset.to_proplist (prune ~positive:false n_lexp prop) in
+          Propset.to_proplist (prune tenv ~positive:false n_lexp prop) in
         let plist =
           prop_zero @ (* model: if 0 then skip else _execute_free_nonzero *)
           IList.flatten (IList.map (fun p ->
               _execute_free_nonzero mk pdesc tenv instr p
-                (Prop.exp_normalize_prop p lexp) typ loc) prop_nonzero) in
+                (Prop.exp_normalize_prop tenv p lexp) typ loc) prop_nonzero) in
         IList.map (fun p -> (p, path)) plist
       end
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -776,17 +774,17 @@ let execute_alloc mk can_return_null
     | [ret_id] -> ret_id
     | _ -> Ident.create_fresh Ident.kprimed in
   let size_exp', prop =
-    let n_size_exp, prop = check_arith_norm_exp pname size_exp prop_ in
+    let n_size_exp, prop = check_arith_norm_exp tenv pname size_exp prop_ in
     let n_size_exp' = evaluate_char_sizeof n_size_exp in
-    Prop.exp_normalize_prop prop n_size_exp', prop in
+    Prop.exp_normalize_prop tenv prop n_size_exp', prop in
   let cnt_te =
     Exp.Sizeof (Typ.Tarray (Typ.Tint Typ.IChar, None), Some size_exp', Subtype.exact) in
   let id_new = Ident.create_fresh Ident.kprimed in
   let exp_new = Exp.Var id_new in
   let ptsto_new =
-    Prop.mk_ptsto_exp (Some tenv) Prop.Fld_init (exp_new, cnt_te, None) Sil.Ialloc in
+    Prop.mk_ptsto_exp tenv Prop.Fld_init (exp_new, cnt_te, None) Sil.Ialloc in
   let prop_plus_ptsto =
-    let prop' = Prop.normalize (Prop.prop_sigma_star prop [ptsto_new]) in
+    let prop' = Prop.normalize tenv (Prop.prop_sigma_star prop [ptsto_new]) in
     let ra =
       { PredSymb.ra_kind = PredSymb.Racquire;
         PredSymb.ra_res = PredSymb.Rmemory mk;
@@ -794,10 +792,10 @@ let execute_alloc mk can_return_null
         PredSymb.ra_loc = loc;
         PredSymb.ra_vpath = None } in
     (* mark value as allocated *)
-    Attribute.add_or_replace prop' (Apred (Aresource ra, [exp_new])) in
-  let prop_alloc = Prop.conjoin_eq (Exp.Var ret_id) exp_new prop_plus_ptsto in
+    Attribute.add_or_replace tenv prop' (Apred (Aresource ra, [exp_new])) in
+  let prop_alloc = Prop.conjoin_eq tenv (Exp.Var ret_id) exp_new prop_plus_ptsto in
   if can_return_null then
-    let prop_null = Prop.conjoin_eq (Exp.Var ret_id) Exp.zero prop in
+    let prop_null = Prop.conjoin_eq tenv (Exp.Var ret_id) Exp.zero prop in
     [(prop_alloc, path); (prop_null, path)]
   else [(prop_alloc, path)]
 
@@ -809,7 +807,7 @@ let execute___cxx_typeid ({ Builtin.pdesc; tenv; prop_; args; loc} as r)
        match rest with
        | [(field_exp, _); (lexp, typ)] ->
            let pname = Cfg.Procdesc.get_proc_name pdesc in
-           let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
+           let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
            let typ =
              try
                let hpred = IList.find (function
@@ -826,12 +824,12 @@ let execute___cxx_typeid ({ Builtin.pdesc; tenv; prop_; args; loc} as r)
        | _ -> res)
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-let execute_pthread_create ({ Builtin.prop_; path; args; } as builtin_args)
+let execute_pthread_create ({ Builtin.tenv; prop_; path; args; } as builtin_args)
   : Builtin.ret_typ =
   match args with
   | [_; _; start_routine; arg] ->
-      let routine_name = Prop.exp_normalize_prop prop_ (fst start_routine) in
-      let routine_arg = Prop.exp_normalize_prop prop_ (fst arg) in
+      let routine_name = Prop.exp_normalize_prop tenv prop_ (fst start_routine) in
+      let routine_arg = Prop.exp_normalize_prop tenv prop_ (fst arg) in
       (match routine_name, (snd start_routine) with
        | Exp.Lvar pvar, _ ->
            let fun_name = Pvar.get_name pvar in
@@ -866,39 +864,39 @@ let execute_scan_function skip_n_arguments ({ Builtin.args } as call_args)
         { call_args with args = !varargs }
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-let execute__unwrap_exception { Builtin.pdesc; prop_; path; ret_ids; args; }
+let execute__unwrap_exception { Builtin.tenv; pdesc; prop_; path; ret_ids; args; }
   : Builtin.ret_typ =
   match args with
   | [(ret_exn, _)] ->
       begin
         let pname = Cfg.Procdesc.get_proc_name pdesc in
-        let n_ret_exn, prop = check_arith_norm_exp pname ret_exn prop_ in
+        let n_ret_exn, prop = check_arith_norm_exp tenv pname ret_exn prop_ in
         match n_ret_exn with
         | Exp.Exn exp ->
-            let prop_with_exn = return_result exp prop ret_ids in
+            let prop_with_exn = return_result tenv exp prop ret_ids in
             [(prop_with_exn, path)]
         | _ -> assert false
       end
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-let execute_return_first_argument { Builtin.pdesc; prop_; path; ret_ids; args; }
+let execute_return_first_argument { Builtin.tenv; pdesc; prop_; path; ret_ids; args; }
   : Builtin.ret_typ =
   match args with
   | (arg1_, _):: _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let arg1, prop = check_arith_norm_exp pname arg1_ prop_ in
-      let prop' = return_result arg1 prop ret_ids in
+      let arg1, prop = check_arith_norm_exp tenv pname arg1_ prop_ in
+      let prop' = return_result tenv arg1 prop ret_ids in
       [(prop', path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-let execute___split_get_nth { Builtin.pdesc; prop_; path; ret_ids; args; }
+let execute___split_get_nth { Builtin.tenv; pdesc; prop_; path; ret_ids; args; }
   : Builtin.ret_typ =
   match args with
   | [(lexp1, _); (lexp2, _); (lexp3, _)] ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp1, prop__ = check_arith_norm_exp pname lexp1 prop_ in
-      let n_lexp2, prop___ = check_arith_norm_exp pname lexp2 prop__ in
-      let n_lexp3, prop = check_arith_norm_exp pname lexp3 prop___ in
+      let n_lexp1, prop__ = check_arith_norm_exp tenv pname lexp1 prop_ in
+      let n_lexp2, prop___ = check_arith_norm_exp tenv pname lexp2 prop__ in
+      let n_lexp3, prop = check_arith_norm_exp tenv pname lexp3 prop___ in
       (match n_lexp1, n_lexp2, n_lexp3 with
        | Exp.Const (Const.Cstr str1), Exp.Const (Const.Cstr str2), Exp.Const (Const.Cint n_sil) ->
            (let n = IntLit.to_int n_sil in
@@ -906,19 +904,19 @@ let execute___split_get_nth { Builtin.pdesc; prop_; path; ret_ids; args; }
               let parts = Str.split (Str.regexp_string str2) str1 in
               let n_part = IList.nth parts n in
               let res = Exp.Const (Const.Cstr n_part) in
-              [(return_result res prop ret_ids, path)]
+              [(return_result tenv res prop ret_ids, path)]
             with Not_found -> assert false)
        | _ -> [(prop, path)])
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (* forces the expression passed as parameter to be assumed true at the point where this
    builtin is called, diverges if this causes an inconsistency *)
-let execute___infer_assume { Builtin.prop_; path; args; }
+let execute___infer_assume { Builtin.tenv; prop_; path; args; }
   : Builtin.ret_typ =
   match args with
   | [(lexp, _)] ->
-      let prop_assume = Prop.conjoin_eq lexp (Exp.bool true) prop_ in
-      if Prover.check_inconsistency prop_assume
+      let prop_assume = Prop.conjoin_eq tenv lexp (Exp.bool true) prop_ in
+      if Prover.check_inconsistency tenv prop_assume
       then SymExec.diverge prop_assume path
       else [(prop_assume, path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -930,7 +928,7 @@ let execute___infer_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
     match args with
     | [(lexp_msg, _)] ->
         begin
-          match Prop.exp_normalize_prop prop_ lexp_msg with
+          match Prop.exp_normalize_prop tenv prop_ lexp_msg with
           | Exp.Const (Const.Cstr str) -> str
           | _ -> assert false
         end

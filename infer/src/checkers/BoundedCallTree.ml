@@ -81,7 +81,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let procs = Domain.elements astate in
     let callees = IList.map
         (fun pn ->
-           match SpecSummary.read_summary pdesc pn with
+           let tenv = AttributesTable.get_tenv pn in
+           match SpecSummary.read_summary tenv pdesc pn with
            | None | Some None -> (match get_proc_desc pn with
                | None -> stacktree_stub_of_procname pn
                (* This can happen when the callee is in the same cluster/ buck

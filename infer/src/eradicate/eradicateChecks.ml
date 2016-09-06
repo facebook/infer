@@ -39,7 +39,7 @@ let return_nonnull_silent = true
 let check_library_calls = false
 
 
-let get_field_annotation fn typ =
+let get_field_annotation _tenv fn typ =
   match Typ.get_field_type_and_annotation fn typ with
   | None -> None
   | Some (t, ia) ->
@@ -52,11 +52,11 @@ let get_field_annotation fn typ =
         else ia in
       Some (t, ia')
 
-let report_error =
-  TypeErr.report_error Checkers.ST.report_error
+let report_error tenv =
+  TypeErr.report_error tenv (Checkers.ST.report_error tenv)
 
-let explain_expr node e =
-  match Errdesc.exp_rv_dexp node e with
+let explain_expr tenv node e =
+  match Errdesc.exp_rv_dexp tenv node e with
   | Some de -> Some (DecompiledExp.to_string de)
   | None -> None
 
@@ -79,19 +79,19 @@ let is_virtual = function
 
 
 (** Check an access (read or write) to a field. *)
-let check_field_access
+let check_field_access tenv
     find_canonical_duplicate curr_pname node instr_ref exp fname ta loc : unit =
   if TypeAnnotation.get_value Annotations.Nullable ta = true then
-    let origin_descr = TypeAnnotation.descr_origin ta in
-    report_error
+    let origin_descr = TypeAnnotation.descr_origin tenv ta in
+    report_error tenv
       find_canonical_duplicate
       node
-      (TypeErr.Null_field_access (explain_expr node exp, fname, origin_descr, false))
+      (TypeErr.Null_field_access (explain_expr tenv node exp, fname, origin_descr, false))
       (Some instr_ref)
       loc curr_pname
 
 (** Check an access to an array *)
-let check_array_access
+let check_array_access tenv
     find_canonical_duplicate
     curr_pname
     node
@@ -102,11 +102,11 @@ let check_array_access
     loc
     indexed =
   if TypeAnnotation.get_value Annotations.Nullable ta = true then
-    let origin_descr = TypeAnnotation.descr_origin ta in
-    report_error
+    let origin_descr = TypeAnnotation.descr_origin tenv ta in
+    report_error tenv
       find_canonical_duplicate
       node
-      (TypeErr.Null_field_access (explain_expr node array_exp, fname, origin_descr, indexed))
+      (TypeErr.Null_field_access (explain_expr tenv node array_exp, fname, origin_descr, indexed))
       (Some instr_ref)
       loc
       curr_pname
@@ -121,7 +121,7 @@ type from_call =
   | From_containsKey (** x.containsKey *)
 
 (** Check the normalized "is zero" or "is not zero" condition of a prune instruction. *)
-let check_condition case_zero find_canonical_duplicate curr_pname
+let check_condition tenv case_zero find_canonical_duplicate curr_pname
     node e typ ta true_branch from_call idenv linereader loc instr_ref : unit =
   let is_fun_nonnull ta = match TypeAnnotation.get_origin ta with
     | TypeOrigin.Proc proc_origin ->
@@ -165,28 +165,28 @@ let check_condition case_zero find_canonical_duplicate curr_pname
     (activate_condition_redundant || nonnull) &&
     true_branch &&
     (not is_temp || nonnull) &&
-    PatternMatch.type_is_class typ &&
+    PatternMatch.type_is_class tenv typ &&
     not (from_try_with_resources ()) &&
     from_call = From_condition &&
     not (TypeAnnotation.origin_is_fun_library ta) in
   let is_always_true = not case_zero in
   let nonnull = is_fun_nonnull ta in
   if should_report then
-    report_error
+    report_error tenv
       find_canonical_duplicate
       node
-      (TypeErr.Condition_redundant (is_always_true, explain_expr node e, nonnull))
+      (TypeErr.Condition_redundant (is_always_true, explain_expr tenv node e, nonnull))
       (Some instr_ref)
       loc curr_pname
 
 (** Check an "is zero" condition. *)
-let check_zero find_canonical_duplicate = check_condition true find_canonical_duplicate
+let check_zero tenv find_canonical_duplicate = check_condition tenv true find_canonical_duplicate
 
 (** Check an "is not zero" condition. *)
-let check_nonzero find_canonical_duplicate = check_condition false find_canonical_duplicate
+let check_nonzero tenv find_canonical_duplicate = check_condition tenv false find_canonical_duplicate
 
 (** Check an assignment to a field. *)
-let check_field_assignment
+let check_field_assignment tenv
     find_canonical_duplicate curr_pname node instr_ref typestate exp_lhs
     exp_rhs typ loc fname t_ia_opt typecheck_expr : unit =
   let (t_lhs, ta_lhs, _) =
@@ -203,7 +203,7 @@ let check_field_assignment
           false in
     TypeAnnotation.get_value Annotations.Nullable ta_lhs = false &&
     TypeAnnotation.get_value Annotations.Nullable ta_rhs = true &&
-    PatternMatch.type_is_class t_lhs &&
+    PatternMatch.type_is_class tenv t_lhs &&
     not (Ident.java_fieldname_is_outer_instance fname) &&
     not (field_is_field_injector_readwrite ()) in
   let should_report_absent =
@@ -223,8 +223,8 @@ let check_field_assignment
     begin
       let ann = if should_report_nullable then Annotations.Nullable else Annotations.Present in
       if Models.Inference.enabled then Models.Inference.field_add_nullable_annotation fname;
-      let origin_descr = TypeAnnotation.descr_origin ta_rhs in
-      report_error
+      let origin_descr = TypeAnnotation.descr_origin tenv ta_rhs in
+      report_error tenv
         find_canonical_duplicate
         node
         (TypeErr.Field_annotation_inconsistent (ann, fname, origin_descr))
@@ -233,8 +233,8 @@ let check_field_assignment
     end;
   if should_report_mutable then
     begin
-      let origin_descr = TypeAnnotation.descr_origin ta_rhs in
-      report_error
+      let origin_descr = TypeAnnotation.descr_origin tenv ta_rhs in
+      report_error tenv
         find_canonical_duplicate
         node
         (TypeErr.Field_not_mutable (fname, origin_descr))
@@ -244,7 +244,7 @@ let check_field_assignment
 
 
 (** Check that nonnullable fields are initialized in constructors. *)
-let check_constructor_initialization
+let check_constructor_initialization tenv
     find_canonical_duplicate
     curr_pname
     curr_pdesc
@@ -258,7 +258,7 @@ let check_constructor_initialization
     match PatternMatch.get_this_type (Cfg.Procdesc.get_attributes curr_pdesc) with
     | Some (Tptr (Tstruct { instance_fields; name } as ts, _)) ->
         let do_field (fn, ft, _) =
-          let annotated_with f = match get_field_annotation fn ts with
+          let annotated_with f = match get_field_annotation tenv fn ts with
             | None -> false
             | Some (_, ia) -> f ia in
           let nullable_annotated = annotated_with Annotations.ia_is_nullable in
@@ -295,7 +295,7 @@ let check_constructor_initialization
               let fld_cname = Ident.java_fieldname_get_class fn in
               string_equal (Typename.name name) fld_cname in
             not injector_readonly_annotated &&
-            PatternMatch.type_is_class ft &&
+            PatternMatch.type_is_class tenv ft &&
             in_current_class &&
             not (Ident.java_fieldname_is_outer_instance fn) in
 
@@ -306,7 +306,7 @@ let check_constructor_initialization
               (* Check if field is missing annotation. *)
               if not (nullable_annotated || nonnull_annotated) &&
                  not may_be_assigned_in_final_typestate then
-                report_error
+                report_error tenv
                   find_canonical_duplicate
                   start_node
                   (TypeErr.Field_not_initialized (fn, curr_pname))
@@ -318,7 +318,7 @@ let check_constructor_initialization
               if activate_field_over_annotated &&
                  nullable_annotated &&
                  not (may_be_nullable_in_final_typestate ()) then
-                report_error
+                report_error tenv
                   find_canonical_duplicate
                   start_node
                   (TypeErr.Field_over_annotated (fn, curr_pname))
@@ -349,7 +349,7 @@ let spec_make_return_nullable curr_pname =
   | None -> ()
 
 (** Check the annotations when returning from a method. *)
-let check_return_annotation
+let check_return_annotation tenv
     find_canonical_duplicate curr_pname exit_node ret_range
     ret_ia ret_implicitly_nullable loc : unit =
   let ret_annotated_nullable = Annotations.ia_is_nullable ret_ia in
@@ -359,7 +359,7 @@ let check_return_annotation
   | Some (_, final_ta, _) ->
       let final_nullable = TypeAnnotation.get_value Annotations.Nullable final_ta in
       let final_present = TypeAnnotation.get_value Annotations.Present final_ta in
-      let origin_descr = TypeAnnotation.descr_origin final_ta in
+      let origin_descr = TypeAnnotation.descr_origin tenv final_ta in
       let return_not_nullable =
         final_nullable &&
         not ret_annotated_nullable &&
@@ -388,7 +388,7 @@ let check_return_annotation
             if return_not_nullable then Annotations.Nullable else Annotations.Present in
 
 
-          report_error
+          report_error tenv
             find_canonical_duplicate
             exit_node
             (TypeErr.Return_annotation_inconsistent (ann, curr_pname, origin_descr))
@@ -398,7 +398,7 @@ let check_return_annotation
 
       if return_over_annotated then
         begin
-          report_error
+          report_error tenv
             find_canonical_duplicate
             exit_node
             (TypeErr.Return_over_annotated curr_pname)
@@ -409,7 +409,7 @@ let check_return_annotation
       ()
 
 (** Check the receiver of a virtual call. *)
-let check_call_receiver
+let check_call_receiver tenv
     find_canonical_duplicate
     curr_pname
     node
@@ -423,7 +423,7 @@ let check_call_receiver
   match call_params with
   | ((original_this_e, this_e), typ) :: _ ->
       let (_, this_ta, _) =
-        typecheck_expr node instr_ref curr_pname typestate this_e
+        typecheck_expr tenv node instr_ref curr_pname typestate this_e
           (typ, TypeAnnotation.const Annotations.Nullable false TypeOrigin.ONone, []) loc in
       let null_method_call = TypeAnnotation.get_value Annotations.Nullable this_ta in
       let optional_get_on_absent =
@@ -433,9 +433,9 @@ let check_call_receiver
       if null_method_call || optional_get_on_absent then
         begin
           let ann = if null_method_call then Annotations.Nullable else Annotations.Present in
-          let descr = explain_expr node original_this_e in
-          let origin_descr = TypeAnnotation.descr_origin this_ta in
-          report_error
+          let descr = explain_expr tenv node original_this_e in
+          let origin_descr = TypeAnnotation.descr_origin tenv this_ta in
+          report_error tenv
             find_canonical_duplicate
             node
             (TypeErr.Call_receiver_annotation_inconsistent
@@ -446,7 +446,7 @@ let check_call_receiver
   | [] -> ()
 
 (** Check the parameters of a call. *)
-let check_call_parameters
+let check_call_parameters tenv
     find_canonical_duplicate curr_pname node typestate callee_attributes
     sig_params call_params loc instr_ref typecheck_expr : unit =
   let callee_pname = callee_attributes.ProcAttributes.proc_name in
@@ -462,13 +462,13 @@ let check_call_parameters
             (t2, TypeAnnotation.const Annotations.Nullable false TypeOrigin.ONone, []) loc in
         let parameter_not_nullable =
           not param_is_this &&
-          PatternMatch.type_is_class t1 &&
+          PatternMatch.type_is_class tenv t1 &&
           not formal_is_nullable &&
           TypeAnnotation.get_value Annotations.Nullable ta2 in
         let parameter_absent =
           activate_optional_present &&
           not param_is_this &&
-          PatternMatch.type_is_class t1 &&
+          PatternMatch.type_is_class tenv t1 &&
           formal_is_present &&
           not (TypeAnnotation.get_value Annotations.Present ta2) in
         if parameter_not_nullable || parameter_absent then
@@ -478,14 +478,14 @@ let check_call_parameters
               then Annotations.Nullable
               else Annotations.Present in
             let description =
-              match explain_expr node orig_e2 with
+              match explain_expr tenv node orig_e2 with
               | Some descr -> descr
               | None -> "formal parameter " ^ (Mangled.to_string s1) in
-            let origin_descr = TypeAnnotation.descr_origin ta2 in
+            let origin_descr = TypeAnnotation.descr_origin tenv ta2 in
 
             let param_num = IList.length sparams' + (if has_this then 0 else 1) in
             let callee_loc = callee_attributes.ProcAttributes.loc in
-            report_error
+            report_error tenv
               find_canonical_duplicate
               node
               (TypeErr.Parameter_annotation_inconsistent (
@@ -527,7 +527,7 @@ let check_overridden_annotations
       let overriden_ia, _ = overriden_signature.Annotations.ret in
       Annotations.ia_is_nullable overriden_ia in
     if ret_is_nullable && not ret_overridden_nullable then
-      report_error
+      report_error tenv
         find_canonical_duplicate
         start_node
         (TypeErr.Inconsistent_subclass_return_annotation (proc_name, overriden_proc_name))
@@ -541,7 +541,7 @@ let check_overridden_annotations
       let () =
         if not (Annotations.ia_is_nullable current_ia)
         && Annotations.ia_is_nullable overriden_ia then
-          report_error
+          report_error tenv
             find_canonical_duplicate
             start_node
             (TypeErr.Inconsistent_subclass_parameter_annotation

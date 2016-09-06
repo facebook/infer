@@ -256,10 +256,10 @@ let extract_pre p tenv pdesc abstract_fun =
     let count = ref 0 in
     Sil.sub_of_list (IList.map (fun id ->
         incr count; (id, Exp.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
-  let _, p' = Cfg.remove_locals_formals pdesc p in
+  let _, p' = Cfg.remove_locals_formals tenv pdesc p in
   let pre, _ = Prop.extract_spec p' in
   let pre' = try abstract_fun tenv pre with exn when SymOp.exn_not_failure exn -> pre in
-  Prop.normalize (Prop.prop_sub sub pre')
+  Prop.normalize tenv (Prop.prop_sub sub pre')
 
 (** return the normalized precondition extracted form the last prop seen, if any
     the abstraction function is a parameter to get around module dependencies *)

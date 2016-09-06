@@ -13,7 +13,7 @@ module L = Logging
 module F = Format
 
 (** Check an implicit cast when returning an immutable collection from a method whose type is mutable. *)
-let check_immutable_cast curr_pname curr_pdesc typ_expected typ_found_opt loc : unit =
+let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt loc : unit =
   match typ_found_opt with
   | Some typ_found ->
       begin
@@ -39,7 +39,7 @@ let check_immutable_cast curr_pname curr_pdesc typ_expected typ_found_opt loc : 
                     (Procname.to_simplified_string curr_pname)
                     Typename.pp name_given
                     Typename.pp name_expected in
-                Checkers.ST.report_error
+                Checkers.ST.report_error tenv
                   curr_pname
                   curr_pdesc
                   "CHECKERS_IMMUTABLE_CAST"
@@ -50,5 +50,5 @@ let check_immutable_cast curr_pname curr_pdesc typ_expected typ_found_opt loc : 
       end
   | None -> ()
 
-let callback_check_immutable_cast =
-  Eradicate.callback_check_return_type check_immutable_cast
+let callback_check_immutable_cast ({Callbacks.tenv} as args) =
+  Eradicate.callback_check_return_type (check_immutable_cast tenv) args

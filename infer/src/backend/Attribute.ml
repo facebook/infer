@@ -23,8 +23,8 @@ let is_pred atom =
   | _ -> false
 
 (** Add an attribute associated to the argument expressions *)
-let add ?(footprint = false) ?(polarity = true) prop attr args =
-  Prop.prop_atom_and ~footprint prop
+let add tenv ?(footprint = false) ?(polarity = true) prop attr args =
+  Prop.prop_atom_and tenv ~footprint prop
     (if polarity then Sil.Apred (attr, args) else Sil.Anpred (attr, args))
 
 let attributes_in_same_category attr1 attr2 =
@@ -33,10 +33,10 @@ let attributes_in_same_category attr1 attr2 =
   PredSymb.category_equal cat1 cat2
 
 (** Replace an attribute associated to the expression *)
-let add_or_replace_check_changed check_attribute_change prop atom0 =
+let add_or_replace_check_changed tenv check_attribute_change prop atom0 =
   match atom0 with
   | Sil.Apred (att0, ((_ :: _) as exps0)) | Anpred (att0, ((_ :: _) as exps0)) ->
-      let nexps = IList.map (fun e -> Prop.exp_normalize_prop prop e) exps0 in
+      let nexps = IList.map (fun e -> Prop.exp_normalize_prop tenv prop e) exps0 in
       let nexp = IList.hd nexps in (* len nexps = len exps0 > 0 by match *)
       let natom = Sil.atom_replace_exp (IList.combine exps0 nexps) atom0 in
       let atom_map = function
@@ -49,15 +49,15 @@ let add_or_replace_check_changed check_attribute_change prop atom0 =
       let pi = prop.Prop.pi in
       let pi' = IList.map_changed atom_map pi in
       if pi == pi'
-      then Prop.prop_atom_and prop natom
-      else Prop.normalize (Prop.set prop ~pi:pi')
+      then Prop.prop_atom_and tenv prop natom
+      else Prop.normalize tenv (Prop.set prop ~pi:pi')
   | _ ->
       prop
 
-let add_or_replace prop atom =
+let add_or_replace tenv prop atom =
   (* wrapper for the most common case: do nothing *)
   let check_attr_changed = (fun _ _ -> ()) in
-  add_or_replace_check_changed check_attr_changed prop atom
+  add_or_replace_check_changed tenv check_attr_changed prop atom
 
 (** Get all the attributes of the prop *)
 let get_all (prop: 'a Prop.t) =
@@ -74,16 +74,16 @@ let get_for_symb prop att =
     ) prop.Prop.pi
 
 (** Get the attribute associated to the expression, if any *)
-let get_for_exp (prop: 'a Prop.t) exp =
-  let nexp = Prop.exp_normalize_prop prop exp in
+let get_for_exp tenv (prop: 'a Prop.t) exp =
+  let nexp = Prop.exp_normalize_prop tenv prop exp in
   let atom_get_attr attributes atom =
     match atom with
     | Sil.Apred (_, es) | Anpred (_, es) when IList.mem Exp.equal nexp es -> atom :: attributes
     | _ -> attributes in
   IList.fold_left atom_get_attr [] prop.pi
 
-let get prop exp category =
-  let atts = get_for_exp prop exp in
+let get tenv prop exp category =
+  let atts = get_for_exp tenv prop exp in
   try
     Some
       (IList.find (function
@@ -93,70 +93,70 @@ let get prop exp category =
          ) atts)
   with Not_found -> None
 
-let get_undef prop exp =
-  get prop exp ACundef
+let get_undef tenv prop exp =
+  get tenv prop exp ACundef
 
-let get_resource prop exp =
-  get prop exp ACresource
+let get_resource tenv prop exp =
+  get tenv prop exp ACresource
 
-let get_taint prop exp =
-  get prop exp ACtaint
+let get_taint tenv prop exp =
+  get tenv prop exp ACtaint
 
-let get_autorelease prop exp =
-  get prop exp ACautorelease
+let get_autorelease tenv prop exp =
+  get tenv prop exp ACautorelease
 
-let get_objc_null prop exp =
-  get prop exp ACobjc_null
+let get_objc_null tenv prop exp =
+  get tenv prop exp ACobjc_null
 
-let get_div0 prop exp =
-  get prop exp ACdiv0
+let get_div0 tenv prop exp =
+  get tenv prop exp ACdiv0
 
-let get_observer prop exp =
-  get prop exp ACobserver
+let get_observer tenv prop exp =
+  get tenv prop exp ACobserver
 
-let get_retval prop exp =
-  get prop exp ACretval
+let get_retval tenv prop exp =
+  get tenv prop exp ACretval
 
-let has_dangling_uninit prop exp =
-  let la = get_for_exp prop exp in
+let has_dangling_uninit tenv prop exp =
+  let la = get_for_exp tenv prop exp in
   IList.exists (function
       | Sil.Apred (a, _) -> PredSymb.equal a (Adangling DAuninit)
       | _ -> false
     ) la
 
-let filter_atoms ~f prop =
+let filter_atoms tenv ~f prop =
   let pi0 = prop.Prop.pi in
   let pi1 = IList.filter_changed f pi0 in
   if pi1 == pi0 then
     prop
   else
-    Prop.normalize (Prop.set prop ~pi:pi1)
+    Prop.normalize tenv (Prop.set prop ~pi:pi1)
 
-let remove prop atom =
+let remove tenv prop atom =
   if is_pred atom then
-    let natom = Prop.atom_normalize_prop prop atom in
+    let natom = Prop.atom_normalize_prop tenv prop atom in
     let f a = not (Sil.atom_equal natom a) in
-    filter_atoms ~f prop
+    filter_atoms tenv ~f prop
   else
     prop
 
 (** Remove an attribute from all the atoms in the heap *)
-let remove_for_attr prop att0 =
+let remove_for_attr tenv prop att0 =
   let f = function
     | Sil.Apred (att, _) | Anpred (att, _) -> not (PredSymb.equal att0 att)
     | _ -> true in
-  filter_atoms ~f prop
+  filter_atoms tenv ~f prop
 
-let remove_resource ra_kind ra_res =
+let remove_resource tenv ra_kind ra_res =
   let f = function
     | Sil.Apred (Aresource res_action, _) ->
         PredSymb.res_act_kind_compare res_action.ra_kind ra_kind <> 0
         || PredSymb.resource_compare res_action.ra_res ra_res <> 0
     | _ -> true in
-  filter_atoms ~f
+  filter_atoms tenv ~f
 
 (** Apply f to every resource attribute in the prop *)
-let map_resource prop f =
+let map_resource tenv prop f =
   let attribute_map e = function
     | PredSymb.Aresource ra -> PredSymb.Aresource (f e ra)
     | att -> att in
@@ -169,40 +169,40 @@ let map_resource prop f =
   if pi1 == pi0 then
     prop
   else
-    Prop.normalize (Prop.set prop ~pi:pi1)
+    Prop.normalize tenv (Prop.set prop ~pi:pi1)
 
 (* Replace an attribute OBJC_NULL($n1) with OBJC_NULL(var) when var = $n1, and also sets $n1 =
    0 *)
-let replace_objc_null prop lhs_exp rhs_exp =
-  match get_objc_null prop rhs_exp, rhs_exp with
+let replace_objc_null tenv prop lhs_exp rhs_exp =
+  match get_objc_null tenv prop rhs_exp, rhs_exp with
   | Some atom, Exp.Var _ ->
-      let prop = remove prop atom in
-      let prop = Prop.conjoin_eq rhs_exp Exp.zero prop in
+      let prop = remove tenv prop atom in
+      let prop = Prop.conjoin_eq tenv rhs_exp Exp.zero prop in
       let natom = Sil.atom_replace_exp [(rhs_exp, lhs_exp)] atom in
-      add_or_replace prop natom
+      add_or_replace tenv prop natom
   | _ -> prop
 
-let rec nullify_exp_with_objc_null prop exp =
+let rec nullify_exp_with_objc_null tenv prop exp =
   match exp with
   | Exp.BinOp (_, exp1, exp2) ->
-      let prop' = nullify_exp_with_objc_null prop exp1 in
-      nullify_exp_with_objc_null prop' exp2
+      let prop' = nullify_exp_with_objc_null tenv prop exp1 in
+      nullify_exp_with_objc_null tenv prop' exp2
   | Exp.UnOp (_, exp, _) ->
-      nullify_exp_with_objc_null prop exp
+      nullify_exp_with_objc_null tenv prop exp
   | Exp.Var _ ->
-      (match get_objc_null prop exp with
+      (match get_objc_null tenv prop exp with
        | Some atom ->
-           let prop' = remove prop atom in
-           Prop.conjoin_eq exp Exp.zero prop'
+           let prop' = remove tenv prop atom in
+           Prop.conjoin_eq tenv exp Exp.zero prop'
        | _ -> prop)
   | _ -> prop
 
 (** mark Exp.Var's or Exp.Lvar's as undefined *)
-let mark_vars_as_undefined prop vars_to_mark callee_pname ret_annots loc path_pos =
+let mark_vars_as_undefined tenv prop vars_to_mark callee_pname ret_annots loc path_pos =
   let att_undef = PredSymb.Aundef (callee_pname, ret_annots, loc, path_pos) in
   let mark_var_as_undefined exp prop =
     match exp with
-    | Exp.Var _ | Lvar _ -> add_or_replace prop (Apred (att_undef, [exp]))
+    | Exp.Var _ | Lvar _ -> add_or_replace tenv prop (Apred (att_undef, [exp]))
     | _ -> prop in
   IList.fold_left (fun prop id -> mark_var_as_undefined id prop) prop vars_to_mark
 
@@ -215,15 +215,15 @@ type arith_problem =
   | UminusUnsigned of Exp.t * Typ.t
 
 (** Look for an arithmetic problem in [exp] *)
-let find_arithmetic_problem proc_node_session prop exp =
+let find_arithmetic_problem tenv proc_node_session prop exp =
   let exps_divided = ref [] in
   let uminus_unsigned = ref [] in
   let res = ref prop in
   let check_zero e =
-    match Prop.exp_normalize_prop prop e with
+    match Prop.exp_normalize_prop tenv prop e with
     | Exp.Const c when Const.iszero_int_float c -> true
     | _ ->
-        res := add_or_replace !res (Apred (Adiv0 proc_node_session, [e]));
+        res := add_or_replace tenv !res (Apred (Adiv0 proc_node_session, [e]));
         false in
   let rec walk = function
     | Exp.Var _ -> ()
@@ -253,7 +253,7 @@ let find_arithmetic_problem proc_node_session prop exp =
 
 (** Deallocate the stack variables in [pvars], and replace them by normal variables.
     Return the list of stack variables whose address was still present after deallocation. *)
-let deallocate_stack_vars (p: 'a Prop.t) pvars =
+let deallocate_stack_vars tenv (p: 'a Prop.t) pvars =
   let filter = function
     | Sil.Hpointsto (Exp.Lvar v, _, _) ->
         IList.exists (Pvar.equal v) pvars
@@ -270,10 +270,10 @@ let deallocate_stack_vars (p: 'a Prop.t) pvars =
   let pi1 = IList.map (fun (id, e) -> Sil.Aeq (Exp.Var id, e)) (Sil.sub_to_list p.sub) in
   let pi = IList.map (Sil.atom_replace_exp exp_replace) (p.pi @ pi1) in
   let p' =
-    Prop.normalize
+    Prop.normalize tenv
       (Prop.set p
          ~sub:Sil.sub_empty
-         ~sigma: (Prop.sigma_replace_exp exp_replace sigma_other)) in
+         ~sigma: (Prop.sigma_replace_exp tenv exp_replace sigma_other)) in
   let p'' =
     let res = ref p' in
     let p'_fav = Prop.prop_fav p' in
@@ -282,16 +282,16 @@ let deallocate_stack_vars (p: 'a Prop.t) pvars =
         begin
           stack_vars_address_in_post := v :: !stack_vars_address_in_post;
           let pred = Sil.Apred (Adangling DAaddr_stack_var, [Exp.Var freshv]) in
-          res := add_or_replace !res pred
+          res := add_or_replace tenv !res pred
         end in
     IList.iter do_var !fresh_address_vars;
     !res in
-  !stack_vars_address_in_post, IList.fold_left Prop.prop_atom_and p'' pi
+  !stack_vars_address_in_post, IList.fold_left (Prop.prop_atom_and tenv) p'' pi
 
 (** Input of this method is an exp in a prop. Output is a formal variable or path from a
     formal variable that is equal to the expression,
     or the OBJC_NULL attribute of the expression. *)
-let find_equal_formal_path e prop =
+let find_equal_formal_path tenv e prop =
   let rec find_in_sigma e seen_hpreds =
     IList.fold_right (
       fun hpred res ->
@@ -321,6 +321,6 @@ let find_equal_formal_path e prop =
   match find_in_sigma e [] with
   | Some vfs -> Some vfs
   | None ->
-      match get_objc_null prop e with
+      match get_objc_null tenv prop e with
       | Some (Apred (Aobjc_null, [_; vfs])) -> Some vfs
       | _ -> None

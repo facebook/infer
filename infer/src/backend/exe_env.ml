@@ -147,18 +147,24 @@ let file_data_to_cfg file_data =
   file_data.cfg
 
 (** return the type environment associated to the procedure *)
-let get_tenv exe_env proc_name : Tenv.t =
+let get_tenv ?(create=false) exe_env proc_name : Tenv.t =
+  let not_found () =
+    (* ToDo: a tenv should always be found, it should not be necessary to create one here *)
+    if create then
+      Tenv.create ()
+    else
+      failwith ("get_tenv: file_data not found for" ^ Procname.to_string proc_name) in
   match get_file_data exe_env proc_name with
-  | None ->
-      failwith ("get_tenv: file_data not found for" ^ Procname.to_string proc_name)
   | Some file_data ->
       begin
         match file_data_to_tenv file_data with
         | Some tenv ->
             tenv
         | None ->
-            failwith ("get_tenv: tenv not found for" ^ Procname.to_string proc_name)
+            not_found ()
       end
+  | None ->
+      not_found ()
 
 (** return the cfg associated to the procedure *)
 let get_cfg exe_env pname =

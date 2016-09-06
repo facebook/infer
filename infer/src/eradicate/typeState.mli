@@ -38,7 +38,7 @@ val add : Pvar.t -> range -> 'a t -> 'a t
 val empty : 'a ext -> 'a t
 val equal : 'a t -> 'a t -> bool
 val get_extension : 'a t -> 'a
-val join : 'a ext -> 'a t -> 'a t -> 'a t
+val join : Tenv.t -> 'a ext -> 'a t -> 'a t -> 'a t
 val lookup_id : Ident.t -> 'a t -> range option
 val lookup_pvar : Pvar.t -> 'a t -> range option
 val pp : 'a ext -> Format.formatter -> 'a t -> unit

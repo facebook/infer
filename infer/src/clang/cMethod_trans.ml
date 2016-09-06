@@ -61,7 +61,7 @@ let get_class_param function_method_decl_info =
   else []
 
 
-let should_add_return_param return_type ~is_objc_method =
+let should_add_return_param _tenv return_type ~is_objc_method =
   match return_type with
   | Typ.Tstruct _ -> not is_objc_method
   | _ -> false
@@ -75,7 +75,7 @@ let get_return_param tenv function_method_decl_info =
   let is_objc_method = is_objc_method function_method_decl_info in
   let return_type_ptr = get_original_return_type function_method_decl_info in
   let return_typ = CTypes_decl.type_ptr_to_sil_type tenv return_type_ptr in
-  if should_add_return_param return_typ ~is_objc_method then
+  if should_add_return_param tenv return_typ ~is_objc_method then
     [(Mangled.from_string CFrontend_config.return_param,
       Ast_expressions.create_pointer_qual_type ~is_const:false return_type_ptr)]
   else
@@ -125,7 +125,7 @@ let get_return_type tenv function_method_decl_info =
   let return_type_ptr = get_original_return_type function_method_decl_info in
   let return_typ = CTypes_decl.type_ptr_to_sil_type tenv return_type_ptr in
   let is_objc_method = is_objc_method function_method_decl_info in
-  if should_add_return_param return_typ ~is_objc_method then
+  if should_add_return_param tenv return_typ ~is_objc_method then
     Ast_expressions.create_void_type, Some (Typ.Tptr (return_typ, Typ.Pk_pointer))
   else return_type_ptr, None
 

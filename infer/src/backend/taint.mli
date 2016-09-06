@@ -23,7 +23,7 @@ val tainted_params : Procname.t -> (int * PredSymb.taint_kind) list
 (** returns the taint_kind of [fieldname] if it has a taint source annotation *)
 val has_taint_annotation : Ident.fieldname -> Typ.struct_typ -> bool
 
-val add_tainting_attribute : PredSymb.t -> Pvar.t -> Prop.normal Prop.t -> Prop.normal Prop.t
+val add_tainting_attribute : Tenv.t -> PredSymb.t -> Pvar.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 
 val get_params_to_taint :
   (int * PredSymb.taint_kind) list -> Pvar.t list -> (Pvar.t * PredSymb.taint_kind) list

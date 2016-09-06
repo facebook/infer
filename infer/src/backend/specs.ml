@@ -33,16 +33,16 @@ module Jprop = struct
     | Prop (n, _) -> n
     | Joined (n, _, _, _) -> n
 
-  let rec fav_add_dfs fav = function
-    | Prop (_, p) -> Prop.prop_fav_add_dfs fav p
+  let rec fav_add_dfs tenv fav = function
+    | Prop (_, p) -> Prop.prop_fav_add_dfs tenv fav p
     | Joined (_, p, jp1, jp2) ->
-        Prop.prop_fav_add_dfs fav p;
-        fav_add_dfs fav jp1;
-        fav_add_dfs fav jp2
+        Prop.prop_fav_add_dfs tenv fav p;
+        fav_add_dfs tenv fav jp1;
+        fav_add_dfs tenv fav jp2
 
-  let rec normalize = function
-    | Prop (n, p) -> Prop (n, Prop.normalize p)
-    | Joined (n, p, jp1, jp2) -> Joined (n, Prop.normalize p, normalize jp1, normalize jp2)
+  let rec normalize tenv = function
+    | Prop (n, p) -> Prop (n, Prop.normalize tenv p)
+    | Joined (n, p, jp1, jp2) -> Joined (n, Prop.normalize tenv p, normalize tenv jp1, normalize tenv jp2)
 
   (** Return a compact representation of the jprop *)
   let rec compact sh = function
@@ -172,38 +172,38 @@ type 'a spec = { pre: 'a Jprop.t; posts: ('a Prop.t * Paths.Path.t) list; visite
 module NormSpec : sig
   type t
 
-  val normalize : Prop.normal spec -> t
+  val normalize : Tenv.t -> Prop.normal spec -> t
 
   val tospecs : t list -> Prop.normal spec list
 
   val compact : Sil.sharing_env -> t -> t (** Return a compact representation of the spec *)
 
-  val erase_join_info_pre : t -> t (** Erase join info from pre of spec *)
+  val erase_join_info_pre : Tenv.t -> t -> t (** Erase join info from pre of spec *)
 end = struct
   type t = Prop.normal spec
 
   let tospecs specs = specs
 
-  let spec_fav (spec: Prop.normal spec) : Sil.fav =
+  let spec_fav tenv (spec: Prop.normal spec) : Sil.fav =
     let fav = Sil.fav_new () in
-    Jprop.fav_add_dfs fav spec.pre;
-    IList.iter (fun (p, _) -> Prop.prop_fav_add_dfs fav p) spec.posts;
+    Jprop.fav_add_dfs tenv fav spec.pre;
+    IList.iter (fun (p, _) -> Prop.prop_fav_add_dfs tenv fav p) spec.posts;
     fav
 
-  let spec_sub sub spec =
-    { pre = Jprop.normalize (Jprop.jprop_sub sub spec.pre);
-      posts = IList.map (fun (p, path) -> (Prop.normalize (Prop.prop_sub sub p), path)) spec.posts;
+  let spec_sub tenv sub spec =
+    { pre = Jprop.normalize tenv (Jprop.jprop_sub sub spec.pre);
+      posts = IList.map (fun (p, path) -> (Prop.normalize tenv (Prop.prop_sub sub p), path)) spec.posts;
       visited = spec.visited }
 
   (** Convert spec into normal form w.r.t. variable renaming *)
-  let normalize (spec: Prop.normal spec) : Prop.normal spec =
-    let fav = spec_fav spec in
+  let normalize tenv (spec: Prop.normal spec) : Prop.normal spec =
+    let fav = spec_fav tenv spec in
     let idlist = Sil.fav_to_list fav in
     let count = ref 0 in
     let sub =
       Sil.sub_of_list (IList.map (fun id ->
           incr count; (id, Exp.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
-    spec_sub sub spec
+    spec_sub tenv sub spec
 
   (** Return a compact representation of the spec *)
   let compact sh spec =
@@ -212,9 +212,9 @@ end = struct
     { pre = pre; posts = posts; visited = spec.visited }
 
   (** Erase join info from pre of spec *)
-  let erase_join_info_pre spec =
+  let erase_join_info_pre tenv spec =
     let spec' = { spec with pre = Jprop.Prop (1, Jprop.to_prop spec.pre) } in
-    normalize spec'
+    normalize tenv spec'
 end
 
 (** Convert spec into normal form w.r.t. variable renaming *)
@@ -540,11 +540,11 @@ let summary_serializer : summary Serialization.serializer =
   Serialization.create_serializer Serialization.summary_key
 
 (** Save summary for the procedure into the spec database *)
-let store_summary pname (summ: summary) =
+let store_summary tenv pname (summ: summary) =
   let process_payload payload = match payload.preposts with
     | Some specs ->
         { payload with
-          preposts = Some (IList.map NormSpec.erase_join_info_pre specs);
+          preposts = Some (IList.map (NormSpec.erase_join_info_pre tenv) specs);
         }
     | None -> payload in
   let summ1 = { summ with payload = process_payload summ.payload } in

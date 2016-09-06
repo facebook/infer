@@ -138,7 +138,7 @@ struct
                         loc_old.Location.line
                         (DB.source_file_to_string alloc_loc.Location.file)
                         alloc_loc.Location.line in
-                    Checkers.ST.report_error
+                    Checkers.ST.report_error tenv
                       curr_pname curr_pdesc checkers_repeated_calls_name loc description
                 | None -> ()
               end

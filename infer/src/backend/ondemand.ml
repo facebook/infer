@@ -113,7 +113,7 @@ let restore_global_state st =
   Timeout.resume_previous_timeout ()
 
 
-let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc =
+let run_proc_analysis tenv ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc =
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
   let callee_pname = Cfg.Procdesc.get_proc_name callee_pdesc in
 
@@ -151,7 +151,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
         Specs.status = Specs.INACTIVE;
         timestamp = summary.Specs.timestamp + 1 } in
     Specs.add_summary callee_pname summary';
-    Checkers.ST.store_summary callee_pname;
+    Checkers.ST.store_summary tenv callee_pname;
     Printer.write_proc_html false callee_pdesc in
 
   let log_error_and_continue exn kind =
@@ -192,13 +192,13 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
           log_error_and_continue exn (FKcrash (Printexc.to_string exn))
 
 
-let analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc =
+let analyze_proc_desc tenv ~propagate_exceptions curr_pdesc callee_pdesc =
   let callee_pname = Cfg.Procdesc.get_proc_name callee_pdesc in
   let proc_attributes = Cfg.Procdesc.get_attributes callee_pdesc in
   match !callbacks_ref with
   | Some callbacks
     when should_be_analyzed proc_attributes callee_pname ->
-      run_proc_analysis
+      run_proc_analysis tenv
         ~propagate_exceptions callbacks.analyze_ondemand curr_pdesc callee_pdesc
   | _ -> ()
 
@@ -207,7 +207,7 @@ let analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc =
 (** analyze_proc_name curr_pdesc proc_name
     performs an on-demand analysis of proc_name
     triggered during the analysis of curr_pname. *)
-let analyze_proc_name ~propagate_exceptions curr_pdesc callee_pname =
+let analyze_proc_name tenv ~propagate_exceptions curr_pdesc callee_pname =
 
   match !callbacks_ref with
   | Some callbacks
@@ -215,7 +215,7 @@ let analyze_proc_name ~propagate_exceptions curr_pdesc callee_pname =
       begin
         match callbacks.get_proc_desc callee_pname with
         | Some callee_pdesc ->
-            analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc
+            analyze_proc_desc tenv ~propagate_exceptions curr_pdesc callee_pdesc
         | None ->
             ()
       end

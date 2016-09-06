@@ -16,7 +16,7 @@ type t
 val const : Annotations.annotation -> bool -> TypeOrigin.t -> t
 
 (** Human-readable description of the origin of a nullable value. *)
-val descr_origin : t -> TypeErr.origin_descr
+val descr_origin : Tenv.t -> t -> TypeErr.origin_descr
 
 val equal : t -> t -> bool
 val from_item_annotation : Typ.item_annotation -> TypeOrigin.t -> t

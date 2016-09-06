@@ -37,9 +37,9 @@ let boolean_variables =
   ]
 
 (** Report a warning in the spec file of the procedure. *)
-let report_warning description pn pd loc =
+let report_warning tenv description pn pd loc =
   if verbose then L.stderr "ERROR: %s@." description;
-  Checkers.ST.report_error pn pd "CHECKERS_TRACE_CALLS_SEQUENCE" loc description
+  Checkers.ST.report_error tenv pn pd "CHECKERS_TRACE_CALLS_SEQUENCE" loc description
 
 
 (** Tracing APIs. *)
@@ -188,7 +188,7 @@ end
 module Automaton = struct
 
   (** Transfer function for a procedure call. *)
-  let do_call caller_pn caller_pd callee_pn (s : State.t) loc : State.t =
+  let do_call tenv caller_pn caller_pd callee_pn (s : State.t) loc : State.t =
     let method_name () = match callee_pn with
       | Procname.Java pname_java ->
           Procname.java_get_method pname_java
@@ -202,26 +202,26 @@ module Automaton = struct
     else if APIs.is_end callee_pn then
       begin
         if verbose then L.stderr "  calling %s@." (method_name ());
-        if State.has_zero s then report_warning "too many end/stop" caller_pn caller_pd loc;
+        if State.has_zero s then report_warning tenv "too many end/stop" caller_pn caller_pd loc;
         State.decr s
       end
     else s
 
   (** Transfer function for an instruction. *)
-  let do_instr pn pd (instr : Sil.instr) (state : State.t) : State.t =
+  let do_instr tenv pn pd (instr : Sil.instr) (state : State.t) : State.t =
     match instr with
     | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, loc, _) ->
-        do_call pn pd callee_pn state loc
+        do_call tenv pn pd callee_pn state loc
     | _ -> state
 
   (** Check if the final state contains any numbers other than zero (balanced). *)
-  let check_final_state pn pd exit_node (s : State.t) : unit =
+  let check_final_state tenv pn pd exit_node (s : State.t) : unit =
     if verbose then L.stderr "@.Final: %s@." (State.to_string s);
     if not (State.is_balanced s) then
       begin
         let description = Printf.sprintf "%d missing end/stop" (Elem.get_int (State.max s)) in
         let loc = Cfg.Node.get_loc exit_node in
-        report_warning description pn pd loc
+        report_warning tenv description pn pd loc
       end
 
 end
@@ -302,13 +302,13 @@ end
 
 
 (** State transformation for a cfg node. *)
-let do_node pn pd idenv _ node (s : State.t) : (State.t list) * (State.t list) =
+let do_node tenv pn pd idenv _ node (s : State.t) : (State.t list) * (State.t list) =
   if verbose then L.stderr "N:%d S:%s@." (Cfg.Node.get_id node :> int) (State.to_string s);
 
   let curr_state = ref s in
 
   let do_instr instr : unit =
-    let state1 = Automaton.do_instr pn pd instr !curr_state in
+    let state1 = Automaton.do_instr tenv pn pd instr !curr_state in
     let state2 = BooleanVars.do_instr pn pd idenv instr state1 in
     curr_state := state2 in
 
@@ -316,8 +316,8 @@ let do_node pn pd idenv _ node (s : State.t) : (State.t list) * (State.t list) =
   [!curr_state], [!curr_state]
 
 (** Check the final state at the end of the analysis. *)
-let check_final_state proc_name proc_desc exit_node final_s =
-  Automaton.check_final_state proc_name proc_desc exit_node final_s;
+let check_final_state tenv proc_name proc_desc exit_node final_s =
+  Automaton.check_final_state tenv proc_name proc_desc exit_node final_s;
   BooleanVars.check_final_state proc_name proc_desc exit_node final_s
 
 (** Check that the trace calls are balanced.
@@ -329,7 +329,7 @@ let callback_check_trace_call_sequence { Callbacks.proc_desc; proc_name; idenv; 
       type t = State.t
       let equal = State.equal
       let join = State.join
-      let do_node = do_node proc_name proc_desc idenv
+      let do_node = do_node tenv proc_name proc_desc idenv
       let proc_throws pn =
         if APIs.is_begin_or_end pn
         then DoesNotThrow (* assume the tracing function do not throw *)
@@ -343,7 +343,7 @@ let callback_check_trace_call_sequence { Callbacks.proc_desc; proc_name; idenv; 
       let exit_node = Cfg.Procdesc.get_exit_node proc_desc in
       match transitions exit_node with
       | DFTrace.Transition (final_s, _, _) ->
-          check_final_state proc_name proc_desc exit_node final_s
+          check_final_state tenv proc_name proc_desc exit_node final_s
       | DFTrace.Dead_state -> ()
     end in
 

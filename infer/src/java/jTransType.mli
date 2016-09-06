@@ -75,7 +75,7 @@ val create_array_type : Typ.t -> int -> Typ.t
 val extract_cn_type_np : Typ.t -> Typ.t
 
 (** [extract_cn_type_np] returns the Java class name of typ when typ is a pointer type, otherwise returns None *)
-val extract_cn_no_obj : Typ.t -> JBasics.class_name option
+val extract_cn_no_obj : Tenv.t -> Typ.t -> JBasics.class_name option
 
 (** returns a string representation of a Java basic type. *)
 val string_of_basic_type : JBasics.java_basic_type -> string

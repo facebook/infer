@@ -590,7 +590,7 @@ module PathSet : sig
   val to_proplist : t -> Prop.normal Prop.t list
 
   (** convert to a set of props *)
-  val to_propset : t -> Propset.t
+  val to_propset : Tenv.t -> t -> Propset.t
 
   (** union of two pathsets *)
   val union : t -> t -> t
@@ -610,8 +610,8 @@ end = struct
   let to_proplist ps =
     IList.map fst (elements ps)
 
-  let to_propset ps =
-    Propset.from_proplist (to_proplist ps)
+  let to_propset tenv ps =
+    Propset.from_proplist tenv (to_proplist ps)
 
   let filter f ps =
     let elements = ref [] in

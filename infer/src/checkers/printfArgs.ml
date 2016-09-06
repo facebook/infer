@@ -114,7 +114,7 @@ let rec format_string_type_names
 
 let printf_args_name = "CHECKERS_PRINTF_ARGS"
 
-let check_printf_args_ok
+let check_printf_args_ok tenv
     (node: Cfg.Node.t)
     (instr: Sil.instr)
     (proc_name: Procname.t)
@@ -134,7 +134,7 @@ let check_printf_args_ok
               n_arg
               (default_format_type_name ft)
               gt in
-          Checkers.ST.report_error
+          Checkers.ST.report_error tenv
             proc_name
             proc_desc
             printf_args_name
@@ -148,7 +148,7 @@ let check_printf_args_ok
             "format string arguments don't mach provided arguments in %s at line %s"
             instr_name
             instr_line in
-        Checkers.ST.report_error
+        Checkers.ST.report_error tenv
           proc_name
           proc_desc
           printf_args_name
@@ -185,7 +185,7 @@ let check_printf_args_ok
             let vararg_ivar_type_names = match array_nvar with
               | Some nvar -> (
                   let ivar = array_ivar instrs nvar in
-                  PatternMatch.get_vararg_type_names node ivar)
+                  PatternMatch.get_vararg_type_names tenv node ivar)
               | None -> [] in
             match fmt with
             | Some fmt ->
@@ -196,7 +196,7 @@ let check_printf_args_ok
                   (format_string_type_names fmt 0)
                   (fixed_nvar_type_names@ vararg_ivar_type_names)
             | None ->
-                Checkers.ST.report_error
+                Checkers.ST.report_error tenv
                   proc_name
                   proc_desc
                   printf_args_name
@@ -211,8 +211,8 @@ let check_printf_args_ok
       | None -> ())
   | _ -> ()
 
-let callback_printf_args { Callbacks.proc_desc; proc_name } : unit =
-  Cfg.Procdesc.iter_instrs (fun n i -> check_printf_args_ok n i proc_name proc_desc) proc_desc
+let callback_printf_args { Callbacks.tenv; proc_desc; proc_name } : unit =
+  Cfg.Procdesc.iter_instrs (fun n i -> check_printf_args_ok tenv n i proc_name proc_desc) proc_desc
 
 (*
 let printf_signature_to_string

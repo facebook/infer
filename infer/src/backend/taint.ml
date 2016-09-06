@@ -371,7 +371,7 @@ let get_params_to_taint tainted_param_nums formal_params =
   IList.fold_left collect_params_to_taint [] numbered_params
 
 (* add tainting attribute to a pvar in a prop *)
-let add_tainting_attribute att pvar_param prop =
+let add_tainting_attribute tenv att pvar_param prop =
   IList.fold_left
     (fun prop_acc hpred ->
        match hpred with
@@ -379,6 +379,6 @@ let add_tainting_attribute att pvar_param prop =
          when Pvar.equal pvar pvar_param ->
            L.d_strln ("TAINT ANALYSIS: setting taint/untaint attribute of parameter " ^
                       (Pvar.to_string pvar));
-           Attribute.add_or_replace prop_acc (Apred (att, [rhs]))
+           Attribute.add_or_replace tenv prop_acc (Apred (att, [rhs]))
        | _ -> prop_acc)
     prop prop.Prop.sigma

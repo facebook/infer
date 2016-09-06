@@ -85,7 +85,7 @@ module ComplexExpressions = struct
   (* This is used to turn complex expressions into pvar's.*)
   (* Arbitrary function parameters and field access are allowed *)
   (* when the relevant options are active. *)
-  let exp_to_string_map_dexp map_dexp node' exp =
+  let exp_to_string_map_dexp tenv map_dexp node' exp =
 
     let rec dexp_to_string dexp =
       let case_not_handled () =
@@ -130,7 +130,7 @@ module ComplexExpressions = struct
       | DExp.Dunknown ->
           case_not_handled () in
 
-    match map_dexp (Errdesc.exp_rv_dexp node' exp) with
+    match map_dexp (Errdesc.exp_rv_dexp tenv node' exp) with
     | Some de ->
         begin
           try Some (dexp_to_string de)
@@ -138,9 +138,9 @@ module ComplexExpressions = struct
         end
     | None -> None
 
-  let exp_to_string node' exp =
+  let exp_to_string tenv node' exp =
     let map_dexp de_opt = de_opt in
-    exp_to_string_map_dexp map_dexp node' exp
+    exp_to_string_map_dexp tenv map_dexp node' exp
 
 end (* ComplexExpressions *)
 
@@ -160,7 +160,7 @@ type checks =
 
 (** Typecheck an expression. *)
 let rec typecheck_expr
-    find_canonical_duplicate visited checks node instr_ref curr_pname
+    find_canonical_duplicate visited checks tenv node instr_ref curr_pname
     typestate e tr_default loc : TypeState.range = match e with
   | Exp.Lvar pvar ->
       (match TypeState.lookup_pvar pvar typestate with
@@ -172,14 +172,14 @@ let rec typecheck_expr
        | None -> tr_default)
   | Exp.Const (Const.Cint i) when IntLit.iszero i ->
       let (typ, _, locs) = tr_default in
-      if PatternMatch.type_is_class typ
+      if PatternMatch.type_is_class tenv typ
       then (typ, TypeAnnotation.const Annotations.Nullable true (TypeOrigin.Const loc), locs)
       else
         let t, ta, ll = tr_default in
         (t, TypeAnnotation.with_origin ta (TypeOrigin.Const loc), ll)
   | Exp.Exn e1 ->
       typecheck_expr
-        find_canonical_duplicate visited checks
+        find_canonical_duplicate visited checks tenv
         node instr_ref curr_pname
         typestate e1 tr_default loc
   | Exp.Const _ ->
@@ -189,9 +189,9 @@ let rec typecheck_expr
       let _, _, locs = tr_default in
       let (_, ta, locs') =
         typecheck_expr
-          find_canonical_duplicate visited checks node instr_ref curr_pname typestate exp
+          find_canonical_duplicate visited checks tenv node instr_ref curr_pname typestate exp
           (typ, TypeAnnotation.const Annotations.Nullable false TypeOrigin.ONone, locs) loc in
-      let tr_new = match EradicateChecks.get_field_annotation fn typ with
+      let tr_new = match EradicateChecks.get_field_annotation tenv fn typ with
         | Some (t, ia) ->
             (
               t,
@@ -200,7 +200,7 @@ let rec typecheck_expr
             )
         | None -> tr_default in
       if checks.eradicate then
-        EradicateChecks.check_field_access
+        EradicateChecks.check_field_access tenv
           find_canonical_duplicate curr_pname node instr_ref exp fn ta loc;
       tr_new
   | Exp.Lindex (array_exp, index_exp) ->
@@ -208,7 +208,7 @@ let rec typecheck_expr
         typecheck_expr
           find_canonical_duplicate
           visited
-          checks
+          checks tenv
           node
           instr_ref
           curr_pname
@@ -217,14 +217,14 @@ let rec typecheck_expr
           tr_default
           loc in
       let index =
-        match EradicateChecks.explain_expr node index_exp with
+        match EradicateChecks.explain_expr tenv node index_exp with
         | Some s -> Format.sprintf "%s" s
         | None -> "?" in
       let fname = Ident.create_fieldname
           (Mangled.from_string index)
           0 in
       if checks.eradicate then
-        EradicateChecks.check_array_access
+        EradicateChecks.check_array_access tenv
           find_canonical_duplicate
           curr_pname
           node
@@ -289,7 +289,7 @@ let typecheck_instr
       match TypeState.lookup_pvar pvar typestate with
       | Some _ when not is_assignment -> typestate
       | _ ->
-          (match EradicateChecks.get_field_annotation fn typ with
+          (match EradicateChecks.get_field_annotation tenv fn typ with
            | Some (t, ia) ->
                let range =
                  (
@@ -306,7 +306,7 @@ let typecheck_instr
       | Some (Exp.Const (Const.Cfun pn), _, _, _)
         when not (ComplexExpressions.procname_used_in_condition pn) ->
           begin
-            match ComplexExpressions.exp_to_string node' exp with
+            match ComplexExpressions.exp_to_string tenv node' exp with
             | None -> default
             | Some exp_str ->
                 let pvar = Pvar.mk (Mangled.from_string exp_str) curr_pname in
@@ -372,7 +372,7 @@ let typecheck_instr
           | Exp.Lvar _ | Exp.Lfield _ when ComplexExpressions.all_nested_fields () ->
               (* treat var.field1. ... .fieldn as a constant *)
               begin
-                match ComplexExpressions.exp_to_string node' exp with
+                match ComplexExpressions.exp_to_string tenv node' exp with
                 | Some exp_str ->
                     let pvar = Pvar.mk (Mangled.from_string exp_str) curr_pname in
                     let typestate' = update_typestate_fld pvar fn typ in
@@ -460,7 +460,7 @@ let typecheck_instr
   (* typecheck_expr with fewer parameters, using a common template for typestate range  *)
   let typecheck_expr_simple typestate1 exp1 typ1 origin1 loc1 =
     typecheck_expr
-      find_canonical_duplicate calls_this checks node instr_ref
+      find_canonical_duplicate calls_this checks tenv node instr_ref
       curr_pname typestate1 exp1
       (typ1, TypeAnnotation.const Annotations.Nullable false origin1, [loc1])
       loc1 in
@@ -490,12 +490,12 @@ let typecheck_instr
       let e1', typestate1 = convert_complex_exp_to_pvar node true e1 typestate loc in
       let check_field_assign () = match e1 with
         | Exp.Lfield (_, fn, f_typ) ->
-            let t_ia_opt = EradicateChecks.get_field_annotation fn f_typ in
+            let t_ia_opt = EradicateChecks.get_field_annotation tenv fn f_typ in
             if checks.eradicate then
-              EradicateChecks.check_field_assignment
+              EradicateChecks.check_field_assignment tenv
                 find_canonical_duplicate curr_pname node
                 instr_ref typestate1 e1' e2 typ loc fn t_ia_opt
-                (typecheck_expr find_canonical_duplicate calls_this checks)
+                (typecheck_expr find_canonical_duplicate calls_this checks tenv)
         | _ -> () in
       let typestate2 =
         match e1' with
@@ -531,7 +531,7 @@ let typecheck_instr
       let (_, ta, _) = typecheck_expr
           find_canonical_duplicate
           calls_this
-          checks
+          checks tenv
           node
           instr_ref
           curr_pname
@@ -540,7 +540,7 @@ let typecheck_instr
           (t, TypeAnnotation.const Annotations.Nullable false TypeOrigin.ONone, [loc])
           loc in
       if checks.eradicate then
-        EradicateChecks.check_array_access
+        EradicateChecks.check_array_access tenv
           find_canonical_duplicate
           curr_pname
           node
@@ -567,7 +567,7 @@ let typecheck_instr
        loc,
        cflags)
     ->
-      Ondemand.analyze_proc_name ~propagate_exceptions:true curr_pdesc callee_pname;
+      Ondemand.analyze_proc_name tenv ~propagate_exceptions:true curr_pdesc callee_pname;
       let callee_attributes =
         match Specs.proc_resolve_attributes (* AttributesTable.load_attributes *) callee_pname with
         | Some proc_attributes ->
@@ -652,11 +652,11 @@ let typecheck_instr
               if checks.eradicate && should_report then
                 begin
                   let cond = Exp.BinOp (Binop.Ne, Exp.Lvar pvar, Exp.null) in
-                  EradicateChecks.report_error
+                  EradicateChecks.report_error tenv
                     find_canonical_duplicate
                     node
                     (TypeErr.Condition_redundant
-                       (true, EradicateChecks.explain_expr node cond, false))
+                       (true, EradicateChecks.explain_expr tenv node cond, false))
                     (Some instr_ref)
                     loc curr_pname
                 end;
@@ -778,7 +778,7 @@ let typecheck_instr
                   Some (DExp.Dretcall (dexp_get, args, loc, call_flags))
               | _ -> None in
             begin
-              match ComplexExpressions.exp_to_string_map_dexp
+              match ComplexExpressions.exp_to_string_map_dexp tenv
                       convert_dexp_key_to_dexp_get node exp_key with
               | Some map_get_str ->
                   let pvar_map_get = Pvar.mk (Mangled.from_string map_get_str) curr_pname in
@@ -803,7 +803,7 @@ let typecheck_instr
                 L.stdout "  %s unique id: %s@." classification unique_id
               end;
             if cflags.CallFlags.cf_virtual && checks.eradicate then
-              EradicateChecks.check_call_receiver
+              EradicateChecks.check_call_receiver tenv
                 find_canonical_duplicate
                 curr_pname
                 node
@@ -814,7 +814,7 @@ let typecheck_instr
                 loc
                 (typecheck_expr find_canonical_duplicate calls_this checks);
             if checks.eradicate then
-              EradicateChecks.check_call_parameters
+              EradicateChecks.check_call_parameters tenv
                 find_canonical_duplicate
                 curr_pname
                 node
@@ -824,7 +824,7 @@ let typecheck_instr
                 call_params
                 loc
                 instr_ref
-                (typecheck_expr find_canonical_duplicate calls_this checks);
+                (typecheck_expr find_canonical_duplicate calls_this checks tenv);
             let typestate2 =
               if checks.check_extension then
                 let etl' = IList.map (fun ((_, e), t) -> (e, t)) call_params in
@@ -915,7 +915,7 @@ let typecheck_instr
                 Some (DExp.Dretcall (fun_dexp, args, loc, call_flags))
             | _ -> None in
           begin
-            match ComplexExpressions.exp_to_string_map_dexp map_dexp node' e with
+            match ComplexExpressions.exp_to_string_map_dexp tenv map_dexp node' e with
             | Some e_str ->
                 let pvar =
                   Pvar.mk (Mangled.from_string e_str) curr_pname in
@@ -957,7 +957,7 @@ let typecheck_instr
               typecheck_expr_simple typestate2 e' Typ.Tvoid TypeOrigin.ONone loc in
 
             if checks.eradicate then
-              EradicateChecks.check_zero
+              EradicateChecks.check_zero tenv
                 find_canonical_duplicate curr_pname
                 node' e' typ
                 ta true_branch EradicateChecks.From_condition
@@ -1004,7 +1004,7 @@ let typecheck_instr
               typecheck_expr_simple typestate2 e' Typ.Tvoid TypeOrigin.ONone loc in
 
             if checks.eradicate then
-              EradicateChecks.check_nonzero find_canonical_duplicate curr_pname
+              EradicateChecks.check_nonzero tenv find_canonical_duplicate curr_pname
                 node e' typ ta true_branch from_call idenv linereader loc instr_ref;
             begin
               match from_call with

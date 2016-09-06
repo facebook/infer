@@ -21,7 +21,7 @@ type method_call_type =
   | MCNoVirtual
   | MCStatic
 
-val should_add_return_param : Typ.t -> is_objc_method:bool -> bool
+val should_add_return_param : Tenv.t -> Typ.t -> is_objc_method:bool -> bool
 
 val create_local_procdesc : Cfg.cfg -> Tenv.t -> CMethod_signature.method_signature ->
   Clang_ast_t.stmt list -> (Pvar.t * Typ.t) list -> bool -> bool

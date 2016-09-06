@@ -239,7 +239,7 @@ let hpred_compact: sharing_env => hpred => hpred;
 
 
 /** {2 Comparision And Inspection Functions} */
-let has_objc_ref_counter: hpred => bool;
+let has_objc_ref_counter: Tenv.t => hpred => bool;
 
 
 /** Returns the zero value of a type, for int, float and ptr types, None othwewise */

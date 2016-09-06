@@ -15,5 +15,5 @@ type lifecycle_trace = (Procname.t * Typ.t option) list
 
 (** create a procedure named harness_name that calls each of the methods in trace add it to the
     cg/cfg *)
-val inhabit_trace : lifecycle_trace -> Procname.java -> Cg.t -> Cfg.cfg -> unit
+val inhabit_trace : Tenv.t -> lifecycle_trace -> Procname.java -> Cg.t -> Cfg.cfg -> unit
 

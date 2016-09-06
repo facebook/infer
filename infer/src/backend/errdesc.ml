@@ -43,9 +43,9 @@ let is_special_field class_names field_name_opt field =
   is_one_of_classes complete_fieldname class_names && field_ok
 
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
-let hpred_is_open_resource prop = function
+let hpred_is_open_resource tenv prop = function
   | Sil.Hpointsto(e, _, _) ->
-      (match Attribute.get_resource prop e with
+      (match Attribute.get_resource tenv prop e with
        | Some (Apred (Aresource { ra_kind = Racquire; ra_res = res }, _)) -> Some res
        | _ -> None)
   | _ ->
@@ -209,7 +209,7 @@ let rec find_boolean_assignment node pvar true_branch : Cfg.Node.t option =
 
 (** Find the Load instruction used to declare normal variable [id],
     and return the expression dereferenced to initialize [id] *)
-let rec _find_normal_variable_load (seen : Exp.Set.t) node id : DExp.t option =
+let rec _find_normal_variable_load tenv (seen : Exp.Set.t) node id : DExp.t option =
   let is_infer = not (Config.checkers || Config.eradicate) in
   let find_declaration node = function
     | Sil.Load (id0, e, _, _) when Ident.equal id id0 ->
@@ -217,14 +217,14 @@ let rec _find_normal_variable_load (seen : Exp.Set.t) node id : DExp.t option =
         then
           (L.d_str "find_normal_variable_load defining ";
            Sil.d_exp e; L.d_ln ());
-        _exp_lv_dexp seen node e
+        _exp_lv_dexp tenv seen node e
     | Sil.Call ([id0], Exp.Const (Const.Cfun pn), (e, _):: _, _, _)
       when Ident.equal id id0 && Procname.equal pn (Procname.from_string_c_fun "__cast") ->
         if verbose
         then
           (L.d_str "find_normal_variable_load cast on ";
            Sil.d_exp e; L.d_ln ());
-        _exp_rv_dexp seen node e
+        _exp_rv_dexp tenv seen node e
     | Sil.Call ([id0], (Exp.Const (Const.Cfun pname) as fun_exp), args, loc, call_flags)
       when Ident.equal id id0 ->
         if verbose
@@ -234,7 +234,7 @@ let rec _find_normal_variable_load (seen : Exp.Set.t) node id : DExp.t option =
 
         let fun_dexp = DExp.Dconst (Const.Cfun pname) in
         let args_dexp =
-          let args_dexpo = IList.map (fun (e, _) -> _exp_rv_dexp seen node e) args in
+          let args_dexpo = IList.map (fun (e, _) -> _exp_rv_dexp tenv seen node e) args in
           if IList.exists (fun x -> x = None) args_dexpo
           then []
           else
@@ -262,23 +262,23 @@ let rec _find_normal_variable_load (seen : Exp.Set.t) node id : DExp.t option =
   res
 
 (** describe lvalue [e] as a dexp *)
-and _exp_lv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
+and _exp_lv_dexp tenv (_seen : Exp.Set.t) node e : DExp.t option =
   if Exp.Set.mem e _seen then
     (L.d_str "exp_lv_dexp: cycle detected"; Sil.d_exp e; L.d_ln (); None)
   else
     let seen = Exp.Set.add e _seen in
-    match Prop.exp_normalize_noabs Sil.sub_empty e with
+    match Prop.exp_normalize_noabs tenv Sil.sub_empty e with
     | Exp.Const c ->
         if verbose then (L.d_str "exp_lv_dexp: constant "; Sil.d_exp e; L.d_ln ());
         Some (DExp.Dderef (DExp.Dconst c))
     | Exp.BinOp(Binop.PlusPI, e1, e2) ->
         if verbose then (L.d_str "exp_lv_dexp: (e1 +PI e2) "; Sil.d_exp e; L.d_ln ());
-        (match _exp_lv_dexp seen node e1, _exp_rv_dexp seen node e2 with
+        (match _exp_lv_dexp tenv seen node e1, _exp_rv_dexp tenv seen node e2 with
          | Some de1, Some de2 -> Some (DExp.Dbinop(Binop.PlusPI, de1, de2))
          | _ -> None)
     | Exp.Var id when Ident.is_normal id ->
         if verbose then (L.d_str "exp_lv_dexp: normal var "; Sil.d_exp e; L.d_ln ());
-        (match _find_normal_variable_load seen node id with
+        (match _find_normal_variable_load tenv seen node id with
          | None -> None
          | Some de -> Some (DExp.Dderef de))
     | Exp.Lvar pvar ->
@@ -298,15 +298,15 @@ and _exp_lv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
                 begin
                   match find_normal_variable_funcall node' id with
                   | Some (fun_exp, eargs, loc, call_flags) ->
-                      let fun_dexpo = _exp_rv_dexp seen node' fun_exp in
-                      let blame_args = IList.map (_exp_rv_dexp seen node') eargs in
+                      let fun_dexpo = _exp_rv_dexp tenv seen node' fun_exp in
+                      let blame_args = IList.map (_exp_rv_dexp tenv seen node') eargs in
                       if IList.exists (fun x -> x = None) (fun_dexpo:: blame_args) then None
                       else
                         let unNone = function Some x -> x | None -> assert false in
                         let args = IList.map unNone blame_args in
                         Some (DExp.Dfcall (unNone fun_dexpo, args, loc, call_flags))
                   | None ->
-                      _exp_rv_dexp seen node' (Exp.Var id)
+                      _exp_rv_dexp tenv seen node' (Exp.Var id)
                 end
           end
         else Some (DExp.Dpvar pvar)
@@ -318,7 +318,7 @@ and _exp_lv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
             L.d_str (" " ^ Ident.fieldname_to_string f);
             L.d_ln ()
           end;
-        (match _find_normal_variable_load seen node id with
+        (match _find_normal_variable_load tenv seen node id with
          | None -> None
          | Some de -> Some (DExp.Darrow (de, f)))
     | Exp.Lfield (e1, f, _) ->
@@ -329,7 +329,7 @@ and _exp_lv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
             L.d_str (" " ^ Ident.fieldname_to_string f);
             L.d_ln ()
           end;
-        (match _exp_lv_dexp seen node e1 with
+        (match _exp_lv_dexp tenv seen node e1 with
          | None -> None
          | Some de -> Some (DExp.Ddot (de, f)))
     | Exp.Lindex (e1, e2) ->
@@ -341,7 +341,7 @@ and _exp_lv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
             Sil.d_exp e2;
             L.d_ln ()
           end;
-        (match _exp_lv_dexp seen node e1, _exp_rv_dexp seen node e2 with
+        (match _exp_lv_dexp tenv seen node e1, _exp_rv_dexp tenv seen node e2 with
          | None, _ -> None
          | Some de1, None ->
              (* even if the index is unknown, the array info is useful for bound errors *)
@@ -352,7 +352,7 @@ and _exp_lv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
         None
 
 (** describe rvalue [e] as a dexp *)
-and _exp_rv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
+and _exp_rv_dexp tenv (_seen : Exp.Set.t) node e : DExp.t option =
   if Exp.Set.mem e _seen then
     (L.d_str "exp_rv_dexp: cycle detected"; Sil.d_exp e; L.d_ln (); None)
   else
@@ -364,11 +364,11 @@ and _exp_rv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
     | Exp.Lvar pv ->
         if verbose then (L.d_str "exp_rv_dexp: program var "; Sil.d_exp e; L.d_ln ());
         if Pvar.is_frontend_tmp pv
-        then _exp_lv_dexp _seen (* avoid spurious cycle detection *) node e
+        then _exp_lv_dexp tenv _seen (* avoid spurious cycle detection *) node e
         else Some (DExp.Dpvaraddr pv)
     | Exp.Var id when Ident.is_normal id ->
         if verbose then (L.d_str "exp_rv_dexp: normal var "; Sil.d_exp e; L.d_ln ());
-        _find_normal_variable_load seen node id
+        _find_normal_variable_load tenv seen node id
     | Exp.Lfield (e1, f, _) ->
         if verbose then
           begin
@@ -377,7 +377,7 @@ and _exp_rv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
             L.d_str (" " ^ Ident.fieldname_to_string f);
             L.d_ln ()
           end;
-        (match _exp_rv_dexp seen node e1 with
+        (match _exp_rv_dexp tenv seen node e1 with
          | None -> None
          | Some de -> Some (DExp.Ddot(de, f)))
     | Exp.Lindex (e1, e2) ->
@@ -389,32 +389,32 @@ and _exp_rv_dexp (_seen : Exp.Set.t) node e : DExp.t option =
             Sil.d_exp e2;
             L.d_ln ()
           end;
-        (match _exp_rv_dexp seen node e1, _exp_rv_dexp seen node e2 with
+        (match _exp_rv_dexp tenv seen node e1, _exp_rv_dexp tenv seen node e2 with
          | None, _ | _, None -> None
          | Some de1, Some de2 -> Some (DExp.Darray(de1, de2)))
     | Exp.BinOp (op, e1, e2) ->
         if verbose then (L.d_str "exp_rv_dexp: BinOp "; Sil.d_exp e; L.d_ln ());
-        (match _exp_rv_dexp seen node e1, _exp_rv_dexp seen node e2 with
+        (match _exp_rv_dexp tenv seen node e1, _exp_rv_dexp tenv seen node e2 with
          | None, _ | _, None -> None
          | Some de1, Some de2 -> Some (DExp.Dbinop (op, de1, de2)))
     | Exp.UnOp (op, e1, _) ->
         if verbose then (L.d_str "exp_rv_dexp: UnOp "; Sil.d_exp e; L.d_ln ());
-        (match _exp_rv_dexp seen node e1 with
+        (match _exp_rv_dexp tenv seen node e1 with
          | None -> None
          | Some de1 -> Some (DExp.Dunop (op, de1)))
     | Exp.Cast (_, e1) ->
         if verbose then (L.d_str "exp_rv_dexp: Cast "; Sil.d_exp e; L.d_ln ());
-        _exp_rv_dexp seen node e1
+        _exp_rv_dexp tenv seen node e1
     | Exp.Sizeof (typ, len, sub) ->
         if verbose then (L.d_str "exp_rv_dexp: type "; Sil.d_exp e; L.d_ln ());
-        Some (DExp.Dsizeof (typ, Option.map_default (_exp_rv_dexp seen node) None len, sub))
+        Some (DExp.Dsizeof (typ, Option.map_default (_exp_rv_dexp tenv seen node) None len, sub))
     | _ ->
         if verbose then (L.d_str "exp_rv_dexp: no match for  "; Sil.d_exp e; L.d_ln ());
         None
 
-let find_normal_variable_load = _find_normal_variable_load Exp.Set.empty
-let exp_lv_dexp = _exp_lv_dexp Exp.Set.empty
-let exp_rv_dexp = _exp_rv_dexp Exp.Set.empty
+let find_normal_variable_load tenv = _find_normal_variable_load tenv Exp.Set.empty
+let exp_lv_dexp tenv = _exp_lv_dexp tenv Exp.Set.empty
+let exp_rv_dexp tenv = _exp_rv_dexp tenv Exp.Set.empty
 
 (** Produce a description of a mismatch between an allocation function
     and a deallocation function *)
@@ -527,7 +527,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
         then
           (L.d_str "explain_leak: current instruction is Nullify for pvar ";
            Pvar.d pvar; L.d_ln ());
-        (match exp_lv_dexp (State.get_node ()) (Exp.Lvar pvar) with
+        (match exp_lv_dexp tenv (State.get_node ()) (Exp.Lvar pvar) with
          | Some de when not (DExp.has_tmp_var de)-> Some (DExp.to_string de)
          | _ -> None)
     | Some (Sil.Abstract _) ->
@@ -549,7 +549,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
         then
           (L.d_str "explain_leak: current instruction Set for ";
            Sil.d_exp lexp; L.d_ln ());
-        (match exp_lv_dexp node lexp with
+        (match exp_lv_dexp tenv node lexp with
          | Some dexp when not (DExp.has_tmp_var dexp) -> Some (DExp.to_string dexp)
          | _ -> None)
     | Some instr ->
@@ -573,7 +573,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
 
 (** find the dexp, if any, where the given value is stored
     also return the type of the value if found *)
-let vpath_find prop _exp : DExp.t option * Typ.t option =
+let vpath_find _tenv prop _exp : DExp.t option * Typ.t option =
   if verbose then (L.d_str "in vpath_find exp:"; Sil.d_exp _exp; L.d_ln ());
   let rec find sigma_acc sigma_todo exp =
     let do_fse res sigma_acc' sigma_todo' lexp texp (f, se) = match se with
@@ -810,7 +810,7 @@ let explain_dereference_access outermost_array is_nullable _de_opt prop =
   (value_str, access_opt)
 
 (** Create a description of a dereference operation *)
-let create_dereference_desc
+let create_dereference_desc tenv
     ?use_buckets: (use_buckets = false)
     ?outermost_array: (outermost_array = false)
     ?is_nullable: (is_nullable = false)
@@ -828,7 +828,7 @@ let create_dereference_desc
       match de_opt with
       | Some (DExp.Dpvar pvar)
       | Some (DExp.Dpvaraddr pvar) ->
-          (match Attribute.get_objc_null prop (Exp.Lvar pvar) with
+          (match Attribute.get_objc_null tenv prop (Exp.Lvar pvar) with
            | Some (Apred (Aobjc_null, [_; vfs])) ->
                Localise.parameter_field_not_null_checked_desc desc vfs
            | _ ->
@@ -848,7 +848,7 @@ let create_dereference_desc
     if outermost_array is true, the outermost array access is removed
     if outermost_dereference is true, stop at the outermost dereference
     (skipping e.g. outermost field access) *)
-let _explain_access
+let _explain_access tenv
     ?(use_buckets = false)
     ?(outermost_array = false)
     ?(outermost_dereference = false)
@@ -858,13 +858,13 @@ let _explain_access
   let rec find_outermost_dereference node e = match e with
     | Exp.Const _ ->
         if verbose then (L.d_str "find_outermost_dereference: constant "; Sil.d_exp e; L.d_ln ());
-        exp_lv_dexp node e
+        exp_lv_dexp tenv node e
     | Exp.Var id when Ident.is_normal id -> (* look up the normal variable declaration *)
         if verbose
         then
           (L.d_str "find_outermost_dereference: normal var ";
            Sil.d_exp e; L.d_ln ());
-        find_normal_variable_load node id
+        find_normal_variable_load tenv node id
     | Exp.Lfield (e', _, _) ->
         if verbose then (L.d_str "find_outermost_dereference: Lfield "; Sil.d_exp e; L.d_ln ());
         find_outermost_dereference node e'
@@ -873,13 +873,13 @@ let _explain_access
         find_outermost_dereference node e'
     | Exp.Lvar _ ->
         if verbose then (L.d_str "find_outermost_dereference: Lvar "; Sil.d_exp e; L.d_ln ());
-        exp_lv_dexp node e
+        exp_lv_dexp tenv node e
     | Exp.BinOp(Binop.PlusPI, Exp.Lvar _, _) ->
         if verbose
         then
           (L.d_str "find_outermost_dereference: Lvar+index ";
            Sil.d_exp e; L.d_ln ());
-        exp_lv_dexp node e
+        exp_lv_dexp tenv node e
     | Exp.Cast (_, e') ->
         if verbose then (L.d_str "find_outermost_dereference: cast "; Sil.d_exp e; L.d_ln ());
         find_outermost_dereference node e'
@@ -916,30 +916,30 @@ let _explain_access
       L.d_strln "Finding deref'd exp";
       let de_opt =
         if outermost_dereference then find_outermost_dereference node e
-        else exp_lv_dexp node e in
-      create_dereference_desc
+        else exp_lv_dexp tenv node e in
+      create_dereference_desc tenv
         ~use_buckets ~outermost_array ~is_nullable ~is_premature_nil
         de_opt deref_str prop loc
 
 (** Produce a description of which expression is dereferenced in the current instruction, if any.
     The subexpression to focus on is obtained by removing field and index accesses. *)
-let explain_dereference
+let explain_dereference tenv
     ?(use_buckets = false)
     ?(is_nullable = false)
     ?(is_premature_nil = false)
     deref_str prop loc =
-  _explain_access
+  _explain_access tenv
     ~use_buckets ~outermost_array: false ~outermost_dereference: true ~is_nullable ~is_premature_nil
     deref_str prop loc
 
 (** Produce a description of the array access performed in the current instruction, if any.
     The subexpression to focus on is obtained by removing the outermost array access. *)
-let explain_array_access deref_str prop loc =
-  _explain_access ~outermost_array: true deref_str prop loc
+let explain_array_access tenv deref_str prop loc =
+  _explain_access tenv ~outermost_array: true deref_str prop loc
 
 (** Produce a description of the memory access performed in the current instruction, if any. *)
-let explain_memory_access deref_str prop loc =
-  _explain_access deref_str prop loc
+let explain_memory_access tenv deref_str prop loc =
+  _explain_access tenv deref_str prop loc
 
 (* offset of an expression found following a program variable *)
 type pvar_off =
@@ -961,19 +961,19 @@ let dexp_apply_pvar_off dexp pvar_off =
 
 (** Produce a description of the nth parameter of the function call, if the current instruction
     is a function call with that parameter *)
-let explain_nth_function_parameter use_buckets deref_str prop n pvar_off =
+let explain_nth_function_parameter tenv use_buckets deref_str prop n pvar_off =
   let node = State.get_node () in
   let loc = State.get_loc () in
   match State.get_instr () with
   | Some Sil.Call (_, _, args, _, _) ->
       (try
          let arg = fst (IList.nth args (n - 1)) in
-         let dexp_opt = exp_rv_dexp node arg in
+         let dexp_opt = exp_rv_dexp tenv node arg in
          let dexp_opt' = match dexp_opt with
            | Some de ->
                Some (dexp_apply_pvar_off de pvar_off)
            | None -> None in
-         create_dereference_desc ~use_buckets dexp_opt' deref_str prop loc
+         create_dereference_desc tenv ~use_buckets dexp_opt' deref_str prop loc
        with exn when SymOp.exn_not_failure exn -> Localise.no_desc)
   | _ -> Localise.no_desc
 
@@ -1005,7 +1005,7 @@ let find_with_exp prop exp =
 
 (** return a description explaining value [exp] in [prop] in terms of a source expression
     using the formal parameters of the call *)
-let explain_dereference_as_caller_expression
+let explain_dereference_as_caller_expression tenv
     ?use_buckets: (use_buckets = false)
     deref_str actual_pre spec_pre exp node loc formal_params =
   let find_formal_param_number name =
@@ -1021,14 +1021,14 @@ let explain_dereference_as_caller_expression
       let pv_name = Pvar.get_name pv in
       if Pvar.is_global pv
       then
-        let dexp = exp_lv_dexp node (Exp.Lvar pv) in
-        create_dereference_desc ~use_buckets dexp deref_str actual_pre loc
+        let dexp = exp_lv_dexp tenv node (Exp.Lvar pv) in
+        create_dereference_desc tenv ~use_buckets dexp deref_str actual_pre loc
       else if Pvar.is_callee pv then
         let position = find_formal_param_number pv_name in
         if verbose then L.d_strln ("parameter number: " ^ string_of_int position);
-        explain_nth_function_parameter use_buckets deref_str actual_pre position pvar_off
+        explain_nth_function_parameter tenv use_buckets deref_str actual_pre position pvar_off
       else
-      if Attribute.has_dangling_uninit spec_pre exp then
+      if Attribute.has_dangling_uninit tenv spec_pre exp then
         Localise.desc_uninitialized_dangling_pointer_deref deref_str (Pvar.to_string pv) loc
       else Localise.no_desc
   | None ->
@@ -1038,11 +1038,11 @@ let explain_dereference_as_caller_expression
       Localise.no_desc
 
 (** explain a class cast exception *)
-let explain_class_cast_exception pname_opt typ1 typ2 exp node loc =
-  let exp_str_opt = match exp_rv_dexp node exp with
+let explain_class_cast_exception tenv pname_opt typ1 typ2 exp node loc =
+  let exp_str_opt = match exp_rv_dexp tenv node exp with
     | Some dexp -> Some (DExp.to_string dexp)
     | None -> None in
-  match exp_rv_dexp node typ1, exp_rv_dexp node typ2 with
+  match exp_rv_dexp tenv node typ1, exp_rv_dexp tenv node typ2 with
   | Some de1, Some de2 ->
       let typ_str1 = DExp.to_string de1 in
       let typ_str2 = DExp.to_string de2 in
@@ -1050,8 +1050,8 @@ let explain_class_cast_exception pname_opt typ1 typ2 exp node loc =
   | _ -> Localise.no_desc
 
 (** explain a division by zero *)
-let explain_divide_by_zero exp node loc =
-  match exp_rv_dexp node exp with
+let explain_divide_by_zero tenv exp node loc =
+  match exp_rv_dexp tenv node exp with
   | Some de ->
       let exp_str = DExp.to_string de in
       Localise.desc_divide_by_zero exp_str loc
@@ -1106,8 +1106,8 @@ let explain_condition_is_assignment loc =
   Localise.desc_condition_is_assignment loc
 
 (** explain a condition which is always true or false *)
-let explain_condition_always_true_false i cond node loc =
-  let cond_str_opt = match exp_rv_dexp node cond with
+let explain_condition_always_true_false tenv i cond node loc =
+  let cond_str_opt = match exp_rv_dexp tenv node cond with
     | Some de ->
         Some (DExp.to_string de)
     | None -> None in
@@ -1125,8 +1125,8 @@ let explain_stack_variable_address_escape loc pvar addr_dexp_opt =
   Localise.desc_stack_variable_address_escape (Pvar.to_string pvar) addr_dexp_str loc
 
 (** explain unary minus applied to unsigned expression *)
-let explain_unary_minus_applied_to_unsigned_expression exp typ node loc =
-  let exp_str_opt = match exp_rv_dexp node exp with
+let explain_unary_minus_applied_to_unsigned_expression tenv exp typ node loc =
+  let exp_str_opt = match exp_rv_dexp tenv node exp with
     | Some de -> Some (DExp.to_string de)
     | None -> None in
   let typ_str =
@@ -1135,8 +1135,8 @@ let explain_unary_minus_applied_to_unsigned_expression exp typ node loc =
   Localise.desc_unary_minus_applied_to_unsigned_expression exp_str_opt typ_str loc
 
 (** explain a test for NULL of a dereferenced pointer *)
-let explain_null_test_after_dereference exp node line loc =
-  match exp_rv_dexp node exp with
+let explain_null_test_after_dereference tenv exp node line loc =
+  match exp_rv_dexp tenv node exp with
   | Some de ->
       let expr_str = DExp.to_string de in
       Localise.desc_null_test_after_dereference expr_str line loc

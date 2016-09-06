@@ -58,7 +58,7 @@ let create_harness cfg cg tenv =
                     match pname with
                     | Procname.Java harness_procname -> harness_procname
                     | _ -> assert false in
-                  Inhabit.inhabit_trace lifecycle_trace harness_procname cg cfg
+                  Inhabit.inhabit_trace tenv lifecycle_trace harness_procname cg cfg
             ) tenv
       | None -> ()
     ) AndroidFramework.get_lifecycles

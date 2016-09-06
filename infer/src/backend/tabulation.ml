@@ -83,9 +83,9 @@ let d_splitting split =
   L.d_strln "------------------------------------------------------------";
   L.d_decrease_indent 1
 
-let print_results actual_pre results =
+let print_results tenv actual_pre results =
   L.d_strln "***** RESULTS FUNCTION CALL *******";
-  Propset.d actual_pre (Propset.from_proplist results);
+  Propset.d actual_pre (Propset.from_proplist tenv results);
   L.d_strln "***** END RESULTS FUNCTION CALL *******"
 (***************)
 
@@ -284,12 +284,12 @@ and find_dereference_without_null_check_in_sexp_list = function
 
 (** Check dereferences implicit in the spec pre.
     In case of dereference error, return [Some(deref_error, description)], otherwise [None] *)
-let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
+let check_dereferences tenv callee_pname actual_pre sub spec_pre formal_params =
   let check_dereference e sexp =
     let e_sub = Sil.exp_sub sub e in
     let desc use_buckets deref_str =
       let error_desc =
-        Errdesc.explain_dereference_as_caller_expression
+        Errdesc.explain_dereference_as_caller_expression tenv
           ~use_buckets
           deref_str actual_pre spec_pre e (State.get_node ()) (State.get_loc ()) formal_params in
       (L.d_strln_color Red) "found error in dereference";
@@ -313,15 +313,15 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
     else
       (* Check if the dereferenced expr has the dangling uninitialized attribute. *)
       (* In that case it raise a dangling pointer dereferece *)
-    if Attribute.has_dangling_uninit spec_pre e then
+    if Attribute.has_dangling_uninit tenv spec_pre e then
       Some (Deref_undef_exp, desc false (Localise.deref_str_dangling (Some PredSymb.DAuninit)) )
     else if Exp.equal e_sub Exp.minus_one
     then Some (Deref_minusone, desc true (Localise.deref_str_dangling None))
-    else match Attribute.get_resource actual_pre e_sub with
+    else match Attribute.get_resource tenv actual_pre e_sub with
       | Some (Apred (Aresource ({ ra_kind = Rrelease } as ra), _)) ->
           Some (Deref_freed ra, desc true (Localise.deref_str_freed ra))
       | _ ->
-          (match Attribute.get_undef actual_pre e_sub with
+          (match Attribute.get_undef tenv actual_pre e_sub with
            | Some (Apred (Aundef (s, _, loc, pos), _)) ->
                Some (Deref_undef (s, loc, pos), desc false (Localise.deref_str_undef (s, loc)))
            | _ -> None) in
@@ -352,19 +352,19 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
            with Not_found -> deref_err)
       else Some deref_err
 
-let post_process_sigma (sigma: Sil.hpred list) loc : Sil.hpred list =
+let post_process_sigma tenv (sigma: Sil.hpred list) loc : Sil.hpred list =
   let map_inst inst = Sil.inst_new_loc loc inst in
   let do_hpred (_, _, hpred) = Sil.hpred_instmap map_inst hpred in
   (* update the location of instrumentations *)
-  IList.map (fun hpred -> do_hpred (Prover.expand_hpred_pointer false hpred)) sigma
+  IList.map (fun hpred -> do_hpred (Prover.expand_hpred_pointer tenv false hpred)) sigma
 
 (** check for interprocedural path errors in the post *)
-let check_path_errors_in_post caller_pname post post_path =
+let check_path_errors_in_post tenv caller_pname post post_path =
   let check_attr atom =
     match atom with
     | Sil.Apred (Adiv0 path_pos, [e]) ->
-        if Prover.check_zero e then
-          let desc = Errdesc.explain_divide_by_zero e (State.get_node ()) (State.get_loc ()) in
+        if Prover.check_zero tenv e then
+          let desc = Errdesc.explain_divide_by_zero tenv e (State.get_node ()) (State.get_loc ()) in
           let new_path, path_pos_opt =
             let current_path, _ = State.get_path () in
             if Paths.Path.contains_position post_path path_pos
@@ -380,24 +380,24 @@ let check_path_errors_in_post caller_pname post post_path =
 (** Post process the instantiated post after the function call so that
     x.f |-> se becomes x |-> \{ f: se \}.
     Also, update any Aresource attributes to refer to the caller *)
-let post_process_post
+let post_process_post tenv
     caller_pname callee_pname loc actual_pre ((post: Prop.exposed Prop.t), post_path) =
-  let actual_pre_has_freed_attribute e = match Attribute.get_resource actual_pre e with
+  let actual_pre_has_freed_attribute e = match Attribute.get_resource tenv actual_pre e with
     | Some (Apred (Aresource ({ ra_kind = Rrelease }), _)) -> true
     | _ -> false in
   let atom_update_alloc_attribute = function
     | Sil.Apred (Aresource ra, [e])
       when not (ra.ra_kind = PredSymb.Rrelease && actual_pre_has_freed_attribute e) ->
         (* unless it was already freed before the call *)
-        let vpath, _ = Errdesc.vpath_find post e in
+        let vpath, _ = Errdesc.vpath_find tenv post e in
         let ra' = { ra with ra_pname = callee_pname; ra_loc = loc; ra_vpath = vpath } in
         Sil.Apred (Aresource ra', [e])
     | a -> a in
-  let prop' = Prop.set post ~sigma:(post_process_sigma post.Prop.sigma loc) in
+  let prop' = Prop.set post ~sigma:(post_process_sigma tenv post.Prop.sigma loc) in
   let pi' = IList.map atom_update_alloc_attribute prop'.Prop.pi in
   (* update alloc attributes to refer to the caller *)
   let post' = Prop.set prop' ~pi:pi' in
-  check_path_errors_in_post caller_pname post' post_path;
+  check_path_errors_in_post tenv caller_pname post' post_path;
   post', post_path
 
 let hpred_lhs_compare hpred1 hpred2 = match hpred1, hpred2 with
@@ -457,7 +457,7 @@ and sexp_star_fld se1 se2 : Sil.strexp =
       L.d_ln ();
       assert false
 
-let texp_star texp1 texp2 =
+let texp_star _tenv texp1 texp2 =
   let rec ftal_sub ftal1 ftal2 = match ftal1, ftal2 with
     | [], _ -> true
     | _, [] -> false
@@ -478,16 +478,16 @@ let texp_star texp1 texp2 =
   | _ ->
       texp1
 
-let hpred_star_fld (hpred1 : Sil.hpred) (hpred2 : Sil.hpred) : Sil.hpred =
+let hpred_star_fld tenv (hpred1 : Sil.hpred) (hpred2 : Sil.hpred) : Sil.hpred =
   match hpred1, hpred2 with
   | Sil.Hpointsto(e1, se1, t1), Sil.Hpointsto(_, se2, t2) ->
       (* L.d_str "hpred_star_fld t1: "; Sil.d_texp_full t1; L.d_str " t2: "; Sil.d_texp_full t2;
          L.d_str " se1: "; Sil.d_sexp se1; L.d_str " se2: "; Sil.d_sexp se2; L.d_ln (); *)
-      Sil.Hpointsto(e1, sexp_star_fld se1 se2, texp_star t1 t2)
+      Sil.Hpointsto(e1, sexp_star_fld se1 se2, texp_star tenv t1 t2)
   | _ -> assert false
 
 (** Implementation of [*] for the field-splitting model *)
-let sigma_star_fld (sigma1 : Sil.hpred list) (sigma2 : Sil.hpred list) : Sil.hpred list =
+let sigma_star_fld tenv (sigma1 : Sil.hpred list) (sigma2 : Sil.hpred list) : Sil.hpred list =
   let sigma1 = IList.stable_sort hpred_lhs_compare sigma1 in
   let sigma2 = IList.stable_sort hpred_lhs_compare sigma2 in
   (* L.out "@.@. computing %a@.STAR @.%a@.@." pp_sigma sigma1 pp_sigma sigma2; *)
@@ -498,7 +498,7 @@ let sigma_star_fld (sigma1 : Sil.hpred list) (sigma2 : Sil.hpred list) : Sil.hpr
     | hpred1:: sigma1', hpred2:: sigma2' ->
         begin
           match hpred_lhs_compare hpred1 hpred2 with
-          | 0 -> hpred_star_fld hpred1 hpred2 :: star sigma1' sigma2'
+          | 0 -> hpred_star_fld tenv hpred1 hpred2 :: star sigma1' sigma2'
           | n when n < 0 -> hpred1 :: star sigma1' sg2
           | _ -> star sg1 sigma2'
         end
@@ -546,7 +546,7 @@ let sigma_star_typ
 (** [prop_footprint_add_pi_sigma_starfld_sigma prop pi sigma missing_fld]
     extends the footprint of [prop] with [pi,sigma]
     and extends the fields of |-> with [missing_fld] *)
-let prop_footprint_add_pi_sigma_starfld_sigma
+let prop_footprint_add_pi_sigma_starfld_sigma tenv
     (prop : 'a Prop.t) pi_new sigma_new missing_fld missing_typ : Prop.normal Prop.t option =
   let rec extend_sigma current_sigma new_sigma = match new_sigma with
     | [] -> Some current_sigma
@@ -576,10 +576,10 @@ let prop_footprint_add_pi_sigma_starfld_sigma
   match extend_sigma prop.Prop.sigma_fp sigma_new with
   | None -> None
   | Some sigma' ->
-      let sigma_fp' = sigma_star_fld sigma' missing_fld in
+      let sigma_fp' = sigma_star_fld tenv sigma' missing_fld in
       let sigma_fp'' = sigma_star_typ sigma_fp' missing_typ in
       let pi' = pi_new @ prop.Prop.pi in
-      Some (Prop.normalize (Prop.set prop ~pi:pi' ~pi_fp:pi_fp' ~sigma_fp:sigma_fp''))
+      Some (Prop.normalize tenv (Prop.set prop ~pi:pi' ~pi_fp:pi_fp' ~sigma_fp:sigma_fp''))
 
 (** Check if the attribute change is a mismatch between a kind
     of allocation and a different kind of deallocation *)
@@ -592,7 +592,7 @@ let check_attr_dealloc_mismatch att_old att_new = match att_old, att_new with
   | _ -> ()
 
 (** [prop_copy_footprint p1 p2] copies the footprint and pure part of [p1] into [p2] *)
-let prop_copy_footprint_pure p1 p2 =
+let prop_copy_footprint_pure tenv p1 p2 =
   let p2' =
     Prop.set p2 ~pi_fp:p1.Prop.pi_fp ~sigma_fp:p1.Prop.sigma_fp in
   let pi2 = p2'.Prop.pi in
@@ -601,10 +601,10 @@ let prop_copy_footprint_pure p1 p2 =
   let replace_attr prop atom = (* call replace_atom_attribute which deals with existing attibutes *)
     (* if [atom] represents an attribute [att], add the attribure to [prop] *)
     if Attribute.is_pred atom then
-      Attribute.add_or_replace_check_changed check_attr_dealloc_mismatch prop atom
+      Attribute.add_or_replace_check_changed tenv check_attr_dealloc_mismatch prop atom
     else
       prop in
-  IList.fold_left replace_attr (Prop.normalize res_noattr) pi2_attr
+  IList.fold_left replace_attr (Prop.normalize tenv res_noattr) pi2_attr
 
 (** check if an expression is an exception *)
 let exp_is_exn = function
@@ -647,14 +647,14 @@ let lookup_custom_errors prop =
   search_error prop.Prop.sigma
 
 (** set a prop to an exception sexp *)
-let prop_set_exn pname prop se_exn =
+let prop_set_exn tenv pname prop se_exn =
   let ret_pvar = Exp.Lvar (Pvar.get_ret_pvar pname) in
   let map_hpred = function
     | Sil.Hpointsto (e, _, t) when Exp.equal e ret_pvar ->
         Sil.Hpointsto(e, se_exn, t)
     | hpred -> hpred in
   let sigma' = IList.map map_hpred prop.Prop.sigma in
-  Prop.normalize (Prop.set prop ~sigma:sigma')
+  Prop.normalize tenv (Prop.set prop ~sigma:sigma')
 
 (** Include a subtrace for a procedure call if the callee is not a model. *)
 let include_subtrace callee_pname =
@@ -663,7 +663,7 @@ let include_subtrace callee_pname =
   not (AttributesTable.is_whitelisted_cpp_method (Procname.to_string callee_pname))
 
 (** combine the spec's post with a splitting and actual precondition *)
-let combine
+let combine tenv
     ret_ids (posts: ('a Prop.t * Paths.Path.t) list)
     actual_pre path_pre split
     caller_pdesc callee_pname loc =
@@ -686,7 +686,7 @@ let combine
           posts in
     IList.map
       (fun (p, path) ->
-         (post_process_post
+         (post_process_post tenv
             caller_pname callee_pname loc actual_pre (Prop.prop_sub split.sub p, path)))
       posts' in
   L.d_increase_indent 1;
@@ -707,10 +707,10 @@ let combine
   L.d_decrease_indent 1; L.d_ln ();
   let compute_result post_p =
     let post_p' =
-      let post_sigma = sigma_star_fld post_p.Prop.sigma split.frame_fld in
+      let post_sigma = sigma_star_fld tenv post_p.Prop.sigma split.frame_fld in
       let post_sigma' = sigma_star_typ post_sigma split.frame_typ in
       Prop.set post_p ~sigma:post_sigma' in
-    let post_p1 = Prop.prop_sigma_star (prop_copy_footprint_pure actual_pre post_p') split.frame in
+    let post_p1 = Prop.prop_sigma_star (prop_copy_footprint_pure tenv actual_pre post_p') split.frame in
 
     let handle_null_case_analysis sigma =
       let id_assigned_to_null id =
@@ -730,7 +730,7 @@ let combine
       let post_p1_sigma = post_p1.Prop.sigma in
       let post_p1_sigma' = handle_null_case_analysis post_p1_sigma in
       let post_p1' = Prop.set post_p1 ~sigma:post_p1_sigma' in
-      Prop.normalize (Prop.set post_p1' ~pi:(post_p1.Prop.pi @ split.missing_pi)) in
+      Prop.normalize tenv (Prop.set post_p1' ~pi:(post_p1.Prop.pi @ split.missing_pi)) in
 
     let post_p3 = (* replace [result|callee] with an aux variable dedicated to this proc *)
       let callee_ret_pvar =
@@ -744,31 +744,31 @@ let combine
           match Prop.prop_iter_find iter filter with
           | None -> post_p2
           | Some iter' ->
-              match fst (Prop.prop_iter_current iter') with
+              match fst (Prop.prop_iter_current tenv iter') with
               | Sil.Hpointsto (_, Sil.Eexp (e', inst), _) when exp_is_exn e' ->
                   (* resuls is an exception: set in caller *)
-                  let p = Prop.prop_iter_remove_curr_then_to_prop iter' in
-                  prop_set_exn caller_pname p (Sil.Eexp (e', inst))
+                  let p = Prop.prop_iter_remove_curr_then_to_prop tenv iter' in
+                  prop_set_exn tenv caller_pname p (Sil.Eexp (e', inst))
               | Sil.Hpointsto (_, Sil.Eexp (e', _), _) when IList.length ret_ids = 1 ->
-                  let p = Prop.prop_iter_remove_curr_then_to_prop iter' in
-                  Prop.conjoin_eq e' (Exp.Var (IList.hd ret_ids)) p
+                  let p = Prop.prop_iter_remove_curr_then_to_prop tenv iter' in
+                  Prop.conjoin_eq tenv e' (Exp.Var (IList.hd ret_ids)) p
               | Sil.Hpointsto (_, Sil.Estruct (ftl, _), _)
                 when IList.length ftl = IList.length ret_ids ->
                   let rec do_ftl_ids p = function
                     | [], [] -> p
                     | (_, Sil.Eexp (e', _)):: ftl', ret_id:: ret_ids' ->
-                        let p' = Prop.conjoin_eq e' (Exp.Var ret_id) p in
+                        let p' = Prop.conjoin_eq tenv e' (Exp.Var ret_id) p in
                         do_ftl_ids p' (ftl', ret_ids')
                     | _ -> p in
-                  let p = Prop.prop_iter_remove_curr_then_to_prop iter' in
+                  let p = Prop.prop_iter_remove_curr_then_to_prop tenv iter' in
                   do_ftl_ids p (ftl, ret_ids)
               | Sil.Hpointsto _ -> (* returning nothing or unexpected sexp, turning into nondet *)
-                  Prop.prop_iter_remove_curr_then_to_prop iter'
+                  Prop.prop_iter_remove_curr_then_to_prop tenv iter'
               | _ -> assert false in
     let post_p4 =
       if !Config.footprint
       then
-        prop_footprint_add_pi_sigma_starfld_sigma
+        prop_footprint_add_pi_sigma_starfld_sigma tenv
           post_p3
           split.missing_pi
           split.missing_sigma
@@ -783,11 +783,11 @@ let combine
     let results =
       IList.map (function (Some x, path) -> (x, path) | (None, _) -> assert false)
         _results in
-    print_results actual_pre (IList.map fst results);
+    print_results tenv actual_pre (IList.map fst results);
     Some results
 
 (* Add Auntaint attribute to a callee_pname precondition *)
-let mk_pre pre formal_params callee_pname callee_attrs =
+let mk_pre tenv pre formal_params callee_pname callee_attrs =
   if Config.taint_analysis
   then
     match Taint.accepts_sensitive_params callee_pname (Some callee_attrs) with
@@ -797,8 +797,8 @@ let mk_pre pre formal_params callee_pname callee_attrs =
         |> IList.fold_left
           (fun prop_acc (param, taint_kind) ->
              let attr = PredSymb.Auntaint { taint_source = callee_pname; taint_kind; } in
-             Taint.add_tainting_attribute attr param prop_acc)
-          (Prop.normalize pre)
+             Taint.add_tainting_attribute tenv attr param prop_acc)
+          (Prop.normalize tenv pre)
         |> Prop.expose
   else pre
 
@@ -815,7 +815,7 @@ let report_taint_error e taint_info callee_pname caller_pname calling_prop =
       (err_desc, __POS__) in
   Reporting.log_warning caller_pname exn
 
-let check_taint_on_variadic_function callee_pname caller_pname actual_params calling_prop =
+let check_taint_on_variadic_function tenv callee_pname caller_pname actual_params calling_prop =
   let rec n_tail lst n = (* return the tail of a list from element n *)
     if n = 1 then lst
     else match lst with
@@ -831,7 +831,7 @@ let check_taint_on_variadic_function callee_pname caller_pname actual_params cal
       L.d_str "Paramters to be checked:  [ ";
       IList.iter(fun (e,_) ->
           L.d_str (" " ^ (Sil.exp_to_string e) ^ " ");
-          match Attribute.get_taint calling_prop e with
+          match Attribute.get_taint tenv calling_prop e with
           | Some (Apred (Ataint taint_info, _)) ->
               report_taint_error e taint_info callee_pname caller_pname calling_prop
           | _ -> ()) actual_params';
@@ -841,7 +841,7 @@ let check_taint_on_variadic_function callee_pname caller_pname actual_params cal
 (** Construct the actual precondition: add to the current state a copy
     of the (callee's) formal parameters instantiated with the actual
     parameters. *)
-let mk_actual_precondition prop actual_params formal_params =
+let mk_actual_precondition tenv prop actual_params formal_params =
   let formals_actuals =
     let rec comb fpars apars = match fpars, apars with
       | f:: fpars', a:: apars' -> (f, a) :: comb fpars' apars'
@@ -860,15 +860,15 @@ let mk_actual_precondition prop actual_params formal_params =
       | _:: _,[] -> raise (Exceptions.Wrong_argument_number __POS__) in
     comb formal_params actual_params in
   let mk_instantiation (formal_var, (actual_e, actual_t)) =
-    Prop.mk_ptsto
+    Prop.mk_ptsto tenv
       (Exp.Lvar formal_var)
       (Sil.Eexp (actual_e, Sil.inst_actual_precondition))
       (Exp.Sizeof (actual_t, None, Subtype.exact)) in
   let instantiated_formals = IList.map mk_instantiation formals_actuals in
   let actual_pre = Prop.prop_sigma_star prop instantiated_formals in
-  Prop.normalize actual_pre
+  Prop.normalize tenv actual_pre
 
-let mk_posts ret_ids prop callee_pname callee_attrs posts =
+let mk_posts tenv ret_ids prop callee_pname callee_attrs posts =
   match ret_ids with
   | [ret_id] ->
       let mk_getter_idempotent posts =
@@ -880,7 +880,7 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
           IList.exists
             (function
               | Sil.Apred (Aretval (pname, _), [exp]) when Procname.equal callee_pname pname ->
-                  Prover.check_disequal prop exp Exp.zero
+                  Prover.check_disequal tenv prop exp Exp.zero
               | _ -> false)
             (Attribute.get_all prop) in
         if last_call_ret_non_null then
@@ -888,7 +888,7 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
             IList.exists
               (function
                 | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (e, _), _) when Pvar.is_return pvar ->
-                    Prover.check_equal (Prop.normalize prop) e Exp.zero
+                    Prover.check_equal tenv (Prop.normalize tenv prop) e Exp.zero
                 | _ -> false)
               prop.Prop.sigma in
           IList.filter (fun (prop, _) -> not (returns_null prop)) posts
@@ -897,9 +897,9 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
         match Taint.returns_tainted callee_pname (Some callee_attrs) with
         | Some taint_kind ->
             let taint_retval (prop, path) =
-              let prop_normal = Prop.normalize prop in
+              let prop_normal = Prop.normalize tenv prop in
               let prop' =
-                Attribute.add_or_replace prop_normal
+                Attribute.add_or_replace tenv prop_normal
                   (Apred (Ataint { taint_source = callee_pname; taint_kind; }, [Exp.Var ret_id]))
                 |> Prop.expose in
               (prop', path) in
@@ -913,17 +913,17 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
   | _ -> posts
 
 (** Check if actual_pre * missing_footprint |- false *)
-let inconsistent_actualpre_missing actual_pre split_opt =
+let inconsistent_actualpre_missing tenv actual_pre split_opt =
   match split_opt with
   | Some split ->
-      let prop'= Prop.normalize (Prop.prop_sigma_star actual_pre split.missing_sigma) in
-      let prop''= IList.fold_left Prop.prop_atom_and prop' split.missing_pi in
-      Prover.check_inconsistency prop''
+      let prop'= Prop.normalize tenv (Prop.prop_sigma_star actual_pre split.missing_sigma) in
+      let prop''= IList.fold_left (Prop.prop_atom_and tenv) prop' split.missing_pi in
+      Prover.check_inconsistency tenv prop''
   | None -> false
 
 (* perform the taint analysis check by comparing the taint atoms in [calling_pi] with the untaint
    atoms required by the [missing_pi] computed during abduction *)
-let do_taint_check caller_pname callee_pname calling_prop missing_pi sub actual_params =
+let do_taint_check tenv caller_pname callee_pname calling_prop missing_pi sub actual_params =
   let calling_pi = calling_prop.Prop.pi in
   (* get a version of [missing_pi] whose var names match the names in calling pi *)
   let missing_pi_sub = Prop.pi_sub sub missing_pi in
@@ -969,29 +969,29 @@ let do_taint_check caller_pname callee_pname calling_prop missing_pi sub actual_
               (fun a -> Sil.atom_equal atom a)
               untaint_atoms)
          taint_untaint_exp_map) in
-  check_taint_on_variadic_function callee_pname caller_pname actual_params calling_prop;
+  check_taint_on_variadic_function tenv callee_pname caller_pname actual_params calling_prop;
   IList.filter not_untaint_atom missing_pi_sub
 
-let class_cast_exn pname_opt texp1 texp2 exp ml_loc =
+let class_cast_exn tenv pname_opt texp1 texp2 exp ml_loc =
   let desc =
-    Errdesc.explain_class_cast_exception
+    Errdesc.explain_class_cast_exception tenv
       pname_opt texp1 texp2 exp (State.get_node ()) (State.get_loc ()) in
   Exceptions.Class_cast_exception (desc, ml_loc)
 
-let raise_cast_exception ml_loc pname_opt texp1 texp2 exp =
-  let exn = class_cast_exn pname_opt texp1 texp2 exp ml_loc in
+let raise_cast_exception tenv ml_loc pname_opt texp1 texp2 exp =
+  let exn = class_cast_exn tenv pname_opt texp1 texp2 exp ml_loc in
   raise exn
 
-let get_check_exn check callee_pname loc ml_loc = match check with
+let get_check_exn tenv check callee_pname loc ml_loc = match check with
   | Prover.Bounds_check ->
       let desc = Localise.desc_precondition_not_met (Some Localise.Pnm_bounds) callee_pname loc in
       Exceptions.Precondition_not_met (desc, ml_loc)
   | Prover.Class_cast_check (texp1, texp2, exp) ->
-      class_cast_exn (Some callee_pname) texp1 texp2 exp ml_loc
+      class_cast_exn tenv (Some callee_pname) texp1 texp2 exp ml_loc
 
-let check_uninitialize_dangling_deref callee_pname actual_pre sub formal_params props =
+let check_uninitialize_dangling_deref tenv callee_pname actual_pre sub formal_params props =
   IList.iter (fun (p, _ ) ->
-      match check_dereferences callee_pname actual_pre sub p formal_params with
+      match check_dereferences tenv callee_pname actual_pre sub p formal_params with
       | Some (Deref_undef_exp, desc) ->
           raise (Exceptions.Dangling_pointer_dereference (Some PredSymb.DAuninit, desc, __POS__))
       | _ -> ()) props
@@ -1001,10 +1001,10 @@ let exe_spec
     tenv ret_ids (n, nspecs) caller_pdesc callee_pname  callee_attrs loc prop path_pre
     (spec : Prop.exposed Specs.spec) actual_params formal_params : abduction_res =
   let caller_pname = Cfg.Procdesc.get_proc_name caller_pdesc in
-  let posts = mk_posts ret_ids prop callee_pname callee_attrs spec.Specs.posts in
-  let actual_pre = mk_actual_precondition prop actual_params formal_params in
+  let posts = mk_posts tenv ret_ids prop callee_pname callee_attrs spec.Specs.posts in
+  let actual_pre = mk_actual_precondition tenv prop actual_params formal_params in
   let spec_pre =
-    mk_pre (Specs.Jprop.to_prop spec.Specs.pre) formal_params callee_pname callee_attrs in
+    mk_pre tenv (Specs.Jprop.to_prop spec.Specs.pre) formal_params callee_pname callee_attrs in
   L.d_strln ("EXECUTING SPEC " ^ string_of_int n ^ "/" ^ string_of_int nspecs);
   L.d_strln "ACTUAL PRECONDITION =";
   L.d_increase_indent 1; Prop.d_prop actual_pre; L.d_decrease_indent 1; L.d_ln ();
@@ -1017,18 +1017,18 @@ let exe_spec
       (checks, sub1, sub2, frame, missing_pi, missing_sigma,
        frame_fld, missing_fld, frame_typ, missing_typ) ->
       let log_check_exn check =
-        let exn = get_check_exn check callee_pname loc __POS__ in
+        let exn = get_check_exn tenv check callee_pname loc __POS__ in
         Reporting.log_warning caller_pname exn in
       let do_split () =
         let missing_pi' =
           if Config.taint_analysis then
-            do_taint_check caller_pname callee_pname actual_pre missing_pi sub2 actual_params
+            do_taint_check tenv caller_pname callee_pname actual_pre missing_pi sub2 actual_params
           else missing_pi in
         process_splitting
           actual_pre sub1 sub2 frame missing_pi' missing_sigma
           frame_fld missing_fld frame_typ missing_typ in
       let report_valid_res split =
-        match combine
+        match combine tenv
                 ret_ids posts
                 actual_pre path_pre split
                 caller_pdesc callee_pname loc with
@@ -1036,11 +1036,11 @@ let exe_spec
         | Some results ->
             (* After combining we check that we have not added
                a points-to of initialized variables.*)
-            check_uninitialize_dangling_deref
+            check_uninitialize_dangling_deref tenv
               callee_pname actual_pre split.sub formal_params results;
             let inconsistent_results, consistent_results =
-              IList.partition (fun (p, _) -> Prover.check_inconsistency p) results in
-            let incons_pre_missing = inconsistent_actualpre_missing actual_pre (Some split) in
+              IList.partition (fun (p, _) -> Prover.check_inconsistency tenv p) results in
+            let incons_pre_missing = inconsistent_actualpre_missing tenv actual_pre (Some split) in
             Valid_res { incons_pre_missing = incons_pre_missing;
                         vr_pi = split.missing_pi;
                         vr_sigma = split.missing_sigma;
@@ -1049,7 +1049,7 @@ let exe_spec
       begin
         IList.iter log_check_exn checks;
         let subbed_pre = (Prop.prop_sub sub1 actual_pre) in
-        match check_dereferences callee_pname subbed_pre sub2 spec_pre formal_params with
+        match check_dereferences tenv callee_pname subbed_pre sub2 spec_pre formal_params with
         | Some (Deref_undef _, _) when Config.angelic_execution ->
             let split = do_split () in
             report_valid_res split
@@ -1084,25 +1084,25 @@ let exe_spec
             else report_valid_res split
       end
 
-let remove_constant_string_class prop =
+let remove_constant_string_class tenv prop =
   let filter = function
     | Sil.Hpointsto (Exp.Const (Const.Cstr _ | Const.Cclass _), _, _) -> false
     | _ -> true in
   let sigma = IList.filter filter prop.Prop.sigma in
   let sigmafp = IList.filter filter prop.Prop.sigma_fp in
   let prop' = Prop.set prop ~sigma ~sigma_fp:sigmafp in
-  Prop.normalize prop'
+  Prop.normalize tenv prop'
 
 (** existentially quantify the path identifier generated
     by the prover to keep track of expansions of lhs paths
     and remove pointsto's whose lhs is a constant string *)
-let quantify_path_idents_remove_constant_strings (prop: Prop.normal Prop.t) : Prop.normal Prop.t =
+let quantify_path_idents_remove_constant_strings tenv (prop: Prop.normal Prop.t) : Prop.normal Prop.t =
   let fav = Prop.prop_fav prop in
   Sil.fav_filter_ident fav Ident.is_path;
-  remove_constant_string_class (Prop.exist_quantify fav prop)
+  remove_constant_string_class tenv (Prop.exist_quantify tenv fav prop)
 
 (** Strengthen the footprint by adding pure facts from the current part *)
-let prop_pure_to_footprint (p: 'a Prop.t) : Prop.normal Prop.t =
+let prop_pure_to_footprint tenv (p: 'a Prop.t) : Prop.normal Prop.t =
   let is_footprint_atom_not_attribute a =
     not (Attribute.is_pred a)
     &&
@@ -1113,10 +1113,10 @@ let prop_pure_to_footprint (p: 'a Prop.t) : Prop.normal Prop.t =
   if new_footprint_atoms == []
   then p
   else (* add pure fact to footprint *)
-    Prop.normalize (Prop.set p ~pi_fp:(p.Prop.pi_fp @ new_footprint_atoms))
+    Prop.normalize tenv (Prop.set p ~pi_fp:(p.Prop.pi_fp @ new_footprint_atoms))
 
 (** post-process the raw result of a function call *)
-let exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc results =
+let exe_call_postprocess tenv ret_ids trace_call callee_pname callee_attrs loc results =
   let filter_valid_res = function
     | Invalid_res _ -> false
     | Valid_res _ -> true in
@@ -1191,7 +1191,7 @@ let exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc result
                 else if IList.exists (function
                     | Prover_checks (check :: _) ->
                         trace_call Specs.CallStats.CR_not_met;
-                        let exn = get_check_exn check callee_pname loc __POS__ in
+                        let exn = get_check_exn tenv check callee_pname loc __POS__ in
                         raise exn
                     | _ -> false) invalid_res then
                   call_desc (Some Localise.Pnm_bounds)
@@ -1206,13 +1206,13 @@ let exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc result
               then (* no consistent results on one spec: divergence *)
                 let incons_res =
                   IList.map
-                    (fun (p, path) -> (prop_pure_to_footprint p, path))
+                    (fun (p, path) -> (prop_pure_to_footprint tenv p, path))
                     vr.vr_incons_res in
                 State.add_diverging_states (Paths.PathSet.from_renamed_list incons_res) in
             save_diverging_states ();
             vr.vr_cons_res in
           IList.map
-            (fun (p, path) -> (prop_pure_to_footprint p, path))
+            (fun (p, path) -> (prop_pure_to_footprint tenv p, path))
             (IList.flatten (IList.map process_valid_res valid_res))
       end
     else if valid_res_no_miss_pi != [] then
@@ -1224,7 +1224,7 @@ let exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc result
         L.d_strln "Missing pure facts for the function call:";
         IList.iter print_pi (IList.map (fun vr -> vr.vr_pi) valid_res_miss_pi);
         match
-          Prover.find_minimum_pure_cover
+          Prover.find_minimum_pure_cover tenv
             (IList.map (fun vr -> (vr.vr_pi, vr.vr_cons_res)) valid_res_miss_pi) with
         | None ->
             trace_call Specs.CallStats.CR_not_met;
@@ -1237,7 +1237,7 @@ let exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc result
   trace_call Specs.CallStats.CR_success;
   let res =
     IList.map
-      (fun (p, path) -> (quantify_path_idents_remove_constant_strings p, path))
+      (fun (p, path) -> (quantify_path_idents_remove_constant_strings tenv p, path))
       res_with_path_idents in
   let ret_annot, _ = callee_attrs.ProcAttributes.method_annotation in
   let returns_nullable ret_annot = Annotations.ia_is_nullable ret_annot in
@@ -1257,7 +1257,7 @@ let exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc result
       let ret_var = Exp.Var ret_id in
       let mark_id_as_retval (p, path) =
         let att_retval = PredSymb.Aretval (callee_pname, ret_annot) in
-        Attribute.add p att_retval [ret_var], path in
+        Attribute.add tenv p att_retval [ret_var], path in
       IList.map mark_id_as_retval res
   | _ -> res
 
@@ -1295,7 +1295,7 @@ let exe_function_call
       actual_params
       formal_params in
   let results = IList.map exe_one_spec spec_list in
-  exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc results
+  exe_call_postprocess tenv ret_ids trace_call callee_pname callee_attrs loc results
 
 (*
 let check_splitting_precondition sub1 sub2 =

@@ -36,7 +36,7 @@ val get_this_type : ProcAttributes.t -> Typ.t option
 val get_type_name : Typ.t -> string
 
 (** Get the type names of a variable argument *)
-val get_vararg_type_names : Cfg.Node.t -> Pvar.t -> string list
+val get_vararg_type_names : Tenv.t -> Cfg.Node.t -> Pvar.t -> string list
 
 val has_formal_method_argument_type_names :
   Cfg.Procdesc.t -> Procname.java -> string list -> bool
@@ -84,22 +84,22 @@ val proc_calls :
     Only Java supported at the moment. *)
 val proc_iter_overridden_methods : (Procname.t -> unit) -> Tenv.t -> Procname.t -> unit
 
-val type_get_annotation : Typ.t -> Typ.item_annotation option
+val type_get_annotation : Tenv.t -> Typ.t -> Typ.item_annotation option
 
 (** Get the class name of the type *)
 val type_get_class_name : Typ.t -> Typename.t option
 
-val type_get_direct_supertypes : Typ.t -> Typename.t list
+val type_get_direct_supertypes : Tenv.t -> Typ.t -> Typename.t list
 
-val type_has_direct_supertype : Typ.t -> Typename.t -> bool
+val type_has_direct_supertype : Tenv.t -> Typ.t -> Typename.t -> bool
 
 (** Is the type a class type *)
-val type_is_class : Typ.t -> bool
+val type_is_class : Tenv.t -> Typ.t -> bool
 
-val type_is_nested_in_direct_supertype : Typ.t -> Typename.t -> bool
+val type_is_nested_in_direct_supertype : Tenv.t -> Typ.t -> Typename.t -> bool
 
 (** Is the type java.lang.Object *)
-val type_is_object : Typ.t -> bool
+val type_is_object : Tenv.t -> Typ.t -> bool
 
 (** return the set of instance fields that are assigned to a null literal in [procdesc] *)
 val get_fields_nullified : Cfg.Procdesc.t -> Ident.FieldSet.t

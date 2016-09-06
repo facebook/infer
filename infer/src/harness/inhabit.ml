@@ -80,7 +80,7 @@ let inhabit_alloc sizeof_typ sizeof_len ret_typ alloc_kind env =
 
 (** find or create a Sil expression with type typ *)
 (* TODO: this should be done in a differnt way: just make typ a param of the harness procedure *)
-let rec inhabit_typ typ cfg env =
+let rec inhabit_typ tenv typ cfg env =
   try (TypMap.find typ env.cache, env)
   with Not_found ->
     let inhabit_internal typ env = match typ with
@@ -108,7 +108,7 @@ let rec inhabit_typ typ cfg env =
                 (* arbitrarily choose a constructor for typ and invoke it. eventually, we may want to
                  * nondeterministically call all possible constructors instead *)
                 let env =
-                  inhabit_constructor constructor (allocated_obj_exp, ptr_to_typ) cfg env in
+                  inhabit_constructor tenv constructor (allocated_obj_exp, ptr_to_typ) cfg env in
                 (* try to get the unqualified name as a class (e.g., Object for java.lang.Object so we
                  * we can use it as a descriptive local variable name in the harness *)
                 let typ_class_name =
@@ -141,21 +141,21 @@ let rec inhabit_typ typ cfg env =
                                 cur_inhabiting = env.cur_inhabiting })
 
 (** inhabit each of the types in the formals list *)
-and inhabit_args formals cfg env =
+and inhabit_args tenv formals cfg env =
   let inhabit_arg (_, formal_typ) (args, env) =
-    let (exp, env) = inhabit_typ formal_typ cfg env in
+    let (exp, env) = inhabit_typ tenv formal_typ cfg env in
     ((exp, formal_typ) :: args, env) in
   IList.fold_right inhabit_arg formals ([], env)
 
 (** create Sil that calls the constructor in constr_name on allocated_obj and inhabits the
  * remaining arguments *)
-and inhabit_constructor constr_name (allocated_obj, obj_type) cfg env =
+and inhabit_constructor tenv constr_name (allocated_obj, obj_type) cfg env =
   try
     (* this lookup can fail when we try to get the procdesc of a procedure from a different
      * module. this could be solved with a whole - program class hierarchy analysis *)
     let (args, env) =
       let non_receiver_formals = tl_or_empty (formals_from_name cfg constr_name) in
-      inhabit_args non_receiver_formals cfg env in
+      inhabit_args tenv non_receiver_formals cfg env in
     let constr_instr =
       let fun_exp = fun_exp_from_name constr_name in
       Sil.Call ([], fun_exp, (allocated_obj, obj_type) :: args, env.pc, CallFlags.default) in
@@ -174,7 +174,7 @@ let inhabit_call_with_args procname procdesc args env =
   env_add_instr call_instr env
 
 (** create Sil that inhabits args to and calls proc_name *)
-let inhabit_call (procname, receiver) cfg env =
+let inhabit_call tenv (procname, receiver) cfg env =
   try
     match procdesc_from_name cfg procname with
     | Some procdesc ->
@@ -187,7 +187,7 @@ let inhabit_call (procname, receiver) cfg env =
                 "Expected at least one formal to bind receiver to in method %a@."
                 Procname.pp procname;
               assert false in
-        let (args, env) = inhabit_args formals cfg env in
+        let (args, env) = inhabit_args tenv formals cfg env in
         inhabit_call_with_args procname procdesc args env
     | None -> env
   with Not_found -> env
@@ -254,7 +254,7 @@ let setup_harness_cfg harness_name env cg cfg =
 
 (** create a procedure named harness_name that calls each of the methods in trace in the specified
  * order with the specified receiver and add it to the execution environment *)
-let inhabit_trace trace harness_name cg cfg =
+let inhabit_trace tenv trace harness_name cg cfg =
   if IList.length trace > 0 then
     let source_file = Cg.get_source cg in
     let harness_file = create_dummy_harness_file harness_name in
@@ -267,7 +267,7 @@ let inhabit_trace trace harness_name cg cfg =
         cur_inhabiting = TypSet.empty;
         harness_name = harness_name; } in
     (* invoke lifecycle methods *)
-    let env'' = IList.fold_left (fun env to_call -> inhabit_call to_call cfg env) empty_env trace in
+    let env'' = IList.fold_left (fun env to_call -> inhabit_call tenv to_call cfg env) empty_env trace in
     try
       setup_harness_cfg harness_name env'' cg cfg;
       write_harness_to_file (IList.rev env''.instrs) harness_file

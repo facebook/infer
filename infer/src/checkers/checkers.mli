@@ -22,6 +22,7 @@ module ST : sig
 
   (** Report an error. *)
   val report_error:
+    Tenv.t ->
     Procname.t ->
     Cfg.Procdesc.t ->
     string ->
@@ -35,7 +36,7 @@ module ST : sig
     unit
 
   (** Store the summary to a .specs file. *)
-  val store_summary : Procname.t -> unit
+  val store_summary : Tenv.t -> Procname.t -> unit
 
 end (* ST *)
 

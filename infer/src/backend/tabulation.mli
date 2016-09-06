@@ -16,7 +16,7 @@ open! Utils
 type splitting
 
 (** Remove constant string or class from a prop *)
-val remove_constant_string_class : 'a Prop.t -> Prop.normal Prop.t
+val remove_constant_string_class : Tenv.t -> 'a Prop.t -> Prop.normal Prop.t
 
 (** Check if the attribute change is a mismatch between a kind of allocation
     and a different kind of deallocation *)
@@ -28,7 +28,7 @@ val find_dereference_without_null_check_in_sexp : Sil.strexp -> (int * PredSymb.
 
 (** raise a cast exception *)
 val raise_cast_exception :
-  Logging.ml_loc -> Procname.t option -> Exp.t -> Exp.t -> Exp.t -> 'a
+  Tenv.t -> Logging.ml_loc -> Procname.t option -> Exp.t -> Exp.t -> Exp.t -> 'a
 
 (** check if a prop is an exception *)
 val prop_is_exn : Procname.t -> 'a Prop.t -> bool

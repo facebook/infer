@@ -256,9 +256,9 @@ let get_annotated_signature proc_attributes : annotated_signature =
 (** Check if the annotated signature is for a wrapper of an anonymous inner class method.
     These wrappers have the same name as the original method, every type is Object, and the parameters
     are called x0, x1, x2. *)
-let annotated_signature_is_anonymous_inner_class_wrapper ann_sig proc_name =
+let annotated_signature_is_anonymous_inner_class_wrapper tenv ann_sig proc_name =
   let check_ret (ia, t) =
-    Typ.item_annotation_is_empty ia && PatternMatch.type_is_object t in
+    Typ.item_annotation_is_empty ia && PatternMatch.type_is_object tenv t in
   let x_param_found = ref false in
   let name_is_x_number name =
     let name_str = Mangled.to_string name in
@@ -278,7 +278,7 @@ let annotated_signature_is_anonymous_inner_class_wrapper ann_sig proc_name =
     else
       name_is_x_number name &&
       Typ.item_annotation_is_empty ia &&
-      PatternMatch.type_is_object t in
+      PatternMatch.type_is_object tenv t in
   Procname.java_is_anonymous_inner_class proc_name
   && check_ret ann_sig.ret
   && IList.for_all check_param ann_sig.params

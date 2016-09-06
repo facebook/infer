@@ -55,16 +55,16 @@ module ST = struct
           end
     end
 
-  let store_summary proc_name =
+  let store_summary tenv proc_name =
     Option.may
       (fun summary ->
          let summary' =
            { summary with
              Specs.timestamp = summary.Specs.timestamp + 1 } in
-         try Specs.store_summary proc_name summary' with Sys_error s -> L.err "%s@." s)
+         try Specs.store_summary tenv proc_name summary' with Sys_error s -> L.err "%s@." s)
       (Specs.get_summary proc_name)
 
-  let report_error
+  let report_error tenv
       proc_name
       proc_desc
       kind
@@ -121,7 +121,7 @@ module ST = struct
       let is_class_suppressed =
         match PatternMatch.get_this_type proc_attributes with
         | Some t -> begin
-            match (PatternMatch.type_get_annotation t) with
+            match (PatternMatch.type_get_annotation tenv t) with
             | Some ia -> Annotations.ia_has_annotation_with ia annotation_matches
             | None -> false
           end
@@ -158,13 +158,13 @@ module ST = struct
       end
 end
 
-let report_calls_and_accesses callback node instr =
+let report_calls_and_accesses tenv callback node instr =
   let proc_desc = Cfg.Node.get_proc_desc node in
   let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
   let callee = Procname.to_string proc_name in
   match PatternMatch.get_java_field_access_signature instr with
   | Some (bt, fn, ft) ->
-      ST.report_error
+      ST.report_error tenv
         proc_name
         proc_desc
         (callback ^ "_CALLBACK")
@@ -173,7 +173,7 @@ let report_calls_and_accesses callback node instr =
   | None ->
       match PatternMatch.get_java_method_call_formal_signature instr with
       | Some (bt, fn, _, rt) ->
-          ST.report_error
+          ST.report_error tenv
             proc_name
             proc_desc
             (callback ^ "_CALLBACK")
@@ -182,18 +182,23 @@ let report_calls_and_accesses callback node instr =
       | None -> ()
 
 (** Report all field accesses and method calls of a procedure. *)
-let callback_check_access { Callbacks.proc_desc } =
-  Cfg.Procdesc.iter_instrs (report_calls_and_accesses "PROC") proc_desc
+let callback_check_access { Callbacks.tenv; proc_desc } =
+  Cfg.Procdesc.iter_instrs (report_calls_and_accesses tenv "PROC") proc_desc
 
 (** Report all field accesses and method calls of a class. *)
 let callback_check_cluster_access all_procs get_proc_desc _ =
-  IList.iter
-    (Option.may (fun d -> Cfg.Procdesc.iter_instrs (report_calls_and_accesses "CLUSTER") d))
-    (IList.map get_proc_desc all_procs)
+  IList.iter (fun proc_name ->
+      match get_proc_desc proc_name with
+      | Some proc_desc ->
+          let tenv = AttributesTable.get_tenv proc_name in
+          Cfg.Procdesc.iter_instrs (report_calls_and_accesses tenv "CLUSTER") proc_desc
+      | _ ->
+          ()
+    ) all_procs
 
 (** Looks for writeToParcel methods and checks whether read is in reverse *)
 let callback_check_write_to_parcel_java
-    pname_java ({ Callbacks.proc_desc; idenv; get_proc_desc } as args) =
+    pname_java ({ Callbacks.tenv; proc_desc; idenv; get_proc_desc } as args) =
   let verbose = ref false in
 
   let is_write_to_parcel this_expr this_type =
@@ -214,7 +219,7 @@ let callback_check_write_to_parcel_java
     PatternMatch.has_formal_method_argument_type_names
       proc_desc pname_java ["android.os.Parcel"] in
 
-  let parcel_constructors = function
+  let parcel_constructors _tenv = function
     | Typ.Tptr (Typ.Tstruct { Typ.def_methods }, _) ->
         IList.filter is_parcel_constructor def_methods
     | _ -> [] in
@@ -289,7 +294,7 @@ let callback_check_write_to_parcel_java
             L.stdout "Serialization check for %a@."
               Procname.pp args.Callbacks.proc_name;
           try
-            match parcel_constructors this_type with
+            match parcel_constructors tenv this_type with
             | x :: _ ->
                 (match get_proc_desc x with
                  | Some x_proc_desc -> check x_proc_desc proc_desc
@@ -542,16 +547,16 @@ let callback_check_field_access { Callbacks.proc_desc } =
   Cfg.Procdesc.iter_instrs do_instr proc_desc
 
 (** Print c method calls. *)
-let callback_print_c_method_calls { Callbacks.proc_desc; proc_name } =
+let callback_print_c_method_calls { Callbacks.tenv; proc_desc; proc_name } =
   let do_instr node = function
     | Sil.Call (_, Exp.Const (Const.Cfun pn), (e, _):: _, loc, _)
       when Procname.is_c_method pn ->
-        let receiver = match Errdesc.exp_rv_dexp node e with
+        let receiver = match Errdesc.exp_rv_dexp tenv node e with
           | Some de -> DecompiledExp.to_string de
           | None -> "?" in
         let description =
           Printf.sprintf "['%s' %s]" receiver (Procname.to_string pn) in
-        ST.report_error
+        ST.report_error tenv
           proc_name
           proc_desc
           "CHECKERS_PRINT_OBJC_METHOD_CALLS"
@@ -560,7 +565,7 @@ let callback_print_c_method_calls { Callbacks.proc_desc; proc_name } =
     | Sil.Call (_, Exp.Const (Const.Cfun pn), _, loc, _) ->
         let description =
           Printf.sprintf "call to %s" (Procname.to_string pn) in
-        ST.report_error
+        ST.report_error tenv
           proc_name
           proc_desc
           "CHECKERS_PRINT_C_CALL"
@@ -570,13 +575,13 @@ let callback_print_c_method_calls { Callbacks.proc_desc; proc_name } =
   Cfg.Procdesc.iter_instrs do_instr proc_desc
 
 (** Print access to globals. *)
-let callback_print_access_to_globals { Callbacks.proc_desc; proc_name } =
+let callback_print_access_to_globals { Callbacks.tenv; proc_desc; proc_name } =
   let do_pvar is_read pvar loc =
     let description =
       Printf.sprintf "%s of global %s"
         (if is_read then "read" else "write")
         (Pvar.to_string pvar) in
-    ST.report_error
+    ST.report_error tenv
       proc_name
       proc_desc
       "CHECKERS_ACCESS_GLOBAL"

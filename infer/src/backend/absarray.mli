@@ -13,10 +13,10 @@ open! Utils
 (** Abstraction for Arrays *)
 
 (** Apply array abstraction and check the result *)
-val abstract_array_check : Prop.normal Prop.t -> Prop.normal Prop.t
+val abstract_array_check : Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 
 (** Remember whether array abstraction was performed (to be reset before calling Abs.abstract) *)
 val array_abstraction_performed : bool ref
 
 (** remove redundant elements in an array *)
-val remove_redundant_elements : Prop.normal Prop.t -> Prop.normal Prop.t
+val remove_redundant_elements : Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t

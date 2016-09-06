@@ -175,7 +175,7 @@ let collect_do_abstract_pre pname tenv (pset : Propset.t) : Propset.t =
 
 let collect_do_abstract_post pname tenv (pathset : Paths.PathSet.t) : Paths.PathSet.t =
   let abs_option p =
-    if Prover.check_inconsistency p then None
+    if Prover.check_inconsistency tenv p then None
     else Some (Abs.abstract pname tenv p) in
   if !Config.footprint
   then
@@ -190,13 +190,13 @@ let do_join_pre plist =
 
 let do_join_post pname tenv (pset: Paths.PathSet.t) =
   if Config.spec_abs_level <= 0 then
-    Dom.pathset_collapse pset
+    Dom.pathset_collapse tenv pset
   else
-    Dom.pathset_collapse (Dom.pathset_collapse_impl pname tenv pset)
+    Dom.pathset_collapse tenv (Dom.pathset_collapse_impl pname tenv pset)
 
-let do_meet_pre pset =
+let do_meet_pre tenv pset =
   if Config.meet_level > 0 then
-    Dom.propset_meet_generate_pre pset
+    Dom.propset_meet_generate_pre tenv pset
   else
     Propset.to_proplist pset
 
@@ -215,31 +215,31 @@ let collect_preconditions tenv proc_name : Prop.normal Specs.Jprop.t list =
     IList.map
       (fun spec -> Specs.Jprop.to_prop spec.Specs.pre)
       (Specs.get_specs proc_name) in
-  let pset = Propset.from_proplist pres in
+  let pset = Propset.from_proplist tenv pres in
   let pset' =
-    let f p = Prop.prop_normal_vars_to_primed_vars p in
-    Propset.map f pset in
+    let f p = Prop.prop_normal_vars_to_primed_vars tenv p in
+    Propset.map tenv f pset in
 
   L.d_strln ("#### Extracted footprint of " ^ Procname.to_string proc_name ^ ":  ####");
   L.d_increase_indent 1; Propset.d Prop.prop_emp pset'; L.d_decrease_indent 1; L.d_ln ();
   L.d_ln ();
   let pset'' = collect_do_abstract_pre proc_name tenv pset' in
-  let plist_meet = do_meet_pre pset'' in
+  let plist_meet = do_meet_pre tenv pset'' in
   L.d_strln ("#### Footprint of " ^ Procname.to_string proc_name ^ " after Meet  ####");
   L.d_increase_indent 1; Propgraph.d_proplist Prop.prop_emp plist_meet;
   L.d_decrease_indent 1; L.d_ln ();
   L.d_ln ();
   L.d_increase_indent 2; (* Indent for the join output *)
-  let jplist = do_join_pre plist_meet in
+  let jplist = do_join_pre tenv plist_meet in
   L.d_decrease_indent 2; L.d_ln ();
   L.d_strln ("#### Footprint of " ^ Procname.to_string proc_name ^ " after Join  ####");
   L.d_increase_indent 1; Specs.Jprop.d_list false jplist; L.d_decrease_indent 1; L.d_ln ();
-  let jplist' = IList.map (Specs.Jprop.map Prop.prop_rename_primed_footprint_vars) jplist in
+  let jplist' = IList.map (Specs.Jprop.map (Prop.prop_rename_primed_footprint_vars tenv)) jplist in
   L.d_strln ("#### Renamed footprint of " ^ Procname.to_string proc_name ^ ":  ####");
   L.d_increase_indent 1; Specs.Jprop.d_list false jplist'; L.d_decrease_indent 1; L.d_ln ();
   let jplist'' =
     let f p =
-      Prop.prop_primed_vars_to_normal_vars
+      Prop.prop_primed_vars_to_normal_vars tenv
         (collect_do_abstract_one proc_name tenv p) in
     IList.map (Specs.Jprop.map f) jplist' in
   L.d_strln ("#### Abstracted footprint of " ^ Procname.to_string proc_name ^ ":  ####");
@@ -282,7 +282,7 @@ let propagate_nodes_divergence
         let mk_incons prop =
           let p_abs = Abs.abstract pname tenv prop in
           let p_zero = Prop.set p_abs ~sub:Sil.sub_empty ~sigma:[] in
-          Prop.normalize (Prop.set p_zero ~pi:[Sil.Aneq (Exp.zero, Exp.zero)]) in
+          Prop.normalize tenv (Prop.set p_zero ~pi:[Sil.Aneq (Exp.zero, Exp.zero)]) in
         Paths.PathSet.map mk_incons diverging_states in
       (L.d_strln_color Orange) "Propagating Divergence -- diverging states:";
       Propgraph.d_proplist Prop.prop_emp (Paths.PathSet.to_proplist prop_incons); L.d_ln ();
@@ -480,7 +480,7 @@ let do_symbolic_execution handle_exn tenv
   Ident.update_name_generator (instrs_get_normal_vars instrs);
   let pset = SymExec.node handle_exn tenv node (Paths.PathSet.from_renamed_list [(prop, path)]) in
   L.d_strln ".... After Symbolic Execution ....";
-  Propset.d prop (Paths.PathSet.to_propset pset);
+  Propset.d prop (Paths.PathSet.to_propset tenv pset);
   L.d_ln (); L.d_ln();
   State.mark_execution_end node;
   pset
@@ -553,7 +553,7 @@ let forward_tabulate tenv wl =
             (fun prop_acc (param, taint_kind) ->
                let attr =
                  PredSymb.Ataint { taint_source = proc_name; taint_kind; } in
-               Taint.add_tainting_attribute attr param prop_acc)
+               Taint.add_tainting_attribute tenv attr param prop_acc)
             prop in
     let doit () =
       handled_some_exception := false;
@@ -564,7 +564,7 @@ let forward_tabulate tenv wl =
                  "Session: " ^ string_of_int session ^ ", " ^
                  "Todo: " ^ string_of_int (Paths.PathSet.size pathset_todo) ^ " ****");
       L.d_increase_indent 1;
-      Propset.d Prop.prop_emp (Paths.PathSet.to_propset pathset_todo);
+      Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv pathset_todo);
       L.d_strln ".... Instructions: .... ";
       Cfg.Node.d_instrs ~sub_instrs: true (State.get_instr ()) curr_node;
       L.d_ln (); L.d_ln ();
@@ -695,12 +695,12 @@ let report_context_leaks pname sigma tenv =
 
 (** Remove locals and formals,
     and check if the address of a stack variable is left in the result *)
-let remove_locals_formals_and_check pdesc p =
+let remove_locals_formals_and_check tenv pdesc p =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
-  let pvars, p' = Cfg.remove_locals_formals pdesc p in
+  let pvars, p' = Cfg.remove_locals_formals tenv pdesc p in
   let check_pvar pvar =
     let loc = Cfg.Node.get_loc (Cfg.Procdesc.get_exit_node pdesc) in
-    let dexp_opt, _ = Errdesc.vpath_find p (Exp.Lvar pvar) in
+    let dexp_opt, _ = Errdesc.vpath_find tenv p (Exp.Lvar pvar) in
     let desc = Errdesc.explain_stack_variable_address_escape loc pvar dexp_opt in
     let exn = Exceptions.Stack_variable_address_escape (desc, __POS__) in
     Reporting.log_warning pname exn in
@@ -708,11 +708,11 @@ let remove_locals_formals_and_check pdesc p =
   p'
 
 (** Collect the analysis results for the exit node. *)
-let collect_analysis_result wl pdesc : Paths.PathSet.t =
+let collect_analysis_result tenv wl pdesc : Paths.PathSet.t =
   let exit_node = Cfg.Procdesc.get_exit_node pdesc in
   let exit_node_id = Cfg.Node.get_id exit_node in
   let pathset = htable_retrieve wl.Worklist.path_set_visited exit_node_id in
-  Paths.PathSet.map (remove_locals_formals_and_check pdesc) pathset
+  Paths.PathSet.map (remove_locals_formals_and_check tenv pdesc) pathset
 
 module Pmap = Map.Make
     (struct
@@ -757,16 +757,16 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
   let pre_post_visited_list =
     let pplist = Paths.PathSet.elements pathset in
     let f (prop, path) =
-      let _, prop' = Cfg.remove_locals_formals pdesc prop in
+      let _, prop' = Cfg.remove_locals_formals tenv pdesc prop in
       let prop'' = Abs.abstract pname tenv prop' in
       let pre, post = Prop.extract_spec prop'' in
-      let pre' = Prop.normalize (Prop.prop_sub sub pre) in
+      let pre' = Prop.normalize tenv (Prop.prop_sub sub pre) in
       if !Config.curr_language =
          Config.Java && Cfg.Procdesc.get_access pdesc <> PredSymb.Private then
         report_context_leaks pname post.Prop.sigma tenv;
       let post' =
-        if Prover.check_inconsistency_base prop then None
-        else Some (Prop.normalize (Prop.prop_sub sub post), path) in
+        if Prover.check_inconsistency_base tenv prop then None
+        else Some (Prop.normalize tenv (Prop.prop_sub sub post), path) in
       let visited =
         let vset_ref = ref Cfg.NodeSet.empty in
         vset_ref_add_path vset_ref path;
@@ -789,7 +789,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
   let add_spec pre ((posts : Paths.PathSet.t), visited) =
     let posts' =
       IList.map
-        (fun (p, path) -> (Cfg.remove_seed_vars p, path))
+        (fun (p, path) -> (Cfg.remove_seed_vars tenv p, path))
         (Paths.PathSet.elements (do_join_post pname tenv posts)) in
     let spec =
       { Specs.pre = Specs.Jprop.Prop (1, pre);
@@ -801,23 +801,23 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
 
 let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
-  let pathset = collect_analysis_result wl pdesc in
+  let pathset = collect_analysis_result tenv wl pdesc in
 
   (* Assuming C++ developers use RAII, remove resources from the constructor posts *)
   let pathset = match pname with
     | Procname.ObjC_Cpp _ ->
         if (Procname.is_constructor pname) then
           Paths.PathSet.map (fun prop ->
-              Attribute.remove_resource Racquire (Rmemory Mobjc)
-                (Attribute.remove_resource Racquire (Rmemory Mmalloc)
-                   (Attribute.remove_resource Racquire Rfile prop))
+              Attribute.remove_resource tenv Racquire (Rmemory Mobjc)
+                (Attribute.remove_resource tenv Racquire (Rmemory Mmalloc)
+                   (Attribute.remove_resource tenv Racquire Rfile prop))
             ) pathset
         else pathset
     | _ -> pathset in
 
   L.d_strln
     ("#### [FUNCTION " ^ Procname.to_string pname ^ "] Analysis result ####");
-  Propset.d Prop.prop_emp (Paths.PathSet.to_propset pathset);
+  Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv pathset);
   L.d_ln ();
   let res =
     try
@@ -835,7 +835,7 @@ let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t 
   L.d_strln
     ("#### [FUNCTION " ^ Procname.to_string pname ^ "] Postconditions after join ####");
   L.d_increase_indent 1;
-  Propset.d Prop.prop_emp (Paths.PathSet.to_propset (fst res));
+  Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv (fst res));
   L.d_decrease_indent 1;
   L.d_ln ();
   res
@@ -857,7 +857,7 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
       let texp = match !Config.curr_language with
         | Config.Clang -> Exp.Sizeof (typ, None, Subtype.exact)
         | Config.Java -> Exp.Sizeof (typ, None, Subtype.subtypes) in
-      Prop.mk_ptsto_lvar (Some tenv) Prop.Fld_init Sil.inst_formal (pv, texp, None) in
+      Prop.mk_ptsto_lvar tenv Prop.Fld_init Sil.inst_formal (pv, texp, None) in
     IList.map do_formal new_formals in
   let sigma_seed =
     create_seed_vars
@@ -887,7 +887,7 @@ let initial_prop
       prop in
   let prop2 =
     prop_init_formals_seed tenv new_formals prop1 in
-  Prop.prop_rename_primed_footprint_vars (Prop.normalize prop2)
+  Prop.prop_rename_primed_footprint_vars tenv (Prop.normalize tenv prop2)
 
 (** Construct an initial prop from the empty prop *)
 let initial_prop_from_emp tenv curr_f =
@@ -939,11 +939,11 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
       let pset, visited = collect_postconditions wl tenv pdesc in
       let plist =
         IList.map
-          (fun (p, path) -> (Cfg.remove_seed_vars p, path))
+          (fun (p, path) -> (Cfg.remove_seed_vars tenv p, path))
           (Paths.PathSet.elements pset) in
       plist, visited in
     let pre =
-      let p = Cfg.remove_locals_ret pdesc (Specs.Jprop.to_prop precondition) in
+      let p = Cfg.remove_locals_ret tenv pdesc (Specs.Jprop.to_prop precondition) in
       match precondition with
       | Specs.Jprop.Prop (n, _) -> Specs.Jprop.Prop (n, p)
       | Specs.Jprop.Joined (n, _, jp1, jp2) -> Specs.Jprop.Joined (n, p, jp1, jp2) in
@@ -1010,7 +1010,7 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t)
         let mk_init precondition =
           initial_prop_from_pre tenv pdesc (Specs.Jprop.to_prop precondition) in
         IList.map (fun spec -> mk_init spec.Specs.pre) specs in
-      let init_props = Propset.from_proplist (init_prop :: init_props_from_pres) in
+      let init_props = Propset.from_proplist tenv (init_prop :: init_props_from_pres) in
       let init_edgeset =
         let add pset prop =
           Paths.PathSet.add_renamed_prop prop (Paths.Path.start start_node) pset in
@@ -1030,7 +1030,7 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t)
       forward_tabulate tenv wl in
     let get_results (wl : Worklist.t) () =
       State.process_execution_failures Reporting.log_warning pname;
-      let results = collect_analysis_result wl pdesc in
+      let results = collect_analysis_result tenv wl pdesc in
       L.out "#### [FUNCTION %a] ... OK #####@\n" Procname.pp pname;
       L.out "#### Finished: Footprint Computation for %a %a ####@."
         Procname.pp pname
@@ -1143,7 +1143,7 @@ let custom_error_preconditions summary =
 
 
 (* Remove the constrain of the form this != null which is true for all Java virtual calls *)
-let remove_this_not_null prop =
+let remove_this_not_null tenv prop =
   let collect_hpred (var_option, hpreds) = function
     | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (Exp.Var var, _), _)
       when !Config.curr_language = Config.Java && Pvar.is_this pvar ->
@@ -1159,14 +1159,14 @@ let remove_this_not_null prop =
       let filtered_atoms =
         IList.fold_left (collect_atom var) [] prop.Prop.pi in
       let prop' = Prop.set Prop.prop_emp ~pi:filtered_atoms ~sigma:filtered_hpreds in
-      Prop.normalize prop'
+      Prop.normalize tenv prop'
 
 
 (** Is true when the precondition does not contain constrains that can be false at call site.
     This means that the post-conditions associated with this precondition cannot be prevented
     by the calling context. *)
-let is_unavoidable pre =
-  let prop = remove_this_not_null (Specs.Jprop.to_prop pre) in
+let is_unavoidable tenv pre =
+  let prop = remove_this_not_null tenv (Specs.Jprop.to_prop pre) in
   match Prop.CategorizePreconditions.categorize [prop] with
   | Prop.CategorizePreconditions.NoPres
   | Prop.CategorizePreconditions.Empty -> true
@@ -1197,7 +1197,7 @@ let report_runtime_exceptions tenv pdesc summary =
   let (exn_preconditions, all_post_exn) =
     exception_preconditions tenv pname summary in
   let should_report pre =
-    all_post_exn || is_main || is_annotated || is_unavoidable pre in
+    all_post_exn || is_main || is_annotated || is_unavoidable tenv pre in
   let report (pre, runtime_exception) =
     if should_report pre then
       let pre_str =
@@ -1208,12 +1208,12 @@ let report_runtime_exceptions tenv pdesc summary =
   IList.iter report exn_preconditions
 
 
-let report_custom_errors summary =
+let report_custom_errors tenv summary =
   let pname = Specs.get_proc_name summary in
   let error_preconditions, all_post_error =
     custom_error_preconditions summary in
   let report (pre, custom_error) =
-    if all_post_error || is_unavoidable pre then
+    if all_post_error || is_unavoidable tenv pre then
       let loc = summary.Specs.attributes.ProcAttributes.loc in
       let err_desc = Localise.desc_custom_error loc in
       let exn = Exceptions.Custom_error (custom_error, err_desc) in
@@ -1226,7 +1226,7 @@ module SpecMap = Map.Make (struct
   end)
 
 (** Update the specs of the current proc after the execution of one phase *)
-let update_specs proc_name phase (new_specs : Specs.NormSpec.t list)
+let update_specs tenv proc_name phase (new_specs : Specs.NormSpec.t list)
   : Specs.NormSpec.t list * bool =
   let new_specs = Specs.normalized_specs_to_specs new_specs in
   let old_specs = Specs.get_specs proc_name in
@@ -1262,7 +1262,7 @@ let update_specs proc_name phase (new_specs : Specs.NormSpec.t list)
         changed := true;
         L.out "Specs changed: added new post@\n%a@."
           (Propset.pp pe_text (Specs.Jprop.to_prop spec.Specs.pre))
-          (Paths.PathSet.to_propset new_post);
+          (Paths.PathSet.to_propset tenv new_post);
         current_specs :=
           SpecMap.add spec.Specs.pre (new_post, new_visited)
             (SpecMap.remove spec.Specs.pre !current_specs) end
@@ -1279,7 +1279,7 @@ let update_specs proc_name phase (new_specs : Specs.NormSpec.t list)
   let res = ref [] in
   let convert pre (post_set, visited) =
     res :=
-      Specs.spec_normalize
+      Specs.spec_normalize tenv
         { Specs.pre = pre;
           Specs.posts = Paths.PathSet.elements post_set;
           Specs.visited = visited }:: !res in
@@ -1289,9 +1289,9 @@ let update_specs proc_name phase (new_specs : Specs.NormSpec.t list)
   !res,!changed
 
 (** update a summary after analysing a procedure *)
-let update_summary prev_summary specs phase proc_name elapsed res =
-  let normal_specs = IList.map Specs.spec_normalize specs in
-  let new_specs, changed = update_specs proc_name phase normal_specs in
+let update_summary tenv prev_summary specs phase proc_name elapsed res =
+  let normal_specs = IList.map (Specs.spec_normalize tenv) specs in
+  let new_specs, changed = update_specs tenv proc_name phase normal_specs in
   let timestamp = max 1 (prev_summary.Specs.timestamp + if changed then 1 else 0) in
   let stats_time = prev_summary.Specs.stats.Specs.stats_time +. elapsed in
   let symops = prev_summary.Specs.stats.Specs.symops + SymOp.get_total () in
@@ -1328,15 +1328,15 @@ let analyze_proc exe_env proc_desc : Specs.summary =
   let elapsed = Unix.gettimeofday () -. init_time in
   let prev_summary = Specs.get_summary_unsafe "analyze_proc" proc_name in
   let updated_summary =
-    update_summary prev_summary specs phase proc_name elapsed res in
+    update_summary tenv prev_summary specs phase proc_name elapsed res in
   if !Config.curr_language == Config.Clang && Config.report_custom_error then
-    report_custom_errors updated_summary;
+    report_custom_errors tenv updated_summary;
   if !Config.curr_language == Config.Java && Config.report_runtime_exceptions then
     report_runtime_exceptions tenv proc_desc updated_summary;
   updated_summary
 
 (** Perform the transition from [FOOTPRINT] to [RE_EXECUTION] in spec table *)
-let transition_footprint_re_exe proc_name joined_pres =
+let transition_footprint_re_exe tenv proc_name joined_pres =
   L.out "Transition %a from footprint to re-exe@." Procname.pp proc_name;
   let summary = Specs.get_summary_unsafe "transition_footprint_re_exe" proc_name in
   let summary' =
@@ -1348,7 +1348,7 @@ let transition_footprint_re_exe proc_name joined_pres =
       let specs =
         IList.map
           (fun jp ->
-             Specs.spec_normalize
+             Specs.spec_normalize tenv
                { Specs.pre = jp;
                  posts = [];
                  visited = Specs.Visitedset.empty })
@@ -1397,7 +1397,7 @@ let perform_transition exe_env tenv proc_name =
         let err_str = "exception raised " ^ (Localise.to_string err_name) in
         L.err "Error: %s %a@." err_str L.pp_ml_loc_opt ml_loc_opt;
         [] in
-    transition_footprint_re_exe proc_name joined_pres in
+    transition_footprint_re_exe tenv proc_name joined_pres in
   if Specs.get_phase proc_name == Specs.FOOTPRINT
   then transition ()
 
@@ -1428,7 +1428,8 @@ let interprocedural_algorithm exe_env : unit =
   let process_one_proc proc_name =
     match to_analyze proc_name with
     | Some pdesc ->
-        Ondemand.analyze_proc_name ~propagate_exceptions:false pdesc proc_name
+        let tenv = Exe_env.get_tenv ~create:true exe_env proc_name in
+        Ondemand.analyze_proc_name tenv ~propagate_exceptions:false pdesc proc_name
     | None ->
         () in
   IList.iter process_one_proc procs_to_analyze

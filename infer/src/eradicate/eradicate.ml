@@ -102,7 +102,7 @@ struct
           (fun f -> f curr_pname curr_pdesc ret_type typ_found_opt loc)
           checks.TypeCheck.check_ret_type;
       if checks.TypeCheck.eradicate then
-        EradicateChecks.check_return_annotation
+        EradicateChecks.check_return_annotation tenv
           find_canonical_duplicate curr_pname exit_node ret_range
           ret_ia ret_implicitly_nullable loc in
 
@@ -119,7 +119,7 @@ struct
     let module DFTypeCheck = MakeDF(struct
         type t = Extension.extension TypeState.t
         let equal = TypeState.equal
-        let join = TypeState.join Extension.ext
+        let join = TypeState.join tenv Extension.ext
         let do_node tenv node typestate =
           State.set_node node;
           let typestates_succ, typestates_exn =
@@ -305,7 +305,7 @@ struct
            check_field_initialization &&
            checks.TypeCheck.eradicate
         then begin
-          EradicateChecks.check_constructor_initialization
+          EradicateChecks.check_constructor_initialization tenv
             find_canonical_duplicate
             curr_pname
             curr_pdesc
@@ -332,7 +332,7 @@ struct
         tenv curr_pname curr_pdesc
         annotated_signature;
 
-    TypeErr.report_forall_checks_and_reset Checkers.ST.report_error curr_pname;
+    TypeErr.report_forall_checks_and_reset tenv (Checkers.ST.report_error tenv) curr_pname;
     update_summary curr_pname curr_pdesc final_typestate_opt
 
   (** Entry point for the eradicate-based checker infrastructure. *)

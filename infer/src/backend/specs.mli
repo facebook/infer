@@ -263,13 +263,13 @@ val re_initialize_dependency_map : dependency_map_t -> dependency_map_t
 val set_status : Procname.t -> status -> unit
 
 (** Convert spec into normal form w.r.t. variable renaming *)
-val spec_normalize : Prop.normal spec -> NormSpec.t
+val spec_normalize : Tenv.t -> Prop.normal spec -> NormSpec.t
 
 (** path to the .specs file for the given procedure in the current results dir *)
 val res_dir_specs_filename : Procname.t -> DB.filename
 
 (** Save summary for the procedure into the spec database *)
-val store_summary : Procname.t -> summary -> unit
+val store_summary : Tenv.t -> Procname.t -> summary -> unit
 
 (** Return a compact representation of the summary *)
 val summary_compact : Sil.sharing_env -> summary -> summary

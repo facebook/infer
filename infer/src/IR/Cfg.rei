@@ -300,20 +300,21 @@ let set_procname_priority: cfg => Procname.t => unit;
 
 
 /** remove the return variable from the prop */
-let remove_ret: Procdesc.t => Prop.t Prop.normal => Prop.t Prop.normal;
+let remove_ret: Tenv.t => Procdesc.t => Prop.t Prop.normal => Prop.t Prop.normal;
 
 
 /** remove locals and return variable from the prop */
-let remove_locals_ret: Procdesc.t => Prop.t Prop.normal => Prop.t Prop.normal;
+let remove_locals_ret: Tenv.t => Procdesc.t => Prop.t Prop.normal => Prop.t Prop.normal;
 
 
 /** Deallocate the stack variables in [pvars], and replace them by normal variables.
     Return the list of stack variables whose address was still present after deallocation. */
-let remove_locals_formals: Procdesc.t => Prop.t Prop.normal => (list Pvar.t, Prop.t Prop.normal);
+let remove_locals_formals:
+  Tenv.t => Procdesc.t => Prop.t Prop.normal => (list Pvar.t, Prop.t Prop.normal);
 
 
 /** remove seed vars from a prop */
-let remove_seed_vars: Prop.t 'a => Prop.t Prop.normal;
+let remove_seed_vars: Tenv.t => Prop.t 'a => Prop.t Prop.normal;
 
 
 /** checks whether a cfg is connected or not */
@@ -321,7 +322,8 @@ let check_cfg_connectedness: cfg => unit;
 
 
 /** Removes seeds variables from a prop corresponding to captured variables in an objc block */
-let remove_seed_captured_vars_block: list Mangled.t => Prop.t Prop.normal => Prop.t Prop.normal;
+let remove_seed_captured_vars_block:
+  Tenv.t => list Mangled.t => Prop.t Prop.normal => Prop.t Prop.normal;
 
 
 /** Creates a copy of a procedure description and a list of type substitutions of the form

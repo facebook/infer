@@ -25,17 +25,17 @@ type rule =
     r_new_pi: Prop.normal Prop.t -> Prop.normal Prop.t -> Sil.subst -> Sil.atom list;
     r_condition: Prop.normal Prop.t -> Sil.subst -> bool }
 
-let sigma_rewrite p r : Prop.normal Prop.t option =
-  match (Match.prop_match_with_impl p r.r_condition r.r_vars r.r_root r.r_sigma) with
+let sigma_rewrite tenv p r : Prop.normal Prop.t option =
+  match (Match.prop_match_with_impl tenv p r.r_condition r.r_vars r.r_root r.r_sigma) with
   | None -> None
   | Some(sub, p_leftover) ->
       if not (r.r_condition p_leftover sub) then None
       else
         let res_pi = r.r_new_pi p p_leftover sub in
         let res_sigma = Prop.sigma_sub sub r.r_new_sigma in
-        let p_with_res_pi = IList.fold_left Prop.prop_atom_and p_leftover res_pi in
+        let p_with_res_pi = IList.fold_left (Prop.prop_atom_and tenv) p_leftover res_pi in
         let p_new = Prop.prop_sigma_star p_with_res_pi res_sigma in
-        Some (Prop.normalize p_new)
+        Some (Prop.normalize tenv p_new)
 
 let sigma_fav_list sigma =
   Sil.fav_to_list (Prop.sigma_fav sigma)
@@ -91,7 +91,7 @@ let create_condition_ls ids_private id_base p_leftover (inst: Sil.subst) =
   (not (IList.intersect Ident.compare fav_insts_of_private_ids fav_p_leftover)) &&
   (not (IList.intersect Ident.compare fav_insts_of_private_ids fav_insts_of_public_ids))
 
-let mk_rule_ptspts_ls impl_ok1 impl_ok2 (para: Sil.hpara) =
+let mk_rule_ptspts_ls tenv impl_ok1 impl_ok2 (para: Sil.hpara) =
   let (ids_tuple, exps_tuple) = create_fresh_primeds_ls para in
   let (id_base, id_next, id_end, ids_shared) = ids_tuple in
   let (exp_base, exp_next, exp_end, exps_shared) = exps_tuple in
@@ -109,7 +109,7 @@ let mk_rule_ptspts_ls impl_ok1 impl_ok2 (para: Sil.hpara) =
     let (ids, para_body) = Sil.hpara_instantiate para exp_next exp_end exps_shared in
     let para_body_hpats = IList.map mark_impl_flag para_body in
     (ids, para_body_hpats) in
-  let lseg_res = Prop.mk_lseg Sil.Lseg_NE para exp_base exp_end exps_shared in
+  let lseg_res = Prop.mk_lseg tenv Sil.Lseg_NE para exp_base exp_end exps_shared in
   let gen_pi_res _ _ (_: Sil.subst) = [] in
   let condition =
     let ids_private = id_next :: (ids_exist_fst @ ids_exist_snd) in
@@ -121,7 +121,7 @@ let mk_rule_ptspts_ls impl_ok1 impl_ok2 (para: Sil.hpara) =
     r_new_pi = gen_pi_res;
     r_condition = condition }
 
-let mk_rule_ptsls_ls k2 impl_ok1 impl_ok2 para =
+let mk_rule_ptsls_ls tenv k2 impl_ok1 impl_ok2 para =
   let (ids_tuple, exps_tuple) = create_fresh_primeds_ls para in
   let (id_base, id_next, id_end, ids_shared) = ids_tuple in
   let (exp_base, exp_next, exp_end, exps_shared) = exps_tuple in
@@ -132,8 +132,8 @@ let mk_rule_ptsls_ls k2 impl_ok1 impl_ok2 para =
     | hpred :: hpreds ->
         let allow_impl hpred = { Match.hpred = hpred; Match.flag = impl_ok1 } in
         (allow_impl hpred, IList.map allow_impl hpreds) in
-  let lseg_pat = { Match.hpred = Prop.mk_lseg k2 para exp_next exp_end exps_shared; Match.flag = impl_ok2 } in
-  let lseg_res = Prop.mk_lseg Sil.Lseg_NE para exp_base exp_end exps_shared in
+  let lseg_pat = { Match.hpred = Prop.mk_lseg tenv k2 para exp_next exp_end exps_shared; Match.flag = impl_ok2 } in
+  let lseg_res = Prop.mk_lseg tenv Sil.Lseg_NE para exp_base exp_end exps_shared in
   let gen_pi_res _ _ (_: Sil.subst) = [] in
   let condition =
     let ids_private = id_next :: ids_exist in
@@ -145,17 +145,17 @@ let mk_rule_ptsls_ls k2 impl_ok1 impl_ok2 para =
     r_new_sigma = [lseg_res];
     r_condition = condition }
 
-let mk_rule_lspts_ls k1 impl_ok1 impl_ok2 para =
+let mk_rule_lspts_ls tenv k1 impl_ok1 impl_ok2 para =
   let (ids_tuple, exps_tuple) = create_fresh_primeds_ls para in
   let (id_base, id_next, id_end, ids_shared) = ids_tuple in
   let (exp_base, exp_next, exp_end, exps_shared) = exps_tuple in
-  let lseg_pat = { Match.hpred = Prop.mk_lseg k1 para exp_base exp_next exps_shared; Match.flag = impl_ok1 } in
+  let lseg_pat = { Match.hpred = Prop.mk_lseg tenv k1 para exp_base exp_next exps_shared; Match.flag = impl_ok1 } in
   let (ids_exist, para_inst_pat) =
     let (ids, para_body) = Sil.hpara_instantiate para exp_next exp_end exps_shared in
     let allow_impl hpred = { Match.hpred = hpred; Match.flag = impl_ok2 } in
     let para_body_pat = IList.map allow_impl para_body in
     (ids, para_body_pat) in
-  let lseg_res = Prop.mk_lseg Sil.Lseg_NE para exp_base exp_end exps_shared in
+  let lseg_res = Prop.mk_lseg tenv Sil.Lseg_NE para exp_base exp_end exps_shared in
   let gen_pi_res _ _ (_: Sil.subst) = [] in
   let condition =
     let ids_private = id_next :: ids_exist in
@@ -171,16 +171,16 @@ let lseg_kind_add k1 k2 = match k1, k2 with
   | Sil.Lseg_NE, Sil.Lseg_NE | Sil.Lseg_NE, Sil.Lseg_PE | Sil.Lseg_PE, Sil.Lseg_NE -> Sil.Lseg_NE
   | Sil.Lseg_PE, Sil.Lseg_PE -> Sil.Lseg_PE
 
-let mk_rule_lsls_ls k1 k2 impl_ok1 impl_ok2 para =
+let mk_rule_lsls_ls tenv k1 k2 impl_ok1 impl_ok2 para =
   let (ids_tuple, exps_tuple) = create_fresh_primeds_ls para in
   let (id_base, id_next, id_end, ids_shared) = ids_tuple in
   let (exp_base, exp_next, exp_end, exps_shared) = exps_tuple in
   let lseg_fst_pat =
-    { Match.hpred = Prop.mk_lseg k1 para exp_base exp_next exps_shared; Match.flag = impl_ok1 } in
+    { Match.hpred = Prop.mk_lseg tenv k1 para exp_base exp_next exps_shared; Match.flag = impl_ok1 } in
   let lseg_snd_pat =
-    { Match.hpred = Prop.mk_lseg k2 para exp_next exp_end exps_shared; Match.flag = impl_ok2 } in
+    { Match.hpred = Prop.mk_lseg tenv k2 para exp_next exp_end exps_shared; Match.flag = impl_ok2 } in
   let k_res = lseg_kind_add k1 k2 in
-  let lseg_res = Prop.mk_lseg k_res para exp_base exp_end exps_shared in
+  let lseg_res = Prop.mk_lseg tenv k_res para exp_base exp_end exps_shared in
   let gen_pi_res _ _ (_: Sil.subst) = []
   (*
   let inst_base, inst_next, inst_end =
@@ -210,23 +210,23 @@ let mk_rule_lsls_ls k1 k2 impl_ok1 impl_ok2 para =
     r_new_pi = gen_pi_res;
     r_condition = condition }
 
-let mk_rules_for_sll (para : Sil.hpara) : rule list =
+let mk_rules_for_sll tenv (para : Sil.hpara) : rule list =
   if not Config.nelseg then
     begin
-      let pts_pts = mk_rule_ptspts_ls true true para in
-      let pts_pels = mk_rule_ptsls_ls Sil.Lseg_PE true false para in
-      let pels_pts = mk_rule_lspts_ls Sil.Lseg_PE false true para in
-      let pels_nels = mk_rule_lsls_ls Sil.Lseg_PE Sil.Lseg_NE false false para in
-      let nels_pels = mk_rule_lsls_ls Sil.Lseg_NE Sil.Lseg_PE false false para in
-      let pels_pels = mk_rule_lsls_ls Sil.Lseg_PE Sil.Lseg_PE false false para in
+      let pts_pts = mk_rule_ptspts_ls tenv true true para in
+      let pts_pels = mk_rule_ptsls_ls tenv Sil.Lseg_PE true false para in
+      let pels_pts = mk_rule_lspts_ls tenv Sil.Lseg_PE false true para in
+      let pels_nels = mk_rule_lsls_ls tenv Sil.Lseg_PE Sil.Lseg_NE false false para in
+      let nels_pels = mk_rule_lsls_ls tenv Sil.Lseg_NE Sil.Lseg_PE false false para in
+      let pels_pels = mk_rule_lsls_ls tenv Sil.Lseg_PE Sil.Lseg_PE false false para in
       [pts_pts; pts_pels; pels_pts; pels_nels; nels_pels; pels_pels]
     end
   else
     begin
-      let pts_pts = mk_rule_ptspts_ls true true para in
-      let pts_nels = mk_rule_ptsls_ls Sil.Lseg_NE true false para in
-      let nels_pts = mk_rule_lspts_ls Sil.Lseg_NE false true para in
-      let nels_nels = mk_rule_lsls_ls Sil.Lseg_NE Sil.Lseg_NE false false para in
+      let pts_pts = mk_rule_ptspts_ls tenv true true para in
+      let pts_nels = mk_rule_ptsls_ls tenv Sil.Lseg_NE true false para in
+      let nels_pts = mk_rule_lspts_ls tenv Sil.Lseg_NE false true para in
+      let nels_nels = mk_rule_lsls_ls tenv Sil.Lseg_NE Sil.Lseg_NE false false para in
       [pts_pts; pts_nels; nels_pts; nels_nels]
     end
 (******************  End of SLL abstraction rules ******************)
@@ -234,7 +234,7 @@ let mk_rules_for_sll (para : Sil.hpara) : rule list =
 (******************  Start of DLL abstraction rules  ******************)
 let create_condition_dll = create_condition_ls
 
-let mk_rule_ptspts_dll impl_ok1 impl_ok2 para =
+let mk_rule_ptspts_dll tenv impl_ok1 impl_ok2 para =
   let id_iF = Ident.create_fresh Ident.kprimed in
   let id_iF' = Ident.create_fresh Ident.kprimed in
   let id_oB = Ident.create_fresh Ident.kprimed in
@@ -262,7 +262,7 @@ let mk_rule_ptspts_dll impl_ok1 impl_ok2 para =
     let (ids, para_body) = Sil.hpara_dll_instantiate para exp_iF' exp_iF exp_oF exps_shared in
     let para_body_hpats = IList.map mark_impl_flag para_body in
     (ids, para_body_hpats) in
-  let dllseg_res = Prop.mk_dllseg Sil.Lseg_NE para exp_iF exp_oB exp_oF exp_iF' exps_shared in
+  let dllseg_res = Prop.mk_dllseg tenv Sil.Lseg_NE para exp_iF exp_oB exp_oF exp_iF' exps_shared in
   let gen_pi_res _ _ (_: Sil.subst) = [] in
   let condition =
     (* for the case of ptspts since iF'=iB therefore iF' cannot be private*)
@@ -281,7 +281,7 @@ let mk_rule_ptspts_dll impl_ok1 impl_ok2 para =
     r_new_pi = gen_pi_res;
     r_condition = condition }
 
-let mk_rule_ptsdll_dll k2 impl_ok1 impl_ok2 para =
+let mk_rule_ptsdll_dll tenv k2 impl_ok1 impl_ok2 para =
   let id_iF = Ident.create_fresh Ident.kprimed in
   let id_iF' = Ident.create_fresh Ident.kprimed in
   let id_oB = Ident.create_fresh Ident.kprimed in
@@ -304,8 +304,8 @@ let mk_rule_ptsdll_dll k2 impl_ok1 impl_ok2 para =
     | hpred :: hpreds ->
         let allow_impl hpred = { Match.hpred = hpred; Match.flag = impl_ok1 } in
         (allow_impl hpred, IList.map allow_impl hpreds) in
-  let dllseg_pat = { Match.hpred = Prop.mk_dllseg k2 para exp_iF' exp_iF exp_oF exp_iB exps_shared; Match.flag = impl_ok2 } in
-  let dllseg_res = Prop.mk_dllseg Sil.Lseg_NE para exp_iF exp_oB exp_oF exp_iB exps_shared in
+  let dllseg_pat = { Match.hpred = Prop.mk_dllseg tenv k2 para exp_iF' exp_iF exp_oF exp_iB exps_shared; Match.flag = impl_ok2 } in
+  let dllseg_res = Prop.mk_dllseg tenv Sil.Lseg_NE para exp_iF exp_oB exp_oF exp_iB exps_shared in
   let gen_pi_res _ _ (_: Sil.subst) = [] in
   let condition =
     let ids_private = id_iF':: ids_exist in
@@ -317,7 +317,7 @@ let mk_rule_ptsdll_dll k2 impl_ok1 impl_ok2 para =
     r_new_sigma = [dllseg_res];
     r_condition = condition }
 
-let mk_rule_dllpts_dll k1 impl_ok1 impl_ok2 para =
+let mk_rule_dllpts_dll tenv k1 impl_ok1 impl_ok2 para =
   let id_iF = Ident.create_fresh Ident.kprimed in
   let id_iF' = Ident.create_fresh Ident.kprimed in
   let id_oB = Ident.create_fresh Ident.kprimed in
@@ -337,8 +337,8 @@ let mk_rule_dllpts_dll k1 impl_ok1 impl_ok2 para =
   let para_inst_pat =
     let allow_impl hpred = { Match.hpred = hpred; Match.flag = impl_ok2 } in
     IList.map allow_impl para_inst in
-  let dllseg_pat = { Match.hpred = Prop.mk_dllseg k1 para exp_iF exp_oB exp_iF' exp_oB' exps_shared; Match.flag = impl_ok1 } in
-  let dllseg_res = Prop.mk_dllseg Sil.Lseg_NE para exp_iF exp_oB exp_oF exp_iF' exps_shared in
+  let dllseg_pat = { Match.hpred = Prop.mk_dllseg tenv k1 para exp_iF exp_oB exp_iF' exp_oB' exps_shared; Match.flag = impl_ok1 } in
+  let dllseg_res = Prop.mk_dllseg tenv Sil.Lseg_NE para exp_iF exp_oB exp_oF exp_iF' exps_shared in
   let gen_pi_res _ _ (_: Sil.subst) = [] in
   let condition =
     let ids_private = id_oB':: ids_exist in
@@ -350,7 +350,7 @@ let mk_rule_dllpts_dll k1 impl_ok1 impl_ok2 para =
     r_new_sigma = [dllseg_res];
     r_condition = condition }
 
-let mk_rule_dlldll_dll k1 k2 impl_ok1 impl_ok2 para =
+let mk_rule_dlldll_dll tenv k1 k2 impl_ok1 impl_ok2 para =
   let id_iF = Ident.create_fresh Ident.kprimed in
   let id_iF' = Ident.create_fresh Ident.kprimed in
   let id_oB = Ident.create_fresh Ident.kprimed in
@@ -368,10 +368,10 @@ let mk_rule_dlldll_dll k1 k2 impl_ok1 impl_ok2 para =
   let exp_oF = Exp.Var id_oF in
   let exp_iB = Exp.Var id_iB in
   let exps_shared = IList.map (fun id -> Exp.Var id) ids_shared in
-  let lseg_fst_pat = { Match.hpred = Prop.mk_dllseg k1 para exp_iF exp_oB exp_iF' exp_oB' exps_shared; Match.flag = impl_ok1 } in
-  let lseg_snd_pat = { Match.hpred = Prop.mk_dllseg k2 para exp_iF' exp_oB' exp_oF exp_iB exps_shared; Match.flag = impl_ok2 } in
+  let lseg_fst_pat = { Match.hpred = Prop.mk_dllseg tenv k1 para exp_iF exp_oB exp_iF' exp_oB' exps_shared; Match.flag = impl_ok1 } in
+  let lseg_snd_pat = { Match.hpred = Prop.mk_dllseg tenv k2 para exp_iF' exp_oB' exp_oF exp_iB exps_shared; Match.flag = impl_ok2 } in
   let k_res = lseg_kind_add k1 k2 in
-  let lseg_res = Prop.mk_dllseg k_res para exp_iF exp_oB exp_oF exp_iB exps_shared in
+  let lseg_res = Prop.mk_dllseg tenv k_res para exp_iF exp_oB exp_oF exp_iB exps_shared in
   let gen_pi_res _ _ (_: Sil.subst) = [] in
   let condition =
     let ids_private = [id_iF'; id_oB'] in
@@ -383,23 +383,23 @@ let mk_rule_dlldll_dll k1 k2 impl_ok1 impl_ok2 para =
     r_new_pi = gen_pi_res;
     r_condition = condition }
 
-let mk_rules_for_dll (para : Sil.hpara_dll) : rule list =
+let mk_rules_for_dll tenv (para : Sil.hpara_dll) : rule list =
   if not Config.nelseg then
     begin
-      let pts_pts = mk_rule_ptspts_dll true true para in
-      let pts_pedll = mk_rule_ptsdll_dll Sil.Lseg_PE true false para in
-      let pedll_pts = mk_rule_dllpts_dll Sil.Lseg_PE false true para in
-      let pedll_nedll = mk_rule_dlldll_dll Sil.Lseg_PE Sil.Lseg_NE false false para in
-      let nedll_pedll = mk_rule_dlldll_dll Sil.Lseg_NE Sil.Lseg_PE false false para in
-      let pedll_pedll = mk_rule_dlldll_dll Sil.Lseg_PE Sil.Lseg_PE false false para in
+      let pts_pts = mk_rule_ptspts_dll tenv true true para in
+      let pts_pedll = mk_rule_ptsdll_dll tenv Sil.Lseg_PE true false para in
+      let pedll_pts = mk_rule_dllpts_dll tenv Sil.Lseg_PE false true para in
+      let pedll_nedll = mk_rule_dlldll_dll tenv Sil.Lseg_PE Sil.Lseg_NE false false para in
+      let nedll_pedll = mk_rule_dlldll_dll tenv Sil.Lseg_NE Sil.Lseg_PE false false para in
+      let pedll_pedll = mk_rule_dlldll_dll tenv Sil.Lseg_PE Sil.Lseg_PE false false para in
       [pts_pts; pts_pedll; pedll_pts; pedll_nedll; nedll_pedll; pedll_pedll]
     end
   else
     begin
-      let ptspts_dll = mk_rule_ptspts_dll true true para in
-      let ptsdll_dll = mk_rule_ptsdll_dll Sil.Lseg_NE true false para in
-      let dllpts_dll = mk_rule_dllpts_dll Sil.Lseg_NE false true para in
-      let dlldll_dll = mk_rule_dlldll_dll Sil.Lseg_NE Sil.Lseg_NE false false para in
+      let ptspts_dll = mk_rule_ptspts_dll tenv true true para in
+      let ptsdll_dll = mk_rule_ptsdll_dll tenv Sil.Lseg_NE true false para in
+      let dllpts_dll = mk_rule_dllpts_dll tenv Sil.Lseg_NE false true para in
+      let dlldll_dll = mk_rule_dlldll_dll tenv Sil.Lseg_NE Sil.Lseg_NE false false para in
       [ptspts_dll; ptsdll_dll; dllpts_dll; dlldll_dll]
     end
 (******************  End of DLL abstraction rules  ******************)
@@ -433,7 +433,7 @@ let typ_get_recursive_flds tenv typ_exp =
       L.err "@.typ_get_recursive: unexpected type expr: %a@." (Sil.pp_exp pe_text) typ_exp;
       assert false
 
-let discover_para_roots p root1 next1 root2 next2 : Sil.hpara option =
+let discover_para_roots tenv p root1 next1 root2 next2 : Sil.hpara option =
   let eq_arg1 = Exp.equal root1 next1 in
   let eq_arg2 = Exp.equal root2 next2 in
   let precondition_check = (not eq_arg1 && not eq_arg2) in
@@ -442,13 +442,13 @@ let discover_para_roots p root1 next1 root2 next2 : Sil.hpara option =
     let corres = [(next1, next2)] in
     let todos = [(root1, root2)] in
     let sigma = p.Prop.sigma in
-    match Match.find_partial_iso (Prover.check_equal p) corres todos sigma with
+    match Match.find_partial_iso tenv (Prover.check_equal tenv p) corres todos sigma with
     | None -> None
     | Some (new_corres, new_sigma1, _, _) ->
-        let hpara, _ = Match.hpara_create new_corres new_sigma1 root1 next1 in
+        let hpara, _ = Match.hpara_create tenv new_corres new_sigma1 root1 next1 in
         Some hpara
 
-let discover_para_dll_roots p root1 blink1 flink1 root2 blink2 flink2 : Sil.hpara_dll option =
+let discover_para_dll_roots tenv p root1 blink1 flink1 root2 blink2 flink2 : Sil.hpara_dll option =
   let eq_arg1 = Exp.equal root1 blink1 in
   let eq_arg1' = Exp.equal root1 flink1 in
   let eq_arg2 = Exp.equal root2 blink2 in
@@ -459,10 +459,10 @@ let discover_para_dll_roots p root1 blink1 flink1 root2 blink2 flink2 : Sil.hpar
     let corres = [(blink1, blink2); (flink1, flink2)] in
     let todos = [(root1, root2)] in
     let sigma = p.Prop.sigma in
-    match Match.find_partial_iso (Prover.check_equal p) corres todos sigma with
+    match Match.find_partial_iso tenv (Prover.check_equal tenv p) corres todos sigma with
     | None -> None
     | Some (new_corres, new_sigma1, _, _) ->
-        let hpara_dll, _ = Match.hpara_dll_create new_corres new_sigma1 root1 blink1 flink1 in
+        let hpara_dll, _ = Match.hpara_dll_create tenv new_corres new_sigma1 root1 blink1 flink1 in
         Some hpara_dll
 
 let discover_para_candidates tenv p =
@@ -544,9 +544,9 @@ let discover_para_dll_candidates tenv p =
 let discover_para tenv p =
   let candidates = discover_para_candidates tenv p in
   let already_defined para paras =
-    IList.exists (fun para' -> Match.hpara_iso para para') paras in
+    IList.exists (fun para' -> Match.hpara_iso tenv para para') paras in
   let f paras (root, next, out) =
-    match (discover_para_roots p root next next out) with
+    match (discover_para_roots tenv p root next next out) with
     | None -> paras
     | Some para -> if already_defined para paras then paras else para :: paras in
   IList.fold_left f [] candidates
@@ -558,9 +558,9 @@ let discover_para_dll tenv p =
   *)
   let candidates = discover_para_dll_candidates tenv p in
   let already_defined para paras =
-    IList.exists (fun para' -> Match.hpara_dll_iso para para') paras in
+    IList.exists (fun para' -> Match.hpara_dll_iso tenv para para') paras in
   let f paras (iF, oB, iF', oF) =
-    match (discover_para_dll_roots p iF oB iF' iF' iF oF) with
+    match (discover_para_dll_roots tenv p iF oB iF' iF' iF oF) with
     | None -> paras
     | Some para -> if already_defined para paras then paras else para :: paras in
   IList.fold_left f [] candidates
@@ -680,9 +680,9 @@ let hpara_special_cases_dll hpara : Sil.hpara_dll list =
   let special_cases = sigma_special_cases hpara.Sil.evars_dll hpara.Sil.body_dll in
   IList.map update_para special_cases
 
-let abs_rules_apply_rsets (rsets: rule_set list) (p_in: Prop.normal Prop.t) : Prop.normal Prop.t =
+let abs_rules_apply_rsets tenv (rsets: rule_set list) (p_in: Prop.normal Prop.t) : Prop.normal Prop.t =
   let apply_rule (changed, p) r =
-    match (sigma_rewrite p r) with
+    match (sigma_rewrite tenv p r) with
     | None -> (changed, p)
     | Some p' ->
     (*
@@ -722,10 +722,10 @@ let abs_rules_apply_lists tenv (p_in: Prop.normal Prop.t) : Prop.normal Prop.t =
       end in
     let (todo_paras_sll, todo_paras_dll) =
       let eq_sll para rset = match rset with
-        | (SLL para', _) -> Match.hpara_iso para para'
+        | (SLL para', _) -> Match.hpara_iso tenv para para'
         | _ -> false in
       let eq_dll para rset = match rset with
-        | (DLL para', _) -> Match.hpara_dll_iso para para'
+        | (DLL para', _) -> Match.hpara_dll_iso tenv para para'
         | _ -> false in
       let filter_sll para =
         not (IList.exists (eq_sll para) old_rsets) &&
@@ -738,17 +738,17 @@ let abs_rules_apply_lists tenv (p_in: Prop.normal Prop.t) : Prop.normal Prop.t =
       (todo_paras_sll, todo_paras_dll) in
     let f_recurse () =
       let todo_rsets_sll =
-        IList.map (fun para -> (SLL para, mk_rules_for_sll para)) todo_paras_sll in
+        IList.map (fun para -> (SLL para, mk_rules_for_sll tenv para)) todo_paras_sll in
       let todo_rsets_dll =
-        IList.map (fun para -> (DLL para, mk_rules_for_dll para)) todo_paras_dll in
+        IList.map (fun para -> (DLL para, mk_rules_for_dll tenv para)) todo_paras_dll in
       new_rsets := !new_rsets @ todo_rsets_sll @ todo_rsets_dll;
-      let p' = abs_rules_apply_rsets todo_rsets_sll p in
-      let p'' = abs_rules_apply_rsets todo_rsets_dll p' in
+      let p' = abs_rules_apply_rsets tenv todo_rsets_sll p in
+      let p'' = abs_rules_apply_rsets tenv todo_rsets_dll p' in
       discover_then_abstract p'' in
     match todo_paras_sll, todo_paras_dll with
     | [], [] -> p
     | _ -> f_recurse () in
-  let p1 = abs_rules_apply_rsets old_rsets p_in in
+  let p1 = abs_rules_apply_rsets tenv old_rsets p_in in
   let p2 = discover_then_abstract p1 in
   let new_rules = old_rsets @ !new_rsets in
   set_current_rules new_rules;
@@ -759,7 +759,7 @@ let abs_rules_apply tenv (p_in: Prop.normal Prop.t) : Prop.normal Prop.t =
 (****************** End of the ADT abs_rules ******************)
 
 (****************** Start of Main Abstraction Functions ******************)
-let abstract_pure_part p ~(from_abstract_footprint: bool) =
+let abstract_pure_part tenv p ~(from_abstract_footprint: bool) =
   let do_pure pure =
     let pi_filtered =
       let sigma = p.Prop.sigma in
@@ -801,12 +801,12 @@ let abstract_pure_part p ~(from_abstract_footprint: bool) =
       let new_pi_footprint = do_pure p.Prop.pi_fp in
       Prop.set eprop' ~pi_fp:new_pi_footprint
     else eprop' in
-  Prop.normalize eprop''
+  Prop.normalize tenv eprop''
 
 (** Collect symbolic garbage from pi and sigma *)
-let abstract_gc p =
+let abstract_gc tenv p =
   let pi = p.Prop.pi in
-  let p_without_pi = Prop.normalize (Prop.set p ~pi:[]) in
+  let p_without_pi = Prop.normalize tenv (Prop.set p ~pi:[]) in
   let fav_p_without_pi = Prop.prop_fav p_without_pi in
   (* let weak_filter atom =
      let fav_atom = atom_fav atom in
@@ -826,10 +826,10 @@ let abstract_gc p =
         ||
         IList.intersect Ident.compare (Sil.fav_to_list fav_a) (Sil.fav_to_list fav_p_without_pi) in
   let new_pi = IList.filter strong_filter pi in
-  let prop = Prop.normalize (Prop.set p ~pi:new_pi) in
+  let prop = Prop.normalize tenv (Prop.set p ~pi:new_pi) in
   match Prop.prop_iter_create prop with
   | None -> prop
-  | Some iter -> Prop.prop_iter_to_prop (Prop.prop_iter_gc_fields iter)
+  | Some iter -> Prop.prop_iter_to_prop tenv (Prop.prop_iter_gc_fields iter)
 
 module IdMap = Map.Make (Ident) (** maps from identifiers *)
 
@@ -999,7 +999,7 @@ let remove_opt _prop =
 
 (** Checks if cycle has fields (derived from a property or directly defined as ivar) with attributes
     weak/unsafe_unretained/assing *)
-let cycle_has_weak_or_unretained_or_assign_field cycle =
+let cycle_has_weak_or_unretained_or_assign_field _tenv cycle =
   (* returns items annotation for field fn in struct t *)
   let get_item_annotation t fn =
     match t with
@@ -1028,12 +1028,12 @@ let cycle_has_weak_or_unretained_or_assign_field cycle =
         else do_cycle c' in
   do_cycle cycle
 
-let check_observer_is_unsubscribed_deallocation prop e =
-  let pvar_opt = match Attribute.get_resource prop e with
+let check_observer_is_unsubscribed_deallocation tenv prop e =
+  let pvar_opt = match Attribute.get_resource tenv prop e with
     | Some (Apred (Aresource ({ ra_vpath =  Some (Dpvar pvar) }), _)) -> Some pvar
     | _ -> None in
   let loc = State.get_loc () in
-  match Attribute.get_observer prop e with
+  match Attribute.get_observer tenv prop e with
   | Some (Apred (Aobserver, _)) ->
       (match pvar_opt with
        |  Some pvar when Config.nsnotification_center_checker_backend ->
@@ -1098,13 +1098,13 @@ let check_junk ?original_prop pname tenv prop =
                 (* find the alloc attribute of one of the roots of hpred, if it exists *)
                 let res = ref None in
                 let do_entry e =
-                  check_observer_is_unsubscribed_deallocation prop e;
-                  match Attribute.get_resource prop e with
+                  check_observer_is_unsubscribed_deallocation tenv prop e;
+                  match Attribute.get_resource tenv prop e with
                   | Some (Apred (Aresource ({ ra_kind = Racquire }) as a, _)) ->
                       L.d_str "ATTRIBUTE: "; PredSymb.d_attribute a; L.d_ln ();
                       res := Some a
                   | _ ->
-                      (match Attribute.get_undef prop e with
+                      (match Attribute.get_undef tenv prop e with
                        | Some (Apred (Aundef _ as a, _)) ->
                            res := Some a
                        | _ -> ()) in
@@ -1112,7 +1112,7 @@ let check_junk ?original_prop pname tenv prop =
                 !res in
               L.d_decrease_indent 1;
               let is_undefined = Option.map_default PredSymb.is_undef false alloc_attribute in
-              let resource = match Errdesc.hpred_is_open_resource prop hpred with
+              let resource = match Errdesc.hpred_is_open_resource tenv prop hpred with
                 | Some res -> res
                 | None -> PredSymb.Rmemory PredSymb.Mmalloc in
               let ml_bucket_opt =
@@ -1143,7 +1143,7 @@ let check_junk ?original_prop pname tenv prop =
                      let cycle = get_var_retain_cycle (remove_opt original_prop) in
                      let ignore_cycle =
                        (IList.length cycle = 0) ||
-                       (cycle_has_weak_or_unretained_or_assign_field cycle) in
+                       (cycle_has_weak_or_unretained_or_assign_field tenv cycle) in
                      ignore_cycle, exn_retain_cycle cycle
                  | Some _, Rmemory Mobjc
                  | Some _, Rmemory Mnew
@@ -1153,7 +1153,7 @@ let check_junk ?original_prop pname tenv prop =
                  | Some _, Rignore -> true, exn_leak
                  | Some _, Rfile -> false, exn_leak
                  | Some _, Rlock -> false, exn_leak
-                 | _ when hpred_in_cycle hpred && Sil.has_objc_ref_counter hpred ->
+                 | _ when hpred_in_cycle hpred && Sil.has_objc_ref_counter tenv hpred ->
                      (* When it's a cycle and the object has a ref counter then
                         we have a retain cycle. Objc object may not have the
                         Mobjc qualifier when added in footprint doing abduction *)
@@ -1196,7 +1196,7 @@ let check_junk ?original_prop pname tenv prop =
     Prop.sigma_equal prop.Prop.sigma sigma_new
     && Prop.sigma_equal prop.Prop.sigma_fp sigma_fp_new
   then prop
-  else Prop.normalize (Prop.set prop ~sigma:sigma_new ~sigma_fp:sigma_fp_new)
+  else Prop.normalize tenv (Prop.set prop ~sigma:sigma_new ~sigma_fp:sigma_fp_new)
 
 (** Check whether the prop contains junk.
     If it does, and [Config.allowleak] is true, remove the junk, otherwise raise a Leak exception. *)
@@ -1207,22 +1207,23 @@ let abstract_junk ?original_prop pname tenv prop =
 (** Remove redundant elements in an array, and check for junk afterwards *)
 let remove_redundant_array_elements pname tenv prop =
   Absarray.array_abstraction_performed := false;
-  let prop' = Absarray.remove_redundant_elements prop in
+  let prop' = Absarray.remove_redundant_elements tenv prop in
   check_junk ~original_prop: (Some(prop)) pname tenv prop'
 
 let abstract_prop pname tenv ~(rename_primed: bool) ~(from_abstract_footprint: bool) p =
   Absarray.array_abstraction_performed := false;
-  let pure_abs_p = abstract_pure_part ~from_abstract_footprint: true p in
+  let pure_abs_p = abstract_pure_part tenv ~from_abstract_footprint: true p in
   let array_abs_p =
     if from_abstract_footprint
     then pure_abs_p
-    else abstract_pure_part ~from_abstract_footprint: from_abstract_footprint (Absarray.abstract_array_check pure_abs_p) in
+    else
+      abstract_pure_part tenv ~from_abstract_footprint (Absarray.abstract_array_check tenv pure_abs_p) in
   let abs_p = abs_rules_apply tenv array_abs_p in
-  let abs_p = abstract_gc abs_p in (* abstraction might enable more gc *)
+  let abs_p = abstract_gc tenv abs_p in (* abstraction might enable more gc *)
   let abs_p = check_junk ~original_prop: (Some(p)) pname tenv abs_p in
   let ren_abs_p =
     if rename_primed
-    then Prop.prop_rename_primed_footprint_vars abs_p
+    then Prop.prop_rename_primed_footprint_vars tenv abs_p
     else abs_p in
   ren_abs_p
 
@@ -1273,9 +1274,9 @@ let abstract_footprint pname (tenv : Tenv.t) (prop : Prop.normal Prop.t) : Prop.
   let p_abs =
     abstract_prop
       pname tenv ~rename_primed: false
-      ~from_abstract_footprint: true (Prop.normalize p) in
+      ~from_abstract_footprint: true (Prop.normalize tenv p) in
   let prop' = set_footprint_for_abs prop p_abs added_local_vars in
-  Prop.normalize prop'
+  Prop.normalize tenv prop'
 
 let _abstract pname pay tenv p =
   if pay then SymOp.pay(); (* pay one symop *)
@@ -1290,9 +1291,9 @@ let abstract_no_symop pname tenv p =
 
 let lifted_abstract pname tenv pset =
   let f p =
-    if Prover.check_inconsistency p then None
+    if Prover.check_inconsistency tenv p then None
     else Some (abstract pname tenv p) in
-  let abstracted_pset = Propset.map_option f pset in
+  let abstracted_pset = Propset.map_option tenv f pset in
   abstracted_pset
 
 (***************** End of Main Abstraction Functions *****************)

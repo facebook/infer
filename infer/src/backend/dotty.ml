@@ -377,7 +377,7 @@ let compute_struct_exp_nodes sigma =
 let get_node_exp n = snd (get_coordinate_and_exp n)
 
 let is_nil e prop =
-  (Exp.equal e Exp.zero) || (Prover.check_equal prop e Exp.zero)
+  (Exp.equal e Exp.zero) || (Prover.check_equal (Tenv.create ()) prop e Exp.zero)
 
 (* an edge is in cycle *)
 let in_cycle cycle edge =
@@ -726,7 +726,8 @@ and print_sll f pe nesting k e1 coo =
   F.fprintf f "state%iL%i [label=\" \"] \n" (n + 1) lambda ;
   F.fprintf f "state%iL%i -> state%iL%i [label=\" \"] }" n' lambda (n + 1) lambda ;
   incr lambda_counter;
-  pp_dotty f (Lambda_pred(n + 1, lambda, false)) (Prop.normalize (Prop.from_sigma nesting)) None
+  pp_dotty f (Lambda_pred(n + 1, lambda, false))
+    (Prop.normalize (Tenv.create ()) (Prop.from_sigma nesting)) None
 
 and print_dll f pe nesting k e1 e4 coo =
   let n = coo.id in
@@ -748,7 +749,8 @@ and print_dll f pe nesting k e1 e4 coo =
   F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]\n" (n + 1) lambda n' lambda;
   F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]}\n" n' lambda (n + 1) lambda ;
   incr lambda_counter;
-  pp_dotty f (Lambda_pred(n', lambda, false)) (Prop.normalize (Prop.from_sigma nesting)) None
+  pp_dotty f (Lambda_pred(n', lambda, false))
+    (Prop.normalize (Tenv.create ()) (Prop.from_sigma nesting)) None
 
 and dotty_pp_state f pe cycle dotnode =
   let dotty_exp coo e c is_dangling =
@@ -826,7 +828,7 @@ and pp_dotty f kind (_prop: Prop.normal Prop.t) cycle =
         (* add stack vars from pre *)
         let pre_stack = fst (Prop.sigma_get_stack_nonstack true pre.Prop.sigma) in
         let prop = Prop.set _prop ~sigma:(pre_stack @ _prop.Prop.sigma) in
-        pe, Prop.normalize prop
+        pe, Prop.normalize (Tenv.create ()) prop
     | _ ->
         let pe = Prop.prop_update_obj_sub pe_text _prop in
         pe, _prop in
@@ -862,7 +864,7 @@ let pp_dotty_one_spec f pre posts =
   F.fprintf f "\n state%iL0 [label=\"SPEC %i \",  style=filled, color= lightblue]\n" !dotty_state_count !spec_counter;
   spec_id:=!dotty_state_count;
   invisible_arrows:= true;
-  pp_dotty f (Spec_precondition) pre None;
+  pp_dotty f Spec_precondition pre None;
   invisible_arrows:= false;
   IList.iter (fun (po, _) -> incr post_counter ; pp_dotty f (Spec_postcondition pre) po None;
                for j = 1 to 4 do
@@ -885,7 +887,7 @@ let pp_dotty_prop_list_in_path f plist prev_n curr_n =
     incr dotty_state_count;
     F.fprintf f "\n state%iN [label=\"NODE %i \",  style=filled, color= lightblue]\n" curr_n curr_n;
     IList.iter (fun po -> incr proposition_counter ;
-                 pp_dotty f (Generic_proposition) po None) plist;
+                 pp_dotty f Generic_proposition po None) plist;
     if prev_n <> - 1 then F.fprintf f "\n state%iN ->state%iN\n" prev_n curr_n;
     F.fprintf f "\n } \n"
   with exn when SymOp.exn_not_failure exn ->
@@ -900,7 +902,7 @@ let pp_dotty_prop fmt (prop, cycle) =
 
 let dotty_prop_to_str prop cycle =
   try
-    Some (pp_to_string pp_dotty_prop (prop, cycle))
+    Some (pp_to_string (pp_dotty_prop) (prop, cycle))
   with exn when SymOp.exn_not_failure exn -> None
 
 (* create a dotty file with a single proposition *)
@@ -1070,7 +1072,7 @@ let pp_speclist_to_file (filename : DB.filename) spec_list =
   Config.pp_simple := true;
   let outc = open_out (DB.filename_to_string (DB.filename_add_suffix filename ".dot")) in
   let fmt = F.formatter_of_out_channel outc in
-  let () = F.fprintf fmt "#### Dotty version:  ####@\n%a@\n@\n" pp_speclist_dotty spec_list in
+  let () = F.fprintf fmt "#### Dotty version:  ####@\n%a@\n@\n" (pp_speclist_dotty) spec_list in
   close_out outc;
   Config.pp_simple := pp_simple_saved
 
@@ -1390,7 +1392,7 @@ let print_specs_xml signature specs loc fmt =
       (* add stack vars from pre *)
       let pre_stack = fst (Prop.sigma_get_stack_nonstack true pre.Prop.sigma) in
       let _prop' = Prop.set _prop ~sigma:(pre_stack @ _prop.Prop.sigma) in
-      Prop.normalize _prop' in
+      Prop.normalize (Tenv.create ()) _prop' in
     let jj = ref 0 in
     let xml_pre = prop_to_xml pre "precondition" !jj in
     let xml_spec =

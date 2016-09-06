@@ -24,7 +24,7 @@ type taint_spec = {
   language : Config.language
 }
 
-let type_is_object = function
+let type_is_object _tenv = function
   | Typ.Tptr (Tstruct { name }, _) -> string_equal (Typename.name name) JConfig.object_cl
   | _ -> false
 
@@ -77,7 +77,7 @@ let get_this_type proc_attributes = match proc_attributes.ProcAttributes.formals
   | (_, t):: _ -> Some t
   | _ -> None
 
-let type_get_direct_supertypes = function
+let type_get_direct_supertypes _tenv = function
   | Typ.Tptr (Tstruct { superclasses }, _)
   | Typ.Tstruct { superclasses } ->
       superclasses
@@ -88,7 +88,7 @@ let type_get_class_name = function
   | Typ.Tptr (typ, _) -> Typ.name typ
   | _ -> None
 
-let type_get_annotation
+let type_get_annotation _tenv
     (t: Typ.t): Typ.item_annotation option =
   match t with
   | Typ.Tptr (Typ.Tstruct { Typ.struct_annotations }, _)
@@ -96,8 +96,8 @@ let type_get_annotation
       Some struct_annotations
   | _ -> None
 
-let type_has_direct_supertype (typ : Typ.t) (class_name : Typename.t) =
-  IList.exists (fun cn -> Typename.equal cn class_name) (type_get_direct_supertypes typ)
+let type_has_direct_supertype tenv (typ : Typ.t) (class_name : Typename.t) =
+  IList.exists (fun cn -> Typename.equal cn class_name) (type_get_direct_supertypes tenv typ)
 
 let type_has_supertype
     (tenv: Tenv.t)
@@ -124,9 +124,9 @@ let type_has_supertype
       end in
   has_supertype typ Typ.Set.empty
 
-let type_is_nested_in_direct_supertype t n =
+let type_is_nested_in_direct_supertype tenv t n =
   let is_nested_in cn1 cn2 = string_is_prefix (Typename.name cn1 ^ "$") (Typename.name cn2) in
-  IList.exists (is_nested_in n) (type_get_direct_supertypes t)
+  IList.exists (is_nested_in n) (type_get_direct_supertypes tenv t)
 
 let rec get_type_name = function
   | Typ.Tvar name
@@ -135,7 +135,7 @@ let rec get_type_name = function
   | Typ.Tptr (t, _) -> get_type_name t
   | _ -> "_"
 
-let get_field_type_name
+let get_field_type_name _tenv
     (typ: Typ.t)
     (fieldname: Ident.fieldname): string option =
   match typ with
@@ -157,7 +157,7 @@ let java_get_const_type_name
   | Const.Cfloat _ -> "java.lang.Double"
   | _ -> "_"
 
-let get_vararg_type_names
+let get_vararg_type_names tenv
     (call_node: Cfg.Node.t)
     (ivar: Pvar.t): string list =
   (* Is this the node creating ivar? *)
@@ -176,7 +176,7 @@ let get_vararg_type_names
     let rec nvar_type_name nvar instrs =
       match instrs with
       | Sil.Load (nv, Exp.Lfield (_, id, t), _, _):: _
-        when Ident.equal nv nvar -> get_field_type_name t id
+        when Ident.equal nv nvar -> get_field_type_name tenv t id
       | Sil.Load (nv, _, t, _):: _
         when Ident.equal nv nvar ->
           Some (get_type_name t)
@@ -249,7 +249,7 @@ let get_java_method_call_formal_signature = function
   | _ -> None
 
 
-let type_is_class = function
+let type_is_class _tenv = function
   | Typ.Tptr (Typ.Tstruct _, _) -> true
   | Typ.Tptr (Typ.Tvar _, _) -> true
   | Typ.Tptr (Typ.Tarray _, _) -> true
@@ -362,7 +362,7 @@ let proc_iter_overridden_methods f tenv proc_name =
        | Some curr_struct_typ ->
            IList.iter
              (do_super_type tenv)
-             (type_get_direct_supertypes (Typ.Tstruct curr_struct_typ))
+             (type_get_direct_supertypes tenv (Typ.Tstruct curr_struct_typ))
        | None ->
            ())
   | _ ->

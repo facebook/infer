@@ -125,7 +125,7 @@ module PathSet : sig
   val to_proplist : t -> Prop.normal Prop.t list
 
   (** convert to a set of props *)
-  val to_propset : t -> Propset.t
+  val to_propset : Tenv.t -> t -> Propset.t
 
   (** union of two pathsets *)
   val union : t -> t -> t

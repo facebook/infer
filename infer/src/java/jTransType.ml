@@ -86,7 +86,7 @@ let rec create_array_type typ dim =
     Typ.Tptr(Typ.Tarray (content_typ, None), Typ.Pk_pointer)
   else typ
 
-let extract_cn_no_obj typ =
+let extract_cn_no_obj _tenv typ =
   match typ with
   | Typ.Tptr (Tstruct { name = TN_csu (Class _, _) as name }, Pk_pointer) ->
       let class_name = Typename.name name in
