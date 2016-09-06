@@ -253,8 +253,6 @@ module Make
       let post_str =
         try
           let state = M.find node_id inv_map in
-          (*L.stderr "post is %a@." I.A.pp state.post;
-            L.stderr "and with sparse pringer: %a@." pp_state state.post;*)
           pp_to_string pp_state state.post
         with Not_found -> "_|_" in
       if inv_str <> post_str then
