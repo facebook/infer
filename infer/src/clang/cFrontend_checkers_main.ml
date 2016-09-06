@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
 open CFrontend_utils
 
 let rec do_frontend_checks_stmt (context:CLintersContext.context) cfg cg stmt =
@@ -66,7 +67,7 @@ let context_with_ck_set context decl_list =
 
 let store_issues source_file =
   let abbrev_source_file = DB.source_file_encoding source_file in
-  let lint_issues_dir = Filename.concat Config.results_dir Config.lint_issues_dir_name in
+  let lint_issues_dir = Config.results_dir // Config.lint_issues_dir_name in
   DB.create_dir lint_issues_dir;
   let lint_issues_file =
     DB.filename_from_string (Filename.concat lint_issues_dir (abbrev_source_file ^ ".issue")) in
@@ -82,5 +83,6 @@ let do_frontend_checks cfg cg source_file ast =
       let allowed_decls = IList.filter is_decl_allowed decl_list in
       IList.iter (do_frontend_checks_decl context cfg cg) allowed_decls;
       (* TODO (t12740727): Remove condition once the transition to linters mode is finished *)
-      if Config.analyzer = Some Config.Linters then store_issues source_file
+      if Config.analyzer = Some Config.Linters && (LintIssues.exists_issues ()) then
+        store_issues source_file
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)

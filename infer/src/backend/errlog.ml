@@ -196,7 +196,7 @@ let log_issue _ekind err_log loc node_id_key session ltr pre_opt exn =
       | _ -> added in
     let print_now () =
       let ex_name, desc, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
-      L.err "%a@?" (Exceptions.pp_err node_id_key loc ekind ex_name desc ml_loc_opt) ();
+      L.err "@\n%a@\n@?" (Exceptions.pp_err node_id_key loc ekind ex_name desc ml_loc_opt) ();
       if _ekind <> Exceptions.Kerror then begin
         let warn_str =
           let pp fmt () =

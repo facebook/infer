@@ -13,6 +13,9 @@ open! Utils
 
 let errLogMap = ref Procname.Map.empty
 
+let exists_issues () =
+  not (Procname.Map.is_empty !errLogMap)
+
 let get_err_log procname =
   try Procname.Map.find procname !errLogMap
   with Not_found ->

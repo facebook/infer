@@ -11,6 +11,8 @@
 
 val errLogMap : Errlog.t Procname.Map.t ref
 
+val exists_issues : unit -> bool
+
 (** Save issues to a file *)
 val get_err_log : Procname.t -> Errlog.t
 
