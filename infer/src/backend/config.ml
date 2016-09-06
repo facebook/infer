@@ -232,17 +232,18 @@ let version_string =
     Unix.time *)
 let initial_analysis_time = Unix.time ()
 
+let bin_dir =
+  Filename.dirname Sys.executable_name
+
 let lib_dir =
-  let bin_dir = Filename.dirname Sys.executable_name in
-  let lib_dir = bin_dir // Filename.parent_dir_name // "lib" in
-  lib_dir
+  bin_dir // Filename.parent_dir_name // "lib"
 
 (** Path to lib/specs to retrieve the default models *)
 let models_dir =
   lib_dir // specs_dir_name
 
 let cpp_models_dir =
-  lib_dir // "models" // "cpp" // "include"
+  bin_dir // Filename.parent_dir_name // "models" // "cpp" // "include"
 
 let wrappers_dir =
   lib_dir // "wrappers"
