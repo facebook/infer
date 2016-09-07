@@ -3,9 +3,6 @@
   endtoend_test_objc = //infer/tests/endtoend:objc_endtoend_tests
   frontend_test_objc = //infer/tests/frontend:objc_frontend_tests
 
-  endtoend_test_java = //infer/tests/endtoend:java_endtoend_tests
-  endtoend_test_c = //infer/tests/endtoend:edgc_endtoend_tests
-
   integration_tests = //infer/tests:integration_tests
   objc = //infer/tests:objc_tests
   c = //infer/tests:c_tests

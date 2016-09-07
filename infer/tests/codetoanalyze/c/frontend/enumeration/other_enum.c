@@ -9,7 +9,7 @@
 
 enum Foo { A, B, C = 10, D, E = 1, F, G = F + C };
 
-int main() {
+int other_enum_main() {
   enum Foo foo_a = A;
   enum Foo foo_b = B;
   enum Foo foo_c = C;
@@ -19,7 +19,7 @@ int main() {
   enum Foo foo_g = G;
 }
 
-int test() {
+int other_enum_test() {
   enum Foo foo_g = G;
   enum Foo foo_a = A;
   if (foo_g == 12)

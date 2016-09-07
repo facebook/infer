@@ -9,7 +9,7 @@
 
 #include <stdarg.h>
 
-int foo(int x, ...) {
+int vaarg_foo(int x, ...) {
   va_list valist;
   va_start(valist, x);
   int i = va_arg(valist, int);

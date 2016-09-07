@@ -1,7 +1,6 @@
 java_test(
     name='c_tests',
     deps=[
-        '//infer/tests/endtoend:c_endtoend_tests',
         '//infer/tests/frontend:c_frontend_tests',
     ],
 )

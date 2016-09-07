@@ -37,10 +37,10 @@ digraph iCFG {
 	
 
 	 12 -> 13 ;
-11 [label="11: Exit test \n  " color=yellow style=filled]
+11 [label="11: Exit other_enum_test \n  " color=yellow style=filled]
 	
 
-10 [label="10: Start test\nFormals: \nLocals:  foo_a:int  foo_g:int  \n   DECLARE_LOCALS(&return,&foo_a,&foo_g); [line 22]\n " color=yellow style=filled]
+10 [label="10: Start other_enum_test\nFormals: \nLocals:  foo_a:int  foo_g:int  \n   DECLARE_LOCALS(&return,&foo_a,&foo_g); [line 22]\n " color=yellow style=filled]
 	
 
 	 10 -> 20 ;
@@ -72,10 +72,10 @@ digraph iCFG {
 	
 
 	 3 -> 2 ;
-2 [label="2: Exit main \n  " color=yellow style=filled]
+2 [label="2: Exit other_enum_main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  foo_g:int  foo_f:int  foo_e:int  foo_d:int  foo_c:int  foo_b:int  foo_a:int  \n   DECLARE_LOCALS(&return,&foo_g,&foo_f,&foo_e,&foo_d,&foo_c,&foo_b,&foo_a); [line 12]\n " color=yellow style=filled]
+1 [label="1: Start other_enum_main\nFormals: \nLocals:  foo_g:int  foo_f:int  foo_e:int  foo_d:int  foo_c:int  foo_b:int  foo_a:int  \n   DECLARE_LOCALS(&return,&foo_g,&foo_f,&foo_e,&foo_d,&foo_c,&foo_b,&foo_a); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 9 ;

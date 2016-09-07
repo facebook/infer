@@ -15,7 +15,7 @@ struct address {
   int v3;
 };
 
-int test() {
+int test_offsetof_expr() {
   int i = offsetof(struct address, v2);
   if (i == 9) {
     return 9 / 0;

@@ -23,7 +23,7 @@ int add2(struct l2* l) {
 }
 
 /* Divide by zero error shows that we get a spec for add2 */
-int main() {
+int lists_main() {
   int res = add2(0);
   return 5 / res;
 }

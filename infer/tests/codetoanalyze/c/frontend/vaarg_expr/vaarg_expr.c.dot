@@ -41,10 +41,10 @@ digraph iCFG {
 	
 
 	 3 -> 2 ;
-2 [label="2: Exit foo \n  " color=yellow style=filled]
+2 [label="2: Exit vaarg_foo \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start foo\nFormals:  x:int \nLocals:  val:int  i:int  valist:void [1] \n   DECLARE_LOCALS(&return,&val,&i,&valist); [line 12]\n " color=yellow style=filled]
+1 [label="1: Start vaarg_foo\nFormals:  x:int \nLocals:  val:int  i:int  valist:void [1] \n   DECLARE_LOCALS(&return,&val,&i,&valist); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 12 ;

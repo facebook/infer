@@ -5,23 +5,9 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-ROOT_DIR = ../../../../..
-include $(ROOT_DIR)/Makefile.config
+include ../../Makefile.clang
 
 OPTIONS = -x c++ -std=c++11 -isystem$(CLANG_INCLUDES)/c++/v1/ -c
-
-default: compile
-
-print: analyze
-	$(INFERPRINT_BIN) -q -a $(ANALYZER) --issues-tests issues.exp.test
-	LC_ALL=C sort -o issues.exp.test issues.exp.test
-
-test: analyze print
-	make clean
-	diff -u issues.exp issues.exp.test
-	rm issues.exp.test
-
-ANALYZER = infer
 
 FILES = \
   attributes/*.cpp \
@@ -52,7 +38,4 @@ compile:
 
 analyze:
 	$(INFER_BIN) -a $(ANALYZER) --cxx --ml-buckets cpp --check-duplicate-symbols -- clang $(OPTIONS) $(FILES) >/dev/null 2>duplicates.txt
-	grep "DUPLICATE_SYMBOLS" duplicates.txt; true
-
-clean:
-	rm -rf *.o infer-out duplicates.txt
+	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0

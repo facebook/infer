@@ -13,7 +13,7 @@ struct MyPoint {
   int x;
 };
 
-int test(struct MyPoint* activeq) {
+int test_assert(struct MyPoint* activeq) {
   assert(activeq != 0);
   return activeq->x;
 }

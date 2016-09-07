@@ -40,7 +40,7 @@ int negation_in_conditional() {
     return *x; // this never happens
 }
 
-int* foo() { return 0; }
+static int* foo() { return 0; }
 
 void null_pointer_with_function_pointer() {
   int* (*fp)();

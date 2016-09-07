@@ -11,17 +11,6 @@ tests_dependencies = [
     '//infer/tests/codetoanalyze/java/infer:infer',
 ]
 
-# ############### C endtoend tests ########################
-java_test(
-  name='c_endtoend_tests',
-  deps=[
-        '//infer/tests/endtoend/c/infer:infer',
-  ],
-  visibility=[
-    'PUBLIC',
-  ],
-)
-
 # ############### ObjC endtoend tests ########################
 java_test(
   name='objc_endtoend_tests',
