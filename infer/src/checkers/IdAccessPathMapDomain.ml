@@ -10,11 +10,8 @@
 open! Utils
 
 (** mapping of ids to raw access paths. useful for id-normalizing access paths *)
-module IdMap = PrettyPrintable.MakePPMap(struct
-    type t = Ident.t
-    let compare = Ident.compare
-    let pp_key = (Ident.pp pe_text)
-  end)
+
+module IdMap = Var.Map
 
 type astate = AccessPath.raw IdMap.t
 

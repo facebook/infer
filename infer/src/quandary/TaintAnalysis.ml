@@ -151,7 +151,9 @@ module Make (TraceDomain : Trace.S) = struct
       let f_resolve_id = resolve_id id_map in
       match instr with
       | Sil.Load (lhs_id, rhs_exp, rhs_typ, _) ->
-          analyze_id_assignment lhs_id rhs_exp rhs_typ astate
+          analyze_id_assignment (Var.of_id lhs_id) rhs_exp rhs_typ astate
+      | Sil.Store (Exp.Lvar lhs_pvar, lhs_typ, rhs_exp, _) when Pvar.is_frontend_tmp lhs_pvar ->
+          analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ astate
       | Sil.Store (lhs_exp, lhs_typ, rhs_exp, loc) ->
           let lhs_access_path =
             match AccessPath.of_exp lhs_exp lhs_typ ~f_resolve_id with
@@ -173,10 +175,10 @@ module Make (TraceDomain : Trace.S) = struct
             match rhs_exp with
             | Exp.Var rhs_id ->
                 let existing_accesses =
-                  try snd (IdMapDomain.find rhs_id astate'.Domain.id_map)
+                  try snd (IdMapDomain.find (Var.of_id rhs_id) astate'.Domain.id_map)
                   with Not_found -> [] in
                 let lhs_ap' = AccessPath.append lhs_access_path existing_accesses in
-                let id_map' = IdMapDomain.add rhs_id lhs_ap' astate'.Domain.id_map in
+                let id_map' = IdMapDomain.add (Var.of_id rhs_id) lhs_ap' astate'.Domain.id_map in
                 { astate' with Domain.id_map = id_map'; }
             | _ ->
                 astate'
@@ -187,7 +189,7 @@ module Make (TraceDomain : Trace.S) = struct
           then
             match args with
             | (cast_target, cast_typ) :: _ ->
-                analyze_id_assignment ret_id cast_target cast_typ astate
+                analyze_id_assignment (Var.of_id ret_id) cast_target cast_typ astate
             | _ ->
                 failwithf
                   "Unexpected cast %a in procedure %a at line %a"

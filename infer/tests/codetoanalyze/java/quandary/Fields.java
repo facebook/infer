@@ -51,6 +51,18 @@ public class Fields {
     InferTaint.inferSensitiveSink(src);
   }
 
+  void viaNestedFieldBad1(Obj obj) {
+    obj.g.f = InferTaint.inferSecretSource();
+    InferTaint.inferSensitiveSink(obj.g.f);
+  }
+
+  void viaNestedFieldBad2() {
+    Obj obj = new Obj();
+    obj.g = new Obj();
+    obj.g.f = InferTaint.inferSecretSource();
+    InferTaint.inferSensitiveSink(obj.g.f);
+  }
+
   /** should not report on these tests */
 
   void viaFieldOk1(Obj obj) {
@@ -109,20 +121,7 @@ public class Fields {
 
   /** an ideal analysis would report on these tests, but we currently do not */
 
-  // need to handle aliasing to get these examples
-  // in the first few cases, this is due to intermediate pvar's introduced by Infer's translation
-
-  void FN_viaNestedFieldBad1(Obj obj) {
-    obj.g.f = InferTaint.inferSecretSource();
-    InferTaint.inferSensitiveSink(obj.g.f);
-  }
-
-  void FN_viaNestedFieldBad2() {
-    Obj obj = new Obj();
-    obj.g = new Obj();
-    obj.g.f = InferTaint.inferSecretSource();
-    InferTaint.inferSensitiveSink(obj.g.f);
-  }
+  // need to soundly handle aliasing to get these examples
 
   void FN_aliasBad1() {
     Obj obj1 = new Obj();
@@ -131,7 +130,7 @@ public class Fields {
     InferTaint.inferSensitiveSink(obj1.f);
   }
 
-  void FN_AliasBad2(Obj obj) {
+  void FN_aliasBad2(Obj obj) {
     Obj x = obj.g;
     x.f = InferTaint.inferSecretSource();
     InferTaint.inferSensitiveSink(obj.g.f);

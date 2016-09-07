@@ -79,15 +79,21 @@ let of_pvar pvar typ =
 let of_id id typ =
   base_of_id id typ, []
 
-let of_exp exp typ ~(f_resolve_id : Ident.t -> raw option) =
+let of_exp exp typ ~(f_resolve_id : Var.t -> raw option) =
   (* [typ] is the type of the last element of the access path (e.g., typeof(g) for x.f.g) *)
   let rec of_exp_ exp typ accesses =
     match exp with
     | Exp.Var id ->
         begin
-          match f_resolve_id id with
+          match f_resolve_id (Var.of_id id) with
           | Some (base, base_accesses) -> Some (base, base_accesses @ accesses)
           | None -> Some (base_of_id id typ, accesses)
+        end
+    | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar ->
+        begin
+          match f_resolve_id (Var.of_pvar pvar) with
+          | Some (base, base_accesses) -> Some (base, base_accesses @ accesses)
+          | None -> Some (base_of_pvar pvar typ, accesses)
         end
     | Exp.Lvar pvar ->
         Some (base_of_pvar pvar typ, accesses)

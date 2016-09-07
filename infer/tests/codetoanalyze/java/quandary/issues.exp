@@ -21,5 +21,7 @@ Fields.java:33: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.infer
 Fields.java:38: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 37]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 38]) via {  }
 Fields.java:44: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 43]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 44]) via {  }
 Fields.java:51: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 49]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 51]) via {  }
+Fields.java:56: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 55]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 56]) via {  }
+Fields.java:63: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 62]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 63]) via {  }
 LoggingPrivateData.java:18: ERROR: QUANDARY_TAINT_ERROR Error: SharedPreferences(String SharedPreferences.getString(String,String) at [line 18]) -> Logging(int Log.d(String,String) at [line 18]) via {  }
 LoggingPrivateData.java:22: ERROR: QUANDARY_TAINT_ERROR Error: SharedPreferences(String SharedPreferences.getString(String,String) at [line 22]) -> Logging(int Log.d(String,String) at [line 22]) via {  }
