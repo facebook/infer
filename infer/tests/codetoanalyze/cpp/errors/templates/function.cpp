@@ -1,0 +1,1 @@
+../../frontend/templates/function.cpp

@@ -1,0 +1,1 @@
+../../frontend/namespace/global_variable.cpp

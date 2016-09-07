@@ -9,6 +9,8 @@
 
 #include <memory>
 
+namespace unique_ptr {
+
 struct X {
   int field;
   int get() { return field; }
@@ -116,4 +118,5 @@ int unique_ptr_move_null_deref() {
   std::unique_ptr<int> p1(new int);
   std::unique_ptr<int> p2 = std::move(p1);
   return *p1;
+}
 }

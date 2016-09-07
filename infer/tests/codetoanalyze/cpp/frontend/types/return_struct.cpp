@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+namespace return_struct {
+
 struct X {
   int f;
   // copy constructor that doesn't use init list
@@ -42,3 +44,4 @@ int get_div1() {
 int get_field_div1() { return 1 / get(1).f; }
 
 int get_method_div1() { return get(1).div(); }
+}

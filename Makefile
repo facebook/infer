@@ -12,6 +12,7 @@ DIRECT_TESTS=
 TARGETS_TO_TEST=
 ifeq ($(BUILD_C_ANALYZERS),yes)
 TARGETS_TO_TEST += c cpp
+DIRECT_TESTS += cpp_infer_test
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 TARGETS_TO_TEST += java
@@ -96,6 +97,9 @@ endif
 
 ocaml_unit_test: test_this_build
 	$(TEST_BUILD_DIR)/unit/inferunit.byte
+
+cpp_infer_test:
+	make -C ./infer/tests/codetoanalyze/cpp/errors test
 
 java_checkers_test:
 	make -C ./infer/tests/codetoanalyze/java/checkers test

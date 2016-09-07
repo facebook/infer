@@ -619,6 +619,11 @@ and changed_files_index =
   CLOpt.mk_string_opt ~long:"changed-files-index" ~exes:CLOpt.[Toplevel] ~meta:"file"
     "Specify the file containing the list of files from which reactive analysis should start"
 
+and check_duplicate_symbols =
+  CLOpt.mk_bool ~long:"check-duplicate-symbols"
+    ~exes:CLOpt.[Analyze]
+    "Check if a symbol with the same name is defined in more than one file."
+
 and clang_include_to_override =
   CLOpt.mk_string_opt ~long:"clang-include-to-override" ~meta:"dir"
     "Use this option in the uncommon case where the normal compilation process overrides the \
@@ -638,10 +643,6 @@ and _ =
 and cluster =
   CLOpt.mk_string_opt ~deprecated:["cluster"] ~long:"cluster"
     ~meta:"file" "Specify a .cluster file to be analyzed"
-
-and code_query =
-  CLOpt.mk_string_opt ~deprecated:["codequery"] ~long:"code-query"
-    ~meta:"query" "Execute the code query"
 
 (** Continue the capture for reactive mode:
     If a procedure was changed beforehand, keep the changed marking. *)
@@ -1360,6 +1361,7 @@ and bugs_txt = !bugs_txt
 and bugs_xml = !bugs_xml
 and changed_files_index = !changed_files_index
 and calls_csv = !calls_csv
+and check_duplicate_symbols = !check_duplicate_symbols
 and checkers = !checkers
 
 (** should the checkers be run? *)
@@ -1367,7 +1369,6 @@ and checkers_enabled = not (!eradicate || !crashcontext || !quandary)
 and clang_include_to_override = !clang_include_to_override
 and clang_lang = !clang_lang
 and cluster_cmdline = !cluster
-and code_query = !code_query
 and continue_capture = !continue
 and copy_propagation = !copy_propagation
 and crashcontext = !crashcontext

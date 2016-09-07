@@ -9,6 +9,8 @@
 
 #include <stdexcept>
 
+namespace cast_with_enforce {
+
 class WrongParameterException : public std::runtime_error {
  public:
   WrongParameterException(bool e, const char* msg) : std::runtime_error(msg){};
@@ -52,4 +54,5 @@ int cast_with_npe() {
   Base base;
   auto derived = dynamic_cast<Derived*>(&base);
   return derived->a; // npe
+}
 }

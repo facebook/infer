@@ -73,6 +73,14 @@ let add_node g n defined::defined =>
     Procname.Hash.add g.node_map n info
   };
 
+let remove_node_defined g n =>
+  try {
+    let info = Procname.Hash.find g.node_map n;
+    info.defined = false
+  } {
+  | Not_found => ()
+  };
+
 let add_defined_node g n => add_node g n defined::true;
 
 

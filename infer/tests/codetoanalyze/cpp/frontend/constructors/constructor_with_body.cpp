@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+namespace constructor_with_body {
+
 class X {
   int f;
   void init() { f = 0; }
@@ -38,4 +40,5 @@ void test_div0_default_constructor() {
 void test_div1() {
   X x(0, 1);
   x.div();
+}
 }

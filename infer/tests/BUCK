@@ -9,7 +9,6 @@ java_test(
 java_test(
     name='cpp_tests',
     deps=[
-        '//infer/tests/endtoend:cpp_endtoend_tests',
         '//infer/tests/frontend:cpp_frontend_tests',
     ],
 )

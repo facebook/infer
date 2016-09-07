@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+namespace conversion_operator {
+
 struct X {
   operator int() { return f_; }
   operator bool() { return b_; }
@@ -65,4 +67,5 @@ int branch_div1() {
     return 1 / v;
   }
   return x;
+}
 }

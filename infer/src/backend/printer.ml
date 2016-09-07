@@ -458,10 +458,15 @@ let write_html_file linereader filename cfg =
   let (fd, fmt) =
     Io_infer.Html.create DB.Results_dir.Abs_source_dir [".."; fname_encoding] in
   let do_proc proof_cover table_nodes_at_linenum global_err_log proc_name proc_desc =
-    (* add the err_log of this proc to [global_err_log] *)
     let proc_loc = (Cfg.Procdesc.get_loc proc_desc) in
-    if Cfg.Procdesc.is_defined proc_desc &&
-       (DB.source_file_equal proc_loc.Location.file !DB.current_source) then
+    let process_proc =
+      Cfg.Procdesc.is_defined proc_desc &&
+      DB.source_file_equal proc_loc.Location.file !DB.current_source &&
+      match AttributesTable.file_defining_procedure proc_name with
+      | None -> true
+      | Some source_file ->
+          DB.source_file_equal source_file (Cfg.Procdesc.get_loc proc_desc).file in
+    if process_proc then
       begin
         IList.iter (process_node table_nodes_at_linenum) (Cfg.Procdesc.get_nodes proc_desc);
         match Specs.get_summary proc_name with

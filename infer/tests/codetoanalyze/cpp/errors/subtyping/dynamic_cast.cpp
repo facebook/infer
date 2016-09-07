@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+namespace dynamic__cast {
+
 class Base {
   virtual void dummy() {}
 
@@ -72,4 +74,5 @@ void wrongReferenceCastNotAssigned() {
   Base* pbb = new Base;
   Base& pdd = *pbb;
   dynamic_cast<Derived&>(pdd);
+}
 }

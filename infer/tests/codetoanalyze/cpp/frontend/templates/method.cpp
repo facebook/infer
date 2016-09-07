@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+namespace method {
+
 struct X1 {
   int get() { return 1; }
 };
@@ -72,4 +74,5 @@ int div1_getter_templ2() {
   X1 x1_2;
   GetterTempl<X1> g;
   return 1 / g.get(x1_1, x1_2);
+}
 }

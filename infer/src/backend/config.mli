@@ -164,12 +164,12 @@ val bugs_txt : outfile option
 val bugs_xml : outfile option
 val changed_files_index : string option
 val calls_csv : outfile option
+val check_duplicate_symbols : bool
 val checkers : bool
 val checkers_enabled : bool
 val clang_include_to_override : string option
 val clang_lang : clang_lang
 val cluster_cmdline : string option
-val code_query : string option
 val continue_capture : bool
 val copy_propagation : bool
 val crashcontext : bool

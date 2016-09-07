@@ -34,17 +34,6 @@ java_test(
   ],
 )
 
-# ############### Cpp endtoend tests  ########################
-java_test(
-  name='cpp_endtoend_tests',
-  deps=[
-      '//infer/tests/endtoend/cpp/infer:infer',
-  ],
-  visibility=[
-    'PUBLIC',
-  ],
-)
-
 # ############### ObjCpp endtoend tests ########################
 java_test(
   name='objcpp_endtoend_tests',

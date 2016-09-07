@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+namespace temp_object {
+
 struct X {
   X(int a) { f = a; }
   X(int a, int b) { f = a; }
@@ -41,3 +43,4 @@ int getX_method_div0() { return getX(0, 1).div(); }
 int temp_field_div1() { return div(X(1, 0).f); }
 
 int getX_field_div1() { return div(getX(1, 0).f); }
+}

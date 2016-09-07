@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+namespace struct_forward_declare {
+
 // this will never be defined
 struct Y;
 
@@ -64,4 +66,5 @@ int Z_ptr_div0(Z* z) {
   // will get expanded by clang frontend
   z->f = 0;
   return 1 / z->getF();
+}
 }

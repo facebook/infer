@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+namespace function {
+
 struct X1 {
   int getVal() { return 1; }
 };
@@ -70,4 +72,5 @@ int div0_create_and_get_val() {
 
 int div1_create_and_get_val() {
   return createAndGetVal<X3>() / createAndGetVal<X1>();
+}
 }

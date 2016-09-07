@@ -9,6 +9,8 @@
 
 #include <memory>
 
+namespace deref_after_mode_example {
+
 struct Person {
   std::unique_ptr<int> age{new int(35)};
   std::unique_ptr<int> move_age() { return std::move(age); }
@@ -31,4 +33,5 @@ int deref_after_move_ok() {
   Person p;
   auto x = p.move_age();
   return *x;
+}
 }

@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+namespace struct_pass_by_value {
+
 struct X {
   int f;
   X(int f) : f(f) {}
@@ -52,4 +54,5 @@ int param_get_copied_div1() {
   X x(1);
   set_f(x, 0); // this won't change x
   return 1 / x.f;
+}
 }

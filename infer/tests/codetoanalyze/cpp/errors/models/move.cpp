@@ -9,6 +9,8 @@
 
 #include <utility>
 
+namespace move {
+
 struct X {
   X() : f(1) {}
   X(X&& x) {
@@ -40,4 +42,5 @@ int div0_moved_to() {
   X x1;
   X x2 = std::move(x1);
   return 1 / (x2.f - 1);
+}
 }

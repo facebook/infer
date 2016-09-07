@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+namespace boxed_ptr {
+
 struct X {
   int field;
   int* getPtr() { return &field; }
@@ -61,4 +63,5 @@ void smart_ptr_result_method_ok_deref() {
   X x;
   p.data = &x;
   int f = *(p.get()->getPtr());
+}
 }

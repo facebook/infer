@@ -35,5 +35,3 @@ void no_resource_leak(const char* filename) {
   OpenFile f(filename);
   return;
 }
-
-int main() {}

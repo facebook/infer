@@ -9,6 +9,8 @@
 
 #include <memory>
 
+namespace npe_added_to_b1 {
+
 int deref_ref(std::shared_ptr<int>& p) { return *p; }
 
 int causes_npe() {
@@ -27,4 +29,5 @@ int deref_person(Person& p) { return *(p.f1); }
 int causes_npe_person() {
   Person p;
   return deref_person(p);
+}
 }

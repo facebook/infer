@@ -9,6 +9,8 @@
 
 #include <memory>
 
+namespace shared_ptr {
+
 struct X {
   int field;
   int get() { return field; }
@@ -126,4 +128,5 @@ int shared_ptr_check_null2(std::shared_ptr<int> p) {
   if (p == nullptr)
     return 1;
   return *p;
+}
 }

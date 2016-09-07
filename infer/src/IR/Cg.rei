@@ -119,6 +119,10 @@ let load_from_file: DB.filename => option t;
 let node_defined: t => Procname.t => bool;
 
 
+/** Remove the defined flag from a node, if it exists. */
+let remove_node_defined: t => Procname.t => unit;
+
+
 /** Print the current call graph as a dotty file. If the filename is [None],
     use the current file dir inside the DB dir. */
 let save_call_graph_dotty: option DB.filename => (Procname.t => list 'a) => t => unit;

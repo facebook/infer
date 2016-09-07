@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+namespace constructor_new {
+
 class Person {
  public:
   Person() { x = 0; }
@@ -96,4 +98,5 @@ void array_of_person_with_constant_size() { Person* tarray = new Person[10]; }
 void matrix_of_person() {
   Person** tarray = new Person*[10];
   tarray[0] = new Person[10];
+}
 }

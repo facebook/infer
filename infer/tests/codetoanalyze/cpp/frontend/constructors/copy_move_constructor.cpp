@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+namespace copy_move_constructor {
+
 // NOTE: that test will break if we start doing copy elision
 // will have default copy/move constructors - used to test
 // whether they get translated correctly
@@ -76,4 +78,5 @@ int copyY_moveY_div1() {
   int d1 = 1 / y2.f;
   int d2 = 1 / getY(2).f;
   return d1 + d2;
+}
 }

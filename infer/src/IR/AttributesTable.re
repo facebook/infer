@@ -191,3 +191,21 @@ let stats () => {
     Config.developer_mode ? Some (Marshal.data_size (Marshal.to_bytes attr_tbl []) 0 / 1024) : None;
   {num_bindings, num_buckets, max_bucket_length, serialized_size_kb}
 };
+
+/* Find the file where the procedure is defined according to the attributes,
+   if a cfg for that file exist. */
+let file_defining_procedure pname =>
+  switch (load_attributes pname) {
+  | None => None
+  | Some proc_attributes =>
+    let loc = proc_attributes.ProcAttributes.loc;
+    let source_file = loc.file;
+    let source_dir = DB.source_dir_from_source_file source_file;
+    let cfg_fname = DB.source_dir_get_internal_file source_dir ".cfg";
+    let cfg_fname_exists = Sys.file_exists (DB.filename_to_string cfg_fname);
+    if cfg_fname_exists {
+      Some source_file
+    } else {
+      None
+    }
+  };

@@ -1,0 +1,1 @@
+../../frontend/templates/class_template_instantiate.cpp

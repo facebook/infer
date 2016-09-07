@@ -73,38 +73,31 @@ let add_cg (exe_env: t) (source_dir : DB.source_dir) =
   let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
   match Cg.load_from_file cg_fname with
   | None ->
-      L.stderr "cannot load %s@." (DB.filename_to_string cg_fname);
-      None
+      L.stderr "cannot load %s@." (DB.filename_to_string cg_fname)
   | Some cg ->
       let source = Cg.get_source cg in
       exe_env.source_files <- DB.SourceFileSet.add source exe_env.source_files;
       let nLOC = Cg.get_nLOC cg in
-      Cg.extend exe_env.cg cg;
       let file_data = new_file_data source nLOC cg_fname in
       let defined_procs = Cg.get_defined_nodes cg in
 
-      (* Find the file where `pname` is defined according to the attributes,
-         if a cfg for that file exist. *)
-      let defined_in_according_to_attributes pname =
-        match AttributesTable.load_attributes pname with
-        | None ->
-            None
-        | Some proc_attributes ->
-            let loc = proc_attributes.ProcAttributes.loc in
-            let source_file = loc.Location.file in
-            let source_dir = DB.source_dir_from_source_file source_file in
-            let cfg_fname = DB.source_dir_get_internal_file source_dir ".cfg" in
-            let cfg_fname_exists = Sys.file_exists (DB.filename_to_string cfg_fname) in
-            if cfg_fname_exists
-            then Some source_file
-            else None in
-
       IList.iter
         (fun pname ->
-           if (defined_in_according_to_attributes pname = None)
-           then Procname.Hash.replace exe_env.proc_map pname file_data)
+           (match AttributesTable.file_defining_procedure pname with
+            | None ->
+                Procname.Hash.replace exe_env.proc_map pname file_data
+            | Some source_defined ->
+                let multiply_defined = DB.source_file_compare source source_defined <> 0 in
+                if multiply_defined then Cg.remove_node_defined cg pname;
+                if Config.check_duplicate_symbols &&
+                   multiply_defined then
+                  L.stderr "@.DUPLICATE_SYMBOLS source: %s source_defined:%s pname:%a@."
+                    (DB.source_file_to_string source)
+                    (DB.source_file_to_string source_defined)
+                    Procname.pp pname
+           ))
         defined_procs;
-      Some cg
+      Cg.extend exe_env.cg cg
 
 (** get the global call graph *)
 let get_cg exe_env =

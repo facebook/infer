@@ -26,7 +26,7 @@ val create : unit -> initial
 
 (** add call graph from the source dir in the spec db,
     with relative tenv and cfg, to the execution environment *)
-val add_cg : initial -> DB.source_dir -> Cg.t option
+val add_cg : initial -> DB.source_dir -> unit
 
 (** get the global call graph *)
 val get_cg : t -> Cg.t

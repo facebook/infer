@@ -54,7 +54,7 @@ let analyze_exe_env exe_env => {
 /** Create an exe_env from a cluster. */
 let exe_env_from_cluster cluster => {
   let _exe_env = Exe_env.create ();
-  ignore (Exe_env.add_cg _exe_env cluster);
+  Exe_env.add_cg _exe_env cluster;
   Exe_env.freeze _exe_env
 };
 

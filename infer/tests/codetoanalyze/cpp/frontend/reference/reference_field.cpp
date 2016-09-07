@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+namespace reference_field {
+
 struct X {
   int f;
 };
@@ -139,4 +141,5 @@ int val_getI_div0() {
   Val r(x);
   x.f = 1;
   return 1 / r.getI();
+}
 }
