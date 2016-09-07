@@ -16,5 +16,10 @@ Basics.java:67: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.infer
 Basics.java:77: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 75]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 77]) via {  }
 Basics.java:89: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 85]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 89]) via {  }
 Basics.java:95: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 93]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 95]) via {  }
+Fields.java:28: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 27]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 28]) via {  }
+Fields.java:33: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 32]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 33]) via {  }
+Fields.java:38: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 37]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 38]) via {  }
+Fields.java:44: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 43]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 44]) via {  }
+Fields.java:51: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 49]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 51]) via {  }
 LoggingPrivateData.java:18: ERROR: QUANDARY_TAINT_ERROR Error: SharedPreferences(String SharedPreferences.getString(String,String) at [line 18]) -> Logging(int Log.d(String,String) at [line 18]) via {  }
 LoggingPrivateData.java:22: ERROR: QUANDARY_TAINT_ERROR Error: SharedPreferences(String SharedPreferences.getString(String,String) at [line 22]) -> Logging(int Log.d(String,String) at [line 22]) via {  }

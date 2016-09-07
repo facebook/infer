@@ -12,6 +12,7 @@ INFERPRINT_OPTIONS = --issues-txt
 
 FILES = \
   Basics.java \
+  Fields.java \
   LoggingPrivateData.java \
 
 compile:
