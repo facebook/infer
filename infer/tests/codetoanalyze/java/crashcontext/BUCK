@@ -15,7 +15,7 @@ java_library(
   ]
 )
 
-out = 'out'
+out = 'infer-out'
 inferconfig_file = '$(location //infer/tests/codetoanalyze/java:inferconfig)'
 copy_inferconfig = ' '.join(['cp', inferconfig_file, '$SRCDIR'])
 clean_cmd = ' '.join(['rm', '-rf', out])
@@ -26,7 +26,6 @@ def mk_infer_cmd(tag, srcs, stacktrace):
         'infer',
         '--no-progress-bar',
         '--absolute-paths',
-        '-o', out,
         '-a', 'crashcontext',
         '--stacktrace', stacktrace,
         '--',

@@ -70,17 +70,21 @@ let stitch_summaries stacktrace_file summary_files out_file =
 
 let collect_all_summaries root_summaries_dir stacktrace_file stacktraces_dir =
   let method_summaries =
-    let path_regexp = Str.regexp ".*crashcontext/.*\\..*\\.json" in
-    let path_matcher path =  Str.string_match path_regexp path 0 in
-    DB.paths_matching root_summaries_dir path_matcher in
+    Utils.directory_fold
+      (fun summaries path ->
+         (* check if the file is a JSON file under the crashcontext dir *)
+         if not (Sys.is_directory path) && Filename.check_suffix path "json" &&
+            string_is_suffix "crashcontext" (Filename.dirname path)
+         then path :: summaries
+         else summaries)
+      []
+      root_summaries_dir in
   let pair_for_stacktrace_file = match stacktrace_file with
     | None -> None
-    | Some file -> begin
-        let crashcontext_dir =
-          Config.results_dir // "crashcontext" in
+    | Some file ->
+        let crashcontext_dir = Config.results_dir // "crashcontext" in
         DB.create_dir crashcontext_dir;
-        Some (file, crashcontext_dir // "crashcontext.json")
-      end in
+        Some (file, crashcontext_dir // "crashcontext.json") in
   let trace_file_regexp = Str.regexp "\\(.*\\)\\.json" in
   let pairs_for_stactrace_dir = match stacktraces_dir with
     | None -> []
