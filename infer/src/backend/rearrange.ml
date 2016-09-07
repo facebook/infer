@@ -1089,9 +1089,7 @@ let rec iter_rearrange
           L.d_ln();
         end;
         struct_typ
-    | Sil.Off_index _ :: off
-      when !Config.curr_language = Config.Clang
-      (* TODO(t7651424): turn on for Java. Needs fixing in the frontend *) ->
+    | Sil.Off_index _ :: off ->
         Typ.Tarray (root_typ_of_offsets off, None)
     | _ ->
         typ_from_instr in

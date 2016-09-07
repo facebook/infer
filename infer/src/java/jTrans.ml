@@ -828,13 +828,12 @@ let rec instruction context pc instr : translation =
         JContext.add_goto_jump context pc JContext.Exit;
         Instr node
     | JBir.AffectArray (array_ex, index_ex, value_ex) ->
-        let (instrs_array, sil_expr_array, arr_type) = expression context pc array_ex
+        let (instrs_array, sil_expr_array, _) = expression context pc array_ex
         and (instrs_index, sil_expr_index, _) = expression context pc index_ex
-        and (instrs_value, sil_expr_value, _) = expression context pc value_ex in
-        let arr_type_np = JTransType.extract_cn_type_np arr_type in
+        and (instrs_value, sil_expr_value, value_typ) = expression context pc value_ex in
         let sil_instr =
           Sil.Store (
-            Exp.Lindex (sil_expr_array, sil_expr_index), arr_type_np, sil_expr_value, loc) in
+            Exp.Lindex (sil_expr_array, sil_expr_index), value_typ, sil_expr_value, loc) in
         let final_instrs = instrs_array @ instrs_index @ instrs_value @ [sil_instr] in
         let node_kind = Cfg.Node.Stmt_node "method_body" in
         let node = create_node node_kind final_instrs in
