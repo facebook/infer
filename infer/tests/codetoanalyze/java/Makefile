@@ -25,7 +25,7 @@ default: compile
 
 print: analyze
 	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) issues.exp.test
-	LC_ALL=C sort -o issues.exp.test issues.exp.test
+	LC_ALL=C sort -t: -k1,1 -k2n,2 -o issues.exp.test issues.exp.test
 
 test: analyze print
 	make clean

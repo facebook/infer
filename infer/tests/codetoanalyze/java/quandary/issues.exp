@@ -1,10 +1,3 @@
-Basics.java:103: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 100]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 103]) via {  }
-Basics.java:118: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 113]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 118]) via {  }
-Basics.java:132: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 129]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 132]) via {  }
-Basics.java:142: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 140]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 142]) via {  }
-Basics.java:153: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 150]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 153]) via {  }
-Basics.java:188: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 185]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 188]) via {  }
-Basics.java:197: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 193]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 197]) via {  }
 Basics.java:24: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 24]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 24]) via {  }
 Basics.java:29: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 28]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 29]) via {  }
 Basics.java:35: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 33]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 35]) via {  }
@@ -16,6 +9,13 @@ Basics.java:67: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.infer
 Basics.java:77: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 75]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 77]) via {  }
 Basics.java:89: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 85]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 89]) via {  }
 Basics.java:95: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 93]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 95]) via {  }
+Basics.java:103: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 100]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 103]) via {  }
+Basics.java:118: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 113]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 118]) via {  }
+Basics.java:132: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 129]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 132]) via {  }
+Basics.java:142: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 140]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 142]) via {  }
+Basics.java:153: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 150]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 153]) via {  }
+Basics.java:188: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 185]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 188]) via {  }
+Basics.java:197: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 193]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 197]) via {  }
 Fields.java:28: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 27]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 28]) via {  }
 Fields.java:33: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 32]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 33]) via {  }
 Fields.java:38: ERROR: QUANDARY_TAINT_ERROR Error: Other(Object InferTaint.inferSecretSource() at [line 37]) -> Other(void InferTaint.inferSensitiveSink(Object) at [line 38]) via {  }
