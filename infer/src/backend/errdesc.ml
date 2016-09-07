@@ -981,7 +981,7 @@ let explain_nth_function_parameter tenv use_buckets deref_str prop n pvar_off =
 let find_with_exp prop exp =
   let res = ref None in
   let found_in_pvar pv =
-    if not (Pvar.is_abducted pv) && not (Pvar.is_this pv) then
+    if not (Pvar.is_abduced pv) && not (Pvar.is_this pv) then
       res := Some (pv, Fpvar) in
   let found_in_struct pv fld_lst = (* found_in_pvar has priority *)
     if !res = None then res := Some (pv, Fstruct (IList.rev fld_lst)) in

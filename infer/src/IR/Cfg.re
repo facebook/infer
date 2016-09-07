@@ -897,7 +897,7 @@ let get_name_of_objc_block_locals p => {
   IList.flatten (IList.flatten vars_sigma)
 };
 
-let remove_abducted_retvars tenv p =>
+let remove_abduced_retvars tenv p =>
   /* compute the hpreds and pure atoms reachable from the set of seed expressions in [exps] */
   {
     let compute_reachable p seed_exps => {
@@ -967,31 +967,31 @@ let remove_abducted_retvars tenv p =>
       };
       (Sil.HpredSet.elements reach_hpreds, reach_pi)
     };
-    /* separate the abducted pvars from the normal ones, deallocate the abducted ones*/
-    let (abducteds, normal_pvars) =
+    /* separate the abduced pvars from the normal ones, deallocate the abduced ones*/
+    let (abduceds, normal_pvars) =
       IList.fold_left
         (
           fun pvars hpred =>
             switch hpred {
             | Sil.Hpointsto (Exp.Lvar pvar) _ _ =>
-              let (abducteds, normal_pvars) = pvars;
-              if (Pvar.is_abducted pvar) {
-                ([pvar, ...abducteds], normal_pvars)
+              let (abduceds, normal_pvars) = pvars;
+              if (Pvar.is_abduced pvar) {
+                ([pvar, ...abduceds], normal_pvars)
               } else {
-                (abducteds, [pvar, ...normal_pvars])
+                (abduceds, [pvar, ...normal_pvars])
               }
             | _ => pvars
             }
         )
         ([], [])
         p.Prop.sigma;
-    let (_, p') = Attribute.deallocate_stack_vars tenv p abducteds;
+    let (_, p') = Attribute.deallocate_stack_vars tenv p abduceds;
     let normal_pvar_set =
       IList.fold_left
         (fun normal_pvar_set pvar => Exp.Set.add (Exp.Lvar pvar) normal_pvar_set)
         Exp.Set.empty
         normal_pvars;
-    /* walk forward from non-abducted pvars, keep everything reachable. remove everything else */
+    /* walk forward from non-abduced pvars, keep everything reachable. remove everything else */
     let (sigma_reach, pi_reach) = compute_reachable p' normal_pvar_set;
     Prop.normalize tenv (Prop.set p' pi::pi_reach sigma::sigma_reach)
   };
@@ -1011,7 +1011,7 @@ let remove_locals tenv (curr_f: Procdesc.t) p => {
   (
     removed,
     if Config.angelic_execution {
-      remove_abducted_retvars tenv p'
+      remove_abduced_retvars tenv p'
     } else {
       p'
     }

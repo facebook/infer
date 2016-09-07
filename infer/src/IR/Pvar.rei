@@ -55,8 +55,8 @@ let get_ret_pvar: Procname.t => t;
 let get_simplified_name: t => string;
 
 
-/** Check if the pvar is an abducted return var or param passed by ref */
-let is_abducted: t => bool;
+/** Check if the pvar is an abduced return var or param passed by ref */
+let is_abduced: t => bool;
 
 
 /** Check if the pvar is a callee var */
@@ -91,12 +91,12 @@ let is_frontend_tmp: t => bool;
 let mk: Mangled.t => Procname.t => t;
 
 
-/** create an abducted variable for a parameter passed by reference */
-let mk_abducted_ref_param: Procname.t => t => Location.t => t;
+/** create an abduced variable for a parameter passed by reference */
+let mk_abduced_ref_param: Procname.t => t => Location.t => t;
 
 
-/** create an abducted return variable for a call to [proc_name] at [loc] */
-let mk_abducted_ret: Procname.t => Location.t => t;
+/** create an abduced return variable for a call to [proc_name] at [loc] */
+let mk_abduced_ret: Procname.t => Location.t => t;
 
 
 /** [mk_callee name proc_name] creates a program var

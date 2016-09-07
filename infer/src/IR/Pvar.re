@@ -24,8 +24,8 @@ let module F = Format;
 type pvar_kind =
   | Local_var of Procname.t /** local variable belonging to a function */
   | Callee_var of Procname.t /** local variable belonging to a callee */
-  | Abducted_retvar of Procname.t Location.t /** synthetic variable to represent return value */
-  | Abducted_ref_param of Procname.t t Location.t
+  | Abduced_retvar of Procname.t Location.t /** synthetic variable to represent return value */
+  | Abduced_ref_param of Procname.t t Location.t
   /** synthetic variable to represent param passed by reference */
   | Global_var /** gloval variable */
   | Seed_var /** variable used to store the initial value of formal parameters */
@@ -40,16 +40,16 @@ let rec pvar_kind_compare k1 k2 =>
   | (Callee_var n1, Callee_var n2) => Procname.compare n1 n2
   | (Callee_var _, _) => (-1)
   | (_, Callee_var _) => 1
-  | (Abducted_retvar p1 l1, Abducted_retvar p2 l2) =>
+  | (Abduced_retvar p1 l1, Abduced_retvar p2 l2) =>
     let n = Procname.compare p1 p2;
     if (n != 0) {
       n
     } else {
       Location.compare l1 l2
     }
-  | (Abducted_retvar _, _) => (-1)
-  | (_, Abducted_retvar _) => 1
-  | (Abducted_ref_param p1 pv1 l1, Abducted_ref_param p2 pv2 l2) =>
+  | (Abduced_retvar _, _) => (-1)
+  | (_, Abduced_retvar _) => 1
+  | (Abduced_ref_param p1 pv1 l1, Abduced_ref_param p2 pv2 l2) =>
     let n = Procname.compare p1 p2;
     if (n != 0) {
       n
@@ -61,8 +61,8 @@ let rec pvar_kind_compare k1 k2 =>
         Location.compare l1 l2
       }
     }
-  | (Abducted_ref_param _, _) => (-1)
-  | (_, Abducted_ref_param _) => 1
+  | (Abduced_ref_param _, _) => (-1)
+  | (_, Abduced_ref_param _) => 1
   | (Global_var, Global_var) => 0
   | (Global_var, _) => (-1)
   | (_, Global_var) => 1
@@ -94,17 +94,17 @@ let rec _pp f pv => {
     } else {
       F.fprintf f "%a$%a|callee" Procname.pp n Mangled.pp name
     }
-  | Abducted_retvar n l =>
+  | Abduced_retvar n l =>
     if !Config.pp_simple {
-      F.fprintf f "%a|abductedRetvar" Mangled.pp name
+      F.fprintf f "%a|abducedRetvar" Mangled.pp name
     } else {
-      F.fprintf f "%a$%a%a|abductedRetvar" Procname.pp n Location.pp l Mangled.pp name
+      F.fprintf f "%a$%a%a|abducedRetvar" Procname.pp n Location.pp l Mangled.pp name
     }
-  | Abducted_ref_param n pv l =>
+  | Abduced_ref_param n pv l =>
     if !Config.pp_simple {
-      F.fprintf f "%a|%a|abductedRefParam" _pp pv Mangled.pp name
+      F.fprintf f "%a|%a|abducedRefParam" _pp pv Mangled.pp name
     } else {
-      F.fprintf f "%a$%a%a|abductedRefParam" Procname.pp n Location.pp l Mangled.pp name
+      F.fprintf f "%a$%a%a|abducedRefParam" Procname.pp n Location.pp l Mangled.pp name
     }
   | Global_var => F.fprintf f "#GB$%a" Mangled.pp name
   | Seed_var => F.fprintf f "old_%a" Mangled.pp name
@@ -125,22 +125,22 @@ let pp_latex f pv => {
       (Mangled.to_string name)
       (Latex.pp_string Latex.Roman)
       "callee"
-  | Abducted_retvar _ =>
+  | Abduced_retvar _ =>
     F.fprintf
       f
       "%a_{%a}"
       (Latex.pp_string Latex.Roman)
       (Mangled.to_string name)
       (Latex.pp_string Latex.Roman)
-      "abductedRetvar"
-  | Abducted_ref_param _ =>
+      "abducedRetvar"
+  | Abduced_ref_param _ =>
     F.fprintf
       f
       "%a_{%a}"
       (Latex.pp_string Latex.Roman)
       (Mangled.to_string name)
       (Latex.pp_string Latex.Roman)
-      "abductedRefParam"
+      "abducedRefParam"
   | Global_var => Latex.pp_string Latex.Boldface f (Mangled.to_string name)
   | Seed_var =>
     F.fprintf
@@ -212,10 +212,10 @@ let get_simplified_name pv => {
 
 
 /** Check if the pvar is an abucted return var or param passed by ref */
-let is_abducted pv =>
+let is_abduced pv =>
   switch pv.pv_kind {
-  | Abducted_retvar _
-  | Abducted_ref_param _ => true
+  | Abduced_retvar _
+  | Abduced_ref_param _ => true
   | _ => false
   };
 
@@ -287,8 +287,8 @@ let to_callee pname pvar =>
   | Local_var _ => {...pvar, pv_kind: Callee_var pname}
   | Global_var => pvar
   | Callee_var _
-  | Abducted_retvar _
-  | Abducted_ref_param _
+  | Abduced_retvar _
+  | Abduced_ref_param _
   | Seed_var =>
     L.d_str "Cannot convert pvar to callee: ";
     d pvar;
@@ -326,13 +326,13 @@ let mk_tmp name pname => {
 };
 
 
-/** create an abducted return variable for a call to [proc_name] at [loc] */
-let mk_abducted_ret (proc_name: Procname.t) (loc: Location.t) :t => {
+/** create an abduced return variable for a call to [proc_name] at [loc] */
+let mk_abduced_ret (proc_name: Procname.t) (loc: Location.t) :t => {
   let name = Mangled.from_string ("$RET_" ^ Procname.to_unique_id proc_name);
-  {pv_name: name, pv_kind: Abducted_retvar proc_name loc}
+  {pv_name: name, pv_kind: Abduced_retvar proc_name loc}
 };
 
-let mk_abducted_ref_param (proc_name: Procname.t) (pv: t) (loc: Location.t) :t => {
+let mk_abduced_ref_param (proc_name: Procname.t) (pv: t) (loc: Location.t) :t => {
   let name = Mangled.from_string ("$REF_PARAM_" ^ Procname.to_unique_id proc_name);
-  {pv_name: name, pv_kind: Abducted_ref_param proc_name pv loc}
+  {pv_name: name, pv_kind: Abduced_ref_param proc_name pv loc}
 };

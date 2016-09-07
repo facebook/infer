@@ -789,27 +789,28 @@ let do_error_checks tenv node_opt instr pname pdesc = match node_opt with
   | None ->
       ()
 
-let add_strexp_to_footprint tenv strexp abducted_pv typ prop =
-  let abducted_lvar = Exp.Lvar abducted_pv in
+let add_strexp_to_footprint tenv strexp abduced_pv typ prop =
+  let abduced_lvar = Exp.Lvar abduced_pv in
   let lvar_pt_fpvar =
     let sizeof_exp = Exp.Sizeof (typ, None, Subtype.subtypes) in
-    Prop.mk_ptsto tenv abducted_lvar strexp sizeof_exp in
+    Prop.mk_ptsto tenv abduced_lvar strexp sizeof_exp in
   let sigma_fp = prop.Prop.sigma_fp in
   Prop.normalize tenv (Prop.set prop ~sigma_fp:(lvar_pt_fpvar :: sigma_fp))
 
-let add_to_footprint tenv abducted_pv typ prop =
+let add_to_footprint tenv abduced_pv typ prop =
   let fresh_fp_var = Exp.Var (Ident.create_fresh Ident.kfootprint) in
-  let prop' = add_strexp_to_footprint tenv (Sil.Eexp (fresh_fp_var, Sil.Inone)) abducted_pv typ prop in
+  let prop' =
+    add_strexp_to_footprint tenv (Sil.Eexp (fresh_fp_var, Sil.Inone)) abduced_pv typ prop in
   prop', fresh_fp_var
 
 (* the current abduction mechanism treats struct values differently than all other types. abduction
    on struct values adds a a struct whose fields are initialized to fresh footprint vars to the
    footprint. regular abduction just adds a fresh footprint value of the correct type to the
    footprint. we can get rid of this special case if we fix the abduction on struct values *)
-let add_struct_value_to_footprint tenv abducted_pv typ prop =
+let add_struct_value_to_footprint tenv abduced_pv typ prop =
   let struct_strexp =
     Prop.create_strexp_of_type tenv Prop.Fld_init typ None Sil.inst_none in
-  let prop' = add_strexp_to_footprint tenv struct_strexp abducted_pv typ prop in
+  let prop' = add_strexp_to_footprint tenv struct_strexp abduced_pv typ prop in
   prop', struct_strexp
 
 let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nullable_annot typ callee_pname callee_loc=
@@ -817,17 +818,17 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nullable_annot typ ca
   else
     let is_rec_call pname = (* TODO: (t7147096) extend this to detect mutual recursion *)
       Procname.equal pname (Cfg.Procdesc.get_proc_name pdesc) in
-    let already_has_abducted_retval p abducted_ret_pv =
+    let already_has_abduced_retval p abduced_ret_pv =
       IList.exists
         (fun hpred -> match hpred with
-           | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abducted_ret_pv
+           | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abduced_ret_pv
            | _ -> false)
         p.Prop.sigma_fp in
-    (* find an hpred [abducted] |-> A in [prop] and add [exp] = A to prop *)
-    let bind_exp_to_abducted_val exp_to_bind abducted prop =
+    (* find an hpred [abduced] |-> A in [prop] and add [exp] = A to prop *)
+    let bind_exp_to_abduced_val exp_to_bind abduced prop =
       let bind_exp prop = function
         | Sil.Hpointsto (Exp.Lvar pv, Sil.Eexp (rhs, _), _)
-          when Pvar.equal pv abducted ->
+          when Pvar.equal pv abduced ->
             Prop.conjoin_eq tenv exp_to_bind rhs prop
         | _ -> prop in
       IList.fold_left bind_exp prop prop.Prop.sigma in
@@ -845,17 +846,17 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nullable_annot typ ca
 
     if Config.angelic_execution && not (is_rec_call callee_pname) then
       (* introduce a fresh program variable to allow abduction on the return value *)
-      let abducted_ret_pv = Pvar.mk_abducted_ret callee_pname callee_loc in
-      (* prevent introducing multiple abducted retvals for a single call site in a loop *)
-      if already_has_abducted_retval prop abducted_ret_pv then prop
+      let abduced_ret_pv = Pvar.mk_abduced_ret callee_pname callee_loc in
+      (* prevent introducing multiple abduced retvals for a single call site in a loop *)
+      if already_has_abduced_retval prop abduced_ret_pv then prop
       else
         let prop' =
           if !Config.footprint then
-            let (prop', fresh_fp_var) = add_to_footprint tenv abducted_ret_pv typ prop in
+            let (prop', fresh_fp_var) = add_to_footprint tenv abduced_ret_pv typ prop in
             Prop.conjoin_eq tenv ~footprint: true ret_exp fresh_fp_var prop'
           else
-            (* bind return id to the abducted value pointed to by the pvar we introduced *)
-            bind_exp_to_abducted_val ret_exp abducted_ret_pv prop in
+            (* bind return id to the abduced value pointed to by the pvar we introduced *)
+            bind_exp_to_abduced_val ret_exp abduced_ret_pv prop in
         let prop'' = add_ret_non_null ret_exp typ prop' in
         if Config.taint_analysis then
           match Taint.returns_tainted callee_pname None with
@@ -1291,27 +1292,27 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
     match actual with
     | Exp.Lvar actual_pv ->
         (* introduce a fresh program variable to allow abduction on the return value *)
-        let abducted_ref_pv =
-          Pvar.mk_abducted_ref_param callee_pname actual_pv callee_loc in
-        let already_has_abducted_retval p =
+        let abduced_ref_pv =
+          Pvar.mk_abduced_ref_param callee_pname actual_pv callee_loc in
+        let already_has_abduced_retval p =
           IList.exists
             (fun hpred -> match hpred with
-               | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abducted_ref_pv
+               | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abduced_ref_pv
                | _ -> false)
             p.Prop.sigma_fp in
-        (* prevent introducing multiple abducted retvals for a single call site in a loop *)
-        if already_has_abducted_retval prop then prop
+        (* prevent introducing multiple abduced retvals for a single call site in a loop *)
+        if already_has_abduced_retval prop then prop
         else
         if !Config.footprint then
           let prop', abduced_strexp = match actual_typ with
             | Typ.Tptr ((Typ.Tstruct _) as typ, _) ->
                 (* for struct types passed by reference, do abduction on the fields of the
                    struct *)
-                add_struct_value_to_footprint tenv abducted_ref_pv typ prop
+                add_struct_value_to_footprint tenv abduced_ref_pv typ prop
             | Typ.Tptr (typ, _) ->
                 (* for pointer types passed by reference, do abduction directly on the pointer *)
                 let (prop', fresh_fp_var) =
-                  add_to_footprint tenv abducted_ref_pv typ prop in
+                  add_to_footprint tenv abduced_ref_pv typ prop in
                 prop', Sil.Eexp (fresh_fp_var, Sil.Inone)
             | typ ->
                 failwith
@@ -1327,7 +1328,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
               prop'.Prop.sigma in
           Prop.normalize tenv (Prop.set prop' ~sigma:filtered_sigma)
         else
-          (* bind actual passed by ref to the abducted value pointed to by the synthetic pvar *)
+          (* bind actual passed by ref to the abduced value pointed to by the synthetic pvar *)
           let prop' =
             let filtered_sigma =
               IList.filter
@@ -1340,7 +1341,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
           IList.fold_left
             (fun p hpred ->
                match hpred with
-               | Sil.Hpointsto (Exp.Lvar pv, rhs, texp) when Pvar.equal pv abducted_ref_pv ->
+               | Sil.Hpointsto (Exp.Lvar pv, rhs, texp) when Pvar.equal pv abduced_ref_pv ->
                    let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
                    Prop.normalize tenv (Prop.set p ~sigma:(new_hpred :: prop'.Prop.sigma))
                | _ -> p)
