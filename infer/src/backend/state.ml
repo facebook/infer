@@ -132,8 +132,7 @@ let node_simple_key node =
       | Sil.Nullify _ -> add_key 5
       | Sil.Abstract _ -> add_key 6
       | Sil.Remove_temps _ -> add_key 7
-      | Sil.Stackop _ -> add_key 8
-      | Sil.Declare_locals _ -> add_key 9 in
+      | Sil.Declare_locals _ -> add_key 8 in
   IList.iter do_instr (Cfg.Node.get_instrs node);
   Hashtbl.hash !key
 

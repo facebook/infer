@@ -52,7 +52,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           astate
         |> exp_add_live call_exp
         |> IList.fold_right exp_add_live (IList.map fst params)
-    | Sil.Declare_locals _ | Stackop _ | Remove_temps _ | Abstract _ | Nullify _ ->
+    | Sil.Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
 end
 

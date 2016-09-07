@@ -1068,8 +1068,6 @@ let typecheck_instr
 
       let node', ncond = normalize_cond node cond in
       check_condition node' ncond
-  | Sil.Stackop _ ->
-      typestate
 
 (** Typecheck the instructions in a cfg node. *)
 let typecheck_node

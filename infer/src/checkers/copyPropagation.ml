@@ -107,8 +107,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         if !Config.curr_language = Config.Java
         then astate' (* Java doesn't have pass-by-reference *)
         else IList.fold_left kill_actuals_by_ref astate' actuals
-    | Sil.Store _ | Sil.Prune _ | Sil.Nullify _ | Sil.Abstract _ | Sil.Remove_temps _
-    | Sil.Declare_locals _ | Sil.Stackop _ ->
+    | Sil.Store _ | Prune _ | Nullify _ | Abstract _ | Remove_temps _ | Declare_locals _ ->
         (* none of these can assign to program vars or logical vars *)
         astate
 end

@@ -44,7 +44,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | actual_exp, Typ.Tptr _ -> add_address_taken_pvars actual_exp astate_acc
           | _ -> astate_acc in
         IList.fold_left add_actual_by_ref astate actuals
-    | Sil.Store _ | Load _ | Prune _ | Nullify _ | Abstract _ | Remove_temps _ | Stackop _
+    | Sil.Store _ | Load _ | Prune _ | Nullify _ | Abstract _ | Remove_temps _
     | Declare_locals _ ->
         astate
 end

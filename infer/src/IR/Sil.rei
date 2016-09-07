@@ -34,13 +34,6 @@ type if_kind =
   | Ik_switch;
 
 
-/** Stack operation for symbolic execution on propsets */
-type stackop =
-  | Push /* copy the curreny propset to the stack */
-  | Swap /* swap the current propset and the top of the stack */
-  | Pop /* pop the stack and combine with the current propset */;
-
-
 /** An instruction. */
 type instr =
   /** Load a value from the heap into an identifier.
@@ -67,8 +60,9 @@ type instr =
   | Nullify of Pvar.t Location.t
   | Abstract of Location.t /** apply abstraction */
   | Remove_temps of (list Ident.t) Location.t /** remove temporaries */
-  | Stackop of stackop Location.t /** operation on the stack of propsets */
   | Declare_locals of (list (Pvar.t, Typ.t)) Location.t /** declare local variables */;
+
+let skip_instr: instr;
 
 
 /** Check if an instruction is auxiliary, or if it comes from source instructions. */

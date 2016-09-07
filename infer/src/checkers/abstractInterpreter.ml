@@ -63,11 +63,8 @@ module MakeNoCFG
         | None -> post, inv_map in
       (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
       let instr_ids = match CFG.instr_ids node with
-        | [] ->
-            (* TODO: get rid of Stackop and replace it with Skip *)
-            [Sil.Stackop (Push, Location.dummy), None]
-        | l ->
-            l in
+        | [] -> [Sil.skip_instr, None]
+        | l -> l in
       let astate_post, inv_map_post = IList.fold_left compute_post (pre, inv_map) instr_ids in
       L.out "Post for node %a is %a@." CFG.pp_id node_id A.pp astate_post;
       let inv_map'' = M.add node_id { pre; post=astate_post; visit_count; } inv_map_post in

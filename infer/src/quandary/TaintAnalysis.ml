@@ -234,7 +234,7 @@ module Make (TraceDomain : Trace.S) = struct
           astate_with_source
       | Sil.Call _ ->
           failwith "Unimp: non-pname call expressions"
-      | Sil.Prune _ | Remove_temps _ | Nullify _ | Abstract _ | Stackop _ | Declare_locals _ ->
+      | Sil.Prune _ | Remove_temps _ | Nullify _ | Abstract _ | Declare_locals _ ->
           astate
   end
 

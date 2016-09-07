@@ -541,7 +541,6 @@ let callback_check_field_access { Callbacks.proc_desc } =
     | Sil.Nullify _
     | Sil.Abstract _
     | Sil.Remove_temps _
-    | Sil.Stackop _
     | Sil.Declare_locals _ ->
         () in
   Cfg.Procdesc.iter_instrs do_instr proc_desc

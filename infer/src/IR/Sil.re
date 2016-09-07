@@ -32,13 +32,6 @@ type if_kind =
   | Ik_switch;
 
 
-/** Stack operation for symbolic execution on propsets */
-type stackop =
-  | Push /* copy the curreny propset to the stack */
-  | Swap /* swap the current propset and the top of the stack */
-  | Pop /* pop the stack and combine with the current propset */;
-
-
 /** An instruction. */
 type instr =
   /** Load a value from the heap into an identifier.
@@ -65,8 +58,9 @@ type instr =
   | Nullify of Pvar.t Location.t
   | Abstract of Location.t /** apply abstraction */
   | Remove_temps of (list Ident.t) Location.t /** remove temporaries */
-  | Stackop of stackop Location.t /** operation on the stack of propsets */
   | Declare_locals of (list (Pvar.t, Typ.t)) Location.t /** declare local variables */;
+
+let skip_instr = Remove_temps [] Location.dummy;
 
 
 /** Check if an instruction is auxiliary, or if it comes from source instructions. */
@@ -79,7 +73,6 @@ let instr_is_auxiliary =
   | Nullify _
   | Abstract _
   | Remove_temps _
-  | Stackop _
   | Declare_locals _ => true;
 
 
@@ -658,7 +651,6 @@ let instr_get_loc =
   | Nullify _ loc
   | Abstract loc
   | Remove_temps _ loc
-  | Stackop _ loc
   | Declare_locals _ loc => loc;
 
 
@@ -672,7 +664,6 @@ let instr_get_exps =
   | Nullify pvar _ => [Exp.Lvar pvar]
   | Abstract _ => []
   | Remove_temps temps _ => IList.map (fun id => Exp.Var id) temps
-  | Stackop _ => []
   | Declare_locals _ => [];
 
 
@@ -706,14 +697,6 @@ let pp_instr pe0 f instr => {
   | Abstract loc => F.fprintf f "APPLY_ABSTRACTION; %a" Location.pp loc
   | Remove_temps temps loc =>
     F.fprintf f "REMOVE_TEMPS(%a); %a" (Ident.pp_list pe) temps Location.pp loc
-  | Stackop stackop loc =>
-    let s =
-      switch stackop {
-      | Push => "Push"
-      | Swap => "Swap"
-      | Pop => "Pop"
-      };
-    F.fprintf f "STACKOP.%s; %a" s Location.pp loc
   | Declare_locals ptl loc =>
     let pp_typ fmt (pvar, _) => F.fprintf fmt "%a" (Pvar.pp pe) pvar;
     F.fprintf f "DECLARE_LOCALS(%a); %a" (pp_comma_seq pp_typ) ptl Location.pp loc
@@ -2191,8 +2174,7 @@ let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => Exp.t) instr => 
     }
   | Nullify _
   | Abstract _
-  | Declare_locals _
-  | Stackop _ => instr
+  | Declare_locals _ => instr
   }
 };
 
@@ -2313,15 +2295,6 @@ let instr_compare instr1 instr2 =>
     }
   | (Remove_temps _, _) => (-1)
   | (_, Remove_temps _) => 1
-  | (Stackop stackop1 loc1, Stackop stackop2 loc2) =>
-    let n = Pervasives.compare stackop1 stackop2;
-    if (n != 0) {
-      n
-    } else {
-      Location.compare loc1 loc2
-    }
-  | (Stackop _, _) => (-1)
-  | (_, Stackop _) => 1
   | (Declare_locals ptl1 loc1, Declare_locals ptl2 loc2) =>
     let pt_compare (pv1, t1) (pv2, t2) => {
       let n = Pvar.compare pv1 pv2;
@@ -2541,7 +2514,6 @@ let instr_compare_structural instr1 instr2 exp_map => {
   | (Abstract _, Abstract _) => (0, exp_map)
   | (Remove_temps temps1 _, Remove_temps temps2 _) =>
     id_list_compare_structural temps1 temps2 exp_map
-  | (Stackop stackop1 _, Stackop stackop2 _) => (Pervasives.compare stackop1 stackop2, exp_map)
   | (Declare_locals ptl1 _, Declare_locals ptl2 _) =>
     let n = Pervasives.compare (IList.length ptl1) (IList.length ptl2);
     if (n != 0) {

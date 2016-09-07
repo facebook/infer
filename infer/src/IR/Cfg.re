@@ -733,8 +733,7 @@ let module Node = {
       | Abstract _
       | Sil.Remove_temps _ =>
         /* these are generated instructions that will be replaced by the preanalysis */
-        instrs
-      | instr => [instr, ...instrs];
+        instrs;
     let convert_node_kind =
       fun
       | Start_node _ => Start_node resolved_proc_desc

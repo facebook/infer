@@ -21,7 +21,7 @@ let tests =
     Cfg.Procdesc.create cfg (ProcAttributes.default Procname.empty_block !Config.curr_language) in
   let dummy_instr1 = Sil.Remove_temps ([], Location.dummy) in
   let dummy_instr2 = Sil.Abstract Location.dummy in
-  let dummy_instr3 = Sil.Stackop (Pop, Location.dummy) in
+  let dummy_instr3 = Sil.Remove_temps ([Ident.create_fresh Ident.knormal], Location.dummy) in
   let dummy_instr4 = Sil.Remove_temps ([], Location.dummy) in
   let instrs1 = [dummy_instr1; dummy_instr2;] in
   let instrs2 = [dummy_instr3] in

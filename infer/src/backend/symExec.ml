@@ -1254,8 +1254,6 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       let sigma' = prop_.Prop.sigma @ sigma_locals in
       let prop' = Prop.normalize tenv (Prop.set prop_ ~sigma:sigma') in
       ret_old_path [prop']
-  | Sil.Stackop _ -> (* this should be handled at the propset level *)
-      assert false
 and diverge prop path =
   State.add_diverging_states (Paths.PathSet.from_renamed_list [(prop, path)]); (* diverge *)
   []
@@ -1717,29 +1715,6 @@ let node handle_exn tenv node (pset : Paths.PathSet.t) : Paths.PathSet.t =
         end
       else sym_exec_wrapper handle_exn tenv pdesc instr (p, tr) in
     Paths.PathSet.union pset2 pset1 in
-  let exe_instr_pset (pset, stack) instr = (* handle a single instruction at the set level *)
-    let pp_stack_instr pset' =
-      L.d_str "Stack Instruction "; Sil.d_instr instr; L.d_ln ();
-      L.d_strln "Stack Instruction Returns";
-      Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv pset'); L.d_ln () in
-    match instr, stack with
-    | Sil.Stackop (Sil.Push, _), _ ->
-        pp_stack_instr pset;
-        (pset, pset :: stack)
-    | Sil.Stackop (Sil.Swap, _), (pset':: stack') ->
-        pp_stack_instr pset';
-        (pset', pset:: stack')
-    | Sil.Stackop (Sil.Pop, _), (pset':: stack') ->
-        let pset'' = Paths.PathSet.union pset pset' in
-        pp_stack_instr pset'';
-        (pset'', stack')
-    | Sil.Stackop _, _ -> (* should not happen *)
-        assert false
-    | _ ->
-        let pset' = Paths.PathSet.fold (exe_instr_prop instr) pset Paths.PathSet.empty in
-        (pset', stack) in
-  let stack = [] in
-  let instrs = Cfg.Node.get_instrs node in
-  let pset', stack' = IList.fold_left exe_instr_pset (pset, stack) instrs in
-  if stack' != [] then assert false; (* final stack must be empty *)
-  pset'
+  let exe_instr_pset pset instr =
+    Paths.PathSet.fold (exe_instr_prop instr) pset Paths.PathSet.empty in
+  IList.fold_left exe_instr_pset pset (Cfg.Node.get_instrs node)
