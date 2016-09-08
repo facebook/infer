@@ -65,7 +65,7 @@ end = struct
 
   (** Find a strexp and a type at the given syntactic offset list *)
   let rec get_strexp_at_syn_offsets tenv se t syn_offs =
-    match se, t, syn_offs with
+    match se, Tenv.expand_type tenv t, syn_offs with
     | _, _, [] -> (se, t)
     | Sil.Estruct (fsel, _), Typ.Tstruct { Typ.instance_fields }, Field (fld, _) :: syn_offs' ->
         let se' = snd (IList.find (fun (f', _) -> Ident.fieldname_equal f' fld) fsel) in
@@ -84,7 +84,7 @@ end = struct
 
   (** Replace a strexp at the given syntactic offset list *)
   let rec replace_strexp_at_syn_offsets tenv se t syn_offs update =
-    match se, t, syn_offs with
+    match se, Tenv.expand_type tenv t, syn_offs with
     | _, _, [] ->
         update se
     | Sil.Estruct (fsel, inst), Typ.Tstruct { Typ.instance_fields }, Field (fld, _) :: syn_offs' ->
@@ -143,14 +143,14 @@ end = struct
     (sigma, hpred, syn_offs)
 
   (** Find a sub strexp with the given property. Can raise [Not_found] *)
-  let find _tenv (sigma : sigma) (pred : strexp_data -> bool) : t list =
+  let find tenv (sigma : sigma) (pred : strexp_data -> bool) : t list =
     let found = ref [] in
     let rec find_offset_sexp sigma_other hpred root offs se typ =
       let offs' = IList.rev offs in
       let path = (root, offs') in
       if pred (path, se, typ) then found := (sigma, hpred, offs') :: !found
       else begin
-        match se, typ with
+        match se, Tenv.expand_type tenv typ with
         | Sil.Estruct (fsel, _), Typ.Tstruct { Typ.instance_fields } ->
             find_offset_fsel sigma_other hpred root offs fsel instance_fields typ
         | Sil.Earray (_, esel, _), Typ.Tarray (t, _) ->
@@ -526,6 +526,7 @@ let report_error prop =
 
 (** Check performed after the array abstraction to see whether it was successful. Raise assert false in case of failure *)
 let check_after_array_abstraction tenv prop =
+  let expand_type = Tenv.expand_type tenv in
   let check_index root offs (ind, _) =
     if !Config.footprint then
       let path = StrexpMatch.path_from_exp_offsets root offs in
@@ -541,7 +542,7 @@ let check_after_array_abstraction tenv prop =
         else IList.iter (fun (ind, se) -> check_se root (offs @ [Sil.Off_index ind]) typ_elem se) esel
     | Sil.Estruct (fsel, _) ->
         IList.iter (fun (f, se) ->
-            let typ_f = Typ.struct_typ_fld (Some Typ.Tvoid) f typ in
+            let typ_f = Typ.struct_typ_fld ~expand_type (Some Typ.Tvoid) f typ in
             check_se root (offs @ [Sil.Off_fld (f, typ)]) typ_f se) fsel in
   let check_hpred = function
     | Sil.Hpointsto (root, se, texp) ->

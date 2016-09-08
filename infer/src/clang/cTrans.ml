@@ -627,10 +627,11 @@ struct
 
   and var_deref_trans trans_state stmt_info (decl_ref : Clang_ast_t.decl_ref) =
     let context = trans_state.context in
-    let _tenv = context.tenv in
+    let tenv = context.tenv in
     let _, _, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
     let ast_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
-    let typ = match ast_typ with
+    let typ =
+      match Tenv.expand_type tenv ast_typ with
       | Tstruct _ when decl_ref.dr_kind = `ParmVar ->
           if General_utils.is_cpp_translation then
             Typ.Tptr (ast_typ, Pk_reference)
@@ -649,7 +650,7 @@ struct
       let is_global_const, init_expr =
         match Ast_utils.get_decl decl_ref.dr_decl_pointer with
         | Some VarDecl (_, _, qual_type, vdi) ->
-            (match ast_typ with
+            (match Tenv.expand_type tenv ast_typ with
              | Tstruct _
                when not General_utils.is_cpp_translation ->
                  (* Do not convert a global struct to a local because SIL
@@ -2074,9 +2075,10 @@ struct
         }
     | _ -> assert false
 
-  and initListExpr_initializers_trans trans_state var_exp n stmts typ is_dyn_array stmt_info =
+  and initListExpr_initializers_trans ({context = {tenv}} as trans_state) var_exp n stmts typ is_dyn_array stmt_info =
+    let expand_type = Tenv.expand_ptr_type tenv in
     let (var_exp_inside, typ_inside) = match typ with
-      | Typ.Tarray (t, _) when Typ.is_array_of_cpp_class typ ->
+      | Typ.Tarray (t, _) when Typ.is_array_of_cpp_class ~expand_type typ ->
           Exp.Lindex (var_exp, Exp.Const (Const.Cint (IntLit.of_int n))), t
       | _ when is_dyn_array ->
           Exp.Lindex (var_exp, Exp.Const (Const.Cint (IntLit.of_int n))), typ
@@ -2117,6 +2119,7 @@ struct
 
   and cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info =
     let context = trans_state.context in
+    let expand_type = Tenv.expand_ptr_type context.CContext.tenv in
     let typ = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
@@ -2143,7 +2146,7 @@ struct
     let init_stmt_info = { stmt_info with
                            Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer () } in
     let res_trans_init =
-      if is_dyn_array && Typ.is_pointer_to_cpp_class typ then
+      if is_dyn_array && Typ.is_pointer_to_cpp_class ~expand_type typ then
         let rec create_stmts stmt_opt size_exp_opt =
           match stmt_opt, size_exp_opt with
           | Some stmt, Some (Exp.Const (Const.Cint n)) when not (IntLit.iszero n) ->

@@ -39,8 +39,9 @@ let return_nonnull_silent = true
 let check_library_calls = false
 
 
-let get_field_annotation _tenv fn typ =
-  match Typ.get_field_type_and_annotation fn typ with
+let get_field_annotation tenv fn typ =
+  let expand_ptr_type = Tenv.expand_ptr_type tenv in
+  match Typ.get_field_type_and_annotation ~expand_ptr_type fn typ with
   | None -> None
   | Some (t, ia) ->
       let ia' =
@@ -135,7 +136,7 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pname
     let loc = Cfg.Node.get_loc node in
     let throwable_found = ref false in
     let typ_is_throwable = function
-      | Typ.Tstruct { name = TN_csu (Class _, _) as name } ->
+      | Typ.Tvar name | Typ.Tstruct { name = TN_csu (Class _, _) as name } ->
           string_equal (Typename.name name) "java.lang.Throwable"
       | _ -> false in
     let do_instr = function
@@ -255,7 +256,10 @@ let check_constructor_initialization tenv
   State.set_node start_node;
   if Procname.is_constructor curr_pname
   then begin
-    match PatternMatch.get_this_type (Cfg.Procdesc.get_attributes curr_pdesc) with
+    match
+      Option.map (Tenv.expand_ptr_type tenv)
+        (PatternMatch.get_this_type (Cfg.Procdesc.get_attributes curr_pdesc))
+    with
     | Some (Tptr (Tstruct { instance_fields; name } as ts, _)) ->
         let do_field (fn, ft, _) =
           let annotated_with f = match get_field_annotation tenv fn ts with

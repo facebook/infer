@@ -316,7 +316,7 @@ let prop_max_size = ref (0, Prop.prop_emp)
 let prop_max_chain_size = ref (0, Prop.prop_emp)
 
 (* Check if the prop exceeds the current max *)
-let check_prop_size p _ =
+let check_prop_size_ p _ =
   let size = Prop.Metrics.prop_size p in
   if size > fst !prop_max_size then
     (prop_max_size := (size, p);
@@ -326,7 +326,7 @@ let check_prop_size p _ =
 
 (* Check prop size and filter out possible unabstracted lists *)
 let check_prop_size edgeset_todo =
-  if Config.monitor_prop_size then Paths.PathSet.iter check_prop_size edgeset_todo
+  if Config.monitor_prop_size then Paths.PathSet.iter check_prop_size_ edgeset_todo
 
 let reset_prop_metrics () =
   prop_max_size := (0, Prop.prop_emp);
@@ -675,10 +675,15 @@ let report_context_leaks pname sigma tenv =
   let context_exps =
     IList.fold_left
       (fun exps hpred -> match hpred with
-         | Sil.Hpointsto (_, Eexp (exp, _), Sizeof (Tptr (Tstruct struct_typ, _), _, _))
-           when AndroidFramework.is_context tenv struct_typ &&
-                not (AndroidFramework.is_application tenv struct_typ) ->
-             (exp, struct_typ) :: exps
+         | Sil.Hpointsto (_, Eexp (exp, _), Sizeof (Tptr (typ, _), _, _)) -> (
+             match Tenv.expand_type tenv typ with
+             | Tstruct struct_typ
+               when AndroidFramework.is_context tenv struct_typ &&
+                    not (AndroidFramework.is_application tenv struct_typ) ->
+                 (exp, struct_typ) :: exps
+             | _ ->
+                 exps
+           )
          | _ -> exps)
       []
       sigma in

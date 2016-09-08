@@ -29,6 +29,10 @@ let create: unit => t;
 let expand_type: t => Typ.t => Typ.t;
 
 
+/** Expand a type if it is a (pointer to a) typename by looking it up in the type environment. */
+let expand_ptr_type: t => Typ.t => Typ.t;
+
+
 /** Fold a function over the elements of the type environment. */
 let fold: (Typename.t => Typ.struct_typ => 'a => 'a) => t => 'a => 'a;
 

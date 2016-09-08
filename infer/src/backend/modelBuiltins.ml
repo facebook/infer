@@ -758,7 +758,8 @@ let execute_alloc mk can_return_null
         evaluate_char_sizeof (Exp.Const (Const.Cint len))
     | Exp.Sizeof _ -> e in
   let size_exp, procname = match args with
-    | [(Exp.Sizeof (Tstruct { name = TN_csu (Class Objc, _) as name } as s, len, subt), _)] ->
+    | [(Exp.Sizeof (( Tvar (TN_csu (Class Objc, _) as name)
+                    | Tstruct { name = TN_csu (Class Objc, _) as name; }) as s, len, subt), _)] ->
         let struct_type =
           match AttributesTable.get_correct_type_from_objc_class_name name with
           | Some struct_type -> struct_type

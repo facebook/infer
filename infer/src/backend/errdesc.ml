@@ -573,7 +573,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
 
 (** find the dexp, if any, where the given value is stored
     also return the type of the value if found *)
-let vpath_find _tenv prop _exp : DExp.t option * Typ.t option =
+let vpath_find tenv prop _exp : DExp.t option * Typ.t option =
   if verbose then (L.d_str "in vpath_find exp:"; Sil.d_exp _exp; L.d_ln ());
   let rec find sigma_acc sigma_todo exp =
     let do_fse res sigma_acc' sigma_todo' lexp texp (f, se) = match se with
@@ -582,14 +582,19 @@ let vpath_find _tenv prop _exp : DExp.t option * Typ.t option =
           (match lexp with
            | Exp.Lvar pv ->
                let typo = match texp with
-                 | Exp.Sizeof (Typ.Tstruct struct_typ, _, _) ->
-                     (try
-                        let _, t, _ =
-                          IList.find (fun (f', _, _) ->
-                              Ident.fieldname_equal f' f)
-                            struct_typ.Typ.instance_fields in
-                        Some t
-                      with Not_found -> None)
+                 | Exp.Sizeof (typ, _, _) -> (
+                     match Tenv.expand_type tenv typ with
+                     | Tstruct {instance_fields} -> (
+                         try
+                           let _, t, _ =
+                             IList.find (fun (f', _, _) -> Ident.fieldname_equal f' f)
+                               instance_fields in
+                           Some t
+                         with Not_found -> None
+                       )
+                     | _ ->
+                         None
+                   )
                  | _ -> None in
                res := Some (DExp.Ddot (DExp.Dpvar pv, f)), typo
            | Exp.Var id ->

@@ -75,6 +75,7 @@ module ST = struct
       ?(exception_kind = fun k d -> Exceptions.Checkers (k, d))
       ?(always_report = false)
       description =
+    let expand_ptr_type = Tenv.expand_ptr_type tenv in
     let localized_description = Localise.custom_desc_with_advice
         description
         (Option.default "" advice)
@@ -112,7 +113,7 @@ module ST = struct
       let is_field_suppressed =
         match field_name, PatternMatch.get_this_type proc_attributes with
         | Some field_name, Some t -> begin
-            match (Typ.get_field_type_and_annotation field_name t) with
+            match Typ.get_field_type_and_annotation ~expand_ptr_type field_name t with
             | Some (_, ia) -> Annotations.ia_has_annotation_with ia annotation_matches
             | None -> false
           end
@@ -208,7 +209,7 @@ let callback_check_write_to_parcel_java
     let type_match () =
       let class_name =
         Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "android.os.Parcelable") in
-      match this_type with
+      match Tenv.expand_ptr_type tenv this_type with
       | Typ.Tptr (Typ.Tstruct struct_typ, _) | Typ.Tstruct struct_typ ->
           PatternMatch.is_immediate_subtype struct_typ class_name
       | _ -> false in
@@ -219,7 +220,8 @@ let callback_check_write_to_parcel_java
     PatternMatch.has_formal_method_argument_type_names
       proc_desc pname_java ["android.os.Parcel"] in
 
-  let parcel_constructors _tenv = function
+  let parcel_constructors tenv typ =
+    match Tenv.expand_ptr_type tenv typ with
     | Typ.Tptr (Typ.Tstruct { Typ.def_methods }, _) ->
         IList.filter is_parcel_constructor def_methods
     | _ -> [] in
@@ -317,17 +319,18 @@ let callback_check_write_to_parcel ({ Callbacks.proc_name } as args) =
       ()
 
 (** Monitor calls to Preconditions.checkNotNull and detect inconsistent uses. *)
-let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
+let callback_monitor_nullcheck { Callbacks.tenv; proc_desc; idenv; proc_name } =
   let verbose = ref false in
 
   let class_formal_names = lazy (
     let formals = Cfg.Procdesc.get_formals proc_desc in
     let class_formals =
-      let is_class_type = function
-        | p, Typ.Tptr _ when Mangled.to_string p = "this" ->
+      let is_class_type (p, typ) =
+        match Tenv.expand_ptr_type tenv typ with
+        | Typ.Tptr _ when Mangled.to_string p = "this" ->
             false (* no need to null check 'this' *)
-        | _, Typ.Tstruct _ -> true
-        | _, Typ.Tptr (Typ.Tstruct _, _) -> true
+        | Typ.Tstruct _ -> true
+        | Typ.Tptr (Typ.Tstruct _, _) -> true
         | _ -> false in
       IList.filter is_class_type formals in
     IList.map fst class_formals) in

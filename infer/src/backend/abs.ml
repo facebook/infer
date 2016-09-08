@@ -999,10 +999,10 @@ let remove_opt _prop =
 
 (** Checks if cycle has fields (derived from a property or directly defined as ivar) with attributes
     weak/unsafe_unretained/assing *)
-let cycle_has_weak_or_unretained_or_assign_field _tenv cycle =
+let cycle_has_weak_or_unretained_or_assign_field tenv cycle =
   (* returns items annotation for field fn in struct t *)
   let get_item_annotation t fn =
-    match t with
+    match Tenv.expand_type tenv t with
     | Typ.Tstruct { Typ.instance_fields; static_fields } ->
         let ia = ref [] in
         IList.iter (fun (fn', _, ia') ->

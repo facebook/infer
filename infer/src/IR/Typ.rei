@@ -223,16 +223,17 @@ let array_elem: option t => t => t;
 
 
 /** the element typ of the final extensible array in the given typ, if any */
-let get_extensible_array_element_typ: t => option t;
+let get_extensible_array_element_typ: expand_type::(t => t) => t => option t;
 
 
 /** If a struct type with field f, return the type of f.
     If not, return the default type if given, otherwise raise an exception */
-let struct_typ_fld: option t => Ident.fieldname => t => t;
+let struct_typ_fld: expand_type::(t => t) => option t => Ident.fieldname => t => t;
 
 
 /** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] */
-let get_field_type_and_annotation: Ident.fieldname => t => option (t, item_annotation);
+let get_field_type_and_annotation:
+  expand_ptr_type::(t => t) => Ident.fieldname => t => option (t, item_annotation);
 
 
 /** if [struct_typ] is a class, return its class kind (Java, CPP, or Obj-C) */
@@ -250,15 +251,15 @@ let struct_typ_is_cpp_class: struct_typ => bool;
 /** return true if [struct_typ] is an Obj-C class. Note that this returns false for raw structs. */
 let struct_typ_is_objc_class: struct_typ => bool;
 
-let is_objc_class: t => bool;
+let is_objc_class: expand_type::(t => t) => t => bool;
 
-let is_cpp_class: t => bool;
+let is_cpp_class: expand_type::(t => t) => t => bool;
 
-let is_java_class: t => bool;
+let is_java_class: expand_type::(t => t) => t => bool;
 
-let is_array_of_cpp_class: t => bool;
+let is_array_of_cpp_class: expand_type::(t => t) => t => bool;
 
-let is_pointer_to_cpp_class: t => bool;
+let is_pointer_to_cpp_class: expand_type::(t => t) => t => bool;
 
 let has_block_prefix: string => bool;
 

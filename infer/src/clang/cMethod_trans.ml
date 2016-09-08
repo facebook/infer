@@ -61,8 +61,8 @@ let get_class_param function_method_decl_info =
   else []
 
 
-let should_add_return_param _tenv return_type ~is_objc_method =
-  match return_type with
+let should_add_return_param tenv return_type ~is_objc_method =
+  match Tenv.expand_type tenv return_type with
   | Typ.Tstruct _ -> not is_objc_method
   | _ -> false
 
@@ -111,7 +111,8 @@ let get_parameters tenv function_method_decl_info =
     | Clang_ast_t.ParmVarDecl (_, name_info, qt, var_decl_info) ->
         let _, mangled = General_utils.get_var_name_mangled name_info var_decl_info in
         let param_typ = CTypes_decl.type_ptr_to_sil_type tenv qt.Clang_ast_t.qt_type_ptr in
-        let qt_type_ptr = match param_typ with
+        let qt_type_ptr =
+          match Tenv.expand_type tenv param_typ with
           | Typ.Tstruct _ when General_utils.is_cpp_translation ->
               Ast_expressions.create_reference_type qt.Clang_ast_t.qt_type_ptr
           | _ -> qt.Clang_ast_t.qt_type_ptr in
@@ -121,7 +122,7 @@ let get_parameters tenv function_method_decl_info =
   get_class_param function_method_decl_info @ pars @ get_return_param tenv function_method_decl_info
 
 (** get return type of the function and optionally type of function's return parameter *)
-let get_return_type tenv function_method_decl_info =
+let get_return_val_and_param_types tenv function_method_decl_info =
   let return_type_ptr = get_original_return_type function_method_decl_info in
   let return_typ = CTypes_decl.type_ptr_to_sil_type tenv return_type_ptr in
   let is_objc_method = is_objc_method function_method_decl_info in
@@ -132,7 +133,7 @@ let get_return_type tenv function_method_decl_info =
 let build_method_signature tenv decl_info procname function_method_decl_info
     parent_pointer pointer_to_property_opt =
   let source_range = decl_info.Clang_ast_t.di_source_range in
-  let tp, return_param_type_opt = get_return_type tenv function_method_decl_info in
+  let tp, return_param_type_opt = get_return_val_and_param_types tenv function_method_decl_info in
   let is_instance_method = is_instance_method function_method_decl_info in
   let parameters = get_parameters tenv function_method_decl_info in
   let attributes = decl_info.Clang_ast_t.di_attributes in

@@ -14,7 +14,7 @@ module L = Logging
 open PatternMatch
 
 (* list of sources that return a tainted value *)
-let sources = [
+let sources0 = [
   (* for testing only *)
   {
     classname = "com.facebook.infer.models.InferTaint";
@@ -284,7 +284,7 @@ let taint_spec_to_taint_info taint_spec =
   { PredSymb.taint_source; taint_kind = taint_spec.taint_kind }
 
 let sources =
-  IList.map taint_spec_to_taint_info sources
+  IList.map taint_spec_to_taint_info sources0
 
 let mk_pname_param_num methods =
   IList.map

@@ -501,7 +501,7 @@ let rec create_strexp_of_type tenv struct_init_mode (typ : Typ.t) len inst : Sil
       | _ -> Exp.zero
     else
       create_fresh_var () in
-  match typ, len with
+  match Tenv.expand_type tenv typ, len with
   | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _), None ->
       Eexp (init_value (), inst)
   | Tstruct { Typ.instance_fields }, _ -> (
@@ -570,8 +570,9 @@ let sigma_get_unsigned_exps sigma =
 (** Collapse consecutive indices that should be added. For instance,
     this function reduces x[1][1] to x[2]. The [typ] argument is used
     to ensure the soundness of this collapsing. *)
-let exp_collapse_consecutive_indices_prop _tenv (typ : Typ.t) exp =
-  let typ_is_base (typ1 : Typ.t) = match typ1 with
+let exp_collapse_consecutive_indices_prop tenv (typ : Typ.t) exp =
+  let typ_is_base (typ1 : Typ.t) =
+    match Tenv.expand_type tenv typ1 with
     | Tint _ | Tfloat _ | Tstruct _ | Tvoid | Tfun _ ->
         true
     | _ ->
@@ -720,7 +721,8 @@ module Normalize = struct
   let (--) = IntLit.sub
   let (++) = IntLit.add
 
-  let sym_eval _tenv abs e =
+  let sym_eval tenv abs e =
+    let expand_type = Tenv.expand_type tenv in
     let rec eval (e : Exp.t) : Exp.t =
       (* L.d_str " ["; Sil.d_exp e; L.d_str"] "; *)
       match e with
@@ -890,7 +892,8 @@ module Normalize = struct
             | _ -> BinOp (ominus, x, y) in
           (* test if the extensible array at the end of [typ] has elements of type [elt] *)
           let extensible_array_element_typ_equal elt typ =
-            Option.map_default (Typ.equal elt) false (Typ.get_extensible_array_element_typ typ) in
+            Option.map_default (Typ.equal elt) false
+              (Typ.get_extensible_array_element_typ ~expand_type typ) in
           begin
             match e1', e2' with
             (* pattern for arrays and extensible structs:

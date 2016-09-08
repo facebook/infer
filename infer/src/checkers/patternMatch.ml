@@ -24,7 +24,8 @@ type taint_spec = {
   language : Config.language
 }
 
-let type_is_object _tenv = function
+let type_is_object tenv typ =
+  match Tenv.expand_ptr_type tenv typ with
   | Typ.Tptr (Tstruct { name }, _) -> string_equal (Typename.name name) JConfig.object_cl
   | _ -> false
 
@@ -77,7 +78,8 @@ let get_this_type proc_attributes = match proc_attributes.ProcAttributes.formals
   | (_, t):: _ -> Some t
   | _ -> None
 
-let type_get_direct_supertypes _tenv = function
+let type_get_direct_supertypes tenv typ =
+  match Tenv.expand_ptr_type tenv typ with
   | Typ.Tptr (Tstruct { superclasses }, _)
   | Typ.Tstruct { superclasses } ->
       superclasses
@@ -88,9 +90,9 @@ let type_get_class_name = function
   | Typ.Tptr (typ, _) -> Typ.name typ
   | _ -> None
 
-let type_get_annotation _tenv
+let type_get_annotation tenv
     (t: Typ.t): Typ.item_annotation option =
-  match t with
+  match Tenv.expand_ptr_type tenv t with
   | Typ.Tptr (Typ.Tstruct { Typ.struct_annotations }, _)
   | Typ.Tstruct { Typ.struct_annotations } ->
       Some struct_annotations
@@ -108,7 +110,7 @@ let type_has_supertype
       false
     else
       begin
-        match Tenv.expand_type tenv typ with
+        match Tenv.expand_ptr_type tenv typ with
         | Typ.Tptr (Typ.Tstruct { Typ.superclasses }, _)
         | Typ.Tstruct { Typ.superclasses } ->
             let match_supertype cn =
@@ -135,10 +137,10 @@ let rec get_type_name = function
   | Typ.Tptr (t, _) -> get_type_name t
   | _ -> "_"
 
-let get_field_type_name _tenv
+let get_field_type_name tenv
     (typ: Typ.t)
     (fieldname: Ident.fieldname): string option =
-  match typ with
+  match Tenv.expand_ptr_type tenv typ with
   | Typ.Tstruct { Typ.instance_fields }
   | Typ.Tptr (Typ.Tstruct { Typ.instance_fields }, _) -> (
       try
@@ -249,7 +251,8 @@ let get_java_method_call_formal_signature = function
   | _ -> None
 
 
-let type_is_class _tenv = function
+let type_is_class tenv typ =
+  match Tenv.expand_ptr_type tenv typ with
   | Typ.Tptr (Typ.Tstruct _, _) -> true
   | Typ.Tptr (Typ.Tvar _, _) -> true
   | Typ.Tptr (Typ.Tarray _, _) -> true

@@ -40,7 +40,8 @@ let rec remove_redundancy have_same_key acc = function
       if have_same_key x y then remove_redundancy have_same_key acc (x:: l')
       else remove_redundancy have_same_key (x:: acc) l
 
-let rec is_java_class tenv = function
+let rec is_java_class tenv typ =
+  match Tenv.expand_type tenv typ with
   | Typ.Tstruct struct_typ -> Typ.struct_typ_is_java_class struct_typ
   | Typ.Tarray (inner_typ, _) | Tptr (inner_typ, _) -> is_java_class tenv inner_typ
   | _ -> false
@@ -379,7 +380,8 @@ end = struct
     IList.iter process_atom pi;
     saturate { leqs = !leqs; lts = !lts; neqs = !neqs }
 
-  let from_sigma _tenv sigma =
+  let from_sigma tenv sigma =
+    let expand_ptr_type = Tenv.expand_ptr_type tenv in
     let leqs = ref [] in
     let lts = ref [] in
     let add_lt_minus1_e e =
@@ -399,8 +401,9 @@ end = struct
           if type_opt_is_unsigned t then add_lt_minus1_e e
       | Sil.Estruct (fsel, _), t ->
           let get_field_type f =
-            Option.map_default
-              (fun t' -> Option.map fst @@ Typ.get_field_type_and_annotation f t') None t in
+            Option.map_default (fun t' ->
+                Option.map fst @@ Typ.get_field_type_and_annotation ~expand_ptr_type f t'
+              ) None t in
           IList.iter (fun (f, se) -> strexp_extract (se, get_field_type f)) fsel
       | Sil.Earray (len, isel, _), t ->
           let elt_t = match t with
@@ -1323,13 +1326,14 @@ let rec sexp_imply tenv source calc_index_frame calc_missing subs se1 se2 typ2 :
       raise (Exceptions.Abduction_case_not_implemented __POS__)
 
 and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 : subst2 * ((Ident.fieldname * Sil.strexp) list) * ((Ident.fieldname * Sil.strexp) list) =
+  let expand_type = Tenv.expand_type tenv in
   match fsel1, fsel2 with
   | _, [] -> subs, fsel1, []
   | (f1, se1) :: fsel1', (f2, se2) :: fsel2' ->
       begin
         match Ident.fieldname_compare f1 f2 with
         | 0 ->
-            let typ' = Typ.struct_typ_fld (Some Typ.Tvoid) f2 typ2 in
+            let typ' = Typ.struct_typ_fld ~expand_type (Some Typ.Tvoid) f2 typ2 in
             let subs', se_frame, se_missing =
               sexp_imply tenv (Exp.Lfield (source, f2, typ2)) false calc_missing subs se1 se2 typ' in
             let subs'', fld_frame, fld_missing = struct_imply tenv source calc_missing subs' fsel1' fsel2' typ2 in
@@ -1344,7 +1348,7 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 : subst2 * ((Ide
             let subs', fld_frame, fld_missing = struct_imply tenv source calc_missing subs fsel1' fsel2 typ2 in
             subs', ((f1, se1) :: fld_frame), fld_missing
         | _ ->
-            let typ' = Typ.struct_typ_fld (Some Typ.Tvoid) f2 typ2 in
+            let typ' = Typ.struct_typ_fld ~expand_type (Some Typ.Tvoid) f2 typ2 in
             let subs' =
               sexp_imply_nolhs tenv (Exp.Lfield (source, f2, typ2)) calc_missing subs se2 typ' in
             let subs', fld_frame, fld_missing = struct_imply tenv source calc_missing subs' fsel1 fsel2' typ2 in
@@ -1352,7 +1356,7 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 : subst2 * ((Ide
             subs', fld_frame, fld_missing'
       end
   | [], (f2, se2) :: fsel2' ->
-      let typ' = Typ.struct_typ_fld (Some Typ.Tvoid) f2 typ2 in
+      let typ' = Typ.struct_typ_fld ~expand_type (Some Typ.Tvoid) f2 typ2 in
       let subs' = sexp_imply_nolhs tenv (Exp.Lfield (source, f2, typ2)) calc_missing subs se2 typ' in
       let subs'', fld_frame, fld_missing = struct_imply tenv source calc_missing subs' [] fsel2' typ2 in
       subs'', fld_frame, (f2, se2):: fld_missing
@@ -1462,10 +1466,11 @@ let move_primed_lhs_from_front subs sigma = match sigma with
 
 (** [expand_hpred_pointer calc_index_frame hpred] expands [hpred] if it is a |-> whose lhs is a Lfield or Lindex or ptr+off.
     Return [(changed, calc_index_frame', hpred')] where [changed] indicates whether the predicate has changed. *)
-let expand_hpred_pointer _tenv calc_index_frame hpred : bool * bool * Sil.hpred =
+let expand_hpred_pointer tenv calc_index_frame hpred : bool * bool * Sil.hpred =
   let rec expand changed calc_index_frame hpred = match hpred with
     | Sil.Hpointsto (Lfield (adr_base, fld, adr_typ), cnt, cnt_texp) ->
-        let cnt_texp' = match adr_typ, cnt_texp with
+        let cnt_texp' =
+          match Tenv.expand_type tenv adr_typ, cnt_texp with
           | Tstruct _, _ ->
               (* type of struct at adr_base is known *)
               Exp.Sizeof (adr_typ, None, Subtype.exact)
@@ -1553,7 +1558,7 @@ struct
 
   (** check if t1 is a subtype of t2, in Java *)
   let rec check_subtype_java tenv t1 t2 =
-    match t1, t2 with
+    match Tenv.expand_type tenv t1, Tenv.expand_type tenv t2 with
     | Typ.Tstruct { name = TN_csu (Class Java, _) as cn1 },
       Typ.Tstruct { name = TN_csu (Class Java, _) as cn2 } ->
         check_subclass tenv cn1 cn2
@@ -1572,7 +1577,7 @@ struct
 
   let get_type_name (t: Typ.t) =
     match t with
-    | Tstruct { name } -> Some name
+    | Tvar name | Tstruct { name } -> Some name
     | _ -> None
 
   (** check if t1 is a subtype of t2 *)
@@ -1586,7 +1591,7 @@ struct
       | _ -> false
 
   let rec case_analysis_type_java tenv (t1, st1) (t2, st2) =
-    match t1, t2 with
+    match Tenv.expand_type tenv t1, Tenv.expand_type tenv t2 with
     | Typ.Tstruct { name = TN_csu (Class Java, _) as cn1 },
       Typ.Tstruct { name = TN_csu (Class Java, _) as cn2 } ->
         Subtype.case_analysis (cn1, st1) (cn2, st2)
@@ -1658,7 +1663,8 @@ let cast_exception tenv texp1 texp2 e1 subs =
     Note: supertype should be a type T rather than a pointer to type T
     Note: [pname] wil never be included in the returned result *)
 let get_overrides_of tenv supertype pname =
-  let typ_has_method pname = function
+  let typ_has_method pname typ =
+    match Tenv.expand_type tenv typ with
     | Typ.Tstruct { Typ.def_methods } ->
         IList.exists (fun m -> Procname.equal pname m) def_methods
     | _ -> false in
@@ -1686,17 +1692,20 @@ let texp_equal_modulo_subtype_flag texp1 texp2 = match texp1, texp2 with
 let texp_imply tenv subs texp1 texp2 e1 calc_missing =
   (* check whether the types could be subject to dynamic cast: *)
   (* classes and arrays in Java, and just classes in C++ and ObjC *)
+  let expand_type = Tenv.expand_type tenv in
   let types_subject_to_dynamic_cast =
     match texp1, texp2 with
-    | Exp.Sizeof ((Typ.Tstruct _) as typ1, _, _), Exp.Sizeof (Typ.Tstruct _, _, _)
-    | Exp.Sizeof ((Typ.Tarray _) as typ1, _, _), Exp.Sizeof (Typ.Tarray _, _, _)
-    | Exp.Sizeof ((Typ.Tarray _) as typ1, _, _), Exp.Sizeof (Typ.Tstruct _, _, _)
-    | Exp.Sizeof ((Typ.Tstruct _) as typ1, _, _), Exp.Sizeof (Typ.Tarray _, _, _)
-      when is_java_class tenv typ1 -> true
-
-    | Exp.Sizeof (typ1, _, _), Exp.Sizeof (typ2, _, _) ->
-        (Typ.is_cpp_class typ1 && Typ.is_cpp_class typ2) ||
-        (Typ.is_objc_class typ1 && Typ.is_objc_class typ2)
+    | Exp.Sizeof (typ1_0, _, _), Exp.Sizeof (typ2_0, _, _) -> (
+        let typ1 = expand_type typ1_0 in
+        let typ2 = expand_type typ2_0 in
+        match typ1, typ2 with
+        | (Tstruct _ | Tarray _), (Tstruct _ | Tarray _) ->
+            is_java_class tenv typ1
+            || (Typ.is_cpp_class ~expand_type typ1 && Typ.is_cpp_class ~expand_type typ2)
+            || (Typ.is_objc_class ~expand_type typ1 && Typ.is_objc_class ~expand_type typ2)
+        | _ ->
+            false
+      )
     | _ -> false in
   if types_subject_to_dynamic_cast then
     begin

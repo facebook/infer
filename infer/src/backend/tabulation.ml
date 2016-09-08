@@ -457,7 +457,7 @@ and sexp_star_fld se1 se2 : Sil.strexp =
       L.d_ln ();
       assert false
 
-let texp_star _tenv texp1 texp2 =
+let texp_star tenv texp1 texp2 =
   let rec ftal_sub ftal1 ftal2 = match ftal1, ftal2 with
     | [], _ -> true
     | _, [] -> false
@@ -466,7 +466,8 @@ let texp_star _tenv texp1 texp2 =
           | n when n < 0 -> false
           | 0 -> ftal_sub ftal1' ftal2'
           | _ -> ftal_sub ftal1 ftal2' end in
-  let typ_star t1 t2 = match t1, t2 with
+  let typ_star t1 t2 =
+    match Tenv.expand_type tenv t1, Tenv.expand_type tenv t2 with
     | Typ.Tstruct { instance_fields = instance_fields1; name = TN_csu (csu1, _) },
       Typ.Tstruct { instance_fields = instance_fields2; name = TN_csu (csu2, _) }
       when csu1 = csu2 ->
@@ -625,7 +626,9 @@ let prop_get_exn_name pname prop =
   let ret_pvar = Exp.Lvar (Pvar.get_ret_pvar pname) in
   let rec search_exn e = function
     | [] -> None
-    | Sil.Hpointsto (e1, _, Sizeof (Tstruct { name }, _, _)) :: _ when Exp.equal e1 e -> Some name
+    | Sil.Hpointsto (e1, _, Sizeof ((Tvar name | Tstruct { name }), _, _)) :: _
+      when Exp.equal e1 e ->
+        Some name
     | _ :: tl -> search_exn e tl in
   let rec find_exn_name hpreds = function
     | [] -> None

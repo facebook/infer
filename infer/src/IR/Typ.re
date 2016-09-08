@@ -483,22 +483,23 @@ let array_elem default_opt =>
 
 
 /** the element typ of the final extensible array in the given typ, if any */
-let rec get_extensible_array_element_typ =
-  fun
+let rec get_extensible_array_element_typ expand_type::expand_type typ =>
+  switch (expand_type typ) {
   | Tarray typ _ => Some typ
   | Tstruct {instance_fields} =>
     Option.map_default
-      (fun (_, fld_typ, _) => get_extensible_array_element_typ fld_typ)
+      (fun (_, fld_typ, _) => get_extensible_array_element_typ expand_type::expand_type fld_typ)
       None
       (IList.last instance_fields)
-  | _ => None;
+  | _ => None
+  };
 
 
 /** If a struct type with field f, return the type of f.
     If not, return the default type if given, otherwise raise an exception */
-let struct_typ_fld default_opt f => {
+let struct_typ_fld expand_type::expand_type default_opt f typ => {
   let def () => unsome "struct_typ_fld" default_opt;
-  fun
+  switch (expand_type typ) {
   | Tstruct struct_typ =>
     try (
       (fun (_, y, _) => y) (
@@ -508,10 +509,11 @@ let struct_typ_fld default_opt f => {
     | Not_found => def ()
     }
   | _ => def ()
+  }
 };
 
-let get_field_type_and_annotation fn =>
-  fun
+let get_field_type_and_annotation expand_ptr_type::expand_ptr_type fn typ =>
+  switch (expand_ptr_type typ) {
   | Tptr (Tstruct struct_typ) _
   | Tstruct struct_typ =>
     try {
@@ -523,7 +525,8 @@ let get_field_type_and_annotation fn =>
     } {
     | Not_found => None
     }
-  | _ => None;
+  | _ => None
+  };
 
 
 /** if [struct_typ] is a class, return its class kind (Java, CPP, or Obj-C) */
@@ -557,27 +560,30 @@ let struct_typ_is_objc_class struct_typ =>
   | _ => false
   };
 
-let is_class_of_kind typ ck =>
-  switch typ {
+let is_class_of_kind expand_type::expand_type typ ck =>
+  switch (expand_type typ) {
   | Tstruct {name: TN_csu (Class ck') _} => ck == ck'
   | _ => false
   };
 
-let is_objc_class typ => is_class_of_kind typ Csu.Objc;
+let is_objc_class expand_type::expand_type typ =>
+  is_class_of_kind expand_type::expand_type typ Csu.Objc;
 
-let is_cpp_class typ => is_class_of_kind typ Csu.CPP;
+let is_cpp_class expand_type::expand_type typ =>
+  is_class_of_kind expand_type::expand_type typ Csu.CPP;
 
-let is_java_class typ => is_class_of_kind typ Csu.Java;
+let is_java_class expand_type::expand_type typ =>
+  is_class_of_kind expand_type::expand_type typ Csu.Java;
 
-let rec is_array_of_cpp_class typ =>
+let rec is_array_of_cpp_class expand_type::expand_type typ =>
   switch typ {
-  | Tarray typ _ => is_array_of_cpp_class typ
-  | _ => is_cpp_class typ
+  | Tarray typ _ => is_array_of_cpp_class expand_type::expand_type typ
+  | _ => is_cpp_class expand_type::expand_type typ
   };
 
-let is_pointer_to_cpp_class typ =>
+let is_pointer_to_cpp_class expand_type::expand_type typ =>
   switch typ {
-  | Tptr t _ => is_cpp_class t
+  | Tptr t _ => is_cpp_class expand_type::expand_type t
   | _ => false
   };
 

@@ -97,7 +97,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
     incr max_stamp;
     Ident.create kind !max_stamp in
   let res =
-    match t, off with
+    match Tenv.expand_type tenv t, off with
     | Typ.Tstruct _, [] ->
         ([], Sil.Estruct ([], inst), t)
     | Typ.Tstruct ({ Typ.instance_fields; static_fields } as struct_typ ),
@@ -192,7 +192,7 @@ let rec _strexp_extend_values
   let new_id () =
     incr max_stamp;
     Ident.create kind !max_stamp in
-  match off, se, typ with
+  match off, se, Tenv.expand_type tenv typ with
   | [], Sil.Eexp _, _
   | [], Sil.Estruct _, _ ->
       [([], se, typ)]
@@ -613,6 +613,7 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
 (** If [lexp] is an access to a field that is annotated with @GuardedBy, add constraints to [prop]
     expressing the safety conditions for the access. Complain if these conditions cannot be met. *)
 let add_guarded_by_constraints tenv prop lexp pdesc =
+  let expand_ptr_type = Tenv.expand_ptr_type tenv in
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let excluded_guardedby_string str =
     (* nothing with a space in it can be a valid Java expression, shouldn't warn *)
@@ -653,7 +654,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     IList.find_map_opt annot_extract_guarded_by_str item_annot in
   (* if [fld] is annotated with @GuardedBy("mLock"), return mLock *)
   let get_guarded_by_fld_str fld typ =
-    match Typ.get_field_type_and_annotation fld typ with
+    match Typ.get_field_type_and_annotation ~expand_ptr_type fld typ with
     | Some (_, item_annot) ->
         begin
           match extract_guarded_by_str item_annot with
@@ -681,7 +682,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
               try
                 let fld, strexp = IList.find f flds in
                 begin
-                  match Typ.get_field_type_and_annotation fld typ with
+                  match Typ.get_field_type_and_annotation ~expand_ptr_type fld typ with
                   | Some (fld_typ, _) -> Some (strexp, fld_typ)
                   | None -> None
                 end
@@ -1026,8 +1027,9 @@ let iter_rearrange_pe_dllseg_last tenv recurse_on_iters default_case_iter iter p
   recurse_on_iters iter_subcases
 
 (** find the type at the offset from the given type expression, if any *)
-let type_at_offset _tenv texp off =
-  let rec strip_offset off typ = match off, typ with
+let type_at_offset tenv texp off =
+  let rec strip_offset off typ =
+    match off, Tenv.expand_type tenv typ with
     | [], _ -> Some typ
     | (Sil.Off_fld (f, _)):: off', Typ.Tstruct { Typ.instance_fields } ->
         (try
@@ -1079,16 +1081,21 @@ let rec iter_rearrange
     pname tenv lexp typ_from_instr prop iter
     inst: (Sil.offset list) Prop.prop_iter list =
   let rec root_typ_of_offsets = function
-    | Sil.Off_fld (f, ((Typ.Tstruct _) as struct_typ)) :: _ ->
-        (* access through field: get the struct type from the field *)
-        if Config.trace_rearrange then begin
-          L.d_increase_indent 1;
-          L.d_str "iter_rearrange: root of lexp accesses field "; L.d_strln (Ident.fieldname_to_string f);
-          L.d_str "  struct type from field: "; Typ.d_full struct_typ; L.d_ln();
-          L.d_decrease_indent 1;
-          L.d_ln();
-        end;
-        struct_typ
+    | Sil.Off_fld (f, fld_typ) :: _ -> (
+        match Tenv.expand_type tenv fld_typ with
+        | Tstruct _ as struct_typ ->
+            (* access through field: get the struct type from the field *)
+            if Config.trace_rearrange then begin
+              L.d_increase_indent 1;
+              L.d_str "iter_rearrange: root of lexp accesses field "; L.d_strln (Ident.fieldname_to_string f);
+              L.d_str "  struct type from field: "; Typ.d_full struct_typ; L.d_ln();
+              L.d_decrease_indent 1;
+              L.d_ln();
+            end;
+            struct_typ
+        | _ ->
+            typ_from_instr
+      )
     | Sil.Off_index _ :: off ->
         Typ.Tarray (root_typ_of_offsets off, None)
     | _ ->
@@ -1187,6 +1194,7 @@ let is_weak_captured_var pdesc pvar =
 
 (** Check for dereference errors: dereferencing 0, a freed value, or an undefined value *)
 let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
+  let expand_ptr_type = Tenv.expand_ptr_type tenv in
   let nullable_obj_str = ref None in
   let nullable_str_is_weak_captured_var = ref false in
   (* return true if deref_exp is only pointed to by fields/params with @Nullable annotations *)
@@ -1218,7 +1226,7 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
              is_nullable || Pvar.is_local pvar
          | Sil.Hpointsto (_, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
              let fld_is_nullable fld =
-               match Typ.get_field_type_and_annotation fld typ with
+               match Typ.get_field_type_and_annotation ~expand_ptr_type fld typ with
                | Some (_, annot) -> Annotations.ia_is_nullable annot
                | _ -> false in
              let is_strexp_pt_by_nullable_fld (fld, strexp) =

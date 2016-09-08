@@ -534,7 +534,7 @@ let resolve_typename prop receiver_exp =
       | _ :: hpreds -> loop hpreds in
     loop prop.Prop.sigma in
   match typexp_opt with
-  | Some (Exp.Sizeof (Tstruct { name }, _, _)) -> Some name
+  | Some (Exp.Sizeof ((Tvar name | Tstruct { name }), _, _)) -> Some name
   | _ -> None
 
 (** If the dynamic type of the receiver actual T_actual is a subtype of the reciever type T_formal
@@ -1302,7 +1302,8 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
         if already_has_abduced_retval prop then prop
         else
         if !Config.footprint then
-          let prop', abduced_strexp = match actual_typ with
+          let prop', abduced_strexp =
+            match Tenv.expand_type tenv actual_typ with
             | Typ.Tptr ((Typ.Tstruct _) as typ, _) ->
                 (* for struct types passed by reference, do abduction on the fields of the
                    struct *)

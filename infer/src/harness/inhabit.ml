@@ -94,7 +94,8 @@ let rec inhabit_typ tenv typ cfg env =
           let (allocated_obj_exp, env) = inhabit_alloc typ None typ ModelBuiltins.__new env in
           (* select methods that are constructors and won't force us into infinite recursion because
            * we are already inhabiting one of their argument types *)
-          let get_all_suitable_constructors typ = match typ with
+          let get_all_suitable_constructors typ =
+            match Tenv.expand_type tenv typ with
             | Typ.Tstruct { name = TN_csu (Class _, _); def_methods } ->
                 let is_suitable_constructor p =
                   let try_get_non_receiver_formals p =

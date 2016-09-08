@@ -21,12 +21,13 @@ open CFrontend_utils
 module L = Logging
 
 let is_pointer_to_objc_class tenv typ =
+  let expand_type = Tenv.expand_ptr_type tenv in
   match typ with
   | Typ.Tptr (Typ.Tvar (Typename.TN_csu (Csu.Class Csu.Objc, cname)), _) ->
       (match Tenv.lookup tenv (Typename.TN_csu (Csu.Class Csu.Objc, cname)) with
-       | Some struct_typ when Typ.is_objc_class (Typ.Tstruct struct_typ) -> true
+       | Some struct_typ when Typ.is_objc_class ~expand_type (Typ.Tstruct struct_typ) -> true
        | _ -> false)
-  | Typ.Tptr (typ, _) when Typ.is_objc_class typ -> true
+  | Typ.Tptr (typ, _) when Typ.is_objc_class ~expand_type typ -> true
   | _ -> false
 
 let get_super_interface_decl otdi_super =

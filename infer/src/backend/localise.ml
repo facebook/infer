@@ -685,7 +685,8 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
           s, " to ", " on " in
     let typ_str =
       match hpred_type_opt with
-      | Some (Exp.Sizeof (Tstruct { name = TN_csu (Class _, _) as name; }, _, _)) ->
+      | Some (Exp.Sizeof (( Tvar (TN_csu (Class _, _) as name)
+                          | Tstruct { name = TN_csu (Class _, _) as name; }), _, _)) ->
           " of type " ^ Typename.name name ^ " "
       | _ -> " " in
     let desc_str =

@@ -86,8 +86,8 @@ let rec create_array_type typ dim =
     Typ.Tptr(Typ.Tarray (content_typ, None), Typ.Pk_pointer)
   else typ
 
-let extract_cn_no_obj _tenv typ =
-  match typ with
+let extract_cn_no_obj tenv typ =
+  match Tenv.expand_ptr_type tenv typ with
   | Typ.Tptr (Tstruct { name = TN_csu (Class _, _) as name }, Pk_pointer) ->
       let class_name = Typename.name name in
       if class_name = JConfig.object_cl then None
@@ -287,6 +287,11 @@ let rec get_all_fields program tenv cn =
   let extract_class_fields classname =
     match get_class_type_no_pointer program tenv classname with
     | Typ.Tstruct { Typ.instance_fields; static_fields } -> (static_fields, instance_fields)
+    | Typ.Tvar name -> (
+        match Tenv.lookup tenv name with
+        | Some { instance_fields; static_fields } -> (static_fields, instance_fields)
+        | None -> assert false
+      )
     | _ -> assert false in
   let trans_fields classname =
     match JClasspath.lookup_node classname program with
@@ -330,6 +335,7 @@ and create_sil_type program tenv cn =
               | Some super_cn ->
                   let super_classname =
                     match get_class_type_no_pointer program tenv super_cn with
+                    | Typ.Tvar name
                     | Typ.Tstruct { name } -> name
                     | _ -> assert false in
                   super_classname :: interface_list in

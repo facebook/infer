@@ -27,6 +27,8 @@ let callback_fragment_retains_view_java
   let is_on_destroy_view = Procname.java_get_method pname_java = "onDestroyView" in
   (* this is needlessly complicated because field types are Tvars instead of Tstructs *)
   let fld_typ_is_view = function
+    | Typ.Tptr (Tstruct struct_typ, _) ->
+        AndroidFramework.is_view tenv struct_typ
     | Typ.Tptr (Typ.Tvar tname, _) ->
         begin
           match Tenv.lookup tenv tname with

@@ -41,6 +41,11 @@ let lookup tenv name =>
   };
 
 
+/** resolve a type string to a Java *class* type. For strings that may represent primitive or array
+    typs, use [lookup_java_typ_from_string] */
+let lookup_java_class_from_string tenv typ_str => lookup tenv (Typename.Java.from_string typ_str);
+
+
 /** Lookup Java types by name */
 let lookup_java_typ_from_string tenv typ_str => {
   let rec loop =
@@ -64,24 +69,12 @@ let lookup_java_typ_from_string tenv typ_str => {
       }
     | typ_str =>
       /* non-primitive/non-array type--resolve it in the tenv */
-      {
-        let typename = Typename.Java.from_string typ_str;
-        switch (lookup tenv typename) {
-        | Some struct_typ => Some (Typ.Tstruct struct_typ)
-        | None => None
-        }
+      switch (lookup_java_class_from_string tenv typ_str) {
+      | Some struct_typ => Some (Typ.Tstruct struct_typ)
+      | None => None
       };
   loop typ_str
 };
-
-
-/** resolve a type string to a Java *class* type. For strings that may represent primitive or array
-    typs, use [lookup_java_typ_from_string] */
-let lookup_java_class_from_string tenv typ_str =>
-  switch (lookup_java_typ_from_string tenv typ_str) {
-  | Some (Typ.Tstruct struct_typ) => Some struct_typ
-  | _ => None
-  };
 
 
 /** Add a (name,type) pair to the global type environment. */
@@ -120,22 +113,34 @@ let get_overriden_method tenv pname_java => {
     | [] => None
     };
   switch (proc_extract_declaring_class_typ tenv pname_java) {
-  | Some proc_struct_typ =>
-    get_overriden_method_in_superclasses pname_java proc_struct_typ.superclasses
+  | Some {Typ.superclasses: superclasses} =>
+    get_overriden_method_in_superclasses pname_java superclasses
   | _ => None
   }
 };
 
 
 /** expand a type if it is a typename by looking it up in the type environment */
-let expand_type tenv typ =>
+let expand_type tenv (typ: Typ.t) =>
   switch typ {
-  | Typ.Tvar tname =>
+  | Tvar tname =>
     switch (lookup tenv tname) {
-    | None => assert false
     | Some struct_typ => Typ.Tstruct struct_typ
+    | None => typ
     }
   | _ => typ
+  };
+
+
+/** expand a type if it is a (pointer to a) typename by looking it up in the type environment */
+let expand_ptr_type tenv (typ: Typ.t) =>
+  switch typ {
+  | Tptr (Tvar tname) k =>
+    switch (lookup tenv tname) {
+    | Some struct_typ => Typ.Tptr (Tstruct struct_typ) k
+    | None => typ
+    }
+  | _ => expand_type tenv typ
   };
 
 
