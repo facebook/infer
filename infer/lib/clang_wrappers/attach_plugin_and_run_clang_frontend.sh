@@ -104,10 +104,6 @@ CLANG_CMD+=(
     "-plugin-arg-${PLUGIN_NAME}"
     "PREPEND_CURRENT_DIR=1")
 
-if [ -n "$SYNTAX_ONLY" ]; then
-    CLANG_CMD+=("-fsyntax-only")
-fi
-
 if [ -n "$LLVM_MODE" ]; then
     CLANG_CMD+=("-o" "-" "-g" "-S" "-emit-llvm")
 fi
@@ -120,6 +116,11 @@ SOURCE_FILENAME="${INPUT_ARGUMENTS[${#INPUT_ARGUMENTS[@]} - 1]}"
 
 if ! [[ "$SOURCE_FILENAME" = /* ]]; then
     SOURCE_FILENAME="$(pwd)/$SOURCE_FILENAME"
+fi
+
+# add fsyntax-only to the end of arg list to override previous options
+if [ -n "$SYNTAX_ONLY" ]; then
+    CLANG_CMD+=("-fsyntax-only")
 fi
 
 if [ -n "$LLVM_MODE" ]; then

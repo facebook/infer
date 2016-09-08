@@ -26,8 +26,11 @@ APPLE_CLANG="$FCP_APPLE_CLANG"
 # Main
 if [ "${0%++}" != "$0" ]; then XX="++"; fi
 
+# Skip -cc1as commands
+if [ "$1" = "-cc1as" ]; then
+  STATUS=0
 # Normalize clang command if not -cc1 already. -cc1 is always the first argument if present.
-if [ "$1" = "-cc1" ]; then
+elif [ "$1" = "-cc1" ]; then
     "$CLANG_CC1_CAPTURE" "$@"
     STATUS=$?
 else
@@ -50,6 +53,10 @@ else
         grep -e '^\([[:space:]]\"\|clang: error:\)' | \
         # replace -cc1 commands with our clang wrapper
         sed -e "s#^[[:space:]]\"\([^\"]*\)\" \"-cc1\" \(.*\)\$# \"$CLANG_CC1_CAPTURE\" \"-cc1\" \2#g" | \
+        # do not run if language is assembler or assembler-with-cpp
+        grep -v -- '"-x" "assembler' | \
+        # do not run -cc1as commands
+        grep -v -- '"-cc1as"' | \
         # replace error messages by failures
         sed -e 's#^\(^clang: error:.*$\)#echo "\1"; exit 1#g' | \
         # add trailing ; to each line
