@@ -82,10 +82,8 @@ let add_missing_fields tenv class_name ck missing_fields =
   match Tenv.lookup tenv class_tn_name with
   | Some ({ fields } as struct_typ) ->
       let new_fields = General_utils.append_no_duplicates_fields fields missing_fields in
-      let class_type_info =
-        Typ.mk_struct ~default:struct_typ ~fields:new_fields ~statics:[] class_tn_name in
-      Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
-      Tenv.add tenv class_tn_name class_type_info
+      ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:new_fields ~statics:[] class_tn_name);
+      Printing.log_out " Updating info for class '%s' in tenv\n" class_name
   | _ -> ()
 
 let modelled_fields_in_classes = [("NSData", "_bytes", Typ.Tptr (Typ.Tvoid, Typ.Pk_pointer))]

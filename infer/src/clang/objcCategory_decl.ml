@@ -81,11 +81,10 @@ let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
    | Some ({ fields; methods } as struct_typ) ->
        let new_fields = General_utils.append_no_duplicates_fields decl_fields fields in
        let new_methods = General_utils.append_no_duplicates_methods decl_methods methods in
-       let class_type_info =
-         Typ.mk_struct
-           ~default:struct_typ ~fields:new_fields ~statics:[] ~methods:new_methods class_tn_name in
-       Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
-       Tenv.add tenv class_tn_name class_type_info
+       ignore(
+         Tenv.mk_struct tenv
+           ~default:struct_typ ~fields:new_fields ~statics:[] ~methods:new_methods class_tn_name );
+       Printing.log_out " Updating info for class '%s' in tenv\n" class_name
    | _ -> ());
   Typ.Tvar class_tn_name
 

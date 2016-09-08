@@ -126,9 +126,8 @@ struct
         Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
     let mblock = Mangled.from_string block_name in
     let block_name = Typename.TN_csu (Csu.Class Csu.Objc, mblock) in
-    let block_struct_typ = Typ.mk_struct ~fields block_name in
+    let block_struct_typ = Tenv.mk_struct tenv ~fields block_name in
     let block_type = Typ.Tstruct block_struct_typ in
-    Tenv.add tenv block_name block_struct_typ;
     let trans_res =
       CTrans_utils.alloc_trans
         trans_state loc (Ast_expressions.dummy_stmt_info ()) block_type true None in

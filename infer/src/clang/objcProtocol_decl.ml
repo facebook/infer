@@ -33,8 +33,7 @@ let protocol_decl type_ptr_to_sil_type tenv decl =
       let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
       Ast_utils.update_sil_types_map decl_key (Typ.Tvar protocol_name);
       let methods = ObjcProperty_decl.get_methods curr_class decl_list in
-      let protocol_type_info = Typ.mk_struct ~methods protocol_name in
-      Tenv.add tenv protocol_name protocol_type_info;
+      ignore( Tenv.mk_struct tenv ~methods protocol_name );
       add_protocol_super type_ptr_to_sil_type tenv obj_c_protocol_decl_info;
       Typ.Tvar protocol_name
   | _ -> assert false

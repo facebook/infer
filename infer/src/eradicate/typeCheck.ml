@@ -218,7 +218,7 @@ let rec typecheck_expr
           loc in
       let index =
         match EradicateChecks.explain_expr tenv node index_exp with
-        | Some s -> Format.sprintf "%s" s
+        | Some s -> s
         | None -> "?" in
       let fname = Ident.create_fieldname
           (Mangled.from_string index)

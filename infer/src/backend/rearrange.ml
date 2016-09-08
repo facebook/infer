@@ -100,7 +100,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
     match Tenv.expand_type tenv t, off with
     | Tstruct _, [] ->
         ([], Sil.Estruct ([], inst), t)
-    | Tstruct ({ fields; statics } as struct_typ ),
+    | Tstruct ({ name; fields; statics } as struct_typ ),
       (Sil.Off_fld (f, _)):: off' ->
         let _, t', _ =
           try
@@ -116,8 +116,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
           if Ident.fieldname_equal f f' then (f, res_t', a') else (f', t', a') in
         let fields' =
           IList.sort Typ.fld_typ_ann_compare (IList.map replace_typ_of_f fields) in
-        (atoms', se,
-         Typ.Tstruct (Typ.mk_struct ~default:struct_typ ~fields:fields' struct_typ.name))
+        (atoms', se, Typ.Tstruct (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name))
     | Typ.Tstruct _, (Sil.Off_index e):: off' ->
         let atoms', se', res_t' =
           create_struct_values
@@ -206,7 +205,7 @@ let rec _strexp_extend_values
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
   | (Sil.Off_fld (f, _)):: off', Sil.Estruct (fsel, inst'),
-    Tstruct ({ fields; statics } as struct_typ) ->
+    Tstruct ({ name; fields; statics } as struct_typ) ->
       let replace_fv new_v fv = if Ident.fieldname_equal (fst fv) f then (f, new_v) else fv in
       let _, typ', _ =
         try
@@ -227,8 +226,7 @@ let rec _strexp_extend_values
             let fields' =
               IList.sort Typ.fld_typ_ann_compare (IList.map replace_fta fields) in
             let struct_typ =
-              Typ.Tstruct
-                (Typ.mk_struct ~default:struct_typ ~fields:fields' struct_typ.name) in
+              Typ.Tstruct (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) in
             (res_atoms', Sil.Estruct (res_fsel', inst'), struct_typ) :: acc in
           IList.fold_left replace [] atoms_se_typ_list'
         with Not_found ->
@@ -240,8 +238,7 @@ let rec _strexp_extend_values
           let fields' =
             IList.sort Typ.fld_typ_ann_compare (IList.map replace_fta fields) in
           let struct_typ =
-            Typ.Tstruct
-              (Typ.mk_struct ~default:struct_typ ~fields:fields' struct_typ.name) in
+            Typ.Tstruct (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) in
           [(atoms', Sil.Estruct (res_fsel', inst'), struct_typ)]
       end
   | (Sil.Off_fld (_, _)):: _, _, _ ->

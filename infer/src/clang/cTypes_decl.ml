@@ -16,14 +16,8 @@ open CFrontend_utils
 module L = Logging
 
 let add_predefined_objc_types tenv =
-  let class_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCClass in
-  let objc_class_type_info =
-    Typ.mk_struct (TN_csu (Struct, Mangled.from_string CFrontend_config.objc_class)) in
-  Tenv.add tenv class_typename objc_class_type_info;
-  let id_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCId in
-  let objc_object_type_info =
-    Typ.mk_struct (TN_csu (Struct, Mangled.from_string CFrontend_config.objc_object)) in
-  Tenv.add tenv id_typename objc_object_type_info
+  ignore (Tenv.mk_struct tenv (CType_to_sil_type.get_builtin_objc_typename `ObjCClass));
+  ignore (Tenv.mk_struct tenv (CType_to_sil_type.get_builtin_objc_typename `ObjCId))
 
 (* Whenever new type are added manually to the translation in ast_expressions, *)
 (* they should be added here too!! *)
@@ -204,9 +198,9 @@ and get_record_declaration_struct_type tenv decl =
         let methods = get_class_methods name decl_list in (* C++ methods only *)
         let supers = get_superclass_list_cpp decl in
         let sil_type =
-          Typ.Tstruct (Typ.mk_struct ~fields ~statics ~methods ~supers ~annots sil_typename) in
+          Typ.Tstruct
+            (Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots sil_typename) in
         Ast_utils.update_sil_types_map type_ptr sil_type;
-        add_struct_to_tenv tenv sil_type;
         sil_type
       ) else (
         match Tenv.lookup tenv sil_typename with
@@ -218,10 +212,9 @@ and get_record_declaration_struct_type tenv decl =
             (* Later, when we see definition, it will be updated with a new value. *)
             (* Note: we know that this type will be wrapped with pointer type because *)
             (* there was no full definition of that type yet. *)
+            ignore (Typ.Tstruct (Tenv.mk_struct tenv ~fields:extra_fields sil_typename));
             let tvar_type = Typ.Tvar sil_typename in
-            let empty_struct_type = Typ.Tstruct (Typ.mk_struct ~fields:extra_fields sil_typename) in
             Ast_utils.update_sil_types_map type_ptr tvar_type;
-            add_struct_to_tenv tenv empty_struct_type;
             tvar_type)
   | _ -> assert false
 

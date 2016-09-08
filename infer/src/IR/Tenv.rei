@@ -58,6 +58,19 @@ let lookup_java_typ_from_string: t => string => option Typ.t;
 let lookup_java_class_from_string: t => string => option Typ.struct_typ;
 
 
+/** Construct a struct_typ, normalizing field types */
+let mk_struct:
+  t =>
+  default::Typ.struct_typ? =>
+  fields::Typ.struct_fields? =>
+  statics::Typ.struct_fields? =>
+  methods::list Procname.t? =>
+  supers::list Typename.t? =>
+  annots::Typ.item_annotation? =>
+  Typename.t =>
+  Typ.struct_typ;
+
+
 /** Return the declaring class type of [pname_java] */
 let proc_extract_declaring_class_typ: t => Procname.java => option Typ.struct_typ;
 

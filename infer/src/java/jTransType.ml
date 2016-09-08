@@ -58,7 +58,7 @@ let const_type const =
 
 
 let typename_of_classname cn =
-  Typename.TN_csu (Csu.Class Csu.Java, (Mangled.from_string (JBasics.cn_name cn)))
+  Typename.Java.from_string (JBasics.cn_name cn)
 
 
 let rec get_named_type vt =
@@ -301,7 +301,7 @@ let rec get_all_fields program tenv cn =
 and create_sil_type program tenv cn =
   match JClasspath.lookup_node cn program with
   | None ->
-      Typ.Tstruct (Typ.mk_struct (Typename.Java.from_string (JBasics.cn_name cn)))
+      Typ.Tstruct (Tenv.mk_struct tenv (typename_of_classname cn))
   | Some node ->
       let create_super_list interface_names =
         IList.iter (fun cn -> ignore (get_class_type_no_pointer program tenv cn)) interface_names;
@@ -332,18 +332,11 @@ and create_sil_type program tenv cn =
             (super_classname_list, nonstatics, statics, item_annotation) in
       let methods = IList.map (fun j -> Procname.Java j) (get_class_procnames cn node) in
       Typ.Tstruct
-        (Typ.mk_struct ~fields ~statics ~methods ~supers ~annots
-           (Typename.Java.from_string (JBasics.cn_name cn)))
+        (Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots (typename_of_classname cn))
 
 and get_class_type_no_pointer program tenv cn =
-  let named_type = typename_of_classname cn in
-  match Tenv.lookup tenv named_type with
-  | None ->
-      (match create_sil_type program tenv cn with
-       | (Typ.Tstruct struct_typ) as typ->
-           Tenv.add tenv named_type struct_typ;
-           typ
-       | _ -> assert false)
+  match Tenv.lookup tenv (typename_of_classname cn) with
+  | None -> create_sil_type program tenv cn
   | Some struct_typ -> Typ.Tstruct struct_typ
 
 let get_class_type program tenv cn =

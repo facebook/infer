@@ -451,7 +451,7 @@ let module Tbl = Hashtbl.Make {
   let hash = Hashtbl.hash;
 };
 
-let mk_struct
+let internal_mk_struct
     default::default=?
     fields::fields=?
     statics::statics=?

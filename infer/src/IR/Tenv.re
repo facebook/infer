@@ -30,6 +30,30 @@ type t = TypenameHash.t Typ.struct_typ;
 let create () => TypenameHash.create 1000;
 
 
+/** Construct a struct type in a type environment */
+let mk_struct
+    tenv
+    default::default=?
+    fields::fields=?
+    statics::statics=?
+    methods::methods=?
+    supers::supers=?
+    annots::annots=?
+    name => {
+  let struct_typ =
+    Typ.internal_mk_struct
+      default::?default
+      fields::?fields
+      statics::?statics
+      methods::?methods
+      supers::?supers
+      annots::?annots
+      name;
+  TypenameHash.replace tenv name struct_typ;
+  struct_typ
+};
+
+
 /** Check if typename is found in tenv */
 let mem tenv name => TypenameHash.mem tenv name;
 

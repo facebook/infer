@@ -1479,7 +1479,7 @@ let expand_hpred_pointer tenv calc_index_frame hpred : bool * bool * Sil.hpred =
                  type of contents is known, so construct struct type for single fld:cnt_typ *)
               let struct_typ =
                 Typ.Tstruct
-                  (Typ.mk_struct
+                  (Typ.internal_mk_struct
                      ~fields: [(fld, cnt_typ, Typ.item_annotation_empty)]
                      (TN_csu (Struct, Mangled.from_string "counterfeit"))) in
               Exp.Sizeof (struct_typ, len, st)

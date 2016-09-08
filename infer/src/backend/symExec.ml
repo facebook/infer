@@ -141,10 +141,9 @@ let rec apply_offlist
   | (Sil.Off_fld (fld, fld_typ)):: offlist', Sil.Estruct (fsel, inst') ->
       begin
         let typ' = Tenv.expand_type tenv typ in
-        let struct_typ =
+        let { Typ.name; fields; } as struct_typ =
           match typ' with
-          | Typ.Tstruct struct_typ ->
-              struct_typ
+          | Tstruct struct_typ -> struct_typ
           | _ -> assert false in
         let t' = unroll_type tenv typ (Sil.Off_fld (fld, fld_typ)) in
         try
@@ -158,10 +157,8 @@ let rec apply_offlist
           let res_se = Sil.Estruct (IList.map replace_fse fsel, inst') in
           let replace_fta (f, t, a) =
             if Ident.fieldname_equal fld f then (fld, res_t', a) else (f, t, a) in
-          let fields' = IList.map replace_fta struct_typ.fields in
-          let res_t =
-            Typ.Tstruct
-              (Typ.mk_struct ~default:struct_typ ~fields:fields' struct_typ.name) in
+          let fields' = IList.map replace_fta fields in
+          let res_t = Typ.Tstruct (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) in
           (res_e', res_se, res_t, res_pred_insts_op')
         with Not_found ->
           pp_error();

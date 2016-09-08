@@ -129,10 +129,9 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
   Printing.log_out "Class %s field:\n" class_name;
   IList.iter (fun (fn, _, _) ->
       Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) all_fields;
-  let interface_type_info =
-    Typ.mk_struct ~fields: all_fields ~supers ~methods ~annots:Typ.objc_class_annotation
-      interface_name in
-  Tenv.add tenv interface_name interface_type_info;
+  ignore(
+    Tenv.mk_struct tenv
+      ~fields: all_fields ~supers ~methods ~annots:Typ.objc_class_annotation interface_name );
   Printing.log_out
     "  >>>Verifying that Typename '%s' is in tenv\n" (Typename.to_string interface_name);
   (match Tenv.lookup tenv interface_name with
@@ -149,8 +148,7 @@ let add_missing_methods tenv class_name ck decl_info decl_list curr_class =
     match Tenv.lookup tenv class_tn_name with
     | Some ({ statics = []; name = TN_csu (Class _, _); methods; } as struct_typ) ->
         let methods = General_utils.append_no_duplicates_methods methods decl_methods in
-        let struct_typ' = Typ.mk_struct ~default:struct_typ ~methods struct_typ.name in
-        Tenv.add tenv class_tn_name struct_typ'
+        ignore( Tenv.mk_struct tenv ~default:struct_typ ~methods class_tn_name )
     | _ -> ()
   end;
   Typ.Tvar class_tn_name

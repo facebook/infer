@@ -210,7 +210,7 @@ let module Tbl: Hashtbl.S with type key = t;
 
 
 /** Construct a struct_typ, normalizing field types */
-let mk_struct:
+let internal_mk_struct:
   default::struct_typ? =>
   fields::struct_fields? =>
   statics::struct_fields? =>
