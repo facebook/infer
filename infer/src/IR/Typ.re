@@ -284,11 +284,11 @@ type struct_fields = list (Ident.fieldname, t, item_annotation)
 /** Type for a structured value. */
 and struct_typ = {
   name: Typename.t, /** name */
-  instance_fields: struct_fields, /** non-static fields */
-  static_fields: struct_fields, /** static fields */
-  superclasses: list Typename.t, /** list of superclasses */
-  def_methods: list Procname.t, /** methods defined */
-  struct_annotations: item_annotation /** annotations */
+  fields: struct_fields, /** non-static fields */
+  statics: struct_fields, /** static fields */
+  supers: list Typename.t, /** list of superclasses */
+  methods: list Procname.t, /** methods defined */
+  annots: item_annotation /** annotations */
 }
 /** types for sil (structured) expressions */
 and t =
@@ -309,11 +309,11 @@ and struct_typ_compare struct_typ1 struct_typ2 =>
   | (TN_csu (Class Java) _, TN_csu (Class Java) _) =>
     Typename.compare struct_typ1.name struct_typ2.name
   | _ =>
-    let n = fld_typ_ann_list_compare struct_typ1.instance_fields struct_typ2.instance_fields;
+    let n = fld_typ_ann_list_compare struct_typ1.fields struct_typ2.fields;
     if (n != 0) {
       n
     } else {
-      let n = fld_typ_ann_list_compare struct_typ1.static_fields struct_typ2.static_fields;
+      let n = fld_typ_ann_list_compare struct_typ1.statics struct_typ2.statics;
       if (n != 0) {
         n
       } else {
@@ -362,7 +362,7 @@ let struct_typ_equal struct_typ1 struct_typ2 => struct_typ_compare struct_typ1 s
 
 let equal t1 t2 => compare t1 t2 == 0;
 
-let rec pp_struct_typ pe pp_base f {instance_fields, name} =>
+let rec pp_struct_typ pe pp_base f {fields, name} =>
   if false {
     /* change false to true to print the details of struct */
     F.fprintf
@@ -371,7 +371,7 @@ let rec pp_struct_typ pe pp_base f {instance_fields, name} =>
       Typename.pp
       name
       (pp_seq (fun f (fld, t, _) => F.fprintf f "%a %a" (pp_full pe) t Ident.pp_fieldname fld))
-      instance_fields
+      fields
       pp_base
       ()
   } else {
@@ -451,6 +451,49 @@ let module Tbl = Hashtbl.Make {
   let hash = Hashtbl.hash;
 };
 
+let mk_struct
+    default::default=?
+    fields::fields=?
+    statics::statics=?
+    methods::methods=?
+    supers::supers=?
+    annots::annots=?
+    name => {
+  let mk_struct_
+      name::name
+      default::
+        default={
+          name,
+          fields: [],
+          statics: [],
+          methods: [],
+          supers: [],
+          annots: item_annotation_empty
+        }
+      fields::fields=default.fields
+      statics::statics=default.statics
+      methods::methods=default.methods
+      supers::supers=default.supers
+      annots::annots=default.annots
+      () => {
+    name,
+    fields,
+    statics,
+    methods,
+    supers,
+    annots
+  };
+  mk_struct_
+    name::name
+    default::?default
+    fields::?fields
+    statics::?statics
+    methods::?methods
+    supers::?supers
+    annots::?annots
+    ()
+};
+
 let name t =>
   switch t {
   | Tvar name
@@ -486,11 +529,11 @@ let array_elem default_opt =>
 let rec get_extensible_array_element_typ expand_type::expand_type typ =>
   switch (expand_type typ) {
   | Tarray typ _ => Some typ
-  | Tstruct {instance_fields} =>
+  | Tstruct {fields} =>
     Option.map_default
       (fun (_, fld_typ, _) => get_extensible_array_element_typ expand_type::expand_type fld_typ)
       None
-      (IList.last instance_fields)
+      (IList.last fields)
   | _ => None
   };
 
@@ -503,7 +546,7 @@ let struct_typ_fld expand_type::expand_type default_opt f typ => {
   | Tstruct struct_typ =>
     try (
       (fun (_, y, _) => y) (
-        IList.find (fun (_f, _, _) => Ident.fieldname_equal _f f) struct_typ.instance_fields
+        IList.find (fun (_f, _, _) => Ident.fieldname_equal _f f) struct_typ.fields
       )
     ) {
     | Not_found => def ()
@@ -519,8 +562,7 @@ let get_field_type_and_annotation expand_ptr_type::expand_ptr_type fn typ =>
     try {
       let (_, t, a) =
         IList.find
-          (fun (f, _, _) => Ident.fieldname_equal f fn)
-          (struct_typ.instance_fields @ struct_typ.static_fields);
+          (fun (f, _, _) => Ident.fieldname_equal f fn) (struct_typ.fields @ struct_typ.statics);
       Some (t, a)
     } {
     | Not_found => None

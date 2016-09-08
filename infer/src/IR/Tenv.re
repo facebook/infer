@@ -93,28 +93,23 @@ let proc_extract_return_typ tenv pname_java =>
 
 /** Get method that is being overriden by java_pname (if any) **/
 let get_overriden_method tenv pname_java => {
-  let struct_typ_get_def_method_by_name struct_typ method_name =>
-    IList.find
-      (fun def_method => method_name == Procname.get_method def_method) struct_typ.Typ.def_methods;
-  let rec get_overriden_method_in_superclasses pname_java superclasses =>
-    switch superclasses {
-    | [superclass, ...superclasses_tail] =>
+  let struct_typ_get_method_by_name struct_typ method_name =>
+    IList.find (fun meth => method_name == Procname.get_method meth) struct_typ.Typ.methods;
+  let rec get_overriden_method_in_supers pname_java supers =>
+    switch supers {
+    | [superclass, ...supers_tail] =>
       switch (lookup tenv superclass) {
       | Some struct_typ =>
-        try (
-          Some (struct_typ_get_def_method_by_name struct_typ (Procname.java_get_method pname_java))
-        ) {
+        try (Some (struct_typ_get_method_by_name struct_typ (Procname.java_get_method pname_java))) {
         | Not_found =>
-          get_overriden_method_in_superclasses
-            pname_java (superclasses_tail @ struct_typ.Typ.superclasses)
+          get_overriden_method_in_supers pname_java (supers_tail @ struct_typ.Typ.supers)
         }
-      | None => get_overriden_method_in_superclasses pname_java superclasses_tail
+      | None => get_overriden_method_in_supers pname_java supers_tail
       }
     | [] => None
     };
   switch (proc_extract_declaring_class_typ tenv pname_java) {
-  | Some {Typ.superclasses: superclasses} =>
-    get_overriden_method_in_superclasses pname_java superclasses
+  | Some {Typ.supers: supers} => get_overriden_method_in_supers pname_java supers
   | _ => None
   }
 };

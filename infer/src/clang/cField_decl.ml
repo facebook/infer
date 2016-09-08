@@ -21,10 +21,10 @@ let rec get_fields_super_classes tenv super_class =
   Printing.log_out "   ... Getting fields of superclass '%s'\n" (Typename.to_string super_class);
   match Tenv.lookup tenv super_class with
   | None -> []
-  | Some { Typ.instance_fields; superclasses = super_class :: _ } ->
+  | Some { fields; supers = super_class :: _ } ->
       let sc_fields = get_fields_super_classes tenv super_class in
-      General_utils.append_no_duplicates_fields instance_fields sc_fields
-  | Some { Typ.instance_fields } -> instance_fields
+      General_utils.append_no_duplicates_fields fields sc_fields
+  | Some { fields } -> fields
 
 let fields_superclass tenv interface_decl_info ck =
   match interface_decl_info.Clang_ast_t.otdi_super with
@@ -76,18 +76,14 @@ let rec get_fields type_ptr_to_sil_type tenv curr_class decl_list =
 
 (* Add potential extra fields defined only in the implementation of the class *)
 (* to the info given in the interface. Update the tenv accordingly. *)
-let add_missing_fields tenv class_name ck fields =
+let add_missing_fields tenv class_name ck missing_fields =
   let mang_name = Mangled.from_string class_name in
   let class_tn_name = Typename.TN_csu (Csu.Class ck, mang_name) in
   match Tenv.lookup tenv class_tn_name with
-  | Some ({ Typ.instance_fields } as struct_typ) ->
-      let new_fields = General_utils.append_no_duplicates_fields instance_fields fields in
-      let class_type_info = {
-        struct_typ with
-        instance_fields = new_fields;
-        static_fields = [];
-        name = class_tn_name;
-      } in
+  | Some ({ fields } as struct_typ) ->
+      let new_fields = General_utils.append_no_duplicates_fields fields missing_fields in
+      let class_type_info =
+        Typ.mk_struct ~default:struct_typ ~fields:new_fields ~statics:[] class_tn_name in
       Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
       Tenv.add tenv class_tn_name class_type_info
   | _ -> ()

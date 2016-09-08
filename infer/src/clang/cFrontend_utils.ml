@@ -525,9 +525,9 @@ struct
 
 
   let sort_fields_tenv tenv =
-    let sort_fields_struct typname st =
-      let st' = { st with Typ.instance_fields = (sort_fields st.Typ.instance_fields) } in
-      Tenv.add tenv typname st' in
+    let sort_fields_struct typname ({Typ.name; fields} as st) =
+      Tenv.add tenv typname
+        (Typ.mk_struct ~default:st ~fields:(sort_fields fields) name) in
     Tenv.iter sort_fields_struct tenv
 
   let rec collect_list_tuples l (a, a1, b, c, d) =

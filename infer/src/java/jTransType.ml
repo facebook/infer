@@ -217,12 +217,12 @@ let create_sil_class_field cn cf =
 
 
 (** Collect static field if static is true, otherwise non-static ones. *)
-let collect_class_field cn cf (static_fields, nonstatic_fields) =
+let collect_class_field cn cf (statics, nonstatics) =
   let field = create_sil_class_field cn cf in
   if Javalib.is_static_field (Javalib.ClassField cf) then
-    (field :: static_fields, nonstatic_fields)
+    (field :: statics, nonstatics)
   else
-    (static_fields, field :: nonstatic_fields)
+    (statics, field :: nonstatics)
 
 
 (** Collect an interface field. *)
@@ -232,17 +232,6 @@ let collect_interface_field cn inf l =
   let field_name = create_fieldname cn fs in
   let annotation = JAnnotation.translate_item inf.Javalib.if_annotations in
   (field_name, field_type, annotation) :: l
-
-
-let dummy_type cn =
-  Typ.Tstruct {
-    Typ.instance_fields = [];
-    static_fields = [];
-    name = Typename.Java.from_string (JBasics.cn_name cn);
-    superclasses = [];
-    def_methods = [];
-    struct_annotations = Typ.item_annotation_empty;
-  }
 
 
 let collect_models_class_fields classpath_field_map cn cf fields =
@@ -265,12 +254,12 @@ let collect_models_class_fields classpath_field_map cn cf fields =
 
 
 let add_model_fields program classpath_fields cn =
-  let static_fields, nonstatic_fields = classpath_fields in
+  let statics, nonstatics = classpath_fields in
   let classpath_field_map =
     let collect_fields map =
       IList.fold_left
         (fun map (fn, ft, _) -> Ident.FieldMap.add fn ft map) map in
-    collect_fields (collect_fields Ident.FieldMap.empty static_fields) nonstatic_fields in
+    collect_fields (collect_fields Ident.FieldMap.empty statics) nonstatics in
   try
     match JBasics.ClassMap.find cn (JClasspath.get_models program) with
     | Javalib.JClass _ as jclass ->
@@ -286,10 +275,10 @@ let add_model_fields program classpath_fields cn =
 let rec get_all_fields program tenv cn =
   let extract_class_fields classname =
     match get_class_type_no_pointer program tenv classname with
-    | Typ.Tstruct { Typ.instance_fields; static_fields } -> (static_fields, instance_fields)
+    | Typ.Tstruct { fields; statics } -> (statics, fields)
     | Typ.Tvar name -> (
         match Tenv.lookup tenv name with
-        | Some { instance_fields; static_fields } -> (static_fields, instance_fields)
+        | Some { fields; statics } -> (statics, fields)
         | None -> assert false
       )
     | _ -> assert false in
@@ -311,20 +300,21 @@ let rec get_all_fields program tenv cn =
 
 and create_sil_type program tenv cn =
   match JClasspath.lookup_node cn program with
-  | None -> dummy_type cn
+  | None ->
+      Typ.Tstruct (Typ.mk_struct (Typename.Java.from_string (JBasics.cn_name cn)))
   | Some node ->
       let create_super_list interface_names =
         IList.iter (fun cn -> ignore (get_class_type_no_pointer program tenv cn)) interface_names;
         IList.map typename_of_classname interface_names in
-      let superclasses, instance_fields, static_fields, struct_annotations =
+      let supers, fields, statics, annots =
         match node with
         | Javalib.JInterface jinterface ->
-            let static_fields, _ = get_all_fields program tenv cn in
+            let statics, _ = get_all_fields program tenv cn in
             let sil_interface_list = create_super_list jinterface.Javalib.i_interfaces in
             let item_annotation = JAnnotation.translate_item jinterface.Javalib.i_annotations in
-            (sil_interface_list, [], static_fields, item_annotation)
+            (sil_interface_list, [], statics, item_annotation)
         | Javalib.JClass jclass ->
-            let static_fields, nonstatic_fields =
+            let statics, nonstatics =
               let classpath_static, classpath_nonstatic = get_all_fields program tenv cn in
               add_model_fields program (classpath_static, classpath_nonstatic) cn in
             let item_annotation = JAnnotation.translate_item jclass.Javalib.c_annotations in
@@ -339,16 +329,11 @@ and create_sil_type program tenv cn =
                     | Typ.Tstruct { name } -> name
                     | _ -> assert false in
                   super_classname :: interface_list in
-            (super_classname_list, nonstatic_fields, static_fields, item_annotation) in
-      let def_methods = IList.map (fun j -> Procname.Java j) (get_class_procnames cn node) in
-      Typ.Tstruct {
-        Typ.instance_fields;
-        static_fields;
-        name = Typename.Java.from_string (JBasics.cn_name cn);
-        superclasses;
-        def_methods;
-        struct_annotations;
-      }
+            (super_classname_list, nonstatics, statics, item_annotation) in
+      let methods = IList.map (fun j -> Procname.Java j) (get_class_procnames cn node) in
+      Typ.Tstruct
+        (Typ.mk_struct ~fields ~statics ~methods ~supers ~annots
+           (Typename.Java.from_string (JBasics.cn_name cn)))
 
 and get_class_type_no_pointer program tenv cn =
   let named_type = typename_of_classname cn in

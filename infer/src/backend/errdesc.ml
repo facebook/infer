@@ -584,11 +584,11 @@ let vpath_find tenv prop _exp : DExp.t option * Typ.t option =
                let typo = match texp with
                  | Exp.Sizeof (typ, _, _) -> (
                      match Tenv.expand_type tenv typ with
-                     | Tstruct {instance_fields} -> (
+                     | Tstruct {fields} -> (
                          try
                            let _, t, _ =
                              IList.find (fun (f', _, _) -> Ident.fieldname_equal f' f)
-                               instance_fields in
+                               fields in
                            Some t
                          with Not_found -> None
                        )

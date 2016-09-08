@@ -504,7 +504,7 @@ let rec create_strexp_of_type tenv struct_init_mode (typ : Typ.t) len inst : Sil
   match Tenv.expand_type tenv typ, len with
   | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _), None ->
       Eexp (init_value (), inst)
-  | Tstruct { Typ.instance_fields }, _ -> (
+  | Tstruct { fields }, _ -> (
       match struct_init_mode with
       | No_init ->
           Estruct ([], inst)
@@ -516,7 +516,7 @@ let rec create_strexp_of_type tenv struct_init_mode (typ : Typ.t) len inst : Sil
               ((fld, Sil.Eexp (Exp.one, inst)) :: flds, None)
             else
               ((fld, create_strexp_of_type tenv struct_init_mode t len inst) :: flds, None) in
-          let flds, _ = IList.fold_right f instance_fields ([], len) in
+          let flds, _ = IList.fold_right f fields ([], len) in
           Estruct (flds, inst)
     )
   | Tarray (_, len_opt), None ->

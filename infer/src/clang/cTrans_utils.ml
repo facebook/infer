@@ -717,10 +717,10 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
         (match Tenv.lookup tenv tn with
          | Some struct_typ -> var_or_zero_in_init_list' e (Typ.Tstruct struct_typ) tns
          | _ -> [[(e, typ)]] (*This case is an error, shouldn't happen.*))
-    | Typ.Tstruct { Typ.instance_fields } as type_struct ->
+    | Typ.Tstruct { fields } as type_struct ->
         let lh_exprs = IList.map ( fun (fieldname, _, _) ->
-            Exp.Lfield (e, fieldname, type_struct) ) instance_fields in
-        let lh_types = IList.map ( fun (_, fieldtype, _) -> fieldtype) instance_fields in
+            Exp.Lfield (e, fieldname, type_struct) ) fields in
+        let lh_types = IList.map ( fun (_, fieldtype, _) -> fieldtype) fields in
         let exp_types = zip lh_exprs lh_types in
         IList.map (fun (e, t) ->
             IList.flatten (var_or_zero_in_init_list' e t tns)) exp_types

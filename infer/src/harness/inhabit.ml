@@ -96,13 +96,13 @@ let rec inhabit_typ tenv typ cfg env =
            * we are already inhabiting one of their argument types *)
           let get_all_suitable_constructors typ =
             match Tenv.expand_type tenv typ with
-            | Typ.Tstruct { name = TN_csu (Class _, _); def_methods } ->
+            | Typ.Tstruct { name = TN_csu (Class _, _); methods } ->
                 let is_suitable_constructor p =
                   let try_get_non_receiver_formals p =
                     get_non_receiver_formals (formals_from_name cfg p) in
                   Procname.is_constructor p && IList.for_all (fun (_, typ) ->
                       not (TypSet.mem typ env.cur_inhabiting)) (try_get_non_receiver_formals p) in
-                IList.filter (fun p -> is_suitable_constructor p) def_methods
+                IList.filter (fun p -> is_suitable_constructor p) methods
             | _ -> [] in
           let (env, typ_class_name) = match get_all_suitable_constructors typ with
             | constructor :: _ ->

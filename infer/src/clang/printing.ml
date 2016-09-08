@@ -41,13 +41,13 @@ let print_tenv tenv =
       | Typename.TN_csu (Csu.Class _, _) | Typename.TN_csu (Csu.Protocol, _) ->
           print_endline (
             (Typename.to_string typname) ^ " " ^
-            (Typ.item_annotation_to_string struct_t.struct_annotations) ^ "\n" ^
+            (Typ.item_annotation_to_string struct_t.annots) ^ "\n" ^
             "---> superclass and protocols " ^ (IList.to_string (fun tn ->
-                "\t" ^ (Typename.to_string tn) ^ "\n") struct_t.superclasses) ^
+                "\t" ^ (Typename.to_string tn) ^ "\n") struct_t.supers) ^
             "---> methods " ^
-            (IList.to_string (fun x ->"\t" ^ (Procname.to_string x) ^ "\n") struct_t.def_methods)
+            (IList.to_string (fun x ->"\t" ^ (Procname.to_string x) ^ "\n") struct_t.methods)
             ^ "  " ^
-            "\t---> fields " ^ (IList.to_string field_to_string struct_t.instance_fields) ^ "\n")
+            "\t---> fields " ^ (IList.to_string field_to_string struct_t.fields) ^ "\n")
       | _ -> ()
     ) tenv
 
@@ -62,7 +62,7 @@ let print_tenv_struct_unions tenv =
                 | Typ.Tvar tname -> "tvar"^(Typename.to_string tname)
                 | Typ.Tstruct _ | _ ->
                     "\t struct "^(Ident.fieldname_to_string fieldname)^" "^
-                    (Typ.to_string typ)^"\n") struct_t.instance_fields
+                    (Typ.to_string typ)^"\n") struct_t.fields
               )
           )
       | _ -> ()

@@ -36,13 +36,13 @@ let java_proc_name_with_class_method pn_java class_with_path method_name =
    with _ -> false)
 
 let get_direct_supers tenv = function
-  | { Typ.name = TN_csu (Class _, _); superclasses } ->
-      IList.map (Tenv.lookup tenv) superclasses
+  | { Typ.name = TN_csu (Class _, _); supers } ->
+      IList.map (Tenv.lookup tenv) supers
       |> IList.flatten_options
   | _ ->
       []
 
-(** get the superclasses of [typ]. does not include [typ] itself *)
+(** get the supers of [typ]. does not include [typ] itself *)
 let strict_supertype_iter tenv f_typ orig_struct_typ =
   let rec get_supers_rec struct_typ =
     let direct_supers = get_direct_supers tenv struct_typ in
@@ -59,7 +59,7 @@ let strict_supertype_exists tenv f_typ orig_struct_typ =
   get_supers_rec orig_struct_typ
 
 let is_immediate_subtype this_type super_type_name =
-  IList.exists (Typename.equal super_type_name) this_type.Typ.superclasses
+  IList.exists (Typename.equal super_type_name) this_type.Typ.supers
 
 (** return true if [typ0] <: [typ1] *)
 let is_subtype tenv struct_typ0 struct_typ1 =
@@ -80,9 +80,9 @@ let get_this_type proc_attributes = match proc_attributes.ProcAttributes.formals
 
 let type_get_direct_supertypes tenv typ =
   match Tenv.expand_ptr_type tenv typ with
-  | Typ.Tptr (Tstruct { superclasses }, _)
-  | Typ.Tstruct { superclasses } ->
-      superclasses
+  | Tptr (Tstruct { supers }, _)
+  | Tstruct { supers } ->
+      supers
   | _ ->
       []
 
@@ -90,12 +90,11 @@ let type_get_class_name = function
   | Typ.Tptr (typ, _) -> Typ.name typ
   | _ -> None
 
-let type_get_annotation tenv
-    (t: Typ.t): Typ.item_annotation option =
+let type_get_annotation tenv (t: Typ.t): Typ.item_annotation option =
   match Tenv.expand_ptr_type tenv t with
-  | Typ.Tptr (Typ.Tstruct { Typ.struct_annotations }, _)
-  | Typ.Tstruct { Typ.struct_annotations } ->
-      Some struct_annotations
+  | Tptr (Tstruct { annots }, _)
+  | Tstruct { annots } ->
+      Some annots
   | _ -> None
 
 let type_has_direct_supertype tenv (typ : Typ.t) (class_name : Typename.t) =
@@ -111,8 +110,8 @@ let type_has_supertype
     else
       begin
         match Tenv.expand_ptr_type tenv typ with
-        | Typ.Tptr (Typ.Tstruct { Typ.superclasses }, _)
-        | Typ.Tstruct { Typ.superclasses } ->
+        | Tptr (Tstruct { supers }, _)
+        | Tstruct { supers } ->
             let match_supertype cn =
               let match_name () = Typename.equal cn class_name in
               let has_indirect_supertype () =
@@ -121,7 +120,7 @@ let type_has_supertype
                     has_supertype (Typ.Tstruct supertype) (Typ.Set.add typ visited)
                 | None -> false in
               (match_name () || has_indirect_supertype ()) in
-            IList.exists match_supertype superclasses
+            IList.exists match_supertype supers
         | _ -> false
       end in
   has_supertype typ Typ.Set.empty
@@ -141,12 +140,12 @@ let get_field_type_name tenv
     (typ: Typ.t)
     (fieldname: Ident.fieldname): string option =
   match Tenv.expand_ptr_type tenv typ with
-  | Typ.Tstruct { Typ.instance_fields }
-  | Typ.Tptr (Typ.Tstruct { Typ.instance_fields }, _) -> (
+  | Tstruct { fields }
+  | Tptr (Tstruct { fields }, _) -> (
       try
         let _, ft, _ = IList.find
             (function | (fn, _, _) -> Ident.fieldname_equal fn fieldname)
-            instance_fields in
+            fields in
         Some (get_type_name ft)
       with Not_found -> None)
   | _ -> None
@@ -345,7 +344,7 @@ let proc_iter_overridden_methods f tenv proc_name =
     let super_proc_name =
       Procname.replace_class proc_name (Typename.name super_class_name) in
     match Tenv.lookup tenv super_class_name with
-    | Some ({ Typ.def_methods }) ->
+    | Some ({ methods }) ->
         let is_override pname =
           Procname.equal pname super_proc_name &&
           not (Procname.is_constructor pname) in
@@ -353,7 +352,7 @@ let proc_iter_overridden_methods f tenv proc_name =
           (fun pname ->
              if is_override pname
              then f pname)
-          def_methods
+          methods
     | _ -> () in
 
   match proc_name with

@@ -24,9 +24,9 @@ let rec unroll_type tenv typ off =
   | Typ.Tvar _, _ ->
       let typ' = Tenv.expand_type tenv typ in
       unroll_type tenv typ' off
-  | Typ.Tstruct { Typ.instance_fields; static_fields }, Sil.Off_fld (fld, _) ->
+  | Typ.Tstruct { fields; statics }, Sil.Off_fld (fld, _) ->
       begin
-        try fldlist_assoc fld (instance_fields @ static_fields)
+        try fldlist_assoc fld (fields @ statics)
         with Not_found ->
           L.d_strln ".... Invalid Field Access ....";
           L.d_strln ("Fld : " ^ Ident.fieldname_to_string fld);
@@ -158,9 +158,10 @@ let rec apply_offlist
           let res_se = Sil.Estruct (IList.map replace_fse fsel, inst') in
           let replace_fta (f, t, a) =
             if Ident.fieldname_equal fld f then (fld, res_t', a) else (f, t, a) in
-          let instance_fields' = IList.map replace_fta struct_typ.Typ.instance_fields in
+          let fields' = IList.map replace_fta struct_typ.fields in
           let res_t =
-            Typ.Tstruct { struct_typ with Typ.instance_fields = instance_fields' } in
+            Typ.Tstruct
+              (Typ.mk_struct ~default:struct_typ ~fields:fields' struct_typ.name) in
           (res_e', res_se, res_t, res_pred_insts_op')
         with Not_found ->
           pp_error();
@@ -506,11 +507,11 @@ let resolve_method tenv class_name proc_name =
       let right_proc_name =
         Procname.replace_class proc_name (Typename.name class_name) in
       match Tenv.lookup tenv class_name with
-      | Some { name = TN_csu (Class _, _); def_methods; superclasses } ->
-          if method_exists right_proc_name def_methods then
+      | Some { name = TN_csu (Class _, _); methods; supers } ->
+          if method_exists right_proc_name methods then
             Some right_proc_name
           else
-            (match superclasses with
+            (match supers with
              | super_classname:: _ ->
                  if not (Typename.Set.mem super_classname !visited)
                  then resolve super_classname

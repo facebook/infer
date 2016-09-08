@@ -136,8 +136,8 @@ let is_allocator tenv pname =
 let check_attributes check tenv pname =
   let check_class_attributes check tenv = function
     | Procname.Java java_pname ->
-        let check_class_annots { Typ.struct_annotations; } =
-          check struct_annotations in
+        let check_class_annots { Typ.annots; } =
+          check annots in
         begin
           match Tenv.proc_extract_declaring_class_typ tenv java_pname with
           | Some current_class ->

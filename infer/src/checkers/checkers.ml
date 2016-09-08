@@ -222,8 +222,8 @@ let callback_check_write_to_parcel_java
 
   let parcel_constructors tenv typ =
     match Tenv.expand_ptr_type tenv typ with
-    | Typ.Tptr (Typ.Tstruct { Typ.def_methods }, _) ->
-        IList.filter is_parcel_constructor def_methods
+    | Tptr (Tstruct { methods }, _) ->
+        IList.filter is_parcel_constructor methods
     | _ -> [] in
 
   let check r_desc w_desc =

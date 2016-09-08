@@ -423,8 +423,8 @@ let typ_get_recursive_flds tenv typ_exp =
   | Exp.Sizeof (typ, _, _) ->
       (match Tenv.expand_type tenv typ with
        | Typ.Tint _ | Typ.Tvoid | Typ.Tfun _ | Typ.Tptr _ | Typ.Tfloat _ -> []
-       | Typ.Tstruct { Typ.instance_fields } ->
-           IList.map (fun (x, _, _) -> x) (IList.filter (filter typ) instance_fields)
+       | Typ.Tstruct { fields } ->
+           IList.map (fun (x, _, _) -> x) (IList.filter (filter typ) fields)
        | Typ.Tarray _ -> []
        | Typ.Tvar _ -> assert false)
   | Exp.Var _ -> [] (* type of |-> not known yet *)
@@ -1003,11 +1003,11 @@ let cycle_has_weak_or_unretained_or_assign_field tenv cycle =
   (* returns items annotation for field fn in struct t *)
   let get_item_annotation t fn =
     match Tenv.expand_type tenv t with
-    | Typ.Tstruct { Typ.instance_fields; static_fields } ->
+    | Tstruct { fields; statics } ->
         let ia = ref [] in
         IList.iter (fun (fn', _, ia') ->
             if Ident.fieldname_equal fn fn' then ia := ia')
-          (instance_fields @ static_fields);
+          (fields @ statics);
         !ia
     | _ -> [] in
   let rec has_weak_or_unretained_or_assign params =

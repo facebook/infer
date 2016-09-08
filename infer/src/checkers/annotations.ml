@@ -39,7 +39,7 @@ let suppressLint = "android.annotation.SuppressLint"
 (** Return the annotations on the declaring class of [pname]. Only works for Java *)
 let get_declaring_class_annotations pname tenv =
   match Tenv.proc_extract_declaring_class_typ tenv pname with
-  | Some { Typ.struct_annotations } -> Some struct_annotations
+  | Some { annots } -> Some annots
   | None -> None
 
 let ia_iter f =

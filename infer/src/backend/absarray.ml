@@ -67,11 +67,11 @@ end = struct
   let rec get_strexp_at_syn_offsets tenv se t syn_offs =
     match se, Tenv.expand_type tenv t, syn_offs with
     | _, _, [] -> (se, t)
-    | Sil.Estruct (fsel, _), Typ.Tstruct { Typ.instance_fields }, Field (fld, _) :: syn_offs' ->
+    | Sil.Estruct (fsel, _), Tstruct { fields }, Field (fld, _) :: syn_offs' ->
         let se' = snd (IList.find (fun (f', _) -> Ident.fieldname_equal f' fld) fsel) in
         let t' = (fun (_,y,_) -> y)
             (IList.find (fun (f', _, _) ->
-                 Ident.fieldname_equal f' fld) instance_fields) in
+                 Ident.fieldname_equal f' fld) fields) in
         get_strexp_at_syn_offsets tenv se' t' syn_offs'
     | Sil.Earray (_, esel, _), Typ.Tarray (t', _), Index ind :: syn_offs' ->
         let se' = snd (IList.find (fun (i', _) -> Exp.equal i' ind) esel) in
@@ -87,11 +87,11 @@ end = struct
     match se, Tenv.expand_type tenv t, syn_offs with
     | _, _, [] ->
         update se
-    | Sil.Estruct (fsel, inst), Typ.Tstruct { Typ.instance_fields }, Field (fld, _) :: syn_offs' ->
+    | Sil.Estruct (fsel, inst), Tstruct { fields }, Field (fld, _) :: syn_offs' ->
         let se' = snd (IList.find (fun (f', _) -> Ident.fieldname_equal f' fld) fsel) in
         let t' = (fun (_,y,_) -> y)
             (IList.find (fun (f', _, _) ->
-                 Ident.fieldname_equal f' fld) instance_fields) in
+                 Ident.fieldname_equal f' fld) fields) in
         let se_mod = replace_strexp_at_syn_offsets tenv se' t' syn_offs' update in
         let fsel' =
           IList.map (fun (f'', se'') ->
@@ -151,8 +151,8 @@ end = struct
       if pred (path, se, typ) then found := (sigma, hpred, offs') :: !found
       else begin
         match se, Tenv.expand_type tenv typ with
-        | Sil.Estruct (fsel, _), Typ.Tstruct { Typ.instance_fields } ->
-            find_offset_fsel sigma_other hpred root offs fsel instance_fields typ
+        | Sil.Estruct (fsel, _), Tstruct { fields } ->
+            find_offset_fsel sigma_other hpred root offs fsel fields typ
         | Sil.Earray (_, esel, _), Typ.Tarray (t, _) ->
             find_offset_esel sigma_other hpred root offs esel t
         | _ -> ()

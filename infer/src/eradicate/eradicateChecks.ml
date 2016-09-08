@@ -260,7 +260,7 @@ let check_constructor_initialization tenv
       Option.map (Tenv.expand_ptr_type tenv)
         (PatternMatch.get_this_type (Cfg.Procdesc.get_attributes curr_pdesc))
     with
-    | Some (Tptr (Tstruct { instance_fields; name } as ts, _)) ->
+    | Some (Tptr (Tstruct { fields; name } as ts, _)) ->
         let do_field (fn, ft, _) =
           let annotated_with f = match get_field_annotation tenv fn ts with
             | None -> false
@@ -331,7 +331,7 @@ let check_constructor_initialization tenv
                   curr_pname;
             end in
 
-        IList.iter do_field instance_fields
+        IList.iter do_field fields
     | _ -> ()
   end
 

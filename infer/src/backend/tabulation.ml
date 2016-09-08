@@ -468,10 +468,10 @@ let texp_star tenv texp1 texp2 =
           | _ -> ftal_sub ftal1 ftal2' end in
   let typ_star t1 t2 =
     match Tenv.expand_type tenv t1, Tenv.expand_type tenv t2 with
-    | Typ.Tstruct { instance_fields = instance_fields1; name = TN_csu (csu1, _) },
-      Typ.Tstruct { instance_fields = instance_fields2; name = TN_csu (csu2, _) }
+    | Tstruct { fields = fields1; name = TN_csu (csu1, _) },
+      Tstruct { fields = fields2; name = TN_csu (csu2, _) }
       when csu1 = csu2 ->
-        if ftal_sub instance_fields1 instance_fields2 then t2 else t1
+        if ftal_sub fields1 fields2 then t2 else t1
     | _ -> t1 in
   match texp1, texp2 with
   | Exp.Sizeof (t1, len1, st1), Exp.Sizeof (t2, _, st2) ->

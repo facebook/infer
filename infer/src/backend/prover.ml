@@ -1477,15 +1477,12 @@ let expand_hpred_pointer tenv calc_index_frame hpred : bool * bool * Sil.hpred =
           | _, Sizeof (cnt_typ, len, st) ->
               (* type of struct at adr_base is unknown (typically Tvoid), but
                  type of contents is known, so construct struct type for single fld:cnt_typ *)
-              Exp.Sizeof
-                (Tstruct
-                   { instance_fields = [(fld, cnt_typ, Typ.item_annotation_empty)];
-                     static_fields = [];
-                     name = TN_csu (Struct, Mangled.from_string "counterfeit");
-                     superclasses = [];
-                     def_methods = [];
-                     struct_annotations = Typ.item_annotation_empty;
-                   }, len, st)
+              let struct_typ =
+                Typ.Tstruct
+                  (Typ.mk_struct
+                     ~fields: [(fld, cnt_typ, Typ.item_annotation_empty)]
+                     (TN_csu (Struct, Mangled.from_string "counterfeit"))) in
+              Exp.Sizeof (struct_typ, len, st)
           | _ ->
               (* type of struct at adr_base and of contents are both unknown: give up *)
               raise (Failure "expand_hpred_pointer: Unexpected non-sizeof type in Lfield") in
@@ -1521,8 +1518,8 @@ struct
   let is_interface tenv class_name =
     match Tenv.lookup tenv class_name with
     | Some ({ name = TN_csu (Class Java, _) } as struct_typ) ->
-        (IList.length struct_typ.Typ.instance_fields = 0) &&
-        (IList.length struct_typ.Typ.def_methods = 0)
+        (IList.length struct_typ.fields = 0) &&
+        (IList.length struct_typ.methods = 0)
     | _ -> false
 
   let is_root_class class_name =
@@ -1538,8 +1535,8 @@ struct
     let rec check cn =
       Typename.equal cn c2 || is_root_class c2 ||
       match Tenv.lookup tenv cn with
-      | Some ({ name = TN_csu (Class _, _); superclasses }) ->
-          IList.exists check superclasses
+      | Some ({ name = TN_csu (Class _, _); supers }) ->
+          IList.exists check supers
       | _ -> false in
     check c1
 
@@ -1665,8 +1662,8 @@ let cast_exception tenv texp1 texp2 e1 subs =
 let get_overrides_of tenv supertype pname =
   let typ_has_method pname typ =
     match Tenv.expand_type tenv typ with
-    | Typ.Tstruct { Typ.def_methods } ->
-        IList.exists (fun m -> Procname.equal pname m) def_methods
+    | Tstruct { methods } ->
+        IList.exists (fun m -> Procname.equal pname m) methods
     | _ -> false in
   let gather_overrides tname struct_typ overrides_acc =
     let typ = Typ.Tstruct struct_typ in

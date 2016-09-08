@@ -137,13 +137,13 @@ type static_length = option IntLit.t;
 
 type struct_fields = list (Ident.fieldname, t, item_annotation)
 /** Type for a structured value. */
-and struct_typ = {
+and struct_typ = private {
   name: Typename.t, /** name */
-  instance_fields: struct_fields, /** non-static fields */
-  static_fields: struct_fields, /** static fields */
-  superclasses: list Typename.t, /** list of superclasses */
-  def_methods: list Procname.t, /** methods defined */
-  struct_annotations: item_annotation /** annotations */
+  fields: struct_fields, /** non-static fields */
+  statics: struct_fields, /** static fields */
+  supers: list Typename.t, /** list of supers */
+  methods: list Procname.t, /** methods defined */
+  annots: item_annotation /** annotations */
 }
 /** types for sil (structured) expressions */
 and t =
@@ -207,6 +207,18 @@ let module Set: Set.S with type elt = t;
 let module Map: Map.S with type key = t;
 
 let module Tbl: Hashtbl.S with type key = t;
+
+
+/** Construct a struct_typ, normalizing field types */
+let mk_struct:
+  default::struct_typ? =>
+  fields::struct_fields? =>
+  statics::struct_fields? =>
+  methods::list Procname.t? =>
+  supers::list Typename.t? =>
+  annots::item_annotation? =>
+  Typename.t =>
+  struct_typ;
 
 
 /** The name of a type */

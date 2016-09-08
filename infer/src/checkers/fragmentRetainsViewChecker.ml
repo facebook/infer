@@ -45,10 +45,10 @@ let callback_fragment_retains_view_java
       let class_typename =
         Typename.Java.from_string (Procname.java_get_class_name pname_java) in
       match Tenv.lookup tenv class_typename with
-      | Some ({ instance_fields } as struct_typ)
+      | Some ({ fields } as struct_typ)
         when AndroidFramework.is_fragment tenv struct_typ ->
           let declared_view_fields =
-            IList.filter (is_declared_view_typ class_typename) instance_fields in
+            IList.filter (is_declared_view_typ class_typename) fields in
           let fields_nullified = PatternMatch.get_fields_nullified proc_desc in
           (* report if a field is declared by C, but not nulled out in C.onDestroyView *)
           IList.iter

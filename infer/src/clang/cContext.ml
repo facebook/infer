@@ -128,9 +128,9 @@ let curr_class_equal curr_class1 curr_class2 =
 let create_curr_class tenv class_name ck =
   let class_tn_name = Typename.TN_csu (Csu.Class ck, (Mangled.from_string class_name)) in
   match Tenv.lookup tenv class_tn_name with
-  | Some { Typ.superclasses } ->
-      (let superclasses_names = IList.map Typename.name superclasses in
-       match superclasses_names with
+  | Some { supers } ->
+      (let supers_names = IList.map Typename.name supers in
+       match supers_names with
        | superclass:: protocols ->
            ContextCls (class_name, Some superclass, protocols)
        | [] -> ContextCls (class_name, None, []))

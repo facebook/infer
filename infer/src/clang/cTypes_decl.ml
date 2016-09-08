@@ -18,25 +18,11 @@ module L = Logging
 let add_predefined_objc_types tenv =
   let class_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCClass in
   let objc_class_type_info =
-    {
-      Typ.instance_fields = [];
-      static_fields = [];
-      name = TN_csu (Struct, Mangled.from_string CFrontend_config.objc_class);
-      superclasses = [];
-      def_methods = [];
-      struct_annotations = [];
-    } in
+    Typ.mk_struct (TN_csu (Struct, Mangled.from_string CFrontend_config.objc_class)) in
   Tenv.add tenv class_typename objc_class_type_info;
   let id_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCId in
   let objc_object_type_info =
-    {
-      Typ.instance_fields = [];
-      static_fields = [];
-      name = TN_csu (Struct, Mangled.from_string CFrontend_config.objc_object);
-      superclasses = [];
-      def_methods = [];
-      struct_annotations = [];
-    } in
+    Typ.mk_struct (TN_csu (Struct, Mangled.from_string CFrontend_config.objc_object)) in
   Tenv.add tenv id_typename objc_object_type_info
 
 (* Whenever new type are added manually to the translation in ast_expressions, *)
@@ -207,25 +193,18 @@ and get_record_declaration_struct_type tenv decl =
       let extra_fields = if CTrans_models.is_objc_memory_model_controlled name then
           [Typ.objc_ref_counter_field]
         else [] in
-      let struct_annotations =
+      let annots =
         if csu = Csu.Class Csu.CPP then Typ.cpp_class_annotation
         else Typ.item_annotation_empty (* No annotations for structs *) in
       if is_complete_definition then (
         Ast_utils.update_sil_types_map type_ptr (Typ.Tvar sil_typename);
-        let non_static_fields = get_struct_fields tenv decl in
-        let non_static_fields =
-          General_utils.append_no_duplicates_fields non_static_fields extra_fields in
-        let static_fields = [] in (* Note: We treat static field same as global variables *)
-        let def_methods = get_class_methods name decl_list in (* C++ methods only *)
-        let superclasses = get_superclass_list_cpp decl in
-        let sil_type = Typ.Tstruct {
-            Typ.instance_fields = non_static_fields;
-            static_fields;
-            name = sil_typename;
-            superclasses;
-            def_methods;
-            struct_annotations;
-          } in
+        let non_statics = get_struct_fields tenv decl in
+        let fields = General_utils.append_no_duplicates_fields non_statics extra_fields in
+        let statics = [] in (* Note: We treat static field same as global variables *)
+        let methods = get_class_methods name decl_list in (* C++ methods only *)
+        let supers = get_superclass_list_cpp decl in
+        let sil_type =
+          Typ.Tstruct (Typ.mk_struct ~fields ~statics ~methods ~supers ~annots sil_typename) in
         Ast_utils.update_sil_types_map type_ptr sil_type;
         add_struct_to_tenv tenv sil_type;
         sil_type
@@ -240,14 +219,7 @@ and get_record_declaration_struct_type tenv decl =
             (* Note: we know that this type will be wrapped with pointer type because *)
             (* there was no full definition of that type yet. *)
             let tvar_type = Typ.Tvar sil_typename in
-            let empty_struct_type = Typ.Tstruct {
-                Typ.instance_fields = extra_fields;
-                static_fields = [];
-                name = sil_typename;
-                superclasses = [];
-                def_methods = [];
-                struct_annotations;
-              } in
+            let empty_struct_type = Typ.Tstruct (Typ.mk_struct ~fields:extra_fields sil_typename) in
             Ast_utils.update_sil_types_map type_ptr tvar_type;
             add_struct_to_tenv tenv empty_struct_type;
             tvar_type)
