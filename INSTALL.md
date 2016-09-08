@@ -19,7 +19,6 @@ release](http://fbinfer.com/docs/getting-started.html) (faster), or to
 compile everything from source (see the end of this document).
 
 - opam >= 1.2.0 (instructions [here](https://opam.ocaml.org/doc/Install.html#OSX))
-- reason >= 0.0.5 ([installation](https://github.com/facebook/reason/blob/master/README.md))
 - Python 2.7
 - Java (only needed for the Java analysis)
 - clang in Xcode command line tools. You can install them with the command
@@ -44,7 +43,6 @@ release](http://fbinfer.com/docs/getting-started.html) (faster), or to
 compile everything from source (see the end of this document).
 
 - opam >= 1.2.0
-- reason >= 0.0.5 ([installation](https://github.com/facebook/reason/blob/master/README.md))
 - Python 2.7
 - Java (only needed for the Java analysis)
 - gcc >= 4.7.2 or clang >= 3.1 (only needed for the C/Objective-C analysis)
