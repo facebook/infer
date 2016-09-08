@@ -11,6 +11,7 @@ ANALYZER = quandary
 INFERPRINT_OPTIONS = --issues-txt
 
 FILES = \
+  Arrays.java \
   Basics.java \
   Fields.java \
   LoggingPrivateData.java \
