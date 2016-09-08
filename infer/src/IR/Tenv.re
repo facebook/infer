@@ -40,6 +40,21 @@ let mk_struct
     supers::supers=?
     annots::annots=?
     name => {
+  let normalize_fields fs =>
+    IList.map_changed
+      (
+        fun ((fld, typ, ann) as fta) =>
+          switch typ {
+          | Typ.Tstruct {name} => (fld, Typ.Tvar name, ann)
+          | _ => fta
+          }
+      )
+      fs;
+  let fields =
+    switch fields {
+    | Some fields => Some (normalize_fields fields)
+    | None => fields
+    };
   let struct_typ =
     Typ.internal_mk_struct
       default::?default

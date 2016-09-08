@@ -494,12 +494,11 @@ let internal_mk_struct
     ()
 };
 
-let name t =>
-  switch t {
+let name =
+  fun
   | Tvar name
   | Tstruct {name} => Some name
-  | _ => None
-  };
+  | _ => None;
 
 let unsome s =>
   fun
