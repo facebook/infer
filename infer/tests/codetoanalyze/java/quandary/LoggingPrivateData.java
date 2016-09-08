@@ -22,6 +22,21 @@ public class LoggingPrivateData {
     Log.d(prefs.getString("some", "data"), "value");
   }
 
+  static class StringWrapper extends Throwable {
+    private String mStr;
+
+    @Override
+    public String toString() {
+      return mStr;
+    }
+  }
+
+  public void logSharedPreferencesDataIndirectBad(SharedPreferences prefs) {
+    StringWrapper wrapper = new StringWrapper();
+    wrapper.mStr = prefs.getString("some", "data");
+    Log.w("tag", wrapper);
+  }
+
   public void logDataOk(SharedPreferences prefs) {
     Log.d("tag", "value");
   }

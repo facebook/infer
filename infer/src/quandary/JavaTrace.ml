@@ -130,18 +130,18 @@ module JavaSink = struct
 
   let get site =
     (* taint all the inputs of [pname] *)
-    let taint_all pname kind site =
+    let taint_all pname kind site ~report_reachable =
       IList.mapi
-        (fun param_num _ -> param_num,make kind site)
+        (fun param_num _ -> Sink.make_sink_param (make kind site) param_num ~report_reachable)
         (Procname.java_get_parameters pname) in
     match CallSite.pname site with
     | Procname.Java pname ->
         begin
           match Procname.java_get_class_name pname, Procname.java_get_method pname with
           | "android.util.Log", ("d" | "e" | "i" | "println" | "v" | "w" | "wtf") ->
-              taint_all pname Logging site
+              taint_all pname Logging site ~report_reachable:true
           | "com.facebook.infer.models.InferTaint", "inferSensitiveSink" ->
-              [0, make Other site]
+              [Sink.make_sink_param (make Other site) 0 ~report_reachable:false]
           | _ ->
               []
         end

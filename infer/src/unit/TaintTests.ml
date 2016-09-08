@@ -52,7 +52,7 @@ module MockTrace = Trace.Make(struct
 
       let get site =
         if string_is_prefix "SINK" (Procname.to_string (CallSite.pname site))
-        then [(0, site)]
+        then [Sink.make_sink_param site 0 ~report_reachable:false]
         else []
     end
 

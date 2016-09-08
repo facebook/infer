@@ -7,11 +7,23 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+type 'a parameter =
+  { sink : 'a;
+    (** sink type of the parameter *)
+    index : int;
+    (** index of the parameter *)
+    report_reachable : bool;
+    (** if true, report if *any* value heap-reachable from the sink parameter is a source.
+        if false, report only if the value passed to the sink is itself a source *)
+  }
+
+let make_sink_param sink index ~report_reachable =
+  { sink; index; report_reachable; }
+
 module type S = sig
   include TraceElem.S
 
   val to_callee : t -> CallSite.t -> t
 
-  (** ith param * ith source kind *)
-  val get : CallSite.t -> (int * t) list
+  val get : CallSite.t -> t parameter list
 end
