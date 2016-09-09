@@ -27,7 +27,7 @@ let compute_icfg tenv ast =
       Printing.log_out "\n Start creating icfg\n";
       let cg = Cg.create () in
       let cfg = Cfg.Node.create_cfg () in
-      if Config.analyzer <> Some Config.Linters then
+      if Config.clang_frontend_do_capture then
         IList.iter (CFrontend_declImpl.translate_one_declaration tenv cg cfg `DeclTraversal)
           decl_list;
       Printing.log_out "\n Finished creating icfg\n";
@@ -62,7 +62,7 @@ let do_source_file source_file ast =
   Printing.log_out "\n End building call/cfg graph for '%s'.\n"
     (DB.source_file_to_string source_file);
   (* TODO (t12740727): Move this call to cMain once the transition to linters mode is finished *)
-  if Config.analyzer <> Some Config.Infer then
+  if Config.clang_frontend_do_lint then
     CFrontend_checkers_main.do_frontend_checks cfg call_graph source_file ast;
   (* This part below is a boilerplate in every frontends. *)
   (* This could be moved in the cfg_infer module *)

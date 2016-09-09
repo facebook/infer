@@ -80,7 +80,7 @@ let get_err_log cfg cg method_decl_opt loc =
   let procname = match method_decl_opt with
     | Some method_decl -> General_utils.procname_of_decl method_decl
     | None -> General_utils.get_procname_for_frontend_checks loc in
-  if Config.analyzer = Some Config.Linters then
+  if Config.clang_frontend_action = `Lint then
     LintIssues.get_err_log procname
   else (* TODO (t12740727): Remove this branch once the transition to linters mode is finished *)
     let pdesc = CMethod_trans.get_method_for_frontend_checks cfg cg loc in

@@ -26,6 +26,11 @@ let string_to_analyzer =
    ("tracing", Tracing); ("crashcontext", Crashcontext); ("linters", Linters);
    ("quandary", Quandary);]
 
+let clang_frontend_action_symbols = [
+  ("lint", `Lint);
+  ("capture", `Capture);
+  ("lint_and_capture", `Lint_and_capture);
+]
 
 type clang_lang = C | CPP | OBJC | OBJCPP
 
@@ -623,6 +628,12 @@ and check_duplicate_symbols =
   CLOpt.mk_bool ~long:"check-duplicate-symbols"
     ~exes:CLOpt.[Analyze]
     "Check if a symbol with the same name is defined in more than one file."
+
+and clang_frontend_action =
+  CLOpt.mk_symbol_opt ~long:"clang-frontend-action"
+    ~exes:CLOpt.[Clang]
+    "Specify whether the clang frontend should capture or lint or both."
+    ~symbols:clang_frontend_action_symbols
 
 and clang_include_to_override =
   CLOpt.mk_string_opt ~long:"clang-include-to-override" ~meta:"dir"
@@ -1366,6 +1377,16 @@ and checkers = !checkers
 
 (** should the checkers be run? *)
 and checkers_enabled = not (!eradicate || !crashcontext || !quandary)
+(* TODO (t12740727): Remove this variable once the transition to linters mode is finished *)
+and clang_frontend_action =
+  match !clang_frontend_action with
+  | Some clang_frontend_action ->
+      clang_frontend_action
+  | None ->
+      match !analyzer with
+      | Some Linters -> `Lint
+      | Some Infer -> `Capture
+      | _ -> `Lint_and_capture
 and clang_include_to_override = !clang_include_to_override
 and clang_lang = !clang_lang
 and cluster_cmdline = !cluster
@@ -1463,6 +1484,17 @@ and write_html = !write_html
 and xcode_developer_dir = !xcode_developer_dir
 and xml_specs = !xml_specs
 and zip_libraries = !zip_libraries
+
+let clang_frontend_do_capture, clang_frontend_do_lint =
+  match clang_frontend_action with
+  | `Lint -> false, true
+  | `Capture -> true, false
+  | `Lint_and_capture -> true, true
+
+let clang_frontend_action_string =
+  String.concat " and " 
+    ((if clang_frontend_do_capture then ["translating"] else []) 
+     @ (if clang_frontend_do_lint then ["linting"] else []))
 
 
 let analysis_path_regex_whitelist analyzer =

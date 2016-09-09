@@ -56,7 +56,9 @@ let do_run source_path ast_path =
     CFrontend_config.json := ast_filename;
     CLocation.check_source_file source_path;
     let source_file = CLocation.source_file_from_path source_path in
-    Printf.printf "Start translation of AST from %s\n" !CFrontend_config.json;
+    Printing.log_stats "Clang frontend action is  %s\n" Config.clang_frontend_action_string;
+    Printf.printf "Start %s of AST from %s\n" Config.clang_frontend_action_string
+      !CFrontend_config.json;
     CFrontend.do_source_file  source_file ast_decl;
     Printf.printf "End translation AST file %s... OK!\n" !CFrontend_config.json;
     print_elapsed ();

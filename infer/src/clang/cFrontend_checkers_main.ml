@@ -74,6 +74,7 @@ let store_issues source_file =
   LintIssues.store_issues lint_issues_file !LintIssues.errLogMap
 
 let do_frontend_checks cfg cg source_file ast =
+  Printing.log_stats "Start linting file %s\n" (DB.source_file_to_string source_file);
   match ast with
   | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
       let context = context_with_ck_set CLintersContext.empty decl_list in
@@ -83,6 +84,7 @@ let do_frontend_checks cfg cg source_file ast =
       let allowed_decls = IList.filter is_decl_allowed decl_list in
       IList.iter (do_frontend_checks_decl context cfg cg) allowed_decls;
       (* TODO (t12740727): Remove condition once the transition to linters mode is finished *)
-      if Config.analyzer = Some Config.Linters && (LintIssues.exists_issues ()) then
-        store_issues source_file
+      if Config.clang_frontend_action = `Lint && (LintIssues.exists_issues ()) then
+        store_issues source_file;
+      Printing.log_stats "End linting file %s\n" (DB.source_file_to_string source_file)
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
