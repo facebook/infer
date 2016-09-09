@@ -274,7 +274,7 @@ toplevel: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDG
 	# 5. filter out root modules since they run code when loading the module.
 	find . \( -name "*.ml" -o -name "*.mly" -o -name "*.mll" -o -name "*.re" \) \
 		\( $(dirs_find_regex) -false \) \
-		-not \( -path "./unit/*" -o -path "./llvm/*" -o -path "./facebook/scripts/eradicate_stats.ml" \) \
+		-not \( -path "./unit/*" -o -path "./llvm/*" -o -path "./facebook/scripts/eradicate_stats.ml" -o -name ".#*" \) \
 	| cut -c 3- \
 	| rev | cut -f 2- -d '.' | rev \
 	| awk 'BEGIN { FS = "/"; OFS = "/" } ; {$$NF=toupper(substr($$NF,1,1))substr($$NF,2); print $$0}' \
