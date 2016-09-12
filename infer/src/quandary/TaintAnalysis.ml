@@ -13,7 +13,8 @@ module F = Format
 module L = Logging
 
 (** Create a taint analysis from a trace domain *)
-module Make (TraceDomain : Trace.S) = struct
+
+module Make (TraceDomain : QuandarySummary.Trace) = struct
 
   module TaintDomain = AccessTree.Make (TraceDomain)
   module IdMapDomain = IdAccessPathMapDomain
@@ -246,6 +247,76 @@ module Make (TraceDomain : Trace.S) = struct
       (Scheduler.ReversePostorder)
       (TransferFunctions)
 
+  (** grab footprint traces in [access_tree] and make them into inputs for the summary. for each
+      trace Footprint(T_out, a.b.c) associated with access path x.z.y, we will produce a summary of
+      the form (x.z.y, T_in) => (T_in + T_out, a.b.c) *)
+  let make_summary formals access_tree pdesc =
+    let add_summary_for_output summary_acc output trace =
+      let make_in_out_summary summary_input summary_output trace =
+        let _ = match summary_input with
+          | QuandarySummary.In_formal (_, _) -> ()
+          | _ -> () in
+        QuandarySummary.make_in_out_summary
+          summary_input summary_output (TraceDomain.to_summary_trace trace) in
+
+      let extract_input source acc =
+        let get_formal_number base formal_bases =
+          IList.find_mapi_opt
+            (fun index formal_base ->
+               if AccessPath.base_equal base formal_base
+               then Some index
+               else None)
+            formal_bases in
+
+        match TraceDomain.Source.get_footprint_access_path source with
+        | Some footprint_ap ->
+            let input =
+              let footprint_ap_base = fst (AccessPath.extract footprint_ap) in
+              match get_formal_number footprint_ap_base formals with
+              | Some index ->
+                  QuandarySummary.make_formal_input index footprint_ap
+              | None ->
+                  failwithf
+                    "Couldn't find formal number for %a@." AccessPath.pp_base footprint_ap_base in
+            let summary = make_in_out_summary input output trace in
+            summary :: acc
+        | None ->
+            let summary = make_in_out_summary QuandarySummary.empty_input output trace in
+            summary :: acc in
+      TraceDomain.Source.Set.fold extract_input (TraceDomain.sources trace) summary_acc in
+
+    let add_summaries_for_base
+        ~(f_make_output : AccessPath.t -> QuandarySummary.output) base summary_acc =
+      let add_summary_for_access_path summary_acc  access_path trace =
+        add_summary_for_output summary_acc (f_make_output access_path) trace in
+
+      let raw_base_ap = base, [] in
+      match TaintDomain.BaseMap.find base access_tree with
+      | trace, TaintDomain.Star ->
+          add_summary_for_access_path summary_acc (AccessPath.Abstracted raw_base_ap) trace
+      | trace, TaintDomain.Subtree subtree ->
+          let access_path = AccessPath.Exact raw_base_ap in
+          add_summary_for_output summary_acc (f_make_output access_path) trace
+          |> TaintDomain.access_map_fold add_summary_for_access_path base subtree
+      | exception Not_found ->
+          summary_acc in
+
+    let add_formal_summaries summary_acc formal_index formal =
+      let f_make_output = QuandarySummary.make_formal_output formal_index in
+      add_summaries_for_base ~f_make_output formal summary_acc in
+
+    let add_return_summaries summary_acc = match Cfg.Procdesc.get_ret_type pdesc with
+      | Typ.Tvoid ->
+          summary_acc
+      | ret_typ ->
+          let return_var_base = AccessPath.base_of_pvar (Cfg.Procdesc.get_ret_var pdesc) ret_typ in
+          add_summaries_for_base
+            ~f_make_output:QuandarySummary.make_return_output return_var_base summary_acc in
+
+    (* add summaries for each formal and for the return value *)
+    IList.fold_lefti add_formal_summaries [] formals
+    |> add_return_summaries
+
   let checker { Callbacks.proc_name; proc_desc; tenv; } =
     let formals =
       let attrs = Cfg.Procdesc.get_attributes proc_desc in
@@ -253,7 +324,19 @@ module Make (TraceDomain : Trace.S) = struct
         (fun (name, typ) -> AccessPath.base_of_pvar (Pvar.mk name proc_name) typ)
         attrs.formals in
     let proc_data = ProcData.make proc_desc tenv formals in
-    ignore (Analyzer.compute_post proc_data)
+    match Analyzer.compute_post proc_data with
+    | Some { access_tree; } ->
+        ignore (make_summary formals access_tree proc_desc)
+    | None ->
+        failwithf "Couldn't compute post for function %a@." Procname.pp proc_name
 end
 
-module Java = Make(JavaTrace)
+module Java = Make(struct
+    include JavaTrace
+
+    let to_summary_trace trace = QuandarySummary.Java trace
+
+    let of_summary_trace = function
+      | QuandarySummary.Java trace -> trace
+      | QuandarySummary.Unknown -> assert false
+  end)

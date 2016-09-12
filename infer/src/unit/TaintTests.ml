@@ -59,7 +59,12 @@ module MockTrace = Trace.Make(struct
     let should_report _ _ = true
   end)
 
-module MockTaintAnalysis = TaintAnalysis.Make(MockTrace)
+module MockTaintAnalysis = TaintAnalysis.Make(struct
+    include MockTrace
+
+    let of_summary_trace _ = assert false
+    let to_summary_trace _ = assert false
+  end)
 
 module TestInterpreter = AnalyzerTester.Make
     (ProcCfg.Normal)
