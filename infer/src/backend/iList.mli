@@ -112,4 +112,7 @@ val map2 : ('a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list
 (** Return the first non-None result found when applying f to elements of l *)
 val find_map_opt : ('a -> 'b option) -> 'a list -> 'b option
 
+(** Like find_map_opt, but with indices *)
+val find_mapi_opt : (int -> 'a -> 'b option) -> 'a list -> 'b option
+
 val to_string : ('a -> string) -> 'a list -> string

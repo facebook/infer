@@ -221,6 +221,17 @@ let rec find_map_opt f = function
       then e'
       else find_map_opt f l'
 
+(** Like find_map_opt, but with indices *)
+let find_mapi_opt (f : int -> 'a -> 'b option) l =
+  let rec find_mapi_opt_ f i = function
+    | [] -> None
+    | e :: l' ->
+        let e' = f i e in
+        if e' <> None
+        then e'
+        else find_mapi_opt_ f (i + 1) l' in
+  find_mapi_opt_ f 0 l
+
 let to_string f l =
   let rec aux l =
     match l with
