@@ -42,6 +42,9 @@ val length : 'a list -> int
 (** tail-recursive variant of List.fold_right *)
 val fold_right : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
 
+(** fold_left with indices *)
+val fold_lefti : ('a -> int -> 'b -> 'a) -> 'a -> 'b list -> 'a
+
 (** tail-recursive variant of List.map *)
 val map : ('a -> 'b) -> 'a list -> 'b list
 

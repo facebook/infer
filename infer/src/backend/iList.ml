@@ -38,6 +38,11 @@ let fold_right f l a =
   let g x y = f y x in
   fold_left g a (rev l)
 
+(** fold_left with indices *)
+let fold_lefti (f : 'a -> int -> 'b -> 'a) a l =
+  fold_left (fun (i, acc) e -> i +1, f acc i e) (0, a) l
+  |> snd
+
 (** tail-recursive variant of List.combine *)
 let combine =
   let rec combine acc l1 l2 = match l1, l2 with
