@@ -129,6 +129,7 @@ type payload =
     calls:  call_summary option; (** list of calls of the form (call, loc) *)
     crashcontext_frame: Stacktree_j.stacktree option;
     (** Procedure location and blame_range info for crashcontext analysis *)
+    quandary : QuandarySummary.t option;
   }
 
 (** Procedure summary *)

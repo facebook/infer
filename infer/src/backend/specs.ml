@@ -324,6 +324,7 @@ type payload =
     typestate : unit TypeState.t option; (** final typestate *)
     calls: call_summary option;
     crashcontext_frame: Stacktree_j.stacktree option;
+    quandary : QuandarySummary.t option;
     (** Proc location and blame_range info for crashcontext analysis *)
   }
 
@@ -758,6 +759,7 @@ let empty_payload =
     typestate = None;
     calls = None;
     crashcontext_frame = None;
+    quandary = None;
   }
 
 (** [init_summary (depend_list, nodes,

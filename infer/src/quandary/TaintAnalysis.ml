@@ -14,6 +14,19 @@ module L = Logging
 
 (** Create a taint analysis from a trace domain *)
 
+module Summary = Summary.Make(struct
+    type summary = QuandarySummary.t
+
+    let update_payload summary payload =
+      { payload with Specs.quandary = Some summary; }
+
+    let read_from_payload payload =
+      match payload.Specs.quandary with
+      | Some summary -> summary
+      | None -> failwith "Failed to load summary"
+  end)
+
+
 module Make (TraceDomain : QuandarySummary.Trace) = struct
 
   module TaintDomain = AccessTree.Make (TraceDomain)
@@ -317,18 +330,37 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
     IList.fold_lefti add_formal_summaries [] formals
     |> add_return_summaries
 
-  let checker { Callbacks.proc_name; proc_desc; tenv; } =
-    let formals =
-      let attrs = Cfg.Procdesc.get_attributes proc_desc in
-      IList.map
-        (fun (name, typ) -> AccessPath.base_of_pvar (Pvar.mk name proc_name) typ)
-        attrs.formals in
-    let proc_data = ProcData.make proc_desc tenv formals in
-    match Analyzer.compute_post proc_data with
-    | Some { access_tree; } ->
-        ignore (make_summary formals access_tree proc_desc)
-    | None ->
-        failwithf "Couldn't compute post for function %a@." Procname.pp proc_name
+  let checker { Callbacks.get_proc_desc; proc_name; proc_desc; tenv; } =
+    let analyze_ondemand pdesc =
+      let make_formal_access_paths pdesc : AccessPath.base list=
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let attrs = Cfg.Procdesc.get_attributes pdesc in
+        IList.map
+          (fun (name, typ) ->
+             let pvar = Pvar.mk name pname in
+             AccessPath.base_of_pvar pvar typ)
+          attrs.ProcAttributes.formals in
+      let formals = make_formal_access_paths pdesc in
+      let proc_data = ProcData.make pdesc tenv formals in
+      match Analyzer.compute_post proc_data with
+      | Some { access_tree; } ->
+          let summary = make_summary formals access_tree pdesc in
+          Summary.write_summary (Cfg.Procdesc.get_proc_name pdesc) summary;
+      | None ->
+          failwith "Couldn't compute post" in
+    let callbacks =
+      {
+        Ondemand.analyze_ondemand;
+        get_proc_desc;
+      } in
+    if Ondemand.procedure_should_be_analyzed proc_name
+    then
+      begin
+        Ondemand.set_callbacks callbacks;
+        analyze_ondemand proc_desc;
+        Ondemand.unset_callbacks ();
+      end
+
 end
 
 module Java = Make(struct
