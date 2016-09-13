@@ -86,10 +86,6 @@ def prepare_build(args):
         logging.error('Could not find infer')
         raise e
 
-    # Disable the use of buckd as this scripts modifies .buckconfig.local
-    logging.info('Disabling buckd: export NO_BUCKD=1')
-    os.environ['NO_BUCKD'] = '1'
-
     # make sure INFER_ANALYSIS is set when buck is called
     logging.info('Setup Infer analysis mode for Buck: export INFER_ANALYSIS=1')
     os.environ['INFER_ANALYSIS'] = '1'
@@ -397,7 +393,7 @@ def collect_results(args, start_time):
 
 
 def cleanup(temp_files):
-    """Removes the generated .buckconfig.local and the temporary infer script.
+    """Removes the temporary infer files.
     """
     for file in temp_files:
         try:
