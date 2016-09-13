@@ -138,10 +138,10 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
               | Some (actual_trace, _) ->
                   (* add callee_pname to actual trace as a sink *)
                   let actual_trace' = TraceDomain.add_sink sink_param.sink actual_trace in
-                  TraceDomain.log_reports
-                    actual_trace'
-                    (Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc)
-                    loc;
+                  let pname = Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc in
+                  IList.iter
+                    (Reporting.log_error pname ~loc)
+                    (TraceDomain.get_reportable_exns actual_trace');
                   TaintDomain.add_trace actual_ap actual_trace' access_tree_acc
               | None ->
                   access_tree_acc

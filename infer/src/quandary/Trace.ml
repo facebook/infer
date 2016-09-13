@@ -18,6 +18,9 @@ module type Spec = sig
 
   (** should a flow originating at source and entering sink be reported? *)
   val should_report : Source.t -> Sink.t -> bool
+
+  (** get a loggable exception reporting a flow from source -> sink *)
+  val get_reportable_exn : Source.t -> Sink.t -> Passthrough.Set.t -> exn
 end
 
 module type S = sig
@@ -35,8 +38,8 @@ module type S = sig
   (** get the reportable source-sink flows in this trace *)
   val get_reports : t -> (Source.t * Sink.t * Passthrough.Set.t) list
 
-  (** log the reportable source-sink flows in this trace *)
-  val log_reports : t -> Procname.t -> Location.t -> unit
+  (** get logging-ready exceptions for the reportable source-sink flows in this trace *)
+  val get_reportable_exns : t -> exn list
 
   (** create a trace from a source *)
   val of_source : Source.t -> t
@@ -102,18 +105,10 @@ module Make (Spec : Spec) = struct
         else acc in
       Sources.fold (fun source acc -> Sinks.fold (report_one source) t.sinks acc) t.sources []
 
-  let log_reports t pname loc =
-    let report_one (source, sink, passthroughs) =
-      let pp_error fmt () =
-        F.fprintf
-          fmt
-          "Error: %a -> %a via %a"
-          Source.pp source Sink.pp sink Passthrough.Set.pp passthroughs in
-      let msg = "QUANDARY_TAINT_ERROR" in
-      let description = pp_to_string pp_error () in
-      let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
-      Reporting.log_error pname exn ~loc in
-    IList.iter report_one (get_reports t)
+  let get_reportable_exns t =
+    IList.map
+      (fun (source, sink, passthroughs) -> Spec.get_reportable_exn source sink passthroughs)
+      (get_reports t)
 
   let of_source source =
     let sources = Sources.singleton source in

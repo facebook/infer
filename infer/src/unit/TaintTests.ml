@@ -56,7 +56,9 @@ module MockTrace = Trace.Make(struct
         else []
     end
 
-    let should_report _ _ = true
+    let should_report _ _ = false
+
+    let get_reportable_exn _ _ _ = assert false
   end)
 
 module MockTaintAnalysis = TaintAnalysis.Make(struct

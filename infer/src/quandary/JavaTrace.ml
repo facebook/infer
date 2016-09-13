@@ -185,4 +185,15 @@ include
           true
       | _ ->
           false
+
+    let get_reportable_exn source sink passthroughs =
+      let pp_error fmt () =
+        F.fprintf
+          fmt
+          "Error: %a -> %a via %a"
+          Source.pp source Sink.pp sink Passthrough.Set.pp passthroughs in
+      let msg = "QUANDARY_TAINT_ERROR" in
+      let description = pp_to_string pp_error () in
+      Exceptions.Checkers (msg, Localise.verbatim_desc description)
+
   end)
