@@ -64,41 +64,52 @@ end = struct
   type path = Exp.t * (syn_offset list)
 
   (** Find a strexp and a type at the given syntactic offset list *)
-  let rec get_strexp_at_syn_offsets tenv se t syn_offs =
-    match se, Tenv.expand_type tenv t, syn_offs with
+  let rec get_strexp_at_syn_offsets tenv se (t: Typ.t) syn_offs =
+    let fail () =
+      L.d_strln "Failure of get_strexp_at_syn_offsets";
+      L.d_str "se: "; Sil.d_sexp se; L.d_ln ();
+      L.d_str "t: "; Typ.d_full t; L.d_ln ();
+      assert false
+    in
+    match se, t, syn_offs with
     | _, _, [] -> (se, t)
-    | Sil.Estruct (fsel, _), Tstruct { fields }, Field (fld, _) :: syn_offs' ->
-        let se' = snd (IList.find (fun (f', _) -> Ident.fieldname_equal f' fld) fsel) in
-        let t' = (fun (_,y,_) -> y)
-            (IList.find (fun (f', _, _) ->
-                 Ident.fieldname_equal f' fld) fields) in
-        get_strexp_at_syn_offsets tenv se' t' syn_offs'
+    | Sil.Estruct (fsel, _), Tstruct name, Field (fld, _) :: syn_offs' -> (
+        match Tenv.lookup tenv name with
+        | Some { fields } ->
+            let se' = snd (IList.find (fun (f', _) -> Ident.fieldname_equal f' fld) fsel) in
+            let t' = snd3 (IList.find (fun (f', _, _) -> Ident.fieldname_equal f' fld) fields) in
+            get_strexp_at_syn_offsets tenv se' t' syn_offs'
+        | None ->
+            fail ()
+      )
     | Sil.Earray (_, esel, _), Typ.Tarray (t', _), Index ind :: syn_offs' ->
         let se' = snd (IList.find (fun (i', _) -> Exp.equal i' ind) esel) in
         get_strexp_at_syn_offsets tenv se' t' syn_offs'
     | _ ->
-        L.d_strln "Failure of get_strexp_at_syn_offsets";
-        L.d_str "se: "; Sil.d_sexp se; L.d_ln ();
-        L.d_str "t: "; Typ.d_full t; L.d_ln ();
-        assert false
+        fail ()
 
   (** Replace a strexp at the given syntactic offset list *)
-  let rec replace_strexp_at_syn_offsets tenv se t syn_offs update =
-    match se, Tenv.expand_type tenv t, syn_offs with
+  let rec replace_strexp_at_syn_offsets tenv se (t: Typ.t) syn_offs update =
+    match se, t, syn_offs with
     | _, _, [] ->
         update se
-    | Sil.Estruct (fsel, inst), Tstruct { fields }, Field (fld, _) :: syn_offs' ->
-        let se' = snd (IList.find (fun (f', _) -> Ident.fieldname_equal f' fld) fsel) in
-        let t' = (fun (_,y,_) -> y)
-            (IList.find (fun (f', _, _) ->
-                 Ident.fieldname_equal f' fld) fields) in
-        let se_mod = replace_strexp_at_syn_offsets tenv se' t' syn_offs' update in
-        let fsel' =
-          IList.map (fun (f'', se'') ->
-              if Ident.fieldname_equal f'' fld then (fld, se_mod) else (f'', se'')
-            ) fsel in
-        Sil.Estruct (fsel', inst)
-    | Sil.Earray (len, esel, inst), Typ.Tarray (t', _), Index idx :: syn_offs' ->
+    | Sil.Estruct (fsel, inst), Tstruct name, Field (fld, _) :: syn_offs' -> (
+        match Tenv.lookup tenv name with
+        | Some { fields } ->
+            let se' = snd (IList.find (fun (f', _) -> Ident.fieldname_equal f' fld) fsel) in
+            let t' = (fun (_,y,_) -> y)
+                (IList.find (fun (f', _, _) ->
+                     Ident.fieldname_equal f' fld) fields) in
+            let se_mod = replace_strexp_at_syn_offsets tenv se' t' syn_offs' update in
+            let fsel' =
+              IList.map (fun (f'', se'') ->
+                  if Ident.fieldname_equal f'' fld then (fld, se_mod) else (f'', se'')
+                ) fsel in
+            Sil.Estruct (fsel', inst)
+        | None ->
+            assert false
+      )
+    | Sil.Earray (len, esel, inst), Tarray (t', _), Index idx :: syn_offs' ->
         let se' = snd (IList.find (fun (i', _) -> Exp.equal i' idx) esel) in
         let se_mod = replace_strexp_at_syn_offsets tenv se' t' syn_offs' update in
         let esel' =
@@ -145,15 +156,20 @@ end = struct
   (** Find a sub strexp with the given property. Can raise [Not_found] *)
   let find tenv (sigma : sigma) (pred : strexp_data -> bool) : t list =
     let found = ref [] in
-    let rec find_offset_sexp sigma_other hpred root offs se typ =
+    let rec find_offset_sexp sigma_other hpred root offs se (typ: Typ.t) =
       let offs' = IList.rev offs in
       let path = (root, offs') in
       if pred (path, se, typ) then found := (sigma, hpred, offs') :: !found
       else begin
-        match se, Tenv.expand_type tenv typ with
-        | Sil.Estruct (fsel, _), Tstruct { fields } ->
-            find_offset_fsel sigma_other hpred root offs fsel fields typ
-        | Sil.Earray (_, esel, _), Typ.Tarray (t, _) ->
+        match se, typ with
+        | Sil.Estruct (fsel, _), Tstruct name -> (
+            match Tenv.lookup tenv name with
+            | Some { fields } ->
+                find_offset_fsel sigma_other hpred root offs fsel fields typ
+            | None ->
+                ()
+          )
+        | Sil.Earray (_, esel, _), Tarray (t, _) ->
             find_offset_esel sigma_other hpred root offs esel t
         | _ -> ()
       end
@@ -526,7 +542,7 @@ let report_error prop =
 
 (** Check performed after the array abstraction to see whether it was successful. Raise assert false in case of failure *)
 let check_after_array_abstraction tenv prop =
-  let expand_type = Tenv.expand_type tenv in
+  let lookup = Tenv.lookup tenv in
   let check_index root offs (ind, _) =
     if !Config.footprint then
       let path = StrexpMatch.path_from_exp_offsets root offs in
@@ -542,7 +558,7 @@ let check_after_array_abstraction tenv prop =
         else IList.iter (fun (ind, se) -> check_se root (offs @ [Sil.Off_index ind]) typ_elem se) esel
     | Sil.Estruct (fsel, _) ->
         IList.iter (fun (f, se) ->
-            let typ_f = Typ.struct_typ_fld ~expand_type (Some Typ.Tvoid) f typ in
+            let typ_f = Typ.struct_typ_fld ~lookup ~default:Tvoid f typ in
             check_se root (offs @ [Sil.Off_fld (f, typ)]) typ_f se) fsel in
   let check_hpred = function
     | Sil.Hpointsto (root, se, texp) ->

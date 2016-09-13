@@ -94,12 +94,12 @@ val type_get_direct_supertypes : Tenv.t -> Typ.t -> Typename.t list
 val type_has_direct_supertype : Tenv.t -> Typ.t -> Typename.t -> bool
 
 (** Is the type a class type *)
-val type_is_class : Tenv.t -> Typ.t -> bool
+val type_is_class : Typ.t -> bool
 
 val type_is_nested_in_direct_supertype : Tenv.t -> Typ.t -> Typename.t -> bool
 
 (** Is the type java.lang.Object *)
-val type_is_object : Tenv.t -> Typ.t -> bool
+val type_is_object : Typ.t -> bool
 
 (** return the set of instance fields that are assigned to a null literal in [procdesc] *)
 val get_fields_nullified : Cfg.Procdesc.t -> Ident.FieldSet.t

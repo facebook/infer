@@ -24,9 +24,9 @@ type taint_spec = {
   language : Config.language
 }
 
-let type_is_object tenv typ =
-  match Tenv.expand_ptr_type tenv typ with
-  | Typ.Tptr (Tstruct { name }, _) -> string_equal (Typename.name name) JConfig.object_cl
+let type_is_object typ =
+  match typ with
+  | Typ.Tptr (Tstruct name, _) -> string_equal (Typename.name name) JConfig.object_cl
   | _ -> false
 
 let java_proc_name_with_class_method pn_java class_with_path method_name =
@@ -75,14 +75,17 @@ let is_subtype_of_str tenv cn1 classname_str =
 
 (** The type the method is invoked on *)
 let get_this_type proc_attributes = match proc_attributes.ProcAttributes.formals with
-  | (_, t):: _ -> Some t
+  | (_, t) :: _ -> Some t
   | _ -> None
 
-let type_get_direct_supertypes tenv typ =
-  match Tenv.expand_ptr_type tenv typ with
-  | Tptr (Tstruct { supers }, _)
-  | Tstruct { supers } ->
-      supers
+let type_get_direct_supertypes tenv (typ: Typ.t) =
+  match typ with
+  | Tptr (Tstruct name, _)
+  | Tstruct name -> (
+      match Tenv.lookup tenv name with
+      | Some { supers } -> supers
+      | None -> []
+    )
   | _ ->
       []
 
@@ -90,11 +93,14 @@ let type_get_class_name = function
   | Typ.Tptr (typ, _) -> Typ.name typ
   | _ -> None
 
-let type_get_annotation tenv (t: Typ.t): Typ.item_annotation option =
-  match Tenv.expand_ptr_type tenv t with
-  | Tptr (Tstruct { annots }, _)
-  | Tstruct { annots } ->
-      Some annots
+let type_get_annotation tenv (typ: Typ.t): Typ.item_annotation option =
+  match typ with
+  | Tptr (Tstruct name, _)
+  | Tstruct name -> (
+      match Tenv.lookup tenv name with
+      | Some { annots } -> Some annots
+      | None -> None
+    )
   | _ -> None
 
 let type_has_direct_supertype tenv (typ : Typ.t) (class_name : Typename.t) =
@@ -108,21 +114,12 @@ let type_has_supertype
     if Typ.Set.mem typ visited then
       false
     else
-      begin
-        match Tenv.expand_ptr_type tenv typ with
-        | Tptr (Tstruct { supers }, _)
-        | Tstruct { supers } ->
-            let match_supertype cn =
-              let match_name () = Typename.equal cn class_name in
-              let has_indirect_supertype () =
-                match Tenv.lookup tenv cn with
-                | Some supertype ->
-                    has_supertype (Typ.Tstruct supertype) (Typ.Set.add typ visited)
-                | None -> false in
-              (match_name () || has_indirect_supertype ()) in
-            IList.exists match_supertype supers
-        | _ -> false
-      end in
+      let supers = type_get_direct_supertypes tenv typ in
+      let match_supertype cn =
+        let match_name () = Typename.equal cn class_name in
+        let has_indirect_supertype () = has_supertype (Typ.Tstruct cn) (Typ.Set.add typ visited) in
+        (match_name () || has_indirect_supertype ()) in
+      IList.exists match_supertype supers in
   has_supertype typ Typ.Set.empty
 
 let type_is_nested_in_direct_supertype tenv t n =
@@ -130,8 +127,7 @@ let type_is_nested_in_direct_supertype tenv t n =
   IList.exists (is_nested_in n) (type_get_direct_supertypes tenv t)
 
 let rec get_type_name = function
-  | Typ.Tvar name
-  | Typ.Tstruct { name } ->
+  | Typ.Tstruct name ->
       Typename.name name
   | Typ.Tptr (t, _) -> get_type_name t
   | _ -> "_"
@@ -139,15 +135,16 @@ let rec get_type_name = function
 let get_field_type_name tenv
     (typ: Typ.t)
     (fieldname: Ident.fieldname): string option =
-  match Tenv.expand_ptr_type tenv typ with
-  | Tstruct { fields }
-  | Tptr (Tstruct { fields }, _) -> (
-      try
-        let _, ft, _ = IList.find
-            (function | (fn, _, _) -> Ident.fieldname_equal fn fieldname)
-            fields in
-        Some (get_type_name ft)
-      with Not_found -> None)
+  match typ with
+  | Tstruct name | Tptr (Tstruct name, _) -> (
+      match Tenv.lookup tenv name with
+      | Some { fields } -> (
+          match IList.find (function | (fn, _, _) -> Ident.fieldname_equal fn fieldname) fields with
+          | _, ft, _ -> Some (get_type_name ft)
+          | exception Not_found -> None
+        )
+      | None -> None
+    )
   | _ -> None
 
 let java_get_const_type_name
@@ -250,10 +247,9 @@ let get_java_method_call_formal_signature = function
   | _ -> None
 
 
-let type_is_class tenv typ =
-  match Tenv.expand_ptr_type tenv typ with
+let type_is_class typ =
+  match typ with
   | Typ.Tptr (Typ.Tstruct _, _) -> true
-  | Typ.Tptr (Typ.Tvar _, _) -> true
   | Typ.Tptr (Typ.Tarray _, _) -> true
   | Typ.Tstruct _ -> true
   | _ -> false
@@ -357,14 +353,12 @@ let proc_iter_overridden_methods f tenv proc_name =
 
   match proc_name with
   | Procname.Java proc_name_java ->
-      let type_name =
-        let class_name = Procname.java_get_class_name proc_name_java in
-        Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string class_name) in
+      let type_name = Typename.Java.from_string (Procname.java_get_class_name proc_name_java) in
       (match Tenv.lookup tenv type_name with
-       | Some curr_struct_typ ->
+       | Some {name} ->
            IList.iter
              (do_super_type tenv)
-             (type_get_direct_supertypes tenv (Typ.Tstruct curr_struct_typ))
+             (type_get_direct_supertypes tenv (Typ.Tstruct name))
        | None ->
            ())
   | _ ->

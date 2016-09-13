@@ -98,7 +98,7 @@ let compound_assignment_binary_operation_instruction boi e1 typ e2 loc =
 (* is returned when we are calculating an expression "instructions" is not *)
 (* empty when the binary operator is actually a statement like an          *)
 (* assignment.                                                             *)
-let binary_operation_instruction context boi e1 typ e2 loc rhs_owning_method =
+let binary_operation_instruction boi e1 typ e2 loc rhs_owning_method =
   let binop_exp op = Exp.BinOp(op, e1, e2) in
   match boi.Clang_ast_t.boi_kind with
   | `Add -> (binop_exp (Binop.PlusA), [])
@@ -120,7 +120,7 @@ let binary_operation_instruction context boi e1 typ e2 loc rhs_owning_method =
   | `LAnd -> (binop_exp (Binop.LAnd), [])
   | `LOr -> (binop_exp (Binop.LOr), [])
   | `Assign ->
-      if !Config.arc_mode && ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv typ then
+      if !Config.arc_mode && ObjcInterface_decl.is_pointer_to_objc_class typ then
         assignment_arc_mode e1 typ e2 loc rhs_owning_method false
       else
         (e1, [Sil.Store (e1, typ, e2, loc)])

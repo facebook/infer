@@ -107,19 +107,18 @@ let retrieve_fieldname fieldname =
 
 
 let get_field_name program static tenv cn fs =
-  match Tenv.expand_type tenv (JTransType.get_class_type_no_pointer program tenv cn) with
-  | Tstruct { fields; statics; name = TN_csu (Class _, _) } ->
-      let fieldname, _, _ =
-        try
-          IList.find
-            (fun (fieldname, _, _) -> retrieve_fieldname fieldname = JBasics.fs_name fs)
-            (if static then statics else fields)
-        with Not_found ->
-          (* TODO: understand why fields cannot be found here *)
-          JUtils.log "cannot find %s.%s@." (JBasics.cn_name cn) (JBasics.fs_name fs);
-          raise (Frontend_error "Cannot find fieldname") in
+  let { Typ.fields; statics; } = JTransType.get_class_struct_typ program tenv cn in
+  match
+    IList.find
+      (fun (fieldname, _, _) -> retrieve_fieldname fieldname = JBasics.fs_name fs)
+      (if static then statics else fields)
+  with
+  | fieldname, _, _ ->
       fieldname
-  | _ -> assert false
+  | exception Not_found ->
+      (* TODO: understand why fields cannot be found here *)
+      JUtils.log "cannot find %s.%s@." (JBasics.cn_name cn) (JBasics.fs_name fs);
+      raise (Frontend_error "Cannot find fieldname")
 
 
 let formals_from_signature program tenv cn ms kind =
@@ -962,7 +961,7 @@ let rec instruction context pc instr : translation =
           match instruction_thread_start context original_cn ms obj args var_opt with
           | Some start_call -> instruction context pc start_call
           | None ->
-              let cn' = match JTransType.extract_cn_no_obj tenv sil_obj_type with
+              let cn' = match JTransType.extract_cn_no_obj sil_obj_type with
                 | Some cn -> cn
                 | None -> original_cn in
               let call_node = create_call_node cn' invoke_kind in

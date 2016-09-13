@@ -81,7 +81,7 @@ let add_array_to_prop tenv pdesc prop_ lexp typ =
         let prop''= Prop.set prop' ~sigma_fp:(hpred:: sigma_fp) in
         let prop''= Prop.normalize tenv prop'' in
         Some (len, prop'')
-      | _ -> None
+    | _ -> None
   end
 
 (* Add an array in prop if it is not allocated.*)
@@ -154,8 +154,7 @@ let create_type tenv n_lexp typ prop =
         match typ with
         | Typ.Tptr (typ', _) ->
             let sexp = Sil.Estruct ([], Sil.inst_none) in
-            let typ'' = Tenv.expand_type tenv typ' in
-            let texp = Exp.Sizeof (typ'', None, Subtype.subtypes) in
+            let texp = Exp.Sizeof (typ', None, Subtype.subtypes) in
             let hpred = Prop.mk_ptsto tenv n_lexp sexp texp in
             Some hpred
         | Typ.Tarray _ ->
@@ -457,31 +456,22 @@ let execute___objc_counter_update
     { Builtin.pdesc; tenv; prop_; path; args; loc; }
   : Builtin.ret_typ =
   match args with
-  | [(lexp, typ)] ->
-      let typ' = (match Tenv.expand_type tenv typ with
-          | Typ.Tstruct _ as s -> s
-          | Typ.Tptr(t, _) -> Tenv.expand_type tenv t
-          | s' ->
-              L.d_str
-                ("Trying to update hidden field of not a struc. Type: " ^
-                 (Typ.to_string s'));
-              assert false) in
+  | [(lexp, (Typ.Tstruct _ as typ | Tptr (Tstruct _ as typ, _)))] ->
       (* Assumes that lexp is a temp n$1 that has the value of the object. *)
       (* This is the case as a call f(o) it's translates as n$1=*&o; f(n$1) *)
       (* n$2 = *n$1.hidden *)
       let tmp = Ident.create_fresh Ident.knormal in
-      let hidden_field = Exp.Lfield (lexp, Ident.fieldname_hidden, typ') in
-      let counter_to_tmp = Sil.Load (tmp, hidden_field, typ', loc) in
+      let hidden_field = Exp.Lfield (lexp, Ident.fieldname_hidden, typ) in
+      let counter_to_tmp = Sil.Load (tmp, hidden_field, typ, loc) in
       (* *n$1.hidden = (n$2 +/- delta) *)
       let update_counter =
-        Sil.Store
-          (hidden_field,
-           typ',
-           Exp.BinOp(op, Exp.Var tmp, Exp.Const (Const.Cint delta)),
-           loc) in
+        Sil.Store (hidden_field, typ, BinOp (op, Var tmp, Const (Cint delta)), loc) in
       let update_counter_instrs =
         [ counter_to_tmp; update_counter; Sil.Remove_temps([tmp], loc) ] in
       SymExec.instrs ~mask_errors tenv pdesc update_counter_instrs [(prop_, path)]
+  | [(_, typ)] ->
+      L.d_str ("Trying to update hidden field of non-struct value. Type: " ^ (Typ.to_string typ));
+      assert false
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (* Given a list of args checks if the first is the flag indicating whether is a call to
@@ -758,8 +748,7 @@ let execute_alloc mk can_return_null
         evaluate_char_sizeof (Exp.Const (Const.Cint len))
     | Exp.Sizeof _ -> e in
   let size_exp, procname = match args with
-    | [(Exp.Sizeof (( Tvar (TN_csu (Class Objc, _) as name)
-                    | Tstruct { name = TN_csu (Class Objc, _) as name; }) as s, len, subt), _)] ->
+    | [(Exp.Sizeof (Tstruct (TN_csu (Class Objc, _) as name) as s, len, subt), _)] ->
         let struct_type =
           match AttributesTable.get_correct_type_from_objc_class_name name with
           | Some struct_type -> struct_type
@@ -1175,11 +1164,8 @@ let arrayWithObjects_pname = mk_objc_class_method "NSArray" "arrayWithObjects:"
 
 let arrayWithObjectsCount_pname = mk_objc_class_method "NSArray" "arrayWithObjects:count:"
 
-let execute_objc_NSArray_alloc_no_fail
-    ({ Builtin.tenv; } as builtin_args) symb_state pname =
-  let nsarray_typ_ =
-    Typ.Tvar (Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string "NSArray")) in
-  let nsarray_typ = Tenv.expand_type tenv nsarray_typ_ in
+let execute_objc_NSArray_alloc_no_fail builtin_args symb_state pname =
+  let nsarray_typ = Typ.Tstruct (TN_csu (Class Objc, Mangled.from_string "NSArray")) in
   execute_objc_alloc_no_fail symb_state nsarray_typ (Some pname) builtin_args
 
 let execute_NSArray_arrayWithObjects_count builtin_args =
@@ -1198,13 +1184,8 @@ let _ =
 
 (* NSDictionary models *)
 
-let execute_objc_NSDictionary_alloc_no_fail
-    symb_state pname
-    ({ Builtin.tenv; } as builtin_args) =
-  let nsdictionary_typ_ =
-    Typ.Tvar (Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string "NSDictionary")) in
-  let nsdictionary_typ =
-    Tenv.expand_type tenv nsdictionary_typ_ in
+let execute_objc_NSDictionary_alloc_no_fail symb_state pname builtin_args =
+  let nsdictionary_typ = Typ.Tstruct (TN_csu (Class Objc, Mangled.from_string "NSDictionary")) in
   execute_objc_alloc_no_fail symb_state nsdictionary_typ (Some pname) builtin_args
 
 let __objc_dictionary_literal_pname =

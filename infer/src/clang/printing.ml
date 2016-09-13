@@ -59,8 +59,8 @@ let print_tenv_struct_unions tenv =
             (Typename.to_string typname)^"\n"^
             "\t---> fields "^(IList.to_string (fun (fieldname, typ, _) ->
                 match typ with
-                | Typ.Tvar tname -> "tvar"^(Typename.to_string tname)
-                | Typ.Tstruct _ | _ ->
+                | Typ.Tstruct tname -> "tvar"^(Typename.to_string tname)
+                | _ ->
                     "\t struct "^(Ident.fieldname_to_string fieldname)^" "^
                     (Typ.to_string typ)^"\n") struct_t.fields
               )

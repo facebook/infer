@@ -19,29 +19,29 @@ let rec fldlist_assoc fld = function
   | [] -> raise Not_found
   | (fld', x, _):: l -> if Ident.fieldname_equal fld fld' then x else fldlist_assoc fld l
 
-let rec unroll_type tenv typ off =
+let unroll_type tenv (typ: Typ.t) (off: Sil.offset) =
+  let fail fld_to_string fld =
+    L.d_strln ".... Invalid Field Access ....";
+    L.d_str ("Fld : " ^ fld_to_string fld); L.d_ln ();
+    L.d_str "Type : "; Typ.d_full typ; L.d_ln ();
+    raise (Exceptions.Bad_footprint __POS__)
+  in
   match (typ, off) with
-  | Typ.Tvar _, _ ->
-      let typ' = Tenv.expand_type tenv typ in
-      unroll_type tenv typ' off
-  | Typ.Tstruct { fields; statics }, Sil.Off_fld (fld, _) ->
-      begin
-        try fldlist_assoc fld (fields @ statics)
-        with Not_found ->
-          L.d_strln ".... Invalid Field Access ....";
-          L.d_strln ("Fld : " ^ Ident.fieldname_to_string fld);
-          L.d_str "Type : "; Typ.d_full typ; L.d_ln ();
-          raise (Exceptions.Bad_footprint __POS__)
-      end
-  | Typ.Tarray (typ', _), Sil.Off_index _ ->
+  | Tstruct name, Off_fld (fld, _) -> (
+      match Tenv.lookup tenv name with
+      | Some { fields; statics } -> (
+          try fldlist_assoc fld (fields @ statics)
+          with Not_found -> fail Ident.fieldname_to_string fld
+        )
+      | None ->
+          fail Ident.fieldname_to_string fld
+    )
+  | Tarray (typ', _), Off_index _ ->
       typ'
-  | _, Sil.Off_index (Exp.Const (Const.Cint i)) when IntLit.iszero i ->
+  | _, Off_index (Const (Cint i)) when IntLit.iszero i ->
       typ
   | _ ->
-      L.d_strln ".... Invalid Field Access ....";
-      L.d_str "Fld : "; Sil.d_offset off; L.d_ln ();
-      L.d_str "Type : "; Typ.d_full typ; L.d_ln ();
-      assert false
+      fail Sil.offset_to_string off
 
 (** Given a node, returns a list of pvar of blocks that have been nullified in the block. *)
 let get_blocks_nullified node =
@@ -90,8 +90,8 @@ let rec apply_offlist
     L.d_str "offlist : "; Sil.d_offset_list offlist; L.d_ln ();
     L.d_str "type : "; Typ.d_full typ; L.d_ln ();
     L.d_str "prop : "; Prop.d_prop p; L.d_ln (); L.d_ln () in
-  match offlist, strexp with
-  | [], Sil.Eexp (e, inst_curr) ->
+  match offlist, strexp, typ with
+  | [], Sil.Eexp (e, inst_curr), _ ->
       let inst_is_uninitialized = function
         | Sil.Ialloc ->
             (* java allocation initializes with default values *)
@@ -122,7 +122,7 @@ let rec apply_offlist
         | _ -> Sil.update_inst inst_curr inst in
       let e' = f (Some e) in
       (e', Sil.Eexp (e', inst_new), typ, None)
-  | [], Sil.Estruct (fesl, inst') ->
+  | [], Sil.Estruct (fesl, inst'), _ ->
       if not nullify_struct then (f None, Sil.Estruct (fesl, inst'), typ, None)
       else if fp_root then (pp_error(); assert false)
       else
@@ -130,76 +130,73 @@ let rec apply_offlist
           L.d_strln "WARNING: struct assignment treated as nondeterministic assignment";
           (f None, Prop.create_strexp_of_type tenv Prop.Fld_init typ None inst, typ, None)
         end
-  | [], Sil.Earray _ ->
+  | [], Sil.Earray _, _ ->
       let offlist' = (Sil.Off_index Exp.zero):: offlist in
       apply_offlist
         pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist' f inst lookup_inst
-  | (Sil.Off_fld _):: _, Sil.Earray _ ->
+  | (Sil.Off_fld _) :: _, Sil.Earray _, _ ->
       let offlist_new = Sil.Off_index(Exp.zero) :: offlist in
       apply_offlist
         pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist_new f inst lookup_inst
-  | (Sil.Off_fld (fld, fld_typ)):: offlist', Sil.Estruct (fsel, inst') ->
-      begin
-        let typ' = Tenv.expand_type tenv typ in
-        let { Typ.name; fields; } as struct_typ =
-          match typ' with
-          | Tstruct struct_typ -> struct_typ
-          | _ -> assert false in
-        let t' = unroll_type tenv typ (Sil.Off_fld (fld, fld_typ)) in
-        try
-          let _, se' = IList.find (fun fse -> Ident.fieldname_equal fld (fst fse)) fsel in
-          let res_e', res_se', res_t', res_pred_insts_op' =
-            apply_offlist
-              pdesc tenv p fp_root nullify_struct
-              (root_lexp, se', t') offlist' f inst lookup_inst in
-          let replace_fse fse =
-            if Ident.fieldname_equal fld (fst fse) then (fld, res_se') else fse in
-          let res_se = Sil.Estruct (IList.map replace_fse fsel, inst') in
-          let replace_fta (f, t, a) =
-            if Ident.fieldname_equal fld f then (fld, res_t', a) else (f, t, a) in
-          let fields' = IList.map replace_fta fields in
-          let res_t = Typ.Tstruct (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) in
-          (res_e', res_se, res_t, res_pred_insts_op')
-        with Not_found ->
+  | (Sil.Off_fld (fld, fld_typ)) :: offlist', Sil.Estruct (fsel, inst'), Typ.Tstruct name -> (
+      match Tenv.lookup tenv name with
+      | Some ({fields} as struct_typ) -> (
+          let t' = unroll_type tenv typ (Sil.Off_fld (fld, fld_typ)) in
+          match IList.find (fun fse -> Ident.fieldname_equal fld (fst fse)) fsel with
+          | _, se' ->
+              let res_e', res_se', res_t', res_pred_insts_op' =
+                apply_offlist
+                  pdesc tenv p fp_root nullify_struct
+                  (root_lexp, se', t') offlist' f inst lookup_inst in
+              let replace_fse fse =
+                if Ident.fieldname_equal fld (fst fse) then (fld, res_se') else fse in
+              let res_se = Sil.Estruct (IList.map replace_fse fsel, inst') in
+              let replace_fta (f, t, a) =
+                if Ident.fieldname_equal fld f then (fld, res_t', a) else (f, t, a) in
+              let fields' = IList.map replace_fta fields in
+              ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
+              (res_e', res_se, typ, res_pred_insts_op')
+          | exception Not_found ->
+              (* This case should not happen. The rearrangement should
+                 have materialized all the accessed cells. *)
+              pp_error();
+              assert false
+        )
+      | None ->
           pp_error();
           assert false
-          (* This case should not happen. The rearrangement should
-             have materialized all the accessed cells. *)
-      end
-  | (Sil.Off_fld _):: _, _ ->
+    )
+  | (Sil.Off_fld _) :: _, _, _ ->
       pp_error();
       assert false
 
-  | (Sil.Off_index idx) :: offlist', Sil.Earray (len, esel, inst1) ->
+  | (Sil.Off_index idx) :: offlist', Sil.Earray (len, esel, inst1), Typ.Tarray (t', len') -> (
       let nidx = Prop.exp_normalize_prop tenv p idx in
-      begin
-        let typ' = Tenv.expand_type tenv typ in
-        let t', len' = match typ' with Typ.Tarray (t', len') -> (t', len') | _ -> assert false in
-        try
-          let idx_ese', se' = IList.find (fun ese -> Prover.check_equal tenv p nidx (fst ese)) esel in
-          let res_e', res_se', res_t', res_pred_insts_op' =
-            apply_offlist
-              pdesc tenv p fp_root nullify_struct
-              (root_lexp, se', t') offlist' f inst lookup_inst in
-          let replace_ese ese =
-            if Exp.equal idx_ese' (fst ese)
-            then (idx_ese', res_se')
-            else ese in
-          let res_se = Sil.Earray (len, IList.map replace_ese esel, inst1) in
-          let res_t = Typ.Tarray (res_t', len') in
-          (res_e', res_se, res_t, res_pred_insts_op')
-        with Not_found ->
-          (* return a nondeterministic value if the index is not found after rearrangement *)
-          L.d_str "apply_offlist: index "; Sil.d_exp idx;
-          L.d_strln " not materialized -- returning nondeterministic value";
-          let res_e' = Exp.Var (Ident.create_fresh Ident.kprimed) in
-          (res_e', strexp, typ, None)
-      end
-  | (Sil.Off_index _):: _, _ ->
+      try
+        let idx_ese', se' = IList.find (fun ese -> Prover.check_equal tenv p nidx (fst ese)) esel in
+        let res_e', res_se', res_t', res_pred_insts_op' =
+          apply_offlist
+            pdesc tenv p fp_root nullify_struct
+            (root_lexp, se', t') offlist' f inst lookup_inst in
+        let replace_ese ese =
+          if Exp.equal idx_ese' (fst ese)
+          then (idx_ese', res_se')
+          else ese in
+        let res_se = Sil.Earray (len, IList.map replace_ese esel, inst1) in
+        let res_t = Typ.Tarray (res_t', len') in
+        (res_e', res_se, res_t, res_pred_insts_op')
+      with Not_found ->
+        (* return a nondeterministic value if the index is not found after rearrangement *)
+        L.d_str "apply_offlist: index "; Sil.d_exp idx;
+        L.d_strln " not materialized -- returning nondeterministic value";
+        let res_e' = Exp.Var (Ident.create_fresh Ident.kprimed) in
+        (res_e', strexp, typ, None)
+    )
+  | (Sil.Off_index _) :: _, _, _ ->
+      (* This case should not happen. The rearrangement should
+         have materialized all the accessed cells. *)
       pp_error();
       raise (Exceptions.Internal_error (Localise.verbatim_desc "Array out of bounds in Symexec"))
-(* This case should not happen. The rearrangement should
-   have materialized all the accessed cells. *)
 
 (** Given [lexp |-> se: typ], if the location [offlist] exists in [se],
     function [ptsto_lookup p (lexp, se, typ) offlist id] returns a tuple.
@@ -532,7 +529,7 @@ let resolve_typename prop receiver_exp =
       | _ :: hpreds -> loop hpreds in
     loop prop.Prop.sigma in
   match typexp_opt with
-  | Some (Exp.Sizeof ((Tvar name | Tstruct { name }), _, _)) -> Some name
+  | Some (Exp.Sizeof (Tstruct name, _, _)) -> Some name
   | _ -> None
 
 (** If the dynamic type of the receiver actual T_actual is a subtype of the reciever type T_formal
@@ -545,8 +542,8 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
     match pname with
     | Procname.Java pname_java ->
         begin
-          match Tenv.proc_extract_declaring_class_typ tenv pname_java with
-          | Some struct_typ -> Typ.Tptr (Tstruct struct_typ, Pk_pointer)
+          match Tenv.lookup_declaring_class tenv pname_java with
+          | Some {name} -> Typ.Tptr (Tstruct name, Pk_pointer)
           | None -> fallback_typ
         end
     | _ ->
@@ -873,11 +870,7 @@ let add_taint prop lhs_id rhs_exp pname tenv  =
     else
       prop in
   match rhs_exp with
-  | Exp.Lfield (_, fieldname, Tptr (Tstruct struct_typ, _))
-  | Exp.Lfield (_, fieldname, Tstruct struct_typ) ->
-      add_attribute_if_field_tainted prop fieldname struct_typ
-  | Exp.Lfield (_, fieldname, Tptr (Tvar typname, _))
-  | Exp.Lfield (_, fieldname, Tvar typname) ->
+  | Exp.Lfield (_, fieldname, (Tstruct typname | Tptr (Tstruct typname, _))) ->
       begin
         match Tenv.lookup tenv typname with
         | Some struct_typ -> add_attribute_if_field_tainted prop fieldname struct_typ
@@ -923,7 +916,7 @@ let execute_load ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ loc
         assert false in
   try
     let n_rhs_exp, prop = check_arith_norm_exp tenv pname rhs_exp prop_ in
-    let n_rhs_exp' = Prop.exp_collapse_consecutive_indices_prop tenv typ n_rhs_exp in
+    let n_rhs_exp' = Prop.exp_collapse_consecutive_indices_prop typ n_rhs_exp in
     match check_constant_string_dereference n_rhs_exp' with
     | Some value ->
         [Prop.conjoin_eq tenv (Exp.Var id) value prop]
@@ -983,7 +976,7 @@ let execute_store ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_e
     let n_lhs_exp, prop_' = check_arith_norm_exp tenv pname lhs_exp prop_ in
     let n_rhs_exp, prop = check_arith_norm_exp tenv pname rhs_exp prop_' in
     let prop = Attribute.replace_objc_null tenv prop n_lhs_exp n_rhs_exp in
-    let n_lhs_exp' = Prop.exp_collapse_consecutive_indices_prop tenv typ n_lhs_exp in
+    let n_lhs_exp' = Prop.exp_collapse_consecutive_indices_prop typ n_lhs_exp in
     let iter_list = Rearrange.rearrange ~report_deref_errors pdesc tenv n_lhs_exp' typ prop loc in
     IList.rev (IList.fold_left (execute_store_ pdesc tenv n_rhs_exp) [] iter_list)
   with Rearrange.ARRAY_ACCESS ->
@@ -1084,11 +1077,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       begin
         match summary_opt with
         | None ->
-            let ret_typ =
-              match Tenv.proc_extract_return_typ tenv callee_pname_java with
-              | Some (Typ.Tstruct _ as typ) -> Typ.Tptr (typ, Pk_pointer)
-              | Some typ -> typ
-              | None -> Typ.Tvoid in
+            let ret_typ = Typ.java_proc_return_typ callee_pname_java in
             let ret_annots = load_ret_annots callee_pname in
             exec_skip_call resolved_pname ret_annots ret_typ
         | Some summary when call_should_be_skipped resolved_pname summary ->
@@ -1114,11 +1103,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
           skip_call norm_prop path pname ret_annots loc ret_ids (Some ret_type) url_handled_args in
         match Specs.get_summary pname with
         | None ->
-            let ret_typ =
-              match Tenv.proc_extract_return_typ tenv callee_pname_java with
-              | Some (Typ.Tstruct _ as typ) -> Typ.Tptr (typ, Pk_pointer)
-              | Some typ -> typ
-              | None -> Typ.Tvoid in
+            let ret_typ = Typ.java_proc_return_typ callee_pname_java in
             let ret_annots = load_ret_annots callee_pname in
             exec_skip_call ret_annots ret_typ
         | Some summary when call_should_be_skipped pname summary ->
@@ -1301,8 +1286,8 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
         else
         if !Config.footprint then
           let prop', abduced_strexp =
-            match Tenv.expand_type tenv actual_typ with
-            | Typ.Tptr ((Typ.Tstruct _) as typ, _) ->
+            match actual_typ with
+            | Typ.Tptr ((Tstruct _) as typ, _) ->
                 (* for struct types passed by reference, do abduction on the fields of the
                    struct *)
                 add_struct_value_to_footprint tenv abduced_ref_pv typ prop
@@ -1523,12 +1508,8 @@ and sym_exec_objc_getter field_name ret_typ tenv ret_ids pdesc pname loc args pr
     | [ret_id] -> ret_id
     | _ -> assert false in
   match args with
-  | [(lexp, typ)] ->
-      let typ' = (match Tenv.expand_type tenv typ with
-          | Typ.Tstruct _ as s -> s
-          | Typ.Tptr (t, _) -> Tenv.expand_type tenv t
-          | _ -> assert false) in
-      let field_access_exp = Exp.Lfield (lexp, field_name, typ') in
+  | [(lexp, (Typ.Tstruct _ as typ | Tptr (Tstruct _ as typ, _)))] ->
+      let field_access_exp = Exp.Lfield (lexp, field_name, typ) in
       execute_load
         ~report_deref_errors:false pname pdesc tenv ret_id field_access_exp ret_typ loc prop
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -1537,12 +1518,8 @@ and sym_exec_objc_setter field_name _ tenv _ pdesc pname loc args prop =
   L.d_strln ("No custom setter found. Executing the ObjC builtin setter with ivar "^
              (Ident.fieldname_to_string field_name)^".");
   match args with
-  | (lexp1, typ1) :: (lexp2, typ2)::_ ->
-      let typ1' = (match Tenv.expand_type tenv typ1 with
-          | Typ.Tstruct _ as s -> s
-          | Typ.Tptr (t, _) -> Tenv.expand_type tenv t
-          | _ -> assert false) in
-      let field_access_exp = Exp.Lfield (lexp1, field_name, typ1') in
+  | (lexp1, (Typ.Tstruct _ as typ1 | Tptr (typ1, _))) :: (lexp2, typ2) :: _ ->
+      let field_access_exp = Exp.Lfield (lexp1, field_name, typ1) in
       execute_store ~report_deref_errors:false pname pdesc tenv field_access_exp typ2 lexp2 loc prop
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 

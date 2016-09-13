@@ -40,8 +40,8 @@ let check_library_calls = false
 
 
 let get_field_annotation tenv fn typ =
-  let expand_ptr_type = Tenv.expand_ptr_type tenv in
-  match Typ.get_field_type_and_annotation ~expand_ptr_type fn typ with
+  let lookup = Tenv.lookup tenv in
+  match Typ.get_field_type_and_annotation ~lookup fn typ with
   | None -> None
   | Some (t, ia) ->
       let ia' =
@@ -136,7 +136,7 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pname
     let loc = Cfg.Node.get_loc node in
     let throwable_found = ref false in
     let typ_is_throwable = function
-      | Typ.Tvar name | Typ.Tstruct { name = TN_csu (Class _, _) as name } ->
+      | Typ.Tstruct (TN_csu (Class Java, _) as name) ->
           string_equal (Typename.name name) "java.lang.Throwable"
       | _ -> false in
     let do_instr = function
@@ -166,7 +166,7 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pname
     (activate_condition_redundant || nonnull) &&
     true_branch &&
     (not is_temp || nonnull) &&
-    PatternMatch.type_is_class tenv typ &&
+    PatternMatch.type_is_class typ &&
     not (from_try_with_resources ()) &&
     from_call = From_condition &&
     not (TypeAnnotation.origin_is_fun_library ta) in
@@ -204,7 +204,7 @@ let check_field_assignment tenv
           false in
     TypeAnnotation.get_value Annotations.Nullable ta_lhs = false &&
     TypeAnnotation.get_value Annotations.Nullable ta_rhs = true &&
-    PatternMatch.type_is_class tenv t_lhs &&
+    PatternMatch.type_is_class t_lhs &&
     not (Ident.java_fieldname_is_outer_instance fname) &&
     not (field_is_field_injector_readwrite ()) in
   let should_report_absent =
@@ -256,82 +256,83 @@ let check_constructor_initialization tenv
   State.set_node start_node;
   if Procname.is_constructor curr_pname
   then begin
-    match
-      Option.map (Tenv.expand_ptr_type tenv)
-        (PatternMatch.get_this_type (Cfg.Procdesc.get_attributes curr_pdesc))
-    with
-    | Some (Tptr (Tstruct { fields; name } as ts, _)) ->
-        let do_field (fn, ft, _) =
-          let annotated_with f = match get_field_annotation tenv fn ts with
-            | None -> false
-            | Some (_, ia) -> f ia in
-          let nullable_annotated = annotated_with Annotations.ia_is_nullable in
-          let nonnull_annotated = annotated_with Annotations.ia_is_nonnull in
-          let injector_readonly_annotated =
-            annotated_with Annotations.ia_is_field_injector_readonly in
+    match PatternMatch.get_this_type (Cfg.Procdesc.get_attributes curr_pdesc) with
+    | Some (Tptr (Tstruct name as ts, _)) -> (
+        match Tenv.lookup tenv name with
+        | Some { fields } ->
+            let do_field (fn, ft, _) =
+              let annotated_with f = match get_field_annotation tenv fn ts with
+                | None -> false
+                | Some (_, ia) -> f ia in
+              let nullable_annotated = annotated_with Annotations.ia_is_nullable in
+              let nonnull_annotated = annotated_with Annotations.ia_is_nonnull in
+              let injector_readonly_annotated =
+                annotated_with Annotations.ia_is_field_injector_readonly in
 
-          let final_type_annotation_with unknown list f =
-            let filter_range_opt = function
-              | Some (_, ta, _) -> f ta
-              | None -> unknown in
-            IList.exists
-              (function pname, typestate ->
-                let pvar = Pvar.mk
-                    (Mangled.from_string (Ident.fieldname_to_string fn))
-                    pname in
-                filter_range_opt (TypeState.lookup_pvar pvar typestate))
-              list in
+              let final_type_annotation_with unknown list f =
+                let filter_range_opt = function
+                  | Some (_, ta, _) -> f ta
+                  | None -> unknown in
+                IList.exists
+                  (function pname, typestate ->
+                     let pvar = Pvar.mk
+                         (Mangled.from_string (Ident.fieldname_to_string fn))
+                         pname in
+                     filter_range_opt (TypeState.lookup_pvar pvar typestate))
+                  list in
 
-          let may_be_assigned_in_final_typestate =
-            final_type_annotation_with
-              false
-              (Lazy.force final_initializer_typestates)
-              (fun ta -> TypeAnnotation.get_origin ta <> TypeOrigin.Undef) in
+              let may_be_assigned_in_final_typestate =
+                final_type_annotation_with
+                  false
+                  (Lazy.force final_initializer_typestates)
+                  (fun ta -> TypeAnnotation.get_origin ta <> TypeOrigin.Undef) in
 
-          let may_be_nullable_in_final_typestate () =
-            final_type_annotation_with
-              true
-              (Lazy.force final_constructor_typestates)
-              (fun ta -> TypeAnnotation.get_value Annotations.Nullable ta = true) in
+              let may_be_nullable_in_final_typestate () =
+                final_type_annotation_with
+                  true
+                  (Lazy.force final_constructor_typestates)
+                  (fun ta -> TypeAnnotation.get_value Annotations.Nullable ta = true) in
 
-          let should_check_field_initialization =
-            let in_current_class =
-              let fld_cname = Ident.java_fieldname_get_class fn in
-              string_equal (Typename.name name) fld_cname in
-            not injector_readonly_annotated &&
-            PatternMatch.type_is_class tenv ft &&
-            in_current_class &&
-            not (Ident.java_fieldname_is_outer_instance fn) in
+              let should_check_field_initialization =
+                let in_current_class =
+                  let fld_cname = Ident.java_fieldname_get_class fn in
+                  string_equal (Typename.name name) fld_cname in
+                not injector_readonly_annotated &&
+                PatternMatch.type_is_class ft &&
+                in_current_class &&
+                not (Ident.java_fieldname_is_outer_instance fn) in
 
-          if should_check_field_initialization then
-            begin
-              if Models.Inference.enabled then Models.Inference.field_add_nullable_annotation fn;
+              if should_check_field_initialization then (
+                if Models.Inference.enabled then Models.Inference.field_add_nullable_annotation fn;
 
-              (* Check if field is missing annotation. *)
-              if not (nullable_annotated || nonnull_annotated) &&
-                 not may_be_assigned_in_final_typestate then
-                report_error tenv
-                  find_canonical_duplicate
-                  start_node
-                  (TypeErr.Field_not_initialized (fn, curr_pname))
-                  None
-                  loc
-                  curr_pname;
+                (* Check if field is missing annotation. *)
+                if not (nullable_annotated || nonnull_annotated) &&
+                   not may_be_assigned_in_final_typestate then
+                  report_error tenv
+                    find_canonical_duplicate
+                    start_node
+                    (TypeErr.Field_not_initialized (fn, curr_pname))
+                    None
+                    loc
+                    curr_pname;
 
-              (* Check if field is over-annotated. *)
-              if activate_field_over_annotated &&
-                 nullable_annotated &&
-                 not (may_be_nullable_in_final_typestate ()) then
-                report_error tenv
-                  find_canonical_duplicate
-                  start_node
-                  (TypeErr.Field_over_annotated (fn, curr_pname))
-                  None
-                  loc
-                  curr_pname;
-            end in
+                (* Check if field is over-annotated. *)
+                if activate_field_over_annotated &&
+                   nullable_annotated &&
+                   not (may_be_nullable_in_final_typestate ()) then
+                  report_error tenv
+                    find_canonical_duplicate
+                    start_node
+                    (TypeErr.Field_over_annotated (fn, curr_pname))
+                    None
+                    loc
+                    curr_pname;
+              ) in
 
-        IList.iter do_field fields
+            IList.iter do_field fields
+        | None ->
+            ()
+      )
     | _ -> ()
   end
 
@@ -466,13 +467,13 @@ let check_call_parameters tenv
             (t2, TypeAnnotation.const Annotations.Nullable false TypeOrigin.ONone, []) loc in
         let parameter_not_nullable =
           not param_is_this &&
-          PatternMatch.type_is_class tenv t1 &&
+          PatternMatch.type_is_class t1 &&
           not formal_is_nullable &&
           TypeAnnotation.get_value Annotations.Nullable ta2 in
         let parameter_absent =
           activate_optional_present &&
           not param_is_this &&
-          PatternMatch.type_is_class tenv t1 &&
+          PatternMatch.type_is_class t1 &&
           formal_is_present &&
           not (TypeAnnotation.get_value Annotations.Present ta2) in
         if parameter_not_nullable || parameter_absent then

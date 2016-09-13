@@ -353,6 +353,10 @@ let d_exp_list: list Exp.t => unit;
 let pp_offset: printenv => F.formatter => offset => unit;
 
 
+/** Convert an offset to a string */
+let offset_to_string: offset => string;
+
+
 /** Dump an offset */
 let d_offset: offset => unit;
 

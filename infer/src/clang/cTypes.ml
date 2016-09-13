@@ -24,8 +24,7 @@ let remove_pointer_to_typ typ =
 
 let classname_of_type typ =
   match typ with
-  | Typ.Tvar name
-  | Typ.Tstruct { name } -> Typename.name name
+  | Typ.Tstruct name -> Typename.name name
   | Typ.Tfun _ -> CFrontend_config.objc_object
   | _ ->
       Printing.log_out
@@ -38,8 +37,7 @@ let mk_structname n = Typename.TN_csu (Csu.Struct, Mangled.from_string n)
 
 let is_class typ =
   match typ with
-  | Typ.Tptr (Tvar ((TN_csu _) as name), _)
-  | Typ.Tptr (Tstruct { name }, _) ->
+  | Typ.Tptr (Tstruct ((TN_csu _) as name), _) ->
       string_equal (Typename.name name) CFrontend_config.objc_class
   | _ -> false
 
@@ -74,21 +72,6 @@ let is_reference_type tp =
   | Some Clang_ast_t.LValueReferenceType _ -> true
   | Some Clang_ast_t.RValueReferenceType _ -> true
   | _ -> false
-
-(* Expand a named type Tvar if it has a definition in tenv. This is used for Tenum, Tstruct, etc. *)
-let rec expand_structured_type tenv typ =
-  match typ with
-  | Typ.Tvar tn ->
-      (match Tenv.lookup tenv tn with
-       | Some ts ->
-           let t = Typ.Tstruct ts in
-           Printing.log_out "   Type expanded with type '%s' found in tenv@." (Typ.to_string t);
-           if Typ.equal t typ then
-             typ
-           else expand_structured_type tenv t
-       | None -> typ)
-  | Typ.Tptr _ -> typ (*do not expand types under pointers *)
-  | _ -> typ
 
 (* To be called with strings of format "<pointer_type_info>*<class_name>" *)
 let get_name_from_type_pointer custom_type_pointer =

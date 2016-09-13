@@ -76,7 +76,7 @@ let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
   let mang_name = Mangled.from_string class_name in
   let class_tn_name = Typename.TN_csu (Csu.Class Csu.Objc, mang_name) in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
-  Ast_utils.update_sil_types_map decl_key (Typ.Tvar class_tn_name);
+  Ast_utils.update_sil_types_map decl_key (Typ.Tstruct class_tn_name);
   (match Tenv.lookup tenv class_tn_name with
    | Some ({ fields; methods } as struct_typ) ->
        let new_fields = General_utils.append_no_duplicates_fields decl_fields fields in
@@ -86,7 +86,7 @@ let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
            ~default:struct_typ ~fields:new_fields ~statics:[] ~methods:new_methods class_tn_name );
        Printing.log_out " Updating info for class '%s' in tenv\n" class_name
    | _ -> ());
-  Typ.Tvar class_tn_name
+  Typ.Tstruct class_tn_name
 
 let category_decl type_ptr_to_sil_type tenv decl =
   let open Clang_ast_t in

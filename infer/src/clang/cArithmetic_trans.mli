@@ -14,7 +14,7 @@ open! Utils
 val bin_op_to_string : Clang_ast_t.binary_operator_info -> string
 
 val binary_operation_instruction :
-  CContext.t -> Clang_ast_t.binary_operator_info -> Exp.t -> Typ.t -> Exp.t ->
+  Clang_ast_t.binary_operator_info -> Exp.t -> Typ.t -> Exp.t ->
   Location.t -> bool -> Exp.t * Sil.instr list
 
 val unary_operation_instruction :

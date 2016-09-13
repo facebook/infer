@@ -40,21 +40,6 @@ let mk_struct
     supers::supers=?
     annots::annots=?
     name => {
-  let normalize_fields fs =>
-    IList.map_changed
-      (
-        fun ((fld, typ, ann) as fta) =>
-          switch typ {
-          | Typ.Tstruct {name} => (fld, Typ.Tvar name, ann)
-          | _ => fta
-          }
-      )
-      fs;
-  let fields =
-    switch fields {
-    | Some fields => Some (normalize_fields fields)
-    | None => fields
-    };
   let struct_typ =
     Typ.internal_mk_struct
       default::?default
@@ -76,58 +61,35 @@ let mem tenv name => TypenameHash.mem tenv name;
 /** Look up a name in the global type environment. */
 let lookup tenv name =>
   try (Some (TypenameHash.find tenv name)) {
-  | Not_found => None
-  };
-
-
-/** resolve a type string to a Java *class* type. For strings that may represent primitive or array
-    typs, use [lookup_java_typ_from_string] */
-let lookup_java_class_from_string tenv typ_str => lookup tenv (Typename.Java.from_string typ_str);
-
-
-/** Lookup Java types by name */
-let lookup_java_typ_from_string tenv typ_str => {
-  let rec loop =
-    fun
-    | ""
-    | "void" => Some Typ.Tvoid
-    | "int" => Some (Typ.Tint Typ.IInt)
-    | "byte" => Some (Typ.Tint Typ.IShort)
-    | "short" => Some (Typ.Tint Typ.IShort)
-    | "boolean" => Some (Typ.Tint Typ.IBool)
-    | "char" => Some (Typ.Tint Typ.IChar)
-    | "long" => Some (Typ.Tint Typ.ILong)
-    | "float" => Some (Typ.Tfloat Typ.FFloat)
-    | "double" => Some (Typ.Tfloat Typ.FDouble)
-    | typ_str when String.contains typ_str '[' => {
-        let stripped_typ = String.sub typ_str 0 (String.length typ_str - 2);
-        switch (loop stripped_typ) {
-        | Some typ => Some (Typ.Tptr (Typ.Tarray typ None) Typ.Pk_pointer)
-        | None => None
-        }
+  | Not_found =>
+    /* ToDo: remove the following additional lookups once C/C++ interop is resolved */
+    switch (name: Typename.t) {
+    | TN_csu Struct m =>
+      try (Some (TypenameHash.find tenv (TN_csu (Class CPP) m))) {
+      | Not_found => None
       }
-    | typ_str =>
-      /* non-primitive/non-array type--resolve it in the tenv */
-      switch (lookup_java_class_from_string tenv typ_str) {
-      | Some struct_typ => Some (Typ.Tstruct struct_typ)
-      | None => None
-      };
-  loop typ_str
-};
+    | TN_csu (Class CPP) m =>
+      try (Some (TypenameHash.find tenv (TN_csu Struct m))) {
+      | Not_found => None
+      }
+    | _ => None
+    }
+  };
 
 
 /** Add a (name,type) pair to the global type environment. */
 let add tenv name struct_typ => TypenameHash.replace tenv name struct_typ;
 
 
+/** resolve a type string to a Java *class* type. For strings that may represent primitive or array
+    typs, use [lookup_java_typ_from_string] */
+let lookup_java_class_from_string tenv typ_str :option Typ.struct_typ =>
+  lookup tenv (Typename.Java.from_string typ_str);
+
+
 /** Return the declaring class type of [pname_java] */
-let proc_extract_declaring_class_typ tenv pname_java =>
+let lookup_declaring_class tenv pname_java =>
   lookup_java_class_from_string tenv (Procname.java_get_class_name pname_java);
-
-
-/** Return the return type of [pname_java]. */
-let proc_extract_return_typ tenv pname_java =>
-  lookup_java_typ_from_string tenv (Procname.java_get_return_type pname_java);
 
 
 /** Get method that is being overriden by java_pname (if any) **/
@@ -147,35 +109,11 @@ let get_overriden_method tenv pname_java => {
       }
     | [] => None
     };
-  switch (proc_extract_declaring_class_typ tenv pname_java) {
+  switch (lookup_declaring_class tenv pname_java) {
   | Some {Typ.supers: supers} => get_overriden_method_in_supers pname_java supers
   | _ => None
   }
 };
-
-
-/** expand a type if it is a typename by looking it up in the type environment */
-let expand_type tenv (typ: Typ.t) =>
-  switch typ {
-  | Tvar tname =>
-    switch (lookup tenv tname) {
-    | Some struct_typ => Typ.Tstruct struct_typ
-    | None => typ
-    }
-  | _ => typ
-  };
-
-
-/** expand a type if it is a (pointer to a) typename by looking it up in the type environment */
-let expand_ptr_type tenv (typ: Typ.t) =>
-  switch typ {
-  | Tptr (Tvar tname) k =>
-    switch (lookup tenv tname) {
-    | Some struct_typ => Typ.Tptr (Tstruct struct_typ) k
-    | None => typ
-    }
-  | _ => expand_type tenv typ
-  };
 
 
 /** Serializer for type environments */

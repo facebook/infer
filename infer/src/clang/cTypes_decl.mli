@@ -11,8 +11,6 @@ open! Utils
 
 (** Processes types and record declarations by adding them to the tenv *)
 
-val add_struct_to_tenv : Tenv.t -> Typ.t -> unit
-
 val get_record_name : Clang_ast_t.decl -> string
 
 val add_types_from_decl_to_tenv : Tenv.t -> Clang_ast_t.decl -> Typ.t
@@ -28,7 +26,7 @@ val class_from_pointer_type : Tenv.t -> Clang_ast_t.type_ptr -> string
 val get_class_type_np : Tenv.t -> Clang_ast_t.expr_info ->
   Clang_ast_t.obj_c_message_expr_info -> Typ.t
 
-val get_type_curr_class_objc : Tenv.t -> CContext.curr_class -> Typ.t
+val get_type_curr_class_objc : CContext.curr_class -> Typ.t
 
 val get_type_from_expr_info : Clang_ast_t.expr_info -> Tenv.t -> Typ.t
 

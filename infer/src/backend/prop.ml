@@ -501,14 +501,12 @@ let rec create_strexp_of_type tenv struct_init_mode (typ : Typ.t) len inst : Sil
       | _ -> Exp.zero
     else
       create_fresh_var () in
-  match Tenv.expand_type tenv typ, len with
+  match typ, len with
   | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _), None ->
       Eexp (init_value (), inst)
-  | Tstruct { fields }, _ -> (
-      match struct_init_mode with
-      | No_init ->
-          Estruct ([], inst)
-      | Fld_init ->
+  | Tstruct name, _ -> (
+      match struct_init_mode, Tenv.lookup tenv name with
+      | Fld_init, Some { fields } ->
           (* pass len as an accumulator, so that it is passed to create_strexp_of_type for the last
              field, but always return None so that only the last field receives len *)
           let f (fld, t, a) (flds, len) =
@@ -518,6 +516,8 @@ let rec create_strexp_of_type tenv struct_init_mode (typ : Typ.t) len inst : Sil
               ((fld, create_strexp_of_type tenv struct_init_mode t len inst) :: flds, None) in
           let flds, _ = IList.fold_right f fields ([], len) in
           Estruct (flds, inst)
+      | _ ->
+          Estruct ([], inst)
     )
   | Tarray (_, len_opt), None ->
       let len = match len_opt with
@@ -526,7 +526,6 @@ let rec create_strexp_of_type tenv struct_init_mode (typ : Typ.t) len inst : Sil
       Earray (len, [], inst)
   | Tarray _, Some len ->
       Earray (len, [], inst)
-  | Tvar _, _
   | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _), Some _ ->
       assert false
 
@@ -570,9 +569,9 @@ let sigma_get_unsigned_exps sigma =
 (** Collapse consecutive indices that should be added. For instance,
     this function reduces x[1][1] to x[2]. The [typ] argument is used
     to ensure the soundness of this collapsing. *)
-let exp_collapse_consecutive_indices_prop tenv (typ : Typ.t) exp =
+let exp_collapse_consecutive_indices_prop (typ : Typ.t) exp =
   let typ_is_base (typ1 : Typ.t) =
-    match Tenv.expand_type tenv typ1 with
+    match typ1 with
     | Tint _ | Tfloat _ | Tstruct _ | Tvoid | Tfun _ ->
         true
     | _ ->
@@ -722,7 +721,7 @@ module Normalize = struct
   let (++) = IntLit.add
 
   let sym_eval tenv abs e =
-    let expand_type = Tenv.expand_type tenv in
+    let lookup = Tenv.lookup tenv in
     let rec eval (e : Exp.t) : Exp.t =
       (* L.d_str " ["; Sil.d_exp e; L.d_str"] "; *)
       match e with
@@ -893,7 +892,7 @@ module Normalize = struct
           (* test if the extensible array at the end of [typ] has elements of type [elt] *)
           let extensible_array_element_typ_equal elt typ =
             Option.map_default (Typ.equal elt) false
-              (Typ.get_extensible_array_element_typ ~expand_type typ) in
+              (Typ.get_extensible_array_element_typ ~lookup typ) in
           begin
             match e1', e2' with
             (* pattern for arrays and extensible structs:

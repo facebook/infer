@@ -466,13 +466,17 @@ let texp_star tenv texp1 texp2 =
           | n when n < 0 -> false
           | 0 -> ftal_sub ftal1' ftal2'
           | _ -> ftal_sub ftal1 ftal2' end in
-  let typ_star t1 t2 =
-    match Tenv.expand_type tenv t1, Tenv.expand_type tenv t2 with
-    | Tstruct { fields = fields1; name = TN_csu (csu1, _) },
-      Tstruct { fields = fields2; name = TN_csu (csu2, _) }
-      when csu1 = csu2 ->
-        if ftal_sub fields1 fields2 then t2 else t1
-    | _ -> t1 in
+  let typ_star (t1: Typ.t) (t2: Typ.t) =
+    match t1, t2 with
+    | Tstruct (TN_csu (csu1, _) as name1), Tstruct (TN_csu (csu2, _) as name2) when csu1 = csu2 -> (
+        match Tenv.lookup tenv name1, Tenv.lookup tenv name2 with
+        | Some { fields = fields1 }, Some { fields = fields2 } when ftal_sub fields1 fields2 ->
+            t2
+        | _ ->
+            t1
+      )
+    | _ ->
+        t1 in
   match texp1, texp2 with
   | Exp.Sizeof (t1, len1, st1), Exp.Sizeof (t2, _, st2) ->
       Exp.Sizeof (typ_star t1 t2, len1, Subtype.join st1 st2)
@@ -626,7 +630,7 @@ let prop_get_exn_name pname prop =
   let ret_pvar = Exp.Lvar (Pvar.get_ret_pvar pname) in
   let rec search_exn e = function
     | [] -> None
-    | Sil.Hpointsto (e1, _, Sizeof ((Tvar name | Tstruct { name }), _, _)) :: _
+    | Sil.Hpointsto (e1, _, Sizeof (Tstruct name, _, _)) :: _
       when Exp.equal e1 e ->
         Some name
     | _ :: tl -> search_exn e tl in

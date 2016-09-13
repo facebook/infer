@@ -183,9 +183,9 @@ let hpred_get_lhs h =>
 /** {2 Comparision and Inspection Functions} */
 let has_objc_ref_counter tenv hpred =>
   switch hpred {
-  | Hpointsto _ _ (Sizeof typ _ _) =>
-    switch (Tenv.expand_type tenv typ) {
-    | Tstruct {fields} => IList.exists Typ.is_objc_ref_counter_field fields
+  | Hpointsto _ _ (Sizeof (Tstruct name) _ _) =>
+    switch (Tenv.lookup tenv name) {
+    | Some {fields} => IList.exists Typ.is_objc_ref_counter_field fields
     | _ => false
     }
   | _ => false
@@ -624,6 +624,10 @@ let pp_offset pe f =>
   fun
   | Off_fld fld _ => F.fprintf f "%a" Ident.pp_fieldname fld
   | Off_index exp => F.fprintf f "%a" (pp_exp pe) exp;
+
+
+/** Convert an offset to a string */
+let offset_to_string e => pp_to_string (pp_offset pe_text) e;
 
 
 /** dump an offset. */

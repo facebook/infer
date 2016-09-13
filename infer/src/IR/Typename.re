@@ -44,6 +44,10 @@ let equal tn1 tn2 => compare tn1 tn2 == 0;
 let module Java = {
   let from_string class_name_str =>
     TN_csu (Csu.Class Csu.Java) (Mangled.from_string class_name_str);
+  let is_class =
+    fun
+    | TN_csu (Class Java) _ => true
+    | _ => false;
 };
 
 type typename_t = t;

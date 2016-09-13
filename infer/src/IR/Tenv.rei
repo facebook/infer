@@ -25,14 +25,6 @@ let add: t => Typename.t => Typ.struct_typ => unit;
 let create: unit => t;
 
 
-/** Expand a type if it is a typename by looking it up in the type environment. */
-let expand_type: t => Typ.t => Typ.t;
-
-
-/** Expand a type if it is a (pointer to a) typename by looking it up in the type environment. */
-let expand_ptr_type: t => Typ.t => Typ.t;
-
-
 /** Fold a function over the elements of the type environment. */
 let fold: (Typename.t => Typ.struct_typ => 'a => 'a) => t => 'a => 'a;
 
@@ -49,13 +41,8 @@ let load_from_file: DB.filename => option t;
 let lookup: t => Typename.t => option Typ.struct_typ;
 
 
-/** Lookup Java types by name. */
-let lookup_java_typ_from_string: t => string => option Typ.t;
-
-
-/** resolve a type string to a Java *class* type. For strings that may represent primitive or array
-    typs, use [lookup_java_typ_from_string]. */
-let lookup_java_class_from_string: t => string => option Typ.struct_typ;
+/** Return the declaring class type of [pname_java] */
+let lookup_declaring_class: t => Procname.java => option Typ.struct_typ;
 
 
 /** Construct a struct_typ, normalizing field types */
@@ -69,14 +56,6 @@ let mk_struct:
   annots::Typ.item_annotation? =>
   Typename.t =>
   Typ.struct_typ;
-
-
-/** Return the declaring class type of [pname_java] */
-let proc_extract_declaring_class_typ: t => Procname.java => option Typ.struct_typ;
-
-
-/** Return the return type of [pname_java]. */
-let proc_extract_return_typ: t => Procname.java => option Typ.t;
 
 
 /** Check if typename is found in t */

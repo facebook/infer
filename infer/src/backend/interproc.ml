@@ -660,14 +660,14 @@ let report_context_leaks pname sigma tenv =
       Prop.compute_reachable_hpreds sigma fld_exps in
     (* raise an error if any Context expression is in [reachable_exps] *)
     IList.iter
-      (fun (context_exp, struct_typ) ->
+      (fun (context_exp, {Typ.name}) ->
          if Exp.Set.mem context_exp reachable_exps then
            let leak_path =
              match get_fld_typ_path_opt fld_exps context_exp reachable_hpreds with
              | Some path -> path
              | None -> assert false (* a path must exist in order for a leak to be reported *) in
            let err_desc =
-             Errdesc.explain_context_leak pname (Typ.Tstruct struct_typ) fld_name leak_path in
+             Errdesc.explain_context_leak pname (Typ.Tstruct name) fld_name leak_path in
            let exn = Exceptions.Context_leak (err_desc, __POS__) in
            Reporting.log_error pname exn)
       context_exps in
@@ -675,9 +675,9 @@ let report_context_leaks pname sigma tenv =
   let context_exps =
     IList.fold_left
       (fun exps hpred -> match hpred with
-         | Sil.Hpointsto (_, Eexp (exp, _), Sizeof (Tptr (typ, _), _, _)) -> (
-             match Tenv.expand_type tenv typ with
-             | Tstruct struct_typ
+         | Sil.Hpointsto (_, Eexp (exp, _), Sizeof (Tptr (Tstruct name, _), _, _)) -> (
+             match Tenv.lookup tenv name with
+             | Some struct_typ
                when AndroidFramework.is_context tenv struct_typ &&
                     not (AndroidFramework.is_application tenv struct_typ) ->
                  (exp, struct_typ) :: exps

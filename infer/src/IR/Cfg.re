@@ -659,7 +659,7 @@ let module Node = {
       | exp => exp;
     let extract_class_name =
       fun
-      | Typ.Tptr (Tvar name | Tstruct {name}) _ => Typename.name name
+      | Typ.Tptr (Tstruct name) _ => Typename.name name
       | _ => failwith "Expecting classname for Java types";
     let subst_map = ref Ident.IdentMap.empty;
     let redirected_class_name origin_id =>

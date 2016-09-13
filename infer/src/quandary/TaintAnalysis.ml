@@ -226,13 +226,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
           let ret_typ =
             match callee_pname with
             | Procname.Java java_pname ->
-                let ret_typ_str = Procname.java_get_return_type java_pname in
-                begin
-                  match Tenv.lookup_java_typ_from_string (proc_data.ProcData.tenv) ret_typ_str with
-                  | Some (Typ.Tstruct _ as typ) -> Typ.Tptr (typ, Typ.Pk_pointer)
-                  | Some typ -> typ
-                  | None -> Typ.Tvoid
-                end
+                Typ.java_proc_return_typ java_pname
             | Procname.C _ ->
                 Typ.Tvoid (* for tests only, since tests use C-style procnames *)
             | _ ->

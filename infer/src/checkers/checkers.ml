@@ -75,7 +75,7 @@ module ST = struct
       ?(exception_kind = fun k d -> Exceptions.Checkers (k, d))
       ?(always_report = false)
       description =
-    let expand_ptr_type = Tenv.expand_ptr_type tenv in
+    let lookup = Tenv.lookup tenv in
     let localized_description = Localise.custom_desc_with_advice
         description
         (Option.default "" advice)
@@ -113,7 +113,7 @@ module ST = struct
       let is_field_suppressed =
         match field_name, PatternMatch.get_this_type proc_attributes with
         | Some field_name, Some t -> begin
-            match Typ.get_field_type_and_annotation ~expand_ptr_type field_name t with
+            match Typ.get_field_type_and_annotation ~lookup field_name t with
             | Some (_, ia) -> Annotations.ia_has_annotation_with ia annotation_matches
             | None -> false
           end
@@ -209,9 +209,12 @@ let callback_check_write_to_parcel_java
     let type_match () =
       let class_name =
         Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "android.os.Parcelable") in
-      match Tenv.expand_ptr_type tenv this_type with
-      | Typ.Tptr (Typ.Tstruct struct_typ, _) | Typ.Tstruct struct_typ ->
-          PatternMatch.is_immediate_subtype struct_typ class_name
+      match this_type with
+      | Typ.Tptr (Tstruct name, _) | Tstruct name -> (
+          match Tenv.lookup tenv name with
+          | Some struct_typ -> PatternMatch.is_immediate_subtype struct_typ class_name
+          | None -> false
+        )
       | _ -> false in
     method_match () && expr_match () && type_match () in
 
@@ -221,9 +224,12 @@ let callback_check_write_to_parcel_java
       proc_desc pname_java ["android.os.Parcel"] in
 
   let parcel_constructors tenv typ =
-    match Tenv.expand_ptr_type tenv typ with
-    | Tptr (Tstruct { methods }, _) ->
-        IList.filter is_parcel_constructor methods
+    match typ with
+    | Typ.Tptr (Tstruct name, _) -> (
+        match Tenv.lookup tenv name with
+        | Some { methods } -> IList.filter is_parcel_constructor methods
+        | None -> []
+      )
     | _ -> [] in
 
   let check r_desc w_desc =
@@ -319,14 +325,14 @@ let callback_check_write_to_parcel ({ Callbacks.proc_name } as args) =
       ()
 
 (** Monitor calls to Preconditions.checkNotNull and detect inconsistent uses. *)
-let callback_monitor_nullcheck { Callbacks.tenv; proc_desc; idenv; proc_name } =
+let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
   let verbose = ref false in
 
   let class_formal_names = lazy (
     let formals = Cfg.Procdesc.get_formals proc_desc in
     let class_formals =
       let is_class_type (p, typ) =
-        match Tenv.expand_ptr_type tenv typ with
+        match typ with
         | Typ.Tptr _ when Mangled.to_string p = "this" ->
             false (* no need to null check 'this' *)
         | Typ.Tstruct _ -> true

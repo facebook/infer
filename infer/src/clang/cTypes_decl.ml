@@ -34,7 +34,7 @@ let add_predefined_basic_types () =
     Ast_utils.update_sil_types_map tp return_type in
   let sil_void_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Void in
   let sil_char_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Char_S in
-  let sil_nsarray_type = Typ.Tvar (CTypes.mk_classname CFrontend_config.nsarray_cl Csu.Objc) in
+  let sil_nsarray_type = Typ.Tstruct (CTypes.mk_classname CFrontend_config.nsarray_cl Csu.Objc) in
   let sil_id_type = CType_to_sil_type.get_builtin_objc_type `ObjCId in
   add_basic_type create_int_type `Int;
   add_basic_type create_void_type `Void;
@@ -117,12 +117,6 @@ let get_superclass_list_cpp decl =
     Typename.TN_csu (Csu.Class Csu.CPP, decl_to_mangled_name super_decl) in
   IList.map get_super_field base_decls
 
-let add_struct_to_tenv tenv typ =
-  match typ with
-  | Typ.Tstruct ({name} as struct_typ) ->
-      Tenv.add tenv name struct_typ
-  | _ -> assert false
-
 let get_translate_as_friend_decl decl_list =
   let is_translate_as_friend_name (_, name_info) =
     let translate_as_str = "infer_traits::TranslateAsType" in
@@ -191,7 +185,7 @@ and get_record_declaration_struct_type tenv decl =
         if csu = Csu.Class Csu.CPP then Typ.cpp_class_annotation
         else Typ.item_annotation_empty (* No annotations for structs *) in
       if is_complete_definition then (
-        Ast_utils.update_sil_types_map type_ptr (Typ.Tvar sil_typename);
+        Ast_utils.update_sil_types_map type_ptr (Typ.Tstruct sil_typename);
         let non_statics = get_struct_fields tenv decl in
         let fields = General_utils.append_no_duplicates_fields non_statics extra_fields in
         let statics = [] in (* Note: We treat static field same as global variables *)
@@ -199,21 +193,18 @@ and get_record_declaration_struct_type tenv decl =
         let supers = get_superclass_list_cpp decl in
         let sil_type =
           Typ.Tstruct
-            (Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots sil_typename) in
+            (Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots sil_typename).name in
         Ast_utils.update_sil_types_map type_ptr sil_type;
         sil_type
       ) else (
         match Tenv.lookup tenv sil_typename with
-        | Some struct_typ -> Typ.Tstruct struct_typ (* just reuse what is already in tenv *)
+        | Some {name} -> Typ.Tstruct name (* just reuse what is already in tenv *)
         | None ->
-            (* This is first forward definition seen so far. Instead of adding *)
-            (* empty Tstruct to sil_types_map add Tvar so that frontend doeasn't expand *)
-            (* type too early. Since tenv doesn't allow to put Tvars, add empty Tstruct there *)
-            (* Later, when we see definition, it will be updated with a new value. *)
-            (* Note: we know that this type will be wrapped with pointer type because *)
-            (* there was no full definition of that type yet. *)
-            ignore (Typ.Tstruct (Tenv.mk_struct tenv ~fields:extra_fields sil_typename));
-            let tvar_type = Typ.Tvar sil_typename in
+            (* This is first forward declaration seen. Add Tstruct to sil_types_map and struct with
+               only ref counter field to tenv. Later, when we see the definition, the tenv will be
+               updated with a new struct including the other fields. *)
+            ignore (Tenv.mk_struct tenv ~fields:extra_fields sil_typename);
+            let tvar_type = Typ.Tstruct sil_typename in
             Ast_utils.update_sil_types_map type_ptr tvar_type;
             tvar_type)
   | _ -> assert false
@@ -244,7 +235,7 @@ let get_type_from_expr_info ei tenv =
 
 let class_from_pointer_type tenv type_ptr =
   match type_ptr_to_sil_type tenv type_ptr with
-  | Typ.Tptr( Typ.Tvar (Typename.TN_csu (_, name)), _) -> Mangled.to_string name
+  | Typ.Tptr( Typ.Tstruct (Typename.TN_csu (_, name)), _) -> Mangled.to_string name
   | _ -> assert false
 
 let get_class_type_np tenv expr_info obj_c_message_expr_info =
@@ -254,7 +245,6 @@ let get_class_type_np tenv expr_info obj_c_message_expr_info =
     | _ -> expr_info.Clang_ast_t.ei_type_ptr in
   type_ptr_to_sil_type tenv tp
 
-let get_type_curr_class_objc tenv curr_class_opt =
+let get_type_curr_class_objc curr_class_opt =
   let name = CContext.get_curr_class_name curr_class_opt in
-  let typ = Typ.Tvar (Typename.TN_csu (Csu.Class Csu.Objc, (Mangled.from_string name))) in
-  CTypes.expand_structured_type tenv typ
+  Typ.Tstruct (TN_csu (Class Objc, (Mangled.from_string name)))

@@ -20,14 +20,9 @@ open CFrontend_utils
 
 module L = Logging
 
-let is_pointer_to_objc_class tenv typ =
-  let expand_type = Tenv.expand_ptr_type tenv in
+let is_pointer_to_objc_class typ =
   match typ with
-  | Typ.Tptr (Typ.Tvar (Typename.TN_csu (Csu.Class Csu.Objc, cname)), _) ->
-      (match Tenv.lookup tenv (Typename.TN_csu (Csu.Class Csu.Objc, cname)) with
-       | Some struct_typ when Typ.is_objc_class ~expand_type (Typ.Tstruct struct_typ) -> true
-       | _ -> false)
-  | Typ.Tptr (typ, _) when Typ.is_objc_class ~expand_type typ -> true
+  | Typ.Tptr (typ, _) when Typ.is_objc_class typ -> true
   | _ -> false
 
 let get_super_interface_decl otdi_super =
@@ -104,7 +99,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
   Printing.log_out "ADDING: ObjCInterfaceDecl for '%s'\n" class_name;
   let interface_name = CTypes.mk_classname class_name Csu.Objc in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
-  Ast_utils.update_sil_types_map decl_key (Typ.Tvar interface_name);
+  Ast_utils.update_sil_types_map decl_key (Typ.Tstruct interface_name);
   let supers, fields =
     create_supers_fields type_ptr_to_sil_type tenv curr_class decl_list
       ocidi.Clang_ast_t.otdi_super
@@ -135,15 +130,16 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
   Printing.log_out
     "  >>>Verifying that Typename '%s' is in tenv\n" (Typename.to_string interface_name);
   (match Tenv.lookup tenv interface_name with
-   | Some st -> Printing.log_out "  >>>OK. Found typ='%s'\n" (Typ.to_string (Typ.Tstruct st))
+   | Some st ->
+       Printing.log_out "  >>>OK. Found typ='%a'\n" (Typ.pp_struct_typ pe_text (fun _ () -> ())) st
    | None -> Printing.log_out "  >>>NOT Found!!\n");
-  Typ.Tvar interface_name
+  Typ.Tstruct interface_name
 
 let add_missing_methods tenv class_name ck decl_info decl_list curr_class =
   let decl_methods = ObjcProperty_decl.get_methods curr_class decl_list in
   let class_tn_name = Typename.TN_csu (Csu.Class ck, (Mangled.from_string class_name)) in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
-  Ast_utils.update_sil_types_map decl_key (Typ.Tvar class_tn_name);
+  Ast_utils.update_sil_types_map decl_key (Typ.Tstruct class_tn_name);
   begin
     match Tenv.lookup tenv class_tn_name with
     | Some ({ statics = []; name = TN_csu (Class _, _); methods; } as struct_typ) ->
@@ -151,7 +147,7 @@ let add_missing_methods tenv class_name ck decl_info decl_list curr_class =
         ignore( Tenv.mk_struct tenv ~default:struct_typ ~methods class_tn_name )
     | _ -> ()
   end;
-  Typ.Tvar class_tn_name
+  Typ.Tstruct class_tn_name
 
 (* Interface_type_info has the name of instance variables and the name of methods. *)
 let interface_declaration type_ptr_to_sil_type tenv decl =

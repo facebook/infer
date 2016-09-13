@@ -28,6 +28,9 @@ val get_method_kind : JCode.jcode Javalib.jmethod -> Procname.method_kind
 val get_method_procname :
   JBasics.class_name -> JBasics.method_signature -> Procname.method_kind -> Procname.java
 
+(** [get_class_struct_typ program tenv cn] returns the struct_typ representation of the class *)
+val get_class_struct_typ: JClasspath.program -> Tenv.t -> JBasics.class_name -> Typ.struct_typ
+
 (** [get_class_type_no_pointer program tenv cn] returns the sil type representation of the class
     without the pointer part *)
 val get_class_type_no_pointer: JClasspath.program -> Tenv.t -> JBasics.class_name -> Typ.t
@@ -75,7 +78,7 @@ val create_array_type : Typ.t -> int -> Typ.t
 val extract_cn_type_np : Typ.t -> Typ.t
 
 (** [extract_cn_type_np] returns the Java class name of typ when typ is a pointer type, otherwise returns None *)
-val extract_cn_no_obj : Tenv.t -> Typ.t -> JBasics.class_name option
+val extract_cn_no_obj : Typ.t -> JBasics.class_name option
 
 (** returns a string representation of a Java basic type. *)
 val string_of_basic_type : JBasics.java_basic_type -> string

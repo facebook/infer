@@ -21,7 +21,7 @@ let try_create_lifecycle_trace struct_typ lifecycle_struct_typ lifecycle_procs t
   | { Typ.name = TN_csu (Class Java, _) as name } ->
       if PatternMatch.is_subtype tenv struct_typ lifecycle_struct_typ &&
          not (AndroidFramework.is_android_lib_class name) then
-        let ptr_to_struct_typ = Some (Typ.Tptr (Tstruct struct_typ, Pk_pointer)) in
+        let ptr_to_struct_typ = Some (Typ.Tptr (Tstruct name, Pk_pointer)) in
         IList.fold_left
           (fun trace lifecycle_proc ->
              (* given a lifecycle subclass T, resolve the call T.lifecycle_proc() to the procname

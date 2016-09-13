@@ -29,6 +29,4 @@ val is_block_type : Clang_ast_t.type_ptr -> bool
 
 val is_reference_type : Clang_ast_t.type_ptr -> bool
 
-val expand_structured_type : Tenv.t -> Typ.t -> Typ.t
-
 val get_name_from_type_pointer : string -> string * string

@@ -37,6 +37,9 @@ let equal: t => t => bool;
 let module Java: {
   /** Create a typename from a Java classname in the form "package.class" */
   let from_string: string => t;
+
+  /** [is_class name] holds if [name] names a Java class */
+  let is_class: t => bool;
 };
 
 let module Set: Set.S with type elt = t;

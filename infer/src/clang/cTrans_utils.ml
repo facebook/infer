@@ -288,7 +288,7 @@ struct
 end
 
 (** This function handles ObjC new/alloc and C++ new calls *)
-let create_alloc_instrs context sil_loc function_type fname size_exp_opt procname_opt =
+let create_alloc_instrs sil_loc function_type fname size_exp_opt procname_opt =
   let function_type, function_type_np =
     match function_type with
     | Typ.Tptr (styp, Typ.Pk_pointer)
@@ -297,7 +297,6 @@ let create_alloc_instrs context sil_loc function_type fname size_exp_opt procnam
     | Typ.Tptr (styp, Typ.Pk_objc_autoreleasing) ->
         function_type, styp
     | _ -> Typ.Tptr (function_type, Typ.Pk_pointer), function_type in
-  let function_type_np = CTypes.expand_structured_type context.CContext.tenv function_type_np in
   let sizeof_exp_ = Exp.Sizeof (function_type_np, None, Subtype.exact) in
   let sizeof_exp = match size_exp_opt with
     | Some exp -> Exp.BinOp (Binop.Mult, sizeof_exp_, exp)
@@ -318,7 +317,7 @@ let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc pro
     else
       ModelBuiltins.__objc_alloc in
   let (function_type, stmt_call, exp) =
-    create_alloc_instrs trans_state.context loc function_type fname None procname_opt in
+    create_alloc_instrs loc function_type fname None procname_opt in
   let res_trans_tmp = { empty_res_trans with instrs =[stmt_call]} in
   let res_trans =
     let nname = "Call alloc" in
@@ -328,7 +327,7 @@ let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc pro
 let objc_new_trans trans_state loc stmt_info cls_name function_type =
   let fname = ModelBuiltins.__objc_alloc_no_fail in
   let (alloc_ret_type, alloc_stmt_call, alloc_ret_exp) =
-    create_alloc_instrs trans_state.context loc function_type fname None None in
+    create_alloc_instrs loc function_type fname None None in
   let init_ret_id = Ident.create_fresh Ident.knormal in
   let is_instance = true in
   let call_flags = { CallFlags.default with CallFlags.cf_virtual = is_instance; } in
@@ -359,31 +358,30 @@ let new_or_alloc_trans trans_state loc stmt_info type_ptr class_name_opt selecto
     objc_new_trans trans_state loc stmt_info class_name function_type
   else assert false
 
-let cpp_new_trans trans_state sil_loc function_type size_exp_opt =
+let cpp_new_trans sil_loc function_type size_exp_opt =
   let fname =
     match size_exp_opt with
     | Some _ -> ModelBuiltins.__new_array
     | None -> ModelBuiltins.__new in
   let (function_type, stmt_call, exp) =
-    create_alloc_instrs trans_state.context sil_loc function_type fname size_exp_opt None in
+    create_alloc_instrs sil_loc function_type fname size_exp_opt None in
   { empty_res_trans with instrs = [stmt_call]; exps = [(exp, function_type)] }
 
-let create_cast_instrs context exp cast_from_typ cast_to_typ sil_loc =
+let create_cast_instrs exp cast_from_typ cast_to_typ sil_loc =
   let ret_id = Ident.create_fresh Ident.knormal in
   let typ = CTypes.remove_pointer_to_typ cast_to_typ in
-  let cast_typ_no_pointer = CTypes.expand_structured_type context.CContext.tenv typ in
-  let sizeof_exp = Exp.Sizeof (cast_typ_no_pointer, None, Subtype.exact) in
+  let sizeof_exp = Exp.Sizeof (typ, None, Subtype.exact) in
   let pname = ModelBuiltins.__objc_cast in
   let args = [(exp, cast_from_typ); (sizeof_exp, Typ.Tint Typ.IULong)] in
   let stmt_call =
     Sil.Call ([ret_id], Exp.Const (Const.Cfun pname), args, sil_loc, CallFlags.default) in
   (stmt_call, Exp.Var ret_id)
 
-let cast_trans context exps sil_loc function_type pname =
+let cast_trans exps sil_loc function_type pname =
   if CTrans_models.is_toll_free_bridging pname then
     match exps with
     | [exp, typ] ->
-        Some (create_cast_instrs context exp typ function_type sil_loc)
+        Some (create_cast_instrs exp typ function_type sil_loc)
     | _ -> assert false
   else None
 
@@ -425,7 +423,7 @@ let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
         match trans_state.obj_bridged_cast_typ with
         | Some typ -> typ
         | None -> cast_typ in
-      let instr, exp = create_cast_instrs trans_state.context exp typ objc_cast_typ sil_loc in
+      let instr, exp = create_cast_instrs exp typ objc_cast_typ sil_loc in
       [instr], (exp, cast_typ)
   | `LValueToRValue ->
       (* Takes an LValue and allow it to use it as RValue. *)
@@ -581,9 +579,9 @@ struct
   let add_self_parameter_for_super_instance context procname loc mei =
     if is_superinstance mei then
       let typ, self_expr, ins =
-        let t' = CTypes.add_pointer_to_typ
-            (CTypes_decl.get_type_curr_class_objc
-               context.CContext.tenv context.CContext.curr_class) in
+        let t' =
+          CTypes.add_pointer_to_typ
+            (CTypes_decl.get_type_curr_class_objc context.CContext.curr_class) in
         let e = Exp.Lvar (Pvar.mk (Mangled.from_string CFrontend_config.self) procname) in
         let id = Ident.create_fresh Ident.knormal in
         t', Exp.Var id, [Sil.Load (id, e, t', loc)] in
@@ -713,17 +711,17 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
   let rec var_or_zero_in_init_list' e typ tns =
     let open General_utils in
     match typ with
-    | Typ.Tvar tn ->
-        (match Tenv.lookup tenv tn with
-         | Some struct_typ -> var_or_zero_in_init_list' e (Typ.Tstruct struct_typ) tns
-         | _ -> [[(e, typ)]] (*This case is an error, shouldn't happen.*))
-    | Typ.Tstruct { fields } as type_struct ->
-        let lh_exprs = IList.map ( fun (fieldname, _, _) ->
-            Exp.Lfield (e, fieldname, type_struct) ) fields in
-        let lh_types = IList.map ( fun (_, fieldtype, _) -> fieldtype) fields in
-        let exp_types = zip lh_exprs lh_types in
-        IList.map (fun (e, t) ->
-            IList.flatten (var_or_zero_in_init_list' e t tns)) exp_types
+    | Typ.Tstruct tn -> (
+        match Tenv.lookup tenv tn with
+        | Some { fields } ->
+            let lh_exprs =
+              IList.map (fun (fieldname, _, _) -> Exp.Lfield (e, fieldname, typ)) fields in
+            let lh_types = IList.map (fun (_, fieldtype, _) -> fieldtype) fields in
+            let exp_types = zip lh_exprs lh_types in
+            IList.map (fun (e, t) -> IList.flatten (var_or_zero_in_init_list' e t tns)) exp_types
+        | None ->
+            assert false
+      )
     | Typ.Tarray (arrtyp, Some n) ->
         let size = IntLit.to_int n in
         let indices = list_range 0 (size - 1) in

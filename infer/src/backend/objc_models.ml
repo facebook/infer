@@ -208,8 +208,7 @@ struct
     match typ with
     | Typ.Tptr (styp, _ ) ->
         is_core_lib lib styp
-    | Typ.Tvar name
-    | Typ.Tstruct { name } ->
+    | Typ.Tstruct name ->
         let core_lib_types = core_lib_to_type_list lib in
         IList.mem string_equal (Typename.name name) core_lib_types
     | _ -> false

@@ -247,8 +247,7 @@ let by_call_to_ra tags ra =
 let rec format_typ = function
   | Typ.Tptr (typ, _) when !Config.curr_language = Config.Java ->
       format_typ typ
-  | Typ.Tstruct { name }
-  | Typ.Tvar name ->
+  | Typ.Tstruct name ->
       Typename.name name
   | typ ->
       Typ.to_string typ
@@ -685,8 +684,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
           s, " to ", " on " in
     let typ_str =
       match hpred_type_opt with
-      | Some (Exp.Sizeof (( Tvar (TN_csu (Class _, _) as name)
-                          | Tstruct { name = TN_csu (Class _, _) as name; }), _, _)) ->
+      | Some (Exp.Sizeof (Tstruct (TN_csu (Class _, _) as name), _, _)) ->
           " of type " ^ Typename.name name ^ " "
       | _ -> " " in
     let desc_str =

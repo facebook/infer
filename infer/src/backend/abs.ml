@@ -406,27 +406,27 @@ let mk_rules_for_dll tenv (para : Sil.hpara_dll) : rule list =
 
 (******************  Start of Predicate Discovery  ******************)
 let typ_get_recursive_flds tenv typ_exp =
-  let filter typ (_, t, _) =
+  let filter typ (_, (t: Typ.t), _) =
     match t with
-    | Typ.Tvar _ | Typ.Tint _ | Typ.Tfloat _ | Typ.Tvoid | Typ.Tfun _ -> false
-    | Typ.Tptr (Typ.Tvar tname', _) ->
-        let typ' = match Tenv.lookup tenv tname' with
-          | None ->
-              L.err "@.typ_get_recursive: Undefined type %s@." (Typename.to_string tname');
-              t
-          | Some st -> Typ.Tstruct st in
+    | Tstruct _ | Tint _ | Tfloat _ | Tvoid | Tfun _ ->
+        false
+    | Tptr (Tstruct _ as typ', _) ->
         Typ.equal typ' typ
-    | Typ.Tptr _ | Typ.Tstruct _ | Typ.Tarray _ ->
+    | Tptr _ | Tarray _ ->
         false
   in
   match typ_exp with
-  | Exp.Sizeof (typ, _, _) ->
-      (match Tenv.expand_type tenv typ with
-       | Typ.Tint _ | Typ.Tvoid | Typ.Tfun _ | Typ.Tptr _ | Typ.Tfloat _ -> []
-       | Typ.Tstruct { fields } ->
-           IList.map (fun (x, _, _) -> x) (IList.filter (filter typ) fields)
-       | Typ.Tarray _ -> []
-       | Typ.Tvar _ -> assert false)
+  | Exp.Sizeof (typ, _, _) -> (
+      match typ with
+      | Tstruct name -> (
+          match Tenv.lookup tenv name with
+          | Some { fields } -> IList.map fst3 (IList.filter (filter typ) fields)
+          | None ->
+              L.err "@.typ_get_recursive: unexpected type expr: %a@." (Sil.pp_exp pe_text) typ_exp;
+              [] (* ToDo: assert false *)
+        )
+      | Tint _ | Tvoid | Tfun _ | Tptr _ | Tfloat _ | Tarray _ -> []
+    )
   | Exp.Var _ -> [] (* type of |-> not known yet *)
   | Exp.Const _ -> []
   | _ ->
@@ -1001,14 +1001,17 @@ let remove_opt _prop =
     weak/unsafe_unretained/assing *)
 let cycle_has_weak_or_unretained_or_assign_field tenv cycle =
   (* returns items annotation for field fn in struct t *)
-  let get_item_annotation t fn =
-    match Tenv.expand_type tenv t with
-    | Tstruct { fields; statics } ->
-        let ia = ref [] in
-        IList.iter (fun (fn', _, ia') ->
-            if Ident.fieldname_equal fn fn' then ia := ia')
-          (fields @ statics);
-        !ia
+  let get_item_annotation (t: Typ.t) fn =
+    match t with
+    | Tstruct name -> (
+        let equal_fn (fn', _, _) = Ident.fieldname_equal fn fn' in
+        match Tenv.lookup tenv name with
+        | Some { fields; statics } -> (
+            try trd3 (IList.find equal_fn (fields @ statics))
+            with Not_found -> []
+          )
+        | None -> []
+      )
     | _ -> [] in
   let rec has_weak_or_unretained_or_assign params =
     match params with

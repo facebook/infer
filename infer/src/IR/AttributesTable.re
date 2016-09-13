@@ -106,13 +106,13 @@ let get_tenv proc_name =>
 /** Given the name of an ObjC class, extract the type from the tenv where the class was defined. We
     do this by adding a method that is unique to each class, and then finding the tenv that
     corresponds to the class definition. */
-let get_correct_type_from_objc_class_name type_name => {
-  let class_method = Procname.get_default_objc_class_method (Typename.name type_name);
-  switch (find_tenv_from_class_of_proc class_method) {
-  | None => None
-  | Some tenv => Option.map (fun st => Typ.Tstruct st) (Tenv.lookup tenv type_name)
-  }
-};
+let get_correct_type_from_objc_class_name type_name =>
+  /* ToDo: this function should return a type that includes a reference to the tenv computed by:
+     let class_method = Procname.get_default_objc_class_method (Typename.name type_name);
+     switch (find_tenv_from_class_of_proc class_method) {
+     | Some tenv =>
+      */
+  Some (Typ.Tstruct type_name);
 
 
 /** Returns true if the method is defined as a C++ model */

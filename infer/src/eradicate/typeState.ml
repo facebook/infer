@@ -75,8 +75,8 @@ let pp ext fmt typestate =
   pp_map typestate.map;
   ext.pp fmt typestate.extension
 
-let type_join tenv typ1 typ2 =
-  if PatternMatch.type_is_object tenv typ1 then typ2 else typ1
+let type_join typ1 typ2 =
+  if PatternMatch.type_is_object typ1 then typ2 else typ1
 let locs_join locs1 locs2 =
   IList.merge_sorted_nodup Location.compare [] locs1 locs2
 
@@ -86,13 +86,13 @@ let range_add_locs (typ, ta, locs1) locs2 =
   (typ, ta, locs')
 
 (** Join m2 to m1 if there are no inconsistencies, otherwise return m1. *)
-let map_join tenv m1 m2 =
+let map_join m1 m2 =
   let tjoined = ref m1 in
   let range_join (typ1, ta1, locs1) (typ2, ta2, locs2) =
     match TypeAnnotation.join ta1 ta2 with
     | None -> None
     | Some ta' ->
-        let typ' = type_join tenv typ1 typ2 in
+        let typ' = type_join typ1 typ2 in
         let locs' = locs_join locs1 locs2 in
         Some (typ', ta', locs') in
   let extend_lhs exp2 range2 = (* extend lhs if possible, otherwise return false *)
@@ -119,13 +119,13 @@ let map_join tenv m1 m2 =
     !tjoined
   )
 
-let join tenv ext t1 t2 =
+let join ext t1 t2 =
   if Config.from_env_variable "ERADICATE_TRACE"
   then L.stderr "@.@.**********join@.-------@.%a@.------@.%a@.********@.@."
       (pp ext) t1
       (pp ext) t2;
   {
-    map = map_join tenv t1.map t2.map;
+    map = map_join t1.map t2.map;
     extension = ext.join t1.extension t2.extension;
   }
 

@@ -17,7 +17,7 @@ let get_builtin_objc_typename builtin_type =
   | `ObjCClass -> Typename.TN_csu (Csu.Struct, (Mangled.from_string CFrontend_config.objc_class))
 
 let get_builtin_objc_type builtin_type =
-  let typ = Typ.Tvar (get_builtin_objc_typename builtin_type) in
+  let typ = Typ.Tstruct (get_builtin_objc_typename builtin_type) in
   match builtin_type with
   | `ObjCId -> typ
   | `ObjCClass -> Typ.Tptr (typ, Typ.Pk_pointer)
@@ -182,7 +182,7 @@ and type_ptr_to_sil_type translate_decl tenv type_ptr =
       Typ.Tptr (sil_typ, Typ.Pk_reference)
   | `ClassType (name, lang) ->
       let kind = match lang with `OBJC -> Csu.Objc | `CPP -> Csu.CPP in
-      Typ.Tvar (CTypes.mk_classname name kind)
-  | `StructType name -> Typ.Tvar (CTypes.mk_structname name)
+      Typ.Tstruct (CTypes.mk_classname name kind)
+  | `StructType name -> Typ.Tstruct (CTypes.mk_structname name)
   | `DeclPtr ptr -> decl_ptr_to_sil_type translate_decl tenv ptr
   | `ErrorType -> Typ.Tvoid

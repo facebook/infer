@@ -135,26 +135,31 @@ let ptr_kind_compare: ptr_kind => ptr_kind => int;
 /** statically determined length of an array type, if any */
 type static_length = option IntLit.t;
 
-type struct_fields = list (Ident.fieldname, t, item_annotation)
-/** Type for a structured value. */
-and struct_typ = private {
-  name: Typename.t, /** name */
-  fields: struct_fields, /** non-static fields */
-  statics: struct_fields, /** static fields */
-  supers: list Typename.t, /** list of supers */
-  methods: list Procname.t, /** methods defined */
-  annots: item_annotation /** annotations */
-}
+
 /** types for sil (structured) expressions */
-and t =
-  | Tvar of Typename.t /** named type */
+type t =
   | Tint of ikind /** integer type */
   | Tfloat of fkind /** float type */
   | Tvoid /** void type */
   | Tfun of bool /** function type with noreturn attribute */
   | Tptr of t ptr_kind /** pointer type */
-  | Tstruct of struct_typ /** Type for a structured value */
+  | Tstruct of Typename.t /** structured value type name */
   | Tarray of t static_length /** array type with statically fixed length */;
+
+type struct_fields = list (Ident.fieldname, t, item_annotation);
+
+
+/** Type for a structured value. */
+type struct_typ = private {
+  name: Typename.t, /** name */
+  fields: struct_fields, /** non-static fields */
+  statics: struct_fields, /** static fields */
+  supers: list Typename.t, /** supers */
+  methods: list Procname.t, /** methods defined */
+  annots: item_annotation /** annotations */
+};
+
+type lookup = Typename.t => option struct_typ;
 
 
 /** Comparision for fieldnames * types * item annotations. */
@@ -235,43 +240,31 @@ let array_elem: option t => t => t;
 
 
 /** the element typ of the final extensible array in the given typ, if any */
-let get_extensible_array_element_typ: expand_type::(t => t) => t => option t;
+let get_extensible_array_element_typ: lookup::lookup => t => option t;
 
 
 /** If a struct type with field f, return the type of f.
     If not, return the default type if given, otherwise raise an exception */
-let struct_typ_fld: expand_type::(t => t) => option t => Ident.fieldname => t => t;
+let struct_typ_fld: lookup::lookup => default::t => Ident.fieldname => t => t;
 
 
 /** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] */
 let get_field_type_and_annotation:
-  expand_ptr_type::(t => t) => Ident.fieldname => t => option (t, item_annotation);
+  lookup::lookup => Ident.fieldname => t => option (t, item_annotation);
 
 
 /** if [struct_typ] is a class, return its class kind (Java, CPP, or Obj-C) */
 let struct_typ_get_class_kind: struct_typ => option Csu.class_kind;
 
+let is_objc_class: t => bool;
 
-/** return true if [struct_typ] is a Java class */
-let struct_typ_is_java_class: struct_typ => bool;
+let is_cpp_class: t => bool;
 
+let is_java_class: t => bool;
 
-/** return true if [struct_typ] is a C++ class. Note that this returns false for raw structs. */
-let struct_typ_is_cpp_class: struct_typ => bool;
+let is_array_of_cpp_class: t => bool;
 
-
-/** return true if [struct_typ] is an Obj-C class. Note that this returns false for raw structs. */
-let struct_typ_is_objc_class: struct_typ => bool;
-
-let is_objc_class: expand_type::(t => t) => t => bool;
-
-let is_cpp_class: expand_type::(t => t) => t => bool;
-
-let is_java_class: expand_type::(t => t) => t => bool;
-
-let is_array_of_cpp_class: expand_type::(t => t) => t => bool;
-
-let is_pointer_to_cpp_class: expand_type::(t => t) => t => bool;
+let is_pointer_to_cpp_class: t => bool;
 
 let has_block_prefix: string => bool;
 
@@ -286,3 +279,7 @@ let objc_ref_counter_field: (Ident.fieldname, t, item_annotation);
 let is_objc_ref_counter_field: (Ident.fieldname, t, item_annotation) => bool;
 
 let unsome: string => option t => t;
+
+
+/** Return the return type of [pname_java]. */
+let java_proc_return_typ: Procname.java => t;

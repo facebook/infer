@@ -111,11 +111,10 @@ val alloc_trans :
 val new_or_alloc_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
   Clang_ast_t.type_ptr -> string option -> string -> trans_result
 
-val cpp_new_trans : trans_state -> Location.t -> Typ.t -> Exp.t option -> trans_result
+val cpp_new_trans : Location.t -> Typ.t -> Exp.t option -> trans_result
 
 val cast_trans :
-  CContext.t -> (Exp.t * Typ.t) list -> Location.t -> Typ.t -> Procname.t ->
-  (Sil.instr * Exp.t) option
+  (Exp.t * Typ.t) list -> Location.t -> Typ.t -> Procname.t -> (Sil.instr * Exp.t) option
 
 val dereference_var_sil : Exp.t * Typ.t -> Location.t -> Sil.instr list * Exp.t
 

@@ -84,7 +84,7 @@ let bounds_check tenv pname prop len e =
     end;
   check_bad_index tenv pname prop len e
 
-let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp t
+let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp (t: Typ.t)
     (off: Sil.offset list) inst : Sil.atom list * Sil.strexp * Typ.t =
   if Config.trace_rearrange then
     begin
@@ -97,27 +97,35 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
     incr max_stamp;
     Ident.create kind !max_stamp in
   let res =
-    match Tenv.expand_type tenv t, off with
+    let fail t off pos =
+      L.d_str "create_struct_values type:"; Typ.d_full t;
+      L.d_str " off: "; Sil.d_offset_list off; L.d_ln();
+      raise (Exceptions.Bad_footprint pos) in
+    match t, off with
     | Tstruct _, [] ->
         ([], Sil.Estruct ([], inst), t)
-    | Tstruct ({ name; fields; statics } as struct_typ ),
-      (Sil.Off_fld (f, _)):: off' ->
-        let _, t', _ =
-          try
-            IList.find (fun (f', _, _) -> Ident.fieldname_equal f f')
-              (fields @ statics)
-          with Not_found ->
-            raise (Exceptions.Bad_footprint __POS__) in
-        let atoms', se', res_t' =
-          create_struct_values
-            pname tenv orig_prop footprint_part kind max_stamp t' off' inst in
-        let se = Sil.Estruct ([(f, se')], inst) in
-        let replace_typ_of_f (f', t', a') =
-          if Ident.fieldname_equal f f' then (f, res_t', a') else (f', t', a') in
-        let fields' =
-          IList.sort Typ.fld_typ_ann_compare (IList.map replace_typ_of_f fields) in
-        (atoms', se, Typ.Tstruct (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name))
-    | Typ.Tstruct _, (Sil.Off_index e):: off' ->
+    | Tstruct name, (Off_fld (f, _)) :: off' -> (
+        match Tenv.lookup tenv name with
+        | Some ({ name; fields; statics; } as struct_typ) -> (
+            match IList.find (fun (f', _, _) -> Ident.fieldname_equal f f') (fields @ statics) with
+            | _, t', _ ->
+                let atoms', se', res_t' =
+                  create_struct_values
+                    pname tenv orig_prop footprint_part kind max_stamp t' off' inst in
+                let se = Sil.Estruct ([(f, se')], inst) in
+                let replace_typ_of_f (f', t', a') =
+                  if Ident.fieldname_equal f f' then (f, res_t', a') else (f', t', a') in
+                let fields' =
+                  IList.sort Typ.fld_typ_ann_compare (IList.map replace_typ_of_f fields) in
+                ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
+                (atoms', se, t)
+            | exception Not_found ->
+                fail t off __POS__
+          )
+        | None ->
+            fail t off __POS__
+      )
+    | Tstruct _, (Off_index e) :: off' ->
         let atoms', se', res_t' =
           create_struct_values
             pname tenv orig_prop footprint_part kind max_stamp t off' inst in
@@ -125,8 +133,8 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         let len = Exp.Var (new_id ()) in
         let se = Sil.Earray (len, [(e', se')], inst) in
         let res_t = Typ.Tarray (res_t', None) in
-        (Sil.Aeq(e, e') :: atoms', se, res_t)
-    | Typ.Tarray (t', len_), off ->
+        (Sil.Aeq (e, e') :: atoms', se, res_t)
+    | Tarray (t', len_), off ->
         let len = match len_ with
           | None -> Exp.Var (new_id ())
           | Some len -> Exp.Const (Const.Cint len) in
@@ -145,10 +153,10 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
          | (Sil.Off_fld _) :: _ ->
              assert false
         )
-    | Typ.Tint _, [] | Typ.Tfloat _, [] | Typ.Tvoid, [] | Typ.Tfun _, [] | Typ.Tptr _, [] ->
+    | Tint _, [] | Tfloat _, [] | Tvoid, [] | Tfun _, [] | Tptr _, [] ->
         let id = new_id () in
         ([], Sil.Eexp (Exp.Var id, inst), t)
-    | (Typ.Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _), (Sil.Off_index e)::off' ->
+    | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _), (Off_index e) :: off' ->
         (* In this case, we lift t to the t array. *)
         let t' = match t with
           | Typ.Tptr(t', _) -> t'
@@ -160,17 +168,10 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         let e' = Sil.array_clean_new_index footprint_part e in
         let se = Sil.Earray (len, [(e', se')], inst) in
         let res_t = Typ.Tarray (res_t', None) in
-        (Sil.Aeq(e, e'):: atoms', se, res_t)
-    | Typ.Tint _, _ | Typ.Tfloat _, _ | Typ.Tvoid, _ | Typ.Tfun _, _ | Typ.Tptr _, _ ->
-        L.d_str "create_struct_values type:"; Typ.d_full t;
-        L.d_str " off: "; Sil.d_offset_list off; L.d_ln();
-        raise (Exceptions.Bad_footprint __POS__)
-
-    | Typ.Tvar _, _ ->
-        L.d_str "create_struct_values type:"; Typ.d_full t;
-        L.d_str " off: "; Sil.d_offset_list off; L.d_ln();
-        assert false in
-
+        (Sil.Aeq(e, e') :: atoms', se, res_t)
+    | Tint _, _ | Tfloat _, _ | Tvoid, _ | Tfun _, _ | Tptr _, _ ->
+        fail t off __POS__
+  in
   if Config.trace_rearrange then
     begin
       let _, se, _ = res in
@@ -188,68 +189,68 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
     we need to change this function. *)
 let rec _strexp_extend_values
     pname tenv orig_prop footprint_part kind max_stamp
-    se typ (off : Sil.offset list) inst =
+    se (typ: Typ.t) (off : Sil.offset list) inst =
   let new_id () =
     incr max_stamp;
     Ident.create kind !max_stamp in
-  match off, se, Tenv.expand_type tenv typ with
+  match off, se, typ with
   | [], Sil.Eexp _, _
   | [], Sil.Estruct _, _ ->
       [([], se, typ)]
   | [], Sil.Earray _, _ ->
-      let off_new = Sil.Off_index(Exp.zero):: off in
+      let off_new = Sil.Off_index (Exp.zero):: off in
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
-  | (Sil.Off_fld _) :: _, Sil.Earray _, Typ.Tarray _ ->
-      let off_new = Sil.Off_index(Exp.zero):: off in
+  | (Off_fld _) :: _, Sil.Earray _, Tarray _ ->
+      let off_new = Sil.Off_index (Exp.zero):: off in
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
-  | (Sil.Off_fld (f, _)):: off', Sil.Estruct (fsel, inst'),
-    Tstruct ({ name; fields; statics } as struct_typ) ->
-      let replace_fv new_v fv = if Ident.fieldname_equal (fst fv) f then (f, new_v) else fv in
-      let _, typ', _ =
-        try
-          IList.find (fun (f', _, _) -> Ident.fieldname_equal f f')
-            (fields @ statics)
-        with Not_found ->
-          raise (Exceptions.Missing_fld (f, __POS__)) in
-      begin
-        try
-          let _, se' = IList.find (fun (f', _) -> Ident.fieldname_equal f f') fsel in
-          let atoms_se_typ_list' =
-            _strexp_extend_values
-              pname tenv orig_prop footprint_part kind max_stamp se' typ' off' inst in
-          let replace acc (res_atoms', res_se', res_typ') =
-            let replace_fse = replace_fv res_se' in
-            let res_fsel' = IList.sort Sil.fld_strexp_compare (IList.map replace_fse fsel) in
-            let replace_fta (f, t, a) = let f', t' = replace_fv res_typ' (f, t) in (f', t', a) in
-            let fields' =
-              IList.sort Typ.fld_typ_ann_compare (IList.map replace_fta fields) in
-            let struct_typ =
-              Typ.Tstruct (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) in
-            (res_atoms', Sil.Estruct (res_fsel', inst'), struct_typ) :: acc in
-          IList.fold_left replace [] atoms_se_typ_list'
-        with Not_found ->
-          let atoms', se', res_typ' =
-            create_struct_values
-              pname tenv orig_prop footprint_part kind max_stamp typ' off' inst in
-          let res_fsel' = IList.sort Sil.fld_strexp_compare ((f, se'):: fsel) in
-          let replace_fta (f', t', a') = if Ident.fieldname_equal f' f then (f, res_typ', a') else (f', t', a') in
-          let fields' =
-            IList.sort Typ.fld_typ_ann_compare (IList.map replace_fta fields) in
-          let struct_typ =
-            Typ.Tstruct (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) in
-          [(atoms', Sil.Estruct (res_fsel', inst'), struct_typ)]
-      end
-  | (Sil.Off_fld (_, _)):: _, _, _ ->
+  | (Off_fld (f, _)) :: off', Sil.Estruct (fsel, inst'), Tstruct name -> (
+      match Tenv.lookup tenv name with
+      | Some ({ name; fields; statics; } as struct_typ) -> (
+          let replace_fv new_v fv = if Ident.fieldname_equal (fst fv) f then (f, new_v) else fv in
+          match IList.find (fun (f', _, _) -> Ident.fieldname_equal f f') (fields @ statics) with
+          | _, typ', _ -> (
+              match IList.find (fun (f', _) -> Ident.fieldname_equal f f') fsel with
+              | _, se' ->
+                  let atoms_se_typ_list' =
+                    _strexp_extend_values
+                      pname tenv orig_prop footprint_part kind max_stamp se' typ' off' inst in
+                  let replace acc (res_atoms', res_se', res_typ') =
+                    let replace_fse = replace_fv res_se' in
+                    let res_fsel' =
+                      IList.sort Sil.fld_strexp_compare (IList.map replace_fse fsel) in
+                    let replace_fta (f, t, a) =
+                      let f', t' = replace_fv res_typ' (f, t) in
+                      (f', t', a) in
+                    let fields' =
+                      IList.sort Typ.fld_typ_ann_compare (IList.map replace_fta fields) in
+                    ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
+                    (res_atoms', Sil.Estruct (res_fsel', inst'), typ) :: acc in
+                  IList.fold_left replace [] atoms_se_typ_list'
+              | exception Not_found ->
+                  let atoms', se', res_typ' =
+                    create_struct_values
+                      pname tenv orig_prop footprint_part kind max_stamp typ' off' inst in
+                  let res_fsel' = IList.sort Sil.fld_strexp_compare ((f, se'):: fsel) in
+                  let replace_fta (f', t', a') =
+                    if Ident.fieldname_equal f' f then (f, res_typ', a') else (f', t', a') in
+                  let fields' =
+                    IList.sort Typ.fld_typ_ann_compare (IList.map replace_fta fields) in
+                  ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
+                  [(atoms', Sil.Estruct (res_fsel', inst'), typ)]
+            )
+          | exception Not_found ->
+              raise (Exceptions.Missing_fld (f, __POS__))
+        )
+      | None ->
+          raise (Exceptions.Missing_fld (f, __POS__))
+    )
+  | (Off_fld _) :: _, _, _ ->
       raise (Exceptions.Bad_footprint __POS__)
 
-  | (Sil.Off_index _):: _, Sil.Eexp _, Typ.Tint _
-  | (Sil.Off_index _):: _, Sil.Eexp _, Typ.Tfloat _
-  | (Sil.Off_index _):: _, Sil.Eexp _, Typ.Tvoid
-  | (Sil.Off_index _):: _, Sil.Eexp _, Typ.Tfun _
-  | (Sil.Off_index _):: _, Sil.Eexp _, Typ.Tptr _
-  | (Sil.Off_index _):: _, Sil.Estruct _, Typ.Tstruct _ ->
+  | (Off_index _) :: _, Sil.Eexp _, (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _)
+  | (Off_index _) :: _, Sil.Estruct _, Tstruct _ ->
       (* L.d_strln_color Orange "turn into an array"; *)
       let len = match se with
         | Sil.Eexp (_, Sil.Ialloc) -> Exp.one (* if allocated explicitly, we know len is 1 *)
@@ -260,11 +261,10 @@ let rec _strexp_extend_values
       let typ_new = Typ.Tarray (typ, None) in
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se_new typ_new off inst
-  | (Sil.Off_index e) :: off', Sil.Earray (len, esel, inst_arr), Typ.Tarray (typ', len_for_typ') ->
+  | (Off_index e) :: off', Sil.Earray (len, esel, inst_arr), Tarray (typ', len_for_typ') -> (
       bounds_check tenv pname orig_prop len e (State.get_loc ());
-      begin
-        try
-          let _, se' = IList.find (fun (e', _) -> Exp.equal e e') esel in
+      match IList.find (fun (e', _) -> Exp.equal e e') esel with
+      | _, se' ->
           let atoms_se_typ_list' =
             _strexp_extend_values
               pname tenv orig_prop footprint_part kind max_stamp se' typ' off' inst in
@@ -279,13 +279,13 @@ let rec _strexp_extend_values
             else
               raise (Exceptions.Bad_footprint __POS__) in
           IList.fold_left replace [] atoms_se_typ_list'
-        with Not_found ->
+      | exception Not_found ->
           array_case_analysis_index pname tenv orig_prop
             footprint_part kind max_stamp
             len esel
             len_for_typ' typ'
             e off' inst_arr inst
-      end
+    )
   | _, _, _ ->
       raise (Exceptions.Bad_footprint __POS__)
 
@@ -614,7 +614,7 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
 (** If [lexp] is an access to a field that is annotated with @GuardedBy, add constraints to [prop]
     expressing the safety conditions for the access. Complain if these conditions cannot be met. *)
 let add_guarded_by_constraints tenv prop lexp pdesc =
-  let expand_ptr_type = Tenv.expand_ptr_type tenv in
+  let lookup = Tenv.lookup tenv in
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let excluded_guardedby_string str =
     (* nothing with a space in it can be a valid Java expression, shouldn't warn *)
@@ -655,7 +655,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     IList.find_map_opt annot_extract_guarded_by_str item_annot in
   (* if [fld] is annotated with @GuardedBy("mLock"), return mLock *)
   let get_guarded_by_fld_str fld typ =
-    match Typ.get_field_type_and_annotation ~expand_ptr_type fld typ with
+    match Typ.get_field_type_and_annotation ~lookup fld typ with
     | Some (_, item_annot) ->
         begin
           match extract_guarded_by_str item_annot with
@@ -683,7 +683,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
               try
                 let fld, strexp = IList.find f flds in
                 begin
-                  match Typ.get_field_type_and_annotation ~expand_ptr_type fld typ with
+                  match Typ.get_field_type_and_annotation ~lookup fld typ with
                   | Some (fld_typ, _) -> Some (strexp, fld_typ)
                   | None -> None
                 end
@@ -731,8 +731,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     let rec is_read_write_lock typ =
       let str_is_read_write_lock str = string_is_suffix "ReadWriteUpdateLock" str in
       match typ with
-      | Typ.Tvar name
-      | Typ.Tstruct { name } -> str_is_read_write_lock (Typename.name name)
+      | Typ.Tstruct name -> str_is_read_write_lock (Typename.name name)
       | Typ.Tptr (typ, _) -> is_read_write_lock typ
       | _ -> false in
     let has_lock guarded_by_exp =
@@ -1029,17 +1028,20 @@ let iter_rearrange_pe_dllseg_last tenv recurse_on_iters default_case_iter iter p
 
 (** find the type at the offset from the given type expression, if any *)
 let type_at_offset tenv texp off =
-  let rec strip_offset off typ =
-    match off, Tenv.expand_type tenv typ with
+  let rec strip_offset (off: Sil.offset list) (typ: Typ.t) =
+    match off, typ with
     | [], _ -> Some typ
-    | (Sil.Off_fld (f, _)):: off', Tstruct { fields } ->
-        (try
-           let typ' =
-             (fun (_, y, _) -> y)
-               (IList.find (fun (f', _, _) -> Ident.fieldname_equal f f') fields) in
-           strip_offset off' typ'
-         with Not_found -> None)
-    | (Sil.Off_index _) :: off', Typ.Tarray (typ', _) ->
+    | (Off_fld (f, _)) :: off', Tstruct name -> (
+        match Tenv.lookup tenv name with
+        | Some { fields } -> (
+            match IList.find (fun (f', _, _) -> Ident.fieldname_equal f f') fields with
+            | _, typ', _ -> strip_offset off' typ'
+            | exception Not_found -> None
+          )
+        | None ->
+            None
+      )
+    | (Off_index _) :: off', Tarray (typ', _) ->
         strip_offset off' typ'
     | _ -> None in
   match texp with
@@ -1083,7 +1085,7 @@ let rec iter_rearrange
     inst: (Sil.offset list) Prop.prop_iter list =
   let rec root_typ_of_offsets = function
     | Sil.Off_fld (f, fld_typ) :: _ -> (
-        match Tenv.expand_type tenv fld_typ with
+        match fld_typ with
         | Tstruct _ as struct_typ ->
             (* access through field: get the struct type from the field *)
             if Config.trace_rearrange then begin
@@ -1195,7 +1197,7 @@ let is_weak_captured_var pdesc pvar =
 
 (** Check for dereference errors: dereferencing 0, a freed value, or an undefined value *)
 let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
-  let expand_ptr_type = Tenv.expand_ptr_type tenv in
+  let lookup = Tenv.lookup tenv in
   let nullable_obj_str = ref None in
   let nullable_str_is_weak_captured_var = ref false in
   (* return true if deref_exp is only pointed to by fields/params with @Nullable annotations *)
@@ -1227,7 +1229,7 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
              is_nullable || Pvar.is_local pvar
          | Sil.Hpointsto (_, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
              let fld_is_nullable fld =
-               match Typ.get_field_type_and_annotation ~expand_ptr_type fld typ with
+               match Typ.get_field_type_and_annotation ~lookup fld typ with
                | Some (_, annot) -> Annotations.ia_is_nullable annot
                | _ -> false in
              let is_strexp_pt_by_nullable_fld (fld, strexp) =

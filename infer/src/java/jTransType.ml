@@ -70,7 +70,7 @@ let rec get_named_type vt =
         | JBasics.TArray vt ->
             let content_type = get_named_type vt in
             Typ.Tptr (Typ.Tarray (content_type, None), Typ.Pk_pointer)
-        | JBasics.TClass cn -> Typ.Tptr (Typ.Tvar (typename_of_classname cn), Typ.Pk_pointer)
+        | JBasics.TClass cn -> Typ.Tptr (Typ.Tstruct (typename_of_classname cn), Typ.Pk_pointer)
       end
 
 
@@ -86,9 +86,9 @@ let rec create_array_type typ dim =
     Typ.Tptr(Typ.Tarray (content_typ, None), Typ.Pk_pointer)
   else typ
 
-let extract_cn_no_obj tenv typ =
-  match Tenv.expand_ptr_type tenv typ with
-  | Typ.Tptr (Tstruct { name = TN_csu (Class _, _) as name }, Pk_pointer) ->
+let extract_cn_no_obj typ =
+  match typ with
+  | Typ.Tptr (Tstruct (TN_csu (Class _, _) as name), Pk_pointer) ->
       let class_name = Typename.name name in
       if class_name = JConfig.object_cl then None
       else
@@ -274,14 +274,8 @@ let add_model_fields program classpath_fields cn =
 
 let rec get_all_fields program tenv cn =
   let extract_class_fields classname =
-    match get_class_type_no_pointer program tenv classname with
-    | Typ.Tstruct { fields; statics } -> (statics, fields)
-    | Typ.Tvar name -> (
-        match Tenv.lookup tenv name with
-        | Some { fields; statics } -> (statics, fields)
-        | None -> assert false
-      )
-    | _ -> assert false in
+    let { Typ.fields; statics } = get_class_struct_typ program tenv classname in
+    (statics, fields) in
   let trans_fields classname =
     match JClasspath.lookup_node classname program with
     | Some (Javalib.JClass jclass) ->
@@ -298,50 +292,47 @@ let rec get_all_fields program tenv cn =
   trans_fields cn
 
 
-and create_sil_type program tenv cn =
-  match JClasspath.lookup_node cn program with
+and get_class_struct_typ program tenv cn =
+  let name = typename_of_classname cn in
+  match Tenv.lookup tenv name with
+  | Some struct_typ ->
+      struct_typ
   | None ->
-      Typ.Tstruct (Tenv.mk_struct tenv (typename_of_classname cn))
-  | Some node ->
-      let create_super_list interface_names =
-        IList.iter (fun cn -> ignore (get_class_type_no_pointer program tenv cn)) interface_names;
-        IList.map typename_of_classname interface_names in
-      let supers, fields, statics, annots =
-        match node with
-        | Javalib.JInterface jinterface ->
-            let statics, _ = get_all_fields program tenv cn in
-            let sil_interface_list = create_super_list jinterface.Javalib.i_interfaces in
-            let item_annotation = JAnnotation.translate_item jinterface.Javalib.i_annotations in
-            (sil_interface_list, [], statics, item_annotation)
-        | Javalib.JClass jclass ->
-            let statics, nonstatics =
-              let classpath_static, classpath_nonstatic = get_all_fields program tenv cn in
-              add_model_fields program (classpath_static, classpath_nonstatic) cn in
-            let item_annotation = JAnnotation.translate_item jclass.Javalib.c_annotations in
-            let interface_list = create_super_list jclass.Javalib.c_interfaces in
-            let super_classname_list =
-              match jclass.Javalib.c_super_class with
-              | None -> interface_list (* base case of the recursion *)
-              | Some super_cn ->
-                  let super_classname =
-                    match get_class_type_no_pointer program tenv super_cn with
-                    | Typ.Tvar name
-                    | Typ.Tstruct { name } -> name
-                    | _ -> assert false in
-                  super_classname :: interface_list in
-            (super_classname_list, nonstatics, statics, item_annotation) in
-      let methods = IList.map (fun j -> Procname.Java j) (get_class_procnames cn node) in
-      Typ.Tstruct
-        (Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots (typename_of_classname cn))
+      match JClasspath.lookup_node cn program with
+      | None ->
+          Tenv.mk_struct tenv name
+      | Some node ->
+          let create_super_list interface_names =
+            IList.iter (fun cn -> ignore (get_class_struct_typ program tenv cn)) interface_names;
+            IList.map typename_of_classname interface_names in
+          let supers, fields, statics, annots =
+            match node with
+            | Javalib.JInterface jinterface ->
+                let statics, _ = get_all_fields program tenv cn in
+                let sil_interface_list = create_super_list jinterface.Javalib.i_interfaces in
+                let item_annotation = JAnnotation.translate_item jinterface.Javalib.i_annotations in
+                (sil_interface_list, [], statics, item_annotation)
+            | Javalib.JClass jclass ->
+                let statics, nonstatics =
+                  let classpath_static, classpath_nonstatic = get_all_fields program tenv cn in
+                  add_model_fields program (classpath_static, classpath_nonstatic) cn in
+                let item_annotation = JAnnotation.translate_item jclass.Javalib.c_annotations in
+                let interface_list = create_super_list jclass.Javalib.c_interfaces in
+                let super_classname_list =
+                  match jclass.Javalib.c_super_class with
+                  | None -> interface_list (* base case of the recursion *)
+                  | Some super_cn ->
+                      let super_classname = (get_class_struct_typ program tenv super_cn).Typ.name in
+                      super_classname :: interface_list in
+                (super_classname_list, nonstatics, statics, item_annotation) in
+          let methods = IList.map (fun j -> Procname.Java j) (get_class_procnames cn node) in
+          Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots name
 
-and get_class_type_no_pointer program tenv cn =
-  match Tenv.lookup tenv (typename_of_classname cn) with
-  | None -> create_sil_type program tenv cn
-  | Some struct_typ -> Typ.Tstruct struct_typ
+let get_class_type_no_pointer program tenv cn =
+  Typ.Tstruct ((get_class_struct_typ program tenv cn).name)
 
 let get_class_type program tenv cn =
-  let t = get_class_type_no_pointer program tenv cn in
-  Typ.Tptr (t, Typ.Pk_pointer)
+  Typ.Tptr (get_class_type_no_pointer program tenv cn, Pk_pointer)
 
 (** return true if [field_name] is the autogenerated C.$assertionsDisabled field for class C *)
 let is_autogenerated_assert_field field_name =

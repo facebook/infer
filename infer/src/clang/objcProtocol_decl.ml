@@ -31,11 +31,11 @@ let protocol_decl type_ptr_to_sil_type tenv decl =
       let mang_name = Mangled.from_string name in
       let protocol_name = Typename.TN_csu (Csu.Protocol, mang_name) in
       let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
-      Ast_utils.update_sil_types_map decl_key (Typ.Tvar protocol_name);
+      Ast_utils.update_sil_types_map decl_key (Typ.Tstruct protocol_name);
       let methods = ObjcProperty_decl.get_methods curr_class decl_list in
       ignore( Tenv.mk_struct tenv ~methods protocol_name );
       add_protocol_super type_ptr_to_sil_type tenv obj_c_protocol_decl_info;
-      Typ.Tvar protocol_name
+      Typ.Tstruct protocol_name
   | _ -> assert false
 
 let is_protocol decl =

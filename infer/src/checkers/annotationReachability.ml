@@ -139,7 +139,7 @@ let check_attributes check tenv pname =
         let check_class_annots { Typ.annots; } =
           check annots in
         begin
-          match Tenv.proc_extract_declaring_class_typ tenv java_pname with
+          match Tenv.lookup_declaring_class tenv java_pname with
           | Some current_class ->
               check_class_annots current_class ||
               PatternMatch.strict_supertype_exists tenv check_class_annots current_class

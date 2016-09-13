@@ -172,7 +172,7 @@ let rec typecheck_expr
        | None -> tr_default)
   | Exp.Const (Const.Cint i) when IntLit.iszero i ->
       let (typ, _, locs) = tr_default in
-      if PatternMatch.type_is_class tenv typ
+      if PatternMatch.type_is_class typ
       then (typ, TypeAnnotation.const Annotations.Nullable true (TypeOrigin.Const loc), locs)
       else
         let t, ta, ll = tr_default in
@@ -583,15 +583,7 @@ let typecheck_instr
                      else Printf.sprintf "arg%d" i in
                    (Mangled.from_string arg, typ))
                 etl_ in
-            let ret_type =
-              match Tenv.proc_extract_return_typ tenv callee_pname_java with
-              | Some (Typ.Tstruct _ as typ) ->
-                  Typ.Tptr (typ, Pk_pointer)
-              | Some typ ->
-                  typ
-              | None ->
-                  let ret_typ_string = Procname.java_get_return_type callee_pname_java in
-                  Typ.Tptr (Tvar (Typename.Java.from_string ret_typ_string), Pk_pointer) in
+            let ret_type = Typ.java_proc_return_typ callee_pname_java in
             let proc_attributes =
               { (ProcAttributes.default callee_pname Config.Java) with
                 ProcAttributes.formals;

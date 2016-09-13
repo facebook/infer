@@ -119,7 +119,7 @@ struct
     let module DFTypeCheck = MakeDF(struct
         type t = Extension.extension TypeState.t
         let equal = TypeState.equal
-        let join = TypeState.join tenv Extension.ext
+        let join = TypeState.join Extension.ext
         let do_node tenv node typestate =
           State.set_node node;
           let typestates_succ, typestates_exn =
