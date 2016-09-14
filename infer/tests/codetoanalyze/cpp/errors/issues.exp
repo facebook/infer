@@ -116,6 +116,7 @@ numeric/min_max.cpp, max_X_inv_div0, 2, DIVIDE_BY_ZERO
 numeric/min_max.cpp, max_int_div0, 0, DIVIDE_BY_ZERO
 numeric/min_max.cpp, min_X_div0, 2, DIVIDE_BY_ZERO
 numeric/min_max.cpp, min_int_div0, 0, DIVIDE_BY_ZERO
+overwrite_attribute/main.cpp, testSetIntValue, 3, DIVIDE_BY_ZERO
 reference/reference_field.cpp, reference_field::ptr_F_div0, 5, DIVIDE_BY_ZERO
 reference/reference_field.cpp, reference_field::ptr_I_div0, 5, DIVIDE_BY_ZERO
 reference/reference_field.cpp, reference_field::ptr_getF_div0, 5, DIVIDE_BY_ZERO

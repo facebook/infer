@@ -25,6 +25,7 @@ FILES = \
   nestedoperators/*.cpp \
   npe/*.cpp \
   numeric/*.cpp \
+  overwrite_attribute/*.cpp \
   reference/*.cpp \
   resource_leaks/*.cpp \
   smart_ptr/*.cpp \

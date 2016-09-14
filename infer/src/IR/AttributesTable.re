@@ -53,7 +53,8 @@ let store_attributes (proc_attributes: ProcAttributes.t) => {
     | None => true
     | Some proc_attributes_on_disk =>
       let higher_rank_than_on_disk () =>
-        DB.source_file_compare proc_attributes.loc.file proc_attributes_on_disk.loc.file > 0;
+        proc_attributes.is_defined &&
+          DB.source_file_compare proc_attributes.loc.file proc_attributes_on_disk.loc.file > 0;
       let becomes_defined = proc_attributes.is_defined && not proc_attributes_on_disk.is_defined;
       /* Only overwrite the attribute file if the procedure becomes defined
          or its associated file has higher rank (alphabetically) than on disk. */
