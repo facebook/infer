@@ -53,7 +53,7 @@ public class PropertyTest {
         contains(
             MEMORY_LEAK,
             MAIN_FILE,
-            "main"
+            "property_main"
         )
     );
   }

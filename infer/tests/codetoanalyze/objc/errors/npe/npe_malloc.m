@@ -15,11 +15,11 @@ struct Person {
   int y;
 };
 
-@interface C : NSObject
+@interface NpeMallocC : NSObject
 
 @end
 
-@implementation C
+@implementation NpeMallocC
 
 - (struct Person*)test {
   struct Person* person = (struct Person*)malloc(sizeof(struct Person));

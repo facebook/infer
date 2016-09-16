@@ -9,11 +9,11 @@
 
 #import <Foundation/NSObject.h>
 
-@interface B : NSObject
+@interface BSuper : NSObject
 
 @end
 
-@implementation B
+@implementation BSuper
 
 - (instancetype)init {
   return nil;
@@ -21,11 +21,11 @@
 
 @end
 
-@interface A : B
+@interface ASuper : BSuper
 
 @end
 
-@implementation A {
+@implementation ASuper {
   int a;
 }
 
@@ -37,8 +37,8 @@
 
 @end
 
-int main(int argc, char* argv[]) {
+int super_example_main(int argc, char* argv[]) {
   @autoreleasepool {
-    __unused id a = [A new];
+    __unused id a = [ASuper new];
   }
 }

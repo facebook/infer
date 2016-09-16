@@ -9,27 +9,27 @@
 
 #import <Foundation/NSObject.h>
 
-@interface A : NSObject {
+@interface NilParamA : NSObject {
   int x;
 }
 @end
 
-@implementation A
+@implementation NilParamA
 
 - (void)test2 {
   self->x = 1;
 }
 
-- (void)test1:(A*)other {
+- (void)test1:(NilParamA*)other {
 
   [other test2];
 }
 
 @end
 
-int main() {
+int NilParamMain() {
 
-  A* a = [A alloc];
+  NilParamA* a = [NilParamA alloc];
   [a test1:nil];
   [a release];
   return 0;

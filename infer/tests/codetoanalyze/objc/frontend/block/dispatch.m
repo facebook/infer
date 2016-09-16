@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-@interface A : NSObject
+@interface DispatchA : NSObject
 
 @property(nonatomic) int x;
 
@@ -17,7 +17,11 @@
 
 @end
 
-@implementation A {
+@implementation DispatchA {
+}
+
+- init {
+  return self;
 }
 
 + (instancetype)sharedInstance {
@@ -61,15 +65,15 @@
 }
 
 + (int)dispatch_a_block_variable_from_macro_delivers_initialised_object {
-  A* a = [A dispatch_a_block_variable_from_macro];
+  DispatchA* a = [DispatchA dispatch_a_block_variable_from_macro];
   a->_x = 5;
   return 1 / (a->_x - 5);
 }
 
 @end
 
-int main() {
-  A* b = [A sharedInstance];
+int DispatchMain() {
+  DispatchA* b = [DispatchA sharedInstance];
   int* p = 0;
   if (b == 0)
     return *p;

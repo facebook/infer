@@ -28,7 +28,8 @@ import utils.InferRunner;
 public class MemoryLeakBucketingArcTest {
 
   public static final String memory_leak_file =
-     "infer/tests/codetoanalyze/objc/errors/memory_leaks_benchmark/RetainReleaseExampleBucketing.m";
+     "infer/tests/codetoanalyze/objc/errors/memory_leaks_benchmark/" +
+     "RetainReleaseExampleBucketingArc.m";
 
   private static ImmutableList<String> inferCmd;
 
@@ -57,7 +58,7 @@ public class MemoryLeakBucketingArcTest {
         doesNotContain(
             MEMORY_LEAK,
             memory_leak_file,
-            "test"));
+            "RetainReleaseArcTest"));
   }
 
 

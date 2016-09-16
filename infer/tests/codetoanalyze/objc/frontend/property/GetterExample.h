@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-@interface A
+@interface GetterExample : NSObject
 
 @property int name;
 

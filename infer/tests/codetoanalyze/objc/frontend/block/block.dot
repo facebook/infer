@@ -4,10 +4,10 @@ digraph iCFG {
 	
 
 	 25 -> 24 ;
-24 [label="24: Exit main \n  " color=yellow style=filled]
+24 [label="24: Exit BlockMain \n  " color=yellow style=filled]
 	
 
-23 [label="23: Start main\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 46]\n " color=yellow style=filled]
+23 [label="23: Start BlockMain\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 46]\n " color=yellow style=filled]
 	
 
 	 23 -> 25 ;

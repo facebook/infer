@@ -7,9 +7,10 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#include <stdlib.h>
 #import "EOCPerson.h"
 
-int main() {
+int CategoryProcdescMain() {
   EOCPerson* person = [[EOCPerson alloc] init];
   [person performDaysWork];
   int* x = malloc(sizeof(int));

@@ -9,20 +9,24 @@
 
 #import <Foundation/NSObject.h>
 
-@interface A : NSObject
+@interface RR2 : NSObject
 
 @end
 
-@implementation A
+@implementation RR2
+
+- init {
+  return self;
+}
 
 @end
 
-void __objc_release(A*); // infer builtin
-A* g;
+void __objc_release(RR2*); // infer builtin
+RR2* g;
 
 // no leak
-A* test() {
-  A* a = [[A alloc] init];
+RR2* retain_release2_test() {
+  RR2* a = [[RR2 alloc] init];
   [a retain];
   [a release];
 
@@ -30,37 +34,37 @@ A* test() {
 }
 
 // no leak
-void test2() {
+void retain_release2_test2() {
 
-  A* b = test();
+  RR2* b = retain_release2_test();
   g = b;
 }
 
 // leak
-void test3() { A* b = test(); }
+void test3() { RR2* b = retain_release2_test(); }
 
 // no leak
 void test4() {
 
-  A* b = test();
+  RR2* b = retain_release2_test();
   [b release];
 }
 
 // No leak
 void test5() {
-  A* a = [[A alloc] init];
+  RR2* a = [[RR2 alloc] init];
   [a release];
 }
 
 // leak
 void test6() {
-  A* a = [[A alloc] init];
+  RR2* a = [[RR2 alloc] init];
   [a retain];
   [a release];
 }
 
 // Creates specs
-void test7(A* a) {
+void test7(RR2* a) {
   if (a)
     __objc_release(a);
 }

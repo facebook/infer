@@ -10,13 +10,13 @@
 #import <Foundation/NSObject.h>
 #import <Foundation/NSString.h>
 
-@interface A : NSObject {
+@interface ArcA : NSObject {
   int x;
 }
-@property A* son;
+@property ArcA* son;
 @end
 
-@implementation A
+@implementation ArcA
 
 /* autorelease is added */
 - (NSString*)getS {

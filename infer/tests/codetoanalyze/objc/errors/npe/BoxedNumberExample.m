@@ -16,11 +16,11 @@ typedef NS_ENUM(NSUInteger, SpacingEnum) {
   SpacingTrailing,
 };
 
-@interface A : NSObject
+@interface BoxedA : NSObject
 
 @end
 
-@implementation A {
+@implementation BoxedA {
   NSMutableDictionary* _spacingMap;
 }
 

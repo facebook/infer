@@ -1,0 +1,1 @@
+../../../c/frontend/initialization/compound_literal.c

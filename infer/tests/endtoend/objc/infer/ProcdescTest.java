@@ -54,7 +54,7 @@ public class ProcdescTest {
         contains(
             MEMORY_LEAK,
             MAIN_FILE,
-            "main"
+            "ProcdescMain"
         )
     );
   }

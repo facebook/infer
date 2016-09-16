@@ -51,7 +51,7 @@ public class WeakVariableInBlockNPETest {
   public void whenInferRunsOnWeakCapturedVariablesNPEThenNPEsFound()
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferC(inferCmdNPD);
-    String[] procedures = {"__objc_anonymous_block_A_strongSelfNoCheck______2"};
+    String[] procedures = {"__objc_anonymous_block_WeakCapturedA_strongSelfNoCheck______2"};
     assertThat(
         "Results should not contain null dereference",
         inferResults,

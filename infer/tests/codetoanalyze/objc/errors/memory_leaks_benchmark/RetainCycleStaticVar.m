@@ -11,26 +11,30 @@
 
 typedef void (^MyHandler)(NSString* name);
 
-@interface C : NSObject
+@interface RetainCSV : NSObject
 
 @property(nonatomic, strong) MyHandler handler;
 
 @property(nonatomic, strong) NSString* name;
-@property(nonatomic, strong) C* bla1;
-@property(nonatomic, strong) C* bla2;
+@property(nonatomic, strong) RetainCSV* bla1;
+@property(nonatomic, strong) RetainCSV* bla2;
 @end
 
-@implementation C
+@implementation RetainCSV
+
+- init {
+  return self;
+}
 
 - (void)foo {
   static dispatch_once_t once;
-  static C* sharedInstance1;
+  static RetainCSV* sharedInstance1;
   dispatch_once(&once, ^{
-    sharedInstance1 = [[C alloc] init];
+    sharedInstance1 = [[RetainCSV alloc] init];
   });
-  static C* sharedInstance2;
+  static RetainCSV* sharedInstance2;
   dispatch_once(&once, ^{
-    sharedInstance2 = [[C alloc] init];
+    sharedInstance2 = [[RetainCSV alloc] init];
   });
 
   _bla1 = sharedInstance1;
@@ -42,8 +46,8 @@ typedef void (^MyHandler)(NSString* name);
 
 @end
 
-int main() {
-  C* c = [[C alloc] init];
+int RetainCSVycleStaticVar() {
+  RetainCSV* c = [[RetainCSV alloc] init];
   [c foo];
   return 0;
 }

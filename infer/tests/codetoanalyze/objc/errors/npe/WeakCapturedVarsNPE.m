@@ -9,11 +9,11 @@
 
 #include <Foundation/NSObject.h>
 
-@interface A : NSObject
+@interface WeakCapturedA : NSObject
 
 @end
 
-@implementation A {
+@implementation WeakCapturedA {
   int x;
 }
 

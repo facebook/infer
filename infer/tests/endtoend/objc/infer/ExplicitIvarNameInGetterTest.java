@@ -58,7 +58,7 @@ public class ExplicitIvarNameInGetterTest {
             NULL_DEREFERENCE,
             FILE,
             new String[]{
-                "test",
+                "testExplicit",
                 "testDefaultName"
             }
         )

@@ -9,13 +9,17 @@
 
 #import <Foundation/NSObject.h>
 
-@interface A : NSObject
+@interface RRB : NSObject
 
 @end
 
-@implementation A
+@implementation RRB
+
+- init {
+  return self;
+}
 
 @end
 
 // no leak in bucketing cf mode
-void test() { A* a = [[A alloc] init]; }
+void RetainReleaseTest() { RRB* a = [[RRB alloc] init]; }

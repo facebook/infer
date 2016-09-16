@@ -55,7 +55,7 @@ public class CategoryProcdescTest {
         contains(
             MEMORY_LEAK,
             MAIN_FILE,
-            "main"
+            "CategoryProcdescMain"
         )
     );
   }

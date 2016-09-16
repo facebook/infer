@@ -12,7 +12,7 @@
 #import "GetterExample.h"
 
 int should_have_div0() {
-  A* a = [[A alloc] init];
+  GetterExample* a = [[GetterExample alloc] init];
   a.name = 5;
   return 1 / (a.name - 5);
 }

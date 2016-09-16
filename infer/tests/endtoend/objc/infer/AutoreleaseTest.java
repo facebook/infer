@@ -57,7 +57,7 @@ public class AutoreleaseTest {
         doesNotContain(
             MEMORY_LEAK,
             memory_leak_file,
-            "main"));
+            "autorelease_main"));
   }
   /*
   @Test
@@ -71,7 +71,7 @@ public class AutoreleaseTest {
             inferError(
                 MEMORY_LEAK,
                 memory_leak_file,
-                "test1")));
+                "autorelease_test1")));
   }  */
 
   @Test
@@ -84,7 +84,7 @@ public class AutoreleaseTest {
         doesNotContain(
             MEMORY_LEAK,
             memory_leak_file,
-            "test2"));
+            "autorelease_test2"));
   }
 
   @Test
@@ -97,7 +97,7 @@ public class AutoreleaseTest {
         doesNotContain(
             MEMORY_LEAK,
             memory_leak_file,
-            "test3"));
+            "autorelease_test3"));
   }
 
 }

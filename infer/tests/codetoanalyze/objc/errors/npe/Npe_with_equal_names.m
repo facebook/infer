@@ -9,36 +9,36 @@
 
 #import <Foundation/NSObject.h>
 
-@interface A : NSObject {
+@interface EqualNamesA : NSObject {
  @public
   int x;
 }
 
-+ (A*)meth;
++ (EqualNamesA*)meth;
 
-@property(nonatomic, readonly) A* meth;
+@property(nonatomic, readonly) EqualNamesA* meth;
 
 @end
 
-@implementation A
+@implementation EqualNamesA
 
-+ (A*)meth {
-  return [A new];
++ (EqualNamesA*)meth {
+  return [EqualNamesA new];
 }
 
-- (A*)meth {
+- (EqualNamesA*)meth {
   return nil;
 }
 
 @end
 
-int test() {
-  A* para = [A new];
-  A* a = [para meth];
+int EqualNamesTest() {
+  EqualNamesA* para = [EqualNamesA new];
+  EqualNamesA* a = [para meth];
   return a->x;
 }
 
-int test2(A* para) {
-  A* a = [A meth];
+int EqualNamesTest2(EqualNamesA* para) {
+  EqualNamesA* a = [EqualNamesA meth];
   return a->x;
 }

@@ -57,7 +57,7 @@ public class MemoryLeakBucketingTest {
         doesNotContain(
             MEMORY_LEAK,
             memory_leak_file,
-            "test"));
+            "RetainReleaseTest"));
   }
 
 

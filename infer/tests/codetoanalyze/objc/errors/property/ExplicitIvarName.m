@@ -9,23 +9,27 @@
 
 #import <Foundation/NSObject.h>
 
-@interface A : NSObject
+@interface ExplicitIvarNameA : NSObject
 
 @property(nonatomic) int x;
 
 @end
 
-@interface B : NSObject
+@interface ExplicitIvarNameB : NSObject
 
 @property(nonatomic) int y;
 
 @end
 
-@implementation A
+@implementation ExplicitIvarNameA
+
+- init {
+  return self;
+}
 
 @synthesize x;
 
-- (int)test {
+- (int)testExplicit {
   int* p = 0;
   self->x = 5;
   if (self.x == 5) { // If NPE is found, means that getter is using the correct
@@ -37,7 +41,7 @@
 
 - (int)testDefaultName {
   int* p = 0;
-  B* b = [[B alloc] init];
+  ExplicitIvarNameB* b = [[ExplicitIvarNameB alloc] init];
   b.y = 5;
   if (b.y == 5) { // If NPE is found, means that getter is using default name _y
     // that is

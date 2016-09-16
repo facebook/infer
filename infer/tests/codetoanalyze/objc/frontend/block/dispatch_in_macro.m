@@ -19,4 +19,6 @@
     static_storage;                                \
   })
 
-id test() { return INITIALIZE_AND_RETURN_STATIC([NSObject new]); }
+id DispatchInMacroTest() {
+  return INITIALIZE_AND_RETURN_STATIC([NSObject new]);
+}

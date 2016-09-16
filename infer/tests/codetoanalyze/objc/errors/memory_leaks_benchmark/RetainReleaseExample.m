@@ -9,16 +9,20 @@
 
 #import <Foundation/NSObject.h>
 
-@interface A : NSObject
+@interface RRA : NSObject
 
 @end
 
-@implementation A
+@implementation RRA
+
+- init {
+  return self;
+}
 
 @end
 
-void test() {
-  A* a = [[A alloc] init];
+void retain_release_test() {
+  RRA* a = [[RRA alloc] init];
   [a retain];
   [a release];
 }

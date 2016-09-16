@@ -10,6 +10,8 @@ include $(ROOT_DIR)/Makefile.config
 
 ANALYZER = infer
 
+CLEAN_EXTRA =
+
 default: compile
 
 print: analyze
@@ -22,4 +24,4 @@ test: analyze print
 	rm issues.exp.test
 
 clean:
-	rm -rf *.o infer-out duplicates.txt
+	rm -rf *.o infer-out $(CLEAN_EXTRA) duplicates.txt

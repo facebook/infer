@@ -9,22 +9,26 @@
 
 #import <Foundation/Foundation.h>
 
-@interface A : NSObject
+@interface PropertyA : NSObject
 
-@property(nonatomic, copy) A* child;
+@property(nonatomic, copy) PropertyA* child;
 
-@property(nonatomic, retain) A* name;
+@property(nonatomic, retain) PropertyA* name;
 
-@property(nonatomic, unsafe_unretained) A* last_name;
+@property(nonatomic, unsafe_unretained) PropertyA* last_name;
 
-- (A*)copy;
+- (PropertyA*)copy;
 
 @end
 
-@implementation A
+@implementation PropertyA
 
-- (A*)copy {
-  A* other = [[A alloc] init];
+- init {
+  return self;
+}
+
+- (PropertyA*)copy {
+  PropertyA* other = [[PropertyA alloc] init];
   if (other) {
     other->_name = self->_name;
     other->_last_name = self->_last_name;
@@ -35,8 +39,8 @@
 
 @end
 
-int test(A* a2) {
-  A* a = [[A alloc] init];
+int test(PropertyA* a2) {
+  PropertyA* a = [[PropertyA alloc] init];
   a.last_name = a2;
   [a release];
   return 0;

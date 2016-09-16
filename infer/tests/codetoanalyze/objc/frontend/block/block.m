@@ -43,4 +43,4 @@ int main1(int y) {
   return y;
 }
 
-int main() { return main1(4); }
+int BlockMain() { return main1(4); }

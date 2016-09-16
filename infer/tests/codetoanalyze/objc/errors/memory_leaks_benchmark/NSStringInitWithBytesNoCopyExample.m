@@ -10,11 +10,11 @@
 #import <Foundation/Foundation.h>
 #import <stdlib.h>
 
-@interface A : NSObject
+@interface StringInitA : NSObject
 
 @end
 
-@implementation A
+@implementation StringInitA
 
 NSString* createURLQueryStringBodyEscaping(NSDictionary* parameters,
                                            NSString* s) {

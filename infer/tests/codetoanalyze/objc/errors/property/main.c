@@ -10,7 +10,7 @@
 #include "IvarExample.h"
 #include <stdlib.h>
 
-int main() {
+int property_main() {
   IvarExample* i = [IvarExample alloc];
   int a = i.aProperty;
   int* x = malloc(sizeof(int));

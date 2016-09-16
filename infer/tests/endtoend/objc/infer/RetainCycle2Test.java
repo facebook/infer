@@ -61,7 +61,7 @@ public class RetainCycle2Test {
         containsExactly(
             RETAIN_CYCLE,
             retain_cycle_file,
-            new String[]{"strongcycle"}));
+            new String[]{"strongcycle2"}));
   }
 
 

@@ -9,39 +9,39 @@
 
 #import <Foundation/NSObject.h>
 
-@interface A : NSObject
+@interface ArcMethodsA : NSObject
 
-+ (A*)newA;
++ (ArcMethodsA*)newA;
 
-+ (A*)someA;
-
-@end
-
-@implementation A
-
-+ (A*)newA {
-  A* a = [[A alloc] init];
-  return a;
-}
-
-+ (A*)someA {
-  A* a = [[A alloc] init];
-
-  return a;
-}
++ (ArcMethodsA*)someA;
 
 @end
 
-int main() {
+@implementation ArcMethodsA
+
++ (ArcMethodsA*)newA {
+  ArcMethodsA* a = [[ArcMethodsA alloc] init];
+  return a;
+}
+
++ (ArcMethodsA*)someA {
+  ArcMethodsA* a = [[ArcMethodsA alloc] init];
+
+  return a;
+}
+
+@end
+
+int main_arc_methods() {
 
   //   A * __weak aWeakRef =0;
   //    A * __strong a1 =0;
   //    A * __unsafe_unretained anUnsafeUnretRef =0;
   //    A * __autoreleasing anAutoRelRef =0;
 
-  A* a1 = [A newA];
-  A* aa = a1;
-  A* a2 = [A someA];
-  A* ab = a2;
+  ArcMethodsA* a1 = [ArcMethodsA newA];
+  ArcMethodsA* aa = a1;
+  ArcMethodsA* a2 = [ArcMethodsA someA];
+  ArcMethodsA* ab = a2;
   return 0;
 }

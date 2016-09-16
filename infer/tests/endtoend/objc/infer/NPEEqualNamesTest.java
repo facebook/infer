@@ -52,7 +52,7 @@ public class NPEEqualNamesTest {
   public void nullDereferenceTest() throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferObjC(inferCmdNPD);
     String[] procedures = {
-        "test",
+        "EqualNamesTest",
     };
     assertThat(
         "Results should contain null pointer dereference error",

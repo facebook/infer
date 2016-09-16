@@ -9,24 +9,24 @@
 
 #import <Foundation/NSObject.h>
 
-@interface A : NSObject {
+@interface SkipMethodNilA : NSObject {
   int x;
 }
 
-- (A*)get_a;
+- (SkipMethodNilA*)get_a;
 
 - (NSString*)skip_method;
 
 @end
 
-@implementation A
+@implementation SkipMethodNilA
 
-- (A*)get_a {
-  return [A new];
+- (SkipMethodNilA*)get_a {
+  return [SkipMethodNilA new];
 }
 
-- (int)testOk:(A*)person {
-  A* personID = [person get_a];
+- (int)testOk:(SkipMethodNilA*)person {
+  SkipMethodNilA* personID = [person get_a];
   NSString* lastRecord = [personID skip_method];
   if (lastRecord) {
     personID->x = 6;
@@ -36,8 +36,8 @@
   }
 }
 
-- (int)testBug:(A*)person {
-  A* personID = [person get_a];
+- (int)testBug:(SkipMethodNilA*)person {
+  SkipMethodNilA* personID = [person get_a];
   NSString* lastRecord = [personID skip_method];
   if (lastRecord) {
     return 0;

@@ -49,7 +49,7 @@ public class SubtypingTest {
     InferResults inferResults = InferRunner.runInferC(inferCmd);
     String[] procedures = {
         "Employee_initWithName:andAge:andEducation:",
-        "test"
+        "subtyping_test"
     };
     assertThat(
         "Results should contain the expected divide by zero",

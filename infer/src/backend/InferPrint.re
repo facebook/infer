@@ -486,7 +486,13 @@ let module IssuesTests = {
         };
       let should_report =
         ekind == Exceptions.Kerror ||
-          IList.exists (Localise.equal error_name) [Localise.return_value_ignored];
+          IList.exists
+            (Localise.equal error_name)
+            [
+              Localise.return_value_ignored,
+              Localise.parameter_not_null_checked,
+              Localise.field_not_null_checked
+            ];
       if (in_footprint && should_report && error_filter source_file error_desc error_name) {
         F.fprintf
           fmt

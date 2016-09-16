@@ -10,13 +10,13 @@
 #include <Foundation/NSObject.h>
 #include <stdlib.h>
 
-@interface A : NSObject
+@interface Araii : NSObject
 
 @property char* buffer;
 
 @end
 
-@implementation A
+@implementation Araii
 
 - (instancetype)initWithBuffer {
   _buffer = malloc(sizeof(char));
@@ -29,7 +29,7 @@
 
 @end
 
-int main() {
-  [[A alloc] initWithBuffer];
+int memory_leak_raii_main() {
+  [[Araii alloc] initWithBuffer];
   return 0;
 }

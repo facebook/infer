@@ -9,30 +9,30 @@
 
 #import <Foundation/Foundation.h>
 
-@interface A : NSObject
+@interface NSAssert : NSObject
 @property int x;
 @end
 
-@implementation A
+@implementation NSAssert
 
-- (int)addTarget:(A*)target {
+- (int)addTarget:(NSAssert*)target {
   NSAssert(target != nil, @"target must not be nil");
   return target.x;
 }
 
-- (int)initWithRequest:(A*)a {
+- (int)initWithRequest:(NSAssert*)a {
   NSAssert1(a != nil, @"target must not be nil %s", "a");
   return a.x;
 }
 
 @end
 
-int test1(A* target) {
+int test1(NSAssert* target) {
   NSCAssert(target != nil, @"target must not be nil");
   return target.x;
 }
 
-int test2(A* target) {
+int test2(NSAssert* target) {
   NSCParameterAssert(target);
   return target.x;
 }

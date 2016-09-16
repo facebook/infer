@@ -9,29 +9,29 @@
 
 #import <Foundation/Foundation.h>
 
-@interface B : NSObject
+@interface BlockEnumB : NSObject
 + foo:(id)obj;
 @end
 
-@implementation B
+@implementation BlockEnumB
 
-+ (B*)foo:(id)obj {
++ (BlockEnumB*)foo:(id)obj {
   return obj;
 }
 
 @end
 
-@interface A : NSObject
+@interface BlockEnumA : NSObject
 - (NSMutableArray*)allResultsList:(NSArray*)allResults;
 @end
 
-@implementation A
+@implementation BlockEnumA
 
 // From a diff
 - (NSMutableArray*)allResultsList:(NSArray*)allResults {
   NSMutableArray* resultsList = [[NSMutableArray alloc] init];
   [allResults enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL* stop) {
-    id* result = [B foo:obj];
+    id* result = [BlockEnumB foo:obj];
     if (result != nil) {
       [resultsList addObject:result];
     }
@@ -45,7 +45,7 @@
   NSMutableArray* resultsList = [[NSMutableArray alloc] init];
   void (^enumerateObjectsUsingBlock)(id, NSUInteger, BOOL*) =
       ^(id obj, NSUInteger idx, BOOL* stop) {
-        id* result = [B foo:obj];
+        id* result = [BlockEnumB foo:obj];
         if (result != nil) {
           [resultsList addObject:result];
         }

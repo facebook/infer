@@ -29,7 +29,7 @@ import utils.InferRunner;
 public class ParameterNotNullableTest {
 
   public static final String FILE =
-      "infer/tests/codetoanalyze/objc/warnings/ParameterNotNullableExample.m";
+      "infer/tests/codetoanalyze/objc/errors/warnings/ParameterNotNullableExample.m";
 
   private static ImmutableList<String> inferCmdFraction;
 

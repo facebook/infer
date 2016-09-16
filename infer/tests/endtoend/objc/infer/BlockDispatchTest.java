@@ -48,7 +48,7 @@ public class BlockDispatchTest {
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferC(inferCmd);
     String[] procedures = {
-        "A_dispatch_a_block_variable_from_macro_delivers_initialised_object"
+        "DispatchA_dispatch_a_block_variable_from_macro_delivers_initialised_object"
     };
     assertThat(
         "Results should contain the expected " + DIVIDE_BY_ZERO,

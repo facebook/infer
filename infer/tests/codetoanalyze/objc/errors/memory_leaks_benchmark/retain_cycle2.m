@@ -23,6 +23,10 @@
   Child* child;
 }
 
+- init {
+  return self;
+}
+
 - (void)setChild:(Child*)c {
 
   self->child = c;
@@ -38,6 +42,10 @@
 
 @implementation ParentW {
   ChildW* child;
+}
+
+- init {
+  return self;
 }
 
 - (void)setChild:(ChildW*)c {
@@ -57,6 +65,10 @@
   ChildUU* child;
 }
 
+- init {
+  return self;
+}
+
 - (void)setChild:(ChildUU*)c {
 
   self->child = c;
@@ -72,6 +84,10 @@
 
 @implementation Child {
   Parent* parent;
+}
+
+- init {
+  return self;
 }
 
 - (void)setParent:(Parent*)p {
@@ -90,6 +106,10 @@
   ParentW __weak* parent;
 }
 
+- init {
+  return self;
+}
+
 - (void)setParent:(ParentW*)p {
   self->parent = p;
 }
@@ -106,27 +126,31 @@
   ParentUU __unsafe_unretained* parent;
 }
 
+- init {
+  return self;
+}
+
 - (void)setParent:(ParentUU*)p {
   self->parent = p;
 }
 
 @end
 
-void strongcycle() {
+void strongcycle2() {
   Parent* parent = [[Parent alloc] init];
   Child* child = [[Child alloc] init];
   [parent setChild:child];
   [child setParent:parent];
 }
 
-void weakcycle() {
+void weakcycle2() {
   ParentW* parent = [[ParentW alloc] init];
   ChildW* child = [[ChildW alloc] init];
   [parent setChild:child];
   [child setParent:parent];
 }
 
-void unsafeunretainedcycle() {
+void unsafeunretainedcycle2() {
   ParentUU* parent = [[ParentUU alloc] init];
   ChildUU* child = [[ChildUU alloc] init];
   [parent setChild:child];

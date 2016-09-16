@@ -9,7 +9,7 @@
 
 #include "Bicycle.h"
 
-int main() {
+int ProtocolProcdescMain() {
 
   Bicycle* bike = [Bicycle alloc];
 
