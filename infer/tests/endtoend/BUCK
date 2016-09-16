@@ -15,7 +15,6 @@ tests_dependencies = [
 java_test(
   name='objc_endtoend_tests',
   deps=[
-      '//infer/tests/endtoend/objc/infer:infer',
       '//infer/tests/endtoend/objc/linters:linters',
   ],
   visibility=[

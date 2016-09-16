@@ -20,6 +20,7 @@ DIRECT_TESTS += java_checkers_test java_eradicate_test java_infer_test java_trac
 endif
 ifneq ($(XCODE_SELECT),no)
 TARGETS_TO_TEST += objc objcpp
+DIRECT_TESTS += objc_infer_test
 endif
 TARGETS_TO_TEST := $(shell echo $(TARGETS_TO_TEST))
 
@@ -118,6 +119,9 @@ java_tracing_test:
 
 java_quandary_test:
 	make -C ./infer/tests/codetoanalyze/java/quandary test
+
+objc_infer_test:
+	make -C ./infer/tests/codetoanalyze/objc/errors test
 
 buck_test: infer
 	make $(DIRECT_TESTS)
