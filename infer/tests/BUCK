@@ -1,18 +1,4 @@
 java_test(
-    name='c_tests',
-    deps=[
-        '//infer/tests/frontend:c_frontend_tests',
-    ],
-)
-
-java_test(
-    name='cpp_tests',
-    deps=[
-        '//infer/tests/frontend:cpp_frontend_tests',
-    ],
-)
-
-java_test(
     name='objc_tests',
     deps=[
         '//infer/tests/endtoend:objc_endtoend_tests',
@@ -31,9 +17,7 @@ java_test(
 java_test(
     name='clang_tests',
     deps=[
-        '//infer/tests:c_tests',
         '//infer/tests:objc_tests',
-        '//infer/tests:cpp_tests',
         '//infer/tests:objcpp_tests',
     ],
 )

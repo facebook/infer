@@ -1,5 +1,0 @@
-
-- It seems that we are never calling print_icfg_dotty with the second
-argument: "extra edges"
-
-- What does the location corresponds to for a procdesc created for an external method invocation ?

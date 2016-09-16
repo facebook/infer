@@ -35,6 +35,8 @@ let exes = [
 
 let all_exes = IList.map snd exes
 
+let frontend_exes = [Clang; Java; Llvm]
+
 let current_exe =
   if !Sys.interactive then Interactive
   else

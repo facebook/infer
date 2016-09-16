@@ -71,7 +71,7 @@ let do_source_file source_file ast =
   let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
   let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
   Cg.store_to_file cg_file call_graph;
-  Cfg.store_cfg_to_file cfg_file true cfg;
+  Cfg.store_cfg_to_file cfg_file cfg;
   (*Logging.out "Tenv %a@." Sil.pp_tenv tenv;*)
   (* Printing.print_tenv tenv; *)
   (*Printing.print_procedures cfg; *)
@@ -79,6 +79,8 @@ let do_source_file source_file ast =
   Tenv.store_to_file tenv_file tenv;
   if Config.stats_mode then Cfg.check_cfg_connectedness cfg;
   if Config.stats_mode
-  || Config.debug_mode || Config.testing_mode then
-    (Dotty.print_icfg_dotty cfg [];
+  || Config.debug_mode
+  || Config.testing_mode
+  || Config.frontend_tests then
+    (Dotty.print_icfg_dotty cfg;
      Cg.save_call_graph_dotty None Specs.get_specs call_graph)

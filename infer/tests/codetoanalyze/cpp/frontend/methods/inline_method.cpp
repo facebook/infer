@@ -8,6 +8,7 @@
  */
 
 class A {
+ public:
   struct AIn {
     int fun() { return 1; }
   };

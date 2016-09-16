@@ -8,6 +8,7 @@
  */
 
 class A {
+ public:
   int fun(int a, int b);
   int fun(int a, int b, int c);
 };

@@ -5,8 +5,6 @@
 
   integration_tests = //infer/tests:integration_tests
   objc = //infer/tests:objc_tests
-  c = //infer/tests:c_tests
-  cpp = //infer/tests:cpp_tests
   objcpp = //infer/tests:objcpp_tests
   clang = //infer/tests:clang_tests
   java = //infer/tests/endtoend:java_endtoend_tests

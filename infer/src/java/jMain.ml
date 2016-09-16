@@ -49,10 +49,10 @@ let store_icfg tenv cg cfg =
     let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
     if Config.create_harness then Harness.create_harness cfg cg tenv;
     Cg.store_to_file cg_file cg;
-    Cfg.store_cfg_to_file cfg_file true cfg;
-    if Config.debug_mode then
+    Cfg.store_cfg_to_file cfg_file cfg;
+    if Config.debug_mode || Config.frontend_tests then
       begin
-        Dotty.print_icfg_dotty cfg [];
+        Dotty.print_icfg_dotty cfg;
         Cg.save_call_graph_dotty None Specs.get_specs cg
       end
   end

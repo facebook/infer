@@ -193,6 +193,7 @@ val failures_allowed : bool
 val filtering : bool
 val flavors : bool
 val frontend_debug : bool
+val frontend_tests : bool
 val frontend_stats : bool
 val headers : bool
 val infer_cache : string option

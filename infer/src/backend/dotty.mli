@@ -33,11 +33,8 @@ val pp_proplist_parsed2dotty_file : string -> Prop.normal Prop.t list -> unit
 
 (** {2 Contol-Flow Graph} *)
 
-(** Print the cfg with extra edges *)
-val print_icfg_dotty : Cfg.cfg -> ((Cfg.Node.t * Cfg.Node.t) list) -> unit
-
-(** [store_icfg_to_file f cfg] saves the dotty representation of the control flow graph [cfg] into the file [f] *)
-val store_icfg_to_file: string -> Cfg.cfg -> unit
+(** Print the cfg *)
+val print_icfg_dotty : Cfg.cfg -> unit
 
 (** {2 Specs} *)
 val reset_dotty_spec_counter : unit -> unit

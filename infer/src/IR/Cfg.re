@@ -1286,7 +1286,7 @@ let inline_java_synthetic_methods cfg => {
 
 
 /** Save a cfg into a file */
-let store_cfg_to_file (filename: DB.filename) (save_sources: bool) (cfg: cfg) => {
+let store_cfg_to_file save_sources::save_sources=true (filename: DB.filename) (cfg: cfg) => {
   inline_java_synthetic_methods cfg;
   if save_sources {
     save_source_files cfg

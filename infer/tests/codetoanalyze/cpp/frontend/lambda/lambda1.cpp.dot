@@ -1,0 +1,128 @@
+/* @generated */
+digraph iCFG {
+34 [label="34:  DeclStmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$1:class fooOK::lambda_lambda_lambda1.cpp:26:12 =(_fun_fooOK::lambda_lambda_lambda1.cpp:26:12_operator()) [line 26]\n  _fun_fooOK::lambda_lambda_lambda1.cpp:26:12_(&y:class fooOK::lambda_lambda_lambda1.cpp:26:12 *,&0$?%__sil_tmpSIL_materialize_temp__n$1:class fooOK::lambda_lambda_lambda1.cpp:26:12 &) [line 26]\n " shape="box"]
+	
+
+	 34 -> 31 ;
+33 [label="33: Exit fooOK::lambda_lambda_lambda1.cpp:26:12_ \n  " color=yellow style=filled]
+	
+
+32 [label="32: Start fooOK::lambda_lambda_lambda1.cpp:26:12_\nFormals:  this:class fooOK::lambda_lambda_lambda1.cpp:26:12 * __param_0:class fooOK::lambda_lambda_lambda1.cpp:26:12 &\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
+	
+
+	 32 -> 33 ;
+31 [label="31:  Return Stmt \n   n$0=_fun_fooOK::lambda_lambda_lambda1.cpp:26:12_operator()(&y:class fooOK::lambda_lambda_lambda1.cpp:26:12 &,3:int ) [line 27]\n  *&return:int =(5 / (4 - n$0)) [line 27]\n " shape="box"]
+	
+
+	 31 -> 27 ;
+30 [label="30:  Return Stmt \n   n$0=*&i:int  [line 26]\n  *&i:int =(n$0 + 1) [line 26]\n  *&return:int =n$0 [line 26]\n " shape="box"]
+	
+
+	 30 -> 29 ;
+29 [label="29: Exit fooOK::lambda_lambda_lambda1.cpp:26:12_operator() \n  " color=yellow style=filled]
+	
+
+28 [label="28: Start fooOK::lambda_lambda_lambda1.cpp:26:12_operator()\nFormals:  this:class fooOK::lambda_lambda_lambda1.cpp:26:12 * i:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
+	
+
+	 28 -> 30 ;
+27 [label="27: Exit fooOK \n  " color=yellow style=filled]
+	
+
+26 [label="26: Start fooOK\nFormals: \nLocals:  y:class fooOK::lambda_lambda_lambda1.cpp:26:12  0$?%__sil_tmpSIL_materialize_temp__n$1:class fooOK::lambda_lambda_lambda1.cpp:26:12  \n   DECLARE_LOCALS(&return,&y,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 24]\n " color=yellow style=filled]
+	
+
+	 26 -> 34 ;
+25 [label="25:  DeclStmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$2:class foo::lambda_lambda_lambda1.cpp:19:17 =(_fun_foo::lambda_lambda_lambda1.cpp:19:17_operator()) [line 19]\n  _fun_foo::lambda_lambda_lambda1.cpp:19:17_(&unused:class foo::lambda_lambda_lambda1.cpp:19:17 *,&0$?%__sil_tmpSIL_materialize_temp__n$2:class foo::lambda_lambda_lambda1.cpp:19:17 &) [line 19]\n " shape="box"]
+	
+
+	 25 -> 19 ;
+24 [label="24:  Return Stmt \n   *&return:int =(1 / 0) [line 19]\n " shape="box"]
+	
+
+	 24 -> 23 ;
+23 [label="23: Exit foo::lambda_lambda_lambda1.cpp:19:17_operator() \n  " color=yellow style=filled]
+	
+
+22 [label="22: Start foo::lambda_lambda_lambda1.cpp:19:17_operator()\nFormals:  this:class foo::lambda_lambda_lambda1.cpp:19:17 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
+	
+
+	 22 -> 24 ;
+21 [label="21: Exit foo::lambda_lambda_lambda1.cpp:19:17_ \n  " color=yellow style=filled]
+	
+
+20 [label="20: Start foo::lambda_lambda_lambda1.cpp:19:17_\nFormals:  this:class foo::lambda_lambda_lambda1.cpp:19:17 * __param_0:class foo::lambda_lambda_lambda1.cpp:19:17 &\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
+	
+
+	 20 -> 21 ;
+19 [label="19:  DeclStmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$1:class foo::lambda_lambda_lambda1.cpp:20:12 =(_fun_foo::lambda_lambda_lambda1.cpp:20:12_operator()) [line 20]\n  _fun_foo::lambda_lambda_lambda1.cpp:20:12_(&y:class foo::lambda_lambda_lambda1.cpp:20:12 *,&0$?%__sil_tmpSIL_materialize_temp__n$1:class foo::lambda_lambda_lambda1.cpp:20:12 &) [line 20]\n " shape="box"]
+	
+
+	 19 -> 16 ;
+18 [label="18: Exit foo::lambda_lambda_lambda1.cpp:20:12_ \n  " color=yellow style=filled]
+	
+
+17 [label="17: Start foo::lambda_lambda_lambda1.cpp:20:12_\nFormals:  this:class foo::lambda_lambda_lambda1.cpp:20:12 * __param_0:class foo::lambda_lambda_lambda1.cpp:20:12 &\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+	
+
+	 17 -> 18 ;
+16 [label="16:  Return Stmt \n   n$0=_fun_foo::lambda_lambda_lambda1.cpp:20:12_operator()(&y:class foo::lambda_lambda_lambda1.cpp:20:12 &,3:int ) [line 21]\n  *&return:int =(5 / (4 - n$0)) [line 21]\n " shape="box"]
+	
+
+	 16 -> 12 ;
+15 [label="15:  Return Stmt \n   n$0=*&i:int  [line 20]\n  *&i:int =(n$0 + 1) [line 20]\n  n$1=*&i:int  [line 20]\n  *&return:int =n$1 [line 20]\n " shape="box"]
+	
+
+	 15 -> 14 ;
+14 [label="14: Exit foo::lambda_lambda_lambda1.cpp:20:12_operator() \n  " color=yellow style=filled]
+	
+
+13 [label="13: Start foo::lambda_lambda_lambda1.cpp:20:12_operator()\nFormals:  this:class foo::lambda_lambda_lambda1.cpp:20:12 * i:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+	
+
+	 13 -> 15 ;
+12 [label="12: Exit foo \n  " color=yellow style=filled]
+	
+
+11 [label="11: Start foo\nFormals: \nLocals:  y:class foo::lambda_lambda_lambda1.cpp:20:12  0$?%__sil_tmpSIL_materialize_temp__n$1:class foo::lambda_lambda_lambda1.cpp:20:12  unused:class foo::lambda_lambda_lambda1.cpp:19:17  0$?%__sil_tmpSIL_materialize_temp__n$2:class foo::lambda_lambda_lambda1.cpp:19:17  \n   DECLARE_LOCALS(&return,&y,&0$?%__sil_tmpSIL_materialize_temp__n$1,&unused,&0$?%__sil_tmpSIL_materialize_temp__n$2); [line 18]\n " color=yellow style=filled]
+	
+
+	 11 -> 25 ;
+10 [label="10:  DeclStmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$1:class bar::lambda_lambda_lambda1.cpp:11:15 =(_fun_bar::lambda_lambda_lambda1.cpp:11:15_operator()) [line 11]\n  _fun_bar::lambda_lambda_lambda1.cpp:11:15_(&func:class bar::lambda_lambda_lambda1.cpp:11:15 *,&0$?%__sil_tmpSIL_materialize_temp__n$1:class bar::lambda_lambda_lambda1.cpp:11:15 &) [line 11]\n " shape="box"]
+	
+
+	 10 -> 7 ;
+9 [label="9: Exit bar::lambda_lambda_lambda1.cpp:11:15_ \n  " color=yellow style=filled]
+	
+
+8 [label="8: Start bar::lambda_lambda_lambda1.cpp:11:15_\nFormals:  this:class bar::lambda_lambda_lambda1.cpp:11:15 * __param_0:class bar::lambda_lambda_lambda1.cpp:11:15 &\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
+	
+
+	 8 -> 9 ;
+7 [label="7:  Return Stmt \n   n$0=_fun_bar::lambda_lambda_lambda1.cpp:11:15_operator()(&func:class bar::lambda_lambda_lambda1.cpp:11:15 &) [line 15]\n  *&return:int =(7 / n$0) [line 15]\n " shape="box"]
+	
+
+	 7 -> 2 ;
+6 [label="6:  DeclStmt \n   *&i:int =0 [line 12]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5:  Return Stmt \n   n$0=*&i:int  [line 13]\n  *&return:int =n$0 [line 13]\n " shape="box"]
+	
+
+	 5 -> 4 ;
+4 [label="4: Exit bar::lambda_lambda_lambda1.cpp:11:15_operator() \n  " color=yellow style=filled]
+	
+
+3 [label="3: Start bar::lambda_lambda_lambda1.cpp:11:15_operator()\nFormals:  this:class bar::lambda_lambda_lambda1.cpp:11:15 *\nLocals:  i:int  \n   DECLARE_LOCALS(&return,&i); [line 11]\n " color=yellow style=filled]
+	
+
+	 3 -> 6 ;
+2 [label="2: Exit bar \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start bar\nFormals: \nLocals:  func:class bar::lambda_lambda_lambda1.cpp:11:15  0$?%__sil_tmpSIL_materialize_temp__n$1:class bar::lambda_lambda_lambda1.cpp:11:15  \n   DECLARE_LOCALS(&return,&func,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 10]\n " color=yellow style=filled]
+	
+
+	 1 -> 10 ;
+}

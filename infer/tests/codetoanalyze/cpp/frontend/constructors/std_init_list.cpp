@@ -13,7 +13,7 @@ class X {
  public:
   X(std::initializer_list<int> list) {
     for (auto i = list.begin(); i != list.end(); i++) {
-      sum = sum + i;
+      sum = sum + *i;
     }
   }
 

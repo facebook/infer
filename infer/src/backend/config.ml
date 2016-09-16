@@ -600,6 +600,11 @@ and bugs_json =
     ~exes:CLOpt.[Print]
     ~meta:"file" "Create a file containing a list of issues in JSON format"
 
+and frontend_tests =
+  CLOpt.mk_bool ~long:"frontend-tests"
+    ~exes:CLOpt.frontend_exes
+    "Save filename.ext.test.dot with the cfg in dotty format for frontend tests"
+
 and bugs_tests =
   CLOpt.mk_option ~long:"issues-tests" ~f:create_outfile
     ~exes:CLOpt.[Print]
@@ -1367,6 +1372,7 @@ and buck_build_args = !buck_build_args
 and buck_out = !buck_out
 and bugs_csv = !bugs_csv
 and bugs_json = !bugs_json
+and frontend_tests = !frontend_tests
 and bugs_tests = !bugs_tests
 and bugs_txt = !bugs_txt
 and bugs_xml = !bugs_xml
@@ -1492,8 +1498,8 @@ let clang_frontend_do_capture, clang_frontend_do_lint =
   | `Lint_and_capture -> true, true
 
 let clang_frontend_action_string =
-  String.concat " and " 
-    ((if clang_frontend_do_capture then ["translating"] else []) 
+  String.concat " and "
+    ((if clang_frontend_do_capture then ["translating"] else [])
      @ (if clang_frontend_do_lint then ["linting"] else []))
 
 

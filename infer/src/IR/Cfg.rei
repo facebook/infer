@@ -26,7 +26,7 @@ let load_cfg_from_file: DB.filename => option cfg;
 
 
 /** Save a cfg into a file, and save a copy of the source files if the boolean is true */
-let store_cfg_to_file: DB.filename => bool => cfg => unit;
+let store_cfg_to_file: save_sources::bool? => DB.filename => cfg => unit;
 
 
 /** proc description */
