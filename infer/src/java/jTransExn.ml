@@ -39,8 +39,7 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
   let id_exn_val = Ident.create_fresh Ident.knormal in
   let create_entry_node loc =
     let instr_get_ret_val = Sil.Load (id_ret_val, Exp.Lvar ret_var, ret_type, loc) in
-    let id_deactivate = Ident.create_fresh Ident.knormal in
-    let instr_deactivate_exn = Sil.Store (Exp.Lvar ret_var, ret_type, Exp.Var id_deactivate, loc) in
+    let instr_deactivate_exn = Sil.Store (Exp.Lvar ret_var, ret_type, Exp.null, loc) in
     let instr_unwrap_ret_val =
       let unwrap_builtin = Exp.Const (Const.Cfun ModelBuiltins.__unwrap_exception) in
       Sil.Call
