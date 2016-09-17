@@ -69,7 +69,8 @@ module JavaSource = struct
           | _ ->
               []
         end
-    | _ -> failwith "Non-Java procname in Java analysis"
+    | pname when Builtin.is_registered pname -> []
+    | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
 
   (** make a clone of [t] with a new call site *)
   let to_return t return_site =
@@ -145,7 +146,8 @@ module JavaSink = struct
           | _ ->
               []
         end
-    | _ -> failwith "Non-Java procname in Java analysis"
+    | pname when Builtin.is_registered pname -> []
+    | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
 
   let to_callee t callee_site =
     { t with site = callee_site; }
