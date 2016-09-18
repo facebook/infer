@@ -563,48 +563,6 @@ public class InferRunner {
         ImmutableList.<String>of());
   }
 
-  public static ImmutableList<String> createLintersCommand(
-      TemporaryFolder folder,
-      String sourceFile,
-      Language lang) throws IOException, InterruptedException {
-    return createClangInferCommand(
-        folder,
-        sourceFile,
-        lang,
-        "linters",
-        getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
-        null,
-        true,
-        ImmutableList.<String>of());
-  }
-
-  public static ImmutableList<String> createObjCLintersCommand(
-      TemporaryFolder folder,
-      String sourceFile) throws IOException, InterruptedException {
-    return createLintersCommand(folder, sourceFile, Language.ObjC);
-  }
-
-  public static ImmutableList<String> createObjCLintersCommandSimple(
-      TemporaryFolder folder,
-      String sourceFile) throws IOException, InterruptedException {
-    return createClangInferCommand(
-        folder,
-        sourceFile,
-        Language.ObjC,
-        "linters",
-        null,
-        null,
-        true,
-        ImmutableList.<String>of());
-  }
-
-  public static ImmutableList<String> createObjCPPLintersCommand(
-      TemporaryFolder folder,
-      String sourceFile) throws IOException, InterruptedException {
-    return createLintersCommand(folder, sourceFile, Language.ObjCPP);
-  }
-
-
   @Nullable
   public static File runInferFrontend(ImmutableList<String> inferCmd)
       throws IOException, InterruptedException, InferException {

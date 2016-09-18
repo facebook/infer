@@ -32,26 +32,32 @@ let compare (s1: string) (s2: string) = Pervasives.compare s1 s2
 let equal s1 s2 =
   compare s1 s2 = 0
 
-let context_leak = "CONTEXT_LEAK"
 let analysis_stops = "ANALYSIS_STOPS"
 let array_out_of_bounds_l1 = "ARRAY_OUT_OF_BOUNDS_L1"
 let array_out_of_bounds_l2 = "ARRAY_OUT_OF_BOUNDS_L2"
 let array_out_of_bounds_l3 = "ARRAY_OUT_OF_BOUNDS_L3"
+let assign_pointer_warning = "ASSIGN_POINTER_WARNING"
 let bad_pointer_comparison = "BAD_POINTER_COMPARISON"
 let class_cast_exception = "CLASS_CAST_EXCEPTION"
 let comparing_floats_for_equality = "COMPARING_FLOAT_FOR_EQUALITY"
 let condition_is_assignment = "CONDITION_IS_ASSIGNMENT"
 let condition_always_false = "CONDITION_ALWAYS_FALSE"
 let condition_always_true = "CONDITION_ALWAYS_TRUE"
+let context_leak = "CONTEXT_LEAK"
+let cxx_reference_captured_in_objc_block = "CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK"
 let dangling_pointer_dereference = "DANGLING_POINTER_DEREFERENCE"
 let deallocate_stack_variable = "DEALLOCATE_STACK_VARIABLE"
 let deallocate_static_memory = "DEALLOCATE_STATIC_MEMORY"
 let deallocation_mismatch = "DEALLOCATION_MISMATCH"
+let direct_atomic_property_access = "DIRECT_ATOMIC_PROPERTY_ACCESS"
 let divide_by_zero = "DIVIDE_BY_ZERO"
 let empty_vector_access = "EMPTY_VECTOR_ACCESS"
 let field_not_null_checked = "IVAR_NOT_NULL_CHECKED"
+let global_variable_initialized_with_function_or_method_call =
+  "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"
 let inherently_dangerous_function = "INHERENTLY_DANGEROUS_FUNCTION"
 let memory_leak = "MEMORY_LEAK"
+let mutable_local_variable_in_component_file = "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE"
 let null_dereference = "NULL_DEREFERENCE"
 let parameter_not_null_checked = "PARAMETER_NOT_NULL_CHECKED"
 let null_test_after_dereference = "NULL_TEST_AFTER_DEREFERENCE"
@@ -68,6 +74,7 @@ let return_statement_missing = "RETURN_STATEMENT_MISSING"
 let skip_function = "SKIP_FUNCTION"
 let skip_pointer_dereference = "SKIP_POINTER_DEREFERENCE"
 let stack_variable_address_escape = "STACK_VARIABLE_ADDRESS_ESCAPE"
+let strong_delegate_warning = "STRONG_DELEGATE_WARNING"
 let tainted_value_reaching_sensitive_function = "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"
 let unary_minus_applied_to_unsigned_expression = "UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION"
 let unsafe_guarded_by_access = "UNSAFE_GUARDED_BY_ACCESS"
@@ -789,9 +796,9 @@ let desc_registered_observer_being_deallocated pvar loc =
   let tags = Tags.create () in
   let obj_str = Pvar.to_string pvar in
   { no_desc with descriptions = [ registered_observer_being_deallocated_str obj_str ^ at_line tags loc ^
-                                 ". Being still registered as observer of the notification " ^
-                                 "center, the deallocated object "
-                                 ^ obj_str ^ " may be notified in the future." ]; tags = !tags }
+                                  ". Being still registered as observer of the notification " ^
+                                  "center, the deallocated object "
+                                  ^ obj_str ^ " may be notified in the future." ]; tags = !tags }
 
 let desc_return_statement_missing loc =
   let tags = Tags.create () in

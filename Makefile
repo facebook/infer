@@ -19,7 +19,7 @@ DIRECT_TESTS += java_checkers_test java_eradicate_test java_infer_test java_trac
 endif
 ifneq ($(XCODE_SELECT),no)
 TARGETS_TO_TEST += objc objcpp
-DIRECT_TESTS += objc_infer_test
+DIRECT_TESTS += objc_infer_test objc_linters objcpp_linters
 endif
 TARGETS_TO_TEST := $(shell echo $(TARGETS_TO_TEST))
 
@@ -135,6 +135,12 @@ java_quandary_test:
 
 objc_infer_test:
 	make -C ./infer/tests/codetoanalyze/objc/errors test
+
+objc_linters:
+	make -C ./infer/tests/codetoanalyze/objc/linters test
+
+objcpp_linters:
+	make -C ./infer/tests/codetoanalyze/objcpp/linters test
 
 buck_test: infer
 	make $(DIRECT_TESTS)

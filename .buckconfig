@@ -14,8 +14,5 @@
 # TODO: this line exists only to support buck integration in infer/tests/build_systems/build_integration_tests.py
   infer = //infer/tests/endtoend/java/infer:infer
 
-  linters = //infer/tests/endtoend:linters
-  componentkit = //infer/tests/endtoend:componentkit
-
 [project]
   ignore = .git, .ml, .mli

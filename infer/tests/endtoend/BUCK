@@ -11,24 +11,11 @@ tests_dependencies = [
     '//infer/tests/codetoanalyze/java/infer:infer',
 ]
 
-# ############### ObjC endtoend tests ########################
-java_test(
-  name='objc_endtoend_tests',
-  deps=[
-      '//infer/tests/endtoend/objc/linters:linters',
-  ],
-  visibility=[
-    'PUBLIC',
-  ],
-)
-
 # ############### ObjCpp endtoend tests ########################
 java_test(
   name='objcpp_endtoend_tests',
   deps=[
       '//infer/tests/endtoend/objcpp/infer:infer',
-      '//infer/tests/endtoend/objcpp/linters:linters',
-      '//infer/tests/endtoend/objcpp/componentkit:componentkit',
   ],
   visibility=[
     'PUBLIC',
@@ -45,24 +32,5 @@ java_test(
     ],
     visibility=[
         'PUBLIC',
-    ],
-)
-
-# ############### Linters tests ########################
-
-java_test(
-    name='linters',
-    deps=[
-        '//infer/tests/endtoend/objc/linters:linters',
-        '//infer/tests/endtoend/objcpp/linters:linters',
-    ],
-)
-
-# ############### ComponentKit tests ########################
-
-java_test(
-    name='componentkit',
-    deps=[
-        '//infer/tests/endtoend/objcpp/componentkit:componentkit',
     ],
 )

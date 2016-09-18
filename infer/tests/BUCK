@@ -1,7 +1,6 @@
 java_test(
     name='objc_tests',
     deps=[
-        '//infer/tests/endtoend:objc_endtoend_tests',
         '//infer/tests/frontend:objc_frontend_tests',
     ],
 )

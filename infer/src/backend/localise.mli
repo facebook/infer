@@ -29,26 +29,31 @@ val compare : t -> t -> int
 
 val equal : t -> t -> bool
 
-val context_leak : t
 val analysis_stops : t
 val array_out_of_bounds_l1 : t
 val array_out_of_bounds_l2 : t
 val array_out_of_bounds_l3 : t
+val assign_pointer_warning : t
 val bad_pointer_comparison : t
 val class_cast_exception : t
+val comparing_floats_for_equality : t
 val condition_is_assignment : t
 val condition_always_false : t
 val condition_always_true : t
-val comparing_floats_for_equality : t
+val context_leak : t
+val cxx_reference_captured_in_objc_block : t
 val dangling_pointer_dereference : t
 val deallocate_stack_variable : t
 val deallocate_static_memory : t
 val deallocation_mismatch : t
+val direct_atomic_property_access : t
 val divide_by_zero : t
 val empty_vector_access : t
 val field_not_null_checked : t
+val global_variable_initialized_with_function_or_method_call : t
 val inherently_dangerous_function : t
 val memory_leak : t
+val mutable_local_variable_in_component_file : t
 val null_dereference : t
 val parameter_not_null_checked : t
 val null_test_after_dereference : t
@@ -63,6 +68,7 @@ val return_value_ignored : t
 val return_expression_required : t
 val return_statement_missing : t
 val stack_variable_address_escape : t
+val strong_delegate_warning : t
 val unary_minus_applied_to_unsigned_expression : t
 val uninitialized_value : t
 val unsafe_guarded_by_access : t

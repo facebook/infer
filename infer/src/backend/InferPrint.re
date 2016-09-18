@@ -482,16 +482,24 @@ let module IssuesTests = {
         | Some proc_loc =>
           let line_offset = loc.Location.line - proc_loc.Location.line;
           (proc_loc.Location.file, line_offset)
-        | None => (loc.Location.file, 0)
+        | None => (loc.Location.file, loc.Location.line)
         };
       let should_report =
         ekind == Exceptions.Kerror ||
           IList.exists
             (Localise.equal error_name)
             [
-              Localise.return_value_ignored,
+              Localise.assign_pointer_warning,
+              Localise.bad_pointer_comparison,
+              Localise.cxx_reference_captured_in_objc_block,
+              Localise.direct_atomic_property_access,
+              Localise.field_not_null_checked,
+              Localise.global_variable_initialized_with_function_or_method_call,
+              Localise.mutable_local_variable_in_component_file,
               Localise.parameter_not_null_checked,
-              Localise.field_not_null_checked
+              Localise.registered_observer_being_deallocated,
+              Localise.return_value_ignored,
+              Localise.strong_delegate_warning
             ];
       if (in_footprint && should_report && error_filter source_file error_desc error_name) {
         F.fprintf
