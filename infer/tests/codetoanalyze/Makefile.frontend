@@ -11,6 +11,7 @@ include $(ROOT_DIR)/Makefile.config
 default: compile
 
 test: capture
+	set -e; \
 	for file in $(FILES) ; do \
     diff -u $$file.dot $$file.test.dot ; \
 	done
