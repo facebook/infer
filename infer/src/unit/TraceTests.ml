@@ -16,6 +16,7 @@ module MockTraceElem = struct
   type kind =
     | Kind1
     | Kind2
+    | Footprint
 
   type t = kind
 
@@ -31,6 +32,9 @@ module MockTraceElem = struct
     | Kind1, _ -> (-1)
     | _, Kind1 -> 1
     | Kind2, Kind2 -> 0
+    | Kind2, _ -> (-1)
+    | _, Kind2 -> 1
+    | Footprint, Footprint -> 0
 
   let equal t1 t2 =
     compare t1 t2 = 0
@@ -38,6 +42,7 @@ module MockTraceElem = struct
   let pp_kind fmt = function
     | Kind1 -> F.fprintf fmt "Kind1"
     | Kind2 -> F.fprintf fmt "Kind2"
+    | Footprint -> F.fprintf fmt "Footprint"
 
   let pp = pp_kind
 
@@ -53,11 +58,14 @@ end
 module MockSource = struct
   include MockTraceElem
 
-  let make : kind -> CallSite.t -> t = MockTraceElem.make
+  let make = MockTraceElem.make
+
+  let is_footprint kind =
+    kind = Footprint
+
+  let make_footprint _ _ = Footprint
 
   let get _ = assert false
-  let is_footprint _ = assert false
-  let make_footprint _ = assert false
   let get_footprint_access_path _ = assert false
   let to_return _ _ = assert false
 end
@@ -81,13 +89,14 @@ module MockTrace = Trace.Make(struct
   end)
 
 let tests =
+  let source1 = MockSource.make MockTraceElem.Kind1 CallSite.dummy in
+  let source2 = MockSource.make MockTraceElem.Kind2 CallSite.dummy in
+  let sink1 = MockSink.make MockTraceElem.Kind1 CallSite.dummy in
+  let sink2 = MockSink.make MockTraceElem.Kind2 CallSite.dummy in
+
   let open OUnit2 in
   let get_reports =
     let get_reports_ _ =
-      let source1 = MockSource.make MockTraceElem.Kind1 CallSite.dummy in
-      let source2 = MockSource.make MockTraceElem.Kind2 CallSite.dummy in
-      let sink1 = MockSink.make MockTraceElem.Kind1 CallSite.dummy in
-      let sink2 = MockSink.make MockTraceElem.Kind2 CallSite.dummy in
       let trace =
         MockTrace.of_source source1
         |> MockTrace.add_source source2
@@ -108,4 +117,28 @@ let tests =
            reports) in
     "get_reports">::get_reports_ in
 
-  "trace_domain_suite">:::[get_reports]
+  let append =
+    let append_ _ =
+      let call_site = CallSite.dummy in
+      let footprint_source = MockSource.make_footprint MockTraceElem.Kind1 call_site in
+      let source_trace =
+        MockTrace.of_source source1 in
+      let footprint_trace =
+        MockTrace.of_source footprint_source
+        |> MockTrace.add_sink sink1 in
+
+      let expected_trace =
+        MockTrace.of_source source1
+        |> MockTrace.add_sink sink1 in
+      assert_bool
+        "Appended trace should contain source and sink"
+        (MockTrace.equal (MockTrace.append source_trace footprint_trace call_site) expected_trace);
+
+      let appended_trace = MockTrace.append MockTrace.initial source_trace call_site in
+      assert_bool
+        "Appending a trace without a sink should add a passthrough"
+        (MockTrace.Passthroughs.mem
+           (Passthrough.make call_site) (MockTrace.passthroughs appended_trace)) in
+    "append">::append_ in
+
+  "trace_domain_suite">:::[get_reports; append]

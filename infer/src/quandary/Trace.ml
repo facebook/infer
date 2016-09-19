@@ -29,14 +29,21 @@ module type S = sig
   type astate = t
   include AbstractDomain.S with type astate := astate
 
+  module Sources = Source.Set
+  module Sinks = Sink.Set
+  module Passthroughs = Passthrough.Set
+
   (** get the sources of the trace. *)
-  val sources : t -> Source.Set.t
+  val sources : t -> Sources.t
 
   (** get the sinks of the trace *)
-  val sinks : t -> Sink.Set.t
+  val sinks : t -> Sinks.t
+
+  (** get the passthroughs of the trace *)
+  val passthroughs : t -> Passthroughs.t
 
   (** get the reportable source-sink flows in this trace *)
-  val get_reports : t -> (Source.t * Sink.t * Passthrough.Set.t) list
+  val get_reports : t -> (Source.t * Sink.t * Passthroughs.t) list
 
   (** get logging-ready exceptions for the reportable source-sink flows in this trace *)
   val get_reportable_exns : t -> exn list
@@ -50,10 +57,15 @@ module type S = sig
   (** add a sink to the current trace. *)
   val add_sink : Sink.t -> t -> t
 
+  (** append the trace for given call site to the current caller trace *)
+  val append : t -> t -> CallSite.t -> t
+
   (** return true if this trace has no source or sink data *)
   val is_empty : t -> bool
 
   val compare : t -> t -> int
+
+  val equal : t -> t -> bool
 
   val pp : F.formatter -> t -> unit
 end
@@ -63,6 +75,7 @@ module Make (Spec : Spec) = struct
 
   module Sources = Source.Set
   module Sinks = Sink.Set
+  module Passthroughs = Passthrough.Set
 
   type t =
     {
@@ -77,19 +90,25 @@ module Make (Spec : Spec) = struct
   let compare t1 t2 =
     Sources.compare t1.sources t2.sources
     |> next Sinks.compare t1.sinks t2.sinks
-    |> next Passthrough.Set.compare t1.passthroughs t2.passthroughs
+    |> next Passthroughs.compare t1.passthroughs t2.passthroughs
+
+  let equal t1 t2 =
+    compare t1 t2 = 0
 
   let pp fmt t =
     F.fprintf
       fmt
       "%a -> %a via %a"
-      Sources.pp t.sources Sinks.pp t.sinks Passthrough.Set.pp t.passthroughs
+      Sources.pp t.sources Sinks.pp t.sinks Passthroughs.pp t.passthroughs
 
   let sources t =
     t.sources
 
   let sinks t =
     t.sinks
+
+  let passthroughs t =
+    t.passthroughs
 
   let is_empty t =
     (* sources empty => sinks empty and passthroughs empty *)
@@ -112,7 +131,7 @@ module Make (Spec : Spec) = struct
 
   let of_source source =
     let sources = Sources.singleton source in
-    let passthroughs = Passthrough.Set.empty in
+    let passthroughs = Passthroughs.empty in
     let sinks = Sinks.empty in
     { sources; passthroughs; sinks; }
 
@@ -124,17 +143,34 @@ module Make (Spec : Spec) = struct
     let sinks = Sinks.add sink t.sinks in
     { t with sinks; }
 
+  (** compute caller_trace + callee_trace *)
+  let append caller_trace callee_trace callee_site =
+    if is_empty callee_trace
+    then caller_trace
+    else
+      let sources =
+        Sources.filter (fun source -> not (Source.is_footprint source)) callee_trace.sources
+        |> Sources.union caller_trace.sources in
+      let sinks = Sinks.union caller_trace.sinks callee_trace.sinks in
+      let passthroughs =
+        let joined_passthroughs =
+          Passthroughs.union caller_trace.passthroughs callee_trace.passthroughs in
+        if Sinks.is_empty callee_trace.sinks
+        then Passthroughs.add (Passthrough.make callee_site) joined_passthroughs
+        else joined_passthroughs in
+      { sources; sinks; passthroughs; }
+
   let initial =
     let sources = Sources.empty in
     let sinks = Sinks.empty in
-    let passthroughs = Passthrough.Set.empty in
+    let passthroughs = Passthroughs.empty in
     { sources; sinks; passthroughs; }
 
   let (<=) ~lhs ~rhs =
     lhs == rhs ||
     (Sources.subset lhs.sources rhs.sources &&
      Sinks.subset lhs.sinks rhs.sinks &&
-     Passthrough.Set.subset lhs.passthroughs rhs.passthroughs)
+     Passthroughs.subset lhs.passthroughs rhs.passthroughs)
 
   let join t1 t2 =
     if t1 == t2
@@ -142,7 +178,7 @@ module Make (Spec : Spec) = struct
     else
       let sources = Sources.union t1.sources t2.sources in
       let sinks = Sinks.union t1.sinks t2.sinks in
-      let passthroughs = Passthrough.Set.union t1.passthroughs t2.passthroughs in
+      let passthroughs = Passthroughs.union t1.passthroughs t2.passthroughs in
       { sources; sinks; passthroughs; }
 
   let widen ~prev ~next ~num_iters:_ =
