@@ -164,7 +164,44 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
       let access_tree' = IList.fold_left add_sink_to_actual access_tree sinks in
       { astate with Domain.access_tree = access_tree'; }
 
-    let exec_instr ({ Domain.id_map; } as astate) proc_data _ instr =
+    let apply_summary
+        ret_ids
+        (summary : QuandarySummary.t)
+        (astate_in : Domain.astate)
+        proc_data
+        callee_site =
+      let apply_return ret_ap = function
+        | [ret_id] -> AccessPath.with_base_var (Var.of_id ret_id) ret_ap
+        | [] -> failwith "Have summary for retval, but no ret id to bind it to!"
+        | _ -> failwith "Unimp: summaries for function with multiple return values" in
+
+      let apply_one access_tree (in_out_summary : QuandarySummary.in_out_summary) =
+        let in_trace = match in_out_summary.input with
+          | In_empty ->
+              TraceDomain.initial
+          | In_formal _ | In_global _ ->
+              (* TODO: implement these cases *)
+              assert false in
+        let caller_ap =
+          match in_out_summary.output with
+          | Out_return ret_ap ->
+              apply_return ret_ap ret_ids
+          | Out_formal _ | Out_global _ ->
+              (* TODO: implement these cases *)
+              assert false in
+        let output_trace = TraceDomain.of_summary_trace in_out_summary.output_trace in
+        let appended_trace = TraceDomain.append in_trace output_trace callee_site in
+        let joined_trace =
+          match access_path_get_node caller_ap access_tree proc_data (CallSite.loc callee_site) with
+          | Some (orig_trace, _) -> TraceDomain.join orig_trace appended_trace
+          | None -> appended_trace in
+        TaintDomain.add_trace caller_ap joined_trace access_tree in
+
+      let access_tree = IList.fold_left apply_one astate_in.access_tree summary in
+      { astate_in with access_tree; }
+
+    let exec_instr
+        ({ Domain.id_map; } as astate) (proc_data : AccessPath.base list ProcData.t) _ instr =
       let f_resolve_id = resolve_id id_map in
       match instr with
       | Sil.Load (lhs_id, rhs_exp, rhs_typ, _) ->
@@ -180,7 +217,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
                 failwithf
                   "Assignment to unexpected lhs expression %a in proc %a at loc %a"
                   (Sil.pp_exp pe_text) lhs_exp
-                  Procname.pp (Cfg.Procdesc.get_proc_name (proc_data.ProcData.pdesc))
+                  Procname.pp (Cfg.Procdesc.get_proc_name (proc_data.pdesc))
                   Location.pp loc in
           let astate' =
             analyze_assignment
@@ -211,7 +248,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
                 failwithf
                   "Unexpected cast %a in procedure %a at line %a"
                   (Sil.pp_instr pe_text) instr
-                  Procname.pp (Cfg.Procdesc.get_proc_name (proc_data.ProcData.pdesc))
+                  Procname.pp (Cfg.Procdesc.get_proc_name (proc_data.pdesc))
                   Location.pp loc
           else
             astate
@@ -242,7 +279,15 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
             | _ ->
                 (* this is allowed by SIL, but not currently used in any frontends *)
                 failwith "Unimp: handling multiple return ids" in
-          astate_with_source
+
+          let astate_with_summary =
+            match Summary.read_summary proc_data.tenv proc_data.pdesc callee_pname with
+            | Some summary ->
+                apply_summary ret_ids summary astate_with_source proc_data call_site
+            | None ->
+                astate_with_source in
+
+          astate_with_summary
       | Sil.Call _ ->
           failwith "Unimp: non-pname call expressions"
       | Sil.Nullify (pvar, _) ->

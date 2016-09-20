@@ -112,6 +112,10 @@ let of_exp exp typ ~(f_resolve_id : Var.t -> raw option) =
 let append (base, old_accesses) new_accesses =
   base, old_accesses @ new_accesses
 
+let with_base_var var = function
+  | Exact ((_, base_typ), accesses) -> Exact ((var, base_typ), accesses)
+  | Abstracted ((_, base_typ), accesses) -> Abstracted ((var, base_typ), accesses)
+
 let rec is_prefix_path path1 path2 =
   if path1 == path2
   then true

@@ -54,6 +54,10 @@ val of_exp : Exp.t -> Typ.t -> f_resolve_id:(Var.t -> raw option) -> raw option
     `x.f.g.h` *)
 val append : raw -> access list -> raw
 
+(** swap base of existing access path for [base_var] (e.g., `with_base_bvar x y.f.g` produces
+    `x.f.g` *)
+val with_base_var : Var.t -> t -> t
+
 (** return true if [ap1] is a prefix of [ap2]. returns true for equal access paths *)
 val is_prefix : raw -> raw -> bool
 

@@ -14,6 +14,7 @@ FILES = \
   Arrays.java \
   Basics.java \
   Fields.java \
+  Interprocedural.java \
   LoggingPrivateData.java \
 
 compile:
