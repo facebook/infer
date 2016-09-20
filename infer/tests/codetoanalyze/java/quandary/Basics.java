@@ -178,6 +178,14 @@ public class Basics {
     InferTaint.inferSensitiveSink(src);
   }
 
+  Object exceptionOk(boolean b, Object o) {
+    if (b) {
+      throw new AssertionError("exception");
+    }
+    o.toString();
+    return o;
+  }
+
   /** "known false positive" tests demonstrating limitations. an ideal analysis would not report on
       these tests, but we do. */
 

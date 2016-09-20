@@ -245,7 +245,17 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
           astate_with_source
       | Sil.Call _ ->
           failwith "Unimp: non-pname call expressions"
-      | Sil.Prune _ | Remove_temps _ | Nullify _ | Abstract _ | Declare_locals _ ->
+      | Sil.Nullify (pvar, _) ->
+          let id_map = IdMapDomain.remove (Var.of_pvar pvar) astate.id_map in
+          { astate with id_map; }
+      | Sil.Remove_temps (ids, _) ->
+          let id_map =
+            IList.fold_left
+              (fun acc id -> IdMapDomain.remove (Var.of_id id) acc)
+              astate.id_map
+              ids in
+          { astate with id_map; }
+      | Sil.Prune _ | Abstract _ | Declare_locals _ ->
           astate
   end
 
@@ -324,6 +334,8 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
     IList.fold_lefti add_formal_summaries [] formals
     |> add_return_summaries
 
+  let dummy_cg = Cg.create ()
+
   let checker { Callbacks.get_proc_desc; proc_name; proc_desc; tenv; } =
     let analyze_ondemand pdesc =
       let make_formal_access_paths pdesc : AccessPath.base list=
@@ -350,6 +362,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
     if Ondemand.procedure_should_be_analyzed proc_name
     then
       begin
+        Preanal.doit proc_desc dummy_cg tenv;
         Ondemand.set_callbacks callbacks;
         analyze_ondemand proc_desc;
         Ondemand.unset_callbacks ();
