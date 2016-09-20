@@ -34,11 +34,8 @@ module MakeNoCFG
 
   (** extract the state of node [n] from [inv_map] *)
   let extract_state node_id inv_map =
-    try
-      Some (M.find node_id inv_map)
-    with Not_found ->
-      L.err "Warning: No state found for node %a" CFG.pp_id node_id;
-      None
+    try Some (M.find node_id inv_map)
+    with Not_found -> None
 
   (** extract the postcondition of node [n] from [inv_map] *)
   let extract_post node_id inv_map =
@@ -54,7 +51,6 @@ module MakeNoCFG
 
   let exec_node node astate_pre work_queue inv_map proc_data =
     let node_id = CFG.id node in
-    L.out "Doing analysis of node %a from pre %a@." CFG.pp_id node_id A.pp astate_pre;
     let update_inv_map pre visit_count =
       let compute_post (pre, inv_map) (instr, id_opt) =
         let post = TF.exec_instr pre proc_data node instr in
@@ -66,25 +62,16 @@ module MakeNoCFG
         | [] -> [Sil.skip_instr, None]
         | l -> l in
       let astate_post, inv_map_post = IList.fold_left compute_post (pre, inv_map) instr_ids in
-      L.out "Post for node %a is %a@." CFG.pp_id node_id A.pp astate_post;
       let inv_map'' = M.add node_id { pre; post=astate_post; visit_count; } inv_map_post in
       inv_map'', Sched.schedule_succs work_queue node in
-    if M.mem node_id inv_map then
+    if M.mem node_id inv_map
+    then
       let old_state = M.find node_id inv_map in
       let widened_pre =
         A.widen ~prev:old_state.pre ~next:astate_pre ~num_iters:old_state.visit_count in
       if A.(<=) ~lhs:widened_pre ~rhs:old_state.pre
-      then
-        begin
-          L.out "Old state contains new, not updating invariant or scheduling succs@.";
-          inv_map, work_queue
-        end
-      else
-        begin
-          L.out "Widening: %a <widen> %a = %a@."
-            A.pp astate_pre A.pp old_state.post A.pp widened_pre;
-          update_inv_map widened_pre (old_state.visit_count + 1)
-        end
+      then inv_map, work_queue
+      else update_inv_map widened_pre (old_state.visit_count + 1)
     else
       (* first time visiting this node *)
       let visit_count = 1 in
@@ -121,7 +108,6 @@ module MakeNoCFG
 
   (* compute and return an invariant map for [pdesc] *)
   let exec_pdesc ({ ProcData.pdesc; } as proc_data) =
-    L.out "Starting analysis of %a@." Procname.pp (Cfg.Procdesc.get_proc_name pdesc);
     exec_cfg (CFG.from_pdesc pdesc) proc_data
 
   (* compute and return the postcondition of [pdesc] *)
