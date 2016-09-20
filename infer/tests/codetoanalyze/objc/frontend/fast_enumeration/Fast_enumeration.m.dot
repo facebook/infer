@@ -20,7 +20,7 @@ digraph iCFG {
 	
 
 	 17 -> 19 ;
-16 [label="16:  BinaryOperatorStmt: Assign \n   n$10=*&items:class NSArray * [line 28]\n  n$11=_fun_NSArray_nextObject(n$10:class NSArray *) virtual [line 28]\n  *&item:class NSArray *=n$11 [line 28]\n  n$12=*&item:class NSArray * [line 28]\n " shape="box"]
+16 [label="16:  BinaryOperatorStmt: Assign \n   n$10=*&items:class NSArray * [line 28]\n  n$11=_fun_NSArray_objectAtIndex:(n$10:class NSArray *,3:unsigned long ) virtual [line 28]\n  *&item:class NSArray *=n$11 [line 28]\n  n$12=*&item:class NSArray * [line 28]\n " shape="box"]
 	
 
 	 16 -> 17 ;

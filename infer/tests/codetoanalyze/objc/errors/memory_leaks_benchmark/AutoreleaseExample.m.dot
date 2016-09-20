@@ -1,5 +1,12 @@
 /* @generated */
 digraph iCFG {
+37 [label="37: Exit frontend_checks_10391c9ce4c9dbd06a97986e9fc1220c \n  " color=yellow style=filled]
+	
+
+36 [label="36: Start frontend_checks_10391c9ce4c9dbd06a97986e9fc1220c\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 36 -> 37 ;
 35 [label="35:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class NSAutoreleasePool ):unsigned long ) [line 60]\n  n$5=_fun_NSObject_init(n$4:class NSAutoreleasePool *) virtual [line 60]\n  *&pool:class NSAutoreleasePool *=n$5 [line 60]\n " shape="box"]
 	
 

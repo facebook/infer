@@ -18,8 +18,7 @@ TARGETS_TO_TEST += java
 DIRECT_TESTS += java_checkers_test java_eradicate_test java_infer_test java_tracing_test java_quandary_test
 endif
 ifneq ($(XCODE_SELECT),no)
-TARGETS_TO_TEST += objc objcpp
-DIRECT_TESTS += objc_infer_test objc_linters objcpp_linters
+DIRECT_TESTS += objc_frontend_test objc_infer_test objc_linters objcpp_frontend_test objcpp_linters
 endif
 TARGETS_TO_TEST := $(shell echo $(TARGETS_TO_TEST))
 
@@ -98,7 +97,7 @@ endif
 ocaml_unit_test: test_this_build
 	$(TEST_BUILD_DIR)/unit/inferunit.byte
 
-frontend_replace: c_frontend_replace cpp_frontend_replace
+frontend_replace: c_frontend_replace cpp_frontend_replace objc_frontend_replace objcpp_frontend_replace
 
 c_frontend_replace:
 	make -C ./infer/tests/codetoanalyze/c/frontend replace
@@ -133,23 +132,38 @@ java_tracing_test:
 java_quandary_test:
 	make -C ./infer/tests/codetoanalyze/java/quandary test
 
+objc_frontend_replace:
+	make -C ./infer/tests/codetoanalyze/objc/frontend replace
+
+objc_frontend_test:
+	make -C ./infer/tests/codetoanalyze/objc/frontend test
+
 objc_infer_test:
 	make -C ./infer/tests/codetoanalyze/objc/errors test
 
 objc_linters:
 	make -C ./infer/tests/codetoanalyze/objc/linters test
 
+objcpp_frontend_replace:
+	make -C ./infer/tests/codetoanalyze/objcpp/frontend replace
+
+objcpp_frontend_test:
+	make -C ./infer/tests/codetoanalyze/objcpp/frontend test
+
 objcpp_linters:
 	make -C ./infer/tests/codetoanalyze/objcpp/linters test
 
-buck_test: infer
+direct_tests:
 	make $(DIRECT_TESTS)
+
+buck_test: infer
+	make direct_tests
 	NO_BUCKD=1 buck clean
 	MAKEFLAGS= NO_BUCKD=1 buck test -j $(NCPU) -L $(NCPU) $(TARGETS_TO_TEST)
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 
 buck_test_xml: infer
-	make $(DIRECT_TESTS)
+	make direct_tests
 	NO_BUCKD=1 buck clean
 	NO_BUCKD=1 buck test -j $(NCPU) -L $(NCPU) --xml test.xml $(TARGETS_TO_TEST)
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py

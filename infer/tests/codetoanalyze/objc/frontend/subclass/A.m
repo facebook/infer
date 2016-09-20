@@ -9,6 +9,11 @@
 
 #import <Foundation/NSObject.h>
 
+@interface A : NSObject {
+  int x;
+}
+@end
+
 @implementation A
 
 - (instancetype)init {

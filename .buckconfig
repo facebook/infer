@@ -1,14 +1,6 @@
 
 [alias]
-  endtoend_test_objc = //infer/tests/endtoend:objc_endtoend_tests
-  frontend_test_objc = //infer/tests/frontend:objc_frontend_tests
-
-  integration_tests = //infer/tests:integration_tests
-  objc = //infer/tests:objc_tests
-  objcpp = //infer/tests:objcpp_tests
-  clang = //infer/tests:clang_tests
   java = //infer/tests/endtoend:java_endtoend_tests
-
   java_libraries = //dependencies/java:java_libraries
 
 # TODO: this line exists only to support buck integration in infer/tests/build_systems/build_integration_tests.py

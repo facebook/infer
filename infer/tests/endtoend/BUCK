@@ -11,22 +11,10 @@ tests_dependencies = [
     '//infer/tests/codetoanalyze/java/infer:infer',
 ]
 
-# ############### ObjCpp endtoend tests ########################
-java_test(
-  name='objcpp_endtoend_tests',
-  deps=[
-      '//infer/tests/endtoend/objcpp/infer:infer',
-  ],
-  visibility=[
-    'PUBLIC',
-  ],
-)
-
 # ############### Java endtoend tests ########################
 java_test(
     name='java_endtoend_tests',
     deps=[
-        '//infer/tests/endtoend/java/infer:infer',
         '//infer/tests/endtoend/java/crashcontext:crashcontext',
         '//infer/tests/endtoend/java/harness:harness',
     ],

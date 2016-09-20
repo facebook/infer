@@ -24,4 +24,4 @@ replace: capture
 	make clean
 
 clean:
-	rm -rf infer-out *.o */*.test.dot
+	rm -rf infer-out *.o */*.test.dot */*/*.test.dot
