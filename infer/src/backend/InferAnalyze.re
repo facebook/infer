@@ -35,7 +35,6 @@ let analyze_exe_env exe_env => {
   L.log_progress_file ();
   Specs.clear_spec_tbl ();
   Random.self_init ();
-  let line_reader = Printer.LineReader.create ();
   if Config.checkers {
     /* run the checkers only */
     let call_graph = Exe_env.get_cg exe_env;
@@ -43,7 +42,7 @@ let analyze_exe_env exe_env => {
   } else {
     /* run the full analysis */
     Interproc.do_analysis exe_env;
-    Printer.write_all_html_files line_reader exe_env;
+    Printer.write_all_html_files exe_env;
     Interproc.print_stats exe_env;
     let elapsed = Unix.gettimeofday () -. init_time;
     L.out "Interprocedural footprint analysis terminated in %f sec@." elapsed

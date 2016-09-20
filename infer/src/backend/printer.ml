@@ -445,41 +445,41 @@ let create_table_err_per_line err_log =
 let create_err_message err_string =
   "\n<div class=\"msg\" style=\"margin-left:9ex\">" ^ err_string ^ "</div>"
 
-(** Create filename.ext.html. *)
-let write_html_file linereader filename cfg =
+let write_html_proc proof_cover table_nodes_at_linenum global_err_log proc_desc =
+  let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
   let process_node nodes_tbl n =
     let lnum = (Cfg.Node.get_loc n).Location.line in
     let curr_nodes =
       try Hashtbl.find nodes_tbl lnum
       with Not_found -> [] in
     Hashtbl.replace nodes_tbl lnum (n:: curr_nodes) in
-  let fname_encoding =
-    DB.source_file_encoding filename in
-  let (fd, fmt) =
-    Io_infer.Html.create DB.Results_dir.Abs_source_dir [".."; fname_encoding] in
-  let do_proc proof_cover table_nodes_at_linenum global_err_log proc_name proc_desc =
-    let proc_loc = (Cfg.Procdesc.get_loc proc_desc) in
-    let process_proc =
-      Cfg.Procdesc.is_defined proc_desc &&
-      DB.source_file_equal proc_loc.Location.file !DB.current_source &&
-      match AttributesTable.file_defining_procedure proc_name with
-      | None -> true
-      | Some source_file ->
-          DB.source_file_equal source_file (Cfg.Procdesc.get_loc proc_desc).file in
-    if process_proc then
-      begin
-        IList.iter (process_node table_nodes_at_linenum) (Cfg.Procdesc.get_nodes proc_desc);
-        match Specs.get_summary proc_name with
-        | None ->
-            ()
-        | Some summary ->
-            IList.iter
-              (fun sp ->
-                 proof_cover := Specs.Visitedset.union sp.Specs.visited !proof_cover)
-              (Specs.get_specs_from_payload summary);
-            Errlog.update global_err_log summary.Specs.attributes.ProcAttributes.err_log
-      end in
+  let proc_loc = Cfg.Procdesc.get_loc proc_desc in
+  let process_proc =
+    Cfg.Procdesc.is_defined proc_desc &&
+    DB.source_file_equal proc_loc.Location.file !DB.current_source &&
+    match AttributesTable.file_defining_procedure proc_name with
+    | None -> true
+    | Some source_file ->
+        DB.source_file_equal source_file (Cfg.Procdesc.get_loc proc_desc).file in
+  if process_proc then
+    begin
+      IList.iter (process_node table_nodes_at_linenum) (Cfg.Procdesc.get_nodes proc_desc);
+      match Specs.get_summary proc_name with
+      | None ->
+          ()
+      | Some summary ->
+          IList.iter
+            (fun sp ->
+               proof_cover := Specs.Visitedset.union sp.Specs.visited !proof_cover)
+            (Specs.get_specs_from_payload summary);
+          Errlog.update global_err_log summary.Specs.attributes.ProcAttributes.err_log
+    end
 
+(** Create filename.ext.html. *)
+let write_html_file linereader filename procs =
+  DB.current_source := filename;
+  let fname_encoding = DB.source_file_encoding filename in
+  let (fd, fmt) = Io_infer.Html.create DB.Results_dir.Abs_source_dir [".."; fname_encoding] in
   let pp_prelude () =
     let s =
       "<center><h1>File " ^
@@ -487,7 +487,6 @@ let write_html_file linereader filename cfg =
       "</h1></center>\n" ^
       "<table class=\"code\">\n" in
     F.fprintf fmt "%s" s in
-
   let print_one_line proof_cover table_nodes_at_linenum table_err_per_line line_number =
     let line_html =
       match LineReader.from_file_linenum linereader !DB.current_source line_number with
@@ -553,7 +552,7 @@ let write_html_file linereader filename cfg =
   let global_err_log = Errlog.empty () in
   let table_nodes_at_linenum = Hashtbl.create 11 in
   let proof_cover = ref Specs.Visitedset.empty in
-  Cfg.iter_proc_desc cfg (do_proc proof_cover table_nodes_at_linenum global_err_log);
+  IList.iter (write_html_proc proof_cover table_nodes_at_linenum global_err_log) procs;
   let table_err_per_line = create_table_err_per_line global_err_log in
   let linenum = ref 0 in
 
@@ -568,8 +567,9 @@ let write_html_file linereader filename cfg =
      Io_infer.Html.close (fd, fmt))
 
 (** Create filename.ext.html for each file in the exe_env. *)
-let write_all_html_files linereader exe_env =
+let write_all_html_files exe_env =
   if Config.write_html then
+    let linereader = LineReader.create () in
     Exe_env.iter_files
       (fun _ cfg ->
          let source_files_in_cfg =
@@ -583,7 +583,6 @@ let write_all_html_files linereader exe_env =
            !files in
          DB.SourceFileSet.iter
            (fun file ->
-              DB.current_source := file;
-              write_html_file linereader file cfg)
+              write_html_file linereader file (Cfg.get_all_procs cfg))
            source_files_in_cfg)
       exe_env

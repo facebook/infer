@@ -49,5 +49,7 @@ val node_start_session : Cfg.node -> Location.t -> Procname.t -> int -> unit
     The boolean indicates whether to print whole seconds only. *)
 val write_proc_html : bool -> Cfg.Procdesc.t -> unit
 
+val write_html_file : LineReader.t -> DB.source_file -> Cfg.Procdesc.t list -> unit
+
 (** Create filename.ext.html for each file in the exe_env. *)
-val write_all_html_files : LineReader.t -> Exe_env.t -> unit
+val write_all_html_files : Exe_env.t -> unit
