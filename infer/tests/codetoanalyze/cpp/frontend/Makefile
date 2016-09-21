@@ -10,7 +10,7 @@ include ../../Makefile.frontend
 OPTIONS = -x c++ -std=c++11 -isystem$(MODELS_DIR)/cpp/include -isystem$(CLANG_INCLUDES)/c++/v1/ -c
 
 FILES = \
-  */*.cpp \
+  */*.cpp shared/*/*.cpp \
 
 compile:
 	clang $(OPTIONS) $(FILES)

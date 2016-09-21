@@ -7,21 +7,25 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#include "header2.h"
+namespace binary_conditional {
 
-using namespace header2;
+struct X {
+  operator bool() { return true; }
+};
 
-// instantiate templates to produce bug reports for them
-void div0_B_int() {
-  B<int> b;
-  b.div0();
+X getX() {
+  X x;
+  return x;
 }
 
-void div0_B_A() {
-  B<A> b;
-  b.div0();
+// more conditional operator tests in C tests
+void binaryConditional() {
+  X a;
+  X x = getX() ?: a;
 }
 
-void div0_templ_int() { div0_templ<int>(); }
-
-int div0_templ_A() { div0_templ<A>(); }
+void conditional() {
+  X a;
+  X x = getX() ? getX() : a;
+}
+}

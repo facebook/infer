@@ -1,1 +1,0 @@
-../../../c/frontend/initialization/struct_initlistexpr.c

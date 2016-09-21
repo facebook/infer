@@ -17,66 +17,64 @@ OPTIONS = -x objective-c \
 
 
 FILES = \
-  category_procdesc/EOCPerson.m \
   field_superclass/B.m \
-  frontend/dispatch.m \
-  frontend/GetterExample.m \
-  frontend/block-it.m \
-  frontend/PropertyAttributes.m \
-  memory_leaks_benchmark/ArcExample.m \
-  memory_leaks_benchmark/AutoreleaseExample.m \
   memory_leaks_benchmark/FBViewExample.m \
-  memory_leaks_benchmark/MemoryLeakExample.m \
   memory_leaks_benchmark/MemoryLeakRaii.m \
   memory_leaks_benchmark/NSMakeCollectableExample.m \
   memory_leaks_benchmark/NSStringInitWithBytesNoCopyExample.m \
-  memory_leaks_benchmark/RetainReleaseExample.m \
   memory_leaks_benchmark/RetainReleaseExampleBucketing.m \
-  memory_leaks_benchmark/arc_methods.m \
   npe/Fraction.m \
   npe/NPD_core_foundation.m \
-  npe/Nonnull_attribute_example.m \
   npe/Npe_with_equal_names.m \
   npe/block.m \
   npe/skip_method_with_nil_object.m \
   procdescs/MethodCall.m \
   property/main.c \
-  protocol_procdesc/Bicycle.m \
-  protocol_procdesc/main.c \
   resource_leaks/ResourceLeakExample.m \
+  shared/block/block-it.m \
+  shared/block/dispatch.m \
+  shared/category_procdesc/EOCPerson.m \
+  shared/memory_leaks_benchmark/ArcExample.m \
+  shared/memory_leaks_benchmark/AutoreleaseExample.m \
+  shared/memory_leaks_benchmark/MemoryLeakExample.m \
+  shared/memory_leaks_benchmark/RetainReleaseExample.m \
+  shared/memory_leaks_benchmark/arc_methods.m \
+  shared/npe/Nonnull_attribute_example.m \
+  shared/property/GetterExample.m \
+  shared/property/PropertyAttributes.m \
+  shared/protocol_procdesc/Bicycle.m \
+  shared/protocol_procdesc/main.c \
   taint/sources.m \
   taint/viewController.m \
 
 FILES_BUCKET_ALL = \
-  frontend/BlockVar.m \
-  frontend/NSAssert_example.m \
-  frontend/block.m \
-  frontend/block_no_args.m \
-  frontend/block_release.m \
-  frontend/compound_literal.c \
-  frontend/dispatch_in_macro.m \
-  category_procdesc/main.c \
-  field_superclass/SuperExample.m \
   field_superclass/field.c \
   global_const/global_const.m \
+  initialization/compound_literal.c \
   memory_leaks_benchmark/CADisplayLinkRetainCycle.m \
   memory_leaks_benchmark/RetainCycleStaticVar.m \
-  memory_leaks_benchmark/RetainReleaseExample2.m \
   npe/blockenum.m \
   npe/nil_param.m \
-  npe/npe_malloc.m \
   npe/null_returned_by_method.m \
   procdescs/main.c \
   property/main.c \
   returnstmt/return_npe_test.m \
+  shared/assertions/NSAssert_example.m \
+  shared/block/BlockVar.m \
+  shared/block/block.m \
+  shared/block/block_no_args.m \
+  shared/block/block_release.m \
+  shared/block/dispatch_in_macro.m \
+  shared/category_procdesc/main.c \
+  shared/field_superclass/SuperExample.m \
+  shared/memory_leaks_benchmark/RetainReleaseExample2.m \
+  shared/npe/npe_malloc.m \
   warnings/ParameterNotNullableExample.m \
 
 FILES_ARC = \
   field_superclass/SubtypingExample.m \
-  frontend/dispatch_examples.m \
-  frontend/struct_initlistexpr.c \
+  initialization/struct_initlistexpr.c \
   memory_leaks_benchmark/RetainReleaseExampleBucketingArc.m \
-  memory_leaks_benchmark/TollBridgeExample.m \
   memory_leaks_benchmark/retain_cycle.m \
   memory_leaks_benchmark/retain_cycle2.m \
   npe/BoxedNumberExample.m \
@@ -89,6 +87,8 @@ FILES_ARC = \
   npe/npe_self.m \
   npe/nullable.m \
   property/ExplicitIvarName.m \
+  shared/block/dispatch_examples.m \
+  shared/memory_leaks_benchmark/TollBridgeExample.m \
   subtyping/KindOfClassExample.m \
   variadic_methods/premature_nil_termination.m \
 

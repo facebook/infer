@@ -7,21 +7,14 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#include "header2.h"
+struct point {
+  int x;
+  int y;
+};
 
-using namespace header2;
+int compound_literal_expr() { return ((struct point){.y = 32, .x = 52}).x; }
 
-// instantiate templates to produce bug reports for them
-void div0_B_int() {
-  B<int> b;
-  b.div0();
+int init_with_compound_literal() {
+  struct point p = (struct point){32, 52};
+  return 1 / (p.x - 32);
 }
-
-void div0_B_A() {
-  B<A> b;
-  b.div0();
-}
-
-void div0_templ_int() { div0_templ<int>(); }
-
-int div0_templ_A() { div0_templ<A>(); }

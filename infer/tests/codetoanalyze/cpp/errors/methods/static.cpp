@@ -1,1 +1,0 @@
-../../frontend/methods/static.cpp

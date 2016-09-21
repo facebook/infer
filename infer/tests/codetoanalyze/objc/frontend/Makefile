@@ -16,13 +16,6 @@ OPTIONS = -x objective-c \
   -mios-simulator-version-min=8.2 --target=x86_64-apple-darwin14 -c \
 
 FILES_NOARC = \
-  block/BlockVar.m \
-  block/block-it.m \
-  block/block.m \
-  block/block_no_args.m \
-  block/block_release.m \
-  block/dispatch.m \
-  block/dispatch_examples.m \
   block/retain_cycle.m \
   block/static.m \
   boxing/Boxing.m \
@@ -33,7 +26,6 @@ FILES_NOARC = \
   conditional_operation/ConditionalOperation.m \
   exceptions/ExceptionExample.m \
   fast_enumeration/Fast_enumeration.m \
-  property/PropertyAttributes.m \
   property/PropertyCustomAccessor.m \
   property/PropertyImplSetter.m \
   property/Property_getter.m \
@@ -44,6 +36,26 @@ FILES_NOARC = \
   returnstmt/void_return.m \
   self_static/Self.m \
   self_static/static.m \
+  shared/block/block-it.m \
+  shared/block/block.m \
+  shared/block/block_no_args.m \
+  shared/block/block_release.m \
+  shared/block/dispatch.m \
+  shared/block/dispatch_examples.m \
+  shared/block/dispatch_in_macro.m \
+  shared/category_procdesc/EOCPerson.m \
+  shared/category_procdesc/main.c \
+  shared/field_superclass/SuperExample.m \
+  shared/memory_leaks_benchmark/AutoreleaseExample.m \
+  shared/memory_leaks_benchmark/MemoryLeakExample.m \
+  shared/memory_leaks_benchmark/RetainReleaseExample.m \
+  shared/memory_leaks_benchmark/RetainReleaseExample2.m \
+  shared/memory_leaks_benchmark/TollBridgeExample.m \
+  shared/npe/npe_malloc.m \
+  shared/property/GetterExample.m \
+  shared/property/PropertyAttributes.m \
+  shared/protocol_procdesc/Bicycle.m \
+  shared/protocol_procdesc/main.c \
   strings/global_string_literal.m \
   strings/string_literal.m \
   subclass/MyClass.m \
@@ -53,26 +65,17 @@ FILES_NOARC = \
   vardecl/aclass.m \
   vardecl/aclass_2.m \
   vardecl/last_af.m \
-  link_to_errors/category_procdesc/EOCPerson.m \
-  link_to_errors/category_procdesc/main.c \
-  link_to_errors/field_superclass/SuperExample.m \
-  link_to_errors/memory_leaks_benchmark/AutoreleaseExample.m \
-  link_to_errors/memory_leaks_benchmark/MemoryLeakExample.m \
-  link_to_errors/memory_leaks_benchmark/RetainReleaseExample.m \
-  link_to_errors/memory_leaks_benchmark/RetainReleaseExample2.m \
-  link_to_errors/memory_leaks_benchmark/TollBridgeExample.m \
-  link_to_errors/npe/npe_malloc.m \
-  link_to_errors/protocol_procdesc/main.c \
 
 FILES_ARC = \
-  assertions/NSAssert_example.m \
   predefined_expr/PredefinedExprExample.m \
   types/attributes.m \
   types/void_call.m \
   vardecl/initlist.m \
-  link_to_errors/npe/Nonnull_attribute_example.m \
-  link_to_errors/memory_leaks_benchmark/ArcExample.m \
-  link_to_errors/memory_leaks_benchmark/arc_methods.m \
+  shared/assertions/NSAssert_example.m \
+  shared/block/BlockVar.m \
+  shared/memory_leaks_benchmark/ArcExample.m \
+  shared/memory_leaks_benchmark/arc_methods.m \
+  shared/npe/Nonnull_attribute_example.m \
 
 FILES = \
   $(FILES_NOARC) \
