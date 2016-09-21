@@ -1155,17 +1155,19 @@ let save_source_files cfg => {
 
 
 /** Save the .attr files for the procedures in the cfg. */
-let save_attributes cfg => {
+let save_attributes source_file cfg => {
   let save_proc proc_desc => {
     let attributes = Procdesc.get_attributes proc_desc;
-    let loc = attributes.ProcAttributes.loc;
-    let attributes' =
-      if (Location.equal loc Location.dummy) {
-        let loc' = {...loc, Location.file: !DB.current_source};
-        {...attributes, ProcAttributes.loc: loc'}
-      } else {
-        attributes
-      };
+    let loc = attributes.loc;
+    let attributes' = {
+      let loc' =
+        if (Location.equal loc Location.dummy) {
+          {...loc, file: source_file}
+        } else {
+          loc
+        };
+      {...attributes, loc: loc', source_file_captured: source_file}
+    };
     /*
      L.stderr "save_proc@.  proc_name:%a@.  filename:%s@.  current_source:%s@.  loc:%s@."
        Procname.pp (Procdesc.get_proc_name proc_desc)
@@ -1286,7 +1288,11 @@ let inline_java_synthetic_methods cfg => {
 
 
 /** Save a cfg into a file */
-let store_cfg_to_file save_sources::save_sources=true (filename: DB.filename) (cfg: cfg) => {
+let store_cfg_to_file
+    save_sources::save_sources=true
+    source_file::source_file
+    (filename: DB.filename)
+    (cfg: cfg) => {
   inline_java_synthetic_methods cfg;
   if save_sources {
     save_source_files cfg
@@ -1297,7 +1303,7 @@ let store_cfg_to_file save_sources::save_sources=true (filename: DB.filename) (c
     | None => ()
     }
   };
-  save_attributes cfg;
+  save_attributes source_file cfg;
   Serialization.to_file cfg_serializer filename cfg
 };
 

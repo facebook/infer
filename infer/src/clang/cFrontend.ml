@@ -71,7 +71,7 @@ let do_source_file source_file ast =
   let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
   let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
   Cg.store_to_file cg_file call_graph;
-  Cfg.store_cfg_to_file cfg_file cfg;
+  Cfg.store_cfg_to_file ~source_file:!DB.current_source cfg_file cfg;
   (*Logging.out "Tenv %a@." Sil.pp_tenv tenv;*)
   (* Printing.print_tenv tenv; *)
   (*Printing.print_procedures cfg; *)

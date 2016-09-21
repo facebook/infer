@@ -77,23 +77,22 @@ let add_cg (exe_env: t) (source_dir : DB.source_dir) =
   | Some cg ->
       let source = Cg.get_source cg in
       exe_env.source_files <- DB.SourceFileSet.add source exe_env.source_files;
-      let nLOC = Cg.get_nLOC cg in
-      let file_data = new_file_data source nLOC cg_fname in
       let defined_procs = Cg.get_defined_nodes cg in
 
       IList.iter
         (fun pname ->
-           (match AttributesTable.file_defining_procedure pname with
+           (match AttributesTable.find_file_capturing_procedure pname with
             | None ->
-                Procname.Hash.replace exe_env.proc_map pname file_data
-            | Some source_defined ->
-                let multiply_defined = DB.source_file_compare source source_defined <> 0 in
+                ()
+            | Some (source_captured, origin) ->
+                let multiply_defined = DB.source_file_compare source source_captured <> 0 in
                 if multiply_defined then Cg.remove_node_defined cg pname;
                 if Config.check_duplicate_symbols &&
-                   multiply_defined then
-                  L.stderr "@.DUPLICATE_SYMBOLS source: %s source_defined:%s pname:%a@."
+                   multiply_defined &&
+                   origin <> `Include then
+                  L.stderr "@.DUPLICATE_SYMBOLS source: %s source_captured:%s pname:%a@."
                     (DB.source_file_to_string source)
-                    (DB.source_file_to_string source_defined)
+                    (DB.source_file_to_string source_captured)
                     Procname.pp pname
            ))
         defined_procs;
@@ -114,7 +113,7 @@ let get_file_data exe_env pname =
           None
       | Some proc_attributes ->
           let loc = proc_attributes.ProcAttributes.loc in
-          let source_file = loc.Location.file in
+          let source_file = proc_attributes.ProcAttributes.source_file_captured in
           let nLOC = loc.Location.nLOC in
           let source_dir = DB.source_dir_from_source_file source_file in
           let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in

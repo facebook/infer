@@ -457,10 +457,10 @@ let write_html_proc proof_cover table_nodes_at_linenum global_err_log proc_desc 
   let process_proc =
     Cfg.Procdesc.is_defined proc_desc &&
     DB.source_file_equal proc_loc.Location.file !DB.current_source &&
-    match AttributesTable.file_defining_procedure proc_name with
+    match AttributesTable.find_file_capturing_procedure proc_name with
     | None -> true
-    | Some source_file ->
-        DB.source_file_equal source_file (Cfg.Procdesc.get_loc proc_desc).file in
+    | Some (source_captured, _) ->
+        DB.source_file_equal source_captured (Cfg.Procdesc.get_loc proc_desc).file in
   if process_proc then
     begin
       IList.iter (process_node table_nodes_at_linenum) (Cfg.Procdesc.get_nodes proc_desc);

@@ -193,19 +193,24 @@ let stats () => {
   {num_bindings, num_buckets, max_bucket_length, serialized_size_kb}
 };
 
-/* Find the file where the procedure is defined according to the attributes,
-   if a cfg for that file exist. */
-let file_defining_procedure pname =>
+/* Find the file where the procedure was captured, if a cfg for that file exists.
+   Return also a boolean indicating whether the procedure is defined in an
+   include file. */
+let find_file_capturing_procedure pname =>
   switch (load_attributes pname) {
   | None => None
   | Some proc_attributes =>
-    let loc = proc_attributes.ProcAttributes.loc;
-    let source_file = loc.file;
+    let source_file = proc_attributes.ProcAttributes.source_file_captured;
     let source_dir = DB.source_dir_from_source_file source_file;
+    let origin =
+      /* Procedure coming from include files if it has different location
+         than the file where it was captured. */
+      DB.source_file_compare source_file proc_attributes.ProcAttributes.loc.file != 0 ?
+        `Include : `Source;
     let cfg_fname = DB.source_dir_get_internal_file source_dir ".cfg";
     let cfg_fname_exists = Sys.file_exists (DB.filename_to_string cfg_fname);
     if cfg_fname_exists {
-      Some source_file
+      Some (source_file, origin)
     } else {
       None
     }

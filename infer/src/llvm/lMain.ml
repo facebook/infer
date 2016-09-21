@@ -36,7 +36,7 @@ let store_icfg cg cfg =
   let cg_file = get_internal_file ".cg" in
   let cfg_file = get_internal_file ".cfg" in
   Cg.store_to_file cg_file cg;
-  Cfg.store_cfg_to_file cfg_file cfg;
+  Cfg.store_cfg_to_file ~source_file:!DB.current_source cfg_file cfg;
   if Config.debug_mode || Config.frontend_tests then
     begin
       Dotty.print_icfg_dotty cfg;

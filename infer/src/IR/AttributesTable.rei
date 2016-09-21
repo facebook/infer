@@ -41,9 +41,10 @@ let get_correct_type_from_objc_class_name: Typename.t => option Typ.t;
 /** Returns true if the method is defined as a C++ model */
 let pname_is_cpp_model: Procname.t => bool;
 
-/* Find the file where the procedure is defined according to the attributes,
-   if a cfg for that file exist. */
-let file_defining_procedure: Procname.t => option DB.source_file;
+/* Find the file where the procedure was captured, if a cfg for that file exists.
+   Return also a boolean indicating whether the procedure is defined in an
+   include file. */
+let find_file_capturing_procedure: Procname.t => option (DB.source_file, [ | `Include | `Source]);
 
 let is_whitelisted_cpp_method: string => bool;
 
