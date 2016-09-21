@@ -1546,7 +1546,7 @@ let log_files_of_current_exe =
     | Print -> "print"
     | StatsAggregator -> "stats_agregator"
     | Toplevel -> "top_level" in
-  prefix ^ "_out", prefix ^ "_err"
+  prefix ^ "_out_", prefix ^ "_err_"
 
 (** should_log_exe exe = true means that files for logging in the log folder will be created
     and uses of Logging.out or Logging.err will log in those files *)
@@ -1561,11 +1561,11 @@ let tmp_log_files_of_current_exe () =
   let log_dir = results_dir // log_dir_name in
   let out_file =
     if out_file_cmdline = "" then
-      Filename.temp_file ~temp_dir:log_dir out_name ""
+      Filename.temp_file ~temp_dir:log_dir out_name ".log"
     else out_file_cmdline in
   let err_file =
     if err_file_cmdline = "" then
-      Filename.temp_file ~temp_dir:log_dir err_name ""
+      Filename.temp_file ~temp_dir:log_dir err_name ".log"
     else err_file_cmdline in
   out_file, err_file
 

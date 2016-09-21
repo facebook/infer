@@ -87,11 +87,9 @@ let out_formatter, err_formatter =
     with Sys_error _ ->
       failwithf "@.ERROR: cannot open output file %s@." fname
   in
-  if Sys.file_exists Config.results_dir
-  && Sys.is_directory Config.results_dir
-  && Config.should_log_current_exe
-  then
+  if Config.should_log_current_exe then
     let log_dir = Config.results_dir // Config.log_dir_name in
+    create_dir Config.results_dir;
     create_dir log_dir;
     let out_file, err_file = Config.tmp_log_files_of_current_exe () in
     let out_fmt, out_chan = open_output_file out_file in

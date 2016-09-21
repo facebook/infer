@@ -310,9 +310,6 @@ val curr_language : language ref
 
 val print_usage_exit : unit -> 'a
 
-(** Name of files for logging the output in the current executable *)
-val log_files_of_current_exe : string * string
-
 (** Name of current temporary files for logging the output in the current executable *)
 val tmp_log_files_of_current_exe : unit -> string * string
 
