@@ -20,7 +20,7 @@ module MockTraceElem = struct
 
   type t = kind
 
-  let call_site _ = assert false
+  let call_site _ = CallSite.dummy
 
   let kind t = t
 

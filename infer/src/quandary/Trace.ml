@@ -153,9 +153,13 @@ module Make (Spec : Spec) = struct
         |> Sources.union caller_trace.sources in
       let sinks = Sinks.union caller_trace.sinks callee_trace.sinks in
       let passthroughs =
+        (* true if the procedure of [sink] is itself a sink rather than a caller of a sink *)
+        let is_original_sink sink =
+          Procname.equal (CallSite.pname callee_site) (CallSite.pname (Sink.call_site sink)) in
         let joined_passthroughs =
           Passthroughs.union caller_trace.passthroughs callee_trace.passthroughs in
-        if Sinks.is_empty callee_trace.sinks
+        if Sinks.is_empty callee_trace.sinks ||
+           not (Sinks.for_all is_original_sink callee_trace.sinks)
         then Passthroughs.add (Passthrough.make callee_site) joined_passthroughs
         else joined_passthroughs in
       { sources; sinks; passthroughs; }

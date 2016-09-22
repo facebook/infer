@@ -166,36 +166,75 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
 
     let apply_summary
         ret_ids
-        (summary : QuandarySummary.t)
+        actuals
+        summary
         (astate_in : Domain.astate)
         proc_data
         callee_site =
+      let callee_loc = CallSite.loc callee_site in
+
       let apply_return ret_ap = function
         | [ret_id] -> AccessPath.with_base_var (Var.of_id ret_id) ret_ap
         | [] -> failwith "Have summary for retval, but no ret id to bind it to!"
         | _ -> failwith "Unimp: summaries for function with multiple return values" in
 
+      let get_actual_ap_trace formal_num formal_ap access_tree =
+        let get_actual_ap formal_num =
+          let f_resolve_id = resolve_id astate_in.id_map in
+          let actual_exp, actual_typ =
+            try IList.nth actuals formal_num
+            with Failure _ -> failwithf "Bad formal number %d" formal_num in
+          AccessPath.of_exp actual_exp actual_typ ~f_resolve_id in
+        let project ~formal_ap ~actual_ap =
+          let projected_ap = AccessPath.append actual_ap (snd (AccessPath.extract formal_ap)) in
+          if AccessPath.is_exact formal_ap
+          then AccessPath.Exact projected_ap
+          else AccessPath.Abstracted projected_ap in
+        match get_actual_ap formal_num with
+        | Some actual_ap ->
+            let projected_ap = project ~formal_ap ~actual_ap in
+            let projected_trace =
+              match access_path_get_node projected_ap access_tree proc_data callee_loc with
+              | Some (trace, _) -> trace
+              | None -> TraceDomain.initial in
+            Some (projected_ap, projected_trace)
+        | None ->
+            None in
+
       let apply_one access_tree (in_out_summary : QuandarySummary.in_out_summary) =
         let in_trace = match in_out_summary.input with
           | In_empty ->
               TraceDomain.initial
-          | In_formal _ | In_global _ ->
-              (* TODO: implement these cases *)
-              assert false in
-        let caller_ap =
+          | In_formal (formal_num, formal_ap) ->
+              begin
+                match get_actual_ap_trace formal_num formal_ap access_tree with
+                | Some (_, actual_trace) -> actual_trace
+                | None -> TraceDomain.initial
+              end
+          | In_global _ ->
+              (* TODO: implement this once we add globals to the footprint (t13273652) *)
+              TraceDomain.initial in
+
+        let caller_ap_trace_opt =
           match in_out_summary.output with
           | Out_return ret_ap ->
-              apply_return ret_ap ret_ids
-          | Out_formal _ | Out_global _ ->
-              (* TODO: implement these cases *)
-              assert false in
-        let output_trace = TraceDomain.of_summary_trace in_out_summary.output_trace in
-        let appended_trace = TraceDomain.append in_trace output_trace callee_site in
-        let joined_trace =
-          match access_path_get_node caller_ap access_tree proc_data (CallSite.loc callee_site) with
-          | Some (orig_trace, _) -> TraceDomain.join orig_trace appended_trace
-          | None -> appended_trace in
-        TaintDomain.add_trace caller_ap joined_trace access_tree in
+              Some (apply_return ret_ap ret_ids, TraceDomain.initial)
+          | Out_formal (formal_num, formal_ap) ->
+              get_actual_ap_trace formal_num formal_ap access_tree
+          | Out_global _ ->
+              (* TODO: implement this once we add globals to the footprint (t13273652) *)
+              None in
+        match caller_ap_trace_opt with
+        | Some (caller_ap, caller_trace) ->
+            let output_trace = TraceDomain.of_summary_trace in_out_summary.output_trace in
+            let appended_trace = TraceDomain.append in_trace output_trace callee_site in
+            let joined_trace = TraceDomain.join caller_trace appended_trace in
+            IList.iter
+              (Reporting.log_error (CallSite.pname callee_site) ~loc:callee_loc)
+              (TraceDomain.get_reportable_exns joined_trace);
+            TaintDomain.add_trace caller_ap joined_trace access_tree
+        | None ->
+            access_tree in
 
       let access_tree = IList.fold_left apply_one astate_in.access_tree summary in
       { astate_in with access_tree; }
@@ -283,7 +322,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
           let astate_with_summary =
             match Summary.read_summary proc_data.tenv proc_data.pdesc callee_pname with
             | Some summary ->
-                apply_summary ret_ids summary astate_with_source proc_data call_site
+                apply_summary ret_ids actuals summary astate_with_source proc_data call_site
             | None ->
                 astate_with_source in
 
