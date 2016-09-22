@@ -76,26 +76,27 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
     module CFG = CFG
     module Domain = Domain
 
-    type formal_list = AccessPath.base list
-    type extras = formal_list
+    (** map from formals to their position *)
+    type formal_map = int AccessPath.BaseMap.t
+    type extras = formal_map
 
-    let is_formal base proc_data =
-      IList.exists (AccessPath.base_equal base) proc_data.ProcData.extras
+    let is_formal base formal_map =
+      AccessPath.BaseMap.mem base formal_map
 
-    let is_rooted_in_formal ap proc_data =
+    let is_rooted_in_formal ap formal_map =
       let root, _ = AccessPath.extract ap in
-      is_formal root proc_data
+      is_formal root formal_map
 
     let resolve_id id_map id =
       try Some (IdMapDomain.find id id_map)
       with Not_found -> None
 
     (* get the node associated with [access_path] in [access_tree] *)
-    let access_path_get_node access_path access_tree proc_data loc =
+    let access_path_get_node access_path access_tree (proc_data : formal_map ProcData.t) loc =
       match TaintDomain.get_node access_path access_tree with
       | Some _ as node_opt ->
           node_opt
-      | None when is_rooted_in_formal access_path proc_data ->
+      | None when is_rooted_in_formal access_path proc_data.extras ->
           let call_site = CallSite.make (Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc) loc in
           let trace =
             TraceDomain.of_source (TraceDomain.Source.make_footprint access_path call_site) in
@@ -239,9 +240,8 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
       let access_tree = IList.fold_left apply_one astate_in.access_tree summary in
       { astate_in with access_tree; }
 
-    let exec_instr
-        ({ Domain.id_map; } as astate) (proc_data : AccessPath.base list ProcData.t) _ instr =
-      let f_resolve_id = resolve_id id_map in
+    let exec_instr (astate : Domain.astate) (proc_data : formal_map ProcData.t) _ instr =
+      let f_resolve_id = resolve_id astate.id_map in
       match instr with
       | Sil.Load (lhs_id, rhs_exp, rhs_typ, _) ->
           analyze_id_assignment (Var.of_id lhs_id) rhs_exp rhs_typ astate
@@ -351,7 +351,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
   (** grab footprint traces in [access_tree] and make them into inputs for the summary. for each
       trace Footprint(T_out, a.b.c) associated with access path x.z.y, we will produce a summary of
       the form (x.z.y, T_in) => (T_in + T_out, a.b.c) *)
-  let make_summary formals access_tree pdesc =
+  let make_summary formal_map access_tree pdesc =
     let add_summary_for_output summary_acc output trace =
       let make_in_out_summary summary_input summary_output trace =
         let _ = match summary_input with
@@ -361,22 +361,14 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
           summary_input summary_output (TraceDomain.to_summary_trace trace) in
 
       let extract_input source acc =
-        let get_formal_number base formal_bases =
-          IList.find_mapi_opt
-            (fun index formal_base ->
-               if AccessPath.base_equal base formal_base
-               then Some index
-               else None)
-            formal_bases in
-
         match TraceDomain.Source.get_footprint_access_path source with
         | Some footprint_ap ->
             let input =
               let footprint_ap_base = fst (AccessPath.extract footprint_ap) in
-              match get_formal_number footprint_ap_base formals with
-              | Some index ->
+              match AccessPath.BaseMap.find footprint_ap_base formal_map with
+              | index ->
                   QuandarySummary.make_formal_input index footprint_ap
-              | None ->
+              | exception Not_found ->
                   failwithf
                     "Couldn't find formal number for %a@." AccessPath.pp_base footprint_ap_base in
             let summary = make_in_out_summary input output trace in
@@ -402,7 +394,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
       | exception Not_found ->
           summary_acc in
 
-    let add_formal_summaries summary_acc formal_index formal =
+    let add_formal_summaries formal formal_index summary_acc =
       let f_make_output = QuandarySummary.make_formal_output formal_index in
       add_summaries_for_base ~f_make_output formal summary_acc in
 
@@ -414,22 +406,27 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
           add_summaries_for_base
             ~f_make_output:QuandarySummary.make_return_output return_var_base summary_acc in
 
-    (* add summaries for each formal and for the return value *)
-    IList.fold_lefti add_formal_summaries [] formals
+    (* add summaries for each formal and the return value *)
+    AccessPath.BaseMap.fold add_formal_summaries formal_map []
     |> add_return_summaries
 
   let dummy_cg = Cg.create ()
 
   let checker { Callbacks.get_proc_desc; proc_name; proc_desc; tenv; } =
     let analyze_ondemand pdesc =
-      let make_formal_access_paths pdesc : AccessPath.base list=
+      let make_formal_access_paths pdesc =
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let attrs = Cfg.Procdesc.get_attributes pdesc in
-        IList.map
-          (fun (name, typ) ->
-             let pvar = Pvar.mk name pname in
-             AccessPath.base_of_pvar pvar typ)
-          attrs.ProcAttributes.formals in
+        let formals_with_nums =
+          IList.mapi
+            (fun index (name, typ) ->
+               let pvar = Pvar.mk name pname in
+               AccessPath.base_of_pvar pvar typ, index)
+            attrs.ProcAttributes.formals in
+        IList.fold_left
+          (fun formal_map (base, index) -> AccessPath.BaseMap.add base index formal_map)
+          AccessPath.BaseMap.empty
+          formals_with_nums in
       let formals = make_formal_access_paths pdesc in
       let proc_data = ProcData.make pdesc tenv formals in
       match Analyzer.compute_post proc_data with

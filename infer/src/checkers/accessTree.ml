@@ -15,17 +15,8 @@ module L = Logging
 (** tree of (trace, access path) associations organized by structure of access paths *)
 module Make (TraceDomain : AbstractDomain.S) = struct
 
-  module AccessMap = PrettyPrintable.MakePPMap(struct
-      type t = AccessPath.access
-      let compare = AccessPath.access_compare
-      let pp_key = AccessPath.pp_access
-    end)
-
-  module BaseMap = PrettyPrintable.MakePPMap(struct
-      type t = AccessPath.base
-      let compare = AccessPath.base_compare
-      let pp_key = AccessPath.pp_base
-    end)
+  module AccessMap = AccessPath.AccessMap
+  module BaseMap = AccessPath.BaseMap
 
   type node = TraceDomain.astate * tree
   and tree =

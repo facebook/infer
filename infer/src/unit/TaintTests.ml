@@ -275,5 +275,5 @@ let tests =
       invariant "{ ret_id$0 => (SOURCE -> SINK) }";
     ];
 
-  ] |> TestInterpreter.create_tests ~pp_opt:pp_sparse [] in
+  ] |> TestInterpreter.create_tests ~pp_opt:pp_sparse AccessPath.BaseMap.empty in
   "taint_test_suite">:::test_list

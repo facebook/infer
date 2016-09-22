@@ -81,3 +81,7 @@ val (<=) : lhs:t -> rhs:t -> bool
 val pp_base : Format.formatter -> base -> unit
 
 val pp : Format.formatter -> t -> unit
+
+module BaseMap : PrettyPrintable.PPMap with type key = base
+
+module AccessMap : PrettyPrintable.PPMap with type key = access

@@ -160,3 +160,15 @@ let pp_raw fmt (base, accesses) =
 let pp fmt = function
   | Exact access_path -> pp_raw fmt access_path
   | Abstracted access_path -> F.fprintf fmt "%a*" pp_raw access_path
+
+module BaseMap = PrettyPrintable.MakePPMap(struct
+    type t = base
+    let compare = base_compare
+    let pp_key = pp_base
+  end)
+
+module AccessMap = PrettyPrintable.MakePPMap(struct
+    type t = access
+    let compare = access_compare
+    let pp_key = pp_access
+  end)
