@@ -101,9 +101,6 @@ let source_file_encoding source_file =
 
 let source_file_empty = Absolute ""
 
-(** current source file *)
-let current_source = ref source_file_empty
-
 (** {2 Source Dirs} *)
 
 (** source directory: the directory inside the results dir corresponding to a source file *)
@@ -281,9 +278,12 @@ module Results_dir = struct
 
   (** kind of path: specifies how to interpret a path *)
   type path_kind =
-    | Abs_root (** absolute path implicitly rooted at the root of the results dir *)
-    | Abs_source_dir (** absolute path implicitly rooted at the source directory for the current file *)
-    | Rel (** relative path *)
+    | Abs_root
+    (** absolute path implicitly rooted at the root of the results dir *)
+    | Abs_source_dir of source_file
+    (** absolute path implicitly rooted at the source directory for the file *)
+    | Rel
+    (** relative path *)
 
   let filename_from_base base path =
     let rec f = function
@@ -296,8 +296,8 @@ module Results_dir = struct
   let path_to_filename pk path =
     let base = match pk with
       | Abs_root -> Config.results_dir
-      | Abs_source_dir ->
-          let dir = source_dir_from_source_file !current_source in
+      | Abs_source_dir source ->
+          let dir = source_dir_from_source_file source in
           source_dir_to_string dir
       | Rel -> Filename.current_dir_name in
     filename_from_base base path
@@ -306,14 +306,14 @@ module Results_dir = struct
   let specs_dir = path_to_filename Abs_root [Config.specs_dir_name]
 
   (** initialize the results directory *)
-  let init () =
+  let init source =
     create_dir Config.results_dir;
     create_dir specs_dir;
     create_dir (path_to_filename Abs_root [Config.attributes_dir_name]);
     create_dir (path_to_filename Abs_root [Config.sources_dir_name]);
     create_dir (path_to_filename Abs_root [Config.captured_dir_name]);
-    if not (source_file_equal !current_source source_file_empty) then
-      create_dir (path_to_filename Abs_source_dir [])
+    if not (source_file_equal source source_file_empty) then
+      create_dir (path_to_filename (Abs_source_dir source) [])
 
   let clean_specs_dir () =
     create_dir specs_dir; (* create dir just in case it doesn't exist to avoid errors *)

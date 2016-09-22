@@ -179,9 +179,9 @@ let static_field_init node cn code =
   with Not_found -> code
 
 (* when accessing a static final field, we call the initialiser method. *)
-let translate_instr_static_field context callee_procdesc fs field_type loc =
+let translate_instr_static_field (context : JContext.t) callee_procdesc fs field_type loc =
   let cg = JContext.get_cg context in
-  let caller_procdesc = JContext.get_procdesc context in
+  let caller_procdesc = context.procdesc in
   let ret_id = Ident.create_fresh Ident.knormal in
   let caller_procname = (Cfg.Procdesc.get_proc_name caller_procdesc) in
   let callee_procname = Cfg.Procdesc.get_proc_name callee_procdesc in
@@ -193,8 +193,8 @@ let translate_instr_static_field context callee_procdesc fs field_type loc =
   ([call_instr], Exp.Var ret_id)
 
 
-let is_static_final_field context cn fs =
-  match JClasspath.lookup_node cn (JContext.get_program context) with
+let is_static_final_field (context : JContext.t) cn fs =
+  match JClasspath.lookup_node cn context.program with
   | None -> false
   | Some node ->
       try

@@ -62,7 +62,7 @@ let freeze exe_env = exe_env (* TODO: unclear what this function is used for *)
 
 (** create a new execution environment *)
 let create () =
-  { cg = Cg.create ();
+  { cg = Cg.create None;
     proc_map = Procname.Hash.create 17;
     source_files = DB.SourceFileSet.empty;
   }
@@ -184,7 +184,6 @@ let iter_files f exe_env =
     then seen_files_acc
     else
       begin
-        DB.current_source := fname;
         Config.nLOC := file_data.nLOC;
         Option.may (fun cfg -> f fname cfg) (file_data_to_cfg file_data);
         DB.SourceFileSet.add fname seen_files_acc

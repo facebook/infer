@@ -34,26 +34,25 @@ let register_perf_stats_report source_file =
 let init_global_state source_file =
   register_perf_stats_report source_file ;
   Config.curr_language := Config.Java;
-  DB.current_source := source_file;
-  DB.Results_dir.init ();
+  DB.Results_dir.init source_file;
   Ident.NameGenerator.reset ();
   JContext.reset_exn_node_table ();
   let nLOC = FileLOC.file_get_loc (DB.source_file_to_string source_file) in
   Config.nLOC := nLOC
 
 
-let store_icfg tenv cg cfg =
-  let source_dir = DB.source_dir_from_source_file !DB.current_source in
+let store_icfg source_file tenv cg cfg =
+  let source_dir = DB.source_dir_from_source_file source_file in
   begin
     let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
     let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
     if Config.create_harness then Harness.create_harness cfg cg tenv;
     Cg.store_to_file cg_file cg;
-    Cfg.store_cfg_to_file ~source_file:!DB.current_source cfg_file cfg;
+    Cfg.store_cfg_to_file ~source_file cfg_file cfg;
     if Config.debug_mode || Config.frontend_tests then
       begin
-        Dotty.print_icfg_dotty cfg;
-        Cg.save_call_graph_dotty None Specs.get_specs cg
+        Dotty.print_icfg_dotty source_file cfg;
+        Cg.save_call_graph_dotty source_file Specs.get_specs cg
       end
   end
 
@@ -62,14 +61,14 @@ let store_icfg tenv cg cfg =
 (* environment are obtained and saved. *)
 let do_source_file
     linereader classes program tenv
-    source_basename (package_opt, source_file) =
+    source_basename package_opt source_file =
   JUtils.log "\nfilename: %s (%s)@."
     (DB.source_file_to_string source_file) source_basename;
   let call_graph, cfg =
     JFrontend.compute_source_icfg
       linereader classes program tenv
-      source_basename package_opt in
-  store_icfg tenv call_graph cfg
+      source_basename package_opt source_file in
+  store_icfg source_file tenv call_graph cfg
 
 
 let capture_libs linereader program tenv =
@@ -83,8 +82,8 @@ let capture_libs linereader program tenv =
             JClasspath.java_source_file_from_path (JFrontend.path_of_cached_classname cn) in
           init_global_state fake_source_file;
           let call_graph, cfg =
-            JFrontend.compute_class_icfg linereader program tenv node in
-          store_icfg tenv call_graph cfg;
+            JFrontend.compute_class_icfg fake_source_file linereader program tenv node in
+          store_icfg fake_source_file tenv call_graph cfg;
           JFrontend.cache_classname cn;
         end in
   JBasics.ClassMap.iter (capture_class tenv) (JClasspath.get_classmap program)
@@ -131,7 +130,7 @@ let do_all_files classpath sources classes =
   let translate_source_file basename (package_opt, _) source_file =
     init_global_state source_file;
     if not (skip source_file) then
-      do_source_file linereader classes program tenv basename (package_opt, source_file) in
+      do_source_file linereader classes program tenv basename package_opt source_file in
   StringMap.iter
     (fun basename file_entry ->
        match file_entry with

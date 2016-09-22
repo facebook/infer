@@ -102,31 +102,35 @@ let is_visited node =
     when starting and finishing the processing of a node *)
 module NodesHtml : sig
   val start_node :
-    int -> Location.t -> Procname.t -> Cfg.node list -> Cfg.node list -> Cfg.node list -> bool
-  val finish_node : int -> unit
+    int -> Location.t -> Procname.t -> Cfg.node list -> Cfg.node list -> Cfg.node list ->
+    DB.source_file -> bool
+  val finish_node : int -> DB.source_file -> unit
 end = struct
   let log_files = Hashtbl.create 11
 
   let id_to_fname id = "node" ^ string_of_int id
 
-  let start_node nodeid loc proc_name preds succs exn =
+  let start_node nodeid loc proc_name preds succs exns source =
     let node_fname = id_to_fname nodeid in
-    let modified = Io_infer.Html.modified_during_analysis ["nodes"; node_fname] in
+    let modified = Io_infer.Html.modified_during_analysis source ["nodes"; node_fname] in
     let needs_initialization, (fd, fmt) =
       if modified then
-        (false, Io_infer.Html.open_out ["nodes"; node_fname])
+        (false, Io_infer.Html.open_out source ["nodes"; node_fname])
       else
-        (true, Io_infer.Html.create DB.Results_dir.Abs_source_dir ["nodes"; node_fname]) in
+        (true,
+         Io_infer.Html.create
+           (DB.Results_dir.Abs_source_dir source)
+           ["nodes"; node_fname]) in
     curr_html_formatter := fmt;
-    Hashtbl.replace log_files (node_fname, !DB.current_source) fd;
+    Hashtbl.replace log_files (node_fname, source) fd;
     if needs_initialization then
       (F.fprintf fmt "<center><h1>Cfg Node %a</h1></center>"
-         (Io_infer.Html.pp_line_link ~text: (Some (string_of_int nodeid)) [".."])
+         (Io_infer.Html.pp_line_link source ~text: (Some (string_of_int nodeid)) [".."])
          loc.Location.line;
        F.fprintf fmt "PROC: %a LINE:%a\n"
          (Io_infer.Html.pp_proc_link [".."] proc_name)
          (Escape.escape_xml (Procname.to_string proc_name))
-         (Io_infer.Html.pp_line_link [".."]) loc.Location.line;
+         (Io_infer.Html.pp_line_link source [".."]) loc.Location.line;
        F.fprintf fmt "<br>PREDS:@\n";
        IList.iter (fun node ->
            Io_infer.Html.pp_node_link [".."] ""
@@ -147,16 +151,16 @@ end = struct
              (IList.map Cfg.Node.get_id (Cfg.Node.get_preds node) :> int list)
              (IList.map Cfg.Node.get_id (Cfg.Node.get_succs node) :> int list)
              (IList.map Cfg.Node.get_id (Cfg.Node.get_exn node) :> int list)
-             (is_visited node) false fmt (Cfg.Node.get_id node :> int)) exn;
+             (is_visited node) false fmt (Cfg.Node.get_id node :> int)) exns;
        F.fprintf fmt "<br>@\n";
        F.pp_print_flush fmt ();
        true
       )
     else false
 
-  let finish_node nodeid =
+  let finish_node nodeid source =
     let fname = id_to_fname nodeid in
-    let fd = Hashtbl.find log_files (fname, !DB.current_source) in
+    let fd = Hashtbl.find log_files (fname, source) in
     Unix.close fd;
     curr_html_formatter := F.std_formatter
 end
@@ -360,13 +364,14 @@ let force_delayed_prints () =
   Config.forcing_delayed_prints := false
 
 (** Start a session, and create a new html fine for the node if it does not exist yet *)
-let start_session node (loc: Location.t) proc_name session =
+let start_session node (loc: Location.t) proc_name session source =
   let node_id = Cfg.Node.get_id node in
   (if NodesHtml.start_node
       (node_id :> int) loc proc_name
       (Cfg.Node.get_preds node)
       (Cfg.Node.get_succs node)
       (Cfg.Node.get_exn node)
+      source
    then
      F.fprintf !curr_html_formatter "%a<LISTING>%a</LISTING>%a"
        Io_infer.Html.pp_start_color Green
@@ -374,37 +379,39 @@ let start_session node (loc: Location.t) proc_name session =
        Io_infer.Html.pp_end_color ());
   F.fprintf !curr_html_formatter "%a%a"
     Io_infer.Html.pp_hline ()
-    (Io_infer.Html.pp_session_link ~with_name: true [".."])
+    (Io_infer.Html.pp_session_link source ~with_name: true [".."])
     ((node_id :> int), session, loc.Location.line);
   F.fprintf !curr_html_formatter "<LISTING>%a"
     Io_infer.Html.pp_start_color Black
 
-let node_start_session node loc proc_name session =
+let node_start_session node loc proc_name session source =
   if Config.write_html then
-    start_session node loc proc_name session
+    start_session node loc proc_name session source
 
 (** Finish a session, and perform delayed print actions if required *)
-let node_finish_session node =
+let node_finish_session node source =
   if Config.test == false then force_delayed_prints ()
   else L.reset_delayed_prints ();
   if Config.write_html then begin
     F.fprintf !curr_html_formatter "</LISTING>%a"
       Io_infer.Html.pp_end_color ();
-    NodesHtml.finish_node (Cfg.Node.get_id node :> int)
+    NodesHtml.finish_node (Cfg.Node.get_id node :> int) source
   end
 
 (** Write html file for the procedure.
     The boolean indicates whether to print whole seconds only *)
-let write_proc_html whole_seconds pdesc =
+let write_proc_html source whole_seconds pdesc =
   if Config.write_html then
     begin
       let pname = Cfg.Procdesc.get_proc_name pdesc in
       let nodes = IList.sort Cfg.Node.compare (Cfg.Procdesc.get_nodes pdesc) in
       let linenum = (Cfg.Node.get_loc (IList.hd nodes)).Location.line in
       let fd, fmt =
-        Io_infer.Html.create DB.Results_dir.Abs_source_dir [Procname.to_filename pname] in
+        Io_infer.Html.create
+          (DB.Results_dir.Abs_source_dir source)
+          [Procname.to_filename pname] in
       F.fprintf fmt "<center><h1>Procedure %a</h1></center>@\n"
-        (Io_infer.Html.pp_line_link
+        (Io_infer.Html.pp_line_link source
            ~text: (Some (Escape.escape_xml (Procname.to_string pname)))
            [])
         linenum;
@@ -421,7 +428,7 @@ let write_proc_html whole_seconds pdesc =
        | None ->
            ()
        | Some summary ->
-           Specs.pp_summary (pe_html Black) whole_seconds fmt summary;
+           Specs.pp_summary_html source Black ~whole_seconds fmt summary;
            Io_infer.Html.close (fd, fmt))
     end
 
@@ -445,7 +452,7 @@ let create_table_err_per_line err_log =
 let create_err_message err_string =
   "\n<div class=\"msg\" style=\"margin-left:9ex\">" ^ err_string ^ "</div>"
 
-let write_html_proc proof_cover table_nodes_at_linenum global_err_log proc_desc =
+let write_html_proc source proof_cover table_nodes_at_linenum global_err_log proc_desc =
   let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
   let process_node nodes_tbl n =
     let lnum = (Cfg.Node.get_loc n).Location.line in
@@ -456,7 +463,7 @@ let write_html_proc proof_cover table_nodes_at_linenum global_err_log proc_desc 
   let proc_loc = Cfg.Procdesc.get_loc proc_desc in
   let process_proc =
     Cfg.Procdesc.is_defined proc_desc &&
-    DB.source_file_equal proc_loc.Location.file !DB.current_source &&
+    DB.source_file_equal proc_loc.Location.file source &&
     match AttributesTable.find_file_capturing_procedure proc_name with
     | None -> true
     | Some (source_captured, _) ->
@@ -477,19 +484,21 @@ let write_html_proc proof_cover table_nodes_at_linenum global_err_log proc_desc 
 
 (** Create filename.ext.html. *)
 let write_html_file linereader filename procs =
-  DB.current_source := filename;
   let fname_encoding = DB.source_file_encoding filename in
-  let (fd, fmt) = Io_infer.Html.create DB.Results_dir.Abs_source_dir [".."; fname_encoding] in
+  let (fd, fmt) =
+    Io_infer.Html.create
+      (DB.Results_dir.Abs_source_dir filename)
+      [".."; fname_encoding] in
   let pp_prelude () =
     let s =
       "<center><h1>File " ^
-      (DB.source_file_to_string !DB.current_source) ^
+      (DB.source_file_to_string filename) ^
       "</h1></center>\n" ^
       "<table class=\"code\">\n" in
     F.fprintf fmt "%s" s in
   let print_one_line proof_cover table_nodes_at_linenum table_err_per_line line_number =
     let line_html =
-      match LineReader.from_file_linenum linereader !DB.current_source line_number with
+      match LineReader.from_file_linenum linereader filename line_number with
       | Some line_raw ->
           Escape.escape_xml line_raw
       | None ->
@@ -552,7 +561,7 @@ let write_html_file linereader filename procs =
   let global_err_log = Errlog.empty () in
   let table_nodes_at_linenum = Hashtbl.create 11 in
   let proof_cover = ref Specs.Visitedset.empty in
-  IList.iter (write_html_proc proof_cover table_nodes_at_linenum global_err_log) procs;
+  IList.iter (write_html_proc filename proof_cover table_nodes_at_linenum global_err_log) procs;
   let table_err_per_line = create_table_err_per_line global_err_log in
   let linenum = ref 0 in
 
@@ -563,7 +572,7 @@ let write_html_file linereader filename procs =
     done
   with End_of_file ->
     (F.fprintf fmt "%s" "</table>\n";
-     Errlog.pp_html [fname_encoding] fmt global_err_log;
+     Errlog.pp_html filename [fname_encoding] fmt global_err_log;
      Io_infer.Html.close (fd, fmt))
 
 (** Create filename.ext.html for each file in the exe_env. *)

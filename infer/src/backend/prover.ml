@@ -749,7 +749,10 @@ let check_atom tenv prop a0 =
   if Config.smt_output then begin
     let key = get_smt_key a prop_no_fp in
     let key_filename =
-      DB.Results_dir.path_to_filename DB.Results_dir.Abs_source_dir [(key ^ ".cns")] in
+      let source = (State.get_loc ()).file in
+      DB.Results_dir.path_to_filename
+        (DB.Results_dir.Abs_source_dir source)
+        [(key ^ ".cns")] in
     let outc = open_out (DB.filename_to_string key_filename) in
     let fmt = F.formatter_of_out_channel outc in
     L.d_str ("ID: "^key); L.d_ln ();

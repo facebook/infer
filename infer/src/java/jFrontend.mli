@@ -29,10 +29,12 @@ val compute_source_icfg :
   Tenv.t ->
   string ->
   string option ->
+  DB.source_file ->
   Cg.t * Cfg.cfg
 
 (** Compute the CFG for a class *)
 val compute_class_icfg :
+  DB.source_file ->
   Printer.LineReader.t ->
   JClasspath.program ->
   Tenv.t ->

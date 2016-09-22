@@ -376,15 +376,15 @@ let param_type program tenv cn name vt =
   else value_type program tenv vt
 
 
-let get_var_type_from_sig context var =
-  let program = JContext.get_program context in
+let get_var_type_from_sig (context : JContext.t) var =
+  let program = context.program in
   try
     let tenv = JContext.get_tenv context in
     let vt', var' =
       IList.find
         (fun (_, var') -> JBir.var_equal var var')
-        (JBir.params (JContext.get_impl context)) in
-    Some (param_type program tenv (JContext.get_cn context) var' vt')
+        (JBir.params context.impl) in
+    Some (param_type program tenv context.cn var' vt')
   with Not_found -> None
 
 
@@ -403,8 +403,8 @@ let extract_array_type typ =
 
 (** translate the type of an expression, looking in the method signature for formal parameters
     this is because variables in expressions do not have accurate types *)
-let rec expr_type context expr =
-  let program = JContext.get_program context in
+let rec expr_type (context : JContext.t) expr =
+  let program = context.program in
   let tenv = JContext.get_tenv context in
   match expr with
   | JBir.Const const -> value_type program tenv (const_type const)

@@ -26,10 +26,10 @@ let create_handler_table impl =
   IList.iter collect (JBir.exception_edges impl);
   handler_tb
 
-let translate_exceptions context exit_nodes get_body_nodes handler_table =
+let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handler_table =
   let catch_block_table = Hashtbl.create 1 in
   let exn_message = "exception handler" in
-  let procdesc = JContext.get_procdesc context in
+  let procdesc = context.procdesc in
   let cfg = JContext.get_cfg context in
   let create_node loc node_kind instrs = Cfg.Node.create cfg loc node_kind instrs procdesc in
   let ret_var = Cfg.Procdesc.get_ret_var procdesc in
@@ -62,7 +62,8 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
             match handler.JBir.e_catch_type with
             | None -> JBasics.make_cn "java.lang.Exception"
             | Some cn -> cn in
-          match JTransType.get_class_type (JContext.get_program context) (JContext.get_tenv context) class_name with
+          match JTransType.get_class_type
+                  context.program (JContext.get_tenv context) class_name with
           | Typ.Tptr (typ, _) -> typ
           | _ -> assert false in
         let id_instanceof = Ident.create_fresh Ident.knormal in

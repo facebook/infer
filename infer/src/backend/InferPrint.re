@@ -871,7 +871,7 @@ let module Summary = {
         "Procedure: %a@\n%a@."
         Procname.pp
         proc_name
-        (Specs.pp_summary pe_text Config.whole_seconds)
+        (Specs.pp_summary_text whole_seconds::Config.whole_seconds)
         summary
     }
   };
@@ -881,7 +881,8 @@ let module Summary = {
     let proc_name = Specs.get_proc_name summary;
     Latex.pp_section
       fmt ("Analysis of function " ^ Latex.convert_string (Procname.to_string proc_name));
-    F.fprintf fmt "@[<v>%a@]" (Specs.pp_summary (pe_latex Black) Config.whole_seconds) summary
+    F.fprintf
+      fmt "@[<v>%a@]" (Specs.pp_summary_latex Black whole_seconds::Config.whole_seconds) summary
   };
   let pp_summary_xml summary fname =>
     if Config.xml_specs {

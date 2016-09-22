@@ -234,14 +234,18 @@ val normalized_specs_to_specs : NormSpec.t list -> Prop.normal spec list
 (** Print the spec *)
 val pp_spec : printenv -> (int * int) option -> Format.formatter -> Prop.normal spec -> unit
 
-(** Print the spec table, the bool indicates whether to print whole seconds only *)
-val pp_spec_table : printenv -> bool -> Format.formatter -> unit -> unit
-
 (** Print the specs *)
 val pp_specs : printenv -> Format.formatter -> Prop.normal spec list -> unit
 
-(** Print the summary, the bool indicates whether to print whole seconds only *)
-val pp_summary : printenv -> bool -> Format.formatter -> summary -> unit
+(** Print the summary in html format *)
+val pp_summary_html :
+  whole_seconds:bool -> DB.source_file -> color -> Format.formatter -> summary -> unit
+
+(** Print the summary in latext format *)
+val pp_summary_latex : whole_seconds:bool -> color -> Format.formatter -> summary -> unit
+
+(** Print the summary in text format *)
+val pp_summary_text : whole_seconds:bool -> Format.formatter -> summary -> unit
 
 (** Like proc_resolve_attributes but start from a proc_desc. *)
 val pdesc_resolve_attributes : Cfg.Procdesc.t -> ProcAttributes.t

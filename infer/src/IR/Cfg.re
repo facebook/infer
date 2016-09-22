@@ -1168,13 +1168,6 @@ let save_attributes source_file cfg => {
         };
       {...attributes, loc: loc', source_file_captured: source_file}
     };
-    /*
-     L.stderr "save_proc@.  proc_name:%a@.  filename:%s@.  current_source:%s@.  loc:%s@."
-       Procname.pp (Procdesc.get_proc_name proc_desc)
-       (DB.filename_to_string filename)
-       (DB.source_file_to_string !DB.current_source)
-       (Location.to_string loc);
-     */
     AttributesTable.store_attributes attributes'
   };
   IList.iter save_proc (get_all_procs cfg)

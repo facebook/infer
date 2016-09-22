@@ -14,7 +14,7 @@ open! Utils
 (** Optional set of source dirs to analyze in on-demand mode. *)
 val dirs_to_analyze : StringSet.t option Lazy.t
 
-type analyze_ondemand = Cfg.Procdesc.t -> unit
+type analyze_ondemand = DB.source_file -> Cfg.Procdesc.t -> unit
 
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 

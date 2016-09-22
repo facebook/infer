@@ -109,11 +109,11 @@ let pp_warnings fmt (errlog : t) =
   ErrLogHash.iter f errlog
 
 (** Print an error log in html format *)
-let pp_html path_to_root fmt (errlog: t) =
+let pp_html source path_to_root fmt (errlog: t) =
   let pp_eds fmt eds =
     let pp_nodeid_session_loc
         fmt ((nodeid, _), session, loc, _, _, _, _) =
-      Io_infer.Html.pp_session_link path_to_root fmt (nodeid, session, loc.Location.line) in
+      Io_infer.Html.pp_session_link source path_to_root fmt (nodeid, session, loc.Location.line) in
     ErrDataSet.iter (pp_nodeid_session_loc fmt) eds in
   let f do_fp ek (ekind, infp, err_name, desc, _) eds =
     if ekind == ek && do_fp == infp

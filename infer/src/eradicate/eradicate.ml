@@ -279,8 +279,8 @@ struct
           let initializers_current_class =
             pname_and_pdescs_with
               (function (pname, proc_attributes) ->
-                is_initializer proc_attributes &&
-                get_class pname = get_class curr_pname) in
+                 is_initializer proc_attributes &&
+                 get_class pname = get_class curr_pname) in
           final_typestates
             ((curr_pname, curr_pdesc) :: initializers_current_class)
         end
@@ -405,7 +405,7 @@ let callback_eradicate
       check_ret_type = [];
     } in
   let callbacks =
-    let analyze_ondemand pdesc =
+    let analyze_ondemand _ pdesc =
       let idenv_pname = Idenv.create_from_idenv idenv pdesc in
       Main.callback checks
         { callback_args with

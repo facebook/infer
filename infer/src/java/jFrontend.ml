@@ -16,8 +16,9 @@ open Sawja_pack
 module L = Logging
 
 
-let add_edges context start_node exn_node exit_nodes method_body_nodes impl super_call =
-  let cfg = (JContext.get_icfg context).cfg in
+let add_edges
+    (context : JContext.t) start_node exn_node exit_nodes method_body_nodes impl super_call =
+  let cfg = context.icfg.cfg in
   let pc_nb = Array.length method_body_nodes in
   let last_pc = pc_nb - 1 in
   let is_last pc = (pc = last_pc) in
@@ -73,7 +74,7 @@ let add_edges context start_node exn_node exit_nodes method_body_nodes impl supe
   Array.iteri connect_nodes method_body_nodes
 
 (** Add a concrete method. *)
-let add_cmethod program icfg node cm is_static =
+let add_cmethod source_file program icfg node cm is_static =
   let cfg = icfg.JContext.cfg in
   let tenv = icfg.JContext.tenv in
   let cn, ms = JBasics.cms_split cm.Javalib.cm_class_method_signature in
@@ -101,7 +102,7 @@ let add_cmethod program icfg node cm is_static =
             (instrs, JContext.Init)
           else (JBir.code impl), JContext.Normal in
         let context =
-          JContext.create_context icfg procdesc impl cn meth_kind node program in
+          JContext.create_context icfg procdesc impl cn meth_kind source_file program in
         let method_body_nodes = Array.mapi (JTrans.instruction context) instrs in
         let procname = Cfg.Procdesc.get_proc_name procdesc in
         add_edges context start_node exn_node [exit_node] method_body_nodes impl false;
@@ -157,20 +158,20 @@ let is_classname_cached cn =
 (* Given a source file and a class, translates the code of this class.
    In init - mode, finds out whether this class contains initializers at all,
    in this case translates it. In standard mode, all methods are translated *)
-let create_icfg linereader program icfg cn node =
+let create_icfg source_file linereader program icfg cn node =
   JUtils.log "\tclassname: %s@." (JBasics.cn_name cn);
   cache_classname cn;
   let cfg = icfg.JContext.cfg in
   let tenv = icfg.JContext.tenv in
   begin
-    Javalib.m_iter (JTrans.create_local_procdesc program linereader cfg tenv node) node;
+    Javalib.m_iter (JTrans.create_local_procdesc source_file program linereader cfg tenv node) node;
     Javalib.m_iter (fun m ->
         (* each procedure has different scope: start names from id 0 *)
         Ident.NameGenerator.reset ();
         let method_kind = JTransType.get_method_kind m in
         match m with
         | Javalib.ConcreteMethod cm ->
-            add_cmethod program icfg node cm method_kind
+            add_cmethod source_file program icfg node cm method_kind
         | Javalib.AbstractMethod am ->
             add_amethod program icfg am method_kind
       ) node
@@ -213,9 +214,9 @@ let should_capture classes package_opt source_basename node =
    source file. *)
 let compute_source_icfg
     linereader classes program tenv
-    source_basename package_opt =
+    source_basename package_opt source_file =
   let icfg =
-    { JContext.cg = Cg.create ();
+    { JContext.cg = Cg.create (Some source_file);
       JContext.cfg = Cfg.Node.create_cfg ();
       JContext.tenv = tenv } in
   let select test procedure cn node =
@@ -229,18 +230,18 @@ let compute_source_icfg
     JBasics.ClassMap.iter
       (select
          (should_capture classes package_opt source_basename)
-         (create_icfg linereader program icfg))
+         (create_icfg source_file linereader program icfg))
       (JClasspath.get_classmap program) in
   (icfg.JContext.cg, icfg.JContext.cfg)
 
-let compute_class_icfg linereader program tenv node =
+let compute_class_icfg source_file linereader program tenv node =
   let icfg =
-    { JContext.cg = Cg.create ();
+    { JContext.cg = Cg.create (Some source_file);
       JContext.cfg = Cfg.Node.create_cfg ();
       JContext.tenv = tenv } in
   begin
     try
-      create_icfg linereader program icfg (Javalib.get_name node) node
+      create_icfg source_file linereader program icfg (Javalib.get_name node) node
     with
     | Bir.Subroutine -> ()
     | e -> raise e

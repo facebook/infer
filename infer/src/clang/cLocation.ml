@@ -38,7 +38,8 @@ let choose_sloc sloc1 sloc2 =
 
 let choose_sloc_to_update_curr_file sloc1 sloc2 =
   match sloc2.Clang_ast_t.sl_file with
-  | Some f when DB.source_file_equal (source_file_from_path f) !DB.current_source -> sloc2
+  | Some f when DB.source_file_equal (source_file_from_path f) !CFrontend_config.current_source ->
+      sloc2
   | _ -> sloc1
 
 let update_curr_file di =
@@ -67,7 +68,7 @@ let clang_to_sil_location clang_loc procdesc_opt =
         | Some f ->
             let file_db = source_file_from_path f in
             let nloc =
-              if (DB.source_file_equal file_db !DB.current_source) then
+              if (DB.source_file_equal file_db !CFrontend_config.current_source) then
                 !Config.nLOC
               else -1 in
             file_db, nloc
@@ -90,7 +91,7 @@ let should_do_frontend_check (loc_start, _) =
   match loc_start.Clang_ast_t.sl_file with
   | Some file ->
       let equal_current_source file =
-        DB.source_file_equal (source_file_from_path file) !DB.current_source in
+        DB.source_file_equal (source_file_from_path file) !CFrontend_config.current_source in
       equal_current_source file ||
       (file_in_project file &&  not Config.testing_mode)
   | None -> false
@@ -112,7 +113,7 @@ let should_translate (loc_start, loc_end) decl_trans_context ~translate_when_use
     map_path_of path_pred loc
   in
   let equal_current_source file =
-    DB.source_file_equal file !DB.current_source
+    DB.source_file_equal file !CFrontend_config.current_source
   in
   let file_in_project = map_path_of file_in_project loc_end
                         || map_path_of file_in_project loc_start in

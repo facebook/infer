@@ -31,7 +31,7 @@ val get_method_procdesc : JClasspath.program -> Cfg.cfg -> Tenv.t -> JBasics.cla
 
 (** [create_local_procdesc linereader cfg tenv program m] creates a procedure description for the method m and adds it to cfg  *)
 val create_local_procdesc :
-  JClasspath.program -> Printer.LineReader.t -> Cfg.cfg -> Tenv.t ->
+  DB.source_file -> JClasspath.program -> Printer.LineReader.t -> Cfg.cfg -> Tenv.t ->
   JCode.jcode Javalib.interface_or_class -> JCode.jcode Javalib.jmethod -> unit
 
 (** returns the implementation of a given method *)

@@ -79,6 +79,8 @@ val modeled_function_attributes : string list
 
 (** Global state *)
 
+val current_source : DB.source_file ref
+
 (** Map from enum constants pointers to their predecesor and their sil value *)
 val enum_map : (Clang_ast_t.pointer option * Exp.t option) Clang_ast_main.PointerMap.t ref
 val global_translation_unit_decls : Clang_ast_t.decl list ref

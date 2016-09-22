@@ -120,7 +120,7 @@ module MakeNoCFG
 
     let checker { Callbacks.get_proc_desc; proc_desc; proc_name; tenv; } extras =
       let post_opt = ref None in
-      let analyze_ondemand pdesc =
+      let analyze_ondemand _source pdesc =
         match compute_post (ProcData.make pdesc tenv extras) with
         | Some post ->
             Summ.write_summary (Cfg.Procdesc.get_proc_name pdesc) post;
@@ -136,7 +136,7 @@ module MakeNoCFG
       then
         begin
           Ondemand.set_callbacks callbacks;
-          analyze_ondemand proc_desc;
+          analyze_ondemand DB.source_file_empty proc_desc;
           Ondemand.unset_callbacks ();
         end;
       !post_opt

@@ -35,6 +35,8 @@ val file_modified_time : ?symlink:bool -> filename -> float
 (** Return whether filename was updated after analysis started. File doesn't have to exist *)
 val file_was_updated_after_start : filename -> bool
 
+type source_file
+
 (** {2 Results Directory} *)
 
 module Results_dir : sig
@@ -43,9 +45,12 @@ module Results_dir : sig
 
   (** kind of path: specifies how to interpret a path *)
   type path_kind =
-    | Abs_root (** absolute path implicitly rooted at the root of the results dir *)
-    | Abs_source_dir (** absolute path implicitly rooted at the source directory for the current file *)
-    | Rel (** relative path *)
+    | Abs_root
+    (** absolute path implicitly rooted at the root of the results dir *)
+    | Abs_source_dir of source_file
+    (** absolute path implicitly rooted at the source directory for the file *)
+    | Rel
+    (** relative path *)
 
   (** convert a path to a filename *)
   val path_to_filename : path_kind -> path -> filename
@@ -54,7 +59,7 @@ module Results_dir : sig
   val specs_dir : filename
 
   (** Initialize the results directory *)
-  val init : unit -> unit
+  val init : source_file -> unit
 
   (** Clean up specs directory *)
   val clean_specs_dir : unit -> unit
@@ -71,16 +76,11 @@ type origin =
 
 (** {2 Source Files} *)
 
-type source_file
-
 (** Maps from source_file *)
 module SourceFileMap : Map.S with type key = source_file
 
 (** Set of source files *)
 module SourceFileSet : Set.S with type elt = source_file
-
-(** current source file *)
-val current_source : source_file ref
 
 (** comparison of source files *)
 val source_file_compare : source_file -> source_file -> int

@@ -410,10 +410,10 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
     AccessPath.BaseMap.fold add_formal_summaries formal_map []
     |> add_return_summaries
 
-  let dummy_cg = Cg.create ()
+  let dummy_cg = Cg.create None
 
   let checker { Callbacks.get_proc_desc; proc_name; proc_desc; tenv; } =
-    let analyze_ondemand pdesc =
+    let analyze_ondemand _ pdesc =
       let make_formal_access_paths pdesc =
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let attrs = Cfg.Procdesc.get_attributes pdesc in
@@ -445,7 +445,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
       begin
         Preanal.doit proc_desc dummy_cg tenv;
         Ondemand.set_callbacks callbacks;
-        analyze_ondemand proc_desc;
+        analyze_ondemand DB.source_file_empty proc_desc;
         Ondemand.unset_callbacks ();
       end
 

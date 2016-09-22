@@ -34,7 +34,7 @@ let read_dirs_to_analyze () =
 let dirs_to_analyze =
   lazy (read_dirs_to_analyze ())
 
-type analyze_ondemand = Cfg.Procdesc.t -> unit
+type analyze_ondemand = DB.source_file -> Cfg.Procdesc.t -> unit
 
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 
@@ -79,7 +79,6 @@ type global_state =
   {
     abs_val : int;
     abstraction_rules : Abs.rules;
-    current_source : DB.source_file;
     delayed_prints : L.print_action list;
     footprint_mode : bool;
     html_formatter : F.formatter;
@@ -93,7 +92,6 @@ let save_global_state () =
   {
     abs_val = !Config.abs_val;
     abstraction_rules = Abs.get_current_rules ();
-    current_source = !DB.current_source;
     delayed_prints = L.get_delayed_prints ();
     footprint_mode = !Config.footprint;
     html_formatter = !Printer.curr_html_formatter;
@@ -104,7 +102,6 @@ let save_global_state () =
 let restore_global_state st =
   Config.abs_val := st.abs_val;
   Abs.set_current_rules st.abstraction_rules;
-  DB.current_source := st.current_source;
   L.set_delayed_prints st.delayed_prints;
   Config.footprint := st.footprint_mode;
   Printer.curr_html_formatter := st.html_formatter;
@@ -128,22 +125,24 @@ let run_proc_analysis tenv ~propagate_exceptions analyze_proc curr_pdesc callee_
     incr nesting;
     let attributes_opt =
       Specs.proc_resolve_attributes callee_pname in
-    Option.may
-      (fun attribute ->
-         DB.current_source := attribute.ProcAttributes.loc.Location.file;
-         let attribute_pname = attribute.ProcAttributes.proc_name in
-         if not (Procname.equal callee_pname attribute_pname) then
-           failwith ("ERROR: "^(Procname.to_string callee_pname)
-                     ^" not equal to "^(Procname.to_string attribute_pname)))
-      attributes_opt;
+    let source = Option.map_default
+        (fun (attributes : ProcAttributes.t) ->
+           let attribute_pname = attributes.proc_name in
+           if not (Procname.equal callee_pname attribute_pname) then
+             failwith ("ERROR: "^(Procname.to_string callee_pname)
+                       ^" not equal to "^(Procname.to_string attribute_pname));
+           attributes.loc.file)
+        DB.source_file_empty
+        attributes_opt in
     let call_graph =
-      let cg = Cg.create () in
+      let cg = Cg.create (Some source) in
       Cg.add_defined_node cg callee_pname;
       cg in
     Specs.reset_summary call_graph callee_pname attributes_opt;
-    Specs.set_status callee_pname Specs.ACTIVE in
+    Specs.set_status callee_pname Specs.ACTIVE;
+    source in
 
-  let postprocess () =
+  let postprocess source =
     decr nesting;
     let summary = Specs.get_summary_unsafe "ondemand" callee_pname in
     let summary' =
@@ -152,7 +151,7 @@ let run_proc_analysis tenv ~propagate_exceptions analyze_proc curr_pdesc callee_
         timestamp = summary.Specs.timestamp + 1 } in
     Specs.add_summary callee_pname summary';
     Checkers.ST.store_summary tenv callee_pname;
-    Printer.write_proc_html false callee_pdesc in
+    Printer.write_proc_html source false callee_pdesc in
 
   let log_error_and_continue exn kind =
     Reporting.log_error callee_pname exn;
@@ -166,10 +165,10 @@ let run_proc_analysis tenv ~propagate_exceptions analyze_proc curr_pdesc callee_
     Specs.add_summary callee_pname new_summary in
 
   let old_state = save_global_state () in
-  preprocess ();
+  let source = preprocess () in
   try
-    analyze_proc callee_pdesc;
-    postprocess ();
+    analyze_proc source callee_pdesc;
+    postprocess source;
     restore_global_state old_state;
   with exn ->
     L.stderr "@.ONDEMAND EXCEPTION %a %s@.@.CALL STACK@.%s@.BACK TRACE@.%s@."

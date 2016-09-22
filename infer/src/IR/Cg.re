@@ -49,7 +49,14 @@ type t = {
   node_map: Procname.Hash.t node_info /** map from node to node_info */
 };
 
-let create () => {source: !DB.current_source, nLOC: !Config.nLOC, node_map: Procname.Hash.create 3};
+let create source_opt => {
+  let source =
+    switch source_opt {
+    | None => DB.source_file_empty
+    | Some source => source
+    };
+  {source, nLOC: !Config.nLOC, node_map: Procname.Hash.create 3}
+};
 
 let add_node g n defined::defined =>
   try {
@@ -355,11 +362,11 @@ let callgraph_serializer: Serialization.serializer (DB.source_file, int, nodes_a
 
 
 /** Load a call graph from a file */
-let load_from_file (filename: DB.filename) :option t => {
-  let g = create ();
+let load_from_file (filename: DB.filename) :option t =>
   switch (Serialization.from_file callgraph_serializer filename) {
   | None => None
   | Some (source, nLOC, (nodes, edges)) =>
+    let g = create (Some source);
     IList.iter
       (
         fun (node, defined) =>
@@ -369,11 +376,9 @@ let load_from_file (filename: DB.filename) :option t => {
       )
       nodes;
     IList.iter (fun (nfrom, nto) => add_edge g nfrom nto) edges;
-    g.source = source;
     g.nLOC = nLOC;
     Some g
-  }
-};
+  };
 
 
 /** Save a call graph into a file */
@@ -431,14 +436,10 @@ let pp_graph_dotty get_specs (g: t) fmt => {
 };
 
 
-/** Print the current call graph as a dotty file.
-    If the filename is [None], use the current file dir inside the DB dir. */
-let save_call_graph_dotty fname_opt get_specs (g: t) => {
+/** Print the call graph as a dotty file. */
+let save_call_graph_dotty source get_specs (g: t) => {
   let fname_dot =
-    switch fname_opt {
-    | None => DB.Results_dir.path_to_filename DB.Results_dir.Abs_source_dir ["call_graph.dot"]
-    | Some fname => fname
-    };
+    DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source) ["call_graph.dot"];
   let outc = open_out (DB.filename_to_string fname_dot);
   let fmt = F.formatter_of_out_channel outc;
   pp_graph_dotty get_specs g fmt;

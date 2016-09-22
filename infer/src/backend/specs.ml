@@ -446,38 +446,36 @@ let get_specs_from_payload summary =
   | Some specs -> NormSpec.tospecs specs
   | None -> []
 
-(** Print the summary *)
-let pp_summary pe whole_seconds fmt summary =
+let pp_summary_text ~whole_seconds fmt summary =
   let err_log = summary.attributes.ProcAttributes.err_log in
-  match pe.pe_kind with
-  | PP_TEXT ->
-      pp_summary_no_stats_specs fmt summary;
-      F.fprintf fmt "%a@\n" pp_errlog err_log;
-      F.fprintf fmt "%a@\n" (pp_stats whole_seconds) summary.stats;
-      F.fprintf fmt "%a" (pp_specs pe) (get_specs_from_payload summary)
-  | PP_HTML ->
-      Io_infer.Html.pp_start_color fmt Black;
-      F.fprintf fmt "@\n%a" pp_summary_no_stats_specs summary;
-      Io_infer.Html.pp_end_color fmt ();
-      F.fprintf fmt "<br />%a<br />@\n" (pp_stats whole_seconds) summary.stats;
-      Errlog.pp_html [] fmt err_log;
-      Io_infer.Html.pp_hline fmt ();
-      F.fprintf fmt "<LISTING>@\n";
-      pp_specs pe fmt (get_specs_from_payload summary);
-      F.fprintf fmt "</LISTING>@\n"
-  | PP_LATEX ->
-      F.fprintf fmt "\\begin{verbatim}@\n";
-      pp_summary_no_stats_specs fmt summary;
-      F.fprintf fmt "%a@\n" pp_errlog err_log;
-      F.fprintf fmt "%a@\n" (pp_stats whole_seconds) summary.stats;
-      F.fprintf fmt "\\end{verbatim}@\n";
-      F.fprintf fmt "%a@\n" (pp_specs pe) (get_specs_from_payload summary)
+  let pe = pe_text in
+  pp_summary_no_stats_specs fmt summary;
+  F.fprintf fmt "%a@\n" pp_errlog err_log;
+  F.fprintf fmt "%a@\n" (pp_stats whole_seconds) summary.stats;
+  F.fprintf fmt "%a" (pp_specs pe) (get_specs_from_payload summary)
 
-(** Print the spec table *)
-let pp_spec_table pe whole_seconds fmt () =
-  Procname.Hash.iter (fun proc_name (summ, _) ->
-      F.fprintf fmt "PROC %a@\n%a@\n" Procname.pp proc_name (pp_summary pe whole_seconds) summ
-    ) spec_tbl
+let pp_summary_latex ~whole_seconds color fmt summary =
+  let err_log = summary.attributes.ProcAttributes.err_log in
+  let pe = pe_latex color in
+  F.fprintf fmt "\\begin{verbatim}@\n";
+  pp_summary_no_stats_specs fmt summary;
+  F.fprintf fmt "%a@\n" pp_errlog err_log;
+  F.fprintf fmt "%a@\n" (pp_stats whole_seconds) summary.stats;
+  F.fprintf fmt "\\end{verbatim}@\n";
+  F.fprintf fmt "%a@\n" (pp_specs pe) (get_specs_from_payload summary)
+
+let pp_summary_html ~whole_seconds source color fmt summary =
+  let err_log = summary.attributes.ProcAttributes.err_log in
+  let pe = pe_html color in
+  Io_infer.Html.pp_start_color fmt Black;
+  F.fprintf fmt "@\n%a" pp_summary_no_stats_specs summary;
+  Io_infer.Html.pp_end_color fmt ();
+  F.fprintf fmt "<br />%a<br />@\n" (pp_stats whole_seconds) summary.stats;
+  Errlog.pp_html source [] fmt err_log;
+  Io_infer.Html.pp_hline fmt ();
+  F.fprintf fmt "<LISTING>@\n";
+  pp_specs pe fmt (get_specs_from_payload summary);
+  F.fprintf fmt "</LISTING>@\n"
 
 let empty_stats calls in_out_calls_opt =
   { stats_time = 0.0;
@@ -509,7 +507,9 @@ let set_summary_origin proc_name summary origin =
   Procname.Hash.replace spec_tbl proc_name (summary, origin)
 
 let add_summary_origin (proc_name : Procname.t) (summary: summary) (origin: DB.origin) : unit =
-  L.out "Adding summary for %a@\n@[<v 2>  %a@]@." Procname.pp proc_name (pp_summary pe_text false) summary;
+  L.out "Adding summary for %a@\n@[<v 2>  %a@]@."
+    Procname.pp proc_name
+    (pp_summary_text ~whole_seconds:false) summary;
   set_summary_origin proc_name summary origin
 
 (** Add the summary to the table for the given function *)

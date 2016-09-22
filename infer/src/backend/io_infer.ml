@@ -126,17 +126,17 @@ struct
     (fd, fmt)
 
   (** Get the full html filename from a path *)
-  let get_full_fname path =
+  let get_full_fname source path =
     let dir_path = match IList.rev path with
       | fname :: path_rev ->
           IList.rev ((fname ^ ".html") :: path_rev)
       | [] ->
           raise (Failure "Html.open_out") in
-    DB.Results_dir.path_to_filename DB.Results_dir.Abs_source_dir dir_path
+    DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source) dir_path
 
   (** Open an Html file to append data *)
-  let open_out path =
-    let full_fname = get_full_fname path in
+  let open_out source path =
+    let full_fname = get_full_fname source path in
     let fd =
       Unix.openfile
         (DB.filename_to_string full_fname)
@@ -147,8 +147,8 @@ struct
     (fd, fmt)
 
   (** Return true if the html file was modified since the beginning of the analysis *)
-  let modified_during_analysis path =
-    let fname = get_full_fname path in
+  let modified_during_analysis source path =
+    let fname = get_full_fname source path in
     if DB.file_exists fname then
       DB.file_modified_time fname >= Config.initial_analysis_time
     else false
@@ -220,8 +220,8 @@ struct
     pp_link ~path: (path_to_root @ [Procname.to_filename proc_name]) fmt text
 
   (** Print an html link to the given line number of the current source file *)
-  let pp_line_link ?(with_name = false) ?(text = None) path_to_root fmt linenum =
-    let fname = DB.source_file_encoding !DB.current_source in
+  let pp_line_link ?(with_name = false) ?(text = None) source path_to_root fmt linenum =
+    let fname = DB.source_file_encoding source in
     let linenum_str = string_of_int linenum in
     let name = "LINE" ^ linenum_str in
     pp_link
@@ -232,7 +232,7 @@ struct
       (match text with Some s -> s | None -> linenum_str)
 
   (** Print an html link given node id and session *)
-  let pp_session_link ?(with_name = false) path_to_root fmt (node_id, session, linenum) =
+  let pp_session_link ?(with_name = false) source path_to_root fmt (node_id, session, linenum) =
     let node_name = "node" ^ (string_of_int node_id) in
     let path_to_node = path_to_root @ ["nodes"; node_name] in
     let pos = "session" ^ (string_of_int session) in
@@ -242,7 +242,7 @@ struct
       ~path: path_to_node
       fmt
       (node_name ^ "#" ^ pos);
-    F.fprintf fmt "(%a)" (pp_line_link path_to_root) linenum
+    F.fprintf fmt "(%a)" (pp_line_link source path_to_root) linenum
 end
 (* =============== END of module Html =============== *)
 

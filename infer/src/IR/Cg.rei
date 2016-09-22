@@ -43,7 +43,7 @@ let calls_recursively: t => Procname.t => Procname.t => bool;
 
 
 /** Create an empty call graph */
-let create: unit => t;
+let create: option DB.source_file => t;
 
 
 /** [extend cg1 gc2] extends [cg1] in place with nodes and edges from [gc2];
@@ -123,9 +123,8 @@ let node_defined: t => Procname.t => bool;
 let remove_node_defined: t => Procname.t => unit;
 
 
-/** Print the current call graph as a dotty file. If the filename is [None],
-    use the current file dir inside the DB dir. */
-let save_call_graph_dotty: option DB.filename => (Procname.t => list 'a) => t => unit;
+/** Print the call graph as a dotty file. */
+let save_call_graph_dotty: DB.source_file => (Procname.t => list 'a) => t => unit;
 
 
 /** Save a call graph into a file */

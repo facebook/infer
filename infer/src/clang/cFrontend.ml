@@ -20,12 +20,12 @@ and CFrontend_declImpl : CFrontend_decl.CFrontend_decl =
   CFrontend_decl.CFrontend_decl_funct(CTransImpl)
 
 (* Translates a file by translating the ast into a cfg. *)
-let compute_icfg tenv ast =
+let compute_icfg source tenv ast =
   match ast with
   | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
       CFrontend_config.global_translation_unit_decls := decl_list;
       Printing.log_out "\n Start creating icfg\n";
-      let cg = Cg.create () in
+      let cg = Cg.create (Some source) in
       let cfg = Cfg.Node.create_cfg () in
       if Config.clang_frontend_do_capture then
         IList.iter (CFrontend_declImpl.translate_one_declaration tenv cg cfg `DeclTraversal)
@@ -45,8 +45,8 @@ let register_perf_stats_report source_file =
 let init_global_state source_file =
   register_perf_stats_report source_file ;
   Config.curr_language := Config.Clang;
-  DB.current_source := source_file;
-  DB.Results_dir.init ();
+  CFrontend_config.current_source := source_file;
+  DB.Results_dir.init source_file;
   Ident.NameGenerator.reset ();
   CFrontend_config.global_translation_unit_decls := [];
   CFrontend_utils.General_utils.reset_block_counter ()
@@ -58,7 +58,7 @@ let do_source_file source_file ast =
   Config.nLOC := FileLOC.file_get_loc (DB.source_file_to_string source_file);
   Printing.log_out "\n Start building call/cfg graph for '%s'....\n"
     (DB.source_file_to_string source_file);
-  let call_graph, cfg = compute_icfg tenv ast in
+  let call_graph, cfg = compute_icfg source_file tenv ast in
   Printing.log_out "\n End building call/cfg graph for '%s'.\n"
     (DB.source_file_to_string source_file);
   (* TODO (t12740727): Move this call to cMain once the transition to linters mode is finished *)
@@ -66,12 +66,12 @@ let do_source_file source_file ast =
     CFrontend_checkers_main.do_frontend_checks cfg call_graph source_file ast;
   (* This part below is a boilerplate in every frontends. *)
   (* This could be moved in the cfg_infer module *)
-  let source_dir = DB.source_dir_from_source_file !DB.current_source in
+  let source_dir = DB.source_dir_from_source_file source_file in
   let tenv_file = DB.source_dir_get_internal_file source_dir ".tenv" in
   let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
   let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
   Cg.store_to_file cg_file call_graph;
-  Cfg.store_cfg_to_file ~source_file:!DB.current_source cfg_file cfg;
+  Cfg.store_cfg_to_file ~source_file cfg_file cfg;
   (*Logging.out "Tenv %a@." Sil.pp_tenv tenv;*)
   (* Printing.print_tenv tenv; *)
   (*Printing.print_procedures cfg; *)
@@ -82,5 +82,5 @@ let do_source_file source_file ast =
   || Config.debug_mode
   || Config.testing_mode
   || Config.frontend_tests then
-    (Dotty.print_icfg_dotty cfg;
-     Cg.save_call_graph_dotty None Specs.get_specs call_graph)
+    (Dotty.print_icfg_dotty source_file cfg;
+     Cg.save_call_graph_dotty source_file Specs.get_specs call_graph)

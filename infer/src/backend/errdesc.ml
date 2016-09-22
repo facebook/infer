@@ -1143,5 +1143,5 @@ let explain_null_test_after_dereference tenv exp node line loc =
 
 (** Print a warning to the err stream at the given location (note: only prints in developer mode) *)
 let warning_err loc fmt_string =
-  L.err ("%s:%d: Warning: " ^^ fmt_string)
-    (DB.source_file_to_string !DB.current_source) loc.Location.line
+  L.err ("%a: Warning: " ^^ fmt_string)
+    Location.pp loc

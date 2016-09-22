@@ -21,15 +21,15 @@ module Html : sig
     DB.Results_dir.path_kind -> DB.Results_dir.path -> Unix.file_descr * Format.formatter
 
   (** Return true if the html file was modified since the beginning of the analysis *)
-  val modified_during_analysis : DB.Results_dir.path -> bool
+  val modified_during_analysis : DB.source_file -> DB.Results_dir.path -> bool
 
   (** Open an Html file to append data *)
-  val open_out : DB.Results_dir.path -> Unix.file_descr * Format.formatter
+  val open_out : DB.source_file -> DB.Results_dir.path -> Unix.file_descr * Format.formatter
 
   (** Print an html link to the given line number of the current source file *)
   val pp_line_link :
     ?with_name: bool -> ?text: (string option) ->
-    DB.Results_dir.path -> Format.formatter -> int -> unit
+    DB.source_file -> DB.Results_dir.path -> Format.formatter -> int -> unit
 
   (** Print a horizontal line *)
   val pp_hline : Format.formatter -> unit -> unit
@@ -54,7 +54,7 @@ module Html : sig
 
   (** Print an html link given node id and session *)
   val pp_session_link :
-    ?with_name: bool -> string list -> Format.formatter -> int * int * int -> unit
+    ?with_name: bool -> DB.source_file -> string list -> Format.formatter -> int * int * int -> unit
 
   (** Print start color *)
   val pp_start_color : Format.formatter -> color -> unit
