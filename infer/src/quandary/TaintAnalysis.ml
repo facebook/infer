@@ -351,64 +351,53 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
   (** grab footprint traces in [access_tree] and make them into inputs for the summary. for each
       trace Footprint(T_out, a.b.c) associated with access path x.z.y, we will produce a summary of
       the form (x.z.y, T_in) => (T_in + T_out, a.b.c) *)
-  let make_summary formal_map access_tree pdesc =
-    let add_summary_for_output summary_acc output trace =
-      let make_in_out_summary summary_input summary_output trace =
-        let _ = match summary_input with
-          | QuandarySummary.In_formal (_, _) -> ()
-          | _ -> () in
-        QuandarySummary.make_in_out_summary
-          summary_input summary_output (TraceDomain.to_summary_trace trace) in
+  let make_summary formal_map access_tree =
+    let is_return (var, _) = match var with
+      | Var.ProgramVar pvar -> Pvar.is_return pvar
+      | Var.LogicalVar _ -> false in
+    let add_summaries_for_trace summary_acc access_path trace =
+      let summary_trace = TraceDomain.to_summary_trace trace in
+      let output_opt =
+        let base = fst (AccessPath.extract access_path) in
+        match AccessPath.BaseMap.find base formal_map with
+        | index ->
+            Some (QuandarySummary.make_formal_output index access_path)
+        | exception Not_found ->
+            if is_return base
+            then Some (QuandarySummary.make_return_output access_path)
+            else None in
 
-      let extract_input source acc =
+      let add_summary_for_source source acc =
         match TraceDomain.Source.get_footprint_access_path source with
         | Some footprint_ap ->
-            let input =
-              let footprint_ap_base = fst (AccessPath.extract footprint_ap) in
+            let footprint_ap_base = fst (AccessPath.extract footprint_ap) in
+            let formal_index =
               match AccessPath.BaseMap.find footprint_ap_base formal_map with
-              | index ->
-                  QuandarySummary.make_formal_input index footprint_ap
+              | index -> index
               | exception Not_found ->
                   failwithf
                     "Couldn't find formal number for %a@." AccessPath.pp_base footprint_ap_base in
-            let summary = make_in_out_summary input output trace in
+            let input = QuandarySummary.make_formal_input formal_index footprint_ap in
+            let output =
+              match output_opt with
+              | Some output -> output
+              | None -> QuandarySummary.make_formal_output formal_index footprint_ap in
+            let summary = QuandarySummary.make_in_out_summary input output summary_trace in
             summary :: acc
         | None ->
-            let summary = make_in_out_summary QuandarySummary.empty_input output trace in
-            summary :: acc in
-      TraceDomain.Source.Set.fold extract_input (TraceDomain.sources trace) summary_acc in
+            begin
+              match output_opt with
+              | Some output ->
+                  let summary =
+                    QuandarySummary.make_in_out_summary
+                      QuandarySummary.empty_input output summary_trace in
+                  summary :: acc
+              | None ->
+                  acc
+            end in
 
-    let add_summaries_for_base
-        ~(f_make_output : AccessPath.t -> QuandarySummary.output) base summary_acc =
-      let add_summary_for_access_path summary_acc  access_path trace =
-        add_summary_for_output summary_acc (f_make_output access_path) trace in
-
-      let raw_base_ap = base, [] in
-      match TaintDomain.BaseMap.find base access_tree with
-      | trace, TaintDomain.Star ->
-          add_summary_for_access_path summary_acc (AccessPath.Abstracted raw_base_ap) trace
-      | trace, TaintDomain.Subtree subtree ->
-          let access_path = AccessPath.Exact raw_base_ap in
-          add_summary_for_output summary_acc (f_make_output access_path) trace
-          |> TaintDomain.access_map_fold add_summary_for_access_path base subtree
-      | exception Not_found ->
-          summary_acc in
-
-    let add_formal_summaries formal formal_index summary_acc =
-      let f_make_output = QuandarySummary.make_formal_output formal_index in
-      add_summaries_for_base ~f_make_output formal summary_acc in
-
-    let add_return_summaries summary_acc = match Cfg.Procdesc.get_ret_type pdesc with
-      | Typ.Tvoid ->
-          summary_acc
-      | ret_typ ->
-          let return_var_base = AccessPath.base_of_pvar (Cfg.Procdesc.get_ret_var pdesc) ret_typ in
-          add_summaries_for_base
-            ~f_make_output:QuandarySummary.make_return_output return_var_base summary_acc in
-
-    (* add summaries for each formal and the return value *)
-    AccessPath.BaseMap.fold add_formal_summaries formal_map []
-    |> add_return_summaries
+      TraceDomain.Source.Set.fold add_summary_for_source (TraceDomain.sources trace) summary_acc in
+    TaintDomain.fold add_summaries_for_trace access_tree []
 
   let dummy_cg = Cg.create None
 
@@ -431,7 +420,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
       let proc_data = ProcData.make pdesc tenv formals in
       match Analyzer.compute_post proc_data with
       | Some { access_tree; } ->
-          let summary = make_summary formals access_tree pdesc in
+          let summary = make_summary formals access_tree in
           Summary.write_summary (Cfg.Procdesc.get_proc_name pdesc) summary;
       | None ->
           failwith "Couldn't compute post" in

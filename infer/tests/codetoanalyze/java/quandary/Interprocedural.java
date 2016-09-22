@@ -101,6 +101,20 @@ class Interprocedural {
     callSinkOnFieldIndirect(obj);
   }
 
+  public Object getF() {
+    return f;
+  }
+
+  void callSinkOnLocal() {
+    Object local = this.getF();
+    InferTaint.inferSensitiveSink(local);
+  }
+
+  void callSinkOnLocalBad() {
+    this.f = InferTaint.inferSecretSource();
+    callSinkOnLocal();
+  }
+
   /** passthrough tests */
 
   public static void singlePassthroughBad() {
