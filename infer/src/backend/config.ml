@@ -820,9 +820,8 @@ and latex =
     ~meta:"file" "Print latex report to a file"
 
 and load_average =
-  CLOpt.mk_option ~long:"load-average" ~short:"l" ~f:(fun s -> Some (float_of_string s))
-    ~meta:"float"
-    ~exes:CLOpt.[Toplevel]
+  CLOpt.mk_float ~long:"load-average" ~short:"l" ~default:(float_of_int ncpu)
+    ~exes:CLOpt.[Toplevel] ~meta:"float"
     "Do not start new parallel jobs if the load average is greater than that specified (Buck and \
      make only)"
 

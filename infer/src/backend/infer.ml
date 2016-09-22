@@ -97,8 +97,7 @@ let () =
       (match Config.infer_cache with None -> [] | Some s ->
         ["--infer_cache"; s]) @
       "-j" :: (string_of_int Config.jobs) ::
-      (match Config.load_average with None -> [] | Some f ->
-        ["-l"; string_of_float f]) @
+      "-l" :: (string_of_float Config.load_average) ::
       (if not Config.pmd_xml then [] else
          ["--pmd-xml"]) @
       (if not Config.reactive_mode then [] else

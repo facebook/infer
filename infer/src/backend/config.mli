@@ -84,7 +84,7 @@ val infer_py_argparse_error_exit_code : int
 val initial_analysis_time : float
 val ivar_attributes : string
 val lint_issues_dir_name : string
-val load_average : float option
+val load_average : float
 val log_analysis_crash : string
 val log_analysis_file : string
 val log_analysis_procedure : string
