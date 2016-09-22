@@ -16,6 +16,7 @@ FILES = \
   Fields.java \
   Interprocedural.java \
   LoggingPrivateData.java \
+  Recursion.java \
 
 compile:
 	javac -cp $(CLASSPATH) $(FILES)

@@ -23,7 +23,7 @@ module Summary = Summary.Make(struct
     let read_from_payload payload =
       match payload.Specs.quandary with
       | Some summary -> summary
-      | None -> failwith "Failed to load summary"
+      | None -> []
   end)
 
 
