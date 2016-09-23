@@ -13,6 +13,7 @@ INFERPRINT_OPTIONS = --issues-txt
 FILES = \
   Arrays.java \
   Basics.java \
+  Exceptions.java \
   Fields.java \
   Interprocedural.java \
   LoggingPrivateData.java \

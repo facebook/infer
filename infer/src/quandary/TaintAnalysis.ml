@@ -351,7 +351,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
   end
 
   module Analyzer = AbstractInterpreter.Make
-      (ProcCfg.Normal)
+      (ProcCfg.Exceptional)
       (Scheduler.ReversePostorder)
       (TransferFunctions)
 
