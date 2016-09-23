@@ -5,19 +5,15 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-include ../../Makefile.clang
+include ../Makefile
 
-OPTIONS = -x objective-c -fobjc-arc -c
-
-ANALYZER = linters
+ANALYZER = infer
 
 FILES = \
-  *.m \
-  */*.m \
+  BasicHarnessActivity.java \
 
 compile:
-	clang $(OPTIONS) $(FILES)
+	javac -cp $(CLASSPATH) $(FILES)
 
 analyze:
-	$(INFER_BIN) -a $(ANALYZER) --check-duplicate-symbols -- clang $(OPTIONS) $(FILES) >/dev/null 2>duplicates.txt
-	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
+	$(INFER_BIN) -a $(ANALYZER) --android-harness -- javac -cp $(CLASSPATH) $(FILES) >/dev/null 2>/dev/null

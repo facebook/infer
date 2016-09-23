@@ -19,8 +19,6 @@ java_library(
 
 def analysis_cmd(analyzer):
     out = 'out'
-    inferconfig_file = '$(location //infer/tests/codetoanalyze/java:inferconfig)'
-    copy_inferconfig = ' '.join(['cp', inferconfig_file, '$SRCDIR'])
     clean_cmd = ' '.join(['rm', '-rf', out])
     classpath = ':'.join([('$(classpath ' + path + ')') for path in dependencies])
     infer_cmd = ' '.join([
@@ -36,7 +34,7 @@ def analysis_cmd(analyzer):
         '$SRCS',
     ])
     copy_cmd = ' '.join(['cp', out + '/report.csv', '$OUT'])
-    return ' && '.join([clean_cmd, copy_inferconfig, infer_cmd, copy_cmd])
+    return ' && '.join([clean_cmd, infer_cmd, copy_cmd])
 
 genrule(
     name = 'analyze',

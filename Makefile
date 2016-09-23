@@ -9,18 +9,17 @@ ROOT_DIR = .
 include $(ROOT_DIR)/Makefile.config
 
 DIRECT_TESTS=
-TARGETS_TO_TEST=
 ifeq ($(BUILD_C_ANALYZERS),yes)
 DIRECT_TESTS += c_infer_test c_frontend_test cpp_infer_test cpp_frontend_test
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
-TARGETS_TO_TEST += java
-DIRECT_TESTS += java_checkers_test java_eradicate_test java_infer_test java_tracing_test java_quandary_test
+DIRECT_TESTS += \
+  java_checkers_test java_eradicate_test java_infer_test java_tracing_test \
+  java_quandary_test java_crashcontext_test java_harness_test
 endif
 ifneq ($(XCODE_SELECT),no)
 DIRECT_TESTS += objc_frontend_test objc_infer_test objc_linters objcpp_frontend_test objcpp_linters
 endif
-TARGETS_TO_TEST := $(shell echo $(TARGETS_TO_TEST))
 
 all: infer inferTraceBugs
 
@@ -120,8 +119,14 @@ cpp_infer_test:
 java_checkers_test:
 	make -C ./infer/tests/codetoanalyze/java/checkers test
 
+java_crashcontext_test:
+	make -C ./infer/tests/codetoanalyze/java/crashcontext test
+
 java_eradicate_test:
 	make -C ./infer/tests/codetoanalyze/java/eradicate test
+
+java_harness_test:
+	make -C ./infer/tests/codetoanalyze/java/harness test
 
 java_infer_test:
 	make -C ./infer/tests/codetoanalyze/java/infer test
@@ -154,18 +159,15 @@ objcpp_linters:
 	make -C ./infer/tests/codetoanalyze/objcpp/linters test
 
 direct_tests:
-	make $(DIRECT_TESTS)
+	time make -j $(NCPU) -l $(NCPU) $(DIRECT_TESTS)
 
 buck_test: infer
 	make direct_tests
-	NO_BUCKD=1 buck clean
-	MAKEFLAGS= NO_BUCKD=1 buck test -j $(NCPU) -L $(NCPU) $(TARGETS_TO_TEST)
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 
 buck_test_xml: infer
 	make direct_tests
-	NO_BUCKD=1 buck clean
-	NO_BUCKD=1 buck test -j $(NCPU) -L $(NCPU) --xml test.xml $(TARGETS_TO_TEST)
+	buck test --xml test.xml # TODO: generate test.xml with test results
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 
 inferTraceBugs_test: infer

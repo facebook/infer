@@ -1,10 +1,3 @@
 
-[alias]
-  java = //infer/tests/endtoend:java_endtoend_tests
-  java_libraries = //dependencies/java:java_libraries
-
-# TODO: this line exists only to support buck integration in infer/tests/build_systems/build_integration_tests.py
-  infer = //infer/tests/endtoend/java/infer:infer
-
 [project]
   ignore = .git, .ml, .mli

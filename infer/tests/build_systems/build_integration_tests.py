@@ -344,9 +344,10 @@ class BuildIntegrationTest(unittest.TestCase):
              env=env)
 
     def test_buck_integration(self):
+        target = '//infer/tests/codetoanalyze/java/infer:analyze'
         test('buck', 'Buck',
              ROOT_DIR,
-             [{'compile': ['buck', 'build', 'infer']}],
+             [{'compile': ['buck', 'build', target]}],
              clean_commands=[['buck', 'clean']],
              available=lambda: is_tool_available(['buck', '--version']))
 
