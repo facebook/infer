@@ -41,11 +41,18 @@ let join astate1 astate2 =
   then astate1
   else
     IdMap.merge
-      (fun _ ap1_opt ap2_opt -> match ap1_opt, ap2_opt with
+      (fun var ap1_opt ap2_opt -> match ap1_opt, ap2_opt with
          | Some ap1, Some ap2 ->
              (* in principle, could do a join here if the access paths have the same root. but
                 they should always be equal if we are using the map correctly *)
-             assert (AccessPath.raw_equal ap1 ap2);
+             let check_invariant () = match var with
+               | Var.ProgramVar pvar when Pvar.is_frontend_tmp pvar ->
+                   (* Sawja reuses temporary variables which sometimes breaks this invariant *)
+                   (* TODO: fix (13370224) *)
+                   ()
+               | _ ->
+                   assert (AccessPath.raw_equal ap1 ap2) in
+             check_invariant ();
              ap1_opt
          | Some _, None -> ap1_opt
          | None, Some _ -> ap2_opt
