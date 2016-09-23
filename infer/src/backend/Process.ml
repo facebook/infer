@@ -69,13 +69,14 @@ let waited_for_jobs = ref 0
 (** [wait_for_son pid_child f jobs_count] wait for pid_child
     and all the other children and update the current jobs count.
     Use f to print the job status *)
-let rec wait_for_child pid_child f current_jobs_count =
+let rec wait_for_child f current_jobs_count jobs_map =
   let pid, status = Unix.wait () in
   Pervasives.decr current_jobs_count;
   Pervasives.incr waited_for_jobs;
   print_status f pid status;
-  if pid <> pid_child then
-    wait_for_child pid_child f current_jobs_count
+  jobs_map := IntMap.remove pid !jobs_map;
+  if not (IntMap.is_empty !jobs_map) then
+    wait_for_child f current_jobs_count jobs_map
 
 let pid_to_program jobsMap pid =
   try
@@ -99,7 +100,7 @@ let run_jobs_in_parallel jobs_stack run_job cmd_to_string =
       | pid_child ->
           jobs_map := IntMap.add pid_child (cmd_to_string job_cmd) !jobs_map;
           if Stack.length jobs_stack = 0 || !current_jobs_count >= Config.jobs then
-            wait_for_child pid_child (pid_to_program !jobs_map) current_jobs_count
+            wait_for_child (pid_to_program !jobs_map) current_jobs_count jobs_map
     done in
   run_job ();
   Logging.stdout ".\n%!";
