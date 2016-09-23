@@ -56,7 +56,7 @@ type block = string;
 
 
 /** Type of procedure names. */
-type t = | Java of java | C of c | ObjC_Cpp of objc_cpp | Block of block;
+type t = | Java of java | C of c | ObjC_Cpp of objc_cpp | Block of block | Linters_dummy_method;
 
 
 /** Level of verbosity of some to_string functions. */
@@ -227,7 +227,8 @@ let replace_class t new_class =>
   | Java j => Java {...j, class_name: split_classname new_class}
   | ObjC_Cpp osig => ObjC_Cpp {...osig, class_name: new_class}
   | C _
-  | Block _ => t
+  | Block _
+  | Linters_dummy_method => t
   };
 
 
@@ -269,7 +270,8 @@ let get_method =
   | ObjC_Cpp name => name.method_name
   | C (name, _) => name
   | Block name => name
-  | Java j => j.method_name;
+  | Java j => j.method_name
+  | Linters_dummy_method => "Linters_dummy_method";
 
 
 /** Return the language of the procedure. */
@@ -278,6 +280,7 @@ let get_language =
   | ObjC_Cpp _ => Config.Clang
   | C _ => Config.Clang
   | Block _ => Config.Clang
+  | Linters_dummy_method => Config.Clang
   | Java _ => Config.Java;
 
 
@@ -535,6 +538,7 @@ let to_unique_id pn =>
   | C (c1, c2) => to_readable_string (c1, c2) true
   | ObjC_Cpp osig => c_method_to_string osig Verbose
   | Block name => name
+  | Linters_dummy_method => "Linters_dummy_method"
   };
 
 
@@ -545,6 +549,7 @@ let to_string p =>
   | C (c1, c2) => to_readable_string (c1, c2) false
   | ObjC_Cpp osig => c_method_to_string osig Non_verbose
   | Block name => name
+  | Linters_dummy_method => to_unique_id p
   };
 
 
@@ -555,6 +560,7 @@ let to_simplified_string withclass::withclass=false p =>
   | C (c1, c2) => to_readable_string (c1, c2) false ^ "()"
   | ObjC_Cpp osig => c_method_to_string osig Simple
   | Block _ => "block"
+  | Linters_dummy_method => to_unique_id p
   };
 
 
@@ -587,6 +593,12 @@ let compare pn1 pn2 =>
       Block s2
     ) =>
     string_compare s1 s2
+  | (
+      Linters_dummy_method, /* Compare fake methods used in linters */
+      Linters_dummy_method
+    ) => 0
+  | (Linters_dummy_method, _) => (-1)
+  | (_, Linters_dummy_method) => 1
   | (Block _, _) => (-1)
   | (_, Block _) => 1
   | (ObjC_Cpp osig1, ObjC_Cpp osig2) => c_meth_sig_compare osig1 osig2

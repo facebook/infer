@@ -32,7 +32,7 @@ type block;
 
 
 /** Type of procedure names. */
-type t = | Java of java | C of c | ObjC_Cpp of objc_cpp | Block of block;
+type t = | Java of java | C of c | ObjC_Cpp of objc_cpp | Block of block | Linters_dummy_method;
 
 type java_type = (option string, string);
 

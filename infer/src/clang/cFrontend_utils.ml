@@ -712,8 +712,4 @@ struct
           Pvar.mk mangled_name procname
     | None -> Pvar.mk (Mangled.from_string name_string) procname
 
-  let get_procname_for_frontend_checks loc =
-    let mangled = string_crc_hex32 (DB.source_file_to_string loc.Location.file) in
-    Procname.from_string_c_fun ("frontend_checks_" ^ mangled)
-
 end

@@ -76,17 +76,17 @@ let while_stmt_checker_list = [CFrontend_checkers.bad_pointer_comparison_warning
 let checker_for_while_stmt stmt_info cond checker context =
   checker context stmt_info cond
 
-let get_err_log method_decl_opt loc =
+let get_err_log method_decl_opt =
   let procname = match method_decl_opt with
     | Some method_decl -> General_utils.procname_of_decl method_decl
-    | None -> General_utils.get_procname_for_frontend_checks loc in
+    | None -> Procname.Linters_dummy_method in
   LintIssues.get_err_log procname
 
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
 let log_frontend_issue method_decl_opt key issue_desc =
   let issue = issue_desc.CIssue.issue in
   let loc = issue_desc.CIssue.loc in
-  let errlog = get_err_log method_decl_opt loc in
+  let errlog = get_err_log method_decl_opt in
   let err_desc = Errdesc.explain_frontend_warning issue_desc.CIssue.description
       issue_desc.CIssue.suggestion loc in
   let name = CIssue.to_string issue in

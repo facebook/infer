@@ -124,7 +124,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   frame.Stacktrace.class_str
                   (Procname.objc_cpp_get_class_name objc_cpp_prod)
             | Procname.C _ -> true (* Needed for test code. *)
-            | Procname.Block _ ->
+            | Procname.Block _ | Procname.Linters_dummy_method ->
                 failwith "Proc type not supported by crashcontext: block" in
           frame.Stacktrace.method_str = (Procname.get_method caller) &&
           matches_class caller in
