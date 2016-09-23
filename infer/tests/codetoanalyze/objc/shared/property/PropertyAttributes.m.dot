@@ -1,12 +1,5 @@
 /* @generated */
 digraph iCFG {
-21 [label="21: Exit frontend_checks_5b931347d68cd9eea4643dd614e081ac \n  " color=yellow style=filled]
-	
-
-20 [label="20: Start frontend_checks_5b931347d68cd9eea4643dd614e081ac\nFormals: \nLocals:  \n  " color=yellow style=filled]
-	
-
-	 20 -> 21 ;
 19 [label="19:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(class PropertyA ):unsigned long ) [line 43]\n  n$4=_fun_PropertyA_init(n$3:class PropertyA *) virtual [line 43]\n  *&a:class PropertyA *=n$4 [line 43]\n " shape="box"]
 	
 

@@ -466,24 +466,6 @@ let create_procdesc_with_pointer context pointer class_name_opt name =
       create_external_procdesc context.cfg callee_name false None;
       callee_name
 
-let get_method_for_frontend_checks cfg cg loc =
-  let proc_name = General_utils.get_procname_for_frontend_checks loc in
-  match Cfg.Procdesc.find_from_name cfg proc_name with
-  | Some pdesc -> pdesc
-  | None ->
-      let attrs = { (ProcAttributes.default proc_name Config.Clang) with
-                    is_defined = true;
-                    loc = loc;
-                  } in
-      let pdesc = Cfg.Procdesc.create cfg attrs in
-      let start_node = Cfg.Node.create cfg loc (Cfg.Node.Start_node pdesc) [] pdesc in
-      let exit_node = Cfg.Node.create cfg loc (Cfg.Node.Exit_node pdesc) [] pdesc in
-      Cfg.Procdesc.set_start_node pdesc start_node;
-      Cfg.Procdesc.set_exit_node pdesc exit_node;
-      Cfg.Node.set_succs_exn cfg start_node [exit_node] [];
-      Cg.add_defined_node cg proc_name;
-      pdesc
-
 let add_default_method_for_class class_name decl_info =
   let loc = CLocation.get_sil_location_from_range decl_info.Clang_ast_t.di_source_range true in
   let proc_name = Procname.get_default_objc_class_method class_name in

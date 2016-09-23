@@ -498,7 +498,7 @@ class BuildIntegrationTest(unittest.TestCase):
              os.path.join(CODETOANALYZE_DIR, 'componentkit'),
              [{'compile': ['clang', '-x', 'objective-c++', '-std=c++11', '-c',
                            'TestIgnoreImports.mm'],
-               'infer_args': ['--cxx', '--no-filtering']}])
+               'infer_args': ['--cxx', '--no-filtering', '-a', 'linters']}])
 
     def test_fail_on_issue(self):
         test('fail', '--fail-on-issue flag',

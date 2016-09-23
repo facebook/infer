@@ -1382,16 +1382,18 @@ and checkers = !checkers
 
 (** should the checkers be run? *)
 and checkers_enabled = not (!eradicate || !crashcontext || !quandary)
-(* TODO (t12740727): Remove this variable once the transition to linters mode is finished *)
-and clang_frontend_action =
+
+and clang_frontend_do_capture, clang_frontend_do_lint =
   match !clang_frontend_action with
-  | Some clang_frontend_action ->
-      clang_frontend_action
+  | Some `Lint -> false, true (* no capture, lint *)
+  | Some `Capture -> true, false (* capture, no lint *)
+  | Some `Lint_and_capture -> true, true (* capture, lint *)
   | None ->
       match !analyzer with
-      | Some Linters -> `Lint
-      | Some Infer -> `Capture
-      | _ -> `Lint_and_capture
+      | Some Linters -> false, true (* no capture, lint *)
+      | Some Infer -> true, false (* capture, no lint *)
+      | _ -> true, true (* capture, lint *)
+
 and clang_include_to_override = !clang_include_to_override
 and clang_lang = !clang_lang
 and cluster_cmdline = !cluster
@@ -1489,12 +1491,6 @@ and write_html = !write_html
 and xcode_developer_dir = !xcode_developer_dir
 and xml_specs = !xml_specs
 and zip_libraries = !zip_libraries
-
-let clang_frontend_do_capture, clang_frontend_do_lint =
-  match clang_frontend_action with
-  | `Lint -> false, true
-  | `Capture -> true, false
-  | `Lint_and_capture -> true, true
 
 let clang_frontend_action_string =
   String.concat " and "

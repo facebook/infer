@@ -14,9 +14,8 @@ open! Utils
 
 (* Run frontend checkers on a statement *)
 val run_frontend_checkers_on_stmt :
-  CLintersContext.context ->
-  Cfg.cfg -> Cg.t -> Clang_ast_t.stmt -> CLintersContext.context
+  CLintersContext.context -> Clang_ast_t.stmt -> CLintersContext.context
 
 (* Run frontend checkers on a declaration *)
-val run_frontend_checkers_on_decl : CLintersContext.context -> Cfg.cfg -> Cg.t ->
-  Clang_ast_t.decl -> CLintersContext.context
+val run_frontend_checkers_on_decl : CLintersContext.context -> Clang_ast_t.decl ->
+  CLintersContext.context

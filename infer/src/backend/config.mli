@@ -167,7 +167,6 @@ val calls_csv : outfile option
 val check_duplicate_symbols : bool
 val checkers : bool
 val checkers_enabled : bool
-val clang_frontend_action : [`Lint | `Capture | `Lint_and_capture ]
 val clang_frontend_action_string : string
 val clang_frontend_do_capture : bool
 val clang_frontend_do_lint : bool

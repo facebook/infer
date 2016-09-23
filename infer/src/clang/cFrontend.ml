@@ -27,26 +27,13 @@ let compute_icfg source tenv ast =
       Printing.log_out "\n Start creating icfg\n";
       let cg = Cg.create (Some source) in
       let cfg = Cfg.Node.create_cfg () in
-      if Config.clang_frontend_do_capture then
-        IList.iter (CFrontend_declImpl.translate_one_declaration tenv cg cfg `DeclTraversal)
-          decl_list;
+      IList.iter (CFrontend_declImpl.translate_one_declaration tenv cg cfg `DeclTraversal)
+        decl_list;
       Printing.log_out "\n Finished creating icfg\n";
       (cg, cfg)
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
 
-let register_perf_stats_report source_file =
-  let stats_dir = Filename.concat Config.results_dir Config.frontend_stats_dir_name in
-  let abbrev_source_file = DB.source_file_encoding source_file in
-  let stats_file = Config.perf_stats_prefix ^ "_" ^ abbrev_source_file ^ ".json" in
-  DB.create_dir Config.results_dir ;
-  DB.create_dir stats_dir ;
-  PerfStats.register_report_at_exit (Filename.concat stats_dir stats_file)
-
-let init_global_state source_file =
-  register_perf_stats_report source_file ;
-  Config.curr_language := Config.Clang;
-  CFrontend_config.current_source := source_file;
-  DB.Results_dir.init source_file;
+let init_global_state_capture () =
   Ident.NameGenerator.reset ();
   CFrontend_config.global_translation_unit_decls := [];
   CFrontend_utils.General_utils.reset_block_counter ()
@@ -54,16 +41,13 @@ let init_global_state source_file =
 let do_source_file source_file ast =
   let tenv = Tenv.create () in
   CTypes_decl.add_predefined_types tenv;
-  init_global_state source_file;
+  init_global_state_capture ();
   Config.nLOC := FileLOC.file_get_loc (DB.source_file_to_string source_file);
   Printing.log_out "\n Start building call/cfg graph for '%s'....\n"
     (DB.source_file_to_string source_file);
   let call_graph, cfg = compute_icfg source_file tenv ast in
   Printing.log_out "\n End building call/cfg graph for '%s'.\n"
     (DB.source_file_to_string source_file);
-  (* TODO (t12740727): Move this call to cMain once the transition to linters mode is finished *)
-  if Config.clang_frontend_do_lint then
-    CFrontend_checkers_main.do_frontend_checks cfg call_graph source_file ast;
   (* This part below is a boilerplate in every frontends. *)
   (* This could be moved in the cfg_infer module *)
   let source_dir = DB.source_dir_from_source_file source_file in
