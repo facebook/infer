@@ -9,28 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-// Mimic importing CKComponnet
-@interface CKComponent : NSObject
-@end
-@implementation CKComponent
-@end
-
-// Mimic importing CKCompositeComponnet
-@interface CKCompositeComponent : CKComponent
-+ (instancetype)newWithComponent:(CKComponent*)component;
-@end
-@implementation CKCompositeComponent
-+ (instancetype)newWithComponent:(CKComponent*)component {
-  return nil;
-}
-@end
-
-// Mimic importing CKLabelComponent
-typedef struct { NSString* string; } LabelAttributes;
-
-typedef struct { int thisStructIsEmpty; } ViewAttributes;
-
-typedef struct { int thisStructIsEmpty; } CKSize;
+#import "FakeComponentKitHeader.h"
 
 @interface CKLabelComponent : CKCompositeComponent
 + (instancetype)newWithLabelAttributes:(LabelAttributes)labelAttributes
