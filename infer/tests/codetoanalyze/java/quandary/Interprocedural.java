@@ -15,6 +15,8 @@ class Interprocedural {
 
   Object f;
 
+  static Object sGlobal;
+
   static class Obj {
     Object f;
   }
@@ -54,6 +56,21 @@ class Interprocedural {
 
   public static void returnSourceViaFieldBad() {
     InferTaint.inferSensitiveSink(returnSourceViaField().f);
+  }
+
+  public static void returnSourceViaGlobal() {
+    sGlobal = InferTaint.inferSecretSource();
+  }
+
+  public void returnSourceViaGlobalBad() {
+    returnSourceViaGlobal();
+    InferTaint.inferSensitiveSink(sGlobal);
+  }
+
+  public void returnSourceViaGlobalOk() {
+    returnSourceViaGlobal();
+    sGlobal = null;
+    InferTaint.inferSensitiveSink(sGlobal);
   }
 
   /** sink tests */
@@ -113,6 +130,44 @@ class Interprocedural {
   void callSinkOnLocalBad() {
     this.f = InferTaint.inferSecretSource();
     callSinkOnLocal();
+  }
+
+  public static void callSinkOnGlobal() {
+    InferTaint.inferSensitiveSink(sGlobal);
+  }
+
+  public static void callSinkOnGlobalBad() {
+    sGlobal = InferTaint.inferSecretSource();
+    callSinkOnGlobal();
+  }
+
+  public static void callSinkOnGlobalOk() {
+    sGlobal = InferTaint.inferSecretSource();
+    sGlobal = null;
+    callSinkOnGlobal();
+  }
+
+  public static void setGlobal(Object o) {
+    sGlobal = o;
+  }
+
+  public static void setGlobalThenCallSinkBad() {
+    setGlobal(InferTaint.inferSecretSource());
+    callSinkOnGlobal();
+  }
+
+  public static Object getGlobal() {
+    return sGlobal;
+  }
+
+  public static void getGlobalThenCallSink() {
+    Object local = getGlobal();
+    InferTaint.inferSensitiveSink(sGlobal);
+  }
+
+  public static void getGlobalThenCallSinkBad() {
+    sGlobal = InferTaint.inferSecretSource();
+    getGlobalThenCallSink();
   }
 
   /** passthrough tests */

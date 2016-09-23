@@ -72,6 +72,10 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
       F.fprintf fmt "(%a, %a)" TaintDomain.pp access_tree IdMapDomain.pp id_map
   end
 
+  let is_global (var, _) = match var with
+    | Var.ProgramVar pvar -> Pvar.is_global pvar
+    | Var.LogicalVar _ -> false
+
   module TransferFunctions (CFG : ProcCfg.S) = struct
     module CFG = CFG
     module Domain = Domain
@@ -83,9 +87,9 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
     let is_formal base formal_map =
       AccessPath.BaseMap.mem base formal_map
 
-    let is_rooted_in_formal ap formal_map =
+    let is_rooted_in_environment ap formal_map =
       let root, _ = AccessPath.extract ap in
-      is_formal root formal_map
+      is_formal root formal_map || is_global root
 
     let resolve_id id_map id =
       try Some (IdMapDomain.find id id_map)
@@ -96,13 +100,19 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
       match TaintDomain.get_node access_path access_tree with
       | Some _ as node_opt ->
           node_opt
-      | None when is_rooted_in_formal access_path proc_data.extras ->
+      | None when is_rooted_in_environment access_path proc_data.extras ->
           let call_site = CallSite.make (Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc) loc in
           let trace =
             TraceDomain.of_source (TraceDomain.Source.make_footprint access_path call_site) in
           Some (TaintDomain.make_normal_leaf trace)
       | None ->
           None
+
+    (* get the trace associated with [access_path] in [access_tree]. *)
+    let access_path_get_trace access_path access_tree proc_data loc =
+      match access_path_get_node access_path access_tree proc_data loc with
+      | Some (trace, _) -> trace
+      | None -> TraceDomain.initial
 
     (* get the node associated with [exp] in [access_tree] *)
     let exp_get_node exp typ { Domain.access_tree; id_map; } proc_data loc =
@@ -195,9 +205,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
         | Some actual_ap ->
             let projected_ap = project ~formal_ap ~actual_ap in
             let projected_trace =
-              match access_path_get_node projected_ap access_tree proc_data callee_loc with
-              | Some (trace, _) -> trace
-              | None -> TraceDomain.initial in
+              access_path_get_trace projected_ap access_tree proc_data callee_loc in
             Some (projected_ap, projected_trace)
         | None ->
             None in
@@ -212,9 +220,8 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
                 | Some (_, actual_trace) -> actual_trace
                 | None -> TraceDomain.initial
               end
-          | In_global _ ->
-              (* TODO: implement this once we add globals to the footprint (t13273652) *)
-              TraceDomain.initial in
+          | In_global global_ap ->
+              access_path_get_trace global_ap access_tree proc_data callee_loc in
 
         let caller_ap_trace_opt =
           match in_out_summary.output with
@@ -222,9 +229,9 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
               Some (apply_return ret_ap ret_ids, TraceDomain.initial)
           | Out_formal (formal_num, formal_ap) ->
               get_actual_ap_trace formal_num formal_ap access_tree
-          | Out_global _ ->
-              (* TODO: implement this once we add globals to the footprint (t13273652) *)
-              None in
+          | Out_global global_ap ->
+              let global_trace = access_path_get_trace global_ap access_tree proc_data callee_loc in
+              Some (global_ap, global_trace) in
         match caller_ap_trace_opt with
         | Some (caller_ap, caller_trace) ->
             let output_trace = TraceDomain.of_summary_trace in_out_summary.output_trace in
@@ -365,23 +372,35 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
         | exception Not_found ->
             if is_return base
             then Some (QuandarySummary.make_return_output access_path)
+            else if is_global base
+            then Some (QuandarySummary.make_global_output access_path)
             else None in
 
       let add_summary_for_source source acc =
         match TraceDomain.Source.get_footprint_access_path source with
         | Some footprint_ap ->
             let footprint_ap_base = fst (AccessPath.extract footprint_ap) in
-            let formal_index =
+            let input, output =
               match AccessPath.BaseMap.find footprint_ap_base formal_map with
-              | index -> index
+              | formal_index ->
+                  let input = QuandarySummary.make_formal_input formal_index footprint_ap in
+                  let output =
+                    match output_opt with
+                    | Some output -> output
+                    | None -> QuandarySummary.make_formal_output formal_index footprint_ap in
+                  input, output
               | exception Not_found ->
-                  failwithf
-                    "Couldn't find formal number for %a@." AccessPath.pp_base footprint_ap_base in
-            let input = QuandarySummary.make_formal_input formal_index footprint_ap in
-            let output =
-              match output_opt with
-              | Some output -> output
-              | None -> QuandarySummary.make_formal_output formal_index footprint_ap in
+                  if is_global footprint_ap_base
+                  then
+                    let input = QuandarySummary.make_global_input footprint_ap in
+                    let output =
+                      match output_opt with
+                      | Some output -> output
+                      | None -> QuandarySummary.make_global_output footprint_ap in
+                    input, output
+                  else
+                    failwithf
+                      "Couldn't find formal number for %a@." AccessPath.pp_base footprint_ap_base in
             let summary = QuandarySummary.make_in_out_summary input output summary_trace in
             summary :: acc
         | None ->
