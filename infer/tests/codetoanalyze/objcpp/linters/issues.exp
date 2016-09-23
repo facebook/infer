@@ -1,5 +1,5 @@
-componentkit/Test.mm, BarComponent_new, 82, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE
-componentkit/Test.mm, BarComponent_new, 84, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE
+componentkit/Test.mm, BarComponent_new, 85, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE
+componentkit/Test.mm, BarComponent_new, 87, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE
 componentkit/Test.mm, FooComponent_newWithString:, 48, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE
 componentkit/Test.mm, FooComponent_newWithString:, 53, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE
 componentkit/Test.mm, FooComponent_newWithString:, 55, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE
