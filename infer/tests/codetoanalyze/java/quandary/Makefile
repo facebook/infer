@@ -15,6 +15,7 @@ FILES = \
   Basics.java \
   Exceptions.java \
   Fields.java \
+  Intents.java \
   Interprocedural.java \
   LoggingPrivateData.java \
   Recursion.java \

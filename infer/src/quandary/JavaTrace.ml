@@ -18,6 +18,7 @@ module JavaSource = struct
     type t =
       | SharedPreferences (** private data read from SharedPreferences *)
       | Footprint of AccessPath.t (** source that was read from the environment. *)
+      | Intent
       | Other (** for testing or uncategorized sources *)
 
     let compare sk1 sk2 = match sk1, sk2 with
@@ -27,6 +28,9 @@ module JavaSource = struct
       | Footprint ap1, Footprint ap2 -> AccessPath.compare ap1 ap2
       | Footprint _, _ -> (-1)
       | _, Footprint _ -> 1
+      | Intent, Intent -> 0
+      | Intent, _ -> (-1)
+      | _, Intent -> 1
       | Other, Other -> 0
   end
 
@@ -62,6 +66,8 @@ module JavaSource = struct
     | Procname.Java pname ->
         begin
           match Procname.java_get_class_name pname, Procname.java_get_method pname with
+          | "android.content.Intent", ("parseUri" | "parseIntent") ->
+              [0, make Intent site]
           | "android.content.SharedPreferences", "getString" ->
               [0, make SharedPreferences site]
           | "com.facebook.infer.models.InferTaint", "inferSecretSource" ->
@@ -84,6 +90,7 @@ module JavaSource = struct
     compare t1 t2 = 0
 
   let pp_kind fmt (kind : kind) = match kind with
+    | Intent -> F.fprintf fmt "Intent"
     | SharedPreferences -> F.fprintf fmt "SharedPreferences"
     | Footprint ap -> F.fprintf fmt "Footprint[%a]" AccessPath.pp ap
     | Other -> F.fprintf fmt "Other"
@@ -102,6 +109,7 @@ module JavaSink = struct
 
   module SinkKind = struct
     type t =
+      | Intent (** sink that trusts an Intent *)
       | Logging (** sink that logs one or more of its arguments *)
       | Other (** for testing or uncategorized sinks *)
 
@@ -109,6 +117,9 @@ module JavaSink = struct
       | Logging, Logging -> 0
       | Logging, _ -> (-1)
       | _, Logging -> 1
+      | Intent, Intent -> 0
+      | Intent, _ -> (-1)
+      | _, Intent -> 1
       | Other, Other -> 0
   end
 
@@ -130,15 +141,43 @@ module JavaSink = struct
     { kind; site; }
 
   let get site =
-    (* taint all the inputs of [pname] *)
-    let taint_all pname kind site ~report_reachable =
+    (* taint all the inputs of [pname]. for non-static procedures, taints the "this" parameter only
+       if [taint_this] is true. *)
+    let taint_all ?(taint_this=false) pname kind site ~report_reachable =
+      let params =
+        let all_params = Procname.java_get_parameters pname in
+        if Procname.java_is_static (CallSite.pname site) || taint_this
+        then all_params
+        else IList.tl all_params in
       IList.mapi
         (fun param_num _ -> Sink.make_sink_param (make kind site) param_num ~report_reachable)
-        (Procname.java_get_parameters pname) in
+        params in
+    (* taint the nth non-"this" parameter (0-indexed) *)
+    let taint_nth n kind site ~report_reachable =
+      let first_index = if Procname.java_is_static (CallSite.pname site) then n else n + 1 in
+      [Sink.make_sink_param (make kind site) first_index ~report_reachable] in
     match CallSite.pname site with
     | Procname.Java pname ->
         begin
           match Procname.java_get_class_name pname, Procname.java_get_method pname with
+          | ("android.app.Activity" | "android.content.ContextWrapper" | "android.content.Context"),
+            ("bindService" |
+             "sendBroadcast" |
+             "sendBroadcastAsUser" |
+             "sendOrderedBroadcast" |
+             "sendStickyBroadcast" |
+             "sendStickyBroadcastAsUser" |
+             "sendStickyOrderedBroadcast" |
+             "sendStickyOrderedBroadcastAsUser" |
+             "startActivities" |
+             "startActivity" |
+             "startActivityForResult" |
+             "startActivityIfNeeded" |
+             "startNextMatchingActivity" |
+             "startService") ->
+              taint_nth 0 Intent site ~report_reachable:true
+          | "android.app.Activity", ("startActivityFromChild" | "startActivityFromFragment") ->
+              taint_nth 1 Intent site ~report_reachable:true
           | "android.util.Log", ("d" | "e" | "i" | "println" | "v" | "w" | "wtf") ->
               taint_all pname Logging site ~report_reachable:true
           | "com.facebook.infer.models.InferTaint", "inferSensitiveSink" ->
@@ -160,6 +199,7 @@ module JavaSink = struct
     compare t1 t2 = 0
 
   let pp_kind fmt (kind : kind) = match kind with
+    | Intent -> F.fprintf fmt "Intent"
     | Logging -> F.fprintf fmt "Logging"
     | Other -> F.fprintf fmt "Other"
 
@@ -184,6 +224,8 @@ include
       match Source.kind source, Sink.kind sink with
       | SourceKind.Other, SinkKind.Other
       | SourceKind.SharedPreferences, SinkKind.Logging ->
+          true
+      | SourceKind.Intent, SinkKind.Intent ->
           true
       | _ ->
           false
