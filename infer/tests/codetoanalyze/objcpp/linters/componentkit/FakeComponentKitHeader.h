@@ -24,3 +24,18 @@ typedef struct { NSString* string; } LabelAttributes;
 typedef struct { int thisStructIsEmpty; } ViewAttributes;
 
 typedef struct { int thisStructIsEmpty; } CKSize;
+
+// Mimic importing CKComponentScope
+
+class CKComponentScope {
+ public:
+  CKComponentScope(Class __unsafe_unretained componentClass,
+                   id identifier = nil,
+                   id (^initialStateCreator)(void) = nil);
+  ~CKComponentScope();
+  int a;
+
+ private:
+  CKComponentScope(const CKComponentScope&) = delete;
+  CKComponentScope& operator=(const CKComponentScope&) = delete;
+};

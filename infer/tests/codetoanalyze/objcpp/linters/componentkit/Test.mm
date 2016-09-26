@@ -86,5 +86,12 @@ class BarClass {
   const BarClass& s2 = s1; // no error
   BarClass& s3 = s1; // error
   const BarClass s4 = {.a = 3}; // no error
+
+  // Whitelisted C++ class
+  CKComponentScope w1(self); // no error
+  const CKComponentScope& w2 = w1; // no error
+  CKComponentScope& w3 = w1; // no error
+  // const CKComponentScope w4 = {.a = 3}; // Can't, lacks default ctor
+  const CKComponentScope w4(self); // no error
 }
 @end

@@ -74,6 +74,20 @@ and contains_ck_impl decl_list =
     const NSString *y;
     ``` *)
 let mutable_local_vars_advice context decl =
+  let rec get_referenced_type (qual_type: Clang_ast_t.qual_type) : Clang_ast_t.decl option =
+    let typ_opt = Ast_utils.get_desugared_type qual_type.qt_type_ptr in
+    match (typ_opt : Clang_ast_t.c_type option) with
+    | Some RecordType (_, decl_ptr) -> Ast_utils.get_decl decl_ptr
+    | Some LValueReferenceType (_, inner_qual_type) -> get_referenced_type inner_qual_type
+    | _ -> None in
+
+  let is_of_whitelisted_type qual_type =
+    let whitelist = ["CKComponentScope"; "FBTrackingNodeScope"; "FBTrackingCodeScope"] in
+    match get_referenced_type qual_type with
+    | Some CXXRecordDecl (_, ndi, _, _, _, _, _, _) ->
+        IList.mem string_equal ndi.ni_name whitelist
+    | _ -> false in
+
   match decl with
   | Clang_ast_t.VarDecl(decl_info, _, qual_type, _) ->
       let is_const_ref = match Ast_utils.get_type qual_type.qt_type_ptr with
@@ -85,7 +99,8 @@ let mutable_local_vars_advice context decl =
                       && Ast_utils.is_in_main_file decl
                       && General_utils.is_objc_extension
                       && (not (Ast_utils.is_syntactically_global_var decl))
-                      && (not is_const) in
+                      && (not is_const)
+                      && not (is_of_whitelisted_type qual_type) in
       if condition then
         Some {
           CIssue.issue = CIssue.Mutable_local_variable_in_component_file;
