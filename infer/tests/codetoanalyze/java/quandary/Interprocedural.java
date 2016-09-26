@@ -219,4 +219,26 @@ class Interprocedural {
     callSinkVariadic(null, null, InferTaint.inferSecretSource());
   }
 
+  void diverge() {
+    for (;;);
+  }
+
+  // we don't propagate divergence in callees to callers
+  public void FP_divergenceInCallee() {
+    Object source = InferTaint.inferSecretSource();
+    diverge();
+    InferTaint.inferSensitiveSink(source);
+  }
+
+  public static void callSinkThenDiverge(Object param) {
+    InferTaint.inferSensitiveSink(param);
+    for (;;);
+  }
+
+  // this fails because the exit block in callSinkThenDiverge is unreachable, so the summary is
+  // empty.
+  public void FN_callSinkThenDivergeBad() {
+    callSinkThenDiverge(InferTaint.inferSecretSource());
+  }
+
 }
