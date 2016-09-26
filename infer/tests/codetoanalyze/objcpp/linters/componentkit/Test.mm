@@ -60,9 +60,9 @@
   const BOOL f = YES; // no error
 
   // Pointer types
-  NSError* const error = nil; // no error
-  NSError* const* g = &error; // error
-  NSError* const* const h = &error; // no error
+  NSObject* const o1 = nil; // no error
+  NSObject* const* o2 = &o1; // error
+  NSObject* const* const o3 = &o1; // no error
 
   return [super newWithComponent:[CKLabelComponent newWithLabelAttributes:{
                   .string = [@[ a, b, c, d ] componentsJoinedByString:@", "],
@@ -93,5 +93,12 @@ class BarClass {
   CKComponentScope& w3 = w1; // no error
   // const CKComponentScope w4 = {.a = 3}; // Can't, lacks default ctor
   const CKComponentScope w4(self); // no error
+
+  // Whitelisted Objc class
+  NSError* const e = nil; // no error
+  NSError** e1; // no error
+  NSError const** e2; // no error
+  NSError* const* e3 = &e; // no error
+  NSError* const* const e4 = &e; // no error
 }
 @end

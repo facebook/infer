@@ -77,15 +77,21 @@ let mutable_local_vars_advice context decl =
   let rec get_referenced_type (qual_type: Clang_ast_t.qual_type) : Clang_ast_t.decl option =
     let typ_opt = Ast_utils.get_desugared_type qual_type.qt_type_ptr in
     match (typ_opt : Clang_ast_t.c_type option) with
+    | Some ObjCInterfaceType (_, decl_ptr)
     | Some RecordType (_, decl_ptr) -> Ast_utils.get_decl decl_ptr
+    | Some PointerType (_, inner_qual_type)
+    | Some ObjCObjectPointerType (_, inner_qual_type)
     | Some LValueReferenceType (_, inner_qual_type) -> get_referenced_type inner_qual_type
     | _ -> None in
 
   let is_of_whitelisted_type qual_type =
-    let whitelist = ["CKComponentScope"; "FBTrackingNodeScope"; "FBTrackingCodeScope"] in
+    let cpp_whitelist = ["CKComponentScope"; "FBTrackingNodeScope"; "FBTrackingCodeScope"] in
+    let objc_whitelist = ["NSError"] in
     match get_referenced_type qual_type with
     | Some CXXRecordDecl (_, ndi, _, _, _, _, _, _) ->
-        IList.mem string_equal ndi.ni_name whitelist
+        IList.mem string_equal ndi.ni_name cpp_whitelist
+    | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
+        IList.mem string_equal ndi.ni_name objc_whitelist
     | _ -> false in
 
   match decl with
