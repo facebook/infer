@@ -89,10 +89,10 @@ let rec create_array_type typ dim =
 let extract_cn_no_obj typ =
   match typ with
   | Typ.Tptr (Tstruct (TN_csu (Class _, _) as name), Pk_pointer) ->
-      let class_name = Typename.name name in
-      if class_name = JConfig.object_cl then None
+      let class_name = JBasics.make_cn (Typename.name name) in
+      if JBasics.cn_equal class_name JBasics.java_lang_object then None
       else
-        let jbir_class_name = (JBasics.make_cn class_name) in
+        let jbir_class_name = class_name in
         Some jbir_class_name
   | _ -> None
 
@@ -423,7 +423,7 @@ let rec expr_type (context : JContext.t) expr =
     Object instead. *)
 let return_type program tenv ms meth_kind =
   if meth_kind = JContext.Init then
-    get_class_type program tenv (JBasics.make_cn JConfig.object_cl)
+    get_class_type program tenv JBasics.java_lang_object
   else
     match JBasics.ms_rtype ms with
     | None -> Typ.Tvoid

@@ -86,7 +86,7 @@ let get_undefined_method_call ovt =
                   if JBasics.cn_name cn = JConfig.string_cl then
                     "string_undefined"
                   else
-                  if JBasics.cn_name cn = JConfig.object_cl then
+                  if JBasics.cn_equal cn JBasics.java_lang_object then
                     "object_undefined"
                   else assert false
             end in
@@ -596,7 +596,7 @@ let method_invocation
       expr_list in
   let callee_procname =
     let proc = Procname.from_string_c_fun (JBasics.ms_name ms) in
-    if JBasics.cn_equal cn' JConfig.infer_builtins_cl &&
+    if JBasics.cn_equal cn' (JBasics.make_cn JConfig.infer_builtins_cl) &&
        Builtin.is_registered proc
     then proc
     else Procname.Java (JTransType.get_method_procname cn' ms method_kind) in

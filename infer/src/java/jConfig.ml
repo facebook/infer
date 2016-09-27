@@ -13,19 +13,17 @@ open! Utils
 open Javalib_pack
 
 (** {2 Class names and types} *)
-let infer_builtins_cl = JBasics.make_cn "com.facebook.infer.models.InferBuiltins"
+let builtins_package = "com.facebook.infer.models"
 
-let infer_array_cl = "com.facebook.infer.models.InferArray"
+let infer_builtins_cl = builtins_package ^ ".InferBuiltins"
 
-let infer_undefined_cl = "com.facebook.infer.models.InferUndefined"
+let infer_array_cl = builtins_package ^ ".InferArray"
 
-let infer_object_cl = "com.facebook.infer.models.InferObject"
+let infer_undefined_cl = builtins_package ^ ".InferUndefined"
 
-let object_cl = "java.lang.Object"
+let object_cl = JBasics.cn_name JBasics.java_lang_object
 
-let java_lang_object_classname = Mangled.from_string object_cl
-
-let obj_type = (JBasics.TObject (JBasics.TClass (JBasics.make_cn object_cl)))
+let obj_type = (JBasics.TObject (JBasics.TClass JBasics.java_lang_object))
 
 let bool_type = JBasics.TBasic `Bool
 
