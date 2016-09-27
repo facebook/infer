@@ -349,6 +349,7 @@ class BuildIntegrationTest(unittest.TestCase):
              ROOT_DIR,
              [{'compile': ['buck', 'build', target]}],
              clean_commands=[['buck', 'clean']],
+             enabled=(sys.platform == 'darwin'),
              available=lambda: is_tool_available(['buck', '--version']))
 
     def test_make_integration(
