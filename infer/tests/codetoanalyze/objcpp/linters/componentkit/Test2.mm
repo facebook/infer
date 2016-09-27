@@ -9,23 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-// This import alone shouldn't trigger lint rules, since its impl is not in
-// this translation unit.
-// Mimic importing CKComponnet
-@interface CKComponent : NSObject
-@end
-@implementation CKComponent
-@end
-
-// Mimic importing CKCompositeComponnet
-@interface CKCompositeComponent : NSObject
-+ (instancetype)newWithComponent:(CKComponent*)component;
-@end
-@implementation CKCompositeComponent
-+ (instancetype)newWithComponent:(CKComponent*)component {
-  return nil;
-}
-@end
+#import "FakeComponentKitHeader.h"
 
 @interface SomeClass : NSObject
 @end
