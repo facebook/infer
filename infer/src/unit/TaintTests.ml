@@ -44,7 +44,6 @@ module MockTrace = Trace.Make(struct
       let is_footprint _ = assert false
       let make_footprint _ = assert false
       let get_footprint_access_path _ = assert false
-      let to_return _ _ = assert false
     end
 
     module Sink = struct

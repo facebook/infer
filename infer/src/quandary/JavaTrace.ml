@@ -78,10 +78,6 @@ module JavaSource = struct
     | pname when Builtin.is_registered pname -> []
     | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
 
-  (** make a clone of [t] with a new call site *)
-  let to_return t return_site =
-    { t with site = return_site; }
-
   let compare src1 src2 =
     SourceKind.compare src1.kind src2.kind
     |> next CallSite.compare src1.site src2.site

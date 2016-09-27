@@ -16,8 +16,6 @@ module type S = sig
 
   val get_footprint_access_path: t -> AccessPath.t option
 
-  val to_return : t -> CallSite.t -> t
-
   (** ith return value * ith sink kind *)
   val get : CallSite.t -> (int * t) list
 end

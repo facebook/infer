@@ -67,7 +67,6 @@ module MockSource = struct
 
   let get _ = assert false
   let get_footprint_access_path _ = assert false
-  let to_return _ _ = assert false
 end
 
 module MockSink = struct
