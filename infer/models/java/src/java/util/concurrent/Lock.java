@@ -9,8 +9,8 @@
 
 package java.util.concurrent.locks;
 import java.util.concurrent.TimeUnit;
-import com.facebook.infer.models.InferBuiltins;
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferBuiltins;
+import com.facebook.infer.builtins.InferUndefined;
 
 /*
 Lock is in actuality an interface, but is implemented here as an abstract class for

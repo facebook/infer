@@ -9,7 +9,7 @@
 
 package java.nio.channels;
 
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.channels.spi.AbstractInterruptibleChannel;

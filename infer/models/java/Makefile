@@ -11,8 +11,6 @@ include $(ROOT_DIR)/Makefile.config
 INFER = INFER_ANALYZE_MODELS=1 $(INFER_BIN) \
           --buck --analyzer infer --multicore 1
 
-JAVA_MODELS_SOURCES = $(shell find $(JAVA_MODELS_DIR)/src -name "*.java")
-
 ANDROID_JAR = $(LIB_DIR)/java/android/android-19.jar
 JACKSON_JAR = $(DEPENDENCIES_DIR)/java/jackson/jackson-2.2.3.jar
 INFER_ANNOTATIONS_JAR = $(ANNOTATIONS_DIR)/annotations.jar
@@ -22,7 +20,10 @@ INFER_REPORT = $(MODELS_OUT)/infer/report.json
 MODELS_JAR = models.jar
 DEPLOYED_MODELS_JAR = $(LIB_DIR)/java/models.jar
 
-JAVA_SOURCES = $(shell find src/ -name "*.java")
+JAVA_BUILTINS_SOURCES = $(shell find builtins -name "*.java")
+JAVA_MODELS_SOURCES = $(shell find src -name "*.java")
+
+JAVA_SOURCES = $(JAVA_BUILTINS_SOURCES) $(JAVA_MODELS_SOURCES)
 
 all: $(MODELS_JAR)
 
@@ -31,7 +32,7 @@ clean:
 	@rm -f $(MODELS_JAR)
 	@rm -f $(DEPLOYED_MODELS_JAR)
 
-$(INFER_REPORT): $(ANDROID_JAR) $(JACKSON_JAR) $(JAVA_SOURCES) $(JAVA_DEPS) $(INFER_ANNOTATIONS_JAR)
+$(INFER_REPORT): $(ANDROID_JAR) $(JACKSON_JAR) $(JAVA_DEPS) $(INFER_ANNOTATIONS_JAR) $(JAVA_SOURCES)
 	@rm -fr $(MODELS_OUT)
 	mkdir -p $(MODELS_OUT)
 	@rm -f $(DEPLOYED_MODELS_JAR)

@@ -15,7 +15,7 @@ import java.net.Socket;
 
 import javax.net.SocketFactory;
 
-import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.builtins.InferBuiltins;
 
 public class SSLSocketFactory extends SocketFactory {
 

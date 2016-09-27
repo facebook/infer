@@ -9,7 +9,7 @@
 
 package com.squareup.okhttp.internal;
 
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 
 import java.io.IOException;
 

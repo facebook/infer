@@ -477,7 +477,7 @@ let is_class_initializer =
 let is_infer_undefined pn =>
   switch pn {
   | Java j =>
-    let regexp = Str.regexp "com.facebook.infer.models.InferUndefined";
+    let regexp = Str.regexp "com.facebook.infer.builtins.InferUndefined";
     Str.string_match regexp (java_get_class_name j) 0
   | _ =>
     /* TODO: add cases for obj-c, c, c++ */

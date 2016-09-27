@@ -9,8 +9,8 @@
 
 package android.database;
 
-import com.facebook.infer.models.InferUndefined;
-import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.builtins.InferUndefined;
+import com.facebook.infer.builtins.InferBuiltins;
 
 public class CursorWrapper extends Cursor {
   protected final Cursor mCursor;

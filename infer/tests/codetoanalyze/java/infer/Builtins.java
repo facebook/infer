@@ -9,7 +9,7 @@
 
 package codetoanalyze.java.infer;
 
-import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.builtins.InferBuiltins;
 
 public class Builtins {
 

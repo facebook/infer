@@ -9,7 +9,7 @@
 
 package java.io;
 
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 import javax.annotation.Nullable;
 
 public class File {

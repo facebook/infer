@@ -13,7 +13,8 @@ open! Utils
 open Javalib_pack
 
 (** {2 Class names and types} *)
-let builtins_package = "com.facebook.infer.models"
+
+let builtins_package = "com.facebook.infer.builtins"
 
 let infer_builtins_cl = builtins_package ^ ".InferBuiltins"
 

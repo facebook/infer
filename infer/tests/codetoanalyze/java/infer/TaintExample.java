@@ -24,7 +24,7 @@ import javax.net.ssl.SSLSocketFactory;
 import android.content.ContentValues;
 import android.content.SharedPreferences;
 
-import com.facebook.infer.models.InferTaint;
+import com.facebook.infer.builtins.InferTaint;
 import com.facebook.infer.annotation.IntegritySource;
 import com.facebook.infer.annotation.IntegritySink;
 import com.facebook.infer.annotation.PrivacySource;

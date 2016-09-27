@@ -9,7 +9,7 @@
 
 package java.util.zip;
 
-import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.builtins.InferBuiltins;
 
 public class Deflater {
 

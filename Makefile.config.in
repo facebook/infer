@@ -78,6 +78,7 @@ BUILD_DIR = $(INFER_DIR)/_build
 ETC_DIR = $(INFER_DIR)/etc
 LIB_DIR = $(INFER_DIR)/lib
 MODELS_DIR = $(INFER_DIR)/models
+JAVA_BUILTINS_DIR = $(MODELS_DIR)/java/builtins
 SRC_DIR = $(INFER_DIR)/src
 
 ANNOT_DIR = $(SRC_DIR)/_build

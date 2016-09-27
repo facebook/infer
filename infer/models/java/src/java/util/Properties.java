@@ -9,7 +9,7 @@
 
 package java.util;
 
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 
 import javax.xml.parsers.DocumentBuilder;
 import java.io.*;

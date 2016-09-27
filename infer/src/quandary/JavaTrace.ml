@@ -70,7 +70,7 @@ module JavaSource = struct
               [0, make Intent site]
           | "android.content.SharedPreferences", "getString" ->
               [0, make SharedPreferences site]
-          | "com.facebook.infer.models.InferTaint", "inferSecretSource" ->
+          | "com.facebook.infer.builtins.InferTaint", "inferSecretSource" ->
               [0, make Other site]
           | _ ->
               []
@@ -176,7 +176,7 @@ module JavaSink = struct
               taint_nth 1 Intent site ~report_reachable:true
           | "android.util.Log", ("d" | "e" | "i" | "println" | "v" | "w" | "wtf") ->
               taint_all pname Logging site ~report_reachable:true
-          | "com.facebook.infer.models.InferTaint", "inferSensitiveSink" ->
+          | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink" ->
               [Sink.make_sink_param (make Other site) 0 ~report_reachable:false]
           | _ ->
               []

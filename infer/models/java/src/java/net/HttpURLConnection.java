@@ -9,7 +9,7 @@
 
 package java.net;
 
-import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.builtins.InferBuiltins;
 
 public class HttpURLConnection extends URLConnection {
 

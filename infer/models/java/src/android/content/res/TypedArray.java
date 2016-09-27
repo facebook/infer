@@ -9,7 +9,7 @@
 
 package android.content.res;
 
-import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.builtins.InferBuiltins;
 
 public class TypedArray {
 

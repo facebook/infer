@@ -10,7 +10,7 @@
 package java.util;
 import java.io.*;
 
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 
 /**
  * A recency abstraction for hashmaps that remembers only the last two

@@ -9,7 +9,7 @@
 
 package codetoanalyze.java.quandary;
 
-import com.facebook.infer.models.InferTaint;
+import com.facebook.infer.builtins.InferTaint;
 
 /** testing basic intraprocedural functionality: assignment, ifs, loops, casts */
 

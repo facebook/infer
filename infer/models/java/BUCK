@@ -1,11 +1,21 @@
 java_library(
-  name = 'models',
-  srcs = glob(['src/**/*.java']),
-  visibility = [
-    'PUBLIC',
-  ],
-  deps = [
-       '//dependencies/java/jackson:jackson',
-       '//infer/lib/java/android:android',
-       ]
+    name = 'builtins',
+    srcs = glob(['builtins/**/*.java']),
+    visibility = [
+        'PUBLIC',
+    ],
+)
+
+java_library(
+    name = 'models',
+    srcs = glob(['src/**/*.java']),
+    visibility = [
+        'PUBLIC',
+    ],
+    deps = [
+        ':builtins',
+        '//dependencies/java/jackson:jackson',
+        '//infer/annotations:annotations',
+        '//infer/lib/java/android:android',
+    ]
 )

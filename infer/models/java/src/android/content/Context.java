@@ -11,7 +11,7 @@ package android.content;
 
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 
 public class Context {
 

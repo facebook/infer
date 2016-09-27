@@ -17,7 +17,7 @@ open PatternMatch
 let sources0 = [
   (* for testing only *)
   {
-    classname = "com.facebook.infer.models.InferTaint";
+    classname = "com.facebook.infer.builtins.InferTaint";
     method_name = "inferSecretSource";
     ret_type = JConfig.object_cl;
     params = [];
@@ -26,7 +26,7 @@ let sources0 = [
     language = Config.Java;
   };
   {
-    classname = "com.facebook.infer.models.InferTaint";
+    classname = "com.facebook.infer.builtins.InferTaint";
     method_name = "inferSecretSourceUndefined";
     ret_type = JConfig.object_cl;
     params = [];
@@ -63,7 +63,7 @@ let sources0 = [
 let sinks = [
   (* for testing only *)
   ({
-    classname = "com.facebook.infer.models.InferTaint";
+    classname = "com.facebook.infer.builtins.InferTaint";
     method_name = "inferSensitiveSink";
     ret_type = "void";
     params = [JConfig.object_cl];
@@ -72,7 +72,7 @@ let sinks = [
     language = Config.Java
   }, [0]);
   ({
-    classname = "com.facebook.infer.models.InferTaint";
+    classname = "com.facebook.infer.builtins.InferTaint";
     method_name = "inferSensitiveSinkUndefined";
     ret_type = "void";
     params = [JConfig.object_cl];

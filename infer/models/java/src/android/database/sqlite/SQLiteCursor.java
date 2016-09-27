@@ -10,8 +10,8 @@
 package android.database.sqlite;
 
 import android.database.Cursor;
-import com.facebook.infer.models.InferBuiltins;
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferBuiltins;
+import com.facebook.infer.builtins.InferUndefined;
 
 
 public class SQLiteCursor extends Cursor {

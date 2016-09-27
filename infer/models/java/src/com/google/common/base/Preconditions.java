@@ -10,7 +10,7 @@
 package com.google.common.base;
 
 import javax.annotation.Nullable;
-import static com.facebook.infer.models.InferBuiltins.assume;
+import static com.facebook.infer.builtins.InferBuiltins.assume;
 
 
 public final class Preconditions {

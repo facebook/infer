@@ -9,7 +9,7 @@
 
 package java.util.jar;
 
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 
 import java.io.IOException;
 import java.io.OutputStream;

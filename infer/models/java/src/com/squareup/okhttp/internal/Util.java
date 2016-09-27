@@ -9,7 +9,7 @@
 
 package com.squareup.okhttp.internal;
 
-import com.facebook.infer.models.InferCloseables;
+import com.facebook.infer.builtins.InferCloseables;
 
 import java.io.Closeable;
 import java.io.IOException;

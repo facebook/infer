@@ -9,7 +9,7 @@
 
 package java.util;
 
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 
 public class Vector<E> extends AbstractList<E> {
 

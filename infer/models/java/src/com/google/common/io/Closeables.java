@@ -9,8 +9,8 @@
 
 package com.google.common.io;
 
-import com.facebook.infer.models.InferCloseables;
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferCloseables;
+import com.facebook.infer.builtins.InferUndefined;
 
 import java.io.Closeable;
 import java.io.IOException;

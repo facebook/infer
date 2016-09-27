@@ -9,7 +9,7 @@
 
 package codetoanalyze.java.quandary;
 
-import com.facebook.infer.models.InferTaint;
+import com.facebook.infer.builtins.InferTaint;
 
 public class Arrays {
 
