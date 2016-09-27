@@ -451,15 +451,21 @@ class Wrapper:
         self.infer_args = infer_args
         self.timer.start('Computing library targets')
         base_cmd, buck_args = parse_buck_command(buck_cmd)
+        self.buck_args = buck_args
         self.normalized_targets = get_normalized_targets(
             buck_args.targets)
         self.buck_cmd = base_cmd + self.normalized_targets
         self.timer.stop('%d targets computed', len(self.normalized_targets))
 
+    def _collect_results(self, start_time):
+        self.timer.start('Collecting results ...')
+        collect_results(self.infer_args, start_time)
+        self.timer.stop('Done')
+
     def run(self):
         temp_files = []
+        start_time = time.time()
         try:
-            start_time = time.time()
             logging.info('Starting the analysis')
 
             if not os.path.isdir(self.infer_args.infer_out):
@@ -478,12 +484,16 @@ class Wrapper:
                 buck_cmd = self.buck_cmd + javac_config
                 subprocess.check_call(buck_cmd)
                 self.timer.stop('Buck finished')
-            self.timer.start('Collecting results ...')
-            collect_results(self.infer_args, start_time)
-            self.timer.stop('Done')
+                self._collect_results(start_time)
             return os.EX_OK
         except KeyboardInterrupt as e:
             self.timer.stop('Exiting')
             sys.exit(0)
+        except subprocess.CalledProcessError as e:
+            if self.buck_args.keep_going:
+                print('Buck failed, but continuing analysis because --keep-going was passed')
+                self._collect_results(start_time)
+                return os.EX_OK
+            raise e
         finally:
             cleanup(temp_files)
