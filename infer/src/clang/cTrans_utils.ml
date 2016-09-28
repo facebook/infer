@@ -307,8 +307,9 @@ let create_alloc_instrs sil_loc function_type fname size_exp_opt procname_opt =
     | None -> [] in
   let args = exp :: procname_arg in
   let ret_id = Ident.create_fresh Ident.knormal in
+  let ret_id_typ = Some (ret_id, function_type) in
   let stmt_call =
-    Sil.Call([ret_id], Exp.Const (Const.Cfun fname), args, sil_loc, CallFlags.default) in
+    Sil.Call (ret_id_typ, Exp.Const (Const.Cfun fname), args, sil_loc, CallFlags.default) in
   (function_type, stmt_call, Exp.Var ret_id)
 
 let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc procname_opt =
@@ -336,8 +337,9 @@ let objc_new_trans trans_state loc stmt_info cls_name function_type =
       cls_name CFrontend_config.init Procname.ObjCInstanceMethod in
   CMethod_trans.create_external_procdesc trans_state.context.CContext.cfg pname is_instance None;
   let args = [(alloc_ret_exp, alloc_ret_type)] in
+  let ret_id_typ = Some (init_ret_id, alloc_ret_type) in
   let init_stmt_call =
-    Sil.Call ([init_ret_id], Exp.Const (Const.Cfun pname), args, loc, call_flags) in
+    Sil.Call (ret_id_typ, Exp.Const (Const.Cfun pname), args, loc, call_flags) in
   let instrs = [alloc_stmt_call; init_stmt_call] in
   let res_trans_tmp = { empty_res_trans with instrs = instrs } in
   let res_trans =
@@ -369,12 +371,13 @@ let cpp_new_trans sil_loc function_type size_exp_opt =
 
 let create_cast_instrs exp cast_from_typ cast_to_typ sil_loc =
   let ret_id = Ident.create_fresh Ident.knormal in
+  let ret_id_typ = Some (ret_id, cast_to_typ) in
   let typ = CTypes.remove_pointer_to_typ cast_to_typ in
   let sizeof_exp = Exp.Sizeof (typ, None, Subtype.exact) in
   let pname = ModelBuiltins.__objc_cast in
   let args = [(exp, cast_from_typ); (sizeof_exp, Typ.Tint Typ.IULong)] in
   let stmt_call =
-    Sil.Call ([ret_id], Exp.Const (Const.Cfun pname), args, sil_loc, CallFlags.default) in
+    Sil.Call (ret_id_typ, Exp.Const (Const.Cfun pname), args, sil_loc, CallFlags.default) in
   (stmt_call, Exp.Var ret_id)
 
 let cast_trans exps sil_loc function_type pname =
@@ -439,7 +442,7 @@ let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
 let trans_assertion_failure sil_loc context =
   let assert_fail_builtin = Exp.Const (Const.Cfun ModelBuiltins.__infer_fail) in
   let args = [Exp.Const (Const.Cstr Config.default_failure_name), Typ.Tvoid] in
-  let call_instr = Sil.Call ([], assert_fail_builtin, args, sil_loc, CallFlags.default) in
+  let call_instr = Sil.Call (None, assert_fail_builtin, args, sil_loc, CallFlags.default) in
   let exit_node = Cfg.Procdesc.get_exit_node (CContext.get_procdesc context)
   and failure_node =
     Nodes.create_node (Cfg.Node.Stmt_node "Assertion failure") [call_instr] sil_loc context in

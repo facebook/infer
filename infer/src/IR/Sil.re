@@ -50,10 +50,9 @@ type instr =
   | Store of Exp.t Typ.t Exp.t Location.t
   /** prune the state based on [exp=1], the boolean indicates whether true branch */
   | Prune of Exp.t Location.t bool if_kind
-  /** [Call (ret_id1..ret_idn, e_fun, arg_ts, loc, call_flags)] represents an instructions
-      [ret_id1..ret_idn = e_fun(arg_ts);]
-      where n = 0 for void return and n > 1 for struct return */
-  | Call of (list Ident.t) Exp.t (list (Exp.t, Typ.t)) Location.t CallFlags.t
+  /** [Call (ret_id, e_fun, arg_ts, loc, call_flags)] represents an instruction
+      [ret_id = e_fun(arg_ts);]. The return value is ignored when [ret_id = None]. */
+  | Call of (option (Ident.t, Typ.t)) Exp.t (list (Exp.t, Typ.t)) Location.t CallFlags.t
   /** nullify stack variable */
   | Nullify of Pvar.t Location.t
   | Abstract of Location.t /** apply abstraction */
@@ -667,7 +666,7 @@ let instr_get_exps =
   | Load id e _ _ => [Exp.Var id, e]
   | Store e1 _ e2 _ => [e1, e2]
   | Prune cond _ _ _ => [cond]
-  | Call ret_ids e _ _ _ => [e, ...(IList.map (fun id => Exp.Var id)) ret_ids]
+  | Call ret_id e _ _ _ => [e, ...Option.map_default (fun (id, _) => [Exp.Var id]) [] ret_id]
   | Nullify pvar _ => [Exp.Lvar pvar]
   | Abstract _ => []
   | Remove_temps temps _ => IList.map (fun id => Exp.Var id) temps
@@ -684,10 +683,10 @@ let pp_instr pe0 f instr => {
     F.fprintf f "*%a:%a=%a %a" (pp_exp pe) e1 (Typ.pp pe) t (pp_exp pe) e2 Location.pp loc
   | Prune cond loc true_branch _ =>
     F.fprintf f "PRUNE(%a, %b); %a" (pp_exp pe) cond true_branch Location.pp loc
-  | Call ret_ids e arg_ts loc cf =>
-    switch ret_ids {
-    | [] => ()
-    | _ => F.fprintf f "%a=" (pp_comma_seq (Ident.pp pe)) ret_ids
+  | Call ret_id e arg_ts loc cf =>
+    switch ret_id {
+    | None => ()
+    | Some (id, _) => F.fprintf f "%a=" (Ident.pp pe) id
     };
     F.fprintf
       f
@@ -2114,7 +2113,7 @@ let exp_sub (subst: subst) e => exp_sub_ids (apply_sub subst) e;
 let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => Exp.t) instr => {
   let sub_id id =>
     switch (exp_sub_ids f (Var id)) {
-    | Var id' => id'
+    | Var id' when not (Ident.equal id id') => id'
     | _ => id
     };
   switch instr {
@@ -2139,12 +2138,17 @@ let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => Exp.t) instr => 
     } else {
       Store lhs_exp' typ rhs_exp' loc
     }
-  | Call ret_ids fun_exp actuals call_flags loc =>
-    let ret_ids' =
+  | Call ret_id fun_exp actuals call_flags loc =>
+    let ret_id' =
       if sub_id_binders {
-        IList.map_changed sub_id ret_ids
+        switch ret_id {
+        | Some (id, typ) =>
+          let id' = sub_id id;
+          Ident.equal id id' ? ret_id : Some (id', typ)
+        | None => None
+        }
       } else {
-        ret_ids
+        ret_id
       };
     let fun_exp' = exp_sub_ids f fun_exp;
     let actuals' =
@@ -2160,10 +2164,10 @@ let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => Exp.t) instr => 
           }
         )
         actuals;
-    if (ret_ids' === ret_ids && fun_exp' === fun_exp && actuals' === actuals) {
+    if (ret_id' === ret_id && fun_exp' === fun_exp && actuals' === actuals) {
       instr
     } else {
-      Call ret_ids' fun_exp' actuals' call_flags loc
+      Call ret_id' fun_exp' actuals' call_flags loc
     }
   | Prune exp loc true_branch if_kind =>
     let exp' = exp_sub_ids f exp;
@@ -2188,6 +2192,15 @@ let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => Exp.t) instr => 
 
 /** apply [subst] to all id's in [instr], including binder id's */
 let instr_sub (subst: subst) instr => instr_sub_ids sub_id_binders::true (apply_sub subst) instr;
+
+let id_typ_compare (id1, typ1) (id2, typ2) => {
+  let n = Ident.compare id1 id2;
+  if (n != 0) {
+    n
+  } else {
+    Typ.compare typ1 typ2
+  }
+};
 
 let exp_typ_compare (exp1, typ1) (exp2, typ2) => {
   let n = Exp.compare exp1 exp2;
@@ -2257,8 +2270,8 @@ let instr_compare instr1 instr2 =>
     }
   | (Prune _, _) => (-1)
   | (_, Prune _) => 1
-  | (Call ret_ids1 e1 arg_ts1 loc1 cf1, Call ret_ids2 e2 arg_ts2 loc2 cf2) =>
-    let n = IList.compare Ident.compare ret_ids1 ret_ids2;
+  | (Call ret_id1 e1 arg_ts1 loc1 cf1, Call ret_id2 e2 arg_ts2 loc2 cf2) =>
+    let n = opt_compare id_typ_compare ret_id1 ret_id2;
     if (n != 0) {
       n
     } else {
@@ -2416,6 +2429,22 @@ let exp_typ_compare_structural (e1, t1) (e2, t2) exp_map => {
     the [exp_map] param gives a mapping of names used in the procedure of [instr1] to identifiers
     used in the procedure of [instr2] */
 let instr_compare_structural instr1 instr2 exp_map => {
+  let id_typ_opt_compare_structural id_typ1 id_typ2 exp_map => {
+    let id_typ_compare_structural (id1, typ1) (id2, typ2) => {
+      let (n, exp_map) = exp_compare_structural (Var id1) (Var id2) exp_map;
+      if (n != 0) {
+        (n, exp_map)
+      } else {
+        (Typ.compare typ1 typ2, exp_map)
+      }
+    };
+    switch (id_typ1, id_typ2) {
+    | (Some it1, Some it2) => id_typ_compare_structural it1 it2
+    | (None, None) => (0, exp_map)
+    | (None, _) => ((-1), exp_map)
+    | (_, None) => (1, exp_map)
+    }
+  };
   let id_list_compare_structural ids1 ids2 exp_map => {
     let n = Pervasives.compare (IList.length ids1) (IList.length ids2);
     if (n != 0) {
@@ -2478,7 +2507,7 @@ let instr_compare_structural instr1 instr2 exp_map => {
       },
       exp_map
     )
-  | (Call ret_ids1 e1 arg_ts1 _ cf1, Call ret_ids2 e2 arg_ts2 _ cf2) =>
+  | (Call ret_id1 e1 arg_ts1 _ cf1, Call ret_id2 e2 arg_ts2 _ cf2) =>
     let args_compare_structural args1 args2 exp_map => {
       let n = Pervasives.compare (IList.length args1) (IList.length args2);
       if (n != 0) {
@@ -2498,7 +2527,7 @@ let instr_compare_structural instr1 instr2 exp_map => {
           args2
       }
     };
-    let (n, exp_map) = id_list_compare_structural ret_ids1 ret_ids2 exp_map;
+    let (n, exp_map) = id_typ_opt_compare_structural ret_id1 ret_id2 exp_map;
     if (n != 0) {
       (n, exp_map)
     } else {

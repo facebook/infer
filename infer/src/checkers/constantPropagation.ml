@@ -84,13 +84,13 @@ module ConstantFlow = Dataflow.MakeDF(struct
               && has_method pn "<init>" ->  (* StringBuilder.<init> *)
               update (Exp.Var sb) (Some (Const.Cstr "")) constants
 
-          | Sil.Call (i:: [], Exp.Const (Const.Cfun pn), (Exp.Var i1, _):: [], _, _)
+          | Sil.Call (Some (i, _), Exp.Const (Const.Cfun pn), (Exp.Var i1, _):: [], _, _)
             when has_class pn "java.lang.StringBuilder"
               && has_method pn "toString" -> (* StringBuilder.toString *)
               update (Exp.Var i) (ConstantMap.find (Exp.Var i1) constants) constants
 
           | Sil.Call
-              (i:: [], Exp.Const (Const.Cfun pn), (Exp.Var i1, _):: (Exp.Var i2, _):: [], _, _)
+              (Some (i, _), Exp.Const (Const.Cfun pn), (Exp.Var i1, _):: (Exp.Var i2, _):: [], _, _)
             when has_class pn "java.lang.StringBuilder"
               && has_method pn "append" -> (* StringBuilder.append *)
               (match

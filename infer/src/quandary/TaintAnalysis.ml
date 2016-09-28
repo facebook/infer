@@ -176,7 +176,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
       { astate with Domain.access_tree = access_tree'; }
 
     let apply_summary
-        ret_ids
+        ret_id
         actuals
         summary
         (astate_in : Domain.astate)
@@ -185,9 +185,8 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
       let callee_loc = CallSite.loc callee_site in
 
       let apply_return ret_ap = function
-        | [ret_id] -> AccessPath.with_base_var (Var.of_id ret_id) ret_ap
-        | [] -> failwith "Have summary for retval, but no ret id to bind it to!"
-        | _ -> failwith "Unimp: summaries for function with multiple return values" in
+        | Some (ret_id, _) -> AccessPath.with_base_var (Var.of_id ret_id) ret_ap
+        | None -> failwith "Have summary for retval, but no ret id to bind it to!" in
 
       let get_actual_ap_trace formal_num formal_ap access_tree =
         let get_actual_ap formal_num =
@@ -226,7 +225,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
         let caller_ap_trace_opt =
           match in_out_summary.output with
           | Out_return ret_ap ->
-              Some (apply_return ret_ap ret_ids, TraceDomain.initial)
+              Some (apply_return ret_ap ret_id, TraceDomain.initial)
           | Out_formal (formal_num, formal_ap) ->
               get_actual_ap_trace formal_num formal_ap access_tree
           | Out_global global_ap ->
@@ -283,7 +282,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
             | _ ->
                 astate'
           end
-      | Sil.Call ([ret_id], Const (Cfun callee_pname), args, loc, _)
+      | Sil.Call (Some (ret_id, _), Const (Cfun callee_pname), args, loc, _)
         when Builtin.is_registered callee_pname ->
           if Procname.equal callee_pname ModelBuiltins.__cast
           then
@@ -298,7 +297,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
                   Location.pp loc
           else
             astate
-      | Sil.Call (ret_ids, Const (Cfun callee_pname), actuals, callee_loc, _) ->
+      | Sil.Call (ret_id, Const (Cfun callee_pname), actuals, callee_loc, _) ->
           let call_site = CallSite.make callee_pname callee_loc in
 
           let astate_with_sink =
@@ -316,11 +315,11 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
                 failwith "Unimp: looking up return type for non-Java procedure" in
 
           let astate_with_source =
-            match TraceDomain.Source.get call_site, ret_ids with
-            | [(0, source)], [ret_id] ->
+            match TraceDomain.Source.get call_site, ret_id with
+            | [(0, source)], Some (ret_id, _) ->
                 let access_tree = add_source source ret_id ret_typ astate_with_sink.access_tree in
                 { astate_with_sink with access_tree; }
-            | [], _ |  _, [] ->
+            | [], _ |  _, None ->
                 astate_with_sink
             | _ ->
                 (* this is allowed by SIL, but not currently used in any frontends *)
@@ -329,7 +328,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
           let astate_with_summary =
             match Summary.read_summary proc_data.tenv proc_data.pdesc callee_pname with
             | Some summary ->
-                apply_summary ret_ids actuals summary astate_with_source proc_data call_site
+                apply_summary ret_id actuals summary astate_with_source proc_data call_site
             | None ->
                 astate_with_source in
 

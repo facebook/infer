@@ -118,10 +118,10 @@ struct
       IList.for_all filter_arg args in
 
     match instr with
-    | Sil.Call (ret_ids, Exp.Const (Const.Cfun callee_pname), _, loc, call_flags)
-      when ret_ids <> [] && arguments_not_temp normalized_etl ->
+    | Sil.Call (Some _ as ret_id, Exp.Const (Const.Cfun callee_pname), _, loc, call_flags)
+      when arguments_not_temp normalized_etl ->
         let instr_normalized_args = Sil.Call (
-            ret_ids,
+            ret_id,
             Exp.Const (Const.Cfun callee_pname),
             normalized_etl,
             loc,

@@ -1175,7 +1175,7 @@ let save_attributes source_file cfg => {
 
 
 /** Inline a synthetic (access or bridge) method. */
-let inline_synthetic_method ret_ids etl proc_desc loc_call :option Sil.instr => {
+let inline_synthetic_method ret_id etl proc_desc loc_call :option Sil.instr => {
   let modified = ref None;
   let debug = false;
   let found instr instr' => {
@@ -1186,15 +1186,16 @@ let inline_synthetic_method ret_ids etl proc_desc loc_call :option Sil.instr => 
     }
   };
   let do_instr _ instr =>
-    switch (instr, ret_ids, etl) {
+    switch (instr, ret_id, etl) {
     | (
         Sil.Load _ (Exp.Lfield (Exp.Var _) fn ft) bt _,
-        [ret_id],
+        Some (ret_id, _),
         [(e1, _)] /* getter for fields */
       ) =>
       let instr' = Sil.Load ret_id (Exp.Lfield e1 fn ft) bt loc_call;
       found instr instr'
-    | (Sil.Load _ (Exp.Lfield (Exp.Lvar pvar) fn ft) bt _, [ret_id], []) when Pvar.is_global pvar =>
+    | (Sil.Load _ (Exp.Lfield (Exp.Lvar pvar) fn ft) bt _, Some (ret_id, _), [])
+        when Pvar.is_global pvar =>
       /* getter for static fields */
       let instr' = Sil.Load ret_id (Exp.Lfield (Exp.Lvar pvar) fn ft) bt loc_call;
       found instr instr'
@@ -1209,21 +1210,19 @@ let inline_synthetic_method ret_ids etl proc_desc loc_call :option Sil.instr => 
       /* setter for static fields */
       let instr' = Sil.Store (Exp.Lfield (Exp.Lvar pvar) fn ft) bt e1 loc_call;
       found instr instr'
-    | (Sil.Call ret_ids' (Exp.Const (Const.Cfun pn)) etl' _ cf, _, _)
-        when IList.length ret_ids == IList.length ret_ids' && IList.length etl' == IList.length etl =>
-      let instr' = Sil.Call ret_ids (Exp.Const (Const.Cfun pn)) etl loc_call cf;
+    | (Sil.Call ret_id' (Exp.Const (Const.Cfun pn)) etl' _ cf, _, _)
+        when ret_id == None == (ret_id' == None) && IList.length etl' == IList.length etl =>
+      let instr' = Sil.Call ret_id (Exp.Const (Const.Cfun pn)) etl loc_call cf;
       found instr instr'
-    | (Sil.Call ret_ids' (Exp.Const (Const.Cfun pn)) etl' _ cf, _, _)
-        when
-          IList.length ret_ids == IList.length ret_ids' &&
-            IList.length etl' + 1 == IList.length etl =>
+    | (Sil.Call ret_id' (Exp.Const (Const.Cfun pn)) etl' _ cf, _, _)
+        when ret_id == None == (ret_id' == None) && IList.length etl' + 1 == IList.length etl =>
       let etl1 =
         switch (IList.rev etl) {
         /* remove last element */
         | [_, ...l] => IList.rev l
         | [] => assert false
         };
-      let instr' = Sil.Call ret_ids (Exp.Const (Const.Cfun pn)) etl1 loc_call cf;
+      let instr' = Sil.Call ret_id (Exp.Const (Const.Cfun pn)) etl1 loc_call cf;
       found instr instr'
     | _ => ()
     };
@@ -1236,7 +1235,7 @@ let inline_synthetic_method ret_ids etl proc_desc loc_call :option Sil.instr => 
 let proc_inline_synthetic_methods cfg proc_desc :unit => {
   let instr_inline_synthetic_method =
     fun
-    | Sil.Call ret_ids (Exp.Const (Const.Cfun pn)) etl loc _ =>
+    | Sil.Call ret_id (Exp.Const (Const.Cfun pn)) etl loc _ =>
       switch (Procdesc.find_from_name cfg pn) {
       | Some pd =>
         let is_access = Procname.java_is_access_method pn;
@@ -1244,7 +1243,7 @@ let proc_inline_synthetic_methods cfg proc_desc :unit => {
         let is_synthetic = attributes.ProcAttributes.is_synthetic_method;
         let is_bridge = attributes.ProcAttributes.is_bridge_method;
         if (is_access || is_bridge || is_synthetic) {
-          inline_synthetic_method ret_ids etl pd loc
+          inline_synthetic_method ret_id etl pd loc
         } else {
           None
         }

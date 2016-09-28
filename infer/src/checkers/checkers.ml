@@ -455,7 +455,7 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
              | Exp.Const (Const.Cclass n) -> Ident.name_to_string n
              | Exp.Lvar _ -> (
                  let is_call_instr set call = match set, call with
-                   | Sil.Store (_, _, Exp.Var (i1), _), Sil.Call (i2::[], _, _, _, _)
+                   | Sil.Store (_, _, Exp.Var (i1), _), Sil.Call (Some (i2, _), _, _, _, _)
                      when Ident.equal i1 i2 -> true
                    | _ -> false in
                  let is_set_instr = function

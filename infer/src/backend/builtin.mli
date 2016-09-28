@@ -17,7 +17,7 @@ type args = {
   tenv : Tenv.t;
   prop_ : Prop.normal Prop.t;
   path : Paths.Path.t;
-  ret_ids : Ident.t list;
+  ret_id : (Ident.t * Typ.t) option;
   args : (Exp.t * Typ.t) list;
   proc_name : Procname.t;
   loc : Location.t;

@@ -97,13 +97,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Store (Var _, _, _, _) ->
         (* *lhs = rhs. not a copy, and not a write to lhs *)
         astate
-    | Sil.Call (ret_ids, _, actuals, _, _) ->
-        let kill_ret_ids astate_acc id =
-          Domain.kill_copies_with_var (Var.of_id id) astate_acc in
+    | Sil.Call (ret_id, _, actuals, _, _) ->
+        let kill_ret_id (id,_) =
+          Domain.kill_copies_with_var (Var.of_id id) astate in
         let kill_actuals_by_ref astate_acc = function
           | (Exp.Lvar pvar, Typ.Tptr _) -> Domain.kill_copies_with_var (Var.of_pvar pvar) astate_acc
           | _ -> astate_acc in
-        let astate' = IList.fold_left kill_ret_ids astate ret_ids in
+        let astate' = Option.map_default kill_ret_id astate ret_id in
         if !Config.curr_language = Config.Java
         then astate' (* Java doesn't have pass-by-reference *)
         else IList.fold_left kill_actuals_by_ref astate' actuals

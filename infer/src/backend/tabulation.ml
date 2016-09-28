@@ -671,7 +671,7 @@ let include_subtrace callee_pname =
 
 (** combine the spec's post with a splitting and actual precondition *)
 let combine tenv
-    ret_ids (posts: ('a Prop.t * Paths.Path.t) list)
+    ret_id (posts: ('a Prop.t * Paths.Path.t) list)
     actual_pre path_pre split
     caller_pdesc callee_pname loc =
   let caller_pname = Cfg.Procdesc.get_proc_name caller_pdesc in
@@ -751,25 +751,27 @@ let combine tenv
           match Prop.prop_iter_find iter filter with
           | None -> post_p2
           | Some iter' ->
-              match fst (Prop.prop_iter_current tenv iter') with
-              | Sil.Hpointsto (_, Sil.Eexp (e', inst), _) when exp_is_exn e' ->
+              match fst (Prop.prop_iter_current tenv iter'), ret_id with
+              | Sil.Hpointsto (_, Sil.Eexp (e', inst), _), _ when exp_is_exn e' ->
                   (* resuls is an exception: set in caller *)
                   let p = Prop.prop_iter_remove_curr_then_to_prop tenv iter' in
                   prop_set_exn tenv caller_pname p (Sil.Eexp (e', inst))
-              | Sil.Hpointsto (_, Sil.Eexp (e', _), _) when IList.length ret_ids = 1 ->
+              | Sil.Hpointsto (_, Sil.Eexp (e', _), _), Some (id, _) ->
                   let p = Prop.prop_iter_remove_curr_then_to_prop tenv iter' in
-                  Prop.conjoin_eq tenv e' (Exp.Var (IList.hd ret_ids)) p
-              | Sil.Hpointsto (_, Sil.Estruct (ftl, _), _)
-                when IList.length ftl = IList.length ret_ids ->
+                  Prop.conjoin_eq tenv e' (Exp.Var id) p
+              | Sil.Hpointsto (_, Sil.Estruct (ftl, _), _), _
+                when IList.length ftl = (if ret_id = None then 0 else 1) ->
+                  (* TODO(jjb): Is this case dead? *)
                   let rec do_ftl_ids p = function
-                    | [], [] -> p
-                    | (_, Sil.Eexp (e', _)):: ftl', ret_id:: ret_ids' ->
+                    | [], None -> p
+                    | (_, Sil.Eexp (e', _)) :: ftl', Some (ret_id, _) ->
                         let p' = Prop.conjoin_eq tenv e' (Exp.Var ret_id) p in
-                        do_ftl_ids p' (ftl', ret_ids')
+                        do_ftl_ids p' (ftl', None)
                     | _ -> p in
                   let p = Prop.prop_iter_remove_curr_then_to_prop tenv iter' in
-                  do_ftl_ids p (ftl, ret_ids)
-              | Sil.Hpointsto _ -> (* returning nothing or unexpected sexp, turning into nondet *)
+                  do_ftl_ids p (ftl, ret_id)
+              | Sil.Hpointsto _, _ ->
+                  (* returning nothing or unexpected sexp, turning into nondet *)
                   Prop.prop_iter_remove_curr_then_to_prop tenv iter'
               | _ -> assert false in
     let post_p4 =
@@ -875,9 +877,9 @@ let mk_actual_precondition tenv prop actual_params formal_params =
   let actual_pre = Prop.prop_sigma_star prop instantiated_formals in
   Prop.normalize tenv actual_pre
 
-let mk_posts tenv ret_ids prop callee_pname callee_attrs posts =
-  match ret_ids with
-  | [ret_id] ->
+let mk_posts tenv ret_id prop callee_pname callee_attrs posts =
+  match ret_id with
+  | Some (ret_id, _) ->
       let mk_getter_idempotent posts =
         (* if we have seen a previous call to the same function, only use specs whose return value
            is consistent with constraints on the return value of the previous call w.r.t to
@@ -1005,10 +1007,10 @@ let check_uninitialize_dangling_deref tenv callee_pname actual_pre sub formal_pa
 
 (** Perform symbolic execution for a single spec *)
 let exe_spec
-    tenv ret_ids (n, nspecs) caller_pdesc callee_pname  callee_attrs loc prop path_pre
+    tenv ret_id (n, nspecs) caller_pdesc callee_pname  callee_attrs loc prop path_pre
     (spec : Prop.exposed Specs.spec) actual_params formal_params : abduction_res =
   let caller_pname = Cfg.Procdesc.get_proc_name caller_pdesc in
-  let posts = mk_posts tenv ret_ids prop callee_pname callee_attrs spec.Specs.posts in
+  let posts = mk_posts tenv ret_id prop callee_pname callee_attrs spec.Specs.posts in
   let actual_pre = mk_actual_precondition tenv prop actual_params formal_params in
   let spec_pre =
     mk_pre tenv (Specs.Jprop.to_prop spec.Specs.pre) formal_params callee_pname callee_attrs in
@@ -1036,7 +1038,7 @@ let exe_spec
           frame_fld missing_fld frame_typ missing_typ in
       let report_valid_res split =
         match combine tenv
-                ret_ids posts
+                ret_id posts
                 actual_pre path_pre split
                 caller_pdesc callee_pname loc with
         | None -> Invalid_res Cannot_combine
@@ -1123,7 +1125,7 @@ let prop_pure_to_footprint tenv (p: 'a Prop.t) : Prop.normal Prop.t =
     Prop.normalize tenv (Prop.set p ~pi_fp:(p.Prop.pi_fp @ new_footprint_atoms))
 
 (** post-process the raw result of a function call *)
-let exe_call_postprocess tenv ret_ids trace_call callee_pname callee_attrs loc results =
+let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc results =
   let filter_valid_res = function
     | Invalid_res _ -> false
     | Valid_res _ -> true in
@@ -1258,8 +1260,8 @@ let exe_call_postprocess tenv ret_ids trace_call callee_pname callee_attrs loc r
      !Config.curr_language = Config.Java &&
      is_likely_getter callee_pname)
     || returns_nullable ret_annot in
-  match ret_ids with
-  | [ret_id] when should_add_ret_attr ()->
+  match ret_id with
+  | Some (ret_id, _) when should_add_ret_attr () ->
       (* add attribute to remember what function call a return id came from *)
       let ret_var = Exp.Var ret_id in
       let mark_id_as_retval (p, path) =
@@ -1270,7 +1272,7 @@ let exe_call_postprocess tenv ret_ids trace_call callee_pname callee_attrs loc r
 
 (** Execute the function call and return the list of results with return value *)
 let exe_function_call
-    callee_attrs tenv ret_ids caller_pdesc callee_pname loc actual_params prop path =
+    callee_attrs tenv ret_id caller_pdesc callee_pname loc actual_params prop path =
   let caller_pname = Cfg.Procdesc.get_proc_name caller_pdesc in
   let trace_call res =
     match Specs.get_summary caller_pname with
@@ -1290,7 +1292,7 @@ let exe_function_call
   let exe_one_spec (n, spec) =
     exe_spec
       tenv
-      ret_ids
+      ret_id
       (n, nspecs)
       caller_pdesc
       callee_pname
@@ -1302,7 +1304,7 @@ let exe_function_call
       actual_params
       formal_params in
   let results = IList.map exe_one_spec spec_list in
-  exe_call_postprocess tenv ret_ids trace_call callee_pname callee_attrs loc results
+  exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc results
 
 (*
 let check_splitting_precondition sub1 sub2 =

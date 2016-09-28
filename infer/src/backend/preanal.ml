@@ -24,7 +24,7 @@ let add_dispatch_calls pdesc cg tenv =
     let has_dispatch_call instrs =
       IList.exists instr_is_dispatch_call instrs in
     let replace_dispatch_calls = function
-      | Sil.Call (ret_ids, (Exp.Const (Const.Cfun callee_pname) as call_exp),
+      | Sil.Call (ret_id, (Exp.Const (Const.Cfun callee_pname) as call_exp),
                   (((_, receiver_typ) :: _) as args), loc, call_flags) as instr
         when call_flags_is_dispatch call_flags ->
           (* the frontend should not populate the list of targets *)
@@ -50,7 +50,7 @@ let add_dispatch_calls pdesc cg tenv =
                  (fun target_pname -> Cg.add_edge cg caller_pname target_pname)
                  targets_to_add;
                let call_flags' = { call_flags with CallFlags.cf_targets = targets_to_add; } in
-               Sil.Call (ret_ids, call_exp, args, loc, call_flags')
+               Sil.Call (ret_id, call_exp, args, loc, call_flags')
            | [] -> instr)
 
       | instr -> instr in
@@ -136,12 +136,12 @@ module NullifyTransferFunctions = struct
     let astate' = match instr with
       | Sil.Load (lhs_id, _, _, _) ->
           VarDomain.add (Var.of_id lhs_id) active_defs, to_nullify
-      | Sil.Call (lhs_ids, _, _, _, _) ->
+      | Sil.Call (lhs_id, _, _, _, _) ->
           let active_defs' =
-            IList.fold_left
-              (fun acc id -> VarDomain.add (Var.of_id id) acc)
+            Option.map_default
+              (fun (id, _) -> VarDomain.add (Var.of_id id) active_defs)
               active_defs
-              lhs_ids in
+              lhs_id in
           active_defs', to_nullify
       | Sil.Store (Exp.Lvar lhs_pvar, _, _, _) ->
           VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify

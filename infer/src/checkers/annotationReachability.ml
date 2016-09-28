@@ -326,7 +326,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Annot.Map.fold add_call_for_annot map astate
 
   let exec_instr astate { ProcData.pdesc; tenv; } _ = function
-    | Sil.Call ([id], Const (Cfun callee_pname), _, _, _)
+    | Sil.Call (Some (id, _), Const (Cfun callee_pname), _, _, _)
       when is_unlikely callee_pname ->
         Domain.add_tracking_var (Var.of_id id) astate
     | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
@@ -353,8 +353,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Prune (exp, _, _, _)
       when prunes_tracking_var astate exp ->
         Domain.stop_tracking astate
-    | Sil.Call (_::_, _, _, _, _) ->
-        failwith "Expecting a singleton for the return value"
+    | Sil.Call (None, _, _, _, _) ->
+        failwith "Expecting a return identifier"
     | _ ->
         astate
 end

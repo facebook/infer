@@ -510,14 +510,14 @@ let typecheck_instr
             typestate1 in
       check_field_assign ();
       typestate2
-  | Sil.Call ([id], Exp.Const (Const.Cfun pn), [(_, typ)], loc, _)
+  | Sil.Call (Some (id, _), Exp.Const (Const.Cfun pn), [(_, typ)], loc, _)
     when Procname.equal pn ModelBuiltins.__new ||
          Procname.equal pn ModelBuiltins.__new_array ->
       TypeState.add_id
         id
         (typ, TypeAnnotation.const Annotations.Nullable false TypeOrigin.New, [loc])
         typestate (* new never returns null *)
-  | Sil.Call ([id], Exp.Const (Const.Cfun pn), (e, typ):: _, loc, _)
+  | Sil.Call (Some (id, _), Exp.Const (Const.Cfun pn), (e, typ):: _, loc, _)
     when Procname.equal pn ModelBuiltins.__cast ->
       typecheck_expr_for_errors typestate e loc;
       let e', typestate' =
@@ -526,7 +526,7 @@ let typecheck_instr
       TypeState.add_id id
         (typecheck_expr_simple typestate' e' typ TypeOrigin.ONone loc)
         typestate'
-  | Sil.Call ([id], Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
+  | Sil.Call (Some (id, _), Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
     when Procname.equal pn ModelBuiltins.__get_array_length ->
       let (_, ta, _) = typecheck_expr
           find_canonical_duplicate
@@ -561,7 +561,7 @@ let typecheck_instr
   | Sil.Call (_, Exp.Const (Const.Cfun pn), _, _, _) when Builtin.is_registered pn ->
       typestate (* skip othe builtins *)
   | Sil.Call
-      (ret_ids,
+      (ret_id,
        Exp.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
        etl_,
        loc,
@@ -608,9 +608,9 @@ let typecheck_instr
         Procname.java_is_anonymous_inner_class_constructor callee_pname in
 
       let do_return loc' typestate' =
-        match ret_ids with
-        | [] -> typestate'
-        | [id] ->
+        match ret_id with
+        | None -> typestate'
+        | Some (id, _) ->
             let (ia, ret_typ) = annotated_signature.Annotations.ret in
             let is_library = Specs.proc_is_library callee_attributes in
             let origin = TypeOrigin.Proc
@@ -627,8 +627,7 @@ let typecheck_instr
                 TypeAnnotation.from_item_annotation ia origin,
                 [loc']
               )
-              typestate'
-        | _ :: _ :: _ -> assert false in
+              typestate' in
 
       (* Handle Preconditions.checkNotNull. *)
       let do_preconditions_check_not_null parameter_num is_vararg typestate' =

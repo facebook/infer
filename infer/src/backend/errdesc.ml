@@ -138,7 +138,7 @@ let find_normal_variable_funcall
     (node: Cfg.Node.t)
     (id: Ident.t): (Exp.t * (Exp.t list) * Location.t * CallFlags.t) option =
   let find_declaration _ = function
-    | Sil.Call ([id0], fun_exp, args, loc, call_flags) when Ident.equal id id0 ->
+    | Sil.Call (Some (id0, _), fun_exp, args, loc, call_flags) when Ident.equal id id0 ->
         Some (fun_exp, IList.map fst args, loc, call_flags)
     | _ -> None in
   let res = find_in_node_or_preds node find_declaration in
@@ -218,14 +218,14 @@ let rec _find_normal_variable_load tenv (seen : Exp.Set.t) node id : DExp.t opti
           (L.d_str "find_normal_variable_load defining ";
            Sil.d_exp e; L.d_ln ());
         _exp_lv_dexp tenv seen node e
-    | Sil.Call ([id0], Exp.Const (Const.Cfun pn), (e, _):: _, _, _)
+    | Sil.Call (Some (id0, _), Exp.Const (Const.Cfun pn), (e, _):: _, _, _)
       when Ident.equal id id0 && Procname.equal pn (Procname.from_string_c_fun "__cast") ->
         if verbose
         then
           (L.d_str "find_normal_variable_load cast on ";
            Sil.d_exp e; L.d_ln ());
         _exp_rv_dexp tenv seen node e
-    | Sil.Call ([id0], (Exp.Const (Const.Cfun pname) as fun_exp), args, loc, call_flags)
+    | Sil.Call (Some (id0, _), (Exp.Const (Const.Cfun pname) as fun_exp), args, loc, call_flags)
       when Ident.equal id id0 ->
         if verbose
         then

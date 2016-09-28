@@ -27,7 +27,7 @@ let assignment_arc_mode e1 typ e2 loc rhs_owning_method is_e1_decl =
   let autorelease_pname = ModelBuiltins.__set_autorelease_attribute in
   let mk_call procname e t =
     let bi_retain = Exp.Const (Const.Cfun procname) in
-    Sil.Call([], bi_retain, [(e, t)], loc, CallFlags.default) in
+    Sil.Call (None, bi_retain, [(e, t)], loc, CallFlags.default) in
   match typ with
   | Typ.Tptr (_, Typ.Pk_pointer) when not rhs_owning_method && not is_e1_decl ->
       (* for __strong e1 = e2 the semantics is*)

@@ -75,7 +75,7 @@ let inhabit_alloc sizeof_typ sizeof_len ret_typ alloc_kind env =
     let fun_new = fun_exp_from_name alloc_kind in
     let sizeof_exp = Exp.Sizeof (sizeof_typ, sizeof_len, Subtype.exact) in
     let args = [(sizeof_exp, Typ.Tptr (ret_typ, Typ.Pk_pointer))] in
-    Sil.Call ([retval], fun_new, args, env.pc, cf_alloc) in
+    Sil.Call (Some (retval, ret_typ), fun_new, args, env.pc, cf_alloc) in
   (inhabited_exp, env_add_instr call_instr env)
 
 (** find or create a Sil expression with type typ *)
@@ -166,14 +166,15 @@ and inhabit_constructor tenv constr_name (allocated_obj, obj_type) cfg env =
       inhabit_args tenv non_receiver_formals cfg env in
     let constr_instr =
       let fun_exp = fun_exp_from_name constr_name in
-      Sil.Call ([], fun_exp, (allocated_obj, obj_type) :: args, env.pc, CallFlags.default) in
+      Sil.Call (None, fun_exp, (allocated_obj, obj_type) :: args, env.pc, CallFlags.default) in
     env_add_instr constr_instr env
   with Not_found -> env
 
 let inhabit_call_with_args procname procdesc args env =
   let retval =
-    let is_void = Cfg.Procdesc.get_ret_type procdesc = Typ.Tvoid in
-    if is_void then [] else [Ident.create_fresh Ident.knormal] in
+    let ret_typ = Cfg.Procdesc.get_ret_type procdesc in
+    let is_void = ret_typ = Typ.Tvoid in
+    if is_void then None else Some (Ident.create_fresh Ident.knormal, ret_typ) in
   let call_instr =
     let fun_exp = fun_exp_from_name procname in
     let flags =

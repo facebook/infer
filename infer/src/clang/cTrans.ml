@@ -82,10 +82,10 @@ struct
        not (CTrans_utils.is_owning_name method_name) &&
        ObjcInterface_decl.is_pointer_to_objc_class typ then
       let fname = ModelBuiltins.__set_autorelease_attribute in
-      let ret_id = Ident.create_fresh Ident.knormal in
+      let ret_id = Some (Ident.create_fresh Ident.knormal, Typ.Tvoid) in
+      (* TODO(jjb): change ret_id to None? *)
       let stmt_call =
-        Sil.Call
-          ([ret_id], Exp.Const (Const.Cfun fname), [(exp, typ)], sil_loc, CallFlags.default) in
+        Sil.Call (ret_id, Exp.Const (Const.Cfun fname), [(exp, typ)], sil_loc, CallFlags.default) in
       [stmt_call]
     else []
 
@@ -269,8 +269,8 @@ struct
 
   let create_call_instr trans_state return_type function_sil params_sil sil_loc
       call_flags ~is_objc_method =
-    let ret_id = if (Typ.equal return_type Typ.Tvoid) then []
-      else [Ident.create_fresh Ident.knormal] in
+    let ret_id = if (Typ.equal return_type Typ.Tvoid) then None
+      else Some (Ident.create_fresh Ident.knormal, return_type) in
     let ret_id', params, initd_exps, ret_exps =
       (* Assumption: should_add_return_param will return true only for struct types *)
       if CMethod_trans.should_add_return_param return_type ~is_objc_method then
@@ -298,8 +298,8 @@ struct
         (*                   value doesn't work good anyway. This may need to be revisited later*)
         let ret_param = (var_exp, param_type) in
         let ret_exp = (var_exp, return_type) in
-        [], params_sil @ [ret_param], [var_exp], [ret_exp]
-      else ret_id, params_sil, [], match ret_id with [x] -> [(Exp.Var x, return_type)] | _ -> [] in
+        None, params_sil @ [ret_param], [var_exp], [ret_exp]
+      else ret_id, params_sil, [], match ret_id with Some (i,t) -> [(Exp.Var i, t)] | None -> [] in
     let call_instr = Sil.Call (ret_id', function_sil, params, sil_loc, call_flags) in
     { empty_res_trans with
       instrs = [call_instr];
@@ -1998,11 +1998,13 @@ struct
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let fname = ModelBuiltins.__objc_release_autorelease_pool in
-    let ret_id = Ident.create_fresh Ident.knormal in
+    let ret_id = Some (Ident.create_fresh Ident.knormal, Typ.Tvoid) in
+    (* TODO(jjb): change ret_id to None? *)
     let autorelease_pool_vars = CVar_decl.compute_autorelease_pool_vars context stmts in
     let stmt_call =
-      Sil.Call([ret_id], (Exp.Const (Const.Cfun fname)),
-               autorelease_pool_vars, sil_loc, CallFlags.default) in
+      Sil.Call
+        (ret_id, (Exp.Const (Const.Cfun fname)),
+         autorelease_pool_vars, sil_loc, CallFlags.default) in
     let node_kind = Cfg.Node.Stmt_node ("Release the autorelease pool") in
     let call_node = create_node node_kind [stmt_call] sil_loc context in
     Cfg.Node.set_succs_exn context.cfg call_node trans_state.succ_nodes [];
@@ -2162,7 +2164,7 @@ struct
     let exp = extract_exp_from_list result_trans_param.exps
         "WARNING: There should be one expression to delete. \n" in
     let call_instr =
-      Sil.Call ([], Exp.Const (Const.Cfun fname), [exp], sil_loc, CallFlags.default) in
+      Sil.Call (None, Exp.Const (Const.Cfun fname), [exp], sil_loc, CallFlags.default) in
     let call_res_trans = { empty_res_trans with instrs = [call_instr] } in
     let all_res_trans = if false then
         (* FIXME (t10135167): call destructor on deleted pointer if it's not null *)
@@ -2222,7 +2224,7 @@ struct
     let exp = match res_trans_stmt.exps with | [e] -> e | _ -> assert false in
     let args = [exp; (sizeof_expr, Typ.Tvoid)] in
     let ret_id = Ident.create_fresh Ident.knormal in
-    let call = Sil.Call ([ret_id], builtin, args, sil_loc, CallFlags.default) in
+    let call = Sil.Call (Some (ret_id, cast_type), builtin, args, sil_loc, CallFlags.default) in
     let res_ex = Exp.Var ret_id in
     let res_trans_dynamic_cast = { empty_res_trans with instrs = [call]; } in
     let all_res_trans = [ res_trans_stmt; res_trans_dynamic_cast ] in
@@ -2244,7 +2246,7 @@ struct
       IList.map (exec_with_glvalue_as_reference instruction trans_state_param) stmts in
     let params = collect_exprs res_trans_subexpr_list  in
     let sil_fun = Exp.Const (Const.Cfun pname) in
-    let call_instr = Sil.Call ([], sil_fun, params, sil_loc, CallFlags.default) in
+    let call_instr = Sil.Call (None, sil_fun, params, sil_loc, CallFlags.default) in
     let res_trans_call = { empty_res_trans with
                            instrs = [call_instr];
                            exps = []; } in
@@ -2283,7 +2285,7 @@ struct
     let ret_exp = Exp.Var ret_id in
     let field_exp = Exp.Lfield (ret_exp, field_name, typ) in
     let args = [type_info_objc; (field_exp, Typ.Tvoid)] @ res_trans_subexpr.exps in
-    let call_instr = Sil.Call ([ret_id], sil_fun, args, sil_loc, CallFlags.default) in
+    let call_instr = Sil.Call (Some (ret_id, typ), sil_fun, args, sil_loc, CallFlags.default) in
     let res_trans_call = { empty_res_trans with
                            instrs = [call_instr];
                            exps = [(ret_exp, typ)]; } in
@@ -2306,7 +2308,7 @@ struct
     let sil_fun = Exp.Const (Const.Cfun fun_name) in
     let ret_id = Ident.create_fresh Ident.knormal in
     let ret_exp = Exp.Var ret_id in
-    let call_instr = Sil.Call ([ret_id], sil_fun, params, sil_loc, CallFlags.default) in
+    let call_instr = Sil.Call (Some (ret_id, typ), sil_fun, params, sil_loc, CallFlags.default) in
     let res_trans_call = { empty_res_trans with
                            instrs = [call_instr];
                            exps = [(ret_exp, typ)]; } in

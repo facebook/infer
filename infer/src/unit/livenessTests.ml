@@ -99,7 +99,7 @@ let tests =
     "dead_after_call_with_retval",
     [
       assert_empty;
-      call_unknown ["y"] [];
+      call_unknown (Some ("y", Typ.Tint IInt)) [];
       invariant "{ y$0 }";
       id_assign_id "x" "y";
     ];

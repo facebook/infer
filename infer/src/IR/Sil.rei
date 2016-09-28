@@ -52,10 +52,9 @@ type instr =
   | Store of Exp.t Typ.t Exp.t Location.t
   /** prune the state based on [exp=1], the boolean indicates whether true branch */
   | Prune of Exp.t Location.t bool if_kind
-  /** [Call (ret_id1..ret_idn, e_fun, arg_ts, loc, call_flags)] represents an instructions
-      [ret_id1..ret_idn = e_fun(arg_ts);]
-      where n = 0 for void return and n > 1 for struct return */
-  | Call of (list Ident.t) Exp.t (list (Exp.t, Typ.t)) Location.t CallFlags.t
+  /** [Call (ret_id, e_fun, arg_ts, loc, call_flags)] represents an instruction
+      [ret_id = e_fun(arg_ts);]. The return value is ignored when [ret_id = None]. */
+  | Call of (option (Ident.t, Typ.t)) Exp.t (list (Exp.t, Typ.t)) Location.t CallFlags.t
   /** nullify stack variable */
   | Nullify of Pvar.t Location.t
   | Abstract of Location.t /** apply abstraction */

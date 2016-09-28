@@ -97,7 +97,8 @@ let rec trans_annotated_instructions
             end
         | Call (ret_var, func_var, typed_args) ->
             let new_sil_instr = Sil.Call (
-                [ident_of_variable ret_var],
+                (* TODO: translate type of ret_var *)
+                Some (ident_of_variable ret_var, Tvoid),
                 Exp.Const (Const.Cfun (procname_of_function_variable func_var)),
                 IList.map (fun (tp, arg) -> (trans_operand arg, trans_typ tp)) typed_args,
                 location, CallFlags.default) in

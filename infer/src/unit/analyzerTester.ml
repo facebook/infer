@@ -90,9 +90,9 @@ module StructuredSil = struct
   let make_set ~rhs_typ ~lhs_exp ~rhs_exp =
     Cmd (Sil.Store (lhs_exp, rhs_typ, rhs_exp, dummy_loc))
 
-  let make_call ?(procname=dummy_procname) ret_ids args =
+  let make_call ?(procname=dummy_procname) ret_id args =
     let call_exp = Exp.Const (Const.Cfun procname) in
-    Cmd (Sil.Call (ret_ids, call_exp, args, dummy_loc, CallFlags.default))
+    Cmd (Sil.Call (ret_id, call_exp, args, dummy_loc, CallFlags.default))
 
   let make_store ~rhs_typ root_exp fld_str ~rhs_exp =
     let fld = AccessPathTestUtils.make_fieldname fld_str in
@@ -124,7 +124,7 @@ module StructuredSil = struct
   let cast_id_to_id lhs cast_typ rhs =
     let lhs_id = ident_of_str lhs in
     let rhs_id = Exp.Var (ident_of_str rhs) in
-    make_call ~procname:ModelBuiltins.__cast [lhs_id] [rhs_id, cast_typ]
+    make_call ~procname:ModelBuiltins.__cast (Some (lhs_id, cast_typ)) [rhs_id, cast_typ]
 
   let var_assign_exp ~rhs_typ lhs rhs_exp =
     let lhs_exp = var_of_str lhs in
@@ -146,13 +146,13 @@ module StructuredSil = struct
     let rhs_exp = var_of_str rhs in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
-  let call_unknown ret_id_strs arg_strs =
+  let call_unknown ret_id_str_opt arg_strs =
     let args = IList.map (fun param_str -> (var_of_str param_str, dummy_typ)) arg_strs in
-    let ret_ids = IList.map ident_of_str ret_id_strs in
-    make_call ret_ids args
+    let ret_id = Option.map (fun (str, typ) -> (ident_of_str str, typ)) ret_id_str_opt in
+    make_call ret_id args
 
   let call_unknown_no_ret arg_strs =
-    call_unknown [] arg_strs
+    call_unknown None arg_strs
 end
 
 module Make
