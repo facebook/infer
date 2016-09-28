@@ -91,8 +91,8 @@ val nullify_exp_with_objc_null : Tenv.t -> Prop.normal Prop.t -> Exp.t -> Prop.n
 
 (** mark Exp.Var's or Exp.Lvar's as undefined *)
 val mark_vars_as_undefined :
-  Tenv.t -> Prop.normal Prop.t -> Exp.t list -> Procname.t -> Typ.item_annotation -> Location.t ->
-  PredSymb.path_pos -> Prop.normal Prop.t
+  Tenv.t -> Prop.normal Prop.t -> Exp.t list -> Procname.t -> Annot.Item.t ->
+  Location.t -> PredSymb.path_pos -> Prop.normal Prop.t
 
 (** type for arithmetic problems *)
 type arith_problem =

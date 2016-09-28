@@ -27,4 +27,4 @@ val print_nodes : Cfg.Node.t list -> unit
 
 val instrs_to_string : Sil.instr list -> string
 
-val field_to_string : Ident.fieldname * Typ.t * Typ.item_annotation -> string
+val field_to_string : Ident.fieldname * Typ.t * Annot.Item.t -> string

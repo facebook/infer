@@ -280,7 +280,7 @@ module Strict = struct
   (* Return (Some parameters) if there is a method call on a @Nullable object,*)
   (* where the origin of @Nullable in the analysis is the return value of a Strict method*)
   (* with parameters. A method is Strict if it or its class are annotated @Strict. *)
-  let err_instance_get_strict tenv err_instance : Typ.annotation option =
+  let err_instance_get_strict tenv err_instance : Annot.t option =
     match err_instance with
     | Call_receiver_annotation_inconsistent (Annotations.Nullable, _, _, origin_descr)
     | Null_field_access (_, _, origin_descr, _) ->

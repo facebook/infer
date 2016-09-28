@@ -41,7 +41,7 @@ type t = {
   language: Config.language, /** language of the procedure */
   loc: Location.t, /** location of this procedure in the source code */
   mutable locals: list (Mangled.t, Typ.t), /** name and type of local variables */
-  method_annotation: Typ.method_annotation, /** annotations for java methods */
+  method_annotation: Annot.Method.t, /** annotations for java methods */
   objc_accessor: option objc_accessor_type, /** type of ObjC accessor, if any */
   proc_flags: proc_flags, /** flags of the procedure */
   proc_name: Procname.t, /** name of the procedure */
@@ -68,7 +68,7 @@ let default proc_name language => {
   language,
   loc: Location.dummy,
   locals: [],
-  method_annotation: Typ.method_annotation_empty,
+  method_annotation: Annot.Method.empty,
   objc_accessor: None,
   proc_flags: proc_flags_empty (),
   proc_name,

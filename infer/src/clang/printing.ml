@@ -21,9 +21,9 @@ let log_err fmt =
   pp Format.err_formatter fmt
 
 
-let annotation_to_string (annotation, _) =
-  "< " ^ annotation.Typ.class_name ^ " : " ^
-  (IList.to_string (fun x -> x) annotation.Typ.parameters) ^ " >"
+let annotation_to_string ((annotation: Annot.t), _) =
+  "< " ^ annotation.class_name ^ " : " ^
+  (IList.to_string (fun x -> x) annotation.parameters) ^ " >"
 
 let field_to_string (fieldname, typ, annotation) =
   (Ident.fieldname_to_string fieldname) ^ " " ^
@@ -41,7 +41,7 @@ let print_tenv tenv =
       | Typename.TN_csu (Csu.Class _, _) | Typename.TN_csu (Csu.Protocol, _) ->
           print_endline (
             (Typename.to_string typname) ^ " " ^
-            (Typ.item_annotation_to_string struct_t.annots) ^ "\n" ^
+            (Annot.Item.to_string struct_t.annots) ^ "\n" ^
             "---> superclass and protocols " ^ (IList.to_string (fun tn ->
                 "\t" ^ (Typename.to_string tn) ^ "\n") struct_t.supers) ^
             "---> methods " ^

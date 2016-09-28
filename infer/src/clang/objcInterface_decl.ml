@@ -126,7 +126,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
       Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) all_fields;
   ignore(
     Tenv.mk_struct tenv
-      ~fields: all_fields ~supers ~methods ~annots:Typ.objc_class_annotation interface_name );
+      ~fields: all_fields ~supers ~methods ~annots:Annot.Class.objc interface_name );
   Printing.log_out
     "  >>>Verifying that Typename '%s' is in tenv\n" (Typename.to_string interface_name);
   (match Tenv.lookup tenv interface_name with

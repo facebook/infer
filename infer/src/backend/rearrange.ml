@@ -642,10 +642,10 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
         string_is_suffix guarded_by_str fully_qualified_this
     | _ -> false in
   let extract_guarded_by_str item_annot =
-    let annot_extract_guarded_by_str (annot, _) =
+    let annot_extract_guarded_by_str ((annot: Annot.t), _) =
       if Annotations.annot_ends_with annot Annotations.guarded_by
       then
-        match annot.Typ.parameters with
+        match annot.parameters with
         | [guarded_by_str] when not (excluded_guardedby_string guarded_by_str) ->
             Some guarded_by_str
         | _ ->

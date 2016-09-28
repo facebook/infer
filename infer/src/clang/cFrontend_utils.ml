@@ -494,7 +494,7 @@ struct
 
 
   let append_no_duplicates_annotations list1 list2 =
-    let eq (annot1, _) (annot2, _) = annot1.Typ.class_name = annot2.Typ.class_name in
+    let eq (annot1, _) (annot2, _) = annot1.Annot.class_name = annot2.Annot.class_name in
     append_no_duplicates eq list1 list2
 
   let add_no_duplicates_fields field_tuple l =

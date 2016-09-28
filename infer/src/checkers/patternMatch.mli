@@ -81,7 +81,7 @@ val proc_calls :
     Only Java supported at the moment. *)
 val proc_iter_overridden_methods : (Procname.t -> unit) -> Tenv.t -> Procname.t -> unit
 
-val type_get_annotation : Tenv.t -> Typ.t -> Typ.item_annotation option
+val type_get_annotation : Tenv.t -> Typ.t -> Annot.Item.t option
 
 (** Get the class name of the type *)
 val type_get_class_name : Typ.t -> Typename.t option

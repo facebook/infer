@@ -138,7 +138,7 @@ sig
   val generate_key_decl : Clang_ast_t.decl -> string
 
   (** Given an objc impl or interface decl, returns the objc interface decl of
-     the superclass, if any. *)
+      the superclass, if any. *)
   val get_super_if : Clang_ast_t.decl option -> Clang_ast_t.decl option
 
   (** Given an objc impl decl info, return the super class's list of decls and
@@ -163,9 +163,9 @@ sig
 
   val string_from_list : string list -> string
 
-  val append_no_duplicates_fields : (Ident.fieldname * Typ.t * Typ.item_annotation) list ->
-    (Ident.fieldname * Typ.t * Typ.item_annotation) list ->
-    (Ident.fieldname * Typ.t * Typ.item_annotation) list
+  val append_no_duplicates_fields : (Ident.fieldname * Typ.t * Annot.Item.t) list ->
+    (Ident.fieldname * Typ.t * Annot.Item.t) list ->
+    (Ident.fieldname * Typ.t * Annot.Item.t) list
 
   val append_no_duplicates_csu :
     Typename.t list -> Typename.t list -> Typename.t list
@@ -179,8 +179,8 @@ sig
     (Exp.t * Typ.t) list -> (Exp.t * Typ.t) list -> (Exp.t * Typ.t) list
 
   val sort_fields :
-    (Ident.fieldname * Typ.t * Typ.item_annotation) list ->
-    (Ident.fieldname * Typ.t * Typ.item_annotation) list
+    (Ident.fieldname * Typ.t * Annot.Item.t) list ->
+    (Ident.fieldname * Typ.t * Annot.Item.t) list
 
   val sort_fields_tenv : Tenv.t -> unit
 

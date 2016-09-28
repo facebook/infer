@@ -25,8 +25,8 @@ type annotation =
 
 (** Method signature with annotations. *)
 type annotated_signature = {
-  ret : Typ.item_annotation * Typ.t; (** Annotated return type. *)
-  params: (Mangled.t * Typ.item_annotation * Typ.t) list (** Annotated parameters. *)
+  ret : Annot.Item.t * Typ.t; (** Annotated return type. *)
+  params: (Mangled.t * Annot.Item.t * Typ.t) list (** Annotated parameters. *)
 }
 
 (** Check if the annotated signature is for a wrapper of an anonymous inner class method.
@@ -57,57 +57,57 @@ val get_annotated_signature : ProcAttributes.t -> annotated_signature
 val nullable : string
 
 (** Return true if [annot] ends with [ann_name] *)
-val annot_ends_with : Typ.annotation -> string -> bool
+val annot_ends_with : Annot.t -> string -> bool
 
 (** Check if there is an annotation in [ia] which ends with the given name *)
-val ia_ends_with : Typ.item_annotation -> string -> bool
+val ia_ends_with : Annot.Item.t -> string -> bool
 
-val ia_contains : Typ.item_annotation -> string -> bool
+val ia_contains : Annot.Item.t -> string -> bool
 
-val ia_has_annotation_with : Typ.item_annotation -> (Typ.annotation -> bool) -> bool
+val ia_has_annotation_with : Annot.Item.t -> (Annot.t -> bool) -> bool
 
-val ia_get_strict : Typ.item_annotation -> Typ.annotation option
+val ia_get_strict : Annot.Item.t -> Annot.t option
 
-val ia_is_false_on_null : Typ.item_annotation -> bool
-val ia_is_initializer : Typ.item_annotation -> bool
+val ia_is_false_on_null : Annot.Item.t -> bool
+val ia_is_initializer : Annot.Item.t -> bool
 
 (** Annotations for readonly injectors.
     The injector framework initializes the field but does not write null into it. *)
-val ia_is_field_injector_readonly : Typ.item_annotation -> bool
+val ia_is_field_injector_readonly : Annot.Item.t -> bool
 
 (** Annotations for read-write injectors.
     The injector framework initializes the field and can write null into it. *)
-val ia_is_field_injector_readwrite : Typ.item_annotation -> bool
+val ia_is_field_injector_readwrite : Annot.Item.t -> bool
 
-val ia_is_mutable : Typ.item_annotation -> bool
-val ia_is_nonnull : Typ.item_annotation -> bool
-val ia_is_nullable : Typ.item_annotation -> bool
-val ia_is_present : Typ.item_annotation -> bool
-val ia_is_true_on_null : Typ.item_annotation -> bool
-val ia_is_verify : Typ.item_annotation -> bool
-val ia_is_expensive : Typ.item_annotation -> bool
-val ia_is_performance_critical : Typ.item_annotation -> bool
-val ia_is_no_allocation : Typ.item_annotation -> bool
-val ia_is_ignore_allocations : Typ.item_annotation -> bool
-val ia_is_suppress_warnings : Typ.item_annotation -> bool
-val ia_is_privacy_source : Typ.item_annotation -> bool
-val ia_is_privacy_sink : Typ.item_annotation -> bool
-val ia_is_integrity_source : Typ.item_annotation -> bool
-val ia_is_integrity_sink : Typ.item_annotation -> bool
-val ia_is_guarded_by : Typ.item_annotation -> bool
+val ia_is_mutable : Annot.Item.t -> bool
+val ia_is_nonnull : Annot.Item.t -> bool
+val ia_is_nullable : Annot.Item.t -> bool
+val ia_is_present : Annot.Item.t -> bool
+val ia_is_true_on_null : Annot.Item.t -> bool
+val ia_is_verify : Annot.Item.t -> bool
+val ia_is_expensive : Annot.Item.t -> bool
+val ia_is_performance_critical : Annot.Item.t -> bool
+val ia_is_no_allocation : Annot.Item.t -> bool
+val ia_is_ignore_allocations : Annot.Item.t -> bool
+val ia_is_suppress_warnings : Annot.Item.t -> bool
+val ia_is_privacy_source : Annot.Item.t -> bool
+val ia_is_privacy_sink : Annot.Item.t -> bool
+val ia_is_integrity_source : Annot.Item.t -> bool
+val ia_is_integrity_sink : Annot.Item.t -> bool
+val ia_is_guarded_by : Annot.Item.t -> bool
 
-val ia_iter : (Typ.annotation -> unit) -> Typ.item_annotation -> unit
+val ia_iter : (Annot.t -> unit) -> Annot.Item.t -> unit
 
-val ma_has_annotation_with : Typ.method_annotation -> (Typ.annotation -> bool) -> bool
+val ma_has_annotation_with : Annot.Method.t -> (Annot.t -> bool) -> bool
 
 val pdesc_has_annot : Cfg.Procdesc.t -> string -> bool
 
 (** Mark the return of the method_annotation with the given annotation. *)
 val method_annotation_mark_return :
-  annotation -> Typ.method_annotation -> Typ.method_annotation
+  annotation -> Annot.Method.t -> Annot.Method.t
 
 (** Add the annotation to the item_annotation. *)
-val mk_ia : annotation -> Typ.item_annotation -> Typ.item_annotation
+val mk_ia : annotation -> Annot.Item.t -> Annot.Item.t
 
 val pp_annotated_signature : Procname.t -> Format.formatter -> annotated_signature -> unit
 

@@ -119,7 +119,7 @@ type phase = FOOTPRINT | RE_EXECUTION
 
 type dependency_map_t = int Procname.Map.t
 
-type call_summary = CallSite.Set.t Typ.AnnotMap.t
+type call_summary = CallSite.Set.t Annot.Map.t
 
 (** Payload: results of some analysis *)
 type payload =

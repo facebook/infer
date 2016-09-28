@@ -165,7 +165,7 @@ type t =
   | Aautorelease
   | Adangling of dangling_kind /** dangling pointer */
   /** undefined value obtained by calling the given procedure, plus its return value annots */
-  | Aundef of Procname.t Typ.item_annotation Location.t path_pos
+  | Aundef of Procname.t Annot.Item.t Location.t path_pos
   | Ataint of taint_info
   | Auntaint of taint_info
   | Alocked
@@ -175,7 +175,7 @@ type t =
   /** attributed exp is null due to a call to a method with given path as null receiver */
   | Aobjc_null
   /** value was returned from a call to the given procedure, plus the annots of the return value */
-  | Aretval of Procname.t Typ.item_annotation
+  | Aretval of Procname.t Annot.Item.t
   /** denotes an object registered as an observers to a notification center */
   | Aobserver
   /** denotes an object unsubscribed from observers of a notification center */
@@ -224,7 +224,7 @@ let compare (att1: t) (att2: t) :int =>
     if (n != 0) {
       n
     } else {
-      Typ.item_annotation_compare annots1 annots2
+      Annot.Item.compare annots1 annots2
     }
   | (Aretval _, _) => (-1)
   | (_, Aretval _) => 1

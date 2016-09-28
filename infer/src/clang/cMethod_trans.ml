@@ -336,16 +336,16 @@ let should_create_procdesc cfg procname defined =
       else false
   | None -> true
 
-let sil_method_annotation_of_args args : Typ.method_annotation =
+let sil_method_annotation_of_args args : Annot.Method.t =
   let default_visibility = true in
   let mk_annot param_name annot_name =
-    let annot = { Typ.class_name = annot_name; Typ.parameters = [param_name]; } in
+    let annot = { Annot.class_name = annot_name; parameters = [param_name]; } in
     annot, default_visibility in
   let arg_to_sil_annot (arg_mangled, {Clang_ast_t.qt_type_ptr}) acc  =
     let arg_name = Mangled.to_string arg_mangled in
     if CFrontend_utils.Ast_utils.is_type_nullable qt_type_ptr then
       [mk_annot arg_name Annotations.nullable] :: acc
-    else Typ.item_annotation_empty::acc in
+    else Annot.Item.empty::acc in
   let param_annots = IList.fold_right arg_to_sil_annot args []  in
   (* TODO: parse annotations on return value *)
   let retval_annot = [] in

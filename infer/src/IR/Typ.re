@@ -20,104 +20,6 @@ let module L = Logging;
 let module F = Format;
 
 
-/** Type to represent one @Annotation. */
-type annotation = {
-  class_name: string, /** name of the annotation */
-  parameters: list string /** currently only one string parameter */
-};
-
-
-/** Compare function for annotations. */
-let annotation_compare a1 a2 => {
-  let n = string_compare a1.class_name a2.class_name;
-  if (n != 0) {
-    n
-  } else {
-    IList.compare string_compare a1.parameters a2.parameters
-  }
-};
-
-
-/** Pretty print an annotation. */
-let pp_annotation fmt annotation => F.fprintf fmt "@@%s" annotation.class_name;
-
-let module AnnotMap = PrettyPrintable.MakePPMap {
-  type t = annotation;
-  let compare = annotation_compare;
-  let pp_key = pp_annotation;
-};
-
-
-/** Annotation for one item: a list of annotations with visibility. */
-type item_annotation = list (annotation, bool);
-
-
-/** Compare function for annotation items. */
-let item_annotation_compare ia1 ia2 => {
-  let cmp (a1, b1) (a2, b2) => {
-    let n = annotation_compare a1 a2;
-    if (n != 0) {
-      n
-    } else {
-      bool_compare b1 b2
-    }
-  };
-  IList.compare cmp ia1 ia2
-};
-
-
-/** Pretty print an item annotation. */
-let pp_item_annotation fmt item_annotation => {
-  let pp fmt (a, _) => pp_annotation fmt a;
-  F.fprintf fmt "<%a>" (pp_seq pp) item_annotation
-};
-
-let item_annotation_to_string ann => {
-  let pp fmt () => pp_item_annotation fmt ann;
-  pp_to_string pp ()
-};
-
-
-/** Empty item annotation. */
-let item_annotation_empty = [];
-
-
-/** Check if the item annodation is empty. */
-let item_annotation_is_empty ia => ia == [];
-
-let objc_class_str = "ObjC-Class";
-
-let cpp_class_str = "Cpp-Class";
-
-let class_annotation class_string => [({class_name: class_string, parameters: []}, true)];
-
-let objc_class_annotation = class_annotation objc_class_str;
-
-let cpp_class_annotation = class_annotation cpp_class_str;
-
-
-/** Annotation for a method: return value and list of parameters. */
-type method_annotation = (item_annotation, list item_annotation);
-
-
-/** Compare function for Method annotations. */
-let method_annotation_compare (ia1, ial1) (ia2, ial2) =>
-  IList.compare item_annotation_compare [ia1, ...ial1] [ia2, ...ial2];
-
-
-/** Pretty print a method annotation. */
-let pp_method_annotation s fmt (ia, ial) =>
-  F.fprintf fmt "%a %s(%a)" pp_item_annotation ia s (pp_seq pp_item_annotation) ial;
-
-
-/** Empty method annotation. */
-let method_annotation_empty = ([], []);
-
-
-/** Check if the method annodation is empty. */
-let method_annotation_is_empty (ia, ial) => IList.for_all item_annotation_is_empty [ia, ...ial];
-
-
 /** Kinds of integers */
 type ikind =
   | IChar /** [char] */
@@ -291,7 +193,7 @@ type t =
   | Tstruct of Typename.t /** structured value type name */
   | Tarray of t static_length /** array type with statically fixed length */;
 
-type struct_fields = list (Ident.fieldname, t, item_annotation);
+type struct_fields = list (Ident.fieldname, t, Annot.Item.t);
 
 
 /** Type for a structured value. */
@@ -300,7 +202,7 @@ type struct_typ = {
   statics: struct_fields, /** static fields */
   supers: list Typename.t, /** superclasses */
   methods: list Procname.t, /** methods defined */
-  annots: item_annotation /** annotations */
+  annots: Annot.Item.t /** annotations */
 };
 
 type lookup = Typename.t => option struct_typ;
@@ -343,7 +245,7 @@ let rec compare t1 t2 =>
 let equal t1 t2 => compare t1 t2 == 0;
 
 let fld_typ_ann_compare fta1 fta2 =>
-  triple_compare Ident.fieldname_compare compare item_annotation_compare fta1 fta2;
+  triple_compare Ident.fieldname_compare compare Annot.Item.compare fta1 fta2;
 
 
 /** Pretty print a type declaration.
@@ -443,8 +345,7 @@ let internal_mk_struct
     annots::annots=?
     () => {
   let mk_struct_
-      default::
-        default={fields: [], statics: [], methods: [], supers: [], annots: item_annotation_empty}
+      default::default={fields: [], statics: [], methods: [], supers: [], annots: Annot.Item.empty}
       fields::fields=default.fields
       statics::statics=default.statics
       methods::methods=default.methods
@@ -578,14 +479,14 @@ let has_block_prefix s =>
 /** Check if type is a type for a block in objc */
 let is_block_type typ => has_block_prefix (to_string typ);
 
-let objc_ref_counter_annot = [({class_name: "ref_counter", parameters: []}, false)];
+let objc_ref_counter_annot = [({Annot.class_name: "ref_counter", parameters: []}, false)];
 
 
 /** Field used for objective-c reference counting */
 let objc_ref_counter_field = (Ident.fieldname_hidden, Tint IInt, objc_ref_counter_annot);
 
 let is_objc_ref_counter_field (fld, _, a) =>
-  Ident.fieldname_is_hidden fld && item_annotation_compare a objc_ref_counter_annot == 0;
+  Ident.fieldname_is_hidden fld && Annot.Item.compare a objc_ref_counter_annot == 0;
 
 
 /** Java types by name */

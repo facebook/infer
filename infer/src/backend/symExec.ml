@@ -953,7 +953,7 @@ let load_ret_annots pname =
       let ret_annots, _ = attrs.ProcAttributes.method_annotation in
       ret_annots
   | None ->
-      Typ.item_annotation_empty
+      Annot.Item.empty
 
 let execute_store ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_exp loc prop_ =
   let execute_store_ pdesc tenv rhs_exp acc_in iter =
@@ -1190,7 +1190,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         L.d_str "Unknown function pointer "; Sil.d_exp fun_exp;
         L.d_strln ", returning undefined value.";
         let callee_pname = Procname.from_string_c_fun "__function_pointer__" in
-        unknown_or_scan_call ~is_scan:false None Typ.item_annotation_empty Builtin.{
+        unknown_or_scan_call ~is_scan:false None Annot.Item.empty Builtin.{
             pdesc= current_pdesc; instr; tenv; prop_= prop_r; path; ret_ids; args= n_actual_params;
             proc_name= callee_pname; loc; }
       end

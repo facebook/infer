@@ -18,69 +18,6 @@ open! Utils;
 let module F = Format;
 
 
-/** Type to represent one @Annotation. */
-type annotation = {
-  class_name: string, /** name of the annotation */
-  parameters: list string /** currently only one string parameter */
-};
-
-
-/** Compare function for annotations. */
-let annotation_compare: annotation => annotation => int;
-
-
-/** Pretty print an annotation. */
-let pp_annotation: F.formatter => annotation => unit;
-
-let module AnnotMap: PrettyPrintable.PPMap with type key = annotation;
-
-
-/** Annotation for one item: a list of annotations with visibility. */
-type item_annotation = list (annotation, bool);
-
-
-/** Compare function for annotation items. */
-let item_annotation_compare: item_annotation => item_annotation => int;
-
-
-/** Pretty print an item annotation. */
-let pp_item_annotation: F.formatter => item_annotation => unit;
-
-let item_annotation_to_string: item_annotation => string;
-
-
-/** Empty item annotation. */
-let item_annotation_empty: item_annotation;
-
-
-/** Check if the item annodation is empty. */
-let item_annotation_is_empty: item_annotation => bool;
-
-let objc_class_annotation: item_annotation;
-
-let cpp_class_annotation: item_annotation;
-
-
-/** Annotation for a method: return value and list of parameters. */
-type method_annotation = (item_annotation, list item_annotation);
-
-
-/** Compare function for Method annotations. */
-let method_annotation_compare: method_annotation => method_annotation => int;
-
-
-/** Empty method annotation. */
-let method_annotation_empty: method_annotation;
-
-
-/** Check if the method annodation is empty. */
-let method_annotation_is_empty: method_annotation => bool;
-
-
-/** Pretty print a method annotation. */
-let pp_method_annotation: string => F.formatter => method_annotation => unit;
-
-
 /** Kinds of integers */
 type ikind =
   | IChar /** [char] */
@@ -146,7 +83,7 @@ type t =
   | Tstruct of Typename.t /** structured value type name */
   | Tarray of t static_length /** array type with statically fixed length */;
 
-type struct_fields = list (Ident.fieldname, t, item_annotation);
+type struct_fields = list (Ident.fieldname, t, Annot.Item.t);
 
 
 /** Type for a structured value. */
@@ -155,7 +92,7 @@ type struct_typ = private {
   statics: struct_fields, /** static fields */
   supers: list Typename.t, /** supers */
   methods: list Procname.t, /** methods defined */
-  annots: item_annotation /** annotations */
+  annots: Annot.Item.t /** annotations */
 };
 
 type lookup = Typename.t => option struct_typ;
@@ -163,7 +100,7 @@ type lookup = Typename.t => option struct_typ;
 
 /** Comparision for fieldnames * types * item annotations. */
 let fld_typ_ann_compare:
-  (Ident.fieldname, t, item_annotation) => (Ident.fieldname, t, item_annotation) => int;
+  (Ident.fieldname, t, Annot.Item.t) => (Ident.fieldname, t, Annot.Item.t) => int;
 
 
 /** Comparision for types. */
@@ -217,7 +154,7 @@ let internal_mk_struct:
   statics::struct_fields? =>
   methods::list Procname.t? =>
   supers::list Typename.t? =>
-  annots::item_annotation? =>
+  annots::Annot.Item.t? =>
   unit =>
   struct_typ;
 
@@ -246,7 +183,7 @@ let struct_typ_fld: lookup::lookup => default::t => Ident.fieldname => t => t;
 
 /** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] */
 let get_field_type_and_annotation:
-  lookup::lookup => Ident.fieldname => t => option (t, item_annotation);
+  lookup::lookup => Ident.fieldname => t => option (t, Annot.Item.t);
 
 let is_objc_class: t => bool;
 
@@ -266,9 +203,9 @@ let is_block_type: t => bool;
 
 
 /** Field used for objective-c reference counting */
-let objc_ref_counter_field: (Ident.fieldname, t, item_annotation);
+let objc_ref_counter_field: (Ident.fieldname, t, Annot.Item.t);
 
-let is_objc_ref_counter_field: (Ident.fieldname, t, item_annotation) => bool;
+let is_objc_ref_counter_field: (Ident.fieldname, t, Annot.Item.t) => bool;
 
 let unsome: string => option t => t;
 

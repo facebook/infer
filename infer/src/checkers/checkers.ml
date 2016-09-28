@@ -89,7 +89,7 @@ module ST = struct
        - @some.PrefixErrorName
        where the kind matching is case - insensitive and ignores '-' and '_' characters. *)
     let suppressed =
-      let annotation_matches a =
+      let annotation_matches (a: Annot.t) =
         let normalize str =
           Str.global_replace (Str.regexp "[_-]") "" (String.lowercase str) in
         let drop_prefix str =
@@ -98,10 +98,10 @@ module ST = struct
           string_equal (normalize s1) (normalize s2) in
 
         let is_parameter_suppressed =
-          IList.mem string_equal a.Typ.class_name [Annotations.suppressLint] &&
-          IList.mem normalized_equal kind a.Typ.parameters in
+          IList.mem string_equal a.class_name [Annotations.suppressLint] &&
+          IList.mem normalized_equal kind a.parameters in
         let is_annotation_suppressed =
-          string_is_suffix (normalize (drop_prefix kind)) (normalize a.Typ.class_name) in
+          string_is_suffix (normalize (drop_prefix kind)) (normalize a.class_name) in
 
         is_parameter_suppressed || is_annotation_suppressed in
 

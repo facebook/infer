@@ -12,7 +12,7 @@ open! Utils
 (** Utility module to retrieve fields of structs of classes *)
 open CFrontend_utils
 
-type field_type = Ident.fieldname * Typ.t * (Typ.annotation * bool) list
+type field_type = Ident.fieldname * Typ.t * (Annot.t * bool) list
 
 val get_fields : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> CContext.curr_class ->
   Clang_ast_t.decl list -> field_type list

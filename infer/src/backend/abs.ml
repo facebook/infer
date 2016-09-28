@@ -1018,10 +1018,10 @@ let cycle_has_weak_or_unretained_or_assign_field tenv cycle =
     | [] -> false
     | att:: _ when Config.unsafe_unret = att || Config.weak = att || Config.assign = att -> true
     | _:: params' -> has_weak_or_unretained_or_assign params' in
-  let do_annotation (a, _) =
-    ((a.Typ.class_name = Config.property_attributes) ||
-     (a.Typ.class_name = Config.ivar_attributes))
-    && has_weak_or_unretained_or_assign a.Typ.parameters in
+  let do_annotation ((a: Annot.t), _) =
+    ((a.class_name = Config.property_attributes) ||
+     (a.class_name = Config.ivar_attributes))
+    && has_weak_or_unretained_or_assign a.parameters in
   let rec do_cycle c =
     match c with
     | [] -> false

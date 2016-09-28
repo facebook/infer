@@ -299,7 +299,7 @@ let func_with_tainted_params =
 
 let attrs_opt_get_annots = function
   | Some attrs -> attrs.ProcAttributes.method_annotation
-  | None -> Typ.method_annotation_empty
+  | None -> Annot.Method.empty
 
 (* TODO: return a taint kind *)
 (** returns true if [callee_pname] returns a tainted value *)

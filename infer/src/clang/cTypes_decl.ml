@@ -182,8 +182,8 @@ and get_record_declaration_struct_type tenv decl =
           [Typ.objc_ref_counter_field]
         else [] in
       let annots =
-        if csu = Csu.Class Csu.CPP then Typ.cpp_class_annotation
-        else Typ.item_annotation_empty (* No annotations for structs *) in
+        if csu = Csu.Class Csu.CPP then Annot.Class.cpp
+        else Annot.Item.empty (* No annotations for structs *) in
       if is_complete_definition then (
         Ast_utils.update_sil_types_map type_ptr (Typ.Tstruct sil_typename);
         let non_statics = get_struct_fields tenv decl in

@@ -118,7 +118,7 @@ struct
       let vname = Pvar.get_name var in
       let qual_name = Ast_utils.make_qual_name_decl [block_name] (Mangled.to_string vname) in
       let fname = General_utils.mk_class_field_name qual_name in
-      let item_annot = Typ.item_annotation_empty in
+      let item_annot = Annot.Item.empty in
       fname, typ, item_annot in
     let fields = IList.map mk_field_from_captured_var captured_vars in
     Printing.log_out "Block %s field:\n" block_name;

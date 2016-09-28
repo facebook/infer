@@ -15,7 +15,7 @@ open CFrontend_utils
 
 module L = Logging
 
-type field_type = Ident.fieldname * Typ.t * (Typ.annotation * bool) list
+type field_type = Ident.fieldname * Typ.t * (Annot.t * bool) list
 
 let rec get_fields_super_classes tenv super_class =
   Printing.log_out "   ... Getting fields of superclass '%s'\n" (Typename.to_string super_class);
@@ -47,9 +47,11 @@ let build_sil_field type_ptr_to_sil_type tenv field_name type_ptr prop_attribute
   let typ = type_ptr_to_sil_type tenv type_ptr in
   let item_annotations = match prop_atts with
     | [] ->
-        [({ Typ.class_name = Config.ivar_attributes; parameters = annotation_from_type typ }, true)]
+        [({ Annot.class_name = Config.ivar_attributes; parameters = annotation_from_type typ },
+          true)]
     | _ ->
-        [({ Typ.class_name = Config.property_attributes; parameters = prop_atts }, true)] in
+        [({ Annot.class_name = Config.property_attributes; parameters = prop_atts },
+          true)] in
   fname, typ, item_annotations
 
 (* Given a list of declarations in an interface returns a list of fields  *)
@@ -94,6 +96,6 @@ let modelled_field class_name_info =
       let class_name_qualified = class_name_info.Clang_ast_t.ni_qual_name in
       let field_name_qualified = Ast_utils.make_qual_name_decl class_name_qualified field_name in
       let name = General_utils.mk_class_field_name field_name_qualified in
-      (name, typ, Typ.item_annotation_empty) :: res
+      (name, typ, Annot.Item.empty) :: res
     else res in
   IList.fold_left modelled_field_in_class [] modelled_fields_in_classes

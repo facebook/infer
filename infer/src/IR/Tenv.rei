@@ -49,7 +49,7 @@ let mk_struct:
   statics::Typ.struct_fields? =>
   methods::list Procname.t? =>
   supers::list Typename.t? =>
-  annots::Typ.item_annotation? =>
+  annots::Annot.Item.t? =>
   Typename.t =>
   Typ.struct_typ;
 

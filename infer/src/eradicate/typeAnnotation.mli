@@ -19,7 +19,7 @@ val const : Annotations.annotation -> bool -> TypeOrigin.t -> t
 val descr_origin : Tenv.t -> t -> TypeErr.origin_descr
 
 val equal : t -> t -> bool
-val from_item_annotation : Typ.item_annotation -> TypeOrigin.t -> t
+val from_item_annotation : Annot.Item.t -> TypeOrigin.t -> t
 val get_origin : t -> TypeOrigin.t
 val get_value : Annotations.annotation -> t -> bool
 val join : t -> t -> t option

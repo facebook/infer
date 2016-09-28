@@ -77,7 +77,7 @@ let type_get_class_name = function
   | Typ.Tptr (typ, _) -> Typ.name typ
   | _ -> None
 
-let type_get_annotation tenv (typ: Typ.t): Typ.item_annotation option =
+let type_get_annotation tenv (typ: Typ.t): Annot.Item.t option =
   match typ with
   | Tptr (Tstruct name, _)
   | Tstruct name -> (

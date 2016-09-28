@@ -850,7 +850,7 @@ let execute_scan_function skip_n_arguments ({ Builtin.args } as call_args)
       SymExec.unknown_or_scan_call
         ~is_scan:true
         None
-        Typ.item_annotation_empty
+        Annot.Item.empty
         { call_args with args = !varargs }
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 

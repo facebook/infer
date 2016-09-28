@@ -29,7 +29,8 @@ module InstrRef : InstrRefT
 
 module Strict :
 sig
-  val signature_get_strict : Tenv.t -> Annotations.annotated_signature -> Typ.annotation option
+  val signature_get_strict :
+    Tenv.t -> Annotations.annotated_signature -> Annot.t option
 end (* Strict *)
 
 

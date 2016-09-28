@@ -1495,7 +1495,7 @@ let expand_hpred_pointer =
                     let mangled = Mangled.from_string ("counterfeit" ^ string_of_int !count) in
                     let name = Typename.TN_csu (Struct, mangled) in
                     incr count ;
-                    let fields = [(fld, cnt_typ, Typ.item_annotation_empty)] in
+                    let fields = [(fld, cnt_typ, Annot.Item.empty)] in
                     ignore (Tenv.mk_struct tenv ~fields name) ;
                     Exp.Sizeof (Tstruct name, len, st)
                 | _ ->
