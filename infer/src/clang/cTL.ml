@@ -126,7 +126,7 @@ let eval_Atomic pred_name params an lcxt =
    such that (st', lcxt) satifies EF phi
 *)
 let rec eval_EF_st phi st lcxt =
-  Printing.log_out "\n->>>> Evaluating EF in %s\n"
+  Logging.out "\n->>>> Evaluating EF in %s\n"
     (Clang_ast_proj.get_stmt_kind_string st);
   let _, succs = Clang_ast_proj.get_stmt_tuple st in
   (eval_formula phi (Stmt st) lcxt) ||
@@ -138,7 +138,7 @@ let rec eval_EF_st phi st lcxt =
    This is as eval_EF_st but for decl.
 *)
 and eval_EF_decl phi dec lcxt =
-  Printing.log_out "\n->>>> Evaluating EF in %s\n"
+  Logging.out "\n->>>> Evaluating EF in %s\n"
     (Clang_ast_proj.get_decl_kind_string dec);
   (eval_formula phi (Decl dec) lcxt) ||
   (match Clang_ast_proj.get_decl_context_tuple dec with
@@ -159,7 +159,7 @@ and eval_EF phi an lcxt =
    such that (st', lcxt) satifies phi
 *)
 and eval_EX_st phi st lcxt =
-  Printing.log_out "\n->>>> Evaluating EX in %s\n"
+  Logging.out "\n->>>> Evaluating EX in %s\n"
     (Clang_ast_proj.get_stmt_kind_string st);
   let _, succs = Clang_ast_proj.get_stmt_tuple st in
   IList.exists (fun s -> eval_formula phi (Stmt s) lcxt) succs
@@ -169,7 +169,7 @@ and eval_EX_st phi st lcxt =
    Same as eval_EX_st but for decl.
 *)
 and eval_EX_decl phi dec lcxt =
-  Printing.log_out "\n->>>> Evaluating EF in %s\n"
+  Logging.out "\n->>>> Evaluating EF in %s\n"
     (Clang_ast_proj.get_decl_kind_string dec);
   match Clang_ast_proj.get_decl_context_tuple dec with
   | Some (decl_list, _) ->
@@ -220,7 +220,7 @@ and eval_EH classes phi an lcxt =
     | None -> false in
   match an with
   | Decl d when node_has_type classes (Decl d) ->
-      Printing.log_out "\n->>>> Evaluating EH in %s\n"
+      Logging.out "\n->>>> Evaluating EH in %s\n"
         (Clang_ast_proj.get_decl_kind_string d);
       eval_super (Ast_utils.get_impl_decl_info d)
   | _ -> false
@@ -231,7 +231,7 @@ and eval_EH classes phi an lcxt =
    such that an',lcxt |= phi
 
    or an is a node among those defined in T, and l is unspecified,
-   and an,lcxt |= EF phi
+   and an,lcxt |= phi
 
    or an is not of type in T and exists an' in Successors(an):
       an', lcxt |= ET[T][->l]phi
@@ -247,48 +247,48 @@ and eval_ET tl trs phi an lcxt =
     let _, stmt_list = Clang_ast_proj.get_stmt_tuple st in
     IList.exists (fun s -> eval phi (Stmt s) lcxt) stmt_list in
   let do_decl d =
-    Printing.log_out "\n->>>> Evaluating ET in %s\n"
+    Logging.out "\n->>>> Evaluating ET in %s\n"
       (Clang_ast_proj.get_decl_kind_string d);
     match trs, node_has_type tl (Decl d) with
     | Some _, true ->
-        Printing.log_out "\n  ->>>> Declaration is in types and has label";
+        Logging.out "\n  ->>>> Declaration is in types and has label";
         (match transition_from_decl_to_stmt d trs with
          | None ->
-             Printing.log_out "\n   ->>>> NO transition returned";
+             Logging.out "\n   ->>>> NO transition returned";
              false
          | Some st ->
-             Printing.log_out "\n   ->>>> A transition is returned \n";
+             Logging.out "\n   ->>>> A transition is returned \n";
              eval_formula phi (Stmt st) lcxt)
     | None, true ->
-        Printing.log_out "\n  ->>>> Declaration has NO transition label\n";
-        eval_EF_decl phi d lcxt
+        Logging.out "\n  ->>>> Declaration has NO transition label\n";
+        eval_formula phi (Decl d) lcxt
     | _, false ->
-        Printing.log_out "\n  ->>>> Declaration is NOT in types and _ label\n";
+        Logging.out "\n  ->>>> Declaration is NOT in types and _ label\n";
         evaluate_on_subdeclarations d (eval_ET tl trs) in
   let do_stmt st =
-    Printing.log_out "\n->>>> Evaluating ET in %s\n"
+    Logging.out "\n->>>> Evaluating ET in %s\n"
       (Clang_ast_proj.get_stmt_kind_string st);
     match trs, node_has_type tl (Stmt st) with
     | Some _, true ->
-        Printing.log_out "\n  ->>>> Statement is in types and has label";
+        Logging.out "\n  ->>>> Statement is in types and has label";
         (match transition_from_stmt_to_decl st trs with
          | None ->
-             Printing.log_out "\n   ->>>> NO transition  returned\n";
+             Logging.out "\n   ->>>> NO transition  returned\n";
              false
          | Some d ->
-             Printing.log_out "\n   ->>>> A transition is returned \n";
+             Logging.out "\n   ->>>> A transition is returned \n";
              eval_formula phi (Decl d) lcxt)
     | None, true ->
-        Printing.log_out "\n  ->>>> Statement has NO transition label\n";
-        eval_EF_st phi st lcxt
+        Logging.out "\n  ->>>> Statement has NO transition label\n";
+        eval_formula phi (Stmt st) lcxt
     | _, false ->
-        Printing.log_out "\n  ->>>> Declaration is NOT in types and _ label\n";
+        Logging.out "\n  ->>>> Declaration is NOT in types and _ label\n";
         evaluate_on_substmt st (eval_ET tl trs) in
   match an with
   | Decl d -> do_decl d
   | Stmt BlockExpr(_, _, _, d) ->
       (* From BlockExpr we jump directly to its BlockDecl *)
-      Printing.log_out "\n->>>> BlockExpr evaluated in ET, evaluating its BlockDecl \n";
+      Logging.out "\n->>>> BlockExpr evaluated in ET, evaluating its BlockDecl \n";
       eval_ET tl trs phi (Decl d) lcxt
   | Stmt st -> do_stmt st
 
