@@ -419,6 +419,24 @@ struct
         Some (decl_list, impl_decl_info)
     | _ -> None
 
+  let get_super_ObjCImplementationDecl impl_decl_info =
+    let objc_interface_decl_current =
+      get_decl_opt_with_decl_ref
+        impl_decl_info.Clang_ast_t.oidi_class_interface in
+    let objc_interface_decl_super = get_super_if objc_interface_decl_current in
+    let objc_implementation_decl_super =
+      match objc_interface_decl_super with
+      | Some ObjCInterfaceDecl(_, _, _, _, interface_decl_info) ->
+          get_decl_opt_with_decl_ref
+            interface_decl_info.otdi_implementation
+      | _ -> None in
+    objc_implementation_decl_super
+
+  let get_impl_decl_info dec =
+    match dec with
+    | Clang_ast_t.ObjCImplementationDecl (_, _, _, _, idi) -> Some idi
+    | _ -> None
+
   let is_in_main_file decl =
     let decl_info = Clang_ast_proj.get_decl_tuple decl in
     let file_opt = (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file in

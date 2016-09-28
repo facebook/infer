@@ -16,29 +16,29 @@ let property_checkers_list = [CFrontend_checkers.strong_delegate_warning;
                               CFrontend_checkers.assign_pointer_warning;]
 
 (* Invocation of checker belonging to property_checker_list *)
-let checkers_for_property decl_info pname_info pdi checker context =
-  checker context decl_info pname_info pdi
+let checkers_for_property decl checker context =
+  checker context decl
 
 (* List of checkers on ivar access *)
 let ivar_access_checker_list =  [CFrontend_checkers.direct_atomic_property_access_warning]
 
 (* Invocation of checker belonging to ivar_access_checker_list *)
-let checkers_for_ivar stmt_info ivar_decl_ref checker context =
-  checker context stmt_info ivar_decl_ref
+let checkers_for_ivar stmt checker context =
+  checker context stmt
 
 (* List of checkers for captured vars in objc blocks *)
 let captured_vars_checker_list = [CFrontend_checkers.captured_cxx_ref_in_objc_block_warning]
 
 (* Invocation of checker belonging to captured_vars_checker_list *)
-let checkers_for_capture_vars stmt_info captured_vars checker context =
-  checker context stmt_info captured_vars
+let checkers_for_capture_vars stmt checker context =
+  checker context stmt
 
 (* List of checkers on NSNotificationCenter *)
 let ns_notification_checker_list = [CFrontend_checkers.checker_NSNotificationCenter]
 
 (* Invocation of checker belonging to ns_notification_center_list *)
-let checkers_for_ns decl_info impl_decl_info decls checker context =
-  checker context decl_info impl_decl_info decls
+let checkers_for_ns decl checker context =
+  checker context decl
 
 (* List of checkers on variables *)
 let var_checker_list = [CFrontend_checkers.global_var_init_with_calls_warning;
@@ -117,16 +117,14 @@ let invoke_set_of_checkers f context key checkers  =
 let run_frontend_checkers_on_stmt context instr =
   let open Clang_ast_t in
   match instr with
-  | ObjCIvarRefExpr (stmt_info, _, _, obj_c_ivar_ref_expr_info) ->
-      let dr_ref = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref in
-      let call_checker_for_ivar = checkers_for_ivar stmt_info dr_ref in
+  | ObjCIvarRefExpr _ ->
+      let call_checker_for_ivar = checkers_for_ivar instr in
       let key = Ast_utils.generate_key_stmt instr in
       invoke_set_of_checkers
         call_checker_for_ivar context key ivar_access_checker_list;
       context
-  | BlockExpr (stmt_info, _ , _, Clang_ast_t.BlockDecl (_, block_decl_info)) ->
-      let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
-      let call_captured_vars_checker = checkers_for_capture_vars stmt_info captured_block_vars in
+  | BlockExpr _ ->
+      let call_captured_vars_checker = checkers_for_capture_vars instr in
       let key = Ast_utils.generate_key_stmt instr in
       invoke_set_of_checkers call_captured_vars_checker context key
         captured_vars_checker_list;
@@ -158,12 +156,8 @@ let run_frontend_checkers_on_stmt context instr =
 let run_frontend_checkers_on_decl context dec =
   let open Clang_ast_t in
   match dec with
-  | ObjCImplementationDecl (decl_info, _, decl_list, _, _)
-  | ObjCProtocolDecl (decl_info, _, decl_list, _, _) ->
-      let idi = match dec with
-        | ObjCImplementationDecl (_, _, _, _, impl_decl_info) -> Some impl_decl_info
-        | _ -> None in
-      let call_ns_checker = checkers_for_ns decl_info idi decl_list in
+  | ObjCImplementationDecl _ | ObjCProtocolDecl _ ->
+      let call_ns_checker = checkers_for_ns dec in
       let key = Ast_utils.generate_key_decl dec in
       invoke_set_of_checkers call_ns_checker context key ns_notification_checker_list;
       context
@@ -172,8 +166,8 @@ let run_frontend_checkers_on_decl context dec =
       let key = Ast_utils.generate_key_decl dec in
       invoke_set_of_checkers call_var_checker context key var_checker_list;
       context
-  | ObjCPropertyDecl (decl_info, pname_info, pdi) ->
-      let call_property_checker = checkers_for_property decl_info pname_info pdi in
+  | ObjCPropertyDecl _ ->
+      let call_property_checker = checkers_for_property dec in
       let key = Ast_utils.generate_key_decl dec in
       invoke_set_of_checkers call_property_checker context key property_checkers_list;
       context
