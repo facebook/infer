@@ -273,7 +273,16 @@ def load_json_report(opened_jar):
         raise NotFoundInJar
 
 
-def collect_results(args, start_time):
+def get_output_jars(targets):
+    if len(targets) == 0:
+        return []
+    else:
+        audit_output = subprocess.check_output(
+            ['buck', 'audit', 'classpath'] + targets)
+        return audit_output.strip().split('\n')
+
+
+def collect_results(args, start_time, targets):
     """Walks through buck-gen, collects results for the different buck targets
     and stores them in in args.infer_out/results.csv.
     """
@@ -297,45 +306,43 @@ def collect_results(args, start_time):
     expected_analyzer = stats['normal']['analyzer']
     expected_version = stats['normal']['infer_version']
 
-    for root, _, files in os.walk(DEFAULT_BUCK_OUT_GEN):
-        for f in [f for f in files if f.endswith('.jar')]:
-            path = os.path.join(root, f)
-            try:
-                with zipfile.ZipFile(path) as jar:
-                    # Accumulate integers and float values
-                    target_stats = load_stats(jar)
+    for path in get_output_jars(targets):
+        try:
+            with zipfile.ZipFile(path) as jar:
+                # Accumulate integers and float values
+                target_stats = load_stats(jar)
 
-                    found_analyzer = target_stats['normal']['analyzer']
-                    found_version = target_stats['normal']['infer_version']
+                found_analyzer = target_stats['normal']['analyzer']
+                found_version = target_stats['normal']['infer_version']
 
-                    if (found_analyzer != expected_analyzer
-                            or found_version != expected_version):
-                        continue
-                    else:
-                        for type_k in ['int', 'float']:
-                            items = target_stats.get(type_k, {}).items()
-                            for key, value in items:
-                                if not any(map(lambda r: r.match(key),
+                if found_analyzer != expected_analyzer \
+                        or found_version != expected_version:
+                    continue
+                else:
+                    for type_k in ['int', 'float']:
+                        items = target_stats.get(type_k, {}).items()
+                        for key, value in items:
+                            if not any(map(lambda r: r.match(key),
                                            accumulation_whitelist)):
-                                    old_value = stats[type_k].get(key, 0)
-                                    stats[type_k][key] = old_value + value
+                                old_value = stats[type_k].get(key, 0)
+                                stats[type_k][key] = old_value + value
 
-                    csv_rows = load_csv_report(jar)
-                    if len(csv_rows) > 0:
-                        headers.append(csv_rows[0])
-                        for row in csv_rows[1:]:
-                            all_csv_rows.add(tuple(row))
+                csv_rows = load_csv_report(jar)
+                if len(csv_rows) > 0:
+                    headers.append(csv_rows[0])
+                    for row in csv_rows[1:]:
+                        all_csv_rows.add(tuple(row))
 
-                    json_rows = load_json_report(jar)
-                    for row in json_rows:
-                        all_json_rows.add(json.dumps(row))
+                json_rows = load_json_report(jar)
+                for row in json_rows:
+                    all_json_rows.add(json.dumps(row))
 
-                    # Override normals
-                    stats['normal'].update(target_stats.get('normal', {}))
-            except NotFoundInJar:
-                pass
-            except zipfile.BadZipfile:
-                logging.warn('Bad zip file %s', path)
+                # Override normals
+                stats['normal'].update(target_stats.get('normal', {}))
+        except NotFoundInJar:
+            pass
+        except zipfile.BadZipfile:
+            logging.warn('Bad zip file %s', path)
 
     csv_report = os.path.join(args.infer_out, config.CSV_REPORT_FILENAME)
     json_report = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
@@ -459,7 +466,7 @@ class Wrapper:
 
     def _collect_results(self, start_time):
         self.timer.start('Collecting results ...')
-        collect_results(self.infer_args, start_time)
+        collect_results(self.infer_args, start_time, self.normalized_targets)
         self.timer.stop('Done')
 
     def run(self):
@@ -484,7 +491,7 @@ class Wrapper:
                 buck_cmd = self.buck_cmd + javac_config
                 subprocess.check_call(buck_cmd)
                 self.timer.stop('Buck finished')
-                self._collect_results(start_time)
+            self._collect_results(start_time)
             return os.EX_OK
         except KeyboardInterrupt as e:
             self.timer.stop('Exiting')
