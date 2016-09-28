@@ -344,12 +344,11 @@ class BuildIntegrationTest(unittest.TestCase):
              env=env)
 
     def test_buck_integration(self):
-        target = '//infer/tests/codetoanalyze/java/infer:analyze'
+        target = '//infer/tests/codetoanalyze/java/infer:compile'
         test('buck', 'Buck',
              ROOT_DIR,
              [{'compile': ['buck', 'build', target]}],
              clean_commands=[['buck', 'clean']],
-             enabled=(sys.platform == 'darwin'),
              available=lambda: is_tool_available(['buck', '--version']))
 
     def test_make_integration(
