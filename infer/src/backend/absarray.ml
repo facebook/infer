@@ -558,7 +558,7 @@ let check_after_array_abstraction tenv prop =
         else IList.iter (fun (ind, se) -> check_se root (offs @ [Sil.Off_index ind]) typ_elem se) esel
     | Sil.Estruct (fsel, _) ->
         IList.iter (fun (f, se) ->
-            let typ_f = Typ.struct_typ_fld ~lookup ~default:Tvoid f typ in
+            let typ_f = StructTyp.fld_typ ~lookup ~default:Tvoid f typ in
             check_se root (offs @ [Sil.Off_fld (f, typ)]) typ_f se) fsel in
   let check_hpred = function
     | Sil.Hpointsto (root, se, texp) ->

@@ -193,20 +193,6 @@ type t =
   | Tstruct of Typename.t /** structured value type name */
   | Tarray of t static_length /** array type with statically fixed length */;
 
-type struct_fields = list (Ident.fieldname, t, Annot.Item.t);
-
-
-/** Type for a structured value. */
-type struct_typ = {
-  fields: struct_fields, /** non-static fields */
-  statics: struct_fields, /** static fields */
-  supers: list Typename.t, /** superclasses */
-  methods: list Procname.t, /** methods defined */
-  annots: Annot.Item.t /** annotations */
-};
-
-type lookup = Typename.t => option struct_typ;
-
 
 /** Comparision for types. */
 let rec compare t1 t2 =>
@@ -243,9 +229,6 @@ let rec compare t1 t2 =>
   };
 
 let equal t1 t2 => compare t1 t2 == 0;
-
-let fld_typ_ann_compare fta1 fta2 =>
-  triple_compare Ident.fieldname_compare compare Annot.Item.compare fta1 fta2;
 
 
 /** Pretty print a type declaration.
@@ -289,22 +272,6 @@ let pp pe f te =>
     ()
   };
 
-let pp_struct_typ pe pp_base name f {fields} =>
-  if false {
-    /* change false to true to print the details of struct */
-    F.fprintf
-      f
-      "%a {%a} %a"
-      Typename.pp
-      name
-      (pp_seq (fun f (fld, t, _) => F.fprintf f "%a %a" (pp_full pe) t Ident.pp_fieldname fld))
-      fields
-      pp_base
-      ()
-  } else {
-    F.fprintf f "%a %a" Typename.pp name pp_base ()
-  };
-
 let to_string typ => {
   let pp fmt () => pp_full pe_text fmt typ;
   pp_to_string pp ()
@@ -336,38 +303,6 @@ let module Tbl = Hashtbl.Make {
   let hash = Hashtbl.hash;
 };
 
-let internal_mk_struct
-    default::default=?
-    fields::fields=?
-    statics::statics=?
-    methods::methods=?
-    supers::supers=?
-    annots::annots=?
-    () => {
-  let mk_struct_
-      default::default={fields: [], statics: [], methods: [], supers: [], annots: Annot.Item.empty}
-      fields::fields=default.fields
-      statics::statics=default.statics
-      methods::methods=default.methods
-      supers::supers=default.supers
-      annots::annots=default.annots
-      () => {
-    fields,
-    statics,
-    methods,
-    supers,
-    annots
-  };
-  mk_struct_
-    default::?default
-    fields::?fields
-    statics::?statics
-    methods::?methods
-    supers::?supers
-    annots::?annots
-    ()
-};
-
 let name =
   fun
   | Tstruct name => Some name
@@ -395,55 +330,6 @@ let array_elem default_opt =>
   fun
   | Tarray t_el _ => t_el
   | _ => unsome "array_elem" default_opt;
-
-
-/** the element typ of the final extensible array in the given typ, if any */
-let rec get_extensible_array_element_typ lookup::lookup typ =>
-  switch typ {
-  | Tarray typ _ => Some typ
-  | Tstruct name =>
-    switch (lookup name) {
-    | Some {fields} =>
-      switch (IList.last fields) {
-      | Some (_, fld_typ, _) => get_extensible_array_element_typ lookup::lookup fld_typ
-      | None => None
-      }
-    | None => None
-    }
-  | _ => None
-  };
-
-
-/** If a struct type with field f, return the type of f. If not, return the default */
-let struct_typ_fld lookup::lookup default::default fn typ =>
-  switch typ {
-  | Tstruct name =>
-    switch (lookup name) {
-    | Some {fields} =>
-      try (snd3 (IList.find (fun (f, _, _) => Ident.fieldname_equal f fn) fields)) {
-      | Not_found => default
-      }
-    | None => default
-    }
-  | _ => default
-  };
-
-let get_field_type_and_annotation lookup::lookup fn typ =>
-  switch typ {
-  | Tstruct name
-  | Tptr (Tstruct name) _ =>
-    switch (lookup name) {
-    | Some {fields, statics} =>
-      try {
-        let (_, t, a) = IList.find (fun (f, _, _) => Ident.fieldname_equal f fn) (fields @ statics);
-        Some (t, a)
-      } {
-      | Not_found => None
-      }
-    | None => None
-    }
-  | _ => None
-  };
 
 let is_class_of_kind typ ck =>
   switch typ {
@@ -478,15 +364,6 @@ let has_block_prefix s =>
 
 /** Check if type is a type for a block in objc */
 let is_block_type typ => has_block_prefix (to_string typ);
-
-let objc_ref_counter_annot = [({Annot.class_name: "ref_counter", parameters: []}, false)];
-
-
-/** Field used for objective-c reference counting */
-let objc_ref_counter_field = (Ident.fieldname_hidden, Tint IInt, objc_ref_counter_annot);
-
-let is_objc_ref_counter_field (fld, _, a) =>
-  Ident.fieldname_is_hidden fld && Annot.Item.compare a objc_ref_counter_annot == 0;
 
 
 /** Java types by name */

@@ -83,25 +83,6 @@ type t =
   | Tstruct of Typename.t /** structured value type name */
   | Tarray of t static_length /** array type with statically fixed length */;
 
-type struct_fields = list (Ident.fieldname, t, Annot.Item.t);
-
-
-/** Type for a structured value. */
-type struct_typ = private {
-  fields: struct_fields, /** non-static fields */
-  statics: struct_fields, /** static fields */
-  supers: list Typename.t, /** supers */
-  methods: list Procname.t, /** methods defined */
-  annots: Annot.Item.t /** annotations */
-};
-
-type lookup = Typename.t => option struct_typ;
-
-
-/** Comparision for fieldnames * types * item annotations. */
-let fld_typ_ann_compare:
-  (Ident.fieldname, t, Annot.Item.t) => (Ident.fieldname, t, Annot.Item.t) => int;
-
 
 /** Comparision for types. */
 let compare: t => t => int;
@@ -109,9 +90,6 @@ let compare: t => t => int;
 
 /** Equality for types. */
 let equal: t => t => bool;
-
-let pp_struct_typ:
-  printenv => (F.formatter => unit => unit) => Typename.t => F.formatter => struct_typ => unit;
 
 
 /** [pp_decl pe pp_base f typ] pretty prints a type declaration.
@@ -147,18 +125,6 @@ let module Map: Map.S with type key = t;
 let module Tbl: Hashtbl.S with type key = t;
 
 
-/** Construct a struct_typ, normalizing field types */
-let internal_mk_struct:
-  default::struct_typ? =>
-  fields::struct_fields? =>
-  statics::struct_fields? =>
-  methods::list Procname.t? =>
-  supers::list Typename.t? =>
-  annots::Annot.Item.t? =>
-  unit =>
-  struct_typ;
-
-
 /** The name of a type */
 let name: t => option Typename.t;
 
@@ -170,20 +136,6 @@ let strip_ptr: t => t;
 /** If an array type, return the type of the element.
     If not, return the default type if given, otherwise raise an exception */
 let array_elem: option t => t => t;
-
-
-/** the element typ of the final extensible array in the given typ, if any */
-let get_extensible_array_element_typ: lookup::lookup => t => option t;
-
-
-/** If a struct type with field f, return the type of f.
-    If not, return the default type if given, otherwise raise an exception */
-let struct_typ_fld: lookup::lookup => default::t => Ident.fieldname => t => t;
-
-
-/** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] */
-let get_field_type_and_annotation:
-  lookup::lookup => Ident.fieldname => t => option (t, Annot.Item.t);
 
 let is_objc_class: t => bool;
 
@@ -200,12 +152,6 @@ let has_block_prefix: string => bool;
 
 /** Check if type is a type for a block in objc */
 let is_block_type: t => bool;
-
-
-/** Field used for objective-c reference counting */
-let objc_ref_counter_field: (Ident.fieldname, t, Annot.Item.t);
-
-let is_objc_ref_counter_field: (Ident.fieldname, t, Annot.Item.t) => bool;
 
 let unsome: string => option t => t;
 

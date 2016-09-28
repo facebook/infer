@@ -29,7 +29,7 @@ val get_method_procname :
   JBasics.class_name -> JBasics.method_signature -> Procname.method_kind -> Procname.java
 
 (** [get_class_struct_typ program tenv cn] returns the struct_typ representation of the class *)
-val get_class_struct_typ: JClasspath.program -> Tenv.t -> JBasics.class_name -> Typ.struct_typ
+val get_class_struct_typ: JClasspath.program -> Tenv.t -> JBasics.class_name -> StructTyp.t
 
 (** [get_class_type_no_pointer program tenv cn] returns the sil type representation of the class
     without the pointer part *)

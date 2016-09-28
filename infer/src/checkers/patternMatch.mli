@@ -60,7 +60,7 @@ val is_subtype : Tenv.t -> Typename.t -> Typename.t -> bool
 val is_subtype_of_str : Tenv.t -> Typename.t -> string -> bool
 
 (** Holds iff the predicate holds on a supertype of the named type, including the type itself *)
-val supertype_exists : Tenv.t -> (Typename.t -> Typ.struct_typ -> bool) -> Typename.t -> bool
+val supertype_exists : Tenv.t -> (Typename.t -> StructTyp.t -> bool) -> Typename.t -> bool
 
 (** Get the name of the type of a constant *)
 val java_get_const_type_name : Const.t -> string

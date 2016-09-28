@@ -14,16 +14,16 @@ open! Utils
 (** return the complete list of (package, lifecycle_classname, lifecycle_methods) trios *)
 val get_lifecycles : (string * string * string list) list
 
-(** return true if [typ] <: android.content.Context *)
+(** return true if [typename] <: android.content.Context *)
 val is_context : Tenv.t -> Typename.t -> bool
 
-(** return true if [struct_typ] <: android.app.Application *)
+(** return true if [typename] <: android.app.Application *)
 val is_application : Tenv.t -> Typename.t -> bool
 
-(** return true if [struct_typ] <: android.app.Activity *)
+(** return true if [typename] <: android.app.Activity *)
 val is_activity : Tenv.t -> Typename.t -> bool
 
-(** return true if [struct_typ] <: android.view.View *)
+(** return true if [typename] <: android.view.View *)
 val is_view : Tenv.t -> Typename.t -> bool
 
 val is_fragment : Tenv.t -> Typename.t -> bool

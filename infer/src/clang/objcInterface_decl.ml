@@ -119,7 +119,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
     | _ -> fields, supers, methods in
   let fields = General_utils.append_no_duplicates_fields fields fields_sc in
   (* We add the special hidden counter_field for implementing reference counting *)
-  let modelled_fields = Typ.objc_ref_counter_field :: CField_decl.modelled_field name_info in
+  let modelled_fields = StructTyp.objc_ref_counter_field :: CField_decl.modelled_field name_info in
   let all_fields = General_utils.append_no_duplicates_fields modelled_fields fields in
   Printing.log_out "Class %s field:\n" class_name;
   IList.iter (fun (fn, _, _) ->
@@ -132,7 +132,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
   (match Tenv.lookup tenv interface_name with
    | Some st ->
        Printing.log_out "  >>>OK. Found typ='%a'\n"
-         (Typ.pp_struct_typ pe_text (fun _ () -> ()) interface_name) st
+         (StructTyp.pp pe_text (fun _ () -> ()) interface_name) st
    | None -> Printing.log_out "  >>>NOT Found!!\n");
   Typ.Tstruct interface_name
 

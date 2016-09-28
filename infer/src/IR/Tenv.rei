@@ -18,7 +18,7 @@ type t; /** Type for type environment. */
 
 
 /** Add a (name,typename) pair to the global type environment. */
-let add: t => Typename.t => Typ.struct_typ => unit;
+let add: t => Typename.t => StructTyp.t => unit;
 
 
 /** Create a new type environment. */
@@ -26,11 +26,11 @@ let create: unit => t;
 
 
 /** Fold a function over the elements of the type environment. */
-let fold: (Typename.t => Typ.struct_typ => 'a => 'a) => t => 'a => 'a;
+let fold: (Typename.t => StructTyp.t => 'a => 'a) => t => 'a => 'a;
 
 
 /** iterate over a type environment */
-let iter: (Typename.t => Typ.struct_typ => unit) => t => unit;
+let iter: (Typename.t => StructTyp.t => unit) => t => unit;
 
 
 /** Load a type environment from a file */
@@ -38,20 +38,20 @@ let load_from_file: DB.filename => option t;
 
 
 /** Look up a name in the global type environment. */
-let lookup: t => Typename.t => option Typ.struct_typ;
+let lookup: t => Typename.t => option StructTyp.t;
 
 
 /** Construct a struct_typ, normalizing field types */
 let mk_struct:
   t =>
-  default::Typ.struct_typ? =>
-  fields::Typ.struct_fields? =>
-  statics::Typ.struct_fields? =>
+  default::StructTyp.t? =>
+  fields::StructTyp.fields? =>
+  statics::StructTyp.fields? =>
   methods::list Procname.t? =>
   supers::list Typename.t? =>
   annots::Annot.Item.t? =>
   Typename.t =>
-  Typ.struct_typ;
+  StructTyp.t;
 
 
 /** Check if typename is found in t */

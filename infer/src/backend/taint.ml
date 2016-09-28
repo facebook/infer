@@ -351,12 +351,12 @@ let tainted_params callee_pname =
       IList.map (fun param_num -> param_num, taint_info.PredSymb.taint_kind) tainted_param_indices
   | None -> []
 
-let has_taint_annotation fieldname struct_typ =
+let has_taint_annotation fieldname (struct_typ: StructTyp.t) =
   let fld_has_taint_annot (fname, _, annot) =
     Ident.fieldname_equal fieldname fname &&
     (Annotations.ia_is_privacy_source annot || Annotations.ia_is_integrity_source annot) in
-  IList.exists fld_has_taint_annot struct_typ.Typ.fields ||
-  IList.exists fld_has_taint_annot struct_typ.Typ.statics
+  IList.exists fld_has_taint_annot struct_typ.fields ||
+  IList.exists fld_has_taint_annot struct_typ.statics
 
 (* add tainting attributes to a list of paramenters *)
 let get_params_to_taint tainted_param_nums formal_params =

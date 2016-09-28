@@ -179,7 +179,7 @@ and get_record_declaration_struct_type tenv decl =
       let is_complete_definition = record_decl_info.Clang_ast_t.rdi_is_complete_definition in
       let sil_typename = Typename.TN_csu (csu, mangled_name) in
       let extra_fields = if CTrans_models.is_objc_memory_model_controlled name then
-          [Typ.objc_ref_counter_field]
+          [StructTyp.objc_ref_counter_field]
         else [] in
       let annots =
         if csu = Csu.Class Csu.CPP then Annot.Class.cpp

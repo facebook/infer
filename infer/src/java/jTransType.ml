@@ -274,7 +274,7 @@ let add_model_fields program classpath_fields cn =
 
 let rec get_all_fields program tenv cn =
   let extract_class_fields classname =
-    let { Typ.fields; statics } = get_class_struct_typ program tenv classname in
+    let { StructTyp.fields; statics } = get_class_struct_typ program tenv classname in
     (statics, fields) in
   let trans_fields classname =
     match JClasspath.lookup_node classname program with

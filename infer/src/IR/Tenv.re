@@ -23,7 +23,7 @@ let module TypenameHash = Hashtbl.Make {
 
 
 /** Type for type environment. */
-type t = TypenameHash.t Typ.struct_typ;
+type t = TypenameHash.t StructTyp.t;
 
 
 /** Create a new type environment. */
@@ -41,7 +41,7 @@ let mk_struct
     annots::annots=?
     name => {
   let struct_typ =
-    Typ.internal_mk_struct
+    StructTyp.internal_mk_struct
       default::?default
       fields::?fields
       statics::?statics
@@ -59,7 +59,7 @@ let mem tenv name => TypenameHash.mem tenv name;
 
 
 /** Look up a name in the global type environment. */
-let lookup tenv name =>
+let lookup tenv name :option StructTyp.t =>
   try (Some (TypenameHash.find tenv name)) {
   | Not_found =>
     /* ToDo: remove the following additional lookups once C/C++ interop is resolved */
@@ -83,23 +83,22 @@ let add tenv name struct_typ => TypenameHash.replace tenv name struct_typ;
 
 /** Get method that is being overriden by java_pname (if any) **/
 let get_overriden_method tenv pname_java => {
-  let struct_typ_get_method_by_name struct_typ method_name =>
-    IList.find (fun meth => method_name == Procname.get_method meth) struct_typ.Typ.methods;
+  let struct_typ_get_method_by_name (struct_typ: StructTyp.t) method_name =>
+    IList.find (fun meth => method_name == Procname.get_method meth) struct_typ.methods;
   let rec get_overriden_method_in_supers pname_java supers =>
     switch supers {
     | [superclass, ...supers_tail] =>
       switch (lookup tenv superclass) {
       | Some struct_typ =>
         try (Some (struct_typ_get_method_by_name struct_typ (Procname.java_get_method pname_java))) {
-        | Not_found =>
-          get_overriden_method_in_supers pname_java (supers_tail @ struct_typ.Typ.supers)
+        | Not_found => get_overriden_method_in_supers pname_java (supers_tail @ struct_typ.supers)
         }
       | None => get_overriden_method_in_supers pname_java supers_tail
       }
     | [] => None
     };
   switch (lookup tenv (Procname.java_get_class_type_name pname_java)) {
-  | Some {Typ.supers: supers} => get_overriden_method_in_supers pname_java supers
+  | Some {supers} => get_overriden_method_in_supers pname_java supers
   | _ => None
   }
 };
@@ -134,7 +133,7 @@ let pp fmt (tenv: t) =>
     (
       fun name typ => {
         Format.fprintf fmt "@[<6>NAME: %s@." (Typename.to_string name);
-        Format.fprintf fmt "@[<6>TYPE: %a@." (Typ.pp_struct_typ pe_text (fun _ () => ()) name) typ
+        Format.fprintf fmt "@[<6>TYPE: %a@." (StructTyp.pp pe_text (fun _ () => ()) name) typ
       }
     )
     tenv;

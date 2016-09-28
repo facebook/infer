@@ -402,7 +402,7 @@ end = struct
       | Sil.Estruct (fsel, _), t ->
           let get_field_type f =
             Option.map_default (fun t' ->
-                Option.map fst @@ Typ.get_field_type_and_annotation ~lookup f t'
+                Option.map fst @@ StructTyp.get_field_type_and_annotation ~lookup f t'
               ) None t in
           IList.iter (fun (f, se) -> strexp_extract (se, get_field_type f)) fsel
       | Sil.Earray (len, isel, _), t ->
@@ -1320,8 +1320,8 @@ let rec sexp_imply tenv source calc_index_frame calc_missing subs se1 se2 typ2 :
       let se2' = Sil.Earray (len, [(Exp.zero, se2)], inst) in
       let typ2' = Typ.Tarray (typ2, None) in
       (* In the sexp_imply, struct_imply, array_imply, and sexp_imply_nolhs functions, the typ2
-         argument is only used by eventually passing its value to Typ.struct_typ_fld, Exp.Lfield,
-         Typ.struct_typ_fld, or Typ.array_elem.  None of these are sensitive to the length field
+         argument is only used by eventually passing its value to StructTyp.fld, Exp.Lfield,
+         StructTyp.fld, or Typ.array_elem.  None of these are sensitive to the length field
          of Tarray, so forgetting the length of typ2' here is not a problem. *)
       sexp_imply tenv source true calc_missing subs se1 se2' typ2' (* calculate index_frame because the rhs is a singleton array *)
   | _ ->
@@ -1336,7 +1336,7 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 : subst2 * ((Ide
       begin
         match Ident.fieldname_compare f1 f2 with
         | 0 ->
-            let typ' = Typ.struct_typ_fld ~lookup ~default:Typ.Tvoid f2 typ2 in
+            let typ' = StructTyp.fld_typ ~lookup ~default:Typ.Tvoid f2 typ2 in
             let subs', se_frame, se_missing =
               sexp_imply tenv (Exp.Lfield (source, f2, typ2)) false calc_missing subs se1 se2 typ' in
             let subs'', fld_frame, fld_missing = struct_imply tenv source calc_missing subs' fsel1' fsel2' typ2 in
@@ -1351,7 +1351,7 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 : subst2 * ((Ide
             let subs', fld_frame, fld_missing = struct_imply tenv source calc_missing subs fsel1' fsel2 typ2 in
             subs', ((f1, se1) :: fld_frame), fld_missing
         | _ ->
-            let typ' = Typ.struct_typ_fld ~lookup ~default:Typ.Tvoid f2 typ2 in
+            let typ' = StructTyp.fld_typ ~lookup ~default:Typ.Tvoid f2 typ2 in
             let subs' =
               sexp_imply_nolhs tenv (Exp.Lfield (source, f2, typ2)) calc_missing subs se2 typ' in
             let subs', fld_frame, fld_missing = struct_imply tenv source calc_missing subs' fsel1 fsel2' typ2 in
@@ -1359,7 +1359,7 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 : subst2 * ((Ide
             subs', fld_frame, fld_missing'
       end
   | [], (f2, se2) :: fsel2' ->
-      let typ' = Typ.struct_typ_fld ~lookup ~default:Typ.Tvoid f2 typ2 in
+      let typ' = StructTyp.fld_typ ~lookup ~default:Typ.Tvoid f2 typ2 in
       let subs' = sexp_imply_nolhs tenv (Exp.Lfield (source, f2, typ2)) calc_missing subs se2 typ' in
       let subs'', fld_frame, fld_missing = struct_imply tenv source calc_missing subs' [] fsel2' typ2 in
       subs'', fld_frame, (f2, se2):: fld_missing

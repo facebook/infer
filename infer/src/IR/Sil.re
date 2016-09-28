@@ -185,7 +185,7 @@ let has_objc_ref_counter tenv hpred =>
   switch hpred {
   | Hpointsto _ _ (Sizeof (Tstruct name) _ _) =>
     switch (Tenv.lookup tenv name) {
-    | Some {fields} => IList.exists Typ.is_objc_ref_counter_field fields
+    | Some {fields} => IList.exists StructTyp.is_objc_ref_counter_field fields
     | _ => false
     }
   | _ => false
