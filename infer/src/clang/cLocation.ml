@@ -18,7 +18,7 @@ let curr_file = ref DB.source_file_empty
 
 let source_file_from_path path =
   if Filename.is_relative path then
-    (Printing.log_err
+    (Logging.err_debug
        "ERROR: Path %s is relative. Please pass an absolute path in the -c argument.@."
        path;
      exit 1);
@@ -27,7 +27,7 @@ let source_file_from_path path =
       (try
          DB.rel_source_file_from_abs_path root path
        with Failure _ ->
-         Printing.log_err "ERROR: %s should be a prefix of %s.@." root path;
+         Logging.err_debug "ERROR: %s should be a prefix of %s.@." root path;
          DB.source_file_from_string path)
   | None -> DB.source_file_from_string path
 
@@ -151,6 +151,6 @@ let get_sil_location stmt_info context =
 
 let check_source_file source_file =
   if is_file_blacklisted source_file then
-    (Printing.log_stats "%s"
+    (Logging.out "%s"
        ("\n Skip the analysis of source file" ^ source_file ^ "\n\n");
      exit(0));

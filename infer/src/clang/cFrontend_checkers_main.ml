@@ -74,7 +74,7 @@ let store_issues source_file =
   LintIssues.store_issues lint_issues_file !LintIssues.errLogMap
 
 let do_frontend_checks source_file ast =
-  Printing.log_stats "Start linting file %s\n" (DB.source_file_to_string source_file);
+  Logging.out "Start linting file %s\n" (DB.source_file_to_string source_file);
   match ast with
   | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
       let context = context_with_ck_set CLintersContext.empty decl_list in
@@ -85,5 +85,5 @@ let do_frontend_checks source_file ast =
       IList.iter (do_frontend_checks_decl context) allowed_decls;
       if (LintIssues.exists_issues ()) then
         store_issues source_file;
-      Printing.log_stats "End linting file %s\n" (DB.source_file_to_string source_file)
+      Logging.out "End linting file %s\n" (DB.source_file_to_string source_file)
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)

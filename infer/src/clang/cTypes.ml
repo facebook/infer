@@ -27,7 +27,7 @@ let classname_of_type typ =
   | Typ.Tstruct name -> Typename.name name
   | Typ.Tfun _ -> CFrontend_config.objc_object
   | _ ->
-      Printing.log_out
+      Logging.out_debug
         "Classname of type cannot be extracted in type %s" (Typ.to_string typ);
       "undefined"
 
@@ -50,11 +50,11 @@ let rec return_type_of_function_type_ptr type_ptr =
   | Some BlockPointerType (_, in_type_ptr) ->
       return_type_of_function_type_ptr in_type_ptr
   | Some _ ->
-      Printing.log_err "Warning: Type pointer %s is not a function type."
+      Logging.err_debug "Warning: Type pointer %s is not a function type."
         (Clang_ast_types.type_ptr_to_string type_ptr);
       `ErrorType
   | None ->
-      Printing.log_err "Warning: Type pointer %s not found."
+      Logging.err_debug "Warning: Type pointer %s not found."
         (Clang_ast_types.type_ptr_to_string type_ptr);
       `ErrorType
 
@@ -83,9 +83,9 @@ let get_name_from_type_pointer custom_type_pointer =
 let rec get_type_list nn ll =
   match ll with
   | [] -> []
-  | (n, t):: ll' -> (* Printing.log_out ">>>>>Searching for type '%s'. Seen '%s'.@." nn n; *)
+  | (n, t):: ll' -> (* Logging.out_debug ">>>>>Searching for type '%s'. Seen '%s'.@." nn n; *)
       if n = nn then (
-        Printing.log_out ">>>>>>>>>>>>>>>>>>>>>>>NOW Found, Its type is: '%s'@."
+        Logging.out_debug ">>>>>>>>>>>>>>>>>>>>>>>NOW Found, Its type is: '%s'@."
           (Typ.to_string t);
         [t]
       ) else get_type_list nn ll'

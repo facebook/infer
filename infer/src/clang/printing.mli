@@ -9,12 +9,6 @@
 
 open! Utils
 
-val log_out : ('a, Format.formatter, unit) format -> 'a
-
-val log_err : ('a, Format.formatter, unit) format -> 'a
-
-val log_stats : ('a, Format.formatter, unit) format -> 'a
-
 val print_failure_info : string -> unit
 
 val print_tenv : Tenv.t -> unit

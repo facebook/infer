@@ -22,7 +22,7 @@ module L = Logging
 let extract_item_from_singleton l warning_string failure_val =
   match l with
   | [item] -> item
-  | _ -> Printing.log_err "%s" warning_string; failure_val
+  | _ -> Logging.err_debug "%s" warning_string; failure_val
 
 let dummy_exp = (Exp.minus_one, Typ.Tint Typ.IInt)
 
@@ -211,11 +211,11 @@ struct
   let try_claim_priority_node trans_state stmt_info =
     match trans_state.priority with
     | Free ->
-        Printing.log_out "Priority is free. Locking priority node in %d\n@."
+        Logging.out_debug "Priority is free. Locking priority node in %d\n@."
           stmt_info.Clang_ast_t.si_pointer;
         { trans_state with priority = Busy stmt_info.Clang_ast_t.si_pointer }
     | _ ->
-        Printing.log_out "Priority busy in %d. No claim possible\n@."
+        Logging.out_debug "Priority busy in %d. No claim possible\n@."
           stmt_info.Clang_ast_t.si_pointer;
         trans_state
 
@@ -434,7 +434,7 @@ let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
       let instrs, deref_exp = dereference_var_sil (exp, typ) sil_loc in
       instrs, (deref_exp, cast_typ)
   | _ ->
-      Printing.log_err
+      Logging.err_debug
         "\nWARNING: Missing translation for Cast Kind %s. The construct has been ignored...\n"
         (Clang_ast_j.string_of_cast_kind cast_kind);
       ([], (exp, cast_typ))
@@ -570,7 +570,7 @@ let rec get_type_from_exp_stmt stmt =
   | ImplicitCastExpr(_, stmt_list, _, _) ->
       get_type_from_exp_stmt (extract_stmt_from_singleton stmt_list "WARNING: We expect only one stmt.")
   | DeclRefExpr(_, _, _, info) -> do_decl_ref_exp info
-  | _ -> Printing.log_err "Failing with: %s \n%!" (Clang_ast_j.string_of_stmt stmt);
+  | _ -> Logging.err_debug "Failing with: %s \n%!" (Clang_ast_j.string_of_stmt stmt);
       Printing.print_failure_info "";
       assert false
 
@@ -747,7 +747,7 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
 let extract_item_from_option op warning_string =
   match op with
   | Some item -> item
-  | _ -> Printing.log_err warning_string; assert false
+  | _ -> Logging.err_debug warning_string; assert false
 
 let extract_id_from_singleton id_list warning_string =
   extract_item_from_singleton id_list warning_string (dummy_id ())

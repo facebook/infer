@@ -228,12 +228,12 @@ let get_method_name_from_clang tenv ms_opt =
 let get_superclass_curr_class_objc context =
   let retrive_super cname super_opt =
     let iname = Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string cname) in
-    Printing.log_out "Checking for superclass = '%s'\n\n%!" (Typename.to_string iname);
+    Logging.out_debug "Checking for superclass = '%s'\n\n%!" (Typename.to_string iname);
     match Tenv.lookup (CContext.get_tenv context) iname with
     | Some { supers = super_name :: _ } ->
         Typename.name super_name
     | _ ->
-        Printing.log_err "NOT FOUND superclass = '%s'\n\n%!" (Typename.to_string iname);
+        Logging.err_debug "NOT FOUND superclass = '%s'\n\n%!" (Typename.to_string iname);
         (match super_opt with
          | Some super -> super
          | _ -> assert false) in
@@ -395,8 +395,8 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
         ~shift:(IList.length captured_mangled)
         (CMethod_signature.ms_get_args ms) in
     let source_range = CMethod_signature.ms_get_loc ms in
-    Printing.log_out "\nCreating a new procdesc for function: '%s'\n@." pname;
-    Printing.log_out "\nms = %s\n@." (CMethod_signature.ms_to_string ms);
+    Logging.out_debug "\nCreating a new procdesc for function: '%s'\n@." pname;
+    Logging.out_debug "\nms = %s\n@." (CMethod_signature.ms_to_string ms);
     let loc_start = CLocation.get_sil_location_from_range source_range true in
     let loc_exit = CLocation.get_sil_location_from_range source_range false in
     let ret_type = get_return_type tenv ms in

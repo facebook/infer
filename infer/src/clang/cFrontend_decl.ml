@@ -32,7 +32,7 @@ struct
   (* Translates the method/function's body into nodes of the cfg. *)
   let add_method tenv cg cfg class_decl_opt procname body has_return_param is_objc_method
       outer_context_opt extra_instrs =
-    Printing.log_out
+    Logging.out_debug
       "\n\n>>---------- ADDING METHOD: '%s' ---------<<\n@." (Procname.to_string procname);
     try
       (match Cfg.Procdesc.find_from_name cfg procname with
@@ -43,7 +43,7 @@ struct
                   has_return_param is_objc_method outer_context_opt in
               let start_node = Cfg.Procdesc.get_start_node procdesc in
               let exit_node = Cfg.Procdesc.get_exit_node procdesc in
-              Printing.log_out
+              Logging.out_debug
                 "\n\n>>---------- Start translating body of function: '%s' ---------<<\n@."
                 (Procname.to_string procname);
               let meth_body_nodes = T.instructions_trans context body extra_instrs exit_node in
@@ -56,8 +56,7 @@ struct
     | CTrans_utils.Self.SelfClassException _ ->
         assert false (* this shouldn't happen, because self or [a class] should always be arguments of functions. This is to make sure I'm not wrong. *)
     | Assert_failure (file, line, column) ->
-        print_endline ("Fatal error: exception Assert_failure("^
-                       file^", "^(string_of_int line)^", "^(string_of_int column)^")");
+        Logging.out "Fatal error: exception Assert_failure(%s, %d, %d)\n%!" file line column;
         Cfg.Procdesc.remove cfg procname true;
         CMethod_trans.create_external_procdesc cfg procname is_objc_method None;
         ()
@@ -133,7 +132,7 @@ struct
     | EmptyDecl _
     | ObjCIvarDecl _ | ObjCPropertyDecl _ -> ()
     | _ ->
-        Printing.log_stats
+        Logging.out
           "\nWARNING: found Method Declaration '%s' skipped. NEED TO BE FIXED\n\n" (Ast_utils.string_of_decl dec);
         ()
 
@@ -222,7 +221,7 @@ struct
                 if Config.cxx_experimental then
                   process_methods tenv cg cfg curr_class [dec]
             | Some dec ->
-                Printing.log_stats "Methods of %s skipped\n" (Ast_utils.string_of_decl dec)
+                Logging.out "Methods of %s skipped\n" (Ast_utils.string_of_decl dec)
             | None -> ())
        | _ -> ());
     match dec with
@@ -244,7 +243,7 @@ struct
         IList.iter (translate_one_declaration tenv cg cfg decl_trans_context) method_decls
     | EnumDecl _ -> ignore (CEnum_decl.enum_decl dec)
     | LinkageSpecDecl (_, decl_list, _) ->
-        Printing.log_out "ADDING: LinkageSpecDecl decl list\n";
+        Logging.out_debug "ADDING: LinkageSpecDecl decl list\n";
         IList.iter (translate_one_declaration tenv cg cfg decl_trans_context) decl_list
     | NamespaceDecl (_, _, decl_list, _, _) ->
         IList.iter (translate_one_declaration tenv cg cfg decl_trans_context) decl_list

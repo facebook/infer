@@ -186,7 +186,7 @@ struct
   let get_decl decl_ptr =
     try
       Some (Clang_ast_main.PointerMap.find decl_ptr !CFrontend_config.pointer_decl_index)
-    with Not_found -> Printing.log_stats "decl with pointer %d not found\n" decl_ptr; None
+    with Not_found -> Logging.out "decl with pointer %d not found\n" decl_ptr; None
 
   let get_decl_opt decl_ptr_opt =
     match decl_ptr_opt with
@@ -196,7 +196,7 @@ struct
   let get_stmt stmt_ptr =
     try
       Some (Clang_ast_main.PointerMap.find stmt_ptr !CFrontend_config.pointer_stmt_index)
-    with Not_found -> Printing.log_stats "stmt with pointer %d not found\n" stmt_ptr; None
+    with Not_found -> Logging.out "stmt with pointer %d not found\n" stmt_ptr; None
 
   let get_stmt_opt stmt_ptr_opt =
     match stmt_ptr_opt with
@@ -211,7 +211,7 @@ struct
   let get_property_of_ivar decl_ptr =
     try
       Some (Clang_ast_main.PointerMap.find decl_ptr !CFrontend_config.ivar_to_property_index)
-    with Not_found -> Printing.log_stats "property with pointer %d not found\n" decl_ptr; None
+    with Not_found -> Logging.out "property with pointer %d not found\n" decl_ptr; None
 
   let update_sil_types_map type_ptr sil_type =
     CFrontend_config.sil_types_map :=
@@ -240,11 +240,11 @@ struct
       (let raw_ptr = Clang_ast_types.type_ptr_to_clang_pointer type_ptr in
        try
          Some (Clang_ast_main.PointerMap.find raw_ptr !CFrontend_config.pointer_type_index)
-       with Not_found -> Printing.log_stats "type with pointer %d not found\n" raw_ptr; None)
+       with Not_found -> Logging.out "type with pointer %d not found\n" raw_ptr; None)
     with Clang_ast_types.Not_Clang_Pointer ->
       (* otherwise, function fails *)
       let type_str = Clang_ast_types.type_ptr_to_string type_ptr in
-      Printing.log_stats "type %s is not clang pointer\n" type_str;
+      Logging.out "type %s is not clang pointer\n" type_str;
       None
 
   let get_desugared_type type_ptr =

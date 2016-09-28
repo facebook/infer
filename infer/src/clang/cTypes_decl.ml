@@ -87,7 +87,7 @@ let get_class_methods class_name decl_list =
     | Clang_ast_t.CXXConversionDecl (_, name_info, _, fdi, mdi)
     | Clang_ast_t.CXXDestructorDecl (_, name_info, _, fdi, mdi) ->
         let method_name = name_info.Clang_ast_t.ni_name in
-        Printing.log_out "  ...Declaring method '%s'.\n" method_name;
+        Logging.out_debug "  ...Declaring method '%s'.\n" method_name;
         let mangled = General_utils.get_mangled_method_name fdi mdi in
         let procname =
           General_utils.mk_procname_from_cpp_method class_name method_name ~meth_decl mangled in

@@ -89,8 +89,10 @@ let out_formatter, err_formatter =
   in
   if Config.should_log_current_exe then
     let log_dir = Config.results_dir // Config.log_dir_name in
+    let exe_log_dir = log_dir // Config.log_dir_of_current_exe in
     create_dir Config.results_dir;
     create_dir log_dir;
+    create_dir exe_log_dir;
     let out_file, err_file = Config.tmp_log_files_of_current_exe () in
     let out_fmt, out_chan = open_output_file out_file in
     let err_fmt, err_chan = open_output_file err_file in
@@ -124,27 +126,41 @@ let set_delayed_prints new_delayed_actions =
 let do_print fmt fmt_string =
   F.fprintf fmt fmt_string
 
-let do_print_in_debug_mode fmt fmt_string =
+let do_print_in_debug_or_stats_mode fmt fmt_string =
   if Config.debug_mode || Config.stats_mode then
     F.fprintf fmt fmt_string
   else
     F.ifprintf fmt fmt_string
 
-(** print to the current out stream (note: only prints in debug mode) *)
+let do_print_in_debug_mode fmt fmt_string =
+  if Config.debug_mode then
+    F.fprintf fmt fmt_string
+  else
+    F.ifprintf fmt fmt_string
+
+(** print to the current out stream (note: only prints in debug or stats mode) *)
 let out fmt_string =
+  do_print_in_debug_or_stats_mode out_formatter fmt_string
+
+(** print to the current out stream (note: only prints in debug mode) *)
+let out_debug fmt_string =
   do_print_in_debug_mode out_formatter fmt_string
 
 (** print to the current out stream  *)
 let do_out fmt_string =
   do_print out_formatter fmt_string
 
-(** print to the current err stream (note: only prints in debug mode) *)
+(** print to the current err stream (note: only prints in debug or stats mode) *)
 let err fmt_string =
-  do_print_in_debug_mode err_formatter fmt_string
+  do_print_in_debug_or_stats_mode err_formatter fmt_string
 
 (** print to the current err stream  *)
 let do_err fmt_string =
   do_print err_formatter fmt_string
+
+(** print to the current out stream (note: only prints in debug mode) *)
+let err_debug fmt_string =
+  do_print_in_debug_mode err_formatter fmt_string
 
 (** print immediately to standard error *)
 let stderr fmt_string =

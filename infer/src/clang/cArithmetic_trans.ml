@@ -131,7 +131,7 @@ let binary_operation_instruction boi e1 typ e2 loc rhs_owning_method =
   (* We should not get here.  *)
   (* These should be treated by compound_assignment_binary_operation_instruction*)
   | bok ->
-      Printing.log_stats
+      Logging.out
         "\nWARNING: Missing translation for Binary Operator Kind %s. Construct ignored...\n"
         (Clang_ast_j.string_of_binary_operator_kind bok);
       (Exp.minus_one, [])
@@ -178,7 +178,7 @@ let unary_operation_instruction uoi e typ loc =
       (e, [])
   | `AddrOf -> (e, [])
   | `Real | `Imag | `Extension | `Coawait ->
-      Printing.log_stats
+      Logging.out
         "\nWARNING: Missing translation for Unary Operator Kind %s. The construct has been ignored...\n" uok;
       (e, [])
 

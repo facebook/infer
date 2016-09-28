@@ -597,7 +597,8 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
       let translated_stmt, op = translate bdi.bdi_parameters s block_decl bei.ei_type_ptr in
       CompoundStmt (stmt_info, translated_stmt), vars_to_register @ op @ bv
   | _ -> (* When it is not the method we expect with only one parameter, we don't translate *)
-      Printing.log_out "WARNING: Block Enumeration called at %s not translated." (Clang_ast_j.string_of_stmt_info stmt_info);
+      Logging.out_debug "WARNING: Block Enumeration called at %s not translated."
+        (Clang_ast_j.string_of_stmt_info stmt_info);
       CompoundStmt (stmt_info, stmt_list), []
 
 (* We translate the logical negation of an integer with a conditional*)

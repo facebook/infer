@@ -40,7 +40,7 @@ let get_methods curr_class decl_list =
         let is_instance = method_decl_info.Clang_ast_t.omdi_is_instance_method in
         let method_kind = Procname.objc_method_kind_of_bool is_instance in
         let method_name = name_info.Clang_ast_t.ni_name in
-        Printing.log_out "  ...Adding Method '%s' \n" (class_name^"_"^method_name);
+        Logging.out_debug "  ...Adding Method '%s' \n" (class_name^"_"^method_name);
         let meth_name = General_utils.mk_procname_from_objc_method class_name method_name method_kind in
         meth_name:: list_methods
     | _ -> list_methods in

@@ -72,11 +72,20 @@ val set_delayed_prints : print_action list -> unit
 (** reset the delayed print actions *)
 val reset_delayed_prints : unit -> unit
 
-(** print to the current out stream (note: only prints in developer mode) *)
+(** print to the current out stream
+    (note: only prints in debug or in stats mode) *)
 val out : ('a, Format.formatter, unit) format -> 'a
 
-(** print to the current error stream (note: only prints in developer mode) *)
+(** print to the current out stream
+    (note: only prints in debug mode) *)
+val out_debug : ('a, Format.formatter, unit) format -> 'a
+
+(** print to the current error stream
+    (note: only prints in debug or stats mode) *)
 val err : ('a, Format.formatter, unit) format -> 'a
+
+(** print to the current error stream (note: only prints in debug mode) *)
+val err_debug : ('a, Format.formatter, unit) format -> 'a
 
 (** print to the current out stream  *)
 val do_out : ('a, Format.formatter, unit) format -> 'a

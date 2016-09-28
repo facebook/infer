@@ -21,8 +21,6 @@ ETC_DIR="${SCRIPT_DIR}/../../etc"
 CLANG_COMPILER="${SCRIPT_DIR}/filter_args_and_run_fcp_clang"
 # extension of the file containing the clang cmd intercepted
 CMD_FILE_EXT=".sh"
-# extension of the file containing the output of the Infer Clang frontend
-INFERCLANG_LOG_FILE_EXT=".astlog"
 # path of the plugin to load in clang
 PLUGIN_PATH="${SCRIPT_DIR}/../../../facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib"
 # name of the plugin to use
@@ -153,19 +151,13 @@ else
         echo "bdump -x -d ${ETC_DIR}/clang_ast.dict -w '!!DUMMY!!' ${OBJECT_FILENAME}.biniou " \
              "> ${OBJECT_FILENAME}.bdump" \
              >> "${OBJECT_FILENAME}${CMD_FILE_EXT}"
-        # Emit the InferClang cmd used to run the frontend
-        INFER_FRONTEND_LOG_FILE="${OBJECT_FILENAME}${INFERCLANG_LOG_FILE_EXT}"
-        echo "${INFER_FRONTEND_CMD[@]}" > "$INFER_FRONTEND_LOG_FILE"
-    else
-        INFER_FRONTEND_LOG_FILE="/dev/null"
     fi
 fi
 
 # run clang and pipe its output to InferClang/InferLLVM, or flush it in case the latter crashes
 "${CLANG_CMD[@]}" | \
   ("${INFER_FRONTEND_CMD[@]}" || \
-   { EC=$?; cat > /dev/null; exit $EC; }) \
-  >> "$INFER_FRONTEND_LOG_FILE" 2>&1
+   { EC=$?; cat > /dev/null; exit $EC; }) 2>&1
 STATUSES=("${PIPESTATUS[@]}")
 STATUS="${STATUSES[0]}"
 INFER_STATUS="${STATUSES[1]}"

@@ -18,7 +18,7 @@ module L = Logging
 type field_type = Ident.fieldname * Typ.t * (Annot.t * bool) list
 
 let rec get_fields_super_classes tenv super_class =
-  Printing.log_out "   ... Getting fields of superclass '%s'\n" (Typename.to_string super_class);
+  Logging.out_debug "   ... Getting fields of superclass '%s'\n" (Typename.to_string super_class);
   match Tenv.lookup tenv super_class with
   | None -> []
   | Some { fields; supers = super_class :: _ } ->
@@ -85,7 +85,7 @@ let add_missing_fields tenv class_name ck missing_fields =
   | Some ({ fields } as struct_typ) ->
       let new_fields = General_utils.append_no_duplicates_fields fields missing_fields in
       ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:new_fields ~statics:[] class_tn_name);
-      Printing.log_out " Updating info for class '%s' in tenv\n" class_name
+      Logging.out_debug " Updating info for class '%s' in tenv\n" class_name
   | _ -> ()
 
 let modelled_fields_in_classes = [("NSData", "_bytes", Typ.Tptr (Typ.Tvoid, Typ.Pk_pointer))]

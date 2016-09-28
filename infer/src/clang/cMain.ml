@@ -23,14 +23,14 @@ let validate_decl_from_file fname =
   try
     Ag_util.Biniou.from_file ~len:buffer_len Clang_ast_b.read_decl fname
   with (Invalid_argument "Bi_inbuf.refill_from_channel") ->
-    Printing.log_stats "WARNING: biniou buffer too short, skipping the file\n";
+    Logging.out "WARNING: biniou buffer too short, skipping the file\n";
     assert false
 
 let validate_decl_from_stdin () =
   try
     Ag_util.Biniou.from_channel ~len:buffer_len Clang_ast_b.read_decl stdin
   with (Invalid_argument "Bi_inbuf.refill_from_channel") ->
-    Printing.log_stats "WARNING: biniou buffer too short, skipping the file\n";
+    Logging.out "WARNING: biniou buffer too short, skipping the file\n";
     assert false
 
 let register_perf_stats_report source_file =
@@ -51,7 +51,7 @@ let do_run source_path ast_path =
   let init_time = Unix.gettimeofday () in
   let print_elapsed () =
     let elapsed = Unix.gettimeofday () -. init_time in
-    Printf.printf "Elapsed: %07.3f seconds.\n" elapsed in
+    Logging.out "Elapsed: %07.3f seconds.\n" elapsed in
   try
     let ast_filename, ast_decl =
       match ast_path with
@@ -69,19 +69,19 @@ let do_run source_path ast_path =
     CFrontend_config.json := ast_filename;
     CLocation.check_source_file source_path;
     let source_file = CLocation.source_file_from_path source_path in
-    Printing.log_stats "Clang frontend action is  %s\n" Config.clang_frontend_action_string;
-    Printf.printf "Start %s of AST from %s\n" Config.clang_frontend_action_string
+    Logging.out "Clang frontend action is  %s\n" Config.clang_frontend_action_string;
+    Logging.out "Start %s of AST from %s\n" Config.clang_frontend_action_string
       !CFrontend_config.json;
     init_global_state_for_capture_and_linters source_file;
     if Config.clang_frontend_do_lint then
       CFrontend_checkers_main.do_frontend_checks source_file ast_decl;
     if Config.clang_frontend_do_capture then
       CFrontend.do_source_file source_file ast_decl;
-    Printf.printf "End translation AST file %s... OK!\n" !CFrontend_config.json;
+    Logging.out "End translation AST file %s... OK!\n" !CFrontend_config.json;
     print_elapsed ();
   with
     (Yojson.Json_error s) as exc ->
-      Printing.log_err "%s\n" s;
+      Logging.err_debug "%s\n" s;
       print_elapsed ();
       raise exc
 
@@ -90,5 +90,5 @@ let () =
   | Some path ->
       do_run path Config.ast_file
   | None ->
-      Printing.log_err "Incorrect command line arguments\n";
+      Logging.err_debug "Incorrect command line arguments\n";
       Config.print_usage_exit ()

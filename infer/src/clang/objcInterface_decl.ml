@@ -96,7 +96,7 @@ let create_supers_fields type_ptr_to_sil_type tenv curr_class decl_list
 (* Adds pairs (interface name, interface_type_info) to the global environment. *)
 let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info decl_list ocidi =
   let class_name = Ast_utils.get_qualified_name name_info in
-  Printing.log_out "ADDING: ObjCInterfaceDecl for '%s'\n" class_name;
+  Logging.out_debug "ADDING: ObjCInterfaceDecl for '%s'\n" class_name;
   let interface_name = CTypes.mk_classname class_name Csu.Objc in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   Ast_utils.update_sil_types_map decl_key (Typ.Tstruct interface_name);
@@ -107,8 +107,8 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
   let methods = ObjcProperty_decl.get_methods curr_class decl_list in
   let fields_sc = CField_decl.fields_superclass tenv ocidi Csu.Objc in
   IList.iter (fun (fn, ft, _) ->
-      Printing.log_out "----->SuperClass field: '%s' " (Ident.fieldname_to_string fn);
-      Printing.log_out "type: '%s'\n" (Typ.to_string ft)) fields_sc;
+      Logging.out_debug "----->SuperClass field: '%s' " (Ident.fieldname_to_string fn);
+      Logging.out_debug "type: '%s'\n" (Typ.to_string ft)) fields_sc;
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
   let fields, (supers : Typename.t list), methods =
     match Tenv.lookup tenv interface_name with
@@ -121,19 +121,19 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
   (* We add the special hidden counter_field for implementing reference counting *)
   let modelled_fields = StructTyp.objc_ref_counter_field :: CField_decl.modelled_field name_info in
   let all_fields = General_utils.append_no_duplicates_fields modelled_fields fields in
-  Printing.log_out "Class %s field:\n" class_name;
+  Logging.out_debug "Class %s field:\n" class_name;
   IList.iter (fun (fn, _, _) ->
-      Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) all_fields;
+      Logging.out_debug "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) all_fields;
   ignore(
     Tenv.mk_struct tenv
       ~fields: all_fields ~supers ~methods ~annots:Annot.Class.objc interface_name );
-  Printing.log_out
+  Logging.out_debug
     "  >>>Verifying that Typename '%s' is in tenv\n" (Typename.to_string interface_name);
   (match Tenv.lookup tenv interface_name with
    | Some st ->
-       Printing.log_out "  >>>OK. Found typ='%a'\n"
+       Logging.out_debug "  >>>OK. Found typ='%a'\n"
          (StructTyp.pp pe_text (fun _ () -> ()) interface_name) st
-   | None -> Printing.log_out "  >>>NOT Found!!\n");
+   | None -> Logging.out_debug "  >>>NOT Found!!\n");
   Typ.Tstruct interface_name
 
 let add_missing_methods tenv class_name ck decl_info decl_list curr_class =
@@ -173,7 +173,7 @@ let interface_impl_declaration type_ptr_to_sil_type tenv decl =
   match decl with
   | ObjCImplementationDecl (decl_info, name_info, decl_list, _, idi) ->
       let class_name = Ast_utils.get_qualified_name name_info in
-      Printing.log_out "ADDING: ObjCImplementationDecl for class '%s'\n" class_name;
+      Logging.out_debug "ADDING: ObjCImplementationDecl for class '%s'\n" class_name;
       let _ = add_class_decl type_ptr_to_sil_type tenv idi in
       let curr_class = get_curr_class_impl idi in
       let fields = CField_decl.get_fields type_ptr_to_sil_type tenv curr_class decl_list in

@@ -143,11 +143,11 @@ and decl_ptr_to_sil_type translate_decl tenv decl_ptr =
   | Some (ObjCCategoryImplDecl _ as d)
   | Some (EnumDecl _ as d) -> translate_decl tenv d
   | Some _ ->
-      Printing.log_err "Warning: Wrong decl found for  pointer %s "
+      Logging.err_debug "Warning: Wrong decl found for  pointer %s "
         (Clang_ast_j.string_of_pointer decl_ptr);
       Typ.Tvoid
   | None ->
-      Printing.log_err "Warning: Decl pointer %s not found."
+      Logging.err_debug "Warning: Decl pointer %s not found."
         (Clang_ast_j.string_of_pointer decl_ptr);
       Typ.Tvoid
 
@@ -166,7 +166,7 @@ and prebuilt_type_to_sil_type type_ptr =
   try
     Clang_ast_types.TypePointerMap.find type_ptr !CFrontend_config.sil_types_map
   with Not_found ->
-    Printing.log_stats "Prebuilt type %s not found\n"
+    Logging.out "Prebuilt type %s not found\n"
       (Clang_ast_types.type_ptr_to_string type_ptr);
     assert false
 

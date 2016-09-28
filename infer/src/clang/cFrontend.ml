@@ -24,12 +24,12 @@ let compute_icfg source tenv ast =
   match ast with
   | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
       CFrontend_config.global_translation_unit_decls := decl_list;
-      Printing.log_out "\n Start creating icfg\n";
+      Logging.out_debug "\n Start creating icfg\n";
       let cg = Cg.create (Some source) in
       let cfg = Cfg.Node.create_cfg () in
       IList.iter (CFrontend_declImpl.translate_one_declaration tenv cg cfg `DeclTraversal)
         decl_list;
-      Printing.log_out "\n Finished creating icfg\n";
+      Logging.out_debug "\n Finished creating icfg\n";
       (cg, cfg)
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
 
@@ -43,10 +43,10 @@ let do_source_file source_file ast =
   CTypes_decl.add_predefined_types tenv;
   init_global_state_capture ();
   Config.nLOC := FileLOC.file_get_loc (DB.source_file_to_string source_file);
-  Printing.log_out "\n Start building call/cfg graph for '%s'....\n"
+  Logging.out_debug "\n Start building call/cfg graph for '%s'....\n"
     (DB.source_file_to_string source_file);
   let call_graph, cfg = compute_icfg source_file tenv ast in
-  Printing.log_out "\n End building call/cfg graph for '%s'.\n"
+  Logging.out_debug "\n End building call/cfg graph for '%s'.\n"
     (DB.source_file_to_string source_file);
   (* This part below is a boilerplate in every frontends. *)
   (* This could be moved in the cfg_infer module *)

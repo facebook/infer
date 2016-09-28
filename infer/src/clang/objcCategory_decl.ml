@@ -84,7 +84,7 @@ let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
        ignore(
          Tenv.mk_struct tenv
            ~default:struct_typ ~fields:new_fields ~statics:[] ~methods:new_methods class_tn_name );
-       Printing.log_out " Updating info for class '%s' in tenv\n" class_name
+       Logging.out_debug " Updating info for class '%s' in tenv\n" class_name
    | _ -> ());
   Typ.Tstruct class_tn_name
 
@@ -94,7 +94,7 @@ let category_decl type_ptr_to_sil_type tenv decl =
   | ObjCCategoryDecl (decl_info, name_info, decl_list, _, cdi) ->
       let name = Ast_utils.get_qualified_name name_info in
       let curr_class = get_curr_class_from_category_decl name cdi in
-      Printing.log_out "ADDING: ObjCCategoryDecl for '%s'\n" name;
+      Logging.out_debug "ADDING: ObjCCategoryDecl for '%s'\n" name;
       let _ = add_class_decl type_ptr_to_sil_type tenv cdi in
       let typ = process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list in
       let _ = add_category_implementation type_ptr_to_sil_type tenv cdi in
@@ -107,7 +107,7 @@ let category_impl_decl type_ptr_to_sil_type tenv decl =
   | ObjCCategoryImplDecl (decl_info, name_info, decl_list, _, cii) ->
       let name = Ast_utils.get_qualified_name name_info in
       let curr_class = get_curr_class_from_category_impl name cii in
-      Printing.log_out "ADDING: ObjCCategoryImplDecl for '%s'\n" name;
+      Logging.out_debug "ADDING: ObjCCategoryImplDecl for '%s'\n" name;
       let _ = add_category_decl type_ptr_to_sil_type tenv cii in
       let typ = process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list in
       typ

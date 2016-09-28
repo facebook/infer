@@ -182,8 +182,12 @@ module FilenameMap = Map.Make(
 
 (** Return the time when a file was last modified. The file must exist. *)
 let file_modified_time ?(symlink=false) fname =
-  let stat = (if symlink then Unix.lstat else Unix.stat) fname in
-  stat.Unix.st_mtime
+  try
+    let stat = (if symlink then Unix.lstat else Unix.stat) fname in
+    stat.Unix.st_mtime
+  with Unix.Unix_error _ ->
+    Logging.do_err "File %s does not exist." fname;
+    exit 1
 
 (** Create a directory if it does not exist already. *)
 let create_dir dir =
