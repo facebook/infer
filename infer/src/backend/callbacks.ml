@@ -25,6 +25,7 @@ type proc_callback_args = {
 type proc_callback_t = proc_callback_args -> unit
 
 type cluster_callback_t =
+  Exe_env.t ->
   Procname.t list ->
   (Procname.t -> Cfg.Procdesc.t option) ->
   (Idenv.t * Tenv.t * Procname.t * Cfg.Procdesc.t) list ->
@@ -129,7 +130,7 @@ let iterate_cluster_callbacks all_procs exe_env proc_names =
     (fun (language_opt, cluster_callback) ->
        let proc_names = relevant_procedures language_opt in
        if IList.length proc_names > 0 then
-         cluster_callback all_procs get_procdesc environment)
+         cluster_callback exe_env all_procs get_procdesc environment)
     !cluster_callbacks
 
 (** Invoke all procedure and cluster callbacks on a given environment. *)

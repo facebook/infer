@@ -80,30 +80,6 @@ let load_attributes proc_name =>
   };
 
 
-/** Given a procedure name, find the file where it is defined and its corresponding type
-    environment */
-let find_tenv_from_class_of_proc procname =>
-  switch (load_attributes procname) {
-  | None => None
-  | Some attrs =>
-    let source_file = attrs.ProcAttributes.loc.Location.file;
-    let source_dir = DB.source_dir_from_source_file source_file;
-    let tenv_fname = DB.source_dir_get_internal_file source_dir ".tenv";
-    Tenv.load_from_file tenv_fname
-  };
-
-
-/** Given a procedure name, find the file where it is defined and its corresponding type
-    environment, or create an empty tenv if necessary. */
-let get_tenv proc_name =>
-  switch (find_tenv_from_class_of_proc proc_name) {
-  | Some tenv => tenv
-  /* ToDo: a tenv should always be found, it should not be necessary to create one here */
-  | None => Tenv.create ()
-  | exception _ => Tenv.create ()
-  };
-
-
 /** Given the name of an ObjC class, extract the type from the tenv where the class was defined. We
     do this by adding a method that is unique to each class, and then finding the tenv that
     corresponds to the class definition. */

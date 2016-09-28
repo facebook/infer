@@ -77,11 +77,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module Domain = Domain
   type extras = extras_t
 
-  let stacktree_of_astate pdesc astate loc location_type get_proc_desc =
+  let stacktree_of_astate tenv pdesc astate loc location_type get_proc_desc =
     let procs = Domain.elements astate in
     let callees = IList.map
         (fun pn ->
-           let tenv = AttributesTable.get_tenv pn in
            match SpecSummary.read_summary tenv pdesc pn with
            | None | Some None -> (match get_proc_desc pn with
                | None -> stacktree_stub_of_procname pn
@@ -95,10 +94,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         procs in
     stacktree_of_pdesc pdesc ~loc ~callees location_type
 
-  let output_json_summary pdesc astate loc location_type get_proc_desc =
+  let output_json_summary tenv pdesc astate loc location_type get_proc_desc =
     let caller = Cfg.Procdesc.get_proc_name pdesc in
     let stacktree =
-      stacktree_of_astate pdesc astate loc location_type get_proc_desc in
+      stacktree_of_astate tenv pdesc astate loc location_type get_proc_desc in
     let dir = Filename.concat Config.results_dir "crashcontext" in
     let suffix = F.sprintf "%s_%d" location_type loc.Location.line in
     let fname = F.sprintf "%s.%s.json"
@@ -112,6 +111,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Call (_, Const (Const.Cfun pn), _, loc, _) ->
         let get_proc_desc = proc_data.ProcData.extras.get_proc_desc in
         let traces = proc_data.ProcData.extras.stacktraces in
+        let tenv = proc_data.ProcData.tenv in
         let caller = Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc in
         let matches_proc frame =
           let matches_class pname = match pname with
@@ -136,7 +136,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             let new_astate = Domain.add pn astate in
             if Stacktrace.frame_matches_location frame loc then begin
               let pdesc = proc_data.ProcData.pdesc in
-              output_json_summary pdesc new_astate loc "call_site" get_proc_desc
+              output_json_summary tenv pdesc new_astate loc "call_site" get_proc_desc
             end;
             new_astate
           with

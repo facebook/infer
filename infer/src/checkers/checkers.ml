@@ -187,11 +187,11 @@ let callback_check_access { Callbacks.tenv; proc_desc } =
   Cfg.Procdesc.iter_instrs (report_calls_and_accesses tenv "PROC") proc_desc
 
 (** Report all field accesses and method calls of a class. *)
-let callback_check_cluster_access all_procs get_proc_desc _ =
+let callback_check_cluster_access exe_env all_procs get_proc_desc _ =
   IList.iter (fun proc_name ->
       match get_proc_desc proc_name with
       | Some proc_desc ->
-          let tenv = AttributesTable.get_tenv proc_name in
+          let tenv = Exe_env.get_tenv exe_env proc_name in
           Cfg.Procdesc.iter_instrs (report_calls_and_accesses tenv "CLUSTER") proc_desc
       | _ ->
           ()

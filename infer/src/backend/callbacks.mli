@@ -29,6 +29,7 @@ type proc_callback_args = {
 type proc_callback_t = proc_callback_args -> unit
 
 type cluster_callback_t =
+  Exe_env.t ->
   Procname.t list ->
   (Procname.t -> Cfg.Procdesc.t option) ->
   (Idenv.t * Tenv.t * Procname.t * Cfg.Procdesc.t) list ->

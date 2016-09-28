@@ -22,16 +22,6 @@ let store_attributes: ProcAttributes.t => unit;
 let load_attributes: Procname.t => option ProcAttributes.t;
 
 
-/** Given a procedure name, find the file where it is defined and its corresponding type
-    environment */
-let find_tenv_from_class_of_proc: Procname.t => option Tenv.t;
-
-
-/** Given a procedure name, find the file where it is defined and its corresponding type
-    environment, or create an empty tenv if necessary. */
-let get_tenv: Procname.t => Tenv.t;
-
-
 /** Given the name of an ObjC class, extract the type from the tenv where the class was defined. We
     do this by adding a method that is unique to each class, and then finding the tenv that
     corresponds to the class definition. */
