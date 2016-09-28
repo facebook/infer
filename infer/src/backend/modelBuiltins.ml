@@ -1165,8 +1165,11 @@ let arrayWithObjects_pname = mk_objc_class_method "NSArray" "arrayWithObjects:"
 let arrayWithObjectsCount_pname = mk_objc_class_method "NSArray" "arrayWithObjects:count:"
 
 let execute_objc_NSArray_alloc_no_fail builtin_args symb_state pname =
-  let nsarray_typ = Typ.Tstruct (TN_csu (Class Objc, Mangled.from_string "NSArray")) in
-  execute_objc_alloc_no_fail symb_state nsarray_typ (Some pname) builtin_args
+  let ret_typ =
+    match builtin_args.Builtin.ret_id with
+    | Some (_, typ) -> typ
+    | None -> Typ.Tptr (Tvoid, Pk_pointer) in
+  execute_objc_alloc_no_fail symb_state ret_typ (Some pname) builtin_args
 
 let execute_NSArray_arrayWithObjects_count builtin_args =
   let n_formals = 1 in
@@ -1185,8 +1188,11 @@ let _ =
 (* NSDictionary models *)
 
 let execute_objc_NSDictionary_alloc_no_fail symb_state pname builtin_args =
-  let nsdictionary_typ = Typ.Tstruct (TN_csu (Class Objc, Mangled.from_string "NSDictionary")) in
-  execute_objc_alloc_no_fail symb_state nsdictionary_typ (Some pname) builtin_args
+  let ret_typ =
+    match builtin_args.Builtin.ret_id with
+    | Some (_, typ) -> typ
+    | None -> Typ.Tptr (Tvoid, Pk_pointer) in
+  execute_objc_alloc_no_fail symb_state ret_typ (Some pname) builtin_args
 
 let __objc_dictionary_literal_pname =
   mk_objc_class_method "NSDictionary" "dictionaryWithObjects:forKeys:count:"
