@@ -51,19 +51,16 @@ val is_getter : Procname.java -> bool
 val is_setter : Procname.java -> bool
 
 (** Is the type a direct subtype of the typename? *)
-val is_immediate_subtype : Typ.struct_typ -> Typename.t -> bool
+val is_immediate_subtype : Tenv.t -> Typename.t -> Typename.t -> bool
 
 (** Is the type a transitive subtype of the typename? *)
-val is_subtype : Tenv.t -> Typ.struct_typ -> Typ.struct_typ -> bool
+val is_subtype : Tenv.t -> Typename.t -> Typename.t -> bool
 
 (** Resolve [typ_str] in [tenv], then check [typ] <: [typ_str] *)
 val is_subtype_of_str : Tenv.t -> Typename.t -> string -> bool
 
-(** get the superclasses of [typ]. does not include [typ] itself *)
-val strict_supertype_iter : Tenv.t -> (Typ.struct_typ -> unit) -> Typ.struct_typ -> unit
-
-(** Return [true] if [f_typ] evaluates to true on a strict supertype of [orig_struct_typ] *)
-val strict_supertype_exists : Tenv.t -> (Typ.struct_typ -> bool) -> Typ.struct_typ -> bool
+(** Holds iff the predicate holds on a supertype of the named type, including the type itself *)
+val supertype_exists : Tenv.t -> (Typename.t -> Typ.struct_typ -> bool) -> Typename.t -> bool
 
 (** Get the name of the type of a constant *)
 val java_get_const_type_name : Const.t -> string

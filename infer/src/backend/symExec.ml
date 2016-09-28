@@ -496,12 +496,12 @@ let method_exists right_proc_name methods =
 let resolve_method tenv class_name proc_name =
   let found_class =
     let visited = ref Typename.Set.empty in
-    let rec resolve class_name =
+    let rec resolve (class_name: Typename.t) =
       visited := Typename.Set.add class_name !visited;
       let right_proc_name =
         Procname.replace_class proc_name (Typename.name class_name) in
-      match Tenv.lookup tenv class_name with
-      | Some { name = TN_csu (Class _, _); methods; supers } ->
+      match class_name, Tenv.lookup tenv class_name with
+      | TN_csu (Class _, _), Some { methods; supers } ->
           if method_exists right_proc_name methods then
             Some right_proc_name
           else
@@ -542,8 +542,9 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
     match pname with
     | Procname.Java pname_java ->
         begin
-          match Tenv.lookup_declaring_class tenv pname_java with
-          | Some {name} -> Typ.Tptr (Tstruct name, Pk_pointer)
+          let name = Procname.java_get_class_type_name pname_java in
+          match Tenv.lookup tenv name with
+          | Some _ -> Typ.Tptr (Tstruct name, Pk_pointer)
           | None -> fallback_typ
         end
     | _ ->

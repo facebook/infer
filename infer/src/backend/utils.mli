@@ -50,8 +50,15 @@ val opt_compare : ('a -> 'a -> int) -> 'a option -> 'a option -> int
 (** Generic comparison of pairs given a compare function for each element of the pair. *)
 val pair_compare : ('a -> 'b -> int) -> ('c -> 'd -> int) -> ('a * 'c) -> ('b * 'd) -> int
 
-(** Generic comparison of pairs given a compare function for each element of the triple. *)
-val triple_compare : ('a -> 'b -> int) -> ('c -> 'd -> int) -> ('e -> 'f -> int) -> ('a * 'c * 'e) -> ('b * 'd * 'f) -> int
+(** Generic comparison of triples given a compare function for each element of the triple. *)
+val triple_compare :
+  ('a -> 'b -> int) -> ('c -> 'd -> int) -> ('e -> 'f -> int) ->
+  ('a * 'c * 'e) -> ('b * 'd * 'f) -> int
+
+(** Generic equality of triples given an equal function for each element of the triple. *)
+val triple_equal :
+  ('a -> 'b -> bool) -> ('c -> 'd -> bool) -> ('e -> 'f -> bool) ->
+  ('a * 'c * 'e) -> ('b * 'd * 'f) -> bool
 
 (** Comparison for strings *)
 val string_compare : string -> string -> int

@@ -65,11 +65,15 @@ let pair_compare compare compare' (x1, y1) (x2, y2) =
   let n = compare x1 x2 in
   if n <> 0 then n else compare' y1 y2
 
-(** Generic comparison of pairs given a compare function for each element of the triple *)
+(** Generic comparison of triples given a compare function for each element of the triple *)
 let triple_compare compare compare' compare'' (x1, y1, z1) (x2, y2, z2) =
   let n = compare x1 x2 in
   if n <> 0 then n else let n = compare' y1 y2 in
     if n <> 0 then n else compare'' z1 z2
+
+(** Generic equality of triples given an equal function for each element of the triple *)
+let triple_equal x_equal y_equal z_equal (x1, y1, z1) (x2, y2, z2) =
+  x_equal x1 x2 && y_equal y1 y2 && z_equal z1 z2
 
 let fst3 (x,_,_) = x
 let snd3 (_,x,_) = x

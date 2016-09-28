@@ -1530,11 +1530,9 @@ struct
 
   let cloneable_type = Typename.Java.from_string "java.lang.Cloneable"
 
-  let is_interface tenv class_name =
-    match Tenv.lookup tenv class_name with
-    | Some ({ name = TN_csu (Class Java, _) } as struct_typ) ->
-        (IList.length struct_typ.fields = 0) &&
-        (IList.length struct_typ.methods = 0)
+  let is_interface tenv (class_name: Typename.t) =
+    match class_name, Tenv.lookup tenv class_name with
+    | TN_csu (Class Java, _), Some { fields = []; methods = []; } -> true
     | _ -> false
 
   let is_root_class class_name =
@@ -1547,10 +1545,10 @@ struct
 
   (** check if c1 is a subclass of c2 *)
   let check_subclass_tenv tenv c1 c2 =
-    let rec check cn =
+    let rec check (cn: Typename.t) =
       Typename.equal cn c2 || is_root_class c2 ||
-      match Tenv.lookup tenv cn with
-      | Some ({ name = TN_csu (Class _, _); supers }) ->
+      match cn, Tenv.lookup tenv cn with
+      | TN_csu (Class _, _), Some { supers } ->
           IList.exists check supers
       | _ -> false in
     check c1
@@ -1671,8 +1669,8 @@ let get_overrides_of tenv supertype pname =
             false
       )
     | _ -> false in
-  let gather_overrides tname {Typ.name} overrides_acc =
-    let typ = Typ.Tstruct name in
+  let gather_overrides tname _ overrides_acc =
+    let typ = Typ.Tstruct tname in
     (* get all types in the type environment that are non-reflexive subtypes of [supertype] *)
     if not (Typ.equal typ supertype) && Subtyping_check.check_subtype tenv typ supertype then
       (* only select the ones that implement [pname] as overrides *)

@@ -322,14 +322,16 @@ and get_class_struct_typ program tenv cn =
                   match jclass.Javalib.c_super_class with
                   | None -> interface_list (* base case of the recursion *)
                   | Some super_cn ->
-                      let super_classname = (get_class_struct_typ program tenv super_cn).Typ.name in
+                      ignore (get_class_struct_typ program tenv super_cn);
+                      let super_classname = typename_of_classname super_cn in
                       super_classname :: interface_list in
                 (super_classname_list, nonstatics, statics, item_annotation) in
           let methods = IList.map (fun j -> Procname.Java j) (get_class_procnames cn node) in
           Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots name
 
 let get_class_type_no_pointer program tenv cn =
-  Typ.Tstruct ((get_class_struct_typ program tenv cn).name)
+  ignore (get_class_struct_typ program tenv cn);
+  Typ.Tstruct (typename_of_classname cn)
 
 let get_class_type program tenv cn =
   Typ.Tptr (get_class_type_no_pointer program tenv cn, Pk_pointer)

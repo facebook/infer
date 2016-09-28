@@ -660,7 +660,7 @@ let report_context_leaks pname sigma tenv =
       Prop.compute_reachable_hpreds sigma fld_exps in
     (* raise an error if any Context expression is in [reachable_exps] *)
     IList.iter
-      (fun (context_exp, {Typ.name}) ->
+      (fun (context_exp, name) ->
          if Exp.Set.mem context_exp reachable_exps then
            let leak_path =
              match get_fld_typ_path_opt fld_exps context_exp reachable_hpreds with
@@ -675,15 +675,10 @@ let report_context_leaks pname sigma tenv =
   let context_exps =
     IList.fold_left
       (fun exps hpred -> match hpred with
-         | Sil.Hpointsto (_, Eexp (exp, _), Sizeof (Tptr (Tstruct name, _), _, _)) -> (
-             match Tenv.lookup tenv name with
-             | Some struct_typ
-               when AndroidFramework.is_context tenv struct_typ &&
-                    not (AndroidFramework.is_application tenv struct_typ) ->
-                 (exp, struct_typ) :: exps
-             | _ ->
-                 exps
-           )
+         | Sil.Hpointsto (_, Eexp (exp, _), Sizeof (Tptr (Tstruct name, _), _, _))
+           when AndroidFramework.is_context tenv name
+             && not (AndroidFramework.is_application tenv name) ->
+             (exp, name) :: exps
          | _ -> exps)
       []
       sigma in

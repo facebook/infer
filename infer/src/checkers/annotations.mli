@@ -54,9 +54,6 @@ val equal : annotated_signature -> annotated_signature -> bool
 (** Get a method signature with annotations from a proc_attributes. *)
 val get_annotated_signature : ProcAttributes.t -> annotated_signature
 
-(** Return the annotations on the declaring class of [java_pname]. *)
-val get_declaring_class_annotations : Procname.java -> Tenv.t -> Typ.item_annotation option
-
 val nullable : string
 
 (** Return true if [annot] ends with [ann_name] *)

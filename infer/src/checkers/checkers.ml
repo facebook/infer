@@ -210,11 +210,8 @@ let callback_check_write_to_parcel_java
       let class_name =
         Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "android.os.Parcelable") in
       match this_type with
-      | Typ.Tptr (Tstruct name, _) | Tstruct name -> (
-          match Tenv.lookup tenv name with
-          | Some struct_typ -> PatternMatch.is_immediate_subtype struct_typ class_name
-          | None -> false
-        )
+      | Typ.Tptr (Tstruct name, _) | Tstruct name ->
+          PatternMatch.is_immediate_subtype tenv name class_name
       | _ -> false in
     method_match () && expr_match () && type_match () in
 

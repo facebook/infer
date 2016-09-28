@@ -151,7 +151,6 @@ type struct_fields = list (Ident.fieldname, t, item_annotation);
 
 /** Type for a structured value. */
 type struct_typ = private {
-  name: Typename.t, /** name */
   fields: struct_fields, /** non-static fields */
   statics: struct_fields, /** static fields */
   supers: list Typename.t, /** supers */
@@ -166,8 +165,6 @@ type lookup = Typename.t => option struct_typ;
 let fld_typ_ann_compare:
   (Ident.fieldname, t, item_annotation) => (Ident.fieldname, t, item_annotation) => int;
 
-let struct_typ_equal: struct_typ => struct_typ => bool;
-
 
 /** Comparision for types. */
 let compare: t => t => int;
@@ -176,7 +173,8 @@ let compare: t => t => int;
 /** Equality for types. */
 let equal: t => t => bool;
 
-let pp_struct_typ: printenv => (F.formatter => unit => unit) => F.formatter => struct_typ => unit;
+let pp_struct_typ:
+  printenv => (F.formatter => unit => unit) => Typename.t => F.formatter => struct_typ => unit;
 
 
 /** [pp_decl pe pp_base f typ] pretty prints a type declaration.
@@ -203,8 +201,6 @@ let d_list: list t => unit;
 
 
 /** Sets of types. */
-let module StructSet: Set.S with type elt = struct_typ;
-
 let module Set: Set.S with type elt = t;
 
 
@@ -222,7 +218,7 @@ let internal_mk_struct:
   methods::list Procname.t? =>
   supers::list Typename.t? =>
   annots::item_annotation? =>
-  Typename.t =>
+  unit =>
   struct_typ;
 
 
@@ -251,10 +247,6 @@ let struct_typ_fld: lookup::lookup => default::t => Ident.fieldname => t => t;
 /** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] */
 let get_field_type_and_annotation:
   lookup::lookup => Ident.fieldname => t => option (t, item_annotation);
-
-
-/** if [struct_typ] is a class, return its class kind (Java, CPP, or Obj-C) */
-let struct_typ_get_class_kind: struct_typ => option Csu.class_kind;
 
 let is_objc_class: t => bool;
 

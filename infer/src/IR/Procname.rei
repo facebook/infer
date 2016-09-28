@@ -155,6 +155,10 @@ let objc_method_kind_of_bool: bool => objc_cpp_method_kind;
 let java_get_class_name: java => string;
 
 
+/** Return the class name as a typename of a java procedure name. */
+let java_get_class_type_name: java => Typename.t;
+
+
 /** Return the simple class name of a java procedure name. */
 let java_get_simple_class_name: java => string;
 

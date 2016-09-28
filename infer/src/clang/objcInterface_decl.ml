@@ -131,7 +131,8 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
     "  >>>Verifying that Typename '%s' is in tenv\n" (Typename.to_string interface_name);
   (match Tenv.lookup tenv interface_name with
    | Some st ->
-       Printing.log_out "  >>>OK. Found typ='%a'\n" (Typ.pp_struct_typ pe_text (fun _ () -> ())) st
+       Printing.log_out "  >>>OK. Found typ='%a'\n"
+         (Typ.pp_struct_typ pe_text (fun _ () -> ()) interface_name) st
    | None -> Printing.log_out "  >>>NOT Found!!\n");
   Typ.Tstruct interface_name
 
@@ -141,8 +142,8 @@ let add_missing_methods tenv class_name ck decl_info decl_list curr_class =
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   Ast_utils.update_sil_types_map decl_key (Typ.Tstruct class_tn_name);
   begin
-    match Tenv.lookup tenv class_tn_name with
-    | Some ({ statics = []; name = TN_csu (Class _, _); methods; } as struct_typ) ->
+    match class_tn_name, Tenv.lookup tenv class_tn_name with
+    | TN_csu (Class _, _), Some ({ statics = []; methods; } as struct_typ) ->
         let methods = General_utils.append_no_duplicates_methods methods decl_methods in
         ignore( Tenv.mk_struct tenv ~default:struct_typ ~methods class_tn_name )
     | _ -> ()

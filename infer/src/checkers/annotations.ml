@@ -35,13 +35,6 @@ let equal as1 as2 =
 let visibleForTesting = "com.google.common.annotations.VisibleForTesting"
 let suppressLint = "android.annotation.SuppressLint"
 
-
-(** Return the annotations on the declaring class of [pname]. Only works for Java *)
-let get_declaring_class_annotations pname tenv =
-  match Tenv.lookup_declaring_class tenv pname with
-  | Some { annots } -> Some annots
-  | None -> None
-
 let ia_iter f =
   let ann_iter (a, _) = f a in
   IList.iter ann_iter

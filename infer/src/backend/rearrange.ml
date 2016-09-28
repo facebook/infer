@@ -106,7 +106,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         ([], Sil.Estruct ([], inst), t)
     | Tstruct name, (Off_fld (f, _)) :: off' -> (
         match Tenv.lookup tenv name with
-        | Some ({ name; fields; statics; } as struct_typ) -> (
+        | Some ({ fields; statics; } as struct_typ) -> (
             match IList.find (fun (f', _, _) -> Ident.fieldname_equal f f') (fields @ statics) with
             | _, t', _ ->
                 let atoms', se', res_t' =
@@ -207,7 +207,7 @@ let rec _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
   | (Off_fld (f, _)) :: off', Sil.Estruct (fsel, inst'), Tstruct name -> (
       match Tenv.lookup tenv name with
-      | Some ({ name; fields; statics; } as struct_typ) -> (
+      | Some ({ fields; statics; } as struct_typ) -> (
           let replace_fv new_v fv = if Ident.fieldname_equal (fst fv) f then (f, new_v) else fv in
           match IList.find (fun (f', _, _) -> Ident.fieldname_equal f f') (fields @ statics) with
           | _, typ', _ -> (

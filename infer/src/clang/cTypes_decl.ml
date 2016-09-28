@@ -191,14 +191,13 @@ and get_record_declaration_struct_type tenv decl =
         let statics = [] in (* Note: We treat static field same as global variables *)
         let methods = get_class_methods name decl_list in (* C++ methods only *)
         let supers = get_superclass_list_cpp decl in
-        let sil_type =
-          Typ.Tstruct
-            (Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots sil_typename).name in
+        ignore (Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots sil_typename);
+        let sil_type = Typ.Tstruct sil_typename in
         Ast_utils.update_sil_types_map type_ptr sil_type;
         sil_type
       ) else (
         match Tenv.lookup tenv sil_typename with
-        | Some {name} -> Typ.Tstruct name (* just reuse what is already in tenv *)
+        | Some _ -> Typ.Tstruct sil_typename (* just reuse what is already in tenv *)
         | None ->
             (* This is first forward declaration seen. Add Tstruct to sil_types_map and struct with
                only ref counter field to tenv. Later, when we see the definition, the tenv will be

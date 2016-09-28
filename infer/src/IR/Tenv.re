@@ -48,7 +48,7 @@ let mk_struct
       methods::?methods
       supers::?supers
       annots::?annots
-      name;
+      ();
   TypenameHash.replace tenv name struct_typ;
   struct_typ
 };
@@ -81,17 +81,6 @@ let lookup tenv name =>
 let add tenv name struct_typ => TypenameHash.replace tenv name struct_typ;
 
 
-/** resolve a type string to a Java *class* type. For strings that may represent primitive or array
-    typs, use [lookup_java_typ_from_string] */
-let lookup_java_class_from_string tenv typ_str :option Typ.struct_typ =>
-  lookup tenv (Typename.Java.from_string typ_str);
-
-
-/** Return the declaring class type of [pname_java] */
-let lookup_declaring_class tenv pname_java =>
-  lookup_java_class_from_string tenv (Procname.java_get_class_name pname_java);
-
-
 /** Get method that is being overriden by java_pname (if any) **/
 let get_overriden_method tenv pname_java => {
   let struct_typ_get_method_by_name struct_typ method_name =>
@@ -109,7 +98,7 @@ let get_overriden_method tenv pname_java => {
       }
     | [] => None
     };
-  switch (lookup_declaring_class tenv pname_java) {
+  switch (lookup tenv (Procname.java_get_class_type_name pname_java)) {
   | Some {Typ.supers: supers} => get_overriden_method_in_supers pname_java supers
   | _ => None
   }
@@ -145,7 +134,7 @@ let pp fmt (tenv: t) =>
     (
       fun name typ => {
         Format.fprintf fmt "@[<6>NAME: %s@." (Typename.to_string name);
-        Format.fprintf fmt "@[<6>TYPE: %a@." (Typ.pp_struct_typ pe_text (fun _ () => ())) typ
+        Format.fprintf fmt "@[<6>TYPE: %a@." (Typ.pp_struct_typ pe_text (fun _ () => ()) name) typ
       }
     )
     tenv;

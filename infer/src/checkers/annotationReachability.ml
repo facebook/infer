@@ -136,15 +136,10 @@ let is_allocator tenv pname =
 let check_attributes check tenv pname =
   let check_class_attributes check tenv = function
     | Procname.Java java_pname ->
-        let check_class_annots { Typ.annots; } =
-          check annots in
-        begin
-          match Tenv.lookup_declaring_class tenv java_pname with
-          | Some current_class ->
-              check_class_annots current_class ||
-              PatternMatch.strict_supertype_exists tenv check_class_annots current_class
-          | None -> false
-        end
+        let check_class_annots _ { Typ.annots; } = check annots in
+        PatternMatch.supertype_exists tenv
+          check_class_annots
+          (Procname.java_get_class_type_name java_pname)
     | _ -> false in
   let check_method_attributes check pname =
     match Specs.proc_resolve_attributes pname with

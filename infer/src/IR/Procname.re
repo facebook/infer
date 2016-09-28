@@ -240,6 +240,12 @@ let objc_cpp_get_class_name objc_cpp => objc_cpp.class_name;
 let java_get_class_name (j: java) => java_type_to_string j.class_name;
 
 
+/** Return the package.classname as a typename of a java procname. */
+let java_get_class_type_name (j: java) => Typename.Java.from_string (
+  java_type_to_string j.class_name
+);
+
+
 /** Return the class name of a java procedure name. */
 let java_get_simple_class_name (j: java) => snd j.class_name;
 

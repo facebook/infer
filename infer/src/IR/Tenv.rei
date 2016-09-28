@@ -41,10 +41,6 @@ let load_from_file: DB.filename => option t;
 let lookup: t => Typename.t => option Typ.struct_typ;
 
 
-/** Return the declaring class type of [pname_java] */
-let lookup_declaring_class: t => Procname.java => option Typ.struct_typ;
-
-
 /** Construct a struct_typ, normalizing field types */
 let mk_struct:
   t =>

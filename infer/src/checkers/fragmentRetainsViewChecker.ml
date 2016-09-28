@@ -26,12 +26,7 @@ let callback_fragment_retains_view_java
   (* TODO: handle fields nullified in callees in the same file *)
   let is_on_destroy_view = Procname.java_get_method pname_java = "onDestroyView" in
   let fld_typ_is_view = function
-    | Typ.Tptr (Typ.Tstruct tname, _) ->
-        begin
-          match Tenv.lookup tenv tname with
-          | Some struct_typ -> AndroidFramework.is_view tenv struct_typ
-          | None -> false
-        end
+    | Typ.Tptr (Tstruct tname, _) -> AndroidFramework.is_view tenv tname
     | _ -> false in
   (* is [fldname] a View type declared by [class_typename]? *)
   let is_declared_view_typ class_typename (fldname, fld_typ, _) =
@@ -42,8 +37,7 @@ let callback_fragment_retains_view_java
       let class_typename =
         Typename.Java.from_string (Procname.java_get_class_name pname_java) in
       match Tenv.lookup tenv class_typename with
-      | Some ({ fields } as struct_typ)
-        when AndroidFramework.is_fragment tenv struct_typ ->
+      | Some { fields } when AndroidFramework.is_fragment tenv class_typename ->
           let declared_view_fields =
             IList.filter (is_declared_view_typ class_typename) fields in
           let fields_nullified = PatternMatch.get_fields_nullified proc_desc in

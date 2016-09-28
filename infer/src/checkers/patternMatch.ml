@@ -35,43 +35,27 @@ let java_proc_name_with_class_method pn_java class_with_path method_name =
      Procname.java_get_method pn_java = method_name
    with _ -> false)
 
-let get_direct_supers tenv = function
-  | { Typ.name = TN_csu (Class _, _); supers } ->
-      IList.map (Tenv.lookup tenv) supers
-      |> IList.flatten_options
-  | _ ->
-      []
+(** Holds iff the predicate holds on a supertype of the named type, including the type itself *)
+let rec supertype_exists tenv pred name =
+  match Tenv.lookup tenv name with
+  | Some ({supers} as struct_typ) ->
+      pred name struct_typ || IList.exists (fun name -> supertype_exists tenv pred name) supers
+  | None ->
+      false
 
-(** get the supers of [typ]. does not include [typ] itself *)
-let strict_supertype_iter tenv f_typ orig_struct_typ =
-  let rec get_supers_rec struct_typ =
-    let direct_supers = get_direct_supers tenv struct_typ in
-    IList.iter f_typ direct_supers;
-    IList.iter get_supers_rec direct_supers in
-  get_supers_rec orig_struct_typ
-
-(** Return [true] if [f_typ] evaluates to true on a strict supertype of [orig_struct_typ] *)
-let strict_supertype_exists tenv f_typ orig_struct_typ =
-  let rec get_supers_rec struct_typ =
-    let direct_supers = get_direct_supers tenv struct_typ in
-    IList.exists f_typ direct_supers ||
-    IList.exists get_supers_rec direct_supers in
-  get_supers_rec orig_struct_typ
-
-let is_immediate_subtype this_type super_type_name =
-  IList.exists (Typename.equal super_type_name) this_type.Typ.supers
+let is_immediate_subtype tenv this_type_name super_type_name =
+  match Tenv.lookup tenv this_type_name with
+  | Some {supers} -> IList.exists (Typename.equal super_type_name) supers
+  | None -> false
 
 (** return true if [typ0] <: [typ1] *)
-let is_subtype tenv struct_typ0 struct_typ1 =
-  Typ.struct_typ_equal struct_typ0 struct_typ1 ||
-  strict_supertype_exists tenv (Typ.struct_typ_equal struct_typ1) struct_typ0
+let is_subtype tenv name0 name1 =
+  supertype_exists tenv (fun name _ -> Typename.equal name name1) name0
 
 let is_subtype_of_str tenv cn1 classname_str =
   let typename = Typename.Java.from_string classname_str in
-  let lookup = Tenv.lookup tenv in
-  match lookup cn1, lookup typename with
-  | Some struct_typ1, Some struct_typ2 -> is_subtype tenv struct_typ1 struct_typ2
-  | _ -> false
+  Typename.equal cn1 typename ||
+  is_subtype tenv cn1 typename
 
 (** The type the method is invoked on *)
 let get_this_type proc_attributes = match proc_attributes.ProcAttributes.formals with
@@ -354,13 +338,9 @@ let proc_iter_overridden_methods f tenv proc_name =
   match proc_name with
   | Procname.Java proc_name_java ->
       let type_name = Typename.Java.from_string (Procname.java_get_class_name proc_name_java) in
-      (match Tenv.lookup tenv type_name with
-       | Some {name} ->
-           IList.iter
-             (do_super_type tenv)
-             (type_get_direct_supertypes tenv (Typ.Tstruct name))
-       | None ->
-           ())
+      IList.iter
+        (do_super_type tenv)
+        (type_get_direct_supertypes tenv (Typ.Tstruct type_name))
   | _ ->
       () (* Only java supported at the moment *)
 

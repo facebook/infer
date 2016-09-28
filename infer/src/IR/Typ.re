@@ -296,7 +296,6 @@ type struct_fields = list (Ident.fieldname, t, item_annotation);
 
 /** Type for a structured value. */
 type struct_typ = {
-  name: Typename.t, /** name */
   fields: struct_fields, /** non-static fields */
   statics: struct_fields, /** static fields */
   supers: list Typename.t, /** superclasses */
@@ -346,28 +345,6 @@ let equal t1 t2 => compare t1 t2 == 0;
 let fld_typ_ann_compare fta1 fta2 =>
   triple_compare Ident.fieldname_compare compare item_annotation_compare fta1 fta2;
 
-let fld_typ_ann_list_compare ftal1 ftal2 => IList.compare fld_typ_ann_compare ftal1 ftal2;
-
-let struct_typ_compare struct_typ1 struct_typ2 =>
-  switch (struct_typ1.name, struct_typ2.name) {
-  | (TN_csu (Class Java) _, TN_csu (Class Java) _) =>
-    Typename.compare struct_typ1.name struct_typ2.name
-  | _ =>
-    let n = fld_typ_ann_list_compare struct_typ1.fields struct_typ2.fields;
-    if (n != 0) {
-      n
-    } else {
-      let n = fld_typ_ann_list_compare struct_typ1.statics struct_typ2.statics;
-      if (n != 0) {
-        n
-      } else {
-        Typename.compare struct_typ1.name struct_typ2.name
-      }
-    }
-  };
-
-let struct_typ_equal struct_typ1 struct_typ2 => struct_typ_compare struct_typ1 struct_typ2 == 0;
-
 
 /** Pretty print a type declaration.
     pp_base prints the variable for a declaration, or can be skip to print only the type */
@@ -410,7 +387,7 @@ let pp pe f te =>
     ()
   };
 
-let pp_struct_typ pe pp_base f {fields, name} =>
+let pp_struct_typ pe pp_base name f {fields} =>
   if false {
     /* change false to true to print the details of struct */
     F.fprintf
@@ -441,11 +418,6 @@ let d_list (tl: list t) => L.add_print_action (L.PTtyp_list, Obj.repr tl);
 
 
 /** {2 Sets and maps of types} */
-let module StructSet = Set.Make {
-  type t = struct_typ;
-  let compare = struct_typ_compare;
-};
-
 let module Set = Set.Make {
   type nonrec t = t;
   let compare = compare;
@@ -469,25 +441,16 @@ let internal_mk_struct
     methods::methods=?
     supers::supers=?
     annots::annots=?
-    name => {
+    () => {
   let mk_struct_
-      name::name
       default::
-        default={
-          name,
-          fields: [],
-          statics: [],
-          methods: [],
-          supers: [],
-          annots: item_annotation_empty
-        }
+        default={fields: [], statics: [], methods: [], supers: [], annots: item_annotation_empty}
       fields::fields=default.fields
       statics::statics=default.statics
       methods::methods=default.methods
       supers::supers=default.supers
       annots::annots=default.annots
       () => {
-    name,
     fields,
     statics,
     methods,
@@ -495,7 +458,6 @@ let internal_mk_struct
     annots
   };
   mk_struct_
-    name::name
     default::?default
     fields::?fields
     statics::?statics
@@ -579,14 +541,6 @@ let get_field_type_and_annotation lookup::lookup fn typ =>
       }
     | None => None
     }
-  | _ => None
-  };
-
-
-/** if [struct_typ] is a class, return its class kind (Java, CPP, or Obj-C) */
-let struct_typ_get_class_kind struct_typ =>
-  switch struct_typ.name {
-  | TN_csu (Class class_kind) _ => Some class_kind
   | _ => None
   };
 
