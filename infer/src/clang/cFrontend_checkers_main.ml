@@ -28,33 +28,39 @@ and do_frontend_checks_decl context decl =
   let open Clang_ast_t in
   let info = Clang_ast_proj.get_decl_tuple decl in
   CLocation.update_curr_file info;
-  (match decl with
-   | FunctionDecl(_, _, _, fdi)
-   | CXXMethodDecl (_, _, _, fdi, _)
-   | CXXConstructorDecl (_, _, _, fdi, _)
-   | CXXConversionDecl (_, _, _, fdi, _)
-   | CXXDestructorDecl (_, _, _, fdi, _) ->
-       (match fdi.Clang_ast_t.fdi_body with
-        | Some stmt ->
-            let context = {context with CLintersContext.current_method = Some decl } in
-            do_frontend_checks_stmt context stmt
-        | None -> ())
-   | ObjCMethodDecl (_, _, mdi) ->
-       (match mdi.Clang_ast_t.omdi_body with
-        | Some stmt ->
-            let context = {context with CLintersContext.current_method = Some decl } in
-            do_frontend_checks_stmt context stmt
-        | None -> ())
-   | BlockDecl (_, block_decl_info) ->
-       (match block_decl_info.Clang_ast_t.bdi_body with
-        | Some stmt ->
-            let context = {context with CLintersContext.current_method = Some decl } in
-            do_frontend_checks_stmt context stmt
-        | None -> ())
-   | _ -> ());
-  let context' = CFrontend_errors.run_frontend_checkers_on_decl context decl in
+  let context' =
+    (match decl with
+     | FunctionDecl(_, _, _, fdi)
+     | CXXMethodDecl (_, _, _, fdi, _)
+     | CXXConstructorDecl (_, _, _, fdi, _)
+     | CXXConversionDecl (_, _, _, fdi, _)
+     | CXXDestructorDecl (_, _, _, fdi, _) ->
+         let context' = {context with CLintersContext.current_method = Some decl } in
+         (match fdi.Clang_ast_t.fdi_body with
+          | Some stmt ->
+              do_frontend_checks_stmt context' stmt
+          | None -> ());
+         context'
+     | ObjCMethodDecl (_, _, mdi) ->
+         let context' = {context with CLintersContext.current_method = Some decl } in
+         (match mdi.Clang_ast_t.omdi_body with
+          | Some stmt ->
+              do_frontend_checks_stmt context' stmt
+          | None -> ());
+         context'
+     | BlockDecl (_, block_decl_info) ->
+         let context' = {context with CLintersContext.current_method = Some decl } in
+         (match block_decl_info.Clang_ast_t.bdi_body with
+          | Some stmt ->
+              do_frontend_checks_stmt context' stmt
+          | None -> ());
+         context'
+     | _ -> context) in
+  let context'' = CFrontend_errors.run_frontend_checkers_on_decl context' decl in
+  let context_with_orig_current_method =
+    {context'' with CLintersContext.current_method = context.CLintersContext.current_method } in
   match Clang_ast_proj.get_decl_context_tuple decl with
-  | Some (decls, _) -> IList.iter (do_frontend_checks_decl context') decls
+  | Some (decls, _) -> IList.iter (do_frontend_checks_decl context_with_orig_current_method) decls
   | None -> ()
 
 let context_with_ck_set context decl_list =
