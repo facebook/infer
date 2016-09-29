@@ -279,7 +279,8 @@ def get_output_jars(targets):
     else:
         audit_output = subprocess.check_output(
             ['buck', 'audit', 'classpath'] + targets)
-        return audit_output.strip().split('\n')
+        classpath_jars = audit_output.strip().split('\n')
+        return filter(os.path.isfile, classpath_jars)
 
 
 def collect_results(args, start_time, targets):
