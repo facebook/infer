@@ -34,6 +34,7 @@ val create_filters : Config.analyzer -> filters
 val never_return_null_matcher : DB.source_file -> Procname.t -> bool
 val suppress_warnings_matcher : DB.source_file -> Procname.t -> bool
 val skip_translation_matcher : DB.source_file -> Procname.t -> bool
+val skip_translation_path_matcher : DB.source_file -> Procname.t -> bool
 val modeled_expensive_matcher : (string -> bool) -> Procname.t -> bool
 
 (** Load the config file and list the files to report on *)
