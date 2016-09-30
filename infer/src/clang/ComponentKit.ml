@@ -115,21 +115,12 @@ let component_factory_function_advice context decl =
   let is_component_if decl =
     Ast_utils.is_objc_if_descendant decl [CFrontend_config.ckcomponent_cl] in
 
-  let rec type_ptr_to_objc_if type_ptr =
-    let typ_opt = Ast_utils.get_desugared_type type_ptr in
-    match (typ_opt : Clang_ast_t.c_type option) with
-    | Some ObjCInterfaceType (_, decl_ptr) -> Ast_utils.get_decl decl_ptr
-    | Some ObjCObjectPointerType (_, (inner_qual_type: Clang_ast_t.qual_type)) ->
-        type_ptr_to_objc_if inner_qual_type.qt_type_ptr
-    | Some FunctionProtoType (_, function_type_info, _)
-    | Some FunctionNoProtoType (_, function_type_info) ->
-        type_ptr_to_objc_if function_type_info.Clang_ast_t.fti_return_type
-    | _ -> None in
-
   match decl with
   | Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _) ->
-      let condition = is_ck_context context decl
-                      && is_component_if (type_ptr_to_objc_if qual_type.qt_type_ptr) in
+      let objc_interface =
+        Ast_utils.type_ptr_to_objc_interface qual_type.qt_type_ptr in
+      let condition =
+        is_ck_context context decl && is_component_if objc_interface in
       if condition then
         Some {
           CIssue.issue = CIssue.Component_factory_function;

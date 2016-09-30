@@ -171,6 +171,7 @@ sig
   val is_objc_if_descendant :
     ?blacklist:string list -> Clang_ast_t.decl option -> string list -> bool
 
+  val type_ptr_to_objc_interface : Clang_ast_types.t_ptr -> Clang_ast_t.decl option
 end
 
 module General_utils :

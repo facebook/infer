@@ -460,6 +460,17 @@ struct
               || is_objc_if_descendant ~blacklist:blacklist (get_super_if if_decl) ancestors)
       | _ -> false
 
+  let rec type_ptr_to_objc_interface type_ptr =
+    let typ_opt = get_desugared_type type_ptr in
+    match (typ_opt : Clang_ast_t.c_type option) with
+    | Some ObjCInterfaceType (_, decl_ptr) -> get_decl decl_ptr
+    | Some ObjCObjectPointerType (_, (inner_qual_type: Clang_ast_t.qual_type)) ->
+        type_ptr_to_objc_interface inner_qual_type.qt_type_ptr
+    | Some FunctionProtoType (_, function_type_info, _)
+    | Some FunctionNoProtoType (_, function_type_info) ->
+        type_ptr_to_objc_interface function_type_info.Clang_ast_t.fti_return_type
+    | _ -> None
+
 (*
   let rec getter_attribute_opt attributes =
     match attributes with
