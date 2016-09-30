@@ -12,52 +12,16 @@ open !Utils
 
 (** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl.
     (Returns false on decls other than that one.) *)
-let rec is_component_if decl =
-  match decl with
-  | Some Clang_ast_t.ObjCInterfaceDecl (_, ndi, _, _, _)->
-      let open CFrontend_config in
-      let whitelist = [ckcomponent_cl] in
-      let blacklist = [nsobject_cl; nsproxy_cl] in
-      let in_list some_list = IList.mem string_equal ndi.Clang_ast_t.ni_name some_list in
-      if in_list whitelist then
-        true
-      else if in_list blacklist then
-        false
-      else
-        (match Ast_utils.get_super_if decl with
-         | Some super_decl ->
-             is_component_if (Some super_decl)
-         | None -> false)
-  | _ -> false
-
-
-(** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl.
-    (Returns false on decls other than that one.) *)
-let rec is_component_or_controller_if decl =
-  match decl with
-  | Clang_ast_t.ObjCInterfaceDecl (_, ndi, _, _, _)->
-      let open CFrontend_config in
-      let whitelist = [ckcomponent_cl; ckcomponentcontroller_cl] in
-      let blacklist = [nsobject_cl; nsproxy_cl] in
-      let in_list some_list = IList.mem string_equal ndi.Clang_ast_t.ni_name some_list in
-      if in_list whitelist then
-        true
-      else if in_list blacklist then
-        false
-      else
-        (match Ast_utils.get_super_if (Some decl) with
-         | Some super_decl ->
-             is_component_or_controller_if super_decl
-         | None -> false)
-  | _ -> false
+let is_component_or_controller_if decl =
+  let open CFrontend_config in
+  Ast_utils.is_objc_if_descendant decl [ckcomponent_cl; ckcomponentcontroller_cl]
 
 (** True if it's an objc class impl that extends from CKComponent or
     CKComponentController, false otherwise *)
 let rec is_component_or_controller_descendant_impl decl =
   match decl with
   | Clang_ast_t.ObjCImplementationDecl _ ->
-      let super_if = Ast_utils.get_super_if (Some decl) in
-      Option.map_default is_component_or_controller_if false super_if
+      is_component_or_controller_if (Ast_utils.get_super_if (Some decl))
   | Clang_ast_t.LinkageSpecDecl (_, decl_list, _) ->
       contains_ck_impl decl_list
   | _ -> false
@@ -145,6 +109,8 @@ let mutable_local_vars_advice context decl =
 
     Any static function that returns a subclass of CKComponent will be flagged. *)
 let component_factory_function_advice context decl =
+  let is_component_if decl =
+    Ast_utils.is_objc_if_descendant decl [CFrontend_config.ckcomponent_cl] in
 
   let rec type_ptr_to_objc_if type_ptr =
     let typ_opt = Ast_utils.get_desugared_type type_ptr in

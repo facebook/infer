@@ -160,6 +160,14 @@ sig
       to the parent decl. *)
   val is_in_main_file : Clang_ast_t.decl -> bool
 
+  (** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl.
+      Returns true if the passed in decl is an objc interface decl that's an
+      eventual descendant of one of the classes passed in.
+      Ancestors param is a list of strings that represent the class names.
+      Will short-circuit on NSObject and NSProxy since those are known to be
+      common base classes. *)
+  val is_objc_if_descendant : Clang_ast_t.decl option -> (string) list -> bool
+
 end
 
 module General_utils :
