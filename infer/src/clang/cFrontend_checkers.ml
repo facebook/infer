@@ -22,9 +22,6 @@ open CFrontend_utils
 (*    - If it is a declaration invoke it from run_frontend_checkers_on_decl *)
 
 (* Helper functions *)
-let location_from_sinfo info =
-  CLocation.get_sil_location_from_range info.Clang_ast_t.si_source_range true
-
 let location_from_stmt stmt =
   let info, _ = Clang_ast_proj.get_stmt_tuple stmt in
   CLocation.get_sil_location_from_range info.Clang_ast_t.si_source_range true
@@ -107,6 +104,38 @@ let ctl_ns_notification decl =
       Some "Consider removing the object from the notification center before its deallocation.";
     CIssue.loc = location_from_decl decl;
   } in
+  condition, issue_desc
+
+(* BAD_POINTER_COMPARISON: Fires whenever a NSNumber is dangerously coerced to
+    a boolean in a comparison *)
+let ctl_bad_pointer_comparison_warning stmt =
+  let open CTL in
+  let is_binop = Atomic ("is_stmt", ["BinaryOperator"]) in
+  let is_binop_eq = Atomic ("is_binop_with_kind", ["EQ"]) in
+  let is_binop_ne = Atomic ("is_binop_with_kind", ["NE"]) in
+  let is_binop_neq = Or (is_binop_eq, is_binop_ne) in
+  let is_unop_lnot = Atomic ("is_unop_with_kind", ["LNot"]) in
+  let is_implicit_cast_expr = Atomic ("is_stmt", ["ImplicitCastExpr"]) in
+  let is_expr_with_cleanups = Atomic ("is_stmt", ["ExprWithCleanups"]) in
+  let is_nsnumber = Atomic ("isa", ["NSNumber"]) in
+  (*
+  NOT is_binop_neq AND
+  (is_expr_with_cleanups OR is_implicit_cast_expr OR is_binop OR is_unop_lnot)
+  UNTIL is_nsnumber
+  *)
+  let p = Or (is_expr_with_cleanups, Or (is_implicit_cast_expr, Or (is_binop, is_unop_lnot))) in
+  let p' = And (Not is_binop_neq, p) in
+  let condition = EU (p', is_nsnumber) in
+  let issue_desc =
+    { CIssue.
+      issue = CIssue.Bad_pointer_comparison;
+      description = "Implicitly checking whether NSNumber pointer is nil";
+      suggestion =
+        Some ("Did you mean to compare against the unboxed value instead? " ^
+              "Please either explicitly compare the NSNumber instance to nil, " ^
+              "or use one of the NSNumber accessors before the comparison.");
+      loc = location_from_stmt stmt
+    } in
   condition, issue_desc
 
 (* name_contains_delegate AND not name_contains_queue AND is_strong_property *)
@@ -247,44 +276,14 @@ let captured_cxx_ref_in_objc_block_warning lcxt stmt  =
     Some issue_desc
   else None
 
-
-(* BAD_POINTER_COMPARISON: Fires whenever a NSNumber is dangerously coerced to
-    a boolean in a comparison *)
-let bad_pointer_comparison_warning _ stmt_info stmts =
-  let rec condition stmts =
-    let condition_aux stmt =
-      match (stmt: Clang_ast_t.stmt) with
-      | BinaryOperator (_, _, _, boi) when
-          (boi.boi_kind = `EQ) || (boi.boi_kind = `NE) -> false
-      | BinaryOperator (_, stmts, _, _) -> condition stmts
-      | UnaryOperator (_, stmts, _, uoi) when uoi.uoi_kind = `LNot ->
-          condition stmts
-      | ImplicitCastExpr (_, stmts, _, _)
-      | ExprWithCleanups (_, stmts, _, _) ->
-          condition stmts
-      | stmt ->
-          match Clang_ast_proj.get_expr_tuple stmt with
-          | Some (_, _, expr_info) ->
-              let typ = CFrontend_utils.Ast_utils.get_desugared_type expr_info.ei_type_ptr in
-              CFrontend_utils.Ast_utils.is_ptr_to_objc_class typ "NSNumber"
-          | _ -> false in
-    IList.exists condition_aux stmts in
-  if condition stmts then
-    Some { CIssue.
-           issue = CIssue.Bad_pointer_comparison;
-           description = "Implicitly checking whether NSNumber pointer is nil";
-           suggestion =
-             Some ("Did you mean to compare against the unboxed value instead? " ^
-                   "Please either explicitly compare the NSNumber instance to nil, " ^
-                   "or use one of the NSNumber accessors before the comparison.");
-           loc = location_from_sinfo stmt_info
-         }
-  else
-    None
-
-
 let checker_NSNotificationCenter lcxt dec =
   let condition, issue_desc = ctl_ns_notification dec in
   if CTL.eval_formula  condition (CTL.Decl dec) lcxt then
+    Some issue_desc
+  else None
+
+let bad_pointer_comparison_warning lcxt stmt =
+  let condition, issue_desc = ctl_bad_pointer_comparison_warning stmt in
+  if CTL.eval_formula condition (CTL.Stmt stmt) lcxt then
     Some issue_desc
   else None

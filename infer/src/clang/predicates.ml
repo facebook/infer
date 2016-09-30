@@ -173,3 +173,30 @@ let is_objc_dealloc context =
 
 let captures_cxx_references stmt =
   IList.length (captured_variables_cxx_ref stmt) > 0
+
+let is_binop_with_kind stmt str_kind =
+  let kind = match str_kind with
+    | "EQ" -> `EQ
+    | "NE" -> `NE
+    | _ -> failwith ("Kind " ^ str_kind ^ " is invalid or not yet supported") in
+  match stmt with
+  | Clang_ast_t.BinaryOperator (_, _, _, boi) when boi.boi_kind = kind -> true
+  | _ -> false
+
+let is_unop_with_kind stmt str_kind =
+  let kind = match str_kind with
+    | "LNot" -> `LNot
+    | _ -> failwith ("Kind " ^ str_kind ^ " is invalid or not yet supported") in
+  match stmt with
+  | Clang_ast_t.UnaryOperator (_, _, _, uoi) when uoi.uoi_kind = kind -> true
+  | _ -> false
+
+let is_stmt stmt stmt_name =
+  stmt_name = Clang_ast_proj.get_stmt_kind_string stmt
+
+let isa stmt classname =
+  match Clang_ast_proj.get_expr_tuple stmt with
+  | Some (_, _, expr_info) ->
+      let typ = CFrontend_utils.Ast_utils.get_desugared_type expr_info.ei_type_ptr in
+      CFrontend_utils.Ast_utils.is_ptr_to_objc_class typ classname
+  | _ -> false

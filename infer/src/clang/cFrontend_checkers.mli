@@ -30,8 +30,7 @@ val captured_cxx_ref_in_objc_block_warning :
   CLintersContext.context -> Clang_ast_t.stmt -> CIssue.issue_desc option
 
 val bad_pointer_comparison_warning :
-  CLintersContext.context ->
-  Clang_ast_t.stmt_info -> Clang_ast_t.stmt list -> CIssue.issue_desc option
+  CLintersContext.context -> Clang_ast_t.stmt -> CIssue.issue_desc option
 
 (* REGISTERED_OBSERVER_BEING_DEALLOCATED: an object is registered in a notification center
    but not removed before deallocation *)

@@ -116,6 +116,10 @@ let eval_Atomic pred_name params an lcxt =
   | "is_objc_constructor", [], _ -> Predicates.is_objc_constructor lcxt
   | "is_objc_dealloc", [], _ -> Predicates.is_objc_dealloc lcxt
   | "captures_cxx_references", [], Stmt st -> Predicates.captures_cxx_references st
+  | "is_binop_with_kind", [kind], Stmt st -> Predicates.is_binop_with_kind st kind
+  | "is_unop_with_kind", [kind], Stmt st -> Predicates.is_unop_with_kind st kind
+  | "is_stmt", [stmt_name], Stmt st -> Predicates.is_stmt st stmt_name
+  | "isa", [classname], Stmt st -> Predicates.isa st classname
   | _ -> failwith ("ERROR: Undefined Predicate: "^pred_name)
 
 (* st, lcxt |= EF phi  <=>

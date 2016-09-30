@@ -44,3 +44,11 @@ val is_objc_constructor : CLintersContext.context -> bool
 val is_objc_dealloc : CLintersContext.context -> bool
 
 val captures_cxx_references : Clang_ast_t.stmt -> bool
+
+val is_binop_with_kind : Clang_ast_t.stmt -> string -> bool
+
+val is_unop_with_kind : Clang_ast_t.stmt -> string -> bool
+
+val is_stmt : Clang_ast_t.stmt -> string -> bool
+
+val isa : Clang_ast_t.stmt -> string -> bool
