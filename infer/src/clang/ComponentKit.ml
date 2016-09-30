@@ -10,6 +10,11 @@
 open CFrontend_utils
 open !Utils
 
+let is_ck_context context decl =
+  context.CLintersContext.is_ck_translation_unit
+  && Ast_utils.is_in_main_file decl
+  && General_utils.is_objc_extension
+
 (** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl.
     (Returns false on decls other than that one.) *)
 let is_component_or_controller_if decl =
@@ -86,9 +91,7 @@ let mutable_local_vars_advice context decl =
             qt_is_const
         | _ -> false in
       let is_const = qual_type.qt_is_const || is_const_ref in
-      let condition = context.CLintersContext.is_ck_translation_unit
-                      && Ast_utils.is_in_main_file decl
-                      && General_utils.is_objc_extension
+      let condition = is_ck_context context decl
                       && (not (Ast_utils.is_syntactically_global_var decl))
                       && (not is_const)
                       && not (is_of_whitelisted_type qual_type) in
@@ -125,9 +128,7 @@ let component_factory_function_advice context decl =
 
   match decl with
   | Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _) ->
-      let condition = context.CLintersContext.is_ck_translation_unit
-                      && Ast_utils.is_in_main_file decl
-                      && General_utils.is_objc_extension
+      let condition = is_ck_context context decl
                       && is_component_if (type_ptr_to_objc_if qual_type.qt_type_ptr) in
       if condition then
         Some {
