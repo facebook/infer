@@ -16,3 +16,6 @@ val contains_ck_impl : Clang_ast_t.decl list -> bool
 
 val mutable_local_vars_advice :
   CLintersContext.context -> Clang_ast_t.decl -> CIssue.issue_desc option
+
+val component_factory_function_advice :
+  CLintersContext.context -> Clang_ast_t.decl -> CIssue.issue_desc option

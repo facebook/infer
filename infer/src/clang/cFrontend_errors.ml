@@ -76,6 +76,11 @@ let while_stmt_checker_list = [CFrontend_checkers.bad_pointer_comparison_warning
 let checker_for_while_stmt cond checker context =
   checker context cond
 
+let function_decl_checker_list = [ComponentKit.component_factory_function_advice]
+
+let checker_for_function_decl decl checker context =
+  checker context decl
+
 let get_err_log method_decl_opt =
   let procname = match method_decl_opt with
     | Some method_decl -> General_utils.procname_of_decl method_decl
@@ -165,6 +170,11 @@ let run_frontend_checkers_on_decl context dec =
       let call_var_checker = checker_for_var dec in
       let key = Ast_utils.generate_key_decl dec in
       invoke_set_of_checkers call_var_checker context key var_checker_list;
+      context
+  | FunctionDecl _ ->
+      let call_function_decl_checker = checker_for_function_decl dec in
+      let key = Ast_utils.generate_key_decl dec in
+      invoke_set_of_checkers call_function_decl_checker context key function_decl_checker_list;
       context
   | ObjCPropertyDecl _ ->
       let call_property_checker = checkers_for_property dec in

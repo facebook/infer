@@ -12,6 +12,27 @@ open !Utils
 
 (** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl.
     (Returns false on decls other than that one.) *)
+let rec is_component_if decl =
+  match decl with
+  | Some Clang_ast_t.ObjCInterfaceDecl (_, ndi, _, _, _)->
+      let open CFrontend_config in
+      let whitelist = [ckcomponent_cl] in
+      let blacklist = [nsobject_cl; nsproxy_cl] in
+      let in_list some_list = IList.mem string_equal ndi.Clang_ast_t.ni_name some_list in
+      if in_list whitelist then
+        true
+      else if in_list blacklist then
+        false
+      else
+        (match Ast_utils.get_super_if decl with
+         | Some super_decl ->
+             is_component_if (Some super_decl)
+         | None -> false)
+  | _ -> false
+
+
+(** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl.
+    (Returns false on decls other than that one.) *)
 let rec is_component_or_controller_if decl =
   match decl with
   | Clang_ast_t.ObjCInterfaceDecl (_, ndi, _, _, _)->
@@ -117,3 +138,41 @@ let mutable_local_vars_advice context decl =
         }
       else None
   | _ -> assert false (* Should only be called with a VarDecl *)
+
+
+(** Catches functions that should be composite components.
+    http://componentkit.org/docs/break-out-composites.html
+
+    Any static function that returns a subclass of CKComponent will be flagged. *)
+let component_factory_function_advice context decl =
+
+  let rec type_ptr_to_objc_if type_ptr =
+    let typ_opt = Ast_utils.get_desugared_type type_ptr in
+    match (typ_opt : Clang_ast_t.c_type option) with
+    | Some ObjCInterfaceType (_, decl_ptr) -> Ast_utils.get_decl decl_ptr
+    | Some ObjCObjectPointerType (_, (inner_qual_type: Clang_ast_t.qual_type)) ->
+        type_ptr_to_objc_if inner_qual_type.qt_type_ptr
+    | Some FunctionProtoType (_, function_type_info, _)
+    | Some FunctionNoProtoType (_, function_type_info) ->
+        type_ptr_to_objc_if function_type_info.Clang_ast_t.fti_return_type
+    | _ -> None in
+
+  match decl with
+  | Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _) ->
+      let condition = context.CLintersContext.is_ck_translation_unit
+                      && Ast_utils.is_in_main_file decl
+                      && General_utils.is_objc_extension
+                      && is_component_if (type_ptr_to_objc_if qual_type.qt_type_ptr) in
+      if condition then
+        Some {
+          CIssue.issue = CIssue.Component_factory_function;
+          CIssue.description = "Break out composite components";
+          CIssue.suggestion = Some (
+              "Prefer subclassing CKCompositeComponent to static helper functions \
+               that return a CKComponent subclass. \
+               http://componentkit.org/docs/break-out-composites.html"
+            );
+          CIssue.loc = CFrontend_checkers.location_from_dinfo decl_info
+        }
+      else None
+  | _ -> assert false (* Should only be called with FunctionDecl *)

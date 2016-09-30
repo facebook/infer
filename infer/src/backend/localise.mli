@@ -41,6 +41,7 @@ val condition_is_assignment : t
 val condition_always_false : t
 val condition_always_true : t
 val context_leak : t
+val component_factory_function : t
 val cxx_reference_captured_in_objc_block : t
 val dangling_pointer_dereference : t
 val deallocate_stack_variable : t

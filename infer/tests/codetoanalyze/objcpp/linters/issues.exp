@@ -1,3 +1,6 @@
+componentkit/FactoryFunctionTest.mm, ExampleFunctionAfterImpl, 35, COMPONENT_FACTORY_FUNCTION
+componentkit/FactoryFunctionTest.mm, ExampleFunctionBeforeImpl, 21, COMPONENT_FACTORY_FUNCTION
+componentkit/FactoryFunctionTest.mm, ExampleFunctionInsideImpl, 29, COMPONENT_FACTORY_FUNCTION
 componentkit/MutableLocalVariablesTest.mm, BarComponent_new, 85, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE
 componentkit/MutableLocalVariablesTest.mm, BarComponent_new, 87, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE
 componentkit/MutableLocalVariablesTest.mm, FooComponent_newWithString:, 48, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE

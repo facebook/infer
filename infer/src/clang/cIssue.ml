@@ -10,6 +10,7 @@
 type issue =
   | Assign_pointer_warning
   | Bad_pointer_comparison
+  | Component_factory_function
   | Cxx_reference_captured_in_objc_block
   | Direct_atomic_property_access
   | Global_variable_initialized_with_function_or_method_call
@@ -24,6 +25,8 @@ let to_string issue =
          Localise.assign_pointer_warning
      | Bad_pointer_comparison ->
          Localise.bad_pointer_comparison
+     | Component_factory_function ->
+         Localise.component_factory_function
      | Cxx_reference_captured_in_objc_block ->
          Localise.cxx_reference_captured_in_objc_block
      | Direct_atomic_property_access ->
@@ -47,6 +50,7 @@ let severity_of_issue issue =
   | Global_variable_initialized_with_function_or_method_call
   | Registered_observer_being_deallocated
   | Strong_delegate_warning -> Exceptions.Kwarning
+  | Component_factory_function
   | Mutable_local_variable_in_component_file -> Exceptions.Kadvice
 
 

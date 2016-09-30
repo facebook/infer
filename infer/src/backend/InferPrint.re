@@ -491,6 +491,7 @@ let module IssuesTests = {
             [
               Localise.assign_pointer_warning,
               Localise.bad_pointer_comparison,
+              Localise.component_factory_function,
               Localise.cxx_reference_captured_in_objc_block,
               Localise.direct_atomic_property_access,
               Localise.field_not_null_checked,
