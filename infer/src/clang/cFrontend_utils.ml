@@ -455,15 +455,9 @@ struct
       match if_decl with
       | Some Clang_ast_t.ObjCInterfaceDecl (_, ndi, _, _, _) ->
           let in_list some_list = IList.mem string_equal ndi.Clang_ast_t.ni_name some_list in
-          if in_list ancestors then
-            true
-          else if in_list blacklist then
-            false
-          else
-            (match get_super_if if_decl with
-             | Some super_decl ->
-                 is_objc_if_descendant (Some super_decl) ancestors
-             | None -> false)
+          not (in_list blacklist)
+          && (in_list ancestors
+              || is_objc_if_descendant ~blacklist:blacklist (get_super_if if_decl) ancestors)
       | _ -> false
 
 (*
