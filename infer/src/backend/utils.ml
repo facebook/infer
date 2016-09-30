@@ -97,6 +97,16 @@ module StringSet = Set.Make(String)
 let pp_stringset fmt ss =
   StringSet.iter (fun s -> F.fprintf fmt "%s " s) ss
 
+(** string list -> StringSet.t
+    from http://stackoverflow.com/a/2382330 *)
+let string_set_of_list list =
+  IList.fold_left (fun acc x -> StringSet.add x acc) StringSet.empty list
+
+(** intersection of two string lists, as a StringSet.t
+    from http://stackoverflow.com/a/2382330 *)
+let string_list_intersection a b =
+  StringSet.inter (string_set_of_list a) (string_set_of_list b)
+
 (** Maps from integers *)
 module IntMap = Map.Make (struct
     type t = int

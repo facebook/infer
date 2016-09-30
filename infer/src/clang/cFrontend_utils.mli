@@ -165,8 +165,11 @@ sig
       eventual descendant of one of the classes passed in.
       Ancestors param is a list of strings that represent the class names.
       Will short-circuit on NSObject and NSProxy since those are known to be
-      common base classes. *)
-  val is_objc_if_descendant : Clang_ast_t.decl option -> (string) list -> bool
+      common base classes.
+      The list of classes to short-circuit on can be overridden via specifying
+      the named `blacklist` argument. *)
+  val is_objc_if_descendant :
+    ?blacklist:string list -> Clang_ast_t.decl option -> string list -> bool
 
 end
 

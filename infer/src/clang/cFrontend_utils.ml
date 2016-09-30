@@ -442,22 +442,29 @@ struct
     let file_opt = (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file in
     opt_equal string_equal file_opt Config.source_file && Option.is_some file_opt
 
-  let rec is_objc_if_descendant if_decl ancestors =
-    match if_decl with
-    | Some Clang_ast_t.ObjCInterfaceDecl (_, ndi, _, _, _)->
-        let open CFrontend_config in
-        let blacklist = [nsobject_cl; nsproxy_cl] in
-        let in_list some_list = IList.mem string_equal ndi.Clang_ast_t.ni_name some_list in
-        if in_list ancestors then
-          true
-        else if in_list blacklist then
-          false
-        else
-          (match get_super_if if_decl with
-           | Some super_decl ->
-               is_objc_if_descendant (Some super_decl) ancestors
-           | None -> false)
-    | _ -> false
+  let default_blacklist =
+    let open CFrontend_config in
+    [nsobject_cl; nsproxy_cl]
+
+  let rec is_objc_if_descendant ?(blacklist = default_blacklist) if_decl ancestors =
+    (* List of ancestors to check for and list of classes to short-circuit to
+       false can't intersect *)
+    if not (StringSet.is_empty (string_list_intersection blacklist ancestors)) then
+      failwith "Blacklist and ancestors must be mutually exclusive."
+    else
+      match if_decl with
+      | Some Clang_ast_t.ObjCInterfaceDecl (_, ndi, _, _, _) ->
+          let in_list some_list = IList.mem string_equal ndi.Clang_ast_t.ni_name some_list in
+          if in_list ancestors then
+            true
+          else if in_list blacklist then
+            false
+          else
+            (match get_super_if if_decl with
+             | Some super_decl ->
+                 is_objc_if_descendant (Some super_decl) ancestors
+             | None -> false)
+      | _ -> false
 
 (*
   let rec getter_attribute_opt attributes =

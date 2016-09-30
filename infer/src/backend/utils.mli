@@ -92,6 +92,12 @@ module StringSet : Set.S with type elt = string
 (** Pretty print a set of strings *)
 val pp_stringset : Format.formatter -> StringSet.t -> unit
 
+(** list of strings -> set of strings *)
+val string_set_of_list : string list -> StringSet.t
+
+(** List intersection *)
+val string_list_intersection : string list -> string list -> StringSet.t
+
 (** Maps from integers *)
 module IntMap : Map.S with type key = int
 
