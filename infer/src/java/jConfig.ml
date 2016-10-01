@@ -22,8 +22,6 @@ let infer_array_cl = builtins_package ^ ".InferArray"
 
 let infer_undefined_cl = builtins_package ^ ".InferUndefined"
 
-let object_cl = JBasics.cn_name JBasics.java_lang_object
-
 let obj_type = (JBasics.TObject (JBasics.TClass JBasics.java_lang_object))
 
 let bool_type = JBasics.TBasic `Bool

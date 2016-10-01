@@ -61,7 +61,7 @@ let default_format_type_name
   | "c" -> "java.lang.Character"
   | "b" -> "java.lang.Boolean"
   | "s" -> "java.lang.String"
-  | "h" | "H" -> JConfig.object_cl
+  | "h" | "H" -> "java.lang.Object"
   | _ -> "unknown"
 
 let format_type_matches_given_type

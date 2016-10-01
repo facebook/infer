@@ -1524,7 +1524,7 @@ let expand_hpred_pointer =
 module Subtyping_check =
 struct
 
-  let object_type = Typename.Java.from_string JConfig.object_cl
+  let object_type = Typename.Java.java_lang_Object
 
   let serializable_type = Typename.Java.from_string "java.io.Serializable"
 

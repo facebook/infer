@@ -40,6 +40,7 @@ let module Java: {
 
   /** [is_class name] holds if [name] names a Java class */
   let is_class: t => bool;
+  let java_lang_Object: t;
 };
 
 let module Set: Set.S with type elt = t;

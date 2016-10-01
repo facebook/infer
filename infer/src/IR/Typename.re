@@ -48,6 +48,7 @@ let module Java = {
     fun
     | TN_csu (Class Java) _ => true
     | _ => false;
+  let java_lang_Object = from_string "java.lang.Object";
 };
 
 type typename_t = t;
