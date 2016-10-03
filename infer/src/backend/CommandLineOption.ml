@@ -154,7 +154,7 @@ let align desc_list =
      to read the result from `tput`. *)
   (try Unix.getenv "TERM" |> ignore
    with Not_found -> Unix.putenv "TERM" "ansi");
-  let cur_term_width = try int_of_string (with_process_in "tput cols" input_line)
+  let cur_term_width = try with_process_in "tput cols" input_line |> fst |> int_of_string
     with
     | End_of_file (* tput is unhappy *)
     | Failure "int_of_string" (* not sure if possible *) -> min_term_width in

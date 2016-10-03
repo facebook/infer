@@ -168,7 +168,7 @@ let get_compilation_database changed_files =
        let buck_targets_list = buck :: "targets" :: "--show-output" :: args_with_flavor in
        let buck_targets = String.concat " " buck_targets_list in
        try
-         match Utils.with_process_in buck_targets Std.input_list with
+         match fst @@ Utils.with_process_in buck_targets Std.input_list with
          | [] -> Logging.stdout "There are no files to process, exiting."; exit 0
          | lines ->
              let scan_output compilation_database_files chan =

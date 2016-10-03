@@ -586,30 +586,42 @@ let read_optional_json_file path =
       Error msg
   else Ok (`Assoc [])
 
+let do_finally f g =
+  let res = try f () with exc -> g () |> ignore; raise exc in
+  let res' = g () in
+  (res, res')
+
 let with_file file ~f =
   let oc = open_out file in
-  try
-    let res = f oc in
-    close_out oc;
-    res
-  with exc ->
-    close_out oc;
-    raise exc
+  let f () = f oc in
+  let g () = close_out oc in
+  do_finally f g
 
 let write_json_to_file destfile json =
   with_file destfile ~f:(fun oc -> Yojson.Basic.pretty_to_channel oc json)
+  |> fst
+
+let consume_in chan_in =
+  try
+    while true do input_line chan_in |> ignore done
+  with End_of_file -> ()
 
 let with_process_in command read =
   let chan = Unix.open_process_in command in
-  let res =
-    try
-      read chan
-    with exc ->
-      Unix.close_process_in chan |> ignore ;
-      raise exc
-  in
-  Unix.close_process_in chan |> ignore ;
-  res
+  let f () = read chan in
+  let g () =
+    consume_in chan;
+    Unix.close_process_in chan in
+  do_finally f g
+
+let with_process_full command read_out read_err =
+  let (out_chan, _, err_chan) as chans = Unix.open_process_full command (Unix.environment ()) in
+  let f () = (read_out out_chan, read_err err_chan) in
+  let g () =
+    consume_in out_chan;
+    consume_in err_chan;
+    Unix.close_process_full chans in
+  do_finally f g
 
 let failwithf fmt =
   Format.kfprintf (fun _ -> failwith (Format.flush_str_formatter ()))

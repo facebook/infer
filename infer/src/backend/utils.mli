@@ -279,7 +279,10 @@ val read_optional_json_file : string -> (Yojson.Basic.json, string) result
 
 val write_json_to_file : string -> Yojson.Basic.json -> unit
 
-val with_process_in: string -> (in_channel -> 'a) -> 'a
+val with_process_in: string -> (in_channel -> 'a) -> ('a * Unix.process_status)
+
+val with_process_full: string -> (in_channel -> 'a) -> (in_channel -> 'b) ->
+  (('a * 'b) * Unix.process_status)
 
 val failwithf : ('a, Format.formatter, unit, 'b) format4 -> 'a
 
