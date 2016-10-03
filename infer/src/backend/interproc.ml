@@ -831,7 +831,7 @@ let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t 
         compute_visited !vset_ref in
       do_join_post pname tenv pathset, visited with
     | exn when (match exn with Exceptions.Leak _ -> true | _ -> false) ->
-        raise (Failure "Leak in post collecion") in
+        L.d_strln"Leak in post collection"; assert false in
   L.d_strln
     ("#### [FUNCTION " ^ Procname.to_string pname ^ "] Postconditions after join ####");
   L.d_increase_indent 1;
