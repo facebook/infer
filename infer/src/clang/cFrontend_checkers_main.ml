@@ -81,7 +81,7 @@ let store_issues source_file =
 
 let do_frontend_checks source_file ast =
   try
-    Logging.out "Start linting file %s\n" (DB.source_file_to_string source_file);
+    Logging.out "Start linting file %s@\n" (DB.source_file_to_string source_file);
     match ast with
     | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
         let context = context_with_ck_set CLintersContext.empty decl_list in
@@ -92,9 +92,9 @@ let do_frontend_checks source_file ast =
         IList.iter (do_frontend_checks_decl context) allowed_decls;
         if (LintIssues.exists_issues ()) then
           store_issues source_file;
-        Logging.out "End linting file %s\n" (DB.source_file_to_string source_file)
-    | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
+        Logging.out "End linting file %s@\n" (DB.source_file_to_string source_file)
+    | _ -> assert false (* NOTE: Assumes that an AST always starts with a TranslationUnitDecl *)
   with
   | Assert_failure (file, line, column) ->
-      Logging.out "Fatal error: exception Assert_failure(%s, %d, %d)\n%!" file line column;
+      Logging.err "Fatal error: exception Assert_failure(%s, %d, %d)@\n%!" file line column;
       exit 1

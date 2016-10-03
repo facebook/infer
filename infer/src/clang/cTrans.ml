@@ -17,25 +17,13 @@ open CFrontend_utils
 open CTrans_utils.Nodes
 module L = Logging
 
-module type CTrans = sig
-  (** Translates instructions: (statements and expressions) from the ast into sil *)
-
-  (** It receives the context, a list of statements from clang ast, list of custom statments to be
-      added before clang statements and the exit node and it returns a list of cfg nodes that
-      reporesent the translation of the stmts into sil. *)
-  val instructions_trans : CContext.t -> Clang_ast_t.stmt -> CModule_type.instr_type list ->
-    Cfg.Node.t -> Cfg.Node.t list
-
-end
-
-module CTrans_funct(F: CModule_type.CFrontend) : CTrans =
+module CTrans_funct(F: CModule_type.CFrontend) : CModule_type.CTranslation =
 struct
-
-  (*Returns the procname and whether is instance, according to the selector *)
-  (* information and according to the method signature with the following priority: *)
-  (* 1. method is a predefined model *)
-  (* 2. method is found by clang's resolution*)
-  (* 3. Method is found by our resolution *)
+  (* Returns the procname and whether is instance, according to the selector information and
+     according to the method signature with the following priority:
+     1. method is a predefined model
+     2. method is found by clang's resolution
+     3. Method is found by our resolution *)
   let get_callee_objc_method context obj_c_message_expr_info act_params =
     let open CContext in
     let (selector, method_pointer_opt, mc_type) =
@@ -664,7 +652,7 @@ struct
     | _ -> res_trans
 
   and decl_ref_trans trans_state pre_trans_result stmt_info decl_ref ~is_constructor_init =
-    Logging.out_debug "  priority node free = '%s'\n@."
+    Logging.out_debug "  priority node free = '%s'@\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let decl_kind = decl_ref.Clang_ast_t.dr_kind in
     match decl_kind with

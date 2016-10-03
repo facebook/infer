@@ -77,7 +77,7 @@ let do_run source_path ast_path =
       CFrontend_checkers_main.do_frontend_checks source_file ast_decl;
     if Config.clang_frontend_do_capture then
       CFrontend.do_source_file source_file ast_decl;
-    Logging.out "End translation AST file %s... OK!\n" !CFrontend_config.json;
+    Logging.out "End translation AST file %s... OK!@\n" !CFrontend_config.json;
     print_elapsed ();
   with
     (Yojson.Json_error s) as exc ->

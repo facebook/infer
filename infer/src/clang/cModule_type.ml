@@ -20,6 +20,11 @@ type decl_trans_context = [ `DeclTraversal | `Translation ]
 
 module type CTranslation =
 sig
+  (** Translates instructions: (statements and expressions) from the ast into sil *)
+
+  (** It receives the context, a list of statements from clang ast, list of custom statments to be
+      added before clang statements and the exit node and it returns a list of cfg nodes that
+      represent the translation of the stmts into sil. *)
   val instructions_trans : CContext.t -> Clang_ast_t.stmt -> instr_type list ->
     Cfg.Node.t -> Cfg.Node.t list
 end

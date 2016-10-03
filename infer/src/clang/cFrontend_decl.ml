@@ -15,17 +15,8 @@ module L = Logging
 
 open CFrontend_utils
 
-module type CFrontend_decl = sig
-  val function_decl : Tenv.t -> Cfg.cfg -> Cg.t -> Clang_ast_t.decl ->
-    CModule_type.block_data option -> unit
-
-  val translate_one_declaration :
-    Tenv.t -> Cg.t -> Cfg.cfg -> CModule_type.decl_trans_context -> Clang_ast_t.decl -> unit
-end
-
-module CFrontend_decl_funct(T: CModule_type.CTranslation) : CFrontend_decl =
+module CFrontend_decl_funct(T: CModule_type.CTranslation) : CModule_type.CFrontend =
 struct
-
   let model_exists procname =
     Specs.summary_exists_in_models procname && not Config.models_mode
 
@@ -33,7 +24,7 @@ struct
   let add_method tenv cg cfg class_decl_opt procname body has_return_param is_objc_method
       outer_context_opt extra_instrs =
     Logging.out_debug
-      "\n\n>>---------- ADDING METHOD: '%s' ---------<<\n@." (Procname.to_string procname);
+      "@\n@\n>>---------- ADDING METHOD: '%s' ---------<<@\n@." (Procname.to_string procname);
     try
       (match Cfg.Procdesc.find_from_name cfg procname with
        | Some procdesc ->

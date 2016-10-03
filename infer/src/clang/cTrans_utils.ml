@@ -570,7 +570,8 @@ let rec get_type_from_exp_stmt stmt =
   | ImplicitCastExpr(_, stmt_list, _, _) ->
       get_type_from_exp_stmt (extract_stmt_from_singleton stmt_list "WARNING: We expect only one stmt.")
   | DeclRefExpr(_, _, _, info) -> do_decl_ref_exp info
-  | _ -> Logging.err_debug "Failing with: %s \n%!" (Clang_ast_j.string_of_stmt stmt);
+  | _ ->
+      Logging.err_debug "Failing with: %s@\n%!" (Clang_ast_j.string_of_stmt stmt);
       Printing.print_failure_info "";
       assert false
 
