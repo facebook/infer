@@ -58,6 +58,35 @@ let match_method language proc_name method_name =
   Procname.get_language proc_name = language &&
   Procname.get_method proc_name = method_name
 
+(* Module to create matcher based on the file path *)
+module FilePathMatchesPatternMatcher = struct
+  type matcher = DB.source_file -> bool
+
+  let default_matcher : matcher = fun _ -> false
+
+
+  let file_contains_path regexp file_in =
+    Str.string_match regexp (Filename.dirname file_in) 0
+
+  let create_matcher s_patterns =
+    if s_patterns = [] then
+      default_matcher
+    else
+      let source_map = ref DB.SourceFileMap.empty in
+      (* let regexp = Str.regexp (join_strings "\\|" s_patterns) in *)
+      let regexp = Str.regexp ("TODO ^ ") in
+      fun source_file ->
+        try
+          DB.SourceFileMap.find source_file !source_map
+        with Not_found ->
+          let file_in = DB.source_file_to_string source_file in
+          let pattern_found = file_contains_path regexp file_in in
+          source_map := DB.SourceFileMap.add source_file pattern_found !source_map;
+          pattern_found
+
+  let load_matcher = create_matcher
+end
+
 (* Module to create matcher based on strings present in the source file *)
 module FileContainsStringMatcher = struct
   type matcher = DB.source_file -> bool
@@ -136,11 +165,12 @@ module FileOrProcMatcher = struct
             false
 
   let create_file_matcher patterns =
-    let s_patterns, m_patterns =
-      let collect (s_patterns, m_patterns) = function
-        | Config.Source_contains (_, s) -> (s:: s_patterns, m_patterns)
-        | Config.Method_pattern (_, mp) -> (s_patterns, mp :: m_patterns) in
-      IList.fold_left collect ([], []) patterns in
+    let s_patterns, m_patterns, p_patterns =
+      let collect (s_patterns, m_patterns, p_patterns) = function
+        | Config.Source_contains (_, s) -> (s:: s_patterns, m_patterns, p_patterns)
+        | Config.Method_pattern (_, mp) -> (s_patterns, mp :: m_patterns, p_patterns)
+        | Config.Path_patterns (pp) -> (s_patterns, m_patterns, pp:: p_patterns) in
+      IList.fold_left collect ([], [], []) patterns in
     let s_matcher =
       let matcher = FileContainsStringMatcher.create_matcher s_patterns in
       fun source_file _ -> matcher source_file
@@ -194,6 +224,7 @@ end
 
 let never_return_null_matcher = FileOrProcMatcher.load_matcher Config.patterns_never_returning_null
 let skip_translation_matcher = FileOrProcMatcher.load_matcher Config.patterns_skip_translation
+let skip_translation_path_matcher = FilePathMatchesPatternMatcher.load_matcher Config.patterns_skip_translation_path
 let suppress_warnings_matcher = FileOrProcMatcher.load_matcher Config.patterns_suppress_warnings
 let modeled_expensive_matcher = OverridesMatcher.load_matcher Config.patterns_modeled_expensive
 

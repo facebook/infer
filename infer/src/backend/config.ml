@@ -60,10 +60,14 @@ type method_pattern = {
   parameters : (string list) option;
 }
 
+type path_patterns = {
+  paths : (string list);
+}
+
 type pattern =
   | Method_pattern of language * method_pattern
   | Source_contains of language * string
-
+  | Path_patterns of path_patterns
 
 type zip_library = {
   zip_filename: string;
@@ -276,6 +280,10 @@ let patterns_of_json_with_key json_key json =
 
   let default_source_contains = "" in
 
+  let default_path_patterns = {
+    paths = []
+  } in
+
   let language_of_string = function
     | "Java" ->
         Ok Java
@@ -297,12 +305,15 @@ let patterns_of_json_with_key json_key json =
     match detect_language assoc with
     | Ok language ->
         let is_method_pattern key = IList.exists (string_equal key) ["class"; "method"]
+        and is_path_pattern key = IList.exists (string_equal key) ["paths"]
         and is_source_contains key = IList.exists (string_equal key) ["source_contains"] in
         let rec loop = function
           | [] ->
               Error ("Unknown pattern for " ^ json_key ^ " in " ^ inferconfig_file)
           | (key, _) :: _ when is_method_pattern key ->
               Ok (Method_pattern (language, default_method_pattern))
+          | (key, _) :: _ when is_path_pattern key ->
+              Ok (Path_patterns (default_path_patterns))
           | (key, _) :: _ when is_source_contains key ->
               Ok (Source_contains (language, default_source_contains))
           | _:: tl -> loop tl in
@@ -328,6 +339,10 @@ let patterns_of_json_with_key json_key json =
         | (key, _) when key = "language" -> mp
         | _ -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc)) in
       IList.fold_left loop default_method_pattern assoc
+    and create_path_patterns assoc =
+      let loop pp = function
+        | (key, `List l) when key = "paths" -> (collect_params l) in
+      loop default_path_patterns assoc
     and create_string_contains assoc =
       let loop sc = function
         | (key, `String pattern) when key = "source_contains" -> pattern
@@ -905,7 +920,8 @@ and margin =
 and (
   patterns_modeled_expensive,
   patterns_never_returning_null,
-  patterns_skip_translation) =
+  patterns_skip_translation,
+  patterns_skip_translation_path) =
   let mk_option ~deprecated ~long doc =
     CLOpt.mk_set_from_json ~deprecated ~long ~default:[] ~default_to_string:(fun _ -> "[]")
       ~exes:CLOpt.[Java]
@@ -916,7 +932,9 @@ and (
     mk_option ~deprecated:["never_returning_null"] ~long:"never-returning-null"
       "Matcher or list of matchers for functions that never return `null`.",
     mk_option ~deprecated:["skip_translation"] ~long:"skip-translation"
-      "Matcher or list of matchers for names of files that should be analyzed at all.")
+      "Matcher or list of matchers for names of files that should be analyzed at all.",
+      mk_option ~deprecated:["skip_translation_path"] ~long:"skip-translation"
+      "Matcher or list of matchers for paths of files that should be analyzed at all.")
 
 and pmd_xml =
   CLOpt.mk_bool ~long:"pmd-xml"
@@ -1445,6 +1463,7 @@ and optimistic_cast = !optimistic_cast
 and out_file_cmdline = !out_file
 and patterns_never_returning_null = !patterns_never_returning_null
 and patterns_skip_translation = !patterns_skip_translation
+and patterns_skip_translation_path = !patterns_skip_translation_path
 and patterns_modeled_expensive = !patterns_modeled_expensive
 and pmd_xml = !pmd_xml
 and precondition_stats = !precondition_stats

@@ -43,9 +43,14 @@ type method_pattern = {
   parameters : (string list) option;
 }
 
+type path_patterns = {
+  paths : (string list);
+}
+
 type pattern =
   | Method_pattern of language * method_pattern
   | Source_contains of language * string
+  | Path_patterns of path_patterns
 
 
 type zip_library = {
@@ -101,6 +106,7 @@ val os_type : os_type
 val patterns_modeled_expensive : pattern list
 val patterns_never_returning_null : pattern list
 val patterns_skip_translation : pattern list
+val patterns_skip_translation_path : pattern list
 val patterns_suppress_warnings : pattern list
 val perf_stats_prefix : string
 val proc_stats_filename : string

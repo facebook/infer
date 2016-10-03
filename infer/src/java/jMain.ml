@@ -127,9 +127,10 @@ let do_all_files classpath sources classes =
   let tenv = load_tenv () in
   let linereader = Printer.LineReader.create () in
   let skip source_file = Inferconfig.skip_translation_matcher source_file Procname.empty_block in
+  let skip_path source_file = Inferconfig.skip_translation_path_matcher source_file Procname.empty_block in
   let translate_source_file basename (package_opt, _) source_file =
     init_global_state source_file;
-    if not (skip source_file) then
+    if not (skip source_file) && not (skip_path source_file) then
       do_source_file linereader classes program tenv basename package_opt source_file in
   StringMap.iter
     (fun basename file_entry ->
