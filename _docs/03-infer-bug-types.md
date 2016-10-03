@@ -31,9 +31,9 @@ Here is an overview of the types of bugs currently reported by Infer.
   - [Registered observer being deallocated](/docs/infer-bug-types.html#REGISTERED_OBSERVER_BEING_DEALLOCATED)
   - [Global variable initialized with function or method call](/docs/infer-bug-types.html#GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL)
   
-  - Bugs reported only in iOS code about [ComponentKit](http://componentkit.org)
-    - [Mutable Local Variable in component file](/docs/infer-bug-types.html#MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE)
-    - [Component factory funciton](/docs/infer-bug-types.html#COMPONENT_FACTORY_FUNCTION)
+- Bugs reported only in iOS code about [ComponentKit](http://componentkit.org)
+  - [Mutable Local Variable in component file](/docs/infer-bug-types.html#MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE)
+  - [Component factory funciton](/docs/infer-bug-types.html#COMPONENT_FACTORY_FUNCTION)
 
 ## <a name="RESOURCE_LEAK"></a> Resource leak
 
