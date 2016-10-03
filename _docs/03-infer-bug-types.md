@@ -541,11 +541,11 @@ start-up time of an app.
 
 ## <a name="MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE"></a> Mutable local variable in component file
 
-(http://componentkit.org/docs/avoid-local-variables.html)
+[Doc in ComponentKit page](http://componentkit.org/docs/avoid-local-variables.html)
 
 ## <a name="COMPONENT_FACTORY_FUNCTION"></a> Component factory function
 
-(http://componentkit.org/docs/break-out-composites.html)
+[Doc in ComponentKit page](http://componentkit.org/docs/break-out-composites.html)
 
 
 
