@@ -30,6 +30,10 @@ Here is an overview of the types of bugs currently reported by Infer.
   - [Assign pointer warning](/docs/infer-bug-types.html#ASSIGN_POINTER_WARNING)
   - [Registered observer being deallocated](/docs/infer-bug-types.html#REGISTERED_OBSERVER_BEING_DEALLOCATED)
   - [Global variable initialized with function or method call](/docs/infer-bug-types.html#GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL)
+  
+  - Bugs reported only in iOS code about [ComponentKit](http://componentkit.org)
+    - [Mutable Local Variable in component file](/docs/infer-bug-types.html#MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE)
+    - [Component factory funciton](/docs/infer-bug-types.html#COMPONENT_FACTORY_FUNCTION)
 
 ## <a name="RESOURCE_LEAK"></a> Resource leak
 
@@ -534,3 +538,15 @@ This checker warns you when the initialization of global variable contain a meth
 The warning wants to make you aware that some functions are expensive.
 As the global variables are initialized before main() is called, these initializations can slow down the
 start-up time of an app.
+
+## <a name="MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE"></a> Mutable local variable in component file
+
+http://componentkit.org/docs/avoid-local-variables.html
+
+## <a name="COMPONENT_FACTORY_FUNCTION"></a> Component factory function
+
+http://componentkit.org/docs/break-out-composites.html
+
+
+
+
