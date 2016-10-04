@@ -292,14 +292,6 @@ let get_all_procs: cfg => list Procdesc.t;
 let get_defined_procs: cfg => list Procdesc.t;
 
 
-/** get the function names which should be analyzed before the other ones */
-let get_priority_procnames: cfg => Procname.Set.t;
-
-
-/** set the function names whose address has been taken in this file */
-let set_procname_priority: cfg => Procname.t => unit;
-
-
 /** checks whether a cfg is connected or not */
 let check_cfg_connectedness: cfg => unit;
 

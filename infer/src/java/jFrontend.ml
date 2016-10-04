@@ -107,7 +107,6 @@ let add_cmethod source_file program icfg node cm is_static =
         let procname = Cfg.Procdesc.get_proc_name procdesc in
         add_edges context start_node exn_node [exit_node] method_body_nodes impl false;
         Cg.add_defined_node icfg.JContext.cg procname;
-        if Procname.is_constructor procname then Cfg.set_procname_priority cfg procname
     | JTrans.Called _ -> ()
 
 

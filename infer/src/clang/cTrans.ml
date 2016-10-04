@@ -460,12 +460,6 @@ struct
     let pname = match get_builtin_pname_opt name decl_opt type_ptr with
       | Some builtin_pname -> builtin_pname
       | None -> CMethod_trans.create_procdesc_with_pointer context decl_ptr None name in
-    let address_of_function = not context.CContext.is_callee_expression in
-    (* If we are not translating a callee expression, *)
-    (* then the address of the function is being taken.*)
-    (* As e.g. in fun_ptr = foo; *)
-    let is_builtin = Builtin.is_registered pname in
-    if address_of_function && not is_builtin then Cfg.set_procname_priority context.cfg pname;
     { empty_res_trans with exps = [(Exp.Const (Const.Cfun pname), typ)] }
 
   let field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init =
@@ -544,7 +538,6 @@ struct
       else
         (* don't add 'this' expression for static methods *)
         [], [] in
-    (* consider using context.CContext.is_callee_expression to deal with pointers to methods? *)
     (* unlike field access, for method calls there is no need to expand class type *)
 
     (* use qualified method name for builtin matching, but use unqualified name elsewhere *)
@@ -552,10 +545,8 @@ struct
     let pname = match get_builtin_pname_opt qual_method_name decl_opt type_ptr with
       | Some builtin_pname -> builtin_pname
       | None ->
-          let pname = CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_name)
-              method_name in
-          Cfg.set_procname_priority context.CContext.cfg pname;
-          pname in
+          CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_name)
+            method_name in
     let method_exp = (Exp.Const (Const.Cfun pname), method_typ) in
     { pre_trans_result with
       is_cpp_call_virtual = is_cpp_virtual;
@@ -832,8 +823,7 @@ struct
         | _ -> assert false) in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
     (* claim priority if no ancestors has claimed priority before *)
-    let context_callee = { context with CContext.is_callee_expression = true } in
-    let trans_state_callee = { trans_state_pri with context = context_callee; succ_nodes = [] } in
+    let trans_state_callee = { trans_state_pri with succ_nodes = [] } in
     let res_trans_callee = instruction trans_state_callee fun_exp_stmt in
     let (sil_fe, _) = extract_exp_from_list res_trans_callee.exps
         "WARNING: The translation of fun_exp did not return an expression.\
@@ -2014,7 +2004,7 @@ struct
     let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
     let loc =
       (match stmt_info.Clang_ast_t.si_source_range with (l1, _) ->
-        CLocation.clang_to_sil_location l1 (Some context.CContext.procdesc)) in
+         CLocation.clang_to_sil_location l1 (Some context.CContext.procdesc)) in
     (* Given a captured var, return the instruction to assign it to a temp *)
     let assign_captured_var (cvar, typ) =
       let id = Ident.create_fresh Ident.knormal in
@@ -2035,7 +2025,6 @@ struct
         let ids, instrs = IList.split ids_instrs in
         let block_data = (context, type_ptr, block_pname, captureds) in
         F.function_decl context.tenv context.cfg context.cg decl (Some block_data);
-        Cfg.set_procname_priority context.cfg block_pname;
         let captured_vars =
           IList.map2 (fun id (pvar, typ) -> (Exp.Var id, pvar, typ)) ids captureds in
         let closure = Exp.Closure { name=block_pname; captured_vars } in
