@@ -697,7 +697,7 @@ let report_context_leaks pname sigma tenv =
     and check if the address of a stack variable is left in the result *)
 let remove_locals_formals_and_check tenv pdesc p =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
-  let pvars, p' = Cfg.remove_locals_formals tenv pdesc p in
+  let pvars, p' = PropUtil.remove_locals_formals tenv pdesc p in
   let check_pvar pvar =
     let loc = Cfg.Node.get_loc (Cfg.Procdesc.get_exit_node pdesc) in
     let dexp_opt, _ = Errdesc.vpath_find tenv p (Exp.Lvar pvar) in
@@ -757,7 +757,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
   let pre_post_visited_list =
     let pplist = Paths.PathSet.elements pathset in
     let f (prop, path) =
-      let _, prop' = Cfg.remove_locals_formals tenv pdesc prop in
+      let _, prop' = PropUtil.remove_locals_formals tenv pdesc prop in
       let prop'' = Abs.abstract pname tenv prop' in
       let pre, post = Prop.extract_spec prop'' in
       let pre' = Prop.normalize tenv (Prop.prop_sub sub pre) in
@@ -789,7 +789,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
   let add_spec pre ((posts : Paths.PathSet.t), visited) =
     let posts' =
       IList.map
-        (fun (p, path) -> (Cfg.remove_seed_vars tenv p, path))
+        (fun (p, path) -> (PropUtil.remove_seed_vars tenv p, path))
         (Paths.PathSet.elements (do_join_post pname tenv posts)) in
     let spec =
       { Specs.pre = Specs.Jprop.Prop (1, pre);
@@ -940,11 +940,11 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
       let pset, visited = collect_postconditions wl tenv pdesc in
       let plist =
         IList.map
-          (fun (p, path) -> (Cfg.remove_seed_vars tenv p, path))
+          (fun (p, path) -> (PropUtil.remove_seed_vars tenv p, path))
           (Paths.PathSet.elements pset) in
       plist, visited in
     let pre =
-      let p = Cfg.remove_locals_ret tenv pdesc (Specs.Jprop.to_prop precondition) in
+      let p = PropUtil.remove_locals_ret tenv pdesc (Specs.Jprop.to_prop precondition) in
       match precondition with
       | Specs.Jprop.Prop (n, _) -> Specs.Jprop.Prop (n, p)
       | Specs.Jprop.Joined (n, _, jp1, jp2) -> Specs.Jprop.Joined (n, p, jp1, jp2) in
