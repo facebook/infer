@@ -126,7 +126,13 @@ let do_all_files classpath sources classes =
   let program = JClasspath.load_program classpath classes in
   let tenv = load_tenv () in
   let linereader = Printer.LineReader.create () in
-  let skip source_file = Inferconfig.skip_translation_matcher source_file Procname.empty_block in
+  let skip source_file =
+    let is_path_matching path =
+      IList.exists
+        (fun pattern -> Str.string_match (Str.regexp pattern) path 0)
+        Config.skip_analysis_in_path in
+    is_path_matching (DB.source_file_to_rel_path source_file)
+    || Inferconfig.skip_translation_matcher source_file Procname.empty_block in
   let translate_source_file basename (package_opt, _) source_file =
     init_global_state source_file;
     if not (skip source_file) then

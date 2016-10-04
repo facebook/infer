@@ -916,7 +916,7 @@ and (
     mk_option ~deprecated:["never_returning_null"] ~long:"never-returning-null"
       "Matcher or list of matchers for functions that never return `null`.",
     mk_option ~deprecated:["skip_translation"] ~long:"skip-translation"
-      "Matcher or list of matchers for names of files that should be analyzed at all.")
+      "Matcher or list of matchers for names of files that should not be analyzed at all.")
 
 and pmd_xml =
   CLOpt.mk_bool ~long:"pmd-xml"
@@ -986,6 +986,11 @@ and seconds_per_iteration =
 and skip_clang_analysis_in_path =
   CLOpt.mk_string_list ~long:"skip-clang-analysis-in-path"
     ~exes:CLOpt.[Clang]
+    ~meta:"path prefix" "Ignore files whose path matches the given prefix"
+
+and skip_analysis_in_path =
+  CLOpt.mk_string_list ~long:"skip-analysis-in-path"
+    ~exes:CLOpt.[Clang;Java]
     ~meta:"path prefix" "Ignore files whose path matches the given prefix"
 
 and skip_translation_headers =
@@ -1464,6 +1469,7 @@ and save_analysis_results = !save_results
 and seconds_per_iteration = !seconds_per_iteration
 and show_buckets = !print_buckets
 and show_progress_bar = !progress_bar
+and skip_analysis_in_path = !skip_analysis_in_path
 and skip_clang_analysis_in_path = !skip_clang_analysis_in_path
 and skip_translation_headers = !skip_translation_headers
 and source_file = !source_file
