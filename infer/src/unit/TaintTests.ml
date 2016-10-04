@@ -65,6 +65,7 @@ module MockTaintAnalysis = TaintAnalysis.Make(struct
 
     let of_summary_trace _ = assert false
     let to_summary_trace _ = assert false
+    let handle_unknown _ _ = []
   end)
 
 module TestInterpreter = AnalyzerTester.Make

@@ -19,6 +19,7 @@ FILES = \
   Interprocedural.java \
   LoggingPrivateData.java \
   Recursion.java \
+  Strings.java \
 
 compile:
 	javac -cp $(CLASSPATH) $(FILES)

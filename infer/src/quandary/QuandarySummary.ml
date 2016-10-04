@@ -55,6 +55,8 @@ module type Trace = sig
   val to_summary_trace : t -> summary_trace
 
   val of_summary_trace : summary_trace -> t
+
+  val handle_unknown : CallSite.t -> Typ.t option -> in_out_summary list
 end
 
 let make_formal_input index access_path =

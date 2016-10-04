@@ -326,11 +326,11 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
                 failwith "Unimp: handling multiple return ids" in
 
           let astate_with_summary =
-            match Summary.read_summary proc_data.tenv proc_data.pdesc callee_pname with
-            | Some summary ->
-                apply_summary ret_id actuals summary astate_with_source proc_data call_site
-            | None ->
-                astate_with_source in
+            let summary =
+              match Summary.read_summary proc_data.tenv proc_data.pdesc callee_pname with
+              | Some summary -> summary
+              | None -> TraceDomain.handle_unknown call_site (Option.map snd ret_id) in
+            apply_summary ret_id actuals summary astate_with_source proc_data call_site in
 
           astate_with_summary
       | Sil.Call _ ->
@@ -457,13 +457,3 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
       end
 
 end
-
-module Java = Make(struct
-    include JavaTrace
-
-    let to_summary_trace trace = QuandarySummary.Java trace
-
-    let of_summary_trace = function
-      | QuandarySummary.Java trace -> trace
-      | QuandarySummary.Unknown -> assert false
-  end)
