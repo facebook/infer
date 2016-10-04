@@ -39,7 +39,7 @@ let active_procedure_checkers () =
         RepeatedCallsChecker.callback_check_repeated_calls, checkers_enabled;
         PrintfArgs.callback_printf_args, checkers_enabled;
         AnnotationReachability.Interprocedural.check_and_report, checkers_enabled;
-        Active.checker, false;
+        ThreadSafety.method_analysis, false;
       ] in
     IList.map (fun (x, y) -> (x, y, Some Config.Java)) l in
   let c_cpp_checkers =
@@ -54,7 +54,9 @@ let active_procedure_checkers () =
   java_checkers @ c_cpp_checkers
 
 let active_cluster_checkers () =
-  [(Checkers.callback_check_cluster_access, false, Some Config.Java)]
+  [(Checkers.callback_check_cluster_access, false, Some Config.Java);
+   (ThreadSafety.file_analysis, false, Some Config.Java)
+  ]
 
 let register () =
   let register registry (callback, active, language_opt) =

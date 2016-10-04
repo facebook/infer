@@ -126,6 +126,10 @@ let privacy_sink = "PrivacySink"
 let integrity_source = "IntegritySource"
 let integrity_sink = "IntegritySink"
 let guarded_by = "GuardedBy"
+let thread_safe = "ThreadSafe"
+
+let ia_is_thread_safe ia =
+  ia_ends_with ia thread_safe
 
 let ia_is_nullable ia =
   ia_ends_with ia nullable

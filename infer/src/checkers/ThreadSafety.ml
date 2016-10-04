@@ -1,0 +1,186 @@
+(*
+ * Copyright (c) 2016 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
+
+(** I want to use various powersets instead of just variables like Var.Set
+    For example to track the analogues of attributes
+    I will do this running forwards later, but backwards for now.
+*)
+
+open! Utils
+
+module F = Format
+module L = Logging
+
+module PPString = PrettyPrintable.MakePPSet(struct
+    type t = string
+    let compare = string_compare
+    let pp_element fmt s = F.fprintf fmt "%s" s
+  end)
+
+module PPrawpath = PrettyPrintable.MakePPSet(struct
+    type t = AccessPath.raw
+    let compare = AccessPath.raw_compare
+    let pp_element = AccessPath.pp_raw
+  end)
+
+module LocksDomain =  AbstractDomain.FiniteSet(PPString)
+
+module PathDomain =  AbstractDomain.FiniteSet(PPrawpath)
+
+module ReadWriteDomain = AbstractDomain.Pair (PathDomain) (PathDomain)
+
+module CombinedDomain = AbstractDomain.Pair (LocksDomain) (ReadWriteDomain)
+(* a typical element is (){locked}, {vars and fields})  *)
+
+
+module TransferFunctions (CFG : ProcCfg.S) = struct
+  module CFG = CFG
+  module Domain = CombinedDomain
+  type extras = ProcData.no_extras
+
+  let is_lock_procedure pn = Procname.equal pn ModelBuiltins.__set_locked_attribute
+
+  let is_unlock_procedure pn = Procname.equal pn ModelBuiltins.__delete_locked_attribute
+
+  let add_path_to_state exp typ pathdomainstate =
+    match AccessPath.of_exp exp typ ~f_resolve_id:(fun _ -> None) with
+    | Some rawpath -> PathDomain.add rawpath pathdomainstate
+    | None -> pathdomainstate
+
+
+  let exec_instr ((lockstate,(readstate,writestate)) as astate) { ProcData.pdesc; } _ =
+    let is_unprotected lockstate =
+      (not (Cfg.Procdesc.is_java_synchronized pdesc)) && (LocksDomain.is_empty lockstate)
+    in
+    function
+    | Sil.Call (_, Const (Cfun pn), _, _, _) ->
+        if is_lock_procedure pn
+        then
+          ((LocksDomain.add "locked" lockstate), (readstate,writestate))
+        else if is_unlock_procedure pn
+        then
+          ((LocksDomain.remove "locked" lockstate) , (readstate,writestate))
+        else
+          astate
+
+    | Sil.Store ((Lfield ( _, _, typ) as lhsfield) , _, _, _) ->
+        if is_unprotected lockstate then (* abstracts no lock being held*)
+          (lockstate, (readstate, add_path_to_state lhsfield typ writestate))
+        else astate
+
+    (* Note: it appears that the third arg of Store is never an Lfield in the targets of,
+       our translations, which is why we have not covered that case. *)
+    | Sil.Store (_, _, Lfield _, _) ->
+        failwith "Unexpected store instruction with rhs field"
+
+    | Sil.Load (_, (Lfield ( _, _, typ) as rhsfield) , _, _) ->
+        if is_unprotected lockstate then (* abstracts no lock being held*)
+          (lockstate, (add_path_to_state rhsfield typ readstate, writestate))
+        else astate
+
+    |  _  ->
+        astate
+end
+
+module Analyzer =
+  AbstractInterpreter.Make
+    (ProcCfg.Normal)
+    (Scheduler.ReversePostorder)
+    (TransferFunctions)
+
+let method_analysis { Callbacks.proc_desc; tenv; } =
+  match Analyzer.compute_post (ProcData.make_default proc_desc tenv) with
+  | Some post ->  (* I am printing to commandline and out to cater to javac and buck*)
+      (L.stdout  "\n Procedure: %s@ "
+         (Procname.to_string (Cfg.Procdesc.get_proc_name proc_desc) )
+      );
+      L.stdout "\n POST: %a\n" CombinedDomain.pp post;
+      (L.out  "\n Procedure: %s@ "
+         (Procname.to_string (Cfg.Procdesc.get_proc_name proc_desc) )
+      );
+      L.out "\n POST: %a\n" CombinedDomain.pp post
+  | None -> ()
+
+(* a results table is a Map where a key is an a procedure environment,
+   i.e., something of type Idenv.t * Tenv.t * Procname.t * Cfg.Procdesc.t
+*)
+module ResultsTableType = Map.Make (struct
+    type t = Idenv.t * Tenv.t * Procname.t * Cfg.Procdesc.t
+    let compare (_, _, pn1, _) (_,_,pn2,_) =  Procname.compare pn1 pn2
+  end)
+
+let should_analyze_proc (_,_,proc_name,proc_desc) =
+  (Procname.is_constructor proc_name) || (Cfg.Procdesc.get_access proc_desc <> PredSymb.Private)
+
+(* creates a map from proc_envs to postconditions *)
+let make_results_table file_env =
+  let procs_to_analyze = IList.filter should_analyze_proc file_env
+  in
+  (* make a Map sending each element e of list l to (f e) *)
+  let map_post_computation_over_procs f l =
+    IList.fold_left (fun m p -> ResultsTableType.add p (f p) m
+                    ) ResultsTableType.empty l
+  in
+  let compute_post_for_procedure = (* takes proc_env as arg *)
+    fun (_, tenv, _, proc_desc) ->
+      match Analyzer.compute_post (ProcData.make_default proc_desc tenv) with
+      | Some post -> post
+      | None -> CombinedDomain.initial
+  in
+  map_post_computation_over_procs compute_post_for_procedure procs_to_analyze
+
+(* For now, just checks if there is one active element amongst the posts of the analyzed methods.
+   This indicates that the method races with itself. To be refined later. *)
+let process_results_table tab = (
+  let finalresult =
+    ResultsTableType.for_all   (* check if writestate is empty for all postconditions*)
+      (fun _ ( _,( _, writestate)) -> (PathDomain.is_empty writestate)
+      )
+      tab
+  in
+  if finalresult then
+    begin
+      L.stdout  "\n ***** \n THREADSAFE \n *****\n" ;
+      L.out  "\n ***** \n THREADSAFE \n *****\n"
+    end
+  else  begin
+    L.stdout  "\n ***** \n RACY \n *****\n" ;
+    L.out  "\n ***** \n RACY \n *****\n"
+  end
+)
+
+(* Currently we analyze if there is an @ThreadSafe annotation on at least one of
+   the classes in a file. This might be tightened in future or even broadened in future
+   based on other criteria *)
+let should_analyze_file file_env =
+  IList.exists
+    (fun (_, tenv, pname, _) ->
+       AnnotationReachability.check_attributes Annotations.ia_is_thread_safe tenv pname
+    )
+    file_env
+
+(*Gathers results by analyzing all the methods in a file, then post-processes
+  the results to check (approximation of) thread safety *)
+(* file_env: (Idenv.t * Tenv.t * Procname.t * Cfg.Procdesc.t) list *)
+let file_analysis _ _ _ file_env =
+  begin L.stdout "\n THREAD SAFETY CHECKER \n\n";
+    if should_analyze_file file_env then
+      process_results_table
+        (make_results_table file_env)
+  end
+
+      (*
+    Todo:
+    0. Refactor abstract domain to use records rather than tuples
+    1. Track line numbers of accesses
+    2. Track protected writes and reads, too; if we have a write and a read where
+    one is non-protected then we have potential race (including protected write, unprotected read
+    3. Output error message when potential race found
+    4. Lotsa other stuff
+      *)

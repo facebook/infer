@@ -95,6 +95,7 @@ val ia_is_privacy_sink : Annot.Item.t -> bool
 val ia_is_integrity_source : Annot.Item.t -> bool
 val ia_is_integrity_sink : Annot.Item.t -> bool
 val ia_is_guarded_by : Annot.Item.t -> bool
+val ia_is_thread_safe : Annot.Item.t -> bool
 
 val ia_iter : (Annot.t -> unit) -> Annot.Item.t -> unit
 
