@@ -133,7 +133,7 @@ else
 EXTRA_DEPS = opensource
 endif
 
-DEPENDENCIES = IR backend checkers eradicate harness quandary $(EXTRA_DEPS)
+DEPENDENCIES = IR backend base checkers eradicate harness quandary $(EXTRA_DEPS)
 
 # ocamlbuild command with options common to all build targets
 OCAMLBUILD_BASE = rebuild $(OCAMLBUILD_OPTIONS) -j $(NCPU) $(addprefix -I , $(DEPENDENCIES))
@@ -333,8 +333,8 @@ ifneq ($(wildcard $(BUILD_DIR)/sanitize.sh),)
 	$(BUILD_DIR)/sanitize.sh
 endif
 
-version: backend/version.ml.in Makefile
-	TMPFILE=$$(mktemp backend/version.ml.tmp.XXXX); \
+version: base/Version.ml.in Makefile
+	TMPFILE=$$(mktemp base/Version.ml.tmp.XXXX); \
 	INFER_GIT_COMMIT=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --short HEAD || printf "unknown"); \
 	INFER_GIT_BRANCH=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --abbrev-ref HEAD || printf "unknown"); \
 	sed \
@@ -345,7 +345,7 @@ version: backend/version.ml.in Makefile
 	  -e "s|@INFER_GIT_COMMIT[@]|$$INFER_GIT_COMMIT|g" \
 	  -e "s|@INFER_GIT_BRANCH[@]|$$INFER_GIT_BRANCH|g" \
 	  $< > "$$TMPFILE"; \
-	$(INSTALL) -m 644 -C "$$TMPFILE" backend/version.ml; \
+	$(INSTALL) -m 644 -C "$$TMPFILE" base/Version.ml; \
 	rm -f "$$TMPFILE"
 
 $(BUILD_DIR):
@@ -363,8 +363,8 @@ endif
 ifeq ($(BUILD_LLVM_ANALYZERS),yes)
 	$(REMOVE) $(LLVM_SOURCES)/lLexer.ml $(LLVM_SOURCES)/lParser.ml
 endif
-	$(REMOVE) backend/version.ml
-	$(REMOVE) backend/version.ml.tmp.*
+	$(REMOVE) base/Version.ml
+	$(REMOVE) base/Version.ml.tmp.*
 	$(REMOVE) backend/jsonbug_{j,t}.ml{,i}
 	$(REMOVE) checkers/stacktree_{j,t}.ml{,i}
 	$(REMOVE) $(INFER_BIN) $(INFERANALYZE_BIN) $(INFERPRINT_BIN) $(STATSAGGREGATOR_BIN)
