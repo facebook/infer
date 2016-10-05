@@ -1039,25 +1039,27 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
   | Sil.Prune (cond, loc, true_branch, ik) ->
       let prop__ = Attribute.nullify_exp_with_objc_null tenv prop_ cond in
       let check_condition_always_true_false () =
-        let report_condition_always_true_false i =
-          let skip_loop = match ik with
-            | Sil.Ik_while | Sil.Ik_for ->
-                not (IntLit.iszero i) (* skip wile(1) and for (;1;) *)
-            | Sil.Ik_dowhile ->
-                true (* skip do..while *)
-            | Sil.Ik_land_lor ->
-                true (* skip subpart of a condition obtained from compilation of && and || *)
-            | _ -> false in
-          true_branch && not skip_loop in
-        match Prop.exp_normalize_prop tenv Prop.prop_emp cond with
-        | Exp.Const (Const.Cint i) when report_condition_always_true_false i ->
-            let node = State.get_node () in
-            let desc = Errdesc.explain_condition_always_true_false tenv i cond node loc in
-            let exn =
-              Exceptions.Condition_always_true_false (desc, not (IntLit.iszero i), __POS__) in
-            let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop current_pname) in
-            Reporting.log_warning current_pname ?pre:pre_opt exn
-        | _ -> () in
+        if !Config.curr_language <> Config.Clang ||
+           Config.report_condition_always_true_in_clang then
+          let report_condition_always_true_false i =
+            let skip_loop = match ik with
+              | Sil.Ik_while | Sil.Ik_for ->
+                  not (IntLit.iszero i) (* skip wile(1) and for (;1;) *)
+              | Sil.Ik_dowhile ->
+                  true (* skip do..while *)
+              | Sil.Ik_land_lor ->
+                  true (* skip subpart of a condition obtained from compilation of && and || *)
+              | _ -> false in
+            true_branch && not skip_loop in
+          match Prop.exp_normalize_prop tenv Prop.prop_emp cond with
+          | Exp.Const (Const.Cint i) when report_condition_always_true_false i ->
+              let node = State.get_node () in
+              let desc = Errdesc.explain_condition_always_true_false tenv i cond node loc in
+              let exn =
+                Exceptions.Condition_always_true_false (desc, not (IntLit.iszero i), __POS__) in
+              let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop current_pname) in
+              Reporting.log_warning current_pname ?pre:pre_opt exn
+          | _ -> () in
       if not Config.report_runtime_exceptions then
         check_already_dereferenced tenv current_pname cond prop__;
       check_condition_always_true_false ();

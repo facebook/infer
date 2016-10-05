@@ -68,6 +68,7 @@ val buck_generated_folder : string
 val buck_infer_deps_file_name : string
 val captured_dir_name : string
 val checks_disabled_by_default : string list
+val report_condition_always_true_in_clang : bool
 val clang_build_output_dir_name : string
 val cpp_models_dir : string
 val csl_analysis : bool

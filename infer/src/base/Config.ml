@@ -107,6 +107,8 @@ let checks_disabled_by_default = [
 
 let clang_build_output_dir_name = "build_output"
 
+let report_condition_always_true_in_clang = false
+
 (** Experimental: if true do some specialized analysis of concurrent constructs. *)
 let csl_analysis = true
 
