@@ -40,6 +40,7 @@ MODULE_TO_COMMAND = {
     'buck': ['buck'],
     'gradle': ['gradle', 'gradlew'],
     'javac': ['javac'],
+    'java': ['java'],
     'make': make.SUPPORTED_COMMANDS,
     'xcodebuild': ['xcodebuild'],
     'mvn': ['mvn'],
@@ -213,7 +214,9 @@ def main():
 
     buck_not_in_compilation_database_mode =  \
         mod_name == 'buck' and not args.use_compilation_database
-    if not (buck_not_in_compilation_database_mode or mod_name == 'javac'):
+    if not (buck_not_in_compilation_database_mode or
+            mod_name == 'javac' or
+            mod_name == 'java'):
         # Something should be already captured, otherwise analysis would fail
         if not os.path.exists(os.path.join(args.infer_out, 'captured')):
             print('There was nothing to analyze, exiting')

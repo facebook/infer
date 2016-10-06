@@ -63,7 +63,7 @@ def create_infer_command(args, javac_arguments):
         infer_args.append('--debug')
     infer_args += ['--analyzer', 'capture']
 
-    return AnalyzerWithFrontendWrapper(
+    return AnalyzerWithJavac(
         analyze.infer_parser.parse_args(infer_args),
         'javac',
         _get_javac_args(['javac'] + javac_arguments)
@@ -101,7 +101,7 @@ class CompilerCall(object):
 
     def run(self):
         if self.args.version:
-            return subprocess.call([self.javac_cmd] + self.original_arguments)
+            return subprocess.call(self.javac_cmd + self.original_arguments)
         else:
             javac_args = ['-verbose', '-g']
 
@@ -112,8 +112,6 @@ class CompilerCall(object):
                 raise AnnotationProcessorNotFound(config.ANNOT_PROCESSOR_JAR)
             if self.args.classes_out is not None:
                 javac_args += ['-d', self.args.classes_out]
-
-            javac_args.append('-J-Duser.language=en')
 
             classpath = self.args.classpath
             # the -processorpath option precludes searching the classpath for
@@ -215,7 +213,7 @@ class CompilerCall(object):
                     delete=False) as file_out:
                 self.verbose_out = file_out.name
 
-                command = [self.javac_cmd] + cli_args + \
+                command = self.javac_cmd + cli_args + \
                           ['@' + str(self.command_line_file)]
                 try:
                     subprocess.check_call(command, stderr=file_out)
@@ -239,13 +237,12 @@ class CompilerCall(object):
 
 class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
 
-    def __init__(self, args, javac_cmd, javac_args):
-        self.javac = CompilerCall(javac_cmd, javac_args)
+    def __init__(self, infer_args, compiler_call):
+        analyze.AnalyzerWrapper.__init__(self, infer_args)
+        self.javac = compiler_call
         if not self.javac.args.version:
-            if javac_args is None:
+            if self.javac.original_arguments is None:
                 raise Exception('No javac command detected')
-
-        analyze.AnalyzerWrapper.__init__(self, args)
 
         if self.args.buck:
             self.args.infer_out = os.path.join(
@@ -341,3 +338,19 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
     def _close(self):
         os.remove(self.javac.verbose_out)
         os.remove(self.javac.suppress_warnings_out)
+
+
+class AnalyzerWithJavac(AnalyzerWithFrontendWrapper):
+
+    def __init__(self, infer_args, javac_executable, javac_args):
+        javac_cmd = [javac_executable, '-J-Duser.language=en']
+        compiler_call = CompilerCall(javac_cmd, javac_args)
+        AnalyzerWithFrontendWrapper.__init__(self, infer_args, compiler_call)
+
+
+class AnalyzerWithJavaJar(AnalyzerWithFrontendWrapper):
+
+    def __init__(self, infer_args, java_executable, jar_path, compiler_args):
+        javac_cmd = [java_executable, '-jar', jar_path]
+        compiler_call = CompilerCall(javac_cmd, compiler_args)
+        AnalyzerWithFrontendWrapper.__init__(self, infer_args, compiler_call)

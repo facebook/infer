@@ -5,37 +5,51 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+import argparse
 import os
 import subprocess
 import traceback
 
 import util
-from inferlib import jwlib
+from inferlib import jwlib, utils
 
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
-javac <options> <source files>
+java -jar compiler.jar <options> <source files>
 
 Analysis examples:
-infer -- javac srcfile.java
-infer -- /path/to/javac srcfile.java'''
+infer -- java -jar compiler.jar srcfile.java
+infer -- /path/to/java -jar compiler.jar srcfile.java'''
 LANG = ['java']
 
 
 def gen_instance(*args):
-    return JavacCapture(*args)
+    return JavaJarCapture(*args)
 
 # This creates an empty argparser for the module, which provides only
 # description/usage information and no arguments.
 create_argparser = util.base_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 
 
-class JavacCapture:
+def parse_command_line(cmd):
+    cmd_parser = argparse.ArgumentParser()
+    cmd_parser.add_argument('-jar', type=utils.decode, metavar='Compiler jar')
+    java_jar, other_args = cmd_parser.parse_known_args(cmd[1:])
+    if java_jar.jar is None:
+        utils.stderr('Expects a javac command or jar file for the compiler')
+        utils.stderr('Example: infer -- java -jar compiler.jar ...\n')
+        exit(1)
+    return cmd[0], java_jar.jar, other_args
+
+
+class JavaJarCapture:
     def __init__(self, args, cmd):
-        self.analysis = jwlib.AnalyzerWithJavac(
+        java_binary, java_jar, other_args = parse_command_line(cmd)
+        self.analysis = jwlib.AnalyzerWithJavaJar(
             args,
-            cmd[0],
-            cmd[1:],
+            java_binary,
+            java_jar,
+            other_args
         )
 
     def capture(self):
