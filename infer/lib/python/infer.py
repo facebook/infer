@@ -1,5 +1,12 @@
 #!/usr/bin/env python2.7
 
+# Copyright (c) 2015 - present Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -7,7 +14,6 @@ from __future__ import unicode_literals
 
 import argparse
 import imp
-import json
 import locale
 import logging
 import os
@@ -40,9 +46,10 @@ MODULE_TO_COMMAND = {
     'ndk-build': ['ndk-build'],
 }
 
+
 def get_commands():
     """Return all commands that are supported."""
-    #flatten and dedup the list of commands
+    # flatten and dedup the list of commands
     return set(sum(MODULE_TO_COMMAND.values(), []))
 
 
@@ -110,7 +117,8 @@ def create_argparser(parents=[]):
         default=None,
         help=('Command to run the compiler/build-system. '
               'Supported build commands (run `infer --help -- <cmd_name>` for '
-              'extra help, e.g. `infer --help -- javac`): ' + supported_commands),
+              'extra help, e.g. `infer --help -- javac`): {}'.format(
+                supported_commands)),
     )
     return parser
 
@@ -151,10 +159,10 @@ def main():
 
     validate_args(imported_module, args)
 
-    remove_infer_out = (imported_module is not None
-                        and not args.reactive
-                        and capture_module_name != 'analyze'
-                        and not args.buck)
+    remove_infer_out = (imported_module is not None and
+                        not args.reactive and
+                        capture_module_name != 'analyze' and
+                        not args.buck)
     if remove_infer_out:
         analyze.remove_infer_out(args.infer_out)
 

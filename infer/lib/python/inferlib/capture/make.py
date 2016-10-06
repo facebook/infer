@@ -30,6 +30,7 @@ ALIASED_COMMANDS = ['clang', 'clang++', 'cc', 'gcc', 'g++']
 BUILD_COMMANDS = ['cmake', 'configure', 'make', 'waf']
 SUPPORTED_COMMANDS = ALIASED_COMMANDS + BUILD_COMMANDS
 
+
 def gen_instance(*args):
     return MakeCapture(*args)
 

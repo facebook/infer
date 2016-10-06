@@ -20,7 +20,6 @@ import logging
 import os
 import subprocess
 import sys
-import tempfile
 import time
 
 from . import config
@@ -216,7 +215,6 @@ class Timer:
         if message:
             self._logger(message + ' (%.2fs)', *(args + (self._dt,)))
         return self._dt
-
 
 
 def interact():

@@ -30,7 +30,7 @@ import time
 import traceback
 import zipfile
 
-from inferlib import analyze, config, issues, utils
+from inferlib import config, issues, utils
 
 
 ANALYSIS_SUMMARY_OUTPUT = 'analysis_summary.txt'
@@ -76,7 +76,7 @@ def prepare_build(args):
     # Create a temporary directory as a cache for jar files.
     infer_cache_dir = os.path.join(args.infer_out, 'cache')
     if not os.path.isdir(infer_cache_dir):
-       os.mkdir(infer_cache_dir)
+        os.mkdir(infer_cache_dir)
     infer_options += ['--infer_cache', infer_cache_dir]
     temp_files = [infer_cache_dir]
 
@@ -254,7 +254,7 @@ class NotFoundInJar(Exception):
 def load_stats(opened_jar):
     try:
         return json.loads(opened_jar.read(INFER_STATS).decode())
-    except KeyError as e:
+    except KeyError:
         raise NotFoundInJar
 
 
@@ -262,14 +262,14 @@ def load_csv_report(opened_jar):
     try:
         sio = io.StringIO(opened_jar.read(INFER_CSV_REPORT).decode())
         return list(utils.locale_csv_reader(sio))
-    except KeyError as e:
+    except KeyError:
         raise NotFoundInJar
 
 
 def load_json_report(opened_jar):
     try:
         return json.loads(opened_jar.read(INFER_JSON_REPORT).decode())
-    except KeyError as e:
+    except KeyError:
         raise NotFoundInJar
 
 
@@ -407,9 +407,9 @@ def cleanup(temp_files):
         try:
             logging.info('Removing %s' % file)
             if os.path.isdir(file):
-              shutil.rmtree(file)
+                shutil.rmtree(file)
             else:
-              os.unlink(file)
+                os.unlink(file)
         except IOError:
             logging.error('Could not remove %s' % file)
 
@@ -499,7 +499,8 @@ class Wrapper:
             sys.exit(0)
         except subprocess.CalledProcessError as e:
             if self.buck_args.keep_going:
-                print('Buck failed, but continuing analysis because --keep-going was passed')
+                print('Buck failed, but continuing the analysis '
+                      'because --keep-going was passed')
                 self._collect_results(start_time)
                 return os.EX_OK
             raise e

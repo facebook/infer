@@ -15,7 +15,6 @@ import argparse
 import codecs
 import os
 import subprocess
-import sys
 import tempfile
 import time
 
@@ -150,9 +149,10 @@ class CompilerCall(object):
                         if _is_empty_classpath(cp_line):
                             cp_line = '\n'
                         else:
-                            cp_line = ':%s\n' % cp_line
-                        args_file_cp.write(
-                            prefix + '-classpath\n' + classpath + cp_line + after_cp)
+                            cp_line = ':{}\n'.format(cp_line)
+                        cp_line = prefix + '-classpath\n' + classpath + cp_line
+                        cp_line += after_cp
+                        args_file_cp.write(cp_line)
                         at_arg_cp = '@' + args_file_cp.name
                         self.remaining_args = [
                             at_arg_cp if arg == at_arg else arg
@@ -170,8 +170,10 @@ class CompilerCall(object):
             # processors (checking the manifest of the annotation processor
             # JAR), so we don't want to use it unless the javac command does
             if self.args.processor is not None:
-                processor = '%s,%s' % (config.ANNOT_PROCESSOR_NAMES,
-                                       self.args.processor)
+                processor = '{infer_processors},{original_processors}'.format(
+                    infer_processors=config.ANNOT_PROCESSOR_NAMES,
+                    original_processors=self.args.processor
+                )
                 javac_args += ['-processor', processor]
 
             with tempfile.NamedTemporaryFile(
@@ -184,8 +186,8 @@ class CompilerCall(object):
                 annot_out.write('{}')
                 self.suppress_warnings_out = annot_out.name
             javac_args += ['-A%s=%s' %
-                          (config.SUPRESS_WARNINGS_OUTPUT_FILENAME_OPTION,
-                           self.suppress_warnings_out)]
+                           (config.SUPRESS_WARNINGS_OUTPUT_FILENAME_OPTION,
+                            self.suppress_warnings_out)]
 
             def arg_must_go_on_cli(arg):
                 # as mandated by javac, argument files must not contain
@@ -241,7 +243,7 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
         self.javac = CompilerCall(javac_cmd, javac_args)
         if not self.javac.args.version:
             if javac_args is None:
-                help_exit('No javac command detected')
+                raise Exception('No javac command detected')
 
         analyze.AnalyzerWrapper.__init__(self, args)
 
@@ -324,7 +326,6 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
             infer_cmd.append('-tracing')
         if self.args.android_harness:
             infer_cmd.append('-harness')
-
 
         return analyze.run_command(
             infer_cmd,

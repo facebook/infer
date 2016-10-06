@@ -10,7 +10,7 @@ import subprocess
 import traceback
 
 import util
-from inferlib import analyze, jwlib
+from inferlib import jwlib
 
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:

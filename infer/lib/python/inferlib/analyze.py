@@ -11,10 +11,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse
-import codecs
 import csv
-import glob
-import json
 import logging
 import multiprocessing
 import os
@@ -35,7 +32,7 @@ def get_infer_version():
     try:
         return subprocess.check_output([
             utils.get_cmd_in_bin_dir(INFER_ANALYZE_BINARY), '-version'])
-    except:
+    except subprocess.CalledProcessError:
         utils.stdout('Failed to run {0} binary, exiting'
                      .format(INFER_ANALYZE_BINARY))
         sys.exit(os.EX_UNAVAILABLE)
@@ -180,6 +177,7 @@ infer_group.add_argument('--specs-dir-list-file',
                               'in <file> to the list of directories to be '
                               'searched for spec files')
 
+
 def remove_infer_out(infer_out):
     # it is safe to ignore errors here because recreating the infer_out
     # directory will fail later
@@ -198,6 +196,7 @@ def reset_start_file(results_dir, touch_if_present=False):
     if (not os.path.exists(start_path)) or touch_if_present:
         # create new empty file - this will update modified timestamp
         open(start_path, 'w').close()
+
 
 def clean(infer_out):
     directories = [
@@ -367,7 +366,6 @@ class AnalyzerWrapper(object):
         elif self.args.project_root:
             infer_options += ['-project_root', self.args.project_root]
 
-
         infer_options = map(utils.decode_or_not, infer_options)
         infer_options_str = ' '.join(infer_options)
         os.environ['INFER_OPTIONS'] = utils.encode(infer_options_str)
@@ -470,15 +468,15 @@ class AnalyzerWrapper(object):
             infer_print_cmd + infer_print_options
         )
         if exit_status != os.EX_OK:
-            logging.error('Error with InferPrint with the command: '
-                          + infer_print_cmd)
+            logging.error(
+                'Error with InferPrint with the command: {}'.format(
+                    infer_print_cmd))
         else:
             issues.clean_csv(self.args, csv_report)
             issues.clean_json(self.args, json_report)
             self.update_stats_with_warnings(csv_report)
 
         return exit_status
-
 
     def read_proc_stats(self):
         proc_stats_path = os.path.join(
@@ -529,7 +527,6 @@ class AnalyzerWrapper(object):
                                          bugs_out, xml_out)
 
     def analyze_and_report(self):
-        should_print_errors = False
         if self.args.analyzer not in [config.ANALYZER_COMPILE,
                                       config.ANALYZER_CAPTURE]:
             if self.args.analyzer == config.ANALYZER_LINTERS:

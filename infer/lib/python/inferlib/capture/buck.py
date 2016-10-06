@@ -11,7 +11,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse
-import json
 import logging
 import os
 import subprocess
@@ -35,6 +34,8 @@ def gen_instance(*args):
 
 def string_in_quotes(value):
     return value.strip('\'')
+
+
 # This creates an empty argparser for the module, which provides only
 # description/usage information and no arguments.
 def create_argparser(group_name=MODULE_NAME):

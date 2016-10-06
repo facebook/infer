@@ -164,6 +164,7 @@ def clean_json(args, json_report):
     utils.dump_json_to_path(rows, temporary_file)
     shutil.move(temporary_file, json_report)
 
+
 def _text_of_infer_loc(loc):
     return ' ({}:{}:{}-{}:)'.format(
         loc[JSON_INDEX_ISL_FILE],

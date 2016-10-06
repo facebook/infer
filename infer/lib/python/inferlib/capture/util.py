@@ -18,7 +18,8 @@ import logging
 import subprocess
 import traceback
 
-from inferlib import analyze, jwlib, utils
+from inferlib import utils
+
 
 def get_build_output(build_cmd):
     #  TODO make it return generator to be able to handle large builds
@@ -45,7 +46,7 @@ def run_compilation_commands(cmds, clean_cmd):
 def run_cmd_ignore_fail(cmd):
     try:
         return subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-    except:
+    except subprocess.CalledProcessError:
         return 'calling {cmd} failed\n{trace}'.format(
             cmd=' '.join(cmd),
             trace=traceback.format_exc())
@@ -62,7 +63,7 @@ def base_argparser(description, module_name):
         """This creates an empty argparser for the module, which provides only
         description/usage information and no arguments."""
         parser = argparse.ArgumentParser(add_help=False)
-        group = parser.add_argument_group(
+        parser.add_argument_group(
             '{grp} module'.format(grp=group_name),
             description=description,
         )
