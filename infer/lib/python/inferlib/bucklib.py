@@ -81,7 +81,7 @@ def prepare_build(args):
     temp_files = [infer_cache_dir]
 
     try:
-        infer = [utils.get_cmd_in_bin_dir('infer')] + infer_options
+        infer_command = [utils.get_cmd_in_bin_dir('infer')] + infer_options
     except subprocess.CalledProcessError as e:
         logging.error('Could not find infer')
         raise e
@@ -89,6 +89,9 @@ def prepare_build(args):
     # make sure INFER_ANALYSIS is set when buck is called
     logging.info('Setup Infer analysis mode for Buck: export INFER_ANALYSIS=1')
     os.environ['INFER_ANALYSIS'] = '1'
+
+    # Export the Infer command as environment variables
+    os.environ['INFER_JAVA_BUCK_OPTIONS'] = json.dumps(infer_command)
 
     # Create a script to be called by buck
     infer_script = None
@@ -98,7 +101,7 @@ def prepare_build(args):
                                      dir='.') as infer_script:
         logging.info('Creating %s' % infer_script.name)
         infer_script.file.write(
-            utils.encode(INFER_SCRIPT.format(sys.executable, infer)))
+            utils.encode(INFER_SCRIPT.format(sys.executable, infer_command)))
 
     st = os.stat(infer_script.name)
     os.chmod(infer_script.name, st.st_mode | stat.S_IEXEC)
