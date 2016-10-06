@@ -89,9 +89,9 @@ let get_param_decls function_method_decl_info =
   | ObjC_Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_parameters
   | Block_decl_info (block_decl_info, _, _) -> block_decl_info.Clang_ast_t.bdi_parameters
 
-let get_language function_method_decl_info =
+let get_language trans_unit_ctx function_method_decl_info =
   match function_method_decl_info with
-  | Func_decl_info (_, _) -> Config.clang_lang
+  | Func_decl_info (_, _) -> trans_unit_ctx.CFrontend_config.lang
   | Cpp_Meth_decl_info _ -> Config.CPP
   | ObjC_Meth_decl_info _ -> Config.OBJC
   | Block_decl_info _ -> Config.OBJC
@@ -105,7 +105,7 @@ let is_cpp_virtual function_method_decl_info =
     1. self/this parameter (optional, only for methods)
     2. normal parameters
     3. return parameter (optional) *)
-let get_parameters tenv function_method_decl_info =
+let get_parameters trans_unit_ctx tenv function_method_decl_info =
   let par_to_ms_par par =
     match par with
     | Clang_ast_t.ParmVarDecl (_, name_info, qt, var_decl_info) ->
@@ -113,7 +113,7 @@ let get_parameters tenv function_method_decl_info =
         let param_typ = CTypes_decl.type_ptr_to_sil_type tenv qt.Clang_ast_t.qt_type_ptr in
         let qt_type_ptr =
           match param_typ with
-          | Typ.Tstruct _ when General_utils.is_cpp_translation ->
+          | Typ.Tstruct _ when General_utils.is_cpp_translation trans_unit_ctx ->
               Ast_expressions.create_reference_type qt.Clang_ast_t.qt_type_ptr
           | _ -> qt.Clang_ast_t.qt_type_ptr in
         (mangled, {qt with qt_type_ptr})
@@ -130,14 +130,14 @@ let get_return_val_and_param_types tenv function_method_decl_info =
     Ast_expressions.create_void_type, Some (Typ.Tptr (return_typ, Typ.Pk_pointer))
   else return_type_ptr, None
 
-let build_method_signature tenv decl_info procname function_method_decl_info
+let build_method_signature trans_unit_ctx tenv decl_info procname function_method_decl_info
     parent_pointer pointer_to_property_opt =
   let source_range = decl_info.Clang_ast_t.di_source_range in
   let tp, return_param_type_opt = get_return_val_and_param_types tenv function_method_decl_info in
   let is_instance_method = is_instance_method function_method_decl_info in
-  let parameters = get_parameters tenv function_method_decl_info in
+  let parameters = get_parameters trans_unit_ctx tenv function_method_decl_info in
   let attributes = decl_info.Clang_ast_t.di_attributes in
-  let lang = get_language function_method_decl_info in
+  let lang = get_language trans_unit_ctx function_method_decl_info in
   let is_cpp_virtual = is_cpp_virtual function_method_decl_info in
   CMethod_signature.make_ms
     procname parameters tp attributes source_range is_instance_method ~is_cpp_virtual:is_cpp_virtual
@@ -157,29 +157,30 @@ let get_init_list_instrs method_decl_info =
   let create_custom_instr construct_instr = `CXXConstructorInit construct_instr in
   IList.map create_custom_instr method_decl_info.Clang_ast_t.xmdi_cxx_ctor_initializers
 
-let method_signature_of_decl tenv meth_decl block_data_opt =
+let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
   let open Clang_ast_t in
   match meth_decl, block_data_opt with
   | FunctionDecl (decl_info, _, qt, fdi), _ ->
       let func_decl = Func_decl_info (fdi, qt.Clang_ast_t.qt_type_ptr) in
-      let procname = General_utils.procname_of_decl meth_decl in
-      let ms = build_method_signature tenv decl_info procname func_decl None None in
+      let procname = General_utils.procname_of_decl trans_unit_ctx meth_decl in
+      let ms = build_method_signature trans_unit_ctx tenv decl_info procname func_decl None None in
       let extra_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
   | CXXMethodDecl (decl_info, _, qt, fdi, mdi), _
   | CXXConstructorDecl (decl_info, _, qt, fdi, mdi), _
   | CXXConversionDecl (decl_info, _, qt, fdi, mdi), _
   | CXXDestructorDecl (decl_info, _, qt, fdi, mdi), _ ->
-      let procname = General_utils.procname_of_decl meth_decl in
+      let procname = General_utils.procname_of_decl trans_unit_ctx meth_decl in
       let parent_ptr = Option.get decl_info.di_parent_pointer in
       let method_decl = Cpp_Meth_decl_info (fdi, mdi, parent_ptr, qt.Clang_ast_t.qt_type_ptr)  in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
-      let ms = build_method_signature tenv decl_info procname method_decl parent_pointer None in
+      let ms = build_method_signature
+          trans_unit_ctx tenv decl_info procname method_decl parent_pointer None in
       let non_null_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       let init_list_instrs = get_init_list_instrs mdi in (* it will be empty for methods *)
       ms, fdi.Clang_ast_t.fdi_body, (init_list_instrs @ non_null_instrs)
   | ObjCMethodDecl (decl_info, _, mdi), _ ->
-      let procname = General_utils.procname_of_decl meth_decl in
+      let procname = General_utils.procname_of_decl trans_unit_ctx meth_decl in
       let parent_ptr = Option.get decl_info.di_parent_pointer in
       let method_decl = ObjC_Meth_decl_info (mdi, parent_ptr) in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
@@ -187,22 +188,22 @@ let method_signature_of_decl tenv meth_decl block_data_opt =
         match mdi.Clang_ast_t.omdi_property_decl with
         | Some decl_ref -> Some decl_ref.Clang_ast_t.dr_decl_pointer
         | None -> None in
-      let ms = build_method_signature tenv decl_info procname method_decl
+      let ms = build_method_signature trans_unit_ctx tenv decl_info procname method_decl
           parent_pointer pointer_to_property_opt in
       let extra_instrs = get_assume_not_null_calls mdi.omdi_parameters in
       ms, mdi.omdi_body, extra_instrs
   | BlockDecl (decl_info, bdi), Some (outer_context, tp, procname, _) ->
       let func_decl = Block_decl_info (bdi, tp, outer_context) in
-      let ms = build_method_signature tenv decl_info procname func_decl None None in
+      let ms = build_method_signature trans_unit_ctx tenv decl_info procname func_decl None None in
       let extra_instrs = get_assume_not_null_calls bdi.bdi_parameters in
       ms, bdi.bdi_body, extra_instrs
   | _ -> raise Invalid_declaration
 
-let method_signature_of_pointer tenv pointer =
+let method_signature_of_pointer trans_unit_ctx tenv pointer =
   try
     match Ast_utils.get_decl pointer with
     | Some meth_decl ->
-        let ms, _, _ = method_signature_of_decl tenv meth_decl None in
+        let ms, _, _ = method_signature_of_decl trans_unit_ctx tenv meth_decl None in
         Some ms
     | None -> None
   with Invalid_declaration -> None
@@ -247,10 +248,10 @@ let get_superclass_curr_class_objc context =
   | CContext.ContextProtocol _ -> assert false
 
 (* Gets the class name from a method signature found by clang, if search is successful *)
-let get_class_name_method_call_from_clang tenv obj_c_message_expr_info =
+let get_class_name_method_call_from_clang trans_unit_ctx tenv obj_c_message_expr_info =
   match obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer with
   | Some pointer ->
-      (match method_signature_of_pointer tenv pointer with
+      (match method_signature_of_pointer trans_unit_ctx tenv pointer with
        | Some ms ->
            begin
              match CMethod_signature.ms_get_name ms with
@@ -377,7 +378,7 @@ let get_const_args_indices ~shift args =
   aux [] args
 
 (** Creates a procedure description. *)
-let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
+let create_local_procdesc trans_unit_ctx cfg tenv ms fbody captured is_objc_inst_method =
   let defined = not ((IList.length fbody) == 0) in
   let proc_name = CMethod_signature.ms_get_name ms in
   let pname = Procname.to_string proc_name in
@@ -397,8 +398,8 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
     let source_range = CMethod_signature.ms_get_loc ms in
     Logging.out_debug "\nCreating a new procdesc for function: '%s'\n@." pname;
     Logging.out_debug "\nms = %s\n@." (CMethod_signature.ms_to_string ms);
-    let loc_start = CLocation.get_sil_location_from_range source_range true in
-    let loc_exit = CLocation.get_sil_location_from_range source_range false in
+    let loc_start = CLocation.get_sil_location_from_range trans_unit_ctx source_range true in
+    let loc_exit = CLocation.get_sil_location_from_range trans_unit_ctx source_range false in
     let ret_type = get_return_type tenv ms in
     if skip_property_accessor ms then ()
     else
@@ -452,9 +453,10 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
 
 let create_procdesc_with_pointer context pointer class_name_opt name =
   let open CContext in
-  match method_signature_of_pointer context.tenv pointer with
+  match method_signature_of_pointer context.translation_unit_context context.tenv pointer with
   | Some callee_ms ->
-      ignore (create_local_procdesc context.cfg context.tenv callee_ms [] [] false);
+      ignore (create_local_procdesc context.translation_unit_context context.cfg context.tenv
+                callee_ms [] [] false);
       CMethod_signature.ms_get_name callee_ms
   | None ->
       let callee_name =
@@ -462,12 +464,13 @@ let create_procdesc_with_pointer context pointer class_name_opt name =
         | Some class_name ->
             General_utils.mk_procname_from_cpp_method class_name name None
         | None ->
-            General_utils.mk_procname_from_function name None in
+            General_utils.mk_procname_from_function context.translation_unit_context name None in
       create_external_procdesc context.cfg callee_name false None;
       callee_name
 
-let add_default_method_for_class class_name decl_info =
-  let loc = CLocation.get_sil_location_from_range decl_info.Clang_ast_t.di_source_range true in
+let add_default_method_for_class trans_unit_ctx class_name decl_info =
+  let loc = CLocation.get_sil_location_from_range trans_unit_ctx
+      decl_info.Clang_ast_t.di_source_range true in
   let proc_name = Procname.get_default_objc_class_method class_name in
   let attrs = { (ProcAttributes.default proc_name Config.Clang) with loc = loc; } in
   AttributesTable.store_attributes attrs

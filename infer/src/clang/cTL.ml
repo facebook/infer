@@ -100,7 +100,7 @@ let eval_Atomic pred_name params an lcxt =
   match pred_name, params, an with
   | "call_method", [p1], Stmt st -> Predicates.call_method p1 st
   | "property_name_contains_word", [p1] , Decl d -> Predicates.property_name_contains_word d p1
-  | "is_objc_extension", [], _ -> Predicates.is_objc_extension
+  | "is_objc_extension", [], _ -> Predicates.is_objc_extension lcxt
   | "is_global_var", [], Decl d -> Predicates.is_syntactically_global_var d
   | "is_const_var", [], Decl d ->  Predicates.is_const_expr_var d
   | "call_function_named", _, Stmt st -> Predicates.call_function_named st params

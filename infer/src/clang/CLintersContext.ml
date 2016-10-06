@@ -8,6 +8,7 @@
  *)
 
 type context = {
+  translation_unit_context : CFrontend_config.translation_unit_context;
   current_method : Clang_ast_t.decl option;
   in_synchronized_block: bool;
   is_ck_translation_unit: bool;
@@ -15,8 +16,9 @@ type context = {
       of CKComponent or CKComponentController. *)
 }
 
-let empty = {
+let empty translation_unit_context = {
   current_method = None;
+  translation_unit_context;
   in_synchronized_block = false;
   is_ck_translation_unit = false;
 }

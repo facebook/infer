@@ -71,7 +71,8 @@ let property_name_contains_word decl word =
        with Not_found -> false)
   | _ -> false
 
-let is_objc_extension = General_utils.is_objc_extension
+let is_objc_extension lcxt =
+  General_utils.is_objc_extension lcxt.CLintersContext.translation_unit_context
 
 let is_syntactically_global_var decl =
   Ast_utils.is_syntactically_global_var decl

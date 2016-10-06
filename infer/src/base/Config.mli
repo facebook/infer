@@ -310,13 +310,3 @@ val curr_language : language ref
 (** Command Line Interface Documentation *)
 
 val print_usage_exit : unit -> 'a
-
-(** Name of dir for logging the output in the specific executable *)
-val log_dir_of_current_exe : string
-
-(** Name of current temporary files for logging the output in the current executable *)
-val tmp_log_files_of_current_exe : unit -> string * string
-
-(** should_log_exe = true means that files for logging in the log dir will be created
-    and uses of Logging.out or Logging.err will log in those files *)
-val should_log_current_exe : bool

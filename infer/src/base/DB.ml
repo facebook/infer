@@ -189,37 +189,10 @@ let file_modified_time ?(symlink=false) fname =
     Logging.do_err "File %s does not exist." fname;
     exit 1
 
-(** Create a directory if it does not exist already. *)
-let create_dir dir =
-  try
-    if (Unix.stat dir).Unix.st_kind != Unix.S_DIR then
-      (L.err "@.ERROR: file %s exists and is not a directory@." dir;
-       assert false)
-  with Unix.Unix_error _ ->
-    (try Unix.mkdir dir 0o700 with
-       Unix.Unix_error _ ->
-         let created_concurrently = (* check if another process created it meanwhile *)
-           try (Unix.stat dir).Unix.st_kind = Unix.S_DIR
-           with Unix.Unix_error _ -> false in
-         if not created_concurrently then
-           (L.err "@.ERROR: cannot create directory %s@." dir;
-            assert false))
-
 let filename_create_dir fname =
   let dirname = Filename.dirname fname in
   if not (Sys.file_exists dirname)
   then create_dir dirname
-
-
-let rec create_path path =
-  try
-    Unix.mkdir path 0o700
-  with
-  | Unix.Unix_error (Unix.EEXIST, _, _) -> ()
-  | Unix.Unix_error (Unix.ENOENT, _, _) ->
-      create_path (Filename.dirname path);
-      create_path path
-
 
 let read_whole_file fd =
   let stats = Unix.fstat fd in

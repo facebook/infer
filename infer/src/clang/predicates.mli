@@ -15,7 +15,7 @@ val call_method : string -> Clang_ast_t.stmt -> bool
 
 val property_name_contains_word : Clang_ast_t.decl -> string -> bool
 
-val is_objc_extension : bool
+val is_objc_extension : CLintersContext.context -> bool
 
 val is_syntactically_global_var : Clang_ast_t.decl -> bool
 

@@ -1263,8 +1263,8 @@ let compute_top_procedures = ref false;
 let register_perf_stats_report () => {
   let stats_dir = Filename.concat Config.results_dir Config.reporting_stats_dir_name;
   let stats_file = Filename.concat stats_dir (Config.perf_stats_prefix ^ ".json");
-  DB.create_dir Config.results_dir;
-  DB.create_dir stats_dir;
+  create_dir Config.results_dir;
+  create_dir stats_dir;
   PerfStats.register_report_at_exit stats_file
 };
 

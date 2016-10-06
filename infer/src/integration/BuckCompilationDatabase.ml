@@ -192,5 +192,5 @@ let get_compilation_database changed_files =
 let () =
   let changed_files = read_files_to_compile () in
   let compilation_database = get_compilation_database changed_files in
-  DB.create_dir (Config.results_dir // Config.clang_build_output_dir_name);
+  create_dir (Config.results_dir // Config.clang_build_output_dir_name);
   run_compilation_database compilation_database

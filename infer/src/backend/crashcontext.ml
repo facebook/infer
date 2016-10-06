@@ -83,7 +83,7 @@ let collect_all_summaries root_summaries_dir stacktrace_file stacktraces_dir =
     | None -> None
     | Some file ->
         let crashcontext_dir = Config.results_dir // "crashcontext" in
-        DB.create_dir crashcontext_dir;
+        create_dir crashcontext_dir;
         Some (file, crashcontext_dir // "crashcontext.json") in
   let trace_file_regexp = Str.regexp "\\(.*\\)\\.json" in
   let pairs_for_stactrace_dir = match stacktraces_dir with

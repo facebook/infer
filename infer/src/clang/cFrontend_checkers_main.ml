@@ -27,7 +27,7 @@ let rec do_frontend_checks_stmt (context:CLintersContext.context) stmt =
 and do_frontend_checks_decl context decl =
   let open Clang_ast_t in
   let info = Clang_ast_proj.get_decl_tuple decl in
-  CLocation.update_curr_file info;
+  CLocation.update_curr_file context.CLintersContext.translation_unit_context info;
   let context' =
     (match decl with
      | FunctionDecl(_, _, _, fdi)
@@ -74,20 +74,22 @@ let context_with_ck_set context decl_list =
 let store_issues source_file =
   let abbrev_source_file = DB.source_file_encoding source_file in
   let lint_issues_dir = Config.results_dir // Config.lint_issues_dir_name in
-  DB.create_dir lint_issues_dir;
+  create_dir lint_issues_dir;
   let lint_issues_file =
     DB.filename_from_string (Filename.concat lint_issues_dir (abbrev_source_file ^ ".issue")) in
   LintIssues.store_issues lint_issues_file !LintIssues.errLogMap
 
-let do_frontend_checks source_file ast =
+let do_frontend_checks trans_unit_ctx ast =
   try
+    let source_file = trans_unit_ctx.CFrontend_config.source_file in
     Logging.out "Start linting file %s@\n" (DB.source_file_to_string source_file);
     match ast with
     | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
-        let context = context_with_ck_set CLintersContext.empty decl_list in
+        let context =
+          context_with_ck_set (CLintersContext.empty trans_unit_ctx) decl_list in
         let is_decl_allowed decl =
           let decl_info = Clang_ast_proj.get_decl_tuple decl in
-          CLocation.should_do_frontend_check decl_info.Clang_ast_t.di_source_range in
+          CLocation.should_do_frontend_check trans_unit_ctx decl_info.Clang_ast_t.di_source_range in
         let allowed_decls = IList.filter is_decl_allowed decl_list in
         IList.iter (do_frontend_checks_decl context) allowed_decls;
         if (LintIssues.exists_issues ()) then

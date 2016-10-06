@@ -158,7 +158,7 @@ sig
   (** Returns true if the declaration or statement is inside the main source
       file, as opposed to an imported header file. For statements, this refers
       to the parent decl. *)
-  val is_in_main_file : Clang_ast_t.decl -> bool
+  val is_in_main_file : CFrontend_config.translation_unit_context -> Clang_ast_t.decl -> bool
 
   (** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl.
       Returns true if the passed in decl is an objc interface decl that's an
@@ -224,8 +224,8 @@ sig
 
   val mk_procname_from_objc_method : string -> string -> Procname.objc_cpp_method_kind -> Procname.t
 
-  val mk_procname_from_function : string -> (Clang_ast_t.decl_info * Clang_ast_t.function_decl_info)
-      option -> Procname.t
+  val mk_procname_from_function : CFrontend_config.translation_unit_context -> string
+    -> (Clang_ast_t.decl_info * Clang_ast_t.function_decl_info) option -> Procname.t
 
   val get_mangled_method_name : Clang_ast_t.function_decl_info ->
     Clang_ast_t.cxx_method_decl_info -> string option
@@ -233,7 +233,7 @@ sig
   val mk_procname_from_cpp_method :
     string -> string -> ?meth_decl:Clang_ast_t.decl -> string option -> Procname.t
 
-  val procname_of_decl : Clang_ast_t.decl -> Procname.t
+  val procname_of_decl : CFrontend_config.translation_unit_context -> Clang_ast_t.decl -> Procname.t
 
   val mk_class_field_name : Clang_ast_t.named_decl_info -> Ident.fieldname
 
@@ -244,9 +244,9 @@ sig
     Pvar.t
 
   (** true if Config.clang_lang is C++ or ObjC++ *)
-  val is_cpp_translation : bool
+  val is_cpp_translation : CFrontend_config.translation_unit_context -> bool
 
   (** true if Config.clang_lang is ObjC or ObjC++ *)
-  val is_objc_extension : bool
+  val is_objc_extension : CFrontend_config.translation_unit_context -> bool
 
 end

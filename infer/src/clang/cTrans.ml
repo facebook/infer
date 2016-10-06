@@ -32,7 +32,9 @@ struct
     let method_kind = Procname.objc_method_kind_of_bool is_instance in
     let ms_opt =
       match method_pointer_opt with
-      | Some pointer -> CMethod_trans.method_signature_of_pointer context.tenv pointer
+      | Some pointer ->
+          CMethod_trans.method_signature_of_pointer context.translation_unit_context context.tenv
+            pointer
       | None -> None in
     let proc_name =
       match CMethod_trans.get_method_name_from_clang context.tenv ms_opt with
@@ -51,10 +53,12 @@ struct
           None in
     match predefined_ms_opt, ms_opt with
     | Some ms, _ ->
-        ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv ms [] [] is_instance);
+        ignore (CMethod_trans.create_local_procdesc context.translation_unit_context context.cfg
+                  context.tenv ms [] [] is_instance);
         CMethod_signature.ms_get_name ms, CMethod_trans.MCNoVirtual
     | None, Some ms ->
-        ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv ms [] [] is_instance);
+        ignore (CMethod_trans.create_local_procdesc context.translation_unit_context context.cfg
+                  context.tenv ms [] [] is_instance);
         if CMethod_signature.ms_is_getter ms || CMethod_signature.ms_is_setter ms then
           proc_name, CMethod_trans.MCNoVirtual
         else
@@ -235,7 +239,8 @@ struct
     let open CContext in
     (* translation will reset Ident counter, save it's state and restore it afterwards *)
     let ident_state = Ident.NameGenerator.get_current () in
-    F.translate_one_declaration context.tenv context.cg context.cfg `Translation decl;
+    F.translate_one_declaration context.translation_unit_context context.tenv context.cg context.cfg
+      `Translation decl;
     Ident.NameGenerator.set_current ident_state
 
   let mk_temp_sil_var procdesc var_name_suffix =
@@ -419,7 +424,7 @@ struct
     let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
 
-  let get_builtin_pname_opt name decl_opt type_ptr =
+  let get_builtin_pname_opt trans_unit_ctx name decl_opt type_ptr =
     let get_deprecated_attr_arg decl =
       let open Clang_ast_t in
       let decl_info = Clang_ast_proj.get_decl_tuple decl in
@@ -444,7 +449,7 @@ struct
     | _ when CTrans_models.is_retain_builtin name type_ptr ->
         Some ModelBuiltins.__objc_retain_cf
     | _ when name = CFrontend_config.malloc &&
-             General_utils.is_objc_extension ->
+             General_utils.is_objc_extension trans_unit_ctx ->
         Some ModelBuiltins.malloc_no_fail
     | _ -> None
 
@@ -457,7 +462,8 @@ struct
     Option.may (call_translation context) decl_opt;
     let name = Ast_utils.get_qualified_name name_info in
     let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
-    let pname = match get_builtin_pname_opt name decl_opt type_ptr with
+    let pname =
+      match get_builtin_pname_opt context.translation_unit_context name decl_opt type_ptr with
       | Some builtin_pname -> builtin_pname
       | None -> CMethod_trans.create_procdesc_with_pointer context decl_ptr None name in
     { empty_res_trans with exps = [(Exp.Const (Const.Cfun pname), typ)] }
@@ -510,7 +516,8 @@ struct
     let class_name = Ast_utils.get_class_name_from_member name_info in
     Logging.out_debug "!!!!! Dealing with method '%s' @." method_name;
     let method_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
-    let ms_opt = CMethod_trans.method_signature_of_pointer context.tenv decl_ptr in
+    let ms_opt = CMethod_trans.method_signature_of_pointer
+        context.translation_unit_context context.tenv decl_ptr in
     let is_instance_method = match ms_opt with
       | Some ms -> CMethod_signature.ms_is_instance ms
       | _ -> true (* might happen for methods that are not exported yet (some templates). *) in
@@ -542,7 +549,9 @@ struct
 
     (* use qualified method name for builtin matching, but use unqualified name elsewhere *)
     let qual_method_name = Ast_utils.get_qualified_name name_info in
-    let pname = match get_builtin_pname_opt qual_method_name decl_opt type_ptr with
+    let pname =
+      match get_builtin_pname_opt context.translation_unit_context qual_method_name decl_opt
+              type_ptr with
       | Some builtin_pname -> builtin_pname
       | None ->
           CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_name)
@@ -562,7 +571,8 @@ struct
           cxx_record_info.xrdi_destructor
       | _ -> None in
     match destruct_decl_ref_opt with
-    | Some decl_ref -> method_deref_trans trans_state pvar_trans_result decl_ref si `CXXDestructor
+    | Some decl_ref ->
+        method_deref_trans trans_state pvar_trans_result decl_ref si `CXXDestructor
     | None -> empty_res_trans
 
   let this_expr_trans trans_state sil_loc class_type_ptr =
@@ -599,7 +609,7 @@ struct
     let typ =
       match ast_typ with
       | Tstruct _ when decl_ref.dr_kind = `ParmVar ->
-          if General_utils.is_cpp_translation then
+          if General_utils.is_cpp_translation context.translation_unit_context then
             Typ.Tptr (ast_typ, Pk_reference)
           else ast_typ
       | _ -> ast_typ in
@@ -617,7 +627,8 @@ struct
         match Ast_utils.get_decl decl_ref.dr_decl_pointer with
         | Some VarDecl (_, _, qual_type, vdi) -> (
             match ast_typ with
-            | Tstruct _ when not General_utils.is_cpp_translation ->
+            | Tstruct _
+              when not (General_utils.is_cpp_translation context.translation_unit_context) ->
                 (* Do not convert a global struct to a local because SIL
                    values do not include structs, they must all be heap-allocated  *)
                 false, None
@@ -649,7 +660,8 @@ struct
     match decl_kind with
     | `EnumConstant -> enum_constant_trans trans_state decl_ref
     | `Function -> function_deref_trans trans_state decl_ref
-    | `Var | `ImplicitParam | `ParmVar -> var_deref_trans trans_state stmt_info decl_ref
+    | `Var | `ImplicitParam | `ParmVar ->
+        var_deref_trans trans_state stmt_info decl_ref
     | `Field | `ObjCIvar ->
         field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init
     | `CXXMethod | `CXXConversion | `CXXConstructor | `CXXDestructor  ->
@@ -790,7 +802,7 @@ struct
               if (is_binary_assign_op binary_operator_info)
               (* assignment operator result is lvalue in CPP, rvalue in C, *)
               (* hence the difference *)
-              && (not General_utils.is_cpp_translation)
+              && (not (General_utils.is_cpp_translation context.translation_unit_context))
               && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
                 (* We are in this case when an assignment is inside        *)
                 (* another operator that creates a node. Eg. another       *)
@@ -1005,7 +1017,7 @@ struct
       | `Class type_ptr ->
           let class_opt =
             CMethod_trans.get_class_name_method_call_from_clang
-              context.CContext.tenv obj_c_message_expr_info in
+              context.translation_unit_context context.CContext.tenv obj_c_message_expr_info in
           Some (new_or_alloc_trans trans_state_pri sil_loc si type_ptr class_opt selector)
       | _ -> None
       (* assertions *)
@@ -1850,7 +1862,8 @@ struct
       CTypes_decl.type_ptr_to_sil_type
         context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     let exp_op, instr_op =
-      CArithmetic_trans.unary_operation_instruction unary_operator_info sil_e' ret_typ sil_loc in
+      CArithmetic_trans.unary_operation_instruction
+        context.translation_unit_context unary_operator_info sil_e' ret_typ sil_loc in
     let unary_op_res_trans = { empty_res_trans with instrs = instr_op } in
     let all_res_trans = [ res_trans_stmt; unary_op_res_trans ] in
     let nname = "UnaryOperator" in
@@ -2004,7 +2017,8 @@ struct
     let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
     let loc =
       (match stmt_info.Clang_ast_t.si_source_range with (l1, _) ->
-         CLocation.clang_to_sil_location l1 (Some context.CContext.procdesc)) in
+         CLocation.clang_to_sil_location context.CContext.translation_unit_context l1
+           (Some context.CContext.procdesc)) in
     (* Given a captured var, return the instruction to assign it to a temp *)
     let assign_captured_var (cvar, typ) =
       let id = Ident.create_fresh Ident.knormal in
@@ -2024,7 +2038,8 @@ struct
         let ids_instrs = IList.map assign_captured_var captureds in
         let ids, instrs = IList.split ids_instrs in
         let block_data = (context, type_ptr, block_pname, captureds) in
-        F.function_decl context.tenv context.cfg context.cg decl (Some block_data);
+        F.function_decl context.translation_unit_context context.tenv context.cfg context.cg decl
+          (Some block_data);
         let captured_vars =
           IList.map2 (fun id (pvar, typ) -> (Exp.Var id, pvar, typ)) ids captureds in
         let closure = Exp.Closure { name=block_pname; captured_vars } in
@@ -2622,13 +2637,14 @@ struct
               (Ast_utils.string_of_stmt s);
             assert false)
 
-  (* Function similar to instruction function, but it takes C++ constructor initializer as *)
-  (* an input parameter. *)
+  (* Function similar to instruction function, but it takes C++ constructor initializer as
+     an input parameter. *)
   and cxx_constructor_init_trans ctor_init trans_state =
-    (*let tenv = trans_state.context.CContext.tenv in*)
-    let class_ptr = CContext.get_curr_class_decl_ptr trans_state.context.CContext.curr_class in
+    let context = trans_state.context in
+    let class_ptr = CContext.get_curr_class_decl_ptr context.CContext.curr_class in
     let source_range = ctor_init.Clang_ast_t.xci_source_range in
-    let sil_loc = CLocation.get_sil_location_from_range source_range true in
+    let sil_loc = CLocation.get_sil_location_from_range context.CContext.translation_unit_context
+        source_range true in
     (* its pointer will be used in PriorityNode *)
     let this_stmt_info = Ast_expressions.dummy_stmt_info () in
     (* this will be used to avoid creating node in init_expr_trans *)

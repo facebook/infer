@@ -26,8 +26,8 @@ let register_perf_stats_report source_file =
   let stats_dir = Filename.concat Config.results_dir Config.frontend_stats_dir_name in
   let abbrev_source_file = DB.source_file_encoding source_file in
   let stats_file = Config.perf_stats_prefix ^ "_" ^ abbrev_source_file ^ ".json" in
-  DB.create_dir Config.results_dir ;
-  DB.create_dir stats_dir ;
+  create_dir Config.results_dir ;
+  create_dir stats_dir ;
   PerfStats.register_report_at_exit (Filename.concat stats_dir stats_file)
 
 

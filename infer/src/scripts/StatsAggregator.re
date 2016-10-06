@@ -180,9 +180,9 @@ let () = {
   let aggregated_frontend_stats_dir = Filename.concat infer_out Config.frontend_stats_dir_name;
   let aggregated_backend_stats_dir = Filename.concat infer_out Config.backend_stats_dir_name;
   let aggregated_reporting_stats_dir = Filename.concat infer_out Config.reporting_stats_dir_name;
-  DB.create_dir aggregated_frontend_stats_dir;
-  DB.create_dir aggregated_backend_stats_dir;
-  DB.create_dir aggregated_reporting_stats_dir;
+  create_dir aggregated_frontend_stats_dir;
+  create_dir aggregated_backend_stats_dir;
+  create_dir aggregated_reporting_stats_dir;
   let write_to_json_file_opt destfile json =>
     switch json {
     | Some j => Utils.write_json_to_file destfile j

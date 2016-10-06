@@ -72,25 +72,29 @@ val set_delayed_prints : print_action list -> unit
 (** reset the delayed print actions *)
 val reset_delayed_prints : unit -> unit
 
-(** print to the current out stream
+(** Set a custom identifier to be part of the filename of the current logfiles. *)
+val set_log_file_identifier : string option -> unit
+
+(** print to the current out stream, as specified in set_log_file_identifier
     (note: only prints in debug or in stats mode) *)
 val out : ('a, Format.formatter, unit) format -> 'a
 
-(** print to the current out stream
+(** print to the current out stream, as specified in set_log_file_identifier
     (note: only prints in debug mode) *)
 val out_debug : ('a, Format.formatter, unit) format -> 'a
 
-(** print to the current error stream
+(** print to the current error stream, as specified in set_log_file_identifier
     (note: only prints in debug or stats mode) *)
 val err : ('a, Format.formatter, unit) format -> 'a
 
-(** print to the current error stream (note: only prints in debug mode) *)
+(** print to the current error stream, as specified in set_log_file_identifier
+    (note: only prints in debug mode) *)
 val err_debug : ('a, Format.formatter, unit) format -> 'a
 
-(** print to the current out stream  *)
+(** print to the current out stream, as specified in set_log_file_identifier  *)
 val do_out : ('a, Format.formatter, unit) format -> 'a
 
-(** print to the current err stream *)
+(** print to the current err stream, as specified in set_log_file_identifier *)
 val do_err : ('a, Format.formatter, unit) format -> 'a
 
 (** print immediately to standard error *)
@@ -156,3 +160,6 @@ val log_progress_procedure : unit -> unit
 
 (** Progress bar: log a timeout event if in developer mode. *)
 val log_progress_timeout_event : SymOp.failure_kind -> unit
+
+(** Name of current temporary files for logging the output in the current executable *)
+val log_file_names : unit -> string * string

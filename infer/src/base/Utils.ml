@@ -630,3 +630,29 @@ let failwithf fmt =
 let invalid_argf fmt =
   Format.kfprintf (fun _ -> invalid_arg (Format.flush_str_formatter ()))
     Format.str_formatter fmt
+
+
+(** Create a directory if it does not exist already. *)
+let create_dir dir =
+  try
+    if (Unix.stat dir).Unix.st_kind != Unix.S_DIR then
+      failwithf "@.ERROR: file %s exists and is not a directory@." dir
+  with Unix.Unix_error _ ->
+  try Unix.mkdir dir 0o700 with
+    Unix.Unix_error _ ->
+      let created_concurrently = (* check if another process created it meanwhile *)
+        try (Unix.stat dir).Unix.st_kind = Unix.S_DIR
+        with Unix.Unix_error _ -> false in
+      if not created_concurrently then
+        failwithf "@.ERROR: cannot create directory %s@." dir
+
+(** [create_path path] will create a directory at [path], creating all the parent directories if
+    non-existing *)
+let rec create_path path =
+  try
+    Unix.mkdir path 0o700
+  with
+  | Unix.Unix_error (Unix.EEXIST, _, _) -> ()
+  | Unix.Unix_error (Unix.ENOENT, _, _) ->
+      create_path (Filename.dirname path);
+      create_dir path

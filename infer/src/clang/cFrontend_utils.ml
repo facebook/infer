@@ -437,10 +437,15 @@ struct
     | Clang_ast_t.ObjCImplementationDecl (_, _, _, _, idi) -> Some idi
     | _ -> None
 
-  let is_in_main_file decl =
+  let is_in_main_file translation_unit_context decl =
     let decl_info = Clang_ast_proj.get_decl_tuple decl in
     let file_opt = (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file in
-    opt_equal string_equal file_opt Config.source_file && Option.is_some file_opt
+    match file_opt with
+    | None -> false
+    | Some file ->
+        DB.source_file_equal
+          (CLocation.source_file_from_path file)
+          translation_unit_context.CFrontend_config.source_file
 
   let default_blacklist =
     let open CFrontend_config in
@@ -632,11 +637,13 @@ struct
          | None -> file)
     | None -> ""
 
-  let is_cpp_translation =
-    Config.clang_lang = Config.CPP || Config.clang_lang = Config.OBJCPP
+  let is_cpp_translation translation_unit_context =
+    let lang = translation_unit_context.CFrontend_config.lang in
+    lang = Config.CPP || lang = Config.OBJCPP
 
-  let is_objc_extension =
-    Config.clang_lang = Config.OBJC || Config.clang_lang = Config.OBJCPP
+  let is_objc_extension translation_unit_context =
+    let lang = translation_unit_context.CFrontend_config.lang in
+    lang = Config.OBJC || lang = Config.OBJCPP
 
   let rec get_mangled_method_name function_decl_info method_decl_info =
     (* For virtual methods return mangled name of the method from most base class
@@ -658,7 +665,7 @@ struct
              get_mangled_method_name fdi mdi
          | _ -> assert false)
 
-  let mk_procname_from_function name function_decl_info_opt =
+  let mk_procname_from_function translation_unit_context name function_decl_info_opt =
     let file =
       match function_decl_info_opt with
       | Some (decl_info, function_decl_info) ->
@@ -673,7 +680,7 @@ struct
       | _ -> None in
     let mangled_name =
       match mangled_opt with
-      | Some m when is_cpp_translation -> m
+      | Some m when is_cpp_translation translation_unit_context -> m
       | _ -> "" in
     let mangled = (string_crc_hex32 file) ^ mangled_name in
     if String.length file == 0 && String.length mangled_name == 0 then
@@ -700,13 +707,13 @@ struct
     let method_kind = Procname.objc_method_kind_of_bool is_instance in
     mk_procname_from_objc_method class_name method_name method_kind
 
-  let procname_of_decl meth_decl =
+  let procname_of_decl translation_unit_context meth_decl =
     let open Clang_ast_t in
     match meth_decl with
     | FunctionDecl (decl_info, name_info, _, fdi) ->
         let name = Ast_utils.get_qualified_name name_info in
         let function_info = Some (decl_info, fdi) in
-        mk_procname_from_function name function_info
+        mk_procname_from_function translation_unit_context name function_info
     | CXXMethodDecl (_, name_info, _, fdi, mdi)
     | CXXConstructorDecl (_, name_info, _, fdi, mdi)
     | CXXConversionDecl (_, name_info, _, fdi, mdi)

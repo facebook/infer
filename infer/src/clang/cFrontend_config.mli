@@ -11,6 +11,11 @@ open! Utils
 
 (** Module that contains constants and global state used in the frontend *)
 
+type translation_unit_context = {
+  lang : Config.clang_lang;
+  source_file : DB.source_file
+}
+
 (** Constants *)
 
 val alloc : string
@@ -78,8 +83,6 @@ val modeled_function_attributes : string list
 
 
 (** Global state *)
-
-val current_source : DB.source_file ref
 
 (** Map from enum constants pointers to their predecesor and their sil value *)
 val enum_map : (Clang_ast_t.pointer option * Exp.t option) Clang_ast_main.PointerMap.t ref

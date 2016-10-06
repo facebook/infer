@@ -136,7 +136,7 @@ let binary_operation_instruction boi e1 typ e2 loc rhs_owning_method =
         (Clang_ast_j.string_of_binary_operator_kind bok);
       (Exp.minus_one, [])
 
-let unary_operation_instruction uoi e typ loc =
+let unary_operation_instruction translation_unit_context uoi e typ loc =
   let uok = Clang_ast_j.string_of_unary_operator_kind (uoi.Clang_ast_t.uoi_kind) in
   let un_exp op =
     Exp.UnOp(op, e, Some typ) in
@@ -150,7 +150,7 @@ let unary_operation_instruction uoi e typ loc =
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Load (id, e, typ, loc) in
       let e_plus_1 = Exp.BinOp(Binop.PlusA, Exp.Var id, Exp.Const(Const.Cint (IntLit.one))) in
-      let exp = if General_utils.is_cpp_translation then
+      let exp = if General_utils.is_cpp_translation translation_unit_context then
           e
         else
           e_plus_1 in
@@ -164,7 +164,7 @@ let unary_operation_instruction uoi e typ loc =
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Load (id, e, typ, loc) in
       let e_minus_1 = Exp.BinOp(Binop.MinusA, Exp.Var id, Exp.Const(Const.Cint (IntLit.one))) in
-      let exp = if General_utils.is_cpp_translation then
+      let exp = if General_utils.is_cpp_translation translation_unit_context then
           e
         else
           e_minus_1 in

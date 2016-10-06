@@ -81,17 +81,17 @@ let function_decl_checker_list = [ComponentKit.component_factory_function_advice
 let checker_for_function_decl decl checker context =
   checker context decl
 
-let get_err_log method_decl_opt =
+let get_err_log translation_unit_context method_decl_opt =
   let procname = match method_decl_opt with
-    | Some method_decl -> General_utils.procname_of_decl method_decl
+    | Some method_decl -> General_utils.procname_of_decl translation_unit_context method_decl
     | None -> Procname.Linters_dummy_method in
   LintIssues.get_err_log procname
 
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
-let log_frontend_issue method_decl_opt key issue_desc =
+let log_frontend_issue translation_unit_context method_decl_opt key issue_desc =
   let issue = issue_desc.CIssue.issue in
   let loc = issue_desc.CIssue.loc in
-  let errlog = get_err_log method_decl_opt in
+  let errlog = get_err_log translation_unit_context method_decl_opt in
   let err_desc = Errdesc.explain_frontend_warning issue_desc.CIssue.description
       issue_desc.CIssue.suggestion loc in
   let name = CIssue.to_string issue in
@@ -116,7 +116,8 @@ let invoke_set_of_checkers f context key checkers  =
   IList.iter (fun checker ->
       match f checker context with
       | Some issue_desc ->
-          log_frontend_issue context.CLintersContext.current_method key issue_desc
+          log_frontend_issue context.CLintersContext.translation_unit_context
+            context.CLintersContext.current_method key issue_desc
       | None -> ()) checkers
 
 let run_frontend_checkers_on_stmt context instr =

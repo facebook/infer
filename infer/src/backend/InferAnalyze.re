@@ -17,6 +17,7 @@ let module L = Logging;
 let module F = Format;
 
 let () = {
+  Logging.set_log_file_identifier (Option.map Filename.basename Config.cluster_cmdline);
   if Config.print_builtins {
     Builtin.print_and_exit ()
   };
@@ -119,8 +120,8 @@ let register_perf_stats_report () => {
     };
   let stats_base = Config.perf_stats_prefix ^ "_" ^ Filename.basename cluster ^ ".json";
   let stats_file = Filename.concat stats_dir stats_base;
-  DB.create_dir Config.results_dir;
-  DB.create_dir stats_dir;
+  create_dir Config.results_dir;
+  create_dir stats_dir;
   PerfStats.register_report_at_exit stats_file
 };
 

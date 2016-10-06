@@ -14,6 +14,73 @@ open! Utils
 
 module F = Format
 
+
+(** Name of dir for logging the output in the specific executable *)
+let log_dir_of_current_exe =
+  match CommandLineOption.current_exe with
+  | Analyze -> "analyze"
+  | BuckCompilationDatabase -> "buck_compilation_database"
+  | Clang -> "clang"
+  | ClangWrapper -> "clang_wrapper"
+  | Interactive -> "interactive"
+  | Java -> "java"
+  | Llvm -> "llvm"
+  | Print -> "print"
+  | StatsAggregator -> "stats_agregator"
+  | Toplevel -> "top_level"
+
+
+let out_file = ref "<BUG: logging to a file not setup, what you're looking for was emitted on \
+                    stdout and may have been swallowed>"
+let err_file = ref "<BUG: logging to a file not setup, what you're looking for was emitted on \
+                    stderr and may have been swallowed>"
+let out_formatter = ref F.std_formatter
+let err_formatter = ref F.err_formatter
+
+let set_log_file_identifier string_opt =
+  let should_setup_log_files =
+    match CommandLineOption.current_exe with
+    | Analyze
+    | Clang
+    | ClangWrapper -> Config.debug_mode || Config.stats_mode
+    | BuckCompilationDatabase -> true
+    | _ -> false in
+  if should_setup_log_files then (
+    let name_prefix = (match string_opt with
+        | Some name -> name ^ "_"
+        | None -> "") ^ string_of_int (Unix.getpid ()) ^ "_" in
+    let exe_log_dir =
+      let log_dir = Config.results_dir // Config.log_dir_name in
+      log_dir // log_dir_of_current_exe in
+    create_path exe_log_dir;
+    let log_file config_opt suffix =
+      (* the command-line option takes precedence if specified *)
+      if config_opt <> "" then config_opt
+      else Filename.temp_file ~temp_dir:exe_log_dir name_prefix suffix in
+    out_file := log_file Config.out_file_cmdline "-out.log";
+    err_file := log_file Config.err_file_cmdline "-err.log";
+    let open_output_file fname =
+      try
+        let cout = open_out fname in
+        let fmt = F.formatter_of_out_channel cout in
+        (fmt, cout)
+      with Sys_error _ ->
+        failwithf "@.ERROR: cannot open output file %s@." fname
+    in
+    let out_fmt, out_chan = open_output_file !out_file in
+    let err_fmt, err_chan = open_output_file !err_file in
+    Pervasives.at_exit (fun () ->
+        F.pp_print_flush out_fmt () ;
+        F.pp_print_flush err_fmt () ;
+        close_out out_chan ;
+        close_out err_chan
+      );
+    out_formatter := out_fmt;
+    err_formatter := err_fmt;
+  )
+
+let log_file_names () = (!out_file, !err_file)
+
 (** type of printable elements *)
 type print_type =
   | PTatom
@@ -64,52 +131,10 @@ let delayed_actions = ref []
 (** hook for the current printer of delayed print actions *)
 let printer_hook = ref (Obj.magic ())
 
-let out_formatter, err_formatter =
-  (* Create a directory if it does not exist already. *)
-  (* This is the same as DB.create_dir, except for logging to stderr *)
-  let create_dir dir =
-    try
-      if (Unix.stat dir).Unix.st_kind != Unix.S_DIR then
-        failwithf "@.ERROR: file %s exists and is not a directory@." dir
-    with Unix.Unix_error _ ->
-    try Unix.mkdir dir 0o700
-    with Unix.Unix_error _ ->
-      let created_concurrently = (* check if another process created it meanwhile *)
-        (Unix.stat dir).Unix.st_kind = Unix.S_DIR in
-      if not created_concurrently then
-        failwithf "@.ERROR: cannot create directory %s@." dir
-  in
-  let open_output_file fname =
-    try
-      let cout = open_out fname in
-      let fmt = F.formatter_of_out_channel cout in
-      (fmt, cout)
-    with Sys_error _ ->
-      failwithf "@.ERROR: cannot open output file %s@." fname
-  in
-  if Config.should_log_current_exe then
-    let log_dir = Config.results_dir // Config.log_dir_name in
-    let exe_log_dir = log_dir // Config.log_dir_of_current_exe in
-    create_dir Config.results_dir;
-    create_dir log_dir;
-    create_dir exe_log_dir;
-    let out_file, err_file = Config.tmp_log_files_of_current_exe () in
-    let out_fmt, out_chan = open_output_file out_file in
-    let err_fmt, err_chan = open_output_file err_file in
-    Pervasives.at_exit (fun () ->
-        F.pp_print_flush out_fmt () ;
-        F.pp_print_flush err_fmt () ;
-        close_out out_chan ;
-        close_out err_chan
-      );
-    (out_fmt, err_fmt)
-  else
-    (F.std_formatter, F.err_formatter)
-
 (** extend the current print log *)
 let add_print_action pact =
   if Config.write_html then delayed_actions := pact :: !delayed_actions
-  else if not Config.test then !printer_hook out_formatter pact
+  else if not Config.test then !printer_hook !out_formatter pact
 
 (** reset the delayed print actions *)
 let reset_delayed_prints () =
@@ -123,50 +148,41 @@ let get_delayed_prints () =
 let set_delayed_prints new_delayed_actions =
   delayed_actions := new_delayed_actions
 
-let do_print fmt fmt_string =
-  F.fprintf fmt fmt_string
+let do_print = F.fprintf
 
-let do_print_in_debug_or_stats_mode fmt fmt_string =
+let do_print_in_debug_or_stats_mode =
   if Config.debug_mode || Config.stats_mode then
-    F.fprintf fmt fmt_string
+    F.fprintf
   else
-    F.ifprintf fmt fmt_string
+    F.ifprintf
 
-let do_print_in_debug_mode fmt fmt_string =
+let do_print_in_debug_mode =
   if Config.debug_mode then
-    F.fprintf fmt fmt_string
+    F.fprintf
   else
-    F.ifprintf fmt fmt_string
+    F.ifprintf
 
-(** print to the current out stream (note: only prints in debug or stats mode) *)
 let out fmt_string =
-  do_print_in_debug_or_stats_mode out_formatter fmt_string
+  do_print_in_debug_or_stats_mode !out_formatter fmt_string
 
-(** print to the current out stream (note: only prints in debug mode) *)
 let out_debug fmt_string =
-  do_print_in_debug_mode out_formatter fmt_string
+  do_print_in_debug_mode !out_formatter fmt_string
 
-(** print to the current out stream  *)
 let do_out fmt_string =
-  do_print out_formatter fmt_string
+  do_print !out_formatter fmt_string
 
-(** print to the current err stream (note: only prints in debug or stats mode) *)
 let err fmt_string =
-  do_print_in_debug_or_stats_mode err_formatter fmt_string
+  do_print_in_debug_or_stats_mode !err_formatter fmt_string
 
-(** print to the current err stream  *)
 let do_err fmt_string =
-  do_print err_formatter fmt_string
+  do_print !err_formatter fmt_string
 
-(** print to the current out stream (note: only prints in debug mode) *)
 let err_debug fmt_string =
-  do_print_in_debug_mode err_formatter fmt_string
+  do_print_in_debug_mode !err_formatter fmt_string
 
-(** print immediately to standard error *)
 let stderr fmt_string =
   do_print F.err_formatter fmt_string
 
-(** print immediately to standard output *)
 let stdout fmt_string =
   do_print F.std_formatter fmt_string
 

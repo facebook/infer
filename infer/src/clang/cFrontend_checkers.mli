@@ -44,4 +44,4 @@ val global_var_init_with_calls_warning :
   CLintersContext.context -> Clang_ast_t.decl -> CIssue.issue_desc option
 
 val location_from_dinfo :
-  Clang_ast_t.decl_info -> Location.t
+  CLintersContext.context -> Clang_ast_t.decl_info -> Location.t

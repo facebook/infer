@@ -23,8 +23,9 @@ type method_call_type =
 
 val should_add_return_param : Typ.t -> is_objc_method:bool -> bool
 
-val create_local_procdesc : Cfg.cfg -> Tenv.t -> CMethod_signature.method_signature ->
-  Clang_ast_t.stmt list -> (Pvar.t * Typ.t) list -> bool -> bool
+val create_local_procdesc : CFrontend_config.translation_unit_context -> Cfg.cfg -> Tenv.t ->
+  CMethod_signature.method_signature -> Clang_ast_t.stmt list -> (Pvar.t * Typ.t) list -> bool ->
+  bool
 
 val create_external_procdesc : Cfg.cfg -> Procname.t -> bool -> (Typ.t * Typ.t list) option -> unit
 
@@ -34,21 +35,23 @@ val get_objc_method_data : Clang_ast_t.obj_c_message_expr_info ->
 val get_class_name_method_call_from_receiver_kind : CContext.t ->
   Clang_ast_t.obj_c_message_expr_info -> (Exp.t * Typ.t) list -> string
 
-val get_class_name_method_call_from_clang : Tenv.t -> Clang_ast_t.obj_c_message_expr_info ->
-  string option
+val get_class_name_method_call_from_clang : CFrontend_config.translation_unit_context -> Tenv.t ->
+  Clang_ast_t.obj_c_message_expr_info -> string option
 
-val method_signature_of_decl : Tenv.t -> Clang_ast_t.decl -> CModule_type.block_data option ->
+val method_signature_of_decl : CFrontend_config.translation_unit_context -> Tenv.t ->
+  Clang_ast_t.decl -> CModule_type.block_data option ->
   CMethod_signature.method_signature * Clang_ast_t.stmt option * CModule_type.instr_type list
 
-val method_signature_of_pointer : Tenv.t -> Clang_ast_t.pointer ->
-  CMethod_signature.method_signature option
+val method_signature_of_pointer : CFrontend_config.translation_unit_context -> Tenv.t ->
+  Clang_ast_t.pointer -> CMethod_signature.method_signature option
 
 val get_method_name_from_clang : Tenv.t -> CMethod_signature.method_signature option ->
   CMethod_signature.method_signature option
 
-val create_procdesc_with_pointer : CContext.t -> Clang_ast_t.pointer -> string option ->
-  string -> Procname.t
+val create_procdesc_with_pointer : CContext.t -> Clang_ast_t.pointer -> string option -> string ->
+  Procname.t
 
-val add_default_method_for_class : string -> Clang_ast_t.decl_info -> unit
+val add_default_method_for_class : CFrontend_config.translation_unit_context -> string ->
+  Clang_ast_t.decl_info -> unit
 
 val get_procname_from_cpp_lambda : CContext.t -> Clang_ast_t.decl -> Procname.t

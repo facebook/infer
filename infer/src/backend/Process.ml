@@ -21,8 +21,8 @@ let print_unix_error cmd e =
     found in that file, and exits, with default code 1 or a given code. *)
 let print_error_and_exit ?(exit_code=1) f el =
   Logging.do_err f el;
-  let log_file = snd (Config.tmp_log_files_of_current_exe ()) in
-  Logging.stderr "\nAn error occured. Please, find details in %s\n\n%!" log_file;
+  let log_file = snd (Logging.log_file_names ()) in
+  Logging.stderr "@\nAn error occured. Please find details in %s@\n@\n%!" log_file;
   exit exit_code
 
 (** Executes a command and catches a potential exeption and prints it. *)

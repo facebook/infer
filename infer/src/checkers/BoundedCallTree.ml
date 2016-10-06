@@ -104,7 +104,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (Procname.to_filename caller)
         suffix in
     let fpath = Filename.concat dir fname in
-    DB.create_dir dir;
+    create_dir dir;
     Ag_util.Json.to_file Stacktree_j.write_stacktree fpath stacktree
 
   let exec_instr astate proc_data _ = function

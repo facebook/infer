@@ -30,9 +30,9 @@ sig
 end
 
 module type CFrontend = sig
-  val function_decl : Tenv.t -> Cfg.cfg -> Cg.t -> Clang_ast_t.decl ->
-    block_data option -> unit
+  val function_decl : CFrontend_config.translation_unit_context -> Tenv.t -> Cfg.cfg -> Cg.t ->
+    Clang_ast_t.decl -> block_data option -> unit
 
-  val translate_one_declaration : Tenv.t -> Cg.t -> Cfg.cfg ->
-    decl_trans_context -> Clang_ast_t.decl -> unit
+  val translate_one_declaration : CFrontend_config.translation_unit_context -> Tenv.t -> Cg.t ->
+    Cfg.cfg -> decl_trans_context -> Clang_ast_t.decl -> unit
 end

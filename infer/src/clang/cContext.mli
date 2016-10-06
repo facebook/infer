@@ -24,6 +24,7 @@ type str_node_map = (string, Cfg.Node.t) Hashtbl.t
 
 type t =
   {
+    translation_unit_context : CFrontend_config.translation_unit_context;
     tenv : Tenv.t;
     cg : Cg.t;
     cfg : Cfg.cfg;
@@ -31,7 +32,8 @@ type t =
     is_objc_method : bool;
     curr_class: curr_class;
     return_param_typ : Typ.t option;
-    outer_context : t option; (* in case of objc blocks, the context of the method containing the block *)
+    outer_context : t option; (** in case of objc blocks, the context of the method containing the
+                                  block *)
     mutable blocks_static_vars : ((Pvar.t * Typ.t) list) Procname.Map.t;
     label_map : str_node_map;
   }
@@ -58,8 +60,8 @@ val is_objc_method : t -> bool
 
 val get_tenv : t -> Tenv.t
 
-val create_context : Tenv.t -> Cg.t -> Cfg.cfg -> Cfg.Procdesc.t ->
-  curr_class -> Typ.t option -> bool -> t option -> t
+val create_context : CFrontend_config.translation_unit_context -> Tenv.t -> Cg.t -> Cfg.cfg ->
+  Cfg.Procdesc.t -> curr_class -> Typ.t option -> bool -> t option -> t
 
 val create_curr_class : Tenv.t -> string -> Csu.class_kind -> curr_class
 

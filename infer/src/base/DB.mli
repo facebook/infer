@@ -143,13 +143,6 @@ val filename_create_dir : filename -> unit
 (** Find the source directories in the current results dir *)
 val find_source_dirs : unit -> source_dir list
 
-(** create a directory if it does not exist already *)
-val create_dir : string -> unit
-
-(** [make_directory path] will create a directory [path] creating all the
-    sub directories if non-existing *)
-val create_path : string -> unit
-
 (** Read a file using a lock to allow write attempts in parallel. *)
 val read_file_with_lock : string -> string -> bytes option
 

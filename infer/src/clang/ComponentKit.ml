@@ -10,10 +10,11 @@
 open CFrontend_utils
 open !Utils
 
-let is_ck_context context decl =
-  context.CLintersContext.is_ck_translation_unit
-  && Ast_utils.is_in_main_file decl
-  && General_utils.is_objc_extension
+let is_ck_context {CLintersContext.is_ck_translation_unit; translation_unit_context} decl =
+  is_ck_translation_unit
+  && Ast_utils.is_in_main_file translation_unit_context decl
+  && General_utils.is_objc_extension translation_unit_context
+
 
 (** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl.
     (Returns false on decls other than that one.) *)
@@ -101,7 +102,7 @@ let mutable_local_vars_advice context decl =
           CIssue.description = "Local variables should be const to avoid reassignment";
           CIssue.suggestion = Some "Add a const (after the asterisk for pointer types). \
                                     http://componentkit.org/docs/avoid-local-variables.html";
-          CIssue.loc = CFrontend_checkers.location_from_dinfo decl_info
+          CIssue.loc = CFrontend_checkers.location_from_dinfo context decl_info
         }
       else None
   | _ -> assert false (* Should only be called with a VarDecl *)
@@ -130,7 +131,7 @@ let component_factory_function_advice context decl =
                that return a CKComponent subclass. \
                http://componentkit.org/docs/break-out-composites.html"
             );
-          CIssue.loc = CFrontend_checkers.location_from_dinfo decl_info
+          CIssue.loc = CFrontend_checkers.location_from_dinfo context decl_info
         }
       else None
   | _ -> assert false (* Should only be called with FunctionDecl *)

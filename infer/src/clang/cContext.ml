@@ -26,6 +26,7 @@ type str_node_map = (string, Cfg.Node.t) Hashtbl.t
 
 type t =
   {
+    translation_unit_context : CFrontend_config.translation_unit_context;
     tenv : Tenv.t;
     cg : Cg.t;
     cfg : Cfg.cfg;
@@ -33,20 +34,16 @@ type t =
     is_objc_method : bool;
     curr_class: curr_class;
     return_param_typ : Typ.t option;
-    outer_context : t option; (* in case of objc blocks, the context of the method containing the block *)
+    outer_context : t option; (** in case of objc blocks, the context of the method containing the
+                                  block *)
     mutable blocks_static_vars : ((Pvar.t * Typ.t) list) Procname.Map.t;
     label_map : str_node_map;
   }
 
-let create_context tenv cg cfg procdesc curr_class return_param_typ is_objc_method context_opt =
-  { tenv = tenv;
-    cg = cg;
-    cfg = cfg;
-    procdesc = procdesc;
-    curr_class = curr_class;
-    return_param_typ = return_param_typ;
-    is_objc_method = is_objc_method;
-    outer_context = context_opt;
+let create_context translation_unit_context tenv cg cfg procdesc curr_class return_param_typ
+    is_objc_method outer_context =
+  { translation_unit_context; tenv; cg; cfg; procdesc; curr_class; return_param_typ;
+    is_objc_method; outer_context;
     blocks_static_vars = Procname.Map.empty;
     label_map = Hashtbl.create 17;
   }

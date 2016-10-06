@@ -11,6 +11,11 @@ open! Utils
 
 (** Module that contains constants and global state used in the frontend *)
 
+type translation_unit_context = {
+  lang : Config.clang_lang;
+  source_file : DB.source_file
+}
+
 (** Constants *)
 
 let alloc = "alloc"
@@ -78,7 +83,6 @@ let modeled_function_attributes = [replace_with_deref_first_arg_attr]
 
 (** Global state *)
 
-let current_source = ref DB.source_file_empty
 let enum_map = ref Clang_ast_main.PointerMap.empty
 let global_translation_unit_decls : Clang_ast_t.decl list ref = ref []
 let ivar_to_property_index = ref Clang_ast_main.PointerMap.empty

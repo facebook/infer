@@ -287,3 +287,10 @@ val with_process_full: string -> (in_channel -> 'a) -> (in_channel -> 'b) ->
 val failwithf : ('a, Format.formatter, unit, 'b) format4 -> 'a
 
 val invalid_argf : ('a, Format.formatter, unit, 'b) format4 -> 'a
+
+(** create a directory if it does not exist already *)
+val create_dir : string -> unit
+
+(** [create_path path] will create a directory at [path], creating all the parent directories if
+    non-existing *)
+val create_path : string -> unit

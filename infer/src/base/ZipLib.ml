@@ -23,7 +23,7 @@ let load_from_cache serializer zip_path cache_dir zip_library =
   let extract to_path =
     if not (Sys.file_exists to_path) then
       begin
-        DB.create_path (Filename.dirname to_path);
+        create_path (Filename.dirname to_path);
         let lazy zip_channel = zip_library.Config.zip_channel in
         let entry = Zip.find_entry zip_channel zip_path in
         Zip.copy_entry_to_file zip_channel entry to_path
