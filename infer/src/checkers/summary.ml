@@ -35,10 +35,10 @@ module Make (H : Helper) = struct
     match Specs.get_summary pname with
     | Some global_summary ->
         let payload = H.update_payload summary global_summary.Specs.payload in
-        Specs.add_summary pname { global_summary with payload }
+        let timestamp = global_summary.timestamp + 1 in
+        Specs.add_summary pname { global_summary with payload; timestamp; }
     | None ->
-        Printf.sprintf "Summary for %s should exist, but does not!@." (Procname.to_string pname)
-        |> failwith
+        failwithf "Summary for %a should exist, but does not!@." Procname.pp pname
 
   let read_summary tenv caller_pdesc callee_pname =
     Ondemand.analyze_proc_name tenv ~propagate_exceptions:false caller_pdesc callee_pname;
