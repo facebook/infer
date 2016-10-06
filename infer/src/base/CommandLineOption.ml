@@ -17,14 +17,15 @@ module YBU = Yojson.Basic.Util
 
 (** Each command line option may appear in the --help list of any executable, these tags are used to
     specify which executables for which an option will be documented. *)
-type exe = Analyze | BuckCompilationDatabase | Clang | Interactive | Java | Llvm | Print |
-           StatsAggregator | Toplevel
+type exe = Analyze | BuckCompilationDatabase | Clang | ClangWrapper | Interactive | Java | Llvm
+         | Print | StatsAggregator | Toplevel
 
 
 let exes = [
   ("InferBuckCompilationDatabase", BuckCompilationDatabase);
   ("InferAnalyze", Analyze);
   ("InferClang", Clang);
+  ("InferClangWrapper", ClangWrapper);
   ("InferJava", Java);
   ("InferLLVM", Llvm);
   ("InferPrint", Print);
@@ -561,9 +562,13 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var exe_u
   let env_args = c_args @ env_args in
   (* end transitional support for INFERCLANG_ARGS *)
   let exe_name = Sys.executable_name in
-  let env_cl_args = match current_exe with
-    | Interactive -> env_args
-    | _ -> prepend_to_argv env_args in
+  let should_parse_cl_args = match current_exe with
+    | ClangWrapper | Interactive -> false
+    | Analyze | BuckCompilationDatabase | Clang | Java | Llvm | Print | StatsAggregator
+    | Toplevel -> true in
+  let env_cl_args =
+    if should_parse_cl_args then prepend_to_argv env_args
+    else env_args in
   let all_args = match config_file with
     | None -> env_cl_args
     | Some path ->

@@ -11,8 +11,8 @@
 
 open! Utils
 
-type exe = Analyze | BuckCompilationDatabase | Clang | Interactive | Java | Llvm | Print |
-           StatsAggregator | Toplevel
+type exe = Analyze | BuckCompilationDatabase | Clang | ClangWrapper | Interactive | Java | Llvm
+         | Print | StatsAggregator | Toplevel
 
 val current_exe : exe
 

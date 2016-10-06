@@ -31,9 +31,9 @@ let exec_command cmd args env =
   with (Unix.Unix_error _ as e) ->
     print_unix_error cmd e
 
-(** Given an command to be executed, creates a process to execute this command,
-    and waits for it to terminate. The standard out and error are not redirected.
-    If the commands fails to execute, prints an error message and exits. *)
+(** Given a command to be executed, create a process to execute this command, and wait for it to
+    terminate. The standard out and error are not redirected.  If the command fails to execute,
+    print an error message and exit. *)
 let create_process_and_wait cmd =
   let pid = Unix.create_process cmd.(0) cmd Unix.stdin Unix.stdout Unix.stderr in
   let _, status = Unix.waitpid [] pid in

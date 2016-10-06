@@ -96,8 +96,8 @@ class BarClass {
 
   // Whitelisted Objc class
   NSError* const e = nil; // no error
-  NSError** e1; // no error
-  NSError const** e2; // no error
+  NSError* __autoreleasing* e1; // no error
+  NSError const* __autoreleasing* e2; // no error
   NSError* const* e3 = &e; // no error
   NSError* const* const e4 = &e; // no error
 }
