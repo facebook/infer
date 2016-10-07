@@ -187,6 +187,8 @@ let com_style_of_lang = [
   (".mli", comment_style_ocaml);
   (".mly", comment_style_c);
   (".mll", comment_style_ocaml);
+  (".re", comment_style_c);
+  (".rei", comment_style_c);
   (".c", comment_style_c);
   (".h", comment_style_c);
   (".cpp", comment_style_c);
