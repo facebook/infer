@@ -108,10 +108,6 @@ base_group.add_argument('--android-harness', action='store_true',
                         help='''[experimental] Create harness to detect bugs
                         involving the Android lifecycle''')
 
-base_group.add_argument('--llvm', action='store_true',
-                        help='''[experimental] Analyze C or C++ file using the
-                        experimental LLVM frontend''')
-
 base_parser.add_argument('-v', '--version',
                          help='''Print the version of Infer and exit''',
                          action=VersionAction)

@@ -65,7 +65,6 @@ buck-out/
 /infer/bin/InferAnalyze
 /infer/bin/InferClang
 /infer/bin/InferJava
-/infer/bin/InferLLVM
 /infer/bin/InferPrint
 /infer/bin/InferStatsAggregator
 /infer/bin/InferBuckCompilationDatabase
@@ -110,10 +109,6 @@ buck-out/
 /infer/src/clang/clang_ast_v.mli
 /infer/src/clang/clang_ast_visit.ml
 /infer/src/clang/clang_ast_main.ml
-
-# copied over by make
-/infer/src/llvm/lLexer.ml
-/infer/src/llvm/lParser.ml
 
 /infer/annotations/annot_classes/
 /infer/annotations/annotations.jar

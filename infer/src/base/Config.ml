@@ -411,7 +411,7 @@ and project_root =
     ?default:CLOpt.(match current_exe with Print | Toplevel | StatsAggregator ->
         Some (Sys.getcwd ()) | _ -> None)
     ~f:resolve
-    ~exes:CLOpt.[Analyze;Clang;Java;Llvm;Print;Toplevel]
+    ~exes:CLOpt.[Analyze;Clang;Java;Print;Toplevel]
     ~meta:"dir" "Specify the root directory of the project"
 
 (* Parse the phase 1 options, ignoring the rest *)
@@ -833,9 +833,6 @@ and load_results =
     ~exes:CLOpt.[Print]
     ~meta:"file.iar" "Load analysis results from Infer Analysis Results file file.iar"
 
-and llvm =
-  CLOpt.mk_bool ~long:"llvm" "Analyze C or C++ using the experimental LLVM frontend"
-
 (** name of the makefile to create with clusters and dependencies *)
 and makefile =
   CLOpt.mk_string ~deprecated:["makefile"] ~long:"makefile" ~default:""
@@ -974,7 +971,7 @@ and reports_include_ml_loc =
 and results_dir =
   CLOpt.mk_string ~deprecated:["results_dir"; "-out"] ~long:"results-dir" ~short:"o"
     ~default:(init_work_dir // "infer-out")
-    ~exes:CLOpt.[Analyze;Clang;Java;Llvm;Print;StatsAggregator]
+    ~exes:CLOpt.[Analyze;Clang;Java;Print;StatsAggregator]
     ~meta:"dir" "Write results and internal files in the specified directory"
 
 and save_results =
@@ -1138,11 +1135,11 @@ and verbose_out =
 
 and version =
   CLOpt.mk_bool ~deprecated:["version"] ~long:"version"
-    ~exes:CLOpt.[Analyze;Clang;Java;Llvm;Print] "Print version information and exit"
+    ~exes:CLOpt.[Analyze;Clang;Java;Print] "Print version information and exit"
 
 and version_json =
   CLOpt.mk_bool ~deprecated:["version_json"] ~long:"version-json"
-    ~exes:CLOpt.[Analyze;Clang;Java;Llvm;Print]
+    ~exes:CLOpt.[Analyze;Clang;Java;Print]
     "Print version json formatted"
 
 and whole_seconds =
@@ -1237,9 +1234,6 @@ let exe_usage (exe : CLOpt.exe) =
   | Java ->
       "Usage: InferJava [options]\n\
        Translate the given files using javac into infer internal representation for later analysis."
-  | Llvm ->
-      "Usage: InferLLVM -c <c file> [options]\n\
-       Translate the given files using llvm into infer internal representation for later analysis."
   | Print ->
       "Usage: InferPrint [options] name1.specs ... namen.specs\n\
        Read, convert, and print .specs files. \
@@ -1437,7 +1431,6 @@ and join_cond = !join_cond
 and latex = !latex
 and load_average = !load_average
 and load_analysis_results = !load_results
-and llvm = !llvm
 and makefile_cmdline = !makefile
 and merge = !merge
 and ml_buckets = !ml_buckets

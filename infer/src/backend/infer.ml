@@ -22,8 +22,7 @@ let set_env_for_clang_wrapper () =
     Unix.putenv "FCP_DEBUG_MODE" "1" ;
   if not Config.failures_allowed then
     Unix.putenv "FCP_REPORT_FRONTEND_FAILURE" "1" ;
-  if Config.llvm then
-    Unix.putenv "LLVM_MODE" "1"
+  ()
 
 (** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)
 let fail_on_issue_epilogue () =

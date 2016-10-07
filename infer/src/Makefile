@@ -11,7 +11,6 @@ include $(ROOT_DIR)/Makefile.config
 #### Global declarations ####
 
 INFER_BUILD_DIR = $(BUILD_DIR)/infer
-LLVM_BUILD_DIR = $(BUILD_DIR)/llvm
 ANNOT_DIR = $(SRC_DIR)/_build
 ETC_DIR = $(INFER_DIR)/etc
 
@@ -110,13 +109,6 @@ INFER_CLANG_FCP_MIRRORED_FILES = $(addprefix $(CLANG_SOURCES)/, $(notdir $(FCP_F
 
 CLANG_BINIOU_DICT = $(ETC_DIR)/clang_ast.dict
 
-#### LLVM declarations ####
-
-LLVM_SOURCES = llvm
-MENHIR_SOURCES = menhir
-INFERLLVM_MAIN = $(LLVM_SOURCES)/lMain
-INFERLLVM_BIN = $(BIN_DIR)/InferLLVM
-
 #### scripts declarations ####
 
 SCRIPT_SOURCES = scripts
@@ -159,8 +151,6 @@ INFER_BASE_TARGETS = \
 INFER_ALL_TARGETS = $(INFER_BASE_TARGETS) \
   $(INFERJAVA_MAIN).native \
   $(INFERCLANG_MAIN).native \
-  $(CLANGWRAPPER_MAIN).native \
-  $(INFERLLVM_MAIN).native \
   $(BUCK_COMPILATION_DATABASE_MAIN).native
 
 # configure-aware ocamlbuild commands and targets
@@ -177,10 +167,6 @@ INFER_CONFIG_TARGETS += $(INFERCLANG_MAIN).native $(CLANGWRAPPER_MAIN).native
 INFER_CONFIG_TARGETS += $(BUCK_COMPILATION_DATABASE_MAIN).native
 DEPENDENCIES += clang
 endif
-ifeq ($(BUILD_LLVM_ANALYZERS),yes)
-INFER_CONFIG_TARGETS += $(INFERLLVM_MAIN).native
-DEPENDENCIES += llvm
-endif
 
 .PHONY: all infer init version sanitize clean toplevel
 
@@ -194,9 +180,6 @@ infer: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS)
 	$(COPY) $(INFER_BUILD_DIR)/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(STATSAGGREGATOR_MAIN).native $(STATSAGGREGATOR_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERUNIT_MAIN).native $(INFERUNIT_BIN)
-ifeq ($(BUILD_LLVM_ANALYZERS),yes)
-	$(COPY) $(INFER_BUILD_DIR)/$(INFERLLVM_MAIN).native $(INFERLLVM_BIN)
-endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERJAVA_MAIN).native $(INFERJAVA_BIN)
 endif
@@ -212,21 +195,8 @@ endif
 ifeq ($(BUILD_C_ANALYZERS),yes)
 infer: $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) $(CLANG_BINIOU_DICT)
 endif
-ifeq ($(BUILD_LLVM_ANALYZERS),yes)
-infer: $(LLVM_SOURCES)/lLexer.ml $(LLVM_SOURCES)/lParser.ml
-endif
 
-$(LLVM_SOURCES)/lLexer.ml $(LLVM_SOURCES)/lParser.ml: init
-	$(OCAMLBUILD_BASE) -build-dir $(LLVM_BUILD_DIR) -I $(LLVM_SOURCES) -use-menhir $(MENHIR_SOURCES)/$(@F)
-	$(COPY) $(LLVM_BUILD_DIR)/$(MENHIR_SOURCES)/$(@F) $@
-
-$(LLVM_SOURCES)/lLexer.ml: $(MENHIR_SOURCES)/lLexer.mll
-# avoid race condition between concurrently running ocamlbuild instances by making the parser depend
-# on the lexer
-$(LLVM_SOURCES)/lParser.ml: $(MENHIR_SOURCES)/lParser.mly $(LLVM_SOURCES)/lLexer.ml
-
-byte: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) \
-  $(LLVM_SOURCES)/lLexer.ml $(LLVM_SOURCES)/lParser.ml
+byte: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) $(INFER_ALL_TARGETS:.native=.byte)
 
 # to build only the single module <Module> (and its dependencies) with extra flags execute:
@@ -236,14 +206,12 @@ byte: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_S
 M=
 MFLAGS=
 
-module: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) \
-  $(LLVM_SOURCES)/lLexer.ml $(LLVM_SOURCES)/lParser.ml
+module: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) \
           $(MFLAGS) \
 	  $(M)
 
-test_build: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) \
-  $(LLVM_SOURCES)/lLexer.ml $(LLVM_SOURCES)/lParser.ml
+test_build: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(OCAMLBUILD_ALL) -build-dir $(TEST_BUILD_DIR) \
 	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
 	  $(INFER_ALL_TARGETS:.native=.byte)
@@ -281,7 +249,7 @@ toplevel: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDG
 	# 5. filter out root modules since they run code when loading the module.
 	find . \( -name "*.ml" -o -name "*.mly" -o -name "*.mll" -o -name "*.re" \) \
 		\( $(dirs_find_regex) -false \) \
-		-not \( -path "./unit/*" -o -path "./llvm/*" -o -path "./facebook/scripts/eradicate_stats.ml" -o -name ".#*" \) \
+		-not \( -path "./unit/*" -o -path "./facebook/scripts/eradicate_stats.ml" -o -name ".#*" \) \
 	| cut -c 3- \
 	| rev | cut -f 2- -d '.' | rev \
 	| awk 'BEGIN { FS = "/"; OFS = "/" } ; {$$NF=toupper(substr($$NF,1,1))substr($$NF,2); print $$0}' \
@@ -367,15 +335,12 @@ clean:
 ifeq ($(ENABLE_OCAML_ANNOT),yes)
 	$(REMOVE_DIR) $(ANNOT_DIR)
 endif
-ifeq ($(BUILD_LLVM_ANALYZERS),yes)
-	$(REMOVE) $(LLVM_SOURCES)/lLexer.ml $(LLVM_SOURCES)/lParser.ml
-endif
 	$(REMOVE) base/Version.ml
 	$(REMOVE) base/Version.ml.tmp.*
 	$(REMOVE) backend/jsonbug_{j,t}.ml{,i}
 	$(REMOVE) checkers/stacktree_{j,t}.ml{,i}
 	$(REMOVE) $(INFER_BIN) $(INFERANALYZE_BIN) $(INFERPRINT_BIN) $(STATSAGGREGATOR_BIN)
-	$(REMOVE) $(INFERJAVA_BIN) $(INFERCLANG_BIN) $(CLANGWRAPPER_BIN) $(INFERLLVM_BIN)
+	$(REMOVE) $(INFERJAVA_BIN) $(INFERCLANG_BIN)
 	$(REMOVE) $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN) $(INFER_BUCK_COMPILATION_DATABASE_BIN)
 	$(REMOVE) $(CLANG_ATDGEN_STUBS)
 	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)

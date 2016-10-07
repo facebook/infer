@@ -24,7 +24,6 @@ let log_dir_of_current_exe =
   | ClangWrapper -> "clang_wrapper"
   | Interactive -> "interactive"
   | Java -> "java"
-  | Llvm -> "llvm"
   | Print -> "print"
   | StatsAggregator -> "stats_agregator"
   | Toplevel -> "top_level"

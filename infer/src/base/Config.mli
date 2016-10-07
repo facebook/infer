@@ -203,7 +203,6 @@ val jobs : int
 val join_cond : int
 val latex : outfile option
 val load_analysis_results : string option
-val llvm : bool
 val makefile_cmdline : string
 val merge : bool
 val ml_buckets :

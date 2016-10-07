@@ -86,7 +86,7 @@ test_oss_build: clang_plugin
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(MAKE) -C facebook clean
 endif
-	$(MAKE) -C $(SRC_DIR) EXTRA_DEPS=opensource LLVM_BUILD_DIR=$(BUILD_DIR)/llvm_opensource TEST_BUILD_DIR=$(BUILD_DIR)/opensource test_build
+	$(MAKE) -C $(SRC_DIR) EXTRA_DEPS=opensource TEST_BUILD_DIR=$(BUILD_DIR)/opensource test_build
 
 test_build: test_this_build
 ifeq ($(IS_FACEBOOK_TREE),yes)

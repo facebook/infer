@@ -102,10 +102,6 @@ CLANG_CMD+=(
     "-plugin-arg-${PLUGIN_NAME}"
     "PREPEND_CURRENT_DIR=1")
 
-if [ -n "$LLVM_MODE" ]; then
-    CLANG_CMD+=("-o" "-" "-g" "-S" "-emit-llvm")
-fi
-
 # add the remaining arguments
 CLANG_CMD+=("$@")
 
@@ -121,40 +117,31 @@ if [ -n "$SYNTAX_ONLY" ]; then
     CLANG_CMD+=("-fsyntax-only")
 fi
 
-if [ -n "$LLVM_MODE" ]; then
-    INFER_FRONTEND_CMD=(
-        "${BIN_DIR}/InferLLVM"
-        "-c" "$SOURCE_FILENAME"
-        "-results_dir" "$RESULTS_DIR"
-        "${INFER_FRONTEND_ARGS[@]}")
-    INFER_FRONTEND_LOG_FILE="/dev/stdout"
-else
-    LANGUAGE=$(get_option_argument "-x" "${INPUT_ARGUMENTS[@]}")
-    if [ -n "$LANGUAGE" ]; then INFER_FRONTEND_ARGS+=("-x" "$LANGUAGE"); fi
-    if has_flag "-fobjc-arc" "${INPUT_ARGUMENTS[@]}"; then
-        INFER_FRONTEND_ARGS+=("-fobjc-arc");
-    fi
-
-    INFER_FRONTEND_CMD=(
-        "${BIN_DIR}/InferClang"
-        "-c" "$SOURCE_FILENAME"
-        "-results_dir" "$RESULTS_DIR"
-        "${INFER_FRONTEND_ARGS[@]}")
-
-    if [ -n "$DEBUG_MODE" ]; then
-        OBJECT_FILENAME="$(get_option_argument "-o" "${INPUT_ARGUMENTS[@]}")"
-        # Emit the clang command with the extra args piped to InferClang
-        echo "${CLANG_CMD[@]} " \
-             "| tee ${OBJECT_FILENAME}.biniou " \
-             "| ${INFER_FRONTEND_CMD[@]}" \
-             > "${OBJECT_FILENAME}${CMD_FILE_EXT}"
-        echo "bdump -x -d ${ETC_DIR}/clang_ast.dict -w '!!DUMMY!!' ${OBJECT_FILENAME}.biniou " \
-             "> ${OBJECT_FILENAME}.bdump" \
-             >> "${OBJECT_FILENAME}${CMD_FILE_EXT}"
-    fi
+LANGUAGE=$(get_option_argument "-x" "${INPUT_ARGUMENTS[@]}")
+if [ -n "$LANGUAGE" ]; then INFER_FRONTEND_ARGS+=("-x" "$LANGUAGE"); fi
+if has_flag "-fobjc-arc" "${INPUT_ARGUMENTS[@]}"; then
+    INFER_FRONTEND_ARGS+=("-fobjc-arc");
 fi
 
-# run clang and pipe its output to InferClang/InferLLVM, or flush it in case the latter crashes
+INFER_FRONTEND_CMD=(
+    "${BIN_DIR}/InferClang"
+    "-c" "$SOURCE_FILENAME"
+    "-results_dir" "$RESULTS_DIR"
+    "${INFER_FRONTEND_ARGS[@]}")
+
+if [ -n "$DEBUG_MODE" ]; then
+    OBJECT_FILENAME="$(get_option_argument "-o" "${INPUT_ARGUMENTS[@]}")"
+    # Emit the clang command with the extra args piped to InferClang
+    echo "${CLANG_CMD[@]} " \
+         "| tee ${OBJECT_FILENAME}.biniou " \
+         "| ${INFER_FRONTEND_CMD[@]}" \
+         > "${OBJECT_FILENAME}${CMD_FILE_EXT}"
+    echo "bdump -x -d ${ETC_DIR}/clang_ast.dict -w '!!DUMMY!!' ${OBJECT_FILENAME}.biniou " \
+         "> ${OBJECT_FILENAME}.bdump" \
+         >> "${OBJECT_FILENAME}${CMD_FILE_EXT}"
+fi
+
+# run clang and pipe its output to InferClang, or flush it in case the latter crashes
 "${CLANG_CMD[@]}" | \
   ("${INFER_FRONTEND_CMD[@]}" || \
    { EC=$?; cat > /dev/null; exit $EC; }) 2>&1
