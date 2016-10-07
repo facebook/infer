@@ -39,6 +39,7 @@ type iter_fun =
   loc_trace ->
   Prop.normal Prop.t option ->
   Exceptions.err_class ->
+  Exceptions.exception_visibility ->
   unit
 
 (** Apply f to nodes and error names *)

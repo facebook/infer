@@ -19,6 +19,12 @@ type exception_visibility =
   | Exn_developer (** only add to error log in developer mode *)
   | Exn_system (** never add to error log *)
 
+let string_of_exception_visibility vis =
+  match vis with
+  | Exn_user -> "user"
+  | Exn_developer -> "developer"
+  | Exn_system  -> "system"
+
 (** severity of bugs *)
 type exception_severity =
   | High (* high severity bug *)
@@ -237,7 +243,7 @@ let recognize_exception exn =
          desc, Some ml_loc, Exn_developer, Low, None, Nocat)
     | Precondition_not_met (desc, ml_loc) ->
         (Localise.precondition_not_met,
-         desc, Some ml_loc, Exn_user, Medium, Some Kwarning, Nocat) (* always a warning *)
+         desc, Some ml_loc, Exn_developer, Medium, Some Kwarning, Nocat) (* always a warning *)
     | Retain_cycle (_, _, desc, ml_loc) ->
         (Localise.retain_cycle,
          desc, Some ml_loc, Exn_user, High, None, Prover)

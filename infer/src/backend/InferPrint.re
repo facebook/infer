@@ -344,7 +344,7 @@ let module IssuesCsv = {
   /** Write bug report in csv format */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname err_log => {
     let pp x => F.fprintf fmt x;
-    let pp_row (_, node_key) loc _ ekind in_footprint error_name error_desc severity ltr _ eclass => {
+    let pp_row (_, node_key) loc _ ekind in_footprint error_name error_desc severity ltr _ eclass _ => {
       let source_file =
         switch proc_loc_opt {
         | Some proc_loc => proc_loc.Location.file
@@ -425,7 +425,8 @@ let module IssuesJson = {
         severity
         ltr
         _
-        eclass => {
+        eclass
+        visibility => {
       let source_file =
         switch proc_loc_opt {
         | Some proc_loc => proc_loc.Location.file
@@ -443,12 +444,14 @@ let module IssuesJson = {
             Some Jsonbug_j.{file, lnum, cnum, enum}
           | _ => None
           };
+        let visibility = Exceptions.string_of_exception_visibility visibility;
         let bug = {
           Jsonbug_j.bug_class: Exceptions.err_class_string eclass,
           kind,
           bug_type,
           qualifier: error_desc_to_plain_string error_desc,
           severity,
+          visibility,
           line: loc.Location.line,
           column: loc.Location.col,
           procedure: Procname.to_string procname,
@@ -476,7 +479,7 @@ let module IssuesJson = {
 let module IssuesTests = {
   /** Write bug report in a format suitable for tests on analysis results. */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt proc_name err_log => {
-    let pp_row _ loc _ ekind in_footprint error_name error_desc _ _ _ _ => {
+    let pp_row _ loc _ ekind in_footprint error_name error_desc _ _ _ _ _ => {
       let (source_file, line_offset) =
         switch proc_loc_opt {
         | Some proc_loc =>
@@ -521,7 +524,7 @@ let module IssuesTests = {
 let module IssuesTxt = {
   /** Write bug report in text format */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt _ err_log => {
-    let pp_row (node_id, node_key) loc _ ekind in_footprint error_name error_desc _ _ _ _ => {
+    let pp_row (node_id, node_key) loc _ ekind in_footprint error_name error_desc _ _ _ _ _ => {
       let source_file =
         switch proc_loc_opt {
         | Some proc_loc => proc_loc.Location.file
@@ -586,7 +589,8 @@ let module IssuesXml = {
         severity
         ltr
         pre_opt
-        eclass => {
+        eclass
+        _ => {
       let source_file =
         switch proc_loc_opt {
         | Some proc_loc => proc_loc.Location.file
@@ -780,7 +784,7 @@ let module Stats = {
   };
   let process_err_log error_filter linereader err_log stats => {
     let found_errors = ref false;
-    let process_row _ loc _ ekind in_footprint error_name error_desc _ ltr _ _ => {
+    let process_row _ loc _ ekind in_footprint error_name error_desc _ ltr _ _ _ => {
       let type_str = Localise.to_string error_name;
       if (in_footprint && error_filter error_desc error_name) {
         switch ekind {

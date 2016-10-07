@@ -18,6 +18,8 @@ type exception_visibility =
   | Exn_developer (** only add to error log in developer mode *)
   | Exn_system (** never add to error log *)
 
+val string_of_exception_visibility : exception_visibility -> string
+
 (** severity of bugs *)
 type exception_severity =
   | High (** high severity bug *)

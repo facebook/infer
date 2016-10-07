@@ -26,11 +26,11 @@ type loc_trace = loc_trace_elem list
 (** Data associated to a specific error *)
 type err_data =
   (int * int) * int * Location.t * L.ml_loc option * loc_trace *
-  Prop.normal Prop.t option * Exceptions.err_class
+  Prop.normal Prop.t option * Exceptions.err_class * Exceptions.exception_visibility
 
 let err_data_compare
-    (_, _, loc1, _, _, _, _)
-    (_, _, loc2, _, _, _, _) =
+    (_, _, loc1, _, _, _, _, _)
+    (_, _, loc2, _, _, _, _, _) =
   Location.compare loc1 loc2
 
 module ErrDataSet = (* set err_data with no repeated loc *)
@@ -74,16 +74,17 @@ type iter_fun =
   loc_trace ->
   Prop.normal Prop.t option ->
   Exceptions.err_class ->
+  Exceptions.exception_visibility ->
   unit
 
 (** Apply f to nodes and error names *)
 let iter (f: iter_fun) (err_log: t) =
   ErrLogHash.iter (fun (ekind, in_footprint, err_name, desc, severity) set ->
       ErrDataSet.iter
-        (fun (node_id_key, _, loc, ml_loc_opt, ltr, pre_opt, eclass) ->
+        (fun (node_id_key, _, loc, ml_loc_opt, ltr, pre_opt, eclass, visibility) ->
            f
              node_id_key loc ml_loc_opt ekind in_footprint err_name
-             desc severity ltr pre_opt eclass)
+             desc severity ltr pre_opt eclass visibility)
         set)
     err_log
 
@@ -112,7 +113,7 @@ let pp_warnings fmt (errlog : t) =
 let pp_html source path_to_root fmt (errlog: t) =
   let pp_eds fmt eds =
     let pp_nodeid_session_loc
-        fmt ((nodeid, _), session, loc, _, _, _, _) =
+        fmt ((nodeid, _), session, loc, _, _, _, _, _) =
       Io_infer.Html.pp_session_link source path_to_root fmt (nodeid, session, loc.Location.line) in
     ErrDataSet.iter (pp_nodeid_session_loc fmt) eds in
   let f do_fp ek (ekind, infp, err_name, desc, _) eds =
@@ -189,7 +190,8 @@ let log_issue _ekind err_log loc node_id_key session ltr pre_opt exn =
     let added =
       add_issue err_log
         (ekind, !Config.footprint, err_name, desc, severity_to_str severity)
-        (ErrDataSet.singleton (node_id_key, session, loc, ml_loc_opt, ltr, pre_opt, eclass)) in
+        (ErrDataSet.singleton
+           (node_id_key, session, loc, ml_loc_opt, ltr, pre_opt, eclass, visibility)) in
     let should_print_now =
       match exn with
       | Exceptions.Internal_error _ -> true
@@ -268,7 +270,7 @@ module Err_table = struct
       ErrDataSet.iter (fun loc -> add_err loc err_name) eds in
     ErrLogHash.iter f err_table;
 
-    let pp ekind (nodeidkey, _, loc, ml_loc_opt, _, _, _) fmt err_names =
+    let pp ekind (nodeidkey, _, loc, ml_loc_opt, _, _, _, _) fmt err_names =
       IList.iter (fun (err_name, desc) ->
           Exceptions.pp_err nodeidkey loc ekind err_name desc ml_loc_opt fmt ()) err_names in
     F.fprintf fmt "@.Detailed errors during footprint phase:@.";
