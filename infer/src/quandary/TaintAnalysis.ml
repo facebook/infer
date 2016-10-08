@@ -441,7 +441,9 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
           let summary = make_summary formals access_tree in
           Summary.write_summary (Cfg.Procdesc.get_proc_name pdesc) summary;
       | None ->
-          failwith "Couldn't compute post" in
+          if Cfg.Node.get_succs (Cfg.Procdesc.get_start_node pdesc) = []
+          then ()
+          else failwith "Couldn't compute post" in
     let callbacks =
       {
         Ondemand.analyze_ondemand;
