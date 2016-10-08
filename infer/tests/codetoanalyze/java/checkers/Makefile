@@ -11,16 +11,16 @@ ANALYZER = checkers
 
 FILES = \
   Branch.java \
-  FragmentRetainsViewExample.java \
   ExpensiveCallExample.java \
-  ImmutableCast.java \
   ExpensiveInheritanceExample.java \
-  NoAllocationExample.java \
   ExpensiveInterfaceExample.java \
-  PrintfArgsChecker.java \
   ExpensiveSubtypingExample.java \
-  TraceCallSequence.java \
   FragmentDoesNotRetainViewExample.java \
+  FragmentRetainsViewExample.java \
+  ImmutableCast.java \
+  NoAllocationExample.java \
+  PrintfArgsChecker.java \
+  TraceCallSequence.java \
   TwoCheckersExample.java
 
 compile:

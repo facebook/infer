@@ -354,4 +354,20 @@ public class GuardedByExample {
   }
   */
 
+  int n;
+
+  public void FP_withloop2() {
+    synchronized (mLock) {
+      for (int i = 0; i<=n; i++) {
+        f = 42;
+      }
+    }
+  }
+
+  public void withoutloop2() {
+    synchronized (mLock) {
+      f = 42;
+    }
+  }
+
 }
