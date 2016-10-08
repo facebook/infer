@@ -98,6 +98,9 @@ val merge_sorted_nodup : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list -> '
     The compare function is required to sort the lists. *)
 val intersect : ('a -> 'a -> int) -> 'a list -> 'a list -> bool
 
+(** [inter cmp xs ys] are the elements in both [xs] and [ys], sorted according to [cmp]. *)
+val inter : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
+
 (** Like List.mem_assoc but without builtin equality *)
 val mem_assoc : ('a -> 'a -> bool) -> 'a -> ('a * 'b) list -> bool
 

@@ -199,6 +199,25 @@ let intersect compare l1 l2 =
         else f l1 l2' in
   f l1_sorted l2_sorted
 
+let inter compare xs ys =
+  let rev_sort xs = sort (fun x y -> compare y x) xs in
+  let rev_xs = rev_sort xs in
+  let rev_ys = rev_sort ys in
+  let rec inter_ is rev_xxs rev_yys =
+    match rev_xxs, rev_yys with
+    | ([], _) | (_, []) ->
+        is
+    | (x :: rev_xs, y :: rev_ys) ->
+        let c = compare x y in
+        if c = 0 then
+          inter_ (x :: is) rev_xs rev_ys
+        else if c < 0 then
+          inter_ is rev_xs rev_yys
+        else
+          inter_ is rev_xxs rev_ys
+  in
+  inter_ [] rev_xs rev_ys
+
 exception Fail
 
 (** Apply [f] to pairs of elements; raise [Fail] if the two lists have different lenghts. *)

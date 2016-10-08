@@ -74,7 +74,6 @@ FilterOutputStreamLeaks.java, void FilterOutputStreamLeaks.printStreamNotClosedA
 GuardedByExample.java, Object GuardedByExample.byRefTrickyBad(), 5, UNSAFE_GUARDED_BY_ACCESS
 GuardedByExample.java, String GuardedByExample$3.readFromInnerClassBad1(), 2, UNSAFE_GUARDED_BY_ACCESS
 GuardedByExample.java, String GuardedByExample$4.readFromInnerClassBad2(), 1, UNSAFE_GUARDED_BY_ACCESS
-GuardedByExample.java, void GuardedByExample.FP_withloop2(), 3, UNSAFE_GUARDED_BY_ACCESS
 GuardedByExample.java, void GuardedByExample.readFAfterBlockBad(), 3, UNSAFE_GUARDED_BY_ACCESS
 GuardedByExample.java, void GuardedByExample.readFBad(), 1, UNSAFE_GUARDED_BY_ACCESS
 GuardedByExample.java, void GuardedByExample.readFBadWrongAnnotation(), 1, UNSAFE_GUARDED_BY_ACCESS

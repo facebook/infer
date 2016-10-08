@@ -1501,9 +1501,9 @@ let rec sigma_partial_join' tenv mode (sigma_acc: Prop.sigma)
         assert false (* Should be handled by a guarded case *)
 
   with Todo.Empty ->
-    match sigma1_in, sigma2_in with
-    | _:: _, _:: _ -> L.d_strln "todo is empty, but the sigmas are not"; raise IList.Fail
-    | _ -> sigma_acc, sigma1_in, sigma2_in
+  match sigma1_in, sigma2_in with
+  | _:: _, _:: _ -> L.d_strln "todo is empty, but the sigmas are not"; raise IList.Fail
+  | _ -> sigma_acc, sigma1_in, sigma2_in
 
 let sigma_partial_join tenv mode (sigma1: Prop.sigma) (sigma2: Prop.sigma)
   : (Prop.sigma * Prop.sigma * Prop.sigma) =
@@ -1555,9 +1555,9 @@ let rec sigma_partial_meet' tenv (sigma_acc: Prop.sigma) (sigma1_in: Prop.sigma)
         (L.d_strln "failure reason 65"; raise IList.Fail)
 
   with Todo.Empty ->
-    match sigma1_in, sigma2_in with
-    | [], [] -> sigma_acc
-    | _, _ -> L.d_strln "todo is empty, but the sigmas are not"; raise IList.Fail
+  match sigma1_in, sigma2_in with
+  | [], [] -> sigma_acc
+  | _, _ -> L.d_strln "todo is empty, but the sigmas are not"; raise IList.Fail
 
 let sigma_partial_meet tenv (sigma1: Prop.sigma) (sigma2: Prop.sigma) : Prop.sigma =
   sigma_partial_meet' tenv [] sigma1 sigma2
@@ -1574,11 +1574,6 @@ let pi_partial_join tenv mode
     (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed Prop.t)
     (pi1: Prop.pi) (pi2: Prop.pi) : Prop.pi
   =
-  let exp_is_const = function
-    (* | Exp.Var id -> is_normal id *)
-    | Exp.Const _ -> true
-    (* | Exp.Lvar _ -> true *)
-    | _ -> false in
   let get_array_len prop =
     (* find some array length in the prop, to be used as heuritic for upper bound in widening *)
     let len_list = ref [] in
@@ -1666,18 +1661,6 @@ let pi_partial_join tenv mode
               | None -> atom_list
               | Some a' -> a' :: atom_list))
     | Some a' -> a' :: atom_list in
-  let filter_atom = function
-    | Sil.Aneq(e, e') | Sil.Aeq(e, e')
-      when (exp_is_const e && exp_is_const e') ->
-        true
-    | Sil.Aneq(Exp.Var _, e') | Sil.Aneq(e', Exp.Var _)
-    | Sil.Aeq(Exp.Var _, e') | Sil.Aeq(e', Exp.Var _)
-      when (exp_is_const e') ->
-        true
-    | Sil.Aneq _ -> false
-    | Sil.Aeq _ as e -> Prop.atom_is_inequality e
-    | Sil.Apred (_, es) | Anpred (_, es) ->
-        IList.for_all exp_is_const es in
   begin
     if Config.trace_join then begin
       L.d_str "pi1: "; Prop.d_pi pi1; L.d_ln ();
@@ -1687,18 +1670,15 @@ let pi_partial_join tenv mode
       let p2 = Prop.normalize tenv ep2 in
       IList.fold_left (handle_atom_with_widening Lhs p2 pi2) [] pi1 in
     if Config.trace_join then (L.d_str "atom_list1: "; Prop.d_pi atom_list1; L.d_ln ());
-    let atom_list_combined =
+    let atom_list2 =
       let p1 = Prop.normalize tenv ep1 in
-      IList.fold_left (handle_atom_with_widening Rhs p1 pi1) atom_list1 pi2 in
+      IList.fold_left (handle_atom_with_widening Rhs p1 pi1) [] pi2 in
+    if Config.trace_join then
+      (L.d_str "atom_list2: "; Prop.d_pi atom_list2; L.d_ln ());
+    let atom_list_combined = IList.inter Sil.atom_compare atom_list1 atom_list2 in
     if Config.trace_join then
       (L.d_str "atom_list_combined: "; Prop.d_pi atom_list_combined; L.d_ln ());
-    let atom_list_filtered =
-      IList.filter filter_atom atom_list_combined in
-    if Config.trace_join then
-      (L.d_str "atom_list_filtered: "; Prop.d_pi atom_list_filtered; L.d_ln ());
-    let atom_list_res =
-      IList.rev atom_list_filtered in
-    atom_list_res
+    atom_list_combined
   end
 
 let pi_partial_meet tenv (p: Prop.normal Prop.t) (ep1: 'a Prop.t) (ep2: 'b Prop.t) : Prop.normal Prop.t =
