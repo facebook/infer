@@ -89,6 +89,9 @@ module IntSet : Set.S with type elt = int
 (** Set of strings *)
 module StringSet : Set.S with type elt = string
 
+(** Pretty Printable Set of strings *)
+module StringPPSet : PrettyPrintable.PPSet with type elt = string
+
 (** Pretty print a set of strings *)
 val pp_stringset : Format.formatter -> StringSet.t -> unit
 

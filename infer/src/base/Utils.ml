@@ -107,6 +107,12 @@ let string_set_of_list list =
 let string_list_intersection a b =
   StringSet.inter (string_set_of_list a) (string_set_of_list b)
 
+module StringPPSet = PrettyPrintable.MakePPSet(struct
+    type t = string
+    let compare = string_compare
+    let pp_element fmt s = F.fprintf fmt "%s" s
+  end)
+
 (** Maps from integers *)
 module IntMap = Map.Make (struct
     type t = int

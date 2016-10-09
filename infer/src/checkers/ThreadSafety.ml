@@ -17,19 +17,13 @@ open! Utils
 module F = Format
 module L = Logging
 
-module PPString = PrettyPrintable.MakePPSet(struct
-    type t = string
-    let compare = string_compare
-    let pp_element fmt s = F.fprintf fmt "%s" s
-  end)
-
 module PPrawpath = PrettyPrintable.MakePPSet(struct
     type t = AccessPath.raw
     let compare = AccessPath.raw_compare
     let pp_element = AccessPath.pp_raw
   end)
 
-module LocksDomain =  AbstractDomain.FiniteSet(PPString)
+module LocksDomain =  AbstractDomain.FiniteSet(StringPPSet)
 
 module PathDomain =  AbstractDomain.FiniteSet(PPrawpath)
 
