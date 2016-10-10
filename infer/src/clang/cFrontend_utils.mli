@@ -88,8 +88,8 @@ sig
       See get_type for more info and restrictions *)
   val get_desugared_type : Clang_ast_t.type_ptr -> Clang_ast_t.c_type option
 
-  (** returns declaration of the type for certain types and crashes for others
-      NOTE: this function needs extending to handle objC types *)
+(** returns declaration of the type for certain types
+    (RecordType, ObjCInterfaceType and None for others *)
   val get_decl_from_typ_ptr : Clang_ast_t.type_ptr -> Clang_ast_t.decl option
 
   (** returns string representation of type_ptr

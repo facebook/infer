@@ -260,9 +260,9 @@ struct
   let get_decl_from_typ_ptr typ_ptr =
     let typ_opt = get_desugared_type typ_ptr in
     let typ = match typ_opt with Some t -> t | _ -> assert false in
-    (* it needs extending to handle objC types *)
     match typ with
-    | Clang_ast_t.RecordType (_, decl_ptr) -> get_decl decl_ptr
+    | Clang_ast_t.RecordType (_, decl_ptr)
+    | Clang_ast_t.ObjCInterfaceType (_, decl_ptr) -> get_decl decl_ptr
     | _ -> None
 
   (*TODO take the attributes into account too. To be done after we get the attribute's arguments. *)
