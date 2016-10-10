@@ -1345,10 +1345,6 @@ let post_parsing_initialization () =
 let parse_args_and_return_usage_exit =
   let usage_exit =
     CLOpt.parse ~accept_unknown:true ~config_file:inferconfig_path "INFER_ARGS" exe_usage in
-  if !debug || (!developer_mode && not (CLOpt.current_exe = CLOpt.Print)) then
-    prerr_endline
-      ((Filename.basename Sys.executable_name) ^ " got args "
-       ^ (try Unix.getenv "INFER_ARGS" with Not_found -> "")) ;
   post_parsing_initialization () ;
   usage_exit
 
