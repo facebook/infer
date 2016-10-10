@@ -64,6 +64,7 @@ ISSUE_TYPES = [
     # TODO (t11307776): Turn this back on once some of the FP issues are fixed
     'UNSAFE_GUARDED_BY_ACCESS',
     'MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE',
+    'COMPONENT_FACTORY_FUNCTION',
 ]
 
 NULL_STYLE_ISSUE_TYPES = [
