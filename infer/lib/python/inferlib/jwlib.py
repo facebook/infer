@@ -99,6 +99,12 @@ class CompilerCall(object):
         self.args, self.remaining_args = parser.parse_known_args(arguments)
         self.verbose_out = None
 
+    def get_version(self):
+        assert self.args.version
+        return subprocess.check_output(
+            self.javac_cmd + self.original_arguments,
+            stderr=subprocess.STDOUT).strip()
+
     def run(self):
         if self.args.version:
             return subprocess.call(self.javac_cmd + self.original_arguments)
@@ -250,11 +256,15 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
                 config.BUCK_INFER_OUT)
             self.args.infer_out = os.path.abspath(self.args.infer_out)
 
+    def compute_buck_key(self):
+        javac_version = self.javac.get_version()
+        infer_version = utils.infer_key(self.args.analyzer)
+        return '/'.join([javac_version, infer_version])
+
     def start(self):
         if self.javac.args.version:
             if self.args.buck:
-                key = self.args.analyzer
-                utils.stderr(utils.infer_key(key))
+                utils.stderr(self.compute_buck_key())
             else:
                 return self.javac.run()
         else:

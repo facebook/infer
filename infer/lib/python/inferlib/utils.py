@@ -125,7 +125,7 @@ def infer_branch():
 
 
 def infer_key(analyzer):
-    return os.pathsep.join([analyzer, infer_version()])
+    return '/'.join([analyzer, infer_version()])
 
 
 def run_infer_stats_aggregator(infer_out, buck_out=None):

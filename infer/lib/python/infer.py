@@ -181,7 +181,10 @@ def main():
                      ' '.join(map(utils.decode, sys.argv)))
         logging.info('Path to infer script %s (%s)', utils.decode(__file__),
                      os.path.realpath(utils.decode(__file__)))
-        logging.info(analyze.get_infer_version())
+        if not args.buck:
+            # Should not print the Infer version when Infer is run by Buck.
+            # Buck reads the whole stderr output to compute the target key
+            logging.info(analyze.get_infer_version())
         logging.info('Platform: %s', utils.decode(platform.platform()))
 
         def log_getenv(k):
