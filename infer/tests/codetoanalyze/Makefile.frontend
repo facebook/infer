@@ -15,13 +15,13 @@ test: capture
 	for file in $(FILES) ; do \
     diff -u $$file.dot $$file.test.dot ; \
 	done
-	make clean
+	$(MAKE) clean
 
 replace: capture
 	for file in $(FILES) ; do \
     mv $$file.test.dot $$file.dot ; \
 	done
-	make clean
+	$(MAKE) clean
 
 clean:
 	rm -rf infer-out *.o */*.test.dot */*/*.test.dot

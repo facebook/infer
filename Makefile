@@ -99,74 +99,74 @@ ocaml_unit_test: test_this_build
 frontend_replace: c_frontend_replace cpp_frontend_replace objc_frontend_replace objcpp_frontend_replace
 
 c_frontend_replace:
-	make -C ./infer/tests/codetoanalyze/c/frontend replace
+	$(MAKE) -C ./infer/tests/codetoanalyze/c/frontend replace
 
 c_frontend_test:
-	make -C ./infer/tests/codetoanalyze/c/frontend test
+	$(MAKE) -C ./infer/tests/codetoanalyze/c/frontend test
 
 c_infer_test:
-	make -C ./infer/tests/codetoanalyze/c/errors test
+	$(MAKE) -C ./infer/tests/codetoanalyze/c/errors test
 
 cpp_frontend_replace:
-	make -C ./infer/tests/codetoanalyze/cpp/frontend replace
+	$(MAKE) -C ./infer/tests/codetoanalyze/cpp/frontend replace
 
 cpp_frontend_test:
-	make -C ./infer/tests/codetoanalyze/cpp/frontend test
+	$(MAKE) -C ./infer/tests/codetoanalyze/cpp/frontend test
 
 cpp_infer_test:
-	make -C ./infer/tests/codetoanalyze/cpp/errors test
+	$(MAKE) -C ./infer/tests/codetoanalyze/cpp/errors test
 
 java_checkers_test:
-	make -C ./infer/tests/codetoanalyze/java/checkers test
+	$(MAKE) -C ./infer/tests/codetoanalyze/java/checkers test
 
 java_crashcontext_test:
-	make -C ./infer/tests/codetoanalyze/java/crashcontext test
+	$(MAKE) -C ./infer/tests/codetoanalyze/java/crashcontext test
 
 java_eradicate_test:
-	make -C ./infer/tests/codetoanalyze/java/eradicate test
+	$(MAKE) -C ./infer/tests/codetoanalyze/java/eradicate test
 
 java_harness_test:
-	make -C ./infer/tests/codetoanalyze/java/harness test
+	$(MAKE) -C ./infer/tests/codetoanalyze/java/harness test
 
 java_infer_test:
-	make -C ./infer/tests/codetoanalyze/java/infer test
+	$(MAKE) -C ./infer/tests/codetoanalyze/java/infer test
 
 java_tracing_test:
-	make -C ./infer/tests/codetoanalyze/java/tracing test
+	$(MAKE) -C ./infer/tests/codetoanalyze/java/tracing test
 
 java_quandary_test:
-	make -C ./infer/tests/codetoanalyze/java/quandary test
+	$(MAKE) -C ./infer/tests/codetoanalyze/java/quandary test
 
 objc_frontend_replace:
-	make -C ./infer/tests/codetoanalyze/objc/frontend replace
+	$(MAKE) -C ./infer/tests/codetoanalyze/objc/frontend replace
 
 objc_frontend_test:
-	make -C ./infer/tests/codetoanalyze/objc/frontend test
+	$(MAKE) -C ./infer/tests/codetoanalyze/objc/frontend test
 
 objc_infer_test:
-	make -C ./infer/tests/codetoanalyze/objc/errors test
+	$(MAKE) -C ./infer/tests/codetoanalyze/objc/errors test
 
 objc_linters:
-	make -C ./infer/tests/codetoanalyze/objc/linters test
+	$(MAKE) -C ./infer/tests/codetoanalyze/objc/linters test
 
 objcpp_frontend_replace:
-	make -C ./infer/tests/codetoanalyze/objcpp/frontend replace
+	$(MAKE) -C ./infer/tests/codetoanalyze/objcpp/frontend replace
 
 objcpp_frontend_test:
-	make -C ./infer/tests/codetoanalyze/objcpp/frontend test
+	$(MAKE) -C ./infer/tests/codetoanalyze/objcpp/frontend test
 
 objcpp_linters:
-	make -C ./infer/tests/codetoanalyze/objcpp/linters test
+	$(MAKE) -C ./infer/tests/codetoanalyze/objcpp/linters test
 
 direct_tests:
-	time make -j $(NCPU) -l $(NCPU) $(DIRECT_TESTS)
+	$(MAKE) -j $(NCPU) -l $(NCPU) $(DIRECT_TESTS)
 
 buck_test: infer
-	make direct_tests
+	$(MAKE) direct_tests
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 
 buck_test_xml: infer
-	make direct_tests
+	$(MAKE) direct_tests
 	buck test --xml test.xml # TODO: generate test.xml with test results
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 

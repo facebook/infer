@@ -27,7 +27,7 @@ print: analyze
 	LC_ALL=C sort -t: -k1,1 -k2n,2 -o issues.exp.test issues.exp.test
 
 test: analyze print
-	make clean
+	$(MAKE) clean
 	diff -u issues.exp issues.exp.test
 	rm issues.exp.test
 

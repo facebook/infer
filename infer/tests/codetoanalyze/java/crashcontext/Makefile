@@ -38,5 +38,5 @@ test: analyze
     diff -u $$file.exp $$file.exp.test ; \
     rm $$file.exp.test ; \
 	done  
-	make clean
+	$(MAKE) clean
 
