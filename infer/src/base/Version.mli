@@ -9,5 +9,6 @@
 
 open! Utils
 
+val commit : string
 val versionString : string
 val versionJson : string

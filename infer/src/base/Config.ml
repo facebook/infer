@@ -1142,6 +1142,10 @@ and version_json =
     ~exes:CLOpt.[Analyze;Clang;Java;Print]
     "Print version json formatted"
 
+and version_vcs =
+  CLOpt.mk_bool ~long:"version-vcs"
+    ~exes:CLOpt.[Analyze;Clang;Java;Print] "Print version control system commit and exit"
+
 and whole_seconds =
   CLOpt.mk_bool ~deprecated:["whole_seconds"] ~long:"whole-seconds"
     "Print whole seconds only"
@@ -1256,6 +1260,10 @@ let post_parsing_initialization () =
   );
   if !version_json then (
     F.fprintf F.std_formatter "%s@." Version.versionJson ;
+    exit 0
+  );
+  if !version_vcs then (
+    F.fprintf F.std_formatter "%s@." Version.commit ;
     exit 0
   );
 
