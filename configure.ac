@@ -102,6 +102,12 @@ AS_IF([test "x$enable_c_analyzers" = "xyes"], [
     AC_CHECK_TOOL([CMAKE], [cmake], [no])
     AC_ASSERT_PROG([cmake], [$CMAKE])
   ])
+  AC_ARG_ENABLE(ocamlopt-custom-cc,
+    AS_HELP_STRING([--enable-ocamlopt-custom-cc], [use CC in ocamlopt invocations]),
+    ,
+    enable_ocamlopt_custom_cc=no)
+  ENABLE_OCAMLOPT_CUSTOM_CC=$enable_ocamlopt_custom_cc
+  AC_SUBST([ENABLE_OCAMLOPT_CUSTOM_CC])
 ])
 # end if($enable_c_analyzers)
 
