@@ -895,7 +895,6 @@ struct
         let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri
             sil_loc nname si all_res_trans in
         let add_cg_edge callee_pname =
-          if not (Builtin.is_registered callee_pname) then
             Cg.add_edge context.CContext.cg procname callee_pname
         in
         Option.may add_cg_edge callee_pname_opt;
