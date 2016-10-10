@@ -99,11 +99,11 @@ compile:
 CLEAN_EXTRA = infer-out-arc infer-out-all
 
 analyze:
-	$(INFER_BIN) -a $(ANALYZER) --cxx --ml-buckets all --check-duplicate-symbols -o infer-out-all -- clang $(OPTIONS) $(FILES_BUCKET_ALL) >/dev/null 2>duplicates.txt
+	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --cxx --ml-buckets all --check-duplicate-symbols -o infer-out-all -- clang $(OPTIONS) $(FILES_BUCKET_ALL) 2>duplicates.txt)
 	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
-	$(INFER_BIN) -a $(ANALYZER) --cxx --ml-buckets cf --check-duplicate-symbols -o infer-out -- clang $(OPTIONS) $(FILES) >/dev/null 2>duplicates.txt
+	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --cxx --ml-buckets cf --check-duplicate-symbols -o infer-out -- clang $(OPTIONS) $(FILES) 2>duplicates.txt)
 	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
-	$(INFER_BIN) -a $(ANALYZER) --cxx --ml-buckets cf --check-duplicate-symbols -o infer-out-arc -- clang $(OPTIONS) -fobjc-arc $(FILES_ARC) >/dev/null 2>duplicates.txt
+	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --cxx --ml-buckets cf --check-duplicate-symbols -o infer-out-arc -- clang $(OPTIONS) -fobjc-arc $(FILES_ARC) 2>duplicates.txt)
 	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
 	cp infer-out-all/specs/* infer-out/specs
 	cp infer-out-arc/specs/* infer-out/specs

@@ -24,7 +24,7 @@ compile:
 
 analyze:
 	for file in $(FILES) ; do \
-	  $(INFER_BIN) -a $(ANALYZER) --stacktrace $$file.stacktrace.json -- javac -cp $(CLASSPATH) $$file.java >/dev/null 2>/dev/null ; \
+	  $(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --stacktrace $$file.stacktrace.json -- javac -cp $(CLASSPATH) $$file.java) ; \
 	  cp infer-out/crashcontext/crashcontext.json $$file.exp.test ; \
 	done
 

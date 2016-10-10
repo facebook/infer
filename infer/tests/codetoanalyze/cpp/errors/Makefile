@@ -61,5 +61,5 @@ compile:
 	clang $(OPTIONS) $(FILES)
 
 analyze:
-	$(INFER_BIN) -a $(ANALYZER) --cxx --ml-buckets cpp --check-duplicate-symbols -- clang $(OPTIONS) $(FILES) >/dev/null 2>duplicates.txt
+	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --cxx --ml-buckets cpp --check-duplicate-symbols -- clang $(OPTIONS) $(FILES) 2>duplicates.txt)
 	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0

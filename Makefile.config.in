@@ -125,3 +125,7 @@ CLANG_DEPS = $(addprefix $(PYTHON_LIB_DIR)/, \
              $(INFERPRINT_BIN)
 
 JAVA_MODELS_JAR = $(LIB_DIR)/java/models.jar
+
+define silent_on_success
+  $(1) >/dev/null 2>/dev/null || ($(1) && exit 1)
+endef

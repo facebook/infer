@@ -29,4 +29,4 @@ compile:
 
 analyze:
 	ERADICATE_RETURN_OVER_ANNOTATED=1 \
-	$(INFER_BIN) -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(FILES) >/dev/null 2>/dev/null
+	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(FILES))

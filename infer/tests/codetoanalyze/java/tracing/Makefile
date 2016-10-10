@@ -39,4 +39,4 @@ compile:
 	javac -cp $(CLASSPATH) $(FILES)
 
 analyze:
-	$(INFER_BIN) -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(FILES) >/dev/null 2>/dev/null
+	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(FILES))
