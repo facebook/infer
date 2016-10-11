@@ -100,8 +100,7 @@ let mutable_local_vars_advice context decl =
         Some {
           CIssue.issue = CIssue.Mutable_local_variable_in_component_file;
           CIssue.description = "Local variables should be const to avoid reassignment";
-          CIssue.suggestion = Some "Add a const (after the asterisk for pointer types). \
-                                    http://componentkit.org/docs/avoid-local-variables.html";
+          CIssue.suggestion = Some "Add a const (after the asterisk for pointer types).";
           CIssue.loc = CFrontend_checkers.location_from_dinfo context decl_info
         }
       else None
@@ -128,8 +127,7 @@ let component_factory_function_advice context decl =
           CIssue.description = "Break out composite components";
           CIssue.suggestion = Some (
               "Prefer subclassing CKCompositeComponent to static helper functions \
-               that return a CKComponent subclass. \
-               http://componentkit.org/docs/break-out-composites.html"
+               that return a CKComponent subclass."
             );
           CIssue.loc = CFrontend_checkers.location_from_dinfo context decl_info
         }
