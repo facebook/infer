@@ -37,7 +37,6 @@ type iter_fun =
   bool ->
   Localise.t -> Localise.error_desc -> string ->
   loc_trace ->
-  Prop.normal Prop.t option ->
   Exceptions.err_class ->
   Exceptions.exception_visibility ->
   unit
@@ -61,9 +60,7 @@ val size : (Exceptions.err_kind -> bool -> bool) -> t -> int
 val update : t -> t -> unit
 
 val log_issue :
-  Exceptions.err_kind ->
-  t -> Location.t -> (int * int) -> int -> loc_trace ->
-  (Prop.normal Prop.t) option -> exn -> unit
+  Exceptions.err_kind -> t -> Location.t -> (int * int) -> int -> loc_trace -> exn -> unit
 
 (** {2 Functions for manipulating per-file error tables} *)
 

@@ -755,9 +755,8 @@ let desc_return_expression_required typ_str loc =
       (at_line tags loc) in
   { no_desc with descriptions = [description]; tags = !tags }
 
-let desc_retain_cycle prop cycle loc cycle_dotty =
+let desc_retain_cycle cycle loc cycle_dotty =
   Logging.d_strln "Proposition with retain cycle:";
-  Prop.d_prop prop; Logging.d_strln "";
   let ct = ref 1 in
   let tags = Tags.create () in
   let str_cycle = ref "" in

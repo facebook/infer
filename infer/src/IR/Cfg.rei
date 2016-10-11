@@ -302,11 +302,6 @@ let get_defined_procs: cfg => list Procdesc.t;
 let check_cfg_connectedness: cfg => unit;
 
 
-/** Removes seeds variables from a prop corresponding to captured variables in an objc block */
-let remove_seed_captured_vars_block:
-  Tenv.t => list Mangled.t => Prop.t Prop.normal => Prop.t Prop.normal;
-
-
 /** Creates a copy of a procedure description and a list of type substitutions of the form
     (name, typ) where name is a parameter. The resulting procdesc is isomorphic but
     all the type of the parameters are replaced in the instructions according to the list.

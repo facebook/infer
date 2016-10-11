@@ -372,8 +372,7 @@ let check_path_errors_in_post tenv caller_pname post post_path =
             else current_path, None (* position not found, only use the path up to the callee *) in
           State.set_path new_path path_pos_opt;
           let exn = Exceptions.Divide_by_zero (desc, __POS__) in
-          let pre_opt = State.get_normalized_pre (fun _ p -> p) (* Abs.abstract_no_symop *) in
-          Reporting.log_warning caller_pname ?pre:pre_opt exn
+          Reporting.log_warning caller_pname exn
     | _ -> () in
   IList.iter check_attr (Attribute.get_all post)
 
@@ -513,7 +512,7 @@ let sigma_star_fld tenv (sigma1 : Sil.hpred list) (sigma2 : Sil.hpred list) : Si
     L.d_str "cannot star ";
     Prop.d_sigma sigma1; L.d_str " and "; Prop.d_sigma sigma2;
     L.d_ln ();
-    raise (Prop.Cannot_star __POS__)
+    raise (Exceptions.Cannot_star __POS__)
 
 let hpred_typing_lhs_compare hpred1 (e2, _) = match hpred1 with
   | Sil.Hpointsto(e1, _, _) -> Exp.compare e1 e2
@@ -546,7 +545,7 @@ let sigma_star_typ
     L.d_str "cannot star ";
     Prop.d_sigma sigma1; L.d_str " and "; Prover.d_typings typings2;
     L.d_ln ();
-    raise (Prop.Cannot_star __POS__)
+    raise (Exceptions.Cannot_star __POS__)
 
 (** [prop_footprint_add_pi_sigma_starfld_sigma prop pi sigma missing_fld]
     extends the footprint of [prop] with [pi,sigma]

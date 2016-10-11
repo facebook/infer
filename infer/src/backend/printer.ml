@@ -435,7 +435,7 @@ let write_proc_html source whole_seconds pdesc =
 (** Creare a hash table mapping line numbers to the set of errors occurring on that line *)
 let create_table_err_per_line err_log =
   let err_per_line = Hashtbl.create 17 in
-  let add_err _ loc _ _ _ err_name desc _ _ _ _ _ =
+  let add_err _ loc _ _ _ err_name desc _ _ _ _ =
     let err_str =
       Localise.to_string err_name ^
       " " ^

@@ -40,6 +40,7 @@ exception Array_out_of_bounds_l1 of Localise.error_desc * Logging.ml_loc
 exception Array_out_of_bounds_l2 of Localise.error_desc * Logging.ml_loc
 exception Array_out_of_bounds_l3 of Localise.error_desc * Logging.ml_loc
 exception Bad_footprint of Logging.ml_loc
+exception Cannot_star of Logging.ml_loc
 exception Class_cast_exception of Localise.error_desc * Logging.ml_loc
 exception Codequery of Localise.error_desc
 exception Comparing_floats_for_equality of Localise.error_desc * Logging.ml_loc
@@ -62,7 +63,7 @@ exception Inherently_dangerous_function of Localise.error_desc
 exception Internal_error of Localise.error_desc
 exception Java_runtime_exception of Typename.t * string * Localise.error_desc
 exception Leak of
-    bool * Prop.normal Prop.t * Sil.hpred * (exception_visibility * Localise.error_desc)
+    bool * Sil.hpred * (exception_visibility * Localise.error_desc)
     * bool * PredSymb.resource * Logging.ml_loc
 exception Missing_fld of Ident.fieldname * Logging.ml_loc
 exception Premature_nil_termination of Localise.error_desc * Logging.ml_loc
@@ -72,7 +73,7 @@ exception Parameter_not_null_checked of Localise.error_desc * Logging.ml_loc
 exception Pointer_size_mismatch of Localise.error_desc * Logging.ml_loc
 exception Precondition_not_found of Localise.error_desc * Logging.ml_loc
 exception Precondition_not_met of Localise.error_desc * Logging.ml_loc
-exception Retain_cycle of Prop.normal Prop.t * Sil.hpred * Localise.error_desc * Logging.ml_loc
+exception Retain_cycle of Sil.hpred * Localise.error_desc * Logging.ml_loc
 exception Registered_observer_being_deallocated of Localise.error_desc * Logging.ml_loc
 exception Return_expression_required of Localise.error_desc * Logging.ml_loc
 exception Return_statement_missing of Localise.error_desc * Logging.ml_loc

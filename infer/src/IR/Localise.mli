@@ -246,7 +246,7 @@ val desc_precondition_not_met : pnm_kind option -> Procname.t -> Location.t -> e
 val desc_return_expression_required : string -> Location.t -> error_desc
 
 val desc_retain_cycle :
-  Prop.normal Prop.t -> ((Sil.strexp * Typ.t) * Ident.fieldname * Sil.strexp) list ->
+  ((Sil.strexp * Typ.t) * Ident.fieldname * Sil.strexp) list ->
   Location.t -> string option -> error_desc
 
 val registered_observer_being_deallocated_str : string -> string

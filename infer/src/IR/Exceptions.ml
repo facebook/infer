@@ -45,6 +45,7 @@ exception Array_out_of_bounds_l2 of Localise.error_desc * L.ml_loc
 exception Array_out_of_bounds_l3 of Localise.error_desc * L.ml_loc
 exception Array_of_pointsto of L.ml_loc
 exception Bad_footprint of L.ml_loc
+exception Cannot_star of L.ml_loc
 exception Class_cast_exception of Localise.error_desc * L.ml_loc
 exception Codequery of Localise.error_desc
 exception Comparing_floats_for_equality of Localise.error_desc * L.ml_loc
@@ -67,7 +68,7 @@ exception Inherently_dangerous_function of Localise.error_desc
 exception Internal_error of Localise.error_desc
 exception Java_runtime_exception of Typename.t * string * Localise.error_desc
 exception Leak of
-    bool * Prop.normal Prop.t * Sil.hpred * (exception_visibility * Localise.error_desc)
+    bool * Sil.hpred * (exception_visibility * Localise.error_desc)
     * bool * PredSymb.resource * L.ml_loc
 exception Missing_fld of Ident.fieldname * L.ml_loc
 exception Premature_nil_termination of Localise.error_desc * L.ml_loc
@@ -77,7 +78,7 @@ exception Parameter_not_null_checked of Localise.error_desc * L.ml_loc
 exception Pointer_size_mismatch of Localise.error_desc * L.ml_loc
 exception Precondition_not_found of Localise.error_desc * L.ml_loc
 exception Precondition_not_met of Localise.error_desc * L.ml_loc
-exception Retain_cycle of Prop.normal Prop.t * Sil.hpred * Localise.error_desc * L.ml_loc
+exception Retain_cycle of Sil.hpred * Localise.error_desc * L.ml_loc
 exception Registered_observer_being_deallocated of Localise.error_desc * L.ml_loc
 exception Return_expression_required of Localise.error_desc * L.ml_loc
 exception Return_statement_missing of Localise.error_desc * L.ml_loc
@@ -132,7 +133,7 @@ let recognize_exception exn =
     | Bad_footprint ml_loc ->
         (Localise.from_string "Bad_footprint",
          Localise.no_desc, Some ml_loc, Exn_developer, Low, None, Nocat)
-    | Prop.Cannot_star ml_loc ->
+    | Cannot_star ml_loc ->
         (Localise.from_string "Cannot_star",
          Localise.no_desc, Some ml_loc, Exn_developer, Low, None, Nocat)
     | Class_cast_exception (desc, ml_loc) ->
@@ -208,7 +209,7 @@ let recognize_exception exn =
     | Java_runtime_exception (exn_name, _, desc) ->
         let exn_str = Typename.name exn_name in
         (Localise.from_string exn_str, desc, None, Exn_user, High, None, Prover)
-    | Leak (fp_part, _, _, (exn_vis, error_desc), done_array_abstraction, resource, ml_loc) ->
+    | Leak (fp_part, _, (exn_vis, error_desc), done_array_abstraction, resource, ml_loc) ->
         if done_array_abstraction
         then (Localise.from_string "Leak_after_array_abstraction",
               error_desc, Some ml_loc, Exn_developer, High, None, Prover)
@@ -244,7 +245,7 @@ let recognize_exception exn =
     | Precondition_not_met (desc, ml_loc) ->
         (Localise.precondition_not_met,
          desc, Some ml_loc, Exn_developer, Medium, Some Kwarning, Nocat) (* always a warning *)
-    | Retain_cycle (_, _, desc, ml_loc) ->
+    | Retain_cycle (_, desc, ml_loc) ->
         (Localise.retain_cycle,
          desc, Some ml_loc, Exn_user, High, None, Prover)
     | Registered_observer_being_deallocated (desc, ml_loc) ->

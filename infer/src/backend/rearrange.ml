@@ -62,16 +62,14 @@ let check_bad_index tenv pname p len index loc =
         let exn =
           Exceptions.Array_out_of_bounds_l1
             (Errdesc.explain_array_access tenv deref_str p loc, __POS__) in
-        let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
-        Reporting.log_warning pname ?pre:pre_opt exn
+        Reporting.log_warning pname exn
       else if len_is_constant then
         let deref_str = Localise.deref_str_array_bound len_const_opt index_const_opt in
         let desc = Errdesc.explain_array_access tenv deref_str p loc in
         let exn = if index_has_bounds ()
           then Exceptions.Array_out_of_bounds_l2 (desc, __POS__)
           else Exceptions.Array_out_of_bounds_l3 (desc, __POS__) in
-        let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
-        Reporting.log_warning pname ?pre:pre_opt exn
+        Reporting.log_warning pname exn
     end
 
 (** Perform bounds checking *)
@@ -1065,8 +1063,7 @@ let check_type_size tenv pname prop texp off typ_from_instr =
         let exn =
           Exceptions.Pointer_size_mismatch (
             Errdesc.explain_dereference tenv deref_str prop loc, __POS__) in
-        let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
-        Reporting.log_warning pname ?pre:pre_opt exn
+        Reporting.log_warning pname exn
       end
   | None ->
       L.d_str "texp: "; Sil.d_texp_full texp; L.d_ln ()

@@ -99,7 +99,6 @@ end
 
 include Core
 
-exception Cannot_star of L.ml_loc
 
 (** {2 Basic Functions for Propositions} *)
 
@@ -2209,6 +2208,20 @@ let prop_rename_fav_with_existentials tenv (p : normal t) : normal t =
   let p' = prop_sub ren_sub p in
   (*L.d_strln "Prop after renaming:"; d_prop p'; L.d_strln "";*)
   Normalize.normalize tenv p'
+
+(** Removes seeds variables from a prop corresponding to captured variables in an objc block *)
+let remove_seed_captured_vars_block tenv captured_vars prop =
+  let is_captured pname vn = Mangled.equal pname vn in
+  let hpred_seed_captured =
+    function
+    | Sil.Hpointsto (Exp.Lvar pv, _, _) ->
+        let pname = Pvar.get_name pv in
+        (Pvar.is_seed pv) && (IList.mem is_captured pname captured_vars)
+    | _ -> false in
+  let sigma = prop.sigma in
+  let sigma' =
+    IList.filter (fun hpred  -> not (hpred_seed_captured hpred)) sigma in
+  Normalize.normalize tenv (set prop ~sigma:sigma')
 
 (** {2 Prop iterators} *)
 

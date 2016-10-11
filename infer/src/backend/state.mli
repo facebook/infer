@@ -74,7 +74,7 @@ val mark_execution_end : Cfg.Node.t -> unit
 val mark_execution_start : Cfg.Node.t -> unit
 
 (** Mark that the execution of the current instruction failed *)
-val mark_instr_fail : (Prop.normal Prop.t) option -> exn -> unit
+val mark_instr_fail : exn -> unit
 
 (** Mark that the execution of the current instruction was OK *)
 val mark_instr_ok : unit -> unit
@@ -90,7 +90,6 @@ type log_issue =
   ?node_id: (int * int) ->
   ?session: int ->
   ?ltr: Errlog.loc_trace ->
-  ?pre: Prop.normal Prop.t ->
   exn ->
   unit
 

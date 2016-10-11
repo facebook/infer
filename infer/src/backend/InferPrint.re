@@ -344,7 +344,7 @@ let module IssuesCsv = {
   /** Write bug report in csv format */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname err_log => {
     let pp x => F.fprintf fmt x;
-    let pp_row (_, node_key) loc _ ekind in_footprint error_name error_desc severity ltr _ eclass _ => {
+    let pp_row (_, node_key) loc _ ekind in_footprint error_name error_desc severity ltr eclass _ => {
       let source_file =
         switch proc_loc_opt {
         | Some proc_loc => proc_loc.Location.file
@@ -424,7 +424,6 @@ let module IssuesJson = {
         error_desc
         severity
         ltr
-        _
         eclass
         visibility => {
       let source_file =
@@ -479,7 +478,7 @@ let module IssuesJson = {
 let module IssuesTests = {
   /** Write bug report in a format suitable for tests on analysis results. */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt proc_name err_log => {
-    let pp_row _ loc _ ekind in_footprint error_name error_desc _ _ _ _ _ => {
+    let pp_row _ loc _ ekind in_footprint error_name error_desc _ _ _ _ => {
       let (source_file, line_offset) =
         switch proc_loc_opt {
         | Some proc_loc =>
@@ -524,7 +523,7 @@ let module IssuesTests = {
 let module IssuesTxt = {
   /** Write bug report in text format */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt _ err_log => {
-    let pp_row (node_id, node_key) loc _ ekind in_footprint error_name error_desc _ _ _ _ _ => {
+    let pp_row (node_id, node_key) loc _ ekind in_footprint error_name error_desc _ _ _ _ => {
       let source_file =
         switch proc_loc_opt {
         | Some proc_loc => proc_loc.Location.file
@@ -540,7 +539,6 @@ let module IssuesTxt = {
 
 let module IssuesXml = {
   let xml_issues_id = ref 0;
-  let include_precondition_tree = false;
   let loc_trace_to_xml linereader ltr => {
     let subtree label contents => Io_infer.Xml.create_tree label [] [Io_infer.Xml.String contents];
     let level_to_xml level => subtree Io_infer.Xml.tag_level (string_of_int level);
@@ -578,19 +576,7 @@ let module IssuesXml = {
 
   /** print issues from summary in xml */
   let pp_issues_of_error_log fmt error_filter linereader proc_loc_opt proc_name err_log => {
-    let do_row
-        (_, node_key)
-        loc
-        _
-        ekind
-        in_footprint
-        error_name
-        error_desc
-        severity
-        ltr
-        pre_opt
-        eclass
-        _ => {
+    let do_row (_, node_key) loc _ ekind in_footprint error_name error_desc severity ltr eclass _ => {
       let source_file =
         switch proc_loc_opt {
         | Some proc_loc => proc_loc.Location.file
@@ -598,13 +584,6 @@ let module IssuesXml = {
         };
       if (in_footprint && error_filter source_file error_desc error_name) {
         let err_desc_string = error_desc_to_xml_string error_desc;
-        let precondition_tree () =>
-          switch pre_opt {
-          | None => []
-          | Some pre =>
-            Dotty.reset_node_counter ();
-            [Dotty.prop_to_xml pre Io_infer.Xml.tag_precondition 1]
-          };
         let subtree label contents =>
           Io_infer.Xml.create_tree label [] [Io_infer.Xml.String contents];
         let kind = Exceptions.err_kind_string ekind;
@@ -633,13 +612,7 @@ let module IssuesXml = {
             Io_infer.Xml.create_tree
               Io_infer.Xml.tag_qualifier_tags [] (error_desc_to_xml_tags error_desc),
             subtree Io_infer.Xml.tag_hash (string_of_int bug_hash)
-          ] @ (
-            if include_precondition_tree {
-              precondition_tree ()
-            } else {
-              []
-            }
-          );
+          ];
           Io_infer.Xml.create_tree "bug" attributes forest
         };
         Io_infer.Xml.pp_inner_node fmt tree
@@ -784,7 +757,7 @@ let module Stats = {
   };
   let process_err_log error_filter linereader err_log stats => {
     let found_errors = ref false;
-    let process_row _ loc _ ekind in_footprint error_name error_desc _ ltr _ _ _ => {
+    let process_row _ loc _ ekind in_footprint error_name error_desc _ ltr _ _ => {
       let type_str = Localise.to_string error_name;
       if (in_footprint && error_filter error_desc error_name) {
         switch ekind {

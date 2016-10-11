@@ -40,7 +40,6 @@ type struct_init_mode =
   | No_init
   | Fld_init
 
-exception Cannot_star of Logging.ml_loc
 
 (** {2 Basic Functions for propositions} *)
 
@@ -310,6 +309,9 @@ val set : ?sub:Sil.subst -> ?pi:pi -> ?sigma:sigma -> ?pi_fp:pi -> ?sigma_fp:sig
 
 (** Rename free variables in a prop replacing them with existentially quantified vars *)
 val prop_rename_fav_with_existentials : Tenv.t -> normal t -> normal t
+
+(** Removes seeds variables from a prop corresponding to captured variables in an objc block *)
+val remove_seed_captured_vars_block: Tenv.t -> Mangled.t list -> normal t -> normal t
 
 (** {2 Prop iterators} *)
 

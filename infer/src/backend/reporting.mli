@@ -16,7 +16,6 @@ type log_t =
   ?node_id: (int * int) ->
   ?session: int ->
   ?ltr: Errlog.loc_trace ->
-  ?pre: Prop.normal Prop.t ->
   exn ->
   unit
 

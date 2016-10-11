@@ -1127,12 +1127,10 @@ let check_junk ?original_prop pname tenv prop =
                 | _ -> None in
               let exn_retain_cycle cycle =
                 let cycle_dotty = get_retain_cycle_dotty original_prop cycle in
-                let desc = Errdesc.explain_retain_cycle
-                    (remove_opt original_prop) cycle (State.get_loc ()) cycle_dotty in
-                Exceptions.Retain_cycle
-                  (remove_opt original_prop, hpred, desc, __POS__) in
+                let desc = Errdesc.explain_retain_cycle cycle (State.get_loc ()) cycle_dotty in
+                Exceptions.Retain_cycle (hpred, desc, __POS__) in
               let exn_leak = Exceptions.Leak
-                  (fp_part, prop, hpred,
+                  (fp_part, hpred,
                    Errdesc.explain_leak tenv hpred prop alloc_attribute ml_bucket_opt,
                    !Absarray.array_abstraction_performed,
                    resource,

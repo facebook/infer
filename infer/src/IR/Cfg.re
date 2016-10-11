@@ -900,22 +900,6 @@ let check_cfg_connectedness cfg => {
 };
 
 
-/** Removes seeds variables from a prop corresponding to captured variables in an objc block */
-let remove_seed_captured_vars_block tenv captured_vars prop => {
-  let is_captured pname vn => Mangled.equal pname vn;
-  let hpred_seed_captured =
-    fun
-    | Sil.Hpointsto (Exp.Lvar pv) _ _ => {
-        let pname = Pvar.get_name pv;
-        Pvar.is_seed pv && IList.mem is_captured pname captured_vars
-      }
-    | _ => false;
-  let sigma = prop.Prop.sigma;
-  let sigma' = IList.filter (fun hpred => not (hpred_seed_captured hpred)) sigma;
-  Prop.normalize tenv (Prop.set prop sigma::sigma')
-};
-
-
 /** Serializer for control flow graphs */
 let cfg_serializer: Serialization.serializer cfg = Serialization.create_serializer Serialization.cfg_key;
 

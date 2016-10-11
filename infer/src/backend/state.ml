@@ -24,8 +24,8 @@ type failure_stats = {
   mutable node_fail: int; (* number of node failures (i.e. at least one instruction failure) *)
   mutable node_ok: int; (* number of node successes (i.e. no instruction failures) *)
   mutable first_failure :
-    (Location.t * (int * int) * int * Errlog.loc_trace *
-     (Prop.normal Prop.t) option * exn) option (* exception at the first failure *)
+    (Location.t * (int * int) * int * Errlog.loc_trace * exn) option
+    (* exception at the first failure *)
 }
 
 module NodeHash = Cfg.NodeHash
@@ -296,14 +296,14 @@ let mark_instr_ok () =
   let fs = get_failure_stats (get_node ()) in
   fs.instr_ok <- fs.instr_ok + 1
 
-let mark_instr_fail pre_opt exn =
+let mark_instr_fail exn =
   let loc = get_loc () in
   let key = (get_node_id_key () :> int * int) in
   let session = get_session () in
   let loc_trace = get_loc_trace () in
   let fs = get_failure_stats (get_node ()) in
   if fs.first_failure = None then
-    fs.first_failure <- Some (loc, key, (session :> int), loc_trace, pre_opt, exn);
+    fs.first_failure <- Some (loc, key, (session :> int), loc_trace, exn);
   fs.instr_fail <- fs.instr_fail + 1
 
 type log_issue =
@@ -312,7 +312,6 @@ type log_issue =
   ?node_id: (int * int) ->
   ?session: int ->
   ?ltr: Errlog.loc_trace ->
-  ?pre: Prop.normal Prop.t ->
   exn ->
   unit
 
@@ -320,12 +319,11 @@ let process_execution_failures (log_issue : log_issue) pname =
   let do_failure _ fs =
     (* L.err "Node:%a node_ok:%d node_fail:%d@." Cfg.Node.pp node fs.node_ok fs.node_fail; *)
     match fs.node_ok, fs.first_failure with
-    | 0, Some (loc, key, _, loc_trace, pre_opt, exn) ->
+    | 0, Some (loc, key, _, loc_trace, exn) ->
         let ex_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
         let desc' = Localise.verbatim_desc ("exception: " ^ Localise.to_string ex_name) in
         let exn' = Exceptions.Analysis_stops (desc', ml_loc_opt) in
-        log_issue
-          pname ~loc ~node_id:key ~ltr:loc_trace ?pre:pre_opt exn'
+        log_issue pname ~loc ~node_id:key ~ltr:loc_trace exn'
     | _ -> () in
   NodeHash.iter do_failure !gs.failure_map
 
