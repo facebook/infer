@@ -379,15 +379,25 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
         match TraceDomain.Source.get_footprint_access_path source with
         | Some footprint_ap ->
             let footprint_ap_base = fst (AccessPath.extract footprint_ap) in
-            let input, output =
+            begin
               match AccessPath.BaseMap.find footprint_ap_base formal_map with
               | formal_index ->
                   let input = QuandarySummary.make_formal_input formal_index footprint_ap in
-                  let output =
+                  begin
                     match output_opt with
-                    | Some output -> output
-                    | None -> QuandarySummary.make_formal_output formal_index footprint_ap in
-                  input, output
+                    | Some output ->
+                        (QuandarySummary.make_in_out_summary input output summary_trace) :: acc
+                    | None ->
+                        if not (TraceDomain.Sinks.is_empty (TraceDomain.sinks trace))
+                        then
+                          let output =
+                            QuandarySummary.make_formal_output formal_index footprint_ap in
+                          (QuandarySummary.make_in_out_summary input output summary_trace) :: acc
+                        else
+                          (* output access path is same as input access path and there were no sinks
+                             in this function. summary would be the identity function *)
+                          acc
+                  end
               | exception Not_found ->
                   if is_global footprint_ap_base
                   then
@@ -396,12 +406,11 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
                       match output_opt with
                       | Some output -> output
                       | None -> QuandarySummary.make_global_output footprint_ap in
-                    input, output
+                    (QuandarySummary.make_in_out_summary input output summary_trace) :: acc
                   else
                     failwithf
-                      "Couldn't find formal number for %a@." AccessPath.pp_base footprint_ap_base in
-            let summary = QuandarySummary.make_in_out_summary input output summary_trace in
-            summary :: acc
+                      "Couldn't find formal number for %a@." AccessPath.pp_base footprint_ap_base
+            end
         | None ->
             begin
               match output_opt with

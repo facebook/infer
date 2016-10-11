@@ -58,6 +58,31 @@ class Interprocedural {
     InferTaint.inferSensitiveSink(returnSourceViaField().f);
   }
 
+  public static void returnSourceViaParameter1(Obj o) {
+    o.f = InferTaint.inferSecretSource();
+  }
+
+  public static void returnSourceViaParameter1Bad(Obj o) {
+    returnSourceViaParameter1(o);
+    InferTaint.inferSensitiveSink(o.f);
+  }
+
+  public static void returnSourceViaParameter2(Obj o1, Obj o2) {
+    o2.f = o1.f;
+  }
+
+  public static void returnSourceViaParameter2Bad(Obj o1, Obj o2) {
+    o1.f = InferTaint.inferSecretSource();
+    returnSourceViaParameter2(o1, o2);
+    InferTaint.inferSensitiveSink(o2.f);
+  }
+
+  public static void returnSourceViaParameterOk(Obj o1, Obj o2) {
+    o1.f = InferTaint.inferSecretSource();
+    returnSourceViaParameter2(o2, o1);
+    InferTaint.inferSensitiveSink(o2.f);
+  }
+
   public static void returnSourceViaGlobal() {
     sGlobal = InferTaint.inferSecretSource();
   }
