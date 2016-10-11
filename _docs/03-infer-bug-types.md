@@ -34,6 +34,7 @@ Here is an overview of the types of bugs currently reported by Infer.
 - Bugs reported only in iOS code about [ComponentKit](http://componentkit.org)
   - [Mutable Local Variable in component file](/docs/infer-bug-types.html#MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE)
   - [Component factory funciton](/docs/infer-bug-types.html#COMPONENT_FACTORY_FUNCTION)
+  - [Component with unconventional superclass](/docs/infer-bug-types.html#COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS)
 
 ## <a name="RESOURCE_LEAK"></a> Resource leak
 
@@ -546,6 +547,10 @@ start-up time of an app.
 ## <a name="COMPONENT_FACTORY_FUNCTION"></a> Component factory function
 
 [Doc in ComponentKit page](http://componentkit.org/docs/break-out-composites.html)
+
+## <a name="COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS"></a> Component with unconventional superclass
+
+[Doc in ComponentKit page](http://componentkit.org/docs/never-subclass-components.html)
 
 
 
