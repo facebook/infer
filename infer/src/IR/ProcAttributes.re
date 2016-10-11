@@ -26,6 +26,7 @@ type t = {
   access: PredSymb.access, /** visibility access */
   captured: list (Mangled.t, Typ.t), /** name and type of variables captured in blocks */
   mutable changed: bool, /** true if proc has changed since last analysis */
+  mutable did_preanalysis: bool, /** true if we performed preanalysis on the CFG for this proc */
   err_log: Errlog.t, /** Error log for the procedure */
   exceptions: list string, /** exceptions thrown by the procedure */
   formals: list (Mangled.t, Typ.t), /** name and type of formal parameters */
@@ -53,6 +54,7 @@ let default proc_name language => {
   access: PredSymb.Default,
   captured: [],
   changed: true,
+  did_preanalysis: false,
   err_log: Errlog.empty (),
   exceptions: [],
   formals: [],

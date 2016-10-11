@@ -512,6 +512,11 @@ let module Node = {
     proc_desc.pd_attributes.ProcAttributes.locals =
       proc_desc.pd_attributes.ProcAttributes.locals @ new_locals;
 
+  /** check or indicate if we have performed preanalysis on the CFG */
+  let proc_desc_did_preanalysis proc_desc => proc_desc.pd_attributes.ProcAttributes.did_preanalysis;
+  let proc_desc_signal_did_preanalysis proc_desc =>
+    proc_desc.pd_attributes.ProcAttributes.did_preanalysis = true;
+
   /** Print extended instructions for the node,
       highlighting the given subinstruction if present */
   let pp_instrs pe0 sub_instrs::sub_instrs instro fmt node => {
@@ -784,6 +789,8 @@ let module Procdesc = {
   let compute_distance_to_exit_node = Node.proc_desc_compute_distance_to_exit_node;
   let create = Node.proc_desc_create;
   let remove = Node.proc_desc_remove;
+  let did_preanalysis = Node.proc_desc_did_preanalysis;
+  let signal_did_preanalysis = Node.proc_desc_signal_did_preanalysis;
   let find_from_name = Node.proc_desc_from_name;
   let get_attributes = Node.proc_desc_get_attributes;
   let get_err_log = Node.proc_desc_get_err_log;

@@ -291,11 +291,16 @@ let do_liveness pdesc tenv =
   LivenessAnalysis.exec_cfg liveness_proc_cfg (ProcData.make_default pdesc tenv)
 
 let doit pdesc cg tenv =
-  if Config.copy_propagation then do_copy_propagation pdesc tenv;
-  let liveness_inv_map = do_liveness pdesc tenv in
-  if not (Config.lazy_dynamic_dispatch) && Config.copy_propagation
-  then remove_dead_frontend_stores pdesc liveness_inv_map;
-  add_nullify_instrs pdesc tenv liveness_inv_map;
-  if not Config.lazy_dynamic_dispatch
-  then add_dispatch_calls pdesc cg tenv;
-  add_abstraction_instructions pdesc;
+  if not (Cfg.Procdesc.did_preanalysis pdesc)
+  then
+    begin
+      Cfg.Procdesc.signal_did_preanalysis pdesc;
+      if Config.copy_propagation then do_copy_propagation pdesc tenv;
+      let liveness_inv_map = do_liveness pdesc tenv in
+      if not (Config.lazy_dynamic_dispatch) && Config.copy_propagation
+      then remove_dead_frontend_stores pdesc liveness_inv_map;
+      add_nullify_instrs pdesc tenv liveness_inv_map;
+      if not Config.lazy_dynamic_dispatch
+      then add_dispatch_calls pdesc cg tenv;
+      add_abstraction_instructions pdesc;
+    end

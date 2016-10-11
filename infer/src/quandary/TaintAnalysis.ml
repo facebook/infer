@@ -434,6 +434,8 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
           (fun formal_map (base, index) -> AccessPath.BaseMap.add base index formal_map)
           AccessPath.BaseMap.empty
           formals_with_nums in
+
+      Preanal.doit pdesc dummy_cg tenv;
       let formals = make_formal_access_paths pdesc in
       let proc_data = ProcData.make pdesc tenv formals in
       match Analyzer.compute_post proc_data with
@@ -452,7 +454,6 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
     if Ondemand.procedure_should_be_analyzed proc_name
     then
       begin
-        Preanal.doit proc_desc dummy_cg tenv;
         Ondemand.set_callbacks callbacks;
         analyze_ondemand DB.source_file_empty proc_desc;
         Ondemand.unset_callbacks ();

@@ -41,6 +41,12 @@ let module Procdesc: {
   /** Create a procdesc */
   let create: cfg => ProcAttributes.t => t;
 
+  /** true if we ran the preanalysis on the CFG associated with [t] */
+  let did_preanalysis: t => bool;
+
+  /** indicate that we have performed preanalysis on the CFG assoociated with [t] */
+  let signal_did_preanalysis: t => unit;
+
   /** [remove cfg name remove_nodes] remove the procdesc [name]
       from the control flow graph [cfg]. */
   /** It also removes all the nodes from the procedure from the cfg if remove_nodes is true */
