@@ -370,3 +370,12 @@ let is_exception tenv typename =
 (** Checks if the class name is a Java exception *)
 let is_throwable tenv typename =
   is_subtype_of_str tenv typename "java.lang.Throwable"
+
+(** tests whether any class attributes (e.g., @ThreadSafe) pass check of first argument*)
+let check_class_attributes check tenv = function
+  | Procname.Java java_pname ->
+      let check_class_annots _ { StructTyp.annots; } = check annots in
+      supertype_exists tenv
+        check_class_annots
+        (Procname.java_get_class_type_name java_pname)
+  | _ -> false

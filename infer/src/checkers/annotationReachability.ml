@@ -134,13 +134,6 @@ let is_allocator tenv pname =
       false
 
 let check_attributes check tenv pname =
-  let check_class_attributes check tenv = function
-    | Procname.Java java_pname ->
-        let check_class_annots _ { StructTyp.annots; } = check annots in
-        PatternMatch.supertype_exists tenv
-          check_class_annots
-          (Procname.java_get_class_type_name java_pname)
-    | _ -> false in
   let check_method_attributes check pname =
     match Specs.proc_resolve_attributes pname with
     | None -> false
@@ -148,7 +141,7 @@ let check_attributes check tenv pname =
         let annotated_signature = Annotations.get_annotated_signature attributes in
         let ret_annotation, _ = annotated_signature.Annotations.ret in
         check ret_annotation in
-  check_class_attributes check tenv pname || check_method_attributes check pname
+  PatternMatch.check_class_attributes check tenv pname || check_method_attributes check pname
 
 let method_overrides is_annotated tenv pname =
   let overrides () =

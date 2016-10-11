@@ -155,7 +155,7 @@ let process_results_table tab = (
 let should_analyze_file file_env =
   IList.exists
     (fun (_, tenv, pname, _) ->
-       AnnotationReachability.check_attributes Annotations.ia_is_thread_safe tenv pname
+       PatternMatch.check_class_attributes Annotations.ia_is_thread_safe tenv pname
     )
     file_env
 
