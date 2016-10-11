@@ -218,20 +218,21 @@ test_build: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_AT
 	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
 	  $(INFER_ALL_TARGETS:.native=.byte)
 
-$(DEPENDENCIES_DIR)/ocamldot/ocamldot:
-	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot
-
 roots:=Infer InferAnalyze CMain JMain InferPrint BuckCompilationDatabase
+clusters:=base clang java IR
 
 src_dirs:=$(shell find * -type d)
 ml_src_files:=$(shell find $(src_dirs) -regex '.*\.ml\(i\)*' -not -path facebook/scripts/eradicate_stats.ml)
 re_src_files:=$(shell find $(src_dirs) -regex '.*\.re\(i\)*')
 inc_flags:=$(foreach dir,$(src_dirs),-I $(dir))
 root_flags:=$(foreach root,$(roots),-r $(root))
-mod_dep.dot: $(DEPENDENCIES_DIR)/ocamldot/ocamldot $(ml_src_files) $(re_src_files)
+cluster_flags:=$(foreach cluster,$(clusters),-c $(cluster))
+mod_dep.dot: $(ml_src_files) $(re_src_files)
+	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot
 	{ ocamldep.opt $(inc_flags) -ml-synonym .re -mli-synonym .rei $(ml_src_files); \
 	  ocamldep.opt $(inc_flags) -ml-synonym .re -mli-synonym .rei -pp refmt $(re_src_files); } \
-	| $(DEPENDENCIES_DIR)/ocamldot/ocamldot -lr $(root_flags) \
+	| $(DEPENDENCIES_DIR)/ocamldot/ocamldot $(cluster_flags) $(root_flags) \
+	| grep -v -e "\"IList\"\|\"Utils\"" \
         > mod_dep.dot
 
 mod_dep.pdf: mod_dep.dot

@@ -327,6 +327,7 @@ endif
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(MAKE) -C facebook clean
 endif
+	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot clean
 
 conf-clean: clean
 	$(REMOVE) infer/lib/python/inferlib/*.pyc

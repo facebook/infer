@@ -4,6 +4,9 @@
 module StringSet =
   Set.Make(struct type t = string let compare = compare end)
 
+module StringMap =
+  Map.Make(struct type t = string let compare = compare end)
+
 let dependencies = ref []
 let currentSource = ref ""
 let addDepend t =
@@ -284,19 +287,95 @@ let getDependFromStdin () =
   with Sys_error msg -> ()
   | Exit -> ()
 
+(**********************************)
+(* Color and Cluster by directory *)
+(**********************************)
+
+let fold_dir f init path =
+  let collect cur_dir path (acum, dirs) =
+    let full_path = Filename.concat cur_dir path in
+    try
+      if Sys.is_directory full_path then
+        (acum, full_path :: dirs)
+      else
+        (f acum full_path, dirs)
+    with Sys_error _ ->
+      (acum, dirs) in
+  let rec fold_dir_ (acum, dirs) =
+    match dirs with
+    | [] ->
+        acum
+    | dir :: dirs ->
+        fold_dir_ (Array.fold_left (fun ad p -> collect dir p ad) (acum, dirs) (Sys.readdir dir)) in
+  if Sys.is_directory path then
+    fold_dir_ (init, [path])
+  else
+    f init path
+
+let dir_to_mod_names graph dir =
+  let nodes =
+    List.fold_left (fun nodes (source, targets) ->
+      StringSet.add source (StringSet.union targets nodes)
+    ) StringSet.empty graph in
+  fold_dir (fun dir_to_mod_names path ->
+    let file = Filename.basename path in
+    let mod_name = String.capitalize (try Filename.chop_extension file with _ -> file) in
+    if ((Filename.check_suffix file ".ml" || Filename.check_suffix file ".re")
+        && StringSet.mem mod_name nodes)
+    then
+      let dir = Filename.dirname path in
+      let files = mod_name :: (try StringMap.find dir dir_to_mod_names with Not_found -> []) in
+      StringMap.add dir files dir_to_mod_names
+    else
+      dir_to_mod_names
+  ) StringMap.empty dir
+
+let printColors dir_to_mod_names =
+  let num_dirs = StringMap.cardinal dir_to_mod_names in
+  let hsv i s v = Printf.sprintf "\"%f %f %f\"" ((float)i *. (1. /. (float)num_dirs)) s v in
+  StringMap.fold (fun dir mod_names i ->
+    List.iter (fun mod_name ->
+      Printf.printf "\"%s\" [style = filled, fillcolor = %s] ;\n" mod_name (hsv i 0.5 0.9) ;
+    ) mod_names ;
+    i + 1
+  ) dir_to_mod_names 0
+  |> ignore
+
+let printClusters clusterDirs dir_to_mod_names =
+  StringMap.iter (fun dir mod_names ->
+    let base = Filename.basename dir in
+    if StringSet.mem base clusterDirs then (
+      Printf.printf "subgraph cluster_%s { label=\"%s\" ;\n" base base;
+      List.iter (fun mod_name ->
+        Printf.printf "\"%s\" ;\n" mod_name
+      ) mod_names ;
+      Printf.printf "}\n"
+    )
+  ) dir_to_mod_names
+
+let colorAndCluster clusterDirs graph dir =
+  let dir_to_mod_names = dir_to_mod_names graph dir in
+  printColors dir_to_mod_names ;
+  printClusters clusterDirs dir_to_mod_names
+
+
                           (***************)
                           (* Entry point *)
                           (***************)
 
 let usage = "Usage: ocamldot [options] <files>"
 
+let clusters = ref []
 let leftToRight = ref false
 let landscape = ref false
 let roots = ref []
 ;;
 
-Arg.parse
+Arg.parse (Arg.align
   [
+    ("-c",
+     Arg.String(fun s -> clusters := s::!clusters),
+     "<c> cluster the modules in the <c> directory in the graph");
     ("-fullgraph",
      Arg.Clear doKernel,
      "  draw the full graph (default is to draw only the kernel)");
@@ -305,11 +384,11 @@ Arg.parse
      "  output in landscape format (default is portrait)");
     ("-lr",
      Arg.Set leftToRight,
-     "         draw graph from left to right (default is top to bottom)");
+     " draw graph from left to right (default is top to bottom)");
     ("-r",
      Arg.String(fun s -> roots := s::!roots),
-     "<r>       use <r> as a root in the graph; nodes reachable from <r>\n               will be shown")
-  ]
+     "<r> use <r> as a root in the graph; nodes reachable from <r> will be shown")
+  ])
   getDependFromFile usage;
 if not(!calledOnFile) then getDependFromStdin();
 print_string "digraph G {\n";
@@ -336,7 +415,7 @@ begin
     let tcGraph = tc graph in          
     let reachable node =
       (List.exists (fun r -> r=node) roots)
-      or
+      ||
       (List.exists (fun r -> isEdge tcGraph r node) roots) in
     let reachableFromRoots =
       List.concat
@@ -346,7 +425,9 @@ begin
              then [(source,targets)]
              else [])
            graph) in
-    printDepend reachableFromRoots
+    printDepend reachableFromRoots;
+    let clusterDirs = List.fold_left (fun z s -> StringSet.add s z) StringSet.empty !clusters in
+    colorAndCluster clusterDirs reachableFromRoots (Sys.getcwd ())
 end;
 print_string "}\n";
 exit 0
