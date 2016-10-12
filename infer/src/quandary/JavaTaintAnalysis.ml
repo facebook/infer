@@ -20,7 +20,7 @@ include
 
     let of_summary_trace = function
       | QuandarySummary.Java trace -> trace
-      | QuandarySummary.Unknown -> assert false
+      | _ -> assert false
 
     (* propagate the trace from the nth parameter of [site.pname] to the return value of
        [site.pname]. if [propagate_reachable] is true, all traces reachable from the parameter will

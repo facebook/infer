@@ -34,6 +34,7 @@ type output =
     because we can't functorize Specs.summary's *)
 type summary_trace =
   | Java of JavaTrace.t
+  | Cpp of CppTrace.t
   | Unknown
 
 (** input-output summary for a pair of values. intuitively, read it as
@@ -71,6 +72,7 @@ let make_in_out_summary input output output_trace =
 
 let pp_trace fmt = function
   | Java trace -> JavaTrace.pp fmt trace
+  | Cpp trace -> CppTrace.pp fmt trace
   | Unknown -> assert false
 
 let pp_input fmt = function

@@ -48,6 +48,7 @@ let active_procedure_checkers () =
         Checkers.callback_print_c_method_calls, false;
         CheckDeadCode.callback_check_dead_code, false;
         Checkers.callback_print_access_to_globals, false;
+        CppTaintAnalysis.checker, Config.quandary;
       ] in
     IList.map (fun (x, y) -> (x, y, Some Config.Clang)) l in
 
