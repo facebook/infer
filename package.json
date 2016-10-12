@@ -1,0 +1,30 @@
+{
+  "version": "0.9.3",
+  "description": "infer",
+  "exportedEnvVars": {
+    "FINDLIB": {
+      "global": true,
+      "resolveAsRelativePath": true,
+      "globalCollisionBehavior": "joinPath",
+      "val": "./_build/ocamlfind/lib"
+    }
+  },
+  "name": "infer",
+  "dependencies": {
+    "@opam-alpha/ocamlfind": "*",
+    "@opam-alpha/ocaml": "4.2.3",
+    "@opam-alpha/sawja": "^ 1.5.1",
+    "@opam-alpha/atdgen": "^ 1.10.0",
+    "@opam-alpha/javalib": "^ 2.3.1",
+    "@opam-alpha/extlib-compat": "1.7.0",
+    "@opam-alpha/ounit": "2.0.0",
+    "reason": "1.3.2-source",
+    "dependency-env": "https://github.com/npm-ml/dependency-env.git",
+    "substs": "https://github.com/yunxing/substs.git",
+    "opam-installer-bin": "https://github.com/yunxing/opam-installer-bin.git",
+    "nopam": "https://github.com/yunxing/nopam.git"
+  },
+  "scripts": {
+    "shell": "eval $(dependencyEnv) && nopam && bash"
+  }
+}

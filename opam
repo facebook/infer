@@ -32,8 +32,8 @@ depends: [
   "atdgen" {>="1.6.0"}
   "javalib" {>="2.3.1"}
   "extlib" {>="1.5.4"}
-  "ounit" {>="2.0.0"}
-  "reason" {>="0.0.5"}
+  "ounit" {= "2.0.0"}
+  "reason" {>="1.3.0"}
 ]
 depexts: [
   [ ["ubuntu"] ["python2.7-dev"] ]

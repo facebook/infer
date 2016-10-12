@@ -6,7 +6,13 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 ROOT_DIR = .
-include $(ROOT_DIR)/Makefile.config
+-include $(ROOT_DIR)/Makefile.config
+
+ifeq ($(IS_FACEBOOK_TREE),yes)
+# With this makefile, all targets will default to have right env variables
+# pointing to the sandbox
+	-include $(ROOT_DIR)/facebook//Makefile.env
+endif
 
 DIRECT_TESTS=
 ifeq ($(BUILD_C_ANALYZERS),yes)
@@ -351,7 +357,6 @@ conf-clean: clean
 .PHONY: all buck_test buck_test_xml clean clang_plugin clang_setup infer inferTraceBugs
 .PHONY: inferTraceBugs_test install ocaml_unit_test check_missing_mli src_build test test_xml
 .PHONY: test_build toplevel uninstall
-
 
 # print any variable for Makefile debugging
 print-%:
