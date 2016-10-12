@@ -250,7 +250,8 @@ let models_dir =
   lib_dir // specs_dir_name
 
 let cpp_models_dir =
-  bin_dir // Filename.parent_dir_name // "models" // "cpp" // "include"
+  let dir = bin_dir // Filename.parent_dir_name // "models" // "cpp" // "include" in
+  Utils.filename_to_absolute dir (* Normalize the path *)
 
 let wrappers_dir =
   lib_dir // "wrappers"
