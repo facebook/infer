@@ -10,7 +10,7 @@ include $(ROOT_DIR)/Makefile.config
 
 DIRECT_TESTS=
 ifeq ($(BUILD_C_ANALYZERS),yes)
-DIRECT_TESTS += c_infer_test c_frontend_test cpp_infer_test cpp_frontend_test
+DIRECT_TESTS += c_infer_test c_frontend_test cpp_infer_test cpp_frontend_test cpp_quandary_test
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 DIRECT_TESTS += \
@@ -115,6 +115,9 @@ cpp_frontend_test:
 
 cpp_infer_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/cpp/errors test
+
+cpp_quandary_test:
+	make -C ./infer/tests/codetoanalyze/cpp/quandary test
 
 java_checkers_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/java/checkers test

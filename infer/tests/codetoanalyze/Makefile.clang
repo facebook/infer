@@ -9,13 +9,14 @@ ROOT_DIR = ../../../../..
 include $(ROOT_DIR)/Makefile.config
 
 ANALYZER = infer
+INFERPRINT_OPTIONS = --issues-tests
 
 CLEAN_EXTRA =
 
 default: compile
 
 print: analyze
-	$(INFERPRINT_BIN) -q -a $(ANALYZER) --issues-tests issues.exp.test
+	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) issues.exp.test
 	LC_ALL=C sort -t, -k1,1 -k2,2 -k3n,3 -o issues.exp.test issues.exp.test
 
 test: analyze print
