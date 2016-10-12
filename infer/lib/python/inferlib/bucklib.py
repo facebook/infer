@@ -92,6 +92,7 @@ def prepare_build(args):
 
     # Export the Infer command as environment variables
     os.environ['INFER_JAVA_BUCK_OPTIONS'] = json.dumps(infer_command)
+    os.environ['INFER_RULE_KEY'] = utils.infer_key(args.analyzer)
 
     # Create a script to be called by buck
     infer_script = None
