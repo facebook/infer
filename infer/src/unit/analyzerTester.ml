@@ -163,7 +163,7 @@ module Make
   open StructuredSil
 
   module I = AbstractInterpreter.Make (CFG) (S) (T)
-  module M = I.M
+  module M = I.InvariantMap
 
   type assert_map = string M.t
 
@@ -245,7 +245,7 @@ module Make
     pdesc, assert_map
 
   let create_test test_program extras pp_opt test_pname _ =
-    let pp_state = Option.default I.A.pp pp_opt in
+    let pp_state = Option.default I.TransferFunctions.Domain.pp pp_opt in
     let pdesc, assert_map = structured_program_to_cfg test_program test_pname in
     let inv_map = I.exec_pdesc (ProcData.make pdesc (Tenv.create ()) extras) in
 

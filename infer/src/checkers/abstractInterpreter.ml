@@ -14,27 +14,39 @@ module L = Logging
 type 'a state = { pre: 'a; post: 'a; visit_count: int; }
 
 module type S = sig
-  module TF : TransferFunctions.S
-  module M : Map.S with type key = TF.CFG.id
-  type inv_map = TF.Domain.astate state M.t
+  module TransferFunctions : TransferFunctions.S
+  module InvariantMap : Map.S with type key = TransferFunctions.CFG.id
+  module Interprocedural
+      (Summary : Summary.S with type summary = TransferFunctions.Domain.astate) :
+  sig
+    val checker : Callbacks.proc_callback_args -> TransferFunctions.extras ->
+      TransferFunctions.Domain.astate option
+  end
 
-  val exec_pdesc : TF.extras ProcData.t -> inv_map
-  val compute_post : TF.extras ProcData.t -> TF.Domain.astate option
+  type invariant_map = TransferFunctions.Domain.astate state InvariantMap.t
+
+  val compute_post : TransferFunctions.extras ProcData.t -> TransferFunctions.Domain.astate option
+  val exec_cfg : TransferFunctions.CFG.t -> TransferFunctions.extras ProcData.t -> invariant_map
+  val exec_pdesc : TransferFunctions.extras ProcData.t -> invariant_map
+  val extract_post : InvariantMap.key -> 'a state InvariantMap.t -> 'a option
+  val extract_pre : InvariantMap.key -> 'a state InvariantMap.t -> 'a option
+  val extract_state : InvariantMap.key -> 'a InvariantMap.t -> 'a option
 end
 
 module MakeNoCFG
-    (Sched : Scheduler.S) (TF : TransferFunctions.S with module CFG = Sched.CFG) = struct
+    (Scheduler : Scheduler.S)
+    (TransferFunctions : TransferFunctions.S with module CFG = Scheduler.CFG) = struct
 
-  module CFG = Sched.CFG
-  module M = ProcCfg.NodeIdMap (Sched.CFG)
-  module A = TF.Domain
+  module CFG = Scheduler.CFG
+  module InvariantMap = ProcCfg.NodeIdMap (CFG)
+  module TransferFunctions = TransferFunctions
+  module Domain = TransferFunctions.Domain
 
-  (* invariant map from node id -> abstract state representing postcondition for node id *)
-  type inv_map = A.astate state M.t
+  type invariant_map = Domain.astate state InvariantMap.t
 
   (** extract the state of node [n] from [inv_map] *)
   let extract_state node_id inv_map =
-    try Some (M.find node_id inv_map)
+    try Some (InvariantMap.find node_id inv_map)
     with Not_found -> None
 
   (** extract the postcondition of node [n] from [inv_map] *)
@@ -53,23 +65,24 @@ module MakeNoCFG
     let node_id = CFG.id node in
     let update_inv_map pre visit_count =
       let compute_post (pre, inv_map) (instr, id_opt) =
-        let post = TF.exec_instr pre proc_data node instr in
+        let post = TransferFunctions.exec_instr pre proc_data node instr in
         match id_opt with
-        | Some id -> post, M.add id { pre; post; visit_count; } inv_map
+        | Some id -> post, InvariantMap.add id { pre; post; visit_count; } inv_map
         | None -> post, inv_map in
       (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
       let instr_ids = match CFG.instr_ids node with
         | [] -> [Sil.skip_instr, None]
         | l -> l in
       let astate_post, inv_map_post = IList.fold_left compute_post (pre, inv_map) instr_ids in
-      let inv_map'' = M.add node_id { pre; post=astate_post; visit_count; } inv_map_post in
-      inv_map'', Sched.schedule_succs work_queue node in
-    if M.mem node_id inv_map
+      let inv_map'' =
+        InvariantMap.add node_id { pre; post=astate_post; visit_count; } inv_map_post in
+      inv_map'', Scheduler.schedule_succs work_queue node in
+    if InvariantMap.mem node_id inv_map
     then
-      let old_state = M.find node_id inv_map in
+      let old_state = InvariantMap.find node_id inv_map in
       let widened_pre =
-        A.widen ~prev:old_state.pre ~next:astate_pre ~num_iters:old_state.visit_count in
-      if A.(<=) ~lhs:widened_pre ~rhs:old_state.pre
+        Domain.widen ~prev:old_state.pre ~next:astate_pre ~num_iters:old_state.visit_count in
+      if Domain.(<=) ~lhs:widened_pre ~rhs:old_state.pre
       then inv_map, work_queue
       else update_inv_map widened_pre (old_state.visit_count + 1)
     else
@@ -86,9 +99,9 @@ module MakeNoCFG
       let extract_pre_f acc pred = extract_pre (CFG.id pred) inv_map :: acc in
       let all_posts = IList.fold_left extract_pre_f normal_posts (CFG.exceptional_preds cfg node) in
       match IList.flatten_options all_posts with
-      | post :: posts -> Some (IList.fold_left A.join post posts)
+      | post :: posts -> Some (IList.fold_left Domain.join post posts)
       | [] -> None in
-    match Sched.pop work_queue with
+    match Scheduler.pop work_queue with
     | Some (_, [], work_queue') ->
         exec_worklist cfg work_queue' inv_map proc_data
     | Some (node, _, work_queue') ->
@@ -103,7 +116,7 @@ module MakeNoCFG
   let exec_cfg cfg proc_data =
     let start_node = CFG.start_node cfg in
     let inv_map', work_queue' =
-      exec_node start_node A.initial (Sched.empty cfg) M.empty proc_data in
+      exec_node start_node Domain.initial (Scheduler.empty cfg) InvariantMap.empty proc_data in
     exec_worklist cfg work_queue' inv_map' proc_data
 
   (* compute and return an invariant map for [pdesc] *)
@@ -116,7 +129,7 @@ module MakeNoCFG
     let inv_map = exec_cfg cfg proc_data in
     extract_post (CFG.id (CFG.exit_node cfg)) inv_map
 
-  module Interprocedural (Summ : Summary.S with type summary = A.astate) = struct
+  module Interprocedural (Summ : Summary.S with type summary = Domain.astate) = struct
 
     let checker { Callbacks.get_proc_desc; proc_desc; proc_name; tenv; } extras =
       let analyze_ondemand_ _ pdesc =

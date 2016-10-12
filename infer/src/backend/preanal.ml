@@ -113,7 +113,7 @@ module NullifyTransferFunctions = struct
   (* (reaching non-nullified vars) * (vars to nullify) *)
   module Domain = AbstractDomain.Pair (VarDomain) (VarDomain)
   module CFG = ProcCfg.Exceptional
-  type extras = LivenessAnalysis.inv_map
+  type extras = LivenessAnalysis.invariant_map
 
   let postprocess ((reaching_defs, _) as astate) node { ProcData.extras; } =
     let node_id =  (CFG.underlying_id node), ProcCfg.Node_index in
