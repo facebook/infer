@@ -218,6 +218,6 @@ The following papers contain some of the technical background on Infer and infor
 - <a href="http://link.springer.com/chapter/10.1007%2F11691372_19">A Local Shape Analysis Based on Separation Logic.</a> Separation logic meets abstract interpretation; calculating loop invariants via a fixed-point computation.
 - <a href="http://dl.acm.org/citation.cfm?id=2049700">Compositional Shape Analysis by Means of Bi-Abduction.</a>
 The bi-abduction paper.
-- <a href="https://research.facebook.com/publications/422671501231772/moving-fast-with-software-verification/">Moving Fast with Software Verification.</a> A paper about the way we use Infer at Facebook.
+- <a href="https://research.facebook.com/publications/moving-fast-with-software-verification/">Moving Fast with Software Verification.</a> A paper about the way we use Infer at Facebook.
 
 {% include katex_render.html %}
