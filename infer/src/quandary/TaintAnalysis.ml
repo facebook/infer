@@ -26,9 +26,9 @@ module Summary = Summary.Make(struct
       | None -> []
   end)
 
+module Make (TaintSpec : TaintSpec.S) = struct
 
-module Make (TraceDomain : QuandarySummary.Trace) = struct
-
+  module TraceDomain = TaintSpec.Trace
   module TaintDomain = AccessTree.Make (TraceDomain)
   module IdMapDomain = IdAccessPathMapDomain
 
@@ -233,7 +233,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
               Some (global_ap, global_trace) in
         match caller_ap_trace_opt with
         | Some (caller_ap, caller_trace) ->
-            let output_trace = TraceDomain.of_summary_trace in_out_summary.output_trace in
+            let output_trace = TaintSpec.of_summary_trace in_out_summary.output_trace in
             let appended_trace = TraceDomain.append in_trace output_trace callee_site in
             let joined_trace = TraceDomain.join caller_trace appended_trace in
             IList.iter
@@ -329,7 +329,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
             let summary =
               match Summary.read_summary proc_data.tenv proc_data.pdesc callee_pname with
               | Some summary -> summary
-              | None -> TraceDomain.handle_unknown call_site (Option.map snd ret_id) in
+              | None -> TaintSpec.handle_unknown_call call_site (Option.map snd ret_id) in
             apply_summary ret_id actuals summary astate_with_source proc_data call_site in
 
           astate_with_summary
@@ -362,7 +362,7 @@ module Make (TraceDomain : QuandarySummary.Trace) = struct
       | Var.ProgramVar pvar -> Pvar.is_return pvar
       | Var.LogicalVar _ -> false in
     let add_summaries_for_trace summary_acc access_path trace =
-      let summary_trace = TraceDomain.to_summary_trace trace in
+      let summary_trace = TaintSpec.to_summary_trace trace in
       let output_opt =
         let base = fst (AccessPath.extract access_path) in
         match AccessPath.BaseMap.find base formal_map with

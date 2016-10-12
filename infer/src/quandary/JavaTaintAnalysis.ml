@@ -14,7 +14,7 @@ module L = Logging
 
 include
   TaintAnalysis.Make(struct
-    include JavaTrace
+    module Trace = JavaTrace
 
     let to_summary_trace trace = QuandarySummary.Java trace
 
@@ -37,11 +37,11 @@ include
       let output =
         QuandarySummary.make_return_output
           (AccessPath.Exact (AccessPath.of_pvar (Pvar.get_ret_pvar pname) ret_typ)) in
-      let footprint_source = Source.make_footprint dummy_param_ap site in
-      let footprint_trace = of_source footprint_source in
+      let footprint_source = Trace.Source.make_footprint dummy_param_ap site in
+      let footprint_trace = Trace.of_source footprint_source in
       QuandarySummary.make_in_out_summary input output (to_summary_trace footprint_trace)
 
-    let handle_unknown site ret_typ_opt =
+    let handle_unknown_call site ret_typ_opt =
       match CallSite.pname site with
       | Procname.Java pname ->
           begin

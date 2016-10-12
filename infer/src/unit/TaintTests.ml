@@ -61,11 +61,11 @@ module MockTrace = Trace.Make(struct
   end)
 
 module MockTaintAnalysis = TaintAnalysis.Make(struct
-    include MockTrace
+    module Trace = MockTrace
 
     let of_summary_trace _ = assert false
     let to_summary_trace _ = assert false
-    let handle_unknown _ _ = []
+    let handle_unknown_call _ _ = []
   end)
 
 module TestInterpreter = AnalyzerTester.Make
