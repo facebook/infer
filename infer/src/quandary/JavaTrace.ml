@@ -67,15 +67,15 @@ module JavaSource = struct
         begin
           match Procname.java_get_class_name pname, Procname.java_get_method pname with
           | "android.content.Intent", ("parseUri" | "parseIntent") ->
-              [0, make Intent site]
+              Some (make Intent site)
           | "android.content.SharedPreferences", "getString" ->
-              [0, make SharedPreferences site]
+              Some (make SharedPreferences site)
           | "com.facebook.infer.builtins.InferTaint", "inferSecretSource" ->
-              [0, make Other site]
+              Some (make Other site)
           | _ ->
-              []
+              None
         end
-    | pname when Builtin.is_registered pname -> []
+    | pname when Builtin.is_registered pname -> None
     | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
 
   let compare src1 src2 =

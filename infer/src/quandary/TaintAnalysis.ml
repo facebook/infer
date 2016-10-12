@@ -297,7 +297,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
                   Location.pp loc
           else
             astate
-      | Sil.Call (ret_id, Const (Cfun callee_pname), actuals, callee_loc, _) ->
+      | Sil.Call (ret, Const (Cfun callee_pname), actuals, callee_loc, _) ->
           let call_site = CallSite.make callee_pname callee_loc in
 
           let astate_with_sink =
@@ -305,32 +305,24 @@ module Make (TaintSpec : TaintSpec.S) = struct
             | [] -> astate
             | sinks -> add_sinks sinks actuals astate proc_data callee_loc in
 
-          let ret_typ =
-            match callee_pname with
-            | Procname.Java java_pname ->
-                Typ.java_proc_return_typ java_pname
-            | Procname.C _ ->
-                Typ.Tvoid (* for tests only, since tests use C-style procnames *)
-            | _ ->
-                failwith "Unimp: looking up return type for non-Java procedure" in
-
           let astate_with_source =
-            match TraceDomain.Source.get call_site, ret_id with
-            | [(0, source)], Some (ret_id, _) ->
+            match TraceDomain.Source.get call_site, ret with
+            | Some source, Some (ret_id, ret_typ) ->
                 let access_tree = add_source source ret_id ret_typ astate_with_sink.access_tree in
                 { astate_with_sink with access_tree; }
-            | [], _ |  _, None ->
-                astate_with_sink
-            | _ ->
-                (* this is allowed by SIL, but not currently used in any frontends *)
-                failwith "Unimp: handling multiple return ids" in
+            | Some _, None ->
+                failwithf
+                  "%a is marked as a source, but has no return value" Procname.pp callee_pname
+            | None, _ ->
+                astate_with_sink in
 
           let astate_with_summary =
             let summary =
               match Summary.read_summary proc_data.tenv proc_data.pdesc callee_pname with
               | Some summary -> summary
-              | None -> TaintSpec.handle_unknown_call call_site (Option.map snd ret_id) in
-            apply_summary ret_id actuals summary astate_with_source proc_data call_site in
+
+              | None -> TaintSpec.handle_unknown_call call_site (Option.map snd ret) in
+            apply_summary ret actuals summary astate_with_source proc_data call_site in
 
           astate_with_summary
       | Sil.Call _ ->

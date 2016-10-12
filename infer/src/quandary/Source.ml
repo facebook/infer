@@ -16,6 +16,6 @@ module type S = sig
 
   val get_footprint_access_path: t -> AccessPath.t option
 
-  (** ith return value * ith sink kind *)
-  val get : CallSite.t -> (int * t) list
+  (** return Some (kind) if the call site is a taint source, None otherwise *)
+  val get : CallSite.t -> t option
 end

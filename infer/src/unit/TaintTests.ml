@@ -38,8 +38,8 @@ module MockTrace = Trace.Make(struct
 
       let get site =
         if string_is_prefix "SOURCE" (Procname.to_string (CallSite.pname site))
-        then [(0, site)]
-        else []
+        then Some site
+        else None
 
       let is_footprint _ = assert false
       let make_footprint _ = assert false
