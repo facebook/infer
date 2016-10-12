@@ -17,10 +17,9 @@ let curr_file = ref DB.source_file_empty
 
 let source_file_from_path path =
   if Filename.is_relative path then
-    (Logging.err_debug
+    (failwithf
        "ERROR: Path %s is relative. Please pass an absolute path in the -c argument.@."
-       path;
-     exit 1);
+       path);
   match Config.project_root with
   | Some root ->
       (try
@@ -146,9 +145,3 @@ let get_sil_location stmt_info context =
   let sloc = choose_sloc sloc1 sloc2 in
   clang_to_sil_location context.CContext.translation_unit_context sloc
     (Some (CContext.get_procdesc context))
-
-let check_source_file source_file =
-  if is_file_blacklisted source_file then
-    (Logging.out "%s"
-       ("\n Skip the analysis of source file" ^ source_file ^ "\n\n");
-     exit(0));

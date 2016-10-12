@@ -16,12 +16,6 @@ let set_env_for_clang_wrapper () =
    | Some dir -> Unix.putenv "FCP_CLANG_INCLUDE_TO_REPLACE" dir
    | None -> ()
   );
-  if Config.cxx_experimental then
-    Unix.putenv "FCP_INFER_CXX_MODELS" "1" ;
-  if Config.debug_mode || Config.frontend_stats then
-    Unix.putenv "FCP_DEBUG_MODE" "1" ;
-  if not Config.failures_allowed then
-    Unix.putenv "FCP_REPORT_FRONTEND_FAILURE" "1" ;
   ()
 
 (** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)

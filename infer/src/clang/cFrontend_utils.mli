@@ -243,10 +243,10 @@ sig
   val mk_sil_var : Clang_ast_t.named_decl_info -> var_info option -> Procname.t -> Procname.t ->
     Pvar.t
 
-  (** true if Config.clang_lang is C++ or ObjC++ *)
+  (** true if the current language is C++ or ObjC++ *)
   val is_cpp_translation : CFrontend_config.translation_unit_context -> bool
 
-  (** true if Config.clang_lang is ObjC or ObjC++ *)
+  (** true if the current language is ObjC or ObjC++ *)
   val is_objc_extension : CFrontend_config.translation_unit_context -> bool
 
 end

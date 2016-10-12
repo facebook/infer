@@ -11,8 +11,8 @@
 
 open! Utils
 
-type exe = Analyze | BuckCompilationDatabase | Clang | ClangWrapper | Interactive | Java | Print
-         | StatsAggregator | Toplevel
+type exe = Analyze | BuckCompilationDatabase | Clang | Interactive | Java | Print | StatsAggregator
+         | Toplevel
 
 val current_exe : exe
 
@@ -65,6 +65,8 @@ val mk_int : default:int -> int ref t
 val mk_float : default:float -> float ref t
 
 val mk_string : default:string -> ?f:(string -> string) -> string ref t
+
+val mk_path : default:string -> string ref t
 
 val mk_string_opt : ?default:string -> ?f:(string -> string) -> string option ref t
 

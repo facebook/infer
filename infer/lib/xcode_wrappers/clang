@@ -6,8 +6,7 @@ CLANG_WRAPPERS_PATH="${SCRIPT_PATH}/../clang_wrappers"
 if [ "${0%++}" != "$0" ]; then INFER_XX="++"; fi
 export INFER_XX
 
-export FCP_CLANG_COMPILER="${CLANG_WRAPPERS_PATH%/}/filter_args_and_run_fcp_clang$INFER_XX";
-export FCP_RESULTS_DIR="${INFER_RESULTS_DIR}";
+FCP_CLANG_COMPILER="${CLANG_WRAPPERS_PATH%/}/filter_args_and_run_fcp_clang$INFER_XX";
 
 if [ -z "$INFER_RESULTS_DIR" ]; then
     # this redirects to the compiler without adding any FCP flag
@@ -17,4 +16,4 @@ if [ -z "$INFER_RESULTS_DIR" ]; then
     exit $?
 fi
 
-"${CLANG_WRAPPERS_PATH%/}/InferClangWrapper" "$@" -fno-cxx-modules
+"${CLANG_WRAPPERS_PATH%/}/InferClang" "$@" -fno-cxx-modules

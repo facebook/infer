@@ -89,7 +89,7 @@ INFERJAVA_MAIN = $(JAVA_SOURCES)/jMain
 #### Clang declarations ####
 
 CLANG_SOURCES = clang
-INFERCLANG_MAIN = $(CLANG_SOURCES)/cMain
+INFERCLANG_MAIN = $(CLANG_SOURCES)/InferClang
 
 FCP_CLANG_OCAML_BUILD_DIR = $(FCP_CLANG_OCAML_DIR)/build
 
@@ -117,9 +117,6 @@ SCRIPT_SOURCES = scripts
 
 CHECKCOPYRIGHT_BIN = $(SCRIPT_DIR)/checkCopyright
 CHECKCOPYRIGHT_MAIN = $(SCRIPT_SOURCES)/checkCopyright
-
-CLANGWRAPPER_BIN = $(LIB_DIR)/clang_wrappers/InferClangWrapper
-CLANGWRAPPER_MAIN = $(SCRIPT_SOURCES)/InferClangWrapper
 
 STATSAGGREGATOR_BIN = $(BIN_DIR)/InferStatsAggregator
 STATSAGGREGATOR_MAIN = $(SCRIPT_SOURCES)/StatsAggregator
@@ -165,7 +162,7 @@ INFER_CONFIG_TARGETS += $(INFERJAVA_MAIN).native
 DEPENDENCIES += java
 endif
 ifeq ($(BUILD_C_ANALYZERS),yes)
-INFER_CONFIG_TARGETS += $(INFERCLANG_MAIN).native $(CLANGWRAPPER_MAIN).native
+INFER_CONFIG_TARGETS += $(INFERCLANG_MAIN).native
 INFER_CONFIG_TARGETS += $(BUCK_COMPILATION_DATABASE_MAIN).native
 DEPENDENCIES += clang
 endif
@@ -187,7 +184,6 @@ ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 endif
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERCLANG_MAIN).native $(INFERCLANG_BIN)
-	$(COPY) $(INFER_BUILD_DIR)/$(CLANGWRAPPER_MAIN).native $(CLANGWRAPPER_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(BUCK_COMPILATION_DATABASE_MAIN).native $(INFER_BUCK_COMPILATION_DATABASE_BIN)
 endif
 ifeq ($(ENABLE_OCAML_ANNOT),yes)
@@ -218,7 +214,7 @@ test_build: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_AT
 	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
 	  $(INFER_ALL_TARGETS:.native=.byte)
 
-roots:=Infer InferAnalyze CMain JMain InferPrint BuckCompilationDatabase
+roots:=Infer InferAnalyze InferClang CMain JMain InferPrint BuckCompilationDatabase
 clusters:=base clang java IR
 
 src_dirs:=$(shell find * -type d)

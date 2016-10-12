@@ -97,6 +97,6 @@ let do_frontend_checks trans_unit_ctx ast =
         Logging.out "End linting file %s@\n" (DB.source_file_to_string source_file)
     | _ -> assert false (* NOTE: Assumes that an AST always starts with a TranslationUnitDecl *)
   with
-  | Assert_failure (file, line, column) ->
+  | Assert_failure (file, line, column) as exn ->
       Logging.err "Fatal error: exception Assert_failure(%s, %d, %d)@\n%!" file line column;
-      exit 1
+      raise exn

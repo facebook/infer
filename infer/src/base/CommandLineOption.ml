@@ -17,15 +17,14 @@ module YBU = Yojson.Basic.Util
 
 (** Each command line option may appear in the --help list of any executable, these tags are used to
     specify which executables for which an option will be documented. *)
-type exe = Analyze | BuckCompilationDatabase | Clang | ClangWrapper | Interactive | Java | Print
-         | StatsAggregator | Toplevel
+type exe = Analyze | BuckCompilationDatabase | Clang | Interactive | Java | Print | StatsAggregator
+         | Toplevel
 
 
 let exes = [
   ("InferBuckCompilationDatabase", BuckCompilationDatabase);
   ("InferAnalyze", Analyze);
   ("InferClang", Clang);
-  ("InferClangWrapper", ClangWrapper);
   ("InferJava", Java);
   ("InferPrint", Print);
   ("InferStatsAggregator", StatsAggregator);
@@ -234,6 +233,11 @@ let mk ?(deprecated=[]) ?(exes=[])
     ) deprecated ;
   variable
 
+(* arguments passed to Arg.parse_argv_dynamic, susceptible to be modified on the fly when parsing *)
+let args_to_parse : string array ref = ref (Array.of_list [])
+(* reference used by Arg.parse_argv_dynamic to track the index of the argument being parsed *)
+let arg_being_parsed : int ref = ref 0
+
 type 'a t =
   ?deprecated:string list -> long:Arg.key -> ?short:Arg.key ->
   ?exes:exe list -> ?meta:string -> Arg.doc ->
@@ -329,6 +333,23 @@ let mk_string ~default ?(f=fun s -> s) ?(deprecated=[]) ~long ?short ?exes ?(met
   mk ~deprecated ~long ?short ~default ?exes ~meta doc
     ~default_to_string:(fun s -> s)
     ~mk_setter:(fun var str -> var := f str)
+    ~decode_json:(string_json_decoder ~long)
+    ~mk_spec:(fun set -> Arg.String set)
+
+let mk_path ~default ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
+  mk ~deprecated ~long ?short ~default ?exes ~meta doc
+    ~default_to_string:(fun s -> s)
+    ~mk_setter:(fun var str ->
+        if Filename.is_relative str then (
+          (* Replace relative paths with absolute ones on the fly in the args being parsed. This
+             assumes that [!arg_being_parsed] points at the option name position in
+             [!args_to_parse], as is the case e.g. when calling [Arg.parse_argv_dynamic
+             ~current:arg_being_parsed !args_to_parse ...]. *)
+          let abs_path = Sys.getcwd () // str in
+          var := abs_path;
+          (!args_to_parse).(!arg_being_parsed + 1) <- abs_path;
+        ) else
+          var := str)
     ~decode_json:(string_json_decoder ~long)
     ~mk_spec:(fun set -> Arg.String set)
 
@@ -562,9 +583,8 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var exe_u
   (* end transitional support for INFERCLANG_ARGS *)
   let exe_name = Sys.executable_name in
   let should_parse_cl_args = match current_exe with
-    | ClangWrapper | Interactive -> false
-    | Analyze | BuckCompilationDatabase | Clang | Java | Print | StatsAggregator
-    | Toplevel -> true in
+    | Clang | Interactive -> false
+    | Analyze | BuckCompilationDatabase | Java | Print | StatsAggregator | Toplevel -> true in
   let env_cl_args =
     if should_parse_cl_args then prepend_to_argv env_args
     else env_args in
@@ -574,22 +594,26 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var exe_u
         let json_args = decode_inferconfig_to_argv path in
         (* read .inferconfig first, as both env vars and command-line options overwrite it *)
         json_args @ env_cl_args in
-  let argv = Array.of_list (exe_name :: all_args) in
-  let current = ref 0 in
+  args_to_parse := Array.of_list (exe_name :: all_args);
+  arg_being_parsed := 0;
   (* tests if msg indicates an unknown option, as opposed to a known option with bad argument *)
   let is_unknown msg =
     let prefix = exe_name ^ ": unknown option" in
     prefix = (String.sub msg 0 (String.length prefix)) in
   let rec parse_loop () =
     try
-      Arg.parse_argv_dynamic ~current argv curr_speclist !anon_fun usage_msg
+      Arg.parse_argv_dynamic ~current:arg_being_parsed !args_to_parse curr_speclist !anon_fun
+        usage_msg
     with
     | Arg.Bad _ when incomplete -> parse_loop ()
-    | Arg.Bad msg when accept_unknown && is_unknown msg -> !anon_fun argv.(!current) ; parse_loop ()
+    | Arg.Bad msg when accept_unknown && is_unknown msg ->
+        !anon_fun !args_to_parse.(!arg_being_parsed);
+        parse_loop ()
     | Arg.Bad usage_msg -> Pervasives.prerr_string usage_msg; exit 2
     | Arg.Help usage_msg -> Pervasives.print_string usage_msg; exit 0
   in
   parse_loop ();
   if not incomplete then
-    Unix.putenv env_var (encode_argv_to_env (prefix_before_rest all_args)) ;
+    Unix.putenv env_var
+      (encode_argv_to_env (prefix_before_rest (IList.tl (Array.to_list !args_to_parse)))) ;
   curr_usage

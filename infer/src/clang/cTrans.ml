@@ -48,7 +48,7 @@ struct
       | Procname.ObjC_Cpp objc_cpp ->
           let class_name = Procname.objc_cpp_get_class_name objc_cpp in
           CTrans_models.get_predefined_model_method_signature class_name selector
-            General_utils.mk_procname_from_objc_method Config.OBJC
+            General_utils.mk_procname_from_objc_method CFrontend_config.ObjC
       | _ ->
           None in
     match predefined_ms_opt, ms_opt with

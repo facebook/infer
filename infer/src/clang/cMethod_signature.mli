@@ -31,7 +31,7 @@ val ms_is_instance : method_signature -> bool
 
 val ms_is_cpp_virtual : method_signature -> bool
 
-val ms_get_lang : method_signature -> Config.clang_lang
+val ms_get_lang : method_signature -> CFrontend_config.clang_lang
 
 val ms_get_pointer_to_parent : method_signature -> Clang_ast_t.pointer option
 
@@ -45,7 +45,7 @@ val ms_is_setter : method_signature -> bool
 
 val make_ms : Procname.t -> (Mangled.t * Clang_ast_t.qual_type) list -> Clang_ast_t.type_ptr
   -> Clang_ast_t.attribute list -> Clang_ast_t.source_range -> bool -> ?is_cpp_virtual:bool
-  -> Config.clang_lang -> Clang_ast_t.pointer option -> Clang_ast_t.pointer option
+  -> CFrontend_config.clang_lang -> Clang_ast_t.pointer option -> Clang_ast_t.pointer option
   -> Typ.t option -> method_signature
 
 val replace_name_ms : method_signature -> Procname.t -> method_signature

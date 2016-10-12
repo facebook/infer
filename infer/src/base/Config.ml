@@ -32,8 +32,6 @@ let clang_frontend_action_symbols = [
   ("lint_and_capture", `Lint_and_capture);
 ]
 
-type clang_lang = C | CPP | OBJC | OBJCPP
-
 type language = Clang | Java
 
 let string_of_language = function
@@ -245,6 +243,9 @@ let bin_dir =
 let lib_dir =
   bin_dir // Filename.parent_dir_name // "lib"
 
+let etc_dir =
+  bin_dir // Filename.parent_dir_name // "etc"
+
 (** Path to lib/specs to retrieve the default models *)
 let models_dir =
   lib_dir // specs_dir_name
@@ -409,8 +410,8 @@ let inferconfig_home =
 
 and project_root =
   CLOpt.mk_string_opt ~deprecated:["project_root"; "-project_root"] ~long:"project-root" ~short:"pr"
-    ?default:CLOpt.(match current_exe with Print | Toplevel | StatsAggregator ->
-        Some (Sys.getcwd ()) | _ -> None)
+    ?default:CLOpt.(match current_exe with Print | Toplevel | StatsAggregator | Clang ->
+        Some init_work_dir | _ -> None)
     ~f:resolve
     ~exes:CLOpt.[Analyze;Clang;Java;Print;Toplevel]
     ~meta:"dir" "Specify the root directory of the project"
@@ -629,6 +630,10 @@ and calls_csv =
     ~exes:CLOpt.[Print]
     ~meta:"file" "Write individual calls in csv format to a file"
 
+and clang_biniou_file =
+  CLOpt.mk_string_opt ~long:"clang-biniou-file" ~exes:CLOpt.[Clang] ~meta:"file"
+    "Specify a file containing the AST of the program, in biniou format"
+
 and changed_files_index =
   CLOpt.mk_string_opt ~long:"changed-files-index" ~exes:CLOpt.[Toplevel] ~meta:"file"
     "Specify the file containing the list of files from which reactive analysis should start"
@@ -649,12 +654,6 @@ and clang_include_to_override =
     "Use this option in the uncommon case where the normal compilation process overrides the \
      location of internal compiler headers. This option should specify the path to those headers \
      so that infer can use its own clang internal headers instead."
-
-(* Default is objc, since it's the default for clang (at least in Mac OS) *)
-and clang_lang =
-  CLOpt.mk_symbol ~long:"clang-lang" ~short:"x" ~default:OBJC
-    "Specify language for clang frontend"
-    ~symbols:[("c", C); ("objective-c", OBJC); ("c++", CPP); ("objective-c++", OBJCPP)]
 
 and _ =
   CLOpt.mk_string_opt ~deprecated:["classpath"] ~long:"classpath"
@@ -970,7 +969,7 @@ and reports_include_ml_loc =
     "Include the location in the Infer source code from where reports are generated"
 
 and results_dir =
-  CLOpt.mk_string ~deprecated:["results_dir"; "-out"] ~long:"results-dir" ~short:"o"
+  CLOpt.mk_path ~deprecated:["results_dir"; "-out"] ~long:"results-dir" ~short:"o"
     ~default:(init_work_dir // "infer-out")
     ~exes:CLOpt.[Analyze;Clang;Java;Print;StatsAggregator]
     ~meta:"dir" "Write results and internal files in the specified directory"
@@ -997,12 +996,6 @@ and skip_translation_headers =
   CLOpt.mk_string_list ~deprecated:["skip_translation_headers"] ~long:"skip-translation-headers"
     ~exes:CLOpt.[Clang]
     ~meta:"path prefix" "Ignore headers whose path matches the given prefix"
-
-(** File to translate *)
-and source_file =
-  (* clang-plugin normalizes filenames *)
-  CLOpt.mk_string_opt ~long:"source-file" ~short:"c" ~f:filename_to_absolute
-    ~meta:"file" ""
 
 and source_file_copy =
   CLOpt.mk_string_opt ~deprecated:["source_file_copy"] ~long:"source-file-copy"
@@ -1229,9 +1222,6 @@ let exe_usage (exe : CLOpt.exe) =
        reads the compilation database emited in json and runs the capture in parallel for \n\
        those commands"
   | Clang ->
-      "Usage: InferClang -c <c files> -ast <ast files> --results-dir <output-dir> [options] \n\
-       Translate the given files using clang into infer internal representation for later analysis."
-  | ClangWrapper ->
       "Usage: internal script to capture compilation commands from clang and clang++. \n\
        You shouldn't need to call this directly."
   | Interactive ->
@@ -1392,7 +1382,7 @@ and checkers = !checkers
 
 (** should the checkers be run? *)
 and checkers_enabled = not (!eradicate || !crashcontext || !quandary)
-
+and clang_biniou_file = !clang_biniou_file
 and clang_frontend_do_capture, clang_frontend_do_lint =
   match !clang_frontend_action with
   | Some `Lint -> false, true (* no capture, lint *)
@@ -1405,7 +1395,6 @@ and clang_frontend_do_capture, clang_frontend_do_lint =
       | _ -> true, true (* capture, lint *)
 
 and clang_include_to_override = !clang_include_to_override
-and clang_lang = !clang_lang
 and cluster_cmdline = !cluster
 and continue_capture = !continue
 and copy_propagation = !copy_propagation
@@ -1475,7 +1464,6 @@ and show_progress_bar = !progress_bar
 and skip_analysis_in_path = !skip_analysis_in_path
 and skip_clang_analysis_in_path = !skip_clang_analysis_in_path
 and skip_translation_headers = !skip_translation_headers
-and source_file = !source_file
 and source_file_copy = !source_file_copy
 and spec_abs_level = !spec_abs_level
 and specs_library = !specs_library

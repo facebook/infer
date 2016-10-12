@@ -214,10 +214,9 @@ struct
            let class_decl = Ast_utils.get_decl parent_ptr in
            (match class_decl with
             | Some (CXXRecordDecl _)
-            | Some (ClassTemplateSpecializationDecl _) ->
+            | Some (ClassTemplateSpecializationDecl _) when Config.cxx_experimental ->
                 let curr_class = CContext.ContextClsDeclPtr parent_ptr in
-                if Config.cxx_experimental then
-                  process_methods trans_unit_ctx tenv cg cfg curr_class [dec]
+                process_methods trans_unit_ctx tenv cg cfg curr_class [dec]
             | Some dec ->
                 Logging.out "Methods of %s skipped\n" (Ast_utils.string_of_decl dec)
             | None -> ())

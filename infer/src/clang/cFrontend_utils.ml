@@ -639,11 +639,11 @@ struct
 
   let is_cpp_translation translation_unit_context =
     let lang = translation_unit_context.CFrontend_config.lang in
-    lang = Config.CPP || lang = Config.OBJCPP
+    lang = CFrontend_config.CPP || lang = CFrontend_config.ObjCPP
 
   let is_objc_extension translation_unit_context =
     let lang = translation_unit_context.CFrontend_config.lang in
-    lang = Config.OBJC || lang = Config.OBJCPP
+    lang = CFrontend_config.ObjC || lang = CFrontend_config.ObjCPP
 
   let rec get_mangled_method_name function_decl_info method_decl_info =
     (* For virtual methods return mangled name of the method from most base class

@@ -92,9 +92,9 @@ let get_param_decls function_method_decl_info =
 let get_language trans_unit_ctx function_method_decl_info =
   match function_method_decl_info with
   | Func_decl_info (_, _) -> trans_unit_ctx.CFrontend_config.lang
-  | Cpp_Meth_decl_info _ -> Config.CPP
-  | ObjC_Meth_decl_info _ -> Config.OBJC
-  | Block_decl_info _ -> Config.OBJC
+  | Cpp_Meth_decl_info _ -> CFrontend_config.CPP
+  | ObjC_Meth_decl_info _ -> CFrontend_config.ObjC
+  | Block_decl_info _ -> CFrontend_config.ObjC
 
 let is_cpp_virtual function_method_decl_info =
   match function_method_decl_info with
@@ -300,9 +300,9 @@ let get_formal_parameters tenv ms =
     | (mangled, {Clang_ast_t.qt_type_ptr}):: pl' ->
         let should_add_pointer name ms =
           let is_objc_self = name = CFrontend_config.self &&
-                             CMethod_signature.ms_get_lang ms = Config.OBJC in
+                             CMethod_signature.ms_get_lang ms = CFrontend_config.ObjC in
           let is_cxx_this = name = CFrontend_config.this &&
-                            CMethod_signature.ms_get_lang ms = Config.CPP in
+                            CMethod_signature.ms_get_lang ms = CFrontend_config.CPP in
           (is_objc_self && CMethod_signature.ms_is_instance ms) || is_cxx_this in
         let tp = if should_add_pointer (Mangled.to_string mangled) ms then
             (Ast_expressions.create_pointer_type qt_type_ptr)
@@ -386,7 +386,7 @@ let create_local_procdesc trans_unit_ctx cfg tenv ms fbody captured is_objc_inst
   let method_annotation =
     sil_method_annotation_of_args (CMethod_signature.ms_get_args ms) in
   let is_cpp_inst_method = CMethod_signature.ms_is_instance ms
-                           && CMethod_signature.ms_get_lang ms = Config.CPP in
+                           && CMethod_signature.ms_get_lang ms = CFrontend_config.CPP in
   let create_new_procdesc () =
     let formals = get_formal_parameters tenv ms in
     let captured_mangled = IList.map (fun (var, t) -> (Pvar.get_name var), t) captured in

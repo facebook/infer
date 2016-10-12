@@ -22,8 +22,6 @@ type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
 val string_to_analyzer : (string * analyzer) list
 
 
-type clang_lang = C | CPP | OBJC | OBJCPP
-
 type language = Clang | Java
 
 val string_of_language : language -> string
@@ -63,6 +61,7 @@ val anonymous_block_prefix : string
 val assign : string
 val attributes_dir_name : string
 val backend_stats_dir_name : string
+val bin_dir : string
 val bound_error_allowed_in_procedure_call : bool
 val buck_generated_folder : string
 val buck_infer_deps_file_name : string
@@ -75,6 +74,7 @@ val csl_analysis : bool
 val default_failure_name : string
 val default_in_zip_results_dir : string
 val dotty_output : string
+val etc_dir : string
 val fail_on_issue_exit_code : int
 val filter_buckets : bool
 val frontend_stats_dir_name : string
@@ -84,6 +84,7 @@ val incremental_procs : bool
 val infer_py_argparse_error_exit_code : int
 val initial_analysis_time : float
 val ivar_attributes : string
+val lib_dir : string
 val lint_issues_dir_name : string
 val load_average : float
 val log_analysis_crash : string
@@ -168,11 +169,11 @@ val calls_csv : outfile option
 val check_duplicate_symbols : bool
 val checkers : bool
 val checkers_enabled : bool
+val clang_biniou_file : string option
 val clang_frontend_action_string : string
 val clang_frontend_do_capture : bool
 val clang_frontend_do_lint : bool
 val clang_include_to_override : string option
-val clang_lang : clang_lang
 val cluster_cmdline : string option
 val continue_capture : bool
 val copy_propagation : bool
@@ -241,7 +242,6 @@ val show_progress_bar : bool
 val skip_analysis_in_path : string list
 val skip_clang_analysis_in_path : string list
 val skip_translation_headers : string list
-val source_file : string option
 val source_file_copy : string option
 val spec_abs_level : int
 val specs_library : string list

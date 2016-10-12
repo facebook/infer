@@ -13,7 +13,7 @@ fi
 if [ "${0%++}" != "$0" ]; then INFER_XX="++"; fi
 export INFER_XX
 
-FRONTEND_COMMAND=("$SCRIPT_DIR/../clang_wrappers/InferClangWrapper" "$@")
+FRONTEND_COMMAND=("$SCRIPT_DIR/../../bin/InferClang" "$@")
 HOST_COMPILER_COMMAND=("$SCRIPT_DIR/../clang_wrappers/filter_args_and_run_fcp_clang$INFER_XX" "$@")
 
 if [ -n "$INFER_COMPILER_WRAPPER_IN_RECURSION" ]; then
@@ -22,7 +22,6 @@ if [ -n "$INFER_COMPILER_WRAPPER_IN_RECURSION" ]; then
     fi
 else
     export INFER_COMPILER_WRAPPER_IN_RECURSION="Y"
-    export FCP_RESULTS_DIR="$INFER_RESULTS_DIR";
 
     "${FRONTEND_COMMAND[@]}"
 fi

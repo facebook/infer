@@ -15,11 +15,9 @@ FILES = \
   include_header/include_templ.cpp \
   memory_leaks/*.cpp \
   models/*.cpp \
-  nestedoperators/*.cpp \
   npe/*.cpp \
   numeric/*.cpp \
   overwrite_attribute/*.cpp \
-  reference/*.cpp \
   resource_leaks/*.cpp \
   shared/attributes/*.cpp \
   shared/conditional/*.cpp \
@@ -53,8 +51,6 @@ FILES = \
   shared/types/typeid_expr.cpp \
   smart_ptr/*.cpp \
   subtyping/*.cpp \
-  templates/*.cpp \
-  types/*.cpp \
   vector/*.cpp \
 
 compile:

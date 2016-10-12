@@ -11,8 +11,10 @@ open! Utils
 
 (** Module that contains constants and global state used in the frontend *)
 
+type clang_lang = C | CPP | ObjC | ObjCPP
+
 type translation_unit_context = {
-  lang : Config.clang_lang;
+  lang : clang_lang;
   source_file : DB.source_file
 }
 
@@ -35,6 +37,9 @@ let cf_bridging_retain = "CFBridgingRetain"
 let cf_non_null_alloc ="__cf_non_null_alloc"
 let ckcomponent_cl = "CKComponent"
 let ckcomponentcontroller_cl = "CKComponentController"
+
+(** script to run our own clang *)
+let clang_bin xx = Config.lib_dir // "clang_wrappers" // "filter_args_and_run_fcp_clang" ^ xx
 let class_method = "class"
 let class_type = "Class"
 let copy = "copy"
@@ -87,7 +92,19 @@ let enum_map = ref Clang_ast_main.PointerMap.empty
 let global_translation_unit_decls : Clang_ast_t.decl list ref = ref []
 let ivar_to_property_index = ref Clang_ast_main.PointerMap.empty
 let json = ref ""
+let log_out = ref Format.std_formatter
 let pointer_decl_index = ref Clang_ast_main.PointerMap.empty
 let pointer_stmt_index = ref Clang_ast_main.PointerMap.empty
 let pointer_type_index = ref Clang_ast_main.PointerMap.empty
 let sil_types_map = ref Clang_ast_types.TypePointerMap.empty
+
+let reset_global_state () =
+  enum_map := Clang_ast_main.PointerMap.empty;
+  global_translation_unit_decls := [];
+  ivar_to_property_index := Clang_ast_main.PointerMap.empty;
+  json := "";
+  log_out := Format.std_formatter;
+  pointer_decl_index := Clang_ast_main.PointerMap.empty;
+  pointer_stmt_index := Clang_ast_main.PointerMap.empty;
+  pointer_type_index := Clang_ast_main.PointerMap.empty;
+  sil_types_map := Clang_ast_types.TypePointerMap.empty;

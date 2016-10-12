@@ -21,7 +21,6 @@ let log_dir_of_current_exe =
   | Analyze -> "analyze"
   | BuckCompilationDatabase -> "buck_compilation_database"
   | Clang -> "clang"
-  | ClangWrapper -> "clang_wrapper"
   | Interactive -> "interactive"
   | Java -> "java"
   | Print -> "print"
@@ -40,8 +39,7 @@ let set_log_file_identifier string_opt =
   let should_setup_log_files =
     match CommandLineOption.current_exe with
     | Analyze
-    | Clang
-    | ClangWrapper -> Config.debug_mode || Config.stats_mode
+    | Clang -> Config.debug_mode || Config.stats_mode
     | BuckCompilationDatabase -> true
     | _ -> false in
   if should_setup_log_files then (

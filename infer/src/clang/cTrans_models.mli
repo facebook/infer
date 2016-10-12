@@ -41,6 +41,6 @@ val is_cf_retain_release : Procname.t -> bool
 
 val get_predefined_model_method_signature : string -> string ->
   (string -> string -> Procname.objc_cpp_method_kind -> Procname.t) ->
-  Config.clang_lang -> CMethod_signature.method_signature option
+  CFrontend_config.clang_lang -> CMethod_signature.method_signature option
 
 val is_dispatch_function_name : string -> (string * int) option

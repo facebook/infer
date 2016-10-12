@@ -129,26 +129,5 @@ def get_clang_frontend_envvars(args):
     frontend_args = []
 
     env_vars['INFER_RESULTS_DIR'] = args.infer_out
-    if args.headers:
-        frontend_args.append('-headers')
-    if args.models_mode:
-        frontend_args.append('-models_mode')
-    if args.project_root:
-        frontend_args += ['-project_root', args.project_root]
-    if args.testing_mode:
-        frontend_args.append('-testing_mode')
-    if args.cxx:
-        frontend_args.append('-cxx-experimental')
-        env_vars['FCP_INFER_CXX_MODELS'] = '1'
-    if args.frontend_debug:
-        frontend_args += ['-debug']
-        env_vars['FCP_DEBUG_MODE'] = '1'
-    if args.frontend_stats:
-        frontend_args += ['-stats']
-        env_vars['FCP_DEBUG_MODE'] = '1'
-    if args.no_failures_allowed:
-        env_vars['FCP_REPORT_FRONTEND_FAILURE'] = '1'
 
-    # export an env variable with all the arguments to pass to InferClang
-    env_vars['FCP_INFER_FRONTEND_ARGS'] = ' '.join(frontend_args)
     return env_vars

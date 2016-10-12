@@ -11,8 +11,10 @@ open! Utils
 
 (** Module that contains constants and global state used in the frontend *)
 
+type clang_lang = C | CPP | ObjC | ObjCPP
+
 type translation_unit_context = {
-  lang : Config.clang_lang;
+  lang : clang_lang;
   source_file : DB.source_file
 }
 
@@ -35,6 +37,10 @@ val cf_bridging_retain : string
 val cf_non_null_alloc : string
 val ckcomponent_cl : string
 val ckcomponentcontroller_cl : string
+
+(** Script to run our own clang. The argument is expected to be either "" or "++". *)
+val clang_bin : string -> string
+
 val class_method : string
 val class_type : string
 val copy : string
@@ -89,6 +95,7 @@ val enum_map : (Clang_ast_t.pointer option * Exp.t option) Clang_ast_main.Pointe
 val global_translation_unit_decls : Clang_ast_t.decl list ref
 val ivar_to_property_index : Clang_ast_t.decl Clang_ast_main.PointerMap.t ref
 val json : string ref
+val log_out : Format.formatter ref
 val pointer_decl_index : Clang_ast_t.decl Clang_ast_main.PointerMap.t ref
 val pointer_stmt_index : Clang_ast_t.stmt Clang_ast_main.PointerMap.t ref
 
@@ -99,3 +106,5 @@ val pointer_type_index : Clang_ast_t.c_type Clang_ast_main.PointerMap.t ref
 (** Map from type pointers (clang pointers and types created later by frontend) to sil types
     Populated during frontend execution when new type is found *)
 val sil_types_map : (Typ.t Clang_ast_types.TypePointerMap.t) ref
+
+val reset_global_state : unit -> unit
