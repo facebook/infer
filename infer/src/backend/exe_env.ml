@@ -33,6 +33,13 @@ let tenv_filename file_base =
   else
     DB.global_tenv_fname
 
+module FilenameHash = Hashtbl.Make(
+  struct
+    type t = DB.filename
+    let equal file1 file2 = DB.filename_compare file1 file2 = 0
+    let hash = Hashtbl.hash
+  end)
+
 (** create a new file_data *)
 let new_file_data source nLOC cg_fname =
   let file_base = DB.chop_extension cg_fname in
@@ -46,11 +53,20 @@ let new_file_data source nLOC cg_fname =
     cfg = None; (* Cfg.load_cfg_from_file cfg_file *)
   }
 
+let create_file_data table source nLOC cg_fname =
+  match FilenameHash.find table cg_fname with
+  | file_data ->
+      file_data
+  | exception Not_found ->
+      let file_data = new_file_data source nLOC cg_fname in
+      FilenameHash.add table cg_fname file_data;
+      file_data
 
 (** execution environment *)
 type t =
   { cg: Cg.t; (** global call graph *)
     proc_map: file_data Procname.Hash.t; (** map from procedure name to file data *)
+    file_map: file_data FilenameHash.t; (** map from cg fname to file data *)
     mutable source_files : DB.SourceFileSet.t; (** Source files in the execution environment *)
   }
 
@@ -64,6 +80,7 @@ let freeze exe_env = exe_env (* TODO: unclear what this function is used for *)
 let create () =
   { cg = Cg.create None;
     proc_map = Procname.Hash.create 17;
+    file_map = FilenameHash.create 1;
     source_files = DB.SourceFileSet.empty;
   }
 
@@ -117,7 +134,7 @@ let get_file_data exe_env pname =
           let nLOC = loc.Location.nLOC in
           let source_dir = DB.source_dir_from_source_file source_file in
           let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
-          let file_data = new_file_data source_file nLOC cg_fname in
+          let file_data = create_file_data exe_env.file_map source_file nLOC cg_fname in
           Procname.Hash.replace exe_env.proc_map pname file_data;
           Some file_data
     end
