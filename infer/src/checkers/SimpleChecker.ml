@@ -104,5 +104,5 @@ module Make (Spec : Spec) : S = struct
              Spec.report astate (ProcCfg.Exceptional.loc node) proc_name)
           astate_set in
     let inv_map = Analyzer.exec_pdesc (ProcData.make_default proc_desc tenv) in
-    Analyzer.M.iter do_reporting inv_map
+    Analyzer.InvariantMap.iter do_reporting inv_map
 end
