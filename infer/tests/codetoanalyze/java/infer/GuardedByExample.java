@@ -370,4 +370,36 @@ public class GuardedByExample {
     }
   }
 
+ @GuardedBy("self_reference")
+ Object self_reference;
+
+ void guardedBySelfReferenceOK() {
+    synchronized(self_reference){
+       this.self_reference.toString();
+    }
+  }
+
+  // TODO: report on this case, or at least a version which writes
+  /*
+ void guardedBySelfReferenceBad() {
+    this.self_reference.toString();
+  }
+  */
+
+  @GuardedBy("itself")
+  Object itself_fld;
+
+ void itselfOK() {
+    synchronized(itself_fld){
+     this.itself_fld.toString();
+    }
+  }
+
+  // TODO: report on this case, or at least a version which writes
+  /*
+ void itselfBad() {
+    this.itself_fld.toString();
+  }
+  */
+
 }

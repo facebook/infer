@@ -744,6 +744,9 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
           | Sil.Apred (Alocked, _) -> true
           | _ -> false)
         (Attribute.get_for_exp tenv prop guarded_by_exp) in
+    let guardedby_is_self_referential =
+      string_equal "itself" (String.lowercase guarded_by_str) ||
+      string_is_suffix guarded_by_str (Ident.fieldname_to_string accessed_fld) in
     let should_warn pdesc =
       (* adding this check implements "by reference" semantics for guarded-by rather than "by value"
          semantics. if this access is through a local L or field V.f
@@ -767,7 +770,8 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       Cfg.Procdesc.get_access pdesc <> PredSymb.Private &&
       not (Annotations.pdesc_has_annot pdesc Annotations.visibleForTesting) &&
       not (Procname.java_is_access_method (Cfg.Procdesc.get_proc_name pdesc)) &&
-      not (is_accessible_through_local_ref lexp) in
+      not (is_accessible_through_local_ref lexp) &&
+      not guardedby_is_self_referential in
     match find_guarded_by_exp guarded_by_str prop.Prop.sigma with
     | Some (Sil.Eexp (guarded_by_exp, _), typ) ->
         if is_read_write_lock typ
