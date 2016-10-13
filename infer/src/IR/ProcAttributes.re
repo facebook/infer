@@ -33,12 +33,12 @@ type t = {
   const_formals: list int, /** list of indices of formals that are const-qualified */
   func_attributes: list PredSymb.func_attribute,
   is_abstract: bool, /** the procedure is abstract */
-  mutable is_bridge_method: bool, /** the procedure is a bridge method */
+  is_bridge_method: bool, /** the procedure is a bridge method */
   is_defined: bool, /** true if the procedure is defined, and not just declared */
   is_objc_instance_method: bool, /** the procedure is an objective-C instance method */
   is_cpp_instance_method: bool, /** the procedure is an C++ instance method */
   is_java_synchronized_method: bool, /** the procedure is a Java synchronized method */
-  mutable is_synthetic_method: bool, /** the procedure is a synthetic method */
+  is_synthetic_method: bool, /** the procedure is a synthetic method */
   language: Config.language, /** language of the procedure */
   loc: Location.t, /** location of this procedure in the source code */
   mutable locals: list (Mangled.t, Typ.t), /** name and type of local variables */
