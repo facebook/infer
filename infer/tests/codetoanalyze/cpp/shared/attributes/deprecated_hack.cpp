@@ -9,9 +9,9 @@
 
 // header required by TranslateAsPtr class. It's not in common header search
 // path when running clang without infer (clang wrappers add it)
-// Add -isystem '/path/models/cpp/include' to clang invocation to work around
+// Add -isystem '/path/to/infer/repo' to clang invocation to work around
 // compilation problem
-#include <infer_model/infer_traits.h>
+#include <infer/models/cpp/include/infer_model/infer_traits.h>
 
 /* Test for passing function attributes to infer via __deprecated__ attribute */
 
