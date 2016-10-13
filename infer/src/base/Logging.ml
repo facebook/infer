@@ -76,6 +76,9 @@ let set_log_file_identifier string_opt =
     err_formatter := err_fmt;
   )
 
+(* set up log files on startup if needed *)
+let () = set_log_file_identifier None
+
 let log_file_names () = (!out_file, !err_file)
 
 (** type of printable elements *)
