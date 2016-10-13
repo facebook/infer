@@ -280,6 +280,8 @@ val directory_iter : (string -> unit) -> string -> unit
 
 val read_optional_json_file : string -> (Yojson.Basic.json, string) result
 
+val with_file : string -> f:(out_channel -> 'a) -> 'a
+
 val write_json_to_file : string -> Yojson.Basic.json -> unit
 
 val consume_in : in_channel -> unit

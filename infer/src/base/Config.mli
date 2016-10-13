@@ -85,6 +85,7 @@ val infer_py_argparse_error_exit_code : int
 val initial_analysis_time : float
 val ivar_attributes : string
 val lib_dir : string
+val lint_dotty_dir_name : string
 val lint_issues_dir_name : string
 val load_average : float
 val log_analysis_crash : string

@@ -126,8 +126,9 @@ let do_frontend_checks trans_unit_ctx ast =
         IList.iter (do_frontend_checks_decl context) allowed_decls;
         if (LintIssues.exists_issues ()) then
           store_issues source_file;
-        Logging.out "End linting file %s@\n" (DB.source_file_to_string source_file)
-    | _ -> assert false (* NOTE: Assumes that an AST always starts with a TranslationUnitDecl *)
+        Logging.out "End linting file %s@\n" (DB.source_file_to_string source_file);
+        CTL.save_dotty_when_in_debug_mode trans_unit_ctx.CFrontend_config.source_file;
+    | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
   with
   | Assert_failure (file, line, column) as exn ->
       Logging.err "Fatal error: exception Assert_failure(%s, %d, %d)@\n%!" file line column;

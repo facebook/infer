@@ -143,6 +143,8 @@ let inferconfig_file = ".inferconfig"
 
 let ivar_attributes = "ivar_attributes"
 
+let lint_dotty_dir_name = "lint_dotty"
+
 let lint_issues_dir_name = "lint_issues"
 
 (** letters used in the analysis output *)

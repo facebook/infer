@@ -52,3 +52,5 @@ val is_unop_with_kind : Clang_ast_t.stmt -> string -> bool
 val is_stmt : Clang_ast_t.stmt -> string -> bool
 
 val isa : Clang_ast_t.stmt -> string -> bool
+
+val pp_predicate : Format.formatter -> string * string list -> unit

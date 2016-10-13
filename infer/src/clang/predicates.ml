@@ -50,6 +50,9 @@ let var_descs_name stmt =
 
 type t = string * string list (* (name, [param1,...,paramK]) *)
 
+let pp_predicate fmt (name, arglist) =
+  Format.fprintf fmt "%s(%a)" name (Utils.pp_comma_seq Format.pp_print_string) arglist
+
 let is_declaration_kind decl s =
   Clang_ast_proj.get_decl_kind_string decl = s
 

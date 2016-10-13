@@ -601,11 +601,10 @@ let with_file file ~f =
   let oc = open_out file in
   let f () = f oc in
   let g () = close_out oc in
-  do_finally f g
+  do_finally f g |> fst
 
 let write_json_to_file destfile json =
   with_file destfile ~f:(fun oc -> Yojson.Basic.pretty_to_channel oc json)
-  |> fst
 
 let consume_in chan_in =
   try

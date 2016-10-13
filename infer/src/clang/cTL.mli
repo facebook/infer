@@ -54,3 +54,5 @@ type ast_node =
   | Decl of Clang_ast_t.decl
 
 val eval_formula : t -> ast_node -> CLintersContext.context -> bool
+
+val save_dotty_when_in_debug_mode : DB.source_file -> unit
