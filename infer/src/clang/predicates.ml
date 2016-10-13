@@ -105,13 +105,14 @@ let is_assign_property decl =
   | _ -> false
 
 let is_property_pointer_type decl =
+  let open Clang_ast_t in
   match decl with
-  | Clang_ast_t.ObjCPropertyDecl (_, _, pdi) ->
-      let type_ptr = pdi.opdi_type_ptr in
-      let raw_ptr = Clang_ast_types.type_ptr_to_clang_pointer type_ptr in
-      (match Clang_ast_main.PointerMap.find raw_ptr !CFrontend_config.pointer_type_index with
-       | MemberPointerType _ | ObjCObjectPointerType _ | BlockPointerType _ -> true
-       | TypedefType (_, tti) ->
+  | ObjCPropertyDecl (_, _, pdi) ->
+      (match Ast_utils.get_desugared_type pdi.opdi_type_ptr with
+       | Some MemberPointerType _
+       | Some ObjCObjectPointerType _
+       | Some BlockPointerType _ -> true
+       | Some TypedefType (_, tti) ->
            (Ast_utils.name_of_typedef_type_info tti) = CFrontend_config.id_cl
        | exception Not_found -> false
        | _ -> false)

@@ -35,4 +35,6 @@ struct MyStruct {
 
 @property(assign) struct MyStruct* shouldNotReport7;
 
+@property(nonatomic, assign, nullable) NSNumber* shouldReport8;
+
 @end

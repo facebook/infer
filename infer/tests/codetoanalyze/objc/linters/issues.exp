@@ -1,6 +1,7 @@
 assign_pointer.m, Linters_dummy_method, 18, ASSIGN_POINTER_WARNING
 assign_pointer.m, Linters_dummy_method, 20, ASSIGN_POINTER_WARNING
 assign_pointer.m, Linters_dummy_method, 22, ASSIGN_POINTER_WARNING
+assign_pointer.m, Linters_dummy_method, 38, ASSIGN_POINTER_WARNING
 atomic_prop.m, A_bla, 98, DIRECT_ATOMIC_PROPERTY_ACCESS
 atomic_prop.m, A_bla, 99, DIRECT_ATOMIC_PROPERTY_ACCESS
 atomic_prop.m, A_readP, 77, DIRECT_ATOMIC_PROPERTY_ACCESS
