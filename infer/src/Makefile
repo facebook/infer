@@ -22,6 +22,7 @@ OCAML_FATAL_WARNINGS = +5+6+8+10+11+12+18+19+20+23+26+29+27+32+33+34+35+37+38+39
 
 OCAMLBUILD_OPTIONS = \
                      -r \
+										 -use-menhir \
                      -cflags -g -lflags -g \
                      -cflags -short-paths \
                      -cflags -safe-string \

@@ -822,6 +822,10 @@ and latex =
   CLOpt.mk_option ~deprecated:["latex"] ~long:"latex" ~f:create_outfile
     ~meta:"file" "Print latex report to a file"
 
+and linters_def_file =
+  CLOpt.mk_string_opt ~long:"linters-def-file" ~exes:CLOpt.[Clang]
+    ~meta:"file" "Specify the file containing linters definition"
+
 and load_average =
   CLOpt.mk_float ~long:"load-average" ~short:"l" ~default:(float_of_int ncpu)
     ~exes:CLOpt.[Toplevel] ~meta:"float"
@@ -1423,6 +1427,7 @@ and javac_verbose_out = !verbose_out
 and jobs = !jobs
 and join_cond = !join_cond
 and latex = !latex
+and linters_def_file = !linters_def_file
 and load_average = !load_average
 and load_analysis_results = !load_results
 and makefile_cmdline = !makefile

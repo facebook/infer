@@ -9,6 +9,37 @@
 
 open! Utils
 open CFrontend_utils
+open Lexing
+open Ctl_lexer
+
+let parse_ctl_file filename =
+  let print_position _ lexbuf =
+    let pos = lexbuf.lex_curr_p in
+    Logging.out "%s:%d:%d" pos.pos_fname
+      pos.pos_lnum (pos.pos_cnum - pos.pos_bol + 1) in
+  let parse_with_error lexbuf =
+    try Some (Ctl_parser.checkers_list token lexbuf) with
+    | SyntaxError msg ->
+        Logging.err "%a: %s\n" print_position lexbuf msg;
+        None
+    | Ctl_parser.Error ->
+        Logging.err "%a: syntax error\n" print_position lexbuf;
+        exit (-1) in
+  let parse_and_print lexbuf =  match parse_with_error lexbuf with
+    | Some l ->
+        IList.iter (fun { Ctl_parser_types.name = s; Ctl_parser_types.definitions = _ } ->
+            Logging.out "Parsed checker: %s\n" s) l;
+    | None -> () in
+  match filename with
+  | Some fn ->
+      let inx = open_in fn in
+      let lexbuf = Lexing.from_channel inx in
+      lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = fn };
+      parse_and_print lexbuf;
+      close_in inx
+  | None ->
+      Logging.out "No linters file specified. Nothing to parse.\n"
+
 
 let rec do_frontend_checks_stmt (context:CLintersContext.context) stmt =
   let open Clang_ast_t in
@@ -81,6 +112,7 @@ let store_issues source_file =
 
 let do_frontend_checks trans_unit_ctx ast =
   try
+    parse_ctl_file Config.linters_def_file;
     let source_file = trans_unit_ctx.CFrontend_config.source_file in
     Logging.out "Start linting file %s@\n" (DB.source_file_to_string source_file);
     match ast with
