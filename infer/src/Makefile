@@ -215,6 +215,21 @@ test_build: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_AT
 	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
 	  $(INFER_ALL_TARGETS:.native=.byte)
 
+# to generate interface file.mli from implementation file.ml execute:
+#   make M=file mli
+mli:
+	ocamlfind ocamlc -package atdgen,extlib,oUnit,str,unix,yojson,zip $(addprefix -I ../_build/infer/,$(DEPENDENCIES)) -i $(M).ml > $(M).mli
+
+rei:
+	ocamlfind ocamlc -package atdgen,extlib,oUnit,str,unix,yojson,zip $(addprefix -I ../_build/infer/,$(DEPENDENCIES)) -i -pp refmt -impl $(M).re > $(M).rei
+
+# convert to reason
+%.re : %.ml
+	refmt -assume-explicit-arity -heuristics-file unary.txt -parse ml -print re $< > $*.re
+
+%.rei : %.mli
+	refmt -assume-explicit-arity -heuristics-file unary.txt -parse ml -print re $< > $*.rei
+
 roots:=Infer InferAnalyze InferClang CMain JMain InferPrint BuckCompilationDatabase
 clusters:=base clang java IR
 
@@ -346,10 +361,3 @@ endif
 	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(REMOVE) mod_dep.dot
 	$(REMOVE) mod_dep.pdf
-
-# convert to reason
-%.re : %.ml
-	refmt -assume-explicit-arity -heuristics-file unary.txt -parse ml -print re $< > $*.re
-
-%.rei : %.mli
-	refmt -assume-explicit-arity -heuristics-file unary.txt -parse ml -print re $< > $*.rei

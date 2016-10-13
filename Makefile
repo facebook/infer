@@ -190,7 +190,7 @@ inferTraceBugs_test: infer
 
 check_missing_mli:
 	@bash -c '\
-	for x in `find infer/src -name "*.ml"`; do \
+	for x in `find infer/src -name "*.ml" -or  -name "*.re"`; do \
 		test -f "$$x"i || echo Missing "$$x"i; done'
 
 inferScriptMode_test: toplevel
