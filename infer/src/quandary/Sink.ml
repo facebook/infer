@@ -25,5 +25,6 @@ module type S = sig
 
   val to_callee : t -> CallSite.t -> t
 
-  val get : CallSite.t -> t parameter list
+  (** return the parameter index and sink kind for the given call site with the given actuals *)
+  val get : CallSite.t -> (Exp.t * Typ.t) list -> t parameter list
 end

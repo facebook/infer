@@ -121,7 +121,7 @@ module CppSink = struct
   let make kind site =
     { kind; site; }
 
-  let get site =
+  let get site _ =
     match CallSite.pname site with
     | (Procname.ObjC_Cpp cpp_pname) as pname ->
         begin

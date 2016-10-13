@@ -301,7 +301,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
           let call_site = CallSite.make callee_pname callee_loc in
 
           let astate_with_sink =
-            match TraceDomain.Sink.get call_site with
+            match TraceDomain.Sink.get call_site actuals with
             | [] -> astate
             | sinks -> add_sinks sinks actuals astate proc_data callee_loc in
 

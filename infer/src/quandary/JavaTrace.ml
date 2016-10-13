@@ -136,7 +136,7 @@ module JavaSink = struct
   let make kind site =
     { kind; site; }
 
-  let get site =
+  let get site _ =
     (* taint all the inputs of [pname]. for non-static procedures, taints the "this" parameter only
        if [taint_this] is true. *)
     let taint_all ?(taint_this=false) pname kind site ~report_reachable =
