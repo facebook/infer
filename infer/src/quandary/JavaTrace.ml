@@ -22,16 +22,8 @@ module JavaSource = struct
       | Other (** for testing or uncategorized sources *)
 
     let compare sk1 sk2 = match sk1, sk2 with
-      | SharedPreferences, SharedPreferences -> 0
-      | SharedPreferences, _ -> (-1)
-      | _, SharedPreferences -> 1
       | Footprint ap1, Footprint ap2 -> AccessPath.compare ap1 ap2
-      | Footprint _, _ -> (-1)
-      | _, Footprint _ -> 1
-      | Intent, Intent -> 0
-      | Intent, _ -> (-1)
-      | _, Intent -> 1
-      | Other, Other -> 0
+      | _ -> tags_compare sk1 sk2
   end
 
   type kind = SourceKind.t
@@ -109,14 +101,7 @@ module JavaSink = struct
       | Logging (** sink that logs one or more of its arguments *)
       | Other (** for testing or uncategorized sinks *)
 
-    let compare snk1 snk2 = match snk1, snk2 with
-      | Logging, Logging -> 0
-      | Logging, _ -> (-1)
-      | _, Logging -> 1
-      | Intent, Intent -> 0
-      | Intent, _ -> (-1)
-      | _, Intent -> 1
-      | Other, Other -> 0
+    let compare snk1 snk2 = tags_compare snk1 snk2
   end
 
   type kind = SinkKind.t

@@ -69,6 +69,10 @@ val string_equal : string -> string -> bool
 (** Comparison for floats *)
 val float_compare : float -> float -> int
 
+(** Use this function to compare sum types (ONLY!) in the default case of your custom compare
+    function. It will fail if you try to check equality of parameterized constructors *)
+val tags_compare: 'a -> 'a -> int
+
 (** Return the first component of a triple. *)
 val fst3 : 'a * 'b * 'c -> 'a
 

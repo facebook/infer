@@ -22,12 +22,7 @@ module CppSource = struct
 
     let compare sk1 sk2 = match sk1, sk2 with
       | Footprint ap1, Footprint ap2 -> AccessPath.compare ap1 ap2
-      | Footprint _, _ -> (-1)
-      | _, Footprint _ -> 1
-      | EnvironmentVariable, EnvironmentVariable -> 0
-      | EnvironmentVariable, _ -> (-1)
-      | _, EnvironmentVariable -> 1
-      | Other, Other -> 0
+      | _ -> tags_compare sk1 sk2
   end
 
   type kind = SourceKind.t
@@ -107,11 +102,7 @@ module CppSink = struct
       | ShellExec (** shell exec function *)
       | Other (** for testing or uncategorized sinks *)
 
-    let compare snk1 snk2 = match snk1, snk2 with
-      | ShellExec, ShellExec -> 0
-      | ShellExec, _ -> (-1)
-      | _, ShellExec -> 1
-      | Other, Other -> 0
+    let compare snk1 snk2 = tags_compare snk1 snk2
   end
 
   type kind = SinkKind.t

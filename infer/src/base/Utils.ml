@@ -81,6 +81,23 @@ let trd3 (_,_,x) = x
 
 let int_of_bool b = if b then 1 else 0
 
+let tags_compare (x : 'a) (y : 'a) =
+  let x = Obj.repr x
+  and y = Obj.repr y in
+  if Obj.is_int x
+  then
+    if Obj.is_int y
+    (* we can use (-) because tags are small and won't overflow *)
+    then Obj.obj x - Obj.obj y
+    else -1
+  else if Obj.is_int y
+  then 1
+  else
+    let r = Obj.tag x - Obj.tag y in
+    if r = 0
+    then failwith "Comparing parameterized constructors"
+    else r
+
 (** {2 Useful Modules} *)
 
 (** Set of integers *)
