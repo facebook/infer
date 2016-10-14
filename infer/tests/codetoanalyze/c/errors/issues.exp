@@ -57,7 +57,9 @@ null_dereference/getc.c, crash_getc, 4, NULL_DEREFERENCE
 null_dereference/getc.c, crash_putc, 4, NULL_DEREFERENCE
 null_dereference/getc.c, crash_rewind, 4, NULL_DEREFERENCE
 null_dereference/getc.c, crash_ungetc, 5, NULL_DEREFERENCE
+null_dereference/getc.c, crash_ungetc, 5, RETURN_VALUE_IGNORED
 null_dereference/getc.c, crash_vfprintf, 5, NULL_DEREFERENCE
+null_dereference/getc.c, nocrash_ungetc, 5, RETURN_VALUE_IGNORED
 null_dereference/malloc_no_null_check.c, test_malloc, 2, NULL_DEREFERENCE
 null_dereference/memcpy-test.c, testError1, 3, NULL_DEREFERENCE
 null_dereference/memcpy-test.c, testError2, 5, NULL_DEREFERENCE

@@ -375,13 +375,6 @@ let check_inherently_dangerous_function caller_pname callee_pname =
         (Localise.desc_inherently_dangerous_function callee_pname) in
     Reporting.log_warning caller_pname exn
 
-let proc_is_defined proc_name =
-  match AttributesTable.load_attributes proc_name with
-  | Some attributes ->
-      attributes.ProcAttributes.is_defined
-  | None ->
-      false
-
 let call_should_be_skipped callee_pname summary =
   (* check skip flag *)
   Specs.get_flag callee_pname proc_flag_skip <> None
@@ -1543,10 +1536,6 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actu
     (* check if the return value of the call is ignored, and issue a warning *)
     let is_ignored = match ret_typ, ret_id with
       | Typ.Tvoid, _ -> false
-      | Typ.Tint _, _ when not (proc_is_defined callee_pname) ->
-          (* if the proc returns Tint and is not defined, *)
-          (* don't report ignored return value *)
-          false
       | _, None -> true
       | _, Some (id, _) -> Errdesc.id_is_assigned_then_dead (State.get_node ()) id in
     if is_ignored

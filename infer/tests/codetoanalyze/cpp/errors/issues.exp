@@ -1,5 +1,7 @@
 c_tests/c_bugs.cpp, crash_fgetc, 4, NULL_DEREFERENCE
+c_tests/c_bugs.cpp, crash_fgetc, 4, RETURN_VALUE_IGNORED
 c_tests/c_bugs.cpp, crash_getc, 4, NULL_DEREFERENCE
+c_tests/c_bugs.cpp, crash_getc, 4, RETURN_VALUE_IGNORED
 c_tests/c_bugs.cpp, malloc_fail_gets_reported, 2, NULL_DEREFERENCE
 c_tests/c_bugs.cpp, malloc_memory_leak_is_reported, 0, MEMORY_LEAK
 c_tests/c_bugs.cpp, memcpy_spec_is_found, 3, NULL_DEREFERENCE

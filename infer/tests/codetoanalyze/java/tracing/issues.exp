@@ -40,6 +40,7 @@ NullPointerExceptions.java, void NullPointerExceptions.dereferenceAfterUnlock1(L
 NullPointerExceptions.java, void NullPointerExceptions.dereferenceAfterUnlock1(Lock), 5, java.lang.NullPointerException
 NullPointerExceptions.java, void NullPointerExceptions.dereferenceAfterUnlock2(Lock), 7, java.lang.NullPointerException
 NullPointerExceptions.java, void NullPointerExceptions.dereferenceAfterUnlock2(Lock), 7, java.lang.NullPointerException
+NullPointerExceptions.java, void NullPointerExceptions.noNullPointerExceptionAfterSkipFunction(), 4, RETURN_VALUE_IGNORED
 NullPointerExceptions.java, void NullPointerExceptions.nullPointerExceptionArrayLength(), 3, java.lang.NullPointerException
 NullPointerExceptions.java, void NullPointerExceptions.nullPointerExceptionCallArrayReadMethod(), 3, java.lang.NullPointerException
 NullPointerExceptions.java, void NullPointerExceptions.nullPointerExceptionCallArrayReadMethod(), 3, java.lang.NullPointerException
@@ -48,8 +49,10 @@ NullPointerExceptions.java, void NullPointerExceptions.nullPointerExceptionFromF
 NullPointerExceptions.java, void NullPointerExceptions.nullPointerExceptionUnlessFrameFails(), 6, java.lang.NullPointerException
 NullPointerExceptions.java, void NullPointerExceptions.nullPointerExceptionWithNullArrayParameter(), 2, java.lang.NullPointerException
 NullPointerExceptions.java, void NullPointerExceptions.nullPointerExceptionWithNullObjectParameter(), 2, java.lang.NullPointerException
+NullPointerExceptions.java, void NullPointerExceptions.nullableNonNullStringAfterTextUtilsIsEmptyCheckShouldNotCauseNPE(String), 2, RETURN_VALUE_IGNORED
 NullPointerExceptions.java, void NullPointerExceptions.someNPEAfterResourceLeak(), 3, java.lang.NullPointerException
 NullPointerExceptions.java, void NullPointerExceptions.stringConstantEqualsFalseNotNPE_FP(), 11, java.lang.NullPointerException
+NullPointerExceptions.java, void NullPointerExceptions.testSystemGetPropertyReturn(), 2, RETURN_VALUE_IGNORED
 NullPointerExceptions.java, void NullPointerExceptions.testSystemGetPropertyReturn(), 3, java.lang.NullPointerException
 ReportOnMainExample.java, void ReportOnMainExample.main(java.lang.String[]), 3, java.lang.NullPointerException
 UnavoidableExceptionExample.java, void UnavoidableExceptionExample.cannotAvoidNPE(), 3, java.lang.NullPointerException
