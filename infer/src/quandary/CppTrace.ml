@@ -17,12 +17,16 @@ module CppSource = struct
   module SourceKind = struct
     type t =
       | Footprint of AccessPath.t (** source that was read from the environment. *)
+      | EnvironmentVariable (** source that was read from an environment variable *)
       | Other (** for testing or uncategorized sources *)
 
     let compare sk1 sk2 = match sk1, sk2 with
       | Footprint ap1, Footprint ap2 -> AccessPath.compare ap1 ap2
       | Footprint _, _ -> (-1)
       | _, Footprint _ -> 1
+      | EnvironmentVariable, EnvironmentVariable -> 0
+      | EnvironmentVariable, _ -> (-1)
+      | _, EnvironmentVariable -> 1
       | Other, Other -> 0
   end
 
@@ -65,6 +69,7 @@ module CppSource = struct
     | (C _) as pname ->
         begin
           match Procname.to_string pname with
+          | "getenv" -> Some (make EnvironmentVariable site)
           | "__infer_taint_source" -> Some (make Other site)
           | _ -> None
         end
@@ -82,6 +87,7 @@ module CppSource = struct
 
   let pp_kind fmt (kind : kind) = match kind with
     | Footprint ap -> F.fprintf fmt "Footprint[%a]" AccessPath.pp ap
+    | EnvironmentVariable -> F.fprintf fmt "EnvironmentVariable"
     | Other -> F.fprintf fmt "Other"
 
   let pp fmt s =
@@ -98,9 +104,13 @@ module CppSink = struct
 
   module SinkKind = struct
     type t =
+      | ShellExec (** shell exec function *)
       | Other (** for testing or uncategorized sinks *)
 
     let compare snk1 snk2 = match snk1, snk2 with
+      | ShellExec, ShellExec -> 0
+      | ShellExec, _ -> (-1)
+      | _, ShellExec -> 1
       | Other, Other -> 0
   end
 
@@ -121,7 +131,11 @@ module CppSink = struct
   let make kind site =
     { kind; site; }
 
-  let get site _ =
+  let get site actuals =
+    let taint_all actuals sink ~report_reachable =
+      IList.mapi
+        (fun actual_num _ -> Sink.make_sink_param sink actual_num ~report_reachable)
+        actuals in
     match CallSite.pname site with
     | (Procname.ObjC_Cpp cpp_pname) as pname ->
         begin
@@ -133,6 +147,8 @@ module CppSink = struct
     | (C _ as pname) ->
         begin
           match Procname.to_string pname with
+          | "execl" | "execlp" | "execle" | "execv" | "execvp" ->
+              taint_all actuals (make ShellExec site) ~report_reachable:false
           | "__infer_taint_sink" ->
               [Sink.make_sink_param (make Other site) 0 ~report_reachable:false]
           | _ ->
@@ -154,6 +170,7 @@ module CppSink = struct
     compare t1 t2 = 0
 
   let pp_kind fmt (kind : kind) = match kind with
+    | ShellExec -> F.fprintf fmt "ShellExec"
     | Other -> F.fprintf fmt "Other"
 
   let pp fmt s =
@@ -175,6 +192,8 @@ include
       let open Source in
       let open Sink in
       match Source.kind source, Sink.kind sink with
+      | SourceKind.EnvironmentVariable, SinkKind.ShellExec ->
+          true
       | SourceKind.Other, SinkKind.Other ->
           true
       | _ ->

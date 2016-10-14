@@ -14,6 +14,7 @@ INFERPRINT_OPTIONS = --issues-txt
 
 FILES = \
   basics.cpp \
+  execs.cpp \
 
 compile:
 	clang $(OPTIONS) $(FILES)
