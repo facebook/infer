@@ -163,7 +163,8 @@ let get_compilation_database changed_files =
   | buck :: build :: args ->
       (check_args_for_targets args;
        let args_with_flavor = add_flavor_to_targets args in
-       let buck_build = Array.of_list (buck :: build :: args_with_flavor) in
+       let buck_build = Array.of_list
+           (buck :: build :: "--config" :: "*//cxx.pch_enabled=false" :: args_with_flavor) in
        Process.create_process_and_wait buck_build;
        let buck_targets_list = buck :: "targets" :: "--show-output" :: args_with_flavor in
        let buck_targets = String.concat " " buck_targets_list in

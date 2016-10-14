@@ -128,6 +128,8 @@ class BuckAnalyzer:
             '*//infer.clang_compiler={clang}'.format(clang=clang_path),
             '--config',
             '*//infer.clang_plugin={plugin}'.format(plugin=plugin_path),
+            '--config',
+            '*//cxx.pch_enabled=false',
         ] + self.args.Xbuck
 
         if self.args.xcode_developer_dir is not None:
