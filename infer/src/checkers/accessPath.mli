@@ -63,6 +63,8 @@ val is_prefix : raw -> raw -> bool
 
 val pp_access : Format.formatter -> access -> unit
 
+val pp_access_list : Format.formatter -> access list -> unit
+
 val pp_raw : Format.formatter -> raw -> unit
 
 val compare : t -> t -> int

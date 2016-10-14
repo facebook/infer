@@ -1123,6 +1123,11 @@ and unsafe_malloc =
     ~exes:CLOpt.[Analyze]
     "Assume that malloc(3) never returns null."
 
+and thread_safety =
+  CLOpt.mk_bool ~long:"thread-safety"
+    ~exes:CLOpt.[Analyze]
+    "Run the experimental thread safety checker. (In conjunction with -a checkers)"
+
 and use_compilation_database =
   CLOpt.mk_symbol_opt ~long:"use-compilation-database"
     "Buck integration using the compilation database, with or without dependencies."
@@ -1488,6 +1493,7 @@ and trace_join = !trace_join
 and trace_rearrange = !trace_rearrange
 and type_size = !type_size
 and unsafe_malloc = !unsafe_malloc
+and thread_safety = !thread_safety
 and use_compilation_database = !use_compilation_database
 and whole_seconds = !whole_seconds
 and worklist_mode = !worklist_mode

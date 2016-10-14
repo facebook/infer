@@ -19,7 +19,9 @@ FILES = \
   FragmentRetainsViewExample.java \
   ImmutableCast.java \
   NoAllocationExample.java \
+  NotThreadSafeExample.java \
   PrintfArgsChecker.java \
+  ThreadSafeExample.java \
   TraceCallSequence.java \
   TwoCheckersExample.java
 
@@ -27,4 +29,4 @@ compile:
 	javac -cp $(CLASSPATH) $(FILES)
 
 analyze:
-	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(FILES))
+	$(call silent_on_success,$(INFER_BIN) --thread-safety -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(FILES))

@@ -148,14 +148,16 @@ let pp_base fmt (pvar, _) =
   Var.pp fmt pvar
 
 let pp_access fmt = function
-  | FieldAccess (field_name, _) -> F.fprintf fmt ".%a" Ident.pp_fieldname field_name
+  | FieldAccess (field_name, _) -> Ident.pp_fieldname fmt field_name
   | ArrayAccess _ -> F.fprintf fmt "[_]"
 
-let pp_raw fmt (base, accesses) =
-  let pp_access_list fmt accesses =
-    let pp_sep _ _ = () in
-    F.pp_print_list ~pp_sep pp_access fmt accesses in
-  F.fprintf fmt "%a%a" pp_base base pp_access_list accesses
+let pp_access_list fmt accesses =
+  let pp_sep _ _ = F.fprintf fmt "." in
+  F.pp_print_list ~pp_sep pp_access fmt accesses
+
+let pp_raw fmt = function
+  | base, [] ->  pp_base fmt base
+  | base, accesses ->  F.fprintf fmt "%a.%a" pp_base base pp_access_list accesses
 
 let pp fmt = function
   | Exact access_path -> pp_raw fmt access_path

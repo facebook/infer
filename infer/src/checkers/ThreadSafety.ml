@@ -129,25 +129,28 @@ let make_results_table file_env =
   in
   map_post_computation_over_procs compute_post_for_procedure procs_to_analyze
 
+let report_thread_safety_errors ( _, tenv, pname, pdesc) writestate =
+  let report_one_error access_path =
+    let description =
+      F.asprintf "Method %a writes to field %a outside of synchronization"
+        Procname.pp pname
+        AccessPath.pp_access_list access_path
+    in
+    Checkers.ST.report_error tenv
+      pname
+      pdesc
+      "CHECKERS_THREAD_SAFETY_WARNING"
+      (Cfg.Procdesc.get_loc pdesc)
+      description
+  in
+  IList.iter report_one_error (IList.map snd (PathDomain.elements writestate))
+
 (* For now, just checks if there is one active element amongst the posts of the analyzed methods.
    This indicates that the method races with itself. To be refined later. *)
-let process_results_table tab = (
-  let finalresult =
-    ResultsTableType.for_all   (* check if writestate is empty for all postconditions*)
-      (fun _ ( _,( _, writestate)) -> (PathDomain.is_empty writestate)
-      )
-      tab
-  in
-  if finalresult then
-    begin
-      L.stdout  "\n ***** \n THREADSAFE \n *****\n" ;
-      L.out  "\n ***** \n THREADSAFE \n *****\n"
-    end
-  else  begin
-    L.stdout  "\n ***** \n RACY \n *****\n" ;
-    L.out  "\n ***** \n RACY \n *****\n"
-  end
-)
+let process_results_table tab =
+  ResultsTableType.iter   (* report errors for each method *)
+    (fun proc_env ( _,( _, writestate)) -> report_thread_safety_errors proc_env writestate)
+    tab
 
 (* Currently we analyze if there is an @ThreadSafe annotation on at least one of
    the classes in a file. This might be tightened in future or even broadened in future
@@ -163,11 +166,9 @@ let should_analyze_file file_env =
   the results to check (approximation of) thread safety *)
 (* file_env: (Idenv.t * Tenv.t * Procname.t * Cfg.Procdesc.t) list *)
 let file_analysis _ _ _ file_env =
-  begin L.stdout "\n THREAD SAFETY CHECKER \n\n";
-    if should_analyze_file file_env then
-      process_results_table
-        (make_results_table file_env)
-  end
+  if should_analyze_file file_env then
+    process_results_table
+      (make_results_table file_env)
 
       (*
     Todo:
@@ -175,6 +176,5 @@ let file_analysis _ _ _ file_env =
     1. Track line numbers of accesses
     2. Track protected writes and reads, too; if we have a write and a read where
     one is non-protected then we have potential race (including protected write, unprotected read
-    3. Output error message when potential race found
-    4. Lotsa other stuff
+    3. Lotsa other stuff
       *)

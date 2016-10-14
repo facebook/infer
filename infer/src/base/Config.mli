@@ -261,6 +261,7 @@ val trace_join : bool
 val trace_rearrange : bool
 val type_size : bool
 val unsafe_malloc : bool
+val thread_safety: bool
 val use_compilation_database : [ `Deps | `NoDeps ] option
 val whole_seconds : bool
 val worklist_mode : int
