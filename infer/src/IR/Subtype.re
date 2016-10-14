@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -40,11 +39,14 @@ let list_to_string list => {
 
 type t' =
   | Exact /** denotes the current type only */
-  | Subtypes of (list Typename.t);
+  | Subtypes (list Typename.t);
 
 
 /** denotes the current type and a list of types that are not their subtypes  */
-type kind = | CAST | INSTOF | NORMAL;
+type kind =
+  | CAST
+  | INSTOF
+  | NORMAL;
 
 type t = (t', kind);
 

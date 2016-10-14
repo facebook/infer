@@ -10,11 +10,11 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
 /**  Control Flow Graph for Interprocedural Analysis */
+
 /** {2 ADT node and proc_desc} */
 type node;
 
@@ -32,6 +32,7 @@ let store_cfg_to_file:
 
 /** proc description */
 let module Procdesc: {
+
   /** proc description */
   type t;
 
@@ -49,6 +50,7 @@ let module Procdesc: {
 
   /** [remove cfg name remove_nodes] remove the procdesc [name]
       from the control flow graph [cfg]. */
+
   /** It also removes all the nodes from the procedure from the cfg if remove_nodes is true */
   let remove: cfg => Procname.t => bool => unit;
 
@@ -138,12 +140,12 @@ let module Node: {
 
   /** kind of cfg node */
   type nodekind =
-    | Start_node of Procdesc.t
-    | Exit_node of Procdesc.t
-    | Stmt_node of string
+    | Start_node Procdesc.t
+    | Exit_node Procdesc.t
+    | Stmt_node string
     | Join_node
-    | Prune_node of bool Sil.if_kind string /** (true/false branch, if_kind, comment) */
-    | Skip_node of string;
+    | Prune_node bool Sil.if_kind string /** (true/false branch, if_kind, comment) */
+    | Skip_node string;
 
   /** kind of Stmt_node for an exception handler. */
   let exn_handler_kind: nodekind;
@@ -286,6 +288,7 @@ let pp_node_list: Format.formatter => list Node.t => unit;
 
 
 /** {2 Functions for manipulating an interprocedural CFG} */
+
 /** Iterate over all the procdesc's */
 let iter_proc_desc: cfg => (Procname.t => Procdesc.t => unit) => unit;
 

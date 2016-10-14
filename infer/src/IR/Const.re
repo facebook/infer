@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -20,13 +19,12 @@ let module L = Logging;
 let module F = Format;
 
 type t =
-  | Cint of IntLit.t /** integer constants */
-  | Cfun of Procname.t /** function names */
-  | Cstr of string /** string constants */
-  | Cfloat of float /** float constants */
-  | Cclass of Ident.name /** class constant */
-  | Cptr_to_fld of Ident.fieldname Typ.t /** pointer to field constant,
-                                             and type of the surrounding Csu.t type */;
+  | Cint IntLit.t /** integer constants */
+  | Cfun Procname.t /** function names */
+  | Cstr string /** string constants */
+  | Cfloat float /** float constants */
+  | Cclass Ident.name /** class constant */
+  | Cptr_to_fld Ident.fieldname Typ.t /** pointer to field constant, and type of the surrounding Csu.t type */;
 
 let compare (c1: t) (c2: t) :int =>
   switch (c1, c2) {

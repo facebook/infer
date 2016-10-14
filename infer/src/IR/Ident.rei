@@ -10,11 +10,11 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
 /** Identifiers: program variables and logical variables */
+
 /** Program and logical variables. */
 type t;
 
@@ -211,6 +211,7 @@ let set_stamp: t => int => t;
 
 
 /** {2 Comparision Functions} */
+
 /** Comparison for names. */
 let name_compare: name => name => int;
 
@@ -248,6 +249,7 @@ let ident_list_equal: list t => list t => bool;
 
 
 /** {2 Pretty Printing} */
+
 /** Pretty print a name. */
 let pp_name: Format.formatter => name => unit;
 

@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -29,6 +28,7 @@ type t; /** the type of a call graph */
     [n1] is the parent and [n2] is the child.
     Node [n1] is dependent on [n2] if there is a path from [n1] to [n2]
     using the child relationship. */
+
 /** [add_edge cg f t] adds an edge from [f] to [t] in the call graph [cg].
     The nodes are also added as undefined, unless already present. */
 let add_edge: t => Procname.t => Procname.t => unit;

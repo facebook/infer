@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -31,9 +30,9 @@ type t = {
 
 let compare cflag1 cflag2 =>
   bool_compare cflag1.cf_virtual cflag2.cf_virtual |>
-    next bool_compare cflag1.cf_interface cflag2.cf_interface |>
-    next bool_compare cflag1.cf_noreturn cflag2.cf_noreturn |>
-    next bool_compare cflag1.cf_is_objc_block cflag2.cf_is_objc_block;
+  next bool_compare cflag1.cf_interface cflag2.cf_interface |>
+  next bool_compare cflag1.cf_noreturn cflag2.cf_noreturn |>
+  next bool_compare cflag1.cf_is_objc_block cflag2.cf_is_objc_block;
 
 let pp f cf => {
   if cf.cf_virtual {

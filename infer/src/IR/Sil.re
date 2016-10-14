@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -21,6 +20,7 @@ let module F = Format;
 
 
 /** {2 Programs and Types} */
+
 /** Kind of prune instruction */
 type if_kind =
   | Ik_bexp /* boolean expressions, and exp ? exp : exp */
@@ -41,23 +41,23 @@ type instr =
   /* Note for frontend writers:
      [x] must be used in a subsequent instruction, otherwise the entire
      `Load` instruction may be eliminated by copy-propagation. */
-  | Load of Ident.t Exp.t Typ.t Location.t
+  | Load Ident.t Exp.t Typ.t Location.t
   /** Store the value of an expression into the heap.
       [*lexp1:typ = exp2] where
         [lexp1] is an expression denoting a heap address
         [typ] is the root type of [lexp1]
         [exp2] is the expression whose value is store. */
-  | Store of Exp.t Typ.t Exp.t Location.t
+  | Store Exp.t Typ.t Exp.t Location.t
   /** prune the state based on [exp=1], the boolean indicates whether true branch */
-  | Prune of Exp.t Location.t bool if_kind
+  | Prune Exp.t Location.t bool if_kind
   /** [Call (ret_id, e_fun, arg_ts, loc, call_flags)] represents an instruction
       [ret_id = e_fun(arg_ts);]. The return value is ignored when [ret_id = None]. */
-  | Call of (option (Ident.t, Typ.t)) Exp.t (list (Exp.t, Typ.t)) Location.t CallFlags.t
+  | Call (option (Ident.t, Typ.t)) Exp.t (list (Exp.t, Typ.t)) Location.t CallFlags.t
   /** nullify stack variable */
-  | Nullify of Pvar.t Location.t
-  | Abstract of Location.t /** apply abstraction */
-  | Remove_temps of (list Ident.t) Location.t /** remove temporaries */
-  | Declare_locals of (list (Pvar.t, Typ.t)) Location.t /** declare local variables */;
+  | Nullify Pvar.t Location.t
+  | Abstract Location.t /** apply abstraction */
+  | Remove_temps (list Ident.t) Location.t /** remove temporaries */
+  | Declare_locals (list (Pvar.t, Typ.t)) Location.t /** declare local variables */;
 
 let skip_instr = Remove_temps [] Location.dummy;
 
@@ -76,16 +76,19 @@ let instr_is_auxiliary =
 
 
 /** offset for an lvalue */
-type offset = | Off_fld of Ident.fieldname Typ.t | Off_index of Exp.t;
+type offset =
+  | Off_fld Ident.fieldname Typ.t
+  | Off_index Exp.t;
 
 
 /** {2 Components of Propositions} */
+
 /** an atom is a pure atomic formula */
 type atom =
-  | Aeq of Exp.t Exp.t /** equality */
-  | Aneq of Exp.t Exp.t /** disequality */
-  | Apred of PredSymb.t (list Exp.t) /** predicate symbol applied to exps */
-  | Anpred of PredSymb.t (list Exp.t) /** negated predicate symbol applied to exps */;
+  | Aeq Exp.t Exp.t /** equality */
+  | Aneq Exp.t Exp.t /** disequality */
+  | Apred PredSymb.t (list Exp.t) /** predicate symbol applied to exps */
+  | Anpred PredSymb.t (list Exp.t) /** negated predicate symbol applied to exps */;
 
 
 /** kind of lseg or dllseg predicates */
@@ -107,21 +110,21 @@ type inst =
   | Iabstraction
   | Iactual_precondition
   | Ialloc
-  | Iformal of zero_flag null_case_flag
+  | Iformal zero_flag null_case_flag
   | Iinitial
   | Ilookup
   | Inone
   | Inullify
-  | Irearrange of zero_flag null_case_flag int PredSymb.path_pos
+  | Irearrange zero_flag null_case_flag int PredSymb.path_pos
   | Itaint
-  | Iupdate of zero_flag null_case_flag int PredSymb.path_pos
-  | Ireturn_from_call of int;
+  | Iupdate zero_flag null_case_flag int PredSymb.path_pos
+  | Ireturn_from_call int;
 
 
 /** structured expressions represent a value of structured type, such as an array or a struct. */
 type strexp =
-  | Eexp of Exp.t inst /** Base case: expression with instrumentation */
-  | Estruct of (list (Ident.fieldname, strexp)) inst /** C structure */
+  | Eexp Exp.t inst /** Base case: expression with instrumentation */
+  | Estruct (list (Ident.fieldname, strexp)) inst /** C structure */
   /** Array of given length
       There are two conditions imposed / used in the array case.
       First, if some index and value pair appears inside an array
@@ -129,20 +132,20 @@ type strexp =
       For instance, x |->[10 | e1: v1] implies that e1 <= 9.
       Second, if two indices appear in an array, they should be different.
       For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. */
-  | Earray of Exp.t (list (Exp.t, strexp)) inst;
+  | Earray Exp.t (list (Exp.t, strexp)) inst;
 
 
 /** an atomic heap predicate */
 type hpred =
-  | Hpointsto of Exp.t strexp Exp.t
+  | Hpointsto Exp.t strexp Exp.t
   /** represents [exp|->strexp:typexp] where [typexp]
       is an expression representing a type, e.h. [sizeof(t)]. */
-  | Hlseg of lseg_kind hpara Exp.t Exp.t (list Exp.t)
+  | Hlseg lseg_kind hpara Exp.t Exp.t (list Exp.t)
   /** higher - order predicate for singly - linked lists.
       Should ensure that exp1!= exp2 implies that exp1 is allocated.
       This assumption is used in the rearrangement. The last [exp list] parameter
       is used to denote the shared links by all the nodes in the list. */
-  | Hdllseg of lseg_kind hpara_dll Exp.t Exp.t Exp.t Exp.t (list Exp.t)
+  | Hdllseg lseg_kind hpara_dll Exp.t Exp.t Exp.t Exp.t (list Exp.t)
 /** higher-order predicate for doubly-linked lists. */
 /** parameter for the higher-order singly-linked list predicate.
     Means "lambda (root,next,svars). Exists evars. body".
@@ -210,15 +213,14 @@ let mk_static_local_name pname vname => pname ^ "_" ^ vname;
 
 
 /** Check if a pvar is a local static in objc */
-let is_static_local_name pname pvar =>
+let is_static_local_name pname pvar => {
   /* local static name is of the form procname_varname */
-  {
-    let var_name = Mangled.to_string (Pvar.get_name pvar);
-    switch (Str.split_delim (Str.regexp_string pname) var_name) {
-    | [_, _] => true
-    | _ => false
-    }
-  };
+  let var_name = Mangled.to_string (Pvar.get_name pvar);
+  switch (Str.split_delim (Str.regexp_string pname) var_name) {
+  | [_, _] => true
+  | _ => false
+  }
+};
 
 let ident_exp_compare = pair_compare Ident.compare Exp.compare;
 
@@ -467,6 +469,7 @@ let module HpredSet = Set.Make {
 
 
 /** {2 Pretty Printing} */
+
 /** Begin change color if using diff printing, return updated printenv and change status */
 let color_pre_wrapper pe f x =>
   if (Config.print_using_diff && pe.pe_kind !== PP_TEXT) {
@@ -776,10 +779,12 @@ let rec pp_star_seq pp f =>
 
 
 /********* START OF MODULE Predicates **********/
+
 /** Module Predicates records the occurrences of predicates as parameters
     of (doubly -)linked lists and Epara. Provides unique numbering
     for predicates and an iterator. */
 let module Predicates: {
+
   /** predicate environment */
   type env;
 
@@ -802,6 +807,7 @@ let module Predicates: {
   /** Process one hpred, updating the predicate environment */
   let process_hpred: env => hpred => unit;
 } = {
+
   /** hash tables for hpara */
   let module HparaHash = Hashtbl.Make {
     type t = hpara;
@@ -962,12 +968,7 @@ let inst_to_string inst => {
     fun
     | Some true => "(z)"
     | _ => "";
-  let null_case_flag_to_string ncf =>
-    if ncf {
-      "(ncf)"
-    } else {
-      ""
-    };
+  let null_case_flag_to_string ncf => if ncf {"(ncf)"} else {""};
   switch inst {
   | Iabstraction => "abstraction"
   | Iactual_precondition => "actual_precondition"
@@ -1464,17 +1465,13 @@ let rec hpred_fpv =
   | Hpointsto base se te => exp_fpv base @ strexp_fpv se @ exp_fpv te
   | Hlseg _ para e1 e2 elist => {
       let fpvars_in_elist = exp_list_fpv elist;
-      hpara_fpv para @ /* This set has to be empty. */  exp_fpv e1 @ exp_fpv e2 @ fpvars_in_elist
+      hpara_fpv para @ /* This set has to be empty. */ exp_fpv e1 @ exp_fpv e2 @ fpvars_in_elist
     }
   | Hdllseg _ para e1 e2 e3 e4 elist => {
       let fpvars_in_elist = exp_list_fpv elist;
       hpara_dll_fpv para @
-        /* This set has to be empty. */
-        exp_fpv e1 @
-        exp_fpv e2 @
-        exp_fpv e3 @
-        exp_fpv e4 @
-        fpvars_in_elist
+      /* This set has to be empty. */
+      exp_fpv e1 @ exp_fpv e2 @ exp_fpv e3 @ exp_fpv e4 @ fpvars_in_elist
     }
 /** hpara should not contain any program variables.
     This is because it might cause problems when we do interprocedural
@@ -1501,6 +1498,7 @@ and hpara_dll_fpv para => {
 
 
 /** {2 Functions for computing free non-program variables} */
+
 /** Type of free variables. These include primed, normal and footprint variables.
     We keep a count of how many types the variables appear. */
 type fav = ref (list Ident.t);
@@ -1715,7 +1713,7 @@ let array_clean_new_index footprint_part new_idx => {
   if (footprint_part && fav_exists fav (fun id => not (Ident.is_footprint id))) {
     L.d_warning (
       "Array index " ^
-        exp_to_string new_idx ^ " has non-footprint vars: replaced by fresh footprint var"
+      exp_to_string new_idx ^ " has non-footprint vars: replaced by fresh footprint var"
     );
     L.d_ln ();
     let id = Ident.create_fresh Ident.kfootprint;
@@ -2688,6 +2686,7 @@ let hpred_compact sh hpred =>
 
 
 /** {2 Functions for constructing or destructing entities in this module} */
+
 /** Compute the offset list of an expression */
 let exp_get_offsets exp => {
   let rec f offlist_past e =>

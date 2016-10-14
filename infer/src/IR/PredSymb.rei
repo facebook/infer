@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -21,7 +20,8 @@ let module F = Format;
 
 
 /** {2 Programs and Types} */
-type func_attribute = | FA_sentinel of int int;
+type func_attribute =
+  | FA_sentinel int int;
 
 
 /** Return the value of the FA_sentinel attribute in [attr_list] if it is found */
@@ -29,7 +29,11 @@ let get_sentinel_func_attribute_value: list func_attribute => option (int, int);
 
 
 /** Visibility modifiers. */
-type access = | Default | Public | Private | Protected;
+type access =
+  | Default
+  | Public
+  | Private
+  | Protected;
 
 type mem_kind =
   | Mmalloc /** memory allocated with malloc */
@@ -41,13 +45,19 @@ let mem_kind_compare: mem_kind => mem_kind => int;
 
 
 /** resource that can be allocated */
-type resource = | Rmemory of mem_kind | Rfile | Rignore | Rlock;
+type resource =
+  | Rmemory mem_kind
+  | Rfile
+  | Rignore
+  | Rlock;
 
 let resource_compare: resource => resource => int;
 
 
 /** kind of resource action */
-type res_act_kind = | Racquire | Rrelease;
+type res_act_kind =
+  | Racquire
+  | Rrelease;
 
 let res_act_kind_compare: res_act_kind => res_act_kind => int;
 
@@ -96,21 +106,21 @@ type res_action = {
     attribute to an expression, that expression should be the first argument, optionally followed by
     additional related expressions. */
 type t =
-  | Aresource of res_action /** resource acquire/release */
+  | Aresource res_action /** resource acquire/release */
   | Aautorelease
-  | Adangling of dangling_kind /** dangling pointer */
+  | Adangling dangling_kind /** dangling pointer */
   /** undefined value obtained by calling the given procedure, plus its return value annots */
-  | Aundef of Procname.t Annot.Item.t Location.t path_pos
-  | Ataint of taint_info
-  | Auntaint of taint_info
+  | Aundef Procname.t Annot.Item.t Location.t path_pos
+  | Ataint taint_info
+  | Auntaint taint_info
   | Alocked
   | Aunlocked
   /** value appeared in second argument of division at given path position */
-  | Adiv0 of path_pos
+  | Adiv0 path_pos
   /** attributed exp is null due to a call to a method with given path as null receiver */
   | Aobjc_null
   /** value was returned from a call to the given procedure, plus the annots of the return value */
-  | Aretval of Procname.t Annot.Item.t
+  | Aretval Procname.t Annot.Item.t
   /** denotes an object registered as an observers to a notification center */
   | Aobserver
   /** denotes an object unsubscribed from observers of a notification center */

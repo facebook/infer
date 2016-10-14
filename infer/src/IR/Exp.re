@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -25,31 +24,31 @@ and dynamic_length = option t
 /** Program expressions. */
 and t =
   /** Pure variable: it is not an lvalue */
-  | Var of Ident.t
+  | Var Ident.t
   /** Unary operator with type of the result if known */
-  | UnOp of Unop.t t (option Typ.t)
+  | UnOp Unop.t t (option Typ.t)
   /** Binary operator */
-  | BinOp of Binop.t t t
+  | BinOp Binop.t t t
   /** Exception */
-  | Exn of t
+  | Exn t
   /** Anonymous function */
-  | Closure of closure
+  | Closure closure
   /** Constants */
-  | Const of Const.t
+  | Const Const.t
   /** Type cast */
-  | Cast of Typ.t t
+  | Cast Typ.t t
   /** The address of a program variable */
-  | Lvar of Pvar.t
+  | Lvar Pvar.t
   /** A field offset, the type is the surrounding struct type */
-  | Lfield of t Ident.fieldname Typ.t
+  | Lfield t Ident.fieldname Typ.t
   /** An array index offset: [exp1\[exp2\]] */
-  | Lindex of t t
+  | Lindex t t
   /** A sizeof expression. [Sizeof (Tarray elt (Some static_length)) (Some dynamic_length)]
       represents the size of an array value consisting of [dynamic_length] elements of type [elt].
       The [dynamic_length], tracked by symbolic execution, may differ from the [static_length]
       obtained from the type definition, e.g. when an array is over-allocated.  For struct types,
       the [dynamic_length] is that of the final extensible array, if any. */
-  | Sizeof of Typ.t dynamic_length Subtype.t;
+  | Sizeof Typ.t dynamic_length Subtype.t;
 
 
 /** Compare expressions. Variables come before other expressions. */
@@ -209,6 +208,7 @@ let is_zero =
 
 
 /** {2 Utility Functions for Expressions} */
+
 /** Turn an expression representing a type into the type it represents
     If not a sizeof, return the default type if given, otherwise raise an exception */
 let texp_to_typ default_opt =>
@@ -243,15 +243,7 @@ let rec pointer_arith =
   | _ => false;
 
 let get_undefined footprint =>
-  Var (
-    Ident.create_fresh (
-      if footprint {
-        Ident.kfootprint
-      } else {
-        Ident.kprimed
-      }
-    )
-  );
+  Var (Ident.create_fresh (if footprint {Ident.kfootprint} else {Ident.kprimed}));
 
 
 /** Create integer constant */
@@ -279,12 +271,7 @@ let minus_one = int IntLit.minus_one;
 
 
 /** Create integer constant corresponding to the boolean value */
-let bool b =>
-  if b {
-    one
-  } else {
-    zero
-  };
+let bool b => if b {one} else {zero};
 
 
 /** Create expresstion [e1 == e2] */

@@ -1,7 +1,4 @@
 /*
- * vim: set ft=rust:
- * vim: set ft=reason:
- *
  * Copyright (c) 2016 - present Facebook, Inc.
  * All rights reserved.
  *
@@ -9,7 +6,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 let aggregated_stats_filename = "aggregated_stats.json";
@@ -18,10 +14,8 @@ let aggregated_stats_by_target_filename = "aggregated_stats_by_target.json";
 
 let json_files_to_ignore_regex = Str.regexp (
   ".*\\(" ^
-    Str.quote aggregated_stats_filename ^
-    "\\|" ^
-    Str.quote aggregated_stats_by_target_filename ^
-    "\\)$"
+  Str.quote aggregated_stats_filename ^
+  "\\|" ^ Str.quote aggregated_stats_by_target_filename ^ "\\)$"
 );
 
 let dir_exists dir =>
@@ -34,7 +28,7 @@ let find_json_files_in_dir dir => {
     let s = Unix.lstat path;
     let json_regex = Str.regexp_case_fold ".*\\.json$";
     not (Str.string_match json_files_to_ignore_regex path 0) &&
-      Str.string_match json_regex path 0 && s.st_kind == Unix.S_REG
+    Str.string_match json_regex path 0 && s.st_kind == Unix.S_REG
   };
   dir_exists dir ?
     {
@@ -51,7 +45,9 @@ type stats_paths = {
   reporting_paths: list string
 };
 
-type origin = | Buck_out of (list (string, stats_paths)) | Infer_out of stats_paths;
+type origin =
+  | Buck_out (list (string, stats_paths))
+  | Infer_out stats_paths;
 
 let find_stats_files_in_dir dir => {
   let frontend_paths = find_json_files_in_dir (Filename.concat dir Config.frontend_stats_dir_name);

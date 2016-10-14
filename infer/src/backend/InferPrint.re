@@ -7,7 +7,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 let module L = Logging;
@@ -209,12 +208,7 @@ let summary_values top_proc_set summary => {
     vfile: DB.source_file_to_string attributes.ProcAttributes.loc.Location.file,
     vline: attributes.ProcAttributes.loc.Location.line,
     vloc: attributes.ProcAttributes.loc.Location.nLOC,
-    vtop:
-      if is_top {
-        "Y"
-      } else {
-        "N"
-      },
+    vtop: if is_top {"Y"} else {"N"},
     vsignature: signature,
     vweight: nodes_nr,
     vproof_coverage: Printf.sprintf "%2.2f" node_coverage,
@@ -226,6 +220,7 @@ let summary_values top_proc_set summary => {
 };
 
 let module ProcsCsv = {
+
   /** Print the header of the procedures csv file, with column names */
   let pp_header fmt () =>
     Format.fprintf
@@ -491,6 +486,7 @@ let module IssuesJson = {
 };
 
 let module IssuesTests = {
+
   /** Write bug report in a format suitable for tests on analysis results. */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt proc_name err_log => {
     let pp_row _ loc _ ekind in_footprint error_name error_desc _ _ _ _ => {
@@ -503,22 +499,22 @@ let module IssuesTests = {
         };
       let should_report =
         ekind == Exceptions.Kerror ||
-          IList.exists
-            (Localise.equal error_name)
-            [
-              Localise.assign_pointer_warning,
-              Localise.bad_pointer_comparison,
-              Localise.component_factory_function,
-              Localise.cxx_reference_captured_in_objc_block,
-              Localise.direct_atomic_property_access,
-              Localise.field_not_null_checked,
-              Localise.global_variable_initialized_with_function_or_method_call,
-              Localise.mutable_local_variable_in_component_file,
-              Localise.parameter_not_null_checked,
-              Localise.registered_observer_being_deallocated,
-              Localise.return_value_ignored,
-              Localise.strong_delegate_warning
-            ];
+        IList.exists
+          (Localise.equal error_name)
+          [
+            Localise.assign_pointer_warning,
+            Localise.bad_pointer_comparison,
+            Localise.component_factory_function,
+            Localise.cxx_reference_captured_in_objc_block,
+            Localise.direct_atomic_property_access,
+            Localise.field_not_null_checked,
+            Localise.global_variable_initialized_with_function_or_method_call,
+            Localise.mutable_local_variable_in_component_file,
+            Localise.parameter_not_null_checked,
+            Localise.registered_observer_being_deallocated,
+            Localise.return_value_ignored,
+            Localise.strong_delegate_warning
+          ];
       if (in_footprint && should_report && error_filter source_file error_desc error_name) {
         F.fprintf
           fmt
@@ -536,6 +532,7 @@ let module IssuesTests = {
 };
 
 let module IssuesTxt = {
+
   /** Write bug report in text format */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt _ err_log => {
     let pp_row (node_id, node_key) loc _ ekind in_footprint error_name error_desc _ _ _ _ => {
@@ -644,6 +641,7 @@ let module IssuesXml = {
 };
 
 let module CallsCsv = {
+
   /** Print the header of the calls csv file, with column names */
   let pp_header fmt () =>
     Format.fprintf
@@ -667,7 +665,8 @@ let module CallsCsv = {
       pp "\"%s\"," (Escape.escape_csv (Procname.to_filename caller_name));
       pp "\"%s\"," (Escape.escape_csv (Procname.to_string callee_name));
       pp "\"%s\"," (Escape.escape_csv (Procname.to_filename callee_name));
-      pp "%s," (DB.source_file_to_string summary.Specs.attributes.ProcAttributes.loc.Location.file);
+      pp
+        "%s," (DB.source_file_to_string summary.Specs.attributes.ProcAttributes.loc.Location.file);
       pp "%d," loc.Location.line;
       pp "%a@\n" Specs.CallStats.pp_trace trace
     };
@@ -801,7 +800,8 @@ let module Stats = {
   let process_summary error_filter summary linereader stats => {
     let specs = Specs.get_specs_from_payload summary;
     let found_errors =
-      process_err_log error_filter linereader summary.Specs.attributes.ProcAttributes.err_log stats;
+      process_err_log
+        error_filter linereader summary.Specs.attributes.ProcAttributes.err_log stats;
     let is_defective = found_errors;
     let is_verified = specs != [] && not is_defective;
     let is_checked = not (is_defective || is_verified);
@@ -884,7 +884,7 @@ let module Summary = {
       let specs = Specs.get_specs_from_payload summary;
       if (
         not (DB.file_exists xml_file) ||
-          DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time xml_file
+        DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time xml_file
       ) {
         let xml_out = create_outfile (DB.filename_to_string xml_file);
         do_outf
@@ -909,18 +909,18 @@ let module Summary = {
       let svg_file = DB.filename_add_suffix base ".svg";
       if (
         not (DB.file_exists dot_file) ||
-          DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time dot_file
+        DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time dot_file
       ) {
         Dotty.pp_speclist_dotty_file base specs
       };
       if (
         not (DB.file_exists svg_file) ||
-          DB.file_modified_time dot_file > DB.file_modified_time svg_file
+        DB.file_modified_time dot_file > DB.file_modified_time svg_file
       ) {
         ignore (
           Sys.command (
             "dot -Tsvg \"" ^
-              DB.filename_to_string dot_file ^ "\" >\"" ^ DB.filename_to_string svg_file ^ "\""
+            DB.filename_to_string dot_file ^ "\" >\"" ^ DB.filename_to_string svg_file ^ "\""
           )
         )
       }
@@ -962,16 +962,27 @@ let module PreconditionStats = {
 };
 
 let error_filter filters proc_name file error_desc error_name => {
-  let always_report () => Localise.error_desc_extract_tag_value error_desc "always_report" == "true";
+  let always_report () =>
+    Localise.error_desc_extract_tag_value error_desc "always_report" == "true";
   (Config.write_html || not (Localise.equal error_name Localise.skip_function)) &&
-    (filters.Inferconfig.path_filter file || always_report ()) &&
-    filters.Inferconfig.error_filter error_name &&
-    filters.Inferconfig.proc_filter proc_name
+  (filters.Inferconfig.path_filter file || always_report ()) &&
+  filters.Inferconfig.error_filter error_name && filters.Inferconfig.proc_filter proc_name
 };
 
-type report_kind = | Issues | Procs | Stats | Calls | Summary;
+type report_kind =
+  | Issues
+  | Procs
+  | Stats
+  | Calls
+  | Summary;
 
-type bug_format_kind = | Json | Csv | Tests | Text | Xml | Latex;
+type bug_format_kind =
+  | Json
+  | Csv
+  | Tests
+  | Text
+  | Xml
+  | Latex;
 
 type bug_format = (bug_format_kind, outfile);
 
@@ -1129,38 +1140,37 @@ let process_summary filters formats_by_report_kind linereader stats top_proc_set
 
 let module AnalysisResults = {
   type t = list (string, Specs.summary);
-  let spec_files_from_cmdline =
+  let spec_files_from_cmdline = {
     /* find spec files specified by command-line arguments */
-    {
-      IList.iter
-        (
-          fun arg =>
-            if (not (Filename.check_suffix arg Config.specs_files_suffix) && arg != ".") {
-              print_usage_exit ("file " ^ arg ^ ": arguments must be .specs files")
-            }
-        )
-        Config.anon_args;
-      switch Config.source_file_copy {
-      | Some s => source_file_copy := Some (DB.abs_source_file_from_path s)
-      | None => ()
-      };
-      if Config.test_filtering {
-        Inferconfig.test ();
-        exit 0
-      };
-      IList.append
-        (
-          if (Config.anon_args == ["."]) {
-            let arr = Sys.readdir ".";
-            let all_files = Array.to_list arr;
-            IList.filter
-              (fun fname => Filename.check_suffix fname Config.specs_files_suffix) all_files
-          } else {
-            Config.anon_args
+    IList.iter
+      (
+        fun arg =>
+          if (not (Filename.check_suffix arg Config.specs_files_suffix) && arg != ".") {
+            print_usage_exit ("file " ^ arg ^ ": arguments must be .specs files")
           }
-        )
-        (load_specfiles ())
+      )
+      Config.anon_args;
+    switch Config.source_file_copy {
+    | Some s => source_file_copy := Some (DB.abs_source_file_from_path s)
+    | None => ()
     };
+    if Config.test_filtering {
+      Inferconfig.test ();
+      exit 0
+    };
+    IList.append
+      (
+        if (Config.anon_args == ["."]) {
+          let arr = Sys.readdir ".";
+          let all_files = Array.to_list arr;
+          IList.filter
+            (fun fname => Filename.check_suffix fname Config.specs_files_suffix) all_files
+        } else {
+          Config.anon_args
+        }
+      )
+      (load_specfiles ())
+  };
 
   /** apply [f] to [arg] with the gc compaction disabled during the execution */
   let apply_without_gc f arg => {

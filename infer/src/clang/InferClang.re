@@ -5,10 +5,10 @@
   * LICENSE file in the root directory of this source tree. An additional grant
   * of patent rights can be found in the PATENTS file in the same directory.
  */
+
 /** Given a clang command, normalize it via `clang -###` if needed to get a clear view of what work
     is being done and which source files are being compiled, if any, then replace compilation
     commands by our own clang with our plugin attached for each source file. */
-
 open! Utils;
 
 
@@ -28,10 +28,9 @@ let normalize (args: array string) :list ClangCommand.t =>
       if (string_is_prefix " \"" line) {
         /* massage line to remove edge-cases for splitting */
         "\"" ^ line ^ " \"" |>
-          /* split by whitespace */
-          Str.split (Str.regexp_string "\" \"") |>
-          Array.of_list |>
-          ClangCommand.mk ClangCommand.DoubleQuotes
+        /* split by whitespace */
+        Str.split (Str.regexp_string "\" \"") |> Array.of_list |>
+        ClangCommand.mk ClangCommand.DoubleQuotes
       } else {
         ClangCommand.ClangError line
       };
@@ -91,13 +90,7 @@ let execute_clang_command (clang_cmd: ClangCommand.t) =>
     exit 1
   | Assembly args =>
     /* We shouldn't get any assembly command at this point */
-    (
-      if Config.debug_mode {
-        failwithf
-      } else {
-        Logging.err
-      }
-    )
+    (if Config.debug_mode {failwithf} else {Logging.err})
       "WARNING: unexpected assembly command: %s@\n" (ClangCommand.command_to_run args)
   | NonCCCommand args =>
     /* Non-compilation (eg, linking) command. Run the command as-is. It will not get captured

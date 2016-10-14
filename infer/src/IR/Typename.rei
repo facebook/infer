@@ -1,7 +1,4 @@
 /*
- * vim: set ft=rust:
- * vim: set ft=reason:
- *
  * Copyright (c) 2015 - present Facebook, Inc.
  * All rights reserved.
  *
@@ -9,12 +6,12 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
 /** Named types. */
-type t = | TN_csu of Csu.t Mangled.t;
+type t =
+  | TN_csu Csu.t Mangled.t;
 
 
 /** convert the typename to a string */
@@ -35,6 +32,7 @@ let compare: t => t => int;
 let equal: t => t => bool;
 
 let module Java: {
+
   /** Create a typename from a Java classname in the form "package.class" */
   let from_string: string => t;
 

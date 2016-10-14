@@ -1,7 +1,4 @@
 /*
- * vim: set ft=rust:
- * vim: set ft=reason:
- *
  * Copyright (c) 2016 - present Facebook, Inc.
  * All rights reserved.
  *
@@ -9,7 +6,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 type t = {
@@ -36,7 +32,7 @@ let to_json s =>
   ];
 
 let from_json json => {
-  let open! Yojson.Basic.Util;
+  open! Yojson.Basic.Util;
   {
     sum: json |> member "sum" |> to_float,
     avg: json |> member "avg" |> to_float,

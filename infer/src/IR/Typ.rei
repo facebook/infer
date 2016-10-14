@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -75,13 +74,13 @@ type static_length = option IntLit.t;
 
 /** types for sil (structured) expressions */
 type t =
-  | Tint of ikind /** integer type */
-  | Tfloat of fkind /** float type */
+  | Tint ikind /** integer type */
+  | Tfloat fkind /** float type */
   | Tvoid /** void type */
-  | Tfun of bool /** function type with noreturn attribute */
-  | Tptr of t ptr_kind /** pointer type */
-  | Tstruct of Typename.t /** structured value type name */
-  | Tarray of t static_length /** array type with statically fixed length */;
+  | Tfun bool /** function type with noreturn attribute */
+  | Tptr t ptr_kind /** pointer type */
+  | Tstruct Typename.t /** structured value type name */
+  | Tarray t static_length /** array type with statically fixed length */;
 
 
 /** Comparision for types. */

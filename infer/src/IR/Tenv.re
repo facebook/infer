@@ -1,7 +1,4 @@
 /*
- * vim: set ft=rust:
- * vim: set ft=reason:
- *
  * Copyright (c) 2016 - present Facebook, Inc.
  * All rights reserved.
  *
@@ -9,11 +6,11 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
 /** Module for Type Environments. */
+
 /** Hash tables on strings. */
 let module TypenameHash = Hashtbl.Make {
   type t = Typename.t;

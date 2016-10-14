@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -74,8 +73,9 @@ let compare i1 i2 => {
   }
 };
 
-let equal i1 i2 => i1.stamp === i2.stamp && i1.kind === i2.kind && name_equal i1.name i2.name
-/* most unlikely first */;
+let equal i1 i2 =>
+  i1.stamp === i2.stamp &&
+  i1.kind === i2.kind && name_equal i1.name i2.name /* most unlikely first */;
 
 let fieldname_equal fn1 fn2 => fieldname_compare fn1 fn2 == 0;
 
@@ -208,8 +208,8 @@ let java_fieldname_is_outer_instance fn => {
   let this_len = String.length this;
   let zero_to_nine s => s >= "0" && s <= "9";
   fn_len > this_len &&
-    String.sub fn (fn_len - this_len - 1) this_len == this &&
-    zero_to_nine (String.sub fn (fn_len - 1) 1)
+  String.sub fn (fn_len - this_len - 1) this_len == this &&
+  zero_to_nine (String.sub fn (fn_len - 1) 1)
 };
 
 let fieldname_offset fn => fn.fpos;
@@ -224,6 +224,7 @@ let fieldname_is_hidden fn => fieldname_equal fn fieldname_hidden;
 
 
 /** {2 Functions and Hash Tables for Managing Stamps} */
+
 /** Set the stamp of the identifier */
 let set_stamp i stamp => {...i, stamp};
 
@@ -331,6 +332,7 @@ let create_footprint name stamp => create_with_stamp kfootprint name stamp;
 
 
 /** {2 Functions for Identifiers} */
+
 /** Get a name of an identifier */
 let get_name id => id.name;
 
@@ -367,6 +369,7 @@ let create_path pathstring =>
 
 
 /** {2 Pretty Printing} */
+
 /** Convert an identifier to a string. */
 let to_string id =>
   if (id.kind === knone) {

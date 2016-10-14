@@ -6,16 +6,15 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 type args;
 
 type t =
-  | Assembly of args
+  | Assembly args
   /** a normalized clang command that runs the assembler */
-  | CC1 of args
+  | CC1 args
   /** a -cc1 clang command */
-  | ClangError of string
-  | NonCCCommand of args /** other commands (as, ld, ...) */;
+  | ClangError string
+  | NonCCCommand args /** other commands (as, ld, ...) */;
 
 type quoting_style =
   | DoubleQuotes /** the arguments are ready to be enclosed in "double quotes" */

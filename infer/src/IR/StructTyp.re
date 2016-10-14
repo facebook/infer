@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -123,7 +122,8 @@ let get_field_type_and_annotation lookup::lookup fn (typ: Typ.t) =>
     switch (lookup name) {
     | Some {fields, statics} =>
       try {
-        let (_, t, a) = IList.find (fun (f, _, _) => Ident.fieldname_equal f fn) (fields @ statics);
+        let (_, t, a) =
+          IList.find (fun (f, _, _) => Ident.fieldname_equal f fn) (fields @ statics);
         Some (t, a)
       } {
       | Not_found => None

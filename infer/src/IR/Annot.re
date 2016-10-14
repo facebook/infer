@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -48,6 +47,7 @@ let module Map = PrettyPrintable.MakePPMap {
 };
 
 let module Item = {
+
   /** Annotation for one item: a list of annotations with visibility. */
   type nonrec t = list (t, bool);
 
@@ -90,6 +90,7 @@ let module Class = {
 };
 
 let module Method = {
+
   /** Annotation for a method: return value and list of parameters. */
   type t = (Item.t, list Item.t);
 

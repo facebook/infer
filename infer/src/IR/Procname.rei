@@ -10,11 +10,11 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
 /** Module for Procedure Names. */
+
 /** Type of java procedure names. */
 type java;
 
@@ -32,7 +32,12 @@ type block;
 
 
 /** Type of procedure names. */
-type t = | Java of java | C of c | ObjC_Cpp of objc_cpp | Block of block | Linters_dummy_method;
+type t =
+  | Java java
+  | C c
+  | ObjC_Cpp objc_cpp
+  | Block block
+  | Linters_dummy_method;
 
 type java_type = (option string, string);
 
@@ -41,8 +46,8 @@ type method_kind =
   | Non_Static /* in Java, procedures called with invokevirtual, invokespecial, and invokeinterface */;
 
 type objc_cpp_method_kind =
-  | CPPMethod of (option string) /** with mangling */
-  | CPPConstructor of (option string) /** with mangling */
+  | CPPMethod (option string) /** with mangling */
+  | CPPConstructor (option string) /** with mangling */
   | ObjCInstanceMethod
   | ObjCInternalMethod
   | ObjCClassMethod;

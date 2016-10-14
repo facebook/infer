@@ -1,7 +1,4 @@
 /*
- * vim: set ft=rust:
- * vim: set ft=reason:
- *
  * Copyright (c) 2015 - present Facebook, Inc.
  * All rights reserved.
  *
@@ -9,12 +6,13 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
 /** Attributes of a procedure. */
-type objc_accessor_type = | Objc_getter of Ident.fieldname | Objc_setter of Ident.fieldname;
+type objc_accessor_type =
+  | Objc_getter Ident.fieldname
+  | Objc_setter Ident.fieldname;
 
 type t = {
   access: PredSymb.access, /** visibility access */

@@ -1,7 +1,4 @@
 /*
- * vim: set ft=rust:
- * vim: set ft=reason:
- *
  * Copyright (c) 2015 - present Facebook, Inc.
  * All rights reserved.
  *
@@ -9,8 +6,8 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-/** Module to manage the table of attributes. */
 
+/** Module to manage the table of attributes. */
 open! Utils;
 
 

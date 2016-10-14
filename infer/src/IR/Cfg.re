@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 let module L = Logging;
@@ -22,12 +21,12 @@ let module F = Format;
 let module Node = {
   type id = int;
   type nodekind =
-    | Start_node of proc_desc
-    | Exit_node of proc_desc
-    | Stmt_node of string
+    | Start_node proc_desc
+    | Exit_node proc_desc
+    | Stmt_node string
     | Join_node
-    | Prune_node of bool Sil.if_kind string /** (true/false branch, if_kind, comment) */
-    | Skip_node of string
+    | Prune_node bool Sil.if_kind string /** (true/false branch, if_kind, comment) */
+    | Skip_node string
   /** a node */
   and t = {
     /** unique id of the node */
@@ -84,59 +83,56 @@ let module Node = {
 
   /** compute the list of procedures added or changed in [cfg_new] over [cfg_old] */
   let mark_unchanged_pdescs cfg_new cfg_old => {
-    let pdescs_eq pd1 pd2 =>
+    let pdescs_eq pd1 pd2 => {
       /* map of exp names in pd1 -> exp names in pd2 */
-      {
-        let exp_map = ref Exp.Map.empty;
-        /* map of node id's in pd1 -> node id's in pd2 */
-        let id_map = ref IntMap.empty;
-        /* formals are the same if their types are the same */
-        let formals_eq formals1 formals2 =>
-          IList.equal (fun (_, typ1) (_, typ2) => Typ.compare typ1 typ2) formals1 formals2;
-        let nodes_eq n1s n2s =>
-          /* nodes are the same if they have the same id, instructions, and succs/preds up to renaming
-             with [exp_map] and [id_map] */
-          {
-            let node_eq n1 n2 => {
-              let id_compare n1 n2 => {
-                let (id1, id2) = (n1.nd_id, n2.nd_id);
-                try {
-                  let id1_mapping = IntMap.find id1 !id_map;
-                  Pervasives.compare id1_mapping id2
-                } {
-                | Not_found =>
-                  /* assume id's are equal and enforce by adding to [id_map] */
-                  id_map := IntMap.add id1 id2 !id_map;
-                  0
-                }
-              };
-              let instrs_eq instrs1 instrs2 =>
-                IList.equal
-                  (
-                    fun i1 i2 => {
-                      let (n, exp_map') = Sil.instr_compare_structural i1 i2 !exp_map;
-                      exp_map := exp_map';
-                      n
-                    }
-                  )
-                  instrs1
-                  instrs2;
-              id_compare n1 n2 == 0 &&
-                IList.equal id_compare n1.nd_succs n2.nd_succs &&
-                IList.equal id_compare n1.nd_preds n2.nd_preds &&
-                instrs_eq n1.nd_instrs n2.nd_instrs
-            };
-            try (IList.for_all2 node_eq n1s n2s) {
-            | Invalid_argument _ => false
+      let exp_map = ref Exp.Map.empty;
+      /* map of node id's in pd1 -> node id's in pd2 */
+      let id_map = ref IntMap.empty;
+      /* formals are the same if their types are the same */
+      let formals_eq formals1 formals2 =>
+        IList.equal (fun (_, typ1) (_, typ2) => Typ.compare typ1 typ2) formals1 formals2;
+      let nodes_eq n1s n2s => {
+        /* nodes are the same if they have the same id, instructions, and succs/preds up to renaming
+           with [exp_map] and [id_map] */
+        let node_eq n1 n2 => {
+          let id_compare n1 n2 => {
+            let (id1, id2) = (n1.nd_id, n2.nd_id);
+            try {
+              let id1_mapping = IntMap.find id1 !id_map;
+              Pervasives.compare id1_mapping id2
+            } {
+            | Not_found =>
+              /* assume id's are equal and enforce by adding to [id_map] */
+              id_map := IntMap.add id1 id2 !id_map;
+              0
             }
           };
-        let att1 = pd1.pd_attributes
-        and att2 = pd2.pd_attributes;
-        att1.ProcAttributes.is_defined == att2.ProcAttributes.is_defined &&
-          Typ.equal att1.ProcAttributes.ret_type att2.ProcAttributes.ret_type &&
-          formals_eq att1.ProcAttributes.formals att2.ProcAttributes.formals &&
-          nodes_eq pd1.pd_nodes pd2.pd_nodes
+          let instrs_eq instrs1 instrs2 =>
+            IList.equal
+              (
+                fun i1 i2 => {
+                  let (n, exp_map') = Sil.instr_compare_structural i1 i2 !exp_map;
+                  exp_map := exp_map';
+                  n
+                }
+              )
+              instrs1
+              instrs2;
+          id_compare n1 n2 == 0 &&
+          IList.equal id_compare n1.nd_succs n2.nd_succs &&
+          IList.equal id_compare n1.nd_preds n2.nd_preds && instrs_eq n1.nd_instrs n2.nd_instrs
+        };
+        try (IList.for_all2 node_eq n1s n2s) {
+        | Invalid_argument _ => false
+        }
       };
+      let att1 = pd1.pd_attributes
+      and att2 = pd2.pd_attributes;
+      att1.ProcAttributes.is_defined == att2.ProcAttributes.is_defined &&
+      Typ.equal att1.ProcAttributes.ret_type att2.ProcAttributes.ret_type &&
+      formals_eq att1.ProcAttributes.formals att2.ProcAttributes.formals &&
+      nodes_eq pd1.pd_nodes pd2.pd_nodes
+    };
     let old_procs = cfg_old.name_pdesc_tbl;
     let new_procs = cfg_new.name_pdesc_tbl;
     let mark_pdesc_if_unchanged pname new_pdesc =>
@@ -145,7 +141,7 @@ let module Node = {
         let changed =
           /* in continue_capture mode keep the old changed bit */
           Config.continue_capture && old_pdesc.pd_attributes.ProcAttributes.changed ||
-            not (pdescs_eq old_pdesc new_pdesc);
+          not (pdescs_eq old_pdesc new_pdesc);
         new_pdesc.pd_attributes.changed = changed
       } {
       | Not_found => ()
@@ -394,7 +390,8 @@ let module Node = {
 
   /** Replace the instructions to be executed. */
   let replace_instrs node instrs => node.nd_instrs = instrs;
-  let proc_desc_get_ret_var pdesc => Pvar.get_ret_pvar pdesc.pd_attributes.ProcAttributes.proc_name;
+  let proc_desc_get_ret_var pdesc =>
+    Pvar.get_ret_pvar pdesc.pd_attributes.ProcAttributes.proc_name;
 
   /** Add declarations for local variables and return variable to the node */
   let add_locals_ret_declaration node locals => {
@@ -480,7 +477,8 @@ let module Node = {
 
   /** Return [true] iff the procedure is defined, and not just declared */
   let proc_desc_is_defined proc_desc => proc_desc.pd_attributes.ProcAttributes.is_defined;
-  let proc_desc_is_java_synchroinized proc_desc => proc_desc.pd_attributes.ProcAttributes.is_java_synchronized_method;
+  let proc_desc_is_java_synchroinized proc_desc =>
+    proc_desc.pd_attributes.ProcAttributes.is_java_synchronized_method;
   let proc_desc_get_loc proc_desc => proc_desc.pd_attributes.ProcAttributes.loc;
 
   /** Return name and type of formal parameters */
@@ -513,7 +511,8 @@ let module Node = {
       proc_desc.pd_attributes.ProcAttributes.locals @ new_locals;
 
   /** check or indicate if we have performed preanalysis on the CFG */
-  let proc_desc_did_preanalysis proc_desc => proc_desc.pd_attributes.ProcAttributes.did_preanalysis;
+  let proc_desc_did_preanalysis proc_desc =>
+    proc_desc.pd_attributes.ProcAttributes.did_preanalysis;
   let proc_desc_signal_did_preanalysis proc_desc =>
     proc_desc.pd_attributes.ProcAttributes.did_preanalysis = true;
 
@@ -593,7 +592,8 @@ let module Node = {
     IList.fold_left f acc (IList.rev (proc_desc_get_nodes proc_desc));
   let proc_desc_fold_calls f acc pdesc => {
     let do_node a node =>
-      IList.fold_left (fun b callee_pname => f b (callee_pname, get_loc node)) a (get_callees node);
+      IList.fold_left
+        (fun b callee_pname => f b (callee_pname, get_loc node)) a (get_callees node);
     IList.fold_left do_node acc (proc_desc_get_nodes pdesc)
   };
 
@@ -826,6 +826,7 @@ let module Procdesc = {
 };
 
 /* =============== END of module Procdesc =============== */
+
 /** Hash table with nodes as keys. */
 let module NodeHash = Hashtbl.Make Node;
 
@@ -920,12 +921,11 @@ let save_source_files cfg => {
     let dest_file_str = DB.filename_to_string dest_file;
     let needs_copy =
       Node.proc_desc_is_defined pdesc &&
-        Sys.file_exists source_file_str &&
-        (
-          not (Sys.file_exists dest_file_str) ||
-            DB.file_modified_time (DB.filename_from_string source_file_str) >
-              DB.file_modified_time dest_file
-        );
+      Sys.file_exists source_file_str && (
+        not (Sys.file_exists dest_file_str) ||
+        DB.file_modified_time (DB.filename_from_string source_file_str) >
+        DB.file_modified_time dest_file
+      );
     if needs_copy {
       switch (copy_file source_file_str dest_file_str) {
       | Some _ => ()
@@ -982,11 +982,7 @@ let inline_synthetic_method ret_id etl proc_desc loc_call :option Sil.instr => {
       /* getter for static fields */
       let instr' = Sil.Load ret_id (Exp.Lfield (Exp.Lvar pvar) fn ft) bt loc_call;
       found instr instr'
-    | (
-        Sil.Store (Exp.Lfield _ fn ft) bt _ _,
-        _,
-        [(e1, _), (e2, _)] /* setter for fields */
-      ) =>
+    | (Sil.Store (Exp.Lfield _ fn ft) bt _ _, _, [(e1, _), (e2, _)] /* setter for fields */) =>
       let instr' = Sil.Store (Exp.Lfield e1 fn ft) bt e2 loc_call;
       found instr instr'
     | (Sil.Store (Exp.Lfield (Exp.Lvar pvar) fn ft) bt _ _, _, [(e1, _)]) when Pvar.is_global pvar =>
@@ -1087,22 +1083,21 @@ let store_cfg_to_file
     (name, typ) where name is a parameter. The resulting proc desc is isomorphic but
     all the type of the parameters are replaced in the instructions according to the list.
     The virtual calls are also replaced to match the parameter types */
-let specialize_types callee_proc_desc resolved_proc_name args =>
-  /** TODO (#9333890): This currently only works when the callee is defined in the same file.
-      Add support to search for the callee procedure description in the execution environment */
-  {
-    let callee_attributes = Procdesc.get_attributes callee_proc_desc;
-    let resolved_formals =
-      IList.fold_left2
-        (fun accu (name, _) (_, arg_typ) => [(name, arg_typ), ...accu])
-        []
-        callee_attributes.ProcAttributes.formals
-        args |> IList.rev;
-    let resolved_attributes = {
-      ...callee_attributes,
-      ProcAttributes.formals: resolved_formals,
-      proc_name: resolved_proc_name
-    };
-    AttributesTable.store_attributes resolved_attributes;
-    Procdesc.specialize_types callee_proc_desc resolved_attributes resolved_formals
+let specialize_types callee_proc_desc resolved_proc_name args => {
+  /* TODO (#9333890): This currently only works when the callee is defined in the same file.
+     Add support to search for the callee procedure description in the execution environment */
+  let callee_attributes = Procdesc.get_attributes callee_proc_desc;
+  let resolved_formals =
+    IList.fold_left2
+      (fun accu (name, _) (_, arg_typ) => [(name, arg_typ), ...accu])
+      []
+      callee_attributes.ProcAttributes.formals
+      args |> IList.rev;
+  let resolved_attributes = {
+    ...callee_attributes,
+    ProcAttributes.formals: resolved_formals,
+    proc_name: resolved_proc_name
   };
+  AttributesTable.store_attributes resolved_attributes;
+  Procdesc.specialize_types callee_proc_desc resolved_attributes resolved_formals
+};

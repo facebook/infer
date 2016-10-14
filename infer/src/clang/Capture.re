@@ -6,7 +6,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -29,7 +28,8 @@ let catch_biniou_buffer_errors f x =>
 /* This function reads the json file in fname, validates it, and encoded in the AST data structure
    defined in Clang_ast_t.  */
 let validate_decl_from_file fname =>
-  catch_biniou_buffer_errors (Ag_util.Biniou.from_file len::buffer_len Clang_ast_b.read_decl) fname;
+  catch_biniou_buffer_errors
+    (Ag_util.Biniou.from_file len::buffer_len Clang_ast_b.read_decl) fname;
 
 let validate_decl_from_channel chan =>
   catch_biniou_buffer_errors
@@ -45,7 +45,9 @@ let register_perf_stats_report source_file => {
 };
 
 let init_global_state_for_capture_and_linters source_file => {
-  Logging.set_log_file_identifier (Some (Filename.basename (DB.source_file_to_string source_file)));
+  Logging.set_log_file_identifier (
+    Some (Filename.basename (DB.source_file_to_string source_file))
+  );
   register_perf_stats_report source_file;
   Config.curr_language := Config.Clang;
   DB.Results_dir.init source_file;
@@ -114,8 +116,7 @@ let run_plugin_and_frontend frontend clang_args => {
             try [Unix.getenv "INFER_ARGS"] {
             | Not_found => []
             }
-          )
-            @ [
+          ) @ [
             "--clang-biniou-file",
             biniou_fname
           ]
@@ -152,7 +153,12 @@ let capture clang_args => {
     init_global_state_for_capture_and_linters source_file;
     let trans_unit_ctx = {
       let clang_langs =
-        CFrontend_config.[("c", C), ("objective-c", ObjC), ("c++", CPP), ("objective-c++", ObjCPP)];
+        CFrontend_config.[
+          ("c", C),
+          ("objective-c", ObjC),
+          ("c++", CPP),
+          ("objective-c++", ObjCPP)
+        ];
       let lang =
         switch (ClangCommand.value_of_option clang_args "-x") {
         | Some lang_opt when IList.mem_assoc string_equal lang_opt clang_langs =>

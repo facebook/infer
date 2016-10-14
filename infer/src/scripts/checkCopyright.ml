@@ -95,7 +95,7 @@ let find_comment_end lines_arr n com_style =
   done;
   match com_style with
   | Line _ -> !found
-  | Block _ -> !found + 1
+  | Block _ -> !found
 
 (** Heuristic to check if this looks like a copyright message. *)
 let looks_like_copyright_message cstart cend lines_arr =
@@ -143,7 +143,7 @@ let pp_copyright mono fb_year com_style fmt _prefix =
     | Block (start, _, _) -> F.fprintf fmt "%s@\n" start in
   let pp_end () = match com_style with
     | Line _ -> F.fprintf fmt "@\n";
-    | Block (_, _, finish) -> F.fprintf fmt "%s%s@\n@\n" _prefix finish in
+    | Block (_, _, finish) -> F.fprintf fmt "%s%s@\n" _prefix finish in
   pp_start ();
   if mono then
     pp_line " Copyright (c) 2009 - 2013 Monoidics ltd.";

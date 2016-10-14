@@ -1,7 +1,4 @@
 /*
- * vim: set ft=rust:
- * vim: set ft=reason:
- *
  * Copyright (c) 2016 - present Facebook, Inc.
  * All rights reserved.
  *
@@ -9,7 +6,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 let get_name_of_local (curr_f: Cfg.Procdesc.t) (x, _) =>
@@ -49,104 +45,103 @@ let get_name_of_objc_block_locals p => {
   IList.flatten (IList.flatten vars_sigma)
 };
 
-let remove_abduced_retvars tenv p =>
+let remove_abduced_retvars tenv p => {
   /* compute the hpreds and pure atoms reachable from the set of seed expressions in [exps] */
-  {
-    let compute_reachable p seed_exps => {
-      let (sigma, pi) = (p.Prop.sigma, p.Prop.pi);
-      let rec collect_exps exps =>
+  let compute_reachable p seed_exps => {
+    let (sigma, pi) = (p.Prop.sigma, p.Prop.pi);
+    let rec collect_exps exps =>
+      fun
+      | Sil.Eexp (Exp.Exn e) _ => Exp.Set.add e exps
+      | Sil.Eexp e _ => Exp.Set.add e exps
+      | Sil.Estruct flds _ =>
+        IList.fold_left (fun exps (_, strexp) => collect_exps exps strexp) exps flds
+      | Sil.Earray _ elems _ =>
+        IList.fold_left (fun exps (_, strexp) => collect_exps exps strexp) exps elems;
+    let rec compute_reachable_hpreds_rec sigma (reach, exps) => {
+      let add_hpred_if_reachable (reach, exps) =>
         fun
-        | Sil.Eexp (Exp.Exn e) _ => Exp.Set.add e exps
-        | Sil.Eexp e _ => Exp.Set.add e exps
-        | Sil.Estruct flds _ =>
-          IList.fold_left (fun exps (_, strexp) => collect_exps exps strexp) exps flds
-        | Sil.Earray _ elems _ =>
-          IList.fold_left (fun exps (_, strexp) => collect_exps exps strexp) exps elems;
-      let rec compute_reachable_hpreds_rec sigma (reach, exps) => {
-        let add_hpred_if_reachable (reach, exps) =>
-          fun
-          | Sil.Hpointsto lhs rhs _ as hpred when Exp.Set.mem lhs exps => {
-              let reach' = Sil.HpredSet.add hpred reach;
-              let exps' = collect_exps exps rhs;
-              (reach', exps')
-            }
-          | Sil.Hlseg _ _ exp1 exp2 exp_l as hpred => {
-              let reach' = Sil.HpredSet.add hpred reach;
-              let exps' =
-                IList.fold_left
-                  (fun exps_acc exp => Exp.Set.add exp exps_acc) exps [exp1, exp2, ...exp_l];
-              (reach', exps')
-            }
-          | Sil.Hdllseg _ _ exp1 exp2 exp3 exp4 exp_l as hpred => {
-              let reach' = Sil.HpredSet.add hpred reach;
-              let exps' =
-                IList.fold_left
-                  (fun exps_acc exp => Exp.Set.add exp exps_acc)
-                  exps
-                  [exp1, exp2, exp3, exp4, ...exp_l];
-              (reach', exps')
-            }
-          | _ => (reach, exps);
-        let (reach', exps') = IList.fold_left add_hpred_if_reachable (reach, exps) sigma;
-        if (Sil.HpredSet.cardinal reach == Sil.HpredSet.cardinal reach') {
-          (reach, exps)
-        } else {
-          compute_reachable_hpreds_rec sigma (reach', exps')
-        }
-      };
-      let (reach_hpreds, reach_exps) =
-        compute_reachable_hpreds_rec sigma (Sil.HpredSet.empty, seed_exps);
-      /* filter away the pure atoms without reachable exps */
-      let reach_pi = {
-        let rec exp_contains =
-          fun
-          | exp when Exp.Set.mem exp reach_exps => true
-          | Exp.UnOp _ e _
-          | Exp.Cast _ e
-          | Exp.Lfield e _ _ => exp_contains e
-          | Exp.BinOp _ e0 e1
-          | Exp.Lindex e0 e1 => exp_contains e0 || exp_contains e1
-          | _ => false;
-        IList.filter
-          (
-            fun
-            | Sil.Aeq lhs rhs
-            | Sil.Aneq lhs rhs => exp_contains lhs || exp_contains rhs
-            | Sil.Apred _ es
-            | Sil.Anpred _ es => IList.exists exp_contains es
-          )
-          pi
-      };
-      (Sil.HpredSet.elements reach_hpreds, reach_pi)
+        | Sil.Hpointsto lhs rhs _ as hpred when Exp.Set.mem lhs exps => {
+            let reach' = Sil.HpredSet.add hpred reach;
+            let exps' = collect_exps exps rhs;
+            (reach', exps')
+          }
+        | Sil.Hlseg _ _ exp1 exp2 exp_l as hpred => {
+            let reach' = Sil.HpredSet.add hpred reach;
+            let exps' =
+              IList.fold_left
+                (fun exps_acc exp => Exp.Set.add exp exps_acc) exps [exp1, exp2, ...exp_l];
+            (reach', exps')
+          }
+        | Sil.Hdllseg _ _ exp1 exp2 exp3 exp4 exp_l as hpred => {
+            let reach' = Sil.HpredSet.add hpred reach;
+            let exps' =
+              IList.fold_left
+                (fun exps_acc exp => Exp.Set.add exp exps_acc)
+                exps
+                [exp1, exp2, exp3, exp4, ...exp_l];
+            (reach', exps')
+          }
+        | _ => (reach, exps);
+      let (reach', exps') = IList.fold_left add_hpred_if_reachable (reach, exps) sigma;
+      if (Sil.HpredSet.cardinal reach == Sil.HpredSet.cardinal reach') {
+        (reach, exps)
+      } else {
+        compute_reachable_hpreds_rec sigma (reach', exps')
+      }
     };
-    /* separate the abduced pvars from the normal ones, deallocate the abduced ones*/
-    let (abduceds, normal_pvars) =
-      IList.fold_left
+    let (reach_hpreds, reach_exps) =
+      compute_reachable_hpreds_rec sigma (Sil.HpredSet.empty, seed_exps);
+    /* filter away the pure atoms without reachable exps */
+    let reach_pi = {
+      let rec exp_contains =
+        fun
+        | exp when Exp.Set.mem exp reach_exps => true
+        | Exp.UnOp _ e _
+        | Exp.Cast _ e
+        | Exp.Lfield e _ _ => exp_contains e
+        | Exp.BinOp _ e0 e1
+        | Exp.Lindex e0 e1 => exp_contains e0 || exp_contains e1
+        | _ => false;
+      IList.filter
         (
-          fun pvars hpred =>
-            switch hpred {
-            | Sil.Hpointsto (Exp.Lvar pvar) _ _ =>
-              let (abduceds, normal_pvars) = pvars;
-              if (Pvar.is_abduced pvar) {
-                ([pvar, ...abduceds], normal_pvars)
-              } else {
-                (abduceds, [pvar, ...normal_pvars])
-              }
-            | _ => pvars
-            }
+          fun
+          | Sil.Aeq lhs rhs
+          | Sil.Aneq lhs rhs => exp_contains lhs || exp_contains rhs
+          | Sil.Apred _ es
+          | Sil.Anpred _ es => IList.exists exp_contains es
         )
-        ([], [])
-        p.Prop.sigma;
-    let (_, p') = Attribute.deallocate_stack_vars tenv p abduceds;
-    let normal_pvar_set =
-      IList.fold_left
-        (fun normal_pvar_set pvar => Exp.Set.add (Exp.Lvar pvar) normal_pvar_set)
-        Exp.Set.empty
-        normal_pvars;
-    /* walk forward from non-abduced pvars, keep everything reachable. remove everything else */
-    let (sigma_reach, pi_reach) = compute_reachable p' normal_pvar_set;
-    Prop.normalize tenv (Prop.set p' pi::pi_reach sigma::sigma_reach)
+        pi
+    };
+    (Sil.HpredSet.elements reach_hpreds, reach_pi)
   };
+  /* separate the abduced pvars from the normal ones, deallocate the abduced ones*/
+  let (abduceds, normal_pvars) =
+    IList.fold_left
+      (
+        fun pvars hpred =>
+          switch hpred {
+          | Sil.Hpointsto (Exp.Lvar pvar) _ _ =>
+            let (abduceds, normal_pvars) = pvars;
+            if (Pvar.is_abduced pvar) {
+              ([pvar, ...abduceds], normal_pvars)
+            } else {
+              (abduceds, [pvar, ...normal_pvars])
+            }
+          | _ => pvars
+          }
+      )
+      ([], [])
+      p.Prop.sigma;
+  let (_, p') = Attribute.deallocate_stack_vars tenv p abduceds;
+  let normal_pvar_set =
+    IList.fold_left
+      (fun normal_pvar_set pvar => Exp.Set.add (Exp.Lvar pvar) normal_pvar_set)
+      Exp.Set.empty
+      normal_pvars;
+  /* walk forward from non-abduced pvars, keep everything reachable. remove everything else */
+  let (sigma_reach, pi_reach) = compute_reachable p' normal_pvar_set;
+  Prop.normalize tenv (Prop.set p' pi::pi_reach sigma::sigma_reach)
+};
 
 let remove_locals tenv (curr_f: Cfg.Procdesc.t) p => {
   let names_of_locals = IList.map (get_name_of_local curr_f) (Cfg.Procdesc.get_locals curr_f);

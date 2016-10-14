@@ -1,7 +1,4 @@
 /*
- * vim: set ft=rust:
- * vim: set ft=reason:
- *
  * Copyright (c) 2015 - present Facebook, Inc.
  * All rights reserved.
  *
@@ -9,7 +6,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 let module F = Format;
@@ -48,19 +44,20 @@ let res_dir_attr_filename pname => {
 let store_attributes (proc_attributes: ProcAttributes.t) => {
   let proc_name = proc_attributes.proc_name;
   let attributes_file = res_dir_attr_filename proc_name;
-  let should_write = not (DB.file_exists attributes_file) || (
-    switch (Serialization.from_file serializer attributes_file) {
-    | None => true
-    | Some proc_attributes_on_disk =>
-      let higher_rank_than_on_disk () =>
-        proc_attributes.is_defined &&
+  let should_write =
+    not (DB.file_exists attributes_file) || (
+      switch (Serialization.from_file serializer attributes_file) {
+      | None => true
+      | Some proc_attributes_on_disk =>
+        let higher_rank_than_on_disk () =>
+          proc_attributes.is_defined &&
           DB.source_file_compare proc_attributes.loc.file proc_attributes_on_disk.loc.file > 0;
-      let becomes_defined = proc_attributes.is_defined && not proc_attributes_on_disk.is_defined;
-      /* Only overwrite the attribute file if the procedure becomes defined
-         or its associated file has higher rank (alphabetically) than on disk. */
-      becomes_defined || higher_rank_than_on_disk ()
-    }
-  );
+        let becomes_defined = proc_attributes.is_defined && not proc_attributes_on_disk.is_defined;
+        /* Only overwrite the attribute file if the procedure becomes defined
+           or its associated file has higher rank (alphabetically) than on disk. */
+        becomes_defined || higher_rank_than_on_disk ()
+      }
+    );
   if should_write {
     Serialization.to_file serializer attributes_file proc_attributes
   }
@@ -132,13 +129,12 @@ let to_json at => {
       ("num_bindings", `Int at.num_bindings),
       ("num_buckets", `Int at.num_buckets),
       ("max_bucket_length", `Int at.max_bucket_length)
-    ]
-      @ extra_field
+    ] @ extra_field
   )
 };
 
 let from_json json => {
-  let open! Yojson.Basic.Util;
+  open! Yojson.Basic.Util;
   {
     num_bindings: json |> member "num_bindings" |> to_int,
     num_buckets: json |> member "num_buckets" |> to_int,
@@ -165,7 +161,8 @@ let stats () => {
   let stats = Procname.Hash.stats attr_tbl;
   let {Hashtbl.num_bindings: num_bindings, num_buckets, max_bucket_length} = stats;
   let serialized_size_kb =
-    Config.developer_mode ? Some (Marshal.data_size (Marshal.to_bytes attr_tbl []) 0 / 1024) : None;
+    Config.developer_mode ?
+      Some (Marshal.data_size (Marshal.to_bytes attr_tbl []) 0 / 1024) : None;
   {num_bindings, num_buckets, max_bucket_length, serialized_size_kb}
 };
 

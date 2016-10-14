@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -22,19 +21,19 @@ let module F = Format;
 
 /** expression representing the result of decompilation */
 type t =
-  | Darray of t t
-  | Dbinop of Binop.t t t
-  | Dconst of Const.t
-  | Dsizeof of Typ.t (option t) Subtype.t
-  | Dderef of t
-  | Dfcall of t (list t) Location.t CallFlags.t
-  | Darrow of t Ident.fieldname
-  | Ddot of t Ident.fieldname
-  | Dpvar of Pvar.t
-  | Dpvaraddr of Pvar.t
-  | Dunop of Unop.t t
+  | Darray t t
+  | Dbinop Binop.t t t
+  | Dconst Const.t
+  | Dsizeof Typ.t (option t) Subtype.t
+  | Dderef t
+  | Dfcall t (list t) Location.t CallFlags.t
+  | Darrow t Ident.fieldname
+  | Ddot t Ident.fieldname
+  | Dpvar Pvar.t
+  | Dpvaraddr Pvar.t
+  | Dunop Unop.t t
   | Dunknown
-  | Dretcall of t (list t) Location.t CallFlags.t;
+  | Dretcall t (list t) Location.t CallFlags.t;
 
 
 /** Value paths: identify an occurrence of a value in a symbolic heap

@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -20,11 +19,15 @@ let module L = Logging;
 let module F = Format;
 
 type func_attribute =
-  | FA_sentinel of int int /** __attribute__((sentinel(int, int))) */;
+  | FA_sentinel int int /** __attribute__((sentinel(int, int))) */;
 
 
 /** Visibility modifiers. */
-type access = | Default | Public | Private | Protected;
+type access =
+  | Default
+  | Public
+  | Private
+  | Protected;
 
 
 /** Return the value of the FA_sentinel attribute in [attr_list] if it is found */
@@ -51,7 +54,11 @@ let mem_kind_compare mk1 mk2 => int_compare (mem_kind_to_num mk1) (mem_kind_to_n
 
 
 /** resource that can be allocated */
-type resource = | Rmemory of mem_kind | Rfile | Rignore | Rlock;
+type resource =
+  | Rmemory mem_kind
+  | Rfile
+  | Rignore
+  | Rlock;
 
 let resource_compare r1 r2 => {
   let res_to_num =
@@ -65,7 +72,9 @@ let resource_compare r1 r2 => {
 
 
 /** kind of resource action */
-type res_act_kind = | Racquire | Rrelease;
+type res_act_kind =
+  | Racquire
+  | Rrelease;
 
 let res_act_kind_compare rak1 rak2 =>
   switch (rak1, rak2) {
@@ -161,21 +170,21 @@ type res_action = {
     attribute to an expression, that expression should be the first argument, optionally followed by
     additional related expressions. */
 type t =
-  | Aresource of res_action /** resource acquire/release */
+  | Aresource res_action /** resource acquire/release */
   | Aautorelease
-  | Adangling of dangling_kind /** dangling pointer */
+  | Adangling dangling_kind /** dangling pointer */
   /** undefined value obtained by calling the given procedure, plus its return value annots */
-  | Aundef of Procname.t Annot.Item.t Location.t path_pos
-  | Ataint of taint_info
-  | Auntaint of taint_info
+  | Aundef Procname.t Annot.Item.t Location.t path_pos
+  | Ataint taint_info
+  | Auntaint taint_info
   | Alocked
   | Aunlocked
   /** value appeared in second argument of division at given path position */
-  | Adiv0 of path_pos
+  | Adiv0 path_pos
   /** attributed exp is null due to a call to a method with given path as null receiver */
   | Aobjc_null
   /** value was returned from a call to the given procedure, plus the annots of the return value */
-  | Aretval of Procname.t Annot.Item.t
+  | Aretval Procname.t Annot.Item.t
   /** denotes an object registered as an observers to a notification center */
   | Aobserver
   /** denotes an object unsubscribed from observers of a notification center */
@@ -324,12 +333,9 @@ let to_string pe =>
           ""
         };
       name ^
-        Binop.str pe Lt ^
-        Procname.to_string ra.ra_pname ^
-        ":" ^
-        string_of_int ra.ra_loc.Location.line ^
-        Binop.str pe Gt ^
-        str_vpath
+      Binop.str pe Lt ^
+      Procname.to_string ra.ra_pname ^
+      ":" ^ string_of_int ra.ra_loc.Location.line ^ Binop.str pe Gt ^ str_vpath
     }
   | Aautorelease => "AUTORELEASE"
   | Adangling dk => {
@@ -343,11 +349,8 @@ let to_string pe =>
     }
   | Aundef pn _ loc _ =>
     "UND" ^
-      Binop.str pe Lt ^
-      Procname.to_string pn ^
-      Binop.str pe Gt ^
-      ":" ^
-      string_of_int loc.Location.line
+    Binop.str pe Lt ^
+    Procname.to_string pn ^ Binop.str pe Gt ^ ":" ^ string_of_int loc.Location.line
   | Ataint {taint_source} => "TAINTED[" ^ Procname.to_string taint_source ^ "]"
   | Auntaint _ => "UNTAINTED"
   | Alocked => "LOCKED"

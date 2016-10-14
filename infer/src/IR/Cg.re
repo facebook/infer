@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -235,10 +234,8 @@ let get_edges (g: t) :list ((node, int), (node, int)) => {
   let f node info =>
     Procname.Set.iter
       (
-        fun nto => edges := [
-          (node_get_num_ancestors g node, node_get_num_ancestors g nto),
-          ...!edges
-        ]
+        fun nto =>
+          edges := [(node_get_num_ancestors g node, node_get_num_ancestors g nto), ...!edges]
       )
       info.children;
   node_map_iter f g;

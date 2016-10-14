@@ -10,7 +10,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-
 open! Utils;
 
 
@@ -40,8 +39,8 @@ type java = {
 type c = (string, option string);
 
 type objc_cpp_method_kind =
-  | CPPMethod of (option string) /** with mangling */
-  | CPPConstructor of (option string) /** with mangling */
+  | CPPMethod (option string) /** with mangling */
+  | CPPConstructor (option string) /** with mangling */
   | ObjCInstanceMethod
   | ObjCInternalMethod
   | ObjCClassMethod;
@@ -56,18 +55,22 @@ type block = string;
 
 
 /** Type of procedure names. */
-type t = | Java of java | C of c | ObjC_Cpp of objc_cpp | Block of block | Linters_dummy_method;
+type t =
+  | Java java
+  | C c
+  | ObjC_Cpp objc_cpp
+  | Block block
+  | Linters_dummy_method;
 
 
 /** Level of verbosity of some to_string functions. */
-type detail_level = | Verbose | Non_verbose | Simple;
+type detail_level =
+  | Verbose
+  | Non_verbose
+  | Simple;
 
 let objc_method_kind_of_bool is_instance =>
-  if is_instance {
-    ObjCInstanceMethod
-  } else {
-    ObjCClassMethod
-  };
+  if is_instance {ObjCInstanceMethod} else {ObjCClassMethod};
 
 let empty_block = Block "";
 
@@ -150,10 +153,10 @@ let java_return_type_compare jr1 jr2 =>
 /** Compare java procedure names. */
 let java_compare (j1: java) (j2: java) =>
   string_compare j1.method_name j2.method_name |>
-    next java_type_list_compare j1.parameters j2.parameters |>
-    next java_type_compare j1.class_name j2.class_name |>
-    next java_return_type_compare j1.return_type j2.return_type |>
-    next method_kind_compare j1.kind j2.kind;
+  next java_type_list_compare j1.parameters j2.parameters |>
+  next java_type_compare j1.class_name j2.class_name |>
+  next java_return_type_compare j1.return_type j2.return_type |>
+  next method_kind_compare j1.kind j2.kind;
 
 let objc_cpp_method_kind_compare k1 k2 =>
   switch (k1, k2) {
@@ -176,8 +179,8 @@ let objc_cpp_method_kind_compare k1 k2 =>
 /** Compare c_method signatures. */
 let c_meth_sig_compare osig1 osig2 =>
   string_compare osig1.method_name osig2.method_name |>
-    next string_compare osig1.class_name osig2.class_name |>
-    next objc_cpp_method_kind_compare osig1.kind osig2.kind;
+  next string_compare osig1.class_name osig2.class_name |>
+  next objc_cpp_method_kind_compare osig1.kind osig2.kind;
 
 
 /** Given a package.class_name string, it looks for the latest dot and split the string
@@ -513,22 +516,20 @@ let c_method_to_string osig detail_level =>
       switch osig.kind {
       | CPPMethod m =>
         "(" ^
-          (
-            switch m {
-            | None => ""
-            | Some s => s
-            }
-          ) ^
-          ")"
+        (
+          switch m {
+          | None => ""
+          | Some s => s
+          }
+        ) ^ ")"
       | CPPConstructor m =>
         "{" ^
-          (
-            switch m {
-            | None => ""
-            | Some s => s
-            }
-          ) ^
-          "}"
+        (
+          switch m {
+          | None => ""
+          | Some s => s
+          }
+        ) ^ "}"
       | ObjCClassMethod => "class"
       | ObjCInstanceMethod => "instance"
       | ObjCInternalMethod => "internal"
