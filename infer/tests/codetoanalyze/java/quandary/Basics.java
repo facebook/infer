@@ -153,6 +153,13 @@ public class Basics {
     InferTaint.inferSensitiveSink(src);
   }
 
+  // this should report only two alarms, not three
+  void noTripleReportBad() {
+    Object src = InferTaint.inferSecretSource();
+    InferTaint.inferSensitiveSink(src);
+    InferTaint.inferSensitiveSink(src);
+  }
+
   /** should not report on these tests */
 
   void directOk1() {

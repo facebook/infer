@@ -162,11 +162,17 @@ module Make (TaintSpec : TaintSpec.S) = struct
               | Some (actual_trace, _) ->
                   (* add callee_pname to actual trace as a sink *)
                   let actual_trace' = TraceDomain.add_sink sink_param.sink actual_trace in
-                  let pname = Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc in
-                  IList.iter
-                    (Reporting.log_error pname ~loc)
-                    (TraceDomain.get_reportable_exns actual_trace');
-                  TaintDomain.add_trace actual_ap actual_trace' access_tree_acc
+                  begin
+                    match TraceDomain.get_reportable_exns actual_trace' with
+                    | [] ->
+                        TaintDomain.add_trace actual_ap actual_trace' access_tree_acc
+                    | reportable_exns ->
+                        (* got new source -> sink flow. report it, but don't update the trace. if we
+                           update the trace, we will double-report later on. *)
+                        let pname = Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc in
+                        IList.iter (Reporting.log_error pname ~loc) reportable_exns;
+                        access_tree_acc
+                  end
               | None ->
                   access_tree_acc
             end
