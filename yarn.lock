@@ -60,6 +60,12 @@
   dependencies:
     camomile-actual "git://github.com/npm-opam/camomile.git#0.8.5"
 
+"@opam-alpha/cmdliner@*":
+  version "0.9.8"
+  resolved cmdliner-0.9.8.tgz#ddc241833e0cef5e784dc6f0506b7df50b041884
+  dependencies:
+    cmdliner-actual "git://github.com/npm-opam/cmdliner.git#0.9.8"
+
 "@opam-alpha/conf-m4@*":
   version "4.1.0"
   resolved conf-m4-4.1.0.tgz#91500bb3c9c9ca790731671035a5beb0664e0ce8
@@ -148,6 +154,18 @@
   dependencies:
     ocamlfind-actual "git+https://github.com/npm-opam/ocamlfind.git#1.6.2"
 
+"@opam-alpha/ocp-build@>= 1.99.6":
+  version "1.99.17"
+  resolved ocp-build-1.99.17.tgz#6f7d1981d9f1fb0ac780c6cb812986171037a555
+  dependencies:
+    ocp-build-actual "git://github.com/npm-opam/ocp-build.git#1.99.17"
+
+"@opam-alpha/ocp-indent@1.5.3":
+  version "1.5.3"
+  resolved ocp-indent-1.5.3.tgz#4a9fad8e8bb8925e0b6953e078e6820e7abb2a1c
+  dependencies:
+    ocp-indent-actual "git://github.com/npm-opam/ocp-indent.git#1.5.3"
+
 "@opam-alpha/ounit@*", "@opam-alpha/ounit@2.0.0":
   version "2.0.0"
   resolved ounit-2.0.0.tgz#bc3ed0ea2581192301558c3abe64ebdeb6fa2f36
@@ -178,7 +196,13 @@
   dependencies:
     sawja-actual "git://github.com/npm-opam/sawja.git#1.5.2"
 
-"@opam-alpha/utop@^ 1.19.3":
+"@opam-alpha/typerex-build@= 1.99.17":
+  version "1.99.17"
+  resolved typerex-build-1.99.17.tgz#e08bfaf642336f62496e5df97ad4076c76f743f2
+  dependencies:
+    typerex-build-actual "git://github.com/npm-opam/typerex-build.git#1.99.17"
+
+"@opam-alpha/utop@*":
   version "1.19.3"
   resolved utop-1.19.3.tgz#757965a3e90b798c686ac71391c5bdfe136df707
   dependencies:
@@ -306,6 +330,16 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
+"cmdliner-actual@git://github.com/npm-opam/cmdliner.git#0.9.8":
+  version "0.9.8"
+  resolved cmdliner.git-5a22387c9abd87e02563d16f5723d8a644d420a1#c72fafc92b68d98a242e51f618a5684afc0b814a
+  dependencies:
+    "@opam-alpha/ocamlbuild" "*"
+    dependency-env "https://github.com/npm-ml/dependency-env.git"
+    nopam "https://github.com/yunxing/nopam.git"
+    opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
+    substs "https://github.com/yunxing/substs.git"
+
 "conf-m4-actual@git://github.com/npm-opam/conf-m4.git#4.1.0":
   version "4.1.0"
   resolved conf-m4.git-e5eedfc61c8d2e529cf598584ba829f2fc722d87#ccaad11e529016d7a46849ece8481432d1190ae9
@@ -366,9 +400,9 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"dependency-env@https://github.com/npm-ml/dependency-env.git", "dependency-env@https://github.com/reasonml/dependency-env.git":
+"dependency-env@git+https://github.com/reasonml/dependency-env.git", "dependency-env@https://github.com/npm-ml/dependency-env.git":
   version "0.0.0"
-  resolved dependency-env.git-ec2fc004bbe5bb773d96b0b604519733f2f9bf01#44270ebff8e022c2c39a8f89e0071b8f4e07e4fd
+  resolved dependency-env.git-876738ea981c991743df981fd3d079e7d6e1bafc#4508296ecc90307b286d1f371c5ebd37ff808cfa
   dependencies:
     resolve "^1.1.7"
 
@@ -470,7 +504,7 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"nopam@https://github.com/reasonml/nopam.git", "nopam@https://github.com/yunxing/nopam.git":
+"nopam@git+https://github.com/reasonml/nopam.git", "nopam@https://github.com/yunxing/nopam.git":
   version "0.0.1"
   resolved nopam.git-0eed691e2addaead2560f8c177f28936397e4477#993f283325a3f1c5ef3258757d0627d7b877fe73
 
@@ -500,7 +534,28 @@
     nopam "https://github.com/yunxing/nopam.git"
     ocaml "https://github.com/npm-opam/ocaml.git#npm-4.02.3"
 
-"opam-installer-bin@https://github.com/yunxing/opam-installer-bin.git":
+"ocp-build-actual@git://github.com/npm-opam/ocp-build.git#1.99.17":
+  version "1.99.17"
+  resolved ocp-build.git-175e8330b2ac994033684c00592ee0d4d615a3f1#aa52c8fe1493b53cbfe206a86918f69b3a59ff94
+  dependencies:
+    "@opam-alpha/typerex-build" "= 1.99.17"
+    dependency-env "https://github.com/npm-ml/dependency-env.git"
+    nopam "https://github.com/yunxing/nopam.git"
+    opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
+    substs "https://github.com/yunxing/substs.git"
+
+"ocp-indent-actual@git://github.com/npm-opam/ocp-indent.git#1.5.3":
+  version "1.5.3"
+  resolved ocp-indent.git-64ba9ffab4018c0a88d9dd99368fc4b3f9db3af7#0616c82003717f40fc6397e9f8a32c9b5fb20ad4
+  dependencies:
+    "@opam-alpha/cmdliner" "*"
+    "@opam-alpha/ocp-build" ">= 1.99.6"
+    dependency-env "https://github.com/npm-ml/dependency-env.git"
+    nopam "https://github.com/yunxing/nopam.git"
+    opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
+    substs "https://github.com/yunxing/substs.git"
+
+"opam-installer-bin@git+https://github.com/yunxing/opam-installer-bin.git", "opam-installer-bin@https://github.com/yunxing/opam-installer-bin.git":
   version "0.0.0"
   resolved opam-installer-bin.git-689ede681217f76fb2f82a9f4528e192a5b543ba#b7704eda021a9fe18a9a37454868e1bbf102e0a0
   dependencies:
@@ -551,9 +606,9 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-reason@1.3.2-source:
-  version "1.3.2-source"
-  resolved reason-1.3.2-source.tgz#cf7aebc17146bab2709a6bb75e87bdfecdd9bd01
+reason@1.4.0-source:
+  version "1.4.0-source"
+  resolved reason-1.4.0-source.tgz#f5c40e4122d06fe4b3abb11ea3d8dffdf31cf502
   dependencies:
     "@opam-alpha/BetterErrors" ">= 0.0.1"
     "@opam-alpha/easy-format" "^ 1.2.0"
@@ -563,7 +618,7 @@ reason@1.3.2-source:
     "@opam-alpha/ocaml" "= 4.02.3"
     "@opam-alpha/ocamlfind" "*"
     "@opam-alpha/re" "^ 1.5.0"
-    "@opam-alpha/utop" "^ 1.19.3"
+    "@opam-alpha/utop" "*"
     dependency-env "https://github.com/reasonml/dependency-env.git"
     nopam "https://github.com/reasonml/nopam.git"
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
@@ -584,9 +639,19 @@ resolve@^1.1.7:
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"substs@https://github.com/yunxing/substs.git":
+"substs@git+https://github.com/yunxing/substs.git", "substs@https://github.com/yunxing/substs.git":
   version "0.0.1"
   resolved substs.git-fd480dcdb4aed3fa9128fd819a546e3a7770040f#3a935dc6de26a5dfae899eca93a510bae55e57a4
+
+"typerex-build-actual@git://github.com/npm-opam/typerex-build.git#1.99.17":
+  version "1.99.17"
+  resolved typerex-build.git-e9f6e31412dcb04bf079a35f319bfa29ae53d144#f462d68529bb881bdee20a88d57b9001e768e9ee
+  dependencies:
+    "@opam-alpha/ocamlfind" "*"
+    dependency-env "https://github.com/npm-ml/dependency-env.git"
+    nopam "https://github.com/yunxing/nopam.git"
+    opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
+    substs "https://github.com/yunxing/substs.git"
 
 "utop-actual@git://github.com/npm-opam/utop.git#1.19.3":
   version "1.19.3"
