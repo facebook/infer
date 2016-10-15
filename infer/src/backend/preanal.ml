@@ -11,12 +11,11 @@
 open! Utils
 
 (** mutate the cfg/cg to add dynamic dispatch handling *)
-let add_dispatch_calls pdesc cg tenv =
+let add_dispatch_calls pdesc cg tenv ~handle_dynamic_dispatch =
   let node_add_dispatch_calls caller_pname node =
-    (* TODO: handle dynamic dispatch for virtual calls as well *)
     let call_flags_is_dispatch call_flags =
       (* if sound dispatch is turned off, only consider dispatch for interface calls *)
-      (Config.sound_dynamic_dispatch && call_flags.CallFlags.cf_virtual) ||
+      (handle_dynamic_dispatch && call_flags.CallFlags.cf_virtual) ||
       call_flags.CallFlags.cf_interface in
     let instr_is_dispatch_call = function
       | Sil.Call (_, _, _, _, call_flags) -> call_flags_is_dispatch call_flags
@@ -40,7 +39,7 @@ let add_dispatch_calls pdesc cg tenv =
           (match sorted_overrides with
            | ((_, target_pname) :: _) as all_targets ->
                let targets_to_add =
-                 if Config.sound_dynamic_dispatch then
+                 if handle_dynamic_dispatch then
                    IList.map snd all_targets
                  else
                    (* if sound dispatch is turned off, consider only the first target. we do this
@@ -290,7 +289,7 @@ let do_liveness pdesc tenv =
   let liveness_proc_cfg = BackwardCfg.from_pdesc pdesc in
   LivenessAnalysis.exec_cfg liveness_proc_cfg (ProcData.make_default pdesc tenv)
 
-let doit pdesc cg tenv =
+let doit ?(handle_dynamic_dispatch=Config.sound_dynamic_dispatch) pdesc cg tenv =
   if not (Cfg.Procdesc.did_preanalysis pdesc)
   then
     begin
@@ -301,6 +300,6 @@ let doit pdesc cg tenv =
       then remove_dead_frontend_stores pdesc liveness_inv_map;
       add_nullify_instrs pdesc tenv liveness_inv_map;
       if not Config.lazy_dynamic_dispatch
-      then add_dispatch_calls pdesc cg tenv;
+      then add_dispatch_calls ~handle_dynamic_dispatch pdesc cg tenv;
       add_abstraction_instructions pdesc;
     end
