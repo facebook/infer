@@ -1189,6 +1189,11 @@ and zip_specs_library =
   CLOpt.mk_string_list ~long:"zip-specs-library" ~short:"ziplib" ~f:resolve
     ~meta:"zip file" "Search for .spec files in a zip file"
 
+and java_jar_compiler =
+  CLOpt.mk_string_opt
+    ~long:"java-jar-compiler"
+    ~exes:CLOpt.[Java]
+    ~meta:"path" "Specifify the Java compiler jar used to generate the bytecode"
 
 (** Configuration values specified by environment variables *)
 
@@ -1430,6 +1435,7 @@ and frontend_stats = !frontend_stats
 and headers = !headers
 and infer_cache = !infer_cache
 and iterations = !iterations
+and java_jar_compiler = !java_jar_compiler
 and javac_verbose_out = !verbose_out
 and jobs = !jobs
 and join_cond = !join_cond

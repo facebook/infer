@@ -270,7 +270,7 @@ val write_html : bool
 val xcode_developer_dir : string option
 val xml_specs : bool
 val zip_libraries : zip_library list
-
+val java_jar_compiler : string option
 
 (** Global variables *)
 

@@ -32,11 +32,17 @@ create_argparser = util.base_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 
 class JavacCapture:
     def __init__(self, args, cmd):
-        self.analysis = jwlib.AnalyzerWithJavac(
-            args,
-            cmd[0],
-            cmd[1:],
-        )
+        if args.java_jar_compiler is not None:
+            self.analysis = jwlib.AnalyzerWithJavaJar(
+                args,
+                'java',
+                args.java_jar_compiler,
+                cmd[1:])
+        else:
+            self.analysis = jwlib.AnalyzerWithJavac(
+                args,
+                cmd[0],
+                cmd[1:])
 
     def capture(self):
         try:

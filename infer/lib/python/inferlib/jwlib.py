@@ -33,12 +33,6 @@ parser.add_argument('-bootclasspath', type=utils.decode)
 parser.add_argument('-d', dest='classes_out', default=current_directory)
 parser.add_argument('-processorpath', type=utils.decode, dest='processorpath')
 parser.add_argument('-processor', type=utils.decode, dest='processor')
-parser.add_argument('-o', '--out', metavar='<directory>',
-                    default=utils.encode(config.DEFAULT_INFER_OUT),
-                    dest='infer_out',
-                    type=utils.decode,
-                    action=utils.AbsolutePathAction,
-                    help='Set the Infer results directory')
 
 
 def _get_javac_args(args):

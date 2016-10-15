@@ -45,11 +45,11 @@ INFER_JSON_REPORT = os.path.join(config.BUCK_INFER_OUT,
 INFER_STATS = os.path.join(config.BUCK_INFER_OUT, config.STATS_FILENAME)
 
 INFER_SCRIPT = """\
-#!/usr/bin/env {0}
+#!/usr/bin/env {python_executable}
 import subprocess
 import sys
 
-cmd = {1} + ['--', 'javac'] + sys.argv[1:]
+cmd = {infer_command} + ['--', 'javac'] + sys.argv[1:]
 subprocess.check_call(cmd)
 """
 
@@ -63,6 +63,12 @@ def prepare_build(args):
         '--buck',
         '--analyzer', args.analyzer,
     ]
+
+    if args.java_jar_compiler is not None:
+        infer_options += [
+            '--java-jar-compiler',
+            args.java_jar_compiler,
+        ]
 
     if args.debug:
         infer_options.append('--debug')
@@ -102,7 +108,9 @@ def prepare_build(args):
                                      dir='.') as infer_script:
         logging.info('Creating %s' % infer_script.name)
         infer_script.file.write(
-            utils.encode(INFER_SCRIPT.format(sys.executable, infer_command)))
+            utils.encode(INFER_SCRIPT.format(
+                python_executable=sys.executable,
+                infer_command=infer_command)))
 
     st = os.stat(infer_script.name)
     os.chmod(infer_script.name, st.st_mode | stat.S_IEXEC)

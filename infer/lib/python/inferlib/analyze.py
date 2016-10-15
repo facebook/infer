@@ -173,6 +173,8 @@ infer_group.add_argument('--specs-dir-list-file',
                               'in <file> to the list of directories to be '
                               'searched for spec files')
 
+infer_group.add_argument('--java-jar-compiler',
+                         metavar='<file>')
 
 def remove_infer_out(infer_out):
     # it is safe to ignore errors here because recreating the infer_out

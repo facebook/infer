@@ -45,12 +45,13 @@ def parse_command_line(cmd):
 class JavaJarCapture:
     def __init__(self, args, cmd):
         java_binary, java_jar, other_args = parse_command_line(cmd)
+        if args.java_jar_compiler is not None:
+            java_jar = args.java_jar_compiler
         self.analysis = jwlib.AnalyzerWithJavaJar(
             args,
             java_binary,
             java_jar,
-            other_args
-        )
+            other_args)
 
     def capture(self):
         try:
