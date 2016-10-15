@@ -297,34 +297,35 @@ module Make (TaintSpec : TaintSpec.S) = struct
                   Location.pp loc
           else
             astate
-      | Sil.Call (ret, Const (Cfun callee_pname), actuals, callee_loc, _) ->
-          let call_site = CallSite.make callee_pname callee_loc in
 
-          let astate_with_sink =
-            match TraceDomain.Sink.get call_site actuals with
-            | [] -> astate
-            | sinks -> add_sinks sinks actuals astate proc_data callee_loc in
+      | Sil.Call (ret, Const (Cfun called_pname), actuals, callee_loc, call_flags) ->
+          let analyze_call astate_acc callee_pname =
+            let call_site = CallSite.make callee_pname callee_loc in
+            let astate_with_sink =
+              match TraceDomain.Sink.get call_site actuals with
+              | [] -> astate
+              | sinks -> add_sinks sinks actuals astate proc_data callee_loc in
 
-          let astate_with_source =
-            match TraceDomain.Source.get call_site, ret with
-            | Some source, Some (ret_id, ret_typ) ->
-                let access_tree = add_source source ret_id ret_typ astate_with_sink.access_tree in
-                { astate_with_sink with access_tree; }
-            | Some _, None ->
-                failwithf
-                  "%a is marked as a source, but has no return value" Procname.pp callee_pname
-            | None, _ ->
-                astate_with_sink in
+            let astate_with_source =
+              match TraceDomain.Source.get call_site, ret with
+              | Some source, Some (ret_id, ret_typ) ->
+                  let access_tree = add_source source ret_id ret_typ astate_with_sink.access_tree in
+                  { astate_with_sink with access_tree; }
+              | Some _, None ->
+                  failwithf
+                    "%a is marked as a source, but has no return value" Procname.pp callee_pname
+              | None, _ ->
+                  astate_with_sink in
 
-          let astate_with_summary =
             let summary =
               match Summary.read_summary proc_data.tenv proc_data.pdesc callee_pname with
               | Some summary -> summary
-
               | None -> TaintSpec.handle_unknown_call call_site (Option.map snd ret) in
-            apply_summary ret actuals summary astate_with_source proc_data call_site in
+            apply_summary ret actuals summary astate_with_source proc_data call_site
+            |> Domain.join astate_acc in
 
-          astate_with_summary
+          (* for each possible target of the call, apply the summary. join all results together *)
+          IList.fold_left analyze_call Domain.initial (called_pname :: call_flags.cf_targets)
       | Sil.Call _ ->
           failwith "Unimp: non-pname call expressions"
       | Sil.Nullify (pvar, _) ->
@@ -436,7 +437,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
           AccessPath.BaseMap.empty
           formals_with_nums in
 
-      Preanal.doit pdesc dummy_cg tenv;
+      Preanal.doit ~handle_dynamic_dispatch:true pdesc dummy_cg tenv;
       let formals = make_formal_access_paths pdesc in
       let proc_data = ProcData.make pdesc tenv formals in
       match Analyzer.compute_post proc_data with

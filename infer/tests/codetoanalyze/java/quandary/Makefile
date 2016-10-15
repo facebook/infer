@@ -13,6 +13,7 @@ INFERPRINT_OPTIONS = --issues-txt
 FILES = \
   Arrays.java \
   Basics.java \
+  DynamicDispatch.java \
   Exceptions.java \
   Fields.java \
   Intents.java \
