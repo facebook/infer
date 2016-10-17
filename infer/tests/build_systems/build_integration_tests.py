@@ -347,7 +347,7 @@ class BuildIntegrationTest(unittest.TestCase):
         target = '//infer/tests/codetoanalyze/java/infer:compile'
         test('buck', 'Buck',
              ROOT_DIR,
-             [{'compile': ['buck', 'build', target]}],
+             [{'compile': ['buck', 'build', '--no-cache', target]}],
              clean_commands=[['buck', 'clean']],
              available=lambda: is_tool_available(['buck', '--version']))
 
