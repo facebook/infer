@@ -110,7 +110,8 @@ module ResultsTableType = Map.Make (struct
   end)
 
 let should_analyze_proc (_,_,proc_name,proc_desc) =
-  (Procname.is_constructor proc_name) || (Cfg.Procdesc.get_access proc_desc <> PredSymb.Private)
+  not (Procname.is_constructor proc_name) &&
+  Cfg.Procdesc.get_access proc_desc <> PredSymb.Private
 
 (* creates a map from proc_envs to postconditions *)
 let make_results_table file_env =

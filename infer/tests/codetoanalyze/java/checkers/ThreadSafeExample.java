@@ -26,6 +26,10 @@ public class ThreadSafeExample{
 
   Integer f;
 
+  public ThreadSafeExample() {
+    f = 86;
+  }
+
   public void tsOK() {
     synchronized (this) {
       f = 42;
