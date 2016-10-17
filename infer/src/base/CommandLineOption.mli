@@ -14,9 +14,8 @@ open! Utils
 type exe = Analyze | BuckCompilationDatabase | Clang | Interactive | Java | Print | StatsAggregator
          | Toplevel
 
-val current_exe : exe
-
-val all_exes : exe list
+(** Association list of executable (base)names to their [exe]s. *)
+val exes : (string * exe) list
 
 val frontend_exes: exe list
 
@@ -104,15 +103,16 @@ val mk_rest :
   ?exes:exe list -> string ->
   string list ref
 
-(** [parse env_var exe_usage] parses command line arguments as specified by preceding calls to the
-    [mk_*] functions, and returns a function that prints the usage message and help text then exits.
-    The decoded values of the inferconfig file [config_file], if provided, and of the environment
-    variable [env_var] are prepended to [Sys.argv] before parsing.  Therefore arguments passed on
-    the command line supersede those specified in the environment variable, which themselves
-    supersede those passed via the config file.  WARNING: An argument will be interpreted as many
-    times as it appears in all of the config file, the environment variable, and the command
-    line. The [env_var] is set to the full set of options parsed.  If [incomplete] is set, unknown
-    options are ignored, and [env_var] is not set.  If [accept_unknown] is set, unknown options are
-    treated the same as anonymous arguments. *)
+(** [parse env_var exe_usage exe] parses command line arguments as specified by preceding calls to
+    the [mk_*] functions, and returns a function that prints the usage message and help text then
+    exits. [exe] is used to construct the help message appropriate for that executable. The decoded
+    values of the inferconfig file [config_file], if provided, and of the environment variable
+    [env_var] are prepended to [Sys.argv] before parsing.  Therefore arguments passed on the command
+    line supersede those specified in the environment variable, which themselves supersede those
+    passed via the config file.  WARNING: An argument will be interpreted as many times as it
+    appears in all of the config file, the environment variable, and the command line. The [env_var]
+    is set to the full set of options parsed.  If [incomplete] is set, unknown options are ignored,
+    and [env_var] is not set.  If [accept_unknown] is set, unknown options are treated the same as
+    anonymous arguments. *)
 val parse : ?incomplete:bool -> ?accept_unknown:bool -> ?config_file:string ->
-  string -> (exe -> Arg.usage_msg) -> (int -> 'a)
+  string -> exe -> (exe -> Arg.usage_msg) -> (int -> 'a)

@@ -239,8 +239,33 @@ let version_string =
     Unix.time *)
 let initial_analysis_time = Unix.time ()
 
+
+(* Resolve symlinks to get to the real executable. The real executable is located in [bin_dir]
+   below, which allows us to find [lib_dir], [models_dir], etc., relative to it. *)
+let real_exe_name =
+  (* Recursively resolve symlinks until we get something that is not a link. Executables may be
+     (multiple levels of) symbolic links to the real binary directory, eg after `make install` or
+     packaging. *)
+  let rec real_path path =
+    match Unix.readlink path with
+    | link when Filename.is_relative link ->
+        (* [path] is a relative symbolic link *)
+        real_path ((Filename.dirname path) // link)
+    | link ->
+        (* [path] is an absolute symbolic link *)
+        real_path link
+    | exception Unix.Unix_error(Unix.EINVAL, _, _) ->
+        (* [path] is not a symbolic link *)
+        path in
+  real_path Sys.executable_name
+
+let current_exe =
+  if !Sys.interactive then CLOpt.Interactive
+  else try IList.assoc string_equal (Filename.basename real_exe_name) CLOpt.exes
+    with Not_found -> CLOpt.Toplevel
+
 let bin_dir =
-  Filename.dirname Sys.executable_name
+  Filename.dirname real_exe_name
 
 let lib_dir =
   bin_dir // Filename.parent_dir_name // "lib"
@@ -407,8 +432,9 @@ let resolve path =
 (* Declare the phase 1 options *)
 
 let inferconfig_home =
+  let all_exes = IList.map snd CLOpt.exes in
   CLOpt.mk_string_opt ~deprecated:["inferconfig_home"] ~long:"inferconfig-home"
-    ~exes:CLOpt.all_exes ~meta:"dir" "Path to the .inferconfig file"
+    ~exes:all_exes ~meta:"dir" "Path to the .inferconfig file"
 
 and project_root =
   CLOpt.mk_string_opt ~deprecated:["project_root"; "-project_root"] ~long:"project-root" ~short:"pr"
@@ -420,7 +446,7 @@ and project_root =
 
 (* Parse the phase 1 options, ignoring the rest *)
 
-let _ = CLOpt.parse ~incomplete:true "INFER_ARGS" (fun _ -> "")
+let _ = CLOpt.parse ~incomplete:true "INFER_ARGS" current_exe (fun _ -> "")
 
 (* Define the values that depend on phase 1 options *)
 
@@ -691,7 +717,7 @@ and cxx_experimental =
 and debug, print_types, write_dotty =
   let print_types =
     CLOpt.mk_bool ~deprecated:["print_types"] ~long:"print-types"
-      ~default:(CLOpt.current_exe = CLOpt.Clang)
+      ~default:(current_exe = CLOpt.Clang)
       "Print types in symbolic heaps"
   and write_dotty =
     CLOpt.mk_bool ~deprecated:["dotty"] ~long:"write-dotty"
@@ -717,7 +743,7 @@ and dependencies =
 
 and developer_mode =
   CLOpt.mk_bool ~deprecated:["developer_mode"] ~long:"developer-mode"
-    ~default:(CLOpt.current_exe = CLOpt.Print)
+    ~default:(current_exe = CLOpt.Print)
     "Show internal exceptions"
 
 and disable_checks =
@@ -1351,7 +1377,8 @@ let post_parsing_initialization () =
 
 let parse_args_and_return_usage_exit =
   let usage_exit =
-    CLOpt.parse ~accept_unknown:true ~config_file:inferconfig_path "INFER_ARGS" exe_usage in
+    CLOpt.parse ~accept_unknown:true ~config_file:inferconfig_path
+      "INFER_ARGS" current_exe exe_usage in
   post_parsing_initialization () ;
   usage_exit
 

@@ -17,7 +17,7 @@ module F = Format
 
 (** Name of dir for logging the output in the specific executable *)
 let log_dir_of_current_exe =
-  match CommandLineOption.current_exe with
+  match Config.current_exe with
   | Analyze -> "analyze"
   | BuckCompilationDatabase -> "buck_compilation_database"
   | Clang -> "clang"
@@ -37,7 +37,7 @@ let err_formatter = ref F.err_formatter
 
 let set_log_file_identifier string_opt =
   let should_setup_log_files =
-    match CommandLineOption.current_exe with
+    match Config.current_exe with
     | Analyze
     | Clang -> Config.debug_mode || Config.stats_mode
     | BuckCompilationDatabase -> true

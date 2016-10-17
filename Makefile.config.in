@@ -99,10 +99,8 @@ INFERSTATS_BIN = $(BIN_DIR)/InferStatsAggregator
 INFERPRINT_BIN = $(BIN_DIR)/InferPrint
 INFERUNIT_BIN = $(BIN_DIR)/InferUnit
 INFER_BUCK_COMPILATION_DATABASE_BIN = $(BIN_DIR)/InferBuckCompilationDatabase
-INFER_BIN = $(LIB_DIR)/infer
+INFER_BIN = $(BIN_DIR)/infer
 INFERTRACEBUGS_BIN = $(BIN_DIR)/inferTraceBugs
-# paths relative to $(ROOT_DIR)
-INFER_BIN_SYMLINK = infer/bin/infer
 INFERTRACEBUGS_BIN_RELPATH = infer/bin/inferTraceBugs
 
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)

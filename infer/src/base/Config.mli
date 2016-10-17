@@ -67,10 +67,10 @@ val buck_generated_folder : string
 val buck_infer_deps_file_name : string
 val captured_dir_name : string
 val checks_disabled_by_default : string list
-val report_condition_always_true_in_clang : bool
 val clang_build_output_dir_name : string
 val cpp_models_dir : string
 val csl_analysis : bool
+val current_exe : CommandLineOption.exe
 val default_failure_name : string
 val default_in_zip_results_dir : string
 val dotty_output : string
@@ -108,6 +108,7 @@ val patterns_suppress_warnings : pattern list
 val perf_stats_prefix : string
 val proc_stats_filename : string
 val property_attributes : string
+val report_condition_always_true_in_clang : bool
 val report_nullable_inconsistency : bool
 val reporting_stats_dir_name : string
 val save_compact_summaries : bool

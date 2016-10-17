@@ -21,6 +21,7 @@ type exe = Analyze | BuckCompilationDatabase | Clang | Interactive | Java | Prin
          | Toplevel
 
 
+(** Association list of executable (base)names to their [exe]s. *)
 let exes = [
   ("InferBuckCompilationDatabase", BuckCompilationDatabase);
   ("InferAnalyze", Analyze);
@@ -32,15 +33,7 @@ let exes = [
   ("interactive", Interactive);
 ]
 
-let all_exes = IList.map snd exes
-
 let frontend_exes = [Clang; Java]
-
-let current_exe =
-  if !Sys.interactive then Interactive
-  else
-    try IList.assoc string_equal (Filename.basename Sys.executable_name) exes
-    with Not_found -> Toplevel
 
 type desc = {
   long: string; short: string; meta: string; doc: string; spec: Arg.spec;
@@ -418,7 +411,7 @@ let mk_rest ?(exes=[]) doc =
   add exes {long = "--"; short = ""; meta = ""; doc; spec; decode_json = fun _ -> []} ;
   rest
 
-let decode_inferconfig_to_argv path =
+let decode_inferconfig_to_argv current_exe path =
   let json = match read_optional_json_file path with
     | Ok json ->
         json
@@ -474,7 +467,7 @@ let prefix_before_rest args =
   prefix_before_rest_ [] args
 
 
-let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var exe_usage =
+let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var current_exe exe_usage =
   let curr_speclist = ref []
   and full_speclist = ref []
   in
@@ -585,7 +578,7 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var exe_u
   let all_args = match config_file with
     | None -> env_cl_args
     | Some path ->
-        let json_args = decode_inferconfig_to_argv path in
+        let json_args = decode_inferconfig_to_argv current_exe path in
         (* read .inferconfig first, as both env vars and command-line options overwrite it *)
         json_args @ env_cl_args in
   args_to_parse := Array.of_list (exe_name :: all_args);
