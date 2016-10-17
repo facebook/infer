@@ -414,6 +414,7 @@ let create_local_procdesc trans_unit_ctx cfg tenv ms fbody captured is_objc_inst
             is_objc_instance_method = is_objc_inst_method;
             is_cpp_instance_method = is_cpp_inst_method;
             loc = loc_start;
+            translation_unit = Some trans_unit_ctx.CFrontend_config.source_file;
             method_annotation;
             ret_type;
           } in

@@ -236,6 +236,11 @@ let is_class_initializer: t => bool;
 let is_infer_undefined: t => bool;
 
 
+/** Is this procedure one inserted by Infer to initialize the global variables of this translation
+    unit? */
+let is_globals_initializer: c => bool;
+
+
 /** Pretty print a proc name. */
 let pp: Format.formatter => t => unit;
 

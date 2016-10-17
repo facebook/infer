@@ -133,3 +133,7 @@ let to_seed: t => t;
 
 /** Convert a pvar to string. */
 let to_string: t => string;
+
+let get_source_file: t => option DB.source_file;
+
+let module Set: PrettyPrintable.PPSet with type elt = t;

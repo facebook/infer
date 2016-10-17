@@ -124,14 +124,6 @@ def create_argparser(parents=[]):
     return parser
 
 
-def validate_args(mode, args):
-    if mode is not None and mode.LANG == ['clang'] and \
-       args.analyzer == config.ANALYZER_CHECKERS:
-        utils.stderr('error: checkers are only enabled for Java.')
-        if not args.debug:
-            exit(1)
-
-
 def main():
     toplevel_envvar_value = os.environ.get(TOP_LEVEL_ENVVAR, None)
     is_toplevel_instance = False
@@ -157,8 +149,6 @@ def main():
     global_argparser = create_argparser(module_argparser)
 
     args = global_argparser.parse_args(to_parse)
-
-    validate_args(imported_module, args)
 
     remove_infer_out = (imported_module is not None and
                         not args.reactive and

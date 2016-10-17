@@ -9,13 +9,7 @@
 
 open! Utils
 
-module PvarSet = PrettyPrintable.MakePPSet(struct
-    type t = Pvar.t
-    let compare = Pvar.compare
-    let pp_element = (Pvar.pp pe_text)
-  end)
-
-module Domain = AbstractDomain.FiniteSet(PvarSet)
+module Domain = AbstractDomain.FiniteSet(Pvar.Set)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG

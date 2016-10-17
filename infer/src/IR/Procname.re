@@ -493,6 +493,8 @@ let is_infer_undefined pn =>
     false
   };
 
+let is_globals_initializer (name, _) => string_is_prefix Config.clang_initializer_prefix name;
+
 
 /** to_string for C_function type */
 let to_readable_string (c1, c2) verbose => {

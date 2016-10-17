@@ -1,0 +1,2 @@
+siof/pod_across_translation_units-1.cpp:12: ERROR: STATIC_INITIALIZATION_ORDER_FIASCO This global variable initializer accesses the following globals in another translation unit: y from file siof/pod_across_translation_units-2.cpp
+siof/siof_across_translation_units-1.cpp:21: ERROR: STATIC_INITIALIZATION_ORDER_FIASCO This global variable initializer accesses the following globals in another translation unit: global_object

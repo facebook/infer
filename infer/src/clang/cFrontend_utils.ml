@@ -756,7 +756,13 @@ struct
             if var_decl_info.Clang_ast_t.vdi_is_static_local then
               Mangled.from_string ((Procname.to_string outer_procname) ^ "_" ^ name_string)
             else simple_name in
-          Pvar.mk_global global_mangled_name source_file
+          let translation_unit =
+            match var_decl_info.Clang_ast_t.vdi_storage_class with
+            | Some "extern" ->
+                DB.source_file_empty
+            | _ ->
+                source_file in
+          Pvar.mk_global global_mangled_name translation_unit
         else if not should_be_mangled then Pvar.mk simple_name procname
         else
           let start_location = fst decl_info.Clang_ast_t.di_source_range in

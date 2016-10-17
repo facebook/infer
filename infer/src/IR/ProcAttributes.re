@@ -39,6 +39,7 @@ type t = {
   is_synthetic_method: bool, /** the procedure is a synthetic method */
   language: Config.language, /** language of the procedure */
   loc: Location.t, /** location of this procedure in the source code */
+  translation_unit: option DB.source_file, /** translation unit to which the procedure belongs */
   mutable locals: list (Mangled.t, Typ.t), /** name and type of local variables */
   method_annotation: Annot.Method.t, /** annotations for java methods */
   objc_accessor: option objc_accessor_type, /** type of ObjC accessor, if any */
@@ -67,6 +68,7 @@ let default proc_name language => {
   is_synthetic_method: false,
   language,
   loc: Location.dummy,
+  translation_unit: None,
   locals: [],
   method_annotation: Annot.Method.empty,
   objc_accessor: None,

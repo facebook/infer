@@ -340,3 +340,15 @@ let mk_abduced_ref_param (proc_name: Procname.t) (pv: t) (loc: Location.t) :t =>
   let name = Mangled.from_string ("$REF_PARAM_" ^ Procname.to_unique_id proc_name);
   {pv_name: name, pv_kind: Abduced_ref_param proc_name pv loc}
 };
+
+let get_source_file pvar =>
+  switch pvar.pv_kind {
+  | Global_var f => Some f
+  | _ => None
+  };
+
+let module Set = PrettyPrintable.MakePPSet {
+  type nonrec t = t;
+  let compare = compare;
+  let pp_element = pp pe_text;
+};
