@@ -1,13 +1,24 @@
 /* @generated */
 digraph iCFG {
-8 [label="8:  Return Stmt \n   n$0=*&__return_param:class Fields * [line 20]\n  *&#GB$__someFields.field1:float =1 [line 16]\n  *&#GB$__someFields.field2:float =2 [line 16]\n  *&#GB$__someFields.field3:float =3 [line 16]\n  _fun_Fields_(n$0:class Fields *,&#GB$__someFields:class Fields &) [line 20]\n " shape="box"]
+11 [label="11:  Return Stmt \n   n$0=*&__return_param:class Fields * [line 20]\n  *&#GB<global_const/global_const.mm>$__someFields.field1:float =1 [line 16]\n  *&#GB<global_const/global_const.mm>$__someFields.field2:float =2 [line 16]\n  *&#GB<global_const/global_const.mm>$__someFields.field3:float =3 [line 16]\n  _fun_Fields_(n$0:class Fields *,&#GB<global_const/global_const.mm>$__someFields:class Fields &) [line 20]\n " shape="box"]
+	
+
+	 11 -> 10 ;
+10 [label="10: Exit fields \n  " color=yellow style=filled]
+	
+
+9 [label="9: Start fields\nFormals:  __return_param:class Fields *\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+	
+
+	 9 -> 11 ;
+8 [label="8:  DeclStmt \n   *&#GB<global_const/global_const.mm>$__someFields.field1:float =1 [line 16]\n  *&#GB<global_const/global_const.mm>$__someFields.field2:float =2 [line 16]\n  *&#GB<global_const/global_const.mm>$__someFields.field3:float =3 [line 16]\n " shape="box"]
 	
 
 	 8 -> 7 ;
-7 [label="7: Exit fields \n  " color=yellow style=filled]
+7 [label="7: Exit __infer_globals_initializer___someFields \n  " color=yellow style=filled]
 	
 
-6 [label="6: Start fields\nFormals:  __return_param:class Fields *\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+6 [label="6: Start __infer_globals_initializer___someFields\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
 	 6 -> 8 ;

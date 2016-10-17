@@ -745,7 +745,8 @@ struct
       | None -> Mangled.from_string name_string in
     name_string, mangled
 
-  let mk_sil_var name decl_info_type_ptr_opt procname outer_procname =
+  let mk_sil_var {CFrontend_config.source_file} name decl_info_type_ptr_opt
+      procname outer_procname =
     let name_string = Ast_utils.get_qualified_name name in
     match decl_info_type_ptr_opt with
     | Some (decl_info, _, var_decl_info, should_be_mangled) ->
@@ -755,7 +756,7 @@ struct
             if var_decl_info.Clang_ast_t.vdi_is_static_local then
               Mangled.from_string ((Procname.to_string outer_procname) ^ "_" ^ name_string)
             else simple_name in
-          Pvar.mk_global global_mangled_name
+          Pvar.mk_global global_mangled_name source_file
         else if not should_be_mangled then Pvar.mk simple_name procname
         else
           let start_location = fst decl_info.Clang_ast_t.di_source_range in

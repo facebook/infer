@@ -68,6 +68,7 @@ val buck_infer_deps_file_name : string
 val captured_dir_name : string
 val checks_disabled_by_default : string list
 val clang_build_output_dir_name : string
+val clang_initializer_prefix : string
 val cpp_models_dir : string
 val csl_analysis : bool
 val current_exe : CommandLineOption.exe

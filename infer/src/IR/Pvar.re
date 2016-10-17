@@ -26,7 +26,7 @@ type pvar_kind =
   | Abduced_retvar Procname.t Location.t /** synthetic variable to represent return value */
   | Abduced_ref_param Procname.t t Location.t
   /** synthetic variable to represent param passed by reference */
-  | Global_var /** gloval variable */
+  | Global_var DB.source_file /** global variable */
   | Seed_var /** variable used to store the initial value of formal parameters */
 /** Names for program variables. */
 and t = {pv_name: Mangled.t, pv_kind: pvar_kind};
@@ -62,9 +62,9 @@ let rec pvar_kind_compare k1 k2 =>
     }
   | (Abduced_ref_param _, _) => (-1)
   | (_, Abduced_ref_param _) => 1
-  | (Global_var, Global_var) => 0
-  | (Global_var, _) => (-1)
-  | (_, Global_var) => 1
+  | (Global_var f1, Global_var f2) => DB.source_file_compare f1 f2
+  | (Global_var _, _) => (-1)
+  | (_, Global_var _) => 1
   | (Seed_var, Seed_var) => 0
   }
 and compare pv1 pv2 => {
@@ -105,7 +105,7 @@ let rec _pp f pv => {
     } else {
       F.fprintf f "%a$%a%a|abducedRefParam" Procname.pp n Location.pp l Mangled.pp name
     }
-  | Global_var => F.fprintf f "#GB$%a" Mangled.pp name
+  | Global_var fname => F.fprintf f "#GB<%s>$%a" (DB.source_file_to_string fname) Mangled.pp name
   | Seed_var => F.fprintf f "old_%a" Mangled.pp name
   }
 };
@@ -140,7 +140,7 @@ let pp_latex f pv => {
       (Mangled.to_string name)
       (Latex.pp_string Latex.Roman)
       "abducedRefParam"
-  | Global_var => Latex.pp_string Latex.Boldface f (Mangled.to_string name)
+  | Global_var _ => Latex.pp_string Latex.Boldface f (Mangled.to_string name)
   | Seed_var =>
     F.fprintf
       f
@@ -248,7 +248,11 @@ let is_seed pv =>
 
 
 /** Check if the pvar is a global var */
-let is_global pv => pv.pv_kind == Global_var;
+let is_global pv =>
+  switch pv.pv_kind {
+  | Global_var _ => true
+  | _ => false
+  };
 
 
 /** Check if a pvar is the special "this" var */
@@ -285,7 +289,7 @@ let is_frontend_tmp pvar => {
 let to_callee pname pvar =>
   switch pvar.pv_kind {
   | Local_var _ => {...pvar, pv_kind: Callee_var pname}
-  | Global_var => pvar
+  | Global_var _ => pvar
   | Callee_var _
   | Abduced_retvar _
   | Abduced_ref_param _
@@ -315,7 +319,7 @@ let mk_callee (name: Mangled.t) (proc_name: Procname.t) :t => {
 
 
 /** create a global variable with the given name */
-let mk_global (name: Mangled.t) :t => {pv_name: name, pv_kind: Global_var};
+let mk_global (name: Mangled.t) fname :t => {pv_name: name, pv_kind: Global_var fname};
 
 
 /** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! */

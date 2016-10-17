@@ -126,6 +126,8 @@ let filter_buckets = false
 
 let frontend_stats_dir_name = "frontend_stats"
 
+let clang_initializer_prefix = "__infer_globals_initializer_"
+
 let global_tenv_filename = "global.tenv"
 
 (** If true, treat calls to no-arg getters as idempotent w.r.t non-nullness *)

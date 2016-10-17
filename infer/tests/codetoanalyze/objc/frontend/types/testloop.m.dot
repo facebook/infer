@@ -1,6 +1,28 @@
 /* @generated */
 digraph iCFG {
-3 [label="3:  Return Stmt \n   n$0=*&#GB$__iPhoneVideoAdLayout:struct FBVideoAdLayout  [line 45]\n  *&return:struct FBVideoAdLayout =n$0 [line 45]\n " shape="box"]
+9 [label="9:  DeclStmt \n   *&#GB<types/testloop.m>$__iPhoneVideoAdLayout.placeHolderWidth:float =244 [line 35]\n  *&#GB<types/testloop.m>$__iPhoneVideoAdLayout.placeHolderHeight:float =175 [line 35]\n  *&#GB<types/testloop.m>$__iPhoneVideoAdLayout.contentLeftSidePadding:float =20 [line 35]\n  *&#GB<types/testloop.m>$__iPhoneVideoAdLayout.contentRightSidePadding:float =20 [line 35]\n  *&#GB<types/testloop.m>$__iPhoneVideoAdLayout.additionalPlaceholderOffset:float =0 [line 35]\n  *&#GB<types/testloop.m>$__iPhoneVideoAdLayout.contentGap:float =7 [line 35]\n " shape="box"]
+	
+
+	 9 -> 8 ;
+8 [label="8: Exit __infer_globals_initializer___iPhoneVideoAdLayout \n  " color=yellow style=filled]
+	
+
+7 [label="7: Start __infer_globals_initializer___iPhoneVideoAdLayout\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 35]\n " color=yellow style=filled]
+	
+
+	 7 -> 9 ;
+6 [label="6:  DeclStmt \n   *&#GB<types/testloop.m>$__iPadVideoAdLayout.placeHolderWidth:float =554 [line 26]\n  *&#GB<types/testloop.m>$__iPadVideoAdLayout.placeHolderHeight:float =350 [line 26]\n  *&#GB<types/testloop.m>$__iPadVideoAdLayout.contentLeftSidePadding:float =140 [line 26]\n  *&#GB<types/testloop.m>$__iPadVideoAdLayout.contentRightSidePadding:float =60 [line 26]\n  *&#GB<types/testloop.m>$__iPadVideoAdLayout.additionalPlaceholderOffset:float =40 [line 26]\n  *&#GB<types/testloop.m>$__iPadVideoAdLayout.contentGap:float =11 [line 26]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit __infer_globals_initializer___iPadVideoAdLayout \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start __infer_globals_initializer___iPadVideoAdLayout\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
+	
+
+	 4 -> 6 ;
+3 [label="3:  Return Stmt \n   n$0=*&#GB<types/testloop.m>$__iPhoneVideoAdLayout:struct FBVideoAdLayout  [line 45]\n  *&return:struct FBVideoAdLayout =n$0 [line 45]\n " shape="box"]
 	
 
 	 3 -> 2 ;

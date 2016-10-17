@@ -92,7 +92,7 @@ digraph iCFG {
 	
 
 	 13 -> 12 ;
-12 [label="12:  BinaryOperatorStmt: Assign \n   n$0=*&b:class RR2 * [line 40]\n  *&#GB$g:class RR2 *=n$0 [line 40]\n " shape="box"]
+12 [label="12:  BinaryOperatorStmt: Assign \n   n$0=*&b:class RR2 * [line 40]\n  *&#GB<shared/memory_leaks_benchmark/RetainReleaseExample2.m>$g:class RR2 *=n$0 [line 40]\n " shape="box"]
 	
 
 	 12 -> 11 ;

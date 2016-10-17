@@ -420,6 +420,7 @@ let rec expression (context : JContext.t) pc expr =
       pc
       context.meth_kind
       cn in
+  let file = loc.Location.file in
   let tenv = JContext.get_tenv context in
   let type_of_expr = JTransType.expr_type context expr in
   let trans_var pvar =
@@ -512,7 +513,7 @@ let rec expression (context : JContext.t) pc expr =
   | JBir.StaticField (cn, fs) ->
       let class_exp =
         let classname = Mangled.from_string (JBasics.cn_name cn) in
-        let var_name = Pvar.mk_global classname in
+        let var_name = Pvar.mk_global classname file in
         Exp.Lvar var_name in
       let (instrs, sil_expr) = [], class_exp in
       let field_name = get_field_name program true tenv cn fs in
@@ -790,6 +791,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
   let ret_type = Cfg.Procdesc.get_ret_type context.procdesc in
   let loc =
     get_location context.source_file context.impl pc meth_kind cn in
+  let file = loc.Location.file in
   let match_never_null = Inferconfig.never_return_null_matcher in
   let create_node node_kind sil_instrs =
     Cfg.Node.create
@@ -865,7 +867,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
     | JBir.AffectStaticField (cn, fs, e_rhs) ->
         let class_exp =
           let classname = Mangled.from_string (JBasics.cn_name cn) in
-          let var_name = Pvar.mk_global classname in
+          let var_name = Pvar.mk_global classname file in
           Exp.Lvar var_name in
         let (stml1, sil_expr_lhs) = [], class_exp in
         let (stml2, sil_expr_rhs, _) = expression context pc e_rhs in

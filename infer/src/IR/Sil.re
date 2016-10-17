@@ -2802,4 +2802,4 @@ let hpara_dll_instantiate (para: hpara_dll) cell blink flink elist => {
   (ids_evars, IList.map (hpred_sub subst) para.body_dll)
 };
 
-let custom_error = Pvar.mk_global (Mangled.from_string "INFER_CUSTOM_ERROR");
+let custom_error = Pvar.mk_global (Mangled.from_string "INFER_CUSTOM_ERROR") DB.source_file_empty;

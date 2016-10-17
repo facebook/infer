@@ -220,6 +220,21 @@ struct
             | Some dec ->
                 Logging.out "Methods of %s skipped\n" (Ast_utils.string_of_decl dec)
             | None -> ())
+       | VarDecl (decl_info, { ni_name }, _, { vdi_is_global; vdi_init_expr })
+         when vdi_is_global && Option.is_some vdi_init_expr ->
+           (* create a fake procedure that initializes the global variable so that the variable
+              initializer can be analyzed by the backend (eg, the SIOF checker) *)
+           let procname = Procname.from_string_c_fun (Config.clang_initializer_prefix ^ ni_name) in
+           let ms = CMethod_signature.make_ms procname [] Ast_expressions.create_void_type
+               [] decl_info.Clang_ast_t.di_source_range false trans_unit_ctx.CFrontend_config.lang
+               None None None in
+           let stmt_info = { si_pointer = Ast_utils.get_fresh_pointer ();
+                             si_source_range = decl_info.di_source_range } in
+           let body = Clang_ast_t.DeclStmt (stmt_info, [], [dec]) in
+           ignore (CMethod_trans.create_local_procdesc trans_unit_ctx cfg tenv ms [body] [] false);
+           add_method trans_unit_ctx tenv cg cfg CContext.ContextNoCls procname body None false
+             None []
+
        | _ -> ());
     let translate = translate_one_declaration trans_unit_ctx tenv cg cfg decl_trans_context in
     match dec with

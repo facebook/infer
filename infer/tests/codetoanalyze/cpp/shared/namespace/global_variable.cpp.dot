@@ -1,14 +1,14 @@
 /* @generated */
 digraph iCFG {
-15 [label="15:  BinaryOperatorStmt: Assign \n   *&#GB$f1::A::v:int =1 [line 41]\n " shape="box"]
+15 [label="15:  BinaryOperatorStmt: Assign \n   *&#GB<shared/namespace/global_variable.cpp>$f1::A::v:int =1 [line 41]\n " shape="box"]
 	
 
 	 15 -> 14 ;
-14 [label="14:  BinaryOperatorStmt: Assign \n   *&#GB$B::v:int =-2 [line 42]\n " shape="box"]
+14 [label="14:  BinaryOperatorStmt: Assign \n   *&#GB<shared/namespace/global_variable.cpp>$B::v:int =-2 [line 42]\n " shape="box"]
 	
 
 	 14 -> 13 ;
-13 [label="13:  Return Stmt \n   n$0=*&#GB$f1::A::v:int  [line 43]\n  n$1=*&#GB$B::v:int  [line 43]\n  *&return:int =(1 / ((n$0 + n$1) + 1)) [line 43]\n " shape="box"]
+13 [label="13:  Return Stmt \n   n$0=*&#GB<shared/namespace/global_variable.cpp>$f1::A::v:int  [line 43]\n  n$1=*&#GB<shared/namespace/global_variable.cpp>$B::v:int  [line 43]\n  *&return:int =(1 / ((n$0 + n$1) + 1)) [line 43]\n " shape="box"]
 	
 
 	 13 -> 12 ;
@@ -19,15 +19,15 @@ digraph iCFG {
 	
 
 	 11 -> 15 ;
-10 [label="10:  BinaryOperatorStmt: Assign \n   *&#GB$B::v:int =1 [line 35]\n " shape="box"]
+10 [label="10:  BinaryOperatorStmt: Assign \n   *&#GB<shared/namespace/global_variable.cpp>$B::v:int =1 [line 35]\n " shape="box"]
 	
 
 	 10 -> 9 ;
-9 [label="9:  BinaryOperatorStmt: Assign \n   *&#GB$f1::A::v:int =-2 [line 36]\n " shape="box"]
+9 [label="9:  BinaryOperatorStmt: Assign \n   *&#GB<shared/namespace/global_variable.cpp>$f1::A::v:int =-2 [line 36]\n " shape="box"]
 	
 
 	 9 -> 8 ;
-8 [label="8:  Return Stmt \n   n$0=*&#GB$f1::A::v:int  [line 37]\n  n$1=*&#GB$B::v:int  [line 37]\n  *&return:int =(1 / ((n$0 + n$1) + 1)) [line 37]\n " shape="box"]
+8 [label="8:  Return Stmt \n   n$0=*&#GB<shared/namespace/global_variable.cpp>$f1::A::v:int  [line 37]\n  n$1=*&#GB<shared/namespace/global_variable.cpp>$B::v:int  [line 37]\n  *&return:int =(1 / ((n$0 + n$1) + 1)) [line 37]\n " shape="box"]
 	
 
 	 8 -> 7 ;
@@ -38,15 +38,15 @@ digraph iCFG {
 	
 
 	 6 -> 10 ;
-5 [label="5:  BinaryOperatorStmt: Assign \n   *&#GB$f1::val:int =1 [line 29]\n " shape="box"]
+5 [label="5:  BinaryOperatorStmt: Assign \n   *&#GB<shared/namespace/global_variable.cpp>$f1::val:int =1 [line 29]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4:  BinaryOperatorStmt: Assign \n   *&#GB$f2::val:int =-2 [line 30]\n " shape="box"]
+4 [label="4:  BinaryOperatorStmt: Assign \n   *&#GB<shared/namespace/global_variable.cpp>$f2::val:int =-2 [line 30]\n " shape="box"]
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   n$0=*&#GB$f1::val:int  [line 31]\n  n$1=*&#GB$f2::val:int  [line 31]\n  *&return:int =(1 / ((n$0 + n$1) + 1)) [line 31]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&#GB<shared/namespace/global_variable.cpp>$f1::val:int  [line 31]\n  n$1=*&#GB<shared/namespace/global_variable.cpp>$f2::val:int  [line 31]\n  *&return:int =(1 / ((n$0 + n$1) + 1)) [line 31]\n " shape="box"]
 	
 
 	 3 -> 2 ;

@@ -88,8 +88,8 @@ sig
       See get_type for more info and restrictions *)
   val get_desugared_type : Clang_ast_t.type_ptr -> Clang_ast_t.c_type option
 
-(** returns declaration of the type for certain types
-    (RecordType, ObjCInterfaceType and None for others *)
+  (** returns declaration of the type for certain types
+      (RecordType, ObjCInterfaceType and None for others *)
   val get_decl_from_typ_ptr : Clang_ast_t.type_ptr -> Clang_ast_t.decl option
 
   (** returns string representation of type_ptr
@@ -240,8 +240,8 @@ sig
   val get_var_name_mangled : Clang_ast_t.named_decl_info -> Clang_ast_t.var_decl_info ->
     (string * Mangled.t)
 
-  val mk_sil_var : Clang_ast_t.named_decl_info -> var_info option -> Procname.t -> Procname.t ->
-    Pvar.t
+  val mk_sil_var : CFrontend_config.translation_unit_context -> Clang_ast_t.named_decl_info ->
+    var_info option -> Procname.t -> Procname.t -> Pvar.t
 
   (** true if the current language is C++ or ObjC++ *)
   val is_cpp_translation : CFrontend_config.translation_unit_context -> bool

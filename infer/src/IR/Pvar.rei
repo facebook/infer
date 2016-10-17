@@ -104,7 +104,7 @@ let mk_callee: Mangled.t => Procname.t => t;
 
 
 /** create a global variable with the given name */
-let mk_global: Mangled.t => t;
+let mk_global: Mangled.t => DB.source_file => t;
 
 
 /** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! */
