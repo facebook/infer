@@ -13,9 +13,6 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then eval `opam config env`; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam update; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam install -y depext; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam pin add -y merlin 'https://github.com/the-lambda-church/merlin.git#reason-0.0.1'; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam pin add -y merlin_extend 'https://github.com/let-def/merlin-extend.git#reason-0.0.1'; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam pin add -y --no-action reason 'https://github.com/facebook/reason.git#0.0.6'; fi
 install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam pin add -y --no-action infer .; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam depext infer; fi
