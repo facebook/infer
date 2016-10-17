@@ -49,6 +49,13 @@ ifneq (,$(findstring s,$(MAKEFLAGS)))
 OCAMLBUILD_OPTIONS += -quiet
 endif
 
+
+#### Base declaration ####
+
+C_STUBS_SOURCE = stubs/c/stubs.c
+# only one C object for now, the Makefile will need changing if more are added
+C_STUBS_OBJ = $(C_STUBS_SOURCE:.c=.o)
+
 #### Backend declarations ####
 
 INFER_MAIN = backend/infer
@@ -138,8 +145,13 @@ OCAMLBUILD_BASE = rebuild $(OCAMLBUILD_OPTIONS) -j $(NCPU) $(addprefix -I , $(DE
 # ocamlbuild with options necessary to build all targets at once, regardless of configure flags
 OCAMLBUILD_ALL = $(OCAMLBUILD_BASE) $(JAVA_OCAMLBUILD_OPTIONS)
 
+OCAMLBUILD_BYTE_OPTS = -lflags -custom,$(C_STUBS_OBJ) -I stubs/c
+
+OCAMLBUILD_NATIVE_OPTS = -lflags $(C_STUBS_OBJ) -I stubs/c
+
 # list of ocamlbuild targets common to all build targets -- native version
 INFER_BASE_TARGETS = \
+  $(C_STUBS_OBJ) \
   $(INFER_MAIN).native \
   $(INFERANALYZE_MAIN).native \
   $(INFERPRINT_MAIN).native \
@@ -173,7 +185,8 @@ endif
 all: infer
 
 infer: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS)
-	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(INFER_CONFIG_TARGETS)
+	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(OCAMLBUILD_NATIVE_OPTS) \
+	  $(INFER_CONFIG_TARGETS)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(INFER_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERANALYZE_MAIN).native $(INFERANALYZE_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERPRINT_MAIN).native $(INFERPRINT_BIN)
@@ -196,7 +209,8 @@ infer: $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) $(CLANG_BINIOU_DI
 endif
 
 byte: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
-	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) $(INFER_ALL_TARGETS:.native=.byte)
+	$(OCAMLBUILD_ALL) $(OCAMLBUILD_BYTE_OPTS) -build-dir $(INFER_BUILD_DIR) \
+	  $(INFER_ALL_TARGETS:.native=.byte)
 
 # to build only the single module <Module> (and its dependencies) with extra flags execute:
 #   make MFLAGS=<flags> M=<Module>.cm{o,x} module
@@ -211,7 +225,7 @@ module: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN
 	  $(M)
 
 test_build: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
-	$(OCAMLBUILD_ALL) -build-dir $(TEST_BUILD_DIR) \
+	$(OCAMLBUILD_ALL) $(OCAMLBUILD_BYTE_OPTS) -build-dir $(TEST_BUILD_DIR) \
 	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
 	  $(INFER_ALL_TARGETS:.native=.byte)
 
@@ -234,7 +248,7 @@ roots:=Infer InferAnalyze InferClang CMain JMain InferPrint BuckCompilationDatab
 clusters:=base clang java IR
 
 src_dirs:=$(shell find * -type d)
-ml_src_files:=$(shell find $(src_dirs) -regex '.*\.ml\(i\)*' -not -path facebook/scripts/eradicate_stats.ml)
+ml_src_files:=$(shell find $(src_dirs) -regex '.*\.ml\(i\)*' -not -path facebook/scripts/eradicate_stats.ml -not -path 'stubs/c/*')
 re_src_files:=$(shell find $(src_dirs) -regex '.*\.re\(i\)*')
 inc_flags:=$(foreach dir,$(src_dirs),-I $(dir))
 root_flags:=$(foreach root,$(roots),-r $(root))
@@ -251,7 +265,7 @@ mod_dep.pdf: mod_dep.dot
 	dot -Tpdf -o mod_dep.pdf mod_dep.dot
 
 roots_grep_regex:=$(foreach root,$(roots),-e $(root)$$)
-dirs_find_regex:=$(foreach dir, $(DEPENDENCIES),-path "./$(dir)/*" -o)
+dirs_find_regex:=$(foreach dir, $(DEPENDENCIES) stubs/ml,-path "./$(dir)/*" -o)
 toplevel: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	# We need to pack all infer modules into another module to avoid name clashes
 	# with some of them coming from ocaml libraries (Ident for example).
@@ -269,7 +283,7 @@ toplevel: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDG
 	| rev | cut -f 2- -d '.' | rev \
 	| awk 'BEGIN { FS = "/"; OFS = "/" } ; {$$NF=toupper(substr($$NF,1,1))substr($$NF,2); print $$0}' \
 	| grep -v $(roots_grep_regex) > toplevel.mlpack
-	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) toplevel.cmo
+	$(OCAMLBUILD_ALL) -I stubs/ml -build-dir $(INFER_BUILD_DIR) toplevel.cmo
 
 define gen_atdgen_rules
 # generate files using atdgen

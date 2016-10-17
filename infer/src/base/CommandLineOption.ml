@@ -148,15 +148,9 @@ let pad_and_xform doc_width left_width desc =
 
 let align desc_list =
   let min_term_width = 80 in
-  (* Try to prevent `tput` from complaining about $TERM not being set as it pollutes stderr. We
-     cannot redirect stderr as `tput` needs access to the tty and we are already redirecting stdout
-     to read the result from `tput`. *)
-  (try Unix.getenv "TERM" |> ignore
-   with Not_found -> Unix.putenv "TERM" "ansi");
-  let cur_term_width = try with_process_in "tput cols" input_line |> fst |> int_of_string
-    with
-    | End_of_file (* tput is unhappy *)
-    | Failure "int_of_string" (* not sure if possible *) -> min_term_width in
+  let cur_term_width =
+    (* `CStubs.term_width ()` return 0 in case of failure *)
+    max (CStubs.term_width ()) min_term_width in
   (* 2 blank columns before option + 2 columns of gap between flag and doc *)
   let extra_space = 4 in
   let min_left_width = 15 in
