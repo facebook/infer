@@ -24,6 +24,9 @@ import java.lang.annotation.Target;
 @ThreadSafe
 public class ThreadSafeExample{
 
+  /*Included to make sure infer does not report on class initializers*/
+  static Class<?> A = ThreadSafeExample.class;
+
   Integer f;
 
   public ThreadSafeExample() {
