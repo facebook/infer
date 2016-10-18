@@ -81,9 +81,9 @@ let value_of_argv_option argv opt_name =>
     ("", None)
     argv |> snd;
 
-let value_of_option {argv} => value_of_argv_option argv;
+let value_of_option {orig_argv} => value_of_argv_option orig_argv;
 
-let has_flag {argv} flag => IList.exists (string_equal flag) argv;
+let has_flag {orig_argv} flag => IList.exists (string_equal flag) orig_argv;
 
 let quote quoting_style =>
   switch quoting_style {
@@ -134,7 +134,12 @@ let mk_clang_compat_args args => {
         filter_unsupported_args_and_swap_includes (arg, res') tl
       };
   let clang_arguments = filter_unsupported_args_and_swap_includes ("", []) args.argv;
-  {...args, argv: clang_arguments}
+  let file = Filename.temp_file "clang_args_" ".txt";
+  let write_args outc =>
+    output_string outc (IList.map (quote args.quoting_style) clang_arguments |> String.concat " ");
+  with_file file f::write_args |> ignore;
+  Logging.out "Clang options stored in file %s@\n" file;
+  {...args, argv: [Format.sprintf "@%s" file]}
 };
 
 let mk quoting_style argv => {
