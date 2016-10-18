@@ -27,9 +27,9 @@ let swap_command cmd =
     Config.wrappers_dir // clang
   else if Utils.string_is_suffix clangplusplus cmd then
     Config.wrappers_dir // clangplusplus
-  else assert false
-(* The command in the compilation database json
-   emited by buck can only be clang or clang++ *)
+  else
+    (* The command in the compilation database json emitted by buck can only be clang or clang++ *)
+    failwithf "Unexpected command name in Buck compilation database: %s" cmd
 
 (** Read the files to compile from the changed files index. *)
 let read_files_to_compile () =
@@ -135,7 +135,7 @@ let run_compilation_file compilation_database file =
   try
     let compilation_data = StringMap.find file !compilation_database in
     Unix.chdir compilation_data.dir;
-    let args = Array.of_list compilation_data.args in
+    let args = Array.of_list (compilation_data.command::compilation_data.args) in
     let env = Array.append
         (Unix.environment())
         (Array.of_list [
@@ -172,6 +172,7 @@ let get_compilation_database changed_files =
          match fst @@ Utils.with_process_in buck_targets Std.input_list with
          | [] -> Logging.stdout "There are no files to process, exiting."; exit 0
          | lines ->
+             Logging.out "Reading compilation database from:@\n%s@\n" (String.concat "\n" lines);
              let scan_output compilation_database_files chan =
                Scanf.sscanf chan "%s %s"
                  (fun target file -> StringMap.add target file compilation_database_files) in

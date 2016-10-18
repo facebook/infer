@@ -29,10 +29,20 @@ endif
 
 all: infer inferTraceBugs
 
-$(INFERTRACEBUGS_BIN_RELPATH):
-	($(REMOVE) $@ && \
-	 cd $(@D) && \
-	 $(LN_S) ../lib/python/$(@F) $(@F))
+# executable names that should point to InferClang to trigger capture
+INFERCLANG_WRAPPERS_BASENAMES = c++ cc clang clang++ g++ gcc
+INFERCLANG_WRAPPERS_PATHS = $(foreach cc,$(INFERCLANG_WRAPPERS_BASENAMES),$(LIB_DIR)/wrappers/$(cc))
+
+$(INFERCLANG_WRAPPERS_PATHS): Makefile
+	$(REMOVE) $@ && \
+	cd $(@D) && \
+	$(LN_S) ../../bin/InferClang $(@F)
+
+
+$(INFERTRACEBUGS_BIN_RELPATH): Makefile
+	$(REMOVE) $@ && \
+	cd $(@D) && \
+	$(LN_S) ../lib/python/$(@F) $(@F)
 
 src_build:
 ifeq ($(IS_FACEBOOK_TREE),yes)
@@ -48,6 +58,9 @@ ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(MAKE) -C $(ANNOTATIONS_DIR)
 endif
 	$(MAKE) -C $(MODELS_DIR) all
+ifeq ($(BUILD_C_ANALYZERS),yes)
+infer: $(INFERCLANG_WRAPPERS_PATHS)
+endif
 
 clang_setup:
 	export CC="$(CC)" CFLAGS="$(CFLAGS)"; \
@@ -266,6 +279,10 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	@for i in $$(find infer/lib/clang_wrappers/*); do \
 	  $(INSTALL_PROGRAM) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
 	done
+	(cd $(DESTDIR)$(libdir)/infer/infer/lib/wrappers/ && \
+	 $(REMOVE) $(INFERCLANG_WRAPPERS_BASENAMES) && \
+	 $(foreach cc,$(INFERCLANG_WRAPPERS_BASENAMES), \
+	  $(LN_S) ../../bin/InferClang $(cc);))
 	@for i in $$(find infer/lib/specs/*); do \
 	  $(INSTALL_DATA) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
 	done
@@ -287,10 +304,9 @@ ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	  $(INSTALL_DATA) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
 	done
 	$(INSTALL_PROGRAM) -C $(INFERJAVA_BIN) $(DESTDIR)$(libdir)/infer/infer/bin/
+	$(INSTALL_PROGRAM) -C      $(LIB_DIR)/wrappers/javac \
+	  $(DESTDIR)$(libdir)/infer/infer/lib/wrappers/
 endif
-	@for i in $$(find infer/lib/wrappers/*); do \
-	  $(INSTALL_PROGRAM) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
-	done
 	@for i in $$(find infer/lib/python/inferlib/* -type f); do \
 	  $(INSTALL_DATA) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
 	done
@@ -319,6 +335,7 @@ ifeq ($(IS_RELEASE_TREE),no)
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(MAKE) -C $(FCP_DIR) clean
 	$(MAKE) -C $(FCP_DIR)/clang-ocaml clean
+	$(REMOVE) $(INFERCLANG_WRAPPERS_PATHS)
 endif
 endif
 	$(MAKE) -C $(SRC_DIR) clean

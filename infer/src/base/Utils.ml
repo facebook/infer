@@ -636,15 +636,6 @@ let with_process_in command read =
     Unix.close_process_in chan in
   do_finally f g
 
-let with_process_full command read_out read_err =
-  let (out_chan, _, err_chan) as chans = Unix.open_process_full command (Unix.environment ()) in
-  let f () = (read_out out_chan, read_err err_chan) in
-  let g () =
-    consume_in out_chan;
-    consume_in err_chan;
-    Unix.close_process_full chans in
-  do_finally f g
-
 let failwithf fmt =
   Format.kfprintf (fun _ -> failwith (Format.flush_str_formatter ()))
     Format.str_formatter fmt

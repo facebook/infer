@@ -580,7 +580,7 @@ and analyzer =
     "Specify which analyzer to run (only one at a time is supported):\n\
      - infer, eradicate, checkers, quandary: run the specified analysis\n\
      - capture: run capture phase only (no analysis)\n\
-     - compile: run compilation command without interfering (Java only)\n\
+     - compile: run compilation command without interfering (not supported by all frontends)\n\
      - crashcontext, tracing: experimental (see --crashcontext and --tracing)\n\
      - linters: run linters based on the ast only (Objective-C and Objective-C++ only)"
     ~symbols:string_to_analyzer

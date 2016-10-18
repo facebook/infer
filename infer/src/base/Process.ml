@@ -25,9 +25,9 @@ let print_error_and_exit ?(exit_code=1) f el =
   Logging.stderr "@\nAn error occured. Please find details in %s@\n@\n%!" log_file;
   exit exit_code
 
-(** Executes a command and catches a potential exeption and prints it. *)
+(** Executes a command and catches a potential exception and prints it. *)
 let exec_command cmd args env =
-  try Unix.execvpe cmd args env
+  try Unix.execve cmd args env
   with (Unix.Unix_error _ as e) ->
     print_unix_error cmd e
 

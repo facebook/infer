@@ -12,18 +12,28 @@ type quoting_style =
   | DoubleQuotes
   | SingleQuotes;
 
-type args = {exec: string, argv: list string, quoting_style: quoting_style};
+type args = {
+  exec: string,
+  argv: list string,
+  orig_argv: list string,
+  quoting_style: quoting_style
+};
 
 type t =
   | Assembly args
+  /** a normalized clang command that runs the assembler */
   | CC1 args
+  /** a -cc1 clang command */
   | ClangError string
-  | NonCCCommand args;
+  | ClangWarning string
+  | NonCCCommand args /** other commands (as, ld, ...) */;
+
+let fcp_dir =
+  Config.bin_dir /\/ Filename.parent_dir_name /\/ Filename.parent_dir_name /\/ "facebook-clang-plugins";
 
 
 /** path of the plugin to load in clang */
-let plugin_path =
-  Config.bin_dir /\/ Filename.parent_dir_name /\/ Filename.parent_dir_name /\/ "facebook-clang-plugins" /\/ "libtooling" /\/ "build" /\/ "FacebookClangPlugin.dylib";
+let plugin_path = fcp_dir /\/ "libtooling" /\/ "build" /\/ "FacebookClangPlugin.dylib";
 
 let test_env_var var =>
   switch (Sys.getenv var) {
@@ -41,8 +51,13 @@ let plugin_name = "BiniouASTExporter";
 let syntax_only = test_env_var "FCP_RUN_SYNTAX_ONLY";
 
 
-/** specify where is located Apple's clang */
-let apple_clang = test_env_var "FCP_APPLE_CLANG";
+/** are we running as Apple's clang? */
+let has_apple_clang =
+  switch (Sys.getenv "FCP_APPLE_CLANG") {
+  | bin when bin != "" => true
+  | _ => false
+  | exception Not_found => false
+  };
 
 
 /** whether to amend include search path with C++ model headers */
@@ -70,6 +85,58 @@ let value_of_option {argv} => value_of_argv_option argv;
 
 let has_flag {argv} flag => IList.exists (string_equal flag) argv;
 
+let quote quoting_style =>
+  switch quoting_style {
+  | DoubleQuotes => (fun s => "\"" ^ s ^ "\"")
+  | SingleQuotes => (fun s => "'" ^ s ^ "'")
+  };
+
+/* Work around various path or library issues occurring when one tries to substitute Apple's version
+   of clang with a different version. Also mitigate version discrepancies in clang's
+   fatal warnings. */
+let mk_clang_compat_args args => {
+  /* command line options not supported by the opensource compiler or the plugins */
+  let flags_blacklist = ["-fembed-bitcode-marker", "-fno-canonical-system-headers"];
+  let replace_option_arg option arg =>
+    if (string_equal option "-arch" && string_equal arg "armv7k") {
+      "armv7"
+      /* replace armv7k arch with armv7 */
+    } else if (
+      string_equal option "-isystem"
+    ) {
+      switch Config.clang_include_to_override {
+      | Some to_replace when string_equal arg to_replace =>
+        fcp_dir /\/ "clang" /\/ "install" /\/ "lib" /\/ "clang" /\/ "4.0.0" /\/ "include"
+      | _ => arg
+      }
+    } else {
+      arg
+    };
+  let post_args = {
+    let global_defines_h = Config.lib_dir /\/ "clang_wrappers" /\/ "global_defines.h";
+    [
+      "-Wno-everything",
+      /* Never error on warnings. Clang is often more strict than Apple's version.  These arguments
+         are appended at the end to override previous opposite settings.  How it's done: suppress
+         all the warnings, since there are no warnings, compiler can't elevate them to error
+         level. */
+      "-include",
+      global_defines_h
+    ]
+  };
+  let rec filter_unsupported_args_and_swap_includes (prev, res) =>
+    fun
+    | [] => IList.rev (IList.rev post_args @ res)
+    | [flag, ...tl] when IList.mem string_equal flag flags_blacklist =>
+      filter_unsupported_args_and_swap_includes (flag, res) tl
+    | [arg, ...tl] => {
+        let res' = [replace_option_arg prev arg, ...res];
+        filter_unsupported_args_and_swap_includes (arg, res') tl
+      };
+  let clang_arguments = filter_unsupported_args_and_swap_includes ("", []) args.argv;
+  {...args, argv: clang_arguments}
+};
+
 let mk quoting_style argv => {
   let argv_list = Array.to_list argv;
   let is_assembly = {
@@ -83,7 +150,11 @@ let mk quoting_style argv => {
        present. */
     string_equal argv.(1) "-cc1as" || assembly_language
   };
-  let args = {exec: argv.(0), argv: IList.tl argv_list, quoting_style};
+  let args =
+    switch argv_list {
+    | [exec, ...argv_no_exec] => {exec, orig_argv: argv_no_exec, argv: argv_no_exec, quoting_style}
+    | [] => failwith "argv cannot be an empty list"
+    };
   if is_assembly {
     Assembly args
   } else if (argv.(1) == "-cc1") {
@@ -95,13 +166,9 @@ let mk quoting_style argv => {
   }
 };
 
-let command_to_run {exec, argv, quoting_style} => {
-  let quote =
-    switch quoting_style {
-    | DoubleQuotes => (fun s => "\"" ^ s ^ "\"")
-    | SingleQuotes => (fun s => "'" ^ s ^ "'")
-    };
-  Printf.sprintf "'%s' %s" exec (IList.map quote argv |> String.concat " ")
+let command_to_run args => {
+  let {exec, argv, quoting_style} = mk_clang_compat_args args;
+  Printf.sprintf "'%s' %s" exec (IList.map (quote quoting_style) argv |> String.concat " ")
 };
 
 let with_exec exec args => {...args, exec};
@@ -127,7 +194,7 @@ let with_plugin_args args => {
          YojsonASTExporter plugin are used. Since the -plugin argument disables the generation of .o
          files, we invoke apple clang again to generate the expected artifacts. This will keep
          xcodebuild plus all the sub-steps happy. */
-      if apple_clang {"-plugin"} else {"-add-plugin"},
+      if has_apple_clang {"-plugin"} else {"-add-plugin"},
       plugin_name,
       "-plugin-arg-" ^ plugin_name,
       "-",
@@ -144,4 +211,4 @@ let prepend_args args clang_args => {...clang_args, argv: args @ clang_args.argv
 
 let append_args args clang_args => {...clang_args, argv: clang_args.argv @ args};
 
-let get_argv {exec, argv} => Array.of_list [exec, ...argv];
+let get_orig_argv {exec, orig_argv} => Array.of_list [exec, ...orig_argv];

@@ -14,6 +14,7 @@ type t =
   | CC1 args
   /** a -cc1 clang command */
   | ClangError string
+  | ClangWarning string
   | NonCCCommand args /** other commands (as, ld, ...) */;
 
 type quoting_style =
@@ -47,7 +48,7 @@ let prepend_args: list string => args => args;
 
 let append_args: list string => args => args;
 
-let get_argv: args => array string;
+let get_orig_argv: args => array string;
 
 
 /** updates the executable to be run */

@@ -244,7 +244,7 @@ rei:
 %.rei : %.mli
 	refmt -assume-explicit-arity -heuristics-file unary.txt -parse ml -print re $< > $*.rei
 
-roots:=Infer InferAnalyze InferClang CMain JMain InferPrint BuckCompilationDatabase
+roots:=Infer InferAnalyze InferClang JMain InferPrint BuckCompilationDatabase
 clusters:=base clang java IR
 
 src_dirs:=$(shell find * -type d)

@@ -84,6 +84,12 @@ buck-out/
 /infer/lib/specs/cpp_models
 /infer/lib/specs/objc_models
 /infer/lib/specs/clean_models
+/infer/lib/wrappers/c++
+/infer/lib/wrappers/cc
+/infer/lib/wrappers/clang
+/infer/lib/wrappers/clang++
+/infer/lib/wrappers/g++
+/infer/lib/wrappers/gcc
 /scripts/checkCopyright
 /infer/etc/clang_ast.dict
 /infer/src/toplevel.mlpack

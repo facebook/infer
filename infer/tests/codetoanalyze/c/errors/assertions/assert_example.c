@@ -1,1 +1,0 @@
-../../frontend/assertions/assert_example.c

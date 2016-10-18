@@ -292,9 +292,6 @@ val consume_in : in_channel -> unit
 
 val with_process_in: string -> (in_channel -> 'a) -> ('a * Unix.process_status)
 
-val with_process_full: string -> (in_channel -> 'a) -> (in_channel -> 'b) ->
-  (('a * 'b) * Unix.process_status)
-
 val failwithf : ('a, Format.formatter, unit, 'b) format4 -> 'a
 
 val invalid_argf : ('a, Format.formatter, unit, 'b) format4 -> 'a
