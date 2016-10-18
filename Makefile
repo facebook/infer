@@ -194,6 +194,9 @@ check_missing_mli:
 	for x in `find infer/src -name "*.ml" -or  -name "*.re"`; do \
 		test -f "$$x"i || echo Missing "$$x"i; done'
 
+toplevel: infer
+	$(MAKE) -C $(SRC_DIR) toplevel
+
 inferScriptMode_test: toplevel
 	INFER_REPL_BINARY=ocaml ./scripts/infer_repl ./infer/tests/repl/infer_batch_script.ml
 
@@ -204,9 +207,6 @@ test_xml: test_build ocaml_unit_test buck_test_xml inferTraceBugs_test
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot
 
 quick-test: test_this_build ocaml_unit_test
-
-toplevel:
-	$(MAKE) -C $(SRC_DIR) toplevel
 
 uninstall:
 	$(REMOVE_DIR) $(DESTDIR)$(libdir)/infer/
