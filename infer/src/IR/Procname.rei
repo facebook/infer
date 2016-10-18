@@ -193,6 +193,10 @@ let java_get_parameters_as_strings: java => list string;
 let java_is_access_method: t => bool;
 
 
+/** Check if the procedure name is of an auto-generated method containing '$'. */
+let java_is_autogen_method: t => bool;
+
+
 /** Check if the procedure belongs to an anonymous inner class. */
 let java_is_anonymous_inner_class: t => bool;
 

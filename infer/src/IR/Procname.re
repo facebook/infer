@@ -430,6 +430,13 @@ let java_is_access_method =
   | _ => false;
 
 
+/** Check if the procedure name is of an auto-generated method containing '$'. */
+let java_is_autogen_method =
+  fun
+  | Java js => String.contains js.method_name '$'
+  | _ => false;
+
+
 /** Check if the proc name has the type of a java vararg.
     Note: currently only checks that the last argument has type Object[]. */
 let java_is_vararg =

@@ -110,6 +110,7 @@ module ResultsTableType = Map.Make (struct
   end)
 
 let should_analyze_proc (_,_,proc_name,proc_desc) =
+  not (Procname.java_is_autogen_method proc_name) &&
   not (Procname.is_constructor proc_name) &&
   not (Procname.is_class_initializer proc_name) &&
   Cfg.Procdesc.get_access proc_desc <> PredSymb.Private
