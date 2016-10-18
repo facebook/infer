@@ -87,7 +87,7 @@ struct
             is_objc None extra_instrs
     | None -> ()
 
-  let process_property_implementation trans_unit_ctx obj_c_property_impl_decl_info =
+  let process_property_implementation cfg trans_unit_ctx obj_c_property_impl_decl_info =
     let property_decl_opt = obj_c_property_impl_decl_info.Clang_ast_t.opidi_property_decl in
     match Ast_utils.get_decl_opt_with_decl_ref property_decl_opt with
     | Some ObjCPropertyDecl (_, _, obj_c_property_decl_info) ->
@@ -110,7 +110,7 @@ struct
                     let attrs = { (ProcAttributes.default procname Config.Clang) with
                                   loc = loc;
                                   objc_accessor = property_accessor; } in
-                    AttributesTable.store_attributes attrs
+                    ignore (Cfg.Procdesc.create cfg attrs)
                 | _ -> ()) in
              process_accessor obj_c_property_decl_info.Clang_ast_t.opdi_getter_method ~getter:true;
              process_accessor obj_c_property_decl_info.Clang_ast_t.opdi_setter_method ~getter:false
@@ -125,7 +125,7 @@ struct
     | ObjCMethodDecl _ ->
         process_method_decl trans_unit_ctx tenv cg cfg curr_class dec ~is_objc:true
     | ObjCPropertyImplDecl (_, obj_c_property_impl_decl_info) ->
-        process_property_implementation trans_unit_ctx obj_c_property_impl_decl_info
+        process_property_implementation cfg trans_unit_ctx obj_c_property_impl_decl_info
     | EmptyDecl _
     | ObjCIvarDecl _ | ObjCPropertyDecl _ -> ()
     | _ ->
