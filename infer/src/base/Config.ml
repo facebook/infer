@@ -241,24 +241,24 @@ let version_string =
     Unix.time *)
 let initial_analysis_time = Unix.time ()
 
+(* Recursively resolve symlinks until we get something that is not a link. Executables may be
+   (multiple levels of) symbolic links to the real binary directory, eg after `make install` or
+   packaging. *)
+let rec real_path path =
+  match Unix.readlink path with
+  | link when Filename.is_relative link ->
+      (* [path] is a relative symbolic link *)
+      real_path ((Filename.dirname path) // link)
+  | link ->
+      (* [path] is an absolute symbolic link *)
+      real_path link
+  | exception Unix.Unix_error(Unix.EINVAL, _, _) ->
+      (* [path] is not a symbolic link *)
+      path
 
 (* Resolve symlinks to get to the real executable. The real executable is located in [bin_dir]
    below, which allows us to find [lib_dir], [models_dir], etc., relative to it. *)
 let real_exe_name =
-  (* Recursively resolve symlinks until we get something that is not a link. Executables may be
-     (multiple levels of) symbolic links to the real binary directory, eg after `make install` or
-     packaging. *)
-  let rec real_path path =
-    match Unix.readlink path with
-    | link when Filename.is_relative link ->
-        (* [path] is a relative symbolic link *)
-        real_path ((Filename.dirname path) // link)
-    | link ->
-        (* [path] is an absolute symbolic link *)
-        real_path link
-    | exception Unix.Unix_error(Unix.EINVAL, _, _) ->
-        (* [path] is not a symbolic link *)
-        path in
   real_path Sys.executable_name
 
 let current_exe =
@@ -418,10 +418,10 @@ let init_work_dir, is_originator =
         else
           Sys.getcwd ()
       with _ ->
-        Sys.getcwd ()
-    in
-    Unix.putenv "INFER_CWD" cwd ;
-    (cwd, true)
+        Sys.getcwd () in
+    let real_cwd = real_path cwd in
+    Unix.putenv "INFER_CWD" real_cwd;
+    (real_cwd, true)
 
 (** Resolve relative paths passed as command line options, i.e., with respect to the working
     directory of the initial invocation of infer. *)
