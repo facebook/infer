@@ -71,56 +71,6 @@ def base_argparser(description, module_name):
     return _func
 
 
-def clang_frontend_argparser(description, module_name):
-    def _func(group_name=module_name):
-        """This creates an argparser for all the modules that require
-        clang for their capture phase, thus InferClang and clang wrappers"""
-        parser = argparse.ArgumentParser(add_help=False)
-        group = parser.add_argument_group(
-            '{grp} module'.format(grp=group_name),
-            description=description,
-        )
-        group.add_argument(
-            '-hd', '--headers',
-            action='store_true',
-            help='Analyze code in header files',
-        )
-        group.add_argument(
-            '--models_mode',
-            action='store_true',
-            dest='models_mode',
-            help='Mode for computing the models',
-        )
-        group.add_argument(
-            '--no_failures_allowed',
-            action='store_true',
-            dest='no_failures_allowed',
-            help='Fail if at least one of the translations fails',
-        )
-        group.add_argument(
-            '-tm', '--testing_mode',
-            dest='testing_mode',
-            action='store_true',
-            help='Testing mode for the translation: Do not translate headers')
-        group.add_argument(
-            '--cxx',
-            dest='cxx',
-            action='store_true',
-            help='Analyze C++ code, still experimental')
-        group.add_argument(
-            '-fs', '--frontend-stats',
-            dest='frontend_stats',
-            action='store_true',
-            help='Output statistics about the capture phase to *.o.astlog')
-        group.add_argument(
-            '-fd', '--frontend-debug',
-            dest='frontend_debug',
-            action='store_true',
-            help='Output debugging information to *.o.astlog during capture')
-        return parser
-    return _func
-
-
 def get_clang_frontend_envvars(args):
     """Return the environment variables that configure the clang wrapper, e.g.
     to emit debug information if needed, and the invocation of the Infer

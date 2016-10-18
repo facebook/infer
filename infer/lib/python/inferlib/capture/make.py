@@ -35,8 +35,9 @@ def gen_instance(*args):
     return MakeCapture(*args)
 
 
-create_argparser = \
-    util.clang_frontend_argparser(MODULE_DESCRIPTION, MODULE_NAME)
+# This creates an empty argparser for the module, which provides only
+# description/usage information and no arguments.
+create_argparser = util.base_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 
 
 class MakeCapture:

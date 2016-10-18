@@ -11,13 +11,6 @@ open! Utils
 
 (** Top-level driver that orchestrates build system integration, frontends, and backend *)
 
-let set_env_for_clang_wrapper () =
-  (match Config.clang_include_to_override with
-   | Some dir -> Unix.putenv "FCP_CLANG_INCLUDE_TO_REPLACE" dir
-   | None -> ()
-  );
-  ()
-
 (** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)
 let fail_on_issue_epilogue () =
   let issues_json = DB.Results_dir.(path_to_filename Abs_root ["report.json"]) in
@@ -28,7 +21,6 @@ let fail_on_issue_epilogue () =
   | None -> ()
 
 let () =
-  set_env_for_clang_wrapper () ;
   let infer_py = Config.lib_dir // "python" // "infer.py" in
   let build_cmd = IList.rev Config.rest in
   let in_buck_mode = match build_cmd with "buck" :: _ -> true | _ -> false in
@@ -62,10 +54,6 @@ let () =
          ["--debug-exceptions"]) @
       (if Config.filtering then [] else
          ["--no-filtering"]) @
-      (if not Config.frontend_debug then [] else
-         ["--frontend-debug"]) @
-      (if not Config.frontend_stats then [] else
-         ["--frontend-stats"]) @
       (if not Config.flavors || not in_buck_mode then [] else
          ["--use-flavors"]) @
       (if Option.is_none Config.use_compilation_database || not in_buck_mode then [] else

@@ -36,8 +36,6 @@ def string_in_quotes(value):
     return value.strip('\'')
 
 
-# This creates an empty argparser for the module, which provides only
-# description/usage information and no arguments.
 def create_argparser(group_name=MODULE_NAME):
     """This defines the set of arguments that get added by this module to the
     set of global args defined in the infer top-level module
