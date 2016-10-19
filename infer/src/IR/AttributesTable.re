@@ -16,17 +16,16 @@ let module L = Logging;
 /** Module to manage the table of attributes. */
 let serializer: Serialization.serializer ProcAttributes.t = Serialization.create_serializer Serialization.attributes_key;
 
-let attributes_filename pname => {
-  let pname_file = Procname.to_filename pname;
-  pname_file ^ ".attr"
-};
+let attributes_filename defined::defined pname_file =>
+  pname_file ^ (defined ? ".attr" : ".decl.attr");
 
 
 /** path to the .attr file for the given procedure in the current results directory */
-let res_dir_attr_filename pname => {
-  let attr_fname = attributes_filename pname;
+let res_dir_attr_filename defined::defined pname => {
+  let pname_file = Procname.to_filename pname;
+  let attr_fname = attributes_filename defined::defined pname_file;
   let bucket_dir = {
-    let base = Filename.chop_extension attr_fname;
+    let base = pname_file;
     let len = String.length base;
     if (len < 2) {
       Filename.current_dir_name
@@ -41,25 +40,45 @@ let res_dir_attr_filename pname => {
   filename
 };
 
+/* Load the proc attribute for the defined filename if it exists,
+   otherwise try to load the declared filename. */
+let load_defined_first proc_name => {
+  let attributes_file defined => res_dir_attr_filename defined::defined proc_name;
+  let attr = Serialization.from_file serializer (attributes_file true);
+  attr != None ? attr : Serialization.from_file serializer (attributes_file false)
+};
+
+/* Write a proc attributes to file.
+   If defined, delete the declared file if it exists. */
+let write_and_delete proc_name (proc_attributes: ProcAttributes.t) => {
+  let attributes_file defined => res_dir_attr_filename defined::defined proc_name;
+  Serialization.to_file serializer (attributes_file proc_attributes.is_defined) proc_attributes;
+  if proc_attributes.is_defined {
+    let fname_declared = DB.filename_to_string (attributes_file false);
+    if (Sys.file_exists fname_declared) {
+      try (Unix.unlink fname_declared) {
+      | Unix.Unix_error _ => ()
+      }
+    }
+  }
+};
+
 let store_attributes (proc_attributes: ProcAttributes.t) => {
   let proc_name = proc_attributes.proc_name;
-  let attributes_file = res_dir_attr_filename proc_name;
   let should_write =
-    not (DB.file_exists attributes_file) || (
-      switch (Serialization.from_file serializer attributes_file) {
-      | None => true
-      | Some proc_attributes_on_disk =>
-        let higher_rank_than_on_disk () =>
-          proc_attributes.is_defined &&
-          DB.source_file_compare proc_attributes.loc.file proc_attributes_on_disk.loc.file > 0;
-        let becomes_defined = proc_attributes.is_defined && not proc_attributes_on_disk.is_defined;
-        /* Only overwrite the attribute file if the procedure becomes defined
-           or its associated file has higher rank (alphabetically) than on disk. */
-        becomes_defined || higher_rank_than_on_disk ()
-      }
-    );
+    switch (load_defined_first proc_name) {
+    | None => true
+    | Some proc_attributes_on_disk =>
+      let higher_rank_than_on_disk () =>
+        proc_attributes.is_defined &&
+        DB.source_file_compare proc_attributes.loc.file proc_attributes_on_disk.loc.file > 0;
+      let becomes_defined = proc_attributes.is_defined && not proc_attributes_on_disk.is_defined;
+      /* Only overwrite the attribute file if the procedure becomes defined
+         or its associated file has higher rank (alphabetically) than on disk. */
+      becomes_defined || higher_rank_than_on_disk ()
+    };
   if should_write {
-    Serialization.to_file serializer attributes_file proc_attributes
+    write_and_delete proc_name proc_attributes
   }
 };
 
@@ -68,12 +87,11 @@ let attr_tbl = Procname.Hash.create 16;
 let load_attributes proc_name =>
   try (Procname.Hash.find attr_tbl proc_name) {
   | Not_found =>
-    let attributes_file = res_dir_attr_filename proc_name;
-    let attr = Serialization.from_file serializer attributes_file;
-    if (attr != None) {
-      Procname.Hash.add attr_tbl proc_name attr
+    let proc_attributes = load_defined_first proc_name;
+    if (proc_attributes != None) {
+      Procname.Hash.add attr_tbl proc_name proc_attributes
     };
-    attr
+    proc_attributes
   };
 
 
