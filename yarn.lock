@@ -102,7 +102,7 @@
   dependencies:
     extlib-compat-actual "git://github.com/npm-opam/extlib-compat.git#1.7.0"
 
-"@opam-alpha/javalib@^ 2.3.1", "@opam-alpha/javalib@>= 2.3.2":
+"@opam-alpha/javalib@>= 2.3.2", "@opam-alpha/javalib@^ 2.3.2":
   version "2.3.2"
   resolved javalib-2.3.2.tgz#be3b8e6f402256dad773e015430d8c129739899c
   dependencies:
@@ -138,7 +138,7 @@
   dependencies:
     merlin-actual "git://github.com/npm-opam/merlin.git#2.5.0"
 
-"@opam-alpha/ocaml@= 4.02.3", "@opam-alpha/ocaml@4.2.3":
+"@opam-alpha/ocaml@4.2.3", "@opam-alpha/ocaml@= 4.02.3":
   version "4.2.3"
   resolved ocaml-4.2.3.tgz#44c6e23fbb716196d4a6121f7751e09c0ad34018
   dependencies:
@@ -178,7 +178,7 @@
   dependencies:
     ppx_tools-actual "git://github.com/npm-opam/ppx_tools.git#5.0.04030"
 
-"@opam-alpha/re@^ 1.5.0", "@opam-alpha/re@>= 1.5.0":
+"@opam-alpha/re@>= 1.5.0", "@opam-alpha/re@^ 1.5.0":
   version "1.6.1"
   resolved re-1.6.1.tgz#e196b2566b10afb76011c71c44d7b0fbf5a70e6f
   dependencies:
@@ -190,7 +190,7 @@
   dependencies:
     react-actual "git://github.com/npm-opam/react.git#1.2.0"
 
-"@opam-alpha/sawja@^ 1.5.1":
+"@opam-alpha/sawja@^ 1.5.2":
   version "1.5.2"
   resolved sawja-1.5.2.tgz#40005c2285447639c554d99f7d99c4ba4268b350
   dependencies:
@@ -400,7 +400,7 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"dependency-env@git+https://github.com/reasonml/dependency-env.git", "dependency-env@https://github.com/npm-ml/dependency-env.git":
+"dependency-env@https://github.com/npm-ml/dependency-env.git", "dependency-env@https://github.com/reasonml/dependency-env.git":
   version "0.0.0"
   resolved dependency-env.git-876738ea981c991743df981fd3d079e7d6e1bafc#4508296ecc90307b286d1f371c5ebd37ff808cfa
   dependencies:
@@ -504,7 +504,7 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"nopam@git+https://github.com/reasonml/nopam.git", "nopam@https://github.com/yunxing/nopam.git":
+"nopam@https://github.com/reasonml/nopam.git", "nopam@https://github.com/yunxing/nopam.git":
   version "0.0.1"
   resolved nopam.git-0eed691e2addaead2560f8c177f28936397e4477#993f283325a3f1c5ef3258757d0627d7b877fe73
 
@@ -555,7 +555,7 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"opam-installer-bin@git+https://github.com/yunxing/opam-installer-bin.git", "opam-installer-bin@https://github.com/yunxing/opam-installer-bin.git":
+"opam-installer-bin@https://github.com/yunxing/opam-installer-bin.git":
   version "0.0.0"
   resolved opam-installer-bin.git-689ede681217f76fb2f82a9f4528e192a5b543ba#b7704eda021a9fe18a9a37454868e1bbf102e0a0
   dependencies:
@@ -639,7 +639,7 @@ resolve@^1.1.7:
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"substs@git+https://github.com/yunxing/substs.git", "substs@https://github.com/yunxing/substs.git":
+"substs@https://github.com/yunxing/substs.git":
   version "0.0.1"
   resolved substs.git-fd480dcdb4aed3fa9128fd819a546e3a7770040f#3a935dc6de26a5dfae899eca93a510bae55e57a4
 

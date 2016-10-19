@@ -26,14 +26,14 @@ remove: [
 ]
 ocaml-version: [ >= "4.02.1" ]
 depends: [
-  "conf-autoconf"
-  "ocamlfind" {build}
-  "sawja" {>="1.5.1"}
   "atdgen" {>="1.6.0"}
-  "javalib" {>="2.3.1"}
-  "extlib" {>="1.5.4"}
-  "ounit" {= "2.0.0"}
+  "conf-autoconf"
+  "extlib-compat" {>="1.5.4"}
+  "javalib" {>="2.3.2"}
+  "ocamlfind" {build}
+  "ounit" {="2.0.0"}
   "reason" {>="1.4.0"}
+  "sawja" {>="1.5.2"}
 ]
 depexts: [
   [ ["ubuntu"] ["python2.7-dev"] ]
