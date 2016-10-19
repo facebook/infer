@@ -60,7 +60,7 @@ class MakeCapture:
             sep=os.pathsep,
             path=env_vars['PATH'],
         )
-        env_vars['INFER_RESULTS_DIR'] = args.infer_out
+        env_vars['INFER_RESULTS_DIR'] = self.args.infer_out
         return env_vars
 
     def capture(self):
