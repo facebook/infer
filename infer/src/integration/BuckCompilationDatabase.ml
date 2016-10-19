@@ -31,6 +31,21 @@ let swap_command cmd =
     (* The command in the compilation database json emitted by buck can only be clang or clang++ *)
     failwithf "Unexpected command name in Buck compilation database: %s" cmd
 
+
+let replace_header_file_with_source_file file_path =
+  let file_path = DB.source_file_to_abs_path file_path in
+  let possible_file_replacements file_path =
+    IList.map (fun suffix -> (Filename.chop_extension file_path) ^ suffix ) [".m"; ".mm"] in
+  let file =
+    if Filename.check_suffix file_path ".h" || Filename.check_suffix file_path ".hh" then
+      try
+        IList.find Sys.file_exists (possible_file_replacements file_path)
+      with Not_found ->
+        Logging.out "Couldn't find any replacement source file for file %s " file_path;
+        file_path
+    else file_path in
+  DB.abs_source_file_from_path file
+
 (** Read the files to compile from the changed files index. *)
 let read_files_to_compile () =
   let changed_files = DB.SourceFileSet.empty in
@@ -43,7 +58,8 @@ let read_files_to_compile () =
   | Some lines ->
       IList.fold_left
         (fun changed_files line ->
-           DB.SourceFileSet.add (DB.abs_source_file_from_path line) changed_files)
+           let file = replace_header_file_with_source_file (DB.abs_source_file_from_path line) in
+           DB.SourceFileSet.add file changed_files)
         changed_files lines
 
 (** Add file to compilation database, only if it is in changed_files. *)
