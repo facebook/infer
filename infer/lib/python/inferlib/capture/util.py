@@ -69,15 +69,3 @@ def base_argparser(description, module_name):
         )
         return parser
     return _func
-
-
-def get_clang_frontend_envvars(args):
-    """Return the environment variables that configure the clang wrapper, e.g.
-    to emit debug information if needed, and the invocation of the Infer
-    frontend for Clang, InferClang, e.g. to analyze headers, emit stats, etc"""
-    env_vars = {}
-    frontend_args = []
-
-    env_vars['INFER_RESULTS_DIR'] = args.infer_out
-
-    return env_vars

@@ -154,9 +154,7 @@ let run_compilation_file compilation_database file =
     let args = Array.of_list (compilation_data.command::compilation_data.args) in
     let env = Array.append
         (Unix.environment())
-        (Array.of_list [
-            "INFER_RESULTS_DIR="^Config.results_dir;
-            "FCP_RUN_SYNTAX_ONLY=1"]) in
+        (Array.of_list ["FCP_RUN_SYNTAX_ONLY=1"]) in
     Process.exec_command compilation_data.command args env
   with Not_found ->
     Process.print_error_and_exit "Failed to find compilation data for %s \n%!" file

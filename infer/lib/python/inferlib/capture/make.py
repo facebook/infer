@@ -53,15 +53,14 @@ class MakeCapture:
     def get_envvars(self):
         env_vars = utils.read_env()
         wrappers_path = config.WRAPPERS_DIRECTORY
+        # INFER_RESULTS_DIR and INFER_OLD_PATH are used by javac wrapper only
         env_vars['INFER_OLD_PATH'] = env_vars['PATH']
         env_vars['PATH'] = '{wrappers}{sep}{path}'.format(
             wrappers=wrappers_path,
             sep=os.pathsep,
             path=env_vars['PATH'],
         )
-
-        frontend_env_vars = util.get_clang_frontend_envvars(self.args)
-        env_vars.update(frontend_env_vars)
+        env_vars['INFER_RESULTS_DIR'] = args.infer_out
         return env_vars
 
     def capture(self):

@@ -51,12 +51,7 @@ class XcodebuildCapture:
 
     def get_envvars(self):
         env_vars = utils.read_env()
-
         env_vars['FCP_APPLE_CLANG'] = self.apple_clang_path
-
-        frontend_env_vars = \
-            util.get_clang_frontend_envvars(self.args)
-        env_vars.update(frontend_env_vars)
         return env_vars
 
     def capture(self):

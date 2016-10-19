@@ -6,15 +6,6 @@ BIN_PATH="${SCRIPT_PATH}/../../bin"
 if [ "${0%++}" != "$0" ]; then INFER_XX="++"; fi
 export INFER_XX
 
-FCP_CLANG_COMPILER="${CLANG_WRAPPERS_PATH%/}/filter_args_and_run_fcp_clang$INFER_XX";
-
-if [ -z "$INFER_RESULTS_DIR" ]; then
-    # this redirects to the compiler without adding any FCP flag
-    # this is because xcode requires message category info from the compiler
-    # and invokes it without any env var set.
-    export INFER_ARGS="-a^compile"
-else
-    EXTRA_ARGS=-fno-cxx-modules
-fi
+EXTRA_ARGS=-fno-cxx-modules
 
 "${BIN_PATH}/InferClang" "$@" $EXTRA_ARGS
