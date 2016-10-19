@@ -493,9 +493,23 @@ let mark_visited summary node =
   else
     stats.Specs.nodes_visited_re <- IntSet.add (node_id :> int) stats.Specs.nodes_visited_re
 
+let add_taint_attrs tenv proc_name proc_desc prop =
+  match Taint.tainted_params proc_name with
+  | [] -> prop
+  | tainted_param_nums ->
+      let formal_params = Cfg.Procdesc.get_formals proc_desc in
+      let formal_params' =
+        IList.map (fun (p, _) -> Pvar.mk p proc_name) formal_params in
+      Taint.get_params_to_taint tainted_param_nums formal_params'
+      |> IList.fold_left
+        (fun prop_acc (param, taint_kind) ->
+           let attr =
+             PredSymb.Ataint { taint_source = proc_name; taint_kind; } in
+           Taint.add_tainting_attribute tenv attr param prop_acc)
+        prop
+
 let forward_tabulate tenv wl source =
-  let handled_some_exception = ref false in
-  let handle_exn curr_node exn =
+  let handle_exn_node curr_node exn =
     let curr_pdesc = Cfg.Node.get_proc_desc curr_node in
     let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
     Exceptions.print_exception_html "Failure of symbolic execution: " exn;
@@ -508,110 +522,100 @@ let forward_tabulate tenv wl source =
     L.d_strln "SIL INSTR:";
     Cfg.Node.d_instrs ~sub_instrs: true (State.get_instr ()) curr_node; L.d_ln ();
     Reporting.log_error curr_pname exn;
-    State.mark_instr_fail exn;
-    handled_some_exception := true in
+    State.mark_instr_fail exn in
 
-  while not (Worklist.is_empty wl) do
-    let curr_node = Worklist.remove wl in
-    let curr_node_kind = Cfg.Node.get_kind curr_node in
-    let curr_node_id = Cfg.Node.get_id curr_node in
-    let proc_desc = Cfg.Node.get_proc_desc curr_node in
-    let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
-    let formal_params = Cfg.Procdesc.get_formals proc_desc in
-    let summary = Specs.get_summary_unsafe "forward_tabulate" proc_name in
-    mark_visited summary curr_node; (* mark nodes visited in fp and re phases *)
-    let session =
-      incr summary.Specs.sessions;
-      !(summary.Specs.sessions) in
-    do_before_node source session curr_node;
-    let pathset_todo = path_set_checkout_todo wl curr_node in
-    let succ_nodes = Cfg.Node.get_succs curr_node in
-    let exn_nodes = Cfg.Node.get_exn curr_node in
-    let exe_iter f pathset =
-      let ps_size = Paths.PathSet.size pathset in
-      let cnt = ref 0 in
-      let exe prop path =
-        State.set_path path None;
-        incr cnt;
-        f prop path !cnt ps_size in
-      Paths.PathSet.iter exe pathset in
+  let exe_iter f pathset =
+    let ps_size = Paths.PathSet.size pathset in
+    let cnt = ref 0 in
+    let exe prop path =
+      State.set_path path None;
+      incr cnt;
+      f prop path !cnt ps_size in
+    Paths.PathSet.iter exe pathset in
+
+  let print_node_preamble curr_node proc_name session pathset_todo =
     let log_string proc_name =
       let phase_string =
         if Specs.get_phase proc_name == Specs.FOOTPRINT then "FP" else "RE" in
       let summary = Specs.get_summary_unsafe "forward_tabulate" proc_name in
       let timestamp = Specs.get_timestamp summary in
       F.sprintf "[%s:%d] %s" phase_string timestamp (Procname.to_string proc_name) in
-    let add_taint_attrs proc_name prop =
-      match Taint.tainted_params proc_name with
-      | [] -> prop
-      | tainted_param_nums ->
-          let formal_params' =
-            IList.map (fun (p, _) -> Pvar.mk p proc_name) formal_params in
-          Taint.get_params_to_taint tainted_param_nums formal_params'
-          |> IList.fold_left
-            (fun prop_acc (param, taint_kind) ->
-               let attr =
-                 PredSymb.Ataint { taint_source = proc_name; taint_kind; } in
-               Taint.add_tainting_attribute tenv attr param prop_acc)
-            prop in
-    let doit () =
-      handled_some_exception := false;
-      check_prop_size pathset_todo;
-      L.d_strln ("**** " ^ (log_string proc_name) ^ " " ^
-                 "Node: " ^ string_of_int (curr_node_id :> int) ^ ", " ^
-                 "Procedure: " ^ Procname.to_string proc_name ^ ", " ^
-                 "Session: " ^ string_of_int session ^ ", " ^
-                 "Todo: " ^ string_of_int (Paths.PathSet.size pathset_todo) ^ " ****");
-      L.d_increase_indent 1;
-      Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv pathset_todo);
-      L.d_strln ".... Instructions: .... ";
-      Cfg.Node.d_instrs ~sub_instrs: true (State.get_instr ()) curr_node;
-      L.d_ln (); L.d_ln ();
+    L.d_strln ("**** " ^ (log_string proc_name) ^ " " ^
+               "Node: " ^ string_of_int (Cfg.Node.get_id curr_node :> int) ^ ", " ^
+               "Procedure: " ^ Procname.to_string proc_name ^ ", " ^
+               "Session: " ^ string_of_int session ^ ", " ^
+               "Todo: " ^ string_of_int (Paths.PathSet.size pathset_todo) ^ " ****");
+    L.d_increase_indent 1;
+    Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv pathset_todo);
+    L.d_strln ".... Instructions: .... ";
+    Cfg.Node.d_instrs ~sub_instrs: true (State.get_instr ()) curr_node;
+    L.d_ln (); L.d_ln () in
 
-      match curr_node_kind with
-      | Cfg.Node.Join_node ->
-          do_symexec_join proc_name tenv wl curr_node pathset_todo
-      | Cfg.Node.Stmt_node _
-      | Cfg.Node.Prune_node _
-      | Cfg.Node.Exit_node _
-      | Cfg.Node.Skip_node _
-      | Cfg.Node.Start_node _ ->
-          exe_iter
-            (fun prop path cnt num_paths ->
-               try
-                 let prop =
-                   if Config.taint_analysis
-                   then add_taint_attrs proc_name prop
-                   else prop in
-                 L.d_strln
-                   ("Processing prop " ^ string_of_int cnt ^ "/" ^ string_of_int num_paths);
-                 L.d_increase_indent 1;
-                 State.reset_diverging_states_node ();
-                 let pset =
-                   do_symbolic_execution (handle_exn curr_node) tenv curr_node prop path in
-                 L.d_decrease_indent 1; L.d_ln();
-                 propagate_nodes_divergence tenv proc_desc pset succ_nodes exn_nodes wl;
-               with
-               | exn when Exceptions.handle_exception exn && !Config.footprint ->
-                   handle_exn curr_node exn;
-                   if Config.nonstop then
-                     propagate_nodes_divergence
-                       tenv proc_desc (Paths.PathSet.from_renamed_list [(prop, path)])
-                       succ_nodes exn_nodes wl;
-                   L.d_decrease_indent 1; L.d_ln ())
-            pathset_todo in
+  let do_prop curr_node proc_desc proc_name handle_exn prop_ path cnt num_paths =
+    let prop =
+      if Config.taint_analysis
+      then add_taint_attrs tenv proc_name proc_desc prop_
+      else prop_ in
+    L.d_strln
+      ("Processing prop " ^ string_of_int cnt ^ "/" ^ string_of_int num_paths);
+    L.d_increase_indent 1;
+    try
+      State.reset_diverging_states_node ();
+      let pset =
+        do_symbolic_execution handle_exn tenv curr_node prop path in
+      let succ_nodes = Cfg.Node.get_succs curr_node in
+      let exn_nodes = Cfg.Node.get_exn curr_node in
+      propagate_nodes_divergence tenv proc_desc pset succ_nodes exn_nodes wl;
+      L.d_decrease_indent 1; L.d_ln();
+    with
+    | exn when Exceptions.handle_exception exn && !Config.footprint ->
+        handle_exn exn;
+        L.d_decrease_indent 1; L.d_ln () in
+
+  let do_node curr_node proc_desc proc_name pathset_todo session handle_exn =
+    check_prop_size pathset_todo;
+    print_node_preamble curr_node proc_name session pathset_todo;
+
+    match Cfg.Node.get_kind curr_node with
+    | Cfg.Node.Join_node ->
+        do_symexec_join proc_name tenv wl curr_node pathset_todo
+    | Cfg.Node.Stmt_node _
+    | Cfg.Node.Prune_node _
+    | Cfg.Node.Exit_node _
+    | Cfg.Node.Skip_node _
+    | Cfg.Node.Start_node _ ->
+        exe_iter (do_prop curr_node proc_desc proc_name handle_exn) pathset_todo in
+
+  let do_node_and_handle curr_node proc_desc proc_name session =
+    let pathset_todo = path_set_checkout_todo wl curr_node in
     try
       begin
-        doit();
-        if !handled_some_exception then Printer.force_delayed_prints ();
+        let handle_exn_called = ref false in
+        let handle_exn exn =
+          handle_exn_called := true;
+          handle_exn_node curr_node exn in
+        do_node curr_node proc_desc proc_name pathset_todo session handle_exn;
+        if !handle_exn_called then Printer.force_delayed_prints ();
         do_after_node source curr_node
       end
     with
     | exn when Exceptions.handle_exception exn ->
-        handle_exn curr_node exn;
+        handle_exn_node curr_node exn;
         Printer.force_delayed_prints ();
         do_after_node source curr_node;
-        if not !Config.footprint then raise RE_EXE_ERROR
+        if not !Config.footprint then raise RE_EXE_ERROR in
+
+  while not (Worklist.is_empty wl) do
+    let curr_node = Worklist.remove wl in
+    let proc_desc = Cfg.Node.get_proc_desc curr_node in
+    let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
+    let summary = Specs.get_summary_unsafe "forward_tabulate" proc_name in
+    mark_visited summary curr_node; (* mark nodes visited in fp and re phases *)
+    let session =
+      incr summary.Specs.sessions;
+      !(summary.Specs.sessions) in
+    do_before_node source session curr_node;
+    do_node_and_handle curr_node proc_desc proc_name session
   done;
   L.d_strln ".... Work list empty. Stop ...."; L.d_ln ()
 

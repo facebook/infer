@@ -1089,11 +1089,6 @@ and static_final =
 and stats =
   CLOpt.mk_bool ~deprecated:["stats"] ~long:"stats" "Stats mode (debugging)"
 
-and no_stop =
-  CLOpt.mk_bool ~deprecated:["nonstop"] ~long:"no-stop"
-    "Nonstop mode: the analysis continues after finding errors. With this option the analysis can \
-     become less precise."
-
 and subtype_multirange =
   CLOpt.mk_bool ~deprecated:["subtype_multirange"] ~long:"subtype-multirange" ~default:true
     "Use the multirange subtyping domain"
@@ -1482,7 +1477,6 @@ and monitor_prop_size = !monitor_prop_size
 and nelseg = !nelseg
 and no_static_final = not !static_final
 and no_translate_libs = not !headers
-and nonstop = !no_stop
 and objc_memory_model_on = !objc_memory_model
 and only_footprint = !only_footprint
 and optimistic_cast = !optimistic_cast

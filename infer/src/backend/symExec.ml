@@ -1652,12 +1652,7 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
     Paths.PathSet.from_renamed_list results
   with exn when Exceptions.handle_exception exn && !Config.footprint ->
     handle_exn exn; (* calls State.mark_instr_fail *)
-    if Config.nonstop
-    then
-      (* in nonstop mode treat the instruction as skip *)
-      (Paths.PathSet.from_renamed_list [(prop, path)])
-    else
-      Paths.PathSet.empty
+    Paths.PathSet.empty
 
 (** {2 Lifted Abstract Transfer Functions} *)
 

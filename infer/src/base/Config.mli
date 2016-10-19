@@ -219,7 +219,6 @@ val monitor_prop_size : bool
 val nelseg : bool
 val no_static_final : bool
 val no_translate_libs : bool
-val nonstop : bool
 val objc_memory_model_on : bool
 val only_footprint : bool
 val optimistic_cast : bool
