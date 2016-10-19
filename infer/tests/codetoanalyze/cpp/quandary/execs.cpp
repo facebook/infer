@@ -14,7 +14,7 @@ extern int rand();
 
 namespace execs {
 
-int callAllSinks(const char* stringSource) {
+int callAllSinks(const char* stringSource, char ** arrSource) {
   switch (rand()) {
     case 1:
       return execl(NULL, stringSource);
@@ -35,29 +35,26 @@ int callAllSinks(const char* stringSource) {
       return execv(stringSource, NULL);
     case 9:
       return execvp(stringSource, NULL);
+    case 10:
+      return execv(NULL, arrSource);
+    case 11:
+      return execvp(NULL, arrSource);
   }
   return 0;
 }
 
 void callExecBad() {
   const char* source = std::getenv("ENV_VAR");
-  callAllSinks(source);
-}
-
-// need to treat an array as tainted when its contents are tainted to get these
-// two
-void FN_envVarFlowsToEnvironment() {
-  char* execEnv[1] = {std::getenv("ENV_VAR")};
-  execv("something.s", execEnv);
-  execvp("something.sh", execEnv);
+  char* arrSource[1] = {std::getenv("ENV_VAR")};
+  callAllSinks(source, arrSource);
 }
 
 extern char* getenv(const char* var);
 
-void execConstantStringOk() { callAllSinks("something.sh"); }
+void execConstantStringOk() { callAllSinks("something.sh", NULL); }
 
 void customGetEnvOk() {
   const char* source = execs::getenv("ENV_VAR");
-  callAllSinks(source);
+  callAllSinks(source, NULL);
 }
 }

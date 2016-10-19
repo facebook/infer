@@ -152,11 +152,19 @@ module Make (TaintSpec : TaintSpec.S) = struct
       let add_sink_to_actual access_tree_acc (sink_param : TraceDomain.Sink.t Sink.parameter) =
         let actual_exp, actual_typ = IList.nth actuals sink_param.index in
         match AccessPath.of_exp actual_exp actual_typ ~f_resolve_id with
-        | Some actual_ap ->
+        | Some actual_ap_raw ->
             let actual_ap =
-              if sink_param.report_reachable
-              then AccessPath.Abstracted actual_ap
-              else AccessPath.Exact actual_ap in
+              let is_array_typ = match actual_typ with
+                | Typ.Tptr (Tarray _, _) (* T* [] (Java-style) *)
+                | Tptr (Tptr _, _) (* T** (C/C++ style 1) *)
+                | Tarray _ (* T[] C/C++ style 2 *) ->
+                    true
+                | _ ->
+                    false in
+              (* conisder any sources that are reachable from an array *)
+              if sink_param.report_reachable || is_array_typ
+              then AccessPath.Abstracted actual_ap_raw
+              else AccessPath.Exact actual_ap_raw in
             begin
               match access_path_get_node actual_ap access_tree_acc proc_data loc with
               | Some (actual_trace, _) ->

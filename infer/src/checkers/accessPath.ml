@@ -28,7 +28,7 @@ let base_compare ((var1, typ1) as base1) ((var2, typ2) as base2) =
   then 0
   else
     Var.compare var1 var2
-    |> next Typ.compare typ1 typ2
+    |> next Typ.array_sensitive_compare typ1 typ2
 
 let base_equal base1 base2 =
   base_compare base1 base2 = 0

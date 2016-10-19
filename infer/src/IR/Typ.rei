@@ -87,6 +87,10 @@ type t =
 let compare: t => t => int;
 
 
+/** type comparison that treats T* [] and T** as the same type. Needed for C/C++ */
+let array_sensitive_compare: t => t => int;
+
+
 /** Equality for types. */
 let equal: t => t => bool;
 

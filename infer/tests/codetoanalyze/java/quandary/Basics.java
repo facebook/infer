@@ -160,6 +160,12 @@ public class Basics {
     InferTaint.inferSensitiveSink(src);
   }
 
+  void arrayWithTaintedContentsBad() {
+    Object src = InferTaint.inferSecretSource();
+    Object[] arr = new Object[] { src };
+    InferTaint.inferSensitiveSink(arr);
+  }
+
   /** should not report on these tests */
 
   void directOk1() {

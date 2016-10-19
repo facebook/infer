@@ -230,6 +230,15 @@ let rec compare t1 t2 =>
 let equal t1 t2 => compare t1 t2 == 0;
 
 
+/** type comparison that treats T* [] and T** as the same type. Needed for C/C++ */
+let array_sensitive_compare t1 t2 =>
+  switch (t1, t2) {
+  | (Tptr (Tptr ptr_typ _) _, Tarray (Tptr array_typ _) _) => compare ptr_typ array_typ
+  | (Tarray (Tptr array_typ _) _, Tptr (Tptr ptr_typ _) _) => compare array_typ ptr_typ
+  | _ => compare t1 t2
+  };
+
+
 /** Pretty print a type declaration.
     pp_base prints the variable for a declaration, or can be skip to print only the type */
 let rec pp_decl pe pp_base f =>
