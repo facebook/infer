@@ -20,18 +20,6 @@ let capture_text =
   if Config.analyzer = Some Config.Linters then "linting"
   else "translating"
 
-let swap_command cmd =
-  let clang = "clang" in
-  let clangplusplus = "clang++" in
-  if Utils.string_is_suffix clang cmd then
-    Config.wrappers_dir // clang
-  else if Utils.string_is_suffix clangplusplus cmd then
-    Config.wrappers_dir // clangplusplus
-  else
-    (* The command in the compilation database json emitted by buck can only be clang or clang++ *)
-    failwithf "Unexpected command name in Buck compilation database: %s" cmd
-
-
 let replace_header_file_with_source_file file_path =
   let file_path = DB.source_file_to_abs_path file_path in
   let possible_file_replacements file_path =
@@ -71,22 +59,6 @@ let add_file_to_compilation_database file_path cmd_options changed_files compila
   if add_file then
     compilation_database := StringMap.add file_path cmd_options !compilation_database
 
-(** We have to replace the .o files because the path in buck-out doesn't exist at this point.
-    Moreover, in debug mode we create debug files in the place where the .o files are created,
-    so having all that in the results directory is convenient for finding the files and for
-    scanning the directory for running clang_frontend_stats. *)
-let replace_clang_args arg =
-  if Filename.check_suffix arg ".o" then
-    let dir = Config.results_dir // Config.clang_build_output_dir_name in
-    let abbrev_source_file = DB.source_file_encoding (DB.source_file_from_string arg) in
-    dir // abbrev_source_file
-  else arg
-
-(* Doing this argument manipulation here rather than in the wrappers because it seems to
-   be needed only with this integration.*)
-let remove_clang_arg arg args =
-  if (arg = "-include-pch") || (Filename.check_suffix arg ".gch")
-  then args else arg :: args
 
 (** Parse the compilation database json file into the compilationDatabase
     map. The json file consists of an array of json objects that contain the file
@@ -94,13 +66,11 @@ let remove_clang_arg arg args =
     and as a string. We pack this information into the compilationDatabase map, and remove the
     clang invocation part, because we will use a clang wrapper. *)
 let decode_compilation_database changed_files compilation_database _ path =
-  let collect_arguments compilation_argument args =
-    match compilation_argument with
-    | `String arg ->
-        let arg' = replace_clang_args arg in
-        remove_clang_arg arg' args
-    | _ -> failwith ("Json file doesn't have the expected format") in
   let json = Yojson.Basic.from_file path in
+  let parse_argument compilation_argument =
+    match compilation_argument with
+    | `String arg -> arg
+    | _ -> failwith ("Json file doesn't have the expected format") in
   let rec parse_json json =
     match json with
     | `List arguments ->
@@ -109,11 +79,10 @@ let decode_compilation_database changed_files compilation_database _ path =
                ("file", `String file_path);
                ("arguments", `List compilation_arguments);
                ("command", `String _) ] ->
-        (match IList.fold_right collect_arguments compilation_arguments [] with
+        (match IList.map parse_argument compilation_arguments with
          | [] -> failwith ("Command cannot be empty")
-         | cmd :: args ->
-             let wrapper_cmd = swap_command cmd in
-             let compilation_data = { dir; command = wrapper_cmd; args;} in
+         | command :: args ->
+             let compilation_data = { dir; command; args;} in
              add_file_to_compilation_database file_path compilation_data changed_files
                compilation_database)
     | _ ->
@@ -147,15 +116,42 @@ let create_files_stack compilation_database =
   StringMap.iter add_to_stack !compilation_database;
   stack
 
+let swap_command cmd =
+  let clang = "clang" in
+  let clangplusplus = "clang++" in
+  if Utils.string_is_suffix clang cmd then
+    Config.wrappers_dir // clang
+  else if Utils.string_is_suffix clangplusplus cmd then
+    Config.wrappers_dir // clangplusplus
+  else
+    (* The command in the compilation database json emitted by buck can only be clang or clang++ *)
+    failwithf "Unexpected command name in Buck compilation database: %s" cmd
+
+(** We have to replace the .o files because the path in buck-out doesn't exist at this point.
+    Moreover, in debug mode we create debug files in the place where the .o files are created,
+    so having all that in the results directory is convenient for finding the files and for
+    scanning the directory for running clang_frontend_stats. *)
+let replace_clang_arg arg =
+  if Filename.check_suffix arg ".o" then
+    let dir = Config.results_dir // Config.clang_build_output_dir_name in
+    let abbrev_source_file = DB.source_file_encoding (DB.source_file_from_string arg) in
+    [dir // abbrev_source_file]
+    (* Doing this argument manipulation here rather than in the wrappers because it seems to
+       be needed only with this integration.*)
+  else if (arg = "-include-pch") || (Filename.check_suffix arg ".gch") then []
+  else [arg]
+
 let run_compilation_file compilation_database file =
   try
     let compilation_data = StringMap.find file !compilation_database in
     Unix.chdir compilation_data.dir;
-    let args = Array.of_list (compilation_data.command::compilation_data.args) in
+    let wrapper_cmd = swap_command compilation_data.command in
+    let replaced_args = IList.map replace_clang_arg compilation_data.args |> IList.flatten in
+    let args = Array.of_list (wrapper_cmd::replaced_args) in
     let env = Array.append
         (Unix.environment())
         (Array.of_list ["FCP_RUN_SYNTAX_ONLY=1"]) in
-    Process.exec_command compilation_data.command args env
+    Process.exec_command wrapper_cmd args env
   with Not_found ->
     Process.print_error_and_exit "Failed to find compilation data for %s \n%!" file
 
