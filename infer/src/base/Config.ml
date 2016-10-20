@@ -1232,8 +1232,6 @@ let get_env_variable var_name =
     if v = "" then None else Some v
   with Not_found -> None
 
-let analyze_models = from_env_variable "INFER_ANALYZE_MODELS"
-
 (** experimental: handle dynamic dispatch by following the JVM semantics and creating
     during the symbolic excution procedure descriptions using the types information
     found in the abstract state *)
@@ -1311,7 +1309,7 @@ let post_parsing_initialization () =
     let default_seconds_timeout = 10.0 in
     let long_symops_timeout = 1000 in
     let long_seconds_timeout = 30.0 in
-    if analyze_models then
+    if !models_mode then
       (* use longer timeouts when analyzing models *)
       long_symops_timeout, long_seconds_timeout
     else

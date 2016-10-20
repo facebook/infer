@@ -626,7 +626,7 @@ let method_invocation
   let instrs =
     match call_args with
     (* modeling a class bypasses the treatment of Closeable *)
-    | _ when Config.analyze_models || JClasspath.is_model callee_procname -> call_instrs
+    | _ when Config.models_mode || JClasspath.is_model callee_procname -> call_instrs
 
     (* add a file attribute when calling the constructor of a subtype of Closeable *)
     | (_, typ) as exp :: _

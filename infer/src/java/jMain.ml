@@ -16,9 +16,9 @@ module L = Logging
 
 let () =
   (match Config.models_file with Some file -> JClasspath.add_models file | None -> ());
-  if Config.analyze_models && !JClasspath.models_jar <> "" then
+  if Config.models_mode && !JClasspath.models_jar <> "" then
     failwith "Not expecting model file when analyzing the models";
-  if not Config.analyze_models && !JClasspath.models_jar = "" then
+  if not Config.models_mode && !JClasspath.models_jar = "" then
     failwith "Java model file is required"
 
 
@@ -96,7 +96,7 @@ let load_tenv () =
       match Tenv.load_from_file DB.global_tenv_fname with
       | None ->
           Tenv.create ()
-      | Some _ when Config.analyze_models ->
+      | Some _ when Config.models_mode ->
           let error_msg =
             "Unexpected tenv file "
             ^ (DB.filename_to_string DB.global_tenv_fname)
@@ -111,7 +111,7 @@ let load_tenv () =
 
 (* Store to a file the type environment containing all the types required to perform the analysis *)
 let save_tenv tenv =
-  if not Config.analyze_models then JTransType.add_models_types tenv;
+  if not Config.models_mode then JTransType.add_models_types tenv;
   (* TODO: this prevents per compilation step incremental analysis at this stage *)
   if DB.file_exists DB.global_tenv_fname then DB.file_remove DB.global_tenv_fname;
   JUtils.log "writing new tenv %s@." (DB.filename_to_string DB.global_tenv_fname);

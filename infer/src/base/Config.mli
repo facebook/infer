@@ -134,7 +134,6 @@ val wrappers_dir : string
 val from_env_variable : string -> bool
 val get_env_variable : string -> string option
 
-val analyze_models : bool
 val lazy_dynamic_dispatch : bool
 val report_custom_error : bool
 val sound_dynamic_dispatch : bool

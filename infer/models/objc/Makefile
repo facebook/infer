@@ -11,14 +11,12 @@ include $(ROOT_DIR)/Makefile.config
 OBJC_MODELS_FILE = $(SPECS_LIB_DIR)/objc_models
 OBJC_MODELS_SOURCES = $(shell find src/ -name "*.m" -or -name "*.c")
 
-INFER = INFER_ANALYZE_MODELS=1 $(BIN_DIR)/infer
-
 all: $(OBJC_MODELS_FILE)
 
 $(OBJC_MODELS_FILE): $(OBJC_MODELS_SOURCES) $(CLANG_DEPS)
 # make clean in src/ in case $(CLANG_DEPS) have changed
 	$(MAKE) -C src clean
-	$(INFER) -o out/ --models_mode --no_failures_allowed -- $(MAKE) -C src
+	$(INFER_BIN) -o out/ --models-mode --no-failures-allowed -- $(MAKE) -C src
 	touch $(OBJC_MODELS_FILE)
 
 install: $(OBJC_MODELS_FILE)

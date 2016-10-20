@@ -1464,7 +1464,7 @@ let do_analysis exe_env =
   IList.iter
     (fun ((pn, _) as x) ->
        let should_init () =
-         Config.analyze_models ||
+         Config.models_mode ||
          Specs.get_summary pn = None in
        if should_init ()
        then init_proc x)

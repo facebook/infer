@@ -11,14 +11,12 @@ include $(ROOT_DIR)/Makefile.config
 C_MODELS_FILE = $(SPECS_LIB_DIR)/c_models
 C_MODELS_SOURCES = $(shell find src/ -name "*.c")
 
-INFER = INFER_ANALYZE_MODELS=1 $(BIN_DIR)/infer
-
 all: $(C_MODELS_FILE)
 
 $(C_MODELS_FILE): $(C_MODELS_SOURCES) $(CLANG_DEPS)
 # make clean in src/ in case $(CLANG_DEPS) have changed
 	$(MAKE) -C src clean
-	$(INFER) -o out/ --models_mode --no_failures_allowed -- $(MAKE) -C src
+	$(INFER_BIN) -o out/ --models-mode --no-failures-allowed -- $(MAKE) -C src
 	touch $(C_MODELS_FILE)
 
 install: $(C_MODELS_FILE)

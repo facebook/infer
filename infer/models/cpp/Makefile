@@ -12,14 +12,12 @@ CPP_MODELS_FILE = $(SPECS_LIB_DIR)/cpp_models
 CPP_MODELS_SOURCES = $(shell find src/ -name "*.cpp")
 C_MODELS_SOURCES = $(shell find src/c_src/ -name "*.c")
 
-INFER = INFER_ANALYZE_MODELS=1 $(BIN_DIR)/infer
-
 all: $(CPP_MODELS_FILE)
 
 $(CPP_MODELS_FILE): $(CPP_MODELS_SOURCES) $(C_MODELS_SOURCES) $(CLANG_DEPS)
 # make clean in src/ in case $(CLANG_DEPS) have changed
 	$(MAKE) -C src clean
-	$(INFER) -o out/ --models_mode --no_failures_allowed --cxx -- $(MAKE) -C src
+	$(INFER_BIN) -o out/ --models-mode --no-failures-allowed --cxx -- $(MAKE) -C src
 	touch $(CPP_MODELS_FILE)
 
 install: $(CPP_MODELS_FILE)

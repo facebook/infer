@@ -8,9 +8,6 @@
 ROOT_DIR = ../../..
 include $(ROOT_DIR)/Makefile.config
 
-INFER = INFER_ANALYZE_MODELS=1 $(INFER_BIN) \
-          --buck --analyzer infer --multicore 1
-
 ANDROID_JAR = $(LIB_DIR)/java/android/android-19.jar
 JACKSON_JAR = $(DEPENDENCIES_DIR)/java/jackson/jackson-2.2.3.jar
 INFER_ANNOTATIONS_JAR = $(ANNOTATIONS_DIR)/annotations.jar
@@ -36,7 +33,7 @@ $(INFER_REPORT): $(ANDROID_JAR) $(JACKSON_JAR) $(JAVA_DEPS) $(INFER_ANNOTATIONS_
 	@rm -fr $(MODELS_OUT)
 	mkdir -p $(MODELS_OUT)
 	@rm -f $(DEPLOYED_MODELS_JAR)
-	$(INFER) -- javac -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(JACKSON_JAR):$(INFER_ANNOTATIONS_JAR) $(JAVA_SOURCES)
+	$(INFER_BIN) --buck --models-mode -- javac -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(JACKSON_JAR):$(INFER_ANNOTATIONS_JAR) $(JAVA_SOURCES)
 
 $(MODELS_JAR): $(INFER_REPORT)
 	cd $(MODELS_OUT); jar cf ../$(MODELS_JAR) *
