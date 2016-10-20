@@ -29,11 +29,6 @@ let source_file_from_path path =
          DB.source_file_from_string path)
   | None -> DB.source_file_from_string path
 
-let choose_sloc sloc1 sloc2 =
-  match sloc1.Clang_ast_t.sl_file with
-  | Some f when not (DB.source_file_equal (source_file_from_path f) !curr_file) -> sloc2
-  | _ -> sloc1
-
 let choose_sloc_to_update_curr_file trans_unit_ctx sloc1 sloc2 =
   match sloc2.Clang_ast_t.sl_file with
   | Some f when DB.source_file_equal (source_file_from_path f)
@@ -137,11 +132,10 @@ let is_file_blacklisted file =
 
 let get_sil_location_from_range trans_unit_ctx source_range prefer_first =
   let sloc1, sloc2 = source_range in
-  let sloc = if not prefer_first then sloc2 else choose_sloc sloc1 sloc2 in
+  let sloc = if not prefer_first then sloc2 else sloc1 in
   clang_to_sil_location trans_unit_ctx sloc None
 
 let get_sil_location stmt_info context =
-  let sloc1, sloc2 = stmt_info.Clang_ast_t.si_source_range in
-  let sloc = choose_sloc sloc1 sloc2 in
-  clang_to_sil_location context.CContext.translation_unit_context sloc
+  let sloc1, _ = stmt_info.Clang_ast_t.si_source_range in
+  clang_to_sil_location context.CContext.translation_unit_context sloc1
     (Some (CContext.get_procdesc context))
