@@ -42,6 +42,7 @@ let checkers_for_objc_protocol decl checker context =
 
 (* List of checkers running on ObjCImpl decls *)
 let objc_impl_checker_list = [CFrontend_checkers.checker_NSNotificationCenter;
+                              ComponentKit.component_with_multiple_factory_methods_advice;
                               ComponentKit.component_with_unconventional_superclass_advice]
 
 (* Invocation of checker belonging to objc_impl_checker_list *)

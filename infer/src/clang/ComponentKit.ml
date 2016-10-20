@@ -183,3 +183,68 @@ let component_with_unconventional_superclass_advice context decl =
       else
         None
   | _ -> assert false
+
+let if_decl_to_di_pointer_opt if_decl =
+  match if_decl with
+  | Clang_ast_t.ObjCInterfaceDecl (if_decl_info, _, _, _, _) ->
+      Some if_decl_info.di_pointer
+  | _ -> None
+
+let is_instance_type type_ptr =
+  match Ast_utils.name_opt_of_typedef_type_ptr type_ptr with
+  | Some name -> name = "instancetype"
+  | None -> false
+
+let return_type_matches_class_type rtp type_decl_pointer =
+  if is_instance_type rtp then
+    true
+  else
+    let return_type_decl_opt = Ast_utils.type_ptr_to_objc_interface rtp in
+    let return_type_decl_pointer_opt =
+      Option.map if_decl_to_di_pointer_opt return_type_decl_opt in
+    (Some type_decl_pointer) = return_type_decl_pointer_opt
+
+(** A class method that returns an instance of the class is a factory method. *)
+let is_factory_method if_decl meth_decl =
+  let if_type_decl_pointer = if_decl_to_di_pointer_opt if_decl in
+  match meth_decl with
+  | Clang_ast_t.ObjCMethodDecl (_, _, omdi) ->
+      (not omdi.omdi_is_instance_method) &&
+      (return_type_matches_class_type omdi.omdi_result_type if_type_decl_pointer)
+  | _ -> false
+
+(** Components should only have one factory method.
+
+    (They could technically have none if they re-use the parent class's factory
+    method.)
+
+    We care about ones that are declared in the interface. In other words, if
+    additional factory methods are implementation-only, the rule doesn't catch
+    it. While its existence is probably not good, I can't think of any reason
+    there would be factory methods that aren't exposed outside of a class is
+    not useful if there's only one public factory method. *)
+let component_with_multiple_factory_methods_advice context decl =
+  let check_interface if_decl =
+    match if_decl with
+    | Clang_ast_t.ObjCInterfaceDecl (decl_info, _, decls, _, _) ->
+        let factory_methods = IList.filter (is_factory_method if_decl) decls in
+        if (IList.length factory_methods) > 1 then
+          Some {
+            CIssue.issue = CIssue.Component_with_multiple_factory_methods;
+            CIssue.description = "Avoid Overrides";
+            CIssue.suggestion =
+              Some "Instead, always expose all parameters in a single \
+                    designated initializer and document which are optional.";
+            CIssue.loc = CFrontend_checkers.location_from_dinfo context decl_info
+          }
+        else
+          None
+    | _ -> assert false in
+  match decl with
+  | Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info) ->
+      let if_decl_opt =
+        Ast_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
+      (match if_decl_opt with
+       | Some d when is_ck_context context decl -> check_interface d
+       | _ -> None)
+  | _ -> assert false

@@ -42,6 +42,7 @@ val condition_always_false : t
 val condition_always_true : t
 val context_leak : t
 val component_factory_function : t
+val component_with_multiple_factory_methods : t
 val component_with_unconventional_superclass : t
 val cxx_reference_captured_in_objc_block : t
 val dangling_pointer_dereference : t
