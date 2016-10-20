@@ -498,7 +498,7 @@ class BuildIntegrationTest(unittest.TestCase):
         test('componentkit', 'component quality analyzer  skips imports',
              os.path.join(CODETOANALYZE_DIR, 'componentkit'),
              [{'compile': ['clang', '-x', 'objective-c++', '-std=c++11', '-c',
-                           'TestIgnoreImports.mm'],
+                           '-fblocks', 'TestIgnoreImports.mm'],
                'infer_args': ['--cxx', '--no-filtering', '-a', 'linters']}])
 
     def test_fail_on_issue(self):

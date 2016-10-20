@@ -7,7 +7,22 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#ifdef __APPLE__
 #import <Foundation/Foundation.h>
+#elif __linux__
+// fake foundation enough so linux doesn't complain
+#define nil 0
+@interface NSObject
+@end
+@implementation NSObject
+@end
+@interface NSString : NSObject
+@end
+@implementation NSString
+@end
+#else
+#error "Need either os x or linux"
+#endif
 
 // Mimic importing CKComponnet
 @interface CKComponent : NSObject

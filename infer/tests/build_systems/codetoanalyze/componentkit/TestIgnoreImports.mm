@@ -9,23 +9,7 @@
 
 #include "HeaderWithMutableLocalVar.h"
 
-#define nil 0
-
-// Mimic importing CKComponnet
-@interface CKComponent
-@end
-@implementation CKComponent
-@end
-
-// Mimic importing CKCompositeComponnet
-@interface CKCompositeComponent : CKComponent
-+ (instancetype)newWithComponent:(CKComponent*)component;
-@end
-@implementation CKCompositeComponent
-+ (instancetype)newWithComponent:(CKComponent*)component {
-  return nil;
-}
-@end
+#include "../../../codetoanalyze/objcpp/linters/componentkit/FakeComponentKitHeader.h"
 
 @interface SomeClass : CKCompositeComponent
 @end
