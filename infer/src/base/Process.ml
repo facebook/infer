@@ -42,7 +42,7 @@ let create_process_and_wait cmd =
     | _ -> 1 in
   if exit_code <> 0 then
     print_error_and_exit ~exit_code:exit_code
-      "Failed to execute: %s" (String.concat " " (Array.to_list cmd))
+      "Failed to execute: %s\n" (String.concat " " (Array.to_list cmd))
 
 (** Given a process id and a function that describes the command that the process id
     represents, prints a message explaining the command and its status, if in debug or stats mode.

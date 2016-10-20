@@ -209,10 +209,10 @@ class BuckAnalyzer:
     def capture_with_compilation_database(self):
         buck_args = self.cmd
         cmd = [utils.get_cmd_in_bin_dir('InferBuckCompilationDatabase')]
-        for arg in buck_args:
-            cmd += ['--Xbuck'] + [arg]
         if self.args.project_root:
-            cmd += ['--project-root'] + [self.args.project_root]
+            cmd += ['--project-root', self.args.project_root]
+        cmd += ['--']
+        cmd += buck_args
         return subprocess.check_call(cmd)
 
     def capture_without_flavors(self):

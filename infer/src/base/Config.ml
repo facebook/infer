@@ -493,7 +493,8 @@ let anon_args =
 
 and rest =
   CLOpt.mk_rest
-    ~exes:CLOpt.[Toplevel] "Stop argument processing, use remaining arguments as a build command"
+    ~exes:CLOpt.[Toplevel;BuckCompilationDatabase]
+    "Stop argument processing, use remaining arguments as a build command"
 
 and absolute_paths =
   CLOpt.mk_bool ~long:"absolute-paths"

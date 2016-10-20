@@ -172,7 +172,7 @@ let run_compilation_database compilation_database =
 (** Computes the compilation database: a map from a file path to info to compile the file, i.e.
     the dir where the compilation should be executed and the arguments to clang.*)
 let get_compilation_database changed_files =
-  let cmd = IList.rev Config.buck_build_args in
+  let cmd = IList.rev_append Config.rest (IList.rev Config.buck_build_args) in
   match cmd with
   | buck :: build :: args ->
       (check_args_for_targets args;
