@@ -15,11 +15,15 @@ open Javalib_pack
 module L = Logging
 
 let () =
-  (match Config.models_file with Some file -> JClasspath.add_models file | None -> ());
-  if Config.models_mode && !JClasspath.models_jar <> "" then
-    failwith "Not expecting model file when analyzing the models";
-  if not Config.models_mode && !JClasspath.models_jar = "" then
-    failwith "Java model file is required"
+  match Config.models_file with
+  | None when Config.models_mode ->
+      ()
+  | None ->
+      failwith "Java model file is required"
+  | Some _ when Config.models_mode ->
+      failwith "Not expecting model file when analyzing the models";
+  | Some file ->
+      JClasspath.add_models file
 
 
 let register_perf_stats_report source_file =
@@ -91,22 +95,15 @@ let capture_libs linereader program tenv =
 
 (* load a stored global tenv if the file is found, and create a new one otherwise *)
 let load_tenv () =
-  if DB.file_exists DB.global_tenv_fname then
-    begin
-      match Tenv.load_from_file DB.global_tenv_fname with
-      | None ->
-          Tenv.create ()
-      | Some _ when Config.models_mode ->
-          let error_msg =
-            "Unexpected tenv file "
-            ^ (DB.filename_to_string DB.global_tenv_fname)
-            ^ " found while generating the models" in
-          failwith error_msg
-      | Some tenv ->
-          tenv
-    end
-  else
-    Tenv.create ()
+  match Tenv.load_from_file DB.global_tenv_fname with
+  | None ->
+      Tenv.create ()
+  | Some _ when Config.models_mode ->
+      failwithf
+        "Unexpected tenv file %s found while generating the models"
+        (DB.filename_to_string DB.global_tenv_fname)
+  | Some tenv ->
+      tenv
 
 
 (* Store to a file the type environment containing all the types required to perform the analysis *)

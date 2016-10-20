@@ -201,6 +201,7 @@ val frontend_stats : bool
 val headers : bool
 val infer_cache : string option
 val iterations : int
+val java_jar_compiler : string option
 val javac_verbose_out : string
 val jobs : int
 val join_cond : int
@@ -270,7 +271,6 @@ val write_html : bool
 val xcode_developer_dir : string option
 val xml_specs : bool
 val zip_libraries : zip_library list
-val java_jar_compiler : string option
 
 (** Global variables *)
 

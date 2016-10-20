@@ -267,8 +267,8 @@ let add_model_fields program classpath_fields cn =
           (collect_models_class_fields classpath_field_map cn)
           jclass
           classpath_fields
-
-    | _ -> classpath_fields
+    | _ ->
+        classpath_fields
   with Not_found -> classpath_fields
 
 

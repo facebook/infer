@@ -1154,10 +1154,3 @@ let rec instruction (context : JContext.t) pc instr : translation =
   with Frontend_error s ->
     JUtils.log "Skipping because of: %s@." s;
     Skip
-
-(*
-let static_field_name cn fs =
-  let classname = JBasics.cn_name cn in
-  let fieldname = JBasics.fs_name fs in
-  Mangled.from_string (classname^"."^fieldname)
-*)
