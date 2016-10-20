@@ -8,13 +8,6 @@
  *)
 
 open! Utils
-module YBU = Yojson.Basic.Util
-
-type compilation_data = {
-  dir : string;
-  command : string;
-  args : string list;
-}
 
 let capture_text =
   if Config.analyzer = Some Config.Linters then "linting"
@@ -50,45 +43,6 @@ let read_files_to_compile () =
            DB.SourceFileSet.add file changed_files)
         changed_files lines
 
-(** Add file to compilation database, only if it is in changed_files. *)
-let add_file_to_compilation_database file_path cmd_options changed_files compilation_database =
-  let add_file =
-    match Config.changed_files_index with
-    | Some _ -> DB.SourceFileSet.mem (DB.source_file_from_string file_path) changed_files
-    | None -> true in
-  if add_file then
-    compilation_database := StringMap.add file_path cmd_options !compilation_database
-
-
-(** Parse the compilation database json file into the compilationDatabase
-    map. The json file consists of an array of json objects that contain the file
-    to be compiled, the directory to be compiled in, and the compilation command as a list
-    and as a string. We pack this information into the compilationDatabase map, and remove the
-    clang invocation part, because we will use a clang wrapper. *)
-let decode_compilation_database changed_files compilation_database _ path =
-  let json = Yojson.Basic.from_file path in
-  let parse_argument compilation_argument =
-    match compilation_argument with
-    | `String arg -> arg
-    | _ -> failwith ("Json file doesn't have the expected format") in
-  let rec parse_json json =
-    match json with
-    | `List arguments ->
-        IList.iter parse_json arguments
-    | `Assoc [ ("directory", `String dir);
-               ("file", `String file_path);
-               ("arguments", `List compilation_arguments);
-               ("command", `String _) ] ->
-        (match IList.map parse_argument compilation_arguments with
-         | [] -> failwith ("Command cannot be empty")
-         | command :: args ->
-             let compilation_data = { dir; command; args;} in
-             add_file_to_compilation_database file_path compilation_data changed_files
-               compilation_database)
-    | _ ->
-        failwith ("Json file doesn't have the expected format") in
-  parse_json json
-
 (** The buck targets are assumed to start with //, aliases are not supported. *)
 let check_args_for_targets args =
   if not (IList.exists (Utils.string_is_prefix "//") args) then
@@ -113,7 +67,7 @@ let create_files_stack compilation_database =
   let stack = Stack.create () in
   let add_to_stack file _ =
     Stack.push file stack in
-  StringMap.iter add_to_stack !compilation_database;
+  CompilationDatabase.iter compilation_database add_to_stack;
   stack
 
 let swap_command cmd =
@@ -143,7 +97,7 @@ let replace_clang_arg arg =
 
 let run_compilation_file compilation_database file =
   try
-    let compilation_data = StringMap.find file !compilation_database in
+    let compilation_data = CompilationDatabase.find compilation_database file in
     Unix.chdir compilation_data.dir;
     let wrapper_cmd = swap_command compilation_data.command in
     let replaced_args = IList.map replace_clang_arg compilation_data.args |> IList.flatten in
@@ -156,7 +110,7 @@ let run_compilation_file compilation_database file =
     Process.print_error_and_exit "Failed to find compilation data for %s \n%!" file
 
 let run_compilation_database compilation_database =
-  let number_of_files = StringMap.cardinal !compilation_database in
+  let number_of_files = CompilationDatabase.get_size compilation_database in
   Logging.out "Starting %s %d files \n%!" capture_text number_of_files;
   Logging.stdout "Starting %s %d files \n%!" capture_text number_of_files;
   let jobsStack = create_files_stack compilation_database in
@@ -188,9 +142,13 @@ let get_compilation_database changed_files =
                  (fun target file -> StringMap.add target file compilation_database_files) in
              (* Map from targets to json output *)
              let compilation_database_files = IList.fold_left scan_output StringMap.empty lines in
-             let compilation_database = ref StringMap.empty in
+             let compilation_database = CompilationDatabase.empty () in
+             let should_add_file file_path =
+               match Config.changed_files_index with
+               | Some _ -> DB.SourceFileSet.mem (DB.source_file_from_string file_path) changed_files
+               | None -> true in
              StringMap.iter
-               (decode_compilation_database changed_files compilation_database)
+               (fun _ file -> CompilationDatabase.decode_json_file compilation_database should_add_file file)
                compilation_database_files;
              compilation_database
        with Unix.Unix_error (err, _, _) ->
