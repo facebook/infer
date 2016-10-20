@@ -74,18 +74,9 @@ base_group.add_argument('-o', '--out', metavar='<directory>',
                         type=utils.decode,
                         action=utils.AbsolutePathAction,
                         help='Set the Infer results directory')
-base_group.add_argument('-i', '--incremental',
-                        dest='reactive', action='store_true',
-                        help='''DEPRECATED: use --reactive.''')
-base_group.add_argument('-ic', '--changed-only',
-                        dest='reactive', action='store_true',
-                        help='''DEPRECATED: use --reactive.''')
 base_group.add_argument('-r', '--reactive', action='store_true',
                         help='''Analyze in reactive propagation mode
                         starting from changed files.''')
-base_group.add_argument('-m', '--merge', action='store_true',
-                        help='''merge the captured results directories specified
-                        in the dependency file.''')
 base_group.add_argument('-c', '--continue', action='store_true',
                         dest='continue_capture',
                         help='''Continue the capture for the reactive
@@ -127,17 +118,9 @@ infer_group.add_argument('-l', '--load-average', metavar='<float>', type=float,
                          help='Specifies that no new jobs (commands) should '
                          'be started if there are others jobs running and the '
                          'load average is at least <float>.')
-infer_group.add_argument('-x', '--project', metavar='<projectname>',
-                           help='Project name, for recording purposes only')
-
-infer_group.add_argument('--revision', metavar='<githash>',
-                           help='The githash, for recording purposes only')
 
 infer_group.add_argument('--buck', action='store_true', dest='buck',
                            help='To use when run with buck')
-
-infer_group.add_argument('--infer_cache', metavar='<directory>',
-                           help='Select a directory to contain the infer cache')
 
 infer_group.add_argument('-pr', '--project_root',
                          dest='project_root',
@@ -149,29 +132,6 @@ infer_group.add_argument('--absolute-paths',
                           action='store_true',
                           default=False,
                           help='Report errors with absolute paths')
-
-infer_group.add_argument('--ml_buckets',
-                         dest='ml_buckets',
-                         help='memory leak buckets to be checked, '
-                              'separated by commas. The possible '
-                              'buckets are cf (Core Foundation), '
-                              'arc, narc (No arc), cpp, unknown_origin')
-
-infer_group.add_argument('-npb', '--no-progress-bar', action='store_true',
-                         help='Do not show a progress bar in the analysis')
-
-infer_group.add_argument('--specs-dir',
-                          metavar='<dir>',
-                          action='append',
-                          dest='specs_dirs',
-                          help='add dir to the list of directories to be '
-                               'searched for spec files. Repeat the argument '
-                               'in case multiple folders are needed')
-infer_group.add_argument('--specs-dir-list-file',
-                         metavar='<file>',
-                         help='add the newline-separated directories listed '
-                              'in <file> to the list of directories to be '
-                              'searched for spec files')
 
 infer_group.add_argument('--java-jar-compiler',
                          metavar='<file>')
@@ -258,24 +218,6 @@ class AnalyzerWrapper(object):
         self.stats = {'int': {}}
         self.timing = {}
 
-        if self.args.specs_dirs:
-            # Each dir passed in input is prepended by '-lib'.
-            # Convert each path to absolute because when running from
-            # cluster Makefiles (multicore mode) InferAnalyze creates the wrong
-            # absolute path from within the multicore folder
-            self.args.specs_dirs = [item
-                                    for argument in
-                                    (['-lib', os.path.abspath(path)] for path in
-                                     self.args.specs_dirs)
-                                    for item in argument]
-        if self.args.specs_dir_list_file:
-            # Convert the path to the file list to an absolute path, because
-            # the analyzer will run from different paths and may not find the
-            # file otherwise.
-            self.args.specs_dir_list_file = \
-                ['-specs-dir-list-file',
-                 os.path.abspath(self.args.specs_dir_list_file)]
-
     def clean_exit(self):
         if os.path.isdir(self.args.infer_out):
             utils.stdout('removing {}'.format(self.args.infer_out))
@@ -311,15 +253,6 @@ class AnalyzerWrapper(object):
             if os.path.isfile(config.MODELS_JAR):
                 infer_options += ['-models', config.MODELS_JAR]
 
-        if self.args.infer_cache:
-            infer_options += ['-infer_cache', self.args.infer_cache]
-
-        if self.args.ml_buckets:
-            infer_options += ['-ml_buckets', self.args.ml_buckets]
-
-        if self.args.no_progress_bar:
-            infer_options += ['-no_progress_bar']
-
         if self.args.debug:
             infer_options += [
                 '-developer_mode',
@@ -336,21 +269,6 @@ class AnalyzerWrapper(object):
             infer_options.append('-developer_mode')
             infer_options.append('-print_buckets')
             self.args.no_filtering = True
-
-        if self.args.reactive:
-            infer_options.append('-reactive')
-
-        if self.args.continue_capture:
-            infer_options.append('-continue')
-
-        if self.args.merge:
-            infer_options.append('-merge')
-
-        if self.args.specs_dirs:
-            infer_options += self.args.specs_dirs
-
-        if self.args.specs_dir_list_file:
-            infer_options += self.args.specs_dir_list_file
 
         exit_status = os.EX_OK
 

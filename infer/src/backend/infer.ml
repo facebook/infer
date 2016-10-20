@@ -58,8 +58,6 @@ let () =
          ["--use-flavors"]) @
       (if Option.is_none Config.use_compilation_database || not in_buck_mode then [] else
          ["--use-compilation-database"]) @
-      (match Config.infer_cache with None -> [] | Some s ->
-          ["--infer_cache"; s]) @
       "-j" :: (string_of_int Config.jobs) ::
       "-l" :: (string_of_float Config.load_average) ::
       (if not Config.pmd_xml then [] else
