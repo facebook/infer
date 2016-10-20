@@ -43,18 +43,18 @@ let init_global_state source_file =
 
 let store_icfg source_file tenv cg cfg =
   let source_dir = DB.source_dir_from_source_file source_file in
-  begin
-    let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
-    let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
-    if Config.create_harness then Harness.create_harness cfg cg tenv;
-    Cg.store_to_file cg_file cg;
-    Cfg.store_cfg_to_file ~source_file cfg_file cfg;
-    if Config.debug_mode || Config.frontend_tests then
-      begin
-        Dotty.print_icfg_dotty source_file cfg;
-        Cg.save_call_graph_dotty source_file Specs.get_specs cg
-      end
-  end
+  let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
+  let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
+  if Config.create_harness then Harness.create_harness cfg cg tenv;
+  Cg.store_to_file cg_file cg;
+  Cfg.store_cfg_to_file ~source_file cfg_file cfg;
+  if Config.debug_mode || Config.frontend_tests then
+    begin
+      Dotty.print_icfg_dotty source_file cfg;
+      Cg.save_call_graph_dotty source_file Specs.get_specs cg
+    end;
+  (* NOTE: nothing should be written to source_dir after this *)
+  DB.mark_file_updated (DB.source_dir_to_string source_dir)
 
 
 (* Given a source file, its code is translated, and the call-graph, control-flow-graph and type *)

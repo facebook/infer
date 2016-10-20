@@ -342,6 +342,13 @@ let file_was_updated_after_start fname =
     (* since file doesn't exist, it wasn't modified *)
     false
 
+(** Mark a file as updated by changing its timestamps to be one second in the future.
+    This guarantees that it appears updated after start. *)
+let mark_file_updated fname =
+  let near_future = Unix.gettimeofday () +. 1. in
+  Unix.utimes fname near_future near_future
+
+
 (** Returns true if the file is a C++ model *)
 let file_is_in_cpp_model file =
   let normalized_file_dir = filename_to_absolute (Filename.dirname file) in

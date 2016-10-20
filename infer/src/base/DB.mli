@@ -32,6 +32,10 @@ val file_remove : filename -> unit
 (** Return the time when a file was last modified. The file must exist. *)
 val file_modified_time : ?symlink:bool -> filename -> float
 
+(** Mark a file as updated by changing its timestamps to be one second in the future.
+    This guarantees that it appears updated after start. *)
+val mark_file_updated : string -> unit
+
 (** Return whether filename was updated after analysis started. File doesn't have to exist *)
 val file_was_updated_after_start : filename -> bool
 
