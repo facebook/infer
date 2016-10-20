@@ -5,10 +5,8 @@ CXX=clang++
 CXXFLAGS=-c -w -std=c++11
 
 all: $(OBJECTS) 
-	echo $(OBJECTS)
 
 clean:
-	echo $(OBJECTS)
 	@rm -rf $(OBJECTS) 
 
 %.o: %.cpp
