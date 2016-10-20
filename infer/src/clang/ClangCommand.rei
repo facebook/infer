@@ -17,14 +17,10 @@ type t =
   | ClangWarning string
   | NonCCCommand args /** other commands (as, ld, ...) */;
 
-type quoting_style =
-  | DoubleQuotes /** the arguments are ready to be enclosed in "double quotes" */
-  | SingleQuotes /** the arguments are ready to be enclodes in 'single quotes' */;
-
 
 /** [mk qs argv] finds the type of command depending on its arguments [argv]. The quoting style of
     the arguments have to be provided, so that the command may be run later on. */
-let mk: quoting_style => array string => t;
+let mk: ClangQuotes.style => array string => t;
 
 
 /** change an args object into a string ready to be passed to a shell to be executed */

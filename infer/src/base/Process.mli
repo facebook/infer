@@ -27,8 +27,11 @@ val print_error_and_exit :
 (** Prints information about a unix error *)
 val print_unix_error : string -> exn -> unit
 
-(** [run_jobs_in_parallel jobs_stack run_job cmd_to_string ] runs the jobs in
-    the given stack, by spawning the jobs in batches of n, where n is Config.jobs. It
-    then waits for all those jobs and starts a new batch and so on. cmd_to_string
-    is used for printing information about the job's status.   *)
-val run_jobs_in_parallel : 'a Stack.t -> ('a -> unit) -> ('a -> string) -> unit
+(** [run_jobs_in_parallel jobs_stack gen_cmd cmd_to_string] runs the jobs in the given stack, by
+    spawning the jobs in batches of n, where n is [Config.jobs]. It then waits for all those jobs
+    and starts a new batch and so on. [gen_cmd] should return a tuple [(dir_opt, command, args,
+    env)] where [dir_opt] is an optional directory to chdir to before executing the process, and
+    [command], [args], [env] are the same as for [exec_command]. [cmd_to_string] is used for
+    printing information about the job's status. *)
+val run_jobs_in_parallel : 'a Stack.t ->
+  ('a -> (string option * string * string array * string array)) -> ('a -> string) -> unit

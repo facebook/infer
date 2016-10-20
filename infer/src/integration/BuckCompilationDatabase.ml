@@ -98,14 +98,15 @@ let replace_clang_arg arg =
 let run_compilation_file compilation_database file =
   try
     let compilation_data = CompilationDatabase.find compilation_database file in
-    Unix.chdir compilation_data.dir;
     let wrapper_cmd = swap_command compilation_data.command in
     let replaced_args = IList.map replace_clang_arg compilation_data.args |> IList.flatten in
-    let args = Array.of_list (wrapper_cmd::replaced_args) in
+    let arg_file =
+      ClangQuotes.mk_arg_file "buck_clang_args_" ClangQuotes.SingleQuotes replaced_args in
+    let args = Array.of_list [wrapper_cmd; "@" ^ arg_file] in
     let env = Array.append
         (Unix.environment())
         (Array.of_list ["FCP_RUN_SYNTAX_ONLY=1"]) in
-    Process.exec_command wrapper_cmd args env
+    (Some compilation_data.dir, wrapper_cmd, args, env)
   with Not_found ->
     Process.print_error_and_exit "Failed to find compilation data for %s \n%!" file
 
@@ -113,10 +114,10 @@ let run_compilation_database compilation_database =
   let number_of_files = CompilationDatabase.get_size compilation_database in
   Logging.out "Starting %s %d files \n%!" capture_text number_of_files;
   Logging.stdout "Starting %s %d files \n%!" capture_text number_of_files;
-  let jobsStack = create_files_stack compilation_database in
+  let jobs_stack = create_files_stack compilation_database in
   let capture_text_upper = String.capitalize capture_text in
   let job_to_string = fun file -> capture_text_upper ^ " " ^ file in
-  Process.run_jobs_in_parallel jobsStack (run_compilation_file compilation_database) job_to_string
+  Process.run_jobs_in_parallel jobs_stack (run_compilation_file compilation_database) job_to_string
 
 
 (** Computes the compilation database: a map from a file path to info to compile the file, i.e.

@@ -83,20 +83,26 @@ let pid_to_program jobsMap pid =
     IntMap.find pid jobsMap
   with Not_found -> ""
 
-(** [run_jobs_in_parallel jobs_stack run_job cmd_to_string ] runs the jobs in
-    the given stack, by spawning the jobs in batches of n, where n is Config.jobs. It
-    then waits for all those jobs and starts a new batch and so on. cmd_to_string
-    is used for printing information about the job's status.   *)
-let run_jobs_in_parallel jobs_stack run_job cmd_to_string =
+(** [run_jobs_in_parallel jobs_stack gen_cmd cmd_to_string] runs the jobs in the given stack, by
+    spawning the jobs in batches of n, where n is [Config.jobs]. It then waits for all those jobs
+    and starts a new batch and so on. [gen_cmd] should return a tuple [(dir_opt, command, args,
+    env)] where [dir_opt] is an optional directory to chdir to before executing the process, and
+    [command], [args], [env] are the same as for [exec_command]. [cmd_to_string] is used for
+    printing information about the job's status. *)
+let run_jobs_in_parallel jobs_stack gen_cmd cmd_to_string =
   let run_job () =
     let jobs_map = ref IntMap.empty in
     let current_jobs_count = start_current_jobs_count () in
     while not (Stack.is_empty jobs_stack) do
       let job_cmd = Stack.pop jobs_stack in
+      let (dir_opt, cmd, args, env) = gen_cmd job_cmd in
       Pervasives.incr current_jobs_count;
       match Unix.fork () with
       | 0 ->
-          run_job job_cmd
+          (match dir_opt with
+           | Some dir -> Unix.chdir dir
+           | None -> ());
+          exec_command cmd args env
       | pid_child ->
           jobs_map := IntMap.add pid_child (cmd_to_string job_cmd) !jobs_map;
           if Stack.length jobs_stack = 0 || !current_jobs_count >= Config.jobs then

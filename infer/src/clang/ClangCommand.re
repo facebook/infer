@@ -8,15 +8,11 @@
  */
 open! Utils;
 
-type quoting_style =
-  | DoubleQuotes
-  | SingleQuotes;
-
 type args = {
   exec: string,
   argv: list string,
   orig_argv: list string,
-  quoting_style: quoting_style
+  quoting_style: ClangQuotes.style
 };
 
 type t =
@@ -85,12 +81,6 @@ let value_of_option {orig_argv} => value_of_argv_option orig_argv;
 
 let has_flag {orig_argv} flag => IList.exists (string_equal flag) orig_argv;
 
-let quote quoting_style =>
-  switch quoting_style {
-  | DoubleQuotes => (fun s => "\"" ^ s ^ "\"")
-  | SingleQuotes => (fun s => "'" ^ s ^ "'")
-  };
-
 /* Work around various path or library issues occurring when one tries to substitute Apple's version
    of clang with a different version. Also mitigate version discrepancies in clang's
    fatal warnings. */
@@ -134,11 +124,7 @@ let mk_clang_compat_args args => {
         filter_unsupported_args_and_swap_includes (arg, res') tl
       };
   let clang_arguments = filter_unsupported_args_and_swap_includes ("", []) args.argv;
-  let file = Filename.temp_file "clang_args_" ".txt";
-  let write_args outc =>
-    output_string outc (IList.map (quote args.quoting_style) clang_arguments |> String.concat " ");
-  with_file file f::write_args |> ignore;
-  Logging.out "Clang options stored in file %s@\n" file;
+  let file = ClangQuotes.mk_arg_file "clang_args_" args.quoting_style clang_arguments;
   {...args, argv: [Format.sprintf "@%s" file]}
 };
 
@@ -173,7 +159,8 @@ let mk quoting_style argv => {
 
 let command_to_run args => {
   let {exec, argv, quoting_style} = mk_clang_compat_args args;
-  Printf.sprintf "'%s' %s" exec (IList.map (quote quoting_style) argv |> String.concat " ")
+  Printf.sprintf
+    "'%s' %s" exec (IList.map (ClangQuotes.quote quoting_style) argv |> String.concat " ")
 };
 
 let with_exec exec args => {...args, exec};

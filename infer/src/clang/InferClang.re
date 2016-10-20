@@ -16,7 +16,7 @@ open! Utils;
     the results of `clang -### [args]`. Assembly commands (eg, clang -cc1as ...) are filtered out,
     although the type cannot reflect that fact. */
 let normalize (args: array string) :list ClangCommand.t =>
-  switch (ClangCommand.mk ClangCommand.SingleQuotes args) {
+  switch (ClangCommand.mk ClangQuotes.SingleQuotes args) {
   | CC1 args =>
     Logging.out "InferClang got toplevel -cc1 command@\n";
     [ClangCommand.CC1 args]
@@ -32,7 +32,7 @@ let normalize (args: array string) :list ClangCommand.t =>
         "\"" ^ line ^ " \"" |>
         /* split by whitespace */
         Str.split (Str.regexp_string "\" \"") |> Array.of_list |>
-        ClangCommand.mk ClangCommand.DoubleQuotes
+        ClangCommand.mk ClangQuotes.EscapedDoubleQuotes
       } else if (
         Str.string_match (Str.regexp "clang[^ :]*: warning: ") line 0
       ) {
