@@ -19,3 +19,6 @@ val mutable_local_vars_advice :
 
 val component_factory_function_advice :
   CLintersContext.context -> Clang_ast_t.decl -> CIssue.issue_desc option
+
+val component_with_unconventional_superclass_advice :
+  CLintersContext.context -> Clang_ast_t.decl -> CIssue.issue_desc option

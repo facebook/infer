@@ -133,3 +133,53 @@ let component_factory_function_advice context decl =
         }
       else None
   | _ -> assert false (* Should only be called with FunctionDecl *)
+
+(** Components should not inherit from each other. They should instead
+    inherit from CKComponent, CKCompositeComponent, or
+    CKStatefulViewComponent. (Similar rule applies to component controllers.) *)
+let component_with_unconventional_superclass_advice context decl =
+  let check_interface if_decl =
+    match if_decl with
+    | Clang_ast_t.ObjCInterfaceDecl (_, _, _, _, _) ->
+        if is_component_or_controller_if (Some if_decl) then
+          let superclass_name = match Ast_utils.get_super_if (Some if_decl) with
+            | Some Clang_ast_t.ObjCInterfaceDecl (_, named_decl_info, _, _, _) ->
+                Some named_decl_info.ni_name
+            | _ -> None in
+          let has_conventional_superclass =
+            let open CFrontend_config in
+            match superclass_name with
+            | Some name when IList.mem string_equal name [
+                ckcomponent_cl;
+                ckcomponentcontroller_cl;
+                "CKCompositeComponent";
+                "CKStatefulViewComponent";
+                "CKStatefulViewComponentController"
+              ] -> true
+            | _ -> false in
+          let condition =
+            is_component_or_controller_if (Some if_decl)
+            && not has_conventional_superclass in
+          if condition then
+            Some {
+              CIssue.issue = CIssue.Component_with_unconventional_superclass;
+              CIssue.description = "Never Subclass Components";
+              CIssue.suggestion = Some (
+                  "Instead, create a new subclass of CKCompositeComponent."
+                );
+              CIssue.loc = CFrontend_checkers.location_from_decl context if_decl
+            }
+          else
+            None
+        else
+          None
+    | _ -> assert false in
+  match decl with
+  | Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info) ->
+      let if_decl_opt =
+        Ast_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
+      if Option.is_some if_decl_opt && is_ck_context context decl then
+        check_interface (Option.get if_decl_opt)
+      else
+        None
+  | _ -> assert false

@@ -33,11 +33,19 @@ let captured_vars_checker_list = [CFrontend_checkers.captured_cxx_ref_in_objc_bl
 let checkers_for_capture_vars stmt checker context =
   checker context stmt
 
-(* List of checkers on NSNotificationCenter *)
-let ns_notification_checker_list = [CFrontend_checkers.checker_NSNotificationCenter]
+(* List of checkers on ObjCProtocol decls *)
+let objc_protocol_checker_list = [CFrontend_checkers.checker_NSNotificationCenter]
 
-(* Invocation of checker belonging to ns_notification_center_list *)
-let checkers_for_ns decl checker context =
+(* Invocation of checker belonging to objc_protocol_checker_list *)
+let checkers_for_objc_protocol decl checker context =
+  checker context decl
+
+(* List of checkers running on ObjCImpl decls *)
+let objc_impl_checker_list = [CFrontend_checkers.checker_NSNotificationCenter;
+                              ComponentKit.component_with_unconventional_superclass_advice]
+
+(* Invocation of checker belonging to objc_impl_checker_list *)
+let checkers_for_objc_impl decl checker context =
   checker context decl
 
 (* List of checkers on variables *)
@@ -162,10 +170,15 @@ let run_frontend_checkers_on_stmt context instr =
 let run_frontend_checkers_on_decl context dec =
   let open Clang_ast_t in
   match dec with
-  | ObjCImplementationDecl _ | ObjCProtocolDecl _ ->
-      let call_ns_checker = checkers_for_ns dec in
+  | ObjCImplementationDecl _ ->
+      let call_objc_impl_checker = checkers_for_objc_impl dec in
       let key = Ast_utils.generate_key_decl dec in
-      invoke_set_of_checkers call_ns_checker context key ns_notification_checker_list;
+      invoke_set_of_checkers call_objc_impl_checker context key objc_impl_checker_list;
+      context
+  | ObjCProtocolDecl _ ->
+      let call_objc_protocol_checker = checkers_for_objc_protocol dec in
+      let key = Ast_utils.generate_key_decl dec in
+      invoke_set_of_checkers call_objc_protocol_checker context key objc_protocol_checker_list;
       context
   | VarDecl _ ->
       let call_var_checker = checker_for_var dec in

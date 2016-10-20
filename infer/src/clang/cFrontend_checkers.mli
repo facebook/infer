@@ -45,3 +45,6 @@ val global_var_init_with_calls_warning :
 
 val location_from_dinfo :
   CLintersContext.context -> Clang_ast_t.decl_info -> Location.t
+
+val location_from_decl :
+  CLintersContext.context -> Clang_ast_t.decl -> Location.t
