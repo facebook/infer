@@ -7,11 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-(** I want to use various powersets instead of just variables like Var.Set
-    For example to track the analogues of attributes
-    I will do this running forwards later, but backwards for now.
-*)
-
 open! Utils
 
 module F = Format
@@ -109,7 +104,8 @@ module ResultsTableType = Map.Make (struct
     let compare (_, _, pn1, _) (_,_,pn2,_) =  Procname.compare pn1 pn2
   end)
 
-let should_analyze_proc (_,_,proc_name,proc_desc) =
+let should_analyze_proc (_,tenv,proc_name,proc_desc) =
+  not (FbThreadSafety.is_custom_init tenv proc_name) &&
   not (Procname.java_is_autogen_method proc_name) &&
   not (Procname.is_constructor proc_name) &&
   not (Procname.is_class_initializer proc_name) &&
@@ -132,6 +128,7 @@ let make_results_table file_env =
   in
   map_post_computation_over_procs compute_post_for_procedure procs_to_analyze
 
+
 let report_thread_safety_errors ( _, tenv, pname, pdesc) writestate =
   let report_one_error access_path =
     let description =
@@ -147,6 +144,7 @@ let report_thread_safety_errors ( _, tenv, pname, pdesc) writestate =
       description
   in
   IList.iter report_one_error (IList.map snd (PathDomain.elements writestate))
+
 
 (* For now, just checks if there is one active element amongst the posts of the analyzed methods.
    This indicates that the method races with itself. To be refined later. *)
