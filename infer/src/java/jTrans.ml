@@ -206,19 +206,6 @@ type defined_status =
   | Defined of Cfg.Procdesc.t
   | Called of Cfg.Procdesc.t
 
-type translation_status =
-  | Created of defined_status
-  | Unknown
-
-let lookup_procdesc cfg procname =
-  match Cfg.Procdesc.find_from_name cfg procname with
-  | Some procdesc ->
-      if Cfg.Procdesc.is_defined procdesc then
-        Created (Defined procdesc)
-      else
-        Created (Called procdesc)
-  | None -> Unknown
-
 let is_java_native cm =
   (cm.Javalib.cm_implementation = Javalib.Native)
 
@@ -246,11 +233,14 @@ let update_init_loc cn ms loc_start =
     with Not_found -> init_loc_map := (JBasics.ClassMap.add cn loc_start !init_loc_map)
 
 (** Creates a procedure description. *)
-let create_local_procdesc source_file program linereader cfg tenv m =
+let create_procdesc source_file program linereader cfg tenv m =
   let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
   let proc_name_java = JTransType.get_method_procname cn ms (JTransType.get_method_kind m) in
   let proc_name = Procname.Java proc_name_java in
-  let create_new_procdesc () =
+  if JClasspath.is_model proc_name then
+    (* do not translate the method if there is a model for it *)
+    JUtils.log "Skipping method with a model: %s@." (Procname.to_string proc_name)
+  else
     let trans_access = function
       | `Default -> PredSymb.Default
       | `Public -> PredSymb.Public
@@ -339,43 +329,8 @@ let create_local_procdesc source_file program linereader cfg tenv m =
           Cfg.Node.add_locals_ret_declaration start_node locals;
     with JBir.Subroutine | JBasics.Class_structure_error _ ->
       L.err
-        "create_local_procdesc raised JBir.Subroutine or JBasics.Class_structure_error on %a@."
-        Procname.pp proc_name in
-  match lookup_procdesc cfg proc_name with
-  | Unknown ->
-      create_new_procdesc ()
-  | Created defined_status ->
-      begin
-        match defined_status with
-        | Defined _ -> assert false
-        | Called procdesc ->
-            Cfg.Procdesc.remove cfg (Cfg.Procdesc.get_proc_name procdesc) false;
-            create_new_procdesc ()
-      end
-
-let create_external_procdesc program cfg tenv cn ms kind =
-  let return_type =
-    match JBasics.ms_rtype ms with
-    | None -> Typ.Tvoid
-    | Some vt -> JTransType.value_type program tenv vt in
-  let formals = formals_from_signature program tenv cn ms kind in
-  let proc_name_java = JTransType.get_method_procname cn ms kind in
-  ignore (
-    let proc_attributes =
-      { (ProcAttributes.default (Procname.Java proc_name_java) Config.Java) with
-        ProcAttributes.formals;
-        ret_type = return_type;
-      } in
-    Cfg.Procdesc.create cfg proc_attributes)
-
-(** returns the procedure description of the given method and creates it if it hasn't been created before *)
-let rec get_method_procdesc program cfg tenv cn ms kind =
-  let procname_java = JTransType.get_method_procname cn ms kind in
-  match lookup_procdesc cfg (Procname.Java procname_java) with
-  | Unknown ->
-      create_external_procdesc program cfg tenv cn ms kind;
-      get_method_procdesc program cfg tenv cn ms kind
-  | Created status -> status
+        "create_procdesc raised JBir.Subroutine or JBasics.Class_structure_error on %a@."
+        Procname.pp proc_name
 
 let builtin_new =
   Exp.Const (Const.Cfun ModelBuiltins.__new)

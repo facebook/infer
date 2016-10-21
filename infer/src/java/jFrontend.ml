@@ -73,47 +73,43 @@ let add_edges
     Cfg.Node.set_succs_exn cfg exn_node exit_nodes exit_nodes;
   Array.iteri connect_nodes method_body_nodes
 
+
 (** Add a concrete method. *)
-let add_cmethod source_file program icfg cm is_static =
+let add_cmethod source_file program icfg cm method_kind =
   let cfg = icfg.JContext.cfg in
-  let tenv = icfg.JContext.tenv in
   let cn, ms = JBasics.cms_split cm.Javalib.cm_class_method_signature in
-  match JTrans.get_method_procdesc program cfg tenv cn ms is_static with
-  | JTrans.Defined procdesc when JClasspath.is_model (Cfg.Procdesc.get_proc_name procdesc) ->
-      (* do not capture the method if there is a model for it *)
-      JUtils.log
-        "Skipping method with a model: %s@."
-        (Procname.to_string (Cfg.Procdesc.get_proc_name procdesc));
-  | JTrans.Defined procdesc ->
+  let proc_name_java = JTransType.get_method_procname cn ms method_kind in
+  let proc_name = Procname.Java proc_name_java in
+  match Cfg.Procdesc.find_from_name cfg proc_name with
+  | None -> ()
+  | Some _ when JTrans.is_java_native cm -> ()
+  | Some procdesc ->
       let start_node = Cfg.Procdesc.get_start_node procdesc in
       let exit_node = Cfg.Procdesc.get_exit_node procdesc in
       let exn_node =
         match JContext.get_exn_node procdesc with
         | Some node -> node
-        | None -> assert false in
+        | None ->
+            failwithf "No exn node found for %s" (Procname.to_string proc_name) in
       let impl = JTrans.get_implementation cm in
       let instrs = JBir.code impl in
       let context =
         JContext.create_context icfg procdesc impl cn source_file program in
       let method_body_nodes = Array.mapi (JTrans.instruction context) instrs in
-      let procname = Cfg.Procdesc.get_proc_name procdesc in
       add_edges context start_node exn_node [exit_node] method_body_nodes impl false;
-      Cg.add_defined_node icfg.JContext.cg procname;
-  | JTrans.Called _ -> ()
+      Cg.add_defined_node icfg.JContext.cg proc_name
 
 
 (** Add an abstract method. *)
-let add_amethod program icfg am is_static =
+let add_amethod icfg am method_kind =
   let cfg = icfg.JContext.cfg in
-  let tenv = icfg.JContext.tenv in
   let cn, ms = JBasics.cms_split am.Javalib.am_class_method_signature in
-  match JTrans.get_method_procdesc program cfg tenv cn ms is_static with
-  | JTrans.Defined procdesc when (JClasspath.is_model (Cfg.Procdesc.get_proc_name procdesc)) ->
-      (* do not capture the method if there is a model for it *)
-      JUtils.log "Skipping method with a model: %s@." (Procname.to_string (Cfg.Procdesc.get_proc_name procdesc));
-  | JTrans.Defined procdesc ->
+  let proc_name_java = JTransType.get_method_procname cn ms method_kind in
+  let proc_name = Procname.Java proc_name_java in
+  match Cfg.Procdesc.find_from_name cfg proc_name with
+  | None -> ()
+  | Some procdesc ->
       Cg.add_defined_node icfg.JContext.cg (Cfg.Procdesc.get_proc_name procdesc)
-  | JTrans.Called _ -> ()
 
 
 let path_of_cached_classname cn =
@@ -155,7 +151,7 @@ let create_icfg source_file linereader program icfg cn node =
   let cfg = icfg.JContext.cfg in
   let tenv = icfg.JContext.tenv in
   begin
-    Javalib.m_iter (JTrans.create_local_procdesc source_file program linereader cfg tenv) node;
+    Javalib.m_iter (JTrans.create_procdesc source_file program linereader cfg tenv) node;
     Javalib.m_iter (fun m ->
         (* each procedure has different scope: start names from id 0 *)
         Ident.NameGenerator.reset ();
@@ -164,18 +160,10 @@ let create_icfg source_file linereader program icfg cn node =
         | Javalib.ConcreteMethod cm ->
             add_cmethod source_file program icfg cm method_kind
         | Javalib.AbstractMethod am ->
-            add_amethod program icfg am method_kind
+            add_amethod icfg am method_kind
       ) node
   end
 
-(*
-This type definition is for a future improvement of the capture where in one pass, the frontend will
-translate things differently whether a source file is found for a given class
-type capture_status =
-  | With_source of string
-  | Library of string
-  | Unknown
-*)
 
 (* returns true for the set of classes that are selected to be translated *)
 let should_capture classes package_opt source_basename node =

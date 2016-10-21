@@ -25,12 +25,11 @@ type defined_status =
   | Defined of Cfg.Procdesc.t
   | Called of Cfg.Procdesc.t
 
-(** returns the procedure description of the given method and creates it if it hasn't been created before *)
-val get_method_procdesc : JClasspath.program -> Cfg.cfg -> Tenv.t -> JBasics.class_name ->
-  JBasics.method_signature -> Procname.method_kind -> defined_status
+val is_java_native : JCode.jcode Javalib.concrete_method  -> bool
 
-(** [create_local_procdesc linereader cfg tenv program m] creates a procedure description for the method m and adds it to cfg  *)
-val create_local_procdesc :
+(** [create_procdesc linereader cfg tenv program m] creates a procedure description
+    for the method m and adds it to cfg  *)
+val create_procdesc :
   DB.source_file ->
   JClasspath.program ->
   Printer.LineReader.t ->

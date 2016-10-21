@@ -186,7 +186,10 @@ let method_signature_names ms =
   let args_types = args_to_signature (JBasics.ms_args ms) in
   (return_type_name, method_name, args_types)
 
-let get_method_kind m = if Javalib.is_static_method m then Procname.Static else Procname.Non_Static
+let get_method_kind m =
+  if Javalib.is_static_method m
+  then Procname.Static
+  else Procname.Non_Static
 
 (* create a mangled procname from an abstract or concrete method *)
 let get_method_procname cn ms kind =
