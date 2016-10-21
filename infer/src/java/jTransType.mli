@@ -58,10 +58,8 @@ val value_type : JClasspath.program -> Tenv.t -> JBasics.value_type -> Typ.t
 val param_type :
   JClasspath.program -> Tenv.t -> JBasics.class_name -> JBir.var -> JBasics.value_type -> Typ.t
 
-(** Returns the return type of the method based on the return type specified in ms.
-    If the method is the initialiser, return the type Object instead. *)
-val return_type :
-  JClasspath.program -> Tenv.t -> JBasics.method_signature -> JContext.meth_kind -> Typ.t
+(** Returns the return type of the method based on the return type specified in ms. *)
+val return_type : JClasspath.program -> Tenv.t -> JBasics.method_signature -> Typ.t
 
 (** translates the type of an expression *)
 val expr_type : JContext.t -> JBir.expr -> Typ.t

@@ -20,11 +20,7 @@ type jump_kind =
   | Jump of int
   | Exit
 
-type meth_kind =
-  | Normal
-  | Init
-
-(** data  *)
+(** Translation data *)
 type icfg = {
   tenv : Tenv.t;
   cg : Cg.t;
@@ -39,12 +35,11 @@ type t =
     if_jumps : int NodeTbl.t;
     goto_jumps : (int, jump_kind) Hashtbl.t;
     cn : JBasics.class_name;
-    meth_kind : meth_kind;
     source_file : DB.source_file;
     program : JClasspath.program;
   }
 
-let create_context icfg procdesc impl cn meth_kind source_file program =
+let create_context icfg procdesc impl cn source_file program =
   { icfg;
     procdesc;
     impl;
@@ -52,7 +47,6 @@ let create_context icfg procdesc impl cn meth_kind source_file program =
     if_jumps = NodeTbl.create 10;
     goto_jumps = Hashtbl.create 10;
     cn;
-    meth_kind;
     source_file;
     program;
   }

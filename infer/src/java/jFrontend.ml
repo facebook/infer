@@ -74,40 +74,32 @@ let add_edges
   Array.iteri connect_nodes method_body_nodes
 
 (** Add a concrete method. *)
-let add_cmethod source_file program icfg node cm is_static =
+let add_cmethod source_file program icfg cm is_static =
   let cfg = icfg.JContext.cfg in
   let tenv = icfg.JContext.tenv in
   let cn, ms = JBasics.cms_split cm.Javalib.cm_class_method_signature in
-  let is_clinit = JBasics.ms_equal ms JBasics.clinit_signature in
-  if Config.no_static_final = false
-  && is_clinit
-  && not (JTransStaticField.has_static_final_fields node) then
-    JUtils.log "\t\tskipping class initializer: %s@." (JBasics.ms_name ms)
-  else
-    match JTrans.get_method_procdesc program cfg tenv cn ms is_static with
-    | JTrans.Defined procdesc when JClasspath.is_model (Cfg.Procdesc.get_proc_name procdesc) ->
-        (* do not capture the method if there is a model for it *)
-        JUtils.log "Skipping method with a model: %s@." (Procname.to_string (Cfg.Procdesc.get_proc_name procdesc));
-    | JTrans.Defined procdesc ->
-        let start_node = Cfg.Procdesc.get_start_node procdesc in
-        let exit_node = Cfg.Procdesc.get_exit_node procdesc in
-        let exn_node =
-          match JContext.get_exn_node procdesc with
-          | Some node -> node
-          | None -> assert false in
-        let impl = JTrans.get_implementation cm in
-        let instrs, meth_kind =
-          if is_clinit && not Config.no_static_final then
-            let instrs = JTransStaticField.static_field_init node cn (JBir.code impl) in
-            (instrs, JContext.Init)
-          else (JBir.code impl), JContext.Normal in
-        let context =
-          JContext.create_context icfg procdesc impl cn meth_kind source_file program in
-        let method_body_nodes = Array.mapi (JTrans.instruction context) instrs in
-        let procname = Cfg.Procdesc.get_proc_name procdesc in
-        add_edges context start_node exn_node [exit_node] method_body_nodes impl false;
-        Cg.add_defined_node icfg.JContext.cg procname;
-    | JTrans.Called _ -> ()
+  match JTrans.get_method_procdesc program cfg tenv cn ms is_static with
+  | JTrans.Defined procdesc when JClasspath.is_model (Cfg.Procdesc.get_proc_name procdesc) ->
+      (* do not capture the method if there is a model for it *)
+      JUtils.log
+        "Skipping method with a model: %s@."
+        (Procname.to_string (Cfg.Procdesc.get_proc_name procdesc));
+  | JTrans.Defined procdesc ->
+      let start_node = Cfg.Procdesc.get_start_node procdesc in
+      let exit_node = Cfg.Procdesc.get_exit_node procdesc in
+      let exn_node =
+        match JContext.get_exn_node procdesc with
+        | Some node -> node
+        | None -> assert false in
+      let impl = JTrans.get_implementation cm in
+      let instrs = JBir.code impl in
+      let context =
+        JContext.create_context icfg procdesc impl cn source_file program in
+      let method_body_nodes = Array.mapi (JTrans.instruction context) instrs in
+      let procname = Cfg.Procdesc.get_proc_name procdesc in
+      add_edges context start_node exn_node [exit_node] method_body_nodes impl false;
+      Cg.add_defined_node icfg.JContext.cg procname;
+  | JTrans.Called _ -> ()
 
 
 (** Add an abstract method. *)
@@ -163,14 +155,14 @@ let create_icfg source_file linereader program icfg cn node =
   let cfg = icfg.JContext.cfg in
   let tenv = icfg.JContext.tenv in
   begin
-    Javalib.m_iter (JTrans.create_local_procdesc source_file program linereader cfg tenv node) node;
+    Javalib.m_iter (JTrans.create_local_procdesc source_file program linereader cfg tenv) node;
     Javalib.m_iter (fun m ->
         (* each procedure has different scope: start names from id 0 *)
         Ident.NameGenerator.reset ();
         let method_kind = JTransType.get_method_kind m in
         match m with
         | Javalib.ConcreteMethod cm ->
-            add_cmethod source_file program icfg node cm method_kind
+            add_cmethod source_file program icfg cm method_kind
         | Javalib.AbstractMethod am ->
             add_amethod program icfg am method_kind
       ) node

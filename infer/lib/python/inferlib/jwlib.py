@@ -319,8 +319,6 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
         if os.path.isfile(config.MODELS_JAR):
             infer_cmd += ['-models', config.MODELS_JAR]
 
-        infer_cmd.append('-no-static_final')
-
         if self.args.debug:
             infer_cmd.append('-debug')
         if self.args.analyzer == config.ANALYZER_TRACING:

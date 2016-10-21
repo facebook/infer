@@ -421,15 +421,11 @@ let rec expr_type (context : JContext.t) expr =
 
 
 (** Returns the return type of the method based on the return type
-    specified in ms. If the method is the initialiser, return the type
-    Object instead. *)
-let return_type program tenv ms meth_kind =
-  if meth_kind = JContext.Init then
-    get_class_type program tenv JBasics.java_lang_object
-  else
-    match JBasics.ms_rtype ms with
-    | None -> Typ.Tvoid
-    | Some vt -> value_type program tenv vt
+    specified in ms. *)
+let return_type program tenv ms =
+  match JBasics.ms_rtype ms with
+  | None -> Typ.Tvoid
+  | Some vt -> value_type program tenv vt
 
 
 let add_models_types tenv =

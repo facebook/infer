@@ -217,7 +217,6 @@ val models_mode : bool
 val modified_targets : string option
 val monitor_prop_size : bool
 val nelseg : bool
-val no_static_final : bool
 val no_translate_libs : bool
 val objc_memory_model_on : bool
 val only_footprint : bool

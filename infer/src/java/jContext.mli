@@ -20,11 +20,6 @@ type jump_kind =
   | Exit
 
 
-(** data structure for identifying whether a method is the initialiser of a class - that initialises the static fields- or a standard method *)
-type meth_kind =
-  | Normal
-  | Init
-
 (** Hastable for storing nodes that correspond to if-instructions. These are
     used when adding the edges in the contrl flow graph. *)
 module NodeTbl : Hashtbl.S with type key = Cfg.Node.t
@@ -48,7 +43,6 @@ type t = private
     if_jumps : int NodeTbl.t;
     goto_jumps : (int, jump_kind) Hashtbl.t;
     cn : JBasics.class_name;
-    meth_kind : meth_kind;
     source_file : DB.source_file;
     program : JClasspath.program;
   }
@@ -60,7 +54,6 @@ val create_context :
   Cfg.Procdesc.t ->
   JBir.t ->
   JBasics.class_name ->
-  meth_kind ->
   DB.source_file ->
   JClasspath.program ->
   t

@@ -1083,10 +1083,6 @@ and stacktraces_dir =
                  Used to guide the  analysis (only with '-a crashcontext').  See \
                  tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
 
-and static_final =
-  CLOpt.mk_bool ~deprecated_no:["no-static_final"] ~long:"static-final" ~default:true
-    "Special treatment for static final fields"
-
 and stats =
   CLOpt.mk_bool ~deprecated:["stats"] ~long:"stats" "Stats mode (debugging)"
 
@@ -1474,7 +1470,6 @@ and models_mode = !models_mode
 and modified_targets = !modified_targets
 and monitor_prop_size = !monitor_prop_size
 and nelseg = !nelseg
-and no_static_final = not !static_final
 and no_translate_libs = not !headers
 and objc_memory_model_on = !objc_memory_model
 and only_footprint = !only_footprint
