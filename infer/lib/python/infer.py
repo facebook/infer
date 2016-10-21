@@ -45,6 +45,7 @@ MODULE_TO_COMMAND = {
     'xcodebuild': ['xcodebuild'],
     'mvn': ['mvn'],
     'ndk-build': ['ndk-build'],
+    'clang-compilation-database': ['clang-compilation-database'],
 }
 
 

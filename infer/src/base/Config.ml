@@ -674,6 +674,11 @@ and check_duplicate_symbols =
     ~exes:CLOpt.[Analyze]
     "Check if a symbol with the same name is defined in more than one file."
 
+and clang_compilation_database =
+  CLOpt.mk_string_opt ~long:"clang-compilation-database"
+    ~exes:CLOpt.[BuckCompilationDatabase] ~meta:"file"
+    "Specify a json file containing a clang compilation database to be used for the analysis"
+
 and clang_frontend_action =
   CLOpt.mk_symbol_opt ~long:"clang-frontend-action"
     ~exes:CLOpt.[Clang]
@@ -1418,6 +1423,7 @@ and checkers = !checkers
 (** should the checkers be run? *)
 and checkers_enabled = not (!eradicate || !crashcontext || !quandary)
 and clang_biniou_file = !clang_biniou_file
+and clang_compilation_database = !clang_compilation_database
 and clang_frontend_do_capture, clang_frontend_do_lint =
   match !clang_frontend_action with
   | Some `Lint -> false, true (* no capture, lint *)

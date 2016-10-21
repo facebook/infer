@@ -172,6 +172,7 @@ val check_duplicate_symbols : bool
 val checkers : bool
 val checkers_enabled : bool
 val clang_biniou_file : string option
+val clang_compilation_database : string option
 val clang_frontend_action_string : string
 val clang_frontend_do_capture : bool
 val clang_frontend_do_lint : bool

@@ -119,10 +119,13 @@ let run_compilation_database compilation_database =
   let job_to_string = fun file -> capture_text_upper ^ " " ^ file in
   Process.run_jobs_in_parallel jobs_stack (run_compilation_file compilation_database) job_to_string
 
+let should_add_file_to_cdb changed_files file_path =
+  match Config.changed_files_index with
+  | Some _ -> DB.SourceFileSet.mem (DB.source_file_from_string file_path) changed_files
+  | None -> true
 
-(** Computes the compilation database: a map from a file path to info to compile the file, i.e.
-    the dir where the compilation should be executed and the arguments to clang.*)
-let get_compilation_database changed_files =
+(** Computes the compilation database files. *)
+let get_compilation_database_files () =
   let cmd = IList.rev_append Config.rest (IList.rev Config.buck_build_args) in
   match cmd with
   | buck :: build :: args ->
@@ -143,15 +146,7 @@ let get_compilation_database changed_files =
                  (fun target file -> StringMap.add target file compilation_database_files) in
              (* Map from targets to json output *)
              let compilation_database_files = IList.fold_left scan_output StringMap.empty lines in
-             let compilation_database = CompilationDatabase.empty () in
-             let should_add_file file_path =
-               match Config.changed_files_index with
-               | Some _ -> DB.SourceFileSet.mem (DB.source_file_from_string file_path) changed_files
-               | None -> true in
-             StringMap.iter
-               (fun _ file -> CompilationDatabase.decode_json_file compilation_database should_add_file file)
-               compilation_database_files;
-             compilation_database
+             IList.map (snd) (StringMap.bindings compilation_database_files)
        with Unix.Unix_error (err, _, _) ->
          Process.print_error_and_exit
            "Cannot execute %s\n%!"
@@ -162,6 +157,19 @@ let get_compilation_database changed_files =
 
 let () =
   let changed_files = read_files_to_compile () in
-  let compilation_database = get_compilation_database changed_files in
+  let db_json_files =
+    match Config.clang_compilation_database with
+    | Some file -> [file]
+    | None ->
+        if Option.is_some Config.use_compilation_database then
+          get_compilation_database_files ()
+        else failwith(
+            "Either the option clang_compilation_database or the option \
+             use_compilation_database should be passed to this module ") in
+  let compilation_database = CompilationDatabase.empty () in
+  IList.iter
+    (CompilationDatabase.decode_json_file
+       compilation_database (should_add_file_to_cdb changed_files)) db_json_files;
+
   create_dir (Config.results_dir // Config.clang_build_output_dir_name);
   run_compilation_database compilation_database
