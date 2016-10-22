@@ -436,23 +436,3 @@ let add_models_types tenv =
     if not (Tenv.mem t typename) then
       Tenv.add tenv typename struct_typ in
   Tenv.iter (add_type tenv) !JClasspath.models_tenv
-
-
-(* TODO #6604630: remove *)
-let never_returning_null =
-  (* class, method name, [arg type], ret_type of methods to model as never returning null *)
-  let fragment_type = "android.support.v4.app.Fragment" in
-  let never_null_method_sigs =
-    [
-      (fragment_type, "getContext", [], "android.content.Context", Procname.Non_Static);
-      (fragment_type, "getActivity", [], "android.support.v4.app.FragmentActivity", Procname.Non_Static)
-    ] in
-  let make_procname = function
-    | (class_name, method_name, arg_types, ret_type, kind) ->
-        let return_cn = JBasics.make_cn ret_type in
-        let cn = JBasics.make_cn class_name
-        and ms =
-          JBasics.make_ms
-            method_name arg_types (Some (JBasics.TObject (JBasics.TClass return_cn))) in
-        get_method_procname cn ms kind in
-  IList.map make_procname never_null_method_sigs

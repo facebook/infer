@@ -707,11 +707,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
   let create_node node_kind sil_instrs =
     Cfg.Node.create cfg loc node_kind sil_instrs context.procdesc in
   let return_not_null () =
-    match_never_null loc.Location.file proc_name
-    ||
-    IList.exists
-      (fun pnj -> Procname.equal (Procname.Java pnj) proc_name)
-      JTransType.never_returning_null in
+    match_never_null loc.Location.file proc_name in
   let trans_monitor_enter_exit context expr pc loc builtin node_desc =
     let instrs, sil_expr, sil_type = expression context pc expr in
     let builtin_const = Exp.Const (Const.Cfun builtin) in

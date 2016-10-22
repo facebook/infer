@@ -93,6 +93,3 @@ val cn_to_java_type : JBasics.class_name -> Procname.java_type
 
 (** Add the types of the models to the type environment passed as parameter *)
 val add_models_types : Tenv.t -> unit
-
-(** list of methods that are never returning null *)
-val never_returning_null : Procname.java list
