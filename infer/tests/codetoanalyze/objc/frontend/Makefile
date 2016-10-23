@@ -86,8 +86,8 @@ compile:
 	clang $(OPTIONS) -fobjc-arc $(FILES_ARC)
 
 capture:
-	infer -a capture --cxx --frontend-tests --continue --reactive -- clang $(OPTIONS) $(FILES_NOARC)
-	infer -a capture --cxx --frontend-tests -- clang $(OPTIONS) -fobjc-arc $(FILES_ARC)
+	$(INFER_BIN) -a capture --cxx --frontend-tests --continue --reactive -- clang $(OPTIONS) $(FILES_NOARC)
+	$(INFER_BIN) -a capture --cxx --frontend-tests -- clang $(OPTIONS) -fobjc-arc $(FILES_ARC)
 
 
 

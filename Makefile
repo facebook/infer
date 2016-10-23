@@ -131,7 +131,7 @@ cpp_infer_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/cpp/errors test
 
 cpp_quandary_test:
-	make -C ./infer/tests/codetoanalyze/cpp/quandary test
+	$(MAKE) -C ./infer/tests/codetoanalyze/cpp/quandary test
 
 java_checkers_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/java/checkers test

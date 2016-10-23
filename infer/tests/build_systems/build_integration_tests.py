@@ -41,6 +41,8 @@ from inferlib import config, issues, utils
 
 ROOT_DIR = os.path.join(SCRIPT_DIR, os.pardir, os.pardir, os.pardir)
 
+INFER_BIN = os.path.join(ROOT_DIR, 'infer', 'bin', 'infer')
+
 CLANG_BIN = os.path.join(ROOT_DIR, 'facebook-clang-plugins', 'clang',
                          'install', 'bin', 'clang')
 
@@ -126,7 +128,7 @@ def run_analysis(clean_cmds, build_cmds, extra_check, should_fail, env=None):
         extra_args = (build_cmd['infer_args']
                       if 'infer_args' in build_cmd
                       else [])
-        infer_cmd = (['infer', '-o', temp_out_dir] +
+        infer_cmd = ([INFER_BIN, '-o', temp_out_dir] +
                      extra_args +
                      ['--'] +
                      build_cmd['compile'])

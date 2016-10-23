@@ -23,7 +23,7 @@ compile:
 	clang $(OPTIONS) $(FILES)
 
 capture:
-	infer -a capture --cxx --frontend-tests --continue --reactive -- clang $(OPTIONS) $(FILES)
+	$(INFER_BIN) -a capture --cxx --frontend-tests --continue --reactive -- clang $(OPTIONS) $(FILES)
 
 
 

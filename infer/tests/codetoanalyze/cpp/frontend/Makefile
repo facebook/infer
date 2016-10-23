@@ -16,4 +16,4 @@ compile:
 	clang $(OPTIONS) $(FILES)
 
 capture:
-	infer -a capture --frontend-tests --cxx --headers -- clang $(OPTIONS) $(FILES)
+	$(INFER_BIN) -a capture --frontend-tests --cxx --headers -- clang $(OPTIONS) $(FILES)
