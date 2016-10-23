@@ -241,20 +241,33 @@ let version_string =
     Unix.time *)
 let initial_analysis_time = Unix.time ()
 
+(* Splits a path into its parts. For example:
+   - (split "path/to/file") is [".", "path"; "to"; "file"]
+   - (split "/path/to/file") is ["/", "path"; "to"; "file"] *)
+let split path =
+  let rec loop accu p =
+    match Filename.dirname p with
+    | d when d = p -> d :: accu
+    | d -> loop ((Filename.basename p) :: accu) d in
+  loop [] path
+
 (* Recursively resolve symlinks until we get something that is not a link. Executables may be
    (multiple levels of) symbolic links to the real binary directory, eg after `make install` or
    packaging. *)
-let rec real_path path =
-  match Unix.readlink path with
-  | link when Filename.is_relative link ->
-      (* [path] is a relative symbolic link *)
-      real_path ((Filename.dirname path) // link)
-  | link ->
-      (* [path] is an absolute symbolic link *)
-      real_path link
-  | exception Unix.Unix_error(Unix.EINVAL, _, _) ->
-      (* [path] is not a symbolic link *)
-      path
+let real_path path =
+  let rec resolve p =
+    match Unix.readlink p with
+    | link when Filename.is_relative link ->
+        (* [p] is a relative symbolic link *)
+        resolve ((Filename.dirname p) // link)
+    | link ->
+        (* [p] is an absolute symbolic link *)
+        resolve link
+    | exception Unix.Unix_error(Unix.EINVAL, _, _) ->
+        (* [p] is not a symbolic link *)
+        p in
+  IList.fold_left
+    (fun resolved_path p -> resolve (resolved_path // p)) "" (split path)
 
 (* Resolve symlinks to get to the real executable. The real executable is located in [bin_dir]
    below, which allows us to find [lib_dir], [models_dir], etc., relative to it. *)
