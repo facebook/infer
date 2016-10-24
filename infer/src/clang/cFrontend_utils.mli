@@ -172,6 +172,9 @@ sig
     ?blacklist:string list -> Clang_ast_t.decl option -> string list -> bool
 
   val type_ptr_to_objc_interface : Clang_ast_types.t_ptr -> Clang_ast_t.decl option
+
+  (** A class method that returns an instance of the class is a factory method. *)
+  val is_objc_factory_method : Clang_ast_t.decl -> Clang_ast_t.decl -> bool
 end
 
 module General_utils :

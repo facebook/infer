@@ -476,6 +476,35 @@ struct
         type_ptr_to_objc_interface function_type_info.Clang_ast_t.fti_return_type
     | _ -> None
 
+
+  let if_decl_to_di_pointer_opt if_decl =
+    match if_decl with
+    | Clang_ast_t.ObjCInterfaceDecl (if_decl_info, _, _, _, _) ->
+        Some if_decl_info.di_pointer
+    | _ -> None
+
+  let is_instance_type type_ptr =
+    match name_opt_of_typedef_type_ptr type_ptr with
+    | Some name -> name = "instancetype"
+    | None -> false
+
+  let return_type_matches_class_type rtp type_decl_pointer =
+    if is_instance_type rtp then
+      true
+    else
+      let return_type_decl_opt = type_ptr_to_objc_interface rtp in
+      let return_type_decl_pointer_opt =
+        Option.map if_decl_to_di_pointer_opt return_type_decl_opt in
+      (Some type_decl_pointer) = return_type_decl_pointer_opt
+
+  let is_objc_factory_method if_decl meth_decl =
+    let if_type_decl_pointer = if_decl_to_di_pointer_opt if_decl in
+    match meth_decl with
+    | Clang_ast_t.ObjCMethodDecl (_, _, omdi) ->
+        (not omdi.omdi_is_instance_method) &&
+        (return_type_matches_class_type omdi.omdi_result_type if_type_decl_pointer)
+    | _ -> false
+
 (*
   let rec getter_attribute_opt attributes =
     match attributes with
