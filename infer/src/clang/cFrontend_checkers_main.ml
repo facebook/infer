@@ -15,7 +15,7 @@ open Ctl_lexer
 let parse_ctl_file filename =
   let print_position _ lexbuf =
     let pos = lexbuf.lex_curr_p in
-    Logging.out "%s:%d:%d" pos.pos_fname
+    Logging.err "%s:%d:%d" pos.pos_fname
       pos.pos_lnum (pos.pos_cnum - pos.pos_bol + 1) in
   let parse_with_error lexbuf =
     try Some (Ctl_parser.checkers_list token lexbuf) with
@@ -27,8 +27,14 @@ let parse_ctl_file filename =
         exit (-1) in
   let parse_and_print lexbuf =  match parse_with_error lexbuf with
     | Some l ->
-        IList.iter (fun { Ctl_parser_types.name = s; Ctl_parser_types.definitions = _ } ->
-            Logging.out "Parsed checker: %s\n" s) l;
+        IList.iter (fun { Ctl_parser_types.name = s; Ctl_parser_types.definitions = defs } ->
+            Logging.out "Parsed checker definition: %s\n" s;
+            IList.iter (fun d -> match d with
+                | Ctl_parser_types.CSet ("report_when", phi) ->
+                    Logging.out "    Report when:  \n    %a\n"
+                      CTL.Debug.pp_formula phi
+                | _ -> ()) defs
+          ) l;
     | None -> () in
   match filename with
   | Some fn ->

@@ -17,34 +17,35 @@
     let pos = lexbuf.lex_curr_p in
     lexbuf.lex_curr_p <-
       { pos with pos_bol = lexbuf.lex_curr_pos;
-                pos_lnum = pos.pos_lnum + 1
+                pos_lnum = pos.pos_lnum + 1;
+                pos_cnum = 1;
       }
 }
 
 let comment = "//" [^'\n']*
 let whitespace = [' ' '\t']
-let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
-
+let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_' ':']*
 
 rule token = parse
   | whitespace+ { token lexbuf }
   | whitespace*("\r")?"\n" { next_line lexbuf; token lexbuf }
   | comment { token lexbuf }
-  | "holds-until" { EU }
-  | "holds-everywhere-until" { AU }
-  | "holds-eventually" { EF }
-  | "holds-eventually-everywhere" { AF }
-  | "holds-next" { EX }
-  | "holds-every-next" { AX }
-  | "always-holds" { EG }
-  | "always-holds-everywhere" { AG }
-  | "instanceof" { EH }
-  | "with-node" { ET }
-  | "define-checker" { DEFINE_CHECKER }
-  | "set" { SET }
-  | "let" { SET }
-  | "True" { TRUE }
-  | "False" { FALSE }
+  | "HOLDS-UNTIL" { EU }
+  | "HOLDS-EVERYWHERE-UNTIL" { AU }
+  | "HOLDS-EVENTUALLY" { EF }
+  | "HOLDS-EVENTUALLY-EVERYWHERE" { AF }
+  | "HOLDS-NEXT" { EX }
+  | "HOLDS-EVERYWHERE-NEXT" { AX }
+  | "ALWAYS-HOLDS" { EG }
+  | "ALSWAYS-HOLDS-EVERYWHERE" { AG }
+  | "INSTANCEOF" { EH }
+  | "IN-NODE" { ET }
+  | "WITH-TRANSITION" {WITH_TRANSITION}
+  | "DEFINE-CHECKER" { DEFINE_CHECKER }
+  | "SET" { SET }
+  | "LET" { LET }
+  | "TRUE" { TRUE }
+  | "FALSE" { FALSE }
   | "{" { LEFT_BRACE }
   | "}" { RIGHT_BRACE }
   | "(" { LEFT_PAREN }
@@ -55,6 +56,7 @@ rule token = parse
   | "AND" { AND }
   | "OR" { OR }
   | "NOT" { NOT }
+  | "IMPLIES" { IMPLIES }
   | id { IDENTIFIER (Lexing.lexeme lexbuf) }
   | '"' { read_string (Buffer.create 80) lexbuf }
   | _ { raise (SyntaxError ("Unexpected char: '" ^ (Lexing.lexeme lexbuf) ^"'")) }
