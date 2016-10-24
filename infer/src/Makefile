@@ -180,10 +180,10 @@ INFER_CONFIG_TARGETS += $(BUCK_COMPILATION_DATABASE_MAIN).native
 DEPENDENCIES += clang
 endif
 
-.PHONY: all infer init version sanitize clean toplevel
-
+.PHONY: all
 all: infer
 
+.PHONY: infer
 infer: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(OCAMLBUILD_NATIVE_OPTS) \
 	  $(INFER_CONFIG_TARGETS)
@@ -208,6 +208,7 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 infer: $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) $(CLANG_BINIOU_DICT)
 endif
 
+.PHONY: byte
 byte: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(OCAMLBUILD_ALL) $(OCAMLBUILD_BYTE_OPTS) -build-dir $(INFER_BUILD_DIR) \
 	  $(INFER_ALL_TARGETS:.native=.byte)
@@ -219,11 +220,13 @@ byte: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_S
 M=
 MFLAGS=
 
+.PHONY: module
 module: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) \
           $(MFLAGS) \
 	  $(M)
 
+.PHONY: test_build
 test_build: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(OCAMLBUILD_ALL) $(OCAMLBUILD_BYTE_OPTS) -build-dir $(TEST_BUILD_DIR) \
 	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
@@ -253,6 +256,8 @@ re_src_files:=$(shell find $(src_dirs) -regex '.*\.re\(i\)*')
 inc_flags:=$(foreach dir,$(src_dirs),-I $(dir))
 root_flags:=$(foreach root,$(roots),-r $(root))
 cluster_flags:=$(foreach cluster,$(clusters),-c $(cluster))
+
+.PHONY: mod_dep_dot
 mod_dep.dot: $(ml_src_files) $(re_src_files)
 	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot
 	{ ocamldep.opt $(inc_flags) -ml-synonym .re -mli-synonym .rei $(ml_src_files); \
@@ -261,11 +266,14 @@ mod_dep.dot: $(ml_src_files) $(re_src_files)
 	| grep -v -e "\"IList\"\|\"Utils\"" \
         > mod_dep.dot
 
+.PHONY: mod_dep.pdf
 mod_dep.pdf: mod_dep.dot
 	dot -Tpdf -o mod_dep.pdf mod_dep.dot
 
 roots_grep_regex:=$(foreach root,$(roots),-e $(root)$$)
 dirs_find_regex:=$(foreach dir, $(DEPENDENCIES) stubs/ml,-path "./$(dir)/*" -o)
+
+.PHONY: toplevel
 toplevel: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	# We need to pack all infer modules into another module to avoid name clashes
 	# with some of them coming from ocaml libraries (Ident for example).
@@ -330,13 +338,16 @@ $(CLANG_BINIOU_DICT): $(CLANG_ATDGEN_STUB_ATD)
 	  | sort | uniq  \
 	  > $@
 
+.PHONY: init
 init: sanitize version $(BUILD_DIR)
 
+.PHONY: sanitize
 sanitize:
 ifneq ($(wildcard $(BUILD_DIR)/sanitize.sh),)
 	$(BUILD_DIR)/sanitize.sh
 endif
 
+.PHONY: version
 version: base/Version.ml.in Makefile
 	TMPFILE=$$(mktemp base/Version.ml.tmp.XXXX); \
 	INFER_GIT_COMMIT=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --short HEAD || printf "unknown"); \
@@ -355,9 +366,11 @@ version: base/Version.ml.in Makefile
 $(BUILD_DIR):
 	$(MKDIR_P) $(BUILD_DIR)
 
+.PHONY: test_clean
 test_clean:
 	$(REMOVE_DIR) $(TEST_BUILD_DIR)
 
+.PHONY: clean
 clean:
 	$(REMOVE_DIR) $(BUILD_DIR)
 	$(REMOVE) $(ETC_DIR)/clang_ast.dict

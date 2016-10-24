@@ -27,6 +27,7 @@ ifneq ($(XCODE_SELECT),no)
 DIRECT_TESTS += objc_frontend_test objc_infer_test objc_linters objcpp_frontend_test objcpp_linters
 endif
 
+.PHONY: all
 all: infer inferTraceBugs
 
 # executable names that should point to InferClang to trigger capture
@@ -44,6 +45,7 @@ $(INFERTRACEBUGS_BIN_RELPATH): Makefile
 	cd $(@D) && \
 	$(LN_S) ../lib/python/$(@F) $(@F)
 
+.PHONY: src_build
 src_build:
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(MAKE) -C facebook
@@ -53,6 +55,7 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 src_build: clang_plugin
 endif
 
+.PHONY: infer
 infer: src_build
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(MAKE) -C $(ANNOTATIONS_DIR)
@@ -62,12 +65,14 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 infer: $(INFERCLANG_WRAPPERS_PATHS)
 endif
 
+.PHONY: clang_setup
 clang_setup:
 	export CC="$(CC)" CFLAGS="$(CFLAGS)"; \
 	export CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)"; \
 	export CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)"; \
 	$(FCP_DIR)/clang/setup.sh $(INFER_FCP_SETUP_OPTS)
 
+.PHONY: clang_plugin
 clang_plugin: clang_setup
 ifeq ($(IS_RELEASE_TREE),no)
 	$(MAKE) -C $(FCP_DIR)/libtooling all \
@@ -87,14 +92,17 @@ ifeq ($(IS_RELEASE_TREE),no)
 	  CLANG_INCLUDES=$(CLANG_INCLUDES)
 endif
 
+.PHONY: inferTraceBugs
 inferTraceBugs: $(INFERTRACEBUGS_BIN_RELPATH)
 
+.PHONY: test_this_build
 test_this_build: clang_plugin
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(MAKE) -C facebook
 endif
 	$(MAKE) -C $(SRC_DIR) test_build
 
+.PHONY: test_oss_build
 test_oss_build: clang_plugin
 # make sure we don't break the opensource build
 ifeq ($(IS_FACEBOOK_TREE),yes)
@@ -102,91 +110,119 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 endif
 	$(MAKE) -C $(SRC_DIR) EXTRA_DEPS=opensource TEST_BUILD_DIR=$(BUILD_DIR)/opensource test_build
 
+.PHONY: test_build
 test_build: test_this_build
 ifeq ($(IS_FACEBOOK_TREE),yes)
 test_build: test_oss_build
 endif
 
+.PHONY: ocaml_unit_test
 ocaml_unit_test: test_this_build
 	$(TEST_BUILD_DIR)/unit/inferunit.byte
 
+.PHONY: frontend_replace
 frontend_replace: c_frontend_replace cpp_frontend_replace objc_frontend_replace objcpp_frontend_replace
 
+.PHONY: c_frontend_replace
 c_frontend_replace:
 	$(MAKE) -C ./infer/tests/codetoanalyze/c/frontend replace
 
+.PHONY: c_frontend_test
 c_frontend_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/c/frontend test
 
+.PHONY: c_infer_test
 c_infer_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/c/errors test
 
+.PHONY: cpp_frontend_replace
 cpp_frontend_replace:
 	$(MAKE) -C ./infer/tests/codetoanalyze/cpp/frontend replace
 
+.PHONY: cpp_frontend_test
 cpp_frontend_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/cpp/frontend test
 
+.PHONY: cpp_infer_test
 cpp_infer_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/cpp/errors test
 
+.PHONY: cpp_quandary_test
 cpp_quandary_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/cpp/quandary test
 
+.PHONY: java_checkers_test
 java_checkers_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/java/checkers test
 
+.PHONY: java_crashcontext_test
 java_crashcontext_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/java/crashcontext test
 
+.PHONY: java_eradicate_test
 java_eradicate_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/java/eradicate test
 
+.PHONY: java_harness_test
 java_harness_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/java/harness test
 
+.PHONY: java_infer_test
 java_infer_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/java/infer test
 
+.PHONY: java_tracing_test
 java_tracing_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/java/tracing test
 
+.PHONY: java_quandary_test
 java_quandary_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/java/quandary test
 
+.PHONY: objc_frontend_replace
 objc_frontend_replace:
 	$(MAKE) -C ./infer/tests/codetoanalyze/objc/frontend replace
 
+.PHONY: objc_frontend_test
 objc_frontend_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/objc/frontend test
 
+.PHONY: objc_infer_test
 objc_infer_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/objc/errors test
 
+.PHONY: objc_linters
 objc_linters:
 	$(MAKE) -C ./infer/tests/codetoanalyze/objc/linters test
 
+.PHONY: objcpp_frontend_replace
 objcpp_frontend_replace:
 	$(MAKE) -C ./infer/tests/codetoanalyze/objcpp/frontend replace
 
+.PHONY: objcpp_frontend_test
 objcpp_frontend_test:
 	$(MAKE) -C ./infer/tests/codetoanalyze/objcpp/frontend test
 
+.PHONY: objcpp_linters
 objcpp_linters:
 	$(MAKE) -C ./infer/tests/codetoanalyze/objcpp/linters test
 
+.PHONY: direct_tests
 direct_tests:
 	$(MAKE) -j $(NCPU) -l $(NCPU) $(DIRECT_TESTS)
 
+.PHONY: buck_test
 buck_test: infer
 	$(MAKE) direct_tests
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 
+.PHONY: buck_test_xml
 buck_test_xml: infer
 	$(MAKE) direct_tests
 	buck test --xml test.xml # TODO: generate test.xml with test results
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 
+.PHONY: inferTraceBugs_test
 inferTraceBugs_test: infer
 	$(INFER_BIN) -o __test-infer-out__ -- \
 	  javac $(EXAMPLES_DIR)/Hello.java \
@@ -202,30 +238,38 @@ inferTraceBugs_test: infer
 	  --only-show > /dev/null
 	@rm -fr __test-infer-out__
 
+.PHONY: check_missing_mli
 check_missing_mli:
 	@bash -c '\
 	for x in `find infer/src -name "*.ml" -or  -name "*.re"`; do \
 		test -f "$$x"i || echo Missing "$$x"i; done'
 
+.PHONY: toplevel
 toplevel: infer
 	$(MAKE) -C $(SRC_DIR) toplevel
 
+.PHONY: inferScriptMode_test
 inferScriptMode_test: toplevel
 	INFER_REPL_BINARY=ocaml ./scripts/infer_repl ./infer/tests/repl/infer_batch_script.ml
 
+.PHONY: test
 test: test_build ocaml_unit_test buck_test inferTraceBugs_test inferScriptMode_test
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot
 
+.PHONY: test_xml
 test_xml: test_build ocaml_unit_test buck_test_xml inferTraceBugs_test
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot
 
+.PHONY: quick-test
 quick-test: test_this_build ocaml_unit_test
 
+.PHONY: uninstall
 uninstall:
 	$(REMOVE_DIR) $(DESTDIR)$(libdir)/infer/
 	$(REMOVE) $(DESTDIR)$(bindir)/inferTraceBugs
 	$(REMOVE) $(DESTDIR)$(bindir)/infer
 
+.PHONY: install
 install: infer inferTraceBugs
 # create directory structure
 	test -d      $(DESTDIR)$(bindir) || \
@@ -329,6 +373,7 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(MAKE) -C facebook install
 endif
 
+.PHONY: clean
 clean:
 	$(REMOVE) test.xml
 ifeq ($(IS_RELEASE_TREE),no)
@@ -348,6 +393,7 @@ endif
 	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot clean
 	find infer/tests -name '*.o' -or -name '*.o.sh' -delete
 
+.PHONY: conf-clean
 conf-clean: clean
 	$(REMOVE) infer/lib/python/inferlib/*.pyc
 	$(REMOVE) infer/lib/python/inferlib/*/*.pyc
@@ -363,10 +409,6 @@ conf-clean: clean
 	$(REMOVE_DIR) infer/models/cpp/out/
 	$(REMOVE_DIR) infer/models/java/infer-out/
 	$(REMOVE_DIR) infer/models/objc/out/
-
-.PHONY: all buck_test buck_test_xml clean clang_plugin clang_setup infer inferTraceBugs
-.PHONY: inferTraceBugs_test install ocaml_unit_test check_missing_mli src_build test test_xml
-.PHONY: test_build toplevel uninstall
 
 # print any variable for Makefile debugging
 print-%:
