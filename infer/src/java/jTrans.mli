@@ -20,11 +20,6 @@ type translation =
   | Prune of Cfg.Node.t * Cfg.Node.t
   | Loop of Cfg.Node.t * Cfg.Node.t * Cfg.Node.t
 
-(** data structure to identify whether a method is defined in the given program  *)
-type defined_status =
-  | Defined of Cfg.Procdesc.t
-  | Called of Cfg.Procdesc.t
-
 val is_java_native : JCode.jcode Javalib.concrete_method  -> bool
 
 (** [create_procdesc linereader cfg tenv program m] creates a procedure description
@@ -33,10 +28,9 @@ val create_procdesc :
   DB.source_file ->
   JClasspath.program ->
   Printer.LineReader.t ->
-  Cfg.cfg ->
-  Tenv.t ->
+  JContext.icfg ->
   JCode.jcode Javalib.jmethod ->
-  unit
+  Cfg.Procdesc.t option
 
 (** returns the implementation of a given method *)
 val get_implementation : JCode.jcode Javalib.concrete_method -> JBir.t

@@ -75,12 +75,12 @@ let add_edges
 
 
 (** Add a concrete method. *)
-let add_cmethod source_file program icfg cm method_kind =
-  let cfg = icfg.JContext.cfg in
+let add_cmethod source_file program linereader icfg cm method_kind =
   let cn, ms = JBasics.cms_split cm.Javalib.cm_class_method_signature in
   let proc_name_java = JTransType.get_method_procname cn ms method_kind in
   let proc_name = Procname.Java proc_name_java in
-  match Cfg.Procdesc.find_from_name cfg proc_name with
+  let jmethod = (Javalib.ConcreteMethod cm) in
+  match JTrans.create_procdesc source_file program linereader icfg jmethod with
   | None -> ()
   | Some _ when JTrans.is_java_native cm -> ()
   | Some procdesc ->
@@ -101,15 +101,15 @@ let add_cmethod source_file program icfg cm method_kind =
 
 
 (** Add an abstract method. *)
-let add_amethod icfg am method_kind =
-  let cfg = icfg.JContext.cfg in
+let add_amethod source_file program linereader icfg am method_kind =
   let cn, ms = JBasics.cms_split am.Javalib.am_class_method_signature in
   let proc_name_java = JTransType.get_method_procname cn ms method_kind in
   let proc_name = Procname.Java proc_name_java in
-  match Cfg.Procdesc.find_from_name cfg proc_name with
+  let jmethod = (Javalib.AbstractMethod am) in
+  match JTrans.create_procdesc source_file program linereader icfg jmethod with
   | None -> ()
-  | Some procdesc ->
-      Cg.add_defined_node icfg.JContext.cg (Cfg.Procdesc.get_proc_name procdesc)
+  | Some _ ->
+      Cg.add_defined_node icfg.JContext.cg proc_name
 
 
 let path_of_cached_classname cn =
@@ -142,27 +142,23 @@ let cache_classname cn =
 let is_classname_cached cn =
   Sys.file_exists (path_of_cached_classname cn)
 
+
 (* Given a source file and a class, translates the code of this class.
    In init - mode, finds out whether this class contains initializers at all,
    in this case translates it. In standard mode, all methods are translated *)
 let create_icfg source_file linereader program icfg cn node =
   JUtils.log "\tclassname: %s@." (JBasics.cn_name cn);
   cache_classname cn;
-  let cfg = icfg.JContext.cfg in
-  let tenv = icfg.JContext.tenv in
-  begin
-    Javalib.m_iter (JTrans.create_procdesc source_file program linereader cfg tenv) node;
-    Javalib.m_iter (fun m ->
-        (* each procedure has different scope: start names from id 0 *)
-        Ident.NameGenerator.reset ();
-        let method_kind = JTransType.get_method_kind m in
-        match m with
-        | Javalib.ConcreteMethod cm ->
-            add_cmethod source_file program icfg cm method_kind
-        | Javalib.AbstractMethod am ->
-            add_amethod icfg am method_kind
-      ) node
-  end
+  let translate m =
+    (* each procedure has different scope: start names from id 0 *)
+    Ident.NameGenerator.reset ();
+    let method_kind = JTransType.get_method_kind m in
+    match m with
+    | Javalib.ConcreteMethod cm ->
+        add_cmethod source_file program linereader icfg cm method_kind
+    | Javalib.AbstractMethod am ->
+        add_amethod source_file program linereader icfg am method_kind in
+  Javalib.m_iter translate node
 
 
 (* returns true for the set of classes that are selected to be translated *)
