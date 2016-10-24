@@ -10,10 +10,10 @@
 open CFrontend_utils
 open !Utils
 
-let is_ck_context {CLintersContext.is_ck_translation_unit; translation_unit_context} decl =
-  is_ck_translation_unit
-  && Ast_utils.is_in_main_file translation_unit_context decl
-  && General_utils.is_objc_extension translation_unit_context
+let is_ck_context (context: CLintersContext.context) decl =
+  context.is_ck_translation_unit
+  && Ast_utils.is_in_main_file context.translation_unit_context decl
+  && General_utils.is_objc_extension context.translation_unit_context
 
 
 (** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl.
