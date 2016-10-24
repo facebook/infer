@@ -20,18 +20,22 @@ ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli
 
 OCAML_FATAL_WARNINGS = +5+6+8+10+11+12+18+19+20+23+26+29+27+32+33+34+35+37+38+39+50
 
+# options for ocamlbuild
+# Notice that use-ocamlfind is used here to avoid a linker bug in ocamlbuild when using -tag thread
 OCAMLBUILD_OPTIONS = \
-                     -r \
-										 -use-menhir -menhir 'menhir --explain --strict' \
-                     -cflags -g -lflags -g \
-                     -cflags -short-paths \
-                     -cflags -safe-string \
-                     -cflags -principal \
-                     -cflags -strict-formats \
-                     -cflags -strict-sequence \
-                     -cflags -w,$(OCAML_FATAL_WARNINGS)-4-9-40-41-42-45-48 \
-                     -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*,checkers/stacktree_*}>: warn(-27-32-35-39)" \
-                     -pkgs atdgen,extlib,oUnit,str,unix,yojson,zip
+					-r \
+					-use-menhir -menhir 'menhir --explain --strict'\
+					-use-ocamlfind \
+					-cflags -g -lflags -g \
+					-cflags -short-paths \
+					-cflags -safe-string \
+					-cflags -principal \
+					-cflags -strict-formats \
+					-cflags -strict-sequence \
+					-cflags -w,$(OCAML_FATAL_WARNINGS)-4-9-40-41-42-45-48 \
+					-tag-line "<*{clang/clang_ast_*,backend/jsonbug_*,checkers/stacktree_*}>: warn(-27-32-35-39)" \
+					-tag thread \
+					-pkgs atdgen,core,extlib,oUnit,str,unix,yojson,zip
 
 ifeq ($(ENABLE_OCAML_ANNOT),yes)
 OCAMLBUILD_OPTIONS += -cflags -annot
