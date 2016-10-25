@@ -1,8 +1,8 @@
 ---
-docid: linter-bug-types
+docid: linters-bug-types
 title: Linters bug types
 layout: docs
-permalink: /docs/linter-bug-types.html
+permalink: /docs/linters-bug-types.html
 ---
 
 TODO
