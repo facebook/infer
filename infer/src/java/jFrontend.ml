@@ -148,7 +148,8 @@ let is_classname_cached cn =
    in this case translates it. In standard mode, all methods are translated *)
 let create_icfg source_file linereader program icfg cn node =
   JUtils.log "\tclassname: %s@." (JBasics.cn_name cn);
-  cache_classname cn;
+  if Config.dependency_mode && not (is_classname_cached cn) then
+    cache_classname cn;
   let translate m =
     (* each procedure has different scope: start names from id 0 *)
     Ident.NameGenerator.reset ();

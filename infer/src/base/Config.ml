@@ -789,6 +789,7 @@ and debug_exceptions =
 
 and dependencies =
   CLOpt.mk_bool ~deprecated:["dependencies"] ~long:"dependencies"
+    ~exes:CLOpt.[Java]
     "Translate all the dependencies during the capture. The classes in the given jar file will be \
      translated. No sources needed."
 
