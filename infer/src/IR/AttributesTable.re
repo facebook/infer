@@ -43,7 +43,9 @@ let res_dir_attr_filename defined::defined pname => {
 /* Load the proc attribute for the defined filename if it exists,
    otherwise try to load the declared filename. */
 let load_defined_first proc_name => {
-  let attributes_file defined => res_dir_attr_filename defined::defined proc_name;
+  let attributes_file defined => Multilinks.resolve (
+    res_dir_attr_filename defined::defined proc_name
+  );
   let attr = Serialization.from_file serializer (attributes_file true);
   attr != None ? attr : Serialization.from_file serializer (attributes_file false)
 };

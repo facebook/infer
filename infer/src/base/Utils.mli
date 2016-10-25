@@ -90,6 +90,9 @@ val int_of_bool : bool -> int
 (** Set of integers *)
 module IntSet : Set.S with type elt = int
 
+(** Hash table over strings *)
+module StringHash : Hashtbl.S with type key = string
+
 (** Set of strings *)
 module StringSet : Set.S with type elt = string
 

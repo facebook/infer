@@ -107,6 +107,14 @@ module IntSet =
     let compare = int_compare
   end)
 
+(** Hash table over strings *)
+module StringHash = Hashtbl.Make (
+  struct
+    type t = string
+    let equal (s1: string) (s2: string) = s1 = s2
+    let hash = Hashtbl.hash
+  end)
+
 (** Set of strings *)
 module StringSet = Set.Make(String)
 

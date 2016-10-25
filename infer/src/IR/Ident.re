@@ -127,11 +127,6 @@ let idlist_to_idset ids => IList.fold_left (fun set id => IdentSet.add id set) I
 
 
 /** {2 Conversion between Names and Strings} */
-let module StringHash = Hashtbl.Make {
-  type t = string;
-  let equal (s1: string) (s2: string) => s1 == s2;
-  let hash = Hashtbl.hash;
-};
 
 let module NameHash = Hashtbl.Make {
   type t = name;
