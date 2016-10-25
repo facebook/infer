@@ -87,7 +87,7 @@ let tests =
           fmt
           "Expected to make access path %a from expression %a, but got %a"
           AccessPath.pp_raw expected_ap
-          (Sil.pp_exp pe_text) exp
+          Exp.pp exp
           AccessPath.pp_raw actual_ap in
       assert_equal ~cmp:AccessPath.raw_equal ~pp_diff actual_ap expected_ap in
 

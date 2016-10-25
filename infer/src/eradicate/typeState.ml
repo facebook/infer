@@ -66,7 +66,7 @@ let pp ext fmt typestate =
   let pp_locs fmt locs = F.fprintf fmt " [%a]" (pp_seq pp_loc) locs in
   let pp_one exp (typ, ta, locs) =
     F.fprintf fmt "  %a -> [%s] %s %a%a@\n"
-      (Sil.pp_exp pe_text) exp
+      Exp.pp exp
       (TypeOrigin.to_string (TypeAnnotation.get_origin ta)) (TypeAnnotation.to_string ta)
       (Typ.pp_full pe_text) typ
       pp_locs locs in

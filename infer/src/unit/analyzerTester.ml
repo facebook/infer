@@ -35,11 +35,11 @@ module StructuredSil = struct
     | If (exp, then_instrs, else_instrs) ->
         (* TODO (t10287763): indent bodies of if/while *)
         F.fprintf fmt "if (%a) {@.%a@.} else {@.%a@.}"
-          (Sil.pp_exp pe_text) exp
+          Exp.pp exp
           pp_structured_instr_list then_instrs
           pp_structured_instr_list else_instrs
     | While (exp, instrs) ->
-        F.fprintf fmt "while (%a) {@.%a@.}" (Sil.pp_exp pe_text) exp pp_structured_instr_list instrs
+        F.fprintf fmt "while (%a) {@.%a@.}" Exp.pp exp pp_structured_instr_list instrs
     | Try (try_, catch, finally) ->
         F.fprintf
           fmt

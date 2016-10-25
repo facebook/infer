@@ -1236,9 +1236,9 @@ let path_to_id path =
     | Exp.Lindex (e, ind) ->
         (match f e with
          | None -> None
-         | Some s -> Some (s ^ "_" ^ (Sil.exp_to_string ind)))
+         | Some s -> Some (s ^ "_" ^ (Exp.to_string ind)))
     | Exp.Lvar _ ->
-        Some (Sil.exp_to_string path)
+        Some (Exp.to_string path)
     | Exp.Const (Const.Cstr s) ->
         Some ("_const_str_" ^ s)
     | Exp.Const (Const.Cclass c) ->

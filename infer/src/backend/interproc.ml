@@ -406,7 +406,7 @@ let check_assignement_guard node =
         when (Ident.equal e1 e2) ->
           if verbose
           then
-            L.d_strln ("Found " ^ (Sil.exp_to_string e') ^ " as prune var");
+            L.d_strln ("Found " ^ (Exp.to_string e') ^ " as prune var");
           [e']
       | _ -> [] in
     let prune_vars = IList.flatten(IList.map (fun n -> prune_var n) succs) in

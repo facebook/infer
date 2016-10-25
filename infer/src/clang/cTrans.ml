@@ -893,12 +893,12 @@ struct
                 { CallFlags.default with CallFlags.cf_is_objc_block = is_call_to_block; } in
               create_call_instr trans_state function_type sil_fe act_params sil_loc
                 call_flags ~is_objc_method:false in
-        let nname = "Call "^(Sil.exp_to_string sil_fe) in
+        let nname = "Call "^(Exp.to_string sil_fe) in
         let all_res_trans = result_trans_subexprs @ [res_trans_call] in
         let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri
             sil_loc nname si all_res_trans in
         let add_cg_edge callee_pname =
-            Cg.add_edge context.CContext.cg procname callee_pname
+          Cg.add_edge context.CContext.cg procname callee_pname
         in
         Option.may add_cg_edge callee_pname_opt;
         { res_trans_to_parent with exps = res_trans_call.exps }
@@ -936,7 +936,7 @@ struct
         } in
         let res_trans_call = create_call_instr trans_state_pri function_type sil_method
             actual_params sil_loc call_flags ~is_objc_method:false in
-        let nname = "Call " ^ (Sil.exp_to_string sil_method) in
+        let nname = "Call " ^ (Exp.to_string sil_method) in
         let all_res_trans = result_trans_subexprs @ [res_trans_call; extra_res_trans] in
         let result_trans_to_parent =
           PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans in

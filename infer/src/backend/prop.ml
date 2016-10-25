@@ -195,9 +195,9 @@ let pp_sub_entry pe0 f entry =
   begin
     match pe.pe_kind with
     | PP_TEXT | PP_HTML ->
-        F.fprintf f "%a = %a" (Ident.pp pe) x (Sil.pp_exp pe) e
+        F.fprintf f "%a = %a" (Ident.pp pe) x (Sil.pp_exp_printenv pe) e
     | PP_LATEX ->
-        F.fprintf f "%a{=}%a" (Ident.pp pe) x (Sil.pp_exp pe) e
+        F.fprintf f "%a{=}%a" (Ident.pp pe) x (Sil.pp_exp_printenv pe) e
   end;
   Sil.color_post_wrapper changed pe0 f
 
@@ -1498,13 +1498,13 @@ module Normalize = struct
         (fun (a : Sil.atom) -> match a with
            | Aneq (Const (Cint n), e)
            | Aneq (e, Const (Cint n)) ->
-              (not (IList.exists
-                      (fun (e', n') -> Exp.equal e e' && IntLit.lt n' n)
-                      le_list_tightened)) &&
-              (not (IList.exists
-                      (fun (n', e') -> Exp.equal e e' && IntLit.leq n n')
-                      lt_list_tightened))
-          | _ -> true)
+               (not (IList.exists
+                       (fun (e', n') -> Exp.equal e e' && IntLit.lt n' n)
+                       le_list_tightened)) &&
+               (not (IList.exists
+                       (fun (n', e') -> Exp.equal e e' && IntLit.leq n n')
+                       lt_list_tightened))
+           | _ -> true)
         nonineq_list in
     (ineq_list', nonineq_list')
 
@@ -2368,7 +2368,7 @@ let prop_iter_make_id_primed tenv id iter =
           | Aeq (Var id1, e1) when Sil.ident_in_exp id1 e1 ->
               L.out "@[<2>#### ERROR: an assumption of the analyzer broken ####@\n";
               L.out "Broken Assumption: id notin e for all (id,e) in sub@\n";
-              L.out "(id,e) : (%a,%a)@\n" (Ident.pp pe_text) id1 (Sil.pp_exp pe_text) e1;
+              L.out "(id,e) : (%a,%a)@\n" (Ident.pp pe_text) id1 Exp.pp e1;
               L.out "PROP : %a@\n@." (pp_prop pe_text) (prop_iter_to_prop tenv iter);
               assert false
           | Aeq (Var id1, e1) when Ident.equal pid id1 ->

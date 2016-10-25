@@ -130,7 +130,7 @@ let execute___print_value { Builtin.tenv; pdesc; prop_; path; args; }
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let do_arg (lexp, _) =
     let n_lexp, _ = check_arith_norm_exp tenv pname lexp prop_ in
-    L.err "%a " (Sil.pp_exp pe_text) n_lexp in
+    L.err "%a " Exp.pp n_lexp in
   IList.iter do_arg args;
   L.err "@.";
   [(prop_, path)]

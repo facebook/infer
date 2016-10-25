@@ -422,7 +422,7 @@ let typ_get_recursive_flds tenv typ_exp =
           match Tenv.lookup tenv name with
           | Some { fields } -> IList.map fst3 (IList.filter (filter typ) fields)
           | None ->
-              L.err "@.typ_get_recursive: unexpected type expr: %a@." (Sil.pp_exp pe_text) typ_exp;
+              L.err "@.typ_get_recursive: unexpected type expr: %a@." Exp.pp typ_exp;
               [] (* ToDo: assert false *)
         )
       | Tint _ | Tvoid | Tfun _ | Tptr _ | Tfloat _ | Tarray _ -> []
@@ -430,7 +430,7 @@ let typ_get_recursive_flds tenv typ_exp =
   | Exp.Var _ -> [] (* type of |-> not known yet *)
   | Exp.Const _ -> []
   | _ ->
-      L.err "@.typ_get_recursive: unexpected type expr: %a@." (Sil.pp_exp pe_text) typ_exp;
+      L.err "@.typ_get_recursive: unexpected type expr: %a@." Exp.pp typ_exp;
       assert false
 
 let discover_para_roots tenv p root1 next1 root2 next2 : Sil.hpara option =
@@ -893,8 +893,8 @@ let get_cycle root prop =
      IList.iter (fun ((e, t), f, e') ->
          match e, e' with
          | Sil.Eexp (e, _), Sil.Eexp (e', _) ->
-             L.d_str ("("^(Sil.exp_to_string e)^": "^(Typ.to_string t)^", "
-                      ^(Ident.fieldname_to_string f)^", "^(Sil.exp_to_string e')^")")
+             L.d_str ("("^(Exp.to_string e)^": "^(Typ.to_string t)^", "
+                      ^(Ident.fieldname_to_string f)^", "^(Exp.to_string e')^")")
          | _ -> ()) cyc;
      L.d_strln "") in
   (* Perform a dfs of a graph stopping when e_root is reached.

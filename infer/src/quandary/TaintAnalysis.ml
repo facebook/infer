@@ -275,7 +275,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
             | None ->
                 failwithf
                   "Assignment to unexpected lhs expression %a in proc %a at loc %a"
-                  (Sil.pp_exp pe_text) lhs_exp
+                  Exp.pp lhs_exp
                   Procname.pp (Cfg.Procdesc.get_proc_name (proc_data.pdesc))
                   Location.pp loc in
           let astate' =

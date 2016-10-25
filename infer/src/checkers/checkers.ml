@@ -357,10 +357,10 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
 
   let handle_check_of_formal e =
     let repeated = Exp.Set.mem e !checks_to_formals in
-    if repeated && !verbose then L.stdout "Repeated Null Check of Formal: %a@." (Sil.pp_exp pe_text) e
+    if repeated && !verbose then L.stdout "Repeated Null Check of Formal: %a@." Exp.pp e
     else begin
       checks_to_formals := Exp.Set.add e !checks_to_formals;
-      if !verbose then L.stdout "Null Check of Formal: %a@." (Sil.pp_exp pe_text) e
+      if !verbose then L.stdout "Null Check of Formal: %a@." Exp.pp e
     end in
 
   let summary_checks_of_formals () =
@@ -394,7 +394,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
                  (Procname.java_get_class_name pname_java)
                  (Procname.java_get_method pname_java)
                  (Sil.pp_instr pe_text) instr
-                 (Sil.pp_exp pe_text) arg1
+                 Exp.pp arg1
            | _ ->
                ())
     | _ -> () in

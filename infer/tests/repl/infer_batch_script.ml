@@ -17,6 +17,6 @@
 let _ = Ident.create_fresh Ident.knormal in
 let ident = Ident.create_fresh Ident.knormal in
 let e = Exp.Var ident in
-print_endline (Sil.exp_to_string e);
+print_endline (Exp.to_string e);
 (* pass --flavors flag to change the value *)
 print_endline (string_of_bool Config.flavors)

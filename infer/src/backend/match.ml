@@ -144,8 +144,8 @@ and isel_match isel1 sub vars isel2 =
       if (not sanity_check) then begin
         let pe = pe_text in
         L.out "@[.... Sanity Check Failure while Matching Index-Strexps ....@.";
-        L.out "@[<4>    IDX1: %a, STREXP1: %a@." (Sil.pp_exp pe) idx1 (Sil.pp_sexp pe) se1';
-        L.out "@[<4>    IDX2: %a, STREXP2: %a@\n@." (Sil.pp_exp pe) idx2 (Sil.pp_sexp pe) se2';
+        L.out "@[<4>    IDX1: %a, STREXP1: %a@." (Sil.pp_exp_printenv pe) idx1 (Sil.pp_sexp pe) se1';
+        L.out "@[<4>    IDX2: %a, STREXP2: %a@\n@." (Sil.pp_exp_printenv pe) idx2 (Sil.pp_sexp pe) se2';
         assert false
       end
       else if Exp.equal idx1 idx2 then begin

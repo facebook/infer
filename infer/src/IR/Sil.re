@@ -532,7 +532,7 @@ let pp_seq_diff pp pe0 f =>
 
 
 /** Pretty print an expression. */
-let rec _pp_exp pe0 pp_t f e0 => {
+let pp_exp_printenv pe0 f e0 => {
   let (pe, changed) = color_pre_wrapper pe0 f e0;
   let e =
     switch pe.pe_obj_sub {
@@ -545,46 +545,10 @@ let rec _pp_exp pe0 pp_t f e0 => {
     | _ => assert false
     }
   } else {
-    let pp_exp = _pp_exp pe pp_t;
-    let print_binop_stm_output e1 op e2 =>
-      switch (op: Binop.t) {
-      | Eq
-      | Ne
-      | PlusA
-      | Mult => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe op) pp_exp e1
-      | Lt => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Gt) pp_exp e1
-      | Gt => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Lt) pp_exp e1
-      | Le => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Ge) pp_exp e1
-      | Ge => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Le) pp_exp e1
-      | _ => F.fprintf f "(%a %s %a)" pp_exp e1 (Binop.str pe op) pp_exp e2
-      };
-    switch (e: Exp.t) {
-    | Var id => (Ident.pp pe) f id
-    | Const c => F.fprintf f "%a" (Const.pp pe) c
-    | Cast typ e => F.fprintf f "(%a)%a" pp_t typ pp_exp e
-    | UnOp op e _ => F.fprintf f "%s%a" (Unop.str op) pp_exp e
-    | BinOp op (Const c) e2 when Config.smt_output => print_binop_stm_output (Exp.Const c) op e2
-    | BinOp op e1 e2 => F.fprintf f "(%a %s %a)" pp_exp e1 (Binop.str pe op) pp_exp e2
-    | Exn e => F.fprintf f "EXN %a" pp_exp e
-    | Closure {name, captured_vars} =>
-      let id_exps = IList.map (fun (id_exp, _, _) => id_exp) captured_vars;
-      F.fprintf f "(%a)" (pp_comma_seq pp_exp) [Exp.Const (Cfun name), ...id_exps]
-    | Lvar pv => Pvar.pp pe f pv
-    | Lfield e fld _ => F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld
-    | Lindex e1 e2 => F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
-    | Sizeof t l s =>
-      let pp_len f l => Option.map_default (F.fprintf f "[%a]" pp_exp) () l;
-      F.fprintf f "sizeof(%a%a%a)" pp_t t pp_len l Subtype.pp s
-    }
+    Exp.pp_printenv pe Typ.pp f e
   };
   color_post_wrapper changed pe0 f
 };
-
-let pp_exp pe f e => _pp_exp pe (Typ.pp pe) f e;
-
-
-/** Convert an expression to a string */
-let exp_to_string e => pp_to_string (pp_exp pe_text) e;
 
 
 /** dump an expression. */
@@ -592,7 +556,7 @@ let d_exp (e: Exp.t) => L.add_print_action (L.PTexp, Obj.repr e);
 
 
 /** Pretty print a list of expressions. */
-let pp_exp_list pe f expl => (pp_seq (pp_exp pe)) f expl;
+let pp_exp_list pe f expl => (pp_seq (pp_exp_printenv pe)) f expl;
 
 
 /** dump a list of expressions. */
@@ -601,20 +565,20 @@ let d_exp_list (el: list Exp.t) => L.add_print_action (L.PTexp_list, Obj.repr el
 let pp_texp pe f =>
   fun
   | Exp.Sizeof t l s => {
-      let pp_len f l => Option.map_default (F.fprintf f "[%a]" (pp_exp pe)) () l;
+      let pp_len f l => Option.map_default (F.fprintf f "[%a]" (pp_exp_printenv pe)) () l;
       F.fprintf f "%a%a%a" (Typ.pp pe) t pp_len l Subtype.pp s
     }
-  | e => (pp_exp pe) f e;
+  | e => (pp_exp_printenv pe) f e;
 
 
 /** Pretty print a type with all the details. */
 let pp_texp_full pe f =>
   fun
   | Exp.Sizeof t l s => {
-      let pp_len f l => Option.map_default (F.fprintf f "[%a]" (pp_exp pe)) () l;
+      let pp_len f l => Option.map_default (F.fprintf f "[%a]" (pp_exp_printenv pe)) () l;
       F.fprintf f "%a%a%a" (Typ.pp_full pe) t pp_len l Subtype.pp s
     }
-  | e => (_pp_exp pe) (Typ.pp_full pe) f e;
+  | e => Exp.pp_printenv pe Typ.pp_full f e;
 
 
 /** Dump a type expression with all the details. */
@@ -625,7 +589,7 @@ let d_texp_full (te: Exp.t) => L.add_print_action (L.PTtexp_full, Obj.repr te);
 let pp_offset pe f =>
   fun
   | Off_fld fld _ => F.fprintf f "%a" Ident.pp_fieldname fld
-  | Off_index exp => F.fprintf f "%a" (pp_exp pe) exp;
+  | Off_index exp => F.fprintf f "%a" (pp_exp_printenv pe) exp;
 
 
 /** Convert an offset to a string */
@@ -647,7 +611,7 @@ let rec pp_offset_list pe f =>
 /** Dump a list of offsets */
 let d_offset_list (offl: list offset) => L.add_print_action (L.PToff_list, Obj.repr offl);
 
-let pp_exp_typ pe f (e, t) => F.fprintf f "%a:%a" (pp_exp pe) e (Typ.pp pe) t;
+let pp_exp_typ pe f (e, t) => F.fprintf f "%a:%a" (pp_exp_printenv pe) e (Typ.pp pe) t;
 
 
 /** Get the location of the instruction */
@@ -681,11 +645,22 @@ let pp_instr pe0 f instr => {
   let (pe, changed) = color_pre_wrapper pe0 f instr;
   switch instr {
   | Load id e t loc =>
-    F.fprintf f "%a=*%a:%a %a" (Ident.pp pe) id (pp_exp pe) e (Typ.pp pe) t Location.pp loc
+    F.fprintf
+      f "%a=*%a:%a %a" (Ident.pp pe) id (pp_exp_printenv pe) e (Typ.pp pe) t Location.pp loc
   | Store e1 t e2 loc =>
-    F.fprintf f "*%a:%a=%a %a" (pp_exp pe) e1 (Typ.pp pe) t (pp_exp pe) e2 Location.pp loc
+    F.fprintf
+      f
+      "*%a:%a=%a %a"
+      (pp_exp_printenv pe)
+      e1
+      (Typ.pp pe)
+      t
+      (pp_exp_printenv pe)
+      e2
+      Location.pp
+      loc
   | Prune cond loc true_branch _ =>
-    F.fprintf f "PRUNE(%a, %b); %a" (pp_exp pe) cond true_branch Location.pp loc
+    F.fprintf f "PRUNE(%a, %b); %a" (pp_exp_printenv pe) cond true_branch Location.pp loc
   | Call ret_id e arg_ts loc cf =>
     switch ret_id {
     | None => ()
@@ -694,7 +669,7 @@ let pp_instr pe0 f instr => {
     F.fprintf
       f
       "%a(%a)%a %a"
-      (pp_exp pe)
+      (pp_exp_printenv pe)
       e
       (pp_comma_seq (pp_exp_typ pe))
       arg_ts
@@ -739,23 +714,25 @@ let pp_atom pe0 f a => {
   | Aeq (BinOp op e1 e2) (Const (Cint i)) when IntLit.isone i =>
     switch pe.pe_kind {
     | PP_TEXT
-    | PP_HTML => F.fprintf f "%a" (pp_exp pe) (Exp.BinOp op e1 e2)
-    | PP_LATEX => F.fprintf f "%a" (pp_exp pe) (Exp.BinOp op e1 e2)
+    | PP_HTML => F.fprintf f "%a" (pp_exp_printenv pe) (Exp.BinOp op e1 e2)
+    | PP_LATEX => F.fprintf f "%a" (pp_exp_printenv pe) (Exp.BinOp op e1 e2)
     }
   | Aeq e1 e2 =>
     switch pe.pe_kind {
     | PP_TEXT
-    | PP_HTML => F.fprintf f "%a = %a" (pp_exp pe) e1 (pp_exp pe) e2
-    | PP_LATEX => F.fprintf f "%a{=}%a" (pp_exp pe) e1 (pp_exp pe) e2
+    | PP_HTML => F.fprintf f "%a = %a" (pp_exp_printenv pe) e1 (pp_exp_printenv pe) e2
+    | PP_LATEX => F.fprintf f "%a{=}%a" (pp_exp_printenv pe) e1 (pp_exp_printenv pe) e2
     }
   | Aneq e1 e2 =>
     switch pe.pe_kind {
     | PP_TEXT
-    | PP_HTML => F.fprintf f "%a != %a" (pp_exp pe) e1 (pp_exp pe) e2
-    | PP_LATEX => F.fprintf f "%a{\\neq}%a" (pp_exp pe) e1 (pp_exp pe) e2
+    | PP_HTML => F.fprintf f "%a != %a" (pp_exp_printenv pe) e1 (pp_exp_printenv pe) e2
+    | PP_LATEX => F.fprintf f "%a{\\neq}%a" (pp_exp_printenv pe) e1 (pp_exp_printenv pe) e2
     }
-  | Apred a es => F.fprintf f "%s(%a)" (PredSymb.to_string pe a) (pp_comma_seq (pp_exp pe)) es
-  | Anpred a es => F.fprintf f "!%s(%a)" (PredSymb.to_string pe a) (pp_comma_seq (pp_exp pe)) es
+  | Apred a es =>
+    F.fprintf f "%s(%a)" (PredSymb.to_string pe a) (pp_comma_seq (pp_exp_printenv pe)) es
+  | Anpred a es =>
+    F.fprintf f "!%s(%a)" (PredSymb.to_string pe a) (pp_comma_seq (pp_exp_printenv pe)) es
   };
   color_post_wrapper changed pe0 f
 };
@@ -1106,7 +1083,7 @@ let pp_inst_if_trace pe f inst =>
 let rec pp_sexp_env pe0 envo f se => {
   let (pe, changed) = color_pre_wrapper pe0 f se;
   switch se {
-  | Eexp e inst => F.fprintf f "%a%a" (pp_exp pe) e (pp_inst_if_trace pe) inst
+  | Eexp e inst => F.fprintf f "%a%a" (pp_exp_printenv pe) e (pp_inst_if_trace pe) inst
   | Estruct fel inst =>
     switch pe.pe_kind {
     | PP_TEXT
@@ -1119,8 +1096,16 @@ let rec pp_sexp_env pe0 envo f se => {
       F.fprintf f "\\{%a\\}%a" (pp_seq_diff pp_diff pe) fel (pp_inst_if_trace pe) inst
     }
   | Earray len nel inst =>
-    let pp_diff f (i, se) => F.fprintf f "%a:%a" (pp_exp pe) i (pp_sexp_env pe envo) se;
-    F.fprintf f "[%a|%a]%a" (pp_exp pe) len (pp_seq_diff pp_diff pe) nel (pp_inst_if_trace pe) inst
+    let pp_diff f (i, se) => F.fprintf f "%a:%a" (pp_exp_printenv pe) i (pp_sexp_env pe envo) se;
+    F.fprintf
+      f
+      "[%a|%a]%a"
+      (pp_exp_printenv pe)
+      len
+      (pp_seq_diff pp_diff pe)
+      nel
+      (pp_inst_if_trace pe)
+      inst
   };
   color_post_wrapper changed pe0 f
 };
@@ -1140,8 +1125,9 @@ let rec pp_hpred_env pe0 envo f hpred => {
     switch pe'.pe_kind {
     | PP_TEXT
     | PP_HTML =>
-      F.fprintf f "%a|->%a:%a" (pp_exp pe') e (pp_sexp_env pe' envo) se (pp_texp_simple pe') te
-    | PP_LATEX => F.fprintf f "%a\\mapsto %a" (pp_exp pe') e (pp_sexp_env pe' envo) se
+      F.fprintf
+        f "%a|->%a:%a" (pp_exp_printenv pe') e (pp_sexp_env pe' envo) se (pp_texp_simple pe') te
+    | PP_LATEX => F.fprintf f "%a\\mapsto %a" (pp_exp_printenv pe') e (pp_sexp_env pe' envo) se
     }
   | Hlseg k hpara e1 e2 elist =>
     switch pe.pe_kind {
@@ -1152,11 +1138,11 @@ let rec pp_hpred_env pe0 envo f hpred => {
         "lseg%a(%a,%a,[%a],%a)"
         pp_lseg_kind
         k
-        (pp_exp pe)
+        (pp_exp_printenv pe)
         e1
-        (pp_exp pe)
+        (pp_exp_printenv pe)
         e2
-        (pp_comma_seq (pp_exp pe))
+        (pp_comma_seq (pp_exp_printenv pe))
         elist
         (pp_hpara_env pe envo)
         hpara
@@ -1166,11 +1152,11 @@ let rec pp_hpred_env pe0 envo f hpred => {
         "\\textsf{lseg}_{%a}(%a,%a,[%a],%a)"
         pp_lseg_kind
         k
-        (pp_exp pe)
+        (pp_exp_printenv pe)
         e1
-        (pp_exp pe)
+        (pp_exp_printenv pe)
         e2
-        (pp_comma_seq (pp_exp pe))
+        (pp_comma_seq (pp_exp_printenv pe))
         elist
         (pp_hpara_env pe envo)
         hpara
@@ -1184,15 +1170,15 @@ let rec pp_hpred_env pe0 envo f hpred => {
         "dllseg%a(%a,%a,%a,%a,[%a],%a)"
         pp_lseg_kind
         k
-        (pp_exp pe)
+        (pp_exp_printenv pe)
         iF
-        (pp_exp pe)
+        (pp_exp_printenv pe)
         oB
-        (pp_exp pe)
+        (pp_exp_printenv pe)
         oF
-        (pp_exp pe)
+        (pp_exp_printenv pe)
         iB
-        (pp_comma_seq (pp_exp pe))
+        (pp_comma_seq (pp_exp_printenv pe))
         elist
         (pp_hpara_dll_env pe envo)
         hpara_dll
@@ -1202,15 +1188,15 @@ let rec pp_hpred_env pe0 envo f hpred => {
         "\\textsf{dllseg}_{%a}(%a,%a,%a,%a,[%a],%a)"
         pp_lseg_kind
         k
-        (pp_exp pe)
+        (pp_exp_printenv pe)
         iF
-        (pp_exp pe)
+        (pp_exp_printenv pe)
         oB
-        (pp_exp pe)
+        (pp_exp_printenv pe)
         oF
-        (pp_exp pe)
+        (pp_exp_printenv pe)
         iB
-        (pp_comma_seq (pp_exp pe))
+        (pp_comma_seq (pp_exp_printenv pe))
         elist
         (pp_hpara_dll_env pe envo)
         hpara_dll
@@ -1713,7 +1699,7 @@ let array_clean_new_index footprint_part new_idx => {
   if (footprint_part && fav_exists fav (fun id => not (Ident.is_footprint id))) {
     L.d_warning (
       "Array index " ^
-      exp_to_string new_idx ^ " has non-footprint vars: replaced by fresh footprint var"
+      Exp.to_string new_idx ^ " has non-footprint vars: replaced by fresh footprint var"
     );
     L.d_ln ();
     let id = Ident.create_fresh Ident.kfootprint;

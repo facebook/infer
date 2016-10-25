@@ -64,7 +64,7 @@ let explain_deallocate_stack_var pvar ra =
 let explain_deallocate_constant_string s ra =
   let const_str =
     let pp fmt () =
-      Sil.pp_exp pe_text fmt (Exp.Const (Const.Cstr s)) in
+      Exp.pp fmt (Exp.Const (Const.Cstr s)) in
     pp_to_string pp () in
   Localise.desc_deallocate_static_memory const_str ra.PredSymb.ra_pname ra.PredSymb.ra_loc
 
@@ -1079,7 +1079,7 @@ let explain_tainted_value_reaching_sensitive_function
           | Some (pvar, pvar_off) ->
               let dexp = dexp_apply_pvar_off (DExp.Dpvar pvar) pvar_off in
               DExp.to_string dexp
-          | None -> Sil.exp_to_string e
+          | None -> Exp.to_string e
         end in
   Localise.desc_tainted_value_reaching_sensitive_function
     taint_kind

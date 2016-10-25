@@ -154,3 +154,10 @@ let lt: t => t => t;
 
 /** Extract the ids and pvars from an expression */
 let get_vars: t => (list Ident.t, list Pvar.t);
+
+let pp_printenv:
+  printenv => (printenv => F.formatter => Typ.t => unit) => F.formatter => t => unit;
+
+let pp: F.formatter => t => unit;
+
+let to_string: t => string;

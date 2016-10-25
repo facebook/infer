@@ -30,7 +30,7 @@ module ConstantFlow = Dataflow.MakeDF(struct
     type t = (Const.t option) ConstantMap.t
 
     let pp fmt constants =
-      let pp_key fmt = Sil.pp_exp pe_text fmt in
+      let pp_key fmt = Exp.pp fmt in
       let print_kv k = function
         | Some v -> Format.fprintf fmt "  %a -> %a@." pp_key k (Const.pp pe_text) v
         | _ -> Format.fprintf fmt "  %a -> None@." pp_key k in

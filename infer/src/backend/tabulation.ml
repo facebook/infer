@@ -838,7 +838,7 @@ let check_taint_on_variadic_function tenv callee_pname caller_pname actual_param
       let actual_params' = n_tail actual_params tp_abs in
       L.d_str "Paramters to be checked:  [ ";
       IList.iter(fun (e,_) ->
-          L.d_str (" " ^ (Sil.exp_to_string e) ^ " ");
+          L.d_str (" " ^ (Exp.to_string e) ^ " ");
           match Attribute.get_taint tenv calling_prop e with
           | Some (Apred (Ataint taint_info, _)) ->
               report_taint_error e taint_info callee_pname caller_pname calling_prop

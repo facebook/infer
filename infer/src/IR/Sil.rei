@@ -317,15 +317,11 @@ let color_post_wrapper: bool => printenv => F.formatter => unit;
 
 
 /** Pretty print an expression. */
-let pp_exp: printenv => F.formatter => Exp.t => unit;
+let pp_exp_printenv: printenv => F.formatter => Exp.t => unit;
 
 
 /** Pretty print an expression with type. */
 let pp_exp_typ: printenv => F.formatter => (Exp.t, Typ.t) => unit;
-
-
-/** Convert an expression to a string */
-let exp_to_string: Exp.t => string;
 
 
 /** dump an expression. */

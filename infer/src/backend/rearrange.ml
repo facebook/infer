@@ -422,7 +422,7 @@ let mk_ptsto_exp_footprint
     if not (Config.angelic_execution && !Config.footprint) then
       begin
         if Config.developer_mode then
-          L.err "!!!! Footprint Error, Bad Root : %a !!!! @\n" (Sil.pp_exp pe_text) lexp;
+          L.err "!!!! Footprint Error, Bad Root : %a !!!! @\n" Exp.pp lexp;
         let deref_str = Localise.deref_str_dangling None in
         let err_desc =
           Errdesc.explain_dereference tenv deref_str orig_prop (State.get_loc ()) in
@@ -1408,14 +1408,3 @@ let rearrange ?(report_deref_errors=true) pdesc tenv lexp typ prop loc
           raise (Exceptions.Symexec_memory_error __POS__)
         end
   | Some iter -> iter_rearrange pname tenv nlexp typ prop' iter inst
-
-(*
-let pp_off fmt off =
-  IList.iter (fun n -> match n with
-      | Sil.Off_fld (f, t) -> F.fprintf fmt "%a " Ident.pp_fieldname f
-      | Sil.Off_index e -> F.fprintf fmt "%a " (Sil.pp_exp pe_text) e) off
-
-let sort_ftl ftl =
-  let compare (f1, _) (f2, _) = Ident.fieldname_compare f1 f2 in
-  IList.sort compare ftl
-*)

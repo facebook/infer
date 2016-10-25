@@ -313,3 +313,45 @@ let get_vars exp => {
     };
   get_vars_ exp ([], [])
 };
+
+
+/** Pretty print an expression. */
+let rec pp_ pe pp_t f e => {
+  let pp_exp = pp_ pe pp_t;
+  let print_binop_stm_output e1 op e2 =>
+    switch (op: Binop.t) {
+    | Eq
+    | Ne
+    | PlusA
+    | Mult => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe op) pp_exp e1
+    | Lt => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Gt) pp_exp e1
+    | Gt => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Lt) pp_exp e1
+    | Le => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Ge) pp_exp e1
+    | Ge => F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Le) pp_exp e1
+    | _ => F.fprintf f "(%a %s %a)" pp_exp e1 (Binop.str pe op) pp_exp e2
+    };
+  switch (e: t) {
+  | Var id => (Ident.pp pe) f id
+  | Const c => F.fprintf f "%a" (Const.pp pe) c
+  | Cast typ e => F.fprintf f "(%a)%a" pp_t typ pp_exp e
+  | UnOp op e _ => F.fprintf f "%s%a" (Unop.str op) pp_exp e
+  | BinOp op (Const c) e2 when Config.smt_output => print_binop_stm_output (Const c) op e2
+  | BinOp op e1 e2 => F.fprintf f "(%a %s %a)" pp_exp e1 (Binop.str pe op) pp_exp e2
+  | Exn e => F.fprintf f "EXN %a" pp_exp e
+  | Closure {name, captured_vars} =>
+    let id_exps = IList.map (fun (id_exp, _, _) => id_exp) captured_vars;
+    F.fprintf f "(%a)" (pp_comma_seq pp_exp) [Const (Cfun name), ...id_exps]
+  | Lvar pv => Pvar.pp pe f pv
+  | Lfield e fld _ => F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld
+  | Lindex e1 e2 => F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
+  | Sizeof t l s =>
+    let pp_len f l => Option.map_default (F.fprintf f "[%a]" pp_exp) () l;
+    F.fprintf f "sizeof(%a%a%a)" pp_t t pp_len l Subtype.pp s
+  }
+};
+
+let pp_printenv pe pp_typ f e => pp_ pe (pp_typ pe) f e;
+
+let pp f e => pp_printenv pe_text Typ.pp f e;
+
+let to_string e => F.asprintf "%a" pp e;

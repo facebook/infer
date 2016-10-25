@@ -135,10 +135,10 @@ let rec strexp_to_string pe coo f se =
       else  ()
   | Sil.Eexp (e, _) ->
       if !print_full_prop then
-        F.fprintf f "%a" (Sil.pp_exp pe) e
+        F.fprintf f "%a" (Sil.pp_exp_printenv pe) e
       else F.fprintf f "_"
   | Sil.Estruct (ls, _) -> F.fprintf f " STRUCT | { %a } " (struct_to_dotty_str pe coo) ls
-  | Sil.Earray(e, idx, _) -> F.fprintf f " ARRAY[%a] | { %a } " (Sil.pp_exp pe) e (get_contents pe coo) idx
+  | Sil.Earray(e, idx, _) -> F.fprintf f " ARRAY[%a] | { %a } " (Sil.pp_exp_printenv pe) e (get_contents pe coo) idx
 
 and struct_to_dotty_str pe coo f ls : unit =
   match ls with
@@ -149,19 +149,19 @@ and struct_to_dotty_str pe coo f ls : unit =
 and get_contents_sexp pe coo f se =
   match se with
   | Sil.Eexp (e', _) ->
-      F.fprintf f "%a" (Sil.pp_exp pe) e'
+      F.fprintf f "%a" (Sil.pp_exp_printenv pe) e'
   | Sil.Estruct (se', _) ->
       F.fprintf f "| { %a }" (struct_to_dotty_str pe coo) se'
   | Sil.Earray(e', [], _) ->
-      F.fprintf f "(ARRAY Size: %a) | { }" (Sil.pp_exp pe) e'
+      F.fprintf f "(ARRAY Size: %a) | { }" (Sil.pp_exp_printenv pe) e'
   | Sil.Earray(e', ((idx, a):: linner), _) ->
-      F.fprintf f "(ARRAY Size: %a) | { %a: %a | %a }" (Sil.pp_exp pe) e' (Sil.pp_exp pe) idx
+      F.fprintf f "(ARRAY Size: %a) | { %a: %a | %a }" (Sil.pp_exp_printenv pe) e' (Sil.pp_exp_printenv pe) idx
         (strexp_to_string pe coo) a (get_contents pe coo) linner
 
 and get_contents_single pe coo f (e, se) =
-  let e_no_special_char = strip_special_chars (Sil.exp_to_string e) in
+  let e_no_special_char = strip_special_chars (Exp.to_string e) in
   F.fprintf f "{ <%s> %a : %a }"
-    e_no_special_char (Sil.pp_exp pe) e (get_contents_sexp pe coo) se
+    e_no_special_char (Sil.pp_exp_printenv pe) e (get_contents_sexp pe coo) se
 
 and get_contents pe coo f = function
   | [] -> ()
@@ -415,7 +415,7 @@ let rec compute_target_struct_fields dotnodes list_fld p f lambda cycle =
            | [node] | [Dotpointsto _ ; node] | [node; Dotpointsto _] ->
                let n = get_coordinate_id node in
                if IList.mem Exp.equal e !struct_exp_nodes then begin
-                 let e_no_special_char = strip_special_chars (Sil.exp_to_string e) in
+                 let e_no_special_char = strip_special_chars (Exp.to_string e) in
                  let link_kind = if (in_cycle cycle (fn, se)) && (not !print_full_prop) then
                      LinkRetainCycle
                    else LinkStructToStruct in
@@ -439,22 +439,22 @@ let rec compute_target_array_elements dotnodes list_elements p f lambda =
     | Sil.Eexp (e, _) ->
         if is_nil e p then begin
           let n'= make_nil_node lambda in
-          [(LinkArrayToExp, Sil.exp_to_string idx, n',"")]
+          [(LinkArrayToExp, Exp.to_string idx, n',"")]
         end else
           let nodes_e = select_nodes_exp_lambda dotnodes e lambda in
           (match nodes_e with
            | [] ->
                (match box_dangling e with
                 | None -> []
-                | Some n' -> [(LinkArrayToExp, Sil.exp_to_string idx, n',"")]
+                | Some n' -> [(LinkArrayToExp, Exp.to_string idx, n',"")]
                )
            | [node] | [Dotpointsto _ ; node] | [node; Dotpointsto _] ->
                let n = get_coordinate_id node in
                if IList.mem Exp.equal e !struct_exp_nodes then begin
-                 let e_no_special_char = strip_special_chars (Sil.exp_to_string e) in
-                 [(LinkArrayToStruct, Sil.exp_to_string idx, n, e_no_special_char)]
+                 let e_no_special_char = strip_special_chars (Exp.to_string e) in
+                 [(LinkArrayToStruct, Exp.to_string idx, n, e_no_special_char)]
                end else
-                 [(LinkArrayToExp, Sil.exp_to_string idx, n,"")]
+                 [(LinkArrayToExp, Exp.to_string idx, n,"")]
            | _ -> (* by construction there must be at most 2 nodes for an expression*)
                L.out "@\n Too many nodes! Error! @\n@.@."; assert false
           )
@@ -496,7 +496,7 @@ let rec dotty_mk_set_links dotnodes sigma p f cycle =
         let ff n = IList.map (fun (k, lab_src, m, lab_trg) -> mk_link k (mk_coordinate (n + 1) lambda) (strip_special_chars lab_src) (mk_coordinate m lambda) (strip_special_chars lab_trg)) target_list in
         let links_from_elements = IList.flatten (IList.map ff (n:: nl)) in
 
-        let trg_label = strip_special_chars (Sil.exp_to_string e) in
+        let trg_label = strip_special_chars (Exp.to_string e) in
         let lnk = mk_link (LinkToArray) (mk_coordinate n lambda) "" (mk_coordinate (n + 1) lambda) trg_label in
         lnk :: links_from_elements @ dotty_mk_set_links dotnodes sigma' p f cycle in
   match sigma with
@@ -521,7 +521,7 @@ let rec dotty_mk_set_links dotnodes sigma p f cycle =
            let nl'= IList.filter (fun id -> address_struct_id != id) nl in
            let links_from_fields = IList.flatten (IList.map ff nl') in
            let lnk_from_address_struct = if !print_full_prop then
-               let trg_label = strip_special_chars (Sil.exp_to_string e) in
+               let trg_label = strip_special_chars (Exp.to_string e) in
                [mk_link (LinkExpToStruct) (mk_coordinate address_struct_id lambda) ""
                   (mk_coordinate (address_struct_id + 1) lambda) trg_label]
              else [] in
@@ -662,7 +662,7 @@ let filter_useless_spec_dollar_box (nodes: dotty_node list) (links: link list) =
     | Dotpointsto _ ->
         let e = get_node_exp node in
         if is_spec_variable e then begin
-          (*L.out "@\n Found a spec expression = %s @.@." (Sil.exp_to_string e); *)
+          (*L.out "@\n Found a spec expression = %s @.@." (Exp.to_string e); *)
           let links_from_node = boxes_pointed_by node links in
           let links_to_node = boxes_pointing_at node links in
           (* L.out "@\n Size of links_from=%i links_to=%i @.@." (IList.length links_from_node) (IList.length links_to_node); *)
@@ -683,16 +683,16 @@ let rec print_struct f pe e te l coo c =
         (match Str.split_delim (Str.regexp_string Config.anonymous_block_prefix) str_t with
          | [_; _] -> "BLOCK object"
          | _ -> str_t)
-    | _ -> Sil.exp_to_string te in
+    | _ -> Exp.to_string te in
   let n = coo.id in
   let lambda = coo.lambda in
-  let e_no_special_char = strip_special_chars (Sil.exp_to_string e) in
+  let e_no_special_char = strip_special_chars (Exp.to_string e) in
   F.fprintf f "subgraph structs_%iL%i {\n" n lambda ;
   if !print_full_prop then
     F.fprintf f
       " node [shape=record]; \n struct%iL%i \
        [label=\"{<%s%iL%i> STRUCT: %a } | %a\" ] fontcolor=%s\n"
-      n lambda e_no_special_char n lambda (Sil.pp_exp pe) e (struct_to_dotty_str pe coo) l c
+      n lambda e_no_special_char n lambda (Sil.pp_exp_printenv pe) e (struct_to_dotty_str pe coo) l c
   else
     F.fprintf f
       " node [shape=record]; \n struct%iL%i \
@@ -703,9 +703,9 @@ let rec print_struct f pe e te l coo c =
 and print_array f pe e1 e2 l coo c =
   let n = coo.id in
   let lambda = coo.lambda in
-  let e_no_special_char = strip_special_chars (Sil.exp_to_string e1) in
+  let e_no_special_char = strip_special_chars (Exp.to_string e1) in
   F.fprintf f "subgraph structs_%iL%i {\n" n lambda ;
-  F.fprintf f " node [shape=record]; \n struct%iL%i [label=\"{<%s%iL%i> ARRAY| SIZE: %a } | %a\" ] fontcolor=%s\n" n lambda e_no_special_char n lambda (Sil.pp_exp pe) e2 (get_contents pe coo) l c;
+  F.fprintf f " node [shape=record]; \n struct%iL%i [label=\"{<%s%iL%i> ARRAY| SIZE: %a } | %a\" ] fontcolor=%s\n" n lambda e_no_special_char n lambda (Sil.pp_exp_printenv pe) e2 (get_contents pe coo) l c;
   F.fprintf f "}\n"
 
 and print_sll f pe nesting k e1 coo =
@@ -718,7 +718,7 @@ and print_sll f pe nesting k e1 coo =
     | Sil.Lseg_NE -> F.fprintf f "subgraph cluster_%iL%i { style=filled; color=lightgrey; node [style=filled,color=white];  label=\"list NE\";" n' lambda  (*pp_nesting nesting*)
     | Sil.Lseg_PE -> F.fprintf f "subgraph cluster_%iL%i { style=filled; color=lightgrey; node [style=filled,color=white];  label=\"list PE\";" n' lambda (*pp_nesting nesting *)
   end;
-  F.fprintf f "state%iL%i [label=\"%a\"]\n" n lambda (Sil.pp_exp pe) e1;
+  F.fprintf f "state%iL%i [label=\"%a\"]\n" n lambda (Sil.pp_exp_printenv pe) e1;
   let n' = !dotty_state_count in
   incr dotty_state_count;
   F.fprintf f "state%iL%i [label=\"... \" style=filled color=lightgrey] \n" n' lambda ;
@@ -739,13 +739,13 @@ and print_dll f pe nesting k e1 e4 coo =
     | Sil.Lseg_NE -> F.fprintf f "subgraph cluster_%iL%i { style=filled; color=lightgrey; node [style=filled,color=white];  label=\"doubly-linked list NE\";" n' lambda  (*pp_nesting nesting *)
     | Sil.Lseg_PE -> F.fprintf f "subgraph cluster_%iL%i { style=filled; color=lightgrey; node [style=filled,color=white];  label=\"doubly-linked list PE\";" n' lambda (*pp_nesting nesting *)
   end;
-  F.fprintf f "state%iL%i [label=\"%a\"]\n" n lambda (Sil.pp_exp pe) e1;
+  F.fprintf f "state%iL%i [label=\"%a\"]\n" n lambda (Sil.pp_exp_printenv pe) e1;
   let n' = !dotty_state_count in
   incr dotty_state_count;
   F.fprintf f "state%iL%i [label=\"... \" style=filled color=lightgrey] \n" n' lambda;
   F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]\n" n lambda n' lambda;
   F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]\n" n' lambda n lambda;
-  F.fprintf f "state%iL%i [label=\"%a\"]\n" (n + 1) lambda (Sil.pp_exp pe) e4;
+  F.fprintf f "state%iL%i [label=\"%a\"]\n" (n + 1) lambda (Sil.pp_exp_printenv pe) e4;
   F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]\n" (n + 1) lambda n' lambda;
   F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]}\n" n' lambda (n + 1) lambda ;
   incr lambda_counter;
@@ -757,9 +757,9 @@ and dotty_pp_state f pe cycle dotnode =
     let n = coo.id in
     let lambda = coo.lambda in
     if is_dangling then
-      F.fprintf f "state%iL%i [label=\"%a \", color=red, style=dashed, fontcolor=%s]\n" n lambda (Sil.pp_exp pe) e c
+      F.fprintf f "state%iL%i [label=\"%a \", color=red, style=dashed, fontcolor=%s]\n" n lambda (Sil.pp_exp_printenv pe) e c
     else
-      F.fprintf f "state%iL%i [label=\"%a\" fontcolor=%s]\n" n lambda (Sil.pp_exp pe) e c in
+      F.fprintf f "state%iL%i [label=\"%a\" fontcolor=%s]\n" n lambda (Sil.pp_exp_printenv pe) e c in
   match dotnode with
   | Dotnil coo when !print_full_prop ->
       F.fprintf f "state%iL%i [label=\"NIL \", color=green, style=filled]\n" coo.id coo.lambda
@@ -786,10 +786,10 @@ and build_visual_graph f pe p cycle =
   compute_fields_struct sigma;
   compute_struct_exp_nodes sigma;
   (* L.out "@\n@\n Computed fields structs: ";
-     IList.iter (fun e -> L.out " %a " (Sil.pp_exp pe) e) !fields_structs;
+     IList.iter (fun e -> L.out " %a " (Sil.pp_exp_printenv pe) e) !fields_structs;
      L.out "@\n@.";
      L.out "@\n@\n Computed exp structs nodes: ";
-     IList.iter (fun e -> L.out " %a " (Sil.pp_exp pe) e) !struct_exp_nodes;
+     IList.iter (fun e -> L.out " %a " (Sil.pp_exp_printenv pe) e) !struct_exp_nodes;
      L.out "@\n@."; *)
   let sigma_lambda = IList.map (fun hp -> (hp,!lambda_counter)) sigma in
   let nodes = (dotty_mk_node pe) sigma_lambda in
@@ -1106,7 +1106,7 @@ let set_dangling_nodes = ref []
 (* convert an exp into a string which is xml friendly, ie. special character are replaced by*)
 (* the proper xml way to visualize them*)
 let exp_to_xml_string e =
-  pp_to_string (Sil.pp_exp (pe_html Black)) e
+  pp_to_string (Sil.pp_exp_printenv (pe_html Black)) e
 
 (* convert an atom into an xml-friendly string without special characters *)
 let atom_to_xml_string a =
@@ -1415,9 +1415,9 @@ let exp_is_neq_zero e =
 
 let rec get_contents_range_single pe coo f range_se =
   let (e1, e2), se = range_se in
-  let e1_no_special_char = strip_special_chars (Sil.exp_to_string e1) in
+  let e1_no_special_char = strip_special_chars (Exp.to_string e1) in
   F.fprintf f "{ <%s> [%a,%a] : %a }"
-    e1_no_special_char (Sil.pp_exp pe) e1 (Sil.pp_exp pe) e2 (get_contents_sexp pe coo) se
+    e1_no_special_char (Sil.pp_exp_printenv pe) e1 (Sil.pp_exp_printenv pe) e2 (get_contents_sexp pe coo) se
 
 and get_contents_range pe coo f = function
   | [] -> ()

@@ -772,7 +772,7 @@ let desc_retain_cycle cycle loc cycle_dotty =
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") a block capturing "^(Ident.fieldname_to_string f)^"; ";
         ct:=!ct +1;
     | Sil.Eexp(Exp.Lvar pvar as e, _) ->
-        let e_str = Sil.exp_to_string e in
+        let e_str = Exp.to_string e in
         let e_str = if Pvar.is_seed pvar then
             remove_old e_str
           else e_str in
