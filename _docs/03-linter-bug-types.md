@@ -1,9 +1,9 @@
 
 ---
-docid: checkers-bug-types
-title: Checkers bug types
+docid: linter-bug-types
+title: Linters bug types
 layout: docs
-permalink: /docs/checkers-bug-types.html
+permalink: /docs/linter-bug-types.html
 ---
 
 TODO
