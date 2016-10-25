@@ -20,7 +20,7 @@ FILES = \
   Interprocedural.java \
   LoggingPrivateData.java \
   Recursion.java \
-  Strings.java \
+  UnknownCode.java \
 
 compile:
 	javac -cp $(CLASSPATH) $(FILES)

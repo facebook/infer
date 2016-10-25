@@ -13,8 +13,9 @@
 module type S = sig
   module Trace : Trace.S
 
-  (** return a summary for handling an unknown call at the given site with the given return type *)
-  val handle_unknown_call : CallSite.t -> Typ.t option -> QuandarySummary.t
+  (** return a summary for handling an unknown call at the given site with the given return type
+      and actuals *)
+  val handle_unknown_call : CallSite.t -> Typ.t option -> (Exp.t * Typ.t) list -> QuandarySummary.t
 
   (** convert a trace type into a summary trace. can be killed if we functorize specs.ml *)
   val to_summary_trace : Trace.t -> QuandarySummary.summary_trace

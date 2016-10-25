@@ -342,7 +342,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
                 let summary =
                   match Summary.read_summary proc_data.tenv proc_data.pdesc callee_pname with
                   | Some summary -> summary
-                  | None -> TaintSpec.handle_unknown_call call_site (Option.map snd ret) in
+                  | None -> TaintSpec.handle_unknown_call call_site (Option.map snd ret) actuals in
                 apply_summary ret actuals summary astate_with_source proc_data call_site in
 
             Domain.join astate_acc astate_with_summary in
