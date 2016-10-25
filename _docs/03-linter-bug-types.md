@@ -17,7 +17,7 @@ Here is an overview of the linter checks we provide in Infer:
   - [Strong delegate warning](/docs/linters-bug-types.html#STRONG_DELEGATE_WARNING)
   
 - Issues reported in iOS code about [ComponentKit](http://componentkit.org)
-  - [Component factory funciton](/docs/infer-bug-types.html#COMPONENT_FACTORY_FUNCTION)
+  - [Component factory funciton](/docs/linters-bug-types.html#COMPONENT_FACTORY_FUNCTION)
   - [Component with multiple factory functions](/docs/linters-bug-types.html#COMPONENT_WITH_MULTIPLE_FACTORY_FUNCTIONS)
   - [Component with unconventional superclass](/docs/linters-bug-types.html#COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS)
   - [Mutable Local Variable in component file](/docs/linters-bug-types.html#MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE)
