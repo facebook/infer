@@ -18,12 +18,6 @@ open Dataflow
 (* ERADICATE CHECKER. TODOS:*)
 (* 1) add support for constructors for anonymous inner classes (currently not checked) *)
 
-(* print initial and final typestates *)
-let verbose = Config.from_env_variable "ERADICATE_TYPINGS"
-
-(* print step-by-step tracing information *)
-let trace = Config.from_env_variable "ERADICATE_TRACE"
-
 (* check that nonnullable fields are initialized in constructors *)
 let check_field_initialization = true
 
@@ -107,7 +101,7 @@ struct
           ret_ia ret_implicitly_nullable loc in
 
     let do_before_dataflow initial_typestate =
-      if verbose then
+      if Config.eradicate_verbose then
         L.stdout "Initial Typestate@\n%a@."
           (TypeState.pp Extension.ext) initial_typestate in
 
@@ -126,7 +120,7 @@ struct
             TypeCheck.typecheck_node
               tenv Extension.ext calls_this checks idenv get_proc_desc curr_pname curr_pdesc
               find_canonical_duplicate annotated_signature typestate node linereader in
-          if trace then
+          if Config.eradicate_trace then
             IList.iter (fun typestate_succ ->
                 L.stdout
                   "Typestate After Node %a@\n%a@."
@@ -314,7 +308,7 @@ struct
             Initializers.final_constructor_typestates_lazy
             proc_loc
         end;
-        if verbose then
+        if Config.eradicate_verbose then
           L.stdout "Final Typestate@\n%a@."
             (TypeState.pp Extension.ext) typestate in
       match typestate_opt with
@@ -354,7 +348,7 @@ struct
     | Some annotated_signature ->
         let loc = Cfg.Procdesc.get_loc proc_desc in
         let linereader = Printer.LineReader.create () in
-        if verbose then
+        if Config.eradicate_verbose then
           L.stdout "%a@."
             (Annotations.pp_annotated_signature proc_name)
             annotated_signature;

@@ -14,9 +14,6 @@ module F = Format
 
 let checkers_repeated_calls_name = "CHECKERS_REPEATED_CALLS"
 
-(* activate the check for repeated calls *)
-let checkers_repeated_calls = Config.from_env_variable checkers_repeated_calls_name
-
 
 (** Extension for the repeated calls check. *)
 module RepeatedCallsExtension : Eradicate.ExtensionT =
@@ -170,7 +167,7 @@ let callback_check_repeated_calls callback_args =
   let checks =
     {
       TypeCheck.eradicate = false;
-      check_extension = checkers_repeated_calls;
+      check_extension = Config.checkers_repeated_calls;
       check_ret_type = [];
     } in
   MainRepeatedCalls.callback checks callback_args

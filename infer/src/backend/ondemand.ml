@@ -14,8 +14,6 @@ open! Utils
 module L = Logging
 module F = Format
 
-let trace () = Config.from_env_variable "INFER_TRACE_ONDEMAND"
-
 (** Read the directories to analyze from the ondemand file. *)
 let read_dirs_to_analyze () =
   match DB.read_changed_files_index with
@@ -116,7 +114,7 @@ let run_proc_analysis tenv ~propagate_exceptions analyze_proc curr_pdesc callee_
 
   (* Dot means start of a procedure *)
   L.log_progress_procedure ();
-  if trace () then L.stderr "[%d] run_proc_analysis %a -> %a@."
+  if Config.trace_ondemand then L.stderr "[%d] run_proc_analysis %a -> %a@."
       !nesting
       Procname.pp curr_pname
       Procname.pp callee_pname;

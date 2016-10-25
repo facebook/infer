@@ -28,5 +28,4 @@ compile:
 	javac -cp $(CLASSPATH) $(FILES)
 
 analyze:
-	ERADICATE_RETURN_OVER_ANNOTATED=1 \
-	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(FILES))
+	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --eradicate-return-over-annotated -- javac -cp $(CLASSPATH) $(FILES))

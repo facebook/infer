@@ -16,6 +16,5 @@ compile:
 	clang $(OPTIONS) $(FILES)
 
 analyze:
-	INFER_REPORT_CUSTOM_ERROR=1 \
-	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --check-duplicate-symbols --developer-mode -- clang $(OPTIONS) $(FILES) 2>duplicates.txt)
+	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --report-custom-error --check-duplicate-symbols --developer-mode -- clang $(OPTIONS) $(FILES) 2>duplicates.txt)
 	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0

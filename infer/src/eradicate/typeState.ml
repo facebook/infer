@@ -120,7 +120,7 @@ let map_join m1 m2 =
   )
 
 let join ext t1 t2 =
-  if Config.from_env_variable "ERADICATE_TRACE"
+  if Config.eradicate_trace
   then L.stderr "@.@.**********join@.-------@.%a@.------@.%a@.********@.@."
       (pp ext) t1
       (pp ext) t2;

@@ -13,25 +13,6 @@ module L = Logging
 
 (** Module for the checks called by Eradicate. *)
 
-(* activate the condition redundant warnings *)
-let activate_condition_redundant = Config.from_env_variable "ERADICATE_CONDITION_REDUNDANT"
-
-(* activate check for @Present annotations *)
-let activate_optional_present = Config.from_env_variable "ERADICATE_OPTIONAL_PRESENT"
-
-(* activate the field not mutable warnings *)
-let activate_field_not_mutable = Config.from_env_variable "ERADICATE_FIELD_NOT_MUTABLE"
-
-(* activate the field over annotated warnings *)
-let activate_field_over_annotated = Config.from_env_variable "ERADICATE_FIELD_OVER_ANNOTATED"
-
-(* activate the return over annotated warning *)
-let activate_return_over_annotated = Config.from_env_variable "ERADICATE_RETURN_OVER_ANNOTATED"
-
-(* activate the propagation of nullable to the return value *)
-let activate_propagate_return_nullable =
-  Config.from_env_variable "ERADICATE_PROPAGATE_RETURN_NULLABLE"
-
 (* do not report RETURN_NOT_NULLABLE if the return is annotated @Nonnull *)
 let return_nonnull_silent = true
 
@@ -163,7 +144,7 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pname
   let nonnull = is_fun_nonnull ta in
   let should_report =
     TypeAnnotation.get_value Annotations.Nullable ta = false &&
-    (activate_condition_redundant || nonnull) &&
+    (Config.eradicate_condition_redundant || nonnull) &&
     true_branch &&
     (not is_temp || nonnull) &&
     PatternMatch.type_is_class typ &&
@@ -208,7 +189,7 @@ let check_field_assignment tenv
     not (Ident.java_fieldname_is_outer_instance fname) &&
     not (field_is_field_injector_readwrite ()) in
   let should_report_absent =
-    activate_optional_present &&
+    Config.eradicate_optional_present &&
     TypeAnnotation.get_value Annotations.Present ta_lhs = true &&
     TypeAnnotation.get_value Annotations.Present ta_rhs = false &&
     not (Ident.java_fieldname_is_outer_instance fname) in
@@ -216,7 +197,7 @@ let check_field_assignment tenv
     let field_is_mutable () = match t_ia_opt with
       | Some (_, ia) -> Annotations.ia_is_mutable ia
       | _ -> false in
-    activate_field_not_mutable &&
+    Config.eradicate_field_not_mutable &&
     not (Procname.is_constructor curr_pname) &&
     not (Procname.is_class_initializer curr_pname) &&
     not (field_is_mutable ()) in
@@ -317,7 +298,7 @@ let check_constructor_initialization tenv
                     curr_pname;
 
                 (* Check if field is over-annotated. *)
-                if activate_field_over_annotated &&
+                if Config.eradicate_field_over_annotated &&
                    nullable_annotated &&
                    not (may_be_nullable_in_final_typestate ()) then
                   report_error tenv
@@ -371,19 +352,19 @@ let check_return_annotation tenv
         not ret_implicitly_nullable &&
         not (return_nonnull_silent && ret_annotated_nonnull) in
       let return_value_not_present =
-        activate_optional_present &&
+        Config.eradicate_optional_present &&
         not final_present &&
         ret_annotated_present in
       let return_over_annotated =
         not final_nullable &&
         ret_annotated_nullable &&
-        activate_return_over_annotated in
+        Config.eradicate_return_over_annotated in
 
       if return_not_nullable && Models.Inference.enabled then
         Models.Inference.proc_mark_return_nullable curr_pname;
 
       if return_not_nullable &&
-         activate_propagate_return_nullable
+         Config.eradicate_propagate_return_nullable
       then
         spec_make_return_nullable curr_pname;
 
@@ -432,7 +413,7 @@ let check_call_receiver tenv
           (typ, TypeAnnotation.const Annotations.Nullable false TypeOrigin.ONone, []) loc in
       let null_method_call = TypeAnnotation.get_value Annotations.Nullable this_ta in
       let optional_get_on_absent =
-        activate_optional_present &&
+        Config.eradicate_optional_present &&
         Models.is_optional_get callee_pname &&
         not (TypeAnnotation.get_value Annotations.Present this_ta) in
       if null_method_call || optional_get_on_absent then
@@ -471,7 +452,7 @@ let check_call_parameters tenv
           not formal_is_nullable &&
           TypeAnnotation.get_value Annotations.Nullable ta2 in
         let parameter_absent =
-          activate_optional_present &&
+          Config.eradicate_optional_present &&
           not param_is_this &&
           PatternMatch.type_is_class t1 &&
           formal_is_present &&

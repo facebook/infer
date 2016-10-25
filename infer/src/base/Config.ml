@@ -105,7 +105,7 @@ let checks_disabled_by_default = [
 
 let clang_build_output_dir_name = "build_output"
 
-let report_condition_always_true_in_clang = false
+let clang_initializer_prefix = "__infer_globals_initializer_"
 
 (** Experimental: if true do some specialized analysis of concurrent constructs. *)
 let csl_analysis = true
@@ -125,8 +125,6 @@ let fail_on_issue_exit_code = 2
 let filter_buckets = false
 
 let frontend_stats_dir_name = "frontend_stats"
-
-let clang_initializer_prefix = "__infer_globals_initializer_"
 
 let global_tenv_filename = "global.tenv"
 
@@ -176,6 +174,8 @@ let proc_stats_filename = "proc_stats.json"
 
 let property_attributes = "property_attributes"
 
+let report_condition_always_true_in_clang = false
+
 (** If true, sanity-check inferred preconditions against Nullable annotations and report
     inconsistencies *)
 let report_nullable_inconsistency = true
@@ -214,6 +214,8 @@ let trace_absarray = false
 let undo_join = true
 
 let unsafe_unret = "<\"Unsafe_unretained\">"
+
+let use_jar_cache = true
 
 let weak = "<\"Weak\">"
 
@@ -312,6 +314,9 @@ let os_type = match Sys.os_type with
   | "Win32" -> Win32
   | "Cygwin" -> Cygwin
   | _ -> Unix
+
+
+(** Inferconfig parsing auxiliary functions *)
 
 let patterns_of_json_with_key json_key json =
   let default_method_pattern = {
@@ -649,11 +654,6 @@ and bugs_json =
     ~exes:CLOpt.[Print]
     ~meta:"file" "Create a file containing a list of issues in JSON format"
 
-and frontend_tests =
-  CLOpt.mk_bool ~long:"frontend-tests"
-    ~exes:CLOpt.frontend_exes
-    "Save filename.ext.test.dot with the cfg in dotty format for frontend tests"
-
 and bugs_tests =
   CLOpt.mk_option ~long:"issues-tests" ~f:create_outfile
     ~exes:CLOpt.[Print]
@@ -674,10 +674,6 @@ and calls_csv =
     ~exes:CLOpt.[Print]
     ~meta:"file" "Write individual calls in csv format to a file"
 
-and clang_biniou_file =
-  CLOpt.mk_string_opt ~long:"clang-biniou-file" ~exes:CLOpt.[Clang] ~meta:"file"
-    "Specify a file containing the AST of the program, in biniou format"
-
 and changed_files_index =
   CLOpt.mk_string_opt ~long:"changed-files-index" ~exes:CLOpt.[Toplevel] ~meta:"file"
     "Specify the file containing the list of files from which reactive analysis should start"
@@ -686,6 +682,40 @@ and check_duplicate_symbols =
   CLOpt.mk_bool ~long:"check-duplicate-symbols"
     ~exes:CLOpt.[Analyze]
     "Check if a symbol with the same name is defined in more than one file."
+
+and checkers, crashcontext, eradicate, quandary =
+  (* Run only the checkers instead of the full analysis *)
+  let checkers =
+    CLOpt.mk_bool ~deprecated:["checkers"] ~long:"checkers"
+      ""
+  in
+  (* Activate the crashcontext checker for java stack trace context reconstruction *)
+  let crashcontext =
+    CLOpt.mk_bool_group ~deprecated:["crashcontext"] ~long:"crashcontext"
+      ""
+      [checkers]
+  in
+  (* Activate the eradicate checker for java annotations (also sets --checkers) *)
+  let eradicate =
+    CLOpt.mk_bool_group ~deprecated:["eradicate"] ~long:"eradicate"
+      ""
+      [checkers]
+  in
+  (* Activate the quandary taint analysis *)
+  let quandary =
+    CLOpt.mk_bool_group ~deprecated:["quandary"] ~long:"quandary"
+      ""
+      [checkers]
+  in
+  (checkers, crashcontext, eradicate, quandary)
+
+and checkers_repeated_calls =
+  CLOpt.mk_bool ~long:"checkers-repeated-calls"
+    "Check for repeated calls"
+
+and clang_biniou_file =
+  CLOpt.mk_string_opt ~long:"clang-biniou-file" ~exes:CLOpt.[Clang] ~meta:"file"
+    "Specify a file containing the AST of the program, in biniou format"
 
 and clang_compilation_database =
   CLOpt.mk_string_opt ~long:"clang-compilation-database"
@@ -776,35 +806,54 @@ and dotty_cfg_libs =
   CLOpt.mk_bool ~deprecated:["dotty_no_cfg_libs"] ~long:"dotty-cfg-libs" ~default:true
     "Print the cfg of the code coming from the libraries"
 
+and dynamic_dispatch_lazy =
+  CLOpt.mk_bool ~long:"dynamic-dispatch-lazy"
+    "Handle dynamic dispatch by following the JVM semantics and creating procedure descriptions \
+     during the symbolic execution using the type information found in the abstract state"
+
+and dynamic_dispatch_sound =
+  CLOpt.mk_bool ~long:"dynamic-dispatch-sound"
+    "Dynamic dispatch for interface calls in Java"
+
 and enable_checks =
   CLOpt.mk_string_list ~deprecated:["enable_checks"] ~long:"enable-checks" ~meta:"error name"
     "Show reports coming from this type of errors"
 
-and checkers, eradicate, crashcontext, quandary =
-  (* Run only the checkers instead of the full analysis *)
-  let checkers =
-    CLOpt.mk_bool ~deprecated:["checkers"] ~long:"checkers"
-      ""
-  in
-  (* Activate the eradicate checker for java annotations (also sets --checkers) *)
-  let eradicate =
-    CLOpt.mk_bool_group ~deprecated:["eradicate"] ~long:"eradicate"
-      ""
-      [checkers]
-  in
-  (* Activate the crashcontext checker for java stack trace context reconstruction *)
-  let crashcontext =
-    CLOpt.mk_bool_group ~deprecated:["crashcontext"] ~long:"crashcontext"
-      ""
-      [checkers]
-  in
-  (* Activate the quandary taint analysis *)
-  let quandary =
-    CLOpt.mk_bool_group ~deprecated:["quandary"] ~long:"quandary"
-      ""
-      [checkers]
-  in
-  (checkers, eradicate, crashcontext, quandary)
+and eradicate_condition_redundant =
+  CLOpt.mk_bool ~long:"eradicate-condition-redundant"
+    "Condition redundant warnings"
+
+and eradicate_field_not_mutable =
+  CLOpt.mk_bool ~long:"eradicate-field-not-mutable"
+    "Field not mutable warnings"
+
+and eradicate_field_over_annotated =
+  CLOpt.mk_bool ~long:"eradicate-field-over-annotated"
+    "Field over-annotated warnings"
+
+and eradicate_optional_present =
+  CLOpt.mk_bool ~long:"eradicate-optional-present"
+    "Check for @Present annotations"
+
+and eradicate_propagate_return_nullable =
+  CLOpt.mk_bool ~long:"eradicate-propagate-return-nullable"
+    "Propagation of nullable to the return value"
+
+and eradicate_return_over_annotated =
+  CLOpt.mk_bool ~long:"eradicate-return-over-annotated"
+    "Return over-annotated warning"
+
+and eradicate_debug =
+  CLOpt.mk_bool ~long:"eradicate-debug"
+    "Print debug info when errors are found"
+
+and eradicate_trace =
+  CLOpt.mk_bool ~long:"eradicate-trace"
+    "Print step-by-step tracing information"
+
+and eradicate_verbose =
+  CLOpt.mk_bool ~long:"eradicate-verbose"
+    "Print initial and final typestates"
 
 (* Use file for the err channel *)
 and err_file =
@@ -820,6 +869,10 @@ and fail_on_bug =
 and failures_allowed =
   CLOpt.mk_bool ~deprecated_no:["-no_failures_allowed"] ~long:"failures-allowed" ~default:true
     "Fail if at least one of the translations fails (clang only)"
+
+and filter_paths =
+  CLOpt.mk_bool ~long:"filter-paths" ~default:true
+    "Filters specified in .inferconfig"
 
 and filtering =
   CLOpt.mk_bool ~long:"filtering" ~short:"f" ~default:true
@@ -842,6 +895,11 @@ and frontend_stats =
   CLOpt.mk_bool ~long:"frontend-stats" ~short:"fs"
     "Output statistics about the capture phase to *.o.astlog (clang only)"
 
+and frontend_tests =
+  CLOpt.mk_bool ~long:"frontend-tests"
+    ~exes:CLOpt.frontend_exes
+    "Save filename.ext.test.dot with the cfg in dotty format for frontend tests"
+
 and headers =
   CLOpt.mk_bool ~deprecated:["headers"] ~deprecated_no:["no_headers"] ~long:"headers" ~short:"hd"
     ~exes:CLOpt.[Clang]
@@ -856,6 +914,12 @@ and iterations =
     ~meta:"int"
     "Specify the maximum number of operations for each function, expressed as a multiple of \
      symbolic operations and a multiple of seconds of elapsed time"
+
+and java_jar_compiler =
+  CLOpt.mk_string_opt
+    ~long:"java-jar-compiler"
+    ~exes:CLOpt.[Java]
+    ~meta:"path" "Specifify the Java compiler jar used to generate the bytecode"
 
 and jobs =
   CLOpt.mk_int ~deprecated:["-multicore"] ~long:"jobs" ~short:"j" ~default:ncpu
@@ -890,6 +954,10 @@ and load_results =
 and makefile =
   CLOpt.mk_string ~deprecated:["makefile"] ~long:"makefile" ~default:""
     ~meta:"file" ""
+
+and margin =
+  CLOpt.mk_int ~deprecated:["set_pp_margin"] ~long:"margin" ~default:100
+    ~meta:"int" "Set right margin for the pretty printing functions"
 
 and merge =
   CLOpt.mk_bool ~deprecated:["merge"] ~long:"merge"
@@ -949,10 +1017,6 @@ and optimistic_cast =
 and out_file =
   CLOpt.mk_string ~deprecated:["out_file"] ~long:"out-file" ~default:""
     ~meta:"file" "Specify the file for the non-error logs of the analyzer"
-
-and margin =
-  CLOpt.mk_int ~deprecated:["set_pp_margin"] ~long:"margin" ~default:100
-    ~meta:"int" "Set right margin for the pretty printing functions"
 
 and (
   patterns_modeled_expensive,
@@ -1017,6 +1081,10 @@ and report =
   CLOpt.mk_option ~deprecated:["report"] ~long:"report" ~f:create_outfile
     ~meta:"file" "Create a file containing a report of the analysis results"
 
+and report_custom_error =
+  CLOpt.mk_bool ~long:"report-custom-error"
+    ""
+
 and reports_include_ml_loc =
   CLOpt.mk_bool ~deprecated:["with_infer_src_loc"] ~long:"reports-include-ml-loc"
     "Include the location in the Infer source code from where reports are generated"
@@ -1035,14 +1103,14 @@ and seconds_per_iteration =
   CLOpt.mk_float ~deprecated:["seconds_per_iteration"] ~long:"seconds-per-iteration" ~default:0.
     ~meta:"float" "Set the number of seconds per iteration (see --iterations)"
 
-and skip_clang_analysis_in_path =
-  CLOpt.mk_string_list ~long:"skip-clang-analysis-in-path"
-    ~exes:CLOpt.[Clang]
-    ~meta:"path prefix" "Ignore files whose path matches the given prefix"
-
 and skip_analysis_in_path =
   CLOpt.mk_string_list ~long:"skip-analysis-in-path"
     ~exes:CLOpt.[Clang;Java]
+    ~meta:"path prefix" "Ignore files whose path matches the given prefix"
+
+and skip_clang_analysis_in_path =
+  CLOpt.mk_string_list ~long:"skip-clang-analysis-in-path"
+    ~exes:CLOpt.[Clang]
     ~meta:"path prefix" "Ignore files whose path matches the given prefix"
 
 and skip_translation_headers =
@@ -1134,6 +1202,11 @@ and testing_mode =
   CLOpt.mk_bool ~deprecated:["testing_mode"; "-testing_mode"] ~long:"testing-mode" ~short:"tm"
     "Mode for testing, where no headers are translated, and dot files are created (clang only)"
 
+and thread_safety =
+  CLOpt.mk_bool ~long:"thread-safety"
+    ~exes:CLOpt.[Analyze]
+    "Run the experimental thread safety checker. (In conjunction with -a checkers)"
+
 and trace_error =
   CLOpt.mk_bool ~deprecated:["trace_error"] ~long:"trace-error"
     "Detailed tracing information during error explanation"
@@ -1141,6 +1214,9 @@ and trace_error =
 and trace_join =
   CLOpt.mk_bool ~deprecated:["trace_join"] ~long:"trace-join"
     "Detailed tracing information during prop join operations"
+
+and trace_ondemand =
+  CLOpt.mk_bool ~long:"trace-ondemand" ""
 
 and trace_rearrange =
   CLOpt.mk_bool ~deprecated:["trace_rearrange"] ~long:"trace-rearrange"
@@ -1160,11 +1236,6 @@ and unsafe_malloc =
   CLOpt.mk_bool ~long:"unsafe-malloc"
     ~exes:CLOpt.[Analyze]
     "Assume that malloc(3) never returns null."
-
-and thread_safety =
-  CLOpt.mk_bool ~long:"thread-safety"
-    ~exes:CLOpt.[Analyze]
-    "Run the experimental thread safety checker. (In conjunction with -a checkers)"
 
 and use_compilation_database =
   CLOpt.mk_symbol_opt ~long:"use-compilation-database"
@@ -1227,47 +1298,16 @@ and zip_specs_library =
   CLOpt.mk_string_list ~long:"zip-specs-library" ~short:"ziplib" ~f:resolve
     ~meta:"zip file" "Search for .spec files in a zip file"
 
-and java_jar_compiler =
-  CLOpt.mk_string_opt
-    ~long:"java-jar-compiler"
-    ~exes:CLOpt.[Java]
-    ~meta:"path" "Specifify the Java compiler jar used to generate the bytecode"
-
-(** Configuration values specified by environment variables *)
-
-let from_env_variable var_name =
-  try
-    let _ = Sys.getenv var_name in true
-  with Not_found -> false
-
-let get_env_variable var_name =
-  try
-    let v = Sys.getenv var_name in
-    if v = "" then None else Some v
-  with Not_found -> None
-
-(** experimental: handle dynamic dispatch by following the JVM semantics and creating
-    during the symbolic excution procedure descriptions using the types information
-    found in the abstract state *)
-let lazy_dynamic_dispatch = from_env_variable "INFER_LAZY_DYNAMIC_DISPATCH"
-
-let report_custom_error = from_env_variable "INFER_REPORT_CUSTOM_ERROR"
-
-(** experimental: dynamic dispatch for interface calls only in Java. off by default because of the
-    cost *)
-let sound_dynamic_dispatch = from_env_variable "INFER_SOUND_DYNAMIC_DISPATCH"
-
-let use_jar_cache = true
 
 (** Parse Command Line Args *)
 
 let exe_usage (exe : CLOpt.exe) =
   match exe with
   | Analyze ->
-      version_string ^ "\n\
-                        Usage: InferAnalyze [options]\n\
-                        Analyze the files captured in the project results directory, \
-                        which can be specified with the --results-dir option."
+      version_string ^ "\n" ^
+      "Usage: InferAnalyze [options]\n\
+       Analyze the files captured in the project results directory, which can be specified with \
+       the --results-dir option."
   | BuckCompilationDatabase ->
       "Usage: BuckCompilationDatabase --Xbuck //target \n\
        Runs buck with the flavor compilation-database or uber-compilation-database. It then \n\
@@ -1432,9 +1472,8 @@ and changed_files_index = !changed_files_index
 and calls_csv = !calls_csv
 and check_duplicate_symbols = !check_duplicate_symbols
 and checkers = !checkers
-
-(** should the checkers be run? *)
 and checkers_enabled = not (!eradicate || !crashcontext || !quandary)
+and checkers_repeated_calls = !checkers_repeated_calls
 and clang_biniou_file = !clang_biniou_file
 and clang_compilation_database = !clang_compilation_database
 and clang_frontend_do_capture, clang_frontend_do_lint =
@@ -1447,7 +1486,6 @@ and clang_frontend_do_capture, clang_frontend_do_lint =
       | Some Linters -> false, true (* no capture, lint *)
       | Some Infer -> true, false (* capture, no lint *)
       | _ -> true, true (* capture, lint *)
-
 and clang_include_to_override = !clang_include_to_override
 and cluster_cmdline = !cluster
 and continue_capture = !continue
@@ -1461,11 +1499,23 @@ and dependency_mode = !dependencies
 and developer_mode = !developer_mode
 and disable_checks = !disable_checks
 and dotty_cfg_libs = !dotty_cfg_libs
+and dynamic_dispatch_lazy = (!dynamic_dispatch_lazy || !analyzer = Some Tracing)
+and dynamic_dispatch_sound = !dynamic_dispatch_sound
 and enable_checks = !enable_checks
 and eradicate = !eradicate
+and eradicate_condition_redundant = !eradicate_condition_redundant
+and eradicate_field_not_mutable = !eradicate_field_not_mutable
+and eradicate_field_over_annotated = !eradicate_field_over_annotated
+and eradicate_optional_present = !eradicate_optional_present
+and eradicate_propagate_return_nullable = !eradicate_propagate_return_nullable
+and eradicate_return_over_annotated = !eradicate_return_over_annotated
+and eradicate_debug = !eradicate_debug
+and eradicate_trace = !eradicate_trace
+and eradicate_verbose = !eradicate_verbose
 and err_file_cmdline = !err_file
 and fail_on_bug = !fail_on_bug
 and failures_allowed = !failures_allowed
+and filter_paths = !filter_paths
 and filtering = !filtering
 and flavors = !flavors
 and frontend_debug = !frontend_debug
@@ -1508,6 +1558,7 @@ and quandary = !quandary
 and quiet = !quiet
 and reactive_mode = !reactive
 and report = !report
+and report_custom_error = !report_custom_error
 and report_runtime_exceptions = !tracing
 and reports_include_ml_loc = !reports_include_ml_loc
 and results_dir = !results_dir
@@ -1531,6 +1582,7 @@ and test = !test
 and test_filtering = !test_filtering
 and testing_mode = !testing_mode
 and trace_error = !trace_error
+and trace_ondemand = !trace_ondemand
 and trace_join = !trace_join
 and trace_rearrange = !trace_rearrange
 and type_size = !type_size
@@ -1549,7 +1601,6 @@ let clang_frontend_action_string =
   String.concat " and "
     ((if clang_frontend_do_capture then ["translating"] else [])
      @ (if clang_frontend_do_lint then ["linting"] else []))
-
 
 let analysis_path_regex_whitelist analyzer =
   IList.assoc (=) analyzer analysis_path_regex_whitelist_options

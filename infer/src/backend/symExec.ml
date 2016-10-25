@@ -553,7 +553,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
       if !Config.curr_language <> Config.Java then
         (* default mode for Obj-C/C++/Java virtual calls: resolution only *)
         [do_resolve callee_pname receiver_exp actual_receiver_typ]
-      else if Config.sound_dynamic_dispatch then
+      else if Config.dynamic_dispatch_sound then
         let targets =
           if call_flags.CallFlags.cf_virtual
           then
@@ -1059,7 +1059,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
   | Sil.Call (ret_id,
               Exp.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
               actual_params, loc, call_flags)
-    when Config.lazy_dynamic_dispatch ->
+    when Config.dynamic_dispatch_lazy ->
       let norm_prop, norm_args = normalize_params tenv current_pname prop_ actual_params in
       let exec_skip_call skipped_pname ret_annots ret_type =
         skip_call norm_prop path skipped_pname ret_annots loc ret_id (Some ret_type) norm_args in

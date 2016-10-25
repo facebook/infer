@@ -17,9 +17,6 @@ module DExp = DecompiledExp
 
 let remove_temps = true (* remove temp ids from typestates *)
 
-(* print debug info when errors are found *)
-let debug = Config.from_env_variable "ERADICATE_DEBUG"
-
 
 (** Module to treat selected complex expressions as constants. *)
 module ComplexExpressions = struct
@@ -637,7 +634,7 @@ let typecheck_instr
           match TypeState.lookup_pvar pvar typestate'' with
           | Some (t, ta, _) ->
               let should_report =
-                EradicateChecks.activate_condition_redundant &&
+                Config.eradicate_condition_redundant &&
                 TypeAnnotation.get_value Annotations.Nullable ta = false &&
                 not (TypeAnnotation.origin_is_fun_library ta) in
               if checks.eradicate && should_report then
@@ -786,7 +783,7 @@ let typecheck_instr
       let typestate2 =
         if not is_anonymous_inner_class_constructor then
           begin
-            if debug then
+            if Config.eradicate_debug then
               begin
                 let unique_id = Procname.to_unique_id callee_pname in
                 let classification =

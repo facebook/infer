@@ -110,6 +110,7 @@ val perf_stats_prefix : string
 val proc_stats_filename : string
 val property_attributes : string
 val report_condition_always_true_in_clang : bool
+val report_custom_error : bool
 val report_nullable_inconsistency : bool
 val reporting_stats_dir_name : string
 val save_compact_summaries : bool
@@ -127,18 +128,6 @@ val unsafe_unret : string
 val weak : string
 val whitelisted_cpp_methods : string list list
 val wrappers_dir : string
-
-
-(** Configuration values specified by environment variables *)
-
-val from_env_variable : string -> bool
-val get_env_variable : string -> string option
-
-val lazy_dynamic_dispatch : bool
-val report_custom_error : bool
-val sound_dynamic_dispatch : bool
-
-val is_originator : bool
 
 
 (** Configuration values specified by command-line options *)
@@ -171,6 +160,7 @@ val calls_csv : outfile option
 val check_duplicate_symbols : bool
 val checkers : bool
 val checkers_enabled : bool
+val checkers_repeated_calls : bool
 val clang_biniou_file : string option
 val clang_compilation_database : string option
 val clang_frontend_action_string : string
@@ -189,11 +179,23 @@ val dependency_mode : bool
 val developer_mode : bool
 val disable_checks : string list
 val dotty_cfg_libs : bool
+val dynamic_dispatch_lazy : bool
+val dynamic_dispatch_sound : bool
 val enable_checks : string list
 val eradicate : bool
+val eradicate_condition_redundant : bool
+val eradicate_field_not_mutable : bool
+val eradicate_field_over_annotated : bool
+val eradicate_optional_present : bool
+val eradicate_propagate_return_nullable : bool
+val eradicate_return_over_annotated : bool
+val eradicate_debug : bool
+val eradicate_trace : bool
+val eradicate_verbose : bool
 val err_file_cmdline : string
 val fail_on_bug : bool
 val failures_allowed : bool
+val filter_paths : bool
 val filtering : bool
 val flavors : bool
 val frontend_debug : bool
@@ -201,6 +203,7 @@ val frontend_tests : bool
 val frontend_stats : bool
 val headers : bool
 val infer_cache : string option
+val is_originator : bool
 val iterations : int
 val java_jar_compiler : string option
 val javac_verbose_out : string
@@ -258,6 +261,7 @@ val test : bool
 val test_filtering : bool
 val testing_mode : bool
 val trace_error : bool
+val trace_ondemand : bool
 val trace_join : bool
 val trace_rearrange : bool
 val type_size : bool

@@ -229,9 +229,8 @@ let filters_from_inferconfig inferconfig : filters =
   }
 
 (* Create filters based on .inferconfig *)
-(* The environment varialble NO_PATH_FILTERING disables path filtering. *)
 let create_filters analyzer =
-  if Config.from_env_variable "NO_PATH_FILTERING" then do_not_filter
+  if not Config.filter_paths then do_not_filter
   else filters_from_inferconfig (load_filters analyzer)
 
 (* Decide whether a checker or error type is enabled or disabled based on*)
