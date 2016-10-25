@@ -21,7 +21,7 @@
   - id: infer-bug-types
   - id: eradicate-warnings
   - id: checkers-bug-types
-  - id: linters-bug-types
+  - id: linter-bug-types
 - title: Contribute
   items:
   - id: adding-checkers
