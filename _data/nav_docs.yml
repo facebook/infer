@@ -8,6 +8,7 @@
   - id: analyzing-apps-or-projects
   - id: eradicate
   - id: checkers
+  - id: linters
   - id: advanced-features
   - id: adding-models
 - title: Foundations
@@ -20,6 +21,7 @@
   - id: infer-bug-types
   - id: eradicate-warnings
   - id: checkers-bug-types
+  - id: linters-bug-types
 - title: Contribute
   items:
   - id: adding-checkers
