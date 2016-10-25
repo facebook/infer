@@ -66,7 +66,7 @@ let store_icfg source_file tenv cg cfg =
 let do_source_file
     linereader classes program tenv
     source_basename package_opt source_file =
-  JUtils.log "\nfilename: %s (%s)@."
+  L.stdout "\nfilename: %s (%s)@."
     (DB.source_file_to_string source_file) source_basename;
   let call_graph, cfg =
     JFrontend.compute_source_icfg
@@ -111,13 +111,13 @@ let save_tenv tenv =
   if not Config.models_mode then JTransType.add_models_types tenv;
   (* TODO: this prevents per compilation step incremental analysis at this stage *)
   if DB.file_exists DB.global_tenv_fname then DB.file_remove DB.global_tenv_fname;
-  JUtils.log "writing new tenv %s@." (DB.filename_to_string DB.global_tenv_fname);
+  L.stdout "writing new tenv %s@." (DB.filename_to_string DB.global_tenv_fname);
   Tenv.store_to_file DB.global_tenv_fname tenv
 
 
 (* The program is loaded and translated *)
 let do_all_files classpath sources classes =
-  JUtils.log "Translating %d source files (%d classes)@."
+  L.stdout "Translating %d source files (%d classes)@."
     (StringMap.cardinal sources)
     (JBasics.ClassSet.cardinal classes);
   let program = JClasspath.load_program classpath classes in
@@ -149,7 +149,7 @@ let do_all_files classpath sources classes =
     capture_libs linereader program tenv;
   save_tenv tenv;
   JClasspath.cleanup program;
-  JUtils.log "done @."
+  L.stdout "done @."
 
 
 (* loads the source files and translates them *)

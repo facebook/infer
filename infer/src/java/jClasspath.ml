@@ -229,14 +229,14 @@ let lookup_node cn program =
   try
     Some (JBasics.ClassMap.find cn (get_classmap program))
   with Not_found ->
-    try
-      let jclass = Javalib.get_class (get_classpath program) cn in
-      add_class cn jclass program;
-      Some jclass
-    with
-    | JBasics.No_class_found _
-    | JBasics.Class_structure_error _
-    | Invalid_argument _ -> None
+  try
+    let jclass = Javalib.get_class (get_classpath program) cn in
+    add_class cn jclass program;
+    Some jclass
+  with
+  | JBasics.No_class_found _
+  | JBasics.Class_structure_error _
+  | Invalid_argument _ -> None
 
 
 let classname_of_class_filename class_filename =
@@ -274,7 +274,7 @@ let collect_classes classmap jar_filename =
 
 
 let load_program classpath classes =
-  JUtils.log "loading program ... %!";
+  L.stdout "loading program ... %!";
   let models =
     if !models_jar = "" then JBasics.ClassMap.empty
     else collect_classes JBasics.ClassMap.empty !models_jar in
@@ -286,12 +286,5 @@ let load_program classpath classes =
   JBasics.ClassSet.iter
     (fun cn -> ignore (lookup_node cn program))
     classes;
-  JUtils.log "done@.";
+  L.stdout "done@.";
   program
-
-(*
-let classmap_of_classpath classpath =
-  let jar_filenames =
-    IList.filter (fun p -> not (Sys.is_directory p)) (split_classpath classpath) in
-  IList.fold_left collect_classes JBasics.ClassMap.empty jar_filenames
-*)
