@@ -1,4 +1,3 @@
-
 ---
 docid: linter-bug-types
 title: Linters bug types
