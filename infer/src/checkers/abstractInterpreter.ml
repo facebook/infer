@@ -154,7 +154,8 @@ module MakeNoCFG
           Ondemand.unset_callbacks ();
           post_opt
         end
-      else None
+      else
+        Summ.read_summary tenv proc_desc proc_name
   end
 end
 
