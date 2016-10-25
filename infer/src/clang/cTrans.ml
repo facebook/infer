@@ -631,8 +631,11 @@ struct
               when not (General_utils.is_cpp_translation context.translation_unit_context) ->
                 (* Do not convert a global struct to a local because SIL
                    values do not include structs, they must all be heap-allocated  *)
-                false, None
-            | _ -> vdi.vdi_is_global && qual_type.qt_is_const, vdi.vdi_init_expr)
+                (false, None)
+            | _ ->
+                (vdi.vdi_is_global && (vdi.vdi_is_const_expr || qual_type.qt_is_const),
+                 vdi.vdi_init_expr)
+          )
         | _ -> false, None in
       if is_global_const then
         init_expr_trans trans_state (var_exp, typ) stmt_info init_expr
