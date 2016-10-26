@@ -6,6 +6,4 @@ BIN_PATH="${SCRIPT_PATH}/../../bin"
 if [ "${0%++}" != "$0" ]; then INFER_XX="++"; fi
 export INFER_XX
 
-EXTRA_ARGS=-fno-cxx-modules
-
-"${BIN_PATH}/InferClang" "$@" $EXTRA_ARGS
+"${BIN_PATH}/InferClang" "$@"

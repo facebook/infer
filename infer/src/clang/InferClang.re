@@ -21,9 +21,10 @@ let normalize (args: array string) :list ClangCommand.t =>
     Logging.out "InferClang got toplevel -cc1 command@\n";
     [ClangCommand.CC1 args]
   | NonCCCommand args =>
+    let args' = ClangCommand.append_args ["-fno-cxx-modules"] args;
     let clang_hashhashhash =
       Printf.sprintf
-        "%s 2>&1" (ClangCommand.prepend_arg "-###" args |> ClangCommand.command_to_run);
+        "%s 2>&1" (ClangCommand.prepend_arg "-###" args' |> ClangCommand.command_to_run);
     Logging.out "clang -### invocation: %s@\n" clang_hashhashhash;
     let normalized_commands = ref [];
     let one_line line =>
