@@ -16,7 +16,7 @@ endif
 
 DIRECT_TESTS=
 ifeq ($(BUILD_C_ANALYZERS),yes)
-DIRECT_TESTS += c_infer_test c_frontend_test cpp_infer_test cpp_frontend_test cpp_quandary_test
+DIRECT_TESTS += c_errors_test c_frontend_test cpp_checkers_test cpp_errors_test cpp_frontend_test cpp_quandary_test
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 DIRECT_TESTS += \
@@ -24,7 +24,7 @@ DIRECT_TESTS += \
   java_quandary_test java_crashcontext_test java_harness_test
 endif
 ifneq ($(XCODE_SELECT),no)
-DIRECT_TESTS += objc_frontend_test objc_infer_test objc_linters objcpp_frontend_test objcpp_linters
+DIRECT_TESTS += objc_frontend_test objc_errors_test objc_linters_test objcpp_frontend_test objcpp_linters_test
 endif
 
 .PHONY: all
@@ -120,92 +120,22 @@ endif
 ocaml_unit_test: test_this_build
 	$(TEST_BUILD_DIR)/unit/inferunit.byte
 
+DIRECT_TESTS_REPLACE = $(patsubst %_frontend_test,%_frontend_replace,$(filter %_frontend_test,$(DIRECT_TESTS)))
+
 .PHONY: frontend_replace
-frontend_replace: c_frontend_replace cpp_frontend_replace objc_frontend_replace objcpp_frontend_replace
+frontend_replace: $(DIRECT_TESTS_REPLACE)
 
-.PHONY: c_frontend_replace
-c_frontend_replace:
-	$(MAKE) -C ./infer/tests/codetoanalyze/c/frontend replace
+define gen_direct_test_rule
+.PHONY: $(1)
+$(1):
+	$(MAKE) -C \
+	  infer/tests/codetoanalyze/$(shell printf $(1) | cut -f 1 -d _)/$(shell printf $(1) | cut -f 2 -d _) \
+	  $(shell printf $(1) | cut -f 3 -d _)
+endef
 
-.PHONY: c_frontend_test
-c_frontend_test:
-	$(MAKE) -C ./infer/tests/codetoanalyze/c/frontend test
-
-.PHONY: c_infer_test
-c_infer_test:
-	$(MAKE) -C ./infer/tests/codetoanalyze/c/errors test
-
-.PHONY: cpp_frontend_replace
-cpp_frontend_replace:
-	$(MAKE) -C ./infer/tests/codetoanalyze/cpp/frontend replace
-
-.PHONY: cpp_frontend_test
-cpp_frontend_test:
-	$(MAKE) -C ./infer/tests/codetoanalyze/cpp/frontend test
-
-.PHONY: cpp_infer_test
-cpp_infer_test:
-	$(MAKE) -C ./infer/tests/codetoanalyze/cpp/errors test
-
-.PHONY: cpp_quandary_test
-cpp_quandary_test:
-	$(MAKE) -C ./infer/tests/codetoanalyze/cpp/quandary test
-
-.PHONY: java_checkers_test
-java_checkers_test:
-	$(MAKE) -C ./infer/tests/codetoanalyze/java/checkers test
-
-.PHONY: java_crashcontext_test
-java_crashcontext_test:
-	$(MAKE) -C ./infer/tests/codetoanalyze/java/crashcontext test
-
-.PHONY: java_eradicate_test
-java_eradicate_test:
-	$(MAKE) -C ./infer/tests/codetoanalyze/java/eradicate test
-
-.PHONY: java_harness_test
-java_harness_test:
-	$(MAKE) -C ./infer/tests/codetoanalyze/java/harness test
-
-.PHONY: java_infer_test
-java_infer_test:
-	$(MAKE) -C ./infer/tests/codetoanalyze/java/infer test
-
-.PHONY: java_tracing_test
-java_tracing_test:
-	$(MAKE) -C ./infer/tests/codetoanalyze/java/tracing test
-
-.PHONY: java_quandary_test
-java_quandary_test:
-	$(MAKE) -C ./infer/tests/codetoanalyze/java/quandary test
-
-.PHONY: objc_frontend_replace
-objc_frontend_replace:
-	$(MAKE) -C ./infer/tests/codetoanalyze/objc/frontend replace
-
-.PHONY: objc_frontend_test
-objc_frontend_test:
-	$(MAKE) -C ./infer/tests/codetoanalyze/objc/frontend test
-
-.PHONY: objc_infer_test
-objc_infer_test:
-	$(MAKE) -C ./infer/tests/codetoanalyze/objc/errors test
-
-.PHONY: objc_linters
-objc_linters:
-	$(MAKE) -C ./infer/tests/codetoanalyze/objc/linters test
-
-.PHONY: objcpp_frontend_replace
-objcpp_frontend_replace:
-	$(MAKE) -C ./infer/tests/codetoanalyze/objcpp/frontend replace
-
-.PHONY: objcpp_frontend_test
-objcpp_frontend_test:
-	$(MAKE) -C ./infer/tests/codetoanalyze/objcpp/frontend test
-
-.PHONY: objcpp_linters
-objcpp_linters:
-	$(MAKE) -C ./infer/tests/codetoanalyze/objcpp/linters test
+$(foreach test,$(DIRECT_TESTS) $(DIRECT_TESTS_REPLACE),\
+    $(eval \
+        $(call gen_direct_test_rule,$(test))))
 
 .PHONY: direct_tests
 direct_tests:
