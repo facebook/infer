@@ -454,8 +454,7 @@ end = struct
             let curr_loc = Cfg.Node.get_loc curr_node in
             match Cfg.Node.get_kind curr_node with
             | Cfg.Node.Join_node -> () (* omit join nodes from error traces *)
-            | Cfg.Node.Start_node pdesc ->
-                let pname = Cfg.Procdesc.get_proc_name pdesc in
+            | Cfg.Node.Start_node pname ->
                 let name = Procname.to_string pname in
                 let name_id = Procname.to_filename pname in
                 let descr = "start of procedure " ^ (Procname.to_simplified_string pname) in
@@ -480,8 +479,7 @@ end = struct
                   [(Io_infer.Xml.tag_kind,"condition");
                    (Io_infer.Xml.tag_branch, if is_true_branch then "true" else "false")] in
                 trace := mk_trace_elem level curr_loc descr node_tags :: !trace
-            | Cfg.Node.Exit_node pdesc ->
-                let pname = Cfg.Procdesc.get_proc_name pdesc in
+            | Cfg.Node.Exit_node pname ->
                 let descr = "return from a call to " ^ (Procname.to_string pname) in
                 let name = Procname.to_string pname in
                 let name_id = Procname.to_filename pname in
@@ -708,4 +706,3 @@ end = struct
     IList.fold_left (fun ps (p, pa) -> add_renamed_prop p pa ps) empty pl
 end
 (* =============== END of the PathSet module ===============*)
-

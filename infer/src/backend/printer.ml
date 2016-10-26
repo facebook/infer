@@ -539,8 +539,7 @@ let write_html_file linereader filename procs =
     IList.iter
       (fun n ->
          match Cfg.Node.get_kind n with
-         | Cfg.Node.Start_node proc_desc ->
-             let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
+         | Cfg.Node.Start_node proc_name ->
              let num_specs = IList.length (Specs.get_specs proc_name) in
              let label =
                (Escape.escape_xml (Procname.to_string proc_name)) ^

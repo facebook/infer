@@ -140,8 +140,8 @@ let module Node: {
 
   /** kind of cfg node */
   type nodekind =
-    | Start_node Procdesc.t
-    | Exit_node Procdesc.t
+    | Start_node Procname.t
+    | Exit_node Procname.t
     | Stmt_node string
     | Join_node
     | Prune_node bool Sil.if_kind string /** (true/false branch, if_kind, comment) */
@@ -187,10 +187,6 @@ let module Node: {
 
   /** Get all the nodes */
   let get_all_nodes: cfg => list t;
-
-  /** Get the (after/before) dead program variables.
-      After/before indicated with the true/false flag. */
-  let get_dead_pvars: t => bool => list Pvar.t;
 
   /** Get the distance to the exit node, if it has been computed */
   let get_distance_to_exit: t => option int;
@@ -257,16 +253,6 @@ let module Node: {
 
   /** Replace the instructions to be executed. */
   let replace_instrs: t => list Sil.instr => unit;
-
-  /** Set the (after/before) dead program variables.
-      After/before indicated with the true/false flag. */
-  let set_dead_pvars: t => bool => list Pvar.t => unit;
-
-  /** Set the node kind */
-  let set_kind: t => nodekind => unit;
-
-  /** Set the source location of the node */
-  let set_loc: t => Location.t => unit;
 
   /** Set the successor nodes and exception nodes, and build predecessor links */
   let set_succs_exn: cfg => t => list t => list t => unit;

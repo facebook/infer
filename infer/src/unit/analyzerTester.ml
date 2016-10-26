@@ -171,6 +171,7 @@ module Make
     let cfg = Cfg.Node.create_cfg () in
     let pdesc =
       Cfg.Procdesc.create cfg (ProcAttributes.default test_pname !Config.curr_language) in
+    let pname = Cfg.Procdesc.get_proc_name pdesc in
 
     let create_node kind cmds =
       Cfg.Node.create cfg dummy_loc kind cmds pdesc in
@@ -234,12 +235,12 @@ module Make
         (fun acc instr -> structured_instr_to_node acc exn_handlers instr)
         (last_node, assert_map)
         instrs in
-    let start_node = create_node (Cfg.Node.Start_node pdesc) [] in
+    let start_node = create_node (Cfg.Node.Start_node pname) [] in
     Cfg.Procdesc.set_start_node pdesc start_node;
     let no_exn_handlers = [] in
     let last_node, assert_map =
       structured_instrs_to_node start_node M.empty no_exn_handlers program in
-    let exit_node = create_node (Cfg.Node.Exit_node pdesc) [] in
+    let exit_node = create_node (Cfg.Node.Exit_node pname) [] in
     set_succs last_node [exit_node] ~exn_handlers:no_exn_handlers;
     Cfg.Procdesc.set_exit_node pdesc exit_node;
     pdesc, assert_map

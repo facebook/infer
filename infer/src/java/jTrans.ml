@@ -269,9 +269,9 @@ let create_procdesc source_file program linereader icfg m : Cfg.Procdesc.t optio
                   ret_type = JTransType.return_type program tenv ms;
                 } in
               Cfg.Procdesc.create cfg proc_attributes in
-            let start_kind = Cfg.Node.Start_node procdesc in
+            let start_kind = Cfg.Node.Start_node proc_name in
             let start_node = Cfg.Node.create cfg Location.dummy start_kind [] procdesc in
-            let exit_kind = (Cfg.Node.Exit_node procdesc) in
+            let exit_kind = (Cfg.Node.Exit_node proc_name) in
             let exit_node = Cfg.Node.create cfg Location.dummy exit_kind [] procdesc in
             Cfg.Node.set_succs_exn cfg start_node [exit_node] [exit_node];
             Cfg.Procdesc.set_start_node procdesc start_node;
@@ -321,9 +321,9 @@ let create_procdesc source_file program linereader icfg m : Cfg.Procdesc.t optio
                   ret_type = JTransType.return_type program tenv ms;
                 } in
               Cfg.Procdesc.create cfg proc_attributes in
-            let start_kind = Cfg.Node.Start_node procdesc in
+            let start_kind = Cfg.Node.Start_node proc_name in
             let start_node = Cfg.Node.create cfg loc_start start_kind [] procdesc in
-            let exit_kind = (Cfg.Node.Exit_node procdesc) in
+            let exit_kind = (Cfg.Node.Exit_node proc_name) in
             let exit_node = Cfg.Node.create cfg loc_exit exit_kind [] procdesc in
             let exn_kind = Cfg.Node.exn_sink_kind in
             let exn_node = Cfg.Node.create cfg loc_exit exn_kind [] procdesc in

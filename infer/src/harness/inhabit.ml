@@ -237,9 +237,10 @@ let add_harness_to_cg harness_name harness_node cg =
 let setup_harness_cfg harness_name env cg cfg =
   (* each procedure has different scope: start names from id 0 *)
   Ident.NameGenerator.reset ();
+  let procname = Procname.Java harness_name in
   let procdesc =
     let proc_attributes =
-      { (ProcAttributes.default (Procname.Java harness_name) Config.Java) with
+      { (ProcAttributes.default procname Config.Java) with
         ProcAttributes.is_defined = true;
         loc = env.pc;
       } in
@@ -251,8 +252,8 @@ let setup_harness_cfg harness_name env cg cfg =
     Cfg.Node.create cfg env.pc nodekind instrs procdesc in
   let (start_node, exit_node) =
     let create_node kind = Cfg.Node.create cfg env.pc kind [] procdesc in
-    let start_kind = Cfg.Node.Start_node procdesc in
-    let exit_kind = Cfg.Node.Exit_node procdesc in
+    let start_kind = Cfg.Node.Start_node procname in
+    let exit_kind = Cfg.Node.Exit_node procname in
     (create_node start_kind, create_node exit_kind) in
   Cfg.Procdesc.set_start_node procdesc start_node;
   Cfg.Procdesc.set_exit_node procdesc exit_node;

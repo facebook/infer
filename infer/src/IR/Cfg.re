@@ -21,8 +21,8 @@ let module F = Format;
 let module Node = {
   type id = int;
   type nodekind =
-    | Start_node proc_desc
-    | Exit_node proc_desc
+    | Start_node Procname.t
+    | Exit_node Procname.t
     | Stmt_node string
     | Join_node
     | Prune_node bool Sil.if_kind string /** (true/false branch, if_kind, comment) */
@@ -33,22 +33,18 @@ let module Node = {
     nd_id: id,
     /** distance to the exit node */
     mutable nd_dist_exit: option int,
-    /** dead program variables after executing the instructions */
-    mutable nd_dead_pvars_after: list Pvar.t,
-    /** dead program variables before executing the instructions */
-    mutable nd_deads_before: list Pvar.t,
     /** exception nodes in the cfg */
     mutable nd_exn: list t,
     /** instructions for symbolic execution */
     mutable nd_instrs: list Sil.instr,
     /** kind of node */
-    mutable nd_kind: nodekind,
+    nd_kind: nodekind,
     /** location in the source code */
-    mutable nd_loc: Location.t,
+    nd_loc: Location.t,
     /** predecessor nodes in the cfg */
     mutable nd_preds: list t,
     /** proc desc from cil */
-    mutable nd_proc: option proc_desc,
+    nd_proc: option proc_desc,
     /** successor nodes in the cfg */
     mutable nd_succs: list t
   }
@@ -66,20 +62,13 @@ let module Node = {
 
   /** data type for the control flow graph */
   type cfg = {
-    node_id: ref int,
-    node_list: ref (list t),
-    name_pdesc_tbl: Procname.Hash.t proc_desc, /** Map proc name to procdesc */
-    mutable priority_set: Procname.Set.t
-    /** set of function names to be analyzed first */
+    mutable node_id: int,
+    mutable node_list: list t,
+    name_pdesc_tbl: Procname.Hash.t proc_desc /** Map proc name to procdesc */
   };
-  let create_cfg () =>
-    /** create a new empty cfg */
-    {
-      node_id: ref 0,
-      node_list: ref [],
-      name_pdesc_tbl: Procname.Hash.create 1000,
-      priority_set: Procname.Set.empty
-    };
+
+  /** create a new empty cfg */
+  let create_cfg () => {node_id: 0, node_list: [], name_pdesc_tbl: Procname.Hash.create 16};
 
   /** compute the list of procedures added or changed in [cfg_new] over [cfg_old] */
   let mark_unchanged_pdescs cfg_new cfg_old => {
@@ -149,8 +138,8 @@ let module Node = {
     Procname.Hash.iter mark_pdesc_if_unchanged new_procs
   };
   let node_id_gen cfg => {
-    incr cfg.node_id;
-    !cfg.node_id
+    cfg.node_id = cfg.node_id + 1;
+    cfg.node_id
   };
   let pdesc_tbl_add cfg proc_name proc_desc =>
     Procname.Hash.add cfg.name_pdesc_tbl proc_name proc_desc;
@@ -160,8 +149,6 @@ let module Node = {
   let dummy () => {
     nd_id: 0,
     nd_dist_exit: None,
-    nd_dead_pvars_after: [],
-    nd_deads_before: [],
     nd_instrs: [],
     nd_kind: Skip_node "dummy",
     nd_loc: Location.dummy,
@@ -173,14 +160,12 @@ let module Node = {
   let compare node1 node2 => int_compare node1.nd_id node2.nd_id;
   let hash node => Hashtbl.hash node.nd_id;
   let equal node1 node2 => compare node1 node2 == 0;
-  let get_all_nodes cfg => !cfg.node_list;
+  let get_all_nodes cfg => cfg.node_list;
   let create cfg loc kind instrs pdesc => {
     let node_id = node_id_gen cfg;
     let node = {
       nd_id: node_id,
       nd_dist_exit: None,
-      nd_dead_pvars_after: [],
-      nd_deads_before: [],
       nd_instrs: instrs,
       nd_kind: kind,
       nd_loc: loc,
@@ -189,7 +174,7 @@ let module Node = {
       nd_succs: [],
       nd_exn: []
     };
-    cfg.node_list := [node, ...!cfg.node_list];
+    cfg.node_list = [node, ...cfg.node_list];
     pdesc.pd_nodes = [node, ...pdesc.pd_nodes];
     node
   };
@@ -298,16 +283,13 @@ let module Node = {
   /** Get the node kind */
   let get_kind node => node.nd_kind;
 
-  /** Set the node kind */
-  let set_kind node kind => node.nd_kind = kind;
-
   /** Comparison for node kind */
   let kind_compare k1 k2 =>
     switch (k1, k2) {
-    | (Start_node pd1, Start_node pd2) => int_compare pd1.pd_id pd2.pd_id
+    | (Start_node pn1, Start_node pn2) => Procname.compare pn1 pn2
     | (Start_node _, _) => (-1)
     | (_, Start_node _) => 1
-    | (Exit_node pd1, Exit_node pd2) => int_compare pd1.pd_id pd2.pd_id
+    | (Exit_node pn1, Exit_node pn2) => Procname.compare pn1 pn2
     | (Exit_node _, _) => (-1)
     | (_, Exit_node _) => 1
     | (Stmt_node s1, Stmt_node s2) => string_compare s1 s2
@@ -359,26 +341,11 @@ let module Node = {
     | [instr, ..._] => Sil.instr_get_loc instr
     | [] => n.nd_loc
     };
-
-  /** Set the location of the node */
-  let set_loc n loc => n.nd_loc = loc;
   let pp_id f id => F.fprintf f "%d" id;
   let pp f node => pp_id f (get_id node);
   let proc_desc_from_name cfg proc_name =>
     try (Some (pdesc_tbl_find cfg proc_name)) {
     | Not_found => None
-    };
-  let set_dead_pvars node after dead =>
-    if after {
-      node.nd_dead_pvars_after = dead
-    } else {
-      node.nd_deads_before = dead
-    };
-  let get_dead_pvars node after =>
-    if after {
-      node.nd_dead_pvars_after
-    } else {
-      node.nd_deads_before
     };
   let get_distance_to_exit node => node.nd_dist_exit;
 
@@ -424,7 +391,7 @@ let module Node = {
   };
   let remove_node' filter_out_fun cfg => {
     let remove_node_in_cfg nodes => IList.filter filter_out_fun nodes;
-    cfg.node_list := remove_node_in_cfg !cfg.node_list
+    cfg.node_list = remove_node_in_cfg cfg.node_list
   };
   let remove_node_set cfg nodes => remove_node' (fun node' => not (NodeSet.mem node' nodes)) cfg;
   let proc_desc_remove cfg name remove_nodes => {
@@ -741,8 +708,8 @@ let module Node = {
         instrs;
     let convert_node_kind =
       fun
-      | Start_node _ => Start_node resolved_proc_desc
-      | Exit_node _ => Exit_node resolved_proc_desc
+      | Start_node _ => Start_node resolved_proc_name
+      | Exit_node _ => Exit_node resolved_proc_name
       | node_kind => node_kind;
     let node_map = ref NodeMap.empty;
     let rec convert_node node => {

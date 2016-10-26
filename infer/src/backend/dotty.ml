@@ -947,21 +947,19 @@ let pp_local_list fmt etl =
   IList.iter (fun (id, ty) ->
       Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full pe_text) ty) etl
 
-let pp_cfgnodelabel fmt (n : Cfg.Node.t) =
+let pp_cfgnodelabel pdesc fmt (n : Cfg.Node.t) =
   let pp_label fmt n =
     match Cfg.Node.get_kind n with
-    | Cfg.Node.Start_node (pdesc) ->
-        (* let def = if Cfg.Procdesc.is_defined pdesc then "defined" else "declared" in *)
-        (* Format.fprintf fmt "Start %a (%s)" pp_id (Procname.to_string (Cfg.Procdesc.get_proc_name pdesc)) def *)
+    | Cfg.Node.Start_node pname ->
         Format.fprintf fmt "Start %s\\nFormals: %a\\nLocals: %a"
-          (Procname.to_string (Cfg.Procdesc.get_proc_name pdesc))
+          (Procname.to_string pname)
           pp_etlist (Cfg.Procdesc.get_formals pdesc)
           pp_local_list (Cfg.Procdesc.get_locals pdesc);
         if IList.length (Cfg.Procdesc.get_captured pdesc) <> 0 then
           Format.fprintf fmt "\\nCaptured: %a"
             pp_local_list (Cfg.Procdesc.get_captured pdesc)
-    | Cfg.Node.Exit_node (pdesc) ->
-        Format.fprintf fmt "Exit %s" (Procname.to_string (Cfg.Procdesc.get_proc_name pdesc))
+    | Cfg.Node.Exit_node pname ->
+        Format.fprintf fmt "Exit %s" (Procname.to_string pname)
     | Cfg.Node.Join_node ->
         Format.fprintf fmt "+"
     | Cfg.Node.Prune_node (is_true_branch, _, _) ->
@@ -992,8 +990,11 @@ pp_cfgnodename src
 pp_cfgnodename dest
 *)
 
-let pp_cfgnode fmt (n: Cfg.Node.t) =
-  F.fprintf fmt "%a [label=\"%a\" %a]\n\t\n" pp_cfgnodename n pp_cfgnodelabel n pp_cfgnodeshape n;
+let pp_cfgnode pdesc fmt (n: Cfg.Node.t) =
+  F.fprintf fmt "%a [label=\"%a\" %a]\n\t\n"
+    pp_cfgnodename n
+    (pp_cfgnodelabel pdesc) n
+    pp_cfgnodeshape n;
   let print_edge n1 n2 is_exn =
     let color = if is_exn then "[color=\"red\" ]" else "" in
     match Cfg.Node.get_kind n2 with
@@ -1020,8 +1021,9 @@ let pp_cfgnode fmt (n: Cfg.Node.t) =
 let print_icfg source fmt cfg =
   let print_node node =
     let loc = Cfg.Node.get_loc node in
+    let pdesc = Cfg.Node.get_proc_desc node in
     if (Config.dotty_cfg_libs || DB.source_file_equal loc.Location.file source) then
-      F.fprintf fmt "%a\n" pp_cfgnode node in
+      F.fprintf fmt "%a\n" (pp_cfgnode pdesc) node in
   IList.iter print_node (Cfg.Node.get_all_nodes cfg)
 
 let write_icfg_dotty_to_file source cfg fname =
