@@ -80,8 +80,14 @@ public class ResourceLeaks {
     fis.close();
   }
 
+  public void fileOutputStreamOneLeak() throws IOException {
+    FileOutputStream fis = new FileOutputStream("file.txt");
+    if (fis != null) {
+    } else {
+    }
+  }
 
-  public int fileOutputStreamTwoLeaks(boolean ok) throws IOException {
+  public int fileOutputStreamTwoLeaks1(boolean ok) throws IOException {
     FileOutputStream fis = new FileOutputStream("file.txt");
     if (ok) {
       fis.write(1);
@@ -90,6 +96,14 @@ public class ResourceLeaks {
       fis.write(2);
       return 2;
     }
+  }
+
+  public void fileOutputStreamTwoLeaks2() throws IOException {
+    FileOutputStream fis = new FileOutputStream("file.txt");
+    if (fis != null) {
+    } else {
+    }
+    fis = new FileOutputStream("x");
   }
 
   //TwoResources tests

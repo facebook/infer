@@ -1,0 +1,23 @@
+sudo: required
+language: c
+os:
+  - linux
+  - osx
+services: docker
+osx_image: xcode7.3
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install opam; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam init; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam switch 4.02.3; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then eval `opam config env`; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam update; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam install -y depext; fi
+install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam pin add -y --no-action infer .; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam depext infer; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam install -y infer; fi
+script:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./.travis/local_install_tests.sh; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./.travis/docker_tests.sh; fi
+  - git diff --exit-code

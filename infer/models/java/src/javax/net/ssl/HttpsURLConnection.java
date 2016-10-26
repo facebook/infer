@@ -9,7 +9,7 @@
 
 package javax.net.ssl;
 
-import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.builtins.InferBuiltins;
 
 import java.net.HttpURLConnection;
 import java.net.URL;

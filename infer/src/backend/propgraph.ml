@@ -17,9 +17,9 @@ module L = Logging
 
 type t = Prop.normal Prop.t
 
-type node = Sil.exp
+type node = Exp.t
 
-type sub_entry = Ident.t * Sil.exp
+type sub_entry = Ident.t * Exp.t
 
 type edge = Ehpred of Sil.hpred | Eatom of Sil.atom | Esub_entry of sub_entry
 
@@ -27,14 +27,14 @@ let from_prop p = p
 
 (** Return [true] if root node *)
 let rec is_root = function
-  | Sil.Var id -> Ident.is_normal id
-  | Sil.Const _ | Sil.Lvar _ -> true
-  | Sil.Cast (_, e) -> is_root e
-  | Sil.UnOp _ | Sil.BinOp _ | Sil.Lfield _ | Sil.Lindex _ | Sil.Sizeof _ -> false
+  | Exp.Var id -> Ident.is_normal id
+  | Exp.Exn _ | Exp.Closure _ | Exp.Const _ | Exp.Lvar _ -> true
+  | Exp.Cast (_, e) -> is_root e
+  | Exp.UnOp _ | Exp.BinOp _ | Exp.Lfield _ | Exp.Lindex _ | Exp.Sizeof _ -> false
 
 (** Return [true] if the nodes are connected. Used to compute reachability. *)
 let nodes_connected n1 n2 =
-  Sil.exp_equal n1 n2 (* Implemented as equality for now, later it might contain offset by a constant *)
+  Exp.equal n1 n2 (* Implemented as equality for now, later it might contain offset by a constant *)
 
 (** Return [true] if the edge is an hpred, and [false] if it is an atom *)
 let edge_is_hpred = function
@@ -44,26 +44,29 @@ let edge_is_hpred = function
 
 (** Return the source of the edge *)
 let edge_get_source = function
-  | Ehpred (Sil.Hpointsto(e, _, _)) -> e
-  | Ehpred (Sil.Hlseg(_, _, e, _, _)) -> e
-  | Ehpred (Sil.Hdllseg(_, _, e1, _, _, _, _)) -> e1 (* only one direction supported for now *)
-  | Eatom (Sil.Aeq (e1, _)) -> e1
-  | Eatom (Sil.Aneq (e1, _)) -> e1
-  | Esub_entry (x, _) -> Sil.Var x
+  | Ehpred (Sil.Hpointsto(e, _, _)) -> Some e
+  | Ehpred (Sil.Hlseg(_, _, e, _, _)) -> Some e
+  | Ehpred (Sil.Hdllseg(_, _, e1, _, _, _, _)) -> Some e1 (* only one direction supported for now *)
+  | Eatom (Sil.Aeq (e1, _)) -> Some e1
+  | Eatom (Sil.Aneq (e1, _)) -> Some e1
+  | Eatom (Sil.Apred (_, e :: _) | Anpred (_, e :: _)) -> Some e
+  | Eatom (Sil.Apred (_, []) | Anpred (_, [])) -> None
+  | Esub_entry (x, _) -> Some (Exp.Var x)
 
 (** Return the successor nodes of the edge *)
 let edge_get_succs = function
-  | Ehpred hpred -> Sil.ExpSet.elements (Prop.hpred_get_targets hpred)
+  | Ehpred hpred -> Exp.Set.elements (Prop.hpred_get_targets hpred)
   | Eatom (Sil.Aeq (_, e2)) -> [e2]
   | Eatom (Sil.Aneq (_, e2)) -> [e2]
+  | Eatom (Sil.Apred _ | Anpred _) -> []
   | Esub_entry (_, e) -> [e]
 
 let get_sigma footprint_part g =
-  if footprint_part then Prop.get_sigma_footprint g else Prop.get_sigma g
+  if footprint_part then g.Prop.sigma_fp else g.Prop.sigma
 let get_pi footprint_part g =
-  if footprint_part then Prop.get_pi_footprint g else Prop.get_pi g
+  if footprint_part then g.Prop.pi_fp else g.Prop.pi
 let get_subl footprint_part g =
-  if footprint_part then [] else Sil.sub_to_list (Prop.get_sub g)
+  if footprint_part then [] else Sil.sub_to_list g.Prop.sub
 
 (** [edge_from_source g n footprint_part is_hpred] finds and edge with the given source [n] in prop [g].
     [footprint_part] indicates whether to search the edge in the footprint part, and [is_pred] whether it is an hpred edge. *)
@@ -72,7 +75,11 @@ let edge_from_source g n footprint_part is_hpred =
     if is_hpred
     then IList.map (fun hpred -> Ehpred hpred ) (get_sigma footprint_part g)
     else IList.map (fun a -> Eatom a) (get_pi footprint_part g) @ IList.map (fun entry -> Esub_entry entry) (get_subl footprint_part g) in
-  match IList.filter (fun hpred -> Sil.exp_equal n (edge_get_source hpred)) edges with
+  let starts_from hpred =
+    match edge_get_source hpred with
+    | Some e -> Exp.equal n e
+    | None -> false in
+  match IList.filter starts_from edges with
   | [] -> None
   | edge:: _ -> Some edge
 
@@ -93,7 +100,7 @@ let get_edges footprint_part g =
 let edge_equal e1 e2 = match e1, e2 with
   | Ehpred hp1, Ehpred hp2 -> Sil.hpred_equal hp1 hp2
   | Eatom a1, Eatom a2 -> Sil.atom_equal a1 a2
-  | Esub_entry (x1, e1), Esub_entry (x2, e2) -> Ident.equal x1 x2 && Sil.exp_equal e1 e2
+  | Esub_entry (x1, e1), Esub_entry (x2, e2) -> Ident.equal x1 x2 && Exp.equal e1 e2
   | _ -> false
 
 (** [contains_edge footprint_part g e] returns true if the graph [g] contains edge [e],
@@ -116,13 +123,13 @@ type diff =
     diff_cmap_foot : colormap (** colormap for the footprint part *) }
 
 (** Compute the subobjects in [e2] which are different from those in [e1] *)
-let compute_exp_diff (e1: Sil.exp) (e2: Sil.exp) : Obj.t list =
-  if Sil.exp_equal e1 e2 then [] else [Obj.repr e2]
+let compute_exp_diff (e1: Exp.t) (e2: Exp.t) : Obj.t list =
+  if Exp.equal e1 e2 then [] else [Obj.repr e2]
 
 
 (** Compute the subobjects in [se2] which are different from those in [se1] *)
 let rec compute_sexp_diff (se1: Sil.strexp) (se2: Sil.strexp) : Obj.t list = match se1, se2 with
-  | Sil.Eexp (e1, _), Sil.Eexp (e2, _) -> if Sil.exp_equal e1 e2 then [] else [Obj.repr se2]
+  | Sil.Eexp (e1, _), Sil.Eexp (e2, _) -> if Exp.equal e1 e2 then [] else [Obj.repr se2]
   | Sil.Estruct (fsel1, _), Sil.Estruct (fsel2, _) ->
       compute_fsel_diff fsel1 fsel2
   | Sil.Earray (e1, esel1, _), Sil.Earray (e2, esel2, _) ->
@@ -131,7 +138,7 @@ let rec compute_sexp_diff (se1: Sil.strexp) (se2: Sil.strexp) : Obj.t list = mat
 
 and compute_fsel_diff fsel1 fsel2 : Obj.t list = match fsel1, fsel2 with
   | ((f1, se1):: fsel1'), (((f2, se2) as x):: fsel2') ->
-      (match Sil.fld_compare f1 f2 with
+      (match Ident.fieldname_compare f1 f2 with
        | n when n < 0 -> compute_fsel_diff fsel1' fsel2
        | 0 -> compute_sexp_diff se1 se2 @ compute_fsel_diff fsel1' fsel2'
        | _ -> (Obj.repr x) :: compute_fsel_diff fsel1 fsel2')
@@ -141,7 +148,7 @@ and compute_fsel_diff fsel1 fsel2 : Obj.t list = match fsel1, fsel2 with
 
 and compute_esel_diff esel1 esel2 : Obj.t list = match esel1, esel2 with
   | ((e1, se1):: esel1'), (((e2, se2) as x):: esel2') ->
-      (match Sil.exp_compare e1 e2 with
+      (match Exp.compare e1 e2 with
        | n when n < 0 -> compute_esel_diff esel1' esel2
        | 0 -> compute_sexp_diff se1 se2 @ compute_esel_diff esel1' esel2'
        | _ -> (Obj.repr x) :: compute_esel_diff esel1 esel2')
@@ -157,6 +164,9 @@ let compute_edge_diff (oldedge: edge) (newedge: edge) : Obj.t list = match olded
       compute_exp_diff e1 e2
   | Eatom (Sil.Aneq (_, e1)), Eatom (Sil.Aneq (_, e2)) ->
       compute_exp_diff e1 e2
+  | Eatom (Sil.Apred (_, es1)), Eatom (Sil.Apred (_, es2))
+  | Eatom (Sil.Anpred (_, es1)), Eatom (Sil.Anpred (_, es2)) ->
+      IList.flatten (try IList.map2 compute_exp_diff es1 es2 with IList.Fail -> [])
   | Esub_entry (_, e1), Esub_entry (_, e2) ->
       compute_exp_diff e1 e2
   | _ -> [Obj.repr newedge]
@@ -167,16 +177,20 @@ let compute_diff default_color oldgraph newgraph : diff =
     let newedges = get_edges footprint_part newgraph in
     let changed = ref [] in
     let build_changed edge =
-      if not (contains_edge footprint_part oldgraph edge) then begin
-        match edge_from_source oldgraph (edge_get_source edge) footprint_part (edge_is_hpred edge) with
+      if not (contains_edge footprint_part oldgraph edge) then
+        match edge_get_source edge with
+        | Some source -> (
+            match edge_from_source oldgraph source footprint_part (edge_is_hpred edge) with
+            | None ->
+                let changed_obj = match edge with
+                  | Ehpred hpred -> Obj.repr hpred
+                  | Eatom a -> Obj.repr a
+                  | Esub_entry entry -> Obj.repr entry in
+                changed := changed_obj :: !changed
+            | Some oldedge -> changed := compute_edge_diff oldedge edge @ !changed
+          )
         | None ->
-            let changed_obj = match edge with
-              | Ehpred hpred -> Obj.repr hpred
-              | Eatom a -> Obj.repr a
-              | Esub_entry entry -> Obj.repr entry in
-            changed := changed_obj :: !changed
-        | Some oldedge -> changed := compute_edge_diff oldedge edge @ !changed
-      end in
+            () in
     IList.iter build_changed newedges;
     let colormap (o: Obj.t) =
       if IList.exists (fun x -> x == o) !changed then Red
@@ -200,12 +214,12 @@ let diff_get_colormap footprint_part diff =
     extracting its local stack vars if the boolean is true. *)
 let pp_proplist pe0 s (base_prop, extract_stack) f plist =
   let num = IList.length plist in
-  let base_stack = fst (Prop.sigma_get_stack_nonstack true (Prop.get_sigma base_prop)) in
+  let base_stack = fst (Prop.sigma_get_stack_nonstack true base_prop.Prop.sigma) in
   let add_base_stack prop =
-    if extract_stack then Prop.replace_sigma (base_stack @ Prop.get_sigma prop) prop
+    if extract_stack then Prop.set prop ~sigma:(base_stack @ prop.Prop.sigma)
     else Prop.expose prop in
   let update_pe_diff (prop: Prop.normal Prop.t) : printenv =
-    if !Config.print_using_diff then
+    if Config.print_using_diff then
       let diff = compute_diff Blue (from_prop base_prop) (from_prop prop) in
       let cmap_norm = diff_get_colormap false diff in
       let cmap_foot = diff_get_colormap true diff in

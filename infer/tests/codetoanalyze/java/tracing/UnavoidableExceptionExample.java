@@ -11,22 +11,22 @@ package codetoanalyze.java.tracing;
 
 public class UnavoidableExceptionExample {
 
-  static T create() {
+  static T2 create() {
     return null;
   }
 
   static void cannotAvoidNPE() {
-    T t = create();
+    T2 t = create();
     t.f();
   }
 
   static void unavoidableNPEWithParameter(boolean b) {
-    T t = create();
+    T2 t = create();
     t.f();
   }
 
   void virtualMethodWithUnavoidableNPE(boolean b) {
-    T t = create();
+    T2 t = create();
     t.f();
   }
 

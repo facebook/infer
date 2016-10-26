@@ -9,7 +9,7 @@
 
 package java.nio;
 
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 
 import java.io.FileDescriptor;
 import java.io.FileInputStream;

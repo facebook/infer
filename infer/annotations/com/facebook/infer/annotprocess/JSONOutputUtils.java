@@ -20,6 +20,8 @@ import java.io.PrintWriter;
   */
 public class JSONOutputUtils {
 
+  private static final String TAB = "  ";
+
   private JSONOutputUtils() {}
 
   // print a comma between all JSON objects except for the last one
@@ -31,20 +33,34 @@ public class JSONOutputUtils {
     }
   }
 
+  public static void outputTabbed(PrintWriter out, String toWrite, int numTabs) {
+    for (int i = 0; i < numTabs; i++) {
+      out.print(TAB);
+    }
+    out.print(toWrite);
+  }
+
+  public static void outputlnTabbed(PrintWriter out, String toWrite, int numTabs) {
+    outputTabbed(out, toWrite, numTabs);
+    out.println();
+  }
+
+  public static String quote(String raw) {
+    return "\"" + raw + "\"";
+  }
+
   public static void outputMethod(PrintWriter out, String clazz, String method,
                                   int elemCount, int elemMax) {
-    String TAB1 = "  ";
-    String TAB2 = TAB1 + TAB1;
-    out.println(TAB1 + "{");
-    out.println(TAB2 +"\"language\": \"Java\",");
-    out.print(TAB2 + "\"class\": \"" + clazz + "\"");
+    outputlnTabbed(out, "{", 1);
+    outputlnTabbed(out, "\"language\": \"Java\",", 2);
+    outputTabbed(out, "\"class\": \"" + clazz + "\"", 2);
     if (method != null) {
       out.println(",");
-      out.println(TAB2 + "\"method\": \"" + method + "\"");
+      outputlnTabbed(out, "\"method\": \"" + method + "\"", 2);
     } else {
       out.println();
     }
-    out.print(TAB1 + "}");
+    outputlnTabbed(out, "}", 1);
     outputCommaIfNotLast(out, elemCount, elemMax);
   }
 
@@ -54,8 +70,7 @@ public class JSONOutputUtils {
 
   public static void outputClassSourcePair(PrintWriter out, String clazz, String source,
                                            int elemCount, int elemMax) {
-    String TAB = "  ";
-    out.print(TAB + "\"" + clazz + "\": \"" + source + "\"");
+    outputlnTabbed(out, "\"" + clazz + "\": \"" + source + "\"", 1);
     outputCommaIfNotLast(out, elemCount, elemMax);
   }
 

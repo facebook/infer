@@ -15,7 +15,4 @@ class Rectangle {
   int area(void) { return width * height; }
 };
 
-int main() {
-  Rectangle* bar = new Rectangle(5, 6);
-  return 0;
-}
+void object_leak() { Rectangle* bar = new Rectangle(5, 6); }

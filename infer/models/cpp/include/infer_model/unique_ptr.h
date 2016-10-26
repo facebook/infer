@@ -10,6 +10,7 @@
 #pragma once
 
 #include <infer_model/common.h>
+#include <infer_model/infer_traits.h>
 
 INFER_NAMESPACE_STD_BEGIN
 
@@ -18,6 +19,7 @@ INFER_NAMESPACE_STD_BEGIN
 // When changing model, remember to change it for specialization as well!
 template <class _Tp, class _Dp = default_delete<_Tp>>
 struct unique_ptr {
+
   // use SFINAE to determine whether _Del::pointer exists
   class _Pointer {
     template <typename _Up>
@@ -31,34 +33,72 @@ struct unique_ptr {
    public:
     typedef decltype(__test<_Del>(0)) type;
   };
-
  public:
   typedef typename _Pointer::type pointer;
   typedef _Tp element_type;
   typedef _Dp deleter_type;
 
-  pointer data;
+ private:
+  /* std::unique_ptr<T> in infer is translated as T*
+     Look at model of std::shared_ptr for more details */
+
+  // translate shared_ptr as type 'pointer'
+  friend class infer_traits::TranslateAsType<pointer>;
+
+  /// type of 'this' in unique_ptr<T> as seen by infer
+  typedef const void** infer_unique_ptr_t;
+// use it to avoid compilation errors and make infer analyzer happy
+#define __cast_to_infer_ptr(self) ((infer_unique_ptr_t)self)
+
+  static void model_set(infer_unique_ptr_t self, const void* value) {
+    *self = value;
+  }
+
+  static void model_move(infer_unique_ptr_t self, infer_unique_ptr_t other) {
+    *self = *other;
+    model_set(other, nullptr);
+  }
+
+  static pointer model_get(infer_unique_ptr_t self) { return (pointer)(*self); }
+
+  static void model_swap(infer_unique_ptr_t infer_self,
+                         infer_unique_ptr_t infer_other) {
+    const void* t = *infer_self;
+    *infer_self = *infer_other;
+    *infer_other = t;
+  }
+
+  pointer __ignore__; // used to keep sizeof(unique_ptr) same as in standard
+
+ public:
   template <class Y>
   unique_ptr(const std__unique_ptr<Y>& u) {}
 
-  constexpr unique_ptr() noexcept : data(nullptr) {}
+  constexpr unique_ptr() noexcept {
+    model_set(__cast_to_infer_ptr(this), nullptr);
+  }
 
   constexpr unique_ptr(nullptr_t) noexcept : unique_ptr<_Tp, _Dp>() {}
 
-  explicit unique_ptr(pointer ptr) : data(ptr) {}
+  explicit unique_ptr(pointer ptr) {
+    model_set(__cast_to_infer_ptr(this), ptr);
+  }
 
   unique_ptr(pointer ptr,
              typename conditional<
                  is_reference<deleter_type>::value,
                  deleter_type,
                  typename add_lvalue_reference<const deleter_type>::type>::type
-                 __d) noexcept : data(ptr) {}
+                 __d) noexcept
+      : unique_ptr<_Tp, _Dp>(ptr) {}
 
   unique_ptr(pointer ptr,
              typename remove_reference<deleter_type>::type&& __d) noexcept
-      : data(ptr) {}
+      : unique_ptr<_Tp, _Dp>(ptr) {}
 
-  unique_ptr(unique_ptr&& u) noexcept : data(u.data) { u.data = nullptr; }
+  unique_ptr(unique_ptr&& u) noexcept {
+    model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&u));
+  }
 
   template <class _Up,
             class _Ep,
@@ -69,8 +109,8 @@ struct unique_ptr {
                 is_convertible<_Ep, deleter_type>::value &&
                 (!is_reference<deleter_type>::value ||
                  is_same<deleter_type, _Ep>::value)>::type>
-  unique_ptr(unique_ptr<_Up, _Ep>&& u) noexcept : data(u.data) {
-    u.data = nullptr;
+  unique_ptr(unique_ptr<_Up, _Ep>&& u) noexcept {
+    model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&u));
   }
 
   template <
@@ -81,7 +121,7 @@ struct unique_ptr {
   ~unique_ptr() { reset(); }
 
   unique_ptr& operator=(unique_ptr&& __u) noexcept {
-    reset(__u.data);
+    model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&__u));
     return *this;
   }
 
@@ -93,7 +133,7 @@ struct unique_ptr {
                                pointer>::value &&
                 is_assignable<deleter_type&, _Ep&&>::value>::type>
   unique_ptr& operator=(unique_ptr<_Up, _Ep>&& __u) noexcept {
-    reset(__u.data);
+    model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&__u));
     return *this;
   }
 
@@ -101,11 +141,12 @@ struct unique_ptr {
     reset();
     return *this;
   }
-  typename add_lvalue_reference<_Tp>::type operator*() const { return *data; }
+  typename add_lvalue_reference<_Tp>::type operator*() const
+      INFER_MODEL_AS_DEREF_FIRST_ARG;
 
-  pointer operator->() const { return data; }
+  pointer operator->() const INFER_MODEL_AS_DEREF_FIRST_ARG;
 
-  pointer get() const { return data; }
+  pointer get() const INFER_MODEL_AS_DEREF_FIRST_ARG;
 
   typedef typename remove_reference<deleter_type>::type& _Dp_reference;
   typedef const typename remove_reference<deleter_type>::type&
@@ -113,15 +154,15 @@ struct unique_ptr {
   _Dp_const_reference get_deleter() const {}
   _Dp_reference get_deleter() {}
 
-  explicit operator bool() const { return data != nullptr; }
-  pointer release() { return data; }
+  explicit operator bool() const {
+    return !!(bool)(model_get(__cast_to_infer_ptr(this)));
+  }
+  pointer release() INFER_MODEL_AS_DEREF_FIRST_ARG;
 
-  void reset(pointer p = nullptr) { data = p; }
+  void reset(pointer p = nullptr) { model_set(__cast_to_infer_ptr(this), p); }
 
   void swap(unique_ptr& u) {
-    pointer tmp = data;
-    data = u.data;
-    u.data = tmp;
+    model_swap(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&u));
   }
 };
 
@@ -146,13 +187,45 @@ struct unique_ptr<_Tp[], _Dp> {
   typedef _Tp element_type;
   typedef _Dp deleter_type;
 
-  pointer data;
+ private:
+  // translate shared_ptr as type pointer
+  friend class infer_traits::TranslateAsType<pointer>;
 
-  constexpr unique_ptr() noexcept : data(nullptr) {}
+  /// type of 'this' in unique_ptr<T> as seen by infer
+  typedef const void** infer_unique_ptr_t;
+// use it to avoid compilation errors and make infer analyzer happy
+#define __cast_to_infer_ptr(self) ((infer_unique_ptr_t)self)
 
-  constexpr unique_ptr(nullptr_t) noexcept : data(nullptr) {}
+  static void model_set(infer_unique_ptr_t self, const void* value) {
+    *self = value;
+  }
 
-  explicit unique_ptr(pointer ptr) : data(ptr) {}
+  static void model_move(infer_unique_ptr_t self, infer_unique_ptr_t other) {
+    *self = *other;
+    model_set(other, nullptr);
+  }
+
+  static pointer model_get(infer_unique_ptr_t self) { return (pointer)(*self); }
+
+  static void model_swap(infer_unique_ptr_t infer_self,
+                         infer_unique_ptr_t infer_other) {
+    const void* t = *infer_self;
+    *infer_self = *infer_other;
+    *infer_other = t;
+  }
+
+  pointer __ignore__; // used to keep sizeof(unique_ptr) same as in standard
+
+ public:
+  constexpr unique_ptr() noexcept {
+    model_set(__cast_to_infer_ptr(this), nullptr);
+  }
+
+  constexpr unique_ptr(nullptr_t) noexcept : unique_ptr() {}
+
+  explicit unique_ptr(pointer ptr) {
+    model_set(__cast_to_infer_ptr(this), ptr);
+  }
 
   unique_ptr(
       pointer ptr,
@@ -160,12 +233,14 @@ struct unique_ptr<_Tp[], _Dp> {
           is_reference<deleter_type>::value,
           deleter_type,
           typename add_lvalue_reference<const deleter_type>::type>::type __d)
-      : data(ptr) {}
+      : unique_ptr(ptr) {}
 
   unique_ptr(pointer ptr, typename remove_reference<deleter_type>::type&& __d)
-      : data(ptr) {}
+      : unique_ptr(ptr) {}
 
-  unique_ptr(unique_ptr&& u) : data(u.data) { u.data = nullptr; }
+  unique_ptr(unique_ptr&& u) {
+    model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&u));
+  }
 
   template <class _Up,
             class _Ep,
@@ -176,8 +251,8 @@ struct unique_ptr<_Tp[], _Dp> {
                 is_convertible<_Ep, deleter_type>::value &&
                 (!is_reference<deleter_type>::value ||
                  is_same<deleter_type, _Ep>::value)>::type>
-  unique_ptr(unique_ptr<_Up, _Ep>&& u) : data(u.data) {
-    u.data = nullptr;
+  unique_ptr(unique_ptr<_Up, _Ep>&& u) {
+    model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&u));
   }
 
   template <
@@ -188,7 +263,7 @@ struct unique_ptr<_Tp[], _Dp> {
   ~unique_ptr() { reset(); }
 
   unique_ptr& operator=(unique_ptr&& __u) {
-    reset(__u.data);
+    model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&__u));
     return *this;
   }
 
@@ -200,7 +275,7 @@ struct unique_ptr<_Tp[], _Dp> {
                                pointer>::value &&
                 is_assignable<deleter_type&, _Ep&&>::value>::type>
   unique_ptr& operator=(unique_ptr<_Up, _Ep>&& __u) {
-    reset(__u.data);
+    model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&__u));
     return *this;
   }
 
@@ -209,25 +284,25 @@ struct unique_ptr<_Tp[], _Dp> {
     return *this;
   }
 
-  typename add_lvalue_reference<_Tp>::type operator[](size_t i) const {}
+  typename add_lvalue_reference<_Tp>::type operator[](size_t i) const
+      INFER_MODEL_AS_DEREF_FIRST_ARG;
 
-  pointer get() const { return data; }
-
+  pointer get() const INFER_MODEL_AS_DEREF_FIRST_ARG;
   typedef typename remove_reference<deleter_type>::type& _Dp_reference;
   typedef const typename remove_reference<deleter_type>::type&
       _Dp_const_reference;
   _Dp_const_reference get_deleter() const {}
   _Dp_reference get_deleter() {}
 
-  explicit operator bool() const { return data != nullptr; }
-  pointer release() { return data; }
+  explicit operator bool() const {
+    return !!(bool)(model_get(__cast_to_infer_ptr(this)));
+  }
+  pointer release() INFER_MODEL_AS_DEREF_FIRST_ARG;
 
-  void reset(pointer p = nullptr) { data = p; }
+  void reset(pointer p = nullptr) { model_set(__cast_to_infer_ptr(this), p); }
 
   void swap(unique_ptr& u) {
-    pointer tmp = data;
-    data = u.data;
-    u.data = tmp;
+    model_swap(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&u));
   }
 };
 
@@ -370,3 +445,5 @@ template <typename _Tp, typename... _Args>
 inline typename _MakeUniq2<_Tp>::__invalid_type make_unique(_Args&&...) =
     delete;
 INFER_NAMESPACE_STD_END
+
+#undef __cast_to_infer_ptr

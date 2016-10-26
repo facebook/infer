@@ -55,4 +55,14 @@
   return self;
 }
 
+- (id)initWithUnsignedInteger:(NSUInteger)v {
+  self->value = v;
+  return self;
+}
+
++ (NSNumber*)numberWithUnsignedInteger:(NSUInteger)value {
+  NSNumber* number = [self alloc];
+  return [number initWithUnsignedInteger:value];
+}
+
 @end

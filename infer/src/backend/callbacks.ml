@@ -25,6 +25,7 @@ type proc_callback_args = {
 type proc_callback_t = proc_callback_args -> unit
 
 type cluster_callback_t =
+  Exe_env.t ->
   Procname.t list ->
   (Procname.t -> Cfg.Procdesc.t option) ->
   (Idenv.t * Tenv.t * Procname.t * Cfg.Procdesc.t) list ->
@@ -54,7 +55,7 @@ let get_procedure_definition exe_env proc_name =
        (idenv, tenv, proc_name, proc_desc, language))
     (Exe_env.get_proc_desc exe_env proc_name)
 
-let get_language proc_name = if Procname.is_java proc_name then Config.Java else Config.C_CPP
+let get_language proc_name = if Procname.is_java proc_name then Config.Java else Config.Clang
 
 (** Invoke all registered procedure callbacks on the given procedure. *)
 let iterate_procedure_callbacks exe_env caller_pname =
@@ -118,7 +119,7 @@ let iterate_cluster_callbacks all_procs exe_env proc_names =
       (fun (idenv, tenv, proc_name, proc_desc, _) -> (idenv, tenv, proc_name, proc_desc))
       procedure_definitions in
 
-  (** Procedures matching the given language or all if no language is specified. *)
+  (* Procedures matching the given language or all if no language is specified. *)
   let relevant_procedures language_opt =
     Option.map_default
       (fun l -> IList.filter (fun p -> l = get_language p) proc_names)
@@ -129,7 +130,7 @@ let iterate_cluster_callbacks all_procs exe_env proc_names =
     (fun (language_opt, cluster_callback) ->
        let proc_names = relevant_procedures language_opt in
        if IList.length proc_names > 0 then
-         cluster_callback all_procs get_procdesc environment)
+         cluster_callback exe_env all_procs get_procdesc environment)
     !cluster_callbacks
 
 (** Invoke all procedure and cluster callbacks on a given environment. *)
@@ -178,6 +179,9 @@ let iterate_callbacks store_summary call_graph exe_env =
     (iterate_cluster_callbacks originally_defined_procs exe_env)
     (cluster procs_to_analyze);
 
-  IList.iter store_summary procs_to_analyze;
+  IList.iter (fun proc_name  ->
+      let tenv = Exe_env.get_tenv ~create:true exe_env proc_name in
+      store_summary tenv proc_name
+    ) procs_to_analyze;
 
   Config.curr_language := saved_language

@@ -8,22 +8,23 @@
  *)
 
 open! Utils
+open CFrontend_utils
 
 (** Define the signature of a method consisting of its name, its arguments, *)
 (** return type, location and whether its an instance method.  *)
 
 type method_signature = {
   mutable name : Procname.t;
-  args : (string * Clang_ast_t.type_ptr) list;
+  args : (Mangled.t * Clang_ast_t.qual_type) list;
   ret_type : Clang_ast_t.type_ptr;
   attributes : Clang_ast_t.attribute list;
   loc : Clang_ast_t.source_range;
   is_instance : bool;
   is_cpp_virtual : bool;
-  language : CFrontend_config.lang;
+  language : CFrontend_config.clang_lang;
   pointer_to_parent : Clang_ast_t.pointer option;
   pointer_to_property_opt : Clang_ast_t.pointer option; (* If set then method is a getter/setter *)
-  return_param_typ : Sil.typ option;
+  return_param_typ : Typ.t option;
 }
 
 let ms_get_name { name } =
@@ -99,7 +100,7 @@ let replace_name_ms ms name =
 let ms_to_string ms =
   "Method " ^ (Procname.to_string ms.name) ^ " " ^
   IList.to_string
-    (fun (s1, s2) -> s1 ^ ", " ^ (Clang_ast_j.string_of_type_ptr s2))
+    (fun (s1, s2) -> (Mangled.to_string s1) ^ ", " ^ (Ast_utils.string_of_qual_type s2))
     ms.args
-  ^ "->" ^ (Clang_ast_j.string_of_type_ptr ms.ret_type) ^ " " ^
+  ^ "->" ^ (Ast_utils.string_of_type_ptr ms.ret_type) ^ " " ^
   Clang_ast_j.string_of_source_range ms.loc

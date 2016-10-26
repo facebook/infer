@@ -12,32 +12,62 @@ open! Utils
 module F = Format
 
 
-(* mock for creating CFG's from adjacency lists *)
+
+(** mocks for creating CFG's from adjacency lists *)
+module MockNode = struct
+  type t = int
+  type id = int
+
+  let instrs _ = []
+  let instr_ids _ = []
+  let to_instr_nodes _ = assert false
+  let id n = n
+  let loc _ = assert false
+  let underlying_id _ = assert false
+  let kind _ = Cfg.Node.Stmt_node ""
+  let id_compare = int_compare
+  let pp_id fmt i =
+    F.fprintf fmt "%i" i
+end
+
 module MockProcCfg = struct
   type node = int
+  include (MockNode : module type of MockNode with type t := node)
   type t = (node * node list) list
 
-  let node_id_compare = Cfg.Node.id_compare
-
-  let node_id n = Cfg.Node.id_of_int__FOR_TESTING_ONLY n
+  let id_compare = int_compare
 
   let succs t n =
     try
-      let id = node_id n in
-      IList.find (fun (node, _) -> node_id_compare (node_id node) id = 0) t
+      let node_id = id n in
+      IList.find
+        (fun (node, _) -> id_compare (id node) node_id = 0)
+        t
       |> snd
     with Not_found -> []
 
   let preds t n =
     try
-      let id = node_id n in
+      let node_id = id n in
       IList.filter
-        (fun (_, succs) -> IList.exists (fun node -> node_id_compare (node_id node) id = 0) succs) t
+        (fun (_, succs) ->
+           IList.exists (fun node -> id_compare (id node) node_id = 0) succs)
+        t
       |> IList.map fst
     with Not_found -> []
 
-  let from_adjacency_list t = t
+  let nodes t = IList.map fst t
 
+  let normal_succs = succs
+  let normal_preds = preds
+  let exceptional_succs _ _ = []
+  let exceptional_preds _ _ = []
+  let from_adjacency_list t = t
+  (* not called by the scheduler *)
+  let start_node _ = assert false
+  let exit_node _ = assert false
+  let proc_desc _ = assert false
+  let from_pdesc _ = assert false
 end
 
 module S = Scheduler.ReversePostorder (MockProcCfg)

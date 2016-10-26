@@ -9,44 +9,40 @@
 
 open! Utils
 
-module PvarSet = PrettyPrintable.MakePPSet(struct
-    type t = Pvar.t
-    let compare = Pvar.compare
-    let pp_element = (Pvar.pp pe_text)
-  end)
+module Domain = AbstractDomain.FiniteSet(Pvar.Set)
 
-module Domain = AbstractDomain.FiniteSet(PvarSet)
-
-module TransferFunctions = struct
-  type astate = Domain.astate
+module TransferFunctions (CFG : ProcCfg.S) = struct
+  module CFG = CFG
+  module Domain = Domain
+  type extras = ProcData.no_extras
 
   let rec add_address_taken_pvars exp astate = match exp with
-    | Sil.Lvar pvar ->
+    | Exp.Lvar pvar ->
         Domain.add pvar astate
-    | Sil.Cast (_, e) | UnOp (_, e, _) | Lfield (e, _, _) ->
+    | Exp.Cast (_, e) | UnOp (_, e, _) | Lfield (e, _, _) ->
         add_address_taken_pvars e astate
-    | Sil.BinOp (_, e1, e2) | Lindex (e1, e2) ->
+    | Exp.BinOp (_, e1, e2) | Lindex (e1, e2) ->
         add_address_taken_pvars e1 astate
         |> add_address_taken_pvars e2
-    | Sil.Const (Cclosure _ | Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cexn _ | Cclass _
-                | Cptr_to_fld _)
-    | Var _ | Sizeof _ ->
+    | Exp.Exn _
+    | Exp.Closure _
+    | Exp.Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _)
+    | Exp.Var _ | Exp.Sizeof _ ->
         astate
 
-  let exec_instr astate _ = function
-    | Sil.Set (_, Tptr _, rhs_exp, _) ->
+  let exec_instr astate _ _ = function
+    | Sil.Store (_, Tptr _, rhs_exp, _) ->
         add_address_taken_pvars rhs_exp astate
     | Sil.Call (_, _, actuals, _, _) ->
         let add_actual_by_ref astate_acc = function
-          | actual_exp, Sil.Tptr _ -> add_address_taken_pvars actual_exp astate_acc
+          | actual_exp, Typ.Tptr _ -> add_address_taken_pvars actual_exp astate_acc
           | _ -> astate_acc in
         IList.fold_left add_actual_by_ref astate actuals
-    | Sil.Set _ | Letderef _ | Prune _ | Nullify _ | Abstract _ | Remove_temps _ | Stackop _
+    | Sil.Store _ | Load _ | Prune _ | Nullify _ | Abstract _ | Remove_temps _
     | Declare_locals _ ->
         astate
-
 end
 
 module Analyzer =
   AbstractInterpreter.Make
-    (ProcCfg.Exceptional) (Scheduler.ReversePostorder) (Domain) (TransferFunctions)
+    (ProcCfg.Exceptional) (Scheduler.ReversePostorder) (TransferFunctions)

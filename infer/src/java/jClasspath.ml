@@ -16,11 +16,6 @@ module L = Logging
 
 let models_specs_filenames = ref StringSet.empty
 
-let javac_verbose_out = ref ""
-
-let set_verbose_out path =
-  javac_verbose_out := path
-
 let models_jar = ref ""
 
 
@@ -52,7 +47,7 @@ let collect_specs_filenames jar_filename =
   let zip_channel = Zip.open_in jar_filename in
   let collect set e =
     let filename = e.Zip.filename in
-    if not (Filename.check_suffix filename ".specs") then set
+    if not (Filename.check_suffix filename Config.specs_files_suffix) then set
     else
       let proc_filename = (Filename.chop_extension (Filename.basename filename)) in
       StringSet.add proc_filename set in
@@ -81,7 +76,7 @@ let java_source_file_from_path path =
   if Filename.is_relative path then
     failwith "Expect absolute path for java source files"
   else
-    match !Config.project_root with
+    match Config.project_root with
     | None -> DB.abs_source_file_from_path path
     | Some project_root -> DB.rel_source_file_from_abs_path project_root path
 
@@ -161,27 +156,40 @@ let add_source_file path map =
 
 
 let load_sources_and_classes () =
-  let file_in = open_in !javac_verbose_out in
+  let file_in = open_in Config.javac_verbose_out in
+  let class_filename_re =
+    Str.regexp
+      "\\[wrote RegularFileObject\\[\\(.*\\)\\]\\]" in
+  let source_filename_re =
+    Str.regexp
+      "\\[parsing started RegularFileObject\\[\\(.*\\)\\]\\]" in
+  let classpath_re =
+    Str.regexp
+      "\\[search path for class files: \\(.*\\)\\]" in
   let rec loop paths roots sources classes =
     try
-      let lexbuf = Lexing.from_string (input_line file_in) in
-      match JVerboseParser.line JVerboseLexer.token lexbuf with
-      | JVerbose.Source path ->
-          loop paths roots (add_source_file path sources) classes
-      | JVerbose.Class path ->
-          let cn, root_info = Javalib.extract_class_name_from_file path in
-          let root_dir = if root_info = "" then Filename.current_dir_name else root_info in
-          let updated_roots =
-            if IList.exists (fun p -> p = root_dir) roots then roots
-            else root_dir:: roots in
-          loop paths updated_roots sources (JBasics.ClassSet.add cn classes)
-      | JVerbose.Classpath parsed_paths ->
-          loop parsed_paths roots sources classes
+      let line = input_line file_in in
+      if Str.string_match class_filename_re line 0 then
+        let path = Str.matched_group 1 line in
+        let cn, root_info = Javalib.extract_class_name_from_file path in
+        let root_dir = if root_info = "" then Filename.current_dir_name else root_info in
+        let updated_roots =
+          if IList.exists (fun p -> p = root_dir) roots then roots
+          else root_dir:: roots in
+        loop paths updated_roots sources (JBasics.ClassSet.add cn classes)
+      else if Str.string_match source_filename_re line 0 then
+        let path = Str.matched_group 1 line in
+        loop paths roots (add_source_file path sources) classes
+      else if Str.string_match classpath_re line 0 then
+        let classpath = Str.matched_group 1 line in
+        let parsed_paths = Str.split (Str.regexp_string ",") classpath in
+        loop parsed_paths roots sources classes
+      else
+        (* skip this line *)
+        loop paths roots sources classes
     with
     | JBasics.Class_structure_error _
-    | Parsing.Parse_error
-    | Invalid_argument _
-    | Failure "lexing: empty token" -> loop paths roots sources classes
+    | Invalid_argument _ -> loop paths roots sources classes
     | End_of_file ->
         close_in file_in;
         let classpath = IList.fold_left append_path "" (roots @ (add_android_jar paths)) in
@@ -221,14 +229,14 @@ let lookup_node cn program =
   try
     Some (JBasics.ClassMap.find cn (get_classmap program))
   with Not_found ->
-    try
-      let jclass = Javalib.get_class (get_classpath program) cn in
-      add_class cn jclass program;
-      Some jclass
-    with
-    | JBasics.No_class_found _
-    | JBasics.Class_structure_error _
-    | Invalid_argument _ -> None
+  try
+    let jclass = Javalib.get_class (get_classpath program) cn in
+    add_class cn jclass program;
+    Some jclass
+  with
+  | JBasics.No_class_found _
+  | JBasics.Class_structure_error _
+  | Invalid_argument _ -> None
 
 
 let classname_of_class_filename class_filename =
@@ -266,7 +274,7 @@ let collect_classes classmap jar_filename =
 
 
 let load_program classpath classes =
-  JUtils.log "loading program ... %!";
+  L.stdout "loading program ... %!";
   let models =
     if !models_jar = "" then JBasics.ClassMap.empty
     else collect_classes JBasics.ClassMap.empty !models_jar in
@@ -278,12 +286,5 @@ let load_program classpath classes =
   JBasics.ClassSet.iter
     (fun cn -> ignore (lookup_node cn program))
     classes;
-  JUtils.log "done@.";
+  L.stdout "done@.";
   program
-
-(*
-let classmap_of_classpath classpath =
-  let jar_filenames =
-    IList.filter (fun p -> not (Sys.is_directory p)) (split_classpath classpath) in
-  IList.fold_left collect_classes JBasics.ClassMap.empty jar_filenames
-*)

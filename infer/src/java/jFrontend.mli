@@ -23,18 +23,18 @@ val is_classname_cached : JBasics.class_name -> bool
 
 (** [compute_icfg linereader classes program tenv source_basename source_file] create the call graph and control flow graph for the file [source_file] by translating all the classes in [program] originating from [source_file] *)
 val compute_source_icfg :
-  Inferconfig.NeverReturnNull.matcher ->
   Printer.LineReader.t ->
   JBasics.ClassSet.t ->
   JClasspath.program ->
   Tenv.t ->
   string ->
   string option ->
+  DB.source_file ->
   Cg.t * Cfg.cfg
 
 (** Compute the CFG for a class *)
 val compute_class_icfg :
-  Inferconfig.NeverReturnNull.matcher ->
+  DB.source_file ->
   Printer.LineReader.t ->
   JClasspath.program ->
   Tenv.t ->

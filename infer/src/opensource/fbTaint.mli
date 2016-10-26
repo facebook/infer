@@ -9,8 +9,8 @@
 
 open! Utils
 
-val sources : PatternMatch.method_str list
+val sources : PatternMatch.taint_spec list
 
-val sinks : (PatternMatch.method_str * int list) list
+val sinks : (PatternMatch.taint_spec * int list) list
 
-val functions_with_tainted_params : (PatternMatch.method_str * int list) list
+val functions_with_tainted_params : (PatternMatch.taint_spec * int list) list

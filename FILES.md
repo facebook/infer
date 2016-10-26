@@ -2,7 +2,7 @@
 
 ## Top-level commands
 
-*infer* : Main command to run Infer. It's a python script. Check out the docs for instructions on how to use it.
+*infer* : Main command to run Infer. Check out the docs for instructions on how to use it.
 
 *inferTest* : Shell script for running Infer's tests. Uses Buck for running the tests.
 Usage: inferTest {c, objc, java} for the tests about the analysis of C, Objective-C, or Java files.

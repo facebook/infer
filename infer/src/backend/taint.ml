@@ -14,22 +14,24 @@ module L = Logging
 open PatternMatch
 
 (* list of sources that return a tainted value *)
-let sources = [
+let sources0 = [
   (* for testing only *)
   {
-    classname = "com.facebook.infer.models.InferTaint";
+    classname = "com.facebook.infer.builtins.InferTaint";
     method_name = "inferSecretSource";
     ret_type = "java.lang.Object";
     params = [];
     is_static = true;
+    taint_kind = Tk_unknown;
     language = Config.Java;
   };
   {
-    classname = "com.facebook.infer.models.InferTaint";
+    classname = "com.facebook.infer.builtins.InferTaint";
     method_name = "inferSecretSourceUndefined";
     ret_type = "java.lang.Object";
     params = [];
     is_static = true;
+    taint_kind = Tk_unknown;
     language = Config.Java
   };
   (* actual specs *)
@@ -39,8 +41,20 @@ let sources = [
     ret_type = "java.lang.String";
     params = ["java.lang.String"; "java.lang.String"];
     is_static = false;
+    taint_kind = Tk_shared_preferences_data;
     language = Config.Java
   };
+  (* === iOS === *)
+  {
+    classname = "NSHTTPCookie";
+    method_name = "value";
+    ret_type = "NSString *";
+    params = [];
+    is_static = false;
+    taint_kind = Tk_privacy_annotation;
+    language = Config.Clang
+  };
+
 ] @ FbTaint.sources
 
 (* list of (sensitive sinks, zero-indexed numbers of parameters that should not be tainted). note:
@@ -49,19 +63,21 @@ let sources = [
 let sinks = [
   (* for testing only *)
   ({
-    classname = "com.facebook.infer.models.InferTaint";
+    classname = "com.facebook.infer.builtins.InferTaint";
     method_name = "inferSensitiveSink";
     ret_type = "void";
     params = ["java.lang.Object"];
     is_static = true;
+    taint_kind = Tk_unknown;
     language = Config.Java
   }, [0]);
   ({
-    classname = "com.facebook.infer.models.InferTaint";
+    classname = "com.facebook.infer.builtins.InferTaint";
     method_name = "inferSensitiveSinkUndefined";
     ret_type = "void";
     params = ["java.lang.Object"];
     is_static = true;
+    taint_kind = Tk_unknown;
     language = Config.Java
   }, [0]);
   (* actual specs *)
@@ -71,6 +87,7 @@ let sinks = [
     ret_type = "int";
     params = ["java.lang.String"; "java.lang.String"];
     is_static = true;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java
   }, [0;1]);
   ({
@@ -79,6 +96,7 @@ let sinks = [
     ret_type = "java.io.InputStream";
     params = ["android.net.Uri"];
     is_static = false;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [1]);
   ({
@@ -87,6 +105,7 @@ let sinks = [
     ret_type = "java.io.OutputStream";
     params = ["android.net.Uri"];
     is_static = false;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [0]);
   ({
@@ -95,6 +114,7 @@ let sinks = [
     ret_type = "java.io.OutputStream";
     params = ["android.net.Uri"; "java.lang.String"];
     is_static = false;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [0]);
   ({
@@ -103,6 +123,7 @@ let sinks = [
     ret_type = "android.content.res.AssetFileDescriptor";
     params = ["android.net.Uri"; "java.lang.String"];
     is_static = false;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [0]);
   ({
@@ -111,6 +132,7 @@ let sinks = [
     ret_type = "android.content.res.AssetFileDescriptor";
     params = ["android.net.Uri"; "java.lang.String"; "android.os.CancellationSignal"];
     is_static = false;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [0]);
   ({
@@ -119,6 +141,7 @@ let sinks = [
     ret_type = "android.os.ParcelFileDescriptor";
     params = ["android.net.Uri"; "java.lang.String"; "android.os.CancellationSignal"];
     is_static = false;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [0]);
   ({
@@ -127,6 +150,7 @@ let sinks = [
     ret_type = "android.os.ParcelFileDescriptor";
     params = ["android.net.Uri"; "java.lang.String"];
     is_static = false;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [0]);
   ({
@@ -136,6 +160,7 @@ let sinks = [
     params = ["android.net.Uri"; "java.lang.String"; "android.os.Bundle";
               "android.os.CancellationSignal"];
     is_static = false;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
   }, [0]);
   ({
@@ -144,7 +169,55 @@ let sinks = [
     ret_type = "android.content.res.AssetFileDescriptor";
     params = ["android.net.Uri"; "java.lang.String"; "android.os.Bundle"];
     is_static = false;
+    taint_kind = Tk_privacy_annotation;
     language = Config.Java;
+  }, [0]);
+
+  (* === iOS === *)
+  ({
+    classname = "NSString";
+    method_name = "stringWithFormat:";
+    ret_type = "instancetype";
+    params = [];
+    is_static = true;
+    taint_kind = Tk_unknown;
+    language = Config.Clang;
+  }, [-2]);
+  ({
+    classname = "NSString";
+    method_name = "stringWithUTF8String:";
+    ret_type = "instancetype";
+    params = [];
+    is_static = true;
+    taint_kind = Tk_unknown;
+    language = Config.Clang
+  }, [-2]);
+  ({
+    classname = "NSString";
+    method_name = "localizedStringWithFormat:";
+    ret_type = "instancetype";
+    params = [];
+    is_static = true;
+    taint_kind = Tk_unknown;
+    language = Config.Clang
+  }, [-2]);
+  ({
+    classname = "NSString";
+    method_name = "initWithFormat:";
+    ret_type = "instancetype";
+    params = [];
+    is_static = false;
+    taint_kind = Tk_unknown;
+    language = Config.Clang
+  }, [-2]);
+  ({
+    classname = "NSString";
+    method_name = "stringWithString:";
+    ret_type = "instancetype";
+    params = [];
+    is_static = true;
+    taint_kind = Tk_unknown;
+    language = Config.Clang
   }, [0]);
 
   (*  ==== iOS for testing only ==== *)
@@ -154,7 +227,8 @@ let sinks = [
     ret_type = "void";
     params = [];
     is_static = false;
-    language = Config.C_CPP
+    taint_kind = Tk_unknown;
+    language = Config.Clang;
   }, [1]); (* it's instance method *)
 ] @ FbTaint.sinks
 
@@ -166,7 +240,8 @@ let functions_with_tainted_params = [
     ret_type = "BOOL";
     params = [];
     is_static = false; (* it's instance method *)
-    language = Config.C_CPP
+    taint_kind = Tk_unknown;
+    language = Config.Clang;
   }, [2]);
 
   (* actual specs *)
@@ -180,7 +255,8 @@ let functions_with_tainted_params = [
     ret_type = "BOOL";
     params = [];
     is_static = false; (* it's instance method *)
-    language = Config.C_CPP
+    taint_kind = Tk_integrity_annotation;
+    language = Config.Clang;
   }, [2]);
 ] @ FbTaint.functions_with_tainted_params
 
@@ -197,23 +273,22 @@ let java_method_to_procname java_method =
 (* turn string specificiation of an objc method into a procname *)
 let objc_method_to_procname objc_method =
   let method_kind = Procname.objc_method_kind_of_bool (not objc_method.is_static) in
-  let mangled = Procname.mangled_of_objc_method_kind method_kind in
   Procname.ObjC_Cpp
-    (Procname.objc_cpp objc_method.classname objc_method.method_name mangled)
+    (Procname.objc_cpp objc_method.classname objc_method.method_name method_kind)
 
-let method_str_to_pname method_str =
-  match method_str.language with
-  | Config.C_CPP ->
-      objc_method_to_procname method_str
-  | Config.Java ->
-      java_method_to_procname method_str
+let taint_spec_to_taint_info taint_spec =
+  let taint_source =
+    match taint_spec.language with
+    | Config.Clang -> objc_method_to_procname taint_spec
+    | Config.Java -> java_method_to_procname taint_spec in
+  { PredSymb.taint_source; taint_kind = taint_spec.taint_kind }
 
 let sources =
-  IList.map method_str_to_pname sources
+  IList.map taint_spec_to_taint_info sources0
 
 let mk_pname_param_num methods =
   IList.map
-    (fun (mname, param_num) -> method_str_to_pname mname, param_num)
+    (fun (mname, param_num) -> taint_spec_to_taint_info mname, param_num)
     methods
 
 let taint_sinks =
@@ -224,38 +299,86 @@ let func_with_tainted_params =
 
 let attrs_opt_get_annots = function
   | Some attrs -> attrs.ProcAttributes.method_annotation
-  | None -> Sil.method_annotation_empty
+  | None -> Annot.Method.empty
 
+(* TODO: return a taint kind *)
 (** returns true if [callee_pname] returns a tainted value *)
 let returns_tainted callee_pname callee_attrs_opt =
-  IList.exists (fun pname -> Procname.equal pname callee_pname) sources ||
-  let ret_annot, _ = attrs_opt_get_annots callee_attrs_opt in
-  Annotations.ia_is_privacy_source ret_annot
-
-let find_callee methods callee_pname =
+  let procname_matches taint_info =
+    Procname.equal taint_info.PredSymb.taint_source callee_pname in
   try
-    snd (IList.find (fun (pname, _) -> Procname.equal pname callee_pname) methods)
-  with Not_found -> []
+    let taint_info = IList.find procname_matches sources in
+    Some taint_info.PredSymb.taint_kind
+  with Not_found ->
+    let ret_annot, _ = attrs_opt_get_annots callee_attrs_opt in
+    if Annotations.ia_is_integrity_source ret_annot
+    then Some PredSymb.Tk_integrity_annotation
+    else if Annotations.ia_is_privacy_source ret_annot
+    then Some PredSymb.Tk_privacy_annotation
+    else None
+
+let find_callee taint_infos callee_pname =
+  try
+    Some
+      (IList.find
+         (fun (taint_info, _) -> Procname.equal taint_info.PredSymb.taint_source callee_pname)
+         taint_infos)
+  with Not_found -> None
 
 (** returns list of zero-indexed argument numbers of [callee_pname] that may be tainted *)
 let accepts_sensitive_params callee_pname callee_attrs_opt =
   match find_callee taint_sinks callee_pname with
-  | [] ->
+  | None ->
       let _, param_annots = attrs_opt_get_annots callee_attrs_opt in
       let offset = if Procname.java_is_static callee_pname then 0 else 1 in
-      IList.mapi (fun param_num attr  -> (param_num + offset, attr)) param_annots
-      |> IList.filter (fun (_, attr) -> Annotations.ia_is_privacy_sink attr)
-      |> IList.map fst
-  | tainted_params -> tainted_params
+      let indices_and_annots =
+        IList.mapi (fun param_num attr  -> param_num + offset, attr) param_annots in
+      let tag_tainted_indices acc (index, attr) =
+        if Annotations.ia_is_integrity_sink attr
+        then (index, PredSymb.Tk_privacy_annotation) :: acc
+        else if Annotations.ia_is_privacy_sink attr
+        then (index, PredSymb.Tk_privacy_annotation) :: acc
+        else acc in
+      IList.fold_left tag_tainted_indices [] indices_and_annots
+  | Some (taint_info, tainted_param_indices) ->
+      IList.map (fun param_num -> param_num, taint_info.PredSymb.taint_kind) tainted_param_indices
 
 (** returns list of zero-indexed parameter numbers of [callee_pname] that should be
     considered tainted during symbolic execution *)
 let tainted_params callee_pname =
-  find_callee func_with_tainted_params callee_pname
+  match find_callee func_with_tainted_params callee_pname with
+  | Some (taint_info, tainted_param_indices) ->
+      IList.map (fun param_num -> param_num, taint_info.PredSymb.taint_kind) tainted_param_indices
+  | None -> []
 
-let has_taint_annotation fieldname struct_typ =
+let has_taint_annotation fieldname (struct_typ: StructTyp.t) =
   let fld_has_taint_annot (fname, _, annot) =
     Ident.fieldname_equal fieldname fname &&
-    Annotations.ia_is_privacy_source annot in
-  IList.exists fld_has_taint_annot struct_typ.Sil.instance_fields ||
-  IList.exists fld_has_taint_annot struct_typ.Sil.static_fields
+    (Annotations.ia_is_privacy_source annot || Annotations.ia_is_integrity_source annot) in
+  IList.exists fld_has_taint_annot struct_typ.fields ||
+  IList.exists fld_has_taint_annot struct_typ.statics
+
+(* add tainting attributes to a list of paramenters *)
+let get_params_to_taint tainted_param_nums formal_params =
+  let get_taint_kind index =
+    try Some (IList.find (fun (taint_index, _) -> index = taint_index) tainted_param_nums)
+    with Not_found -> None in
+  let collect_params_to_taint params_to_taint_acc (index, param) =
+    match get_taint_kind index with
+    | Some (_, taint_kind) -> (param, taint_kind) :: params_to_taint_acc
+    | None -> params_to_taint_acc in
+  let numbered_params = IList.mapi (fun i param -> (i, param)) formal_params in
+  IList.fold_left collect_params_to_taint [] numbered_params
+
+(* add tainting attribute to a pvar in a prop *)
+let add_tainting_attribute tenv att pvar_param prop =
+  IList.fold_left
+    (fun prop_acc hpred ->
+       match hpred with
+       | Sil.Hpointsto (Exp.Lvar pvar, (Sil.Eexp (rhs, _)), _)
+         when Pvar.equal pvar pvar_param ->
+           L.d_strln ("TAINT ANALYSIS: setting taint/untaint attribute of parameter " ^
+                      (Pvar.to_string pvar));
+           Attribute.add_or_replace tenv prop_acc (Apred (att, [rhs]))
+       | _ -> prop_acc)
+    prop prop.Prop.sigma

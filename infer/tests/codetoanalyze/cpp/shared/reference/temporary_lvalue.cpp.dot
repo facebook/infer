@@ -1,0 +1,55 @@
+/* @generated */
+digraph iCFG {
+14 [label="14:  DeclStmt \n   *&a:int =0 [line 21]\n " shape="box"]
+	
+
+	 14 -> 13 ;
+13 [label="13:  Return Stmt \n   n$0=_fun_div(&a:int &) [line 22]\n  *&return:int =n$0 [line 22]\n " shape="box"]
+	
+
+	 13 -> 12 ;
+12 [label="12: Exit div0_no_const_ref \n  " color=yellow style=filled]
+	
+
+11 [label="11: Start div0_no_const_ref\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 20]\n " color=yellow style=filled]
+	
+
+	 11 -> 14 ;
+10 [label="10:  Return Stmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$0:int =0 [line 17]\n  n$1=_fun_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:int &) [line 17]\n  *&return:int =n$1 [line 17]\n " shape="box"]
+	
+
+	 10 -> 9 ;
+9 [label="9: Exit div0_function_param_cast \n  " color=yellow style=filled]
+	
+
+8 [label="8: Start div0_function_param_cast\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:int  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 17]\n " color=yellow style=filled]
+	
+
+	 8 -> 10 ;
+7 [label="7:  DeclStmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$2:int =0 [line 13]\n  *&a:int &=&0$?%__sil_tmpSIL_materialize_temp__n$2 [line 13]\n " shape="box"]
+	
+
+	 7 -> 6 ;
+6 [label="6:  Return Stmt \n   n$0=*&a:int & [line 14]\n  n$1=_fun_div(n$0:int &) [line 14]\n  *&return:int =n$1 [line 14]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit div0_init_expr \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start div0_init_expr\nFormals: \nLocals:  a:int & 0$?%__sil_tmpSIL_materialize_temp__n$2:int  \n   DECLARE_LOCALS(&return,&a,&0$?%__sil_tmpSIL_materialize_temp__n$2); [line 12]\n " color=yellow style=filled]
+	
+
+	 4 -> 7 ;
+3 [label="3:  Return Stmt \n   n$0=*&v:int & [line 10]\n  n$1=*n$0:int  [line 10]\n  *&return:int =(1 / n$1) [line 10]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit div \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start div\nFormals:  v:int &\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

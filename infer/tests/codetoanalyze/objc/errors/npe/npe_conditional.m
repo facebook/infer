@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-@interface A : NSObject {
+@interface ConditionalA : NSObject {
   int x;
 }
 
@@ -17,13 +17,13 @@
 
 @end
 
-@implementation A
+@implementation ConditionalA
 
 - (NSString*)name {
   return @"1";
 }
 
-void binaryConditionalNoNPE(A* transfer) {
+void binaryConditionalNoNPE(ConditionalA* transfer) {
   NSString* val = transfer.name ?: @"0";
   NSMutableDictionary* extraBlock =
       [[NSMutableDictionary alloc] initWithDictionary:@{
@@ -31,7 +31,7 @@ void binaryConditionalNoNPE(A* transfer) {
       }];
 }
 
-void conditionalNPE(A* transfer) {
+void conditionalNPE(ConditionalA* transfer) {
   NSString* val = transfer.name ? transfer.name : @"0";
   NSMutableDictionary* extraBlock =
       [[NSMutableDictionary alloc] initWithDictionary:@{

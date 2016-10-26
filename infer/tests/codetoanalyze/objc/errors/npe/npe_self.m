@@ -10,15 +10,15 @@
 #import <Foundation/NSObject.h>
 #import <Foundation/NSString.h>
 
-@interface C : NSObject {
+@interface CSelf : NSObject {
   int x;
-  C* _currentCompositionState;
+  CSelf* _currentCompositionState;
 }
 @property(nonatomic, copy, readonly) NSString* JSON;
 
 @end
 
-@implementation C
+@implementation CSelf
 
 - (id)init {
   self = [super init];
@@ -27,8 +27,8 @@
 }
 
 - (void)captureManagerSessionDidStart {
-  __weak C* weakSelf = self;
-  C* strongSelf = weakSelf;
+  __weak CSelf* weakSelf = self;
+  CSelf* strongSelf = weakSelf;
   int x = strongSelf->x;
 }
 
@@ -43,7 +43,7 @@
     return YES;
   if (![object isKindOfClass:[self class]])
     return NO;
-  C* other = (C*)object;
+  CSelf* other = (CSelf*)object;
   return ([_JSON isEqualToString:other->_JSON]);
 }
 

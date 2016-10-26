@@ -1,0 +1,46 @@
+/* @generated */
+digraph iCFG {
+11 [label="11:  Return Stmt \n   n$1=*&self:class A * [line 24]\n  n$5=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int  [line 24]\n  n$6=_fun_A_test4:(n$1:class A *,n$5:int ) virtual [line 24]\n  *&return:int =n$6 [line 24]\n " shape="box"]
+	
+
+	 11 -> 5 ;
+10 [label="10:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$2:int =1 [line 24]\n " shape="box"]
+	
+
+	 10 -> 6 ;
+9 [label="9:  ConditinalStmt Branch \n   n$4=*&b:_Bool  [line 24]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$2:int =n$4 [line 24]\n " shape="box"]
+	
+
+	 9 -> 6 ;
+8 [label="8: Prune (false branch) \n   n$3=*&b:_Bool  [line 24]\n  PRUNE((n$3 == 0), false); [line 24]\n " shape="invhouse"]
+	
+
+	 8 -> 10 ;
+7 [label="7: Prune (true branch) \n   n$3=*&b:_Bool  [line 24]\n  PRUNE((n$3 != 0), true); [line 24]\n " shape="invhouse"]
+	
+
+	 7 -> 9 ;
+6 [label="6: + \n  " ]
+	
+
+	 6 -> 11 ;
+5 [label="5: Exit A_test5: \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start A_test5:\nFormals:  self:class A * b:_Bool \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$2:int  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$2); [line 23]\n " color=yellow style=filled]
+	
+
+	 4 -> 7 ;
+	 4 -> 8 ;
+3 [label="3:  Return Stmt \n   n$0=*&x:int  [line 20]\n  *&return:int =n$0 [line 20]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit A_test4: \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start A_test4:\nFormals:  self:class A * x:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

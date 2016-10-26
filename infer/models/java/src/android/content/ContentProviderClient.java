@@ -9,8 +9,8 @@
 
 package android.content;
 
-import com.facebook.infer.models.InferBuiltins;
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferBuiltins;
+import com.facebook.infer.builtins.InferUndefined;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteCursor;
@@ -30,7 +30,7 @@ public class ContentProviderClient {
             ContentResolver contentResolver, IContentProvider contentProvider, boolean stable) {
         mContentResolver = contentResolver;
         mContentProvider = contentProvider;
-        mPackageName = InferUndefined.string_undefined();
+        mPackageName = (String)InferUndefined.object_undefined();
         mStable = stable;
     }
 

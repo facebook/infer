@@ -12,11 +12,12 @@ from __future__ import unicode_literals
 
 import codecs
 
-from . import colorize, config, utils
+from . import colorize, config
 
 BASE_INDENT = 2
 # how many lines of context around each report
 SOURCE_CONTEXT = 2
+
 
 class Indenter(str):
     def __init__(self):

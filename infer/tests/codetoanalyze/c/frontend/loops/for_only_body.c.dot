@@ -1,9 +1,10 @@
+/* @generated */
 digraph iCFG {
-8 [label="8:  DeclStmt \n   *&i:int =0 [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="box"]
+8 [label="8:  DeclStmt \n   *&i:int =0 [line 11]\n " shape="box"]
 	
 
 	 8 -> 4 ;
-7 [label="7:  UnaryOperator \n   n$0=*&i:int  [line 13]\n  *&i:int =(n$0 + 1) [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+7 [label="7:  UnaryOperator \n   n$0=*&i:int  [line 13]\n  *&i:int =(n$0 + 1) [line 13]\n " shape="box"]
 	
 
 	 7 -> 4 ;
@@ -20,14 +21,14 @@ digraph iCFG {
 
 	 4 -> 5 ;
 	 4 -> 6 ;
-3 [label="3:  Return Stmt \n   NULLIFY(&i,false); [line 15]\n  *&return:int =0 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&return:int =0 [line 15]\n " shape="box"]
 	
 
 	 3 -> 2 ;
 2 [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  i:int  \n   DECLARE_LOCALS(&return,&i); [line 10]\n  NULLIFY(&i,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start main\nFormals: \nLocals:  i:int  \n   DECLARE_LOCALS(&return,&i); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 8 ;

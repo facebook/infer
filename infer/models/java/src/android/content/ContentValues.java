@@ -9,7 +9,7 @@
 
 package android.content;
 
-import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.builtins.InferBuiltins;
 
 public class ContentValues {
 

@@ -9,10 +9,10 @@
 
 package codetoanalyze.java.infer;
 
+import java.lang.ref.WeakReference;
+
 import android.content.Context;
 import android.app.Activity;
-import android.os.Handler;
-
 
 public class ContextLeaks extends Activity {
 
@@ -92,29 +92,30 @@ public class ContextLeaks extends Activity {
     return Singleton.getInstance(this.getApplicationContext());
   }
 
-  private Handler handler = new Handler();
+  // testing that we don't report on static field -> ... -> Context paths broken by weak refs
+  static WeakReference<Context> sDirectWeakReference;
 
-  public void indirectHandlerLeak() {
-    handlerLeak();
+  static WeakReference<Obj> sIndirectWeakReference1;
+
+  static Obj sIndirectWeakReference2;
+
+  // sDirectWeakReference |-> WeakReference.referent |-> Context
+  public void directWeakReferenceOk() {
+    sDirectWeakReference = new WeakReference(this);
   }
 
-  private void handlerLeak() {
-    Runnable r =
-        new Runnable() {
-          public void run() {
-          }
-        };
-    handler.postDelayed(r, 10000);
+  // sIndirectWeakReference1 |-> WeakReference.referent |-> Obj.f |-> Context
+  public void indirectWeakReferenceOk1() {
+    Obj obj = new Obj();
+    obj.f = this;
+    sIndirectWeakReference1 = new WeakReference(obj);
   }
 
-  public void handlerNoLeak() {
-    Runnable r =
-        new Runnable() {
-          public void run() {
-          }
-        };
-    handler.postDelayed(r, 10000);
-    handler.removeCallbacks(r);
+  // sIndirectWeakReference2.|-> Obj.f |-> WeakReference.referent |-> Context
+  public void indirectWeakReferenceOk2() {
+    Obj obj = new Obj();
+    obj.f = new WeakReference(this);
+    sIndirectWeakReference2 = obj;
   }
 
 }

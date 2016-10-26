@@ -20,7 +20,6 @@ import logging
 import os
 import subprocess
 import sys
-import tempfile
 import time
 
 from . import config
@@ -126,7 +125,24 @@ def infer_branch():
 
 
 def infer_key(analyzer):
-    return os.pathsep.join([analyzer, infer_version()])
+    return '/'.join([analyzer, infer_version()])
+
+
+def run_infer_stats_aggregator(infer_out, buck_out=None):
+    buck_out_args = []
+    if buck_out is not None:
+        buck_out_args = ['--buck-out', buck_out]
+    try:
+        cmd = get_cmd_in_bin_dir('InferStatsAggregator')
+        return subprocess.check_output(
+            [cmd, '--results-dir', infer_out] + buck_out_args,
+            stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as exc:
+        output = 'Error while aggregating stats ({ec}): {output}'\
+            .format(ec=exc.returncode, output=exc.output)
+        stderr('Info: aggregated performance data are not available in '
+               'this run')
+        return output
 
 
 def vcs_branch(dir='.'):
@@ -199,7 +215,6 @@ class Timer:
         if message:
             self._logger(message + ' (%.2fs)', *(args + (self._dt,)))
         return self._dt
-
 
 
 def interact():
@@ -295,6 +310,20 @@ def encode(u, errors='replace'):
     return u.encode(encoding=config.CODESET, errors=errors)
 
 
+def decode_or_not(s, errors='replace'):
+    try:
+        return decode(s, errors)
+    except UnicodeEncodeError:
+        return s
+
+
+def encode_or_not(u, errors='replace'):
+    try:
+        return encode(u, errors)
+    except UnicodeDecodeError:
+        return u
+
+
 def stdout(s, errors='replace'):
     print(encode(s, errors=errors))
 
@@ -312,7 +341,21 @@ def merge_and_dedup_files_into_path(files_to_merge, dest):
         fdest.writelines(lines)
 
 
+def read_env():
+    env = dict(os.environ).copy()
+    for k, v in env.iteritems():
+        env[k] = decode(v)
+    return env
+
+
+def encode_env(env):
+    new_env = env.copy()
+    for k, v in new_env.iteritems():
+        new_env[k] = encode(v)
+    return new_env
+
+
 class AbsolutePathAction(argparse.Action):
     """Convert a path from relative to absolute in the arg parser"""
     def __call__(self, parser, namespace, values, option_string=None):
-        setattr(namespace, self.dest, os.path.abspath(values))
+        setattr(namespace, self.dest, encode(os.path.abspath(values)))

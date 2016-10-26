@@ -15,6 +15,7 @@ RUN apt-get update && \
             autoconf \
             curl \
             gcc \
+            g++ \
             git \
             groff \
             libc6-dev \
@@ -43,7 +44,7 @@ RUN VERSION=1.2.2; \
 RUN opam init -y --comp=4.02.3
 
 # Download the latest Infer release
-RUN INFER_VERSION=v0.8.1; \
+RUN INFER_VERSION=v0.9.3; \
     cd /opt && \
     curl -sL \
       https://github.com/facebook/infer/releases/download/${INFER_VERSION}/infer-linux64-${INFER_VERSION}.tar.xz | \
@@ -51,16 +52,8 @@ RUN INFER_VERSION=v0.8.1; \
     rm -f /infer && \
     ln -s ${PWD}/infer-linux64-$INFER_VERSION /infer
 
-# Install opam dependencies
-RUN cd /infer && \
-    eval $(opam config env) && \
-    opam update && \
-    opam pin add --yes --no-action infer . && \
-    opam install --deps-only infer
-
 # Compile Infer
 RUN cd /infer && \
-    eval $(opam config env) && \
     ./build-infer.sh
 
 # Install Infer

@@ -1,0 +1,17 @@
+[
+  {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "Hello.java",
+    "procedure": "void Hello.mayCauseNPE()"
+  },
+  {
+    "bug_type": "RESOURCE_LEAK",
+    "file": "Hello.java",
+    "procedure": "void Hello.mayLeakResource()"
+  },
+  {
+    "bug_type": "RESOURCE_LEAK",
+    "file": "Hello.java",
+    "procedure": "void Hello.twoResources()"
+  }
+]

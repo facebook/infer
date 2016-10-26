@@ -15,14 +15,19 @@ AC_PREREQ([2.63])
 # - opam
 # - docker/Dockerfile
 AC_INIT([Infer],
-        [0.8.1],
+        [0.9.3],
         [https://github.com/facebook/infer/issues/])
-AC_CONFIG_SRCDIR([infer/src/IR/sil.ml])
+
+# this has to happen just after AC_INIT() because later macros may mess with the arguments passed to
+# this script
+config_flags="$*"
+
+AC_CONFIG_SRCDIR([infer/src/IR/Sil.re])
 
 # WARNING: keep in sync with above
 INFER_MAJOR=0
-INFER_MINOR=8
-INFER_PATCH=1
+INFER_MINOR=9
+INFER_PATCH=3
 
 AC_SUBST([INFER_MAJOR])
 AC_SUBST([INFER_MINOR])
@@ -39,9 +44,9 @@ IS_FACEBOOK_TREE=$is_facebook_tree
 AC_SUBST([IS_FACEBOOK_TREE])
 
 # to compile the facebook-clang-plugins
-AC_ARG_VAR([CLANG_PREFIX], [directory where clang is installed (defaults=$PWD/facebook-clang-plugins/clang)])
+AC_ARG_VAR([CLANG_PREFIX], [directory where clang is installed (defaults=$PWD/facebook-clang-plugins/clang/install)])
 AS_IF([test "x$CLANG_PREFIX" = "x"], [
-  CLANG_PREFIX="$(pwd)/facebook-clang-plugins/clang"
+  CLANG_PREFIX="$(pwd)/facebook-clang-plugins/clang/install"
 ])
 
 AC_ARG_VAR([CLANG_INCLUDES], [clang headers directories (defaults=$CLANG_PREFIX/include)])
@@ -92,6 +97,17 @@ AS_IF([test "x$enable_c_analyzers" = "xyes"], [
 
   AC_CHECK_TOOL([SHASUM], [shasum], [no])
   AC_ASSERT_PROG([shasum], [$SHASUM])
+  # cmake is required to build llvm+clang
+  AS_IF([test "x$is_release_tree" = "xno"], [
+    AC_CHECK_TOOL([CMAKE], [cmake], [no])
+    AC_ASSERT_PROG([cmake], [$CMAKE])
+  ])
+  AC_ARG_ENABLE(ocamlopt-custom-cc,
+    AS_HELP_STRING([--enable-ocamlopt-custom-cc], [use CC in ocamlopt invocations]),
+    ,
+    enable_ocamlopt_custom_cc=no)
+  ENABLE_OCAMLOPT_CUSTOM_CC=$enable_ocamlopt_custom_cc
+  AC_SUBST([ENABLE_OCAMLOPT_CUSTOM_CC])
 ])
 # end if($enable_c_analyzers)
 
@@ -157,7 +173,7 @@ fi
 AC_PROG_OCAML
 AC_ASSERT_PROG([ocamlc], [$OCAMLC])
 # check the version of OCaml
-AC_ASSERT_OCAML_MIN_VERSION([4.02.1])
+AC_ASSERT_OCAML_MIN_VERSION([4.02.3])
 AC_ASSERT_PROG([ocamlopt], [$OCAMLOPT])
 AC_ASSERT_PROG([ocamlbuild], [$OCAMLBUILD])
 AC_PROG_FINDLIB
@@ -171,7 +187,12 @@ AC_ASSERT_OCAML_PKG([camlzip], [zip])
 AC_ASSERT_OCAML_PKG([easy-format])
 AC_ASSERT_OCAML_PKG([extlib], [], [1.5.4])
 AC_ASSERT_OCAML_PKG([oUnit], [], [2.0.0])
+AC_ASSERT_OCAML_PKG([reason])
 AC_ASSERT_OCAML_PKG([yojson])
+# check for rebuild after checking for Reason since `rebuild` is normally provided by Reason. This
+# way if Reason is missing we get a more helpful error message and not "rebuild not found".
+AC_CHECK_TOOL([REBUILD], [rebuild], [no])
+AC_ASSERT_PROG([rebuild], [$REBUILD])
 
 if test "x$enable_java_analyzers" = "xyes"; then
   AC_CHECK_TOOL([JAVA], [java], [no])
@@ -231,8 +252,8 @@ AC_SUBST([ENABLE_OCAML_BINANNOT])
 # We use Buck to run the Infer tests
 AC_MSG_CHECKING([which version of Buck to use])
 buckversion_file=.buckversion
-oss_buck_version=a965937ccdadf8119a98ab766c3feb0708dc424e
-fb_buck_version=440619c312cf07951891083d8f02d05a713205b5
+oss_buck_version=7722fca11136f5059c113379969a116802a58df0
+fb_buck_version=3a688647b6fca77bda05ab55f2f53860a470edfc
 AS_IF([test x"$is_facebook_tree" = x"yes"],
   [buck_version=$fb_buck_version],
   [buck_version=$oss_buck_version])
@@ -256,14 +277,9 @@ AC_SUBST([NCPU])
 
 AC_CONFIG_FILES([
   Makefile.config
-  Makefile
-  infer/Makefile
-  infer/models/Makefile
-  infer/models/c/Makefile
-  infer/models/cpp/Makefile
-  infer/models/objc/Makefile
-  infer/models/java/Makefile
-  infer/src/Makefile
 ])
+
+AC_MSG_NOTICE([saving configure flags to ./config.flags])
+echo $config_flags > config.flags
 
 AC_OUTPUT

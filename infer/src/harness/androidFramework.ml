@@ -11,7 +11,6 @@ open! Utils
 
 module L = Logging
 module F = Format
-module TypSet = Sil.StructTypSet
 
 (** Android lifecycle types and their lifecycle methods that are called by the framework *)
 
@@ -56,27 +55,25 @@ let android_lifecycles =
      fragment_lifecycle);
   ]
 
-let is_subtype_package_class tenv struct_typ package classname =
-  let classname = Mangled.from_package_class package classname in
-  match Tenv.lookup tenv (Typename.TN_csu (Csu.Class Csu.Java, classname)) with
-  | Some found_struct_typ -> PatternMatch.is_subtype tenv struct_typ found_struct_typ
-  | _ -> false
+let is_subtype_package_class tenv tname package classname =
+  PatternMatch.is_subtype tenv
+    tname (Typename.TN_csu (Class Java, Mangled.from_package_class package classname))
 
-let is_context tenv typ =
-  is_subtype_package_class tenv typ "android.content" "Context"
+let is_context tenv tname =
+  is_subtype_package_class tenv tname "android.content" "Context"
 
-let is_application tenv typ =
-  is_subtype_package_class tenv typ "android.app" "Application"
+let is_application tenv tname =
+  is_subtype_package_class tenv tname "android.app" "Application"
 
-let is_activity tenv typ =
-  is_subtype_package_class tenv typ "android.app" "Activity"
+let is_activity tenv tname =
+  is_subtype_package_class tenv tname "android.app" "Activity"
 
-let is_view tenv typ =
-  is_subtype_package_class tenv typ "android.view" "View"
+let is_view tenv tname =
+  is_subtype_package_class tenv tname "android.view" "View"
 
-let is_fragment tenv typ =
-  is_subtype_package_class tenv typ "android.app" "Fragment" ||
-  is_subtype_package_class tenv typ "android.support.v4.app" "Fragment"
+let is_fragment tenv tname =
+  is_subtype_package_class tenv tname "android.app" "Fragment" ||
+  is_subtype_package_class tenv tname "android.support.v4.app" "Fragment"
 
 (** return true if [class_name] is the name of a class that belong to the Android framework *)
 let is_android_lib_class class_name =
@@ -86,8 +83,8 @@ let is_android_lib_class class_name =
 (** given an Android framework type mangled string [lifecycle_typ] (e.g., android.app.Activity) and
     a list of method names [lifecycle_procs_strs], get the appropriate typ and procnames *)
 let get_lifecycle_for_framework_typ_opt tenv lifecycle_typ lifecycle_proc_strs =
-  match Tenv.lookup tenv (Typename.TN_csu (Csu.Class Csu.Java, lifecycle_typ)) with
-  | Some ({ Sil.csu = Csu.Class _; struct_name = Some _; def_methods } as lifecycle_typ) ->
+  match Tenv.lookup tenv lifecycle_typ with
+  | Some { methods } ->
       (* TODO (t4645631): collect the procedures for which is_java is returning false *)
       let lookup_proc lifecycle_proc =
         IList.find (fun decl_proc ->
@@ -96,15 +93,15 @@ let get_lifecycle_for_framework_typ_opt tenv lifecycle_typ lifecycle_proc_strs =
                 lifecycle_proc = Procname.java_get_method decl_proc_java
             | _ ->
                 false
-          ) def_methods in
+          ) methods in
       (* convert each of the framework lifecycle proc strings to a lifecycle method procname *)
       let lifecycle_procs =
         IList.fold_left (fun lifecycle_procs lifecycle_proc_str ->
             try (lookup_proc lifecycle_proc_str) :: lifecycle_procs
             with Not_found -> lifecycle_procs)
           [] lifecycle_proc_strs in
-      Some (lifecycle_typ, lifecycle_procs)
-  | _ -> None
+      lifecycle_procs
+  | _ -> []
 
 (** return the complete list of (package, lifecycle_classname, lifecycle_methods) trios *)
 let get_lifecycles = android_lifecycles

@@ -9,11 +9,11 @@
 
 #import <Foundation/Foundation.h>
 
-@interface A : NSObject {
+@interface ADict : NSObject {
 }
 @end
 
-@implementation A
+@implementation ADict
 
 - (void)noProblem {
   NSDictionary* foo = @{ @"aaa" : @"a value", @"bbb" : @"b value" };
@@ -95,8 +95,8 @@
 
 @end
 
-int main() {
-  A* a = [A alloc];
+int DictMain() {
+  ADict* a = [ADict alloc];
   [a noProblem];
   [a nilInDictionaryLiteralKey0];
   return 0;

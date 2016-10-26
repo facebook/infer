@@ -18,14 +18,20 @@ type throws =
 
 (** Module type used to define the state component for a dataflow algorithm. *)
 module type DFStateType = sig
-  type t (** Type for state. *)
-  val equal : t -> t -> bool (** Equality between states. *)
-  val join : t -> t -> t (** Join two states (the old one is the first parameter). *)
+  (** Type for state. *)
+  type t
+
+  (** Equality between states. *)
+  val equal : t -> t -> bool
+
+  (** Join two states (the old one is the first parameter). *)
+  val join : t -> t -> t
 
   (** Perform a state transition on a node. *)
   val do_node : Tenv.t -> Cfg.Node.t -> t -> (t list) * (t list)
 
-  val proc_throws : Procname.t -> throws (** Can proc throw an exception? *)
+  (** Can proc throw an exception? *)
+  val proc_throws : Procname.t -> throws
 end
 
 (** Type for the dataflow API. *)
@@ -48,15 +54,15 @@ let node_throws node (proc_throws : Procname.t -> throws) : throws =
       let ret_pvar = Cfg.Procdesc.get_ret_var pdesc in
       Pvar.equal pvar ret_pvar in
     match instr with
-    | Sil.Set (Sil.Lvar pvar, _, Sil.Const (Sil.Cexn _), _) when is_return pvar ->
+    | Sil.Store (Exp.Lvar pvar, _, Exp.Exn _, _) when is_return pvar ->
         (* assignment to return variable is an artifact of a throw instruction *)
         Throws
-    | Sil.Call (_, Sil.Const (Sil.Cfun callee_pn), _, _, _)
+    | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _)
       when Builtin.is_registered callee_pn ->
         if Procname.equal callee_pn ModelBuiltins.__cast
         then DontKnow
         else DoesNotThrow
-    | Sil.Call (_, Sil.Const (Sil.Cfun callee_pn), _, _, _) ->
+    | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _) ->
         proc_throws callee_pn
     | _ ->
         DoesNotThrow in

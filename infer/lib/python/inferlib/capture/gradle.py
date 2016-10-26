@@ -10,8 +10,7 @@ import os
 import util
 import tempfile
 
-from inferlib import jwlib
-from inferlib import config
+from inferlib import config, jwlib, utils
 
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
@@ -20,7 +19,7 @@ gradle [options] [task]
 Analysis examples:
 infer -- gradle build
 infer -- ./gradlew build'''
-
+LANG = ['java']
 
 
 def gen_instance(*args):
@@ -43,7 +42,7 @@ class GradleCapture:
                             config.JAVAC_FILELISTS_FILENAME)
         if not os.path.exists(path):
             os.mkdir(path)
-        logging.info('Running with:\n' + version_str)
+        logging.info('Running with:\n' + utils.decode(version_str))
 
     def get_infer_commands(self, verbose_output):
         argument_start_pattern = ' Compiler arguments: '
@@ -74,12 +73,11 @@ class GradleCapture:
                         dir=os.path.join(self.args.infer_out,
                                          config.JAVAC_FILELISTS_FILENAME),
                         delete=False) as sources:
-                    sources.write('\n'.join(java_files))
+                    sources.write('\n'.join(map(utils.encode, java_files)))
                     sources.flush()
                     java_args.append('@' + sources.name)
-                    capture = jwlib.create_infer_command(self.args,
-                                                         java_args)
-                    calls.append(capture)
+                capture = jwlib.create_infer_command(self.args, java_args)
+                calls.append(capture)
         return calls
 
     def capture(self):

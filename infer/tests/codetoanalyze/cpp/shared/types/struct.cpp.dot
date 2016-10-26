@@ -1,0 +1,26 @@
+/* @generated */
+digraph iCFG {
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$3=*&xs:class X_struct * [line 24]\n  *n$3.a:int =10 [line 24]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&xs:class X_struct * [line 25]\n  *n$2.b:int =20 [line 25]\n " shape="box"]
+	
+
+	 5 -> 4 ;
+4 [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&xc:class X_class * [line 28]\n  *n$1.a:int =10 [line 28]\n " shape="box"]
+	
+
+	 4 -> 3 ;
+3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&xc:class X_class * [line 29]\n  *n$0.b:int =20 [line 29]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit test \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start test\nFormals: \nLocals:  xc:class X_class * xs:class X_struct * \n   DECLARE_LOCALS(&return,&xc,&xs); [line 21]\n " color=yellow style=filled]
+	
+
+	 1 -> 6 ;
+}

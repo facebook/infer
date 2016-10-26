@@ -25,7 +25,7 @@
 - (int)while_loop:(NSArray*)items {
   int size = 0;
   NSArray* item = nil;
-  while (item = [items nextObject]) {
+  while ((item = [items objectAtIndex:3])) {
     size += [item count];
   }
   return size;

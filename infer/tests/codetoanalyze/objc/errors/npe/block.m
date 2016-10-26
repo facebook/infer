@@ -9,10 +9,10 @@
 
 #import <Foundation/NSObject.h>
 
-@interface A : NSObject
+@interface BlockA : NSObject
 @end
 
-@implementation A {
+@implementation BlockA {
 
   void (^_block_field)(void);
 }

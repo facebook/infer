@@ -9,11 +9,11 @@
 
 #import <Foundation/Foundation.h>
 
-@interface A : NSObject {
+@interface PrematureNilTermA : NSObject {
 }
 @end
 
-@implementation A
+@implementation PrematureNilTermA
 
 - (void)noProblem {
   NSArray* foo = [NSArray arrayWithObjects:@"aaa", @"bbb", nil];
@@ -29,8 +29,8 @@
 
 @end
 
-int main() {
-  A* a = [A alloc];
+int PrematureNilMain() {
+  PrematureNilTermA* a = [PrematureNilTermA alloc];
   [a noProblem];
   [a nilInArrayWithObjects];
   return 0;

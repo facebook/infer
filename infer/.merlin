@@ -1,5 +1,5 @@
 S src/**
-B _build-infer/**
+B _build/infer/**
 PKG atdgen
 PKG extlib
 PKG javalib
@@ -11,4 +11,4 @@ PKG unix
 PKG yojson
 PKG zip
 FLG -principal -safe-string -short-paths -strict-formats -strict-sequence
-FLG -w +a-4-9-40-41-42-45-48-50
+FLG -w +a-4-9-40-41-42-45-48

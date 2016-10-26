@@ -33,12 +33,12 @@ let callback_sql { Callbacks.proc_desc; proc_name; tenv } =
       && Procname.java_get_method pn_java = "append"
       then
         begin
-          let rvar1 = Sil.Var i1 in
-          let rvar2 = Sil.Var i2 in
+          let rvar1 = Exp.Var i1 in
+          let rvar2 = Exp.Var i2 in
           begin
             let matches s r = Str.string_match r s 0 in
             match const_map node rvar1, const_map node rvar2 with
-            | Some (Sil.Cstr ""), Some (Sil.Cstr s2) ->
+            | Some (Const.Cstr ""), Some (Const.Cstr s2) ->
                 if IList.exists (matches s2) sql_start then
                   begin
                     L.stdout
@@ -53,7 +53,7 @@ let callback_sql { Callbacks.proc_desc; proc_name; tenv } =
         end in
 
     match instr with
-    | Sil.Call (_, Sil.Const (Sil.Cfun pn), (Sil.Var i1, _):: (Sil.Var i2, _):: [], l, _) ->
+    | Sil.Call (_, Exp.Const (Const.Cfun pn), (Exp.Var i1, _):: (Exp.Var i2, _):: [], l, _) ->
         begin
           match pn with
           | Procname.Java pn_java ->

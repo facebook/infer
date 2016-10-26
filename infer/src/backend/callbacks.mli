@@ -29,6 +29,7 @@ type proc_callback_args = {
 type proc_callback_t = proc_callback_args -> unit
 
 type cluster_callback_t =
+  Exe_env.t ->
   Procname.t list ->
   (Procname.t -> Cfg.Procdesc.t option) ->
   (Idenv.t * Tenv.t * Procname.t * Cfg.Procdesc.t) list ->
@@ -44,4 +45,4 @@ val register_cluster_callback : Config.language option -> cluster_callback_t -> 
 val unregister_all_callbacks : unit -> unit
 
 (** Invoke all the registered callbacks. *)
-val iterate_callbacks : (Procname.t -> unit) -> Cg.t -> Exe_env.t -> unit
+val iterate_callbacks : (Tenv.t -> Procname.t -> unit) -> Cg.t -> Exe_env.t -> unit

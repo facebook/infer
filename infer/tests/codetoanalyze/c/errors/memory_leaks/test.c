@@ -52,3 +52,10 @@ void conditional_last_instruction() {
     free(p);
   }
 }
+
+int* compound_return_no_leak() {
+  return ({
+    int* p = malloc(sizeof(int));
+    p;
+  });
+}

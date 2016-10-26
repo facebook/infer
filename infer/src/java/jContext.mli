@@ -20,11 +20,6 @@ type jump_kind =
   | Exit
 
 
-(** data structure for identifying whether a method is the initialiser of a class - that initialises the static fields- or a standard method *)
-type meth_kind =
-  | Normal
-  | Init
-
 (** Hastable for storing nodes that correspond to if-instructions. These are
     used when adding the edges in the contrl flow graph. *)
 module NodeTbl : Hashtbl.S with type key = Cfg.Node.t
@@ -40,29 +35,28 @@ type icfg = {
 }
 
 (** data structure for storing the context elements.  *)
-type t
+type t = private
+  { icfg : icfg;
+    procdesc : Cfg.Procdesc.t;
+    impl : JBir.t;
+    mutable var_map : (Pvar.t * Typ.t * Typ.t) JBir.VarMap.t;
+    if_jumps : int NodeTbl.t;
+    goto_jumps : (int, jump_kind) Hashtbl.t;
+    cn : JBasics.class_name;
+    source_file : DB.source_file;
+    program : JClasspath.program;
+  }
 
 
 (** cretes a context for a given method.   *)
 val create_context :
-  Inferconfig.NeverReturnNull.matcher ->
   icfg ->
   Cfg.Procdesc.t ->
   JBir.t ->
   JBasics.class_name ->
-  meth_kind ->
-  JCode.jcode Javalib.interface_or_class ->
+  DB.source_file ->
   JClasspath.program ->
   t
-
-(** returns the intermediate representation of the Java file from the context.  *)
-val get_icfg : t -> icfg
-
-(** returns the code of the method from the context *)
-val get_impl : t -> JBir.t
-
-(** returns the class where the method is defined from the context *)
-val get_cn : t -> JBasics.class_name
 
 (** returns the type environment that corresponds to the current file. *)
 val get_tenv : t -> Tenv.t
@@ -72,14 +66,6 @@ val get_cg : t -> Cg.t
 
 (**  returns the control flow graph that corresponds to the current file. *)
 val get_cfg : t -> Cfg.cfg
-
-(** returns the procedure description in the intermediate language for the
-    current method. *)
-val get_procdesc : t -> Cfg.Procdesc.t
-
-(** returns the method kind of the current method: standard or initialiser of
-    static fields. *)
-val get_meth_kind : t -> meth_kind
 
 (** adds to the context the line that an if-node will jump to *)
 val add_if_jump : t -> Cfg.Node.t -> int -> unit
@@ -97,21 +83,11 @@ val get_goto_jump : t -> int -> jump_kind
 (** returns whether the given line corresponds to a goto instruction.  *)
 val is_goto_jump : t -> int -> bool
 
-(** returns the Java program *)
-val get_program : t -> JClasspath.program
-
-(** returns the current node *)
-val get_node : t -> JCode.jcode Javalib.interface_or_class
-
-(** returns a match function for procedures that are never returning null
-    according to .inferfonfig *)
-val get_never_null_matcher : t -> Inferconfig.NeverReturnNull.matcher
-
 (** [set_pvar context var type] adds a variable with a type to the context  *)
-val set_pvar : t -> JBir.var -> Sil.typ -> Pvar.t
+val set_pvar : t -> JBir.var -> Typ.t -> Pvar.t
 
 (** [get_var_type context var] returns the type of the variable, if the variable is in the context *)
-val get_var_type : t -> JBir.var -> Sil.typ option
+val get_var_type : t -> JBir.var -> Typ.t option
 
 (** resets the dynamic type of the variables in the context. *)
 val reset_pvar_type : t -> unit

@@ -25,10 +25,10 @@ module Path : sig
   val contains : t -> t -> bool
 
   (** check wether the path contains the given position *)
-  val contains_position : t -> Sil.path_pos -> bool
+  val contains_position : t -> PredSymb.path_pos -> bool
 
   (** Create the location trace of the path, up to the path position if specified *)
-  val create_loc_trace : t -> Sil.path_pos option -> Errlog.loc_trace
+  val create_loc_trace : t -> PredSymb.path_pos option -> Errlog.loc_trace
 
   (** return the current node of the path *)
   val curr_node : t -> Cfg.node option
@@ -51,7 +51,7 @@ module Path : sig
       Do not iterate past the given position.
       [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] and possible exception [exn_opt] *)
   val iter_longest_sequence :
-    (int -> t -> int -> Typename.t option -> unit) -> Sil.path_pos option -> t -> unit
+    (int -> t -> int -> Typename.t option -> unit) -> PredSymb.path_pos option -> t -> unit
 
   (** join two paths *)
   val join : t -> t -> t
@@ -125,7 +125,7 @@ module PathSet : sig
   val to_proplist : t -> Prop.normal Prop.t list
 
   (** convert to a set of props *)
-  val to_propset : t -> Propset.t
+  val to_propset : Tenv.t -> t -> Propset.t
 
   (** union of two pathsets *)
   val union : t -> t -> t

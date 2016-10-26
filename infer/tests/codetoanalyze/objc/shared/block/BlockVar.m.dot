@@ -1,0 +1,209 @@
+/* @generated */
+digraph iCFG {
+54 [label="54:  DeclStmt \n   *&i:int =5 [line 57]\n " shape="box"]
+	
+
+	 54 -> 53 ;
+53 [label="53:  DeclStmt \n   *&x:int *=&i [line 58]\n " shape="box"]
+	
+
+	 53 -> 52 ;
+52 [label="52:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_capturedNoNullDeref______5); [line 59]\n  n$37=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_BlockVar_capturedNoNullDeref______5 ):unsigned long ) [line 59]\n  *&__objc_anonymous_block_BlockVar_capturedNoNullDeref______5:class __objc_anonymous_block_BlockVar_capturedNoNullDeref______5 =n$37 [line 59]\n  n$38=*&x:int * [line 59]\n  *n$37.x:int *=n$38 [line 59]\n  n$34=*&x:int * [line 59]\n  *&my_block:_fn_ (*)=(_fun___objc_anonymous_block_BlockVar_capturedNoNullDeref______5,n$34) [line 59]\n " shape="box"]
+	
+
+	 52 -> 48 ;
+51 [label="51:  Return Stmt \n   n$35=*&x:int * [line 60]\n  n$36=*n$35:int  [line 60]\n  *&return:int =n$36 [line 60]\n " shape="box"]
+	
+
+	 51 -> 50 ;
+50 [label="50: Exit __objc_anonymous_block_BlockVar_capturedNoNullDeref______5 \n  " color=yellow style=filled]
+	
+
+49 [label="49: Start __objc_anonymous_block_BlockVar_capturedNoNullDeref______5\nFormals:  x:int *\nLocals: \nCaptured:  x:int * \n   DECLARE_LOCALS(&return); [line 59]\n " color=yellow style=filled]
+	
+
+	 49 -> 51 ;
+48 [label="48:  BinaryOperatorStmt: Assign \n   *&x:int *=0 [line 62]\n " shape="box"]
+	
+
+	 48 -> 47 ;
+47 [label="47:  Return Stmt \n   n$32=*&my_block:_fn_ (*) [line 63]\n  n$33=n$32() [line 63]\n  *&return:int =n$33 [line 63]\n " shape="box"]
+	
+
+	 47 -> 46 ;
+46 [label="46: Exit BlockVar_capturedNoNullDeref \n  " color=yellow style=filled]
+	
+
+45 [label="45: Start BlockVar_capturedNoNullDeref\nFormals:  self:class BlockVar *\nLocals:  my_block:_fn_ (*) x:int * i:int  \n   DECLARE_LOCALS(&return,&my_block,&x,&i); [line 56]\n " color=yellow style=filled]
+	
+
+	 45 -> 54 ;
+44 [label="44:  DeclStmt \n   *&x:int *=0 [line 49]\n " shape="box"]
+	
+
+	 44 -> 43 ;
+43 [label="43:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_capturedNullDeref______4); [line 50]\n  n$30=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_BlockVar_capturedNullDeref______4 ):unsigned long ) [line 50]\n  *&__objc_anonymous_block_BlockVar_capturedNullDeref______4:class __objc_anonymous_block_BlockVar_capturedNullDeref______4 =n$30 [line 50]\n  n$31=*&x:int * [line 50]\n  *n$30.x:int *=n$31 [line 50]\n  n$27=*&x:int * [line 50]\n  *&my_block:_fn_ (*)=(_fun___objc_anonymous_block_BlockVar_capturedNullDeref______4,n$27) [line 50]\n " shape="box"]
+	
+
+	 43 -> 39 ;
+42 [label="42:  Return Stmt \n   n$28=*&x:int * [line 51]\n  n$29=*n$28:int  [line 51]\n  *&return:int =n$29 [line 51]\n " shape="box"]
+	
+
+	 42 -> 41 ;
+41 [label="41: Exit __objc_anonymous_block_BlockVar_capturedNullDeref______4 \n  " color=yellow style=filled]
+	
+
+40 [label="40: Start __objc_anonymous_block_BlockVar_capturedNullDeref______4\nFormals:  x:int *\nLocals: \nCaptured:  x:int * \n   DECLARE_LOCALS(&return); [line 50]\n " color=yellow style=filled]
+	
+
+	 40 -> 42 ;
+39 [label="39:  Return Stmt \n   n$25=*&my_block:_fn_ (*) [line 53]\n  n$26=n$25() [line 53]\n  *&return:int =n$26 [line 53]\n " shape="box"]
+	
+
+	 39 -> 38 ;
+38 [label="38: Exit BlockVar_capturedNullDeref \n  " color=yellow style=filled]
+	
+
+37 [label="37: Start BlockVar_capturedNullDeref\nFormals:  self:class BlockVar *\nLocals:  my_block:_fn_ (*) x:int * \n   DECLARE_LOCALS(&return,&my_block,&x); [line 48]\n " color=yellow style=filled]
+	
+
+	 37 -> 44 ;
+36 [label="36:  DeclStmt \n   *&i:int =7 [line 40]\n " shape="box"]
+	
+
+	 36 -> 35 ;
+35 [label="35:  DeclStmt \n   *&x:int *=&i [line 41]\n " shape="box"]
+	
+
+	 35 -> 34 ;
+34 [label="34:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_blockPostOk______3); [line 42]\n  n$23=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_BlockVar_blockPostOk______3 ):unsigned long ) [line 42]\n  *&__objc_anonymous_block_BlockVar_blockPostOk______3:class __objc_anonymous_block_BlockVar_blockPostOk______3 =n$23 [line 42]\n  n$24=*&x:int * [line 42]\n  *n$23.x:int *=n$24 [line 42]\n  n$21=*&x:int * [line 42]\n  *&my_block:_fn_ (*)=(_fun___objc_anonymous_block_BlockVar_blockPostOk______3,n$21) [line 42]\n " shape="box"]
+	
+
+	 34 -> 30 ;
+33 [label="33:  Return Stmt \n   n$22=*&x:int * [line 43]\n  *&return:int *=n$22 [line 43]\n " shape="box"]
+	
+
+	 33 -> 32 ;
+32 [label="32: Exit __objc_anonymous_block_BlockVar_blockPostOk______3 \n  " color=yellow style=filled]
+	
+
+31 [label="31: Start __objc_anonymous_block_BlockVar_blockPostOk______3\nFormals:  x:int *\nLocals: \nCaptured:  x:int * \n   DECLARE_LOCALS(&return); [line 42]\n " color=yellow style=filled]
+	
+
+	 31 -> 33 ;
+30 [label="30:  Return Stmt \n   n$18=*&my_block:_fn_ (*) [line 45]\n  n$19=n$18() [line 45]\n  n$20=*n$19:int  [line 45]\n  *&return:int =n$20 [line 45]\n " shape="box"]
+	
+
+	 30 -> 29 ;
+29 [label="29: Exit BlockVar_blockPostOk \n  " color=yellow style=filled]
+	
+
+28 [label="28: Start BlockVar_blockPostOk\nFormals:  self:class BlockVar *\nLocals:  my_block:_fn_ (*) x:int * i:int  \n   DECLARE_LOCALS(&return,&my_block,&x,&i); [line 39]\n " color=yellow style=filled]
+	
+
+	 28 -> 36 ;
+27 [label="27:  DeclStmt \n   *&x:int *=0 [line 32]\n " shape="box"]
+	
+
+	 27 -> 26 ;
+26 [label="26:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_blockPostBad______2); [line 33]\n  n$16=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_BlockVar_blockPostBad______2 ):unsigned long ) [line 33]\n  *&__objc_anonymous_block_BlockVar_blockPostBad______2:class __objc_anonymous_block_BlockVar_blockPostBad______2 =n$16 [line 33]\n  n$17=*&x:int * [line 33]\n  *n$16.x:int *=n$17 [line 33]\n  n$14=*&x:int * [line 33]\n  *&my_block:_fn_ (*)=(_fun___objc_anonymous_block_BlockVar_blockPostBad______2,n$14) [line 33]\n " shape="box"]
+	
+
+	 26 -> 22 ;
+25 [label="25:  Return Stmt \n   n$15=*&x:int * [line 34]\n  *&return:int *=n$15 [line 34]\n " shape="box"]
+	
+
+	 25 -> 24 ;
+24 [label="24: Exit __objc_anonymous_block_BlockVar_blockPostBad______2 \n  " color=yellow style=filled]
+	
+
+23 [label="23: Start __objc_anonymous_block_BlockVar_blockPostBad______2\nFormals:  x:int *\nLocals: \nCaptured:  x:int * \n   DECLARE_LOCALS(&return); [line 33]\n " color=yellow style=filled]
+	
+
+	 23 -> 25 ;
+22 [label="22:  Return Stmt \n   n$11=*&my_block:_fn_ (*) [line 36]\n  n$12=n$11() [line 36]\n  n$13=*n$12:int  [line 36]\n  *&return:int =n$13 [line 36]\n " shape="box"]
+	
+
+	 22 -> 21 ;
+21 [label="21: Exit BlockVar_blockPostBad \n  " color=yellow style=filled]
+	
+
+20 [label="20: Start BlockVar_blockPostBad\nFormals:  self:class BlockVar *\nLocals:  my_block:_fn_ (*) x:int * \n   DECLARE_LOCALS(&return,&my_block,&x); [line 31]\n " color=yellow style=filled]
+	
+
+	 20 -> 27 ;
+19 [label="19:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_navigateToURLInBackground______1); [line 19]\n  n$10=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_BlockVar_navigateToURLInBackground______1 ):unsigned long ) [line 19]\n  *&__objc_anonymous_block_BlockVar_navigateToURLInBackground______1:class __objc_anonymous_block_BlockVar_navigateToURLInBackground______1 =n$10 [line 19]\n  *&addBlock:_fn_ (*)=(_fun___objc_anonymous_block_BlockVar_navigateToURLInBackground______1) [line 19]\n " shape="box"]
+	
+
+	 19 -> 14 ;
+18 [label="18:  DeclStmt \n   n$9=_fun_BlockVar_test() [line 20]\n  *&res:int =n$9 [line 20]\n " shape="box"]
+	
+
+	 18 -> 17 ;
+17 [label="17:  Return Stmt \n   n$6=*&a:int  [line 21]\n  n$7=*&b:int  [line 21]\n  n$8=*&res:int  [line 21]\n  *&return:int =((n$6 + n$7) + n$8) [line 21]\n " shape="box"]
+	
+
+	 17 -> 16 ;
+16 [label="16: Exit __objc_anonymous_block_BlockVar_navigateToURLInBackground______1 \n  " color=yellow style=filled]
+	
+
+15 [label="15: Start __objc_anonymous_block_BlockVar_navigateToURLInBackground______1\nFormals:  a:int  b:int \nLocals:  res:int  \n   DECLARE_LOCALS(&return,&res); [line 19]\n " color=yellow style=filled]
+	
+
+	 15 -> 18 ;
+14 [label="14:  DeclStmt \n   n$4=*&addBlock:_fn_ (*) [line 23]\n  n$5=n$4(1:int ,2:int ) [line 23]\n  *&x:int =n$5 [line 23]\n " shape="box"]
+	
+
+	 14 -> 13 ;
+13 [label="13:  DeclStmt \n   *&p:int *=0 [line 24]\n " shape="box"]
+	
+
+	 13 -> 8 ;
+12 [label="12:  Return Stmt \n   n$3=*&x:int  [line 28]\n  *&return:int =n$3 [line 28]\n " shape="box"]
+	
+
+	 12 -> 5 ;
+11 [label="11:  Return Stmt \n   n$1=*&p:int * [line 26]\n  n$2=*n$1:int  [line 26]\n  *&return:int =n$2 [line 26]\n " shape="box"]
+	
+
+	 11 -> 5 ;
+10 [label="10: Prune (false branch) \n   PRUNE(((n$0 == 8) == 0), false); [line 25]\n " shape="invhouse"]
+	
+
+	 10 -> 12 ;
+9 [label="9: Prune (true branch) \n   PRUNE(((n$0 == 8) != 0), true); [line 25]\n " shape="invhouse"]
+	
+
+	 9 -> 11 ;
+8 [label="8:  BinaryOperatorStmt: EQ \n   n$0=*&x:int  [line 25]\n " shape="box"]
+	
+
+	 8 -> 9 ;
+	 8 -> 10 ;
+7 [label="7:  between_join_and_exit \n  " shape="box"]
+	
+
+	 7 -> 5 ;
+6 [label="6: + \n  " ]
+	
+
+	 6 -> 7 ;
+5 [label="5: Exit BlockVar_navigateToURLInBackground \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start BlockVar_navigateToURLInBackground\nFormals: \nLocals:  p:int * x:int  addBlock:_fn_ (*) \n   DECLARE_LOCALS(&return,&p,&x,&addBlock); [line 18]\n " color=yellow style=filled]
+	
+
+	 4 -> 19 ;
+3 [label="3:  Return Stmt \n   *&return:int =5 [line 15]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit BlockVar_test \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start BlockVar_test\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

@@ -28,6 +28,10 @@ class SomeResource implements Closeable {
   }
 
   public void close() {}
+
+  native void foo(int i);
+  native static void bar(SomeResource r);
+
 }
 
 class Resource implements Closeable {
@@ -157,6 +161,16 @@ public class CloseableAsResourceExample {
 
   void leakFoundWhenIndirectlyImplementingCloseable() {
     MyResource res = new MyResource();
+  }
+
+  void skippedCallClosesResourceOnArgs() {
+    SomeResource res = new SomeResource();
+    SomeResource.bar(res);
+  }
+
+  void skippedVritualCallDoesNotCloseResourceOnReceiver() {
+    SomeResource res = new SomeResource();
+    res.foo(42);
   }
 
 }

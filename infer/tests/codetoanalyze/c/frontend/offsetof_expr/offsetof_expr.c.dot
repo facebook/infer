@@ -1,0 +1,43 @@
+/* @generated */
+digraph iCFG {
+10 [label="10:  DeclStmt \n   *&i:int =n$1 [line 19]\n " shape="box"]
+	
+
+	 10 -> 5 ;
+9 [label="9:  Return Stmt \n   *&return:int =(4 / 0) [line 23]\n " shape="box"]
+	
+
+	 9 -> 2 ;
+8 [label="8:  Return Stmt \n   *&return:int =(9 / 0) [line 21]\n " shape="box"]
+	
+
+	 8 -> 2 ;
+7 [label="7: Prune (false branch) \n   PRUNE(((n$0 == 9) == 0), false); [line 20]\n " shape="invhouse"]
+	
+
+	 7 -> 9 ;
+6 [label="6: Prune (true branch) \n   PRUNE(((n$0 == 9) != 0), true); [line 20]\n " shape="invhouse"]
+	
+
+	 6 -> 8 ;
+5 [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&i:int  [line 20]\n " shape="box"]
+	
+
+	 5 -> 6 ;
+	 5 -> 7 ;
+4 [label="4:  between_join_and_exit \n  " shape="box"]
+	
+
+	 4 -> 2 ;
+3 [label="3: + \n  " ]
+	
+
+	 3 -> 4 ;
+2 [label="2: Exit test_offsetof_expr \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start test_offsetof_expr\nFormals: \nLocals:  i:int  \n   DECLARE_LOCALS(&return,&i); [line 18]\n " color=yellow style=filled]
+	
+
+	 1 -> 10 ;
+}

@@ -10,6 +10,8 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
+void __set_untaint_attribute(void*);
+
 BOOL ExampleSanitizer(NSURL* u, int f) {
   if (f)
     __set_untaint_attribute(u);
@@ -21,30 +23,45 @@ BOOL ExampleSanitizer(NSURL* u, int f) {
 @end
 
 @implementation ExampleViewController
+
+- init {
+  return self;
+}
+
 - (void)loadURL:(NSURL*)URL
   trackingCodes:(NSArray*)trackingCodes{
                     // Require untainted URL
                 };
 @end
 
-@interface B : NSObject
+@interface VCB : NSObject
 - (void)another_url_pass:(NSURL*)u;
 @end
 
-@implementation B
+@implementation VCB
+
+- init {
+  return self;
+}
+
 - (void)another_url_pass:(NSURL*)u {
   ExampleViewController* vc = [[ExampleViewController alloc] init];
   [vc loadURL:u trackingCodes:nil];
 }
 @end
 
-@interface A : NSObject
+@interface VCA : NSObject
 - (void)pass_url_arond:(NSURL*)u;
 @end
 
-@implementation A
+@implementation VCA
+
+- init {
+  return self;
+}
+
 - (void)pass_url_arond:(NSURL*)u {
-  B* b = [[B alloc] init];
+  VCB* b = [[VCB alloc] init];
   [b another_url_pass:u];
 }
 @end
@@ -57,12 +74,17 @@ BOOL ExampleSanitizer(NSURL* u, int f) {
 @end
 
 @implementation ExampleDelegate
+
+- init {
+  return self;
+}
+
 - (BOOL)application:(UIApplication*)application
             openURL:(NSURL*)URL
   sourceApplication:(NSString*)sourceApplication
          annotation:(id)annotation {
   // Assume tainted URL;
-  A* a = [[A alloc] init];
+  VCA* a = [[VCA alloc] init];
   if (!ExampleSanitizer(URL, 0)) {
     [a pass_url_arond:URL]; // report taint
   }

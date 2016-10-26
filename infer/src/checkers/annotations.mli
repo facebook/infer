@@ -16,6 +16,7 @@ val suppressLint : string
 val expensive : string
 val performance_critical : string
 val no_allocation : string
+val on_bind : string
 val suppress_warnings : string
 
 type annotation =
@@ -23,9 +24,10 @@ type annotation =
   | Present
 
 (** Method signature with annotations. *)
-type annotated_signature =
-  { ret : Sil.item_annotation * Sil.typ; (** Annotated return type. *)
-    params: (Mangled.t * Sil.item_annotation * Sil.typ) list } (** Annotated parameters. *)
+type annotated_signature = {
+  ret : Annot.Item.t * Typ.t; (** Annotated return type. *)
+  params: (Mangled.t * Annot.Item.t * Typ.t) list (** Annotated parameters. *)
+}
 
 (** Check if the annotated signature is for a wrapper of an anonymous inner class method.
     These wrappers have the same name as the original method, every type is Object, and the parameters
@@ -52,61 +54,63 @@ val equal : annotated_signature -> annotated_signature -> bool
 (** Get a method signature with annotations from a proc_attributes. *)
 val get_annotated_signature : ProcAttributes.t -> annotated_signature
 
-(** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] *)
-val get_field_type_and_annotation :
-  Ident.fieldname -> Sil.typ -> (Sil.typ * Sil.item_annotation) option
-
-(** Return the annotations on the declaring class of [java_pname]. *)
-val get_declaring_class_annotations : Procname.java -> Tenv.t -> Sil.item_annotation option
-
 val nullable : string
 
-val ia_contains : Sil.item_annotation -> string -> bool
+(** Return true if [annot] ends with [ann_name] *)
+val annot_ends_with : Annot.t -> string -> bool
 
-val ia_has_annotation_with : Sil.item_annotation -> (Sil.annotation -> bool) -> bool
+(** Check if there is an annotation in [ia] which ends with the given name *)
+val ia_ends_with : Annot.Item.t -> string -> bool
 
-val ia_get_strict : Sil.item_annotation -> Sil.annotation option
+val ia_contains : Annot.Item.t -> string -> bool
 
-val ia_is_false_on_null : Sil.item_annotation -> bool
-val ia_is_initializer : Sil.item_annotation -> bool
+val ia_has_annotation_with : Annot.Item.t -> (Annot.t -> bool) -> bool
+
+val ia_get_strict : Annot.Item.t -> Annot.t option
+
+val ia_is_false_on_null : Annot.Item.t -> bool
+val ia_is_initializer : Annot.Item.t -> bool
 
 (** Annotations for readonly injectors.
     The injector framework initializes the field but does not write null into it. *)
-val ia_is_field_injector_readonly : Sil.item_annotation -> bool
+val ia_is_field_injector_readonly : Annot.Item.t -> bool
 
 (** Annotations for read-write injectors.
     The injector framework initializes the field and can write null into it. *)
-val ia_is_field_injector_readwrite : Sil.item_annotation -> bool
+val ia_is_field_injector_readwrite : Annot.Item.t -> bool
 
-val ia_is_mutable : Sil.item_annotation -> bool
-val ia_is_nonnull : Sil.item_annotation -> bool
-val ia_is_nullable : Sil.item_annotation -> bool
-val ia_is_present : Sil.item_annotation -> bool
-val ia_is_true_on_null : Sil.item_annotation -> bool
-val ia_is_verify : Sil.item_annotation -> bool
-val ia_is_expensive : Sil.item_annotation -> bool
-val ia_is_performance_critical : Sil.item_annotation -> bool
-val ia_is_no_allocation : Sil.item_annotation -> bool
-val ia_is_ignore_allocations : Sil.item_annotation -> bool
-val ia_is_suppress_warnings : Sil.item_annotation -> bool
-val ia_is_privacy_source : Sil.item_annotation -> bool
-val ia_is_privacy_sink : Sil.item_annotation -> bool
+val ia_is_mutable : Annot.Item.t -> bool
+val ia_is_nonnull : Annot.Item.t -> bool
+val ia_is_nullable : Annot.Item.t -> bool
+val ia_is_present : Annot.Item.t -> bool
+val ia_is_true_on_null : Annot.Item.t -> bool
+val ia_is_verify : Annot.Item.t -> bool
+val ia_is_expensive : Annot.Item.t -> bool
+val ia_is_performance_critical : Annot.Item.t -> bool
+val ia_is_no_allocation : Annot.Item.t -> bool
+val ia_is_ignore_allocations : Annot.Item.t -> bool
+val ia_is_suppress_warnings : Annot.Item.t -> bool
+val ia_is_privacy_source : Annot.Item.t -> bool
+val ia_is_privacy_sink : Annot.Item.t -> bool
+val ia_is_integrity_source : Annot.Item.t -> bool
+val ia_is_integrity_sink : Annot.Item.t -> bool
+val ia_is_guarded_by : Annot.Item.t -> bool
+val ia_is_thread_safe : Annot.Item.t -> bool
 
-val ia_iter : (Sil.annotation -> unit) -> Sil.item_annotation -> unit
+val ia_iter : (Annot.t -> unit) -> Annot.Item.t -> unit
 
-val ma_contains : Sil.method_annotation -> string list -> bool
+val ma_has_annotation_with : Annot.Method.t -> (Annot.t -> bool) -> bool
 
-val ma_has_annotation_with : Sil.method_annotation -> (Sil.annotation -> bool) -> bool
-
-val ma_iter : (Sil.annotation -> unit) -> Sil.method_annotation -> unit
+val pdesc_has_annot : Cfg.Procdesc.t -> string -> bool
 
 (** Mark the return of the method_annotation with the given annotation. *)
 val method_annotation_mark_return :
-  annotation -> Sil.method_annotation -> Sil.method_annotation
+  annotation -> Annot.Method.t -> Annot.Method.t
 
 (** Add the annotation to the item_annotation. *)
-val mk_ia : annotation -> Sil.item_annotation -> Sil.item_annotation
+val mk_ia : annotation -> Annot.Item.t -> Annot.Item.t
 
 val pp_annotated_signature : Procname.t -> Format.formatter -> annotated_signature -> unit
 
 val visibleForTesting : string
+val guarded_by : string

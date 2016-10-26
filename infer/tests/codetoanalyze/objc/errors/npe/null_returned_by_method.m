@@ -9,15 +9,15 @@
 
 #import <Foundation/NSObject.h>
 
-@interface A : NSObject
+@interface NullReturnedByMethodA : NSObject
 
 @end
 
-@implementation A {
+@implementation NullReturnedByMethodA {
   int x;
 }
 
-- (A*)test {
+- (NullReturnedByMethodA*)test {
   return nil;
 }
 

@@ -10,7 +10,7 @@ import subprocess
 import traceback
 
 import util
-from inferlib import analyze, jwlib
+from inferlib import jwlib
 
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
@@ -19,6 +19,7 @@ javac <options> <source files>
 Analysis examples:
 infer -- javac srcfile.java
 infer -- /path/to/javac srcfile.java'''
+LANG = ['java']
 
 
 def gen_instance(*args):
@@ -31,11 +32,17 @@ create_argparser = util.base_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 
 class JavacCapture:
     def __init__(self, args, cmd):
-        self.analysis = jwlib.AnalyzerWithFrontendWrapper(
-            args,
-            cmd[0],
-            cmd[1:],
-        )
+        if args.java_jar_compiler is not None:
+            self.analysis = jwlib.AnalyzerWithJavaJar(
+                args,
+                'java',
+                args.java_jar_compiler,
+                cmd[1:])
+        else:
+            self.analysis = jwlib.AnalyzerWithJavac(
+                args,
+                cmd[0],
+                cmd[1:])
 
     def capture(self):
         try:

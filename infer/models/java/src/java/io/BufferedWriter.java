@@ -9,7 +9,7 @@
 
 package java.io;
 
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 
 
 public class BufferedWriter extends Writer {

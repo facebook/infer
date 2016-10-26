@@ -13,7 +13,7 @@ import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.view.ContextThemeWrapper;
 
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 
 public abstract class Activity extends ContextThemeWrapper {
 

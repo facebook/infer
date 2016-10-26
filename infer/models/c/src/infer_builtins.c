@@ -84,14 +84,6 @@ clock_t __infer_nondet_clock_t() {
   return t;
 }
 
-long infer__builtin_expect(long e, long x) {
-  if (e == x) {
-    return x;
-  } else {
-    return e;
-  }
-}
-
 void* infer__builtin___memset_chk(void* dest,
                                   int val,
                                   unsigned long len,

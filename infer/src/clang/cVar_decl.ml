@@ -19,25 +19,21 @@ module L = Logging
 let is_custom_var_pointer pointer =
   pointer <= 0
 
-let is_captured procdesc vname =
-  IList.exists
-    (fun (name, _) -> (Mangled.to_string name) = vname)
-    (Cfg.Procdesc.get_captured procdesc)
-
 let sil_var_of_decl context var_decl procname =
   let outer_procname = CContext.get_outer_procname context in
-  let procdesc = context.CContext.procdesc in
+  let trans_unit_ctx = context.CContext.translation_unit_context in
   let open Clang_ast_t in
   match var_decl with
-  | VarDecl (decl_info, name_info, type_ptr, var_decl_info) ->
+  | VarDecl (decl_info, name_info, qual_type, var_decl_info) ->
       let shoud_be_mangled =
-        not (is_custom_var_pointer decl_info.Clang_ast_t.di_pointer) &&
-        not (is_captured procdesc name_info.Clang_ast_t.ni_name) in
-      let var_decl_details = Some (decl_info, type_ptr, var_decl_info, shoud_be_mangled) in
-      General_utils.mk_sil_var name_info var_decl_details procname outer_procname
-  | ParmVarDecl (decl_info, name_info, type_ptr, var_decl_info) ->
-      let var_decl_details = Some (decl_info, type_ptr, var_decl_info, false) in
-      General_utils.mk_sil_var name_info var_decl_details procname outer_procname
+        not (is_custom_var_pointer decl_info.Clang_ast_t.di_pointer) in
+      let var_decl_details = Some
+          (decl_info, qual_type.Clang_ast_t.qt_type_ptr, var_decl_info, shoud_be_mangled) in
+      General_utils.mk_sil_var trans_unit_ctx name_info var_decl_details procname outer_procname
+  | ParmVarDecl (decl_info, name_info, qual_type, var_decl_info) ->
+      let var_decl_details = Some
+          (decl_info, qual_type.Clang_ast_t.qt_type_ptr, var_decl_info, false) in
+      General_utils.mk_sil_var trans_unit_ctx name_info var_decl_details procname outer_procname
   | _ -> assert false
 
 let sil_var_of_decl_ref context decl_ref procname =
@@ -49,7 +45,8 @@ let sil_var_of_decl_ref context decl_ref procname =
   match decl_ref.Clang_ast_t.dr_kind with
   | `ImplicitParam ->
       let outer_procname = CContext.get_outer_procname context in
-      General_utils.mk_sil_var name None procname outer_procname
+      let trans_unit_ctx = context.CContext.translation_unit_context in
+      General_utils.mk_sil_var trans_unit_ctx name None procname outer_procname
   | _ ->
       if is_custom_var_pointer pointer then
         Pvar.mk (Mangled.from_string name.Clang_ast_t.ni_name) procname
@@ -78,7 +75,7 @@ let rec compute_autorelease_pool_vars context stmts =
                 let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
                 let pvar = sil_var_of_decl_ref context decl_ref procname in
                 if Pvar.is_local pvar then
-                  General_utils.append_no_duplicateds [(Sil.Lvar pvar, typ)] res
+                  General_utils.append_no_duplicateds [(Exp.Lvar pvar, typ)] res
                 else res
             | _ -> res)
        | _ -> res)

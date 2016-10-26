@@ -1,0 +1,221 @@
+/* @generated */
+digraph iCFG {
+54 [label="54:  DeclStmt \n   n$45=_fun___objc_alloc_no_fail(sizeof(class NSArray ):unsigned long ) [line 34]\n  n$46=_fun_NSArray_init(n$45:class NSArray *) virtual [line 34]\n  *&a:class NSArray *=n$46 [line 34]\n " shape="box"]
+	
+
+	 54 -> 53 ;
+53 [label="53:  DeclStmt \n   n$44=*&a:class NSArray * [line 36]\n  *&objects:class NSArray *=n$44 [line 36]\n " shape="box"]
+	
+
+	 53 -> 52 ;
+52 [label="52:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MyBlock_array_trans______2); [line 40]\n  n$43=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MyBlock_array_trans______2 ):unsigned long ) [line 40]\n  *&__objc_anonymous_block_MyBlock_array_trans______2:class __objc_anonymous_block_MyBlock_array_trans______2 =n$43 [line 40]\n  *&enumerateObjectsUsingBlock:_fn_ (*)=(_fun___objc_anonymous_block_MyBlock_array_trans______2) [line 39]\n " shape="box"]
+	
+
+	 52 -> 44 ;
+51 [label="51:  BinaryOperatorStmt: Assign \n   n$42=*&stop:_Bool * [line 45]\n  *n$42:_Bool =1 [line 45]\n " shape="box"]
+	
+
+	 51 -> 47 ;
+50 [label="50: Prune (false branch) \n   n$41=*&ShouldStop:int  [line 44]\n  PRUNE((n$41 == 0), false); [line 44]\n " shape="invhouse"]
+	
+
+	 50 -> 47 ;
+49 [label="49: Prune (true branch) \n   n$41=*&ShouldStop:int  [line 44]\n  PRUNE((n$41 != 0), true); [line 44]\n " shape="invhouse"]
+	
+
+	 49 -> 51 ;
+48 [label="48:  between_join_and_exit \n  " shape="box"]
+	
+
+	 48 -> 46 ;
+47 [label="47: + \n  " ]
+	
+
+	 47 -> 48 ;
+46 [label="46: Exit __objc_anonymous_block_MyBlock_array_trans______2 \n  " color=yellow style=filled]
+	
+
+45 [label="45: Start __objc_anonymous_block_MyBlock_array_trans______2\nFormals:  object:struct objc_object * idx:unsigned long  stop:_Bool *\nLocals:  ShouldStop:int  \n   DECLARE_LOCALS(&return,&ShouldStop); [line 40]\n " color=yellow style=filled]
+	
+
+	 45 -> 49 ;
+	 45 -> 50 ;
+44 [label="44:  DeclStmt \n   n$40=_fun_malloc_no_fail(sizeof(_Bool ):_Bool ) [line 48]\n  *&stop:_Bool *=n$40 [line 48]\n " shape="box"]
+	
+
+	 44 -> 43 ;
+43 [label="43:  BinaryOperatorStmt: Assign \n   n$39=*&stop:_Bool * [line 49]\n  *n$39:_Bool =0 [line 49]\n " shape="box"]
+	
+
+	 43 -> 32 ;
+42 [label="42:  DeclStmt \n   n$36=*&objects:class NSArray * [line 53]\n  n$37=*&idx:unsigned long  [line 53]\n  n$38=_fun_NSArray_objectAtIndexedSubscript:(n$36:class NSArray *,n$37:unsigned long ) virtual [line 53]\n  *&object:struct objc_object *=n$38 [line 53]\n " shape="box"]
+	
+
+	 42 -> 41 ;
+41 [label="41:  Call n$32 \n   n$32=*&enumerateObjectsUsingBlock:_fn_ (*) [line 54]\n  n$33=*&object:struct objc_object * [line 54]\n  n$34=*&idx:unsigned long  [line 54]\n  n$35=*&stop:_Bool * [line 54]\n  n$32(n$33:struct objc_object *,n$34:unsigned long ,n$35:_Bool *) [line 54]\n " shape="box"]
+	
+
+	 41 -> 38 ;
+40 [label="40: Prune (false branch) \n   PRUNE(((n$31 == 1) == 0), false); [line 55]\n " shape="invhouse"]
+	
+
+	 40 -> 37 ;
+39 [label="39: Prune (true branch) \n   PRUNE(((n$31 == 1) != 0), true); [line 55]\n " shape="invhouse"]
+	
+
+	 39 -> 30 ;
+38 [label="38:  BinaryOperatorStmt: EQ \n   n$30=*&stop:_Bool * [line 55]\n  n$31=*n$30:_Bool  [line 55]\n " shape="box"]
+	
+
+	 38 -> 39 ;
+	 38 -> 40 ;
+37 [label="37: + \n  " ]
+	
+
+	 37 -> 33 ;
+36 [label="36: Prune (false branch) \n   PRUNE(((n$27 < n$29) == 0), false); [line 51]\n " shape="invhouse"]
+	
+
+	 36 -> 30 ;
+35 [label="35: Prune (true branch) \n   PRUNE(((n$27 < n$29) != 0), true); [line 51]\n " shape="invhouse"]
+	
+
+	 35 -> 42 ;
+34 [label="34:  BinaryOperatorStmt: LT \n   n$27=*&idx:unsigned long  [line 51]\n  n$28=*&objects:class NSArray * [line 51]\n  n$29=_fun_NSArray_count(n$28:class NSArray *) [line 51]\n " shape="box"]
+	
+
+	 34 -> 35 ;
+	 34 -> 36 ;
+33 [label="33:  UnaryOperator \n   n$26=*&idx:unsigned long  [line 51]\n  *&idx:unsigned long =(n$26 + 1) [line 51]\n " shape="box"]
+	
+
+	 33 -> 31 ;
+32 [label="32:  DeclStmt \n   *&idx:unsigned long =0 [line 51]\n " shape="box"]
+	
+
+	 32 -> 31 ;
+31 [label="31: + \n  " ]
+	
+
+	 31 -> 34 ;
+30 [label="30:  Call _fun_free \n   n$25=*&stop:_Bool * [line 58]\n  _fun_free(n$25:void *) [line 58]\n " shape="box"]
+	
+
+	 30 -> 29 ;
+29 [label="29: Exit MyBlock_array_trans \n  " color=yellow style=filled]
+	
+
+28 [label="28: Start MyBlock_array_trans\nFormals:  self:class MyBlock *\nLocals:  idx:unsigned long  object:struct objc_object * stop:_Bool * enumerateObjectsUsingBlock:_fn_ (*) objects:class NSArray * a:class NSArray * \n   DECLARE_LOCALS(&return,&idx,&object,&stop,&enumerateObjectsUsingBlock,&objects,&a); [line 32]\n " color=yellow style=filled]
+	
+
+	 28 -> 54 ;
+27 [label="27:  DeclStmt \n   n$23=_fun___objc_alloc_no_fail(sizeof(class NSArray ):unsigned long ) [line 20]\n  n$24=_fun_NSArray_init(n$23:class NSArray *) virtual [line 20]\n  *&a:class NSArray *=n$24 [line 20]\n " shape="box"]
+	
+
+	 27 -> 26 ;
+26 [label="26:  DeclStmt \n   n$22=*&a:class NSArray * [line 21]\n  *&objects:class NSArray *=n$22 [line 21]\n " shape="box"]
+	
+
+	 26 -> 25 ;
+25 [label="25:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MyBlock_array______1); [line 21]\n  n$21=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MyBlock_array______1 ):unsigned long ) [line 21]\n  *&__objc_anonymous_block_MyBlock_array______1:class __objc_anonymous_block_MyBlock_array______1 =n$21 [line 21]\n  *&0$?%__sil_tmp__objc_anonymous_block_MyBlock_array______1n$0:_fn_ (*)=(_fun___objc_anonymous_block_MyBlock_array______1) [line 21]\n " shape="box"]
+	
+
+	 25 -> 17 ;
+24 [label="24:  BinaryOperatorStmt: Assign \n   n$20=*&stop:_Bool * [line 27]\n  *n$20:_Bool =1 [line 27]\n " shape="box"]
+	
+
+	 24 -> 20 ;
+23 [label="23: Prune (false branch) \n   n$19=*&ShouldStop:int  [line 26]\n  PRUNE((n$19 == 0), false); [line 26]\n " shape="invhouse"]
+	
+
+	 23 -> 20 ;
+22 [label="22: Prune (true branch) \n   n$19=*&ShouldStop:int  [line 26]\n  PRUNE((n$19 != 0), true); [line 26]\n " shape="invhouse"]
+	
+
+	 22 -> 24 ;
+21 [label="21:  between_join_and_exit \n  " shape="box"]
+	
+
+	 21 -> 19 ;
+20 [label="20: + \n  " ]
+	
+
+	 20 -> 21 ;
+19 [label="19: Exit __objc_anonymous_block_MyBlock_array______1 \n  " color=yellow style=filled]
+	
+
+18 [label="18: Start __objc_anonymous_block_MyBlock_array______1\nFormals:  object:struct objc_object * idx:unsigned long  stop:_Bool *\nLocals:  ShouldStop:int  \n   DECLARE_LOCALS(&return,&ShouldStop); [line 21]\n " color=yellow style=filled]
+	
+
+	 18 -> 22 ;
+	 18 -> 23 ;
+17 [label="17:  DeclStmt \n   n$18=_fun_malloc_no_fail(sizeof(signed char ):signed char ) [line 21]\n  *&stop:_Bool *=n$18 [line 21]\n " shape="box"]
+	
+
+	 17 -> 16 ;
+16 [label="16:  BinaryOperatorStmt: Assign \n   n$17=*&stop:_Bool * [line 21]\n  *n$17:void =0 [line 21]\n " shape="box"]
+	
+
+	 16 -> 5 ;
+15 [label="15:  DeclStmt \n   n$14=*&objects:class NSArray * [line 21]\n  n$15=*&idx:unsigned long  [line 21]\n  n$16=_fun_NSArray_objectAtIndexedSubscript:(n$14:class NSArray *,n$15:unsigned long ) virtual [line 21]\n  *&object:struct objc_object *=n$16 [line 21]\n " shape="box"]
+	
+
+	 15 -> 14 ;
+14 [label="14:  Call n$9 \n   n$9=*&0$?%__sil_tmp__objc_anonymous_block_MyBlock_array______1n$0:_fn_ (*) [line 21]\n  n$10=*&object:struct objc_object * [line 21]\n  n$11=*&idx:unsigned long  [line 21]\n  n$12=*&stop:_Bool * [line 21]\n  n$13=n$9(n$10:struct objc_object *,n$11:unsigned long ,n$12:_Bool *) [line 21]\n " shape="box"]
+	
+
+	 14 -> 11 ;
+13 [label="13: Prune (false branch) \n   n$8=*n$7:signed char  [line 21]\n  PRUNE((n$8 == 0), false); [line 21]\n " shape="invhouse"]
+	
+
+	 13 -> 10 ;
+12 [label="12: Prune (true branch) \n   n$8=*n$7:signed char  [line 21]\n  PRUNE((n$8 != 0), true); [line 21]\n " shape="invhouse"]
+	
+
+	 12 -> 3 ;
+11 [label="11:  UnaryOperator \n   n$7=*&stop:_Bool * [line 21]\n " shape="box"]
+	
+
+	 11 -> 12 ;
+	 11 -> 13 ;
+10 [label="10: + \n  " ]
+	
+
+	 10 -> 6 ;
+9 [label="9: Prune (false branch) \n   PRUNE(((n$4 < n$6) == 0), false); [line 21]\n " shape="invhouse"]
+	
+
+	 9 -> 3 ;
+8 [label="8: Prune (true branch) \n   PRUNE(((n$4 < n$6) != 0), true); [line 21]\n " shape="invhouse"]
+	
+
+	 8 -> 15 ;
+7 [label="7:  BinaryOperatorStmt: LT \n   n$4=*&idx:unsigned long  [line 21]\n  n$5=*&objects:class NSArray * [line 21]\n  n$6=_fun_NSArray_count(n$5:class NSArray *) virtual [line 21]\n " shape="box"]
+	
+
+	 7 -> 8 ;
+	 7 -> 9 ;
+6 [label="6:  UnaryOperator \n   n$3=*&idx:unsigned long  [line 21]\n  *&idx:unsigned long =(n$3 + 1) [line 21]\n " shape="box"]
+	
+
+	 6 -> 4 ;
+5 [label="5:  DeclStmt \n   *&idx:unsigned long =0 [line 21]\n " shape="box"]
+	
+
+	 5 -> 4 ;
+4 [label="4: + \n  " ]
+	
+
+	 4 -> 7 ;
+3 [label="3:  Call _fun_free \n   n$1=*&stop:_Bool * [line 21]\n  n$2=_fun_free(n$1:void *) [line 21]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit MyBlock_array \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start MyBlock_array\nFormals:  self:class MyBlock *\nLocals:  idx:unsigned long  object:struct objc_object * stop:_Bool * 0$?%__sil_tmp__objc_anonymous_block_MyBlock_array______1n$0:_fn_ (*) objects:class NSArray * a:class NSArray * \n   DECLARE_LOCALS(&return,&idx,&object,&stop,&0$?%__sil_tmp__objc_anonymous_block_MyBlock_array______1n$0,&objects,&a); [line 18]\n " color=yellow style=filled]
+	
+
+	 1 -> 27 ;
+}

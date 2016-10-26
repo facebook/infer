@@ -27,25 +27,15 @@ let protocol_decl type_ptr_to_sil_type tenv decl =
       (* Protocol_type_info contains the methods composing the protocol. *)
       (* Here we are giving a similar treatment as interfaces (see above)*)
       (* It may turn out that we need a more specific treatment for protocols*)
-      Printing.log_out "ADDING: ObjCProtocolDecl for '%s'\n" name;
+      Logging.out_debug "ADDING: ObjCProtocolDecl for '%s'\n" name;
       let mang_name = Mangled.from_string name in
       let protocol_name = Typename.TN_csu (Csu.Protocol, mang_name) in
       let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
-      Ast_utils.update_sil_types_map decl_key (Sil.Tvar protocol_name);
-      let def_methods = ObjcProperty_decl.get_methods curr_class decl_list in
-      let protocol_type_info =
-        {
-          Sil.instance_fields = [];
-          static_fields = [];
-          csu = Csu.Protocol;
-          struct_name = Some mang_name;
-          superclasses = [];
-          def_methods;
-          struct_annotations = [];
-        } in
-      Tenv.add tenv protocol_name protocol_type_info;
+      Ast_utils.update_sil_types_map decl_key (Typ.Tstruct protocol_name);
+      let methods = ObjcProperty_decl.get_methods curr_class decl_list in
+      ignore( Tenv.mk_struct tenv ~methods protocol_name );
       add_protocol_super type_ptr_to_sil_type tenv obj_c_protocol_decl_info;
-      Sil.Tvar protocol_name
+      Typ.Tstruct protocol_name
   | _ -> assert false
 
 let is_protocol decl =

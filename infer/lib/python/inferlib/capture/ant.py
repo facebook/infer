@@ -5,7 +5,6 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-import os
 import logging
 
 from . import util
@@ -17,6 +16,8 @@ ant [options] [target]
 
 Analysis examples:
 infer -- ant compile'''
+LANG = ['java']
+
 
 def gen_instance(*args):
     return AntCapture(*args)

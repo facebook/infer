@@ -9,9 +9,6 @@
 
 open! Utils
 
-(** get the path to the .inferconfig file *)
-val inferconfig : unit -> string
-
 (** Filter type for a source file *)
 type path_filter = DB.source_file -> bool
 
@@ -32,28 +29,16 @@ type filters =
 val do_not_filter : filters
 
 (** Create filters based on the config file *)
-val create_filters : analyzer -> filters
+val create_filters : Config.analyzer -> filters
 
-module type Matcher = sig
-  type matcher = DB.source_file -> Procname.t -> bool
-  val load_matcher : string -> matcher
-end
-
-module NeverReturnNull : Matcher
-
-module SkipTranslationMatcher : Matcher
-
-module SuppressWarningsMatcher : Matcher
-
-module ModeledExpensiveMatcher : sig
-  type matcher = (string -> bool) -> Procname.t -> bool
-  val load_matcher : string -> matcher
-end
+val never_return_null_matcher : DB.source_file -> Procname.t -> bool
+val suppress_warnings_matcher : DB.source_file -> Procname.t -> bool
+val skip_translation_matcher : DB.source_file -> Procname.t -> bool
+val modeled_expensive_matcher : (string -> bool) -> Procname.t -> bool
 
 (** Load the config file and list the files to report on *)
 val test: unit -> unit
 
-val skip_translation_headers : string list Lazy.t
-
-(* is_checker_enabled error_name is true if error_name is whitelisted in .inferconfig or if it's enabled by default *)
+(** is_checker_enabled [error_name] is [true] if [error_name] is whitelisted in .inferconfig or if
+    it's enabled by default *)
 val is_checker_enabled : string -> bool

@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-int m(int z) {
+int m1(int z) {
   int y = 0;
   int x = 5;
   if (z < 10) {
@@ -15,10 +15,24 @@ int m(int z) {
     if (x == 7)
       return x / y;
   }
-  if (x == 5)
+  if (x == 6)
     return x / y;
   else
     return 0;
+}
+
+int m2(int z) {
+    int y = 0;
+    int x = 5;
+    if (z < 10) {
+        int x = 7;
+        if (x == 6)
+            return x / y;
+    }
+    if (x == 5)
+        return x / y;
+    else
+        return 0;
 }
 
 int mm() {

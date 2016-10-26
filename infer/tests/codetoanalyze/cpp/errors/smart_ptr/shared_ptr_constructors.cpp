@@ -9,6 +9,8 @@
 
 #include <memory>
 
+namespace shared_ptr_constructors {
+
 struct Base {
   int* f1;
 };
@@ -94,4 +96,5 @@ void get_from_derived3_null_f1_deref() {
   std::shared_ptr<Base> p = getFromDerived3(&b);
   b.f1 = nullptr;
   int r = *(p->f1);
+}
 }

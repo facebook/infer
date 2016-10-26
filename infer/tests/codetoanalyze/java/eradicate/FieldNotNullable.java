@@ -357,6 +357,14 @@ class NestedFieldAccess {
       }
     }
 
+    void testMapContainsKeyInsideWhileLoop (java.util.Map<Integer, String> m) {
+      while (true) {
+        if (m.containsKey(3)) {
+          m.get(3).isEmpty();
+        }
+      }
+    }
+
     void testImmutableMapContainsKey (com.google.common.collect.ImmutableMap<Integer, String> m) {
       if (m.containsKey(3)) {
         m.get(3).isEmpty();

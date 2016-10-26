@@ -9,6 +9,8 @@
 
 #include <memory>
 
+namespace unique_ptr {
+
 struct X {
   int field;
   int get() { return field; }
@@ -29,9 +31,19 @@ int empty_ptr_deref() {
   return *x;
 }
 
+int empty_array_ptr_deref() {
+  std::unique_ptr<int[]> x;
+  return x[0];
+}
+
 int nullptr_ptr_deref() {
   std::unique_ptr<int> x(nullptr);
   return *x;
+}
+
+int nullptr_array_ptr_deref() {
+  std::unique_ptr<int[]> x(nullptr);
+  return x[2];
 }
 
 int empty_ptr_field_deref() {
@@ -106,4 +118,5 @@ int unique_ptr_move_null_deref() {
   std::unique_ptr<int> p1(new int);
   std::unique_ptr<int> p2 = std::move(p1);
   return *p1;
+}
 }

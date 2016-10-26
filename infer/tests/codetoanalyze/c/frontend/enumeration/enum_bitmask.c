@@ -13,6 +13,6 @@ typedef enum MyOption {
 };
 
 int main() {
-  MyOption option1 = MyOption1;
-  MyOption option2 = MyOption2;
+  enum MyOption option1 = MyOption1;
+  enum MyOption option2 = MyOption2;
 }

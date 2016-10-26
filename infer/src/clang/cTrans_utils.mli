@@ -26,26 +26,27 @@ type trans_state = {
   succ_nodes: Cfg.Node.t list;
   continuation: continuation option;
   priority: priority_node;
-  var_exp_typ: (Sil.exp * Sil.typ) option;
-  opaque_exp: (Sil.exp * Sil.typ) option;
-  obj_bridged_cast_typ : Sil.typ option
+  var_exp_typ: (Exp.t * Typ.t) option;
+  opaque_exp: (Exp.t * Typ.t) option;
+  obj_bridged_cast_typ : Typ.t option
 }
 
 type trans_result = {
   root_nodes: Cfg.Node.t list;
   leaf_nodes: Cfg.Node.t list;
-  ids: Ident.t list;
   instrs: Sil.instr list;
-  exps: (Sil.exp * Sil.typ) list;
-  initd_exps: Sil.exp list;
+  exps: (Exp.t * Typ.t) list;
+  initd_exps: Exp.t list;
   is_cpp_call_virtual : bool;
 }
 
 val empty_res_trans: trans_result
 
+val undefined_expression: unit -> Exp.t
+
 val collect_res_trans : Cfg.cfg -> trans_result list -> trans_result
 
-val extract_var_exp_or_fail : trans_state -> Sil.exp * Sil.typ
+val extract_var_exp_or_fail : trans_state -> Exp.t * Typ.t
 
 val is_return_temp: continuation option -> bool
 
@@ -57,15 +58,15 @@ val mk_cond_continuation : continuation option -> continuation option
 
 val extract_item_from_singleton : 'a list -> string -> 'a -> 'a
 
-val extract_exp_from_list : (Sil.exp * Sil.typ) list -> string -> (Sil.exp * Sil.typ)
+val extract_exp_from_list : (Exp.t * Typ.t) list -> string -> (Exp.t * Typ.t)
 
-val fix_param_exps_mismatch : 'a list -> (Sil.exp * Sil.typ) list -> (Sil.exp * Sil.typ)list
+val fix_param_exps_mismatch : 'a list -> (Exp.t * Typ.t) list -> (Exp.t * Typ.t)list
 
 val get_selector_receiver : Clang_ast_t.obj_c_message_expr_info -> string * Clang_ast_t.receiver_kind
 
 val define_condition_side_effects :
-  (Sil.exp * Sil.typ) list -> Sil.instr list -> Location.t ->
-  (Sil.exp * Sil.typ) list * Sil.instr list
+  (Exp.t * Typ.t) list -> Sil.instr list -> Location.t ->
+  (Exp.t * Typ.t) list * Sil.instr list
 
 val extract_stmt_from_singleton : Clang_ast_t.stmt list -> string -> Clang_ast_t.stmt
 
@@ -77,17 +78,15 @@ val is_member_exp : Clang_ast_t.stmt -> bool
 
 val get_type_from_exp_stmt : Clang_ast_t.stmt -> Clang_ast_t.type_ptr
 
-(** Given trans_result with ONE expression, create temporary variable with *)
-(** dereferenced value of an expression assigned to it *)
+(** Given trans_result with ONE expression, create temporary variable with dereferenced value of an
+    expression assigned to it *)
 val dereference_value_from_result : Location.t -> trans_result -> strip_pointer:bool -> trans_result
 
 val cast_operation :
-  trans_state -> Clang_ast_t.cast_kind -> (Sil.exp * Sil.typ) list -> Sil.typ -> Location.t ->
-  bool -> Ident.t list * Sil.instr list * (Sil.exp * Sil.typ)
+  trans_state -> Clang_ast_t.cast_kind -> (Exp.t * Typ.t) list -> Typ.t -> Location.t ->
+  bool -> Sil.instr list * (Exp.t * Typ.t)
 
-val trans_assertion_failure : Location.t -> CContext.t -> trans_result
-
-val trans_assume_false : Location.t -> CContext.t -> Cfg.Node.t list ->  trans_result
+val trans_assertion: trans_state -> Location.t ->  trans_result
 
 val is_owning_method : Clang_ast_t.stmt -> bool
 
@@ -100,22 +99,24 @@ val contains_opaque_value_expr : Clang_ast_t.stmt -> bool
 val get_decl_ref_info : Clang_ast_t.stmt -> Clang_ast_t.decl_ref
 
 val builtin_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
-  Sil.typ -> Procname.t option -> trans_result option
+  Typ.t -> trans_result list -> Procname.t -> trans_result option
+
+val cxx_method_builtin_trans : trans_state -> Location.t -> trans_result list ->
+  Procname.t -> trans_result option
 
 val alloc_trans :
-  trans_state -> Location.t -> Clang_ast_t.stmt_info -> Sil.typ -> bool ->
+  trans_state -> Location.t -> Clang_ast_t.stmt_info -> Typ.t -> bool ->
   Procname.t option -> trans_result
 
 val new_or_alloc_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
   Clang_ast_t.type_ptr -> string option -> string -> trans_result
 
-val cpp_new_trans : trans_state -> Location.t -> Sil.typ -> Sil.exp option -> trans_result
+val cpp_new_trans : Location.t -> Typ.t -> Exp.t option -> trans_result
 
 val cast_trans :
-  CContext.t -> (Sil.exp * Sil.typ) list -> Location.t -> Procname.t option -> Sil.typ ->
-  (Ident.t * Sil.instr * Sil.exp) option
+  (Exp.t * Typ.t) list -> Location.t -> Typ.t -> Procname.t -> (Sil.instr * Exp.t) option
 
-val dereference_var_sil : Sil.exp * Sil.typ -> Location.t -> Ident.t list * Sil.instr list * Sil.exp
+val dereference_var_sil : Exp.t * Typ.t -> Location.t -> Sil.instr list * Exp.t
 
 (** Module for creating cfg nodes and other utility functions related to them.  *)
 module Nodes :
@@ -124,14 +125,13 @@ sig
 
   val need_unary_op_node : Clang_ast_t.unary_operator_info -> bool
 
-  val create_node : Cfg.Node.nodekind -> Ident.t list -> Sil.instr list ->
-    Location.t -> CContext.t -> Cfg.Node.t
+  val create_node : Cfg.Node.nodekind -> Sil.instr list -> Location.t -> CContext.t -> Cfg.Node.t
 
   val is_join_node : Cfg.Node.t -> bool
 
   val create_prune_node :
-    bool -> (Sil.exp * Sil.typ) list -> Ident.t list -> Sil.instr list -> Location.t ->
-    Sil.if_kind -> CContext.t -> Cfg.Node.t
+    bool -> (Exp.t * Typ.t) list -> Sil.instr list -> Location.t -> Sil.if_kind ->
+    CContext.t -> Cfg.Node.t
 
   val is_prune_node : Cfg.Node.t -> bool
 
@@ -141,18 +141,15 @@ sig
 
 end
 
-(** priority_node is used to enforce some kind of policy for creating nodes *)
-(** in the cfg. Certain elements of the AST _must_ create nodes therefore   *)
-(** there is no need for them to use priority_node. Certain elements        *)
-(** instead need or need not to create a node depending of certain factors. *)
-(** When an element of the latter kind wants to create a node it must claim *)
-(** priority first (like taking a lock). priority can be claimes only when  *)
-(** it is free. If an element of AST succedes in claiming priority its id   *)
-(** (pointer) is recorded in priority. After an element has finished it     *)
-(** frees the priority. In general an AST element E checks if an ancestor   *)
-(** has claimed priority. If priority is already claimed E does not have to *)
-(** create a node. If priority is free then it means E has to create the    *)
-(** node. Then E claims priority and release it afterward.                  *)
+(** priority_node is used to enforce some kind of policy for creating nodes in the cfg. Certain
+    elements of the AST _must_ create nodes therefore there is no need for them to use
+    priority_node. Certain elements instead need or need not to create a node depending of certain
+    factors.  When an element of the latter kind wants to create a node it must claim priority first
+    (like taking a lock). priority can be claimes only when it is free. If an element of AST
+    succedes in claiming priority its id (pointer) is recorded in priority. After an element has
+    finished it frees the priority. In general an AST element E checks if an ancestor has claimed
+    priority. If priority is already claimed E does not have to create a node. If priority is free
+    then it means E has to create the node. Then E claims priority and release it afterward. *)
 module PriorityNode :
 sig
 
@@ -199,8 +196,8 @@ sig
 
 end
 
-(** This module handles the translation of the variable self which is challenging because self *)
-(** is used both as a variable in instance method calls and also as a type in class method calls. *)
+(** This module handles the translation of the variable self which is challenging because self is
+    used both as a variable in instance method calls and also as a type in class method calls. *)
 module Self :
 sig
 
@@ -220,5 +217,5 @@ val is_dispatch_function : Clang_ast_t.stmt list -> int option
 
 val is_block_enumerate_function : Clang_ast_t.obj_c_message_expr_info -> bool
 
-val var_or_zero_in_init_list : Tenv.t -> Sil.exp -> Sil.typ -> return_zero:bool ->
-  (Sil.exp * Sil.typ) list
+val var_or_zero_in_init_list : Tenv.t -> Exp.t -> Typ.t -> return_zero:bool ->
+  (Exp.t * Typ.t) list

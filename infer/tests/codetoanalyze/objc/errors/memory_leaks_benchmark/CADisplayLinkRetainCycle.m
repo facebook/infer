@@ -10,14 +10,14 @@
 #import <Foundation/Foundation.h>
 #import <QuartzCore/QuartzCore.h>
 
-@interface A : NSObject
+@interface CADisplay : NSObject
 @property(nonatomic, strong) CADisplayLink* displayLink;
 
 - (void)bla;
 - (void)invalidate;
 @end
 
-@implementation A
+@implementation CADisplay
 
 - init {
   _displayLink =
@@ -41,13 +41,13 @@
 
 void testCycle() {
 
-  A* a = [[A alloc] init];
-  A* b = a;
+  CADisplay* a = [[CADisplay alloc] init];
+  CADisplay* b = a;
 }
 
 void testNoCycle() {
 
-  A* a = [[A alloc] init];
+  CADisplay* a = [[CADisplay alloc] init];
   [a invalidate]; // break the cycle
   [a dealloc];
 }

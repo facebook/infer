@@ -88,8 +88,8 @@ let origin_is_fun_library ta = match get_origin ta with
       proc_origin.TypeOrigin.is_library
   | _ -> false
 
-let descr_origin ta : TypeErr.origin_descr =
-  let descr_opt = TypeOrigin.get_description ta.origin in
+let descr_origin tenv ta : TypeErr.origin_descr =
+  let descr_opt = TypeOrigin.get_description tenv ta.origin in
   match descr_opt with
   | None -> ("", None, None)
   | Some (str, loc_opt, sig_opt) -> ("(Origin: " ^ str ^ ")", loc_opt, sig_opt)

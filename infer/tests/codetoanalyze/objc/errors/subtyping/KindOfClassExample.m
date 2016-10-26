@@ -17,6 +17,10 @@
 
 @implementation Base
 
+- init {
+  return self;
+}
+
 + (int)returnsZero1:(Base*)b {
   if ([b isKindOfClass:[self class]]) {
     return 0;
@@ -32,6 +36,10 @@
 @end
 
 @implementation Derived
+
+- init {
+  return self;
+}
 
 @end
 

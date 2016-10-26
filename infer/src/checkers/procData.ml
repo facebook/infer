@@ -9,6 +9,14 @@
 
 open! Utils
 
-type t = { pdesc : Cfg.Procdesc.t; tenv : Tenv.t }
+type 'a t = { pdesc : Cfg.Procdesc.t; tenv : Tenv.t; extras : 'a; }
 
-let make pdesc tenv = { pdesc; tenv }
+type no_extras = unit
+
+let empty_extras = ()
+
+let make pdesc tenv extras =
+  { pdesc; tenv; extras; }
+
+let make_default pdesc tenv =
+  make pdesc tenv empty_extras

@@ -14,41 +14,31 @@ open! Utils
 open CFrontend_utils
 module L = Logging
 
-let get_name_from_struct s =
-  match s with
-  | Sil.Tstruct { Sil.struct_name = Some n } -> n
-  | _ -> assert false
-
 let add_pointer_to_typ typ =
-  Sil.Tptr(typ, Sil.Pk_pointer)
+  Typ.Tptr(typ, Typ.Pk_pointer)
 
 let remove_pointer_to_typ typ =
   match typ with
-  | Sil.Tptr(typ, Sil.Pk_pointer) -> typ
+  | Typ.Tptr(typ, Typ.Pk_pointer) -> typ
   | _ -> typ
 
 let classname_of_type typ =
   match typ with
-  | Sil.Tvar (Typename.TN_csu (_, name) )
-  | Sil.Tstruct { Sil.struct_name =  Some name }
-  | Sil.Tvar (Typename.TN_typedef name) -> Mangled.to_string name
-  | Sil.Tfun _ -> CFrontend_config.objc_object
+  | Typ.Tstruct name -> Typename.name name
+  | Typ.Tfun _ -> CFrontend_config.objc_object
   | _ ->
-      Printing.log_out
-        "Classname of type cannot be extracted in type %s" (Sil.typ_to_string typ);
+      Logging.out_debug
+        "Classname of type cannot be extracted in type %s" (Typ.to_string typ);
       "undefined"
 
 let mk_classname n ck = Typename.TN_csu (Csu.Class ck, Mangled.from_string n)
 
 let mk_structname n = Typename.TN_csu (Csu.Struct, Mangled.from_string n)
 
-let mk_enumname n = Typename.TN_enum (Mangled.from_string n)
-
 let is_class typ =
   match typ with
-  | Sil.Tptr (Sil.Tstruct { Sil.struct_name = Some name }, _)
-  | Sil.Tptr (Sil.Tvar (Typename.TN_csu (_, name) ), _) ->
-      (Mangled.to_string name) = CFrontend_config.objc_class
+  | Typ.Tptr (Tstruct ((TN_csu _) as name), _) ->
+      string_equal (Typename.name name) CFrontend_config.objc_class
   | _ -> false
 
 let rec return_type_of_function_type_ptr type_ptr =
@@ -60,11 +50,11 @@ let rec return_type_of_function_type_ptr type_ptr =
   | Some BlockPointerType (_, in_type_ptr) ->
       return_type_of_function_type_ptr in_type_ptr
   | Some _ ->
-      Printing.log_err "Warning: Type pointer %s is not a function type."
+      Logging.err_debug "Warning: Type pointer %s is not a function type."
         (Clang_ast_types.type_ptr_to_string type_ptr);
       `ErrorType
   | None ->
-      Printing.log_err "Warning: Type pointer %s not found."
+      Logging.err_debug "Warning: Type pointer %s not found."
         (Clang_ast_types.type_ptr_to_string type_ptr);
       `ErrorType
 
@@ -83,21 +73,6 @@ let is_reference_type tp =
   | Some Clang_ast_t.RValueReferenceType _ -> true
   | _ -> false
 
-(* Expand a named type Tvar if it has a definition in tenv. This is used for Tenum, Tstruct, etc. *)
-let rec expand_structured_type tenv typ =
-  match typ with
-  | Sil.Tvar tn ->
-      (match Tenv.lookup tenv tn with
-       | Some ts ->
-           let t = Sil.Tstruct ts in
-           Printing.log_out "   Type expanded with type '%s' found in tenv@." (Sil.typ_to_string t);
-           if Sil.typ_equal t typ then
-             typ
-           else expand_structured_type tenv t
-       | None -> typ)
-  | Sil.Tptr _ -> typ (*do not expand types under pointers *)
-  | _ -> typ
-
 (* To be called with strings of format "<pointer_type_info>*<class_name>" *)
 let get_name_from_type_pointer custom_type_pointer =
   match Str.split (Str.regexp "*") custom_type_pointer with
@@ -108,10 +83,10 @@ let get_name_from_type_pointer custom_type_pointer =
 let rec get_type_list nn ll =
   match ll with
   | [] -> []
-  | (n, t):: ll' -> (* Printing.log_out ">>>>>Searching for type '%s'. Seen '%s'.@." nn n; *)
+  | (n, t):: ll' -> (* Logging.out_debug ">>>>>Searching for type '%s'. Seen '%s'.@." nn n; *)
       if n = nn then (
-        Printing.log_out ">>>>>>>>>>>>>>>>>>>>>>>NOW Found, Its type is: '%s'@."
-          (Sil.typ_to_string t);
+        Logging.out_debug ">>>>>>>>>>>>>>>>>>>>>>>NOW Found, Its type is: '%s'@."
+          (Typ.to_string t);
         [t]
       ) else get_type_list nn ll'
 *)

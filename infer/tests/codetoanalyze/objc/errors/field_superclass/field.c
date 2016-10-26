@@ -9,7 +9,7 @@
 
 #include "B.h"
 
-int main() {
+int field_superclass_main() {
   B* b = [B alloc];
   b->x = 5;
   b->a = b; // create cycle --> leak

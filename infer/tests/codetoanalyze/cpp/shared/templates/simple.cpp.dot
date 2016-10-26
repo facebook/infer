@@ -1,0 +1,33 @@
+/* @generated */
+digraph iCFG {
+8 [label="8:  BinaryOperatorStmt: Assign \n   n$2=*&v:class X & [line 25]\n  *n$2.field:int =0 [line 25]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7:  Return Stmt \n   n$0=*&v:class X & [line 26]\n  n$1=*n$0.field:int  [line 26]\n  *&return:int =(1 / n$1) [line 26]\n " shape="box"]
+	
+
+	 7 -> 6 ;
+6 [label="6: Exit div0_struct_field \n  " color=yellow style=filled]
+	
+
+5 [label="5: Start div0_struct_field\nFormals:  v:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+	
+
+	 5 -> 8 ;
+4 [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&v:class Container<int> & [line 20]\n  *n$2.field:int =0 [line 20]\n " shape="box"]
+	
+
+	 4 -> 3 ;
+3 [label="3:  Return Stmt \n   n$0=*&v:class Container<int> & [line 21]\n  n$1=*n$0.field:int  [line 21]\n  *&return:int =(1 / n$1) [line 21]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit div0_template_field \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start div0_template_field\nFormals:  v:class Container<int> &\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
+	
+
+	 1 -> 4 ;
+}

@@ -34,14 +34,14 @@ let cluster_should_be_analyzed cluster =
     let modified =
       DB.file_was_updated_after_start (DB.filename_from_string fname) in
     if modified &&
-       !Config.developer_mode
+       Config.developer_mode
     then L.stdout "Modified: %s@." fname;
     modified in
   begin
     match in_ondemand_config with
     | Some b -> (* ondemand config file is specified *)
         b
-    | None when !Config.reactive_mode  ->
+    | None when Config.reactive_mode  ->
         check_modified ()
     | None ->
         true
@@ -53,7 +53,7 @@ let pp_prolog fmt clusters =
     Sys.executable_name
     (Escape.escape_map
        (fun c -> if c = '#' then Some "\\#" else None)
-       !Config.results_dir);
+       Config.results_dir);
   F.fprintf fmt "CLUSTERS=";
 
   IList.iteri
@@ -64,7 +64,7 @@ let pp_prolog fmt clusters =
 
   F.fprintf fmt "@.@.default: test@.@.all: test@.@.";
   F.fprintf fmt "test: $(CLUSTERS)@.";
-  if !Config.show_progress_bar then F.fprintf fmt "\techo \"\"@."
+  if Config.show_progress_bar then F.fprintf fmt "\techo \"\"@."
 
 let pp_epilog fmt () =
   F.fprintf fmt "@.clean:@.\trm -f $(CLUSTERS)@."

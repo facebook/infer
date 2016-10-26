@@ -9,7 +9,7 @@
 
 package java.lang.reflect;
 
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 
 public final class Array {
 

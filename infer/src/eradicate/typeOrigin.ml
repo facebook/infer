@@ -77,7 +77,7 @@ let to_string = function
   | ONone -> "ONone"
   | Undef -> "Undef"
 
-let get_description origin =
+let get_description tenv origin =
   let atline loc =
     " at line " ^ (string_of_int loc.Location.line) in
   match origin with
@@ -88,10 +88,10 @@ let get_description origin =
   | Formal s ->
       Some ("method parameter " ^ Mangled.to_string s, None, None)
   | Proc po ->
-      let strict = match TypeErr.Strict.signature_get_strict po.annotated_signature with
+      let strict = match TypeErr.Strict.signature_get_strict tenv po.annotated_signature with
         | Some ann ->
             let str = "@Strict" in
-            (match ann.Sil.parameters with
+            (match ann.Annot.parameters with
              | par1 :: _ -> Printf.sprintf "%s(%s) " str par1
              | [] -> Printf.sprintf "%s " str)
         | None -> "" in

@@ -1,0 +1,34 @@
+Ocamldot generates program dependency graphs for ocaml programs.
+
+The dependency graph output by ocamldot can be rendered by a separate
+program, dot.  Dot is freely available from
+
+  http://www.research.att.com/sw/tools/graphviz/
+
+Ocamldot is designed to process the output of ocamldep.  A typical use
+would be
+
+  ocamldep *.ml | ocamldot > dep.dot
+
+or
+
+  ocamldep *.ml > .depend
+  ocamldot .depend > dep.dot
+
+This will output a dot graph into the file dep.dot.  You can then use
+the program dotty to view, edit, and print the graph.
+
+Ocamldot has the following options:
+
+  -fullgraph   draw the full graph (default is to draw only the kernel)
+  -landscape   output in landscape format (default is portrait)
+  -lr          draw graph from left to right (default is top to bottom)
+  -r <r>       use <r> as a root in the graph; nodes reachable from <r>
+               will be shown
+
+(The transitive kernel of a dag is the smallest subset of the dag
+whose transitive closure is the same as the transitive closure of the
+dag.  For example, the kernel of A->B, A->C, B->C is just the two
+edges A->B, B->C.)
+
+-Trevor Jim

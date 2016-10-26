@@ -1,0 +1,40 @@
+/* @generated */
+digraph iCFG {
+10 [label="10:  Call _fun_A_method \n   n$0=*&a_ptr:class A * [line 25]\n  _=*n$0:class A  [line 25]\n  n$2=_fun_A_method(n$0:class A *) [line 25]\n " shape="box"]
+	
+
+	 10 -> 9 ;
+9 [label="9: Exit test \n  " color=yellow style=filled]
+	
+
+8 [label="8: Start test\nFormals: \nLocals:  a_ptr:class A * \n   DECLARE_LOCALS(&return,&a_ptr); [line 23]\n " color=yellow style=filled]
+	
+
+	 8 -> 10 ;
+7 [label="7:  Call _fun_A_init \n   n$2=*&this:class A * [line 19]\n  _=*n$2:class A  [line 19]\n  _fun_A_init(n$2:class A *,10:int ) [line 19]\n " shape="box"]
+	
+
+	 7 -> 6 ;
+6 [label="6:  Return Stmt \n   n$0=*&this:class A * [line 20]\n  n$1=*n$0.field:int  [line 20]\n  *&return:int =n$1 [line 20]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit A_method \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start A_method\nFormals:  this:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+	
+
+	 4 -> 7 ;
+3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class A * [line 14]\n  n$1=*&val:int  [line 14]\n  *n$0.field:int =n$1 [line 14]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit A_init \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start A_init\nFormals:  this:class A * val:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

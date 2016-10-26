@@ -45,6 +45,7 @@ ERROR = RED
 HEADER = BRIGHT
 SUCCESS = BLUE_BG + WHITE + BRIGHT
 WARNING = ''
+ADVICE = ''
 
 
 class Invalid_mode(Exception):
@@ -55,7 +56,11 @@ def syntax_highlighting(source_name, mode, s):
     if pygments is None or mode == PLAIN_FORMATTER:
         return s
 
-    lexer = pygments.lexers.get_lexer_for_filename(source_name)
+    try:
+        lexer = pygments.lexers.get_lexer_for_filename(source_name)
+    except pygments.lexers.ClassNotFound:
+        return s
+
     formatter = None
     if mode == TERMINAL_FORMATTER:
         if not sys.stdout.isatty():

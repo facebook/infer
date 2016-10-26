@@ -1,0 +1,58 @@
+/* @generated */
+digraph iCFG {
+15 [label="15:  Message Call: getX \n   n$1=*&self:class MyClass * [line 37]\n  n$2=_fun_MyClass_getX(n$1:class MyClass *) virtual [line 37]\n " shape="box"]
+	
+
+	 15 -> 14 ;
+14 [label="14: Exit MyClass_anInstanceMethod2 \n  " color=yellow style=filled]
+	
+
+13 [label="13: Start MyClass_anInstanceMethod2\nFormals:  self:class MyClass *\nLocals:  \n   DECLARE_LOCALS(&return); [line 36]\n " color=yellow style=filled]
+	
+
+	 13 -> 15 ;
+12 [label="12:  Return Stmt \n   *&return:int =0 [line 33]\n " shape="box"]
+	
+
+	 12 -> 11 ;
+11 [label="11: Exit MyClass_getX \n  " color=yellow style=filled]
+	
+
+10 [label="10: Start MyClass_getX\nFormals:  self:class MyClass *\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
+	
+
+	 10 -> 12 ;
+9 [label="9:  Message Call: aClassMethod \n   _fun_MyClass_aClassMethod() [line 29]\n " shape="box"]
+	
+
+	 9 -> 8 ;
+8 [label="8: Exit MyClass_aClassMethod2 \n  " color=yellow style=filled]
+	
+
+7 [label="7: Start MyClass_aClassMethod2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n " color=yellow style=filled]
+	
+
+	 7 -> 9 ;
+6 [label="6:  Message Call: aClassMethod \n   _fun_MyClass_aClassMethod() [line 25]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit MyClass_anInstanceMethod \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start MyClass_anInstanceMethod\nFormals:  self:class MyClass *\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+	
+
+	 4 -> 6 ;
+3 [label="3:  DeclStmt \n   n$0=_fun___objc_alloc_no_fail(sizeof(class MyClass ):unsigned long ) [line 21]\n  *&myClass:class MyClass *=n$0 [line 21]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit MyClass_aClassMethod \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start MyClass_aClassMethod\nFormals: \nLocals:  myClass:class MyClass * \n   DECLARE_LOCALS(&return,&myClass); [line 20]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

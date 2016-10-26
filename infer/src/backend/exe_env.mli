@@ -26,7 +26,7 @@ val create : unit -> initial
 
 (** add call graph from the source dir in the spec db,
     with relative tenv and cfg, to the execution environment *)
-val add_cg : initial -> DB.source_dir -> Cg.t option
+val add_cg : initial -> DB.source_dir -> unit
 
 (** get the global call graph *)
 val get_cg : t -> Cg.t
@@ -35,7 +35,7 @@ val get_cg : t -> Cg.t
 val get_source : t -> Procname.t -> DB.source_file option
 
 (** return the type environment associated to the procedure *)
-val get_tenv : t -> Procname.t -> Tenv.t
+val get_tenv : ?create:bool -> t -> Procname.t -> Tenv.t
 
 (** return the cfg associated to the procedure *)
 val get_cfg : t -> Procname.t -> Cfg.cfg option

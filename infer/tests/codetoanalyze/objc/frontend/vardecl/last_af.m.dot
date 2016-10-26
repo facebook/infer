@@ -1,0 +1,18 @@
+/* @generated */
+digraph iCFG {
+4 [label="4:  DeclStmt \n   *&a:int =0 [line 10]\n " shape="box"]
+	
+
+	 4 -> 3 ;
+3 [label="3:  DeclStmt \n   n$0=*&a:int  [line 10]\n  *&b:int =(n$0 + 2) [line 10]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit main \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start main\nFormals: \nLocals:  b:int  a:int  \n   DECLARE_LOCALS(&return,&b,&a); [line 10]\n " color=yellow style=filled]
+	
+
+	 1 -> 4 ;
+}

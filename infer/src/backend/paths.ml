@@ -30,10 +30,10 @@ module Path : sig
   val contains : t -> t -> bool
 
   (** check wether the path contains the given position *)
-  val contains_position : t -> Sil.path_pos -> bool
+  val contains_position : t -> PredSymb.path_pos -> bool
 
   (** Create the location trace of the path, up to the path position if specified *)
-  val create_loc_trace : t -> Sil.path_pos option -> Errlog.loc_trace
+  val create_loc_trace : t -> PredSymb.path_pos option -> Errlog.loc_trace
 
   (** return the current node of the path *)
   val curr_node : t -> Cfg.node option
@@ -57,7 +57,7 @@ module Path : sig
       Do not iterate past the given position.
       [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] *)
   val iter_longest_sequence :
-    (int -> t -> int -> Typename.t option -> unit) -> Sil.path_pos option -> t -> unit
+    (int -> t -> int -> Typename.t option -> unit) -> PredSymb.path_pos option -> t -> unit
 
   (** join two paths *)
   val join : t -> t -> t
@@ -167,22 +167,23 @@ end = struct
     if include_subtrace then Pcall(p, pname, p_sub, get_dummy_stats ())
     else p
 
-  module Invariant = (** functions in this module either do not assume, or do not re-establish, the invariant on dummy stats *)
-  struct
+  (** functions in this module either do not assume, or do not re-establish, the invariant on dummy
+      stats *)
+  module Invariant = struct
     (** check whether a stats is the dummy stats *)
     let stats_is_dummy stats =
       stats.max_length == - 1
 
-    (** return the stats of the path *)
-    (** assumes that the stats are computed *)
+    (** return the stats of the path, assumes that the stats are computed *)
     let get_stats = function
       | Pstart (_, stats) -> stats
       | Pnode (_, _, _, _, stats, _) -> stats
       | Pjoin (_, _, stats) -> stats
       | Pcall (_, _, _, stats) -> stats
 
-    (** restore the invariant that all the stats are dummy, so the path is ready for another traversal *)
-    (** assumes that the stats are computed beforehand, and ensures that the invariant holds afterwards *)
+    (** restore the invariant that all the stats are dummy, so the path is ready for another
+        traversal assumes that the stats are computed beforehand, and ensures that the invariant
+        holds afterwards *)
     let rec reset_stats = function
       | Pstart (_, stats) ->
           if not (stats_is_dummy stats) then set_dummy_stats stats
@@ -207,12 +208,13 @@ end = struct
               set_dummy_stats stats
             end
 
-    (** Iterate [f] over the path and compute the stats, assuming the invariant: all the stats are dummy. *)
-    (** Function [f] (typically with side-effects) is applied once to every node, and max_length in the stats
-        is the length of a longest sequence of nodes in the path where [f] returned [true] on at least one node.
-        max_length is 0 if the path was visited but no node satisfying [f] was found. *)
-    (** Assumes that the invariant holds beforehand, and ensures that all the stats are computed afterwards. *)
-    (** Since this breaks the invariant, it must be followed by reset_stats. *)
+    (** Iterate [f] over the path and compute the stats, assuming the invariant: all the stats are
+        dummy.  Function [f] (typically with side-effects) is applied once to every node, and
+        max_length in the stats is the length of a longest sequence of nodes in the path where [f]
+        returned [true] on at least one node.  max_length is 0 if the path was visited but no node
+        satisfying [f] was found.  Assumes that the invariant holds beforehand, and ensures that all
+        the stats are computed afterwards.  Since this breaks the invariant, it must be followed by
+        reset_stats. *)
     let rec compute_stats do_calls (f : Cfg.Node.t -> bool) =
       let nodes_found stats = stats.max_length > 0 in
       function
@@ -276,7 +278,7 @@ end = struct
   let contains_position path pos =
     let found = ref false in
     let f node =
-      if Sil.path_pos_equal (get_path_pos node) pos then found := true;
+      if PredSymb.path_pos_equal (get_path_pos node) pos then found := true;
       true in
     Invariant.compute_stats true f path;
     Invariant.reset_stats path;
@@ -290,7 +292,8 @@ end = struct
     let rec doit level session path prev_exn_opt = match path with
       | Pstart _ -> f level path session prev_exn_opt
       | Pnode (_, exn_opt, session', p, _, _) ->
-          let next_exn_opt = if prev_exn_opt <> None then None else exn_opt in (* no two consecutive exceptions *)
+          (* no two consecutive exceptions *)
+          let next_exn_opt = if prev_exn_opt <> None then None else exn_opt in
           doit level (session' :> int) p next_exn_opt;
           f level path session prev_exn_opt
       | Pjoin (p1, p2, _) ->
@@ -311,10 +314,10 @@ end = struct
       [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] and possible exception [exn_opt] *)
   let iter_longest_sequence
       (f : int -> t -> int -> Typename.t option -> unit)
-      (pos_opt : Sil.path_pos option) (path: t) : unit =
+      (pos_opt : PredSymb.path_pos option) (path: t) : unit =
     let filter node = match pos_opt with
       | None -> true
-      | Some pos -> Sil.path_pos_equal (get_path_pos node) pos in
+      | Some pos -> PredSymb.path_pos_equal (get_path_pos node) pos in
     let path_pos_at_path p =
       try
         match curr_node p with
@@ -451,8 +454,7 @@ end = struct
             let curr_loc = Cfg.Node.get_loc curr_node in
             match Cfg.Node.get_kind curr_node with
             | Cfg.Node.Join_node -> () (* omit join nodes from error traces *)
-            | Cfg.Node.Start_node pdesc ->
-                let pname = Cfg.Procdesc.get_proc_name pdesc in
+            | Cfg.Node.Start_node pname ->
                 let name = Procname.to_string pname in
                 let name_id = Procname.to_filename pname in
                 let descr = "start of procedure " ^ (Procname.to_simplified_string pname) in
@@ -477,8 +479,7 @@ end = struct
                   [(Io_infer.Xml.tag_kind,"condition");
                    (Io_infer.Xml.tag_branch, if is_true_branch then "true" else "false")] in
                 trace := mk_trace_elem level curr_loc descr node_tags :: !trace
-            | Cfg.Node.Exit_node pdesc ->
-                let pname = Cfg.Procdesc.get_proc_name pdesc in
+            | Cfg.Node.Exit_node pname ->
                 let descr = "return from a call to " ^ (Procname.to_string pname) in
                 let name = Procname.to_string pname in
                 let name_id = Procname.to_filename pname in
@@ -587,7 +588,7 @@ module PathSet : sig
   val to_proplist : t -> Prop.normal Prop.t list
 
   (** convert to a set of props *)
-  val to_propset : t -> Propset.t
+  val to_propset : Tenv.t -> t -> Propset.t
 
   (** union of two pathsets *)
   val union : t -> t -> t
@@ -607,8 +608,8 @@ end = struct
   let to_proplist ps =
     IList.map fst (elements ps)
 
-  let to_propset ps =
-    Propset.from_proplist (to_proplist ps)
+  let to_propset tenv ps =
+    Propset.from_proplist tenv (to_proplist ps)
 
   let filter f ps =
     let elements = ref [] in
@@ -705,4 +706,3 @@ end = struct
     IList.fold_left (fun ps (p, pa) -> add_renamed_prop p pa ps) empty pl
 end
 (* =============== END of the PathSet module ===============*)
-

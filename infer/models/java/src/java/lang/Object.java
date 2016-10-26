@@ -9,13 +9,13 @@
 
 package java.lang;
 
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 
 public class Object {
 
     public Class getClass() {
         Class c = new Class();
-        c.name = InferUndefined.string_undefined();
+        c.name = (String)InferUndefined.object_undefined();
         return c;
     }
 

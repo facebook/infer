@@ -11,7 +11,7 @@ package codetoanalyze.java.tracing;
 
 public class ReportOnMainExample {
 
-  T t;
+  T2 t;
 
   native boolean test();
 

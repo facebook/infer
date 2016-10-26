@@ -1,0 +1,97 @@
+/* @generated */
+digraph iCFG {
+25 [label="25:  DeclStmt \n   n$20=_fun___new(sizeof(class Base ):unsigned long ) [line 22]\n  _fun_Base_Base(n$20:class Base *) [line 22]\n  *&b:class Base *=n$20 [line 22]\n " shape="box"]
+	
+
+	 25 -> 24 ;
+24 [label="24:  DeclStmt \n   n$19=_fun___new(sizeof(class Sub ):unsigned long ) [line 23]\n  _fun_Sub_Sub(n$19:class Sub *) [line 23]\n  *&s1:class Sub *=n$19 [line 23]\n " shape="box"]
+	
+
+	 24 -> 23 ;
+23 [label="23:  DeclStmt \n   n$18=_fun___new(sizeof(class Sub ):unsigned long ) [line 24]\n  _fun_Sub_Sub(n$18:class Sub *) [line 24]\n  *&s2:class Sub *=n$18 [line 24]\n " shape="box"]
+	
+
+	 23 -> 22 ;
+22 [label="22:  Call _fun_Base_fun \n   n$15=*&b:class Base * [line 26]\n  _=*n$15:class Base  [line 26]\n  n$17=_fun_Base_fun(n$15:class Base *) [line 26]\n " shape="box"]
+	
+
+	 22 -> 21 ;
+21 [label="21:  Call _fun_Base_fun \n   n$12=*&s1:class Base * [line 27]\n  _=*n$12:class Base  [line 27]\n  n$14=_fun_Base_fun(n$12:class Base *) [line 27]\n " shape="box"]
+	
+
+	 21 -> 20 ;
+20 [label="20:  Call _fun_Base_fun \n   n$9=*&s2:class Sub * [line 28]\n  _=*n$9:class Sub  [line 28]\n  n$11=_fun_Base_fun(n$9:class Sub *) [line 28]\n " shape="box"]
+	
+
+	 20 -> 19 ;
+19 [label="19:  Call _fun_Base_fun_redefine \n   n$6=*&b:class Base * [line 30]\n  _=*n$6:class Base  [line 30]\n  n$8=_fun_Base_fun_redefine(n$6:class Base *) [line 30]\n " shape="box"]
+	
+
+	 19 -> 18 ;
+18 [label="18:  Call _fun_Base_fun_redefine \n   n$3=*&s1:class Base * [line 31]\n  _=*n$3:class Base  [line 31]\n  n$5=_fun_Base_fun_redefine(n$3:class Base *) [line 31]\n " shape="box"]
+	
+
+	 18 -> 17 ;
+17 [label="17:  Call _fun_Sub_fun_redefine \n   n$0=*&s2:class Sub * [line 32]\n  _=*n$0:class Sub  [line 32]\n  n$2=_fun_Sub_fun_redefine(n$0:class Sub *) [line 32]\n " shape="box"]
+	
+
+	 17 -> 16 ;
+16 [label="16: Exit call_static_methods \n  " color=yellow style=filled]
+	
+
+15 [label="15: Start call_static_methods\nFormals: \nLocals:  s2:class Sub * s1:class Base * b:class Base * \n   DECLARE_LOCALS(&return,&s2,&s1,&b); [line 21]\n " color=yellow style=filled]
+	
+
+	 15 -> 25 ;
+14 [label="14:  Constructor Init \n   n$0=*&this:class Sub * [line 16]\n  _fun_Base_Base(n$0:class Sub *) [line 16]\n " shape="box"]
+	
+
+	 14 -> 13 ;
+13 [label="13: Exit Sub_Sub \n  " color=yellow style=filled]
+	
+
+12 [label="12: Start Sub_Sub\nFormals:  this:class Sub *\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
+	
+
+	 12 -> 14 ;
+11 [label="11:  Return Stmt \n   *&return:int =20 [line 18]\n " shape="box"]
+	
+
+	 11 -> 10 ;
+10 [label="10: Exit Sub_fun_redefine \n  " color=yellow style=filled]
+	
+
+9 [label="9: Start Sub_fun_redefine\nFormals:  this:class Sub *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+	
+
+	 9 -> 11 ;
+8 [label="8: Exit Base_Base \n  " color=yellow style=filled]
+	
+
+7 [label="7: Start Base_Base\nFormals:  this:class Base *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+	
+
+	 7 -> 8 ;
+6 [label="6:  Return Stmt \n   *&return:int =10 [line 13]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit Base_fun_redefine \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start Base_fun_redefine\nFormals:  this:class Base *\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
+	
+
+	 4 -> 6 ;
+3 [label="3:  Return Stmt \n   *&return:int =1 [line 12]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit Base_fun \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start Base_fun\nFormals:  this:class Base *\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

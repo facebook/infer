@@ -9,8 +9,8 @@
 
 package java.io;
 
-import com.facebook.infer.models.InferUndefined;
-import com.facebook.infer.models.InferUtils;
+import com.facebook.infer.builtins.InferUndefined;
+import com.facebook.infer.builtins.InferUtils;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;

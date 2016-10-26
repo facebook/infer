@@ -1,27 +1,20 @@
+# Copyright (c) 2016 - present Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
 
-all:
-	make -C arithmetic
-	make -C assertions
-	make -C attributes
-	make -C custom_error
-	make -C initialization
-	make -C local_vars
-	make -C null_dereference
-	make -C resource_leaks
-	make -C memory_leaks
-	make -C lists
-	make -C dangling_deref
+include ../../Makefile.clang
 
-clean:
-	make -C arithmetic clean
-	make -C assertions clean
-	make -C custom_error clean
-	make -C attributes clean
-	make -C initialization clean
-	make -C local_vars clean
-	make -C null_dereference clean
-	make -C resource_leaks clean
-	make -C memory_leaks
-	make -C lists
-	make -C dangling_deref
+OPTIONS = -c
 
+FILES = \
+  */*.c \
+
+compile:
+	clang $(OPTIONS) $(FILES)
+
+analyze:
+	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --report-custom-error --check-duplicate-symbols --developer-mode -- clang $(OPTIONS) $(FILES) 2>duplicates.txt)
+	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0

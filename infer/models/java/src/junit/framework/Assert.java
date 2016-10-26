@@ -9,7 +9,7 @@
 
 package junit.framework;
 
-import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.builtins.InferBuiltins;
 
 public class Assert {
 

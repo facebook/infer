@@ -16,7 +16,7 @@ module F = Format
 
 (** Flags to activate checkers. *)
 let active_procedure_checkers () =
-  let checkers_enabled = Config.checkers_enabled () in
+  let checkers_enabled = Config.checkers_enabled in
 
   let java_checkers =
     let l =
@@ -31,27 +31,36 @@ let active_procedure_checkers () =
         Dataflow.callback_test_dataflow, false;
         FragmentRetainsViewChecker.callback_fragment_retains_view, checkers_enabled;
         SqlChecker.callback_sql, false;
-        Eradicate.callback_eradicate, !Config.eradicate;
-        CodeQuery.code_query_callback, !CodeQuery.query <> None;
+        Eradicate.callback_eradicate, Config.eradicate;
+        BoundedCallTree.checker, Config.crashcontext;
+        JavaTaintAnalysis.checker, Config.quandary;
         Checkers.callback_check_field_access, false;
         ImmutableChecker.callback_check_immutable_cast, checkers_enabled;
         RepeatedCallsChecker.callback_check_repeated_calls, checkers_enabled;
         PrintfArgs.callback_printf_args, checkers_enabled;
         AnnotationReachability.Interprocedural.check_and_report, checkers_enabled;
+        ThreadSafety.method_analysis, false;
       ] in
+    (* make sure SimpleChecker.ml is not dead code *)
+    if false then (let module SC = SimpleChecker.Make in ());
     IList.map (fun (x, y) -> (x, y, Some Config.Java)) l in
   let c_cpp_checkers =
     let l =
       [
         Checkers.callback_print_c_method_calls, false;
-        CheckDeadCode.callback_check_dead_code, checkers_enabled;
+        CheckDeadCode.callback_check_dead_code, false;
+        Checkers.callback_print_access_to_globals, false;
+        CppTaintAnalysis.checker, Config.quandary;
+        Siof.checker, checkers_enabled;
       ] in
-    IList.map (fun (x, y) -> (x, y, Some Config.C_CPP)) l in
+    IList.map (fun (x, y) -> (x, y, Some Config.Clang)) l in
 
   java_checkers @ c_cpp_checkers
 
 let active_cluster_checkers () =
-  [(Checkers.callback_check_cluster_access, false, Some Config.Java)]
+  [(Checkers.callback_check_cluster_access, false, Some Config.Java);
+   (ThreadSafety.file_analysis, Config.checkers_enabled && Config.thread_safety, Some Config.Java)
+  ]
 
 let register () =
   let register registry (callback, active, language_opt) =

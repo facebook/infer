@@ -24,17 +24,20 @@ Analysis examples:
 infer -- make all
 infer -- clang -c srcfile.m
 infer -- gcc -c srcfile.c'''
+LANG = ['clang']
 
 ALIASED_COMMANDS = ['clang', 'clang++', 'cc', 'gcc', 'g++']
 BUILD_COMMANDS = ['cmake', 'configure', 'make', 'waf']
 SUPPORTED_COMMANDS = ALIASED_COMMANDS + BUILD_COMMANDS
 
+
 def gen_instance(*args):
     return MakeCapture(*args)
 
 
-create_argparser = \
-    util.clang_frontend_argparser(MODULE_DESCRIPTION, MODULE_NAME)
+# This creates an empty argparser for the module, which provides only
+# description/usage information and no arguments.
+create_argparser = util.base_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 
 
 class MakeCapture:
@@ -48,24 +51,24 @@ class MakeCapture:
             cmd[0] = command_name
 
     def get_envvars(self):
-        env_vars = dict(os.environ)
+        env_vars = utils.read_env()
         wrappers_path = config.WRAPPERS_DIRECTORY
+        # INFER_RESULTS_DIR and INFER_OLD_PATH are used by javac wrapper only
         env_vars['INFER_OLD_PATH'] = env_vars['PATH']
         env_vars['PATH'] = '{wrappers}{sep}{path}'.format(
             wrappers=wrappers_path,
             sep=os.pathsep,
             path=env_vars['PATH'],
         )
-
-        frontend_env_vars = util.get_clang_frontend_envvars(self.args)
-        env_vars.update(frontend_env_vars)
+        env_vars['INFER_RESULTS_DIR'] = self.args.infer_out
         return env_vars
 
     def capture(self):
         try:
-            env = self.get_envvars()
-            logging.info('Running command %s with env:\n%s' % (self.cmd, env))
-            subprocess.check_call(self.cmd, env=env)
+            env = utils.encode_env(self.get_envvars())
+            cmd = map(utils.encode, self.cmd)
+            logging.info('Running command %s with env:\n%s' % (cmd, env))
+            subprocess.check_call(cmd, env=env)
             capture_dir = os.path.join(self.args.infer_out, 'captured')
             if len(os.listdir(capture_dir)) < 1:
                 # Don't return with a failure code unless we're

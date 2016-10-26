@@ -10,7 +10,7 @@
 #include "MethodCall.h"
 #include <stdlib.h>
 
-int main() {
+int ProcdescMain() {
   MethodCall* call = [MethodCall alloc];
   int n = [call plusX:1 andY:3];
   int* x = malloc(sizeof(int));

@@ -15,6 +15,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
@@ -556,6 +557,51 @@ public class NullPointerExceptions {
     String s = l.toString();
     s = null;
     s.toString(); // Expect NPE here
+  }
+
+  void optionalNPE(Optional<Object> o) {
+    o.orNull().toString();
+  }
+
+  void stringConstantEqualsTrueNotNPE() {
+    final String c1 = "Test string!";
+    final String c2 = "Test string!";
+    String s = null;
+    if(c1.equals(c1)) {
+      s = "safe";
+    }
+    s.toString(); // No NPE
+    s = null;
+    if(c1.equals(c2)) {
+      s = "safe";
+    }
+    s.toString(); // No NPE
+  }
+
+  void stringConstantEqualsFalseNotNPE_FP() {
+    // This won't actually cause an NPE, but our current model for String.equals
+    // returns boolean_undefined for all cases other than String constant
+    // equality. Consider handling constant inequality in the future.
+    final String c1 = "Test string 1";
+    final String c2 = "Test string 2";
+    String s = null;
+    if(!c1.equals(c2)) {
+      s = "safe";
+    }
+    s.toString(); // No NPE
+  }
+
+  String getString2() {
+    return "string 2";
+  }
+
+  void stringVarEqualsFalseNPE() {
+    final String c1 = "Test string 1";
+    String c2 = "Test " + getString2();
+    String s = null;
+    if(!c1.equals(c2)) {
+      s.toString(); // NPE
+    }
   }
 
 }

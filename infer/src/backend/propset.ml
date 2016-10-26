@@ -29,13 +29,15 @@ let compare = PropSet.compare
     The invariant is maintaned that Prop.prop_rename_primed_footprint_vars is called on any prop added to the set. *)
 type t = PropSet.t
 
-let add p pset =
-  let ps = Prop.prop_expand p in
-  IList.fold_left (fun pset' p' -> PropSet.add (Prop.prop_rename_primed_footprint_vars p') pset') pset ps
+let add tenv p pset =
+  let ps = Prop.prop_expand tenv p in
+  IList.fold_left (fun pset' p' ->
+      PropSet.add (Prop.prop_rename_primed_footprint_vars tenv p') pset'
+    ) pset ps
 
 (** Singleton set. *)
-let singleton p =
-  add p PropSet.empty
+let singleton tenv p =
+  add tenv p PropSet.empty
 
 (** Set union. *)
 let union = PropSet.union
@@ -61,22 +63,22 @@ let size = PropSet.cardinal
 
 let filter = PropSet.filter
 
-let from_proplist plist =
-  IList.fold_left (fun pset p -> add p pset) empty plist
+let from_proplist tenv plist =
+  IList.fold_left (fun pset p -> add tenv p pset) empty plist
 
 let to_proplist pset =
   PropSet.elements pset
 
 (** Apply function to all the elements of [propset], removing those where it returns [None]. *)
-let map_option f pset =
+let map_option tenv f pset =
   let plisto = IList.map f (to_proplist pset) in
   let plisto = IList.filter (function | Some _ -> true | None -> false) plisto in
   let plist = IList.map (function Some p -> p | None -> assert false) plisto in
-  from_proplist plist
+  from_proplist tenv plist
 
 (** Apply function to all the elements of [propset]. *)
-let map f pset =
-  from_proplist (IList.map f (to_proplist pset))
+let map tenv f pset =
+  from_proplist tenv (IList.map f (to_proplist pset))
 
 (** [fold f pset a] computes [f (... (f (f a p1) p2) ...) pn]
     where [p1 ... pN] are the elements of pset, in increasing order. *)

@@ -22,11 +22,6 @@
   {
     "bug_type": "CONTEXT_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java",
-    "procedure": "void ContextLeaks.indirectHandlerLeak()"
-  },
-  {
-    "bug_type": "CONTEXT_LEAK",
-    "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java",
     "procedure": "void ContextLeaks.indirectLeak()"
   },
   {
@@ -108,6 +103,26 @@
     "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
     "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java",
     "procedure": "InputStream TaintExample.taintingShouldNotPreventInference2(SSLSocketFactory)"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.testIntegritySinkAnnotReport(String)"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.testIntegritySourceAnnot()"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.testIntegritySourceInstanceFieldAnnot()"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.testIntegritySourceStaticFieldAnnot()"
   },
   {
     "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
@@ -342,12 +357,27 @@
   {
     "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "procedure": "int ResourceLeaks.fileOutputStreamTwoLeaks(boolean)"
+    "procedure": "void ResourceLeaks.fileOutputStreamOneLeak()"
   },
   {
     "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "procedure": "int ResourceLeaks.fileOutputStreamTwoLeaks(boolean)"
+    "procedure": "int ResourceLeaks.fileOutputStreamTwoLeaks1(boolean)"
+  },
+  {
+    "bug_type": "RESOURCE_LEAK",
+    "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
+    "procedure": "int ResourceLeaks.fileOutputStreamTwoLeaks1(boolean)"
+  },
+  {
+    "bug_type": "RESOURCE_LEAK",
+    "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
+    "procedure": "void ResourceLeaks.fileOutputStreamTwoLeaks2()"
+  },
+  {
+    "bug_type": "RESOURCE_LEAK",
+    "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
+    "procedure": "void ResourceLeaks.fileOutputStreamTwoLeaks2()"
   },
   {
     "bug_type": "RESOURCE_LEAK",
@@ -463,11 +493,6 @@
     "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/CursorLeaks.java",
     "procedure": "void CursorLeaks.loadPrefsFromContentProviderNotClosed()"
-  },
-  {
-    "bug_type": "RESOURCE_LEAK",
-    "file": "infer/tests/utils/matchers/DotFilesEqual.java",
-    "procedure": "boolean DotFilesEqual.matches(Object)"
   },
   {
     "bug_type": "RESOURCE_LEAK",
@@ -627,6 +652,11 @@
   {
     "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
+    "procedure": "void NullPointerExceptions.optionalNPE(Optional)"
+  },
+  {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
     "procedure": "void NullPointerExceptions.otherSinkWithNeverNullSource()"
   },
   {
@@ -736,6 +766,11 @@
   },
   {
     "bug_type": "RESOURCE_LEAK",
+    "file": "infer/tests/codetoanalyze/java/infer/CloseableAsResourceExample.java",
+    "procedure": "void CloseableAsResourceExample.skippedVritualCallDoesNotCloseResourceOnReceiver()"
+  },
+  {
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
     "procedure": "void ResourceLeaks.socketNotClosed()"
   },
@@ -748,6 +783,16 @@
     "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/CloseableAsResourceExample.java",
     "procedure": "T CloseableAsResourceExample.sourceOfNullWithResourceLeak()"
+  },
+  {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
+    "procedure": "void NullPointerExceptions.stringConstantEqualsFalseNotNPE_FP()"
+  },
+  {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
+    "procedure": "void NullPointerExceptions.stringVarEqualsFalseNPE()"
   },
   {
     "bug_type": "NULL_DEREFERENCE",

@@ -116,6 +116,29 @@ sudo apt-get install -y \
   zlib1g-dev
 ```
 
+### Debian 8
+
+```sh
+sudo apt install -y \
+  autoconf \
+  automake \
+  build-essential \
+  git \
+  libgmp-dev \
+  libmpc-dev \
+  libmpfr-dev \
+  m4 \
+  openjdk-7-jdk \
+  unzip \
+  zlib1g-dev \
+  opam \
+  rsync \
+  pkg-config \
+  libncurses-dev \
+  python \
+  aspcud
+```
+
 ### Ubuntu 12.04.4 LTS
 
 ```sh

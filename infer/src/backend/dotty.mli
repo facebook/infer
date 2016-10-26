@@ -23,7 +23,7 @@ type kind_of_dotty_prop =
 val reset_proposition_counter : unit -> unit
 
 val pp_dotty : Format.formatter -> kind_of_dotty_prop -> Prop.normal Prop.t ->
-  ((Sil.strexp * Sil.typ) * Ident.fieldname * Sil.strexp) list option -> unit
+  ((Sil.strexp * Typ.t) * Ident.fieldname * Sil.strexp) list option -> unit
 
 (** {2 Sets and lists of propositions} *)
 
@@ -33,11 +33,8 @@ val pp_proplist_parsed2dotty_file : string -> Prop.normal Prop.t list -> unit
 
 (** {2 Contol-Flow Graph} *)
 
-(** Print the cfg with extra edges *)
-val print_icfg_dotty : Cfg.cfg -> ((Cfg.Node.t * Cfg.Node.t) list) -> unit
-
-(** [store_icfg_to_file f cfg] saves the dotty representation of the control flow graph [cfg] into the file [f] *)
-val store_icfg_to_file: string -> Cfg.cfg -> unit
+(** Print the cfg *)
+val print_icfg_dotty : DB.source_file -> Cfg.cfg -> unit
 
 (** {2 Specs} *)
 val reset_dotty_spec_counter : unit -> unit
@@ -47,10 +44,10 @@ val pp_speclist_dotty_file : DB.filename -> Prop.normal Specs.spec list -> unit
 
 (* create a dotty file with a single proposition *)
 val dotty_prop_to_dotty_file : string -> Prop.normal Prop.t ->
-  ((Sil.strexp * Sil.typ) * Ident.fieldname * Sil.strexp) list -> unit
+  ((Sil.strexp * Typ.t) * Ident.fieldname * Sil.strexp) list -> unit
 
 val dotty_prop_to_str : Prop.normal Prop.t ->
-  ((Sil.strexp * Sil.typ) * Ident.fieldname * Sil.strexp) list -> string option
+  ((Sil.strexp * Typ.t) * Ident.fieldname * Sil.strexp) list -> string option
 
 (** reset the counter used for node and heap identifiers *)
 val reset_node_counter : unit -> unit

@@ -14,7 +14,7 @@ import android.database.sqlite.SQLiteCursor;
 import android.net.Uri;
 import android.os.CancellationSignal;
 
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 
 
 public class ContentResolver {

@@ -20,11 +20,7 @@ type jump_kind =
   | Jump of int
   | Exit
 
-type meth_kind =
-  | Normal
-  | Init
-
-(** data  *)
+(** Translation data *)
 type icfg = {
   tenv : Tenv.t;
   cg : Cg.t;
@@ -35,46 +31,33 @@ type t =
   { icfg : icfg;
     procdesc : Cfg.Procdesc.t;
     impl : JBir.t;
-    mutable var_map : (Pvar.t * Sil.typ * Sil.typ) JBir.VarMap.t;
+    mutable var_map : (Pvar.t * Typ.t * Typ.t) JBir.VarMap.t;
     if_jumps : int NodeTbl.t;
     goto_jumps : (int, jump_kind) Hashtbl.t;
     cn : JBasics.class_name;
-    meth_kind : meth_kind;
-    node : JCode.jcode Javalib.interface_or_class;
+    source_file : DB.source_file;
     program : JClasspath.program;
-    never_null_matcher: Inferconfig.NeverReturnNull.matcher;
   }
 
-let create_context never_null_matcher icfg procdesc impl cn meth_kind node program =
-  { icfg = icfg;
-    procdesc = procdesc;
-    impl = impl;
+let create_context icfg procdesc impl cn source_file program =
+  { icfg;
+    procdesc;
+    impl;
     var_map = JBir.VarMap.empty;
     if_jumps = NodeTbl.create 10;
     goto_jumps = Hashtbl.create 10;
-    cn = cn;
-    meth_kind = meth_kind;
-    node = node;
-    program = program;
-    never_null_matcher = never_null_matcher;
+    cn;
+    source_file;
+    program;
   }
 
-let get_icfg context = context.icfg
 let get_cfg context = context.icfg.cfg
 let get_cg context = context.icfg.cg
 let get_tenv context = context.icfg.tenv
-let get_procdesc context = context.procdesc
-let get_cn context = context.cn
-let get_node context = context.node
-let get_program context = context.program
-let get_impl context = context.impl
-let get_var_map context = context.var_map
 let set_var_map context var_map = context.var_map <- var_map
-let get_meth_kind context = context.meth_kind
-let get_never_null_matcher context = context.never_null_matcher
 
 let get_or_set_pvar_type context var typ =
-  let var_map = get_var_map context in
+  let var_map = context.var_map in
   try
     let (pvar, otyp, _) = (JBir.VarMap.find var var_map) in
     let tenv = get_tenv context in
@@ -84,7 +67,7 @@ let get_or_set_pvar_type context var typ =
     else set_var_map context (JBir.VarMap.add var (pvar, typ, typ) var_map);
     (pvar, typ)
   with Not_found ->
-    let procname = (Cfg.Procdesc.get_proc_name (get_procdesc context)) in
+    let procname = (Cfg.Procdesc.get_proc_name context.procdesc) in
     let varname = Mangled.from_string (JBir.var_name_g var) in
     let pvar = Pvar.mk varname procname in
     set_var_map context (JBir.VarMap.add var (pvar, typ, typ) var_map);
@@ -93,7 +76,7 @@ let get_or_set_pvar_type context var typ =
 let set_pvar context var typ = fst (get_or_set_pvar_type context var typ)
 
 let reset_pvar_type context =
-  let var_map = get_var_map context in
+  let var_map = context.var_map in
   let aux var item =
     match item with (pvar, otyp, _) ->
       set_var_map context (JBir.VarMap.add var (pvar, otyp, otyp) var_map) in
@@ -101,7 +84,7 @@ let reset_pvar_type context =
 
 let get_var_type context var =
   try
-    let (_, _, otyp) = JBir.VarMap.find var (get_var_map context) in
+    let (_, _, otyp) = JBir.VarMap.find var context.var_map in
     Some otyp
   with Not_found -> None
 

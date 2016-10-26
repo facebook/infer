@@ -14,19 +14,9 @@ open! Utils
 module L = Logging
 module F = Format
 
-let trace () = Config.from_env_variable "INFER_TRACE_ONDEMAND"
-
-(** Name of the ondemand file *)
-let ondemand_file () = Config.get_env_variable "INFER_ONDEMAND_FILE"
-
 (** Read the directories to analyze from the ondemand file. *)
 let read_dirs_to_analyze () =
-  let lines_opt = match ondemand_file () with
-    | None ->
-        None
-    | Some fname ->
-        read_file (DB.source_file_to_abs_path (DB.source_file_from_string fname)) in
-  match lines_opt with
+  match DB.read_changed_files_index with
   | None ->
       None
   | Some lines ->
@@ -42,7 +32,7 @@ let read_dirs_to_analyze () =
 let dirs_to_analyze =
   lazy (read_dirs_to_analyze ())
 
-type analyze_ondemand = Cfg.Procdesc.t -> unit
+type analyze_ondemand = DB.source_file -> Cfg.Procdesc.t -> unit
 
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 
@@ -87,7 +77,6 @@ type global_state =
   {
     abs_val : int;
     abstraction_rules : Abs.rules;
-    current_source : DB.source_file;
     delayed_prints : L.print_action list;
     footprint_mode : bool;
     html_formatter : F.formatter;
@@ -101,7 +90,6 @@ let save_global_state () =
   {
     abs_val = !Config.abs_val;
     abstraction_rules = Abs.get_current_rules ();
-    current_source = !DB.current_source;
     delayed_prints = L.get_delayed_prints ();
     footprint_mode = !Config.footprint;
     html_formatter = !Printer.curr_html_formatter;
@@ -112,7 +100,6 @@ let save_global_state () =
 let restore_global_state st =
   Config.abs_val := st.abs_val;
   Abs.set_current_rules st.abstraction_rules;
-  DB.current_source := st.current_source;
   L.set_delayed_prints st.delayed_prints;
   Config.footprint := st.footprint_mode;
   Printer.curr_html_formatter := st.html_formatter;
@@ -121,13 +108,13 @@ let restore_global_state st =
   Timeout.resume_previous_timeout ()
 
 
-let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc =
+let run_proc_analysis tenv ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc =
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
   let callee_pname = Cfg.Procdesc.get_proc_name callee_pdesc in
 
-  (** Dot means start of a procedure *)
+  (* Dot means start of a procedure *)
   L.log_progress_procedure ();
-  if trace () then L.stderr "[%d] run_proc_analysis %a -> %a@."
+  if Config.trace_ondemand then L.stderr "[%d] run_proc_analysis %a -> %a@."
       !nesting
       Procname.pp curr_pname
       Procname.pp callee_pname;
@@ -136,22 +123,24 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     incr nesting;
     let attributes_opt =
       Specs.proc_resolve_attributes callee_pname in
-    Option.may
-      (fun attribute ->
-         DB.current_source := attribute.ProcAttributes.loc.Location.file;
-         let attribute_pname = attribute.ProcAttributes.proc_name in
-         if not (Procname.equal callee_pname attribute_pname) then
-           failwith ("ERROR: "^(Procname.to_string callee_pname)
-                     ^" not equal to "^(Procname.to_string attribute_pname)))
-      attributes_opt;
+    let source = Option.map_default
+        (fun (attributes : ProcAttributes.t) ->
+           let attribute_pname = attributes.proc_name in
+           if not (Procname.equal callee_pname attribute_pname) then
+             failwith ("ERROR: "^(Procname.to_string callee_pname)
+                       ^" not equal to "^(Procname.to_string attribute_pname));
+           attributes.loc.file)
+        DB.source_file_empty
+        attributes_opt in
     let call_graph =
-      let cg = Cg.create () in
+      let cg = Cg.create (Some source) in
       Cg.add_defined_node cg callee_pname;
       cg in
     Specs.reset_summary call_graph callee_pname attributes_opt;
-    Specs.set_status callee_pname Specs.ACTIVE in
+    Specs.set_status callee_pname Specs.ACTIVE;
+    source in
 
-  let postprocess () =
+  let postprocess source =
     decr nesting;
     let summary = Specs.get_summary_unsafe "ondemand" callee_pname in
     let summary' =
@@ -159,8 +148,8 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
         Specs.status = Specs.INACTIVE;
         timestamp = summary.Specs.timestamp + 1 } in
     Specs.add_summary callee_pname summary';
-    Checkers.ST.store_summary callee_pname;
-    Printer.write_proc_html false callee_pdesc in
+    Checkers.ST.store_summary tenv callee_pname;
+    Printer.write_proc_html source false callee_pdesc in
 
   let log_error_and_continue exn kind =
     Reporting.log_error callee_pname exn;
@@ -174,10 +163,10 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     Specs.add_summary callee_pname new_summary in
 
   let old_state = save_global_state () in
-  preprocess ();
+  let source = preprocess () in
   try
-    analyze_proc callee_pdesc;
-    postprocess ();
+    analyze_proc source callee_pdesc;
+    postprocess source;
     restore_global_state old_state;
   with exn ->
     L.stderr "@.ONDEMAND EXCEPTION %a %s@.@.CALL STACK@.%s@.BACK TRACE@.%s@."
@@ -200,13 +189,13 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
           log_error_and_continue exn (FKcrash (Printexc.to_string exn))
 
 
-let analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc =
+let analyze_proc_desc tenv ~propagate_exceptions curr_pdesc callee_pdesc =
   let callee_pname = Cfg.Procdesc.get_proc_name callee_pdesc in
   let proc_attributes = Cfg.Procdesc.get_attributes callee_pdesc in
   match !callbacks_ref with
   | Some callbacks
     when should_be_analyzed proc_attributes callee_pname ->
-      run_proc_analysis
+      run_proc_analysis tenv
         ~propagate_exceptions callbacks.analyze_ondemand curr_pdesc callee_pdesc
   | _ -> ()
 
@@ -215,7 +204,7 @@ let analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc =
 (** analyze_proc_name curr_pdesc proc_name
     performs an on-demand analysis of proc_name
     triggered during the analysis of curr_pname. *)
-let analyze_proc_name ~propagate_exceptions curr_pdesc callee_pname =
+let analyze_proc_name tenv ~propagate_exceptions curr_pdesc callee_pname =
 
   match !callbacks_ref with
   | Some callbacks
@@ -223,7 +212,7 @@ let analyze_proc_name ~propagate_exceptions curr_pdesc callee_pname =
       begin
         match callbacks.get_proc_desc callee_pname with
         | Some callee_pdesc ->
-            analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc
+            analyze_proc_desc tenv ~propagate_exceptions curr_pdesc callee_pdesc
         | None ->
             ()
       end

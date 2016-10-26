@@ -14,28 +14,16 @@ open Javalib_pack
 
 
 let is_suppress_warnings_annotated =
-  let matcher =
-    lazy
-      (let default_matcher = fun _ -> false in
-       match !Config.suppress_warnings_annotations with
-       | Some f ->
-           (try
-              let m = Inferconfig.SuppressWarningsMatcher.load_matcher f in
-              (m DB.source_file_empty)
-            with Yojson.Json_error _ ->
-              default_matcher)
-       | None -> failwith "Local config expected!") in
-  fun proc_name ->
-    (Lazy.force matcher) proc_name
-
+  Inferconfig.suppress_warnings_matcher DB.source_file_empty
 
 let suppress_warnings =
-  ({ Sil.class_name = Annotations.suppress_warnings;
-     Sil.parameters = ["infer"] },
+  ({ Annot.
+     class_name = Annotations.suppress_warnings;
+     parameters = ["infer"] },
    true)
 
 (** Translate an annotation. *)
-let translate a : Sil.annotation =
+let translate a : Annot.t =
   let class_name = JBasics.cn_name a.JBasics.kind in
   let translate_value_pair (_, value) =
     match value with
@@ -45,12 +33,13 @@ let translate a : Sil.annotation =
         s
     | _ -> "?" in
   let element_value_pairs = a.JBasics.element_value_pairs in
-  { Sil.class_name = class_name;
-    Sil.parameters = IList.map translate_value_pair element_value_pairs }
+  { Annot.
+    class_name;
+    parameters = IList.map translate_value_pair element_value_pairs }
 
 
 (** Translate an item annotation. *)
-let translate_item avlist : Sil.item_annotation =
+let translate_item avlist : Annot.Item.t =
   let trans_vis = function
     | Javalib.RTVisible -> true
     | Javalib.RTInvisible -> false in
@@ -59,7 +48,7 @@ let translate_item avlist : Sil.item_annotation =
 
 
 (** Translate a method annotation. *)
-let translate_method proc_name_java ann : Sil.method_annotation =
+let translate_method proc_name_java ann : Annot.Method.t =
   let global_ann = ann.Javalib.ma_global in
   let param_ann = ann.Javalib.ma_parameters in
   let ret_item =

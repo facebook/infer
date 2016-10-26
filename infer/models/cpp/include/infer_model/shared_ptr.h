@@ -11,15 +11,64 @@
 // ASSERT that __cplusplus >= 201103L
 
 #include <infer_model/common.h>
+#include <infer_model/infer_traits.h>
 
 INFER_NAMESPACE_STD_BEGIN
 
 // use inheritance to avoid compilation errors when using
 // methods / non-member functions that are not modeled
-// WARNING: sizeof(shared_ptr) = 24, not 16 - this may
+// WARNING: if sizeof(shared_ptr) becomes different than 16, it may
 // lead to compilation errors
 template <class T>
 class shared_ptr : public std__shared_ptr<T> {
+
+  // translate shared_ptr as type T*
+  friend class infer_traits::TranslateAsType<T*>;
+
+  // shared_ptr<T> in infer is translated as T*.
+  // Some facts:
+  // 1. shared_ptr<T>* translated as T**
+  // 2. typeof(this) translated as T**
+  // 3. typeof(this) in clang's AST is shared_ptr<T>*
+  // When writing models for shared_ptr, we need to use infer's representation
+  // In order to achieve that and not break compilation, there is some ugly
+  // casting going around. We are using void* and void** to make compilation
+  // happy - infer doesn't care about those types that much since they are
+  // pointers anyway.
+  // Example of model_X function declaration:
+  // static void model_X(infer_shared_ptr_t self, ... params)
+  // model_X are really C functions, but to simplify linking process, they are
+  // defined inside shared_ptr class as static methods.
+  // When using model_X functions, call them like so:
+  //    model_X(__cast_to_infer_ptr(this), args)
+
+  /// type of 'this' in shared_ptr<T> as seen by infer
+  typedef const void** infer_shared_ptr_t;
+// use it to avoid compilation errors and make infer analyzer happy
+#define __cast_to_infer_ptr(self) ((infer_shared_ptr_t)self)
+
+  static void model_set(infer_shared_ptr_t self, const void* value) {
+    *self = value;
+  }
+
+  static void model_copy(infer_shared_ptr_t self, infer_shared_ptr_t other) {
+    /* TODO - increase refcount*/
+    *self = *other;
+  }
+
+  static void model_move(infer_shared_ptr_t self, infer_shared_ptr_t other) {
+    model_copy(self, other);
+    model_set(other, nullptr);
+  }
+
+  static T* model_get(infer_shared_ptr_t self) { return (T*)(*self); }
+
+  static void model_swap(infer_shared_ptr_t infer_self,
+                         infer_shared_ptr_t infer_other) {
+    const void* t = *infer_self;
+    *infer_self = *infer_other;
+    *infer_other = t;
+  }
 
  public:
   // Conversion constructors to allow implicit conversions.
@@ -31,10 +80,10 @@ class shared_ptr : public std__shared_ptr<T> {
   template <class Y>
   shared_ptr(const std__shared_ptr<Y>& r, T* p) noexcept {}
 
-  T* data;
-
   // constructors:
-  constexpr shared_ptr() noexcept : data(nullptr) {}
+  constexpr shared_ptr() noexcept {
+    model_set(__cast_to_infer_ptr(this), nullptr);
+  }
 
   shared_ptr(nullptr_t) : shared_ptr() {}
 
@@ -47,7 +96,7 @@ class shared_ptr : public std__shared_ptr<T> {
   template <class Y,
             typename = typename enable_if<is_convertible<Y*, T*>::value>::type>
   explicit shared_ptr(Y* p) {
-    data = p;
+    model_set(__cast_to_infer_ptr(this), p);
   }
 
   template <class Y,
@@ -68,27 +117,29 @@ class shared_ptr : public std__shared_ptr<T> {
   shared_ptr(nullptr_t p, D d, A a) : shared_ptr<T>(p) {}
 
   template <class Y>
-  shared_ptr(const shared_ptr<Y>& r, T* p) noexcept : data(nullptr) { /* TODO */
+  shared_ptr(const shared_ptr<Y>& r, T* p) noexcept {
+    model_set(__cast_to_infer_ptr(this), nullptr); /* TODO */
   }
 
-  shared_ptr(const shared_ptr& r) noexcept
-      : shared_ptr<T>(r.data) { /* TODO - increase refcount*/
+  shared_ptr(const shared_ptr& r) noexcept {
+    model_copy(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&r));
+  }
+
+  template <class Y,
+
+            typename = typename enable_if<is_convertible<Y*, T*>::value>::type>
+  shared_ptr(const shared_ptr<Y>& r) noexcept {
+    model_copy(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&r));
+  }
+
+  shared_ptr(shared_ptr&& r) noexcept {
+    model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&r));
   }
 
   template <class Y,
             typename = typename enable_if<is_convertible<Y*, T*>::value>::type>
-  shared_ptr(const shared_ptr<Y>& r) noexcept
-      : shared_ptr<T>(r.data) { /* TODO - increase refcount*/
-  }
-
-  shared_ptr(shared_ptr&& r) noexcept : shared_ptr<T>(r.data) {
-    r.data = nullptr;
-  }
-
-  template <class Y,
-            typename = typename enable_if<is_convertible<Y*, T*>::value>::type>
-  shared_ptr(shared_ptr<Y>&& r) noexcept : shared_ptr<T>(r.data) {
-    r.data = nullptr;
+  shared_ptr(shared_ptr<Y>&& r) noexcept {
+    model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&r));
   }
 
   template <class Y,
@@ -116,7 +167,7 @@ class shared_ptr : public std__shared_ptr<T> {
   // assignment:
   shared_ptr& operator=(const shared_ptr& r) noexcept {
     // shared_ptr<T>(r).swap(*this);
-    data = r.data;
+    model_copy(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&r));
     return *this;
   }
 
@@ -124,13 +175,13 @@ class shared_ptr : public std__shared_ptr<T> {
             typename = typename enable_if<is_convertible<Y*, T*>::value>::type>
   shared_ptr& operator=(const shared_ptr<Y>& r) noexcept {
     // shared_ptr<T>(r).swap(*this);
-    data = r.data;
+    model_copy(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&r));
     return *this;
   }
 
   shared_ptr& operator=(shared_ptr&& r) noexcept {
     // shared_ptr<T>(std::move(r)).swap(*this);
-    data = r.data;
+    model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&r));
     return *this;
   }
 
@@ -138,7 +189,7 @@ class shared_ptr : public std__shared_ptr<T> {
             typename = typename enable_if<is_convertible<Y*, T*>::value>::type>
   shared_ptr& operator=(shared_ptr<Y>&& r) {
     // shared_ptr<T>(std::move(r)).swap(*this);
-    data = r.data;
+    model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&r));
     return *this;
   }
 
@@ -156,9 +207,7 @@ class shared_ptr : public std__shared_ptr<T> {
 
   // modifiers:
   void swap(shared_ptr& r) noexcept {
-    T* tmp = r.data;
-    r.data = data;
-    data = tmp;
+    model_swap(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&r));
   }
 
   void reset() noexcept { reset((T*)nullptr); }
@@ -168,10 +217,10 @@ class shared_ptr : public std__shared_ptr<T> {
   void reset(Y* p) {
     /*
     if (unique()) {
-      delete data;
+      delete __data;
     }
     */
-    data = p;
+    model_set(__cast_to_infer_ptr(this), p);
     // TODO adjust refcounts
   }
 
@@ -191,14 +240,19 @@ class shared_ptr : public std__shared_ptr<T> {
   }
 
   // observers:
-  T* get() const noexcept { return data; }
-  typename add_lvalue_reference<T>::type operator*() const noexcept {
-    return *data;
-  }
-  T* operator->() const noexcept { return data; }
+  T* get() const noexcept INFER_MODEL_AS_DEREF_FIRST_ARG;
+
+  typename std::add_lvalue_reference<T>::type operator*() const
+      noexcept INFER_MODEL_AS_DEREF_FIRST_ARG;
+
+  T* operator->() const noexcept INFER_MODEL_AS_DEREF_FIRST_ARG;
   long use_count() const noexcept { return 2; /* FIXME */ }
   bool unique() const noexcept { return use_count() == 1; /* FIXME */ }
-  explicit operator bool() const noexcept { return (bool)data; }
+  explicit operator bool() const noexcept {
+    // for some reason analyzer can't cast to bool correctly, trick with two
+    // negations creates right specs for this function
+    return !!(bool)(model_get(__cast_to_infer_ptr(this)));
+  }
   template <class U>
   bool owner_before(shared_ptr<U> const& b) const {
     return true; /* FIXME - use non-det*/
@@ -208,6 +262,102 @@ class shared_ptr : public std__shared_ptr<T> {
     return true; /* FIXME - use non-det */
   }
 };
+template <class _Tp, class _Up>
+inline bool operator==(const shared_ptr<_Tp>& __x,
+                       const shared_ptr<_Up>& __y) noexcept {
+  return __x.get() == __y.get();
+}
+
+template <class _Tp, class _Up>
+inline bool operator!=(const shared_ptr<_Tp>& __x,
+                       const shared_ptr<_Up>& __y) noexcept {
+  return !(__x == __y);
+}
+
+template <class _Tp, class _Up>
+inline bool operator<(const shared_ptr<_Tp>& __x,
+                      const shared_ptr<_Up>& __y) noexcept {
+  typedef typename common_type<_Tp*, _Up*>::type _Vp;
+  return less<_Vp>()(__x.get(), __y.get());
+}
+
+template <class _Tp, class _Up>
+inline bool operator>(const shared_ptr<_Tp>& __x,
+                      const shared_ptr<_Up>& __y) noexcept {
+  return __y < __x;
+}
+
+template <class _Tp, class _Up>
+inline bool operator<=(const shared_ptr<_Tp>& __x,
+                       const shared_ptr<_Up>& __y) noexcept {
+  return !(__y < __x);
+}
+
+template <class _Tp, class _Up>
+inline bool operator>=(const shared_ptr<_Tp>& __x,
+                       const shared_ptr<_Up>& __y) noexcept {
+  return !(__x < __y);
+}
+
+template <class _Tp>
+inline bool operator==(const shared_ptr<_Tp>& __x, nullptr_t) noexcept {
+  return !__x;
+}
+
+template <class _Tp>
+inline bool operator==(nullptr_t, const shared_ptr<_Tp>& __x) noexcept {
+  return !__x;
+}
+
+template <class _Tp>
+inline bool operator!=(const shared_ptr<_Tp>& __x, nullptr_t) noexcept {
+  return static_cast<bool>(__x);
+}
+
+template <class _Tp>
+inline bool operator!=(nullptr_t, const shared_ptr<_Tp>& __x) noexcept {
+  return static_cast<bool>(__x);
+}
+
+template <class _Tp>
+inline bool operator<(const shared_ptr<_Tp>& __x, nullptr_t) noexcept {
+  return less<_Tp*>()(__x.get(), nullptr);
+}
+
+template <class _Tp>
+inline bool operator<(nullptr_t, const shared_ptr<_Tp>& __x) noexcept {
+  return less<_Tp*>()(nullptr, __x.get());
+}
+
+template <class _Tp>
+inline bool operator>(const shared_ptr<_Tp>& __x, nullptr_t) noexcept {
+  return nullptr < __x;
+}
+
+template <class _Tp>
+inline bool operator>(nullptr_t, const shared_ptr<_Tp>& __x) noexcept {
+  return __x < nullptr;
+}
+
+template <class _Tp>
+inline bool operator<=(const shared_ptr<_Tp>& __x, nullptr_t) noexcept {
+  return !(nullptr < __x);
+}
+
+template <class _Tp>
+inline bool operator<=(nullptr_t, const shared_ptr<_Tp>& __x) noexcept {
+  return !(__x < nullptr);
+}
+
+template <class _Tp>
+inline bool operator>=(const shared_ptr<_Tp>& __x, nullptr_t) noexcept {
+  return !(__x < nullptr);
+}
+
+template <class _Tp>
+inline bool operator>=(nullptr_t, const shared_ptr<_Tp>& __x) noexcept {
+  return !(nullptr < __x);
+}
 
 template <class T>
 struct hash<shared_ptr<T>> : public hash<std__shared_ptr<T>> {};
@@ -232,4 +382,5 @@ shared_ptr<T> make_shared(Args&&... args) {
   return shared_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
+#undef __cast_to_infer_ptr
 INFER_NAMESPACE_STD_END

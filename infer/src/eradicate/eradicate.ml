@@ -18,12 +18,6 @@ open Dataflow
 (* ERADICATE CHECKER. TODOS:*)
 (* 1) add support for constructors for anonymous inner classes (currently not checked) *)
 
-(* print initial and final typestates *)
-let verbose = Config.from_env_variable "ERADICATE_TYPINGS"
-
-(* print step-by-step tracing information *)
-let trace = Config.from_env_variable "ERADICATE_TRACE"
-
 (* check that nonnullable fields are initialized in constructors *)
 let check_field_initialization = true
 
@@ -86,7 +80,7 @@ struct
       let typestate_empty = TypeState.empty Extension.ext in
       IList.fold_left add_formal typestate_empty annotated_signature.Annotations.params in
 
-    (** Check the nullable flag computed for the return value and report inconsistencies. *)
+    (* Check the nullable flag computed for the return value and report inconsistencies. *)
     let check_return find_canonical_duplicate exit_node final_typestate ret_ia ret_type loc : unit =
       let ret_pvar = Cfg.Procdesc.get_ret_var curr_pdesc in
       let ret_range = TypeState.lookup_pvar ret_pvar final_typestate in
@@ -102,12 +96,12 @@ struct
           (fun f -> f curr_pname curr_pdesc ret_type typ_found_opt loc)
           checks.TypeCheck.check_ret_type;
       if checks.TypeCheck.eradicate then
-        EradicateChecks.check_return_annotation
+        EradicateChecks.check_return_annotation tenv
           find_canonical_duplicate curr_pname exit_node ret_range
           ret_ia ret_implicitly_nullable loc in
 
     let do_before_dataflow initial_typestate =
-      if verbose then
+      if Config.eradicate_verbose then
         L.stdout "Initial Typestate@\n%a@."
           (TypeState.pp Extension.ext) initial_typestate in
 
@@ -126,7 +120,7 @@ struct
             TypeCheck.typecheck_node
               tenv Extension.ext calls_this checks idenv get_proc_desc curr_pname curr_pdesc
               find_canonical_duplicate annotated_signature typestate node linereader in
-          if trace then
+          if Config.eradicate_trace then
             IList.iter (fun typestate_succ ->
                 L.stdout
                   "Typestate After Node %a@\n%a@."
@@ -190,13 +184,13 @@ struct
       type init = Procname.t * Cfg.Procdesc.t
 
       let final_typestates initializers_current_class =
-        (** Get the private methods, from the same class, directly called by the initializers. *)
+        (* Get the private methods, from the same class, directly called by the initializers. *)
         let get_private_called (initializers : init list) : init list =
           let res = ref [] in
           let do_proc (init_pn, init_pd) =
             let filter callee_pn callee_attributes =
               let is_private =
-                callee_attributes.ProcAttributes.access = Sil.Private in
+                callee_attributes.ProcAttributes.access = PredSymb.Private in
               let same_class =
                 let get_class_opt pn = match pn with
                   | Procname.Java pn_java ->
@@ -216,8 +210,8 @@ struct
           IList.iter do_proc initializers;
           !res in
 
-        (** Get the initializers recursively called by computing a fixpoint.
-            Start from the initializers of the current class and the current procedure. *)
+        (* Get the initializers recursively called by computing a fixpoint.
+           Start from the initializers of the current class and the current procedure. *)
         let initializers_recursive : init list =
           let initializers_base_case = initializers_current_class in
 
@@ -238,7 +232,7 @@ struct
           fixpoint initializers_base_case;
           !res in
 
-        (** Get the final typestates of all the initializers. *)
+        (* Get the final typestates of all the initializers. *)
         let final_typestates = ref [] in
         let get_final_typestate (pname, pdesc) =
           match typecheck_proc false pname pdesc None with
@@ -279,8 +273,8 @@ struct
           let initializers_current_class =
             pname_and_pdescs_with
               (function (pname, proc_attributes) ->
-                is_initializer proc_attributes &&
-                get_class pname = get_class curr_pname) in
+                 is_initializer proc_attributes &&
+                 get_class pname = get_class curr_pname) in
           final_typestates
             ((curr_pname, curr_pdesc) :: initializers_current_class)
         end
@@ -305,7 +299,7 @@ struct
            check_field_initialization &&
            checks.TypeCheck.eradicate
         then begin
-          EradicateChecks.check_constructor_initialization
+          EradicateChecks.check_constructor_initialization tenv
             find_canonical_duplicate
             curr_pname
             curr_pdesc
@@ -314,7 +308,7 @@ struct
             Initializers.final_constructor_typestates_lazy
             proc_loc
         end;
-        if verbose then
+        if Config.eradicate_verbose then
           L.stdout "Final Typestate@\n%a@."
             (TypeState.pp Extension.ext) typestate in
       match typestate_opt with
@@ -332,7 +326,7 @@ struct
         tenv curr_pname curr_pdesc
         annotated_signature;
 
-    TypeErr.report_forall_checks_and_reset Checkers.ST.report_error curr_pname;
+    TypeErr.report_forall_checks_and_reset tenv (Checkers.ST.report_error tenv) curr_pname;
     update_summary curr_pname curr_pdesc final_typestate_opt
 
   (** Entry point for the eradicate-based checker infrastructure. *)
@@ -354,7 +348,7 @@ struct
     | Some annotated_signature ->
         let loc = Cfg.Procdesc.get_loc proc_desc in
         let linereader = Printer.LineReader.create () in
-        if verbose then
+        if Config.eradicate_verbose then
           L.stdout "%a@."
             (Annotations.pp_annotated_signature proc_name)
             annotated_signature;
@@ -405,7 +399,7 @@ let callback_eradicate
       check_ret_type = [];
     } in
   let callbacks =
-    let analyze_ondemand pdesc =
+    let analyze_ondemand _ pdesc =
       let idenv_pname = Idenv.create_from_idenv idenv pdesc in
       Main.callback checks
         { callback_args with

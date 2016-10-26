@@ -11,26 +11,43 @@ open! Utils
 
 module L = Logging
 
-module Make
-    (C : ProcCfg.Wrapper)
-    (Sched : Scheduler.S)
-    (A : AbstractDomain.S)
-    (T : TransferFunctions.S with type astate = A.astate) = struct
+type 'a state = { pre: 'a; post: 'a; visit_count: int; }
 
-  module S = Sched (C)
-  module M = Cfg.IdMap
+module type S = sig
+  module TransferFunctions : TransferFunctions.S
+  module InvariantMap : Map.S with type key = TransferFunctions.CFG.id
+  module Interprocedural
+      (Summary : Summary.S with type summary = TransferFunctions.Domain.astate) :
+  sig
+    val checker : Callbacks.proc_callback_args -> TransferFunctions.extras ->
+      TransferFunctions.Domain.astate option
+  end
 
-  type state = { pre: A.astate; post: A.astate; visit_count: int; }
-  (* invariant map from node id -> abstract state representing postcondition for node id *)
-  type inv_map = state M.t
+  type invariant_map = TransferFunctions.Domain.astate state InvariantMap.t
+
+  val compute_post : TransferFunctions.extras ProcData.t -> TransferFunctions.Domain.astate option
+  val exec_cfg : TransferFunctions.CFG.t -> TransferFunctions.extras ProcData.t -> invariant_map
+  val exec_pdesc : TransferFunctions.extras ProcData.t -> invariant_map
+  val extract_post : InvariantMap.key -> 'a state InvariantMap.t -> 'a option
+  val extract_pre : InvariantMap.key -> 'a state InvariantMap.t -> 'a option
+  val extract_state : InvariantMap.key -> 'a InvariantMap.t -> 'a option
+end
+
+module MakeNoCFG
+    (Scheduler : Scheduler.S)
+    (TransferFunctions : TransferFunctions.S with module CFG = Scheduler.CFG) = struct
+
+  module CFG = Scheduler.CFG
+  module InvariantMap = ProcCfg.NodeIdMap (CFG)
+  module TransferFunctions = TransferFunctions
+  module Domain = TransferFunctions.Domain
+
+  type invariant_map = Domain.astate state InvariantMap.t
 
   (** extract the state of node [n] from [inv_map] *)
   let extract_state node_id inv_map =
-    try
-      Some (M.find node_id inv_map)
-    with Not_found ->
-      L.err "Warning: No state found for node %a" Cfg.Node.pp_id node_id;
-      None
+    try Some (InvariantMap.find node_id inv_map)
+    with Not_found -> None
 
   (** extract the postcondition of node [n] from [inv_map] *)
   let extract_post node_id inv_map =
@@ -45,34 +62,29 @@ module Make
     | None -> None
 
   let exec_node node astate_pre work_queue inv_map proc_data =
-    let node_id = C.node_id node in
-    L.out "Doing analysis of node %a from pre %a@." Cfg.Node.pp_id node_id A.pp astate_pre;
-    let update_inv_map astate_pre visit_count =
-      let astate_post =
-        let exec_instrs astate_acc instr =
-          if A.is_bottom astate_acc
-          then astate_acc
-          else T.exec_instr astate_acc proc_data instr in
-        IList.fold_left exec_instrs astate_pre (C.instrs node) in
-      L.out "Post for node %a is %a@." Cfg.Node.pp_id node_id A.pp astate_post;
-      let inv_map' = M.add node_id { pre=astate_pre; post=astate_post; visit_count; } inv_map in
-      inv_map', S.schedule_succs work_queue node in
-    if M.mem node_id inv_map then
-      let old_state = M.find node_id inv_map in
+    let node_id = CFG.id node in
+    let update_inv_map pre visit_count =
+      let compute_post (pre, inv_map) (instr, id_opt) =
+        let post = TransferFunctions.exec_instr pre proc_data node instr in
+        match id_opt with
+        | Some id -> post, InvariantMap.add id { pre; post; visit_count; } inv_map
+        | None -> post, inv_map in
+      (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
+      let instr_ids = match CFG.instr_ids node with
+        | [] -> [Sil.skip_instr, None]
+        | l -> l in
+      let astate_post, inv_map_post = IList.fold_left compute_post (pre, inv_map) instr_ids in
+      let inv_map'' =
+        InvariantMap.add node_id { pre; post=astate_post; visit_count; } inv_map_post in
+      inv_map'', Scheduler.schedule_succs work_queue node in
+    if InvariantMap.mem node_id inv_map
+    then
+      let old_state = InvariantMap.find node_id inv_map in
       let widened_pre =
-        A.widen ~prev:old_state.pre ~next:astate_pre ~num_iters:old_state.visit_count in
-      if A.(<=) ~lhs:widened_pre ~rhs:old_state.pre
-      then
-        begin
-          L.out "Old state contains new, not updating invariant or scheduling succs@.";
-          inv_map, work_queue
-        end
-      else
-        begin
-          L.out "Widening: %a <widen> %a = %a@."
-            A.pp astate_pre A.pp old_state.post A.pp widened_pre;
-          update_inv_map widened_pre (old_state.visit_count + 1)
-        end
+        Domain.widen ~prev:old_state.pre ~next:astate_pre ~num_iters:old_state.visit_count in
+      if Domain.(<=) ~lhs:widened_pre ~rhs:old_state.pre
+      then inv_map, work_queue
+      else update_inv_map widened_pre (old_state.visit_count + 1)
     else
       (* first time visiting this node *)
       let visit_count = 1 in
@@ -81,15 +93,15 @@ module Make
   let rec exec_worklist cfg work_queue inv_map proc_data =
     let compute_pre node inv_map =
       (* if the [pred] -> [node] transition was normal, use post([pred]) *)
-      let extract_post_ pred = extract_post (C.node_id pred) inv_map in
-      let normal_posts = IList.map extract_post_ (C.normal_preds cfg node) in
+      let extract_post_ pred = extract_post (CFG.id pred) inv_map in
+      let normal_posts = IList.map extract_post_ (CFG.normal_preds cfg node) in
       (* if the [pred] -> [node] transition was exceptional, use pre([pred]) *)
-      let extract_pre_f acc pred = extract_pre (C.node_id pred) inv_map :: acc in
-      let all_posts = IList.fold_left extract_pre_f normal_posts (C.exceptional_preds cfg node) in
+      let extract_pre_f acc pred = extract_pre (CFG.id pred) inv_map :: acc in
+      let all_posts = IList.fold_left extract_pre_f normal_posts (CFG.exceptional_preds cfg node) in
       match IList.flatten_options all_posts with
-      | post :: posts -> Some (IList.fold_left A.join post posts)
+      | post :: posts -> Some (IList.fold_left Domain.join post posts)
       | [] -> None in
-    match S.pop work_queue with
+    match Scheduler.pop work_queue with
     | Some (_, [], work_queue') ->
         exec_worklist cfg work_queue' inv_map proc_data
     | Some (node, _, work_queue') ->
@@ -102,32 +114,33 @@ module Make
 
   (* compute and return an invariant map for [cfg] *)
   let exec_cfg cfg proc_data =
-    let start_node = C.start_node cfg in
-    let inv_map', work_queue' = exec_node start_node A.initial (S.empty cfg) M.empty proc_data in
+    let start_node = CFG.start_node cfg in
+    let inv_map', work_queue' =
+      exec_node start_node Domain.initial (Scheduler.empty cfg) InvariantMap.empty proc_data in
     exec_worklist cfg work_queue' inv_map' proc_data
 
   (* compute and return an invariant map for [pdesc] *)
   let exec_pdesc ({ ProcData.pdesc; } as proc_data) =
-    L.out "Starting analysis of %a@." Procname.pp (Cfg.Procdesc.get_proc_name pdesc);
-    exec_cfg (C.from_pdesc pdesc) proc_data
+    exec_cfg (CFG.from_pdesc pdesc) proc_data
 
   (* compute and return the postcondition of [pdesc] *)
   let compute_post ({ ProcData.pdesc; } as proc_data) =
-    let cfg = C.from_pdesc pdesc in
+    let cfg = CFG.from_pdesc pdesc in
     let inv_map = exec_cfg cfg proc_data in
-    extract_post (C.node_id (C.exit_node cfg)) inv_map
+    extract_post (CFG.id (CFG.exit_node cfg)) inv_map
 
-  module Interprocedural (Summ : Summary.S with type summary = A.astate) = struct
+  module Interprocedural (Summ : Summary.S with type summary = Domain.astate) = struct
 
-    let checker { Callbacks.get_proc_desc; proc_desc; proc_name; tenv; } =
-      let post_opt = ref None in
-      let analyze_ondemand pdesc =
-        match compute_post (ProcData.make pdesc tenv) with
+    let checker { Callbacks.get_proc_desc; proc_desc; proc_name; tenv; } extras =
+      let analyze_ondemand_ _ pdesc =
+        match compute_post (ProcData.make pdesc tenv extras) with
         | Some post ->
             Summ.write_summary (Cfg.Procdesc.get_proc_name pdesc) post;
-            post_opt := Some post
+            Some post
         | None ->
-            post_opt := None in
+            None in
+      let analyze_ondemand source pdesc =
+        ignore (analyze_ondemand_ source pdesc) in
       let callbacks =
         {
           Ondemand.analyze_ondemand;
@@ -137,10 +150,14 @@ module Make
       then
         begin
           Ondemand.set_callbacks callbacks;
-          analyze_ondemand proc_desc;
+          let post_opt = analyze_ondemand_ DB.source_file_empty proc_desc in
           Ondemand.unset_callbacks ();
-        end;
-      !post_opt
+          post_opt
+        end
+      else
+        Summ.read_summary tenv proc_desc proc_name
   end
 end
 
+module Make (C : ProcCfg.S) (S : Scheduler.Make) (T : TransferFunctions.Make) =
+  MakeNoCFG (S (C)) (T (C))

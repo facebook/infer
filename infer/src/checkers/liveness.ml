@@ -18,53 +18,47 @@ module Domain = AbstractDomain.FiniteSet(Var.Set)
 
 (* compilers 101-style backward transfer functions for liveness analysis. gen a variable when it is
    read, kill the variable when it is assigned *)
-module TransferFunctions = struct
-  type astate = Domain.astate
+module TransferFunctions (CFG : ProcCfg.S) = struct
+  module CFG = CFG
+  module Domain = Domain
+  type extras = ProcData.no_extras
 
   (* add all of the vars read in [exp] to the live set *)
   let exp_add_live exp astate =
-    let (ids, pvars) = Sil.exp_get_vars exp in
+    let (ids, pvars) = Exp.get_vars exp in
     let astate' =
-      IList.fold_left (fun astate_acc id -> Domain.add (LogicalVar id) astate_acc) astate ids in
-    IList.fold_left (fun astate_acc pvar -> Domain.add (ProgramVar pvar) astate_acc) astate' pvars
+      IList.fold_left (fun astate_acc id -> Domain.add (Var.of_id id) astate_acc) astate ids in
+    IList.fold_left (fun astate_acc pvar -> Domain.add (Var.of_pvar pvar) astate_acc) astate' pvars
 
-  let exec_instr astate _ = function
-    | Sil.Letderef (lhs_id, rhs_exp, _, _)
-    | Sil.Set (Sil.Var lhs_id, _, rhs_exp, _) ->
-        Domain.remove (LogicalVar lhs_id) astate
+  let exec_instr astate _ _ = function
+    | Sil.Load (lhs_id, rhs_exp, _, _) ->
+        Domain.remove (Var.of_id lhs_id) astate
         |> exp_add_live rhs_exp
-    | Sil.Set (Lvar lhs_pvar, _, rhs_exp, _) ->
+    | Sil.Store (Lvar lhs_pvar, _, rhs_exp, _) ->
         let astate' =
           if Pvar.is_global lhs_pvar
           then astate (* never kill globals *)
-          else Domain.remove (ProgramVar lhs_pvar) astate in
+          else Domain.remove (Var.of_pvar lhs_pvar) astate in
         exp_add_live rhs_exp astate'
-    | Sil.Set (lhs_exp, _, rhs_exp, _) ->
+    | Sil.Store (lhs_exp, _, rhs_exp, _) ->
         exp_add_live lhs_exp astate
         |> exp_add_live rhs_exp
     | Sil.Prune (exp, _, _, _) ->
         exp_add_live exp astate
-    | Sil.Call (ret_ids, call_exp, params, _, _) ->
-        IList.fold_right
-          (fun ret_id astate_acc -> Domain.remove (LogicalVar ret_id) astate_acc)
-          ret_ids
-          astate
+    | Sil.Call (ret_id, call_exp, params, _, _) ->
+        Option.map_default (fun (ret_id, _) -> Domain.remove (Var.of_id ret_id) astate)
+          astate ret_id
         |> exp_add_live call_exp
         |> IList.fold_right exp_add_live (IList.map fst params)
-    | Sil.Declare_locals _ | Stackop _ ->
+    | Sil.Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
-    | Sil.Nullify _ | Remove_temps _ | Abstract _ ->
-        failwith
-          "Nullify, Remove_temps, and Abstract instructions should be added after running liveness"
-
 end
 
 module Analyzer =
   AbstractInterpreter.Make
     (ProcCfg.Backward(ProcCfg.Exceptional))
     (Scheduler.ReversePostorder)
-    (Domain)
     (TransferFunctions)
 
 let checker { Callbacks.proc_desc; tenv; } =
-  ignore(Analyzer.exec_pdesc (ProcData.make proc_desc tenv))
+  ignore(Analyzer.exec_pdesc (ProcData.make_default proc_desc tenv))

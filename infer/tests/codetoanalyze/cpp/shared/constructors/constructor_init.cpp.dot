@@ -1,0 +1,169 @@
+/* @generated */
+digraph iCFG {
+44 [label="44:  DeclStmt \n   _fun_B_B(&b:class B *,1:int ) [line 55]\n " shape="box"]
+	
+
+	 44 -> 43 ;
+43 [label="43:  DeclStmt \n   n$4=*&b.f:int  [line 56]\n  *&v:int =(1 / n$4) [line 56]\n " shape="box"]
+	
+
+	 43 -> 42 ;
+42 [label="42:  DeclStmt \n   n$3=*&b.f2:int  [line 57]\n  *&v2:int =(1 / n$3) [line 57]\n " shape="box"]
+	
+
+	 42 -> 41 ;
+41 [label="41:  DeclStmt \n   n$2=*&b.t.v:int  [line 58]\n  *&v3:int =(1 / n$2) [line 58]\n " shape="box"]
+	
+
+	 41 -> 40 ;
+40 [label="40:  Return Stmt \n   n$0=*&v:int  [line 59]\n  n$1=*&v2:int  [line 59]\n  *&return:int =(n$0 + n$1) [line 59]\n " shape="box"]
+	
+
+	 40 -> 39 ;
+39 [label="39: Exit f_f2_div1 \n  " color=yellow style=filled]
+	
+
+38 [label="38: Start f_f2_div1\nFormals: \nLocals:  v3:int  v2:int  v:int  b:class B  \n   DECLARE_LOCALS(&return,&v3,&v2,&v,&b); [line 54]\n " color=yellow style=filled]
+	
+
+	 38 -> 44 ;
+37 [label="37:  DeclStmt \n   _fun_B_B(&b:class B *,-1:int ,0:int ) [line 49]\n " shape="box"]
+	
+
+	 37 -> 36 ;
+36 [label="36:  DeclStmt \n   n$1=*&b.f:int  [line 50]\n  *&v:int =(1 / n$1) [line 50]\n " shape="box"]
+	
+
+	 36 -> 35 ;
+35 [label="35:  Return Stmt \n   n$0=*&b.f2:int  [line 51]\n  *&return:int =(1 / n$0) [line 51]\n " shape="box"]
+	
+
+	 35 -> 34 ;
+34 [label="34: Exit delegate_constr_f2_div0 \n  " color=yellow style=filled]
+	
+
+33 [label="33: Start delegate_constr_f2_div0\nFormals: \nLocals:  v:int  b:class B  \n   DECLARE_LOCALS(&return,&v,&b); [line 48]\n " color=yellow style=filled]
+	
+
+	 33 -> 37 ;
+32 [label="32:  DeclStmt \n   _fun_B_B(&b:class B *,-1:int ,1:int ) [line 43]\n " shape="box"]
+	
+
+	 32 -> 31 ;
+31 [label="31:  DeclStmt \n   n$1=*&b.f2:int  [line 44]\n  *&v:int =(1 / n$1) [line 44]\n " shape="box"]
+	
+
+	 31 -> 30 ;
+30 [label="30:  Return Stmt \n   n$0=*&b.f:int  [line 45]\n  *&return:int =(1 / n$0) [line 45]\n " shape="box"]
+	
+
+	 30 -> 29 ;
+29 [label="29: Exit delegate_constr_f_div0 \n  " color=yellow style=filled]
+	
+
+28 [label="28: Start delegate_constr_f_div0\nFormals: \nLocals:  v:int  b:class B  \n   DECLARE_LOCALS(&return,&v,&b); [line 42]\n " color=yellow style=filled]
+	
+
+	 28 -> 32 ;
+27 [label="27:  DeclStmt \n   _fun_B_B(&b:class B *,0:int ) [line 38]\n " shape="box"]
+	
+
+	 27 -> 26 ;
+26 [label="26:  Return Stmt \n   n$0=*&b.t.v:int  [line 39]\n  *&return:int =(1 / n$0) [line 39]\n " shape="box"]
+	
+
+	 26 -> 25 ;
+25 [label="25: Exit t_div0 \n  " color=yellow style=filled]
+	
+
+24 [label="24: Start t_div0\nFormals: \nLocals:  b:class B  \n   DECLARE_LOCALS(&return,&b); [line 37]\n " color=yellow style=filled]
+	
+
+	 24 -> 27 ;
+23 [label="23:  DeclStmt \n   _fun_B_B(&b:class B *,0:int ) [line 33]\n " shape="box"]
+	
+
+	 23 -> 22 ;
+22 [label="22:  Return Stmt \n   n$0=*&b.f:int  [line 34]\n  *&return:int =(1 / n$0) [line 34]\n " shape="box"]
+	
+
+	 22 -> 21 ;
+21 [label="21: Exit f_div0 \n  " color=yellow style=filled]
+	
+
+20 [label="20: Start f_div0\nFormals: \nLocals:  b:class B  \n   DECLARE_LOCALS(&return,&b); [line 32]\n " color=yellow style=filled]
+	
+
+	 20 -> 23 ;
+19 [label="19:  DeclStmt \n   _fun_B_B(&b:class B *,0:int ) [line 28]\n " shape="box"]
+	
+
+	 19 -> 18 ;
+18 [label="18:  Return Stmt \n   n$0=*&b.f2:int  [line 29]\n  *&return:int =(1 / n$0) [line 29]\n " shape="box"]
+	
+
+	 18 -> 17 ;
+17 [label="17: Exit f2_div0 \n  " color=yellow style=filled]
+	
+
+16 [label="16: Start f2_div0\nFormals: \nLocals:  b:class B  \n   DECLARE_LOCALS(&return,&b); [line 27]\n " color=yellow style=filled]
+	
+
+	 16 -> 19 ;
+15 [label="15:  Constructor Init \n   n$2=*&this:class B * [line 24]\n  n$3=*&a:int  [line 24]\n  n$4=*&b:int  [line 24]\n  _fun_B_B(n$2:class B *,(n$3 + n$4):int ) [line 24]\n " shape="box"]
+	
+
+	 15 -> 14 ;
+14 [label="14:  BinaryOperatorStmt: Assign \n   n$0=*&this:class B * [line 24]\n  n$1=*&b:int  [line 24]\n  *n$0.f2:int =n$1 [line 24]\n " shape="box"]
+	
+
+	 14 -> 13 ;
+13 [label="13: Exit B_B \n  " color=yellow style=filled]
+	
+
+12 [label="12: Start B_B\nFormals:  this:class B * a:int  b:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+	
+
+	 12 -> 15 ;
+11 [label="11:  Constructor Init \n   n$4=*&this:class B * [line 22]\n  n$5=*&a:int  [line 22]\n  _fun_A_A(n$4:class B *,n$5:int ) [line 22]\n " shape="box"]
+	
+
+	 11 -> 10 ;
+10 [label="10:  Constructor Init \n   n$2=*&this:class B * [line 22]\n  n$3=*&a:int  [line 22]\n  *n$2.f2:int =n$3 [line 22]\n " shape="box"]
+	
+
+	 10 -> 9 ;
+9 [label="9:  Constructor Init \n   n$0=*&this:class B * [line 22]\n  n$1=*&a:int  [line 22]\n  _fun_B::T_T(n$0.t:class B::T *,n$1:int ) [line 22]\n " shape="box"]
+	
+
+	 9 -> 8 ;
+8 [label="8: Exit B_B \n  " color=yellow style=filled]
+	
+
+7 [label="7: Start B_B\nFormals:  this:class B * a:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
+	
+
+	 7 -> 11 ;
+6 [label="6:  Constructor Init \n   n$0=*&this:class B::T * [line 18]\n  n$1=*&v:int  [line 18]\n  *n$0.v:int =n$1 [line 18]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit B::T_T \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start B::T_T\nFormals:  this:class B::T * v:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+	
+
+	 4 -> 6 ;
+3 [label="3:  Constructor Init \n   n$0=*&this:class A * [line 12]\n  n$1=*&f:int  [line 12]\n  *n$0.f:int =n$1 [line 12]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit A_A \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start A_A\nFormals:  this:class A * f:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

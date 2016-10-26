@@ -41,3 +41,21 @@ void memcpy_spec_is_found() {
   memcpy(0, &x, sizeof(int));
   int p = 1 / 0; // infer won't reach it when memcpy spec is found
 }
+
+// taken from getc.c e2e test
+void crash_getc() {
+  FILE* f;
+  int i;
+  f = fopen("this_file_doesnt_exist", "r");
+  i = getc(f);
+  fclose(f);
+}
+
+// taken from getc.c e2e test
+void crash_fgetc() {
+  FILE* f;
+  int i;
+  f = fopen("this_file_doesnt_exist", "r");
+  i = fgetc(f);
+  fclose(f);
+}

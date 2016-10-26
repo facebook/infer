@@ -28,7 +28,7 @@ val is_root : node -> bool
 val nodes_connected : node -> node -> bool
 
 (** Return the source of the edge *)
-val edge_get_source : edge -> node
+val edge_get_source : edge -> node option
 
 (** Return the successor nodes of the edge *)
 val edge_get_succs : edge -> node list

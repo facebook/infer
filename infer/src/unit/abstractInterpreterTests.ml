@@ -29,8 +29,6 @@ module PathCountDomain = struct
 
   let initial = make_path_count 1
 
-  let is_bottom _ = false
-
   let (<=) ~lhs ~rhs = match lhs, rhs with
     | PathCount c1, PathCount c2 -> c1 <= c2
     | _, Top -> true
@@ -48,24 +46,24 @@ module PathCountDomain = struct
 
 end
 
-module PathCountTransferFunctions = struct
-  type astate = PathCountDomain.astate
+module PathCountTransferFunctions (CFG : ProcCfg.S) = struct
+  module CFG = CFG
+  module Domain = PathCountDomain
+  type extras = ProcData.no_extras
 
   (* just propagate the current path count *)
-  let exec_instr astate _ _ = astate
+  let exec_instr astate _ _ _ = astate
 end
 
 
 module NormalTestInterpreter = AnalyzerTester.Make
     (ProcCfg.Normal)
     (Scheduler.ReversePostorder)
-    (PathCountDomain)
     (PathCountTransferFunctions)
 
 module ExceptionalTestInterpreter = AnalyzerTester.Make
     (ProcCfg.Exceptional)
     (Scheduler.ReversePostorder)
-    (PathCountDomain)
     (PathCountTransferFunctions)
 
 let tests =
@@ -182,7 +180,7 @@ let tests =
       );
       invariant "1"
     ];
-  ] |> NormalTestInterpreter.create_tests in
+  ] |> NormalTestInterpreter.create_tests ProcData.empty_extras in
   let exceptional_test_list = [
     "try1",
     [
@@ -218,5 +216,5 @@ let tests =
       );
       invariant "3"
     ];
-  ] |> ExceptionalTestInterpreter.create_tests in
+  ] |> ExceptionalTestInterpreter.create_tests ProcData.empty_extras in
   "analyzer_tests_suite">:::(normal_test_list @ exceptional_test_list)

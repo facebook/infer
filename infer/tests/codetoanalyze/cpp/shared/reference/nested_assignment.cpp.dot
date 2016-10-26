@@ -1,0 +1,64 @@
+/* @generated */
+digraph iCFG {
+16 [label="16:  DeclStmt \n   *&a:int =3 [line 23]\n " shape="box"]
+	
+
+	 16 -> 15 ;
+15 [label="15:  DeclStmt \n   n$3=*&a:int  [line 24]\n  *&b:int =n$3 [line 24]\n " shape="box"]
+	
+
+	 15 -> 14 ;
+14 [label="14:  DeclStmt \n   *&b:int =4 [line 28]\n  n$2=*&b:int  [line 28]\n  *&a:int =n$2 [line 28]\n  *&ref_from_val:int &=&a [line 28]\n " shape="box"]
+	
+
+	 14 -> 13 ;
+13 [label="13:  DeclStmt \n   n$0=*&ref_from_val:int & [line 29]\n  *&b:int =5 [line 29]\n  n$1=*&b:int  [line 29]\n  *n$0:int =n$1 [line 29]\n  *&ref_from_ref:int &=n$0 [line 29]\n " shape="box"]
+	
+
+	 13 -> 12 ;
+12 [label="12: Exit crazy_nested \n  " color=yellow style=filled]
+	
+
+11 [label="11: Start crazy_nested\nFormals: \nLocals:  ref_from_ref:int & ref_from_val:int & b:int  a:int  \n   DECLARE_LOCALS(&return,&ref_from_ref,&ref_from_val,&b,&a); [line 22]\n " color=yellow style=filled]
+	
+
+	 11 -> 16 ;
+10 [label="10:  DeclStmt \n   *&a:int =3 [line 17]\n " shape="box"]
+	
+
+	 10 -> 9 ;
+9 [label="9:  DeclStmt \n   *&a:int =4 [line 18]\n  *&ref_from_val:int &=&a [line 18]\n " shape="box"]
+	
+
+	 9 -> 8 ;
+8 [label="8:  DeclStmt \n   n$0=*&ref_from_val:int & [line 19]\n  *n$0:int =6 [line 19]\n  *&ref_from_ref:int &=n$0 [line 19]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7: Exit nested \n  " color=yellow style=filled]
+	
+
+6 [label="6: Start nested\nFormals: \nLocals:  ref_from_ref:int & ref_from_val:int & a:int  \n   DECLARE_LOCALS(&return,&ref_from_ref,&ref_from_val,&a); [line 16]\n " color=yellow style=filled]
+	
+
+	 6 -> 10 ;
+5 [label="5:  DeclStmt \n   *&a:int =3 [line 11]\n " shape="box"]
+	
+
+	 5 -> 4 ;
+4 [label="4:  DeclStmt \n   *&ref_from_val:int &=&a [line 12]\n " shape="box"]
+	
+
+	 4 -> 3 ;
+3 [label="3:  DeclStmt \n   n$0=*&ref_from_val:int & [line 13]\n  *&ref_from_ref:int &=n$0 [line 13]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit normal \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start normal\nFormals: \nLocals:  ref_from_ref:int & ref_from_val:int & a:int  \n   DECLARE_LOCALS(&return,&ref_from_ref,&ref_from_val,&a); [line 10]\n " color=yellow style=filled]
+	
+
+	 1 -> 5 ;
+}

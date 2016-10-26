@@ -33,16 +33,16 @@ module Jprop = struct
     | Prop (n, _) -> n
     | Joined (n, _, _, _) -> n
 
-  let rec fav_add_dfs fav = function
-    | Prop (_, p) -> Prop.prop_fav_add_dfs fav p
+  let rec fav_add_dfs tenv fav = function
+    | Prop (_, p) -> Prop.prop_fav_add_dfs tenv fav p
     | Joined (_, p, jp1, jp2) ->
-        Prop.prop_fav_add_dfs fav p;
-        fav_add_dfs fav jp1;
-        fav_add_dfs fav jp2
+        Prop.prop_fav_add_dfs tenv fav p;
+        fav_add_dfs tenv fav jp1;
+        fav_add_dfs tenv fav jp2
 
-  let rec normalize = function
-    | Prop (n, p) -> Prop (n, Prop.normalize p)
-    | Joined (n, p, jp1, jp2) -> Joined (n, Prop.normalize p, normalize jp1, normalize jp2)
+  let rec normalize tenv = function
+    | Prop (n, p) -> Prop (n, Prop.normalize tenv p)
+    | Joined (n, p, jp1, jp2) -> Joined (n, Prop.normalize tenv p, normalize tenv jp1, normalize tenv jp2)
 
   (** Return a compact representation of the jprop *)
   let rec compact sh = function
@@ -168,35 +168,42 @@ let visited_str vis =
     visited: a list of pairs (node_id, line) for the visited nodes *)
 type 'a spec = { pre: 'a Jprop.t; posts: ('a Prop.t * Paths.Path.t) list; visited : Visitedset.t }
 
-module NormSpec : sig (* encapsulate type for normalized specs *)
+(** encapsulate type for normalized specs *)
+module NormSpec : sig
   type t
-  val normalize : Prop.normal spec -> t
+
+  val normalize : Tenv.t -> Prop.normal spec -> t
+
   val tospecs : t list -> Prop.normal spec list
+
   val compact : Sil.sharing_env -> t -> t (** Return a compact representation of the spec *)
-  val erase_join_info_pre : t -> t (** Erase join info from pre of spec *)
+
+  val erase_join_info_pre : Tenv.t -> t -> t (** Erase join info from pre of spec *)
 end = struct
   type t = Prop.normal spec
 
   let tospecs specs = specs
 
-  let spec_fav (spec: Prop.normal spec) : Sil.fav =
+  let spec_fav tenv (spec: Prop.normal spec) : Sil.fav =
     let fav = Sil.fav_new () in
-    Jprop.fav_add_dfs fav spec.pre;
-    IList.iter (fun (p, _) -> Prop.prop_fav_add_dfs fav p) spec.posts;
+    Jprop.fav_add_dfs tenv fav spec.pre;
+    IList.iter (fun (p, _) -> Prop.prop_fav_add_dfs tenv fav p) spec.posts;
     fav
 
-  let spec_sub sub spec =
-    { pre = Jprop.normalize (Jprop.jprop_sub sub spec.pre);
-      posts = IList.map (fun (p, path) -> (Prop.normalize (Prop.prop_sub sub p), path)) spec.posts;
+  let spec_sub tenv sub spec =
+    { pre = Jprop.normalize tenv (Jprop.jprop_sub sub spec.pre);
+      posts = IList.map (fun (p, path) -> (Prop.normalize tenv (Prop.prop_sub sub p), path)) spec.posts;
       visited = spec.visited }
 
   (** Convert spec into normal form w.r.t. variable renaming *)
-  let normalize (spec: Prop.normal spec) : Prop.normal spec =
-    let fav = spec_fav spec in
+  let normalize tenv (spec: Prop.normal spec) : Prop.normal spec =
+    let fav = spec_fav tenv spec in
     let idlist = Sil.fav_to_list fav in
     let count = ref 0 in
-    let sub = Sil.sub_of_list (IList.map (fun id -> incr count; (id, Sil.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
-    spec_sub sub spec
+    let sub =
+      Sil.sub_of_list (IList.map (fun id ->
+          incr count; (id, Exp.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
+    spec_sub tenv sub spec
 
   (** Return a compact representation of the spec *)
   let compact sh spec =
@@ -205,9 +212,9 @@ end = struct
     { pre = pre; posts = posts; visited = spec.visited }
 
   (** Erase join info from pre of spec *)
-  let erase_join_info_pre spec =
+  let erase_join_info_pre tenv spec =
     let spec' = { spec with pre = Jprop.Prop (1, Jprop.to_prop spec.pre) } in
-    normalize spec'
+    normalize tenv spec'
 end
 
 (** Convert spec into normal form w.r.t. variable renaming *)
@@ -226,7 +233,8 @@ module CallStats = struct (** module for tracing stats of function calls *)
         Location.equal loc1 loc2 && Procname.equal pname1 pname2
     end)
 
-  type call_result = (** kind of result of a procedure call *)
+  (** kind of result of a procedure call *)
+  type call_result =
     | CR_success (** successful call *)
     | CR_not_met (** precondition not met *)
     | CR_not_found (** the callee has no specs *)
@@ -307,12 +315,7 @@ type phase = FOOTPRINT | RE_EXECUTION
 
 type dependency_map_t = int Procname.Map.t
 
-type call = Procname.t * Location.t
-
-type call_summary = {
-  expensive_calls: call list;
-  allocations: call list
-}
+type call_summary = CallSite.Set.t Annot.Map.t
 
 (** Payload: results of some analysis *)
 type payload =
@@ -320,6 +323,10 @@ type payload =
     preposts : NormSpec.t list option; (** list of specs *)
     typestate : unit TypeState.t option; (** final typestate *)
     calls: call_summary option;
+    crashcontext_frame: Stacktree_j.stacktree option;
+    (** Proc location and blame_range info for crashcontext analysis *)
+    quandary : QuandarySummary.t option;
+    globals_read: Pvar.Set.t option;
   }
 
 type summary =
@@ -334,13 +341,7 @@ type summary =
     attributes : ProcAttributes.t; (** Attributes of the procedure *)
   }
 
-(** origin of a summary: current results dir, a spec library, or models *)
-type origin =
-  | Res_dir
-  | Spec_lib
-  | Models
-
-type spec_tbl = (summary * origin) Procname.Hash.t
+type spec_tbl = (summary * DB.origin) Procname.Hash.t
 
 let spec_tbl: spec_tbl = Procname.Hash.create 128
 
@@ -355,12 +356,15 @@ let pp_failure_kind_opt fmt failure_kind_opt = match failure_kind_opt with
   | Some failure_kind -> SymOp.pp_failure_kind fmt failure_kind
   | None -> F.fprintf fmt "NONE"
 
-let pp_stats err_log whole_seconds fmt stats =
-  F.fprintf fmt "TIME:%a FAILURE:%a SYMOPS:%d CALLS:%d,%d@\n" (pp_time whole_seconds)
-    stats.stats_time pp_failure_kind_opt stats.stats_failure stats.symops
-    stats.stats_calls.Cg.in_calls stats.stats_calls.Cg.out_calls;
+let pp_errlog fmt err_log =
   F.fprintf fmt "ERRORS: @[<h>%a@]@." Errlog.pp_errors err_log;
   F.fprintf fmt "WARNINGS: @[<h>%a@]" Errlog.pp_warnings err_log
+
+let pp_stats whole_seconds fmt stats =
+  F.fprintf fmt "TIME:%a FAILURE:%a SYMOPS:%d CALLS:%d,%d@\n" (pp_time whole_seconds)
+    stats.stats_time pp_failure_kind_opt stats.stats_failure stats.symops
+    stats.stats_calls.Cg.in_calls stats.stats_calls.Cg.out_calls
+
 
 (** Print the spec *)
 let pp_spec pe num_opt fmt spec =
@@ -379,7 +383,7 @@ let pp_spec pe num_opt fmt spec =
   | PP_HTML ->
       F.fprintf fmt "--------------------------- %s ---------------------------@\n" num_str;
       F.fprintf fmt "PRE:@\n%a%a%a@\n" Io_infer.Html.pp_start_color Blue (Prop.pp_prop (pe_html Blue)) pre Io_infer.Html.pp_end_color ();
-      F.fprintf fmt "%a" (Propgraph.pp_proplist pe_post "POST" (Jprop.to_prop spec.pre, true)) post_list;
+      F.fprintf fmt "%a" (Propgraph.pp_proplist pe_post "POST" (pre, true)) post_list;
       F.fprintf fmt "----------------------------------------------------------------"
   | PP_LATEX ->
       F.fprintf fmt "\\textbf{\\large Requires}\\\\@\n@[%a%a%a@]\\\\@\n" Latex.pp_color Blue (Prop.pp_prop (pe_latex Blue)) pre Latex.pp_color pe.pe_color;
@@ -419,14 +423,14 @@ let get_signature summary =
   IList.iter
     (fun (p, typ) ->
        let pp_name f () = F.fprintf f "%a" Mangled.pp p in
-       let pp f () = Sil.pp_type_decl pe_text pp_name Sil.pp_exp f typ in
+       let pp f () = Typ.pp_decl pe_text pp_name f typ in
        let decl = pp_to_string pp () in
        s := if !s = "" then decl else !s ^ ", " ^ decl)
     summary.attributes.ProcAttributes.formals;
   let pp_procname f () = F.fprintf f "%a"
       Procname.pp summary.attributes.ProcAttributes.proc_name in
   let pp f () =
-    Sil.pp_type_decl pe_text pp_procname Sil.pp_exp f summary.attributes.ProcAttributes.ret_type in
+    Typ.pp_decl pe_text pp_procname f summary.attributes.ProcAttributes.ret_type in
   let decl = pp_to_string pp () in
   decl ^ "(" ^ !s ^ ")"
 
@@ -438,43 +442,41 @@ let pp_summary_no_stats_specs fmt summary =
   F.fprintf fmt "%a@\n" pp_pair (describe_phase summary);
   F.fprintf fmt "Dependency_map: @[%a@]@\n" pp_dependency_map summary.dependency_map
 
-let pp_stats_html err_log fmt =
-  Errlog.pp_html [] fmt err_log
-
 let get_specs_from_payload summary =
   match summary.payload.preposts with
   | Some specs -> NormSpec.tospecs specs
   | None -> []
 
-(** Print the summary *)
-let pp_summary pe whole_seconds fmt summary =
+let pp_summary_text ~whole_seconds fmt summary =
   let err_log = summary.attributes.ProcAttributes.err_log in
-  match pe.pe_kind with
-  | PP_TEXT ->
-      pp_summary_no_stats_specs fmt summary;
-      F.fprintf fmt "%a@\n" (pp_stats err_log whole_seconds) summary.stats;
-      F.fprintf fmt "%a" (pp_specs pe) (get_specs_from_payload summary)
-  | PP_HTML ->
-      Io_infer.Html.pp_start_color fmt Black;
-      F.fprintf fmt "@\n%a" pp_summary_no_stats_specs summary;
-      Io_infer.Html.pp_end_color fmt ();
-      pp_stats_html err_log fmt;
-      Io_infer.Html.pp_hline fmt ();
-      F.fprintf fmt "<LISTING>@\n";
-      pp_specs pe fmt (get_specs_from_payload summary);
-      F.fprintf fmt "</LISTING>@\n"
-  | PP_LATEX ->
-      F.fprintf fmt "\\begin{verbatim}@\n";
-      pp_summary_no_stats_specs fmt summary;
-      F.fprintf fmt "%a@\n" (pp_stats err_log whole_seconds) summary.stats;
-      F.fprintf fmt "\\end{verbatim}@\n";
-      F.fprintf fmt "%a@\n" (pp_specs pe) (get_specs_from_payload summary)
+  let pe = pe_text in
+  pp_summary_no_stats_specs fmt summary;
+  F.fprintf fmt "%a@\n" pp_errlog err_log;
+  F.fprintf fmt "%a@\n" (pp_stats whole_seconds) summary.stats;
+  F.fprintf fmt "%a" (pp_specs pe) (get_specs_from_payload summary)
 
-(** Print the spec table *)
-let pp_spec_table pe whole_seconds fmt () =
-  Procname.Hash.iter (fun proc_name (summ, _) ->
-      F.fprintf fmt "PROC %a@\n%a@\n" Procname.pp proc_name (pp_summary pe whole_seconds) summ
-    ) spec_tbl
+let pp_summary_latex ~whole_seconds color fmt summary =
+  let err_log = summary.attributes.ProcAttributes.err_log in
+  let pe = pe_latex color in
+  F.fprintf fmt "\\begin{verbatim}@\n";
+  pp_summary_no_stats_specs fmt summary;
+  F.fprintf fmt "%a@\n" pp_errlog err_log;
+  F.fprintf fmt "%a@\n" (pp_stats whole_seconds) summary.stats;
+  F.fprintf fmt "\\end{verbatim}@\n";
+  F.fprintf fmt "%a@\n" (pp_specs pe) (get_specs_from_payload summary)
+
+let pp_summary_html ~whole_seconds source color fmt summary =
+  let err_log = summary.attributes.ProcAttributes.err_log in
+  let pe = pe_html color in
+  Io_infer.Html.pp_start_color fmt Black;
+  F.fprintf fmt "@\n%a" pp_summary_no_stats_specs summary;
+  Io_infer.Html.pp_end_color fmt ();
+  F.fprintf fmt "<br />%a<br />@\n" (pp_stats whole_seconds) summary.stats;
+  Errlog.pp_html source [] fmt err_log;
+  Io_infer.Html.pp_hline fmt ();
+  F.fprintf fmt "<LISTING>@\n";
+  pp_specs pe fmt (get_specs_from_payload summary);
+  F.fprintf fmt "</LISTING>@\n"
 
 let empty_stats calls in_out_calls_opt =
   { stats_time = 0.0;
@@ -505,17 +507,19 @@ let summary_compact sh summary =
 let set_summary_origin proc_name summary origin =
   Procname.Hash.replace spec_tbl proc_name (summary, origin)
 
-let add_summary_origin (proc_name : Procname.t) (summary: summary) (origin: origin) : unit =
-  L.out "Adding summary for %a@\n@[<v 2>  %a@]@." Procname.pp proc_name (pp_summary pe_text false) summary;
+let add_summary_origin (proc_name : Procname.t) (summary: summary) (origin: DB.origin) : unit =
+  L.out "Adding summary for %a@\n@[<v 2>  %a@]@."
+    Procname.pp proc_name
+    (pp_summary_text ~whole_seconds:false) summary;
   set_summary_origin proc_name summary origin
 
 (** Add the summary to the table for the given function *)
 let add_summary (proc_name : Procname.t) (summary: summary) : unit =
-  add_summary_origin proc_name summary Res_dir
+  add_summary_origin proc_name summary DB.Res_dir
 
 let specs_filename pname =
   let pname_file = Procname.to_filename pname in
-  pname_file ^ ".specs"
+  pname_file ^ Config.specs_files_suffix
 
 (** path to the .specs file for the given procedure in the current results directory *)
 let res_dir_specs_filename pname =
@@ -525,7 +529,7 @@ let res_dir_specs_filename pname =
 let specs_library_filenames pname =
   IList.map
     (fun specs_dir -> DB.filename_from_string (Filename.concat specs_dir (specs_filename pname)))
-    !Config.specs_library
+    Config.specs_library
 
 (** paths to the .specs file for the given procedure in the models folder *)
 let specs_models_filename pname =
@@ -538,18 +542,18 @@ let summary_serializer : summary Serialization.serializer =
   Serialization.create_serializer Serialization.summary_key
 
 (** Save summary for the procedure into the spec database *)
-let store_summary pname (summ: summary) =
+let store_summary tenv pname (summ: summary) =
   let process_payload payload = match payload.preposts with
     | Some specs ->
         { payload with
-          preposts = Some (IList.map NormSpec.erase_join_info_pre specs);
+          preposts = Some (IList.map (NormSpec.erase_join_info_pre tenv) specs);
         }
     | None -> payload in
   let summ1 = { summ with payload = process_payload summ.payload } in
-  let summ2 = if !Config.save_compact_summaries
+  let summ2 = if Config.save_compact_summaries
     then summary_compact (Sil.create_sharing_env ()) summ1
     else summ1 in
-  let summ3 = if !Config.save_time_in_summaries
+  let summ3 = if Config.save_time_in_summaries
     then summ2
     else
       { summ2 with
@@ -560,22 +564,6 @@ let store_summary pname (summ: summary) =
 let load_summary specs_file =
   Serialization.from_file summary_serializer specs_file
 
-(** Load procedure summary from the given zip file *)
-(* TODO: instead of always going through the same list for zip files for every proc_name, *)
-(* create beforehand a map from specs filenames to zip filenames, so that looking up the specs for a given procedure is fast *)
-let load_summary_from_zip zip_specs_path zip_channel =
-  let found_summary =
-    try
-      let entry = Zip.find_entry zip_channel zip_specs_path in
-      begin
-        match Serialization.from_string summary_serializer (Zip.read_entry zip_channel entry) with
-        | Some summ -> Some summ
-        | None ->
-            L.err "Could not load specs datastructure from %s@." zip_specs_path;
-            None
-      end
-    with Not_found -> None in
-  found_summary
 
 (** Load procedure summary for the given procedure name and update spec table *)
 let load_summary_to_spec_table proc_name =
@@ -585,7 +573,7 @@ let load_summary_to_spec_table proc_name =
   let load_summary_models models_dir =
     match load_summary models_dir with
     | None -> false
-    | Some summ -> add summ Models in
+    | Some summ -> add summ DB.Models in
   let rec load_summary_libs = function (* try to load the summary from a list of libs *)
     | [] -> false
     | spec_path :: spec_paths ->
@@ -593,31 +581,20 @@ let load_summary_to_spec_table proc_name =
          | None -> load_summary_libs spec_paths
          | Some summ ->
              add summ Spec_lib) in
-  let rec load_summary_ziplibs zip_libraries = (* try to load the summary from a list of zip libraries *)
-    let zip_specs_filename = specs_filename proc_name in
-    let zip_specs_path =
-      let root = Filename.concat Config.default_in_zip_results_dir Config.specs_dir_name in
-      Filename.concat root zip_specs_filename in
-    match zip_libraries with
-    | [] -> false
-    | zip_library:: zip_libraries ->
-        begin
-          match load_summary_from_zip zip_specs_path (Config.zip_channel zip_library) with
-          | None -> load_summary_ziplibs zip_libraries
-          | Some summ ->
-              let origin = if zip_library.Config.models then Models else Spec_lib in
-              add summ origin
-        end in
+  let load_summary_ziplibs zip_specs_filename =
+    let zip_specs_path = Filename.concat Config.specs_dir_name zip_specs_filename in
+    match ZipLib.load summary_serializer zip_specs_path with
+    | None -> false
+    | Some (summary, origin) -> add summary origin in
   let default_spec_dir = res_dir_specs_filename proc_name in
   match load_summary default_spec_dir with
   | None ->
       (* search on models, libzips, and libs *)
-      if load_summary_models (specs_models_filename proc_name) then true
-      else if load_summary_ziplibs !Config.zip_libraries then true
-      else load_summary_libs (specs_library_filenames proc_name)
-
+      load_summary_models (specs_models_filename proc_name) ||
+      load_summary_ziplibs (specs_filename proc_name) ||
+      load_summary_libs (specs_library_filenames proc_name)
   | Some summ ->
-      add summ Res_dir
+      add summ DB.Res_dir
 
 let rec get_summary_origin proc_name =
   try
@@ -687,7 +664,7 @@ let pdesc_resolve_attributes proc_desc =
 let get_origin proc_name =
   match get_summary_origin proc_name with
   | Some (_, origin) -> origin
-  | None -> Res_dir
+  | None -> DB.Res_dir
 
 let summary_exists proc_name =
   match get_summary proc_name with
@@ -782,6 +759,9 @@ let empty_payload =
     preposts = None;
     typestate = None;
     calls = None;
+    crashcontext_frame = None;
+    quandary = None;
+    globals_read = None;
   }
 
 (** [init_summary (depend_list, nodes,
@@ -806,7 +786,7 @@ let init_summary
         { proc_attributes with
           ProcAttributes.proc_flags = proc_flags; };
     } in
-  Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name (summary, Res_dir)
+  Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name (summary, DB.Res_dir)
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 let reset_summary call_graph proc_name attributes_opt =

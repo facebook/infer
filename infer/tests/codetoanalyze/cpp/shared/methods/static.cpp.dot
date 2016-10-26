@@ -1,0 +1,36 @@
+/* @generated */
+digraph iCFG {
+9 [label="9:  Call _fun_A_fun \n   n$0=*&a:class A * [line 21]\n  n$1=_fun_A_fun(0:int ) [line 21]\n " shape="box"]
+	
+
+	 9 -> 8 ;
+8 [label="8: Exit div0_instance \n  " color=yellow style=filled]
+	
+
+7 [label="7: Start div0_instance\nFormals:  a:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
+	
+
+	 7 -> 9 ;
+6 [label="6:  Call _fun_A_fun \n   n$0=_fun_A_fun(0:int ) [line 17]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit div0_class \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start div0_class\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
+	
+
+	 4 -> 6 ;
+3 [label="3:  Return Stmt \n   n$0=*&a:int  [line 15]\n  *&return:int =(1 / n$0) [line 15]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit A_fun \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start A_fun\nFormals:  a:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

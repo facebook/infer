@@ -14,9 +14,6 @@ module F = Format
 
 let checkers_repeated_calls_name = "CHECKERS_REPEATED_CALLS"
 
-(* activate the check for repeated calls *)
-let checkers_repeated_calls = Config.from_env_variable checkers_repeated_calls_name
-
 
 (** Extension for the repeated calls check. *)
 module RepeatedCallsExtension : Eradicate.ExtensionT =
@@ -27,9 +24,9 @@ struct
       let compare i1 i2 = match i1, i2 with
         | Sil.Call (_, e1, etl1, _, cf1), Sil.Call (_, e2, etl2, _, cf2) ->
             (* ignore return ids and call flags *)
-            let n = Sil.exp_compare e1 e2 in
+            let n = Exp.compare e1 e2 in
             if n <> 0 then n else let n = IList.compare Sil.exp_typ_compare etl1 etl2 in
-              if n <> 0 then n else Sil.call_flags_compare cf1 cf2
+              if n <> 0 then n else CallFlags.compare cf1 cf2
         | _ -> Sil.instr_compare i1 i2
     end)
 
@@ -73,7 +70,7 @@ struct
         Procname.equal pn ModelBuiltins.__new_array in
       let do_instr instr =
         match instr with
-        | Sil.Call (_, Sil.Const (Sil.Cfun pn), _, loc, _) when proc_is_new pn ->
+        | Sil.Call (_, Exp.Const (Const.Cfun pn), _, loc, _) when proc_is_new pn ->
             found := Some loc
         | _ -> () in
       IList.iter do_instr (Cfg.Node.get_instrs node);
@@ -108,21 +105,21 @@ struct
   (** Check repeated calls to the same procedure. *)
   let check_instr tenv get_proc_desc curr_pname curr_pdesc extension instr normalized_etl =
 
-    (** Arguments are not temporary variables. *)
+    (* Arguments are not temporary variables. *)
     let arguments_not_temp args =
       let filter_arg (e, _) = match e with
-        | Sil.Lvar pvar ->
+        | Exp.Lvar pvar ->
             (* same temporary variable does not imply same value *)
-            not (Errdesc.pvar_is_frontend_tmp pvar)
+            not (Pvar.is_frontend_tmp pvar)
         | _ -> true in
       IList.for_all filter_arg args in
 
     match instr with
-    | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), _, loc, call_flags)
-      when ret_ids <> [] && arguments_not_temp normalized_etl ->
+    | Sil.Call (Some _ as ret_id, Exp.Const (Const.Cfun callee_pname), _, loc, call_flags)
+      when arguments_not_temp normalized_etl ->
         let instr_normalized_args = Sil.Call (
-            ret_ids,
-            Sil.Const (Sil.Cfun callee_pname),
+            ret_id,
+            Exp.Const (Const.Cfun callee_pname),
             normalized_etl,
             loc,
             call_flags) in
@@ -138,7 +135,7 @@ struct
                         loc_old.Location.line
                         (DB.source_file_to_string alloc_loc.Location.file)
                         alloc_loc.Location.line in
-                    Checkers.ST.report_error
+                    Checkers.ST.report_error tenv
                       curr_pname curr_pdesc checkers_repeated_calls_name loc description
                 | None -> ()
               end
@@ -170,7 +167,7 @@ let callback_check_repeated_calls callback_args =
   let checks =
     {
       TypeCheck.eradicate = false;
-      check_extension = checkers_repeated_calls;
+      check_extension = Config.checkers_repeated_calls;
       check_ret_type = [];
     } in
   MainRepeatedCalls.callback checks callback_args

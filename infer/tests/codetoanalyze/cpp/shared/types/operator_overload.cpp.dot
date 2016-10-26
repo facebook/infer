@@ -1,0 +1,103 @@
+/* @generated */
+digraph iCFG {
+27 [label="27:  Return Stmt \n   n$0=*&x:class X & [line 45]\n  n$1=_fun_X_operator[](n$0:class X &,1:int ) [line 45]\n  *&return:int =(1 / n$1) [line 45]\n " shape="box"]
+	
+
+	 27 -> 26 ;
+26 [label="26: Exit div1_method_op \n  " color=yellow style=filled]
+	
+
+25 [label="25: Start div1_method_op\nFormals:  x:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 45]\n " color=yellow style=filled]
+	
+
+	 25 -> 27 ;
+24 [label="24:  Return Stmt \n   n$0=*&y:class Y & [line 42]\n  n$1=_fun_X_operator[](n$0:class Y &,0:int ) [line 42]\n  *&return:int =(1 / n$1) [line 42]\n " shape="box"]
+	
+
+	 24 -> 23 ;
+23 [label="23: Exit div0_inheritted_op \n  " color=yellow style=filled]
+	
+
+22 [label="22: Start div0_inheritted_op\nFormals:  y:class Y &\nLocals:  \n   DECLARE_LOCALS(&return); [line 40]\n " color=yellow style=filled]
+	
+
+	 22 -> 24 ;
+21 [label="21:  DeclStmt \n   n$1=*&x:class X & [line 36]\n  _=*n$1:class X  [line 36]\n  n$3=_fun_X_operator[](n$1:class X &,0:int ) [line 36]\n  *&v:int =n$3 [line 36]\n " shape="box"]
+	
+
+	 21 -> 20 ;
+20 [label="20:  Return Stmt \n   n$0=*&v:int  [line 37]\n  *&return:int =(1 / n$0) [line 37]\n " shape="box"]
+	
+
+	 20 -> 19 ;
+19 [label="19: Exit div0_method \n  " color=yellow style=filled]
+	
+
+18 [label="18: Start div0_method\nFormals:  x:class X &\nLocals:  v:int  \n   DECLARE_LOCALS(&return,&v); [line 34]\n " color=yellow style=filled]
+	
+
+	 18 -> 21 ;
+17 [label="17:  DeclStmt \n   n$1=*&x:class X & [line 30]\n  n$2=_fun_operator*(n$1:class X &,0:int ) [line 30]\n  *&v:int =n$2 [line 30]\n " shape="box"]
+	
+
+	 17 -> 16 ;
+16 [label="16:  Return Stmt \n   n$0=*&v:int  [line 31]\n  *&return:int =(1 / n$0) [line 31]\n " shape="box"]
+	
+
+	 16 -> 15 ;
+15 [label="15: Exit div0_function_op \n  " color=yellow style=filled]
+	
+
+14 [label="14: Start div0_function_op\nFormals:  x:class X &\nLocals:  v:int  \n   DECLARE_LOCALS(&return,&v); [line 28]\n " color=yellow style=filled]
+	
+
+	 14 -> 17 ;
+13 [label="13:  Return Stmt \n   n$0=*&x:class X * [line 26]\n  n$1=_fun_X_operator[](n$0:class X &,0:int ) [line 26]\n  *&return:int =(1 / n$1) [line 26]\n " shape="box"]
+	
+
+	 13 -> 12 ;
+12 [label="12: Exit div0_method_op_ptr \n  " color=yellow style=filled]
+	
+
+11 [label="11: Start div0_method_op_ptr\nFormals:  x:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
+	
+
+	 11 -> 13 ;
+10 [label="10:  DeclStmt \n   n$1=*&x:class X & [line 22]\n  n$2=_fun_X_operator[](n$1:class X &,0:int ) [line 22]\n  *&v:int =n$2 [line 22]\n " shape="box"]
+	
+
+	 10 -> 9 ;
+9 [label="9:  Return Stmt \n   n$0=*&v:int  [line 23]\n  *&return:int =(1 / n$0) [line 23]\n " shape="box"]
+	
+
+	 9 -> 8 ;
+8 [label="8: Exit div0_method_op \n  " color=yellow style=filled]
+	
+
+7 [label="7: Start div0_method_op\nFormals:  x:class X &\nLocals:  v:int  \n   DECLARE_LOCALS(&return,&v); [line 20]\n " color=yellow style=filled]
+	
+
+	 7 -> 10 ;
+6 [label="6:  Return Stmt \n   n$0=*&v:int  [line 18]\n  *&return:int =n$0 [line 18]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit operator* \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start operator*\nFormals:  x1:class X & v:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+	
+
+	 4 -> 6 ;
+3 [label="3:  Return Stmt \n   n$0=*&x:int  [line 12]\n  *&return:int =n$0 [line 12]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit X_operator[] \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start X_operator[]\nFormals:  this:class X * x:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

@@ -15,53 +15,36 @@ module L = Logging
 (** Annotations. *)
 
 (** Method signature with annotations. *)
-type annotated_signature =
-  { ret : Sil.item_annotation * Sil.typ; (** Annotated return type. *)
-    params: (Mangled.t * Sil.item_annotation * Sil.typ) list } (** Annotated parameters. *)
+type annotated_signature = {
+  ret : Annot.Item.t * Typ.t; (** Annotated return type. *)
+  params: (Mangled.t * Annot.Item.t * Typ.t) list (** Annotated parameters. *)
+}
 
 let param_equal (s1, ia1, t1) (s2, ia2, t2) =
   Mangled.equal s1 s2 &&
-  Sil.item_annotation_compare ia1 ia2 = 0 &&
-  Sil.typ_equal t1 t2
+  Annot.Item.compare ia1 ia2 = 0 &&
+  Typ.equal t1 t2
 
 let equal as1 as2 =
   let ia1, t1 = as1.ret
   and ia2, t2 = as2.ret in
-  Sil.item_annotation_compare ia1 ia2 = 0 &&
-  Sil.typ_equal t1 t2 &&
+  Annot.Item.compare ia1 ia2 = 0 &&
+  Typ.equal t1 t2 &&
   IList.for_all2 param_equal as1.params as2.params
 
 let visibleForTesting = "com.google.common.annotations.VisibleForTesting"
 let suppressLint = "android.annotation.SuppressLint"
 
-
-let get_field_type_and_annotation fn = function
-  | Sil.Tptr (Sil.Tstruct struct_typ, _)
-  | Sil.Tstruct struct_typ ->
-      (try
-         let (_, t, a) = IList.find (fun (f, _, _) ->
-             Sil.fld_equal f fn)
-             (struct_typ.Sil.instance_fields @ struct_typ.Sil.static_fields) in
-         Some (t, a)
-       with Not_found -> None)
-  | _ -> None
-
-(** Return the annotations on the declaring class of [pname]. Only works for Java *)
-let get_declaring_class_annotations pname tenv =
-  match Tenv.proc_extract_declaring_class_typ tenv pname with
-  | Some { Sil.struct_annotations } -> Some struct_annotations
-  | None -> None
-
 let ia_iter f =
   let ann_iter (a, _) = f a in
   IList.iter ann_iter
 
-let ma_iter f ((ia, ial) : Sil.method_annotation) =
+let ma_iter f ((ia, ial) : Annot.Method.t) =
   IList.iter (ia_iter f) (ia:: ial)
 
 let ma_has_annotation_with
-    (ma: Sil.method_annotation)
-    (predicate: Sil.annotation -> bool): bool =
+    (ma: Annot.Method.t)
+    (predicate: Annot.t -> bool): bool =
   let found = ref false in
   ma_iter
     (fun a -> if predicate a then found := true)
@@ -69,43 +52,53 @@ let ma_has_annotation_with
   !found
 
 let ia_has_annotation_with
-    (ia: Sil.item_annotation)
-    (predicate: Sil.annotation -> bool): bool =
+    (ia: Annot.Item.t)
+    (predicate: Annot.t -> bool): bool =
   let found = ref false in
   ia_iter
     (fun a -> if predicate a then found := true)
     ia;
   !found
 
-(** Check if there is an annotation which ends with the given name *)
-let ia_ends_with ia ann_name =
-  let found = ref false in
+(** Return true if [annot] ends with [ann_name] *)
+let annot_ends_with annot ann_name =
   let filter s =
     let sl = String.length s in
     let al = String.length ann_name in
     sl >= al && String.sub s (sl - al) al = ann_name in
-  ia_iter (fun a -> if filter a.Sil.class_name then found := true) ia;
+  filter annot.Annot.class_name
+
+(** Check if there is an annotation in [ia] which ends with the given name *)
+let ia_ends_with ia ann_name =
+  let found = ref false in
+  ia_iter (fun a -> if annot_ends_with a ann_name then found := true) ia;
   !found
 
 let ia_contains ia ann_name =
   let found = ref false in
-  ia_iter (fun a -> if ann_name = a.Sil.class_name then found := true) ia;
+  ia_iter (fun a -> if ann_name = a.Annot.class_name then found := true) ia;
   !found
 
 let ia_get ia ann_name =
   let found = ref None in
-  ia_iter (fun a -> if ann_name = a.Sil.class_name then found := Some a) ia;
+  ia_iter (fun a -> if ann_name = a.Annot.class_name then found := Some a) ia;
   !found
 
 let ma_contains ma ann_names =
   let found = ref false in
-  ma_iter (fun a -> if IList.exists (string_equal a.Sil.class_name) ann_names then found := true) ma;
+  ma_iter (fun a ->
+      if IList.exists (string_equal a.Annot.class_name) ann_names then found := true
+    ) ma;
   !found
+
+let pdesc_has_annot pdesc annot =
+  ma_contains (Cfg.Procdesc.get_attributes pdesc).ProcAttributes.method_annotation [annot]
 
 let initializer_ = "Initializer"
 let inject = "Inject"
 let inject_view = "InjectView"
 let bind = "Bind"
+let bind_view = "BindView"
 let bind_array = "BindArray"
 let bind_bitmap = "BindBitmap"
 let bind_drawable = "BindDrawable"
@@ -115,6 +108,7 @@ let false_on_null = "FalseOnNull"
 let mutable_ = "Mutable"
 let nullable = "Nullable"
 let nonnull = "Nonnull"
+let on_bind = "OnBind"
 let camel_nonnull = "NonNull"
 let notnull = "NotNull"
 let present = "Present"
@@ -125,9 +119,20 @@ let expensive = "Expensive"
 let performance_critical = "PerformanceCritical"
 let no_allocation = "NoAllocation"
 let ignore_allocations = "IgnoreAllocations"
+
 let suppress_warnings = "SuppressWarnings"
 let privacy_source = "PrivacySource"
 let privacy_sink = "PrivacySink"
+let integrity_source = "IntegritySource"
+let integrity_sink = "IntegritySink"
+let guarded_by = "GuardedBy"
+let thread_safe = "ThreadSafe"
+let not_thread_safe = "NotThreadSafe"
+
+(* we don't want it to just end with ThreadSafe, because this falls
+   foul of the @NotThreadSafe annotation *)
+let ia_is_thread_safe ia =
+  ia_ends_with ia thread_safe && not (ia_ends_with ia not_thread_safe)
 
 let ia_is_nullable ia =
   ia_ends_with ia nullable
@@ -153,6 +158,7 @@ let field_injector_readwrite_list =
   [
     inject_view;
     bind;
+    bind_view;
     bind_array;
     bind_bitmap;
     bind_drawable;
@@ -209,6 +215,15 @@ let ia_is_privacy_source ia =
 let ia_is_privacy_sink ia =
   ia_ends_with ia privacy_sink
 
+let ia_is_integrity_source ia =
+  ia_ends_with ia integrity_source
+
+let ia_is_integrity_sink ia =
+  ia_ends_with ia integrity_sink
+
+let ia_is_guarded_by ia =
+  ia_ends_with ia guarded_by
+
 type annotation =
   | Nullable
   | Present
@@ -228,7 +243,7 @@ let get_annotated_signature proc_attributes : annotated_signature =
       | ia :: ial', (name, typ) :: parl' ->
           (name, ia, typ) :: extract ial' parl'
       | [], (name, typ) :: parl' ->
-          (name, Sil.item_annotation_empty, typ) :: extract [] parl'
+          (name, Annot.Item.empty, typ) :: extract [] parl'
       | [], [] ->
           []
       | _ :: _, [] ->
@@ -243,7 +258,7 @@ let get_annotated_signature proc_attributes : annotated_signature =
     are called x0, x1, x2. *)
 let annotated_signature_is_anonymous_inner_class_wrapper ann_sig proc_name =
   let check_ret (ia, t) =
-    Sil.item_annotation_is_empty ia && PatternMatch.type_is_object t in
+    Annot.Item.is_empty ia && PatternMatch.type_is_object t in
   let x_param_found = ref false in
   let name_is_x_number name =
     let name_str = Mangled.to_string name in
@@ -262,7 +277,7 @@ let annotated_signature_is_anonymous_inner_class_wrapper ann_sig proc_name =
     if Mangled.to_string name = "this" then true
     else
       name_is_x_number name &&
-      Sil.item_annotation_is_empty ia &&
+      Annot.Item.is_empty ia &&
       PatternMatch.type_is_object t in
   Procname.java_is_anonymous_inner_class proc_name
   && check_ret ann_sig.ret
@@ -278,17 +293,17 @@ let param_is_nullable pvar ann_sig =
 
 (** Pretty print a method signature with annotations. *)
 let pp_annotated_signature proc_name fmt annotated_signature =
-  let pp_ia fmt ia = if ia <> [] then F.fprintf fmt "%a " Sil.pp_item_annotation ia in
+  let pp_ia fmt ia = if ia <> [] then F.fprintf fmt "%a " Annot.Item.pp ia in
   let pp_annotated_param fmt (p, ia, t) =
-    F.fprintf fmt " %a%a %a" pp_ia ia (Sil.pp_typ_full pe_text) t Mangled.pp p in
+    F.fprintf fmt " %a%a %a" pp_ia ia (Typ.pp_full pe_text) t Mangled.pp p in
   let ia, ret_type = annotated_signature.ret in
   F.fprintf fmt "%a%a %s (%a )"
     pp_ia ia
-    (Sil.pp_typ_full pe_text) ret_type
+    (Typ.pp_full pe_text) ret_type
     (Procname.to_simplified_string proc_name)
     (pp_comma_seq pp_annotated_param) annotated_signature.params
 
-let mk_ann_str s = { Sil.class_name = s; Sil.parameters = [] }
+let mk_ann_str s = { Annot.class_name = s; parameters = [] }
 let mk_ann = function
   | Nullable -> mk_ann_str nullable
   | Present -> mk_ann_str present

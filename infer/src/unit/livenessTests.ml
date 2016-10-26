@@ -12,66 +12,70 @@ open! Utils
 module F = Format
 
 module TestInterpreter = AnalyzerTester.Make
-    (ProcCfg.Backward (ProcCfg.Exceptional))
+    (ProcCfg.Backward(ProcCfg.Normal))
     (Scheduler.ReversePostorder)
-    (Liveness.Domain)
     (Liveness.TransferFunctions)
 
 let tests =
   let open OUnit2 in
   let open AnalyzerTester.StructuredSil in
   let assert_empty = invariant "{  }" in
-  let fun_ptr_typ = Sil.Tptr (Tfun false, Pk_pointer) in
+  let fun_ptr_typ = Typ.Tptr (Tfun false, Pk_pointer) in
   let closure_exp captured_pvars =
-    let mk_captured_var str = (Sil.Var (ident_of_str str), pvar_of_str str, dummy_typ) in
+    let mk_captured_var str = (Exp.Var (ident_of_str str), pvar_of_str str, dummy_typ) in
     let captured_vars = IList.map mk_captured_var captured_pvars in
-    let closure = { Sil.name=dummy_procname; captured_vars; } in
-    Sil.Const (Cclosure closure) in
+    let closure = { Exp.name=dummy_procname; captured_vars; } in
+    Exp.Closure closure in
   let unknown_cond =
     (* don't want to use AnalyzerTest.unknown_exp because we'll treat it as a live var! *)
-    Sil.exp_zero in
+    Exp.zero in
   let test_list = [
     "basic_live",
     [
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
     "basic_live_then_dead",
     [
       assert_empty;
       var_assign_int "b" 1;
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
     "iterative_live",
     [
       invariant "{ &b, &d, &f }";
-      var_assign_var "e" "f";
+      id_assign_var "e" "f";
       invariant "{ &b, &d }";
-      var_assign_var "c" "d";
+      id_assign_var "c" "d";
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
     "live_kill_live",
     [
       invariant "{ &b }";
-      var_assign_var "c" "b";
+      id_assign_var "c" "b";
       assert_empty;
       var_assign_int "b" 1;
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
-    "basic_live_letderef",
+    "basic_live_load",
     [
       invariant "{ y$0 }";
       id_assign_id "x" "y"
     ];
-    "basic_live_then_kill_letderef",
+    "basic_live_then_kill_load",
     [
       invariant "{ z$0 }";
       id_assign_id "y" "z";
       invariant "{ y$0 }";
       id_assign_id "x" "y"
+    ];
+    "set_id",
+    [
+      invariant "{ x$0, y$0 }";
+      id_set_id "x" "y" (* this is *x = y, which is a read of both x and y *)
     ];
     "if_exp_live",
     [
@@ -95,7 +99,7 @@ let tests =
     "dead_after_call_with_retval",
     [
       assert_empty;
-      call_unknown ["y"] [];
+      call_unknown (Some ("y", Typ.Tint IInt)) [];
       invariant "{ y$0 }";
       id_assign_id "x" "y";
     ];
@@ -108,7 +112,7 @@ let tests =
     [
       invariant "{ &b }";
       If (unknown_cond,
-          [var_assign_var "a" "b"],
+          [id_assign_var "a" "b"],
           []
          )
     ];
@@ -116,8 +120,8 @@ let tests =
     [
       invariant "{ &b, &d }";
       If (unknown_cond,
-          [var_assign_var "a" "b"],
-          [var_assign_var "c" "d"]
+          [id_assign_var "a" "b"],
+          [id_assign_var "c" "d"]
          )
     ];
     "if_conservative_kill",
@@ -128,17 +132,17 @@ let tests =
           []
          );
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
     "if_conservative_kill_live",
     [
       invariant "{ &b, &d }";
       If (unknown_cond,
           [var_assign_int "b" 1],
-          [var_assign_var "c" "d"]
+          [id_assign_var "c" "d"]
          );
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
     "if_precise1",
     [
@@ -146,10 +150,10 @@ let tests =
       If (unknown_cond,
           [var_assign_int "b" 1;
            invariant "{ &b }";
-           var_assign_var "a" "b"],
+           id_assign_var "a" "b"],
           [var_assign_int "d" 1;
            invariant "{ &d }";
-           var_assign_var "c" "d"]
+           id_assign_var "c" "d"]
          )
     ];
     "if_precise2",
@@ -160,13 +164,13 @@ let tests =
           [var_assign_int "b" 1]
          );
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
     "loop_as_if1",
     [
       invariant "{ &b }";
       While (unknown_cond,
-             [var_assign_var "a" "b"]
+             [id_assign_var "a" "b"]
             )
     ];
     "loop_as_if2",
@@ -176,16 +180,16 @@ let tests =
              [var_assign_int "b" 1]
             );
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
     "loop_before_after",
     [
       invariant "{ &b, &d }";
       While (unknown_cond,
-             [var_assign_var "b" "d"]
+             [id_assign_var "b" "d"]
             );
       invariant "{ &b }";
-      var_assign_var "a" "b"
+      id_assign_var "a" "b"
     ];
-  ] |> TestInterpreter.create_tests in
+  ] |> TestInterpreter.create_tests ProcData.empty_extras in
   "liveness_test_suite">:::test_list

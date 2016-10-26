@@ -13,5 +13,4 @@ open! Utils
 (** Preanalysis for eliminating dead local variables *)
 
 (** Perform liveness analysis *)
-val doit : ?f_translate_typ:(Tenv.t -> string -> unit) option -> Cfg.cfg -> Cg.t -> Tenv.t
-  -> unit
+val doit : ?handle_dynamic_dispatch:bool -> Cfg.Procdesc.t -> Cg.t -> Tenv.t -> unit

@@ -9,14 +9,14 @@
 
 #import <Foundation/NSString.h>
 
-@interface A : NSObject {
+@interface NullableA : NSObject {
  @public
   int fld;
 }
 
 @end
 
-@interface B : NSObject
+@interface NullableB : NSObject
 
 @property int prop;
 
@@ -24,22 +24,42 @@
 
 @end
 
-int derefNullableParamDirect(A* __nullable param) { return param->fld; }
+int derefNullableParamDirect(NullableA* __nullable param) { return param->fld; }
 
-int derefNullableParamIndirect(A* __nullable param) {
-  A* local = param;
+int derefNullableParamIndirect(NullableA* __nullable param) {
+  NullableA* local = param;
   return local->fld;
 }
 
-A* derefNullableParamOk(A* __nullable param) {
+NullableA* derefNullableParamOk(NullableA* __nullable param) {
   if (!param)
-    param = [A new];
+    param = [NullableA new];
   param->fld = 7;
   return param;
 }
 
-int readNullableParamPropertyOk(B* __nullable param) { return param.prop; }
+int parameter_nullable_ok(NSString* body,
+                          NSString* __nullable linkTapAction,
+                          NullableA* options) {
+  return options->fld;
+}
 
-void writeNullableParamPropertyOk(B* __nullable param) { param.prop = 7; }
+int parameter_nullable_bug(NullableA* __nullable options,
+                           NSAttributedString* body,
+                           NSString* linkTapAction)
 
-void methodCallOnNullableParamOk(B* __nullable param) { [param method]; }
+{
+  return options->fld;
+}
+
+int readNullableParamPropertyOk(NullableB* __nullable param) {
+  return param.prop;
+}
+
+void writeNullableParamPropertyOk(NullableB* __nullable param) {
+  param.prop = 7;
+}
+
+void methodCallOnNullableParamOk(NullableB* __nullable param) {
+  [param method];
+}

@@ -11,7 +11,7 @@ package java.net;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.util.Hashtable;
-import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.builtins.InferBuiltins;
 
 public final class URL implements java.io.Serializable {
 

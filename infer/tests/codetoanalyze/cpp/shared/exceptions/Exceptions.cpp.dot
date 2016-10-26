@@ -1,0 +1,68 @@
+/* @generated */
+digraph iCFG {
+17 [label="17:  Return Stmt \n   n$0=_fun_deref(0:int *) [line 28]\n  *&return:int =n$0 [line 28]\n " shape="box"]
+	
+
+	 17 -> 16 ;
+16 [label="16: Exit main \n  " color=yellow style=filled]
+	
+
+15 [label="15: Start main\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
+	
+
+	 15 -> 17 ;
+14 [label="14:  Call _fun_deref_null \n   n$0=_fun_deref_null(null:int *) [line 24]\n " shape="box"]
+	
+
+	 14 -> 13 ;
+13 [label="13: Exit call_deref_with_null \n  " color=yellow style=filled]
+	
+
+12 [label="12: Start call_deref_with_null\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+	
+
+	 12 -> 14 ;
+11 [label="11:  Return Stmt \n   n$0=*&p:int * [line 19]\n  n$1=*n$0:int  [line 19]\n  *&return:int =n$1 [line 19]\n " shape="box"]
+	
+
+	 11 -> 10 ;
+10 [label="10: Exit deref_null \n  " color=yellow style=filled]
+	
+
+9 [label="9: Start deref_null\nFormals:  p:int *\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
+	
+
+	 9 -> 11 ;
+8 [label="8:  ObjCCPPThrow \n   _fun___infer_objc_cpp_throw(\"Null pointer!\":char *) [line 12]\n " shape="box"]
+	
+
+	 8 -> 4 ;
+7 [label="7: Prune (false branch) \n   PRUNE(((n$2 == 0) == 0), false); [line 11]\n " shape="invhouse"]
+	
+
+	 7 -> 4 ;
+6 [label="6: Prune (true branch) \n   PRUNE(((n$2 == 0) != 0), true); [line 11]\n " shape="invhouse"]
+	
+
+	 6 -> 8 ;
+5 [label="5:  BinaryOperatorStmt: EQ \n   n$2=*&p:int * [line 11]\n " shape="box"]
+	
+
+	 5 -> 6 ;
+	 5 -> 7 ;
+4 [label="4: + \n  " ]
+	
+
+	 4 -> 3 ;
+3 [label="3:  Return Stmt \n   n$0=*&p:int * [line 14]\n  n$1=*n$0:int  [line 14]\n  *&return:int =n$1 [line 14]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit deref \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start deref\nFormals:  p:int *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+	
+
+	 1 -> 5 ;
+}

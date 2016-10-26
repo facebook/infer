@@ -17,8 +17,8 @@ open! Utils
 *)
 
 (* TODO: missing documentation *)
-val hpara_match_with_impl : bool -> Sil.hpara -> Sil.hpara -> bool
-val hpara_dll_match_with_impl : bool -> Sil.hpara_dll -> Sil.hpara_dll -> bool
+val hpara_match_with_impl : Tenv.t -> bool -> Sil.hpara -> Sil.hpara -> bool
+val hpara_dll_match_with_impl : Tenv.t -> bool -> Sil.hpara_dll -> Sil.hpara_dll -> bool
 
 (** Type for a hpred pattern. [flag=false] means that the implication
     between hpreds is not considered, and [flag = true] means that it is
@@ -36,7 +36,7 @@ type sidecondition = Prop.normal Prop.t -> Sil.subst -> bool
     1) [dom(subst) = vars]
     2) [p |- (hpat.hpred * hpats.hpred)[subst] * p_leftover].
     Using the flag [field], we can control the strength of |-. *)
-val prop_match_with_impl : Prop.normal Prop.t -> sidecondition -> Ident.t list -> hpred_pat -> hpred_pat list -> (Sil.subst * Prop.normal Prop.t) option
+val prop_match_with_impl : Tenv.t -> Prop.normal Prop.t -> sidecondition -> Ident.t list -> hpred_pat -> hpred_pat list -> (Sil.subst * Prop.normal Prop.t) option
 
 (** [find_partial_iso] finds disjoint isomorphic sub-sigmas inside a given sigma.
     The first argument is an equality checker.
@@ -45,12 +45,12 @@ val prop_match_with_impl : Prop.normal Prop.t -> sidecondition -> Ident.t list -
     the returned isomorphism. The second is the second copy of the two isomorphic sigmas,
     and it uses expressions in the range of the isomorphism. The third is the unused
     part of the input sigma. *)
-val find_partial_iso :
-  (Sil.exp -> Sil.exp -> bool) ->
-  (Sil.exp * Sil.exp) list ->
-  (Sil.exp * Sil.exp) list ->
+val find_partial_iso : Tenv.t ->
+  (Exp.t -> Exp.t -> bool) ->
+  (Exp.t * Exp.t) list ->
+  (Exp.t * Exp.t) list ->
   Sil.hpred list ->
-  ((Sil.exp * Sil.exp) list * Sil.hpred list * Sil.hpred list * Sil.hpred list) option
+  ((Exp.t * Exp.t) list * Sil.hpred list * Sil.hpred list * Sil.hpred list) option
 
 (** This mode expresses the flexibility allowed during the isomorphism check *)
 type iso_mode = Exact | LFieldForget | RFieldForget
@@ -62,41 +62,42 @@ type iso_mode = Exact | LFieldForget | RFieldForget
     the returned isomorphism. The second is the second copy of the two isomorphic sigmas,
     and it uses expressions in the range of the isomorphism. The third and fourth
     are the unused parts of the two input sigmas. *)
-val find_partial_iso_from_two_sigmas :
+val find_partial_iso_from_two_sigmas : Tenv.t ->
   iso_mode ->
-  (Sil.exp -> Sil.exp -> bool) ->
-  (Sil.exp * Sil.exp) list ->
-  (Sil.exp * Sil.exp) list ->
+  (Exp.t -> Exp.t -> bool) ->
+  (Exp.t * Exp.t) list ->
+  (Exp.t * Exp.t) list ->
   Sil.hpred list ->
   Sil.hpred list ->
-  ((Sil.exp * Sil.exp) list * Sil.hpred list * Sil.hpred list * (Sil.hpred list * Sil.hpred list)) option
+  ((Exp.t * Exp.t) list * Sil.hpred list * Sil.hpred list * (Sil.hpred list * Sil.hpred list))
+    option
 
 (** [hpara_iso] soundly checks whether two hparas are isomorphic. *)
-val hpara_iso : Sil.hpara -> Sil.hpara -> bool
+val hpara_iso : Tenv.t -> Sil.hpara -> Sil.hpara -> bool
 
 (** [hpara_dll_iso] soundly checks whether two hpara_dlls are isomorphic. *)
-val hpara_dll_iso : Sil.hpara_dll -> Sil.hpara_dll -> bool
+val hpara_dll_iso : Tenv.t -> Sil.hpara_dll -> Sil.hpara_dll -> bool
 
 
 (** [hpara_create] takes a correspondence, and a sigma, a root
     and a next for the first part of this correspondence. Then, it creates a
     hpara and discovers a list of shared expressions that are
     passed as arguments to hpara. Both of them are returned as a result. *)
-val hpara_create :
-  (Sil.exp * Sil.exp) list ->
+val hpara_create : Tenv.t ->
+  (Exp.t * Exp.t) list ->
   Sil.hpred list ->
-  Sil.exp ->
-  Sil.exp ->
-  Sil.hpara * Sil.exp list
+  Exp.t ->
+  Exp.t ->
+  Sil.hpara * Exp.t list
 
 (** [hpara_dll_create] takes a correspondence, and a sigma, a root,
     a blink and a flink for the first part of this correspondence. Then,
     it creates a hpara_dll and discovers a list of shared expressions that are
     passed as arguments to hpara. Both of them are returned as a result. *)
-val hpara_dll_create :
-  (Sil.exp * Sil.exp) list ->
+val hpara_dll_create : Tenv.t ->
+  (Exp.t * Exp.t) list ->
   Sil.hpred list ->
-  Sil.exp ->
-  Sil.exp ->
-  Sil.exp ->
-  Sil.hpara_dll * Sil.exp list
+  Exp.t ->
+  Exp.t ->
+  Exp.t ->
+  Sil.hpara_dll * Exp.t list

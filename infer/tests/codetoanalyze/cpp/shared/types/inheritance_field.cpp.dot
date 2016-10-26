@@ -1,0 +1,158 @@
+/* @generated */
+digraph iCFG {
+41 [label="41:  BinaryOperatorStmt: Assign \n   n$3=*&s:class Sub * [line 67]\n  *n$3.b1:int =1 [line 67]\n " shape="box"]
+	
+
+	 41 -> 40 ;
+40 [label="40:  DeclStmt \n   n$2=*&s:class Sub * [line 68]\n  *&b:class Sub *=n$2 [line 68]\n " shape="box"]
+	
+
+	 40 -> 39 ;
+39 [label="39:  Return Stmt \n   n$0=*&b:class Base1 * [line 69]\n  n$1=*n$0.b1:int  [line 69]\n  *&return:int =(1 / n$1) [line 69]\n " shape="box"]
+	
+
+	 39 -> 38 ;
+38 [label="38: Exit div1_cast \n  " color=yellow style=filled]
+	
+
+37 [label="37: Start div1_cast\nFormals:  s:class Sub *\nLocals:  b:class Base1 * \n   DECLARE_LOCALS(&return,&b); [line 66]\n " color=yellow style=filled]
+	
+
+	 37 -> 41 ;
+36 [label="36:  BinaryOperatorStmt: Assign \n   n$2=*&s:class Sub & [line 62]\n  *n$2.b1:int =1 [line 62]\n " shape="box"]
+	
+
+	 36 -> 35 ;
+35 [label="35:  Return Stmt \n   n$0=*&s:class Sub & [line 63]\n  n$1=*n$0.b1:int  [line 63]\n  *&return:int =(1 / n$1) [line 63]\n " shape="box"]
+	
+
+	 35 -> 34 ;
+34 [label="34: Exit div1_b1 \n  " color=yellow style=filled]
+	
+
+33 [label="33: Start div1_b1\nFormals:  s:class Sub &\nLocals:  \n   DECLARE_LOCALS(&return); [line 61]\n " color=yellow style=filled]
+	
+
+	 33 -> 36 ;
+32 [label="32:  BinaryOperatorStmt: Assign \n   n$5=*&s:class Sub * [line 56]\n  *n$5.b1:int =1 [line 56]\n " shape="box"]
+	
+
+	 32 -> 31 ;
+31 [label="31:  BinaryOperatorStmt: Assign \n   n$4=*&s:class Sub * [line 57]\n  *n$4.s:int =1 [line 57]\n " shape="box"]
+	
+
+	 31 -> 30 ;
+30 [label="30:  Return Stmt \n   n$0=*&s:class Sub * [line 58]\n  n$1=*n$0.b1:int  [line 58]\n  n$2=*&s:class Sub * [line 58]\n  n$3=*n$2.s:int  [line 58]\n  *&return:int =(1 / (n$1 - n$3)) [line 58]\n " shape="box"]
+	
+
+	 30 -> 29 ;
+29 [label="29: Exit div0_s_b1 \n  " color=yellow style=filled]
+	
+
+28 [label="28: Start div0_s_b1\nFormals:  s:class Sub *\nLocals:  \n   DECLARE_LOCALS(&return); [line 55]\n " color=yellow style=filled]
+	
+
+	 28 -> 32 ;
+27 [label="27:  BinaryOperatorStmt: Assign \n   n$5=*&s:class Sub * [line 50]\n  *n$5.b1:int =1 [line 50]\n " shape="box"]
+	
+
+	 27 -> 26 ;
+26 [label="26:  BinaryOperatorStmt: Assign \n   n$4=*&s:class Sub * [line 51]\n  *n$4.s:int =1 [line 51]\n " shape="box"]
+	
+
+	 26 -> 25 ;
+25 [label="25:  Return Stmt \n   n$0=*&s:class Sub * [line 52]\n  n$1=*n$0.b1:int  [line 52]\n  n$2=*&s:class Sub * [line 52]\n  n$3=*n$2.s:int  [line 52]\n  *&return:int =(1 / (n$1 - n$3)) [line 52]\n " shape="box"]
+	
+
+	 25 -> 24 ;
+24 [label="24: Exit div0_b1_s \n  " color=yellow style=filled]
+	
+
+23 [label="23: Start div0_b1_s\nFormals:  s:class Sub *\nLocals:  \n   DECLARE_LOCALS(&return); [line 49]\n " color=yellow style=filled]
+	
+
+	 23 -> 27 ;
+22 [label="22:  BinaryOperatorStmt: Assign \n   n$3=*&s:class Sub & [line 44]\n  *n$3.b1:int =0 [line 44]\n " shape="box"]
+	
+
+	 22 -> 21 ;
+21 [label="21:  DeclStmt \n   n$2=*&s:class Sub & [line 45]\n  *&b:class Sub &=n$2 [line 45]\n " shape="box"]
+	
+
+	 21 -> 20 ;
+20 [label="20:  Return Stmt \n   n$0=*&b:class Base1 & [line 46]\n  n$1=*n$0.b1:int  [line 46]\n  *&return:int =(1 / n$1) [line 46]\n " shape="box"]
+	
+
+	 20 -> 19 ;
+19 [label="19: Exit div0_cast_ref \n  " color=yellow style=filled]
+	
+
+18 [label="18: Start div0_cast_ref\nFormals:  s:class Sub &\nLocals:  b:class Base1 & \n   DECLARE_LOCALS(&return,&b); [line 43]\n " color=yellow style=filled]
+	
+
+	 18 -> 22 ;
+17 [label="17:  BinaryOperatorStmt: Assign \n   n$3=*&s:class Sub * [line 38]\n  *n$3.b1:int =0 [line 38]\n " shape="box"]
+	
+
+	 17 -> 16 ;
+16 [label="16:  DeclStmt \n   n$2=*&s:class Sub * [line 39]\n  *&b:class Sub *=n$2 [line 39]\n " shape="box"]
+	
+
+	 16 -> 15 ;
+15 [label="15:  Return Stmt \n   n$0=*&b:class Base1 * [line 40]\n  n$1=*n$0.b1:int  [line 40]\n  *&return:int =(1 / n$1) [line 40]\n " shape="box"]
+	
+
+	 15 -> 14 ;
+14 [label="14: Exit div0_cast \n  " color=yellow style=filled]
+	
+
+13 [label="13: Start div0_cast\nFormals:  s:class Sub *\nLocals:  b:class Base1 * \n   DECLARE_LOCALS(&return,&b); [line 37]\n " color=yellow style=filled]
+	
+
+	 13 -> 17 ;
+12 [label="12:  BinaryOperatorStmt: Assign \n   n$2=*&s:class Sub & [line 33]\n  *n$2.s:int =0 [line 33]\n " shape="box"]
+	
+
+	 12 -> 11 ;
+11 [label="11:  Return Stmt \n   n$0=*&s:class Sub & [line 34]\n  n$1=*n$0.s:int  [line 34]\n  *&return:int =(1 / n$1) [line 34]\n " shape="box"]
+	
+
+	 11 -> 10 ;
+10 [label="10: Exit div0_s \n  " color=yellow style=filled]
+	
+
+9 [label="9: Start div0_s\nFormals:  s:class Sub &\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
+	
+
+	 9 -> 12 ;
+8 [label="8:  BinaryOperatorStmt: Assign \n   n$2=*&s:class Sub & [line 28]\n  *n$2.b2:int =0 [line 28]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7:  Return Stmt \n   n$0=*&s:class Sub & [line 29]\n  n$1=*n$0.b2:int  [line 29]\n  *&return:int =(1 / n$1) [line 29]\n " shape="box"]
+	
+
+	 7 -> 6 ;
+6 [label="6: Exit div0_b2 \n  " color=yellow style=filled]
+	
+
+5 [label="5: Start div0_b2\nFormals:  s:class Sub &\nLocals:  \n   DECLARE_LOCALS(&return); [line 27]\n " color=yellow style=filled]
+	
+
+	 5 -> 8 ;
+4 [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&s:class Sub & [line 23]\n  *n$2.b1:int =0 [line 23]\n " shape="box"]
+	
+
+	 4 -> 3 ;
+3 [label="3:  Return Stmt \n   n$0=*&s:class Sub & [line 24]\n  n$1=*n$0.b1:int  [line 24]\n  *&return:int =(1 / n$1) [line 24]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit div0_b1 \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start div0_b1\nFormals:  s:class Sub &\nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
+	
+
+	 1 -> 4 ;
+}

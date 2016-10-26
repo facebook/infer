@@ -15,6 +15,7 @@ open! Utils
 open Sil
 
 type normal (** kind for normal props, i.e. normalized *)
+
 type exposed (** kind for exposed props *)
 
 (** Proposition. *)
@@ -22,7 +23,15 @@ type exposed (** kind for exposed props *)
 type pi = Sil.atom list
 type sigma = Sil.hpred list
 
-type 'a t (** the kind 'a should range over [normal] and [exposed] *)
+(** the kind 'a should range over [normal] and [exposed] *)
+type 'a t = private
+  {
+    sigma: sigma;  (** spatial part *)
+    sub: Sil.subst;  (** substitution *)
+    pi: pi;  (** pure part *)
+    sigma_fp : sigma;  (** abduced spatial part *)
+    pi_fp: pi;  (** abduced pure part *)
+  }
 
 (** type to describe different strategies for initializing fields of a structure. [No_init] does not
     initialize any fields of the struct. [Fld_init] initializes the fields of the struct with fresh
@@ -31,7 +40,6 @@ type struct_init_mode =
   | No_init
   | Fld_init
 
-exception Cannot_star of Logging.ml_loc
 
 (** {2 Basic Functions for propositions} *)
 
@@ -110,7 +118,7 @@ val sigma_fav_in_pvars_add : fav -> hpred list -> unit
 val prop_fav_add : fav -> 'a t -> unit
 
 (** Compute free non-program variables of prop, visited in depth first order *)
-val prop_fav_add_dfs : fav -> 'a t -> unit
+val prop_fav_add_dfs : Tenv.t -> fav -> 'a t -> unit
 
 val prop_fav: normal t -> fav
 
@@ -133,77 +141,62 @@ val sigma_sub : subst -> hpred list -> hpred list
 val prop_sub : subst -> 'a t -> exposed t
 
 (** Apply the substitution to all the expressions in the prop. *)
-val prop_expmap : (Sil.exp -> Sil.exp) -> 'a t -> exposed t
+val prop_expmap : (Exp.t -> Exp.t) -> 'a t -> exposed t
 
 (** Relaces all expressions in the [hpred list] using the first argument.
     Assume that the first parameter defines a partial function.
     No expressions inside hpara are replaced. *)
-val sigma_replace_exp : (exp * exp) list -> hpred list -> hpred list
-
-val sigma_map : 'a t -> (hpred -> hpred) -> 'a t
+val sigma_replace_exp : Tenv.t -> (Exp.t * Exp.t) list -> hpred list -> hpred list
 
 (** {2 Normalization} *)
 
 (** Turn an inequality expression into an atom *)
-val mk_inequality : Sil.exp -> Sil.atom
+val mk_inequality : Tenv.t -> Exp.t -> Sil.atom
 
 (** Return [true] if the atom is an inequality *)
 val atom_is_inequality : Sil.atom -> bool
 
 (** If the atom is [e<=n] return [e,n] *)
-val atom_exp_le_const : Sil.atom -> (Sil.exp * Sil.Int.t) option
+val atom_exp_le_const : Sil.atom -> (Exp.t * IntLit.t) option
 
 (** If the atom is [n<e] return [n,e] *)
-val atom_const_lt_exp : Sil.atom -> (Sil.Int.t * Sil.exp) option
-
-(** Negate an atom *)
-val atom_negate : Sil.atom -> Sil.atom
-
-(** type for arithmetic problems *)
-type arith_problem =
-  (* division by zero *)
-  | Div0 of Sil.exp
-
-  (* unary minus of unsigned type applied to the given expression *)
-  | UminusUnsigned of Sil.exp * Sil.typ
-
-(** Look for an arithmetic problem in [exp] *)
-val find_arithmetic_problem : path_pos -> normal t -> Sil.exp -> arith_problem option * normal t
+val atom_const_lt_exp : Sil.atom -> (IntLit.t * Exp.t) option
 
 (** Normalize [exp] using the pure part of [prop].  Later, we should
     change this such that the normalization exposes offsets of [exp]
     as much as possible. *)
-val exp_normalize_prop : 'a t -> Sil.exp -> Sil.exp
+val exp_normalize_prop : Tenv.t -> 'a t -> Exp.t -> Exp.t
 
 (** Normalize the expression without abstracting complex subexpressions *)
-val exp_normalize_noabs : Sil.subst -> Sil.exp -> Sil.exp
+val exp_normalize_noabs : Tenv.t -> Sil.subst -> Exp.t -> Exp.t
 
 (** Collapse consecutive indices that should be added. For instance,
     this function reduces x[1][1] to x[2]. The [typ] argument is used
     to ensure the soundness of this collapsing. *)
-val exp_collapse_consecutive_indices_prop : Sil.typ -> Sil.exp -> Sil.exp
+val exp_collapse_consecutive_indices_prop : Typ.t -> Exp.t -> Exp.t
 
 (** Normalize [exp] used for the address of a heap cell.
     This normalization does not combine two offsets inside [exp]. *)
-val lexp_normalize_prop : 'a t -> exp -> exp
+val lexp_normalize_prop : Tenv.t -> 'a t -> Exp.t -> Exp.t
 
-val atom_normalize_prop : 'a t -> atom -> atom
+val atom_normalize_prop : Tenv.t -> 'a t -> atom -> atom
 
-val strexp_normalize_prop : 'a t -> strexp -> strexp
+val strexp_normalize_prop : Tenv.t -> 'a t -> strexp -> strexp
 
-val hpred_normalize_prop : 'a t -> hpred -> hpred
+val hpred_normalize_prop : Tenv.t -> 'a t -> hpred -> hpred
 
-val sigma_normalize_prop : 'a t -> hpred list -> hpred list
+val sigma_normalize_prop : Tenv.t -> 'a t -> hpred list -> hpred list
 
-val pi_normalize_prop : 'a t -> atom list -> atom list
+val pi_normalize_prop : Tenv.t -> 'a t -> atom list -> atom list
 
 (** normalize a prop *)
-val normalize : exposed t -> normal t
+val normalize : Tenv.t -> exposed t -> normal t
 
 (** expose a prop, no-op used to instantiate the sub-type relation *)
 val expose : normal t -> exposed t
 
 (** {2 Compaction} *)
+
 (** Return a compact representation of the prop *)
 val prop_compact : sharing_env -> normal t -> normal t
 
@@ -215,38 +208,44 @@ val prop_is_emp : 'a t -> bool
 (** {2 Functions for changing and generating propositions} *)
 
 (** Construct a disequality. *)
-val mk_neq : exp -> exp -> atom
+val mk_neq : Tenv.t -> Exp.t -> Exp.t -> atom
 
 (** Construct an equality. *)
-val mk_eq : exp -> exp -> atom
+val mk_eq : Tenv.t -> Exp.t -> Exp.t -> atom
+
+(** Construct a positive pred. *)
+val mk_pred : Tenv.t -> PredSymb.t -> Exp.t list -> atom
+
+(** Construct a negative pred. *)
+val mk_npred : Tenv.t -> PredSymb.t -> Exp.t list -> atom
 
 (** create a strexp of the given type, populating the structures if [expand_structs] is true *)
-val create_strexp_of_type: Tenv.t option -> struct_init_mode -> Sil.typ -> Sil.inst -> Sil.strexp
+val create_strexp_of_type :
+  Tenv.t -> struct_init_mode -> Typ.t -> Exp.t option -> Sil.inst -> Sil.strexp
 
 (** Construct a pointsto. *)
-val mk_ptsto : exp -> strexp -> exp -> hpred
+val mk_ptsto : Tenv.t -> Exp.t -> strexp -> Exp.t -> hpred
 
 (** Construct a points-to predicate for an expression using either the provided expression [name] as
     base for fresh identifiers. *)
-val mk_ptsto_exp : Tenv.t option -> struct_init_mode -> exp * exp * exp option -> Sil.inst -> hpred
+val mk_ptsto_exp : Tenv.t -> struct_init_mode -> Exp.t * Exp.t * Exp.t option -> Sil.inst -> hpred
 
 (** Construct a points-to predicate for a single program variable.
     If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
-val mk_ptsto_lvar :
-  Tenv.t option -> struct_init_mode -> Sil.inst -> Pvar.t * exp * exp option -> hpred
+val mk_ptsto_lvar : Tenv.t -> struct_init_mode -> Sil.inst -> Pvar.t * Exp.t * Exp.t option -> hpred
 
 (** Construct a lseg predicate *)
-val mk_lseg : lseg_kind -> hpara -> exp -> exp -> exp list -> hpred
+val mk_lseg : Tenv.t -> lseg_kind -> hpara -> Exp.t -> Exp.t -> Exp.t list -> hpred
 
 (** Construct a dllseg predicate *)
-val mk_dllseg : lseg_kind -> hpara_dll -> exp -> exp -> exp -> exp -> exp list -> hpred
+val mk_dllseg : Tenv.t -> lseg_kind -> hpara_dll -> Exp.t -> Exp.t -> Exp.t -> Exp.t -> Exp.t list -> hpred
 
 (** Construct a hpara *)
-val mk_hpara : Ident.t -> Ident.t -> Ident.t list -> Ident.t list -> hpred list -> hpara
+val mk_hpara : Tenv.t -> Ident.t -> Ident.t -> Ident.t list -> Ident.t list -> hpred list -> hpara
 
 (** Construct a dll_hpara *)
 val mk_dll_hpara :
-  Ident.t -> Ident.t -> Ident.t -> Ident.t list -> Ident.t list -> hpred list -> hpara_dll
+  Tenv.t -> Ident.t -> Ident.t -> Ident.t -> Ident.t list -> Ident.t list -> hpred list -> hpara_dll
 
 (** Proposition [true /\ emp]. *)
 val prop_emp : normal t
@@ -261,106 +260,19 @@ val prop_hpred_star : 'a t -> hpred -> exposed t
 val prop_sigma_star : 'a t -> hpred list -> exposed t
 
 (** Conjoin a pure atomic predicate by normal conjunction. *)
-val prop_atom_and : ?footprint: bool -> normal t -> atom -> normal t
+val prop_atom_and : Tenv.t -> ?footprint: bool -> normal t -> atom -> normal t
 
 (** Conjoin [exp1]=[exp2] with a symbolic heap [prop]. *)
-val conjoin_eq : ?footprint: bool -> exp -> exp -> normal t -> normal t
+val conjoin_eq : Tenv.t -> ?footprint: bool -> Exp.t -> Exp.t -> normal t -> normal t
 
 (** Conjoin [exp1]!=[exp2] with a symbolic heap [prop]. *)
-val conjoin_neq : ?footprint: bool -> exp -> exp -> normal t -> normal t
-
-(** Check whether an atom is used to mark an attribute *)
-val atom_is_attribute : atom -> bool
-
-(** Apply f to every resource attribute in the prop *)
-val attribute_map_resource : normal t -> (Sil.exp -> Sil.res_action -> Sil.res_action) -> normal t
-
-(** Return the exp and attribute marked in the atom if any, and return None otherwise *)
-val atom_get_exp_attribute : atom -> (Sil.exp * Sil.attribute) option
-
-(** Get the attributes associated to the expression, if any *)
-val get_exp_attributes : 'a t -> exp -> attribute list
-
-(** Get the undef attribute associated to the expression, if any *)
-val get_undef_attribute : 'a t -> exp -> attribute option
-
-(** Get the resource attribute associated to the expression, if any *)
-val get_resource_attribute : 'a t -> exp -> attribute option
-
-(** Get the taint attribute associated to the expression, if any *)
-val get_taint_attribute : 'a t -> exp -> attribute option
-
-(** Get the autorelease attribute associated to the expression, if any *)
-val get_autorelease_attribute : 'a t -> exp -> attribute option
-
-(** Get the div0 attribute associated to the expression, if any *)
-val get_div0_attribute : 'a t -> exp -> attribute option
-
-(** Get the observer attribute associated to the expression, if any *)
-val get_observer_attribute : 'a t -> exp -> attribute option
-
-(** Get the objc null attribute associated to the expression, if any *)
-val get_objc_null_attribute : 'a t -> exp -> attribute option
-
-(** Get the retval null attribute associated to the expression, if any *)
-val get_retval_attribute : 'a t -> exp -> attribute option
-
-(** Get all the attributes of the prop *)
-val get_all_attributes : 'a t -> (exp * attribute) list
-
-val has_dangling_uninit_attribute : 'a t -> exp -> bool
-
-val set_exp_attribute : normal t -> exp -> attribute -> normal t
-
-val add_or_replace_exp_attribute_check_changed : (Sil.attribute -> Sil.attribute -> unit) ->
-  normal t -> exp -> attribute -> normal t
-
-(** Replace an attribute associated to the expression *)
-val add_or_replace_exp_attribute : normal t -> exp -> attribute -> normal t
-
-(** mark Sil.Var's or Sil.Lvar's as undefined *)
-val mark_vars_as_undefined : normal t -> Sil.exp list -> Procname.t -> Sil.item_annotation ->
-  Location.t -> Sil.path_pos -> normal t
-
-(** Remove an attribute from all the atoms in the heap *)
-val remove_attribute : Sil.attribute -> 'a t -> normal t
-
-(** [replace_objc_null lhs rhs].
-    If rhs has the objc_null attribute, replace the attribute and set the lhs = 0 *)
-val replace_objc_null : normal t -> exp -> exp -> normal t
-
-val nullify_exp_with_objc_null : normal t -> exp -> normal t
-
-(** Remove an attribute from an exp in the heap *)
-val remove_attribute_from_exp : Sil.attribute -> 'a t -> exp -> normal t
-
-(** Retireve all the atoms in the heap that contain a specific attribute *)
-val get_atoms_with_attribute : Sil.attribute -> 'a t -> Sil.exp list
-
-(** Return the sub part of [prop]. *)
-val get_sub : 'a t -> subst
-
-(** Return the pi part of [prop]. *)
-val get_pi : 'a t -> atom list
+val conjoin_neq : Tenv.t -> ?footprint: bool -> Exp.t -> Exp.t -> normal t -> normal t
 
 (** Return the pure part of [prop]. *)
 val get_pure : 'a t -> atom list
 
-(** Return the sigma part of [prop] *)
-val get_sigma : 'a t -> hpred list
-
-(** Return the pi part of the footprint of [prop] *)
-val get_pi_footprint : 'a t -> atom list
-
-(** Return the sigma part of the footprint of [prop] *)
-val get_sigma_footprint : 'a t -> hpred list
-
-(** Deallocate the stack variables in [pvars], and replace them by normal variables.
-    Return the list of stack variables whose address was still present after deallocation. *)
-val deallocate_stack_vars : normal t -> Pvar.t list -> Pvar.t list * normal t
-
 (** Canonicalize the names of primed variables. *)
-val prop_rename_primed_footprint_vars : normal t -> normal t
+val prop_rename_primed_footprint_vars : Tenv.t -> normal t -> normal t
 
 (** Extract the footprint and return it as a prop *)
 val extract_footprint : 'a t -> exposed t
@@ -372,34 +284,18 @@ val extract_spec : normal t -> (normal t * normal t)
 val prop_set_footprint : 'a t -> 'b t -> exposed t
 
 (** Expand PE listsegs if the flag is on. *)
-val prop_expand : normal t -> normal t list
-
-(** translate a logical and/or operation
-    taking care of the non-strict semantics for side effects *)
-val trans_land_lor :
-  Sil.binop -> (Ident.t list * Sil.instr list) * Sil.exp ->
-  (Ident.t list * Sil.instr list) * Sil.exp -> Location.t ->
-  (Ident.t list * Sil.instr list) * Sil.exp
-
-(** translate an if-then-else expression *)
-val trans_if_then_else :
-  (Ident.t list * Sil.instr list) * Sil.exp -> (Ident.t list * Sil.instr list) * Sil.exp ->
-  (Ident.t list * Sil.instr list) * Sil.exp -> Location.t ->
-  (Ident.t list * Sil.instr list) * Sil.exp
+val prop_expand : Tenv.t -> normal t -> normal t list
 
 (** {2 Functions for existentially quantifying and unquantifying variables} *)
 
 (** Existentially quantify the [ids] in [prop]. *)
-val exist_quantify : fav -> normal t -> normal t
+val exist_quantify : Tenv.t -> fav -> normal t -> normal t
 
 (** convert the footprint vars to primed vars. *)
-val prop_normal_vars_to_primed_vars : normal t -> normal t
+val prop_normal_vars_to_primed_vars : Tenv.t -> normal t -> normal t
 
 (** convert the primed vars to normal vars. *)
-val prop_primed_vars_to_normal_vars : normal t -> normal t
-
-(** Rename all primed variables. *)
-val prop_rename_primed_fresh : normal t -> normal t
+val prop_primed_vars_to_normal_vars : Tenv.t -> normal t -> normal t
 
 (** Build an exposed prop from pi *)
 val from_pi : pi -> exposed t
@@ -407,23 +303,15 @@ val from_pi : pi -> exposed t
 (** Build an exposed prop from sigma *)
 val from_sigma : sigma -> exposed t
 
-(** Replace the substitution part of a prop *)
-val replace_sub : Sil.subst -> 'a t -> exposed t
-
-(** Replace the pi part of a prop *)
-val replace_pi : pi -> 'a t -> exposed t
-
-(** Replace the sigma part of a prop *)
-val replace_sigma : sigma -> 'a t -> exposed t
-
-(** Replace the sigma part of the footprint of a prop *)
-val replace_sigma_footprint : sigma -> 'a t -> exposed t
-
-(** Replace the pi part of the footprint of a prop *)
-val replace_pi_footprint : pi -> 'a t -> exposed t
+(** Set individual fields of the prop. *)
+val set : ?sub:Sil.subst -> ?pi:pi -> ?sigma:sigma -> ?pi_fp:pi -> ?sigma_fp:sigma ->
+  'a t -> exposed t
 
 (** Rename free variables in a prop replacing them with existentially quantified vars *)
-val prop_rename_fav_with_existentials : normal t -> normal t
+val prop_rename_fav_with_existentials : Tenv.t -> normal t -> normal t
+
+(** Removes seeds variables from a prop corresponding to captured variables in an objc block *)
+val remove_seed_captured_vars_block: Tenv.t -> Mangled.t list -> normal t -> normal t
 
 (** {2 Prop iterators} *)
 
@@ -434,7 +322,7 @@ type 'a prop_iter
 val prop_iter_create : normal t -> unit prop_iter option
 
 (** Return the prop associated to the iterator. *)
-val prop_iter_to_prop : 'a prop_iter -> normal t
+val prop_iter_to_prop : Tenv.t -> 'a prop_iter -> normal t
 
 (** Add an atom to the pi part of prop iter. The
     first parameter records whether it is done
@@ -443,10 +331,10 @@ val prop_iter_add_atom : bool -> 'a prop_iter -> atom -> 'a prop_iter
 
 (** Remove the current element from the iterator, and return the prop
     associated to the resulting iterator. *)
-val prop_iter_remove_curr_then_to_prop : 'a prop_iter -> normal t
+val prop_iter_remove_curr_then_to_prop : Tenv.t -> 'a prop_iter -> normal t
 
 (** Return the current hpred and state. *)
-val prop_iter_current : 'a prop_iter -> (hpred * 'a)
+val prop_iter_current : Tenv.t -> 'a prop_iter -> (hpred * 'a)
 
 (** Return the next iterator. *)
 val prop_iter_next : 'a prop_iter -> unit prop_iter option
@@ -482,31 +370,20 @@ val prop_iter_update_current_by_list : 'a prop_iter -> hpred list -> unit prop_i
 val prop_iter_set_state : 'a prop_iter -> 'b -> 'b prop_iter
 
 (** Rename [ident] in [iter] by a fresh primed identifier *)
-val prop_iter_make_id_primed : Ident.t -> 'a prop_iter -> 'a prop_iter
+val prop_iter_make_id_primed : Tenv.t -> Ident.t -> 'a prop_iter -> 'a prop_iter
 
 (** Collect garbage fields. *)
 val prop_iter_gc_fields : unit prop_iter -> unit prop_iter
 
-val find_equal_formal_path : exp -> 'a t -> Sil.exp option
-
 (** return the set of subexpressions of [strexp] *)
-val strexp_get_exps : Sil.strexp -> Sil.ExpSet.t
+val strexp_get_exps : Sil.strexp -> Exp.Set.t
 
 (** get the set of expressions on the righthand side of [hpred] *)
-val hpred_get_targets : Sil.hpred -> Sil.ExpSet.t
+val hpred_get_targets : Sil.hpred -> Exp.Set.t
 
 (** return the set of hpred's and exp's in [sigma] that are reachable from an expression in
     [exps] *)
-val compute_reachable_hpreds : hpred list -> Sil.ExpSet.t -> Sil.HpredSet.t * Sil.ExpSet.t
-
-
-(** if possible, produce a (fieldname, typ) path from one of the [src_exps] to [snk_exp] using
-    [reachable_hpreds]. *)
-val get_fld_typ_path_opt : Sil.ExpSet.t -> Sil.exp -> Sil.HpredSet.t ->
-  (Ident.fieldname option * Sil.typ) list option
-
-(** filter [pi] by removing the pure atoms that do not contain an expression in [exps] *)
-val compute_reachable_atoms : pi -> Sil.ExpSet.t -> pi
+val compute_reachable_hpreds : hpred list -> Exp.Set.t -> Sil.HpredSet.t * Exp.Set.t
 
 (** {2 Internal modules} *)
 

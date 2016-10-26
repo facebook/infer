@@ -1,0 +1,10 @@
+#include <infer_model/portability.h>
+
+#ifdef INFER_CPP11_ON
+#include<infer_model/vector.h>
+
+#else 
+// don't model std::vector pre-c++11 to
+// simplify implementation
+#include_next <vector>
+#endif

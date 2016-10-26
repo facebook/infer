@@ -1,0 +1,74 @@
+/* @generated */
+digraph iCFG {
+19 [label="19:  Call _fun_fun_ignore_param \n   n$0=_fun_fun_ignore_param(1:int ,1:int ,1:int ) [line 27]\n " shape="box"]
+	
+
+	 19 -> 18 ;
+18 [label="18: Exit test2 \n  " color=yellow style=filled]
+	
+
+17 [label="17: Start test2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 27]\n " color=yellow style=filled]
+	
+
+	 17 -> 19 ;
+16 [label="16:  Call _fun_fun_default \n   n$4=_fun_fun_default(1:int ,2:int ) [line 19]\n " shape="box"]
+	
+
+	 16 -> 15 ;
+15 [label="15:  Call _fun_fun_default \n   n$3=_fun_fun_default(1:int ,5:int ) [line 20]\n " shape="box"]
+	
+
+	 15 -> 14 ;
+14 [label="14:  Call _fun_fun_default \n   n$2=_fun_fun_default(3:int ,5:int ) [line 21]\n " shape="box"]
+	
+
+	 14 -> 13 ;
+13 [label="13:  Call _fun_fun_default_decl \n   n$1=_fun_fun_default_decl(6:int ,5:int ) [line 23]\n " shape="box"]
+	
+
+	 13 -> 12 ;
+12 [label="12:  Call _fun_fun_default_decl \n   n$0=_fun_fun_default_decl(6:int ,6:int ) [line 24]\n " shape="box"]
+	
+
+	 12 -> 11 ;
+11 [label="11: Exit test \n  " color=yellow style=filled]
+	
+
+10 [label="10: Start test\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+	
+
+	 10 -> 16 ;
+9 [label="9:  Return Stmt \n   n$0=*&a:int  [line 16]\n  *&return:int =n$0 [line 16]\n " shape="box"]
+	
+
+	 9 -> 8 ;
+8 [label="8: Exit fun_ignore_param \n  " color=yellow style=filled]
+	
+
+7 [label="7: Start fun_ignore_param\nFormals:  a:int  __param_1:int  __param_2:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
+	
+
+	 7 -> 9 ;
+6 [label="6:  Return Stmt \n   n$0=*&a:int  [line 14]\n  n$1=*&b:int  [line 14]\n  *&return:int =(n$0 + n$1) [line 14]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit fun_default_decl \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start fun_default_decl\nFormals:  a:int  b:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+	
+
+	 4 -> 6 ;
+3 [label="3:  Return Stmt \n   n$0=*&a:int  [line 10]\n  n$1=*&b:int  [line 10]\n  *&return:int =(n$0 + n$1) [line 10]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit fun_default \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start fun_default\nFormals:  a:int  b:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

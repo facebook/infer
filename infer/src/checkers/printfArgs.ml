@@ -85,10 +85,10 @@ let format_type_matches_given_type
 (* The format string and the nvar for the fixed arguments and the nvar of the varargs array *)
 let format_arguments
     (printf: printf_signature)
-    (args: (Sil.exp * Sil.typ) list): (string option * (Sil.exp list) * (Sil.exp option)) =
+    (args: (Exp.t * Typ.t) list): (string option * (Exp.t list) * (Exp.t option)) =
 
   let format_string = match IList.nth args printf.format_pos with
-    | Sil.Const (Sil.Cstr fmt), _ -> Some fmt
+    | Exp.Const (Const.Cstr fmt), _ -> Some fmt
     | _ -> None in
 
   let fixed_nvars = IList.map
@@ -114,7 +114,7 @@ let rec format_string_type_names
 
 let printf_args_name = "CHECKERS_PRINTF_ARGS"
 
-let check_printf_args_ok
+let check_printf_args_ok tenv
     (node: Cfg.Node.t)
     (instr: Sil.instr)
     (proc_name: Procname.t)
@@ -134,7 +134,7 @@ let check_printf_args_ok
               n_arg
               (default_format_type_name ft)
               gt in
-          Checkers.ST.report_error
+          Checkers.ST.report_error tenv
             proc_name
             proc_desc
             printf_args_name
@@ -148,7 +148,7 @@ let check_printf_args_ok
             "format string arguments don't mach provided arguments in %s at line %s"
             instr_name
             instr_line in
-        Checkers.ST.report_error
+        Checkers.ST.report_error tenv
           proc_name
           proc_desc
           printf_args_name
@@ -158,24 +158,24 @@ let check_printf_args_ok
   (* Get the array ivar for a given nvar *)
   let rec array_ivar instrs nvar =
     match instrs, nvar with
-    | Sil.Letderef (id, Sil.Lvar iv, _, _):: _, Sil.Var nid
+    | Sil.Load (id, Exp.Lvar iv, _, _):: _, Exp.Var nid
       when Ident.equal id nid -> iv
     | _:: is, _ -> array_ivar is nvar
     | _ -> raise Not_found in
 
   let rec fixed_nvar_type_name instrs nvar =
     match nvar with
-    | Sil.Var nid -> (
+    | Exp.Var nid -> (
         match instrs with
-        | Sil.Letderef (id, Sil.Lvar _, t, _):: _
+        | Sil.Load (id, Exp.Lvar _, t, _):: _
           when Ident.equal id nid -> PatternMatch.get_type_name t
         | _:: is -> fixed_nvar_type_name is nvar
         | _ -> raise Not_found)
-    | Sil.Const c -> PatternMatch.java_get_const_type_name c
+    | Exp.Const c -> PatternMatch.java_get_const_type_name c
     | _ -> raise (Failure "Could not resolve fixed type name") in
 
   match instr with
-  | Sil.Call (_, Sil.Const (Sil.Cfun pn), args, cl, _) -> (
+  | Sil.Call (_, Exp.Const (Const.Cfun pn), args, cl, _) -> (
       match printf_like_function pn with
       | Some printf -> (
           try
@@ -185,7 +185,7 @@ let check_printf_args_ok
             let vararg_ivar_type_names = match array_nvar with
               | Some nvar -> (
                   let ivar = array_ivar instrs nvar in
-                  PatternMatch.get_vararg_type_names node ivar)
+                  PatternMatch.get_vararg_type_names tenv node ivar)
               | None -> [] in
             match fmt with
             | Some fmt ->
@@ -196,7 +196,7 @@ let check_printf_args_ok
                   (format_string_type_names fmt 0)
                   (fixed_nvar_type_names@ vararg_ivar_type_names)
             | None ->
-                Checkers.ST.report_error
+                Checkers.ST.report_error tenv
                   proc_name
                   proc_desc
                   printf_args_name
@@ -211,8 +211,8 @@ let check_printf_args_ok
       | None -> ())
   | _ -> ()
 
-let callback_printf_args { Callbacks.proc_desc; proc_name } : unit =
-  Cfg.Procdesc.iter_instrs (fun n i -> check_printf_args_ok n i proc_name proc_desc) proc_desc
+let callback_printf_args { Callbacks.tenv; proc_desc; proc_name } : unit =
+  Cfg.Procdesc.iter_instrs (fun n i -> check_printf_args_ok tenv n i proc_name proc_desc) proc_desc
 
 (*
 let printf_signature_to_string

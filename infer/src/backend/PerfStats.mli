@@ -11,4 +11,10 @@
 
 open! Utils
 
+type perf_stats
+
+val from_json : Yojson.Basic.json -> perf_stats
+
+val aggregate : perf_stats list -> Yojson.Basic.json
+
 val register_report_at_exit : string -> unit

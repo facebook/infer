@@ -11,12 +11,4 @@ open! Utils
 
 (** Translate declarations **)
 
-module type CFrontend_decl = sig
-  val function_decl : Tenv.t -> Cfg.cfg -> Cg.t -> Clang_ast_t.decl ->
-    CModule_type.block_data option -> unit
-
-  val translate_one_declaration : Tenv.t -> Cg.t -> Cfg.cfg ->
-    CModule_type.decl_trans_context -> Clang_ast_t.decl -> unit
-end
-
-module CFrontend_decl_funct(T: CModule_type.CTranslation) : CFrontend_decl
+module CFrontend_decl_funct(T: CModule_type.CTranslation) : CModule_type.CFrontend

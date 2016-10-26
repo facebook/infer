@@ -254,24 +254,24 @@ module Strict = struct
     let (ia, _) = signature.Annotations.ret in
     Annotations.ia_get_strict ia
 
-  let this_type_get_strict signature =
+  let this_type_get_strict tenv signature =
     match signature.Annotations.params with
     | (p, _, this_type):: _ when Mangled.to_string p = "this" ->
         begin
-          match PatternMatch.type_get_annotation this_type with
+          match PatternMatch.type_get_annotation tenv this_type with
           | Some ia -> Annotations.ia_get_strict ia
           | None -> None
         end
     | _ -> None
 
-  let signature_get_strict signature =
+  let signature_get_strict tenv signature =
     match method_get_strict signature with
-    | None -> this_type_get_strict signature
+    | None -> this_type_get_strict tenv signature
     | Some x -> Some x
 
-  let origin_descr_get_strict origin_descr = match origin_descr with
+  let origin_descr_get_strict tenv origin_descr = match origin_descr with
     | _, _, Some signature ->
-        signature_get_strict signature
+        signature_get_strict tenv signature
     | _, _, None ->
         None
 
@@ -280,14 +280,14 @@ module Strict = struct
   (* Return (Some parameters) if there is a method call on a @Nullable object,*)
   (* where the origin of @Nullable in the analysis is the return value of a Strict method*)
   (* with parameters. A method is Strict if it or its class are annotated @Strict. *)
-  let err_instance_get_strict err_instance : Sil.annotation option =
+  let err_instance_get_strict tenv err_instance : Annot.t option =
     match err_instance with
     | Call_receiver_annotation_inconsistent (Annotations.Nullable, _, _, origin_descr)
     | Null_field_access (_, _, origin_descr, _) ->
-        origin_descr_get_strict origin_descr
+        origin_descr_get_strict tenv origin_descr
     | Parameter_annotation_inconsistent (Annotations.Nullable, _, _, _, _, origin_descr)
       when report_on_method_arguments ->
-        origin_descr_get_strict origin_descr
+        origin_descr_get_strict tenv origin_descr
     | _ -> None
 end (* Strict *)
 
@@ -305,7 +305,7 @@ type st_report_error =
   unit
 
 (** Report an error right now. *)
-let report_error_now
+let report_error_now tenv
     (st_report_error : st_report_error) node err_instance loc pname : unit =
   let demo_mode = true in
   let do_print_base ew_string kind_s s =
@@ -526,7 +526,7 @@ let report_error_now
         None in
   let ew_string = if is_err then "Error" else "Warning" in
   (if demo_mode then do_print_demo else do_print) ew_string kind_s description;
-  let always_report = Strict.err_instance_get_strict err_instance <> None in
+  let always_report = Strict.err_instance_get_strict tenv err_instance <> None in
   st_report_error
     pname
     (Cfg.Node.get_proc_desc node)
@@ -542,22 +542,22 @@ let report_error_now
 
 (** Report an error unless is has been reported already, or unless it's a forall error
     since it requires waiting until the end of the analysis and be printed by flush. *)
-let report_error (st_report_error : st_report_error) find_canonical_duplicate node
+let report_error tenv (st_report_error : st_report_error) find_canonical_duplicate node
     err_instance instr_ref_opt loc pname_java =
   let should_report_now =
     add_err find_canonical_duplicate err_instance instr_ref_opt loc in
   if should_report_now then
-    report_error_now st_report_error node err_instance loc pname_java
+    report_error_now tenv st_report_error node err_instance loc pname_java
 
 (** Report the forall checks at the end of the analysis and reset the error table *)
-let report_forall_checks_and_reset st_report_error proc_name =
+let report_forall_checks_and_reset tenv st_report_error proc_name =
   let iter (err_instance, instr_ref_opt) err_state =
     match instr_ref_opt, get_forall err_instance with
     | Some instr_ref, is_forall ->
         let node = InstrRef.get_node instr_ref in
         State.set_node node;
         if is_forall && err_state.always
-        then report_error_now st_report_error node err_instance err_state.loc proc_name
+        then report_error_now tenv st_report_error node err_instance err_state.loc proc_name
     | None, _ -> () in
   H.iter iter err_tbl;
   reset ()

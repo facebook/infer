@@ -1,0 +1,52 @@
+.TH OCAMLDOT 1
+.SH NAME
+ocamldot \- generate dependency graphs of ocaml programs
+.SH SYNOPSIS
+.B ocamldot
+.I 
+.RI "[options] <dependency-file>"
+.SH "DESCRIPTION"
+This manual page documents briefly the
+.BR ocamldot
+command.
+.PP
+.B ocamldot
+generates program dependency graphs for ocaml programs.  The
+dependency graph output by ocamldot can be rendered by a separate
+program, \fIdot\fR.
+.P
+Ocamldot is designed to process the output of ocamldep. A typical use would be 
+.P
+	ocamldep *.ml | ocamldot > dep.dot 
+.P
+or 
+.P
+	ocamldep *.ml > .depend
+.br
+	ocamldot .depend > dep.dot 
+.SH OPTIONS
+.TP
+.B \-fullgraph 
+Draw the full graph (default is to draw only the kernel) 
+.TP
+.B \-landscape 
+Output in landscape format (default is portrait) 
+.TP
+.B \-lr 
+Draw graph from left to right (default is top to bottom) 
+.TP
+.B \-r <r>
+Use \fI<r>\fR as a root in the graph; nodes reachable from \fI<r>\fR
+will be shown.
+.P
+The transitive kernel of a dag is the smallest subset of the dag whose transitive closure is the same as the transitive closure of the dag.
+For example, the kernel of A->B, A->C, B->C is just the two edges A->B, B->C.
+
+.SH SEE ALSO
+.BR ocamldep (1),
+.BR dot(1)
+.P
+\fIhttp://www.research.att.com/~trevor/ocamldot\fR.
+
+.SH AUTHOR
+Trevor Jim <trevor@research.att.com>

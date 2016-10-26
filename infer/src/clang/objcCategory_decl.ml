@@ -70,30 +70,23 @@ let get_base_class_name_from_category decl =
 (* Add potential extra fields defined only in the category *)
 (* to the corresponding class. Update the tenv accordingly.*)
 let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
-  let fields = CField_decl.get_fields type_ptr_to_sil_type tenv curr_class decl_list in
-  let methods = ObjcProperty_decl.get_methods curr_class decl_list in
+  let decl_fields = CField_decl.get_fields type_ptr_to_sil_type tenv curr_class decl_list in
+  let decl_methods = ObjcProperty_decl.get_methods curr_class decl_list in
   let class_name = CContext.get_curr_class_name curr_class in
   let mang_name = Mangled.from_string class_name in
   let class_tn_name = Typename.TN_csu (Csu.Class Csu.Objc, mang_name) in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
-  Ast_utils.update_sil_types_map decl_key (Sil.Tvar class_tn_name);
+  Ast_utils.update_sil_types_map decl_key (Typ.Tstruct class_tn_name);
   (match Tenv.lookup tenv class_tn_name with
-   | Some ({ Sil.instance_fields; def_methods } as struct_typ) ->
-       let new_fields = General_utils.append_no_duplicates_fields fields instance_fields in
-       let new_methods = General_utils.append_no_duplicates_methods methods def_methods in
-       let class_type_info =
-         {
-           struct_typ with
-           Sil.instance_fields = new_fields;
-           static_fields = [];
-           csu = Csu.Class Csu.Objc;
-           struct_name = Some mang_name;
-           def_methods = new_methods;
-         } in
-       Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
-       Tenv.add tenv class_tn_name class_type_info
+   | Some ({ fields; methods } as struct_typ) ->
+       let new_fields = General_utils.append_no_duplicates_fields decl_fields fields in
+       let new_methods = General_utils.append_no_duplicates_methods decl_methods methods in
+       ignore(
+         Tenv.mk_struct tenv
+           ~default:struct_typ ~fields:new_fields ~statics:[] ~methods:new_methods class_tn_name );
+       Logging.out_debug " Updating info for class '%s' in tenv\n" class_name
    | _ -> ());
-  Sil.Tvar class_tn_name
+  Typ.Tstruct class_tn_name
 
 let category_decl type_ptr_to_sil_type tenv decl =
   let open Clang_ast_t in
@@ -101,7 +94,7 @@ let category_decl type_ptr_to_sil_type tenv decl =
   | ObjCCategoryDecl (decl_info, name_info, decl_list, _, cdi) ->
       let name = Ast_utils.get_qualified_name name_info in
       let curr_class = get_curr_class_from_category_decl name cdi in
-      Printing.log_out "ADDING: ObjCCategoryDecl for '%s'\n" name;
+      Logging.out_debug "ADDING: ObjCCategoryDecl for '%s'\n" name;
       let _ = add_class_decl type_ptr_to_sil_type tenv cdi in
       let typ = process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list in
       let _ = add_category_implementation type_ptr_to_sil_type tenv cdi in
@@ -114,7 +107,7 @@ let category_impl_decl type_ptr_to_sil_type tenv decl =
   | ObjCCategoryImplDecl (decl_info, name_info, decl_list, _, cii) ->
       let name = Ast_utils.get_qualified_name name_info in
       let curr_class = get_curr_class_from_category_impl name cii in
-      Printing.log_out "ADDING: ObjCCategoryImplDecl for '%s'\n" name;
+      Logging.out_debug "ADDING: ObjCCategoryImplDecl for '%s'\n" name;
       let _ = add_category_decl type_ptr_to_sil_type tenv cii in
       let typ = process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list in
       typ

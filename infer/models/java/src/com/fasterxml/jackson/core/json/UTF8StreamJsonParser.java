@@ -9,7 +9,7 @@
 
 package com.fasterxml.jackson.core.json;
 
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 import com.fasterxml.jackson.core.Base64Variant;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonToken;
@@ -132,7 +132,7 @@ public final class UTF8StreamJsonParser
     public String getText()
             throws IOException, JsonParseException {
         throwExceptions();
-        return InferUndefined.string_undefined();
+        return (String)InferUndefined.object_undefined();
     }
 
     @Override

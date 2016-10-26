@@ -1,0 +1,44 @@
+/* @generated */
+digraph iCFG {
+11 [label="11:  DeclStmt \n   _fun_X_X(&x1:class X *,0:int ,0:int ) [line 21]\n " shape="box"]
+	
+
+	 11 -> 10 ;
+10 [label="10:  DeclStmt \n   _fun_X_X(&x2:class X *,1:int ,0:int ) [line 22]\n " shape="box"]
+	
+
+	 10 -> 9 ;
+9 [label="9:  DeclStmt \n   _fun_X_X(&x3:class X *,0:int ,1:int ) [line 23]\n " shape="box"]
+	
+
+	 9 -> 8 ;
+8 [label="8: Exit test \n  " color=yellow style=filled]
+	
+
+7 [label="7: Start test\nFormals: \nLocals:  x3:class X  x2:class X  x1:class X  \n   DECLARE_LOCALS(&return,&x3,&x2,&x1); [line 20]\n " color=yellow style=filled]
+	
+
+	 7 -> 11 ;
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 18]\n  n$1=*&a:int  [line 18]\n  n$2=*&b:int  [line 18]\n  *n$0.f:int =(n$1 + n$2) [line 18]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit X_X \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start X_X\nFormals:  this:class X * a:int  b:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+	
+
+	 4 -> 6 ;
+3 [label="3:  Return Stmt \n   n$0=*&this:class X * [line 15]\n  n$1=*n$0.f:int  [line 15]\n  *&return:int =(1 / n$1) [line 15]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit X_div \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start X_div\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

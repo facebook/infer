@@ -1,0 +1,358 @@
+/* @generated */
+digraph iCFG {
+95 [label="95:  DeclStmt \n   *&a:int =0 [line 140]\n " shape="box"]
+	
+
+	 95 -> 94 ;
+94 [label="94:  DeclStmt \n   _fun_TranslateAsPtr<int>_TranslateAsPtr(&t:int **,null:int *) [line 141]\n  n$4=*&t:int * [line 141]\n " shape="box"]
+	
+
+	 94 -> 93 ;
+93 [label="93:  Call _fun_TranslateAsPtr<int>_setPtr \n   _=*&t:int * [line 142]\n  _fun_TranslateAsPtr<int>_setPtr(&t:int *&,&a:int *) [line 142]\n " shape="box"]
+	
+
+	 93 -> 92 ;
+92 [label="92:  Return Stmt \n   _=*&t:int * [line 143]\n  n$1=*&t:int *& [line 143]\n  n$2=*n$1:int * [line 143]\n  *&return:int =n$2 [line 143]\n " shape="box"]
+	
+
+	 92 -> 91 ;
+91 [label="91: Exit getRef_ok_deref \n  " color=yellow style=filled]
+	
+
+90 [label="90: Start getRef_ok_deref\nFormals: \nLocals:  t:int * a:int  \n   DECLARE_LOCALS(&return,&t,&a); [line 139]\n " color=yellow style=filled]
+	
+
+	 90 -> 95 ;
+89 [label="89:  DeclStmt \n   _fun_TranslateAsPtr<int>_TranslateAsPtr(&t:int **,null:int *) [line 134]\n  n$4=*&t:int * [line 134]\n " shape="box"]
+	
+
+	 89 -> 88 ;
+88 [label="88:  Call _fun_TranslateAsPtr<int>_setPtr \n   _=*&t:int * [line 135]\n  _fun_TranslateAsPtr<int>_setPtr(&t:int *&,null:int *) [line 135]\n " shape="box"]
+	
+
+	 88 -> 87 ;
+87 [label="87:  Return Stmt \n   _=*&t:int * [line 136]\n  n$1=*&t:int *& [line 136]\n  n$2=*n$1:int * [line 136]\n  *&return:int =n$2 [line 136]\n " shape="box"]
+	
+
+	 87 -> 86 ;
+86 [label="86: Exit getRef_null_deref2 \n  " color=yellow style=filled]
+	
+
+85 [label="85: Start getRef_null_deref2\nFormals: \nLocals:  t:int * \n   DECLARE_LOCALS(&return,&t); [line 133]\n " color=yellow style=filled]
+	
+
+	 85 -> 89 ;
+84 [label="84:  DeclStmt \n   _fun_TranslateAsPtr<int>_TranslateAsPtr(&t:int **,null:int *) [line 128]\n  n$4=*&t:int * [line 128]\n " shape="box"]
+	
+
+	 84 -> 83 ;
+83 [label="83:  Call _fun_TranslateAsPtr<int>_setPtr \n   _=*&t:int * [line 129]\n  _fun_TranslateAsPtr<int>_setPtr(&t:int *&,null:int *) [line 129]\n " shape="box"]
+	
+
+	 83 -> 82 ;
+82 [label="82:  Return Stmt \n   _=*&t:int * [line 130]\n  n$1=*&t:int *& [line 130]\n  n$2=*n$1:int * [line 130]\n  *&return:int =n$2 [line 130]\n " shape="box"]
+	
+
+	 82 -> 81 ;
+81 [label="81: Exit getRef_null_deref1 \n  " color=yellow style=filled]
+	
+
+80 [label="80: Start getRef_null_deref1\nFormals: \nLocals:  t:int * \n   DECLARE_LOCALS(&return,&t); [line 127]\n " color=yellow style=filled]
+	
+
+	 80 -> 84 ;
+79 [label="79:  DeclStmt \n   _fun_TranslateAsPtr<int>_TranslateAsPtr(&t:int **,null:int *) [line 122]\n  n$4=*&t:int * [line 122]\n " shape="box"]
+	
+
+	 79 -> 78 ;
+78 [label="78:  Call _fun_TranslateAsPtr<int>_setPtr \n   _=*&t:int * [line 123]\n  _fun_TranslateAsPtr<int>_setPtr(&t:int *&,&a:int *) [line 123]\n " shape="box"]
+	
+
+	 78 -> 77 ;
+77 [label="77:  Return Stmt \n   _=*&t:int * [line 124]\n  n$1=*&t:int *& [line 124]\n  n$2=*n$1:int * [line 124]\n  *&return:int =n$2 [line 124]\n " shape="box"]
+	
+
+	 77 -> 76 ;
+76 [label="76: Exit operator_star_ok_deref \n  " color=yellow style=filled]
+	
+
+75 [label="75: Start operator_star_ok_deref\nFormals: \nLocals:  t:int * a:int  \n   DECLARE_LOCALS(&return,&t,&a); [line 120]\n " color=yellow style=filled]
+	
+
+	 75 -> 79 ;
+74 [label="74:  DeclStmt \n   _fun_TranslateAsPtr<int>_TranslateAsPtr(&t:int **,null:int *) [line 115]\n  n$4=*&t:int * [line 115]\n " shape="box"]
+	
+
+	 74 -> 73 ;
+73 [label="73:  Call _fun_TranslateAsPtr<int>_setPtr \n   _=*&t:int * [line 116]\n  _fun_TranslateAsPtr<int>_setPtr(&t:int *&,null:int *) [line 116]\n " shape="box"]
+	
+
+	 73 -> 72 ;
+72 [label="72:  Return Stmt \n   _=*&t:int * [line 117]\n  n$1=*&t:int *& [line 117]\n  n$2=*n$1:int * [line 117]\n  *&return:int =n$2 [line 117]\n " shape="box"]
+	
+
+	 72 -> 71 ;
+71 [label="71: Exit operator_star_null_deref2 \n  " color=yellow style=filled]
+	
+
+70 [label="70: Start operator_star_null_deref2\nFormals: \nLocals:  t:int * \n   DECLARE_LOCALS(&return,&t); [line 114]\n " color=yellow style=filled]
+	
+
+	 70 -> 74 ;
+69 [label="69:  DeclStmt \n   _fun_TranslateAsPtr<int>_TranslateAsPtr(&t:int **,null:int *) [line 109]\n  n$3=*&t:int * [line 109]\n " shape="box"]
+	
+
+	 69 -> 68 ;
+68 [label="68:  Call _fun_TranslateAsPtr<int>_setPtr \n   _=*&t:int * [line 110]\n  _fun_TranslateAsPtr<int>_setPtr(&t:int *&,null:int *) [line 110]\n " shape="box"]
+	
+
+	 68 -> 67 ;
+67 [label="67:  Return Stmt \n   n$0=*&t:int *& [line 111]\n  n$1=*n$0:int * [line 111]\n  *&return:int =n$1 [line 111]\n " shape="box"]
+	
+
+	 67 -> 66 ;
+66 [label="66: Exit operator_star_null_deref1 \n  " color=yellow style=filled]
+	
+
+65 [label="65: Start operator_star_null_deref1\nFormals: \nLocals:  t:int * \n   DECLARE_LOCALS(&return,&t); [line 108]\n " color=yellow style=filled]
+	
+
+	 65 -> 69 ;
+64 [label="64:  DeclStmt \n   *&a:int =0 [line 102]\n " shape="box"]
+	
+
+	 64 -> 63 ;
+63 [label="63:  DeclStmt \n   _fun_TranslateAsPtr<int>_TranslateAsPtr(&t:int **,null:int *) [line 103]\n  n$4=*&t:int * [line 103]\n " shape="box"]
+	
+
+	 63 -> 62 ;
+62 [label="62:  Call _fun_TranslateAsPtr<int>_setPtr \n   _=*&t:int * [line 104]\n  _fun_TranslateAsPtr<int>_setPtr(&t:int *&,&a:int *) [line 104]\n " shape="box"]
+	
+
+	 62 -> 61 ;
+61 [label="61:  Return Stmt \n   _=*&t:int * [line 105]\n  n$1=*&t:int *& [line 105]\n  n$2=*n$1:int  [line 105]\n  *&return:int =n$2 [line 105]\n " shape="box"]
+	
+
+	 61 -> 60 ;
+60 [label="60: Exit getPtr_ok_deref \n  " color=yellow style=filled]
+	
+
+59 [label="59: Start getPtr_ok_deref\nFormals: \nLocals:  t:int * a:int  \n   DECLARE_LOCALS(&return,&t,&a); [line 101]\n " color=yellow style=filled]
+	
+
+	 59 -> 64 ;
+58 [label="58:  DeclStmt \n   _fun_TranslateAsPtr<int>_TranslateAsPtr(&t:int **,null:int *) [line 96]\n  n$4=*&t:int * [line 96]\n " shape="box"]
+	
+
+	 58 -> 57 ;
+57 [label="57:  Call _fun_TranslateAsPtr<int>_setPtr \n   _=*&t:int * [line 97]\n  _fun_TranslateAsPtr<int>_setPtr(&t:int *&,null:int *) [line 97]\n " shape="box"]
+	
+
+	 57 -> 56 ;
+56 [label="56:  Return Stmt \n   _=*&t:int * [line 98]\n  n$1=*&t:int *& [line 98]\n  n$2=*n$1:int  [line 98]\n  *&return:int =n$2 [line 98]\n " shape="box"]
+	
+
+	 56 -> 55 ;
+55 [label="55: Exit getPtr_null_deref2 \n  " color=yellow style=filled]
+	
+
+54 [label="54: Start getPtr_null_deref2\nFormals: \nLocals:  t:int * \n   DECLARE_LOCALS(&return,&t); [line 95]\n " color=yellow style=filled]
+	
+
+	 54 -> 58 ;
+53 [label="53:  DeclStmt \n   _fun_TranslateAsPtr<int>_TranslateAsPtr(&t:int **,null:int *) [line 90]\n  n$4=*&t:int * [line 90]\n " shape="box"]
+	
+
+	 53 -> 52 ;
+52 [label="52:  Call _fun_TranslateAsPtr<int>_setPtr \n   _=*&t:int * [line 91]\n  _fun_TranslateAsPtr<int>_setPtr(&t:int *&,null:int *) [line 91]\n " shape="box"]
+	
+
+	 52 -> 51 ;
+51 [label="51:  Return Stmt \n   _=*&t:int * [line 92]\n  n$1=*&t:int *& [line 92]\n  n$2=*n$1:int  [line 92]\n  *&return:int =n$2 [line 92]\n " shape="box"]
+	
+
+	 51 -> 50 ;
+50 [label="50: Exit getPtr_null_deref1 \n  " color=yellow style=filled]
+	
+
+49 [label="49: Start getPtr_null_deref1\nFormals: \nLocals:  t:int * \n   DECLARE_LOCALS(&return,&t); [line 89]\n " color=yellow style=filled]
+	
+
+	 49 -> 53 ;
+48 [label="48: Exit TranslateAsPtr<int>_getRef \n  " color=yellow style=filled]
+	
+
+47 [label="47: Start TranslateAsPtr<int>_getRef\nFormals:  this:int ** a:int  b:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 83]\n " color=yellow style=filled]
+	
+
+	 47 -> 48 ;
+46 [label="46: Exit TranslateAsPtr<int>_getRef \n  " color=yellow style=filled]
+	
+
+45 [label="45: Start TranslateAsPtr<int>_getRef\nFormals:  this:int **\nLocals:  \n   DECLARE_LOCALS(&return); [line 82]\n " color=yellow style=filled]
+	
+
+	 45 -> 46 ;
+44 [label="44: Exit TranslateAsPtr<int>_operator* \n  " color=yellow style=filled]
+	
+
+43 [label="43: Start TranslateAsPtr<int>_operator*\nFormals:  this:int **\nLocals:  \n   DECLARE_LOCALS(&return); [line 81]\n " color=yellow style=filled]
+	
+
+	 43 -> 44 ;
+42 [label="42: Exit TranslateAsPtr<int>_getPtr \n  " color=yellow style=filled]
+	
+
+41 [label="41: Start TranslateAsPtr<int>_getPtr\nFormals:  this:int ** a:int  b:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 79]\n " color=yellow style=filled]
+	
+
+	 41 -> 42 ;
+40 [label="40: Exit TranslateAsPtr<int>_getPtr \n  " color=yellow style=filled]
+	
+
+39 [label="39: Start TranslateAsPtr<int>_getPtr\nFormals:  this:int **\nLocals:  \n   DECLARE_LOCALS(&return); [line 78]\n " color=yellow style=filled]
+	
+
+	 39 -> 40 ;
+38 [label="38:  Call _fun_TranslateAsPtr<int>_setPtr \n   n$0=*&this:int ** [line 76]\n  _=*n$0:int * [line 76]\n  n$2=*&t:int * [line 76]\n  _fun_TranslateAsPtr<int>_setPtr(n$0:int **,n$2:int *) [line 76]\n " shape="box"]
+	
+
+	 38 -> 34 ;
+37 [label="37:  BinaryOperatorStmt: Assign \n   n$0=*&this:int ** [line 86]\n  n$1=*&v:int * [line 86]\n  *n$0:void *=n$1 [line 86]\n " shape="box"]
+	
+
+	 37 -> 36 ;
+36 [label="36: Exit TranslateAsPtr<int>_setPtr \n  " color=yellow style=filled]
+	
+
+35 [label="35: Start TranslateAsPtr<int>_setPtr\nFormals:  this:int ** v:int *\nLocals:  \n   DECLARE_LOCALS(&return); [line 86]\n " color=yellow style=filled]
+	
+
+	 35 -> 37 ;
+34 [label="34: Exit TranslateAsPtr<int>_TranslateAsPtr \n  " color=yellow style=filled]
+	
+
+33 [label="33: Start TranslateAsPtr<int>_TranslateAsPtr\nFormals:  this:int ** t:int *\nLocals:  \n   DECLARE_LOCALS(&return); [line 76]\n " color=yellow style=filled]
+	
+
+	 33 -> 38 ;
+32 [label="32:  DeclStmt \n   *&a:int =0 [line 63]\n " shape="box"]
+	
+
+	 32 -> 31 ;
+31 [label="31:  Return Stmt \n   n$0=_fun_derefFirstArg3(&a:int *,null:int *) [line 64]\n  *&return:int =n$0 [line 64]\n " shape="box"]
+	
+
+	 31 -> 30 ;
+30 [label="30: Exit derefFirstArg3_null_deref \n  " color=yellow style=filled]
+	
+
+29 [label="29: Start derefFirstArg3_null_deref\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 62]\n " color=yellow style=filled]
+	
+
+	 29 -> 32 ;
+28 [label="28:  DeclStmt \n   *&a:int =0 [line 58]\n " shape="box"]
+	
+
+	 28 -> 27 ;
+27 [label="27:  Return Stmt \n   n$0=_fun_derefFirstArg3(null:int *,&a:int *) [line 59]\n  *&return:int =n$0 [line 59]\n " shape="box"]
+	
+
+	 27 -> 26 ;
+26 [label="26: Exit derefFirstArg3_ok_deref \n  " color=yellow style=filled]
+	
+
+25 [label="25: Start derefFirstArg3_ok_deref\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 57]\n " color=yellow style=filled]
+	
+
+	 25 -> 28 ;
+24 [label="24:  DeclStmt \n   *&a:int =0 [line 53]\n " shape="box"]
+	
+
+	 24 -> 23 ;
+23 [label="23:  Return Stmt \n   n$0=*&a:int * [line 54]\n  *&return:int =n$0 [line 54]\n " shape="box"]
+	
+
+	 23 -> 22 ;
+22 [label="22: Exit derefFirstArg2_ok_deref \n  " color=yellow style=filled]
+	
+
+21 [label="21: Start derefFirstArg2_ok_deref\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 52]\n " color=yellow style=filled]
+	
+
+	 21 -> 24 ;
+20 [label="20:  DeclStmt \n   *&a:int =0 [line 48]\n " shape="box"]
+	
+
+	 20 -> 19 ;
+19 [label="19:  Return Stmt \n   n$0=*null:int * [line 49]\n  *&return:int =n$0 [line 49]\n " shape="box"]
+	
+
+	 19 -> 18 ;
+18 [label="18: Exit derefFirstArg2_null_deref \n  " color=yellow style=filled]
+	
+
+17 [label="17: Start derefFirstArg2_null_deref\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 47]\n " color=yellow style=filled]
+	
+
+	 17 -> 20 ;
+16 [label="16:  DeclStmt \n   *&a:int =0 [line 43]\n " shape="box"]
+	
+
+	 16 -> 15 ;
+15 [label="15:  Return Stmt \n   n$0=*&a:int * [line 44]\n  *&return:int =n$0 [line 44]\n " shape="box"]
+	
+
+	 15 -> 14 ;
+14 [label="14: Exit derefFirstArg_ok_deref \n  " color=yellow style=filled]
+	
+
+13 [label="13: Start derefFirstArg_ok_deref\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 42]\n " color=yellow style=filled]
+	
+
+	 13 -> 16 ;
+12 [label="12:  DeclStmt \n   *&a:int =0 [line 38]\n " shape="box"]
+	
+
+	 12 -> 11 ;
+11 [label="11:  Return Stmt \n   n$0=*null:int * [line 39]\n  *&return:int =n$0 [line 39]\n " shape="box"]
+	
+
+	 11 -> 10 ;
+10 [label="10: Exit derefFirstArg_null_deref \n  " color=yellow style=filled]
+	
+
+9 [label="9: Start derefFirstArg_null_deref\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 37]\n " color=yellow style=filled]
+	
+
+	 9 -> 12 ;
+8 [label="8:  Return Stmt \n   n$0=*&b:int * [line 33]\n  n$1=*n$0:int  [line 33]\n  *&return:int =n$1 [line 33]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7: Exit derefFirstArg3 \n  " color=yellow style=filled]
+	
+
+6 [label="6: Start derefFirstArg3\nFormals:  a:int * b:int *\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n " color=yellow style=filled]
+	
+
+	 6 -> 8 ;
+5 [label="5:  Return Stmt \n   n$0=*&b:int * [line 26]\n  n$1=*n$0:int  [line 26]\n  *&return:int =n$1 [line 26]\n " shape="box"]
+	
+
+	 5 -> 4 ;
+4 [label="4: Exit derefFirstArg2 \n  " color=yellow style=filled]
+	
+
+3 [label="3: Start derefFirstArg2\nFormals:  a:int * b:int *\nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
+	
+
+	 3 -> 5 ;
+2 [label="2: Exit derefFirstArg \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start derefFirstArg\nFormals:  a:int * b:int *\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
+	
+
+	 1 -> 2 ;
+}

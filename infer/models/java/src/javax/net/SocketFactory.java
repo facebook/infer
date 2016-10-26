@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 
-import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.builtins.InferBuiltins;
 
 public class SocketFactory {
 

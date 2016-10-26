@@ -29,7 +29,8 @@ module InstrRef : InstrRefT
 
 module Strict :
 sig
-  val signature_get_strict : Annotations.annotated_signature -> Sil.annotation option
+  val signature_get_strict :
+    Tenv.t -> Annotations.annotated_signature -> Annot.t option
 end (* Strict *)
 
 
@@ -79,11 +80,11 @@ type st_report_error =
   unit
 
 val report_error :
-  st_report_error ->
+  Tenv.t -> st_report_error ->
   (Cfg.Node.t -> Cfg.Node.t) -> Cfg.Node.t ->
   err_instance -> InstrRef.t option -> Location.t ->
   Procname.t -> unit
 
-val report_forall_checks_and_reset : st_report_error -> Procname.t -> unit
+val report_forall_checks_and_reset : Tenv.t -> st_report_error -> Procname.t -> unit
 
 val reset : unit -> unit

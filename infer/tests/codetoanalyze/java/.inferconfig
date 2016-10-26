@@ -10,9 +10,13 @@
       "method": "get"
     }
   ],
-  "infer_blacklist_files_containing": [
+  "infer-blacklist-files-containing": [
     "@generated"
   ],
+  "enable_checks": [
+      "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL",
+      "UNSAFE_GUARDED_BY_ACCESS"
+    ],
   "skip_translation": [
     {
       "language": "Java",

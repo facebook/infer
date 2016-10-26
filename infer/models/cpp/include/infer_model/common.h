@@ -16,7 +16,9 @@
 namespace infer_model {
 // code compiled with infer headers is not supposed to be executed
 struct AbortWhenRun {
-  AbortWhenRun() {
+  AbortWhenRun() { __infer_skip__(); }
+  // will be skipped by analyzer
+  void __infer_skip__() {
     fprintf(stderr,
             "!!! This program must not be run !!!\n"
             "This code was compiled to be analyzed by Infer.\n"

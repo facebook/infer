@@ -30,7 +30,7 @@ type t =
 val equal : t -> t -> bool
 
 (** Get a description to be used for error messages. *)
-val get_description : t -> TypeErr.origin_descr option
+val get_description : Tenv.t -> t -> TypeErr.origin_descr option
 
 (** Join with left priority *)
 val join : t -> t -> t

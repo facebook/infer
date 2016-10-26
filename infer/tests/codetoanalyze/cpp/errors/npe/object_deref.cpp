@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+namespace object_deref {
+
 class X {
  public:
   int field;
@@ -25,4 +27,5 @@ void derefNullField() {
 void derefNonNullField() {
   X* x = getNonNull();
   int c = x->field;
+}
 }

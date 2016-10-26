@@ -22,14 +22,14 @@ class LocallyDefinedException extends RuntimeException {
 
 public class LocallyDefinedExceptionExample {
 
-  T t;
+  T2 t;
 
   public LocallyDefinedExceptionExample() {
-    this.t = new T();
+    this.t = new T2();
     this.t.x = 42;
   }
 
-  void setT(T t) {
+  void setT(T2 t) {
     this.t = t;
   }
 

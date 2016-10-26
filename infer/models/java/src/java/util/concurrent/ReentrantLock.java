@@ -19,8 +19,8 @@
 */
 
 package java.util.concurrent.locks;
-import com.facebook.infer.models.InferBuiltins;
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferBuiltins;
+import com.facebook.infer.builtins.InferUndefined;
 
 public abstract class ReentrantLock extends Lock implements java.io.Serializable {
 

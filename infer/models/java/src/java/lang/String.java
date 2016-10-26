@@ -9,8 +9,8 @@
 
 package java.lang;
 
-import com.facebook.infer.models.InferUndefined;
-import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.builtins.InferUndefined;
+import com.facebook.infer.builtins.InferBuiltins;
 
 public final class String {
 
@@ -52,6 +52,14 @@ public final class String {
             throw new StringIndexOutOfBoundsException(offset);
         if (offset > bytes.length - length)
             throw new StringIndexOutOfBoundsException(offset + length);
+    }
+
+    public boolean equals(Object anObject) {
+        if (this == anObject) {
+          return true;
+        } else {
+          return InferUndefined.boolean_undefined();
+        }
     }
 
 }

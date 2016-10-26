@@ -1,25 +1,3 @@
 
-[alias]
-  endtoend_test_objc = //infer/tests/endtoend:objc_endtoend_tests
-  frontend_test_objc = //infer/tests/frontend:objc_frontend_tests
-
-  endtoend_test_java = //infer/tests/endtoend:java_endtoend_tests
-  endtoend_test_c = //infer/tests/endtoend:edgc_endtoend_tests
-
-  integration_tests = //infer/tests:integration_tests
-  objc = //infer/tests:objc_tests
-  c = //infer/tests:c_tests
-  cpp = //infer/tests:cpp_tests
-  objcpp = //infer/tests:objcpp_tests
-  clang = //infer/tests:clang_tests
-  java = //infer/tests/endtoend:java_endtoend_tests
-
-  java_libraries = //dependencies/java:java_libraries
-
-  infer = //infer/tests/endtoend/java/infer:infer
-  eradicate = //infer/tests/endtoend/java/eradicate:eradicate
-  checkers = //infer/tests/endtoend/java/checkers:checkers
-  tracing = //infer/tests/endtoend/java/tracing:tracing
-
 [project]
   ignore = .git, .ml, .mli

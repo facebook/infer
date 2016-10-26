@@ -24,7 +24,9 @@ type jsonbug = {
   bug_type : string;
   qualifier : string;
   severity : string;
+  visibility : string;
   line: int;
+  column: int;
   procedure : string;
   procedure_id : string;
   file : string;
@@ -35,6 +37,8 @@ type jsonbug = {
   ?dotty : string option;
   ?infer_source_loc: loc option;
 }
+
+type report = jsonbug list
 
 type json_trace = {
   trace : json_trace_item list;

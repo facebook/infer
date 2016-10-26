@@ -1,0 +1,248 @@
+/* @generated */
+digraph iCFG {
+65 [label="65:  DeclStmt \n   _fun_copy_move_constructor::Y_Y(&y1:class copy_move_constructor::Y *) [line 75]\n " shape="box"]
+	
+
+	 65 -> 64 ;
+64 [label="64:  BinaryOperatorStmt: Assign \n   *&y1.f:int =1 [line 76]\n " shape="box"]
+	
+
+	 64 -> 63 ;
+63 [label="63:  DeclStmt \n   _fun_copy_move_constructor::Y_Y(&y2:class copy_move_constructor::Y *,&y1:class copy_move_constructor::Y &) [line 77]\n " shape="box"]
+	
+
+	 63 -> 62 ;
+62 [label="62:  DeclStmt \n   n$5=*&y2.f:int  [line 78]\n  *&d1:int =(1 / n$5) [line 78]\n " shape="box"]
+	
+
+	 62 -> 61 ;
+61 [label="61:  DeclStmt \n   _fun_copy_move_constructor::getY(2:int ,&0$?%__sil_tmp__temp_return_n$3:class copy_move_constructor::Y *) [line 79]\n  n$4=*&0$?%__sil_tmp__temp_return_n$3.f:int  [line 79]\n  *&d2:int =(1 / n$4) [line 79]\n " shape="box"]
+	
+
+	 61 -> 60 ;
+60 [label="60:  Return Stmt \n   n$0=*&d1:int  [line 80]\n  n$1=*&d2:int  [line 80]\n  *&return:int =(n$0 + n$1) [line 80]\n " shape="box"]
+	
+
+	 60 -> 59 ;
+59 [label="59: Exit copy_move_constructor::copyY_moveY_div1 \n  " color=yellow style=filled]
+	
+
+58 [label="58: Start copy_move_constructor::copyY_moveY_div1\nFormals: \nLocals:  d2:int  0$?%__sil_tmp__temp_return_n$3:class copy_move_constructor::Y  d1:int  y2:class copy_move_constructor::Y  y1:class copy_move_constructor::Y  \n   DECLARE_LOCALS(&return,&d2,&0$?%__sil_tmp__temp_return_n$3,&d1,&y2,&y1); [line 74]\n " color=yellow style=filled]
+	
+
+	 58 -> 65 ;
+57 [label="57:  DeclStmt \n   _fun_copy_move_constructor::X_X(&x1:class copy_move_constructor::X *) [line 66]\n " shape="box"]
+	
+
+	 57 -> 56 ;
+56 [label="56:  BinaryOperatorStmt: Assign \n   *&x1.f:int =1 [line 67]\n " shape="box"]
+	
+
+	 56 -> 55 ;
+55 [label="55:  DeclStmt \n   _fun_copy_move_constructor::X_X(&x2:class copy_move_constructor::X *,&x1:class copy_move_constructor::X &) [line 68]\n " shape="box"]
+	
+
+	 55 -> 54 ;
+54 [label="54:  DeclStmt \n   n$5=*&x2.f:int  [line 69]\n  *&d1:int =(1 / n$5) [line 69]\n " shape="box"]
+	
+
+	 54 -> 53 ;
+53 [label="53:  DeclStmt \n   _fun_copy_move_constructor::getX(1:int ,&0$?%__sil_tmp__temp_return_n$3:class copy_move_constructor::X *) [line 70]\n  n$4=*&0$?%__sil_tmp__temp_return_n$3.f:int  [line 70]\n  *&d2:int =(1 / n$4) [line 70]\n " shape="box"]
+	
+
+	 53 -> 52 ;
+52 [label="52:  Return Stmt \n   n$0=*&d1:int  [line 71]\n  n$1=*&d2:int  [line 71]\n  *&return:int =(n$0 + n$1) [line 71]\n " shape="box"]
+	
+
+	 52 -> 51 ;
+51 [label="51: Exit copy_move_constructor::copyX_moveX_div1 \n  " color=yellow style=filled]
+	
+
+50 [label="50: Start copy_move_constructor::copyX_moveX_div1\nFormals: \nLocals:  d2:int  0$?%__sil_tmp__temp_return_n$3:class copy_move_constructor::X  d1:int  x2:class copy_move_constructor::X  x1:class copy_move_constructor::X  \n   DECLARE_LOCALS(&return,&d2,&0$?%__sil_tmp__temp_return_n$3,&d1,&x2,&x1); [line 65]\n " color=yellow style=filled]
+	
+
+	 50 -> 57 ;
+49 [label="49:  DeclStmt \n   _fun_copy_move_constructor::getY(2:int ,&0$?%__sil_tmpSIL_materialize_temp__n$1:class copy_move_constructor::Y *) [line 60]\n  _fun_copy_move_constructor::Y_Y(&y1:class copy_move_constructor::Y *,&0$?%__sil_tmpSIL_materialize_temp__n$1:class copy_move_constructor::Y &) [line 60]\n " shape="box"]
+	
+
+	 49 -> 48 ;
+48 [label="48:  DeclStmt \n   _fun_copy_move_constructor::Y_Y(&y2:class copy_move_constructor::Y *,&y1:class copy_move_constructor::Y &) [line 61]\n " shape="box"]
+	
+
+	 48 -> 47 ;
+47 [label="47:  Return Stmt \n   n$0=*&y2.f:int  [line 62]\n  *&return:int =(1 / n$0) [line 62]\n " shape="box"]
+	
+
+	 47 -> 46 ;
+46 [label="46: Exit copy_move_constructor::moveY_moveY_copyY_div0 \n  " color=yellow style=filled]
+	
+
+45 [label="45: Start copy_move_constructor::moveY_moveY_copyY_div0\nFormals: \nLocals:  y2:class copy_move_constructor::Y  y1:class copy_move_constructor::Y  0$?%__sil_tmpSIL_materialize_temp__n$1:class copy_move_constructor::Y  \n   DECLARE_LOCALS(&return,&y2,&y1,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 59]\n " color=yellow style=filled]
+	
+
+	 45 -> 49 ;
+44 [label="44:  Return Stmt \n   _fun_copy_move_constructor::getY(1:int ,&0$?%__sil_tmp__temp_return_n$1:class copy_move_constructor::Y *) [line 57]\n  n$2=*&0$?%__sil_tmp__temp_return_n$1.f:int  [line 57]\n  *&return:int =(1 / n$2) [line 57]\n " shape="box"]
+	
+
+	 44 -> 43 ;
+43 [label="43: Exit copy_move_constructor::moveY_div0 \n  " color=yellow style=filled]
+	
+
+42 [label="42: Start copy_move_constructor::moveY_div0\nFormals: \nLocals:  0$?%__sil_tmp__temp_return_n$1:class copy_move_constructor::Y  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_return_n$1); [line 57]\n " color=yellow style=filled]
+	
+
+	 42 -> 44 ;
+41 [label="41:  DeclStmt \n   _fun_copy_move_constructor::Y_Y(&y1:class copy_move_constructor::Y *) [line 51]\n " shape="box"]
+	
+
+	 41 -> 40 ;
+40 [label="40:  BinaryOperatorStmt: Assign \n   *&y1.f:int =0 [line 52]\n " shape="box"]
+	
+
+	 40 -> 39 ;
+39 [label="39:  DeclStmt \n   _fun_copy_move_constructor::Y_Y(&y2:class copy_move_constructor::Y *,&y1:class copy_move_constructor::Y &) [line 53]\n " shape="box"]
+	
+
+	 39 -> 38 ;
+38 [label="38:  Return Stmt \n   n$0=*&y2.f:int  [line 54]\n  *&return:int =(1 / n$0) [line 54]\n " shape="box"]
+	
+
+	 38 -> 37 ;
+37 [label="37: Exit copy_move_constructor::copyY_div0 \n  " color=yellow style=filled]
+	
+
+36 [label="36: Start copy_move_constructor::copyY_div0\nFormals: \nLocals:  y2:class copy_move_constructor::Y  y1:class copy_move_constructor::Y  \n   DECLARE_LOCALS(&return,&y2,&y1); [line 50]\n " color=yellow style=filled]
+	
+
+	 36 -> 41 ;
+35 [label="35:  Return Stmt \n   _fun_copy_move_constructor::getX(0:int ,&0$?%__sil_tmp__temp_return_n$1:class copy_move_constructor::X *) [line 48]\n  n$2=*&0$?%__sil_tmp__temp_return_n$1.f:int  [line 48]\n  *&return:int =(1 / n$2) [line 48]\n " shape="box"]
+	
+
+	 35 -> 34 ;
+34 [label="34: Exit copy_move_constructor::moveX_div0 \n  " color=yellow style=filled]
+	
+
+33 [label="33: Start copy_move_constructor::moveX_div0\nFormals: \nLocals:  0$?%__sil_tmp__temp_return_n$1:class copy_move_constructor::X  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_return_n$1); [line 48]\n " color=yellow style=filled]
+	
+
+	 33 -> 35 ;
+32 [label="32:  DeclStmt \n   _fun_copy_move_constructor::X_X(&x1:class copy_move_constructor::X *) [line 42]\n " shape="box"]
+	
+
+	 32 -> 31 ;
+31 [label="31:  BinaryOperatorStmt: Assign \n   *&x1.f:int =0 [line 43]\n " shape="box"]
+	
+
+	 31 -> 30 ;
+30 [label="30:  DeclStmt \n   _fun_copy_move_constructor::X_X(&x2:class copy_move_constructor::X *,&x1:class copy_move_constructor::X &) [line 44]\n " shape="box"]
+	
+
+	 30 -> 29 ;
+29 [label="29:  Return Stmt \n   n$0=*&x2.f:int  [line 45]\n  *&return:int =(1 / n$0) [line 45]\n " shape="box"]
+	
+
+	 29 -> 28 ;
+28 [label="28: Exit copy_move_constructor::copyX_div0 \n  " color=yellow style=filled]
+	
+
+27 [label="27: Start copy_move_constructor::copyX_div0\nFormals: \nLocals:  x2:class copy_move_constructor::X  x1:class copy_move_constructor::X  \n   DECLARE_LOCALS(&return,&x2,&x1); [line 41]\n " color=yellow style=filled]
+	
+
+	 27 -> 32 ;
+26 [label="26:  DeclStmt \n   _fun_copy_move_constructor::Y_Y(&y:class copy_move_constructor::Y *) [line 36]\n " shape="box"]
+	
+
+	 26 -> 25 ;
+25 [label="25:  BinaryOperatorStmt: Assign \n   n$1=*&f:int  [line 37]\n  *&y.f:int =n$1 [line 37]\n " shape="box"]
+	
+
+	 25 -> 24 ;
+24 [label="24:  Return Stmt \n   n$0=*&__return_param:class copy_move_constructor::Y * [line 38]\n  _fun_copy_move_constructor::Y_Y(n$0:class copy_move_constructor::Y *,&y:class copy_move_constructor::Y &) [line 38]\n " shape="box"]
+	
+
+	 24 -> 23 ;
+23 [label="23: Exit copy_move_constructor::getY \n  " color=yellow style=filled]
+	
+
+22 [label="22: Start copy_move_constructor::getY\nFormals:  f:int  __return_param:class copy_move_constructor::Y *\nLocals:  y:class copy_move_constructor::Y  \n   DECLARE_LOCALS(&return,&y); [line 35]\n " color=yellow style=filled]
+	
+
+	 22 -> 26 ;
+21 [label="21:  DeclStmt \n   _fun_copy_move_constructor::X_X(&x:class copy_move_constructor::X *) [line 30]\n " shape="box"]
+	
+
+	 21 -> 20 ;
+20 [label="20:  BinaryOperatorStmt: Assign \n   n$1=*&f:int  [line 31]\n  *&x.f:int =n$1 [line 31]\n " shape="box"]
+	
+
+	 20 -> 19 ;
+19 [label="19:  Return Stmt \n   n$0=*&__return_param:class copy_move_constructor::X * [line 32]\n  _fun_copy_move_constructor::X_X(n$0:class copy_move_constructor::X *,&x:class copy_move_constructor::X &) [line 32]\n " shape="box"]
+	
+
+	 19 -> 18 ;
+18 [label="18: Exit copy_move_constructor::getX \n  " color=yellow style=filled]
+	
+
+17 [label="17: Start copy_move_constructor::getX\nFormals:  f:int  __return_param:class copy_move_constructor::X *\nLocals:  x:class copy_move_constructor::X  \n   DECLARE_LOCALS(&return,&x); [line 29]\n " color=yellow style=filled]
+	
+
+	 17 -> 21 ;
+16 [label="16:  Constructor Init \n   n$0=*&this:class copy_move_constructor::Y * [line 26]\n  n$1=*&y:class copy_move_constructor::Y & [line 26]\n  n$2=*n$1.f:int  [line 26]\n  *n$0.f:int =(n$2 - 1) [line 26]\n " shape="box"]
+	
+
+	 16 -> 15 ;
+15 [label="15: Exit copy_move_constructor::Y_Y \n  " color=yellow style=filled]
+	
+
+14 [label="14: Start copy_move_constructor::Y_Y\nFormals:  this:class copy_move_constructor::Y * y:class copy_move_constructor::Y &\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
+	
+
+	 14 -> 16 ;
+13 [label="13:  Constructor Init \n   n$0=*&this:class copy_move_constructor::Y * [line 24]\n  n$1=*&y:class copy_move_constructor::Y & [line 24]\n  n$2=*n$1.f:int  [line 24]\n  *n$0.f:int =n$2 [line 24]\n " shape="box"]
+	
+
+	 13 -> 12 ;
+12 [label="12: Exit copy_move_constructor::Y_Y \n  " color=yellow style=filled]
+	
+
+11 [label="11: Start copy_move_constructor::Y_Y\nFormals:  this:class copy_move_constructor::Y * y:class copy_move_constructor::Y &\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+	
+
+	 11 -> 13 ;
+10 [label="10: Exit copy_move_constructor::Y_Y \n  " color=yellow style=filled]
+	
+
+9 [label="9: Start copy_move_constructor::Y_Y\nFormals:  this:class copy_move_constructor::Y *\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
+	
+
+	 9 -> 10 ;
+8 [label="8:  Constructor Init \n   n$0=*&this:class copy_move_constructor::X * [line 15]\n  n$1=*&__param_0:class copy_move_constructor::X & [line 15]\n  n$2=*n$1.f:int  [line 15]\n  *n$0.f:int =n$2 [line 15]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7: Exit copy_move_constructor::X_X \n  " color=yellow style=filled]
+	
+
+6 [label="6: Start copy_move_constructor::X_X\nFormals:  this:class copy_move_constructor::X * __param_0:class copy_move_constructor::X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+	
+
+	 6 -> 8 ;
+5 [label="5:  Constructor Init \n   n$0=*&this:class copy_move_constructor::X * [line 15]\n  n$1=*&__param_0:class copy_move_constructor::X & [line 15]\n  n$2=*n$1.f:int  [line 15]\n  *n$0.f:int =n$2 [line 15]\n " shape="box"]
+	
+
+	 5 -> 4 ;
+4 [label="4: Exit copy_move_constructor::X_X \n  " color=yellow style=filled]
+	
+
+3 [label="3: Start copy_move_constructor::X_X\nFormals:  this:class copy_move_constructor::X * __param_0:class copy_move_constructor::X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+	
+
+	 3 -> 5 ;
+2 [label="2: Exit copy_move_constructor::X_X \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start copy_move_constructor::X_X\nFormals:  this:class copy_move_constructor::X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+	
+
+	 1 -> 2 ;
+}

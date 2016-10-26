@@ -16,131 +16,184 @@ let property_checkers_list = [CFrontend_checkers.strong_delegate_warning;
                               CFrontend_checkers.assign_pointer_warning;]
 
 (* Invocation of checker belonging to property_checker_list *)
-let checkers_for_property decl_info pname_info pdi checker =
-  checker decl_info pname_info pdi
+let checkers_for_property decl checker context =
+  checker context decl
 
 (* List of checkers on ivar access *)
 let ivar_access_checker_list =  [CFrontend_checkers.direct_atomic_property_access_warning]
 
 (* Invocation of checker belonging to ivar_access_checker_list *)
-let checkers_for_ivar context stmt_info dr_name checker =
-  checker context stmt_info dr_name
+let checkers_for_ivar stmt checker context =
+  checker context stmt
 
 (* List of checkers for captured vars in objc blocks *)
 let captured_vars_checker_list = [CFrontend_checkers.captured_cxx_ref_in_objc_block_warning]
 
 (* Invocation of checker belonging to captured_vars_checker_list *)
-let checkers_for_capture_vars stmt_info captured_vars checker =
-  checker stmt_info captured_vars
+let checkers_for_capture_vars stmt checker context =
+  checker context stmt
 
-(* List of checkers on NSNotificationCenter *)
-let ns_notification_checker_list = [CFrontend_checkers.checker_NSNotificationCenter]
+(* List of checkers on ObjCProtocol decls *)
+let objc_protocol_checker_list = [CFrontend_checkers.checker_NSNotificationCenter]
 
-(* Invocation of checker belonging to ns_notification_center_list *)
-let checkers_for_ns decl_info decls checker =
-  checker decl_info decls
+(* Invocation of checker belonging to objc_protocol_checker_list *)
+let checkers_for_objc_protocol decl checker context =
+  checker context decl
 
-(* List of checkers on global variables *)
-let global_var_checker_list = [CFrontend_checkers.global_var_init_with_calls_warning]
+(* List of checkers running on ObjCImpl decls *)
+let objc_impl_checker_list = [CFrontend_checkers.checker_NSNotificationCenter;
+                              ComponentKit.component_with_multiple_factory_methods_advice;
+                              ComponentKit.component_with_unconventional_superclass_advice]
 
-(* Invocation of checker belonging to global_var_checker_list *)
-let checker_for_global_var dec checker =
-  checker dec
+(* Invocation of checker belonging to objc_impl_checker_list *)
+let checkers_for_objc_impl decl checker context =
+  checker context decl
+
+(* List of checkers on variables *)
+let var_checker_list = [CFrontend_checkers.global_var_init_with_calls_warning;
+                        ComponentKit.mutable_local_vars_advice]
+
+(* Invocation of checker belonging to var_checker_list *)
+let checker_for_var dec checker context =
+  checker context dec
+
+(* List of checkers on conditional operator *)
+let conditional_op_checker_list = [CFrontend_checkers.bad_pointer_comparison_warning]
+
+(* Invocation of checker belonging to conditional_op_checker_list *)
+let checker_for_conditional_op first_stmt checker context =
+  checker context first_stmt
+
+(* List of checkers on if-statement *)
+let if_stmt_checker_list = [CFrontend_checkers.bad_pointer_comparison_warning]
+
+(* Invocation of checker belonging to if_stmt_checker_list *)
+let checker_for_if_stmt cond checker context =
+  checker context cond
+
+(* List of checkers on for statement *)
+let for_stmt_checker_list = [CFrontend_checkers.bad_pointer_comparison_warning]
+
+(* Invocation of checker belonging to for_stmt_checker_list *)
+let checker_for_for_stmt cond checker context =
+  checker context cond
+
+(* List of checkers on while statement *)
+let while_stmt_checker_list = [CFrontend_checkers.bad_pointer_comparison_warning]
+
+(* Invocation of checker belonging to while_stmt_checker_list *)
+let checker_for_while_stmt cond checker context =
+  checker context cond
+
+let function_decl_checker_list = [ComponentKit.component_factory_function_advice]
+
+let checker_for_function_decl decl checker context =
+  checker context decl
+
+let get_err_log translation_unit_context method_decl_opt =
+  let procname = match method_decl_opt with
+    | Some method_decl -> General_utils.procname_of_decl translation_unit_context method_decl
+    | None -> Procname.Linters_dummy_method in
+  LintIssues.get_err_log procname
 
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
-let log_frontend_warning pdesc warn_desc =
-  let open CFrontend_checkers in
-  let loc = warn_desc.loc in
-  let errlog = Cfg.Procdesc.get_err_log pdesc in
-  let err_desc =
-    Errdesc.explain_frontend_warning warn_desc.description warn_desc.suggestion loc in
-  let exn = Exceptions.Frontend_warning
-      (warn_desc.name, err_desc, __POS__) in
+let log_frontend_issue translation_unit_context method_decl_opt key issue_desc =
+  let issue = issue_desc.CIssue.issue in
+  let loc = issue_desc.CIssue.loc in
+  let errlog = get_err_log translation_unit_context method_decl_opt in
+  let err_desc = Errdesc.explain_frontend_warning issue_desc.CIssue.description
+      issue_desc.CIssue.suggestion loc in
+  let name = CIssue.to_string issue in
+  let exn = Exceptions.Frontend_warning (name, err_desc, __POS__) in
   let trace = [
     { Errlog.lt_level = 0;
-      Errlog.lt_loc = warn_desc.loc;
+      Errlog.lt_loc = issue_desc.CIssue.loc;
       Errlog.lt_description = "";
       Errlog.lt_node_tags = []}] in
-  Reporting.log_error_from_errlog errlog exn ~loc:(Some loc) ~ltr:(Some trace)
+  let err_kind = CIssue.severity_of_issue issue in
+  let method_name = Ast_utils.full_name_of_decl_opt method_decl_opt in
+  let key = Hashtbl.hash (key ^ method_name) in
+  Reporting.log_issue_from_errlog err_kind errlog exn ~loc ~ltr:trace
+    ~node_id:(0, key)
 
 (* General invocation function for checkers
    Takes
    1. f a particular way to apply a checker, it's a partial function
    2. context
    3. the list of checkers to be applied *)
-let invoke_set_of_checkers f cfg cg pdesc_opt checkers  =
+let invoke_set_of_checkers f context key checkers  =
   IList.iter (fun checker ->
-      match f checker with
-      | Some warning_desc ->
-          let pdesc =
-            match pdesc_opt with
-            | Some pdesc -> pdesc
-            | None ->
-                let loc = warning_desc.CFrontend_checkers.loc in
-                CMethod_trans.get_method_for_frontend_checks cfg cg loc in
-          log_frontend_warning pdesc warning_desc
+      match f checker context with
+      | Some issue_desc ->
+          log_frontend_issue context.CLintersContext.translation_unit_context
+            context.CLintersContext.current_method key issue_desc
       | None -> ()) checkers
 
-(* Call all checkers on properties of class c *)
-let rec check_for_property_errors cfg cg decl_list =
+let run_frontend_checkers_on_stmt context instr =
   let open Clang_ast_t in
-  let do_one_property decl_info pname_info pdi =
-    let call_property_checker = checkers_for_property decl_info pname_info pdi in
-    invoke_set_of_checkers call_property_checker cfg cg None property_checkers_list in
-  match decl_list with
-  | [] -> ()
-  | ObjCPropertyDecl (decl_info, pname_info, pdi) :: rest ->
-      do_one_property decl_info pname_info pdi;
-      check_for_property_errors cfg cg rest
-  | _ :: rest  ->
-      check_for_property_errors cfg cg rest
-
-let get_categories_decls decl_ref =
-  match Ast_utils.get_decl_opt_with_decl_ref decl_ref with
-  | Some ObjCCategoryDecl (_, _, decls, _, _)
-  | Some ObjCInterfaceDecl (_, _, decls, _, _) -> decls
-  | _ -> []
-
-let run_frontend_checkers_on_stmt trans_state instr =
-  let open Clang_ast_t in
-  let context = trans_state.CTrans_utils.context in
-  let pdesc = CContext.get_procdesc context in
-  let cg = context.CContext.cg in
-  let cfg = context.CContext.cfg in
   match instr with
-  | ObjCIvarRefExpr(stmt_info, _, _, obj_c_ivar_ref_expr_info) ->
-      let dr_name = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref.Clang_ast_t.dr_name in
-      let call_checker_for_ivar = checkers_for_ivar context stmt_info dr_name in
-      invoke_set_of_checkers call_checker_for_ivar cfg cg (Some pdesc) ivar_access_checker_list
-  | BlockExpr(stmt_info, _ , _, Clang_ast_t.BlockDecl (_, block_decl_info)) ->
-      let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
-      let captured_vars = CVar_decl.captured_vars_from_block_info context captured_block_vars in
-      let call_captured_vars_checker =  checkers_for_capture_vars stmt_info captured_vars in
-      let pdesc_opt = Some pdesc in
-      invoke_set_of_checkers call_captured_vars_checker cfg cg pdesc_opt captured_vars_checker_list
-  | _ -> ()
+  | ObjCIvarRefExpr _ ->
+      let call_checker_for_ivar = checkers_for_ivar instr in
+      let key = Ast_utils.generate_key_stmt instr in
+      invoke_set_of_checkers
+        call_checker_for_ivar context key ivar_access_checker_list;
+      context
+  | BlockExpr _ ->
+      let call_captured_vars_checker = checkers_for_capture_vars instr in
+      let key = Ast_utils.generate_key_stmt instr in
+      invoke_set_of_checkers call_captured_vars_checker context key
+        captured_vars_checker_list;
+      context
+  | IfStmt (_, _ :: _ :: cond :: _) ->
+      let call_checker = checker_for_if_stmt cond in
+      let key = Ast_utils.generate_key_stmt cond in
+      invoke_set_of_checkers call_checker context key if_stmt_checker_list;
+      context
+  | ConditionalOperator (_, first_stmt :: _, _) ->
+      let call_checker = checker_for_conditional_op first_stmt in
+      let key = Ast_utils.generate_key_stmt first_stmt in
+      invoke_set_of_checkers call_checker context key conditional_op_checker_list;
+      context
+  | ForStmt (_, [_; _; cond; _; _]) ->
+      let call_checker = checker_for_for_stmt cond in
+      let key = Ast_utils.generate_key_stmt cond in
+      invoke_set_of_checkers call_checker context key for_stmt_checker_list;
+      context
+  | WhileStmt (_, [_; cond; _]) ->
+      let call_checker = checker_for_while_stmt cond in
+      let key = Ast_utils.generate_key_stmt cond in
+      invoke_set_of_checkers call_checker context key while_stmt_checker_list;
+      context
+  | ObjCAtSynchronizedStmt _ ->
+      { context with CLintersContext.in_synchronized_block = true }
+  | _ -> context
 
-let rec run_frontend_checkers_on_decl cfg cg dec =
+let run_frontend_checkers_on_decl context dec =
   let open Clang_ast_t in
   match dec with
-  | ObjCCategoryImplDecl(_, _, decl_list, _, ocidi) ->
-      let decls = (get_categories_decls ocidi.Clang_ast_t.ocidi_category_decl) @ decl_list in
-      check_for_property_errors cfg cg decls;
-      IList.iter (run_frontend_checkers_on_decl cfg cg) decl_list
-  | ObjCImplementationDecl(decl_info, _, decl_list, _, idi) ->
-      let decls = (get_categories_decls idi.Clang_ast_t.oidi_class_interface) @ decl_list in
-      check_for_property_errors cfg cg decls;
-      let call_ns_checker = checkers_for_ns decl_info decl_list in
-      invoke_set_of_checkers call_ns_checker cfg cg None ns_notification_checker_list;
-      IList.iter (run_frontend_checkers_on_decl cfg cg) decl_list
-  | ObjCProtocolDecl (decl_info, _, decl_list, _, _) ->
-      if CLocation.should_do_frontend_check decl_info.Clang_ast_t.di_source_range then
-        (check_for_property_errors cfg cg decl_list;
-         let call_ns_checker = checkers_for_ns decl_info decl_list in
-         invoke_set_of_checkers call_ns_checker cfg cg None ns_notification_checker_list;
-         IList.iter (run_frontend_checkers_on_decl cfg cg) decl_list)
-      else ()
+  | ObjCImplementationDecl _ ->
+      let call_objc_impl_checker = checkers_for_objc_impl dec in
+      let key = Ast_utils.generate_key_decl dec in
+      invoke_set_of_checkers call_objc_impl_checker context key objc_impl_checker_list;
+      context
+  | ObjCProtocolDecl _ ->
+      let call_objc_protocol_checker = checkers_for_objc_protocol dec in
+      let key = Ast_utils.generate_key_decl dec in
+      invoke_set_of_checkers call_objc_protocol_checker context key objc_protocol_checker_list;
+      context
   | VarDecl _ ->
-      let call_global_checker = checker_for_global_var dec in
-      invoke_set_of_checkers call_global_checker cfg cg None global_var_checker_list
-  | _ -> ()
+      let call_var_checker = checker_for_var dec in
+      let key = Ast_utils.generate_key_decl dec in
+      invoke_set_of_checkers call_var_checker context key var_checker_list;
+      context
+  | FunctionDecl _ ->
+      let call_function_decl_checker = checker_for_function_decl dec in
+      let key = Ast_utils.generate_key_decl dec in
+      invoke_set_of_checkers call_function_decl_checker context key function_decl_checker_list;
+      context
+  | ObjCPropertyDecl _ ->
+      let call_property_checker = checkers_for_property dec in
+      let key = Ast_utils.generate_key_decl dec in
+      invoke_set_of_checkers call_property_checker context key property_checkers_list;
+      context
+  | _ -> context

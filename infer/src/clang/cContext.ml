@@ -19,35 +19,31 @@ type curr_class =
   (*class name and name of (optional) super class , and a list of protocols *)
   | ContextCategory of string * string (* category name and corresponding class *)
   | ContextProtocol of string  (* category name and corresponding class *)
+  | ContextClsDeclPtr of Clang_ast_t.pointer
   | ContextNoCls
 
 type str_node_map = (string, Cfg.Node.t) Hashtbl.t
 
 type t =
   {
+    translation_unit_context : CFrontend_config.translation_unit_context;
     tenv : Tenv.t;
     cg : Cg.t;
     cfg : Cfg.cfg;
     procdesc : Cfg.Procdesc.t;
     is_objc_method : bool;
     curr_class: curr_class;
-    return_param_typ : Sil.typ option;
-    is_callee_expression : bool;
-    outer_context : t option; (* in case of objc blocks, the context of the method containing the block *)
-    mutable blocks_static_vars : ((Pvar.t * Sil.typ) list) Procname.Map.t;
+    return_param_typ : Typ.t option;
+    outer_context : t option; (** in case of objc blocks, the context of the method containing the
+                                  block *)
+    mutable blocks_static_vars : ((Pvar.t * Typ.t) list) Procname.Map.t;
     label_map : str_node_map;
   }
 
-let create_context tenv cg cfg procdesc curr_class return_param_typ is_objc_method context_opt =
-  { tenv = tenv;
-    cg = cg;
-    cfg = cfg;
-    procdesc = procdesc;
-    curr_class = curr_class;
-    return_param_typ = return_param_typ;
-    is_callee_expression = false;
-    is_objc_method = is_objc_method;
-    outer_context = context_opt;
+let create_context translation_unit_context tenv cg cfg procdesc curr_class return_param_typ
+    is_objc_method outer_context =
+  { translation_unit_context; tenv; cg; cfg; procdesc; curr_class; return_param_typ;
+    is_objc_method; outer_context;
     blocks_static_vars = Procname.Map.empty;
     label_map = Hashtbl.create 17;
   }
@@ -83,7 +79,13 @@ let get_curr_class_name curr_class =
   | ContextCls (name, _, _) -> name
   | ContextCategory (_, cls) -> cls
   | ContextProtocol name -> name
+  | ContextClsDeclPtr _ -> assert false
   | ContextNoCls -> assert false
+
+let get_curr_class_decl_ptr curr_class =
+  match curr_class with
+  | ContextClsDeclPtr ptr -> ptr
+  | _ -> assert false
 
 let curr_class_to_string curr_class =
   match curr_class with
@@ -92,6 +94,7 @@ let curr_class_to_string curr_class =
        ",  protocols: " ^ (IList.to_string (fun x -> x) protocols))
   | ContextCategory (name, cls) -> ("category " ^ name ^ " of class " ^ cls)
   | ContextProtocol name -> ("protocol " ^ name)
+  | ContextClsDeclPtr ptr -> ("decl_ptr: " ^ string_of_int ptr)
   | ContextNoCls -> "no class"
 
 let curr_class_compare curr_class1 curr_class2 =
@@ -108,24 +111,21 @@ let curr_class_compare curr_class1 curr_class2 =
       String.compare name1 name2
   | ContextProtocol _, _ -> -1
   | _, ContextProtocol _ -> 1
+  | ContextClsDeclPtr ptr1, ContextClsDeclPtr ptr2 ->
+      ptr1 - ptr2
+  | ContextClsDeclPtr _, _ -> -1
+  | _, ContextClsDeclPtr _ -> 1
   | ContextNoCls, ContextNoCls -> 0
 
 let curr_class_equal curr_class1 curr_class2 =
   curr_class_compare curr_class1 curr_class2 == 0
 
-let curr_class_hash curr_class =
-  match curr_class with
-  | ContextCls (name, _, _) -> Hashtbl.hash name
-  | ContextCategory (name, cls) -> Hashtbl.hash (name, cls)
-  | ContextProtocol name -> Hashtbl.hash name
-  | ContextNoCls -> Hashtbl.hash "no class"
-
 let create_curr_class tenv class_name ck =
   let class_tn_name = Typename.TN_csu (Csu.Class ck, (Mangled.from_string class_name)) in
   match Tenv.lookup tenv class_tn_name with
-  | Some { Sil.superclasses } ->
-      (let superclasses_names = IList.map Typename.name superclasses in
-       match superclasses_names with
+  | Some { supers } ->
+      (let supers_names = IList.map Typename.name supers in
+       match supers_names with
        | superclass:: protocols ->
            ContextCls (class_name, Some superclass, protocols)
        | [] -> ContextCls (class_name, None, []))
@@ -158,17 +158,3 @@ let rec get_outer_procname context =
   match context.outer_context with
   | Some outer_context -> get_outer_procname outer_context
   | None -> Cfg.Procdesc.get_proc_name context.procdesc
-
-let is_curr_proc_objc_getter context field_name =
-  let attrs = Cfg.Procdesc.get_attributes context.procdesc in
-  match attrs.ProcAttributes.objc_accessor with
-  | Some ProcAttributes.Objc_getter field ->
-      Ident.fieldname_equal field field_name
-  | _ -> false
-
-let is_curr_proc_objc_setter context field_name =
-  let attrs = Cfg.Procdesc.get_attributes context.procdesc in
-  match attrs.ProcAttributes.objc_accessor with
-  | Some ProcAttributes.Objc_setter field ->
-      Ident.fieldname_equal field field_name
-  | _ -> false

@@ -9,98 +9,15 @@
 
 open! Utils
 
-(** Module for utility functions for the whole frontend. Includes functions for printing,  *)
-(** for transformations of ast nodes and general utility functions such as  functions on lists *)
+(** Module for utility functions for the whole frontend. Includes functions for transformations of
+    ast nodes and general utility functions such as functions on lists *)
 
 module L = Logging
 module F = Format
 
-module Printing =
-struct
-  let log_out fmt =
-    let pp = if !CFrontend_config.debug_mode then Format.fprintf else Format.ifprintf in
-    pp Format.std_formatter fmt
-
-  let log_err fmt =
-    let pp = if !CFrontend_config.debug_mode then Format.fprintf else Format.ifprintf in
-    pp Format.err_formatter fmt
-
-
-  let annotation_to_string (annotation, _) =
-    "< " ^ annotation.Sil.class_name ^ " : " ^
-    (IList.to_string (fun x -> x) annotation.Sil.parameters) ^ " >"
-
-  let field_to_string (fieldname, typ, annotation) =
-    (Ident.fieldname_to_string fieldname) ^ " " ^
-    (Sil.typ_to_string typ) ^  (IList.to_string annotation_to_string annotation)
-
-  let log_stats fmt =
-    let pp =
-      if !CFrontend_config.stats_mode || !CFrontend_config.debug_mode
-      then Format.fprintf else Format.ifprintf in
-    pp Format.std_formatter fmt
-
-  let print_tenv tenv =
-    Tenv.iter (fun typname struct_t ->
-        match typname with
-        | Typename.TN_csu (Csu.Class _, _) | Typename.TN_csu (Csu.Protocol, _) ->
-            print_endline (
-              (Typename.to_string typname) ^ " " ^
-              (Sil.item_annotation_to_string struct_t.struct_annotations) ^ "\n" ^
-              "---> superclass and protocols " ^ (IList.to_string (fun tn ->
-                  "\t" ^ (Typename.to_string tn) ^ "\n") struct_t.superclasses) ^
-              "---> methods " ^
-              (IList.to_string (fun x ->"\t" ^ (Procname.to_string x) ^ "\n") struct_t.def_methods)
-              ^ "  " ^
-              "\t---> fields " ^ (IList.to_string field_to_string struct_t.instance_fields) ^ "\n")
-        | _ -> ()
-      ) tenv
-
-  let print_tenv_struct_unions tenv =
-    Tenv.iter (fun typname struct_t ->
-        match typname with
-        | Typename.TN_csu (Csu.Struct, _) | Typename.TN_csu (Csu.Union, _) ->
-            print_endline (
-              (Typename.to_string typname)^"\n"^
-              "\t---> fields "^(IList.to_string (fun (fieldname, typ, _) ->
-                  match typ with
-                  | Sil.Tvar tname -> "tvar"^(Typename.to_string tname)
-                  | Sil.Tstruct _ | _ ->
-                      "\t struct "^(Ident.fieldname_to_string fieldname)^" "^
-                      (Sil.typ_to_string typ)^"\n") struct_t.instance_fields
-                )
-            )
-        | Typename.TN_typedef typname ->
-            print_endline
-              ((Mangled.to_string typname)^"-->"^(Sil.typ_to_string (Sil.Tstruct struct_t)))
-        | _ -> ()
-      ) tenv
-
-  let print_procedures cfg =
-    let procs = Cfg.get_all_procs cfg in
-    print_endline
-      (IList.to_string (fun pdesc ->
-           let pname = Cfg.Procdesc.get_proc_name pdesc in
-           "name> "^
-           (Procname.to_string pname) ^
-           " defined? " ^ (string_of_bool (Cfg.Procdesc.is_defined pdesc)) ^ "\n")
-          procs)
-
-  let print_failure_info pointer =
-    L.err "AST Element> %s IN FILE> %s @.@." pointer !CFrontend_config.json
-
-  let print_nodes nodes =
-    IList.iter (fun node -> print_endline (Cfg.Node.get_description pe_text node)) nodes
-
-  let instrs_to_string instrs =
-    let pp fmt () = Format.fprintf fmt "%a" (Sil.pp_instr_list pe_text) instrs in
-    pp_to_string pp ()
-
-end
-
 module Ast_utils =
 struct
-  type type_ptr_to_sil_type = Tenv.t -> Clang_ast_t.type_ptr -> Sil.typ
+  type type_ptr_to_sil_type = Tenv.t -> Clang_ast_t.type_ptr -> Typ.t
 
   let string_of_decl decl =
     let name = Clang_ast_proj.get_decl_kind_string decl in
@@ -146,8 +63,8 @@ struct
     | [] -> ""
     | name :: quals ->
         let s = (IList.fold_right (fun el res -> res ^ el ^ "::") quals "") ^ name in
-        let no_slash = Str.global_replace (Str.regexp "/") "_" s in
-        no_slash
+        let no_slash_space = Str.global_replace (Str.regexp "[/ ]") "_" s in
+        no_slash_space
 
   let get_qualified_name name_info =
     fold_qual_name name_info.Clang_ast_t.ni_qual_name
@@ -269,7 +186,7 @@ struct
   let get_decl decl_ptr =
     try
       Some (Clang_ast_main.PointerMap.find decl_ptr !CFrontend_config.pointer_decl_index)
-    with Not_found -> Printing.log_stats "decl with pointer %d not found\n" decl_ptr; None
+    with Not_found -> Logging.out "decl with pointer %d not found\n" decl_ptr; None
 
   let get_decl_opt decl_ptr_opt =
     match decl_ptr_opt with
@@ -279,7 +196,7 @@ struct
   let get_stmt stmt_ptr =
     try
       Some (Clang_ast_main.PointerMap.find stmt_ptr !CFrontend_config.pointer_stmt_index)
-    with Not_found -> Printing.log_stats "stmt with pointer %d not found\n" stmt_ptr; None
+    with Not_found -> Logging.out "stmt with pointer %d not found\n" stmt_ptr; None
 
   let get_stmt_opt stmt_ptr_opt =
     match stmt_ptr_opt with
@@ -290,6 +207,11 @@ struct
     match decl_ref_opt with
     | Some decl_ref -> get_decl decl_ref.Clang_ast_t.dr_decl_pointer
     | None -> None
+
+  let get_property_of_ivar decl_ptr =
+    try
+      Some (Clang_ast_main.PointerMap.find decl_ptr !CFrontend_config.ivar_to_property_index)
+    with Not_found -> Logging.out "property with pointer %d not found\n" decl_ptr; None
 
   let update_sil_types_map type_ptr sil_type =
     CFrontend_config.sil_types_map :=
@@ -318,11 +240,11 @@ struct
       (let raw_ptr = Clang_ast_types.type_ptr_to_clang_pointer type_ptr in
        try
          Some (Clang_ast_main.PointerMap.find raw_ptr !CFrontend_config.pointer_type_index)
-       with Not_found -> Printing.log_stats "type with pointer %d not found\n" raw_ptr; None)
+       with Not_found -> Logging.out "type with pointer %d not found\n" raw_ptr; None)
     with Clang_ast_types.Not_Clang_Pointer ->
       (* otherwise, function fails *)
       let type_str = Clang_ast_types.type_ptr_to_string type_ptr in
-      Printing.log_stats "type %s is not clang pointer\n" type_str;
+      Logging.out "type %s is not clang pointer\n" type_str;
       None
 
   let get_desugared_type type_ptr =
@@ -338,9 +260,9 @@ struct
   let get_decl_from_typ_ptr typ_ptr =
     let typ_opt = get_desugared_type typ_ptr in
     let typ = match typ_opt with Some t -> t | _ -> assert false in
-    (* it needs extending to handle objC types *)
     match typ with
-    | Clang_ast_t.RecordType (_, decl_ptr) -> get_decl decl_ptr
+    | Clang_ast_t.RecordType (_, decl_ptr)
+    | Clang_ast_t.ObjCInterfaceType (_, decl_ptr) -> get_decl decl_ptr
     | _ -> None
 
   (*TODO take the attributes into account too. To be done after we get the attribute's arguments. *)
@@ -356,10 +278,22 @@ struct
     | Some AttributedType (_, attr_info) -> attr_info.ati_attr_kind = `Nullable
     | _ -> false
 
-  let string_of_type_ptr type_ptr =
-    match get_desugared_type type_ptr with
-    | Some typ -> (Clang_ast_proj.get_type_tuple typ).Clang_ast_t.ti_raw
-    | None -> ""
+  let string_of_type_ptr type_ptr = Clang_ast_j.string_of_type_ptr type_ptr
+
+  let name_of_typedef_type_info {Clang_ast_t.tti_decl_ptr} =
+    match get_decl tti_decl_ptr with
+    | Some TypedefDecl (_, name_decl_info, _, _, _) ->
+        get_qualified_name name_decl_info
+    | _ -> ""
+
+  let name_opt_of_typedef_type_ptr type_ptr =
+    match get_type type_ptr with
+    | Some Clang_ast_t.TypedefType (_, typedef_type_info) ->
+        Some (name_of_typedef_type_info typedef_type_info)
+    | _ -> None
+
+  let string_of_qual_type {Clang_ast_t.qt_type_ptr; qt_is_const} =
+    Printf.sprintf "%s%s" (if qt_is_const then "is_const " else "") (string_of_type_ptr qt_type_ptr)
 
   let add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt fail_if_not_found =
     match decl_ref_opt with (* translate interface first if found *)
@@ -399,19 +333,176 @@ struct
       let _, st_list = Clang_ast_proj.get_stmt_tuple st in
       IList.exists (exists_eventually_st atomic_pred param) st_list
 
-  let is_global_var decl =
+  let is_syntactically_global_var decl =
     match decl with
-    | Clang_ast_t.VarDecl (_, _ ,_, vdi) -> vdi.vdi_is_global
+    | Clang_ast_t.VarDecl (_, _ ,_, vdi) ->
+        vdi.vdi_is_global && not vdi.vdi_is_static_local
     | _ -> false
 
-  let is_objc () =
-    match !CFrontend_config.language with
-    | CFrontend_config.OBJC -> true
+  let is_const_expr_var decl =
+    match decl with
+    | Clang_ast_t.VarDecl (_, _ ,_, vdi) -> vdi.vdi_is_const_expr
     | _ -> false
 
-  let is_objcpp () =
-    match !CFrontend_config.language with
-    | CFrontend_config.OBJCPP -> true
+  let is_ptr_to_objc_class typ class_name =
+    match typ with
+    | Some Clang_ast_t.ObjCObjectPointerType (_, {Clang_ast_t.qt_type_ptr}) ->
+        (match get_desugared_type qt_type_ptr with
+         | Some ObjCInterfaceType (_, ptr) ->
+             (match get_decl ptr with
+              | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
+                  String.compare ndi.ni_name class_name = 0
+              | _ -> false)
+         | _ -> false)
+    | _ -> false
+
+  let full_name_of_decl_opt decl_opt =
+    match decl_opt with
+    | Some decl ->
+        (match Clang_ast_proj.get_named_decl_tuple decl with
+         | Some (_, name_info) -> get_qualified_name name_info
+         | None -> "")
+    | None -> ""
+
+  (* Generates a unique number for each variant of a type. *)
+  let get_tag ast_item =
+    let item_rep = Obj.repr ast_item in
+    if Obj.is_block item_rep then
+      Obj.tag item_rep
+    else -(Obj.obj item_rep)
+
+  (* Generates a key for a statement based on its sub-statements and the statement tag. *)
+  let rec generate_key_stmt stmt =
+    let tag_str = string_of_int (get_tag stmt) in
+    let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
+    let tags = IList.map generate_key_stmt stmts in
+    let buffer = Buffer.create 16 in
+    let tags = tag_str :: tags in
+    IList.iter (fun tag -> Buffer.add_string buffer tag) tags;
+    Buffer.contents buffer
+
+  (* Generates a key for a declaration based on its name and the declaration tag. *)
+  let generate_key_decl decl =
+    let buffer = Buffer.create 16 in
+    let name = full_name_of_decl_opt (Some decl) in
+    Buffer.add_string buffer (string_of_int (get_tag decl));
+    Buffer.add_string buffer name;
+    Buffer.contents buffer
+
+  let rec get_super_if decl =
+    match decl with
+    | Some Clang_ast_t.ObjCImplementationDecl(_, _, _, _, impl_decl_info) ->
+        (* Try getting the super ref through the impl info, and fall back to
+           getting the if decl first and getting the super ref through it. *)
+        let super_ref = get_decl_opt_with_decl_ref impl_decl_info.oidi_super in
+        if Option.is_some super_ref then
+          super_ref
+        else
+          get_super_if (get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface)
+    | Some Clang_ast_t.ObjCInterfaceDecl(_, _, _, _, interface_decl_info) ->
+        get_decl_opt_with_decl_ref interface_decl_info.otdi_super
+    | _ -> None
+
+  let get_super_impl impl_decl_info =
+    let objc_interface_decl_current =
+      get_decl_opt_with_decl_ref
+        impl_decl_info.Clang_ast_t.oidi_class_interface in
+    let objc_interface_decl_super = get_super_if objc_interface_decl_current in
+    let objc_implementation_decl_super =
+      match objc_interface_decl_super with
+      | Some ObjCInterfaceDecl(_, _, _, _, interface_decl_info) ->
+          get_decl_opt_with_decl_ref
+            interface_decl_info.otdi_implementation
+      | _ -> None in
+    match objc_implementation_decl_super with
+    | Some ObjCImplementationDecl(_, _, decl_list, _, impl_decl_info) ->
+        Some (decl_list, impl_decl_info)
+    | _ -> None
+
+  let get_super_ObjCImplementationDecl impl_decl_info =
+    let objc_interface_decl_current =
+      get_decl_opt_with_decl_ref
+        impl_decl_info.Clang_ast_t.oidi_class_interface in
+    let objc_interface_decl_super = get_super_if objc_interface_decl_current in
+    let objc_implementation_decl_super =
+      match objc_interface_decl_super with
+      | Some ObjCInterfaceDecl(_, _, _, _, interface_decl_info) ->
+          get_decl_opt_with_decl_ref
+            interface_decl_info.otdi_implementation
+      | _ -> None in
+    objc_implementation_decl_super
+
+  let get_impl_decl_info dec =
+    match dec with
+    | Clang_ast_t.ObjCImplementationDecl (_, _, _, _, idi) -> Some idi
+    | _ -> None
+
+  let is_in_main_file translation_unit_context decl =
+    let decl_info = Clang_ast_proj.get_decl_tuple decl in
+    let file_opt = (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file in
+    match file_opt with
+    | None -> false
+    | Some file ->
+        DB.source_file_equal
+          (CLocation.source_file_from_path file)
+          translation_unit_context.CFrontend_config.source_file
+
+  let default_blacklist =
+    let open CFrontend_config in
+    [nsobject_cl; nsproxy_cl]
+
+  let rec is_objc_if_descendant ?(blacklist = default_blacklist) if_decl ancestors =
+    (* List of ancestors to check for and list of classes to short-circuit to
+       false can't intersect *)
+    if not (StringSet.is_empty (string_list_intersection blacklist ancestors)) then
+      failwith "Blacklist and ancestors must be mutually exclusive."
+    else
+      match if_decl with
+      | Some Clang_ast_t.ObjCInterfaceDecl (_, ndi, _, _, _) ->
+          let in_list some_list = IList.mem string_equal ndi.Clang_ast_t.ni_name some_list in
+          not (in_list blacklist)
+          && (in_list ancestors
+              || is_objc_if_descendant ~blacklist:blacklist (get_super_if if_decl) ancestors)
+      | _ -> false
+
+  let rec type_ptr_to_objc_interface type_ptr =
+    let typ_opt = get_desugared_type type_ptr in
+    match (typ_opt : Clang_ast_t.c_type option) with
+    | Some ObjCInterfaceType (_, decl_ptr) -> get_decl decl_ptr
+    | Some ObjCObjectPointerType (_, (inner_qual_type: Clang_ast_t.qual_type)) ->
+        type_ptr_to_objc_interface inner_qual_type.qt_type_ptr
+    | Some FunctionProtoType (_, function_type_info, _)
+    | Some FunctionNoProtoType (_, function_type_info) ->
+        type_ptr_to_objc_interface function_type_info.Clang_ast_t.fti_return_type
+    | _ -> None
+
+
+  let if_decl_to_di_pointer_opt if_decl =
+    match if_decl with
+    | Clang_ast_t.ObjCInterfaceDecl (if_decl_info, _, _, _, _) ->
+        Some if_decl_info.di_pointer
+    | _ -> None
+
+  let is_instance_type type_ptr =
+    match name_opt_of_typedef_type_ptr type_ptr with
+    | Some name -> name = "instancetype"
+    | None -> false
+
+  let return_type_matches_class_type rtp type_decl_pointer =
+    if is_instance_type rtp then
+      true
+    else
+      let return_type_decl_opt = type_ptr_to_objc_interface rtp in
+      let return_type_decl_pointer_opt =
+        Option.map if_decl_to_di_pointer_opt return_type_decl_opt in
+      (Some type_decl_pointer) = return_type_decl_pointer_opt
+
+  let is_objc_factory_method if_decl meth_decl =
+    let if_type_decl_pointer = if_decl_to_di_pointer_opt if_decl in
+    match meth_decl with
+    | Clang_ast_t.ObjCMethodDecl (_, _, omdi) ->
+        (not omdi.omdi_is_instance_method) &&
+        (return_type_matches_class_type omdi.omdi_result_type if_type_decl_pointer)
     | _ -> false
 
 (*
@@ -431,6 +522,7 @@ struct
         | `Setter setter -> setter.Clang_ast_t.dr_name
         | _ -> (setter_attribute_opt rest)
 *)
+
 end
 
 (* Global counter for anonymous block*)
@@ -474,16 +566,16 @@ struct
     append_no_duplicates Procname.equal list1 list2
 
   let append_no_duplicated_vars list1 list2 =
-    let eq (m1, t1) (m2, t2) = (Mangled.equal m1 m2) && (Sil.typ_equal t1 t2) in
+    let eq (m1, t1) (m2, t2) = (Mangled.equal m1 m2) && (Typ.equal t1 t2) in
     append_no_duplicates eq list1 list2
 
   let append_no_duplicateds list1 list2 =
-    let eq (e1, t1) (e2, t2) = (Sil.exp_equal e1 e2) && (Sil.typ_equal t1 t2) in
+    let eq (e1, t1) (e2, t2) = (Exp.equal e1 e2) && (Typ.equal t1 t2) in
     append_no_duplicates eq list1 list2
 
 
   let append_no_duplicates_annotations list1 list2 =
-    let eq (annot1, _) (annot2, _) = annot1.Sil.class_name = annot2.Sil.class_name in
+    let eq (annot1, _) (annot2, _) = annot1.Annot.class_name = annot2.Annot.class_name in
     append_no_duplicates eq list1 list2
 
   let add_no_duplicates_fields field_tuple l =
@@ -491,7 +583,7 @@ struct
       match field_tuple, l with
       | (field, typ, annot), ((old_field, old_typ, old_annot) as old_field_tuple :: rest) ->
           let ret_list, ret_found = replace_field field_tuple rest found in
-          if Ident.fieldname_equal field old_field && Sil.typ_equal typ old_typ then
+          if Ident.fieldname_equal field old_field && Typ.equal typ old_typ then
             let annotations = append_no_duplicates_annotations annot old_annot in
             (field, typ, annotations) :: ret_list, true
           else old_field_tuple :: ret_list, ret_found
@@ -514,9 +606,8 @@ struct
 
 
   let sort_fields_tenv tenv =
-    let sort_fields_struct typname st =
-      let st' = { st with Sil.instance_fields = (sort_fields st.Sil.instance_fields) } in
-      Tenv.add tenv typname st' in
+    let sort_fields_struct name ({StructTyp.fields} as st) =
+      ignore (Tenv.mk_struct tenv ~default:st ~fields:(sort_fields fields) name) in
     Tenv.iter sort_fields_struct tenv
 
   let rec collect_list_tuples l (a, a1, b, c, d) =
@@ -542,7 +633,7 @@ struct
   (* It does not update the global block_counter *)
   let get_next_block_pvar defining_proc =
     let name = block_procname_with_index defining_proc (!block_counter +1) in
-    Pvar.mk (Mangled.from_string (CFrontend_config.temp_var^"_"^name)) defining_proc
+    Pvar.mk_tmp name defining_proc
 
   (* Reset  block counter *)
   let reset_block_counter () =
@@ -569,13 +660,41 @@ struct
   let get_rel_file_path file_opt =
     match file_opt with
     | Some file ->
-        (match !Config.project_root with
+        (match Config.project_root with
          | Some root ->
              DB.source_file_to_rel_path (DB.rel_source_file_from_abs_path root file)
          | None -> file)
     | None -> ""
 
-  let mk_procname_from_function name function_decl_info_opt tp language =
+  let is_cpp_translation translation_unit_context =
+    let lang = translation_unit_context.CFrontend_config.lang in
+    lang = CFrontend_config.CPP || lang = CFrontend_config.ObjCPP
+
+  let is_objc_extension translation_unit_context =
+    let lang = translation_unit_context.CFrontend_config.lang in
+    lang = CFrontend_config.ObjC || lang = CFrontend_config.ObjCPP
+
+  let rec get_mangled_method_name function_decl_info method_decl_info =
+    (* For virtual methods return mangled name of the method from most base class
+       Go recursively until there is no method in any parent class. All names
+       of the same method need to be the same, otherwise dynamic dispatch won't
+       work. *)
+    let open Clang_ast_t in
+    match method_decl_info.xmdi_overriden_methods with
+    | [] -> function_decl_info.fdi_mangled_name
+    | base1_dr :: _ ->
+        (let base1 = match Ast_utils.get_decl base1_dr.dr_decl_pointer with
+            | Some b -> b
+            | _ -> assert false in
+         match base1 with
+         | CXXMethodDecl (_, _, _, fdi, mdi)
+         | CXXConstructorDecl (_, _, _, fdi, mdi)
+         | CXXConversionDecl (_, _, _, fdi, mdi)
+         | CXXDestructorDecl (_, _, _, fdi, mdi) ->
+             get_mangled_method_name fdi mdi
+         | _ -> assert false)
+
+  let mk_procname_from_function translation_unit_context name function_decl_info_opt =
     let file =
       match function_decl_info_opt with
       | Some (decl_info, function_decl_info) ->
@@ -585,69 +704,102 @@ struct
                get_rel_file_path file_opt
            | _ -> "")
       | None -> "" in
-    let type_string =
-      match language with
-      | CFrontend_config.CPP
-      | CFrontend_config.OBJCPP -> Ast_utils.string_of_type_ptr tp
+    let mangled_opt = match function_decl_info_opt with
+      | Some (_, function_decl_info) -> function_decl_info.Clang_ast_t.fdi_mangled_name
+      | _ -> None in
+    let mangled_name =
+      match mangled_opt with
+      | Some m when is_cpp_translation translation_unit_context -> m
       | _ -> "" in
-    (* remove __restrict from type name to avoid mismatches. Clang allows to declare function*)
-    (* with __restrict parameters and then define it without (it mostly applies to models).*)
-    (* We are not using this information right now so we can remove it to avoid dealing with*)
-    (* corner cases on different systems *)
-    let type_string_no_restrict = Str.global_replace (Str.regexp "__restrict") "" type_string in
-    let mangled = file ^ type_string_no_restrict in
-    if String.length mangled == 0 then
+    let mangled = (string_crc_hex32 file) ^ mangled_name in
+    if String.length file == 0 && String.length mangled_name == 0 then
       Procname.from_string_c_fun name
     else
-      let crc = string_crc_hex32 mangled in
-      Procname.C (Procname.c name crc)
+      Procname.C (Procname.c name mangled)
 
   let mk_procname_from_objc_method class_name method_name method_kind =
-    let mangled = Procname.mangled_of_objc_method_kind method_kind in
     Procname.ObjC_Cpp
-      (Procname.objc_cpp class_name method_name mangled)
+      (Procname.objc_cpp class_name method_name method_kind)
 
-  let mk_procname_from_cpp_method class_name method_name tp =
-    let type_name = Ast_utils.string_of_type_ptr tp in
-    let type_name_crc = Some (string_crc_hex32 type_name) in
+  let mk_procname_from_cpp_method class_name method_name ?meth_decl mangled =
+    let method_kind = match meth_decl with
+      | Some (Clang_ast_t.CXXConstructorDecl _) ->
+          Procname.CPPConstructor mangled
+      | _ ->
+          Procname.CPPMethod mangled in
     Procname.ObjC_Cpp
-      (Procname.objc_cpp class_name method_name type_name_crc)
+      (Procname.objc_cpp class_name method_name method_kind)
 
-  let get_var_name_string name_info var_decl_info =
+  let get_objc_method_name name_info mdi class_name =
+    let method_name = name_info.Clang_ast_t.ni_name in
+    let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
+    let method_kind = Procname.objc_method_kind_of_bool is_instance in
+    mk_procname_from_objc_method class_name method_name method_kind
+
+  let procname_of_decl translation_unit_context meth_decl =
+    let open Clang_ast_t in
+    match meth_decl with
+    | FunctionDecl (decl_info, name_info, _, fdi) ->
+        let name = Ast_utils.get_qualified_name name_info in
+        let function_info = Some (decl_info, fdi) in
+        mk_procname_from_function translation_unit_context name function_info
+    | CXXMethodDecl (_, name_info, _, fdi, mdi)
+    | CXXConstructorDecl (_, name_info, _, fdi, mdi)
+    | CXXConversionDecl (_, name_info, _, fdi, mdi)
+    | CXXDestructorDecl (_, name_info, _, fdi, mdi) ->
+        let mangled = get_mangled_method_name fdi mdi in
+        let method_name = Ast_utils.get_unqualified_name name_info in
+        let class_name = Ast_utils.get_class_name_from_member name_info in
+        mk_procname_from_cpp_method class_name method_name ~meth_decl mangled
+    | ObjCMethodDecl (_, name_info, mdi) ->
+        let class_name = Ast_utils.get_class_name_from_member name_info in
+        get_objc_method_name name_info mdi class_name
+    | BlockDecl _ ->
+        let name = Config.anonymous_block_prefix ^ Config.anonymous_block_num_sep ^
+                   (string_of_int (get_fresh_block_index ())) in
+        Procname.mangled_objc_block name
+    | _ -> assert false
+
+
+  let get_var_name_mangled name_info var_decl_info =
     let clang_name = Ast_utils.get_qualified_name name_info in
-    match clang_name, var_decl_info.Clang_ast_t.vdi_parm_index_in_function with
-    | "", Some index -> "__param_" ^ string_of_int index
-    | "", None -> assert false
-    | _ -> clang_name
+    let param_idx_opt = var_decl_info.Clang_ast_t.vdi_parm_index_in_function in
+    let name_string =
+      match clang_name, param_idx_opt with
+      | "", Some index -> "__param_" ^ string_of_int index
+      | "", None -> assert false
+      | _ -> clang_name in
+    let mangled = match param_idx_opt with
+      | Some index -> Mangled.mangled name_string (string_of_int index)
+      | None -> Mangled.from_string name_string in
+    name_string, mangled
 
-  let mk_sil_var name decl_info_type_ptr_opt procname outer_procname =
+  let mk_sil_var {CFrontend_config.source_file} name decl_info_type_ptr_opt
+      procname outer_procname =
     let name_string = Ast_utils.get_qualified_name name in
     match decl_info_type_ptr_opt with
-    | Some (decl_info, type_ptr, var_decl_info, should_be_mangled) ->
-        let name_string = get_var_name_string name var_decl_info in
-        let simple_name = Mangled.from_string name_string in
+    | Some (decl_info, _, var_decl_info, should_be_mangled) ->
+        let name_string, simple_name = get_var_name_mangled name var_decl_info in
         if var_decl_info.Clang_ast_t.vdi_is_global then
           let global_mangled_name =
             if var_decl_info.Clang_ast_t.vdi_is_static_local then
               Mangled.from_string ((Procname.to_string outer_procname) ^ "_" ^ name_string)
             else simple_name in
-          Pvar.mk_global global_mangled_name
+          let translation_unit =
+            match var_decl_info.Clang_ast_t.vdi_storage_class with
+            | Some "extern" ->
+                DB.source_file_empty
+            | _ ->
+                source_file in
+          Pvar.mk_global global_mangled_name translation_unit
         else if not should_be_mangled then Pvar.mk simple_name procname
         else
-          let type_name = Ast_utils.string_of_type_ptr type_ptr in
           let start_location = fst decl_info.Clang_ast_t.di_source_range in
           let line_opt = start_location.Clang_ast_t.sl_line in
           let line_str = match line_opt with | Some line -> string_of_int line | None -> "" in
-          let mangled = string_crc_hex32 (type_name ^ line_str) in
+          let mangled = string_crc_hex32 line_str in
           let mangled_name = Mangled.mangled name_string mangled in
           Pvar.mk mangled_name procname
     | None -> Pvar.mk (Mangled.from_string name_string) procname
 
-  let is_cpp_translation language =
-    language = CFrontend_config.CPP || language = CFrontend_config.OBJCPP
-
 end
-
-
-
-

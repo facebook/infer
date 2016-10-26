@@ -10,23 +10,24 @@
 #import <Foundation/Foundation.h>
 #import <stdlib.h>
 
-@interface A : NSObject
+@interface StringInitA : NSObject
 
 @end
 
-@implementation A
+@implementation StringInitA
 
-NSString* FBCreateURLQueryStringBodyEscaping(NSDictionary* parameters,
-                                             NSString* s) {
+NSString* createURLQueryStringBodyEscaping(NSDictionary* parameters,
+                                           NSString* s) {
+  NSString* resultString;
   if (s) {
     char* resultBuffer = (char*)malloc(5 * sizeof(char));
 
-    NSString* resultString = [s initWithBytesNoCopy:resultBuffer
-                                             length:5
-                                           encoding:NSUTF8StringEncoding
-                                       freeWhenDone:YES];
+    resultString = [s initWithBytesNoCopy:resultBuffer
+                                   length:5
+                                 encoding:NSUTF8StringEncoding
+                             freeWhenDone:YES];
   }
-  return s;
+  return resultString;
 }
 
 + (NSData*)randomBytes:(NSUInteger)numOfBytes {
@@ -38,6 +39,15 @@ NSString* FBCreateURLQueryStringBodyEscaping(NSDictionary* parameters,
     free(buffer);
     return nil;
   }
+}
+
+- (NSData*)readDataOfLength:(NSUInteger)length {
+  size_t bytesLength = length;
+  void* bytes = malloc(bytesLength);
+  if (bytes == NULL) {
+    return nil;
+  }
+  return [[NSData alloc] initWithBytesNoCopy:bytes length:5 freeWhenDone:YES];
 }
 
 - (NSData*)macForIV:(NSData*)IV {

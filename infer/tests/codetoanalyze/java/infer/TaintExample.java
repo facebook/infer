@@ -24,7 +24,9 @@ import javax.net.ssl.SSLSocketFactory;
 import android.content.ContentValues;
 import android.content.SharedPreferences;
 
-import com.facebook.infer.models.InferTaint;
+import com.facebook.infer.builtins.InferTaint;
+import com.facebook.infer.annotation.IntegritySource;
+import com.facebook.infer.annotation.IntegritySink;
 import com.facebook.infer.annotation.PrivacySource;
 import com.facebook.infer.annotation.PrivacySink;
 
@@ -172,7 +174,7 @@ public class TaintExample {
     values.put(key, value);
   }
 
-  @PrivacySource("")
+  @PrivacySource
   public String privacySource() {
     return "source";
   }
@@ -181,10 +183,10 @@ public class TaintExample {
     InferTaint.inferSensitiveSinkUndefined(privacySource()); // should report
   }
 
-  public void instancePrivacySink(@PrivacySink("") String s1, String s2) {
+  public void instancePrivacySink(@PrivacySink String s1, String s2) {
   }
 
-  public static void staticPrivacySink(@PrivacySink("") String s1, String s2) {
+  public static void staticPrivacySink(@PrivacySink String s1, String s2) {
   }
 
   public void testPrivacySinkAnnot1() {
@@ -207,9 +209,9 @@ public class TaintExample {
     staticPrivacySink("", source); // should not report
   }
 
-  @PrivacySource("") String mPrivacySource;
+  @PrivacySource String mPrivacySource;
 
-  @PrivacySource("") String sPrivacySource;
+  @PrivacySource String sPrivacySource;
 
   public void testPrivacySourceInstanceFieldAnnot() {
     String source = mPrivacySource;
@@ -226,6 +228,40 @@ public class TaintExample {
   public void testPrivacySourceFieldAnnotPropagation() {
     aFieldWithoutAnnotations = mPrivacySource;
     InferTaint.inferSensitiveSinkUndefined(aFieldWithoutAnnotations); // should report
+  }
+
+  @IntegritySource
+  public String integritySource() {
+    return "source";
+  }
+
+  @IntegritySource String mIntegritySource;
+
+  @IntegritySource String sIntegritySource;
+
+  public void testIntegritySourceAnnot() {
+    InferTaint.inferSensitiveSinkUndefined(integritySource()); // should report
+  }
+
+  public void testIntegritySourceInstanceFieldAnnot() {
+    String source = mIntegritySource;
+    InferTaint.inferSensitiveSinkUndefined(source); // should report
+  }
+
+  public void testIntegritySourceStaticFieldAnnot() {
+    String source = sIntegritySource;
+    InferTaint.inferSensitiveSinkUndefined(source); // should report
+  }
+
+  public void integritySink(@IntegritySink String s1, String s2) {
+  }
+
+  void testIntegritySinkAnnotReport(String s) {
+    integritySink(integritySource(), s); // should report
+  }
+
+  void testIntegritySinkAnnotNoReport(String s) {
+    integritySink(s, integritySource()); // should not report
   }
 
 }

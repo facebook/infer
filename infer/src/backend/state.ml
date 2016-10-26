@@ -15,7 +15,7 @@ open! Utils
 module L = Logging
 module F = Format
 
-type const_map = Cfg.Node.t -> Sil.exp -> Sil.const option
+type const_map = Cfg.Node.t -> Exp.t -> Const.t option
 
 (** failure statistics for symbolic execution on a given node *)
 type failure_stats = {
@@ -24,39 +24,39 @@ type failure_stats = {
   mutable node_fail: int; (* number of node failures (i.e. at least one instruction failure) *)
   mutable node_ok: int; (* number of node successes (i.e. no instruction failures) *)
   mutable first_failure :
-    (Location.t * (int * int) * int * Errlog.loc_trace *
-     (Prop.normal Prop.t) option * exn) option (* exception at the first failure *)
+    (Location.t * (int * int) * int * Errlog.loc_trace * exn) option
+    (* exception at the first failure *)
 }
 
 module NodeHash = Cfg.NodeHash
 
 type t = {
-  (** Constant map for the procedure *)
   mutable const_map : const_map;
+  (** Constant map for the procedure *)
 
-  (** Diverging states since the last reset for the node *)
   mutable diverging_states_node : Paths.PathSet.t;
+  (** Diverging states since the last reset for the node *)
 
-  (** Diverging states since the last reset for the procedure *)
   mutable diverging_states_proc : Paths.PathSet.t;
+  (** Diverging states since the last reset for the procedure *)
 
-  (** Last instruction seen *)
   mutable last_instr : Sil.instr option;
+  (** Last instruction seen *)
 
-  (** Last node seen *)
   mutable last_node : Cfg.Node.t;
+  (** Last node seen *)
 
+  mutable last_path : (Paths.Path.t * (PredSymb.path_pos option)) option;
   (** Last path seen *)
-  mutable last_path : (Paths.Path.t * (Sil.path_pos option)) option;
 
-  (** Last prop,tenv,pdesc seen *)
   mutable last_prop_tenv_pdesc : (Prop.normal Prop.t * Tenv.t * Cfg.Procdesc.t) option;
+  (** Last prop,tenv,pdesc seen *)
 
-  (** Last session seen *)
   mutable last_session : int;
+  (** Last session seen *)
 
-  (** Map visited nodes to failure statistics *)
   failure_map : failure_stats NodeHash.t;
+  (** Map visited nodes to failure statistics *)
 }
 
 let initial () = {
@@ -125,15 +125,14 @@ let node_simple_key node =
     if Sil.instr_is_auxiliary instr then ()
     else
       match instr with
-      | Sil.Letderef _ -> add_key 1
-      | Sil.Set _ -> add_key 2
+      | Sil.Load _ -> add_key 1
+      | Sil.Store _ -> add_key 2
       | Sil.Prune _ -> add_key 3
       | Sil.Call _ -> add_key 4
       | Sil.Nullify _ -> add_key 5
       | Sil.Abstract _ -> add_key 6
       | Sil.Remove_temps _ -> add_key 7
-      | Sil.Stackop _ -> add_key 8
-      | Sil.Declare_locals _ -> add_key 9 in
+      | Sil.Declare_locals _ -> add_key 8 in
   IList.iter do_instr (Cfg.Node.get_instrs node);
   Hashtbl.hash !key
 
@@ -148,7 +147,7 @@ let node_key node =
 let instrs_normalize instrs =
   let bound_ids =
     let do_instr ids = function
-      | Sil.Letderef (id, _, _, _) -> id :: ids
+      | Sil.Load (id, _, _, _) -> id :: ids
       | _ -> ids in
     IList.fold_left do_instr [] instrs in
   let subst =
@@ -156,7 +155,7 @@ let instrs_normalize instrs =
     let gensym id =
       incr count;
       Ident.set_stamp id !count in
-    Sil.sub_of_list (IList.map (fun id -> (id, Sil.Var (gensym id))) bound_ids) in
+    Sil.sub_of_list (IList.map (fun id -> (id, Exp.Var (gensym id))) bound_ids) in
   IList.map (Sil.instr_sub subst) instrs
 
 (** Create a function to find duplicate nodes.
@@ -254,11 +253,12 @@ let extract_pre p tenv pdesc abstract_fun =
     let fav = Prop.prop_fav p in
     let idlist = Sil.fav_to_list fav in
     let count = ref 0 in
-    Sil.sub_of_list (IList.map (fun id -> incr count; (id, Sil.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
-  let _, p' = Cfg.remove_locals_formals pdesc p in
+    Sil.sub_of_list (IList.map (fun id ->
+        incr count; (id, Exp.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
+  let _, p' = PropUtil.remove_locals_formals tenv pdesc p in
   let pre, _ = Prop.extract_spec p' in
   let pre' = try abstract_fun tenv pre with exn when SymOp.exn_not_failure exn -> pre in
-  Prop.normalize (Prop.prop_sub sub pre')
+  Prop.normalize tenv (Prop.prop_sub sub pre')
 
 (** return the normalized precondition extracted form the last prop seen, if any
     the abstraction function is a parameter to get around module dependencies *)
@@ -296,23 +296,22 @@ let mark_instr_ok () =
   let fs = get_failure_stats (get_node ()) in
   fs.instr_ok <- fs.instr_ok + 1
 
-let mark_instr_fail pre_opt exn =
+let mark_instr_fail exn =
   let loc = get_loc () in
   let key = (get_node_id_key () :> int * int) in
   let session = get_session () in
   let loc_trace = get_loc_trace () in
   let fs = get_failure_stats (get_node ()) in
   if fs.first_failure = None then
-    fs.first_failure <- Some (loc, key, (session :> int), loc_trace, pre_opt, exn);
+    fs.first_failure <- Some (loc, key, (session :> int), loc_trace, exn);
   fs.instr_fail <- fs.instr_fail + 1
 
 type log_issue =
   Procname.t ->
-  ?loc: Location.t option ->
-  ?node_id: (int * int) option ->
-  ?session: int option ->
-  ?ltr: Errlog.loc_trace option ->
-  ?pre: Prop.normal Prop.t option ->
+  ?loc: Location.t ->
+  ?node_id: (int * int) ->
+  ?session: int ->
+  ?ltr: Errlog.loc_trace ->
   exn ->
   unit
 
@@ -320,12 +319,11 @@ let process_execution_failures (log_issue : log_issue) pname =
   let do_failure _ fs =
     (* L.err "Node:%a node_ok:%d node_fail:%d@." Cfg.Node.pp node fs.node_ok fs.node_fail; *)
     match fs.node_ok, fs.first_failure with
-    | 0, Some (loc, key, _, loc_trace, pre_opt, exn) ->
+    | 0, Some (loc, key, _, loc_trace, exn) ->
         let ex_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
         let desc' = Localise.verbatim_desc ("exception: " ^ Localise.to_string ex_name) in
         let exn' = Exceptions.Analysis_stops (desc', ml_loc_opt) in
-        log_issue
-          pname ~loc: (Some loc) ~node_id: (Some key) ~ltr: (Some loc_trace) ~pre: pre_opt exn'
+        log_issue pname ~loc ~node_id:key ~ltr:loc_trace exn'
     | _ -> () in
   NodeHash.iter do_failure !gs.failure_map
 

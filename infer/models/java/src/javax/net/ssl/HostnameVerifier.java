@@ -13,8 +13,8 @@ import java.net.Socket;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSession;
 
-import com.facebook.infer.models.InferBuiltins;
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferBuiltins;
+import com.facebook.infer.builtins.InferUndefined;
 
 public class HostnameVerifier {
 

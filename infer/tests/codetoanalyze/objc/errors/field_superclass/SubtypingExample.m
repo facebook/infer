@@ -82,4 +82,4 @@ int testFields() {
   return [employee getAge];
 }
 
-int test() { return 1 / (testFields() - 29); }
+int subtyping_test() { return 1 / (testFields() - 29); }

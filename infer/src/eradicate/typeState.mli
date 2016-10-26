@@ -12,7 +12,7 @@ open! Utils
 (** Module for typestates: maps from expressions to annotated types, with extensions. *)
 
 (** Parameters of a call. *)
-type parameters = (Sil.exp * Sil.typ) list
+type parameters = (Exp.t * Typ.t) list
 
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 
@@ -20,9 +20,10 @@ type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 type 'a ext =
   {
     empty : 'a; (** empty extension *)
-    check_instr : (** check the extension for an instruction *)
+    check_instr :
       Tenv.t -> get_proc_desc -> Procname.t ->
-      Cfg.Procdesc.t ->'a -> Sil.instr -> parameters -> 'a;
+      Cfg.Procdesc.t ->'a -> Sil.instr -> parameters ->
+      'a; (** check the extension for an instruction *)
     join : 'a -> 'a -> 'a; (** join two extensions *)
     pp : Format.formatter -> 'a -> unit (** pretty print an extension *)
   }
@@ -30,7 +31,7 @@ type 'a ext =
 (** Typestate extended with elements of type 'a. *)
 type 'a t
 
-type range = Sil.typ * TypeAnnotation.t * (Location.t list)
+type range = Typ.t * TypeAnnotation.t * (Location.t list)
 
 val add_id : Ident.t -> range -> 'a t -> 'a t
 val add : Pvar.t -> range -> 'a t -> 'a t

@@ -95,7 +95,7 @@ let find_comment_end lines_arr n com_style =
   done;
   match com_style with
   | Line _ -> !found
-  | Block _ -> !found + 1
+  | Block _ -> !found
 
 (** Heuristic to check if this looks like a copyright message. *)
 let looks_like_copyright_message cstart cend lines_arr =
@@ -143,7 +143,7 @@ let pp_copyright mono fb_year com_style fmt _prefix =
     | Block (start, _, _) -> F.fprintf fmt "%s@\n" start in
   let pp_end () = match com_style with
     | Line _ -> F.fprintf fmt "@\n";
-    | Block (_, _, finish) -> F.fprintf fmt "%s%s@\n@\n" _prefix finish in
+    | Block (_, _, finish) -> F.fprintf fmt "%s%s@\n" _prefix finish in
   pp_start ();
   if mono then
     pp_line " Copyright (c) 2009 - 2013 Monoidics ltd.";
@@ -187,6 +187,8 @@ let com_style_of_lang = [
   (".mli", comment_style_ocaml);
   (".mly", comment_style_c);
   (".mll", comment_style_ocaml);
+  (".re", comment_style_c);
+  (".rei", comment_style_c);
   (".c", comment_style_c);
   (".h", comment_style_c);
   (".cpp", comment_style_c);
@@ -217,7 +219,6 @@ let output_diff fname lines_arr cstart n cend len mono fb_year com_style prefix 
   done;
   L.stdout "-----@.";
   L.stdout "@[<v>%a@]" (pp_copyright mono fb_year com_style) prefix;
-  L.flush_streams ();
   if !update_files then
     update_file fname mono fb_year com_style prefix cstart cend lines_arr
 
@@ -277,6 +278,6 @@ let () =
   let to_check = ref [] in
   let add_file_to_check fname =
     to_check := fname :: !to_check in
-  Arg.parse "CHECKCOPYRIGHT_ARGS" (Arg.align speclist) add_file_to_check usage_msg;
+  Arg.parse (Arg.align speclist) add_file_to_check usage_msg;
   IList.iter check_copyright (IList.rev !to_check);
   exit 0

@@ -1,0 +1,7 @@
+[
+  {
+    "bug_type": "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE",
+    "file": "TestIgnoreImports.mm",
+    "procedure": "SomeClass_new"
+  }
+]

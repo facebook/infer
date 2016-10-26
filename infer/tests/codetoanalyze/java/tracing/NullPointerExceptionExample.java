@@ -13,12 +13,12 @@ import com.facebook.infer.annotation.Verify;
 
 public class NullPointerExceptionExample {
 
-  void deref(T t) {
+  void deref(T2 t) {
     t.f();
   }
 
   @Verify
-  void callDeref(T t, boolean condition) {
+  void callDeref(T2 t, boolean condition) {
     if (condition) {
       deref(t);
     }

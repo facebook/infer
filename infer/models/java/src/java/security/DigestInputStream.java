@@ -9,7 +9,7 @@
 
 package java.security;
 
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferUndefined;
 
 import java.io.FilterInputStream;
 import java.io.IOException;

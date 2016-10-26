@@ -10,15 +10,15 @@
 #import <Foundation/NSData.h>
 #import <Foundation/NSObject.h>
 
-@interface A : NSObject
+@interface CallInConditionA : NSObject
 
-@property(nonatomic) A* child;
+@property(nonatomic) CallInConditionA* child;
 
-@property(nonatomic) A* url;
+@property(nonatomic) CallInConditionA* url;
 
 @end
 
-@implementation A
+@implementation CallInConditionA
 
 - (void)testLength:(NSData*)imageData {
   unsigned char* pixels = (unsigned char*)[imageData bytes];
@@ -28,9 +28,9 @@
   }
 }
 
-A* testUrl(A* context) {
+CallInConditionA* testUrl(CallInConditionA* context) {
   if (context.url) {
-    A* entityMemObject = context.child;
+    CallInConditionA* entityMemObject = context.child;
     return entityMemObject->_child;
   }
   return nil;

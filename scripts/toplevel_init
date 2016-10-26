@@ -1,0 +1,9 @@
+(* load dependencies *)
+#use "topfind";;
+#require "sawja";;
+#require "atdgen";;
+#require "extlib";;
+
+(* load infer code *)
+#load_rec "toplevel.cmo";;
+open Toplevel;;

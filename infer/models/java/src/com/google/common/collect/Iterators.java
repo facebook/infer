@@ -11,7 +11,7 @@ package com.google.common.collect;
 
 import java.util.NoSuchElementException;
 
-import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.builtins.InferBuiltins;
 
 import javax.annotation.Nullable;
 

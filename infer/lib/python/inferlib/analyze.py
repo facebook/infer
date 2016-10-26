@@ -11,10 +11,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse
-import codecs
 import csv
-import glob
-import json
 import logging
 import multiprocessing
 import os
@@ -35,7 +32,7 @@ def get_infer_version():
     try:
         return subprocess.check_output([
             utils.get_cmd_in_bin_dir(INFER_ANALYZE_BINARY), '-version'])
-    except:
+    except subprocess.CalledProcessError:
         utils.stdout('Failed to run {0} binary, exiting'
                      .format(INFER_ANALYZE_BINARY))
         sys.exit(os.EX_UNAVAILABLE)
@@ -52,25 +49,34 @@ class VersionAction(argparse._VersionAction):
                                             option_string)
 
 
+def get_pwd():
+    pwd = os.getenv('PWD')
+    if pwd is not None:
+        try:
+            # Compare whether 'PWD' and '.' point to same place
+            # Approach is borrowed from llvm implementation of
+            # llvm::sys::fs::current_path (implemented in Path.inc file)
+            pwd_stat = os.stat(pwd)
+            dot_stat = os.stat('.')
+            if pwd_stat.st_dev == dot_stat.st_dev and \
+               pwd_stat.st_ino == dot_stat.st_ino:
+                return pwd
+        except OSError:
+            # fallthrough to default case
+            pass
+    return os.getcwd()
 
 base_parser = argparse.ArgumentParser(add_help=False)
 base_group = base_parser.add_argument_group('global arguments')
 base_group.add_argument('-o', '--out', metavar='<directory>',
-                        default=config.DEFAULT_INFER_OUT, dest='infer_out',
+                        default=utils.encode(config.DEFAULT_INFER_OUT),
+                        dest='infer_out',
+                        type=utils.decode,
                         action=utils.AbsolutePathAction,
                         help='Set the Infer results directory')
-base_group.add_argument('-i', '--incremental',
-                        dest='reactive', action='store_true',
-                        help='''DEPRECATED: use --reactive.''')
-base_group.add_argument('-ic', '--changed-only',
-                        dest='reactive', action='store_true',
-                        help='''DEPRECATED: use --reactive.''')
 base_group.add_argument('-r', '--reactive', action='store_true',
                         help='''Analyze in reactive propagation mode
                         starting from changed files.''')
-base_group.add_argument('-m', '--merge', action='store_true',
-                        help='''merge the captured results directories specified
-                        in the dependency file.''')
 base_group.add_argument('-c', '--continue', action='store_true',
                         dest='continue_capture',
                         help='''Continue the capture for the reactive
@@ -88,18 +94,10 @@ base_group.add_argument('-nf', '--no-filtering', action='store_true',
                         help='''Also show the results from the experimental
                         checks. Warning: some checks may contain many false
                         alarms''')
-base_group.add_argument('--fail-on-bug', action='store_true',
-                        help='''Exit with error code %d if Infer found
-                        something to report'''
-                        % config.BUG_FOUND_ERROR_CODE)
 
 base_group.add_argument('--android-harness', action='store_true',
                         help='''[experimental] Create harness to detect bugs
                         involving the Android lifecycle''')
-
-base_group.add_argument('-l', '--llvm', action='store_true',
-                        help='''[experimental] Analyze C or C++ file using the
-                        experimental LLVM frontend''')
 
 base_parser.add_argument('-v', '--version',
                          help='''Print the version of Infer and exit''',
@@ -116,51 +114,27 @@ infer_group.add_argument('-j', '--multicore', metavar='n', type=int,
                            default=multiprocessing.cpu_count(),
                            dest='multicore', help='Set the number of cores to '
                            'be used for the analysis (default uses all cores)')
-infer_group.add_argument('-x', '--project', metavar='<projectname>',
-                           help='Project name, for recording purposes only')
-
-infer_group.add_argument('--revision', metavar='<githash>',
-                           help='The githash, for recording purposes only')
+infer_group.add_argument('-l', '--load-average', metavar='<float>', type=float,
+                         help='Specifies that no new jobs (commands) should '
+                         'be started if there are others jobs running and the '
+                         'load average is at least <float>.')
 
 infer_group.add_argument('--buck', action='store_true', dest='buck',
                            help='To use when run with buck')
 
-infer_group.add_argument('--infer_cache', metavar='<directory>',
-                           help='Select a directory to contain the infer cache')
-
 infer_group.add_argument('-pr', '--project_root',
-                          dest='project_root',
-                          default=os.getcwd(),
-                          help='Location of the project root '
-                          '(default is current directory)')
+                         dest='project_root',
+                         default=get_pwd(),
+                         help='Location of the project root '
+                         '(default is current directory)')
 
 infer_group.add_argument('--absolute-paths',
                           action='store_true',
                           default=False,
                           help='Report errors with absolute paths')
 
-infer_group.add_argument('--ml_buckets',
-                         dest='ml_buckets',
-                         help='memory leak buckets to be checked, '
-                              'separated by commas. The possible '
-                              'buckets are cf (Core Foundation), '
-                              'arc, narc (No arc), cpp, unknown_origin')
-
-infer_group.add_argument('-npb', '--no-progress-bar', action='store_true',
-                         help='Do not show a progress bar in the analysis')
-
-infer_group.add_argument('--specs-dir',
-                          metavar='<dir>',
-                          action='append',
-                          dest='specs_dirs',
-                          help='add dir to the list of directories to be '
-                               'searched for spec files. Repeat the argument '
-                               'in case multiple folders are needed')
-infer_group.add_argument('--specs-dir-list-file',
-                         metavar='<file>',
-                         help='add the newline-separated directories listed '
-                              'in <file> to the list of directories to be '
-                              'searched for spec files')
+infer_group.add_argument('--java-jar-compiler',
+                         metavar='<file>')
 
 def remove_infer_out(infer_out):
     # it is safe to ignore errors here because recreating the infer_out
@@ -180,6 +154,7 @@ def reset_start_file(results_dir, touch_if_present=False):
     if (not os.path.exists(start_path)) or touch_if_present:
         # create new empty file - this will update modified timestamp
         open(start_path, 'w').close()
+
 
 def clean(infer_out):
     directories = [
@@ -243,24 +218,6 @@ class AnalyzerWrapper(object):
         self.stats = {'int': {}}
         self.timing = {}
 
-        if self.args.specs_dirs:
-            # Each dir passed in input is prepended by '-lib'.
-            # Convert each path to absolute because when running from
-            # cluster Makefiles (multicore mode) InferAnalyze creates the wrong
-            # absolute path from within the multicore folder
-            self.args.specs_dirs = [item
-                                    for argument in
-                                    (['-lib', os.path.abspath(path)] for path in
-                                     self.args.specs_dirs)
-                                    for item in argument]
-        if self.args.specs_dir_list_file:
-            # Convert the path to the file list to an absolute path, because
-            # the analyzer will run from different paths and may not find the
-            # file otherwise.
-            self.args.specs_dir_list_file = \
-                ['-specs-dir-list-file',
-                 os.path.abspath(self.args.specs_dir_list_file)]
-
     def clean_exit(self):
         if os.path.isdir(self.args.infer_out):
             utils.stdout('removing {}'.format(self.args.infer_out))
@@ -280,26 +237,21 @@ class AnalyzerWrapper(object):
         # to be reported
         infer_options += ['-allow_specs_cleanup']
 
-        infer_options += ['-inferconfig_home', os.getcwd()]
+        infer_options += ['-inferconfig_home', utils.decode(os.getcwd())]
 
         if self.args.analyzer == config.ANALYZER_ERADICATE:
             infer_options += ['-eradicate']
+        elif self.args.analyzer == config.ANALYZER_CRASHCONTEXT:
+            infer_options += ['-crashcontext']
         elif self.args.analyzer == config.ANALYZER_CHECKERS:
             infer_options += ['-checkers']
+        elif self.args.analyzer == config.ANALYZER_QUANDARY:
+            infer_options += ['-quandary']
         else:
             if self.args.analyzer == config.ANALYZER_TRACING:
                 infer_options.append('-tracing')
             if os.path.isfile(config.MODELS_JAR):
                 infer_options += ['-models', config.MODELS_JAR]
-
-        if self.args.infer_cache:
-            infer_options += ['-infer_cache', self.args.infer_cache]
-
-        if self.args.ml_buckets:
-            infer_options += ['-ml_buckets', self.args.ml_buckets]
-
-        if self.args.no_progress_bar:
-            infer_options += ['-no_progress_bar']
 
         if self.args.debug:
             infer_options += [
@@ -318,25 +270,11 @@ class AnalyzerWrapper(object):
             infer_options.append('-print_buckets')
             self.args.no_filtering = True
 
-        if self.args.reactive:
-            infer_options.append('-reactive')
-
-        if self.args.continue_capture:
-            infer_options.append('-continue')
-
-        if self.args.merge:
-            infer_options.append('-merge')
-
-        if self.args.specs_dirs:
-            infer_options += self.args.specs_dirs
-
-        if self.args.specs_dir_list_file:
-            infer_options += self.args.specs_dir_list_file
-
         exit_status = os.EX_OK
 
         if self.javac is not None and self.args.buck:
-            infer_options += ['-project_root', os.getcwd(), '-java']
+            infer_options += ['-project_root', utils.decode(os.getcwd()),
+                              '-java']
             if self.javac.args.classpath is not None:
                 for path in self.javac.args.classpath.split(os.pathsep):
                     if os.path.isfile(path):
@@ -344,17 +282,12 @@ class AnalyzerWrapper(object):
         elif self.args.project_root:
             infer_options += ['-project_root', self.args.project_root]
 
-        if self.args.analyzer in [config.ANALYZER_CHECKERS,
-                                  config.ANALYZER_TRACING]:
-            os.environ['INFER_ONDEMAND'] = 'Y'
-
-        os.environ['INFER_OPTIONS'] = ' '.join(infer_options)
+        infer_options = map(utils.decode_or_not, infer_options)
+        infer_options_str = ' '.join(infer_options)
+        os.environ['INFER_OPTIONS'] = utils.encode(infer_options_str)
 
         javac_original_arguments = \
             self.javac.original_arguments if self.javac is not None else []
-
-        if self.args.analyzer == config.ANALYZER_TRACING:
-            os.environ['INFER_LAZY_DYNAMIC_DISPATCH'] = 'Y'
 
         if self.args.multicore == 1:
             analysis_start_time = time.time()
@@ -391,7 +324,10 @@ class AnalyzerWrapper(object):
             self.timing['makefile_generation'] = elapsed
             exit_status += makefile_status
             if makefile_status == os.EX_OK:
-                make_cmd = ['make', '-k', '-j', str(self.args.multicore)]
+                make_cmd = ['make', '-k']
+                make_cmd += ['-j', str(self.args.multicore)]
+                if self.args.load_average is not None:
+                    make_cmd += ['-l', str(self.args.load_average)]
                 if not self.args.debug:
                     make_cmd += ['-s']
                 analysis_start_time = time.time()
@@ -445,8 +381,9 @@ class AnalyzerWrapper(object):
             infer_print_cmd + infer_print_options
         )
         if exit_status != os.EX_OK:
-            logging.error('Error with InferPrint with the command: '
-                          + infer_print_cmd)
+            logging.error(
+                'Error with InferPrint with the command: {}'.format(
+                    infer_print_cmd))
         else:
             issues.clean_csv(self.args, csv_report)
             issues.clean_json(self.args, json_report)
@@ -481,28 +418,35 @@ class AnalyzerWrapper(object):
         stats_path = os.path.join(self.args.infer_out, config.STATS_FILENAME)
         utils.dump_json_to_path(self.stats, stats_path)
 
+    def report_proc_stats(self):
+        self.read_proc_stats()
+        self.print_analysis_stats()
+
+    def report(self):
+        reporting_start_time = time.time()
+        report_status = self.create_report()
+        elapsed = utils.elapsed_time(reporting_start_time)
+        self.timing['reporting'] = elapsed
+        if report_status == os.EX_OK and not self.args.buck:
+            json_report = os.path.join(self.args.infer_out,
+                                       config.JSON_REPORT_FILENAME)
+            bugs_out = os.path.join(self.args.infer_out,
+                                    config.BUGS_FILENAME)
+            xml_out = None
+            if self.args.pmd_xml:
+                xml_out = os.path.join(self.args.infer_out,
+                                       config.PMD_XML_FILENAME)
+            issues.print_and_save_errors(json_report,
+                                         bugs_out, xml_out)
+
     def analyze_and_report(self):
-        should_print_errors = False
         if self.args.analyzer not in [config.ANALYZER_COMPILE,
                                       config.ANALYZER_CAPTURE]:
-            if self.analyze() == os.EX_OK:
-                reporting_start_time = time.time()
-                report_status = self.create_report()
-                elapsed = utils.elapsed_time(reporting_start_time)
-                self.timing['reporting'] = elapsed
-                self.read_proc_stats()
-                self.print_analysis_stats()
-                if report_status == os.EX_OK and not self.args.buck:
-                    json_report = os.path.join(self.args.infer_out,
-                                               config.JSON_REPORT_FILENAME)
-                    bugs_out = os.path.join(self.args.infer_out,
-                                            config.BUGS_FILENAME)
-                    xml_out = None
-                    if self.args.pmd_xml:
-                        xml_out = os.path.join(self.args.infer_out,
-                                               config.PMD_XML_FILENAME)
-                    issues.print_and_save_errors(json_report,
-                                                 bugs_out, xml_out)
+            if self.args.analyzer == config.ANALYZER_LINTERS:
+                self.report()
+            elif self.analyze() == os.EX_OK:
+                self.report_proc_stats()
+                self.report()
 
     def print_analysis_stats(self):
         files_total = self.stats['int']['files']

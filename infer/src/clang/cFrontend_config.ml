@@ -9,172 +9,105 @@
 
 open! Utils
 
-(** Module that contains constants and variables used in the frontend *)
+(** Module that contains constants and global state used in the frontend *)
 
-let no_translate_libs = ref true
+type clang_lang = C | CPP | ObjC | ObjCPP
 
-let testing_mode = ref false
+type translation_unit_context = {
+  lang : clang_lang;
+  source_file : DB.source_file
+}
 
-let cxx_experimental = ref false
-
-let array_with_objects_count_m = "arrayWithObjects:count:"
-
-let object_at_indexed_subscript_m = "objectAtIndexedSubscript:"
-
-let string_with_utf8_m = "stringWithUTF8String:"
-
-let is_kind_of_class = "isKindOfClass:"
-
-let nsstring_cl = "NSString"
-
-let nsobject_cl = "NSObject"
-
-let next_object = "nextObject"
-
-let nsautorelease_pool_cl = "NSAutoreleasePool"
-
-let id_cl = "id"
-
-let self = "self"
-
-let this = "this"
-
-let return_param = "__return_param"
+(** Constants *)
 
 let alloc = "alloc"
-
-let malloc = "malloc"
-
-let free = "free"
-
-let static = "static"
-
-let source_file : string option ref = ref None
-
-let ast_file : string option ref = ref None
-
-let json = ref ""
-
-let pointer_decl_index = ref Clang_ast_main.PointerMap.empty
-
-let pointer_stmt_index = ref Clang_ast_main.PointerMap.empty
-
-let debug_mode = ref false
-
-let stats_mode = ref false
-
-let models_mode = ref false
-
-type lang =
-  | C
-  | CPP
-  | OBJC
-  | OBJCPP
-
-let language = ref OBJC (* Default is objc, since it's the default for clang (at least in Mac OS) *)
-
-let lang_from_string lang_string =
-  let lang =
-    if lang_string = "c" then C
-    else if lang_string = "objective-c" then OBJC
-    else if lang_string = "c++" then CPP
-    else if lang_string = "objective-c++" then OBJCPP
-    else assert false in
-  language := lang
-
-let lang_to_string lang =
-  match lang with
-  | C -> "c"
-  | OBJC -> "objective-c"
-  | CPP -> "c++"
-  | OBJCPP -> "objective-c++"
-
-let emtpy_name_category ="EMPTY_NAME_CATEGORY_FOR_"
-
-let objc_object = "objc_object"
-
-let objc_class = "objc_class"
-
-let class_type = "Class"
-
-let global_translation_unit_decls : Clang_ast_t.decl list ref = ref []
-
-let retain = "retain"
-
-let release = "release"
-
-let drain = "drain"
-
-let autorelease = "autorelease"
-
-let copy = "copy"
-
-let mutableCopy = "mutableCopy"
-
-let new_str = "new"
-
-let init = "init"
-
-let temp_var = "infer"
-
-let invalid_pointer = 0
-
-let void = "void"
-
-let class_method = "class"
-
-let cf_non_null_alloc ="__cf_non_null_alloc"
-
-let cf_alloc ="__cf_alloc"
-
-let cf_bridging_release = "CFBridgingRelease"
-
-let cf_bridging_retain = "CFBridgingRetain"
-
-let cf_autorelease = "CFAutorelease"
-
-let ns_make_collectable = "NSMakeCollectable"
-
-let builtin_expect = "__builtin_expect"
-
-let builtin_memset_chk = "__builtin___memset_chk"
-
-let builtin_object_size = "__builtin_object_size"
-
+let array_with_objects_count_m = "arrayWithObjects:count:"
 let assert_fail = "__assert_fail"
-
 let assert_rtn = "__assert_rtn"
+let atomic_att = "<\"Atomic\">"
+let autorelease = "autorelease"
+let block = "block"
+let builtin_expect = "__builtin_expect"
+let builtin_memset_chk = "__builtin___memset_chk"
+let builtin_object_size = "__builtin_object_size"
+let cf_alloc ="__cf_alloc"
+let cf_autorelease = "CFAutorelease"
+let cf_bridging_release = "CFBridgingRelease"
+let cf_bridging_retain = "CFBridgingRetain"
+let cf_non_null_alloc ="__cf_non_null_alloc"
+let ckcomponent_cl = "CKComponent"
+let ckcomponentcontroller_cl = "CKComponentController"
 
-let handleFailureInMethod = "handleFailureInMethod:object:file:lineNumber:description:"
-
-let handleFailureInFunction = "handleFailureInFunction:file:lineNumber:description:"
-
-let fbAssertWithSignalAndLogFunctionHelper = "FBAssertWithSignalAndLogFunctionHelper"
-
-let pseudo_object_type = "<pseudo-object type>"
-
+(** script to run our own clang *)
+let clang_bin xx =
+  Config.bin_dir // Filename.parent_dir_name // Filename.parent_dir_name //
+  "facebook-clang-plugins" //
+  "clang" // "install" // "bin" // "clang" ^ xx
+let class_method = "class"
+let class_type = "Class"
+let copy = "copy"
 let count = "count"
-
-let objects = "objects"
-
+let drain = "drain"
+let emtpy_name_category ="EMPTY_NAME_CATEGORY_FOR_"
 let enumerateObjectsUsingBlock = "enumerateObjectsUsingBlock:"
+let fbAssertWithSignalAndLogFunctionHelper = "FBAssertWithSignalAndLogFunctionHelper"
+let free = "free"
+let google_LogMessageFatal = "google::LogMessageFatal_LogMessageFatal"
+let google_MakeCheckOpString = "google::MakeCheckOpString"
+let handleFailureInFunction = "handleFailureInFunction:file:lineNumber:description:"
+let handleFailureInMethod = "handleFailureInMethod:object:file:lineNumber:description:"
+let id_cl = "id"
+let infer = "infer"
+let infer_skip_fun = "__infer_skip_function"
+let infer_skip_gcc_asm_stmt = "__infer_skip_gcc_asm_stmt"
+let init = "init"
+let invalid_pointer = 0
+let is_kind_of_class = "isKindOfClass:"
+let malloc = "malloc"
+let mutableCopy = "mutableCopy"
+let new_str = "new"
+let next_object = "nextObject"
+let ns_make_collectable = "NSMakeCollectable"
+let nsarray_cl = "NSArray"
+let nsautorelease_pool_cl = "NSAutoreleasePool"
+let nsproxy_cl = "NSProxy"
+let nsobject_cl = "NSObject"
+let nsstring_cl = "NSString"
+let objc_class = "objc_class"
+let objc_object = "objc_object"
+let object_at_indexed_subscript_m = "objectAtIndexedSubscript:"
+let objects = "objects"
+let pseudo_object_type = "<pseudo-object type>"
+let release = "release"
+let retain = "retain"
+let return_param = "__return_param"
+let self = "self"
+let static = "static"
+let string_with_utf8_m = "stringWithUTF8String:"
+let this = "this"
+let void = "void"
+let replace_with_deref_first_arg_attr = "__infer_replace_with_deref_first_arg"
+let modeled_function_attributes = [replace_with_deref_first_arg_attr]
 
+(** Global state *)
+
+let enum_map = ref Clang_ast_main.PointerMap.empty
+let global_translation_unit_decls : Clang_ast_t.decl list ref = ref []
+let ivar_to_property_index = ref Clang_ast_main.PointerMap.empty
+let json = ref ""
+let log_out = ref Format.std_formatter
+let pointer_decl_index = ref Clang_ast_main.PointerMap.empty
+let pointer_stmt_index = ref Clang_ast_main.PointerMap.empty
 let pointer_type_index = ref Clang_ast_main.PointerMap.empty
-
-(* Map from type pointers or declaration pointers to sil types *)
 let sil_types_map = ref Clang_ast_types.TypePointerMap.empty
 
-(* Map from enum constants pointers to their predecesor and their sil value *)
-let enum_map = ref Clang_ast_main.PointerMap.empty
-
-let nsarray_cl = "NSArray"
-
-let infer = "infer"
-
-let block = "block"
-
-let atomic_att = "<\"Atomic\">"
-
-let infer_skip_gcc_ast_stmt = "__infer_skip_gcc_ast_stmt"
-
-let infer_skip_fun = "__infer_skip_function"
+let reset_global_state () =
+  enum_map := Clang_ast_main.PointerMap.empty;
+  global_translation_unit_decls := [];
+  ivar_to_property_index := Clang_ast_main.PointerMap.empty;
+  json := "";
+  log_out := Format.std_formatter;
+  pointer_decl_index := Clang_ast_main.PointerMap.empty;
+  pointer_stmt_index := Clang_ast_main.PointerMap.empty;
+  pointer_type_index := Clang_ast_main.PointerMap.empty;
+  sil_types_map := Clang_ast_types.TypePointerMap.empty;

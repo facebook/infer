@@ -11,28 +11,22 @@ open! Utils
 
 (** Utility module for retrieving types *)
 
-val add_pointer_to_typ : Sil.typ -> Sil.typ
+val add_pointer_to_typ : Typ.t -> Typ.t
 
-val classname_of_type : Sil.typ -> string
+val classname_of_type : Typ.t -> string
 
 val mk_classname : string -> Csu.class_kind -> Typename.t
 
 val mk_structname : string -> Typename.t
 
-val mk_enumname : string -> Typename.t
+val remove_pointer_to_typ : Typ.t -> Typ.t
 
-val get_name_from_struct: Sil.typ -> Mangled.t
-
-val remove_pointer_to_typ : Sil.typ -> Sil.typ
-
-val is_class : Sil.typ -> bool
+val is_class : Typ.t -> bool
 
 val return_type_of_function_type : Clang_ast_t.type_ptr -> Clang_ast_t.type_ptr
 
 val is_block_type : Clang_ast_t.type_ptr -> bool
 
 val is_reference_type : Clang_ast_t.type_ptr -> bool
-
-val expand_structured_type : Tenv.t -> Sil.typ -> Sil.typ
 
 val get_name_from_type_pointer : string -> string * string

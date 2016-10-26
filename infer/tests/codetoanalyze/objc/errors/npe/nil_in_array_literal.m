@@ -9,11 +9,11 @@
 
 #import <Foundation/Foundation.h>
 
-@interface A : NSObject {
+@interface Arr : NSObject {
 }
 @end
 
-@implementation A
+@implementation Arr
 
 - (void)noProblem {
   NSArray* foo = @[ @"aaa", @"bbb" ];
@@ -64,8 +64,8 @@
 
 @end
 
-int main() {
-  A* a = [A alloc];
+int ArrMain() {
+  Arr* a = [Arr alloc];
   [a noProblem];
   [a nilInArrayLiteral0];
   [a nilInArrayWithObject];

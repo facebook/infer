@@ -13,12 +13,12 @@ open! Utils
     Lazy implementation: only created when actually used. *)
 
 
-type t = (Sil.exp Ident.IdentHash.t) Lazy.t
+type t = (Exp.t Ident.IdentHash.t) Lazy.t
 
 let create_ proc_desc =
   let map = Ident.IdentHash.create 1 in
   let do_instr _ = function
-    | Sil.Letderef (id, e, _, _) ->
+    | Sil.Load (id, e, _, _) ->
         Ident.IdentHash.add map id e
     | _ -> () in
   Cfg.Procdesc.iter_instrs do_instr proc_desc;
@@ -41,7 +41,7 @@ let lookup map_ id =
   with Not_found -> None
 
 let expand_expr idenv e = match e with
-  | Sil.Var id ->
+  | Exp.Var id ->
       (match lookup idenv id with
        | Some e' -> e'
        | None -> e)
@@ -50,16 +50,16 @@ let expand_expr idenv e = match e with
 let expand_expr_temps idenv node _exp =
   let exp = expand_expr idenv _exp in
   match exp with
-  | Sil.Lvar pvar when Errdesc.pvar_is_frontend_tmp pvar ->
+  | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar ->
       (match Errdesc.find_program_variable_assignment node pvar with
        | None -> exp
        | Some (_, id) ->
-           expand_expr idenv (Sil.Var id))
+           expand_expr idenv (Exp.Var id))
   | _ -> exp
 
 (** Return true if the expression is a temporary variable introduced by the front-end. *)
 let exp_is_temp idenv e =
   match expand_expr idenv e with
-  | Sil.Lvar pvar ->
-      Errdesc.pvar_is_frontend_tmp pvar
+  | Exp.Lvar pvar ->
+      Pvar.is_frontend_tmp pvar
   | _ -> false

@@ -10,7 +10,7 @@
 #import "NSString.h"
 #import <stdlib.h>
 
-void __get_array_size(const UInt8);
+void __get_array_length(const UInt8);
 
 @implementation NSString
 
@@ -21,16 +21,40 @@ void __get_array_size(const UInt8);
   return s;
 }
 
++ (instancetype)stringWithString:(NSString*)aString {
+  NSString* s = [NSString alloc];
+  s->value = aString->value;
+  return s;
+}
+
++ (instancetype)stringWithFormat:(NSString*)format, ... {
+  return format;
+}
+
++ (instancetype)localizedStringWithFormat:(NSString*)format, ... {
+  return format;
+}
+
 - (instancetype)initWithBytesNoCopy:(char*)bytes
                              length:(NSUInteger)length
                            encoding:(id)encoding
                        freeWhenDone:(BOOL)flag {
   if (flag == YES) {
     if (bytes) {
-      __get_array_size(bytes);
+      __get_array_length(bytes);
       free(bytes);
     }
   }
+  return self;
+}
+
+- (instancetype)initWithFormat:(NSString*)format arguments:(va_list)argList {
+  self->value = format->value;
+  return self;
+}
+
+- (instancetype)initWithFormat:(NSString*)format, ... {
+  self->value = format->value;
   return self;
 }
 @end

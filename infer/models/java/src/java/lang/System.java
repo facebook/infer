@@ -9,8 +9,8 @@
 
 package java.lang;
 
-import com.facebook.infer.models.InferBuiltins;
-import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.builtins.InferBuiltins;
+import com.facebook.infer.builtins.InferUndefined;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -45,7 +45,7 @@ public final class System {
       if (InferUndefined.boolean_undefined()) {
         return null;
       }
-      return InferUndefined.string_undefined();
+      return (String)InferUndefined.object_undefined();
     }
 
 }

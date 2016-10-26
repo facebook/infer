@@ -7,6 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+// macro to help distinguish between infer compilation and normal one
+#define __INFER__ 1
+
 // set _FORTIFY_SOURCE to 0 to prevent it from changing some function prototypes
 // https://securityblog.redhat.com/2014/03/26/fortify-and-you/
 // We always do it when building models so we should do same thing

@@ -86,6 +86,12 @@ public class ReturnNotNullable {
     }
   }
 
+  Object tryWithResourcesReturnNullable(String path) throws IOException {
+    try (BufferedReader br = nn(new BufferedReader(new FileReader(path)))) {
+      return returnNullOK();
+    }
+  }
+
   /*
   Check that orNull is modelled and RETURN_OVER_ANNOTATED is not returned.
    */

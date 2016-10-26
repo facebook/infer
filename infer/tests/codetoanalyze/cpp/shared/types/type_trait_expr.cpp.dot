@@ -1,0 +1,25 @@
+/* @generated */
+digraph iCFG {
+6 [label="6:  Return Stmt \n   *&return:int =0 [line 12]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit is_pointer_example \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start is_pointer_example\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 4 -> 6 ;
+3 [label="3:  Return Stmt \n   *&return:int =1 [line 10]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit is_trivial_example \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start is_trivial_example\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

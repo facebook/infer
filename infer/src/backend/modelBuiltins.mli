@@ -15,18 +15,20 @@ val __assert_fail : Procname.t
 val __delete : Procname.t
 val __delete_array : Procname.t
 val __exit : Procname.t
-val __get_array_size : Procname.t
+val __get_array_length : Procname.t
 val __get_type_of : Procname.t
 val __infer_fail : Procname.t
 val __instanceof : Procname.t (** [__instanceof(val,typ)] implements java's [val instanceof typ] *)
+
 val __cast : Procname.t (** [__cast(val,typ)] implements java's [typ(val)] *)
+
 val __placement_delete : Procname.t
 val __placement_new : Procname.t
 val __new : Procname.t
 val __new_array : Procname.t
 val __objc_alloc : Procname.t
 val __objc_alloc_no_fail : Procname.t
-val __set_array_size : Procname.t
+val __set_array_length : Procname.t
 val __unwrap_exception : Procname.t
 val __set_file_attribute : Procname.t
 val __set_mem_attribute : Procname.t
@@ -44,3 +46,4 @@ val __objc_cast : Procname.t
 val __objc_dictionary_literal : Procname.t
 val __cxx_typeid : Procname.t
 val malloc_no_fail : Procname.t
+val objc_cpp_throw : Procname.t

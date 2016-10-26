@@ -1,4 +1,4 @@
-# Infer
+# Infer [![Build Status](https://travis-ci.org/facebook/infer.svg?branch=master)](https://travis-ci.org/facebook/infer)
 
 [Infer](http://fbinfer.com/) is a static analysis tool for Java,
 Objective-C and C, written in [OCaml](https://ocaml.org/).

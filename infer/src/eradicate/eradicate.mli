@@ -17,7 +17,7 @@ val callback_check_return_type : TypeCheck.check_return_type -> Callbacks.proc_c
 
 
 (** Parameters of a call. *)
-type parameters = (Sil.exp * Sil.typ) list
+type parameters = (Exp.t * Typ.t) list
 
 
 (** Type for a module that provides a main callback function *)
