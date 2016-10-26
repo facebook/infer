@@ -104,7 +104,7 @@ let mk_callee: Mangled.t => Procname.t => t;
 
 
 /** create a global variable with the given name */
-let mk_global: Mangled.t => DB.source_file => t;
+let mk_global: is_constexpr::bool? => Mangled.t => DB.source_file => t;
 
 
 /** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! */
@@ -134,6 +134,16 @@ let to_seed: t => t;
 /** Convert a pvar to string. */
 let to_string: t => string;
 
+
+/** Get the source file corresponding to a global, if known. Returns [None] if not a global. */
 let get_source_file: t => option DB.source_file;
+
+
+/** Is the variable's value a compile-time constant? Always [false] for non-globals. */
+let is_compile_constant: t => bool;
+
+
+/** Get the procname of the initializer function for the given global variable */
+let get_initializer_pname: t => option Procname.t;
 
 let module Set: PrettyPrintable.PPSet with type elt = t;

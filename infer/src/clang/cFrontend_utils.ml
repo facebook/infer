@@ -536,7 +536,7 @@ let get_fresh_block_index () =
 module General_utils =
 struct
 
-  type var_info = Clang_ast_t.decl_info * Clang_ast_t.type_ptr * Clang_ast_t.var_decl_info * bool
+  type var_info = Clang_ast_t.decl_info * Clang_ast_t.qual_type * Clang_ast_t.var_decl_info * bool
 
   let rec swap_elements_list l =
     match l with
@@ -774,24 +774,29 @@ struct
       | None -> Mangled.from_string name_string in
     name_string, mangled
 
-  let mk_sil_var {CFrontend_config.source_file} name decl_info_type_ptr_opt
-      procname outer_procname =
-    let name_string = Ast_utils.get_qualified_name name in
+  let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name=fun _ x -> x)
+      named_decl_info var_decl_info =
+    let name_string, simple_name = get_var_name_mangled named_decl_info var_decl_info in
+    let translation_unit =
+      match var_decl_info.Clang_ast_t.vdi_storage_class with
+      | Some "extern" ->
+          DB.source_file_empty
+      | _ ->
+          source_file in
+    let is_constexpr = var_decl_info.Clang_ast_t.vdi_is_const_expr in
+    Pvar.mk_global ~is_constexpr (mk_name name_string simple_name) translation_unit
+
+  let mk_sil_var trans_unit_ctx named_decl_info decl_info_type_ptr_opt procname outer_procname =
     match decl_info_type_ptr_opt with
     | Some (decl_info, _, var_decl_info, should_be_mangled) ->
-        let name_string, simple_name = get_var_name_mangled name var_decl_info in
+        let name_string, simple_name = get_var_name_mangled named_decl_info var_decl_info in
         if var_decl_info.Clang_ast_t.vdi_is_global then
-          let global_mangled_name =
+          let mk_name =
             if var_decl_info.Clang_ast_t.vdi_is_static_local then
-              Mangled.from_string ((Procname.to_string outer_procname) ^ "_" ^ name_string)
-            else simple_name in
-          let translation_unit =
-            match var_decl_info.Clang_ast_t.vdi_storage_class with
-            | Some "extern" ->
-                DB.source_file_empty
-            | _ ->
-                source_file in
-          Pvar.mk_global global_mangled_name translation_unit
+              Some (fun name_string _ ->
+                  Mangled.from_string ((Procname.to_string outer_procname) ^ "_" ^ name_string))
+            else None in
+          mk_sil_global_var trans_unit_ctx ?mk_name named_decl_info var_decl_info
         else if not should_be_mangled then Pvar.mk simple_name procname
         else
           let start_location = fst decl_info.Clang_ast_t.di_source_range in
@@ -800,6 +805,8 @@ struct
           let mangled = string_crc_hex32 line_str in
           let mangled_name = Mangled.mangled name_string mangled in
           Pvar.mk mangled_name procname
-    | None -> Pvar.mk (Mangled.from_string name_string) procname
+    | None ->
+        let name_string = Ast_utils.get_qualified_name named_decl_info in
+        Pvar.mk (Mangled.from_string name_string) procname
 
 end

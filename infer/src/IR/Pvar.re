@@ -26,7 +26,7 @@ type pvar_kind =
   | Abduced_retvar Procname.t Location.t /** synthetic variable to represent return value */
   | Abduced_ref_param Procname.t t Location.t
   /** synthetic variable to represent param passed by reference */
-  | Global_var DB.source_file /** global variable */
+  | Global_var (DB.source_file, bool) /** global variable: translation unit + is it compile constant? */
   | Seed_var /** variable used to store the initial value of formal parameters */
 /** Names for program variables. */
 and t = {pv_name: Mangled.t, pv_kind: pvar_kind};
@@ -62,7 +62,13 @@ let rec pvar_kind_compare k1 k2 =>
     }
   | (Abduced_ref_param _, _) => (-1)
   | (_, Abduced_ref_param _) => 1
-  | (Global_var f1, Global_var f2) => DB.source_file_compare f1 f2
+  | (Global_var (f1, b1), Global_var (f2, b2)) =>
+    let n = DB.source_file_compare f1 f2;
+    if (n != 0) {
+      n
+    } else {
+      bool_compare b1 b2
+    }
   | (Global_var _, _) => (-1)
   | (_, Global_var _) => 1
   | (Seed_var, Seed_var) => 0
@@ -105,7 +111,9 @@ let rec _pp f pv => {
     } else {
       F.fprintf f "%a$%a%a|abducedRefParam" Procname.pp n Location.pp l Mangled.pp name
     }
-  | Global_var fname => F.fprintf f "#GB<%s>$%a" (DB.source_file_to_string fname) Mangled.pp name
+  | Global_var (fname, b) =>
+    F.fprintf
+      f "#GB<%s%s>$%a" (DB.source_file_to_string fname) (if b {"|const"} else {""}) Mangled.pp name
   | Seed_var => F.fprintf f "old_%a" Mangled.pp name
   }
 };
@@ -319,7 +327,10 @@ let mk_callee (name: Mangled.t) (proc_name: Procname.t) :t => {
 
 
 /** create a global variable with the given name */
-let mk_global (name: Mangled.t) fname :t => {pv_name: name, pv_kind: Global_var fname};
+let mk_global is_constexpr::is_constexpr=false (name: Mangled.t) fname :t => {
+  pv_name: name,
+  pv_kind: Global_var (fname, is_constexpr)
+};
 
 
 /** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! */
@@ -343,7 +354,22 @@ let mk_abduced_ref_param (proc_name: Procname.t) (pv: t) (loc: Location.t) :t =>
 
 let get_source_file pvar =>
   switch pvar.pv_kind {
-  | Global_var f => Some f
+  | Global_var (f, _) => Some f
+  | _ => None
+  };
+
+let is_compile_constant pvar =>
+  switch pvar.pv_kind {
+  | Global_var (_, b) => b
+  | _ => false
+  };
+
+let get_initializer_pname {pv_name, pv_kind} =>
+  switch pv_kind {
+  | Global_var _ =>
+    Some (
+      Procname.from_string_c_fun (Config.clang_initializer_prefix ^ Mangled.to_string_full pv_name)
+    )
   | _ => None
   };
 

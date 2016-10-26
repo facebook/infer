@@ -51,10 +51,10 @@ digraph iCFG {
 	
 
 	 18 -> 17 ;
-17 [label="17: Exit __infer_globals_initializer_rect \n  " color=yellow style=filled]
+17 [label="17: Exit __infer_globals_initializer_bar::rect \n  " color=yellow style=filled]
 	
 
-16 [label="16: Start __infer_globals_initializer_rect\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
+16 [label="16: Start __infer_globals_initializer_bar::rect\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
 	
 
 	 16 -> 18 ;
@@ -80,10 +80,10 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9: Exit __infer_globals_initializer_pi \n  " color=yellow style=filled]
+9 [label="9: Exit __infer_globals_initializer_bar::pi \n  " color=yellow style=filled]
 	
 
-8 [label="8: Start __infer_globals_initializer_pi\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 29]\n " color=yellow style=filled]
+8 [label="8: Start __infer_globals_initializer_bar::pi\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 29]\n " color=yellow style=filled]
 	
 
 	 8 -> 10 ;

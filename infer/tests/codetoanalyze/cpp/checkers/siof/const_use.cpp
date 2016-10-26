@@ -6,9 +6,12 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
+extern const int const_x;
+extern const int const_y;
+extern int z;
+extern int u;
 
-int goo();
-
-static int y = goo();
-
-int foo() { return y; }
+int use_x = const_x + 1;
+int use_y = const_y + 1;
+int use_z = z + 1;
+int use_u = u + 1;

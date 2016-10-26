@@ -220,11 +220,16 @@ struct
             | Some dec ->
                 Logging.out "Methods of %s skipped\n" (Ast_utils.string_of_decl dec)
             | None -> ())
-       | VarDecl (decl_info, { ni_name }, _, { vdi_is_global; vdi_init_expr })
+       | VarDecl (decl_info, named_decl_info, _, ({ vdi_is_global; vdi_init_expr } as vdi))
          when vdi_is_global && Option.is_some vdi_init_expr ->
            (* create a fake procedure that initializes the global variable so that the variable
               initializer can be analyzed by the backend (eg, the SIOF checker) *)
-           let procname = Procname.from_string_c_fun (Config.clang_initializer_prefix ^ ni_name) in
+           let procname =
+             (* create the corresponding global variable to get the right pname for its
+                initializer *)
+             let global = General_utils.mk_sil_global_var trans_unit_ctx named_decl_info vdi in
+             (* safe to Option.get because it's a global *)
+             Option.get (Pvar.get_initializer_pname global) in
            let ms = CMethod_signature.make_ms procname [] Ast_expressions.create_void_type
                [] decl_info.Clang_ast_t.di_source_range false trans_unit_ctx.CFrontend_config.lang
                None None None in

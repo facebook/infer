@@ -180,7 +180,7 @@ end
 module General_utils :
 sig
 
-  type var_info = Clang_ast_t.decl_info * Clang_ast_t.type_ptr * Clang_ast_t.var_decl_info * bool
+  type var_info = Clang_ast_t.decl_info * Clang_ast_t.qual_type * Clang_ast_t.var_decl_info * bool
 
   val string_from_list : string list -> string
 
@@ -242,6 +242,10 @@ sig
 
   val get_var_name_mangled : Clang_ast_t.named_decl_info -> Clang_ast_t.var_decl_info ->
     (string * Mangled.t)
+
+  val mk_sil_global_var : CFrontend_config.translation_unit_context ->
+    ?mk_name:(string -> Mangled.t -> Mangled.t) ->
+    Clang_ast_t.named_decl_info -> Clang_ast_t.var_decl_info -> Pvar.t
 
   val mk_sil_var : CFrontend_config.translation_unit_context -> Clang_ast_t.named_decl_info ->
     var_info option -> Procname.t -> Procname.t -> Pvar.t

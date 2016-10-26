@@ -326,7 +326,7 @@ type payload =
     crashcontext_frame: Stacktree_j.stacktree option;
     (** Proc location and blame_range info for crashcontext analysis *)
     quandary : QuandarySummary.t option;
-    globals_read: Pvar.Set.t option;
+    siof : SiofDomain.astate option;
   }
 
 type summary =
@@ -761,7 +761,7 @@ let empty_payload =
     calls = None;
     crashcontext_frame = None;
     quandary = None;
-    globals_read = None;
+    siof = None;
   }
 
 (** [init_summary (depend_list, nodes,

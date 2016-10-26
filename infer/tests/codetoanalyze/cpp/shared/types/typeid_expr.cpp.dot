@@ -474,10 +474,10 @@ digraph iCFG {
 	
 
 	 9 -> 8 ;
-8 [label="8: Exit __infer_globals_initializer_value \n  " color=yellow style=filled]
+8 [label="8: Exit __infer_globals_initializer_std::__1::__numeric_type<void>::value \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start __infer_globals_initializer_value\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 1697]\n " color=yellow style=filled]
+7 [label="7: Start __infer_globals_initializer_std::__1::__numeric_type<void>::value\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 1697]\n " color=yellow style=filled]
 	
 
 	 7 -> 9 ;

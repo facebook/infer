@@ -26,7 +26,7 @@ module BottomLifted (Domain : S) = struct
     | Bottom
     | NonBottom of Domain.astate
 
-  let initial = NonBottom Domain.initial
+  let initial = Bottom
 
   let (<=) ~lhs ~rhs =
     if lhs == rhs

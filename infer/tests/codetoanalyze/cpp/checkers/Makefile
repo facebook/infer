@@ -13,10 +13,13 @@ ANALYZER = checkers
 INFERPRINT_OPTIONS = --issues-txt
 
 FILES = \
+  siof/const.cpp \
+  siof/const_use.cpp \
   siof/pod_across_translation_units-1.cpp \
   siof/pod_across_translation_units-2.cpp \
   siof/pod_same_translation_unit.cpp \
   siof/siof_across_translation_units-1.cpp \
+  siof/siof_across_translation_units-2.cpp \
 
 compile:
 	clang $(OPTIONS) $(FILES)

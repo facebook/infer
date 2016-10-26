@@ -7,8 +7,13 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-int goo();
+// This file exists only so that the SIOF checkers sees global_object
+// being initialized via a method call. The SIOF checker could be
+// improved to know that all non-POD types require initialization in
+// C++.
 
-static int y = goo();
+struct SomeObject {
+  void some_method();
+};
 
-int foo() { return y; }
+SomeObject global_object;
