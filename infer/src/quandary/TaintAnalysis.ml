@@ -347,8 +347,22 @@ module Make (TaintSpec : TaintSpec.S) = struct
 
             Domain.join astate_acc astate_with_summary in
 
+          (* highly polymorphic call sites stress reactive mode too much by spawning a ton of
+             threads that thrash the machine. here, we choose an arbitrary call limit that allows us
+             to finish the analysis in practice. this is obviously unsound; will try to remove in
+             the future. *)
+          let max_calls = 10 in
+          let targets =
+            if IList.length call_flags.cf_targets <= max_calls
+            then
+              called_pname :: call_flags.cf_targets
+            else
+              begin
+                L.out "Skipping highly polymorphic call site for %a@." Procname.pp called_pname;
+                [called_pname]
+              end in
           (* for each possible target of the call, apply the summary. join all results together *)
-          IList.fold_left analyze_call Domain.initial (called_pname :: call_flags.cf_targets)
+          IList.fold_left analyze_call Domain.initial targets
       | Sil.Call _ ->
           failwith "Unimp: non-pname call expressions"
       | Sil.Nullify (pvar, _) ->
