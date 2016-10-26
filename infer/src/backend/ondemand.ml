@@ -136,7 +136,11 @@ let run_proc_analysis tenv ~propagate_exceptions analyze_proc curr_pdesc callee_
       let cg = Cg.create (Some source) in
       Cg.add_defined_node cg callee_pname;
       cg in
-    Specs.reset_summary call_graph callee_pname attributes_opt;
+    let callee_pdesc_option =
+      if Config.dynamic_dispatch_lazy
+      then Some callee_pdesc
+      else None in
+    Specs.reset_summary call_graph callee_pname attributes_opt callee_pdesc_option;
     Specs.set_status callee_pname Specs.ACTIVE;
     source in
 

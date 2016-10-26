@@ -1060,7 +1060,12 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
               Exp.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
               actual_params, loc, call_flags)
     when Config.dynamic_dispatch_lazy ->
-      let norm_prop, norm_args = normalize_params tenv current_pname prop_ actual_params in
+      let norm_prop, norm_args =
+        normalize_params
+          tenv
+          current_pname
+          prop_
+          (call_constructor_url_update_args callee_pname actual_params) in
       let exec_skip_call skipped_pname ret_annots ret_type =
         skip_call norm_prop path skipped_pname ret_annots loc ret_id (Some ret_type) norm_args in
       let resolved_pname, summary_opt =

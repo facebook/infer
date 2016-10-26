@@ -809,11 +809,13 @@ and dotty_cfg_libs =
 
 and dynamic_dispatch_lazy =
   CLOpt.mk_bool ~long:"dynamic-dispatch-lazy"
+    ~exes:CLOpt.[Java]
     "Handle dynamic dispatch by following the JVM semantics and creating procedure descriptions \
      during the symbolic execution using the type information found in the abstract state"
 
 and dynamic_dispatch_sound =
   CLOpt.mk_bool ~long:"dynamic-dispatch-sound"
+    ~exes:CLOpt.[Java]
     "Dynamic dispatch for interface calls in Java"
 
 and enable_checks =

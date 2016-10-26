@@ -1459,7 +1459,11 @@ let do_analysis exe_env =
     let attributes =
       { (Cfg.Procdesc.get_attributes pdesc) with
         ProcAttributes.err_log = static_err_log; } in
-    Specs.init_summary (dep, nodes, proc_flags, calls, None, attributes) in
+    let proc_desc_option =
+      if Config.dynamic_dispatch_lazy
+      then Some pdesc
+      else None in
+    Specs.init_summary (dep, nodes, proc_flags, calls, None, attributes, proc_desc_option) in
 
   IList.iter
     (fun ((pn, _) as x) ->
@@ -1472,7 +1476,14 @@ let do_analysis exe_env =
 
   let callbacks =
     let get_proc_desc proc_name =
-      Exe_env.get_proc_desc exe_env proc_name in
+      match Exe_env.get_proc_desc exe_env proc_name with
+      | Some pdesc -> Some pdesc
+      | None when Config.dynamic_dispatch_lazy ->
+          Option.map_default
+            (fun summary -> summary.Specs.proc_desc_option)
+            None
+            (Specs.get_summary proc_name)
+      | None -> None in
     let analyze_ondemand source proc_desc =
       let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
       let tenv = Exe_env.get_tenv exe_env proc_name in

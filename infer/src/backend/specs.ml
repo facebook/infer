@@ -339,6 +339,7 @@ type summary =
     status: status; (** ACTIVE when the proc is being analyzed *)
     timestamp: int; (** Timestamp of the specs, >= 0, increased every time the specs change *)
     attributes : ProcAttributes.t; (** Attributes of the procedure *)
+    proc_desc_option : Cfg.Procdesc.t option;
   }
 
 type spec_tbl = (summary * DB.origin) Procname.Hash.t
@@ -770,7 +771,8 @@ let empty_payload =
 let init_summary
     (depend_list, nodes,
      proc_flags, calls, in_out_calls_opt,
-     proc_attributes) =
+     proc_attributes,
+     proc_desc_option) =
   let dependency_map = mk_initial_dependency_map depend_list in
   let summary =
     {
@@ -785,11 +787,12 @@ let init_summary
       attributes =
         { proc_attributes with
           ProcAttributes.proc_flags = proc_flags; };
+      proc_desc_option;
     } in
   Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name (summary, DB.Res_dir)
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
-let reset_summary call_graph proc_name attributes_opt =
+let reset_summary call_graph proc_name attributes_opt proc_desc_option =
   let dependents = Cg.get_defined_children call_graph proc_name in
   let proc_attributes = match attributes_opt with
     | Some attributes ->
@@ -802,7 +805,8 @@ let reset_summary call_graph proc_name attributes_opt =
     proc_flags_empty (),
     [],
     Some (Cg.get_calls call_graph proc_name),
-    proc_attributes
+    proc_attributes,
+    proc_desc_option
   )
 
 (* =============== END of support for spec tables =============== *)

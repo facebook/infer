@@ -144,6 +144,7 @@ type summary =
     status: status; (** ACTIVE when the proc is being analyzed *)
     timestamp: int; (** Timestamp of the specs, >= 0, increased every time the specs change *)
     attributes : ProcAttributes.t; (** Attributes of the procedure *)
+    proc_desc_option : Cfg.Procdesc.t option;
   }
 
 (** Add the summary to the table for the given function *)
@@ -217,11 +218,12 @@ val init_summary :
    proc_flags * (* procedure flags *)
    (Procname.t * Location.t) list * (* calls *)
    (Cg.in_out_calls option) * (* in and out calls *)
-   ProcAttributes.t (* attributes of the procedure *)
-  ) -> unit
+   ProcAttributes.t * (* attributes of the procedure *)
+   Cfg.Procdesc.t option) (* procdesc option *)
+  -> unit
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
-val reset_summary : Cg.t -> Procname.t -> ProcAttributes.t option -> unit
+val reset_summary : Cg.t -> Procname.t -> ProcAttributes.t option -> Cfg.Procdesc.t option -> unit
 
 (** Load procedure summary from the given file *)
 val load_summary : DB.filename -> summary option

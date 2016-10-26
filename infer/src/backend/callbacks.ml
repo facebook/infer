@@ -165,7 +165,7 @@ let iterate_callbacks store_summary call_graph exe_env =
     let should_reset =
       Specs.get_summary proc_name = None in
     if should_reset
-    then Specs.reset_summary call_graph proc_name attributes_opt in
+    then Specs.reset_summary call_graph proc_name attributes_opt None in
 
   (* Make sure summaries exists. *)
   IList.iter reset_summary procs_to_analyze;
