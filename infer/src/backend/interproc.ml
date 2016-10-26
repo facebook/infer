@@ -1460,7 +1460,7 @@ let do_analysis exe_env =
       { (Cfg.Procdesc.get_attributes pdesc) with
         ProcAttributes.err_log = static_err_log; } in
     let proc_desc_option =
-      if Config.dynamic_dispatch_lazy
+      if Config.dynamic_dispatch = `Lazy
       then Some pdesc
       else None in
     Specs.init_summary (dep, nodes, proc_flags, calls, None, attributes, proc_desc_option) in
@@ -1478,7 +1478,7 @@ let do_analysis exe_env =
     let get_proc_desc proc_name =
       match Exe_env.get_proc_desc exe_env proc_name with
       | Some pdesc -> Some pdesc
-      | None when Config.dynamic_dispatch_lazy ->
+      | None when Config.dynamic_dispatch = `Lazy ->
           Option.map_default
             (fun summary -> summary.Specs.proc_desc_option)
             None

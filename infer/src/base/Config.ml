@@ -807,16 +807,13 @@ and dotty_cfg_libs =
   CLOpt.mk_bool ~deprecated:["dotty_no_cfg_libs"] ~long:"dotty-cfg-libs" ~default:true
     "Print the cfg of the code coming from the libraries"
 
-and dynamic_dispatch_lazy =
-  CLOpt.mk_bool ~long:"dynamic-dispatch-lazy"
-    ~exes:CLOpt.[Java]
-    "Handle dynamic dispatch by following the JVM semantics and creating procedure descriptions \
-     during the symbolic execution using the type information found in the abstract state"
-
-and dynamic_dispatch_sound =
-  CLOpt.mk_bool ~long:"dynamic-dispatch-sound"
-    ~exes:CLOpt.[Java]
-    "Dynamic dispatch for interface calls in Java"
+and dynamic_dispatch =
+  CLOpt.mk_symbol ~long:"dynamic-dispatch" ~default:`None
+    "Specify treatment of dynamic dispatch in Java code: 'none' treats dynamic dispatch as a call \
+     to unknown code, 'lazy' follows the JVM semantics and creates procedure descriptions during \
+     symbolic execution using the type information found in the abstract state; 'sound' is \
+     significantly more computationally expensive"
+    ~symbols:[("none", `None); ("lazy", `Lazy); ("sound", `Sound)]
 
 and enable_checks =
   CLOpt.mk_string_list ~deprecated:["enable_checks"] ~long:"enable-checks" ~meta:"error name"
@@ -1502,8 +1499,7 @@ and dependency_mode = !dependencies
 and developer_mode = !developer_mode
 and disable_checks = !disable_checks
 and dotty_cfg_libs = !dotty_cfg_libs
-and dynamic_dispatch_lazy = (!dynamic_dispatch_lazy || !analyzer = Some Tracing)
-and dynamic_dispatch_sound = !dynamic_dispatch_sound
+and dynamic_dispatch = if !analyzer = Some Tracing then `Lazy else !dynamic_dispatch
 and enable_checks = !enable_checks
 and eradicate = !eradicate
 and eradicate_condition_redundant = !eradicate_condition_redundant
