@@ -274,7 +274,7 @@ let collect_classes classmap jar_filename =
 
 
 let load_program classpath classes =
-  L.stdout "loading program ... %!";
+  L.out_debug "loading program ... %!";
   let models =
     if !models_jar = "" then JBasics.ClassMap.empty
     else collect_classes JBasics.ClassMap.empty !models_jar in
@@ -286,5 +286,5 @@ let load_program classpath classes =
   JBasics.ClassSet.iter
     (fun cn -> ignore (lookup_node cn program))
     classes;
-  L.stdout "done@.";
+  L.out_debug "done@.";
   program

@@ -147,7 +147,7 @@ let is_classname_cached cn =
    In init - mode, finds out whether this class contains initializers at all,
    in this case translates it. In standard mode, all methods are translated *)
 let create_icfg source_file linereader program icfg cn node =
-  L.stdout "\tclassname: %s@." (JBasics.cn_name cn);
+  L.out_debug "\tclassname: %s@." (JBasics.cn_name cn);
   if Config.dependency_mode && not (is_classname_cached cn) then
     cache_classname cn;
   let translate m =

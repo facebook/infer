@@ -112,7 +112,7 @@ let get_field_name program static tenv cn fs =
       fieldname
   | exception Not_found ->
       (* TODO: understand why fields cannot be found here *)
-      L.stdout "cannot find %s.%s@." (JBasics.cn_name cn) (JBasics.fs_name fs);
+      L.do_err "cannot find %s.%s@." (JBasics.cn_name cn) (JBasics.fs_name fs);
       raise (Frontend_error "Cannot find fieldname")
 
 
@@ -213,8 +213,7 @@ let get_implementation cm =
   | Javalib.Native ->
       let cms = cm.Javalib.cm_class_method_signature in
       let cn, ms = JBasics.cms_split cms in
-      L.stdout "native method %s found in %s@." (JBasics.ms_name ms) (JBasics.cn_name cn);
-      assert false
+      failwithf "native method %s found in %s@." (JBasics.ms_name ms) (JBasics.cn_name cn)
   | Javalib.Java t ->
       JBir.transform ~bcv: false ~ch_link: false ~formula: false ~formula_cmd:[] cm (Lazy.force t)
 
@@ -238,7 +237,7 @@ let create_procdesc source_file program linereader icfg m : Cfg.Procdesc.t optio
   if JClasspath.is_model proc_name then
     begin
       (* do not translate the method if there is a model for it *)
-      L.stdout "Skipping method with a model: %s@." (Procname.to_string proc_name);
+      L.out_debug "Skipping method with a model: %s@." (Procname.to_string proc_name);
       None
     end
   else
@@ -334,7 +333,7 @@ let create_procdesc source_file program linereader icfg m : Cfg.Procdesc.t optio
             procdesc in
       Some procdesc
     with JBir.Subroutine | JBasics.Class_structure_error _ ->
-      L.stderr
+      L.do_err
         "create_procdesc raised JBir.Subroutine or JBasics.Class_structure_error on %a@."
         Procname.pp proc_name;
       None
@@ -351,7 +350,6 @@ let create_sil_deref exp typ loc =
 
 (** translate an expression used as an r-value *)
 let rec expression (context : JContext.t) pc expr =
-  (* L.stdout "\t\t\t\texpr: %s@." (JBir.print_expr expr); *)
   let program = context.program in
   let loc = get_location context.source_file context.impl pc in
   let file = loc.Location.file in
@@ -666,7 +664,7 @@ let instruction_array_call ms obj_type obj args var_opt =
 let instruction_thread_start (context : JContext.t) cn ms obj args var_opt =
   match JClasspath.lookup_node cn context.program with
   | None ->
-      let () = L.stderr "\t\t\tWARNING: %s should normally be found@." (JBasics.cn_name cn) in
+      let () = L.do_err "\t\t\tWARNING: %s should normally be found@." (JBasics.cn_name cn) in
       None
   | Some node ->
       begin
@@ -1061,5 +1059,5 @@ let rec instruction (context : JContext.t) pc instr : translation =
 
     | _ -> Skip
   with Frontend_error s ->
-    L.stderr "Skipping because of: %s@." s;
+    L.do_err "Skipping because of: %s@." s;
     Skip
