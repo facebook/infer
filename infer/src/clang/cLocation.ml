@@ -31,7 +31,7 @@ let source_file_from_path path =
 
 let choose_sloc_to_update_curr_file trans_unit_ctx sloc1 sloc2 =
   match sloc2.Clang_ast_t.sl_file with
-  | Some f when DB.source_file_equal (source_file_from_path f)
+  | Some f when DB.inode_equal (source_file_from_path f)
         trans_unit_ctx.CFrontend_config.source_file ->
       sloc2
   | _ -> sloc1
@@ -62,7 +62,7 @@ let clang_to_sil_location trans_unit_ctx clang_loc procdesc_opt =
         | Some f ->
             let file_db = source_file_from_path f in
             let nloc =
-              if (DB.source_file_equal file_db trans_unit_ctx.CFrontend_config.source_file) then
+              if (DB.inode_equal file_db trans_unit_ctx.CFrontend_config.source_file) then
                 !Config.nLOC
               else -1 in
             file_db, nloc
@@ -72,11 +72,13 @@ let clang_to_sil_location trans_unit_ctx clang_loc procdesc_opt =
 let file_in_project file =
   match Config.project_root with
   | Some root ->
-      let file_in_project = string_is_prefix root file in
+      let real_root = real_path root in
+      let real_file = real_path file in
+      let file_in_project = string_is_prefix real_root real_file in
       let paths = Config.skip_translation_headers in
       let file_should_be_skipped =
         IList.exists
-          (fun path -> string_is_prefix (Filename.concat root path) file)
+          (fun path -> string_is_prefix (Filename.concat real_root path) real_file)
           paths in
       file_in_project && not (file_should_be_skipped)
   | None -> false
@@ -84,7 +86,8 @@ let file_in_project file =
 let should_do_frontend_check trans_unit_ctx (loc_start, _) =
   match loc_start.Clang_ast_t.sl_file with
   | Some file ->
-      let equal_current_source file = DB.source_file_equal (source_file_from_path file)
+      let equal_current_source file =
+        DB.inode_equal (source_file_from_path file)
           trans_unit_ctx.CFrontend_config.source_file in
       equal_current_source file ||
       (file_in_project file &&  not Config.testing_mode)
@@ -104,7 +107,7 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
     let path_pred path = pred (source_file_from_path path) in
     map_path_of path_pred loc
   in
-  let equal_current_source = DB.source_file_equal trans_unit_ctx.CFrontend_config.source_file
+  let equal_current_source = DB.inode_equal trans_unit_ctx.CFrontend_config.source_file
   in
   let file_in_project = map_path_of file_in_project loc_end
                         || map_path_of file_in_project loc_start in

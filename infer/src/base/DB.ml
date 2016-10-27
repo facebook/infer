@@ -81,6 +81,11 @@ let source_file_to_abs_path fname =
   | Relative path -> Filename.concat (project_root()) path
   | Absolute path -> path
 
+let inode_equal sf1 sf2 =
+  let stat1 = Unix.stat (source_file_to_abs_path sf1) in
+  let stat2 = Unix.stat (source_file_to_abs_path sf2) in
+  stat1.st_dev = stat2.st_dev && stat1.st_ino = stat2.st_ino
+
 let source_file_to_rel_path fname =
   match fname with
   | Relative path -> path

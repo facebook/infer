@@ -677,3 +677,27 @@ let rec create_path path =
   | Unix.Unix_error (Unix.ENOENT, _, _) ->
       create_path (Filename.dirname path);
       create_dir path
+
+let real_path path =
+  (* Splits a path into its parts. For example:
+     - (split "path/to/file") is [".", "path"; "to"; "file"]
+     - (split "/path/to/file") is ["/", "path"; "to"; "file"] *)
+  let split path =
+    let rec loop accu p =
+      match Filename.dirname p with
+      | d when d = p -> d :: accu
+      | d -> loop ((Filename.basename p) :: accu) d in
+    loop [] path in
+  let rec resolve p =
+    match Unix.readlink p with
+    | link when Filename.is_relative link ->
+        (* [p] is a relative symbolic link *)
+        resolve ((Filename.dirname p) // link)
+    | link ->
+        (* [p] is an absolute symbolic link *)
+        resolve link
+    | exception Unix.Unix_error(Unix.EINVAL, _, _) ->
+        (* [p] is not a symbolic link *)
+        p in
+  IList.fold_left
+    (fun resolved_path p -> resolve (resolved_path // p)) "" (split path)

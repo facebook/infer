@@ -441,9 +441,10 @@ struct
     let decl_info = Clang_ast_proj.get_decl_tuple decl in
     let file_opt = (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file in
     match file_opt with
-    | None -> false
+    | None ->
+        false
     | Some file ->
-        DB.source_file_equal
+        DB.inode_equal
           (CLocation.source_file_from_path file)
           translation_unit_context.CFrontend_config.source_file
 

@@ -92,6 +92,9 @@ val source_file_compare : source_file -> source_file -> int
 (** equality of source files *)
 val source_file_equal : source_file -> source_file -> bool
 
+(** equality of the files on disk *)
+val inode_equal : source_file -> source_file -> bool
+
 (** empty source file *)
 val source_file_empty : source_file
 
