@@ -81,27 +81,13 @@ let swap_command cmd =
     (* The command in the compilation database json emitted by buck can only be clang or clang++ *)
     failwithf "Unexpected command name in Buck compilation database: %s" cmd
 
-(** We have to replace the .o files because the path in buck-out doesn't exist at this point.
-    Moreover, in debug mode we create debug files in the place where the .o files are created,
-    so having all that in the results directory is convenient for finding the files and for
-    scanning the directory for running clang_frontend_stats. *)
-let replace_clang_arg arg =
-  if Filename.check_suffix arg ".o" then
-    let dir = Config.results_dir // Config.clang_build_output_dir_name in
-    let abbrev_source_file = DB.source_file_encoding (DB.source_file_from_string arg) in
-    [dir // abbrev_source_file]
-    (* Doing this argument manipulation here rather than in the wrappers because it seems to
-       be needed only with this integration.*)
-  else if (arg = "-include-pch") || (Filename.check_suffix arg ".gch") then []
-  else [arg]
-
 let run_compilation_file compilation_database file =
   try
     let compilation_data = CompilationDatabase.find compilation_database file in
     let wrapper_cmd = swap_command compilation_data.command in
-    let replaced_args = IList.map replace_clang_arg compilation_data.args |> IList.flatten in
     let arg_file =
-      ClangQuotes.mk_arg_file "buck_clang_args_" ClangQuotes.SingleQuotes replaced_args in
+      ClangQuotes.mk_arg_file
+        "cdb_clang_args_" ClangQuotes.EscapedNoQuotes [compilation_data.args] in
     let args = Array.of_list [wrapper_cmd; "@" ^ arg_file] in
     let env = Array.append
         (Unix.environment())

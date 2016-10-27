@@ -13,10 +13,12 @@ open! Utils;
 /** quoting style of the arguments */
 type style =
   | EscapedDoubleQuotes /** the arguments should be enclosed in "double quotes" and are already escaped */
-  | SingleQuotes /** the arguments should be enclosed in 'single quotes' and have to be escaped */;
+  | SingleQuotes /** the arguments should be enclosed in 'single quotes' and have to be escaped */
+  | EscapedNoQuotes /** the arguments should not be enclosed in quotes and are already escaped */;
 
 let quote style =>
   switch style {
+  | EscapedNoQuotes => (fun s => s)
   | EscapedDoubleQuotes => (fun s => "\"" ^ s ^ "\"")
   | SingleQuotes =>
     let map = (

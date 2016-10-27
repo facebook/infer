@@ -8,10 +8,11 @@
  */
 /* module for escaping clang arguments on the command line and put them into files */
 
-/** quoting style */
+/** quoting style of the arguments */
 type style =
   | EscapedDoubleQuotes /** the arguments should be enclosed in "double quotes" and are already escaped */
-  | SingleQuotes /** the arguments should be enclosed in 'single quotes' and have to be escaped */;
+  | SingleQuotes /** the arguments should be enclosed in 'single quotes' and have to be escaped */
+  | EscapedNoQuotes /** the arguments should not be enclosed in quotes and are already escaped */;
 
 let quote: style => string => string;
 

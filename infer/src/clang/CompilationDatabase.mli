@@ -14,7 +14,7 @@ type t
 type compilation_data = {
   dir : string;
   command : string;
-  args : string list;
+  args : string;
 }
 
 val empty : unit -> t
