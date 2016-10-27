@@ -79,35 +79,50 @@ let of_pvar pvar typ =
 let of_id id typ =
   base_of_id id typ, []
 
-let of_exp exp typ ~(f_resolve_id : Var.t -> raw option) =
+let of_exp exp0 typ0 ~(f_resolve_id : Var.t -> raw option) =
   (* [typ] is the type of the last element of the access path (e.g., typeof(g) for x.f.g) *)
-  let rec of_exp_ exp typ accesses =
+  let rec of_exp_ exp typ accesses acc =
     match exp with
     | Exp.Var id ->
         begin
           match f_resolve_id (Var.of_id id) with
-          | Some (base, base_accesses) -> Some (base, base_accesses @ accesses)
-          | None -> Some (base_of_id id typ, accesses)
+          | Some (base, base_accesses) -> (base, base_accesses @ accesses) :: acc
+          | None -> (base_of_id id typ, accesses) :: acc
         end
     | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar ->
         begin
           match f_resolve_id (Var.of_pvar pvar) with
-          | Some (base, base_accesses) -> Some (base, base_accesses @ accesses)
-          | None -> Some (base_of_pvar pvar typ, accesses)
+          | Some (base, base_accesses) -> (base, base_accesses @ accesses) :: acc
+          | None -> (base_of_pvar pvar typ, accesses) :: acc
         end
     | Exp.Lvar pvar ->
-        Some (base_of_pvar pvar typ, accesses)
+        (base_of_pvar pvar typ, accesses) :: acc
     | Exp.Lfield (root_exp, fld, root_exp_typ) ->
         let field_access = FieldAccess (fld, typ) in
-        of_exp_ root_exp root_exp_typ (field_access :: accesses)
+        of_exp_ root_exp root_exp_typ (field_access :: accesses) acc
     | Exp.Lindex (root_exp, _) ->
         let array_access = ArrayAccess typ in
         let array_typ = Typ.Tarray (typ, None) in
-        of_exp_ root_exp array_typ (array_access :: accesses)
-    | _ ->
-        (* trying to make access path from an invalid expression (e.g., a constant) *)
-        None in
-  of_exp_ exp typ []
+        of_exp_ root_exp array_typ (array_access :: accesses) acc
+    | Exp.Cast (cast_typ, cast_exp) ->
+        of_exp_ cast_exp cast_typ [] acc
+    | Exp.UnOp (_, unop_exp, _) ->
+        of_exp_ unop_exp typ [] acc
+    | Exp.Exn exn_exp ->
+        of_exp_ exn_exp typ [] acc
+    | Exp.BinOp (_, exp1, exp2) ->
+        of_exp_ exp1 typ [] acc
+        |> of_exp_ exp2 typ []
+    | Exp.Const _ | Closure _ | Sizeof _ ->
+        (* trying to make access path from an invalid expression *)
+        acc in
+  of_exp_ exp0 typ0 [] []
+
+let of_lhs_exp lhs_exp typ ~(f_resolve_id : Var.t -> raw option) =
+  match of_exp lhs_exp typ ~f_resolve_id with
+  | [lhs_ap] -> Some lhs_ap
+  | [] -> None
+  | _ -> failwithf "Creating lhs access path from invalid access path %a" Exp.pp lhs_exp
 
 let append (base, old_accesses) new_accesses =
   base, old_accesses @ new_accesses

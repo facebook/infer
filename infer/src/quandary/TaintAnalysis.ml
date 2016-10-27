@@ -117,7 +117,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
     (* get the node associated with [exp] in [access_tree] *)
     let exp_get_node exp typ { Domain.access_tree; id_map; } proc_data loc =
       let f_resolve_id = resolve_id id_map in
-      match AccessPath.of_exp exp typ ~f_resolve_id with
+      match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
       | Some access_path ->
           access_path_get_node (AccessPath.Exact access_path) access_tree proc_data loc
       | None ->
@@ -134,7 +134,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
 
     let analyze_id_assignment lhs_id rhs_exp rhs_typ ({ Domain.id_map; } as astate) =
       let f_resolve_id = resolve_id id_map in
-      match AccessPath.of_exp rhs_exp rhs_typ ~f_resolve_id with
+      match AccessPath.of_lhs_exp rhs_exp rhs_typ ~f_resolve_id with
       | Some rhs_access_path ->
           let id_map' = IdMapDomain.add lhs_id rhs_access_path id_map in
           { astate with Domain.id_map = id_map'; }
@@ -151,7 +151,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
       (* add [sink] to the trace associated with the [formal_num]th actual *)
       let add_sink_to_actual access_tree_acc (sink_param : TraceDomain.Sink.t Sink.parameter) =
         let actual_exp, actual_typ = IList.nth actuals sink_param.index in
-        match AccessPath.of_exp actual_exp actual_typ ~f_resolve_id with
+        match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
         | Some actual_ap_raw ->
             let actual_ap =
               let is_array_typ = match actual_typ with
@@ -208,7 +208,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
           let actual_exp, actual_typ =
             try IList.nth actuals formal_num
             with Failure _ -> failwithf "Bad formal number %d" formal_num in
-          AccessPath.of_exp actual_exp actual_typ ~f_resolve_id in
+          AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id in
         let project ~formal_ap ~actual_ap =
           let projected_ap = AccessPath.append actual_ap (snd (AccessPath.extract formal_ap)) in
           if AccessPath.is_exact formal_ap
@@ -269,7 +269,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
           analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ astate
       | Sil.Store (lhs_exp, lhs_typ, rhs_exp, loc) ->
           let lhs_access_path =
-            match AccessPath.of_exp lhs_exp lhs_typ ~f_resolve_id with
+            match AccessPath.of_lhs_exp lhs_exp lhs_typ ~f_resolve_id with
             | Some access_path ->
                 access_path
             | None ->

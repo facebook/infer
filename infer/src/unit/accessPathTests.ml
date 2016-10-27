@@ -78,7 +78,7 @@ let tests =
 
     let check_make_ap exp expected_ap ~f_resolve_id =
       let make_ap exp =
-        match AccessPath.of_exp exp dummy_typ ~f_resolve_id with
+        match AccessPath.of_lhs_exp exp dummy_typ ~f_resolve_id with
         | Some ap -> ap
         | None -> assert false in
       let actual_ap = make_ap exp in
@@ -108,6 +108,14 @@ let tests =
         let id_exp = Exp.Var (Ident.create_normal (Ident.string_to_name "") 0) in
         Exp.Lfield (id_exp, g_fieldname, dummy_typ) in
       check_make_ap xFG_exp_with_id xFG ~f_resolve_id:f_resolve_id_to_xF;
+      (* make sure we can grab access paths from compound expressions *)
+      let binop_exp = Exp.le xF_exp xFG_exp in
+      match AccessPath.of_exp binop_exp dummy_typ ~f_resolve_id with
+      | [ap1; ap2] ->
+          assert_equal ~cmp:AccessPath.raw_equal ap1 xFG;
+          assert_equal ~cmp:AccessPath.raw_equal ap2 xF;
+      | _ ->
+          assert false;
       () in
     "of_exp">::of_exp_test_ in
 

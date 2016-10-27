@@ -47,8 +47,11 @@ val of_pvar : Pvar.t -> Typ.t -> raw
 (** create an access path from an ident *)
 val of_id : Ident.t -> Typ.t -> raw
 
-(** convert [exp] to a raw access path, resolving identifiers using [f_resolve_id] *)
-val of_exp : Exp.t -> Typ.t -> f_resolve_id:(Var.t -> raw option) -> raw option
+(** extract the raw access paths that occur in [exp], resolving identifiers using [f_resolve_id] *)
+val of_exp : Exp.t -> Typ.t -> f_resolve_id:(Var.t -> raw option) -> raw list
+
+(** convert [lhs_exp] to a raw access path, resolving identifiers using [f_resolve_id] *)
+val of_lhs_exp : Exp.t -> Typ.t -> f_resolve_id:(Var.t -> raw option) -> raw option
 
 (** append new accesses to an existing access path; e.g., `append_access x.f [g, h]` produces
     `x.f.g.h` *)

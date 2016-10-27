@@ -38,10 +38,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_unlock_procedure pn = Procname.equal pn ModelBuiltins.__delete_locked_attribute
 
   let add_path_to_state exp typ pathdomainstate =
-    match AccessPath.of_exp exp typ ~f_resolve_id:(fun _ -> None) with
-    | Some rawpath -> PathDomain.add rawpath pathdomainstate
-    | None -> pathdomainstate
-
+    IList.fold_left
+      (fun pathdomainstate_acc rawpath -> PathDomain.add rawpath pathdomainstate_acc)
+      pathdomainstate
+      (AccessPath.of_exp exp typ ~f_resolve_id:(fun _ -> None))
 
   let exec_instr ((lockstate,(readstate,writestate)) as astate) { ProcData.pdesc; } _ =
     let is_unprotected lockstate =
