@@ -5,27 +5,11 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-include ../Makefile
+JAVA_TEST_DIR = ..
+include $(JAVA_TEST_DIR)/java.make
 
 ANALYZER = eradicate
 
-FILES = \
-  ActivityFieldNotInitialized.java \
-  FieldNotInitialized.java \
-  FieldNotNullable.java \
-  InconsistentSubclassAnnotationInterface.java \
-  InconsistentSubclassAnnotation.java \
-  LibraryCalls.java \
-  NoReuseUndefFunctionValues.java \
-  NullFieldAccess.java \
-  NullMethodCall.java \
-  ParameterNotNullable.java \
-  ReturnNotNullable.java \
-  SuppressWarningsExample.java \
-  SuppressedFieldNotInitializedExample.java
+INFER_OPTIONS = --eradicate-return-over-annotated
 
-compile:
-	javac -cp $(CLASSPATH) $(FILES)
-
-analyze:
-	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --eradicate-return-over-annotated -- javac -cp $(CLASSPATH) $(FILES))
+JAVA_SOURCE_FILES = $(wildcard *.java)

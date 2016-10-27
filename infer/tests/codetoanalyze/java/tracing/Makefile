@@ -5,38 +5,9 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-include ../Makefile
+JAVA_TEST_DIR = ..
+include $(JAVA_TEST_DIR)/java.make
 
 ANALYZER = tracing
 
-FILES_FOR_TRACING = \
-  T2.java \
-  \
-  ArrayIndexOutOfBoundsExceptionExample.java \
-  ClassCastExceptionExample.java \
-  LazyDynamicDispatchExample.java \
-  LocallyDefinedExceptionExample.java \
-  NullPointerExceptionExample.java \
-  ReportOnMainExample.java \
-  UnavoidableExceptionExample.java \
-  \
-
-FILES_LINKED_FROM_INFER = \
-  T.java \
-  SkippedSourceFile.java \
-  SomeLibrary.java \
-  Utils.java \
-  CloseableAsResourceExample.java \
-  NeverNullSource.java \
-  \
-  ArrayOutOfBounds.java \
-  ClassCastExceptions.java \
-  NullPointerExceptions.java \
-
-FILES = $(FILES_FOR_TRACING) $(FILES_LINKED_FROM_INFER)
-
-compile:
-	javac -cp $(CLASSPATH) $(FILES)
-
-analyze:
-	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(FILES))
+JAVA_SOURCE_FILES = $(wildcard *.java)

@@ -17,19 +17,3 @@ JSR305 = $(DEPENDENCIES_DIR)/java/jsr-305/jsr305.jar
 INJECT = $(DEPENDENCIES_DIR)/java/jsr-330/javax.inject.jar
 
 CLASSPATH=$(ANDROID19):$(ANDROIDSUPPORT):$(ANNOTATIONS):$(BUTTERKNIFE):$(JACKSON):$(JSR305):$(INJECT):$(JAVA_BUILTINS_DIR):.
-
-INFERPRINT_OPTIONS = --issues-tests
-
-default: compile
-
-print: analyze
-	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) issues.exp.test
-	LC_ALL=C sort -t: -k1,1 -k2n,2 -o issues.exp.test issues.exp.test
-
-test: analyze print
-	$(MAKE) clean
-	diff -u issues.exp issues.exp.test
-	rm issues.exp.test
-
-clean:
-	rm -rf codetoanalyze infer-out *.class

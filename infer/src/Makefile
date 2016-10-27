@@ -257,7 +257,6 @@ inc_flags:=$(foreach dir,$(src_dirs),-I $(dir))
 root_flags:=$(foreach root,$(roots),-r $(root))
 cluster_flags:=$(foreach cluster,$(clusters),-c $(cluster))
 
-.PHONY: mod_dep_dot
 mod_dep.dot: $(ml_src_files) $(re_src_files)
 	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot
 	{ ocamldep.opt $(inc_flags) -ml-synonym .re -mli-synonym .rei $(ml_src_files); \
@@ -266,7 +265,6 @@ mod_dep.dot: $(ml_src_files) $(re_src_files)
 	| grep -v -e "\"IList\"\|\"Utils\"" \
         > mod_dep.dot
 
-.PHONY: mod_dep.pdf
 mod_dep.pdf: mod_dep.dot
 	dot -Tpdf -o mod_dep.pdf mod_dep.dot
 

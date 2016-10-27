@@ -5,28 +5,11 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-include ../Makefile
+JAVA_TEST_DIR = ..
+include $(JAVA_TEST_DIR)/java.make
 
 ANALYZER = checkers
 
-FILES = \
-  Branch.java \
-  ExpensiveCallExample.java \
-  ExpensiveInheritanceExample.java \
-  ExpensiveInterfaceExample.java \
-  ExpensiveSubtypingExample.java \
-  FragmentDoesNotRetainViewExample.java \
-  FragmentRetainsViewExample.java \
-  ImmutableCast.java \
-  NoAllocationExample.java \
-  NotThreadSafeExample.java \
-  PrintfArgsChecker.java \
-  ThreadSafeExample.java \
-  TraceCallSequence.java \
-  TwoCheckersExample.java
+INFER_OPTIONS = --thread-safety
 
-compile:
-	javac -cp $(CLASSPATH) $(FILES)
-
-analyze:
-	$(call silent_on_success,$(INFER_BIN) --thread-safety -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(FILES))
+JAVA_SOURCE_FILES = $(wildcard *.java)

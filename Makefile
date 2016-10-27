@@ -170,9 +170,8 @@ inferTraceBugs_test: infer
 
 .PHONY: check_missing_mli
 check_missing_mli:
-	@bash -c '\
-	for x in `find infer/src -name "*.ml" -or  -name "*.re"`; do \
-		test -f "$$x"i || echo Missing "$$x"i; done'
+	@for x in $$(find infer/src -name "*.ml" -or -name "*.re"); do \
+	    test -f "$$x"i || echo Missing "$$x"i; done
 
 .PHONY: toplevel
 toplevel: infer
@@ -192,6 +191,11 @@ test_xml: test_build ocaml_unit_test buck_test_xml inferTraceBugs_test
 
 .PHONY: quick-test
 quick-test: test_this_build ocaml_unit_test
+
+.PHONY: test-replace
+test-replace:
+	@for file in $$(find infer/tests -name "*.exp.test"); do \
+	    mv -f $$file $$(dirname $$file)/$$(basename -s .exp.test $$file).exp; done
 
 .PHONY: uninstall
 uninstall:

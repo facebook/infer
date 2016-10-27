@@ -5,15 +5,12 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-include ../Makefile
+JAVA_TEST_DIR = ..
+include $(JAVA_TEST_DIR)/java.make
 
 ANALYZER = infer
 
-FILES = \
+INFER_OPTIONS = --android-harness
+
+JAVA_SOURCE_FILES = \
   BasicHarnessActivity.java \
-
-compile:
-	javac -cp $(CLASSPATH) $(FILES)
-
-analyze:
-	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --android-harness -- javac -cp $(CLASSPATH) $(FILES))
