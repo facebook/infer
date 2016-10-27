@@ -88,7 +88,7 @@ delegates should generally be weak, otherwise this may cause retain cycles.
 
 [Doc in ComponentKit page](http://componentkit.org/docs/break-out-composites.html)
 
-## <a name="COMPONENT_FACTORY_FUNCTION"></a> Component initializer with side-effects
+## <a name="COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS"></a> Component initializer with side-effects
 
 [Doc in ComponentKit page](http://componentkit.org/docs/no-side-effects.html)
 
