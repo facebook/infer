@@ -1,135 +1,135 @@
 /* @generated */
 digraph iCFG {
-36 [label="36:  Call _fun_div0_templ<A> \n   n$0=_fun_div0_templ<A>() [line 25]\n " shape="box"]
+"div0_templ<A>3" [label="3:  Return Stmt \n   *&return:int =(1 / 0) [line 23]\n " shape="box"]
 	
 
-	 36 -> 35 ;
-35 [label="35: Exit div0_templ_A \n  " color=yellow style=filled]
+	 "div0_templ<A>3" -> "div0_templ<A>2" ;
+"div0_templ<A>2" [label="2: Exit div0_templ<A> \n  " color=yellow style=filled]
 	
 
-34 [label="34: Start div0_templ_A\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
+"div0_templ<A>1" [label="1: Start div0_templ<A>\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
 	
 
-	 34 -> 36 ;
-33 [label="33:  Call _fun_div0_templ<int> \n   n$0=_fun_div0_templ<int>() [line 23]\n " shape="box"]
+	 "div0_templ<A>1" -> "div0_templ<A>3" ;
+"div0_fun3" [label="3:  Return Stmt \n   *&return:int =(1 / 0) [line 19]\n " shape="box"]
 	
 
-	 33 -> 32 ;
-32 [label="32: Exit div0_templ_int \n  " color=yellow style=filled]
+	 "div0_fun3" -> "div0_fun2" ;
+"div0_fun2" [label="2: Exit div0_fun \n  " color=yellow style=filled]
 	
 
-31 [label="31: Start div0_templ_int\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
+"div0_fun1" [label="1: Start div0_fun\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
 	
 
-	 31 -> 33 ;
-30 [label="30:  DeclStmt \n   _fun_B<A>_B(&b:class B<A> *) [line 19]\n " shape="box"]
+	 "div0_fun1" -> "div0_fun3" ;
+"B<int>_B2" [label="2: Exit B<int>_B \n  " color=yellow style=filled]
 	
 
-	 30 -> 29 ;
-29 [label="29:  Call _fun_B<A>_div0 \n   _=*&b:class B<A>  [line 20]\n  n$1=_fun_B<A>_div0(&b:class B<A> &) [line 20]\n " shape="box"]
+"B<int>_B1" [label="1: Start B<int>_B\nFormals:  this:class B<int> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
-	 29 -> 28 ;
-28 [label="28: Exit div0_B_A \n  " color=yellow style=filled]
+	 "B<int>_B1" -> "B<int>_B2" ;
+"div0_templ_A3" [label="3:  Call _fun_div0_templ<A> \n   n$0=_fun_div0_templ<A>() [line 25]\n " shape="box"]
 	
 
-27 [label="27: Start div0_B_A\nFormals: \nLocals:  b:class B<A>  \n   DECLARE_LOCALS(&return,&b); [line 18]\n " color=yellow style=filled]
+	 "div0_templ_A3" -> "div0_templ_A2" ;
+"div0_templ_A2" [label="2: Exit div0_templ_A \n  " color=yellow style=filled]
 	
 
-	 27 -> 30 ;
-26 [label="26:  DeclStmt \n   _fun_B<int>_B(&b:class B<int> *) [line 14]\n " shape="box"]
+"div0_templ_A1" [label="1: Start div0_templ_A\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
 	
 
-	 26 -> 25 ;
-25 [label="25:  Call _fun_B<int>_div0 \n   _=*&b:class B<int>  [line 15]\n  n$1=_fun_B<int>_div0(&b:class B<int> &) [line 15]\n " shape="box"]
+	 "div0_templ_A1" -> "div0_templ_A3" ;
+"B<A>_div03" [label="3:  Return Stmt \n   *&return:int =(1 / 0) [line 16]\n " shape="box"]
 	
 
-	 25 -> 24 ;
-24 [label="24: Exit div0_B_int \n  " color=yellow style=filled]
+	 "B<A>_div03" -> "B<A>_div02" ;
+"B<A>_div02" [label="2: Exit B<A>_div0 \n  " color=yellow style=filled]
 	
 
-23 [label="23: Start div0_B_int\nFormals: \nLocals:  b:class B<int>  \n   DECLARE_LOCALS(&return,&b); [line 13]\n " color=yellow style=filled]
+"B<A>_div01" [label="1: Start B<A>_div0\nFormals:  this:class B<A> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
-	 23 -> 26 ;
-22 [label="22:  Return Stmt \n   *&return:int =(1 / 0) [line 23]\n " shape="box"]
+	 "B<A>_div01" -> "B<A>_div03" ;
+"div0_templ_int3" [label="3:  Call _fun_div0_templ<int> \n   n$0=_fun_div0_templ<int>() [line 23]\n " shape="box"]
 	
 
-	 22 -> 21 ;
-21 [label="21: Exit div0_templ<A> \n  " color=yellow style=filled]
+	 "div0_templ_int3" -> "div0_templ_int2" ;
+"div0_templ_int2" [label="2: Exit div0_templ_int \n  " color=yellow style=filled]
 	
 
-20 [label="20: Start div0_templ<A>\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
+"div0_templ_int1" [label="1: Start div0_templ_int\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
 	
 
-	 20 -> 22 ;
-19 [label="19:  Return Stmt \n   *&return:int =(1 / 0) [line 23]\n " shape="box"]
+	 "div0_templ_int1" -> "div0_templ_int3" ;
+"A_div03" [label="3:  Return Stmt \n   *&return:int =(1 / 0) [line 11]\n " shape="box"]
 	
 
-	 19 -> 18 ;
-18 [label="18: Exit div0_templ<int> \n  " color=yellow style=filled]
+	 "A_div03" -> "A_div02" ;
+"A_div02" [label="2: Exit A_div0 \n  " color=yellow style=filled]
 	
 
-17 [label="17: Start div0_templ<int>\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
+"A_div01" [label="1: Start A_div0\nFormals:  this:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
 	
 
-	 17 -> 19 ;
-16 [label="16:  Return Stmt \n   *&return:int =(1 / 0) [line 19]\n " shape="box"]
+	 "A_div01" -> "A_div03" ;
+"div0_B_A4" [label="4:  DeclStmt \n   _fun_B<A>_B(&b:class B<A> *) [line 19]\n " shape="box"]
 	
 
-	 16 -> 15 ;
-15 [label="15: Exit div0_fun \n  " color=yellow style=filled]
+	 "div0_B_A4" -> "div0_B_A3" ;
+"div0_B_A3" [label="3:  Call _fun_B<A>_div0 \n   _=*&b:class B<A>  [line 20]\n  n$1=_fun_B<A>_div0(&b:class B<A> &) [line 20]\n " shape="box"]
 	
 
-14 [label="14: Start div0_fun\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
+	 "div0_B_A3" -> "div0_B_A2" ;
+"div0_B_A2" [label="2: Exit div0_B_A \n  " color=yellow style=filled]
 	
 
-	 14 -> 16 ;
-13 [label="13: Exit B<A>_B \n  " color=yellow style=filled]
+"div0_B_A1" [label="1: Start div0_B_A\nFormals: \nLocals:  b:class B<A>  \n   DECLARE_LOCALS(&return,&b); [line 18]\n " color=yellow style=filled]
 	
 
-12 [label="12: Start B<A>_B\nFormals:  this:class B<A> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+	 "div0_B_A1" -> "div0_B_A4" ;
+"div0_B_int4" [label="4:  DeclStmt \n   _fun_B<int>_B(&b:class B<int> *) [line 14]\n " shape="box"]
 	
 
-	 12 -> 13 ;
-11 [label="11:  Return Stmt \n   *&return:int =(1 / 0) [line 16]\n " shape="box"]
+	 "div0_B_int4" -> "div0_B_int3" ;
+"div0_B_int3" [label="3:  Call _fun_B<int>_div0 \n   _=*&b:class B<int>  [line 15]\n  n$1=_fun_B<int>_div0(&b:class B<int> &) [line 15]\n " shape="box"]
 	
 
-	 11 -> 10 ;
-10 [label="10: Exit B<A>_div0 \n  " color=yellow style=filled]
+	 "div0_B_int3" -> "div0_B_int2" ;
+"div0_B_int2" [label="2: Exit div0_B_int \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start B<A>_div0\nFormals:  this:class B<A> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
+"div0_B_int1" [label="1: Start div0_B_int\nFormals: \nLocals:  b:class B<int>  \n   DECLARE_LOCALS(&return,&b); [line 13]\n " color=yellow style=filled]
 	
 
-	 9 -> 11 ;
-8 [label="8: Exit B<int>_B \n  " color=yellow style=filled]
+	 "div0_B_int1" -> "div0_B_int4" ;
+"B<A>_B2" [label="2: Exit B<A>_B \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start B<int>_B\nFormals:  this:class B<int> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+"B<A>_B1" [label="1: Start B<A>_B\nFormals:  this:class B<A> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
-	 7 -> 8 ;
-6 [label="6:  Return Stmt \n   *&return:int =(1 / 0) [line 16]\n " shape="box"]
+	 "B<A>_B1" -> "B<A>_B2" ;
+"div0_templ<int>3" [label="3:  Return Stmt \n   *&return:int =(1 / 0) [line 23]\n " shape="box"]
 	
 
-	 6 -> 5 ;
-5 [label="5: Exit B<int>_div0 \n  " color=yellow style=filled]
+	 "div0_templ<int>3" -> "div0_templ<int>2" ;
+"div0_templ<int>2" [label="2: Exit div0_templ<int> \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start B<int>_div0\nFormals:  this:class B<int> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
+"div0_templ<int>1" [label="1: Start div0_templ<int>\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
 	
 
-	 4 -> 6 ;
-3 [label="3:  Return Stmt \n   *&return:int =(1 / 0) [line 11]\n " shape="box"]
+	 "div0_templ<int>1" -> "div0_templ<int>3" ;
+"B<int>_div03" [label="3:  Return Stmt \n   *&return:int =(1 / 0) [line 16]\n " shape="box"]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit A_div0 \n  " color=yellow style=filled]
+	 "B<int>_div03" -> "B<int>_div02" ;
+"B<int>_div02" [label="2: Exit B<int>_div0 \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start A_div0\nFormals:  this:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
+"B<int>_div01" [label="1: Start B<int>_div0\nFormals:  this:class B<int> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
-	 1 -> 3 ;
+	 "B<int>_div01" -> "B<int>_div03" ;
 }

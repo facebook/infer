@@ -1,52 +1,52 @@
 /* @generated */
 digraph iCFG {
-13 [label="13:  DeclStmt \n   *&t:int *=0 [line 24]\n " shape="box"]
+"test4" [label="4:  DeclStmt \n   *&t:int *=0 [line 24]\n " shape="box"]
 	
 
-	 13 -> 12 ;
-12 [label="12:  Call _fun_destroy<int_*> \n   n$0=_fun_destroy<int_*>(&t:int **) [line 25]\n " shape="box"]
+	 "test4" -> "test3" ;
+"test3" [label="3:  Call _fun_destroy<int_*> \n   n$0=_fun_destroy<int_*>(&t:int **) [line 25]\n " shape="box"]
 	
 
-	 12 -> 11 ;
-11 [label="11: Exit test \n  " color=yellow style=filled]
+	 "test3" -> "test2" ;
+"test2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-10 [label="10: Start test\nFormals: \nLocals:  t:int * \n   DECLARE_LOCALS(&return,&t); [line 23]\n " color=yellow style=filled]
+"test1" [label="1: Start test\nFormals: \nLocals:  t:int * \n   DECLARE_LOCALS(&return,&t); [line 23]\n " color=yellow style=filled]
 	
 
-	 10 -> 13 ;
-9 [label="9:  Call _fun___infer_skip_function \n   _fun___infer_skip_function() [line 19]\n " shape="box"]
+	 "test1" -> "test4" ;
+"f5" [label="5:  DeclStmt \n   n$1=*&p:int * [line 12]\n  n$2=*n$1:int  [line 12]\n  *&x:int =n$2 [line 12]\n " shape="box"]
 	
 
-	 9 -> 8 ;
-8 [label="8:  Return Stmt \n   *&return:int =0 [line 20]\n " shape="box"]
+	 "f5" -> "f4" ;
+"f4" [label="4:  Call _fun___infer_skip_function \n   _fun___infer_skip_function() [line 13]\n " shape="box"]
 	
 
-	 8 -> 7 ;
-7 [label="7: Exit destroy<int_*> \n  " color=yellow style=filled]
+	 "f4" -> "f3" ;
+"f3" [label="3:  Return Stmt \n   n$0=*&x:int  [line 14]\n  *&return:int =n$0 [line 14]\n " shape="box"]
 	
 
-6 [label="6: Start destroy<int_*>\nFormals:  ptr:int **\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+	 "f3" -> "f2" ;
+"f2" [label="2: Exit f \n  " color=yellow style=filled]
 	
 
-	 6 -> 9 ;
-5 [label="5:  DeclStmt \n   n$1=*&p:int * [line 12]\n  n$2=*n$1:int  [line 12]\n  *&x:int =n$2 [line 12]\n " shape="box"]
+"f1" [label="1: Start f\nFormals:  p:int *\nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 11]\n " color=yellow style=filled]
 	
 
-	 5 -> 4 ;
-4 [label="4:  Call _fun___infer_skip_function \n   _fun___infer_skip_function() [line 13]\n " shape="box"]
+	 "f1" -> "f5" ;
+"destroy<int_*>4" [label="4:  Call _fun___infer_skip_function \n   _fun___infer_skip_function() [line 19]\n " shape="box"]
 	
 
-	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   n$0=*&x:int  [line 14]\n  *&return:int =n$0 [line 14]\n " shape="box"]
+	 "destroy<int_*>4" -> "destroy<int_*>3" ;
+"destroy<int_*>3" [label="3:  Return Stmt \n   *&return:int =0 [line 20]\n " shape="box"]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit f \n  " color=yellow style=filled]
+	 "destroy<int_*>3" -> "destroy<int_*>2" ;
+"destroy<int_*>2" [label="2: Exit destroy<int_*> \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start f\nFormals:  p:int *\nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 11]\n " color=yellow style=filled]
+"destroy<int_*>1" [label="1: Start destroy<int_*>\nFormals:  ptr:int **\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
-	 1 -> 5 ;
+	 "destroy<int_*>1" -> "destroy<int_*>4" ;
 }

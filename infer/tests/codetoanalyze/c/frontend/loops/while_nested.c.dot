@@ -1,64 +1,64 @@
 /* @generated */
 digraph iCFG {
-15 [label="15:  DeclStmt \n   *&i:int =0 [line 11]\n " shape="box"]
+"main15" [label="15:  DeclStmt \n   *&i:int =0 [line 11]\n " shape="box"]
 	
 
-	 15 -> 14 ;
-14 [label="14:  DeclStmt \n   *&k:int =0 [line 12]\n " shape="box"]
+	 "main15" -> "main14" ;
+"main14" [label="14:  DeclStmt \n   *&k:int =0 [line 12]\n " shape="box"]
 	
 
-	 14 -> 4 ;
-13 [label="13:  UnaryOperator \n   n$3=*&k:int  [line 15]\n  *&k:int =(n$3 + 1) [line 15]\n " shape="box"]
+	 "main14" -> "main4" ;
+"main13" [label="13:  UnaryOperator \n   n$3=*&k:int  [line 15]\n  *&k:int =(n$3 + 1) [line 15]\n " shape="box"]
 	
 
-	 13 -> 9 ;
-12 [label="12: Prune (false branch) \n   PRUNE(((n$2 <= 5) == 0), false); [line 14]\n " shape="invhouse"]
+	 "main13" -> "main9" ;
+"main12" [label="12: Prune (false branch) \n   PRUNE(((n$2 <= 5) == 0), false); [line 14]\n " shape="invhouse"]
 	
 
-	 12 -> 8 ;
-11 [label="11: Prune (true branch) \n   PRUNE(((n$2 <= 5) != 0), true); [line 14]\n " shape="invhouse"]
+	 "main12" -> "main8" ;
+"main11" [label="11: Prune (true branch) \n   PRUNE(((n$2 <= 5) != 0), true); [line 14]\n " shape="invhouse"]
 	
 
-	 11 -> 13 ;
-10 [label="10:  BinaryOperatorStmt: LE \n   n$2=*&k:int  [line 14]\n " shape="box"]
+	 "main11" -> "main13" ;
+"main10" [label="10:  BinaryOperatorStmt: LE \n   n$2=*&k:int  [line 14]\n " shape="box"]
 	
 
-	 10 -> 11 ;
-	 10 -> 12 ;
-9 [label="9: + \n  " ]
+	 "main10" -> "main11" ;
+	 "main10" -> "main12" ;
+"main9" [label="9: + \n  " ]
 	
 
-	 9 -> 10 ;
-8 [label="8:  UnaryOperator \n   n$1=*&i:int  [line 17]\n  *&i:int =(n$1 + 1) [line 17]\n " shape="box"]
+	 "main9" -> "main10" ;
+"main8" [label="8:  UnaryOperator \n   n$1=*&i:int  [line 17]\n  *&i:int =(n$1 + 1) [line 17]\n " shape="box"]
 	
 
-	 8 -> 4 ;
-7 [label="7: Prune (false branch) \n   PRUNE(((n$0 <= 10) == 0), false); [line 13]\n " shape="invhouse"]
+	 "main8" -> "main4" ;
+"main7" [label="7: Prune (false branch) \n   PRUNE(((n$0 <= 10) == 0), false); [line 13]\n " shape="invhouse"]
 	
 
-	 7 -> 3 ;
-6 [label="6: Prune (true branch) \n   PRUNE(((n$0 <= 10) != 0), true); [line 13]\n " shape="invhouse"]
+	 "main7" -> "main3" ;
+"main6" [label="6: Prune (true branch) \n   PRUNE(((n$0 <= 10) != 0), true); [line 13]\n " shape="invhouse"]
 	
 
-	 6 -> 9 ;
-5 [label="5:  BinaryOperatorStmt: LE \n   n$0=*&i:int  [line 13]\n " shape="box"]
+	 "main6" -> "main9" ;
+"main5" [label="5:  BinaryOperatorStmt: LE \n   n$0=*&i:int  [line 13]\n " shape="box"]
 	
 
-	 5 -> 6 ;
-	 5 -> 7 ;
-4 [label="4: + \n  " ]
+	 "main5" -> "main6" ;
+	 "main5" -> "main7" ;
+"main4" [label="4: + \n  " ]
 	
 
-	 4 -> 5 ;
-3 [label="3:  Return Stmt \n   *&return:int =0 [line 19]\n " shape="box"]
+	 "main4" -> "main5" ;
+"main3" [label="3:  Return Stmt \n   *&return:int =0 [line 19]\n " shape="box"]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit main \n  " color=yellow style=filled]
+	 "main3" -> "main2" ;
+"main2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  k:int  i:int  \n   DECLARE_LOCALS(&return,&k,&i); [line 10]\n " color=yellow style=filled]
+"main1" [label="1: Start main\nFormals: \nLocals:  k:int  i:int  \n   DECLARE_LOCALS(&return,&k,&i); [line 10]\n " color=yellow style=filled]
 	
 
-	 1 -> 15 ;
+	 "main1" -> "main15" ;
 }

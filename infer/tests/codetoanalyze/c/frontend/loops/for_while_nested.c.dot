@@ -1,64 +1,64 @@
 /* @generated */
 digraph iCFG {
-15 [label="15:  DeclStmt \n   *&k:int =0 [line 11]\n " shape="box"]
+"main15" [label="15:  DeclStmt \n   *&k:int =0 [line 11]\n " shape="box"]
 	
 
-	 15 -> 5 ;
-14 [label="14:  UnaryOperator \n   n$4=*&k:int  [line 14]\n  *&k:int =(n$4 + 1) [line 14]\n " shape="box"]
+	 "main15" -> "main5" ;
+"main14" [label="14:  UnaryOperator \n   n$4=*&k:int  [line 14]\n  *&k:int =(n$4 + 1) [line 14]\n " shape="box"]
 	
 
-	 14 -> 10 ;
-13 [label="13: Prune (false branch) \n   PRUNE(((n$3 < 10) == 0), false); [line 13]\n " shape="invhouse"]
+	 "main14" -> "main10" ;
+"main13" [label="13: Prune (false branch) \n   PRUNE(((n$3 < 10) == 0), false); [line 13]\n " shape="invhouse"]
 	
 
-	 13 -> 6 ;
-12 [label="12: Prune (true branch) \n   PRUNE(((n$3 < 10) != 0), true); [line 13]\n " shape="invhouse"]
+	 "main13" -> "main6" ;
+"main12" [label="12: Prune (true branch) \n   PRUNE(((n$3 < 10) != 0), true); [line 13]\n " shape="invhouse"]
 	
 
-	 12 -> 14 ;
-11 [label="11:  BinaryOperatorStmt: LT \n   n$3=*&k:int  [line 13]\n " shape="box"]
+	 "main12" -> "main14" ;
+"main11" [label="11:  BinaryOperatorStmt: LT \n   n$3=*&k:int  [line 13]\n " shape="box"]
 	
 
-	 11 -> 12 ;
-	 11 -> 13 ;
-10 [label="10: + \n  " ]
+	 "main11" -> "main12" ;
+	 "main11" -> "main13" ;
+"main10" [label="10: + \n  " ]
 	
 
-	 10 -> 11 ;
-9 [label="9: Prune (false branch) \n   PRUNE(((n$2 < 10) == 0), false); [line 12]\n " shape="invhouse"]
+	 "main10" -> "main11" ;
+"main9" [label="9: Prune (false branch) \n   PRUNE(((n$2 < 10) == 0), false); [line 12]\n " shape="invhouse"]
 	
 
-	 9 -> 3 ;
-8 [label="8: Prune (true branch) \n   PRUNE(((n$2 < 10) != 0), true); [line 12]\n " shape="invhouse"]
+	 "main9" -> "main3" ;
+"main8" [label="8: Prune (true branch) \n   PRUNE(((n$2 < 10) != 0), true); [line 12]\n " shape="invhouse"]
 	
 
-	 8 -> 10 ;
-7 [label="7:  BinaryOperatorStmt: LT \n   n$2=*&i:int  [line 12]\n " shape="box"]
+	 "main8" -> "main10" ;
+"main7" [label="7:  BinaryOperatorStmt: LT \n   n$2=*&i:int  [line 12]\n " shape="box"]
 	
 
-	 7 -> 8 ;
-	 7 -> 9 ;
-6 [label="6:  UnaryOperator \n   n$1=*&i:int  [line 12]\n  *&i:int =(n$1 + 1) [line 12]\n " shape="box"]
+	 "main7" -> "main8" ;
+	 "main7" -> "main9" ;
+"main6" [label="6:  UnaryOperator \n   n$1=*&i:int  [line 12]\n  *&i:int =(n$1 + 1) [line 12]\n " shape="box"]
 	
 
-	 6 -> 4 ;
-5 [label="5:  DeclStmt \n   *&i:int =0 [line 12]\n " shape="box"]
+	 "main6" -> "main4" ;
+"main5" [label="5:  DeclStmt \n   *&i:int =0 [line 12]\n " shape="box"]
 	
 
-	 5 -> 4 ;
-4 [label="4: + \n  " ]
+	 "main5" -> "main4" ;
+"main4" [label="4: + \n  " ]
 	
 
-	 4 -> 7 ;
-3 [label="3:  Return Stmt \n   n$0=*&k:int  [line 17]\n  *&return:int =n$0 [line 17]\n " shape="box"]
+	 "main4" -> "main7" ;
+"main3" [label="3:  Return Stmt \n   n$0=*&k:int  [line 17]\n  *&return:int =n$0 [line 17]\n " shape="box"]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit main \n  " color=yellow style=filled]
+	 "main3" -> "main2" ;
+"main2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  i:int  k:int  \n   DECLARE_LOCALS(&return,&i,&k); [line 10]\n " color=yellow style=filled]
+"main1" [label="1: Start main\nFormals: \nLocals:  i:int  k:int  \n   DECLARE_LOCALS(&return,&i,&k); [line 10]\n " color=yellow style=filled]
 	
 
-	 1 -> 15 ;
+	 "main1" -> "main15" ;
 }

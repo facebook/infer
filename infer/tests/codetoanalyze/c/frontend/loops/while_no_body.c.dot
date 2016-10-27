@@ -1,27 +1,27 @@
 /* @generated */
 digraph iCFG {
-6 [label="6: Prune (false branch) \n   PRUNE((1 == 0), false); [line 11]\n " shape="invhouse"]
+"main6" [label="6: Prune (false branch) \n   PRUNE((1 == 0), false); [line 11]\n " shape="invhouse"]
 	
 
-	 6 -> 3 ;
-5 [label="5: Prune (true branch) \n   PRUNE((1 != 0), true); [line 11]\n " shape="invhouse"]
+	 "main6" -> "main3" ;
+"main5" [label="5: Prune (true branch) \n   PRUNE((1 != 0), true); [line 11]\n " shape="invhouse"]
 	
 
-	 5 -> 4 ;
-4 [label="4: + \n  " ]
+	 "main5" -> "main4" ;
+"main4" [label="4: + \n  " ]
 	
 
-	 4 -> 5 ;
-	 4 -> 6 ;
-3 [label="3:  Return Stmt \n   *&return:int =0 [line 13]\n " shape="box"]
+	 "main4" -> "main5" ;
+	 "main4" -> "main6" ;
+"main3" [label="3:  Return Stmt \n   *&return:int =0 [line 13]\n " shape="box"]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit main \n  " color=yellow style=filled]
+	 "main3" -> "main2" ;
+"main2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+"main1" [label="1: Start main\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
-	 1 -> 4 ;
+	 "main1" -> "main4" ;
 }

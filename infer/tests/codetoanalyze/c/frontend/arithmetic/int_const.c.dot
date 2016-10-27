@@ -1,26 +1,26 @@
 /* @generated */
 digraph iCFG {
-6 [label="6:  DeclStmt \n   *&#GB<arithmetic/int_const.c>$main_kDuration:int =3 [line 17]\n " shape="box"]
+"main6" [label="6:  DeclStmt \n   *&#GB<arithmetic/int_const.c>$main_kDuration:int =3 [line 17]\n " shape="box"]
 	
 
-	 6 -> 5 ;
-5 [label="5:  DeclStmt \n   *&large_int:int =9223372036854775807 [line 19]\n " shape="box"]
+	 "main6" -> "main5" ;
+"main5" [label="5:  DeclStmt \n   *&large_int:int =9223372036854775807 [line 19]\n " shape="box"]
 	
 
-	 5 -> 4 ;
-4 [label="4:  DeclStmt \n   *&overflow_int:int =n$0 [line 20]\n " shape="box"]
+	 "main5" -> "main4" ;
+"main4" [label="4:  DeclStmt \n   *&overflow_int:int =n$0 [line 20]\n " shape="box"]
 	
 
-	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   *&return:int =0 [line 22]\n " shape="box"]
+	 "main4" -> "main3" ;
+"main3" [label="3:  Return Stmt \n   *&return:int =0 [line 22]\n " shape="box"]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit main \n  " color=yellow style=filled]
+	 "main3" -> "main2" ;
+"main2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  overflow_int:int  large_int:int  d:long double  c:float * b:int * a:int  \n   DECLARE_LOCALS(&return,&overflow_int,&large_int,&d,&c,&b,&a); [line 10]\n " color=yellow style=filled]
+"main1" [label="1: Start main\nFormals: \nLocals:  overflow_int:int  large_int:int  d:long double  c:float * b:int * a:int  \n   DECLARE_LOCALS(&return,&overflow_int,&large_int,&d,&c,&b,&a); [line 10]\n " color=yellow style=filled]
 	
 
-	 1 -> 6 ;
+	 "main1" -> "main6" ;
 }

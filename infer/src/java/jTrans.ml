@@ -269,10 +269,10 @@ let create_procdesc source_file program linereader icfg m : Cfg.Procdesc.t optio
                 } in
               Cfg.Procdesc.create cfg proc_attributes in
             let start_kind = Cfg.Node.Start_node proc_name in
-            let start_node = Cfg.Node.create cfg Location.dummy start_kind [] procdesc in
+            let start_node = Cfg.Node.create Location.dummy start_kind [] procdesc in
             let exit_kind = (Cfg.Node.Exit_node proc_name) in
-            let exit_node = Cfg.Node.create cfg Location.dummy exit_kind [] procdesc in
-            Cfg.Node.set_succs_exn cfg start_node [exit_node] [exit_node];
+            let exit_node = Cfg.Node.create Location.dummy exit_kind [] procdesc in
+            Cfg.Node.set_succs_exn start_node [exit_node] [exit_node];
             Cfg.Procdesc.set_start_node procdesc start_node;
             Cfg.Procdesc.set_exit_node procdesc exit_node;
             procdesc
@@ -321,11 +321,11 @@ let create_procdesc source_file program linereader icfg m : Cfg.Procdesc.t optio
                 } in
               Cfg.Procdesc.create cfg proc_attributes in
             let start_kind = Cfg.Node.Start_node proc_name in
-            let start_node = Cfg.Node.create cfg loc_start start_kind [] procdesc in
+            let start_node = Cfg.Node.create loc_start start_kind [] procdesc in
             let exit_kind = (Cfg.Node.Exit_node proc_name) in
-            let exit_node = Cfg.Node.create cfg loc_exit exit_kind [] procdesc in
+            let exit_node = Cfg.Node.create loc_exit exit_kind [] procdesc in
             let exn_kind = Cfg.Node.exn_sink_kind in
-            let exn_node = Cfg.Node.create cfg loc_exit exn_kind [] procdesc in
+            let exn_node = Cfg.Node.create loc_exit exn_kind [] procdesc in
             JContext.add_exn_node proc_name exn_node;
             Cfg.Procdesc.set_start_node procdesc start_node;
             Cfg.Procdesc.set_exit_node procdesc exit_node;
@@ -699,7 +699,6 @@ let assume_not_null loc sil_expr =
 
 
 let rec instruction (context : JContext.t) pc instr : translation =
-  let cfg = JContext.get_cfg context in
   let tenv = JContext.get_tenv context in
   let cg = JContext.get_cg context in
   let program = context.program in
@@ -710,7 +709,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
   let file = loc.Location.file in
   let match_never_null = Inferconfig.never_return_null_matcher in
   let create_node node_kind sil_instrs =
-    Cfg.Node.create cfg loc node_kind sil_instrs context.procdesc in
+    Cfg.Node.create loc node_kind sil_instrs context.procdesc in
   let return_not_null () =
     match_never_null loc.Location.file proc_name in
   let trans_monitor_enter_exit context expr pc loc builtin node_desc =

@@ -1,29 +1,29 @@
 /* @generated */
 digraph iCFG {
-7 [label="7:  BinaryOperatorStmt: Assign \n   n$0=_fun_sum(2:int ,3:int ) [line 20]\n  *&total:int =n$0 [line 20]\n " shape="box"]
+"main4" [label="4:  BinaryOperatorStmt: Assign \n   n$0=_fun_sum(2:int ,3:int ) [line 20]\n  *&total:int =n$0 [line 20]\n " shape="box"]
 	
 
-	 7 -> 3 ;
-6 [label="6:  Return Stmt \n   n$0=*&a:int  [line 25]\n  n$1=*&b:int  [line 25]\n  *&return:int =(n$0 + n$1) [line 25]\n " shape="box"]
+	 "main4" -> "main3" ;
+"main3" [label="3:  Return Stmt \n   *&return:int =0 [line 22]\n " shape="box"]
 	
 
-	 6 -> 5 ;
-5 [label="5: Exit sum \n  " color=yellow style=filled]
+	 "main3" -> "main2" ;
+"main2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start sum\nFormals:  a:int  b:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
+"main1" [label="1: Start main\nFormals: \nLocals:  total:int  \n   DECLARE_LOCALS(&return,&total); [line 17]\n " color=yellow style=filled]
 	
 
-	 4 -> 6 ;
-3 [label="3:  Return Stmt \n   *&return:int =0 [line 22]\n " shape="box"]
+	 "main1" -> "main4" ;
+"sum3" [label="3:  Return Stmt \n   n$0=*&a:int  [line 25]\n  n$1=*&b:int  [line 25]\n  *&return:int =(n$0 + n$1) [line 25]\n " shape="box"]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit main \n  " color=yellow style=filled]
+	 "sum3" -> "sum2" ;
+"sum2" [label="2: Exit sum \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  total:int  \n   DECLARE_LOCALS(&return,&total); [line 17]\n " color=yellow style=filled]
+"sum1" [label="1: Start sum\nFormals:  a:int  b:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
 	
 
-	 1 -> 7 ;
+	 "sum1" -> "sum3" ;
 }

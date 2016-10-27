@@ -50,9 +50,7 @@ let module Procdesc: {
 
   /** [remove cfg name remove_nodes] remove the procdesc [name]
       from the control flow graph [cfg]. */
-
-  /** It also removes all the nodes from the procedure from the cfg if remove_nodes is true */
-  let remove: cfg => Procname.t => bool => unit;
+  let remove: cfg => Procname.t => unit;
 
   /** Find the procdesc given the proc name. Return None if not found. */
   let find_from_name: cfg => Procname.t => option t;
@@ -168,10 +166,9 @@ let module Node: {
   /** Compare two nodes */
   let compare: t => t => int;
 
-  /** [create cfg loc kind instrs proc_desc] create a new cfg node
-      with the given location, kind, list of instructions,
-      procdesc */
-  let create: cfg => Location.t => nodekind => list Sil.instr => Procdesc.t => t;
+  /** Create a new cfg node with the given location, kind, list of instructions,
+      and add it to the procdesc. */
+  let create: Location.t => nodekind => list Sil.instr => Procdesc.t => t;
 
   /** create a new empty cfg */
   let create_cfg: unit => cfg;
@@ -184,9 +181,6 @@ let module Node: {
 
   /** Check if two nodes are equal */
   let equal: t => t => bool;
-
-  /** Get all the nodes */
-  let get_all_nodes: cfg => list t;
 
   /** Get the distance to the exit node, if it has been computed */
   let get_distance_to_exit: t => option int;
@@ -255,7 +249,7 @@ let module Node: {
   let replace_instrs: t => list Sil.instr => unit;
 
   /** Set the successor nodes and exception nodes, and build predecessor links */
-  let set_succs_exn: cfg => t => list t => list t => unit;
+  let set_succs_exn: t => list t => list t => unit;
 };
 
 
@@ -270,8 +264,6 @@ let module NodeSet: Set.S with type elt = Node.t;
 /** Map with node id keys. */
 let module IdMap: Map.S with type key = Node.id;
 
-let pp_node_list: Format.formatter => list Node.t => unit;
-
 
 /** {2 Functions for manipulating an interprocedural CFG} */
 
@@ -285,6 +277,10 @@ let get_all_procs: cfg => list Procdesc.t;
 
 /** Get the procedures whose body is defined in this cfg */
 let get_defined_procs: cfg => list Procdesc.t;
+
+
+/** Iterate over all the nodes in the cfg */
+let iter_all_nodes: (Procdesc.t => Node.t => unit) => cfg => unit;
 
 
 /** checks whether a cfg is connected or not */

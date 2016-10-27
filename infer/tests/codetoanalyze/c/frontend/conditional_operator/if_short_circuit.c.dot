@@ -1,398 +1,398 @@
 /* @generated */
 digraph iCFG {
-95 [label="95:  BinaryOperatorStmt: Assign \n   n$13=_fun_getenv(\"BLOCK\":char *) [line 47]\n  *&spec:char *=n$13 [line 47]\n " shape="box"]
+"shortcircuit_or12" [label="12:  BinaryOperatorStmt: Assign \n   *&x:int *=32 [line 17]\n " shape="box"]
 	
 
-	 95 -> 67 ;
-	 95 -> 68 ;
-94 [label="94:  BinaryOperatorStmt: Assign \n   *&block_size:char *=0 [line 53]\n " shape="box"]
+	 "shortcircuit_or12" -> "shortcircuit_or3" ;
+"shortcircuit_or11" [label="11:  BinaryOperatorStmt: Assign \n   *&x:int *=17 [line 15]\n " shape="box"]
 	
 
-	 94 -> 90 ;
-93 [label="93: Prune (false branch) \n   PRUNE(((n$12 == 39) == 0), false); [line 52]\n " shape="invhouse"]
+	 "shortcircuit_or11" -> "shortcircuit_or3" ;
+"shortcircuit_or10" [label="10: Prune (false branch) \n   PRUNE(((n$2 == 2) == 0), false); [line 14]\n " shape="invhouse"]
 	
 
-	 93 -> 90 ;
-92 [label="92: Prune (true branch) \n   PRUNE(((n$12 == 39) != 0), true); [line 52]\n " shape="invhouse"]
+	 "shortcircuit_or10" -> "shortcircuit_or12" ;
+"shortcircuit_or9" [label="9: Prune (true branch) \n   PRUNE(((n$2 == 2) != 0), true); [line 14]\n " shape="invhouse"]
 	
 
-	 92 -> 94 ;
-91 [label="91:  BinaryOperatorStmt: EQ \n   n$11=*&spec:char * [line 52]\n  n$12=*n$11:char  [line 52]\n " shape="box"]
+	 "shortcircuit_or9" -> "shortcircuit_or11" ;
+"shortcircuit_or8" [label="8:  BinaryOperatorStmt: EQ \n   n$1=*&x:int * [line 14]\n  n$2=*n$1:int  [line 14]\n " shape="box"]
 	
 
-	 91 -> 92 ;
-	 91 -> 93 ;
-90 [label="90: + \n  " ]
+	 "shortcircuit_or8" -> "shortcircuit_or9" ;
+	 "shortcircuit_or8" -> "shortcircuit_or10" ;
+"shortcircuit_or7" [label="7: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 14]\n " shape="invhouse"]
 	
 
-	 90 -> 65 ;
-89 [label="89:  BinaryOperatorStmt: Assign \n   *&block_size:char *=0 [line 50]\n " shape="box"]
+	 "shortcircuit_or7" -> "shortcircuit_or8" ;
+"shortcircuit_or6" [label="6: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 14]\n " shape="invhouse"]
 	
 
-	 89 -> 65 ;
-88 [label="88: Prune (false branch) \n   n$10=*&0$?%__sil_tmpSIL_temp_conditional___n$7:int  [line 49]\n  PRUNE((n$10 == 0), false); [line 49]\n " shape="invhouse"]
+	 "shortcircuit_or6" -> "shortcircuit_or11" ;
+"shortcircuit_or5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&x:int * [line 14]\n " shape="box"]
 	
 
-	 88 -> 91 ;
-87 [label="87: Prune (true branch) \n   n$10=*&0$?%__sil_tmpSIL_temp_conditional___n$7:int  [line 49]\n  PRUNE((n$10 != 0), true); [line 49]\n " shape="invhouse"]
+	 "shortcircuit_or5" -> "shortcircuit_or6" ;
+	 "shortcircuit_or5" -> "shortcircuit_or7" ;
+"shortcircuit_or4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 87 -> 89 ;
-86 [label="86:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$7:int =1 [line 49]\n " shape="box"]
+	 "shortcircuit_or4" -> "shortcircuit_or2" ;
+"shortcircuit_or3" [label="3: + \n  " ]
 	
 
-	 86 -> 81 ;
-85 [label="85:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$7:int =0 [line 49]\n " shape="box"]
+	 "shortcircuit_or3" -> "shortcircuit_or4" ;
+"shortcircuit_or2" [label="2: Exit shortcircuit_or \n  " color=yellow style=filled]
 	
 
-	 85 -> 81 ;
-84 [label="84: Prune (false branch) \n   PRUNE((n$9 == 0), false); [line 49]\n " shape="invhouse"]
+"shortcircuit_or1" [label="1: Start shortcircuit_or\nFormals:  x:int *\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
-	 84 -> 86 ;
-83 [label="83: Prune (true branch) \n   PRUNE((n$9 != 0), true); [line 49]\n " shape="invhouse"]
+	 "shortcircuit_or1" -> "shortcircuit_or5" ;
+"shortcircuit_and21" [label="21:  BinaryOperatorStmt: Assign \n   n$7=*&x:int * [line 25]\n  *n$7:int =32 [line 25]\n " shape="box"]
 	
 
-	 83 -> 85 ;
-82 [label="82:  BinaryOperatorStmt: Assign \n   n$8=_fun_getenv(\"BLOCKSIZE\":char *) [line 49]\n  *&spec:char *=n$8 [line 49]\n  n$9=*&spec:char * [line 49]\n " shape="box"]
+	 "shortcircuit_and21" -> "shortcircuit_and3" ;
+"shortcircuit_and20" [label="20:  BinaryOperatorStmt: Assign \n   *&x:int *=17 [line 23]\n " shape="box"]
 	
 
-	 82 -> 83 ;
-	 82 -> 84 ;
-81 [label="81: + \n  " ]
+	 "shortcircuit_and20" -> "shortcircuit_and3" ;
+"shortcircuit_and19" [label="19: Prune (false branch) \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int  [line 22]\n  PRUNE((n$6 == 0), false); [line 22]\n " shape="invhouse"]
 	
 
-	 81 -> 87 ;
-	 81 -> 88 ;
-80 [label="80: Prune (false branch) \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int  [line 49]\n  PRUNE((n$6 == 0), false); [line 49]\n " shape="invhouse"]
+	 "shortcircuit_and19" -> "shortcircuit_and21" ;
+"shortcircuit_and18" [label="18: Prune (true branch) \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int  [line 22]\n  PRUNE((n$6 != 0), true); [line 22]\n " shape="invhouse"]
 	
 
-	 80 -> 91 ;
-79 [label="79: Prune (true branch) \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int  [line 49]\n  PRUNE((n$6 != 0), true); [line 49]\n " shape="invhouse"]
+	 "shortcircuit_and18" -> "shortcircuit_and20" ;
+"shortcircuit_and17" [label="17:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int =1 [line 22]\n " shape="box"]
 	
 
-	 79 -> 82 ;
-78 [label="78:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int =1 [line 49]\n " shape="box"]
+	 "shortcircuit_and17" -> "shortcircuit_and12" ;
+"shortcircuit_and16" [label="16:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int =0 [line 22]\n " shape="box"]
 	
 
-	 78 -> 73 ;
-77 [label="77:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int =0 [line 49]\n " shape="box"]
+	 "shortcircuit_and16" -> "shortcircuit_and12" ;
+"shortcircuit_and15" [label="15: Prune (false branch) \n   PRUNE((n$5 == 0), false); [line 22]\n " shape="invhouse"]
 	
 
-	 77 -> 73 ;
-76 [label="76: Prune (false branch) \n   PRUNE((n$5 == 0), false); [line 49]\n " shape="invhouse"]
+	 "shortcircuit_and15" -> "shortcircuit_and17" ;
+"shortcircuit_and14" [label="14: Prune (true branch) \n   PRUNE((n$5 != 0), true); [line 22]\n " shape="invhouse"]
 	
 
-	 76 -> 78 ;
-75 [label="75: Prune (true branch) \n   PRUNE((n$5 != 0), true); [line 49]\n " shape="invhouse"]
+	 "shortcircuit_and14" -> "shortcircuit_and16" ;
+"shortcircuit_and13" [label="13:  BinaryOperatorStmt: Assign \n   n$4=_fun_getenv(\"BLOCK\":char *) [line 22]\n  *&x:int *=n$4 [line 22]\n  n$5=*&x:int * [line 22]\n " shape="box"]
 	
 
-	 75 -> 77 ;
-74 [label="74:  BinaryOperatorStmt: Assign \n   n$4=_fun_getenv(\"BLOCK_SIZE\":char *) [line 49]\n  *&spec:char *=n$4 [line 49]\n  n$5=*&spec:char * [line 49]\n " shape="box"]
+	 "shortcircuit_and13" -> "shortcircuit_and14" ;
+	 "shortcircuit_and13" -> "shortcircuit_and15" ;
+"shortcircuit_and12" [label="12: + \n  " ]
 	
 
-	 74 -> 75 ;
-	 74 -> 76 ;
-73 [label="73: + \n  " ]
+	 "shortcircuit_and12" -> "shortcircuit_and18" ;
+	 "shortcircuit_and12" -> "shortcircuit_and19" ;
+"shortcircuit_and11" [label="11: Prune (false branch) \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int  [line 22]\n  PRUNE((n$2 == 0), false); [line 22]\n " shape="invhouse"]
 	
 
-	 73 -> 79 ;
-	 73 -> 80 ;
-72 [label="72: Prune (false branch) \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int  [line 49]\n  PRUNE((n$2 == 0), false); [line 49]\n " shape="invhouse"]
+	 "shortcircuit_and11" -> "shortcircuit_and21" ;
+"shortcircuit_and10" [label="10: Prune (true branch) \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int  [line 22]\n  PRUNE((n$2 != 0), true); [line 22]\n " shape="invhouse"]
 	
 
-	 72 -> 91 ;
-71 [label="71: Prune (true branch) \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int  [line 49]\n  PRUNE((n$2 != 0), true); [line 49]\n " shape="invhouse"]
+	 "shortcircuit_and10" -> "shortcircuit_and13" ;
+"shortcircuit_and9" [label="9:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =1 [line 22]\n " shape="box"]
 	
 
-	 71 -> 74 ;
-70 [label="70:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =1 [line 49]\n " shape="box"]
+	 "shortcircuit_and9" -> "shortcircuit_and5" ;
+"shortcircuit_and8" [label="8:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =0 [line 22]\n " shape="box"]
 	
 
-	 70 -> 66 ;
-69 [label="69:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =0 [line 49]\n " shape="box"]
+	 "shortcircuit_and8" -> "shortcircuit_and5" ;
+"shortcircuit_and7" [label="7: Prune (false branch) \n   n$1=*&x:int * [line 22]\n  PRUNE((n$1 == 0), false); [line 22]\n " shape="invhouse"]
 	
 
-	 69 -> 66 ;
-68 [label="68: Prune (false branch) \n   n$1=*&spec:char * [line 49]\n  PRUNE((n$1 == 0), false); [line 49]\n " shape="invhouse"]
+	 "shortcircuit_and7" -> "shortcircuit_and9" ;
+"shortcircuit_and6" [label="6: Prune (true branch) \n   n$1=*&x:int * [line 22]\n  PRUNE((n$1 != 0), true); [line 22]\n " shape="invhouse"]
 	
 
-	 68 -> 70 ;
-67 [label="67: Prune (true branch) \n   n$1=*&spec:char * [line 49]\n  PRUNE((n$1 != 0), true); [line 49]\n " shape="invhouse"]
+	 "shortcircuit_and6" -> "shortcircuit_and8" ;
+"shortcircuit_and5" [label="5: + \n  " ]
 	
 
-	 67 -> 69 ;
-66 [label="66: + \n  " ]
+	 "shortcircuit_and5" -> "shortcircuit_and10" ;
+	 "shortcircuit_and5" -> "shortcircuit_and11" ;
+"shortcircuit_and4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 66 -> 71 ;
-	 66 -> 72 ;
-65 [label="65: + \n  " ]
+	 "shortcircuit_and4" -> "shortcircuit_and2" ;
+"shortcircuit_and3" [label="3: + \n  " ]
 	
 
-	 65 -> 64 ;
-64 [label="64:  Return Stmt \n   *&return:int =0 [line 56]\n " shape="box"]
+	 "shortcircuit_and3" -> "shortcircuit_and4" ;
+"shortcircuit_and2" [label="2: Exit shortcircuit_and \n  " color=yellow style=filled]
 	
 
-	 64 -> 63 ;
-63 [label="63: Exit main \n  " color=yellow style=filled]
+"shortcircuit_and1" [label="1: Start shortcircuit_and\nFormals:  x:int *\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int  0$?%__sil_tmpSIL_temp_conditional___n$3:int  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&0$?%__sil_tmpSIL_temp_conditional___n$3); [line 21]\n " color=yellow style=filled]
 	
 
-62 [label="62: Start main\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int  0$?%__sil_tmpSIL_temp_conditional___n$3:int  0$?%__sil_tmpSIL_temp_conditional___n$7:int  block_size:char * spec:char * \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&0$?%__sil_tmpSIL_temp_conditional___n$3,&0$?%__sil_tmpSIL_temp_conditional___n$7,&block_size,&spec); [line 42]\n " color=yellow style=filled]
+	 "shortcircuit_and1" -> "shortcircuit_and6" ;
+	 "shortcircuit_and1" -> "shortcircuit_and7" ;
+"test_loop28" [label="28:  BinaryOperatorStmt: Assign \n   n$11=_fun_getenv(\"BLOCK\":char *) [line 34]\n  *&spec:char *=n$11 [line 34]\n " shape="box"]
 	
 
-	 62 -> 95 ;
-61 [label="61:  BinaryOperatorStmt: Assign \n   n$11=_fun_getenv(\"BLOCK\":char *) [line 34]\n  *&spec:char *=n$11 [line 34]\n " shape="box"]
+	 "test_loop28" -> "test_loop3" ;
+"test_loop27" [label="27:  BinaryOperatorStmt: Assign \n   *&block_size:char *=0 [line 38]\n " shape="box"]
 	
 
-	 61 -> 36 ;
-60 [label="60:  BinaryOperatorStmt: Assign \n   *&block_size:char *=0 [line 38]\n " shape="box"]
+	 "test_loop27" -> "test_loop3" ;
+"test_loop26" [label="26: Prune (false branch) \n   n$10=*&0$?%__sil_tmpSIL_temp_conditional___n$7:int  [line 37]\n  PRUNE((n$10 == 0), false); [line 37]\n " shape="invhouse"]
 	
 
-	 60 -> 36 ;
-59 [label="59: Prune (false branch) \n   n$10=*&0$?%__sil_tmpSIL_temp_conditional___n$7:int  [line 37]\n  PRUNE((n$10 == 0), false); [line 37]\n " shape="invhouse"]
+	 "test_loop26" -> "test_loop2" ;
+"test_loop25" [label="25: Prune (true branch) \n   n$10=*&0$?%__sil_tmpSIL_temp_conditional___n$7:int  [line 37]\n  PRUNE((n$10 != 0), true); [line 37]\n " shape="invhouse"]
 	
 
-	 59 -> 35 ;
-58 [label="58: Prune (true branch) \n   n$10=*&0$?%__sil_tmpSIL_temp_conditional___n$7:int  [line 37]\n  PRUNE((n$10 != 0), true); [line 37]\n " shape="invhouse"]
+	 "test_loop25" -> "test_loop27" ;
+"test_loop24" [label="24:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$7:int =1 [line 37]\n " shape="box"]
 	
 
-	 58 -> 60 ;
-57 [label="57:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$7:int =1 [line 37]\n " shape="box"]
+	 "test_loop24" -> "test_loop19" ;
+"test_loop23" [label="23:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$7:int =0 [line 37]\n " shape="box"]
 	
 
-	 57 -> 52 ;
-56 [label="56:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$7:int =0 [line 37]\n " shape="box"]
+	 "test_loop23" -> "test_loop19" ;
+"test_loop22" [label="22: Prune (false branch) \n   PRUNE((n$9 == 0), false); [line 37]\n " shape="invhouse"]
 	
 
-	 56 -> 52 ;
-55 [label="55: Prune (false branch) \n   PRUNE((n$9 == 0), false); [line 37]\n " shape="invhouse"]
+	 "test_loop22" -> "test_loop24" ;
+"test_loop21" [label="21: Prune (true branch) \n   PRUNE((n$9 != 0), true); [line 37]\n " shape="invhouse"]
 	
 
-	 55 -> 57 ;
-54 [label="54: Prune (true branch) \n   PRUNE((n$9 != 0), true); [line 37]\n " shape="invhouse"]
+	 "test_loop21" -> "test_loop23" ;
+"test_loop20" [label="20:  BinaryOperatorStmt: Assign \n   n$8=_fun_getenv(\"BLOCKSIZE\":char *) [line 37]\n  *&spec:char *=n$8 [line 37]\n  n$9=*&spec:char * [line 37]\n " shape="box"]
 	
 
-	 54 -> 56 ;
-53 [label="53:  BinaryOperatorStmt: Assign \n   n$8=_fun_getenv(\"BLOCKSIZE\":char *) [line 37]\n  *&spec:char *=n$8 [line 37]\n  n$9=*&spec:char * [line 37]\n " shape="box"]
+	 "test_loop20" -> "test_loop21" ;
+	 "test_loop20" -> "test_loop22" ;
+"test_loop19" [label="19: + \n  " ]
 	
 
-	 53 -> 54 ;
-	 53 -> 55 ;
-52 [label="52: + \n  " ]
+	 "test_loop19" -> "test_loop25" ;
+	 "test_loop19" -> "test_loop26" ;
+"test_loop18" [label="18: Prune (false branch) \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int  [line 36]\n  PRUNE((n$6 == 0), false); [line 36]\n " shape="invhouse"]
 	
 
-	 52 -> 58 ;
-	 52 -> 59 ;
-51 [label="51: Prune (false branch) \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int  [line 36]\n  PRUNE((n$6 == 0), false); [line 36]\n " shape="invhouse"]
+	 "test_loop18" -> "test_loop2" ;
+"test_loop17" [label="17: Prune (true branch) \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int  [line 36]\n  PRUNE((n$6 != 0), true); [line 36]\n " shape="invhouse"]
 	
 
-	 51 -> 35 ;
-50 [label="50: Prune (true branch) \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int  [line 36]\n  PRUNE((n$6 != 0), true); [line 36]\n " shape="invhouse"]
+	 "test_loop17" -> "test_loop20" ;
+"test_loop16" [label="16:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int =1 [line 36]\n " shape="box"]
 	
 
-	 50 -> 53 ;
-49 [label="49:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int =1 [line 36]\n " shape="box"]
+	 "test_loop16" -> "test_loop11" ;
+"test_loop15" [label="15:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int =0 [line 36]\n " shape="box"]
 	
 
-	 49 -> 44 ;
-48 [label="48:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int =0 [line 36]\n " shape="box"]
+	 "test_loop15" -> "test_loop11" ;
+"test_loop14" [label="14: Prune (false branch) \n   PRUNE((n$5 == 0), false); [line 36]\n " shape="invhouse"]
 	
 
-	 48 -> 44 ;
-47 [label="47: Prune (false branch) \n   PRUNE((n$5 == 0), false); [line 36]\n " shape="invhouse"]
+	 "test_loop14" -> "test_loop16" ;
+"test_loop13" [label="13: Prune (true branch) \n   PRUNE((n$5 != 0), true); [line 36]\n " shape="invhouse"]
 	
 
-	 47 -> 49 ;
-46 [label="46: Prune (true branch) \n   PRUNE((n$5 != 0), true); [line 36]\n " shape="invhouse"]
+	 "test_loop13" -> "test_loop15" ;
+"test_loop12" [label="12:  BinaryOperatorStmt: Assign \n   n$4=_fun_getenv(\"BLOCK_SIZE\":char *) [line 36]\n  *&spec:char *=n$4 [line 36]\n  n$5=*&spec:char * [line 36]\n " shape="box"]
 	
 
-	 46 -> 48 ;
-45 [label="45:  BinaryOperatorStmt: Assign \n   n$4=_fun_getenv(\"BLOCK_SIZE\":char *) [line 36]\n  *&spec:char *=n$4 [line 36]\n  n$5=*&spec:char * [line 36]\n " shape="box"]
+	 "test_loop12" -> "test_loop13" ;
+	 "test_loop12" -> "test_loop14" ;
+"test_loop11" [label="11: + \n  " ]
 	
 
-	 45 -> 46 ;
-	 45 -> 47 ;
-44 [label="44: + \n  " ]
+	 "test_loop11" -> "test_loop17" ;
+	 "test_loop11" -> "test_loop18" ;
+"test_loop10" [label="10: Prune (false branch) \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int  [line 36]\n  PRUNE((n$2 == 0), false); [line 36]\n " shape="invhouse"]
 	
 
-	 44 -> 50 ;
-	 44 -> 51 ;
-43 [label="43: Prune (false branch) \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int  [line 36]\n  PRUNE((n$2 == 0), false); [line 36]\n " shape="invhouse"]
+	 "test_loop10" -> "test_loop2" ;
+"test_loop9" [label="9: Prune (true branch) \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int  [line 36]\n  PRUNE((n$2 != 0), true); [line 36]\n " shape="invhouse"]
 	
 
-	 43 -> 35 ;
-42 [label="42: Prune (true branch) \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int  [line 36]\n  PRUNE((n$2 != 0), true); [line 36]\n " shape="invhouse"]
+	 "test_loop9" -> "test_loop12" ;
+"test_loop8" [label="8:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =1 [line 36]\n " shape="box"]
 	
 
-	 42 -> 45 ;
-41 [label="41:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =1 [line 36]\n " shape="box"]
+	 "test_loop8" -> "test_loop4" ;
+"test_loop7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =0 [line 36]\n " shape="box"]
 	
 
-	 41 -> 37 ;
-40 [label="40:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =0 [line 36]\n " shape="box"]
+	 "test_loop7" -> "test_loop4" ;
+"test_loop6" [label="6: Prune (false branch) \n   n$1=*&spec:char * [line 36]\n  PRUNE((n$1 == 0), false); [line 36]\n " shape="invhouse"]
 	
 
-	 40 -> 37 ;
-39 [label="39: Prune (false branch) \n   n$1=*&spec:char * [line 36]\n  PRUNE((n$1 == 0), false); [line 36]\n " shape="invhouse"]
+	 "test_loop6" -> "test_loop8" ;
+"test_loop5" [label="5: Prune (true branch) \n   n$1=*&spec:char * [line 36]\n  PRUNE((n$1 != 0), true); [line 36]\n " shape="invhouse"]
 	
 
-	 39 -> 41 ;
-38 [label="38: Prune (true branch) \n   n$1=*&spec:char * [line 36]\n  PRUNE((n$1 != 0), true); [line 36]\n " shape="invhouse"]
+	 "test_loop5" -> "test_loop7" ;
+"test_loop4" [label="4: + \n  " ]
 	
 
-	 38 -> 40 ;
-37 [label="37: + \n  " ]
+	 "test_loop4" -> "test_loop9" ;
+	 "test_loop4" -> "test_loop10" ;
+"test_loop3" [label="3: + \n  " ]
 	
 
-	 37 -> 42 ;
-	 37 -> 43 ;
-36 [label="36: + \n  " ]
+	 "test_loop3" -> "test_loop5" ;
+	 "test_loop3" -> "test_loop6" ;
+"test_loop2" [label="2: Exit test_loop \n  " color=yellow style=filled]
 	
 
-	 36 -> 38 ;
-	 36 -> 39 ;
-35 [label="35: Exit test_loop \n  " color=yellow style=filled]
+"test_loop1" [label="1: Start test_loop\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int  0$?%__sil_tmpSIL_temp_conditional___n$3:int  0$?%__sil_tmpSIL_temp_conditional___n$7:int  block_size:char * spec:char * \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&0$?%__sil_tmpSIL_temp_conditional___n$3,&0$?%__sil_tmpSIL_temp_conditional___n$7,&block_size,&spec); [line 29]\n " color=yellow style=filled]
 	
 
-34 [label="34: Start test_loop\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int  0$?%__sil_tmpSIL_temp_conditional___n$3:int  0$?%__sil_tmpSIL_temp_conditional___n$7:int  block_size:char * spec:char * \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&0$?%__sil_tmpSIL_temp_conditional___n$3,&0$?%__sil_tmpSIL_temp_conditional___n$7,&block_size,&spec); [line 29]\n " color=yellow style=filled]
+	 "test_loop1" -> "test_loop28" ;
+"main34" [label="34:  BinaryOperatorStmt: Assign \n   n$13=_fun_getenv(\"BLOCK\":char *) [line 47]\n  *&spec:char *=n$13 [line 47]\n " shape="box"]
 	
 
-	 34 -> 61 ;
-33 [label="33:  BinaryOperatorStmt: Assign \n   n$7=*&x:int * [line 25]\n  *n$7:int =32 [line 25]\n " shape="box"]
+	 "main34" -> "main6" ;
+	 "main34" -> "main7" ;
+"main33" [label="33:  BinaryOperatorStmt: Assign \n   *&block_size:char *=0 [line 53]\n " shape="box"]
 	
 
-	 33 -> 15 ;
-32 [label="32:  BinaryOperatorStmt: Assign \n   *&x:int *=17 [line 23]\n " shape="box"]
+	 "main33" -> "main29" ;
+"main32" [label="32: Prune (false branch) \n   PRUNE(((n$12 == 39) == 0), false); [line 52]\n " shape="invhouse"]
 	
 
-	 32 -> 15 ;
-31 [label="31: Prune (false branch) \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int  [line 22]\n  PRUNE((n$6 == 0), false); [line 22]\n " shape="invhouse"]
+	 "main32" -> "main29" ;
+"main31" [label="31: Prune (true branch) \n   PRUNE(((n$12 == 39) != 0), true); [line 52]\n " shape="invhouse"]
 	
 
-	 31 -> 33 ;
-30 [label="30: Prune (true branch) \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int  [line 22]\n  PRUNE((n$6 != 0), true); [line 22]\n " shape="invhouse"]
+	 "main31" -> "main33" ;
+"main30" [label="30:  BinaryOperatorStmt: EQ \n   n$11=*&spec:char * [line 52]\n  n$12=*n$11:char  [line 52]\n " shape="box"]
 	
 
-	 30 -> 32 ;
-29 [label="29:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int =1 [line 22]\n " shape="box"]
+	 "main30" -> "main31" ;
+	 "main30" -> "main32" ;
+"main29" [label="29: + \n  " ]
 	
 
-	 29 -> 24 ;
-28 [label="28:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int =0 [line 22]\n " shape="box"]
+	 "main29" -> "main4" ;
+"main28" [label="28:  BinaryOperatorStmt: Assign \n   *&block_size:char *=0 [line 50]\n " shape="box"]
 	
 
-	 28 -> 24 ;
-27 [label="27: Prune (false branch) \n   PRUNE((n$5 == 0), false); [line 22]\n " shape="invhouse"]
+	 "main28" -> "main4" ;
+"main27" [label="27: Prune (false branch) \n   n$10=*&0$?%__sil_tmpSIL_temp_conditional___n$7:int  [line 49]\n  PRUNE((n$10 == 0), false); [line 49]\n " shape="invhouse"]
 	
 
-	 27 -> 29 ;
-26 [label="26: Prune (true branch) \n   PRUNE((n$5 != 0), true); [line 22]\n " shape="invhouse"]
+	 "main27" -> "main30" ;
+"main26" [label="26: Prune (true branch) \n   n$10=*&0$?%__sil_tmpSIL_temp_conditional___n$7:int  [line 49]\n  PRUNE((n$10 != 0), true); [line 49]\n " shape="invhouse"]
 	
 
-	 26 -> 28 ;
-25 [label="25:  BinaryOperatorStmt: Assign \n   n$4=_fun_getenv(\"BLOCK\":char *) [line 22]\n  *&x:int *=n$4 [line 22]\n  n$5=*&x:int * [line 22]\n " shape="box"]
+	 "main26" -> "main28" ;
+"main25" [label="25:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$7:int =1 [line 49]\n " shape="box"]
 	
 
-	 25 -> 26 ;
-	 25 -> 27 ;
-24 [label="24: + \n  " ]
+	 "main25" -> "main20" ;
+"main24" [label="24:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$7:int =0 [line 49]\n " shape="box"]
 	
 
-	 24 -> 30 ;
-	 24 -> 31 ;
-23 [label="23: Prune (false branch) \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int  [line 22]\n  PRUNE((n$2 == 0), false); [line 22]\n " shape="invhouse"]
+	 "main24" -> "main20" ;
+"main23" [label="23: Prune (false branch) \n   PRUNE((n$9 == 0), false); [line 49]\n " shape="invhouse"]
 	
 
-	 23 -> 33 ;
-22 [label="22: Prune (true branch) \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int  [line 22]\n  PRUNE((n$2 != 0), true); [line 22]\n " shape="invhouse"]
+	 "main23" -> "main25" ;
+"main22" [label="22: Prune (true branch) \n   PRUNE((n$9 != 0), true); [line 49]\n " shape="invhouse"]
 	
 
-	 22 -> 25 ;
-21 [label="21:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =1 [line 22]\n " shape="box"]
+	 "main22" -> "main24" ;
+"main21" [label="21:  BinaryOperatorStmt: Assign \n   n$8=_fun_getenv(\"BLOCKSIZE\":char *) [line 49]\n  *&spec:char *=n$8 [line 49]\n  n$9=*&spec:char * [line 49]\n " shape="box"]
 	
 
-	 21 -> 17 ;
-20 [label="20:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =0 [line 22]\n " shape="box"]
+	 "main21" -> "main22" ;
+	 "main21" -> "main23" ;
+"main20" [label="20: + \n  " ]
 	
 
-	 20 -> 17 ;
-19 [label="19: Prune (false branch) \n   n$1=*&x:int * [line 22]\n  PRUNE((n$1 == 0), false); [line 22]\n " shape="invhouse"]
+	 "main20" -> "main26" ;
+	 "main20" -> "main27" ;
+"main19" [label="19: Prune (false branch) \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int  [line 49]\n  PRUNE((n$6 == 0), false); [line 49]\n " shape="invhouse"]
 	
 
-	 19 -> 21 ;
-18 [label="18: Prune (true branch) \n   n$1=*&x:int * [line 22]\n  PRUNE((n$1 != 0), true); [line 22]\n " shape="invhouse"]
+	 "main19" -> "main30" ;
+"main18" [label="18: Prune (true branch) \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int  [line 49]\n  PRUNE((n$6 != 0), true); [line 49]\n " shape="invhouse"]
 	
 
-	 18 -> 20 ;
-17 [label="17: + \n  " ]
+	 "main18" -> "main21" ;
+"main17" [label="17:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int =1 [line 49]\n " shape="box"]
 	
 
-	 17 -> 22 ;
-	 17 -> 23 ;
-16 [label="16:  between_join_and_exit \n  " shape="box"]
+	 "main17" -> "main12" ;
+"main16" [label="16:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int =0 [line 49]\n " shape="box"]
 	
 
-	 16 -> 14 ;
-15 [label="15: + \n  " ]
+	 "main16" -> "main12" ;
+"main15" [label="15: Prune (false branch) \n   PRUNE((n$5 == 0), false); [line 49]\n " shape="invhouse"]
 	
 
-	 15 -> 16 ;
-14 [label="14: Exit shortcircuit_and \n  " color=yellow style=filled]
+	 "main15" -> "main17" ;
+"main14" [label="14: Prune (true branch) \n   PRUNE((n$5 != 0), true); [line 49]\n " shape="invhouse"]
 	
 
-13 [label="13: Start shortcircuit_and\nFormals:  x:int *\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int  0$?%__sil_tmpSIL_temp_conditional___n$3:int  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&0$?%__sil_tmpSIL_temp_conditional___n$3); [line 21]\n " color=yellow style=filled]
+	 "main14" -> "main16" ;
+"main13" [label="13:  BinaryOperatorStmt: Assign \n   n$4=_fun_getenv(\"BLOCK_SIZE\":char *) [line 49]\n  *&spec:char *=n$4 [line 49]\n  n$5=*&spec:char * [line 49]\n " shape="box"]
 	
 
-	 13 -> 18 ;
-	 13 -> 19 ;
-12 [label="12:  BinaryOperatorStmt: Assign \n   *&x:int *=32 [line 17]\n " shape="box"]
+	 "main13" -> "main14" ;
+	 "main13" -> "main15" ;
+"main12" [label="12: + \n  " ]
 	
 
-	 12 -> 3 ;
-11 [label="11:  BinaryOperatorStmt: Assign \n   *&x:int *=17 [line 15]\n " shape="box"]
+	 "main12" -> "main18" ;
+	 "main12" -> "main19" ;
+"main11" [label="11: Prune (false branch) \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int  [line 49]\n  PRUNE((n$2 == 0), false); [line 49]\n " shape="invhouse"]
 	
 
-	 11 -> 3 ;
-10 [label="10: Prune (false branch) \n   PRUNE(((n$2 == 2) == 0), false); [line 14]\n " shape="invhouse"]
+	 "main11" -> "main30" ;
+"main10" [label="10: Prune (true branch) \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int  [line 49]\n  PRUNE((n$2 != 0), true); [line 49]\n " shape="invhouse"]
 	
 
-	 10 -> 12 ;
-9 [label="9: Prune (true branch) \n   PRUNE(((n$2 == 2) != 0), true); [line 14]\n " shape="invhouse"]
+	 "main10" -> "main13" ;
+"main9" [label="9:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =1 [line 49]\n " shape="box"]
 	
 
-	 9 -> 11 ;
-8 [label="8:  BinaryOperatorStmt: EQ \n   n$1=*&x:int * [line 14]\n  n$2=*n$1:int  [line 14]\n " shape="box"]
+	 "main9" -> "main5" ;
+"main8" [label="8:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =0 [line 49]\n " shape="box"]
 	
 
-	 8 -> 9 ;
-	 8 -> 10 ;
-7 [label="7: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 14]\n " shape="invhouse"]
+	 "main8" -> "main5" ;
+"main7" [label="7: Prune (false branch) \n   n$1=*&spec:char * [line 49]\n  PRUNE((n$1 == 0), false); [line 49]\n " shape="invhouse"]
 	
 
-	 7 -> 8 ;
-6 [label="6: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 14]\n " shape="invhouse"]
+	 "main7" -> "main9" ;
+"main6" [label="6: Prune (true branch) \n   n$1=*&spec:char * [line 49]\n  PRUNE((n$1 != 0), true); [line 49]\n " shape="invhouse"]
 	
 
-	 6 -> 11 ;
-5 [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&x:int * [line 14]\n " shape="box"]
+	 "main6" -> "main8" ;
+"main5" [label="5: + \n  " ]
 	
 
-	 5 -> 6 ;
-	 5 -> 7 ;
-4 [label="4:  between_join_and_exit \n  " shape="box"]
+	 "main5" -> "main10" ;
+	 "main5" -> "main11" ;
+"main4" [label="4: + \n  " ]
 	
 
-	 4 -> 2 ;
-3 [label="3: + \n  " ]
+	 "main4" -> "main3" ;
+"main3" [label="3:  Return Stmt \n   *&return:int =0 [line 56]\n " shape="box"]
 	
 
-	 3 -> 4 ;
-2 [label="2: Exit shortcircuit_or \n  " color=yellow style=filled]
+	 "main3" -> "main2" ;
+"main2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start shortcircuit_or\nFormals:  x:int *\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+"main1" [label="1: Start main\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int  0$?%__sil_tmpSIL_temp_conditional___n$3:int  0$?%__sil_tmpSIL_temp_conditional___n$7:int  block_size:char * spec:char * \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&0$?%__sil_tmpSIL_temp_conditional___n$3,&0$?%__sil_tmpSIL_temp_conditional___n$7,&block_size,&spec); [line 42]\n " color=yellow style=filled]
 	
 
-	 1 -> 5 ;
+	 "main1" -> "main34" ;
 }

@@ -27,19 +27,19 @@ let tests =
   let instrs2 = [dummy_instr3] in
   let instrs3 = [dummy_instr4] in
   let instrs4 = [] in
-  let create_node cfg instrs =
-    Cfg.Node.create cfg Location.dummy (Cfg.Node.Stmt_node "") instrs test_pdesc in
-  let n1 = create_node cfg instrs1 in
-  let n2 = create_node cfg instrs2 in
-  let n3 = create_node cfg instrs3 in
-  let n4 = create_node cfg instrs4 in
+  let create_node instrs =
+    Cfg.Node.create Location.dummy (Cfg.Node.Stmt_node "") instrs test_pdesc in
+  let n1 = create_node instrs1 in
+  let n2 = create_node instrs2 in
+  let n3 = create_node instrs3 in
+  let n4 = create_node instrs4 in
 
   Cfg.Procdesc.set_start_node test_pdesc n1;
   (* let -> represent normal transitions and -*-> represent exceptional transitions *)
   (* creating graph n1 -> n2, n1 -*-> n3, n2 -> n4, n2 -*-> n3, n3 -> n4 , n3 -*> n4 *)
-  Cfg.Node.set_succs_exn cfg n1 [n2] [n3];
-  Cfg.Node.set_succs_exn cfg n2 [n4] [n3];
-  Cfg.Node.set_succs_exn cfg n3 [n4] [n4];
+  Cfg.Node.set_succs_exn n1 [n2] [n3];
+  Cfg.Node.set_succs_exn n2 [n4] [n3];
+  Cfg.Node.set_succs_exn n3 [n4] [n4];
 
   let normal_proc_cfg = ProcCfg.Normal.from_pdesc test_pdesc in
   let exceptional_proc_cfg = ProcCfg.Exceptional.from_pdesc test_pdesc in

@@ -1,25 +1,25 @@
 /* @generated */
 digraph iCFG {
-6 [label="6:  Return Stmt \n   *&return:int =0 [line 14]\n " shape="box"]
+"main3" [label="3:  Return Stmt \n   *&return:int =0 [line 14]\n " shape="box"]
 	
 
-	 6 -> 5 ;
-5 [label="5: Exit main \n  " color=yellow style=filled]
+	 "main3" -> "main2" ;
+"main2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start main\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+"main1" [label="1: Start main\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
 	
 
-	 4 -> 6 ;
-3 [label="3:  DeclStmt \n   n$0=_fun_NSString_stringWithUTF8String:(\"Rodriguez\":char *) [line 12]\n  *&#GB<strings/global_string_literal.m>$lastName:class NSString *=n$0 [line 12]\n " shape="box"]
+	 "main1" -> "main3" ;
+"__infer_globals_initializer_lastName3" [label="3:  DeclStmt \n   n$0=_fun_NSString_stringWithUTF8String:(\"Rodriguez\":char *) [line 12]\n  *&#GB<strings/global_string_literal.m>$lastName:class NSString *=n$0 [line 12]\n " shape="box"]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit __infer_globals_initializer_lastName \n  " color=yellow style=filled]
+	 "__infer_globals_initializer_lastName3" -> "__infer_globals_initializer_lastName2" ;
+"__infer_globals_initializer_lastName2" [label="2: Exit __infer_globals_initializer_lastName \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start __infer_globals_initializer_lastName\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+"__infer_globals_initializer_lastName1" [label="1: Start __infer_globals_initializer_lastName\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
-	 1 -> 3 ;
+	 "__infer_globals_initializer_lastName1" -> "__infer_globals_initializer_lastName3" ;
 }

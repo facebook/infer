@@ -1,296 +1,296 @@
 /* @generated */
 digraph iCFG {
-73 [label="73:  Return Stmt \n   n$1=*&p:int * [line 60]\n  n$2=*n$1:int  [line 60]\n  *&return:int =n$2 [line 60]\n " shape="box"]
+"simple_init_div09" [label="9:  Return Stmt \n   n$2=*&a:int  [line 20]\n  *&return:int =(1 / n$2) [line 20]\n " shape="box"]
 	
 
-	 73 -> 66 ;
-72 [label="72:  Return Stmt \n   *&return:int =1 [line 58]\n " shape="box"]
+	 "simple_init_div09" -> "simple_init_div02" ;
+"simple_init_div08" [label="8:  Return Stmt \n   n$1=*&a:int  [line 18]\n  *&return:int =n$1 [line 18]\n " shape="box"]
 	
 
-	 72 -> 66 ;
-71 [label="71:  DeclStmt \n   *&p:int *=null [line 57]\n " shape="box"]
+	 "simple_init_div08" -> "simple_init_div02" ;
+"simple_init_div07" [label="7:  DeclStmt \n   *&a:int =0 [line 17]\n " shape="box"]
 	
 
-	 71 -> 69 ;
-	 71 -> 70 ;
-70 [label="70: Prune (false branch) \n   n$0=*&p:int * [line 57]\n  PRUNE((n$0 == 0), false); [line 57]\n " shape="invhouse"]
+	 "simple_init_div07" -> "simple_init_div05" ;
+	 "simple_init_div07" -> "simple_init_div06" ;
+"simple_init_div06" [label="6: Prune (false branch) \n   n$0=*&a:int  [line 17]\n  PRUNE((n$0 == 0), false); [line 17]\n " shape="invhouse"]
 	
 
-	 70 -> 73 ;
-69 [label="69: Prune (true branch) \n   n$0=*&p:int * [line 57]\n  PRUNE((n$0 != 0), true); [line 57]\n " shape="invhouse"]
+	 "simple_init_div06" -> "simple_init_div09" ;
+"simple_init_div05" [label="5: Prune (true branch) \n   n$0=*&a:int  [line 17]\n  PRUNE((n$0 != 0), true); [line 17]\n " shape="invhouse"]
 	
 
-	 69 -> 72 ;
-68 [label="68:  between_join_and_exit \n  " shape="box"]
+	 "simple_init_div05" -> "simple_init_div08" ;
+"simple_init_div04" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 68 -> 66 ;
-67 [label="67: + \n  " ]
+	 "simple_init_div04" -> "simple_init_div02" ;
+"simple_init_div03" [label="3: + \n  " ]
 	
 
-	 67 -> 68 ;
-66 [label="66: Exit simple_init_null_deref \n  " color=yellow style=filled]
+	 "simple_init_div03" -> "simple_init_div04" ;
+"simple_init_div02" [label="2: Exit simple_init_div0 \n  " color=yellow style=filled]
 	
 
-65 [label="65: Start simple_init_null_deref\nFormals: \nLocals:  p:int * \n   DECLARE_LOCALS(&return,&p); [line 56]\n " color=yellow style=filled]
+"simple_init_div01" [label="1: Start simple_init_div0\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 16]\n " color=yellow style=filled]
 	
 
-	 65 -> 71 ;
-64 [label="64:  DeclStmt \n   *&r:int =1 [line 49]\n " shape="box"]
+	 "simple_init_div01" -> "simple_init_div07" ;
+"conditional_init_div013" [label="13:  Return Stmt \n   n$3=*&a:int  [line 44]\n  *&return:int =(1 / (n$3 - 1)) [line 44]\n " shape="box"]
 	
 
-	 64 -> 62 ;
-63 [label="63:  BinaryOperatorStmt: Assign \n   n$3=*&a:int & [line 51]\n  *n$3:int =0 [line 51]\n " shape="box"]
+	 "conditional_init_div013" -> "conditional_init_div02" ;
+"conditional_init_div012" [label="12:  DeclStmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int  [line 43]\n  *&a:int =n$2 [line 43]\n " shape="box"]
 	
 
-	 63 -> 59 ;
-62 [label="62:  DeclStmt \n   *&a:int &=&r [line 50]\n " shape="box"]
+	 "conditional_init_div012" -> "conditional_init_div05" ;
+	 "conditional_init_div012" -> "conditional_init_div06" ;
+"conditional_init_div011" [label="11:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int =0 [line 43]\n " shape="box"]
 	
 
-	 62 -> 60 ;
-	 62 -> 61 ;
-61 [label="61: Prune (false branch) \n   n$1=*&a:int & [line 50]\n  n$2=*n$1:int  [line 50]\n  PRUNE((n$2 == 0), false); [line 50]\n " shape="invhouse"]
+	 "conditional_init_div011" -> "conditional_init_div07" ;
+"conditional_init_div010" [label="10:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int =1 [line 43]\n " shape="box"]
 	
 
-	 61 -> 59 ;
-60 [label="60: Prune (true branch) \n   n$1=*&a:int & [line 50]\n  n$2=*n$1:int  [line 50]\n  PRUNE((n$2 != 0), true); [line 50]\n " shape="invhouse"]
+	 "conditional_init_div010" -> "conditional_init_div07" ;
+"conditional_init_div09" [label="9: Prune (false branch) \n   PRUNE((1 == 0), false); [line 43]\n " shape="invhouse"]
 	
 
-	 60 -> 63 ;
-59 [label="59: + \n  " ]
+	 "conditional_init_div09" -> "conditional_init_div011" ;
+"conditional_init_div08" [label="8: Prune (true branch) \n   PRUNE((1 != 0), true); [line 43]\n " shape="invhouse"]
 	
 
-	 59 -> 58 ;
-58 [label="58:  Return Stmt \n   n$0=*&r:int  [line 53]\n  *&return:int =(1 / n$0) [line 53]\n " shape="box"]
+	 "conditional_init_div08" -> "conditional_init_div010" ;
+"conditional_init_div07" [label="7: + \n  " ]
 	
 
-	 58 -> 57 ;
-57 [label="57: Exit reference_init_div0 \n  " color=yellow style=filled]
+	 "conditional_init_div07" -> "conditional_init_div012" ;
+"conditional_init_div06" [label="6: Prune (false branch) \n   n$0=*&a:int  [line 43]\n  PRUNE((n$0 == 0), false); [line 43]\n " shape="invhouse"]
 	
 
-56 [label="56: Start reference_init_div0\nFormals: \nLocals:  a:int & r:int  \n   DECLARE_LOCALS(&return,&a,&r); [line 48]\n " color=yellow style=filled]
+	 "conditional_init_div06" -> "conditional_init_div03" ;
+"conditional_init_div05" [label="5: Prune (true branch) \n   n$0=*&a:int  [line 43]\n  PRUNE((n$0 != 0), true); [line 43]\n " shape="invhouse"]
 	
 
-	 56 -> 64 ;
-55 [label="55:  Return Stmt \n   n$3=*&a:int  [line 44]\n  *&return:int =(1 / (n$3 - 1)) [line 44]\n " shape="box"]
+	 "conditional_init_div05" -> "conditional_init_div013" ;
+"conditional_init_div04" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 55 -> 44 ;
-54 [label="54:  DeclStmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int  [line 43]\n  *&a:int =n$2 [line 43]\n " shape="box"]
+	 "conditional_init_div04" -> "conditional_init_div02" ;
+"conditional_init_div03" [label="3: + \n  " ]
 	
 
-	 54 -> 47 ;
-	 54 -> 48 ;
-53 [label="53:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int =0 [line 43]\n " shape="box"]
+	 "conditional_init_div03" -> "conditional_init_div04" ;
+"conditional_init_div02" [label="2: Exit conditional_init_div0 \n  " color=yellow style=filled]
 	
 
-	 53 -> 49 ;
-52 [label="52:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int =1 [line 43]\n " shape="box"]
+"conditional_init_div01" [label="1: Start conditional_init_div0\nFormals: \nLocals:  a:int  0$?%__sil_tmpSIL_temp_conditional___n$1:int  \n   DECLARE_LOCALS(&return,&a,&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 42]\n " color=yellow style=filled]
 	
 
-	 52 -> 49 ;
-51 [label="51: Prune (false branch) \n   PRUNE((1 == 0), false); [line 43]\n " shape="invhouse"]
+	 "conditional_init_div01" -> "conditional_init_div08" ;
+	 "conditional_init_div01" -> "conditional_init_div09" ;
+"simple_inif_elseif_div014" [label="14:  Return Stmt \n   n$2=*&a:int  [line 30]\n  n$3=*&b:int  [line 30]\n  *&return:int =(1 / (n$2 + n$3)) [line 30]\n " shape="box"]
 	
 
-	 51 -> 53 ;
-50 [label="50: Prune (true branch) \n   PRUNE((1 != 0), true); [line 43]\n " shape="invhouse"]
+	 "simple_inif_elseif_div014" -> "simple_inif_elseif_div02" ;
+"simple_inif_elseif_div013" [label="13:  Return Stmt \n   *&return:int =1 [line 28]\n " shape="box"]
 	
 
-	 50 -> 52 ;
-49 [label="49: + \n  " ]
+	 "simple_inif_elseif_div013" -> "simple_inif_elseif_div02" ;
+"simple_inif_elseif_div012" [label="12:  DeclStmt \n   *&b:int =0 [line 27]\n " shape="box"]
 	
 
-	 49 -> 54 ;
-48 [label="48: Prune (false branch) \n   n$0=*&a:int  [line 43]\n  PRUNE((n$0 == 0), false); [line 43]\n " shape="invhouse"]
+	 "simple_inif_elseif_div012" -> "simple_inif_elseif_div010" ;
+	 "simple_inif_elseif_div012" -> "simple_inif_elseif_div011" ;
+"simple_inif_elseif_div011" [label="11: Prune (false branch) \n   n$1=*&b:int  [line 27]\n  PRUNE((n$1 == 0), false); [line 27]\n " shape="invhouse"]
 	
 
-	 48 -> 45 ;
-47 [label="47: Prune (true branch) \n   n$0=*&a:int  [line 43]\n  PRUNE((n$0 != 0), true); [line 43]\n " shape="invhouse"]
+	 "simple_inif_elseif_div011" -> "simple_inif_elseif_div014" ;
+"simple_inif_elseif_div010" [label="10: Prune (true branch) \n   n$1=*&b:int  [line 27]\n  PRUNE((n$1 != 0), true); [line 27]\n " shape="invhouse"]
 	
 
-	 47 -> 55 ;
-46 [label="46:  between_join_and_exit \n  " shape="box"]
+	 "simple_inif_elseif_div010" -> "simple_inif_elseif_div013" ;
+"simple_inif_elseif_div09" [label="9: + \n  " ]
 	
 
-	 46 -> 44 ;
-45 [label="45: + \n  " ]
+	 "simple_inif_elseif_div09" -> "simple_inif_elseif_div03" ;
+"simple_inif_elseif_div08" [label="8:  Return Stmt \n   *&return:int =1 [line 26]\n " shape="box"]
 	
 
-	 45 -> 46 ;
-44 [label="44: Exit conditional_init_div0 \n  " color=yellow style=filled]
+	 "simple_inif_elseif_div08" -> "simple_inif_elseif_div02" ;
+"simple_inif_elseif_div07" [label="7:  DeclStmt \n   *&a:int =0 [line 25]\n " shape="box"]
 	
 
-43 [label="43: Start conditional_init_div0\nFormals: \nLocals:  a:int  0$?%__sil_tmpSIL_temp_conditional___n$1:int  \n   DECLARE_LOCALS(&return,&a,&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 42]\n " color=yellow style=filled]
+	 "simple_inif_elseif_div07" -> "simple_inif_elseif_div05" ;
+	 "simple_inif_elseif_div07" -> "simple_inif_elseif_div06" ;
+"simple_inif_elseif_div06" [label="6: Prune (false branch) \n   n$0=*&a:int  [line 25]\n  PRUNE((n$0 == 0), false); [line 25]\n " shape="invhouse"]
 	
 
-	 43 -> 50 ;
-	 43 -> 51 ;
-42 [label="42:  Return Stmt \n   n$2=*&a:int  [line 38]\n  *&return:int =(1 / (n$2 - 1)) [line 38]\n " shape="box"]
+	 "simple_inif_elseif_div06" -> "simple_inif_elseif_div012" ;
+"simple_inif_elseif_div05" [label="5: Prune (true branch) \n   n$0=*&a:int  [line 25]\n  PRUNE((n$0 != 0), true); [line 25]\n " shape="invhouse"]
 	
 
-	 42 -> 36 ;
-41 [label="41:  DeclStmt \n   n$1=_fun_get1() [line 37]\n  *&a:int =n$1 [line 37]\n " shape="box"]
+	 "simple_inif_elseif_div05" -> "simple_inif_elseif_div08" ;
+"simple_inif_elseif_div04" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 41 -> 39 ;
-	 41 -> 40 ;
-40 [label="40: Prune (false branch) \n   n$0=*&a:int  [line 37]\n  PRUNE((n$0 == 0), false); [line 37]\n " shape="invhouse"]
+	 "simple_inif_elseif_div04" -> "simple_inif_elseif_div02" ;
+"simple_inif_elseif_div03" [label="3: + \n  " ]
 	
 
-	 40 -> 37 ;
-39 [label="39: Prune (true branch) \n   n$0=*&a:int  [line 37]\n  PRUNE((n$0 != 0), true); [line 37]\n " shape="invhouse"]
+	 "simple_inif_elseif_div03" -> "simple_inif_elseif_div04" ;
+"simple_inif_elseif_div02" [label="2: Exit simple_inif_elseif_div0 \n  " color=yellow style=filled]
 	
 
-	 39 -> 42 ;
-38 [label="38:  between_join_and_exit \n  " shape="box"]
+"simple_inif_elseif_div01" [label="1: Start simple_inif_elseif_div0\nFormals: \nLocals:  a:int  b:int  \n   DECLARE_LOCALS(&return,&a,&b); [line 24]\n " color=yellow style=filled]
 	
 
-	 38 -> 36 ;
-37 [label="37: + \n  " ]
+	 "simple_inif_elseif_div01" -> "simple_inif_elseif_div07" ;
+"function_call_init_div08" [label="8:  Return Stmt \n   n$2=*&a:int  [line 38]\n  *&return:int =(1 / (n$2 - 1)) [line 38]\n " shape="box"]
 	
 
-	 37 -> 38 ;
-36 [label="36: Exit function_call_init_div0 \n  " color=yellow style=filled]
+	 "function_call_init_div08" -> "function_call_init_div02" ;
+"function_call_init_div07" [label="7:  DeclStmt \n   n$1=_fun_get1() [line 37]\n  *&a:int =n$1 [line 37]\n " shape="box"]
 	
 
-35 [label="35: Start function_call_init_div0\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 36]\n " color=yellow style=filled]
+	 "function_call_init_div07" -> "function_call_init_div05" ;
+	 "function_call_init_div07" -> "function_call_init_div06" ;
+"function_call_init_div06" [label="6: Prune (false branch) \n   n$0=*&a:int  [line 37]\n  PRUNE((n$0 == 0), false); [line 37]\n " shape="invhouse"]
 	
 
-	 35 -> 41 ;
-34 [label="34:  Return Stmt \n   *&return:int =1 [line 34]\n " shape="box"]
+	 "function_call_init_div06" -> "function_call_init_div03" ;
+"function_call_init_div05" [label="5: Prune (true branch) \n   n$0=*&a:int  [line 37]\n  PRUNE((n$0 != 0), true); [line 37]\n " shape="invhouse"]
 	
 
-	 34 -> 33 ;
-33 [label="33: Exit get1 \n  " color=yellow style=filled]
+	 "function_call_init_div05" -> "function_call_init_div08" ;
+"function_call_init_div04" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-32 [label="32: Start get1\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
+	 "function_call_init_div04" -> "function_call_init_div02" ;
+"function_call_init_div03" [label="3: + \n  " ]
 	
 
-	 32 -> 34 ;
-31 [label="31:  Return Stmt \n   n$2=*&a:int  [line 30]\n  n$3=*&b:int  [line 30]\n  *&return:int =(1 / (n$2 + n$3)) [line 30]\n " shape="box"]
+	 "function_call_init_div03" -> "function_call_init_div04" ;
+"function_call_init_div02" [label="2: Exit function_call_init_div0 \n  " color=yellow style=filled]
 	
 
-	 31 -> 19 ;
-30 [label="30:  Return Stmt \n   *&return:int =1 [line 28]\n " shape="box"]
+"function_call_init_div01" [label="1: Start function_call_init_div0\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 36]\n " color=yellow style=filled]
 	
 
-	 30 -> 19 ;
-29 [label="29:  DeclStmt \n   *&b:int =0 [line 27]\n " shape="box"]
+	 "function_call_init_div01" -> "function_call_init_div07" ;
+"simple_init_null_deref9" [label="9:  Return Stmt \n   n$1=*&p:int * [line 60]\n  n$2=*n$1:int  [line 60]\n  *&return:int =n$2 [line 60]\n " shape="box"]
 	
 
-	 29 -> 27 ;
-	 29 -> 28 ;
-28 [label="28: Prune (false branch) \n   n$1=*&b:int  [line 27]\n  PRUNE((n$1 == 0), false); [line 27]\n " shape="invhouse"]
+	 "simple_init_null_deref9" -> "simple_init_null_deref2" ;
+"simple_init_null_deref8" [label="8:  Return Stmt \n   *&return:int =1 [line 58]\n " shape="box"]
 	
 
-	 28 -> 31 ;
-27 [label="27: Prune (true branch) \n   n$1=*&b:int  [line 27]\n  PRUNE((n$1 != 0), true); [line 27]\n " shape="invhouse"]
+	 "simple_init_null_deref8" -> "simple_init_null_deref2" ;
+"simple_init_null_deref7" [label="7:  DeclStmt \n   *&p:int *=null [line 57]\n " shape="box"]
 	
 
-	 27 -> 30 ;
-26 [label="26: + \n  " ]
+	 "simple_init_null_deref7" -> "simple_init_null_deref5" ;
+	 "simple_init_null_deref7" -> "simple_init_null_deref6" ;
+"simple_init_null_deref6" [label="6: Prune (false branch) \n   n$0=*&p:int * [line 57]\n  PRUNE((n$0 == 0), false); [line 57]\n " shape="invhouse"]
 	
 
-	 26 -> 20 ;
-25 [label="25:  Return Stmt \n   *&return:int =1 [line 26]\n " shape="box"]
+	 "simple_init_null_deref6" -> "simple_init_null_deref9" ;
+"simple_init_null_deref5" [label="5: Prune (true branch) \n   n$0=*&p:int * [line 57]\n  PRUNE((n$0 != 0), true); [line 57]\n " shape="invhouse"]
 	
 
-	 25 -> 19 ;
-24 [label="24:  DeclStmt \n   *&a:int =0 [line 25]\n " shape="box"]
+	 "simple_init_null_deref5" -> "simple_init_null_deref8" ;
+"simple_init_null_deref4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 24 -> 22 ;
-	 24 -> 23 ;
-23 [label="23: Prune (false branch) \n   n$0=*&a:int  [line 25]\n  PRUNE((n$0 == 0), false); [line 25]\n " shape="invhouse"]
+	 "simple_init_null_deref4" -> "simple_init_null_deref2" ;
+"simple_init_null_deref3" [label="3: + \n  " ]
 	
 
-	 23 -> 29 ;
-22 [label="22: Prune (true branch) \n   n$0=*&a:int  [line 25]\n  PRUNE((n$0 != 0), true); [line 25]\n " shape="invhouse"]
+	 "simple_init_null_deref3" -> "simple_init_null_deref4" ;
+"simple_init_null_deref2" [label="2: Exit simple_init_null_deref \n  " color=yellow style=filled]
 	
 
-	 22 -> 25 ;
-21 [label="21:  between_join_and_exit \n  " shape="box"]
+"simple_init_null_deref1" [label="1: Start simple_init_null_deref\nFormals: \nLocals:  p:int * \n   DECLARE_LOCALS(&return,&p); [line 56]\n " color=yellow style=filled]
 	
 
-	 21 -> 19 ;
-20 [label="20: + \n  " ]
+	 "simple_init_null_deref1" -> "simple_init_null_deref7" ;
+"reference_init_div09" [label="9:  DeclStmt \n   *&r:int =1 [line 49]\n " shape="box"]
 	
 
-	 20 -> 21 ;
-19 [label="19: Exit simple_inif_elseif_div0 \n  " color=yellow style=filled]
+	 "reference_init_div09" -> "reference_init_div07" ;
+"reference_init_div08" [label="8:  BinaryOperatorStmt: Assign \n   n$3=*&a:int & [line 51]\n  *n$3:int =0 [line 51]\n " shape="box"]
 	
 
-18 [label="18: Start simple_inif_elseif_div0\nFormals: \nLocals:  a:int  b:int  \n   DECLARE_LOCALS(&return,&a,&b); [line 24]\n " color=yellow style=filled]
+	 "reference_init_div08" -> "reference_init_div04" ;
+"reference_init_div07" [label="7:  DeclStmt \n   *&a:int &=&r [line 50]\n " shape="box"]
 	
 
-	 18 -> 24 ;
-17 [label="17:  Return Stmt \n   n$2=*&a:int  [line 20]\n  *&return:int =(1 / n$2) [line 20]\n " shape="box"]
+	 "reference_init_div07" -> "reference_init_div05" ;
+	 "reference_init_div07" -> "reference_init_div06" ;
+"reference_init_div06" [label="6: Prune (false branch) \n   n$1=*&a:int & [line 50]\n  n$2=*n$1:int  [line 50]\n  PRUNE((n$2 == 0), false); [line 50]\n " shape="invhouse"]
 	
 
-	 17 -> 10 ;
-16 [label="16:  Return Stmt \n   n$1=*&a:int  [line 18]\n  *&return:int =n$1 [line 18]\n " shape="box"]
+	 "reference_init_div06" -> "reference_init_div04" ;
+"reference_init_div05" [label="5: Prune (true branch) \n   n$1=*&a:int & [line 50]\n  n$2=*n$1:int  [line 50]\n  PRUNE((n$2 != 0), true); [line 50]\n " shape="invhouse"]
 	
 
-	 16 -> 10 ;
-15 [label="15:  DeclStmt \n   *&a:int =0 [line 17]\n " shape="box"]
+	 "reference_init_div05" -> "reference_init_div08" ;
+"reference_init_div04" [label="4: + \n  " ]
 	
 
-	 15 -> 13 ;
-	 15 -> 14 ;
-14 [label="14: Prune (false branch) \n   n$0=*&a:int  [line 17]\n  PRUNE((n$0 == 0), false); [line 17]\n " shape="invhouse"]
+	 "reference_init_div04" -> "reference_init_div03" ;
+"reference_init_div03" [label="3:  Return Stmt \n   n$0=*&r:int  [line 53]\n  *&return:int =(1 / n$0) [line 53]\n " shape="box"]
 	
 
-	 14 -> 17 ;
-13 [label="13: Prune (true branch) \n   n$0=*&a:int  [line 17]\n  PRUNE((n$0 != 0), true); [line 17]\n " shape="invhouse"]
+	 "reference_init_div03" -> "reference_init_div02" ;
+"reference_init_div02" [label="2: Exit reference_init_div0 \n  " color=yellow style=filled]
 	
 
-	 13 -> 16 ;
-12 [label="12:  between_join_and_exit \n  " shape="box"]
+"reference_init_div01" [label="1: Start reference_init_div0\nFormals: \nLocals:  a:int & r:int  \n   DECLARE_LOCALS(&return,&a,&r); [line 48]\n " color=yellow style=filled]
 	
 
-	 12 -> 10 ;
-11 [label="11: + \n  " ]
+	 "reference_init_div01" -> "reference_init_div09" ;
+"get13" [label="3:  Return Stmt \n   *&return:int =1 [line 34]\n " shape="box"]
 	
 
-	 11 -> 12 ;
-10 [label="10: Exit simple_init_div0 \n  " color=yellow style=filled]
+	 "get13" -> "get12" ;
+"get12" [label="2: Exit get1 \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start simple_init_div0\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 16]\n " color=yellow style=filled]
+"get11" [label="1: Start get1\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
 	
 
-	 9 -> 15 ;
-8 [label="8:  Return Stmt \n   n$1=*&a:int  [line 12]\n  *&return:int =(1 / n$1) [line 12]\n " shape="box"]
+	 "get11" -> "get13" ;
+"simple_init_div18" [label="8:  Return Stmt \n   n$1=*&a:int  [line 12]\n  *&return:int =(1 / n$1) [line 12]\n " shape="box"]
 	
 
-	 8 -> 2 ;
-7 [label="7:  DeclStmt \n   *&a:int =1 [line 11]\n " shape="box"]
+	 "simple_init_div18" -> "simple_init_div12" ;
+"simple_init_div17" [label="7:  DeclStmt \n   *&a:int =1 [line 11]\n " shape="box"]
 	
 
-	 7 -> 5 ;
-	 7 -> 6 ;
-6 [label="6: Prune (false branch) \n   n$0=*&a:int  [line 11]\n  PRUNE((n$0 == 0), false); [line 11]\n " shape="invhouse"]
+	 "simple_init_div17" -> "simple_init_div15" ;
+	 "simple_init_div17" -> "simple_init_div16" ;
+"simple_init_div16" [label="6: Prune (false branch) \n   n$0=*&a:int  [line 11]\n  PRUNE((n$0 == 0), false); [line 11]\n " shape="invhouse"]
 	
 
-	 6 -> 3 ;
-5 [label="5: Prune (true branch) \n   n$0=*&a:int  [line 11]\n  PRUNE((n$0 != 0), true); [line 11]\n " shape="invhouse"]
+	 "simple_init_div16" -> "simple_init_div13" ;
+"simple_init_div15" [label="5: Prune (true branch) \n   n$0=*&a:int  [line 11]\n  PRUNE((n$0 != 0), true); [line 11]\n " shape="invhouse"]
 	
 
-	 5 -> 8 ;
-4 [label="4:  between_join_and_exit \n  " shape="box"]
+	 "simple_init_div15" -> "simple_init_div18" ;
+"simple_init_div14" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 4 -> 2 ;
-3 [label="3: + \n  " ]
+	 "simple_init_div14" -> "simple_init_div12" ;
+"simple_init_div13" [label="3: + \n  " ]
 	
 
-	 3 -> 4 ;
-2 [label="2: Exit simple_init_div1 \n  " color=yellow style=filled]
+	 "simple_init_div13" -> "simple_init_div14" ;
+"simple_init_div12" [label="2: Exit simple_init_div1 \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start simple_init_div1\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 10]\n " color=yellow style=filled]
+"simple_init_div11" [label="1: Start simple_init_div1\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 10]\n " color=yellow style=filled]
 	
 
-	 1 -> 7 ;
+	 "simple_init_div11" -> "simple_init_div17" ;
 }

@@ -249,17 +249,17 @@ let setup_harness_cfg harness_name env cg cfg =
     (* important to reverse the list or there will be scoping issues! *)
     let instrs = (IList.rev env.instrs) in
     let nodekind = Cfg.Node.Stmt_node "method_body" in
-    Cfg.Node.create cfg env.pc nodekind instrs procdesc in
+    Cfg.Node.create env.pc nodekind instrs procdesc in
   let (start_node, exit_node) =
-    let create_node kind = Cfg.Node.create cfg env.pc kind [] procdesc in
+    let create_node kind = Cfg.Node.create env.pc kind [] procdesc in
     let start_kind = Cfg.Node.Start_node procname in
     let exit_kind = Cfg.Node.Exit_node procname in
     (create_node start_kind, create_node exit_kind) in
   Cfg.Procdesc.set_start_node procdesc start_node;
   Cfg.Procdesc.set_exit_node procdesc exit_node;
   Cfg.Node.add_locals_ret_declaration start_node [];
-  Cfg.Node.set_succs_exn cfg start_node [harness_node] [exit_node];
-  Cfg.Node.set_succs_exn cfg harness_node [exit_node] [exit_node];
+  Cfg.Node.set_succs_exn start_node [harness_node] [exit_node];
+  Cfg.Node.set_succs_exn harness_node [exit_node] [exit_node];
   add_harness_to_cg harness_name harness_node cg
 
 (** create a procedure named harness_name that calls each of the methods in trace in the specified

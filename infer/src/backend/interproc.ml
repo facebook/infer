@@ -1513,8 +1513,10 @@ let do_analysis exe_env =
 
 let visited_and_total_nodes cfg =
   let all_nodes =
-    let add s n = Cfg.NodeSet.add n s in
-    IList.fold_left add Cfg.NodeSet.empty (Cfg.Node.get_all_nodes cfg) in
+    let set = ref Cfg.NodeSet.empty in
+    let add _ n = set := Cfg.NodeSet.add n !set in
+    Cfg.iter_all_nodes add cfg;
+    !set in
   let filter_node n =
     Cfg.Procdesc.is_defined (Cfg.Node.get_proc_desc n) &&
     match Cfg.Node.get_kind n with

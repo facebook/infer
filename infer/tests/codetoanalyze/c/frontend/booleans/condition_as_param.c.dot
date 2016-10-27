@@ -1,25 +1,25 @@
 /* @generated */
 digraph iCFG {
-6 [label="6:  DeclStmt \n   *&x:int =3 [line 13]\n " shape="box"]
+"main4" [label="4:  DeclStmt \n   *&x:int =3 [line 13]\n " shape="box"]
 	
 
-	 6 -> 5 ;
-5 [label="5:  Call _fun_check \n   n$0=*&x:int  [line 14]\n  _fun_check((n$0 < 2):int ) [line 14]\n " shape="box"]
+	 "main4" -> "main3" ;
+"main3" [label="3:  Call _fun_check \n   n$0=*&x:int  [line 14]\n  _fun_check((n$0 < 2):int ) [line 14]\n " shape="box"]
 	
 
-	 5 -> 4 ;
-4 [label="4: Exit main \n  " color=yellow style=filled]
+	 "main3" -> "main2" ;
+"main2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start main\nFormals: \nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 12]\n " color=yellow style=filled]
+"main1" [label="1: Start main\nFormals: \nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 12]\n " color=yellow style=filled]
 	
 
-	 3 -> 6 ;
-2 [label="2: Exit check \n  " color=yellow style=filled]
+	 "main1" -> "main4" ;
+"check2" [label="2: Exit check \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start check\nFormals:  x:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+"check1" [label="1: Start check\nFormals:  x:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
-	 1 -> 2 ;
+	 "check1" -> "check2" ;
 }

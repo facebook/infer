@@ -53,6 +53,7 @@ let module Node = {
     pd_attributes: ProcAttributes.t, /** attributes of the procedure */
     pd_id: int, /** unique proc_desc identifier */
     mutable pd_nodes: list t, /** list of nodes of this procedure */
+    mutable pd_nodes_num: int, /** number of nodes */
     mutable pd_start_node: t, /** start node of this procedure */
     mutable pd_exit_node: t /** exit node of ths procedure */
   };
@@ -61,14 +62,10 @@ let module Node = {
   let throw_kind = Stmt_node "throw";
 
   /** data type for the control flow graph */
-  type cfg = {
-    mutable node_id: int,
-    mutable node_list: list t,
-    name_pdesc_tbl: Procname.Hash.t proc_desc /** Map proc name to procdesc */
-  };
+  type cfg = {name_pdesc_tbl: Procname.Hash.t proc_desc /** Map proc name to procdesc */};
 
   /** create a new empty cfg */
-  let create_cfg () => {node_id: 0, node_list: [], name_pdesc_tbl: Procname.Hash.create 16};
+  let create_cfg () => {name_pdesc_tbl: Procname.Hash.create 16};
 
   /** compute the list of procedures added or changed in [cfg_new] over [cfg_old] */
   let mark_unchanged_pdescs cfg_new cfg_old => {
@@ -137,10 +134,6 @@ let module Node = {
       };
     Procname.Hash.iter mark_pdesc_if_unchanged new_procs
   };
-  let node_id_gen cfg => {
-    cfg.node_id = cfg.node_id + 1;
-    cfg.node_id
-  };
   let pdesc_tbl_add cfg proc_name proc_desc =>
     Procname.Hash.add cfg.name_pdesc_tbl proc_name proc_desc;
   let pdesc_tbl_remove cfg proc_name => Procname.Hash.remove cfg.name_pdesc_tbl proc_name;
@@ -160,9 +153,11 @@ let module Node = {
   let compare node1 node2 => int_compare node1.nd_id node2.nd_id;
   let hash node => Hashtbl.hash node.nd_id;
   let equal node1 node2 => compare node1 node2 == 0;
-  let get_all_nodes cfg => cfg.node_list;
-  let create cfg loc kind instrs pdesc => {
-    let node_id = node_id_gen cfg;
+
+  /** Create a new cfg node */
+  let create loc kind instrs pdesc => {
+    pdesc.pd_nodes_num = pdesc.pd_nodes_num + 1;
+    let node_id = pdesc.pd_nodes_num;
     let node = {
       nd_id: node_id,
       nd_dist_exit: None,
@@ -174,7 +169,6 @@ let module Node = {
       nd_succs: [],
       nd_exn: []
     };
-    cfg.node_list = [node, ...cfg.node_list];
     pdesc.pd_nodes = [node, ...pdesc.pd_nodes];
     node
   };
@@ -251,12 +245,12 @@ let module Node = {
   /** Set the successor and exception nodes.
       If this is a join node right before the exit node, add an extra node in the middle,
       otherwise nullify and abstract instructions cannot be added after a conditional. */
-  let set_succs_exn cfg node succs exn =>
+  let set_succs_exn node succs exn =>
     switch (node.nd_kind, succs) {
     | (Join_node, [{nd_kind: Exit_node _} as exit_node]) =>
       let kind = Stmt_node "between_join_and_exit";
       let pdesc = get_proc_desc node;
-      let node' = create cfg node.nd_loc kind node.nd_instrs pdesc;
+      let node' = create node.nd_loc kind node.nd_instrs pdesc;
       set_succs_exn_base node [node'] exn;
       set_succs_exn_base node' [exit_node] exn
     | _ => set_succs_exn_base node succs exn
@@ -383,26 +377,14 @@ let module Node = {
       pd_attributes: proc_attributes,
       pd_id: !proc_desc_id_counter,
       pd_nodes: [],
+      pd_nodes_num: 0,
       pd_start_node: dummy (),
       pd_exit_node: dummy ()
     };
     pdesc_tbl_add cfg proc_attributes.ProcAttributes.proc_name pdesc;
     pdesc
   };
-  let remove_node' filter_out_fun cfg => {
-    let remove_node_in_cfg nodes => IList.filter filter_out_fun nodes;
-    cfg.node_list = remove_node_in_cfg cfg.node_list
-  };
-  let remove_node_set cfg nodes => remove_node' (fun node' => not (NodeSet.mem node' nodes)) cfg;
-  let proc_desc_remove cfg name remove_nodes => {
-    if remove_nodes {
-      let pdesc = pdesc_tbl_find cfg name;
-      let proc_nodes =
-        IList.fold_right (fun node set => NodeSet.add node set) pdesc.pd_nodes NodeSet.empty;
-      remove_node_set cfg proc_nodes
-    };
-    pdesc_tbl_remove cfg name
-  };
+  let proc_desc_remove cfg name => pdesc_tbl_remove cfg name;
   let proc_desc_get_start_node proc_desc => proc_desc.pd_start_node;
   let proc_desc_get_err_log proc_desc => proc_desc.pd_attributes.ProcAttributes.err_log;
   let proc_desc_get_attributes proc_desc => proc_desc.pd_attributes;
@@ -611,11 +593,6 @@ let module Node = {
       IList.fold_left (fun acc instr => f acc node instr) acc (get_instrs node);
     proc_desc_fold_nodes fold_node acc proc_desc
   };
-  /*
-     let remove_node cfg node =
-       remove_node' (fun node' -> not (equal node node'))
-         cfg node
-   */
   /* clone a procedure description and apply the type substitutions where
      the parameters are used */
   let proc_desc_specialize_types callee_proc_desc resolved_attributes substitutions => {
@@ -716,7 +693,7 @@ let module Node = {
       let loc = get_loc node
       and kind = convert_node_kind (get_kind node)
       and instrs = IList.fold_left convert_instr [] (get_instrs node) |> IList.rev;
-      create cfg loc kind instrs resolved_proc_desc
+      create loc kind instrs resolved_proc_desc
     }
     and loop callee_nodes =>
       switch callee_nodes {
@@ -735,7 +712,7 @@ let module Node = {
             if (equal node callee_exit_node) {
               proc_desc_set_exit_node resolved_proc_desc new_node
             };
-            set_succs_exn cfg new_node (loop successors) (loop exn_nodes);
+            set_succs_exn new_node (loop successors) (loop exn_nodes);
             new_node
           };
         [converted_node, ...loop other_node]
@@ -807,11 +784,12 @@ let module IdMap = Node.IdMap;
 
 let iter_proc_desc = Node.iter_proc_desc;
 
-let rec pp_node_list f =>
-  fun
-  | [] => ()
-  | [node] => Node.pp f node
-  | [node, ...nodes] => F.fprintf f "%a, %a" Node.pp node pp_node_list nodes;
+
+/** Iterate over all the nodes in the cfg */
+let iter_all_nodes f (cfg: cfg) => {
+  let do_proc_desc _ (pdesc: Procdesc.t) => IList.iter (fun node => f pdesc node) pdesc.pd_nodes;
+  iter_proc_desc cfg do_proc_desc
+};
 
 
 /** Get all the procdescs (defined and declared) */

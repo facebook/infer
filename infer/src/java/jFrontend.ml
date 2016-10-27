@@ -18,7 +18,6 @@ module L = Logging
 
 let add_edges
     (context : JContext.t) start_node exn_node exit_nodes method_body_nodes impl super_call =
-  let cfg = context.icfg.cfg in
   let pc_nb = Array.length method_body_nodes in
   let last_pc = pc_nb - 1 in
   let is_last pc = (pc = last_pc) in
@@ -49,7 +48,7 @@ let add_edges
     if super_call then (fun _ -> exit_nodes)
     else JTransExn.create_exception_handlers context [exn_node] get_body_nodes impl in
   let connect node pc =
-    Cfg.Node.set_succs_exn cfg node (get_succ_nodes node pc) (get_exn_nodes pc) in
+    Cfg.Node.set_succs_exn node (get_succ_nodes node pc) (get_exn_nodes pc) in
   let connect_nodes pc translated_instruction =
     match translated_instruction with
     | JTrans.Skip -> ()
@@ -58,7 +57,7 @@ let add_edges
         connect node_true pc;
         connect node_false pc
     | JTrans.Loop (join_node, node_true, node_false) ->
-        Cfg.Node.set_succs_exn cfg join_node [node_true; node_false] [];
+        Cfg.Node.set_succs_exn join_node [node_true; node_false] [];
         connect node_true pc;
         connect node_false pc in
   let first_nodes =
@@ -66,11 +65,11 @@ let add_edges
     direct_successors (-1) in
 
   (* the exceptions edges here are going directly to the exit node *)
-  Cfg.Node.set_succs_exn cfg start_node first_nodes exit_nodes;
+  Cfg.Node.set_succs_exn start_node first_nodes exit_nodes;
 
   if not super_call then
     (* the exceptions node is just before the exit node *)
-    Cfg.Node.set_succs_exn cfg exn_node exit_nodes exit_nodes;
+    Cfg.Node.set_succs_exn exn_node exit_nodes exit_nodes;
   Array.iteri connect_nodes method_body_nodes
 
 

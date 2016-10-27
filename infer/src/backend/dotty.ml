@@ -936,8 +936,8 @@ let pp_proplist_parsed2dotty_file filename plist =
 (********** Print control flow graph (in dot form) for fundec to *)
 (* channel. You have to compute an interprocedural cfg first               *)
 
-let pp_cfgnodename fmt (n : Cfg.Node.t) =
-  F.fprintf fmt "%d" (Cfg.Node.get_id n :> int)
+let pp_cfgnodename pname fmt (n : Cfg.Node.t) =
+  F.fprintf fmt "\"%a%d\"" Procname.pp pname (Cfg.Node.get_id n :> int)
 
 let pp_etlist fmt etl =
   IList.iter (fun (id, ty) ->
@@ -983,16 +983,10 @@ let pp_cfgnodeshape fmt (n: Cfg.Node.t) =
   | Cfg.Node.Stmt_node _ -> F.fprintf fmt "shape=\"box\""
   | _ -> F.fprintf fmt ""
 
-(*
-let pp_cfgedge fmt src dest =
-F.fprintf fmt "%a -> %a"
-pp_cfgnodename src
-pp_cfgnodename dest
-*)
-
 let pp_cfgnode pdesc fmt (n: Cfg.Node.t) =
+  let pname = Cfg.Procdesc.get_proc_name pdesc in
   F.fprintf fmt "%a [label=\"%a\" %a]\n\t\n"
-    pp_cfgnodename n
+    (pp_cfgnodename pname) n
     (pp_cfgnodelabel pdesc) n
     pp_cfgnodeshape n;
   let print_edge n1 n2 is_exn =
@@ -1001,9 +995,9 @@ let pp_cfgnode pdesc fmt (n: Cfg.Node.t) =
     | Cfg.Node.Exit_node _ when is_exn = true -> (* don't print exception edges to the exit node *)
         ()
     | _ ->
-        F.fprintf fmt "\n\t %d -> %d %s;"
-          (Cfg.Node.get_id n1 :> int)
-          (Cfg.Node.get_id n2 :> int)
+        F.fprintf fmt "\n\t %a -> %a %s;"
+          (pp_cfgnodename pname) n1
+          (pp_cfgnodename pname) n2
           color in
   IList.iter (fun n' -> print_edge n n' false) (Cfg.Node.get_succs n);
   IList.iter (fun n' -> print_edge n n' true) (Cfg.Node.get_exn n)
@@ -1019,12 +1013,11 @@ let pp_cfgnode pdesc fmt (n: Cfg.Node.t) =
 (* Print the extra information related to the inteprocedural aspect, ie.,  *)
 (* special node, and call / return edges                                   *)
 let print_icfg source fmt cfg =
-  let print_node node =
+  let print_node pdesc node =
     let loc = Cfg.Node.get_loc node in
-    let pdesc = Cfg.Node.get_proc_desc node in
     if (Config.dotty_cfg_libs || DB.source_file_equal loc.Location.file source) then
       F.fprintf fmt "%a\n" (pp_cfgnode pdesc) node in
-  IList.iter print_node (Cfg.Node.get_all_nodes cfg)
+  Cfg.iter_all_nodes print_node cfg
 
 let write_icfg_dotty_to_file source cfg fname =
   let chan = open_out fname in

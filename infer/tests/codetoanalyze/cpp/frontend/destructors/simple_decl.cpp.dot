@@ -1,25 +1,25 @@
 /* @generated */
 digraph iCFG {
-6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class B * [line 20]\n  *n$0.f:int =1 [line 20]\n " shape="box"]
+"B_~B3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class B * [line 20]\n  *n$0.f:int =1 [line 20]\n " shape="box"]
 	
 
-	 6 -> 5 ;
-5 [label="5: Exit B_~B \n  " color=yellow style=filled]
+	 "B_~B3" -> "B_~B2" ;
+"B_~B2" [label="2: Exit B_~B \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start B_~B\nFormals:  this:class B *\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+"B_~B1" [label="1: Start B_~B\nFormals:  this:class B *\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
-	 4 -> 6 ;
-3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class A * [line 12]\n  *n$0.f:int =0 [line 12]\n " shape="box"]
+	 "B_~B1" -> "B_~B3" ;
+"A_~A3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class A * [line 12]\n  *n$0.f:int =0 [line 12]\n " shape="box"]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit A_~A \n  " color=yellow style=filled]
+	 "A_~A3" -> "A_~A2" ;
+"A_~A2" [label="2: Exit A_~A \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start A_~A\nFormals:  this:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+"A_~A1" [label="1: Start A_~A\nFormals:  this:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
-	 1 -> 3 ;
+	 "A_~A1" -> "A_~A3" ;
 }

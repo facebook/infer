@@ -174,9 +174,9 @@ module Make
     let pname = Cfg.Procdesc.get_proc_name pdesc in
 
     let create_node kind cmds =
-      Cfg.Node.create cfg dummy_loc kind cmds pdesc in
+      Cfg.Node.create dummy_loc kind cmds pdesc in
     let set_succs cur_node succs ~exn_handlers=
-      Cfg.Node.set_succs_exn cfg cur_node succs exn_handlers in
+      Cfg.Node.set_succs_exn cur_node succs exn_handlers in
     let mk_prune_nodes_for_cond cond_exp if_kind =
       let mk_prune_node cond_exp if_kind true_branch =
         let prune_instr = Sil.Prune (cond_exp, dummy_loc, true_branch, if_kind) in
