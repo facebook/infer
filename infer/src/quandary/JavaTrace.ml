@@ -16,12 +16,13 @@ module JavaSource = struct
 
   module SourceKind = struct
     type t =
-      | SharedPreferences (** private data read from SharedPreferences *)
+      | PrivateData (** private user or device-specific data *)
       | Footprint of AccessPath.t (** source that was read from the environment. *)
       | Intent
       | Other (** for testing or uncategorized sources *)
 
     let compare sk1 sk2 = match sk1, sk2 with
+      | PrivateData, PrivateData -> 0
       | Footprint ap1, Footprint ap2 -> AccessPath.compare ap1 ap2
       | _ -> tags_compare sk1 sk2
   end
@@ -61,7 +62,17 @@ module JavaSource = struct
           | "android.content.Intent", ("parseUri" | "parseIntent") ->
               Some (make Intent site)
           | "android.content.SharedPreferences", "getString" ->
-              Some (make SharedPreferences site)
+              Some (make PrivateData site)
+          | "android.location.Location",
+            ("getAltitude" | "getBearing" | "getLatitude" | "getLongitude" | "getSpeed") ->
+              Some (make PrivateData site)
+          | "android.telephony.TelephonyManager",
+            ("getDeviceId" |
+             "getLine1Number" |
+             "getSimSerialNumber" |
+             "getSubscriberId" |
+             "getVoiceMailNumber") ->
+              Some (make PrivateData site)
           | "com.facebook.infer.builtins.InferTaint", "inferSecretSource" ->
               Some (make Other site)
           | _ ->
@@ -79,7 +90,7 @@ module JavaSource = struct
 
   let pp_kind fmt (kind : kind) = match kind with
     | Intent -> F.fprintf fmt "Intent"
-    | SharedPreferences -> F.fprintf fmt "SharedPreferences"
+    | PrivateData -> F.fprintf fmt "PrivateData"
     | Footprint ap -> F.fprintf fmt "Footprint[%a]" AccessPath.pp ap
     | Other -> F.fprintf fmt "Other"
 
@@ -204,7 +215,7 @@ include
       let open Sink in
       match Source.kind source, Sink.kind sink with
       | SourceKind.Other, SinkKind.Other
-      | SourceKind.SharedPreferences, SinkKind.Logging ->
+      | SourceKind.PrivateData, SinkKind.Logging ->
           true
       | SourceKind.Intent, SinkKind.Intent ->
           true

@@ -10,6 +10,8 @@
 package codetoanalyze.java.quandary;
 
 import android.content.SharedPreferences;
+import android.location.Location;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 public class LoggingPrivateData {
@@ -39,6 +41,39 @@ public class LoggingPrivateData {
 
   public void logDataOk(SharedPreferences prefs) {
     Log.d("tag", "value");
+  }
+
+  private native int rand();
+
+  public String returnAllSources(Location l, TelephonyManager t) {
+    switch (rand()) {
+    case 1:
+      return String.valueOf(l.getAltitude());
+    case 2:
+      return String.valueOf(l.getBearing());
+    case 3:
+      return String.valueOf(l.getLatitude());
+    case 4:
+      return String.valueOf(l.getLongitude());
+    case 5:
+      return String.valueOf(l.getSpeed());
+    case 6:
+      return t.getDeviceId();
+    case 7:
+      return t.getLine1Number();
+    case 8:
+      return t.getSimSerialNumber();
+    case 9:
+      return t.getSubscriberId();
+    case 10:
+      return t.getVoiceMailNumber();
+    }
+    return null;
+  }
+
+  public void logAllSourcesBad(Location l, TelephonyManager t) {
+    String source = returnAllSources(l, t);
+    Log.d("tag", source);
   }
 
 }
