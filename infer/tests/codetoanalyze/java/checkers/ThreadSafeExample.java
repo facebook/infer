@@ -44,3 +44,20 @@ public class ThreadSafeExample{
   }
 
 }
+
+class ExtendsThreadSafeExample extends ThreadSafeExample{
+
+  Integer field;
+
+  /* Presently,we will warn not just on overwridden methods from
+  @ThreadSafe class, but potentially on other methods in subclass */
+  public void newmethodBad() {
+     field = 22;
+  }
+
+  /* Bad now that it's overridden */
+  public void tsOK() {
+     field = 44;
+  }
+
+}
