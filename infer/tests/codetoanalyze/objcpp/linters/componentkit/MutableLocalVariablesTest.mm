@@ -9,6 +9,9 @@
 
 #import <Foundation/Foundation.h>
 
+#include <vector>
+#include <stdio.h>
+
 #import "FakeComponentKitHeader.h"
 
 @interface CKLabelComponent : CKCompositeComponent
@@ -37,6 +40,7 @@
     NSString* foo = @"HI"; // error
     _foo = foo;
   }
+  return nil;
 }
 @end
 
@@ -100,5 +104,25 @@ class BarClass {
   NSError const* __autoreleasing* e2; // no error
   NSError* const* e3 = &e; // no error
   NSError* const* const e4 = &e; // no error
+
+  // implicit vars (e.g. ones generated in a for loop statement)
+  const std::vector<const int> const_vector_of_const_int = {1, 2, 3};
+  for (int i : const_vector_of_const_int) { // error
+    printf("%d", i);
+  }
+  for (const int i : const_vector_of_const_int) {
+    printf("%d", i);
+  }
+  for (auto i : const_vector_of_const_int) { // auto != const int; error
+    printf("%d", i);
+  }
+  for (const auto i : const_vector_of_const_int) {
+    printf("%d", i);
+  }
+  for (auto& i : const_vector_of_const_int) { // auto == const int; no error
+    printf("%d", i);
+  }
+
+  return nil;
 }
 @end

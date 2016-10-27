@@ -86,7 +86,7 @@ let mutable_local_vars_advice context decl =
     | _ -> false in
 
   match decl with
-  | Clang_ast_t.VarDecl(decl_info, _, qual_type, _) ->
+  | Clang_ast_t.VarDecl(decl_info, named_decl_info, qual_type, _) ->
       let is_const_ref = match Ast_utils.get_type qual_type.qt_type_ptr with
         | Some LValueReferenceType (_, {Clang_ast_t.qt_is_const}) ->
             qt_is_const
@@ -95,11 +95,13 @@ let mutable_local_vars_advice context decl =
       let condition = is_ck_context context decl
                       && (not (Ast_utils.is_syntactically_global_var decl))
                       && (not is_const)
-                      && not (is_of_whitelisted_type qual_type) in
+                      && not (is_of_whitelisted_type qual_type)
+                      && not decl_info.di_is_implicit in
       if condition then
         Some {
           CIssue.issue = CIssue.Mutable_local_variable_in_component_file;
-          CIssue.description = "Local variables should be const to avoid reassignment";
+          CIssue.description = "Local variable '" ^ named_decl_info.ni_name
+                               ^ "' should be const to avoid reassignment";
           CIssue.suggestion = Some "Add a const (after the asterisk for pointer types).";
           CIssue.loc = CFrontend_checkers.location_from_dinfo context decl_info
         }
