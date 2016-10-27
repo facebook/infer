@@ -49,6 +49,12 @@ let objc_impl_checker_list = [CFrontend_checkers.checker_NSNotificationCenter;
 let checkers_for_objc_impl decl checker context =
   checker context decl
 
+let call_expr_checker_list = [ComponentKit.component_initializer_with_side_effects_advice]
+
+(* Invocation of checker belonging to call_expr_checker_list *)
+let checkers_for_call_expr stmt checker context =
+  checker context stmt
+
 (* List of checkers on variables *)
 let var_checker_list = [CFrontend_checkers.global_var_init_with_calls_warning;
                         ComponentKit.mutable_local_vars_advice]
@@ -164,18 +170,24 @@ let run_frontend_checkers_on_stmt context instr =
       let key = Ast_utils.generate_key_stmt cond in
       invoke_set_of_checkers call_checker context key while_stmt_checker_list;
       context
+  | CallExpr (_, called_func_stmt :: _, _) ->
+      let call_checker = checkers_for_call_expr called_func_stmt in
+      let key = Ast_utils.generate_key_stmt called_func_stmt in
+      invoke_set_of_checkers call_checker context key call_expr_checker_list;
+      context
   | ObjCAtSynchronizedStmt _ ->
       { context with CLintersContext.in_synchronized_block = true }
   | _ -> context
 
-let run_frontend_checkers_on_decl context dec =
+let run_frontend_checkers_on_decl (context: CLintersContext.context) dec =
   let open Clang_ast_t in
   match dec with
   | ObjCImplementationDecl _ ->
       let call_objc_impl_checker = checkers_for_objc_impl dec in
       let key = Ast_utils.generate_key_decl dec in
-      invoke_set_of_checkers call_objc_impl_checker context key objc_impl_checker_list;
-      context
+      let context' = {context with current_objc_impl = Some dec} in
+      invoke_set_of_checkers call_objc_impl_checker context' key objc_impl_checker_list;
+      context'
   | ObjCProtocolDecl _ ->
       let call_objc_protocol_checker = checkers_for_objc_protocol dec in
       let key = Ast_utils.generate_key_decl dec in

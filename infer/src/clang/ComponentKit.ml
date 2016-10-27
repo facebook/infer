@@ -219,3 +219,48 @@ let component_with_multiple_factory_methods_advice context decl =
        | Some d when is_ck_context context decl -> check_interface d
        | _ -> None)
   | _ -> assert false
+
+let in_ck_class (context: CLintersContext.context) =
+  Option.map_default is_component_or_controller_descendant_impl false context.current_objc_impl
+  && General_utils.is_objc_extension context.translation_unit_context
+
+(** Components shouldn't have side-effects in its initializer.
+
+    http://componentkit.org/docs/no-side-effects.html
+
+    The only current way we look for side-effects is by looking for
+    asynchronous execution (dispatch_async, dispatch_after) and execution that
+    relies on other threads (dispatch_sync). Other side-effects, like reading
+    of global variables, is not checked by this analyzer, although still an
+    infraction of the rule. *)
+let rec component_initializer_with_side_effects_advice
+    (context: CLintersContext.context) call_stmt =
+  let condition =
+    in_ck_class context
+    && context.in_objc_static_factory_method
+    && (match context.current_objc_impl with
+        | Some d -> Ast_utils.is_in_main_file context.translation_unit_context d
+        | None -> false) in
+  if condition then
+    match call_stmt with
+    | Clang_ast_t.ImplicitCastExpr (_, stmt :: _, _, _) ->
+        component_initializer_with_side_effects_advice context stmt
+    | Clang_ast_t.DeclRefExpr (_, _, _, decl_ref_expr_info) ->
+        let refs = [decl_ref_expr_info.drti_decl_ref;
+                    decl_ref_expr_info.drti_found_decl_ref] in
+        (match IList.find_map_opt Ast_utils.name_of_decl_ref_opt refs with
+         | Some "dispatch_after"
+         | Some "dispatch_async"
+         | Some "dispatch_sync" ->
+             Some {
+               CIssue.issue = CIssue.Component_initializer_with_side_effects;
+               CIssue.description = "No Side-effects";
+               CIssue.suggestion = Some "Your +new method should not modify any \
+                                         global variables or global state.";
+               CIssue.loc = CFrontend_checkers.location_from_stmt context call_stmt
+             }
+         | _ -> None)
+    | _->
+        None
+  else
+    None

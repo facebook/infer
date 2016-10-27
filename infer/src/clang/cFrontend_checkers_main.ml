@@ -61,10 +61,10 @@ let rec do_frontend_checks_stmt (context:CLintersContext.context) stmt =
   let stmts = Ast_utils.get_stmts_from_stmt stmt in
   IList.iter (do_all_checks_on_stmts) stmts
 
-and do_frontend_checks_decl context decl =
+and do_frontend_checks_decl (context: CLintersContext.context) decl =
   let open Clang_ast_t in
   let info = Clang_ast_proj.get_decl_tuple decl in
-  CLocation.update_curr_file context.CLintersContext.translation_unit_context info;
+  CLocation.update_curr_file context.translation_unit_context info;
   let context' =
     (match decl with
      | FunctionDecl(_, _, _, fdi)
@@ -79,7 +79,18 @@ and do_frontend_checks_decl context decl =
           | None -> ());
          context'
      | ObjCMethodDecl (_, _, mdi) ->
-         let context' = {context with CLintersContext.current_method = Some decl } in
+         let if_decl_opt =
+           (match context.current_objc_impl with
+            | Some ObjCImplementationDecl (_, _, _, _, impl_decl_info) ->
+                Ast_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface
+            | _ -> None) in
+         let is_factory_method =
+           (match if_decl_opt with
+            | Some if_decl -> Ast_utils.is_objc_factory_method if_decl decl
+            | _ -> false) in
+         let context' = {context with
+                         CLintersContext.current_method = Some decl;
+                         CLintersContext.in_objc_static_factory_method = is_factory_method} in
          (match mdi.Clang_ast_t.omdi_body with
           | Some stmt ->
               do_frontend_checks_stmt context' stmt
@@ -95,7 +106,7 @@ and do_frontend_checks_decl context decl =
      | _ -> context) in
   let context'' = CFrontend_errors.run_frontend_checkers_on_decl context' decl in
   let context_with_orig_current_method =
-    {context'' with CLintersContext.current_method = context.CLintersContext.current_method } in
+    {context'' with CLintersContext.current_method = context.current_method } in
   match Clang_ast_proj.get_decl_context_tuple decl with
   | Some (decls, _) -> IList.iter (do_frontend_checks_decl context_with_orig_current_method) decls
   | None -> ()

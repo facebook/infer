@@ -25,3 +25,6 @@ val component_with_unconventional_superclass_advice :
 
 val component_with_multiple_factory_methods_advice :
   CLintersContext.context -> Clang_ast_t.decl -> CIssue.issue_desc option
+
+val component_initializer_with_side_effects_advice :
+  CLintersContext.context -> Clang_ast_t.stmt -> CIssue.issue_desc option

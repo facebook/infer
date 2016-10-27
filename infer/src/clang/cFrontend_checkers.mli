@@ -43,6 +43,9 @@ val checker_NSNotificationCenter :
 val global_var_init_with_calls_warning :
   CLintersContext.context -> Clang_ast_t.decl -> CIssue.issue_desc option
 
+val location_from_stmt :
+  CLintersContext.context -> Clang_ast_t.stmt -> Location.t
+
 val location_from_dinfo :
   CLintersContext.context -> Clang_ast_t.decl_info -> Location.t
 

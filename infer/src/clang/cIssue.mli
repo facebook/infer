@@ -11,6 +11,7 @@ type issue =
   | Assign_pointer_warning
   | Bad_pointer_comparison
   | Component_factory_function
+  | Component_initializer_with_side_effects
   | Component_with_multiple_factory_methods
   | Component_with_unconventional_superclass
   | Cxx_reference_captured_in_objc_block

@@ -175,6 +175,8 @@ sig
 
   (** A class method that returns an instance of the class is a factory method. *)
   val is_objc_factory_method : Clang_ast_t.decl -> Clang_ast_t.decl -> bool
+
+  val name_of_decl_ref_opt : Clang_ast_t.decl_ref option -> string option
 end
 
 module General_utils :

@@ -505,6 +505,14 @@ struct
         (return_type_matches_class_type omdi.omdi_result_type if_type_decl_pointer)
     | _ -> false
 
+  let name_of_decl_ref_opt (decl_ref_opt: Clang_ast_t.decl_ref option) =
+    match decl_ref_opt with
+    | Some decl_ref ->
+        (match decl_ref.dr_name with
+         | Some named_decl_info -> Some named_decl_info.ni_name
+         | _ -> None)
+    | _ -> None
+
 (*
   let rec getter_attribute_opt attributes =
     match attributes with
