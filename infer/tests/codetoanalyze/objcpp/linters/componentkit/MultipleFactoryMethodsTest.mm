@@ -25,3 +25,9 @@
 
 @implementation OKComponent
 @end
+
+@implementation UnavailableInitializer1
+@end
+
+@implementation UnavailableInitializer2
+@end

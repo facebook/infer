@@ -8,6 +8,7 @@ componentkit/InitializerWithSideEffectTest.mm, __objc_anonymous_block_______1, 3
 componentkit/InitializerWithSideEffectTest.mm, __objc_anonymous_block_______2, 41, COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS
 componentkit/MultipleFactoryMethodsTest.h, Linters_dummy_method, 18, COMPONENT_WITH_MULTIPLE_FACTORY_METHODS
 componentkit/MultipleFactoryMethodsTest.h, Linters_dummy_method, 27, COMPONENT_WITH_MULTIPLE_FACTORY_METHODS
+componentkit/MultipleFactoryMethodsTest.h, Linters_dummy_method, 48, COMPONENT_WITH_MULTIPLE_FACTORY_METHODS
 componentkit/MutableLocalVariablesTest.mm, BarComponent_new, 89, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE
 componentkit/MutableLocalVariablesTest.mm, BarComponent_new, 91, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE
 componentkit/MutableLocalVariablesTest.mm, BarComponent_new, 110, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE

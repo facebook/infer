@@ -197,10 +197,21 @@ let component_with_unconventional_superclass_advice context decl =
     there would be factory methods that aren't exposed outside of a class is
     not useful if there's only one public factory method. *)
 let component_with_multiple_factory_methods_advice context decl =
+  let is_unavailable_attr attr = match attr with
+    | Clang_ast_t.UnavailableAttr _ -> true
+    | _ -> false in
+  let is_available_factory_method if_decl (decl: Clang_ast_t.decl) =
+    let attrs = match decl with
+      | ObjCMethodDecl (decl_info, _, _) -> decl_info.Clang_ast_t.di_attributes
+      | _ -> assert false in
+    let unavailable_attrs = (IList.filter is_unavailable_attr attrs) in
+    let is_available = IList.length unavailable_attrs = 0 in
+    (Ast_utils.is_objc_factory_method if_decl decl) && is_available in
+
   let check_interface if_decl =
     match if_decl with
     | Clang_ast_t.ObjCInterfaceDecl (decl_info, _, decls, _, _) ->
-        let factory_methods = IList.filter (Ast_utils.is_objc_factory_method if_decl) decls in
+        let factory_methods = IList.filter (is_available_factory_method if_decl) decls in
         if (IList.length factory_methods) > 1 then
           Some {
             CIssue.issue = CIssue.Component_with_multiple_factory_methods;
