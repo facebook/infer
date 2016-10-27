@@ -128,13 +128,35 @@ let make_results_table file_env =
   in
   map_post_computation_over_procs compute_post_for_procedure procs_to_analyze
 
+let get_current_class_and_threadsafe_superclasses tenv pname =
+  match pname with
+  | Procname.Java java_pname ->
+      let current_class = Procname.java_get_class_type_name java_pname in
+      let thread_safe_annotated_classes = PatternMatch.find_superclasses_with_attributes
+          Annotations.ia_is_thread_safe tenv current_class
+      in
+      Some (current_class,thread_safe_annotated_classes)
+  | _ -> None  (*shouldn't happen*)
+
+(** The addendum message says that a superclass is marked @ThreadSafe,
+    when the current class is not so marked*)
+let calculate_addendum_message tenv pname =
+  match get_current_class_and_threadsafe_superclasses tenv pname with
+  | Some (current_class,thread_safe_annotated_classes) ->
+      if not (IList.mem Typename.equal current_class thread_safe_annotated_classes) then
+        match thread_safe_annotated_classes with
+        | hd::_ -> F.asprintf "\n Note: Superclass %a is marked @ThreadSafe." Typename.pp hd
+        | [] -> ""
+      else ""
+  | _ -> ""
 
 let report_thread_safety_errors ( _, tenv, pname, pdesc) writestate =
   let report_one_error access_path =
     let description =
-      F.asprintf "Method %a writes to field %a outside of synchronization"
+      F.asprintf "Method %a writes to field %a outside of synchronization. %s"
         Procname.pp pname
         AccessPath.pp_access_list access_path
+        (calculate_addendum_message tenv pname)
     in
     Checkers.ST.report_error tenv
       pname
@@ -157,11 +179,14 @@ let process_results_table tab =
    the classes in a file. This might be tightened in future or even broadened in future
    based on other criteria *)
 let should_analyze_file file_env =
-  IList.exists
-    (fun (_, tenv, pname, _) ->
-       PatternMatch.check_class_attributes Annotations.ia_is_thread_safe tenv pname
-    )
-    file_env
+  let current_class_or_super_marked_threadsafe =
+    fun (_, tenv, pname, _) ->
+      match get_current_class_and_threadsafe_superclasses tenv pname with
+      | Some (_, thread_safe_annotated_classes) ->
+          not (thread_safe_annotated_classes = [])
+      | _ -> false
+  in
+  IList.exists current_class_or_super_marked_threadsafe file_env
 
 (*Gathers results by analyzing all the methods in a file, then post-processes
   the results to check (approximation of) thread safety *)

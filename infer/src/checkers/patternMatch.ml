@@ -379,3 +379,16 @@ let check_class_attributes check tenv = function
         check_class_annots
         (Procname.java_get_class_type_name java_pname)
   | _ -> false
+
+(** find superclasss with attributes (e.g., @ThreadSafe), including current class*)
+let rec find_superclasses_with_attributes check tenv tname =
+  match Tenv.lookup tenv tname with
+  | Some (struct_typ) ->
+      let result_from_supers = IList.flatten
+          (IList.map (find_superclasses_with_attributes check tenv) struct_typ.supers)
+      in
+      if check struct_typ.annots then
+        tname ::result_from_supers
+      else
+        result_from_supers
+  | _ -> []

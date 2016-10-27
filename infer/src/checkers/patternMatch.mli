@@ -113,3 +113,7 @@ val is_runtime_exception : Tenv.t -> Typename.t -> bool
 
 (** tests whether any class attributes (e.g., @ThreadSafe) pass check of first argument*)
 val check_class_attributes : (Annot.Item.t -> bool) -> Tenv.t -> Procname.t -> bool
+
+(** find superclasss with attributes (e.g., @ThreadSafe), including current class*)
+val find_superclasses_with_attributes : (Annot.Item.t -> bool) -> Tenv.t
+  -> Typename.t -> Typename.t list

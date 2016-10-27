@@ -21,6 +21,8 @@ ExpensiveInheritanceExample.java, void ExpensiveInheritanceExample.doesReportBec
 ExpensiveInheritanceExample.java, void ExpensiveInheritanceExample.reportsAssumingObjectOfTypeA(), 2, CHECKERS_CALLS_EXPENSIVE_METHOD
 ExpensiveInheritanceExample.java, void ExpensiveInheritanceExample.reportsBecauseFooIsExpensiveInA(A), 1, CHECKERS_CALLS_EXPENSIVE_METHOD
 ExpensiveSubtypingExample.java, void ExpensiveSubtypingExample.m3(), 0, CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED
+ExtendsThreadSafeExample.java, void ExtendsThreadSafeExample.newmethodBad(), 0, CHECKERS_THREAD_SAFETY_WARNING
+ExtendsThreadSafeExample.java, void ExtendsThreadSafeExample.tsOK(), 0, CHECKERS_THREAD_SAFETY_WARNING
 FragmentRetainsViewExample.java, void FragmentRetainsViewExample.onDestroyView(), 0, CHECKERS_FRAGMENT_RETAINS_VIEW
 FragmentRetainsViewExample.java, void FragmentRetainsViewExample.onDestroyView(), 0, CHECKERS_FRAGMENT_RETAINS_VIEW
 FragmentRetainsViewExample.java, void FragmentRetainsViewExample.onDestroyView(), 0, CHECKERS_FRAGMENT_RETAINS_VIEW
