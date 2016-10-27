@@ -18,7 +18,7 @@ Here is an overview of the linter checks we provide in Infer:
   
 - Issues reported in iOS code about [ComponentKit](http://componentkit.org)
   - [Component factory funciton](/docs/linters-bug-types.html#COMPONENT_FACTORY_FUNCTION)
-  - [Component initializer with side-effects](/docs/linters-bug-types.html#COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS)
+  - [Component initializer with side effects](/docs/linters-bug-types.html#COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS)
   - [Component with multiple factory functions](/docs/linters-bug-types.html#COMPONENT_WITH_MULTIPLE_FACTORY_FUNCTIONS)
   - [Component with unconventional superclass](/docs/linters-bug-types.html#COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS)
   - [Mutable Local Variable in component file](/docs/linters-bug-types.html#MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE)
@@ -88,7 +88,7 @@ delegates should generally be weak, otherwise this may cause retain cycles.
 
 [Doc in ComponentKit page](http://componentkit.org/docs/break-out-composites.html)
 
-## <a name="COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS"></a> Component initializer with side-effects
+## <a name="COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS"></a> Component initializer with side effects
 
 [Doc in ComponentKit page](http://componentkit.org/docs/no-side-effects.html)
 
