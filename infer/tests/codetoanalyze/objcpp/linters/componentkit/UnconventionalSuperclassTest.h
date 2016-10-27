@@ -16,3 +16,9 @@
 
 @interface BarComponent : FooComponent // bad
 @end
+
+@interface NTNativeTemplateComponent : CKCompositeComponent // fake NT
+@end
+
+@interface NativeTemplateComponent : NTNativeTemplateComponent // good
+@end

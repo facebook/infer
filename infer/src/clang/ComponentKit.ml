@@ -156,7 +156,8 @@ let component_with_unconventional_superclass_advice context decl =
                 ckcomponentcontroller_cl;
                 "CKCompositeComponent";
                 "CKStatefulViewComponent";
-                "CKStatefulViewComponentController"
+                "CKStatefulViewComponentController";
+                "NTNativeTemplateComponent"
               ] -> true
             | _ -> false in
           let condition =

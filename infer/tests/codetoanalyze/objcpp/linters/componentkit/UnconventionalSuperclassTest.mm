@@ -16,3 +16,6 @@
 
 @implementation BarComponent
 @end
+
+@implementation NativeTemplateComponent
+@end
