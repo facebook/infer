@@ -190,16 +190,17 @@ public class GuardedByExample {
     sGuardedByClass.toString();
   }
 
-  static void synchronizeOnClassOk() {
+  static void synchronizeOnClassOk1() {
     synchronized(GuardedByExample.class) {
       sGuardedByClass.toString(); // should not warn here
+      sGuardedByClass = new Object(); // or here
     }
   }
 
   void synchronizedOnThisBad() {
     sGuardedByClass.toString();
   }
-  
+
   Object dontReportOnCompilerGenerated() {
     return new Object() {
       public void accessInAnonClassOk() {
@@ -324,6 +325,13 @@ public class GuardedByExample {
     Object guardedByInnerThis2;
     @GuardedBy("GuardedByExample$Inner.this")
     Object guardedByInnerThis3;
+    @GuardedBy("Inner.class")
+    Object guardedByInnerClass1;
+    @GuardedBy("GuardedByExample.Inner.class")
+    Object guardedByInnerClass2;
+    @GuardedBy("GuardedByExample$Inner.class")
+    Object guardedByInnerClass3;
+
 
     synchronized void okAccess1() {
       guardedByInnerThis1 = null;
@@ -336,8 +344,24 @@ public class GuardedByExample {
     synchronized void okAccess3() {
       guardedByInnerThis3 = null;
     }
-  }
 
+    void okInnerClassGuard1() {
+      synchronized (Inner.class) {
+        guardedByInnerClass1 = new Object();
+        guardedByInnerClass2 = new Object();
+        guardedByInnerClass3 = new Object();
+      }
+    }
+
+    void okInnerClassGuard2() {
+      synchronized (GuardedByExample.Inner.class) {
+        guardedByInnerClass1 = new Object();
+        guardedByInnerClass2 = new Object();
+        guardedByInnerClass3 = new Object();
+      }
+    }
+
+  }
 
   // TODO: report on these cases
   /*

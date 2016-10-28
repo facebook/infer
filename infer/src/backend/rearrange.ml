@@ -626,7 +626,13 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
   let guarded_by_str_is_this guarded_by_str =
     string_is_suffix "this" guarded_by_str in
   let guarded_by_str_is_class guarded_by_str class_str =
-    string_is_suffix guarded_by_str (class_str ^ ".class") in
+    let dollar_normalize s =
+      String.map
+        (function
+          | '$' -> '.'
+          | c -> c)
+        s in
+    string_is_suffix (dollar_normalize guarded_by_str) (dollar_normalize (class_str ^ ".class")) in
   let guarded_by_str_is_current_class guarded_by_str = function
     | Procname.Java java_pname ->
         (* programmers write @GuardedBy("MyClass.class") when the field is guarded by the class *)
@@ -674,6 +680,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     IList.find_map_opt
       (function
         | Sil.Hpointsto ((Const (Cclass clazz) as lhs_exp), _, Exp.Sizeof (typ, _, _))
+        | Sil.Hpointsto (_, Sil.Eexp (Const (Cclass clazz) as lhs_exp, _), Exp.Sizeof (typ, _, _))
           when guarded_by_str_is_class guarded_by_str (Ident.name_to_string clazz) ->
             Some (Sil.Eexp (lhs_exp, Sil.inst_none), typ)
         | Sil.Hpointsto (_, Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
