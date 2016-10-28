@@ -19,7 +19,7 @@ Here is an overview of the linter checks we provide in Infer:
 - Issues reported in iOS code about [ComponentKit](http://componentkit.org)
   - [Component factory funciton](/docs/linters-bug-types.html#COMPONENT_FACTORY_FUNCTION)
   - [Component initializer with side effects](/docs/linters-bug-types.html#COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS)
-  - [Component with multiple factory functions](/docs/linters-bug-types.html#COMPONENT_WITH_MULTIPLE_FACTORY_FUNCTIONS)
+  - [Component with multiple factory methods](/docs/linters-bug-types.html#COMPONENT_WITH_MULTIPLE_FACTORY_METHODS)
   - [Component with unconventional superclass](/docs/linters-bug-types.html#COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS)
   - [Mutable Local Variable in component file](/docs/linters-bug-types.html#MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE)
 
@@ -92,7 +92,7 @@ delegates should generally be weak, otherwise this may cause retain cycles.
 
 [Doc in ComponentKit page](http://componentkit.org/docs/no-side-effects.html)
 
-## <a name="COMPONENT_WITH_MULTIPLE_FACTORY_FUNCTIONS"></a> Component with multiple factory functions
+## <a name="COMPONENT_WITH_MULTIPLE_FACTORY_METHODS"></a> Component with multiple factory methods
 
 [Doc in ComponentKit page](http://componentkit.org/docs/avoid-overrides.html)
 
