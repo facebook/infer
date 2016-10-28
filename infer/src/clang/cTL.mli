@@ -12,10 +12,11 @@
    CTL formula which express a condition saying when the checker should
     report a problem *)
 
-type transition_decl_to_stmt =
-  | Body
-  | InitExpr
-
+(* Transition labels used for example to switch from decl to stmt *)
+type transitions =
+  | Body (* decl to stmt *)
+  | InitExpr (* decl to stmt *)
+  | Super (* decl to decl *)
 
 (* In formulas below prefix
    "E" means "exists a path"
@@ -30,21 +31,22 @@ type t =
   | And of t * t
   | Or of t * t
   | Implies of t * t
+  | InNode of string list * t
   | AX of t (** AX phi <=> for all children of the current node phi holds *)
-  | EX of t (** EX phi <=> exist a child of the current node such that phi holds *)
+  | EX of transitions option * t (** EX phi <=> exist a child of the current node such that phi holds *)
   | AF of t (** AF phi <=> for all path from the current node there is a descendant where phi holds *)
-  | EF of t (** EF phi <=> there exits a a path from the current node with a descendant where phi hold *)
+  | EF of transitions option * t (** EF phi <=> there exits a a path from the current node with a descendant where phi hold *)
   | AG of t (** AG phi <=> for all discendant of the current node phi hold *)
-  | EG of t (** EG phi <=>
-                there exists a path (of descendants) from the current node where phi hold at each node of the path *)
+  | EG of transitions option * t (** EG phi <=>
+                                     there exists a path (of descendants) from the current node where phi hold at each node of the path *)
   | AU of t * t (** AU(phi1, phi2) <=>
                     for all paths from the current node phi1 holds in every node until ph2 holds *)
-  | EU of t * t (** EU(phi1, phi2) <=>
-                    there exists a path from the current node such that phi1 holds until phi2 holds *)
+  | EU of transitions option * t * t (** EU(phi1, phi2) <=>
+                                         there exists a path from the current node such that phi1 holds until phi2 holds *)
   | EH of string list * t (** EH[classes]phi <=>
                               there exists a node defining a super class in the hierarchy of the class
                               defined by the current node (if any) where  phi holds *)
-  | ET of string list * transition_decl_to_stmt option * t (** ET[T][l] phi <=>
+  | ET of string list * transitions option * t (** ET[T][l] phi <=>
                                                                there exists a descentant an of the current node such that an is of type in set T
                                                                making a transition to a node an' via label l, such that in an phi holds. *)
 

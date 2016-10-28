@@ -79,16 +79,16 @@ let ctl_makes_an_expensive_call () =
 let ctl_ns_notification lctx decl =
   let open CTL in
   let exists_method_calling_addObserver =
-    EF (Atomic ("call_method", ["addObserver:selector:name:object:"])) in
+    EF (None, (Atomic ("call_method", ["addObserver:selector:name:object:"]))) in
   let exists_method_calling_addObserverForName =
-    EF (Atomic ("call_method", ["addObserverForName:object:queue:usingBlock:"])) in
+    EF (None, (Atomic ("call_method", ["addObserverForName:object:queue:usingBlock:"]))) in
   let add_observer = Or (exists_method_calling_addObserver,
                          exists_method_calling_addObserverForName) in
   let eventually_addObserver = ET(["ObjCMethodDecl"], Some Body, add_observer) in
   let exists_method_calling_removeObserver =
-    EF(Atomic ("call_method",["removeObserver:"])) in
+    EF (None, (Atomic ("call_method",["removeObserver:"]))) in
   let exists_method_calling_removeObserverName =
-    EF(Atomic ("call_method",["removeObserver:name:object:"])) in
+    EF (None, (Atomic ("call_method",["removeObserver:name:object:"]))) in
   let remove_observer = Or(exists_method_calling_removeObserver,
                            exists_method_calling_removeObserverName) in
   let remove_observer_in_block = ET(["BlockDecl"], Some Body, remove_observer) in
@@ -128,7 +128,7 @@ let ctl_bad_pointer_comparison_warning lctx stmt =
   *)
   let p = Or (is_expr_with_cleanups, Or (is_implicit_cast_expr, Or (is_binop, is_unop_lnot))) in
   let p' = And (Not is_binop_neq, p) in
-  let condition = EU (p', is_nsnumber) in
+  let condition = EU (None, p', is_nsnumber) in
   let issue_desc =
     { CIssue.
       issue = CIssue.Bad_pointer_comparison;
@@ -171,7 +171,7 @@ let ctl_global_var_init_with_calls_warning lctx decl =
     And (And (Atomic ("is_objc_extension", []), Atomic ("is_global_var", [])),
          Not (Atomic ("is_const_var", []))) in
   let ctl_is_initialized_with_expensive_call  =
-    ET(["VarDecl"], Some InitExpr, EF (ctl_makes_an_expensive_call ())) in
+    ET(["VarDecl"], Some InitExpr, EF (None, (ctl_makes_an_expensive_call ()))) in
   let condition = And (ctl_is_global_var, ctl_is_initialized_with_expensive_call) in
   let issue_desc = {
     CIssue.issue = CIssue.Global_variable_initialized_with_function_or_method_call;

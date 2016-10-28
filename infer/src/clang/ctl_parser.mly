@@ -109,15 +109,15 @@ formula:
   | LEFT_PAREN formula RIGHT_PAREN { $2 }
   | formula_id { $1 }
   | atomic_formula { Logging.out "\tParsed atomic formula\n"; $1 }
-  | formula EU formula { Logging.out "\tParsed EU\n"; CTL.EU ($1, $3) }
+  | formula EU formula { Logging.out "\tParsed EU\n"; CTL.EU (None, $1, $3) }
   | formula AU formula { Logging.out "\tParsed AU\n"; CTL.AU ($1, $3) }
   | formula AF { Logging.out "\tParsed AF\n"; CTL.AF ($1) }
-  | formula EX { Logging.out "\tParsed EX\n"; CTL.EX ($1) }
+  | formula EX { Logging.out "\tParsed EX\n"; CTL.EX (None, $1) }
   | formula AX { Logging.out "\tParsed AX\n"; CTL.AX ($1) }
-  | formula EG { Logging.out "\tParsed EG\n"; CTL.EG ($1) }
+  | formula EG { Logging.out "\tParsed EG\n"; CTL.EG (None, $1) }
   | formula AG { Logging.out "\tParsed AG\n"; CTL.AG ($1) }
   | formula EH params { Logging.out "\tParsed EH\n"; CTL.EH ($3, $1) }
-  | formula EF { Logging.out "\tParsed EF\n"; CTL.EF ($1) }
+  | formula EF { Logging.out "\tParsed EF\n"; CTL.EF (None, $1) }
   | ET params WITH_TRANSITION transition_label formula_EF
      { Logging.out "\tParsed ET\n"; CTL.ET ($2, $4, $5)}
   | formula AND formula { Logging.out "\tParsed AND\n"; CTL.And ($1, $3) }

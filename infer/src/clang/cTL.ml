@@ -17,10 +17,11 @@ open CFrontend_utils
     report a problem *)
 
 
-(* Label that allows switching from a decl node to a stmt node *)
-type transition_decl_to_stmt =
-  | Body
-  | InitExpr
+(* Transition labels used for example to switch from decl to stmt *)
+type transitions =
+  | Body (* decl to stmt *)
+  | InitExpr (* decl to stmt *)
+  | Super (* decl to decl *)
 
 (* In formulas below prefix
    "E" means "exists a path"
@@ -34,16 +35,17 @@ type t = (* A ctl formula *)
   | And of t * t
   | Or of t * t
   | Implies of t * t
+  | InNode of string list * t
   | AX of t
-  | EX of t
+  | EX of transitions option * t
   | AF of t
-  | EF of t
+  | EF of transitions option * t
   | AG of t
-  | EG of t
+  | EG of transitions option * t
   | AU of t * t
-  | EU of t * t
+  | EU of transitions option * t * t
   | EH of string list * t
-  | ET of string list * transition_decl_to_stmt option * t
+  | ET of string list * transitions option * t
 
 (* the kind of AST nodes where formulas are evaluated *)
 type ast_node =
@@ -51,13 +53,14 @@ type ast_node =
   | Decl of Clang_ast_t.decl
 
 module Debug = struct
-  let pp_transition_decl_to_stmt fmt trans_opt =
+  let pp_transition fmt trans_opt =
     let pp_aux fmt trans = match trans with
       | Body -> Format.pp_print_string fmt "Body"
-      | InitExpr -> Format.pp_print_string fmt "InitExpr" in
+      | InitExpr -> Format.pp_print_string fmt "InitExpr"
+      | Super -> Format.pp_print_string fmt "Super" in
     match trans_opt with
     | Some trans -> pp_aux fmt trans
-    | None -> Format.pp_print_string fmt "None"
+    | None -> Format.pp_print_string fmt "_"
 
   let rec pp_formula fmt phi =
     match phi with
@@ -68,20 +71,24 @@ module Debug = struct
     | And (phi1, phi2) -> Format.fprintf fmt "(%a AND %a)" pp_formula phi1 pp_formula phi2
     | Or (phi1, phi2) -> Format.fprintf fmt "(%a OR %a)" pp_formula phi1 pp_formula phi2
     | Implies (phi1, phi2) -> Format.fprintf fmt "(%a ==> %a)" pp_formula phi1 pp_formula phi2
+    | InNode (nl, phi) -> Format.fprintf fmt "IN-NODE %a: (%a)"
+                            (Utils.pp_comma_seq Format.pp_print_string) nl
+                            pp_formula phi
     | AX phi -> Format.fprintf fmt "AX(%a)" pp_formula phi
-    | EX phi -> Format.fprintf fmt "EX(%a)" pp_formula phi
+    | EX (trs, phi) -> Format.fprintf fmt "EX[->%a](%a)" pp_transition trs pp_formula phi
     | AF phi -> Format.fprintf fmt "AF(%a)" pp_formula phi
-    | EF phi -> Format.fprintf fmt "EF(%a)" pp_formula phi
+    | EF (trs, phi) -> Format.fprintf fmt "EF[->%a](%a)" pp_transition trs pp_formula phi
     | AG phi -> Format.fprintf fmt "AG(%a)" pp_formula phi
-    | EG phi -> Format.fprintf fmt "EG(%a)" pp_formula phi
+    | EG (trs, phi) -> Format.fprintf fmt "EG[->%a](%a)" pp_transition trs pp_formula phi
     | AU (phi1, phi2) -> Format.fprintf fmt "A[%a UNTIL %a]" pp_formula phi1 pp_formula phi2
-    | EU (phi1, phi2) -> Format.fprintf fmt "E[%a UNTIL %a]" pp_formula phi1 pp_formula phi2
+    | EU (trs, phi1, phi2) -> Format.fprintf fmt "E[->%a][%a UNTIL %a]"
+                                pp_transition trs pp_formula phi1 pp_formula phi2
     | EH (arglist, phi) -> Format.fprintf fmt "EH[%a](%a)"
                              (Utils.pp_comma_seq Format.pp_print_string) arglist
                              pp_formula phi
     | ET (arglist, trans, phi) -> Format.fprintf fmt "ET[%a][%a](%a)"
                                     (Utils.pp_comma_seq Format.pp_print_string) arglist
-                                    pp_transition_decl_to_stmt trans
+                                    pp_transition trans
                                     pp_formula phi
 
   module EvaluationTracker = struct
@@ -235,44 +242,69 @@ let save_dotty_when_in_debug_mode source_file =
 
 (* Helper functions *)
 
+(* Sometimes we need to unwrap a node *)
+(* NOTE: when in the language it will be possible to define
+   sintactic sugar than we can remove this and define it a
+   transition from BlockExpr to  BlockDecl *)
+let unwrap_node an =
+  match an with
+  | Stmt BlockExpr(_, _, _, d) ->
+      (* From BlockExpr we jump directly to its BlockDecl *)
+      Decl d
+  | _ -> an
+
+let node_to_string an =
+  match an with
+  | Decl d -> Clang_ast_proj.get_decl_kind_string d
+  | Stmt s -> Clang_ast_proj.get_stmt_kind_string s
+
 (* true iff an ast node is a node of type among the list tl *)
 let node_has_type tl an =
-  let an_str = match an with
-    | Decl d -> Clang_ast_proj.get_decl_kind_string d
-    | Stmt s -> Clang_ast_proj.get_stmt_kind_string s in
+  let an_str = node_to_string an in
   IList.mem (string_equal) an_str tl
 
 (* given a decl returns a stmt such that decl--->stmt via label trs *)
-let transition_from_decl_to_stmt d trs =
+let transition_decl_to_stmt d trs =
   let open Clang_ast_t in
-  match trs, d with
-  | Some Body, ObjCMethodDecl (_, _, omdi) -> omdi.omdi_body
-  | Some Body, FunctionDecl (_, _, _, fdi)
-  | Some Body, CXXMethodDecl (_, _, _, fdi,_ )
-  | Some Body, CXXConstructorDecl (_, _, _, fdi, _)
-  | Some Body, CXXConversionDecl (_, _, _, fdi, _)
-  | Some Body, CXXDestructorDecl (_, _, _, fdi, _) -> fdi.fdi_body
-  | Some Body, BlockDecl (_, bdi) -> bdi.bdi_body
-  | Some InitExpr, VarDecl (_, _ ,_, vdi) -> vdi.vdi_init_expr
-  | Some InitExpr, ObjCIvarDecl (_, _, _, fldi, _)
-  | Some InitExpr, FieldDecl (_, _, _, fldi)
-  | Some InitExpr, ObjCAtDefsFieldDecl (_, _, _, fldi)-> fldi.fldi_init_expr
-  | Some InitExpr, CXXMethodDecl _
-  | Some InitExpr, CXXConstructorDecl _
-  | Some InitExpr, CXXConversionDecl _
-  | Some InitExpr, CXXDestructorDecl _ ->
-      assert false (* to be done. Requires extending to lists *)
-  | Some InitExpr, EnumConstantDecl (_, _, _, ecdi) -> ecdi.ecdi_init_expr
+  let temp_res =
+    match trs, d with
+    | Some Body, ObjCMethodDecl (_, _, omdi) -> omdi.omdi_body
+    | Some Body, FunctionDecl (_, _, _, fdi)
+    | Some Body, CXXMethodDecl (_, _, _, fdi,_ )
+    | Some Body, CXXConstructorDecl (_, _, _, fdi, _)
+    | Some Body, CXXConversionDecl (_, _, _, fdi, _)
+    | Some Body, CXXDestructorDecl (_, _, _, fdi, _) -> fdi.fdi_body
+    | Some Body, BlockDecl (_, bdi) -> bdi.bdi_body
+    | Some InitExpr, VarDecl (_, _ ,_, vdi) -> vdi.vdi_init_expr
+    | Some InitExpr, ObjCIvarDecl (_, _, _, fldi, _)
+    | Some InitExpr, FieldDecl (_, _, _, fldi)
+    | Some InitExpr, ObjCAtDefsFieldDecl (_, _, _, fldi)-> fldi.fldi_init_expr
+    | Some InitExpr, CXXMethodDecl _
+    | Some InitExpr, CXXConstructorDecl _
+    | Some InitExpr, CXXConversionDecl _
+    | Some InitExpr, CXXDestructorDecl _ ->
+        assert false (* to be done. Requires extending to lists *)
+    | Some InitExpr, EnumConstantDecl (_, _, _, ecdi) -> ecdi.ecdi_init_expr
+    | _, _ -> None in
+  match temp_res with
+  | Some st -> Some (Stmt st)
+  | _ -> None
+
+let transition_decl_to_decl_via_super d =
+  match Ast_utils.get_impl_decl_info d with
+  | Some idi ->
+      (match Ast_utils.get_super_ObjCImplementationDecl idi with
+       | Some d -> Some (Decl d)
+       | _ -> None)
+  | None -> None
+
+(* given a node an returns the node an' such that an transition to an' via label trans *)
+let next_state_via_transition an trans =
+  match an, trans with
+  | Decl d, Some Super -> transition_decl_to_decl_via_super d
+  | Decl d, Some InitExpr
+  | Decl d, Some Body -> transition_decl_to_stmt d trans
   | _, _ -> None
-
-(* given a stmt returns a decl such that stmt--->decl via label trs
-   NOTE: for the moment we don't have any transitions stmt to decl as
-   we don't have much experience.
-   TBD: the list need to be populated when we know what we need *)
-let transition_from_stmt_to_decl st trs =
-  match trs, st with
-  | _, _ -> None  (* For the moment always no transitions. TBD add transitions *)
-
 
 (* Evaluation of formulas *)
 
@@ -311,10 +343,10 @@ let eval_Atomic pred_name params an lcxt =
    either (st,lcxt) satifies phi or there is a child st' of the node st
    such that (st', lcxt) satifies EF phi
 *)
-let rec eval_EF_st phi st lcxt =
+let rec eval_EF_st phi st lcxt trans =
   let _, succs = Clang_ast_proj.get_stmt_tuple st in
   eval_formula phi (Stmt st) lcxt
-  || IList.exists (fun s -> eval_EF phi (Stmt s) lcxt) succs
+  || IList.exists (fun s -> eval_EF phi (Stmt s) lcxt trans) succs
 
 
 (* dec, lcxt |= EF phi  <=>
@@ -322,18 +354,22 @@ let rec eval_EF_st phi st lcxt =
 
    This is as eval_EF_st but for decl.
 *)
-and eval_EF_decl phi dec lcxt =
+and eval_EF_decl phi dec lcxt trans =
   eval_formula phi (Decl dec) lcxt ||
   (match Clang_ast_proj.get_decl_context_tuple dec with
    | Some (decl_list, _) ->
-       IList.exists (fun d -> eval_EF phi (Decl d) lcxt) decl_list
+       IList.exists (fun d -> eval_EF phi (Decl d) lcxt trans) decl_list
    | None -> false)
 
 (* an, lcxt |= EF phi  evaluates on decl or stmt depending on an *)
-and eval_EF phi an lcxt =
-  match an with
-  | Stmt st -> eval_EF_st phi st lcxt
-  | Decl dec -> eval_EF_decl phi dec lcxt
+and eval_EF phi an lcxt trans =
+  match trans, an with
+  | Some _, _ ->
+      (* Using equivalence EF[->trans] phi = phi OR EX[->trans](EF[->trans] phi)*)
+      let phi' = Or (phi, EX (trans, EF (trans, phi))) in
+      eval_formula phi' an lcxt
+  | None, Stmt st -> eval_EF_st phi st lcxt trans
+  | None, Decl dec -> eval_EF_decl phi dec lcxt trans
 
 (* st, lcxt |= EX phi  <=> exists st' in Successors(st): st', lcxt |= phi
 
@@ -355,11 +391,19 @@ and eval_EX_decl phi dec lcxt =
       IList.exists (fun d -> eval_formula phi (Decl d) lcxt) decl_list
   | None -> false
 
+(* Evaluate phi on node an' such that an -l-> an'. False if an' does not exists *)
+and evaluate_on_transition phi an lcxt l =
+  match next_state_via_transition an l with
+  | Some succ -> eval_formula phi succ lcxt
+  | None -> false
+
 (* an |= EX phi evaluates on decl/stmt depending on the ast_node an *)
-and eval_EX phi an lcxt =
-  match an with
-  | Stmt st -> eval_EX_st phi st lcxt
-  | Decl decl -> eval_EX_decl phi decl lcxt
+and eval_EX phi an lcxt trans =
+  match trans, an with
+  | Some _, _ -> evaluate_on_transition phi an lcxt trans
+  | None, Stmt st -> eval_EX_st phi st lcxt
+  | None, Decl decl -> eval_EX_decl phi decl lcxt
+
 
 (* an, lcxt |= E(phi1 U phi2) evaluated using the equivalence
    an, lcxt |= E(phi1 U phi2) <=> an, lcxt |= phi2 or (phi1 and EX(E(phi1 U phi2)))
@@ -367,8 +411,8 @@ and eval_EX phi an lcxt =
    That is: a (an,lcxt) satifies E(phi1 U phi2) if and only if
    an,lcxt satifies the formula phi2 or (phi1 and EX(E(phi1 U phi2)))
 *)
-and eval_EU phi1 phi2 an lcxt =
-  let f = Or (phi2, And (phi1, EX (EU (phi1, phi2)))) in
+and eval_EU phi1 phi2 an lcxt trans =
+  let f = Or (phi2, And (phi1, EX (trans, (EU (trans, phi1, phi2))))) in
   eval_formula f an lcxt
 
 (* an |= A(phi1 U phi2) evaluated using the equivalence
@@ -380,6 +424,12 @@ and eval_AU phi1 phi2 an lcxt =
   let f = Or (phi2, And (phi1, AX (AU (phi1, phi2)))) in
   eval_formula f an lcxt
 
+(* an, lcxt |= InNode[node_type_list] phi <=>
+   an is a node of type in node_type_list and an satifies phi
+*)
+and in_node node_type_list phi an lctx =
+  (node_has_type node_type_list an) && (eval_formula phi an lctx)
+
 (* Intuitive meaning: (an,lcxt) satifies EH[Classes] phi
    if the node an is among the declaration specified by the list Classes and
    there exists a super class in its hierarchy whose declaration satisfy phi.
@@ -388,62 +438,25 @@ and eval_AU phi1 phi2 an lcxt =
    the node an is in Classes and there exists a declaration d in Hierarchy(an)
    such that d,lcxt |= phi *)
 and eval_EH classes phi an lcxt =
-  let rec eval_super impl_decl_info =
-    match impl_decl_info with
-    | Some idi ->
-        (match Ast_utils.get_super_ObjCImplementationDecl idi with
-         | Some (Clang_ast_t.ObjCImplementationDecl(_, _, _, _, idi') as d) ->
-             eval_formula phi (Decl d) lcxt || eval_super (Some idi')
-         | _ -> false)
-    | None -> false in
-  match an with
-  | Decl d when node_has_type classes (Decl d) ->
-      eval_super (Ast_utils.get_impl_decl_info d)
-  | _ -> false
+  (* Define EH[Classes] phi = ET[Classes](EF[->Super] phi) *)
+  let f = ET (classes, None, EF (Some Super, phi)) in
+  eval_formula f an lcxt
 
 (* an, lcxt |= ET[T][->l]phi <=>
-   an is a node among those defined in T and an-l->an'
-   ("an transitions" to another node an' via an edge labelled l)
-   such that an',lcxt |= phi
+   eventually we reach a node an' such that an' is among the types defined in T
+   and:
 
-   or an is a node among those defined in T, and l is unspecified,
-   and an,lcxt |= phi
+   an'-l->an''
+   ("an' transitions" to another node an'' via an edge labelled l)
+   and an'',lcxt |= phi
 
-   or an is not of type in T and exists an' in Successors(an):
-      an', lcxt |= ET[T][->l]phi
+   or l is unspecified and an,lcxt |= phi
 *)
 and eval_ET tl trs phi an lcxt =
-  let open Clang_ast_t in
-  let evaluate_on_subdeclarations d eval =
-    match Clang_ast_proj.get_decl_context_tuple d with
-    | None -> false
-    | Some (decl_list, _) ->
-        IList.exists (fun d' -> eval phi (Decl d') lcxt) decl_list in
-  let evaluate_on_substmt st eval =
-    let _, stmt_list = Clang_ast_proj.get_stmt_tuple st in
-    IList.exists (fun s -> eval phi (Stmt s) lcxt) stmt_list in
-  let do_decl d =
-    match trs, node_has_type tl (Decl d) with
-    | Some _, true ->
-        (match transition_from_decl_to_stmt d trs with
-         | None -> false
-         | Some st -> eval_formula phi (Stmt st) lcxt)
-    | None, true -> eval_formula phi (Decl d) lcxt
-    | _, false -> evaluate_on_subdeclarations d (eval_ET tl trs) in
-  let do_stmt st =
-    match trs, node_has_type tl (Stmt st) with
-    | Some _, true ->
-        (match transition_from_stmt_to_decl st trs with
-         | None -> false
-         | Some d -> eval_formula phi (Decl d) lcxt)
-    | None, true -> eval_formula phi (Stmt st) lcxt
-    | _, false -> evaluate_on_substmt st (eval_ET tl trs) in
-  match an with
-  | Decl d -> do_decl d
-  | Stmt BlockExpr(_, _, _, d) ->
-      (* From BlockExpr we jump directly to its BlockDecl *)
-      eval_ET tl trs phi (Decl d) lcxt
-  | Stmt st -> do_stmt st
+  let f = match trs with
+    | Some _ -> EF (None, (InNode (tl, EX (trs, phi))))
+    | None -> EF (None, (InNode (tl, phi))) in
+  eval_formula f an lcxt
 
 (* Formulas are evaluated on a AST node an and a linter context lcxt *)
 and eval_formula f an lcxt =
@@ -457,16 +470,19 @@ and eval_formula f an lcxt =
     | Or (f1, f2) -> (eval_formula f1 an lcxt) || (eval_formula f2 an lcxt)
     | Implies (f1, f2) ->
         not (eval_formula f1 an lcxt) || (eval_formula f2 an lcxt)
+    | InNode (node_type_list, f1) ->
+        let an' = unwrap_node an in
+        in_node node_type_list f1 an' lcxt
     | AU (f1, f2) -> eval_AU f1 f2 an lcxt
-    | EU (f1, f2) -> eval_EU f1 f2 an lcxt
-    | EF f1 -> eval_EF f1 an lcxt
+    | EU (trans, f1, f2) -> eval_EU f1 f2 an lcxt trans
+    | EF (trans, f1) -> eval_EF f1 an lcxt trans
     | AF f1 -> eval_formula (AU (True, f1)) an lcxt
-    | AG f1 -> eval_formula (Not (EF (Not f1))) an lcxt
-    | EX f1 -> eval_EX f1 an lcxt
-    | AX f1 -> eval_formula (Not (EX (Not f1))) an lcxt
+    | AG f1 -> eval_formula (Not (EF (None, (Not f1)))) an lcxt
+    | EX (trans, f1) -> eval_EX f1 an lcxt trans
+    | AX f1 -> eval_formula (Not (EX (None, (Not f1)))) an lcxt
     | EH (cl, phi) -> eval_EH cl phi an lcxt
-    | EG f1 -> (* st |= EG f1 <=> st |= f1 /\ EX EG f1 *)
-        eval_formula (And (f1, EX (EG (f1)))) an lcxt
+    | EG (trans, f1) -> (* st |= EG f1 <=> st |= f1 /\ EX EG f1 *)
+        eval_formula (And (f1, EX (trans, (EG (trans, f1))))) an lcxt
     | ET (tl, sw, phi) -> eval_ET tl sw phi an lcxt in
   debug_eval_end res;
   res
