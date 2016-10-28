@@ -45,9 +45,8 @@ let register_perf_stats_report source_file => {
 };
 
 let init_global_state_for_capture_and_linters source_file => {
-  Logging.set_log_file_identifier (
-    Some (Filename.basename (DB.source_file_to_string source_file))
-  );
+  Logging.set_log_file_identifier
+    CommandLineOption.Clang (Some (Filename.basename (DB.source_file_to_string source_file)));
   register_perf_stats_report source_file;
   Config.curr_language := Config.Clang;
   CLocation.curr_file := source_file;

@@ -16,8 +16,8 @@ module F = Format
 
 
 (** Name of dir for logging the output in the specific executable *)
-let log_dir_of_current_exe =
-  match Config.current_exe with
+let log_dir_of_current_exe (current_exe : CommandLineOption.exe) =
+  match current_exe with
   | Analyze -> "analyze"
   | BuckCompilationDatabase -> "buck_compilation_database"
   | Clang -> "clang"
@@ -35,9 +35,9 @@ let err_file = ref "<BUG: logging to a file not setup, what you're looking for w
 let out_formatter = ref F.std_formatter
 let err_formatter = ref F.err_formatter
 
-let set_log_file_identifier string_opt =
+let set_log_file_identifier (current_exe : CommandLineOption.exe) string_opt =
   let should_setup_log_files =
-    match Config.current_exe with
+    match current_exe with
     | Analyze
     | Clang -> Config.debug_mode || Config.stats_mode
     | BuckCompilationDatabase -> true
@@ -48,7 +48,7 @@ let set_log_file_identifier string_opt =
         | None -> "") ^ string_of_int (Unix.getpid ()) ^ "_" in
     let exe_log_dir =
       let log_dir = Config.results_dir // Config.log_dir_name in
-      log_dir // log_dir_of_current_exe in
+      log_dir // (log_dir_of_current_exe current_exe) in
     create_path exe_log_dir;
     let log_file config_opt suffix =
       (* the command-line option takes precedence if specified *)
@@ -77,7 +77,7 @@ let set_log_file_identifier string_opt =
   )
 
 (* set up log files on startup if needed *)
-let () = set_log_file_identifier None
+let () = set_log_file_identifier Config.current_exe None
 
 let log_file_names () = (!out_file, !err_file)
 

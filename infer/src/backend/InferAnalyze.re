@@ -16,7 +16,8 @@ let module L = Logging;
 let module F = Format;
 
 let () = {
-  Logging.set_log_file_identifier (Option.map Filename.basename Config.cluster_cmdline);
+  Logging.set_log_file_identifier
+    CommandLineOption.Analyze (Option.map Filename.basename Config.cluster_cmdline);
   if Config.print_builtins {
     Builtin.print_and_exit ()
   };

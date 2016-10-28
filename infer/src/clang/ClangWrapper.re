@@ -84,7 +84,7 @@ let normalize (args: array string) :list ClangCommand.t =>
 
 let execute_clang_command (clang_cmd: ClangCommand.t) => {
   /* reset logging, otherwise we might print into the logs of the previous file that was compiled */
-  Logging.set_log_file_identifier None;
+  Logging.set_log_file_identifier CommandLineOption.Clang None;
   switch clang_cmd {
   | CC1 args =>
     /* this command compiles some code; replace the invocation of clang with our own clang and
