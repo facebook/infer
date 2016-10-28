@@ -40,3 +40,5 @@
    TODO: Similar integration with build systems other than buck.
 *)
 val crashcontext_epilogue : in_buck_mode:bool -> unit
+
+val pp_stacktree : Format.formatter -> Stacktree_t.stacktree -> unit

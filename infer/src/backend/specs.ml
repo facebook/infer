@@ -323,7 +323,7 @@ type payload =
     preposts : NormSpec.t list option; (** list of specs *)
     typestate : unit TypeState.t option; (** final typestate *)
     calls: call_summary option;
-    crashcontext_frame: Stacktree_j.stacktree option;
+    crashcontext_frame: Stacktree_t.stacktree option;
     (** Proc location and blame_range info for crashcontext analysis *)
     quandary : QuandarySummary.t option;
     siof : SiofDomain.astate option;
@@ -435,6 +435,12 @@ let get_signature summary =
   let decl = pp_to_string pp () in
   decl ^ "(" ^ !s ^ ")"
 
+let get_specs_from_preposts preposts =
+  Option.map_default NormSpec.tospecs [] preposts
+
+let get_specs_from_payload summary =
+  get_specs_from_preposts summary.payload.preposts
+
 let pp_summary_no_stats_specs fmt summary =
   let pp_pair fmt (x, y) = F.fprintf fmt "%s: %s" x y in
   F.fprintf fmt "%s@\n" (get_signature summary);
@@ -443,18 +449,26 @@ let pp_summary_no_stats_specs fmt summary =
   F.fprintf fmt "%a@\n" pp_pair (describe_phase summary);
   F.fprintf fmt "Dependency_map: @[%a@]@\n" pp_dependency_map summary.dependency_map
 
-let get_specs_from_payload summary =
-  match summary.payload.preposts with
-  | Some specs -> NormSpec.tospecs specs
-  | None -> []
+let pp_payload pe fmt { preposts; typestate; crashcontext_frame; quandary; siof } =
+  let pp_opt pp fmt = function
+    | Some x -> pp fmt x
+    | None -> () in
+  F.fprintf fmt "%a%a%a%a%a"
+    (pp_specs pe) (get_specs_from_preposts preposts)
+    (pp_opt (TypeState.pp TypeState.unit_ext)) typestate
+    (pp_opt Crashcontext.pp_stacktree) crashcontext_frame
+    (pp_opt QuandarySummary.pp) quandary
+    (pp_opt SiofDomain.pp) siof
+
 
 let pp_summary_text ~whole_seconds fmt summary =
   let err_log = summary.attributes.ProcAttributes.err_log in
   let pe = pe_text in
   pp_summary_no_stats_specs fmt summary;
-  F.fprintf fmt "%a@\n" pp_errlog err_log;
-  F.fprintf fmt "%a@\n" (pp_stats whole_seconds) summary.stats;
-  F.fprintf fmt "%a" (pp_specs pe) (get_specs_from_payload summary)
+  F.fprintf fmt "%a@\n%a%a"
+    pp_errlog err_log
+    (pp_stats whole_seconds) summary.stats
+    (pp_payload pe) summary.payload
 
 let pp_summary_latex ~whole_seconds color fmt summary =
   let err_log = summary.attributes.ProcAttributes.err_log in

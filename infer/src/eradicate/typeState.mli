@@ -45,3 +45,4 @@ val pp : 'a ext -> Format.formatter -> 'a t -> unit
 val range_add_locs : range -> (Location.t list) -> range
 val remove_id : Ident.t -> 'a t -> 'a t
 val set_extension : 'a t -> 'a -> 'a t
+val unit_ext : unit ext

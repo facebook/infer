@@ -32,6 +32,13 @@ type 'a ext =
     pp : Format.formatter -> 'a -> unit (** pretty print an extension *)
   }
 
+let unit_ext : unit ext = {
+  empty = ();
+  check_instr = (fun _ _ _ _ () _ _ -> ());
+  join = (fun () () -> ());
+  pp = (fun _ () -> ());
+}
+
 
 module M = Map.Make (struct
     type t = Exp.t
