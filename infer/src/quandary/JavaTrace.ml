@@ -170,7 +170,7 @@ module JavaSink = struct
               taint_nth 0 Intent site ~report_reachable:true
           | "android.app.Activity", ("startActivityFromChild" | "startActivityFromFragment") ->
               taint_nth 1 Intent site ~report_reachable:true
-          | "android.util.Log", ("d" | "e" | "i" | "println" | "v" | "w" | "wtf") ->
+          | "android.util.Log", ("e" | "println" | "w" | "wtf") ->
               taint_all pname Logging site ~report_reachable:true
           | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink" ->
               [Sink.make_sink_param (make Other site) 0 ~report_reachable:false]

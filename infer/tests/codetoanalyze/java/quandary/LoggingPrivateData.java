@@ -17,11 +17,11 @@ import android.util.Log;
 public class LoggingPrivateData {
 
   public void logSharedPreferencesDataBad(SharedPreferences prefs) {
-    Log.d("tag", prefs.getString("some", "data"));
+    Log.e("tag", prefs.getString("some", "data"));
   }
 
   public void logSharedPreferencesDataInTagBad(SharedPreferences prefs) {
-    Log.d(prefs.getString("some", "data"), "value");
+    Log.e(prefs.getString("some", "data"), "value");
   }
 
   static class StringWrapper extends Throwable {
@@ -40,7 +40,7 @@ public class LoggingPrivateData {
   }
 
   public void logDataOk(SharedPreferences prefs) {
-    Log.d("tag", "value");
+    Log.e("tag", "value");
   }
 
   private native int rand();
@@ -73,7 +73,7 @@ public class LoggingPrivateData {
 
   public void logAllSourcesBad(Location l, TelephonyManager t) {
     String source = returnAllSources(l, t);
-    Log.d("tag", source);
+    Log.e("tag", source);
   }
 
 }
