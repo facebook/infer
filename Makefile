@@ -268,6 +268,8 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 		$(INSTALL_DATA) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
 	done
 	$(INSTALL_PROGRAM) -C $(INFERCLANG_BIN) $(DESTDIR)$(libdir)/infer/infer/bin/
+	(cd $(DESTDIR)$(libdir)/infer/infer/bin/ && \
+	 $(LN_S) -f $(INFERCLANG_BIN) $(INFERCLANG_BIN)++)
 	$(INSTALL_PROGRAM) -C $(INFER_BUCK_COMPILATION_DATABASE_BIN) $(DESTDIR)$(libdir)/infer/infer/bin/
 endif
 ifneq ($(XCODE_SELECT),no)

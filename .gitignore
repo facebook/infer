@@ -67,6 +67,7 @@ buck-out/
 #other
 /infer/bin/InferAnalyze
 /infer/bin/InferClang
+/infer/bin/InferClang++
 /infer/bin/InferJava
 /infer/bin/InferPrint
 /infer/bin/InferStatsAggregator
