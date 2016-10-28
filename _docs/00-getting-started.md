@@ -13,6 +13,20 @@ You'll need [Homebrew](http://brew.sh/). Simply type this into a terminal:
 brew install infer
 ```
 
+If you get the following error...
+
+```sh
+Error: No available formula for infer 
+Searching taps...
+homebrew/science/infernal
+```
+... Then you must run this command first:
+
+```sh
+brew update
+```
+And wait a few minutes, and then run `brew install infer`. More info [here](https://github.com/facebook/infer/issues/36).
+
 ## Install Infer on Linux
 
 The easiest way is via [Docker](https://docs.docker.com/engine/installation/):
