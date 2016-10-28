@@ -438,7 +438,7 @@ and project_root =
 
 (* Parse the phase 1 options, ignoring the rest *)
 
-let _ = CLOpt.parse ~incomplete:true "INFER_ARGS" current_exe (fun _ -> "")
+let _ = CLOpt.parse ~incomplete:true current_exe (fun _ -> "")
 
 (* Define the values that depend on phase 1 options *)
 
@@ -841,6 +841,14 @@ and fail_on_bug =
 and failures_allowed =
   CLOpt.mk_bool ~deprecated_no:["-no_failures_allowed"] ~long:"failures-allowed" ~default:true
     "Fail if at least one of the translations fails (clang only)"
+
+and fcp_apple_clang =
+  CLOpt.mk_string_opt ~long:"fcp-apple-clang"
+    ~meta:"path" "Specify the path to Apple Clang"
+
+and fcp_syntax_only =
+  CLOpt.mk_bool ~long:"fcp-syntax-only"
+    "Skip creation of object files"
 
 and filter_paths =
   CLOpt.mk_bool ~long:"filter-paths" ~default:true
@@ -1399,8 +1407,7 @@ let post_parsing_initialization () =
 
 let parse_args_and_return_usage_exit =
   let usage_exit =
-    CLOpt.parse ~accept_unknown:true ~config_file:inferconfig_path
-      "INFER_ARGS" current_exe exe_usage in
+    CLOpt.parse ~accept_unknown:true ~config_file:inferconfig_path current_exe exe_usage in
   post_parsing_initialization () ;
   usage_exit
 
@@ -1486,6 +1493,8 @@ and eradicate_verbose = !eradicate_verbose
 and err_file_cmdline = !err_file
 and fail_on_bug = !fail_on_bug
 and failures_allowed = !failures_allowed
+and fcp_apple_clang = !fcp_apple_clang
+and fcp_syntax_only = !fcp_syntax_only
 and filter_paths = !filter_paths
 and filtering = !filtering
 and flavors = !flavors

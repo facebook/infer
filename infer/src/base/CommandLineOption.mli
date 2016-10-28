@@ -103,6 +103,12 @@ val mk_rest :
   ?exes:exe list -> string ->
   string list ref
 
+(** environment variable use to pass arguments from parent to child processes *)
+val args_env_var : string
+
+(** separator of argv elements when encoded into environment variables *)
+val env_var_sep : char
+
 (** [parse env_var exe_usage exe] parses command line arguments as specified by preceding calls to
     the [mk_*] functions, and returns a function that prints the usage message and help text then
     exits. [exe] is used to construct the help message appropriate for that executable. The decoded
@@ -115,4 +121,4 @@ val mk_rest :
     and [env_var] is not set.  If [accept_unknown] is set, unknown options are treated the same as
     anonymous arguments. *)
 val parse : ?incomplete:bool -> ?accept_unknown:bool -> ?config_file:string ->
-  string -> exe -> (exe -> Arg.usage_msg) -> (int -> 'a)
+  exe -> (exe -> Arg.usage_msg) -> (int -> 'a)

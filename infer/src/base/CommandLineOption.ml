@@ -439,21 +439,22 @@ let decode_inferconfig_to_argv current_exe path =
   IList.fold_left one_config_item [] json_config
 
 
-(** [sep_char] is used to separate elements of argv when encoded into environment variables *)
-let sep_char = '^'
+(** separator of argv elements when encoded into environment variables *)
+let env_var_sep = '^'
 
 let encode_argv_to_env argv =
-  String.concat (String.make 1 sep_char)
+  String.concat (String.make 1 env_var_sep)
     (IList.filter (fun arg ->
-         not (String.contains arg sep_char)
+         not (String.contains arg env_var_sep)
          || (
-           F.eprintf "Ignoring unsupported option containing '%c' character: %s@\n" sep_char arg ;
+           F.eprintf "Ignoring unsupported option containing '%c' character: %s@\n"
+             env_var_sep arg ;
            false
          )
        ) argv)
 
 let decode_env_to_argv env =
-  Str.split (Str.regexp_string (String.make 1 sep_char)) env
+  Str.split (Str.regexp_string (String.make 1 env_var_sep)) env
 
 let prepend_to_argv args =
   let cl_args = match Array.to_list Sys.argv with _ :: tl -> tl | [] -> [] in
@@ -467,7 +468,10 @@ let prefix_before_rest args =
   prefix_before_rest_ [] args
 
 
-let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var current_exe exe_usage =
+(** environment variable use to pass arguments from parent to child processes *)
+let args_env_var = "INFER_ARGS"
+
+let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe exe_usage =
   let curr_speclist = ref []
   and full_speclist = ref []
   in
@@ -561,7 +565,7 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var curre
   ;
   full_speclist := add_or_suppress_help (normalize !full_desc_list)
   ;
-  let env_args = decode_env_to_argv (try Unix.getenv env_var with Not_found -> "") in
+  let env_args = decode_env_to_argv (try Unix.getenv args_env_var with Not_found -> "") in
   (* begin transitional support for INFERCLANG_ARGS *)
   let c_args =
     Str.split (Str.regexp_string (String.make 1 ':'))
@@ -601,6 +605,6 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file env_var curre
   in
   parse_loop ();
   if not incomplete then
-    Unix.putenv env_var
+    Unix.putenv args_env_var
       (encode_argv_to_env (prefix_before_rest (IList.tl (Array.to_list !args_to_parse)))) ;
   curr_usage

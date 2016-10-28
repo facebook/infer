@@ -51,7 +51,11 @@ class XcodebuildCapture:
 
     def get_envvars(self):
         env_vars = utils.read_env()
-        env_vars['FCP_APPLE_CLANG'] = self.apple_clang_path
+        infer_args = env_vars['INFER_ARGS']
+        if infer_args != '':
+            infer_args += '^'  # '^' must be CommandLineOption.env_var_sep
+        infer_args += '--fcp-apple-clang^' + self.apple_clang_path
+        env_vars['INFER_ARGS'] = infer_args
         return env_vars
 
     def capture(self):

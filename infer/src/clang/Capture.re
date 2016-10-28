@@ -8,6 +8,8 @@
  */
 open! Utils;
 
+let module CLOpt = CommandLineOption;
+
 
 /** this fails the execution of clang if the frontend fails */
 let report_frontend_failure = not Config.failures_allowed;
@@ -113,7 +115,7 @@ let run_plugin_and_frontend frontend clang_args => {
         "^"
         (
           (
-            try [Unix.getenv "INFER_ARGS"] {
+            try [Unix.getenv CLOpt.args_env_var] {
             | Not_found => []
             }
           ) @ [
@@ -123,7 +125,8 @@ let run_plugin_and_frontend frontend clang_args => {
         );
     Format.fprintf
       debug_script_fmt
-      "INFER_ARGS=\"%s\" %s@\n"
+      "%s=\"%s\" %s@\n"
+      CLOpt.args_env_var
       infer_clang_options
       (ClangCommand.with_exec Sys.executable_name clang_args |> ClangCommand.command_to_run);
     Format.fprintf

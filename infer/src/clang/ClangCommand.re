@@ -31,29 +31,13 @@ let fcp_dir =
 /** path of the plugin to load in clang */
 let plugin_path = fcp_dir /\/ "libtooling" /\/ "build" /\/ "FacebookClangPlugin.dylib";
 
-let test_env_var var =>
-  switch (Sys.getenv var) {
-  | "1" => true
-  | _ => false
-  | exception Not_found => false
-  };
-
 
 /** name of the plugin to use */
 let plugin_name = "BiniouASTExporter";
 
 
-/** this skips the creation of .o files */
-let syntax_only = test_env_var "FCP_RUN_SYNTAX_ONLY";
-
-
 /** are we running as Apple's clang? */
-let has_apple_clang =
-  switch (Sys.getenv "FCP_APPLE_CLANG") {
-  | bin when bin != "" => true
-  | _ => false
-  | exception Not_found => false
-  };
+let has_apple_clang = Config.fcp_apple_clang != None;
 
 
 /** whether to amend include search path with C++ model headers */
@@ -193,7 +177,7 @@ let with_plugin_args args => {
       "-plugin-arg-" ^ plugin_name,
       "PREPEND_CURRENT_DIR=1"
     ];
-  let args_after = [] |> do_if syntax_only (cons "-fsyntax-only");
+  let args_after = [] |> do_if Config.fcp_syntax_only (cons "-fsyntax-only");
   {...args, argv: IList.rev_append rev_args_before (args.argv @ args_after)}
 };
 

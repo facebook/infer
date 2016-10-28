@@ -194,6 +194,8 @@ val eradicate_verbose : bool
 val err_file_cmdline : string
 val fail_on_bug : bool
 val failures_allowed : bool
+val fcp_apple_clang : string option
+val fcp_syntax_only : bool
 val filter_paths : bool
 val filtering : bool
 val flavors : bool

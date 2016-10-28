@@ -9,6 +9,9 @@
 
 open! Utils
 
+module CLOpt = CommandLineOption
+module F = Format
+
 let capture_text =
   if Config.analyzer = Some Config.Linters then "linting"
   else "translating"
@@ -89,9 +92,22 @@ let run_compilation_file compilation_database file =
       ClangQuotes.mk_arg_file
         "cdb_clang_args_" ClangQuotes.EscapedNoQuotes [compilation_data.args] in
     let args = Array.of_list [wrapper_cmd; "@" ^ arg_file] in
-    let env = Array.append
-        (Unix.environment())
-        (Array.of_list ["FCP_RUN_SYNTAX_ONLY=1"]) in
+    let env =
+      let env0 = Unix.environment () in
+      let found = ref false in
+      Array.iteri (fun i key_val ->
+          match string_split_character key_val '=' with
+          | Some var, args when string_equal var CLOpt.args_env_var ->
+              found := true ;
+              env0.(i) <-
+                F.sprintf "%s=%s%c--fcp-syntax-only" CLOpt.args_env_var args CLOpt.env_var_sep
+          | _ ->
+              ()
+        ) env0 ;
+      if !found then
+        env0
+      else
+        Array.append env0 [|CLOpt.args_env_var ^ "=--fcp-syntax-only"|] in
     (Some compilation_data.dir, wrapper_cmd, args, env)
   with Not_found ->
     Process.print_error_and_exit "Failed to find compilation data for %s \n%!" file

@@ -177,7 +177,11 @@ class BuckAnalyzer:
                   'is located')
             return os.EX_USAGE
         env_vars = utils.read_env()
-        env_vars['FCP_RUN_SYNTAX_ONLY'] = '1'
+        infer_args = env_vars['INFER_ARGS']
+        if infer_args != '':
+            infer_args += '^'  # '^' must be CommandLineOption.env_var_sep
+        infer_args += '--fcp-syntax-only'
+        env_vars['INFER_ARGS'] = infer_args
         env = utils.encode_env(env_vars)
         command = self.cmd
         command += ['-j', str(self.args.multicore)]
