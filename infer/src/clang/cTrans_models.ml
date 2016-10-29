@@ -56,11 +56,11 @@ let is_autorelease_method funct =
 
 let get_builtinname method_name =
   if is_retain_method method_name then
-    Some ModelBuiltins.__objc_retain
+    Some BuiltinDecl.__objc_retain
   else if is_autorelease_method method_name then
-    Some ModelBuiltins.__set_autorelease_attribute
+    Some BuiltinDecl.__set_autorelease_attribute
   else if is_release_method method_name then
-    Some ModelBuiltins.__objc_release
+    Some BuiltinDecl.__objc_release
   else None
 
 let is_modeled_builtin funct =
@@ -115,8 +115,8 @@ let is_toll_free_bridging pn =
   funct = CFrontend_config.ns_make_collectable
 
 let is_cf_retain_release pn =
-  Procname.equal pn ModelBuiltins.__objc_retain_cf
-  || Procname.equal pn ModelBuiltins.__objc_release_cf
+  Procname.equal pn BuiltinDecl.__objc_retain_cf
+  || Procname.equal pn BuiltinDecl.__objc_release_cf
 
 (** If the function is a builtin model, return the model, otherwise return the function *)
 let is_assert_log pname =
@@ -180,7 +180,7 @@ let get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procna
   let args = [(Mangled.from_string CFrontend_config.self, class_type)] in
   get_predefined_ms_method condition class_name method_name Procname.ObjCInstanceMethod
     mk_procname lang args Ast_expressions.create_void_type
-    [] (Some ModelBuiltins.__objc_release_autorelease_pool)
+    [] (Some BuiltinDecl.__objc_release_autorelease_pool)
 
 let get_predefined_ms_is_kind_of_class class_name method_name mk_procname lang =
   let condition = method_name = CFrontend_config.is_kind_of_class in
@@ -188,7 +188,7 @@ let get_predefined_ms_is_kind_of_class class_name method_name mk_procname lang =
   let args = [(Mangled.from_string CFrontend_config.self, class_type)] in
   get_predefined_ms_method condition class_name method_name Procname.ObjCInstanceMethod
     mk_procname lang args Ast_expressions.create_BOOL_type
-    [] (Some ModelBuiltins.__instanceof)
+    [] (Some BuiltinDecl.__instanceof)
 
 let get_predefined_model_method_signature class_name method_name mk_procname lang =
   let next_predefined f = function

@@ -27,16 +27,15 @@ type ret_typ = (Prop.normal Prop.t * Paths.Path.t) list
 
 type t = args -> ret_typ
 
-val register : string -> t -> Procname.t
-(** Register a builtin function name and symbolic execution handler *)
+type registered
 
-val register_procname : Procname.t -> t -> unit
+val register : Procname.t -> t -> registered
 (** Register a builtin [Procname.t] and symbolic execution handler *)
 
 val is_registered : Procname.t -> bool
 (** Check if the function is a builtin *)
 
-val get : Procname.t -> t
+val get : Procname.t -> t option
 (** Get the symbolic execution handler associated to the builtin function name *)
 
 val print_and_exit : unit -> 'a

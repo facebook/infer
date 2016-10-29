@@ -122,7 +122,7 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pname
       | _ -> false in
     let do_instr = function
       | Sil.Call (_, Exp.Const (Const.Cfun pn), [_; (Exp.Sizeof(t, _, _), _)], _, _) when
-          Procname.equal pn ModelBuiltins.__instanceof && typ_is_throwable t ->
+          Procname.equal pn BuiltinDecl.__instanceof && typ_is_throwable t ->
           throwable_found := true
       | _ -> () in
     let do_node n =

@@ -33,9 +33,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module Domain = CombinedDomain
   type extras = ProcData.no_extras
 
-  let is_lock_procedure pn = Procname.equal pn ModelBuiltins.__set_locked_attribute
+  let is_lock_procedure pn = Procname.equal pn BuiltinDecl.__set_locked_attribute
 
-  let is_unlock_procedure pn = Procname.equal pn ModelBuiltins.__delete_locked_attribute
+  let is_unlock_procedure pn = Procname.equal pn BuiltinDecl.__delete_locked_attribute
 
   let add_path_to_state exp typ pathdomainstate =
     IList.fold_left

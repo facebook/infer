@@ -89,7 +89,7 @@ include
             | _ ->
                 []
           end
-      | pname when Builtin.is_registered pname ->
+      | pname when BuiltinDecl.is_declared pname ->
           []
       | pname ->
           failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname

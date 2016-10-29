@@ -54,7 +54,7 @@ let is_matching patterns =
 
 (** Check if a proc name is matching the name given as string. *)
 let match_method language proc_name method_name =
-  not (Builtin.is_registered proc_name) &&
+  not (BuiltinDecl.is_declared proc_name) &&
   Procname.get_language proc_name = language &&
   Procname.get_method proc_name = method_name
 

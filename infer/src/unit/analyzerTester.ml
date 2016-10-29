@@ -124,7 +124,7 @@ module StructuredSil = struct
   let cast_id_to_id lhs cast_typ rhs =
     let lhs_id = ident_of_str lhs in
     let rhs_id = Exp.Var (ident_of_str rhs) in
-    make_call ~procname:ModelBuiltins.__cast (Some (lhs_id, cast_typ)) [rhs_id, cast_typ]
+    make_call ~procname:BuiltinDecl.__cast (Some (lhs_id, cast_typ)) [rhs_id, cast_typ]
 
   let var_assign_exp ~rhs_typ lhs rhs_exp =
     let lhs_exp = var_of_str lhs in

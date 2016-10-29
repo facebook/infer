@@ -66,8 +66,8 @@ struct
     let node_allocates node : Location.t option =
       let found = ref None in
       let proc_is_new pn =
-        Procname.equal pn ModelBuiltins.__new ||
-        Procname.equal pn ModelBuiltins.__new_array in
+        Procname.equal pn BuiltinDecl.__new ||
+        Procname.equal pn BuiltinDecl.__new_array in
       let do_instr instr =
         match instr with
         | Sil.Call (_, Exp.Const (Const.Cfun pn), _, loc, _) when proc_is_new pn ->

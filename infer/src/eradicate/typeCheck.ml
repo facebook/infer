@@ -41,7 +41,7 @@ module ComplexExpressions = struct
 
 
   let procname_optional_isPresent = Models.is_optional_isPresent
-  let procname_instanceof = Procname.equal ModelBuiltins.__instanceof
+  let procname_instanceof = Procname.equal BuiltinDecl.__instanceof
 
   let procname_is_false_on_null pn =
     match Specs.proc_resolve_attributes pn with
@@ -73,7 +73,7 @@ module ComplexExpressions = struct
     procname_optional_isPresent pn ||
     procname_instanceof pn ||
     procname_containsKey pn ||
-    Builtin.is_registered pn
+    BuiltinDecl.is_declared pn
 
 
   exception Not_handled
@@ -508,14 +508,14 @@ let typecheck_instr
       check_field_assign ();
       typestate2
   | Sil.Call (Some (id, _), Exp.Const (Const.Cfun pn), [(_, typ)], loc, _)
-    when Procname.equal pn ModelBuiltins.__new ||
-         Procname.equal pn ModelBuiltins.__new_array ->
+    when Procname.equal pn BuiltinDecl.__new ||
+         Procname.equal pn BuiltinDecl.__new_array ->
       TypeState.add_id
         id
         (typ, TypeAnnotation.const Annotations.Nullable false TypeOrigin.New, [loc])
         typestate (* new never returns null *)
   | Sil.Call (Some (id, _), Exp.Const (Const.Cfun pn), (e, typ):: _, loc, _)
-    when Procname.equal pn ModelBuiltins.__cast ->
+    when Procname.equal pn BuiltinDecl.__cast ->
       typecheck_expr_for_errors typestate e loc;
       let e', typestate' =
         convert_complex_exp_to_pvar node false e typestate loc in
@@ -524,7 +524,7 @@ let typecheck_instr
         (typecheck_expr_simple typestate' e' typ TypeOrigin.ONone loc)
         typestate'
   | Sil.Call (Some (id, _), Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
-    when Procname.equal pn ModelBuiltins.__get_array_length ->
+    when Procname.equal pn BuiltinDecl.__get_array_length ->
       let (_, ta, _) = typecheck_expr
           find_canonical_duplicate
           calls_this
@@ -555,7 +555,7 @@ let typecheck_instr
           [loc]
         )
         typestate
-  | Sil.Call (_, Exp.Const (Const.Cfun pn), _, _, _) when Builtin.is_registered pn ->
+  | Sil.Call (_, Exp.Const (Const.Cfun pn), _, _, _) when BuiltinDecl.is_declared pn ->
       typestate (* skip othe builtins *)
   | Sil.Call
       (ret_id,

@@ -68,7 +68,7 @@ module CppSource = struct
           | "__infer_taint_source" -> Some (make Other site)
           | _ -> None
         end
-    | pname when Builtin.is_registered pname ->
+    | pname when BuiltinDecl.is_declared pname ->
         None
     | pname ->
         failwithf "Non-C++ procname %a in C++ analysis@." Procname.pp pname
@@ -145,7 +145,7 @@ module CppSink = struct
           | _ ->
               []
         end
-    | pname when Builtin.is_registered pname ->
+    | pname when BuiltinDecl.is_declared pname ->
         []
     | pname ->
         failwithf "Non-C++ procname %a in C++ analysis@." Procname.pp pname

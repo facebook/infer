@@ -127,6 +127,7 @@ let register_perf_stats_report () => {
 
 let () = {
   register_perf_stats_report ();
+  BuiltinDefn.init ();
   if Config.developer_mode {
     Printexc.record_backtrace true
   };

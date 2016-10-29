@@ -58,8 +58,8 @@ let node_throws node (proc_throws : Procname.t -> throws) : throws =
         (* assignment to return variable is an artifact of a throw instruction *)
         Throws
     | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _)
-      when Builtin.is_registered callee_pn ->
-        if Procname.equal callee_pn ModelBuiltins.__cast
+      when BuiltinDecl.is_declared callee_pn ->
+        if Procname.equal callee_pn BuiltinDecl.__cast
         then DontKnow
         else DoesNotThrow
     | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _) ->

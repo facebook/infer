@@ -339,10 +339,10 @@ let create_procdesc source_file program linereader icfg m : Cfg.Procdesc.t optio
       None
 
 let builtin_new =
-  Exp.Const (Const.Cfun ModelBuiltins.__new)
+  Exp.Const (Const.Cfun BuiltinDecl.__new)
 
 let builtin_get_array_length =
-  Exp.Const (Const.Cfun ModelBuiltins.__get_array_length)
+  Exp.Const (Const.Cfun BuiltinDecl.__get_array_length)
 
 let create_sil_deref exp typ loc =
   let no_id = Ident.create_none () in
@@ -405,8 +405,8 @@ let rec expression (context : JContext.t) pc expr =
               JTransType.sizeof_of_object_type program tenv ot subtypes in
             let builtin =
               (match unop with
-               | JBir.InstanceOf _ -> Exp.Const (Const.Cfun ModelBuiltins.__instanceof)
-               | JBir.Cast _ -> Exp.Const (Const.Cfun ModelBuiltins.__cast)
+               | JBir.InstanceOf _ -> Exp.Const (Const.Cfun BuiltinDecl.__instanceof)
+               | JBir.Cast _ -> Exp.Const (Const.Cfun BuiltinDecl.__cast)
                | _ -> assert false) in
             let args = [(sil_ex, type_of_ex); (sizeof_expr, Typ.Tvoid)] in
             let ret_id = Ident.create_fresh Ident.knormal in
@@ -519,7 +519,7 @@ let method_invocation
   let callee_procname =
     let proc = Procname.from_string_c_fun (JBasics.ms_name ms) in
     if JBasics.cn_equal cn' (JBasics.make_cn JConfig.infer_builtins_cl) &&
-       Builtin.is_registered proc
+       BuiltinDecl.is_declared proc
     then proc
     else Procname.Java (JTransType.get_method_procname cn' ms method_kind) in
   let call_instrs =
@@ -550,7 +550,7 @@ let method_invocation
     | (_, typ) as exp :: _
       when Procname.is_constructor callee_procname && JTransType.is_closeable program tenv typ ->
         let set_file_attr =
-          let set_builtin = Exp.Const (Const.Cfun ModelBuiltins.__set_file_attribute) in
+          let set_builtin = Exp.Const (Const.Cfun BuiltinDecl.__set_file_attribute) in
           Sil.Call (None, set_builtin, [exp], loc, CallFlags.default) in
         (* Exceptions thrown in the constructor should prevent adding the resource attribute *)
         call_instrs @ [set_file_attr]
@@ -559,7 +559,7 @@ let method_invocation
     | (_, typ) as exp :: []
       when Procname.java_is_close callee_procname && JTransType.is_closeable program tenv typ ->
         let set_mem_attr =
-          let set_builtin = Exp.Const (Const.Cfun ModelBuiltins.__set_mem_attribute) in
+          let set_builtin = Exp.Const (Const.Cfun BuiltinDecl.__set_mem_attribute) in
           Sil.Call (None, set_builtin, [exp], loc, CallFlags.default) in
         (* Exceptions thrown in the close method should not prevent the resource from being *)
         (* considered as closed *)
@@ -690,7 +690,7 @@ let is_this expr =
 
 
 let assume_not_null loc sil_expr =
-  let builtin_infer_assume = Exp.Const (Const.Cfun ModelBuiltins.__infer_assume) in
+  let builtin_infer_assume = Exp.Const (Const.Cfun BuiltinDecl.__infer_assume) in
   let not_null_expr =
     Exp.BinOp (Binop.Ne, sil_expr, Exp.null) in
   let assume_call_flag = { CallFlags.default with CallFlags.cf_noreturn = true; } in
@@ -818,7 +818,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
         JContext.add_goto_jump context pc JContext.Exit;
         Instr node
     | JBir.New (var, cn, constr_type_list, constr_arg_list) ->
-        let builtin_new = Exp.Const (Const.Cfun ModelBuiltins.__new) in
+        let builtin_new = Exp.Const (Const.Cfun BuiltinDecl.__new) in
         let class_type = JTransType.get_class_type program tenv cn in
         let class_type_np = JTransType.get_class_type_no_pointer program tenv cn in
         let sizeof_exp = Exp.Sizeof (class_type_np, None, Subtype.exact) in
@@ -840,7 +840,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
         Cg.add_edge cg caller_procname constr_procname;
         Instr node
     | JBir.NewArray (var, vt, expr_list) ->
-        let builtin_new_array = Exp.Const (Const.Cfun ModelBuiltins.__new_array) in
+        let builtin_new_array = Exp.Const (Const.Cfun BuiltinDecl.__new_array) in
         let content_type = JTransType.value_type program tenv vt in
         let array_type = JTransType.create_array_type content_type (IList.length expr_list) in
         let array_name = JContext.set_pvar context var array_type in
@@ -1016,7 +1016,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
         and ret_id = Ident.create_fresh Ident.knormal
         and sizeof_expr =
           JTransType.sizeof_of_object_type program tenv object_type Subtype.subtypes_instof in
-        let check_cast = Exp.Const (Const.Cfun ModelBuiltins.__instanceof) in
+        let check_cast = Exp.Const (Const.Cfun BuiltinDecl.__instanceof) in
         let args = [(sil_expr, sil_type); (sizeof_expr, Typ.Tvoid)] in
         let call = Sil.Call (Some (ret_id, ret_type), check_cast, args, loc, CallFlags.default) in
         let res_ex = Exp.Var ret_id in
@@ -1050,11 +1050,11 @@ let rec instruction (context : JContext.t) pc instr : translation =
         Prune (is_instance_node, throw_cast_exception_node)
     | JBir.MonitorEnter expr ->
         trans_monitor_enter_exit
-          context expr pc loc ModelBuiltins.__set_locked_attribute "MonitorEnter"
+          context expr pc loc BuiltinDecl.__set_locked_attribute "MonitorEnter"
 
     | JBir.MonitorExit expr ->
         trans_monitor_enter_exit
-          context expr pc loc ModelBuiltins.__delete_locked_attribute "MonitorExit"
+          context expr pc loc BuiltinDecl.__delete_locked_attribute "MonitorExit"
 
     | _ -> Skip
   with Frontend_error s ->

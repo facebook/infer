@@ -40,7 +40,7 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
     let instr_get_ret_val = Sil.Load (id_ret_val, Exp.Lvar ret_var, ret_type, loc) in
     let instr_deactivate_exn = Sil.Store (Exp.Lvar ret_var, ret_type, Exp.null, loc) in
     let instr_unwrap_ret_val =
-      let unwrap_builtin = Exp.Const (Const.Cfun ModelBuiltins.__unwrap_exception) in
+      let unwrap_builtin = Exp.Const (Const.Cfun BuiltinDecl.__unwrap_exception) in
       Sil.Call
         (Some (id_exn_val, ret_type), unwrap_builtin, [(Exp.Var id_ret_val, ret_type)], loc,
          CallFlags.default) in
@@ -68,7 +68,7 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
           | _ -> assert false in
         let id_instanceof = Ident.create_fresh Ident.knormal in
         let instr_call_instanceof =
-          let instanceof_builtin = Exp.Const (Const.Cfun ModelBuiltins.__instanceof) in
+          let instanceof_builtin = Exp.Const (Const.Cfun BuiltinDecl.__instanceof) in
           let args = [
             (Exp.Var id_exn_val, Typ.Tptr(exn_type, Typ.Pk_pointer));
             (Exp.Sizeof (exn_type, None, Subtype.exact), Typ.Tvoid)] in

@@ -313,9 +313,9 @@ let create_alloc_instrs sil_loc function_type fname size_exp_opt procname_opt =
 
 let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc procname_opt =
   let fname = if is_cf_non_null_alloc then
-      ModelBuiltins.__objc_alloc_no_fail
+      BuiltinDecl.__objc_alloc_no_fail
     else
-      ModelBuiltins.__objc_alloc in
+      BuiltinDecl.__objc_alloc in
   let (function_type, stmt_call, exp) =
     create_alloc_instrs loc function_type fname None procname_opt in
   let res_trans_tmp = { empty_res_trans with instrs =[stmt_call]} in
@@ -325,7 +325,7 @@ let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc pro
   { res_trans with exps =[(exp, function_type)]}
 
 let objc_new_trans trans_state loc stmt_info cls_name function_type =
-  let fname = ModelBuiltins.__objc_alloc_no_fail in
+  let fname = BuiltinDecl.__objc_alloc_no_fail in
   let (alloc_ret_type, alloc_stmt_call, alloc_ret_exp) =
     create_alloc_instrs loc function_type fname None None in
   let init_ret_id = Ident.create_fresh Ident.knormal in
@@ -362,8 +362,8 @@ let new_or_alloc_trans trans_state loc stmt_info type_ptr class_name_opt selecto
 let cpp_new_trans sil_loc function_type size_exp_opt =
   let fname =
     match size_exp_opt with
-    | Some _ -> ModelBuiltins.__new_array
-    | None -> ModelBuiltins.__new in
+    | Some _ -> BuiltinDecl.__new_array
+    | None -> BuiltinDecl.__new in
   let (function_type, stmt_call, exp) =
     create_alloc_instrs sil_loc function_type fname size_exp_opt None in
   { empty_res_trans with instrs = [stmt_call]; exps = [(exp, function_type)] }
@@ -373,7 +373,7 @@ let create_cast_instrs exp cast_from_typ cast_to_typ sil_loc =
   let ret_id_typ = Some (ret_id, cast_to_typ) in
   let typ = CTypes.remove_pointer_to_typ cast_to_typ in
   let sizeof_exp = Exp.Sizeof (typ, None, Subtype.exact) in
-  let pname = ModelBuiltins.__objc_cast in
+  let pname = BuiltinDecl.__objc_cast in
   let args = [(exp, cast_from_typ); (sizeof_exp, Typ.Tint Typ.IULong)] in
   let stmt_call =
     Sil.Call (ret_id_typ, Exp.Const (Const.Cfun pname), args, sil_loc, CallFlags.default) in
@@ -439,7 +439,7 @@ let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
       ([], (exp, cast_typ))
 
 let trans_assertion_failure sil_loc context =
-  let assert_fail_builtin = Exp.Const (Const.Cfun ModelBuiltins.__infer_fail) in
+  let assert_fail_builtin = Exp.Const (Const.Cfun BuiltinDecl.__infer_fail) in
   let args = [Exp.Const (Const.Cstr Config.default_failure_name), Typ.Tvoid] in
   let call_instr = Sil.Call (None, assert_fail_builtin, args, sil_loc, CallFlags.default) in
   let exit_node = Cfg.Procdesc.get_exit_node (CContext.get_procdesc context)

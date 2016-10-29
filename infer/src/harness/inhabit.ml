@@ -87,11 +87,11 @@ let rec inhabit_typ tenv typ cfg env =
       | Typ.Tptr (Typ.Tarray (inner_typ, Some _), Typ.Pk_pointer) ->
           let len = Exp.Const (Const.Cint (IntLit.one)) in
           let arr_typ = Typ.Tarray (inner_typ, Some IntLit.one) in
-          inhabit_alloc arr_typ (Some len) typ ModelBuiltins.__new_array env
+          inhabit_alloc arr_typ (Some len) typ BuiltinDecl.__new_array env
       | Typ.Tptr (typ, Typ.Pk_pointer) as ptr_to_typ ->
           (* TODO (t4575417): this case does not work correctly for enums, but they are currently
            * broken in Infer anyway (see t4592290) *)
-          let (allocated_obj_exp, env) = inhabit_alloc typ None typ ModelBuiltins.__new env in
+          let (allocated_obj_exp, env) = inhabit_alloc typ None typ BuiltinDecl.__new env in
           (* select methods that are constructors and won't force us into infinite recursion because
            * we are already inhabiting one of their argument types *)
           let get_all_suitable_constructors (typ: Typ.t) =

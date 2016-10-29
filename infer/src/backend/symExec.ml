@@ -1054,7 +1054,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       ret_old_path (Propset.to_proplist (prune tenv ~positive:true n_cond prop))
   | Sil.Call (ret_id, Exp.Const (Const.Cfun callee_pname), args, loc, _)
     when Builtin.is_registered callee_pname ->
-      let sym_exe_builtin = Builtin.get callee_pname in
+      let sym_exe_builtin =  Option.get (Builtin.get callee_pname) in
       sym_exe_builtin (call_args prop_ callee_pname args ret_id loc)
   | Sil.Call (ret_id,
               Exp.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),

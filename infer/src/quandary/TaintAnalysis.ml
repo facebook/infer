@@ -297,8 +297,8 @@ module Make (TaintSpec : TaintSpec.S) = struct
                 astate'
           end
       | Sil.Call (Some (ret_id, _), Const (Cfun callee_pname), args, loc, _)
-        when Builtin.is_registered callee_pname ->
-          if Procname.equal callee_pname ModelBuiltins.__cast
+        when BuiltinDecl.is_declared callee_pname ->
+          if Procname.equal callee_pname BuiltinDecl.__cast
           then
             match args with
             | (cast_target, cast_typ) :: _ ->

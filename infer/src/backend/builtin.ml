@@ -27,27 +27,30 @@ type ret_typ = (Prop.normal Prop.t * Paths.Path.t) list
 
 type t = args -> ret_typ
 
+type registered = t
+
 (** builtin function names for which we do symbolic execution *)
 let builtin_functions = Procname.Hash.create 4
 
+let check_register_populated () =
+  (* check if BuiltinDefn were loaded before accessing register *)
+  if Procname.Hash.length builtin_functions = 0 then
+    failwith "Builtins were not initialized"
+  else ()
+
 (** check if the function is a builtin *)
 let is_registered name =
-  Procname.Hash.mem builtin_functions name
+  Procname.Hash.mem builtin_functions name || (check_register_populated (); false)
 
 (** get the symbolic execution handler associated to the builtin function name *)
-let get name : t =
-  try Procname.Hash.find builtin_functions name
-  with Not_found -> assert false
-
-(** register a builtin function name and symbolic execution handler *)
-let register proc_name_str (sym_exe_fun: t) =
-  let proc_name = Procname.from_string_c_fun proc_name_str in
-  Procname.Hash.replace builtin_functions proc_name sym_exe_fun;
-  proc_name
+let get name : t option =
+  try Some (Procname.Hash.find builtin_functions name)
+  with Not_found -> (check_register_populated (); None)
 
 (** register a builtin [Procname.t] and symbolic execution handler *)
-let register_procname proc_name (sym_exe_fun: t) =
-  Procname.Hash.replace builtin_functions proc_name sym_exe_fun
+let register proc_name sym_exe_fun : registered =
+  Procname.Hash.replace builtin_functions proc_name sym_exe_fun;
+  sym_exe_fun
 
 (** print the functions registered *)
 let pp_registered fmt () =
