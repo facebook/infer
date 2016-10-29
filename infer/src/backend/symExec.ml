@@ -1052,126 +1052,122 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       check_condition_always_true_false ();
       let n_cond, prop = check_arith_norm_exp tenv current_pname cond prop__ in
       ret_old_path (Propset.to_proplist (prune tenv ~positive:true n_cond prop))
-  | Sil.Call (ret_id, Exp.Const (Const.Cfun callee_pname), args, loc, _)
-    when Builtin.is_registered callee_pname ->
-      let sym_exe_builtin =  Option.get (Builtin.get callee_pname) in
-      sym_exe_builtin (call_args prop_ callee_pname args ret_id loc)
-  | Sil.Call (ret_id,
-              Exp.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
-              actual_params, loc, call_flags)
-    when Config.dynamic_dispatch = `Lazy ->
-      let norm_prop, norm_args =
-        normalize_params
-          tenv
-          current_pname
-          prop_
-          (call_constructor_url_update_args callee_pname actual_params) in
-      let exec_skip_call skipped_pname ret_annots ret_type =
-        skip_call norm_prop path skipped_pname ret_annots loc ret_id (Some ret_type) norm_args in
-      let resolved_pname, summary_opt =
-        resolve_and_analyze tenv current_pdesc norm_prop norm_args callee_pname call_flags in
-      begin
-        match summary_opt with
-        | None ->
-            let ret_typ = Typ.java_proc_return_typ callee_pname_java in
-            let ret_annots = load_ret_annots callee_pname in
-            exec_skip_call resolved_pname ret_annots ret_typ
-        | Some summary when call_should_be_skipped resolved_pname summary ->
-            let proc_attrs = summary.Specs.attributes in
-            let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
-            exec_skip_call resolved_pname ret_annots proc_attrs.ProcAttributes.ret_type
-        | Some summary ->
-            proc_call summary (call_args prop_ callee_pname norm_args ret_id loc)
-      end
-
-  | Sil.Call (ret_id,
-              Exp.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
-              actual_params, loc, call_flags) ->
-      do_error_checks tenv (Paths.Path.curr_node path) instr current_pname current_pdesc;
-      let norm_prop, norm_args = normalize_params tenv current_pname prop_ actual_params in
-      let url_handled_args =
-        call_constructor_url_update_args callee_pname norm_args in
-      let resolved_pnames =
-        resolve_virtual_pname tenv norm_prop url_handled_args callee_pname call_flags in
-      let exec_one_pname pname =
-        Ondemand.analyze_proc_name tenv ~propagate_exceptions:true current_pdesc pname;
-        let exec_skip_call ret_annots ret_type =
-          skip_call norm_prop path pname ret_annots loc ret_id (Some ret_type) url_handled_args in
-        match Specs.get_summary pname with
-        | None ->
-            let ret_typ = Typ.java_proc_return_typ callee_pname_java in
-            let ret_annots = load_ret_annots callee_pname in
-            exec_skip_call ret_annots ret_typ
-        | Some summary when call_should_be_skipped pname summary ->
-            let proc_attrs = summary.Specs.attributes in
-            let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
-            exec_skip_call ret_annots proc_attrs.ProcAttributes.ret_type
-        | Some summary ->
-            proc_call summary (call_args norm_prop pname url_handled_args ret_id loc) in
-      IList.fold_left (fun acc pname -> exec_one_pname pname @ acc) [] resolved_pnames
-
-  | Sil.Call (ret_id, Exp.Const (Const.Cfun callee_pname), actual_params, loc, call_flags) ->
-      (* Generic fun call with known name *)
-      let (prop_r, n_actual_params) = normalize_params tenv current_pname prop_ actual_params in
-      let resolved_pname =
-        match resolve_virtual_pname tenv prop_r n_actual_params callee_pname call_flags with
-        | resolved_pname :: _ -> resolved_pname
-        | [] -> callee_pname in
-
-      Ondemand.analyze_proc_name tenv ~propagate_exceptions:true current_pdesc resolved_pname;
-
-      let callee_pdesc_opt = Ondemand.get_proc_desc resolved_pname in
-
-      let ret_typ_opt = Option.map Cfg.Procdesc.get_ret_type callee_pdesc_opt in
-      let sentinel_result =
-        if !Config.curr_language = Config.Clang then
-          check_variadic_sentinel_if_present
-            (call_args prop_r callee_pname actual_params ret_id loc)
-        else [(prop_r, path)] in
-      let do_call (prop, path) =
-        let summary = Specs.get_summary resolved_pname in
-        let should_skip resolved_pname summary =
-          match summary with
-          | None -> true
-          | Some summary -> call_should_be_skipped resolved_pname summary in
-        if should_skip resolved_pname summary then
-          (* If it's an ObjC getter or setter, call the builtin rather than skipping *)
-          let attrs_opt =
-            let attr_opt = Option.map Cfg.Procdesc.get_attributes callee_pdesc_opt in
-            match attr_opt, resolved_pname with
-            | Some attrs, Procname.ObjC_Cpp _ -> Some attrs
-            | None, Procname.ObjC_Cpp _ -> AttributesTable.load_attributes resolved_pname
-            | _ -> None in
-          let objc_property_accessor_ret_typ_opt =
-            match attrs_opt with
-            | Some attrs ->
-                (match attrs.ProcAttributes.objc_accessor with
-                 | Some objc_accessor -> Some (objc_accessor, attrs.ProcAttributes.ret_type)
-                 | None -> None)
-            | None -> None in
-          match objc_property_accessor_ret_typ_opt with
-          | Some (objc_property_accessor, ret_typ) ->
-              handle_objc_instance_method_call
-                n_actual_params n_actual_params prop tenv ret_id
-                current_pdesc callee_pname loc path
-                (sym_exec_objc_accessor objc_property_accessor ret_typ)
-          | None ->
-              let ret_annots = match summary with
-                | Some summ ->
-                    let ret_annots, _ = summ.Specs.attributes.ProcAttributes.method_annotation in
-                    ret_annots
+  | Sil.Call (ret_id, Exp.Const (Const.Cfun callee_pname), actual_params, loc, call_flags) -> (
+      match Builtin.get callee_pname with
+      | Some exec_builtin -> exec_builtin (call_args prop_ callee_pname actual_params ret_id loc)
+      | None -> (
+          match callee_pname with
+          | Java callee_pname_java when Config.dynamic_dispatch = `Lazy ->
+              let norm_prop, norm_args =
+                normalize_params
+                  tenv
+                  current_pname
+                  prop_
+                  (call_constructor_url_update_args callee_pname actual_params) in
+              let exec_skip_call skipped_pname ret_annots ret_type =
+                skip_call norm_prop path skipped_pname ret_annots loc ret_id
+                  (Some ret_type) norm_args in
+              let resolved_pname, summary_opt = resolve_and_analyze tenv current_pdesc
+                  norm_prop norm_args callee_pname call_flags in
+              begin
+                match summary_opt with
                 | None ->
-                    load_ret_annots resolved_pname in
-              let is_objc_instance_method =
-                match attrs_opt with
-                | Some attrs -> attrs.ProcAttributes.is_objc_instance_method
-                | None -> false in
-              skip_call ~is_objc_instance_method prop path resolved_pname ret_annots loc ret_id
-                ret_typ_opt n_actual_params
-        else
-          proc_call (Option.get summary)
-            (call_args prop resolved_pname n_actual_params ret_id loc) in
-      IList.flatten (IList.map do_call sentinel_result)
+                    let ret_typ = Typ.java_proc_return_typ callee_pname_java in
+                    let ret_annots = load_ret_annots callee_pname in
+                    exec_skip_call resolved_pname ret_annots ret_typ
+                | Some summary when call_should_be_skipped resolved_pname summary ->
+                    let proc_attrs = summary.Specs.attributes in
+                    let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
+                    exec_skip_call resolved_pname ret_annots proc_attrs.ProcAttributes.ret_type
+                | Some summary ->
+                    proc_call summary (call_args prop_ callee_pname norm_args ret_id loc)
+              end
+          | Java callee_pname_java ->
+              do_error_checks tenv (Paths.Path.curr_node path) instr current_pname current_pdesc;
+              let norm_prop, norm_args = normalize_params tenv current_pname prop_ actual_params in
+              let url_handled_args =
+                call_constructor_url_update_args callee_pname norm_args in
+              let resolved_pnames =
+                resolve_virtual_pname tenv norm_prop url_handled_args callee_pname call_flags in
+              let exec_one_pname pname =
+                Ondemand.analyze_proc_name tenv ~propagate_exceptions:true current_pdesc pname;
+                let exec_skip_call ret_annots ret_type = skip_call norm_prop path pname ret_annots
+                    loc ret_id (Some ret_type) url_handled_args in
+                match Specs.get_summary pname with
+                | None ->
+                    let ret_typ = Typ.java_proc_return_typ callee_pname_java in
+                    let ret_annots = load_ret_annots callee_pname in
+                    exec_skip_call ret_annots ret_typ
+                | Some summary when call_should_be_skipped pname summary ->
+                    let proc_attrs = summary.Specs.attributes in
+                    let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
+                    exec_skip_call ret_annots proc_attrs.ProcAttributes.ret_type
+                | Some summary ->
+                    proc_call summary (call_args norm_prop pname url_handled_args ret_id loc) in
+              IList.fold_left (fun acc pname -> exec_one_pname pname @ acc) [] resolved_pnames
+          | _ -> (* Generic fun call with known name *)
+              let (prop_r, n_actual_params) =
+                normalize_params tenv current_pname prop_ actual_params in
+              let resolved_pname =
+                match resolve_virtual_pname tenv prop_r n_actual_params callee_pname call_flags with
+                | resolved_pname :: _ -> resolved_pname
+                | [] -> callee_pname in
+              Ondemand.analyze_proc_name
+                tenv ~propagate_exceptions:true current_pdesc resolved_pname;
+              let callee_pdesc_opt = Ondemand.get_proc_desc resolved_pname in
+              let ret_typ_opt = Option.map Cfg.Procdesc.get_ret_type callee_pdesc_opt in
+              let sentinel_result =
+                if !Config.curr_language = Config.Clang then
+                  check_variadic_sentinel_if_present
+                    (call_args prop_r callee_pname actual_params ret_id loc)
+                else [(prop_r, path)] in
+              let do_call (prop, path) =
+                let summary = Specs.get_summary resolved_pname in
+                let should_skip resolved_pname summary =
+                  match summary with
+                  | None -> true
+                  | Some summary -> call_should_be_skipped resolved_pname summary in
+                if should_skip resolved_pname summary then
+                  (* If it's an ObjC getter or setter, call the builtin rather than skipping *)
+                  let attrs_opt =
+                    let attr_opt = Option.map Cfg.Procdesc.get_attributes callee_pdesc_opt in
+                    match attr_opt, resolved_pname with
+                    | Some attrs, Procname.ObjC_Cpp _ -> Some attrs
+                    | None, Procname.ObjC_Cpp _ -> AttributesTable.load_attributes resolved_pname
+                    | _ -> None in
+                  let objc_property_accessor_ret_typ_opt =
+                    match attrs_opt with
+                    | Some attrs ->
+                        (match attrs.ProcAttributes.objc_accessor with
+                         | Some objc_accessor -> Some (objc_accessor, attrs.ProcAttributes.ret_type)
+                         | None -> None)
+                    | None -> None in
+                  match objc_property_accessor_ret_typ_opt with
+                  | Some (objc_property_accessor, ret_typ) ->
+                      handle_objc_instance_method_call
+                        n_actual_params n_actual_params prop tenv ret_id
+                        current_pdesc callee_pname loc path
+                        (sym_exec_objc_accessor objc_property_accessor ret_typ)
+                  | None ->
+                      let ret_annots = match summary with
+                        | Some summ ->
+                            let ret_annots, _ =
+                              summ.Specs.attributes.ProcAttributes.method_annotation in
+                            ret_annots
+                        | None ->
+                            load_ret_annots resolved_pname in
+                      let is_objc_instance_method =
+                        match attrs_opt with
+                        | Some attrs -> attrs.ProcAttributes.is_objc_instance_method
+                        | None -> false in
+                      skip_call ~is_objc_instance_method prop path resolved_pname ret_annots
+                        loc ret_id ret_typ_opt n_actual_params
+                else
+                  proc_call (Option.get summary)
+                    (call_args prop resolved_pname n_actual_params ret_id loc) in
+              IList.flatten (IList.map do_call sentinel_result)
+        )
+    )
   | Sil.Call (ret_id, fun_exp, actual_params, loc, call_flags) -> (* Call via function pointer *)
       let (prop_r, n_actual_params) = normalize_params tenv current_pname prop_ actual_params in
       if call_flags.CallFlags.cf_is_objc_block then
