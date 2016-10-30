@@ -117,4 +117,17 @@ class Exceptions {
     callSinkThenThrow(InferTaint.inferSecretSource());
   }
 
+  public static void doThrow(Object param) throws RuntimeException {
+    throw new RuntimeException(param.toString());
+  }
+
+  // false negative; need to track flow into and out of exceptions to get this (t14159157)
+  public static void FN_callSink() {
+    try {
+      doThrow(InferTaint.inferSecretSource());
+    } catch (RuntimeException e) {
+      InferTaint.inferSensitiveSink(e);
+    }
+  }
+
 }

@@ -267,6 +267,12 @@ module Make (TaintSpec : TaintSpec.S) = struct
           analyze_id_assignment (Var.of_id lhs_id) rhs_exp rhs_typ astate
       | Sil.Store (Exp.Lvar lhs_pvar, lhs_typ, rhs_exp, _) when Pvar.is_frontend_tmp lhs_pvar ->
           analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ astate
+      | Sil.Store (Exp.Lvar lhs_pvar, _, Exp.Exn _, _) when Pvar.is_return lhs_pvar ->
+          (* the Java frontend translates `throw Exception` as `return Exception`, which is a bit
+             wonky. this tranlsation causes problems for us in computing a summary when an
+             exception is "returned" from a void function. skip code like this for now
+             (fix via t14159157 later *)
+          astate
       | Sil.Store (lhs_exp, lhs_typ, rhs_exp, loc) ->
           let lhs_access_path =
             match AccessPath.of_lhs_exp lhs_exp lhs_typ ~f_resolve_id with
@@ -347,10 +353,9 @@ module Make (TaintSpec : TaintSpec.S) = struct
 
             Domain.join astate_acc astate_with_summary in
 
-          (* highly polymorphic call sites stress reactive mode too much by spawning a ton of
-             threads that thrash the machine. here, we choose an arbitrary call limit that allows us
-             to finish the analysis in practice. this is obviously unsound; will try to remove in
-             the future. *)
+          (* highly polymorphic call sites stress reactive mode too much by using too much memory.
+             here, we choose an arbitrary call limit that allows us to finish the analysis in
+             practice. this is obviously unsound; will try to remove in the future. *)
           let max_calls = 10 in
           let targets =
             if IList.length call_flags.cf_targets <= max_calls

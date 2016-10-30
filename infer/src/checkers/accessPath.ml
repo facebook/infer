@@ -121,8 +121,7 @@ let of_exp exp0 typ0 ~(f_resolve_id : Var.t -> raw option) =
 let of_lhs_exp lhs_exp typ ~(f_resolve_id : Var.t -> raw option) =
   match of_exp lhs_exp typ ~f_resolve_id with
   | [lhs_ap] -> Some lhs_ap
-  | [] -> None
-  | _ -> failwithf "Creating lhs access path from invalid access path %a" Exp.pp lhs_exp
+  | _ -> None
 
 let append (base, old_accesses) new_accesses =
   base, old_accesses @ new_accesses
