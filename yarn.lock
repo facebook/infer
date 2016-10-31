@@ -642,9 +642,9 @@
   dependencies:
     resolve "^1.1.7"
 
-"dependencyEnv@git+https://github.com/reasonml/dependency-env.git":
+"dependencyEnv@https://github.com/reasonml/dependency-env":
   version "0.0.0"
-  resolved "git+https://github.com/reasonml/dependency-env.git#f51ae4f0d72d70f3e7f261df9fff27849dfeacde"
+  resolved dependency-env-f51ae4f0d72d70f3e7f261df9fff27849dfeacde#48f6db2b606e79e9b56cde38bd5ffcca17129d5f
   dependencies:
     resolve "^1.1.7"
 
@@ -1325,7 +1325,7 @@ resolve@^1.1.7:
   version "0.0.1"
   resolved substs.git-fd480dcdb4aed3fa9128fd819a546e3a7770040f#3a935dc6de26a5dfae899eca93a510bae55e57a4
 
-"tuareg@github:yunxing/tuareg":
+tuareg@yunxing/tuareg:
   version "1.0.0"
   resolved a90c0a2f202529a641d369c3b18b0c785a4a7e99#aa3a72a7726b1dd4fd1c809f893cc7ed6d2d420d
 

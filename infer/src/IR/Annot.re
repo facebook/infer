@@ -29,9 +29,7 @@ type t = {
 /** Compare function for annotations. */
 let compare a1 a2 => {
   let n = string_compare a1.class_name a2.class_name;
-
-  /** TODO: just a testing, remove before pushing */
-  if (n != Core.Std.ident 0) {
+  if (n != 0) {
     n
   } else {
     IList.compare string_compare a1.parameters a2.parameters
