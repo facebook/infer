@@ -52,7 +52,7 @@ module MockTraceElem = struct
       let pp_element = pp
     end)
 
-  let to_callee _ _ = assert false
+  let to_callee t _ = t
 end
 
 module MockSource = struct

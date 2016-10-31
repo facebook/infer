@@ -159,15 +159,21 @@ module Make (Spec : Spec) = struct
       let sources =
         Sources.filter (fun source -> not (Source.is_footprint source)) callee_trace.sources
         |> Sources.union caller_trace.sources in
-      let sinks = Sinks.union caller_trace.sinks callee_trace.sinks in
-      let passthroughs =
-        let is_original_sink sink =
-          Procname.equal (CallSite.pname callee_site) (CallSite.pname (Sink.call_site sink)) in
-        (* add [callee_site] as a passthrough if it is not an "original" sink; that is, a procedure
-           that is itself a sink rather than a caller of a sink  *)
-        if Sinks.exists is_original_sink callee_trace.sinks
-        then caller_trace.passthroughs
-        else Passthroughs.add (Passthrough.make callee_site) caller_trace.passthroughs in
+      let sinks, passthroughs =
+        if Sinks.for_all (fun sink -> Sinks.mem sink caller_trace.sinks) callee_trace.sinks
+        then
+          (* this callee didn't add any new sinks; it's just a passthrough *)
+          let passthroughs =
+            Passthroughs.add (Passthrough.make callee_site) caller_trace.passthroughs in
+          caller_trace.sinks, passthroughs
+        else
+          (* this callee added a new sink *)
+          let callee_sinks =
+            IList.map
+              (fun sink -> Sink.to_callee sink callee_site)
+              (Sinks.elements callee_trace.sinks)
+            |> Sinks.of_list in
+          Sinks.union caller_trace.sinks callee_sinks, caller_trace.passthroughs in
       { sources; sinks; passthroughs; }
 
   let initial =
