@@ -63,13 +63,6 @@ type pattern =
   | Source_contains of language * string
 
 
-type zip_library = {
-  zip_filename: string;
-  zip_channel: Zip.in_file Lazy.t;
-  models: bool;
-}
-
-
 (** Constant configuration values *)
 
 (** If true, a precondition with e.g. index 3 in an array does not require the caller to
@@ -957,7 +950,7 @@ and ml_buckets =
 
 (* Add a zip file containing the Java models *)
 and models_file =
-  CLOpt.mk_string_opt ~deprecated:["models"] ~long:"models"
+  CLOpt.mk_string_opt ~deprecated:["models"] ~long:"models" ~f:resolve
     ~meta:"zip file" ""
 
 and models_mode =
@@ -1109,11 +1102,10 @@ and spec_abs_level =
                  - 1 = filter out redundant posts implied by other posts"
 
 and specs_library =
-  (* Add dir to the list of directories to be searched for .spec files *)
   let specs_library =
     CLOpt.mk_string_list ~long:"specs-library" ~short:"lib" ~f:resolve
-      ~meta:"dir"
-      "" in
+      ~deprecated:["-zip-specs-library"; "ziplib"]
+      ~meta:"dir|jar" "Search for .spec files in given directory or jar file" in
   let _ =
     (* Given a filename with a list of paths, convert it into a list of string iff they are
        absolute *)
@@ -1271,13 +1263,6 @@ and xml_specs =
   CLOpt.mk_bool ~deprecated:["xml"] ~long:"xml-specs"
     "Export specs into XML files file1.xml ... filen.xml"
 
-(** list of the zip files to search for specs files *)
-and zip_libraries : zip_library list ref = ref []
-
-and zip_specs_library =
-  CLOpt.mk_string_list ~long:"zip-specs-library" ~short:"ziplib" ~f:resolve
-    ~meta:"zip file" "Search for .spec files in a zip file"
-
 
 (** Parse Command Line Args *)
 
@@ -1350,59 +1335,7 @@ let post_parsing_initialization () =
       default_symops_timeout, default_seconds_timeout
   in
   if !seconds_per_iteration = 0. then seconds_per_iteration := seconds_timeout ;
-  if !symops_per_iteration = 0 then symops_per_iteration := symops_timeout ;
-
-  let add_zip_library zip_filename =
-    match !infer_cache with
-    | Some cache_dir when use_jar_cache ->
-        let mkdir s =
-          try
-            Unix.mkdir s 0o700;
-            true
-          with Unix.Unix_error _ -> false
-        in
-        let extract_specs dest_dir zip_filename =
-          let zip_channel = Zip.open_in zip_filename in
-          let entries = Zip.entries zip_channel in
-          let extract_entry entry =
-            let dest_file = dest_dir // (Filename.basename entry.Zip.filename) in
-            if Filename.check_suffix entry.Zip.filename specs_files_suffix
-            then Zip.copy_entry_to_file zip_channel entry dest_file in
-          IList.iter extract_entry entries;
-          Zip.close_in zip_channel
-        in
-        let basename = Filename.basename zip_filename in
-        let key = basename ^ string_crc_hex32 zip_filename in
-        let key_dir = cache_dir // key in
-        if (mkdir key_dir)
-        then extract_specs key_dir zip_filename;
-        specs_library := !specs_library @ [key_dir]
-    | _ ->
-        (* The order matters, the jar files should be added following the order specs files should
-           be searched in them *)
-        let zip_library = {
-          zip_filename = zip_filename;
-          zip_channel = lazy (Zip.open_in zip_filename);
-          models = false
-        } in
-        zip_libraries := zip_library :: !zip_libraries
-  in
-  IList.iter add_zip_library (IList.rev !zip_specs_library) ;
-
-  let zip_models = ref [] in
-  let add_models zip_filename =
-    let zip_library = {
-      zip_filename = zip_filename;
-      zip_channel = lazy (Zip.open_in zip_filename);
-      models = true
-    } in
-    zip_models := zip_library :: !zip_models
-  in
-  (match !models_file with
-   | Some file -> add_models (resolve file)
-   | None -> ());
-
-  zip_libraries := IList.rev_append !zip_models (IList.rev !zip_libraries)
+  if !symops_per_iteration = 0 then symops_per_iteration := symops_timeout
 
 
 let parse_args_and_return_usage_exit =
@@ -1451,20 +1384,9 @@ and changed_files_index = !changed_files_index
 and calls_csv = !calls_csv
 and check_duplicate_symbols = !check_duplicate_symbols
 and checkers = !checkers
-and checkers_enabled = not (!eradicate || !crashcontext || !quandary)
 and checkers_repeated_calls = !checkers_repeated_calls
 and clang_biniou_file = !clang_biniou_file
 and clang_compilation_database = !clang_compilation_database
-and clang_frontend_do_capture, clang_frontend_do_lint =
-  match !clang_frontend_action with
-  | Some `Lint -> false, true (* no capture, lint *)
-  | Some `Capture -> true, false (* capture, no lint *)
-  | Some `Lint_and_capture -> true, true (* capture, lint *)
-  | None ->
-      match !analyzer with
-      | Some Linters -> false, true (* no capture, lint *)
-      | Some Infer -> true, false (* capture, no lint *)
-      | _ -> true, true (* capture, lint *)
 and clang_include_to_override = !clang_include_to_override
 and cluster_cmdline = !cluster
 and continue_capture = !continue
@@ -1478,7 +1400,6 @@ and dependency_mode = !dependencies
 and developer_mode = !developer_mode
 and disable_checks = !disable_checks
 and dotty_cfg_libs = !dotty_cfg_libs
-and dynamic_dispatch = if !analyzer = Some Tracing then `Lazy else !dynamic_dispatch
 and enable_checks = !enable_checks
 and eradicate = !eradicate
 and eradicate_condition_redundant = !eradicate_condition_redundant
@@ -1551,7 +1472,6 @@ and skip_clang_analysis_in_path = !skip_clang_analysis_in_path
 and skip_translation_headers = !skip_translation_headers
 and source_file_copy = !source_file_copy
 and spec_abs_level = !spec_abs_level
-and specs_library = !specs_library
 and stacktrace = !stacktrace
 and stacktraces_dir = !stacktraces_dir
 and stats_mode = !stats
@@ -1575,12 +1495,9 @@ and write_dotty = !write_dotty
 and write_html = !write_html
 and xcode_developer_dir = !xcode_developer_dir
 and xml_specs = !xml_specs
-and zip_libraries = !zip_libraries
 
-let clang_frontend_action_string =
-  String.concat " and "
-    ((if clang_frontend_do_capture then ["translating"] else [])
-     @ (if clang_frontend_do_lint then ["linting"] else []))
+
+(** Configuration values derived from command-line options *)
 
 let analysis_path_regex_whitelist analyzer =
   IList.assoc (=) analyzer analysis_path_regex_whitelist_options
@@ -1590,6 +1507,26 @@ and analysis_blacklist_files_containing analyzer =
   IList.assoc (=) analyzer analysis_blacklist_files_containing_options
 and analysis_suppress_errors analyzer =
   IList.assoc (=) analyzer analysis_suppress_errors_options
+
+let checkers_enabled = not (eradicate || crashcontext || quandary)
+
+let clang_frontend_do_capture, clang_frontend_do_lint =
+  match !clang_frontend_action with
+  | Some `Lint -> false, true (* no capture, lint *)
+  | Some `Capture -> true, false (* capture, no lint *)
+  | Some `Lint_and_capture -> true, true (* capture, lint *)
+  | None ->
+      match analyzer with
+      | Some Linters -> false, true (* no capture, lint *)
+      | Some Infer -> true, false (* capture, no lint *)
+      | _ -> true, true (* capture, lint *)
+
+let clang_frontend_action_string =
+  String.concat " and "
+    ((if clang_frontend_do_capture then ["translating"] else [])
+     @ (if clang_frontend_do_lint then ["linting"] else []))
+
+let dynamic_dispatch = if analyzer = Some Tracing then `Lazy else !dynamic_dispatch
 
 let patterns_suppress_warnings =
   let error msg =
@@ -1611,6 +1548,33 @@ let patterns_suppress_warnings =
   | None ->
       if CLOpt.(current_exe <> Java) then []
       else error ("Error: The option " ^ suppress_warnings_annotations_long ^ " was not provided")
+
+let specs_library =
+  match infer_cache with
+  | Some cache_dir when use_jar_cache ->
+      let add_spec_lib specs_library filename =
+        let basename = Filename.basename filename in
+        let key = basename ^ string_crc_hex32 filename in
+        let key_dir = cache_dir // key in
+        let extract_specs dest_dir filename =
+          if Filename.check_suffix filename ".jar" then
+            match (Unix.mkdir dest_dir 0o700) with
+            | exception Unix.Unix_error _ ->
+                ()
+            | () ->
+                let zip_channel = Zip.open_in filename in
+                let entries = Zip.entries zip_channel in
+                let extract_entry (entry : Zip.entry) =
+                  let dest_file = dest_dir // (Filename.basename entry.filename) in
+                  if Filename.check_suffix entry.filename specs_files_suffix
+                  then Zip.copy_entry_to_file zip_channel entry dest_file in
+                IList.iter extract_entry entries;
+                Zip.close_in zip_channel in
+        extract_specs key_dir filename;
+        key_dir :: specs_library in
+      IList.fold_left add_spec_lib [] !specs_library
+  | _ ->
+      !specs_library
 
 
 (** Global variables *)

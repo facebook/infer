@@ -46,13 +46,6 @@ type pattern =
   | Source_contains of language * string
 
 
-type zip_library = {
-  zip_filename : string;
-  zip_channel : Zip.in_file Lazy.t;
-  models : bool;
-}
-
-
 (** Constant configuration values *)
 
 val allow_missing_index_in_proc_call : bool
@@ -125,6 +118,7 @@ val taint_analysis : bool
 val trace_absarray : bool
 val undo_join : bool
 val unsafe_unret : string
+val use_jar_cache : bool
 val weak : string
 val whitelisted_cpp_methods : string list list
 val wrappers_dir : string
@@ -275,7 +269,7 @@ val write_dotty : bool
 val write_html : bool
 val xcode_developer_dir : string option
 val xml_specs : bool
-val zip_libraries : zip_library list
+
 
 (** Global variables *)
 
@@ -296,7 +290,6 @@ val run_in_re_execution_mode : ('a -> 'b) -> 'a -> 'b
 val forcing_delayed_prints : bool ref
 val nLOC : int ref
 val pp_simple : bool ref
-
 
 
 (** Global variables with initial values specified by command-line options *)
