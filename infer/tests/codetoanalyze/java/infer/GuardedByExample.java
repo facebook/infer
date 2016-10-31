@@ -14,16 +14,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import com.google.common.annotations.VisibleForTesting;
+import android.annotation.SuppressLint;
+import javax.annotation.concurrent.GuardedBy;
 
 import java.io.Closeable;
 
 public class GuardedByExample {
-
-  @Retention(RetentionPolicy.CLASS)
-  @Target({ElementType.FIELD, ElementType.METHOD})
-  public @interface GuardedBy {
-    String value();
-  }
 
   static class AutoCloseableReadWriteUpdateLock implements Closeable {
     @Override public void close() {}
@@ -69,6 +65,16 @@ public class GuardedByExample {
   }
 
   void readFBad() {
+    this.f.toString();
+  }
+
+  @SuppressLint("InvalidAccessToGuardedField")
+  void readFBadButSuppressed() {
+    this.f.toString();
+  }
+
+  @SuppressLint("SomeOtherWarning")
+  void readFBadButSuppressedOther() {
     this.f.toString();
   }
 

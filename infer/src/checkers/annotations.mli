@@ -114,3 +114,4 @@ val pp_annotated_signature : Procname.t -> Format.formatter -> annotated_signatu
 
 val visibleForTesting : string
 val guarded_by : string
+val suppress_lint : string

@@ -657,6 +657,18 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       else
         None in
     IList.find_map_opt annot_extract_guarded_by_str item_annot in
+  let extract_suppress_warnings_str item_annot =
+    let annot_suppress_warnings_str ((annot: Annot.t), _) =
+        if Annotations.annot_ends_with annot Annotations.suppress_lint
+        then
+          match annot.parameters with
+          | [suppr_str] ->
+              Some suppr_str
+          | _ ->
+              None
+        else
+          None in
+      IList.find_map_opt annot_suppress_warnings_str item_annot in
   (* if [fld] is annotated with @GuardedBy("mLock"), return mLock *)
   let get_guarded_by_fld_str fld typ =
     match StructTyp.get_field_type_and_annotation ~lookup fld typ with
@@ -754,6 +766,14 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     let guardedby_is_self_referential =
       string_equal "itself" (String.lowercase guarded_by_str) ||
       string_is_suffix guarded_by_str (Ident.fieldname_to_string accessed_fld) in
+    let proc_has_suppress_guarded_by_annot pdesc =
+      let proc_signature =
+        Annotations.get_annotated_signature (Cfg.Procdesc.get_attributes pdesc) in
+      let proc_annot, _ = proc_signature.Annotations.ret in
+        match extract_suppress_warnings_str proc_annot with
+          | Some suppression_str->
+            suppression_str = "InvalidAccessToGuardedField"
+          | None -> false in
     let should_warn pdesc =
       (* adding this check implements "by reference" semantics for guarded-by rather than "by value"
          semantics. if this access is through a local L or field V.f
@@ -778,7 +798,9 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       not (Annotations.pdesc_has_annot pdesc Annotations.visibleForTesting) &&
       not (Procname.java_is_access_method (Cfg.Procdesc.get_proc_name pdesc)) &&
       not (is_accessible_through_local_ref lexp) &&
-      not guardedby_is_self_referential in
+      not guardedby_is_self_referential &&
+      not (proc_has_suppress_guarded_by_annot pdesc)
+      in
     match find_guarded_by_exp guarded_by_str prop.Prop.sigma with
     | Some (Sil.Eexp (guarded_by_exp, _), typ) ->
         if is_read_write_lock typ

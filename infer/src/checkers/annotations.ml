@@ -121,6 +121,7 @@ let no_allocation = "NoAllocation"
 let ignore_allocations = "IgnoreAllocations"
 
 let suppress_warnings = "SuppressWarnings"
+let suppress_lint = "SuppressLint"
 let privacy_source = "PrivacySource"
 let privacy_sink = "PrivacySink"
 let integrity_source = "IntegritySource"
