@@ -11,7 +11,5 @@ open! Utils;
 let () = {
   let xx_suffix = string_is_suffix "++" Sys.argv.(0) ? "++" : "";
   let args = Array.copy Sys.argv;
-  /* make sure we don't call ourselves recursively */
-  args.(0) = CFrontend_config.clang_bin xx_suffix;
   ClangWrapper.exe args xx_suffix
 };
