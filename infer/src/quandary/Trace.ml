@@ -46,7 +46,7 @@ module type S = sig
   val get_reports : t -> (Source.t * Sink.t * Passthroughs.t) list
 
   (** get logging-ready exceptions for the reportable source-sink flows in this trace *)
-  val get_reportable_exns : t -> exn list
+  val get_reportable_exns : t -> (Source.t * Sink.t * exn) list
 
   (** create a trace from a source *)
   val of_source : Source.t -> t
@@ -56,6 +56,9 @@ module type S = sig
 
   (** add a sink to the current trace. *)
   val add_sink : Sink.t -> t -> t
+
+  (** remove the given sinks from the current trace *)
+  val filter_sinks : t -> Sink.t list -> t
 
   (** append the trace for given call site to the current caller trace *)
   val append : t -> t -> CallSite.t -> t
@@ -126,7 +129,8 @@ module Make (Spec : Spec) = struct
 
   let get_reportable_exns t =
     IList.map
-      (fun (source, sink, passthroughs) -> Spec.get_reportable_exn source sink passthroughs)
+      (fun (source, sink, passthroughs) ->
+         source, sink, Spec.get_reportable_exn source sink passthroughs)
       (get_reports t)
 
   let of_source source =
@@ -141,6 +145,10 @@ module Make (Spec : Spec) = struct
 
   let add_sink sink t =
     let sinks = Sinks.add sink t.sinks in
+    { t with sinks; }
+
+  let filter_sinks t sinks_to_filter =
+    let sinks = Sinks.diff t.sinks (Sinks.of_list sinks_to_filter) in
     { t with sinks; }
 
   (** compute caller_trace + callee_trace *)

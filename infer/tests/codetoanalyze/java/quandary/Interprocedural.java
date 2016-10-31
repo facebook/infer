@@ -195,6 +195,13 @@ class Interprocedural {
     getGlobalThenCallSink();
   }
 
+  // this should report two alarms, not three
+  public void callSinkNoTripleReportBad() {
+    Object source = InferTaint.inferSecretSource();
+    callSinkParam1(source, null);
+    callSinkParam2(null, source);
+  }
+
   /** passthrough tests */
 
   public static void singlePassthroughBad() {

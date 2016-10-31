@@ -146,7 +146,24 @@ module Make (TaintSpec : TaintSpec.S) = struct
       let id_ap = AccessPath.Exact (AccessPath.of_id ret_id ret_typ) in
       TaintDomain.add_trace id_ap trace access_tree
 
-    let add_sinks sinks actuals ({ Domain.access_tree; id_map; } as astate) proc_data loc =
+    (* log any reportable source-sink flows in [trace] and remove logged sinks from the trace *)
+    let report_and_filter_trace trace callee_site (proc_data : formal_map ProcData.t) =
+      match TraceDomain.get_reportable_exns trace with
+      | [] ->
+          trace
+      | reportable_exns ->
+          let caller_pname = Cfg.Procdesc.get_proc_name proc_data.pdesc in
+          let reported_sinks =
+            IList.map
+              (fun (_, sink, exn) ->
+                 Reporting.log_error caller_pname ~loc:(CallSite.loc callee_site) exn;
+                 sink)
+              reportable_exns in
+          (* got new source -> sink flow. report it, but don't add the sink to the trace. if we do,
+             we will double-report later on. *)
+          TraceDomain.filter_sinks trace reported_sinks
+
+    let add_sinks sinks actuals ({ Domain.access_tree; id_map; } as astate) proc_data callee_site =
       let f_resolve_id = resolve_id id_map in
       (* add [sink] to the trace associated with the [formal_num]th actual *)
       let add_sink_to_actual access_tree_acc (sink_param : TraceDomain.Sink.t Sink.parameter) =
@@ -166,21 +183,16 @@ module Make (TaintSpec : TaintSpec.S) = struct
               then AccessPath.Abstracted actual_ap_raw
               else AccessPath.Exact actual_ap_raw in
             begin
-              match access_path_get_node actual_ap access_tree_acc proc_data loc with
+              match access_path_get_node
+                      actual_ap access_tree_acc proc_data (CallSite.loc callee_site) with
               | Some (actual_trace, _) ->
                   (* add callee_pname to actual trace as a sink *)
-                  let actual_trace' = TraceDomain.add_sink sink_param.sink actual_trace in
-                  begin
-                    match TraceDomain.get_reportable_exns actual_trace' with
-                    | [] ->
-                        TaintDomain.add_trace actual_ap actual_trace' access_tree_acc
-                    | reportable_exns ->
-                        (* got new source -> sink flow. report it, but don't update the trace. if we
-                           update the trace, we will double-report later on. *)
-                        let pname = Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc in
-                        IList.iter (Reporting.log_error pname ~loc) reportable_exns;
-                        access_tree_acc
-                  end
+                  let actual_trace' =
+                    report_and_filter_trace
+                      (TraceDomain.add_sink sink_param.sink actual_trace)
+                      callee_site
+                      proc_data in
+                  TaintDomain.add_trace actual_ap actual_trace' access_tree_acc
               | None ->
                   access_tree_acc
             end
@@ -250,10 +262,8 @@ module Make (TaintSpec : TaintSpec.S) = struct
             let output_trace = TaintSpec.of_summary_trace in_out_summary.output_trace in
             let appended_trace = TraceDomain.append in_trace output_trace callee_site in
             let joined_trace = TraceDomain.join caller_trace appended_trace in
-            IList.iter
-              (Reporting.log_error (CallSite.pname callee_site) ~loc:callee_loc)
-              (TraceDomain.get_reportable_exns joined_trace);
-            TaintDomain.add_trace caller_ap joined_trace access_tree
+            let filtered_trace = report_and_filter_trace joined_trace callee_site proc_data in
+            TaintDomain.add_trace caller_ap filtered_trace access_tree
         | None ->
             access_tree in
 
@@ -325,7 +335,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
             let sinks = TraceDomain.Sink.get call_site actuals in
             let astate_with_sink = match sinks with
               | [] -> astate
-              | sinks -> add_sinks sinks actuals astate proc_data callee_loc in
+              | sinks -> add_sinks sinks actuals astate proc_data call_site in
 
             let source = TraceDomain.Source.get call_site in
             let astate_with_source =

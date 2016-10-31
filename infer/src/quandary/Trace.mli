@@ -46,7 +46,7 @@ module type S = sig
   val get_reports : t -> (Source.t * Sink.t * Passthroughs.t) list
 
   (** get logging-ready exceptions for the reportable source-sink flows in this trace *)
-  val get_reportable_exns : t -> exn list
+  val get_reportable_exns : t -> (Source.t * Sink.t * exn) list
 
   (** create a trace from a source *)
   val of_source : Source.t -> t
@@ -56,6 +56,9 @@ module type S = sig
 
   (** add a sink to the current trace. *)
   val add_sink : Sink.t -> t -> t
+
+  (** remove the given sinks from the current trace *)
+  val filter_sinks : t -> Sink.t list -> t
 
   (** append the trace for given call site to the current caller trace *)
   val append : t -> t -> CallSite.t -> t
