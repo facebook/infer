@@ -92,6 +92,7 @@ val log_dir_name : string
 val max_recursion : int
 val meet_level : int
 val models_dir : string
+val models_jar : string
 val ncpu : int
 val nsnotification_center_checker_backend : bool
 val os_type : os_type

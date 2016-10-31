@@ -250,8 +250,6 @@ class AnalyzerWrapper(object):
         else:
             if self.args.analyzer == config.ANALYZER_TRACING:
                 infer_options.append('-tracing')
-            if os.path.isfile(config.MODELS_JAR):
-                infer_options += ['-models', config.MODELS_JAR]
 
         if self.args.debug:
             infer_options += [

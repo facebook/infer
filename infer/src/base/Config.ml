@@ -259,6 +259,9 @@ let etc_dir =
 let models_dir =
   lib_dir // specs_dir_name
 
+let models_jar =
+  lib_dir // "java" // "models.jar"
+
 let cpp_models_dir =
   let dir = bin_dir // Filename.parent_dir_name // "models" // "cpp" // "include" in
   Utils.filename_to_absolute dir (* Normalize the path *)
@@ -969,10 +972,9 @@ and ml_buckets =
      - 'cpp' from C++ code"
     ~symbols:ml_bucket_symbols
 
-(* Add a zip file containing the Java models *)
 and models_file =
   CLOpt.mk_string_opt ~deprecated:["models"] ~long:"models" ~f:resolve
-    ~meta:"zip file" ""
+    ~exes:CLOpt.[Analyze;Java] ~meta:"jar file" "Specify a jar file containing the Java models"
 
 and models_mode =
   CLOpt.mk_bool ~deprecated:["models_mode"; "-models_mode"] ~long:"models-mode"

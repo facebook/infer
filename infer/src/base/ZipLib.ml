@@ -62,27 +62,36 @@ let load_data serializer path zip_library =
 
 (** list of the zip files to search for specs files *)
 let zip_libraries =
-  let mk_zip_lib models zip_filename =
-    { models; zip_filename; zip_channel = lazy (Zip.open_in zip_filename) } in
-  let zip_libs =
-    if Config.use_jar_cache && Config.infer_cache <> None then
-      []
-    else
-      (* Order matters, jar files should appear in the order in which they should be searched for
-         specs files. Config.specs_library is in reverse order of appearance on command line. *)
-      let add_zip zip_libs fname =
-        if Filename.check_suffix fname ".jar" then
-          (* fname is a zip of specs *)
-          (mk_zip_lib false fname) :: zip_libs
-        else
-          (* fname is a dir of specs *)
-          zip_libs in
-      IList.fold_left add_zip [] Config.specs_library in
-  match Config.models_file with
-  | None ->
-      zip_libs
-  | Some file ->
-      (mk_zip_lib true file) :: zip_libs
+  (* delay until load is called, to avoid stating/opening files at init time *)
+  lazy (
+    let mk_zip_lib models zip_filename =
+      { models; zip_filename; zip_channel = lazy (Zip.open_in zip_filename) } in
+    let zip_libs =
+      if Config.use_jar_cache && Config.infer_cache <> None then
+        []
+      else
+        (* Order matters, jar files should appear in the order in which they should be searched for
+           specs files. Config.specs_library is in reverse order of appearance on command line. *)
+        let add_zip zip_libs fname =
+          if Filename.check_suffix fname ".jar" then
+            (* fname is a zip of specs *)
+            (mk_zip_lib false fname) :: zip_libs
+          else
+            (* fname is a dir of specs *)
+            zip_libs in
+        IList.fold_left add_zip [] Config.specs_library in
+    let add_models file =
+      (mk_zip_lib true file) :: zip_libs in
+    match Config.models_file with
+    | _ when Config.checkers ->
+        zip_libs
+    | Some file ->
+        add_models file
+    | None when Sys.file_exists Config.models_jar ->
+        add_models Config.models_jar
+    | None ->
+        zip_libs
+  )
 
 (* Search path in the list of zip libraries and use a cache directory to save already
    deserialized data *)
@@ -93,4 +102,4 @@ let load serializer path =
         let opt = load_data serializer path zip_library in
         if Option.is_some opt then opt
         else loop other_libraries in
-  loop zip_libraries
+  loop (Lazy.force zip_libraries)
