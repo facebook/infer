@@ -16,64 +16,48 @@ import android.util.Log;
 
 public class LoggingPrivateData {
 
-  public void logSharedPreferencesDataBad(SharedPreferences prefs) {
-    Log.e("tag", prefs.getString("some", "data"));
-  }
-
-  public void logSharedPreferencesDataInTagBad(SharedPreferences prefs) {
-    Log.e(prefs.getString("some", "data"), "value");
-  }
-
-  static class StringWrapper extends Throwable {
-    private String mStr;
-
-    @Override
-    public String toString() {
-      return mStr;
-    }
-  }
-
-  public void logSharedPreferencesDataIndirectBad(SharedPreferences prefs) {
-    StringWrapper wrapper = new StringWrapper();
-    wrapper.mStr = prefs.getString("some", "data");
-    Log.w("tag", wrapper);
-  }
-
-  public void logDataOk(SharedPreferences prefs) {
-    Log.e("tag", "value");
-  }
-
   private native int rand();
 
-  public String returnAllSources(Location l, TelephonyManager t) {
+  public void logAllSourcesBad(Location l, TelephonyManager t) {
+    String source = null;
     switch (rand()) {
     case 1:
-      return String.valueOf(l.getAltitude());
+      source = String.valueOf(l.getAltitude());
+      break;
     case 2:
-      return String.valueOf(l.getBearing());
+      source = String.valueOf(l.getBearing());
+      break;
     case 3:
-      return String.valueOf(l.getLatitude());
+      source = String.valueOf(l.getLatitude());
+      break;
     case 4:
-      return String.valueOf(l.getLongitude());
+      source = String.valueOf(l.getLongitude());
+      break;
     case 5:
-      return String.valueOf(l.getSpeed());
+      source = String.valueOf(l.getSpeed());
+      break;
     case 6:
-      return t.getDeviceId();
+      source = t.getDeviceId();
+      break;
     case 7:
-      return t.getLine1Number();
+      source = t.getLine1Number();
+      break;
     case 8:
-      return t.getSimSerialNumber();
+      source = t.getSimSerialNumber();
+      break;
     case 9:
-      return t.getSubscriberId();
+      source = t.getSubscriberId();
+      break;
     case 10:
-      return t.getVoiceMailNumber();
+      source = t.getVoiceMailNumber();
+      break;
     }
-    return null;
-  }
 
-  public void logAllSourcesBad(Location l, TelephonyManager t) {
-    String source = returnAllSources(l, t);
-    Log.e("tag", source);
+    String TAG = "tag";
+    Log.e(TAG, source);
+    Log.println(0, TAG, source);
+    Log.w(TAG, source);
+    Log.wtf(TAG, source); // 10 sources * 4 sinks = 40 expected reports
   }
 
 }

@@ -20,43 +20,36 @@ import org.xmlpull.v1.XmlPullParserException;
 
 public class Intents {
 
-  Activity activity;
-
-  public void callAllSinks(Intent i) {
-    activity.bindService(i, null, 0);
-    activity.sendBroadcast(i);
-    activity.sendBroadcastAsUser(i, null);
-    activity.sendOrderedBroadcast(i, null);
-    activity.sendStickyBroadcast(i);
-    activity.sendStickyBroadcastAsUser(i, null);
-    activity.sendStickyOrderedBroadcast(i, null, null, 0, null, null);
-    activity.sendStickyOrderedBroadcastAsUser(i, null, null, null, 0, null, null);
-    activity.startActivities(new Intent[] { i });
-    activity.startActivity(i);
-    activity.startActivityForResult(i, 0);
-    activity.startActivityIfNeeded(i, 0);
-    activity.startActivityFromChild(null, i, 0);
-    activity.startActivityFromFragment(null, i, 0);
-    activity.startService(i);
-  }
-
   private native int rand();
 
-  public Intent returnAllSources() throws
+  public void callAllSinksBad(Activity activity, String uri) throws
     IOException, URISyntaxException, XmlPullParserException {
+    Intent intent = null;
+
     switch (rand()) {
     case 1:
-      return Intent.parseUri(null, 0);
+      intent = Intent.parseUri(null, 0);
+      break;
     case 2:
-      return Intent.parseIntent(null, null, null);
+      intent = Intent.parseIntent(null, null, null);
+      break;
     }
-    return null;
-  }
 
-  public void callAllSinksBad(String uri) throws
-    IOException, URISyntaxException, XmlPullParserException {
-    Intent intent = returnAllSources();
-    callAllSinks(intent);
+    activity.bindService(intent, null, 0);
+    activity.sendBroadcast(intent);
+    activity.sendBroadcastAsUser(intent, null);
+    activity.sendOrderedBroadcast(intent, null);
+    activity.sendStickyBroadcast(intent);
+    activity.sendStickyBroadcastAsUser(intent, null);
+    activity.sendStickyOrderedBroadcast(intent, null, null, 0, null, null);
+    activity.sendStickyOrderedBroadcastAsUser(intent, null, null, null, 0, null, null);
+    activity.startActivities(new Intent[] { intent });
+    activity.startActivity(intent);
+    activity.startActivityForResult(intent, 0);
+    activity.startActivityIfNeeded(intent, 0);
+    activity.startActivityFromChild(null, intent, 0);
+    activity.startActivityFromFragment(null, intent, 0);
+    activity.startService(intent); // 2 sinks * 15 sources = 30 expected reports
   }
 
 }
