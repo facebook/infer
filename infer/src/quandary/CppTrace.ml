@@ -196,7 +196,7 @@ include
           fmt
           "Error: %a -> %a via %a"
           Source.pp source Sink.pp sink Passthrough.Set.pp passthroughs in
-      let msg = "QUANDARY_TAINT_ERROR" in
+      let msg = Localise.to_string Localise.quandary_taint_error in
       let description = pp_to_string pp_error () in
       Exceptions.Checkers (msg, Localise.verbatim_desc description)
 

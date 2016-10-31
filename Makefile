@@ -196,6 +196,8 @@ quick-test: test_this_build ocaml_unit_test
 test-replace:
 	@for file in $$(find infer/tests -name "*.exp.test"); do \
 	    mv -f $$file $$(dirname $$file)/$$(basename -s .exp.test $$file).exp; done
+	@for file in $$(find infer/tests -name "*.test.dot"); do \
+	    mv -f $$file $$(dirname $$file)/$$(basename -s .test.dot $$file).dot; done
 
 .PHONY: uninstall
 uninstall:

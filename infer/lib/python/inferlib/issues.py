@@ -11,7 +11,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import codecs
-import csv
 import datetime
 import itertools
 import json
@@ -31,69 +30,13 @@ except ImportError:
 from . import colorize, config, source, utils
 
 
-# Increase the limit of the CSV parser to sys.maxlimit
-csv.field_size_limit(sys.maxsize)
-
 ISSUE_KIND_ERROR = 'ERROR'
 ISSUE_KIND_WARNING = 'WARNING'
 ISSUE_KIND_INFO = 'INFO'
 ISSUE_KIND_ADVICE = 'ADVICE'
 
-ISSUE_TYPES = [
-    'ASSERTION_FAILURE',
-    'BAD_POINTER_COMPARISON',
-    # 'CHECKERS_PRINTF_ARGS'
-    # TODO (#8030397): revert this once all the checkers are moved to Infer
-    'CONTEXT_LEAK',
-    'MEMORY_LEAK',
-    'RESOURCE_LEAK',
-    'RETAIN_CYCLE',
-    'STRONG_DELEGATE_WARNING',
-    'TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION',
-    'IVAR_NOT_NULL_CHECKED',
-    'NULL_DEREFERENCE',
-    'EMPTY_VECTOR_ACCESS',
-    'PARAMETER_NOT_NULL_CHECKED',
-    'PREMATURE_NIL_TERMINATION_ARGUMENT',
-    'DIRECT_ATOMIC_PROPERTY_ACCESS',
-    'CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK',
-    'REGISTERED_OBSERVER_BEING_DEALLOCATED',
-    'ASSIGN_POINTER_WARNING',
-    'GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL',
-    'QUANDARY_TAINT_ERROR',
-    # TODO (t11307776): Turn this back on once some of the FP issues are fixed
-    'UNSAFE_GUARDED_BY_ACCESS',
-    'MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE',
-    'COMPONENT_FACTORY_FUNCTION',
-    'COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS',
-    'COMPONENT_WITH_MULTIPLE_FACTORY_METHODS',
-    'COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS',
-]
-
-NULL_STYLE_ISSUE_TYPES = [
-    'IVAR_NOT_NULL_CHECKED',
-    'NULL_DEREFERENCE',
-    'PARAMETER_NOT_NULL_CHECKED',
-    'PREMATURE_NIL_TERMINATION_ARGUMENT',
-]
-
 # indices in rows of csv reports
-CSV_INDEX_CLASS = 0
-CSV_INDEX_KIND = 1
 CSV_INDEX_TYPE = 2
-CSV_INDEX_QUALIFIER = 3
-CSV_INDEX_SEVERITY = 4
-CSV_INDEX_LINE = 5
-CSV_INDEX_PROCEDURE = 6
-CSV_INDEX_PROCEDURE_ID = 7
-CSV_INDEX_FILENAME = 8
-CSV_INDEX_TRACE = 9
-CSV_INDEX_KEY = 10
-CSV_INDEX_QUALIFIER_TAGS = 11
-CSV_INDEX_HASH = 12
-CSV_INDEX_BUG_ID = 13
-CSV_INDEX_ALWAYS_REPORT = 14
-CSV_INDEX_ADVICE = 15
 
 # field names in rows of json reports
 JSON_INDEX_DOTTY = 'dotty'
@@ -110,64 +53,16 @@ JSON_INDEX_PROCEDURE = 'procedure'
 JSON_INDEX_PROCEDURE_ID = 'procedure_id'
 JSON_INDEX_QUALIFIER = 'qualifier'
 JSON_INDEX_QUALIFIER_TAGS = 'qualifier_tags'
-JSON_INDEX_SEVERITY = 'file'
 JSON_INDEX_TYPE = 'bug_type'
 JSON_INDEX_TRACE = 'bug_trace'
 JSON_INDEX_TRACE_LEVEL = 'level'
 JSON_INDEX_TRACE_FILENAME = 'filename'
 JSON_INDEX_TRACE_LINE = 'line_number'
 JSON_INDEX_TRACE_DESCRIPTION = 'description'
-JSON_INDEX_TRACE_NODE_TAGS = 'node_tags'
-JSON_INDEX_TRACE_NODE_TAGS_TAG = 'tags'
-JSON_INDEX_TRACE_NODE_TAGS_VALUE = 'value'
 JSON_INDEX_VISIBILITY = 'visibility'
 
 
-QUALIFIER_TAGS = 'qualifier_tags'
-BUCKET_TAGS = 'bucket'
 ISSUE_TYPES_URL = 'http://fbinfer.com/docs/infer-issue-types.html#'
-
-
-def clean_csv(args, csv_report):
-    collected_rows = []
-    with open(csv_report, 'r') as file_in:
-        reader = csv.reader(file_in)
-        rows = [row for row in reader]
-        if len(rows) <= 1:
-            return rows
-        else:
-            for row in rows[1:]:
-                filename = row[CSV_INDEX_FILENAME]
-                if os.path.isfile(filename):
-                    if args.no_filtering \
-                       or _should_report_csv(args.analyzer, row):
-                        collected_rows.append(row)
-            collected_rows.sort(key=operator.itemgetter(CSV_INDEX_FILENAME,
-                                                        CSV_INDEX_LINE))
-            collected_rows = [rows[0]] + collected_rows
-    temporary_file = tempfile.mktemp()
-    with open(temporary_file, 'w') as file_out:
-        writer = csv.writer(file_out)
-        writer.writerows(collected_rows)
-        file_out.flush()
-        shutil.move(temporary_file, csv_report)
-
-
-def clean_json(args, json_report):
-    rows = utils.load_json_from_path(json_report)
-
-    def is_clean(row):
-        filename = row[JSON_INDEX_FILENAME]
-        return (os.path.isfile(filename) and
-                (args.no_filtering or
-                 _should_report_json(args.analyzer, row)))
-
-    rows = filter(is_clean, rows)
-    rows.sort(key=operator.itemgetter(JSON_INDEX_FILENAME,
-                                      JSON_INDEX_LINE))
-    temporary_file = tempfile.mktemp()
-    utils.dump_json_to_path(rows, temporary_file)
-    shutil.move(temporary_file, json_report)
 
 
 def _text_of_infer_loc(loc):
@@ -352,62 +247,3 @@ def _sort_and_uniq_rows(l):
     groups = itertools.groupby(l, key)
     # guaranteed to be at least one element in each group
     return map(lambda (keys, dups): dups.next(), groups)
-
-
-def _should_report(analyzer, error_kind, error_type, error_bucket):
-    analyzers_whitelist = [
-        config.ANALYZER_ERADICATE,
-        config.ANALYZER_CHECKERS,
-        config.ANALYZER_TRACING,
-    ]
-    error_kinds = [ISSUE_KIND_ERROR, ISSUE_KIND_WARNING, ISSUE_KIND_ADVICE]
-    null_style_buckets = ['B1', 'B2']
-
-    if analyzer in analyzers_whitelist:
-        return True
-
-    if error_kind not in error_kinds:
-        return False
-
-    if not error_type:
-        return False
-
-    if error_type in NULL_STYLE_ISSUE_TYPES:
-        return error_bucket in null_style_buckets
-
-    return error_type in ISSUE_TYPES
-
-
-def _should_report_csv(analyzer, row):
-    error_kind = row[CSV_INDEX_KIND]
-    error_type = row[CSV_INDEX_TYPE]
-    error_bucket = ''  # can be updated later once we extract it from qualifier
-
-    try:
-        qualifier_xml = ET.fromstring(row[CSV_INDEX_QUALIFIER_TAGS])
-        if qualifier_xml.tag == QUALIFIER_TAGS:
-            bucket = qualifier_xml.find(BUCKET_TAGS)
-            if bucket is not None:
-                error_bucket = bucket.text
-    except ET.ParseError:
-        pass  # this will skip any invalid xmls
-
-    return _should_report(analyzer, error_kind, error_type, error_bucket)
-
-
-def _should_report_json(analyzer, row):
-    error_kind = row[JSON_INDEX_KIND]
-    error_type = row[JSON_INDEX_TYPE]
-    error_bucket = ''  # can be updated later once we extract it from qualifier
-
-    for qual_tag in row[QUALIFIER_TAGS]:
-        if qual_tag['tag'] == BUCKET_TAGS:
-            error_bucket = qual_tag['value']
-            break
-
-    return _should_report(analyzer, error_kind, error_type, error_bucket)
-
-
-def _print_and_write(file_out, message):
-    utils.stdout(message)
-    file_out.write(utils.encode(message + '\n'))

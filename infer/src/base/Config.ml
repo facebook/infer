@@ -658,19 +658,19 @@ and checkers, crashcontext, eradicate, quandary =
   let crashcontext =
     CLOpt.mk_bool_group ~deprecated:["crashcontext"] ~long:"crashcontext"
       ""
-      [checkers]
+      [checkers] []
   in
   (* Activate the eradicate checker for java annotations (also sets --checkers) *)
   let eradicate =
     CLOpt.mk_bool_group ~deprecated:["eradicate"] ~long:"eradicate"
       ""
-      [checkers]
+      [checkers] []
   in
   (* Activate the quandary taint analysis *)
   let quandary =
     CLOpt.mk_bool_group ~deprecated:["quandary"] ~long:"quandary"
       ""
-      [checkers]
+      [checkers] []
   in
   (checkers, crashcontext, eradicate, quandary)
 
@@ -730,11 +730,29 @@ and cxx_experimental =
     ~exes:CLOpt.[Clang]
     "Analyze C++ methods, still experimental"
 
-and debug, print_types, write_dotty =
-  let print_types =
+and (
+  debug,
+  debug_exceptions,
+  filtering,
+  print_types,
+  reports_include_ml_loc,
+  write_dotty
+) =
+  let filtering =
+    CLOpt.mk_bool ~long:"filtering" ~short:"f" ~default:true
+      ~exes:CLOpt.[Toplevel]
+      "Do not show the results from experimental checks (note: some of them may contain many false \
+       alarms)"
+
+  and print_types =
     CLOpt.mk_bool ~deprecated:["print_types"] ~long:"print-types"
       ~default:(current_exe = CLOpt.Clang)
       "Print types in symbolic heaps"
+
+  and reports_include_ml_loc =
+    CLOpt.mk_bool ~deprecated:["with_infer_src_loc"] ~long:"reports-include-ml-loc"
+      "Include the location in the Infer source code from where reports are generated"
+
   and write_dotty =
     CLOpt.mk_bool ~deprecated:["dotty"] ~long:"write-dotty"
       "Produce dotty files for specs in the results directory"
@@ -742,16 +760,25 @@ and debug, print_types, write_dotty =
   let debug =
     CLOpt.mk_bool_group ~deprecated:["debug"] ~long:"debug" ~short:"g"
       ~exes:CLOpt.[Analyze]
-      "Debug mode (also sets --print-types and --write-dotty)"
-      [print_types; write_dotty]
-  in
-  (debug, print_types, write_dotty)
+      "Debug mode (also sets --no-filtering, --print-types, --reports-include-ml-loc, \
+       --write-dotty)"
+      [print_types; reports_include_ml_loc; write_dotty]
+      [filtering]
 
-and debug_exceptions =
-  CLOpt.mk_bool ~long:"debug-exceptions"
-    ~exes:CLOpt.[Analyze]
-    "Generate lightweight debugging information: just print the internal exceptions during analysis"
-
+  and debug_exceptions =
+    CLOpt.mk_bool_group ~long:"debug-exceptions"
+      "Generate lightweight debugging information: just print the internal exceptions during \
+       analysis (also sets --no-filtering, --reports-include-ml-loc)"
+      [reports_include_ml_loc]
+      [filtering]
+  in (
+    debug,
+    debug_exceptions,
+    filtering,
+    print_types,
+    reports_include_ml_loc,
+    write_dotty
+  )
 and dependencies =
   CLOpt.mk_bool ~deprecated:["dependencies"] ~long:"dependencies"
     ~exes:CLOpt.[Java]
@@ -846,12 +873,6 @@ and fcp_syntax_only =
 and filter_paths =
   CLOpt.mk_bool ~long:"filter-paths" ~default:true
     "Filters specified in .inferconfig"
-
-and filtering =
-  CLOpt.mk_bool ~long:"filtering" ~short:"f" ~default:true
-    ~exes:CLOpt.[Toplevel]
-    "Do not show the results from experimental checks (note: some of them may contain many false \
-     alarms)"
 
 and flavors =
   CLOpt.mk_bool ~deprecated:["-use-flavors"] ~long:"flavors"
@@ -1057,10 +1078,6 @@ and report =
 and report_custom_error =
   CLOpt.mk_bool ~long:"report-custom-error"
     ""
-
-and reports_include_ml_loc =
-  CLOpt.mk_bool ~deprecated:["with_infer_src_loc"] ~long:"reports-include-ml-loc"
-    "Include the location in the Infer source code from where reports are generated"
 
 and results_dir =
   CLOpt.mk_path ~deprecated:["results_dir"; "-out"] ~long:"results-dir" ~short:"o"

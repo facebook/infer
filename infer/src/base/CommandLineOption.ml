@@ -295,9 +295,10 @@ let mk_bool ?(deprecated_no=[]) ?(default=false) ?(f=fun b -> b)
   var
 
 let mk_bool_group ?(deprecated_no=[]) ?(default=false)
-    ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc children =
+    ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc children no_children =
   let f b =
     IList.iter (fun child -> child := b) children ;
+    IList.iter (fun child -> child := not b) no_children ;
     b
   in
   mk_bool ~deprecated ~deprecated_no ~default ~long ?short ~f ?exes ~meta doc

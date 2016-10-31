@@ -385,8 +385,6 @@ class AnalyzerWrapper(object):
                 'Error with InferPrint with the command: {}'.format(
                     infer_print_cmd))
         else:
-            issues.clean_csv(self.args, csv_report)
-            issues.clean_json(self.args, json_report)
             self.update_stats_with_warnings(csv_report)
 
         return exit_status

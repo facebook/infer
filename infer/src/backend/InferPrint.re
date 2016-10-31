@@ -313,6 +313,92 @@ let module ProcsXml = {
   let pp_procs_close fmt () => Io_infer.Xml.pp_close fmt "procedures";
 };
 
+let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc =>
+  if (not Config.filtering) {
+    true
+  } else {
+    let analyzer_is_whitelisted =
+      switch Config.analyzer {
+      | Some (Checkers | Eradicate | Tracing) => true
+      | None
+      | Some (Capture | Compile | Crashcontext | Infer | Linters | Quandary) => false
+      };
+    if analyzer_is_whitelisted {
+      true
+    } else {
+      let issue_kind_is_blacklisted =
+        switch issue_kind {
+        | Kinfo => true
+        | Kerror
+        | Kwarning
+        | Kadvice => false
+        };
+      if issue_kind_is_blacklisted {
+        false
+      } else {
+        let issue_type_is_null_deref = {
+          let null_deref_issue_types =
+            Localise.[
+              field_not_null_checked,
+              null_dereference,
+              parameter_not_null_checked,
+              premature_nil_termination
+            ];
+          IList.mem Localise.equal issue_type null_deref_issue_types
+        };
+        if issue_type_is_null_deref {
+          let issue_bucket_is_high = {
+            let issue_bucket = Localise.error_desc_get_bucket error_desc;
+            let high_buckets = Localise.BucketLevel.[b1, b2];
+            let eq o y =>
+              switch (o, y) {
+              | (None, _) => false
+              | (Some x, y) => string_equal x y
+              };
+            IList.mem eq issue_bucket high_buckets
+          };
+          issue_bucket_is_high
+        } else {
+          let issue_type_is_reportable = {
+            let reportable_issue_types =
+              Localise.[
+                Localise.from_string Config.default_failure_name,
+                assign_pointer_warning,
+                bad_pointer_comparison,
+                component_factory_function,
+                component_initializer_with_side_effects,
+                component_with_multiple_factory_methods,
+                component_with_unconventional_superclass,
+                context_leak,
+                cxx_reference_captured_in_objc_block,
+                direct_atomic_property_access,
+                empty_vector_access,
+                global_variable_initialized_with_function_or_method_call,
+                memory_leak,
+                mutable_local_variable_in_component_file,
+                quandary_taint_error,
+                registered_observer_being_deallocated,
+                resource_leak,
+                retain_cycle,
+                strong_delegate_warning,
+                tainted_value_reaching_sensitive_function,
+                unsafe_guarded_by_access
+              ];
+            IList.mem Localise.equal issue_type reportable_issue_types
+          };
+          issue_type_is_reportable
+        }
+      }
+    }
+  };
+
+let is_file source_file =>
+  switch (Unix.stat (DB.source_file_to_string source_file)) {
+  | {st_kind: S_REG | S_LNK} => true
+  | _ => false
+  | exception Unix.Unix_error _ => false
+  };
+
 let module IssuesCsv = {
   let csv_issues_id = ref 0;
   let pp_header fmt () =>
@@ -345,7 +431,11 @@ let module IssuesCsv = {
         | Some proc_loc => proc_loc.Location.file
         | None => loc.Location.file
         };
-      if (in_footprint && error_filter source_file error_desc error_name) {
+      if (
+        in_footprint &&
+        error_filter source_file error_desc error_name &&
+        should_report ekind error_name error_desc && is_file source_file
+      ) {
         let err_desc_string = error_desc_to_csv_string error_desc;
         let err_advice_string = error_advice_to_csv_string error_desc;
         let qualifier_tag_xml = {
@@ -441,7 +531,9 @@ let module IssuesJson = {
       let file = DB.source_file_to_string source_file;
       let file_opt = make_cpp_models_path_relative file;
       if (
-        in_footprint && error_filter source_file error_desc error_name && Option.is_some file_opt
+        in_footprint &&
+        error_filter source_file error_desc error_name &&
+        Option.is_some file_opt && should_report ekind error_name error_desc && is_file source_file
       ) {
         let kind = Exceptions.err_kind_string ekind;
         let bug_type = Localise.to_string error_name;

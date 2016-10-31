@@ -65,6 +65,7 @@ val pointer_size_mismatch : t
 val precondition_not_found : t
 val precondition_not_met : t
 val premature_nil_termination : t
+val quandary_taint_error : t
 val registered_observer_being_deallocated : t
 val retain_cycle : t
 val resource_leak : t
