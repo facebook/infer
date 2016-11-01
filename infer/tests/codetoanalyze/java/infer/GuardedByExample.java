@@ -16,6 +16,8 @@ import java.lang.annotation.Target;
 import com.google.common.annotations.VisibleForTesting;
 import android.annotation.SuppressLint;
 import javax.annotation.concurrent.GuardedBy;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import java.io.Closeable;
 
@@ -431,5 +433,44 @@ public class GuardedByExample {
     this.itself_fld.toString();
   }
   */
+
+
+  ReadWriteLock mRWL;
+
+  @GuardedBy("mRWL")
+  Integer guardedbymRWL;
+
+  Integer someOtherInt;
+
+  void readLockOK() {
+    mRWL.readLock().lock();
+    someOtherInt = guardedbymRWL;
+    mRWL.readLock().unlock();
+  }
+
+  void writeLockOK() {
+    mRWL.writeLock().lock();
+    guardedbymRWL = 55;
+    mRWL.writeLock().unlock();
+  }
+
+  ReentrantReadWriteLock mRRWL;
+
+  @GuardedBy("mRRWL")
+  Integer guardedbymRRWL;
+
+  void reentrantReadLockOK() {
+    mRRWL.readLock().lock();
+    someOtherInt = guardedbymRRWL;
+    mRRWL.readLock().unlock();
+  }
+
+  void reentrantWriteLockOK() {
+    mRRWL.writeLock().lock();
+    guardedbymRRWL = 55;
+    mRRWL.writeLock().unlock();
+  }
+
+  // TODO: warn on misuse of read/write locks.
 
 }
