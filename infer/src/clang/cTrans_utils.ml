@@ -573,7 +573,6 @@ let rec get_type_from_exp_stmt stmt =
   | DeclRefExpr(_, _, _, info) -> do_decl_ref_exp info
   | _ ->
       Logging.err_debug "Failing with: %s@\n%!" (Clang_ast_j.string_of_stmt stmt);
-      Printing.print_failure_info "";
       assert false
 
 module Self =

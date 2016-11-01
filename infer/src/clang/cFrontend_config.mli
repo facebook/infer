@@ -94,7 +94,6 @@ val modeled_function_attributes : string list
 val enum_map : (Clang_ast_t.pointer option * Exp.t option) Clang_ast_main.PointerMap.t ref
 val global_translation_unit_decls : Clang_ast_t.decl list ref
 val ivar_to_property_index : Clang_ast_t.decl Clang_ast_main.PointerMap.t ref
-val json : string ref
 val log_out : Format.formatter ref
 val pointer_decl_index : Clang_ast_t.decl Clang_ast_main.PointerMap.t ref
 val pointer_stmt_index : Clang_ast_t.stmt Clang_ast_main.PointerMap.t ref

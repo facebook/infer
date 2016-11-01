@@ -63,9 +63,6 @@ let print_procedures cfg =
          " defined? " ^ (string_of_bool (Cfg.Procdesc.is_defined pdesc)) ^ "\n")
         procs)
 
-let print_failure_info pointer =
-  L.err "AST Element> %s IN FILE> %s @.@." pointer !CFrontend_config.json
-
 let print_nodes nodes =
   IList.iter (fun node -> Logging.do_out "%s" (Cfg.Node.get_description pe_text node)) nodes
 

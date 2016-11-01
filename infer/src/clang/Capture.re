@@ -76,17 +76,15 @@ let run_clang_frontend trans_unit_ctx ast_source => {
   CFrontend_config.pointer_stmt_index := stmt_index;
   CFrontend_config.pointer_type_index := type_index;
   CFrontend_config.ivar_to_property_index := ivar_to_property_index;
-  CFrontend_config.json := ast_filename;
   Logging.out "Clang frontend action is  %s@\n" Config.clang_frontend_action_string;
-  Logging.out
-    "Start %s of AST from %s@\n" Config.clang_frontend_action_string !CFrontend_config.json;
+  Logging.out "Start %s of AST from %s@\n" Config.clang_frontend_action_string ast_filename;
   if Config.clang_frontend_do_lint {
     CFrontend_checkers_main.do_frontend_checks trans_unit_ctx ast_decl
   };
   if Config.clang_frontend_do_capture {
     CFrontend.do_source_file trans_unit_ctx ast_decl
   };
-  Logging.out "End translation AST file %s... OK!@\n" !CFrontend_config.json;
+  Logging.out "End translation AST file %s... OK!@\n" ast_filename;
   print_elapsed ()
 };
 
