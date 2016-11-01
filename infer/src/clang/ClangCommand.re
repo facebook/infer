@@ -36,10 +36,6 @@ let plugin_path = fcp_dir /\/ "libtooling" /\/ "build" /\/ "FacebookClangPlugin.
 let plugin_name = "BiniouASTExporter";
 
 
-/** are we running as Apple's clang? */
-let has_apple_clang = Config.fcp_apple_clang != None;
-
-
 /** whether to amend include search path with C++ model headers */
 let infer_cxx_models = Config.cxx_experimental;
 
@@ -170,7 +166,11 @@ let with_plugin_args args => {
          YojsonASTExporter plugin are used. Since the -plugin argument disables the generation of .o
          files, we invoke apple clang again to generate the expected artifacts. This will keep
          xcodebuild plus all the sub-steps happy. */
-      if has_apple_clang {"-plugin"} else {"-add-plugin"},
+      if (has_flag args "-fmodules") {
+        "-plugin"
+      } else {
+        "-add-plugin"
+      },
       plugin_name,
       "-plugin-arg-" ^ plugin_name,
       "-",
