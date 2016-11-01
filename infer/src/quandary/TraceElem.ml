@@ -17,6 +17,7 @@ module type S = sig
   val kind : t -> kind
 
   val make : kind -> CallSite.t -> t
+  val to_callee : t -> CallSite.t -> t
 
   val compare : t -> t -> int
   val equal : t -> t -> bool

@@ -23,8 +23,6 @@ let make_sink_param sink index ~report_reachable =
 module type S = sig
   include TraceElem.S
 
-  val to_callee : t -> CallSite.t -> t
-
   (** return the parameter index and sink kind for the given call site with the given actuals *)
   val get : CallSite.t -> (Exp.t * Typ.t) list -> t parameter list
 end

@@ -156,24 +156,38 @@ module Make (Spec : Spec) = struct
     if is_empty callee_trace
     then caller_trace
     else
+      let non_footprint_callee_sources =
+        Sources.filter (fun source -> not (Source.is_footprint source)) callee_trace.sources in
       let sources =
-        Sources.filter (fun source -> not (Source.is_footprint source)) callee_trace.sources
-        |> Sources.union caller_trace.sources in
-      let sinks, passthroughs =
-        if Sinks.for_all (fun sink -> Sinks.mem sink caller_trace.sinks) callee_trace.sinks
+        if Sources.subset non_footprint_callee_sources caller_trace.sources
         then
-          (* this callee didn't add any new sinks; it's just a passthrough *)
-          let passthroughs =
-            Passthroughs.add (Passthrough.make callee_site) caller_trace.passthroughs in
-          caller_trace.sinks, passthroughs
+          caller_trace.sources
         else
-          (* this callee added a new sink *)
-          let callee_sinks =
-            IList.map
-              (fun sink -> Sink.to_callee sink callee_site)
-              (Sinks.elements callee_trace.sinks)
-            |> Sinks.of_list in
-          Sinks.union caller_trace.sinks callee_sinks, caller_trace.passthroughs in
+          IList.map
+            (fun sink -> Source.to_callee sink callee_site)
+            (Sources.elements non_footprint_callee_sources)
+          |> Sources.of_list
+          |> Sources.union caller_trace.sources in
+
+      let sinks =
+        if Sinks.subset callee_trace.sinks caller_trace.sinks
+        then
+          caller_trace.sinks
+        else
+          IList.map
+            (fun sink -> Sink.to_callee sink callee_site)
+            (Sinks.elements callee_trace.sinks)
+          |> Sinks.of_list
+          |> Sinks.union caller_trace.sinks in
+
+      let passthroughs =
+        if sources == caller_trace.sources && sinks == caller_trace.sinks
+        then
+          (* this callee didn't add any new sources or any news sinks; it's just a passthrough *)
+          Passthroughs.add (Passthrough.make callee_site) caller_trace.passthroughs
+        else
+          caller_trace.passthroughs in
+
       { sources; sinks; passthroughs; }
 
   let initial =

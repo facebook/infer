@@ -81,6 +81,9 @@ module JavaSource = struct
     | pname when BuiltinDecl.is_declared pname -> None
     | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
 
+  let to_callee t callee_site =
+    { t with site = callee_site; }
+
   let compare src1 src2 =
     SourceKind.compare src1.kind src2.kind
     |> next CallSite.compare src1.site src2.site

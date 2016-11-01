@@ -73,6 +73,9 @@ module CppSource = struct
     | pname ->
         failwithf "Non-C++ procname %a in C++ analysis@." Procname.pp pname
 
+  let to_callee t callee_site =
+    { t with site = callee_site; }
+
   let compare src1 src2 =
     SourceKind.compare src1.kind src2.kind
     |> next CallSite.compare src1.site src2.site
