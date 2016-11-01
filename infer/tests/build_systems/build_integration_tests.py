@@ -61,6 +61,7 @@ EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
     'ant',
+    'assembly',
     'buck',
     'cc1',
     'cmake',
@@ -495,6 +496,11 @@ class BuildIntegrationTest(unittest.TestCase):
              CODETOANALYZE_DIR,
              [],
              preprocess=preprocess)
+
+    def test_clang_assembly(self):
+        test('assembly', 'compile with assembly code', CODETOANALYZE_DIR,
+             [{'compile': ['clang', '-x', 'c', '-c', 'hello.c', '-x',
+                           'assembler-with-cpp', 'example.S']}])
 
     def test_clang_component_kit_imports(self):
         test('componentkit', 'component quality analyzer  skips imports',
