@@ -306,7 +306,8 @@ type st_report_error =
 
 (** Report an error right now. *)
 let report_error_now tenv
-    (st_report_error : st_report_error) node err_instance loc pname : unit =
+    (st_report_error : st_report_error) err_instance loc pdesc : unit =
+  let pname = Cfg.Procdesc.get_proc_name pdesc in
   let demo_mode = true in
   let do_print_base ew_string kind_s s =
     let mname = match pname with
@@ -529,7 +530,7 @@ let report_error_now tenv
   let always_report = Strict.err_instance_get_strict tenv err_instance <> None in
   st_report_error
     pname
-    (Cfg.Node.get_proc_desc node)
+    pdesc
     kind_s
     loc
     ~advice
@@ -542,22 +543,22 @@ let report_error_now tenv
 
 (** Report an error unless is has been reported already, or unless it's a forall error
     since it requires waiting until the end of the analysis and be printed by flush. *)
-let report_error tenv (st_report_error : st_report_error) find_canonical_duplicate node
-    err_instance instr_ref_opt loc pname_java =
+let report_error tenv (st_report_error : st_report_error) find_canonical_duplicate
+    err_instance instr_ref_opt loc pdesc =
   let should_report_now =
     add_err find_canonical_duplicate err_instance instr_ref_opt loc in
   if should_report_now then
-    report_error_now tenv st_report_error node err_instance loc pname_java
+    report_error_now tenv st_report_error err_instance loc pdesc
 
 (** Report the forall checks at the end of the analysis and reset the error table *)
-let report_forall_checks_and_reset tenv st_report_error proc_name =
+let report_forall_checks_and_reset tenv st_report_error proc_desc =
   let iter (err_instance, instr_ref_opt) err_state =
     match instr_ref_opt, get_forall err_instance with
     | Some instr_ref, is_forall ->
         let node = InstrRef.get_node instr_ref in
         State.set_node node;
         if is_forall && err_state.always
-        then report_error_now tenv st_report_error node err_instance err_state.loc proc_name
+        then report_error_now tenv st_report_error err_instance err_state.loc proc_desc
     | None, _ -> () in
   H.iter iter err_tbl;
   reset ()

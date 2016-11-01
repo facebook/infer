@@ -271,7 +271,7 @@ end = struct
     Invariant.reset_stats path
 
   let get_path_pos node =
-    let pn = Cfg.Procdesc.get_proc_name (Cfg.Node.get_proc_desc node) in
+    let pn = Cfg.Node.get_proc_name node in
     let n_id = Cfg.Node.get_id node in
     (pn, (n_id :> int))
 

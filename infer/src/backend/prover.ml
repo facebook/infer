@@ -857,27 +857,28 @@ let check_inconsistency_base tenv prop =
   let inconsistent_ptsto _ =
     check_allocatedness tenv prop Exp.zero in
   let inconsistent_this_self_var () =
-    let procdesc =
-      Cfg.Node.get_proc_desc (State.get_node ()) in
-    let procedure_attr =
-      Cfg.Procdesc.get_attributes procdesc in
-    let is_java_this pvar =
-      procedure_attr.ProcAttributes.language = Config.Java && Pvar.is_this pvar in
-    let is_objc_instance_self pvar =
-      procedure_attr.ProcAttributes.language = Config.Clang &&
-      Pvar.get_name pvar = Mangled.from_string "self" &&
-      procedure_attr.ProcAttributes.is_objc_instance_method in
-    let is_cpp_this pvar =
-      procedure_attr.ProcAttributes.language = Config.Clang &&
-      Pvar.is_this pvar &&
-      procedure_attr.ProcAttributes.is_cpp_instance_method in
-    let do_hpred = function
-      | Sil.Hpointsto (Exp.Lvar pv, Sil.Eexp (e, _), _) ->
-          Exp.equal e Exp.zero &&
-          Pvar.is_seed pv &&
-          (is_java_this pv || is_cpp_this pv || is_objc_instance_self pv)
-      | _ -> false in
-    IList.exists do_hpred sigma in
+    match State.get_prop_tenv_pdesc () with
+    | None -> false
+    | Some (_, _, pdesc) ->
+        let procedure_attr =
+          Cfg.Procdesc.get_attributes pdesc in
+        let is_java_this pvar =
+          procedure_attr.ProcAttributes.language = Config.Java && Pvar.is_this pvar in
+        let is_objc_instance_self pvar =
+          procedure_attr.ProcAttributes.language = Config.Clang &&
+          Pvar.get_name pvar = Mangled.from_string "self" &&
+          procedure_attr.ProcAttributes.is_objc_instance_method in
+        let is_cpp_this pvar =
+          procedure_attr.ProcAttributes.language = Config.Clang &&
+          Pvar.is_this pvar &&
+          procedure_attr.ProcAttributes.is_cpp_instance_method in
+        let do_hpred = function
+          | Sil.Hpointsto (Exp.Lvar pv, Sil.Eexp (e, _), _) ->
+              Exp.equal e Exp.zero &&
+              Pvar.is_seed pv &&
+              (is_java_this pv || is_cpp_this pv || is_objc_instance_self pv)
+          | _ -> false in
+        IList.exists do_hpred sigma in
   let inconsistent_atom = function
     | Sil.Aeq (e1, e2) ->
         (match e1, e2 with

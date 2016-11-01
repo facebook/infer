@@ -257,9 +257,9 @@ let setup_harness_cfg harness_name env cg cfg =
     (create_node start_kind, create_node exit_kind) in
   Cfg.Procdesc.set_start_node procdesc start_node;
   Cfg.Procdesc.set_exit_node procdesc exit_node;
-  Cfg.Node.add_locals_ret_declaration start_node [];
-  Cfg.Node.set_succs_exn start_node [harness_node] [exit_node];
-  Cfg.Node.set_succs_exn harness_node [exit_node] [exit_node];
+  Cfg.Node.add_locals_ret_declaration procdesc start_node [];
+  Cfg.Node.set_succs_exn procdesc start_node [harness_node] [exit_node];
+  Cfg.Node.set_succs_exn procdesc harness_node [exit_node] [exit_node];
   add_harness_to_cg harness_name harness_node cg
 
 (** create a procedure named harness_name that calls each of the methods in trace in the specified

@@ -161,7 +161,7 @@ let module Node: {
   let prepend_instrs: t => list Sil.instr => unit;
 
   /** Add declarations for local variables and return variable to the node */
-  let add_locals_ret_declaration: t => list (Mangled.t, Typ.t) => unit;
+  let add_locals_ret_declaration: Procdesc.t => t => list (Mangled.t, Typ.t) => unit;
 
   /** Compare two nodes */
   let compare: t => t => int;
@@ -213,8 +213,8 @@ let module Node: {
       from a node with subsequent applications of a generator function */
   let get_generated_slope: t => (t => list t) => list t;
 
-  /** Get the proc desc associated to the node */
-  let get_proc_desc: t => Procdesc.t;
+  /** Get the name of the procedure the node belongs to */
+  let get_proc_name: t => Procname.t;
 
   /** Get the instructions to be executed */
   let get_instrs: t => list Sil.instr;
@@ -249,7 +249,7 @@ let module Node: {
   let replace_instrs: t => list Sil.instr => unit;
 
   /** Set the successor nodes and exception nodes, and build predecessor links */
-  let set_succs_exn: t => list t => list t => unit;
+  let set_succs_exn: Procdesc.t => t => list t => list t => unit;
 };
 
 

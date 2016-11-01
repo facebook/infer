@@ -38,8 +38,9 @@ struct
                 "\n\n>>---------- Start translating body of function: '%s' ---------<<\n@."
                 (Procname.to_string procname);
               let meth_body_nodes = T.instructions_trans context body extra_instrs exit_node in
-              Cfg.Node.add_locals_ret_declaration start_node (Cfg.Procdesc.get_locals procdesc);
-              Cfg.Node.set_succs_exn start_node meth_body_nodes [];
+              Cfg.Node.add_locals_ret_declaration
+                procdesc start_node (Cfg.Procdesc.get_locals procdesc);
+              Cfg.Node.set_succs_exn procdesc start_node meth_body_nodes [];
               Cg.add_defined_node (CContext.get_cg context) (Cfg.Procdesc.get_proc_name procdesc))
        | None -> ())
     with

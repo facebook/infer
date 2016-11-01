@@ -26,9 +26,10 @@ let module Node = {
     | Stmt_node string
     | Join_node
     | Prune_node bool Sil.if_kind string /** (true/false branch, if_kind, comment) */
-    | Skip_node string
+    | Skip_node string;
+
   /** a node */
-  and t = {
+  type t = {
     /** unique id of the node */
     nd_id: id,
     /** distance to the exit node */
@@ -43,13 +44,14 @@ let module Node = {
     nd_loc: Location.t,
     /** predecessor nodes in the cfg */
     mutable nd_preds: list t,
-    /** proc desc from cil */
-    nd_proc: option proc_desc,
+    /** name of the procedure the node belongs to */
+    nd_pname: option Procname.t,
     /** successor nodes in the cfg */
     mutable nd_succs: list t
-  }
+  };
+
   /** procedure description */
-  and proc_desc = {
+  type proc_desc = {
     pd_attributes: ProcAttributes.t, /** attributes of the procedure */
     pd_id: int, /** unique proc_desc identifier */
     mutable pd_nodes: list t, /** list of nodes of this procedure */
@@ -145,7 +147,7 @@ let module Node = {
     nd_instrs: [],
     nd_kind: Skip_node "dummy",
     nd_loc: Location.dummy,
-    nd_proc: None,
+    nd_pname: None,
     nd_succs: [],
     nd_preds: [],
     nd_exn: []
@@ -165,7 +167,7 @@ let module Node = {
       nd_kind: kind,
       nd_loc: loc,
       nd_preds: [],
-      nd_proc: Some pdesc,
+      nd_pname: Some pdesc.pd_attributes.proc_name,
       nd_succs: [],
       nd_exn: []
     };
@@ -226,13 +228,13 @@ let module Node = {
   };
   let get_exn node => node.nd_exn;
 
-  /** Get the proc desc of the node */
-  let get_proc_desc node =>
-    switch node.nd_proc {
+  /** Get the name of the procedure the node belongs to */
+  let get_proc_name node =>
+    switch node.nd_pname {
     | None =>
       L.out "node_get_proc_desc: at node %d@\n" node.nd_id;
       assert false
-    | Some proc_desc => proc_desc
+    | Some proc_name => proc_name
     };
 
   /** Set the successor nodes and exception nodes, and build predecessor links */
@@ -245,11 +247,10 @@ let module Node = {
   /** Set the successor and exception nodes.
       If this is a join node right before the exit node, add an extra node in the middle,
       otherwise nullify and abstract instructions cannot be added after a conditional. */
-  let set_succs_exn node succs exn =>
+  let set_succs_exn pdesc node succs exn =>
     switch (node.nd_kind, succs) {
     | (Join_node, [{nd_kind: Exit_node _} as exit_node]) =>
       let kind = Stmt_node "between_join_and_exit";
-      let pdesc = get_proc_desc node;
       let node' = create node.nd_loc kind node.nd_instrs pdesc;
       set_succs_exn_base node [node'] exn;
       set_succs_exn_base node' [exit_node] exn
@@ -355,9 +356,8 @@ let module Node = {
     Pvar.get_ret_pvar pdesc.pd_attributes.ProcAttributes.proc_name;
 
   /** Add declarations for local variables and return variable to the node */
-  let add_locals_ret_declaration node locals => {
+  let add_locals_ret_declaration pdesc node locals => {
     let loc = get_loc node;
-    let pdesc = get_proc_desc node;
     let proc_name = pdesc.pd_attributes.ProcAttributes.proc_name;
     let ret_var = {
       let ret_type = pdesc.pd_attributes.ProcAttributes.ret_type;
@@ -712,7 +712,7 @@ let module Node = {
             if (equal node callee_exit_node) {
               proc_desc_set_exit_node resolved_proc_desc new_node
             };
-            set_succs_exn new_node (loop successors) (loop exn_nodes);
+            set_succs_exn callee_proc_desc new_node (loop successors) (loop exn_nodes);
             new_node
           };
         [converted_node, ...loop other_node]

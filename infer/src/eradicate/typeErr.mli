@@ -81,10 +81,10 @@ type st_report_error =
 
 val report_error :
   Tenv.t -> st_report_error ->
-  (Cfg.Node.t -> Cfg.Node.t) -> Cfg.Node.t ->
+  (Cfg.Node.t -> Cfg.Node.t) ->
   err_instance -> InstrRef.t option -> Location.t ->
-  Procname.t -> unit
+  Cfg.Procdesc.t -> unit
 
-val report_forall_checks_and_reset : Tenv.t -> st_report_error -> Procname.t -> unit
+val report_forall_checks_and_reset : Tenv.t -> st_report_error -> Cfg.Procdesc.t -> unit
 
 val reset : unit -> unit

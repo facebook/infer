@@ -97,7 +97,7 @@ struct
           checks.TypeCheck.check_ret_type;
       if checks.TypeCheck.eradicate then
         EradicateChecks.check_return_annotation tenv
-          find_canonical_duplicate curr_pname exit_node ret_range
+          find_canonical_duplicate curr_pdesc ret_range
           ret_ia ret_implicitly_nullable loc in
 
     let do_before_dataflow initial_typestate =
@@ -326,7 +326,7 @@ struct
         tenv curr_pname curr_pdesc
         annotated_signature;
 
-    TypeErr.report_forall_checks_and_reset tenv (Checkers.ST.report_error tenv) curr_pname;
+    TypeErr.report_forall_checks_and_reset tenv (Checkers.ST.report_error tenv) curr_pdesc;
     update_summary curr_pname curr_pdesc final_typestate_opt
 
   (** Entry point for the eradicate-based checker infrastructure. *)

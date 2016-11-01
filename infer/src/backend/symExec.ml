@@ -1657,8 +1657,7 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
 
 (** {2 Lifted Abstract Transfer Functions} *)
 
-let node handle_exn tenv node (pset : Paths.PathSet.t) : Paths.PathSet.t =
-  let pdesc = Cfg.Node.get_proc_desc node in
+let node handle_exn tenv pdesc node (pset : Paths.PathSet.t) : Paths.PathSet.t =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let exe_instr_prop instr p tr (pset1: Paths.PathSet.t) =
     let pset2 =

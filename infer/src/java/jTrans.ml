@@ -272,7 +272,7 @@ let create_procdesc source_file program linereader icfg m : Cfg.Procdesc.t optio
             let start_node = Cfg.Node.create Location.dummy start_kind [] procdesc in
             let exit_kind = (Cfg.Node.Exit_node proc_name) in
             let exit_node = Cfg.Node.create Location.dummy exit_kind [] procdesc in
-            Cfg.Node.set_succs_exn start_node [exit_node] [exit_node];
+            Cfg.Node.set_succs_exn procdesc start_node [exit_node] [exit_node];
             Cfg.Procdesc.set_start_node procdesc start_node;
             Cfg.Procdesc.set_exit_node procdesc exit_node;
             procdesc
@@ -329,7 +329,7 @@ let create_procdesc source_file program linereader icfg m : Cfg.Procdesc.t optio
             JContext.add_exn_node proc_name exn_node;
             Cfg.Procdesc.set_start_node procdesc start_node;
             Cfg.Procdesc.set_exit_node procdesc exit_node;
-            Cfg.Node.add_locals_ret_declaration start_node locals;
+            Cfg.Node.add_locals_ret_declaration procdesc start_node locals;
             procdesc in
       Some procdesc
     with JBir.Subroutine | JBasics.Class_structure_error _ ->

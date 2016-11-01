@@ -55,7 +55,10 @@ let check_access access_opt de_opt =
   let find_bucket line_number null_case_flag =
     let find_formal_ids node = (* find ids obtained by a letref on a formal parameter *)
       let node_instrs = Cfg.Node.get_instrs node in
-      let formals = Cfg.Procdesc.get_formals (Cfg.Node.get_proc_desc node) in
+      let formals = match State.get_prop_tenv_pdesc () with
+        | None -> []
+        | Some (_, _, pdesc) ->
+            Cfg.Procdesc.get_formals pdesc in
       let formal_names = IList.map fst formals in
       let is_formal pvar =
         let name = Pvar.get_name pvar in

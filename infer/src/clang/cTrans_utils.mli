@@ -44,7 +44,7 @@ val empty_res_trans: trans_result
 
 val undefined_expression: unit -> Exp.t
 
-val collect_res_trans : trans_result list -> trans_result
+val collect_res_trans : Cfg.Procdesc.t -> trans_result list -> trans_result
 
 val extract_var_exp_or_fail : trans_state -> Exp.t * Typ.t
 

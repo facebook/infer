@@ -159,8 +159,7 @@ module ST = struct
       end
 end
 
-let report_calls_and_accesses tenv callback node instr =
-  let proc_desc = Cfg.Node.get_proc_desc node in
+let report_calls_and_accesses tenv callback proc_desc instr =
   let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
   let callee = Procname.to_string proc_name in
   match PatternMatch.get_java_field_access_signature instr with
@@ -184,7 +183,9 @@ let report_calls_and_accesses tenv callback node instr =
 
 (** Report all field accesses and method calls of a procedure. *)
 let callback_check_access { Callbacks.tenv; proc_desc } =
-  Cfg.Procdesc.iter_instrs (report_calls_and_accesses tenv "PROC") proc_desc
+  Cfg.Procdesc.iter_instrs
+    (fun _ instr  -> report_calls_and_accesses tenv "PROC" proc_desc instr)
+    proc_desc
 
 (** Report all field accesses and method calls of a class. *)
 let callback_check_cluster_access exe_env all_procs get_proc_desc _ =
@@ -192,7 +193,9 @@ let callback_check_cluster_access exe_env all_procs get_proc_desc _ =
       match get_proc_desc proc_name with
       | Some proc_desc ->
           let tenv = Exe_env.get_tenv exe_env proc_name in
-          Cfg.Procdesc.iter_instrs (report_calls_and_accesses tenv "CLUSTER") proc_desc
+          Cfg.Procdesc.iter_instrs
+            (fun _ instr -> report_calls_and_accesses tenv "CLUSTER" proc_desc instr)
+            proc_desc
       | _ ->
           ()
     ) all_procs

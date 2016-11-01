@@ -91,8 +91,8 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
         let node_false =
           let instrs_false = [instr_call_instanceof; instr_prune_false] @ (if rethrow_exception then [instr_rethrow_exn] else []) in
           create_node loc node_kind_false instrs_false in
-        Cfg.Node.set_succs_exn node_true catch_nodes exit_nodes;
-        Cfg.Node.set_succs_exn node_false succ_nodes exit_nodes;
+        Cfg.Node.set_succs_exn procdesc node_true catch_nodes exit_nodes;
+        Cfg.Node.set_succs_exn procdesc node_false succ_nodes exit_nodes;
         let is_finally = handler.JBir.e_catch_type = None in
         if is_finally
         then [node_true] (* TODO (#4759480): clean up the translation so prune nodes are not created at all *)
@@ -109,7 +109,7 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
         | n:: _ -> Cfg.Node.get_loc n
         | [] -> Location.dummy in
       let entry_node = create_entry_node loc in
-      Cfg.Node.set_succs_exn entry_node nodes_first_handler exit_nodes;
+      Cfg.Node.set_succs_exn procdesc entry_node nodes_first_handler exit_nodes;
       Hashtbl.add catch_block_table handler_list [entry_node] in
   Hashtbl.iter (fun _ handler_list -> create_entry_block handler_list) handler_table;
   catch_block_table

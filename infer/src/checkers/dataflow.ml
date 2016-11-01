@@ -47,10 +47,9 @@ module type DF = sig
 end
 
 (** Determine if the node can throw an exception. *)
-let node_throws node (proc_throws : Procname.t -> throws) : throws =
+let node_throws pdesc node (proc_throws : Procname.t -> throws) : throws =
   let instr_throws instr =
     let is_return pvar =
-      let pdesc = Cfg.Node.get_proc_desc node in
       let ret_pvar = Cfg.Procdesc.get_ret_var pdesc in
       Pvar.equal pvar ret_pvar in
     match instr with
@@ -157,7 +156,7 @@ module MakeDF(St: DFStateType) : DF with type state = St.t = struct
         try
           let state = H.find t.pre_states node in
           let states_succ, states_exn = St.do_node tenv node state in
-          propagate t node states_succ states_exn (node_throws node St.proc_throws)
+          propagate t node states_succ states_exn (node_throws proc_desc node St.proc_throws)
         with Not_found -> ()
       done in
 

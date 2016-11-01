@@ -591,15 +591,16 @@ struct
     this_expr_trans trans_state sil_loc expr_info.Clang_ast_t.ei_type_ptr
 
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
+    let context = trans_state.context in
     (* go ahead with the translation *)
     let res_trans = match stmt_list with
       | [stmt] ->
           instruction trans_state stmt
       | _ -> assert false (* expected a stmt or at most a compoundstmt *) in
     (* create the label root node into the hashtbl *)
-    let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
+    let sil_loc = CLocation.get_sil_location stmt_info context in
     let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
-    Cfg.Node.set_succs_exn root_node' res_trans.root_nodes [];
+    Cfg.Node.set_succs_exn context.procdesc root_node' res_trans.root_nodes [];
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
 
   and var_deref_trans trans_state stmt_info (decl_ref : Clang_ast_t.decl_ref) =
@@ -723,7 +724,8 @@ struct
     { empty_res_trans with exps = [(const_exp, typ)] }
 
   and arraySubscriptExpr_trans trans_state expr_info stmt_list =
-    let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
+    let context = trans_state.context in
+    let typ = CTypes_decl.get_type_from_expr_info expr_info context.tenv in
     let array_stmt, idx_stmt = (match stmt_list with
         | [a; i] -> a, i  (* Assumption: the statement list contains 2 elements,
                              the first is the array expr and the second the index *)
@@ -748,7 +750,7 @@ struct
     if res_trans_idx.root_nodes <> []
     then
       IList.iter
-        (fun n -> Cfg.Node.set_succs_exn n res_trans_idx.root_nodes [])
+        (fun n -> Cfg.Node.set_succs_exn context.procdesc n res_trans_idx.root_nodes [])
         res_trans_a.leaf_nodes;
 
     (* Note the order of res_trans_idx.ids @ res_trans_a.ids is important. *)
@@ -1129,7 +1131,9 @@ struct
           "ConditinalStmt Branch" stmt_info all_res_trans in
       let prune_nodes_t, prune_nodes_f = IList.partition is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
-      IList.iter (fun n -> Cfg.Node.set_succs_exn n res_trans.root_nodes []) prune_nodes' in
+      IList.iter
+        (fun n -> Cfg.Node.set_succs_exn context.procdesc n res_trans.root_nodes [])
+        prune_nodes' in
     (match stmt_list with
      | [cond; exp1; exp2] ->
          let typ =
@@ -1137,7 +1141,7 @@ struct
              context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
          let var_typ = add_reference_if_glvalue typ expr_info in
          let join_node = create_node (Cfg.Node.Join_node) [] sil_loc context in
-         Cfg.Node.set_succs_exn join_node succ_nodes [];
+         Cfg.Node.set_succs_exn context.procdesc join_node succ_nodes [];
          let pvar = mk_temp_sil_var procdesc "SIL_temp_conditional___" in
          Cfg.Procdesc.append_locals procdesc [(Pvar.get_name pvar, var_typ)];
          let continuation' = mk_cond_continuation trans_state.continuation in
@@ -1210,7 +1214,7 @@ struct
       let prune_t = mk_prune_node true e' instrs' in
       let prune_f = mk_prune_node false e' instrs' in
       IList.iter
-        (fun n' -> Cfg.Node.set_succs_exn n' [prune_t; prune_f] [])
+        (fun n' -> Cfg.Node.set_succs_exn context.procdesc n' [prune_t; prune_f] [])
         res_trans_cond.leaf_nodes;
       let rnodes = if (IList.length res_trans_cond.root_nodes) = 0 then
           [prune_t; prune_f]
@@ -1243,7 +1247,7 @@ struct
           | Binop.LOr -> prune_nodes_f, prune_nodes_t
           | _ -> assert false) in
       IList.iter
-        (fun n -> Cfg.Node.set_succs_exn n res_trans_s2.root_nodes [])
+        (fun n -> Cfg.Node.set_succs_exn context.procdesc n res_trans_s2.root_nodes [])
         prune_to_s2;
       let root_nodes_to_parent =
         if (IList.length res_trans_s1.root_nodes) = 0
@@ -1284,7 +1288,7 @@ struct
     let succ_nodes = trans_state.succ_nodes in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let join_node = create_node (Cfg.Node.Join_node) [] sil_loc context in
-    Cfg.Node.set_succs_exn join_node succ_nodes [];
+    Cfg.Node.set_succs_exn context.procdesc join_node succ_nodes [];
     let trans_state' = { trans_state with succ_nodes = [join_node] } in
     let do_branch branch stmt_branch prune_nodes =
       (* leaf nodes are ignored here as they will be already attached to join_node *)
@@ -1297,7 +1301,9 @@ struct
              res_trans_b.root_nodes) in
       let prune_nodes_t, prune_nodes_f = IList.partition is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
-      IList.iter (fun n -> Cfg.Node.set_succs_exn n nodes_branch []) prune_nodes' in
+      IList.iter
+        (fun n -> Cfg.Node.set_succs_exn context.procdesc n nodes_branch [])
+        prune_nodes' in
     (match stmt_list with
      | [_; decl_stmt; cond; stmt1; stmt2] ->
          (* set the flat to inform that we are translating a condition of a if *)
@@ -1333,7 +1339,7 @@ struct
           let node_kind = Cfg.Node.Stmt_node "Switch_stmt" in
           create_node node_kind res_trans_cond_tmp.instrs sil_loc context in
         IList.iter
-          (fun n' -> Cfg.Node.set_succs_exn n' [switch_special_cond_node] [])
+          (fun n' -> Cfg.Node.set_succs_exn context.procdesc n' [switch_special_cond_node] [])
           res_trans_cond_tmp.leaf_nodes;
         let root_nodes =
           if res_trans_cond_tmp.root_nodes <> [] then res_trans_cond_tmp.root_nodes
@@ -1431,8 +1437,8 @@ struct
               let case_entry_point = connected_instruction (IList.rev case_content) last_nodes in
               (* connects between cases, then continuation has priority about breaks *)
               let prune_node_t, prune_node_f = create_prune_nodes_for_case case in
-              Cfg.Node.set_succs_exn prune_node_t case_entry_point [];
-              Cfg.Node.set_succs_exn prune_node_f last_prune_nodes [];
+              Cfg.Node.set_succs_exn context.procdesc prune_node_t case_entry_point [];
+              Cfg.Node.set_succs_exn context.procdesc prune_node_f last_prune_nodes [];
               case_entry_point, [prune_node_t; prune_node_f]
           | DefaultStmt(stmt_info, default_content) :: rest ->
               let sil_loc = CLocation.get_sil_location stmt_info context in
@@ -1442,13 +1448,14 @@ struct
                 translate_and_connect_cases rest next_nodes [placeholder_entry_point] in
               let default_entry_point =
                 connected_instruction (IList.rev default_content) last_nodes in
-              Cfg.Node.set_succs_exn placeholder_entry_point default_entry_point [];
+              Cfg.Node.set_succs_exn
+                context.procdesc placeholder_entry_point default_entry_point [];
               default_entry_point, last_prune_nodes
           | _ -> assert false in
         let top_entry_point, top_prune_nodes =
           translate_and_connect_cases list_of_cases succ_nodes succ_nodes in
         let _ = connected_instruction (IList.rev pre_case_stmts) top_entry_point in
-        Cfg.Node.set_succs_exn switch_special_cond_node top_prune_nodes [];
+        Cfg.Node.set_succs_exn context.procdesc switch_special_cond_node top_prune_nodes [];
         let top_nodes = res_trans_decl.root_nodes in
         IList.iter
           (fun n' -> Cfg.Node.append_instrs n' []) succ_nodes;
@@ -1529,9 +1536,13 @@ struct
       match loop_kind with
       | Loops.For _ | Loops.While _ -> res_trans_body.root_nodes
       | Loops.DoWhile _ -> [join_node] in
-    Cfg.Node.set_succs_exn join_node join_succ_nodes [];
-    IList.iter (fun n -> Cfg.Node.set_succs_exn n prune_t_succ_nodes []) prune_nodes_t;
-    IList.iter (fun n -> Cfg.Node.set_succs_exn n succ_nodes []) prune_nodes_f;
+    Cfg.Node.set_succs_exn context.procdesc join_node join_succ_nodes [];
+    IList.iter
+      (fun n -> Cfg.Node.set_succs_exn context.procdesc n prune_t_succ_nodes [])
+      prune_nodes_t;
+    IList.iter
+      (fun n -> Cfg.Node.set_succs_exn context.procdesc n succ_nodes [])
+      prune_nodes_f;
     let root_nodes =
       match loop_kind with
       | Loops.For _ ->
@@ -1880,6 +1891,7 @@ struct
     let mk_ret_node instrs =
       let ret_node = create_node (Cfg.Node.Stmt_node "Return Stmt") instrs sil_loc context in
       Cfg.Node.set_succs_exn
+        context.procdesc
         ret_node [(Cfg.Procdesc.get_exit_node context.CContext.procdesc)] [];
       ret_node in
     let trans_result = (match stmt_list with
@@ -1912,7 +1924,7 @@ struct
             let instrs = var_instrs @ res_trans_stmt.instrs @ ret_instrs @ autorelease_instrs in
             let ret_node = mk_ret_node instrs in
             IList.iter
-              (fun n -> Cfg.Node.set_succs_exn n [ret_node] [])
+              (fun n -> Cfg.Node.set_succs_exn procdesc n [ret_node] [])
               res_trans_stmt.leaf_nodes;
             let root_nodes_to_parent =
               if IList.length res_trans_stmt.root_nodes >0
@@ -1999,7 +2011,7 @@ struct
          autorelease_pool_vars, sil_loc, CallFlags.default) in
     let node_kind = Cfg.Node.Stmt_node ("Release the autorelease pool") in
     let call_node = create_node node_kind [stmt_call] sil_loc context in
-    Cfg.Node.set_succs_exn call_node trans_state.succ_nodes [];
+    Cfg.Node.set_succs_exn context.procdesc call_node trans_state.succ_nodes [];
     let trans_state'={ trans_state with continuation = None; succ_nodes =[call_node] } in
     instructions trans_state' stmts
 
@@ -2098,7 +2110,7 @@ struct
 
   and cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info =
     let context = trans_state.context in
-    let typ = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
+    let typ = CTypes_decl.get_type_from_expr_info expr_info context.tenv in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let is_dyn_array = cxx_new_expr_info.Clang_ast_t.xnei_is_array in
@@ -2135,7 +2147,7 @@ struct
         let (var_exp, typ) = var_exp_typ in
         let res_trans_init_list = initListExpr_initializers_trans trans_state_init var_exp 0 stmts
             typ is_dyn_array stmt_info in
-        CTrans_utils.collect_res_trans res_trans_init_list
+        CTrans_utils.collect_res_trans context.procdesc res_trans_init_list
       else init_expr_trans trans_state_init var_exp_typ init_stmt_info stmt_opt in
     let all_res_trans = [res_trans_size; res_trans_new; res_trans_init] in
     let nname = "CXXNewExpr" in
