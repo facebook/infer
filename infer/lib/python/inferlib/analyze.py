@@ -105,11 +105,6 @@ infer_group.add_argument('-l', '--load-average', metavar='<float>', type=float,
 infer_group.add_argument('--buck', action='store_true', dest='buck',
                            help='To use when run with buck')
 
-infer_group.add_argument('--absolute-paths',
-                          action='store_true',
-                          default=False,
-                          help='Report errors with absolute paths')
-
 infer_group.add_argument('--java-jar-compiler',
                          metavar='<file>')
 

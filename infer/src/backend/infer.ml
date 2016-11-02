@@ -28,8 +28,6 @@ let () =
     Array.of_list (
       infer_py ::
       Config.anon_args @
-      (if not Config.absolute_paths then [] else
-         ["--absolute-paths"]) @
       (match Config.analyzer with None -> [] | Some a ->
           ["--analyzer";
            IList.assoc (=) a (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)]) @
