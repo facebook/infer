@@ -505,7 +505,7 @@ and allow_leak =
     "Forget leaked memory during abstraction"
 
 and allow_specs_cleanup =
-  CLOpt.mk_bool ~deprecated:["allow_specs_cleanup"] ~long:"allow-specs-cleanup"
+  CLOpt.mk_bool ~deprecated:["allow_specs_cleanup"] ~long:"allow-specs-cleanup" ~default:true
     "Allow to remove existing specs before running analysis when it's not incremental"
 
 and (
