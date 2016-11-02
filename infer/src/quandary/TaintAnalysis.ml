@@ -148,29 +148,17 @@ module Make (TaintSpec : TaintSpec.S) = struct
 
     (* log any reportable source-sink flows in [trace] and remove logged sinks from the trace *)
     let report_and_filter_trace trace callee_site (proc_data : formal_map ProcData.t) =
-      let trace_of_pname pname =
-        match Summary.read_summary proc_data.tenv proc_data.pdesc pname with
-        | Some summary ->
-            let join_output_trace acc { QuandarySummary.output_trace; } =
-              TraceDomain.join (TaintSpec.of_summary_trace output_trace) acc in
-            IList.fold_left join_output_trace TraceDomain.initial summary
-        | None ->
-            TraceDomain.initial in
-
-      let caller_pname = Cfg.Procdesc.get_proc_name proc_data.pdesc in
-      let expand_trace = false in
-      match TraceDomain.get_reportable_traces trace caller_pname ~expand_trace ~trace_of_pname with
+      match TraceDomain.get_reportable_exns trace with
       | [] ->
           trace
-      | reportable_trace_strs ->
+      | reportable_exns ->
+          let caller_pname = Cfg.Procdesc.get_proc_name proc_data.pdesc in
           let reported_sinks =
             IList.map
-              (fun (_, sink, trace_str) ->
-                 let msg = Localise.to_string Localise.quandary_taint_error in
-                 let exn = Exceptions.Checkers (msg, Localise.verbatim_desc trace_str) in
+              (fun (_, sink, exn) ->
                  Reporting.log_error caller_pname ~loc:(CallSite.loc callee_site) exn;
                  sink)
-              reportable_trace_strs in
+              reportable_exns in
           (* got new source -> sink flow. report it, but don't add the sink to the trace. if we do,
              we will double-report later on. *)
           TraceDomain.filter_sinks trace reported_sinks

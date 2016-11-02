@@ -85,6 +85,8 @@ module MockTrace = Trace.Make(struct
 
     let should_report source sink =
       Source.kind source = Sink.kind sink
+
+    let get_reportable_exn _ _ _ = assert false
   end)
 
 let tests =
