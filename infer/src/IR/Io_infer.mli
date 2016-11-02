@@ -23,6 +23,9 @@ module Html : sig
   (** Return true if the html file was modified since the beginning of the analysis *)
   val modified_during_analysis : DB.source_file -> DB.Results_dir.path -> bool
 
+  (** File name for the node, given the procedure name and node id *)
+  val node_filename : Procname.t -> int -> string
+
   (** Open an Html file to append data *)
   val open_out : DB.source_file -> DB.Results_dir.path -> Unix.file_descr * Format.formatter
 
@@ -37,16 +40,14 @@ module Html : sig
   (** Print end color *)
   val pp_end_color : Format.formatter -> unit -> unit
 
-  (** [pp_node_link path_to_root description isvisited isproof fmt id]
-      prints an html link to the given node.
+  (** Print an html link to the given node.
+      Usage: [pp_node_link path_to_root ... fmt id].
       [path_to_root] is the path to the dir for the procedure in the spec db.
-      [description] is a string description.
-      [is_visited] indicates whether the node should be active or greyed out.
-      [is_proof] indicates whether the node is part of a proof and should be green.
       [id] is the node identifier. *)
   val pp_node_link :
-    DB.Results_dir.path -> string -> int list -> int list -> int list ->
-    bool -> bool -> Format.formatter -> int -> unit
+    DB.Results_dir.path -> Procname.t ->
+    description:string -> preds:int list -> succs:int list -> exn:int list ->
+    isvisited:bool -> isproof:bool -> Format.formatter -> int -> unit
 
   (** Print an html link to the given proc *)
   val pp_proc_link :

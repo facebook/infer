@@ -102,14 +102,12 @@ module NodesHtml : sig
   val start_node :
     int -> Location.t -> Procname.t -> Cfg.node list -> Cfg.node list -> Cfg.node list ->
     DB.source_file -> bool
-  val finish_node : int -> DB.source_file -> unit
+  val finish_node : Procname.t -> int -> DB.source_file -> unit
 end = struct
   let log_files = Hashtbl.create 11
 
-  let id_to_fname id = "node" ^ string_of_int id
-
   let start_node nodeid loc proc_name preds succs exns source =
-    let node_fname = id_to_fname nodeid in
+    let node_fname = Io_infer.Html.node_filename proc_name nodeid in
     let modified = Io_infer.Html.modified_during_analysis source ["nodes"; node_fname] in
     let needs_initialization, (fd, fmt) =
       if modified then
@@ -131,34 +129,49 @@ end = struct
          (Io_infer.Html.pp_line_link source [".."]) loc.Location.line;
        F.fprintf fmt "<br>PREDS:@\n";
        IList.iter (fun node ->
-           Io_infer.Html.pp_node_link [".."] ""
-             (IList.map Cfg.Node.get_id (Cfg.Node.get_preds node) :> int list)
-             (IList.map Cfg.Node.get_id (Cfg.Node.get_succs node) :> int list)
-             (IList.map Cfg.Node.get_id (Cfg.Node.get_exn node) :> int list)
-             (is_visited proc_name node) false fmt (Cfg.Node.get_id node :> int)) preds;
+           Io_infer.Html.pp_node_link
+             [".."]
+             (Cfg.Node.get_proc_name node)
+             ~description:""
+             ~preds:(IList.map Cfg.Node.get_id (Cfg.Node.get_preds node) :> int list)
+             ~succs:(IList.map Cfg.Node.get_id (Cfg.Node.get_succs node) :> int list)
+             ~exn:(IList.map Cfg.Node.get_id (Cfg.Node.get_exn node) :> int list)
+             ~isvisited:(is_visited proc_name node)
+             ~isproof:false
+             fmt (Cfg.Node.get_id node :> int)) preds;
        F.fprintf fmt "<br>SUCCS: @\n";
        IList.iter (fun node ->
-           Io_infer.Html.pp_node_link [".."] ""
-             (IList.map Cfg.Node.get_id (Cfg.Node.get_preds node) :> int list)
-             (IList.map Cfg.Node.get_id (Cfg.Node.get_succs node) :> int list)
-             (IList.map Cfg.Node.get_id (Cfg.Node.get_exn node) :> int list)
-             (is_visited proc_name node) false fmt (Cfg.Node.get_id node :> int)) succs;
+           Io_infer.Html.pp_node_link
+             [".."]
+             (Cfg.Node.get_proc_name node)
+             ~description:""
+             ~preds:(IList.map Cfg.Node.get_id (Cfg.Node.get_preds node) :> int list)
+             ~succs:(IList.map Cfg.Node.get_id (Cfg.Node.get_succs node) :> int list)
+             ~exn:(IList.map Cfg.Node.get_id (Cfg.Node.get_exn node) :> int list)
+             ~isvisited:(is_visited proc_name node)
+             ~isproof:false
+             fmt (Cfg.Node.get_id node :> int)) succs;
        F.fprintf fmt "<br>EXN: @\n";
        IList.iter (fun node ->
-           Io_infer.Html.pp_node_link [".."] ""
-             (IList.map Cfg.Node.get_id (Cfg.Node.get_preds node) :> int list)
-             (IList.map Cfg.Node.get_id (Cfg.Node.get_succs node) :> int list)
-             (IList.map Cfg.Node.get_id (Cfg.Node.get_exn node) :> int list)
-             (is_visited proc_name node) false fmt (Cfg.Node.get_id node :> int)) exns;
+           Io_infer.Html.pp_node_link
+             [".."]
+             (Cfg.Node.get_proc_name node)
+             ~description:""
+             ~preds:(IList.map Cfg.Node.get_id (Cfg.Node.get_preds node) :> int list)
+             ~succs:(IList.map Cfg.Node.get_id (Cfg.Node.get_succs node) :> int list)
+             ~exn:(IList.map Cfg.Node.get_id (Cfg.Node.get_exn node) :> int list)
+             ~isvisited:(is_visited proc_name node)
+             ~isproof:false
+             fmt (Cfg.Node.get_id node :> int)) exns;
        F.fprintf fmt "<br>@\n";
        F.pp_print_flush fmt ();
        true
       )
     else false
 
-  let finish_node nodeid source =
-    let fname = id_to_fname nodeid in
-    let fd = Hashtbl.find log_files (fname, source) in
+  let finish_node proc_name nodeid source =
+    let node_fname = Io_infer.Html.node_filename proc_name nodeid in
+    let fd = Hashtbl.find log_files (node_fname, source) in
     Unix.close fd;
     curr_html_formatter := F.std_formatter
 end
@@ -393,7 +406,7 @@ let node_finish_session node source =
   if Config.write_html then begin
     F.fprintf !curr_html_formatter "</LISTING>%a"
       Io_infer.Html.pp_end_color ();
-    NodesHtml.finish_node (Cfg.Node.get_id node :> int) source
+    NodesHtml.finish_node (Cfg.Node.get_proc_name node) (Cfg.Node.get_id node :> int) source
   end
 
 (** Write html file for the procedure.
@@ -415,12 +428,16 @@ let write_proc_html source whole_seconds pdesc =
         linenum;
       IList.iter
         (fun n ->
-           Io_infer.Html.pp_node_link []
-             (Cfg.Node.get_description (pe_html Black) n)
-             (IList.map Cfg.Node.get_id (Cfg.Node.get_preds n) :> int list)
-             (IList.map Cfg.Node.get_id (Cfg.Node.get_succs n) :> int list)
-             (IList.map Cfg.Node.get_id (Cfg.Node.get_exn n) :> int list)
-             (is_visited pname n) false fmt (Cfg.Node.get_id n :> int))
+           Io_infer.Html.pp_node_link
+             []
+             (Cfg.Node.get_proc_name n)
+             ~description:(Cfg.Node.get_description (pe_html Black) n)
+             ~preds:(IList.map Cfg.Node.get_id (Cfg.Node.get_preds n) :> int list)
+             ~succs:(IList.map Cfg.Node.get_id (Cfg.Node.get_succs n) :> int list)
+             ~exn:(IList.map Cfg.Node.get_id (Cfg.Node.get_exn n) :> int list)
+             ~isvisited:(is_visited pname n)
+             ~isproof:false
+             fmt (Cfg.Node.get_id n :> int))
         nodes;
       (match Specs.get_summary pname with
        | None ->
@@ -525,14 +542,14 @@ let write_html_file linereader filename procs =
            Specs.Visitedset.mem (Cfg.Node.get_id n, []) !proof_cover in
          Io_infer.Html.pp_node_link
            [fname_encoding]
-           (Cfg.Node.get_description (pe_html Black) n)
-           (IList.map Cfg.Node.get_id (Cfg.Node.get_preds n) :> int list)
-           (IList.map Cfg.Node.get_id (Cfg.Node.get_succs n) :> int list)
-           (IList.map Cfg.Node.get_id (Cfg.Node.get_exn n) :> int list)
-           (is_visited (Cfg.Procdesc.get_proc_name pdesc) n)
-           isproof
-           fmt
-           (Cfg.Node.get_id n :> int))
+           (Cfg.Node.get_proc_name n)
+           ~description:(Cfg.Node.get_description (pe_html Black) n)
+           ~preds:(IList.map Cfg.Node.get_id (Cfg.Node.get_preds n) :> int list)
+           ~succs:(IList.map Cfg.Node.get_id (Cfg.Node.get_succs n) :> int list)
+           ~exn:(IList.map Cfg.Node.get_id (Cfg.Node.get_exn n) :> int list)
+           ~isvisited:(is_visited (Cfg.Procdesc.get_proc_name pdesc) n)
+           ~isproof
+           fmt (Cfg.Node.get_id n :> int))
       nodes_at_linenum;
     IList.iter
       (fun (n, _) ->

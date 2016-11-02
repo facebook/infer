@@ -184,14 +184,16 @@ struct
     let pr_str = "<a " ^ name_str ^ "href=\"" ^ link_str ^ "\">" ^ text ^ "</a>" in
     F.fprintf fmt " %s" pr_str
 
-  (** [pp_node_link path_to_root description isvisited isproof fmt id]
-      prints an html link to the given node. *)
-  let pp_node_link path_to_root description preds succs exn isvisited isproof fmt id =
+  (** File name for the node, given the procedure name and node id *)
+  let node_filename pname id = (Procname.to_filename pname) ^ "_node" ^ string_of_int id
+
+  (** Print an html link to the given node. *)
+  let pp_node_link path_to_root pname ~description ~preds ~succs ~exn ~isvisited ~isproof fmt id =
     let display_name =
       (if description = "" then "N" else String.sub description 0 1)
       ^ "_"
       ^ (string_of_int id) in
-    let node_name = "node" ^ string_of_int id in
+    let node_fname = node_filename pname id in
     let style_class =
       if not isvisited
       then "dangling"
@@ -213,7 +215,7 @@ struct
       pp_to_string pp () in
     if not isvisited
     then F.fprintf fmt " %s" node_text
-    else pp_link ~path: (path_to_root @ ["nodes"; node_name]) fmt node_text
+    else pp_link ~path: (path_to_root @ ["nodes"; node_fname]) fmt node_text
 
   (** Print an html link to the given proc *)
   let pp_proc_link path_to_root proc_name fmt text =
