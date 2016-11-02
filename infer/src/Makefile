@@ -131,7 +131,7 @@ CHECKCOPYRIGHT_BIN = $(SCRIPT_DIR)/checkCopyright
 CHECKCOPYRIGHT_MAIN = $(SCRIPT_SOURCES)/checkCopyright
 
 STATSAGGREGATOR_BIN = $(BIN_DIR)/InferStatsAggregator
-STATSAGGREGATOR_MAIN = $(SCRIPT_SOURCES)/StatsAggregator
+STATSAGGREGATOR_MAIN = backend/StatsAggregator
 
 #### End of declarations ####
 
@@ -251,7 +251,7 @@ rei:
 %.rei : %.mli
 	refmt -assume-explicit-arity -heuristics-file unary.txt -parse ml -print re $< > $*.rei
 
-roots:=Infer InferAnalyzeExe InferClang JMain InferPrintExe BuckCompilationDatabase
+roots:=Infer InferAnalyzeExe InferClang JMain InferPrintExe BuckCompilationDatabase StatsAggregator
 clusters:=base clang java IR
 
 src_dirs:=$(shell find * -type d)
