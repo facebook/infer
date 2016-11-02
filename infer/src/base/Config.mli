@@ -278,6 +278,8 @@ val xml_specs : bool
     Restore the initial value also in case of exception. *)
 val set_reference_and_call_function : 'a ref -> 'a -> ('b -> 'c) -> 'b -> 'c
 
+val arc_mode : bool ref
+
 val curr_language : language ref
 
 val footprint : bool ref
@@ -306,7 +308,6 @@ val reset_abs_val : unit -> unit
 val run_with_abs_val_equal_zero : ('a -> 'b) -> 'a -> 'b
 
 val allow_leak : bool ref
-val arc_mode : bool ref
 
 
 (** Command Line Interface Documentation *)

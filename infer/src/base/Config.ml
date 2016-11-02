@@ -1010,11 +1010,6 @@ and nelseg =
   CLOpt.mk_bool ~deprecated:["nelseg"] ~long:"nelseg"
     "Use only nonempty lsegs"
 
-(* Translate with Objective-C Automatic Reference Counting (ARC) *)
-and objc_arc =
-  CLOpt.mk_bool ~deprecated:["fobjc-arc"] ~long:"objc-arc"
-    ""
-
 (* TODO: document *)
 and objc_memory_model =
   CLOpt.mk_bool ~deprecated:["objcm"] ~long:"objc-memory-model"
@@ -1395,7 +1390,6 @@ and analysis_suppress_errors_options =
 and analysis_stops = !analysis_stops
 and analyzer = !analyzer
 and angelic_execution = !angelic_execution
-and arc_mode = objc_arc
 and array_level = !array_level
 and ast_file = !ast_file
 and blacklist = !blacklist
@@ -1620,6 +1614,9 @@ let set_reference_and_call_function reference value f x =
   | exn ->
       restore ();
       raise exn
+
+(** Current Objective-C Automatic Reference Counting (ARC) mode *)
+let arc_mode = ref false
 
 (** Current language *)
 let curr_language = ref Clang
