@@ -207,12 +207,6 @@ class AnalyzerWrapper(object):
 
         exit_status = os.EX_OK
 
-        if self.javac is not None and self.args.buck:
-            if self.javac.args.classpath is not None:
-                for path in self.javac.args.classpath.split(os.pathsep):
-                    if os.path.isfile(path):
-                        infer_options += ['-ziplib', os.path.abspath(path)]
-
         infer_options = map(utils.decode_or_not, infer_options)
         infer_options_str = ' '.join(infer_options)
         os.environ['INFER_OPTIONS'] = utils.encode(infer_options_str)

@@ -1132,7 +1132,6 @@ and spec_abs_level =
 and specs_library =
   let specs_library =
     CLOpt.mk_string_list ~long:"specs-library" ~short:"lib" ~f:resolve
-      ~deprecated:["-zip-specs-library"; "ziplib"]
       ~meta:"dir|jar" "Search for .spec files in given directory or jar file" in
   let _ =
     (* Given a filename with a list of paths, convert it into a list of string iff they are

@@ -273,6 +273,16 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
             if self.args.analyzer == config.ANALYZER_CAPTURE:
                 return os.EX_OK
 
+            if self.args.buck:
+                if self.javac.args.classpath is not None:
+                    infer_args = utils.read_env()['INFER_ARGS']
+                    # 'INFER_ARGS' must be CommandLineOption.args_env_var
+                    for path in self.javac.args.classpath.split(os.pathsep):
+                        if os.path.isfile(path):
+                            infer_args += '^--specs-library^' + os.path.abspath(path)
+                            # '^' must be CommandLineOption.env_var_sep
+                    os.environ['INFER_ARGS'] = utils.encode(infer_args)
+
             self.analyze_and_report()
             self._close()
             self.timing['total'] = utils.elapsed_time(start_time)
