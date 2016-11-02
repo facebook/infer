@@ -203,20 +203,14 @@ class AnalyzerWrapper(object):
             '-results_dir',
             self.args.infer_out
         ]
-        infer_options = []
-
         exit_status = os.EX_OK
-
-        infer_options = map(utils.decode_or_not, infer_options)
-        infer_options_str = ' '.join(infer_options)
-        os.environ['INFER_OPTIONS'] = utils.encode(infer_options_str)
 
         javac_original_arguments = \
             self.javac.original_arguments if self.javac is not None else []
 
         if self.args.multicore == 1:
             analysis_start_time = time.time()
-            analyze_cmd = infer_analyze + infer_options
+            analyze_cmd = infer_analyze
             exit_status = run_command(
                 analyze_cmd,
                 self.args.debug,
@@ -236,7 +230,6 @@ class AnalyzerWrapper(object):
             os.mkdir(multicore_dir)
             os.chdir(multicore_dir)
             analyze_cmd = infer_analyze + ['-makefile', 'Makefile']
-            analyze_cmd += infer_options
             makefile_generation_start_time = time.time()
             makefile_status = run_command(
                 analyze_cmd,

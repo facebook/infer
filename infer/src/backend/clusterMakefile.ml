@@ -49,7 +49,7 @@ let cluster_should_be_analyzed cluster =
 
 
 let pp_prolog fmt clusters =
-  F.fprintf fmt "INFERANALYZE= %s $(INFER_OPTIONS) -results_dir '%s'\n@."
+  F.fprintf fmt "INFERANALYZE= %s -results_dir '%s'\n@."
     Sys.executable_name
     (Escape.escape_map
        (fun c -> if c = '#' then Some "\\#" else None)
@@ -64,7 +64,7 @@ let pp_prolog fmt clusters =
 
   F.fprintf fmt "@.@.default: test@.@.all: test@.@.";
   F.fprintf fmt "test: $(CLUSTERS)@.";
-  if Config.show_progress_bar then F.fprintf fmt "\techo \"\"@."
+  if Config.show_progress_bar then F.fprintf fmt "\t@@echo@\n@."
 
 let pp_epilog fmt () =
   F.fprintf fmt "@.clean:@.\trm -f $(CLUSTERS)@."
