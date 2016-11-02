@@ -233,8 +233,6 @@ class AnalyzerWrapper(object):
         ]
         infer_options = []
 
-        infer_options += ['-inferconfig_home', utils.decode(os.getcwd())]
-
         if self.args.analyzer == config.ANALYZER_ERADICATE:
             infer_options += ['-eradicate']
         elif self.args.analyzer == config.ANALYZER_CRASHCONTEXT:

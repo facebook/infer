@@ -421,7 +421,7 @@ let resolve path =
 
 let inferconfig_home =
   let all_exes = IList.map snd CLOpt.exes in
-  CLOpt.mk_string_opt ~deprecated:["inferconfig_home"] ~long:"inferconfig-home"
+  CLOpt.mk_string_opt ~long:"inferconfig-home"
     ~exes:all_exes ~meta:"dir" "Path to the .inferconfig file"
 
 and project_root =
