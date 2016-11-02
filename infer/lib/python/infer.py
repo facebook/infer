@@ -211,10 +211,6 @@ def main():
     if not (buck_not_in_compilation_database_mode or
             mod_name == 'javac' or
             mod_name == 'java'):
-        # Something should be already captured, otherwise analysis would fail
-        if not os.path.exists(os.path.join(args.infer_out, 'captured')):
-            print('There was nothing to analyze, exiting')
-            exit(os.EX_USAGE)
         analysis = analyze.AnalyzerWrapper(args)
         analysis.analyze_and_report()
         analysis.save_stats()
