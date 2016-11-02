@@ -11,10 +11,6 @@ open! Utils;
 let module CLOpt = CommandLineOption;
 
 
-/** this fails the execution of clang if the frontend fails */
-let report_frontend_failure = not Config.failures_allowed;
-
-
 /** enable debug mode (to get more data saved to disk for future inspections) */
 let debug_mode = Config.debug_mode || Config.frontend_stats;
 
@@ -107,7 +103,16 @@ let run_clang_frontend ast_source => {
   print_elapsed ()
 };
 
+let run_and_validate_clang_frontend ast_source =>
+  try (run_clang_frontend ast_source) {
+  | exc =>
+    if (not Config.failures_allowed) {
+      raise exc
+    }
+  };
+
 let run_clang clang_command read =>
+  /* NOTE: exceptions will propagate through without exiting here */
   switch (with_process_in clang_command read) {
   | (res, Unix.WEXITED 0) => res
   | (_, Unix.WEXITED n) =>
@@ -169,17 +174,11 @@ let cc1_capture clang_cmd => {
     /* We still need to run clang, but we don't have to attach the plugin. */
     run_clang (ClangCommand.command_to_run clang_cmd) consume_in
   } else {
-    try (
-      switch Config.clang_biniou_file {
-      | Some fname => run_clang_frontend (`File fname)
-      | None =>
-        run_plugin_and_frontend (fun chan_in => run_clang_frontend (`Pipe chan_in)) clang_cmd
-      }
-    ) {
-    | exc =>
-      if report_frontend_failure {
-        raise exc
-      }
+    switch Config.clang_biniou_file {
+    | Some fname => run_and_validate_clang_frontend (`File fname)
+    | None =>
+      run_plugin_and_frontend
+        (fun chan_in => run_and_validate_clang_frontend (`Pipe chan_in)) clang_cmd
     };
     /* reset logging to stop capturing log output into the source file's log */
     Logging.set_log_file_identifier CommandLineOption.Clang None;
