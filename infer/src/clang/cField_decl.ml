@@ -31,7 +31,7 @@ let fields_superclass tenv interface_decl_info ck =
   | Some dr ->
       (match dr.Clang_ast_t.dr_name with
        | Some sc ->
-           let classname = CTypes.mk_classname (Ast_utils.get_qualified_name sc) ck in
+           let classname = CType.mk_classname (Ast_utils.get_qualified_name sc) ck in
            get_fields_super_classes tenv classname
        | _ -> [])
   | _ -> []

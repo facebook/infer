@@ -97,7 +97,7 @@ let create_supers_fields type_ptr_to_sil_type tenv curr_class decl_list
 let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info decl_list ocidi =
   let class_name = Ast_utils.get_qualified_name name_info in
   Logging.out_debug "ADDING: ObjCInterfaceDecl for '%s'\n" class_name;
-  let interface_name = CTypes.mk_classname class_name Csu.Objc in
+  let interface_name = CType.mk_classname class_name Csu.Objc in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   Ast_utils.update_sil_types_map decl_key (Typ.Tstruct interface_name);
   let supers, fields =

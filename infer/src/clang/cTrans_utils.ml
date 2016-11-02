@@ -350,11 +350,11 @@ let objc_new_trans trans_state loc stmt_info cls_name function_type =
 
 let new_or_alloc_trans trans_state loc stmt_info type_ptr class_name_opt selector =
   let tenv = trans_state.context.CContext.tenv in
-  let function_type = CTypes_decl.type_ptr_to_sil_type tenv type_ptr in
+  let function_type = CType_decl.type_ptr_to_sil_type tenv type_ptr in
   let class_name =
     match class_name_opt with
     | Some class_name -> class_name
-    | None -> CTypes.classname_of_type function_type in
+    | None -> CType.classname_of_type function_type in
   if selector = CFrontend_config.alloc then
     alloc_trans trans_state loc stmt_info function_type true None
   else if selector = CFrontend_config.new_str then
@@ -373,7 +373,7 @@ let cpp_new_trans sil_loc function_type size_exp_opt =
 let create_cast_instrs exp cast_from_typ cast_to_typ sil_loc =
   let ret_id = Ident.create_fresh Ident.knormal in
   let ret_id_typ = Some (ret_id, cast_to_typ) in
-  let typ = CTypes.remove_pointer_to_typ cast_to_typ in
+  let typ = CType.remove_pointer_to_typ cast_to_typ in
   let sizeof_exp = Exp.Sizeof (typ, None, Subtype.exact) in
   let pname = BuiltinDecl.__objc_cast in
   let args = [(exp, cast_from_typ); (sizeof_exp, Typ.Tint Typ.IULong)] in
@@ -584,8 +584,8 @@ struct
     if is_superinstance mei then
       let typ, self_expr, ins =
         let t' =
-          CTypes.add_pointer_to_typ
-            (CTypes_decl.get_type_curr_class_objc context.CContext.curr_class) in
+          CType.add_pointer_to_typ
+            (CType_decl.get_type_curr_class_objc context.CContext.curr_class) in
         let e = Exp.Lvar (Pvar.mk (Mangled.from_string CFrontend_config.self) procname) in
         let id = Ident.create_fresh Ident.knormal in
         t', Exp.Var id, [Sil.Load (id, e, t', loc)] in
@@ -662,7 +662,7 @@ let rec contains_opaque_value_expr s =
 
 (* checks if a unary operator is a logic negation applied to integers*)
 let is_logical_negation_of_int tenv ei uoi =
-  match CTypes_decl.type_ptr_to_sil_type tenv ei.Clang_ast_t.ei_type_ptr, uoi.Clang_ast_t.uoi_kind with
+  match CType_decl.type_ptr_to_sil_type tenv ei.Clang_ast_t.ei_type_ptr, uoi.Clang_ast_t.uoi_kind with
   | Typ.Tint _,`LNot -> true
   | _, _ -> false
 
@@ -672,7 +672,7 @@ let rec is_block_stmt stmt =
   | BlockExpr _ -> true
   | DeclRefExpr (_, _, expr_info, _) ->
       let tp = expr_info.Clang_ast_t.ei_type_ptr in
-      CTypes.is_block_type tp
+      CType.is_block_type tp
   | _ -> (match snd (Clang_ast_proj.get_stmt_tuple stmt) with
       | [sub_stmt] -> is_block_stmt sub_stmt
       | _ -> false)

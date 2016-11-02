@@ -27,14 +27,14 @@ let add_predefined_basic_types () =
     let sil_type = CType_to_sil_type.sil_type_of_builtin_type_kind basic_type_kind in
     Ast_utils.update_sil_types_map tp sil_type in
   let add_pointer_type tp sil_type =
-    let pointer_type = CTypes.add_pointer_to_typ sil_type in
+    let pointer_type = CType.add_pointer_to_typ sil_type in
     Ast_utils.update_sil_types_map tp pointer_type in
   let add_function_type tp return_type =
     (* We translate function types as the return type of the function *)
     Ast_utils.update_sil_types_map tp return_type in
   let sil_void_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Void in
   let sil_char_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Char_S in
-  let sil_nsarray_type = Typ.Tstruct (CTypes.mk_classname CFrontend_config.nsarray_cl Csu.Objc) in
+  let sil_nsarray_type = Typ.Tstruct (CType.mk_classname CFrontend_config.nsarray_cl Csu.Objc) in
   let sil_id_type = CType_to_sil_type.get_builtin_objc_type `ObjCId in
   add_basic_type create_int_type `Int;
   add_basic_type create_void_type `Void;

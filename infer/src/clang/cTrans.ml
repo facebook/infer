@@ -93,7 +93,7 @@ struct
   let objc_exp_of_type_block fun_exp_stmt =
     match fun_exp_stmt with
     | Clang_ast_t.ImplicitCastExpr(_, _, ei, _)
-      when CTypes.is_block_type ei.Clang_ast_t.ei_type_ptr -> true
+      when CType.is_block_type ei.Clang_ast_t.ei_type_ptr -> true
     | _ -> false
 
   (* This function add in tenv a class representing an objc block. *)
@@ -194,7 +194,7 @@ struct
       f trans_state stmt
     with Self.SelfClassException class_name ->
       let typ =
-        CTypes_decl.objc_class_name_to_sil_type trans_state.context.CContext.tenv class_name in
+        CType_decl.objc_class_name_to_sil_type trans_state.context.CContext.tenv class_name in
       { empty_res_trans with
         exps = [(Exp.Sizeof (typ, None, Subtype.exact), Tint IULong)] }
 
@@ -249,7 +249,7 @@ struct
 
   let mk_temp_sil_var_for_expr tenv procdesc var_name_prefix expr_info =
     let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
-    let typ = CTypes_decl.type_ptr_to_sil_type tenv type_ptr in
+    let typ = CType_decl.type_ptr_to_sil_type tenv type_ptr in
     (mk_temp_sil_var procdesc var_name_prefix, typ)
 
   let create_var_exp_tmp_var trans_state expr_info var_name =
@@ -310,7 +310,7 @@ struct
     | _ -> assert false
 
   let stringLiteral_trans trans_state expr_info str =
-    let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
+    let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     let exp = Exp.Const (Const.Cstr (str)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
@@ -323,12 +323,12 @@ struct
      (* (which is an integer that may not match the size of a pointer)".
      So we implement it as the constant zero *)
   let gNUNullExpr_trans trans_state expr_info =
-    let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
+    let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     let exp = Exp.Const (Const.Cint (IntLit.zero)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
   let nullPtrExpr_trans trans_state expr_info =
-    let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
+    let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     { empty_res_trans with exps = [(Exp.null, typ)]}
 
   let objCSelectorExpr_trans trans_state expr_info selector =
@@ -345,7 +345,7 @@ struct
     stringLiteral_trans trans_state expr_info name
 
   let characterLiteral_trans trans_state expr_info n =
-    let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
+    let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     let exp = Exp.Const (Const.Cint (IntLit.of_int n)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
@@ -353,14 +353,14 @@ struct
     characterLiteral_trans trans_state expr_info (Utils.int_of_bool b)
 
   let floatingLiteral_trans trans_state expr_info float_string =
-    let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
+    let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     let exp = Exp.Const (Const.Cfloat (float_of_string float_string)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
   (* Note currently we don't have support for different qual     *)
   (* type like long, unsigned long, etc                                *)
   and integerLiteral_trans trans_state expr_info integer_literal_info =
-    let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
+    let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     let exp =
       try
         let i = Int64.of_string integer_literal_info.Clang_ast_t.ili_value in
@@ -376,7 +376,7 @@ struct
     }
 
   let cxxScalarValueInitExpr_trans trans_state expr_info =
-    let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
+    let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     (* constant will be different depending on type *)
     let zero_opt = match typ with
       | Typ.Tfloat _  | Typ.Tptr _ | Typ.Tint _ -> Some (Sil.zero_value_of_numerical_type typ)
@@ -389,7 +389,7 @@ struct
   let implicitValueInitExpr_trans trans_state expr_info =
     let (var_exp, _) = extract_var_exp_or_fail trans_state in
     let tenv = trans_state.context.CContext.tenv in
-    let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
+    let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     let exps = var_or_zero_in_init_list tenv var_exp typ ~return_zero:true in
     { empty_res_trans with exps = exps }
 
@@ -399,7 +399,7 @@ struct
   (* The stmt seems to be always empty *)
   let unaryExprOrTypeTraitExpr_trans trans_state expr_info unary_expr_or_type_trait_expr_info =
     let tenv = trans_state.context.CContext.tenv in
-    let typ = CTypes_decl.type_ptr_to_sil_type tenv expr_info.Clang_ast_t.ei_type_ptr in
+    let typ = CType_decl.type_ptr_to_sil_type tenv expr_info.Clang_ast_t.ei_type_ptr in
     match unary_expr_or_type_trait_expr_info.Clang_ast_t.uttei_kind with
     | `SizeOf ->
         let tp =
@@ -407,7 +407,7 @@ struct
             unary_expr_or_type_trait_expr_info in
         let sizeof_typ =
           match tp with
-          | Some tp -> CTypes_decl.type_ptr_to_sil_type tenv tp
+          | Some tp -> CType_decl.type_ptr_to_sil_type tenv tp
           | None -> typ (* Some default type since the type is missing *) in
         { empty_res_trans with
           exps = [(Exp.Sizeof (sizeof_typ, None, Subtype.exact), sizeof_typ)] }
@@ -461,7 +461,7 @@ struct
     let decl_opt = Ast_utils.get_function_decl_with_body decl_ptr in
     Option.may (call_translation context) decl_opt;
     let name = Ast_utils.get_qualified_name name_info in
-    let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let pname =
       match get_builtin_pname_opt context.translation_unit_context name decl_opt type_ptr with
       | Some builtin_pname -> builtin_pname
@@ -474,7 +474,7 @@ struct
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let name_info, _, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
     Logging.out_debug "!!!!! Dealing with field '%s' @." name_info.Clang_ast_t.ni_name;
-    let field_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let field_typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let (obj_sil, class_typ) = extract_exp_from_list pre_trans_result.exps
         "WARNING: in Field dereference we expect to know the object\n" in
     let is_pointer_typ = match class_typ with
@@ -495,7 +495,7 @@ struct
     (*    it's done in var_deref_trans. The only exception is during field initialization in*)
     (*    constructor's initializer list (when reference itself is initialized) *)
     let should_add_deref = (not is_pointer_typ) ||
-                           (not is_constructor_init && CTypes.is_reference_type type_ptr) in
+                           (not is_constructor_init && CType.is_reference_type type_ptr) in
     let exp, deref_instrs = if should_add_deref then
         let id = Ident.create_fresh Ident.knormal in
         let deref_instr = Sil.Load (id, field_exp, field_typ, sil_loc) in
@@ -515,7 +515,7 @@ struct
     let method_name = Ast_utils.get_unqualified_name name_info in
     let class_name = Ast_utils.get_class_name_from_member name_info in
     Logging.out_debug "!!!!! Dealing with method '%s' @." method_name;
-    let method_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let method_typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let ms_opt = CMethod_trans.method_signature_of_pointer
         context.translation_unit_context context.tenv decl_ptr in
     let is_instance_method = match ms_opt with
@@ -581,7 +581,7 @@ struct
     let name = CFrontend_config.this in
     let pvar = Pvar.mk (Mangled.from_string name) procname in
     let exp = Exp.Lvar pvar in
-    let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv class_type_ptr in
+    let typ = CType_decl.type_ptr_to_sil_type context.CContext.tenv class_type_ptr in
     let exps =  [(exp, typ)] in
     (* there is no cast operation in AST, but backend needs it *)
     dereference_value_from_result sil_loc { empty_res_trans with exps = exps } ~strip_pointer:false
@@ -606,7 +606,7 @@ struct
   and var_deref_trans trans_state stmt_info (decl_ref : Clang_ast_t.decl_ref) =
     let context = trans_state.context in
     let _, _, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
-    let ast_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let ast_typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let typ =
       match ast_typ with
       | Tstruct _ when decl_ref.dr_kind = `ParmVar ->
@@ -643,10 +643,10 @@ struct
       else empty_res_trans in
     let exps = if Self.is_var_self pvar (CContext.is_objc_method context) then
         let curr_class = CContext.get_curr_class context in
-        if (CTypes.is_class typ) then
+        if (CType.is_class typ) then
           raise (Self.SelfClassException (CContext.get_curr_class_name curr_class))
         else
-          let typ = CTypes.add_pointer_to_typ (CTypes_decl.get_type_curr_class_objc curr_class) in
+          let typ = CType.add_pointer_to_typ (CType_decl.get_type_curr_class_objc curr_class) in
           [(var_exp, typ)]
       else [(var_exp, typ)] in
     Logging.out_debug "\n\n PVAR ='%s'\n\n" (Pvar.to_string pvar);
@@ -719,13 +719,13 @@ struct
   and enum_constant_trans trans_state decl_ref =
     let context = trans_state.context in
     let _, _, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
-    let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
+    let typ = CType_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
     let const_exp = get_enum_constant_expr context decl_ref.Clang_ast_t.dr_decl_pointer in
     { empty_res_trans with exps = [(const_exp, typ)] }
 
   and arraySubscriptExpr_trans trans_state expr_info stmt_list =
     let context = trans_state.context in
-    let typ = CTypes_decl.get_type_from_expr_info expr_info context.tenv in
+    let typ = CType_decl.get_type_from_expr_info expr_info context.tenv in
     let array_stmt, idx_stmt = (match stmt_list with
         | [a; i] -> a, i  (* Assumption: the statement list contains 2 elements,
                              the first is the array expr and the second the index *)
@@ -775,7 +775,7 @@ struct
     let trans_state' = { trans_state_pri with succ_nodes = [] } in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let typ =
-      CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
+      CType_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     match stmt_list with
     | [s1; s2] -> (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands*)
         let rhs_owning_method = CTrans_utils.is_owning_method s2 in
@@ -830,7 +830,7 @@ struct
 
   and callExpr_trans trans_state si stmt_list expr_info =
     let context = trans_state.context in
-    let fn_type_no_ref = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
+    let fn_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let function_type = add_reference_if_glvalue fn_type_no_ref expr_info in
     let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
     let sil_loc = CLocation.get_sil_location si context in
@@ -959,7 +959,7 @@ struct
     let trans_state_callee = { trans_state_pri with succ_nodes = [] } in
     let result_trans_callee = instruction trans_state_callee fun_exp_stmt in
     let is_cpp_call_virtual = result_trans_callee.is_cpp_call_virtual in
-    let fn_type_no_ref = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
+    let fn_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let function_type = add_reference_if_glvalue fn_type_no_ref expr_info in
     cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt
       si function_type is_cpp_call_virtual empty_res_trans
@@ -974,7 +974,7 @@ struct
       | None ->
           let procdesc = trans_state.context.CContext.procdesc in
           let pvar = Pvar.mk_tmp "__temp_construct_" (Cfg.Procdesc.get_proc_name procdesc) in
-          let class_type = CTypes_decl.get_type_from_expr_info ei context.CContext.tenv in
+          let class_type = CType_decl.get_type_from_expr_info ei context.CContext.tenv in
           Cfg.Procdesc.append_locals procdesc [(Pvar.get_name pvar, class_type)];
           Exp.Lvar pvar, class_type in
     let this_type = Typ.Tptr (class_type, Typ.Pk_pointer) in
@@ -1011,7 +1011,7 @@ struct
     let receiver_kind = obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind in
     let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
     (* class method *)
-    if selector = CFrontend_config.class_method && CTypes.is_class method_type then
+    if selector = CFrontend_config.class_method && CType.is_class method_type then
       let class_name = CMethod_trans.get_class_name_method_call_from_receiver_kind context
           obj_c_message_expr_info act_params in
       raise (Self.SelfClassException class_name)
@@ -1056,7 +1056,7 @@ struct
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location si context in
-    let method_type_no_ref = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
+    let method_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let method_type = add_reference_if_glvalue method_type_no_ref expr_info in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
     let trans_state_param = { trans_state_pri with succ_nodes = []; var_exp_typ = None } in
@@ -1137,7 +1137,7 @@ struct
     (match stmt_list with
      | [cond; exp1; exp2] ->
          let typ =
-           CTypes_decl.type_ptr_to_sil_type
+           CType_decl.type_ptr_to_sil_type
              context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
          let var_typ = add_reference_if_glvalue typ expr_info in
          let join_node = create_node (Cfg.Node.Join_node) [] sil_loc context in
@@ -1620,7 +1620,7 @@ struct
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let var_type =
-      CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
+      CType_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     let lh = var_or_zero_in_init_list tenv var_exp var_type ~return_zero:false in
     let res_trans_subexpr_list =
       initListExpr_initializers_trans trans_state var_exp 0 stmts typ false stmt_info in
@@ -1721,7 +1721,7 @@ struct
     let do_var_dec (di, var_name, qual_type, vdi) next_node =
       let var_decl = VarDecl (di, var_name, qual_type, vdi) in
       let pvar = CVar_decl.sil_var_of_decl context var_decl procname in
-      let typ = CTypes_decl.type_ptr_to_sil_type
+      let typ = CType_decl.type_ptr_to_sil_type
           context.CContext.tenv
           qual_type.Clang_ast_t.qt_type_ptr in
       CVar_decl.add_var_to_locals procdesc var_decl typ pvar;
@@ -1823,7 +1823,7 @@ struct
         "WARNING: In CastExpr There must be only one stmt defining the expression to be cast.\n" in
     let res_trans_stmt = instruction trans_state stmt in
     let typ =
-      CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
+      CType_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     let cast_kind = cast_expr_info.Clang_ast_t.cei_cast_kind in
     (* This gives the differnece among cast operations kind*)
     let is_objc_bridged_cast_expr _ stmt =
@@ -1871,7 +1871,7 @@ struct
       extract_exp_from_list res_trans_stmt.exps
         "\nWARNING: Missing operand in unary operator. NEED FIXING.\n" in
     let ret_typ =
-      CTypes_decl.type_ptr_to_sil_type
+      CType_decl.type_ptr_to_sil_type
         context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     let exp_op, instr_op =
       CArithmetic_trans.unary_operation_instruction
@@ -1952,7 +1952,7 @@ struct
 
   and objCBoxedExpr_trans trans_state info sel stmt_info stmts =
     let typ =
-      CTypes_decl.class_from_pointer_type
+      CType_decl.class_from_pointer_type
         trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
     let obj_c_message_expr_info = Ast_expressions.make_obj_c_message_expr_info_class sel typ None in
     let message_stmt =
@@ -1961,7 +1961,7 @@ struct
 
   and objCArrayLiteral_trans trans_state info stmt_info stmts =
     let typ =
-      CTypes_decl.class_from_pointer_type
+      CType_decl.class_from_pointer_type
         trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
     let meth = CFrontend_config.array_with_objects_count_m in
     let obj_c_mes_expr_info = Ast_expressions.make_obj_c_message_expr_info_class meth typ None in
@@ -1971,7 +1971,7 @@ struct
 
   and objCDictionaryLiteral_trans trans_state info stmt_info stmts =
     let typ =
-      CTypes_decl.class_from_pointer_type
+      CType_decl.class_from_pointer_type
         trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
     let dictionary_literal_pname = BuiltinDecl.__objc_dictionary_literal in
     let dictionary_literal_s = Procname.get_method dictionary_literal_pname in
@@ -1988,7 +1988,7 @@ struct
     let stmts = [Ast_expressions.create_implicit_cast_expr stmt_info stmts
                    Ast_expressions.create_char_star_type `ArrayToPointerDecay] in
     let typ =
-      CTypes_decl.class_from_pointer_type
+      CType_decl.class_from_pointer_type
         trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
     let meth = CFrontend_config.string_with_utf8_m in
     let obj_c_mess_expr_info = Ast_expressions.make_obj_c_message_expr_info_class meth typ None in
@@ -2042,7 +2042,7 @@ struct
         let open CContext in
         let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
         let block_pname = CFrontend_utils.General_utils.mk_fresh_block_procname procname in
-        let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
+        let typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
         (* We need to set the explicit dependency between the newly created block and the *)
         (* defining procedure. We add an edge in the call graph.*)
         Cg.add_edge context.cg procname block_pname;
@@ -2100,7 +2100,7 @@ struct
     call_translation context decl;
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
     let lambda_pname = CMethod_trans.get_procname_from_cpp_lambda context decl in
-    let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
     (* We need to set the explicit dependency between the newly created lambda and the *)
     (* defining procedure. We add an edge in the call graph.*)
     Cg.add_edge context.cg procname lambda_pname;
@@ -2110,7 +2110,7 @@ struct
 
   and cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info =
     let context = trans_state.context in
-    let typ = CTypes_decl.get_type_from_expr_info expr_info context.tenv in
+    let typ = CType_decl.get_type_from_expr_info expr_info context.tenv in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let is_dyn_array = cxx_new_expr_info.Clang_ast_t.xnei_is_array in
@@ -2219,7 +2219,7 @@ struct
     let subtypes = Subtype.subtypes_cast in
     let tenv = context.CContext.tenv in
     let sil_loc = CLocation.get_sil_location stmt_info context in
-    let cast_type = CTypes_decl.type_ptr_to_sil_type tenv cast_type_ptr in
+    let cast_type = CType_decl.type_ptr_to_sil_type tenv cast_type_ptr in
     let sizeof_expr = match cast_type with
       | Typ.Tptr (typ, _) -> Exp.Sizeof (typ, None, subtypes)
       | _ -> assert false in
@@ -2272,7 +2272,7 @@ struct
 
   and cxxTypeidExpr_trans trans_state stmt_info stmts expr_info =
     let tenv = trans_state.context.CContext.tenv in
-    let typ = CTypes_decl.get_type_from_expr_info expr_info tenv in
+    let typ = CType_decl.get_type_from_expr_info expr_info tenv in
     let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let res_trans_subexpr =
@@ -2304,7 +2304,7 @@ struct
     let tenv = context.CContext.tenv in
     let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
     let type_pointer = expr_info.Clang_ast_t.ei_type_ptr in
-    let typ = CTypes_decl.type_ptr_to_sil_type tenv type_pointer in
+    let typ = CType_decl.type_ptr_to_sil_type tenv type_pointer in
     let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_fun in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let trans_state_param = { trans_state_pri with succ_nodes = [] } in
@@ -2325,7 +2325,7 @@ struct
   and objCBridgedCastExpr_trans trans_state stmts expr_info =
     let stmt = extract_stmt_from_singleton stmts "" in
     let tenv = trans_state.context.CContext.tenv in
-    let typ = CTypes_decl.get_type_from_expr_info expr_info tenv in
+    let typ = CType_decl.get_type_from_expr_info expr_info tenv in
     let trans_state' = { trans_state with obj_bridged_cast_typ = Some typ } in
     instruction trans_state' stmt
 
@@ -2353,7 +2353,7 @@ struct
 
   and trans_into_undefined_expr trans_state expr_info =
     let tenv = trans_state.context.CContext.tenv in
-    let typ = CTypes_decl.get_type_from_expr_info expr_info tenv in
+    let typ = CType_decl.get_type_from_expr_info expr_info tenv in
     { empty_res_trans with exps = [CTrans_utils.undefined_expression (), typ] }
 
   (* Translates a clang instruction into SIL instructions. It takes a       *)
