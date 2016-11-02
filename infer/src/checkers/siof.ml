@@ -105,8 +105,8 @@ let report_siof pname loc bad_globals =
        unit: %a"
       pp_set bad_globals in
   let description = pp_to_string pp_desc () in
-  let exn = Exceptions.Checkers
-      ("STATIC_INITIALIZATION_ORDER_FIASCO", Localise.verbatim_desc description) in
+  let msg = Localise.to_string Localise.static_initialization_order_fiasco in
+  let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
   Reporting.log_error pname ~loc exn
 
 

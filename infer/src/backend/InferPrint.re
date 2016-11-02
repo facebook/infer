@@ -380,6 +380,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc =>
                 registered_observer_being_deallocated,
                 resource_leak,
                 retain_cycle,
+                static_initialization_order_fiasco,
                 strong_delegate_warning,
                 tainted_value_reaching_sensitive_function,
                 unsafe_guarded_by_access
@@ -593,22 +594,24 @@ let module IssuesTests = {
         ekind == Exceptions.Kerror ||
         IList.exists
           (Localise.equal error_name)
-          [
-            Localise.assign_pointer_warning,
-            Localise.bad_pointer_comparison,
-            Localise.component_factory_function,
-            Localise.component_initializer_with_side_effects,
-            Localise.component_with_multiple_factory_methods,
-            Localise.component_with_unconventional_superclass,
-            Localise.cxx_reference_captured_in_objc_block,
-            Localise.direct_atomic_property_access,
-            Localise.field_not_null_checked,
-            Localise.global_variable_initialized_with_function_or_method_call,
-            Localise.mutable_local_variable_in_component_file,
-            Localise.parameter_not_null_checked,
-            Localise.registered_observer_being_deallocated,
-            Localise.return_value_ignored,
-            Localise.strong_delegate_warning
+          Localise.[
+            assign_pointer_warning,
+            bad_pointer_comparison,
+            component_factory_function,
+            component_initializer_with_side_effects,
+            component_with_multiple_factory_methods,
+            component_with_unconventional_superclass,
+            cxx_reference_captured_in_objc_block,
+            direct_atomic_property_access,
+            field_not_null_checked,
+            global_variable_initialized_with_function_or_method_call,
+            mutable_local_variable_in_component_file,
+            parameter_not_null_checked,
+            quandary_taint_error,
+            registered_observer_being_deallocated,
+            return_value_ignored,
+            static_initialization_order_fiasco,
+            strong_delegate_warning
           ];
       if (in_footprint && should_report && error_filter source_file error_desc error_name) {
         F.fprintf

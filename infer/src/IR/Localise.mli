@@ -73,6 +73,7 @@ val return_value_ignored : t
 val return_expression_required : t
 val return_statement_missing : t
 val stack_variable_address_escape : t
+val static_initialization_order_fiasco : t
 val strong_delegate_warning : t
 val unary_minus_applied_to_unsigned_expression : t
 val uninitialized_value : t
