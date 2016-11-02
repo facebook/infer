@@ -233,18 +233,6 @@ class AnalyzerWrapper(object):
         ]
         infer_options = []
 
-        if self.args.analyzer == config.ANALYZER_ERADICATE:
-            infer_options += ['-eradicate']
-        elif self.args.analyzer == config.ANALYZER_CRASHCONTEXT:
-            infer_options += ['-crashcontext']
-        elif self.args.analyzer == config.ANALYZER_CHECKERS:
-            infer_options += ['-checkers']
-        elif self.args.analyzer == config.ANALYZER_QUANDARY:
-            infer_options += ['-quandary']
-        else:
-            if self.args.analyzer == config.ANALYZER_TRACING:
-                infer_options.append('-tracing')
-
         exit_status = os.EX_OK
 
         if self.javac is not None and self.args.buck:

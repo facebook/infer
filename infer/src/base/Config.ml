@@ -652,27 +652,23 @@ and check_duplicate_symbols =
     "Check if a symbol with the same name is defined in more than one file."
 
 and checkers, crashcontext, eradicate, quandary =
-  (* Run only the checkers instead of the full analysis *)
   let checkers =
     CLOpt.mk_bool ~deprecated:["checkers"] ~long:"checkers"
-      ""
+      "Activate the checkers instead of the full analysis"
   in
-  (* Activate the crashcontext checker for java stack trace context reconstruction *)
   let crashcontext =
     CLOpt.mk_bool_group ~deprecated:["crashcontext"] ~long:"crashcontext"
-      ""
+      "Activate the crashcontext checker for java stack trace context reconstruction"
       [checkers] []
   in
-  (* Activate the eradicate checker for java annotations (also sets --checkers) *)
   let eradicate =
     CLOpt.mk_bool_group ~deprecated:["eradicate"] ~long:"eradicate"
-      ""
+      "Activate the eradicate checker for java annotations"
       [checkers] []
   in
-  (* Activate the quandary taint analysis *)
   let quandary =
     CLOpt.mk_bool_group ~deprecated:["quandary"] ~long:"quandary"
-      ""
+      "Activate the quandary taint analysis"
       [checkers] []
   in
   (checkers, crashcontext, eradicate, quandary)
@@ -1366,7 +1362,15 @@ let post_parsing_initialization () =
       default_symops_timeout, default_seconds_timeout
   in
   if !seconds_per_iteration = 0. then seconds_per_iteration := seconds_timeout ;
-  if !symops_per_iteration = 0 then symops_per_iteration := symops_timeout
+  if !symops_per_iteration = 0 then symops_per_iteration := symops_timeout ;
+
+  match !analyzer with
+  | Some Checkers -> checkers := true
+  | Some Crashcontext -> checkers := true; crashcontext := true
+  | Some Eradicate -> checkers := true; eradicate := true
+  | Some Quandary -> checkers := true; quandary := true
+  | Some Tracing -> tracing := true
+  | Some (Capture | Compile | Infer | Linters) | None -> ()
 
 
 let parse_args_and_return_usage_exit =
