@@ -717,12 +717,6 @@ and copy_propagation =
   CLOpt.mk_bool ~deprecated:["copy-propagation"] ~long:"copy-propagation"
     "Perform copy-propagation on the IR"
 
-(** Set language to Java *)
-and curr_language =
-  let var = ref Clang in
-  CLOpt.mk_set var Java ~deprecated:["java"] ~long:"java" "";
-  var
-
 and cxx_experimental =
   CLOpt.mk_bool ~deprecated:["cxx-experimental"] ~long:"cxx"
     ~exes:CLOpt.[Clang]
@@ -1626,6 +1620,9 @@ let set_reference_and_call_function reference value f x =
   | exn ->
       restore ();
       raise exn
+
+(** Current language *)
+let curr_language = ref Clang
 
 (** Flag for footprint discovery mode *)
 let footprint = ref true

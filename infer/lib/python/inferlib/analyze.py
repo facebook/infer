@@ -213,7 +213,6 @@ class AnalyzerWrapper(object):
         exit_status = os.EX_OK
 
         if self.javac is not None and self.args.buck:
-            infer_options += ['-java']
             if self.javac.args.classpath is not None:
                 for path in self.javac.args.classpath.split(os.pathsep):
                     if os.path.isfile(path):
