@@ -1,65 +1,65 @@
 /* @generated */
 digraph iCFG {
-"__infer_globals_initializer_global3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<globals/global_const1.cpp>$global:class X *) [line 13]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<globals/global_const1.cpp>$global:class X *) [line 13]\n " shape="box"]
 	
 
-	 "__infer_globals_initializer_global3" -> "__infer_globals_initializer_global2" ;
-"__infer_globals_initializer_global2" [label="2: Exit __infer_globals_initializer_global \n  " color=yellow style=filled]
+	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" [label="2: Exit __infer_globals_initializer_global \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_global1" [label="1: Start __infer_globals_initializer_global\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_1" [label="1: Start __infer_globals_initializer_global\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
 	
 
-	 "__infer_globals_initializer_global1" -> "__infer_globals_initializer_global3" ;
-"X_X2" [label="2: Exit X_X \n  " color=yellow style=filled]
+	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_1" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" ;
+"X_X{_ZN1XC1ERKS_}.abc525d74d1815a6e1a874d1ed502de3_2" [label="2: Exit X_X \n  " color=yellow style=filled]
 	
 
-"X_X1" [label="1: Start X_X\nFormals:  this:class X * __param_0:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+"X_X{_ZN1XC1ERKS_}.abc525d74d1815a6e1a874d1ed502de3_1" [label="1: Start X_X\nFormals:  this:class X * __param_0:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
-	 "X_X1" -> "X_X2" ;
-"test3" [label="3:  Return Stmt \n   n$0=*&__return_param:class X * [line 15]\n  _fun_X_X(&#GB<globals/global_const1.cpp>$global:class X *) [line 13]\n  _fun_X_X(n$0:class X *,&#GB<globals/global_const1.cpp>$global:class X &) [line 15]\n " shape="box"]
+	 "X_X{_ZN1XC1ERKS_}.abc525d74d1815a6e1a874d1ed502de3_1" -> "X_X{_ZN1XC1ERKS_}.abc525d74d1815a6e1a874d1ed502de3_2" ;
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" [label="3:  Return Stmt \n   n$0=*&__return_param:class X * [line 15]\n  _fun_X_X(&#GB<globals/global_const1.cpp>$global:class X *) [line 13]\n  _fun_X_X(n$0:class X *,&#GB<globals/global_const1.cpp>$global:class X &) [line 15]\n " shape="box"]
 	
 
-	 "test3" -> "test2" ;
-"test2" [label="2: Exit test \n  " color=yellow style=filled]
+	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" ;
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test1" [label="1: Start test\nFormals:  __return_param:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_1" [label="1: Start test\nFormals:  __return_param:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
-	 "test1" -> "test3" ;
-"X_X2" [label="2: Exit X_X \n  " color=yellow style=filled]
+	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_1" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" ;
+"X_X{_ZN1XC1Ev}.dbc1390b15606562094682699e12caba_2" [label="2: Exit X_X \n  " color=yellow style=filled]
 	
 
-"X_X1" [label="1: Start X_X\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
+"X_X{_ZN1XC1Ev}.dbc1390b15606562094682699e12caba_1" [label="1: Start X_X\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
 	
 
-	 "X_X1" -> "X_X2" ;
-"__infer_globals_initializer_v3" [label="3:  DeclStmt \n   *&#GB<globals/global_const1.cpp>$v:int =2 [line 17]\n " shape="box"]
+	 "X_X{_ZN1XC1Ev}.dbc1390b15606562094682699e12caba_1" -> "X_X{_ZN1XC1Ev}.dbc1390b15606562094682699e12caba_2" ;
+"__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_3" [label="3:  DeclStmt \n   *&#GB<globals/global_const1.cpp>$v:int =2 [line 17]\n " shape="box"]
 	
 
-	 "__infer_globals_initializer_v3" -> "__infer_globals_initializer_v2" ;
-"__infer_globals_initializer_v2" [label="2: Exit __infer_globals_initializer_v \n  " color=yellow style=filled]
+	 "__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_3" -> "__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_2" ;
+"__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_2" [label="2: Exit __infer_globals_initializer_v \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_v1" [label="1: Start __infer_globals_initializer_v\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
+"__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_1" [label="1: Start __infer_globals_initializer_v\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
 	
 
-	 "__infer_globals_initializer_v1" -> "__infer_globals_initializer_v3" ;
-"test24" [label="4:  DeclStmt \n   *&#GB<globals/global_const1.cpp>$v:int =2 [line 20]\n  n$1=*&#GB<globals/global_const1.cpp>$v:int  [line 20]\n  *&local:int =n$1 [line 20]\n " shape="box"]
+	 "__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_1" -> "__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_3" ;
+"test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_4" [label="4:  DeclStmt \n   *&#GB<globals/global_const1.cpp>$v:int =2 [line 20]\n  n$1=*&#GB<globals/global_const1.cpp>$v:int  [line 20]\n  *&local:int =n$1 [line 20]\n " shape="box"]
 	
 
-	 "test24" -> "test23" ;
-"test23" [label="3:  Return Stmt \n   *&#GB<globals/global_const1.cpp>$v:int =2 [line 21]\n  n$0=*&#GB<globals/global_const1.cpp>$v:int  [line 21]\n  *&return:int =n$0 [line 21]\n " shape="box"]
+	 "test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_4" -> "test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_3" ;
+"test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_3" [label="3:  Return Stmt \n   *&#GB<globals/global_const1.cpp>$v:int =2 [line 21]\n  n$0=*&#GB<globals/global_const1.cpp>$v:int  [line 21]\n  *&return:int =n$0 [line 21]\n " shape="box"]
 	
 
-	 "test23" -> "test22" ;
-"test22" [label="2: Exit test2 \n  " color=yellow style=filled]
+	 "test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_3" -> "test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_2" ;
+"test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_2" [label="2: Exit test2 \n  " color=yellow style=filled]
 	
 
-"test21" [label="1: Start test2\nFormals: \nLocals:  local:int  \n   DECLARE_LOCALS(&return,&local); [line 19]\n " color=yellow style=filled]
+"test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_1" [label="1: Start test2\nFormals: \nLocals:  local:int  \n   DECLARE_LOCALS(&return,&local); [line 19]\n " color=yellow style=filled]
 	
 
-	 "test21" -> "test24" ;
+	 "test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_1" -> "test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_4" ;
 }

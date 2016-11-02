@@ -937,7 +937,7 @@ let pp_proplist_parsed2dotty_file filename plist =
 (* channel. You have to compute an interprocedural cfg first               *)
 
 let pp_cfgnodename pname fmt (n : Cfg.Node.t) =
-  F.fprintf fmt "\"%a%d\"" Procname.pp pname (Cfg.Node.get_id n :> int)
+  F.fprintf fmt "\"%s_%d\"" (Procname.to_filename pname) (Cfg.Node.get_id n :> int)
 
 let pp_etlist fmt etl =
   IList.iter (fun (id, ty) ->

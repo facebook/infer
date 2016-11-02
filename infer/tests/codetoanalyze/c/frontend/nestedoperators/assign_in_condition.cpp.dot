@@ -1,35 +1,35 @@
 /* @generated */
 digraph iCFG {
-"foo8" [label="8:  Return Stmt \n   *&return:int =32 [line 12]\n " shape="box"]
+"foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_8" [label="8:  Return Stmt \n   *&return:int =32 [line 12]\n " shape="box"]
 	
 
-	 "foo8" -> "foo2" ;
-"foo7" [label="7: Prune (false branch) \n   n$1=*n$0:int  [line 11]\n  PRUNE((n$1 == 0), false); [line 11]\n " shape="invhouse"]
+	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_8" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_2" ;
+"foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_7" [label="7: Prune (false branch) \n   n$1=*n$0:int  [line 11]\n  PRUNE((n$1 == 0), false); [line 11]\n " shape="invhouse"]
 	
 
-	 "foo7" -> "foo4" ;
-"foo6" [label="6: Prune (true branch) \n   n$1=*n$0:int  [line 11]\n  PRUNE((n$1 != 0), true); [line 11]\n " shape="invhouse"]
+	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_7" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_4" ;
+"foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_6" [label="6: Prune (true branch) \n   n$1=*n$0:int  [line 11]\n  PRUNE((n$1 != 0), true); [line 11]\n " shape="invhouse"]
 	
 
-	 "foo6" -> "foo8" ;
-"foo5" [label="5:  BinaryOperatorStmt: Assign \n   n$0=*&p:int * [line 11]\n  *n$0:int =0 [line 11]\n " shape="box"]
+	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_6" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_8" ;
+"foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_5" [label="5:  BinaryOperatorStmt: Assign \n   n$0=*&p:int * [line 11]\n  *n$0:int =0 [line 11]\n " shape="box"]
 	
 
-	 "foo5" -> "foo6" ;
-	 "foo5" -> "foo7" ;
-"foo4" [label="4: + \n  " ]
+	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_5" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_6" ;
+	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_5" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_7" ;
+"foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_4" [label="4: + \n  " ]
 	
 
-	 "foo4" -> "foo3" ;
-"foo3" [label="3:  Return Stmt \n   *&return:int =52 [line 14]\n " shape="box"]
+	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_4" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_3" ;
+"foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_3" [label="3:  Return Stmt \n   *&return:int =52 [line 14]\n " shape="box"]
 	
 
-	 "foo3" -> "foo2" ;
-"foo2" [label="2: Exit foo \n  " color=yellow style=filled]
+	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_3" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_2" ;
+"foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_2" [label="2: Exit foo \n  " color=yellow style=filled]
 	
 
-"foo1" [label="1: Start foo\nFormals:  p:int *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+"foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_1" [label="1: Start foo\nFormals:  p:int *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
-	 "foo1" -> "foo5" ;
+	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_1" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3fooPi}.9b69b91953f97044466d1dd6c3d24e80_5" ;
 }
