@@ -32,7 +32,7 @@ class Interprocedural {
   }
 
   public static Object returnSourceIndirect() {
-    return InferTaint.inferSecretSource();
+    return returnSourceDirect();
   }
 
   public static void returnSourceDirectBad() {
