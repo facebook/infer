@@ -245,23 +245,6 @@ class AnalyzerWrapper(object):
             if self.args.analyzer == config.ANALYZER_TRACING:
                 infer_options.append('-tracing')
 
-        if self.args.debug:
-            infer_options += [
-                '-developer_mode',
-                '-html',
-                '-dotty',
-                '-print_types',
-                '-trace_error',
-                '-print_buckets',
-                '-notest'
-            ]
-            self.args.no_filtering = True
-
-        elif self.args.debug_exceptions:
-            infer_options.append('-developer_mode')
-            infer_options.append('-print_buckets')
-            self.args.no_filtering = True
-
         exit_status = os.EX_OK
 
         if self.javac is not None and self.args.buck:

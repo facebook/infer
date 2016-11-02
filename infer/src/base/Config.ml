@@ -734,21 +734,35 @@ and cxx_experimental =
     "Analyze C++ methods, still experimental"
 
 and (
+  developer_mode,
   debug,
   debug_exceptions,
   filtering,
+  print_buckets,
   print_types,
   reports_include_ml_loc,
+  test,
+  trace_error,
+  write_html,
   write_dotty
 ) =
-  let filtering =
+  let developer_mode =
+    CLOpt.mk_bool ~long:"developer-mode"
+      ~default:CLOpt.(current_exe = Print)
+      "Show internal exceptions"
+
+  and filtering =
     CLOpt.mk_bool ~long:"filtering" ~short:"f" ~default:true
       ~exes:CLOpt.[Toplevel]
       "Do not show the results from experimental checks (note: some of them may contain many false \
        alarms)"
 
+  and print_buckets =
+    CLOpt.mk_bool ~long:"print-buckets"
+      "Show the internal bucket of Infer reports in their textual description"
+
   and print_types =
-    CLOpt.mk_bool ~deprecated:["print_types"] ~long:"print-types"
+    CLOpt.mk_bool ~long:"print-types"
       ~default:(current_exe = CLOpt.Clang)
       "Print types in symbolic heaps"
 
@@ -756,30 +770,50 @@ and (
     CLOpt.mk_bool ~deprecated:["with_infer_src_loc"] ~long:"reports-include-ml-loc"
       "Include the location in the Infer source code from where reports are generated"
 
+  and test =
+    CLOpt.mk_bool ~long:"only-cheap-debug"
+      ~default:true
+      "Disable expensive debugging output"
+
+  and trace_error =
+    CLOpt.mk_bool ~long:"trace-error"
+      "Detailed tracing information during error explanation"
+
+  and write_html =
+    CLOpt.mk_bool ~long:"write-html"
+      "Produce hmtl debug output in the results directory"
+
   and write_dotty =
-    CLOpt.mk_bool ~deprecated:["dotty"] ~long:"write-dotty"
+    CLOpt.mk_bool ~long:"write-dotty"
       "Produce dotty files for specs in the results directory"
   in
   let debug =
     CLOpt.mk_bool_group ~deprecated:["debug"] ~long:"debug" ~short:"g"
       ~exes:CLOpt.[Analyze]
-      "Debug mode (also sets --no-filtering, --print-types, --reports-include-ml-loc, \
-       --write-dotty)"
-      [print_types; reports_include_ml_loc; write_dotty]
-      [filtering]
+      "Debug mode (also sets --developer-mode, --no-filtering, --print-buckets, --print-types, \
+       --reports-include-ml-loc, --no-test, --trace-error, --write-dotty, --write-html)"
+      [developer_mode; print_buckets; print_types; reports_include_ml_loc; trace_error; write_html;
+       write_dotty]
+      [filtering; test]
 
   and debug_exceptions =
     CLOpt.mk_bool_group ~long:"debug-exceptions"
       "Generate lightweight debugging information: just print the internal exceptions during \
-       analysis (also sets --no-filtering, --reports-include-ml-loc)"
-      [reports_include_ml_loc]
+       analysis (also sets --developer-mode, --no-filtering, --print-buckets, \
+       --reports-include-ml-loc)"
+      [developer_mode; print_buckets; reports_include_ml_loc]
       [filtering]
   in (
+    developer_mode,
     debug,
     debug_exceptions,
     filtering,
+    print_buckets,
     print_types,
     reports_include_ml_loc,
+    test,
+    trace_error,
+    write_html,
     write_dotty
   )
 and dependencies =
@@ -787,11 +821,6 @@ and dependencies =
     ~exes:CLOpt.[Java]
     "Translate all the dependencies during the capture. The classes in the given jar file will be \
      translated. No sources needed."
-
-and developer_mode =
-  CLOpt.mk_bool ~deprecated:["developer_mode"] ~long:"developer-mode"
-    ~default:(current_exe = CLOpt.Print)
-    "Show internal exceptions"
 
 and disable_checks =
   CLOpt.mk_string_list ~deprecated:["disable_checks"] ~long:"disable-checks" ~meta:"error name"
@@ -1039,10 +1068,6 @@ and precondition_stats =
   CLOpt.mk_bool ~deprecated:["precondition_stats"] ~long:"precondition-stats"
     "Print stats about preconditions to standard output"
 
-and print_buckets =
-  CLOpt.mk_bool ~deprecated:["print_buckets"] ~long:"print-buckets"
-    "Show the internal bucket of Infer reports in their textual description"
-
 and print_builtins =
   CLOpt.mk_bool ~deprecated:["print_builtins"] ~long:"print-builtins"
     "Print the builtin functions and exit"
@@ -1180,11 +1205,6 @@ and symops_per_iteration =
   CLOpt.mk_int ~deprecated:["symops_per_iteration"] ~long:"symops-per-iteration" ~default:0
     ~meta:"int" "Set the number of symbolic operations per iteration (see --iterations)"
 
-and test =
-  CLOpt.mk_bool ~deprecated_no:["notest"] ~deprecated:["-test"] ~long:"only-cheap-debug"
-    ~default:true
-    "Disable expensive debugging output"
-
 and test_filtering =
   CLOpt.mk_bool ~deprecated:["test_filtering"] ~long:"test-filtering"
     "List all the files Infer can report on (should be called from the root of the project)"
@@ -1197,10 +1217,6 @@ and thread_safety =
   CLOpt.mk_bool ~long:"thread-safety"
     ~exes:CLOpt.[Analyze]
     "Run the experimental thread safety checker. (In conjunction with -a checkers)"
-
-and trace_error =
-  CLOpt.mk_bool ~deprecated:["trace_error"] ~long:"trace-error"
-    "Detailed tracing information during error explanation"
 
 and trace_join =
   CLOpt.mk_bool ~deprecated:["trace_join"] ~long:"trace-join"
@@ -1268,10 +1284,6 @@ and worklist_mode =
   CLOpt.mk_set var 2 ~long:"visits-bias" ~deprecated:["visits_bias"]
     "nodes visited fewer times are analyzed first" ;
   var
-
-and write_html =
-  CLOpt.mk_bool ~deprecated:["html"] ~long:"write-html"
-    "Produce hmtl debug output in the results directory"
 
 and xcode_developer_dir =
   CLOpt.mk_string_opt ~long:"xcode-developer-dir"
