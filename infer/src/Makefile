@@ -77,7 +77,7 @@ INFERPRINT_ATDGEN_STUB_BASE = backend/jsonbug
 INFERPRINT_ATDGEN_STUB_ATD = $(INFERPRINT_ATDGEN_STUB_BASE).atd
 INFERPRINT_ATDGEN_STUBS = $(addprefix $(INFERPRINT_ATDGEN_STUB_BASE), $(ATDGEN_SUFFIXES))
 
-INFERPRINT_MAIN = backend/InferPrint
+INFERPRINT_MAIN = backend/InferPrintExe
 
 ### InferUnit declarations ###
 
@@ -251,7 +251,7 @@ rei:
 %.rei : %.mli
 	refmt -assume-explicit-arity -heuristics-file unary.txt -parse ml -print re $< > $*.rei
 
-roots:=Infer InferAnalyze InferClang JMain InferPrint BuckCompilationDatabase
+roots:=Infer InferAnalyze InferClang JMain InferPrintExe BuckCompilationDatabase
 clusters:=base clang java IR
 
 src_dirs:=$(shell find * -type d)

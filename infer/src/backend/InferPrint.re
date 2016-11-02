@@ -740,19 +740,6 @@ let module IssuesXml = {
 
 let module CallsCsv = {
 
-  /** Print the header of the calls csv file, with column names */
-  let pp_header fmt () =>
-    Format.fprintf
-      fmt
-      "%s,%s,%s,%s,%s,%s,%s@\n"
-      Io_infer.Xml.tag_caller
-      Io_infer.Xml.tag_caller_id
-      Io_infer.Xml.tag_callee
-      Io_infer.Xml.tag_callee_id
-      Io_infer.Xml.tag_file
-      Io_infer.Xml.tag_line
-      Io_infer.Xml.tag_call_trace;
-
   /** Write proc summary stats in csv format */
   let pp_calls fmt summary => {
     let pp x => F.fprintf fmt x;
@@ -1082,8 +1069,6 @@ type bug_format_kind =
   | Xml
   | Latex;
 
-type bug_format = (bug_format_kind, outfile);
-
 let pp_issues_in_format (format_kind, outf) =>
   switch format_kind {
   | Json => IssuesJson.pp_issues_of_error_log outf.fmt
@@ -1371,9 +1356,9 @@ let register_perf_stats_report () => {
 let mk_format format_kind fname =>
   Option.map_default (fun out_file => [(format_kind, out_file)]) [] (create_outfile fname);
 
-let init_issues_format_list () => {
-  let csv_format = Option.map_default (mk_format Csv) [] Config.bugs_csv;
-  let json_format = Option.map_default (mk_format Json) [] Config.bugs_json;
+let init_issues_format_list report_csv report_json => {
+  let csv_format = Option.map_default (mk_format Csv) [] report_csv;
+  let json_format = Option.map_default (mk_format Json) [] report_json;
   let tests_format = Option.map_default (mk_format Tests) [] Config.bugs_tests;
   let txt_format = Option.map_default (mk_format Text) [] Config.bugs_txt;
   let xml_format = Option.map_default (mk_format Xml) [] Config.bugs_xml;
@@ -1471,9 +1456,9 @@ let pp_summary_and_issues formats_by_report_kind => {
   finalize_and_close_files formats_by_report_kind stats pdflatex
 };
 
-let () = {
+let main report_csv::report_csv report_json::report_json => {
   let formats_by_report_kind = [
-    (Issues, init_issues_format_list ()),
+    (Issues, init_issues_format_list report_csv report_json),
     (Procs, init_procs_format_list ()),
     (Calls, init_calls_format_list ()),
     (Stats, init_stats_format_list ()),
