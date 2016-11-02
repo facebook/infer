@@ -19,3 +19,5 @@ module type S = sig
   (** return Some (kind) if the call site is a taint source, None otherwise *)
   val get : CallSite.t -> t option
 end
+
+module Dummy : S
