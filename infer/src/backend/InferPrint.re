@@ -1368,7 +1368,8 @@ let register_perf_stats_report () => {
   PerfStats.register_report_at_exit stats_file
 };
 
-let mk_format format_kind out_file => [(format_kind, out_file)];
+let mk_format format_kind fname =>
+  Option.map_default (fun out_file => [(format_kind, out_file)]) [] (create_outfile fname);
 
 let init_issues_format_list () => {
   let csv_format = Option.map_default (mk_format Csv) [] Config.bugs_csv;

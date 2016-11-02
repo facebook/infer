@@ -612,34 +612,38 @@ and buck_out =
     ~exes:CLOpt.[StatsAggregator] ~meta:"dir" "Specify the root directory of buck-out"
 
 and bugs_csv =
-  CLOpt.mk_option ~deprecated:["bugs"] ~long:"issues-csv" ~f:create_outfile
-    ~exes:CLOpt.[Print]
-    ~meta:"file" "Create a file containing a list of issues in CSV format"
+  CLOpt.mk_string_opt ~deprecated:["bugs"] ~long:"issues-csv"
+    ~exes:CLOpt.[Toplevel;Print]
+    ~meta:"file" "Write a list of issues in CSV format to a file"
 
 and bugs_json =
-  CLOpt.mk_option ~deprecated:["bugs_json"] ~long:"issues-json" ~f:create_outfile
-    ~exes:CLOpt.[Print]
-    ~meta:"file" "Create a file containing a list of issues in JSON format"
+  CLOpt.mk_string_opt ~deprecated:["bugs_json"] ~long:"issues-json"
+    ~exes:CLOpt.[Toplevel;Print]
+    ~meta:"file" "Write a list of issues in JSON format to a file"
 
 and bugs_tests =
-  CLOpt.mk_option ~long:"issues-tests" ~f:create_outfile
-    ~exes:CLOpt.[Print]
-    ~meta:"file" "Create a file containing issues in a format suitable for tests"
+  CLOpt.mk_string_opt ~long:"issues-tests"
+    ~exes:CLOpt.[Toplevel;Print]
+    ~meta:"file"
+    "Write a list of issues in a format suitable for tests to a file"
 
 and bugs_txt =
-  CLOpt.mk_option ~deprecated:["bugs_txt"] ~long:"issues-txt" ~f:create_outfile
-    ~exes:CLOpt.[Print]
-    ~meta:"file" "Create a file containing a list of issues in TXT format"
+  CLOpt.mk_string_opt ~deprecated:["bugs_txt"] ~long:"issues-txt"
+    ~exes:CLOpt.[Toplevel;Print]
+    ~meta:"file"
+    "Write a list of issues in TXT format to a file"
 
 and bugs_xml =
-  CLOpt.mk_option ~deprecated:["bugs_xml"] ~long:"issues-xml" ~f:create_outfile
-    ~exes:CLOpt.[Print]
-    ~meta:"file" "Create a file containing a list of issues in XML format"
+  CLOpt.mk_string_opt ~deprecated:["bugs_xml"] ~long:"issues-xml"
+    ~exes:CLOpt.[Toplevel;Print]
+    ~meta:"file"
+    "Write a list of issues in XML format to a file"
 
 and calls_csv =
-  CLOpt.mk_option ~deprecated:["calls"] ~long:"calls-csv" ~f:create_outfile
-    ~exes:CLOpt.[Print]
-    ~meta:"file" "Write individual calls in csv format to a file"
+  CLOpt.mk_string_opt ~deprecated:["calls"] ~long:"calls-csv"
+    ~exes:CLOpt.[Toplevel;Print]
+    ~meta:"file"
+    "Write individual calls in CSV format to a file"
 
 and changed_files_index =
   CLOpt.mk_string_opt ~long:"changed-files-index" ~exes:CLOpt.[Toplevel] ~meta:"file"
@@ -947,8 +951,9 @@ and join_cond =
                  - 1 = use the least aggressive join for preconditions"
 
 and latex =
-  CLOpt.mk_option ~deprecated:["latex"] ~long:"latex" ~f:create_outfile
-    ~meta:"file" "Print latex report to a file"
+  CLOpt.mk_string_opt ~deprecated:["latex"] ~long:"latex"
+    ~meta:"file"
+    "Write a latex report of the analysis results to a file"
 
 and linters_def_file =
   CLOpt.mk_string_opt ~long:"linters-def-file" ~exes:CLOpt.[Clang]
@@ -1061,12 +1066,14 @@ and print_using_diff =
     "Highlight the difference w.r.t. the previous prop when printing symbolic execution debug info"
 
 and procs_csv =
-  CLOpt.mk_option ~deprecated:["procs"] ~long:"procs-csv" ~f:create_outfile
-    ~meta:"file" "Create a file containing statistics for each procedure in CSV format"
+  CLOpt.mk_string_opt ~deprecated:["procs"] ~long:"procs-csv"
+    ~meta:"file" "Write statistics for each procedure in CSV format to a file"
 
 and procs_xml =
-  CLOpt.mk_option ~deprecated:["procs_xml"] ~long:"procs-xml" ~f:create_outfile
-    ~meta:"file" "Create a file containing statistics for each procedure in XML format"
+  CLOpt.mk_string_opt ~deprecated:["procs_xml"] ~long:"procs-xml"
+    ~meta:"file"
+    "Write statistics for each procedure in XML format to a file (as a path relative to \
+     --results-dir)"
 
 and progress_bar =
   CLOpt.mk_bool ~deprecated_no:["no_progress_bar"] ~long:"progress-bar" ~short:"pb" ~default:true
@@ -1083,8 +1090,8 @@ and reactive =
     "Reactive mode: the analysis starts from the files captured since the `infer` command started"
 
 and report =
-  CLOpt.mk_option ~deprecated:["report"] ~long:"report" ~f:create_outfile
-    ~meta:"file" "Create a file containing a report of the analysis results"
+  CLOpt.mk_string_opt ~deprecated:["report"] ~long:"report"
+    ~meta:"file" "Write a report of the analysis results to a file"
 
 and report_custom_error =
   CLOpt.mk_bool ~long:"report-custom-error"

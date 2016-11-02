@@ -145,13 +145,13 @@ val blacklist : string option
 val buck : bool
 val buck_build_args : string list
 val buck_out : string option
-val bugs_csv : outfile option
-val bugs_json : outfile option
-val bugs_tests : outfile option
-val bugs_txt : outfile option
-val bugs_xml : outfile option
+val bugs_csv : string option
+val bugs_json : string option
+val bugs_tests : string option
+val bugs_txt : string option
+val bugs_xml : string option
 val changed_files_index : string option
-val calls_csv : outfile option
+val calls_csv : string option
 val check_duplicate_symbols : bool
 val checkers : bool
 val checkers_enabled : bool
@@ -205,7 +205,7 @@ val java_jar_compiler : string option
 val javac_verbose_out : string
 val jobs : int
 val join_cond : int
-val latex : outfile option
+val latex : string option
 val linters_def_file : string option
 val load_analysis_results : string option
 val makefile_cmdline : string
@@ -227,13 +227,13 @@ val precondition_stats : bool
 val print_builtins : bool
 val print_types : bool
 val print_using_diff : bool
-val procs_csv : outfile option
-val procs_xml : outfile option
+val procs_csv : string option
+val procs_xml : string option
 val project_root : string
 val quandary : bool
 val quiet : bool
 val reactive_mode : bool
-val report : outfile option
+val report : string option
 val report_runtime_exceptions : bool
 val reports_include_ml_loc : bool
 val results_dir : string
