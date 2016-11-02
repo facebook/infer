@@ -68,17 +68,10 @@ let source_file_to_string fname =
   | Relative path
   | Absolute path -> path
 
-exception No_project_root
-
-let project_root () =
-  match Config.project_root with
-  | None -> L.err "No --project-root option passed@."; raise No_project_root
-  | Some path -> path
-
 (* Checking if the path exists may be needed only in some cases, hence the flag check_exists *)
 let source_file_to_abs_path fname =
   match fname with
-  | Relative path -> Filename.concat (project_root()) path
+  | Relative path -> Filename.concat Config.project_root path
   | Absolute path -> path
 
 let inode_equal sf1 sf2 =
@@ -89,7 +82,7 @@ let inode_equal sf1 sf2 =
 let source_file_to_rel_path fname =
   match fname with
   | Relative path -> path
-  | Absolute path -> filename_to_relative (project_root ()) path
+  | Absolute path -> filename_to_relative Config.project_root path
 
 (** string encoding of a source file (including path) as a single filename *)
 let source_file_encoding source_file =

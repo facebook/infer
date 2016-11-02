@@ -65,8 +65,6 @@ let () =
       (if not Config.reactive_mode then [] else
          ["--reactive"]) @
       "--out" :: Config.results_dir ::
-      (match Config.project_root with None -> [] | Some pr ->
-          ["--project_root"; pr]) @
       (match Config.xcode_developer_dir with None -> [] | Some d ->
           ["--xcode-developer-dir"; d]) @
       (if Config.rest = [] then [] else

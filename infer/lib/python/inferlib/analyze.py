@@ -49,23 +49,6 @@ class VersionAction(argparse._VersionAction):
                                             option_string)
 
 
-def get_pwd():
-    pwd = os.getenv('PWD')
-    if pwd is not None:
-        try:
-            # Compare whether 'PWD' and '.' point to same place
-            # Approach is borrowed from llvm implementation of
-            # llvm::sys::fs::current_path (implemented in Path.inc file)
-            pwd_stat = os.stat(pwd)
-            dot_stat = os.stat('.')
-            if pwd_stat.st_dev == dot_stat.st_dev and \
-               pwd_stat.st_ino == dot_stat.st_ino:
-                return pwd
-        except OSError:
-            # fallthrough to default case
-            pass
-    return os.getcwd()
-
 base_parser = argparse.ArgumentParser(add_help=False)
 base_group = base_parser.add_argument_group('global arguments')
 base_group.add_argument('-o', '--out', metavar='<directory>',
@@ -121,12 +104,6 @@ infer_group.add_argument('-l', '--load-average', metavar='<float>', type=float,
 
 infer_group.add_argument('--buck', action='store_true', dest='buck',
                            help='To use when run with buck')
-
-infer_group.add_argument('-pr', '--project_root',
-                         dest='project_root',
-                         default=get_pwd(),
-                         help='Location of the project root '
-                         '(default is current directory)')
 
 infer_group.add_argument('--absolute-paths',
                           action='store_true',
@@ -236,14 +213,11 @@ class AnalyzerWrapper(object):
         exit_status = os.EX_OK
 
         if self.javac is not None and self.args.buck:
-            infer_options += ['-project_root', utils.decode(os.getcwd()),
-                              '-java']
+            infer_options += ['-java']
             if self.javac.args.classpath is not None:
                 for path in self.javac.args.classpath.split(os.pathsep):
                     if os.path.isfile(path):
                         infer_options += ['-ziplib', os.path.abspath(path)]
-        elif self.args.project_root:
-            infer_options += ['-project_root', self.args.project_root]
 
         infer_options = map(utils.decode_or_not, infer_options)
         infer_options_str = ' '.join(infer_options)

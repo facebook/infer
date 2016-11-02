@@ -20,14 +20,11 @@ let source_file_from_path path =
     (failwithf
        "ERROR: Path %s is relative. Please pass an absolute path in the -c argument.@."
        path);
-  match Config.project_root with
-  | Some root ->
-      (try
-         DB.rel_source_file_from_abs_path root path
-       with Failure _ ->
-         Logging.err_debug "ERROR: %s should be a prefix of %s.@." root path;
-         DB.source_file_from_string path)
-  | None -> DB.source_file_from_string path
+  try
+    DB.rel_source_file_from_abs_path Config.project_root path
+  with Failure _ ->
+    Logging.err_debug "ERROR: %s should be a prefix of %s.@." Config.project_root path;
+    DB.source_file_from_string path
 
 let choose_sloc_to_update_curr_file trans_unit_ctx sloc1 sloc2 =
   match sloc2.Clang_ast_t.sl_file with
@@ -70,18 +67,15 @@ let clang_to_sil_location trans_unit_ctx clang_loc procdesc_opt =
   Location.{line; col; file; nLOC}
 
 let file_in_project file =
-  match Config.project_root with
-  | Some root ->
-      let real_root = real_path root in
-      let real_file = real_path file in
-      let file_in_project = string_is_prefix real_root real_file in
-      let paths = Config.skip_translation_headers in
-      let file_should_be_skipped =
-        IList.exists
-          (fun path -> string_is_prefix (Filename.concat real_root path) real_file)
-          paths in
-      file_in_project && not (file_should_be_skipped)
-  | None -> false
+  let real_root = real_path Config.project_root in
+  let real_file = real_path file in
+  let file_in_project = string_is_prefix real_root real_file in
+  let paths = Config.skip_translation_headers in
+  let file_should_be_skipped =
+    IList.exists
+      (fun path -> string_is_prefix (Filename.concat real_root path) real_file)
+      paths in
+  file_in_project && not (file_should_be_skipped)
 
 let should_do_frontend_check trans_unit_ctx (loc_start, _) =
   match loc_start.Clang_ast_t.sl_file with

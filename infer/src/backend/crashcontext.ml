@@ -121,13 +121,10 @@ let crashcontext_epilogue ~in_buck_mode =
      infer-out/ directory, but instead it is buck-out/, which contains the
      infer output directories for every buck target. *)
   let root_summaries_dir = if in_buck_mode then begin
-      let project_root = match Config.project_root with
-        | Some root -> root
-        | None -> Filename.dirname Config.results_dir in
       let buck_out = match Config.buck_out with
         | Some dir -> dir
         | None -> "buck-out" in
-      project_root // buck_out
+      Config.project_root // buck_out
     end
     else Config.results_dir in
   collect_all_summaries

@@ -20,12 +20,7 @@ let use_multilinks = true
     is used to determine whether a captured directory needs to be merged. *)
 let check_timestamp_of_symlinks = true
 
-let buck_out () =
-  match Config.project_root with
-  | Some root ->
-      Filename.concat root "buck-out"
-  | None ->
-      Filename.concat (Filename.dirname Config.results_dir) "buck-out"
+let buck_out () = Filename.concat Config.project_root "buck-out"
 
 let infer_deps () = Filename.concat Config.results_dir Config.buck_infer_deps_file_name
 

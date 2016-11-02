@@ -425,9 +425,8 @@ let inferconfig_home =
     ~exes:all_exes ~meta:"dir" "Path to the .inferconfig file"
 
 and project_root =
-  CLOpt.mk_string_opt ~deprecated:["project_root"; "-project_root"] ~long:"project-root" ~short:"pr"
-    ?default:CLOpt.(match current_exe with Print | Toplevel | StatsAggregator | Clang ->
-        Some init_work_dir | _ -> None)
+  CLOpt.mk_string ~deprecated:["project_root"; "-project_root"] ~long:"project-root" ~short:"pr"
+    ~default:init_work_dir
     ~f:resolve
     ~exes:CLOpt.[Analyze;Clang;Java;Print;Toplevel]
     ~meta:"dir" "Specify the root directory of the project"
@@ -442,9 +441,9 @@ let inferconfig_home = !inferconfig_home
 and project_root = !project_root
 
 let inferconfig_path =
-  match inferconfig_home, project_root with
-  | Some dir, _ | _, Some dir -> dir // inferconfig_file
-  | None, None -> inferconfig_file
+  match inferconfig_home with
+  | Some dir -> dir // inferconfig_file
+  | None -> project_root // inferconfig_file
 
 (* Proceed to declare and parse the remaining options *)
 

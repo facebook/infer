@@ -76,9 +76,7 @@ let java_source_file_from_path path =
   if Filename.is_relative path then
     failwith "Expect absolute path for java source files"
   else
-    match Config.project_root with
-    | None -> DB.abs_source_file_from_path path
-    | Some project_root -> DB.rel_source_file_from_abs_path project_root path
+    DB.rel_source_file_from_abs_path Config.project_root path
 
 
 (** Add the android.jar containing bytecode at the beginning of the class path *)

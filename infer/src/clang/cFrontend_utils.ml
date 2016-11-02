@@ -669,10 +669,7 @@ struct
   let get_rel_file_path file_opt =
     match file_opt with
     | Some file ->
-        (match Config.project_root with
-         | Some root ->
-             DB.source_file_to_rel_path (DB.rel_source_file_from_abs_path root file)
-         | None -> file)
+        DB.source_file_to_rel_path (DB.rel_source_file_from_abs_path Config.project_root file)
     | None -> ""
 
   let is_cpp_translation translation_unit_context =

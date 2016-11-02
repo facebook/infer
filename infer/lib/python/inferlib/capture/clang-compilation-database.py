@@ -31,8 +31,6 @@ class ClangCompilationDatabase:
     def capture(self):
         args = self.cmd
         cmd = [utils.get_cmd_in_bin_dir('InferBuckCompilationDatabase')]
-        if self.args.project_root:
-            cmd += ['--project-root', self.args.project_root]
         cmd += ['--clang-compilation-database', args[1]]
         print(cmd)
         return subprocess.check_call(cmd)

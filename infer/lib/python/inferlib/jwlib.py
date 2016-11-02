@@ -307,9 +307,6 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
         infer_cmd = [utils.get_cmd_in_bin_dir('InferJava')]
         infer_cmd += ['-classpath', self._create_frontend_classpath()]
 
-        if not self.args.absolute_paths:
-            infer_cmd += ['-project_root', self.args.project_root]
-
         infer_cmd += [
             '-results_dir', self.args.infer_out,
             '-verbose_out', self.javac.verbose_out,
