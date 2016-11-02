@@ -57,19 +57,38 @@ let init_global_state_for_capture_and_linters source_file => {
   CFrontend_config.reset_global_state ()
 };
 
-let run_clang_frontend trans_unit_ctx ast_source => {
+let run_clang_frontend ast_source => {
   let init_time = Unix.gettimeofday ();
   let print_elapsed () => {
     let elapsed = Unix.gettimeofday () -. init_time;
     Logging.out "Elapsed: %07.3f seconds.@\n" elapsed
   };
-  let (ast_filename, ast_decl) =
+  let ast_decl =
     switch ast_source {
-    | `File path => (path, validate_decl_from_file path)
-    | `Pipe chan => (
-        "stdin of " ^ DB.source_file_to_string trans_unit_ctx.CFrontend_config.source_file,
-        validate_decl_from_channel chan
-      )
+    | `File path => validate_decl_from_file path
+    | `Pipe chan => validate_decl_from_channel chan
+    };
+  let trans_unit_ctx =
+    switch ast_decl {
+    | Clang_ast_t.TranslationUnitDecl (_, _, _, info) =>
+      Config.arc_mode := info.Clang_ast_t.tudi_arc_enabled;
+      let source_file = CLocation.source_file_from_path info.Clang_ast_t.tudi_input_path;
+      init_global_state_for_capture_and_linters source_file;
+      let lang =
+        switch info.Clang_ast_t.tudi_input_kind {
+        | `IK_C => CFrontend_config.C
+        | `IK_CXX => CFrontend_config.CPP
+        | `IK_ObjC => CFrontend_config.ObjC
+        | `IK_ObjCXX => CFrontend_config.ObjCPP
+        | _ => assert false
+        };
+      {CFrontend_config.source_file: source_file, lang}
+    | _ => assert false
+    };
+  let ast_filename =
+    switch ast_source {
+    | `File path => path
+    | `Pipe _ => "stdin of " ^ DB.source_file_to_string trans_unit_ctx.CFrontend_config.source_file
     };
   let (decl_index, stmt_index, type_index, ivar_to_property_index) = Clang_ast_main.index_node_pointers ast_decl;
   CFrontend_config.pointer_decl_index := decl_index;
@@ -150,31 +169,11 @@ let cc1_capture clang_cmd => {
     /* We still need to run clang, but we don't have to attach the plugin. */
     run_clang (ClangCommand.command_to_run clang_cmd) consume_in
   } else {
-    let source_file = CLocation.source_file_from_path source_path;
-    init_global_state_for_capture_and_linters source_file;
-    let trans_unit_ctx = {
-      let clang_langs =
-        CFrontend_config.[
-          ("c", C),
-          ("objective-c", ObjC),
-          ("c++", CPP),
-          ("objective-c++", ObjCPP)
-        ];
-      let lang =
-        switch (ClangCommand.value_of_option clang_cmd "-x") {
-        | Some lang_opt when IList.mem_assoc string_equal lang_opt clang_langs =>
-          IList.assoc string_equal lang_opt clang_langs
-        | _ => assert false
-        };
-      {CFrontend_config.source_file: source_file, lang}
-    };
-    Config.arc_mode := ClangCommand.has_flag clang_cmd "-fobjc-arc";
     try (
       switch Config.clang_biniou_file {
-      | Some fname => run_clang_frontend trans_unit_ctx (`File fname)
+      | Some fname => run_clang_frontend (`File fname)
       | None =>
-        run_plugin_and_frontend
-          (fun chan_in => run_clang_frontend trans_unit_ctx (`Pipe chan_in)) clang_cmd
+        run_plugin_and_frontend (fun chan_in => run_clang_frontend (`Pipe chan_in)) clang_cmd
       }
     ) {
     | exc =>
