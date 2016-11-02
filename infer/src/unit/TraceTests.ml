@@ -13,12 +13,10 @@ module L = Logging
 module F = Format
 
 module MockTraceElem = struct
-  type kind =
+  type t =
     | Kind1
     | Kind2
     | Footprint
-
-  type t = kind
 
   let call_site _ = CallSite.dummy
 
@@ -39,12 +37,16 @@ module MockTraceElem = struct
   let equal t1 t2 =
     compare t1 t2 = 0
 
-  let pp_kind fmt = function
+  let pp fmt = function
     | Kind1 -> F.fprintf fmt "Kind1"
     | Kind2 -> F.fprintf fmt "Kind2"
     | Footprint -> F.fprintf fmt "Footprint"
 
-  let pp = pp_kind
+  module Kind = struct
+    type nonrec t = t
+    let compare = compare
+    let pp = pp
+  end
 
   module Set = PrettyPrintable.MakePPSet(struct
       type nonrec t = t

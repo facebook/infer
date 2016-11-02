@@ -9,19 +9,24 @@
 
 module F = Format
 
-module type S = sig
-  type kind
+module type Kind = sig
   type t
 
-  val call_site : t -> CallSite.t
-  val kind : t -> kind
+  val compare : t -> t -> int
+  val pp : F.formatter -> t -> unit
+end
 
-  val make : kind -> CallSite.t -> t
+module type S = sig
+  type t
+
+  module Kind : Kind
+
+  val call_site : t -> CallSite.t
+  val kind : t -> Kind.t
+
+  val make : Kind.t -> CallSite.t -> t
   val to_callee : t -> CallSite.t -> t
 
-  val compare : t -> t -> int
-  val equal : t -> t -> bool
-  val pp_kind : F.formatter -> kind -> unit
   val pp : F.formatter -> t -> unit
 
   module Set : PrettyPrintable.PPSet with type elt = t

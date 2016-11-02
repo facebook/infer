@@ -13,15 +13,19 @@ module F = Format
 
 module MockTrace = Trace.Make(struct
     module MockTraceElem = struct
-      type kind = unit
       type t = CallSite.t
+
+      module Kind = struct
+        type t = unit
+        let compare _ _ = assert false
+        let pp _ _ = assert false
+      end
+
       let call_site t = t
       let kind _ = ()
       let make _ site = site
       let compare = CallSite.compare
-      let equal = CallSite.equal
       let pp = CallSite.pp
-      let pp_kind _ _ = assert false
 
       let to_callee t _ = t
 

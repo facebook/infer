@@ -14,7 +14,7 @@ module L = Logging
 
 module JavaSource = struct
 
-  module SourceKind = struct
+  module Kind = struct
     type t =
       | PrivateData (** private user or device-specific data *)
       | Footprint of AccessPath.t (** source that was read from the environment. *)
@@ -25,22 +25,26 @@ module JavaSource = struct
       | PrivateData, PrivateData -> 0
       | Footprint ap1, Footprint ap2 -> AccessPath.compare ap1 ap2
       | _ -> tags_compare sk1 sk2
-  end
 
-  type kind = SourceKind.t
+    let pp fmt = function
+      | Intent -> F.fprintf fmt "Intent"
+      | PrivateData -> F.fprintf fmt "PrivateData"
+      | Footprint ap -> F.fprintf fmt "Footprint[%a]" AccessPath.pp ap
+      | Other -> F.fprintf fmt "Other"
+  end
 
   type t =
     {
-      kind : kind;
+      kind : Kind.t;
       site : CallSite.t;
     }
 
   let is_footprint t = match t.kind with
-    | SourceKind.Footprint _ -> true
+    | Kind.Footprint _ -> true
     | _ -> false
 
   let get_footprint_access_path t = match t.kind with
-    | SourceKind.Footprint access_path -> Some access_path
+    | Kind.Footprint access_path -> Some access_path
     | _ -> None
 
   let call_site t =
@@ -53,7 +57,7 @@ module JavaSource = struct
     { site; kind; }
 
   let make_footprint ap site =
-    { kind = (SourceKind.Footprint ap); site; }
+    { kind = Kind.Footprint ap; site; }
 
   let get site = match CallSite.pname site with
     | Procname.Java pname ->
@@ -85,20 +89,11 @@ module JavaSource = struct
     { t with site = callee_site; }
 
   let compare src1 src2 =
-    SourceKind.compare src1.kind src2.kind
+    Kind.compare src1.kind src2.kind
     |> next CallSite.compare src1.site src2.site
 
-  let equal t1 t2 =
-    compare t1 t2 = 0
-
-  let pp_kind fmt (kind : kind) = match kind with
-    | Intent -> F.fprintf fmt "Intent"
-    | PrivateData -> F.fprintf fmt "PrivateData"
-    | Footprint ap -> F.fprintf fmt "Footprint[%a]" AccessPath.pp ap
-    | Other -> F.fprintf fmt "Other"
-
   let pp fmt s =
-    F.fprintf fmt "%a(%a)" pp_kind s.kind CallSite.pp s.site
+    F.fprintf fmt "%a(%a)" Kind.pp s.kind CallSite.pp s.site
 
   module Set = PrettyPrintable.MakePPSet(struct
       type nonrec t = t
@@ -109,20 +104,23 @@ end
 
 module JavaSink = struct
 
-  module SinkKind = struct
+  module Kind = struct
     type t =
       | Intent (** sink that trusts an Intent *)
       | Logging (** sink that logs one or more of its arguments *)
       | Other (** for testing or uncategorized sinks *)
 
     let compare snk1 snk2 = tags_compare snk1 snk2
-  end
 
-  type kind = SinkKind.t
+    let pp fmt = function
+      | Intent -> F.fprintf fmt "Intent"
+      | Logging -> F.fprintf fmt "Logging"
+      | Other -> F.fprintf fmt "Other"
+  end
 
   type t =
     {
-      kind : kind;
+      kind : Kind.t;
       site : CallSite.t;
     }
 
@@ -187,19 +185,11 @@ module JavaSink = struct
     { t with site = callee_site; }
 
   let compare snk1 snk2 =
-    SinkKind.compare snk1.kind snk2.kind
+    Kind.compare snk1.kind snk2.kind
     |> next CallSite.compare snk1.site snk2.site
 
-  let equal t1 t2 =
-    compare t1 t2 = 0
-
-  let pp_kind fmt (kind : kind) = match kind with
-    | Intent -> F.fprintf fmt "Intent"
-    | Logging -> F.fprintf fmt "Logging"
-    | Other -> F.fprintf fmt "Other"
-
   let pp fmt s =
-    F.fprintf fmt "%a(%a)" pp_kind s.kind CallSite.pp s.site
+    F.fprintf fmt "%a(%a)" Kind.pp s.kind CallSite.pp s.site
 
   module Set = PrettyPrintable.MakePPSet(struct
       type nonrec t = t
@@ -214,13 +204,11 @@ include
     module Sink = JavaSink
 
     let should_report source sink =
-      let open Source in
-      let open Sink in
       match Source.kind source, Sink.kind sink with
-      | SourceKind.Other, SinkKind.Other
-      | SourceKind.PrivateData, SinkKind.Logging ->
+      | Source.Kind.Other, Sink.Kind.Other
+      | Source.Kind.PrivateData, Sink.Kind.Logging ->
           true
-      | SourceKind.Intent, SinkKind.Intent ->
+      | Source.Kind.Intent, Sink.Kind.Intent ->
           true
       | _ ->
           false
@@ -234,5 +222,4 @@ include
       let msg = Localise.to_string Localise.quandary_taint_error in
       let description = pp_to_string pp_error () in
       Exceptions.Checkers (msg, Localise.verbatim_desc description)
-
   end)
