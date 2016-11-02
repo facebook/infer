@@ -8,21 +8,12 @@
  */
 open! Utils;
 
-type args = {
+type t = {
   exec: string,
   argv: list string,
   orig_argv: list string,
   quoting_style: ClangQuotes.style
 };
-
-type t =
-  | Assembly args
-  /** a normalized clang command that runs the assembler */
-  | CC1 args
-  /** a -cc1 clang command */
-  | ClangError string
-  | ClangWarning string
-  | NonCCCommand args /** other commands (as, ld, ...) */;
 
 let fcp_dir =
   Config.bin_dir /\/ Filename.parent_dir_name /\/ Filename.parent_dir_name /\/ "facebook-clang-plugins";
@@ -61,10 +52,35 @@ let value_of_option {orig_argv} => value_of_argv_option orig_argv;
 
 let has_flag {orig_argv} flag => IList.exists (string_equal flag) orig_argv;
 
+let can_attach_ast_exporter cmd =>
+  has_flag cmd "-cc1" && (
+    switch (value_of_option cmd "-x") {
+    | None =>
+      Logging.stderr "malformed -cc1 command has no \"-x\" flag!";
+      false
+    | Some lang when string_is_prefix "assembler" lang => false
+    | Some _ => true
+    }
+  );
+
+let argv_cons a b => [a, ...b];
+
+let argv_do_if cond action x =>
+  if cond {
+    action x
+  } else {
+    x
+  };
+
+let file_arg_cmd_sanitizer cmd => {
+  let file = ClangQuotes.mk_arg_file "clang_command_" cmd.quoting_style cmd.argv;
+  {...cmd, argv: [Format.sprintf "@%s" file]}
+};
+
 /* Work around various path or library issues occurring when one tries to substitute Apple's version
    of clang with a different version. Also mitigate version discrepancies in clang's
    fatal warnings. */
-let mk_clang_compat_args args => {
+let clang_cc1_cmd_sanitizer cmd => {
   /* command line options not supported by the opensource compiler or the plugins */
   let flags_blacklist = ["-fembed-bitcode-marker", "-fno-canonical-system-headers"];
   let replace_option_arg option arg =>
@@ -82,83 +98,66 @@ let mk_clang_compat_args args => {
     } else {
       arg
     };
-  let post_args = {
-    let global_defines_h = Config.lib_dir /\/ "clang_wrappers" /\/ "global_defines.h";
-    [
-      "-Wno-everything",
-      /* Never error on warnings. Clang is often more strict than Apple's version.  These arguments
-         are appended at the end to override previous opposite settings.  How it's done: suppress
-         all the warnings, since there are no warnings, compiler can't elevate them to error
-         level. */
-      "-include",
-      global_defines_h
-    ]
-  };
-  let rec filter_unsupported_args_and_swap_includes (prev, res) =>
+  let post_args_rev =
+    [] |> IList.rev_append ["-include", Config.lib_dir /\/ "clang_wrappers" /\/ "global_defines.h"] |>
+    argv_do_if (has_flag cmd "-fmodules") (argv_cons "-fno-cxx-modules") |>
+    /* Never error on warnings. Clang is often more strict than Apple's version.  These arguments
+       are appended at the end to override previous opposite settings.  How it's done: suppress
+       all the warnings, since there are no warnings, compiler can't elevate them to error
+       level. */
+    argv_cons "-Wno-everything";
+  let rec filter_unsupported_args_and_swap_includes (prev, res_rev) =>
     fun
-    | [] => IList.rev (IList.rev post_args @ res)
+    | [] =>
+      /* return non-reversed list */
+      IList.rev (post_args_rev @ res_rev)
     | [flag, ...tl] when IList.mem string_equal flag flags_blacklist =>
-      filter_unsupported_args_and_swap_includes (flag, res) tl
+      filter_unsupported_args_and_swap_includes (flag, res_rev) tl
     | [arg, ...tl] => {
-        let res' = [replace_option_arg prev arg, ...res];
-        filter_unsupported_args_and_swap_includes (arg, res') tl
+        let res_rev' = [replace_option_arg prev arg, ...res_rev];
+        filter_unsupported_args_and_swap_includes (arg, res_rev') tl
       };
-  let clang_arguments = filter_unsupported_args_and_swap_includes ("", []) args.argv;
-  let file = ClangQuotes.mk_arg_file "clang_args_" args.quoting_style clang_arguments;
-  {...args, argv: [Format.sprintf "@%s" file]}
+  let clang_arguments = filter_unsupported_args_and_swap_includes ("", []) cmd.argv;
+  file_arg_cmd_sanitizer {...cmd, argv: clang_arguments}
 };
 
 let mk quoting_style argv => {
   let argv_list = Array.to_list argv;
-  let is_assembly = {
-    /* whether language is set to "assembler" or "assembler-with-cpp" */
-    let assembly_language =
-      switch (value_of_argv_option argv_list "-x") {
-      | Some lang => string_is_prefix "assembler" lang
-      | _ => false
-      };
-    /* Detect -cc1as or assembly language commands. -cc1as is always the first argument if
-       present. */
-    string_equal argv.(1) "-cc1as" || assembly_language
-  };
-  let args =
-    switch argv_list {
-    | [exec, ...argv_no_exec] => {exec, orig_argv: argv_no_exec, argv: argv_no_exec, quoting_style}
-    | [] => failwith "argv cannot be an empty list"
-    };
-  if is_assembly {
-    Assembly args
-  } else if (argv.(1) == "-cc1") {
-    CC1
-      /* -cc1 is always the first argument if present. */
-      args
-  } else {
-    NonCCCommand args
+  switch argv_list {
+  | [exec, ...argv_no_exec] => {exec, orig_argv: argv_no_exec, argv: argv_no_exec, quoting_style}
+  | [] => failwith "argv cannot be an empty list"
   }
 };
 
-let command_to_run args => {
-  let {exec, argv, quoting_style} = mk_clang_compat_args args;
-  Printf.sprintf
-    "'%s' %s" exec (IList.map (ClangQuotes.quote quoting_style) argv |> String.concat " ")
+let command_to_run cmd => {
+  let mk_cmd normalizer => {
+    let {exec, argv, quoting_style} = normalizer cmd;
+    Printf.sprintf
+      "'%s' %s" exec (IList.map (ClangQuotes.quote quoting_style) argv |> String.concat " ")
+  };
+  if (can_attach_ast_exporter cmd) {
+    mk_cmd clang_cc1_cmd_sanitizer
+  } else if (
+    string_is_prefix "clang" (Filename.basename cmd.exec)
+  ) {
+    /* `clang` supports argument files and the commands can be longer than the maximum length of the
+       command line, so put arguments in a file */
+    mk_cmd file_arg_cmd_sanitizer
+  } else {
+    /* other commands such as `ld` do not support argument files */
+    mk_cmd (fun x => x)
+  }
 };
 
 let with_exec exec args => {...args, exec};
 
 let with_plugin_args args => {
-  let cons a b => [a, ...b];
-  let do_if cond action x =>
-    if cond {
-      action x
-    } else {
-      x
-    };
-  let rev_args_before =
+  let args_before_rev =
     [] |>
     /* -cc1 has to be the first argument or clang will think it runs in driver mode */
-    cons "-cc1" |>
+    argv_cons "-cc1" |>
     /* It's important to place this option before other -isystem options. */
-    do_if infer_cxx_models (IList.rev_append ["-isystem", Config.cpp_models_dir]) |>
+    argv_do_if infer_cxx_models (IList.rev_append ["-isystem", Config.cpp_models_dir]) |>
     IList.rev_append [
       "-load",
       plugin_path,
@@ -177,8 +176,8 @@ let with_plugin_args args => {
       "-plugin-arg-" ^ plugin_name,
       "PREPEND_CURRENT_DIR=1"
     ];
-  let args_after = [] |> do_if Config.fcp_syntax_only (cons "-fsyntax-only");
-  {...args, argv: IList.rev_append rev_args_before (args.argv @ args_after)}
+  let args_after_rev = [] |> argv_do_if Config.fcp_syntax_only (argv_cons "-fsyntax-only");
+  {...args, argv: IList.rev_append args_before_rev (args.argv @ IList.rev args_after_rev)}
 };
 
 let prepend_arg arg clang_args => {...clang_args, argv: [arg, ...clang_args.argv]};

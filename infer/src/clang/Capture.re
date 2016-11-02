@@ -138,9 +138,9 @@ let run_plugin_and_frontend frontend clang_args => {
   run_clang clang_command frontend
 };
 
-let capture clang_args => {
+let cc1_capture clang_cmd => {
   let source_path = {
-    let orig_argv = ClangCommand.get_orig_argv clang_args;
+    let orig_argv = ClangCommand.get_orig_argv clang_cmd;
     /* the source file is always the last argument of the original -cc1 clang command */
     filename_to_absolute orig_argv.(Array.length orig_argv - 1)
   };
@@ -148,7 +148,7 @@ let capture clang_args => {
   if (Config.analyzer == Some Config.Compile || CLocation.is_file_blacklisted source_path) {
     Logging.out "@\n Skip the analysis of source file %s@\n@\n" source_path;
     /* We still need to run clang, but we don't have to attach the plugin. */
-    run_clang (ClangCommand.command_to_run clang_args) consume_in
+    run_clang (ClangCommand.command_to_run clang_cmd) consume_in
   } else {
     let source_file = CLocation.source_file_from_path source_path;
     init_global_state_for_capture_and_linters source_file;
@@ -161,20 +161,20 @@ let capture clang_args => {
           ("objective-c++", ObjCPP)
         ];
       let lang =
-        switch (ClangCommand.value_of_option clang_args "-x") {
+        switch (ClangCommand.value_of_option clang_cmd "-x") {
         | Some lang_opt when IList.mem_assoc string_equal lang_opt clang_langs =>
           IList.assoc string_equal lang_opt clang_langs
         | _ => assert false
         };
       {CFrontend_config.source_file: source_file, lang}
     };
-    Config.arc_mode := ClangCommand.has_flag clang_args "-fobjc-arc";
+    Config.arc_mode := ClangCommand.has_flag clang_cmd "-fobjc-arc";
     try (
       switch Config.clang_biniou_file {
       | Some fname => run_clang_frontend trans_unit_ctx (`File fname)
       | None =>
         run_plugin_and_frontend
-          (fun chan_in => run_clang_frontend trans_unit_ctx (`Pipe chan_in)) clang_args
+          (fun chan_in => run_clang_frontend trans_unit_ctx (`Pipe chan_in)) clang_cmd
       }
     ) {
     | exc =>
@@ -182,6 +182,22 @@ let capture clang_args => {
         raise exc
       }
     };
+    /* reset logging to stop capturing log output into the source file's log */
+    Logging.set_log_file_identifier CommandLineOption.Clang None;
     ()
   }
 };
+
+let capture clang_cmd =>
+  if (ClangCommand.can_attach_ast_exporter clang_cmd) {
+    /* this command compiles some code; replace the invocation of clang with our own clang and
+       plugin */
+    cc1_capture clang_cmd
+  } else {
+    /* Non-compilation (eg, linking) command. Run the command as-is. It will not get captured
+       further since `clang -### ...` will only output commands that invoke binaries using their
+       absolute paths. */
+    let command_to_run = ClangCommand.command_to_run clang_cmd;
+    Logging.out "Running non-cc command without capture: %s@\n" command_to_run;
+    run_clang command_to_run consume_in
+  };

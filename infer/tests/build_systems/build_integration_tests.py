@@ -63,7 +63,6 @@ ALL_TESTS = [
     'ant',
     'assembly',
     'buck',
-    'cc1',
     'cmake',
     'componentkit',
     'delete',
@@ -476,26 +475,6 @@ class BuildIntegrationTest(unittest.TestCase):
               {'compile': ['clang', '-c', 'hello2.c'],
                'infer_args': reactive_args},
               {'compile': ['analyze']}])
-
-    def test_clang_cc1(self):
-        def preprocess():
-            hashhashhash = subprocess.check_output(
-                [CLANG_BIN, '-###', '-c', 'hello.c'],
-                # `clang -### -c hello.c` prints on stderr
-                stderr=subprocess.STDOUT)
-            # pick the line containing the compilation command, which
-            # should be the only one to include "-cc1"
-            cc1_line = filter(lambda s: s.find('"-cc1"') != -1,
-                              hashhashhash.splitlines())[0]
-            # [cc1_line] usually looks like ' "/foo/clang" "bar" "baz"'.
-            # return ['clang', 'bar', 'baz']
-            cmd = [s.strip('"') for s in cc1_line.strip().split('" "')]
-            cmd[0] = 'clang'
-            return [{'compile': cmd}]
-        test('cc1', 'clang -cc1',
-             CODETOANALYZE_DIR,
-             [],
-             preprocess=preprocess)
 
     def test_clang_assembly(self):
         test('assembly', 'compile with assembly code', CODETOANALYZE_DIR,
