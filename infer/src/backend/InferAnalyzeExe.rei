@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2009 - 2013 Monoidics ltd.
- * Copyright (c) 2013 - present Facebook, Inc.
+ * Copyright (c) 2016 - present Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD style license found in the
@@ -8,9 +7,4 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 open! Utils;
-
-
 /** Main module for the analysis after the capture phase */
-let main: unit => unit;
-
-let output_json_makefile_stats: list DB.source_dir => unit;

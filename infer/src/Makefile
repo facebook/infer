@@ -63,7 +63,7 @@ C_STUBS_OBJ = $(C_STUBS_SOURCE:.c=.o)
 #### Backend declarations ####
 
 INFER_MAIN = backend/infer
-INFERANALYZE_MAIN = backend/InferAnalyze
+INFERANALYZE_MAIN = backend/InferAnalyzeExe
 
 #### Checkers declarations ####
 
@@ -251,7 +251,7 @@ rei:
 %.rei : %.mli
 	refmt -assume-explicit-arity -heuristics-file unary.txt -parse ml -print re $< > $*.rei
 
-roots:=Infer InferAnalyze InferClang JMain InferPrintExe BuckCompilationDatabase
+roots:=Infer InferAnalyzeExe InferClang JMain InferPrintExe BuckCompilationDatabase
 clusters:=base clang java IR
 
 src_dirs:=$(shell find * -type d)

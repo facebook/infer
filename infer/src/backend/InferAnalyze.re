@@ -15,22 +15,6 @@ let module L = Logging;
 
 let module F = Format;
 
-let () = {
-  Logging.set_log_file_identifier
-    CommandLineOption.Analyze (Option.map Filename.basename Config.cluster_cmdline);
-  if Config.print_builtins {
-    Builtin.print_and_exit ()
-  };
-  switch Config.modified_targets {
-  | Some file => MergeCapture.modified_file file
-  | None => ()
-  };
-  if (not (Sys.file_exists Config.results_dir)) {
-    L.err "ERROR: results directory %s does not exist@.@." Config.results_dir;
-    Config.print_usage_exit ()
-  }
-};
-
 let analyze_exe_env exe_env => {
   let init_time = Unix.gettimeofday ();
   L.log_progress_file ();
@@ -125,7 +109,20 @@ let register_perf_stats_report () => {
   PerfStats.register_report_at_exit stats_file
 };
 
-let () = {
+let main () => {
+  Logging.set_log_file_identifier
+    CommandLineOption.Analyze (Option.map Filename.basename Config.cluster_cmdline);
+  if Config.print_builtins {
+    Builtin.print_and_exit ()
+  };
+  switch Config.modified_targets {
+  | Some file => MergeCapture.modified_file file
+  | None => ()
+  };
+  if (not (Sys.file_exists Config.results_dir)) {
+    L.err "ERROR: results directory %s does not exist@.@." Config.results_dir;
+    Config.print_usage_exit ()
+  };
   register_perf_stats_report ();
   BuiltinDefn.init ();
   if Config.developer_mode {
@@ -148,7 +145,7 @@ let () = {
       ClusterMakefile.create_cluster_makefile clusters Config.makefile_cmdline
     } else {
       IList.iteri (fun i cluster => analyze_cluster i cluster) clusters;
-      L.stdout "Analysis finished in %as@." pp_elapsed_time ()
+      L.stdout "@\nAnalysis finished in %as@." pp_elapsed_time ()
     };
     output_json_makefile_stats clusters
   }
