@@ -44,9 +44,10 @@ include
       let footprint_trace = Trace.of_source footprint_source in
       QuandarySummary.make_in_out_summary input output (to_summary_trace footprint_trace)
 
-    (* propagate the trace associated with each actual to the actual corresponding to the
-       constructed object *)
-    let propagate_to_constructor site actuals ~propagate_all =
+    (* propagate the trace associated with non-receiver actual to the receiver actual. also useful
+       for propagating taint from constructor actuals to the constructed object (which, like the
+       receiver, is also the first argument) *)
+    let propagate_to_receiver site actuals ~propagate_all =
       match actuals with
       | [] ->
           failwithf
@@ -83,7 +84,12 @@ include
                   Procname.java_get_method java_pname,
                   ret_typ_opt with
             | _ when Procname.is_constructor pname ->
-                propagate_to_constructor site actuals ~propagate_all:true
+                propagate_to_receiver site actuals ~propagate_all:true
+            | ("java.lang.StringBuffer" | "java.lang.StringBuilder" | "java.util.Formatter"), _,
+              Some ret_typ
+              when not (Procname.java_is_static pname) ->
+                (propagate_actuals_to_return site ret_typ actuals ~propagate_all:true) @
+                (propagate_to_receiver site actuals ~propagate_all:true)
             | _, _, Some ret_typ ->
                 propagate_actuals_to_return site ret_typ actuals ~propagate_all:true
             | _ ->

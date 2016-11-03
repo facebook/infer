@@ -263,7 +263,10 @@ module Make (TaintSpec : TaintSpec.S) = struct
         let caller_ap_trace_opt =
           match in_out_summary.output with
           | Out_return ret_ap ->
-              Some (apply_return ret_ap ret_id, TraceDomain.initial)
+              let caller_ret_ap = apply_return ret_ap ret_id in
+              let ret_trace =
+                access_path_get_trace caller_ret_ap access_tree proc_data callee_loc in
+              Some (caller_ret_ap, ret_trace)
           | Out_formal (formal_num, formal_ap) ->
               get_actual_ap_trace formal_num formal_ap access_tree
           | Out_global global_ap ->
