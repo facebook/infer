@@ -18,9 +18,6 @@ module type Spec = sig
 
   (** should a flow originating at source and entering sink be reported? *)
   val should_report : Source.t -> Sink.t -> bool
-
-  (** get a loggable exception reporting a flow from source -> sink *)
-  val get_reportable_exn : Source.t -> Sink.t -> Passthrough.Set.t -> exn
 end
 
 module type S = sig
@@ -45,8 +42,13 @@ module type S = sig
   (** get the reportable source-sink flows in this trace *)
   val get_reports : t -> (Source.t * Sink.t * Passthroughs.t) list
 
-  (** get logging-ready exceptions for the reportable source-sink flows in this trace *)
-  val get_reportable_exns : t -> (Source.t * Sink.t * exn) list
+  (** get logging-ready trace strings for the reportable source-sink flows in this trace *)
+  val get_reportable_traces :
+    t ->
+    Procname.t ->
+    ?expand_trace:bool ->
+    trace_of_pname:(Procname.t -> t) ->
+    (Source.t * Sink.t * string) list
 
   (** create a trace from a source *)
   val of_source : Source.t -> t
