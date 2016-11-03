@@ -5,16 +5,12 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-include ../../Makefile.clang
+TESTS_DIR = ../../..
+include $(TESTS_DIR)/clang.make
 
-OPTIONS = -c
+ANALYZER = infer
+CLANG_OPTIONS = -c
+INFER_OPTIONS =  --report-custom-error --developer-mode
 
-FILES = \
-  */*.c \
-
-compile:
-	clang $(OPTIONS) $(FILES)
-
-analyze:
-	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --report-custom-error --check-duplicate-symbols --developer-mode -- clang $(OPTIONS) $(FILES) 2>duplicates.txt)
-	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
+SOURCES = \
+  $(wildcard */*.c) \

@@ -5,18 +5,22 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-include ../../Makefile.clang
+TESTS_DIR = ../../..
+include $(TESTS_DIR)/clang.make
 
 IPHONESIMULATOR_ISYSROOT_SUFFIX = /Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk
 
 XCODEROOT = $(shell xcode-select -p)
 
-OPTIONS = -x objective-c \
+ANALYZER = infer
+CLANG_OPTIONS = -x objective-c \
   -isysroot $(XCODEROOT)$(IPHONESIMULATOR_ISYSROOT_SUFFIX) \
   -mios-simulator-version-min=8.2 --target=x86_64-apple-darwin14 -c \
 
+CLEAN_EXTRA = infer-out-arc infer-out-all
+INFER_OPTIONS = --cxx  --check-duplicate-symbols
 
-FILES = \
+SOURCES_DEFAULT = \
   field_superclass/B.m \
   memory_leaks_benchmark/FBViewExample.m \
   memory_leaks_benchmark/MemoryLeakRaii.m \
@@ -47,7 +51,7 @@ FILES = \
   taint/sources.m \
   taint/viewController.m \
 
-FILES_BUCKET_ALL = \
+SOURCES_BUCKET_ALL = \
   field_superclass/field.c \
   global_const/global_const.m \
   initialization/compound_literal.c \
@@ -71,7 +75,7 @@ FILES_BUCKET_ALL = \
   shared/npe/npe_malloc.m \
   warnings/ParameterNotNullableExample.m \
 
-FILES_ARC = \
+SOURCES_ARC = \
   field_superclass/SubtypingExample.m \
   initialization/struct_initlistexpr.c \
   memory_leaks_benchmark/RetainReleaseExampleBucketingArc.m \
@@ -92,18 +96,36 @@ FILES_ARC = \
   subtyping/KindOfClassExample.m \
   variadic_methods/premature_nil_termination.m \
 
-compile:
-	clang $(OPTIONS) $(FILES) $(FILES_BUCKET_ALL)
-	clang $(OPTIONS) -fobjc-arc $(FILES_ARC)
+SOURCES = $(SOURCES_DEFAULT) $(SOURCES_BUCKET_ALL) $(SOURCES_ARC)
 
-CLEAN_EXTRA = infer-out-arc infer-out-all
+OBJECTS_ARC = $(foreach source,$(SOURCES_ARC),$(basename $(source)).o)
+OBJECTS_BUCKET_ALL = $(foreach source,$(SOURCES_BUCKET_ALL),$(basename $(source)).o)
+OBJECTS_DEFAULT = $(foreach source,$(SOURCES_DEFAULT),$(basename $(source)).o)
 
-analyze:
-	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --cxx --ml-buckets all --check-duplicate-symbols -o infer-out-all -- clang $(OPTIONS) $(FILES_BUCKET_ALL) 2>duplicates.txt)
+$(OBJECTS_ARC): $(SOURCES_ARC)
+	clang $(CLANG_OPTIONS) -fobjc-arc $< -o $@
+
+$(OBJECTS_BASE) $(OBJECTS_BUCKETS_ALL): $(SOURCES_BASE) $(SOURCES_BUCKET_ALL)
+	clang $(CLANG_OPTIONS) $< -o $@
+
+infer-out-all/report.json: $(INFER_BIN) $(SOURCES_BUCKET_ALL)
+	$(call silent_on_success,\
+	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --ml-buckets all -o infer-out-all -- \
+	  clang $(CLANG_OPTIONS) $(SOURCES_BUCKET_ALL) 2>duplicates.txt)
 	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
-	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --cxx --ml-buckets cf --check-duplicate-symbols -o infer-out -- clang $(OPTIONS) $(FILES) 2>duplicates.txt)
+
+infer-out-arc/report.json: $(INFER_BIN) $(SOURCES_ARC)
+	$(call silent_on_success,\
+	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --ml-buckets cf -o infer-out-arc -- \
+	  clang $(CLANG_OPTIONS) -fobjc-arc $(SOURCES_ARC) 2>duplicates.txt)
 	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
-	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --cxx --ml-buckets cf --check-duplicate-symbols -o infer-out-arc -- clang $(OPTIONS) -fobjc-arc $(FILES_ARC) 2>duplicates.txt)
+
+infer-out-default/report.json: $(INFER_BIN) $(SOURCES_DEFAULT)
+	$(call silent_on_success,\
+	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --ml-buckets cf -o infer-out-default -- \
+	  clang $(CLANG_OPTIONS) $(SOURCES_DEFAULT) 2>duplicates.txt)
 	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
-	cp infer-out-all/specs/* infer-out/specs
-	cp infer-out-arc/specs/* infer-out/specs
+
+infer-out/report.json: infer-out-all/report.json infer-out-arc/report.json infer-out-default/report.json
+	$(MKDIR_P) infer-out/specs
+	cp infer-out-{all,arc,default}/specs/* infer-out/specs

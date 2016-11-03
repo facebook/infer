@@ -5,20 +5,14 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-include ../../Makefile.clang
-
-OPTIONS = -x c++ -std=c++11 -isystem$(ROOT_DIR) -isystem$(CLANG_INCLUDES)/c++/v1/ -c
+TESTS_DIR = ../../..
+include $(TESTS_DIR)/clang.make
 
 ANALYZER = quandary
+CLANG_OPTIONS = -x c++ -std=c++11 -isystem$(ROOT_DIR) -isystem$(CLANG_INCLUDES)/c++/v1/ -c
+INFER_OPTIONS = --cxx --ml-buckets cpp
 INFERPRINT_OPTIONS = --issues-txt
 
-FILES = \
+SOURCES = \
   basics.cpp \
   execs.cpp \
-
-compile:
-	clang $(OPTIONS) $(FILES)
-
-analyze:
-	$(call silent_on_success,$(INFER_BIN) -a $(ANALYZER) --cxx --ml-buckets cpp --check-duplicate-symbols -- clang $(OPTIONS) $(FILES) 2>duplicates.txt)
-	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0

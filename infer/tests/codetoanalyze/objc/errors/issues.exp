@@ -59,7 +59,6 @@ procdescs/main.c, call_nslog, 2, MEMORY_LEAK
 procdescs/main.c, call_nslog, 3, MEMORY_LEAK
 property/ExplicitIvarName.m, ExplicitIvarNameA_testDefaultName, 7, NULL_DEREFERENCE
 property/ExplicitIvarName.m, ExplicitIvarNameA_testExplicit, 6, NULL_DEREFERENCE
-property/main.c, property_main, 2, MEMORY_LEAK
 property/main.c, property_main, 3, MEMORY_LEAK
 shared/assertions/NSAssert_example.m, NSAssert_addTarget:, 1, MEMORY_LEAK
 shared/assertions/NSAssert_example.m, NSAssert_initWithRequest:, 1, MEMORY_LEAK
