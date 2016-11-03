@@ -31,7 +31,7 @@ module Path : sig
   val create_loc_trace : t -> PredSymb.path_pos option -> Errlog.loc_trace
 
   (** return the current node of the path *)
-  val curr_node : t -> Cfg.node option
+  val curr_node : t -> Cfg.Node.t option
 
   (** dump a path *)
   val d : t -> unit
@@ -40,12 +40,12 @@ module Path : sig
   val d_stats : t -> unit
 
   (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
-  val extend : Cfg.node -> Typename.t option -> session -> t -> t
+  val extend : Cfg.Node.t -> Typename.t option -> session -> t -> t
 
   val add_description : t -> string -> t
 
   (** iterate over each node in the path, excluding calls, once *)
-  val iter_all_nodes_nocalls : (Cfg.node -> unit) -> t -> unit
+  val iter_all_nodes_nocalls : (Cfg.Node.t -> unit) -> t -> unit
 
   (** iterate over the longest sequence belonging to the path, restricting to those containing the given position if given.
       Do not iterate past the given position.
@@ -63,7 +63,7 @@ module Path : sig
   val pp_stats : Format.formatter -> t -> unit
 
   (** create a new path with given start node *)
-  val start : Cfg.node -> t
+  val start : Cfg.Node.t -> t
 end
 
 (** Set of (prop,path) pairs, where the identity is given by prop *)

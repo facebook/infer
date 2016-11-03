@@ -168,15 +168,15 @@ module Make
   type assert_map = string M.t
 
   let structured_program_to_cfg program test_pname =
-    let cfg = Cfg.Node.create_cfg () in
+    let cfg = Cfg.create_cfg () in
     let pdesc =
-      Cfg.Procdesc.create cfg (ProcAttributes.default test_pname !Config.curr_language) in
+      Cfg.create_proc_desc cfg (ProcAttributes.default test_pname !Config.curr_language) in
     let pname = Cfg.Procdesc.get_proc_name pdesc in
 
     let create_node kind cmds =
-      Cfg.Node.create dummy_loc kind cmds pdesc in
+      Cfg.Procdesc.create_node pdesc dummy_loc kind cmds in
     let set_succs cur_node succs ~exn_handlers=
-      Cfg.Node.set_succs_exn pdesc cur_node succs exn_handlers in
+      Cfg.Procdesc.node_set_succs_exn pdesc cur_node succs exn_handlers in
     let mk_prune_nodes_for_cond cond_exp if_kind =
       let mk_prune_node cond_exp if_kind true_branch =
         let prune_instr = Sil.Prune (cond_exp, dummy_loc, true_branch, if_kind) in

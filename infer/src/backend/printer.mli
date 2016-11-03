@@ -37,13 +37,13 @@ val curr_html_formatter : Format.formatter ref
 val force_delayed_prints : unit -> unit
 
 (** Finish a session, and perform delayed print actions if required *)
-val node_finish_session : Cfg.node -> DB.source_file -> unit
+val node_finish_session : Cfg.Node.t -> DB.source_file -> unit
 
 (** Return true if the node was visited during footprint and during re-execution *)
 val node_is_visited : Procname.t -> Cfg.Node.t -> bool * bool
 
 (** Start a session, and create a new html fine for the node if it does not exist yet *)
-val node_start_session : Cfg.node -> Location.t -> Procname.t -> int -> DB.source_file -> unit
+val node_start_session : Cfg.Node.t -> Location.t -> Procname.t -> int -> DB.source_file -> unit
 
 (** Write html file for the procedure.
     The boolean indicates whether to print whole seconds only. *)

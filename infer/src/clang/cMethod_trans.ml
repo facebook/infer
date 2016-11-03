@@ -328,11 +328,11 @@ let sil_func_attributes_of_attributes attrs =
   do_translation [] attrs
 
 let should_create_procdesc cfg procname defined =
-  match Cfg.Procdesc.find_from_name cfg procname with
+  match Cfg.find_proc_desc_from_name cfg procname with
   | Some previous_procdesc ->
       let is_defined_previous = Cfg.Procdesc.is_defined previous_procdesc in
       if defined && (not is_defined_previous) then
-        (Cfg.Procdesc.remove cfg (Cfg.Procdesc.get_proc_name previous_procdesc);
+        (Cfg.remove_proc_desc cfg (Cfg.Procdesc.get_proc_name previous_procdesc);
          true)
       else false
   | None -> true
@@ -418,14 +418,14 @@ let create_local_procdesc trans_unit_ctx cfg tenv ms fbody captured is_objc_inst
             method_annotation;
             ret_type;
           } in
-        Cfg.Procdesc.create cfg proc_attributes in
+        Cfg.create_proc_desc cfg proc_attributes in
       if defined then
         (if !Config.arc_mode then
            Cfg.Procdesc.set_flag procdesc Mleak_buckets.objc_arc_flag "true";
          let start_kind = Cfg.Node.Start_node proc_name in
-         let start_node = Cfg.Node.create loc_start start_kind [] procdesc in
+         let start_node = Cfg.Procdesc.create_node procdesc loc_start start_kind [] in
          let exit_kind = Cfg.Node.Exit_node proc_name in
-         let exit_node = Cfg.Node.create loc_exit exit_kind [] procdesc in
+         let exit_node = Cfg.Procdesc.create_node procdesc loc_exit exit_kind [] in
          Cfg.Procdesc.set_start_node procdesc start_node;
          Cfg.Procdesc.set_exit_node procdesc exit_node) in
   if should_create_procdesc cfg proc_name defined then
@@ -434,7 +434,7 @@ let create_local_procdesc trans_unit_ctx cfg tenv ms fbody captured is_objc_inst
 
 (** Create a procdesc for objc methods whose signature cannot be found. *)
 let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
-  match Cfg.Procdesc.find_from_name cfg proc_name with
+  match Cfg.find_proc_desc_from_name cfg proc_name with
   | Some _ -> ()
   | None ->
       let ret_type, formals =
@@ -450,7 +450,7 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
           loc;
           ret_type;
         } in
-      ignore (Cfg.Procdesc.create cfg proc_attributes)
+      ignore (Cfg.create_proc_desc cfg proc_attributes)
 
 let create_procdesc_with_pointer context pointer class_name_opt name =
   let open CContext in

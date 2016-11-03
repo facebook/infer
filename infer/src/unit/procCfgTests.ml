@@ -16,9 +16,9 @@ module InstrCfg = ProcCfg.OneInstrPerNode (ProcCfg.Normal)
 module BackwardInstrCfg = ProcCfg.Backward (InstrCfg)
 
 let tests =
-  let cfg = Cfg.Node.create_cfg () in
+  let cfg = Cfg.create_cfg () in
   let test_pdesc =
-    Cfg.Procdesc.create cfg (ProcAttributes.default Procname.empty_block !Config.curr_language) in
+    Cfg.create_proc_desc cfg (ProcAttributes.default Procname.empty_block !Config.curr_language) in
   let dummy_instr1 = Sil.Remove_temps ([], Location.dummy) in
   let dummy_instr2 = Sil.Abstract Location.dummy in
   let dummy_instr3 = Sil.Remove_temps ([Ident.create_fresh Ident.knormal], Location.dummy) in
@@ -28,7 +28,7 @@ let tests =
   let instrs3 = [dummy_instr4] in
   let instrs4 = [] in
   let create_node instrs =
-    Cfg.Node.create Location.dummy (Cfg.Node.Stmt_node "") instrs test_pdesc in
+    Cfg.Procdesc.create_node test_pdesc Location.dummy (Cfg.Node.Stmt_node "") instrs in
   let n1 = create_node instrs1 in
   let n2 = create_node instrs2 in
   let n3 = create_node instrs3 in
@@ -37,9 +37,9 @@ let tests =
   Cfg.Procdesc.set_start_node test_pdesc n1;
   (* let -> represent normal transitions and -*-> represent exceptional transitions *)
   (* creating graph n1 -> n2, n1 -*-> n3, n2 -> n4, n2 -*-> n3, n3 -> n4 , n3 -*> n4 *)
-  Cfg.Node.set_succs_exn test_pdesc n1 [n2] [n3];
-  Cfg.Node.set_succs_exn test_pdesc n2 [n4] [n3];
-  Cfg.Node.set_succs_exn test_pdesc n3 [n4] [n4];
+  Cfg.Procdesc.node_set_succs_exn test_pdesc n1 [n2] [n3];
+  Cfg.Procdesc.node_set_succs_exn test_pdesc n2 [n4] [n3];
+  Cfg.Procdesc.node_set_succs_exn test_pdesc n3 [n4] [n4];
 
   let normal_proc_cfg = ProcCfg.Normal.from_pdesc test_pdesc in
   let exceptional_proc_cfg = ProcCfg.Exceptional.from_pdesc test_pdesc in

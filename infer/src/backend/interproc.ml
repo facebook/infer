@@ -99,7 +99,7 @@ module Worklist = struct
   let is_empty (wl : t) : bool =
     NodeVisitSet.is_empty wl.todo_set
 
-  let add (wl : t) (node : Cfg.node) : unit =
+  let add (wl : t) (node : Cfg.Node.t) : unit =
     let visits = (* recover visit count if it was visited before *)
       try NodeMap.find node wl.visit_map with
       | Not_found -> 0 in
@@ -136,7 +136,7 @@ let htable_retrieve (htable : (Cfg.Node.id, Paths.PathSet.t) Hashtbl.t) (key : C
     Paths.PathSet.empty
 
 (** Add [d] to the pathset todo at [node] returning true if changed *)
-let path_set_put_todo (wl : Worklist.t) (node: Cfg.node) (d: Paths.PathSet.t) : bool =
+let path_set_put_todo (wl : Worklist.t) (node: Cfg.Node.t) (d: Paths.PathSet.t) : bool =
   let changed =
     if Paths.PathSet.is_empty d then false
     else
@@ -149,7 +149,7 @@ let path_set_put_todo (wl : Worklist.t) (node: Cfg.node) (d: Paths.PathSet.t) : 
       not (Paths.PathSet.equal old_todo todo_new) in
   changed
 
-let path_set_checkout_todo (wl : Worklist.t) (node: Cfg.node) : Paths.PathSet.t =
+let path_set_checkout_todo (wl : Worklist.t) (node: Cfg.Node.t) : Paths.PathSet.t =
   try
     let node_id = Cfg.Node.get_id node in
     let todo = Hashtbl.find wl.Worklist.path_set_todo node_id in
@@ -250,7 +250,7 @@ let collect_preconditions tenv proc_name : Prop.normal Specs.Jprop.t list =
 
 (** propagate a set of results to the given node *)
 let propagate
-    (wl : Worklist.t) pname ~is_exception (pset: Paths.PathSet.t) (curr_node: Cfg.node) =
+    (wl : Worklist.t) pname ~is_exception (pset: Paths.PathSet.t) (curr_node: Cfg.Node.t) =
   let edgeset_todo =
     (* prop must be a renamed prop by the invariant preserved by PropSet *)
     let f prop path edgeset_curr =
@@ -270,7 +270,7 @@ let propagate
 (** propagate a set of results, including exceptions and divergence *)
 let propagate_nodes_divergence
     tenv (pdesc: Cfg.Procdesc.t) (pset: Paths.PathSet.t)
-    (succ_nodes: Cfg.node list) (exn_nodes: Cfg.node list) (wl : Worklist.t) =
+    (succ_nodes: Cfg.Node.t list) (exn_nodes: Cfg.Node.t list) (wl : Worklist.t) =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let pset_exn, pset_ok = Paths.PathSet.partition (Tabulation.prop_is_exn pname) pset in
   if !Config.footprint && not (Paths.PathSet.is_empty (State.get_diverging_states_node ())) then
@@ -463,7 +463,7 @@ let check_assignement_guard pdesc node =
 
 (** Perform symbolic execution for a node starting from an initial prop *)
 let do_symbolic_execution pdesc handle_exn tenv
-    (node : Cfg.node) (prop: Prop.normal Prop.t) (path : Paths.Path.t) =
+    (node : Cfg.Node.t) (prop: Prop.normal Prop.t) (path : Paths.Path.t) =
   State.mark_execution_start node;
   (* build the const map lazily *)
   State.set_const_map (ConstantPropagation.build_const_map tenv pdesc);

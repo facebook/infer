@@ -100,7 +100,7 @@ let is_visited proc_name node =
     when starting and finishing the processing of a node *)
 module NodesHtml : sig
   val start_node :
-    int -> Location.t -> Procname.t -> Cfg.node list -> Cfg.node list -> Cfg.node list ->
+    int -> Location.t -> Procname.t -> Cfg.Node.t list -> Cfg.Node.t list -> Cfg.Node.t list ->
     DB.source_file -> bool
   val finish_node : Procname.t -> int -> DB.source_file -> unit
 end = struct
@@ -237,7 +237,7 @@ let force_delayed_print fmt =
       let (loc: Location.t) = Obj.obj loc in
       Location.pp fmt loc
   | (L.PTnode_instrs, b_n) ->
-      let (b: bool), (io: Sil.instr option), (n: Cfg.node) = Obj.obj b_n in
+      let (b: bool), (io: Sil.instr option), (n: Cfg.Node.t) = Obj.obj b_n in
       if Config.write_html
       then
         F.fprintf fmt "%a%a%a"

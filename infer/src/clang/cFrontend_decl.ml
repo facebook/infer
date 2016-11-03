@@ -26,7 +26,7 @@ struct
     Logging.out_debug
       "@\n@\n>>---------- ADDING METHOD: '%s' ---------<<@\n@." (Procname.to_string procname);
     try
-      (match Cfg.Procdesc.find_from_name cfg procname with
+      (match Cfg.find_proc_desc_from_name cfg procname with
        | Some procdesc ->
            if (Cfg.Procdesc.is_defined procdesc && not (model_exists procname)) then
              (let context =
@@ -38,9 +38,10 @@ struct
                 "\n\n>>---------- Start translating body of function: '%s' ---------<<\n@."
                 (Procname.to_string procname);
               let meth_body_nodes = T.instructions_trans context body extra_instrs exit_node in
+              let proc_attributes = Cfg.Procdesc.get_attributes procdesc in
               Cfg.Node.add_locals_ret_declaration
-                procdesc start_node (Cfg.Procdesc.get_locals procdesc);
-              Cfg.Node.set_succs_exn procdesc start_node meth_body_nodes [];
+                start_node proc_attributes (Cfg.Procdesc.get_locals procdesc);
+              Cfg.Procdesc.node_set_succs_exn procdesc start_node meth_body_nodes [];
               Cg.add_defined_node (CContext.get_cg context) (Cfg.Procdesc.get_proc_name procdesc))
        | None -> ())
     with
@@ -51,7 +52,7 @@ struct
         assert false
     | Assert_failure (file, line, column) ->
         Logging.out "Fatal error: exception Assert_failure(%s, %d, %d)\n%!" file line column;
-        Cfg.Procdesc.remove cfg procname;
+        Cfg.remove_proc_desc cfg procname;
         CMethod_trans.create_external_procdesc cfg procname is_objc_method None;
         ()
 
@@ -111,7 +112,7 @@ struct
                     let attrs = { (ProcAttributes.default procname Config.Clang) with
                                   loc = loc;
                                   objc_accessor = property_accessor; } in
-                    ignore (Cfg.Procdesc.create cfg attrs)
+                    ignore (Cfg.create_proc_desc cfg attrs)
                 | _ -> ()) in
              process_accessor obj_c_property_decl_info.Clang_ast_t.opdi_getter_method ~getter:true;
              process_accessor obj_c_property_decl_info.Clang_ast_t.opdi_setter_method ~getter:false

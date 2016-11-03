@@ -54,7 +54,7 @@ struct
 
   let create_node node_kind instrs loc context =
     let procdesc = CContext.get_procdesc context in
-    Cfg.Node.create loc node_kind instrs procdesc
+    Cfg.Procdesc.create_node procdesc loc node_kind instrs
 
   let create_prune_node branch e_cond instrs_cond loc ik context =
     let (e_cond', _) = extract_exp_from_list e_cond
@@ -170,7 +170,9 @@ let collect_res_trans pdesc l =
           if rt'.leaf_nodes <> [] then rt'.leaf_nodes
           else rt.leaf_nodes in
         if rt'.root_nodes <> [] then
-          IList.iter (fun n -> Cfg.Node.set_succs_exn pdesc n rt'.root_nodes []) rt.leaf_nodes;
+          IList.iter
+            (fun n -> Cfg.Procdesc.node_set_succs_exn pdesc n rt'.root_nodes [])
+            rt.leaf_nodes;
         collect l'
           { root_nodes = root_nodes;
             leaf_nodes = leaf_nodes;
@@ -244,9 +246,9 @@ struct
       (* We need to create a node *)
       let node_kind = Cfg.Node.Stmt_node (nd_name) in
       let node = Nodes.create_node node_kind res_state.instrs loc trans_state.context in
-      Cfg.Node.set_succs_exn trans_state.context.procdesc node trans_state.succ_nodes [];
+      Cfg.Procdesc.node_set_succs_exn trans_state.context.procdesc node trans_state.succ_nodes [];
       IList.iter
-        (fun leaf -> Cfg.Node.set_succs_exn trans_state.context.procdesc leaf [node] [])
+        (fun leaf -> Cfg.Procdesc.node_set_succs_exn trans_state.context.procdesc leaf [node] [])
         res_state.leaf_nodes;
       (* Invariant: if root_nodes is empty then the params have not created a node.*)
       let root_nodes = (if res_state.root_nodes <> [] then res_state.root_nodes
@@ -447,13 +449,13 @@ let trans_assertion_failure sil_loc (context : CContext.t) =
   let exit_node = Cfg.Procdesc.get_exit_node (CContext.get_procdesc context)
   and failure_node =
     Nodes.create_node (Cfg.Node.Stmt_node "Assertion failure") [call_instr] sil_loc context in
-  Cfg.Node.set_succs_exn context.procdesc failure_node [exit_node] [];
+  Cfg.Procdesc.node_set_succs_exn context.procdesc failure_node [exit_node] [];
   { empty_res_trans with root_nodes = [failure_node]; }
 
 let trans_assume_false sil_loc (context : CContext.t) succ_nodes =
   let instrs_cond = [Sil.Prune (Exp.zero, sil_loc, true, Sil.Ik_land_lor)] in
   let prune_node = Nodes.create_node (Nodes.prune_kind true) instrs_cond sil_loc context in
-  Cfg.Node.set_succs_exn context.procdesc prune_node succ_nodes [];
+  Cfg.Procdesc.node_set_succs_exn context.procdesc prune_node succ_nodes [];
   { empty_res_trans with root_nodes = [prune_node]; leaf_nodes = [prune_node] }
 
 let trans_assertion trans_state sil_loc =

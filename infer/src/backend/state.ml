@@ -336,7 +336,7 @@ let set_path path pos_opt =
 let set_prop_tenv_pdesc prop tenv pdesc =
   !gs.last_prop_tenv_pdesc <- Some (prop, tenv, pdesc)
 
-let set_node (node: Cfg.node) =
+let set_node (node: Cfg.Node.t) =
   !gs.last_instr <- None;
   !gs.last_node <- node
 

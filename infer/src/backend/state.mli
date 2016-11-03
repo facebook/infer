@@ -115,7 +115,7 @@ val set_const_map : const_map -> unit
 val set_instr : Sil.instr -> unit
 
 (** Set last node seen in symbolic execution *)
-val set_node : Cfg.node -> unit
+val set_node : Cfg.Node.t -> unit
 
 (** Get last path seen in symbolic execution *)
 val set_path : Paths.Path.t -> PredSymb.path_pos option -> unit

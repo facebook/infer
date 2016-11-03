@@ -187,7 +187,7 @@ let get_cfg exe_env pname =
 let get_proc_desc exe_env pname =
   match get_cfg exe_env pname with
   | Some cfg ->
-      Cfg.Procdesc.find_from_name cfg pname
+      Cfg.find_proc_desc_from_name cfg pname
   | None ->
       None
 

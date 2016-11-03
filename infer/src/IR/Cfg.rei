@@ -15,125 +15,13 @@ open! Utils;
 
 /**  Control Flow Graph for Interprocedural Analysis */
 
-/** {2 ADT node and proc_desc} */
-type node;
-
-type cfg;
-
-
-/** Load a cfg from a file */
-let load_cfg_from_file: DB.filename => option cfg;
-
-
-/** Save a cfg into a file, and save a copy of the source files if the boolean is true */
-let store_cfg_to_file:
-  save_sources::bool? => source_file::DB.source_file => DB.filename => cfg => unit;
-
-
-/** proc description */
-let module Procdesc: {
-
-  /** proc description */
-  type t;
-
-  /** Compute the distance of each node to the exit node, if not computed already */
-  let compute_distance_to_exit_node: t => unit;
-
-  /** Create a procdesc */
-  let create: cfg => ProcAttributes.t => t;
-
-  /** true if we ran the preanalysis on the CFG associated with [t] */
-  let did_preanalysis: t => bool;
-
-  /** indicate that we have performed preanalysis on the CFG assoociated with [t] */
-  let signal_did_preanalysis: t => unit;
-
-  /** [remove cfg name remove_nodes] remove the procdesc [name]
-      from the control flow graph [cfg]. */
-  let remove: cfg => Procname.t => unit;
-
-  /** Find the procdesc given the proc name. Return None if not found. */
-  let find_from_name: cfg => Procname.t => option t;
-
-  /** Get the attributes of the procedure. */
-  let get_attributes: t => ProcAttributes.t;
-  let get_err_log: t => Errlog.t;
-  let get_exit_node: t => node;
-
-  /** Get flags for the proc desc */
-  let get_flags: t => proc_flags;
-
-  /** Return name and type of formal parameters */
-  let get_formals: t => list (Mangled.t, Typ.t);
-
-  /** Return loc information for the procedure */
-  let get_loc: t => Location.t;
-
-  /** Return name and type of local variables */
-  let get_locals: t => list (Mangled.t, Typ.t);
-
-  /** Return name and type of block's captured variables */
-  let get_captured: t => list (Mangled.t, Typ.t);
-
-  /** Return the visibility attribute */
-  let get_access: t => PredSymb.access;
-  let get_nodes: t => list node;
-
-  /** Get the procedure's nodes up until the first branching */
-  let get_slope: t => list node;
-
-  /** Get the sliced procedure's nodes up until the first branching */
-  let get_sliced_slope: t => (node => bool) => list node;
-  let get_proc_name: t => Procname.t;
-
-  /** Return the return type of the procedure and type string */
-  let get_ret_type: t => Typ.t;
-  let get_ret_var: t => Pvar.t;
-  let get_start_node: t => node;
-
-  /** Return [true] iff the procedure is defined, and not just declared */
-  let is_defined: t => bool;
-
-  /** Return [true] if the procedure signature has the Java synchronized keyword */
-  let is_java_synchronized: t => bool;
-
-  /** iterate over all the nodes of a procedure */
-  let iter_nodes: (node => unit) => t => unit;
-
-  /** fold over the calls from the procedure: (callee, location) pairs */
-  let fold_calls: ('a => (Procname.t, Location.t) => 'a) => 'a => t => 'a;
-
-  /** iterate over the calls from the procedure: (callee, location) pairs */
-  let iter_calls: ((Procname.t, Location.t) => unit) => t => unit;
-
-  /** iterate over all nodes and their instructions */
-  let iter_instrs: (node => Sil.instr => unit) => t => unit;
-
-  /** fold over all nodes and their instructions */
-  let fold_instrs: ('a => node => Sil.instr => 'a) => 'a => t => 'a;
-
-  /** iterate over all nodes until we reach a branching structure */
-  let iter_slope: (node => unit) => t => unit;
-
-  /** iterate over all calls until we reach a branching structure */
-  let iter_slope_calls: (Procname.t => unit) => t => unit;
-
-  /** iterate between two nodes or until we reach a branching structure */
-  let iter_slope_range: (node => unit) => node => node => unit;
-  let set_exit_node: t => node => unit;
-
-  /** Set a flag for the proc desc */
-  let set_flag: t => string => string => unit;
-  let set_start_node: t => node => unit;
-
-  /** append a list of new local variables to the existing list of local variables */
-  let append_locals: t => list (Mangled.t, Typ.t) => unit;
-};
-
-
 /** node of the control flow graph */
 let module Node: {
-  type t = node; /** type of nodes */
+
+  /** type of nodes */
+  type t;
+
+  /** node id */
   type id = private int;
 
   /** kind of cfg node */
@@ -154,24 +42,14 @@ let module Node: {
   /** kind of Stmt_node for a throw instruction. */
   let throw_kind: nodekind;
 
+  /** Add declarations for local variables and return variable to the node */
+  let add_locals_ret_declaration: t => ProcAttributes.t => list (Mangled.t, Typ.t) => unit;
+
   /** Append the instructions to the list of instructions to execute */
   let append_instrs: t => list Sil.instr => unit;
 
-  /** Add the instructions at the beginning of the list of instructions to execute */
-  let prepend_instrs: t => list Sil.instr => unit;
-
-  /** Add declarations for local variables and return variable to the node */
-  let add_locals_ret_declaration: Procdesc.t => t => list (Mangled.t, Typ.t) => unit;
-
   /** Compare two nodes */
   let compare: t => t => int;
-
-  /** Create a new cfg node with the given location, kind, list of instructions,
-      and add it to the procdesc. */
-  let create: Location.t => nodekind => list Sil.instr => Procdesc.t => t;
-
-  /** create a new empty cfg */
-  let create_cfg: unit => cfg;
 
   /** Dump extended instructions for the node */
   let d_instrs: sub_instrs::bool => option Sil.instr => t => unit;
@@ -182,63 +60,65 @@ let module Node: {
   /** Check if two nodes are equal */
   let equal: t => t => bool;
 
-  /** Get the distance to the exit node, if it has been computed */
-  let get_distance_to_exit: t => option int;
+  /** Get the list of callee procnames from the node */
+  let get_callees: t => list Procname.t;
 
   /** Return a description of the node */
   let get_description: printenv => t => string;
 
+  /** Get the distance to the exit node, if it has been computed */
+  let get_distance_to_exit: t => option int;
+
   /** Get the exception nodes from the current node */
   let get_exn: t => list t;
-
-  /** Get the unique id of the node */
-  let get_id: t => id;
-
-  /** compare node ids */
-  let id_compare: id => id => int;
-
-  /** Get the source location of the node */
-  let get_loc: t => Location.t;
-
-  /** Get the source location of the last instruction in the node */
-  let get_last_loc: t => Location.t;
-
-  /** Get the kind of the current node */
-  let get_kind: t => nodekind;
-
-  /** Get the predecessor nodes of the current node */
-  let get_preds: t => list t;
 
   /** Get a list of unique nodes until the first branch starting
       from a node with subsequent applications of a generator function */
   let get_generated_slope: t => (t => list t) => list t;
 
-  /** Get the name of the procedure the node belongs to */
-  let get_proc_name: t => Procname.t;
+  /** Get the unique id of the node */
+  let get_id: t => id;
 
   /** Get the instructions to be executed */
   let get_instrs: t => list Sil.instr;
 
-  /** Get the list of callee procnames from the node */
-  let get_callees: t => list Procname.t;
+  /** Get the kind of the current node */
+  let get_kind: t => nodekind;
 
-  /** Get the successor nodes of the current node */
-  let get_succs: t => list t;
+  /** Get the source location of the last instruction in the node */
+  let get_last_loc: t => Location.t;
 
-  /** Get the successor nodes of a node where the given predicate evaluates to true */
-  let get_sliced_succs: t => (t => bool) => list t;
+  /** Get the source location of the node */
+  let get_loc: t => Location.t;
+
+  /** Get the predecessor nodes of the current node */
+  let get_preds: t => list t;
+
+  /** Get the name of the procedure the node belongs to */
+  let get_proc_name: t => Procname.t;
 
   /** Get the predecessor nodes of a node where the given predicate evaluates to true */
   let get_sliced_preds: t => (t => bool) => list t;
 
+  /** Get the successor nodes of a node where the given predicate evaluates to true */
+  let get_sliced_succs: t => (t => bool) => list t;
+
+  /** Get the successor nodes of the current node */
+  let get_succs: t => list t;
+
   /** Hash function for nodes */
   let hash: t => int;
+
+  /** compare node ids */
+  let id_compare: id => id => int;
 
   /** Comparison for node kind */
   let kind_compare: nodekind => nodekind => int;
 
   /** Pretty print the node */
   let pp: Format.formatter => t => unit;
+
+  /** Pretty print a node id */
   let pp_id: Format.formatter => id => unit;
 
   /** Print extended instructions for the node,
@@ -247,10 +127,120 @@ let module Node: {
 
   /** Replace the instructions to be executed. */
   let replace_instrs: t => list Sil.instr => unit;
+};
+
+
+/** procedure description */
+let module Procdesc: {
+
+  /** proc description */
+  type t;
+
+  /** append a list of new local variables to the existing list of local variables */
+  let append_locals: t => list (Mangled.t, Typ.t) => unit;
+
+  /** Compute the distance of each node to the exit node, if not computed already */
+  let compute_distance_to_exit_node: t => unit;
+
+  /** Create a new cfg node with the given location, kind, list of instructions,
+      and add it to the procdesc. */
+  let create_node: t => Location.t => Node.nodekind => list Sil.instr => Node.t;
+
+  /** true if we ran the preanalysis on the CFG associated with [t] */
+  let did_preanalysis: t => bool;
+
+  /** fold over the calls from the procedure: (callee, location) pairs */
+  let fold_calls: ('a => (Procname.t, Location.t) => 'a) => 'a => t => 'a;
+
+  /** fold over all nodes and their instructions */
+  let fold_instrs: ('a => Node.t => Sil.instr => 'a) => 'a => t => 'a;
+
+  /** Return the visibility attribute */
+  let get_access: t => PredSymb.access;
+
+  /** Get the attributes of the procedure. */
+  let get_attributes: t => ProcAttributes.t;
+
+  /** Return name and type of block's captured variables */
+  let get_captured: t => list (Mangled.t, Typ.t);
+  let get_err_log: t => Errlog.t;
+  let get_exit_node: t => Node.t;
+
+  /** Get flags for the proc desc */
+  let get_flags: t => proc_flags;
+
+  /** Return name and type of formal parameters */
+  let get_formals: t => list (Mangled.t, Typ.t);
+
+  /** Return loc information for the procedure */
+  let get_loc: t => Location.t;
+
+  /** Return name and type of local variables */
+  let get_locals: t => list (Mangled.t, Typ.t);
+  let get_nodes: t => list Node.t;
+  let get_proc_name: t => Procname.t;
+
+  /** Return the return type of the procedure and type string */
+  let get_ret_type: t => Typ.t;
+  let get_ret_var: t => Pvar.t;
+
+  /** Get the sliced procedure's nodes up until the first branching */
+  let get_sliced_slope: t => (Node.t => bool) => list Node.t;
+
+  /** Get the procedure's nodes up until the first branching */
+  let get_slope: t => list Node.t;
+  let get_start_node: t => Node.t;
+
+  /** Return [true] iff the procedure is defined, and not just declared */
+  let is_defined: t => bool;
+
+  /** Return [true] if the procedure signature has the Java synchronized keyword */
+  let is_java_synchronized: t => bool;
+
+  /** iterate over the calls from the procedure: (callee, location) pairs */
+  let iter_calls: ((Procname.t, Location.t) => unit) => t => unit;
+
+  /** iterate over all nodes and their instructions */
+  let iter_instrs: (Node.t => Sil.instr => unit) => t => unit;
+
+  /** iterate over all the nodes of a procedure */
+  let iter_nodes: (Node.t => unit) => t => unit;
+
+  /** iterate over all nodes until we reach a branching structure */
+  let iter_slope: (Node.t => unit) => t => unit;
+
+  /** iterate over all calls until we reach a branching structure */
+  let iter_slope_calls: (Procname.t => unit) => t => unit;
+
+  /** iterate between two nodes or until we reach a branching structure */
+  let iter_slope_range: (Node.t => unit) => Node.t => Node.t => unit;
 
   /** Set the successor nodes and exception nodes, and build predecessor links */
-  let set_succs_exn: Procdesc.t => t => list t => list t => unit;
+  let node_set_succs_exn: t => Node.t => list Node.t => list Node.t => unit;
+
+  /** Set the exit node of the procedure */
+  let set_exit_node: t => Node.t => unit;
+
+  /** Set a flag for the proc desc */
+  let set_flag: t => string => string => unit;
+  let set_start_node: t => Node.t => unit;
+
+  /** indicate that we have performed preanalysis on the CFG assoociated with [t] */
+  let signal_did_preanalysis: t => unit;
 };
+
+
+/** A control-flow graph */
+type cfg;
+
+
+/** Load a cfg from a file */
+let load_cfg_from_file: DB.filename => option cfg;
+
+
+/** Save a cfg into a file, and save a copy of the source files if the boolean is true */
+let store_cfg_to_file:
+  save_sources::bool? => source_file::DB.source_file => DB.filename => cfg => unit;
 
 
 /** Hash table with nodes as keys. */
@@ -267,8 +257,20 @@ let module IdMap: Map.S with type key = Node.id;
 
 /** {2 Functions for manipulating an interprocedural CFG} */
 
+/** create a new empty cfg */
+let create_cfg: unit => cfg;
+
+
+/** Create a new procdesc */
+let create_proc_desc: cfg => ProcAttributes.t => Procdesc.t;
+
+
 /** Iterate over all the procdesc's */
 let iter_proc_desc: cfg => (Procname.t => Procdesc.t => unit) => unit;
+
+
+/** Find the procdesc given the proc name. Return None if not found. */
+let find_proc_desc_from_name: cfg => Procname.t => option Procdesc.t;
 
 
 /** Get all the procedures (defined and declared) */
@@ -285,6 +287,10 @@ let iter_all_nodes: (Procdesc.t => Node.t => unit) => cfg => unit;
 
 /** checks whether a cfg is connected or not */
 let check_cfg_connectedness: cfg => unit;
+
+
+/** Remove the procdesc from the control flow graph. */
+let remove_proc_desc: cfg => Procname.t => unit;
 
 
 /** Creates a copy of a procedure description and a list of type substitutions of the form

@@ -16,7 +16,6 @@ let module L = Logging;
 
 let module F = Format;
 
-/* ============== START of ADT node and proc_desc ============== */
 /* =============== START of module Node =============== */
 let module Node = {
   type id = int;
@@ -31,162 +30,50 @@ let module Node = {
   /** a node */
   type t = {
     /** unique id of the node */
-    nd_id: id,
+    id: id,
     /** distance to the exit node */
-    mutable nd_dist_exit: option int,
+    mutable dist_exit: option int,
     /** exception nodes in the cfg */
-    mutable nd_exn: list t,
+    mutable exn: list t,
     /** instructions for symbolic execution */
-    mutable nd_instrs: list Sil.instr,
+    mutable instrs: list Sil.instr,
     /** kind of node */
-    nd_kind: nodekind,
+    kind: nodekind,
     /** location in the source code */
-    nd_loc: Location.t,
+    loc: Location.t,
     /** predecessor nodes in the cfg */
-    mutable nd_preds: list t,
+    mutable preds: list t,
     /** name of the procedure the node belongs to */
-    nd_pname: option Procname.t,
+    pname: option Procname.t,
     /** successor nodes in the cfg */
-    mutable nd_succs: list t
-  };
-
-  /** procedure description */
-  type proc_desc = {
-    pd_attributes: ProcAttributes.t, /** attributes of the procedure */
-    pd_id: int, /** unique proc_desc identifier */
-    mutable pd_nodes: list t, /** list of nodes of this procedure */
-    mutable pd_nodes_num: int, /** number of nodes */
-    mutable pd_start_node: t, /** start node of this procedure */
-    mutable pd_exit_node: t /** exit node of ths procedure */
+    mutable succs: list t
   };
   let exn_handler_kind = Stmt_node "exception handler";
   let exn_sink_kind = Stmt_node "exceptions sink";
   let throw_kind = Stmt_node "throw";
-
-  /** data type for the control flow graph */
-  type cfg = {name_pdesc_tbl: Procname.Hash.t proc_desc /** Map proc name to procdesc */};
-
-  /** create a new empty cfg */
-  let create_cfg () => {name_pdesc_tbl: Procname.Hash.create 16};
-
-  /** compute the list of procedures added or changed in [cfg_new] over [cfg_old] */
-  let mark_unchanged_pdescs cfg_new cfg_old => {
-    let pdescs_eq pd1 pd2 => {
-      /* map of exp names in pd1 -> exp names in pd2 */
-      let exp_map = ref Exp.Map.empty;
-      /* map of node id's in pd1 -> node id's in pd2 */
-      let id_map = ref IntMap.empty;
-      /* formals are the same if their types are the same */
-      let formals_eq formals1 formals2 =>
-        IList.equal (fun (_, typ1) (_, typ2) => Typ.compare typ1 typ2) formals1 formals2;
-      let nodes_eq n1s n2s => {
-        /* nodes are the same if they have the same id, instructions, and succs/preds up to renaming
-           with [exp_map] and [id_map] */
-        let node_eq n1 n2 => {
-          let id_compare n1 n2 => {
-            let (id1, id2) = (n1.nd_id, n2.nd_id);
-            try {
-              let id1_mapping = IntMap.find id1 !id_map;
-              Pervasives.compare id1_mapping id2
-            } {
-            | Not_found =>
-              /* assume id's are equal and enforce by adding to [id_map] */
-              id_map := IntMap.add id1 id2 !id_map;
-              0
-            }
-          };
-          let instrs_eq instrs1 instrs2 =>
-            IList.equal
-              (
-                fun i1 i2 => {
-                  let (n, exp_map') = Sil.instr_compare_structural i1 i2 !exp_map;
-                  exp_map := exp_map';
-                  n
-                }
-              )
-              instrs1
-              instrs2;
-          id_compare n1 n2 == 0 &&
-          IList.equal id_compare n1.nd_succs n2.nd_succs &&
-          IList.equal id_compare n1.nd_preds n2.nd_preds && instrs_eq n1.nd_instrs n2.nd_instrs
-        };
-        try (IList.for_all2 node_eq n1s n2s) {
-        | Invalid_argument _ => false
-        }
-      };
-      let att1 = pd1.pd_attributes
-      and att2 = pd2.pd_attributes;
-      att1.ProcAttributes.is_defined == att2.ProcAttributes.is_defined &&
-      Typ.equal att1.ProcAttributes.ret_type att2.ProcAttributes.ret_type &&
-      formals_eq att1.ProcAttributes.formals att2.ProcAttributes.formals &&
-      nodes_eq pd1.pd_nodes pd2.pd_nodes
-    };
-    let old_procs = cfg_old.name_pdesc_tbl;
-    let new_procs = cfg_new.name_pdesc_tbl;
-    let mark_pdesc_if_unchanged pname new_pdesc =>
-      try {
-        let old_pdesc = Procname.Hash.find old_procs pname;
-        let changed =
-          /* in continue_capture mode keep the old changed bit */
-          Config.continue_capture && old_pdesc.pd_attributes.ProcAttributes.changed ||
-          not (pdescs_eq old_pdesc new_pdesc);
-        new_pdesc.pd_attributes.changed = changed
-      } {
-      | Not_found => ()
-      };
-    Procname.Hash.iter mark_pdesc_if_unchanged new_procs
-  };
-  let pdesc_tbl_add cfg proc_name proc_desc =>
-    Procname.Hash.add cfg.name_pdesc_tbl proc_name proc_desc;
-  let pdesc_tbl_remove cfg proc_name => Procname.Hash.remove cfg.name_pdesc_tbl proc_name;
-  let pdesc_tbl_find cfg proc_name => Procname.Hash.find cfg.name_pdesc_tbl proc_name;
-  let iter_proc_desc cfg f => Procname.Hash.iter f cfg.name_pdesc_tbl;
   let dummy () => {
-    nd_id: 0,
-    nd_dist_exit: None,
-    nd_instrs: [],
-    nd_kind: Skip_node "dummy",
-    nd_loc: Location.dummy,
-    nd_pname: None,
-    nd_succs: [],
-    nd_preds: [],
-    nd_exn: []
+    id: 0,
+    dist_exit: None,
+    instrs: [],
+    kind: Skip_node "dummy",
+    loc: Location.dummy,
+    pname: None,
+    succs: [],
+    preds: [],
+    exn: []
   };
-  let compare node1 node2 => int_compare node1.nd_id node2.nd_id;
-  let hash node => Hashtbl.hash node.nd_id;
+  let compare node1 node2 => int_compare node1.id node2.id;
+  let hash node => Hashtbl.hash node.id;
   let equal node1 node2 => compare node1 node2 == 0;
 
-  /** Create a new cfg node */
-  let create loc kind instrs pdesc => {
-    pdesc.pd_nodes_num = pdesc.pd_nodes_num + 1;
-    let node_id = pdesc.pd_nodes_num;
-    let node = {
-      nd_id: node_id,
-      nd_dist_exit: None,
-      nd_instrs: instrs,
-      nd_kind: kind,
-      nd_loc: loc,
-      nd_preds: [],
-      nd_pname: Some pdesc.pd_attributes.proc_name,
-      nd_succs: [],
-      nd_exn: []
-    };
-    pdesc.pd_nodes = [node, ...pdesc.pd_nodes];
-    node
-  };
-
   /** Get the unique id of the node */
-  let get_id node => node.nd_id;
+  let get_id node => node.id;
 
   /** compare node ids */
   let id_compare = int_compare;
-  let get_succs node => node.nd_succs;
+  let get_succs node => node.succs;
   type node = t;
   let module NodeSet = Set.Make {
-    type t = node;
-    let compare = compare;
-  };
-  let module NodeMap = Map.Make {
     type t = node;
     let compare = compare;
   };
@@ -203,12 +90,12 @@ let module Node = {
           NodeSet.singleton n
         } else {
           NodeSet.union
-            acc (slice_nodes (IList.filter (fun s => not (NodeSet.mem s !visited)) n.nd_succs))
+            acc (slice_nodes (IList.filter (fun s => not (NodeSet.mem s !visited)) n.succs))
         }
       };
       IList.fold_left do_node NodeSet.empty nodes
     };
-    NodeSet.elements (slice_nodes node.nd_succs)
+    NodeSet.elements (slice_nodes node.succs)
   };
   let get_sliced_preds node f => {
     let visited = ref NodeSet.empty;
@@ -219,46 +106,26 @@ let module Node = {
           NodeSet.singleton n
         } else {
           NodeSet.union
-            acc (slice_nodes (IList.filter (fun s => not (NodeSet.mem s !visited)) n.nd_preds))
+            acc (slice_nodes (IList.filter (fun s => not (NodeSet.mem s !visited)) n.preds))
         }
       };
       IList.fold_left do_node NodeSet.empty nodes
     };
-    NodeSet.elements (slice_nodes node.nd_preds)
+    NodeSet.elements (slice_nodes node.preds)
   };
-  let get_exn node => node.nd_exn;
+  let get_exn node => node.exn;
 
   /** Get the name of the procedure the node belongs to */
   let get_proc_name node =>
-    switch node.nd_pname {
+    switch node.pname {
     | None =>
-      L.out "node_get_proc_desc: at node %d@\n" node.nd_id;
+      L.out "get_proc_name: at node %d@\n" node.id;
       assert false
-    | Some proc_name => proc_name
-    };
-
-  /** Set the successor nodes and exception nodes, and build predecessor links */
-  let set_succs_exn_base node succs exn => {
-    node.nd_succs = succs;
-    node.nd_exn = exn;
-    IList.iter (fun n => n.nd_preds = [node, ...n.nd_preds]) succs
-  };
-
-  /** Set the successor and exception nodes.
-      If this is a join node right before the exit node, add an extra node in the middle,
-      otherwise nullify and abstract instructions cannot be added after a conditional. */
-  let set_succs_exn pdesc node succs exn =>
-    switch (node.nd_kind, succs) {
-    | (Join_node, [{nd_kind: Exit_node _} as exit_node]) =>
-      let kind = Stmt_node "between_join_and_exit";
-      let node' = create node.nd_loc kind node.nd_instrs pdesc;
-      set_succs_exn_base node [node'] exn;
-      set_succs_exn_base node' [exit_node] exn
-    | _ => set_succs_exn_base node succs exn
+    | Some pname => pname
     };
 
   /** Get the predecessors of the node */
-  let get_preds node => node.nd_preds;
+  let get_preds node => node.preds;
 
   /** Generates a list of nodes starting at a given node
       and recursively adding the results of the generator */
@@ -276,7 +143,7 @@ let module Node = {
   };
 
   /** Get the node kind */
-  let get_kind node => node.nd_kind;
+  let get_kind node => node.kind;
 
   /** Comparison for node kind */
   let kind_compare k1 k2 =>
@@ -311,7 +178,7 @@ let module Node = {
     };
 
   /** Get the instructions to be executed */
-  let get_instrs node => node.nd_instrs;
+  let get_instrs node => node.instrs;
 
   /** Get the list of callee procnames from the node */
   let get_callees node => {
@@ -328,142 +195,40 @@ let module Node = {
   };
 
   /** Get the location of the node */
-  let get_loc n => n.nd_loc;
+  let get_loc n => n.loc;
 
   /** Get the source location of the last instruction in the node */
   let get_last_loc n =>
     switch (IList.rev (get_instrs n)) {
     | [instr, ..._] => Sil.instr_get_loc instr
-    | [] => n.nd_loc
+    | [] => n.loc
     };
   let pp_id f id => F.fprintf f "%d" id;
   let pp f node => pp_id f (get_id node);
-  let proc_desc_from_name cfg proc_name =>
-    try (Some (pdesc_tbl_find cfg proc_name)) {
-    | Not_found => None
-    };
-  let get_distance_to_exit node => node.nd_dist_exit;
+  let get_distance_to_exit node => node.dist_exit;
 
   /** Append the instructions to the list of instructions to execute */
-  let append_instrs node instrs => node.nd_instrs = node.nd_instrs @ instrs;
+  let append_instrs node instrs => node.instrs = node.instrs @ instrs;
 
   /** Add the instructions at the beginning of the list of instructions to execute */
-  let prepend_instrs node instrs => node.nd_instrs = instrs @ node.nd_instrs;
+  let prepend_instrs node instrs => node.instrs = instrs @ node.instrs;
 
   /** Replace the instructions to be executed. */
-  let replace_instrs node instrs => node.nd_instrs = instrs;
-  let proc_desc_get_ret_var pdesc =>
-    Pvar.get_ret_pvar pdesc.pd_attributes.ProcAttributes.proc_name;
+  let replace_instrs node instrs => node.instrs = instrs;
 
   /** Add declarations for local variables and return variable to the node */
-  let add_locals_ret_declaration pdesc node locals => {
+  let add_locals_ret_declaration node (proc_attributes: ProcAttributes.t) locals => {
     let loc = get_loc node;
-    let proc_name = pdesc.pd_attributes.ProcAttributes.proc_name;
+    let pname = proc_attributes.proc_name;
     let ret_var = {
-      let ret_type = pdesc.pd_attributes.ProcAttributes.ret_type;
-      (proc_desc_get_ret_var pdesc, ret_type)
+      let ret_type = proc_attributes.ret_type;
+      (Pvar.get_ret_pvar pname, ret_type)
     };
-    let construct_decl (x, typ) => (Pvar.mk x proc_name, typ);
+    let construct_decl (x, typ) => (Pvar.mk x pname, typ);
     let ptl = [ret_var, ...IList.map construct_decl locals];
     let instr = Sil.Declare_locals ptl loc;
     prepend_instrs node [instr]
   };
-
-  /** Counter for identifiers of procdescs */
-  let proc_desc_id_counter = ref 0;
-  let proc_desc_create cfg proc_attributes => {
-    incr proc_desc_id_counter;
-    let pdesc = {
-      pd_attributes: proc_attributes,
-      pd_id: !proc_desc_id_counter,
-      pd_nodes: [],
-      pd_nodes_num: 0,
-      pd_start_node: dummy (),
-      pd_exit_node: dummy ()
-    };
-    pdesc_tbl_add cfg proc_attributes.ProcAttributes.proc_name pdesc;
-    pdesc
-  };
-  let proc_desc_remove cfg name => pdesc_tbl_remove cfg name;
-  let proc_desc_get_start_node proc_desc => proc_desc.pd_start_node;
-  let proc_desc_get_err_log proc_desc => proc_desc.pd_attributes.ProcAttributes.err_log;
-  let proc_desc_get_attributes proc_desc => proc_desc.pd_attributes;
-  let proc_desc_get_exit_node proc_desc => proc_desc.pd_exit_node;
-
-  /** Compute the distance of each node to the exit node, if not computed already */
-  let proc_desc_compute_distance_to_exit_node proc_desc => {
-    let exit_node = proc_desc.pd_exit_node;
-    let rec mark_distance dist nodes => {
-      let next_nodes = ref [];
-      let do_node node =>
-        switch node.nd_dist_exit {
-        | Some _ => ()
-        | None =>
-          node.nd_dist_exit = Some dist;
-          next_nodes := node.nd_preds @ !next_nodes
-        };
-      IList.iter do_node nodes;
-      if (!next_nodes !== []) {
-        mark_distance (dist + 1) !next_nodes
-      }
-    };
-    mark_distance 0 [exit_node]
-  };
-
-  /** Set the start node of the proc desc */
-  let proc_desc_set_start_node pdesc node => pdesc.pd_start_node = node;
-
-  /** Set the exit node of the proc desc */
-  let proc_desc_set_exit_node pdesc node => pdesc.pd_exit_node = node;
-
-  /** Set a flag for the proc desc */
-  let proc_desc_set_flag pdesc key value =>
-    proc_flags_add pdesc.pd_attributes.ProcAttributes.proc_flags key value;
-
-  /** Return the return type of the procedure */
-  let proc_desc_get_ret_type proc_desc => proc_desc.pd_attributes.ProcAttributes.ret_type;
-  let proc_desc_get_proc_name proc_desc => proc_desc.pd_attributes.ProcAttributes.proc_name;
-
-  /** Return [true] iff the procedure is defined, and not just declared */
-  let proc_desc_is_defined proc_desc => proc_desc.pd_attributes.ProcAttributes.is_defined;
-  let proc_desc_is_java_synchroinized proc_desc =>
-    proc_desc.pd_attributes.ProcAttributes.is_java_synchronized_method;
-  let proc_desc_get_loc proc_desc => proc_desc.pd_attributes.ProcAttributes.loc;
-
-  /** Return name and type of formal parameters */
-  let proc_desc_get_formals proc_desc => proc_desc.pd_attributes.ProcAttributes.formals;
-
-  /** Return name and type of local variables */
-  let proc_desc_get_locals proc_desc => proc_desc.pd_attributes.ProcAttributes.locals;
-
-  /** Return name and type of captured variables */
-  let proc_desc_get_captured proc_desc => proc_desc.pd_attributes.ProcAttributes.captured;
-
-  /** Return the visibility attribute */
-  let proc_desc_get_access proc_desc => proc_desc.pd_attributes.ProcAttributes.access;
-  let proc_desc_get_nodes proc_desc => proc_desc.pd_nodes;
-
-  /** List of nodes in the procedure up to the first branching */
-  let proc_desc_get_slope proc_desc =>
-    get_generated_slope (proc_desc_get_start_node proc_desc) get_succs;
-
-  /** List of nodes in the procedure sliced by a predicate up to the first branching */
-  let proc_desc_get_sliced_slope proc_desc f =>
-    get_generated_slope (proc_desc_get_start_node proc_desc) (fun n => get_sliced_succs n f);
-
-  /** Get flags for the proc desc */
-  let proc_desc_get_flags proc_desc => proc_desc.pd_attributes.ProcAttributes.proc_flags;
-
-  /** Append the locals to the list of local variables */
-  let proc_desc_append_locals proc_desc new_locals =>
-    proc_desc.pd_attributes.ProcAttributes.locals =
-      proc_desc.pd_attributes.ProcAttributes.locals @ new_locals;
-
-  /** check or indicate if we have performed preanalysis on the CFG */
-  let proc_desc_did_preanalysis proc_desc =>
-    proc_desc.pd_attributes.ProcAttributes.did_preanalysis;
-  let proc_desc_signal_did_preanalysis proc_desc =>
-    proc_desc.pd_attributes.ProcAttributes.did_preanalysis = true;
 
   /** Print extended instructions for the node,
       highlighting the given subinstruction if present */
@@ -536,240 +301,13 @@ let module Node = {
     let pp fmt () => F.fprintf fmt "%s\n%a@?" str (pp_instrs pe None sub_instrs::true) node;
     pp_to_string pp ()
   };
-  let proc_desc_iter_nodes f proc_desc => IList.iter f (IList.rev (proc_desc_get_nodes proc_desc));
-  let proc_desc_fold_nodes f acc proc_desc =>
-    IList.fold_left f acc (IList.rev (proc_desc_get_nodes proc_desc));
-  let proc_desc_fold_calls f acc pdesc => {
-    let do_node a node =>
-      IList.fold_left
-        (fun b callee_pname => f b (callee_pname, get_loc node)) a (get_callees node);
-    IList.fold_left do_node acc (proc_desc_get_nodes pdesc)
-  };
-
-  /** iterate over the calls from the procedure: (callee,location) pairs */
-  let proc_desc_iter_calls f pdesc => proc_desc_fold_calls (fun _ call => f call) () pdesc;
-  let proc_desc_iter_slope f proc_desc => {
-    let visited = ref NodeSet.empty;
-    let rec do_node node => {
-      visited := NodeSet.add node !visited;
-      f node;
-      switch (get_succs node) {
-      | [n] =>
-        if (not (NodeSet.mem n !visited)) {
-          do_node n
-        }
-      | _ => ()
-      }
-    };
-    do_node (proc_desc_get_start_node proc_desc)
-  };
-
-  /** iterate between two nodes or until we reach a branching structure */
-  let proc_desc_iter_slope_range f src_node dst_node => {
-    let visited = ref NodeSet.empty;
-    let rec do_node node => {
-      visited := NodeSet.add node !visited;
-      f node;
-      switch (get_succs node) {
-      | [n] =>
-        if (not (NodeSet.mem n !visited) && not (equal node dst_node)) {
-          do_node n
-        }
-      | _ => ()
-      }
-    };
-    do_node src_node
-  };
-  let proc_desc_iter_slope_calls f proc_desc => {
-    let do_node node => IList.iter (fun callee_pname => f callee_pname) (get_callees node);
-    proc_desc_iter_slope do_node proc_desc
-  };
-  let proc_desc_iter_instrs f proc_desc => {
-    let do_node node => IList.iter (fun i => f node i) (get_instrs node);
-    proc_desc_iter_nodes do_node proc_desc
-  };
-  let proc_desc_fold_instrs f acc proc_desc => {
-    let fold_node acc node =>
-      IList.fold_left (fun acc instr => f acc node instr) acc (get_instrs node);
-    proc_desc_fold_nodes fold_node acc proc_desc
-  };
-  /* clone a procedure description and apply the type substitutions where
-     the parameters are used */
-  let proc_desc_specialize_types callee_proc_desc resolved_attributes substitutions => {
-    let cfg = create_cfg ();
-    let resolved_proc_desc = proc_desc_create cfg resolved_attributes;
-    let resolved_proc_name = proc_desc_get_proc_name resolved_proc_desc
-    and callee_start_node = proc_desc_get_start_node callee_proc_desc
-    and callee_exit_node = proc_desc_get_exit_node callee_proc_desc;
-    let convert_pvar pvar => Pvar.mk (Pvar.get_name pvar) resolved_proc_name;
-    let convert_exp =
-      fun
-      | Exp.Lvar origin_pvar => Exp.Lvar (convert_pvar origin_pvar)
-      | exp => exp;
-    let extract_class_name =
-      fun
-      | Typ.Tptr (Tstruct name) _ => Typename.name name
-      | _ => failwith "Expecting classname for Java types";
-    let subst_map = ref Ident.IdentMap.empty;
-    let redirected_class_name origin_id =>
-      try (Some (Ident.IdentMap.find origin_id !subst_map)) {
-      | Not_found => None
-      };
-    let convert_instr instrs =>
-      fun
-      | Sil.Load id (Exp.Lvar origin_pvar as origin_exp) origin_typ loc => {
-          let (_, specialized_typ) = {
-            let pvar_name = Pvar.get_name origin_pvar;
-            try (IList.find (fun (n, _) => Mangled.equal n pvar_name) substitutions) {
-            | Not_found => (pvar_name, origin_typ)
-            }
-          };
-          subst_map := Ident.IdentMap.add id specialized_typ !subst_map;
-          [Sil.Load id (convert_exp origin_exp) specialized_typ loc, ...instrs]
-        }
-      | Sil.Load id (Exp.Var origin_id as origin_exp) origin_typ loc => {
-          let updated_typ =
-            switch (Ident.IdentMap.find origin_id !subst_map) {
-            | Typ.Tptr typ _ => typ
-            | _ => failwith "Expecting a pointer type"
-            | exception Not_found => origin_typ
-            };
-          [Sil.Load id (convert_exp origin_exp) updated_typ loc, ...instrs]
-        }
-      | Sil.Load id origin_exp origin_typ loc => [
-          Sil.Load id (convert_exp origin_exp) origin_typ loc,
-          ...instrs
-        ]
-      | Sil.Store assignee_exp origin_typ origin_exp loc => {
-          let set_instr =
-            Sil.Store (convert_exp assignee_exp) origin_typ (convert_exp origin_exp) loc;
-          [set_instr, ...instrs]
-        }
-      | Sil.Call
-          return_ids
-          (Exp.Const (Const.Cfun (Procname.Java callee_pname_java)))
-          [(Exp.Var id, _), ...origin_args]
-          loc
-          call_flags
-          when call_flags.CallFlags.cf_virtual && redirected_class_name id != None => {
-          let redirected_typ = Option.get (redirected_class_name id);
-          let redirected_pname =
-            Procname.replace_class
-              (Procname.Java callee_pname_java) (extract_class_name redirected_typ)
-          and args = {
-            let other_args = IList.map (fun (exp, typ) => (convert_exp exp, typ)) origin_args;
-            [(Exp.Var id, redirected_typ), ...other_args]
-          };
-          let call_instr =
-            Sil.Call return_ids (Exp.Const (Const.Cfun redirected_pname)) args loc call_flags;
-          [call_instr, ...instrs]
-        }
-      | Sil.Call return_ids origin_call_exp origin_args loc call_flags => {
-          let converted_args = IList.map (fun (exp, typ) => (convert_exp exp, typ)) origin_args;
-          let call_instr =
-            Sil.Call return_ids (convert_exp origin_call_exp) converted_args loc call_flags;
-          [call_instr, ...instrs]
-        }
-      | Sil.Prune origin_exp loc is_true_branch if_kind => [
-          Sil.Prune (convert_exp origin_exp) loc is_true_branch if_kind,
-          ...instrs
-        ]
-      | Sil.Declare_locals typed_vars loc => {
-          let new_typed_vars = IList.map (fun (pvar, typ) => (convert_pvar pvar, typ)) typed_vars;
-          [Sil.Declare_locals new_typed_vars loc, ...instrs]
-        }
-      | Sil.Nullify _
-      | Abstract _
-      | Sil.Remove_temps _ =>
-        /* these are generated instructions that will be replaced by the preanalysis */
-        instrs;
-    let convert_node_kind =
-      fun
-      | Start_node _ => Start_node resolved_proc_name
-      | Exit_node _ => Exit_node resolved_proc_name
-      | node_kind => node_kind;
-    let node_map = ref NodeMap.empty;
-    let rec convert_node node => {
-      let loc = get_loc node
-      and kind = convert_node_kind (get_kind node)
-      and instrs = IList.fold_left convert_instr [] (get_instrs node) |> IList.rev;
-      create loc kind instrs resolved_proc_desc
-    }
-    and loop callee_nodes =>
-      switch callee_nodes {
-      | [] => []
-      | [node, ...other_node] =>
-        let converted_node =
-          try (NodeMap.find node !node_map) {
-          | Not_found =>
-            let new_node = convert_node node
-            and successors = get_succs node
-            and exn_nodes = get_exn node;
-            node_map := NodeMap.add node new_node !node_map;
-            if (equal node callee_start_node) {
-              proc_desc_set_start_node resolved_proc_desc new_node
-            };
-            if (equal node callee_exit_node) {
-              proc_desc_set_exit_node resolved_proc_desc new_node
-            };
-            set_succs_exn callee_proc_desc new_node (loop successors) (loop exn_nodes);
-            new_node
-          };
-        [converted_node, ...loop other_node]
-      };
-    ignore (loop [callee_start_node]);
-    resolved_proc_desc
-  };
 };
 
 /* =============== END of module Node =============== */
-type node = Node.t;
 
-type cfg = Node.cfg;
+/** Map over nodes */
+let module NodeMap = Map.Make Node;
 
-/* =============== START of module Procdesc =============== */
-let module Procdesc = {
-  type t = Node.proc_desc;
-  let compute_distance_to_exit_node = Node.proc_desc_compute_distance_to_exit_node;
-  let create = Node.proc_desc_create;
-  let remove = Node.proc_desc_remove;
-  let did_preanalysis = Node.proc_desc_did_preanalysis;
-  let signal_did_preanalysis = Node.proc_desc_signal_did_preanalysis;
-  let find_from_name = Node.proc_desc_from_name;
-  let get_attributes = Node.proc_desc_get_attributes;
-  let get_err_log = Node.proc_desc_get_err_log;
-  let get_exit_node = Node.proc_desc_get_exit_node;
-  let get_flags = Node.proc_desc_get_flags;
-  let get_formals = Node.proc_desc_get_formals;
-  let get_loc = Node.proc_desc_get_loc;
-  let get_locals = Node.proc_desc_get_locals;
-  let get_captured = Node.proc_desc_get_captured;
-  let get_access = Node.proc_desc_get_access;
-  let get_nodes = Node.proc_desc_get_nodes;
-  let get_slope = Node.proc_desc_get_slope;
-  let get_sliced_slope = Node.proc_desc_get_sliced_slope;
-  let get_proc_name = Node.proc_desc_get_proc_name;
-  let get_ret_type = Node.proc_desc_get_ret_type;
-  let get_ret_var pdesc => Pvar.mk Ident.name_return (get_proc_name pdesc);
-  let get_start_node = Node.proc_desc_get_start_node;
-  let is_defined = Node.proc_desc_is_defined;
-  let is_java_synchronized = Node.proc_desc_is_java_synchroinized;
-  let iter_nodes = Node.proc_desc_iter_nodes;
-  let fold_calls = Node.proc_desc_fold_calls;
-  let iter_calls = Node.proc_desc_iter_calls;
-  let iter_instrs = Node.proc_desc_iter_instrs;
-  let fold_instrs = Node.proc_desc_fold_instrs;
-  let iter_slope = Node.proc_desc_iter_slope;
-  let iter_slope_calls = Node.proc_desc_iter_slope_calls;
-  let iter_slope_range = Node.proc_desc_iter_slope_range;
-  let set_exit_node = Node.proc_desc_set_exit_node;
-  let set_flag = Node.proc_desc_set_flag;
-  let set_start_node = Node.proc_desc_set_start_node;
-  let append_locals = Node.proc_desc_append_locals;
-  let specialize_types = Node.proc_desc_specialize_types;
-};
-
-/* =============== END of module Procdesc =============== */
 
 /** Hash table with nodes as keys. */
 let module NodeHash = Hashtbl.Make Node;
@@ -782,12 +320,232 @@ let module NodeSet = Node.NodeSet;
 /** Map with node id keys. */
 let module IdMap = Node.IdMap;
 
-let iter_proc_desc = Node.iter_proc_desc;
+/* =============== START of module Procdesc =============== */
+let module Procdesc = {
+
+  /** procedure description */
+  type t = {
+    attributes: ProcAttributes.t, /** attributes of the procedure */
+    id: int, /** unique proc_desc identifier */
+    mutable nodes: list Node.t, /** list of nodes of this procedure */
+    mutable nodes_num: int, /** number of nodes */
+    mutable start_node: Node.t, /** start node of this procedure */
+    mutable exit_node: Node.t /** exit node of ths procedure */
+  };
+
+  /** Compute the distance of each node to the exit node, if not computed already */
+  let compute_distance_to_exit_node pdesc => {
+    let exit_node = pdesc.exit_node;
+    let rec mark_distance dist nodes => {
+      let next_nodes = ref [];
+      let do_node (node: Node.t) =>
+        switch node.dist_exit {
+        | Some _ => ()
+        | None =>
+          node.dist_exit = Some dist;
+          next_nodes := node.preds @ !next_nodes
+        };
+      IList.iter do_node nodes;
+      if (!next_nodes !== []) {
+        mark_distance (dist + 1) !next_nodes
+      }
+    };
+    mark_distance 0 [exit_node]
+  };
+
+  /** check or indicate if we have performed preanalysis on the CFG */
+  let did_preanalysis pdesc => pdesc.attributes.did_preanalysis;
+  let signal_did_preanalysis pdesc => pdesc.attributes.did_preanalysis = true;
+  let get_attributes pdesc => pdesc.attributes;
+  let get_err_log pdesc => pdesc.attributes.err_log;
+  let get_exit_node pdesc => pdesc.exit_node;
+
+  /** Get flags for the proc desc */
+  let get_flags pdesc => pdesc.attributes.proc_flags;
+
+  /** Return name and type of formal parameters */
+  let get_formals pdesc => pdesc.attributes.formals;
+  let get_loc pdesc => pdesc.attributes.loc;
+
+  /** Return name and type of local variables */
+  let get_locals pdesc => pdesc.attributes.locals;
+
+  /** Return name and type of captured variables */
+  let get_captured pdesc => pdesc.attributes.captured;
+
+  /** Return the visibility attribute */
+  let get_access pdesc => pdesc.attributes.access;
+  let get_nodes pdesc => pdesc.nodes;
+  let get_proc_name pdesc => pdesc.attributes.proc_name;
+
+  /** Return the return type of the procedure */
+  let get_ret_type pdesc => pdesc.attributes.ret_type;
+  let get_ret_var pdesc => Pvar.mk Ident.name_return (get_proc_name pdesc);
+  let get_start_node pdesc => pdesc.start_node;
+
+  /** List of nodes in the procedure sliced by a predicate up to the first branching */
+  let get_sliced_slope pdesc f =>
+    Node.get_generated_slope (get_start_node pdesc) (fun n => Node.get_sliced_succs n f);
+
+  /** List of nodes in the procedure up to the first branching */
+  let get_slope pdesc => Node.get_generated_slope (get_start_node pdesc) Node.get_succs;
+
+  /** Return [true] iff the procedure is defined, and not just declared */
+  let is_defined pdesc => pdesc.attributes.is_defined;
+  let is_java_synchronized pdesc => pdesc.attributes.is_java_synchronized_method;
+  let iter_nodes f pdesc => IList.iter f (IList.rev (get_nodes pdesc));
+  let fold_calls f acc pdesc => {
+    let do_node a node =>
+      IList.fold_left
+        (fun b callee_pname => f b (callee_pname, Node.get_loc node)) a (Node.get_callees node);
+    IList.fold_left do_node acc (get_nodes pdesc)
+  };
+
+  /** iterate over the calls from the procedure: (callee,location) pairs */
+  let iter_calls f pdesc => fold_calls (fun _ call => f call) () pdesc;
+  let iter_instrs f pdesc => {
+    let do_node node => IList.iter (fun i => f node i) (Node.get_instrs node);
+    iter_nodes do_node pdesc
+  };
+  let fold_nodes f acc pdesc => IList.fold_left f acc (IList.rev (get_nodes pdesc));
+  let fold_instrs f acc pdesc => {
+    let fold_node acc node =>
+      IList.fold_left (fun acc instr => f acc node instr) acc (Node.get_instrs node);
+    fold_nodes fold_node acc pdesc
+  };
+  let iter_slope f pdesc => {
+    let visited = ref NodeSet.empty;
+    let rec do_node node => {
+      visited := NodeSet.add node !visited;
+      f node;
+      switch (Node.get_succs node) {
+      | [n] =>
+        if (not (NodeSet.mem n !visited)) {
+          do_node n
+        }
+      | _ => ()
+      }
+    };
+    do_node (get_start_node pdesc)
+  };
+  let iter_slope_calls f pdesc => {
+    let do_node node => IList.iter (fun callee_pname => f callee_pname) (Node.get_callees node);
+    iter_slope do_node pdesc
+  };
+
+  /** iterate between two nodes or until we reach a branching structure */
+  let iter_slope_range f src_node dst_node => {
+    let visited = ref NodeSet.empty;
+    let rec do_node node => {
+      visited := NodeSet.add node !visited;
+      f node;
+      switch (Node.get_succs node) {
+      | [n] =>
+        if (not (NodeSet.mem n !visited) && not (Node.equal node dst_node)) {
+          do_node n
+        }
+      | _ => ()
+      }
+    };
+    do_node src_node
+  };
+
+  /** Set the exit node of the proc desc */
+  let set_exit_node pdesc node => pdesc.exit_node = node;
+
+  /** Set a flag for the proc desc */
+  let set_flag pdesc key value => proc_flags_add pdesc.attributes.proc_flags key value;
+
+  /** Set the start node of the proc desc */
+  let set_start_node pdesc node => pdesc.start_node = node;
+
+  /** Append the locals to the list of local variables */
+  let append_locals pdesc new_locals =>
+    pdesc.attributes.locals = pdesc.attributes.locals @ new_locals;
+
+  /** Set the successor nodes and exception nodes, and build predecessor links */
+  let set_succs_exn_base (node: Node.t) succs exn => {
+    node.succs = succs;
+    node.exn = exn;
+    IList.iter (fun (n: Node.t) => n.preds = [node, ...n.preds]) succs
+  };
+
+  /** Create a new cfg node */
+  let create_node pdesc loc kind instrs => {
+    pdesc.nodes_num = pdesc.nodes_num + 1;
+    let node_id = pdesc.nodes_num;
+    let node = {
+      Node.id: node_id,
+      dist_exit: None,
+      instrs,
+      kind,
+      loc,
+      preds: [],
+      pname: Some pdesc.attributes.proc_name,
+      succs: [],
+      exn: []
+    };
+    pdesc.nodes = [node, ...pdesc.nodes];
+    node
+  };
+
+  /** Set the successor and exception nodes.
+      If this is a join node right before the exit node, add an extra node in the middle,
+      otherwise nullify and abstract instructions cannot be added after a conditional. */
+  let node_set_succs_exn pdesc (node: Node.t) succs exn =>
+    switch (node.kind, succs) {
+    | (Join_node, [{Node.kind: Exit_node _} as exit_node]) =>
+      let kind = Node.Stmt_node "between_join_and_exit";
+      let node' = create_node pdesc node.loc kind node.instrs;
+      set_succs_exn_base node [node'] exn;
+      set_succs_exn_base node' [exit_node] exn
+    | _ => set_succs_exn_base node succs exn
+    };
+};
+
+/* =============== END of module Procdesc =============== */
+
+/** data type for the control flow graph */
+type cfg = {
+  mutable proc_desc_id_counter: int /** Counter for identifiers of procdescs */,
+  proc_desc_table: Procname.Hash.t Procdesc.t /** Map proc name to procdesc */
+};
+
+
+/** create a new empty cfg */
+let create_cfg () => {proc_desc_id_counter: 0, proc_desc_table: Procname.Hash.create 16};
+
+let add_proc_desc cfg pname pdesc => Procname.Hash.add cfg.proc_desc_table pname pdesc;
+
+let remove_proc_desc cfg pname => Procname.Hash.remove cfg.proc_desc_table pname;
+
+let iter_proc_desc cfg f => Procname.Hash.iter f cfg.proc_desc_table;
+
+let find_proc_desc_from_name cfg pname =>
+  try (Some (Procname.Hash.find cfg.proc_desc_table pname)) {
+  | Not_found => None
+  };
+
+
+/** Create a new procdesc */
+let create_proc_desc cfg (proc_attributes: ProcAttributes.t) => {
+  cfg.proc_desc_id_counter = cfg.proc_desc_id_counter + 1;
+  let pdesc = {
+    Procdesc.attributes: proc_attributes,
+    id: cfg.proc_desc_id_counter,
+    nodes: [],
+    nodes_num: 0,
+    start_node: Node.dummy (),
+    exit_node: Node.dummy ()
+  };
+  add_proc_desc cfg proc_attributes.proc_name pdesc;
+  pdesc
+};
 
 
 /** Iterate over all the nodes in the cfg */
-let iter_all_nodes f (cfg: cfg) => {
-  let do_proc_desc _ (pdesc: Procdesc.t) => IList.iter (fun node => f pdesc node) pdesc.pd_nodes;
+let iter_all_nodes f cfg => {
+  let do_proc_desc _ (pdesc: Procdesc.t) => IList.iter (fun node => f pdesc node) pdesc.nodes;
   iter_proc_desc cfg do_proc_desc
 };
 
@@ -859,13 +617,13 @@ let load_cfg_from_file (filename: DB.filename) :option cfg =>
     unless an updated copy already exists */
 let save_source_files cfg => {
   let process_proc _ pdesc => {
-    let loc = Node.proc_desc_get_loc pdesc;
+    let loc = Procdesc.get_loc pdesc;
     let source_file = loc.Location.file;
     let source_file_str = DB.source_file_to_abs_path source_file;
     let dest_file = DB.source_file_in_resdir source_file;
     let dest_file_str = DB.filename_to_string dest_file;
     let needs_copy =
-      Node.proc_desc_is_defined pdesc &&
+      Procdesc.is_defined pdesc &&
       Sys.file_exists source_file_str && (
         not (Sys.file_exists dest_file_str) ||
         DB.file_modified_time (DB.filename_from_string source_file_str) >
@@ -878,14 +636,14 @@ let save_source_files cfg => {
       }
     }
   };
-  Node.iter_proc_desc cfg process_proc
+  iter_proc_desc cfg process_proc
 };
 
 
 /** Save the .attr files for the procedures in the cfg. */
 let save_attributes source_file cfg => {
-  let save_proc proc_desc => {
-    let attributes = Procdesc.get_attributes proc_desc;
+  let save_proc pdesc => {
+    let attributes = Procdesc.get_attributes pdesc;
     let loc = attributes.loc;
     let attributes' = {
       let loc' =
@@ -903,7 +661,7 @@ let save_attributes source_file cfg => {
 
 
 /** Inline a synthetic (access or bridge) method. */
-let inline_synthetic_method ret_id etl proc_desc loc_call :option Sil.instr => {
+let inline_synthetic_method ret_id etl pdesc loc_call :option Sil.instr => {
   let modified = ref None;
   let debug = false;
   let found instr instr' => {
@@ -950,22 +708,22 @@ let inline_synthetic_method ret_id etl proc_desc loc_call :option Sil.instr => {
       found instr instr'
     | _ => ()
     };
-  Procdesc.iter_instrs do_instr proc_desc;
+  Procdesc.iter_instrs do_instr pdesc;
   !modified
 };
 
 
 /** Find synthetic (access or bridge) Java methods in the procedure and inline them in the cfg. */
-let proc_inline_synthetic_methods cfg proc_desc :unit => {
+let proc_inline_synthetic_methods cfg pdesc :unit => {
   let instr_inline_synthetic_method =
     fun
     | Sil.Call ret_id (Exp.Const (Const.Cfun pn)) etl loc _ =>
-      switch (Procdesc.find_from_name cfg pn) {
+      switch (find_proc_desc_from_name cfg pn) {
       | Some pd =>
         let is_access = Procname.java_is_access_method pn;
         let attributes = Procdesc.get_attributes pd;
-        let is_synthetic = attributes.ProcAttributes.is_synthetic_method;
-        let is_bridge = attributes.ProcAttributes.is_bridge_method;
+        let is_synthetic = attributes.is_synthetic_method;
+        let is_bridge = attributes.is_bridge_method;
         if (is_access || is_bridge || is_synthetic) {
           inline_synthetic_method ret_id etl pd loc
         } else {
@@ -989,17 +747,85 @@ let proc_inline_synthetic_methods cfg proc_desc :unit => {
       Node.replace_instrs node instrs'
     }
   };
-  Procdesc.iter_nodes node_inline_synthetic_methods proc_desc
+  Procdesc.iter_nodes node_inline_synthetic_methods pdesc
 };
 
 
 /** Inline the java synthetic methods in the cfg */
 let inline_java_synthetic_methods cfg => {
-  let f proc_name proc_desc =>
-    if (Procname.is_java proc_name) {
-      proc_inline_synthetic_methods cfg proc_desc
+  let f pname pdesc =>
+    if (Procname.is_java pname) {
+      proc_inline_synthetic_methods cfg pdesc
     };
   iter_proc_desc cfg f
+};
+
+
+/** compute the list of procedures added or changed in [cfg_new] over [cfg_old] */
+let mark_unchanged_pdescs cfg_new cfg_old => {
+  let pdescs_eq (pd1: Procdesc.t) (pd2: Procdesc.t) => {
+    /* map of exp names in pd1 -> exp names in pd2 */
+    let exp_map = ref Exp.Map.empty;
+    /* map of node id's in pd1 -> node id's in pd2 */
+    let id_map = ref IntMap.empty;
+    /* formals are the same if their types are the same */
+    let formals_eq formals1 formals2 =>
+      IList.equal (fun (_, typ1) (_, typ2) => Typ.compare typ1 typ2) formals1 formals2;
+    let nodes_eq n1s n2s => {
+      /* nodes are the same if they have the same id, instructions, and succs/preds up to renaming
+         with [exp_map] and [id_map] */
+      let node_eq (n1: Node.t) (n2: Node.t) => {
+        let id_compare (n1: Node.t) (n2: Node.t) => {
+          let (id1, id2) = (n1.id, n2.id);
+          try {
+            let id1_mapping = IntMap.find id1 !id_map;
+            Pervasives.compare id1_mapping id2
+          } {
+          | Not_found =>
+            /* assume id's are equal and enforce by adding to [id_map] */
+            id_map := IntMap.add id1 id2 !id_map;
+            0
+          }
+        };
+        let instrs_eq instrs1 instrs2 =>
+          IList.equal
+            (
+              fun i1 i2 => {
+                let (n, exp_map') = Sil.instr_compare_structural i1 i2 !exp_map;
+                exp_map := exp_map';
+                n
+              }
+            )
+            instrs1
+            instrs2;
+        id_compare n1 n2 == 0 &&
+        IList.equal id_compare n1.succs n2.succs &&
+        IList.equal id_compare n1.preds n2.preds && instrs_eq n1.instrs n2.instrs
+      };
+      try (IList.for_all2 node_eq n1s n2s) {
+      | Invalid_argument _ => false
+      }
+    };
+    let att1 = pd1.attributes
+    and att2 = pd2.attributes;
+    att1.is_defined == att2.is_defined &&
+    Typ.equal att1.ret_type att2.ret_type &&
+    formals_eq att1.formals att2.formals && nodes_eq pd1.nodes pd2.nodes
+  };
+  let old_procs = cfg_old.proc_desc_table;
+  let new_procs = cfg_new.proc_desc_table;
+  let mark_pdesc_if_unchanged pname (new_pdesc: Procdesc.t) =>
+    try {
+      let old_pdesc = Procname.Hash.find old_procs pname;
+      let changed =
+        /* in continue_capture mode keep the old changed bit */
+        Config.continue_capture && old_pdesc.attributes.changed ||
+        not (pdescs_eq old_pdesc new_pdesc);
+      new_pdesc.attributes.changed = changed
+    } {
+    | Not_found => ()
+    };
+  Procname.Hash.iter mark_pdesc_if_unchanged new_procs
 };
 
 
@@ -1015,7 +841,7 @@ let store_cfg_to_file
   };
   if Config.incremental_procs {
     switch (load_cfg_from_file filename) {
-    | Some old_cfg => Node.mark_unchanged_pdescs cfg old_cfg
+    | Some old_cfg => mark_unchanged_pdescs cfg old_cfg
     | None => ()
     }
   };
@@ -1024,25 +850,156 @@ let store_cfg_to_file
 };
 
 
+/** clone a procedure description and apply the type substitutions where
+    the parameters are used */
+let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
+  let resolved_pname = Procdesc.get_proc_name resolved_pdesc
+  and callee_start_node = Procdesc.get_start_node callee_pdesc
+  and callee_exit_node = Procdesc.get_exit_node callee_pdesc;
+  let convert_pvar pvar => Pvar.mk (Pvar.get_name pvar) resolved_pname;
+  let convert_exp =
+    fun
+    | Exp.Lvar origin_pvar => Exp.Lvar (convert_pvar origin_pvar)
+    | exp => exp;
+  let extract_class_name =
+    fun
+    | Typ.Tptr (Tstruct name) _ => Typename.name name
+    | _ => failwith "Expecting classname for Java types";
+  let subst_map = ref Ident.IdentMap.empty;
+  let redirected_class_name origin_id =>
+    try (Some (Ident.IdentMap.find origin_id !subst_map)) {
+    | Not_found => None
+    };
+  let convert_instr instrs =>
+    fun
+    | Sil.Load id (Exp.Lvar origin_pvar as origin_exp) origin_typ loc => {
+        let (_, specialized_typ) = {
+          let pvar_name = Pvar.get_name origin_pvar;
+          try (IList.find (fun (n, _) => Mangled.equal n pvar_name) substitutions) {
+          | Not_found => (pvar_name, origin_typ)
+          }
+        };
+        subst_map := Ident.IdentMap.add id specialized_typ !subst_map;
+        [Sil.Load id (convert_exp origin_exp) specialized_typ loc, ...instrs]
+      }
+    | Sil.Load id (Exp.Var origin_id as origin_exp) origin_typ loc => {
+        let updated_typ =
+          switch (Ident.IdentMap.find origin_id !subst_map) {
+          | Typ.Tptr typ _ => typ
+          | _ => failwith "Expecting a pointer type"
+          | exception Not_found => origin_typ
+          };
+        [Sil.Load id (convert_exp origin_exp) updated_typ loc, ...instrs]
+      }
+    | Sil.Load id origin_exp origin_typ loc => [
+        Sil.Load id (convert_exp origin_exp) origin_typ loc,
+        ...instrs
+      ]
+    | Sil.Store assignee_exp origin_typ origin_exp loc => {
+        let set_instr =
+          Sil.Store (convert_exp assignee_exp) origin_typ (convert_exp origin_exp) loc;
+        [set_instr, ...instrs]
+      }
+    | Sil.Call
+        return_ids
+        (Exp.Const (Const.Cfun (Procname.Java callee_pname_java)))
+        [(Exp.Var id, _), ...origin_args]
+        loc
+        call_flags
+        when call_flags.CallFlags.cf_virtual && redirected_class_name id != None => {
+        let redirected_typ = Option.get (redirected_class_name id);
+        let redirected_pname =
+          Procname.replace_class
+            (Procname.Java callee_pname_java) (extract_class_name redirected_typ)
+        and args = {
+          let other_args = IList.map (fun (exp, typ) => (convert_exp exp, typ)) origin_args;
+          [(Exp.Var id, redirected_typ), ...other_args]
+        };
+        let call_instr =
+          Sil.Call return_ids (Exp.Const (Const.Cfun redirected_pname)) args loc call_flags;
+        [call_instr, ...instrs]
+      }
+    | Sil.Call return_ids origin_call_exp origin_args loc call_flags => {
+        let converted_args = IList.map (fun (exp, typ) => (convert_exp exp, typ)) origin_args;
+        let call_instr =
+          Sil.Call return_ids (convert_exp origin_call_exp) converted_args loc call_flags;
+        [call_instr, ...instrs]
+      }
+    | Sil.Prune origin_exp loc is_true_branch if_kind => [
+        Sil.Prune (convert_exp origin_exp) loc is_true_branch if_kind,
+        ...instrs
+      ]
+    | Sil.Declare_locals typed_vars loc => {
+        let new_typed_vars = IList.map (fun (pvar, typ) => (convert_pvar pvar, typ)) typed_vars;
+        [Sil.Declare_locals new_typed_vars loc, ...instrs]
+      }
+    | Sil.Nullify _
+    | Abstract _
+    | Sil.Remove_temps _ =>
+      /* these are generated instructions that will be replaced by the preanalysis */
+      instrs;
+  let convert_node_kind =
+    fun
+    | Node.Start_node _ => Node.Start_node resolved_pname
+    | Node.Exit_node _ => Node.Exit_node resolved_pname
+    | node_kind => node_kind;
+  let node_map = ref NodeMap.empty;
+  let rec convert_node node => {
+    let loc = Node.get_loc node
+    and kind = convert_node_kind (Node.get_kind node)
+    and instrs = IList.fold_left convert_instr [] (Node.get_instrs node) |> IList.rev;
+    Procdesc.create_node resolved_pdesc loc kind instrs
+  }
+  and loop callee_nodes =>
+    switch callee_nodes {
+    | [] => []
+    | [node, ...other_node] =>
+      let converted_node =
+        try (NodeMap.find node !node_map) {
+        | Not_found =>
+          let new_node = convert_node node
+          and successors = Node.get_succs node
+          and exn_nodes = Node.get_exn node;
+          node_map := NodeMap.add node new_node !node_map;
+          if (Node.equal node callee_start_node) {
+            Procdesc.set_start_node resolved_pdesc new_node
+          };
+          if (Node.equal node callee_exit_node) {
+            Procdesc.set_exit_node resolved_pdesc new_node
+          };
+          Procdesc.node_set_succs_exn callee_pdesc new_node (loop successors) (loop exn_nodes);
+          new_node
+        };
+      [converted_node, ...loop other_node]
+    };
+  ignore (loop [callee_start_node]);
+  resolved_pdesc
+};
+
+
 /** Creates a copy of a procedure description and a list of type substitutions of the form
     (name, typ) where name is a parameter. The resulting proc desc is isomorphic but
     all the type of the parameters are replaced in the instructions according to the list.
     The virtual calls are also replaced to match the parameter types */
-let specialize_types callee_proc_desc resolved_proc_name args => {
+let specialize_types callee_pdesc resolved_pname args => {
   /* TODO (#9333890): This currently only works when the callee is defined in the same file.
      Add support to search for the callee procedure description in the execution environment */
-  let callee_attributes = Procdesc.get_attributes callee_proc_desc;
+  let callee_attributes = Procdesc.get_attributes callee_pdesc;
   let resolved_formals =
     IList.fold_left2
       (fun accu (name, _) (_, arg_typ) => [(name, arg_typ), ...accu])
       []
-      callee_attributes.ProcAttributes.formals
+      callee_attributes.formals
       args |> IList.rev;
   let resolved_attributes = {
     ...callee_attributes,
-    ProcAttributes.formals: resolved_formals,
-    proc_name: resolved_proc_name
+    formals: resolved_formals,
+    proc_name: resolved_pname
   };
   AttributesTable.store_attributes resolved_attributes;
-  Procdesc.specialize_types callee_proc_desc resolved_attributes resolved_formals
+  let resolved_pdesc = {
+    let tmp_cfg = create_cfg ();
+    create_proc_desc tmp_cfg resolved_attributes
+  };
+  specialize_types_proc callee_pdesc resolved_pdesc resolved_formals
 };
