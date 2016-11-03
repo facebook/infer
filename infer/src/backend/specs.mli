@@ -205,10 +205,7 @@ val get_timestamp : summary -> int
 val get_status : summary -> status
 
 (** Check if the procedure is active *)
-val is_active : Procname.t -> bool
-
-(** Check if the procedure is active *)
-val is_inactive : Procname.t -> bool
+val is_active : summary -> bool
 
 (** Initialize the summary for [proc_name] given dependent procs in list [depend_list].
     Do nothing if a summary exists already. *)

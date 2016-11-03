@@ -54,8 +54,9 @@ let nesting = ref 0
 
 let should_be_analyzed proc_attributes proc_name =
   let currently_analyzed () =
-    Specs.summary_exists proc_name &&
-    Specs.is_active proc_name in
+    match Specs.get_summary proc_name with
+    | None -> false
+    | Some summary -> Specs.is_active summary in
   let already_analyzed () =
     match Specs.get_summary proc_name with
     | Some summary ->

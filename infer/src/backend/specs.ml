@@ -627,8 +627,7 @@ let get_summary proc_name =
 let get_summary_unsafe s proc_name =
   match get_summary proc_name with
   | None ->
-      raise (Failure (
-          "[" ^ s ^ "] Specs.get_summary_unsafe: " ^ (Procname.to_string proc_name) ^ "Not_found"))
+      failwithf "[%s] Specs.get_summary_unsafe: %a Not found" s Procname.pp proc_name
   | Some summary -> summary
 
 (** Check if the procedure is from a library:
@@ -689,11 +688,8 @@ let summary_exists proc_name =
 let get_status summary =
   summary.status
 
-let is_active proc_name =
-  get_status (get_summary_unsafe "is_active" proc_name) = ACTIVE
-
-let is_inactive proc_name =
-  get_status (get_summary_unsafe "is_active" proc_name) = INACTIVE
+let is_active summary =
+  get_status summary = ACTIVE
 
 let get_timestamp summary =
   summary.timestamp
