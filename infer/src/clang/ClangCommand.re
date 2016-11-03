@@ -100,7 +100,6 @@ let clang_cc1_cmd_sanitizer cmd => {
     };
   let post_args_rev =
     [] |> IList.rev_append ["-include", Config.lib_dir /\/ "clang_wrappers" /\/ "global_defines.h"] |>
-    argv_do_if (has_flag cmd "-fmodules") (argv_cons "-fno-cxx-modules") |>
     /* Never error on warnings. Clang is often more strict than Apple's version.  These arguments
        are appended at the end to override previous opposite settings.  How it's done: suppress
        all the warnings, since there are no warnings, compiler can't elevate them to error
