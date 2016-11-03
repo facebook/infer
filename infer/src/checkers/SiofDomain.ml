@@ -6,7 +6,6 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
-module PvarSetDomain = AbstractDomain.FiniteSet(Pvar.Set)
 
 (* The domain for the analysis is sets of global variables if an initialization is needed at
    runtime, or Bottom if no initialization is needed. For instance, `int x = 32; int y = x * 52;`
@@ -18,4 +17,4 @@ module PvarSetDomain = AbstractDomain.FiniteSet(Pvar.Set)
    information: whether a global variable (via its initializer function) requires runtime
    initialization, and which globals requiring initialization a given function (transitively)
    accesses. *)
-include AbstractDomain.BottomLifted(PvarSetDomain)
+include AbstractDomain.BottomLifted(SiofTrace)
