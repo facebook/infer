@@ -74,15 +74,13 @@ let create_files_stack compilation_database =
   stack
 
 let swap_command cmd =
+  let plusplus = "++" in
   let clang = "clang" in
   let clangplusplus = "clang++" in
-  if Utils.string_is_suffix clang cmd then
-    Config.wrappers_dir // clang
-  else if Utils.string_is_suffix clangplusplus cmd then
+  if Utils.string_is_suffix plusplus cmd then
     Config.wrappers_dir // clangplusplus
   else
-    (* The command in the compilation database json emitted by buck can only be clang or clang++ *)
-    failwithf "Unexpected command name in Buck compilation database: %s" cmd
+    Config.wrappers_dir // clang
 
 let run_compilation_file compilation_database file =
   try

@@ -56,13 +56,16 @@ let touch_start_file () =
   try Unix.close (Unix.openfile start flags file_perm)
   with Unix.Unix_error (Unix.EEXIST, _, _) -> ()
 
-type build_mode = Analyze | Ant | Buck | Gradle | Java | Javac | Make | Mvn | Ndk | Xcode
+type build_mode =
+  | Analyze | Ant | Buck | ClangCompilationDatabase | Gradle | Java | Javac | Make | Mvn | Ndk
+  | Xcode
 
 let build_mode_of_string path =
   match Filename.basename path with
   | "analyze" -> Analyze
   | "ant" -> Ant
   | "buck" -> Buck
+  | "clang-compilation-database" -> ClangCompilationDatabase
   | "gradle" | "gradlew" -> Gradle
   | "java" -> Java
   | "javac" -> Javac
@@ -147,7 +150,7 @@ let analyze = function
   | Java | Javac ->
       (* In Java and Javac modes, analysis is invoked from capture. *)
       ()
-  | Analyze | Ant | Buck | Gradle | Make | Mvn | Ndk | Xcode ->
+  | Analyze | Ant | Buck | ClangCompilationDatabase | Gradle | Make | Mvn | Ndk | Xcode ->
       if not (Sys.file_exists Config.(results_dir // captured_dir_name)) then (
         L.err "There was nothing to analyze, exiting" ;
         Config.print_usage_exit ()

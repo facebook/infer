@@ -63,6 +63,7 @@ EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 ALL_TESTS = [
     'assembly',
     'buck',
+    'clang_compilation_database',
     'cmake',
     'componentkit',
     'delete',
@@ -442,6 +443,26 @@ class BuildIntegrationTest(unittest.TestCase):
             # remove build/ directory
             shutil.rmtree(build_root)
 
+    def test_clang_compilation_database_integration(
+            self,
+            enabled=None,
+            root=os.path.join(CODETOANALYZE_DIR, 'clang_compilation_database'),
+            report_fname='clang_compilation_database_report.json'):
+        build_root = os.path.join(root, 'build')
+        if test('clang_compilation_database', 'clang compilation database test',
+                build_root,
+                [{'compile': ['cmake', '-DCMAKE_EXPORT_COMPILE_COMMANDS=1', '..']},
+                 {'compile': ['clang-compilation-database', 'compile_commands.json']}],
+                available=lambda: is_tool_available(['cmake', '--version']),
+                enabled=enabled,
+                # remove build/ directory just in case
+                preprocess=lambda: shutil.rmtree(build_root, True),
+                # cmake produces absolute paths using the real path
+                postprocess=(lambda errors:
+                             make_paths_relative_in_report(
+                                 os.path.realpath(root), errors))):
+            # remove build/ directory
+            shutil.rmtree(build_root)
 
     def test_utf8_in_pwd_integration(self):
         if not 'utf8_in_pwd' in to_test:
