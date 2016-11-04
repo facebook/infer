@@ -394,7 +394,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc =>
   };
 
 let is_file source_file =>
-  switch (Unix.stat (DB.source_file_to_string source_file)) {
+  switch (Unix.stat (DB.source_file_to_abs_path source_file)) {
   | {st_kind: S_REG | S_LNK} => true
   | _ => false
   | exception Unix.Unix_error _ => false
@@ -496,18 +496,18 @@ let module IssuesJson = {
     } else {
       file
     };
-  let make_cpp_models_path_relative file =>
-    if (Utils.string_is_prefix Config.cpp_models_dir file) {
+  let make_cpp_models_path_relative file => {
+    let abs_file = DB.source_file_to_abs_path file;
+    if (Utils.string_is_prefix Config.cpp_models_dir abs_file) {
       if (Config.debug_mode || Config.debug_exceptions) {
-        Some (
-          DB.source_file_to_rel_path (DB.rel_source_file_from_abs_path Config.cpp_models_dir file)
-        )
+        Some (DB.rel_source_file_from_abs_path Config.cpp_models_dir abs_file)
       } else {
         None
       }
     } else {
       Some file
-    };
+    }
+  };
 
   /** Write bug report in JSON format */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname err_log => {
@@ -529,8 +529,7 @@ let module IssuesJson = {
         | Some proc_loc => proc_loc.Location.file
         | None => loc.Location.file
         };
-      let file = DB.source_file_to_string source_file;
-      let file_opt = make_cpp_models_path_relative file;
+      let file_opt = make_cpp_models_path_relative source_file;
       if (
         in_footprint &&
         error_filter source_file error_desc error_name &&
@@ -539,7 +538,7 @@ let module IssuesJson = {
         let kind = Exceptions.err_kind_string ekind;
         let bug_type = Localise.to_string error_name;
         let procedure_id = Procname.to_filename procname;
-        let file = expand_links_under_buck_out (Option.get file_opt);
+        let file = expand_links_under_buck_out (DB.source_file_to_string (Option.get file_opt));
         let json_ml_loc =
           switch ml_loc_opt {
           | Some (file, lnum, cnum, enum) when Config.reports_include_ml_loc =>

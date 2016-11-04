@@ -66,8 +66,6 @@ val mk_float : default:float -> float ref t
 
 val mk_string : default:string -> ?f:(string -> string) -> string ref t
 
-val mk_path : default:string -> string ref t
-
 val mk_string_opt : ?default:string -> ?f:(string -> string) -> string option ref t
 
 (** [mk_string_list] defines a [string list ref], initialized to [[]] unless overridden by
@@ -75,6 +73,16 @@ val mk_string_opt : ?default:string -> ?f:(string -> string) -> string option re
     final value will be in the reverse order they appeared on the command line. *)
 val mk_string_list :
   ?default:string list -> ?f:(string -> string) -> string list ref t
+
+(** like [mk_string] but will resolve the string into an absolute path so that children processes
+    agree on the absolute path that the option represents *)
+val mk_path : default:string -> string ref t
+
+(** analogous of [mk_string_opt] with the extra feature of [mk_path] *)
+val mk_path_opt : ?default:string -> string option ref t
+
+(** analogous of [mk_string_list] with the extra feature of [mk_path] *)
+val mk_path_list : ?default:string list -> string list ref t
 
 (** [mk_symbol long symbols] defines a command line flag [--long <symbol>] where [(<symbol>,_)] is
     an element of [symbols]. *)

@@ -411,11 +411,7 @@ let init_work_dir, is_originator =
 
 (** Resolve relative paths passed as command line options, i.e., with respect to the working
     directory of the initial invocation of infer. *)
-let resolve path =
-  if Filename.is_relative path then
-    init_work_dir // path
-  else
-    path
+let resolve = filename_to_absolute
 
 
 (** Command Line options *)
@@ -424,13 +420,12 @@ let resolve path =
 
 let inferconfig_home =
   let all_exes = IList.map snd CLOpt.exes in
-  CLOpt.mk_string_opt ~long:"inferconfig-home"
+  CLOpt.mk_path_opt ~long:"inferconfig-home"
     ~exes:all_exes ~meta:"dir" "Path to the .inferconfig file"
 
 and project_root =
-  CLOpt.mk_string ~deprecated:["project_root"; "-project_root"] ~long:"project-root" ~short:"pr"
+  CLOpt.mk_path ~deprecated:["project_root"; "-project_root"] ~long:"project-root" ~short:"pr"
     ~default:init_work_dir
-    ~f:resolve
     ~exes:CLOpt.[Analyze;Clang;Java;Print;Toplevel]
     ~meta:"dir" "Specify the root directory of the project"
 
@@ -587,7 +582,7 @@ and array_level =
                  - 2 = assumes that all heap dereferences via array indexing and pointer \
                  arithmetic are correct"
 and ast_file =
-  CLOpt.mk_string_opt ~long:"ast-file" ~short:"ast"
+  CLOpt.mk_path_opt ~long:"ast-file" ~short:"ast"
     ~meta:"file" "AST file for the translation"
 
 and blacklist =
@@ -607,45 +602,45 @@ and buck_build_args =
     "Pass values as command-line arguments to invocations of `buck build` (Buck flavors only)"
 
 and buck_out =
-  CLOpt.mk_string_opt ~long:"buck-out"
+  CLOpt.mk_path_opt ~long:"buck-out"
     ~exes:CLOpt.[Toplevel] ~meta:"dir" "Specify the root directory of buck-out"
 
 and bugs_csv =
-  CLOpt.mk_string_opt ~deprecated:["bugs"] ~long:"issues-csv"
+  CLOpt.mk_path_opt ~deprecated:["bugs"] ~long:"issues-csv"
     ~exes:CLOpt.[Toplevel;Print]
     ~meta:"file" "Write a list of issues in CSV format to a file"
 
 and bugs_json =
-  CLOpt.mk_string_opt ~deprecated:["bugs_json"] ~long:"issues-json"
+  CLOpt.mk_path_opt ~deprecated:["bugs_json"] ~long:"issues-json"
     ~exes:CLOpt.[Toplevel;Print]
     ~meta:"file" "Write a list of issues in JSON format to a file"
 
 and bugs_tests =
-  CLOpt.mk_string_opt ~long:"issues-tests"
+  CLOpt.mk_path_opt ~long:"issues-tests"
     ~exes:CLOpt.[Toplevel;Print]
     ~meta:"file"
     "Write a list of issues in a format suitable for tests to a file"
 
 and bugs_txt =
-  CLOpt.mk_string_opt ~deprecated:["bugs_txt"] ~long:"issues-txt"
+  CLOpt.mk_path_opt ~deprecated:["bugs_txt"] ~long:"issues-txt"
     ~exes:CLOpt.[Toplevel;Print]
     ~meta:"file"
     "Write a list of issues in TXT format to a file"
 
 and bugs_xml =
-  CLOpt.mk_string_opt ~deprecated:["bugs_xml"] ~long:"issues-xml"
+  CLOpt.mk_path_opt ~deprecated:["bugs_xml"] ~long:"issues-xml"
     ~exes:CLOpt.[Toplevel;Print]
     ~meta:"file"
     "Write a list of issues in XML format to a file"
 
 and calls_csv =
-  CLOpt.mk_string_opt ~deprecated:["calls"] ~long:"calls-csv"
+  CLOpt.mk_path_opt ~deprecated:["calls"] ~long:"calls-csv"
     ~exes:CLOpt.[Toplevel;Print]
     ~meta:"file"
     "Write individual calls in CSV format to a file"
 
 and changed_files_index =
-  CLOpt.mk_string_opt ~long:"changed-files-index" ~exes:CLOpt.[Toplevel] ~meta:"file"
+  CLOpt.mk_path_opt ~long:"changed-files-index" ~exes:CLOpt.[Toplevel] ~meta:"file"
     "Specify the file containing the list of files from which reactive analysis should start"
 
 and check_duplicate_symbols =
@@ -680,11 +675,11 @@ and checkers_repeated_calls =
     "Check for repeated calls"
 
 and clang_biniou_file =
-  CLOpt.mk_string_opt ~long:"clang-biniou-file" ~exes:CLOpt.[Clang] ~meta:"file"
+  CLOpt.mk_path_opt ~long:"clang-biniou-file" ~exes:CLOpt.[Clang] ~meta:"file"
     "Specify a file containing the AST of the program, in biniou format"
 
 and clang_compilation_database =
-  CLOpt.mk_string_opt ~long:"clang-compilation-database"
+  CLOpt.mk_path_opt ~long:"clang-compilation-database"
     ~exes:CLOpt.[BuckCompilationDatabase] ~meta:"file"
     "Specify a json file containing a clang compilation database to be used for the analysis"
 
@@ -705,7 +700,7 @@ and _ =
     ~meta:"path" "Specify where to find user class files and annotation processors"
 
 and cluster =
-  CLOpt.mk_string_opt ~deprecated:["cluster"] ~long:"cluster"
+  CLOpt.mk_path_opt ~deprecated:["cluster"] ~long:"cluster"
     ~meta:"file" "Specify a .cluster file to be analyzed"
 
 (** Continue the capture for reactive mode:
@@ -887,7 +882,7 @@ and failures_allowed =
     "Fail if at least one of the translations fails (clang only)"
 
 and fcp_apple_clang =
-  CLOpt.mk_string_opt ~long:"fcp-apple-clang"
+  CLOpt.mk_path_opt ~long:"fcp-apple-clang"
     ~meta:"path" "Specify the path to Apple Clang"
 
 and fcp_syntax_only =
@@ -924,7 +919,7 @@ and headers =
     "Analyze code in header files"
 
 and infer_cache =
-  CLOpt.mk_string_opt ~deprecated:["infer_cache"; "-infer_cache"] ~long:"infer-cache" ~f:resolve
+  CLOpt.mk_path_opt ~deprecated:["infer_cache"; "-infer_cache"] ~long:"infer-cache"
     ~meta:"dir" "Select a directory to contain the infer cache (Buck and Java only)"
 
 and iterations =
@@ -934,7 +929,7 @@ and iterations =
      symbolic operations and a multiple of seconds of elapsed time"
 
 and java_jar_compiler =
-  CLOpt.mk_string_opt
+  CLOpt.mk_path_opt
     ~long:"java-jar-compiler"
     ~exes:CLOpt.[Java]
     ~meta:"path" "Specifify the Java compiler jar used to generate the bytecode"
@@ -950,12 +945,12 @@ and join_cond =
                  - 1 = use the least aggressive join for preconditions"
 
 and latex =
-  CLOpt.mk_string_opt ~deprecated:["latex"] ~long:"latex"
+  CLOpt.mk_path_opt ~deprecated:["latex"] ~long:"latex"
     ~meta:"file"
     "Write a latex report of the analysis results to a file"
 
 and linters_def_file =
-  CLOpt.mk_string_opt ~long:"linters-def-file" ~exes:CLOpt.[Clang]
+  CLOpt.mk_path_opt ~long:"linters-def-file" ~exes:CLOpt.[Clang]
     ~meta:"file" "Specify the file containing linters definition"
 
 and load_average =
@@ -965,13 +960,13 @@ and load_average =
      make only)"
 
 and load_results =
-  CLOpt.mk_string_opt ~deprecated:["load_results"] ~long:"load-results"
+  CLOpt.mk_path_opt ~deprecated:["load_results"] ~long:"load-results"
     ~exes:CLOpt.[Print]
     ~meta:"file.iar" "Load analysis results from Infer Analysis Results file file.iar"
 
 (** name of the makefile to create with clusters and dependencies *)
 and makefile =
-  CLOpt.mk_string ~deprecated:["makefile"] ~long:"makefile" ~default:""
+  CLOpt.mk_path ~deprecated:["makefile"] ~long:"makefile" ~default:""
     ~meta:"file" ""
 
 and margin =
@@ -995,7 +990,7 @@ and ml_buckets =
     ~symbols:ml_bucket_symbols
 
 and models_file =
-  CLOpt.mk_string_opt ~deprecated:["models"] ~long:"models" ~f:resolve
+  CLOpt.mk_path_opt ~deprecated:["models"] ~long:"models"
     ~exes:CLOpt.[Analyze;Java] ~meta:"jar file" "Specify a jar file containing the Java models"
 
 and models_mode =
@@ -1003,7 +998,7 @@ and models_mode =
     "Mode for analyzing the models"
 
 and modified_targets =
-  CLOpt.mk_string_opt ~deprecated:["modified_targets"] ~long:"modified-targets"
+  CLOpt.mk_path_opt ~deprecated:["modified_targets"] ~long:"modified-targets"
     ~meta:"file" "Read the file of Buck targets modified since the last analysis"
 
 and monitor_prop_size =
@@ -1028,7 +1023,7 @@ and optimistic_cast =
     "Allow cast of undefined values"
 
 and out_file =
-  CLOpt.mk_string ~deprecated:["out_file"] ~long:"out-file" ~default:""
+  CLOpt.mk_path ~deprecated:["out_file"] ~long:"out-file" ~default:""
     ~meta:"file" "Specify the file for the non-error logs of the analyzer"
 
 and (
@@ -1065,11 +1060,11 @@ and print_using_diff =
     "Highlight the difference w.r.t. the previous prop when printing symbolic execution debug info"
 
 and procs_csv =
-  CLOpt.mk_string_opt ~deprecated:["procs"] ~long:"procs-csv"
+  CLOpt.mk_path_opt ~deprecated:["procs"] ~long:"procs-csv"
     ~meta:"file" "Write statistics for each procedure in CSV format to a file"
 
 and procs_xml =
-  CLOpt.mk_string_opt ~deprecated:["procs_xml"] ~long:"procs-xml"
+  CLOpt.mk_path_opt ~deprecated:["procs_xml"] ~long:"procs-xml"
     ~meta:"file"
     "Write statistics for each procedure in XML format to a file (as a path relative to \
      --results-dir)"
@@ -1089,7 +1084,7 @@ and reactive =
     "Reactive mode: the analysis starts from the files captured since the `infer` command started"
 
 and report =
-  CLOpt.mk_string_opt ~deprecated:["report"] ~long:"report"
+  CLOpt.mk_path_opt ~deprecated:["report"] ~long:"report"
     ~meta:"file" "Write a report of the analysis results to a file"
 
 and report_custom_error =
@@ -1103,7 +1098,7 @@ and results_dir =
     ~meta:"dir" "Write results and internal files in the specified directory"
 
 and save_results =
-  CLOpt.mk_string_opt ~deprecated:["save_results"] ~long:"save-results"
+  CLOpt.mk_path_opt ~deprecated:["save_results"] ~long:"save-results"
     ~meta:"file.iar" "Save analysis results to Infer Analysis Results file file.iar"
 
 and seconds_per_iteration =
@@ -1137,7 +1132,7 @@ and spec_abs_level =
 
 and specs_library =
   let specs_library =
-    CLOpt.mk_string_list ~long:"specs-library" ~short:"lib" ~f:resolve
+    CLOpt.mk_path_list ~long:"specs-library" ~short:"lib"
       ~meta:"dir|jar" "Search for .spec files in given directory or jar file" in
   let _ =
     (* Given a filename with a list of paths, convert it into a list of string iff they are
@@ -1163,13 +1158,13 @@ and specs_library =
   specs_library
 
 and stacktrace =
-  CLOpt.mk_string_opt ~long:"stacktrace" ~short:"st" ~f:resolve ~exes:CLOpt.[Toplevel]
+  CLOpt.mk_path_opt ~long:"stacktrace" ~short:"st" ~exes:CLOpt.[Toplevel]
     ~meta:"file" "File path containing a json-encoded Java crash stacktrace. Used to guide the \
                   analysis (only with '-a crashcontext').  See \
                   tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
 
 and stacktraces_dir =
-  CLOpt.mk_string_opt ~long:"stacktraces-dir" ~f:resolve ~exes:CLOpt.[Toplevel]
+  CLOpt.mk_path_opt ~long:"stacktraces-dir" ~exes:CLOpt.[Toplevel]
     ~meta:"dir" "Directory path containing multiple json-encoded Java crash stacktraces. \
                  Used to guide the  analysis (only with '-a crashcontext').  See \
                  tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
@@ -1183,7 +1178,7 @@ and subtype_multirange =
 
 (* Path to list of collected @SuppressWarnings annotations *)
 and suppress_warnings_out =
-  CLOpt.mk_string_opt ~deprecated:["suppress_warnings_out"] ~long:suppress_warnings_annotations_long
+  CLOpt.mk_path_opt ~deprecated:["suppress_warnings_out"] ~long:suppress_warnings_annotations_long
     ~meta:"path" ""
 
 and svg =
@@ -1240,7 +1235,7 @@ and use_compilation_database =
 
 (** Set the path to the javac verbose output *)
 and verbose_out =
-  CLOpt.mk_string ~deprecated:["verbose_out"] ~long:"verbose-out" ~default:""
+  CLOpt.mk_path ~deprecated:["verbose_out"] ~long:"verbose-out" ~default:""
     ~meta:"file" ""
 
 and version =
@@ -1275,7 +1270,7 @@ and worklist_mode =
   var
 
 and xcode_developer_dir =
-  CLOpt.mk_string_opt ~long:"xcode-developer-dir"
+  CLOpt.mk_path_opt ~long:"xcode-developer-dir"
     ~exes:CLOpt.[Toplevel]
     ~meta:"XCODE_DEVELOPER_DIR" "Specify the path to Xcode developer directory (Buck flavors only)"
 

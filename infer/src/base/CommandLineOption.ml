@@ -322,23 +322,6 @@ let mk_string ~default ?(f=fun s -> s) ?(deprecated=[]) ~long ?short ?exes ?(met
     ~decode_json:(string_json_decoder ~long)
     ~mk_spec:(fun set -> Arg.String set)
 
-let mk_path ~default ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
-  mk ~deprecated ~long ?short ~default ?exes ~meta doc
-    ~default_to_string:(fun s -> s)
-    ~mk_setter:(fun var str ->
-        if Filename.is_relative str then (
-          (* Replace relative paths with absolute ones on the fly in the args being parsed. This
-             assumes that [!arg_being_parsed] points at the option name position in
-             [!args_to_parse], as is the case e.g. when calling [Arg.parse_argv_dynamic
-             ~current:arg_being_parsed !args_to_parse ...]. *)
-          let abs_path = Sys.getcwd () // str in
-          var := abs_path;
-          (!args_to_parse).(!arg_being_parsed + 1) <- abs_path;
-        ) else
-          var := str)
-    ~decode_json:(string_json_decoder ~long)
-    ~mk_spec:(fun set -> Arg.String set)
-
 let mk_string_opt ?default ?(f=fun s -> s) ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let default_to_string = function Some s -> s | None -> "" in
   let f s = Some (f s) in
@@ -351,6 +334,43 @@ let mk_string_list ?(default=[]) ?(f=fun s -> s)
     ~mk_setter:(fun var str -> var := (f str) :: !var)
     ~decode_json:(list_json_decoder (string_json_decoder ~long))
     ~mk_spec:(fun set -> Arg.String set)
+
+let mk_path_helper ~setter ~default_to_string
+    ~default ~deprecated ~long ~short ~exes ~meta doc =
+  let normalize_path_in_args_being_parsed str =
+    if Filename.is_relative str then (
+      (* Replace relative paths with absolute ones on the fly in the args being parsed. This assumes
+         that [!arg_being_parsed] points at the option name position in [!args_to_parse], as is the
+         case e.g. when calling
+         [Arg.parse_argv_dynamic ~current:arg_being_parsed !args_to_parse ...]. *)
+      let abs_path = filename_to_absolute str in
+      (!args_to_parse).(!arg_being_parsed + 1) <- abs_path;
+      abs_path
+    ) else
+      str in
+  mk ~deprecated ~long ?short ~default ?exes ~meta doc
+    ~default_to_string
+    ~mk_setter:(fun var str ->
+        let abs_path = normalize_path_in_args_being_parsed str in
+        setter var abs_path)
+    ~decode_json:(string_json_decoder ~long)
+    ~mk_spec:(fun set -> Arg.String set)
+
+let mk_path ~default ?(deprecated=[]) ~long ?short ?exes ?(meta="path") =
+  mk_path_helper ~setter:(fun var x -> var := x) ~default_to_string:(fun s -> s)
+    ~default ~deprecated ~long ~short ~exes ~meta
+
+let mk_path_opt ?default ?(deprecated=[]) ~long ?short ?exes ?(meta="path") =
+  mk_path_helper
+    ~setter:(fun var x -> var := Some x)
+    ~default_to_string:(function Some s -> s | None -> "")
+    ~default ~deprecated ~long ~short ~exes ~meta
+
+let mk_path_list ?(default=[]) ?(deprecated=[]) ~long ?short ?exes ?(meta="path") =
+  mk_path_helper
+    ~setter:(fun var x -> var := x :: !var)
+    ~default_to_string:(String.concat ", ")
+    ~default ~deprecated ~long ~short ~exes ~meta
 
 let mk_symbol ~default ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let strings = IList.map fst symbols in

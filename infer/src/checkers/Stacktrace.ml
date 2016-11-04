@@ -88,13 +88,12 @@ let of_string s =
       make exception_name parsed
   | [] -> failwith "Empty stack trace"
 
-let of_json json =
+let of_json filename json =
   let exception_name_key = "exception_type" in
   let frames_key = "stack_trace" in
   let extract_json_member key =
     match Yojson.Basic.Util.member key json with
-    | `Null -> failwith ("Missing key in supplied JSON \
-                          data: " ^ key)
+    | `Null -> failwithf "Missing key in supplied JSON data: %s (in file %s)" key filename
     | item -> item in
   let exception_name =
     Yojson.Basic.Util.to_string (extract_json_member exception_name_key) in
@@ -107,7 +106,8 @@ let of_json json =
   make exception_name frames
 
 let of_json_file filename =
-  match Utils.read_optional_json_file filename with
-  | Ok json -> of_json json
-  | Error msg -> failwith (Printf.sprintf "Could not read or parse the supplied JSON \
-                                           stacktrace file %s :\n %s" filename msg)
+  try
+    of_json filename (Yojson.Basic.from_file filename)
+  with Sys_error msg | Yojson.Json_error msg ->
+    failwithf "Could not read or parse the supplied JSON stacktrace file %s :\n %s"
+      filename msg
