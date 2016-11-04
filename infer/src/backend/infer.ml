@@ -129,6 +129,7 @@ let capture build_cmd = function
         "-l" :: (string_of_float Config.load_average) ::
         (if not Config.pmd_xml then [] else
            ["--pmd-xml"]) @
+        ["--project-root"; Config.project_root] @
         (if not Config.reactive_mode then [] else
            ["--reactive"]) @
         "--out" :: Config.results_dir ::

@@ -93,6 +93,10 @@ base_group.add_argument('--pmd-xml',
 
 infer_parser = argparse.ArgumentParser(parents=[base_parser])
 infer_group = infer_parser.add_argument_group('backend arguments')
+infer_group.add_argument('-pr', '--project-root',
+                         dest='project_root',
+                         help='Location of the project root '
+                         '(default is current directory)')
 infer_group.add_argument('-j', '--multicore', metavar='n', type=int,
                            default=multiprocessing.cpu_count(),
                            dest='multicore', help='Set the number of cores to '
@@ -352,7 +356,7 @@ class AnalyzerWrapper(object):
             if self.args.pmd_xml:
                 xml_out = os.path.join(self.args.infer_out,
                                        config.PMD_XML_FILENAME)
-            issues.print_and_save_errors(json_report,
+            issues.print_and_save_errors(self.args.project_root, json_report,
                                          bugs_out, xml_out)
 
     def analyze_and_report(self):

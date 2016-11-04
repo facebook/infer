@@ -207,7 +207,8 @@ class BuckAnalyzer:
         if self.args.pmd_xml:
             xml_out = os.path.join(
                 self.args.infer_out, config.PMD_XML_FILENAME)
-        issues.print_and_save_errors(merged_reports_path, bugs_out, xml_out)
+        issues.print_and_save_errors(self.args.project_root,
+                                     merged_reports_path, bugs_out, xml_out)
         return os.EX_OK
 
     def capture_with_compilation_database(self):

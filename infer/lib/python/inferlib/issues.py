@@ -93,7 +93,8 @@ def text_of_report(report):
     )
 
 
-def _text_of_report_list(reports, formatter=colorize.TERMINAL_FORMATTER):
+def _text_of_report_list(project_root, reports,
+                         formatter=colorize.TERMINAL_FORMATTER):
     text_errors_list = []
     error_types_count = {}
     for report in reports:
@@ -103,7 +104,7 @@ def _text_of_report_list(reports, formatter=colorize.TERMINAL_FORMATTER):
         source_context = ''
         if formatter == colorize.TERMINAL_FORMATTER:
             source_context = source.build_source_context(
-                filename,
+                os.path.join(project_root, filename),
                 formatter,
                 line,
             )
@@ -166,18 +167,18 @@ def _text_of_report_list(reports, formatter=colorize.TERMINAL_FORMATTER):
     return msg
 
 
-def _is_user_visible(report):
+def _is_user_visible(project_root, report):
     filename = report[JSON_INDEX_FILENAME]
     kind = report[JSON_INDEX_KIND]
-    return (os.path.isfile(filename) and
+    return (os.path.isfile(os.path.join(project_root, filename)) and
             kind in [ISSUE_KIND_ERROR, ISSUE_KIND_WARNING, ISSUE_KIND_ADVICE])
 
 
-def print_and_save_errors(json_report, bugs_out, xml_out):
+def print_and_save_errors(project_root, json_report, bugs_out, xml_out):
     errors = utils.load_json_from_path(json_report)
-    errors = filter(_is_user_visible, errors)
-    utils.stdout('\n' + _text_of_report_list(errors))
-    plain_out = _text_of_report_list(errors,
+    errors = [e for e in errors if _is_user_visible(project_root, e)]
+    utils.stdout('\n' + _text_of_report_list(project_root, errors))
+    plain_out = _text_of_report_list(project_root, errors,
                                      formatter=colorize.PLAIN_FORMATTER)
     with codecs.open(bugs_out, 'w',
                      encoding=config.CODESET, errors='replace') as file_out:
