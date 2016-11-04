@@ -159,6 +159,12 @@ val clear_spec_tbl : unit -> unit
 (** Dump a spec *)
 val d_spec : 'a spec -> unit
 
+(** Returns true if the procedure is a model *)
+val is_model: Procname.t -> bool
+
+(** Return the summary option for the procedure name *)
+val get_summary : Procname.t -> summary option
+
 (** Get the procedure name *)
 val get_proc_name : summary -> Procname.t
 
@@ -172,13 +178,10 @@ val get_ret_type : summary -> Typ.t
 val get_formals : summary -> (Mangled.t * Typ.t) list
 
 (** Get the flag with the given key for the procedure, if any *)
-val get_flag : Procname.t -> string -> string option
+val get_flag : summary -> string -> string option
 
 (** Return the current phase for the proc *)
-val get_phase : Procname.t -> phase
-
-(** Return the origin of the spec file *)
-val get_origin: Procname.t -> DB.origin
+val get_phase : summary -> phase
 
 (** Return the signature of a procedure declaration as a string *)
 val get_signature : summary -> string
@@ -191,9 +194,6 @@ val get_specs_formals : Procname.t -> Prop.normal spec list * (Mangled.t * Typ.t
 
 (** Get the specs from the payload of the summary. *)
 val get_specs_from_payload : summary -> Prop.normal spec list
-
-(** Return the summary option for the procedure name *)
-val get_summary : Procname.t -> summary option
 
 (** @deprecated Return the summary for the procedure name. Raises an exception when not found. *)
 val get_summary_unsafe : string -> Procname.t -> summary

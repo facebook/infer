@@ -529,9 +529,9 @@ let forward_tabulate tenv pdesc wl source =
 
   let print_node_preamble curr_node session pathset_todo =
     let log_string proc_name =
-      let phase_string =
-        if Specs.get_phase proc_name == Specs.FOOTPRINT then "FP" else "RE" in
       let summary = Specs.get_summary_unsafe "forward_tabulate" proc_name in
+      let phase_string =
+        if Specs.get_phase summary == Specs.FOOTPRINT then "FP" else "RE" in
       let timestamp = Specs.get_timestamp summary in
       F.sprintf "[%s:%d] %s" phase_string timestamp (Procname.to_string proc_name) in
     L.d_strln ("**** " ^ (log_string pname) ^ " " ^
@@ -987,10 +987,10 @@ type exe_phase = (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.p
     [go ()] was interrupted by and exception. *)
 let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t) source
   : exe_phase =
+  let summary = Specs.get_summary_unsafe "check_recursion_level" pname in
   let start_node = Cfg.Procdesc.get_start_node pdesc in
 
   let check_recursion_level () =
-    let summary = Specs.get_summary_unsafe "check_recursion_level" pname in
     let recursion_level = Specs.get_timestamp summary in
     if recursion_level > Config.max_recursion then
       begin
@@ -1097,7 +1097,7 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t) so
       specs, Specs.RE_EXECUTION in
     go, get_results in
 
-  match Specs.get_phase pname with
+  match Specs.get_phase summary with
   | Specs.FOOTPRINT ->
       compute_footprint ()
   | Specs.RE_EXECUTION ->
@@ -1394,8 +1394,10 @@ let perform_transition exe_env tenv proc_name source =
         L.err "Error: %s %a@." err_str L.pp_ml_loc_opt ml_loc_opt;
         [] in
     transition_footprint_re_exe tenv proc_name joined_pres in
-  if Specs.get_phase proc_name == Specs.FOOTPRINT
-  then transition ()
+  match Specs.get_summary proc_name with
+  | Some summary when Specs.get_phase summary == Specs.FOOTPRINT ->
+      transition ()
+  | _ -> ()
 
 
 let interprocedural_algorithm exe_env : unit =

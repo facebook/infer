@@ -664,7 +664,7 @@ let prop_set_exn tenv pname prop se_exn =
 
 (** Include a subtrace for a procedure call if the callee is not a model. *)
 let include_subtrace callee_pname =
-  Specs.get_origin callee_pname <> DB.Models &&
+  not (Specs.is_model callee_pname) &&
   not (AttributesTable.pname_is_cpp_model callee_pname) &&
   not (AttributesTable.is_whitelisted_cpp_method (Procname.to_string callee_pname))
 

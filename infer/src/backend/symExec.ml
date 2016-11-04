@@ -375,13 +375,13 @@ let check_inherently_dangerous_function caller_pname callee_pname =
         (Localise.desc_inherently_dangerous_function callee_pname) in
     Reporting.log_warning caller_pname exn
 
-let call_should_be_skipped callee_pname summary =
+let call_should_be_skipped callee_summary =
   (* check skip flag *)
-  Specs.get_flag callee_pname proc_flag_skip <> None
+  Specs.get_flag callee_summary proc_flag_skip <> None
   (* skip abstract methods *)
-  || summary.Specs.attributes.ProcAttributes.is_abstract
+  || callee_summary.Specs.attributes.ProcAttributes.is_abstract
   (* treat calls with no specs as skip functions in angelic mode *)
-  || (Config.angelic_execution && Specs.get_specs_from_payload summary == [])
+  || (Config.angelic_execution && Specs.get_specs_from_payload callee_summary == [])
 
 (** In case of constant string dereference, return the result immediately *)
 let check_constant_string_dereference lexp =
@@ -1067,20 +1067,20 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
               let exec_skip_call skipped_pname ret_annots ret_type =
                 skip_call norm_prop path skipped_pname ret_annots loc ret_id
                   (Some ret_type) norm_args in
-              let resolved_pname, summary_opt = resolve_and_analyze tenv current_pdesc
+              let resolved_pname, resolved_summary_opt = resolve_and_analyze tenv current_pdesc
                   norm_prop norm_args callee_pname call_flags in
               begin
-                match summary_opt with
+                match resolved_summary_opt with
                 | None ->
                     let ret_typ = Typ.java_proc_return_typ callee_pname_java in
                     let ret_annots = load_ret_annots callee_pname in
                     exec_skip_call resolved_pname ret_annots ret_typ
-                | Some summary when call_should_be_skipped resolved_pname summary ->
-                    let proc_attrs = summary.Specs.attributes in
+                | Some resolved_summary when call_should_be_skipped resolved_summary ->
+                    let proc_attrs = resolved_summary.Specs.attributes in
                     let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
                     exec_skip_call resolved_pname ret_annots proc_attrs.ProcAttributes.ret_type
-                | Some summary ->
-                    proc_call summary (call_args prop_ callee_pname norm_args ret_id loc)
+                | Some resolved_summary ->
+                    proc_call resolved_summary (call_args prop_ callee_pname norm_args ret_id loc)
               end
           | Java callee_pname_java ->
               do_error_checks tenv (Paths.Path.curr_node path) instr current_pname current_pdesc;
@@ -1098,12 +1098,13 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                     let ret_typ = Typ.java_proc_return_typ callee_pname_java in
                     let ret_annots = load_ret_annots callee_pname in
                     exec_skip_call ret_annots ret_typ
-                | Some summary when call_should_be_skipped pname summary ->
-                    let proc_attrs = summary.Specs.attributes in
+                | Some callee_summary when call_should_be_skipped callee_summary ->
+                    let proc_attrs = callee_summary.Specs.attributes in
                     let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
                     exec_skip_call ret_annots proc_attrs.ProcAttributes.ret_type
-                | Some summary ->
-                    proc_call summary (call_args norm_prop pname url_handled_args ret_id loc) in
+                | Some callee_summary ->
+                    let handled_args = call_args norm_prop pname url_handled_args ret_id loc in
+                    proc_call callee_summary handled_args in
               IList.fold_left (fun acc pname -> exec_one_pname pname @ acc) [] resolved_pnames
           | _ -> (* Generic fun call with known name *)
               let (prop_r, n_actual_params) =
@@ -1122,12 +1123,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                     (call_args prop_r callee_pname actual_params ret_id loc)
                 else [(prop_r, path)] in
               let do_call (prop, path) =
-                let summary = Specs.get_summary resolved_pname in
-                let should_skip resolved_pname summary =
-                  match summary with
-                  | None -> true
-                  | Some summary -> call_should_be_skipped resolved_pname summary in
-                if should_skip resolved_pname summary then
+                let resolved_summary_opt = Specs.get_summary resolved_pname in
+                if Option.map_default call_should_be_skipped true resolved_summary_opt then
                   (* If it's an ObjC getter or setter, call the builtin rather than skipping *)
                   let attrs_opt =
                     let attr_opt = Option.map Cfg.Procdesc.get_attributes callee_pdesc_opt in
@@ -1149,7 +1146,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                         current_pdesc callee_pname loc path
                         (sym_exec_objc_accessor objc_property_accessor ret_typ)
                   | None ->
-                      let ret_annots = match summary with
+                      let ret_annots = match resolved_summary_opt with
                         | Some summ ->
                             let ret_annots, _ =
                               summ.Specs.attributes.ProcAttributes.method_annotation in
@@ -1163,7 +1160,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                       skip_call ~is_objc_instance_method prop path resolved_pname ret_annots
                         loc ret_id ret_typ_opt n_actual_params
                 else
-                  proc_call (Option.get summary)
+                  proc_call (Option.get resolved_summary_opt)
                     (call_args prop resolved_pname n_actual_params ret_id loc) in
               IList.flatten (IList.map do_call sentinel_result)
         )
@@ -1540,7 +1537,7 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actu
       | _, None -> true
       | _, Some (id, _) -> Errdesc.id_is_assigned_then_dead (State.get_node ()) id in
     if is_ignored
-    && Specs.get_flag callee_pname proc_flag_ignore_return = None then
+    && Specs.get_flag summary proc_flag_ignore_return = None then
       let err_desc = Localise.desc_return_value_ignored callee_pname loc in
       let exn = (Exceptions.Return_value_ignored (err_desc, __POS__)) in
       Reporting.log_warning caller_pname exn in

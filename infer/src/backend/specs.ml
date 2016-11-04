@@ -675,10 +675,10 @@ let pdesc_resolve_attributes proc_desc =
       (* this should not happen *)
       assert false
 
-let get_origin proc_name =
+let is_model proc_name =
   match get_summary_origin proc_name with
-  | Some (_, origin) -> origin
-  | None -> DB.Res_dir
+  | None -> false
+  | Some (_, origin) -> origin = DB.Models
 
 let summary_exists proc_name =
   match get_summary proc_name with
@@ -707,15 +707,11 @@ let get_attributes summary =
   summary.attributes
 
 (** Get the flag with the given key for the procedure, if any *)
-(* TODO get_flag should get a summary as parameter *)
-let get_flag proc_name key =
-  match get_summary proc_name with
-  | None -> None
-  | Some summary ->
-      let proc_flags = summary.attributes.ProcAttributes.proc_flags in
-      try
-        Some (Hashtbl.find proc_flags key)
-      with Not_found -> None
+let get_flag summary key =
+  let proc_flags = summary.attributes.ProcAttributes.proc_flags in
+  try
+    Some (Hashtbl.find proc_flags key)
+  with Not_found -> None
 
 (** Return the specs and parameters for the proc in the spec table *)
 let get_specs_formals proc_name =
@@ -732,10 +728,8 @@ let get_specs proc_name =
   fst (get_specs_formals proc_name)
 
 (** Return the current phase for the proc *)
-let get_phase proc_name =
-  match get_summary_origin proc_name with
-  | None -> raise (Failure ("Specs.get_phase: " ^ (Procname.to_string proc_name) ^ " Not_found"))
-  | Some (summary, _) -> summary.phase
+let get_phase summary =
+  summary.phase
 
 (** Set the current status for the proc *)
 let set_status proc_name status =
