@@ -11,8 +11,7 @@
 
 open! Utils
 
-type exe = Analyze | BuckCompilationDatabase | Clang | Interactive | Java | Print | StatsAggregator
-         | Toplevel
+type exe = Analyze | BuckCompilationDatabase | Clang | Interactive | Java | Print | Toplevel
 
 (** Association list of executable (base)names to their [exe]s. *)
 val exes : (string * exe) list

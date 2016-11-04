@@ -169,6 +169,7 @@ let analyze = function
 
 let epilogue build_mode =
   if Config.is_originator then (
+    StatsAggregator.generate_files () ;
     if Config.analyzer = Some Config.Crashcontext then
       Crashcontext.crashcontext_epilogue ~in_buck_mode:(build_mode = Buck);
     if Config.fail_on_bug then

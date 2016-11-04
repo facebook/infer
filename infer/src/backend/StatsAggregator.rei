@@ -7,3 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 open! Utils;
+
+
+/** Generate files containing statistics aggregated from individual statistics files under
+    Config.results_dir */
+let generate_files: unit => unit;

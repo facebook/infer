@@ -165,7 +165,7 @@ let aggregate_stats_by_target tp => {
   {frontend_json_data, backend_json_data, reporting_json_data}
 };
 
-let () = {
+let generate_files () => {
   let infer_out = Config.results_dir;
   let stats_files = collect_all_stats_files ();
   let origin =

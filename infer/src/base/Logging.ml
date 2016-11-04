@@ -24,7 +24,6 @@ let log_dir_of_current_exe (current_exe : CommandLineOption.exe) =
   | Interactive -> "interactive"
   | Java -> "java"
   | Print -> "print"
-  | StatsAggregator -> "stats_agregator"
   | Toplevel -> "top_level"
 
 
