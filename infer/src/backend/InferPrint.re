@@ -524,10 +524,10 @@ let module IssuesJson = {
         ltr
         eclass
         visibility => {
-      let source_file =
+      let (source_file, procedure_start_line) =
         switch proc_loc_opt {
-        | Some proc_loc => proc_loc.Location.file
-        | None => loc.Location.file
+        | Some proc_loc => (proc_loc.Location.file, proc_loc.Location.line)
+        | None => (loc.Location.file, loc.Location.line)
         };
       let file_opt = make_cpp_models_path_relative source_file;
       if (
@@ -557,6 +557,7 @@ let module IssuesJson = {
           column: loc.Location.col,
           procedure: Procname.to_string procname,
           procedure_id,
+          procedure_start_line,
           file,
           bug_trace: loc_trace_to_jsonbug_record ltr ekind,
           key: node_key,
@@ -628,6 +629,20 @@ let module IssuesTests = {
   };
 };
 
+let pp_tests_of_report fmt report => {
+  let pp_row jsonbug =>
+    Jsonbug_t.(
+      F.fprintf
+        fmt
+        "%s, %s, %d, %s@."
+        jsonbug.file
+        jsonbug.procedure
+        (jsonbug.line - jsonbug.procedure_start_line)
+        jsonbug.bug_type
+    );
+  IList.iter pp_row report
+};
+
 let module IssuesTxt = {
 
   /** Write bug report in text format */
@@ -644,6 +659,21 @@ let module IssuesTxt = {
     };
     Errlog.iter pp_row err_log
   };
+};
+
+let pp_text_of_report fmt report => {
+  let pp_row jsonbug =>
+    Jsonbug_t.(
+      F.fprintf
+        fmt
+        "%s:%d: %s: %s %s@\n"
+        jsonbug.file
+        jsonbug.line
+        jsonbug.kind
+        jsonbug.bug_type
+        jsonbug.qualifier
+    );
+  IList.iter pp_row report
 };
 
 let module IssuesXml = {
@@ -1187,6 +1217,31 @@ let pp_summary_by_report_kind
   IList.iter pp_summary_by_report_kind formats_by_report_kind
 };
 
+let pp_json_report_by_report_kind formats_by_report_kind fname =>
+  switch (read_file fname) {
+  | Some report_lines =>
+    let pp_json_issues format_list report => {
+      let pp_json_issue (format_kind, outf) =>
+        switch format_kind {
+        | Tests => pp_tests_of_report outf.fmt report
+        | Text => pp_text_of_report outf.fmt report
+        | Json => failwith "Printing issues from json does not support json output"
+        | Csv => failwith "Printing issues from json does not support csv output"
+        | Xml => failwith "Printing issues from json does not support xml output"
+        | Latex => failwith "Printing issues from json does not support latex output"
+        };
+      IList.iter pp_json_issue format_list
+    };
+    let report = Jsonbug_j.report_of_string (String.concat "\n" report_lines);
+    let pp_report_by_report_kind (report_kind, format_list) =>
+      switch (report_kind, format_list) {
+      | (Issues, [_, ..._]) => pp_json_issues format_list report
+      | _ => ()
+      };
+    IList.iter pp_report_by_report_kind formats_by_report_kind
+  | None => failwithf "Error reading %s. Does the file exist?" fname
+  };
+
 let pp_lint_issues_by_report_kind formats_by_report_kind error_filter linereader procname error_log => {
   let pp_summary_by_report_kind (report_kind, format_list) =>
     switch (report_kind, format_list) {
@@ -1428,7 +1483,6 @@ let finalize_and_close_files format_list_by_kind stats pdflatex => {
 };
 
 let pp_summary_and_issues formats_by_report_kind => {
-  init_files formats_by_report_kind;
   let pdflatex fname => ignore (Sys.command ("pdflatex " ^ fname));
   let stats = Stats.create ();
   let linereader = Printer.LineReader.create ();
@@ -1455,6 +1509,14 @@ let pp_summary_and_issues formats_by_report_kind => {
   finalize_and_close_files formats_by_report_kind stats pdflatex
 };
 
+let print_issues formats_by_report_kind => {
+  init_files formats_by_report_kind;
+  switch Config.from_json_report {
+  | Some fname => pp_json_report_by_report_kind formats_by_report_kind fname
+  | None => pp_summary_and_issues formats_by_report_kind
+  }
+};
+
 let main report_csv::report_csv report_json::report_json => {
   let formats_by_report_kind = [
     (Issues, init_issues_format_list report_csv report_json),
@@ -1465,6 +1527,5 @@ let main report_csv::report_csv report_json::report_json => {
   ];
   register_perf_stats_report ();
   handle_source_file_copy_option ();
-  /* print issues */
-  pp_summary_and_issues formats_by_report_kind
+  print_issues formats_by_report_kind
 };

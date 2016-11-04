@@ -193,6 +193,7 @@ val fcp_syntax_only : bool
 val filter_paths : bool
 val filtering : bool
 val flavors : bool
+val from_json_report : string option
 val frontend_debug : bool
 val frontend_tests : bool
 val frontend_stats : bool
