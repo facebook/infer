@@ -481,10 +481,6 @@ and rest =
     ~exes:CLOpt.[Toplevel;BuckCompilationDatabase]
     "Stop argument processing, use remaining arguments as a build command"
 
-and absolute_paths =
-  CLOpt.mk_bool ~long:"absolute-paths"
-    ~exes:CLOpt.[Java] "Report errors using absolute paths"
-
 and abs_struct =
   CLOpt.mk_int ~deprecated:["absstruct"] ~long:"abs-struct" ~default:1
     ~meta:"int" "Specify abstraction level for fields of structs:\n\
@@ -1383,7 +1379,6 @@ let anon_args = IList.rev !anon_args
 and rest = !rest
 and abs_struct = !abs_struct
 and abs_val_orig = !abs_val
-and absolute_paths = !absolute_paths
 and allow_specs_cleanup = !allow_specs_cleanup
 and analysis_path_regex_whitelist_options =
   IList.map (fun (a, b) -> (a, !b)) analysis_path_regex_whitelist_options

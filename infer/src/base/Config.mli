@@ -130,7 +130,6 @@ val wrappers_dir : string
 val anon_args : string list
 val rest : string list
 val abs_struct : int
-val absolute_paths : bool
 val allow_specs_cleanup : bool
 val analysis_path_regex_whitelist : analyzer -> string list
 val analysis_path_regex_blacklist : analyzer -> string list
