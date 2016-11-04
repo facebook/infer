@@ -46,7 +46,7 @@ let check_nested_loop path pos_opt =
         if level = 0 then do_node_caller node
     | None ->
         () in
-  Paths.Path.iter_longest_sequence f pos_opt path;
+  Paths.Path.iter_shortest_sequence f pos_opt path;
   in_nested_loop ()
 
 (** Check that we know where the value was last assigned,

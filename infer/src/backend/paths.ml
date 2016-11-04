@@ -53,10 +53,7 @@ module Path : sig
   (** iterate over each node in the path, excluding calls, once *)
   val iter_all_nodes_nocalls : (Cfg.Node.t -> unit) -> t -> unit
 
-  (** iterate over the longest sequence belonging to the path, restricting to those containing the given position if given.
-      Do not iterate past the given position.
-      [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] *)
-  val iter_longest_sequence :
+  val iter_shortest_sequence :
     (int -> t -> int -> Typename.t option -> unit) -> PredSymb.path_pos option -> t -> unit
 
   (** join two paths *)
@@ -284,9 +281,11 @@ end = struct
     Invariant.reset_stats path;
     !found
 
-  (** iterate over the longest sequence belonging to the path, restricting to those where [filter] holds of some element.
-      if a node is reached via an exception, pass the exception information to [f] on the previous node *)
-  let iter_longest_sequence_filter
+  (** iterate over the longest sequence belonging to the path,
+      restricting to those where [filter] holds of some element.
+      If a node is reached via an exception,
+      pass the exception information to [f] on the previous node *)
+  let iter_shortest_sequence_filter
       (f : int -> t -> int -> Typename.t option -> unit)
       (filter: Cfg.Node.t -> bool) (path: t) : unit =
     let rec doit level session path prev_exn_opt = match path with
@@ -297,7 +296,7 @@ end = struct
           doit level (session' :> int) p next_exn_opt;
           f level path session prev_exn_opt
       | Pjoin (p1, p2, _) ->
-          if (Invariant.get_stats p1).max_length >= (Invariant.get_stats p2).max_length then
+          if (Invariant.get_stats p1).max_length <= (Invariant.get_stats p2).max_length then
             doit level session p1 prev_exn_opt
           else
             doit level session p2 prev_exn_opt
@@ -309,10 +308,12 @@ end = struct
     doit 0 0 path None;
     Invariant.reset_stats path
 
-  (** iterate over the longest sequence belonging to the path, restricting to those containing the given position if given.
+  (** iterate over the shortest sequence belonging to the path,
+      restricting to those containing the given position if given.
       Do not iterate past the last occurrence of the given position.
-      [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] and possible exception [exn_opt] *)
-  let iter_longest_sequence
+      [f level path session exn_opt] is passed the current nesting [level] and [path]
+      and previous [session] and possible exception [exn_opt] *)
+  let iter_shortest_sequence
       (f : int -> t -> int -> Typename.t option -> unit)
       (pos_opt : PredSymb.path_pos option) (path: t) : unit =
     let filter node = match pos_opt with
@@ -331,7 +332,7 @@ end = struct
       let g level p session exn_opt =
         if path_pos_at_path p then position_seen := true;
         log := (level, p, session, exn_opt) :: !log in
-      iter_longest_sequence_filter g filter path;
+      iter_shortest_sequence_filter g filter path;
       !log in
     let sequence_up_to_last_seen =
       if !position_seen then
@@ -342,11 +343,13 @@ end = struct
           | [] -> [] in
         remove_until_seen inverse_sequence
       else IList.rev inverse_sequence in
-    IList.iter (fun (level, p, session, exn_opt) -> f level p session exn_opt) sequence_up_to_last_seen
+    IList.iter
+      (fun (level, p, session, exn_opt) -> f level p session exn_opt)
+      sequence_up_to_last_seen
 
   module NodeMap = Map.Make (Cfg.Node)
 
-  (** return the node visited most, and number of visits, in the longest linear sequence *)
+  (** return the node visited most, and number of visits, in the shortest linear sequence *)
   let repetitions path =
     let map = ref NodeMap.empty in
     let add_node = function
@@ -360,7 +363,7 @@ end = struct
           end
       | None ->
           () in
-    iter_longest_sequence (fun _ p _ _ -> add_node (curr_node p)) None path;
+    iter_shortest_sequence (fun _ p _ _ -> add_node (curr_node p)) None path;
     let max_rep_node = ref (Cfg.Node.dummy ()) in
     let max_rep_num = ref 0 in
     NodeMap.iter (fun node num -> if num > !max_rep_num then (max_rep_node := node; max_rep_num := num)) !map;
@@ -509,7 +512,7 @@ end = struct
           end
       | None ->
           () in
-    iter_longest_sequence g pos_opt path;
+    iter_shortest_sequence g pos_opt path;
     let compare lt1 lt2 =
       let n = int_compare lt1.Errlog.lt_level lt2.Errlog.lt_level in
       if n <> 0 then n else Location.compare lt1.Errlog.lt_loc lt2.Errlog.lt_loc in

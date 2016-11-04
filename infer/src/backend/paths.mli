@@ -47,10 +47,12 @@ module Path : sig
   (** iterate over each node in the path, excluding calls, once *)
   val iter_all_nodes_nocalls : (Cfg.Node.t -> unit) -> t -> unit
 
-  (** iterate over the longest sequence belonging to the path, restricting to those containing the given position if given.
-      Do not iterate past the given position.
-      [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] and possible exception [exn_opt] *)
-  val iter_longest_sequence :
+  (** iterate over the shortest sequence belonging to the path,
+      restricting to those containing the given position if given.
+      Do not iterate past the last occurrence of the given position.
+      [f level path session exn_opt] is passed the current nesting [level] and [path]
+      and previous [session] and possible exception [exn_opt] *)
+  val iter_shortest_sequence :
     (int -> t -> int -> Typename.t option -> unit) -> PredSymb.path_pos option -> t -> unit
 
   (** join two paths *)
