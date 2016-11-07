@@ -140,7 +140,6 @@ struct
 
   let should_translate_decl trans_unit_ctx dec decl_trans_context =
     let info = Clang_ast_proj.get_decl_tuple dec in
-    CLocation.update_curr_file trans_unit_ctx info;
     let source_range = info.Clang_ast_t.di_source_range in
     let translate_when_used = match dec with
       | Clang_ast_t.FunctionDecl (_, name_info, _, _)

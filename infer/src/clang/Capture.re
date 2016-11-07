@@ -47,7 +47,6 @@ let init_global_state_for_capture_and_linters source_file => {
     CommandLineOption.Clang (Some (Filename.basename (DB.source_file_to_string source_file)));
   register_perf_stats_report source_file;
   Config.curr_language := Config.Clang;
-  CLocation.curr_file := source_file;
   DB.Results_dir.init source_file;
   Clang_ast_main.reset_cache ();
   CFrontend_config.reset_global_state ()

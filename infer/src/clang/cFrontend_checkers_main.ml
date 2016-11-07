@@ -63,8 +63,6 @@ let rec do_frontend_checks_stmt (context:CLintersContext.context) stmt =
 
 and do_frontend_checks_decl (context: CLintersContext.context) decl =
   let open Clang_ast_t in
-  let info = Clang_ast_proj.get_decl_tuple decl in
-  CLocation.update_curr_file context.translation_unit_context info;
   let context' =
     (match decl with
      | FunctionDecl(_, _, _, fdi)

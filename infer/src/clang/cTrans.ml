@@ -2032,8 +2032,7 @@ struct
     let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
     let loc =
       (match stmt_info.Clang_ast_t.si_source_range with (l1, _) ->
-         CLocation.clang_to_sil_location context.CContext.translation_unit_context l1
-           (Some context.CContext.procdesc)) in
+         CLocation.clang_to_sil_location context.CContext.translation_unit_context l1) in
     (* Given a captured var, return the instruction to assign it to a temp *)
     let assign_captured_var (cvar, typ) =
       let id = Ident.create_fresh Ident.knormal in

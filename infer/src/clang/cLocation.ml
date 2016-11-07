@@ -11,10 +11,6 @@ open! Utils
 
 (** Module for function to retrieve the location (file, line, etc) of instructions *)
 
-(** Inside the AST there may be code or type definitions from other files than the one passed as an
-    argument. That current file in the translation is saved in this variable. *)
-let curr_file = ref DB.source_file_empty
-
 let source_file_from_path path =
   if Filename.is_relative path then
     (failwithf
@@ -26,44 +22,12 @@ let source_file_from_path path =
     Logging.err_debug "ERROR: %s should be a prefix of %s.@." Config.project_root path;
     DB.source_file_from_string path
 
-let choose_sloc_to_update_curr_file trans_unit_ctx sloc1 sloc2 =
-  match sloc2.Clang_ast_t.sl_file with
-  | Some f when DB.inode_equal (source_file_from_path f)
-        trans_unit_ctx.CFrontend_config.source_file ->
-      sloc2
-  | _ -> sloc1
-
-let update_curr_file trans_unit_ctx di =
-  let loc_start, loc_end = di.Clang_ast_t.di_source_range in
-  let loc = choose_sloc_to_update_curr_file trans_unit_ctx loc_start loc_end in
-  match loc.Clang_ast_t.sl_file with
-  | Some f -> curr_file := source_file_from_path f
-  | None -> ()
-
-let clang_to_sil_location trans_unit_ctx clang_loc procdesc_opt =
-  let line = match clang_loc.Clang_ast_t.sl_line with
-    | Some l -> l
-    | None -> -1 in
-  let col = match clang_loc.Clang_ast_t.sl_column with
-    | Some c -> c
-    | None -> -1 in
-  let file, nLOC =
-    match procdesc_opt with
-    | Some procdesc ->
-        let proc_loc = Cfg.Procdesc.get_loc procdesc in
-        if (DB.source_file_equal proc_loc.Location.file DB.source_file_empty) then
-          !curr_file, !Config.nLOC
-        else proc_loc.Location.file, proc_loc.Location.nLOC
-    | None ->
-        match clang_loc.Clang_ast_t.sl_file with
-        | Some f ->
-            let file_db = source_file_from_path f in
-            let nloc =
-              if (DB.inode_equal file_db trans_unit_ctx.CFrontend_config.source_file) then
-                !Config.nLOC
-              else -1 in
-            file_db, nloc
-        | None -> !curr_file, !Config.nLOC in
+let clang_to_sil_location trans_unit_ctx clang_loc =
+  let line = Option.default (-1) clang_loc.Clang_ast_t.sl_line in
+  let col = Option.default (-1) clang_loc.Clang_ast_t.sl_column in
+  let file = Option.map_default source_file_from_path
+      trans_unit_ctx.CFrontend_config.source_file clang_loc.Clang_ast_t.sl_file in
+  let nLOC = -1 in
   Location.{line; col; file; nLOC}
 
 let file_in_project file =
@@ -108,8 +72,7 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
   let translate_on_demand = translate_when_used || file_in_project || Config.models_mode in
   let file_in_models = map_path_of DB.file_is_in_cpp_model loc_end
                        || map_path_of DB.file_is_in_cpp_model loc_start in
-  equal_current_source !curr_file
-  || map_file_of equal_current_source loc_end
+  map_file_of equal_current_source loc_end
   || map_file_of equal_current_source loc_start
   || file_in_models
   || (Config.cxx_experimental && decl_trans_context = `Translation && translate_on_demand
@@ -130,9 +93,8 @@ let is_file_blacklisted file =
 let get_sil_location_from_range trans_unit_ctx source_range prefer_first =
   let sloc1, sloc2 = source_range in
   let sloc = if not prefer_first then sloc2 else sloc1 in
-  clang_to_sil_location trans_unit_ctx sloc None
+  clang_to_sil_location trans_unit_ctx sloc
 
 let get_sil_location stmt_info context =
   let sloc1, _ = stmt_info.Clang_ast_t.si_source_range in
   clang_to_sil_location context.CContext.translation_unit_context sloc1
-    (Some (CContext.get_procdesc context))
