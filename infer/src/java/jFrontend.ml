@@ -147,13 +147,19 @@ let create_icfg source_file linereader program icfg cn node =
     cache_classname cn;
   let translate m =
     let proc_name = JTransType.translate_method_name m in
-    (* each procedure has different scope: start names from id 0 *)
-    Ident.NameGenerator.reset ();
-    match m with
-    | Javalib.ConcreteMethod cm ->
-        add_cmethod source_file program linereader icfg cm proc_name
-    | Javalib.AbstractMethod am ->
-        add_amethod source_file program linereader icfg am proc_name in
+    if JClasspath.is_model proc_name then
+      (* do not translate the method if there is a model for it *)
+      L.out_debug "Skipping method with a model: %s@." (Procname.to_string proc_name)
+    else
+      begin
+        (* each procedure has different scope: start names from id 0 *)
+        Ident.NameGenerator.reset ();
+        match m with
+        | Javalib.ConcreteMethod cm ->
+            add_cmethod source_file program linereader icfg cm proc_name
+        | Javalib.AbstractMethod am ->
+            add_amethod source_file program linereader icfg am proc_name
+      end in
   Javalib.m_iter translate node
 
 
