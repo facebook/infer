@@ -10,6 +10,7 @@ include $(TESTS_DIR)/clang.make
 
 ANALYZER = linters
 CLANG_OPTIONS = -x objective-c++ -std=c++11 -fobjc-arc -c
+INFER_OPTIONS = --no-filtering --debug-exceptions
 
 SOURCES = \
   $(wildcard */*.mm) \

@@ -21,6 +21,7 @@ NullPointerExceptionExample.java, void NullPointerExceptionExample.callDeref(T2,
 NullPointerExceptionExample.java, void NullPointerExceptionExample.callLeadToNpe(), 2, java.lang.NullPointerException
 NullPointerExceptionExample.java, void NullPointerExceptionExample.npeOnBothBranches(int), 6, java.lang.NullPointerException
 NullPointerExceptionExample.java, void NullPointerExceptionExample.npeOnBothBranches(int), 6, java.lang.NullPointerException
+NullPointerExceptions.java, String NullPointerExceptions.testSystemGetPropertyArgument(), 1, ANALYSIS_STOPS
 NullPointerExceptions.java, String NullPointerExceptions.testSystemGetPropertyArgument(), 1, NULL_DEREFERENCE
 NullPointerExceptions.java, int NullPointerExceptions.nullListFiles(String), 3, java.lang.NullPointerException
 NullPointerExceptions.java, int NullPointerExceptions.nullPointerException(), 2, java.lang.NullPointerException
@@ -29,6 +30,7 @@ NullPointerExceptions.java, int NullPointerExceptions.nullPointerExceptionWithAC
 NullPointerExceptions.java, int NullPointerExceptions.nullPointerExceptionWithAChainOfFields(NullPointerExceptions$C), 2, java.lang.NullPointerException
 NullPointerExceptions.java, int NullPointerExceptions.nullPointerExceptionWithArray(), 3, java.lang.NullPointerException
 NullPointerExceptions.java, int NullPointerExceptions.nullPointerExceptionWithExceptionHandling(boolean), 5, java.lang.NullPointerException
+NullPointerExceptions.java, int NullPointerExceptions.preconditionCheckStateTest(NullPointerExceptions$D), 1, PRECONDITION_NOT_MET
 NullPointerExceptions.java, void NullPointerExceptions$$$Class$Name$With$Dollars.npeWithDollars(), 3, java.lang.NullPointerException
 NullPointerExceptions.java, void NullPointerExceptions.badCheckShouldCauseNPE(), 2, java.lang.NullPointerException
 NullPointerExceptions.java, void NullPointerExceptions.derefNonThisGetterAfterCheckShouldNotCauseNPE(), 5, java.lang.NullPointerException

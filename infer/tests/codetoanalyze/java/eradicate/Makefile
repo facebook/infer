@@ -10,6 +10,6 @@ include $(JAVA_TEST_DIR)/java.make
 
 ANALYZER = eradicate
 
-INFER_OPTIONS = --eradicate-return-over-annotated
+INFER_OPTIONS = --eradicate-return-over-annotated --no-filtering --debug-exceptions
 
 JAVA_SOURCE_FILES = $(wildcard *.java)

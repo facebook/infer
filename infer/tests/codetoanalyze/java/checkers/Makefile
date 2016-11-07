@@ -10,6 +10,6 @@ include $(JAVA_TEST_DIR)/java.make
 
 ANALYZER = checkers
 
-INFER_OPTIONS = --thread-safety
+INFER_OPTIONS = --thread-safety --no-filtering --debug-exceptions
 
 JAVA_SOURCE_FILES = $(wildcard *.java)

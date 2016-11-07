@@ -10,7 +10,7 @@ include $(TESTS_DIR)/clang.make
 
 ANALYZER = checkers
 CLANG_OPTIONS = -x c++ -std=c++11 -isystem$(MODELS_DIR)/cpp/include -isystem$(CLANG_INCLUDES)/c++/v1/ -c
-INFER_OPTIONS = --cxx --ml-buckets cpp
+INFER_OPTIONS = --cxx --ml-buckets cpp --no-filtering --debug-exceptions
 INFERPRINT_OPTIONS = --issues-txt
 
 SOURCES = \

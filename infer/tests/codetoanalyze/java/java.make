@@ -24,10 +24,9 @@ infer-out/report.json: $(INFER_BIN) $(JAVA_SOURCE_FILES)
 	$(call silent_on_success,\
 	  $(INFER_BIN) $(INFER_OPTIONS) -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(JAVA_SOURCE_FILES))
 
-issues.exp.test: $(INFERPRINT_BIN) infer-out/report.json
-	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) issues.exp.test
-	LC_ALL=C sort -t: -k1,1 -k2n,2 -o issues.exp.test issues.exp.test
-
+issues.exp.test: infer-out/report.json $(INFERPRINT_BIN)
+	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@ --from-json-report $<
+	LC_ALL=C sort -t: -k1,1 -k2n,2 -o $@ $@
 
 default: compile
 

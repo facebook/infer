@@ -13,6 +13,7 @@
 *.rej
 *.start
 *.exp.test
+*.exp.test.*
 duplicates.txt
 infer/tests/codetoanalyze/java/*/codetoanalyze
 

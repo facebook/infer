@@ -12,7 +12,7 @@ ANALYZER = infer
 
 CLANG_OPTIONS = -x c++ -std=c++11 -isystem$(ROOT_DIR) -isystem$(CLANG_INCLUDES)/c++/v1/ -c
 
-INFER_OPTIONS = --cxx --ml-buckets cpp
+INFER_OPTIONS = --cxx --ml-buckets cpp --no-filtering --debug-exceptions
 
 SOURCES = \
   $(wildcard c_tests/*.cpp) \

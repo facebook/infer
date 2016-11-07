@@ -21,9 +21,9 @@ infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
 	  $(INFER_BIN) --check-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- clang $(CLANG_OPTIONS) $(SOURCES) 2>duplicates.txt)
 	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
 
-issues.exp.test: $(INFERPRINT_BIN) infer-out/report.json
-	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) issues.exp.test
-	LC_ALL=C sort -t, -k1,1 -k2,2 -k3n,3 -o issues.exp.test issues.exp.test
+issues.exp.test: infer-out/report.json $(INFERPRINT_BIN)
+	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@ --from-json-report $<
+	LC_ALL=C sort -t, -k1,1 -k2,2 -k3n,3 -o $@ $@
 
 $(OBJECTS): $(SOURCES)
 	clang $(CLANG_OPTIONS) $(SOURCES)

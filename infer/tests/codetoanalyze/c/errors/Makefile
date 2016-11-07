@@ -10,7 +10,7 @@ include $(TESTS_DIR)/clang.make
 
 ANALYZER = infer
 CLANG_OPTIONS = -c
-INFER_OPTIONS =  --report-custom-error --developer-mode
+INFER_OPTIONS = --report-custom-error --developer-mode --no-filtering --debug-exceptions
 
 SOURCES = \
   $(wildcard */*.c) \

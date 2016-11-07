@@ -15,8 +15,6 @@ default: compile
 JAVA_SOURCE_FILES = $(wildcard src/infer/*.java)
 JAVA_CLASS_FILES = $(patsubst %.java,ant_out/%.class,$(JAVA_SOURCE_FILES))
 
-INFERPRINT_OPTIONS = --issues-tests
-
 $(JAVA_CLASS_FILES): $(JAVA_SOURCE_FILES)
 	ant
 
@@ -24,9 +22,9 @@ infer-out/report.json: $(INFER_BIN) $(JAVA_SOURCE_FILES)
 	$(call silent_on_success,\
 	  $(INFER_BIN) -a $(ANALYZER) -- ant)
 
-issues.exp.test: $(INFERPRINT_BIN) infer-out/report.json
-	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) issues.exp.test
-	LC_ALL=C sort -t: -k1,1 -k2n,2 -o issues.exp.test issues.exp.test
+issues.exp.test: infer-out/report.json $(INFERPRINT_BIN)
+	$(INFERPRINT_BIN) -q -a $(ANALYZER) --issues-tests $@ --from-json-report $<
+	LC_ALL=C sort -t: -k1,1 -k2n,2 -o $@ $@
 
 .PHONY: compile
 compile: $(JAVA_CLASS_FILES)

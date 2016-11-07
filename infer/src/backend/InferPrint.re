@@ -527,7 +527,7 @@ let module IssuesJson = {
       let (source_file, procedure_start_line) =
         switch proc_loc_opt {
         | Some proc_loc => (proc_loc.Location.file, proc_loc.Location.line)
-        | None => (loc.Location.file, loc.Location.line)
+        | None => (loc.Location.file, 0)
         };
       let file_opt = make_cpp_models_path_relative source_file;
       if (
@@ -572,57 +572,6 @@ let module IssuesJson = {
           is_first_item := false
         };
         pp "%s@?" (Jsonbug_j.string_of_jsonbug bug)
-      }
-    };
-    Errlog.iter pp_row err_log
-  };
-};
-
-let module IssuesTests = {
-
-  /** Write bug report in a format suitable for tests on analysis results. */
-  let pp_issues_of_error_log fmt error_filter _ proc_loc_opt proc_name err_log => {
-    let pp_row _ loc _ ekind in_footprint error_name error_desc _ _ _ _ => {
-      let (source_file, line_offset) =
-        switch proc_loc_opt {
-        | Some proc_loc =>
-          let line_offset = loc.Location.line - proc_loc.Location.line;
-          (proc_loc.Location.file, line_offset)
-        | None => (loc.Location.file, loc.Location.line)
-        };
-      let should_report =
-        ekind == Exceptions.Kerror ||
-        IList.exists
-          (Localise.equal error_name)
-          Localise.[
-            assign_pointer_warning,
-            bad_pointer_comparison,
-            component_factory_function,
-            component_initializer_with_side_effects,
-            component_with_multiple_factory_methods,
-            component_with_unconventional_superclass,
-            cxx_reference_captured_in_objc_block,
-            direct_atomic_property_access,
-            field_not_null_checked,
-            global_variable_initialized_with_function_or_method_call,
-            mutable_local_variable_in_component_file,
-            parameter_not_null_checked,
-            quandary_taint_error,
-            registered_observer_being_deallocated,
-            return_value_ignored,
-            static_initialization_order_fiasco,
-            strong_delegate_warning
-          ];
-      if (in_footprint && should_report && error_filter source_file error_desc error_name) {
-        F.fprintf
-          fmt
-          "%s, %a, %d, %a@."
-          (DB.source_file_to_string source_file)
-          Procname.pp
-          proc_name
-          line_offset
-          Localise.pp
-          error_name
       }
     };
     Errlog.iter pp_row err_log
@@ -1102,7 +1051,7 @@ let pp_issues_in_format (format_kind, outf) =>
   switch format_kind {
   | Json => IssuesJson.pp_issues_of_error_log outf.fmt
   | Csv => IssuesCsv.pp_issues_of_error_log outf.fmt
-  | Tests => IssuesTests.pp_issues_of_error_log outf.fmt
+  | Tests => failwith "Print issues as tests is not implemented"
   | Text => IssuesTxt.pp_issues_of_error_log outf.fmt
   | Xml => IssuesXml.pp_issues_of_error_log outf.fmt
   | Latex => failwith "Printing issues in latex is not implemented"

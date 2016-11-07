@@ -18,7 +18,7 @@ CLANG_OPTIONS = -x objective-c \
   -mios-simulator-version-min=8.2 --target=x86_64-apple-darwin14 -c \
 
 CLEAN_EXTRA = infer-out-arc infer-out-all
-INFER_OPTIONS = --cxx  --check-duplicate-symbols
+INFER_OPTIONS = --cxx  --check-duplicate-symbols --no-filtering --debug-exceptions
 
 SOURCES_DEFAULT = \
   field_superclass/B.m \
@@ -96,17 +96,15 @@ SOURCES_ARC = \
   subtyping/KindOfClassExample.m \
   variadic_methods/premature_nil_termination.m \
 
-SOURCES = $(SOURCES_DEFAULT) $(SOURCES_BUCKET_ALL) $(SOURCES_ARC)
-
 OBJECTS_ARC = $(foreach source,$(SOURCES_ARC),$(basename $(source)).o)
 OBJECTS_BUCKET_ALL = $(foreach source,$(SOURCES_BUCKET_ALL),$(basename $(source)).o)
 OBJECTS_DEFAULT = $(foreach source,$(SOURCES_DEFAULT),$(basename $(source)).o)
 
 $(OBJECTS_ARC): $(SOURCES_ARC)
-	clang $(CLANG_OPTIONS) -fobjc-arc $< -o $@
+	clang $(CLANG_OPTIONS) -fobjc-arc $*
 
 $(OBJECTS_BASE) $(OBJECTS_BUCKETS_ALL): $(SOURCES_BASE) $(SOURCES_BUCKET_ALL)
-	clang $(CLANG_OPTIONS) $< -o $@
+	clang $(CLANG_OPTIONS) $*
 
 infer-out-all/report.json: $(INFER_BIN) $(SOURCES_BUCKET_ALL)
 	$(call silent_on_success,\
@@ -120,12 +118,21 @@ infer-out-arc/report.json: $(INFER_BIN) $(SOURCES_ARC)
 	  clang $(CLANG_OPTIONS) -fobjc-arc $(SOURCES_ARC) 2>duplicates.txt)
 	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
 
-infer-out-default/report.json: $(INFER_BIN) $(SOURCES_DEFAULT)
+infer-out/report.json: $(INFER_BIN) $(SOURCES_DEFAULT)
 	$(call silent_on_success,\
-	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --ml-buckets cf -o infer-out-default -- \
+	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --ml-buckets cf -o infer-out -- \
 	  clang $(CLANG_OPTIONS) $(SOURCES_DEFAULT) 2>duplicates.txt)
 	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
 
-infer-out/report.json: infer-out-all/report.json infer-out-arc/report.json infer-out-default/report.json
-	$(MKDIR_P) infer-out/specs
-	cp infer-out-{all,arc,default}/specs/* infer-out/specs
+issues.exp.test: infer-out-all/report.json infer-out-arc/report.json infer-out/report.json
+	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.all \
+	  --from-json-report infer-out-all/report.json
+	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.arc \
+	  --from-json-report infer-out-arc/report.json
+	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.default \
+	  --from-json-report infer-out/report.json
+	LC_ALL=C sort -t, -k1,1 -k2,2 -k3n,3 -o $@ $@.all $@.arc $@.default
+
+clean:
+	$(REMOVE_DIR) infer-out-all infer-out-arc
+	$(REMOVE) issues.exp.test.all issues.exp.test.arc issues.exp.test.default

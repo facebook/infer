@@ -10,7 +10,7 @@ include $(JAVA_TEST_DIR)/java.make
 
 ANALYZER = infer
 
-INFER_OPTIONS = --android-harness
+INFER_OPTIONS = --android-harness --no-filtering --debug-exceptions
 
 JAVA_SOURCE_FILES = \
   BasicHarnessActivity.java \

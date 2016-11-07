@@ -9,5 +9,6 @@ JAVA_TEST_DIR = ..
 include $(JAVA_TEST_DIR)/java.make
 
 ANALYZER = tracing
+INFER_OPTIONS = --no-filtering --debug-exceptions
 
 JAVA_SOURCE_FILES = $(wildcard *.java)
