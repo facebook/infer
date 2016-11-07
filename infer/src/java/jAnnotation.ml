@@ -48,12 +48,12 @@ let translate_item avlist : Annot.Item.t =
 
 
 (** Translate a method annotation. *)
-let translate_method proc_name_java ann : Annot.Method.t =
+let translate_method proc_name ann : Annot.Method.t =
   let global_ann = ann.Javalib.ma_global in
   let param_ann = ann.Javalib.ma_parameters in
   let ret_item =
     let base_annotations = translate_item global_ann in
-    if is_suppress_warnings_annotated (Procname.Java proc_name_java) then
+    if is_suppress_warnings_annotated proc_name then
       suppress_warnings :: base_annotations
     else base_annotations in
   let param_items = IList.map translate_item param_ann in

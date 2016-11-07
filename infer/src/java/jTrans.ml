@@ -30,8 +30,11 @@ let init_loc_map : Location.t JBasics.ClassMap.t ref = ref JBasics.ClassMap.empt
 (** Fix the line associated to a method definition.
     Since Sawja often reports a method off by a few lines, we search
     backwards for a line where the method name is. *)
-let fix_method_definition_line linereader proc_name_java loc =
-  let proc_name = Procname.Java proc_name_java in
+let fix_method_definition_line linereader proc_name loc =
+  let proc_name_java =
+    match proc_name with
+    | Procname.Java p -> p
+    | _ -> assert false in
   let method_name =
     if Procname.is_constructor proc_name then
       let inner_class_name cname = snd (string_split_character cname '$') in
@@ -232,8 +235,7 @@ let create_procdesc source_file program linereader icfg m : Cfg.Procdesc.t optio
   let cfg = icfg.JContext.cfg in
   let tenv = icfg.JContext.tenv in
   let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
-  let proc_name_java = JTransType.get_method_procname cn ms (JTransType.get_method_kind m) in
-  let proc_name = Procname.Java proc_name_java in
+  let proc_name = JTransType.translate_method_name m in
   if JClasspath.is_model proc_name then
     begin
       (* do not translate the method if there is a model for it *)
@@ -253,7 +255,7 @@ let create_procdesc source_file program linereader icfg m : Cfg.Procdesc.t optio
             let formals =
               formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
             let method_annotation =
-              JAnnotation.translate_method proc_name_java am.Javalib.am_annotations in
+              JAnnotation.translate_method proc_name am.Javalib.am_annotations in
             let procdesc =
               let proc_attributes =
                 { (ProcAttributes.default proc_name Config.Java) with
@@ -280,7 +282,7 @@ let create_procdesc source_file program linereader icfg m : Cfg.Procdesc.t optio
             let formals =
               formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
             let method_annotation =
-              JAnnotation.translate_method proc_name_java cm.Javalib.cm_annotations in
+              JAnnotation.translate_method proc_name cm.Javalib.cm_annotations in
             let proc_attributes =
               { (ProcAttributes.default proc_name Config.Java) with
                 ProcAttributes.access = trans_access cm.Javalib.cm_access;
@@ -297,11 +299,11 @@ let create_procdesc source_file program linereader icfg m : Cfg.Procdesc.t optio
             let locals, formals = locals_formals program tenv cn impl in
             let loc_start =
               let loc = get_location source_file impl 0 in
-              fix_method_definition_line linereader proc_name_java loc in
+              fix_method_definition_line linereader proc_name loc in
             let loc_exit =
               get_location source_file impl (Array.length (JBir.code impl) - 1) in
             let method_annotation =
-              JAnnotation.translate_method proc_name_java cm.Javalib.cm_annotations in
+              JAnnotation.translate_method proc_name cm.Javalib.cm_annotations in
             update_constr_loc cn ms loc_start;
             update_init_loc cn ms loc_exit;
             let proc_attributes =
@@ -521,7 +523,7 @@ let method_invocation
     if JBasics.cn_equal cn' (JBasics.make_cn JConfig.infer_builtins_cl) &&
        BuiltinDecl.is_declared proc
     then proc
-    else Procname.Java (JTransType.get_method_procname cn' ms method_kind) in
+    else JTransType.get_method_procname cn' ms method_kind in
   let call_instrs =
     let callee_fun = Exp.Const (Const.Cfun callee_procname) in
     let return_type =

@@ -26,7 +26,10 @@ val get_method_kind : JCode.jcode Javalib.jmethod -> Procname.method_kind
 
 (** returns a procedure name based on the class name and the method's signature. *)
 val get_method_procname :
-  JBasics.class_name -> JBasics.method_signature -> Procname.method_kind -> Procname.java
+  JBasics.class_name -> JBasics.method_signature -> Procname.method_kind -> Procname.t
+
+(** translate the SIL procedure name of the Java method *)
+val translate_method_name : JCode.jcode Javalib.jmethod -> Procname.t
 
 (** [get_class_struct_typ program tenv cn] returns the struct_typ representation of the class *)
 val get_class_struct_typ: JClasspath.program -> Tenv.t -> JBasics.class_name -> StructTyp.t

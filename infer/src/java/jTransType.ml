@@ -191,18 +191,18 @@ let get_method_kind m =
   then Procname.Static
   else Procname.Non_Static
 
-(* create a mangled procname from an abstract or concrete method *)
-let get_method_procname cn ms kind =
+let get_method_procname cn ms method_kind =
   let return_type_name, method_name, args_type_name = method_signature_names ms in
   let class_name = cn_to_java_type cn in
-  Procname.java class_name return_type_name method_name args_type_name kind
+  let proc_name_java =
+    Procname.java class_name return_type_name method_name args_type_name method_kind in
+  Procname.Java proc_name_java
 
-let get_class_procnames cn node =
-  let collect jmethod procnames =
-    let ms = Javalib.get_method_signature jmethod in
-    let kind = get_method_kind jmethod in
-    (get_method_procname cn ms kind) :: procnames in
-  Javalib.m_fold collect node []
+(* create a mangled procname from an abstract or concrete method *)
+let translate_method_name m =
+  let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
+  get_method_procname cn ms (get_method_kind m)
+
 
 let create_fieldname cn fs =
   let fieldname cn fs =
@@ -329,7 +329,10 @@ and get_class_struct_typ program tenv cn =
                       let super_classname = typename_of_classname super_cn in
                       super_classname :: interface_list in
                 (super_classname_list, nonstatics, statics, item_annotation) in
-          let methods = IList.map (fun j -> Procname.Java j) (get_class_procnames cn node) in
+          let methods =
+            Javalib.m_fold
+              (fun m procnames -> (translate_method_name m) :: procnames)
+              node [] in
           Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots name
 
 let get_class_type_no_pointer program tenv cn =

@@ -75,10 +75,8 @@ let add_edges
 
 
 (** Add a concrete method. *)
-let add_cmethod source_file program linereader icfg cm method_kind =
-  let cn, ms = JBasics.cms_split cm.Javalib.cm_class_method_signature in
-  let proc_name_java = JTransType.get_method_procname cn ms method_kind in
-  let proc_name = Procname.Java proc_name_java in
+let add_cmethod source_file program linereader icfg cm proc_name =
+  let cn, _ = JBasics.cms_split cm.Javalib.cm_class_method_signature in
   let jmethod = (Javalib.ConcreteMethod cm) in
   match JTrans.create_procdesc source_file program linereader icfg jmethod with
   | None -> ()
@@ -101,10 +99,7 @@ let add_cmethod source_file program linereader icfg cm method_kind =
 
 
 (** Add an abstract method. *)
-let add_amethod source_file program linereader icfg am method_kind =
-  let cn, ms = JBasics.cms_split am.Javalib.am_class_method_signature in
-  let proc_name_java = JTransType.get_method_procname cn ms method_kind in
-  let proc_name = Procname.Java proc_name_java in
+let add_amethod source_file program linereader icfg am proc_name =
   let jmethod = (Javalib.AbstractMethod am) in
   match JTrans.create_procdesc source_file program linereader icfg jmethod with
   | None -> ()
@@ -151,14 +146,14 @@ let create_icfg source_file linereader program icfg cn node =
   if Config.dependency_mode && not (is_classname_cached cn) then
     cache_classname cn;
   let translate m =
+    let proc_name = JTransType.translate_method_name m in
     (* each procedure has different scope: start names from id 0 *)
     Ident.NameGenerator.reset ();
-    let method_kind = JTransType.get_method_kind m in
     match m with
     | Javalib.ConcreteMethod cm ->
-        add_cmethod source_file program linereader icfg cm method_kind
+        add_cmethod source_file program linereader icfg cm proc_name
     | Javalib.AbstractMethod am ->
-        add_amethod source_file program linereader icfg am method_kind in
+        add_amethod source_file program linereader icfg am proc_name in
   Javalib.m_iter translate node
 
 

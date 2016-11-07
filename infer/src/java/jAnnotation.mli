@@ -17,4 +17,4 @@ open Javalib_pack
 val translate_item : (JBasics.annotation * Javalib.visibility) list -> Annot.Item.t
 
 (** Translate a method annotation. *)
-val translate_method : Procname.java -> Javalib.method_annotations -> Annot.Method.t
+val translate_method : Procname.t -> Javalib.method_annotations -> Annot.Method.t
