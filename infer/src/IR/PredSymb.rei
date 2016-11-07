@@ -75,6 +75,8 @@ type dangling_kind =
 /** position in a path: proc name, node id */
 type path_pos = (Procname.t, int);
 
+let path_pos_compare: path_pos => path_pos => int;
+
 let path_pos_equal: path_pos => path_pos => bool;
 
 type taint_kind =

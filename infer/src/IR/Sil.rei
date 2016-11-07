@@ -274,9 +274,17 @@ let atom_compare: atom => atom => int;
 
 let atom_equal: atom => atom => bool;
 
-let strexp_compare: strexp => strexp => int;
 
-let strexp_equal: strexp => strexp => bool;
+/** Comparison function for strexp.
+    The inst:: parameter specifies whether instumentations should also
+    be considered (false by default).  */
+let strexp_compare: inst::bool? => strexp => strexp => int;
+
+
+/** Equality function for strexp.
+    The inst:: parameter specifies whether instumentations should also
+    be considered (false by default).  */
+let strexp_equal: inst::bool? => strexp => strexp => bool;
 
 let hpara_compare: hpara => hpara => int;
 
@@ -290,9 +298,17 @@ let lseg_kind_compare: lseg_kind => lseg_kind => int;
 
 let lseg_kind_equal: lseg_kind => lseg_kind => bool;
 
-let hpred_compare: hpred => hpred => int;
 
-let hpred_equal: hpred => hpred => bool;
+/** Comparison function for hpred.
+    The inst:: parameter specifies whether instumentations should also
+    be considered (false by default).  */
+let hpred_compare: inst::bool? => hpred => hpred => int;
+
+
+/** Equality function for hpred.
+    The inst:: parameter specifies whether instumentations should also
+    be considered (false by default).  */
+let hpred_equal: inst::bool? => hpred => hpred => bool;
 
 let fld_strexp_compare: (Ident.fieldname, strexp) => (Ident.fieldname, strexp) => int;
 

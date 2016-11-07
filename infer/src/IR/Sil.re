@@ -284,24 +284,127 @@ let lseg_kind_compare k1 k2 =>
 
 let lseg_kind_equal k1 k2 => lseg_kind_compare k1 k2 == 0;
 
+let zero_flag_compare = opt_compare bool_compare;
+
+let inst_compare_base inst1 inst2 =>
+  switch (inst1, inst2) {
+  | (Iabstraction, Iabstraction) => 0
+  | (Iabstraction, _) => (-1)
+  | (_, Iabstraction) => 1
+  | (Iactual_precondition, Iactual_precondition) => 0
+  | (Iactual_precondition, _) => (-1)
+  | (_, Iactual_precondition) => 1
+  | (Ialloc, Ialloc) => 0
+  | (Ialloc, _) => (-1)
+  | (_, Ialloc) => 1
+  | (Iformal zero_flag1 null_case_flag1, Iformal zero_flag2 null_case_flag2) =>
+    let n = zero_flag_compare zero_flag1 zero_flag2;
+    if (n != 0) {
+      n
+    } else {
+      bool_compare null_case_flag1 null_case_flag2
+    }
+  | (Iformal _, _) => (-1)
+  | (_, Iformal _) => 1
+  | (Iinitial, Iinitial) => 0
+  | (Iinitial, _) => (-1)
+  | (_, Iinitial) => 1
+  | (Ilookup, Ilookup) => 0
+  | (Ilookup, _) => (-1)
+  | (_, Ilookup) => 1
+  | (Inone, Inone) => 0
+  | (Inone, _) => (-1)
+  | (_, Inone) => 1
+  | (Inullify, Inullify) => 0
+  | (Inullify, _) => (-1)
+  | (_, Inullify) => 1
+  | (
+      Irearrange zero_flag1 null_case_flag1 i1 path_pos1,
+      Irearrange zero_flag2 null_case_flag2 i2 path_pos2
+    ) =>
+    let n = zero_flag_compare zero_flag1 zero_flag2;
+    if (n != 0) {
+      n
+    } else {
+      let n = bool_compare null_case_flag1 null_case_flag2;
+      if (n != 0) {
+        n
+      } else {
+        let n = int_compare i1 i2;
+        if (n != 0) {
+          n
+        } else {
+          PredSymb.path_pos_compare path_pos1 path_pos2
+        }
+      }
+    }
+  | (Irearrange _, _) => (-1)
+  | (_, Irearrange _) => 1
+  | (Itaint, Itaint) => 0
+  | (Itaint, _) => (-1)
+  | (_, Itaint) => 1
+  | (
+      Iupdate zero_flag1 null_case_flag1 i1 path_pos1,
+      Iupdate zero_flag2 null_case_flag2 i2 path_pos2
+    ) =>
+    let n = zero_flag_compare zero_flag1 zero_flag2;
+    if (n != 0) {
+      n
+    } else {
+      let n = bool_compare null_case_flag1 null_case_flag2;
+      if (n != 0) {
+        n
+      } else {
+        let n = int_compare i1 i2;
+        if (n != 0) {
+          n
+        } else {
+          PredSymb.path_pos_compare path_pos1 path_pos2
+        }
+      }
+    }
+  | (Iupdate _, _) => (-1)
+  | (_, Iupdate _) => 1
+  | (Ireturn_from_call i1, Ireturn_from_call i2) => int_compare i1 i2
+  };
+
+let inst_compare inst::inst inst1 inst2 => inst ? inst_compare_base inst1 inst2 : 0;
+
 /* Comparison for strexps */
-let rec strexp_compare se1 se2 =>
+let rec strexp_compare inst::inst=false se1 se2 =>
   if (se1 === se2) {
     0
   } else {
     switch (se1, se2) {
-    | (Eexp e1 _, Eexp e2 _) => Exp.compare e1 e2
-    | (Eexp _, _) => (-1)
-    | (_, Eexp _) => 1
-    | (Estruct fel1 _, Estruct fel2 _) => fld_strexp_list_compare fel1 fel2
-    | (Estruct _, _) => (-1)
-    | (_, Estruct _) => 1
-    | (Earray e1 esel1 _, Earray e2 esel2 _) =>
+    | (Eexp e1 i1, Eexp e2 i2) =>
       let n = Exp.compare e1 e2;
       if (n != 0) {
         n
       } else {
-        exp_strexp_list_compare esel1 esel2
+        inst_compare inst::inst i1 i2
+      }
+    | (Eexp _, _) => (-1)
+    | (_, Eexp _) => 1
+    | (Estruct fel1 i1, Estruct fel2 i2) =>
+      let n = fld_strexp_list_compare fel1 fel2;
+      if (n != 0) {
+        n
+      } else {
+        inst_compare inst::inst i1 i2
+      }
+    | (Estruct _, _) => (-1)
+    | (_, Estruct _) => 1
+    | (Earray e1 esel1 i1, Earray e2 esel2 i2) =>
+      let n = Exp.compare e1 e2;
+      if (n != 0) {
+        n
+      } else {
+        let n = exp_strexp_list_compare esel1 esel2;
+        if (n != 0) {
+          n
+        } else {
+          inst_compare inst::inst i1 i2
+        }
       }
     }
   }
@@ -312,7 +415,7 @@ and exp_strexp_list_compare esel1 esel2 => IList.compare exp_strexp_compare esel
 
 
 /** Comparsion between heap predicates. Hpointsto comes before others. */
-let rec hpred_compare hpred1 hpred2 =>
+let rec hpred_compare inst::inst=false hpred1 hpred2 =>
   if (hpred1 === hpred2) {
     0
   } else {
@@ -328,7 +431,7 @@ let rec hpred_compare hpred1 hpred2 =>
       if (n != 0) {
         n
       } else {
-        let n = strexp_compare se2 se1;
+        let n = strexp_compare inst::inst se2 se1;
         if (n != 0) {
           n
         } else {
@@ -448,9 +551,9 @@ and hpara_dll_compare hp1 hp2 => {
   }
 };
 
-let strexp_equal se1 se2 => strexp_compare se1 se2 == 0;
+let strexp_equal inst::inst=false se1 se2 => strexp_compare inst::inst se1 se2 == 0;
 
-let hpred_equal hpred1 hpred2 => hpred_compare hpred1 hpred2 == 0;
+let hpred_equal inst::inst=false hpred1 hpred2 => hpred_compare inst::inst hpred1 hpred2 == 0;
 
 let hpara_equal hpara1 hpara2 => hpara_compare hpara1 hpara2 == 0;
 
@@ -464,7 +567,7 @@ let elist_to_eset es => IList.fold_left (fun set e => Exp.Set.add e set) Exp.Set
 /** {2 Sets of heap predicates} */
 let module HpredSet = Set.Make {
   type t = hpred;
-  let compare = hpred_compare;
+  let compare = hpred_compare inst::false;
 };
 
 
@@ -2621,17 +2724,17 @@ let hpred_replace_exp epairs =>
 
 
 /** {2 Compaction} */
-let module HpredHash = Hashtbl.Make {
+let module HpredInstHash = Hashtbl.Make {
   type t = hpred;
-  let equal = hpred_equal;
+  let equal = hpred_equal inst::true;
   let hash = Hashtbl.hash;
 };
 
-type sharing_env = {exph: Exp.Hash.t Exp.t, hpredh: HpredHash.t hpred};
+type sharing_env = {exph: Exp.Hash.t Exp.t, hpredh: HpredInstHash.t hpred};
 
 
 /** Create a sharing env to store canonical representations */
-let create_sharing_env () => {exph: Exp.Hash.create 3, hpredh: HpredHash.create 3};
+let create_sharing_env () => {exph: Exp.Hash.create 3, hpredh: HpredInstHash.create 3};
 
 
 /** Return a canonical representation of the exp */
@@ -2663,10 +2766,10 @@ let _hpred_compact sh hpred =>
   };
 
 let hpred_compact sh hpred =>
-  try (HpredHash.find sh.hpredh hpred) {
+  try (HpredInstHash.find sh.hpredh hpred) {
   | Not_found =>
     let hpred' = _hpred_compact sh hpred;
-    HpredHash.add sh.hpredh hpred' hpred';
+    HpredInstHash.add sh.hpredh hpred' hpred';
     hpred'
   };
 

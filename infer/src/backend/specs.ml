@@ -573,6 +573,7 @@ let store_summary tenv pname (summ: summary) =
     else
       { summ2 with
         stats = { summ1.stats with stats_time = 0.0} } in
+  add_summary pname summ3 (* Make sure the summary in memory is identical to the saved one *);
   Serialization.to_file summary_serializer (res_dir_specs_filename pname) summ3
 
 (** Load procedure summary from the given file *)

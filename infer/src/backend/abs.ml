@@ -836,7 +836,7 @@ module IdMap = Map.Make (Ident) (** maps from identifiers *)
 module HpredSet =
   Set.Make(struct
     type t = Sil.hpred
-    let compare = Sil.hpred_compare
+    let compare = Sil.hpred_compare ~inst:false
   end)
 
 let hpred_entries hpred = match hpred with
