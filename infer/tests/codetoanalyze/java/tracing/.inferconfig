@@ -13,9 +13,6 @@
   "infer-blacklist-files-containing": [
     "@generated"
   ],
-  "enable_checks": [
-      "UNSAFE_GUARDED_BY_ACCESS"
-    ],
   "skip_translation": [
     {
       "language": "Java",

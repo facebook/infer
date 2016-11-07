@@ -93,7 +93,6 @@ let captured_dir_name = "captured"
 
 let checks_disabled_by_default = [
   "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL";
-  "UNSAFE_GUARDED_BY_ACCESS";
 ]
 
 let clang_build_output_dir_name = "build_output"
