@@ -77,11 +77,9 @@ let add_edges
 (** Add a concrete method. *)
 let add_cmethod source_file program linereader icfg cm proc_name =
   let cn, _ = JBasics.cms_split cm.Javalib.cm_class_method_signature in
-  let jmethod = (Javalib.ConcreteMethod cm) in
-  match JTrans.create_procdesc source_file program linereader icfg jmethod with
+  match JTrans.create_cm_procdesc source_file program linereader icfg cm proc_name with
   | None -> ()
-  | Some _ when JTrans.is_java_native cm -> ()
-  | Some procdesc ->
+  | Some (procdesc, impl) ->
       let start_node = Cfg.Procdesc.get_start_node procdesc in
       let exit_node = Cfg.Procdesc.get_exit_node procdesc in
       let exn_node =
@@ -89,21 +87,11 @@ let add_cmethod source_file program linereader icfg cm proc_name =
         | Some node -> node
         | None ->
             failwithf "No exn node found for %s" (Procname.to_string proc_name) in
-      let impl = JTrans.get_implementation cm in
       let instrs = JBir.code impl in
       let context =
         JContext.create_context icfg procdesc impl cn source_file program in
       let method_body_nodes = Array.mapi (JTrans.instruction context) instrs in
       add_edges context start_node exn_node [exit_node] method_body_nodes impl false;
-      Cg.add_defined_node icfg.JContext.cg proc_name
-
-
-(** Add an abstract method. *)
-let add_amethod source_file program linereader icfg am proc_name =
-  let jmethod = (Javalib.AbstractMethod am) in
-  match JTrans.create_procdesc source_file program linereader icfg jmethod with
-  | None -> ()
-  | Some _ ->
       Cg.add_defined_node icfg.JContext.cg proc_name
 
 
@@ -151,15 +139,22 @@ let create_icfg source_file linereader program icfg cn node =
       (* do not translate the method if there is a model for it *)
       L.out_debug "Skipping method with a model: %s@." (Procname.to_string proc_name)
     else
-      begin
+      try
         (* each procedure has different scope: start names from id 0 *)
         Ident.NameGenerator.reset ();
         match m with
+        | Javalib.AbstractMethod am ->
+            ignore (JTrans.create_am_procdesc program icfg am proc_name);
+            (* TODO #4040807: investigate why we need to mark asbtract methods as defined *)
+            Cg.add_defined_node icfg.JContext.cg proc_name
+        | Javalib.ConcreteMethod cm when JTrans.is_java_native cm ->
+            ignore (JTrans.create_native_procdesc program icfg cm proc_name)
         | Javalib.ConcreteMethod cm ->
             add_cmethod source_file program linereader icfg cm proc_name
-        | Javalib.AbstractMethod am ->
-            add_amethod source_file program linereader icfg am proc_name
-      end in
+      with JBasics.Class_structure_error _ ->
+        L.do_err
+          "create_icfg raised JBasics.Class_structure_error on %a@."
+          Procname.pp proc_name in
   Javalib.m_iter translate node
 
 

@@ -22,18 +22,28 @@ type translation =
 
 val is_java_native : JCode.jcode Javalib.concrete_method  -> bool
 
-(** [create_procdesc linereader cfg tenv program m] creates a procedure description
-    for the method m and adds it to cfg  *)
-val create_procdesc :
+(** Create the procedure description for an abstract method *)
+val create_am_procdesc :
+  JClasspath.program -> JContext.icfg -> Javalib.abstract_method -> Procname.t -> Cfg.Procdesc.t
+
+(** Create the procedure description for a concrete method *)
+val create_native_procdesc :
+  JClasspath.program ->
+  JContext.icfg ->
+  JCode.jcode Javalib.concrete_method ->
+  Procname.t ->
+  Cfg.Procdesc.t
+
+(** [create_procdesc source_file program linereader icfg cm proc_name] creates
+    a procedure description for the concrete method cm and adds it to cfg *)
+val create_cm_procdesc :
   DB.source_file ->
   JClasspath.program ->
   Printer.LineReader.t ->
   JContext.icfg ->
-  JCode.jcode Javalib.jmethod ->
-  Cfg.Procdesc.t option
-
-(** returns the implementation of a given method *)
-val get_implementation : JCode.jcode Javalib.concrete_method -> JBir.t
+  JCode.jcode Javalib.concrete_method ->
+  Procname.t ->
+  (Cfg.Procdesc.t * JBir.t) option
 
 (** translates an instruction into a statement node or prune nodes in the cfg *)
 val instruction : JContext.t -> int -> JBir.instr -> translation
