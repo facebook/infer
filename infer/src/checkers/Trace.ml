@@ -75,7 +75,7 @@ module type S = sig
   val pp : F.formatter -> t -> unit
 
   (** pretty-print a path in the context of the given procname *)
-  val pp_path : F.formatter -> Procname.t -> path -> unit
+  val pp_path : Procname.t -> F.formatter -> path -> unit
 end
 
 (** Expand a trace element (i.e., a source or sink) into a list of trace elements bottoming out in
@@ -102,7 +102,7 @@ module Expander (TraceElem : TraceElem.S) = struct
           (* TODO: pick the shortest path to a sink here instead (t14242809) *)
           (* arbitrarily pick one elem and explore it further *)
           expand_ callee_elem ((elem, passthroughs) :: elems_passthroughs_acc)
-      | [] ->
+      | _ ->
           (elem, Passthrough.Set.empty) :: elems_passthroughs_acc in
     expand_ elem0 []
 end
@@ -166,7 +166,7 @@ module Make (Spec : Spec) = struct
         else acc in
       Sources.fold (fun source acc -> Sinks.fold (report_one source) t.sinks acc) t.sources []
 
-  let pp_path fmt cur_pname (cur_passthroughs, sources_passthroughs, sinks_passthroughs) =
+  let pp_path cur_pname fmt (cur_passthroughs, sources_passthroughs, sinks_passthroughs) =
     let pp_passthroughs fmt passthroughs =
       if not (Passthrough.Set.is_empty passthroughs)
       then F.fprintf fmt "(via %a)" Passthrough.Set.pp passthroughs in

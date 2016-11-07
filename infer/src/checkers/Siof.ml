@@ -75,9 +75,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Prune (exp, loc, _, _) ->
         Domain.join astate (get_globals tenv astate pdesc loc exp)
     | Call (_, Const (Cfun callee_pname), params, loc, _) ->
+        let callsite = CallSite.make callee_pname loc in
         let callee_globals =
-          Option.default Domain.initial
-          @@ Summary.read_summary tenv pdesc callee_pname in
+          match Summary.read_summary tenv pdesc callee_pname with
+          | Some (Domain.NonBottom trace) -> Domain.NonBottom (SiofTrace.to_callee trace callsite)
+          | _ -> Domain.Bottom in
         add_params_globals astate tenv pdesc loc params
         |> Domain.join callee_globals
         |>
@@ -100,29 +102,48 @@ module Analyzer =
 
 module Interprocedural = Analyzer.Interprocedural (Summary)
 
-let report_siof pname loc bad_globals =
-  let pp_desc fmt () =
-    let pp_var f v =
-      let pp_source f v = match Pvar.get_source_file v with
-        | Some source_file when DB.source_file_equal DB.source_file_empty source_file ->
-            Format.fprintf f ""
-        | None ->
-            Format.fprintf f ""
-        | Some source_file ->
-            Format.fprintf f " from file %s" (DB.source_file_to_string source_file) in
-      Format.fprintf f "%s%a" (Pvar.get_simplified_name v) pp_source v in
-    let pp_set f s = pp_seq pp_var f s in
-    Format.fprintf fmt
-      "This global variable initializer accesses the following globals in another translation \
-       unit: %a"
-      pp_set bad_globals in
-  let description = pp_to_string pp_desc () in
-  let exn = Exceptions.Checkers
-      ("STATIC_INITIALIZATION_ORDER_FIASCO", Localise.verbatim_desc description) in
-  Reporting.log_error pname ~loc exn
+let report_siof trace pdesc tenv loc =
+  let trace_of_pname pname =
+    match Summary.read_summary tenv pdesc pname with
+    | Some (SiofDomain.NonBottom summary) -> summary
+    | _ -> SiofTrace.initial in
 
+  let pp_sink f sink =
+    let pp_source f v = match Pvar.get_source_file v with
+      | Some source_file when DB.source_file_equal DB.source_file_empty source_file ->
+          F.fprintf f ""
+      | None ->
+          F.fprintf f ""
+      | Some source_file ->
+          F.fprintf f " from file %s" (DB.source_file_to_string source_file) in
+    let v = SiofTrace.Sink.kind sink in
+    F.fprintf f "%s%a" (Pvar.get_simplified_name v) pp_source v in
 
-let siof_check pdesc = function
+  let pp_path_part f path =
+    let pp_path f path =
+      let pp_sep f () = F.fprintf f " => " in
+      let pp_elem f (sink, _) =
+        CallSite.pp f (SiofTrace.Sink.call_site sink) in
+      (F.pp_print_list ~pp_sep) pp_elem f path in
+    if (IList.length path > 1)
+    then F.fprintf f "Full path: %a" pp_path path in
+
+  let report_one_path (_, path) =
+    let final_sink = fst (IList.hd path) in
+    let description =
+      F.asprintf
+        "This global variable initializer accesses the following globals in another translation \
+         unit: %a. %a"
+        pp_sink final_sink
+        pp_path_part (IList.rev path) in
+    let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
+    let exn = Exceptions.Checkers
+        ("STATIC_INITIALIZATION_ORDER_FIASCO", Localise.verbatim_desc description) in
+    Reporting.log_error caller_pname ~loc exn in
+
+  IList.iter report_one_path (SiofTrace.get_reportable_sink_paths trace ~trace_of_pname)
+
+let siof_check pdesc tenv = function
   | Some (SiofDomain.NonBottom post) ->
       let attrs = Cfg.Procdesc.get_attributes pdesc in
       let is_orig_file f = match attrs.ProcAttributes.translation_unit with
@@ -137,21 +158,15 @@ let siof_check pdesc = function
           (fun sink -> is_foreign (SiofTrace.Sink.kind sink))
           (SiofTrace.sinks post) in
       if not (SiofTrace.Sinks.is_empty foreign_global_sinks)
-      then
-        let foreign_globals =
-          IList.map
-            (fun sink -> (SiofTrace.Sink.kind sink))
-            (SiofTrace.Sinks.elements foreign_global_sinks) in
-        report_siof (Cfg.Procdesc.get_proc_name pdesc) attrs.ProcAttributes.loc foreign_globals;
+      then report_siof post pdesc tenv attrs.ProcAttributes.loc;
   | Some SiofDomain.Bottom | None ->
       ()
 
-let checker callback =
-  let pdesc = callback.Callbacks.proc_desc in
+let checker ({ Callbacks.tenv; proc_desc } as callback) =
   let post = Interprocedural.checker callback ProcData.empty_extras in
-  let pname = Cfg.Procdesc.get_proc_name pdesc in
+  let pname = Cfg.Procdesc.get_proc_name proc_desc in
   match pname with
   | Procname.C c when Procname.is_globals_initializer c ->
-      siof_check pdesc post
+      siof_check proc_desc tenv post
   | _ ->
       ()

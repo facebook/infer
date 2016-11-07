@@ -16,4 +16,4 @@ sig
   val pp : Format.formatter -> t -> unit
 end
 
-include Trace.S with module Sink.Kind = Globals
+include SinkTrace.S with module Sink.Kind = Globals

@@ -20,4 +20,4 @@ module type S = sig
   val get : CallSite.t -> t option
 end
 
-module Dummy : S
+module Dummy : S with type t = unit

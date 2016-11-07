@@ -8,7 +8,8 @@
  */
 
 extern int foo();
-
-static int x = foo(); // BAD: report SIOF here
+int bar() { return foo(); }
+int baz() { return bar(); }
+static int x = baz(); // BAD: report SIOF here
 static int x1 = x; // do not report here
 static int x2 = x1; // do not report here

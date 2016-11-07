@@ -1,3 +1,4 @@
-siof/const_use.cpp:17: ERROR: STATIC_INITIALIZATION_ORDER_FIASCO This global variable initializer accesses the following globals in another translation unit: u
-siof/pod_across_translation_units-1.cpp:12: ERROR: STATIC_INITIALIZATION_ORDER_FIASCO This global variable initializer accesses the following globals in another translation unit: y from file siof/pod_across_translation_units-2.cpp
-siof/siof_across_translation_units-1.cpp:21: ERROR: STATIC_INITIALIZATION_ORDER_FIASCO This global variable initializer accesses the following globals in another translation unit: global_object
+siof/const_use.cpp:17: ERROR: STATIC_INITIALIZATION_ORDER_FIASCO This global variable initializer accesses the following globals in another translation unit: u. 
+siof/pod_across_translation_units-1.cpp:13: ERROR: STATIC_INITIALIZATION_ORDER_FIASCO This global variable initializer accesses the following globals in another translation unit: y from file siof/pod_across_translation_units-2.cpp. Full path: baz at [line 13] => bar at [line 12] => foo at [line 11]
+siof/siof_across_translation_units-1.cpp:21: ERROR: STATIC_INITIALIZATION_ORDER_FIASCO This global variable initializer accesses the following globals in another translation unit: another_global_object from file siof/siof_across_translation_units-1.cpp. 
+siof/siof_across_translation_units-1.cpp:21: ERROR: STATIC_INITIALIZATION_ORDER_FIASCO This global variable initializer accesses the following globals in another translation unit: global_object. 

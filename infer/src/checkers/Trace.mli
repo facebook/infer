@@ -75,7 +75,7 @@ module type S = sig
   val pp : F.formatter -> t -> unit
 
   (** pretty-print a path in the context of the given procname *)
-  val pp_path : F.formatter -> Procname.t -> path -> unit
+  val pp_path : Procname.t -> F.formatter -> path -> unit
 end
 
 module Make (Spec : Spec) : S with module Source = Spec.Source and module Sink = Spec.Sink
