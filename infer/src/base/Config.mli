@@ -156,7 +156,6 @@ val checkers : bool
 val checkers_enabled : bool
 val checkers_repeated_calls : bool
 val clang_biniou_file : string option
-val clang_compilation_database : string option
 val clang_frontend_action_string : string
 val clang_frontend_do_capture : bool
 val clang_frontend_do_lint : bool
@@ -308,7 +307,6 @@ val reset_abs_val : unit -> unit
 val run_with_abs_val_equal_zero : ('a -> 'b) -> 'a -> 'b
 
 val allow_leak : bool ref
-
 
 (** Command Line Interface Documentation *)
 

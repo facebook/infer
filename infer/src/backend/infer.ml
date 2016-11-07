@@ -90,58 +90,74 @@ let run_command cmd_list after_wait =
     exit exit_code
   )
 
-let capture build_cmd = function
-  | build_mode ->
-      let in_buck_mode = build_mode = Buck in
-      let infer_py = Config.lib_dir // "python" // "infer.py" in
-      run_command (
-        infer_py ::
-        Config.anon_args @
-        (match Config.analyzer with None -> [] | Some a ->
-            ["--analyzer";
-             IList.assoc (=) a (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)]) @
-        (match Config.blacklist with
-         | Some s when in_buck_mode -> ["--blacklist-regex"; s]
-         | _ -> []) @
-        (if not Config.create_harness then [] else
-           ["--android-harness"]) @
-        (if not Config.buck then [] else
-           ["--buck"]) @
-        (match Config.java_jar_compiler with None -> [] | Some p ->
-            ["--java-jar-compiler"; p]) @
-        (match IList.rev Config.buck_build_args with
-         | args when in_buck_mode ->
-             IList.map (fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> IList.flatten
-         | _ -> []) @
-        (if not Config.continue_capture then [] else
-           ["--continue"]) @
-        (if not Config.debug_mode then [] else
-           ["--debug"]) @
-        (if not Config.debug_exceptions then [] else
-           ["--debug-exceptions"]) @
-        (if Config.filtering then [] else
-           ["--no-filtering"]) @
-        (if not Config.flavors || not in_buck_mode then [] else
-           ["--use-flavors"]) @
-        (if Option.is_none Config.use_compilation_database || not in_buck_mode then [] else
-           ["--use-compilation-database"]) @
-        "-j" :: (string_of_int Config.jobs) ::
-        "-l" :: (string_of_float Config.load_average) ::
-        (if not Config.pmd_xml then [] else
-           ["--pmd-xml"]) @
-        ["--project-root"; Config.project_root] @
-        (if not Config.reactive_mode then [] else
-           ["--reactive"]) @
-        "--out" :: Config.results_dir ::
-        (match Config.xcode_developer_dir with None -> [] | Some d ->
-            ["--xcode-developer-dir"; d]) @
-        (if Config.rest = [] then [] else
-           ("--" :: build_cmd))
-      ) (fun exit_code ->
-          if exit_code = Config.infer_py_argparse_error_exit_code then
-            (* swallow infer.py argument parsing error *)
-            Config.print_usage_exit ()
-        )
+let capture build_cmd build_mode =
+  let analyze_cmd = "analyze" in
+  let is_analyze_cmd cmd =
+    match cmd with
+    | [cmd] when cmd = analyze_cmd -> true
+    | _ -> false in
+  let build_cmd =
+    match build_mode with
+    | Buck when Option.is_some Config.use_compilation_database ->
+        let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck () in
+        CaptureCompilationDatabase.capture_files_in_database json_cdb;
+        [analyze_cmd]
+    | ClangCompilationDatabase ->
+        (match Config.rest with
+         | arg::_ -> CaptureCompilationDatabase.capture_files_in_database [arg]
+         | _ -> failwith("Errror parsing arguments. Please, pass the compilation \
+                          database json file as in \
+                          infer -- clang-compilation-database file.json."));
+        [analyze_cmd]
+    | _ ->  build_cmd in
+  let in_buck_mode = build_mode = Buck in
+  let infer_py = Config.lib_dir // "python" // "infer.py" in
+  run_command (
+    infer_py ::
+    Config.anon_args @
+    (match Config.analyzer with None -> [] | Some a ->
+        ["--analyzer";
+         IList.assoc (=) a (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)]) @
+    (match Config.blacklist with
+     | Some s when in_buck_mode && not (is_analyze_cmd build_cmd) -> ["--blacklist-regex"; s]
+     | _ -> []) @
+    (if not Config.create_harness then [] else
+       ["--android-harness"]) @
+    (if not Config.buck then [] else
+       ["--buck"]) @
+    (match Config.java_jar_compiler with None -> [] | Some p ->
+        ["--java-jar-compiler"; p]) @
+    (match IList.rev Config.buck_build_args with
+     | args when in_buck_mode ->
+         IList.map (fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> IList.flatten
+     | _ -> []) @
+    (if not Config.continue_capture then [] else
+       ["--continue"]) @
+    (if not Config.debug_mode then [] else
+       ["--debug"]) @
+    (if not Config.debug_exceptions then [] else
+       ["--debug-exceptions"]) @
+    (if Config.filtering then [] else
+       ["--no-filtering"]) @
+    (if not Config.flavors || not in_buck_mode || is_analyze_cmd build_cmd then [] else
+       ["--use-flavors"]) @
+    "-j" :: (string_of_int Config.jobs) ::
+    "-l" :: (string_of_float Config.load_average) ::
+    (if not Config.pmd_xml then [] else
+       ["--pmd-xml"]) @
+    ["--project-root"; Config.project_root] @
+    (if not Config.reactive_mode then [] else
+       ["--reactive"]) @
+    "--out" :: Config.results_dir ::
+    (match Config.xcode_developer_dir with None -> [] | Some d ->
+        ["--xcode-developer-dir"; d]) @
+    (if Config.rest = [] then [] else
+       ("--" :: build_cmd))
+  ) (fun exit_code ->
+      if exit_code = Config.infer_py_argparse_error_exit_code then
+        (* swallow infer.py argument parsing error *)
+        Config.print_usage_exit ()
+    )
 
 let analyze = function
   | Buck when Config.use_compilation_database = None ->

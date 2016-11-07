@@ -71,7 +71,7 @@ buck-out/
 /infer/bin/InferClang++
 /infer/bin/InferJava
 /infer/bin/InferPrint
-/infer/bin/InferBuckCompilationDatabase
+
 /infer/bin/InferUnit
 /infer/bin/Typeprop
 /infer/bin/infer

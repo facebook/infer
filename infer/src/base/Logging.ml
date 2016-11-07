@@ -19,7 +19,6 @@ module F = Format
 let log_dir_of_current_exe (current_exe : CommandLineOption.exe) =
   match current_exe with
   | Analyze -> "analyze"
-  | BuckCompilationDatabase -> "buck_compilation_database"
   | Clang -> "clang"
   | Interactive -> "interactive"
   | Java -> "java"
@@ -39,7 +38,7 @@ let set_log_file_identifier (current_exe : CommandLineOption.exe) string_opt =
     match current_exe with
     | Analyze
     | Clang -> Config.debug_mode || Config.stats_mode
-    | BuckCompilationDatabase -> true
+    | Toplevel -> true
     | _ -> false in
   if should_setup_log_files then (
     let name_prefix = (match string_opt with

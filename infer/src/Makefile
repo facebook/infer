@@ -85,11 +85,6 @@ UNIT_SOURCES = unit
 
 INFERUNIT_MAIN = $(UNIT_SOURCES)/inferunit
 
-#### Infer integration declarations ####
-INTEGRATION_SOURCES = integration
-
-BUCK_COMPILATION_DATABASE_MAIN = $(INTEGRATION_SOURCES)/BuckCompilationDatabase
-
 #### Java declarations ####
 
 JAVA_OCAMLBUILD_OPTIONS = -pkgs javalib,ptrees,sawja
@@ -162,7 +157,6 @@ INFER_BASE_TARGETS = \
 INFER_ALL_TARGETS = $(INFER_BASE_TARGETS) \
   $(INFERJAVA_MAIN).native \
   $(INFERCLANG_MAIN).native \
-  $(BUCK_COMPILATION_DATABASE_MAIN).native
 
 # configure-aware ocamlbuild commands and targets
 OCAMLBUILD_CONFIG = $(OCAMLBUILD_BASE)
@@ -175,7 +169,6 @@ DEPENDENCIES += java
 endif
 ifeq ($(BUILD_C_ANALYZERS),yes)
 INFER_CONFIG_TARGETS += $(INFERCLANG_MAIN).native
-INFER_CONFIG_TARGETS += $(BUCK_COMPILATION_DATABASE_MAIN).native
 DEPENDENCIES += clang
 endif
 
@@ -197,7 +190,6 @@ endif
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERCLANG_MAIN).native $(INFERCLANG_BIN)
 	cd $(INFER_BUILD_DIR) && $(LN_S) -f InferClang InferClang++ && cd -
-	$(COPY) $(INFER_BUILD_DIR)/$(BUCK_COMPILATION_DATABASE_MAIN).native $(INFER_BUCK_COMPILATION_DATABASE_BIN)
 endif
 ifeq ($(ENABLE_OCAML_ANNOT),yes)
 	rsync -a --include '*/' --include '*.annot' --exclude '*' $(INFER_BUILD_DIR)/ $(ANNOT_DIR)/
@@ -246,7 +238,7 @@ rei:
 %.rei : %.mli
 	refmt -assume-explicit-arity -heuristics-file unary.txt -parse ml -print re $< > $*.rei
 
-roots:=Infer InferAnalyzeExe InferClang JMain InferPrintExe BuckCompilationDatabase StatsAggregator
+roots:=Infer InferAnalyzeExe InferClang JMain InferPrintExe StatsAggregator
 clusters:=base clang java IR
 
 src_dirs:=$(shell find * -type d)
@@ -380,7 +372,7 @@ endif
 	$(REMOVE) checkers/stacktree_{j,t}.ml{,i}
 	$(REMOVE) $(INFER_BIN) $(INFERANALYZE_BIN) $(INFERPRINT_BIN)
 	$(REMOVE) $(INFERJAVA_BIN) $(INFERCLANG_BIN)
-	$(REMOVE) $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN) $(INFER_BUCK_COMPILATION_DATABASE_BIN)
+	$(REMOVE) $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN)
 	$(REMOVE) $(CLANG_ATDGEN_STUBS)
 	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(REMOVE) mod_dep.dot

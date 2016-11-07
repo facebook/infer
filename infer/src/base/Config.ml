@@ -476,7 +476,7 @@ let anon_args =
 
 and rest =
   CLOpt.mk_rest
-    ~exes:CLOpt.[Toplevel;BuckCompilationDatabase]
+    ~exes:CLOpt.[Toplevel]
     "Stop argument processing, use remaining arguments as a build command"
 
 and abs_struct =
@@ -598,7 +598,7 @@ and buck =
 
 and buck_build_args =
   CLOpt.mk_string_list ~long:"Xbuck"
-    ~exes:CLOpt.[Toplevel;BuckCompilationDatabase]
+    ~exes:CLOpt.[Toplevel]
     "Pass values as command-line arguments to invocations of `buck build` (Buck flavors only)"
 
 and buck_out =
@@ -677,11 +677,6 @@ and checkers_repeated_calls =
 and clang_biniou_file =
   CLOpt.mk_path_opt ~long:"clang-biniou-file" ~exes:CLOpt.[Clang] ~meta:"file"
     "Specify a file containing the AST of the program, in biniou format"
-
-and clang_compilation_database =
-  CLOpt.mk_path_opt ~long:"clang-compilation-database"
-    ~exes:CLOpt.[BuckCompilationDatabase] ~meta:"file"
-    "Specify a json file containing a clang compilation database to be used for the analysis"
 
 and clang_frontend_action =
   CLOpt.mk_symbol_opt ~long:"clang-frontend-action"
@@ -1295,11 +1290,6 @@ let exe_usage (exe : CLOpt.exe) =
       "Usage: InferAnalyze [options]\n\
        Analyze the files captured in the project results directory, which can be specified with \
        the --results-dir option."
-  | BuckCompilationDatabase ->
-      "Usage: BuckCompilationDatabase --Xbuck //target \n\
-       Runs buck with the flavor compilation-database or uber-compilation-database. It then \n\
-       reads the compilation database emited in json and runs the capture in parallel for \n\
-       those commands"
   | Clang ->
       "Usage: internal script to capture compilation commands from clang and clang++. \n\
        You shouldn't need to call this directly."
@@ -1411,7 +1401,6 @@ and check_duplicate_symbols = !check_duplicate_symbols
 and checkers = !checkers
 and checkers_repeated_calls = !checkers_repeated_calls
 and clang_biniou_file = !clang_biniou_file
-and clang_compilation_database = !clang_compilation_database
 and clang_include_to_override = !clang_include_to_override
 and cluster_cmdline = !cluster
 and continue_capture = !continue

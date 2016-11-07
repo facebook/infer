@@ -89,11 +89,8 @@ class BuckAnalyzer:
 
     def capture(self):
         try:
-            if self.args.use_flavors and \
-                    not self.args.use_compilation_database:
+            if self.args.use_flavors:
                 return self.capture_with_flavors()
-            elif self.args.use_compilation_database:
-                return self.capture_with_compilation_database()
             else:
                 return self.capture_without_flavors()
         except subprocess.CalledProcessError as exc:
@@ -210,13 +207,6 @@ class BuckAnalyzer:
         issues.print_and_save_errors(self.args.project_root,
                                      merged_reports_path, bugs_out, xml_out)
         return os.EX_OK
-
-    def capture_with_compilation_database(self):
-        buck_args = self.cmd
-        cmd = [utils.get_cmd_in_bin_dir('InferBuckCompilationDatabase')]
-        cmd += ['--']
-        cmd += buck_args
-        return subprocess.check_call(cmd)
 
     def capture_without_flavors(self):
         # Java is a special case, and we run the analysis from here

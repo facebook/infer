@@ -125,7 +125,7 @@ let should_add_file_to_cdb changed_files file_path =
   | None -> true
 
 (** Computes the compilation database files. *)
-let get_compilation_database_files () =
+let get_compilation_database_files_buck () =
   let cmd = IList.rev_append Config.rest (IList.rev Config.buck_build_args) in
   match cmd with
   | buck :: build :: args ->
@@ -155,21 +155,11 @@ let get_compilation_database_files () =
       let cmd = String.concat " " cmd in
       Process.print_error_and_exit "Incorrect buck command: %s. Please use buck build <targets>" cmd
 
-let () =
+let capture_files_in_database db_json_files =
   let changed_files = read_files_to_compile () in
-  let db_json_files =
-    match Config.clang_compilation_database with
-    | Some file -> [file]
-    | None ->
-        if Option.is_some Config.use_compilation_database then
-          get_compilation_database_files ()
-        else failwith(
-            "Either the option clang_compilation_database or the option \
-             use_compilation_database should be passed to this module ") in
   let compilation_database = CompilationDatabase.empty () in
   IList.iter
     (CompilationDatabase.decode_json_file
        compilation_database (should_add_file_to_cdb changed_files)) db_json_files;
-
   create_dir (Config.results_dir // Config.clang_build_output_dir_name);
   run_compilation_database compilation_database
