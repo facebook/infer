@@ -30,6 +30,11 @@ module type S = sig
   module Sinks = Sink.Set
   module Passthroughs = Passthrough.Set
 
+  (** path from a source to a sink with passthroughs at each step in the call stack. the first set
+      of passthroughs are the ones in the "reporting" procedure that calls the first function in
+      both the source and sink stack *)
+  type path = Passthroughs.t * (Source.t * Passthroughs.t) list * (Sink.t * Passthroughs.t) list
+
   (** get the sources of the trace. *)
   val sources : t -> Sources.t
 
@@ -42,13 +47,8 @@ module type S = sig
   (** get the reportable source-sink flows in this trace *)
   val get_reports : t -> (Source.t * Sink.t * Passthroughs.t) list
 
-  (** get logging-ready trace strings for the reportable source-sink flows in this trace *)
-  val get_reportable_traces :
-    t ->
-    Procname.t ->
-    ?expand_trace:bool ->
-    trace_of_pname:(Procname.t -> t) ->
-    (Source.t * Sink.t * string) list
+  (** get a path for each of the reportable source -> sink flows in this trace *)
+  val get_reportable_paths : t -> trace_of_pname:(Procname.t -> t) -> path list
 
   (** create a trace from a source *)
   val of_source : Source.t -> t
@@ -73,6 +73,9 @@ module type S = sig
   val equal : t -> t -> bool
 
   val pp : F.formatter -> t -> unit
+
+  (** pretty-print a path in the context of the given procname *)
+  val pp_path : F.formatter -> Procname.t -> path -> unit
 end
 
 module Make (Spec : Spec) : S with module Source = Spec.Source and module Sink = Spec.Sink

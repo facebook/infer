@@ -157,20 +157,33 @@ module Make (TaintSpec : TaintSpec.S) = struct
         | None ->
             TraceDomain.initial in
 
-      let caller_pname = Cfg.Procdesc.get_proc_name proc_data.pdesc in
-      let expand_trace = false in
-      match TraceDomain.get_reportable_traces trace caller_pname ~expand_trace ~trace_of_pname with
+      let pp_path_short fmt (cur_passthroughs, sources_passthroughs, sinks_passthroughs) =
+        let pp_passthroughs fmt passthroughs =
+          if not (Passthrough.Set.is_empty passthroughs)
+          then F.fprintf fmt "(via %a)" Passthrough.Set.pp passthroughs in
+        let source = fst (IList.hd (IList.rev sources_passthroughs)) in
+        let sink = fst (IList.hd (IList.rev sinks_passthroughs)) in
+        F.fprintf
+          fmt
+          "Error: %a -> %a %a"
+          TraceDomain.Source.pp source
+          TraceDomain.Sink.pp sink
+          pp_passthroughs cur_passthroughs in
+
+      match TraceDomain.get_reportable_paths trace ~trace_of_pname with
       | [] ->
           trace
-      | reportable_trace_strs ->
+      | paths ->
+          let caller_pname = Cfg.Procdesc.get_proc_name proc_data.pdesc in
           let reported_sinks =
             IList.map
-              (fun (_, sink, trace_str) ->
+              (fun ((_, _, sinks) as path) ->
                  let msg = Localise.to_string Localise.quandary_taint_error in
+                 let trace_str = F.asprintf "%a" pp_path_short path in
                  let exn = Exceptions.Checkers (msg, Localise.verbatim_desc trace_str) in
                  Reporting.log_error caller_pname ~loc:(CallSite.loc callee_site) exn;
-                 sink)
-              reportable_trace_strs in
+                 fst (IList.hd (IList.rev sinks)))
+              paths in
           (* got new source -> sink flow. report it, but don't add the sink to the trace. if we do,
              we will double-report later on. *)
           TraceDomain.filter_sinks trace reported_sinks

@@ -30,6 +30,11 @@ module type S = sig
   module Sinks = Sink.Set
   module Passthroughs = Passthrough.Set
 
+  (** path from a source to a sink with passthroughs at each step in the call stack. the first set
+      of passthroughs are the ones in the "reporting" procedure that calls the first function in
+      both the source and sink stack *)
+  type path = Passthroughs.t * (Source.t * Passthroughs.t) list * (Sink.t * Passthroughs.t) list
+
   (** get the sources of the trace. *)
   val sources : t -> Sources.t
 
@@ -42,13 +47,8 @@ module type S = sig
   (** get the reportable source-sink flows in this trace *)
   val get_reports : t -> (Source.t * Sink.t * Passthroughs.t) list
 
-  (** get logging-ready trace strings for the reportable source-sink flows in this trace *)
-  val get_reportable_traces :
-    t ->
-    Procname.t ->
-    ?expand_trace:bool ->
-    trace_of_pname:(Procname.t -> t) ->
-    (Source.t * Sink.t * string) list
+  (** get a path for each of the reportable source -> sink flows in this trace *)
+  val get_reportable_paths : t -> trace_of_pname:(Procname.t -> t) -> path list
 
   (** create a trace from a source *)
   val of_source : Source.t -> t
@@ -73,6 +73,9 @@ module type S = sig
   val equal : t -> t -> bool
 
   val pp : F.formatter -> t -> unit
+
+  (** pretty-print a path in the context of the given procname *)
+  val pp_path : F.formatter -> Procname.t -> path -> unit
 end
 
 (** Expand a trace element (i.e., a source or sink) into a list of trace elements bottoming out in
@@ -124,6 +127,8 @@ module Make (Spec : Spec) = struct
 
   type astate = t
 
+  type path = Passthroughs.t * (Source.t * Passthroughs.t) list * (Sink.t * Passthroughs.t) list
+
   let compare t1 t2 =
     Sources.compare t1.sources t2.sources
     |> next Sinks.compare t1.sinks t2.sinks
@@ -161,57 +166,52 @@ module Make (Spec : Spec) = struct
         else acc in
       Sources.fold (fun source acc -> Sinks.fold (report_one source) t.sinks acc) t.sources []
 
-  let get_reportable_traces t cur_pname ?(expand_trace=true) ~trace_of_pname =
+  let pp_path fmt cur_pname (cur_passthroughs, sources_passthroughs, sinks_passthroughs) =
     let pp_passthroughs fmt passthroughs =
       if not (Passthrough.Set.is_empty passthroughs)
       then F.fprintf fmt "(via %a)" Passthrough.Set.pp passthroughs in
 
-    let get_expanded_trace_string
-        cur_pname cur_passthroughs sources_passthroughs sinks_passthroughs =
-      let pp_elems elem_to_callsite fmt elems_passthroughs =
-        let pp_sep fmt () = F.fprintf fmt "@." in
-        let pp_elem fmt (elem, passthroughs) =
-          F.fprintf
-            fmt
-            "|=> %a %a"
-            CallSite.pp (elem_to_callsite elem) pp_passthroughs passthroughs in
-        (F.pp_print_list ~pp_sep) pp_elem fmt elems_passthroughs in
-      let pp_sources = pp_elems Source.call_site in
-      let pp_sinks = pp_elems Sink.call_site in
-      let original_source = fst (IList.hd sources_passthroughs) in
-      let final_sink = fst (IList.hd sinks_passthroughs) in
-      F.asprintf
-        "Error: %a -> %a. Full trace:@.%a@.Current procedure %a %a@.%a"
-        Source.pp original_source
-        Sink.pp final_sink
-        pp_sources sources_passthroughs
-        Procname.pp cur_pname
-        pp_passthroughs cur_passthroughs
-        pp_sinks (IList.rev sinks_passthroughs) in
+    let pp_elems elem_to_callsite fmt elems_passthroughs =
+      let pp_sep fmt () = F.fprintf fmt "@." in
+      let pp_elem fmt (elem, passthroughs) =
+        F.fprintf
+          fmt
+          "|=> %a %a"
+          CallSite.pp (elem_to_callsite elem) pp_passthroughs passthroughs in
+      (F.pp_print_list ~pp_sep) pp_elem fmt elems_passthroughs in
+    let pp_sources = pp_elems Source.call_site in
+    let pp_sinks = pp_elems Sink.call_site in
 
-    let get_trace_string source sink cur_passthroughs =
-      if expand_trace
-      then
-        let sources_of_pname pname =
-          let trace = trace_of_pname pname in
-          Sources.elements (sources trace), passthroughs trace in
-        let sinks_of_pname pname =
-          let trace = trace_of_pname pname in
-          Sinks.elements (sinks trace), passthroughs trace in
-        let sources_passthroughs =
-          SourceExpander.expand source ~elems_passthroughs_of_pname:sources_of_pname in
-        let sinks_passthroughs =
-          SinkExpander.expand sink ~elems_passthroughs_of_pname:sinks_of_pname in
-        get_expanded_trace_string cur_pname cur_passthroughs sources_passthroughs sinks_passthroughs
-      else
-        F.asprintf
-          "Error: %a -> %a %a"
-          Source.pp source Sink.pp sink pp_passthroughs cur_passthroughs in
+    let original_source = fst (IList.hd sources_passthroughs) in
+    let final_sink = fst (IList.hd sinks_passthroughs) in
+    F.fprintf
+      fmt
+      "Error: %a -> %a. Full trace:@.%a@.Current procedure %a %a@.%a"
+      Source.pp original_source
+      Sink.pp final_sink
+      pp_sources sources_passthroughs
+      Procname.pp cur_pname
+      pp_passthroughs cur_passthroughs
+      pp_sinks (IList.rev sinks_passthroughs)
+
+  let get_reportable_paths t ~trace_of_pname =
+    let expand_path source sink =
+      let sources_of_pname pname =
+        let trace = trace_of_pname pname in
+        Sources.elements (sources trace), passthroughs trace in
+      let sinks_of_pname pname =
+        let trace = trace_of_pname pname in
+        Sinks.elements (sinks trace), passthroughs trace in
+      let sources_passthroughs =
+        SourceExpander.expand source ~elems_passthroughs_of_pname:sources_of_pname in
+      let sinks_passthroughs =
+        SinkExpander.expand sink ~elems_passthroughs_of_pname:sinks_of_pname in
+      sources_passthroughs, sinks_passthroughs in
 
     IList.map
       (fun (source, sink, passthroughs) ->
-         let trace_string = get_trace_string source sink passthroughs in
-         source, sink, trace_string)
+         let sources_passthroughs, sinks_passthroughs = expand_path source sink in
+         passthroughs, sources_passthroughs, sinks_passthroughs)
       (get_reports t)
 
   let of_source source =
