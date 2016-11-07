@@ -61,7 +61,6 @@ CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
-    'assembly',
     'buck',
     'clang_compilation_database',
     'cmake',
@@ -329,13 +328,6 @@ def test(name,
 
 class BuildIntegrationTest(unittest.TestCase):
 
-    def test_ant_integration(self):
-        test('ant', 'Ant',
-             os.path.join(SCRIPT_DIR, os.pardir),
-             [{'compile': ['ant', 'compile']}],
-             clean_commands=[['ant', 'clean']],
-             available=lambda: is_tool_available(['ant', '-version']))
-
     def test_javac_integration(
             self,
             enabled=None,
@@ -514,11 +506,6 @@ class BuildIntegrationTest(unittest.TestCase):
               {'compile': ['clang', '-c', 'hello2.c'],
                'infer_args': reactive_args},
               {'compile': ['analyze']}])
-
-    def test_clang_assembly(self):
-        test('assembly', 'compile with assembly code', CODETOANALYZE_DIR,
-             [{'compile': ['clang', '-x', 'c', '-c', 'hello.c', '-x',
-                           'assembler-with-cpp', 'example.S']}])
 
     def test_clang_component_kit_imports(self):
         test('componentkit', 'component quality analyzer  skips imports',
