@@ -268,9 +268,9 @@ let inhabit_trace tenv trace harness_name cg cfg =
   if IList.length trace > 0 then
     let source_file = Cg.get_source cg in
     let harness_file = create_dummy_harness_file harness_name in
-    let start_line = (Cg.get_nLOC cg) + 1 in
+    let start_line = 1 in
     let empty_env =
-      let pc = { Location.line = start_line; col = 1; file = source_file; nLOC = 0; } in
+      let pc = { Location.line = start_line; col = 1; file = source_file; } in
       { instrs = [];
         cache = TypMap.empty;
         pc = pc;

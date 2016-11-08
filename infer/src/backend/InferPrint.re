@@ -141,7 +141,6 @@ type summary_val = {
   vfile: string,
   vflags: proc_flags,
   vline: int,
-  vloc: int,
   vtop: string,
   vsignature: string,
   vweight: int,
@@ -207,7 +206,6 @@ let summary_values top_proc_set summary => {
     vflags: attributes.ProcAttributes.proc_flags,
     vfile: DB.source_file_to_string attributes.ProcAttributes.loc.Location.file,
     vline: attributes.ProcAttributes.loc.Location.line,
-    vloc: attributes.ProcAttributes.loc.Location.nLOC,
     vtop: if is_top {"Y"} else {"N"},
     vsignature: signature,
     vweight: nodes_nr,
@@ -258,7 +256,6 @@ let module ProcsCsv = {
     pp "%d," sv.verr;
     pp "%s," sv.vfile;
     pp "%d," sv.vline;
-    pp "%d," sv.vloc;
     pp "%s," sv.vtop;
     pp "\"%s\"," (Escape.escape_csv sv.vsignature);
     pp "%d," sv.vweight;
@@ -290,7 +287,6 @@ let module ProcsXml = {
         subtree Io_infer.Xml.tag_err (string_of_int sv.verr),
         subtree Io_infer.Xml.tag_file sv.vfile,
         subtree Io_infer.Xml.tag_line (string_of_int sv.vline),
-        subtree Io_infer.Xml.tag_loc (string_of_int sv.vloc),
         subtree Io_infer.Xml.tag_top sv.vtop,
         subtree Io_infer.Xml.tag_signature (Escape.escape_xml sv.vsignature),
         subtree Io_infer.Xml.tag_weight (string_of_int sv.vweight),
@@ -769,7 +765,6 @@ let module Stats = {
     mutable nerrors: int,
     mutable ninfos: int,
     mutable nadvice: int,
-    mutable nLOC: int,
     mutable nprocs: int,
     mutable nspecs: int,
     mutable ntimeouts: int,
@@ -784,7 +779,6 @@ let module Stats = {
     nerrors: 0,
     ninfos: 0,
     nadvice: 0,
-    nLOC: 0,
     nprocs: 0,
     nspecs: 0,
     ntimeouts: 0,
@@ -794,9 +788,7 @@ let module Stats = {
   };
   let process_loc loc stats =>
     try (Hashtbl.find stats.files loc.Location.file) {
-    | Not_found =>
-      stats.nLOC = stats.nLOC + loc.Location.nLOC;
-      Hashtbl.add stats.files loc.Location.file ()
+    | Not_found => Hashtbl.add stats.files loc.Location.file ()
     };
   let loc_trace_to_string_list linereader indent_num ltr => {
     let res = ref [];
@@ -893,7 +885,6 @@ let module Stats = {
   let num_files stats => Hashtbl.length stats.files;
   let pp fmt stats => {
     F.fprintf fmt "Files: %d@\n" (num_files stats);
-    F.fprintf fmt "LOC: %d@\n" stats.nLOC;
     F.fprintf fmt "Specs: %d@\n" stats.nspecs;
     F.fprintf fmt "Timeouts: %d@\n" stats.ntimeouts;
     F.fprintf fmt "Procedures: %d@\n" stats.nprocs;

@@ -293,7 +293,6 @@ val run_in_footprint_mode : ('a -> 'b) -> 'a -> 'b
 val run_in_re_execution_mode : ('a -> 'b) -> 'a -> 'b
 
 val forcing_delayed_prints : bool ref
-val nLOC : int ref
 val pp_simple : bool ref
 
 

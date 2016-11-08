@@ -44,7 +44,6 @@ let do_source_file translation_unit_context ast =
   CType_decl.add_predefined_types tenv;
   init_global_state_capture ();
   let source_file = translation_unit_context.CFrontend_config.source_file in
-  Config.nLOC := FileLOC.file_get_loc (DB.source_file_to_string source_file);
   Logging.out_debug "@\n Start building call/cfg graph for '%s'....@\n"
     (DB.source_file_to_string source_file);
   let call_graph, cfg = compute_icfg translation_unit_context tenv ast in

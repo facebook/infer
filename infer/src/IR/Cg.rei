@@ -79,10 +79,6 @@ let get_defined_children: t => Procname.t => Procname.Set.t;
 let get_dependents: t => Procname.t => Procname.Set.t;
 
 
-/** Return the number of LOC of the source file */
-let get_nLOC: t => int;
-
-
 /** Return the list of nodes with calls */
 let get_nodes_and_calls: t => list (Procname.t, in_out_calls);
 

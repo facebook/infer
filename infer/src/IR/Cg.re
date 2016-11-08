@@ -43,8 +43,7 @@ type node_info = {
 
 /** Type for call graph */
 type t = {
-  mutable source: DB.source_file, /** path for the source file */
-  mutable nLOC: int, /** number of LOC */
+  source: DB.source_file, /** path for the source file */
   node_map: Procname.Hash.t node_info /** map from node to node_info */
 };
 
@@ -54,7 +53,7 @@ let create source_opt => {
     | None => DB.source_file_empty
     | Some source => source
     };
-  {source, nLOC: !Config.nLOC, node_map: Procname.Hash.create 3}
+  {source, node_map: Procname.Hash.create 3}
 };
 
 let add_node g n defined::defined =>
@@ -341,10 +340,6 @@ let get_defined_nodes (g: t) => {
 let get_source (g: t) => g.source;
 
 
-/** Return the number of LOC of the source file */
-let get_nLOC (g: t) => g.nLOC;
-
-
 /** [extend cg1 gc2] extends [cg1] in place with nodes and edges from [gc2];
     undefined nodes become defined if at least one side is. */
 let extend cg_old cg_new => {
@@ -355,14 +350,14 @@ let extend cg_old cg_new => {
 
 
 /** Begin support for serialization */
-let callgraph_serializer: Serialization.serializer (DB.source_file, int, nodes_and_edges) = Serialization.create_serializer Serialization.cg_key;
+let callgraph_serializer: Serialization.serializer (DB.source_file, nodes_and_edges) = Serialization.create_serializer Serialization.cg_key;
 
 
 /** Load a call graph from a file */
 let load_from_file (filename: DB.filename) :option t =>
   switch (Serialization.from_file callgraph_serializer filename) {
   | None => None
-  | Some (source, nLOC, (nodes, edges)) =>
+  | Some (source, (nodes, edges)) =>
     let g = create (Some source);
     IList.iter
       (
@@ -373,7 +368,6 @@ let load_from_file (filename: DB.filename) :option t =>
       )
       nodes;
     IList.iter (fun (nfrom, nto) => add_edge g nfrom nto) edges;
-    g.nLOC = nLOC;
     Some g
   };
 
@@ -381,9 +375,7 @@ let load_from_file (filename: DB.filename) :option t =>
 /** Save a call graph into a file */
 let store_to_file (filename: DB.filename) (call_graph: t) =>
   Serialization.to_file
-    callgraph_serializer
-    filename
-    (call_graph.source, call_graph.nLOC, get_nodes_and_edges call_graph);
+    callgraph_serializer filename (call_graph.source, get_nodes_and_edges call_graph);
 
 let pp_graph_dotty get_specs (g: t) fmt => {
   let nodes_with_calls = get_all_nodes g;

@@ -66,8 +66,7 @@ let get_location source_file impl pc =
     | Some n -> n in
   { Location.line = line_number;
     col = -1;
-    file = source_file;
-    nLOC = !Config.nLOC }
+    file = source_file }
 
 let get_undefined_method_call ovt =
   let get_undefined_method ovt =

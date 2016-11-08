@@ -1626,9 +1626,6 @@ let run_in_re_execution_mode f x =
 (** Set in the middle of forcing delayed prints *)
 let forcing_delayed_prints = ref false
 
-(** Number of lines of code in original file *)
-let nLOC = ref 0
-
 (** if true, user simple pretty printing *)
 let pp_simple = ref true
 

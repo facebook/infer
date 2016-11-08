@@ -228,13 +228,6 @@ val filename_to_absolute : string -> string
 (** Convert an absolute filename to one relative to a root directory *)
 val filename_to_relative : string -> string -> string
 
-(** count lines of code of files and keep processed results in a cache *)
-module FileLOC : sig
-  val reset: unit -> unit (** reset the cache *)
-
-  val file_get_loc : string -> int (** get the LOC of the file *)
-end
-
 (** type for files used for printing *)
 type outfile =
   { fname : string; (** name of the file *)

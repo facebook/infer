@@ -27,8 +27,7 @@ let clang_to_sil_location trans_unit_ctx clang_loc =
   let col = Option.default (-1) clang_loc.Clang_ast_t.sl_column in
   let file = Option.map_default source_file_from_path
       trans_unit_ctx.CFrontend_config.source_file clang_loc.Clang_ast_t.sl_file in
-  let nLOC = -1 in
-  Location.{line; col; file; nLOC}
+  Location.{line; col; file}
 
 let file_in_project file =
   (* Look at file paths before resolving them to real paths. Do it to

@@ -392,21 +392,6 @@ let copy_file fname_from fname_to =
       cleanup();
       None
 
-(** count lines of code of files and keep processed results in a cache *)
-module FileLOC = struct
-  let include_loc_hash = Hashtbl.create 1
-
-  let reset () = Hashtbl.clear include_loc_hash
-
-  let file_get_loc fname =
-    try Hashtbl.find include_loc_hash fname with Not_found ->
-      let loc = match read_file fname with
-        | None -> 0
-        | Some l -> IList.length l in
-      Hashtbl.add include_loc_hash fname loc;
-      loc
-end
-
 (** type for files used for printing *)
 type outfile =
   { fname : string; (** name of the file *)

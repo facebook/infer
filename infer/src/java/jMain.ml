@@ -40,9 +40,7 @@ let init_global_state source_file =
   Config.curr_language := Config.Java;
   DB.Results_dir.init source_file;
   Ident.NameGenerator.reset ();
-  JContext.reset_exn_node_table ();
-  let nLOC = FileLOC.file_get_loc (DB.source_file_to_string source_file) in
-  Config.nLOC := nLOC
+  JContext.reset_exn_node_table ()
 
 
 let store_icfg source_file tenv cg cfg =

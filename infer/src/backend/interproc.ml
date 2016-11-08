@@ -413,13 +413,11 @@ let check_assignement_guard pdesc node =
         | _ -> false) succs in
   let succs_same_loc_as_node () =
     if verbose then
-      (L.d_str ("LOCATION NODE: line: " ^ (string_of_int l_node.Location.line) ^
-                " nLOC: " ^ (string_of_int l_node.Location.nLOC));
+      (L.d_str ("LOCATION NODE: line: " ^ (string_of_int l_node.Location.line));
        L.d_strln " ");
     IList.for_all (fun l ->
         if verbose then
-          (L.d_str ("LOCATION l: line: " ^ (string_of_int l.Location.line) ^
-                    " nLOC: " ^ (string_of_int l.Location.nLOC));
+          (L.d_str ("LOCATION l: line: " ^ (string_of_int l.Location.line));
            L.d_strln " ");
         Location.equal l l_node) succs_loc in
   (* check that the guards of the succs are a var or its negation *)
@@ -1579,9 +1577,8 @@ let print_stats_cfg proc_shadowed source cfg =
     (* F.fprintf fmt "VISITED: %a@\n" (pp_seq pp_node) nodes_visited;
        F.fprintf fmt "TOTAL: %a@\n" (pp_seq pp_node) nodes_total; *)
     F.fprintf fmt "@\n++++++++++++++++++++++++++++++++++++++++++++++++++@\n";
-    F.fprintf fmt "+ FILE: %s  LOC: %n  VISITED: %d/%d SYMOPS: %d@\n"
+    F.fprintf fmt "+ FILE: %s  VISITED: %d/%d SYMOPS: %d@\n"
       (DB.source_file_to_string source)
-      !Config.nLOC
       (IList.length nodes_visited)
       (IList.length nodes_total)
       !tot_symops;

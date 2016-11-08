@@ -17,13 +17,11 @@ module L = Logging
 (** per-file data: type environment and cfg *)
 type file_data =
   { source: DB.source_file;
-    nLOC : int;
     tenv_file: DB.filename;
     mutable tenv: Tenv.t option;
     cfg_file: DB.filename;
     mutable cfg: Cfg.cfg option;
   }
-
 
 (** get the path to the tenv file, which either one tenv file per source file or a global tenv file *)
 let tenv_filename file_base =
@@ -41,24 +39,23 @@ module FilenameHash = Hashtbl.Make(
   end)
 
 (** create a new file_data *)
-let new_file_data source nLOC cg_fname =
+let new_file_data source cg_fname =
   let file_base = DB.chop_extension cg_fname in
   let tenv_file = tenv_filename file_base in
   let cfg_file = DB.filename_add_suffix file_base ".cfg" in
   { source = source;
-    nLOC = nLOC;
     tenv_file = tenv_file;
     tenv = None; (* Sil.load_tenv_from_file tenv_file *)
     cfg_file = cfg_file;
     cfg = None; (* Cfg.load_cfg_from_file cfg_file *)
   }
 
-let create_file_data table source nLOC cg_fname =
+let create_file_data table source cg_fname =
   match FilenameHash.find table cg_fname with
   | file_data ->
       file_data
   | exception Not_found ->
-      let file_data = new_file_data source nLOC cg_fname in
+      let file_data = new_file_data source cg_fname in
       FilenameHash.add table cg_fname file_data;
       file_data
 
@@ -129,12 +126,10 @@ let get_file_data exe_env pname =
           L.err "can't find tenv_cfg_object for %a@." Procname.pp pname;
           None
       | Some proc_attributes ->
-          let loc = proc_attributes.ProcAttributes.loc in
           let source_file = proc_attributes.ProcAttributes.source_file_captured in
-          let nLOC = loc.Location.nLOC in
           let source_dir = DB.source_dir_from_source_file source_file in
           let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
-          let file_data = create_file_data exe_env.file_map source_file nLOC cg_fname in
+          let file_data = create_file_data exe_env.file_map source_file cg_fname in
           Procname.Hash.replace exe_env.proc_map pname file_data;
           Some file_data
     end
@@ -201,7 +196,6 @@ let iter_files f exe_env =
     then seen_files_acc
     else
       begin
-        Config.nLOC := file_data.nLOC;
         Option.may (fun cfg -> f fname cfg) (file_data_to_cfg file_data);
         DB.SourceFileSet.add fname seen_files_acc
       end in
