@@ -125,9 +125,13 @@ frontend_replace: $(DIRECT_TESTS_REPLACE)
 define gen_direct_test_rule
 .PHONY: $(1)
 $(1): infer
-	$(MAKE) -C \
+	($(MAKE) -C \
 	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $(1) | cut -f 1 -d _)/$(shell printf $(1) | cut -f 2 -d _) \
-	  $(shell printf $(1) | cut -f 3 -d _)
+	  $(shell printf $(1) | cut -f 3 -d _) \
+	3>&1 1>&2- 2>&3- ) \
+	| grep -v "warning: ignoring old commands for target" \
+	| grep -v "warning: overriding commands for target" \
+	; exit $$$${PIPESTATUS[0]}
 endef
 
 $(foreach test,$(DIRECT_TESTS) $(DIRECT_TESTS_REPLACE),\
@@ -179,7 +183,8 @@ toplevel: infer
 
 .PHONY: inferScriptMode_test
 inferScriptMode_test: toplevel
-	INFER_REPL_BINARY=ocaml $(SCRIPT_DIR)/infer_repl $(INFER_DIR)/tests/repl/infer_batch_script.ml
+	$(call silent_on_success,\
+	 INFER_REPL_BINARY=ocaml $(SCRIPT_DIR)/infer_repl $(INFER_DIR)/tests/repl/infer_batch_script.ml)
 
 .PHONY: test
 test: test_build ocaml_unit_test buck_test inferTraceBugs_test inferScriptMode_test

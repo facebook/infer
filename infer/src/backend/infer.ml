@@ -198,6 +198,7 @@ let () =
   let build_mode = match build_cmd with path :: _ -> build_mode_of_string path | [] -> Analyze in
   remove_results_dir build_mode ;
   create_results_dir () ;
+  if Config.is_originator then L.out "%s@\n" Config.version_string ;
   touch_start_file () ;
   capture build_cmd build_mode ;
   analyze build_mode ;

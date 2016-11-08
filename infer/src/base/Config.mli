@@ -120,6 +120,7 @@ val trace_absarray : bool
 val undo_join : bool
 val unsafe_unret : string
 val use_jar_cache : bool
+val version_string : string
 val weak : string
 val whitelisted_cpp_methods : string list list
 val wrappers_dir : string
