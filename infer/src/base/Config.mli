@@ -81,7 +81,7 @@ val ivar_attributes : string
 val lib_dir : string
 val lint_dotty_dir_name : string
 val lint_issues_dir_name : string
-val load_average : float
+val load_average : float option
 val log_analysis_crash : string
 val log_analysis_file : string
 val log_analysis_procedure : string

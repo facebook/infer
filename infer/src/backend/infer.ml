@@ -142,7 +142,7 @@ let capture build_cmd build_mode =
     (if not Config.flavors || not in_buck_mode || is_analyze_cmd build_cmd then [] else
        ["--use-flavors"]) @
     "-j" :: (string_of_int Config.jobs) ::
-    "-l" :: (string_of_float Config.load_average) ::
+    (Option.map_default (fun l -> ["-l"; string_of_float l]) [] Config.load_average) @
     (if not Config.pmd_xml then [] else
        ["--pmd-xml"]) @
     ["--project-root"; Config.project_root] @

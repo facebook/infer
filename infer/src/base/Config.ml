@@ -955,7 +955,7 @@ and linters_def_file =
     ~meta:"file" "Specify the file containing linters definition"
 
 and load_average =
-  CLOpt.mk_float ~long:"load-average" ~short:"l" ~default:(float_of_int ncpu)
+  CLOpt.mk_float_opt ~long:"load-average" ~short:"l"
     ~exes:CLOpt.[Toplevel] ~meta:"float"
     "Do not start new parallel jobs if the load average is greater than that specified (Buck and \
      make only)"
@@ -1444,7 +1444,11 @@ and jobs = !jobs
 and join_cond = !join_cond
 and latex = !latex
 and linters_def_file = !linters_def_file
-and load_average = !load_average
+and load_average = match !load_average with
+  | None when !buck ->
+      Some (float_of_int ncpu)
+  | _ ->
+      !load_average
 and load_analysis_results = !load_results
 and makefile_cmdline = !makefile
 and merge = !merge
