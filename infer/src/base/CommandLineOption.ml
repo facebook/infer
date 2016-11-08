@@ -30,6 +30,11 @@ let exes = [
   ("interactive", Interactive);
 ]
 
+let exe_name =
+  let exe_to_name = IList.map (fun (n,a) -> (a,n)) exes in
+  fun exe -> IList.assoc (=) exe exe_to_name
+
+
 let frontend_exes = [Clang; Java]
 
 type desc = {

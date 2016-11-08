@@ -16,6 +16,8 @@ type exe = Analyze | Clang | Interactive | Java | Print | Toplevel
 (** Association list of executable (base)names to their [exe]s. *)
 val exes : (string * exe) list
 
+val exe_name : exe -> string
+
 val frontend_exes: exe list
 
 (** The [mk_*] functions declare command line options, while [parse] parses then according to the

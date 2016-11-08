@@ -161,5 +161,5 @@ val log_progress_procedure : unit -> unit
 (** Progress bar: log a timeout event if in developer mode. *)
 val log_progress_timeout_event : SymOp.failure_kind -> unit
 
-(** Name of current temporary files for logging the output in the current executable *)
+(** Names of current temporary files for logging the output in the current executable *)
 val log_file_names : unit -> string * string

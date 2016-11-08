@@ -50,8 +50,8 @@ let cluster_should_be_analyzed cluster =
 
 
 let pp_prolog fmt clusters =
-  let inferanalyze = IList.assoc (=) CLOpt.Analyze (IList.map (fun (n,a) -> (a,n)) CLOpt.exes) in
-  F.fprintf fmt "INFERANALYZE= %s -results_dir '%s'\n@." (Config.bin_dir // inferanalyze)
+  F.fprintf fmt "INFERANALYZE= %s -results_dir '%s'\n@."
+    (Config.bin_dir // (CLOpt.exe_name Analyze))
     (Escape.escape_map
        (fun c -> if c = '#' then Some "\\#" else None)
        Config.results_dir);

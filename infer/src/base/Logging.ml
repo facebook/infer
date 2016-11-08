@@ -13,10 +13,11 @@ open! Utils
 (** log messages at different levels of verbosity *)
 
 module F = Format
+module CLOpt = CommandLineOption
 
 
 (** Name of dir for logging the output in the specific executable *)
-let log_dir_of_current_exe (current_exe : CommandLineOption.exe) =
+let log_dir_of_current_exe (current_exe : CLOpt.exe) =
   match current_exe with
   | Analyze -> "analyze"
   | Clang -> "clang"
@@ -26,14 +27,14 @@ let log_dir_of_current_exe (current_exe : CommandLineOption.exe) =
   | Toplevel -> "top_level"
 
 
-let out_file = ref "<BUG: logging to a file not setup, what you're looking for was emitted on \
-                    stdout and may have been swallowed>"
-let err_file = ref "<BUG: logging to a file not setup, what you're looking for was emitted on \
-                    stderr and may have been swallowed>"
-let out_formatter = ref F.std_formatter
-let err_formatter = ref F.err_formatter
+let out_file = ref (lazy "out log file not initialized, stdout used instead")
+let err_file = ref (lazy "err log file not initialized, stderr used instead")
+let out_chan = ref (lazy Pervasives.stdout)
+let err_chan = ref (lazy Pervasives.stderr)
+let out_formatter = ref (lazy F.std_formatter)
+let err_formatter = ref (lazy F.err_formatter)
 
-let set_log_file_identifier (current_exe : CommandLineOption.exe) string_opt =
+let set_log_file_identifier (current_exe : CLOpt.exe) string_opt =
   let should_setup_log_files =
     match current_exe with
     | Analyze
@@ -41,43 +42,52 @@ let set_log_file_identifier (current_exe : CommandLineOption.exe) string_opt =
     | Toplevel -> true
     | _ -> false in
   if should_setup_log_files then (
-    let name_prefix = (match string_opt with
-        | Some name -> name ^ "_"
-        | None -> "") ^ string_of_int (Unix.getpid ()) ^ "_" in
+    let name_prefix =
+      (match string_opt with
+       | Some name -> name ^ "_"
+       | None -> ""
+      ) ^ string_of_int (Unix.getpid ()) ^ "_" in
     let exe_log_dir =
       let log_dir = Config.results_dir // Config.log_dir_name in
       log_dir // (log_dir_of_current_exe current_exe) in
     create_path exe_log_dir;
-    let log_file config_opt suffix =
-      (* the command-line option takes precedence if specified *)
-      if config_opt <> "" then config_opt
-      else Filename.temp_file ~temp_dir:exe_log_dir name_prefix suffix in
-    out_file := log_file Config.out_file_cmdline "-out.log";
-    err_file := log_file Config.err_file_cmdline "-err.log";
-    let open_output_file fname =
+    let fmt_chan_file name suffix = lazy (
       try
-        let cout = open_out fname in
-        let fmt = F.formatter_of_out_channel cout in
-        (fmt, cout)
+        let file =
+          (* the command-line option takes precedence if specified *)
+          if name <> "" then name
+          else Filename.temp_file ~temp_dir:exe_log_dir name_prefix suffix in
+        let chan = Pervasives.open_out file in
+        let fmt = F.formatter_of_out_channel chan in
+        (fmt, chan, file)
       with Sys_error _ ->
-        failwithf "@.ERROR: cannot open output file %s@." fname
-    in
-    let out_fmt, out_chan = open_output_file !out_file in
-    let err_fmt, err_chan = open_output_file !err_file in
+        failwithf "ERROR: cannot open log file %s@\n" name
+    ) in
+    let out_fmt_chan_file = fmt_chan_file Config.out_file_cmdline "-out.log" in
+    let err_fmt_chan_file = fmt_chan_file Config.err_file_cmdline "-err.log" in
     Pervasives.at_exit (fun () ->
-        F.pp_print_flush out_fmt () ;
-        F.pp_print_flush err_fmt () ;
-        close_out out_chan ;
-        close_out err_chan
+        let close fmt_chan_file =
+          if Lazy.is_val fmt_chan_file then (
+            let (fmt, chan, _) = Lazy.force fmt_chan_file in
+            F.pp_print_flush fmt () ;
+            Pervasives.close_out_noerr chan
+          ) in
+        close out_fmt_chan_file ;
+        close err_fmt_chan_file
       );
-    out_formatter := out_fmt;
-    err_formatter := err_fmt;
+    out_formatter := lazy (fst3 (Lazy.force out_fmt_chan_file)) ;
+    out_chan := lazy (snd3 (Lazy.force out_fmt_chan_file)) ;
+    out_file := lazy (trd3 (Lazy.force out_fmt_chan_file)) ;
+    err_formatter := lazy (fst3 (Lazy.force err_fmt_chan_file)) ;
+    err_chan := lazy (snd3 (Lazy.force err_fmt_chan_file)) ;
+    err_file := lazy (trd3 (Lazy.force err_fmt_chan_file))
   )
 
 (* set up log files on startup if needed *)
-let () = set_log_file_identifier Config.current_exe None
+let () = set_log_file_identifier Config.current_exe (Some (CLOpt.exe_name Config.current_exe))
 
-let log_file_names () = (!out_file, !err_file)
+let log_file_names () = (Lazy.force !out_file, Lazy.force !err_file)
+
 
 (** type of printable elements *)
 type print_type =
@@ -127,12 +137,12 @@ type print_action =
 let delayed_actions = ref []
 
 (** hook for the current printer of delayed print actions *)
-let printer_hook = ref (Obj.magic ())
+let printer_hook = ref (fun _ -> failwith "uninitialized printer hook")
 
 (** extend the current print log *)
 let add_print_action pact =
   if Config.write_html then delayed_actions := pact :: !delayed_actions
-  else if not Config.test then !printer_hook !out_formatter pact
+  else if not Config.test then !printer_hook (Lazy.force !out_formatter) pact
 
 (** reset the delayed print actions *)
 let reset_delayed_prints () =
@@ -146,19 +156,19 @@ let get_delayed_prints () =
 let set_delayed_prints new_delayed_actions =
   delayed_actions := new_delayed_actions
 
-let do_print = F.fprintf
+let do_print (lazy fmt) = F.fprintf fmt
 
-let do_print_in_debug_or_stats_mode =
+let do_print_in_debug_or_stats_mode (lazy fmt) =
   if Config.debug_mode || Config.stats_mode then
-    F.fprintf
+    F.fprintf fmt
   else
-    F.ifprintf
+    F.ifprintf fmt
 
-let do_print_in_debug_mode =
+let do_print_in_debug_mode (lazy fmt) =
   if Config.debug_mode then
-    F.fprintf
+    F.fprintf fmt
   else
-    F.ifprintf
+    F.ifprintf fmt
 
 let out fmt_string =
   do_print_in_debug_or_stats_mode !out_formatter fmt_string
@@ -179,10 +189,10 @@ let err_debug fmt_string =
   do_print_in_debug_mode !err_formatter fmt_string
 
 let stderr fmt_string =
-  do_print F.err_formatter fmt_string
+  do_print (Lazy.from_val F.err_formatter) fmt_string
 
 let stdout fmt_string =
-  do_print F.std_formatter fmt_string
+  do_print (Lazy.from_val F.std_formatter) fmt_string
 
 (** Type of location in ml source: __POS__ *)
 type ml_loc = string * int * int * int
