@@ -190,6 +190,11 @@
     "procedure": "void WriterLeaks.bufferedWriterNotClosedAfterWrite()"
   },
   {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "Object GuardedByExample.byRefTrickyBad()"
+  },
+  {
     "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterInputStreamLeaks.java",
     "procedure": "void FilterInputStreamLeaks.checkedInputStreamNotClosedAfterRead()"
@@ -735,6 +740,51 @@
     "procedure": "int ResourceLeaks.readConfigNotCloseStream(String)"
   },
   {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "void GuardedByExample.readFAfterBlockBad()"
+  },
+  {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "void GuardedByExample.readFBad()"
+  },
+  {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "void GuardedByExample.readFBadButSuppressedOther()"
+  },
+  {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "void GuardedByExample.readFBadWrongAnnotation()"
+  },
+  {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "void GuardedByExample.readFBadWrongLock()"
+  },
+  {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "String GuardedByExample$3.readFromInnerClassBad1()"
+  },
+  {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "String GuardedByExample$4.readFromInnerClassBad2()"
+  },
+  {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "void GuardedByExample.readHBad()"
+  },
+  {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "void GuardedByExample.readHBadSynchronizedMethodShouldntHelp()"
+  },
+  {
     "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
     "procedure": "String ResourceLeaks.readInstallationFileBad(File)"
@@ -795,6 +845,21 @@
     "procedure": "void NullPointerExceptions.stringVarEqualsFalseNPE()"
   },
   {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "void GuardedByExample.synchronizedMethodReadBad()"
+  },
+  {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "void GuardedByExample.synchronizedMethodWriteBad()"
+  },
+  {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "void GuardedByExample.synchronizedOnThisBad()"
+  },
+  {
     "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
     "procedure": "String NullPointerExceptions.testSystemGetPropertyArgument()"
@@ -833,6 +898,21 @@
     "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/CloseableAsResourceExample.java",
     "procedure": "void CloseableAsResourceExample.withException()"
+  },
+  {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "void GuardedByExample.writeFAfterBlockBad()"
+  },
+  {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "void GuardedByExample.writeFBad()"
+  },
+  {
+    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
+    "file": "infer/tests/codetoanalyze/java/infer/GuardedByExample.java",
+    "procedure": "void GuardedByExample.writeFBadWrongLock()"
   },
   {
     "bug_type": "RESOURCE_LEAK",
