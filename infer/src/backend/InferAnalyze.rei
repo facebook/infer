@@ -12,5 +12,3 @@ open! Utils;
 
 /** Main module for the analysis after the capture phase */
 let main: unit => unit;
-
-let output_json_makefile_stats: list DB.source_dir => unit;

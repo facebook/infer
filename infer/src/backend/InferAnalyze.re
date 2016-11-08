@@ -65,77 +65,23 @@ let output_json_makefile_stats clusters => {
   Yojson.Basic.pretty_to_channel f file_stats
 };
 
-let print_prolog () =>
-  switch Config.cluster_cmdline {
-  | None =>
-    L.stdout "Starting analysis (Infer version %s)@\n" Version.versionString;
-    L.stdout "@\n";
-    L.stdout "legend:@\n";
-    L.stdout "  \"%s\" analyzing a file@\n" Config.log_analysis_file;
-    L.stdout "  \"%s\" analyzing a procedure@\n" Config.log_analysis_procedure;
-    if Config.stats_mode {
-      L.stdout "  \"%s\" analyzer crashed@\n" Config.log_analysis_crash;
-      L.stdout
-        "  \"%s\" timeout: procedure analysis took too much time@\n"
-        Config.log_analysis_wallclock_timeout;
-      L.stdout
-        "  \"%s\" timeout: procedure analysis took too many symbolic execution steps@\n"
-        Config.log_analysis_symops_timeout;
-      L.stdout
-        "  \"%s\" timeout: procedure analysis took too many recursive iterations@\n"
-        Config.log_analysis_recursion_timeout
-    };
-    L.stdout "@\n@?"
-  | Some clname => L.stdout "Cluster %s@." clname
-  };
-
 let process_cluster_cmdline fname =>
   switch (Cluster.load_from_file (DB.filename_from_string fname)) {
   | None => L.err "Cannot find cluster file %s@." fname
   | Some (nr, cluster) => analyze_cluster (nr - 1) cluster
   };
 
-let register_perf_stats_report () => {
-  let stats_dir = Filename.concat Config.results_dir Config.backend_stats_dir_name;
-  let cluster =
-    switch Config.cluster_cmdline {
-    | Some cl => "_" ^ cl
-    | None => ""
-    };
-  let stats_base = Config.perf_stats_prefix ^ "_" ^ Filename.basename cluster ^ ".json";
-  let stats_file = Filename.concat stats_dir stats_base;
-  create_dir Config.results_dir;
-  create_dir stats_dir;
-  PerfStats.register_report_at_exit stats_file
-};
-
 let main () => {
-  Logging.set_log_file_identifier
-    CommandLineOption.Analyze (Option.map Filename.basename Config.cluster_cmdline);
-  if Config.print_builtins {
-    Builtin.print_and_exit ()
-  };
   switch Config.modified_targets {
   | Some file => MergeCapture.modified_file file
   | None => ()
   };
-  if (not (Sys.file_exists Config.results_dir)) {
-    L.err "ERROR: results directory %s does not exist@.@." Config.results_dir;
-    Config.print_usage_exit ()
-  };
-  register_perf_stats_report ();
-  BuiltinDefn.init ();
-  if Config.developer_mode {
-    Printexc.record_backtrace true
-  };
-  print_prolog ();
-  RegisterCheckers.register ();
-  if (Config.allow_specs_cleanup == true && Config.cluster_cmdline == None) {
-    DB.Results_dir.clean_specs_dir ()
-  };
   switch Config.cluster_cmdline {
   | Some fname => process_cluster_cmdline fname
   | None =>
+    if Config.allow_specs_cleanup {
+      DB.Results_dir.clean_specs_dir ()
+    };
     if Config.merge {
       MergeCapture.merge_captured_targets ()
     };
