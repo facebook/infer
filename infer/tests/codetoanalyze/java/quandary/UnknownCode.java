@@ -13,15 +13,31 @@ import com.facebook.infer.builtins.InferTaint;
 
 /** testing how the analysis handles missing/unknown code */
 
-public class UnknownCode {
+public abstract class UnknownCode {
 
-  native static Object id(Object o);
+  native static Object nativeMethod(Object o);
 
-  public UnknownCode() {}
+  abstract Object abstractMethod(Object o);
 
-  static void propagateViaUnknownCodeBad() {
+  static interface Interface {
+    Object interfaceMethod(Object o);
+  }
+
+  void propagateViaUnknownNativeCodeBad() {
     Object source = InferTaint.inferSecretSource();
-    Object launderedSource = id(source);
+    Object launderedSource = nativeMethod(source);
+    InferTaint.inferSensitiveSink(launderedSource);
+  }
+
+  static void propagateViaUnknownAbstractCodeBad() {
+    Object source = InferTaint.inferSecretSource();
+    Object launderedSource = nativeMethod(source);
+    InferTaint.inferSensitiveSink(launderedSource);
+  }
+
+  static void propagateViaInterfaceCodeBad(Interface i) {
+    Object source = InferTaint.inferSecretSource();
+    Object launderedSource = i.interfaceMethod(source);
     InferTaint.inferSensitiveSink(launderedSource);
   }
 
@@ -37,10 +53,12 @@ public class UnknownCode {
     InferTaint.inferSensitiveSink(unknownConstructor);
   }
 
-  static void propagateViaUnknownCodeOk() {
-    Object notASource = new UnknownCode();
-    Object launderedSource = id(notASource);
-    InferTaint.inferSensitiveSink(launderedSource);
+  void propagateViaUnknownCodeOk(Interface i) {
+    Object notASource = new Object();
+    Object launderedSource1 = nativeMethod(notASource);
+    Object launderedSource2 = abstractMethod(launderedSource1);
+    Object launderedSource3 = i.interfaceMethod(launderedSource2);
+    InferTaint.inferSensitiveSink(launderedSource3);
   }
 
 }

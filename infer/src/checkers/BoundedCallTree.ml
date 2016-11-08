@@ -33,7 +33,7 @@ module SpecSummary = Summary.Make (struct
       { payload with Specs.crashcontext_frame = frame }
 
     let read_from_payload payload =
-      payload.Specs.crashcontext_frame
+      Some payload.Specs.crashcontext_frame
   end)
 
 type extras_t = {

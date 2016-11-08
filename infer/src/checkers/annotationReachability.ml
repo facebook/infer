@@ -89,8 +89,8 @@ module Summary = Summary.Make (struct
 
     let read_from_payload payload =
       match payload.Specs.calls with
-      | Some call_summary -> Domain.NonBottom (call_summary, Domain.TrackingVar.empty)
-      | None -> Domain.initial
+      | Some call_summary -> Some (Domain.NonBottom (call_summary, Domain.TrackingVar.empty))
+      | None -> None
   end)
 
 (* Warning name when a performance critical method directly or indirectly

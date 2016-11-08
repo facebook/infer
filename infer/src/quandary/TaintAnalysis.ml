@@ -21,9 +21,7 @@ module Summary = Summary.Make(struct
       { payload with Specs.quandary = Some summary; }
 
     let read_from_payload payload =
-      match payload.Specs.quandary with
-      | Some summary -> summary
-      | None -> []
+      payload.Specs.quandary
   end)
 
 module Make (TaintSpec : TaintSpec.S) = struct
@@ -517,17 +515,24 @@ module Make (TaintSpec : TaintSpec.S) = struct
           AccessPath.BaseMap.empty
           formals_with_nums in
 
-      Preanal.doit ~handle_dynamic_dispatch:true pdesc dummy_cg tenv;
-      let formals = make_formal_access_paths pdesc in
-      let proc_data = ProcData.make pdesc tenv formals in
-      match Analyzer.compute_post proc_data with
-      | Some { access_tree; } ->
-          let summary = make_summary formals access_tree in
-          Summary.write_summary (Cfg.Procdesc.get_proc_name pdesc) summary;
-      | None ->
-          if Cfg.Node.get_succs (Cfg.Procdesc.get_start_node pdesc) = []
-          then ()
-          else failwith "Couldn't compute post" in
+      let has_body pdesc =
+        let attrs = Cfg.Procdesc.get_attributes pdesc in
+        attrs.is_defined && not attrs.is_abstract in
+      if has_body pdesc
+      then
+        begin
+          Preanal.doit ~handle_dynamic_dispatch:true pdesc dummy_cg tenv;
+          let formals = make_formal_access_paths pdesc in
+          let proc_data = ProcData.make pdesc tenv formals in
+          match Analyzer.compute_post proc_data with
+          | Some { access_tree; } ->
+              let summary = make_summary formals access_tree in
+              Summary.write_summary (Cfg.Procdesc.get_proc_name pdesc) summary;
+          | None ->
+              if Cfg.Node.get_succs (Cfg.Procdesc.get_start_node pdesc) = []
+              then ()
+              else failwith "Couldn't compute post"
+        end in
     let callbacks =
       {
         Ondemand.analyze_ondemand;

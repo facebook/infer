@@ -19,9 +19,7 @@ module Summary = Summary.Make (struct
       { payload with Specs.siof = Some astate }
 
     let read_from_payload payload =
-      match payload.Specs.siof with
-      | Some astate -> astate
-      | None -> SiofDomain.initial
+      payload.Specs.siof
   end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
