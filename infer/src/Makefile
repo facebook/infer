@@ -133,7 +133,7 @@ else
 EXTRA_DEPS = opensource
 endif
 
-DEPENDENCIES = IR backend base checkers eradicate harness quandary $(EXTRA_DEPS)
+DEPENDENCIES = IR backend base checkers eradicate harness integration quandary $(EXTRA_DEPS)
 
 # ocamlbuild command with options common to all build targets
 OCAMLBUILD_BASE = rebuild $(OCAMLBUILD_OPTIONS) -j $(NCPU) $(addprefix -I , $(DEPENDENCIES))
