@@ -31,13 +31,21 @@ let clang_to_sil_location trans_unit_ctx clang_loc =
   Location.{line; col; file; nLOC}
 
 let file_in_project file =
-  let real_root = real_path Config.project_root in
-  let real_file = real_path file in
-  let file_in_project = string_is_prefix real_root real_file in
+  (* Look at file paths before resolving them to real paths. Do it to
+     improve performance of most likely case when calling realpath is not needed *)
+  let file_in_project, used_project_root, used_file =
+    if string_is_prefix Config.project_root file then
+      true, Config.project_root, file
+    else if string_is_prefix Config.project_root_realpath file then
+      true, Config.project_root_realpath, file
+    else
+      let real_root = Config.project_root_realpath in
+      let real_file = Core.Std.Filename.realpath file in
+      string_is_prefix real_root real_file, real_root, real_file in
   let paths = Config.skip_translation_headers in
   let file_should_be_skipped =
     IList.exists
-      (fun path -> string_is_prefix (Filename.concat real_root path) real_file)
+      (fun path -> string_is_prefix (Filename.concat used_project_root path) used_file)
       paths in
   file_in_project && not (file_should_be_skipped)
 
@@ -65,7 +73,10 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
     let path_pred path = pred (source_file_from_path path) in
     map_path_of path_pred loc
   in
-  let equal_current_source = DB.inode_equal trans_unit_ctx.CFrontend_config.source_file
+  (* it's not necessary to compare inodes here because both files come from
+     the same context - they are produced by the same invocation of ASTExporter
+     which uses same logic to produce both files *)
+  let equal_current_source = DB.source_file_equal trans_unit_ctx.CFrontend_config.source_file
   in
   let file_in_project = map_path_of file_in_project loc_end
                         || map_path_of file_in_project loc_start in

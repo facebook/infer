@@ -238,7 +238,7 @@ let initial_analysis_time = Unix.time ()
 (* Resolve symlinks to get to the real executable. The real executable is located in [bin_dir]
    below, which allows us to find [lib_dir], [models_dir], etc., relative to it. *)
 let real_exe_name =
-  real_path Sys.executable_name
+  Core.Std.Filename.realpath Sys.executable_name
 
 let current_exe =
   if !Sys.interactive then CLOpt.Interactive
@@ -404,7 +404,7 @@ let init_work_dir, is_originator =
           Sys.getcwd ()
       with _ ->
         Sys.getcwd () in
-    let real_cwd = real_path cwd in
+    let real_cwd = Core.Std.Filename.realpath cwd in
     Unix.putenv "INFER_CWD" real_cwd;
     (real_cwd, true)
 
@@ -1469,6 +1469,7 @@ and print_types = !print_types
 and print_using_diff = !print_using_diff
 and procs_csv = !procs_csv
 and procs_xml = !procs_xml
+and project_root_realpath = Core.Std.Filename.realpath project_root
 and quandary = !quandary
 and quiet = !quiet
 and reactive_mode = !reactive

@@ -305,8 +305,3 @@ val create_dir : string -> unit
 (** [create_path path] will create a directory at [path], creating all the parent directories if
     non-existing *)
 val create_path : string -> unit
-
-(** Recursively resolve symlinks until we get something that is not a link. Executables may be
-    (multiple levels of) symbolic links to the real binary directory, eg after `make install` or
-    packaging. *)
-val real_path : string -> string
