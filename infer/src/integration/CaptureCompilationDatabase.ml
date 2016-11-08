@@ -13,7 +13,7 @@ module CLOpt = CommandLineOption
 module F = Format
 
 let capture_text =
-  if Config.analyzer = Some Config.Linters then "linting"
+  if Config.analyzer = Config.Linters then "linting"
   else "translating"
 
 let replace_header_file_with_source_file file_path =

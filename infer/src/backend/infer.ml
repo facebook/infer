@@ -115,9 +115,9 @@ let capture build_cmd build_mode =
   run_command (
     infer_py ::
     Config.anon_args @
-    (match Config.analyzer with None -> [] | Some a ->
-        ["--analyzer";
-         IList.assoc (=) a (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)]) @
+    ["--analyzer";
+     IList.assoc (=) Config.analyzer
+       (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)] @
     (match Config.blacklist with
      | Some s when in_buck_mode && not (is_analyze_cmd build_cmd) -> ["--blacklist-regex"; s]
      | _ -> []) @
@@ -173,13 +173,13 @@ let analyze = function
         Config.print_usage_exit ()
       );
       (match Config.analyzer with
-       | None | Some (Infer | Eradicate | Checkers | Tracing | Crashcontext | Quandary) ->
+       | Infer | Eradicate | Checkers | Tracing | Crashcontext | Quandary ->
            (* Still handled by infer.py through capture function above *)
            ()
-       | Some Linters ->
+       | Linters ->
            (* Still handled by infer.py through capture function above *)
            ()
-       | Some (Capture | Compile) ->
+       | Capture | Compile ->
            (* Still handled by infer.py through capture function above *)
            ()
       )
@@ -187,7 +187,7 @@ let analyze = function
 let epilogue build_mode =
   if Config.is_originator then (
     StatsAggregator.generate_files () ;
-    if Config.analyzer = Some Config.Crashcontext then
+    if Config.analyzer = Config.Crashcontext then
       Crashcontext.crashcontext_epilogue ~in_buck_mode:(build_mode = Buck);
     if Config.fail_on_bug then
       fail_on_issue_epilogue ();

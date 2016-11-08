@@ -315,9 +315,15 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc =>
   } else {
     let analyzer_is_whitelisted =
       switch Config.analyzer {
-      | Some (Checkers | Eradicate | Tracing) => true
-      | None
-      | Some (Capture | Compile | Crashcontext | Infer | Linters | Quandary) => false
+      | Checkers
+      | Eradicate
+      | Tracing => true
+      | Capture
+      | Compile
+      | Crashcontext
+      | Infer
+      | Linters
+      | Quandary => false
       };
     if analyzer_is_whitelisted {
       true
@@ -1426,11 +1432,7 @@ let pp_summary_and_issues formats_by_report_kind => {
   let pdflatex fname => ignore (Sys.command ("pdflatex " ^ fname));
   let stats = Stats.create ();
   let linereader = Printer.LineReader.create ();
-  let filters =
-    switch Config.analyzer {
-    | None => Inferconfig.do_not_filter
-    | Some analyzer => Inferconfig.create_filters analyzer
-    };
+  let filters = Inferconfig.create_filters Config.analyzer;
   let iterate_summaries = AnalysisResults.get_summary_iterator ();
   let top_proc = TopProcedures.create ();
   let top_proc_set = TopProcedures.top_set top_proc;

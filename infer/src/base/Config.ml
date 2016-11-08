@@ -1380,7 +1380,6 @@ and analysis_blacklist_files_containing_options =
 and analysis_suppress_errors_options =
   IList.map (fun (a, b) -> (a, !b)) analysis_suppress_errors_options
 and analysis_stops = !analysis_stops
-and analyzer = !analyzer
 and angelic_execution = !angelic_execution
 and array_level = !array_level
 and ast_file = !ast_file
@@ -1535,17 +1534,19 @@ let clang_frontend_do_capture, clang_frontend_do_lint =
   | Some `Capture -> true, false (* capture, no lint *)
   | Some `Lint_and_capture -> true, true (* capture, lint *)
   | None ->
-      match analyzer with
+      match !analyzer with
       | Some Linters -> false, true (* no capture, lint *)
       | Some Infer -> true, false (* capture, no lint *)
       | _ -> true, true (* capture, lint *)
+
+let analyzer = match !analyzer with Some a -> a | None -> Infer
 
 let clang_frontend_action_string =
   String.concat " and "
     ((if clang_frontend_do_capture then ["translating"] else [])
      @ (if clang_frontend_do_lint then ["linting"] else []))
 
-let dynamic_dispatch = if analyzer = Some Tracing then `Lazy else !dynamic_dispatch
+let dynamic_dispatch = if analyzer = Tracing then `Lazy else !dynamic_dispatch
 
 let patterns_suppress_warnings =
   let error msg =

@@ -168,7 +168,7 @@ let cc1_capture clang_cmd => {
     filename_to_absolute orig_argv.(Array.length orig_argv - 1)
   };
   Logging.out "@\n*** Beginning capture of file %s ***@\n" source_path;
-  if (Config.analyzer == Some Config.Compile || CLocation.is_file_blacklisted source_path) {
+  if (Config.analyzer == Config.Compile || CLocation.is_file_blacklisted source_path) {
     Logging.out "@\n Skip the analysis of source file %s@\n@\n" source_path;
     /* We still need to run clang, but we don't have to attach the plugin. */
     run_clang (ClangCommand.command_to_run clang_cmd) consume_in

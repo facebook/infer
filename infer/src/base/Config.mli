@@ -137,7 +137,7 @@ val analysis_path_regex_blacklist : analyzer -> string list
 val analysis_blacklist_files_containing : analyzer -> string list
 val analysis_stops : bool
 val analysis_suppress_errors : analyzer -> string list
-val analyzer : analyzer option
+val analyzer : analyzer
 val angelic_execution : bool
 val array_level : int
 val ast_file : string option
