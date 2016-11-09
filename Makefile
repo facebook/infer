@@ -195,7 +195,7 @@ test:
 ifeq (,$(findstring s,$(MAKEFLAGS)))
 	@$(MAKE) run-test && echo "ALL TESTS PASSED"
 else
-	@$(MAKE) run-test || echo "SOME TEST FAILED"
+	@$(MAKE) run-test
 endif
 
 .PHONY: quick-test
