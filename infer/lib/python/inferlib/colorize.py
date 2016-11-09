@@ -66,7 +66,14 @@ def syntax_highlighting(source_name, mode, s):
         if not sys.stdout.isatty():
             return s
         formatter = pygments.formatters.TerminalFormatter()
-    return pygments.highlight(s, lexer, formatter)
+    # there's a bug in pygments.highlight() where it will remove all starting
+    # newline characters, so we have to add them back!
+    initial_newlines = ''
+    i = 0
+    while (i < len(s) and s[i] == '\n'):
+        initial_newlines += '\n'
+        i += 1
+    return initial_newlines + pygments.highlight(s, lexer, formatter)
 
 
 def color(s, color, mode):

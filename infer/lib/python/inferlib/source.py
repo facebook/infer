@@ -71,13 +71,18 @@ def build_source_context(source_name, mode, report_line):
                      encoding=config.CODESET, errors="replace") as source_file:
         # avoid going past the end of the file
         for line in source_file:
+            last_line = line_number
             if start_line <= line_number <= end_line:
                 excerpt += line
+            elif line_number > end_line:
+                # OPTIM: no need to read past the last line of the excerpt
+                break
             line_number += 1
     excerpt = colorize.syntax_highlighting(source_name, mode, excerpt)
 
+
     # number lines and add caret at the right position
-    n_length = len(str(end_line))
+    n_length = len(str(last_line))
     s = ''
     line_number = start_line
     for line in excerpt.split('\n'):
