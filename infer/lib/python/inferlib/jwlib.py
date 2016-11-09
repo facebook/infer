@@ -323,9 +323,6 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
             '-suppress_warnings_out', self.javac.suppress_warnings_out,
         ]
 
-        if os.path.isfile(config.MODELS_JAR):
-            infer_cmd += ['-models', config.MODELS_JAR]
-
         if self.args.debug:
             infer_cmd.append('-debug')
         if self.args.analyzer == config.ANALYZER_TRACING:

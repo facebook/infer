@@ -212,7 +212,6 @@ val makefile_cmdline : string
 val merge : bool
 val ml_buckets :
   [ `MLeak_all | `MLeak_arc | `MLeak_cf | `MLeak_cpp | `MLeak_no_arc | `MLeak_unknown ] list
-val models_file : string option
 val models_mode : bool
 val modified_targets : string option
 val monitor_prop_size : bool

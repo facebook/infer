@@ -80,17 +80,12 @@ let zip_libraries =
             (* fname is a dir of specs *)
             zip_libs in
         IList.fold_left add_zip [] Config.specs_library in
-    let add_models file =
-      (mk_zip_lib true file) :: zip_libs in
-    match Config.models_file with
-    | _ when Config.checkers ->
-        zip_libs
-    | Some file ->
-        add_models file
-    | None when Sys.file_exists Config.models_jar ->
-        add_models Config.models_jar
-    | None ->
-        zip_libs
+    if Config.checkers then
+      zip_libs
+    else if Sys.file_exists Config.models_jar then
+      (mk_zip_lib true Config.models_jar) :: zip_libs
+    else
+      zip_libs
   )
 
 (* Search path in the list of zip libraries and use a cache directory to save already

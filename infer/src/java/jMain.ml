@@ -15,15 +15,15 @@ open Javalib_pack
 module L = Logging
 
 let () =
-  match Config.models_file with
-  | None when Config.models_mode ->
+  match Config.models_mode, Sys.file_exists Config.models_jar with
+  | true, false ->
       ()
-  | None ->
+  | false, false ->
       failwith "Java model file is required"
-  | Some _ when Config.models_mode ->
-      failwith "Not expecting model file when analyzing the models";
-  | Some file ->
-      JClasspath.add_models file
+  | true, true ->
+      failwith "Not expecting model file when analyzing the models"
+  | false, true ->
+      JClasspath.add_models Config.models_jar
 
 
 let register_perf_stats_report source_file =

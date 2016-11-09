@@ -990,10 +990,6 @@ and ml_buckets =
      - 'cpp' from C++ code"
     ~symbols:ml_bucket_symbols
 
-and models_file =
-  CLOpt.mk_path_opt ~deprecated:["models"] ~long:"models"
-    ~exes:CLOpt.[Analyze;Java] ~meta:"jar file" "Specify a jar file containing the Java models"
-
 and models_mode =
   CLOpt.mk_bool ~deprecated:["models_mode"; "-models_mode"] ~long:"models-mode"
     "Mode for analyzing the models"
@@ -1452,7 +1448,6 @@ and load_analysis_results = !load_results
 and makefile_cmdline = !makefile
 and merge = !merge
 and ml_buckets = !ml_buckets
-and models_file = !models_file
 and models_mode = !models_mode
 and modified_targets = !modified_targets
 and monitor_prop_size = !monitor_prop_size
