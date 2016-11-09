@@ -91,8 +91,7 @@ let add_cmethod source_file program linereader icfg cm proc_name =
       let context =
         JContext.create_context icfg procdesc impl cn source_file program in
       let method_body_nodes = Array.mapi (JTrans.instruction context) instrs in
-      add_edges context start_node exn_node [exit_node] method_body_nodes impl false;
-      Cg.add_defined_node icfg.JContext.cg proc_name
+      add_edges context start_node exn_node [exit_node] method_body_nodes impl false
 
 
 let path_of_cached_classname cn =
@@ -142,15 +141,16 @@ let create_icfg source_file linereader program icfg cn node =
       try
         (* each procedure has different scope: start names from id 0 *)
         Ident.NameGenerator.reset ();
-        match m with
-        | Javalib.AbstractMethod am ->
-            ignore (JTrans.create_am_procdesc program icfg am proc_name);
-            (* TODO #4040807: investigate why we need to mark asbtract methods as defined *)
-            Cg.add_defined_node icfg.JContext.cg proc_name
-        | Javalib.ConcreteMethod cm when JTrans.is_java_native cm ->
-            ignore (JTrans.create_native_procdesc program icfg cm proc_name)
-        | Javalib.ConcreteMethod cm ->
-            add_cmethod source_file program linereader icfg cm proc_name
+        begin
+          match m with
+          | Javalib.AbstractMethod am ->
+              ignore (JTrans.create_am_procdesc program icfg am proc_name)
+          | Javalib.ConcreteMethod cm when JTrans.is_java_native cm ->
+              ignore (JTrans.create_native_procdesc program icfg cm proc_name)
+          | Javalib.ConcreteMethod cm ->
+              add_cmethod source_file program linereader icfg cm proc_name
+        end;
+        Cg.add_defined_node icfg.JContext.cg proc_name
       with JBasics.Class_structure_error _ ->
         L.do_err
           "create_icfg raised JBasics.Class_structure_error on %a@."
