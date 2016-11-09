@@ -151,8 +151,7 @@ INFER_BASE_TARGETS = \
   $(INFER_MAIN).native \
   $(INFERANALYZE_MAIN).native \
   $(INFERPRINT_MAIN).native \
-  $(INFERUNIT_MAIN).native \
-  $(CHECKCOPYRIGHT_MAIN).native
+  $(INFERUNIT_MAIN).native
 
 INFER_ALL_TARGETS = $(INFER_BASE_TARGETS) \
   $(INFERJAVA_MAIN).native \
@@ -182,7 +181,6 @@ infer: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(INFER_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERANALYZE_MAIN).native $(INFERANALYZE_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERPRINT_MAIN).native $(INFERPRINT_BIN)
-	$(COPY) $(INFER_BUILD_DIR)/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERUNIT_MAIN).native $(INFERUNIT_BIN)
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERJAVA_MAIN).native $(INFERJAVA_BIN)
@@ -281,6 +279,13 @@ toplevel: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDG
 	| awk 'BEGIN { FS = "/"; OFS = "/" } ; {$$NF=toupper(substr($$NF,1,1))substr($$NF,2); print $$0}' \
 	| grep -v $(roots_grep_regex) > toplevel.mlpack
 	$(OCAMLBUILD_ALL) -I stubs/ml -build-dir $(INFER_BUILD_DIR) toplevel.cmo
+
+.PHONY: checkCopyright
+checkCopyright: $(CHECKCOPYRIGHT_BIN)
+
+$(CHECKCOPYRIGHT_BIN): sanitize $(BUILD_DIR) $(CHECKCOPYRIGHT_MAIN).ml
+	rebuild -quiet -r -j $(NCPU) -build-dir $(INFER_BUILD_DIR) -pkgs core_extended,str -tag thread -use-ocamlfind $(CHECKCOPYRIGHT_MAIN).native
+	$(COPY) $(INFER_BUILD_DIR)/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BIN)
 
 define gen_atdgen_rules
 # generate files using atdgen

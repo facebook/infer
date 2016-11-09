@@ -186,8 +186,12 @@ inferScriptMode_test: toplevel
 	$(call silent_on_success,\
 	 INFER_REPL_BINARY=ocaml $(SCRIPT_DIR)/infer_repl $(INFER_DIR)/tests/repl/infer_batch_script.ml)
 
+.PHONY: checkCopyright
+checkCopyright:
+	$(MAKE) -C $(SRC_DIR) checkCopyright
+
 .PHONY: run-test
-run-test: test_build ocaml_unit_test buck_test inferTraceBugs_test inferScriptMode_test
+run-test: test_build ocaml_unit_test buck_test inferTraceBugs_test inferScriptMode_test checkCopyright
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot
 
 .PHONY: test

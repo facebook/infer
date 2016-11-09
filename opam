@@ -27,7 +27,7 @@ remove: [
 ocaml-version: [ >= "4.02.1" ]
 depends: [
   "atdgen" {>="1.6.0"}
-  "core" {>="113.33.03"}
+  "core_extended" {>="113.33.03"}
   "conf-autoconf"
   "extlib-compat" {>="1.5.4"}
   "javalib" {>="2.3.2"}
