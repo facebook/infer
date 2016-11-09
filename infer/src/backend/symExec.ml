@@ -574,16 +574,18 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
         else resolved_pname :: feasible_targets
       else
         begin
+          let resolved_target = do_resolve callee_pname receiver_exp actual_receiver_typ in
           match call_flags.CallFlags.cf_targets with
           | target :: _ when call_flags.CallFlags.cf_interface &&
-                             receiver_types_equal callee_pname actual_receiver_typ ->
+                             receiver_types_equal callee_pname actual_receiver_typ &&
+                             Procname.equal resolved_target callee_pname ->
               (* "production mode" of dynamic dispatch for Java: unsound, but faster. the handling
                  is restricted to interfaces: if we can't resolve an interface call, we pick the
                  first implementation of the interface and call it *)
               [target]
           | _ ->
               (* default mode for Java virtual calls: resolution only *)
-              [do_resolve callee_pname receiver_exp actual_receiver_typ]
+              [resolved_target]
         end
   | _ -> failwith "A virtual call must have a receiver"
 

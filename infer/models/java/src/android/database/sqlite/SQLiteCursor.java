@@ -14,7 +14,7 @@ import com.facebook.infer.builtins.InferBuiltins;
 import com.facebook.infer.builtins.InferUndefined;
 
 
-public class SQLiteCursor extends Cursor {
+public class SQLiteCursor implements Cursor {
 
     @Deprecated
     public SQLiteCursor(SQLiteDatabase db, SQLiteCursorDriver driver,

@@ -12,7 +12,7 @@ package android.database;
 import com.facebook.infer.builtins.InferUndefined;
 import com.facebook.infer.builtins.InferBuiltins;
 
-public class CursorWrapper extends Cursor {
+public class CursorWrapper implements Cursor {
   protected final Cursor mCursor;
 
   public CursorWrapper(Cursor cursor) {

@@ -34,6 +34,26 @@ public class CursorLeaks {
       }
   }
 
+  public Object cursorClosedCheckNull(SQLiteDatabase sqLiteDatabase) {
+    Cursor cursor = sqLiteDatabase.query(
+        "events", null,
+        null, null, null, null, null);
+    Object value = null;
+
+    try {
+      if (cursor == null) {
+        return null;
+      }
+
+      value = cursor.getString(0);
+    } finally {
+      if (cursor != null) {
+        cursor.close();
+      }
+    }
+    return value;
+  }
+
   public int cursorNotClosed(SQLiteDatabase sqLiteDatabase) {
     Cursor cursor = sqLiteDatabase.query(
         "events", null,
@@ -135,7 +155,7 @@ public class CursorLeaks {
 
   public int completeDownloadClosed(DownloadManager downloadManager) {
     DownloadManager.Query query = new DownloadManager.Query();
-    Cursor cursor = null;
+    Cursor cursor = (Cursor) null;
     try {
       cursor = downloadManager.query(query);
       if (cursor == null) {

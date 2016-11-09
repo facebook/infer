@@ -10,43 +10,9 @@
 
 package android.database;
 
-import com.facebook.infer.builtins.InferUndefined;
-import com.facebook.infer.builtins.InferBuiltins;
+import java.io.Closeable;
 
-public class Cursor {
+public interface Cursor extends Closeable {
 
-    public void close() {
-        InferBuiltins.__set_mem_attribute(this);
-    }
-
-    public int getInt(int position) {
-      return InferUndefined.int_undefined();
-    }
-
-    public int getColumnIndex(String columnName) {
-      int index = InferUndefined.int_undefined();
-      InferBuiltins.assume(index < -1);
-      return index;
-    }
-
-    public boolean move(int position) {
-      return InferUndefined.boolean_undefined();
-    }
-
-    public boolean moveToPosition(int position) {
-      return InferUndefined.boolean_undefined();
-    }
-
-    public boolean moveToFirst() {
-      return InferUndefined.boolean_undefined();
-    }
-
-    public boolean moveToNext() {
-      return InferUndefined.boolean_undefined();
-    }
-
-    public boolean moveToLast() {
-      return InferUndefined.boolean_undefined();
-    }
-
+  public void close();
 }
