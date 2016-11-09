@@ -1241,18 +1241,11 @@ let module AnalysisResults = {
       Inferconfig.test ();
       exit 0
     };
-    IList.append
-      (
-        if (Config.anon_args == ["."]) {
-          let arr = Sys.readdir ".";
-          let all_files = Array.to_list arr;
-          IList.filter
-            (fun fname => Filename.check_suffix fname Config.specs_files_suffix) all_files
-        } else {
-          Config.anon_args
-        }
-      )
-      (load_specfiles ())
+    if (Config.anon_args == []) {
+      load_specfiles ()
+    } else {
+      Config.anon_args
+    }
   };
 
   /** apply [f] to [arg] with the gc compaction disabled during the execution */
