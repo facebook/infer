@@ -186,9 +186,17 @@ inferScriptMode_test: toplevel
 	$(call silent_on_success,\
 	 INFER_REPL_BINARY=ocaml $(SCRIPT_DIR)/infer_repl $(INFER_DIR)/tests/repl/infer_batch_script.ml)
 
-.PHONY: test
-test: test_build ocaml_unit_test buck_test inferTraceBugs_test inferScriptMode_test
+.PHONY: run-test
+run-test: test_build ocaml_unit_test buck_test inferTraceBugs_test inferScriptMode_test
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot
+
+.PHONY: test
+test:
+ifeq (,$(findstring s,$(MAKEFLAGS)))
+	@$(MAKE) run-test && echo "ALL TESTS PASSED"
+else
+	@$(MAKE) run-test || echo "SOME TEST FAILED"
+endif
 
 .PHONY: quick-test
 quick-test: test_this_build ocaml_unit_test
