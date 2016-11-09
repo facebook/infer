@@ -199,6 +199,8 @@ test-replace:
 	    mv -f $$file $$(dirname $$file)/$$(basename -s .exp.test $$file).exp; done
 	@for file in $$(find $(INFER_DIR)/tests -name "*.test.dot"); do \
 	    mv -f $$file $$(dirname $$file)/$$(basename -s .test.dot $$file).dot; done
+	INFER_RECORD_INTEGRATION_TESTS=1 NO_BUCKD=1 \
+	  $(INFER_DIR)/tests/build_systems/build_integration_tests.py
 
 .PHONY: uninstall
 uninstall:
