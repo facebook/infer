@@ -24,7 +24,7 @@ module ST : sig
   val report_error:
     Tenv.t ->
     Procname.t ->
-    Cfg.Procdesc.t ->
+    Procdesc.t ->
     string ->
     Location.t ->
     ?advice: string option ->

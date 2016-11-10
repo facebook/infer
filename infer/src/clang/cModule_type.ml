@@ -26,7 +26,7 @@ sig
       added before clang statements and the exit node and it returns a list of cfg nodes that
       represent the translation of the stmts into sil. *)
   val instructions_trans : CContext.t -> Clang_ast_t.stmt -> instr_type list ->
-    Cfg.Node.t -> Cfg.Node.t list
+    Procdesc.Node.t -> Procdesc.Node.t list
 end
 
 module type CFrontend = sig

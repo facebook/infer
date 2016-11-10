@@ -36,10 +36,10 @@ val get_this_type : ProcAttributes.t -> Typ.t option
 val get_type_name : Typ.t -> string
 
 (** Get the type names of a variable argument *)
-val get_vararg_type_names : Tenv.t -> Cfg.Node.t -> Pvar.t -> string list
+val get_vararg_type_names : Tenv.t -> Procdesc.Node.t -> Pvar.t -> string list
 
 val has_formal_method_argument_type_names :
-  Cfg.Procdesc.t -> Procname.java -> string list -> bool
+  Procdesc.t -> Procname.java -> string list -> bool
 
 (** Check if the method is one of the known initializer methods. *)
 val method_is_initializer : Tenv.t -> ProcAttributes.t -> bool
@@ -66,14 +66,14 @@ val supertype_exists : Tenv.t -> (Typename.t -> StructTyp.t -> bool) -> Typename
 val java_get_const_type_name : Const.t -> string
 
 (** Get the values of a vararg parameter given the pvar used to assign the elements. *)
-val java_get_vararg_values : Cfg.Node.t -> Pvar.t -> Idenv.t -> Exp.t list
+val java_get_vararg_values : Procdesc.Node.t -> Pvar.t -> Idenv.t -> Exp.t list
 
 val java_proc_name_with_class_method : Procname.java -> string -> string -> bool
 
 (** Return the callees that satisfy [filter]. *)
 val proc_calls :
   (Procname.t -> ProcAttributes.t option) ->
-  Cfg.Procdesc.t ->
+  Procdesc.t ->
   (Procname.t -> ProcAttributes.t -> bool) ->
   (Procname.t * ProcAttributes.t) list
 
@@ -99,7 +99,7 @@ val type_is_nested_in_direct_supertype : Tenv.t -> Typ.t -> Typename.t -> bool
 val type_is_object : Typ.t -> bool
 
 (** return the set of instance fields that are assigned to a null literal in [procdesc] *)
-val get_fields_nullified : Cfg.Procdesc.t -> Ident.FieldSet.t
+val get_fields_nullified : Procdesc.t -> Ident.FieldSet.t
 
 (** [is_exception tenv class_name] checks if class_name is of type java.lang.Exception *)
 val is_exception : Tenv.t -> Typename.t -> bool

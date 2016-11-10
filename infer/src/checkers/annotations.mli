@@ -101,7 +101,7 @@ val ia_iter : (Annot.t -> unit) -> Annot.Item.t -> unit
 
 val ma_has_annotation_with : Annot.Method.t -> (Annot.t -> bool) -> bool
 
-val pdesc_has_annot : Cfg.Procdesc.t -> string -> bool
+val pdesc_has_annot : Procdesc.t -> string -> bool
 
 (** Mark the return of the method_annotation with the given annotation. *)
 val method_annotation_mark_return :

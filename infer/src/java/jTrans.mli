@@ -16,15 +16,15 @@ open Sawja_pack
 (** Data structure for storing the results of the translation of an instruction.   *)
 type translation =
   | Skip
-  | Instr of Cfg.Node.t
-  | Prune of Cfg.Node.t * Cfg.Node.t
-  | Loop of Cfg.Node.t * Cfg.Node.t * Cfg.Node.t
+  | Instr of Procdesc.Node.t
+  | Prune of Procdesc.Node.t * Procdesc.Node.t
+  | Loop of Procdesc.Node.t * Procdesc.Node.t * Procdesc.Node.t
 
 val is_java_native : JCode.jcode Javalib.concrete_method  -> bool
 
 (** Create the procedure description for an abstract method *)
 val create_am_procdesc :
-  JClasspath.program -> JContext.icfg -> Javalib.abstract_method -> Procname.t -> Cfg.Procdesc.t
+  JClasspath.program -> JContext.icfg -> Javalib.abstract_method -> Procname.t -> Procdesc.t
 
 (** Create the procedure description for a concrete method *)
 val create_native_procdesc :
@@ -32,7 +32,7 @@ val create_native_procdesc :
   JContext.icfg ->
   JCode.jcode Javalib.concrete_method ->
   Procname.t ->
-  Cfg.Procdesc.t
+  Procdesc.t
 
 (** [create_procdesc source_file program linereader icfg cm proc_name] creates
     a procedure description for the concrete method cm and adds it to cfg *)
@@ -43,7 +43,7 @@ val create_cm_procdesc :
   JContext.icfg ->
   JCode.jcode Javalib.concrete_method ->
   Procname.t ->
-  (Cfg.Procdesc.t * JBir.t) option
+  (Procdesc.t * JBir.t) option
 
 (** translates an instruction into a statement node or prune nodes in the cfg *)
 val instruction : JContext.t -> int -> JBir.instr -> translation

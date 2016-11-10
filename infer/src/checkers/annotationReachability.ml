@@ -323,7 +323,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       when is_unlikely callee_pname ->
         Domain.add_tracking_var (Var.of_id id) astate
     | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
-        let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
+        let caller_pname = Procdesc.get_proc_name pdesc in
         let call_site = CallSite.make callee_pname call_loc in
         begin
           (* Runs the analysis of callee_pname if not already analyzed *)
@@ -368,7 +368,7 @@ module Interprocedural = struct
     is_modeled_expensive tenv pname || is_expensive tenv pname
 
   let check_and_report ({ Callbacks.proc_desc; proc_name; tenv; } as proc_data) =
-    let loc = Cfg.Procdesc.get_loc proc_desc in
+    let loc = Procdesc.get_loc proc_desc in
     let expensive = is_expensive tenv proc_name in
     (* TODO: generalize so we can check subtyping on arbitrary annotations *)
     let check_expensive_subtyping_rules overridden_pname =

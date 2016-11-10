@@ -17,7 +17,7 @@ open! Utils
 val vpath_find : Tenv.t -> 'a Prop.t -> Exp.t -> DecompiledExp.vpath * Typ.t option
 
 (** Return true if [id] is assigned to a program variable which is then nullified *)
-val id_is_assigned_then_dead : Cfg.Node.t -> Ident.t -> bool
+val id_is_assigned_then_dead : Procdesc.Node.t -> Ident.t -> bool
 
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
 val hpred_is_open_resource : Tenv.t -> 'a Prop.t -> Sil.hpred -> PredSymb.resource option
@@ -25,20 +25,21 @@ val hpred_is_open_resource : Tenv.t -> 'a Prop.t -> Sil.hpred -> PredSymb.resour
 (** Find the function call instruction used to initialize normal variable [id],
     and return the function name and arguments *)
 val find_normal_variable_funcall :
-  Cfg.Node.t -> Ident.t -> (Exp.t * (Exp.t list) * Location.t * CallFlags.t) option
+  Procdesc.Node.t -> Ident.t -> (Exp.t * (Exp.t list) * Location.t * CallFlags.t) option
 
 (** Find a program variable assignment in the current node or straightline predecessor. *)
-val find_program_variable_assignment : Cfg.Node.t -> Pvar.t -> (Cfg.Node.t * Ident.t) option
+val find_program_variable_assignment :
+  Procdesc.Node.t -> Pvar.t -> (Procdesc.Node.t * Ident.t) option
 
 (** Find a program variable assignment to id in the current node or predecessors. *)
-val find_ident_assignment : Cfg.Node.t -> Ident.t -> (Cfg.Node.t * Exp.t) option
+val find_ident_assignment : Procdesc.Node.t -> Ident.t -> (Procdesc.Node.t * Exp.t) option
 
 (** Find a boolean assignment to a temporary variable holding a boolean condition.
     The boolean parameter indicates whether the true or false branch is required. *)
-val find_boolean_assignment : Cfg.Node.t -> Pvar.t -> bool -> Cfg.Node.t option
+val find_boolean_assignment : Procdesc.Node.t -> Pvar.t -> bool -> Procdesc.Node.t option
 
 (** describe rvalue [e] as a dexp *)
-val exp_rv_dexp : Tenv.t -> Cfg.Node.t -> Exp.t -> DecompiledExp.t option
+val exp_rv_dexp : Tenv.t -> Procdesc.Node.t -> Exp.t -> DecompiledExp.t option
 
 (** Produce a description of a persistent reference to an Android Context *)
 val explain_context_leak : Procname.t -> Typ.t -> Ident.fieldname ->
@@ -54,7 +55,7 @@ val explain_array_access : Tenv.t -> Localise.deref_str -> 'a Prop.t -> Location
 (** explain a class cast exception *)
 val explain_class_cast_exception :
   Tenv.t -> Procname.t option -> Exp.t -> Exp.t -> Exp.t ->
-  Cfg.Node.t -> Location.t -> Localise.error_desc
+  Procdesc.Node.t -> Location.t -> Localise.error_desc
 
 (** Explain a deallocate stack variable error *)
 val explain_deallocate_stack_var : Pvar.t -> PredSymb.res_action -> Localise.error_desc
@@ -72,10 +73,10 @@ val explain_dereference :
 val explain_dereference_as_caller_expression :
   Tenv.t -> ?use_buckets:bool ->
   Localise.deref_str -> 'a Prop.t -> 'b Prop.t -> Exp.t ->
-  Cfg.Node.t -> Location.t -> Pvar.t list -> Localise.error_desc
+  Procdesc.Node.t -> Location.t -> Pvar.t list -> Localise.error_desc
 
 (** explain a division by zero *)
-val explain_divide_by_zero : Tenv.t -> Exp.t -> Cfg.Node.t -> Location.t -> Localise.error_desc
+val explain_divide_by_zero : Tenv.t -> Exp.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
 
 (** explain a return expression required *)
 val explain_return_expression_required : Location.t -> Typ.t -> Localise.error_desc
@@ -88,7 +89,7 @@ val explain_condition_is_assignment : Location.t -> Localise.error_desc
 
 (** explain a condition which is always true or false *)
 val explain_condition_always_true_false :
-  Tenv.t -> IntLit.t -> Exp.t -> Cfg.Node.t -> Location.t -> Localise.error_desc
+  Tenv.t -> IntLit.t -> Exp.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
 
 (** explain the escape of a stack variable address from its scope *)
 val explain_stack_variable_address_escape :
@@ -107,7 +108,7 @@ val explain_retain_cycle :
 
 (** explain unary minus applied to unsigned expression *)
 val explain_unary_minus_applied_to_unsigned_expression :
-  Tenv.t -> Exp.t -> Typ.t -> Cfg.Node.t -> Location.t -> Localise.error_desc
+  Tenv.t -> Exp.t -> Typ.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
 
 (** Explain a tainted value error *)
 val explain_tainted_value_reaching_sensitive_function :
@@ -127,7 +128,7 @@ val explain_memory_access : Tenv.t -> Localise.deref_str -> 'a Prop.t -> Locatio
 
 (** explain a test for NULL of a dereferenced pointer *)
 val explain_null_test_after_dereference :
-  Tenv.t -> Exp.t -> Cfg.Node.t -> int -> Location.t -> Localise.error_desc
+  Tenv.t -> Exp.t -> Procdesc.Node.t -> int -> Location.t -> Localise.error_desc
 
 (** Print a warning to the err stream at the given location (note: only prints in developer mode) *)
 val warning_err : Location.t -> ('a, Format.formatter, unit) format -> 'a

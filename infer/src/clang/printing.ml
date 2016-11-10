@@ -57,14 +57,14 @@ let print_procedures cfg =
   let procs = Cfg.get_all_procs cfg in
   Logging.do_out "%s"
     (IList.to_string (fun pdesc ->
-         let pname = Cfg.Procdesc.get_proc_name pdesc in
+         let pname = Procdesc.get_proc_name pdesc in
          "name> "^
          (Procname.to_string pname) ^
-         " defined? " ^ (string_of_bool (Cfg.Procdesc.is_defined pdesc)) ^ "\n")
+         " defined? " ^ (string_of_bool (Procdesc.is_defined pdesc)) ^ "\n")
         procs)
 
 let print_nodes nodes =
-  IList.iter (fun node -> Logging.do_out "%s" (Cfg.Node.get_description pe_text node)) nodes
+  IList.iter (fun node -> Logging.do_out "%s" (Procdesc.Node.get_description pe_text node)) nodes
 
 let instrs_to_string instrs =
   let pp fmt () = Format.fprintf fmt "%a" (Sil.pp_instr_list pe_text) instrs in

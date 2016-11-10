@@ -13,7 +13,7 @@ sig
   val initial : astate
   val exec_instr :
     astate ->
-    Sil.instr -> Cfg.Node.nodekind -> Procname.t -> Tenv.t -> astate
+    Sil.instr -> Procdesc.Node.nodekind -> Procname.t -> Tenv.t -> astate
   val report : astate -> Location.t -> Procname.t -> unit
   val compare : astate -> astate -> int
 end

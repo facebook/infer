@@ -15,7 +15,7 @@ open! Utils
 module L = Logging
 module F = Format
 
-type const_map = Cfg.Node.t -> Exp.t -> Const.t option
+type const_map = Procdesc.Node.t -> Exp.t -> Const.t option
 
 (** failure statistics for symbolic execution on a given node *)
 type failure_stats = {
@@ -28,7 +28,7 @@ type failure_stats = {
     (* exception at the first failure *)
 }
 
-module NodeHash = Cfg.NodeHash
+module NodeHash = Procdesc.NodeHash
 
 type t = {
   mutable const_map : const_map;
@@ -43,13 +43,13 @@ type t = {
   mutable last_instr : Sil.instr option;
   (** Last instruction seen *)
 
-  mutable last_node : Cfg.Node.t;
+  mutable last_node : Procdesc.Node.t;
   (** Last node seen *)
 
   mutable last_path : (Paths.Path.t * (PredSymb.path_pos option)) option;
   (** Last path seen *)
 
-  mutable last_prop_tenv_pdesc : (Prop.normal Prop.t * Tenv.t * Cfg.Procdesc.t) option;
+  mutable last_prop_tenv_pdesc : (Prop.normal Prop.t * Tenv.t * Procdesc.t) option;
   (** Last prop,tenv,pdesc seen *)
 
   mutable last_session : int;
@@ -64,7 +64,7 @@ let initial () = {
   diverging_states_node = Paths.PathSet.empty;
   diverging_states_proc = Paths.PathSet.empty;
   last_instr = None;
-  last_node = Cfg.Node.dummy ();
+  last_node = Procdesc.Node.dummy ();
   last_path = None;
   last_prop_tenv_pdesc = None;
   last_session = 0;
@@ -112,7 +112,7 @@ let get_instr () =
 
 let get_loc () = match !gs.last_instr with
   | Some instr -> Sil.instr_get_loc instr
-  | None -> Cfg.Node.get_loc !gs.last_node
+  | None -> Procdesc.Node.get_loc !gs.last_node
 
 let get_node () =
   !gs.last_node
@@ -133,13 +133,13 @@ let node_simple_key node =
       | Sil.Abstract _ -> add_key 6
       | Sil.Remove_temps _ -> add_key 7
       | Sil.Declare_locals _ -> add_key 8 in
-  IList.iter do_instr (Cfg.Node.get_instrs node);
+  IList.iter do_instr (Procdesc.Node.get_instrs node);
   Hashtbl.hash !key
 
 (** key for a node: look at the current node, successors and predecessors *)
 let node_key node =
-  let succs = Cfg.Node.get_succs node in
-  let preds = Cfg.Node.get_preds node in
+  let succs = Procdesc.Node.get_succs node in
+  let preds = Procdesc.Node.get_preds node in
   let v = (node_simple_key node, IList.map node_simple_key succs, IList.map node_simple_key preds) in
   Hashtbl.hash v
 
@@ -161,25 +161,25 @@ let instrs_normalize instrs =
 (** Create a function to find duplicate nodes.
     A node is a duplicate of another one if they have the same kind and location
     and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
-let mk_find_duplicate_nodes proc_desc : (Cfg.Node.t -> Cfg.NodeSet.t) =
+let mk_find_duplicate_nodes proc_desc : (Procdesc.Node.t -> Procdesc.NodeSet.t) =
   let module M = (* map from (loc,kind) *)
     Map.Make(struct
-      type t = Location.t * Cfg.Node.nodekind
+      type t = Location.t * Procdesc.Node.nodekind
       let compare (loc1, k1) (loc2, k2) =
         let n = Location.compare loc1 loc2 in
-        if n <> 0 then n else Cfg.Node.kind_compare k1 k2
+        if n <> 0 then n else Procdesc.Node.kind_compare k1 k2
     end) in
 
   let module S = (* set of nodes with normalized insructions *)
     Set.Make(struct
-      type t = Cfg.Node.t * Sil.instr list
+      type t = Procdesc.Node.t * Sil.instr list
       let compare (n1, _) (n2, _) =
-        Cfg.Node.compare n1 n2
+        Procdesc.Node.compare n1 n2
     end) in
 
   let get_key node = (* map key *)
-    let loc = Cfg.Node.get_loc node in
-    let kind = Cfg.Node.get_kind node in
+    let loc = Procdesc.Node.get_loc node in
+    let kind = Procdesc.Node.get_kind node in
     (loc, kind) in
 
   let map =
@@ -192,14 +192,14 @@ let mk_find_duplicate_nodes proc_desc : (Cfg.Node.t -> Cfg.NodeSet.t) =
     end in
 
     let do_node node =
-      let normalized_instrs = instrs_normalize (Cfg.Node.get_instrs node) in
+      let normalized_instrs = instrs_normalize (Procdesc.Node.get_instrs node) in
       let key = get_key node in
       let s = try M.find key !m with Not_found -> S.empty in
       if S.cardinal s > E.threshold then raise E.Threshold;
       let s' = S.add (node, normalized_instrs) s in
       m := M.add key s' !m in
 
-    let nodes = Cfg.Procdesc.get_nodes proc_desc in
+    let nodes = Procdesc.get_nodes proc_desc in
     try
       IList.iter do_node nodes;
       !m
@@ -211,7 +211,7 @@ let mk_find_duplicate_nodes proc_desc : (Cfg.Node.t -> Cfg.NodeSet.t) =
       let s = M.find (get_key node) map in
       let elements = S.elements s in
       let (_, node_normalized_instrs), _ =
-        let filter (node', _) = Cfg.Node.equal node node' in
+        let filter (node', _) = Procdesc.Node.equal node node' in
         match IList.partition filter elements with
         | [this], others -> this, others
         | _ -> raise Not_found in
@@ -220,17 +220,17 @@ let mk_find_duplicate_nodes proc_desc : (Cfg.Node.t -> Cfg.NodeSet.t) =
           IList.compare Sil.instr_compare node_normalized_instrs normalized_instrs' = 0 in
         IList.filter equal_normalized_instrs elements in
       IList.fold_left
-        (fun nset (node', _) -> Cfg.NodeSet.add node' nset)
-        Cfg.NodeSet.empty duplicates
-    with Not_found -> Cfg.NodeSet.singleton node in
+        (fun nset (node', _) -> Procdesc.NodeSet.add node' nset)
+        Procdesc.NodeSet.empty duplicates
+    with Not_found -> Procdesc.NodeSet.singleton node in
 
   find_duplicate_nodes
 
 let get_node_id () =
-  Cfg.Node.get_id !gs.last_node
+  Procdesc.Node.get_id !gs.last_node
 
 let get_node_id_key () =
-  (Cfg.Node.get_id !gs.last_node, node_key !gs.last_node)
+  (Procdesc.Node.get_id !gs.last_node, node_key !gs.last_node)
 
 let get_inst_update pos =
   let loc = get_loc () in
@@ -274,7 +274,7 @@ let get_session () =
 
 let get_path_pos () =
   let pname = match get_prop_tenv_pdesc () with
-    | Some (_, _, pdesc) -> Cfg.Procdesc.get_proc_name pdesc
+    | Some (_, _, pdesc) -> Procdesc.get_proc_name pdesc
     | None -> Procname.from_string_c_fun "unknown_procedure" in
   let nid = get_node_id () in
   (pname, (nid :> int))
@@ -317,7 +317,7 @@ type log_issue =
 
 let process_execution_failures (log_issue : log_issue) pname =
   let do_failure _ fs =
-    (* L.err "Node:%a node_ok:%d node_fail:%d@." Cfg.Node.pp node fs.node_ok fs.node_fail; *)
+    (* L.err "Node:%a node_ok:%d node_fail:%d@." Procdesc.Node.pp node fs.node_ok fs.node_fail; *)
     match fs.node_ok, fs.first_failure with
     | 0, Some (loc, key, _, loc_trace, exn) ->
         let ex_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
@@ -336,7 +336,7 @@ let set_path path pos_opt =
 let set_prop_tenv_pdesc prop tenv pdesc =
   !gs.last_prop_tenv_pdesc <- Some (prop, tenv, pdesc)
 
-let set_node (node: Cfg.Node.t) =
+let set_node (node: Procdesc.Node.t) =
   !gs.last_instr <- None;
   !gs.last_node <- node
 

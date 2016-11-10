@@ -13,7 +13,7 @@ open! Utils
 open Javalib_pack
 open Sawja_pack
 
-module NodeTbl = Cfg.NodeHash
+module NodeTbl = Procdesc.NodeHash
 
 type jump_kind =
   | Next
@@ -29,7 +29,7 @@ type icfg = {
 
 type t =
   { icfg : icfg;
-    procdesc : Cfg.Procdesc.t;
+    procdesc : Procdesc.t;
     impl : JBir.t;
     mutable var_map : (Pvar.t * Typ.t * Typ.t) JBir.VarMap.t;
     if_jumps : int NodeTbl.t;
@@ -67,7 +67,7 @@ let get_or_set_pvar_type context var typ =
     else set_var_map context (JBir.VarMap.add var (pvar, typ, typ) var_map);
     (pvar, typ)
   with Not_found ->
-    let procname = (Cfg.Procdesc.get_proc_name context.procdesc) in
+    let procname = (Procdesc.get_proc_name context.procdesc) in
     let varname = Mangled.from_string (JBir.var_name_g var) in
     let pvar = Pvar.mk varname procname in
     set_var_map context (JBir.VarMap.add var (pvar, typ, typ) var_map);
@@ -119,10 +119,10 @@ let exn_node_table = Procname.Hash.create 100
 let reset_exn_node_table () =
   Procname.Hash.clear exn_node_table
 
-let add_exn_node procname (exn_node : Cfg.Node.t) =
+let add_exn_node procname (exn_node : Procdesc.Node.t) =
   Procname.Hash.add exn_node_table procname exn_node
 
 let get_exn_node procdesc =
   try
-    Some (Procname.Hash.find exn_node_table (Cfg.Procdesc.get_proc_name procdesc))
+    Some (Procname.Hash.find exn_node_table (Procdesc.get_proc_name procdesc))
   with Not_found -> None

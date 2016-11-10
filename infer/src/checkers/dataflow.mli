@@ -26,7 +26,7 @@ module type DFStateType = sig
   val join : t -> t -> t
 
   (** Perform a state transition on a node. *)
-  val do_node : Tenv.t -> Cfg.Node.t -> t -> (t list) * (t list)
+  val do_node : Tenv.t -> Procdesc.Node.t -> t -> (t list) * (t list)
 
   (** Can proc throw an exception? *)
   val proc_throws : Procname.t -> throws
@@ -43,7 +43,7 @@ module type DF = sig
 
   (** Run the dataflow analysis on a procedure starting from the given state.
       Returns a function to lookup the results of the analysis on every node *)
-  val run : Tenv.t -> Cfg.Procdesc.t -> state -> (Cfg.Node.t -> transition)
+  val run : Tenv.t -> Procdesc.t -> state -> (Procdesc.Node.t -> transition)
 end
 
 (** Functor to create an instance of a dataflow analysis. *)

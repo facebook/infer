@@ -113,17 +113,17 @@ module ConstantFlow = Dataflow.MakeDF(struct
 
       if verbose then
         begin
-          L.stdout "Node %i:" (Cfg.Node.get_id node :> int);
+          L.stdout "Node %i:" (Procdesc.Node.get_id node :> int);
           L.stdout "%a" pp constants;
           IList.iter
             (fun instr -> L.stdout "%a@." (Sil.pp_instr pe_text) instr)
-            (Cfg.Node.get_instrs node)
+            (Procdesc.Node.get_instrs node)
         end;
       let constants =
         IList.fold_left
           do_instr
           constants
-          (Cfg.Node.get_instrs node) in
+          (Procdesc.Node.get_instrs node) in
       if verbose then L.stdout "%a\n@." pp constants;
       [constants], [constants]
   end)
@@ -136,7 +136,7 @@ let run tenv proc_desc =
     | ConstantFlow.Dead_state -> ConstantMap.empty in
   get_constants
 
-type const_map = Cfg.Node.t -> Exp.t -> Const.t option
+type const_map = Procdesc.Node.t -> Exp.t -> Const.t option
 
 (** Build a const map lazily. *)
 let build_const_map tenv pdesc =

@@ -13,4 +13,6 @@ open! Utils
 open Sawja_pack
 
 
-val create_exception_handlers : JContext.t -> Cfg.Node.t list -> (int -> Cfg.Node.t list) -> JBir.t -> int -> Cfg.Node.t list
+val create_exception_handlers :
+  JContext.t -> Procdesc.Node.t list -> (int -> Procdesc.Node.t list) ->
+  JBir.t -> int -> Procdesc.Node.t list

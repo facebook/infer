@@ -673,7 +673,7 @@ let combine tenv
     ret_id (posts: ('a Prop.t * Paths.Path.t) list)
     actual_pre path_pre split
     caller_pdesc callee_pname loc =
-  let caller_pname = Cfg.Procdesc.get_proc_name caller_pdesc in
+  let caller_pname = Procdesc.get_proc_name caller_pdesc in
   let instantiated_post =
     let posts' =
       if !Config.footprint && posts = []
@@ -1008,7 +1008,7 @@ let check_uninitialize_dangling_deref tenv callee_pname actual_pre sub formal_pa
 let exe_spec
     tenv ret_id (n, nspecs) caller_pdesc callee_pname  callee_attrs loc prop path_pre
     (spec : Prop.exposed Specs.spec) actual_params formal_params : abduction_res =
-  let caller_pname = Cfg.Procdesc.get_proc_name caller_pdesc in
+  let caller_pname = Procdesc.get_proc_name caller_pdesc in
   let posts = mk_posts tenv ret_id prop callee_pname callee_attrs spec.Specs.posts in
   let actual_pre = mk_actual_precondition tenv prop actual_params formal_params in
   let spec_pre =
@@ -1272,7 +1272,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
 (** Execute the function call and return the list of results with return value *)
 let exe_function_call
     callee_attrs tenv ret_id caller_pdesc callee_pname loc actual_params prop path =
-  let caller_pname = Cfg.Procdesc.get_proc_name caller_pdesc in
+  let caller_pname = Procdesc.get_proc_name caller_pdesc in
   let trace_call res =
     match Specs.get_summary caller_pname with
     | None -> ()

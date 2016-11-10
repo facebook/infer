@@ -48,7 +48,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       let sink_of_global global pname loc =
         let site = CallSite.make pname loc in
         SiofTrace.Sink.make global site in
-      let pname = Cfg.Procdesc.get_proc_name pdesc in
+      let pname = Procdesc.get_proc_name pdesc in
       let trace = match astate with
         | Domain.Bottom -> SiofTrace.initial
         | Domain.NonBottom t -> t in
@@ -134,7 +134,7 @@ let report_siof trace pdesc tenv loc =
          unit: %a. %a"
         pp_sink final_sink
         pp_path_part (IList.rev path) in
-    let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
+    let caller_pname = Procdesc.get_proc_name pdesc in
     let exn = Exceptions.Checkers
         ("STATIC_INITIALIZATION_ORDER_FIASCO", Localise.verbatim_desc description) in
     Reporting.log_error caller_pname ~loc exn in
@@ -143,7 +143,7 @@ let report_siof trace pdesc tenv loc =
 
 let siof_check pdesc tenv = function
   | Some (SiofDomain.NonBottom post) ->
-      let attrs = Cfg.Procdesc.get_attributes pdesc in
+      let attrs = Procdesc.get_attributes pdesc in
       let is_orig_file f = match attrs.ProcAttributes.translation_unit with
         | Some orig_file ->
             let orig_path = DB.source_file_to_abs_path orig_file in
@@ -162,7 +162,7 @@ let siof_check pdesc tenv = function
 
 let checker ({ Callbacks.tenv; proc_desc } as callback) =
   let post = Interprocedural.checker callback ProcData.empty_extras in
-  let pname = Cfg.Procdesc.get_proc_name proc_desc in
+  let pname = Procdesc.get_proc_name proc_desc in
   match pname with
   | Procname.C c when Procname.is_globals_initializer c ->
       siof_check proc_desc tenv post

@@ -25,7 +25,7 @@ module type S = sig
   val write_summary : Procname.t -> summary -> unit
   (* read and return the summary for [callee_pname] called from [caller_pdesc]. does the analysis to
      create the summary if needed *)
-  val read_summary : Tenv.t -> Cfg.Procdesc.t -> Procname.t -> summary option
+  val read_summary : Tenv.t -> Procdesc.t -> Procname.t -> summary option
 end
 
 module Make (H : Helper) = struct

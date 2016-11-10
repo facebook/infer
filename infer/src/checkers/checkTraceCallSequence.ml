@@ -220,7 +220,7 @@ module Automaton = struct
     if not (State.is_balanced s) then
       begin
         let description = Printf.sprintf "%d missing end/stop" (Elem.get_int (State.max s)) in
-        let loc = Cfg.Node.get_loc exit_node in
+        let loc = Procdesc.Node.get_loc exit_node in
         report_warning tenv description pn pd loc
       end
 
@@ -303,7 +303,7 @@ end
 
 (** State transformation for a cfg node. *)
 let do_node tenv pn pd idenv _ node (s : State.t) : (State.t list) * (State.t list) =
-  if verbose then L.stderr "N:%d S:%s@." (Cfg.Node.get_id node :> int) (State.to_string s);
+  if verbose then L.stderr "N:%d S:%s@." (Procdesc.Node.get_id node :> int) (State.to_string s);
 
   let curr_state = ref s in
 
@@ -312,7 +312,7 @@ let do_node tenv pn pd idenv _ node (s : State.t) : (State.t list) * (State.t li
     let state2 = BooleanVars.do_instr pn pd idenv instr state1 in
     curr_state := state2 in
 
-  IList.iter do_instr (Cfg.Node.get_instrs node);
+  IList.iter do_instr (Procdesc.Node.get_instrs node);
   [!curr_state], [!curr_state]
 
 (** Check the final state at the end of the analysis. *)
@@ -340,7 +340,7 @@ let callback_check_trace_call_sequence { Callbacks.proc_desc; proc_name; idenv; 
     begin
       if verbose then L.stderr "@.--@.PROC: %a@." Procname.pp proc_name;
       let transitions = DFTrace.run tenv proc_desc State.balanced in
-      let exit_node = Cfg.Procdesc.get_exit_node proc_desc in
+      let exit_node = Procdesc.get_exit_node proc_desc in
       match transitions exit_node with
       | DFTrace.Transition (final_s, _, _) ->
           check_final_state tenv proc_name proc_desc exit_node final_s

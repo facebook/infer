@@ -17,12 +17,12 @@ module type InstrRefT =
 sig
   type t
   type generator
-  val create_generator : Cfg.Node.t -> generator
+  val create_generator : Procdesc.Node.t -> generator
   val equal : t -> t -> bool
   val gen : generator -> t
-  val get_node : t -> Cfg.Node.t
+  val get_node : t -> Procdesc.Node.t
   val hash : t -> int
-  val replace_node : t -> Cfg.Node.t -> t
+  val replace_node : t -> Procdesc.Node.t -> t
 end (* InstrRefT *)
 
 module InstrRef : InstrRefT
@@ -64,11 +64,11 @@ type err_instance =
   | Return_over_annotated of Procname.t
 
 
-val node_reset_forall : Cfg.Node.t -> unit
+val node_reset_forall : Procdesc.Node.t -> unit
 
 type st_report_error =
   Procname.t ->
-  Cfg.Procdesc.t ->
+  Procdesc.t ->
   string ->
   Location.t ->
   ?advice: string option ->
@@ -81,10 +81,10 @@ type st_report_error =
 
 val report_error :
   Tenv.t -> st_report_error ->
-  (Cfg.Node.t -> Cfg.Node.t) ->
+  (Procdesc.Node.t -> Procdesc.Node.t) ->
   err_instance -> InstrRef.t option -> Location.t ->
-  Cfg.Procdesc.t -> unit
+  Procdesc.t -> unit
 
-val report_forall_checks_and_reset : Tenv.t -> st_report_error -> Cfg.Procdesc.t -> unit
+val report_forall_checks_and_reset : Tenv.t -> st_report_error -> Procdesc.t -> unit
 
 val reset : unit -> unit

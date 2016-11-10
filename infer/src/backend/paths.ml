@@ -36,7 +36,7 @@ module Path : sig
   val create_loc_trace : t -> PredSymb.path_pos option -> Errlog.loc_trace
 
   (** return the current node of the path *)
-  val curr_node : t -> Cfg.Node.t option
+  val curr_node : t -> Procdesc.Node.t option
 
   (** dump a path *)
   val d : t -> unit
@@ -45,13 +45,13 @@ module Path : sig
   val d_stats : t -> unit
 
   (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
-  val extend : Cfg.Node.t -> Typename.t option -> session -> t -> t
+  val extend : Procdesc.Node.t -> Typename.t option -> session -> t -> t
 
   (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
   val add_description : t -> string -> t
 
   (** iterate over each node in the path, excluding calls, once *)
-  val iter_all_nodes_nocalls : (Cfg.Node.t -> unit) -> t -> unit
+  val iter_all_nodes_nocalls : (Procdesc.Node.t -> unit) -> t -> unit
 
   val iter_shortest_sequence :
     (int -> t -> int -> Typename.t option -> unit) -> PredSymb.path_pos option -> t -> unit
@@ -66,7 +66,7 @@ module Path : sig
   val pp_stats : Format.formatter -> t -> unit
 
   (** create a new path with given start node *)
-  val start : Cfg.Node.t -> t
+  val start : Procdesc.Node.t -> t
 
 (*
   (** equality for paths *)
@@ -83,8 +83,8 @@ end = struct
   type path =
     (* INVARIANT: stats are always set to dummy_stats unless we are in the middle of a traversal *)
     (* in particular: a new traversal cannot be initiated during an existing traversal *)
-    | Pstart of Cfg.Node.t * stats (** start node *)
-    | Pnode of Cfg.Node.t * Typename.t option * session * path * stats * string option
+    | Pstart of Procdesc.Node.t * stats (** start node *)
+    | Pnode of Procdesc.Node.t * Typename.t option * session * path * stats * string option
     (** we got to [node] from last [session] perhaps propagating exception [exn_opt],
         and continue with [path].  *)
     | Pjoin of path * path * stats (** join of two paths *)
@@ -133,11 +133,11 @@ end = struct
   let rec compare p1 p2 : int =
     if p1 == p2 then 0 else match p1, p2 with
       | Pstart (n1, _), Pstart (n2, _) ->
-          Cfg.Node.compare n1 n2
+          Procdesc.Node.compare n1 n2
       | Pstart _, _ -> - 1
       | _, Pstart _ -> 1
       | Pnode (n1, eo1, s1, p1, _, _), Pnode (n2, eo2, s2, p2, _, _) ->
-          let n = Cfg.Node.compare n1 n2 in
+          let n = Procdesc.Node.compare n1 n2 in
           if n <> 0 then n else let n = exname_opt_compare eo1 eo2 in
             if n <> 0 then n else let n = int_compare s1 s2 in
               if n <> 0 then n else compare p1 p2
@@ -154,7 +154,7 @@ end = struct
 
   let start node = Pstart (node, get_dummy_stats ())
 
-  let extend (node: Cfg.Node.t) exn_opt session path =
+  let extend (node: Procdesc.Node.t) exn_opt session path =
     Pnode (node, exn_opt, session, path, get_dummy_stats (), None)
 
   let join p1 p2 =
@@ -212,7 +212,7 @@ end = struct
         satisfying [f] was found.  Assumes that the invariant holds beforehand, and ensures that all
         the stats are computed afterwards.  Since this breaks the invariant, it must be followed by
         reset_stats. *)
-    let rec compute_stats do_calls (f : Cfg.Node.t -> bool) =
+    let rec compute_stats do_calls (f : Procdesc.Node.t -> bool) =
       let nodes_found stats = stats.max_length > 0 in
       function
       | Pstart (node, stats) ->
@@ -268,8 +268,8 @@ end = struct
     Invariant.reset_stats path
 
   let get_path_pos node =
-    let pn = Cfg.Node.get_proc_name node in
-    let n_id = Cfg.Node.get_id node in
+    let pn = Procdesc.Node.get_proc_name node in
+    let n_id = Procdesc.Node.get_id node in
     (pn, (n_id :> int))
 
   let contains_position path pos =
@@ -287,7 +287,7 @@ end = struct
       pass the exception information to [f] on the previous node *)
   let iter_shortest_sequence_filter
       (f : int -> t -> int -> Typename.t option -> unit)
-      (filter: Cfg.Node.t -> bool) (path: t) : unit =
+      (filter: Procdesc.Node.t -> bool) (path: t) : unit =
     let rec doit level session path prev_exn_opt = match path with
       | Pstart _ -> f level path session prev_exn_opt
       | Pnode (_, exn_opt, session', p, _, _) ->
@@ -347,26 +347,26 @@ end = struct
       (fun (level, p, session, exn_opt) -> f level p session exn_opt)
       sequence_up_to_last_seen
 
-  module NodeMap = Map.Make (Cfg.Node)
-
   (** return the node visited most, and number of visits, in the shortest linear sequence *)
   let repetitions path =
-    let map = ref NodeMap.empty in
+    let map = ref Procdesc.NodeMap.empty in
     let add_node = function
       | Some node ->
           begin
             try
-              let n = NodeMap.find node !map in
-              map := NodeMap.add node (n + 1) !map
+              let n = Procdesc.NodeMap.find node !map in
+              map := Procdesc.NodeMap.add node (n + 1) !map
             with Not_found ->
-              map := NodeMap.add node 1 !map
+              map := Procdesc.NodeMap.add node 1 !map
           end
       | None ->
           () in
     iter_shortest_sequence (fun _ p _ _ -> add_node (curr_node p)) None path;
-    let max_rep_node = ref (Cfg.Node.dummy ()) in
+    let max_rep_node = ref (Procdesc.Node.dummy ()) in
     let max_rep_num = ref 0 in
-    NodeMap.iter (fun node num -> if num > !max_rep_num then (max_rep_node := node; max_rep_num := num)) !map;
+    Procdesc.NodeMap.iter
+      (fun node num -> if num > !max_rep_num then (max_rep_node := node; max_rep_num := num))
+      !map;
     (!max_rep_node, !max_rep_num)
 
   let stats_string path =
@@ -376,7 +376,7 @@ end = struct
       "linear paths: " ^ string_of_float (Invariant.get_stats path).linear_num ^
       " max length: " ^ string_of_int (Invariant.get_stats path).max_length ^
       " has repetitions: " ^ string_of_int repetitions ^
-      " of node " ^ (string_of_int (Cfg.Node.get_id node :> int)) in
+      " of node " ^ (string_of_int (Procdesc.Node.get_id node :> int)) in
     Invariant.reset_stats path;
     str
 
@@ -418,9 +418,9 @@ end = struct
       with Not_found ->
       match path with
       | Pstart (node, _) ->
-          F.fprintf fmt "n%a" Cfg.Node.pp node
+          F.fprintf fmt "n%a" Procdesc.Node.pp node
       | Pnode (node, _, session, path, _, _) ->
-          F.fprintf fmt "%a(s%d).n%a" (doit (n - 1)) path (session :> int) Cfg.Node.pp node
+          F.fprintf fmt "%a(s%d).n%a" (doit (n - 1)) path (session :> int) Procdesc.Node.pp node
       | Pjoin (path1, path2, _) ->
           F.fprintf fmt "(%a + %a)" (doit (n - 1)) path1 (doit (n - 1)) path2
       | Pcall (path1, _, path2, _) ->
@@ -454,10 +454,10 @@ end = struct
       match curr_node path with
       | Some curr_node ->
           begin
-            let curr_loc = Cfg.Node.get_loc curr_node in
-            match Cfg.Node.get_kind curr_node with
-            | Cfg.Node.Join_node -> () (* omit join nodes from error traces *)
-            | Cfg.Node.Start_node pname ->
+            let curr_loc = Procdesc.Node.get_loc curr_node in
+            match Procdesc.Node.get_kind curr_node with
+            | Procdesc.Node.Join_node -> () (* omit join nodes from error traces *)
+            | Procdesc.Node.Start_node pname ->
                 let name = Procname.to_string pname in
                 let name_id = Procname.to_filename pname in
                 let descr = "start of procedure " ^ (Procname.to_simplified_string pname) in
@@ -466,7 +466,7 @@ end = struct
                    (Io_infer.Xml.tag_name, name);
                    (Io_infer.Xml.tag_name_id, name_id)] in
                 trace := mk_trace_elem level curr_loc descr node_tags :: !trace
-            | Cfg.Node.Prune_node (is_true_branch, if_kind, _) ->
+            | Procdesc.Node.Prune_node (is_true_branch, if_kind, _) ->
                 let descr = match is_true_branch, if_kind with
                   | true, Sil.Ik_if -> "Taking true branch"
                   | false, Sil.Ik_if -> "Taking false branch"
@@ -482,7 +482,7 @@ end = struct
                   [(Io_infer.Xml.tag_kind,"condition");
                    (Io_infer.Xml.tag_branch, if is_true_branch then "true" else "false")] in
                 trace := mk_trace_elem level curr_loc descr node_tags :: !trace
-            | Cfg.Node.Exit_node pname ->
+            | Procdesc.Node.Exit_node pname ->
                 let descr = "return from a call to " ^ (Procname.to_string pname) in
                 let name = Procname.to_string pname in
                 let name_id = Procname.to_filename pname in
@@ -644,10 +644,10 @@ end = struct
   (** check if the nodes in path p1 are a subset of those in p2 (not trace subset) *)
   let path_nodes_subset p1 p2 =
     let get_nodes p =
-      let s = ref Cfg.NodeSet.empty in
-      Path.iter_all_nodes_nocalls (fun n -> s := Cfg.NodeSet.add n !s) p;
+      let s = ref Procdesc.NodeSet.empty in
+      Path.iter_all_nodes_nocalls (fun n -> s := Procdesc.NodeSet.add n !s) p;
       !s in
-    Cfg.NodeSet.subset (get_nodes p1) (get_nodes p2)
+    Procdesc.NodeSet.subset (get_nodes p1) (get_nodes p2)
 
   (** difference between pathsets for the differential fixpoint *)
   let diff (ps1: t) (ps2: t) : t =

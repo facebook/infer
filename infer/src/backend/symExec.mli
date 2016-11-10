@@ -14,12 +14,12 @@ open! Utils
 
 (** Symbolic execution of the instructions of a node, lifted to sets of propositions. *)
 val node :
-  (exn -> unit) -> Tenv.t -> Cfg.Procdesc.t -> Cfg.Node.t -> Paths.PathSet.t -> Paths.PathSet.t
+  (exn -> unit) -> Tenv.t -> Procdesc.t -> Procdesc.Node.t -> Paths.PathSet.t -> Paths.PathSet.t
 
 (** Symbolic execution of a sequence of instructions.
     If errors occur and [mask_errors] is true, just treat as skip. *)
 val instrs :
-  ?mask_errors:bool -> Tenv.t -> Cfg.Procdesc.t -> Sil.instr list ->
+  ?mask_errors:bool -> Tenv.t -> Procdesc.t -> Sil.instr list ->
   (Prop.normal Prop.t * Paths.Path.t) list -> (Prop.normal Prop.t * Paths.Path.t) list
 
 (** Symbolic execution of the divergent pure computation. *)

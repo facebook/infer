@@ -140,7 +140,7 @@ let java_get_const_type_name
   | _ -> "_"
 
 let get_vararg_type_names tenv
-    (call_node: Cfg.Node.t)
+    (call_node: Procdesc.Node.t)
     (ivar: Pvar.t): string list =
   (* Is this the node creating ivar? *)
   let rec initializes_array instrs =
@@ -167,7 +167,7 @@ let get_vararg_type_names tenv
     let rec added_nvar array_nvar instrs =
       match instrs with
       | Sil.Store (Exp.Lindex (Exp.Var iv, _), _, Exp.Var nvar, _):: _
-        when Ident.equal iv array_nvar -> nvar_type_name nvar (Cfg.Node.get_instrs node)
+        when Ident.equal iv array_nvar -> nvar_type_name nvar (Procdesc.Node.get_instrs node)
       | Sil.Store (Exp.Lindex (Exp.Var iv, _), _, Exp.Const c, _):: _
         when Ident.equal iv array_nvar -> Some (java_get_const_type_name c)
       | _:: is -> added_nvar array_nvar is
@@ -179,14 +179,14 @@ let get_vararg_type_names tenv
           added_nvar nv instrs
       | _:: is -> array_nvar is
       | _ -> None in
-    array_nvar (Cfg.Node.get_instrs node) in
+    array_nvar (Procdesc.Node.get_instrs node) in
 
   (* Walk nodes backward until definition of ivar, adding type names *)
   let rec type_names node =
-    if initializes_array (Cfg.Node.get_instrs node) then
+    if initializes_array (Procdesc.Node.get_instrs node) then
       []
     else
-      match (Cfg.Node.get_preds node) with
+      match (Procdesc.Node.get_preds node) with
       | [n] -> (match (added_type_name node) with
           | Some name -> name:: type_names n
           | None -> type_names n)
@@ -195,7 +195,7 @@ let get_vararg_type_names tenv
   IList.rev (type_names call_node)
 
 let has_formal_proc_argument_type_names proc_desc argument_type_names =
-  let formals = Cfg.Procdesc.get_formals proc_desc in
+  let formals = Procdesc.get_formals proc_desc in
   let equal_formal_arg (_, typ) arg_type_name = get_type_name typ = arg_type_name in
   IList.length formals = IList.length argument_type_names
   && IList.for_all2 equal_formal_arg formals argument_type_names
@@ -290,10 +290,10 @@ let java_get_vararg_values node pvar idenv =
         values := content_exp :: !values
     | _ -> () in
   let do_node n =
-    IList.iter do_instr (Cfg.Node.get_instrs n) in
+    IList.iter do_instr (Procdesc.Node.get_instrs n) in
   let () = match Errdesc.find_program_variable_assignment node pvar with
     | Some (node', _) ->
-        Cfg.Procdesc.iter_slope_range do_node node' node
+        Procdesc.iter_slope_range do_node node' node
     | None -> () in
   !values
 
@@ -310,9 +310,9 @@ let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t)
         end
     | _ -> () in
   let do_node node =
-    let instrs = Cfg.Node.get_instrs node in
+    let instrs = Procdesc.Node.get_instrs node in
     IList.iter (do_instruction node) instrs in
-  let nodes = Cfg.Procdesc.get_nodes pdesc in
+  let nodes = Procdesc.get_nodes pdesc in
   IList.iter do_node nodes;
   IList.rev !res
 
@@ -355,7 +355,7 @@ let get_fields_nullified procdesc =
         (nullified_flds, Ident.IdentSet.add id this_ids)
     | _ -> (nullified_flds, this_ids) in
   let (nullified_flds, _) =
-    Cfg.Procdesc.fold_instrs
+    Procdesc.fold_instrs
       collect_nullified_flds (Ident.FieldSet.empty, Ident.IdentSet.empty) procdesc in
   nullified_flds
 

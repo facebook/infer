@@ -69,7 +69,7 @@ struct
 
 
   let add_autorelease_call context exp typ sil_loc =
-    let method_name = Procname.get_method (Cfg.Procdesc.get_proc_name context.CContext.procdesc) in
+    let method_name = Procname.get_method (Procdesc.get_proc_name context.CContext.procdesc) in
     if !Config.arc_mode &&
        not (CTrans_utils.is_owning_name method_name) &&
        ObjcInterface_decl.is_pointer_to_objc_class typ then
@@ -105,7 +105,7 @@ struct
   let allocate_block trans_state block_name captured_vars loc =
     let tenv = trans_state.context.CContext.tenv in
     let procdesc = trans_state.context.CContext.procdesc in
-    let procname = Cfg.Procdesc.get_proc_name procdesc in
+    let procname = Procdesc.get_proc_name procdesc in
     let mk_field_from_captured_var (var, typ) =
       let vname = Pvar.get_name var in
       let qual_name = Ast_utils.make_qual_name_decl [block_name] (Mangled.to_string vname) in
@@ -244,7 +244,7 @@ struct
     Ident.NameGenerator.set_current ident_state
 
   let mk_temp_sil_var procdesc var_name_suffix =
-    let procname = Cfg.Procdesc.get_proc_name procdesc in
+    let procname = Procdesc.get_proc_name procdesc in
     Pvar.mk_tmp var_name_suffix procname
 
   let mk_temp_sil_var_for_expr tenv procdesc var_name_prefix expr_info =
@@ -257,7 +257,7 @@ struct
     let procdesc = context.CContext.procdesc in
     let (pvar, typ) = mk_temp_sil_var_for_expr context.CContext.tenv procdesc
         var_name expr_info in
-    Cfg.Procdesc.append_locals procdesc [(Pvar.get_name pvar, typ)];
+    Procdesc.append_locals procdesc [(Pvar.get_name pvar, typ)];
     Exp.Lvar pvar, typ
 
   let create_call_instr trans_state return_type function_sil params_sil sil_loc
@@ -273,7 +273,7 @@ struct
           | _ ->
               let procdesc = trans_state.context.CContext.procdesc in
               let pvar = mk_temp_sil_var procdesc "__temp_return_" in
-              Cfg.Procdesc.append_locals procdesc [(Pvar.get_name pvar, return_type)];
+              Procdesc.append_locals procdesc [(Pvar.get_name pvar, return_type)];
               Exp.Lvar pvar in
         (* It is very confusing - same expression has two different types in two contexts:*)
         (* 1. if passed as parameter it's RETURN_TYPE* since we are passing it as rvalue *)
@@ -577,7 +577,7 @@ struct
 
   let this_expr_trans trans_state sil_loc class_type_ptr =
     let context = trans_state.context in
-    let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
+    let procname = Procdesc.get_proc_name context.CContext.procdesc in
     let name = CFrontend_config.this in
     let pvar = Pvar.mk (Mangled.from_string name) procname in
     let exp = Exp.Lvar pvar in
@@ -600,7 +600,7 @@ struct
     (* create the label root node into the hashtbl *)
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
-    Cfg.Procdesc.node_set_succs_exn context.procdesc root_node' res_trans.root_nodes [];
+    Procdesc.node_set_succs_exn context.procdesc root_node' res_trans.root_nodes [];
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
 
   and var_deref_trans trans_state stmt_info (decl_ref : Clang_ast_t.decl_ref) =
@@ -614,7 +614,7 @@ struct
             Typ.Tptr (ast_typ, Pk_reference)
           else ast_typ
       | _ -> ast_typ in
-    let procname = Cfg.Procdesc.get_proc_name context.procdesc in
+    let procname = Procdesc.get_proc_name context.procdesc in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let pvar = CVar_decl.sil_var_of_decl_ref context decl_ref procname in
     CContext.add_block_static_var context procname (pvar, typ);
@@ -750,7 +750,7 @@ struct
     if res_trans_idx.root_nodes <> []
     then
       IList.iter
-        (fun n -> Cfg.Procdesc.node_set_succs_exn context.procdesc n res_trans_idx.root_nodes [])
+        (fun n -> Procdesc.node_set_succs_exn context.procdesc n res_trans_idx.root_nodes [])
         res_trans_a.leaf_nodes;
 
     (* Note the order of res_trans_idx.ids @ res_trans_a.ids is important. *)
@@ -832,7 +832,7 @@ struct
     let context = trans_state.context in
     let fn_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let function_type = add_reference_if_glvalue fn_type_no_ref expr_info in
-    let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
+    let procname = Procdesc.get_proc_name context.CContext.procdesc in
     let sil_loc = CLocation.get_sil_location si context in
     (* First stmt is the function expr and the rest are params *)
     let fun_exp_stmt, params_stmt = (match stmt_list with
@@ -909,7 +909,7 @@ struct
       si function_type is_cpp_call_virtual extra_res_trans =
     let open CContext in
     let context = trans_state_pri.context in
-    let procname = Cfg.Procdesc.get_proc_name context.procdesc in
+    let procname = Procdesc.get_proc_name context.procdesc in
     let sil_loc = CLocation.get_sil_location si context in
     (* first for method address, second for 'this' expression *)
     assert ((IList.length result_trans_callee.exps) = 2);
@@ -973,9 +973,9 @@ struct
       | Some exp_typ -> exp_typ
       | None ->
           let procdesc = trans_state.context.CContext.procdesc in
-          let pvar = Pvar.mk_tmp "__temp_construct_" (Cfg.Procdesc.get_proc_name procdesc) in
+          let pvar = Pvar.mk_tmp "__temp_construct_" (Procdesc.get_proc_name procdesc) in
           let class_type = CType_decl.get_type_from_expr_info ei context.CContext.tenv in
-          Cfg.Procdesc.append_locals procdesc [(Pvar.get_name pvar, class_type)];
+          Procdesc.append_locals procdesc [(Pvar.get_name pvar, class_type)];
           Exp.Lvar pvar, class_type in
     let this_type = Typ.Tptr (class_type, Typ.Pk_pointer) in
     let this_res_trans = { empty_res_trans with
@@ -1067,7 +1067,7 @@ struct
             method_type trans_state_pri sil_loc subexpr_exprs with
     | Some res -> res
     | None ->
-        let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
+        let procname = Procdesc.get_proc_name context.CContext.procdesc in
         let callee_name, method_call_type = get_callee_objc_method context obj_c_message_expr_info
             subexpr_exprs in
         let res_trans_add_self = Self.add_self_parameter_for_super_instance context procname sil_loc
@@ -1101,7 +1101,7 @@ struct
 
   and block_enumeration_trans trans_state stmt_info stmt_list ei =
     Logging.out_debug "\n Call to a block enumeration function treated as special case...\n@.";
-    let procname = Cfg.Procdesc.get_proc_name trans_state.context.CContext.procdesc in
+    let procname = Procdesc.get_proc_name trans_state.context.CContext.procdesc in
     let pvar = CFrontend_utils.General_utils.get_next_block_pvar procname in
     let transformed_stmt, _ =
       Ast_expressions.translate_block_enumerate (Pvar.to_string pvar) stmt_info stmt_list ei in
@@ -1132,7 +1132,7 @@ struct
       let prune_nodes_t, prune_nodes_f = IList.partition is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
       IList.iter
-        (fun n -> Cfg.Procdesc.node_set_succs_exn context.procdesc n res_trans.root_nodes [])
+        (fun n -> Procdesc.node_set_succs_exn context.procdesc n res_trans.root_nodes [])
         prune_nodes' in
     (match stmt_list with
      | [cond; exp1; exp2] ->
@@ -1140,10 +1140,10 @@ struct
            CType_decl.type_ptr_to_sil_type
              context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
          let var_typ = add_reference_if_glvalue typ expr_info in
-         let join_node = create_node (Cfg.Node.Join_node) [] sil_loc context in
-         Cfg.Procdesc.node_set_succs_exn context.procdesc join_node succ_nodes [];
+         let join_node = create_node (Procdesc.Node.Join_node) [] sil_loc context in
+         Procdesc.node_set_succs_exn context.procdesc join_node succ_nodes [];
          let pvar = mk_temp_sil_var procdesc "SIL_temp_conditional___" in
-         Cfg.Procdesc.append_locals procdesc [(Pvar.get_name pvar, var_typ)];
+         Procdesc.append_locals procdesc [(Pvar.get_name pvar, var_typ)];
          let continuation' = mk_cond_continuation trans_state.continuation in
          let trans_state' = { trans_state with continuation = continuation'; succ_nodes = [] } in
          let res_trans_cond = exec_with_priority_exception trans_state' cond cond_trans in
@@ -1214,7 +1214,7 @@ struct
       let prune_t = mk_prune_node true e' instrs' in
       let prune_f = mk_prune_node false e' instrs' in
       IList.iter
-        (fun n' -> Cfg.Procdesc.node_set_succs_exn context.procdesc n' [prune_t; prune_f] [])
+        (fun n' -> Procdesc.node_set_succs_exn context.procdesc n' [prune_t; prune_f] [])
         res_trans_cond.leaf_nodes;
       let rnodes = if (IList.length res_trans_cond.root_nodes) = 0 then
           [prune_t; prune_f]
@@ -1247,7 +1247,7 @@ struct
           | Binop.LOr -> prune_nodes_f, prune_nodes_t
           | _ -> assert false) in
       IList.iter
-        (fun n -> Cfg.Procdesc.node_set_succs_exn context.procdesc n res_trans_s2.root_nodes [])
+        (fun n -> Procdesc.node_set_succs_exn context.procdesc n res_trans_s2.root_nodes [])
         prune_to_s2;
       let root_nodes_to_parent =
         if (IList.length res_trans_s1.root_nodes) = 0
@@ -1287,8 +1287,8 @@ struct
     let context = trans_state.context in
     let succ_nodes = trans_state.succ_nodes in
     let sil_loc = CLocation.get_sil_location stmt_info context in
-    let join_node = create_node (Cfg.Node.Join_node) [] sil_loc context in
-    Cfg.Procdesc.node_set_succs_exn context.procdesc join_node succ_nodes [];
+    let join_node = create_node (Procdesc.Node.Join_node) [] sil_loc context in
+    Procdesc.node_set_succs_exn context.procdesc join_node succ_nodes [];
     let trans_state' = { trans_state with succ_nodes = [join_node] } in
     let do_branch branch stmt_branch prune_nodes =
       (* leaf nodes are ignored here as they will be already attached to join_node *)
@@ -1296,13 +1296,14 @@ struct
       let nodes_branch =
         (match res_trans_b.root_nodes with
          | [] ->
-             [create_node (Cfg.Node.Stmt_node "IfStmt Branch") res_trans_b.instrs sil_loc context]
+             [create_node
+                (Procdesc.Node.Stmt_node "IfStmt Branch") res_trans_b.instrs sil_loc context]
          | _ ->
              res_trans_b.root_nodes) in
       let prune_nodes_t, prune_nodes_f = IList.partition is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
       IList.iter
-        (fun n -> Cfg.Procdesc.node_set_succs_exn context.procdesc n nodes_branch [])
+        (fun n -> Procdesc.node_set_succs_exn context.procdesc n nodes_branch [])
         prune_nodes' in
     (match stmt_list with
      | [_; decl_stmt; cond; stmt1; stmt2] ->
@@ -1336,11 +1337,11 @@ struct
         let trans_state' ={ trans_state_pri with succ_nodes = []} in
         let res_trans_cond_tmp = instruction trans_state' cond in
         let switch_special_cond_node =
-          let node_kind = Cfg.Node.Stmt_node "Switch_stmt" in
+          let node_kind = Procdesc.Node.Stmt_node "Switch_stmt" in
           create_node node_kind res_trans_cond_tmp.instrs sil_loc context in
         IList.iter
           (fun n' ->
-             Cfg.Procdesc.node_set_succs_exn context.procdesc n' [switch_special_cond_node] [])
+             Procdesc.node_set_succs_exn context.procdesc n' [switch_special_cond_node] [])
           res_trans_cond_tmp.leaf_nodes;
         let root_nodes =
           if res_trans_cond_tmp.root_nodes <> [] then res_trans_cond_tmp.root_nodes
@@ -1438,29 +1439,30 @@ struct
               let case_entry_point = connected_instruction (IList.rev case_content) last_nodes in
               (* connects between cases, then continuation has priority about breaks *)
               let prune_node_t, prune_node_f = create_prune_nodes_for_case case in
-              Cfg.Procdesc.node_set_succs_exn context.procdesc prune_node_t case_entry_point [];
-              Cfg.Procdesc.node_set_succs_exn context.procdesc prune_node_f last_prune_nodes [];
+              Procdesc.node_set_succs_exn context.procdesc prune_node_t case_entry_point [];
+              Procdesc.node_set_succs_exn context.procdesc prune_node_f last_prune_nodes [];
               case_entry_point, [prune_node_t; prune_node_f]
           | DefaultStmt(stmt_info, default_content) :: rest ->
               let sil_loc = CLocation.get_sil_location stmt_info context in
               let placeholder_entry_point =
-                create_node (Cfg.Node.Stmt_node "DefaultStmt_placeholder") [] sil_loc context in
+                create_node
+                  (Procdesc.Node.Stmt_node "DefaultStmt_placeholder") [] sil_loc context in
               let last_nodes, last_prune_nodes =
                 translate_and_connect_cases rest next_nodes [placeholder_entry_point] in
               let default_entry_point =
                 connected_instruction (IList.rev default_content) last_nodes in
-              Cfg.Procdesc.node_set_succs_exn
+              Procdesc.node_set_succs_exn
                 context.procdesc placeholder_entry_point default_entry_point [];
               default_entry_point, last_prune_nodes
           | _ -> assert false in
         let top_entry_point, top_prune_nodes =
           translate_and_connect_cases list_of_cases succ_nodes succ_nodes in
         let _ = connected_instruction (IList.rev pre_case_stmts) top_entry_point in
-        Cfg.Procdesc.node_set_succs_exn
+        Procdesc.node_set_succs_exn
           context.procdesc switch_special_cond_node top_prune_nodes [];
         let top_nodes = res_trans_decl.root_nodes in
         IList.iter
-          (fun n' -> Cfg.Node.append_instrs n' []) succ_nodes;
+          (fun n' -> Procdesc.Node.append_instrs n' []) succ_nodes;
         (* succ_nodes will remove the temps *)
         { empty_res_trans with root_nodes = top_nodes; leaf_nodes = succ_nodes }
     | _ -> assert false
@@ -1480,7 +1482,7 @@ struct
     let context = trans_state.context in
     let succ_nodes = trans_state.succ_nodes in
     let sil_loc = CLocation.get_sil_location stmt_info context in
-    let join_node = create_node Cfg.Node.Join_node [] sil_loc context in
+    let join_node = create_node Procdesc.Node.Join_node [] sil_loc context in
     let continuation = Some { break = succ_nodes; continue = [join_node]; return_temp = false } in
     (* set the flat to inform that we are translating a condition of a if *)
     let continuation_cond = mk_cond_continuation outer_continuation in
@@ -1538,12 +1540,12 @@ struct
       match loop_kind with
       | Loops.For _ | Loops.While _ -> res_trans_body.root_nodes
       | Loops.DoWhile _ -> [join_node] in
-    Cfg.Procdesc.node_set_succs_exn context.procdesc join_node join_succ_nodes [];
+    Procdesc.node_set_succs_exn context.procdesc join_node join_succ_nodes [];
     IList.iter
-      (fun n -> Cfg.Procdesc.node_set_succs_exn context.procdesc n prune_t_succ_nodes [])
+      (fun n -> Procdesc.node_set_succs_exn context.procdesc n prune_t_succ_nodes [])
       prune_nodes_t;
     IList.iter
-      (fun n -> Cfg.Procdesc.node_set_succs_exn context.procdesc n succ_nodes [])
+      (fun n -> Procdesc.node_set_succs_exn context.procdesc n succ_nodes [])
       prune_nodes_f;
     let root_nodes =
       match loop_kind with
@@ -1719,7 +1721,7 @@ struct
     let open Clang_ast_t in
     let context = trans_state.context in
     let procdesc = context.CContext.procdesc in
-    let procname = Cfg.Procdesc.get_proc_name procdesc in
+    let procname = Procdesc.get_proc_name procdesc in
     let do_var_dec (di, var_name, qual_type, vdi) next_node =
       let var_decl = VarDecl (di, var_name, qual_type, vdi) in
       let pvar = CVar_decl.sil_var_of_decl context var_decl procname in
@@ -1891,26 +1893,26 @@ struct
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let mk_ret_node instrs =
-      let ret_node = create_node (Cfg.Node.Stmt_node "Return Stmt") instrs sil_loc context in
-      Cfg.Procdesc.node_set_succs_exn
+      let ret_node = create_node (Procdesc.Node.Stmt_node "Return Stmt") instrs sil_loc context in
+      Procdesc.node_set_succs_exn
         context.procdesc
-        ret_node [(Cfg.Procdesc.get_exit_node context.CContext.procdesc)] [];
+        ret_node [(Procdesc.get_exit_node context.CContext.procdesc)] [];
       ret_node in
     let trans_result = (match stmt_list with
         | [stmt] -> (* return exp; *)
             let procdesc = context.CContext.procdesc in
-            let ret_type = Cfg.Procdesc.get_ret_type procdesc in
+            let ret_type = Procdesc.get_ret_type procdesc in
             let ret_exp, ret_typ, var_instrs = match context.CContext.return_param_typ with
               | Some ret_param_typ ->
                   let name = CFrontend_config.return_param in
-                  let procname = Cfg.Procdesc.get_proc_name procdesc in
+                  let procname = Procdesc.get_proc_name procdesc in
                   let pvar = Pvar.mk (Mangled.from_string name) procname in
                   let id = Ident.create_fresh Ident.knormal in
                   let instr = Sil.Load (id, Exp.Lvar pvar, ret_param_typ, sil_loc) in
                   let ret_typ = match ret_param_typ with Typ.Tptr (t, _) -> t | _ -> assert false in
                   Exp.Var id, ret_typ, [instr]
               | None ->
-                  Exp.Lvar (Cfg.Procdesc.get_ret_var procdesc), ret_type, [] in
+                  Exp.Lvar (Procdesc.get_ret_var procdesc), ret_type, [] in
             let trans_state' = { trans_state_pri with
                                  succ_nodes = [];
                                  var_exp_typ = Some (ret_exp, ret_typ) } in
@@ -1926,7 +1928,7 @@ struct
             let instrs = var_instrs @ res_trans_stmt.instrs @ ret_instrs @ autorelease_instrs in
             let ret_node = mk_ret_node instrs in
             IList.iter
-              (fun n -> Cfg.Procdesc.node_set_succs_exn procdesc n [ret_node] [])
+              (fun n -> Procdesc.node_set_succs_exn procdesc n [ret_node] [])
               res_trans_stmt.leaf_nodes;
             let root_nodes_to_parent =
               if IList.length res_trans_stmt.root_nodes >0
@@ -2011,9 +2013,9 @@ struct
       Sil.Call
         (ret_id, (Exp.Const (Const.Cfun fname)),
          autorelease_pool_vars, sil_loc, CallFlags.default) in
-    let node_kind = Cfg.Node.Stmt_node ("Release the autorelease pool") in
+    let node_kind = Procdesc.Node.Stmt_node ("Release the autorelease pool") in
     let call_node = create_node node_kind [stmt_call] sil_loc context in
-    Cfg.Procdesc.node_set_succs_exn context.procdesc call_node trans_state.succ_nodes [];
+    Procdesc.node_set_succs_exn context.procdesc call_node trans_state.succ_nodes [];
     let trans_state'={ trans_state with continuation = None; succ_nodes =[call_node] } in
     instructions trans_state' stmts
 
@@ -2029,7 +2031,7 @@ struct
 
   and blockExpr_trans trans_state stmt_info expr_info decl =
     let context = trans_state.context in
-    let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
+    let procname = Procdesc.get_proc_name context.CContext.procdesc in
     let loc =
       (match stmt_info.Clang_ast_t.si_source_range with (l1, _) ->
          CLocation.clang_to_sil_location context.CContext.translation_unit_context l1) in
@@ -2099,7 +2101,7 @@ struct
     let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
     let context = trans_state.context in
     call_translation context decl;
-    let procname = Cfg.Procdesc.get_proc_name context.procdesc in
+    let procname = Procdesc.get_proc_name context.procdesc in
     let lambda_pname = CMethod_trans.get_procname_from_cpp_lambda context decl in
     let typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
     (* We need to set the explicit dependency between the newly created lambda and the *)
@@ -2199,7 +2201,7 @@ struct
     let (pvar, typ) = mk_temp_sil_var_for_expr context.CContext.tenv procdesc
         "SIL_materialize_temp__" expr_info in
     let temp_exp = match stmt_list with [p] -> p | _ -> assert false in
-    Cfg.Procdesc.append_locals procdesc [(Pvar.get_name pvar, typ)];
+    Procdesc.append_locals procdesc [(Pvar.get_name pvar, typ)];
     let var_exp_typ = (Exp.Lvar pvar, typ) in
     let res_trans = init_expr_trans trans_state var_exp_typ stmt_info (Some temp_exp) in
     { res_trans with exps = [var_exp_typ] }

@@ -27,18 +27,18 @@ let check_nested_loop path pos_opt =
         if verbose then L.d_strln "in nested loop";
         true (* last two loop visits were entering loops *)
     | _ -> false in
-  let do_node_caller node = match Cfg.Node.get_kind node with
-    | Cfg.Node.Prune_node (b, (Sil.Ik_dowhile | Sil.Ik_for | Sil.Ik_while), _) ->
+  let do_node_caller node = match Procdesc.Node.get_kind node with
+    | Procdesc.Node.Prune_node (b, (Sil.Ik_dowhile | Sil.Ik_for | Sil.Ik_while), _) ->
         (* if verbose then *)
         (*   L.d_strln ((if b then "enter" else "exit") ^ " node " *)
-        (*              ^ (string_of_int (Cfg.Node.get_id node))); *)
+        (*              ^ (string_of_int (Procdesc.Node.get_id node))); *)
         loop_visits_log := b :: !loop_visits_log
     | _ -> () in
   let do_any_node _level _node =
     incr trace_length;
     (* L.d_strln *)
     (*   ("level " ^ string_of_int _level ^ *)
-    (*    " (Cfg.Node.get_id node) " ^ string_of_int (Cfg.Node.get_id _node)) *)
+    (*    " (Procdesc.Node.get_id node) " ^ string_of_int (Procdesc.Node.get_id _node)) *)
   in
   let f level p _ _ = match Paths.Path.curr_node p  with
     | Some node ->
@@ -54,11 +54,11 @@ let check_nested_loop path pos_opt =
 let check_access access_opt de_opt =
   let find_bucket line_number null_case_flag =
     let find_formal_ids node = (* find ids obtained by a letref on a formal parameter *)
-      let node_instrs = Cfg.Node.get_instrs node in
+      let node_instrs = Procdesc.Node.get_instrs node in
       let formals = match State.get_prop_tenv_pdesc () with
         | None -> []
         | Some (_, _, pdesc) ->
-            Cfg.Procdesc.get_formals pdesc in
+            Procdesc.get_formals pdesc in
       let formal_names = IList.map fst formals in
       let is_formal pvar =
         let name = Pvar.get_name pvar in
@@ -97,10 +97,10 @@ let check_access access_opt de_opt =
         | Sil.Store (_, _, e, _) ->
             exp_is_null e
         | _ -> false in
-      IList.exists filter (Cfg.Node.get_instrs node) in
+      IList.exists filter (Procdesc.Node.get_instrs node) in
     let local_access_found = ref false in
     let do_node node =
-      if (Cfg.Node.get_loc node).Location.line = line_number && has_call_or_sets_null node then
+      if (Procdesc.Node.get_loc node).Location.line = line_number && has_call_or_sets_null node then
         begin
           local_access_found := true
         end in

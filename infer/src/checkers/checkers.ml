@@ -160,7 +160,7 @@ module ST = struct
 end
 
 let report_calls_and_accesses tenv callback proc_desc instr =
-  let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
+  let proc_name = Procdesc.get_proc_name proc_desc in
   let callee = Procname.to_string proc_name in
   match PatternMatch.get_java_field_access_signature instr with
   | Some (bt, fn, ft) ->
@@ -168,7 +168,7 @@ let report_calls_and_accesses tenv callback proc_desc instr =
         proc_name
         proc_desc
         (callback ^ "_CALLBACK")
-        (Cfg.Procdesc.get_loc proc_desc)
+        (Procdesc.get_loc proc_desc)
         (Format.sprintf "field access %s.%s:%s in %s@." bt fn ft callee)
   | None ->
       match PatternMatch.get_java_method_call_formal_signature instr with
@@ -177,13 +177,13 @@ let report_calls_and_accesses tenv callback proc_desc instr =
             proc_name
             proc_desc
             (callback ^ "_CALLBACK")
-            (Cfg.Procdesc.get_loc proc_desc)
+            (Procdesc.get_loc proc_desc)
             (Format.sprintf "method call %s.%s(%s):%s in %s@." bt fn "..." rt callee)
       | None -> ()
 
 (** Report all field accesses and method calls of a procedure. *)
 let callback_check_access { Callbacks.tenv; proc_desc } =
-  Cfg.Procdesc.iter_instrs
+  Procdesc.iter_instrs
     (fun _ instr  -> report_calls_and_accesses tenv "PROC" proc_desc instr)
     proc_desc
 
@@ -193,7 +193,7 @@ let callback_check_cluster_access exe_env all_procs get_proc_desc _ =
       match get_proc_desc proc_name with
       | Some proc_desc ->
           let tenv = Exe_env.get_tenv exe_env proc_name in
-          Cfg.Procdesc.iter_instrs
+          Procdesc.iter_instrs
             (fun _ instr -> report_calls_and_accesses tenv "CLUSTER" proc_desc instr)
             proc_desc
       | _ ->
@@ -235,7 +235,7 @@ let callback_check_write_to_parcel_java
   let check r_desc w_desc =
 
     let is_serialization_node node =
-      match Cfg.Node.get_callees node with
+      match Procdesc.Node.get_callees node with
       | [] -> false
       | [Procname.Java pname_java] ->
           let class_name = Procname.java_get_class_name pname_java in
@@ -261,18 +261,18 @@ let callback_check_write_to_parcel_java
           false in
 
     let node_to_call_desc node =
-      match Cfg.Node.get_callees node with
+      match Procdesc.Node.get_callees node with
       | [desc] -> desc
       | _ -> assert false in
 
     let r_call_descs =
       IList.map node_to_call_desc
         (IList.filter is_serialization_node
-           (Cfg.Procdesc.get_sliced_slope r_desc is_serialization_node)) in
+           (Procdesc.get_sliced_slope r_desc is_serialization_node)) in
     let w_call_descs =
       IList.map node_to_call_desc
         (IList.filter is_serialization_node
-           (Cfg.Procdesc.get_sliced_slope w_desc is_serialization_node)) in
+           (Procdesc.get_sliced_slope w_desc is_serialization_node)) in
 
     let rec check_match = function
       | rc:: rcs, wc:: wcs ->
@@ -314,7 +314,7 @@ let callback_check_write_to_parcel_java
             if !verbose then L.stdout "Methods not available@."
         end
     | _ -> () in
-  Cfg.Procdesc.iter_instrs do_instr proc_desc
+  Procdesc.iter_instrs do_instr proc_desc
 
 (** Looks for writeToParcel methods and checks whether read is in reverse *)
 let callback_check_write_to_parcel ({ Callbacks.proc_name } as args) =
@@ -329,7 +329,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
   let verbose = ref false in
 
   let class_formal_names = lazy (
-    let formals = Cfg.Procdesc.get_formals proc_desc in
+    let formals = Procdesc.get_formals proc_desc in
     let class_formals =
       let is_class_type (p, typ) =
         match typ with
@@ -375,7 +375,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
         let was_not_found formal_name =
           not (Exp.Set.exists (fun exp -> equal_formal_param exp formal_name) !checks_to_formals) in
         let missing = IList.filter was_not_found formal_names in
-        let loc = Cfg.Procdesc.get_loc proc_desc in
+        let loc = Procdesc.get_loc proc_desc in
         let pp_file_loc fmt () =
           F.fprintf fmt "%s:%d" (DB.source_file_to_string loc.Location.file) loc.Location.line in
         L.stdout "Null Checks of Formal Parameters: ";
@@ -401,7 +401,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
            | _ ->
                ())
     | _ -> () in
-  Cfg.Procdesc.iter_instrs do_instr proc_desc;
+  Procdesc.iter_instrs do_instr proc_desc;
   summary_checks_of_formals ()
 
 (** Test persistent state. *)
@@ -412,7 +412,7 @@ let callback_test_state { Callbacks.proc_name } =
 let callback_checkVisibleForTesting { Callbacks.proc_desc } =
   if Annotations.pdesc_has_annot proc_desc Annotations.visibleForTesting then
     begin
-      let loc = Cfg.Procdesc.get_loc proc_desc in
+      let loc = Procdesc.get_loc proc_desc in
       let linereader = Printer.LineReader.create () in
       L.stdout "%a@." (PP.pp_loc_range linereader 10 10) loc
     end
@@ -426,10 +426,15 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
   let reverse_find_instr f node =
     (* this is not really sound but for the moment a sufficient approximation *)
     let has_instr node =
-      try ignore(IList.find f (Cfg.Node.get_instrs node)); true
+      try ignore(IList.find f (Procdesc.Node.get_instrs node)); true
       with Not_found -> false in
-    let preds = Cfg.Node.get_generated_slope node (fun n -> Cfg.Node.get_sliced_preds n has_instr) in
-    let instrs = IList.flatten (IList.map (fun n -> IList.rev (Cfg.Node.get_instrs n)) preds) in
+    let preds =
+      Procdesc.Node.get_generated_slope
+        node
+        (fun n -> Procdesc.Node.get_sliced_preds n has_instr) in
+    let instrs =
+      IList.flatten
+        (IList.map (fun n -> IList.rev (Procdesc.Node.get_instrs n)) preds) in
     try
       Some (IList.find f instrs)
     with Not_found -> None in
@@ -442,9 +447,9 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
       Some proc_desc' ->
         let is_return_instr = function
           | Sil.Store (Exp.Lvar p, _, _, _)
-            when Pvar.equal p (Cfg.Procdesc.get_ret_var proc_desc') -> true
+            when Pvar.equal p (Procdesc.get_ret_var proc_desc') -> true
           | _ -> false in
-        (match reverse_find_instr is_return_instr (Cfg.Procdesc.get_exit_node proc_desc') with
+        (match reverse_find_instr is_return_instr (Procdesc.get_exit_node proc_desc') with
          | Some (Sil.Store (_, _, Exp.Const (Const.Cclass n), _)) -> Ident.name_to_string n
          | _ -> "<" ^ (Procname.to_string proc_name') ^ ">")
     | None -> "?" in
@@ -509,7 +514,7 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
     ST.pname_add proc_name ret_const_key ret_const in
 
   store_return ();
-  Cfg.Procdesc.iter_instrs do_instr proc_desc
+  Procdesc.iter_instrs do_instr proc_desc
 
 (** Check field accesses. *)
 let callback_check_field_access { Callbacks.proc_desc } =
@@ -552,7 +557,7 @@ let callback_check_field_access { Callbacks.proc_desc } =
     | Sil.Remove_temps _
     | Sil.Declare_locals _ ->
         () in
-  Cfg.Procdesc.iter_instrs do_instr proc_desc
+  Procdesc.iter_instrs do_instr proc_desc
 
 (** Print c method calls. *)
 let callback_print_c_method_calls { Callbacks.tenv; proc_desc; proc_name } =
@@ -580,7 +585,7 @@ let callback_print_c_method_calls { Callbacks.tenv; proc_desc; proc_name } =
           loc
           description
     | _ -> () in
-  Cfg.Procdesc.iter_instrs do_instr proc_desc
+  Procdesc.iter_instrs do_instr proc_desc
 
 (** Print access to globals. *)
 let callback_print_access_to_globals { Callbacks.tenv; proc_desc; proc_name } =
@@ -608,4 +613,4 @@ let callback_print_access_to_globals { Callbacks.tenv; proc_desc; proc_name } =
     | Sil.Store (e, _, _, loc) when get_global_var e <> None ->
         Option.may (fun pvar -> do_pvar false pvar loc) (get_global_var e)
     | _ -> () in
-  Cfg.Procdesc.iter_instrs do_instr proc_desc
+  Procdesc.iter_instrs do_instr proc_desc

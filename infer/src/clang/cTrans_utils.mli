@@ -12,8 +12,8 @@ open! Utils
 (** Utility methods to support the translation of clang ast constructs into sil instructions.  *)
 
 type continuation = {
-  break: Cfg.Node.t list;
-  continue: Cfg.Node.t list;
+  break: Procdesc.Node.t list;
+  continue: Procdesc.Node.t list;
   return_temp : bool; (* true if temps should not be removed in the node but returned to ancestors *)
 }
 
@@ -23,7 +23,7 @@ type priority_node =
 
 type trans_state = {
   context: CContext.t;
-  succ_nodes: Cfg.Node.t list;
+  succ_nodes: Procdesc.Node.t list;
   continuation: continuation option;
   priority: priority_node;
   var_exp_typ: (Exp.t * Typ.t) option;
@@ -32,8 +32,8 @@ type trans_state = {
 }
 
 type trans_result = {
-  root_nodes: Cfg.Node.t list;
-  leaf_nodes: Cfg.Node.t list;
+  root_nodes: Procdesc.Node.t list;
+  leaf_nodes: Procdesc.Node.t list;
   instrs: Sil.instr list;
   exps: (Exp.t * Typ.t) list;
   initd_exps: Exp.t list;
@@ -44,7 +44,7 @@ val empty_res_trans: trans_result
 
 val undefined_expression: unit -> Exp.t
 
-val collect_res_trans : Cfg.Procdesc.t -> trans_result list -> trans_result
+val collect_res_trans : Procdesc.t -> trans_result list -> trans_result
 
 val extract_var_exp_or_fail : trans_state -> Exp.t * Typ.t
 
@@ -125,19 +125,20 @@ sig
 
   val need_unary_op_node : Clang_ast_t.unary_operator_info -> bool
 
-  val create_node : Cfg.Node.nodekind -> Sil.instr list -> Location.t -> CContext.t -> Cfg.Node.t
+  val create_node :
+    Procdesc.Node.nodekind -> Sil.instr list -> Location.t -> CContext.t -> Procdesc.Node.t
 
-  val is_join_node : Cfg.Node.t -> bool
+  val is_join_node : Procdesc.Node.t -> bool
 
   val create_prune_node :
     bool -> (Exp.t * Typ.t) list -> Sil.instr list -> Location.t -> Sil.if_kind ->
-    CContext.t -> Cfg.Node.t
+    CContext.t -> Procdesc.Node.t
 
-  val is_prune_node : Cfg.Node.t -> bool
+  val is_prune_node : Procdesc.Node.t -> bool
 
-  val is_true_prune_node : Cfg.Node.t -> bool
+  val is_true_prune_node : Procdesc.Node.t -> bool
 
-  val prune_kind : bool -> Cfg.Node.nodekind
+  val prune_kind : bool -> Procdesc.Node.nodekind
 
 end
 
@@ -175,7 +176,7 @@ end
 (** Module for translating goto instructions by keeping a map of labels. *)
 module GotoLabel :
 sig
-  val find_goto_label : CContext.t -> string -> Location.t -> Cfg.Node.t
+  val find_goto_label : CContext.t -> string -> Location.t -> Procdesc.Node.t
 end
 
 (** Module that provides utility functions for translating different types of loops. *)

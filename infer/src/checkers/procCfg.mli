@@ -17,10 +17,10 @@ module type Node = sig
   type t
   type id
 
-  val kind : t -> Cfg.Node.nodekind
+  val kind : t -> Procdesc.Node.nodekind
   val id : t -> id
   val loc : t -> Location.t
-  val underlying_id : t -> Cfg.Node.id
+  val underlying_id : t -> Procdesc.Node.id
   val id_compare : id -> id -> int
   val pp_id : Format.formatter -> id -> unit
 end
@@ -60,24 +60,24 @@ module type S = sig
 
   val exit_node : t -> node
 
-  val proc_desc : t -> Cfg.Procdesc.t
+  val proc_desc : t -> Procdesc.t
 
   val nodes : t -> node list
 
-  val from_pdesc : Cfg.Procdesc.t -> t
+  val from_pdesc : Procdesc.t -> t
 end
 
-module DefaultNode : Node with type t = Cfg.Node.t and type id = Cfg.Node.id
+module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.Node.id
 
-module InstrNode : Node with type t = Cfg.Node.t and type id = Cfg.Node.id * index
+module InstrNode : Node with type t = Procdesc.Node.t and type id = Procdesc.Node.id * index
 
 (** Forward CFG with no exceptional control-flow *)
-module Normal : S with type t = Cfg.Procdesc.t
+module Normal : S with type t = Procdesc.t
                    and type node = DefaultNode.t
                    and type id = DefaultNode.id
 
 (** Forward CFG with exceptional control-flow *)
-module Exceptional : S with type t = Cfg.Procdesc.t * DefaultNode.t list Cfg.IdMap.t
+module Exceptional : S with type t = Procdesc.t * DefaultNode.t list Procdesc.IdMap.t
                         and type node = DefaultNode.t
                         and type id = DefaultNode.id
 

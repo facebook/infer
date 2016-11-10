@@ -115,10 +115,10 @@ let rec format_string_type_names
 let printf_args_name = "CHECKERS_PRINTF_ARGS"
 
 let check_printf_args_ok tenv
-    (node: Cfg.Node.t)
+    (node: Procdesc.Node.t)
     (instr: Sil.instr)
     (proc_name: Procname.t)
-    (proc_desc: Cfg.Procdesc.t): unit =
+    (proc_desc: Procdesc.t): unit =
 
   (* Check if format string lines up with arguments *)
   let rec check_type_names instr_loc n_arg instr_proc_name fmt_type_names arg_type_names =
@@ -180,7 +180,7 @@ let check_printf_args_ok tenv
       | Some printf -> (
           try
             let fmt, fixed_nvars, array_nvar = format_arguments printf args in
-            let instrs = Cfg.Node.get_instrs node in
+            let instrs = Procdesc.Node.get_instrs node in
             let fixed_nvar_type_names = IList.map (fixed_nvar_type_name instrs) fixed_nvars in
             let vararg_ivar_type_names = match array_nvar with
               | Some nvar -> (
@@ -212,7 +212,7 @@ let check_printf_args_ok tenv
   | _ -> ()
 
 let callback_printf_args { Callbacks.tenv; proc_desc; proc_name } : unit =
-  Cfg.Procdesc.iter_instrs (fun n i -> check_printf_args_ok tenv n i proc_name proc_desc) proc_desc
+  Procdesc.iter_instrs (fun n i -> check_printf_args_ok tenv n i proc_name proc_desc) proc_desc
 
 (*
 let printf_signature_to_string

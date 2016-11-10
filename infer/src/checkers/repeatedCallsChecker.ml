@@ -73,7 +73,7 @@ struct
         | Sil.Call (_, Exp.Const (Const.Cfun pn), _, loc, _) when proc_is_new pn ->
             found := Some loc
         | _ -> () in
-      IList.iter do_instr (Cfg.Node.get_instrs node);
+      IList.iter do_instr (Procdesc.Node.get_instrs node);
       !found in
 
     let module DFAllocCheck = Dataflow.MakeDF(struct
@@ -98,7 +98,7 @@ struct
       end) in
 
     let transitions = DFAllocCheck.run tenv pdesc None in
-    match transitions (Cfg.Procdesc.get_exit_node pdesc) with
+    match transitions (Procdesc.get_exit_node pdesc) with
     | DFAllocCheck.Transition (loc, _, _) -> loc
     | DFAllocCheck.Dead_state -> None
 
@@ -144,7 +144,7 @@ struct
         let () = match get_proc_desc callee_pname with
           | None -> ()
           | Some proc_desc ->
-              if Cfg.Procdesc.is_defined proc_desc
+              if Procdesc.is_defined proc_desc
               then report proc_desc in
         add_call instr_normalized_args extension
     | _ -> extension

@@ -25,7 +25,7 @@ module type Spec = sig
       input is the previous state, current instruction, current node kind, current procedure and
       type environment.
   *)
-  val exec_instr : astate -> Sil.instr -> Cfg.Node.nodekind -> Procname.t -> Tenv.t -> astate
+  val exec_instr : astate -> Sil.instr -> Procdesc.Node.nodekind -> Procname.t -> Tenv.t -> astate
 
   (** log errors here.
       input is a state, location where the state occurs in the source, and the current procedure.
@@ -74,7 +74,7 @@ module Make (Spec : Spec) : S = struct
 
     let exec_instr astate_set proc_data node instr =
       let node_kind = CFG.kind node in
-      let pname = Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc in
+      let pname = Procdesc.get_proc_name proc_data.ProcData.pdesc in
       Domain.fold
         (fun astate acc ->
            Domain.add (Spec.exec_instr astate instr node_kind pname proc_data.ProcData.tenv) acc)
@@ -89,7 +89,7 @@ module Make (Spec : Spec) : S = struct
       (TransferFunctions)
 
   let checker { Callbacks.proc_desc; proc_name; tenv; } =
-    let nodes = Cfg.Procdesc.get_nodes proc_desc in
+    let nodes = Procdesc.get_nodes proc_desc in
     let do_reporting node_id state =
       let astate_set = state.AbstractInterpreter.post in
       if not (Domain.is_empty astate_set)
@@ -97,7 +97,7 @@ module Make (Spec : Spec) : S = struct
         (* should never fail since keys in the invariant map should always be real node id's *)
         let node =
           IList.find
-            (fun node -> Cfg.Node.id_compare node_id (Cfg.Node.get_id node) = 0)
+            (fun node -> Procdesc.Node.id_compare node_id (Procdesc.Node.get_id node) = 0)
             nodes in
         Domain.iter
           (fun astate ->

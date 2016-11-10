@@ -135,7 +135,7 @@ module MakeNoCFG
       let analyze_ondemand_ _ pdesc =
         match compute_post (ProcData.make pdesc tenv extras) with
         | Some post ->
-            Summ.write_summary (Cfg.Procdesc.get_proc_name pdesc) post;
+            Summ.write_summary (Procdesc.get_proc_name pdesc) post;
             Some post
         | None ->
             None in

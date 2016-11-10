@@ -936,8 +936,8 @@ let pp_proplist_parsed2dotty_file filename plist =
 (********** Print control flow graph (in dot form) for fundec to *)
 (* channel. You have to compute an interprocedural cfg first               *)
 
-let pp_cfgnodename pname fmt (n : Cfg.Node.t) =
-  F.fprintf fmt "\"%s_%d\"" (Procname.to_filename pname) (Cfg.Node.get_id n :> int)
+let pp_cfgnodename pname fmt (n : Procdesc.Node.t) =
+  F.fprintf fmt "\"%s_%d\"" (Procname.to_filename pname) (Procdesc.Node.get_id n :> int)
 
 let pp_etlist fmt etl =
   IList.iter (fun (id, ty) ->
@@ -947,60 +947,62 @@ let pp_local_list fmt etl =
   IList.iter (fun (id, ty) ->
       Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full pe_text) ty) etl
 
-let pp_cfgnodelabel pdesc fmt (n : Cfg.Node.t) =
+let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
   let pp_label fmt n =
-    match Cfg.Node.get_kind n with
-    | Cfg.Node.Start_node pname ->
+    match Procdesc.Node.get_kind n with
+    | Procdesc.Node.Start_node pname ->
         Format.fprintf fmt "Start %s\\nFormals: %a\\nLocals: %a"
           (Procname.to_string pname)
-          pp_etlist (Cfg.Procdesc.get_formals pdesc)
-          pp_local_list (Cfg.Procdesc.get_locals pdesc);
-        if IList.length (Cfg.Procdesc.get_captured pdesc) <> 0 then
+          pp_etlist (Procdesc.get_formals pdesc)
+          pp_local_list (Procdesc.get_locals pdesc);
+        if IList.length (Procdesc.get_captured pdesc) <> 0 then
           Format.fprintf fmt "\\nCaptured: %a"
-            pp_local_list (Cfg.Procdesc.get_captured pdesc)
-    | Cfg.Node.Exit_node pname ->
+            pp_local_list (Procdesc.get_captured pdesc)
+    | Procdesc.Node.Exit_node pname ->
         Format.fprintf fmt "Exit %s" (Procname.to_string pname)
-    | Cfg.Node.Join_node ->
+    | Procdesc.Node.Join_node ->
         Format.fprintf fmt "+"
-    | Cfg.Node.Prune_node (is_true_branch, _, _) ->
+    | Procdesc.Node.Prune_node (is_true_branch, _, _) ->
         Format.fprintf fmt "Prune (%b branch)" is_true_branch
-    | Cfg.Node.Stmt_node s -> Format.fprintf fmt " %s" s
-    | Cfg.Node.Skip_node s -> Format.fprintf fmt "Skip %s" s in
+    | Procdesc.Node.Stmt_node s -> Format.fprintf fmt " %s" s
+    | Procdesc.Node.Skip_node s -> Format.fprintf fmt "Skip %s" s in
   let instr_string i =
     let pp f () = Sil.pp_instr pe_text f i in
     let str = pp_to_string pp () in
     Escape.escape_dotty str in
   let pp_instrs fmt instrs =
     IList.iter (fun i -> F.fprintf fmt " %s\\n " (instr_string i)) instrs in
-  let instrs = Cfg.Node.get_instrs n in
-  F.fprintf fmt "%d: %a \\n  %a" (Cfg.Node.get_id n :> int) pp_label n pp_instrs instrs
+  let instrs = Procdesc.Node.get_instrs n in
+  F.fprintf fmt "%d: %a \\n  %a" (Procdesc.Node.get_id n :> int) pp_label n pp_instrs instrs
 
-let pp_cfgnodeshape fmt (n: Cfg.Node.t) =
-  match Cfg.Node.get_kind n with
-  | Cfg.Node.Start_node _ | Cfg.Node.Exit_node _ -> F.fprintf fmt "color=yellow style=filled"
-  | Cfg.Node.Prune_node _ -> F.fprintf fmt "shape=\"invhouse\""
-  | Cfg.Node.Skip_node _ -> F.fprintf fmt "color=\"gray\""
-  | Cfg.Node.Stmt_node _ -> F.fprintf fmt "shape=\"box\""
+let pp_cfgnodeshape fmt (n: Procdesc.Node.t) =
+  match Procdesc.Node.get_kind n with
+  | Procdesc.Node.Start_node _
+  | Procdesc.Node.Exit_node _ -> F.fprintf fmt "color=yellow style=filled"
+  | Procdesc.Node.Prune_node _ -> F.fprintf fmt "shape=\"invhouse\""
+  | Procdesc.Node.Skip_node _ -> F.fprintf fmt "color=\"gray\""
+  | Procdesc.Node.Stmt_node _ -> F.fprintf fmt "shape=\"box\""
   | _ -> F.fprintf fmt ""
 
-let pp_cfgnode pdesc fmt (n: Cfg.Node.t) =
-  let pname = Cfg.Procdesc.get_proc_name pdesc in
+let pp_cfgnode pdesc fmt (n: Procdesc.Node.t) =
+  let pname = Procdesc.get_proc_name pdesc in
   F.fprintf fmt "%a [label=\"%a\" %a]\n\t\n"
     (pp_cfgnodename pname) n
     (pp_cfgnodelabel pdesc) n
     pp_cfgnodeshape n;
   let print_edge n1 n2 is_exn =
     let color = if is_exn then "[color=\"red\" ]" else "" in
-    match Cfg.Node.get_kind n2 with
-    | Cfg.Node.Exit_node _ when is_exn = true -> (* don't print exception edges to the exit node *)
+    match Procdesc.Node.get_kind n2 with
+    | Procdesc.Node.Exit_node _
+      when is_exn = true -> (* don't print exception edges to the exit node *)
         ()
     | _ ->
         F.fprintf fmt "\n\t %a -> %a %s;"
           (pp_cfgnodename pname) n1
           (pp_cfgnodename pname) n2
           color in
-  IList.iter (fun n' -> print_edge n n' false) (Cfg.Node.get_succs n);
-  IList.iter (fun n' -> print_edge n n' true) (Cfg.Node.get_exn n)
+  IList.iter (fun n' -> print_edge n n' false) (Procdesc.Node.get_succs n);
+  IList.iter (fun n' -> print_edge n n' true) (Procdesc.Node.get_exn n)
 
 (* * print control flow graph (in dot form) for fundec to channel let      *)
 (* print_cfg_channel (chan : out_channel) (fd : fundec) = let pnode (s:    *)
@@ -1014,7 +1016,7 @@ let pp_cfgnode pdesc fmt (n: Cfg.Node.t) =
 (* special node, and call / return edges                                   *)
 let print_icfg source fmt cfg =
   let print_node pdesc node =
-    let loc = Cfg.Node.get_loc node in
+    let loc = Procdesc.Node.get_loc node in
     if (Config.dotty_cfg_libs || DB.source_file_equal loc.Location.file source) then
       F.fprintf fmt "%a\n" (pp_cfgnode pdesc) node in
   Cfg.iter_all_nodes print_node cfg

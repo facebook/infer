@@ -142,9 +142,9 @@ module ComplexExpressions = struct
 end (* ComplexExpressions *)
 
 type check_return_type =
-  Procname.t -> Cfg.Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
+  Procname.t -> Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
 
-type find_canonical_duplicate = Cfg.Node.t -> Cfg.Node.t
+type find_canonical_duplicate = Procdesc.Node.t -> Procdesc.Node.t
 
 type get_proc_desc = TypeState.get_proc_desc
 
@@ -157,7 +157,7 @@ type checks =
 
 (** Typecheck an expression. *)
 let rec typecheck_expr
-    find_canonical_duplicate visited checks tenv node instr_ref (curr_pdesc : Cfg.Procdesc.t)
+    find_canonical_duplicate visited checks tenv node instr_ref (curr_pdesc : Procdesc.t)
     typestate e tr_default loc : TypeState.range = match e with
   | Exp.Lvar pvar ->
       (match TypeState.lookup_pvar pvar typestate with
@@ -236,11 +236,11 @@ let rec typecheck_expr
 
 (** Typecheck an instruction. *)
 let typecheck_instr
-    tenv ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc curr_pname
+    tenv ext calls_this checks (node: Procdesc.Node.t) idenv get_proc_desc curr_pname
     curr_pdesc find_canonical_duplicate annotated_signature instr_ref linereader typestate instr =
   (* let print_current_state () = *)
   (*   L.stdout "Current Typestate in node %a@\n%a@." *)
-  (*     Cfg.Node.pp (TypeErr.InstrRef.get_node instr_ref) *)
+  (*     Procdesc.Node.pp (TypeErr.InstrRef.get_node instr_ref) *)
   (*     (TypeState.pp ext) typestate; *)
   (*   L.stdout "  %a@." (Sil.pp_instr pe_text) instr in *)
 
@@ -429,7 +429,7 @@ let typecheck_instr
       annotated_signature.Annotations.params in
 
   let is_return pvar =
-    let ret_pvar = Cfg.Procdesc.get_ret_var curr_pdesc in
+    let ret_pvar = Procdesc.get_ret_var curr_pdesc in
     Pvar.equal pvar ret_pvar in
 
   (* Apply a function to a pvar and its associated content if front-end generated. *)
@@ -702,7 +702,7 @@ let typecheck_instr
                   | _ -> ()
                 end
             | _ -> () in
-          IList.iter do_instr (Cfg.Node.get_instrs cond_node) in
+          IList.iter do_instr (Procdesc.Node.get_instrs cond_node) in
         let handle_optional_isPresent node' e =
           match convert_complex_exp_to_pvar node' false e typestate' loc with
           | Exp.Lvar pvar', _ ->
@@ -718,7 +718,9 @@ let typecheck_instr
               (* In foo(cond1 && cond2), the node that sets the result to false
                  has all the negated conditions as parents. *)
               | Some boolean_assignment_node ->
-                  IList.iter handle_negated_condition (Cfg.Node.get_preds boolean_assignment_node);
+                  IList.iter
+                    handle_negated_condition
+                    (Procdesc.Node.get_preds boolean_assignment_node);
                   !res_typestate
               | None ->
                   begin
@@ -1018,7 +1020,7 @@ let typecheck_instr
       (* Handle assigment fron a temp pvar in a condition.
          This recognizes the handling of temp variables in ((x = ...) != null) *)
       let handle_assignment_in_condition pvar =
-        match Cfg.Node.get_preds node with
+        match Procdesc.Node.get_preds node with
         | [prev_node] ->
             let found = ref None in
             let do_instr i = match i with
@@ -1026,7 +1028,7 @@ let typecheck_instr
                 when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv e') ->
                   found := Some e
               | _ -> () in
-            IList.iter do_instr (Cfg.Node.get_instrs prev_node);
+            IList.iter do_instr (Procdesc.Node.get_instrs prev_node);
             !found
         | _ -> None in
 
@@ -1060,7 +1062,7 @@ let typecheck_node
     tenv ext calls_this checks idenv get_proc_desc curr_pname curr_pdesc
     find_canonical_duplicate annotated_signature typestate node linereader =
 
-  let instrs = Cfg.Node.get_instrs node in
+  let instrs = Procdesc.Node.get_instrs node in
   let instr_ref_gen = TypeErr.InstrRef.create_generator node in
 
   let typestates_exn = ref [] in
@@ -1077,7 +1079,7 @@ let typecheck_node
           typestates_exn := typestate :: !typestates_exn
     | Sil.Store (Exp.Lvar pv, _, _, _) when
         Pvar.is_return pv &&
-        Cfg.Node.get_kind node = Cfg.Node.throw_kind ->
+        Procdesc.Node.get_kind node = Procdesc.Node.throw_kind ->
         (* throw instruction *)
         typestates_exn := typestate :: !typestates_exn
     | _ -> () in
@@ -1099,6 +1101,6 @@ let typecheck_node
   TypeErr.node_reset_forall canonical_node;
 
   let typestate_succ = IList.fold_left (do_instruction ext) typestate instrs in
-  if Cfg.Node.get_kind node = Cfg.Node.exn_sink_kind
+  if Procdesc.Node.get_kind node = Procdesc.Node.exn_sink_kind
   then [], [] (* don't propagate exceptions to exit node *)
   else [typestate_succ], !typestates_exn

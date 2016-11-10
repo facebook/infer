@@ -22,7 +22,7 @@ type curr_class =
   | ContextClsDeclPtr of Clang_ast_t.pointer
   | ContextNoCls
 
-type str_node_map = (string, Cfg.Node.t) Hashtbl.t
+type str_node_map = (string, Procdesc.Node.t) Hashtbl.t
 
 type t =
   {
@@ -30,7 +30,7 @@ type t =
     tenv : Tenv.t;
     cg : Cg.t;
     cfg : Cfg.cfg;
-    procdesc : Cfg.Procdesc.t;
+    procdesc : Procdesc.t;
     is_objc_method : bool;
     curr_class: curr_class;
     return_param_typ : Typ.t option;
@@ -65,7 +65,7 @@ let rec is_objc_instance context =
   match context.outer_context with
   | Some outer_context -> is_objc_instance outer_context
   | None ->
-      let attrs = Cfg.Procdesc.get_attributes context.procdesc in
+      let attrs = Procdesc.get_attributes context.procdesc in
       attrs.ProcAttributes.is_objc_instance_method
 
 let rec get_curr_class context =
@@ -157,4 +157,4 @@ let static_vars_for_block context block_name =
 let rec get_outer_procname context =
   match context.outer_context with
   | Some outer_context -> get_outer_procname outer_context
-  | None -> Cfg.Procdesc.get_proc_name context.procdesc
+  | None -> Procdesc.get_proc_name context.procdesc

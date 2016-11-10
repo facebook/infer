@@ -14,12 +14,12 @@ module L = Logging
 (** Module to register and invoke callbacks *)
 
 type proc_callback_args = {
-  get_proc_desc : Procname.t -> Cfg.Procdesc.t option;
+  get_proc_desc : Procname.t -> Procdesc.t option;
   get_procs_in_file : Procname.t -> Procname.t list;
   idenv : Idenv.t;
   tenv : Tenv.t;
   proc_name : Procname.t;
-  proc_desc : Cfg.Procdesc.t;
+  proc_desc : Procdesc.t;
 }
 
 type proc_callback_t = proc_callback_args -> unit
@@ -27,8 +27,8 @@ type proc_callback_t = proc_callback_args -> unit
 type cluster_callback_t =
   Exe_env.t ->
   Procname.t list ->
-  (Procname.t -> Cfg.Procdesc.t option) ->
-  (Idenv.t * Tenv.t * Procname.t * Cfg.Procdesc.t) list ->
+  (Procname.t -> Procdesc.t option) ->
+  (Idenv.t * Tenv.t * Procname.t * Procdesc.t) list ->
   unit
 
 let procedure_callbacks = ref []
@@ -51,7 +51,7 @@ let get_procedure_definition exe_env proc_name =
   Option.map
     (fun proc_desc ->
        let idenv = Idenv.create proc_desc
-       and language = (Cfg.Procdesc.get_attributes proc_desc).ProcAttributes.language in
+       and language = (Procdesc.get_attributes proc_desc).ProcAttributes.language in
        (idenv, tenv, proc_name, proc_desc, language))
     (Exe_env.get_proc_desc exe_env proc_name)
 
@@ -68,7 +68,7 @@ let iterate_procedure_callbacks exe_env caller_pname =
   let get_procs_in_file proc_name =
     match Exe_env.get_cfg exe_env proc_name with
     | Some cfg->
-        IList.map Cfg.Procdesc.get_proc_name (Cfg.get_defined_procs cfg)
+        IList.map Procdesc.get_proc_name (Cfg.get_defined_procs cfg)
     | None ->
         [] in
 

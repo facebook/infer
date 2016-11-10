@@ -16,7 +16,7 @@ val sil_var_of_decl : CContext.t -> Clang_ast_t.decl -> Procname.t -> Pvar.t
 
 val sil_var_of_decl_ref : CContext.t -> Clang_ast_t.decl_ref -> Procname.t -> Pvar.t
 
-val add_var_to_locals : Cfg.Procdesc.t -> Clang_ast_t.decl -> Typ.t -> Pvar.t -> unit
+val add_var_to_locals : Procdesc.t -> Clang_ast_t.decl -> Typ.t -> Pvar.t -> unit
 
 val compute_autorelease_pool_vars : CContext.t -> Clang_ast_t.stmt list -> (Exp.t * Typ.t) list
 

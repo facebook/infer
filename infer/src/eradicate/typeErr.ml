@@ -20,23 +20,23 @@ module type InstrRefT =
 sig
   type t
   type generator
-  val create_generator : Cfg.Node.t -> generator
+  val create_generator : Procdesc.Node.t -> generator
   val equal : t -> t -> bool
   val gen : generator -> t
-  val get_node : t -> Cfg.Node.t
+  val get_node : t -> Procdesc.Node.t
   val hash : t -> int
-  val replace_node : t -> Cfg.Node.t -> t
+  val replace_node : t -> Procdesc.Node.t -> t
 end (* InstrRefT *)
 
 
 (** Per-node instruction reference. *)
 module InstrRef : InstrRefT =
 struct
-  type t = Cfg.Node.t * int
-  type generator = Cfg.Node.t * int ref
+  type t = Procdesc.Node.t * int
+  type generator = Procdesc.Node.t * int ref
   let equal (n1, i1) (n2, i2) =
-    Cfg.Node.equal n1 n2 && i1 = i2
-  let hash (n, i) = Hashtbl.hash (Cfg.Node.hash n, i)
+    Procdesc.Node.equal n1 n2 && i1 = i2
+  let hash (n, i) = Hashtbl.hash (Procdesc.Node.hash n, i)
   let get_node (n, _) = n
   let replace_node (_, i) n' = (n', i)
   let create_generator n = (n, ref 0)
@@ -227,7 +227,7 @@ let node_reset_forall node =
     match instr_ref_opt, get_forall err_instance with
     | Some instr_ref, is_forall ->
         let node' = InstrRef.get_node instr_ref in
-        if is_forall && Cfg.Node.equal node node' then err_state.always <- false
+        if is_forall && Procdesc.Node.equal node node' then err_state.always <- false
     | None, _ -> () in
   H.iter iter err_tbl
 
@@ -293,7 +293,7 @@ end (* Strict *)
 
 type st_report_error =
   Procname.t ->
-  Cfg.Procdesc.t ->
+  Procdesc.t ->
   string ->
   Location.t ->
   ?advice: string option ->
@@ -307,7 +307,7 @@ type st_report_error =
 (** Report an error right now. *)
 let report_error_now tenv
     (st_report_error : st_report_error) err_instance loc pdesc : unit =
-  let pname = Cfg.Procdesc.get_proc_name pdesc in
+  let pname = Procdesc.get_proc_name pdesc in
   let demo_mode = true in
   let do_print_base ew_string kind_s s =
     let mname = match pname with

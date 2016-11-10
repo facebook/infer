@@ -20,7 +20,7 @@ type curr_class =
   | ContextClsDeclPtr of Clang_ast_t.pointer
   | ContextNoCls
 
-type str_node_map = (string, Cfg.Node.t) Hashtbl.t
+type str_node_map = (string, Procdesc.Node.t) Hashtbl.t
 
 type t =
   {
@@ -28,7 +28,7 @@ type t =
     tenv : Tenv.t;
     cg : Cg.t;
     cfg : Cfg.cfg;
-    procdesc : Cfg.Procdesc.t;
+    procdesc : Procdesc.t;
     is_objc_method : bool;
     curr_class: curr_class;
     return_param_typ : Typ.t option;
@@ -38,7 +38,7 @@ type t =
     label_map : str_node_map;
   }
 
-val get_procdesc : t -> Cfg.Procdesc.t
+val get_procdesc : t -> Procdesc.t
 
 val get_cfg : t -> Cfg.cfg
 
@@ -61,7 +61,7 @@ val is_objc_method : t -> bool
 val get_tenv : t -> Tenv.t
 
 val create_context : CFrontend_config.translation_unit_context -> Tenv.t -> Cg.t -> Cfg.cfg ->
-  Cfg.Procdesc.t -> curr_class -> Typ.t option -> bool -> t option -> t
+  Procdesc.t -> curr_class -> Typ.t option -> bool -> t option -> t
 
 val create_curr_class : Tenv.t -> string -> Csu.class_kind -> curr_class
 

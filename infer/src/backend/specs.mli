@@ -61,7 +61,7 @@ module Jprop : sig
 end
 
 (** set of visited nodes: node id and list of lines of all the instructions *)
-module Visitedset : Set.S with type elt = Cfg.Node.id * int list
+module Visitedset : Set.S with type elt = Procdesc.Node.id * int list
 
 (** convert a Visitedset to a string *)
 val visited_str : Visitedset.t -> string
@@ -136,7 +136,7 @@ type payload =
 (** Procedure summary *)
 type summary =
   { dependency_map: dependency_map_t;  (** maps children procs to timestamp as last seen at the start of an analysys phase for this proc *)
-    nodes: Cfg.Node.id list; (** ids of cfg nodes of the procedure *)
+    nodes: Procdesc.Node.id list; (** ids of cfg nodes of the procedure *)
     phase: phase; (** in FOOTPRINT phase or in RE_EXECUTION PHASE *)
     payload: payload;  (** payload containing the result of some analysis *)
     sessions: int ref; (** Session number: how many nodes went trough symbolic execution *)
@@ -144,7 +144,7 @@ type summary =
     status: status; (** ACTIVE when the proc is being analyzed *)
     timestamp: int; (** Timestamp of the specs, >= 0, increased every time the specs change *)
     attributes : ProcAttributes.t; (** Attributes of the procedure *)
-    proc_desc_option : Cfg.Procdesc.t option;
+    proc_desc_option : Procdesc.t option;
   }
 
 (** Add the summary to the table for the given function *)
@@ -211,16 +211,16 @@ val is_active : summary -> bool
     Do nothing if a summary exists already. *)
 val init_summary :
   (Procname.t list * (* depend list *)
-   Cfg.Node.id list * (* nodes *)
+   Procdesc.Node.id list * (* nodes *)
    proc_flags * (* procedure flags *)
    (Procname.t * Location.t) list * (* calls *)
    (Cg.in_out_calls option) * (* in and out calls *)
    ProcAttributes.t * (* attributes of the procedure *)
-   Cfg.Procdesc.t option) (* procdesc option *)
+   Procdesc.t option) (* procdesc option *)
   -> unit
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
-val reset_summary : Cg.t -> Procname.t -> ProcAttributes.t option -> Cfg.Procdesc.t option -> unit
+val reset_summary : Cg.t -> Procname.t -> ProcAttributes.t option -> Procdesc.t option -> unit
 
 (** Load procedure summary from the given file *)
 val load_summary : DB.filename -> summary option
@@ -248,7 +248,7 @@ val pp_summary_latex : whole_seconds:bool -> color -> Format.formatter -> summar
 val pp_summary_text : whole_seconds:bool -> Format.formatter -> summary -> unit
 
 (** Like proc_resolve_attributes but start from a proc_desc. *)
-val pdesc_resolve_attributes : Cfg.Procdesc.t -> ProcAttributes.t
+val pdesc_resolve_attributes : Procdesc.t -> ProcAttributes.t
 
 (** Try to find the attributes for a defined proc.
     First look at specs (to get attributes computed by analysis)

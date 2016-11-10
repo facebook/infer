@@ -143,8 +143,8 @@ end
 
 module Visitedset =
   Set.Make (struct
-    type t = Cfg.Node.id * int list
-    let compare (node_id1, _) (node_id2, _) = Cfg.Node.id_compare node_id1 node_id2
+    type t = Procdesc.Node.id * int list
+    let compare (node_id1, _) (node_id2, _) = Procdesc.Node.id_compare node_id1 node_id2
   end)
 
 let visited_str vis =
@@ -331,7 +331,7 @@ type payload =
 
 type summary =
   { dependency_map: dependency_map_t;  (** maps children procs to timestamp as last seen at the start of an analysys phase for this proc *)
-    nodes: Cfg.Node.id list; (** ids of cfg nodes of the procedure *)
+    nodes: Procdesc.Node.id list; (** ids of cfg nodes of the procedure *)
     phase: phase; (** in FOOTPRINT phase or in RE_EXECUTION PHASE *)
     payload: payload;  (** payload containing the result of some analysis *)
     sessions: int ref; (** Session number: how many nodes went trough symbolic execution *)
@@ -339,7 +339,7 @@ type summary =
     status: status; (** ACTIVE when the proc is being analyzed *)
     timestamp: int; (** Timestamp of the specs, >= 0, increased every time the specs change *)
     attributes : ProcAttributes.t; (** Attributes of the procedure *)
-    proc_desc_option : Cfg.Procdesc.t option;
+    proc_desc_option : Procdesc.t option;
   }
 
 type spec_tbl = (summary * DB.origin) Procname.Hash.t
@@ -668,7 +668,7 @@ let proc_resolve_attributes proc_name =
 
 (** Like proc_resolve_attributes but start from a proc_desc. *)
 let pdesc_resolve_attributes proc_desc =
-  let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
+  let proc_name = Procdesc.get_proc_name proc_desc in
   match proc_resolve_attributes proc_name with
   | Some proc_attributes ->
       proc_attributes

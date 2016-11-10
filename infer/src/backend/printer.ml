@@ -84,9 +84,9 @@ let node_is_visited proc_name node =
   | Some summary ->
       let stats = summary.Specs.stats in
       let is_visited_fp =
-        IntSet.mem (Cfg.Node.get_id node :> int) stats.Specs.nodes_visited_fp in
+        IntSet.mem (Procdesc.Node.get_id node :> int) stats.Specs.nodes_visited_fp in
       let is_visited_re =
-        IntSet.mem (Cfg.Node.get_id node :> int) stats.Specs.nodes_visited_re in
+        IntSet.mem (Procdesc.Node.get_id node :> int) stats.Specs.nodes_visited_re in
       is_visited_fp, is_visited_re
 
 (** Return true if the node was visited during analysis *)
@@ -100,7 +100,8 @@ let is_visited proc_name node =
     when starting and finishing the processing of a node *)
 module NodesHtml : sig
   val start_node :
-    int -> Location.t -> Procname.t -> Cfg.Node.t list -> Cfg.Node.t list -> Cfg.Node.t list ->
+    int -> Location.t -> Procname.t -> Procdesc.Node.t list ->
+    Procdesc.Node.t list -> Procdesc.Node.t list ->
     DB.source_file -> bool
   val finish_node : Procname.t -> int -> DB.source_file -> unit
 end = struct
@@ -131,38 +132,38 @@ end = struct
        IList.iter (fun node ->
            Io_infer.Html.pp_node_link
              [".."]
-             (Cfg.Node.get_proc_name node)
+             (Procdesc.Node.get_proc_name node)
              ~description:""
-             ~preds:(IList.map Cfg.Node.get_id (Cfg.Node.get_preds node) :> int list)
-             ~succs:(IList.map Cfg.Node.get_id (Cfg.Node.get_succs node) :> int list)
-             ~exn:(IList.map Cfg.Node.get_id (Cfg.Node.get_exn node) :> int list)
+             ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds node) :> int list)
+             ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs node) :> int list)
+             ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn node) :> int list)
              ~isvisited:(is_visited proc_name node)
              ~isproof:false
-             fmt (Cfg.Node.get_id node :> int)) preds;
+             fmt (Procdesc.Node.get_id node :> int)) preds;
        F.fprintf fmt "<br>SUCCS: @\n";
        IList.iter (fun node ->
            Io_infer.Html.pp_node_link
              [".."]
-             (Cfg.Node.get_proc_name node)
+             (Procdesc.Node.get_proc_name node)
              ~description:""
-             ~preds:(IList.map Cfg.Node.get_id (Cfg.Node.get_preds node) :> int list)
-             ~succs:(IList.map Cfg.Node.get_id (Cfg.Node.get_succs node) :> int list)
-             ~exn:(IList.map Cfg.Node.get_id (Cfg.Node.get_exn node) :> int list)
+             ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds node) :> int list)
+             ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs node) :> int list)
+             ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn node) :> int list)
              ~isvisited:(is_visited proc_name node)
              ~isproof:false
-             fmt (Cfg.Node.get_id node :> int)) succs;
+             fmt (Procdesc.Node.get_id node :> int)) succs;
        F.fprintf fmt "<br>EXN: @\n";
        IList.iter (fun node ->
            Io_infer.Html.pp_node_link
              [".."]
-             (Cfg.Node.get_proc_name node)
+             (Procdesc.Node.get_proc_name node)
              ~description:""
-             ~preds:(IList.map Cfg.Node.get_id (Cfg.Node.get_preds node) :> int list)
-             ~succs:(IList.map Cfg.Node.get_id (Cfg.Node.get_succs node) :> int list)
-             ~exn:(IList.map Cfg.Node.get_id (Cfg.Node.get_exn node) :> int list)
+             ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds node) :> int list)
+             ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs node) :> int list)
+             ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn node) :> int list)
              ~isvisited:(is_visited proc_name node)
              ~isproof:false
-             fmt (Cfg.Node.get_id node :> int)) exns;
+             fmt (Procdesc.Node.get_id node :> int)) exns;
        F.fprintf fmt "<br>@\n";
        F.pp_print_flush fmt ();
        true
@@ -237,16 +238,16 @@ let force_delayed_print fmt =
       let (loc: Location.t) = Obj.obj loc in
       Location.pp fmt loc
   | (L.PTnode_instrs, b_n) ->
-      let (b: bool), (io: Sil.instr option), (n: Cfg.Node.t) = Obj.obj b_n in
+      let (b: bool), (io: Sil.instr option), (n: Procdesc.Node.t) = Obj.obj b_n in
       if Config.write_html
       then
         F.fprintf fmt "%a%a%a"
           Io_infer.Html.pp_start_color Green
-          (Cfg.Node.pp_instrs (pe_html Green) io ~sub_instrs: b) n
+          (Procdesc.Node.pp_instrs (pe_html Green) io ~sub_instrs: b) n
           Io_infer.Html.pp_end_color ()
       else
         F.fprintf fmt "%a"
-          (Cfg.Node.pp_instrs pe_text io ~sub_instrs: b) n
+          (Procdesc.Node.pp_instrs pe_text io ~sub_instrs: b) n
   | (L.PToff, off) ->
       let (off: Sil.offset) = Obj.obj off in
       Sil.pp_offset pe_default fmt off
@@ -376,17 +377,17 @@ let force_delayed_prints () =
 
 (** Start a session, and create a new html fine for the node if it does not exist yet *)
 let start_session node (loc: Location.t) proc_name session source =
-  let node_id = Cfg.Node.get_id node in
+  let node_id = Procdesc.Node.get_id node in
   (if NodesHtml.start_node
       (node_id :> int) loc proc_name
-      (Cfg.Node.get_preds node)
-      (Cfg.Node.get_succs node)
-      (Cfg.Node.get_exn node)
+      (Procdesc.Node.get_preds node)
+      (Procdesc.Node.get_succs node)
+      (Procdesc.Node.get_exn node)
       source
    then
      F.fprintf !curr_html_formatter "%a<LISTING>%a</LISTING>%a"
        Io_infer.Html.pp_start_color Green
-       (Cfg.Node.pp_instrs (pe_html Green) None ~sub_instrs: true) node
+       (Procdesc.Node.pp_instrs (pe_html Green) None ~sub_instrs: true) node
        Io_infer.Html.pp_end_color ());
   F.fprintf !curr_html_formatter "%a%a"
     Io_infer.Html.pp_hline ()
@@ -406,7 +407,10 @@ let node_finish_session node source =
   if Config.write_html then begin
     F.fprintf !curr_html_formatter "</LISTING>%a"
       Io_infer.Html.pp_end_color ();
-    NodesHtml.finish_node (Cfg.Node.get_proc_name node) (Cfg.Node.get_id node :> int) source
+    NodesHtml.finish_node
+      (Procdesc.Node.get_proc_name node)
+      (Procdesc.Node.get_id node :> int)
+      source
   end
 
 (** Write html file for the procedure.
@@ -414,9 +418,9 @@ let node_finish_session node source =
 let write_proc_html source whole_seconds pdesc =
   if Config.write_html then
     begin
-      let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let nodes = IList.sort Cfg.Node.compare (Cfg.Procdesc.get_nodes pdesc) in
-      let linenum = (Cfg.Node.get_loc (IList.hd nodes)).Location.line in
+      let pname = Procdesc.get_proc_name pdesc in
+      let nodes = IList.sort Procdesc.Node.compare (Procdesc.get_nodes pdesc) in
+      let linenum = (Procdesc.Node.get_loc (IList.hd nodes)).Location.line in
       let fd, fmt =
         Io_infer.Html.create
           (DB.Results_dir.Abs_source_dir source)
@@ -430,14 +434,14 @@ let write_proc_html source whole_seconds pdesc =
         (fun n ->
            Io_infer.Html.pp_node_link
              []
-             (Cfg.Node.get_proc_name n)
-             ~description:(Cfg.Node.get_description (pe_html Black) n)
-             ~preds:(IList.map Cfg.Node.get_id (Cfg.Node.get_preds n) :> int list)
-             ~succs:(IList.map Cfg.Node.get_id (Cfg.Node.get_succs n) :> int list)
-             ~exn:(IList.map Cfg.Node.get_id (Cfg.Node.get_exn n) :> int list)
+             (Procdesc.Node.get_proc_name n)
+             ~description:(Procdesc.Node.get_description (pe_html Black) n)
+             ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds n) :> int list)
+             ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs n) :> int list)
+             ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn n) :> int list)
              ~isvisited:(is_visited pname n)
              ~isproof:false
-             fmt (Cfg.Node.get_id n :> int))
+             fmt (Procdesc.Node.get_id n :> int))
         nodes;
       (match Specs.get_summary pname with
        | None ->
@@ -468,24 +472,24 @@ let create_err_message err_string =
   "\n<div class=\"msg\" style=\"margin-left:9ex\">" ^ err_string ^ "</div>"
 
 let write_html_proc source proof_cover table_nodes_at_linenum global_err_log proc_desc =
-  let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
+  let proc_name = Procdesc.get_proc_name proc_desc in
   let process_node n =
-    let lnum = (Cfg.Node.get_loc n).Location.line in
+    let lnum = (Procdesc.Node.get_loc n).Location.line in
     let curr_nodes =
       try Hashtbl.find table_nodes_at_linenum lnum
       with Not_found -> [] in
     Hashtbl.replace table_nodes_at_linenum lnum ((n, proc_desc) :: curr_nodes) in
-  let proc_loc = Cfg.Procdesc.get_loc proc_desc in
+  let proc_loc = Procdesc.get_loc proc_desc in
   let process_proc =
-    Cfg.Procdesc.is_defined proc_desc &&
+    Procdesc.is_defined proc_desc &&
     DB.source_file_equal proc_loc.Location.file source &&
     match AttributesTable.find_file_capturing_procedure proc_name with
     | None -> true
     | Some (source_captured, _) ->
-        DB.source_file_equal source_captured (Cfg.Procdesc.get_loc proc_desc).file in
+        DB.source_file_equal source_captured (Procdesc.get_loc proc_desc).file in
   if process_proc then
     begin
-      IList.iter process_node (Cfg.Procdesc.get_nodes proc_desc);
+      IList.iter process_node (Procdesc.get_nodes proc_desc);
       match Specs.get_summary proc_name with
       | None ->
           ()
@@ -539,22 +543,22 @@ let write_html_file linereader filename procs =
     IList.iter
       (fun (n, pdesc) ->
          let isproof =
-           Specs.Visitedset.mem (Cfg.Node.get_id n, []) !proof_cover in
+           Specs.Visitedset.mem (Procdesc.Node.get_id n, []) !proof_cover in
          Io_infer.Html.pp_node_link
            [fname_encoding]
-           (Cfg.Node.get_proc_name n)
-           ~description:(Cfg.Node.get_description (pe_html Black) n)
-           ~preds:(IList.map Cfg.Node.get_id (Cfg.Node.get_preds n) :> int list)
-           ~succs:(IList.map Cfg.Node.get_id (Cfg.Node.get_succs n) :> int list)
-           ~exn:(IList.map Cfg.Node.get_id (Cfg.Node.get_exn n) :> int list)
-           ~isvisited:(is_visited (Cfg.Procdesc.get_proc_name pdesc) n)
+           (Procdesc.Node.get_proc_name n)
+           ~description:(Procdesc.Node.get_description (pe_html Black) n)
+           ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds n) :> int list)
+           ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs n) :> int list)
+           ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn n) :> int list)
+           ~isvisited:(is_visited (Procdesc.get_proc_name pdesc) n)
            ~isproof
-           fmt (Cfg.Node.get_id n :> int))
+           fmt (Procdesc.Node.get_id n :> int))
       nodes_at_linenum;
     IList.iter
       (fun (n, _) ->
-         match Cfg.Node.get_kind n with
-         | Cfg.Node.Start_node proc_name ->
+         match Procdesc.Node.get_kind n with
+         | Procdesc.Node.Start_node proc_name ->
              let num_specs = IList.length (Specs.get_specs proc_name) in
              let label =
                (Escape.escape_xml (Procname.to_string proc_name)) ^
@@ -599,9 +603,9 @@ let write_all_html_files exe_env =
            let files = ref DB.SourceFileSet.empty in
            Cfg.iter_proc_desc cfg
              (fun _ proc_desc ->
-                if Cfg.Procdesc.is_defined proc_desc
+                if Procdesc.is_defined proc_desc
                 then
-                  let file = (Cfg.Procdesc.get_loc proc_desc).Location.file in
+                  let file = (Procdesc.get_loc proc_desc).Location.file in
                   files := DB.SourceFileSet.add file !files);
            !files in
          DB.SourceFileSet.iter

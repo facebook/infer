@@ -71,16 +71,16 @@ let explain_deallocate_constant_string s ra =
 let verbose = Config.trace_error
 
 let find_in_node_or_preds start_node f_node_instr =
-  let visited = ref Cfg.NodeSet.empty in
+  let visited = ref Procdesc.NodeSet.empty in
   let rec find node =
-    if Cfg.NodeSet.mem node !visited then None
+    if Procdesc.NodeSet.mem node !visited then None
     else
       begin
-        visited := Cfg.NodeSet.add node !visited;
-        let instrs = Cfg.Node.get_instrs node in
+        visited := Procdesc.NodeSet.add node !visited;
+        let instrs = Procdesc.Node.get_instrs node in
         match IList.find_map_opt (f_node_instr node) (IList.rev instrs) with
         | Some res -> Some res
-        | None -> IList.find_map_opt find (Cfg.Node.get_preds node)
+        | None -> IList.find_map_opt find (Procdesc.Node.get_preds node)
       end in
   find start_node
 
@@ -93,7 +93,7 @@ let find_variable_assigment node id : Sil.instr option =
 
 (** Check if a nullify instruction exists for the program variable after the given instruction *)
 let find_nullify_after_instr node instr pvar : bool =
-  let node_instrs = Cfg.Node.get_instrs node in
+  let node_instrs = Procdesc.Node.get_instrs node in
   let found_instr = ref false in
   let find_nullify = function
     | Sil.Nullify (pv, _) when !found_instr -> Pvar.equal pv pvar
@@ -105,11 +105,11 @@ let find_nullify_after_instr node instr pvar : bool =
 (** Find the other prune node of a conditional
     (e.g. the false branch given the true branch of a conditional) *)
 let find_other_prune_node node =
-  match Cfg.Node.get_preds node with
+  match Procdesc.Node.get_preds node with
   | [n_pre] ->
-      (match Cfg.Node.get_succs n_pre with
+      (match Procdesc.Node.get_succs n_pre with
        | [n1; n2] ->
-           if Cfg.Node.equal n1 node then Some n2 else Some n1
+           if Procdesc.Node.equal n1 node then Some n2 else Some n1
        | _ -> None)
   | _ -> None
 
@@ -118,13 +118,13 @@ let id_is_assigned_then_dead node id =
   match find_variable_assigment node id with
   | Some (Sil.Store (Exp.Lvar pvar, _, _, _) as instr)
     when Pvar.is_local pvar || Pvar.is_callee pvar ->
-      let is_prune = match Cfg.Node.get_kind node with
-        | Cfg.Node.Prune_node _ -> true
+      let is_prune = match Procdesc.Node.get_kind node with
+        | Procdesc.Node.Prune_node _ -> true
         | _ -> false in
       let prune_check = function
         (* if prune node, check that it's also nullified in the other branch *)
         | Some node' ->
-            (match Cfg.Node.get_instrs node' with
+            (match Procdesc.Node.get_instrs node' with
              | instr':: _ -> find_nullify_after_instr node' instr' pvar
              | _ -> false)
         | _ -> false in
@@ -135,7 +135,7 @@ let id_is_assigned_then_dead node id =
 (** Find the function call instruction used to initialize normal variable [id],
     and return the function name and arguments *)
 let find_normal_variable_funcall
-    (node: Cfg.Node.t)
+    (node: Procdesc.Node.t)
     (id: Ident.t): (Exp.t * (Exp.t list) * Location.t * CallFlags.t) option =
   let find_declaration _ = function
     | Sil.Call (Some (id0, _), fun_exp, args, loc, call_flags) when Ident.equal id id0 ->
@@ -148,12 +148,12 @@ let find_normal_variable_funcall
        ("find_normal_variable_funcall could not find " ^
         Ident.to_string id ^
         " in node " ^
-        string_of_int (Cfg.Node.get_id node :> int));
+        string_of_int (Procdesc.Node.get_id node :> int));
      L.d_ln ());
   res
 
 (** Find a program variable assignment in the current node or predecessors. *)
-let find_program_variable_assignment node pvar : (Cfg.Node.t * Ident.t) option =
+let find_program_variable_assignment node pvar : (Procdesc.Node.t * Ident.t) option =
   let find_instr node = function
     | Sil.Store (Exp.Lvar _pvar, _, Exp.Var id, _)
       when Pvar.equal pvar _pvar && Ident.is_normal id ->
@@ -184,7 +184,7 @@ let find_struct_by_value_assignment node pvar =
   else None
 
 (** Find a program variable assignment to id in the current node or predecessors. *)
-let find_ident_assignment node id : (Cfg.Node.t * Exp.t) option =
+let find_ident_assignment node id : (Procdesc.Node.t * Exp.t) option =
   let find_instr node = function
     | Sil.Load (_id, e, _, _) when Ident.equal _id id -> Some (node, e)
     | _ -> None in
@@ -192,14 +192,14 @@ let find_ident_assignment node id : (Cfg.Node.t * Exp.t) option =
 
 (** Find a boolean assignment to a temporary variable holding a boolean condition.
     The boolean parameter indicates whether the true or false branch is required. *)
-let rec find_boolean_assignment node pvar true_branch : Cfg.Node.t option =
+let rec find_boolean_assignment node pvar true_branch : Procdesc.Node.t option =
   let find_instr n =
     let filter = function
       | Sil.Store (Exp.Lvar _pvar, _, Exp.Const (Const.Cint i), _) when Pvar.equal pvar _pvar ->
           IntLit.iszero i <> true_branch
       | _ -> false in
-    IList.exists filter (Cfg.Node.get_instrs n) in
-  match Cfg.Node.get_preds node with
+    IList.exists filter (Procdesc.Node.get_instrs n) in
+  match Procdesc.Node.get_preds node with
   | [pred_node] -> find_boolean_assignment pred_node pvar true_branch
   | [n1; n2] ->
       if find_instr n1 then (Some n1)
@@ -257,7 +257,7 @@ let rec _find_normal_variable_load tenv (seen : Exp.Set.t) node id : DExp.t opti
        ("find_normal_variable_load could not find " ^
         Ident.to_string id ^
         " in node " ^
-        string_of_int (Cfg.Node.get_id node :> int));
+        string_of_int (Procdesc.Node.get_id node :> int));
      L.d_ln ());
   res
 
@@ -484,7 +484,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
   let instro = State.get_instr () in
   let loc = State.get_loc () in
   let node = State.get_node () in
-  let node_instrs = Cfg.Node.get_instrs node in
+  let node_instrs = Procdesc.Node.get_instrs node in
   let hpred_typ_opt = find_hpred_typ hpred in
   let value_str_from_pvars_vpath pvars vpath =
     if pvars <> [] then

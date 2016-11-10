@@ -37,14 +37,14 @@ module SpecSummary = Summary.Make (struct
   end)
 
 type extras_t = {
-  get_proc_desc : Procname.t -> Cfg.Procdesc.t option;
+  get_proc_desc : Procname.t -> Procdesc.t option;
   stacktraces : Stacktrace.t list;
 }
 
 let line_range_of_pdesc pdesc =
-  let ploc = Cfg.Procdesc.get_loc pdesc in
+  let ploc = Procdesc.get_loc pdesc in
   let start_line = ploc.Location.line in
-  let end_line = Cfg.Procdesc.fold_instrs
+  let end_line = Procdesc.fold_instrs
       (fun acc _ instr ->
          let new_loc = Sil.instr_get_loc instr in
          max acc new_loc.Location.line)
@@ -54,10 +54,10 @@ let line_range_of_pdesc pdesc =
 
 let stacktree_of_pdesc
     pdesc
-    ?(loc=Cfg.Procdesc.get_loc pdesc)
+    ?(loc=Procdesc.get_loc pdesc)
     ?(callees=[])
     location_type =
-  let procname = Cfg.Procdesc.get_proc_name pdesc in
+  let procname = Procdesc.get_proc_name pdesc in
   let frame_loc =
     Some { Stacktree_j.location_type = location_type;
            file = DB.source_file_to_string loc.Location.file;
@@ -95,7 +95,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     stacktree_of_pdesc pdesc ~loc ~callees location_type
 
   let output_json_summary tenv pdesc astate loc location_type get_proc_desc =
-    let caller = Cfg.Procdesc.get_proc_name pdesc in
+    let caller = Procdesc.get_proc_name pdesc in
     let stacktree =
       stacktree_of_astate tenv pdesc astate loc location_type get_proc_desc in
     let dir = Filename.concat Config.results_dir "crashcontext" in
@@ -112,7 +112,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let get_proc_desc = proc_data.ProcData.extras.get_proc_desc in
         let traces = proc_data.ProcData.extras.stacktraces in
         let tenv = proc_data.ProcData.tenv in
-        let caller = Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc in
+        let caller = Procdesc.get_proc_name proc_data.ProcData.pdesc in
         let matches_proc frame =
           let matches_class pname = match pname with
             | Procname.Java java_proc ->
@@ -186,7 +186,7 @@ let checker { Callbacks.proc_desc; tenv; get_proc_desc; } =
   | Some stacktraces -> begin
       let extras = { get_proc_desc; stacktraces; } in
       SpecSummary.write_summary
-        (Cfg.Procdesc.get_proc_name proc_desc)
+        (Procdesc.get_proc_name proc_desc)
         (Some (stacktree_of_pdesc proc_desc "proc_start"));
       ignore(Analyzer.exec_pdesc (ProcData.make proc_desc tenv extras))
     end

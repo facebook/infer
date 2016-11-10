@@ -45,7 +45,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let exec_instr ((lockstate,(readstate,writestate)) as astate) { ProcData.pdesc; } _ =
     let is_unprotected lockstate =
-      (not (Cfg.Procdesc.is_java_synchronized pdesc)) && (LocksDomain.is_empty lockstate)
+      (not (Procdesc.is_java_synchronized pdesc)) && (LocksDomain.is_empty lockstate)
     in
     function
     | Sil.Call (_, Const (Cfun pn), _, _, _) ->
@@ -87,20 +87,20 @@ let method_analysis { Callbacks.proc_desc; tenv; } =
   match Analyzer.compute_post (ProcData.make_default proc_desc tenv) with
   | Some post ->  (* I am printing to commandline and out to cater to javac and buck*)
       (L.stdout  "\n Procedure: %s@ "
-         (Procname.to_string (Cfg.Procdesc.get_proc_name proc_desc) )
+         (Procname.to_string (Procdesc.get_proc_name proc_desc) )
       );
       L.stdout "\n POST: %a\n" CombinedDomain.pp post;
       (L.out  "\n Procedure: %s@ "
-         (Procname.to_string (Cfg.Procdesc.get_proc_name proc_desc) )
+         (Procname.to_string (Procdesc.get_proc_name proc_desc) )
       );
       L.out "\n POST: %a\n" CombinedDomain.pp post
   | None -> ()
 
 (* a results table is a Map where a key is an a procedure environment,
-   i.e., something of type Idenv.t * Tenv.t * Procname.t * Cfg.Procdesc.t
+   i.e., something of type Idenv.t * Tenv.t * Procname.t * Procdesc.t
 *)
 module ResultsTableType = Map.Make (struct
-    type t = Idenv.t * Tenv.t * Procname.t * Cfg.Procdesc.t
+    type t = Idenv.t * Tenv.t * Procname.t * Procdesc.t
     let compare (_, _, pn1, _) (_,_,pn2,_) =  Procname.compare pn1 pn2
   end)
 
@@ -109,7 +109,7 @@ let should_analyze_proc (_,tenv,proc_name,proc_desc) =
   not (Procname.java_is_autogen_method proc_name) &&
   not (Procname.is_constructor proc_name) &&
   not (Procname.is_class_initializer proc_name) &&
-  Cfg.Procdesc.get_access proc_desc <> PredSymb.Private
+  Procdesc.get_access proc_desc <> PredSymb.Private
 
 (* creates a map from proc_envs to postconditions *)
 let make_results_table file_env =
@@ -162,7 +162,7 @@ let report_thread_safety_errors ( _, tenv, pname, pdesc) writestate =
       pname
       pdesc
       "CHECKERS_THREAD_SAFETY_WARNING"
-      (Cfg.Procdesc.get_loc pdesc)
+      (Procdesc.get_loc pdesc)
       description
   in
   IList.iter report_one_error (IList.map snd (PathDomain.elements writestate))
@@ -190,7 +190,7 @@ let should_analyze_file file_env =
 
 (*Gathers results by analyzing all the methods in a file, then post-processes
   the results to check (approximation of) thread safety *)
-(* file_env: (Idenv.t * Tenv.t * Procname.t * Cfg.Procdesc.t) list *)
+(* file_env: (Idenv.t * Tenv.t * Procname.t * Procdesc.t) list *)
 let file_analysis _ _ _ file_env =
   if should_analyze_file file_env then
     process_results_table

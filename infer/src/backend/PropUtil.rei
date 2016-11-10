@@ -10,17 +10,17 @@ open! Utils;
 
 
 /** remove the return variable from the prop */
-let remove_ret: Tenv.t => Cfg.Procdesc.t => Prop.t Prop.normal => Prop.t Prop.normal;
+let remove_ret: Tenv.t => Procdesc.t => Prop.t Prop.normal => Prop.t Prop.normal;
 
 
 /** remove locals and return variable from the prop */
-let remove_locals_ret: Tenv.t => Cfg.Procdesc.t => Prop.t Prop.normal => Prop.t Prop.normal;
+let remove_locals_ret: Tenv.t => Procdesc.t => Prop.t Prop.normal => Prop.t Prop.normal;
 
 
 /** Deallocate the stack variables in [pvars], and replace them by normal variables.
     Return the list of stack variables whose address was still present after deallocation. */
 let remove_locals_formals:
-  Tenv.t => Cfg.Procdesc.t => Prop.t Prop.normal => (list Pvar.t, Prop.t Prop.normal);
+  Tenv.t => Procdesc.t => Prop.t Prop.normal => (list Pvar.t, Prop.t Prop.normal);
 
 
 /** remove seed vars from a prop */

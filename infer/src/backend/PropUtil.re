@@ -8,12 +8,11 @@
  */
 open! Utils;
 
-let get_name_of_local (curr_f: Cfg.Procdesc.t) (x, _) =>
-  Pvar.mk x (Cfg.Procdesc.get_proc_name curr_f);
+let get_name_of_local (curr_f: Procdesc.t) (x, _) => Pvar.mk x (Procdesc.get_proc_name curr_f);
 
 /* returns a list of local static variables (ie local variables defined static) in a proposition */
-let get_name_of_objc_static_locals (curr_f: Cfg.Procdesc.t) p => {
-  let pname = Procname.to_string (Cfg.Procdesc.get_proc_name curr_f);
+let get_name_of_objc_static_locals (curr_f: Procdesc.t) p => {
+  let pname = Procname.to_string (Procdesc.get_proc_name curr_f);
   let local_static e =>
     switch e {
     /* is a local static if it's a global and it has a static local name */
@@ -143,8 +142,8 @@ let remove_abduced_retvars tenv p => {
   Prop.normalize tenv (Prop.set p' pi::pi_reach sigma::sigma_reach)
 };
 
-let remove_locals tenv (curr_f: Cfg.Procdesc.t) p => {
-  let names_of_locals = IList.map (get_name_of_local curr_f) (Cfg.Procdesc.get_locals curr_f);
+let remove_locals tenv (curr_f: Procdesc.t) p => {
+  let names_of_locals = IList.map (get_name_of_local curr_f) (Procdesc.get_locals curr_f);
   let names_of_locals' =
     switch !Config.curr_language {
     | Config.Clang =>
@@ -165,31 +164,31 @@ let remove_locals tenv (curr_f: Cfg.Procdesc.t) p => {
   )
 };
 
-let remove_formals tenv (curr_f: Cfg.Procdesc.t) p => {
-  let pname = Cfg.Procdesc.get_proc_name curr_f;
-  let formal_vars = IList.map (fun (n, _) => Pvar.mk n pname) (Cfg.Procdesc.get_formals curr_f);
+let remove_formals tenv (curr_f: Procdesc.t) p => {
+  let pname = Procdesc.get_proc_name curr_f;
+  let formal_vars = IList.map (fun (n, _) => Pvar.mk n pname) (Procdesc.get_formals curr_f);
   Attribute.deallocate_stack_vars tenv p formal_vars
 };
 
 
 /** remove the return variable from the prop */
-let remove_ret tenv (curr_f: Cfg.Procdesc.t) (p: Prop.t Prop.normal) => {
-  let pname = Cfg.Procdesc.get_proc_name curr_f;
-  let name_of_ret = Cfg.Procdesc.get_ret_var curr_f;
+let remove_ret tenv (curr_f: Procdesc.t) (p: Prop.t Prop.normal) => {
+  let pname = Procdesc.get_proc_name curr_f;
+  let name_of_ret = Procdesc.get_ret_var curr_f;
   let (_, p') = Attribute.deallocate_stack_vars tenv p [Pvar.to_callee pname name_of_ret];
   p'
 };
 
 
 /** remove locals and return variable from the prop */
-let remove_locals_ret tenv (curr_f: Cfg.Procdesc.t) p => snd (
+let remove_locals_ret tenv (curr_f: Procdesc.t) p => snd (
   remove_locals tenv curr_f (remove_ret tenv curr_f p)
 );
 
 
 /** Remove locals and formal parameters from the prop.
     Return the list of stack variables whose address was still present after deallocation. */
-let remove_locals_formals tenv (curr_f: Cfg.Procdesc.t) p => {
+let remove_locals_formals tenv (curr_f: Procdesc.t) p => {
   let (pvars1, p1) = remove_formals tenv curr_f p;
   let (pvars2, p2) = remove_locals tenv curr_f p1;
   (pvars1 @ pvars2, p2)

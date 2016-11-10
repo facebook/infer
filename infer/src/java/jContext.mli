@@ -22,7 +22,7 @@ type jump_kind =
 
 (** Hastable for storing nodes that correspond to if-instructions. These are
     used when adding the edges in the contrl flow graph. *)
-module NodeTbl : Hashtbl.S with type key = Cfg.Node.t
+module NodeTbl : Hashtbl.S with type key = Procdesc.Node.t
 
 
 (** data structure for saving the three structures tht contain the intermediate
@@ -37,7 +37,7 @@ type icfg = {
 (** data structure for storing the context elements.  *)
 type t = private
   { icfg : icfg;
-    procdesc : Cfg.Procdesc.t;
+    procdesc : Procdesc.t;
     impl : JBir.t;
     mutable var_map : (Pvar.t * Typ.t * Typ.t) JBir.VarMap.t;
     if_jumps : int NodeTbl.t;
@@ -51,7 +51,7 @@ type t = private
 (** cretes a context for a given method.   *)
 val create_context :
   icfg ->
-  Cfg.Procdesc.t ->
+  Procdesc.t ->
   JBir.t ->
   JBasics.class_name ->
   DB.source_file ->
@@ -68,10 +68,10 @@ val get_cg : t -> Cg.t
 val get_cfg : t -> Cfg.cfg
 
 (** adds to the context the line that an if-node will jump to *)
-val add_if_jump : t -> Cfg.Node.t -> int -> unit
+val add_if_jump : t -> Procdesc.Node.t -> int -> unit
 
 (** returns whether the given node corresponds to an if-instruction *)
-val get_if_jump : t -> Cfg.Node.t -> int option
+val get_if_jump : t -> Procdesc.Node.t -> int option
 
 (** adds to the context the line that the node in the given line will jump to. *)
 val add_goto_jump : t -> int -> jump_kind -> unit
@@ -96,7 +96,7 @@ val reset_pvar_type : t -> unit
 val reset_exn_node_table : unit -> unit
 
 (** adds the exception node for a given method *)
-val add_exn_node : Procname.t -> Cfg.Node.t -> unit
+val add_exn_node : Procname.t -> Procdesc.Node.t -> unit
 
 (** returns the exception node of a given method *)
-val get_exn_node : Cfg.Procdesc.t -> Cfg.Node.t option
+val get_exn_node : Procdesc.t -> Procdesc.Node.t option

@@ -7,12 +7,12 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-type 'a t = { pdesc : Cfg.Procdesc.t; tenv : Tenv.t; extras : 'a; }
+type 'a t = { pdesc : Procdesc.t; tenv : Tenv.t; extras : 'a; }
 
 type no_extras
 
 val empty_extras : no_extras
 
-val make : Cfg.Procdesc.t -> Tenv.t -> 'a -> 'a t
+val make : Procdesc.t -> Tenv.t -> 'a -> 'a t
 
-val make_default : Cfg.Procdesc.t -> Tenv.t -> no_extras t
+val make_default : Procdesc.t -> Tenv.t -> no_extras t

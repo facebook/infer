@@ -613,7 +613,7 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
     expressing the safety conditions for the access. Complain if these conditions cannot be met. *)
 let add_guarded_by_constraints tenv prop lexp pdesc =
   let lookup = Tenv.lookup tenv in
-  let pname = Cfg.Procdesc.get_proc_name pdesc in
+  let pname = Procdesc.get_proc_name pdesc in
   let excluded_guardedby_string str =
     (* nothing with a space in it can be a valid Java expression, shouldn't warn *)
     let is_invalid_exp_str str =
@@ -729,7 +729,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     (* return true if [pdesc] has an annotation that matches [guarded_by_str] *)
     let proc_has_matching_annot pdesc guarded_by_str =
       let proc_signature =
-        Annotations.get_annotated_signature (Cfg.Procdesc.get_attributes pdesc) in
+        Annotations.get_annotated_signature (Procdesc.get_attributes pdesc) in
       let proc_annot, _ = proc_signature.Annotations.ret in
       match extract_guarded_by_str proc_annot with
       | Some proc_guarded_by_str ->
@@ -738,7 +738,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       | None -> false in
     let is_synchronized_on_class guarded_by_str =
       guarded_by_str_is_current_class guarded_by_str pname &&
-      Cfg.Procdesc.is_java_synchronized pdesc && Procname.java_is_static pname in
+      Procdesc.is_java_synchronized pdesc && Procname.java_is_static pname in
     let warn accessed_fld guarded_by_str =
       let loc = State.get_loc () in
       let err_desc =
@@ -755,9 +755,9 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     let has_lock guarded_by_exp =
       (* procedure is synchronized and guarded by this *)
       (guarded_by_str_is_current_class_this guarded_by_str pname &&
-       Cfg.Procdesc.is_java_synchronized pdesc) ||
+       Procdesc.is_java_synchronized pdesc) ||
       (guarded_by_str_is_current_class guarded_by_str pname &&
-       Cfg.Procdesc.is_java_synchronized pdesc && Procname.java_is_static pname) ||
+       Procdesc.is_java_synchronized pdesc && Procname.java_is_static pname) ||
       (* or the prop says we already have the lock *)
       IList.exists
         (function
@@ -769,7 +769,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       string_is_suffix guarded_by_str (Ident.fieldname_to_string accessed_fld) in
     let proc_has_suppress_guarded_by_annot pdesc =
       let proc_signature =
-        Annotations.get_annotated_signature (Cfg.Procdesc.get_attributes pdesc) in
+        Annotations.get_annotated_signature (Procdesc.get_attributes pdesc) in
       let proc_annot, _ = proc_signature.Annotations.ret in
       match extract_suppress_warnings_str proc_annot with
       | Some suppression_str->
@@ -795,9 +795,9 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
                   flds
             | _ -> false)
           prop.Prop.sigma in
-      Cfg.Procdesc.get_access pdesc <> PredSymb.Private &&
+      Procdesc.get_access pdesc <> PredSymb.Private &&
       not (Annotations.pdesc_has_annot pdesc Annotations.visibleForTesting) &&
-      not (Procname.java_is_access_method (Cfg.Procdesc.get_proc_name pdesc)) &&
+      not (Procname.java_is_access_method (Procdesc.get_proc_name pdesc)) &&
       not (is_accessible_through_local_ref lexp) &&
       not guardedby_is_self_referential &&
       not (proc_has_suppress_guarded_by_annot pdesc)
@@ -1214,7 +1214,7 @@ let rec iter_rearrange
   res
 
 let is_weak_captured_var pdesc pvar =
-  let pname = Cfg.Procdesc.get_proc_name pdesc in
+  let pname = Procdesc.get_proc_name pdesc in
   match pname with
   | Block _ ->
       let is_weak_captured (var, typ) =
@@ -1222,7 +1222,7 @@ let is_weak_captured_var pdesc pvar =
         | Typ.Tptr (_, Pk_objc_weak) ->
             Mangled.equal (Pvar.get_name pvar) var
         | _ -> false in
-      IList.exists is_weak_captured (Cfg.Procdesc.get_captured pdesc)
+      IList.exists is_weak_captured (Procdesc.get_captured pdesc)
   | _ -> false
 
 
@@ -1363,7 +1363,7 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
     match get_exp_called () with
     | Some (_, Exp.Lvar pvar) -> (* pvar is the block *)
         let name = Pvar.get_name pvar in
-        IList.exists (fun (cn, _) -> (Mangled.equal name cn)) (Cfg.Procdesc.get_captured pdesc)
+        IList.exists (fun (cn, _) -> (Mangled.equal name cn)) (Procdesc.get_captured pdesc)
     | _ -> false in
   let is_field_deref () = (*Called expression is a field *)
     match get_exp_called () with
@@ -1422,7 +1422,7 @@ let rearrange ?(report_deref_errors=true) pdesc tenv lexp typ prop loc
   L.d_str "Exp: "; Sil.d_exp nlexp; L.d_ln ();
   L.d_str "Prop: "; L.d_ln(); Prop.d_prop prop; L.d_ln (); L.d_ln ();
   if report_deref_errors then check_dereference_error tenv pdesc prop nlexp (State.get_loc ());
-  let pname = Cfg.Procdesc.get_proc_name pdesc in
+  let pname = Procdesc.get_proc_name pdesc in
   let prop' =
     if Config.csl_analysis && !Config.footprint && Procname.is_java pname &&
        not (Procname.is_constructor pname || Procname.is_class_initializer pname)

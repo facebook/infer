@@ -20,25 +20,25 @@ let verbose = false
 module State = struct
   type t =
     {
-      visited : Cfg.NodeSet.t;
+      visited : Procdesc.NodeSet.t;
     }
 
   let initial =
     {
-      visited = Cfg.NodeSet.empty;
+      visited = Procdesc.NodeSet.empty;
     }
 
   let equal t1 t2 =
-    Cfg.NodeSet.equal t1.visited t2.visited
+    Procdesc.NodeSet.equal t1.visited t2.visited
 
   let join t1 t2 =
     {
-      visited = Cfg.NodeSet.union t1.visited t2.visited
+      visited = Procdesc.NodeSet.union t1.visited t2.visited
     }
 
   let add_visited node t =
     {
-      visited = Cfg.NodeSet.add node t.visited;
+      visited = Procdesc.NodeSet.add node t.visited;
     }
 
   let get_visited t =
@@ -46,16 +46,16 @@ module State = struct
 
   let pp fmt t =
     F.fprintf fmt "visited: %a"
-      (pp_seq Cfg.Node.pp) (Cfg.NodeSet.elements t.visited)
+      (pp_seq Procdesc.Node.pp) (Procdesc.NodeSet.elements t.visited)
 
   let num_visited t =
-    Cfg.NodeSet.cardinal t.visited
+    Procdesc.NodeSet.cardinal t.visited
 end
 
 let do_node _ node (s : State.t) : (State.t list) * (State.t list) =
   let s' = State.add_visited node s in
   if verbose then L.stderr "  N:%a (#visited: %a)@."
-      Cfg.Node.pp node
+      Procdesc.Node.pp node
       State.pp s';
   [s'], [s']
 
@@ -68,20 +68,22 @@ let report_error tenv description pn pd loc =
 
 (** Check the final state at the end of the analysis. *)
 let check_final_state tenv proc_name proc_desc final_s =
-  let proc_nodes = Cfg.Procdesc.get_nodes proc_desc in
+  let proc_nodes = Procdesc.get_nodes proc_desc in
   let tot_nodes = IList.length proc_nodes in
   let tot_visited = State.num_visited final_s in
   if verbose then L.stderr "TOT nodes: %d (visited: %n)@." tot_nodes tot_visited;
   if tot_nodes <> tot_visited then
     begin
       let not_visited =
-        IList.filter (fun n -> not (Cfg.NodeSet.mem n (State.get_visited final_s))) proc_nodes in
+        IList.filter
+          (fun n -> not (Procdesc.NodeSet.mem n (State.get_visited final_s)))
+          proc_nodes in
       let do_node n =
-        let loc = Cfg.Node.get_loc n in
-        let description = Format.sprintf "Node not visited: %d" (Cfg.Node.get_id n :> int) in
-        let report = match Cfg.Node.get_kind n with
-          | Cfg.Node.Join_node -> false
-          | k when k = Cfg.Node.exn_sink_kind -> false
+        let loc = Procdesc.Node.get_loc n in
+        let description = Format.sprintf "Node not visited: %d" (Procdesc.Node.get_id n :> int) in
+        let report = match Procdesc.Node.get_kind n with
+          | Procdesc.Node.Join_node -> false
+          | k when k = Procdesc.Node.exn_sink_kind -> false
           | _ -> true in
         if report
         then report_error tenv description proc_name proc_desc loc in
@@ -103,7 +105,7 @@ let callback_check_dead_code { Callbacks.proc_desc; proc_name; tenv } =
     begin
       if verbose then L.stderr "@.--@.PROC: %a@." Procname.pp proc_name;
       let transitions = DFDead.run tenv proc_desc State.initial in
-      let exit_node = Cfg.Procdesc.get_exit_node proc_desc in
+      let exit_node = Procdesc.get_exit_node proc_desc in
       match transitions exit_node with
       | DFDead.Transition (pre_final_s, _, _) ->
           let final_s = State.add_visited exit_node pre_final_s in

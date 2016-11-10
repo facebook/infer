@@ -861,7 +861,7 @@ let check_inconsistency_base tenv prop =
     | None -> false
     | Some (_, _, pdesc) ->
         let procedure_attr =
-          Cfg.Procdesc.get_attributes pdesc in
+          Procdesc.get_attributes pdesc in
         let is_java_this pvar =
           procedure_attr.ProcAttributes.language = Config.Java && Pvar.is_this pvar in
         let is_objc_instance_self pvar =

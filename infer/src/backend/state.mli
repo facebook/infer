@@ -18,7 +18,7 @@ type t
 (** Add diverging states *)
 val add_diverging_states : Paths.PathSet.t -> unit
 
-type const_map = Cfg.Node.t -> Exp.t -> Const.t option
+type const_map = Procdesc.Node.t -> Exp.t -> Const.t option
 
 (** Get the constant map for the current procedure. *)
 val get_const_map : unit -> const_map
@@ -42,13 +42,13 @@ val get_loc : unit -> Location.t
 val get_loc_trace : unit -> Errlog.loc_trace
 
 (** Get last node seen in symbolic execution *)
-val get_node : unit -> Cfg.Node.t
+val get_node : unit -> Procdesc.Node.t
 
 (** Get id of last node seen in symbolic execution *)
-val get_node_id : unit -> Cfg.Node.id
+val get_node_id : unit -> Procdesc.Node.id
 
 (** Get id and key of last node seen in symbolic execution *)
-val get_node_id_key : unit -> Cfg.Node.id * int
+val get_node_id_key : unit -> Procdesc.Node.id * int
 
 (** return the normalized precondition extracted form the last prop seen, if any
     the abstraction function is a parameter to get around module dependencies *)
@@ -62,16 +62,16 @@ val get_path : unit -> Paths.Path.t * (PredSymb.path_pos option)
 val get_path_pos : unit -> PredSymb.path_pos
 
 (** Get last last prop,tenv,pdesc seen in symbolic execution *)
-val get_prop_tenv_pdesc : unit -> (Prop.normal Prop.t * Tenv.t * Cfg.Procdesc.t) option
+val get_prop_tenv_pdesc : unit -> (Prop.normal Prop.t * Tenv.t * Procdesc.t) option
 
 (** Get last session seen in symbolic execution *)
 val get_session : unit -> int
 
 (** Mark the end of symbolic execution of a node *)
-val mark_execution_end : Cfg.Node.t -> unit
+val mark_execution_end : Procdesc.Node.t -> unit
 
 (** Mark the start of symbolic execution of a node *)
-val mark_execution_start : Cfg.Node.t -> unit
+val mark_execution_start : Procdesc.Node.t -> unit
 
 (** Mark that the execution of the current instruction failed *)
 val mark_instr_fail : exn -> unit
@@ -82,7 +82,7 @@ val mark_instr_ok : unit -> unit
 (** Create a function to find duplicate nodes.
     A node is a duplicate of another one if they have the same kind and location
     and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
-val mk_find_duplicate_nodes: Cfg.Procdesc.t -> (Cfg.Node.t -> Cfg.NodeSet.t)
+val mk_find_duplicate_nodes: Procdesc.t -> (Procdesc.Node.t -> Procdesc.NodeSet.t)
 
 type log_issue =
   Procname.t ->
@@ -115,13 +115,13 @@ val set_const_map : const_map -> unit
 val set_instr : Sil.instr -> unit
 
 (** Set last node seen in symbolic execution *)
-val set_node : Cfg.Node.t -> unit
+val set_node : Procdesc.Node.t -> unit
 
 (** Get last path seen in symbolic execution *)
 val set_path : Paths.Path.t -> PredSymb.path_pos option -> unit
 
 (** Set last prop,tenv,pdesc seen in symbolic execution *)
-val set_prop_tenv_pdesc : Prop.normal Prop.t -> Tenv.t -> Cfg.Procdesc.t -> unit
+val set_prop_tenv_pdesc : Prop.normal Prop.t -> Tenv.t -> Procdesc.t -> unit
 
 (** Set last session seen in symbolic execution *)
 val set_session : int -> unit

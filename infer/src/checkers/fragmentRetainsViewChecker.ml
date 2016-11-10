@@ -17,7 +17,7 @@ let report_error fragment_typ fld fld_typ pname pdesc =
   let retained_view = "CHECKERS_FRAGMENT_RETAINS_VIEW" in
   let description = Localise.desc_fragment_retains_view fragment_typ fld fld_typ pname in
   let exn =  Exceptions.Checkers (retained_view, description) in
-  let loc = Cfg.Procdesc.get_loc pdesc in
+  let loc = Procdesc.get_loc pdesc in
   Reporting.log_error pname ~loc exn
 
 let callback_fragment_retains_view_java

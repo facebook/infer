@@ -46,7 +46,7 @@ struct
   let update_summary proc_name proc_desc final_typestate_opt =
     match Specs.get_summary proc_name with
     | Some old_summ ->
-        let nodes = IList.map (fun n -> Cfg.Node.get_id n) (Cfg.Procdesc.get_nodes proc_desc) in
+        let nodes = IList.map (fun n -> Procdesc.Node.get_id n) (Procdesc.get_nodes proc_desc) in
         let method_annotation =
           (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.method_annotation in
         let new_summ =
@@ -58,7 +58,7 @@ struct
             Specs.attributes =
               {
                 old_summ.Specs.attributes with
-                ProcAttributes.loc = Cfg.Procdesc.get_loc proc_desc;
+                ProcAttributes.loc = Procdesc.get_loc proc_desc;
                 method_annotation;
               };
           } in
@@ -82,7 +82,7 @@ struct
 
     (* Check the nullable flag computed for the return value and report inconsistencies. *)
     let check_return find_canonical_duplicate exit_node final_typestate ret_ia ret_type loc : unit =
-      let ret_pvar = Cfg.Procdesc.get_ret_var curr_pdesc in
+      let ret_pvar = Procdesc.get_ret_var curr_pdesc in
       let ret_range = TypeState.lookup_pvar ret_pvar final_typestate in
       let typ_found_opt = match ret_range with
         | Some (typ_found, _, _) -> Some typ_found
@@ -106,7 +106,7 @@ struct
           (TypeState.pp Extension.ext) initial_typestate in
 
     let do_after_dataflow find_canonical_duplicate final_typestate =
-      let exit_node = Cfg.Procdesc.get_exit_node curr_pdesc in
+      let exit_node = Procdesc.get_exit_node curr_pdesc in
       let ia, ret_type = annotated_signature.Annotations.ret in
       check_return find_canonical_duplicate exit_node final_typestate ia ret_type proc_loc in
 
@@ -124,7 +124,7 @@ struct
             IList.iter (fun typestate_succ ->
                 L.stdout
                   "Typestate After Node %a@\n%a@."
-                  Cfg.Node.pp node
+                  Procdesc.Node.pp node
                   (TypeState.pp Extension.ext) typestate_succ)
               typestates_succ;
           typestates_succ, typestates_exn
@@ -133,7 +133,7 @@ struct
     let initial_typestate = get_initial_typestate () in
     do_before_dataflow initial_typestate;
     let transitions = DFTypeCheck.run tenv curr_pdesc initial_typestate in
-    match transitions (Cfg.Procdesc.get_exit_node curr_pdesc) with
+    match transitions (Procdesc.get_exit_node curr_pdesc) with
     | DFTypeCheck.Transition (final_typestate, _, _) ->
         do_after_dataflow find_canonical_duplicate final_typestate;
         !calls_this, Some final_typestate
@@ -155,7 +155,7 @@ struct
     let find_duplicate_nodes = State.mk_find_duplicate_nodes curr_pdesc in
     let find_canonical_duplicate node =
       let duplicate_nodes = find_duplicate_nodes node in
-      try Cfg.NodeSet.min_elt duplicate_nodes with
+      try Procdesc.NodeSet.min_elt duplicate_nodes with
       | Not_found -> node in
 
     let typecheck_proc do_checks pname pdesc proc_details_opt =
@@ -164,8 +164,8 @@ struct
             (ann_sig, loc, idenv_pn)
         | None ->
             let ann_sig =
-              Models.get_modelled_annotated_signature (Cfg.Procdesc.get_attributes pdesc) in
-            let loc = Cfg.Procdesc.get_loc pdesc in
+              Models.get_modelled_annotated_signature (Procdesc.get_attributes pdesc) in
+            let loc = Procdesc.get_loc pdesc in
             let idenv_pn = Idenv.create_from_idenv idenv pdesc in
             (ann_sig, loc, idenv_pn) in
       let checks', calls_this' =
@@ -181,7 +181,7 @@ struct
         pname pdesc ann_sig linereader loc in
 
     let module Initializers = struct
-      type init = Procname.t * Cfg.Procdesc.t
+      type init = Procname.t * Procdesc.t
 
       let final_typestates initializers_current_class =
         (* Get the private methods, from the same class, directly called by the initializers. *)
@@ -294,7 +294,7 @@ struct
 
     let do_final_typestate typestate_opt calls_this =
       let do_typestate typestate =
-        let start_node = Cfg.Procdesc.get_start_node curr_pdesc in
+        let start_node = Procdesc.get_start_node curr_pdesc in
         if not calls_this && (* if 'this(...)' is called, no need to check initialization *)
            check_field_initialization &&
            checks.TypeCheck.eradicate
@@ -346,7 +346,7 @@ struct
     match filter_special_cases () with
     | None -> ()
     | Some annotated_signature ->
-        let loc = Cfg.Procdesc.get_loc proc_desc in
+        let loc = Procdesc.get_loc proc_desc in
         let linereader = Printer.LineReader.create () in
         if Config.eradicate_verbose then
           L.stdout "%a@."
@@ -404,7 +404,7 @@ let callback_eradicate
       Main.callback checks
         { callback_args with
           Callbacks.idenv = idenv_pname;
-          proc_name = (Cfg.Procdesc.get_proc_name pdesc);
+          proc_name = (Procdesc.get_proc_name pdesc);
           proc_desc = pdesc; } in
     {
       Ondemand.analyze_ondemand;

@@ -32,9 +32,9 @@ let read_dirs_to_analyze () =
 let dirs_to_analyze =
   lazy (read_dirs_to_analyze ())
 
-type analyze_ondemand = DB.source_file -> Cfg.Procdesc.t -> unit
+type analyze_ondemand = DB.source_file -> Procdesc.t -> unit
 
-type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
+type get_proc_desc = Procname.t -> Procdesc.t option
 
 type callbacks =
   {
@@ -110,8 +110,8 @@ let restore_global_state st =
 
 
 let run_proc_analysis tenv ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc =
-  let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
-  let callee_pname = Cfg.Procdesc.get_proc_name callee_pdesc in
+  let curr_pname = Procdesc.get_proc_name curr_pdesc in
+  let callee_pname = Procdesc.get_proc_name callee_pdesc in
 
   (* Dot means start of a procedure *)
   L.log_progress_procedure ();
@@ -195,8 +195,8 @@ let run_proc_analysis tenv ~propagate_exceptions analyze_proc curr_pdesc callee_
 
 
 let analyze_proc_desc tenv ~propagate_exceptions curr_pdesc callee_pdesc =
-  let callee_pname = Cfg.Procdesc.get_proc_name callee_pdesc in
-  let proc_attributes = Cfg.Procdesc.get_attributes callee_pdesc in
+  let callee_pname = Procdesc.get_proc_name callee_pdesc in
+  let proc_attributes = Procdesc.get_attributes callee_pdesc in
   match !callbacks_ref with
   | Some callbacks
     when should_be_analyzed proc_attributes callee_pname ->

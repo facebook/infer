@@ -53,17 +53,17 @@ let add_dispatch_calls pdesc cg tenv ~handle_dynamic_dispatch =
            | [] -> instr)
 
       | instr -> instr in
-    let instrs = Cfg.Node.get_instrs node in
+    let instrs = Procdesc.Node.get_instrs node in
     if has_dispatch_call instrs then
       IList.map replace_dispatch_calls instrs
-      |> Cfg.Node.replace_instrs node in
-  let pname = Cfg.Procdesc.get_proc_name pdesc in
+      |> Procdesc.Node.replace_instrs node in
+  let pname = Procdesc.get_proc_name pdesc in
   if Procname.is_java pname then
-    Cfg.Procdesc.iter_nodes (node_add_dispatch_calls pname) pdesc
+    Procdesc.iter_nodes (node_add_dispatch_calls pname) pdesc
 
 (** add instructions to perform abstraction *)
 let add_abstraction_instructions pdesc =
-  let open Cfg in
+  let open Procdesc in
   (* true if there is a succ node s.t.: it is an exit node, or the succ of >1 nodes *)
   let converging_node node =
     let is_exit node = match Node.get_kind node with
@@ -88,7 +88,7 @@ let add_abstraction_instructions pdesc =
   let do_node node =
     let loc = Node.get_last_loc node in
     if node_requires_abstraction node then Node.append_instrs node [Sil.Abstract loc] in
-  Cfg.Procdesc.iter_nodes do_node pdesc
+  Procdesc.iter_nodes do_node pdesc
 
 module BackwardCfg = ProcCfg.OneInstrPerNode(ProcCfg.Backward(ProcCfg.Exceptional))
 
@@ -175,12 +175,12 @@ let remove_dead_frontend_stores pdesc liveness_inv_map =
     let instr_nodes' = IList.filter_changed is_used_store instr_nodes in
     if instr_nodes' != instr_nodes
     then
-      Cfg.Node.replace_instrs node (IList.rev_map fst instr_nodes') in
-  Cfg.Procdesc.iter_nodes node_remove_dead_stores pdesc
+      Procdesc.Node.replace_instrs node (IList.rev_map fst instr_nodes') in
+  Procdesc.iter_nodes node_remove_dead_stores pdesc
 
 let add_nullify_instrs pdesc tenv liveness_inv_map =
   let address_taken_vars =
-    if Procname.is_java (Cfg.Procdesc.get_proc_name pdesc)
+    if Procname.is_java (Procdesc.get_proc_name pdesc)
     then AddressTaken.Domain.empty (* can't take the address of a variable in Java *)
     else
       match AddressTaken.Analyzer.compute_post (ProcData.make_default pdesc tenv) with
@@ -196,17 +196,17 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
     not (Pvar.is_return pvar || Pvar.is_global pvar) in
 
   let node_add_nullify_instructions node pvars =
-    let loc = Cfg.Node.get_last_loc node in
+    let loc = Procdesc.Node.get_last_loc node in
     let nullify_instrs =
       IList.filter is_local pvars
       |> IList.map (fun pvar -> Sil.Nullify (pvar, loc)) in
     if nullify_instrs <> []
-    then Cfg.Node.append_instrs node (IList.rev nullify_instrs) in
+    then Procdesc.Node.append_instrs node (IList.rev nullify_instrs) in
 
   let node_add_removetmps_instructions node ids =
     if ids <> [] then
-      let loc = Cfg.Node.get_last_loc node in
-      Cfg.Node.append_instrs node [Sil.Remove_temps (IList.rev ids, loc)] in
+      let loc = Procdesc.Node.get_last_loc node in
+      Procdesc.Node.append_instrs node [Sil.Remove_temps (IList.rev ids, loc)] in
 
   IList.iter
     (fun node ->
@@ -282,18 +282,18 @@ let do_copy_propagation pdesc tenv =
     (fun node ->
        let instrs, changed = rev_transform_node_instrs node in
        if changed
-       then Cfg.Node.replace_instrs node (IList.rev instrs))
-    (Cfg.Procdesc.get_nodes pdesc)
+       then Procdesc.Node.replace_instrs node (IList.rev instrs))
+    (Procdesc.get_nodes pdesc)
 
 let do_liveness pdesc tenv =
   let liveness_proc_cfg = BackwardCfg.from_pdesc pdesc in
   LivenessAnalysis.exec_cfg liveness_proc_cfg (ProcData.make_default pdesc tenv)
 
 let doit ?(handle_dynamic_dispatch= (Config.dynamic_dispatch = `Sound)) pdesc cg tenv =
-  if not (Cfg.Procdesc.did_preanalysis pdesc)
+  if not (Procdesc.did_preanalysis pdesc)
   then
     begin
-      Cfg.Procdesc.signal_did_preanalysis pdesc;
+      Procdesc.signal_did_preanalysis pdesc;
       if Config.copy_propagation then do_copy_propagation pdesc tenv;
       let liveness_inv_map = do_liveness pdesc tenv in
       if Config.dynamic_dispatch <> `Lazy && Config.copy_propagation

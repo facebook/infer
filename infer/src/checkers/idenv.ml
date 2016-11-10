@@ -21,7 +21,7 @@ let create_ proc_desc =
     | Sil.Load (id, e, _, _) ->
         Ident.IdentHash.add map id e
     | _ -> () in
-  Cfg.Procdesc.iter_instrs do_instr proc_desc;
+  Procdesc.iter_instrs do_instr proc_desc;
   map
 
 (* lazy implementation, only create when used *)

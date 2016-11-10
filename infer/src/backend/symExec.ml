@@ -47,7 +47,7 @@ let unroll_type tenv (typ: Typ.t) (off: Sil.offset) =
 let get_blocks_nullified node =
   let null_blocks = IList.flatten(IList.map (fun i -> match i with
       | Sil.Nullify(pvar, _) when Sil.is_block_pvar pvar -> [pvar]
-      | _ -> []) (Cfg.Node.get_instrs node)) in
+      | _ -> []) (Procdesc.Node.get_instrs node)) in
   null_blocks
 
 (** Given a proposition and an objc block checks whether by existentially quantifying
@@ -83,7 +83,7 @@ let check_block_retain_cycle tenv caller_pname prop block_nullified =
 let rec apply_offlist
     pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist
     (f: Exp.t option -> Exp.t) inst lookup_inst =
-  let pname = Cfg.Procdesc.get_proc_name pdesc in
+  let pname = Procdesc.get_proc_name pdesc in
   let pp_error () =
     L.d_strln ".... Invalid Field ....";
     L.d_str "strexp : "; Sil.d_sexp strexp; L.d_ln ();
@@ -803,7 +803,7 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nullable_annot typ ca
   if Procname.is_infer_undefined callee_pname then prop
   else
     let is_rec_call pname = (* TODO: (t7147096) extend this to detect mutual recursion *)
-      Procname.equal pname (Cfg.Procdesc.get_proc_name pdesc) in
+      Procname.equal pname (Procdesc.get_proc_name pdesc) in
     let already_has_abduced_retval p abduced_ret_pv =
       IList.exists
         (fun hpred -> match hpred with
@@ -977,7 +977,7 @@ let execute_store ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_e
 (** Execute [instr] with a symbolic heap [prop].*)
 let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
   : (Prop.normal Prop.t * Paths.Path.t) list =
-  let current_pname = Cfg.Procdesc.get_proc_name current_pdesc in
+  let current_pname = Procdesc.get_proc_name current_pdesc in
   State.set_instr _instr; (* mark instruction last seen *)
   State.set_prop_tenv_pdesc prop_ tenv current_pdesc; (* mark prop,tenv,pdesc last seen *)
   SymOp.pay(); (* pay one symop *)
@@ -1118,7 +1118,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
               Ondemand.analyze_proc_name
                 tenv ~propagate_exceptions:true current_pdesc resolved_pname;
               let callee_pdesc_opt = Ondemand.get_proc_desc resolved_pname in
-              let ret_typ_opt = Option.map Cfg.Procdesc.get_ret_type callee_pdesc_opt in
+              let ret_typ_opt = Option.map Procdesc.get_ret_type callee_pdesc_opt in
               let sentinel_result =
                 if !Config.curr_language = Config.Clang then
                   check_variadic_sentinel_if_present
@@ -1129,7 +1129,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                 if Option.map_default call_should_be_skipped true resolved_summary_opt then
                   (* If it's an ObjC getter or setter, call the builtin rather than skipping *)
                   let attrs_opt =
-                    let attr_opt = Option.map Cfg.Procdesc.get_attributes callee_pdesc_opt in
+                    let attr_opt = Option.map Procdesc.get_attributes callee_pdesc_opt in
                     match attr_opt, resolved_pname with
                     | Some attrs, Procname.ObjC_Cpp _ -> Some attrs
                     | None, Procname.ObjC_Cpp _ -> AttributesTable.load_attributes resolved_pname
@@ -1426,7 +1426,7 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
       | _ ->
           pre_1 in
     let pre_3 = add_constraints_on_actuals_by_ref tenv pre_2 actuals_by_ref callee_pname loc in
-    let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
+    let caller_pname = Procdesc.get_proc_name pdesc in
     add_tainted_pre pre_3 args caller_pname callee_pname in
   if is_scan (* if scan function, don't mark anything with undef attributes *)
   then [(Tabulation.remove_constant_string_class tenv pre_final, path)]
@@ -1523,13 +1523,13 @@ and sym_exec_objc_accessor property_accesor ret_typ tenv ret_id pdesc _ loc args
     | ProcAttributes.Objc_setter field_name -> sym_exec_objc_setter field_name in
   (* we want to execute in the context of the current procedure, not in the context of callee_pname,
      since this is the procname of the setter/getter method *)
-  let cur_pname = Cfg.Procdesc.get_proc_name pdesc in
+  let cur_pname = Procdesc.get_proc_name pdesc in
   f_accessor ret_typ tenv ret_id pdesc cur_pname loc args prop
   |> IList.map (fun p -> (p, path))
 
 (** Perform symbolic execution for a function call *)
 and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actual_pars; loc; } =
-  let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
+  let caller_pname = Procdesc.get_proc_name pdesc in
   let callee_pname = Specs.get_proc_name summary in
   let ret_typ = Specs.get_ret_type summary in
   let check_return_value_ignored () =
@@ -1588,7 +1588,7 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actu
 (** perform symbolic execution for a single prop, and check for junk *)
 and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), path)
   : Paths.PathSet.t =
-  let pname = Cfg.Procdesc.get_proc_name pdesc in
+  let pname = Procdesc.get_proc_name pdesc in
   let prop_primed_to_normal p = (* Rename primed vars with fresh normal vars, and return them *)
     let fav = Prop.prop_fav p in
     Sil.fav_filter_ident fav Ident.is_primed;
@@ -1623,10 +1623,10 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
         let instr_is_abstraction = function
           | Sil.Abstract _ -> true
           | _ -> false in
-        IList.exists instr_is_abstraction (Cfg.Node.get_instrs node) in
+        IList.exists instr_is_abstraction (Procdesc.Node.get_instrs node) in
       let curr_node = State.get_node () in
-      match Cfg.Node.get_kind curr_node with
-      | Cfg.Node.Prune_node _ when not (node_has_abstraction curr_node) ->
+      match Procdesc.Node.get_kind curr_node with
+      | Procdesc.Node.Prune_node _ when not (node_has_abstraction curr_node) ->
           (* don't check for leaks in prune nodes, unless there is abstraction anyway,*)
           (* but force them into either branch *)
           p'
@@ -1657,11 +1657,11 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
 (** {2 Lifted Abstract Transfer Functions} *)
 
 let node handle_exn tenv pdesc node (pset : Paths.PathSet.t) : Paths.PathSet.t =
-  let pname = Cfg.Procdesc.get_proc_name pdesc in
+  let pname = Procdesc.get_proc_name pdesc in
   let exe_instr_prop instr p tr (pset1: Paths.PathSet.t) =
     let pset2 =
       if Tabulation.prop_is_exn pname p && not (Sil.instr_is_auxiliary instr)
-         && Cfg.Node.get_kind node <> Cfg.Node.exn_handler_kind
+         && Procdesc.Node.get_kind node <> Procdesc.Node.exn_handler_kind
          (* skip normal instructions if an exception was thrown,
             unless this is an exception handler node *)
       then
@@ -1673,4 +1673,4 @@ let node handle_exn tenv pdesc node (pset : Paths.PathSet.t) : Paths.PathSet.t =
     Paths.PathSet.union pset2 pset1 in
   let exe_instr_pset pset instr =
     Paths.PathSet.fold (exe_instr_prop instr) pset Paths.PathSet.empty in
-  IList.fold_left exe_instr_pset pset (Cfg.Node.get_instrs node)
+  IList.fold_left exe_instr_pset pset (Procdesc.Node.get_instrs node)

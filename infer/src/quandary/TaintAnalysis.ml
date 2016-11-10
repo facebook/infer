@@ -99,7 +99,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
       | Some _ as node_opt ->
           node_opt
       | None when is_rooted_in_environment access_path proc_data.extras ->
-          let call_site = CallSite.make (Cfg.Procdesc.get_proc_name proc_data.ProcData.pdesc) loc in
+          let call_site = CallSite.make (Procdesc.get_proc_name proc_data.ProcData.pdesc) loc in
           let trace =
             TraceDomain.of_source (TraceDomain.Source.make_footprint access_path call_site) in
           Some (TaintDomain.make_normal_leaf trace)
@@ -173,7 +173,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
           trace
       | paths ->
           let report_error path =
-            let caller_pname = Cfg.Procdesc.get_proc_name proc_data.pdesc in
+            let caller_pname = Procdesc.get_proc_name proc_data.pdesc in
             let msg = Localise.to_string Localise.quandary_taint_error in
             let trace_str = F.asprintf "%a" pp_path_short path in
             let exn = Exceptions.Checkers (msg, Localise.verbatim_desc trace_str) in
@@ -326,7 +326,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
                 failwithf
                   "Assignment to unexpected lhs expression %a in proc %a at loc %a"
                   Exp.pp lhs_exp
-                  Procname.pp (Cfg.Procdesc.get_proc_name (proc_data.pdesc))
+                  Procname.pp (Procdesc.get_proc_name (proc_data.pdesc))
                   Location.pp loc in
           let astate' =
             analyze_assignment
@@ -357,7 +357,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
                 failwithf
                   "Unexpected cast %a in procedure %a at line %a"
                   (Sil.pp_instr pe_text) instr
-                  Procname.pp (Cfg.Procdesc.get_proc_name (proc_data.pdesc))
+                  Procname.pp (Procdesc.get_proc_name (proc_data.pdesc))
                   Location.pp loc
           else
             astate
@@ -516,8 +516,8 @@ module Make (TaintSpec : TaintSpec.S) = struct
   let checker { Callbacks.get_proc_desc; proc_name; proc_desc; tenv; } =
     let analyze_ondemand _ pdesc =
       let make_formal_access_paths pdesc =
-        let pname = Cfg.Procdesc.get_proc_name pdesc in
-        let attrs = Cfg.Procdesc.get_attributes pdesc in
+        let pname = Procdesc.get_proc_name pdesc in
+        let attrs = Procdesc.get_attributes pdesc in
         let formals_with_nums =
           IList.mapi
             (fun index (name, typ) ->
@@ -530,7 +530,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
           formals_with_nums in
 
       let has_body pdesc =
-        let attrs = Cfg.Procdesc.get_attributes pdesc in
+        let attrs = Procdesc.get_attributes pdesc in
         attrs.is_defined && not attrs.is_abstract in
       if has_body pdesc
       then
@@ -541,9 +541,9 @@ module Make (TaintSpec : TaintSpec.S) = struct
           match Analyzer.compute_post proc_data with
           | Some { access_tree; } ->
               let summary = make_summary formals access_tree in
-              Summary.write_summary (Cfg.Procdesc.get_proc_name pdesc) summary;
+              Summary.write_summary (Procdesc.get_proc_name pdesc) summary;
           | None ->
-              if Cfg.Node.get_succs (Cfg.Procdesc.get_start_node pdesc) = []
+              if Procdesc.Node.get_succs (Procdesc.get_start_node pdesc) = []
               then ()
               else failwith "Couldn't compute post"
         end in

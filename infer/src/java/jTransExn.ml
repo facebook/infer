@@ -30,9 +30,9 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
   let catch_block_table = Hashtbl.create 1 in
   let exn_message = "exception handler" in
   let procdesc = context.procdesc in
-  let create_node loc node_kind instrs = Cfg.Procdesc.create_node procdesc loc node_kind instrs in
-  let ret_var = Cfg.Procdesc.get_ret_var procdesc in
-  let ret_type = Cfg.Procdesc.get_ret_type procdesc in
+  let create_node loc node_kind instrs = Procdesc.create_node procdesc loc node_kind instrs in
+  let ret_var = Procdesc.get_ret_var procdesc in
+  let ret_type = Procdesc.get_ret_type procdesc in
   let id_ret_val = Ident.create_fresh Ident.knormal in
   (* this is removed in the true branches, and in the false branch of the last handler *)
   let id_exn_val = Ident.create_fresh Ident.knormal in
@@ -46,7 +46,7 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
          CallFlags.default) in
     create_node
       loc
-      Cfg.Node.exn_handler_kind
+      Procdesc.Node.exn_handler_kind
       [instr_get_ret_val; instr_deactivate_exn; instr_unwrap_ret_val] in
   let create_entry_block handler_list =
     try
@@ -55,7 +55,7 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
       let collect succ_nodes rethrow_exception handler =
         let catch_nodes = get_body_nodes handler.JBir.e_handler in
         let loc = match catch_nodes with
-          | n:: _ -> Cfg.Node.get_loc n
+          | n:: _ -> Procdesc.Node.get_loc n
           | [] -> Location.dummy in
         let exn_type =
           let class_name =
@@ -83,16 +83,16 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
           Sil.Store (Exp.Lvar catch_var, ret_type, Exp.Var id_exn_val, loc) in
         let instr_rethrow_exn =
           Sil.Store (Exp.Lvar ret_var, ret_type, Exp.Exn (Exp.Var id_exn_val), loc) in
-        let node_kind_true = Cfg.Node.Prune_node (true, if_kind, exn_message) in
-        let node_kind_false = Cfg.Node.Prune_node (false, if_kind, exn_message) in
+        let node_kind_true = Procdesc.Node.Prune_node (true, if_kind, exn_message) in
+        let node_kind_false = Procdesc.Node.Prune_node (false, if_kind, exn_message) in
         let node_true =
           let instrs_true = [instr_call_instanceof; instr_prune_true; instr_set_catch_var] in
           create_node loc node_kind_true instrs_true in
         let node_false =
           let instrs_false = [instr_call_instanceof; instr_prune_false] @ (if rethrow_exception then [instr_rethrow_exn] else []) in
           create_node loc node_kind_false instrs_false in
-        Cfg.Procdesc.node_set_succs_exn procdesc node_true catch_nodes exit_nodes;
-        Cfg.Procdesc.node_set_succs_exn procdesc node_false succ_nodes exit_nodes;
+        Procdesc.node_set_succs_exn procdesc node_true catch_nodes exit_nodes;
+        Procdesc.node_set_succs_exn procdesc node_false succ_nodes exit_nodes;
         let is_finally = handler.JBir.e_catch_type = None in
         if is_finally
         then [node_true] (* TODO (#4759480): clean up the translation so prune nodes are not created at all *)
@@ -106,10 +106,10 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
       let nodes_first_handler =
         IList.fold_left process_handler exit_nodes (IList.rev handler_list) in
       let loc = match nodes_first_handler with
-        | n:: _ -> Cfg.Node.get_loc n
+        | n:: _ -> Procdesc.Node.get_loc n
         | [] -> Location.dummy in
       let entry_node = create_entry_node loc in
-      Cfg.Procdesc.node_set_succs_exn procdesc entry_node nodes_first_handler exit_nodes;
+      Procdesc.node_set_succs_exn procdesc entry_node nodes_first_handler exit_nodes;
       Hashtbl.add catch_block_table handler_list [entry_node] in
   Hashtbl.iter (fun _ handler_list -> create_entry_block handler_list) handler_table;
   catch_block_table

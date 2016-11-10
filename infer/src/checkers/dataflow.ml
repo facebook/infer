@@ -28,7 +28,7 @@ module type DFStateType = sig
   val join : t -> t -> t
 
   (** Perform a state transition on a node. *)
-  val do_node : Tenv.t -> Cfg.Node.t -> t -> (t list) * (t list)
+  val do_node : Tenv.t -> Procdesc.Node.t -> t -> (t list) * (t list)
 
   (** Can proc throw an exception? *)
   val proc_throws : Procname.t -> throws
@@ -43,14 +43,14 @@ module type DF = sig
     | Transition of state * state list * state list
 
   val join : state list -> state -> state
-  val run : Tenv.t -> Cfg.Procdesc.t -> state -> (Cfg.Node.t -> transition)
+  val run : Tenv.t -> Procdesc.t -> state -> (Procdesc.Node.t -> transition)
 end
 
 (** Determine if the node can throw an exception. *)
 let node_throws pdesc node (proc_throws : Procname.t -> throws) : throws =
   let instr_throws instr =
     let is_return pvar =
-      let ret_pvar = Cfg.Procdesc.get_ret_var pdesc in
+      let ret_pvar = Procdesc.get_ret_var pdesc in
       Pvar.equal pvar ret_pvar in
     match instr with
     | Sil.Store (Exp.Lvar pvar, _, Exp.Exn _, _) when is_return pvar ->
@@ -75,14 +75,14 @@ let node_throws pdesc node (proc_throws : Procname.t -> throws) : throws =
     | t, DoesNotThrow -> res := t in
   let do_instr instr = update_res (instr_throws instr) in
 
-  IList.iter do_instr (Cfg.Node.get_instrs node);
+  IList.iter do_instr (Procdesc.Node.get_instrs node);
   !res
 
 (** Create an instance of the dataflow algorithm given a state parameter. *)
 module MakeDF(St: DFStateType) : DF with type state = St.t = struct
-  module S = Cfg.NodeSet
-  module H = Cfg.NodeHash
-  module N = Cfg.Node
+  module S = Procdesc.NodeSet
+  module H = Procdesc.NodeHash
+  module N = Procdesc.Node
 
   type worklist = S.t
   type statemap = St.t H.t
@@ -92,7 +92,7 @@ module MakeDF(St: DFStateType) : DF with type state = St.t = struct
     pre_states : statemap;
     post_states : statelistmap;
     exn_states : statelistmap;
-    proc_desc : Cfg.Procdesc.t
+    proc_desc : Procdesc.t
   }
   type state = St.t
   type transition =
@@ -118,8 +118,8 @@ module MakeDF(St: DFStateType) : DF with type state = St.t = struct
           push_state dest_joined
       with Not_found -> push_state new_state in
 
-    let succ_nodes = Cfg.Node.get_succs node in
-    let exn_nodes = Cfg.Node.get_exn node in
+    let succ_nodes = Procdesc.Node.get_succs node in
+    let exn_nodes = Procdesc.Node.get_exn node in
     if throws <> Throws then
       IList.iter
         (fun s -> IList.iter (propagate_to_dest s) succ_nodes)
@@ -136,7 +136,7 @@ module MakeDF(St: DFStateType) : DF with type state = St.t = struct
   let run tenv proc_desc state =
 
     let t =
-      let start_node = Cfg.Procdesc.get_start_node proc_desc in
+      let start_node = Procdesc.get_start_node proc_desc in
       let init_set = S.singleton start_node in
       let init_statemap =
         let m = H.create 1 in
@@ -178,7 +178,7 @@ let callback_test_dataflow { Callbacks.proc_desc; tenv } =
       let equal = int_equal
       let join n m = if n = 0 then m else n
       let do_node _ n s =
-        if verbose then L.stdout "visiting node %a with state %d@." Cfg.Node.pp n s;
+        if verbose then L.stdout "visiting node %a with state %d@." Procdesc.Node.pp n s;
         [s + 1], [s + 1]
       let proc_throws _ = DoesNotThrow
     end) in
@@ -187,4 +187,4 @@ let callback_test_dataflow { Callbacks.proc_desc; tenv } =
     match transitions node with
     | DFCount.Transition _ -> ()
     | DFCount.Dead_state -> () in
-  IList.iter do_node (Cfg.Procdesc.get_nodes proc_desc)
+  IList.iter do_node (Procdesc.get_nodes proc_desc)

@@ -156,7 +156,7 @@ module StructuredSil = struct
 end
 
 module Make
-    (CFG : ProcCfg.S with type node = Cfg.Node.t)
+    (CFG : ProcCfg.S with type node = Procdesc.Node.t)
     (S : Scheduler.Make)
     (T : TransferFunctions.Make) = struct
 
@@ -171,16 +171,16 @@ module Make
     let cfg = Cfg.create_cfg () in
     let pdesc =
       Cfg.create_proc_desc cfg (ProcAttributes.default test_pname !Config.curr_language) in
-    let pname = Cfg.Procdesc.get_proc_name pdesc in
+    let pname = Procdesc.get_proc_name pdesc in
 
     let create_node kind cmds =
-      Cfg.Procdesc.create_node pdesc dummy_loc kind cmds in
+      Procdesc.create_node pdesc dummy_loc kind cmds in
     let set_succs cur_node succs ~exn_handlers=
-      Cfg.Procdesc.node_set_succs_exn pdesc cur_node succs exn_handlers in
+      Procdesc.node_set_succs_exn pdesc cur_node succs exn_handlers in
     let mk_prune_nodes_for_cond cond_exp if_kind =
       let mk_prune_node cond_exp if_kind true_branch =
         let prune_instr = Sil.Prune (cond_exp, dummy_loc, true_branch, if_kind) in
-        create_node (Cfg.Node.Prune_node (true_branch, if_kind, "")) [prune_instr] in
+        create_node (Procdesc.Node.Prune_node (true_branch, if_kind, "")) [prune_instr] in
       let true_prune_node = mk_prune_node cond_exp if_kind true in
       let false_prune_node =
         let negated_cond_exp = Exp.UnOp (Unop.LNot, cond_exp, None) in
@@ -189,7 +189,7 @@ module Make
 
     let rec structured_instr_to_node (last_node, assert_map) exn_handlers = function
       | Cmd cmd ->
-          let node = create_node (Cfg.Node.Stmt_node "") [cmd] in
+          let node = create_node (Procdesc.Node.Stmt_node "") [cmd] in
           set_succs last_node [node] ~exn_handlers;
           node, assert_map
       | If (exp, then_instrs, else_instrs) ->
@@ -199,34 +199,34 @@ module Make
             structured_instrs_to_node then_prune_node assert_map exn_handlers then_instrs in
           let else_branch_end_node, assert_map'' =
             structured_instrs_to_node else_prune_node assert_map' exn_handlers else_instrs in
-          let join_node = create_node Cfg.Node.Join_node [] in
+          let join_node = create_node Procdesc.Node.Join_node [] in
           set_succs then_branch_end_node [join_node] ~exn_handlers;
           set_succs else_branch_end_node [join_node] ~exn_handlers;
           join_node, assert_map''
       | While (exp, body_instrs) ->
-          let loop_head_join_node = create_node Cfg.Node.Join_node [] in
+          let loop_head_join_node = create_node Procdesc.Node.Join_node [] in
           set_succs last_node [loop_head_join_node] ~exn_handlers;
           let true_prune_node, false_prune_node = mk_prune_nodes_for_cond exp Sil.Ik_while in
           set_succs loop_head_join_node [true_prune_node; false_prune_node] ~exn_handlers;
           let loop_body_end_node, assert_map' =
             structured_instrs_to_node true_prune_node assert_map exn_handlers body_instrs in
-          let loop_exit_node = create_node (Cfg.Node.Skip_node "") [] in
+          let loop_exit_node = create_node (Procdesc.Node.Skip_node "") [] in
           set_succs loop_body_end_node [loop_head_join_node] ~exn_handlers;
           set_succs false_prune_node [loop_exit_node] ~exn_handlers;
           loop_exit_node, assert_map'
       | Try (try_instrs, catch_instrs, finally_instrs) ->
-          let catch_start_node = create_node (Cfg.Node.Skip_node "exn_handler") [] in
+          let catch_start_node = create_node (Procdesc.Node.Skip_node "exn_handler") [] in
           (* use [catch_start_node] as the exn handler *)
           let try_end_node, assert_map' =
             structured_instrs_to_node last_node assert_map [catch_start_node] try_instrs in
           let catch_end_node, assert_map'' =
             structured_instrs_to_node catch_start_node assert_map' exn_handlers catch_instrs in
-          let finally_start_node = create_node (Cfg.Node.Skip_node "finally") [] in
+          let finally_start_node = create_node (Procdesc.Node.Skip_node "finally") [] in
           set_succs try_end_node [finally_start_node] ~exn_handlers;
           set_succs catch_end_node [finally_start_node] ~exn_handlers;
           structured_instrs_to_node finally_start_node assert_map'' exn_handlers finally_instrs
       | Invariant (inv_str, inv_label) ->
-          let node = create_node (Cfg.Node.Stmt_node "Invariant") [] in
+          let node = create_node (Procdesc.Node.Stmt_node "Invariant") [] in
           set_succs last_node [node] ~exn_handlers;
           (* add the assertion to be checked after analysis converges *)
           node, M.add (CFG.id node) (inv_str, inv_label) assert_map
@@ -235,14 +235,14 @@ module Make
         (fun acc instr -> structured_instr_to_node acc exn_handlers instr)
         (last_node, assert_map)
         instrs in
-    let start_node = create_node (Cfg.Node.Start_node pname) [] in
-    Cfg.Procdesc.set_start_node pdesc start_node;
+    let start_node = create_node (Procdesc.Node.Start_node pname) [] in
+    Procdesc.set_start_node pdesc start_node;
     let no_exn_handlers = [] in
     let last_node, assert_map =
       structured_instrs_to_node start_node M.empty no_exn_handlers program in
-    let exit_node = create_node (Cfg.Node.Exit_node pname) [] in
+    let exit_node = create_node (Procdesc.Node.Exit_node pname) [] in
     set_succs last_node [exit_node] ~exn_handlers:no_exn_handlers;
-    Cfg.Procdesc.set_exit_node pdesc exit_node;
+    Procdesc.set_exit_node pdesc exit_node;
     pdesc, assert_map
 
   let create_test test_program extras pp_opt test_pname _ =

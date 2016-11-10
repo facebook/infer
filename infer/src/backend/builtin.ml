@@ -12,7 +12,7 @@ open! Utils
 (** Module for builtin functions with their symbolic execution handler *)
 
 type args = {
-  pdesc : Cfg.Procdesc.t;
+  pdesc : Procdesc.t;
   instr : Sil.instr;
   tenv : Tenv.t;
   prop_ : Prop.normal Prop.t;

@@ -37,19 +37,20 @@ val curr_html_formatter : Format.formatter ref
 val force_delayed_prints : unit -> unit
 
 (** Finish a session, and perform delayed print actions if required *)
-val node_finish_session : Cfg.Node.t -> DB.source_file -> unit
+val node_finish_session : Procdesc.Node.t -> DB.source_file -> unit
 
 (** Return true if the node was visited during footprint and during re-execution *)
-val node_is_visited : Procname.t -> Cfg.Node.t -> bool * bool
+val node_is_visited : Procname.t -> Procdesc.Node.t -> bool * bool
 
 (** Start a session, and create a new html fine for the node if it does not exist yet *)
-val node_start_session : Cfg.Node.t -> Location.t -> Procname.t -> int -> DB.source_file -> unit
+val node_start_session :
+  Procdesc.Node.t -> Location.t -> Procname.t -> int -> DB.source_file -> unit
 
 (** Write html file for the procedure.
     The boolean indicates whether to print whole seconds only. *)
-val write_proc_html : DB.source_file -> bool -> Cfg.Procdesc.t -> unit
+val write_proc_html : DB.source_file -> bool -> Procdesc.t -> unit
 
-val write_html_file : LineReader.t -> DB.source_file -> Cfg.Procdesc.t list -> unit
+val write_html_file : LineReader.t -> DB.source_file -> Procdesc.t list -> unit
 
 (** Create filename.ext.html for each file in the exe_env. *)
 val write_all_html_files : Exe_env.t -> unit

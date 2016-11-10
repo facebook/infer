@@ -19,6 +19,7 @@ type printf_signature = {
 
 val add_printf_like_function : printf_signature -> unit
 
-val check_printf_args_ok : Tenv.t -> Cfg.Node.t -> Sil.instr -> Procname.t -> Cfg.Procdesc.t -> unit
+val check_printf_args_ok :
+  Tenv.t -> Procdesc.Node.t -> Sil.instr -> Procname.t -> Procdesc.t -> unit
 
 val callback_printf_args: Callbacks.proc_callback_t
