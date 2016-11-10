@@ -172,15 +172,23 @@ module Make (TaintSpec : TaintSpec.S) = struct
       | [] ->
           trace
       | paths ->
-          let caller_pname = Cfg.Procdesc.get_proc_name proc_data.pdesc in
+          let report_error path =
+            let caller_pname = Cfg.Procdesc.get_proc_name proc_data.pdesc in
+            let msg = Localise.to_string Localise.quandary_taint_error in
+            let trace_str = F.asprintf "%a" pp_path_short path in
+            let exn = Exceptions.Checkers (msg, Localise.verbatim_desc trace_str) in
+            Reporting.log_error caller_pname ~loc:(CallSite.loc callee_site) exn in
+
           let reported_sinks =
             IList.map
-              (fun ((_, _, sinks) as path) ->
-                 let msg = Localise.to_string Localise.quandary_taint_error in
-                 let trace_str = F.asprintf "%a" pp_path_short path in
-                 let exn = Exceptions.Checkers (msg, Localise.verbatim_desc trace_str) in
-                 Reporting.log_error caller_pname ~loc:(CallSite.loc callee_site) exn;
-                 fst (IList.hd (IList.rev sinks)))
+              (fun ((_, sources, sinks) as path) ->
+                 let source = fst (IList.hd (IList.rev (sources))) in
+                 let sink = fst (IList.hd (IList.rev sinks)) in
+                 if not (CallSite.equal
+                           (TraceDomain.Source.call_site source)
+                           (TraceDomain.Sink.call_site sink))
+                 then report_error path;
+                 sink)
               paths in
           (* got new source -> sink flow. report it, but don't add the sink to the trace. if we do,
              we will double-report later on. *)
