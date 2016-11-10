@@ -161,5 +161,4 @@ let capture_files_in_database db_json_files =
   IList.iter
     (CompilationDatabase.decode_json_file
        compilation_database (should_add_file_to_cdb changed_files)) db_json_files;
-  create_dir (Config.results_dir // Config.clang_build_output_dir_name);
   run_compilation_database compilation_database

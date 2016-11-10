@@ -95,8 +95,6 @@ let checks_disabled_by_default = [
   "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL";
 ]
 
-let clang_build_output_dir_name = "build_output"
-
 let clang_initializer_prefix = "__infer_globals_initializer_"
 
 (** Experimental: if true do some specialized analysis of concurrent constructs. *)
