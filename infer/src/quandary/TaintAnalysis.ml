@@ -435,10 +435,16 @@ module Make (TaintSpec : TaintSpec.S) = struct
     let add_summaries_for_trace summary_acc access_path trace =
       let summary_trace = TaintSpec.to_summary_trace trace in
       let output_opt =
-        let base = fst (AccessPath.extract access_path) in
+        let base, accesses = AccessPath.extract access_path in
         match AccessPath.BaseMap.find base formal_map with
         | index ->
-            Some (QuandarySummary.make_formal_output index access_path)
+            (* Java is pass-by-value. thus, summaries should not include assignments to the formal
+               parameters (first part of the check) . however, they should reflect when a formal
+               passes through a sink (second part of the check) *)
+            if accesses = [] && TraceDomain.Sinks.is_empty (TraceDomain.sinks trace)
+            (* TODO: and if [base] is not passed by reference, for C/C++/Obj-C *)
+            then None
+            else Some (QuandarySummary.make_formal_output index access_path)
         | exception Not_found ->
             if is_return base
             then Some (QuandarySummary.make_return_output access_path)

@@ -273,4 +273,26 @@ class Interprocedural {
     callSinkThenDiverge(InferTaint.inferSecretSource());
   }
 
+  public static void assignSourceToParam(Object o) {
+    o = InferTaint.inferSecretSource();
+  }
+
+  // Java is call-by-value; this is fine
+  public static void assignSourceToParamOk() {
+    Object o = null;
+    assignSourceToParam(o);
+    InferTaint.inferSensitiveSink(o);
+  }
+
+  public static void swapParams(Object o1, Object o2) {
+    o1 = o2;
+  }
+
+  public static void swapParamsOk() {
+    Object notASource = null;
+    Object source = InferTaint.inferSecretSource();
+    swapParams(notASource, source);
+    InferTaint.inferSensitiveSink(notASource);
+  }
+
 }
