@@ -228,7 +228,6 @@ val print_using_diff : bool
 val procs_csv : string option
 val procs_xml : string option
 val project_root : string
-val project_root_realpath : string
 val quandary : bool
 val quiet : bool
 val reactive_mode : bool

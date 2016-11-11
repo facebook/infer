@@ -30,21 +30,14 @@ let clang_to_sil_location trans_unit_ctx clang_loc =
   Location.{line; col; file}
 
 let file_in_project file =
-  (* Look at file paths before resolving them to real paths. Do it to
-     improve performance of most likely case when calling realpath is not needed *)
-  let file_in_project, used_project_root, used_file =
-    if string_is_prefix Config.project_root file then
-      true, Config.project_root, file
-    else if string_is_prefix Config.project_root_realpath file then
-      true, Config.project_root_realpath, file
-    else
-      let real_root = Config.project_root_realpath in
-      let real_file = Core.Std.Filename.realpath file in
-      string_is_prefix real_root real_file, real_root, real_file in
+  (* IMPORTANT: results of realpath are cached to not ruin performance *)
+  let real_root = realpath Config.project_root in
+  let real_file = realpath file in
+  let file_in_project = string_is_prefix real_root real_file in
   let paths = Config.skip_translation_headers in
   let file_should_be_skipped =
     IList.exists
-      (fun path -> string_is_prefix (Filename.concat used_project_root path) used_file)
+      (fun path -> string_is_prefix (Filename.concat real_root path) real_file)
       paths in
   file_in_project && not (file_should_be_skipped)
 

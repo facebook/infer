@@ -298,3 +298,7 @@ val create_dir : string -> unit
 (** [create_path path] will create a directory at [path], creating all the parent directories if
     non-existing *)
 val create_path : string -> unit
+
+(** [realpath path] returns path with all symbolic links resolved. It caches results of previous
+    calls to avoid expensive system calls *)
+val realpath : string -> string

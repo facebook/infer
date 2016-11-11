@@ -662,3 +662,12 @@ let rec create_path path =
   | Unix.Unix_error (Unix.ENOENT, _, _) ->
       create_path (Filename.dirname path);
       create_dir path
+
+let realpath_cache = Hashtbl.create 1023
+
+let realpath path =
+  try Hashtbl.find realpath_cache path
+  with Not_found ->
+    let realpath = Core.Std.Filename.realpath path in
+    Hashtbl.add realpath_cache path realpath;
+    realpath
