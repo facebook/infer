@@ -9,11 +9,15 @@
 
 open! Utils
 
-module Globals :
+module Global :
 sig
   type t = Pvar.t
   val compare : t -> t -> int
   val pp : Format.formatter -> t -> unit
 end
 
-include SinkTrace.S with module Sink.Kind = Globals
+include SinkTrace.S with module Sink.Kind = Global
+
+val make_access : Global.t -> Location.t -> Sink.t
+
+val is_intraprocedural_access : Sink.t -> bool

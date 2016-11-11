@@ -240,9 +240,9 @@ let is_class_initializer: t => bool;
 let is_infer_undefined: t => bool;
 
 
-/** Is this procedure one inserted by Infer to initialize the global variables of this translation
-    unit? */
-let is_globals_initializer: c => bool;
+/** Return the name of the global for which this procedure is the initializer if this is an
+    initializer, None otherwise. */
+let get_global_name_of_initializer: t => option string;
 
 
 /** Pretty print a proc name. */

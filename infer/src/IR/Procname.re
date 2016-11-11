@@ -500,7 +500,13 @@ let is_infer_undefined pn =>
     false
   };
 
-let is_globals_initializer (name, _) => string_is_prefix Config.clang_initializer_prefix name;
+let get_global_name_of_initializer =
+  fun
+  | C (name, _) when string_is_prefix Config.clang_initializer_prefix name => {
+      let prefix_len = String.length Config.clang_initializer_prefix;
+      Some (String.sub name prefix_len (String.length name - prefix_len))
+    }
+  | _ => None;
 
 
 /** to_string for C_function type */

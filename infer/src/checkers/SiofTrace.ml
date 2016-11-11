@@ -12,39 +12,51 @@ open! Utils
 module F = Format
 module L = Logging
 
-module Globals = struct
+module Global = struct
   type t = Pvar.t
   let compare = Pvar.compare
   let pp fmt pvar = (Pvar.pp pe_text) fmt pvar
 end
 
-include SinkTrace.Make(struct
-    module Kind = Globals
+module TraceElem = struct
+  module Kind = Global
 
-    type t = {
-      site : CallSite.t;
-      kind: Kind.t;
-    }
+  type t = {
+    site : CallSite.t;
+    kind: [`Call | `Access] * Kind.t;
+  }
 
-    let call_site { site; } = site
+  let call_site { site; } = site
 
-    let kind { kind; } = kind
+  let kind { kind; } = snd kind
 
-    let make kind site = { kind; site; }
+  let make kind site = { kind = (`Call, kind); site; }
 
-    let with_callsite t site = { t with site; }
+  let with_callsite { kind=(_, kind); } site = { kind=(`Call, kind); site; }
 
-    let compare t1 t2 =
-      CallSite.compare t1.site t2.site
-      |> next Kind.compare t1.kind t2.kind
+  let compare t1 t2 =
+    let n = CallSite.compare t1.site t2.site in
+    if n <> 0 then n
+    else
+      let n = tags_compare (fst t1.kind) (fst t2.kind) in
+      if n <> 0 then n
+      else Kind.compare (snd t1.kind) (snd t2.kind)
 
-    let pp fmt { site; kind; } =
-      F.fprintf fmt "Access to %a at %a" Kind.pp kind CallSite.pp site
+  let pp fmt { site; kind; } =
+    F.fprintf fmt "Access to %a at %a" Kind.pp (snd kind) CallSite.pp site
 
-    module Set = PrettyPrintable.MakePPSet (struct
-        type nonrec t = t
-        let compare = compare
-        let pp_element = pp
-      end)
+  module Set = PrettyPrintable.MakePPSet (struct
+      type nonrec t = t
+      let compare = compare
+      let pp_element = pp
+    end)
 
-  end)
+end
+
+include SinkTrace.Make(TraceElem)
+
+let make_access kind loc =
+  let site = CallSite.make Procname.empty_block loc in
+  { TraceElem.kind = (`Access, kind); site; }
+
+let is_intraprocedural_access { TraceElem.kind=(kind, _); } = kind = `Access

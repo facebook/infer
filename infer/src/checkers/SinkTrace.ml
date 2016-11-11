@@ -24,6 +24,10 @@ module type S = sig
 
   (** update sink with the given call site *)
   val with_callsite : t -> CallSite.t -> t
+
+  val to_sink_loc_trace :
+    ?desc_of_sink:(Sink.t -> string) -> ?sink_should_nest:(Sink.t -> bool) ->
+    sink_path -> Errlog.loc_trace_elem list
 end
 
 module MakeSink(TraceElem : TraceElem.S) = struct
@@ -48,6 +52,9 @@ module Make (TraceElem : TraceElem.S) = struct
     IList.map
       (fun (passthroughs, _, sinks) -> passthroughs, sinks)
       (get_reportable_paths t ~trace_of_pname)
+
+  let to_sink_loc_trace ?desc_of_sink ?sink_should_nest (passthroughs, sinks) =
+    to_loc_trace ?desc_of_sink ?sink_should_nest (passthroughs, [], sinks)
 
   let with_callsite t call_site =
     IList.fold_left

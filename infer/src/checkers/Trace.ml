@@ -50,6 +50,14 @@ module type S = sig
   (** get a path for each of the reportable source -> sink flows in this trace *)
   val get_reportable_paths : t -> trace_of_pname:(Procname.t -> t) -> path list
 
+  (** create a loc_trace from a path; [source_should_nest s] should be true when we are going one
+      deeper into a call-chain, ie when lt_level should be bumper in the next loc_trace_elem, and
+      similarly for [sink_should_nest] *)
+  val to_loc_trace :
+    ?desc_of_source:(Source.t -> string) -> ?source_should_nest:(Source.t -> bool) ->
+    ?desc_of_sink:(Sink.t -> string) -> ?sink_should_nest:(Sink.t -> bool) ->
+    path -> Errlog.loc_trace
+
   (** create a trace from a source *)
   val of_source : Source.t -> t
 
@@ -213,6 +221,33 @@ module Make (Spec : Spec) = struct
          let sources_passthroughs, sinks_passthroughs = expand_path source sink in
          passthroughs, sources_passthroughs, sinks_passthroughs)
       (get_reports t)
+
+  let to_loc_trace
+      ?(desc_of_source=fun source ->
+          let callsite = Source.call_site source in
+          Format.asprintf "call to %a" Procname.pp (CallSite.pname callsite))
+      ?(source_should_nest=(fun _ -> true))
+      ?(desc_of_sink=fun sink ->
+          let callsite = Sink.call_site sink in
+          Format.asprintf "call to %a" Procname.pp (CallSite.pname callsite))
+      ?(sink_should_nest=(fun _ -> true))
+      (_, sources, sinks) =
+    let trace_elem_of_path_elem call_site desc should_nest =
+      let level = ref 0 in
+      fun (elem, _) ->
+        let lt_level = !level in
+        let desc = desc elem in
+        let callsite = call_site elem in
+        if should_nest elem then incr level;
+        Errlog.make_trace_element lt_level (CallSite.loc callsite) desc [] in
+    let trace_elem_of_source =
+      trace_elem_of_path_elem Source.call_site desc_of_source source_should_nest in
+    let trace_elem_of_sink =
+      trace_elem_of_path_elem Sink.call_site desc_of_sink sink_should_nest in
+    (* reverse sinks intentionally, do not reverse sources(?) *)
+    IList.rev_append
+      (IList.rev_map trace_elem_of_source sources)
+      (IList.map trace_elem_of_sink (IList.rev sinks))
 
   let of_source source =
     let sources = Sources.singleton source in
