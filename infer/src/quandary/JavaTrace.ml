@@ -85,7 +85,7 @@ module JavaSource = struct
     | pname when BuiltinDecl.is_declared pname -> None
     | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
 
-  let to_callee t callee_site =
+  let with_callsite t callee_site =
     { t with site = callee_site; }
 
   let compare src1 src2 =
@@ -181,7 +181,7 @@ module JavaSink = struct
     | pname when BuiltinDecl.is_declared pname -> []
     | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
 
-  let to_callee t callee_site =
+  let with_callsite t callee_site =
     { t with site = callee_site; }
 
   let compare snk1 snk2 =

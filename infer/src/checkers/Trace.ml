@@ -245,7 +245,7 @@ module Make (Spec : Spec) = struct
           caller_trace.sources
         else
           IList.map
-            (fun sink -> Source.to_callee sink callee_site)
+            (fun sink -> Source.with_callsite sink callee_site)
             (Sources.elements non_footprint_callee_sources)
           |> Sources.of_list
           |> Sources.union caller_trace.sources in
@@ -256,7 +256,7 @@ module Make (Spec : Spec) = struct
           caller_trace.sinks
         else
           IList.map
-            (fun sink -> Sink.to_callee sink callee_site)
+            (fun sink -> Sink.with_callsite sink callee_site)
             (Sinks.elements callee_trace.sinks)
           |> Sinks.of_list
           |> Sinks.union caller_trace.sinks in

@@ -54,7 +54,7 @@ module MockTraceElem = struct
       let pp_element = pp
     end)
 
-  let to_callee t _ = t
+  let with_callsite t _ = t
 end
 
 module MockSource = struct

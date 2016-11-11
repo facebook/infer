@@ -32,7 +32,7 @@ include SinkTrace.Make(struct
 
     let make kind site = { kind; site; }
 
-    let to_callee t site = { t with site; }
+    let with_callsite t site = { t with site; }
 
     let compare t1 t2 =
       CallSite.compare t1.site t2.site

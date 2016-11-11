@@ -27,7 +27,7 @@ module MockTrace = Trace.Make(struct
       let compare = CallSite.compare
       let pp = CallSite.pp
 
-      let to_callee t _ = t
+      let with_callsite t _ = t
 
       module Set = PrettyPrintable.MakePPSet(struct
           type nonrec t = t

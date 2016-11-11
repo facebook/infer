@@ -79,7 +79,7 @@ module CppSource = struct
     | pname ->
         failwithf "Non-C++ procname %a in C++ analysis@." Procname.pp pname
 
-  let to_callee t callee_site =
+  let with_callsite t callee_site =
     { t with site = callee_site; }
 
   let compare src1 src2 =
@@ -159,7 +159,7 @@ module CppSink = struct
     | pname ->
         failwithf "Non-C++ procname %a in C++ analysis@." Procname.pp pname
 
-  let to_callee t callee_site =
+  let with_callsite t callee_site =
     { t with site = callee_site; }
 
   let compare snk1 snk2 =

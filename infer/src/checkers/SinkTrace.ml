@@ -22,8 +22,8 @@ module type S = sig
   (** get a path for each of the reportable flows to a sink in this trace *)
   val get_reportable_sink_paths : t -> trace_of_pname:(Procname.t -> t) -> sink_path list
 
-  (** convert of the sinks to callee sinks for the given call site *)
-  val to_callee : t -> CallSite.t -> t
+  (** update sink with the given call site *)
+  val with_callsite : t -> CallSite.t -> t
 end
 
 module MakeSink(TraceElem : TraceElem.S) = struct
@@ -49,10 +49,10 @@ module Make (TraceElem : TraceElem.S) = struct
       (fun (passthroughs, _, sinks) -> passthroughs, sinks)
       (get_reportable_paths t ~trace_of_pname)
 
-  let to_callee t call_site =
+  let with_callsite t call_site =
     IList.fold_left
       (fun t_acc sink ->
-         let callee_sink = Sink.to_callee sink call_site in
+         let callee_sink = Sink.with_callsite sink call_site in
          add_sink callee_sink t_acc)
       initial
       (Sinks.elements (sinks t))

@@ -76,8 +76,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let callsite = CallSite.make callee_pname loc in
         let callee_globals =
           match Summary.read_summary tenv pdesc callee_pname with
-          | Some (Domain.NonBottom trace) -> Domain.NonBottom (SiofTrace.to_callee trace callsite)
-          | _ -> Domain.Bottom in
+          | Some (Domain.NonBottom trace) ->
+              Domain.NonBottom (SiofTrace.with_callsite trace callsite)
+          | _ ->
+              Domain.Bottom in
         add_params_globals astate tenv pdesc loc params
         |> Domain.join callee_globals
         |>

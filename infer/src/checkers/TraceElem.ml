@@ -25,7 +25,7 @@ module type S = sig
   val kind : t -> Kind.t
 
   val make : Kind.t -> CallSite.t -> t
-  val to_callee : t -> CallSite.t -> t
+  val with_callsite : t -> CallSite.t -> t
 
   val pp : F.formatter -> t -> unit
 
