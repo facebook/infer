@@ -18,6 +18,7 @@ type context = {
   current_objc_impl : Clang_ast_t.decl option;
   (** True if inside an objc static factory method (a class-level initializer, like +new) *)
   in_objc_static_factory_method : bool;
+  et_evaluation_node : string option;
 }
 
 let empty translation_unit_context = {
@@ -27,4 +28,5 @@ let empty translation_unit_context = {
   is_ck_translation_unit = false;
   current_objc_impl = None;
   in_objc_static_factory_method = false;
+  et_evaluation_node = None;
 }

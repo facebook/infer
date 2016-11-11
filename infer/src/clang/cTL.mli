@@ -17,6 +17,7 @@ type transitions =
   | Body (* decl to stmt *)
   | InitExpr (* decl to stmt *)
   | Super (* decl to decl *)
+  | Cond
 
 (* In formulas below prefix
    "E" means "exists a path"
@@ -47,6 +48,9 @@ type t =
                               there exists a node defining a super class in the hierarchy of the class
                               defined by the current node (if any) where  phi holds *)
   | ET of string list * transitions option * t (** ET[T][l] phi <=>
+                                                               there exists a descentant an of the current node such that an is of type in set T
+                                                               making a transition to a node an' via label l, such that in an phi holds. *)
+  | ETX of string list * transitions option * t (** ET[T][l] phi <=>
                                                                there exists a descentant an of the current node such that an is of type in set T
                                                                making a transition to a node an' via label l, such that in an phi holds. *)
 

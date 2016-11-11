@@ -142,4 +142,21 @@ int bad10(NSNumber* number, Simple* simple) {
   return 0;
 }
 
+int bad11(int i, NSNumber* number) {
+  if (i > 10) {
+    return 11;
+  } else if (number) {
+    return 0;
+  }
+  return 1;
+}
+
 int good6(NSNumber* number) { return (number.integerValue > 5 ? 1 : 0); }
+
+NSNumber* good7(NSNumber* number) {
+  return (number.integerValue > 5 ? number : @0);
+}
+
+NSNumber* bad12(NSNumber* number) {
+  return (number.integerValue > 5 ? (number ? @1 : @0) : @0);
+}

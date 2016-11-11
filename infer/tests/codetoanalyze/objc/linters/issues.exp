@@ -10,6 +10,8 @@ atomic_prop.m, A_writeQ:, 82, DIRECT_ATOMIC_PROPERTY_ACCESS
 atomic_prop.m, __objc_anonymous_block_______1, 114, DIRECT_ATOMIC_PROPERTY_ACCESS
 badpointer.m, bad1, 17, BAD_POINTER_COMPARISON
 badpointer.m, bad10, 139, BAD_POINTER_COMPARISON
+badpointer.m, bad11, 148, BAD_POINTER_COMPARISON
+badpointer.m, bad12, 161, BAD_POINTER_COMPARISON
 badpointer.m, bad2, 26, BAD_POINTER_COMPARISON
 badpointer.m, bad3, 33, BAD_POINTER_COMPARISON
 badpointer.m, bad4, 85, BAD_POINTER_COMPARISON

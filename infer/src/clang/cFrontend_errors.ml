@@ -63,32 +63,11 @@ let var_checker_list = [CFrontend_checkers.global_var_init_with_calls_warning;
 let checker_for_var dec checker context =
   checker context dec
 
-(* List of checkers on conditional operator *)
-let conditional_op_checker_list = [CFrontend_checkers.bad_pointer_comparison_warning]
-
-(* Invocation of checker belonging to conditional_op_checker_list *)
-let checker_for_conditional_op first_stmt checker context =
-  checker context first_stmt
-
 (* List of checkers on if-statement *)
 let if_stmt_checker_list = [CFrontend_checkers.bad_pointer_comparison_warning]
 
 (* Invocation of checker belonging to if_stmt_checker_list *)
 let checker_for_if_stmt cond checker context =
-  checker context cond
-
-(* List of checkers on for statement *)
-let for_stmt_checker_list = [CFrontend_checkers.bad_pointer_comparison_warning]
-
-(* Invocation of checker belonging to for_stmt_checker_list *)
-let checker_for_for_stmt cond checker context =
-  checker context cond
-
-(* List of checkers on while statement *)
-let while_stmt_checker_list = [CFrontend_checkers.bad_pointer_comparison_warning]
-
-(* Invocation of checker belonging to while_stmt_checker_list *)
-let checker_for_while_stmt cond checker context =
   checker context cond
 
 let function_decl_checker_list = [ComponentKit.component_factory_function_advice]
@@ -146,25 +125,10 @@ let run_frontend_checkers_on_stmt context instr =
       invoke_set_of_checkers call_captured_vars_checker context key
         captured_vars_checker_list;
       context
-  | IfStmt (_, _ :: _ :: cond :: _) ->
-      let call_checker = checker_for_if_stmt cond in
-      let key = Ast_utils.generate_key_stmt cond in
+  | IfStmt _ | ConditionalOperator _ | ForStmt _ | WhileStmt  _ ->
+      let call_checker = checker_for_if_stmt instr in
+      let key = Ast_utils.generate_key_stmt instr in
       invoke_set_of_checkers call_checker context key if_stmt_checker_list;
-      context
-  | ConditionalOperator (_, first_stmt :: _, _) ->
-      let call_checker = checker_for_conditional_op first_stmt in
-      let key = Ast_utils.generate_key_stmt first_stmt in
-      invoke_set_of_checkers call_checker context key conditional_op_checker_list;
-      context
-  | ForStmt (_, [_; _; cond; _; _]) ->
-      let call_checker = checker_for_for_stmt cond in
-      let key = Ast_utils.generate_key_stmt cond in
-      invoke_set_of_checkers call_checker context key for_stmt_checker_list;
-      context
-  | WhileStmt (_, [_; cond; _]) ->
-      let call_checker = checker_for_while_stmt cond in
-      let key = Ast_utils.generate_key_stmt cond in
-      invoke_set_of_checkers call_checker context key while_stmt_checker_list;
       context
   | CallExpr (_, called_func_stmt :: _, _) ->
       let call_checker = checkers_for_call_expr called_func_stmt in

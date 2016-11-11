@@ -23,7 +23,7 @@ let get_ivar_attributes ivar_decl =
   | _ -> []
 
 (* list of cxx references captured by stmt *)
-let captured_variables_cxx_ref stmt =
+let captured_variables_cxx_ref dec =
   let capture_var_is_cxx_ref reference_captured_vars captured_var =
     let decl_ref_opt = captured_var.Clang_ast_t.bcv_variable in
     match Ast_utils.get_decl_opt_with_decl_ref decl_ref_opt with
@@ -35,14 +35,17 @@ let captured_variables_cxx_ref stmt =
              named_decl_info::reference_captured_vars
          | _ -> reference_captured_vars)
     | _ -> reference_captured_vars in
-  let captured_vars = match stmt with
-    | Clang_ast_t.BlockExpr (_, _ , _, Clang_ast_t.BlockDecl (_, bdi)) ->
+  let captured_vars = match dec with
+    | Clang_ast_t.BlockDecl (_, bdi) ->
         bdi.Clang_ast_t.bdi_captured_variables
     | _ -> [] in
   IList.fold_left capture_var_is_cxx_ref [] captured_vars
 
 let var_descs_name stmt =
-  let capt_refs = captured_variables_cxx_ref stmt in
+  let capt_refs = match stmt with
+    | Clang_ast_t.BlockExpr (_, _ , _, decl) ->
+        captured_variables_cxx_ref decl
+    | _ -> [] in
   let var_desc vars var_named_decl_info =
     vars ^ "'" ^ var_named_decl_info.Clang_ast_t.ni_name ^ "'" in
   IList.fold_left var_desc "" capt_refs
@@ -55,9 +58,6 @@ let pp_predicate fmt (name, arglist) =
 
 let is_declaration_kind decl s =
   Clang_ast_proj.get_decl_kind_string decl = s
-
-let is_statement_kind stmt s =
-  Clang_ast_proj.get_stmt_kind_string stmt = s
 
 (* st |= call_method(m) *)
 let call_method m st =

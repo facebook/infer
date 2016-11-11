@@ -22,6 +22,7 @@ type transitions =
   | Body (* decl to stmt *)
   | InitExpr (* decl to stmt *)
   | Super (* decl to decl *)
+  | Cond
 
 (* In formulas below prefix
    "E" means "exists a path"
@@ -46,6 +47,7 @@ type t = (* A ctl formula *)
   | EU of transitions option * t * t
   | EH of string list * t
   | ET of string list * transitions option * t
+  | ETX of string list * transitions option * t
 
 (* the kind of AST nodes where formulas are evaluated *)
 type ast_node =
@@ -57,19 +59,28 @@ module Debug = struct
     let pp_aux fmt trans = match trans with
       | Body -> Format.pp_print_string fmt "Body"
       | InitExpr -> Format.pp_print_string fmt "InitExpr"
-      | Super -> Format.pp_print_string fmt "Super" in
+      | Super -> Format.pp_print_string fmt "Super"
+      | Cond -> Format.pp_print_string fmt "Cond" in
     match trans_opt with
     | Some trans -> pp_aux fmt trans
     | None -> Format.pp_print_string fmt "_"
+
+  (* a flag to print more or less in the dotty graph *)
+  let full_print = true
 
   let rec pp_formula fmt phi =
     match phi with
     | True -> Format.fprintf fmt "True"
     | False -> Format.fprintf fmt "False"
     | Atomic p -> Predicates.pp_predicate fmt p
-    | Not phi -> Format.fprintf fmt "NOT(%a)" pp_formula phi
-    | And (phi1, phi2) -> Format.fprintf fmt "(%a AND %a)" pp_formula phi1 pp_formula phi2
-    | Or (phi1, phi2) -> Format.fprintf fmt "(%a OR %a)" pp_formula phi1 pp_formula phi2
+    | Not phi -> if full_print then Format.fprintf fmt "NOT(%a)" pp_formula phi
+        else Format.fprintf fmt "NOT(...)"
+    | And (phi1, phi2) -> if full_print then
+          Format.fprintf fmt "(%a AND %a)" pp_formula phi1 pp_formula phi2
+        else  Format.fprintf fmt "(... AND ...)"
+    | Or (phi1, phi2) -> if full_print then
+          Format.fprintf fmt "(%a OR %a)" pp_formula phi1 pp_formula phi2
+        else Format.fprintf fmt "(... OR ...)"
     | Implies (phi1, phi2) -> Format.fprintf fmt "(%a ==> %a)" pp_formula phi1 pp_formula phi2
     | InNode (nl, phi) -> Format.fprintf fmt "IN-NODE %a: (%a)"
                             (Utils.pp_comma_seq Format.pp_print_string) nl
@@ -86,10 +97,11 @@ module Debug = struct
     | EH (arglist, phi) -> Format.fprintf fmt "EH[%a](%a)"
                              (Utils.pp_comma_seq Format.pp_print_string) arglist
                              pp_formula phi
-    | ET (arglist, trans, phi) -> Format.fprintf fmt "ET[%a][%a](%a)"
-                                    (Utils.pp_comma_seq Format.pp_print_string) arglist
-                                    pp_transition trans
-                                    pp_formula phi
+    | ET (arglist, trans, phi)
+    | ETX (arglist, trans, phi)  -> Format.fprintf fmt "ET[%a][%a](%a)"
+                                      (Utils.pp_comma_seq Format.pp_print_string) arglist
+                                      pp_transition trans
+                                      pp_formula phi
 
   module EvaluationTracker = struct
     exception Empty_stack of string
@@ -99,6 +111,7 @@ module Debug = struct
     type content = {
       ast_node: ast_node;
       phi: t;
+      lcxt: CLintersContext.context;
       eval_result: eval_result;
     }
 
@@ -115,9 +128,9 @@ module Debug = struct
       forest: tree list;
     }
 
-    let create_content ast_node phi = {ast_node; phi; eval_result = Eval_undefined}
+    let create_content ast_node phi lcxt = {ast_node; phi; eval_result = Eval_undefined; lcxt = lcxt; }
 
-    let create () = {next_id = 0; eval_stack = Stack.create(); forest = []}
+    let create () = {next_id = 0; eval_stack = Stack.create(); forest = [] }
 
     let eval_begin t content =
       let node = {id = t.next_id; content} in
@@ -169,6 +182,10 @@ module Debug = struct
               | Eval_false -> "red"
               | _ -> failwith "Tree is not fully evaluated" in
             let label =
+              let string_of_lcxt c =
+                match c.CLintersContext.et_evaluation_node with
+                | Some s -> ("et_evaluation_node = "^s)
+                | _ -> "et_evaluation_node = NONE" in
               let string_of_ast_node an =
                 match an with
                 | Stmt stmt -> Clang_ast_proj.get_stmt_kind_string stmt
@@ -181,9 +198,10 @@ module Debug = struct
                 | Implies _ when num_children = 2 -> "(...) ==> (...)"
                 | Not _ -> "NOT(...)"
                 | _ -> Utils.pp_to_string pp_formula phi in
-              Format.sprintf "(%d)\\n%s\\n%s"
+              Format.sprintf "(%d)\\n%s\\n%s\\n%s"
                 root_node.id
                 (Escape.escape_dotty (string_of_ast_node root_node.content.ast_node))
+                (Escape.escape_dotty (string_of_lcxt root_node.content.lcxt))
                 (Escape.escape_dotty (smart_string_of_formula root_node.content.phi)) in
             let edges =
               let buf = Buffer.create 16 in
@@ -212,9 +230,9 @@ let ctl_evaluation_tracker = match Config.debug_mode with
   | true -> Some (ref (Debug.EvaluationTracker.create ()))
   | false -> None
 
-let debug_create_payload ast_node phi =
+let debug_create_payload ast_node phi lcxt =
   match ctl_evaluation_tracker with
-  | Some _ -> Some (Debug.EvaluationTracker.create_content ast_node phi)
+  | Some _ -> Some (Debug.EvaluationTracker.create_content ast_node phi lcxt)
   | None -> None
 
 let debug_eval_begin payload =
@@ -258,6 +276,15 @@ let node_to_string an =
   | Decl d -> Clang_ast_proj.get_decl_kind_string d
   | Stmt s -> Clang_ast_proj.get_stmt_kind_string s
 
+let node_to_unique_string_id an =
+  match an with
+  | Decl d ->
+      let di = Clang_ast_proj.get_decl_tuple d in
+      (Clang_ast_proj.get_decl_kind_string d) ^ (string_of_int di.Clang_ast_t.di_pointer)
+  | Stmt s ->
+      let si, _ = Clang_ast_proj.get_stmt_tuple s in
+      Clang_ast_proj.get_stmt_kind_string s ^ (string_of_int si.Clang_ast_t.si_pointer)
+
 (* true iff an ast node is a node of type among the list tl *)
 let node_has_type tl an =
   let an_str = node_to_string an in
@@ -298,12 +325,22 @@ let transition_decl_to_decl_via_super d =
        | _ -> None)
   | None -> None
 
+let transition_stmt_to_stmt_via_condition st =
+  let open Clang_ast_t in
+  match st with
+  | IfStmt (_, _ :: _ :: cond :: _)
+  | ConditionalOperator (_, cond:: _, _)
+  | ForStmt (_, [_; _; cond; _; _])
+  | WhileStmt (_, [_; cond; _]) -> Some (Stmt cond)
+  | _ -> None
+
 (* given a node an returns the node an' such that an transition to an' via label trans *)
 let next_state_via_transition an trans =
   match an, trans with
   | Decl d, Some Super -> transition_decl_to_decl_via_super d
   | Decl d, Some InitExpr
   | Decl d, Some Body -> transition_decl_to_stmt d trans
+  | Stmt st, Some Cond -> transition_stmt_to_stmt_via_condition st
   | _, _ -> None
 
 (* Evaluation of formulas *)
@@ -318,7 +355,6 @@ let eval_Atomic pred_name params an lcxt =
   | "is_global_var", [], Decl d -> Predicates.is_syntactically_global_var d
   | "is_const_var", [], Decl d ->  Predicates.is_const_expr_var d
   | "call_function_named", _, Stmt st -> Predicates.call_function_named st params
-  | "is_statement_kind", [p1], Stmt st -> Predicates.is_statement_kind st p1
   | "is_declaration_kind", [p1], Decl d -> Predicates.is_declaration_kind d p1
   | "is_strong_property", [], Decl d -> Predicates.is_strong_property d
   | "is_assign_property", [], Decl d -> Predicates.is_assign_property d
@@ -329,7 +365,7 @@ let eval_Atomic pred_name params an lcxt =
       Predicates.is_method_property_accessor_of_ivar st lcxt
   | "is_objc_constructor", [], _ -> Predicates.is_objc_constructor lcxt
   | "is_objc_dealloc", [], _ -> Predicates.is_objc_dealloc lcxt
-  | "captures_cxx_references", [], Stmt st -> Predicates.captures_cxx_references st
+  | "captures_cxx_references", [], Decl d -> Predicates.captures_cxx_references d
   | "is_binop_with_kind", [kind], Stmt st -> Predicates.is_binop_with_kind st kind
   | "is_unop_with_kind", [kind], Stmt st -> Predicates.is_unop_with_kind st kind
   | "is_stmt", [stmt_name], Stmt st -> Predicates.is_stmt st stmt_name
@@ -428,7 +464,14 @@ and eval_AU phi1 phi2 an lcxt =
    an is a node of type in node_type_list and an satifies phi
 *)
 and in_node node_type_list phi an lctx =
-  (node_has_type node_type_list an) && (eval_formula phi an lctx)
+  let holds_for_one_node n =
+    match lctx.CLintersContext.et_evaluation_node with
+    | Some id ->
+        (string_equal id (node_to_unique_string_id an)) && (eval_formula phi an lctx)
+    | None ->
+        (node_has_type [n] an) && (eval_formula phi an lctx) in
+  IList.exists holds_for_one_node node_type_list
+
 
 (* Intuitive meaning: (an,lcxt) satifies EH[Classes] phi
    if the node an is among the declaration specified by the list Classes and
@@ -458,9 +501,20 @@ and eval_ET tl trs phi an lcxt =
     | None -> EF (None, (InNode (tl, phi))) in
   eval_formula f an lcxt
 
+and eval_ETX tl trs phi an lcxt =
+  let lcxt', tl' = match lcxt.CLintersContext.et_evaluation_node, node_has_type tl an with
+    | None, true ->
+        let an_str = node_to_string an in
+        {lcxt with CLintersContext.et_evaluation_node = Some (node_to_unique_string_id an) }, [an_str]
+    | _, _ -> lcxt, tl in
+  let f = match trs with
+    | Some _ -> EF (None, (InNode (tl', EX (trs, phi))))
+    | None -> EF (None, (InNode (tl', phi))) in
+  eval_formula f an lcxt'
+
 (* Formulas are evaluated on a AST node an and a linter context lcxt *)
 and eval_formula f an lcxt =
-  debug_eval_begin (debug_create_payload an f);
+  debug_eval_begin (debug_create_payload an f lcxt);
   let res = match f with
     | True -> true
     | False -> false
@@ -483,6 +537,7 @@ and eval_formula f an lcxt =
     | EH (cl, phi) -> eval_EH cl phi an lcxt
     | EG (trans, f1) -> (* st |= EG f1 <=> st |= f1 /\ EX EG f1 *)
         eval_formula (And (f1, EX (trans, (EG (trans, f1))))) an lcxt
-    | ET (tl, sw, phi) -> eval_ET tl sw phi an lcxt in
+    | ET (tl, sw, phi) -> eval_ET tl sw phi an lcxt
+    | ETX (tl, sw, phi) -> eval_ETX tl sw phi an lcxt in
   debug_eval_end res;
   res

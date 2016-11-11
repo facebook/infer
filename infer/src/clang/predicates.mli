@@ -23,8 +23,6 @@ val is_const_expr_var : Clang_ast_t.decl -> bool
 
 val is_declaration_kind : Clang_ast_t.decl -> string -> bool
 
-val is_statement_kind : Clang_ast_t.stmt -> string -> bool
-
 val call_function_named : Clang_ast_t.stmt -> string list -> bool
 
 val is_strong_property : Clang_ast_t.decl -> bool
@@ -43,7 +41,7 @@ val is_objc_constructor : CLintersContext.context -> bool
 
 val is_objc_dealloc : CLintersContext.context -> bool
 
-val captures_cxx_references : Clang_ast_t.stmt -> bool
+val captures_cxx_references : Clang_ast_t.decl -> bool
 
 val is_binop_with_kind : Clang_ast_t.stmt -> string -> bool
 
