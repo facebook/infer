@@ -20,6 +20,10 @@ type loc_trace_elem = {
   lt_node_tags : (string * string) list (** tags describing the node at the current location *)
 }
 
+let make_trace_element lt_level lt_loc lt_description lt_node_tags =
+  { lt_level; lt_loc; lt_description; lt_node_tags }
+
+
 (** Trace of locations *)
 type loc_trace = loc_trace_elem list
 

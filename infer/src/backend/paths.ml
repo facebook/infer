@@ -445,11 +445,6 @@ end = struct
 
   let create_loc_trace path pos_opt : Errlog.loc_trace =
     let trace = ref [] in
-    let mk_trace_elem level loc descr node_tags =
-      { Errlog.lt_level = level;
-        Errlog.lt_loc = loc;
-        Errlog.lt_description = descr;
-        Errlog.lt_node_tags = node_tags } in
     let g level path _ exn_opt =
       match curr_node path with
       | Some curr_node ->
@@ -465,7 +460,7 @@ end = struct
                   [(Io_infer.Xml.tag_kind,"procedure_start");
                    (Io_infer.Xml.tag_name, name);
                    (Io_infer.Xml.tag_name_id, name_id)] in
-                trace := mk_trace_elem level curr_loc descr node_tags :: !trace
+                trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
             | Procdesc.Node.Prune_node (is_true_branch, if_kind, _) ->
                 let descr = match is_true_branch, if_kind with
                   | true, Sil.Ik_if -> "Taking true branch"
@@ -481,7 +476,7 @@ end = struct
                 let node_tags =
                   [(Io_infer.Xml.tag_kind,"condition");
                    (Io_infer.Xml.tag_branch, if is_true_branch then "true" else "false")] in
-                trace := mk_trace_elem level curr_loc descr node_tags :: !trace
+                trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
             | Procdesc.Node.Exit_node pname ->
                 let descr = "return from a call to " ^ (Procname.to_string pname) in
                 let name = Procname.to_string pname in
@@ -490,7 +485,7 @@ end = struct
                   [(Io_infer.Xml.tag_kind,"procedure_end");
                    (Io_infer.Xml.tag_name, name);
                    (Io_infer.Xml.tag_name_id, name_id)] in
-                trace := mk_trace_elem level curr_loc descr node_tags :: !trace
+                trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
             | _ ->
                 let descr, node_tags =
                   match exn_opt with
@@ -508,7 +503,7 @@ end = struct
                   | Some path_descr ->
                       if String.length descr > 0 then descr^" "^path_descr else path_descr
                   | None -> descr in
-                trace := mk_trace_elem level curr_loc descr node_tags :: !trace
+                trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
           end
       | None ->
           () in

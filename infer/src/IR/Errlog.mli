@@ -12,12 +12,15 @@ open! Utils
 (** Module for error logs. *)
 
 (** Element of a loc trace *)
-type loc_trace_elem = {
+type loc_trace_elem = private {
   lt_level : int; (** nesting level of procedure calls *)
   lt_loc : Location.t; (** source location at the current step in the trace *)
   lt_description : string; (** description of the current step in the trace *)
   lt_node_tags : (string * string) list (** tags describing the node at the current location *)
 }
+
+(** build a loc_trace_elem from its constituents (unambiguously identified by their types). *)
+val make_trace_element : int -> Location.t -> string -> (string * string) list -> loc_trace_elem
 
 (** Trace of locations *)
 type loc_trace = loc_trace_elem list

@@ -179,13 +179,7 @@ let lookup_annotation_calls annot pname : CallSite.t list =
 let update_trace loc trace =
   if Location.equal loc Location.dummy then trace
   else
-    let trace_elem = {
-      Errlog.lt_level = 0;
-      lt_loc = loc;
-      lt_description = "";
-      lt_node_tags = [];
-    } in
-    trace_elem :: trace
+    Errlog.make_trace_element 0 loc "" [] :: trace
 
 let string_of_pname =
   Procname.to_simplified_string ~withclass:true

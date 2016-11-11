@@ -131,18 +131,12 @@ module ST = struct
       is_method_suppressed || is_field_suppressed || is_class_suppressed in
 
     let trace =
-      let make_trace_element loc description =
-        [{
-          Errlog.lt_level = 0;
-          Errlog.lt_loc = loc;
-          Errlog.lt_description = description;
-          Errlog.lt_node_tags = []
-        }] in
       let origin_elements =
         match origin_loc with
-        | Some oloc -> make_trace_element oloc "origin"
+        | Some oloc -> [Errlog.make_trace_element 0 oloc "origin" []]
         | None -> [] in
-      origin_elements @ (make_trace_element loc description) in
+      origin_elements @ [Errlog.make_trace_element 0 loc description []]
+    in
 
     if not suppressed then
       begin
