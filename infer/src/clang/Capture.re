@@ -12,7 +12,7 @@ let module CLOpt = CommandLineOption;
 
 
 /** enable debug mode (to get more data saved to disk for future inspections) */
-let debug_mode = Config.debug_mode || Config.frontend_stats;
+let debug_mode = Config.debug_mode || Config.frontend_stats || Config.frontend_debug;
 
 let buffer_len = 262143;
 
@@ -120,16 +120,16 @@ let run_clang clang_command read =>
   | _ => exit 1
   };
 
-let run_plugin_and_frontend frontend clang_args => {
+let run_plugin_and_frontend source_path frontend clang_args => {
   let clang_command = ClangCommand.command_to_run (ClangCommand.with_plugin_args clang_args);
   if debug_mode {
     /* -cc1 clang commands always set -o explicitly */
-    let object_filename = Option.get (ClangCommand.value_of_option clang_args "-o");
+    let basename = source_path ^ ".capture";
     /* Emit the clang command with the extra args piped to InferClang */
-    let frontend_script_fname = Printf.sprintf "%s.sh" object_filename;
+    let frontend_script_fname = Printf.sprintf "%s.sh" basename;
     let debug_script_out = open_out frontend_script_fname;
     let debug_script_fmt = Format.formatter_of_out_channel debug_script_out;
-    let biniou_fname = Printf.sprintf "%s.biniou" object_filename;
+    let biniou_fname = Printf.sprintf "%s.biniou" basename;
     Format.fprintf debug_script_fmt "%s \\@\n  > %s@\n" clang_command biniou_fname;
     let infer_clang_options =
       String.concat
@@ -155,7 +155,7 @@ let run_plugin_and_frontend frontend clang_args => {
       "bdump -x -d \"%s/clang_ast.dict\" -w '!!DUMMY!!' %s \\@\n  > %s.bdump"
       Config.etc_dir
       biniou_fname
-      object_filename;
+      basename;
     close_out debug_script_out
   };
   run_clang clang_command frontend
@@ -177,7 +177,7 @@ let cc1_capture clang_cmd => {
     | Some fname => run_and_validate_clang_frontend (`File fname)
     | None =>
       run_plugin_and_frontend
-        (fun chan_in => run_and_validate_clang_frontend (`Pipe chan_in)) clang_cmd
+        source_path (fun chan_in => run_and_validate_clang_frontend (`Pipe chan_in)) clang_cmd
     };
     /* reset logging to stop capturing log output into the source file's log */
     Logging.set_log_file_identifier CommandLineOption.Clang None;

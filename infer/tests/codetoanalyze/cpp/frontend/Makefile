@@ -7,7 +7,8 @@
 
 include ../../Makefile.frontend
 
-OPTIONS = -x c++ -std=c++11 -isystem$(ROOT_DIR) -isystem$(CLANG_INCLUDES)/c++/v1/ -c
+# see explanations in cpp/errors/Makefile for the custom isystem
+OPTIONS = -x c++ -std=c++11 -nostdinc++ -isystem$(ROOT_DIR) -isystem$(CLANG_INCLUDES)/c++/v1/ -c
 
 FILES = \
   */*.cpp shared/*/*.cpp \
