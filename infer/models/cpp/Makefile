@@ -21,7 +21,7 @@ $(CPP_MODELS_FILE): $(CPP_MODELS_SOURCES) $(C_MODELS_SOURCES) $(CLANG_DEPS)
 	touch $(CPP_MODELS_FILE)
 
 install: $(CPP_MODELS_FILE)
-	$(INSTALL) -m 644 -C out/specs/*.specs $(SPECS_LIB_DIR)
+	$(INSTALL_DATA) -C out/specs/*.specs $(SPECS_LIB_DIR)
 
 clean:
 	@rm -f $(CPP_MODELS_FILE)

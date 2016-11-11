@@ -20,7 +20,7 @@ $(OBJC_MODELS_FILE): $(OBJC_MODELS_SOURCES) $(CLANG_DEPS)
 	touch $(OBJC_MODELS_FILE)
 
 install: $(OBJC_MODELS_FILE)
-	$(INSTALL) -m 644 -C out/specs/*.specs $(SPECS_LIB_DIR)
+	$(INSTALL_DATA) -C out/specs/*.specs $(SPECS_LIB_DIR)
 
 clean:
 	@rm -f $(OBJC_MODELS_FILE)

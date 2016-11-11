@@ -20,7 +20,7 @@ $(C_MODELS_FILE): $(C_MODELS_SOURCES) $(CLANG_DEPS)
 	touch $(C_MODELS_FILE)
 
 install: $(C_MODELS_FILE)
-	$(INSTALL) -m 644 -C out/specs/*.specs $(SPECS_LIB_DIR)
+	$(INSTALL_DATA) -C out/specs/*.specs $(SPECS_LIB_DIR)
 
 clean:
 	@rm -f $(C_MODELS_FILE)
