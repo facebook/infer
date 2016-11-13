@@ -66,4 +66,8 @@ public class ClassCastExceptions {
     connection.disconnect();
   }
 
+  public void castingArrayOfPrimitiveTypeOK(int[] a) {
+    int[] b = (int[]) a;
+  }
+
 }

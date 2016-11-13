@@ -1592,38 +1592,34 @@ struct
       | Some cn1, Some cn2 -> check_subclass tenv cn1 cn2
       | _ -> false
 
-  let rec case_analysis_type_java tenv ((t1: Typ.t), st1) ((t2: Typ.t), st2) =
+  let rec case_analysis_type tenv ((t1: Typ.t), st1) ((t2: Typ.t), st2) =
     match t1, t2 with
     | Tstruct (TN_csu (Class Java, _) as cn1), Tstruct (TN_csu (Class Java, _) as cn2) ->
-        Subtype.case_analysis (cn1, st1) (cn2, st2)
-          (check_subclass tenv) (is_interface tenv)
-    | Tarray (dom_type1, _), Tarray (dom_type2, _) ->
-        case_analysis_type_java tenv (dom_type1, st1) (dom_type2, st2)
-    | Tptr (dom_type1, _), Tptr (dom_type2, _) ->
-        case_analysis_type_java tenv (dom_type1, st1) (dom_type2, st2)
-    | Tstruct (TN_csu (Class Java, _) as cn1), Tarray _ ->
-        if (Typename.equal cn1 serializable_type
+        Subtype.case_analysis
+          (cn1, st1) (cn2, st2) (check_subclass tenv) (is_interface tenv)
+    | Tstruct (TN_csu (Class Java, _) as cn1), Tarray _
+      when (Typename.equal cn1 serializable_type
             || Typename.equal cn1 cloneable_type
             || Typename.equal cn1 object_type) &&
-           st1 <> Subtype.exact then Some st1, None
-        else (None, Some st1)
-    | _ -> if check_subtype_basic_type t1 t2 then Some st1, None
-        else None, Some st1
-
-  let case_analysis_type tenv (t1, st1) (t2, st2) =
-    if is_java_class tenv t1 then
-      case_analysis_type_java tenv (t1, st1) (t2, st2)
-    else match Typ.name t1, Typ.name t2 with
-      | Some cn1, Some cn2 ->
-          (* cn1 <: cn2 or cn2 <: cn1 is implied in Java when we get two types compared *)
-          (* that get through the type system, but not in C++ because of multiple inheritance, *)
-          (* and not in ObjC because of being weakly typed, *)
-          (* and the algorithm will only work correctly if this is the case *)
-          if check_subclass tenv cn1 cn2 || check_subclass tenv cn2 cn1 then
-            Subtype.case_analysis (cn1, st1) (cn2, st2) (check_subclass tenv)
-              (is_interface tenv)
-          else None, Some st1
-      | _ -> None, Some st1
+           st1 <> Subtype.exact ->
+        Some st1, None
+    | Tstruct cn1, Tstruct cn2
+      (* cn1 <: cn2 or cn2 <: cn1 is implied in Java when we get two types compared *)
+      (* that get through the type system, but not in C++ because of multiple inheritance, *)
+      (* and not in ObjC because of being weakly typed, *)
+      (* and the algorithm will only work correctly if this is the case *)
+      when check_subclass tenv cn1 cn2 || check_subclass tenv cn2 cn1 ->
+        Subtype.case_analysis
+          (cn1, st1) (cn2, st2) (check_subclass tenv) (is_interface tenv)
+    | Tarray (dom_type1, _), Tarray (dom_type2, _) ->
+        case_analysis_type tenv (dom_type1, st1) (dom_type2, st2)
+    | Tptr (dom_type1, _), Tptr (dom_type2, _) ->
+        case_analysis_type tenv (dom_type1, st1) (dom_type2, st2)
+    | _ when check_subtype_basic_type t1 t2 ->
+        Some st1, None
+    | _ ->
+        (* The case analysis did not succeed *)
+        None, Some st1
 
   (** perform case analysis on [texp1 <: texp2], and return the updated types in the true and false
       case, if they are possible *)

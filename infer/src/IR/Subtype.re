@@ -326,7 +326,7 @@ let case_analysis_basic (c1, st) (c2, (_, flag2)) f => {
 };
 
 
-/** [case_analysis (c1, st1) (c2,st2) f] performs case analysis on [c1 <: c2]
+/** [case_analysis (c1, st1) (c2, st2) f] performs case analysis on [c1 <: c2]
     according to [st1] and [st2]
     where f c1 c2 is true if c1 is a subtype of c2.
     get_subtypes returning a pair:
