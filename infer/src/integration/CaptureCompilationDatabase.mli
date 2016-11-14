@@ -12,7 +12,11 @@
     is passed, we only capture the files there *)
 val capture_files_in_database : string list -> unit
 
-(** Gets the compilation database files that contain the compilation given by the
+(** Get the compilation database files that contain the compilation given by the
     buck command. It will be the compilation of the passed targets only or also
     the dependencies according to the flag --use-compilation-database deps | no-deps *)
 val get_compilation_database_files_buck : unit -> string list
+
+(** Get the compilation database files that contain the compilation given by the
+    xcodebuild command, using xcpretty. *)
+val get_compilation_database_files_xcodebuild : unit -> string list

@@ -111,3 +111,34 @@ let run_jobs_in_parallel jobs_stack gen_cmd cmd_to_string =
   run_job ();
   Logging.stdout ".\n%!";
   Logging.out "Waited for %d jobs" !waited_for_jobs
+
+let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
+  let open Core.Std in
+  let pipe_in, pipe_out = Unix.pipe () in
+  match Unix.fork () with
+  | `In_the_child ->
+      (* redirect producer's stdout to pipe_out *)
+      Unix.dup2 ~src:pipe_out ~dst:Unix.stdout ;
+      (* close producer's copy of pipe ends *)
+      Unix.close pipe_out ;
+      Unix.close pipe_in ;
+      (* exec producer *)
+      never_returns (Unix.exec ~prog:producer_prog ~args:producer_args ())
+  | `In_the_parent producer_pid ->
+      match Unix.fork () with
+      | `In_the_child ->
+          (* redirect consumer's stdin to pipe_in *)
+          Unix.dup2 ~src:pipe_in ~dst:Unix.stdin ;
+          (* close consumer's copy of pipe ends *)
+          Unix.close pipe_out ;
+          Unix.close pipe_in ;
+          (* exec consumer *)
+          never_returns (Unix.exec ~prog:consumer_prog ~args:consumer_args ())
+      | `In_the_parent consumer_pid ->
+          (* close parent's copy of pipe ends *)
+          Unix.close pipe_out ;
+          Unix.close pipe_in ;
+          (* wait for children *)
+          let producer_status = Unix.waitpid producer_pid in
+          let consumer_status = Unix.waitpid consumer_pid in
+          (producer_status, consumer_status)

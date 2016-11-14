@@ -1269,6 +1269,13 @@ and xcode_developer_dir =
     ~exes:CLOpt.[Toplevel]
     ~meta:"XCODE_DEVELOPER_DIR" "Specify the path to Xcode developer directory (Buck flavors only)"
 
+and xcpretty =
+  CLOpt.mk_bool ~long:"xcpretty"
+    ~default:true
+    ~exes:CLOpt.[Toplevel]
+    "Infer will use xcpretty together with xcodebuild to analyze an iOS app. xcpretty just needs \
+     to be in the path, infer command is still just infer -- <xcodebuild command>. (Recommended)"
+
 and xml_specs =
   CLOpt.mk_bool ~deprecated:["xml"] ~long:"xml-specs"
     "Export specs into XML files file1.xml ... filen.xml"
@@ -1504,6 +1511,7 @@ and worklist_mode = !worklist_mode
 and write_dotty = !write_dotty
 and write_html = !write_html
 and xcode_developer_dir = !xcode_developer_dir
+and xcpretty = !xcpretty
 and xml_specs = !xml_specs
 
 

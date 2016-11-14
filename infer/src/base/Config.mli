@@ -267,6 +267,7 @@ val worklist_mode : int
 val write_dotty : bool
 val write_html : bool
 val xcode_developer_dir : string option
+val xcpretty : bool
 val xml_specs : bool
 
 

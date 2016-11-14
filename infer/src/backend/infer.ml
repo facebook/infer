@@ -90,6 +90,18 @@ let run_command cmd_list after_wait =
     exit exit_code
   )
 
+let check_xcpretty () =
+  let open Core.Std in
+  let exit_code = Unix.system "xcpretty --version" in
+  match exit_code with
+  | Ok () -> ()
+  | Error _ ->
+      Logging.stderr
+        "@.xcpretty not found in the path. Please, install xcpretty \
+         for a more robust integration with xcodebuild. Otherwise use the option \
+         --no-xcpretty.@.@.";
+      Unix.exit_immediately 1
+
 let capture build_cmd build_mode =
   let analyze_cmd = "analyze" in
   let is_analyze_cmd cmd =
@@ -98,6 +110,12 @@ let capture build_cmd build_mode =
     | _ -> false in
   let build_cmd =
     match build_mode with
+    | Xcode when Config.xcpretty ->
+        check_xcpretty ();
+        let json_cdb =
+          CaptureCompilationDatabase.get_compilation_database_files_xcodebuild () in
+        CaptureCompilationDatabase.capture_files_in_database json_cdb;
+        [analyze_cmd]
     | Buck when Option.is_some Config.use_compilation_database ->
         let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck () in
         CaptureCompilationDatabase.capture_files_in_database json_cdb;

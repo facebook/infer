@@ -155,6 +155,29 @@ let get_compilation_database_files_buck () =
       let cmd = String.concat " " cmd in
       Process.print_error_and_exit "Incorrect buck command: %s. Please use buck build <targets>" cmd
 
+(** Compute the compilation database files. *)
+let get_compilation_database_files_xcodebuild () =
+  let cmd_and_args = IList.rev Config.rest in
+  let temp_dir = Config.results_dir // "clang" in
+  create_dir temp_dir;
+  let tmp_file = Filename.temp_file ~temp_dir:temp_dir "cdb" ".json" in
+  let xcodebuild_cmd, xcodebuild_args =
+    match cmd_and_args with
+    | [] -> failwith("Build command cannot be empty")
+    | cmd :: _ -> cmd, cmd_and_args in
+  let xcpretty_cmd = "xcpretty" in
+  let xcpretty_cmd_args =
+    [xcpretty_cmd; "--report"; "json-compilation-database"; "--output"; tmp_file] in
+  let producer_status, consumer_status =
+    Process.pipeline ~producer_prog:xcodebuild_cmd ~producer_args:xcodebuild_args
+      ~consumer_prog:xcpretty_cmd ~consumer_args:xcpretty_cmd_args in
+  match producer_status, consumer_status with
+  | Ok (), Ok () -> [tmp_file]
+  | _ ->
+      Logging.stderr "There was an error executing the build command";
+      exit 1
+
+
 let capture_files_in_database db_json_files =
   let changed_files = read_files_to_compile () in
   let compilation_database = CompilationDatabase.empty () in
