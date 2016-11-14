@@ -199,8 +199,8 @@ if test "x$enable_java_analyzers" = "xyes"; then
   AC_CHECK_TOOL([JAVAC], [javac], [no])
   AC_ASSERT_PROG([javac], [$JAVAC])
   AC_ASSERT_PROG([java], [$JAVA])
-  AC_ASSERT_OCAML_PKG([javalib], [], [2.3.1])
-  AC_ASSERT_OCAML_PKG([sawja], [], [1.5.1])
+  AC_ASSERT_OCAML_PKG([javalib], [], [2.3.3])
+  AC_ASSERT_OCAML_PKG([sawja], [], [1.5.2])
   AC_ASSERT_OCAML_PKG([ptrees])
 
   AC_MSG_CHECKING([for JAVA_HOME])

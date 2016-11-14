@@ -153,6 +153,10 @@ HashMapExample.java, void HashMapExample.putIntegerTwiceThenGetTwice(HashMap), 1
 HashMapExample.java, void HashMapExample.putIntegerTwiceThenGetTwice(HashMap), 13, RETURN_VALUE_IGNORED
 HashMapExample.java, void HashMapExample.putIntegerTwiceThenGetTwice(HashMap), 6, RETURN_VALUE_IGNORED
 HashMapExample.java, void HashMapExample.putIntegerTwiceThenGetTwice(HashMap), 7, RETURN_VALUE_IGNORED
+InvokeDynamic.java, int InvokeDynamic.lambda$npeInLambdaBad$1(String,String), 1, ANALYSIS_STOPS
+InvokeDynamic.java, int InvokeDynamic.lambda$npeInLambdaBad$1(String,String), 1, NULL_DEREFERENCE
+InvokeDynamic.java, void InvokeDynamic.invokeDynamicThenNpeBad(List), 5, ANALYSIS_STOPS
+InvokeDynamic.java, void InvokeDynamic.invokeDynamicThenNpeBad(List), 5, NULL_DEREFERENCE
 JunitAssertion.java, void JunitAssertion.consistentAssertion(JunitAssertion$A), 1, PRECONDITION_NOT_MET
 JunitAssertion.java, void JunitAssertion.inconsistentAssertion(JunitAssertion$A), 2, ANALYSIS_STOPS
 JunitAssertion.java, void JunitAssertion.inconsistentAssertion(JunitAssertion$A), 2, NULL_DEREFERENCE

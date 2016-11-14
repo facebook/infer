@@ -217,7 +217,21 @@ let get_implementation cm =
       let cn, ms = JBasics.cms_split cms in
       failwithf "native method %s found in %s@." (JBasics.ms_name ms) (JBasics.cn_name cn)
   | Javalib.Java t ->
-      JBir.transform ~bcv: false ~ch_link: false ~formula: false ~formula_cmd:[] cm (Lazy.force t)
+      (* Sawja doesn't handle invokedynamic, and it will crash with a Match_failure if we give it
+         bytecode with this instruction. hack around this problem by converting all invokedynamic's
+         to invokestatic's that call a method with the same signature as the lambda on
+         java.lang.Object. this isn't great, but it's a lot better than crashing *)
+      let code = Lazy.force t in
+      let c_code =
+        Array.map
+          (function
+            | (JCode.OpInvoke (`Dynamic _, ms)) ->
+                JCode.OpInvoke (`Static JBasics.java_lang_object, ms)
+            | opcode ->
+                opcode)
+          code.JCode.c_code in
+      let code' = { code with JCode.c_code; } in
+      JBir.transform ~bcv: false ~ch_link: false ~formula: false ~formula_cmd:[] cm code'
 
 let update_constr_loc cn ms loc_start =
   if (JBasics.ms_name ms) = JConfig.constructor_name then

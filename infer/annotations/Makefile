@@ -14,7 +14,7 @@ ANNOT_SOURCES = $(shell find com/facebook/infer/annotation -name "*.java")
 PROCESSOR_SOURCES = $(shell find com/facebook/infer/annotprocess -name "*.java")
 ANNOT_CLASSES = 'annot_classes'
 PROCESSOR_CLASSES = 'processor_classes'
-TARGET_JDK_VERSION = '1.7'
+TARGET_JDK_VERSION = '1.8'
 
 ANNOTATIONS_JAR = $(CWD)/annotations.jar
 PROCESSOR_JAR = $(JAVA_LIB_DIR)/processor.jar

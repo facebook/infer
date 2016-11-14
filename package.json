@@ -16,7 +16,7 @@
     "@opam-alpha/ocaml": "4.2.3",
     "@opam-alpha/sawja": "^ 1.5.2",
     "@opam-alpha/atdgen": "^ 1.10.0",
-    "@opam-alpha/javalib": "^ 2.3.2",
+    "@opam-alpha/javalib": "^ 2.3.3",
     "@opam-alpha/extlib-compat": "1.7.0",
     "@opam-alpha/ounit": "2.0.0",
     "@opam-alpha/ocp-indent": "1.5.3",

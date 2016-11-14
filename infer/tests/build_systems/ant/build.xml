@@ -7,10 +7,8 @@
     <target name="compile">
         <mkdir dir="ant_out"/>
         <javac srcdir="src/infer" destdir="ant_out" includeantruntime="false">
-            <bootclasspath>
-              <pathelement location="../../../lib/java/android/android-19.jar"/>
-            </bootclasspath>
             <classpath>
+              <pathelement location="../../../lib/java/android/android-19.jar"/>
               <pathelement location="../../../../dependencies/java/jackson/jackson-2.2.3.jar"/>
               <pathelement location="../../../lib/java/models.jar"/>
               <pathelement location="../../../annotations//annotations.jar"/>

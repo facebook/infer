@@ -30,7 +30,7 @@ depends: [
   "core_extended" {>="113.33.03"}
   "conf-autoconf"
   "extlib-compat" {>="1.5.4"}
-  "javalib" {>="2.3.2"}
+  "javalib" {>="2.3.3"}
   "ocamlfind" {build}
   "ounit" {="2.0.0"}
   "reason" {>="1.4.0"}

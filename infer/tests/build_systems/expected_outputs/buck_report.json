@@ -475,6 +475,11 @@
     "procedure": "void DynamicDispatch.interfaceShouldNotCauseFalseNegativeHard(DynamicDispatch$Interface)"
   },
   {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "infer/tests/codetoanalyze/java/infer/InvokeDynamic.java",
+    "procedure": "void InvokeDynamic.invokeDynamicThenNpeBad(List)"
+  },
+  {
     "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
     "procedure": "boolean ResourceLeaks.jarFileNotClosed()"
@@ -488,6 +493,11 @@
     "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
     "procedure": "void ResourceLeaks.jarOutputStreamLeak()"
+  },
+  {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "infer/tests/codetoanalyze/java/infer/InvokeDynamic.java",
+    "procedure": "int InvokeDynamic.lambda$npeInLambdaBad$1(String,String)"
   },
   {
     "bug_type": "RESOURCE_LEAK",

@@ -132,11 +132,11 @@
   dependencies:
     fieldslib-actual "git://github.com/npm-opam/fieldslib.git#113.33.03"
 
-"@opam-alpha/javalib@^ 2.3.2", "@opam-alpha/javalib@>= 2.3.2":
-  version "2.3.2"
-  resolved javalib-2.3.2.tgz#be3b8e6f402256dad773e015430d8c129739899c
+"@opam-alpha/javalib@^ 2.3.3", "@opam-alpha/javalib@>= 2.3.2":
+  version "2.3.3"
+  resolved javalib-2.3.3.tgz#1cb16fe3bbc6998a13d3ae6725c1189989555a18
   dependencies:
-    javalib-actual "git://github.com/npm-opam/javalib.git#2.3.2"
+    javalib-actual "git://github.com/npm-opam/javalib.git#2.3.3"
 
 "@opam-alpha/js-build-tools@>= 113.33.04 < 113.34.00":
   version "113.33.4"
@@ -680,9 +680,15 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"dependency-env@git+https://github.com/reasonml/dependency-env.git", "dependency-env@https://github.com/npm-ml/dependency-env.git", "dependencyEnv@git+https://github.com/reasonml/dependency-env.git":
+"dependency-env@https://github.com/npm-ml/dependency-env.git", "dependency-env@https://github.com/reasonml/dependency-env.git":
   version "0.0.0"
   resolved dependency-env.git-b6710d7ccc0ea940ce55c4149675dd4ad6a9b94b#1dfad199e8cd9fba48513f85c1383874c7e83e5e
+  dependencies:
+    resolve "^1.1.7"
+
+"dependencyEnv@https://github.com/reasonml/dependency-env":
+  version "0.0.0"
+  resolved dependency-env-b6710d7ccc0ea940ce55c4149675dd4ad6a9b94b#1dfad199e8cd9fba48513f85c1383874c7e83e5e
   dependencies:
     resolve "^1.1.7"
 
@@ -719,9 +725,9 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"javalib-actual@git://github.com/npm-opam/javalib.git#2.3.2":
-  version "2.3.2"
-  resolved javalib.git-b767b73e51bbfb7fc3a420fbe8bb861036d39984#a763fba354b2de5bb9a7a7fd2928674aff45d4ad
+"javalib-actual@git://github.com/npm-opam/javalib.git#2.3.3":
+  version "2.3.3"
+  resolved javalib.git-e6ef415e81155658efac8ccc98c43963b611b8ec#c7b814034b9f08a77c9feaa40d6fc5fa4de29d68
   dependencies:
     "@opam-alpha/camlp4" "*"
     "@opam-alpha/camlzip" ">= 1.05.0"
@@ -807,7 +813,7 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"nopam@git+https://github.com/reasonml/nopam.git", "nopam@https://github.com/yunxing/nopam.git":
+"nopam@https://github.com/reasonml/nopam.git", "nopam@https://github.com/yunxing/nopam.git":
   version "0.0.1"
   resolved nopam.git-8584695c8e2615857d4f58a0dec7bae3a9059a54#49cd1b4ccc32d588cdd3a671d4cc6d773803396b
 
@@ -845,7 +851,7 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"opam-installer-bin@git+https://github.com/yunxing/opam-installer-bin.git", "opam-installer-bin@https://github.com/yunxing/opam-installer-bin.git":
+"opam-installer-bin@https://github.com/yunxing/opam-installer-bin.git":
   version "0.0.0"
   resolved opam-installer-bin.git-689ede681217f76fb2f82a9f4528e192a5b543ba#b7704eda021a9fe18a9a37454868e1bbf102e0a0
   dependencies:
@@ -1383,7 +1389,7 @@ resolve@^1.1.7:
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"substs@git+https://github.com/yunxing/substs.git", "substs@https://github.com/yunxing/substs.git":
+"substs@https://github.com/yunxing/substs.git":
   version "0.0.1"
   resolved substs.git-fd480dcdb4aed3fa9128fd819a546e3a7770040f#3a935dc6de26a5dfae899eca93a510bae55e57a4
 
@@ -1411,7 +1417,7 @@ resolve@^1.1.7:
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"tuareg@github:yunxing/tuareg":
+tuareg@yunxing/tuareg:
   version "1.0.0"
   resolved a90c0a2f202529a641d369c3b18b0c785a4a7e99#aa3a72a7726b1dd4fd1c809f893cc7ed6d2d420d
 

@@ -64,6 +64,8 @@ src/infer/GuardedByExample.java, void GuardedByExample.writeFBad(), 1, UNSAFE_GU
 src/infer/GuardedByExample.java, void GuardedByExample.writeFBadWrongLock(), 2, UNSAFE_GUARDED_BY_ACCESS
 src/infer/HashMapExample.java, int HashMapExample.getOneIntegerWithoutCheck(), 6, NULL_DEREFERENCE
 src/infer/HashMapExample.java, void HashMapExample.getTwoIntegersWithOneCheck(Integer,Integer), 11, NULL_DEREFERENCE
+src/infer/InvokeDynamic.java, int InvokeDynamic.lambda$npeInLambdaBad$1(String,String), 1, NULL_DEREFERENCE
+src/infer/InvokeDynamic.java, void InvokeDynamic.invokeDynamicThenNpeBad(List), 5, NULL_DEREFERENCE
 src/infer/NullPointerExceptions.java, String NullPointerExceptions.hashmapNPE(HashMap,Object), 1, NULL_DEREFERENCE
 src/infer/NullPointerExceptions.java, String NullPointerExceptions.nullTryLock(FileChannel), 2, NULL_DEREFERENCE
 src/infer/NullPointerExceptions.java, String NullPointerExceptions.testSystemGetPropertyArgument(), 1, NULL_DEREFERENCE
