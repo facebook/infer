@@ -692,10 +692,6 @@ and clang_include_to_override =
      location of internal compiler headers. This option should specify the path to those headers \
      so that infer can use its own clang internal headers instead."
 
-and _ =
-  CLOpt.mk_string_opt ~deprecated:["classpath"] ~long:"classpath"
-    ~meta:"path" "Specify where to find user class files and annotation processors"
-
 and cluster =
   CLOpt.mk_path_opt ~deprecated:["cluster"] ~long:"cluster"
     ~meta:"file" "Specify a .cluster file to be analyzed"
