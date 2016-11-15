@@ -157,8 +157,12 @@ def main():
                                  touch_if_present=not args.continue_capture)
 
         utils.configure_logging(args)
-        logging.info('output of locale.getdefaultlocale(): %s',
-                     str(locale.getdefaultlocale()))
+        try:
+            logging.info('output of locale.getdefaultlocale(): %s',
+                         str(locale.getdefaultlocale()))
+        except (locale.Error, ValueError) as e:
+            logging.info('locale.getdefaultlocale() failed with exception: %s',
+                         str(e))
         logging.info('encoding we chose in the end: %s',
                      config.CODESET)
         logging.info('Running command %s',
