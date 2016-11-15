@@ -131,7 +131,7 @@ issues.exp.test: infer-out-all/report.json infer-out-arc/report.json infer-out/r
 	  --from-json-report infer-out-arc/report.json
 	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.default \
 	  --from-json-report infer-out/report.json
-	LC_ALL=C sort -t, -k1,1 -k2,2 -k3n,3 -o $@ $@.all $@.arc $@.default
+	cat $@.all $@.arc $@.default > $@
 
 clean:
 	$(REMOVE_DIR) infer-out-all infer-out-arc

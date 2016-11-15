@@ -596,6 +596,33 @@ let pp_tests_of_report fmt report => {
   IList.iter pp_row report
 };
 
+let tests_jsonbug_compare bug1 bug2 => {
+  open Jsonbug_t;
+  let n = string_compare bug1.file bug2.file;
+  if (n != 0) {
+    n
+  } else {
+    let n = string_compare bug1.procedure bug2.procedure;
+    if (n != 0) {
+      n
+    } else {
+      let n =
+        int_compare
+          (bug1.line - bug1.procedure_start_line) (bug2.line - bug2.procedure_start_line);
+      if (n != 0) {
+        n
+      } else {
+        let n = string_compare bug1.bug_type bug2.bug_type;
+        if (n != 0) {
+          n
+        } else {
+          int_compare bug1.hash bug2.hash
+        }
+      }
+    }
+  }
+};
+
 let module IssuesTxt = {
 
   /** Write bug report in text format */
@@ -1180,10 +1207,13 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =>
         };
       IList.iter pp_json_issue format_list
     };
-    let report = Jsonbug_j.report_of_string (String.concat "\n" report_lines);
+    let sorted_report = {
+      let report = Jsonbug_j.report_of_string (String.concat "\n" report_lines);
+      IList.sort tests_jsonbug_compare report
+    };
     let pp_report_by_report_kind (report_kind, format_list) =>
       switch (report_kind, format_list) {
-      | (Issues, [_, ..._]) => pp_json_issues format_list report
+      | (Issues, [_, ..._]) => pp_json_issues format_list sorted_report
       | _ => ()
       };
     IList.iter pp_report_by_report_kind formats_by_report_kind
