@@ -5,12 +5,12 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-JAVA_TEST_DIR = ..
-include $(JAVA_TEST_DIR)/java.make
+TESTS_DIR = ../../..
 
 ANALYZER = infer
-
 INFER_OPTIONS = --android-harness --no-filtering --debug-exceptions
-
-JAVA_SOURCE_FILES = \
+INFERPRINT_OPTIONS = --issues-tests
+SOURCES = \
   BasicHarnessActivity.java \
+
+include $(TESTS_DIR)/javac.make

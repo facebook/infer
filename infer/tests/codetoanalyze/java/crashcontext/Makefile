@@ -5,18 +5,18 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-JAVA_TEST_DIR = ..
-include $(JAVA_TEST_DIR)/config.make
+TESTS_DIR = ../../..
+include $(TESTS_DIR)/java.make
 
 ANALYZER = crashcontext
 
-JAVA_SOURCE_FILES = $(wildcard *.java)
-JAVA_CLASS_FILES = $(patsubst %.java,%.class,$(JAVA_SOURCE_FILES))
-EXP_TESTs = $(sort $(patsubst %.java,%.exp.test,$(JAVA_SOURCE_FILES)))
-INFER_OUTs = $(patsubst %.java,infer-out-%,$(JAVA_SOURCE_FILES))
+SOURCES = $(wildcard *.java)
+OBJECTS = $(patsubst %.java,%.class,$(SOURCES))
+EXP_TESTs = $(sort $(patsubst %.java,%.exp.test,$(SOURCES)))
+INFER_OUTs = $(patsubst %.java,infer-out-%,$(SOURCES))
 
-$(JAVA_CLASS_FILES): $(JAVA_SOURCE_FILES)
-	javac -cp $(CLASSPATH) $(JAVA_SOURCE_FILES)
+$(OBJECTS): $(SOURCES)
+	javac -cp $(CLASSPATH) $(SOURCES)
 
 # analyze a single source file and generate the test results for it
 %.exp.test: $(INFER_BIN) %.stacktrace.json %.java
@@ -34,7 +34,7 @@ issues.exp.test: $(EXP_TESTs)
 default: compile
 
 .PHONY: compile
-compile: $(JAVA_CLASS_FILES)
+compile: $(OBJECTS)
 
 .PHONY: analyze
 analyze: $(EXP_TESTs)
@@ -48,4 +48,4 @@ test: issues.exp.test
 
 .PHONY: clean
 clean:
-	$(REMOVE_DIR) $(INFER_OUTs) $(JAVA_CLASS_FILES) $(EXP_TESTs)
+	$(REMOVE_DIR) $(INFER_OUTs) $(OBJECTS) $(EXP_TESTs)

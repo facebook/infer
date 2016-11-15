@@ -5,22 +5,21 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-TESTS_DIR = ../..
+# Makefiles that include this one must define TESTS_DIR and then include
+# $(TESTS_DIR)/javac.make.
+#
+# Makefiles that include this one must define the ANALYZER and SOURCES
+# variables, and may optionally define INFER_OPTIONS, INFERPRINT_OPTIONS,
+# CLEAN_EXTRA.
 
-ANALYZER = infer
-SOURCES = $(wildcard src/infer/*.java)
-OBJECTS = $(patsubst %.java,ant_out/%.class,$(SOURCES))
-INFERPRINT_OPTIONS = --issues-tests
+OBJECTS = $(patsubst %.java,%.class,$(SOURCES))
 
 include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/base.make
 
 $(OBJECTS): $(SOURCES)
-	ant
+	javac -cp $(CLASSPATH) $(SOURCES)
 
 infer-out/report.json: $(INFER_BIN) $(SOURCES)
 	$(call silent_on_success,\
-	  $(INFER_BIN) -a $(ANALYZER) -- ant)
-
-clean:
-	ant clean
+	  $(INFER_BIN) $(INFER_OPTIONS) -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(SOURCES))

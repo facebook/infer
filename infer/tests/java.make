@@ -5,7 +5,8 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-ROOT_DIR = ../../../../..
+ROOT_DIR = $(TESTS_DIR)/../..
+
 include $(ROOT_DIR)/Makefile.config
 
 ANDROID19 = $(JAVA_LIB_DIR)/android/android-19.jar

@@ -5,11 +5,11 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-JAVA_TEST_DIR = ..
-include $(JAVA_TEST_DIR)/java.make
+TESTS_DIR = ../../..
 
 ANALYZER = quandary
-INFER_OPTIONS =  --no-filtering --debug-exceptions
+INFER_OPTIONS = --no-filtering --debug-exceptions
 INFERPRINT_OPTIONS = --issues-txt
+SOURCES = $(wildcard *.java)
 
-JAVA_SOURCE_FILES = $(wildcard *.java)
+include $(TESTS_DIR)/javac.make
