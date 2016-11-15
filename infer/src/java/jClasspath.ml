@@ -260,15 +260,20 @@ let extract_classnames classnames jar_filename =
   classnames_after
 
 
-let collect_classes classmap jar_filename =
+let collect_classes start_classmap jar_filename =
   let classpath = Javalib.class_path jar_filename in
   let collect classmap cn =
-    JBasics.ClassMap.add cn (Javalib.get_class classpath cn) classmap in
-  try
-    let classes = IList.fold_left collect classmap (extract_classnames [] jar_filename) in
-    Javalib.close_class_path classpath;
-    classes
-  with JBasics.Class_structure_error _ -> classmap
+    try
+      JBasics.ClassMap.add cn (Javalib.get_class classpath cn) classmap
+    with JBasics.Class_structure_error _ ->
+      classmap in
+  let classmap =
+    IList.fold_left
+      collect
+      start_classmap
+      (extract_classnames [] jar_filename) in
+  Javalib.close_class_path classpath;
+  classmap
 
 
 let load_program classpath classes =
