@@ -12,25 +12,21 @@ open! Utils
 module F = Format
 module L = Logging
 
-module PPrawpath = PrettyPrintable.MakePPSet(struct
-    type t = AccessPath.raw
-    let compare = AccessPath.raw_compare
-    let pp_element = AccessPath.pp_raw
+
+module Summary = Summary.Make (struct
+    type summary = ThreadSafetyDomain.astate
+
+    let update_payload astate payload =
+      { payload with Specs.threadsafety = Some astate }
+
+    let read_from_payload payload =
+      payload.Specs.threadsafety
   end)
-
-module LocksDomain =  AbstractDomain.FiniteSet(StringPPSet)
-
-module PathDomain =  AbstractDomain.FiniteSet(PPrawpath)
-
-module ReadWriteDomain = AbstractDomain.Pair (PathDomain) (PathDomain)
-
-module CombinedDomain = AbstractDomain.Pair (LocksDomain) (ReadWriteDomain)
-(* a typical element is (){locked}, {vars and fields})  *)
 
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
-  module Domain = CombinedDomain
+  module Domain = ThreadSafetyDomain
   type extras = ProcData.no_extras
 
   let is_lock_procedure pn = Procname.equal pn BuiltinDecl.__set_locked_attribute
@@ -39,22 +35,24 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let add_path_to_state exp typ pathdomainstate =
     IList.fold_left
-      (fun pathdomainstate_acc rawpath -> PathDomain.add rawpath pathdomainstate_acc)
+      (fun pathdomainstate_acc rawpath -> ThreadSafetyDomain.PathDomain.add 
+                                            rawpath pathdomainstate_acc)
       pathdomainstate
       (AccessPath.of_exp exp typ ~f_resolve_id:(fun _ -> None))
 
   let exec_instr ((lockstate,(readstate,writestate)) as astate) { ProcData.pdesc; } _ =
     let is_unprotected lockstate =
-      (not (Procdesc.is_java_synchronized pdesc)) && (LocksDomain.is_empty lockstate)
+      (not (Procdesc.is_java_synchronized pdesc)) && 
+      (ThreadSafetyDomain.LocksDomain.is_empty lockstate)
     in
     function
     | Sil.Call (_, Const (Cfun pn), _, _, _) ->
         if is_lock_procedure pn
         then
-          ((LocksDomain.add "locked" lockstate), (readstate,writestate))
+          ((ThreadSafetyDomain.LocksDomain.add "locked" lockstate), (readstate,writestate))
         else if is_unlock_procedure pn
         then
-          ((LocksDomain.remove "locked" lockstate) , (readstate,writestate))
+          ((ThreadSafetyDomain.LocksDomain.remove "locked" lockstate) , (readstate,writestate))
         else
           astate
 
@@ -83,18 +81,24 @@ module Analyzer =
     (Scheduler.ReversePostorder)
     (TransferFunctions)
 
-let method_analysis { Callbacks.proc_desc; tenv; } =
-  match Analyzer.compute_post (ProcData.make_default proc_desc tenv) with
+module Interprocedural = Analyzer.Interprocedural (Summary)
+
+(*This is a "checker"*)
+let method_analysis callback =
+  let proc_desc = callback.Callbacks.proc_desc in
+  let opost = Interprocedural.checker callback ProcData.empty_extras in
+  match opost with
   | Some post ->  (* I am printing to commandline and out to cater to javac and buck*)
       (L.stdout  "\n Procedure: %s@ "
          (Procname.to_string (Procdesc.get_proc_name proc_desc) )
       );
-      L.stdout "\n POST: %a\n" CombinedDomain.pp post;
+      L.stdout "\n POST: %a\n" ThreadSafetyDomain.pp post;
       (L.out  "\n Procedure: %s@ "
          (Procname.to_string (Procdesc.get_proc_name proc_desc) )
       );
-      L.out "\n POST: %a\n" CombinedDomain.pp post
+      L.out "\n POST: %a\n" ThreadSafetyDomain.pp post
   | None -> ()
+
 
 (* a results table is a Map where a key is an a procedure environment,
    i.e., something of type Idenv.t * Tenv.t * Procname.t * Procdesc.t
@@ -111,8 +115,9 @@ let should_analyze_proc (_,tenv,proc_name,proc_desc) =
   not (Procname.is_class_initializer proc_name) &&
   Procdesc.get_access proc_desc <> PredSymb.Private
 
+
 (* creates a map from proc_envs to postconditions *)
-let make_results_table file_env =
+let make_results_table get_proc_desc file_env =
   let procs_to_analyze = IList.filter should_analyze_proc file_env
   in
   (* make a Map sending each element e of list l to (f e) *)
@@ -121,10 +126,13 @@ let make_results_table file_env =
                     ) ResultsTableType.empty l
   in
   let compute_post_for_procedure = (* takes proc_env as arg *)
-    fun (_, tenv, _, proc_desc) ->
-      match Analyzer.compute_post (ProcData.make_default proc_desc tenv) with
+    fun (idenv, tenv, proc_name, proc_desc) ->
+      let callback_arg =
+        {Callbacks.get_proc_desc; get_procs_in_file = (fun _ -> []);
+         idenv; tenv; proc_name; proc_desc} in
+      match Interprocedural.checker callback_arg ProcData.empty_extras with
       | Some post -> post
-      | None -> CombinedDomain.initial
+      | None -> ThreadSafetyDomain.initial
   in
   map_post_computation_over_procs compute_post_for_procedure procs_to_analyze
 
@@ -165,7 +173,7 @@ let report_thread_safety_errors ( _, tenv, pname, pdesc) writestate =
       (Procdesc.get_loc pdesc)
       description
   in
-  IList.iter report_one_error (IList.map snd (PathDomain.elements writestate))
+  IList.iter report_one_error (IList.map snd (ThreadSafetyDomain.PathDomain.elements writestate))
 
 
 (* For now, just checks if there is one active element amongst the posts of the analyzed methods.
@@ -188,13 +196,14 @@ let should_analyze_file file_env =
   in
   IList.exists current_class_or_super_marked_threadsafe file_env
 
+(*This is a "cluster checker" *)
 (*Gathers results by analyzing all the methods in a file, then post-processes
   the results to check (approximation of) thread safety *)
 (* file_env: (Idenv.t * Tenv.t * Procname.t * Procdesc.t) list *)
-let file_analysis _ _ _ file_env =
+let file_analysis _ _ get_procdesc file_env =
   if should_analyze_file file_env then
     process_results_table
-      (make_results_table file_env)
+      (make_results_table get_procdesc file_env)
 
       (*
     Todo:
