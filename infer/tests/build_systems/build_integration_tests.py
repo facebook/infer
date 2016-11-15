@@ -14,8 +14,8 @@
 # ./build_integration_test.py -- ant gradle
 # # run no test
 # ./build_integration_test.py --
-# # run only the buck tests and record the output
-# INFER_RECORD_INTEGRATION_TESTS=1 ./build_integration_test.py -- buck
+# # run only the waf tests and record the output
+# INFER_RECORD_INTEGRATION_TESTS=1 ./build_integration_test.py -- waf
 
 from __future__ import absolute_import
 from __future__ import division
@@ -61,7 +61,6 @@ CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
-    'buck',
     'clang_compilation_database',
     'cmake',
     'componentkit',
@@ -156,17 +155,12 @@ def run_analysis(clean_cmds, build_cmds, extra_check, should_fail, env=None):
         # useful to compare the result of your migrated test with the
         # issues.exp that this gives you.
         if False:
-            inferprint_cmd = [INFERPRINT_BIN, '-q', '--issues-tests',
-                              '-o', temp_out_dir] + extra_args
-            with tempfile.TemporaryFile(
-                    mode='w',
-                    suffix='.out',
-                    prefix='issues.exp') as analysis_output:
-                try:
-                    subprocess.check_call(inferprint_cmd, env=env)
-                except subprocess.CalledProcessError, exn:
-                    if exn.returncode != should_fail:
-                        raise
+            inferprint_cmd = (
+                [INFERPRINT_BIN, '-q', '--issues-tests', 'issues.exp',
+                 '--from-json-report',
+                 os.path.join(temp_out_dir, 'report.json')] +
+                extra_args)
+            subprocess.check_call(inferprint_cmd, env=env)
 
     json_path = os.path.join(temp_out_dir, REPORT_JSON)
     found_errors = utils.load_json_from_path(json_path)
@@ -355,14 +349,6 @@ class BuildIntegrationTest(unittest.TestCase):
              enabled=enabled,
              report_fname=report_fname,
              env=env)
-
-    def test_buck_integration(self):
-        target = '//infer/tests/codetoanalyze/java/infer:compile'
-        test('buck', 'Buck',
-             ROOT_DIR,
-             [{'compile': ['buck', 'build', '--no-cache', target]}],
-             clean_commands=[['buck', 'clean']],
-             available=lambda: is_tool_available(['buck', '--version']))
 
     def test_make_integration(
             self,

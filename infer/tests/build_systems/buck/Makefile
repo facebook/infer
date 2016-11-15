@@ -1,0 +1,29 @@
+# Copyright (c) 2016 - present Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+CURDIR = $(shell pwd)
+
+TESTS_DIR = ../..
+ROOT_DIR = $(TESTS_DIR)/../..
+
+ANALYZER = infer
+SOURCES = $(wildcard $(TESTS_DIR)/codetoanalyze/java/infer/*.java)
+OBJECTS = $(ROOT_DIR)/buck-out/gen/infer/tests/codetoanalyze/java/infer/lib__compile__output/compile.jar
+INFERPRINT_OPTIONS = --project-root $(ROOT_DIR) --issues-tests
+CLEAN_EXTRAS = $(ROOT_DIR)/buck-out/ $(CURDIR)/buck-out/
+
+include $(TESTS_DIR)/java.make
+include $(TESTS_DIR)/base.make
+
+$(JAR_OUTPUT): $(JAVA_SOURCE_FILES)
+	NO_BUCKD=1 buck build --no-cache //infer/tests/codetoanalyze/java/infer:compile
+
+infer-out/report.json: $(INFER_BIN) $(JAVA_SOURCE_FILES)
+	$(call silent_on_success,\
+	  cd $(ROOT_DIR) && \
+	  NO_BUCKD=1 $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out  -- \
+	    buck build --no-cache //infer/tests/codetoanalyze/java/infer:compile)

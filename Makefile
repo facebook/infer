@@ -13,7 +13,13 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
   include $(ROOT_DIR)/facebook/Makefile.env
 endif
 
-BUILD_SYSTEMS_TESTS = ant assembly project_root_rel
+BUILD_SYSTEMS_TESTS = assembly project_root_rel
+ifneq ($(ANT),no)
+BUILD_SYSTEMS_TESTS += ant
+endif
+ifneq ($(BUCK),no)
+BUILD_SYSTEMS_TESTS += buck
+endif
 
 DIRECT_TESTS=
 ifeq ($(BUILD_C_ANALYZERS),yes)

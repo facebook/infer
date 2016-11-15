@@ -274,6 +274,9 @@ else
 fi
 AC_SUBST([NCPU])
 
+# tools that are optional, eg build systems to be run in integration tests
+AC_CHECK_TOOL([ANT], [ant], [no])
+AC_CHECK_TOOL([BUCK], [buck], [no])
 
 AC_CONFIG_FILES([
   Makefile.config
