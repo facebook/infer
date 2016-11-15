@@ -5,17 +5,17 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-include ../../Makefile.frontend
+TESTS_DIR=../../..
 
 IPHONESIMULATOR_ISYSROOT_SUFFIX = /Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk
 
 XCODEROOT = $(shell xcode-select -p)
 
-OPTIONS = -x objective-c \
+CLANG_OPTIONS = -x objective-c \
   -isysroot $(XCODEROOT)$(IPHONESIMULATOR_ISYSROOT_SUFFIX) \
   -mios-simulator-version-min=8.2 --target=x86_64-apple-darwin14 -c \
 
-FILES_NOARC = \
+SOURCES_NOARC = \
   block/retain_cycle.m \
   block/static.m \
   boxing/Boxing.m \
@@ -66,7 +66,7 @@ FILES_NOARC = \
   vardecl/aclass_2.m \
   vardecl/last_af.m \
 
-FILES_ARC = \
+SOURCES_ARC = \
   predefined_expr/PredefinedExprExample.m \
   types/attributes.m \
   types/void_call.m \
@@ -77,17 +77,16 @@ FILES_ARC = \
   shared/memory_leaks_benchmark/arc_methods.m \
   shared/npe/Nonnull_attribute_example.m \
 
-FILES = \
-  $(FILES_NOARC) \
-  $(FILES_ARC) \
+SOURCES = \
+  $(SOURCES_NOARC) \
+  $(SOURCES_ARC) \
+
+include $(TESTS_DIR)/clang-frontend.make
 
 compile:
-	clang $(OPTIONS) $(FILES_NOARC)
-	clang $(OPTIONS) -fobjc-arc $(FILES_ARC)
+	clang $(CLANG_OPTIONS) $(SOURCES_NOARC)
+	clang $(CLANG_OPTIONS) -fobjc-arc $(SOURCES_ARC)
 
 capture:
-	$(INFER_BIN) -a capture --cxx --frontend-tests --continue --reactive -- clang $(OPTIONS) $(FILES_NOARC)
-	$(INFER_BIN) -a capture --cxx --frontend-tests -- clang $(OPTIONS) -fobjc-arc $(FILES_ARC)
-
-
-
+	$(INFER_BIN) -a capture --cxx --frontend-tests --continue --reactive -- clang $(CLANG_OPTIONS) $(SOURCES_NOARC)
+	$(INFER_BIN) -a capture --cxx --frontend-tests -- clang $(CLANG_OPTIONS) -fobjc-arc $(SOURCES_ARC)
