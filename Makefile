@@ -22,7 +22,7 @@ endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 DIRECT_TESTS += \
   java_checkers_test java_eradicate_test java_infer_test java_tracing_test \
-  java_quandary_test java_crashcontext_test java_harness_test
+  java_quandary_test java_threadsafety_test java_crashcontext_test java_harness_test
 endif
 ifneq ($(XCODE_SELECT),no)
 DIRECT_TESTS += objc_frontend_test objc_errors_test objc_linters_test objcpp_frontend_test objcpp_linters_test

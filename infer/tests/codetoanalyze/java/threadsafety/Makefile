@@ -8,8 +8,7 @@
 JAVA_TEST_DIR = ..
 include $(JAVA_TEST_DIR)/java.make
 
-ANALYZER = checkers
-
-INFER_OPTIONS = --no-filtering --debug-exceptions
+ANALYZER = threadsafety
+INFER_OPTIONS =  --no-filtering --debug-exceptions
 
 JAVA_SOURCE_FILES = $(wildcard *.java)

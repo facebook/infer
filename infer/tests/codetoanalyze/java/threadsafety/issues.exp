@@ -1,0 +1,3 @@
+ThreadSafeExample.java, void ExtendsThreadSafeExample.newmethodBad(), 0, THREAD_SAFETY_ERROR
+ThreadSafeExample.java, void ExtendsThreadSafeExample.tsOK(), 0, THREAD_SAFETY_ERROR
+ThreadSafeExample.java, void ThreadSafeExample.tsBad(), 0, THREAD_SAFETY_ERROR

@@ -191,7 +191,7 @@ let analyze = function
         Config.print_usage_exit ()
       );
       (match Config.analyzer with
-       | Infer | Eradicate | Checkers | Tracing | Crashcontext | Quandary ->
+       | Infer | Eradicate | Checkers | Tracing | Crashcontext | Quandary | Threadsafety ->
            (* Still handled by infer.py through capture function above *)
            ()
        | Linters ->

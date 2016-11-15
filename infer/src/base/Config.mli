@@ -16,7 +16,7 @@ open! Utils
 
 (** Various kind of analyzers *)
 type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
-              | Crashcontext | Linters | Quandary
+              | Crashcontext | Linters | Quandary | Threadsafety
 
 (** Association list of analyzers and their names *)
 val string_to_analyzer : (string * analyzer) list
@@ -254,13 +254,13 @@ val symops_per_iteration : int
 val test : bool
 val test_filtering : bool
 val testing_mode : bool
+val threadsafety : bool
 val trace_error : bool
 val trace_ondemand : bool
 val trace_join : bool
 val trace_rearrange : bool
 val type_size : bool
 val unsafe_malloc : bool
-val thread_safety: bool
 val use_compilation_database : [ `Deps | `NoDeps ] option
 val whole_seconds : bool
 val worklist_mode : int

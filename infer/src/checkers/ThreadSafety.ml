@@ -161,7 +161,7 @@ let report_thread_safety_errors ( _, tenv, pname, pdesc) writestate =
     Checkers.ST.report_error tenv
       pname
       pdesc
-      "CHECKERS_THREAD_SAFETY_WARNING"
+      (Localise.to_string Localise.thread_safety_error)
       (Procdesc.get_loc pdesc)
       description
   in

@@ -323,7 +323,8 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc =>
       | Crashcontext
       | Infer
       | Linters
-      | Quandary => false
+      | Quandary 
+      | Threadsafety => false
       };
     if analyzer_is_whitelisted {
       true
@@ -385,6 +386,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc =>
                 static_initialization_order_fiasco,
                 strong_delegate_warning,
                 tainted_value_reaching_sensitive_function,
+                thread_safety_error,
                 unsafe_guarded_by_access
               ];
             IList.mem Localise.equal issue_type reportable_issue_types

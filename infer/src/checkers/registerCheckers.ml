@@ -59,7 +59,7 @@ let active_procedure_checkers () =
 
 let active_cluster_checkers () =
   [(Checkers.callback_check_cluster_access, false, Some Config.Java);
-   (ThreadSafety.file_analysis, Config.checkers_enabled && Config.thread_safety, Some Config.Java)
+   (ThreadSafety.file_analysis, Config.threadsafety, Some Config.Java)
   ]
 
 let register () =
