@@ -917,8 +917,14 @@ extern char* _locale_global;
 // return 0 or the allocated string _locale_global, nondeterministically
 char* setlocale(int category, const char* locale) {
   int nondet;
-  __require_allocated_array(locale);
+
   __require_allocated_array(_locale_global);
+
+  if (locale == NULL) {
+    return _locale_global;
+  }
+
+  __require_allocated_array(locale);
   nondet = __infer_nondet_int();
   if (nondet)
     return 0;
