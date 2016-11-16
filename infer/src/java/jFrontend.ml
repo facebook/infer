@@ -79,7 +79,7 @@ let add_cmethod source_file program linereader icfg cm proc_name =
   let cn, _ = JBasics.cms_split cm.Javalib.cm_class_method_signature in
   match JTrans.create_cm_procdesc source_file program linereader icfg cm proc_name with
   | None -> ()
-  | Some (procdesc, impl) ->
+  | Some (procdesc, _, jbir_code) ->
       let start_node = Procdesc.get_start_node procdesc in
       let exit_node = Procdesc.get_exit_node procdesc in
       let exn_node =
@@ -87,11 +87,11 @@ let add_cmethod source_file program linereader icfg cm proc_name =
         | Some node -> node
         | None ->
             failwithf "No exn node found for %s" (Procname.to_string proc_name) in
-      let instrs = JBir.code impl in
+      let instrs = JBir.code jbir_code in
       let context =
-        JContext.create_context icfg procdesc impl cn source_file program in
+        JContext.create_context icfg procdesc jbir_code cn source_file program in
       let method_body_nodes = Array.mapi (JTrans.instruction context) instrs in
-      add_edges context start_node exn_node [exit_node] method_body_nodes impl false
+      add_edges context start_node exn_node [exit_node] method_body_nodes jbir_code false
 
 
 let path_of_cached_classname cn =

@@ -43,7 +43,7 @@ val create_cm_procdesc :
   JContext.icfg ->
   JCode.jcode Javalib.concrete_method ->
   Procname.t ->
-  (Procdesc.t * JBir.t) option
+  (Procdesc.t * Javalib_pack.JCode.jcode * JBir.t) option
 
 (** translates an instruction into a statement node or prune nodes in the cfg *)
 val instruction : JContext.t -> int -> JBir.instr -> translation

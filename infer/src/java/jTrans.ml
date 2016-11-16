@@ -134,30 +134,50 @@ let formals_from_signature program tenv cn ms kind =
     | Procname.Non_Static -> [(JConfig.this, JTransType.get_class_type program tenv cn)] in
   IList.rev (IList.fold_left collect init_arg_list (JBasics.ms_args ms))
 
-let formals program tenv cn impl =
+(** Creates the list of formal variables from a procedure based on ... *)
+let translate_formals program tenv cn impl =
   let collect l (vt, var) =
     let name = Mangled.from_string (JBir.var_name_g var) in
     let typ = JTransType.param_type program tenv cn var vt in
     (name, typ):: l in
   IList.rev (IList.fold_left collect [] (JBir.params impl))
 
-(** Creates the local and formal variables from a procedure based on the
-    impl argument. If the meth_kind is Init, we add a parameter field to
-    the initialiser method. *)
-let locals_formals program tenv cn impl =
-  let form_list = formals program tenv cn impl in
-  let is_formal p =
-    IList.exists (fun (p', _) -> Mangled.equal p p') form_list in
-  let collect l var =
-    let vname = Mangled.from_string (JBir.var_name_g var) in
-    let names = (fst (IList.split l)) in
-    if not (is_formal vname) && (not (IList.mem Mangled.equal vname names)) then
-      (vname, Typ.Tvoid):: l
+(** Creates the list of local variables from the bytecode and add the variables from
+    the JBir representation *)
+let translate_locals program tenv formals bytecode jbir_code =
+  let formal_set =
+    IList.fold_left
+      (fun set (var, _) -> Mangled.MangledSet.add var set)
+      Mangled.MangledSet.empty
+      formals in
+  let collect (seen_vars, l) (var, typ) =
+    if Mangled.MangledSet.mem var seen_vars then
+      (seen_vars, l)
     else
-      l in
-  let vars = JBir.vars impl in
-  let loc_list = IList.rev (Array.fold_left collect [] vars) in
-  (loc_list, form_list)
+      (Mangled.MangledSet.add var seen_vars, (var, typ) :: l) in
+  let with_bytecode_vars =
+    (* Do not consider parameters as local variables *)
+    let init = (formal_set, []) in
+    match bytecode.JCode.c_local_variable_table with
+    | None -> init
+    | Some variable_table ->
+        IList.fold_left
+          (fun accu (_, _, var_name, var_type, _) ->
+             let var = Mangled.from_string var_name
+             and typ = JTransType.value_type program tenv var_type in
+             collect accu (var, typ))
+          init
+          variable_table in
+  (* TODO (#4040807): Needs to add the JBir temporary variables since other parts of the
+     code are still relying on those *)
+  let with_jbir_vars =
+    Array.fold_left
+      (fun accu jbir_var ->
+         let var = Mangled.from_string (JBir.var_name_g jbir_var) in
+         collect accu (var, Typ.Tvoid))
+      with_bytecode_vars
+      (JBir.vars jbir_code) in
+  snd with_jbir_vars
 
 let get_constant (c : JBir.const) =
   match c with
@@ -221,7 +241,7 @@ let get_implementation cm =
          bytecode with this instruction. hack around this problem by converting all invokedynamic's
          to invokestatic's that call a method with the same signature as the lambda on
          java.lang.Object. this isn't great, but it's a lot better than crashing *)
-      let code = Lazy.force t in
+      let bytecode = Lazy.force t in
       let c_code =
         Array.map
           (function
@@ -229,9 +249,12 @@ let get_implementation cm =
                 JCode.OpInvoke (`Static JBasics.java_lang_object, ms)
             | opcode ->
                 opcode)
-          code.JCode.c_code in
-      let code' = { code with JCode.c_code; } in
-      JBir.transform ~bcv: false ~ch_link: false ~formula: false ~formula_cmd:[] cm code'
+          bytecode.JCode.c_code in
+      let hacked_bytecode = { bytecode with JCode.c_code; } in
+      let jbir_code =
+        JBir.transform
+          ~bcv: false ~ch_link: false ~formula: false ~formula_cmd:[] cm hacked_bytecode in
+      (hacked_bytecode, jbir_code)
 
 let update_constr_loc cn ms loc_start =
   if (JBasics.ms_name ms) = JConfig.constructor_name then
@@ -309,14 +332,15 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name =
   let m = Javalib.ConcreteMethod cm in
   let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
   try
-    let impl = get_implementation cm in
+    let bytecode, jbir_code = get_implementation cm in
     let procdesc =
-      let locals, formals = locals_formals program tenv cn impl in
+      let formals = translate_formals program tenv cn jbir_code in
+      let locals = translate_locals program tenv formals bytecode jbir_code in
       let loc_start =
-        let loc = get_location source_file impl 0 in
+        let loc = get_location source_file jbir_code 0 in
         fix_method_definition_line linereader proc_name loc in
       let loc_exit =
-        get_location source_file impl (Array.length (JBir.code impl) - 1) in
+        get_location source_file jbir_code (Array.length (JBir.code jbir_code) - 1) in
       let method_annotation =
         JAnnotation.translate_method proc_name cm.Javalib.cm_annotations in
       update_constr_loc cn ms loc_start;
@@ -348,7 +372,7 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name =
       Procdesc.set_exit_node procdesc exit_node;
       Procdesc.Node.add_locals_ret_declaration start_node proc_attributes locals;
       procdesc in
-    Some (procdesc, impl)
+    Some (procdesc, bytecode, jbir_code)
   with JBir.Subroutine  ->
     L.do_err
       "create_procdesc raised JBir.Subroutine on %a@."
