@@ -1079,6 +1079,10 @@ and reactive =
   CLOpt.mk_bool ~deprecated:["reactive"] ~long:"reactive"
     "Reactive mode: the analysis starts from the files captured since the `infer` command started"
 
+and reactive_capture =
+  CLOpt.mk_bool ~long:"reactive-capture"
+    "Compile source files only when required by analyzer (clang only)"
+
 and report =
   CLOpt.mk_path_opt ~deprecated:["report"] ~long:"report"
     ~meta:"file" "Write a report of the analysis results to a file"
@@ -1472,6 +1476,7 @@ and procs_xml = !procs_xml
 and quandary = !quandary
 and quiet = !quiet
 and reactive_mode = !reactive
+and reactive_capture = !reactive_capture
 and report = !report
 and report_custom_error = !report_custom_error
 and report_runtime_exceptions = !tracing

@@ -231,6 +231,7 @@ val project_root : string
 val quandary : bool
 val quiet : bool
 val reactive_mode : bool
+val reactive_capture : bool
 val report : string option
 val report_runtime_exceptions : bool
 val reports_include_ml_loc : bool
