@@ -93,7 +93,7 @@ def text_of_report(report):
     )
 
 
-def _text_of_report_list(project_root, reports,
+def _text_of_report_list(project_root, reports, bugs_txt_path, limit=-1,
                          formatter=colorize.TERMINAL_FORMATTER):
     text_errors_list = []
     error_types_count = {}
@@ -150,7 +150,13 @@ def _text_of_report_list(project_root, reports,
         count,
     ), sorted_error_types)
 
-    text_errors = '\n\n'.join(text_errors_list)
+    text_errors = '\n\n'.join(text_errors_list[:limit])
+    if limit >= 0 and n_issues > limit:
+        text_errors += colorize.color(
+            ('\n\n...too many issues to display (limit=%d exceeded), please ' +
+             'see %s or run `inferTraceBugs` for the remaining issues.')
+            % (limit, bugs_txt_path), colorize.HEADER, formatter)
+
 
     issues_found = 'Found {n_issues}'.format(
         n_issues=utils.get_plural('issue', n_issues),
@@ -164,6 +170,7 @@ def _text_of_report_list(project_root, reports,
                               colorize.HEADER, formatter),
         summary='\n'.join(types_text_list),
     )
+
     return msg
 
 
@@ -177,8 +184,10 @@ def _is_user_visible(project_root, report):
 def print_and_save_errors(project_root, json_report, bugs_out, xml_out):
     errors = utils.load_json_from_path(json_report)
     errors = [e for e in errors if _is_user_visible(project_root, e)]
-    utils.stdout('\n' + _text_of_report_list(project_root, errors))
-    plain_out = _text_of_report_list(project_root, errors,
+    console_out = _text_of_report_list(project_root, errors, bugs_out,
+                                       limit=10)
+    utils.stdout('\n' + console_out)
+    plain_out = _text_of_report_list(project_root, errors, bugs_out, limit=-1,
                                      formatter=colorize.PLAIN_FORMATTER)
     with codecs.open(bugs_out, 'w',
                      encoding=config.CODESET, errors='replace') as file_out:
