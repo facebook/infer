@@ -13,6 +13,8 @@ type t
 
 val make : CallSite.t -> t
 
+val site : t -> CallSite.t
+
 val compare : t -> t -> int
 
 val pp : F.formatter -> t -> unit

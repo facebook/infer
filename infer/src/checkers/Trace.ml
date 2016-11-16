@@ -239,23 +239,53 @@ module Make (Spec : Spec) = struct
           let callsite = Sink.call_site sink in
           Format.asprintf "call to %a" Procname.pp (CallSite.pname callsite))
       ?(sink_should_nest=(fun _ -> true))
-      (_, sources, sinks) =
-    let trace_elem_of_path_elem call_site desc should_nest =
-      let level = ref 0 in
-      fun (elem, _) ->
-        let lt_level = !level in
-        let desc = desc elem in
-        let callsite = call_site elem in
-        if should_nest elem then incr level;
-        Errlog.make_trace_element lt_level (CallSite.loc callsite) desc [] in
-    let trace_elem_of_source =
-      trace_elem_of_path_elem Source.call_site desc_of_source source_should_nest in
-    let trace_elem_of_sink =
-      trace_elem_of_path_elem Sink.call_site desc_of_sink sink_should_nest in
-    (* reverse sinks intentionally, do not reverse sources(?) *)
-    IList.rev_append
-      (IList.rev_map trace_elem_of_source sources)
-      (IList.map trace_elem_of_sink (IList.rev sinks))
+      (passthroughs, sources, sinks) =
+
+    let trace_elems_of_passthroughs lt_level passthroughs acc0 =
+      let trace_elem_of_passthrough passthrough acc =
+        let passthrough_site = Passthrough.site passthrough in
+        let desc = F.asprintf "flow through %a" Procname.pp (CallSite.pname passthrough_site) in
+        (Errlog.make_trace_element lt_level (CallSite.loc passthrough_site) desc []) :: acc in
+      (* sort passthroughs by ascending line number to create a coherent trace *)
+      let sorted_passthroughs =
+        IList.sort
+          (fun passthrough1 passthrough2 ->
+             let loc1 = CallSite.loc (Passthrough.site passthrough1) in
+             let loc2 = CallSite.loc (Passthrough.site passthrough2) in
+             Pervasives.compare loc1.Location.line loc2.Location.line)
+          (Passthroughs.elements passthroughs) in
+      IList.fold_right trace_elem_of_passthrough sorted_passthroughs acc0 in
+
+    let get_nesting should_nest elems start_nesting =
+      let level = ref start_nesting in
+      let get_nesting_ ((elem, _) as pair) =
+        if should_nest elem
+        then incr level;
+        pair, !level in
+      IList.map get_nesting_ (IList.rev elems) in
+
+    let trace_elems_of_path_elem call_site desc ~is_source ((elem, passthroughs), lt_level) acc =
+      let desc = desc elem in
+      let loc = CallSite.loc (call_site elem) in
+      if is_source
+      then
+        let trace_elem = Errlog.make_trace_element lt_level loc desc [] in
+        trace_elems_of_passthroughs (lt_level + 1) passthroughs (trace_elem :: acc)
+      else
+        let trace_elem = Errlog.make_trace_element (lt_level - 1) loc desc [] in
+        trace_elem :: (trace_elems_of_passthroughs lt_level passthroughs acc) in
+
+    let trace_elems_of_source =
+      trace_elems_of_path_elem Source.call_site desc_of_source ~is_source:true in
+    let trace_elems_of_sink =
+      trace_elems_of_path_elem Sink.call_site desc_of_sink ~is_source:false in
+    let sources_with_level = get_nesting source_should_nest sources (-1) in
+    let sinks_with_level = get_nesting sink_should_nest sinks 0 in
+    let trace_prefix =
+      IList.fold_right trace_elems_of_sink sinks_with_level []
+      |> trace_elems_of_passthroughs 0 passthroughs in
+    IList.fold_left
+      (fun acc source -> trace_elems_of_source source acc) trace_prefix sources_with_level
 
   let of_source source =
     let sources = Sources.singleton source in
