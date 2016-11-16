@@ -6,11 +6,13 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 TESTS_DIR = ../../..
-include $(TESTS_DIR)/clang.make
 
 ANALYZER = linters
 CLANG_OPTIONS = -x objective-c++ -std=c++11 -fobjc-arc -c
 INFER_OPTIONS = --no-filtering --debug-exceptions
+INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \
   $(wildcard */*.mm) \
+
+include $(TESTS_DIR)/clang.make

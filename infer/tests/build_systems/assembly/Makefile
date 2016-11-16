@@ -6,12 +6,14 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 TESTS_DIR = ../..
-include $(TESTS_DIR)/clang.make
 
 ANALYZER = infer
 CLANG_OPTIONS = -c
 INFER_OPTIONS = --report-custom-error --developer-mode --project-root ../codetoanalyze
+INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \
   ../codetoanalyze/example.S \
   ../codetoanalyze/hello.c \
+
+include $(TESTS_DIR)/clang.make

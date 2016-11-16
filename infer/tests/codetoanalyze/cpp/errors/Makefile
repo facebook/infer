@@ -6,7 +6,6 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 TESTS_DIR = ../../..
-include $(TESTS_DIR)/clang.make
 
 ANALYZER = infer
 
@@ -14,6 +13,7 @@ ANALYZER = infer
 # regardless of the libraries installed on the machine.
 CLANG_OPTIONS = -x c++ -std=c++11 -nostdinc++ -isystem$(ROOT_DIR) -isystem$(CLANG_INCLUDES)/c++/v1/ -c
 INFER_OPTIONS = --cxx --ml-buckets cpp --no-filtering --debug-exceptions
+INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \
   $(wildcard c_tests/*.cpp) \
@@ -58,3 +58,5 @@ SOURCES = \
   $(wildcard smart_ptr/*.cpp) \
   $(wildcard subtyping/*.cpp) \
   $(wildcard vector/*.cpp) \
+
+include $(TESTS_DIR)/clang.make

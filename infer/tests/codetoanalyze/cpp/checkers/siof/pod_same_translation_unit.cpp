@@ -7,8 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#include <iostream>
-
 int same_tu_foo();
 int same_tu_goo();
 

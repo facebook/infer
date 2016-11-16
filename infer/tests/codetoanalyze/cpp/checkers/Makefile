@@ -6,7 +6,6 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 TESTS_DIR = ../../..
-include $(TESTS_DIR)/clang.make
 
 ANALYZER = checkers
 # see explanations in cpp/errors/Makefile for the custom isystem
@@ -22,3 +21,5 @@ SOURCES = \
   siof/pod_same_translation_unit.cpp \
   siof/siof_across_translation_units-1.cpp \
   siof/siof_across_translation_units-2.cpp \
+
+include $(TESTS_DIR)/clang.make

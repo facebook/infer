@@ -6,7 +6,6 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 TESTS_DIR = ../../..
-include $(TESTS_DIR)/clang.make
 
 IPHONESIMULATOR_ISYSROOT_SUFFIX = /Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk
 
@@ -19,6 +18,7 @@ CLANG_OPTIONS = -x objective-c \
 
 CLEAN_EXTRA = infer-out-arc infer-out-all
 INFER_OPTIONS = --cxx  --check-duplicate-symbols --no-filtering --debug-exceptions
+INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES_DEFAULT = \
   field_superclass/B.m \
@@ -95,6 +95,8 @@ SOURCES_ARC = \
   shared/memory_leaks_benchmark/TollBridgeExample.m \
   subtyping/KindOfClassExample.m \
   variadic_methods/premature_nil_termination.m \
+
+include $(TESTS_DIR)/clang.make
 
 OBJECTS_ARC = $(foreach source,$(SOURCES_ARC),$(basename $(source)).o)
 OBJECTS_BUCKET_ALL = $(foreach source,$(SOURCES_BUCKET_ALL),$(basename $(source)).o)
