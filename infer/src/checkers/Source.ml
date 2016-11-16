@@ -33,7 +33,8 @@ module Dummy = struct
 
   let pp _ () = ()
 
-  let is_footprint _ = assert false
+  let is_footprint _ = false
+
   let make_footprint _ _ = assert false
   let get_footprint_access_path _ = assert false
   let get _ = None

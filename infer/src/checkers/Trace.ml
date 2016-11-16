@@ -165,14 +165,22 @@ module Make (Spec : Spec) = struct
     Sources.is_empty t.sources
 
   let get_reports t =
-    if Sinks.is_empty t.sinks
-    then []
+    if Sinks.is_empty t.sinks || Sources.is_empty t.sources
+    then
+      []
     else
-      let report_one source sink acc =
-        if Spec.should_report source sink
-        then (source, sink, t.passthroughs) :: acc
-        else acc in
-      Sources.fold (fun source acc -> Sinks.fold (report_one source) t.sinks acc) t.sources []
+      (* written to avoid closure allocations in hot code. change with caution. *)
+      let report_source source sinks acc0 =
+        let report_one sink acc =
+          if Spec.should_report source sink
+          then (source, sink, t.passthroughs) :: acc
+          else acc in
+        Sinks.fold report_one sinks acc0 in
+      let report_sources source acc =
+        if Source.is_footprint source
+        then acc
+        else report_source source t.sinks acc in
+      Sources.fold report_sources t.sources []
 
   let pp_path cur_pname fmt (cur_passthroughs, sources_passthroughs, sinks_passthroughs) =
     let pp_passthroughs fmt passthroughs =

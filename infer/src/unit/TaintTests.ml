@@ -45,7 +45,7 @@ module MockTrace = Trace.Make(struct
         then Some site
         else None
 
-      let is_footprint _ = assert false
+      let is_footprint _ = false
       let make_footprint _ = assert false
       let get_footprint_access_path _ = assert false
     end
