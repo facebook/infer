@@ -359,7 +359,6 @@ def collect_results(args, start_time, targets):
 
     csv_report = os.path.join(args.infer_out, config.CSV_REPORT_FILENAME)
     json_report = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
-    bugs_out = os.path.join(args.infer_out, config.BUGS_FILENAME)
 
     if len(headers) > 1:
         if any(map(lambda x: x != headers[0], headers)):
@@ -387,12 +386,10 @@ def collect_results(args, start_time, targets):
         report.flush()
 
     print('\n')
-    xml_out = None
-    if args.pmd_xml:
-        xml_out = os.path.join(args.infer_out,
-                               config.PMD_XML_FILENAME)
-    issues.print_and_save_errors(args.project_root, json_report,
-                                 bugs_out, xml_out)
+    json_report = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
+    bugs_out = os.path.join(args.infer_out, config.BUGS_FILENAME)
+    issues.print_and_save_errors(args.project_root, json_report, bugs_out,
+                                 args.pmd_xml)
 
     stats['int']['total_time'] = int(round(utils.elapsed_time(start_time)))
 

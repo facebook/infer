@@ -93,7 +93,7 @@ def text_of_report(report):
     )
 
 
-def _text_of_report_list(project_root, reports, bugs_txt_path, limit=-1,
+def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
                          formatter=colorize.TERMINAL_FORMATTER):
     text_errors_list = []
     error_types_count = {}
@@ -181,18 +181,20 @@ def _is_user_visible(project_root, report):
             kind in [ISSUE_KIND_ERROR, ISSUE_KIND_WARNING, ISSUE_KIND_ADVICE])
 
 
-def print_and_save_errors(project_root, json_report, bugs_out, xml_out):
+def print_and_save_errors(project_root, json_report, bugs_out, pmd_xml):
     errors = utils.load_json_from_path(json_report)
     errors = [e for e in errors if _is_user_visible(project_root, e)]
     console_out = _text_of_report_list(project_root, errors, bugs_out,
                                        limit=10)
     utils.stdout('\n' + console_out)
-    plain_out = _text_of_report_list(project_root, errors, bugs_out, limit=-1,
+    plain_out = _text_of_report_list(project_root, errors, bugs_out,
                                      formatter=colorize.PLAIN_FORMATTER)
     with codecs.open(bugs_out, 'w',
                      encoding=config.CODESET, errors='replace') as file_out:
         file_out.write(plain_out)
-    if xml_out is not None:
+
+    if pmd_xml:
+        xml_out = os.path.join(infer_out, config.PMD_XML_FILENAME)
         with codecs.open(xml_out, 'w',
                          encoding=config.CODESET,
                          errors='replace') as file_out:

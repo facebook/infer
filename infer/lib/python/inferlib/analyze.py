@@ -348,16 +348,12 @@ class AnalyzerWrapper(object):
         elapsed = utils.elapsed_time(reporting_start_time)
         self.timing['reporting'] = elapsed
         if report_status == os.EX_OK and not self.args.buck:
-            json_report = os.path.join(self.args.infer_out,
-                                       config.JSON_REPORT_FILENAME)
-            bugs_out = os.path.join(self.args.infer_out,
-                                    config.BUGS_FILENAME)
-            xml_out = None
-            if self.args.pmd_xml:
-                xml_out = os.path.join(self.args.infer_out,
-                                       config.PMD_XML_FILENAME)
-            issues.print_and_save_errors(self.args.project_root, json_report,
-                                         bugs_out, xml_out)
+            infer_out = self.args.infer_out
+            json_report = os.path.join(infer_out, config.JSON_REPORT_FILENAME)
+            bugs_out = os.path.join(infer_out, config.BUGS_FILENAME)
+            issues.print_and_save_errors(self.args.project_root,
+                                         json_report, bugs_out,
+                                         self.args.pmd_xml)
 
     def analyze_and_report(self):
         if self.args.analyzer not in [config.ANALYZER_COMPILE,
