@@ -41,14 +41,6 @@ let captured_variables_cxx_ref dec =
     | _ -> [] in
   IList.fold_left capture_var_is_cxx_ref [] captured_vars
 
-let var_descs_name stmt =
-  let capt_refs = match stmt with
-    | Clang_ast_t.BlockExpr (_, _ , _, decl) ->
-        captured_variables_cxx_ref decl
-    | _ -> [] in
-  let var_desc vars var_named_decl_info =
-    vars ^ "'" ^ var_named_decl_info.Clang_ast_t.ni_name ^ "'" in
-  IList.fold_left var_desc "" capt_refs
 
 
 type t = string * string list (* (name, [param1,...,paramK]) *)

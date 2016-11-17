@@ -9,7 +9,7 @@
 
 type t = string * string list (* (name, [param1,...,paramK]) *)
 
-val var_descs_name : Clang_ast_t.stmt -> string (* Helper function *)
+val captured_variables_cxx_ref : Clang_ast_t.decl -> Clang_ast_t.named_decl_info list
 
 val call_method : string -> Clang_ast_t.stmt -> bool
 

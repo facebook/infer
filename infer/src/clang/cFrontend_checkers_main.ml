@@ -49,7 +49,7 @@ let parse_ctl_file filename =
 
 let rec do_frontend_checks_stmt (context:CLintersContext.context) stmt =
   let open Clang_ast_t in
-  let context' = CFrontend_errors.run_frontend_checkers_on_stmt context stmt in
+  let context' = CFrontend_errors.run_frontend_checkers_on_an context (CTL.Stmt stmt) in
   let do_all_checks_on_stmts stmt =
     (match stmt with
      | DeclStmt (_, _, decl_list) ->
@@ -102,7 +102,7 @@ and do_frontend_checks_decl (context: CLintersContext.context) decl =
           | None -> ());
          context'
      | _ -> context) in
-  let context'' = CFrontend_errors.run_frontend_checkers_on_decl context' decl in
+  let context'' = CFrontend_errors.run_frontend_checkers_on_an context' (CTL.Decl decl) in
   let context_with_orig_current_method =
     {context'' with CLintersContext.current_method = context.current_method } in
   match Clang_ast_proj.get_decl_context_tuple decl with

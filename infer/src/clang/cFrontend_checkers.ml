@@ -36,15 +36,24 @@ let location_from_decl lctx dec =
   CLocation.get_sil_location_from_range lctx.CLintersContext.translation_unit_context
     info.Clang_ast_t.di_source_range true
 
-let decl_name dec =
-  match Clang_ast_proj.get_named_decl_tuple dec with
-  | Some (_, n) -> n.Clang_ast_t.ni_name
-  | None -> ""
+let location_from_an lcxt an =
+  match an with
+  | CTL.Stmt st -> location_from_stmt lcxt st
+  | CTL.Decl d -> location_from_decl lcxt d
 
-let ivar_name stmt =
+
+let decl_name_from_an an =
+  match an with
+  | CTL.Decl dec ->
+      (match Clang_ast_proj.get_named_decl_tuple dec with
+       | Some (_, n) -> n.Clang_ast_t.ni_name
+       | None -> "")
+  | _ -> ""
+
+let ivar_name an =
   let open Clang_ast_t in
-  match stmt with
-  | ObjCIvarRefExpr (_, _, _, rei) ->
+  match an with
+  | CTL.Stmt (ObjCIvarRefExpr (_, _, _, rei)) ->
       let dr_ref = rei.ovrei_decl_ref in
       let ivar_pointer = dr_ref.dr_decl_pointer in
       (match Ast_utils.get_decl ivar_pointer with
@@ -52,6 +61,15 @@ let ivar_name stmt =
            named_decl_info.Clang_ast_t.ni_name
        | _ -> "")
   | _ -> ""
+
+let var_descs_name an =
+  let capt_refs = match an with
+    | CTL.Stmt (Clang_ast_t.BlockExpr (_, _ , _, decl)) ->
+        Predicates.captured_variables_cxx_ref decl
+    | _ -> [] in
+  let var_desc vars var_named_decl_info =
+    vars ^ "'" ^ var_named_decl_info.Clang_ast_t.ni_name ^ "'" in
+  IList.fold_left var_desc "" capt_refs
 
 
 (* (is_CallExpr /\ not call_function_named) ||
@@ -75,7 +93,7 @@ let ctl_makes_an_expensive_call () =
          ET([ObjCMethodDecl][->Body] EF remove_observer) Or
          EH([ObjCImplementationDecl, ObjCProtocolDecl] EF remove_observer)
 *)
-let ctl_ns_notification lctx decl =
+let ctl_ns_notification_warning lctx an =
   let open CTL in
   let exists_method_calling_addObserver =
     EF (None, (Atomic ("call_method", ["addObserver:selector:name:object:"]))) in
@@ -97,20 +115,21 @@ let ctl_ns_notification lctx decl =
     ET(["ObjCImplementationDecl"; "ObjCProtocolDecl"], None,
        Or(remove_observer_in_method ,
           EH(["ObjCImplementationDecl"; "ObjCProtocolDecl"], remove_observer_in_method))) in
-  let condition = Not (Implies (eventually_addObserver, eventually_removeObserver)) in
+  let condition = InNode (["ObjCImplementationDecl"; "ObjCProtocolDecl"],
+                         Not (Implies (eventually_addObserver, eventually_removeObserver))) in
   let issue_desc = {
     CIssue.issue = CIssue.Registered_observer_being_deallocated;
     CIssue.description =
       Localise.registered_observer_being_deallocated_str CFrontend_config.self;
     CIssue.suggestion =
       Some "Consider removing the object from the notification center before its deallocation.";
-    CIssue.loc = location_from_decl lctx decl;
+    CIssue.loc = location_from_an lctx an;
   } in
-  condition, issue_desc
+  condition, Some issue_desc
 
 (* BAD_POINTER_COMPARISON: Fires whenever a NSNumber is dangerously coerced to
     a boolean in a comparison *)
-let ctl_bad_pointer_comparison_warning lctx stmt =
+let ctl_bad_pointer_comparison_warning lctx an =
   let open CTL in
   let is_binop = Atomic ("is_stmt", ["BinaryOperator"]) in
   let is_binop_eq = Atomic ("is_binop_with_kind", ["EQ"]) in
@@ -127,8 +146,9 @@ let ctl_bad_pointer_comparison_warning lctx stmt =
   *)
   let p = Or (is_expr_with_cleanups, Or (is_implicit_cast_expr, Or (is_binop, is_unop_lnot))) in
   let p' = And (Not is_binop_neq, p) in
-  let condition = ETX (["IfStmt"; "ForStmt"; "WhileStmt"; "ConditionalOperator"], Some Cond,
-                       EU (None, p', is_nsnumber)) in
+  let etx = ETX (["IfStmt"; "ForStmt"; "WhileStmt"; "ConditionalOperator"], Some Cond,
+                 EU (None, p', is_nsnumber)) in
+  let condition = InNode (["IfStmt"; "ForStmt"; "WhileStmt"; "ConditionalOperator"], etx) in
   let issue_desc =
     { CIssue.
       issue = CIssue.Bad_pointer_comparison;
@@ -137,12 +157,12 @@ let ctl_bad_pointer_comparison_warning lctx stmt =
         Some ("Did you mean to compare against the unboxed value instead? " ^
               "Please either explicitly compare the NSNumber instance to nil, " ^
               "or use one of the NSNumber accessors before the comparison.");
-      loc = location_from_stmt lctx stmt
+      loc = location_from_an lctx an
     } in
-  condition, issue_desc
+  condition, Some issue_desc
 
 (* name_contains_delegate AND not name_contains_queue AND is_strong_property *)
-let ctl_strong_delegate lctx dec =
+let ctl_strong_delegate_warning lctx an =
   let open CTL in
   let name_contains_delegate =
     Atomic ("property_name_contains_word", ["delegate"]) in
@@ -150,22 +170,22 @@ let ctl_strong_delegate lctx dec =
     Not(Atomic ("property_name_contains_word", ["queue"])) in
   let is_strong_property =
     Atomic("is_strong_property", []) in
-  let condition = ET (["ObjCPropertyDecl"], None, And (name_contains_delegate,
-                                                       And (name_does_not_contains_queue,
-                                                            is_strong_property))) in
+  let condition = InNode (["ObjCPropertyDecl"], And (name_contains_delegate,
+                                                     And (name_does_not_contains_queue,
+                                                          is_strong_property))) in
   let issue_desc = {
     CIssue.issue = CIssue.Strong_delegate_warning;
     CIssue.description = Printf.sprintf
-        "Property or ivar %s declared strong" (decl_name dec);
+        "Property or ivar %s declared strong" (decl_name_from_an an);
     CIssue.suggestion = Some "In general delegates should be declared weak or assign";
-    CIssue.loc = location_from_decl lctx dec
+    CIssue.loc = location_from_an lctx an
   } in
-  condition, issue_desc
+  condition, Some issue_desc
 
 (* (is_ObjC || is_Objc++) /\ is_global_var /\ not is_const_var  /\
    ET([VarDecl][->InitExpr] EF ctl_makes_an_expensive_call)
 *)
-let ctl_global_var_init_with_calls_warning lctx decl =
+let ctl_global_var_init_with_calls_warning lctx an =
   let open CTL in
   let ctl_is_global_var =
     And (And (Atomic ("is_objc_extension", []), Atomic ("is_global_var", [])),
@@ -173,125 +193,70 @@ let ctl_global_var_init_with_calls_warning lctx decl =
   let ctl_is_initialized_with_expensive_call  =
     ET(["VarDecl"], Some InitExpr, EF (None, (ctl_makes_an_expensive_call ()))) in
   let condition =
-    ET (["VarDecl"], None, And (ctl_is_global_var, ctl_is_initialized_with_expensive_call)) in
+    InNode (["VarDecl"], And (ctl_is_global_var, ctl_is_initialized_with_expensive_call)) in
   let issue_desc = {
     CIssue.issue = CIssue.Global_variable_initialized_with_function_or_method_call;
     CIssue.description = Printf.sprintf
         "Global variable %s is initialized using a function or method call"
-        (decl_name decl);
+        (decl_name_from_an an);
     CIssue.suggestion = Some
         "If the function/method call is expensive, it can affect the starting time of the app.";
-    CIssue.loc = location_from_decl lctx decl
+    CIssue.loc = location_from_an lctx an
   } in
-  condition, issue_desc
+  condition, Some issue_desc
 
 (* is_assign_property AND is_property_pointer_type *)
-let ctl_assign_pointer_warning lctx decl =
+let ctl_assign_pointer_warning lctx an =
   let open CTL in
-  let condition = ET(["ObjCPropertyDecl"], None,
-                     And (Atomic ("is_assign_property", []),
-                          Atomic ("is_property_pointer_type", []))) in
+  let condition = InNode(["ObjCPropertyDecl"],
+                         And (Atomic ("is_assign_property", []),
+                              Atomic ("is_property_pointer_type", []))) in
   let issue_desc =
     { CIssue.issue = CIssue.Assign_pointer_warning;
       CIssue.description =
         Printf.sprintf
           "Property `%s` is a pointer type marked with the `assign` attribute"
-          (decl_name decl);
+          (decl_name_from_an an);
       CIssue.suggestion = Some "Use a different attribute like `strong` or `weak`.";
-      CIssue.loc = location_from_decl lctx decl
+      CIssue.loc = location_from_an lctx an
     } in
-  condition, issue_desc
+  condition, Some issue_desc
 
 (*
   not context_in_synchronized_block /\ not is_method_property_accessor_of_ivar
   /\ not is_objc_constructor /\ not is_objc_dealloc
 *)
-let ctl_direct_atomic_property_access_warning lctx stmt =
+let ctl_direct_atomic_property_access_warning lctx an =
   let open CTL in
-  let condition = ET (["ObjCIvarRefExpr"], None,
-                      And (And (And (And (Not (Atomic ("context_in_synchronized_block", [])),
-                                          Atomic("is_ivar_atomic", [])),
-                                     Not (Atomic ("is_method_property_accessor_of_ivar", []))),
-                                Not (Atomic ("is_objc_constructor", []))),
-                           Not (Atomic ("is_objc_dealloc", [])))) in
+  let condition = InNode (["ObjCIvarRefExpr"],
+                          And (And (And (And (Not (Atomic ("context_in_synchronized_block", [])),
+                                              Atomic("is_ivar_atomic", [])),
+                                         Not (Atomic ("is_method_property_accessor_of_ivar", []))),
+                                    Not (Atomic ("is_objc_constructor", []))),
+                               Not (Atomic ("is_objc_dealloc", [])))) in
   let issue_desc = {
     CIssue.issue = CIssue.Direct_atomic_property_access;
     CIssue.description = Printf.sprintf
-        "Direct access to ivar %s of an atomic property" (ivar_name stmt);
+        "Direct access to ivar %s of an atomic property" (ivar_name an);
     CIssue.suggestion =
       Some "Accessing an ivar of an atomic property makes the property nonatomic";
-    CIssue.loc = location_from_stmt lctx stmt
+    CIssue.loc = location_from_an lctx an
   } in
-  condition, issue_desc
+  condition, Some issue_desc
 
-let ctl_captured_cxx_ref_in_objc_block_warning lctx stmt  =
+let ctl_captured_cxx_ref_in_objc_block_warning lctx an  =
   (* Fire if the list of captured references is not empty *)
   let open CTL in
-  let condition = ET (["BlockDecl"], None, Atomic ("captures_cxx_references", [])) in
+  let condition = InNode (["BlockDecl"], Atomic ("captures_cxx_references", [])) in
   let issue_desc = {
     CIssue.issue = CIssue.Cxx_reference_captured_in_objc_block;
     CIssue.description = Printf.sprintf
         "C++ Reference variable(s) %s captured by Objective-C block"
-        (Predicates.var_descs_name stmt);
+        (var_descs_name an);
     CIssue.suggestion = Some ("C++ References are unmanaged and may be invalid " ^
                               "by the time the block executes.");
-    CIssue.loc = match stmt with
-      | Clang_ast_t.BlockExpr (_, _ , _, decl) -> location_from_decl lctx decl
-      | _ -> location_from_stmt lctx stmt;
+    CIssue.loc = match an with
+      | Stmt (Clang_ast_t.BlockExpr (_, _ , _, decl)) -> location_from_an lctx (Decl decl)
+      | _ -> location_from_an lctx an;
   } in
-  condition, issue_desc
-
-(* === Warnings on properties === *)
-
-(* Assing Pointer Warning: a property with a pointer type should not be declared `assign` *)
-let assign_pointer_warning lctx decl =
-  let open CTL in
-  let condition, issue_desc = ctl_assign_pointer_warning lctx decl in
-  if CTL.eval_formula condition (Decl decl) lctx then
-    Some issue_desc
-  else None
-
-(* Strong Delegate Warning: a property with name delegate should not be declared strong *)
-let strong_delegate_warning lctx decl =
-  let condition, issue_desc = ctl_strong_delegate lctx decl in
-  if CTL.eval_formula condition (Decl decl) lctx then
-    Some issue_desc
-  else None
-
-(* GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL warning: *)
-(* a global variable initialization should not *)
-(* contain calls to functions or methods as these can be expensive an delay the starting time *)
-(* of an app *)
-let global_var_init_with_calls_warning lctx decl =
-  let condition, issue_desc = ctl_global_var_init_with_calls_warning lctx decl in
-  if  CTL.eval_formula condition (CTL.Decl decl) lctx then
-    Some issue_desc
-  else None
-
-(* Direct Atomic Property access:
-   a property declared atomic should not be accessed directly via its ivar *)
-let direct_atomic_property_access_warning lctx stmt =
-  let condition, issue_desc = ctl_direct_atomic_property_access_warning lctx stmt in
-  if  CTL.eval_formula condition (CTL.Stmt stmt) lctx then
-    Some issue_desc
-  else None
-
-(* CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK: C++ references
-   should not be captured in blocks.  *)
-let captured_cxx_ref_in_objc_block_warning lctx stmt  =
-  let condition, issue_desc = ctl_captured_cxx_ref_in_objc_block_warning lctx stmt  in
-  if CTL.eval_formula condition (CTL.Stmt stmt) lctx  then
-    Some issue_desc
-  else None
-
-let checker_NSNotificationCenter lctx dec =
-  let condition, issue_desc = ctl_ns_notification lctx dec in
-  if CTL.eval_formula  condition (CTL.Decl dec) lctx then
-    Some issue_desc
-  else None
-
-let bad_pointer_comparison_warning lctx stmt =
-  let condition, issue_desc = ctl_bad_pointer_comparison_warning lctx stmt in
-  if CTL.eval_formula condition (CTL.Stmt stmt) lctx then
-    Some issue_desc
-  else None
+  condition, Some issue_desc

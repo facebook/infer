@@ -64,7 +64,7 @@ and contains_ck_impl decl_list =
     const int *z;
     const NSString *y;
     ``` *)
-let mutable_local_vars_advice context decl =
+let mutable_local_vars_advice context an =
   let rec get_referenced_type (qual_type: Clang_ast_t.qual_type) : Clang_ast_t.decl option =
     let typ_opt = Ast_utils.get_desugared_type qual_type.qt_type_ptr in
     match (typ_opt : Clang_ast_t.c_type option) with
@@ -85,8 +85,8 @@ let mutable_local_vars_advice context decl =
         IList.mem string_equal ndi.ni_name objc_whitelist
     | _ -> false in
 
-  match decl with
-  | Clang_ast_t.VarDecl(decl_info, named_decl_info, qual_type, _) ->
+  match an with
+  | CTL.Decl (Clang_ast_t.VarDecl(decl_info, named_decl_info, qual_type, _) as decl)->
       let is_const_ref = match Ast_utils.get_type qual_type.qt_type_ptr with
         | Some LValueReferenceType (_, {Clang_ast_t.qt_is_const}) ->
             qt_is_const
@@ -98,33 +98,33 @@ let mutable_local_vars_advice context decl =
                       && not (is_of_whitelisted_type qual_type)
                       && not decl_info.di_is_implicit in
       if condition then
-        Some {
+        CTL.True, Some {
           CIssue.issue = CIssue.Mutable_local_variable_in_component_file;
           CIssue.description = "Local variable '" ^ named_decl_info.ni_name
                                ^ "' should be const to avoid reassignment";
           CIssue.suggestion = Some "Add a const (after the asterisk for pointer types).";
           CIssue.loc = CFrontend_checkers.location_from_dinfo context decl_info
         }
-      else None
-  | _ -> assert false (* Should only be called with a VarDecl *)
+      else CTL.False, None
+  | _ -> CTL.False, None (* Should only be called with a VarDecl *)
 
 
 (** Catches functions that should be composite components.
     http://componentkit.org/docs/break-out-composites.html
 
     Any static function that returns a subclass of CKComponent will be flagged. *)
-let component_factory_function_advice context decl =
+let component_factory_function_advice context an =
   let is_component_if decl =
     Ast_utils.is_objc_if_descendant decl [CFrontend_config.ckcomponent_cl] in
 
-  match decl with
-  | Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _) ->
+  match an with
+  | CTL.Decl (Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _) as decl) ->
       let objc_interface =
         Ast_utils.type_ptr_to_objc_interface qual_type.qt_type_ptr in
       let condition =
         is_ck_context context decl && is_component_if objc_interface in
       if condition then
-        Some {
+        CTL.True, Some {
           CIssue.issue = CIssue.Component_factory_function;
           CIssue.description = "Break out composite components";
           CIssue.suggestion = Some (
@@ -133,13 +133,13 @@ let component_factory_function_advice context decl =
             );
           CIssue.loc = CFrontend_checkers.location_from_dinfo context decl_info
         }
-      else None
-  | _ -> assert false (* Should only be called with FunctionDecl *)
+      else CTL.False, None
+  | _ -> CTL.False, None (* Should only be called with FunctionDecl *)
 
 (** Components should not inherit from each other. They should instead
     inherit from CKComponent, CKCompositeComponent, or
     CKStatefulViewComponent. (Similar rule applies to component controllers.) *)
-let component_with_unconventional_superclass_advice context decl =
+let component_with_unconventional_superclass_advice context an =
   let check_interface if_decl =
     match if_decl with
     | Clang_ast_t.ObjCInterfaceDecl (_, _, _, _, _) ->
@@ -164,7 +164,7 @@ let component_with_unconventional_superclass_advice context decl =
             is_component_or_controller_if (Some if_decl)
             && not has_conventional_superclass in
           if condition then
-            Some {
+            CTL.True, Some {
               CIssue.issue = CIssue.Component_with_unconventional_superclass;
               CIssue.description = "Never Subclass Components";
               CIssue.suggestion = Some (
@@ -173,19 +173,19 @@ let component_with_unconventional_superclass_advice context decl =
               CIssue.loc = CFrontend_checkers.location_from_decl context if_decl
             }
           else
-            None
+            CTL.False, None
         else
-          None
+          CTL.False, None
     | _ -> assert false in
-  match decl with
-  | Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info) ->
+  match an with
+  | CTL.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info) as decl) ->
       let if_decl_opt =
         Ast_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
       if Option.is_some if_decl_opt && is_ck_context context decl then
         check_interface (Option.get if_decl_opt)
       else
-        None
-  | _ -> assert false
+        CTL.False, None
+  | _ -> CTL.False, None
 
 (** Components should only have one factory method.
 
@@ -197,7 +197,7 @@ let component_with_unconventional_superclass_advice context decl =
     it. While its existence is probably not good, I can't think of any reason
     there would be factory methods that aren't exposed outside of a class is
     not useful if there's only one public factory method. *)
-let component_with_multiple_factory_methods_advice context decl =
+let component_with_multiple_factory_methods_advice context an =
   let is_unavailable_attr attr = match attr with
     | Clang_ast_t.UnavailableAttr _ -> true
     | _ -> false in
@@ -214,7 +214,7 @@ let component_with_multiple_factory_methods_advice context decl =
     | Clang_ast_t.ObjCInterfaceDecl (decl_info, _, decls, _, _) ->
         let factory_methods = IList.filter (is_available_factory_method if_decl) decls in
         if (IList.length factory_methods) > 1 then
-          Some {
+          CTL.True, Some {
             CIssue.issue = CIssue.Component_with_multiple_factory_methods;
             CIssue.description = "Avoid Overrides";
             CIssue.suggestion =
@@ -223,16 +223,16 @@ let component_with_multiple_factory_methods_advice context decl =
             CIssue.loc = CFrontend_checkers.location_from_dinfo context decl_info
           }
         else
-          None
+          CTL.False, None
     | _ -> assert false in
-  match decl with
-  | Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info) ->
+  match an with
+  | CTL.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info) as decl) ->
       let if_decl_opt =
         Ast_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
       (match if_decl_opt with
        | Some d when is_ck_context context decl -> check_interface d
-       | _ -> None)
-  | _ -> assert false
+       | _ -> CTL.False, None)
+  | _ -> CTL.False, None
 
 let in_ck_class (context: CLintersContext.context) =
   Option.map_default is_component_or_controller_descendant_impl false context.current_objc_impl
@@ -247,7 +247,7 @@ let in_ck_class (context: CLintersContext.context) =
     relies on other threads (dispatch_sync). Other side-effects, like reading
     of global variables, is not checked by this analyzer, although still an
     infraction of the rule. *)
-let rec component_initializer_with_side_effects_advice
+let rec _component_initializer_with_side_effects_advice
     (context: CLintersContext.context) call_stmt =
   let condition =
     in_ck_class context
@@ -258,7 +258,7 @@ let rec component_initializer_with_side_effects_advice
   if condition then
     match call_stmt with
     | Clang_ast_t.ImplicitCastExpr (_, stmt :: _, _, _) ->
-        component_initializer_with_side_effects_advice context stmt
+        _component_initializer_with_side_effects_advice context stmt
     | Clang_ast_t.DeclRefExpr (_, _, _, decl_ref_expr_info) ->
         let refs = [decl_ref_expr_info.drti_decl_ref;
                     decl_ref_expr_info.drti_found_decl_ref] in
@@ -266,15 +266,23 @@ let rec component_initializer_with_side_effects_advice
          | Some "dispatch_after"
          | Some "dispatch_async"
          | Some "dispatch_sync" ->
-             Some {
+             CTL.True, Some {
                CIssue.issue = CIssue.Component_initializer_with_side_effects;
                CIssue.description = "No Side-effects";
                CIssue.suggestion = Some "Your +new method should not modify any \
                                          global variables or global state.";
                CIssue.loc = CFrontend_checkers.location_from_stmt context call_stmt
              }
-         | _ -> None)
+         | _ ->
+             CTL.False, None)
     | _->
-        None
+        CTL.False, None
   else
-    None
+    CTL.False, None
+
+let component_initializer_with_side_effects_advice
+    (context: CLintersContext.context) an =
+  match an with
+  | CTL.Stmt (CallExpr (_, called_func_stmt :: _, _))  ->
+      _component_initializer_with_side_effects_advice context called_func_stmt
+  | _ -> CTL.False, None (* only to be called in CallExpr *)

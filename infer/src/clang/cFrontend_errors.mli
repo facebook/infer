@@ -12,10 +12,6 @@ open! Utils
 
 (* Module for warnings detected at translation time by the frontend *)
 
-(* Run frontend checkers on a statement *)
-val run_frontend_checkers_on_stmt :
-  CLintersContext.context -> Clang_ast_t.stmt -> CLintersContext.context
-
-(* Run frontend checkers on a declaration *)
-val run_frontend_checkers_on_decl : CLintersContext.context -> Clang_ast_t.decl ->
-  CLintersContext.context
+(* Run frontend checkers on an AST node *)
+val run_frontend_checkers_on_an :
+  CLintersContext.context -> CTL.ast_node -> CLintersContext.context
