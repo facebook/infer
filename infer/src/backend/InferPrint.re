@@ -323,7 +323,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc =>
       | Crashcontext
       | Infer
       | Linters
-      | Quandary 
+      | Quandary
       | Threadsafety => false
       };
     if analyzer_is_whitelisted {
@@ -583,16 +583,23 @@ let module IssuesJson = {
 };
 
 let pp_tests_of_report fmt report => {
+  open Jsonbug_t;
+  let pp_trace_elem fmt {description} => F.fprintf fmt "%s" description;
+  let pp_trace fmt trace =>
+    if Config.print_traces_in_tests {
+      let trace_without_empty_descs = IList.filter (fun {description} => description != "") trace;
+      F.fprintf fmt ", [%a]" (pp_comma_seq pp_trace_elem) trace_without_empty_descs
+    };
   let pp_row jsonbug =>
-    Jsonbug_t.(
-      F.fprintf
-        fmt
-        "%s, %s, %d, %s@."
-        jsonbug.file
-        jsonbug.procedure
-        (jsonbug.line - jsonbug.procedure_start_line)
-        jsonbug.bug_type
-    );
+    F.fprintf
+      fmt
+      "%s, %s, %d, %s%a@."
+      jsonbug.file
+      jsonbug.procedure
+      (jsonbug.line - jsonbug.procedure_start_line)
+      jsonbug.bug_type
+      pp_trace
+      jsonbug.bug_trace;
   IList.iter pp_row report
 };
 

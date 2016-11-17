@@ -1054,6 +1054,11 @@ and print_builtins =
   CLOpt.mk_bool ~deprecated:["print_builtins"] ~long:"print-builtins"
     "Print the builtin functions and exit"
 
+and print_traces_in_tests =
+  CLOpt.mk_bool ~long:"print-traces-in-tests" ~default:true
+    ~exes:CLOpt.[Print]
+    "Include symbolic traces summaries in the output of --issues-tests"
+
 and print_using_diff =
   CLOpt.mk_bool ~deprecated_no:["noprintdiff"] ~long:"print-using-diff" ~default:true
     "Highlight the difference w.r.t. the previous prop when printing symbolic execution debug info"
@@ -1472,6 +1477,7 @@ and patterns_modeled_expensive = !patterns_modeled_expensive
 and pmd_xml = !pmd_xml
 and precondition_stats = !precondition_stats
 and print_builtins = !print_builtins
+and print_traces_in_tests = !print_traces_in_tests
 and print_types = !print_types
 and print_using_diff = !print_using_diff
 and procs_csv = !procs_csv

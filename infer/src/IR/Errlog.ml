@@ -23,7 +23,6 @@ type loc_trace_elem = {
 let make_trace_element lt_level lt_loc lt_description lt_node_tags =
   { lt_level; lt_loc; lt_description; lt_node_tags }
 
-
 (** Trace of locations *)
 type loc_trace = loc_trace_elem list
 

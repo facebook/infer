@@ -1,4 +1,4 @@
-siof/const_use.cpp, __infer_globals_initializer_use_u, 0, STATIC_INITIALIZATION_ORDER_FIASCO
-siof/pod_across_translation_units-1.cpp, __infer_globals_initializer_x, 0, STATIC_INITIALIZATION_ORDER_FIASCO
-siof/siof_across_translation_units-1.cpp, __infer_globals_initializer_another_global_object, 0, STATIC_INITIALIZATION_ORDER_FIASCO
-siof/siof_across_translation_units-1.cpp, __infer_globals_initializer_another_global_object, 0, STATIC_INITIALIZATION_ORDER_FIASCO
+siof/const_use.cpp, __infer_globals_initializer_use_u, 0, STATIC_INITIALIZATION_ORDER_FIASCO, [initialization of use_u,access to u]
+siof/pod_across_translation_units-1.cpp, __infer_globals_initializer_x, 0, STATIC_INITIALIZATION_ORDER_FIASCO, [initialization of x,call to baz,call to bar,call to foo,access to y]
+siof/siof_across_translation_units-1.cpp, __infer_globals_initializer_another_global_object, 0, STATIC_INITIALIZATION_ORDER_FIASCO, [initialization of another_global_object,access to another_global_object]
+siof/siof_across_translation_units-1.cpp, __infer_globals_initializer_another_global_object, 0, STATIC_INITIALIZATION_ORDER_FIASCO, [initialization of another_global_object,call to SomeOtherObject_SomeOtherObject,access to global_object]
