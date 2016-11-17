@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<globals/global_const1.cpp>$global:class X *) [line 13]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<globals/global_const1.cpp|!pod>$global:class X *) [line 13]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
@@ -18,7 +18,7 @@ digraph iCFG {
 	
 
 	 "X_X{_ZN1XC1ERKS_}.abc525d74d1815a6e1a874d1ed502de3_1" -> "X_X{_ZN1XC1ERKS_}.abc525d74d1815a6e1a874d1ed502de3_2" ;
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" [label="3:  Return Stmt \n   n$0=*&__return_param:class X * [line 15]\n  _fun_X_X(&#GB<globals/global_const1.cpp>$global:class X *) [line 13]\n  _fun_X_X(n$0:class X *,&#GB<globals/global_const1.cpp>$global:class X &) [line 15]\n " shape="box"]
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" [label="3:  Return Stmt \n   n$0=*&__return_param:class X * [line 15]\n  _fun_X_X(&#GB<globals/global_const1.cpp|!pod>$global:class X *) [line 13]\n  _fun_X_X(n$0:class X *,&#GB<globals/global_const1.cpp|!pod>$global:class X &) [line 15]\n " shape="box"]
 	
 
 	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" ;

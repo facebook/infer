@@ -7,13 +7,16 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-// This file exists only so that the SIOF checkers sees global_object
-// being initialized via a method call. The SIOF checker could be
-// improved to know that all non-POD types require initialization in
-// C++.
-
-struct SomeObject {
-  void some_method();
+struct SomeNonPODObject {
+  virtual void some_method();
 };
 
-SomeObject global_object;
+template<typename T>
+struct SomeTemplatedNonPODObject {
+  virtual T some_method();
+};
+
+int access_to_templated_non_pod();
+int access_to_non_pod();
+SomeNonPODObject& getFunctionStaticNonPOD();
+SomeNonPODObject& getGlobalNonPOD();

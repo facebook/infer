@@ -104,7 +104,7 @@ let mk_callee: Mangled.t => Procname.t => t;
 
 
 /** create a global variable with the given name */
-let mk_global: is_constexpr::bool? => Mangled.t => DB.source_file => t;
+let mk_global: is_constexpr::bool? => is_pod::bool? => Mangled.t => DB.source_file => t;
 
 
 /** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! */
@@ -139,8 +139,14 @@ let to_string: t => string;
 let get_source_file: t => option DB.source_file;
 
 
-/** Is the variable's value a compile-time constant? Always [false] for non-globals. */
+/** Is the variable's value a compile-time constant? Always (potentially incorrectly) returns
+    [false] for non-globals. */
 let is_compile_constant: t => bool;
+
+
+/** Is the variable's type a "Plain Old Data" type (C++)? Always (potentially incorrectly) returns
+    [true] for non-globals. */
+let is_pod: t => bool;
 
 
 /** Get the procname of the initializer function for the given global variable */

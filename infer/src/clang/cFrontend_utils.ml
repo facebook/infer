@@ -781,20 +781,33 @@ struct
     name_string, mangled
 
   let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name=fun _ x -> x)
-      named_decl_info var_decl_info =
+      named_decl_info var_decl_info qt =
     let name_string, simple_name = get_var_name_mangled named_decl_info var_decl_info in
     let translation_unit =
-      match var_decl_info.Clang_ast_t.vdi_storage_class with
-      | Some "extern" ->
+      match (var_decl_info.Clang_ast_t.vdi_storage_class,
+             var_decl_info.Clang_ast_t.vdi_init_expr) with
+      | Some "extern", None ->
+          (* some compilers simply disregard "extern" when the global is given some initialisation
+             code, which is why we make sure that [vdi_init_expr] is None here... *)
           DB.source_file_empty
       | _ ->
           source_file in
     let is_constexpr = var_decl_info.Clang_ast_t.vdi_is_const_expr in
-    Pvar.mk_global ~is_constexpr (mk_name name_string simple_name) translation_unit
+    let is_pod =
+      Ast_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr
+      |> Option.map_default (function
+          | Clang_ast_t.RecordType(_, decl_ptr) -> Ast_utils.get_decl decl_ptr
+          | _ -> None) None
+      |> Option.map_default (function
+          | Clang_ast_t.CXXRecordDecl(_, _, _, _, _, _, _, {xrdi_is_pod})
+          | Clang_ast_t.ClassTemplateSpecializationDecl(_, _, _, _, _, _, _, {xrdi_is_pod}, _) ->
+              xrdi_is_pod
+          | _ -> true) true in
+    Pvar.mk_global ~is_constexpr ~is_pod (mk_name name_string simple_name) translation_unit
 
   let mk_sil_var trans_unit_ctx named_decl_info decl_info_type_ptr_opt procname outer_procname =
     match decl_info_type_ptr_opt with
-    | Some (decl_info, _, var_decl_info, should_be_mangled) ->
+    | Some (decl_info, qt, var_decl_info, should_be_mangled) ->
         let name_string, simple_name = get_var_name_mangled named_decl_info var_decl_info in
         if var_decl_info.Clang_ast_t.vdi_is_global then
           let mk_name =
@@ -802,7 +815,7 @@ struct
               Some (fun name_string _ ->
                   Mangled.from_string ((Procname.to_string outer_procname) ^ "_" ^ name_string))
             else None in
-          mk_sil_global_var trans_unit_ctx ?mk_name named_decl_info var_decl_info
+          mk_sil_global_var trans_unit_ctx ?mk_name named_decl_info var_decl_info qt
         else if not should_be_mangled then Pvar.mk simple_name procname
         else
           let start_location = fst decl_info.Clang_ast_t.di_source_range in

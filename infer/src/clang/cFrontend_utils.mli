@@ -247,7 +247,7 @@ sig
 
   val mk_sil_global_var : CFrontend_config.translation_unit_context ->
     ?mk_name:(string -> Mangled.t -> Mangled.t) ->
-    Clang_ast_t.named_decl_info -> Clang_ast_t.var_decl_info -> Pvar.t
+    Clang_ast_t.named_decl_info -> Clang_ast_t.var_decl_info -> Clang_ast_t.qual_type -> Pvar.t
 
   val mk_sil_var : CFrontend_config.translation_unit_context -> Clang_ast_t.named_decl_info ->
     var_info option -> Procname.t -> Procname.t -> Pvar.t

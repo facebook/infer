@@ -18,7 +18,7 @@ digraph iCFG {
 	
 
 	 "foo::Rectangle_Rectangle{_ZN3foo9RectangleC1Ev}.994e34698d49402781f481c8d7fa0e03_1" -> "foo::Rectangle_Rectangle{_ZN3foo9RectangleC1Ev}.994e34698d49402781f481c8d7fa0e03_2" ;
-"__infer_globals_initializer_bar::rect.e5e9061ca63212fdc2fd329df6c073de_3" [label="3:  DeclStmt \n   _fun_bar::Rectangle_Rectangle(&#GB<shared/namespace/namespace.cpp>$bar::rect:class bar::Rectangle *) [line 38]\n " shape="box"]
+"__infer_globals_initializer_bar::rect.e5e9061ca63212fdc2fd329df6c073de_3" [label="3:  DeclStmt \n   _fun_bar::Rectangle_Rectangle(&#GB<shared/namespace/namespace.cpp|!pod>$bar::rect:class bar::Rectangle *) [line 38]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_bar::rect.e5e9061ca63212fdc2fd329df6c073de_3" -> "__infer_globals_initializer_bar::rect.e5e9061ca63212fdc2fd329df6c073de_2" ;
