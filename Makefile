@@ -20,6 +20,9 @@ endif
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck
 endif
+ifneq ($(CMAKE),no)
+BUILD_SYSTEMS_TESTS += clang_compilation_db
+endif
 
 DIRECT_TESTS=
 ifeq ($(BUILD_C_ANALYZERS),yes)
