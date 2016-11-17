@@ -73,7 +73,18 @@ def syntax_highlighting(source_name, mode, s):
     while (i < len(s) and s[i] == '\n'):
         initial_newlines += '\n'
         i += 1
-    return initial_newlines + pygments.highlight(s, lexer, formatter)
+    # pygments.highlight() also insists that all string end with exactly one
+    # newline character regardless of the input string!
+    final_newlines = ''
+    i = 1
+    while (i <= len(s) and s[-i] == '\n'):
+        final_newlines += '\n'
+        i += 1
+    colorized_string = pygments.highlight(s, lexer, formatter)
+    # strip the result from pygments.highlight() to get rid of the
+    # potentially spurious final newline, and also to continue to
+    # work in case the bugs in pygments.highlight() gets fixed.
+    return initial_newlines + colorized_string.strip('\n') + final_newlines
 
 
 def color(s, color, mode):

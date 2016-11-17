@@ -72,7 +72,7 @@ def build_source_context(source_name, mode, report_line):
         # avoid going past the end of the file
         for line in source_file:
             last_line = line_number
-            if start_line <= line_number <= end_line:
+            if start_line <= line_number < end_line:
                 excerpt += line
             elif line_number > end_line:
                 # OPTIM: no need to read past the last line of the excerpt
