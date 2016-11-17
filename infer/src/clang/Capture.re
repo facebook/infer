@@ -110,15 +110,21 @@ let run_and_validate_clang_frontend ast_source =>
     }
   };
 
-let run_clang clang_command read =>
+let run_clang clang_command read => {
+  let exit_with_error exit_code => {
+    Logging.stderr
+      "Error: the following clang command did not run successfully:@\n  %s@\n" clang_command;
+    exit exit_code
+  };
   /* NOTE: exceptions will propagate through without exiting here */
   switch (with_process_in clang_command read) {
   | (res, Unix.WEXITED 0) => res
   | (_, Unix.WEXITED n) =>
     /* exit with the same error code as clang in case of compilation failure */
-    exit n
-  | _ => exit 1
-  };
+    exit_with_error n
+  | _ => exit_with_error 1
+  }
+};
 
 let run_plugin_and_frontend source_path frontend clang_args => {
   let clang_command = ClangCommand.command_to_run (ClangCommand.with_plugin_args clang_args);

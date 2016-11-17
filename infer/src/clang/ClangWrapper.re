@@ -78,10 +78,10 @@ let exec_action_item =
   | ClangError error => {
       /* An error in the output of `clang -### ...`. Outputs the error and fail. This is because
          `clang -###` pretty much never fails, but warns of failures on stderr instead. */
-      Logging.err "%s" error;
+      Logging.stderr "%s@." error;
       exit 1
     }
-  | ClangWarning warning => Logging.err "%s@\n" warning
+  | ClangWarning warning => Logging.stderr "%s@\n" warning
   | Command clang_cmd => Capture.capture clang_cmd;
 
 let exe args xx_suffix => {
