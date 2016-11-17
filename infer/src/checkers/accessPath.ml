@@ -61,7 +61,9 @@ let raw_compare ((base1, accesses1) as ap1) ((base2, accesses2) as ap2) =
     let n = base_compare base1 base2 in
     if n <> 0
     then n
-    else (IList.compare access_compare) accesses1 accesses2
+    else if accesses1 == accesses2
+    then 0
+    else IList.compare access_compare accesses1 accesses2
 
 let raw_equal ap1 ap2 =
   raw_compare ap1 ap2 = 0
