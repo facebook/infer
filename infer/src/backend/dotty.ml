@@ -1034,7 +1034,7 @@ let print_icfg_dotty source cfg =
   let fname =
     if Config.frontend_tests
     then
-      (DB.source_file_to_string source) ^ ".test.dot"
+      (DB.source_file_to_abs_path source) ^ ".test.dot"
     else
       DB.filename_to_string
         (DB.Results_dir.path_to_filename

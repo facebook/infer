@@ -8,6 +8,6 @@
  */
 
 #pragma once
-
-#include <infer_model/portability.h>
-#include <infer_no_model/crash_on_exec.h>
+namespace external {
+int fun(int a) { return a; }
+}

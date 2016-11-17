@@ -8,6 +8,9 @@
  */
 
 #pragma once
+namespace internal {
+int fun(int a) { return a; }
 
-#include <infer_model/portability.h>
-#include <infer_no_model/crash_on_exec.h>
+// function shouldn't be translated if it's not used in source file
+int unused(int a) { return a; }
+}

@@ -259,9 +259,12 @@ let models_dir =
 let models_jar =
   lib_dir // "java" // "models.jar"
 
-let cpp_models_dir =
+let cpp_extra_include_dir =
   let dir = bin_dir // Filename.parent_dir_name // "models" // "cpp" // "include" in
   Utils.filename_to_absolute dir (* Normalize the path *)
+
+let cpp_models_dir =
+  cpp_extra_include_dir // "infer_model"
 
 let wrappers_dir =
   lib_dir // "wrappers"
