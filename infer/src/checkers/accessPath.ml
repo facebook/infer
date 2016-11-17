@@ -27,20 +27,25 @@ let base_compare ((var1, typ1) as base1) ((var2, typ2) as base2) =
   if base1 == base2
   then 0
   else
-    Var.compare var1 var2
-    |> next Typ.array_sensitive_compare typ1 typ2
+    let n = Var.compare var1 var2 in
+    if n <> 0
+    then n
+    else Typ.array_sensitive_compare typ1 typ2
 
 let base_equal base1 base2 =
   base_compare base1 base2 = 0
 
 let access_compare access1 access2 =
   if access1 == access2
-  then 0
+  then
+    0
   else
     match access1, access2 with
     | FieldAccess (f1, typ1), FieldAccess (f2, typ2) ->
-        Ident.fieldname_compare f1 f2
-        |> next Typ.compare typ1 typ2
+        let n = Ident.fieldname_compare f1 f2 in
+        if n <> 0
+        then n
+        else Typ.compare typ1 typ2
     | ArrayAccess typ1, ArrayAccess typ2 ->
         Typ.compare typ1 typ2
     | FieldAccess _, _ -> 1
@@ -53,16 +58,23 @@ let raw_compare ((base1, accesses1) as ap1) ((base2, accesses2) as ap2) =
   if ap1 == ap2
   then 0
   else
-    base_compare base1 base2
-    |> next (IList.compare access_compare) accesses1 accesses2
+    let n = base_compare base1 base2 in
+    if n <> 0
+    then n
+    else (IList.compare access_compare) accesses1 accesses2
 
 let raw_equal ap1 ap2 =
   raw_compare ap1 ap2 = 0
 
-let compare ap1 ap2 = match ap1, ap2 with
-  | Exact ap1, Exact ap2 | Abstracted ap1, Abstracted ap2 -> raw_compare ap1 ap2
-  | Exact _, Abstracted _ -> 1
-  | Abstracted _, Exact _ -> (-1)
+let compare ap1 ap2 =
+  if ap1 == ap2
+  then
+    0
+  else
+    match ap1, ap2 with
+    | Exact ap1, Exact ap2 | Abstracted ap1, Abstracted ap2 -> raw_compare ap1 ap2
+    | Exact _, Abstracted _ -> 1
+    | Abstracted _, Exact _ -> (-1)
 
 let equal ap1 ap2 =
   compare ap1 ap2 = 0

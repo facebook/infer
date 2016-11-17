@@ -138,9 +138,18 @@ module Make (Spec : Spec) = struct
   type path = Passthroughs.t * (Source.t * Passthroughs.t) list * (Sink.t * Passthroughs.t) list
 
   let compare t1 t2 =
-    Sources.compare t1.sources t2.sources
-    |> next Sinks.compare t1.sinks t2.sinks
-    |> next Passthroughs.compare t1.passthroughs t2.passthroughs
+    if t1 == t2
+    then
+      0
+    else
+      let n = Sources.compare t1.sources t2.sources in
+      if n <> 0
+      then n
+      else
+        let n = Sinks.compare t1.sinks t2.sinks in
+        if n <> 0
+        then n
+        else Passthroughs.compare t1.passthroughs t2.passthroughs
 
   let equal t1 t2 =
     compare t1 t2 = 0

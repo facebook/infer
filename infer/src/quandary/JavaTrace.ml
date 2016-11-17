@@ -89,8 +89,14 @@ module JavaSource = struct
     { t with site = callee_site; }
 
   let compare src1 src2 =
-    Kind.compare src1.kind src2.kind
-    |> next CallSite.compare src1.site src2.site
+    if src1 == src2
+    then
+      0
+    else
+      let n = Kind.compare src1.kind src2.kind in
+      if n <> 0
+      then n
+      else CallSite.compare src1.site src2.site
 
   let pp fmt s =
     F.fprintf fmt "%a(%a)" Kind.pp s.kind CallSite.pp s.site
@@ -185,8 +191,14 @@ module JavaSink = struct
     { t with site = callee_site; }
 
   let compare snk1 snk2 =
-    Kind.compare snk1.kind snk2.kind
-    |> next CallSite.compare snk1.site snk2.site
+    if snk1 == snk2
+    then
+      0
+    else
+      let n = Kind.compare snk1.kind snk2.kind in
+      if n <> 0
+      then n
+      else CallSite.compare snk1.site snk2.site
 
   let pp fmt s =
     F.fprintf fmt "%a(%a)" Kind.pp s.kind CallSite.pp s.site
