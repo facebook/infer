@@ -638,13 +638,30 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
         (* programmers write @GuardedBy("MyClass.class") when the field is guarded by the class *)
         guarded_by_str_is_class guarded_by_str (Procname.java_get_class_name java_pname)
     | _ -> false in
-  (* return true if [guarded_by_str] is as suffix of "<name_of_current_proc>.this" *)
+
+  let guarded_by_str_is_class_this class_name guarded_by_str =
+    let fully_qualified_this =
+      Printf.sprintf "%s.this" class_name in
+    string_is_suffix guarded_by_str fully_qualified_this
+  in
+
+  (* return true if [guarded_by_str] is a suffix of "<name_of_super_class>.this" *)
+  let guarded_by_str_is_super_class_this guarded_by_str pname =
+    match pname with
+    | Procname.Java java_pname ->
+        let current_class_type_name = (Procname.java_get_class_type_name java_pname) in
+        let comparison class_type_name _ =
+          guarded_by_str_is_class_this (Typename.to_string class_type_name) guarded_by_str in
+        PatternMatch.supertype_exists tenv comparison current_class_type_name
+    | _ -> false in
+
+
+  (* return true if [guarded_by_str] is as suffix of "<name_of_current_class>.this" *)
   let guarded_by_str_is_current_class_this guarded_by_str = function
     | Procname.Java java_pname ->
-        let fully_qualified_this =
-          Printf.sprintf "%s.this" (Procname.java_get_class_name java_pname) in
-        string_is_suffix guarded_by_str fully_qualified_this
+        guarded_by_str_is_class_this (Procname.java_get_class_name java_pname) guarded_by_str
     | _ -> false in
+
   let extract_guarded_by_str item_annot =
     let annot_extract_guarded_by_str ((annot: Annot.t), _) =
       if Annotations.annot_ends_with annot Annotations.guarded_by
@@ -688,7 +705,8 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       (* this comparison needs to be somewhat fuzzy, since programmers are free to write
          @GuardedBy("mLock"), @GuardedBy("MyClass.mLock"), or use other conventions *)
       Ident.fieldname_to_flat_string fld = guarded_by_str ||
-      Ident.fieldname_to_string fld = guarded_by_str in
+      Ident.fieldname_to_string fld = guarded_by_str
+    in
     IList.find_map_opt
       (function
         | Sil.Hpointsto ((Const (Cclass clazz) as lhs_exp), _, Exp.Sizeof (typ, _, _))
@@ -719,7 +737,9 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
                   res
             end
         | Sil.Hpointsto (Lvar pvar, rhs_exp, Exp.Sizeof (typ, _, _))
-          when guarded_by_str_is_current_class_this guarded_by_str pname && Pvar.is_this pvar ->
+          when (guarded_by_str_is_current_class_this guarded_by_str pname ||
+                guarded_by_str_is_super_class_this guarded_by_str pname
+               ) && Pvar.is_this pvar ->
             Some (rhs_exp, typ)
         | _ ->
             None)
@@ -753,9 +773,11 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       | Typ.Tptr (typ, _) -> is_read_write_lock typ
       | _ -> false in
     let has_lock guarded_by_exp =
-      (* procedure is synchronized and guarded by this *)
-      (guarded_by_str_is_current_class_this guarded_by_str pname &&
-       Procdesc.is_java_synchronized pdesc) ||
+      ((guarded_by_str_is_current_class_this guarded_by_str pname ||
+        guarded_by_str_is_super_class_this guarded_by_str pname )
+       &&
+       Procdesc.is_java_synchronized pdesc)
+      ||
       (guarded_by_str_is_current_class guarded_by_str pname &&
        Procdesc.is_java_synchronized pdesc && Procname.java_is_static pname) ||
       (* or the prop says we already have the lock *)

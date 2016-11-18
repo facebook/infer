@@ -473,4 +473,25 @@ public class GuardedByExample {
 
   // TODO: warn on misuse of read/write locks.
 
+  @GuardedBy("this")
+  Integer xForSub;
+
+  static class Sub extends GuardedByExample{
+
+    void goodSub1() {
+      synchronized (this){
+        xForSub = 22;
+      }
+    }
+
+    synchronized void goodSub2() {
+      xForSub = 22;
+    }
+
+    void badSub() {
+      xForSub = 22;
+    }
+
+  }
+
 }

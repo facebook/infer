@@ -128,6 +128,7 @@ FilterOutputStreamLeaks.java, void FilterOutputStreamLeaks.printStreamNotClosedA
 GuardedByExample.java, Object GuardedByExample.byRefTrickyBad(), 5, UNSAFE_GUARDED_BY_ACCESS, [start of procedure byRefTrickyBad()]
 GuardedByExample.java, String GuardedByExample$3.readFromInnerClassBad1(), 2, UNSAFE_GUARDED_BY_ACCESS, [start of procedure readFromInnerClassBad1()]
 GuardedByExample.java, String GuardedByExample$4.readFromInnerClassBad2(), 1, UNSAFE_GUARDED_BY_ACCESS, [start of procedure readFromInnerClassBad2()]
+GuardedByExample.java, void GuardedByExample$Sub.badSub(), 1, UNSAFE_GUARDED_BY_ACCESS, [start of procedure badSub()]
 GuardedByExample.java, void GuardedByExample.readFAfterBlockBad(), 3, UNSAFE_GUARDED_BY_ACCESS, [start of procedure readFAfterBlockBad()]
 GuardedByExample.java, void GuardedByExample.readFBad(), 1, UNSAFE_GUARDED_BY_ACCESS, [start of procedure readFBad()]
 GuardedByExample.java, void GuardedByExample.readFBadButSuppressedOther(), 1, UNSAFE_GUARDED_BY_ACCESS, [start of procedure readFBadButSuppressedOther()]
