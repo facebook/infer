@@ -16,6 +16,8 @@ import java.lang.annotation.Target;
 import com.google.common.annotations.VisibleForTesting;
 import android.annotation.SuppressLint;
 import javax.annotation.concurrent.GuardedBy;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -492,6 +494,45 @@ public class GuardedByExample {
       xForSub = 22;
     }
 
+  }
+
+  Lock normallock;
+
+  @GuardedBy("normallock")
+  Integer guardedbynl;
+
+  ReentrantLock reentrantlock;
+
+  @GuardedBy("reentrantlock")
+  Integer guardedbyrel;
+
+
+  void goodGuardedByNormalLock() {
+    normallock.lock();
+    guardedbynl = 22;
+    normallock.unlock();
+  }
+
+  void goodTryLockGuardedByNormalLock() {
+    if (normallock.tryLock()) {
+      guardedbynl = 22;
+      normallock.unlock();
+    }
+  }
+
+  void goodTryLockGuardedByReentrantLock() {
+    if (reentrantlock.tryLock()) {
+      guardedbyrel = 44;
+      reentrantlock.unlock();
+    }
+  }
+
+  void badGuardedByNormalLock(){
+    guardedbynl = 22;
+  }
+
+  void badGuardedByReentrantLock(){
+    guardedbyrel = 44;
   }
 
 }
