@@ -9,7 +9,7 @@ TESTS_DIR = ../../..
 
 ANALYZER = quandary
 INFER_OPTIONS = --no-filtering --debug-exceptions
-INFERPRINT_OPTIONS = --issues-txt
+INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)
 
 include $(TESTS_DIR)/javac.make

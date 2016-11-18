@@ -155,18 +155,14 @@ module Make (TaintSpec : TaintSpec.S) = struct
         | None ->
             TraceDomain.initial in
 
-      let pp_path_short fmt (cur_passthroughs, sources_passthroughs, sinks_passthroughs) =
-        let pp_passthroughs fmt passthroughs =
-          if not (Passthrough.Set.is_empty passthroughs)
-          then F.fprintf fmt "(via %a)" Passthrough.Set.pp passthroughs in
-        let source = fst (IList.hd (IList.rev sources_passthroughs)) in
-        let sink = fst (IList.hd (IList.rev sinks_passthroughs)) in
+      let pp_path_short fmt (_, sources_passthroughs, sinks_passthroughs) =
+        let original_source = fst (IList.hd sources_passthroughs) in
+        let final_sink = fst (IList.hd sinks_passthroughs) in
         F.fprintf
           fmt
-          "Error: %a -> %a %a"
-          TraceDomain.Source.pp source
-          TraceDomain.Sink.pp sink
-          pp_passthroughs cur_passthroughs in
+          "%a -> %a"
+          TraceDomain.Source.pp original_source
+          TraceDomain.Sink.pp final_sink in
 
       match TraceDomain.get_reportable_paths trace ~trace_of_pname with
       | [] ->

@@ -242,7 +242,7 @@ module Make (Spec : Spec) = struct
   let to_loc_trace
       ?(desc_of_source=fun source ->
           let callsite = Source.call_site source in
-          Format.asprintf "call to %a" Procname.pp (CallSite.pname callsite))
+          Format.asprintf "return from %a" Procname.pp (CallSite.pname callsite))
       ?(source_should_nest=(fun _ -> true))
       ?(desc_of_sink=fun sink ->
           let callsite = Sink.call_site sink in

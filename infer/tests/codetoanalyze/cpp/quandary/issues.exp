@@ -1,15 +1,15 @@
-basics.cpp:44: ERROR: QUANDARY_TAINT_ERROR Error: Other(__infer_taint_source at [line 42]) -> Other(basics::callSink at [line 44]) (via { basics::id at [line 43] })
-basics.cpp:33: ERROR: QUANDARY_TAINT_ERROR Error: Other(basics::returnSource at [line 32]) -> Other(__infer_taint_sink at [line 33]) 
-basics.cpp:38: ERROR: QUANDARY_TAINT_ERROR Error: Other(__infer_taint_source at [line 37]) -> Other(basics::callSink at [line 38]) 
-basics.cpp:28: ERROR: QUANDARY_TAINT_ERROR Error: Other(__infer_taint_source at [line 27]) -> Other(__infer_taint_sink at [line 28]) 
-execs.cpp:52: ERROR: QUANDARY_TAINT_ERROR Error: EnvironmentVariable(getenv at [line 47]) -> ShellExec(execl at [line 52]) 
-execs.cpp:54: ERROR: QUANDARY_TAINT_ERROR Error: EnvironmentVariable(getenv at [line 47]) -> ShellExec(execl at [line 54]) 
-execs.cpp:57: ERROR: QUANDARY_TAINT_ERROR Error: EnvironmentVariable(getenv at [line 47]) -> ShellExec(execl at [line 57]) 
-execs.cpp:59: ERROR: QUANDARY_TAINT_ERROR Error: EnvironmentVariable(getenv at [line 47]) -> ShellExec(execlp at [line 59]) 
-execs.cpp:61: ERROR: QUANDARY_TAINT_ERROR Error: EnvironmentVariable(getenv at [line 47]) -> ShellExec(execlp at [line 61]) 
-execs.cpp:63: ERROR: QUANDARY_TAINT_ERROR Error: EnvironmentVariable(getenv at [line 47]) -> ShellExec(execle at [line 63]) 
-execs.cpp:65: ERROR: QUANDARY_TAINT_ERROR Error: EnvironmentVariable(getenv at [line 47]) -> ShellExec(execle at [line 65]) 
-execs.cpp:67: ERROR: QUANDARY_TAINT_ERROR Error: EnvironmentVariable(getenv at [line 47]) -> ShellExec(execv at [line 67]) 
-execs.cpp:69: ERROR: QUANDARY_TAINT_ERROR Error: EnvironmentVariable(getenv at [line 47]) -> ShellExec(execvp at [line 69]) 
-execs.cpp:71: ERROR: QUANDARY_TAINT_ERROR Error: EnvironmentVariable(getenv at [line 48]) -> ShellExec(execv at [line 71]) 
-execs.cpp:73: ERROR: QUANDARY_TAINT_ERROR Error: EnvironmentVariable(getenv at [line 48]) -> ShellExec(execvp at [line 73]) 
+basics.cpp, basics::propagateBad, 3, QUANDARY_TAINT_ERROR, [return from __infer_taint_source,flow through basics::id,call to basics::callSink,call to __infer_taint_sink]
+basics.cpp, basics::returnSourceToSinkBad, 2, QUANDARY_TAINT_ERROR, [return from __infer_taint_source,return from basics::returnSource,call to __infer_taint_sink]
+basics.cpp, basics::sourceThenCallSinkBad, 2, QUANDARY_TAINT_ERROR, [return from __infer_taint_source,call to basics::callSink,call to __infer_taint_sink]
+basics.cpp, basics::sourceToSinkDirectBad, 2, QUANDARY_TAINT_ERROR, [return from __infer_taint_source,call to __infer_taint_sink]
+execs.cpp, execs::callExecBad, 6, QUANDARY_TAINT_ERROR, [return from getenv,call to execl]
+execs.cpp, execs::callExecBad, 8, QUANDARY_TAINT_ERROR, [return from getenv,call to execl]
+execs.cpp, execs::callExecBad, 11, QUANDARY_TAINT_ERROR, [return from getenv,call to execl]
+execs.cpp, execs::callExecBad, 13, QUANDARY_TAINT_ERROR, [return from getenv,call to execlp]
+execs.cpp, execs::callExecBad, 15, QUANDARY_TAINT_ERROR, [return from getenv,call to execlp]
+execs.cpp, execs::callExecBad, 17, QUANDARY_TAINT_ERROR, [return from getenv,call to execle]
+execs.cpp, execs::callExecBad, 19, QUANDARY_TAINT_ERROR, [return from getenv,call to execle]
+execs.cpp, execs::callExecBad, 21, QUANDARY_TAINT_ERROR, [return from getenv,call to execv]
+execs.cpp, execs::callExecBad, 23, QUANDARY_TAINT_ERROR, [return from getenv,call to execvp]
+execs.cpp, execs::callExecBad, 25, QUANDARY_TAINT_ERROR, [return from getenv,call to execv]
+execs.cpp, execs::callExecBad, 27, QUANDARY_TAINT_ERROR, [return from getenv,call to execvp]
