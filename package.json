@@ -12,7 +12,7 @@
   "name": "infer",
   "dependencies": {
     "@opam-alpha/ocamlfind": "*",
-    "@opam-alpha/core_extended": "113.33.3",
+    "@opam-alpha/core": "113.33.3",
     "@opam-alpha/ocaml": "4.2.3",
     "@opam-alpha/sawja": "^ 1.5.2",
     "@opam-alpha/atdgen": "^ 1.10.0",

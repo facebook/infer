@@ -1,7 +1,7 @@
 S src/**
 B _build/infer/**
 PKG atdgen
-PKG core_extended
+PKG core
 PKG extlib
 PKG javalib
 PKG ounit

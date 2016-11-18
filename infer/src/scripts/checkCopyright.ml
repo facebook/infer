@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Core_extended.Std
+open! Core.Std
 
 module F = Format
 
@@ -178,7 +178,7 @@ let update_file fname mono fb_year com_style prefix cstart cend lines_arr =
       F.fprintf fmt "%s@\n" lines_arr.(i)
     done;
     F.fprintf fmt "@?";
-    close_out cout
+    Out_channel.close cout
   with _ -> ()
 
 let com_style_of_lang = [
@@ -222,11 +222,7 @@ let output_diff fname lines_arr cstart n cend len mono fb_year com_style prefix 
     update_file fname mono fb_year com_style prefix cstart cend lines_arr
 
 let check_copyright fname =
-  let lines =
-    let readline =
-      let linebuf = Linebuf.create fname in
-      fun () -> Linebuf.try_read linebuf in
-    Lazy_list.to_list (Lazy_list.uniter ~f:readline) in
+  let lines = In_channel.with_file fname ~f:In_channel.input_lines in
   match find_copyright_line lines 0 with
   | None ->
       if file_should_have_copyright fname then
