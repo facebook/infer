@@ -52,6 +52,8 @@ src/infer/GuardedByExample.java, String GuardedByExample$4.readFromInnerClassBad
 src/infer/GuardedByExample.java, void GuardedByExample$Sub.badSub(), 1, UNSAFE_GUARDED_BY_ACCESS, [start of procedure badSub()]
 src/infer/GuardedByExample.java, void GuardedByExample.badGuardedByNormalLock(), 1, UNSAFE_GUARDED_BY_ACCESS, [start of procedure badGuardedByNormalLock()]
 src/infer/GuardedByExample.java, void GuardedByExample.badGuardedByReentrantLock(), 1, UNSAFE_GUARDED_BY_ACCESS, [start of procedure badGuardedByReentrantLock()]
+src/infer/GuardedByExample.java, void GuardedByExample.guardedByTypeSyntaxBad(), 1, UNSAFE_GUARDED_BY_ACCESS, [start of procedure guardedByTypeSyntaxBad()]
+src/infer/GuardedByExample.java, void GuardedByExample.guardedByTypeSyntaxBad(), 2, UNSAFE_GUARDED_BY_ACCESS, [start of procedure guardedByTypeSyntaxBad()]
 src/infer/GuardedByExample.java, void GuardedByExample.readFAfterBlockBad(), 3, UNSAFE_GUARDED_BY_ACCESS, [start of procedure readFAfterBlockBad()]
 src/infer/GuardedByExample.java, void GuardedByExample.readFBad(), 1, UNSAFE_GUARDED_BY_ACCESS, [start of procedure readFBad()]
 src/infer/GuardedByExample.java, void GuardedByExample.readFBadButSuppressedOther(), 1, UNSAFE_GUARDED_BY_ACCESS, [start of procedure readFBadButSuppressedOther()]

@@ -700,45 +700,76 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
         end
     | _ -> None in
   (* find A.guarded_by_fld_str |-> B and return Some B, or None if there is no such hpred *)
-  let find_guarded_by_exp guarded_by_str sigma =
-    let is_guarded_by_strexp (fld, _) =
+  let find_guarded_by_exp guarded_by_str0 sigma =
+
+    let is_guarded_by_fld guarded_by_str fld _ =
       (* this comparison needs to be somewhat fuzzy, since programmers are free to write
          @GuardedBy("mLock"), @GuardedBy("MyClass.mLock"), or use other conventions *)
       Ident.fieldname_to_flat_string fld = guarded_by_str ||
-      Ident.fieldname_to_string fld = guarded_by_str
-    in
+      Ident.fieldname_to_string fld = guarded_by_str in
+
+    let get_fld_strexp_and_typ typ f flds =
+      let match_one (fld, strexp) =
+        match StructTyp.get_field_type_and_annotation ~lookup fld typ with
+        | Some (fld_typ, _) when f fld fld_typ -> Some (strexp, fld_typ)
+        | _ -> None in
+      IList.find_map_opt match_one flds in
+
+    (* sometimes, programmers will write @GuardedBy("T.f") with the meaning "guarded by the field f
+       of the object of type T in the current state." note that this is ambiguous when there are
+       multiple objects of type T, but let's try to respect the intention *)
+    let match_on_field_type typ flds =
+      match string_split_character guarded_by_str0 '.' with
+      | Some class_part, field_part ->
+          let typ_matches_guarded_by _ = function
+            | Typ.Tptr (ptr_typ, _) ->
+                string_is_suffix class_part (Typ.to_string ptr_typ);
+            | _ ->
+                false in
+          begin
+            match get_fld_strexp_and_typ typ typ_matches_guarded_by flds with
+            | Some (Sil.Eexp (matching_exp, _), _) ->
+                IList.find_map_opt
+                  (function
+                    | Sil.Hpointsto (lhs_exp, Estruct (matching_flds, _), Sizeof (fld_typ, _, _))
+                      when Exp.equal lhs_exp matching_exp ->
+                        get_fld_strexp_and_typ fld_typ (is_guarded_by_fld field_part) matching_flds
+                    | _ ->
+                        None)
+                  sigma
+            | _ ->
+                None
+          end
+      | _ ->
+          None in
+
     IList.find_map_opt
       (function
         | Sil.Hpointsto ((Const (Cclass clazz) as lhs_exp), _, Exp.Sizeof (typ, _, _))
         | Sil.Hpointsto (_, Sil.Eexp (Const (Cclass clazz) as lhs_exp, _), Exp.Sizeof (typ, _, _))
-          when guarded_by_str_is_class guarded_by_str (Ident.name_to_string clazz) ->
+          when guarded_by_str_is_class guarded_by_str0 (Ident.name_to_string clazz) ->
             Some (Sil.Eexp (lhs_exp, Sil.inst_none), typ)
         | Sil.Hpointsto (_, Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
-            let get_fld_strexp_and_typ f flds =
-              try
-                let fld, strexp = IList.find f flds in
-                begin
-                  match StructTyp.get_field_type_and_annotation ~lookup fld typ with
-                  | Some (fld_typ, _) -> Some (strexp, fld_typ)
-                  | None -> None
-                end
-              with Not_found -> None in
             begin
               (* first, try to find a field that exactly matches the guarded-by string *)
-              match get_fld_strexp_and_typ is_guarded_by_strexp flds with
-              | None when guarded_by_str_is_this guarded_by_str ->
+              match get_fld_strexp_and_typ typ (is_guarded_by_fld guarded_by_str0) flds with
+              | None when guarded_by_str_is_this guarded_by_str0 ->
                   (* if the guarded-by string is "OuterClass.this", look for "this$n" for some n.
                      note that this is a bit sketchy when there are mutliple this$n's, but there's
                      nothing we can do to disambiguate them. *)
                   get_fld_strexp_and_typ
-                    (fun (f, _) -> Ident.java_fieldname_is_outer_instance f)
+                    typ
+                    (fun f _ -> Ident.java_fieldname_is_outer_instance f)
                     flds
-              | res ->
-                  res
+              | None ->
+                  (* can't find an exact match. try a different convention. *)
+                  match_on_field_type typ flds
+              | Some _ as res_opt ->
+                  res_opt
             end
         | Sil.Hpointsto (Lvar pvar, rhs_exp, Exp.Sizeof (typ, _, _))
-          when (guarded_by_str_is_current_class_this guarded_by_str pname ||
-                guarded_by_str_is_super_class_this guarded_by_str pname
+          when (guarded_by_str_is_current_class_this guarded_by_str0 pname ||
+                guarded_by_str_is_super_class_this guarded_by_str0 pname
                ) && Pvar.is_this pvar ->
             Some (rhs_exp, typ)
         | _ ->
