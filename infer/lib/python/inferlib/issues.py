@@ -13,14 +13,10 @@ from __future__ import unicode_literals
 import codecs
 import datetime
 import itertools
-import json
 import operator
 import os
 import re
-import shutil
 import sys
-import tempfile
-import xml.etree.ElementTree as ET
 
 try:
     from lxml import etree

@@ -16,7 +16,6 @@ import argparse
 import os
 import sys
 
-import inferlib
 from inferlib import config, issues, utils
 
 arg_parser = argparse.ArgumentParser(add_help=False)
