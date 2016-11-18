@@ -333,6 +333,8 @@ endif
 	  $(DESTDIR)$(libdir)/infer/infer/lib/python/infer.py
 	$(INSTALL_PROGRAM) -C       infer/lib/python/inferTraceBugs \
 	  $(DESTDIR)$(libdir)/infer/infer/lib/python/inferTraceBugs
+	$(INSTALL_PROGRAM) -C       infer/lib/python/report.py \
+	  $(DESTDIR)$(libdir)/infer/infer/lib/python/report.py
 	$(INSTALL_PROGRAM) -C $(INFER_BIN) $(DESTDIR)$(libdir)/infer/infer/bin/
 	$(INSTALL_PROGRAM) -C $(INFERANALYZE_BIN) $(DESTDIR)$(libdir)/infer/infer/bin/
 	$(INSTALL_PROGRAM) -C $(INFERPRINT_BIN) $(DESTDIR)$(libdir)/infer/infer/bin/
