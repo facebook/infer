@@ -93,6 +93,7 @@ val max_recursion : int
 val meet_level : int
 val models_dir : string
 val models_jar : string
+val multicore_dir_name : string
 val ncpu : int
 val nsnotification_center_checker_backend : bool
 val os_type : os_type
@@ -235,6 +236,7 @@ val quiet : bool
 val reactive_mode : bool
 val reactive_capture : bool
 val report : string option
+val report_hook : string option
 val report_runtime_exceptions : bool
 val reports_include_ml_loc : bool
 val results_dir : string

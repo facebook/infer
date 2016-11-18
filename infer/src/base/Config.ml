@@ -156,6 +156,8 @@ let max_recursion = 5
     1 = use the meet to generate new preconditions *)
 let meet_level = 1
 
+let multicore_dir_name = "multicore"
+
 let nsnotification_center_checker_backend = false
 
 let perf_stats_prefix = "perf_stats"
@@ -1099,6 +1101,14 @@ and report_custom_error =
   CLOpt.mk_bool ~long:"report-custom-error"
     ""
 
+and report_hook =
+  CLOpt.mk_string_opt ~long:"report-hook"
+    ~default:(lib_dir // "python" // "report.py")
+    ~meta:"script"
+    "Specify a script to be executed after the analysis results are written.  This script will be \
+     passed --issues-csv, --issues-json, --issues-txt, --issues-xml, --project-root, and \
+     --results-dir."
+
 and results_dir =
   CLOpt.mk_path ~deprecated:["results_dir"; "-out"] ~long:"results-dir" ~short:"o"
     ~default:(init_work_dir // "infer-out")
@@ -1488,6 +1498,7 @@ and reactive_mode = !reactive
 and reactive_capture = !reactive_capture
 and report = !report
 and report_custom_error = !report_custom_error
+and report_hook = !report_hook
 and report_runtime_exceptions = !tracing
 and reports_include_ml_loc = !reports_include_ml_loc
 and results_dir = !results_dir

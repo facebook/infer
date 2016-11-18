@@ -78,4 +78,5 @@ let create_cluster_makefile (clusters: Cluster.t list) (fname: string) =
     Cluster.pp_cluster fmt (cluster_nr + 1, cluster) in
   pp_prolog fmt clusters;
   IList.iteri do_cluster clusters;
-  pp_epilog fmt ()
+  pp_epilog fmt () ;
+  close_out outc

@@ -67,5 +67,5 @@ let () = {
   };
   print_prolog ();
   RegisterCheckers.register ();
-  InferAnalyze.main ()
+  InferAnalyze.main Config.makefile_cmdline
 };

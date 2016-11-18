@@ -12,49 +12,30 @@ open! Utils
 (** Top-level driver that orchestrates build system integration, frontends, backend, and
     reporting *)
 
+module CLOpt = CommandLineOption
 module L = Logging
+
 
 let rec rmtree name =
   match Unix.opendir name with
   | dir -> (
-      match Unix.readdir dir with
-      | entry when entry = Filename.current_dir_name || entry = Filename.parent_dir_name ->
-          ()
-      | entry ->
-          rmtree entry
-      | exception End_of_file ->
-          Unix.closedir dir ;
-          Unix.rmdir name
+      let rec rmdir dir =
+        match Unix.readdir dir with
+        | entry ->
+            if not (entry = Filename.current_dir_name || entry = Filename.parent_dir_name) then (
+              rmtree (name // entry)
+            );
+            rmdir dir
+        | exception End_of_file ->
+            Unix.closedir dir ;
+            Unix.rmdir name in
+      rmdir dir
     )
   | exception Unix.Unix_error (Unix.ENOTDIR, _, _) ->
       Unix.unlink name
   | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
       ()
 
-(** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)
-let fail_on_issue_epilogue () =
-  let issues_json = DB.Results_dir.(path_to_filename Abs_root ["report.json"]) in
-  match read_file (DB.filename_to_string issues_json) with
-  | Some lines ->
-      let issues = Jsonbug_j.report_of_string @@ String.concat "" lines in
-      if issues <> [] then exit Config.fail_on_issue_exit_code
-  | None -> ()
-
-(* permissions used for created files *)
-let file_perm = 0o0666
-
-let create_results_dir () =
-  create_path (Config.results_dir // Config.captured_dir_name) ;
-  create_path (Config.results_dir // Config.sources_dir_name) ;
-  create_path (Config.results_dir // Config.specs_dir_name)
-
-let touch_start_file () =
-  let start = Config.results_dir // Config.start_filename in
-  let flags =
-    Unix.O_CREAT :: Unix.O_WRONLY :: (if Config.continue_capture then [Unix.O_EXCL] else []) in
-  (* create new file, or open existing file for writing to update modified timestamp *)
-  try Unix.close (Unix.openfile start flags file_perm)
-  with Unix.Unix_error (Unix.EEXIST, _, _) -> ()
 
 type build_mode =
   | Analyze | Ant | Buck | ClangCompilationDatabase | Gradle | Java | Javac | Make | Mvn | Ndk
@@ -75,9 +56,60 @@ let build_mode_of_string path =
   | "xcodebuild" -> Xcode
   | cmd -> failwithf "Unsupported build command %s" cmd
 
-let remove_results_dir build_mode =
-  if not (build_mode = Analyze || Config.buck || Config.reactive_mode) then
-    rmtree Config.results_dir
+
+let remove_results_dir () =
+  rmtree Config.results_dir
+
+let create_results_dir () =
+  create_path (Config.results_dir // Config.captured_dir_name) ;
+  create_path (Config.results_dir // Config.sources_dir_name) ;
+  create_path (Config.results_dir // Config.specs_dir_name)
+
+let clean_results_dir () =
+  let dirs = ["classnames"; "filelists"; "multicore"; "sources"] in
+  let suffixes = [".cfg"; ".cg"] in
+  let rec clean name =
+    match Unix.opendir name with
+    | dir -> (
+        let rec cleandir dir =
+          match Unix.readdir dir with
+          | entry ->
+              if (IList.exists (string_equal entry) dirs) then (
+                rmtree (name // entry)
+              ) else if not (entry = Filename.current_dir_name
+                             || entry = Filename.parent_dir_name) then (
+                clean (name // entry)
+              );
+              cleandir dir
+          | exception End_of_file ->
+              Unix.closedir dir in
+        cleandir dir
+      )
+    | exception Unix.Unix_error (Unix.ENOTDIR, _, _) ->
+        if IList.exists (Filename.check_suffix name) suffixes then
+          Unix.unlink name
+    | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
+        () in
+  clean Config.results_dir
+
+
+let register_perf_stats_report () =
+  let stats_dir = Filename.concat Config.results_dir Config.backend_stats_dir_name in
+  let stats_base = Config.perf_stats_prefix ^ ".json" in
+  let stats_file = Filename.concat stats_dir stats_base in
+  create_path stats_dir;
+  PerfStats.register_report_at_exit stats_file
+
+
+let touch_start_file () =
+  let start = Config.results_dir // Config.start_filename in
+  let file_perm = 0o0666 in
+  let flags =
+    Unix.O_CREAT :: Unix.O_WRONLY :: (if Config.continue_capture then [Unix.O_EXCL] else []) in
+  (* create new file, or open existing file for writing to update modified timestamp *)
+  try Unix.close (Unix.openfile start flags file_perm)
+  with Unix.Unix_error (Unix.EEXIST, _, _) -> ()
+
 
 let run_command cmd_list after_wait =
   let cmd = Array.of_list cmd_list in
@@ -90,94 +122,134 @@ let run_command cmd_list after_wait =
     exit exit_code
   )
 
+
 let check_xcpretty () =
   let open Core.Std in
   let exit_code = Unix.system "xcpretty --version" in
   match exit_code with
   | Ok () -> ()
   | Error _ ->
-      Logging.stderr
+      L.stderr
         "@.xcpretty not found in the path. Please, install xcpretty \
          for a more robust integration with xcodebuild. Otherwise use the option \
          --no-xcpretty.@.@.";
       Unix.exit_immediately 1
 
-let capture build_cmd build_mode =
-  let analyze_cmd = "analyze" in
-  let is_analyze_cmd cmd =
-    match cmd with
-    | [cmd] when cmd = analyze_cmd -> true
-    | _ -> false in
-  let build_cmd =
-    match build_mode with
-    | Xcode when Config.xcpretty ->
-        check_xcpretty ();
-        let json_cdb =
-          CaptureCompilationDatabase.get_compilation_database_files_xcodebuild () in
-        CaptureCompilationDatabase.capture_files_in_database json_cdb;
-        [analyze_cmd]
-    | Buck when Option.is_some Config.use_compilation_database ->
-        let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck () in
-        CaptureCompilationDatabase.capture_files_in_database json_cdb;
-        [analyze_cmd]
-    | ClangCompilationDatabase ->
-        (match Config.rest with
-         | arg::_ -> CaptureCompilationDatabase.capture_files_in_database [arg]
-         | _ -> failwith("Errror parsing arguments. Please, pass the compilation \
-                          database json file as in \
-                          infer -- clang-compilation-database file.json."));
-        [analyze_cmd]
-    | _ ->  build_cmd in
-  let in_buck_mode = build_mode = Buck in
-  let infer_py = Config.lib_dir // "python" // "infer.py" in
+
+let capture build_cmd = function
+  | Analyze ->
+      ()
+  | Buck when Config.use_compilation_database <> None ->
+      let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck () in
+      CaptureCompilationDatabase.capture_files_in_database json_cdb
+  | ClangCompilationDatabase -> (
+      match Config.rest with
+      | arg :: _ -> CaptureCompilationDatabase.capture_files_in_database [arg]
+      | _ ->
+          failwith
+            "Error parsing arguments. Please, pass the compilation database json file as in \
+             infer -- clang-compilation-database file.json." ;
+          Config.print_usage_exit ()
+    )
+  | Xcode when Config.xcpretty ->
+      check_xcpretty ();
+      let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_xcodebuild () in
+      CaptureCompilationDatabase.capture_files_in_database json_cdb
+  | build_mode ->
+      let in_buck_mode = build_mode = Buck in
+      let infer_py = Config.lib_dir // "python" // "infer.py" in
+      run_command (
+        infer_py ::
+        Config.anon_args @
+        ["--analyzer";
+         IList.assoc (=) Config.analyzer
+           (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)] @
+        (match Config.blacklist with
+         | Some s when in_buck_mode -> ["--blacklist-regex"; s]
+         | _ -> []) @
+        (if not Config.create_harness then [] else
+           ["--android-harness"]) @
+        (if not Config.buck then [] else
+           ["--buck"]) @
+        (match Config.java_jar_compiler with None -> [] | Some p ->
+            ["--java-jar-compiler"; p]) @
+        (match IList.rev Config.buck_build_args with
+         | args when in_buck_mode ->
+             IList.map (fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> IList.flatten
+         | _ -> []) @
+        (if not Config.debug_mode then [] else
+           ["--debug"]) @
+        (if not Config.debug_exceptions then [] else
+           ["--debug-exceptions"]) @
+        (if Config.filtering then [] else
+           ["--no-filtering"]) @
+        (if not Config.flavors || not in_buck_mode then [] else
+           ["--use-flavors"]) @
+        "-j" :: (string_of_int Config.jobs) ::
+        (match Config.load_average with None -> [] | Some l ->
+            ["-l"; string_of_float l]) @
+        (if not Config.pmd_xml then [] else
+           ["--pmd-xml"]) @
+        ["--project-root"; Config.project_root] @
+        (if not Config.reactive_mode then [] else
+           ["--reactive"]) @
+        "--out" :: Config.results_dir ::
+        (match Config.xcode_developer_dir with None -> [] | Some d ->
+            ["--xcode-developer-dir"; d]) @
+        ("--" :: build_cmd)
+      ) (fun exit_code ->
+          if exit_code = Config.infer_py_argparse_error_exit_code then
+            (* swallow infer.py argument parsing error *)
+            Config.print_usage_exit ()
+        )
+
+let run_parallel_analysis () =
+  let multicore_dir = Config.results_dir // Config.multicore_dir_name in
+  rmtree multicore_dir ;
+  create_path multicore_dir ;
+  InferAnalyze.main (multicore_dir // "Makefile") ;
+  let cwd = Unix.getcwd () in
+  Unix.chdir multicore_dir ;
   run_command (
-    infer_py ::
-    Config.anon_args @
-    ["--analyzer";
-     IList.assoc (=) Config.analyzer
-       (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)] @
-    (match Config.blacklist with
-     | Some s when in_buck_mode && not (is_analyze_cmd build_cmd) -> ["--blacklist-regex"; s]
-     | _ -> []) @
-    (if not Config.create_harness then [] else
-       ["--android-harness"]) @
-    (if not Config.buck then [] else
-       ["--buck"]) @
-    (match Config.java_jar_compiler with None -> [] | Some p ->
-        ["--java-jar-compiler"; p]) @
-    (match IList.rev Config.buck_build_args with
-     | args when in_buck_mode ->
-         IList.map (fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> IList.flatten
-     | _ -> []) @
-    (if not Config.continue_capture then [] else
-       ["--continue"]) @
-    (if not Config.debug_mode then [] else
-       ["--debug"]) @
-    (if not Config.debug_exceptions then [] else
-       ["--debug-exceptions"]) @
-    (if Config.filtering then [] else
-       ["--no-filtering"]) @
-    (if not Config.flavors || not in_buck_mode || is_analyze_cmd build_cmd then [] else
-       ["--use-flavors"]) @
+    "make" ::
+    "-k" ::
     "-j" :: (string_of_int Config.jobs) ::
     (Option.map_default (fun l -> ["-l"; string_of_float l]) [] Config.load_average) @
-    (if not Config.pmd_xml then [] else
-       ["--pmd-xml"]) @
-    ["--project-root"; Config.project_root] @
-    (if not Config.reactive_mode then [] else
-       ["--reactive"]) @
-    "--out" :: Config.results_dir ::
-    (match Config.xcode_developer_dir with None -> [] | Some d ->
-        ["--xcode-developer-dir"; d]) @
-    (if Config.rest = [] then [] else
-       ("--" :: build_cmd))
-  ) (fun exit_code ->
-      if exit_code = Config.infer_py_argparse_error_exit_code then
-        (* swallow infer.py argument parsing error *)
-        Config.print_usage_exit ()
-    )
+    (if Config.debug_mode then [] else ["-s"])
+  ) (fun _ -> ());
+  Unix.chdir cwd
+
+let execute_analyze () =
+  if Config.jobs = 1 then
+    InferAnalyze.main ""
+  else
+    run_parallel_analysis ()
+
+let report () =
+  let open! Core.Std in
+  let report_csv = Some (Config.results_dir ^/ "report.csv") in
+  let report_json = Some (Config.results_dir ^/ "report.json") in
+  InferPrint.main ~report_csv ~report_json ;
+  match Config.report_hook with
+  | None -> ()
+  | Some prog ->
+      let if_some key opt args = match opt with None -> args | Some arg -> key :: arg :: args in
+      let if_true key opt args = if not opt then args else key :: args in
+      let args =
+        if_some "--issues-csv" report_csv @@
+        if_some "--issues-json" report_json @@
+        if_some "--issues-txt" Config.bugs_txt @@
+        if_some "--issues-xml" Config.bugs_xml @@
+        if_true "--pmd-xml" Config.pmd_xml [
+          "--project-root"; Config.project_root;
+          "--results-dir"; Config.results_dir
+        ] in
+      Unix.waitpid (Unix.create_process ~prog ~args).pid |> ignore
 
 let analyze = function
+  | Ant | Gradle | Make | Mvn | Ndk | Xcode ->
+      (* Still handled by infer.py through capture function above *)
+      ()
   | Buck when Config.use_compilation_database = None ->
       (* In Buck mode when compilation db is not used, analysis is invoked either from capture or a
          separate Analyze invocation is necessary, depending on the buck flavor used. *)
@@ -185,39 +257,50 @@ let analyze = function
   | Java | Javac ->
       (* In Java and Javac modes, analysis is invoked from capture. *)
       ()
-  | Analyze | Ant | Buck | ClangCompilationDatabase | Gradle | Make | Mvn | Ndk | Xcode ->
+  | Analyze | Buck | ClangCompilationDatabase ->
       if not (Sys.file_exists Config.(results_dir // captured_dir_name)) then (
         L.err "There was nothing to analyze, exiting" ;
         Config.print_usage_exit ()
       );
       (match Config.analyzer with
        | Infer | Eradicate | Checkers | Tracing | Crashcontext | Quandary | Threadsafety ->
-           (* Still handled by infer.py through capture function above *)
-           ()
+           execute_analyze () ;
+           report ()
        | Linters ->
-           (* Still handled by infer.py through capture function above *)
-           ()
+           report ()
        | Capture | Compile ->
-           (* Still handled by infer.py through capture function above *)
            ()
       )
 
-let epilogue build_mode =
+(** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)
+let fail_on_issue_epilogue () =
+  let issues_json = DB.Results_dir.(path_to_filename Abs_root ["report.json"]) in
+  match read_file (DB.filename_to_string issues_json) with
+  | Some lines ->
+      let issues = Jsonbug_j.report_of_string @@ String.concat "" lines in
+      if issues <> [] then exit Config.fail_on_issue_exit_code
+  | None -> ()
+
+let () =
+  if Config.developer_mode then Printexc.record_backtrace true ;
+  let build_cmd = IList.rev Config.rest in
+  let build_mode = match build_cmd with path :: _ -> build_mode_of_string path | [] -> Analyze in
+  if build_mode != Analyze && not Config.buck && not Config.reactive_mode then
+    remove_results_dir () ;
+  create_results_dir () ;
+  (* re-set log files, as default files were in results_dir removed above *)
+  L.set_log_file_identifier Config.current_exe (Some (CLOpt.exe_name Config.current_exe)) ;
+  if Config.is_originator then L.out "%s@\n" Config.version_string ;
+  register_perf_stats_report () ;
+  touch_start_file () ;
+  capture build_cmd build_mode ;
+  analyze build_mode ;
   if Config.is_originator then (
     StatsAggregator.generate_files () ;
     if Config.analyzer = Config.Crashcontext then
       Crashcontext.crashcontext_epilogue ~in_buck_mode:(build_mode = Buck);
+    if build_mode = Buck then
+      clean_results_dir () ;
     if Config.fail_on_bug then
-      fail_on_issue_epilogue ();
+      fail_on_issue_epilogue () ;
   )
-
-let () =
-  let build_cmd = IList.rev Config.rest in
-  let build_mode = match build_cmd with path :: _ -> build_mode_of_string path | [] -> Analyze in
-  remove_results_dir build_mode ;
-  create_results_dir () ;
-  if Config.is_originator then L.out "%s@\n" Config.version_string ;
-  touch_start_file () ;
-  capture build_cmd build_mode ;
-  analyze build_mode ;
-  epilogue build_mode

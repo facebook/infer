@@ -1262,8 +1262,9 @@ let process_summary filters formats_by_report_kind linereader stats top_proc_set
 
 let module AnalysisResults = {
   type t = list (string, Specs.summary);
-  let spec_files_from_cmdline = {
-    /* find spec files specified by command-line arguments */
+  let spec_files_from_cmdline () => {
+    /* Find spec files specified by command-line arguments.  Not run at init time since the specs
+       files may be generated between init and report time. */
     IList.iter
       (
         fun arg =>
@@ -1307,7 +1308,7 @@ let module AnalysisResults = {
         exit 0
       | Some summary => summaries := [(fname, summary), ...!summaries]
       };
-    apply_without_gc (IList.iter load_file) spec_files_from_cmdline;
+    apply_without_gc (IList.iter load_file) (spec_files_from_cmdline ());
     let summ_cmp (_, summ1) (_, summ2) => {
       let n =
         DB.source_file_compare
@@ -1326,7 +1327,7 @@ let module AnalysisResults = {
 
   /** Create an iterator which loads spec files one at a time */
   let iterator_of_spec_files () => {
-    let sorted_spec_files = IList.sort string_compare spec_files_from_cmdline;
+    let sorted_spec_files = IList.sort string_compare (spec_files_from_cmdline ());
     let do_spec f fname =>
       switch (Specs.load_summary (DB.filename_from_string fname)) {
       | None =>
