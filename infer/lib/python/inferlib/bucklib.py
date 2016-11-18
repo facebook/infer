@@ -388,8 +388,8 @@ def collect_results(args, start_time, targets):
     print('\n')
     json_report = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
     bugs_out = os.path.join(args.infer_out, config.BUGS_FILENAME)
-    issues.print_and_save_errors(args.project_root, json_report, bugs_out,
-                                 args.pmd_xml)
+    issues.print_and_save_errors(args.infer_out, args.project_root,
+                                 json_report, bugs_out, args.pmd_xml)
 
     stats['int']['total_time'] = int(round(utils.elapsed_time(start_time)))
 

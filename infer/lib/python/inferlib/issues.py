@@ -181,7 +181,8 @@ def _is_user_visible(project_root, report):
             kind in [ISSUE_KIND_ERROR, ISSUE_KIND_WARNING, ISSUE_KIND_ADVICE])
 
 
-def print_and_save_errors(project_root, json_report, bugs_out, pmd_xml):
+def print_and_save_errors(infer_out, project_root, json_report, bugs_out,
+                          pmd_xml):
     errors = utils.load_json_from_path(json_report)
     errors = [e for e in errors if _is_user_visible(project_root, e)]
     console_out = _text_of_report_list(project_root, errors, bugs_out,
