@@ -247,9 +247,6 @@ let report () =
       Unix.waitpid (Unix.create_process ~prog ~args).pid |> ignore
 
 let analyze = function
-  | Ant | Gradle | Make | Mvn | Ndk | Xcode ->
-      (* Still handled by infer.py through capture function above *)
-      ()
   | Buck when Config.use_compilation_database = None ->
       (* In Buck mode when compilation db is not used, analysis is invoked either from capture or a
          separate Analyze invocation is necessary, depending on the buck flavor used. *)
@@ -257,7 +254,7 @@ let analyze = function
   | Java | Javac ->
       (* In Java and Javac modes, analysis is invoked from capture. *)
       ()
-  | Analyze | Buck | ClangCompilationDatabase ->
+  | Analyze | Ant | Buck | ClangCompilationDatabase | Gradle | Make | Mvn | Ndk | Xcode ->
       if not (Sys.file_exists Config.(results_dir // captured_dir_name)) then (
         L.err "There was nothing to analyze, exiting" ;
         Config.print_usage_exit ()

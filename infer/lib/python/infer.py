@@ -199,14 +199,5 @@ def main():
         global_argparser.print_help()
         sys.exit(os.EX_OK)
 
-    buck_not_in_compilation_database_mode =  \
-        mod_name == 'buck' and not args.use_compilation_database
-    if not (buck_not_in_compilation_database_mode or
-            mod_name == 'javac' or
-            mod_name == 'java'):
-        analysis = analyze.AnalyzerWrapper(args)
-        analysis.analyze_and_report()
-        analysis.save_stats()
-
 if __name__ == '__main__':
     main()
