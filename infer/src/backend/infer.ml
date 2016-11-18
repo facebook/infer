@@ -244,7 +244,7 @@ let report () =
           "--project-root"; Config.project_root;
           "--results-dir"; Config.results_dir
         ] in
-      Unix.waitpid (Unix.create_process ~prog ~args).pid |> ignore
+      Unix.waitpid (Unix.fork_exec ~prog ~args:(prog :: args) ()) |> ignore
 
 let analyze = function
   | Buck when Config.use_compilation_database = None ->

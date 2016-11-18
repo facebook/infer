@@ -40,8 +40,8 @@ def main():
     sys_argv = map(utils.decode, sys.argv)
     args = arg_parser.parse_args(sys_argv[1:])
     bugs_out = os.path.join(args.results_dir, config.BUGS_FILENAME)
-    issues.print_and_save_errors(args.project_root, args.issues_json, bugs_out,
-                                 args.pmd_xml)
+    issues.print_and_save_errors(args.results_dir, args.project_root,
+                                 args.issues_json, bugs_out, args.pmd_xml)
 
 if __name__ == '__main__':
     main()
