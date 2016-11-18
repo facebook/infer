@@ -9,12 +9,9 @@ us a line at cla@fb.com. Thanks!
 
 ## Submitting Pull Requests
 
-* Please make sure Infer builds: `make -C infer clean <target>`. Refer
-  to the [installation
+* Please make sure Infer builds: `make`. Refer to the [installation
   document](https://github.com/facebook/infer/blob/master/INSTALL.md)
   for details.
 
-* If relevant, add a test for your change. Tests are located at
-  `infer/tests/codetoanalyze/` and
-  `infer/tests/{endtoend,frontend}/`. To run the all tests, execute
-  `make test`.
+* If relevant, add a test for your change. Tests are located in
+  `infer/tests/`. To run the all tests, execute `make test`.

@@ -31,7 +31,7 @@ You can install some of these dependencies using
 
 ```sh
 brew install autoconf automake opam caskroom/cask/brew-cask && \
-brew cask install caskroom/versions/java7
+brew cask install java7
 ```
 
 
@@ -86,8 +86,10 @@ some means other than opam, you can still compile Infer by running:
 ./autogen.sh
 ./configure
 make # or make java
-# Install Infer into your PATH
+# Install Infer into your PATH...
 export PATH=`pwd`/infer/bin:$PATH
+# ...or, alternatively, install Infer system-wide
+sudo make install
 ```
 
 
@@ -168,14 +170,8 @@ sudo update-alternatives \
 ### Setting up opam
 
 Unfortunately, the version of opam that ships with some Linux
-distributions is broken, so you'll have to get it from the web:
+distributions is broken, so you'll have to get it from the
+[web](http://opam.ocaml.org/doc/Install.html#Binarydistribution).
 
-```sh
-wget https://github.com/ocaml/opam/releases/download/1.2.2/opam-1.2.2-x86_64-Linux
-chmod +x opam-1.2.2-x86_64-Linux
-sudo cp opam-1.2.2-x86_64-Linux /usr/local/bin/opam
-opam init --comp=4.02.3
-```
-
-Alternatively, follow the instructions [from the opam
-webpage](https://opam.ocaml.org/doc/Install.html).
+The OCaml dependencies needed by Infer are automatically handled by
+opam when running `./build-infer.sh`.
