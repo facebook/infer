@@ -1,10 +1,10 @@
 /* @generated */
 digraph iCFG {
-"MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_15" [label="15:  DeclStmt \n   *&i:int =0 [line 19]\n " shape="box"]
+"MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_15" [label="15:  DeclStmt \n   *&i:int=0 [line 19]\n " shape="box"]
 	
 
 	 "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_15" -> "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_14" ;
-"MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_14" [label="14:  DeclStmt \n   *&j:int =0 [line 20]\n " shape="box"]
+"MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_14" [label="14:  DeclStmt \n   *&j:int=0 [line 20]\n " shape="box"]
 	
 
 	 "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_14" -> "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_10" ;
@@ -20,7 +20,7 @@ digraph iCFG {
 	
 
 	 "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_11" -> "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_13" ;
-"MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_10" [label="10:  BinaryOperatorStmt: EQ \n   n$2=*&i:int  [line 21]\n " shape="box"]
+"MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_10" [label="10:  BinaryOperatorStmt: EQ \n   n$2=*&i:int [line 21]\n " shape="box"]
 	
 
 	 "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_10" -> "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_11" ;
@@ -29,7 +29,7 @@ digraph iCFG {
 	
 
 	 "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_9" -> "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_5" ;
-"MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_8" [label="8:  UnaryOperator \n   n$1=*&i:int  [line 26]\n  *&i:int =(n$1 + 1) [line 26]\n " shape="box"]
+"MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_8" [label="8:  UnaryOperator \n   n$1=*&i:int [line 26]\n  *&i:int=(n$1 + 1) [line 26]\n " shape="box"]
 	
 
 	 "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_8" -> "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_3" ;
@@ -41,7 +41,7 @@ digraph iCFG {
 	
 
 	 "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_6" -> "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_8" ;
-"MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&j:int  [line 25]\n " shape="box"]
+"MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&j:int [line 25]\n " shape="box"]
 	
 
 	 "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_5" -> "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_6" ;
@@ -57,7 +57,7 @@ digraph iCFG {
 "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_2" [label="2: Exit MyClass_aMethod \n  " color=yellow style=filled]
 	
 
-"MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_1" [label="1: Start MyClass_aMethod\nFormals:  self:class MyClass *\nLocals:  j:int  i:int  \n   DECLARE_LOCALS(&return,&j,&i); [line 18]\n " color=yellow style=filled]
+"MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_1" [label="1: Start MyClass_aMethod\nFormals:  self:class MyClass*\nLocals:  j:int i:int \n   DECLARE_LOCALS(&return,&j,&i); [line 18]\n " color=yellow style=filled]
 	
 
 	 "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_1" -> "MyClass_aMethodinstance.86f997a41acdd391dfc8b38414875e59_15" ;

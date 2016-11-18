@@ -239,37 +239,26 @@ let array_sensitive_compare t1 t2 =>
   };
 
 
-/** Pretty print a type declaration.
-    pp_base prints the variable for a declaration, or can be skip to print only the type */
-let rec pp_decl pe pp_base f =>
+/** Pretty print a type with all the details, using the C syntax. */
+let rec pp_full pe f =>
   fun
-  | Tstruct tname => F.fprintf f "%s %a" (Typename.to_string tname) pp_base ()
-  | Tint ik => F.fprintf f "%s %a" (ikind_to_string ik) pp_base ()
-  | Tfloat fk => F.fprintf f "%s %a" (fkind_to_string fk) pp_base ()
-  | Tvoid => F.fprintf f "void %a" pp_base ()
-  | Tfun false => F.fprintf f "_fn_ %a" pp_base ()
-  | Tfun true => F.fprintf f "_fn_noreturn_ %a" pp_base ()
-  | Tptr ((Tarray _ | Tfun _) as typ) pk => {
-      let pp_base' fmt () => F.fprintf fmt "(%s%a)" (ptr_kind_string pk) pp_base ();
-      pp_decl pe pp_base' f typ
-    }
-  | Tptr typ pk => {
-      let pp_base' fmt () => F.fprintf fmt "%s%a" (ptr_kind_string pk) pp_base ();
-      pp_decl pe pp_base' f typ
-    }
+  | Tstruct tname => F.fprintf f "%s" (Typename.to_string tname)
+  | Tint ik => F.fprintf f "%s" (ikind_to_string ik)
+  | Tfloat fk => F.fprintf f "%s" (fkind_to_string fk)
+  | Tvoid => F.fprintf f "void"
+  | Tfun false => F.fprintf f "_fn_"
+  | Tfun true => F.fprintf f "_fn_noreturn_"
+  | Tptr ((Tarray _ | Tfun _) as typ) pk =>
+    F.fprintf f "%a(%s)" (pp_full pe) typ (ptr_kind_string pk)
+  | Tptr typ pk => F.fprintf f "%a%s" (pp_full pe) typ (ptr_kind_string pk)
   | Tarray typ static_len => {
       let pp_array_static_len fmt => (
         fun
         | Some static_len => IntLit.pp fmt static_len
         | None => F.fprintf fmt "_"
       );
-      let pp_base' fmt () => F.fprintf fmt "%a[%a]" pp_base () pp_array_static_len static_len;
-      pp_decl pe pp_base' f typ
+      F.fprintf f "%a[%a]" (pp_full pe) typ pp_array_static_len static_len
     };
-
-
-/** Pretty print a type with all the details, using the C syntax. */
-let pp_full pe => pp_decl pe (fun _ () => ());
 
 
 /** Pretty print a type. Do nothing by default. */

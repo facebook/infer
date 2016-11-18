@@ -1,14 +1,14 @@
 /* @generated */
 digraph iCFG {
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_8" [label="8:  DeclStmt \n   n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int  [line 10]\n  *&#GB<globals/global_const2.cpp>$global:int =n$1 [line 10]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_8" [label="8:  DeclStmt \n   n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 10]\n  *&#GB<globals/global_const2.cpp>$global:int=n$1 [line 10]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_8" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =3 [line 10]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=3 [line 10]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_7" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" ;
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_6" [label="6:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =2 [line 10]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_6" [label="6:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=2 [line 10]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_6" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" ;
@@ -27,20 +27,20 @@ digraph iCFG {
 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" [label="2: Exit __infer_globals_initializer_global \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_1" [label="1: Start __infer_globals_initializer_global\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 10]\n " color=yellow style=filled]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_1" [label="1: Start __infer_globals_initializer_global\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 10]\n " color=yellow style=filled]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_1" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_4" ;
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_1" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_5" ;
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_8" [label="8:  Return Stmt \n   n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int  [line 10]\n  *&#GB<globals/global_const2.cpp>$global:int =n$1 [line 11]\n  n$2=*&#GB<globals/global_const2.cpp>$global:int  [line 11]\n  *&return:int =n$2 [line 11]\n " shape="box"]
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_8" [label="8:  Return Stmt \n   n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 10]\n  *&#GB<globals/global_const2.cpp>$global:int=n$1 [line 11]\n  n$2=*&#GB<globals/global_const2.cpp>$global:int [line 11]\n  *&return:int=n$2 [line 11]\n " shape="box"]
 	
 
 	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_8" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" ;
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =3 [line 10]\n " shape="box"]
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=3 [line 10]\n " shape="box"]
 	
 
 	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_7" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" ;
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_6" [label="6:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int =2 [line 10]\n " shape="box"]
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_6" [label="6:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=2 [line 10]\n " shape="box"]
 	
 
 	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_6" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" ;
@@ -59,7 +59,7 @@ digraph iCFG {
 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_1" [label="1: Start test\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 11]\n " color=yellow style=filled]
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_1" [label="1: Start test\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 11]\n " color=yellow style=filled]
 	
 
 	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_1" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_4" ;

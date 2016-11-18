@@ -12,7 +12,7 @@ digraph iCFG {
 	
 
 	 "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_6" -> "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_8" ;
-"Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:class Bla * [line 25]\n  n$1=_fun_Bla_conformsToProtocol:(n$0:class Bla *,\"Foo\":class Protocol *) virtual [line 25]\n " shape="box"]
+"Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:class Bla* [line 25]\n  n$1=_fun_Bla_conformsToProtocol:(n$0:class Bla*,\"Foo\":class Protocol*) virtual [line 25]\n " shape="box"]
 	
 
 	 "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_5" -> "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_6" ;
@@ -28,7 +28,7 @@ digraph iCFG {
 "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_2" [label="2: Exit Bla_fooMethod \n  " color=yellow style=filled]
 	
 
-"Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_1" [label="1: Start Bla_fooMethod\nFormals:  self:class Bla *\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+"Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_1" [label="1: Start Bla_fooMethod\nFormals:  self:class Bla*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
 	
 
 	 "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_1" -> "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_5" ;

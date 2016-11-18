@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-"__infer_globals_initializer_x.90ed5779794b6c6f0b00544949bb1047_3" [label="3:  DeclStmt \n   n$0=_fun_foo() [line 14]\n  *&#GB<globals/initializer.cpp>$x:int =(n$0 + 5) [line 14]\n " shape="box"]
+"__infer_globals_initializer_x.90ed5779794b6c6f0b00544949bb1047_3" [label="3:  DeclStmt \n   n$0=_fun_foo() [line 14]\n  *&#GB<globals/initializer.cpp>$x:int=(n$0 + 5) [line 14]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_x.90ed5779794b6c6f0b00544949bb1047_3" -> "__infer_globals_initializer_x.90ed5779794b6c6f0b00544949bb1047_2" ;
@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 "__infer_globals_initializer_x.90ed5779794b6c6f0b00544949bb1047_1" -> "__infer_globals_initializer_x.90ed5779794b6c6f0b00544949bb1047_3" ;
-"__infer_globals_initializer_y.0ea250be2dd991733c9131c53abc3c54_3" [label="3:  DeclStmt \n   n$0=*&#GB<globals/initializer.cpp>$x:int  [line 15]\n  n$1=*&#GB<globals/initializer.cpp>$z:int  [line 15]\n  *&#GB<globals/initializer.cpp>$y:int =((n$0 + n$1) + 1) [line 15]\n " shape="box"]
+"__infer_globals_initializer_y.0ea250be2dd991733c9131c53abc3c54_3" [label="3:  DeclStmt \n   n$0=*&#GB<globals/initializer.cpp>$x:int [line 15]\n  n$1=*&#GB<globals/initializer.cpp>$z:int [line 15]\n  *&#GB<globals/initializer.cpp>$y:int=((n$0 + n$1) + 1) [line 15]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_y.0ea250be2dd991733c9131c53abc3c54_3" -> "__infer_globals_initializer_y.0ea250be2dd991733c9131c53abc3c54_2" ;

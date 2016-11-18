@@ -424,15 +424,17 @@ let get_signature summary =
   let s = ref "" in
   IList.iter
     (fun (p, typ) ->
-       let pp_name f () = F.fprintf f "%a" Mangled.pp p in
-       let pp f () = Typ.pp_decl pe_text pp_name f typ in
+       let pp f () = F.fprintf f "%a %a" (Typ.pp_full pe_text) typ Mangled.pp p in
        let decl = pp_to_string pp () in
        s := if !s = "" then decl else !s ^ ", " ^ decl)
     summary.attributes.ProcAttributes.formals;
-  let pp_procname f () = F.fprintf f "%a"
-      Procname.pp summary.attributes.ProcAttributes.proc_name in
   let pp f () =
-    Typ.pp_decl pe_text pp_procname f summary.attributes.ProcAttributes.ret_type in
+    F.fprintf
+      f
+      "%a %a"
+      (Typ.pp_full pe_text)
+      summary.attributes.ProcAttributes.ret_type
+      Procname.pp summary.attributes.ProcAttributes.proc_name in
   let decl = pp_to_string pp () in
   decl ^ "(" ^ !s ^ ")"
 

@@ -95,11 +95,6 @@ let array_sensitive_compare: t => t => int;
 let equal: t => t => bool;
 
 
-/** [pp_decl pe pp_base f typ] pretty prints a type declaration.
-    pp_base prints the variable for a declaration, or can be skip to print only the type */
-let pp_decl: printenv => (F.formatter => unit => unit) => F.formatter => t => unit;
-
-
 /** Pretty print a type with all the details. */
 let pp_full: printenv => F.formatter => t => unit;
 
