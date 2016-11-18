@@ -16,7 +16,8 @@ CLANG_OPTIONS = -x objective-c \
   -isysroot $(XCODEROOT)$(IPHONESIMULATOR_ISYSROOT_SUFFIX) \
   -mios-simulator-version-min=8.2 --target=x86_64-apple-darwin14 -c \
 
-CLEAN_EXTRA = infer-out-arc infer-out-all
+CLEAN_EXTRA = infer-out-arc infer-out-all infer-out-all infer-out-arc \
+              issues.exp.test.all issues.exp.test.arc issues.exp.test.default
 INFER_OPTIONS = --cxx  --check-duplicate-symbols --no-filtering --debug-exceptions
 INFERPRINT_OPTIONS = --issues-tests
 
@@ -134,7 +135,3 @@ issues.exp.test: infer-out-all/report.json infer-out-arc/report.json infer-out/r
 	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.default \
 	  --from-json-report infer-out/report.json
 	cat $@.all $@.arc $@.default > $@
-
-clean:
-	$(REMOVE_DIR) infer-out-all infer-out-arc
-	$(REMOVE) issues.exp.test.all issues.exp.test.arc issues.exp.test.default

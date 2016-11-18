@@ -8,6 +8,7 @@
 ROOT_DIR = $(TESTS_DIR)/../..
 
 OBJECTS = $(foreach source,$(SOURCES),$(basename $(source)).o)
+CLEAN_EXTRA += duplicates.txt
 
 include $(TESTS_DIR)/base.make
 
@@ -27,6 +28,3 @@ infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
 
 %.o: %.mm
 	clang++ $(CLANG_OPTIONS) -o $@ $<
-
-clean:
-	$(REMOVE) duplicates.txt

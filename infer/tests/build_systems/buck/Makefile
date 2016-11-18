@@ -14,7 +14,7 @@ ANALYZER = infer
 SOURCES = $(wildcard $(TESTS_DIR)/codetoanalyze/java/infer/*.java)
 OBJECTS = $(ROOT_DIR)/buck-out/gen/infer/tests/codetoanalyze/java/infer/lib__compile__output/compile.jar
 INFERPRINT_OPTIONS = --project-root $(ROOT_DIR) --issues-tests
-CLEAN_EXTRAS = $(ROOT_DIR)/buck-out/ $(CURDIR)/buck-out/
+CLEAN_EXTRA = $(ROOT_DIR)/buck-out/ $(CURDIR)/buck-out/
 
 include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/base.make
