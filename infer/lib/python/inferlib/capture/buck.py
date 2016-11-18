@@ -202,8 +202,8 @@ class BuckAnalyzer:
         infer_out = self.args.infer_out
         json_report = os.path.join(infer_out, config.JSON_REPORT_FILENAME)
         bugs_out = os.path.join(infer_out, config.BUGS_FILENAME)
-        issues.print_and_save_errors(self.args.project_root, json_report,
-                                     bugs_out, self.args.pmd_xml)
+        issues.print_and_save_errors(infer_out, self.args.project_root,
+                                     json_report, bugs_out, self.args.pmd_xml)
         return os.EX_OK
 
     def capture_without_flavors(self):

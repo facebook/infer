@@ -56,6 +56,18 @@ let build_mode_of_string path =
   | "xcodebuild" -> Xcode
   | cmd -> failwithf "Unsupported build command %s" cmd
 
+let string_of_build_mode = function
+  | Analyze -> "analyze"
+  | Ant -> "ant"
+  | Buck -> "buck"
+  | ClangCompilationDatabase -> "clang-compilation-database"
+  | Gradle -> "gradle"
+  | Java -> "java"
+  | Javac -> "javac"
+  | Make -> "make/cc"
+  | Mvn -> "maven"
+  | Ndk -> "ndk-build"
+  | Xcode -> "xcodebuild"
 
 let remove_results_dir () =
   rmtree Config.results_dir
@@ -118,7 +130,7 @@ let run_command cmd_list after_wait =
   let exit_code = match status with Unix.WEXITED i -> i | _ -> 1 in
   after_wait exit_code ;
   if exit_code <> 0 then (
-    L.err "Failed to execute: %s@\n" (String.concat " " cmd_list) ;
+    L.do_err "Failed to execute: %s@\n" (String.concat " " cmd_list) ;
     exit exit_code
   )
 
@@ -140,9 +152,11 @@ let capture build_cmd = function
   | Analyze ->
       ()
   | Buck when Config.use_compilation_database <> None ->
+      L.stdout "Capturing using Buck's compilation database...@\n";
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck () in
       CaptureCompilationDatabase.capture_files_in_database json_cdb
   | ClangCompilationDatabase -> (
+      L.stdout "Capturing using a compilation database file...@\n";
       match Config.rest with
       | arg :: _ -> CaptureCompilationDatabase.capture_files_in_database [arg]
       | _ ->
@@ -152,10 +166,12 @@ let capture build_cmd = function
           Config.print_usage_exit ()
     )
   | Xcode when Config.xcpretty ->
+      L.stdout "Capturing using xcpretty...@\n";
       check_xcpretty ();
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_xcodebuild () in
       CaptureCompilationDatabase.capture_files_in_database json_cdb
   | build_mode ->
+      L.stdout "Capturing in %s mode...@." (string_of_build_mode build_mode);
       let in_buck_mode = build_mode = Buck in
       let infer_py = Config.lib_dir // "python" // "infer.py" in
       run_command (
@@ -207,6 +223,7 @@ let run_parallel_analysis () =
   let multicore_dir = Config.results_dir // Config.multicore_dir_name in
   rmtree multicore_dir ;
   create_path multicore_dir ;
+  InferAnalyze.print_stdout_legend ();
   InferAnalyze.main (multicore_dir // "Makefile") ;
   let cwd = Unix.getcwd () in
   Unix.chdir multicore_dir ;
@@ -244,7 +261,11 @@ let report () =
           "--project-root"; Config.project_root;
           "--results-dir"; Config.results_dir
         ] in
-      Unix.waitpid (Unix.fork_exec ~prog ~args:(prog :: args) ()) |> ignore
+      match (Unix.waitpid (Unix.fork_exec ~prog ~args:(prog :: args) ())) with
+      | Result.Ok _ -> ()
+      | Result.Error _ ->
+          L.stderr "** Error running the reporting script:@\n**   %s %s@\n** See error above@."
+            prog (String.concat ~sep:" " args)
 
 let analyze = function
   | Buck when Config.use_compilation_database = None ->
@@ -256,7 +277,7 @@ let analyze = function
       ()
   | Analyze | Ant | Buck | ClangCompilationDatabase | Gradle | Make | Mvn | Ndk | Xcode ->
       if not (Sys.file_exists Config.(results_dir // captured_dir_name)) then (
-        L.err "There was nothing to analyze, exiting" ;
+        L.stderr "There was nothing to analyze, exiting" ;
         Config.print_usage_exit ()
       );
       (match Config.analyzer with
@@ -287,7 +308,7 @@ let () =
   create_results_dir () ;
   (* re-set log files, as default files were in results_dir removed above *)
   L.set_log_file_identifier Config.current_exe (Some (CLOpt.exe_name Config.current_exe)) ;
-  if Config.is_originator then L.out "%s@\n" Config.version_string ;
+  if Config.is_originator then L.do_out "%s@\n" Config.version_string ;
   register_perf_stats_report () ;
   touch_start_file () ;
   capture build_cmd build_mode ;

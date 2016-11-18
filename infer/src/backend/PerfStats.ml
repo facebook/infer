@@ -146,6 +146,7 @@ let register_report_at_exit file =
       try
         let json_stats = to_json (stats ()) in
         try
+          create_path (Filename.dirname file);
           let stats_oc = open_out file in
           Yojson.Basic.pretty_to_channel stats_oc json_stats ;
           close_out stats_oc

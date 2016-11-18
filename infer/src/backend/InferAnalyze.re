@@ -71,6 +71,27 @@ let process_cluster_cmdline fname =>
   | Some (nr, cluster) => analyze_cluster (nr - 1) cluster
   };
 
+let print_stdout_legend () => {
+  L.stdout "Starting analysis...@\n";
+  L.stdout "@\n";
+  L.stdout "legend:@\n";
+  L.stdout "  \"%s\" analyzing a file@\n" Config.log_analysis_file;
+  L.stdout "  \"%s\" analyzing a procedure@\n" Config.log_analysis_procedure;
+  if Config.stats_mode {
+    L.stdout "  \"%s\" analyzer crashed@\n" Config.log_analysis_crash;
+    L.stdout
+      "  \"%s\" timeout: procedure analysis took too much time@\n"
+      Config.log_analysis_wallclock_timeout;
+    L.stdout
+      "  \"%s\" timeout: procedure analysis took too many symbolic execution steps@\n"
+      Config.log_analysis_symops_timeout;
+    L.stdout
+      "  \"%s\" timeout: procedure analysis took too many recursive iterations@\n"
+      Config.log_analysis_recursion_timeout
+  };
+  L.stdout "@\n@?"
+};
+
 let main makefile => {
   switch Config.modified_targets {
   | Some file => MergeCapture.modified_file file
