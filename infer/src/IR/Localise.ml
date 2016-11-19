@@ -450,7 +450,7 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
             (Procname.java_get_method pname_java)
       | _ ->
           "" in
-    "Context " ^ context_str ^ "may leak during method " ^ pname_str ^ ":\n" in
+    "Context " ^ context_str ^ " may leak during method " ^ pname_str ^ ":\n" in
   { no_desc with descriptions = [preamble; leak_root; path_str] }
 
 let desc_unsafe_guarded_by_access pname accessed_fld guarded_by_str loc =
