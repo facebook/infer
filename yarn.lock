@@ -84,6 +84,12 @@
   dependencies:
     conf-ncurses-actual "git://github.com/npm-opam/conf-ncurses.git#1.0.0"
 
+"@opam-alpha/conf-pkg-config@*":
+  version "1.0.0"
+  resolved conf-pkg-config-1.0.0.tgz#938404a87215fdea094d5b16ccc44715c4dbac28
+  dependencies:
+    conf-pkg-config-actual "git://github.com/npm-opam/conf-pkg-config.git#1.0.0"
+
 "@opam-alpha/conf-which@*":
   version "1.0.0"
   resolved conf-which-1.0.0.tgz#45b4dc34e3c256b8027fc47d672eca0d1c25f541
@@ -107,6 +113,18 @@
   resolved cppo-1.4.0.tgz#e9572a069d93fd9140122036dc7371d6581093f6
   dependencies:
     cppo-actual "git://github.com/npm-opam/cppo.git#1.4.0"
+
+"@opam-alpha/ctypes-foreign@*", "@opam-alpha/ctypes-foreign@0.4.0":
+  version "0.4.0"
+  resolved ctypes-foreign-0.4.0.tgz#deb81969266b6436ca6b84699541a3e28b909ad1
+  dependencies:
+    ctypes-foreign-actual "git://github.com/npm-opam/ctypes-foreign.git#0.4.0"
+
+"@opam-alpha/ctypes@0.9.2":
+  version "0.9.2"
+  resolved ctypes-0.9.2.tgz#b3eac49546bbd7e263643014a1f4993a4352cfee
+  dependencies:
+    ctypes-actual "git://github.com/npm-opam/ctypes.git#0.9.2"
 
 "@opam-alpha/easy-format@*", "@opam-alpha/easy-format@^ 1.2.0":
   version "1.2.0"
@@ -568,6 +586,16 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
+"conf-pkg-config-actual@git://github.com/npm-opam/conf-pkg-config.git#1.0.0":
+  version "1.0.0"
+  resolved conf-pkg-config.git-b1306dce3be035308f7d8aabf8d579921e0ff821#11761f7a13f854172308800e9b110d6d4415814f
+  dependencies:
+    dependency-env "https://github.com/npm-ml/dependency-env.git"
+    nopam "https://github.com/yunxing/nopam.git"
+    opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
+    substs "https://github.com/yunxing/substs.git"
+    yarn-pkg-config "*"
+
 "conf-which-actual@git://github.com/npm-opam/conf-which.git#1.0.0":
   version "1.0.0"
   resolved conf-which.git-fdb919d8ed608aa090d0b95bbde5f3717192c068#03ef24339d749f817c328e42b8a992f92322d543
@@ -636,7 +664,31 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"dependency-env@git+https://github.com/reasonml/dependency-env.git", "dependency-env@https://github.com/npm-ml/dependency-env.git", "dependencyEnv@git+https://github.com/reasonml/dependency-env.git":
+"ctypes-actual@git://github.com/npm-opam/ctypes.git#0.9.2":
+  version "0.9.2"
+  resolved ctypes.git-c926f6199de1b5989189fb620f26cbd7892fe4f4#1d5be5cd1e2fe987d4431ee165115c15a81d78d0
+  dependencies:
+    "@opam-alpha/conf-pkg-config" "*"
+    "@opam-alpha/ctypes-foreign" "*"
+    "@opam-alpha/lwt" "*"
+    "@opam-alpha/ocamlfind" "*"
+    "@opam-alpha/ounit" "*"
+    dependency-env "https://github.com/npm-ml/dependency-env.git"
+    nopam "https://github.com/yunxing/nopam.git"
+    opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
+    substs "https://github.com/yunxing/substs.git"
+
+"ctypes-foreign-actual@git://github.com/npm-opam/ctypes-foreign.git#0.4.0":
+  version "0.4.0"
+  resolved ctypes-foreign.git-8f223221a7309520a5679f472eecd950b4647e11#591be30c209cf0f440d24b7262e88bbf559d1e6f
+  dependencies:
+    dependency-env "https://github.com/npm-ml/dependency-env.git"
+    libffi "*"
+    nopam "https://github.com/yunxing/nopam.git"
+    opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
+    substs "https://github.com/yunxing/substs.git"
+
+"dependency-env@git+https://github.com/npm-ml/dependency-env.git", "dependency-env@git+https://github.com/reasonml/dependency-env.git", "dependency-env@https://github.com/npm-ml/dependency-env.git", "dependencyEnv@git+https://github.com/reasonml/dependency-env.git":
   version "0.0.0"
   resolved dependency-env.git-20ccabcf9f4854fdcda3f965ce410487515d7dc7#fb1a38d19682e7f754e6154d276ce6fdfbade9f7
   dependencies:
@@ -713,6 +765,13 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
+libffi@*:
+  version "3.2.11"
+  resolved libffi-3.2.11.tgz#4d1d94dacae6c511c434ea50cc5d62ddcc97461e
+  dependencies:
+    dependency-env "https://github.com/npm-ml/dependency-env.git"
+    nopam "https://github.com/yunxing/nopam.git"
+
 "lwt-actual@git://github.com/npm-opam/lwt.git#2.5.2":
   version "2.5.2"
   resolved lwt.git-6c677df6c9d6f34d6fc2d28680bbab7e95da23e4#a7c043ebfd0ae650a259191c60c583714cfa8ea2
@@ -763,7 +822,7 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"nopam@git+https://github.com/reasonml/nopam.git", "nopam@https://github.com/yunxing/nopam.git":
+"nopam@git+https://github.com/reasonml/nopam.git", "nopam@git+https://github.com/yunxing/nopam.git", "nopam@https://github.com/yunxing/nopam.git":
   version "0.0.1"
   resolved nopam.git-8584695c8e2615857d4f58a0dec7bae3a9059a54#49cd1b4ccc32d588cdd3a671d4cc6d773803396b
 
@@ -1371,6 +1430,13 @@ resolve@^1.1.7:
     nopam "https://github.com/yunxing/nopam.git"
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
+
+yarn-pkg-config@*:
+  version "0.29.3"
+  resolved yarn-pkg-config-0.29.3.tgz#d71f04aabc743be557d5f2fa80e9e13049723107
+  dependencies:
+    dependency-env "https://github.com/npm-ml/dependency-env.git"
+    nopam "https://github.com/yunxing/nopam.git"
 
 "yojson-actual@git://github.com/npm-opam/yojson.git#1.3.2":
   version "1.3.2"

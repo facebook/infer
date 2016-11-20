@@ -26,6 +26,7 @@ OCAMLBUILD_OPTIONS = \
   -r \
   -use-menhir -menhir 'menhir --explain --strict'\
   -use-ocamlfind \
+  -lflags -cclib,-lffi \
   -cflags -g -lflags -g \
   -cflags -short-paths \
   -cflags -safe-string \
@@ -35,7 +36,7 @@ OCAMLBUILD_OPTIONS = \
   -cflags -w,$(OCAML_FATAL_WARNINGS)-4-9-40-41-42-45-48 \
   -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*,checkers/stacktree_*}>: warn(-27-32-35-39)" \
   -tag thread \
-  -pkgs atdgen,core,extlib,oUnit,str,unix,yojson,zip
+  -pkgs atdgen,core,ctypes.foreign,extlib,oUnit,str,unix,yojson,zip
 
 ifeq ($(ENABLE_OCAML_ANNOT),yes)
 OCAMLBUILD_OPTIONS += -cflags -annot
@@ -133,7 +134,7 @@ else
 EXTRA_DEPS = opensource
 endif
 
-DEPENDENCIES = IR backend base checkers eradicate harness integration quandary $(EXTRA_DEPS)
+DEPENDENCIES = IR backend base checkers eradicate harness integration tp/fts quandary $(EXTRA_DEPS)
 
 # ocamlbuild command with options common to all build targets
 OCAMLBUILD_BASE = rebuild $(OCAMLBUILD_OPTIONS) -j $(NCPU) $(addprefix -I , $(DEPENDENCIES))

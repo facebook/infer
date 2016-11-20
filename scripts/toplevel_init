@@ -2,6 +2,8 @@
 #use "topfind";;
 #thread;;
 #require "core";;
+#require "ctypes";;
+#require "ctypes.foreign";;
 #require "sawja";;
 #require "atdgen";;
 #require "extlib";;

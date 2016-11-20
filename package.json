@@ -13,6 +13,8 @@
   "dependencies": {
     "@opam-alpha/ocamlfind": "*",
     "@opam-alpha/core": "113.33.3",
+    "@opam-alpha/ctypes": "0.9.2",
+    "@opam-alpha/ctypes-foreign": "0.4.0",
     "@opam-alpha/ocaml": "4.2.3",
     "@opam-alpha/sawja": "^ 1.5.2",
     "@opam-alpha/atdgen": "^ 1.10.0",
