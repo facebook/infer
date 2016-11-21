@@ -85,7 +85,7 @@ module FileContainsStringMatcher = struct
           DB.SourceFileMap.find source_file !source_map
         with Not_found ->
         try
-          let file_in = open_in (DB.source_file_to_string source_file) in
+          let file_in = open_in (DB.source_file_to_abs_path source_file) in
           let pattern_found = file_contains regexp file_in in
           close_in file_in;
           source_map := DB.SourceFileMap.add source_file pattern_found !source_map;

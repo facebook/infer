@@ -217,7 +217,7 @@ let create_dummy_harness_file harness_name =
 (* TODO (t3040429): fill this file up with Java-like code that matches the SIL *)
 let write_harness_to_file harness_instrs harness_file =
   let harness_file =
-    let harness_file_name = DB.source_file_to_string harness_file in
+    let harness_file_name = DB.source_file_to_abs_path harness_file in
     create_outfile harness_file_name in
   let pp_harness fmt = IList.iter (fun instr ->
       Format.fprintf fmt "%a\n" (Sil.pp_instr pe_text) instr) harness_instrs in

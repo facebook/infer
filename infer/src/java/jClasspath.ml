@@ -103,7 +103,7 @@ type file_entry =
 (* Open the source file and search for the package declaration.
    Only the case where the package is declared in a single line is supported *)
 let read_package_declaration source_file =
-  let path = DB.source_file_to_string source_file in
+  let path = DB.source_file_to_abs_path source_file in
   let file_in = open_in path in
   let remove_trailing_semicolon =
     Str.replace_first (Str.regexp ";") "" in

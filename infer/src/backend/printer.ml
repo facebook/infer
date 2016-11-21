@@ -48,7 +48,7 @@ struct
       Some (Hashtbl.find hash fname)
     with Not_found ->
     try
-      let lines_arr = read_file (DB.source_file_to_string fname) in
+      let lines_arr = read_file (DB.source_file_to_abs_path fname) in
       Hashtbl.add hash fname lines_arr;
       Some lines_arr
     with exn when SymOp.exn_not_failure exn -> None
