@@ -12,7 +12,7 @@ CMAKE_BUILD_DIR = $(CMAKE_DIR)/_build
 
 ANALYZER = infer
 CLEAN_EXTRA = $(CMAKE_BUILD_DIR)
-INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(CMAKE_DIR)
+INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(CMAKE_DIR) --changed-files-index $(CMAKE_DIR)/index.txt
 SOURCES = $(CMAKE_DIR)/hello.cpp
 OBJECTS = $(CMAKE_BUILD_DIR)/compile_commands.json
 INFERPRINT_OPTIONS = --issues-tests

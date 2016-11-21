@@ -7,7 +7,21 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-void test() {
+#include "lib1.h"
+#include "lib2.h"
+
+void test0() {
   int* s = nullptr; // requires -std=c++11 flag
   *s = 42;
+}
+
+int test1() {
+  int* s = nullptr;
+  return deref1(s); // should be nullderef
+}
+
+void test2() {
+  int* s = nullptr;
+  return deref2(s); // should be nullderef, but will be skipped
+  //  because of --changed-files-index option
 }

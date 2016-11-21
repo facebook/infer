@@ -42,7 +42,7 @@ let read_files_to_compile () =
   | Some lines ->
       IList.fold_left
         (fun changed_files line ->
-           let file = replace_header_file_with_source_file (DB.abs_source_file_from_path line) in
+           let file = replace_header_file_with_source_file (DB.source_file_from_string line) in
            DB.SourceFileSet.add file changed_files)
         changed_files lines
 

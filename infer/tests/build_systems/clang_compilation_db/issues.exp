@@ -1,1 +1,2 @@
-hello.cpp, test, 2, NULL_DEREFERENCE, [start of procedure test()]
+hello.cpp, test0, 2, NULL_DEREFERENCE, [start of procedure test0()]
+hello.cpp, test1, 2, NULL_DEREFERENCE, [start of procedure test1(),start of procedure deref1()]
