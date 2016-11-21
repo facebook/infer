@@ -437,17 +437,6 @@ struct
     | Clang_ast_t.ObjCImplementationDecl (_, _, _, _, idi) -> Some idi
     | _ -> None
 
-  let is_in_main_file translation_unit_context decl =
-    let decl_info = Clang_ast_proj.get_decl_tuple decl in
-    let file_opt = (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file in
-    match file_opt with
-    | None ->
-        false
-    | Some file ->
-        DB.inode_equal
-          (CLocation.source_file_from_path file)
-          translation_unit_context.CFrontend_config.source_file
-
   let default_blacklist =
     let open CFrontend_config in
     [nsobject_cl; nsproxy_cl]

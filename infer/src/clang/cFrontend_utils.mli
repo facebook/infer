@@ -155,11 +155,6 @@ sig
   val get_super_ObjCImplementationDecl :
     Clang_ast_t.obj_c_implementation_decl_info -> Clang_ast_t.decl option
 
-  (** Returns true if the declaration or statement is inside the main source
-      file, as opposed to an imported header file. For statements, this refers
-      to the parent decl. *)
-  val is_in_main_file : CFrontend_config.translation_unit_context -> Clang_ast_t.decl -> bool
-
   (** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl.
       Returns true if the passed in decl is an objc interface decl that's an
       eventual descendant of one of the classes passed in.

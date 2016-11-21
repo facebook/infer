@@ -10,9 +10,28 @@
 open CFrontend_utils
 open !Utils
 
-let is_ck_context (context: CLintersContext.context) decl =
+let get_source_range an =
+  match an with
+  | CTL.Decl decl ->
+      let decl_info = Clang_ast_proj.get_decl_tuple decl in
+      decl_info.Clang_ast_t.di_source_range
+  | CTL.Stmt stmt ->
+      let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
+      stmt_info.Clang_ast_t.si_source_range
+
+let is_in_main_file translation_unit_context an =
+  let file_opt = (fst (get_source_range an)).Clang_ast_t.sl_file in
+  match file_opt with
+  | None ->
+      false
+  | Some file ->
+      DB.inode_equal
+        (CLocation.source_file_from_path file)
+        translation_unit_context.CFrontend_config.source_file
+
+let is_ck_context (context: CLintersContext.context) an =
   context.is_ck_translation_unit
-  && Ast_utils.is_in_main_file context.translation_unit_context decl
+  && is_in_main_file context.translation_unit_context an
   && General_utils.is_objc_extension context.translation_unit_context
 
 
@@ -92,7 +111,7 @@ let mutable_local_vars_advice context an =
             qt_is_const
         | _ -> false in
       let is_const = qual_type.qt_is_const || is_const_ref in
-      let condition = is_ck_context context decl
+      let condition = is_ck_context context an
                       && (not (Ast_utils.is_syntactically_global_var decl))
                       && (not is_const)
                       && not (is_of_whitelisted_type qual_type)
@@ -118,11 +137,11 @@ let component_factory_function_advice context an =
     Ast_utils.is_objc_if_descendant decl [CFrontend_config.ckcomponent_cl] in
 
   match an with
-  | CTL.Decl (Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _) as decl) ->
+  | CTL.Decl (Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _)) ->
       let objc_interface =
         Ast_utils.type_ptr_to_objc_interface qual_type.qt_type_ptr in
       let condition =
-        is_ck_context context decl && is_component_if objc_interface in
+        is_ck_context context an && is_component_if objc_interface in
       if condition then
         CTL.True, Some {
           CIssue.issue = CIssue.Component_factory_function;
@@ -178,10 +197,10 @@ let component_with_unconventional_superclass_advice context an =
           CTL.False, None
     | _ -> assert false in
   match an with
-  | CTL.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info) as decl) ->
+  | CTL.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
       let if_decl_opt =
         Ast_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
-      if Option.is_some if_decl_opt && is_ck_context context decl then
+      if Option.is_some if_decl_opt && is_ck_context context an then
         check_interface (Option.get if_decl_opt)
       else
         CTL.False, None
@@ -226,11 +245,11 @@ let component_with_multiple_factory_methods_advice context an =
           CTL.False, None
     | _ -> assert false in
   match an with
-  | CTL.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info) as decl) ->
+  | CTL.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
       let if_decl_opt =
         Ast_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
       (match if_decl_opt with
-       | Some d when is_ck_context context decl -> check_interface d
+       | Some d when is_ck_context context an -> check_interface d
        | _ -> CTL.False, None)
   | _ -> CTL.False, None
 
@@ -253,7 +272,7 @@ let rec _component_initializer_with_side_effects_advice
     in_ck_class context
     && context.in_objc_static_factory_method
     && (match context.current_objc_impl with
-        | Some d -> Ast_utils.is_in_main_file context.translation_unit_context d
+        | Some d -> is_in_main_file context.translation_unit_context (CTL.Decl d)
         | None -> false) in
   if condition then
     match call_stmt with
