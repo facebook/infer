@@ -36,7 +36,7 @@ let parse_command_and_arguments command_and_arguments =
     to be compiled, the directory to be compiled in, and the compilation command as a list
     and as a string. We pack this information into the compilationDatabase map, and remove the
     clang invocation part, because we will use a clang wrapper. *)
-let decode_json_file (database : t) should_add_file json_path =
+let decode_json_file (database : t) json_path =
   let exit_format_error () =
     failwith ("Json file doesn't have the expected format") in
   let json = Yojson.Basic.from_file json_path in
@@ -67,8 +67,7 @@ let decode_json_file (database : t) should_add_file json_path =
           | Some cmd -> cmd
           | None -> exit_format_error () in
         let command, args = parse_command_and_arguments cmd in
-        if should_add_file file then
-          let compilation_data = { dir; command; args;} in
-          database := StringMap.add file compilation_data !database
+        let compilation_data = { dir; command; args;} in
+        database := StringMap.add file compilation_data !database
     | _ -> exit_format_error () in
   parse_json json

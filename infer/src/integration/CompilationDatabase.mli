@@ -25,4 +25,4 @@ val iter : t -> (string -> compilation_data -> unit) -> unit
 
 val find : t -> string -> compilation_data
 
-val decode_json_file : t -> (string -> bool) -> string -> unit
+val decode_json_file : t -> string -> unit

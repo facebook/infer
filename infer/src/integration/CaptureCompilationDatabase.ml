@@ -66,10 +66,14 @@ let add_flavor_to_targets args =
     else arg in
   IList.map process_arg args
 
-let create_files_stack compilation_database =
+let create_files_stack compilation_database changed_files =
   let stack = Stack.create () in
-  let add_to_stack file _ =
-    Stack.push file stack in
+  let should_add_file_to_cdb changed_files file_path =
+    match Config.changed_files_index with
+    | Some _ -> DB.SourceFileSet.mem (DB.source_file_from_string file_path) changed_files
+    | None -> true in
+  let add_to_stack file _ = if should_add_file_to_cdb changed_files file then
+      Stack.push file stack in
   CompilationDatabase.iter compilation_database add_to_stack;
   stack
 
@@ -110,19 +114,14 @@ let run_compilation_file compilation_database file =
   with Not_found ->
     Process.print_error_and_exit "Failed to find compilation data for %s \n%!" file
 
-let run_compilation_database compilation_database =
+let run_compilation_database compilation_database changed_files =
   let number_of_files = CompilationDatabase.get_size compilation_database in
   Logging.out "Starting %s %d files \n%!" capture_text number_of_files;
   Logging.stdout "Starting %s %d files \n%!" capture_text number_of_files;
-  let jobs_stack = create_files_stack compilation_database in
+  let jobs_stack = create_files_stack compilation_database changed_files in
   let capture_text_upper = String.capitalize capture_text in
   let job_to_string = fun file -> capture_text_upper ^ " " ^ file in
   Process.run_jobs_in_parallel jobs_stack (run_compilation_file compilation_database) job_to_string
-
-let should_add_file_to_cdb changed_files file_path =
-  match Config.changed_files_index with
-  | Some _ -> DB.SourceFileSet.mem (DB.source_file_from_string file_path) changed_files
-  | None -> true
 
 (** Computes the compilation database files. *)
 let get_compilation_database_files_buck () =
@@ -181,7 +180,5 @@ let get_compilation_database_files_xcodebuild () =
 let capture_files_in_database db_json_files =
   let changed_files = read_files_to_compile () in
   let compilation_database = CompilationDatabase.empty () in
-  IList.iter
-    (CompilationDatabase.decode_json_file
-       compilation_database (should_add_file_to_cdb changed_files)) db_json_files;
-  run_compilation_database compilation_database
+  IList.iter (CompilationDatabase.decode_json_file compilation_database) db_json_files;
+  run_compilation_database compilation_database changed_files
