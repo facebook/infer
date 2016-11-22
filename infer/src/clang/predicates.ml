@@ -172,20 +172,19 @@ let captures_cxx_references stmt =
   IList.length (captured_variables_cxx_ref stmt) > 0
 
 let is_binop_with_kind stmt str_kind =
-  let kind = match str_kind with
-    | "EQ" -> `EQ
-    | "NE" -> `NE
-    | _ -> failwith ("Kind " ^ str_kind ^ " is invalid or not yet supported") in
+  if not (Clang_ast_proj.is_valid_binop_kind_name str_kind) then
+    failwith ("Binary operator kind " ^ str_kind ^ " is not valid");
   match stmt with
-  | Clang_ast_t.BinaryOperator (_, _, _, boi) when boi.boi_kind = kind -> true
+  | Clang_ast_t.BinaryOperator (_, _, _, boi) ->
+      Clang_ast_proj.string_of_binop_kind boi.boi_kind = str_kind
   | _ -> false
 
 let is_unop_with_kind stmt str_kind =
-  let kind = match str_kind with
-    | "LNot" -> `LNot
-    | _ -> failwith ("Kind " ^ str_kind ^ " is invalid or not yet supported") in
+  if not (Clang_ast_proj.is_valid_unop_kind_name str_kind) then
+    failwith ("Unary operator kind " ^ str_kind ^ " is not valid");
   match stmt with
-  | Clang_ast_t.UnaryOperator (_, _, _, uoi) when uoi.uoi_kind = kind -> true
+  | Clang_ast_t.UnaryOperator (_, _, _, uoi) ->
+      Clang_ast_proj.string_of_unop_kind uoi.uoi_kind = str_kind
   | _ -> false
 
 let is_stmt stmt stmt_name =
