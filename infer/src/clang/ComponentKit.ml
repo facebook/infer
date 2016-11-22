@@ -25,7 +25,7 @@ let is_in_main_file translation_unit_context an =
   | None ->
       false
   | Some file ->
-      DB.inode_equal
+      DB.source_file_equal
         (CLocation.source_file_from_path file)
         translation_unit_context.CFrontend_config.source_file
 

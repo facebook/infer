@@ -45,7 +45,7 @@ let should_do_frontend_check trans_unit_ctx (loc_start, _) =
   match loc_start.Clang_ast_t.sl_file with
   | Some file ->
       let equal_current_source file =
-        DB.inode_equal (source_file_from_path file)
+        DB.source_file_equal (source_file_from_path file)
           trans_unit_ctx.CFrontend_config.source_file in
       equal_current_source file ||
       (file_in_project file &&  not Config.testing_mode)
