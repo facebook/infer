@@ -309,7 +309,7 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	done
 	$(INSTALL_PROGRAM) -C $(INFERCLANG_BIN) $(DESTDIR)$(libdir)/infer/infer/bin/
 	(cd $(DESTDIR)$(libdir)/infer/infer/bin/ && \
-	 $(LN_S) -f $(INFERCLANG_BIN) $(INFERCLANG_BIN)++)
+	 $(LN_S) -f InferClang InferClang++)
 endif
 ifneq ($(XCODE_SELECT),no)
 	@for i in $$(find infer/lib/xcode_wrappers/*); do \
