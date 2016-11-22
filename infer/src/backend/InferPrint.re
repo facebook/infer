@@ -13,17 +13,6 @@ let module L = Logging;
 
 let module F = Format;
 
-let source_file_copy = ref None;
-
-let handle_source_file_copy_option () =>
-  switch !source_file_copy {
-  | None => ()
-  | Some source_file =>
-    let source_in_resdir = DB.source_file_in_resdir source_file;
-    F.fprintf F.std_formatter "%s@." (DB.filename_to_string source_in_resdir);
-    exit 0
-  };
-
 let print_usage_exit err_s => {
   L.stderr "Load Error: %s@.@." err_s;
   Config.print_usage_exit ()
@@ -1273,10 +1262,6 @@ let module AnalysisResults = {
           }
       )
       Config.anon_args;
-    switch Config.source_file_copy {
-    | Some s => source_file_copy := Some (DB.abs_source_file_from_path s)
-    | None => ()
-    };
     if Config.test_filtering {
       Inferconfig.test ();
       exit 0
@@ -1499,6 +1484,5 @@ let main report_csv::report_csv report_json::report_json => {
     (Summary, init_summary_format_list ())
   ];
   register_perf_stats_report ();
-  handle_source_file_copy_option ();
   print_issues formats_by_report_kind
 };

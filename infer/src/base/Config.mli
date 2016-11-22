@@ -247,7 +247,6 @@ val show_progress_bar : bool
 val skip_analysis_in_path : string list
 val skip_clang_analysis_in_path : string list
 val skip_translation_headers : string list
-val source_file_copy : string option
 val spec_abs_level : int
 val specs_library : string list
 val stacktrace : string option

@@ -1138,10 +1138,6 @@ and skip_translation_headers =
     ~exes:CLOpt.[Clang]
     ~meta:"path prefix" "Ignore headers whose path matches the given prefix"
 
-and source_file_copy =
-  CLOpt.mk_string_opt ~deprecated:["source_file_copy"] ~long:"source-file-copy"
-    ~meta:"source_file" "Print the path of the copy of source_file in the results directory"
-
 and spec_abs_level =
   CLOpt.mk_int ~deprecated:["spec_abs_level"] ~long:"spec-abs-level" ~default:1
     ~meta:"int" "Set the level of abstracting the postconditions of discovered specs:\n\
@@ -1509,7 +1505,6 @@ and show_progress_bar = !progress_bar
 and skip_analysis_in_path = !skip_analysis_in_path
 and skip_clang_analysis_in_path = !skip_clang_analysis_in_path
 and skip_translation_headers = !skip_translation_headers
-and source_file_copy = !source_file_copy
 and spec_abs_level = !spec_abs_level
 and stacktrace = !stacktrace
 and stacktraces_dir = !stacktraces_dir
