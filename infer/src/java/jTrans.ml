@@ -658,37 +658,6 @@ type translation =
   | Prune of Procdesc.Node.t * Procdesc.Node.t
   | Loop of Procdesc.Node.t * Procdesc.Node.t * Procdesc.Node.t
 
-(* TODO: unclear if this corresponds to what JControlFlow.resolve_method'*)
-(* is trying to do. Normally, this implementation below goes deeper into *)
-(* the type hierarchy and it is not clear why we should not do that *)
-let extends (context : JContext.t) node1 node2 =
-  let is_matching cn =
-    JBasics.cn_equal cn (Javalib.get_name node2) in
-  let rec check cn_list =
-    if IList.exists is_matching cn_list then true
-    else
-      iterate cn_list
-  and iterate cn_list =
-    let per_classname cn =
-      match JClasspath.lookup_node cn context.program with
-      | None -> false (* TODO: should capture the class instead of returning false *)
-      | Some node ->
-          let super_cn_list =
-            match node with
-            | Javalib.JInterface jinterface ->
-                jinterface.Javalib.i_interfaces
-            | Javalib.JClass jclass ->
-                let cn_interfaces = jclass.Javalib.c_interfaces in
-                begin
-                  match jclass.Javalib.c_super_class with
-                  | None -> cn_interfaces
-                  | Some super_cn -> super_cn :: cn_interfaces
-                end in
-          match super_cn_list with
-          | [] -> false
-          | l -> check l in
-    IList.exists per_classname cn_list in
-  check [Javalib.get_name node1]
 
 let instruction_array_call ms obj_type obj args var_opt =
   if is_clone ms then
@@ -699,24 +668,6 @@ let instruction_array_call ms obj_type obj args var_opt =
   else
     (let undef_cn, undef_ms = get_undefined_method_call (JBasics.ms_rtype ms) in
      JBir.InvokeStatic (var_opt, undef_cn, undef_ms, []))
-
-(* special translation of the method start() of a Thread or a Runnable object.
-   We translate it directly as the run() method *)
-let instruction_thread_start (context : JContext.t) cn ms obj args var_opt =
-  match JClasspath.lookup_node cn context.program with
-  | None ->
-      let () = L.do_err "\t\t\tWARNING: %s should normally be found@." (JBasics.cn_name cn) in
-      None
-  | Some node ->
-      begin
-        match JClasspath.lookup_node (JBasics.make_cn JConfig.thread_class) context.program with
-        | None -> None (* TODO: should load the class instead of returning None *)
-        | Some thread_node ->
-            if ((JBasics.ms_name ms) = JConfig.start_method) && (extends context node thread_node) then
-              let ms = JBasics.make_ms JConfig.run_method [] None in
-              Some (JBir.InvokeNonVirtual (var_opt, obj, cn, ms, args))
-            else None
-      end
 
 
 let is_this expr =
@@ -924,14 +875,11 @@ let rec instruction (context : JContext.t) pc instr : translation =
           Cg.add_edge cg caller_procname callee_procname;
           call_node in
         let trans_virtual_call original_cn invoke_kind =
-          match instruction_thread_start context original_cn ms obj args var_opt with
-          | Some start_call -> instruction context pc start_call
-          | None ->
-              let cn' = match JTransType.extract_cn_no_obj sil_obj_type with
-                | Some cn -> cn
-                | None -> original_cn in
-              let call_node = create_call_node cn' invoke_kind in
-              Instr call_node in
+          let cn' = match JTransType.extract_cn_no_obj sil_obj_type with
+            | Some cn -> cn
+            | None -> original_cn in
+          let call_node = create_call_node cn' invoke_kind in
+          Instr call_node in
         begin
           match call_kind with
           | JBir.VirtualCall obj_type ->
