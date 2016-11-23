@@ -112,7 +112,6 @@ val save_compact_summaries : bool
 val save_time_in_summaries : bool
 val smt_output : bool
 val source_file_extentions : string list
-val sources_dir_name : string
 val specs_dir_name : string
 val specs_files_suffix : string
 val start_filename : string

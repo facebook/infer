@@ -62,11 +62,7 @@ struct
         else None
 
   let from_file_linenum hash fname linenum =
-    let fname_in_resdir =
-      DB.source_file_in_resdir fname in
-    let sourcefile_in_resdir =
-      DB.abs_source_file_from_path (DB.filename_to_string fname_in_resdir) in
-    from_file_linenum_original hash sourcefile_in_resdir linenum
+    from_file_linenum_original hash fname linenum
 
   let from_loc hash loc =
     from_file_linenum hash loc.Location.file loc.Location.line

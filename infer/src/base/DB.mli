@@ -126,9 +126,6 @@ type source_dir
 
 val source_dir_compare : source_dir -> source_dir -> int
 
-(** get the absolute path to the sources dir *)
-val sources_dir : string
-
 (** expose the source dir as a string *)
 val source_dir_to_string : source_dir -> string
 
@@ -137,9 +134,6 @@ val source_dir_get_internal_file : source_dir -> string -> filename
 
 (** get the source directory corresponding to a source file *)
 val source_dir_from_source_file : source_file -> source_dir
-
-(** get the path to the copy of the source file to be stored in the results directory *)
-val source_file_in_resdir : source_file -> filename
 
 (** directory where the results of the capture phase are stored *)
 val captured_dir : filename

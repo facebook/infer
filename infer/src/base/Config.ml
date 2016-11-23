@@ -186,8 +186,6 @@ let smt_output = false
 
 let source_file_extentions = [".java"; ".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"]
 
-let sources_dir_name = "sources"
-
 let specs_dir_name = "specs"
 
 let specs_files_suffix = ".specs"

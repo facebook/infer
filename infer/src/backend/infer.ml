@@ -74,7 +74,6 @@ let remove_results_dir () =
 
 let create_results_dir () =
   create_path (Config.results_dir // Config.captured_dir_name) ;
-  create_path (Config.results_dir // Config.sources_dir_name) ;
   create_path (Config.results_dir // Config.specs_dir_name)
 
 let clean_results_dir () =

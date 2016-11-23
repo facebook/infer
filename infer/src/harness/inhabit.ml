@@ -205,8 +205,7 @@ let inhabit_call tenv (procname, receiver) cfg env =
 let create_dummy_harness_file harness_name =
   let dummy_file_name =
     let dummy_file_dir =
-      if Sys.file_exists DB.sources_dir then DB.sources_dir
-      else Filename.get_temp_dir_name () in
+      Filename.get_temp_dir_name () in
     let file_str =
       Procname.java_get_class_name
         harness_name ^ "_" ^Procname.java_get_method harness_name ^ ".java" in

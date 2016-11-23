@@ -115,33 +115,6 @@ let load_cfg_from_file (filename: DB.filename) :option cfg =>
   Serialization.from_file cfg_serializer filename;
 
 
-/** save a copy in the results dir of the source files of procedures defined in the cfg,
-    unless an updated copy already exists */
-let save_source_files cfg => {
-  let process_proc _ pdesc => {
-    let loc = Procdesc.get_loc pdesc;
-    let source_file = loc.Location.file;
-    let source_file_str = DB.source_file_to_abs_path source_file;
-    let dest_file = DB.source_file_in_resdir source_file;
-    let dest_file_str = DB.filename_to_string dest_file;
-    let needs_copy =
-      Procdesc.is_defined pdesc &&
-      Sys.file_exists source_file_str && (
-        not (Sys.file_exists dest_file_str) ||
-        DB.file_modified_time (DB.filename_from_string source_file_str) >
-        DB.file_modified_time dest_file
-      );
-    if needs_copy {
-      switch (copy_file source_file_str dest_file_str) {
-      | Some _ => ()
-      | None => L.err "Error cannot create copy of source file %s@." source_file_str
-      }
-    }
-  };
-  iter_proc_desc cfg process_proc
-};
-
-
 /** Save the .attr files for the procedures in the cfg. */
 let save_attributes source_file cfg => {
   let save_proc pdesc => {
@@ -332,15 +305,8 @@ let mark_unchanged_pdescs cfg_new cfg_old => {
 
 
 /** Save a cfg into a file */
-let store_cfg_to_file
-    save_sources::save_sources=true
-    source_file::source_file
-    (filename: DB.filename)
-    (cfg: cfg) => {
+let store_cfg_to_file source_file::source_file (filename: DB.filename) (cfg: cfg) => {
   inline_java_synthetic_methods cfg;
-  if save_sources {
-    save_source_files cfg
-  };
   if Config.incremental_procs {
     switch (load_cfg_from_file filename) {
     | Some old_cfg => mark_unchanged_pdescs cfg old_cfg

@@ -119,16 +119,9 @@ let source_dir_get_internal_file source_dir extension =
 let captured_dir =
   Filename.concat Config.results_dir Config.captured_dir_name
 
-let sources_dir =
-  Filename.concat Config.results_dir Config.sources_dir_name
-
 (** get the source directory corresponding to a source file *)
 let source_dir_from_source_file source_file =
   Filename.concat captured_dir (source_file_encoding source_file)
-
-(** get the path to the copy of the source file to be stored in the results directory *)
-let source_file_in_resdir source_file =
-  Filename.concat sources_dir (source_file_encoding source_file)
 
 (** Find the source directories in the results dir *)
 let find_source_dirs () =
@@ -285,7 +278,6 @@ module Results_dir = struct
     create_dir Config.results_dir;
     create_dir specs_dir;
     create_dir (path_to_filename Abs_root [Config.attributes_dir_name]);
-    create_dir (path_to_filename Abs_root [Config.sources_dir_name]);
     create_dir (path_to_filename Abs_root [Config.captured_dir_name]);
     if not (source_file_equal source source_file_empty) then
       create_dir (path_to_filename (Abs_source_dir source) [])
