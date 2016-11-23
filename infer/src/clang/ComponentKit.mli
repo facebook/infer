@@ -31,3 +31,6 @@ val component_initializer_with_side_effects_advice :
 
 val component_file_line_count_info :
   CLintersContext.context -> Clang_ast_t.decl -> CIssue.issue_desc list
+
+val component_file_cyclomatic_complexity_info :
+  CLintersContext.context -> CTL.ast_node -> CTL.t * CIssue.issue_desc option

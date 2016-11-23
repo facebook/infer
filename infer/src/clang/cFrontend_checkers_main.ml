@@ -135,6 +135,7 @@ let do_frontend_checks trans_unit_ctx ast =
         let context =
           context_with_ck_set (CLintersContext.empty trans_unit_ctx) decl_list in
         ignore (CFrontend_errors.run_translation_unit_checker context ast);
+        ignore (CFrontend_errors.run_frontend_checkers_on_an context (CTL.Decl ast));
         let is_decl_allowed decl =
           let decl_info = Clang_ast_proj.get_decl_tuple decl in
           CLocation.should_do_frontend_check trans_unit_ctx decl_info.Clang_ast_t.di_source_range in

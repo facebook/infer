@@ -19,12 +19,14 @@ let decl_checkers_list = [CFrontend_checkers.ctl_strong_delegate_warning;
                           ComponentKit.component_with_unconventional_superclass_advice;
                           ComponentKit.mutable_local_vars_advice;
                           ComponentKit.component_factory_function_advice;
+                          ComponentKit.component_file_cyclomatic_complexity_info;
                           ComponentKit.component_with_multiple_factory_methods_advice;]
 
 (* List of checkers on ivar access *)
 let stmt_checkers_list =  [CFrontend_checkers.ctl_direct_atomic_property_access_warning;
                            CFrontend_checkers.ctl_captured_cxx_ref_in_objc_block_warning;
                            CFrontend_checkers.ctl_bad_pointer_comparison_warning;
+                           ComponentKit.component_file_cyclomatic_complexity_info;
                            ComponentKit.component_initializer_with_side_effects_advice;]
 
 (* List of checkers on translation unit that potentially output multiple issues *)

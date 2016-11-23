@@ -42,6 +42,7 @@ val condition_always_false : t
 val condition_always_true : t
 val context_leak : t
 val component_factory_function : t
+val component_file_cyclomatic_complexity : t
 val component_file_line_count : t
 val component_initializer_with_side_effects : t
 val component_with_multiple_factory_methods : t

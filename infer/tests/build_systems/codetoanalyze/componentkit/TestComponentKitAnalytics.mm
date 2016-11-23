@@ -12,4 +12,13 @@
 @interface SomeClass : CKCompositeComponent
 @end
 @implementation SomeClass
++ (instancetype) new {
+  if (1 == 3) {
+    return nil;
+  } else if (2 == 4) {
+    return nil;
+  } else {
+    return nil;
+  }
+}
 @end

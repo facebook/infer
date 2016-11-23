@@ -11,6 +11,7 @@ type issue =
   | Assign_pointer_warning
   | Bad_pointer_comparison
   | Component_factory_function
+  | Component_file_cyclomatic_complexity
   | Component_file_line_count
   | Component_initializer_with_side_effects
   | Component_with_multiple_factory_methods
