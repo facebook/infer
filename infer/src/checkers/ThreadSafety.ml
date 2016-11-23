@@ -35,14 +35,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let add_path_to_state exp typ pathdomainstate =
     IList.fold_left
-      (fun pathdomainstate_acc rawpath -> ThreadSafetyDomain.PathDomain.add 
-                                            rawpath pathdomainstate_acc)
+      (fun pathdomainstate_acc rawpath -> ThreadSafetyDomain.PathDomain.add
+          rawpath pathdomainstate_acc)
       pathdomainstate
       (AccessPath.of_exp exp typ ~f_resolve_id:(fun _ -> None))
 
   let exec_instr ((lockstate,(readstate,writestate)) as astate) { ProcData.pdesc; } _ =
     let is_unprotected lockstate =
-      (not (Procdesc.is_java_synchronized pdesc)) && 
+      (not (Procdesc.is_java_synchronized pdesc)) &&
       (ThreadSafetyDomain.LocksDomain.is_empty lockstate)
     in
     function
@@ -108,18 +108,15 @@ module ResultsTableType = Map.Make (struct
     let compare (_, _, pn1, _) (_,_,pn2,_) =  Procname.compare pn1 pn2
   end)
 
-let should_analyze_proc (_,tenv,proc_name,proc_desc) =
+let should_report_on_proc (_,tenv,proc_name,proc_desc) =
   not (FbThreadSafety.is_custom_init tenv proc_name) &&
   not (Procname.java_is_autogen_method proc_name) &&
   not (Procname.is_constructor proc_name) &&
   not (Procname.is_class_initializer proc_name) &&
   Procdesc.get_access proc_desc <> PredSymb.Private
 
-
 (* creates a map from proc_envs to postconditions *)
 let make_results_table get_proc_desc file_env =
-  let procs_to_analyze = IList.filter should_analyze_proc file_env
-  in
   (* make a Map sending each element e of list l to (f e) *)
   let map_post_computation_over_procs f l =
     IList.fold_left (fun m p -> ResultsTableType.add p (f p) m
@@ -134,7 +131,7 @@ let make_results_table get_proc_desc file_env =
       | Some post -> post
       | None -> ThreadSafetyDomain.initial
   in
-  map_post_computation_over_procs compute_post_for_procedure procs_to_analyze
+  map_post_computation_over_procs compute_post_for_procedure file_env
 
 let get_current_class_and_threadsafe_superclasses tenv pname =
   match pname with
@@ -180,13 +177,17 @@ let report_thread_safety_errors ( _, tenv, pname, pdesc) writestate =
    This indicates that the method races with itself. To be refined later. *)
 let process_results_table tab =
   ResultsTableType.iter   (* report errors for each method *)
-    (fun proc_env ( _,( _, writestate)) -> report_thread_safety_errors proc_env writestate)
+    (fun proc_env ( _,( _, writestate)) ->
+       if should_report_on_proc proc_env then
+         report_thread_safety_errors proc_env writestate
+       else ()
+    )
     tab
 
 (* Currently we analyze if there is an @ThreadSafe annotation on at least one of
    the classes in a file. This might be tightened in future or even broadened in future
    based on other criteria *)
-let should_analyze_file file_env =
+let should_report_on_file file_env =
   let current_class_or_super_marked_threadsafe =
     fun (_, tenv, pname, _) ->
       match get_current_class_and_threadsafe_superclasses tenv pname with
@@ -201,9 +202,10 @@ let should_analyze_file file_env =
   the results to check (approximation of) thread safety *)
 (* file_env: (Idenv.t * Tenv.t * Procname.t * Procdesc.t) list *)
 let file_analysis _ _ get_procdesc file_env =
-  if should_analyze_file file_env then
-    process_results_table
-      (make_results_table get_procdesc file_env)
+  let tab = make_results_table get_procdesc file_env in
+  if should_report_on_file file_env then
+    process_results_table tab
+  else ()
 
       (*
     Todo:
