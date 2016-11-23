@@ -1,1 +1,77 @@
-[]
+[
+  {
+    "bug_type": "COMPONENT_FILE_LINE_COUNT",
+    "file": "TestComponentKitAnalytics.mm",
+    "procedure": "Linters_dummy_method"
+  },
+  {
+    "bug_type": "COMPONENT_FILE_LINE_COUNT",
+    "file": "TestComponentKitAnalytics.mm",
+    "procedure": "Linters_dummy_method"
+  },
+  {
+    "bug_type": "COMPONENT_FILE_LINE_COUNT",
+    "file": "TestComponentKitAnalytics.mm",
+    "procedure": "Linters_dummy_method"
+  },
+  {
+    "bug_type": "COMPONENT_FILE_LINE_COUNT",
+    "file": "TestComponentKitAnalytics.mm",
+    "procedure": "Linters_dummy_method"
+  },
+  {
+    "bug_type": "COMPONENT_FILE_LINE_COUNT",
+    "file": "TestComponentKitAnalytics.mm",
+    "procedure": "Linters_dummy_method"
+  },
+  {
+    "bug_type": "COMPONENT_FILE_LINE_COUNT",
+    "file": "TestComponentKitAnalytics.mm",
+    "procedure": "Linters_dummy_method"
+  },
+  {
+    "bug_type": "COMPONENT_FILE_LINE_COUNT",
+    "file": "TestComponentKitAnalytics.mm",
+    "procedure": "Linters_dummy_method"
+  },
+  {
+    "bug_type": "COMPONENT_FILE_LINE_COUNT",
+    "file": "TestComponentKitAnalytics.mm",
+    "procedure": "Linters_dummy_method"
+  },
+  {
+    "bug_type": "COMPONENT_FILE_LINE_COUNT",
+    "file": "TestComponentKitAnalytics.mm",
+    "procedure": "Linters_dummy_method"
+  },
+  {
+    "bug_type": "COMPONENT_FILE_LINE_COUNT",
+    "file": "TestComponentKitAnalytics.mm",
+    "procedure": "Linters_dummy_method"
+  },
+  {
+    "bug_type": "COMPONENT_FILE_LINE_COUNT",
+    "file": "TestComponentKitAnalytics.mm",
+    "procedure": "Linters_dummy_method"
+  },
+  {
+    "bug_type": "COMPONENT_FILE_LINE_COUNT",
+    "file": "TestComponentKitAnalytics.mm",
+    "procedure": "Linters_dummy_method"
+  },
+  {
+    "bug_type": "COMPONENT_FILE_LINE_COUNT",
+    "file": "TestComponentKitAnalytics.mm",
+    "procedure": "Linters_dummy_method"
+  },
+  {
+    "bug_type": "COMPONENT_FILE_LINE_COUNT",
+    "file": "TestComponentKitAnalytics.mm",
+    "procedure": "Linters_dummy_method"
+  },
+  {
+    "bug_type": "COMPONENT_FILE_LINE_COUNT",
+    "file": "TestComponentKitAnalytics.mm",
+    "procedure": "Linters_dummy_method"
+  }
+]

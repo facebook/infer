@@ -119,3 +119,8 @@ val find_map_opt : ('a -> 'b option) -> 'a list -> 'b option
 val find_mapi_opt : (int -> 'a -> 'b option) -> 'a list -> 'b option
 
 val to_string : ('a -> string) -> 'a list -> string
+
+(** Creates an list, inclusive. E.g. `range 2 4` -> [2, 3, 4].
+
+    Not tail-recursive.*)
+val range : int -> int -> int list

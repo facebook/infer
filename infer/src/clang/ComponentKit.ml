@@ -305,3 +305,27 @@ let component_initializer_with_side_effects_advice
   | CTL.Stmt (CallExpr (_, called_func_stmt :: _, _))  ->
       _component_initializer_with_side_effects_advice context called_func_stmt
   | _ -> CTL.False, None (* only to be called in CallExpr *)
+
+(** Returns one issue per line of code, with the column set to 0.
+
+    This still needs to be in infer b/c only files that have a valid component
+    kit class impl should be analyzed. *)
+let component_file_line_count_info (context: CLintersContext.context) dec =
+  let condition = Config.compute_analytics && context.is_ck_translation_unit in
+  match dec with
+  | Clang_ast_t.TranslationUnitDecl _ when condition ->
+      let source_file =
+        context.translation_unit_context.CFrontend_config.source_file in
+      let line_count = DB.source_file_line_count source_file in
+      IList.map (fun i -> {
+            CIssue.issue = CIssue.Component_file_line_count;
+            CIssue.description = "Line count analytics";
+            CIssue.suggestion = None;
+            CIssue.loc = {
+              Location.line = i;
+              Location.col = 0;
+              Location.file = source_file
+            }
+          }
+        ) (IList.range 1 line_count)
+  | _ -> []

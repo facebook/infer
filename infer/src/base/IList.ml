@@ -266,3 +266,8 @@ let mem_assoc equal a l =
 (** Like List.assoc but without builtin equality *)
 let assoc equal a l =
   snd (find (fun x -> equal a (fst x)) l)
+
+let range i j =
+  let rec aux n acc =
+    if n < i then acc else aux (n-1) (n :: acc) in
+  aux j []

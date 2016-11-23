@@ -17,6 +17,11 @@ module L = Logging
 
 (** {2 Source Files} *)
 
+let count_newlines (path: string): int =
+  let open Core.Std in
+  let f file = In_channel.fold_lines file ~init:0 ~f:(fun i _ -> i + 1) in
+  In_channel.with_file path ~f
+
 type source_file =
   | Absolute of string
   | Relative of string
@@ -73,6 +78,10 @@ let source_file_to_abs_path fname =
   match fname with
   | Relative path -> Filename.concat Config.project_root path
   | Absolute path -> path
+
+let source_file_line_count source_file =
+  let abs_path = source_file_to_abs_path source_file in
+  count_newlines abs_path
 
 let inode_equal sf1 sf2 =
   let stat1 = Unix.stat (source_file_to_abs_path sf1) in

@@ -11,6 +11,7 @@ type issue =
   | Assign_pointer_warning
   | Bad_pointer_comparison
   | Component_factory_function
+  | Component_file_line_count
   | Component_initializer_with_side_effects
   | Component_with_multiple_factory_methods
   | Component_with_unconventional_superclass
@@ -30,6 +31,8 @@ let to_string issue =
          Localise.bad_pointer_comparison
      | Component_factory_function ->
          Localise.component_factory_function
+     | Component_file_line_count ->
+         Localise.component_file_line_count
      | Component_initializer_with_side_effects ->
          Localise.component_initializer_with_side_effects
      | Component_with_multiple_factory_methods ->
@@ -64,6 +67,7 @@ let severity_of_issue issue =
   | Component_with_multiple_factory_methods
   | Component_with_unconventional_superclass
   | Mutable_local_variable_in_component_file -> Exceptions.Kadvice
+  | Component_file_line_count -> Exceptions.Kinfo
 
 
 type issue_desc = {

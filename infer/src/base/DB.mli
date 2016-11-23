@@ -89,6 +89,9 @@ module SourceFileSet : Set.S with type elt = source_file
 (** comparison of source files *)
 val source_file_compare : source_file -> source_file -> int
 
+(** compute line count of a source file *)
+val source_file_line_count : source_file -> int
+
 (** equality of source files *)
 val source_file_equal : source_file -> source_file -> bool
 

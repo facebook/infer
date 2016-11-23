@@ -27,6 +27,9 @@ let stmt_checkers_list =  [CFrontend_checkers.ctl_direct_atomic_property_access_
                            CFrontend_checkers.ctl_bad_pointer_comparison_warning;
                            ComponentKit.component_initializer_with_side_effects_advice;]
 
+(* List of checkers on translation unit that potentially output multiple issues *)
+let translation_unit_checkers_list = [ComponentKit.component_file_line_count_info;]
+
 
 
 
@@ -76,3 +79,12 @@ let run_frontend_checkers_on_an (context: CLintersContext.context) an =
     | _ -> context in
   invoke_set_of_checkers_an an context';
   context'
+
+let run_translation_unit_checker (context: CLintersContext.context) dec =
+  IList.iter (fun checker ->
+      let issue_desc_list = checker context dec in
+      IList.iter (fun issue_desc ->
+          let key = Ast_utils.generate_key_decl dec in
+          log_frontend_issue context.CLintersContext.translation_unit_context
+            context.CLintersContext.current_method key issue_desc
+        ) issue_desc_list) translation_unit_checkers_list
