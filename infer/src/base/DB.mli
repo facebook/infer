@@ -95,14 +95,8 @@ val source_file_line_count : source_file -> int
 (** equality of source files *)
 val source_file_equal : source_file -> source_file -> bool
 
-(** equality of the files on disk *)
-val inode_equal : source_file -> source_file -> bool
-
 (** empty source file *)
 val source_file_empty : source_file
-
-(** convert a path to a source file, turning it into an absolute path if necessary *)
-val abs_source_file_from_path : string -> source_file
 
 val source_file_from_abs_path : string -> source_file
 

@@ -56,10 +56,6 @@ let source_file_from_string path =
   else
     Absolute path
 
-(** convert a path to a source file, turning it into an absolute path if necessary *)
-let abs_source_file_from_path fname =
-  Absolute (filename_to_absolute fname)
-
 let rel_path_from_abs_path root fname =
   let relative_complemented_fname = filename_to_relative root fname in
   if string_is_prefix root fname &&
@@ -99,11 +95,6 @@ let source_file_to_abs_path fname =
 let source_file_line_count source_file =
   let abs_path = source_file_to_abs_path source_file in
   count_newlines abs_path
-
-let inode_equal sf1 sf2 =
-  let stat1 = Unix.stat (source_file_to_abs_path sf1) in
-  let stat2 = Unix.stat (source_file_to_abs_path sf2) in
-  stat1.st_dev = stat2.st_dev && stat1.st_ino = stat2.st_ino
 
 let source_file_to_rel_path fname =
   match fname with
