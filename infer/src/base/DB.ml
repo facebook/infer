@@ -24,14 +24,18 @@ let count_newlines (path: string): int =
 
 type source_file =
   | Absolute of string
-  | Relative of string
+  | RelativeProjectRoot of string (* relative to project root *)
+  | RelativeInferModel of string (* relative to infer models *)
 
 let source_file_compare sf1 sf2 =
   match sf1, sf2 with
   | Absolute p1, Absolute p2 -> string_compare p1 p2
   | Absolute _, _ -> -1
   | _, Absolute _ -> 1
-  | Relative p1, Relative p2 -> string_compare p1 p2
+  | RelativeProjectRoot p1, RelativeProjectRoot p2 -> string_compare p1 p2
+  | RelativeProjectRoot _, _ -> -1
+  | _, RelativeProjectRoot _ -> 1
+  | RelativeInferModel p1, RelativeInferModel p2 -> string_compare p1 p2
 
 let source_file_equal sf1 sf2 =
   (source_file_compare sf1 sf2) = 0
@@ -48,7 +52,7 @@ module SourceFileSet = Set.Make(OrderedSourceFile)
 
 let source_file_from_string path =
   if Filename.is_relative path then
-    Relative path
+    RelativeProjectRoot path
   else
     Absolute path
 
@@ -56,27 +60,40 @@ let source_file_from_string path =
 let abs_source_file_from_path fname =
   Absolute (filename_to_absolute fname)
 
-(** convert a project root directory and a full path to a rooted source file *)
-let rel_source_file_from_abs_path root fname =
+let rel_path_from_abs_path root fname =
   let relative_complemented_fname = filename_to_relative root fname in
   if string_is_prefix root fname &&
      Filename.is_relative relative_complemented_fname then
-    Relative relative_complemented_fname
-  else
-    (* The project root is not a prefix of the file name *)
-    abs_source_file_from_path fname
+    Some relative_complemented_fname
+  else None (* The project root is not a prefix of the file name *)
+
+(** convert a project root directory and a full path to a rooted source file *)
+let source_file_from_abs_path fname =
+  if Filename.is_relative fname then
+    (failwithf
+       "ERROR: Path %s is relative, when absolute path was expected .@."
+       fname);
+  match rel_path_from_abs_path Config.project_root fname with
+  | Some path -> RelativeProjectRoot path
+  | None -> (
+      match rel_path_from_abs_path Config.models_src_dir fname with
+      | Some path -> RelativeInferModel path
+      | None -> Absolute fname (* fname is absolute already *)
+    )
 
 let curr_encoding = `Enc_crc
 
 let source_file_to_string fname =
   match fname with
-  | Relative path
+  | RelativeProjectRoot path
+  | RelativeInferModel path
   | Absolute path -> path
 
 (* Checking if the path exists may be needed only in some cases, hence the flag check_exists *)
 let source_file_to_abs_path fname =
   match fname with
-  | Relative path -> Filename.concat Config.project_root path
+  | RelativeProjectRoot path -> Filename.concat Config.project_root path
+  | RelativeInferModel path -> Filename.concat Config.models_src_dir path
   | Absolute path -> path
 
 let source_file_line_count source_file =
@@ -90,23 +107,38 @@ let inode_equal sf1 sf2 =
 
 let source_file_to_rel_path fname =
   match fname with
-  | Relative path -> path
-  | Absolute path -> filename_to_relative Config.project_root path
+  | RelativeProjectRoot path -> path
+  | _ -> source_file_to_abs_path fname |> filename_to_relative Config.project_root
 
 (** string encoding of a source file (including path) as a single filename *)
 let source_file_encoding source_file =
+  let prefix = match source_file with
+    | RelativeProjectRoot _ -> "P"
+    | RelativeInferModel _ -> "MOD"
+    | Absolute _ -> "ABS" in
   let source_file_s = source_file_to_string source_file in
   match curr_encoding with
   | `Enc_base ->
       Filename.basename source_file_s
   | `Enc_path_with_underscores ->
-      Escape.escape_path source_file_s
+      prefix ^ Escape.escape_path source_file_s
   | `Enc_crc ->
       let base = Filename.basename source_file_s in
-      let dir = Filename.dirname source_file_s in
+      let dir = prefix ^ Filename.dirname source_file_s in
       string_append_crc_cutoff ~key:dir base
 
 let source_file_empty = Absolute ""
+
+let source_file_is_infer_model source_file = match source_file with
+  | RelativeProjectRoot _ | Absolute _ -> false
+  | RelativeInferModel _ -> true
+
+(** Returns true if the file is a C++ model *)
+let source_file_is_cpp_model file =
+  match file with
+  | RelativeInferModel path ->
+      string_is_prefix Config.relative_cpp_models_dir path
+  | _ -> false
 
 (** {2 Source Dirs} *)
 
@@ -346,13 +378,6 @@ let file_was_updated_after_start fname =
 let mark_file_updated fname =
   let near_future = Unix.gettimeofday () +. 1. in
   Unix.utimes fname near_future near_future
-
-
-(** Returns true if the file is a C++ model *)
-let file_is_in_cpp_model file =
-  let normalized_file_dir = filename_to_absolute (Filename.dirname file) in
-  let normalized_cpp_models_dir = filename_to_absolute Config.cpp_models_dir in
-  string_is_prefix normalized_cpp_models_dir normalized_file_dir
 
 (** Fold over all file paths recursively under [dir] which match [p]. *)
 let fold_paths_matching ~dir ~p ~init ~f =

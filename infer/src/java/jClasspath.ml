@@ -72,13 +72,6 @@ let is_model procname =
 let split_classpath cp = Str.split (Str.regexp JFile.sep) cp
 
 
-let java_source_file_from_path path =
-  if Filename.is_relative path then
-    failwith "Expect absolute path for java source files"
-  else
-    DB.rel_source_file_from_abs_path Config.project_root path
-
-
 (** Add the android.jar containing bytecode at the beginning of the class path *)
 let add_android_jar paths =
   AndroidFramework.non_stub_android_jar () :: paths
@@ -130,7 +123,7 @@ let add_source_file path map =
   let basename = Filename.basename path in
   let entry =
     let current_source_file =
-      java_source_file_from_path (convert_to_absolute path) in
+      DB.source_file_from_abs_path (convert_to_absolute path) in
     try
       match StringMap.find basename map with
       | Singleton previous_source_file ->

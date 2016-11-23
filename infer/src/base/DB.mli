@@ -104,8 +104,7 @@ val source_file_empty : source_file
 (** convert a path to a source file, turning it into an absolute path if necessary *)
 val abs_source_file_from_path : string -> source_file
 
-(** convert a project root directory and an absolute path to a source file *)
-val rel_source_file_from_abs_path : string -> string -> source_file
+val source_file_from_abs_path : string -> source_file
 
 (** string encoding of a source file (including path) as a single filename *)
 val source_file_encoding : source_file -> string
@@ -121,6 +120,11 @@ val source_file_to_abs_path : source_file -> string
 
 (** get the relative path of a source file *)
 val source_file_to_rel_path : source_file -> string
+
+val source_file_is_infer_model : source_file -> bool
+
+(** Returns true if the file is a C++ model *)
+val source_file_is_cpp_model : source_file -> bool
 
 (** {2 Source Dirs} *)
 
@@ -161,9 +165,6 @@ val global_tenv_fname : filename
 
 (** Check if a path is a Java, C, C++ or Objectve C source file according to the file extention *)
 val is_source_file: string -> bool
-
-(** Returns true if the file is a C++ model *)
-val file_is_in_cpp_model : string -> bool
 
 (** Fold over all file paths recursively under [dir] which match [p]. *)
 val fold_paths_matching :

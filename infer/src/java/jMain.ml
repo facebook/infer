@@ -81,7 +81,7 @@ let capture_libs linereader program tenv =
     | Javalib.JClass _ ->
         begin
           let fake_source_file =
-            JClasspath.java_source_file_from_path (JFrontend.path_of_cached_classname cn) in
+            DB.source_file_from_abs_path (JFrontend.path_of_cached_classname cn) in
           init_global_state fake_source_file;
           let call_graph, cfg =
             JFrontend.compute_class_icfg fake_source_file linereader program tenv node in

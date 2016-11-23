@@ -26,7 +26,7 @@ let is_in_main_file translation_unit_context an =
       false
   | Some file ->
       DB.source_file_equal
-        (CLocation.source_file_from_path file)
+        (DB.source_file_from_abs_path file)
         translation_unit_context.CFrontend_config.source_file
 
 let is_ck_context (context: CLintersContext.context) an =

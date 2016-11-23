@@ -112,9 +112,7 @@ let get_correct_type_from_objc_class_name type_name =>
 /** Returns true if the method is defined as a C++ model */
 let pname_is_cpp_model callee_pname =>
   switch (load_attributes callee_pname) {
-  | Some attrs =>
-    let file = DB.source_file_to_string attrs.ProcAttributes.loc.Location.file;
-    DB.file_is_in_cpp_model file
+  | Some attrs => DB.source_file_is_cpp_model attrs.ProcAttributes.loc.Location.file
   | None => false
   };
 

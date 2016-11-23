@@ -489,18 +489,6 @@ let module IssuesJson = {
     } else {
       file
     };
-  let make_cpp_models_path_relative file => {
-    let abs_file = DB.source_file_to_abs_path file;
-    if (Utils.string_is_prefix Config.cpp_models_dir abs_file) {
-      if (Config.debug_mode || Config.debug_exceptions) {
-        Some (DB.rel_source_file_from_abs_path Config.cpp_models_dir abs_file)
-      } else {
-        None
-      }
-    } else {
-      Some file
-    }
-  };
 
   /** Write bug report in JSON format */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname err_log => {
@@ -522,16 +510,19 @@ let module IssuesJson = {
         | Some proc_loc => (proc_loc.Location.file, proc_loc.Location.line)
         | None => (loc.Location.file, 0)
         };
-      let file_opt = make_cpp_models_path_relative source_file;
+      let should_report_source_file =
+        not (DB.source_file_is_infer_model source_file) ||
+        Config.debug_mode || Config.debug_exceptions;
       if (
         in_footprint &&
         error_filter source_file error_desc error_name &&
-        Option.is_some file_opt && should_report ekind error_name error_desc && is_file source_file
+        should_report_source_file &&
+        should_report ekind error_name error_desc && is_file source_file
       ) {
         let kind = Exceptions.err_kind_string ekind;
         let bug_type = Localise.to_string error_name;
         let procedure_id = Procname.to_filename procname;
-        let file = expand_links_under_buck_out (DB.source_file_to_string (Option.get file_opt));
+        let file = expand_links_under_buck_out (DB.source_file_to_string source_file);
         let json_ml_loc =
           switch ml_loc_opt {
           | Some (file, lnum, cnum, enum) when Config.reports_include_ml_loc =>

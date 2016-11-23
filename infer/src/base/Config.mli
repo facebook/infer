@@ -62,7 +62,7 @@ val captured_dir_name : string
 val checks_disabled_by_default : string list
 val clang_initializer_prefix : string
 val cpp_extra_include_dir : string
-val cpp_models_dir : string
+val relative_cpp_models_dir : string
 val csl_analysis : bool
 val current_exe : CommandLineOption.exe
 val default_failure_name : string
@@ -93,6 +93,7 @@ val max_recursion : int
 val meet_level : int
 val models_dir : string
 val models_jar : string
+val models_src_dir : string
 val multicore_dir_name : string
 val ncpu : int
 val nsnotification_center_checker_backend : bool

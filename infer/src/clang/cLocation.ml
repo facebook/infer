@@ -11,21 +11,10 @@ open! Utils
 
 (** Module for function to retrieve the location (file, line, etc) of instructions *)
 
-let source_file_from_path path =
-  if Filename.is_relative path then
-    (failwithf
-       "ERROR: Path %s is relative. Please pass an absolute path in the -c argument.@."
-       path);
-  try
-    DB.rel_source_file_from_abs_path Config.project_root path
-  with Failure _ ->
-    Logging.err_debug "ERROR: %s should be a prefix of %s.@." Config.project_root path;
-    DB.source_file_from_string path
-
 let clang_to_sil_location trans_unit_ctx clang_loc =
   let line = Option.default (-1) clang_loc.Clang_ast_t.sl_line in
   let col = Option.default (-1) clang_loc.Clang_ast_t.sl_column in
-  let file = Option.map_default source_file_from_path
+  let file = Option.map_default DB.source_file_from_abs_path
       trans_unit_ctx.CFrontend_config.source_file clang_loc.Clang_ast_t.sl_file in
   Location.{line; col; file}
 
@@ -45,7 +34,7 @@ let should_do_frontend_check trans_unit_ctx (loc_start, _) =
   match loc_start.Clang_ast_t.sl_file with
   | Some file ->
       let equal_current_source file =
-        DB.source_file_equal (source_file_from_path file)
+        DB.source_file_equal (DB.source_file_from_abs_path file)
           trans_unit_ctx.CFrontend_config.source_file in
       equal_current_source file ||
       (file_in_project file &&  not Config.testing_mode)
@@ -62,7 +51,7 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
     | None -> false
   in
   let map_file_of pred loc =
-    let path_pred path = pred (source_file_from_path path) in
+    let path_pred path = pred (DB.source_file_from_abs_path path) in
     map_path_of path_pred loc
   in
   (* it's not necessary to compare inodes here because both files come from
@@ -73,8 +62,8 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
   let file_in_project = map_path_of file_in_project loc_end
                         || map_path_of file_in_project loc_start in
   let translate_on_demand = translate_when_used || file_in_project || Config.models_mode in
-  let file_in_models = map_path_of DB.file_is_in_cpp_model loc_end
-                       || map_path_of DB.file_is_in_cpp_model loc_start in
+  let file_in_models = map_file_of DB.source_file_is_cpp_model loc_end
+                       || map_file_of DB.source_file_is_cpp_model loc_start in
   map_file_of equal_current_source loc_end
   || map_file_of equal_current_source loc_start
   || file_in_models

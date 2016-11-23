@@ -25,10 +25,6 @@ val add_models : string -> unit
 (** Check if there is a model for the given procname *)
 val is_model : Procname.t -> bool
 
-(** create a source file from an absolute path.
-    Source files are relative if the project root is specified and absolute otherwise *)
-val java_source_file_from_path : string -> DB.source_file
-
 val split_classpath : string -> string list
 
 (** map entry for source files with potential basname collision within the same compiler call *)
