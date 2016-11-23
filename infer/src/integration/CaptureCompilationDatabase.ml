@@ -28,23 +28,23 @@ let replace_header_file_with_source_file file_path =
         Logging.out "Couldn't find any replacement source file for file %s " file_path;
         file_path
     else file_path in
-  DB.abs_source_file_from_path file
+  DB.source_file_from_abs_path file
 
 (** Read the files to compile from the changed files index. *)
-let read_files_to_compile () =
-  let changed_files = DB.SourceFileSet.empty in
+let should_capture_file_from_index () =
   match DB.read_changed_files_index with
   | None ->
       (match Config.changed_files_index with
        | Some index ->
            Process.print_error_and_exit "Error reading the changed files index %s.\n%!" index
-       | None -> changed_files)
+       | None -> function _ -> true)
   | Some lines ->
-      IList.fold_left
-        (fun changed_files line ->
-           let file = replace_header_file_with_source_file (DB.source_file_from_string line) in
-           DB.SourceFileSet.add file changed_files)
-        changed_files lines
+      let index_files_set = IList.fold_left
+          (fun changed_files line ->
+             let file = replace_header_file_with_source_file (DB.source_file_from_string line) in
+             DB.SourceFileSet.add file changed_files)
+          DB.SourceFileSet.empty lines in
+      function source_file -> DB.SourceFileSet.mem source_file index_files_set
 
 (** The buck targets are assumed to start with //, aliases are not supported. *)
 let check_args_for_targets args =
@@ -66,13 +66,9 @@ let add_flavor_to_targets args =
     else arg in
   IList.map process_arg args
 
-let create_files_stack compilation_database changed_files =
+let create_files_stack compilation_database should_capture_file =
   let stack = Stack.create () in
-  let should_add_file_to_cdb changed_files file_path =
-    match Config.changed_files_index with
-    | Some _ -> DB.SourceFileSet.mem (DB.source_file_from_string file_path) changed_files
-    | None -> true in
-  let add_to_stack file _ = if should_add_file_to_cdb changed_files file then
+  let add_to_stack file _ = if should_capture_file file then
       Stack.push file stack in
   CompilationDatabase.iter compilation_database add_to_stack;
   stack
@@ -112,15 +108,16 @@ let run_compilation_file compilation_database file =
         Array.append env0 [|CLOpt.args_env_var ^ "=--fcp-syntax-only"|] in
     (Some compilation_data.dir, wrapper_cmd, args, env)
   with Not_found ->
-    Process.print_error_and_exit "Failed to find compilation data for %s \n%!" file
+    Process.print_error_and_exit "Failed to find compilation data for %s \n%!"
+      (DB.source_file_to_string file)
 
-let run_compilation_database compilation_database changed_files =
+let run_compilation_database compilation_database should_capture_file =
   let number_of_files = CompilationDatabase.get_size compilation_database in
   Logging.out "Starting %s %d files \n%!" capture_text number_of_files;
   Logging.stdout "Starting %s %d files \n%!" capture_text number_of_files;
-  let jobs_stack = create_files_stack compilation_database changed_files in
+  let jobs_stack = create_files_stack compilation_database should_capture_file in
   let capture_text_upper = String.capitalize capture_text in
-  let job_to_string = fun file -> capture_text_upper ^ " " ^ file in
+  let job_to_string = fun file -> capture_text_upper ^ " " ^ (DB.source_file_to_string file) in
   Process.run_jobs_in_parallel jobs_stack (run_compilation_file compilation_database) job_to_string
 
 (** Computes the compilation database files. *)
@@ -178,7 +175,5 @@ let get_compilation_database_files_xcodebuild () =
 
 
 let capture_files_in_database db_json_files =
-  let changed_files = read_files_to_compile () in
-  let compilation_database = CompilationDatabase.empty () in
-  IList.iter (CompilationDatabase.decode_json_file compilation_database) db_json_files;
-  run_compilation_database compilation_database changed_files
+  let compilation_database = CompilationDatabase.from_json_files db_json_files in
+  run_compilation_database compilation_database (should_capture_file_from_index ())

@@ -15,14 +15,14 @@ type compilation_data = {
   args : string;
 }
 
-type t = compilation_data StringMap.t ref
-let empty () = ref StringMap.empty
+type t = compilation_data DB.SourceFileMap.t ref
+let empty () = ref DB.SourceFileMap.empty
 
-let get_size database = StringMap.cardinal !database
+let get_size database = DB.SourceFileMap.cardinal !database
 
-let iter database f = StringMap.iter f !database
+let iter database f = DB.SourceFileMap.iter f !database
 
-let find database key = StringMap.find key !database
+let find database key = DB.SourceFileMap.find key !database
 
 let parse_command_and_arguments command_and_arguments =
   let regexp = Str.regexp "[^\\][ ]" in
@@ -68,6 +68,12 @@ let decode_json_file (database : t) json_path =
           | None -> exit_format_error () in
         let command, args = parse_command_and_arguments cmd in
         let compilation_data = { dir; command; args;} in
-        database := StringMap.add file compilation_data !database
+        let source_file = DB.source_file_from_abs_path file in
+        database := DB.SourceFileMap.add source_file compilation_data !database
     | _ -> exit_format_error () in
   parse_json json
+
+let from_json_files  db_json_files =
+  let db = empty () in
+  IList.iter (decode_json_file db) db_json_files;
+  db
