@@ -701,6 +701,13 @@ and cluster =
   CLOpt.mk_path_opt ~deprecated:["cluster"] ~long:"cluster"
     ~meta:"file" "Specify a .cluster file to be analyzed"
 
+and compute_analytics =
+  CLOpt.mk_bool ~long:"compute-analytics"
+    ~default:false
+    ~exes:CLOpt.[Toplevel;Clang]
+    "Emit analytics as info-level issues, like component kit line count and \
+     component kit file cyclomatic complexity"
+
 (** Continue the capture for reactive mode:
     If a procedure was changed beforehand, keep the changed marking. *)
 and continue =
@@ -1417,6 +1424,7 @@ and checkers_repeated_calls = !checkers_repeated_calls
 and clang_biniou_file = !clang_biniou_file
 and clang_include_to_override = !clang_include_to_override
 and cluster_cmdline = !cluster
+and compute_analytics = !compute_analytics
 and continue_capture = !continue
 and copy_propagation = !copy_propagation
 and crashcontext = !crashcontext

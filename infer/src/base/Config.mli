@@ -163,6 +163,7 @@ val clang_frontend_do_capture : bool
 val clang_frontend_do_lint : bool
 val clang_include_to_override : string option
 val cluster_cmdline : string option
+val compute_analytics : bool
 val continue_capture : bool
 val copy_propagation : bool
 val crashcontext : bool
