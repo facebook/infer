@@ -146,6 +146,10 @@ let check_xcpretty () =
          --no-xcpretty.@.@.";
       Unix.exit_immediately 1
 
+let capture_with_compilation_database db_files =
+  Config.clang_compilation_db_files := IList.map filename_to_absolute db_files;
+  let compilation_database = CompilationDatabase.from_json_files db_files in
+  CaptureCompilationDatabase.capture_files_in_database compilation_database
 
 let capture build_cmd = function
   | Analyze ->
@@ -153,11 +157,12 @@ let capture build_cmd = function
   | Buck when Config.use_compilation_database <> None ->
       L.stdout "Capturing using Buck's compilation database...@\n";
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck () in
-      CaptureCompilationDatabase.capture_files_in_database json_cdb
+      capture_with_compilation_database json_cdb
   | ClangCompilationDatabase -> (
       L.stdout "Capturing using a compilation database file...@\n";
       match Config.rest with
-      | arg :: _ -> CaptureCompilationDatabase.capture_files_in_database [arg]
+      | arg :: _ ->
+          capture_with_compilation_database [arg]
       | _ ->
           failwith
             "Error parsing arguments. Please, pass the compilation database json file as in \
@@ -168,7 +173,7 @@ let capture build_cmd = function
       L.stdout "Capturing using xcpretty...@\n";
       check_xcpretty ();
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_xcodebuild () in
-      CaptureCompilationDatabase.capture_files_in_database json_cdb
+      capture_with_compilation_database json_cdb
   | build_mode ->
       L.stdout "Capturing in %s mode...@." (string_of_build_mode build_mode);
       let in_buck_mode = build_mode = Buck in

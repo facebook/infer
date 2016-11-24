@@ -50,11 +50,15 @@ let cluster_should_be_analyzed cluster =
 
 
 let pp_prolog fmt clusters =
-  F.fprintf fmt "INFERANALYZE= %s -results_dir '%s'\n@."
+  let compilation_dbs_cmd =
+    IList.map (F.sprintf "--clang-compilation-db-files %s") !Config.clang_compilation_db_files
+    |> String.concat " " in
+  F.fprintf fmt "INFERANALYZE= %s -results_dir '%s' %s \n@."
     (Config.bin_dir // (CLOpt.exe_name Analyze))
     (Escape.escape_map
        (fun c -> if c = '#' then Some "\\#" else None)
-       Config.results_dir);
+       Config.results_dir)
+    compilation_dbs_cmd;
   F.fprintf fmt "CLUSTERS=";
 
   IList.iteri

@@ -312,6 +312,8 @@ val run_with_abs_val_equal_zero : ('a -> 'b) -> 'a -> 'b
 
 val allow_leak : bool ref
 
+val clang_compilation_db_files : string list ref
+
 (** Command Line Interface Documentation *)
 
 val print_usage_exit : unit -> 'a

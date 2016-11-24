@@ -10,7 +10,7 @@
 (** capture_files_in_database file runs the capture of the files for which
     we have compilation commands in the database. If the option changed-files-index
     is passed, we only capture the files there *)
-val capture_files_in_database : string list -> unit
+val capture_files_in_database : CompilationDatabase.t -> unit
 
 (** Get the compilation database files that contain the compilation given by the
     buck command. It will be the compilation of the passed targets only or also

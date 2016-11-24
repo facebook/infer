@@ -687,6 +687,10 @@ and clang_biniou_file =
   CLOpt.mk_path_opt ~long:"clang-biniou-file" ~exes:CLOpt.[Clang] ~meta:"file"
     "Specify a file containing the AST of the program, in biniou format"
 
+and clang_compilation_db_files =
+  CLOpt.mk_path_list ~long:"clang-compilation-db-files"
+    "Files that contain compilation commands"
+
 and clang_frontend_action =
   CLOpt.mk_symbol_opt ~long:"clang-frontend-action"
     ~exes:CLOpt.[Clang]

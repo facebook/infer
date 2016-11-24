@@ -174,6 +174,5 @@ let get_compilation_database_files_xcodebuild () =
       exit 1
 
 
-let capture_files_in_database db_json_files =
-  let compilation_database = CompilationDatabase.from_json_files db_json_files in
+let capture_files_in_database compilation_database =
   run_compilation_database compilation_database (should_capture_file_from_index ())
