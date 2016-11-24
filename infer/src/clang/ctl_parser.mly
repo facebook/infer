@@ -85,7 +85,7 @@ atomic_formula:
   ;
 
  formula_id:
-  | IDENTIFIER { Logging.out "\tParsed formula identifier '%s' \n" $1; CTL.Atomic($1,[]) }
+  | IDENTIFIER { Logging.out "\tParsed formula identifier '%s' \n" $1; CTL.Atomic($1, []) }
   ;
 
 params:

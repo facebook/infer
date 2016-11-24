@@ -77,12 +77,13 @@ let var_descs_name an =
    || is_CXXOperatorCallExpr || is_ObjCMessageExpr *)
 let ctl_makes_an_expensive_call () =
   let open CTL in
-  Or (Or (Or (Or (And (Atomic ("is_stmt", ["CallExpr"]),
-                       Not (Atomic("call_function_named", ["CGPointMake"]))),
-                  Atomic ("is_stmt", ["CXXTemporaryObjectExpr"])),
-              Atomic ("is_stmt", ["CXXMemberCallExpr"])),
-          Atomic ("is_stmt", ["CXXOperatorCallExpr"])),
-      Atomic ("is_stmt", ["ObjCMessageExpr"]))
+  let white_list_functions = ["CGPointMake"] in
+  Or (Or (Or (Or (And (Atomic ("in_node", ["CallExpr"]),
+                       Not(Atomic("call_function_named", white_list_functions))),
+                  Atomic ("in_node", ["CXXTemporaryObjectExpr"])),
+              Atomic ("in_node", ["CXXMemberCallExpr"])),
+          Atomic ("in_node", ["CXXOperatorCallExpr"])),
+      Atomic ("in_node", ["ObjCMessageExpr"]))
 
 
 (*
@@ -103,9 +104,9 @@ let ctl_ns_notification_warning lctx an =
                          exists_method_calling_addObserverForName) in
   let eventually_addObserver = ET(["ObjCMethodDecl"], Some Body, add_observer) in
   let exists_method_calling_removeObserver =
-    EF (None, (Atomic ("call_method",["removeObserver:"]))) in
+    EF (None, (Atomic ("call_method", ["removeObserver:"]))) in
   let exists_method_calling_removeObserverName =
-    EF (None, (Atomic ("call_method",["removeObserver:name:object:"]))) in
+    EF (None, (Atomic ("call_method", ["removeObserver:name:object:"]))) in
   let remove_observer = Or(exists_method_calling_removeObserver,
                            exists_method_calling_removeObserverName) in
   let remove_observer_in_block = ET(["BlockDecl"], Some Body, remove_observer) in
@@ -116,7 +117,7 @@ let ctl_ns_notification_warning lctx an =
        Or(remove_observer_in_method ,
           EH(["ObjCImplementationDecl"; "ObjCProtocolDecl"], remove_observer_in_method))) in
   let condition = InNode (["ObjCImplementationDecl"; "ObjCProtocolDecl"],
-                         Not (Implies (eventually_addObserver, eventually_removeObserver))) in
+                          Not (Implies (eventually_addObserver, eventually_removeObserver))) in
   let issue_desc = {
     CIssue.issue = CIssue.Registered_observer_being_deallocated;
     CIssue.description =
@@ -131,13 +132,13 @@ let ctl_ns_notification_warning lctx an =
     a boolean in a comparison *)
 let ctl_bad_pointer_comparison_warning lctx an =
   let open CTL in
-  let is_binop = Atomic ("is_stmt", ["BinaryOperator"]) in
+  let is_binop = Atomic ("in_node", ["BinaryOperator"]) in
   let is_binop_eq = Atomic ("is_binop_with_kind", ["EQ"]) in
   let is_binop_ne = Atomic ("is_binop_with_kind", ["NE"]) in
   let is_binop_neq = Or (is_binop_eq, is_binop_ne) in
   let is_unop_lnot = Atomic ("is_unop_with_kind", ["LNot"]) in
-  let is_implicit_cast_expr = Atomic ("is_stmt", ["ImplicitCastExpr"]) in
-  let is_expr_with_cleanups = Atomic ("is_stmt", ["ExprWithCleanups"]) in
+  let is_implicit_cast_expr = Atomic ("in_node", ["ImplicitCastExpr"]) in
+  let is_expr_with_cleanups = Atomic ("in_node", ["ExprWithCleanups"]) in
   let is_nsnumber = Atomic ("isa", ["NSNumber"]) in
   (*
   NOT is_binop_neq AND

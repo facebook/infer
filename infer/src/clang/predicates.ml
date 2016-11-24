@@ -22,7 +22,7 @@ let get_ivar_attributes ivar_decl =
        | _ -> [])
   | _ -> []
 
-(* list of cxx references captured by stmt *)
+(* list of cxx references captured by decl *)
 let captured_variables_cxx_ref dec =
   let capture_var_is_cxx_ref reference_captured_vars captured_var =
     let decl_ref_opt = captured_var.Clang_ast_t.bcv_variable in
@@ -45,11 +45,8 @@ let captured_variables_cxx_ref dec =
 
 type t = string * string list (* (name, [param1,...,paramK]) *)
 
-let pp_predicate fmt (name, arglist) =
-  Format.fprintf fmt "%s(%a)" name (Utils.pp_comma_seq Format.pp_print_string) arglist
-
-let is_declaration_kind decl s =
-  Clang_ast_proj.get_decl_kind_string decl = s
+let pp_predicate fmt (name, args) =
+  Format.fprintf fmt "%s(%a)" name (Utils.pp_comma_seq Format.pp_print_string) args
 
 (* st |= call_method(m) *)
 let call_method m st =
@@ -57,7 +54,7 @@ let call_method m st =
   | Clang_ast_t.ObjCMessageExpr (_, _, _, omei) -> omei.omei_selector = m
   | _ -> false
 
-let property_name_contains_word decl word =
+let property_name_contains_word word decl =
   match Clang_ast_proj.get_named_decl_tuple decl with
   | Some (_, n) -> let pname = n.Clang_ast_t.ni_name in
       let rexp = Str.regexp_string_case_fold word in
@@ -84,7 +81,7 @@ let decl_ref_is_in names st =
        | _ -> false)
   | _ -> false
 
-let call_function_named st names =
+let call_function_named names st =
   Ast_utils.exists_eventually_st decl_ref_is_in names st
 
 let is_strong_property decl =
@@ -168,10 +165,10 @@ let is_objc_dealloc context =
       Procname.is_objc_dealloc method_name
   | _ -> false
 
-let captures_cxx_references stmt =
-  IList.length (captured_variables_cxx_ref stmt) > 0
+let captures_cxx_references decl =
+  IList.length (captured_variables_cxx_ref decl) > 0
 
-let is_binop_with_kind stmt str_kind =
+let is_binop_with_kind str_kind stmt =
   if not (Clang_ast_proj.is_valid_binop_kind_name str_kind) then
     failwith ("Binary operator kind " ^ str_kind ^ " is not valid");
   match stmt with
@@ -179,7 +176,7 @@ let is_binop_with_kind stmt str_kind =
       Clang_ast_proj.string_of_binop_kind boi.boi_kind = str_kind
   | _ -> false
 
-let is_unop_with_kind stmt str_kind =
+let is_unop_with_kind str_kind stmt =
   if not (Clang_ast_proj.is_valid_unop_kind_name str_kind) then
     failwith ("Unary operator kind " ^ str_kind ^ " is not valid");
   match stmt with
@@ -187,10 +184,17 @@ let is_unop_with_kind stmt str_kind =
       Clang_ast_proj.string_of_unop_kind uoi.uoi_kind = str_kind
   | _ -> false
 
-let is_stmt stmt stmt_name =
-  stmt_name = Clang_ast_proj.get_stmt_kind_string stmt
+let is_stmt nodename stmt =
+  if not (Clang_ast_proj.is_valid_astnode_kind nodename) then
+    failwith ("Statement " ^ nodename ^ " is not a valid statement");
+  nodename = Clang_ast_proj.get_stmt_kind_string stmt
 
-let isa stmt classname =
+let is_decl nodename decl =
+  if not (Clang_ast_proj.is_valid_astnode_kind nodename) then
+    failwith ("Declaration " ^ nodename ^ " is not a valid declaration");
+  nodename = Clang_ast_proj.get_decl_kind_string decl
+
+let isa classname stmt =
   match Clang_ast_proj.get_expr_tuple stmt with
   | Some (_, _, expr_info) ->
       let typ = CFrontend_utils.Ast_utils.get_desugared_type expr_info.ei_type_ptr in
