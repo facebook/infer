@@ -33,6 +33,7 @@ SOURCES_DEFAULT = \
   npe/Npe_with_equal_names.m \
   npe/block.m \
   npe/skip_method_with_nil_object.m \
+	npe/Nsstring_length_no_npe.m \
   procdescs/MethodCall.m \
   property/main.c \
   resource_leaks/ResourceLeakExample.m \

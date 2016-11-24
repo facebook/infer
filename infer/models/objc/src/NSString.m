@@ -12,6 +12,8 @@
 
 void __get_array_length(const UInt8);
 
+void __infer_assume(bool cond);
+
 @implementation NSString
 
 + (instancetype)stringWithUTF8String:(const char*)bytes {
@@ -57,4 +59,15 @@ void __get_array_length(const UInt8);
   self->value = format->value;
   return self;
 }
+
+- (int)length {
+  if (self == nil) {
+    return 0;
+  } else {
+    int res;
+    __infer_assume(res >= 0);
+    return res;
+  }
+}
+
 @end
