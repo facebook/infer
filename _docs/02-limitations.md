@@ -14,7 +14,7 @@ Although we have had good fix rates working with Facebook mobile codebases,
 we are not making strong claims about rates of false alarms or similar when applied to arbitrary
 codebases. For example, we have had some success [getting bugs fixed
 in the DuckDuckGo Android App](blog/2015/05/22/Infer-on-open-source-android-apps.html), but we encountered many false alarms when running Infer on GNU coreutils.
-It typical of program verification and static analysis tools that their results vary,
+It is typical of program verification and static analysis tools that their results vary,
 and that is to be expected, e.g., because
 they are tackling undecidable problems and because different codebases they are applied to will have been coded differently.
 
