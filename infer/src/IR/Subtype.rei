@@ -35,20 +35,14 @@ let subtypes_instof: t;
 let join: t => t => t;
 
 
-/** [case_analysis (c1, st1) (c2,st2) f] performs case analysis on [c1 <: c2] according
-    to [st1] and [st2] where f c1 c2 is true if c1 is a subtype of c2.
-    get_subtypes returning a pair:
-    - whether [st1] and [st2] admit [c1 <: c2], and in case return the updated subtype [st1]
-    - whether [st1] and [st2] admit [not(c1 <: c2)], and in case return
-    the updated subtype [st1] */
-let case_analysis:
-  (Typename.t, t) =>
-  (Typename.t, t) =>
-  (Typename.t => Typename.t => bool) =>
-  (Typename.t => bool) =>
-  (option t, option t);
+/** [case_analysis tenv (c1, st1) (c2,st2)] performs case analysis on [c1 <: c2] according
+    to [st1] and [st2].
+    [case_analysis] returns a pair:
+    - whether [st1] and [st2] admit [c1 <: c2], and in case returns the updated subtype [st1]
+    - whether [st1] and [st2] admit [not(c1 <: c2)], and in case returns the updated subtype [st1] */
+let case_analysis: Tenv.t => (Typename.t, t) => (Typename.t, t) => (option t, option t);
 
-let check_subtype: (Typename.t => Typename.t => bool) => Typename.t => Typename.t => bool;
+let check_subtype: Tenv.t => Typename.t => Typename.t => bool;
 
 let subtypes_to_string: t => string;
 

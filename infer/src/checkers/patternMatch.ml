@@ -26,7 +26,7 @@ type taint_spec = {
 
 let type_is_object typ =
   match typ with
-  | Typ.Tptr (Tstruct name, _) -> Typename.equal name Typename.Java.java_lang_Object
+  | Typ.Tptr (Tstruct name, _) -> Typename.equal name Typename.Java.java_lang_object
   | _ -> false
 
 let java_proc_name_with_class_method pn_java class_with_path method_name =

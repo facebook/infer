@@ -45,7 +45,9 @@ let module Java = {
     fun
     | TN_csu (Class Java) _ => true
     | _ => false;
-  let java_lang_Object = from_string "java.lang.Object";
+  let java_lang_object = from_string "java.lang.Object";
+  let java_io_serializable = from_string "java.io.Serializable";
+  let java_lang_cloneable = from_string "java.lang.Cloneable";
 };
 
 type typename_t = t;

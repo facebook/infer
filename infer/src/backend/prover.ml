@@ -1525,39 +1525,6 @@ let expand_hpred_pointer =
 module Subtyping_check =
 struct
 
-  let object_type = Typename.Java.java_lang_Object
-
-  let serializable_type = Typename.Java.from_string "java.io.Serializable"
-
-  let cloneable_type = Typename.Java.from_string "java.lang.Cloneable"
-
-  let is_interface tenv (class_name: Typename.t) =
-    match class_name, Tenv.lookup tenv class_name with
-    | TN_csu (Class Java, _), Some { fields = []; methods = []; } -> true
-    | _ -> false
-
-  let is_root_class class_name =
-    match class_name with
-    | Typename.TN_csu (Csu.Class Csu.Java, _) ->
-        Typename.equal class_name object_type
-    | Typename.TN_csu (Csu.Class Csu.CPP, _) ->
-        false
-    | _ -> false
-
-  (** check if c1 is a subclass of c2 *)
-  let check_subclass_tenv tenv c1 c2 =
-    let rec check (cn: Typename.t) =
-      Typename.equal cn c2 || is_root_class c2 ||
-      match cn, Tenv.lookup tenv cn with
-      | TN_csu (Class _, _), Some { supers } ->
-          IList.exists check supers
-      | _ -> false in
-    check c1
-
-  let check_subclass tenv c1 c2 =
-    let f = check_subclass_tenv tenv in
-    Subtype.check_subtype f c1 c2
-
   (** check that t1 and t2 are the same primitive type *)
   let check_subtype_basic_type t1 t2 =
     match t2 with
@@ -1571,15 +1538,15 @@ struct
   let rec check_subtype_java tenv (t1: Typ.t) (t2: Typ.t) =
     match t1, t2 with
     | Tstruct (TN_csu (Class Java, _) as cn1), Tstruct (TN_csu (Class Java, _) as cn2) ->
-        check_subclass tenv cn1 cn2
+        Subtype.check_subtype tenv cn1 cn2
     | Tarray (dom_type1, _), Tarray (dom_type2, _) ->
         check_subtype_java tenv dom_type1 dom_type2
     | Tptr (dom_type1, _), Tptr (dom_type2, _) ->
         check_subtype_java tenv dom_type1 dom_type2
     | Tarray _, Tstruct (TN_csu (Class Java, _) as cn2) ->
-        Typename.equal cn2 serializable_type
-        || Typename.equal cn2 cloneable_type
-        || Typename.equal cn2 object_type
+        Typename.equal cn2 Typename.Java.java_io_serializable
+        || Typename.equal cn2 Typename.Java.java_lang_cloneable
+        || Typename.equal cn2 Typename.Java.java_lang_object
     | _ -> check_subtype_basic_type t1 t2
 
   (** check if t1 is a subtype of t2 *)
@@ -1589,18 +1556,17 @@ struct
       check_subtype_java tenv t1 t2
     else
       match Typ.name t1, Typ.name t2 with
-      | Some cn1, Some cn2 -> check_subclass tenv cn1 cn2
+      | Some cn1, Some cn2 -> Subtype.check_subtype tenv cn1 cn2
       | _ -> false
 
   let rec case_analysis_type tenv ((t1: Typ.t), st1) ((t2: Typ.t), st2) =
     match t1, t2 with
     | Tstruct (TN_csu (Class Java, _) as cn1), Tstruct (TN_csu (Class Java, _) as cn2) ->
-        Subtype.case_analysis
-          (cn1, st1) (cn2, st2) (check_subclass tenv) (is_interface tenv)
+        Subtype.case_analysis tenv (cn1, st1) (cn2, st2)
     | Tstruct (TN_csu (Class Java, _) as cn1), Tarray _
-      when (Typename.equal cn1 serializable_type
-            || Typename.equal cn1 cloneable_type
-            || Typename.equal cn1 object_type) &&
+      when (Typename.equal cn1 Typename.Java.java_io_serializable
+            || Typename.equal cn1 Typename.Java.java_lang_cloneable
+            || Typename.equal cn1 Typename.Java.java_lang_object) &&
            st1 <> Subtype.exact ->
         Some st1, None
     | Tstruct cn1, Tstruct cn2
@@ -1608,9 +1574,8 @@ struct
       (* that get through the type system, but not in C++ because of multiple inheritance, *)
       (* and not in ObjC because of being weakly typed, *)
       (* and the algorithm will only work correctly if this is the case *)
-      when check_subclass tenv cn1 cn2 || check_subclass tenv cn2 cn1 ->
-        Subtype.case_analysis
-          (cn1, st1) (cn2, st2) (check_subclass tenv) (is_interface tenv)
+      when Subtype.check_subtype tenv cn1 cn2 || Subtype.check_subtype tenv cn2 cn1 ->
+        Subtype.case_analysis tenv (cn1, st1) (cn2, st2)
     | Tarray (dom_type1, _), Tarray (dom_type2, _) ->
         case_analysis_type tenv (dom_type1, st1) (dom_type2, st2)
     | Tptr (dom_type1, _), Tptr (dom_type2, _) ->
@@ -1709,7 +1674,7 @@ let texp_imply tenv subs texp1 texp2 e1 calc_missing =
         | Some texp1' ->
             not (texp_equal_modulo_subtype_flag texp1' texp1)
         | None -> false in
-      if (calc_missing) then (* footprint *)
+      if calc_missing then (* footprint *)
         begin
           match pos_type_opt with
           | None -> cast_exception tenv texp1 texp2 e1 subs

@@ -61,10 +61,38 @@ type subtMap = SubtypesMap.t bool;
 
 let subtMap: ref subtMap = ref SubtypesMap.empty;
 
-let check_subtype f c1 c2 =>
+let is_interface tenv (class_name: Typename.t) =>
+  switch (class_name, Tenv.lookup tenv class_name) {
+  | (TN_csu (Class Java) _, Some {fields: [], methods: []}) => true
+  | _ => false
+  };
+
+let is_root_class class_name =>
+  switch class_name {
+  | Typename.TN_csu (Csu.Class Csu.Java) _ =>
+    Typename.equal class_name Typename.Java.java_lang_object
+  | Typename.TN_csu (Csu.Class Csu.CPP) _ => false
+  | _ => false
+  };
+
+
+/** check if c1 is a subclass of c2 */
+let check_subclass_tenv tenv c1 c2 => {
+  let rec check (cn: Typename.t) =>
+    Typename.equal cn c2 ||
+    is_root_class c2 || (
+      switch (cn, Tenv.lookup tenv cn) {
+      | (TN_csu (Class _) _, Some {supers}) => IList.exists check supers
+      | _ => false
+      }
+    );
+  check c1
+};
+
+let check_subtype tenv c1 c2 =>
   try (SubtypesMap.find (c1, c2) !subtMap) {
   | Not_found =>
-    let is_subt = f c1 c2;
+    let is_subt = check_subclass_tenv tenv c1 c2;
     subtMap := SubtypesMap.add (c1, c2) is_subt !subtMap;
     is_subt
   };
@@ -190,26 +218,26 @@ let subtypes_to_string t =>
   };
 
 /* c is a subtype when it does not appear in the list l of no-subtypes */
-let is_subtype f c l =>
+let is_subtype tenv c l =>
   try {
-    ignore (IList.find (f c) l);
+    ignore (IList.find (check_subtype tenv c) l);
     false
   } {
   | Not_found => true
   };
 
-let is_strict_subtype f c1 c2 => f c1 c2 && not (Typename.equal c1 c2);
+let is_strict_subtype tenv c1 c2 => check_subtype tenv c1 c2 && not (Typename.equal c1 c2);
 
 /* checks for redundancies when adding c to l
    Xi in A - { X1,..., Xn } is redundant in two cases:
    1) not (Xi <: A) because removing the subtypes of Xi has no effect unless Xi is a subtype of A
    2) Xi <: Xj because the subtypes of Xi are a subset of the subtypes of Xj */
-let check_redundancies f c l => {
+let check_redundancies tenv c l => {
   let aux (l, add) ci => {
     let (l, should_add) =
-      if (f ci c) {
+      if (check_subtype tenv ci c) {
         (l, true)
-      } else if (f c ci) {
+      } else if (check_subtype tenv c ci) {
         ([ci, ...l], false)
       } else {
         ([ci, ...l], true)
@@ -232,16 +260,16 @@ let rec updates_head f c l =>
 
 /* adds the classes of l2 to l1 and checks that no redundancies or inconsistencies will occur
    A - { X1,..., Xn } is inconsistent if A <: Xi for some i */
-let rec add_not_subtype f c1 l1 l2 =>
+let rec add_not_subtype tenv c1 l1 l2 =>
   switch l2 {
   | [] => l1
   | [c, ...rest] =>
-    if (f c1 c) {
-      add_not_subtype f c1 l1 rest
+    if (check_subtype tenv c1 c) {
+      add_not_subtype tenv c1 l1 rest
     } else {
       /* checks for inconsistencies */
-      let (l1', should_add) = check_redundancies f c l1; /* checks for redundancies */
-      let rest' = add_not_subtype f c1 l1' rest;
+      let (l1', should_add) = check_redundancies tenv c l1; /* checks for redundancies */
+      let rest' = add_not_subtype tenv c1 l1' rest;
       if should_add {
         [c, ...rest']
       } else {
@@ -250,8 +278,8 @@ let rec add_not_subtype f c1 l1 l2 =>
     }
   };
 
-let get_subtypes (c1, (st1, flag1)) (c2, (st2, flag2)) f is_interface => {
-  let is_sub = f c1 c2;
+let get_subtypes tenv (c1, (st1, flag1): t) (c2, (st2, flag2): t) => {
+  let is_sub = check_subtype tenv c1 c2;
   let (pos_st, neg_st) =
     switch (st1, st2) {
     | (Exact, Exact) =>
@@ -261,7 +289,7 @@ let get_subtypes (c1, (st1, flag1)) (c2, (st2, flag2)) f is_interface => {
         (None, Some st1)
       }
     | (Exact, Subtypes l2) =>
-      if (is_sub && is_subtype f c1 l2) {
+      if (is_sub && is_subtype tenv c1 l2) {
         (Some st1, None)
       } else {
         (None, Some st1)
@@ -270,28 +298,28 @@ let get_subtypes (c1, (st1, flag1)) (c2, (st2, flag2)) f is_interface => {
       if is_sub {
         (Some st1, None)
       } else {
-        let l1' = updates_head f c2 l1;
-        if (is_subtype f c2 l1) {
-          (Some (Subtypes l1'), Some (Subtypes (add_not_subtype f c1 l1 [c2])))
+        let l1' = updates_head tenv c2 l1;
+        if (is_subtype tenv c2 l1) {
+          (Some (Subtypes l1'), Some (Subtypes (add_not_subtype tenv c1 l1 [c2])))
         } else {
           (None, Some st1)
         }
       }
     | (Subtypes l1, Subtypes l2) =>
-      if (is_interface c2 || is_sub) {
-        if (is_subtype f c1 l2) {
-          let l2' = updates_head f c1 l2;
-          (Some (Subtypes (add_not_subtype f c1 l1 l2')), None)
+      if (is_interface tenv c2 || is_sub) {
+        if (is_subtype tenv c1 l2) {
+          let l2' = updates_head tenv c1 l2;
+          (Some (Subtypes (add_not_subtype tenv c1 l1 l2')), None)
         } else {
           (None, Some st1)
         }
       } else if (
-        (is_interface c1 || f c2 c1) && is_subtype f c2 l1
+        (is_interface tenv c1 || check_subtype tenv c2 c1) && is_subtype tenv c2 l1
       ) {
-        let l1' = updates_head f c2 l1;
+        let l1' = updates_head tenv c2 l1;
         (
-          Some (Subtypes (add_not_subtype f c2 l1' l2)),
-          Some (Subtypes (add_not_subtype f c1 l1 [c2]))
+          Some (Subtypes (add_not_subtype tenv c2 l1' l2)),
+          Some (Subtypes (add_not_subtype tenv c1 l1 [c2]))
         )
       } else {
         (None, Some st1)
@@ -300,11 +328,11 @@ let get_subtypes (c1, (st1, flag1)) (c2, (st2, flag2)) f is_interface => {
   (normalize_subtypes pos_st c1 c2 flag1 flag2, normalize_subtypes neg_st c1 c2 flag1 flag2)
 };
 
-let case_analysis_basic (c1, st) (c2, (_, flag2)) f => {
+let case_analysis_basic tenv (c1, st) (c2, (_, flag2)) => {
   let (pos_st, neg_st) =
-    if (f c1 c2) {
+    if (check_subtype tenv c1 c2) {
       (Some st, None)
-    } else if (f c2 c1) {
+    } else if (check_subtype tenv c2 c1) {
       switch st {
       | (Exact, _) =>
         if (Typename.equal c1 c2) {
@@ -333,11 +361,9 @@ let case_analysis_basic (c1, st) (c2, (_, flag2)) f => {
     - whether [st1] and [st2] admit [c1 <: c2], and in case return the updated subtype [st1]
     - whether [st1] and [st2] admit [not(c1 <: c2)],
     and in case return the updated subtype [st1] */
-let case_analysis (c1, st1) (c2, st2) f is_interface => {
-  let f = check_subtype f;
+let case_analysis tenv (c1, st1) (c2, st2) =>
   if Config.subtype_multirange {
-    get_subtypes (c1, st1) (c2, st2) f is_interface
+    get_subtypes tenv (c1, st1) (c2, st2)
   } else {
-    case_analysis_basic (c1, st1) (c2, st2) f
-  }
-};
+    case_analysis_basic tenv (c1, st1) (c2, st2)
+  };

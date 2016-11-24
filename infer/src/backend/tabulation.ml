@@ -986,9 +986,8 @@ let class_cast_exn tenv pname_opt texp1 texp2 exp ml_loc =
       pname_opt texp1 texp2 exp (State.get_node ()) (State.get_loc ()) in
   Exceptions.Class_cast_exception (desc, ml_loc)
 
-let raise_cast_exception tenv ml_loc pname_opt texp1 texp2 exp =
-  let exn = class_cast_exn tenv pname_opt texp1 texp2 exp ml_loc in
-  raise exn
+let create_cast_exception tenv ml_loc pname_opt texp1 texp2 exp =
+  class_cast_exn tenv pname_opt texp1 texp2 exp ml_loc
 
 let get_check_exn tenv check callee_pname loc ml_loc = match check with
   | Prover.Bounds_check ->

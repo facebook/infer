@@ -244,9 +244,10 @@ let execute___instanceof_cast ~instof
       (* and throw an exception in case of a cast to a reference. *)
       let should_throw_exception =
         !Config.curr_language = Config.Java || is_cast_to_reference in
-      let deal_with_failed_cast val1 _ texp1 texp2 =
-        Tabulation.raise_cast_exception tenv
-          __POS__ None texp1 texp2 val1 in
+      let deal_with_failed_cast val1 texp1 texp2 =
+        raise
+          (Tabulation.create_cast_exception
+             tenv __POS__ None texp1 texp2 val1) in
       let exe_one_prop prop =
         if Exp.equal texp2 Exp.zero then
           [(return_result tenv Exp.zero prop ret_id, path)]
@@ -268,11 +269,9 @@ let execute___instanceof_cast ~instof
                           else replace_ptsto_texp tenv prop val1 texp1' in
                         [(return_result tenv res_e prop' ret_id, path)] in
                   if instof then (* instanceof *)
-                    begin
-                      let pos_res = mk_res pos_type_opt Exp.one in
-                      let neg_res = mk_res neg_type_opt Exp.zero in
-                      pos_res @ neg_res
-                    end
+                    let pos_res = mk_res pos_type_opt Exp.one in
+                    let neg_res = mk_res neg_type_opt Exp.zero in
+                    pos_res @ neg_res
                   else (* cast *)
                   if not should_throw_exception then (* C++ case when negative cast returns 0 *)
                     let pos_res = mk_res pos_type_opt val1 in
@@ -280,20 +279,16 @@ let execute___instanceof_cast ~instof
                     pos_res @ neg_res
                   else
                     begin
-                      if (!Config.footprint = true) then
-                        begin
-                          match pos_type_opt with
-                          | None -> deal_with_failed_cast val1 typ1 texp1 texp2
-                          | Some _ -> mk_res pos_type_opt val1
-                        end
-                      else (* !Config.footprint = false *)
-                        begin
-                          match neg_type_opt with
-                          | Some _ ->
-                              if is_undefined_opt tenv prop val1 then mk_res pos_type_opt val1
-                              else deal_with_failed_cast val1 typ1 texp1 texp2
-                          | None -> mk_res pos_type_opt val1
-                        end
+                      if !Config.footprint then
+                        match pos_type_opt with
+                        | None -> deal_with_failed_cast val1 texp1 texp2
+                        | Some _ -> mk_res pos_type_opt val1
+                      else (* !Config.footprint is false *)
+                        match neg_type_opt with
+                        | Some _ ->
+                            if is_undefined_opt tenv prop val1 then mk_res pos_type_opt val1
+                            else deal_with_failed_cast val1 texp1 texp2
+                        | None -> mk_res pos_type_opt val1
                     end
               | _ -> []
             with Not_found ->
