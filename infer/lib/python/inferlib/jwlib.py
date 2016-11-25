@@ -26,10 +26,8 @@ parser = argparse.ArgumentParser()
 current_directory = utils.decode(os.getcwd())
 
 parser.add_argument('-version', action='store_true')
-parser.add_argument('-deprecation', action='store_true')
 parser.add_argument('-cp', '-classpath', type=utils.decode,
                     dest='classpath', default=os.getcwd())
-parser.add_argument('-bootclasspath', type=utils.decode)
 parser.add_argument('-d', dest='classes_out', default=current_directory)
 parser.add_argument('-processorpath', type=utils.decode, dest='processorpath')
 parser.add_argument('-processor', type=utils.decode, dest='processor')
@@ -104,9 +102,6 @@ class CompilerCall(object):
             return subprocess.call(self.javac_cmd + self.original_arguments)
         else:
             javac_args = ['-verbose', '-g']
-
-            if self.args.bootclasspath is not None:
-                javac_args += ['-bootclasspath', self.args.bootclasspath]
 
             if not os.path.isfile(config.ANNOT_PROCESSOR_JAR):
                 raise AnnotationProcessorNotFound(config.ANNOT_PROCESSOR_JAR)
