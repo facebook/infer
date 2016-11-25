@@ -40,6 +40,9 @@ rule token = parse
   | "ALSWAYS-HOLDS-EVERYWHERE" { AG }
   | "INSTANCEOF" { EH }
   | "IN-NODE" { ET }
+  | "IN-EXCLUSIVE-NODE" { ETX }
+  | "WHEN" { WHEN }
+  | "HOLDS-IN-NODE" { HOLDS_IN_NODE }
   | "WITH-TRANSITION" {WITH_TRANSITION}
   | "DEFINE-CHECKER" { DEFINE_CHECKER }
   | "SET" { SET }

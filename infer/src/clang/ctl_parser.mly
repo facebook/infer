@@ -23,7 +23,10 @@
 %token EH
 %token DEFINE_CHECKER
 %token ET
+%token ETX
 %token WITH_TRANSITION
+%token WHEN
+%token HOLDS_IN_NODE
 %token SET
 %token LET
 %token TRUE
@@ -60,7 +63,20 @@ checkers_list:
 
 checker:
  DEFINE_CHECKER IDENTIFIER ASSIGNMENT LEFT_BRACE clause_list RIGHT_BRACE
-  { Logging.out "Parsed checker \n\n"; { name = $2; definitions = $5 } }
+  { let name = $2 in
+    let definitions = $5 in
+    Logging.out "\nParsed checker definition: %s\n" name;
+    IList.iter (fun d -> (match d with
+      | Ctl_parser_types.CSet (clause_name, phi)
+      | Ctl_parser_types.CLet (clause_name, phi) ->
+        Logging.out "    %s=  \n    %a\n\n"
+          clause_name CTL.Debug.pp_formula phi
+      | Ctl_parser_types.CDesc (clause_name, s) ->
+        Logging.out "    %s=  \n    %s\n\n" clause_name s)
+        ) definitions;
+    Logging.out "\n-------------------- \n";
+    { name = name; definitions = definitions }
+    }
 ;
 
 clause_list:
@@ -98,6 +114,7 @@ transition_label:
   | IDENTIFIER { match $1 with
                   | "Body" | "body" -> Some CTL.Body
                   | "InitExpr" | "initexpr" -> Some CTL.InitExpr
+                  | "Cond" | "cond" -> Some CTL.Cond
                   | _  -> None }
   ;
 
@@ -118,8 +135,12 @@ formula:
   | formula AG { Logging.out "\tParsed AG\n"; CTL.AG ($1) }
   | formula EH params { Logging.out "\tParsed EH\n"; CTL.EH ($3, $1) }
   | formula EF { Logging.out "\tParsed EF\n"; CTL.EF (None, $1) }
+  | WHEN formula HOLDS_IN_NODE params
+     { Logging.out "\tParsed InNode\n"; CTL.InNode ($4, $2)}
   | ET params WITH_TRANSITION transition_label formula_EF
      { Logging.out "\tParsed ET\n"; CTL.ET ($2, $4, $5)}
+  | ETX params WITH_TRANSITION transition_label formula_EF
+        { Logging.out "\tParsed ETX\n"; CTL.ETX ($2, $4, $5)}
   | formula AND formula { Logging.out "\tParsed AND\n"; CTL.And ($1, $3) }
   | formula OR formula { Logging.out "\tParsed OR\n"; CTL.Or ($1, $3) }
   | formula IMPLIES formula { Logging.out "\tParsed IMPLIES\n"; CTL.Implies ($1, $3) }
