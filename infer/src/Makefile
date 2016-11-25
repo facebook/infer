@@ -258,6 +258,10 @@ mod_dep.dot: $(ml_src_files) $(re_src_files)
 mod_dep.pdf: mod_dep.dot
 	dot -Tpdf -o mod_dep.pdf mod_dep.dot
 
+.PHONY: dsort
+dsort:
+	@ocamldep.opt -sort $(inc_flags) -ml-synonym .re -mli-synonym .rei $(ml_src_files) -pp refmt $(re_src_files)
+
 roots_grep_regex:=$(foreach root,$(roots),-e $(root)$$)
 dirs_find_regex:=$(foreach dir, $(DEPENDENCIES) stubs/ml,-path "./$(dir)/*" -o)
 
