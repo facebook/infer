@@ -42,12 +42,16 @@ let res_dir_attr_filename defined::defined pname => {
 
 /* Load the proc attribute for the defined filename if it exists,
    otherwise try to load the declared filename. */
-let load_defined_first proc_name => {
-  let attributes_file defined => Multilinks.resolve (
+let load_attr defined_only::defined_only proc_name => {
+  let attributes_file defined::defined proc_name => Multilinks.resolve (
     res_dir_attr_filename defined::defined proc_name
   );
-  let attr = Serialization.from_file serializer (attributes_file true);
-  attr != None ? attr : Serialization.from_file serializer (attributes_file false)
+  let attr = Serialization.from_file serializer (attributes_file defined::true proc_name);
+  if (attr == None && defined_only == false) {
+    Serialization.from_file serializer (attributes_file defined::false proc_name)
+  } else {
+    attr
+  }
 };
 
 /* Write a proc attributes to file.
@@ -68,7 +72,7 @@ let write_and_delete proc_name (proc_attributes: ProcAttributes.t) => {
 let store_attributes (proc_attributes: ProcAttributes.t) => {
   let proc_name = proc_attributes.proc_name;
   let should_write =
-    switch (load_defined_first proc_name) {
+    switch (load_attr defined_only::false proc_name) {
     | None => true
     | Some proc_attributes_on_disk =>
       let higher_rank_than_on_disk () =>
@@ -86,12 +90,29 @@ let store_attributes (proc_attributes: ProcAttributes.t) => {
 
 let attr_tbl = Procname.Hash.create 16;
 
+let defined_attr_tbl = Procname.Hash.create 16;
+
 let load_attributes proc_name =>
   try (Procname.Hash.find attr_tbl proc_name) {
   | Not_found =>
-    let proc_attributes = load_defined_first proc_name;
+    let proc_attributes = load_attr defined_only::false proc_name;
+    switch proc_attributes {
+    | Some attrs =>
+      Procname.Hash.add attr_tbl proc_name proc_attributes;
+      if (attrs.is_defined == true) {
+        Procname.Hash.add defined_attr_tbl proc_name proc_attributes
+      }
+    | None => ()
+    };
+    proc_attributes
+  };
+
+let load_defined_attributes proc_name =>
+  try (Procname.Hash.find defined_attr_tbl proc_name) {
+  | Not_found =>
+    let proc_attributes = load_attr defined_only::true proc_name;
     if (proc_attributes != None) {
-      Procname.Hash.add attr_tbl proc_name proc_attributes
+      Procname.Hash.add defined_attr_tbl proc_name proc_attributes
     };
     proc_attributes
   };

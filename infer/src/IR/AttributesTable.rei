@@ -19,6 +19,10 @@ let store_attributes: ProcAttributes.t => unit;
 let load_attributes: Procname.t => option ProcAttributes.t;
 
 
+/** Load attrubutes for the procedure but only if is_defined is true */
+let load_defined_attributes: Procname.t => option ProcAttributes.t;
+
+
 /** Given the name of an ObjC class, extract the type from the tenv where the class was defined. We
     do this by adding a method that is unique to each class, and then finding the tenv that
     corresponds to the class definition. */
