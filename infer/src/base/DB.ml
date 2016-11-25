@@ -131,6 +131,30 @@ let source_file_is_cpp_model file =
       string_is_prefix Config.relative_cpp_models_dir path
   | _ -> false
 
+let source_file_exists_cache = Hashtbl.create 256
+
+let source_file_path_exists abs_path =
+  try Hashtbl.find source_file_exists_cache abs_path
+  with Not_found ->
+    let result = Sys.file_exists  abs_path in
+    Hashtbl.add source_file_exists_cache abs_path result;
+    result
+
+
+let source_file_of_header header_file =
+  let abs_path = source_file_to_abs_path header_file in
+  let source_file_exts = ["c"; "cc"; "cpp"; "cxx"; "m"; "mm"] in
+  let header_file_exts = ["h"; "hh"; "hpp"; "hxx"] in
+  let file_no_ext, ext_opt = Core.Std.Filename.split_extension abs_path in
+  let file_opt = match ext_opt with
+    | Some ext when IList.mem string_equal ext header_file_exts -> (
+        let possible_files = IList.map (fun ext -> file_no_ext ^ "." ^ ext) source_file_exts in
+        try Some (IList.find source_file_path_exists possible_files)
+        with Not_found -> None
+      )
+    | _ -> None in
+  Option.map source_file_from_abs_path file_opt
+
 (** {2 Source Dirs} *)
 
 (** source directory: the directory inside the results dir corresponding to a source file *)

@@ -17,18 +17,7 @@ let capture_text =
   else "translating"
 
 let replace_header_file_with_source_file file_path =
-  let file_path = DB.source_file_to_abs_path file_path in
-  let possible_file_replacements file_path =
-    IList.map (fun suffix -> (Filename.chop_extension file_path) ^ suffix ) [".m"; ".mm"] in
-  let file =
-    if Filename.check_suffix file_path ".h" || Filename.check_suffix file_path ".hh" then
-      try
-        IList.find Sys.file_exists (possible_file_replacements file_path)
-      with Not_found ->
-        Logging.out "Couldn't find any replacement source file for file %s " file_path;
-        file_path
-    else file_path in
-  DB.source_file_from_abs_path file
+  Option.default file_path (DB.source_file_of_header file_path)
 
 (** Read the files to compile from the changed files index. *)
 let should_capture_file_from_index () =
