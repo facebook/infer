@@ -274,7 +274,12 @@ AC_SUBST([NCPU])
 
 # tools that are optional, eg build systems to be run in integration tests
 AC_CHECK_TOOL([ANT], [ant], [no])
-AC_CHECK_TOOL([BUCK], [buck], [no])
+if test ! -z "$SANDCASTLE"; then
+   BUCK=buck
+   AC_SUBST([BUCK])
+else
+  AC_CHECK_TOOL([BUCK], [buck], [no])
+fi
 
 AC_CONFIG_FILES([
   Makefile.config
