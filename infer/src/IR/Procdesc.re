@@ -419,6 +419,8 @@ let get_slope pdesc => Node.get_generated_slope (get_start_node pdesc) Node.get_
 /** Return [true] iff the procedure is defined, and not just declared */
 let is_defined pdesc => pdesc.attributes.is_defined;
 
+let is_body_empty pdesc => Node.get_succs (get_start_node pdesc) == [];
+
 let is_java_synchronized pdesc => pdesc.attributes.is_java_synchronized_method;
 
 let iter_nodes f pdesc => IList.iter f (IList.rev (get_nodes pdesc));

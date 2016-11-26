@@ -235,6 +235,10 @@ let get_start_node: t => Node.t;
 let is_defined: t => bool;
 
 
+/** Return [true] if the body of the procdesc is empty (no instructions) */
+let is_body_empty: t => bool;
+
+
 /** Return [true] if the procedure signature has the Java synchronized keyword */
 let is_java_synchronized: t => bool;
 

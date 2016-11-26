@@ -540,9 +540,8 @@ module Make (TaintSpec : TaintSpec.S) = struct
               let summary = make_summary formals access_tree in
               Summary.write_summary (Procdesc.get_proc_name pdesc) summary;
           | None ->
-              if Procdesc.Node.get_succs (Procdesc.get_start_node pdesc) = []
-              then ()
-              else failwith "Couldn't compute post"
+              if not (Procdesc.is_body_empty pdesc)
+              then failwith "Couldn't compute post"
         end in
     let callbacks =
       {
