@@ -23,24 +23,6 @@ public abstract class UnknownCode {
     Object interfaceMethod(Object o);
   }
 
-  void propagateViaUnknownNativeCodeBad() {
-    Object source = InferTaint.inferSecretSource();
-    Object launderedSource = nativeMethod(source);
-    InferTaint.inferSensitiveSink(launderedSource);
-  }
-
-  static void propagateViaUnknownAbstractCodeBad() {
-    Object source = InferTaint.inferSecretSource();
-    Object launderedSource = nativeMethod(source);
-    InferTaint.inferSensitiveSink(launderedSource);
-  }
-
-  static void propagateViaInterfaceCodeBad(Interface i) {
-    Object source = InferTaint.inferSecretSource();
-    Object launderedSource = i.interfaceMethod(source);
-    InferTaint.inferSensitiveSink(launderedSource);
-  }
-
   static void propagateViaUnknownConstructorBad() {
     String source = (String) InferTaint.inferSecretSource();
     // we don't analyze the code for the core Java libraries, so this constructor will be unknown
@@ -59,6 +41,24 @@ public abstract class UnknownCode {
     Object launderedSource2 = abstractMethod(launderedSource1);
     Object launderedSource3 = i.interfaceMethod(launderedSource2);
     InferTaint.inferSensitiveSink(launderedSource3);
+  }
+
+  static void FN_propagateViaInterfaceCodeBad(Interface i) {
+    Object source = InferTaint.inferSecretSource();
+    Object launderedSource = i.interfaceMethod(source);
+    InferTaint.inferSensitiveSink(launderedSource);
+  }
+
+  void FN_propagateViaUnknownNativeCodeBad() {
+    Object source = InferTaint.inferSecretSource();
+    Object launderedSource = nativeMethod(source);
+    InferTaint.inferSensitiveSink(launderedSource);
+  }
+
+  static void FN_propagateViaUnknownAbstractCodeBad() {
+    Object source = InferTaint.inferSecretSource();
+    Object launderedSource = nativeMethod(source);
+    InferTaint.inferSensitiveSink(launderedSource);
   }
 
 }

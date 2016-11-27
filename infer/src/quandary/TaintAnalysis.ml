@@ -21,7 +21,12 @@ module Summary = Summary.Make(struct
       { payload with Specs.quandary = Some summary; }
 
     let read_from_payload payload =
-      payload.Specs.quandary
+      match payload.Specs.quandary with
+      | None ->
+          (* abstract/native/interface methods will have None as a summary. treat them as skip *)
+          Some []
+      | summary_opt ->
+          summary_opt
   end)
 
 module Make (TaintSpec : TaintSpec.S) = struct
@@ -526,23 +531,17 @@ module Make (TaintSpec : TaintSpec.S) = struct
           AccessPath.BaseMap.empty
           formals_with_nums in
 
-      let has_body pdesc =
-        let attrs = Procdesc.get_attributes pdesc in
-        attrs.is_defined && not attrs.is_abstract in
-      if has_body pdesc
-      then
-        begin
-          Preanal.doit ~handle_dynamic_dispatch:true pdesc dummy_cg tenv;
-          let formals = make_formal_access_paths pdesc in
-          let proc_data = ProcData.make pdesc tenv formals in
-          match Analyzer.compute_post proc_data with
-          | Some { access_tree; } ->
-              let summary = make_summary formals access_tree in
-              Summary.write_summary (Procdesc.get_proc_name pdesc) summary;
-          | None ->
-              if not (Procdesc.is_body_empty pdesc)
-              then failwith "Couldn't compute post"
-        end in
+      Preanal.doit ~handle_dynamic_dispatch:true pdesc dummy_cg tenv;
+      let formals = make_formal_access_paths pdesc in
+      let proc_data = ProcData.make pdesc tenv formals in
+      match Analyzer.compute_post proc_data with
+      | Some { access_tree; } ->
+          let summary = make_summary formals access_tree in
+          Summary.write_summary (Procdesc.get_proc_name pdesc) summary;
+      | None ->
+          if Procdesc.Node.get_succs (Procdesc.get_start_node pdesc) <> []
+          then failwith "Couldn't compute post" in
+
     let callbacks =
       {
         Ondemand.analyze_ondemand;
