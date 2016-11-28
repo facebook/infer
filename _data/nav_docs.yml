@@ -24,4 +24,5 @@
   - id: linters-bug-types
 - title: Contribute
   items:
+  - id: absint-framework
   - id: adding-checkers
