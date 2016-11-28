@@ -18,7 +18,7 @@ CLANG_OPTIONS = -x objective-c \
 
 CLEAN_EXTRA = infer-out-arc infer-out-all infer-out-all infer-out-arc \
               issues.exp.test.all issues.exp.test.arc issues.exp.test.default
-INFER_OPTIONS = --cxx  --check-duplicate-symbols --no-filtering --debug-exceptions
+INFER_OPTIONS = --cxx  --check-duplicate-symbols --no-filtering --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES_DEFAULT = \

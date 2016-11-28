@@ -9,7 +9,7 @@ TESTS_DIR = ../../..
 
 ANALYZER = infer
 CLANG_OPTIONS = -c
-INFER_OPTIONS = --report-custom-error --developer-mode --no-filtering --debug-exceptions
+INFER_OPTIONS = --report-custom-error --developer-mode --no-filtering --debug-exceptions --project-root $(TESTS_DIR)
 # we need to disable traces in C tests because assertions/assertion_failure.c has different traces
 # on Linux and OSX because of different implementations of assert() on each platform
 INFERPRINT_OPTIONS = --no-print-traces-in-tests --issues-tests

@@ -96,7 +96,7 @@ digraph iCFG {
 
 	 "method_div0_ptr{d41d8cd98f00b204e9800998ecf8427e_Z15method_div0_ptrP1X}.f3e4b6dda73405cc6ef139c433f1be83_1" -> "method_div0_ptr{d41d8cd98f00b204e9800998ecf8427e_Z15method_div0_ptrP1X}.f3e4b6dda73405cc6ef139c433f1be83_5" ;
 	 "method_div0_ptr{d41d8cd98f00b204e9800998ecf8427e_Z15method_div0_ptrP1X}.f3e4b6dda73405cc6ef139c433f1be83_1" -> "method_div0_ptr{d41d8cd98f00b204e9800998ecf8427e_Z15method_div0_ptrP1X}.f3e4b6dda73405cc6ef139c433f1be83_6" ;
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<shared/reference/reference_struct_e2e.cpp>$global:class X*) [line 29]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<codetoanalyze/cpp/frontend/shared/reference/reference_struct_e2e.cpp>$global:class X*) [line 29]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
@@ -137,7 +137,7 @@ digraph iCFG {
 	
 
 	 "get_global_ref_div1_field{d41d8cd98f00b204e9800998ecf8427e_Z25get_global_ref_div1_fieldv}.8607dfe596d93bdff8ef4771a2860768_1" -> "get_global_ref_div1_field{d41d8cd98f00b204e9800998ecf8427e_Z25get_global_ref_div1_fieldv}.8607dfe596d93bdff8ef4771a2860768_5" ;
-"get_global_ref{d41d8cd98f00b204e9800998ecf8427e_Z14get_global_refv}.f4b7019d054deab282b87afe2627508e_3" [label="3:  Return Stmt \n   *&return:class X&=&#GB<shared/reference/reference_struct_e2e.cpp>$global [line 31]\n " shape="box"]
+"get_global_ref{d41d8cd98f00b204e9800998ecf8427e_Z14get_global_refv}.f4b7019d054deab282b87afe2627508e_3" [label="3:  Return Stmt \n   *&return:class X&=&#GB<codetoanalyze/cpp/frontend/shared/reference/reference_struct_e2e.cpp>$global [line 31]\n " shape="box"]
 	
 
 	 "get_global_ref{d41d8cd98f00b204e9800998ecf8427e_Z14get_global_refv}.f4b7019d054deab282b87afe2627508e_3" -> "get_global_ref{d41d8cd98f00b204e9800998ecf8427e_Z14get_global_refv}.f4b7019d054deab282b87afe2627508e_2" ;
@@ -236,7 +236,7 @@ digraph iCFG {
 
 	 "method_div1_ptr{d41d8cd98f00b204e9800998ecf8427e_Z15method_div1_ptrP1X}.1c0e973f73df66029a031ece1247cb9b_1" -> "method_div1_ptr{d41d8cd98f00b204e9800998ecf8427e_Z15method_div1_ptrP1X}.1c0e973f73df66029a031ece1247cb9b_5" ;
 	 "method_div1_ptr{d41d8cd98f00b204e9800998ecf8427e_Z15method_div1_ptrP1X}.1c0e973f73df66029a031ece1247cb9b_1" -> "method_div1_ptr{d41d8cd98f00b204e9800998ecf8427e_Z15method_div1_ptrP1X}.1c0e973f73df66029a031ece1247cb9b_6" ;
-"get_global_ptr{d41d8cd98f00b204e9800998ecf8427e_Z14get_global_ptrv}.2c09171c0890ad0c015390a6138a2db9_3" [label="3:  Return Stmt \n   *&return:class X*=&#GB<shared/reference/reference_struct_e2e.cpp>$global [line 30]\n " shape="box"]
+"get_global_ptr{d41d8cd98f00b204e9800998ecf8427e_Z14get_global_ptrv}.2c09171c0890ad0c015390a6138a2db9_3" [label="3:  Return Stmt \n   *&return:class X*=&#GB<codetoanalyze/cpp/frontend/shared/reference/reference_struct_e2e.cpp>$global [line 30]\n " shape="box"]
 	
 
 	 "get_global_ptr{d41d8cd98f00b204e9800998ecf8427e_Z14get_global_ptrv}.2c09171c0890ad0c015390a6138a2db9_3" -> "get_global_ptr{d41d8cd98f00b204e9800998ecf8427e_Z14get_global_ptrv}.2c09171c0890ad0c015390a6138a2db9_2" ;

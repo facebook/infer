@@ -24,4 +24,4 @@ compile:
 	clang $(CLANG_OPTIONS) $(SOURCES)
 
 capture:
-	$(INFER_BIN) -a capture --cxx --frontend-tests --continue --reactive -- clang $(CLANG_OPTIONS) $(SOURCES)
+	$(INFER_BIN) -a capture --cxx --frontend-tests --continue --reactive --project-root $(TESTS_DIR) -- clang $(CLANG_OPTIONS) $(SOURCES)

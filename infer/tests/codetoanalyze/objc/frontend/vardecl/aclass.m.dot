@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-"AClass_sharedInstanceinstance.8119c64d9e8ea5cab9416c2c3ff21dc7_3" [label="3:  Return Stmt \n   n$0=*&#GB<vardecl/aclass.m>$aVariable:class NSObject* [line 21]\n  *&return:class NSObject*=n$0 [line 21]\n " shape="box"]
+"AClass_sharedInstanceinstance.8119c64d9e8ea5cab9416c2c3ff21dc7_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/vardecl/aclass.m>$aVariable:class NSObject* [line 21]\n  *&return:class NSObject*=n$0 [line 21]\n " shape="box"]
 	
 
 	 "AClass_sharedInstanceinstance.8119c64d9e8ea5cab9416c2c3ff21dc7_3" -> "AClass_sharedInstanceinstance.8119c64d9e8ea5cab9416c2c3ff21dc7_2" ;

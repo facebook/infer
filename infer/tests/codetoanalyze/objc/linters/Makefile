@@ -9,7 +9,7 @@ TESTS_DIR = ../../..
 
 ANALYZER = linters
 CLANG_OPTIONS = -x objective-c -fobjc-arc -c
-INFER_OPTIONS = --no-filtering --debug-exceptions
+INFER_OPTIONS = --no-filtering --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \

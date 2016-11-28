@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<globals/global_const1.cpp|!pod>$global:class X*) [line 13]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:class X*) [line 13]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
@@ -18,7 +18,7 @@ digraph iCFG {
 	
 
 	 "X_X{_ZN1XC1ERKS_}.abc525d74d1815a6e1a874d1ed502de3_1" -> "X_X{_ZN1XC1ERKS_}.abc525d74d1815a6e1a874d1ed502de3_2" ;
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" [label="3:  Return Stmt \n   n$0=*&__return_param:class X* [line 15]\n  _fun_X_X(&#GB<globals/global_const1.cpp|!pod>$global:class X*) [line 13]\n  _fun_X_X(n$0:class X*,&#GB<globals/global_const1.cpp|!pod>$global:class X&) [line 15]\n " shape="box"]
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" [label="3:  Return Stmt \n   n$0=*&__return_param:class X* [line 15]\n  _fun_X_X(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:class X*) [line 13]\n  _fun_X_X(n$0:class X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:class X&) [line 15]\n " shape="box"]
 	
 
 	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" ;
@@ -36,7 +36,7 @@ digraph iCFG {
 	
 
 	 "X_X{_ZN1XC1Ev}.dbc1390b15606562094682699e12caba_1" -> "X_X{_ZN1XC1Ev}.dbc1390b15606562094682699e12caba_2" ;
-"__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_3" [label="3:  DeclStmt \n   *&#GB<globals/global_const1.cpp>$v:int=2 [line 17]\n " shape="box"]
+"__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int=2 [line 17]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_3" -> "__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_2" ;
@@ -47,11 +47,11 @@ digraph iCFG {
 	
 
 	 "__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_1" -> "__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_3" ;
-"test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_4" [label="4:  DeclStmt \n   *&#GB<globals/global_const1.cpp>$v:int=2 [line 20]\n  n$1=*&#GB<globals/global_const1.cpp>$v:int [line 20]\n  *&local:int=n$1 [line 20]\n " shape="box"]
+"test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_4" [label="4:  DeclStmt \n   *&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int=2 [line 20]\n  n$1=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int [line 20]\n  *&local:int=n$1 [line 20]\n " shape="box"]
 	
 
 	 "test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_4" -> "test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_3" ;
-"test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_3" [label="3:  Return Stmt \n   *&#GB<globals/global_const1.cpp>$v:int=2 [line 21]\n  n$0=*&#GB<globals/global_const1.cpp>$v:int [line 21]\n  *&return:int=n$0 [line 21]\n " shape="box"]
+"test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_3" [label="3:  Return Stmt \n   *&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int=2 [line 21]\n  n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int [line 21]\n  *&return:int=n$0 [line 21]\n " shape="box"]
 	
 
 	 "test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_3" -> "test2{d41d8cd98f00b204e9800998ecf8427e_Z5test2v}.cf7940edefd4df119b2c0c269e6b062c_2" ;
