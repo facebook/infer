@@ -23,7 +23,6 @@ INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES_DEFAULT = \
   field_superclass/B.m \
-  memory_leaks_benchmark/FBViewExample.m \
   memory_leaks_benchmark/MemoryLeakRaii.m \
   memory_leaks_benchmark/NSMakeCollectableExample.m \
   memory_leaks_benchmark/NSStringInitWithBytesNoCopyExample.m \
