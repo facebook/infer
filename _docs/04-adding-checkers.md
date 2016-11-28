@@ -1,6 +1,6 @@
 ---
 docid: adding-checkers
-title: Adding checkers
+title: Simple intraprocedural checkers
 layout: docs
 permalink: /docs/adding-checkers.html
 ---
