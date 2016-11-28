@@ -1,6 +1,6 @@
 ---
 docid: absint-framework
-title: Building checkers with the abstract interpretation framework.
+title: Building checkers with the abstract interpretation framework
 layout: docs
 permalink: /docs/absint-framework.html
 ---
