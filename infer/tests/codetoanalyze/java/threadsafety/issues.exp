@@ -1,5 +1,5 @@
-ThreadSafeExample.java, void ExtendsThreadSafeExample.newmethodBad(), 0, THREAD_SAFETY_ERROR, [Method void ExtendsThreadSafeExample.newmethodBad() writes to field codetoanalyze.java.checkers.ExtendsThreadSafeExample.field outside of synchronization. 
+codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ExtendsThreadSafeExample.newmethodBad(), 0, THREAD_SAFETY_ERROR, [Method void ExtendsThreadSafeExample.newmethodBad() writes to field codetoanalyze.java.checkers.ExtendsThreadSafeExample.field outside of synchronization. 
  Note: Superclass class codetoanalyze.java.checkers.ThreadSafeExample is marked @ThreadSafe.]
-ThreadSafeExample.java, void ExtendsThreadSafeExample.tsOK(), 0, THREAD_SAFETY_ERROR, [Method void ExtendsThreadSafeExample.tsOK() writes to field codetoanalyze.java.checkers.ExtendsThreadSafeExample.field outside of synchronization. 
+codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ExtendsThreadSafeExample.tsOK(), 0, THREAD_SAFETY_ERROR, [Method void ExtendsThreadSafeExample.tsOK() writes to field codetoanalyze.java.checkers.ExtendsThreadSafeExample.field outside of synchronization. 
  Note: Superclass class codetoanalyze.java.checkers.ThreadSafeExample is marked @ThreadSafe.]
-ThreadSafeExample.java, void ThreadSafeExample.tsBad(), 0, THREAD_SAFETY_ERROR, [Method void ThreadSafeExample.tsBad() writes to field codetoanalyze.java.checkers.ThreadSafeExample.f outside of synchronization. ]
+codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ThreadSafeExample.tsBad(), 0, THREAD_SAFETY_ERROR, [Method void ThreadSafeExample.tsBad() writes to field codetoanalyze.java.checkers.ThreadSafeExample.f outside of synchronization. ]

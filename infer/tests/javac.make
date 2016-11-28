@@ -22,4 +22,4 @@ $(OBJECTS): $(SOURCES)
 
 infer-out/report.json: $(INFER_BIN) $(SOURCES)
 	$(call silent_on_success,\
-	  $(INFER_BIN) $(INFER_OPTIONS) -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(SOURCES))
+	  $(INFER_BIN) --project-root $(TESTS_DIR) --inferconfig-home . $(INFER_OPTIONS) -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(SOURCES))
