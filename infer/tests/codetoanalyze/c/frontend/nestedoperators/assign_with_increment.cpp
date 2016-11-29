@@ -1,1 +1,0 @@
-assign_with_increment.c

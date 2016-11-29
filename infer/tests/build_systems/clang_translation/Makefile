@@ -15,9 +15,9 @@ SYM_ROOT = ../codetoanalyze/clang_translation/tsrc_symlink
 
 SOURCES = \
   $(ROOT)/main.cpp \
-	$(ROOT)/main_default_root.cpp \
-	$(SYM_ROOT)/main_symlink.cpp \
-	$(SYM_ROOT)/main_default_symlink.cpp \
+  $(ROOT)/main_default_root.cpp \
+  $(SYM_ROOT)/main_symlink.cpp \
+  $(SYM_ROOT)/main_default_symlink.cpp \
 
 include $(TESTS_DIR)/clang-frontend.make
 
@@ -27,10 +27,21 @@ compile:
 	clang $(CLANG_OPTIONS) $(SOURCES)
 
 capture:
-	$(INFER_BIN) $(INFER_OPTIONS) --project-root $(ROOT)  -- clang $(CLANG_OPTIONS) $(ROOT)/main.cpp
-	$(INFER_BIN) $(INFER_OPTIONS) --project-root $(SYM_ROOT) -- clang $(CLANG_OPTIONS) $(SYM_ROOT)/main_symlink.cpp
-	cd $(ROOT) && $(INFER_BIN) $(INFER_OPTIONS) -- clang $(CLANG_OPTIONS) main_default_root.cpp
-	cd $(SYM_ROOT) && $(INFER_BIN) $(INFER_OPTIONS) -- clang $(CLANG_OPTIONS) main_default_symlink.cpp
+	$(INFER_BIN) $(INFER_OPTIONS) --project-root $(ROOT) \
+	--icfg-dotty-outfile $(ROOT)/main.cpp.test.dot -- \
+	clang $(CLANG_OPTIONS) $(ROOT)/main.cpp
+
+	$(INFER_BIN) $(INFER_OPTIONS) --project-root $(SYM_ROOT) \
+	--icfg-dotty-outfile $(SYM_ROOT)/main_symlink.cpp.test.dot -- \
+	clang $(CLANG_OPTIONS) $(SYM_ROOT)/main.cpp
+
+	cd $(ROOT) && $(INFER_BIN) $(INFER_OPTIONS) \
+	--icfg-dotty-outfile main_default_root.cpp.test.dot -- \
+	clang $(CLANG_OPTIONS) main.cpp
+
+	cd $(SYM_ROOT) && $(INFER_BIN) $(INFER_OPTIONS) \
+	--icfg-dotty-outfile main_default_symlink.cpp.test.dot -- \
+	clang $(CLANG_OPTIONS) main.cpp
 
 # test_extra needs to be separate target. Otherwise commands from test
 # target in common Makefile won't run

@@ -66,7 +66,8 @@ let do_source_file translation_unit_context ast =
   if Config.stats_mode
   || Config.debug_mode
   || Config.testing_mode
-  || Config.frontend_tests then
+  || Config.frontend_tests
+  || Option.is_some Config.icfg_dotty_outfile then
     (Dotty.print_icfg_dotty source_file cfg;
      Cg.save_call_graph_dotty source_file Specs.get_specs call_graph);
   (* NOTE: nothing should be written to source_dir after this *)

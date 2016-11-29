@@ -65,14 +65,18 @@ let rel_path_from_abs_path root fname =
 
 (** convert a project root directory and a full path to a rooted source file *)
 let source_file_from_abs_path fname =
+  (* IMPORTANT: results of realpath are cached to not ruin performance *)
+  let fname_real = realpath fname in
+  let project_root_real = realpath Config.project_root in
+  let models_dir_real = Config.models_src_dir in
   if Filename.is_relative fname then
     (failwithf
        "ERROR: Path %s is relative, when absolute path was expected .@."
        fname);
-  match rel_path_from_abs_path Config.project_root fname with
+  match rel_path_from_abs_path project_root_real fname_real with
   | Some path -> RelativeProjectRoot path
   | None -> (
-      match rel_path_from_abs_path Config.models_src_dir fname with
+      match rel_path_from_abs_path models_dir_real fname_real with
       | Some path -> RelativeInferModel path
       | None -> Absolute fname (* fname is absolute already *)
     )
@@ -131,6 +135,10 @@ let source_file_is_cpp_model file =
       string_is_prefix Config.relative_cpp_models_dir path
   | _ -> false
 
+let source_file_is_under_project_root = function
+  | RelativeProjectRoot _ -> true
+  | Absolute _ | RelativeInferModel _ -> false
+
 let source_file_exists_cache = Hashtbl.create 256
 
 let source_file_path_exists abs_path =
@@ -139,7 +147,6 @@ let source_file_path_exists abs_path =
     let result = Sys.file_exists  abs_path in
     Hashtbl.add source_file_exists_cache abs_path result;
     result
-
 
 let source_file_of_header header_file =
   let abs_path = source_file_to_abs_path header_file in

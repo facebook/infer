@@ -200,6 +200,7 @@ val frontend_debug : bool
 val frontend_tests : bool
 val frontend_stats : bool
 val headers : bool
+val icfg_dotty_outfile : string option
 val infer_cache : string option
 val is_originator : bool
 val iterations : int

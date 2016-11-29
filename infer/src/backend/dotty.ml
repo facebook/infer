@@ -1032,14 +1032,15 @@ let write_icfg_dotty_to_file source cfg fname =
 
 let print_icfg_dotty source cfg =
   let fname =
-    if Config.frontend_tests
-    then
-      (DB.source_file_to_abs_path source) ^ ".test.dot"
-    else
-      DB.filename_to_string
-        (DB.Results_dir.path_to_filename
-           (DB.Results_dir.Abs_source_dir source)
-           [Config.dotty_output]) in
+    match Config.icfg_dotty_outfile with
+    | Some file -> file
+    | None when Config.frontend_tests = true ->
+        (DB.source_file_to_abs_path source) ^ ".test.dot"
+    | None ->
+        DB.filename_to_string
+          (DB.Results_dir.path_to_filename
+             (DB.Results_dir.Abs_source_dir source)
+             [Config.dotty_output]) in
   write_icfg_dotty_to_file source cfg fname
 
 (********** END of Printing dotty files ***********)

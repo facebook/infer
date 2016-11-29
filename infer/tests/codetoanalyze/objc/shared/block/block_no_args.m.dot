@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_14" [label="14:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/objc/frontend/shared/block/block_no_args.m>$g:int=7 [line 22]\n " shape="box"]
+"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_14" [label="14:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=7 [line 22]\n " shape="box"]
 	
 
 	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_14" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_13" ;
@@ -8,7 +8,7 @@ digraph iCFG {
 	
 
 	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_13" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_12" ;
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_12" [label="12:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_m______1); [line 25]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_m______1):unsigned long) [line 25]\n  *&__objc_anonymous_block_My_manager_m______1:class __objc_anonymous_block_My_manager_m______1=n$7 [line 25]\n  n$8=*&z:int [line 25]\n  n$9=*&#GB<codetoanalyze/objc/frontend/shared/block/block_no_args.m>$g:int [line 25]\n  *n$7.z:int=n$8 [line 25]\n  *n$7.g:int=n$9 [line 25]\n  n$5=*&z:int [line 25]\n  *&b:_fn_(*)=(_fun___objc_anonymous_block_My_manager_m______1,n$5) [line 25]\n " shape="box"]
+"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_12" [label="12:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_m______1); [line 25]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_m______1):unsigned long) [line 25]\n  *&__objc_anonymous_block_My_manager_m______1:class __objc_anonymous_block_My_manager_m______1=n$7 [line 25]\n  n$8=*&z:int [line 25]\n  n$9=*&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int [line 25]\n  *n$7.z:int=n$8 [line 25]\n  *n$7.g:int=n$9 [line 25]\n  n$5=*&z:int [line 25]\n  *&b:_fn_(*)=(_fun___objc_anonymous_block_My_manager_m______1,n$5) [line 25]\n " shape="box"]
 	
 
 	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_12" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_11" ;
@@ -36,7 +36,7 @@ digraph iCFG {
 	
 
 	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_6" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_8" ;
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&#GB<codetoanalyze/objc/frontend/shared/block/block_no_args.m>$g:int [line 30]\n " shape="box"]
+"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int [line 30]\n " shape="box"]
 	
 
 	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_5" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_6" ;
@@ -56,7 +56,7 @@ digraph iCFG {
 	
 
 	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_1" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_14" ;
-"__objc_anonymous_block_My_manager_m______1.3cc413211d47d071e2197fcf824430cb_3" [label="3:  BinaryOperatorStmt: Assign \n   n$6=*&z:int [line 26]\n  *&#GB<codetoanalyze/objc/frontend/shared/block/block_no_args.m>$g:int=(n$6 + 3) [line 26]\n " shape="box"]
+"__objc_anonymous_block_My_manager_m______1.3cc413211d47d071e2197fcf824430cb_3" [label="3:  BinaryOperatorStmt: Assign \n   n$6=*&z:int [line 26]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$6 + 3) [line 26]\n " shape="box"]
 	
 
 	 "__objc_anonymous_block_My_manager_m______1.3cc413211d47d071e2197fcf824430cb_3" -> "__objc_anonymous_block_My_manager_m______1.3cc413211d47d071e2197fcf824430cb_2" ;

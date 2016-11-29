@@ -20,7 +20,7 @@ $(OBJECTS): $(SOURCES)
 
 infer-out/report.json: $(INFER_BIN) $(SOURCES)
 	$(call silent_on_success,\
-	  $(INFER_BIN) -a $(ANALYZER) -- ant)
+	  $(INFER_BIN) -a $(ANALYZER) --project-root $(TESTS_DIR) --inferconfig-home . -- ant)
 
 clean:
 	ant clean

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 - present Facebook, Inc.
+ * Copyright (c) 2013 - present Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD style license found in the
@@ -7,9 +7,30 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#include <stdlib.h>
+struct {
+  int a;
+  int b;
+} * x;
 
-void test() {
-  int* s = NULL;
-  *s = 42;
+union {
+  int e;
+  int f;
+
+  struct {
+    int w;
+    int u;
+  } g;
+
+  int h;
+} y;
+
+int main() {
+  int l;
+
+  x->a = 1;
+  y.f = 7;
+  y.g.u = y.f;
+
+  y.g.w = x->b;
+  return 0;
 }

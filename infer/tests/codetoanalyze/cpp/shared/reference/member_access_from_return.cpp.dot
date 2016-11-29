@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<codetoanalyze/cpp/frontend/shared/reference/member_access_from_return.cpp>$global:class X*) [line 15]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global:class X*) [line 15]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
@@ -18,7 +18,7 @@ digraph iCFG {
 	
 
 	 "X_X{_ZN1XC1Ev}.dbc1390b15606562094682699e12caba_1" -> "X_X{_ZN1XC1Ev}.dbc1390b15606562094682699e12caba_2" ;
-"get_ptr{d41d8cd98f00b204e9800998ecf8427e_Z7get_ptrv}.79c23fccc4af78490d3b790f3bfe4b4b_3" [label="3:  Return Stmt \n   *&return:class X*=&#GB<codetoanalyze/cpp/frontend/shared/reference/member_access_from_return.cpp>$global [line 16]\n " shape="box"]
+"get_ptr{d41d8cd98f00b204e9800998ecf8427e_Z7get_ptrv}.79c23fccc4af78490d3b790f3bfe4b4b_3" [label="3:  Return Stmt \n   *&return:class X*=&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global [line 16]\n " shape="box"]
 	
 
 	 "get_ptr{d41d8cd98f00b204e9800998ecf8427e_Z7get_ptrv}.79c23fccc4af78490d3b790f3bfe4b4b_3" -> "get_ptr{d41d8cd98f00b204e9800998ecf8427e_Z7get_ptrv}.79c23fccc4af78490d3b790f3bfe4b4b_2" ;
@@ -44,7 +44,7 @@ digraph iCFG {
 	
 
 	 "test_ref{d41d8cd98f00b204e9800998ecf8427e_Z8test_refv}.00ae903ec76106232cfb760d7c58e99e_1" -> "test_ref{d41d8cd98f00b204e9800998ecf8427e_Z8test_refv}.00ae903ec76106232cfb760d7c58e99e_4" ;
-"get_ref{d41d8cd98f00b204e9800998ecf8427e_Z7get_refv}.bbbf241bd8d761aafd6f3adea16247b8_3" [label="3:  Return Stmt \n   *&return:class X&=&#GB<codetoanalyze/cpp/frontend/shared/reference/member_access_from_return.cpp>$global [line 17]\n " shape="box"]
+"get_ref{d41d8cd98f00b204e9800998ecf8427e_Z7get_refv}.bbbf241bd8d761aafd6f3adea16247b8_3" [label="3:  Return Stmt \n   *&return:class X&=&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global [line 17]\n " shape="box"]
 	
 
 	 "get_ref{d41d8cd98f00b204e9800998ecf8427e_Z7get_refv}.bbbf241bd8d761aafd6f3adea16247b8_3" -> "get_ref{d41d8cd98f00b204e9800998ecf8427e_Z7get_refv}.bbbf241bd8d761aafd6f3adea16247b8_2" ;

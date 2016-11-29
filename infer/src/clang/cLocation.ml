@@ -18,26 +18,21 @@ let clang_to_sil_location trans_unit_ctx clang_loc =
       trans_unit_ctx.CFrontend_config.source_file clang_loc.Clang_ast_t.sl_file in
   Location.{line; col; file}
 
-let file_in_project file =
-  (* IMPORTANT: results of realpath are cached to not ruin performance *)
-  let real_root = realpath Config.project_root in
-  let real_file = realpath file in
-  let file_in_project = string_is_prefix real_root real_file in
-  let paths = Config.skip_translation_headers in
+let source_file_in_project source_file =
+  let file_in_project = DB.source_file_is_under_project_root source_file in
+  let rel_source_file = DB.source_file_to_string source_file in
   let file_should_be_skipped =
     IList.exists
-      (fun path -> string_is_prefix (Filename.concat real_root path) real_file)
-      paths in
+      (fun path -> string_is_prefix path rel_source_file)
+      Config.skip_translation_headers in
   file_in_project && not (file_should_be_skipped)
 
 let should_do_frontend_check trans_unit_ctx (loc_start, _) =
   match loc_start.Clang_ast_t.sl_file with
   | Some file ->
-      let equal_current_source file =
-        DB.source_file_equal (DB.source_file_from_abs_path file)
-          trans_unit_ctx.CFrontend_config.source_file in
-      equal_current_source file ||
-      (file_in_project file &&  not Config.testing_mode)
+      let source_file = (DB.source_file_from_abs_path file) in
+      DB.source_file_equal source_file trans_unit_ctx.CFrontend_config.source_file ||
+      (source_file_in_project source_file &&  not Config.testing_mode)
   | None -> false
 
 (** We translate by default the instructions in the current file.  In C++ development, we also
@@ -59,8 +54,8 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
      which uses same logic to produce both files *)
   let equal_current_source = DB.source_file_equal trans_unit_ctx.CFrontend_config.source_file
   in
-  let file_in_project = map_path_of file_in_project loc_end
-                        || map_path_of file_in_project loc_start in
+  let file_in_project = map_file_of source_file_in_project loc_end
+                        || map_file_of source_file_in_project loc_start in
   let translate_on_demand = translate_when_used || file_in_project || Config.models_mode in
   let file_in_models = map_file_of DB.source_file_is_cpp_model loc_end
                        || map_file_of DB.source_file_is_cpp_model loc_start in

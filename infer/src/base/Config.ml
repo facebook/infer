@@ -936,6 +936,11 @@ and headers =
     ~exes:CLOpt.[Clang]
     "Analyze code in header files"
 
+and icfg_dotty_outfile =
+  CLOpt.mk_path_opt ~long:"icfg-dotty-outfile" ~meta:"path"
+    "If set, specifies path where .dot file should be written, it overrides the path for all \
+     other options that would generate icfg file otherwise"
+
 and infer_cache =
   CLOpt.mk_path_opt ~deprecated:["infer_cache"; "-infer_cache"] ~long:"infer-cache"
     ~meta:"dir" "Select a directory to contain the infer cache (Buck and Java only)"
@@ -1465,6 +1470,7 @@ and from_json_report = !from_json_report
 and frontend_debug = !frontend_debug
 and frontend_stats = !frontend_stats
 and headers = !headers
+and icfg_dotty_outfile = !icfg_dotty_outfile
 and infer_cache = !infer_cache
 and iterations = !iterations
 and java_jar_compiler = !java_jar_compiler

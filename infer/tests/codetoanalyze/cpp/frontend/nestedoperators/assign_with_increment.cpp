@@ -7,9 +7,10 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#include <stdlib.h>
-
-void test() {
-  int* s = NULL;
-  *s = 42;
+int test() {
+  int a = 3;
+  int b = ++a;
+  int c = a++;
+  int d = --a;
+  int e = a--;
 }

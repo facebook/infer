@@ -120,6 +120,9 @@ val source_file_is_infer_model : source_file -> bool
 (** Returns true if the file is a C++ model *)
 val source_file_is_cpp_model : source_file -> bool
 
+(** Returns true if the file is in project root *)
+val source_file_is_under_project_root : source_file -> bool
+
 (** Return approximate source file corresponding to the parameter if it's header file and
     file exists. returns None otherwise *)
 val source_file_of_header : source_file -> source_file option
