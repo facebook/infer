@@ -173,7 +173,7 @@ class Hello {
 	int test() {
 		String s = "Hello World";
 		System.out.println(s);
-		s= null;
+		s = null;
 		println();
 		return s.length();
 	}
