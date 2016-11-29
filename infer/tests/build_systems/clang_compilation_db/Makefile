@@ -12,7 +12,7 @@ CMAKE_BUILD_DIR = $(CMAKE_DIR)/_build
 
 ANALYZER = infer
 CLEAN_EXTRA = $(CMAKE_BUILD_DIR)
-INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(CMAKE_DIR) --changed-files-index $(CMAKE_DIR)/index.txt
+INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(CMAKE_DIR)
 SOURCES = $(CMAKE_DIR)/hello.cpp
 OBJECTS = $(CMAKE_BUILD_DIR)/compile_commands.json
 INFERPRINT_OPTIONS = --issues-tests
@@ -26,6 +26,20 @@ $(CMAKE_BUILD_DIR)/compile_commands.json: $(SOURCES) $(CMAKE_DIR)/CMakeLists.txt
 	cd $(CMAKE_BUILD_DIR) && \
 	$(CMAKE) -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
 
-infer-out/report.json: $(CMAKE_BUILD_DIR)/compile_commands.json $(INFER_BIN) $(SOURCES)
+infer-out/report.json:
+	# make this target empty - since this test defines issues.exp.test directly
+
+infer-out-with-index/report.json: $(CMAKE_BUILD_DIR)/compile_commands.json $(INFER_BIN) $(SOURCES)
 	$(call silent_on_success,\
-	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) -- clang-compilation-database $<)
+	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) -o infer-out-with-index --changed-files-index $(CMAKE_DIR)/index.txt -- clang-compilation-database $<)
+
+infer-out-no-index/report.json: $(CMAKE_BUILD_DIR)/compile_commands.json $(INFER_BIN) $(SOURCES)
+	$(call silent_on_success,\
+	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) -o infer-out-no-index -- clang-compilation-database $<)
+
+issues.exp.test: infer-out-with-index/report.json infer-out-no-index/report.json
+	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.with-index \
+		--from-json-report infer-out-with-index/report.json
+	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.no-index \
+	  --from-json-report infer-out-no-index/report.json
+	cat $@.with-index $@.no-index > $@
