@@ -29,9 +29,9 @@ module Summary = Summary.Make(struct
           summary_opt
   end)
 
-module Make (TaintSpec : TaintSpec.S) = struct
+module Make (TaintSpecification : TaintSpec.S) = struct
 
-  module TraceDomain = TaintSpec.Trace
+  module TraceDomain = TaintSpecification.Trace
   module TaintDomain = AccessTree.Make (TraceDomain)
   module IdMapDomain = IdAccessPathMapDomain
 
@@ -118,11 +118,15 @@ module Make (TaintSpec : TaintSpec.S) = struct
       | None -> TraceDomain.initial
 
     (* get the node associated with [exp] in [access_tree] *)
-    let exp_get_node exp typ { Domain.access_tree; id_map; } proc_data loc =
+    let exp_get_node ?(abstracted=false) exp typ { Domain.access_tree; id_map; } proc_data loc =
       let f_resolve_id = resolve_id id_map in
       match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
-      | Some access_path ->
-          access_path_get_node (AccessPath.Exact access_path) access_tree proc_data loc
+      | Some raw_access_path ->
+          let access_path =
+            if abstracted
+            then AccessPath.Abstracted raw_access_path
+            else AccessPath.Exact raw_access_path in
+          access_path_get_node access_path access_tree proc_data loc
       | None ->
           (* can't make an access path from [exp] *)
           None
@@ -155,7 +159,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
         match Summary.read_summary proc_data.tenv proc_data.pdesc pname with
         | Some summary ->
             let join_output_trace acc { QuandarySummary.output_trace; } =
-              TraceDomain.join (TaintSpec.of_summary_trace output_trace) acc in
+              TraceDomain.join (TaintSpecification.of_summary_trace output_trace) acc in
             IList.fold_left join_output_trace TraceDomain.initial summary
         | None ->
             TraceDomain.initial in
@@ -295,7 +299,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
               Some (global_ap, global_trace) in
         match caller_ap_trace_opt with
         | Some (caller_ap, caller_trace) ->
-            let output_trace = TaintSpec.of_summary_trace in_out_summary.output_trace in
+            let output_trace = TaintSpecification.of_summary_trace in_out_summary.output_trace in
             let appended_trace = TraceDomain.append in_trace output_trace callee_site in
             let joined_trace = TraceDomain.join caller_trace appended_trace in
             let filtered_trace = report_and_filter_trace joined_trace callee_site proc_data in
@@ -365,6 +369,45 @@ module Make (TaintSpec : TaintSpec.S) = struct
             astate
 
       | Sil.Call (ret, Const (Cfun called_pname), actuals, callee_loc, call_flags) ->
+
+          let handle_unknown_call callee_pname astate =
+            let exp_join_traces trace_acc (exp, typ) =
+              match exp_get_node ~abstracted:true exp typ astate proc_data callee_loc with
+              | Some (trace, _) -> TraceDomain.join trace trace_acc
+              | None -> trace_acc in
+            let propagate_to_access_path access_path actuals (astate : Domain.astate) =
+              let trace_with_propagation =
+                IList.fold_left exp_join_traces TraceDomain.initial actuals in
+              let access_tree =
+                TaintDomain.add_trace access_path trace_with_propagation astate.access_tree in
+              { astate with access_tree; } in
+            let handle_unknown_call_ astate_acc propagation =
+              match propagation, actuals, ret with
+              | _, [], _ ->
+                  astate_acc
+              | TaintSpec.Propagate_to_return, actuals, Some (ret_id, ret_typ) ->
+                  let ret_ap = AccessPath.Exact (AccessPath.of_id ret_id ret_typ) in
+                  propagate_to_access_path ret_ap actuals astate_acc
+              | TaintSpec.Propagate_to_receiver,
+                (receiver_exp, receiver_typ) :: (_ :: _ as other_actuals),
+                _ ->
+                  let receiver_ap =
+                    match AccessPath.of_lhs_exp receiver_exp receiver_typ ~f_resolve_id with
+                    | Some ap ->
+                        AccessPath.Exact ap
+                    | None ->
+                        failwithf
+                          "Receiver for called procedure %a does not have an access path"
+                          Procname.pp
+                          callee_pname in
+                  propagate_to_access_path receiver_ap other_actuals astate_acc
+              | _ ->
+                  astate_acc in
+
+            let propagations =
+              TaintSpecification.handle_unknown_call callee_pname (Option.map snd ret) in
+            IList.fold_left handle_unknown_call_ astate propagations in
+
           let analyze_call astate_acc callee_pname =
             let call_site = CallSite.make callee_pname callee_loc in
 
@@ -391,11 +434,11 @@ module Make (TaintSpec : TaintSpec.S) = struct
                 (* don't use a summary for a procedure that is a direct source or sink *)
                 astate_with_source
               else
-                let summary =
-                  match Summary.read_summary proc_data.tenv proc_data.pdesc callee_pname with
-                  | Some summary -> summary
-                  | None -> TaintSpec.handle_unknown_call call_site (Option.map snd ret) actuals in
-                apply_summary ret actuals summary astate_with_source proc_data call_site in
+                match Summary.read_summary proc_data.tenv proc_data.pdesc callee_pname with
+                | Some summary ->
+                    apply_summary ret actuals summary astate_with_source proc_data call_site
+                | None ->
+                    handle_unknown_call callee_pname astate_with_source in
 
             Domain.join astate_acc astate_with_summary in
 
@@ -443,7 +486,7 @@ module Make (TaintSpec : TaintSpec.S) = struct
       | Var.ProgramVar pvar -> Pvar.is_return pvar
       | Var.LogicalVar _ -> false in
     let add_summaries_for_trace summary_acc access_path trace =
-      let summary_trace = TaintSpec.to_summary_trace trace in
+      let summary_trace = TaintSpecification.to_summary_trace trace in
       let output_opt =
         let base, accesses = AccessPath.extract access_path in
         match AccessPath.BaseMap.find base formal_map with

@@ -22,6 +22,6 @@ include
       | QuandarySummary.Cpp trace -> trace
       | _ -> assert false
 
-    let handle_unknown_call _ _ _ =
+    let handle_unknown_call _ _ =
       []
   end)
