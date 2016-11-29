@@ -12,7 +12,12 @@ module PPrawpath = PrettyPrintable.MakePPSet(struct
     let pp_element = AccessPath.pp_raw
   end)
 
-module LocksDomain =  AbstractDomain.FiniteSet(Utils.StringPPSet)
+(** A bool that is true if a lock is definitely held. Note that this is unsound because it assumes
+    the existence of one global lock. In the case that a lock is held on the access to a variable,
+    but the lock held is the wrong one, we will erroneously say that the access is thread-safe.
+    However, this coarse abstraction saves us from the complexity of tracking which locks are held
+    and which memory locations correspond to the same lock. *)
+module LocksDomain = AbstractDomain.BooleanAnd
 
 module PathDomain =  AbstractDomain.FiniteSet(PPrawpath)
 

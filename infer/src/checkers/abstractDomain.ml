@@ -142,3 +142,19 @@ module Map (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
   let pp fmt astate =
     M.pp ~pp_value:ValueDomain.pp fmt astate
 end
+
+module BooleanAnd = struct
+  type astate = bool
+
+  let initial = false
+
+  let (<=) ~lhs ~rhs = lhs || not rhs
+
+  let join = (&&)
+
+  let widen ~prev ~next ~num_iters:_ =
+    join prev next
+
+  let pp fmt astate =
+    F.fprintf fmt "%b" astate
+end

@@ -40,21 +40,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       pathdomainstate
       (AccessPath.of_exp exp typ ~f_resolve_id:(fun _ -> None))
 
-  let exec_instr ((lockstate,(readstate,writestate)) as astate) { ProcData.pdesc; } _ =
-    let is_unprotected lockstate =
-      (not (Procdesc.is_java_synchronized pdesc)) &&
-      (ThreadSafetyDomain.LocksDomain.is_empty lockstate)
-    in
+  let exec_instr ((lockstate, (readstate,writestate)) as astate) { ProcData.pdesc; } _ =
+    let is_unprotected is_locked =
+      not is_locked && not (Procdesc.is_java_synchronized pdesc) in
     function
     | Sil.Call (_, Const (Cfun pn), _, _, _) ->
         if is_lock_procedure pn
-        then
-          ((ThreadSafetyDomain.LocksDomain.add "locked" lockstate), (readstate,writestate))
+        then true, (readstate,writestate)
         else if is_unlock_procedure pn
-        then
-          ((ThreadSafetyDomain.LocksDomain.remove "locked" lockstate) , (readstate,writestate))
-        else
-          astate
+        then false, (readstate,writestate)
+        else astate
 
     | Sil.Store ((Lfield ( _, _, typ) as lhsfield) , _, _, _) ->
         if is_unprotected lockstate then (* abstracts no lock being held*)

@@ -47,3 +47,7 @@ module Map (Map : PrettyPrintable.PPMap) (ValueDomain : S) : sig
   include PrettyPrintable.PPMap with type 'a t = 'a Map.t and type key = Map.key
   include S with type astate = ValueDomain.astate Map.t
 end
+
+(** Boolean domain ordered by p || ~q. Useful when you want a boolean that's true only when it's
+    true in both branches. *)
+module BooleanAnd : S with type astate = bool
