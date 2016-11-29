@@ -54,6 +54,11 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
      which uses same logic to produce both files *)
   let equal_current_source = DB.source_file_equal trans_unit_ctx.CFrontend_config.source_file
   in
+  let equal_header_of_current_source maybe_header =
+    (* DB.source_file_of_header will cache calls to filesystem *)
+    let source_of_header_opt = DB.source_file_of_header maybe_header in
+    Option.map_default equal_current_source false source_of_header_opt
+  in
   let file_in_project = map_file_of source_file_in_project loc_end
                         || map_file_of source_file_in_project loc_start in
   let translate_on_demand = translate_when_used || file_in_project || Config.models_mode in
@@ -62,6 +67,7 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
   map_file_of equal_current_source loc_end
   || map_file_of equal_current_source loc_start
   || file_in_models
+  || (Config.cxx_experimental && map_file_of equal_header_of_current_source loc_start)
   || (Config.cxx_experimental && decl_trans_context = `Translation && translate_on_demand
       && not Config.testing_mode)
 

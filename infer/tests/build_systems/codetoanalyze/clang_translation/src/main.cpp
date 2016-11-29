@@ -9,8 +9,8 @@
 
 #include <memory>
 #include <string>
+#include "main.h"
 
-#include "project_lib.h"
 #include "external/external_lib.h"
 #include "exclude_dir/lib.h"
 

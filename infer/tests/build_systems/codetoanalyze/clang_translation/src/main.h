@@ -8,13 +8,12 @@
  */
 
 #pragma once
-namespace internal {
-int fun(int a) { return a; }
 
-// function shouldn't be translated if it's not used in source file
-int unused(int a) { return a; }
+#include "project_lib.h"
 
-// function should be translated because it's used in header corresponding
-// to source file
-int used_in_main_header(int a) { return a; }
+// even though it's unused, it should be translated if compiled source is
+// main.cpp (or a symbolic link pointing to it)
+int unused_deref_in_header(int* a) {
+  int x = internal::used_in_main_header(0);
+  return *a;
 }
