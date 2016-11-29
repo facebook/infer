@@ -39,7 +39,7 @@ let rec rmtree name =
 
 type build_mode =
   | Analyze | Ant | Buck | ClangCompilationDatabase | Gradle | Java | Javac | Make | Mvn | Ndk
-  | Xcode
+  | Xcode | Genrule
 
 let build_mode_of_string path =
   match Filename.basename path with
@@ -47,6 +47,7 @@ let build_mode_of_string path =
   | "ant" -> Ant
   | "buck" -> Buck
   | "clang-compilation-database" -> ClangCompilationDatabase
+  | "genrule" -> Genrule
   | "gradle" | "gradlew" -> Gradle
   | "java" -> Java
   | "javac" -> Javac
@@ -61,6 +62,7 @@ let string_of_build_mode = function
   | Ant -> "ant"
   | Buck -> "buck"
   | ClangCompilationDatabase -> "clang-compilation-database"
+  | Genrule -> "genrule"
   | Gradle -> "gradle"
   | Java -> "java"
   | Javac -> "javac"
@@ -68,6 +70,7 @@ let string_of_build_mode = function
   | Mvn -> "maven"
   | Ndk -> "ndk-build"
   | Xcode -> "xcodebuild"
+
 
 let remove_results_dir () =
   rmtree Config.results_dir
@@ -174,6 +177,10 @@ let capture build_cmd = function
       check_xcpretty ();
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_xcodebuild () in
       capture_with_compilation_database json_cdb
+  | Genrule ->
+      L.stdout "Capturing for Buck genrule compatibility...@\n";
+      let infer_java = Config.bin_dir // "InferJava" in
+      run_command [infer_java] (function _ -> ())
   | build_mode ->
       L.stdout "Capturing in %s mode...@." (string_of_build_mode build_mode);
       let in_buck_mode = build_mode = Buck in
@@ -279,7 +286,7 @@ let analyze = function
   | Java | Javac ->
       (* In Java and Javac modes, analysis is invoked from capture. *)
       ()
-  | Analyze | Ant | Buck | ClangCompilationDatabase | Gradle | Make | Mvn | Ndk | Xcode ->
+  | Analyze | Ant | Buck | ClangCompilationDatabase | Genrule | Gradle | Make | Mvn | Ndk | Xcode ->
       if not (Sys.file_exists Config.(results_dir // captured_dir_name)) then (
         L.stderr "There was nothing to analyze, exiting" ;
         Config.print_usage_exit ()

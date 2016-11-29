@@ -595,6 +595,11 @@ and blacklist =
     ~meta:"regex" "Skip analysis of files matched by the specified regular expression (Buck \
                    flavors only)"
 
+and bootclasspath =
+  CLOpt.mk_string_opt ~long:"bootclasspath"
+    ~exes:CLOpt.[Toplevel; Java]
+    "Specify the Java bootclasspath"
+
 (** Automatically set when running from within Buck *)
 and buck =
   CLOpt.mk_bool ~long:"buck"
@@ -702,6 +707,11 @@ and clang_include_to_override =
     "Use this option in the uncommon case where the normal compilation process overrides the \
      location of internal compiler headers. This option should specify the path to those headers \
      so that infer can use its own clang internal headers instead."
+
+and classpath =
+  CLOpt.mk_string_opt ~long:"classpath"
+    ~exes:CLOpt.[Java]
+    "Specify the Java classpath"
 
 and cluster =
   CLOpt.mk_path_opt ~deprecated:["cluster"] ~long:"cluster"
@@ -931,6 +941,11 @@ and frontend_tests =
     ~exes:CLOpt.frontend_exes
     "Save filename.ext.test.dot with the cfg in dotty format for frontend tests"
 
+and generated_classes =
+  CLOpt.mk_path_opt ~long:"generated-classes"
+    ~exes:CLOpt.[Toplevel; Java]
+    "Specify where to load the generated class files"
+
 and headers =
   CLOpt.mk_bool ~deprecated:["headers"] ~deprecated_no:["no_headers"] ~long:"headers" ~short:"hd"
     ~exes:CLOpt.[Clang]
@@ -1155,6 +1170,16 @@ and skip_translation_headers =
   CLOpt.mk_string_list ~deprecated:["skip_translation_headers"] ~long:"skip-translation-headers"
     ~exes:CLOpt.[Clang]
     ~meta:"path prefix" "Ignore headers whose path matches the given prefix"
+
+and sources =
+  CLOpt.mk_string_list ~long:"sources"
+    ~exes:CLOpt.[Java]
+    "Specify the list of source files"
+
+and sourcepath =
+  CLOpt.mk_string_opt ~long:"sourcepath"
+    ~exes:CLOpt.[Java]
+    "Specify the sourcepath"
 
 and spec_abs_level =
   CLOpt.mk_int ~deprecated:["spec_abs_level"] ~long:"spec-abs-level" ~default:1
@@ -1418,12 +1443,14 @@ and angelic_execution = !angelic_execution
 and array_level = !array_level
 and ast_file = !ast_file
 and blacklist = !blacklist
+and bootclasspath = !bootclasspath
 and buck = !buck
 and buck_build_args = !buck_build_args
 and buck_out = !buck_out
 and bugs_csv = !bugs_csv
 and bugs_json = !bugs_json
 and frontend_tests = !frontend_tests
+and generated_classes = !generated_classes
 and bugs_tests = !bugs_tests
 and bugs_txt = !bugs_txt
 and bugs_xml = !bugs_xml
@@ -1434,6 +1461,7 @@ and checkers = !checkers
 and checkers_repeated_calls = !checkers_repeated_calls
 and clang_biniou_file = !clang_biniou_file
 and clang_include_to_override = !clang_include_to_override
+and classpath = !classpath
 and cluster_cmdline = !cluster
 and compute_analytics = !compute_analytics
 and continue_capture = !continue
@@ -1525,6 +1553,8 @@ and show_progress_bar = !progress_bar
 and skip_analysis_in_path = !skip_analysis_in_path
 and skip_clang_analysis_in_path = !skip_clang_analysis_in_path
 and skip_translation_headers = !skip_translation_headers
+and sources = !sources
+and sourcepath = !sourcepath
 and spec_abs_level = !spec_abs_level
 and stacktrace = !stacktrace
 and stacktraces_dir = !stacktraces_dir
@@ -1602,9 +1632,10 @@ let patterns_suppress_warnings =
           | `Null -> []
           | json -> patterns_of_json_with_key json_key json)
       | Error msg -> error ("Could not read or parse the supplied " ^ path ^ ":\n" ^ msg))
+  | None when CLOpt.(current_exe <> Java) -> []
+  | None when Option.is_some generated_classes -> []
   | None ->
-      if CLOpt.(current_exe <> Java) then []
-      else error ("Error: The option " ^ suppress_warnings_annotations_long ^ " was not provided")
+      error ("Error: The option " ^ suppress_warnings_annotations_long ^ " was not provided")
 
 let specs_library =
   match infer_cache with

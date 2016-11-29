@@ -61,6 +61,7 @@ val buck_infer_deps_file_name : string
 val captured_dir_name : string
 val checks_disabled_by_default : string list
 val clang_initializer_prefix : string
+val classpath : string option
 val cpp_extra_include_dir : string
 val relative_cpp_models_dir : string
 val csl_analysis : bool
@@ -113,6 +114,8 @@ val save_compact_summaries : bool
 val save_time_in_summaries : bool
 val smt_output : bool
 val source_file_extentions : string list
+val sources : string list
+val sourcepath : string option
 val specs_dir_name : string
 val specs_files_suffix : string
 val start_filename : string
@@ -143,6 +146,7 @@ val angelic_execution : bool
 val array_level : int
 val ast_file : string option
 val blacklist : string option
+val bootclasspath : string option
 val buck : bool
 val buck_build_args : string list
 val buck_out : string option
@@ -199,6 +203,7 @@ val from_json_report : string option
 val frontend_debug : bool
 val frontend_tests : bool
 val frontend_stats : bool
+val generated_classes : string option
 val headers : bool
 val icfg_dotty_outfile : string option
 val infer_cache : string option
