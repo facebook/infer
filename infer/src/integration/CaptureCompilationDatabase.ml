@@ -16,24 +16,22 @@ let capture_text =
   if Config.analyzer = Config.Linters then "linting"
   else "translating"
 
-let replace_header_file_with_source_file file_path =
-  Option.default file_path (DB.source_file_of_header file_path)
-
 (** Read the files to compile from the changed files index. *)
 let should_capture_file_from_index () =
-  match DB.read_changed_files_index with
+  match DB.changed_source_files_set with
   | None ->
       (match Config.changed_files_index with
        | Some index ->
            Process.print_error_and_exit "Error reading the changed files index %s.\n%!" index
        | None -> function _ -> true)
-  | Some lines ->
-      let index_files_set = IList.fold_left
-          (fun changed_files line ->
-             let file = replace_header_file_with_source_file (DB.source_file_from_string line) in
-             DB.SourceFileSet.add file changed_files)
-          DB.SourceFileSet.empty lines in
-      function source_file -> DB.SourceFileSet.mem source_file index_files_set
+  | Some files_set ->
+      function source_file ->
+        DB.SourceFileSet.mem source_file files_set ||
+        (* as fallback try to capture corresponding source file for headers *)
+        Option.map_default
+          (fun src -> DB.SourceFileSet.mem src files_set)
+          false
+          (DB.source_file_of_header source_file)
 
 (** The buck targets are assumed to start with //, aliases are not supported. *)
 let check_args_for_targets args =

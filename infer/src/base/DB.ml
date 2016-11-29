@@ -419,8 +419,10 @@ let fold_paths_matching ~dir ~p ~init ~f =
 let paths_matching dir p =
   fold_paths_matching ~dir ~p ~init:[] ~f:(fun x xs -> x :: xs)
 
-let read_changed_files_index =
-  match Config.changed_files_index with
-  | None -> None
-  | Some fname ->
-      read_file (source_file_to_abs_path (source_file_from_string fname))
+let changed_source_files_set =
+  Option.map_default read_file None Config.changed_files_index |>
+  Option.map (
+    IList.fold_left
+      (fun changed_files line -> SourceFileSet.add (source_file_from_string line) changed_files)
+      SourceFileSet.empty
+  )

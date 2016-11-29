@@ -14,23 +14,16 @@ open! Utils
 module L = Logging
 module F = Format
 
-(** Read the directories to analyze from the ondemand file. *)
-let read_dirs_to_analyze () =
-  match DB.read_changed_files_index with
-  | None ->
-      None
-  | Some lines ->
-      let res = ref StringSet.empty in
-      let do_line line =
-        let rel_file = DB.source_file_to_rel_path (DB.source_file_from_string line) in
-        let source_dir = DB.source_dir_from_source_file (DB.source_file_from_string rel_file) in
-        res := StringSet.add (DB.source_dir_to_string source_dir) !res in
-      IList.iter do_line lines;
-      Some !res
-
 (** Directories to analyze from the ondemand file. *)
 let dirs_to_analyze =
-  lazy (read_dirs_to_analyze ())
+  let process_changed_files changed_files =
+    DB.SourceFileSet.fold
+      (fun source_file source_dir_set ->
+         let source_dir = DB.source_dir_from_source_file source_file in
+         StringSet.add (DB.source_dir_to_string source_dir) source_dir_set
+      )
+      changed_files StringSet.empty in
+  Option.map process_changed_files DB.changed_source_files_set
 
 type analyze_ondemand = DB.source_file -> Procdesc.t -> unit
 

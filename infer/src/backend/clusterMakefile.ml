@@ -25,12 +25,7 @@ let source_file_to_pname fname =
 
 let cluster_should_be_analyzed cluster =
   let fname = DB.source_dir_to_string cluster in
-  let in_ondemand_config =
-    match Lazy.force Ondemand.dirs_to_analyze with
-    | None ->
-        None
-    | Some set ->
-        Some (StringSet.mem fname set) in
+  let in_ondemand_config = Option.map (StringSet.mem fname) Ondemand.dirs_to_analyze in
   let check_modified () =
     let modified =
       DB.file_was_updated_after_start (DB.filename_from_string fname) in

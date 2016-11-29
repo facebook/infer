@@ -174,4 +174,5 @@ val fold_paths_matching :
 (** Return all file paths recursively under the given directory which match the given predicate *)
 val paths_matching : string -> (string -> bool) -> string list
 
-val read_changed_files_index : string list option
+(** Set of files read from --changed-files-index file, None if option not specified *)
+val changed_source_files_set :  SourceFileSet.t option

@@ -12,7 +12,7 @@ open! Utils
 (** Module for on-demand analysis. *)
 
 (** Optional set of source dirs to analyze in on-demand mode. *)
-val dirs_to_analyze : StringSet.t option Lazy.t
+val dirs_to_analyze : StringSet.t option
 
 type analyze_ondemand = DB.source_file -> Procdesc.t -> unit
 
