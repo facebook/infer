@@ -117,11 +117,11 @@ let rec compare e1 e2 =>
   | (Const _, _) => (-1)
   | (_, Const _) => 1
   | (Cast t1 e1, Cast t2 e2) =>
-    let n = compare e1 e2;
+    let n = Typ.compare t1 t2;
     if (n != 0) {
       n
     } else {
-      Typ.compare t1 t2
+      compare e1 e2
     }
   | (Cast _, _) => (-1)
   | (_, Cast _) => 1
