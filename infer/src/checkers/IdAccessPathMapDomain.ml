@@ -30,7 +30,7 @@ let (<=) ~lhs ~rhs =
       IdMap.for_all
         (fun id lhs_ap ->
            let rhs_ap = IdMap.find id rhs in
-           let eq = AccessPath.raw_equal lhs_ap rhs_ap in
+           let eq = AccessPath.equal_raw lhs_ap rhs_ap in
            assert eq;
            eq)
         lhs
@@ -51,7 +51,7 @@ let join astate1 astate2 =
                    (* TODO: fix (13370224) *)
                    ()
                | _ ->
-                   assert (AccessPath.raw_equal ap1 ap2) in
+                   assert (AccessPath.equal_raw ap1 ap2) in
              check_invariant ();
              ap1_opt
          | Some _, None -> ap1_opt

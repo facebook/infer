@@ -11,72 +11,32 @@ open! Utils
 
 module F = Format
 
-type base = Var.t * Typ.t
+type _array_sensitive_typ = Typ.t
+
+let compare__array_sensitive_typ = Typ.array_sensitive_compare
+
+type base = Var.t * _array_sensitive_typ [@@deriving compare]
+
+let equal_base base1 base2 =
+  compare_base base1 base2 = 0
 
 type access =
-  | FieldAccess of Ident.fieldname * Typ.t
   | ArrayAccess of Typ.t
+  | FieldAccess of Ident.fieldname * Typ.t
+[@@deriving compare]
 
-type raw = base * access list
+let equal_access access1 access2 =
+  compare_access access1 access2 = 0
+
+type raw = base * access list [@@deriving compare]
+
+let equal_raw ap1 ap2 =
+  compare_raw ap1 ap2 = 0
 
 type t =
-  | Exact of raw
   | Abstracted of raw
-
-let base_compare ((var1, typ1) as base1) ((var2, typ2) as base2) =
-  if base1 == base2
-  then 0
-  else
-    let n = Var.compare var1 var2 in
-    if n <> 0
-    then n
-    else Typ.array_sensitive_compare typ1 typ2
-
-let base_equal base1 base2 =
-  base_compare base1 base2 = 0
-
-let access_compare access1 access2 =
-  if access1 == access2
-  then
-    0
-  else
-    match access1, access2 with
-    | FieldAccess (f1, typ1), FieldAccess (f2, typ2) ->
-        let n = Ident.compare_fieldname f1 f2 in
-        if n <> 0
-        then n
-        else Typ.compare typ1 typ2
-    | ArrayAccess typ1, ArrayAccess typ2 ->
-        Typ.compare typ1 typ2
-    | FieldAccess _, _ -> 1
-    | _, FieldAccess _ -> -1
-
-let access_equal access1 access2 =
-  access_compare access1 access2 = 0
-
-let raw_compare ((base1, accesses1) as ap1) ((base2, accesses2) as ap2) =
-  if ap1 == ap2
-  then 0
-  else
-    let n = base_compare base1 base2 in
-    if n <> 0
-    then n
-    else if accesses1 == accesses2
-    then 0
-    else IList.compare access_compare accesses1 accesses2
-
-let raw_equal ap1 ap2 =
-  raw_compare ap1 ap2 = 0
-
-let compare ap1 ap2 =
-  if ap1 == ap2
-  then
-    0
-  else
-    match ap1, ap2 with
-    | Exact ap1, Exact ap2 | Abstracted ap1, Abstracted ap2 -> raw_compare ap1 ap2
-    | Exact _, Abstracted _ -> 1
-    | Abstracted _, Exact _ -> (-1)
+  | Exact of raw
+[@@deriving compare]
 
 let equal ap1 ap2 =
   compare ap1 ap2 = 0
@@ -151,13 +111,13 @@ let rec is_prefix_path path1 path2 =
     match path1, path2 with
     | [], _ -> true
     | _, [] -> false
-    | access1 :: p1, access2 :: p2 -> access_equal access1 access2 && is_prefix_path p1 p2
+    | access1 :: p1, access2 :: p2 -> equal_access access1 access2 && is_prefix_path p1 p2
 
 let is_prefix ((base1, path1) as ap1) ((base2, path2) as ap2) =
   if ap1 == ap2
   then true
   else
-    base_equal base1 base2 && is_prefix_path path1 path2
+    equal_base base1 base2 && is_prefix_path path1 path2
 
 let extract = function
   | Exact ap | Abstracted ap -> ap
@@ -169,7 +129,7 @@ let is_exact = function
 let (<=) ~lhs ~rhs =
   match lhs, rhs with
   | Abstracted _, Exact _ -> false
-  | Exact lhs_ap, Exact rhs_ap -> raw_equal lhs_ap rhs_ap
+  | Exact lhs_ap, Exact rhs_ap -> equal_raw lhs_ap rhs_ap
   | (Exact lhs_ap | Abstracted lhs_ap), Abstracted rhs_ap -> is_prefix rhs_ap lhs_ap
 
 let pp_base fmt (pvar, _) =
@@ -193,12 +153,12 @@ let pp fmt = function
 
 module BaseMap = PrettyPrintable.MakePPMap(struct
     type t = base
-    let compare = base_compare
+    let compare = compare_base
     let pp_key = pp_base
   end)
 
 module AccessMap = PrettyPrintable.MakePPMap(struct
     type t = access
-    let compare = access_compare
+    let compare = compare_access
     let pp_key = pp_access
   end)

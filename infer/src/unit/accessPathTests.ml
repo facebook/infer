@@ -37,12 +37,12 @@ let tests =
   let open OUnit2 in
   let equal_test =
     let equal_test_ _ =
-      assert_bool "equal works for bases" (AccessPath.raw_equal x (make_access_path "x" []));
+      assert_bool "equal works for bases" (AccessPath.equal_raw x (make_access_path "x" []));
       assert_bool
         "equal works for paths"
-        (AccessPath.raw_equal xFG (make_access_path "x" ["f"; "g";]));
-      assert_bool "disequality works for bases" (not (AccessPath.raw_equal x y));
-      assert_bool "disequality works for paths" (not (AccessPath.raw_equal xF xFG)) in
+        (AccessPath.equal_raw xFG (make_access_path "x" ["f"; "g";]));
+      assert_bool "disequality works for bases" (not (AccessPath.equal_raw x y));
+      assert_bool "disequality works for paths" (not (AccessPath.equal_raw xF xFG)) in
     "equal">::equal_test_ in
 
   let append_test =
@@ -53,7 +53,7 @@ let tests =
         AccessPath.pp_raw expected
         AccessPath.pp_raw actual in
     let assert_eq input expected =
-      assert_equal ~cmp:AccessPath.raw_equal ~pp_diff input expected in
+      assert_equal ~cmp:AccessPath.equal_raw ~pp_diff input expected in
     let append_test_ _ =
       assert_eq xF (AccessPath.append x [f_access]);
       assert_eq xFG (AccessPath.append xF [g_access]) in
@@ -89,7 +89,7 @@ let tests =
           AccessPath.pp_raw expected_ap
           Exp.pp exp
           AccessPath.pp_raw actual_ap in
-      assert_equal ~cmp:AccessPath.raw_equal ~pp_diff actual_ap expected_ap in
+      assert_equal ~cmp:AccessPath.equal_raw ~pp_diff actual_ap expected_ap in
 
     let of_exp_test_ _ =
       let f_fieldname = make_fieldname "f" in
@@ -112,8 +112,8 @@ let tests =
       let binop_exp = Exp.le xF_exp xFG_exp in
       match AccessPath.of_exp binop_exp dummy_typ ~f_resolve_id with
       | [ap1; ap2] ->
-          assert_equal ~cmp:AccessPath.raw_equal ap1 xFG;
-          assert_equal ~cmp:AccessPath.raw_equal ap2 xF;
+          assert_equal ~cmp:AccessPath.equal_raw ap1 xFG;
+          assert_equal ~cmp:AccessPath.equal_raw ap2 xF;
       | _ ->
           assert false;
       () in
@@ -121,7 +121,7 @@ let tests =
 
   let abstraction_test =
     let abstraction_test_ _ =
-      assert_bool "extract" (AccessPath.raw_equal (AccessPath.extract xF_exact) xF);
+      assert_bool "extract" (AccessPath.equal_raw (AccessPath.extract xF_exact) xF);
       assert_bool "is_exact" (AccessPath.is_exact x_exact);
       assert_bool "not is_exact" (not (AccessPath.is_exact x_abstract));
       assert_bool "(<=)1" (AccessPath.(<=) ~lhs:x_exact ~rhs:x_abstract);

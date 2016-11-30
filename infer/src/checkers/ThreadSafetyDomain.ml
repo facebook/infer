@@ -8,7 +8,7 @@
  *)
 module PPrawpath = PrettyPrintable.MakePPSet(struct
     type t = AccessPath.raw
-    let compare = AccessPath.raw_compare
+    let compare = AccessPath.compare_raw
     let pp_element = AccessPath.pp_raw
   end)
 

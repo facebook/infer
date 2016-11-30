@@ -9,31 +9,29 @@
 
 (** Module for naming heap locations via the path used to access them (e.g., x.f.g, y[a].b) *)
 
-type base = Var.t * Typ.t
+type base = Var.t * Typ.t [@@deriving compare]
 
 type access =
-  | FieldAccess of Ident.fieldname * Typ.t (* field name * field type *)
   | ArrayAccess of Typ.t (* array element type. index is unknown *)
+  | FieldAccess of Ident.fieldname * Typ.t (* field name * field type *)
+[@@deriving compare]
 
 (** root var, and a list of accesses. closest to the root var is first that is, x.f.g is represented
     as (x, [f; g]) *)
-type raw = base * access list
+type raw = base * access list [@@deriving compare]
 
 type t =
-  | Exact of raw (** precise representation of an access path, e.g. x.f.g *)
   | Abstracted of raw (** abstraction of heap reachable from an access path, e.g. x.f* *)
+  | Exact of raw (** precise representation of an access path, e.g. x.f.g *)
+[@@deriving compare]
 
-val base_compare : base -> base -> int
+val equal_base : base -> base -> bool
 
-val base_equal : base -> base -> bool
+val equal_access : access -> access -> bool
 
-val raw_compare : raw -> raw -> int
+val equal_raw : raw -> raw -> bool
 
-val raw_equal : raw -> raw -> bool
-
-val access_compare : access -> access -> int
-
-val access_equal : access -> access -> bool
+val equal : t -> t -> bool
 
 (** create a base from a pvar *)
 val base_of_pvar : Pvar.t -> Typ.t -> base
@@ -69,10 +67,6 @@ val pp_access : Format.formatter -> access -> unit
 val pp_access_list : Format.formatter -> access list -> unit
 
 val pp_raw : Format.formatter -> raw -> unit
-
-val compare : t -> t -> int
-
-val equal : t -> t -> bool
 
 (** extract a raw access path from its wrapper *)
 val extract : t -> raw
