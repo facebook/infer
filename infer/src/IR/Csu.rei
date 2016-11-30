@@ -15,16 +15,16 @@ open! Utils;
 type class_kind =
   | CPP
   | Java
-  | Objc;
+  | Objc
+[@@deriving compare];
 
 type t =
   | Class class_kind
   | Struct
   | Union
-  | Protocol;
-
-let name: t => string;
-
-let compare: t => t => int;
+  | Protocol
+[@@deriving compare];
 
 let equal: t => t => bool;
+
+let name: t => string;

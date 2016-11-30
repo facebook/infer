@@ -15,13 +15,15 @@ open! Utils;
 type class_kind =
   | CPP
   | Java
-  | Objc;
+  | Objc
+[@@deriving compare];
 
 type t =
   | Class class_kind
   | Struct
   | Union
-  | Protocol;
+  | Protocol
+[@@deriving compare];
 
 let name =
   fun
@@ -29,27 +31,5 @@ let name =
   | Struct => "struct"
   | Union => "union"
   | Protocol => "protocol";
-
-let class_kind_num =
-  fun
-  | CPP => 1
-  | Java => 2
-  | Objc => 3;
-
-let class_kind_compare ck1 ck2 => class_kind_num ck1 - class_kind_num ck2;
-
-let compare dstruct1 dstruct2 =>
-  switch (dstruct1, dstruct2) {
-  | (Class ck1, Class ck2) => class_kind_compare ck1 ck2
-  | (Class _, _) => (-1)
-  | (_, Class _) => 1
-  | (Struct, Struct) => 0
-  | (Struct, _) => (-1)
-  | (_, Struct) => 1
-  | (Union, Union) => 0
-  | (Union, _) => (-1)
-  | (_, Union) => 1
-  | (Protocol, Protocol) => 0
-  };
 
 let equal tn1 tn2 => compare tn1 tn2 == 0;
