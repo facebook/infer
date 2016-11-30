@@ -9,9 +9,7 @@
 
 module F = Format
 
-type t
-
-val compare : t -> t -> int
+type t [@@deriving compare]
 
 val equal : t -> t -> bool
 

@@ -14,15 +14,7 @@ type t =
     pname : Procname.t;
     loc : Location.t;
   }
-
-let compare t1 t2 =
-  if t1 == t2
-  then 0
-  else
-    let n = Procname.compare t1.pname t2.pname in
-    if n <> 0
-    then n
-    else Location.compare t1.loc t2.loc
+[@@deriving compare]
 
 let equal t1 t2 =
   compare t1 t2 = 0
