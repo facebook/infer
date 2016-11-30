@@ -22,27 +22,11 @@ let bucket_to_message bucket =
   | `MLeak_cpp -> "[CPP]"
   | `MLeak_unknown -> "[UNKNOWN ORIGIN]"
 
-let mleak_bucket_compare b1 b2 =
-  match b1, b2 with
-  | `MLeak_all, `MLeak_all -> 0
-  | `MLeak_all, _ -> -1
-  | _, `MLeak_all -> 1
-  | `MLeak_cf, `MLeak_cf -> 0
-  | `MLeak_cf, _ -> -1
-  | _, `MLeak_cf -> 1
-  | `MLeak_arc, `MLeak_arc -> 0
-  | `MLeak_arc, _ -> -1
-  | _, `MLeak_arc -> 1
-  | `MLeak_no_arc, `MLeak_no_arc -> 0
-  | `MLeak_no_arc, _ -> -1
-  | _, `MLeak_no_arc -> 1
-  | `MLeak_unknown, `MLeak_unknown -> 0
-  | `MLeak_unknown, _ -> -1
-  | _, `MLeak_unknown -> 1
-  | `MLeak_cpp, `MLeak_cpp -> 0
+let compare_mleak_bucket =
+  [%compare: [ `MLeak_all | `MLeak_arc | `MLeak_cf | `MLeak_cpp | `MLeak_no_arc | `MLeak_unknown ]]
 
 let mleak_bucket_eq b1 b2 =
-  mleak_bucket_compare b1 b2 = 0
+  compare_mleak_bucket b1 b2 = 0
 
 let contains_all =
   IList.mem mleak_bucket_eq `MLeak_all Config.ml_buckets
