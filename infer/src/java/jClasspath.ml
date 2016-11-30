@@ -145,6 +145,11 @@ let add_source_file path map =
   StringMap.add basename entry map
 
 
+let add_root_path path roots =
+  if StringSet.mem path roots then roots
+  else StringSet.add path roots
+
+
 let load_from_verbose_output () =
   let file_in = open_in Config.javac_verbose_out in
   let class_filename_re =
@@ -163,10 +168,7 @@ let load_from_verbose_output () =
         let path = Str.matched_group 1 line in
         let cn, root_info = Javalib.extract_class_name_from_file path in
         let root_dir = if root_info = "" then Filename.current_dir_name else root_info in
-        let updated_roots =
-          if IList.exists (fun p -> p = root_dir) roots then roots
-          else root_dir:: roots in
-        loop paths updated_roots sources (JBasics.ClassSet.add cn classes)
+        loop paths (add_root_path root_dir roots) sources (JBasics.ClassSet.add cn classes)
       else if Str.string_match source_filename_re line 0 then
         let path = Str.matched_group 1 line in
         loop paths roots (add_source_file path sources) classes
@@ -182,19 +184,20 @@ let load_from_verbose_output () =
     | Invalid_argument _ -> loop paths roots sources classes
     | End_of_file ->
         close_in file_in;
-        let classpath = IList.fold_left append_path "" (roots @ (add_android_jar paths)) in
+        let classpath =
+          IList.fold_left
+            append_path
+            ""
+            ((StringSet.elements roots) @ (add_android_jar paths)) in
         (classpath, sources, classes) in
-  loop [] [] StringMap.empty JBasics.ClassSet.empty
+  loop [] StringSet.empty StringMap.empty JBasics.ClassSet.empty
 
 
 let classname_of_class_filename class_filename =
-  let parts = Str.split (Str.regexp "/") class_filename in
-  let classname_str =
-    if IList.length parts > 1 then
-      IList.fold_left (fun s p -> s^"."^p) (IList.hd parts) (IList.tl parts)
-    else
-      IList.hd parts in
-  JBasics.make_cn classname_str
+  JBasics.make_cn
+    (String.map
+       (function | '/' -> '.' | c -> c)
+       class_filename)
 
 
 let extract_classnames classnames jar_filename =
@@ -203,7 +206,7 @@ let extract_classnames classnames jar_filename =
     let class_filename = entry.Zip.filename in
     try
       let () = ignore (Str.search_forward (Str.regexp "class") class_filename 0) in
-      (classname_of_class_filename (Filename.chop_extension class_filename):: classes)
+      (classname_of_class_filename (Filename.chop_extension class_filename) :: classes)
     with Not_found -> classes in
   let classnames_after = IList.fold_left collect classnames (Zip.entries file_in) in
   Zip.close_in file_in;
@@ -211,33 +214,26 @@ let extract_classnames classnames jar_filename =
 
 
 let collect_classnames start_classmap jar_filename =
-  let classpath = Javalib.class_path jar_filename in
-  let classmap =
-    IList.fold_left
-      (fun map cn -> JBasics.ClassSet.add cn map)
-      start_classmap
-      (extract_classnames [] jar_filename) in
-  Javalib.close_class_path classpath;
-  classmap
+  IList.fold_left
+    (fun map cn -> JBasics.ClassSet.add cn map)
+    start_classmap
+    (extract_classnames [] jar_filename)
 
 
 let search_classes path =
   let add_class roots classes class_filename =
     let cn, root_dir =
       Javalib.extract_class_name_from_file class_filename in
-    let updated_roots =
-      if IList.exists (fun p -> p = root_dir) roots then roots
-      else root_dir:: roots in
-    (updated_roots, JBasics.ClassSet.add cn classes) in
+    (add_root_path root_dir roots, JBasics.ClassSet.add cn classes) in
   directory_fold
     (fun accu p ->
        let paths, classes = accu in
        if Filename.check_suffix p "class" then
          add_class paths classes p
        else if Filename.check_suffix p "jar" then
-         (p :: paths, collect_classnames classes p)
+         (add_root_path p paths, collect_classnames classes p)
        else accu)
-    ([], JBasics.ClassSet.empty)
+    (StringSet.empty, JBasics.ClassSet.empty)
     path
 
 
@@ -261,13 +257,15 @@ let search_sources () =
 
 let load_from_arguments classes_out_path =
   let roots, classes = search_classes classes_out_path in
-  let sources = search_sources () in
   let split cp_option =
     Option.map_default split_classpath [] cp_option in
-  let paths =
-    (split Config.bootclasspath) @ roots @ (split Config.classpath) in
-  let classpath = IList.fold_left append_path "" paths in
-  (classpath, sources, classes)
+  let combine path_list classpath =
+    IList.fold_left append_path classpath (IList.rev path_list) in
+  let classpath =
+    combine (split Config.classpath) ""
+    |> combine (StringSet.elements roots)
+    |> combine (split Config.bootclasspath) in
+  (classpath, search_sources (), classes)
 
 
 let load_sources_and_classes () =
