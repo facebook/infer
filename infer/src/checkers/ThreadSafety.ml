@@ -63,7 +63,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       pathdomainstate
       (AccessPath.of_exp exp typ ~f_resolve_id:(fun _ -> None))
 
-  let exec_instr ((lockstate, (readstate,writestate)) as astate) { ProcData.pdesc; tenv } _ =
+  let exec_instr ((lockstate, (readstate,writestate)) as astate) { ProcData.pdesc; } _ =
     let is_unprotected is_locked =
       not is_locked && not (Procdesc.is_java_synchronized pdesc) in
     function
@@ -77,7 +77,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               false, snd astate
           | None ->
               begin
-                match Summary.read_summary tenv pdesc pn with
+                match Summary.read_summary pdesc pn with
                 | Some ((callee_lockstate, _) as summary) ->
                     let lockstate' = callee_lockstate || lockstate in
                     let _, read_writestate' =

@@ -25,7 +25,7 @@ module type S = sig
   val write_summary : Procname.t -> summary -> unit
   (* read and return the summary for [callee_pname] called from [caller_pdesc]. does the analysis to
      create the summary if needed *)
-  val read_summary : Tenv.t -> Procdesc.t -> Procname.t -> summary option
+  val read_summary : Procdesc.t -> Procname.t -> summary option
 end
 
 module Make (H : Helper) = struct
@@ -40,8 +40,8 @@ module Make (H : Helper) = struct
     | None ->
         failwithf "Summary for %a should exist, but does not!@." Procname.pp pname
 
-  let read_summary tenv caller_pdesc callee_pname =
-    Ondemand.analyze_proc_name tenv ~propagate_exceptions:false caller_pdesc callee_pname;
+  let read_summary caller_pdesc callee_pname =
+    Ondemand.analyze_proc_name ~propagate_exceptions:false caller_pdesc callee_pname;
     match Specs.get_summary callee_pname with
     | None -> None
     | Some summary -> H.read_from_payload summary.Specs.payload

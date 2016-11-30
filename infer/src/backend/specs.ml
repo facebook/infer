@@ -554,14 +554,7 @@ let summary_serializer : summary Serialization.serializer =
   Serialization.create_serializer Serialization.summary_key
 
 (** Save summary for the procedure into the spec database *)
-let store_summary tenv pname (summ: summary) =
-  let process_payload payload = match payload.preposts with
-    | Some specs ->
-        { payload with
-          preposts = Some (IList.map (NormSpec.erase_join_info_pre tenv) specs);
-        }
-    | None -> payload in
-  let summ1 = { summ with payload = process_payload summ.payload } in
+let store_summary pname (summ1: summary) =
   let summ2 = if Config.save_compact_summaries
     then summary_compact (Sil.create_sharing_env ()) summ1
     else summ1 in

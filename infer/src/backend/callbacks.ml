@@ -179,10 +179,6 @@ let iterate_callbacks store_summary call_graph exe_env =
     (iterate_cluster_callbacks originally_defined_procs exe_env)
     (cluster procs_to_analyze);
 
-  IList.iter
-    (fun proc_name  ->
-       let tenv = Exe_env.get_tenv ~create:true exe_env proc_name in
-       store_summary tenv proc_name)
-    procs_to_analyze;
+  IList.iter store_summary procs_to_analyze;
 
   Config.curr_language := saved_language

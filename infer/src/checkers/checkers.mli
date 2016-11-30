@@ -36,7 +36,7 @@ module ST : sig
     unit
 
   (** Store the summary to a .specs file. *)
-  val store_summary : Tenv.t -> Procname.t -> unit
+  val store_summary : Procname.t -> unit
 
 end (* ST *)
 

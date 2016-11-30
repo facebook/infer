@@ -54,7 +54,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let at_least_bottom =
     Domain.join (Domain.NonBottom SiofTrace.initial)
 
-  let exec_instr astate { ProcData.pdesc; tenv } _ (instr : Sil.instr) = match instr with
+  let exec_instr astate { ProcData.pdesc; } _ (instr : Sil.instr) = match instr with
     | Load (_, exp, _, loc)
     | Store (_, _, exp, loc)
     | Prune (exp, loc, _, _) ->
@@ -62,7 +62,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Const (Cfun callee_pname), params, loc, _) ->
         let callsite = CallSite.make callee_pname loc in
         let callee_globals =
-          match Summary.read_summary tenv pdesc callee_pname with
+          match Summary.read_summary pdesc callee_pname with
           | Some (Domain.NonBottom trace) ->
               Domain.NonBottom (SiofTrace.with_callsite trace callsite)
           | _ ->
@@ -98,12 +98,12 @@ let is_foreign tu_opt v =
     | None -> assert false in
   Option.map_default (fun f -> not (is_orig_file f)) false (Pvar.get_source_file v)
 
-let report_siof tenv trace pdesc gname loc =
+let report_siof trace pdesc gname loc =
   let tu_opt =
     let attrs = Procdesc.get_attributes pdesc in
     attrs.ProcAttributes.translation_unit in
   let trace_of_pname pname =
-    match Summary.read_summary tenv pdesc pname with
+    match Summary.read_summary pdesc pname with
     | Some (SiofDomain.NonBottom summary) -> summary
     | _ -> SiofTrace.initial in
 
@@ -147,7 +147,7 @@ let report_siof tenv trace pdesc gname loc =
 
   IList.iter report_one_path (SiofTrace.get_reportable_sink_paths trace ~trace_of_pname)
 
-let siof_check tenv pdesc gname = function
+let siof_check pdesc gname = function
   | Some (SiofDomain.NonBottom post) ->
       let attrs = Procdesc.get_attributes pdesc in
       let foreign_global_sinks =
@@ -155,15 +155,15 @@ let siof_check tenv pdesc gname = function
           (fun sink -> is_foreign attrs.ProcAttributes.translation_unit (SiofTrace.Sink.kind sink))
           (SiofTrace.sinks post) in
       if not (SiofTrace.Sinks.is_empty foreign_global_sinks)
-      then report_siof tenv post pdesc gname attrs.ProcAttributes.loc;
+      then report_siof post pdesc gname attrs.ProcAttributes.loc;
   | Some SiofDomain.Bottom | None ->
       ()
 
-let checker ({ Callbacks.tenv; proc_desc } as callback) =
+let checker ({ Callbacks.proc_desc; } as callback) =
   let post = Interprocedural.checker callback ProcData.empty_extras in
   let pname = Procdesc.get_proc_name proc_desc in
   match Procname.get_global_name_of_initializer pname with
   | Some gname ->
-      siof_check tenv proc_desc gname post
+      siof_check proc_desc gname post
   | None ->
       ()

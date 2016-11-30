@@ -1299,10 +1299,11 @@ let update_summary tenv prev_summary specs phase proc_name elapsed res =
       symops;
       stats_failure;
     } in
-  let payload =
-    { prev_summary.Specs.payload with
-      Specs.preposts = Some new_specs;
-    } in
+  let preposts =
+    match phase with
+    | Specs.FOOTPRINT -> Some new_specs
+    | Specs.RE_EXECUTION -> Some (IList.map (Specs.NormSpec.erase_join_info_pre tenv) new_specs) in
+  let payload = { prev_summary.Specs.payload with Specs.preposts; } in
   { prev_summary with
     Specs.phase;
     stats;
@@ -1424,11 +1425,8 @@ let interprocedural_algorithm exe_env : unit =
         None in
   let process_one_proc proc_name =
     match to_analyze proc_name with
-    | Some pdesc ->
-        let tenv = Exe_env.get_tenv ~create:true exe_env proc_name in
-        Ondemand.analyze_proc_name tenv ~propagate_exceptions:false pdesc proc_name
-    | None ->
-        () in
+    | Some pdesc -> Ondemand.analyze_proc_name ~propagate_exceptions:false pdesc proc_name
+    | None -> () in
   IList.iter process_one_proc procs_to_analyze
 
 (** Perform the analysis of an exe_env *)

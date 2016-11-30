@@ -156,7 +156,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     (* log any reportable source-sink flows in [trace] and remove logged sinks from the trace *)
     let report_and_filter_trace trace callee_site (proc_data : formal_map ProcData.t) =
       let trace_of_pname pname =
-        match Summary.read_summary proc_data.tenv proc_data.pdesc pname with
+        match Summary.read_summary proc_data.pdesc pname with
         | Some summary ->
             let join_output_trace acc { QuandarySummary.output_trace; } =
               TraceDomain.join (TaintSpecification.of_summary_trace output_trace) acc in
@@ -434,7 +434,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 (* don't use a summary for a procedure that is a direct source or sink *)
                 astate_with_source
               else
-                match Summary.read_summary proc_data.tenv proc_data.pdesc callee_pname with
+                match Summary.read_summary proc_data.pdesc callee_pname with
                 | Some summary ->
                     apply_summary ret actuals summary astate_with_source proc_data call_site
                 | None ->

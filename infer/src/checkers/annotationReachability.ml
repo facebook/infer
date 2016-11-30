@@ -321,7 +321,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let call_site = CallSite.make callee_pname call_loc in
         begin
           (* Runs the analysis of callee_pname if not already analyzed *)
-          match Summary.read_summary tenv pdesc callee_pname with
+          match Summary.read_summary pdesc callee_pname with
           | Some Domain.NonBottom (call_map, _) ->
               add_call call_map tenv callee_pname caller_pname call_site astate
           | None ->
