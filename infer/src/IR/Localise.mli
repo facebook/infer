@@ -13,7 +13,9 @@ open! Utils
 (** Support for localisation *)
 
 (** type of string used for localisation *)
-type t
+type t [@@deriving compare]
+
+val equal : t -> t -> bool
 
 (** pretty print a localised string *)
 val pp : Format.formatter -> t -> unit
@@ -23,11 +25,6 @@ val from_string : string -> t
 
 (** convert a localised string to an ordinary string *)
 val to_string : t -> string
-
-(** compare two localised strings *)
-val compare : t -> t -> int
-
-val equal : t -> t -> bool
 
 val analysis_stops : t
 val array_out_of_bounds_l1 : t

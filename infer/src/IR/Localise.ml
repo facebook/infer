@@ -15,7 +15,10 @@ open! Utils
 module F = Format
 
 (** type of string used for localisation *)
-type t = string
+type t = string [@@deriving compare]
+
+let equal s1 s2 =
+  compare s1 s2 = 0
 
 (** pretty print a localised string *)
 let pp fmt s = Format.fprintf fmt "%s" s
@@ -25,12 +28,6 @@ let from_string s = s
 
 (** convert a localised string to an ordinary string *)
 let to_string s = s
-
-(** compare two localised strings *)
-let compare (s1: string) (s2: string) = Pervasives.compare s1 s2
-
-let equal s1 s2 =
-  compare s1 s2 = 0
 
 let analysis_stops = "ANALYSIS_STOPS"
 let array_out_of_bounds_l1 = "ARRAY_OUT_OF_BOUNDS_L1"
