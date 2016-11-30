@@ -15,10 +15,10 @@ open! Utils
 
 module type InstrRefT =
 sig
-  type t
+  type t [@@deriving compare]
+  val equal : t -> t -> bool
   type generator
   val create_generator : Procdesc.Node.t -> generator
-  val equal : t -> t -> bool
   val gen : generator -> t
   val get_node : t -> Procdesc.Node.t
   val hash : t -> int
