@@ -131,25 +131,11 @@ module Make (Spec : Spec) = struct
       sinks : Sinks.t;
       (** last callees in the trace that transitively called a tainted function (if any) *)
       passthroughs : Passthrough.Set.t; (** calls that occurred between source and sink *)
-    }
+    } [@@deriving compare]
 
   type astate = t
 
   type path = Passthroughs.t * (Source.t * Passthroughs.t) list * (Sink.t * Passthroughs.t) list
-
-  let compare t1 t2 =
-    if t1 == t2
-    then
-      0
-    else
-      let n = Sources.compare t1.sources t2.sources in
-      if n <> 0
-      then n
-      else
-        let n = Sinks.compare t1.sinks t2.sinks in
-        if n <> 0
-        then n
-        else Passthroughs.compare t1.passthroughs t2.passthroughs
 
   let equal t1 t2 =
     compare t1 t2 = 0
