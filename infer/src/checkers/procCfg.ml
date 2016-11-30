@@ -37,7 +37,7 @@ module DefaultNode = struct
   let id = Procdesc.Node.get_id
   let loc = Procdesc.Node.get_loc
   let underlying_id = id
-  let id_compare = Procdesc.Node.id_compare
+  let id_compare = Procdesc.Node.compare_id
   let pp_id = Procdesc.Node.pp_id
 end
 
@@ -60,7 +60,7 @@ module InstrNode = struct
     | Instr_index _, Node_index -> -1
 
   let id_compare (id1, index1) (id2, index2) =
-    let n = Procdesc.Node.id_compare id1 id2 in
+    let n = Procdesc.Node.compare_id id1 id2 in
     if n <> 0 then n
     else index_compare index1 index2
 

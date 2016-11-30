@@ -97,7 +97,7 @@ module Make (Spec : Spec) : S = struct
         (* should never fail since keys in the invariant map should always be real node id's *)
         let node =
           IList.find
-            (fun node -> Procdesc.Node.id_compare node_id (Procdesc.Node.get_id node) = 0)
+            (fun node -> Procdesc.Node.compare_id node_id (Procdesc.Node.get_id node) = 0)
             nodes in
         Domain.iter
           (fun astate ->

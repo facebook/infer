@@ -25,7 +25,8 @@ let module Node = {
     | Stmt_node string
     | Join_node
     | Prune_node bool Sil.if_kind string /** (true/false branch, if_kind, comment) */
-    | Skip_node string;
+    | Skip_node string
+  [@@deriving compare];
 
   /** a node */
   type t = {
@@ -70,7 +71,7 @@ let module Node = {
   let get_id node => node.id;
 
   /** compare node ids */
-  let id_compare = int_compare;
+  let compare_id = int_compare;
   let get_succs node => node.succs;
   type node = t;
   let module NodeSet = Set.Make {
@@ -79,7 +80,7 @@ let module Node = {
   };
   let module IdMap = Map.Make {
     type t = id;
-    let compare = id_compare;
+    let compare = compare_id;
   };
   let get_sliced_succs node f => {
     let visited = ref NodeSet.empty;
@@ -144,38 +145,6 @@ let module Node = {
 
   /** Get the node kind */
   let get_kind node => node.kind;
-
-  /** Comparison for node kind */
-  let kind_compare k1 k2 =>
-    switch (k1, k2) {
-    | (Start_node pn1, Start_node pn2) => Procname.compare pn1 pn2
-    | (Start_node _, _) => (-1)
-    | (_, Start_node _) => 1
-    | (Exit_node pn1, Exit_node pn2) => Procname.compare pn1 pn2
-    | (Exit_node _, _) => (-1)
-    | (_, Exit_node _) => 1
-    | (Stmt_node s1, Stmt_node s2) => string_compare s1 s2
-    | (Stmt_node _, _) => (-1)
-    | (_, Stmt_node _) => 1
-    | (Join_node, Join_node) => 0
-    | (Join_node, _) => (-1)
-    | (_, Join_node) => 1
-    | (Prune_node is_true_branch1 if_kind1 descr1, Prune_node is_true_branch2 if_kind2 descr2) =>
-      let n = bool_compare is_true_branch1 is_true_branch2;
-      if (n != 0) {
-        n
-      } else {
-        let n = Pervasives.compare if_kind1 if_kind2;
-        if (n != 0) {
-          n
-        } else {
-          string_compare descr1 descr2
-        }
-      }
-    | (Prune_node _, _) => (-1)
-    | (_, Prune_node _) => 1
-    | (Skip_node s1, Skip_node s2) => string_compare s1 s2
-    };
 
   /** Get the instructions to be executed */
   let get_instrs node => node.instrs;

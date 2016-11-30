@@ -17,10 +17,10 @@ open! Utils;
 let module Node: {
 
   /** type of nodes */
-  type t;
+  type t [@@deriving compare];
 
   /** node id */
-  type id = private int;
+  type id = private int [@@deriving compare];
 
   /** kind of cfg node */
   type nodekind =
@@ -29,7 +29,8 @@ let module Node: {
     | Stmt_node string
     | Join_node
     | Prune_node bool Sil.if_kind string /** (true/false branch, if_kind, comment) */
-    | Skip_node string;
+    | Skip_node string
+  [@@deriving compare];
 
   /** kind of Stmt_node for an exception handler. */
   let exn_handler_kind: nodekind;
@@ -45,9 +46,6 @@ let module Node: {
 
   /** Append the instructions to the list of instructions to execute */
   let append_instrs: t => list Sil.instr => unit;
-
-  /** Compare two nodes */
-  let compare: t => t => int;
 
   /** Dump extended instructions for the node */
   let d_instrs: sub_instrs::bool => option Sil.instr => t => unit;
@@ -106,12 +104,6 @@ let module Node: {
 
   /** Hash function for nodes */
   let hash: t => int;
-
-  /** compare node ids */
-  let id_compare: id => id => int;
-
-  /** Comparison for node kind */
-  let kind_compare: nodekind => nodekind => int;
 
   /** Pretty print the node */
   let pp: Format.formatter => t => unit;
