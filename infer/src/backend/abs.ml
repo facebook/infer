@@ -189,7 +189,7 @@ let mk_rule_lsls_ls tenv k1 k2 impl_ok1 impl_ok2 para =
   (find id_base, find id_next, find id_end)
   with Not_found -> assert false in
   let spooky_case _ =
-  (lseg_kind_equal Sil.Lseg_PE k_res)
+  (equal_lseg_kind Sil.Lseg_PE k_res)
   && (check_allocatedness p_leftover inst_end)
   && ((check_disequal p_start inst_base inst_next)
   || (check_disequal p_start inst_next inst_end)) in
@@ -836,7 +836,7 @@ module IdMap = Map.Make (Ident) (** maps from identifiers *)
 module HpredSet =
   Set.Make(struct
     type t = Sil.hpred
-    let compare = Sil.hpred_compare ~inst:false
+    let compare = Sil.compare_hpred ~inst:false
   end)
 
 let hpred_entries hpred = match hpred with
@@ -904,9 +904,9 @@ let get_cycle root prop =
     match el with
     | [] -> path, false
     | (f, e):: el' ->
-        if Sil.strexp_equal e e_root then
+        if Sil.equal_strexp e e_root then
           (et_src, f, e):: path, true
-        else if IList.mem Sil.strexp_equal e visited then
+        else if IList.mem Sil.equal_strexp e visited then
           path, false
         else (
           let visited' = (fst et_src):: visited in
@@ -954,7 +954,7 @@ let get_var_retain_cycle prop_ =
   let sigma = prop_.Prop.sigma in
   let is_pvar v h =
     match h with
-    | Sil.Hpointsto (Exp.Lvar _, v', _) when Sil.strexp_equal v v' -> true
+    | Sil.Hpointsto (Exp.Lvar _, v', _) when Sil.equal_strexp v v' -> true
     | _ -> false in
   let is_hpred_block v h =
     match h, v with

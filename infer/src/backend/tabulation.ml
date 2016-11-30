@@ -403,7 +403,7 @@ let hpred_lhs_compare hpred1 hpred2 = match hpred1, hpred2 with
   | Sil.Hpointsto(e1, _, _), Sil.Hpointsto(e2, _, _) -> Exp.compare e1 e2
   | Sil.Hpointsto _, _ -> - 1
   | _, Sil.Hpointsto _ -> 1
-  | hpred1, hpred2 -> Sil.hpred_compare hpred1 hpred2
+  | hpred1, hpred2 -> Sil.compare_hpred hpred1 hpred2
 
 (** set the inst everywhere in a sexp *)
 let rec sexp_set_inst inst = function
@@ -974,7 +974,7 @@ let do_taint_check tenv caller_pname callee_pname calling_prop missing_pi sub ac
       (Exp.Map.exists
          (fun _ (_, untaint_atoms) ->
             IList.exists
-              (fun a -> Sil.atom_equal atom a)
+              (fun a -> Sil.equal_atom atom a)
               untaint_atoms)
          taint_untaint_exp_map) in
   check_taint_on_variadic_function tenv callee_pname caller_pname actual_params calling_prop;

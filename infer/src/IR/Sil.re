@@ -29,7 +29,8 @@ type if_kind =
   | Ik_if
   | Ik_land_lor /* obtained from translation of && or || */
   | Ik_while
-  | Ik_switch;
+  | Ik_switch
+[@@deriving compare];
 
 
 /** An instruction. */
@@ -57,7 +58,8 @@ type instr =
   | Nullify Pvar.t Location.t
   | Abstract Location.t /** apply abstraction */
   | Remove_temps (list Ident.t) Location.t /** remove temporaries */
-  | Declare_locals (list (Pvar.t, Typ.t)) Location.t /** declare local variables */;
+  | Declare_locals (list (Pvar.t, Typ.t)) Location.t /** declare local variables */
+[@@deriving compare];
 
 let skip_instr = Remove_temps [] Location.dummy;
 
@@ -88,21 +90,27 @@ type atom =
   | Aeq Exp.t Exp.t /** equality */
   | Aneq Exp.t Exp.t /** disequality */
   | Apred PredSymb.t (list Exp.t) /** predicate symbol applied to exps */
-  | Anpred PredSymb.t (list Exp.t) /** negated predicate symbol applied to exps */;
+  | Anpred PredSymb.t (list Exp.t) /** negated predicate symbol applied to exps */
+[@@deriving compare];
+
+let equal_atom x y => compare_atom x y == 0;
 
 
 /** kind of lseg or dllseg predicates */
 type lseg_kind =
   | Lseg_NE /** nonempty (possibly circular) listseg */
-  | Lseg_PE /** possibly empty (possibly circular) listseg */;
+  | Lseg_PE /** possibly empty (possibly circular) listseg */
+[@@deriving compare];
+
+let equal_lseg_kind k1 k2 => compare_lseg_kind k1 k2 == 0;
 
 
 /** The boolean is true when the pointer was dereferenced without testing for zero. */
-type zero_flag = option bool;
+type zero_flag = option bool [@@deriving compare];
 
 
 /** True when the value was obtained by doing case analysis on null in a procedure call. */
-type null_case_flag = bool;
+type null_case_flag = bool [@@deriving compare];
 
 
 /** instrumentation of heap values */
@@ -118,13 +126,19 @@ type inst =
   | Irearrange zero_flag null_case_flag int PredSymb.path_pos
   | Itaint
   | Iupdate zero_flag null_case_flag int PredSymb.path_pos
-  | Ireturn_from_call int;
+  | Ireturn_from_call int
+[@@deriving compare];
+
+/* some occurrences of inst are always ignored by compare */
+type _inst = inst;
+
+let compare__inst _ _ => 0;
 
 
 /** structured expressions represent a value of structured type, such as an array or a struct. */
-type strexp =
-  | Eexp Exp.t inst /** Base case: expression with instrumentation */
-  | Estruct (list (Ident.fieldname, strexp)) inst /** C structure */
+type strexp0 'inst =
+  | Eexp Exp.t 'inst /** Base case: expression with instrumentation */
+  | Estruct (list (Ident.fieldname, strexp0 _inst)) 'inst /** C structure */
   /** Array of given length
       There are two conditions imposed / used in the array case.
       First, if some index and value pair appears inside an array
@@ -132,45 +146,102 @@ type strexp =
       For instance, x |->[10 | e1: v1] implies that e1 <= 9.
       Second, if two indices appear in an array, they should be different.
       For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. */
-  | Earray Exp.t (list (Exp.t, strexp)) inst;
+  | Earray Exp.t (list (Exp.t, strexp0 _inst)) 'inst
+[@@deriving compare];
+
+type strexp = strexp0 inst;
+
+let compare_strexp inst::inst=false se1 se2 =>
+  compare_strexp0 (inst ? compare_inst : compare__inst) se1 se2;
+
+let equal_strexp inst::inst=false se1 se2 => compare_strexp inst::inst se1 se2 == 0;
 
 
 /** an atomic heap predicate */
-type hpred =
-  | Hpointsto Exp.t strexp Exp.t
+type hpred0 'inst =
+  | Hpointsto Exp.t (strexp0 'inst) Exp.t
   /** represents [exp|->strexp:typexp] where [typexp]
       is an expression representing a type, e.h. [sizeof(t)]. */
-  | Hlseg lseg_kind hpara Exp.t Exp.t (list Exp.t)
+  | Hlseg lseg_kind (hpara0 'inst) Exp.t Exp.t (list Exp.t)
   /** higher - order predicate for singly - linked lists.
       Should ensure that exp1!= exp2 implies that exp1 is allocated.
       This assumption is used in the rearrangement. The last [exp list] parameter
       is used to denote the shared links by all the nodes in the list. */
-  | Hdllseg lseg_kind hpara_dll Exp.t Exp.t Exp.t Exp.t (list Exp.t)
-/** higher-order predicate for doubly-linked lists. */
-/** parameter for the higher-order singly-linked list predicate.
-    Means "lambda (root,next,svars). Exists evars. body".
-    Assume that root, next, svars, evars are disjoint sets of
-    primed identifiers, and include all the free primed identifiers in body.
-    body should not contain any non - primed identifiers or program
-    variables (i.e. pvars). */
-and hpara = {
+  | Hdllseg lseg_kind (hpara_dll0 'inst) Exp.t Exp.t Exp.t Exp.t (list Exp.t)
+  /** higher-order predicate for doubly-linked lists.
+      Parameter for the higher-order singly-linked list predicate.
+      Means "lambda (root,next,svars). Exists evars. body".
+      Assume that root, next, svars, evars are disjoint sets of
+      primed identifiers, and include all the free primed identifiers in body.
+      body should not contain any non - primed identifiers or program
+      variables (i.e. pvars). */
+[@@deriving compare]
+and hpara0 'inst = {
   root: Ident.t,
   next: Ident.t,
   svars: list Ident.t,
   evars: list Ident.t,
-  body: list hpred
+  body: list (hpred0 'inst)
 }
+[@@deriving compare]
 /** parameter for the higher-order doubly-linked list predicates.
     Assume that all the free identifiers in body_dll should belong to
     cell, blink, flink, svars_dll, evars_dll. */
-and hpara_dll = {
+and hpara_dll0 'inst = {
   cell: Ident.t, /** address cell */
   blink: Ident.t, /** backward link */
   flink: Ident.t, /** forward link */
   svars_dll: list Ident.t,
   evars_dll: list Ident.t,
-  body_dll: list hpred
-};
+  body_dll: list (hpred0 'inst)
+}
+[@@deriving compare];
+
+type hpred = hpred0 inst;
+
+
+/** Comparsion between heap predicates. Reverse natural order, and order first by anchor exp. */
+let compare_hpred inst::inst=false hpred1 hpred2 =>
+  if (hpred1 === hpred2) {
+    0
+  } else {
+    switch (hpred1, hpred2) {
+    | (
+        Hpointsto e1 _ _ | Hlseg _ _ e1 _ _ | Hdllseg _ _ e1 _ _ _ _,
+        Hpointsto e2 _ _ | Hlseg _ _ e2 _ _ | Hdllseg _ _ e2 _ _ _ _
+      )
+        when Exp.compare e2 e1 != 0 =>
+      Exp.compare e2 e1
+    | (Hpointsto _, Hpointsto _)
+    | (Hlseg _, Hlseg _)
+    | (Hdllseg _, Hdllseg _) =>
+      if inst {
+        compare_hpred0 compare_inst hpred2 hpred1
+      } else {
+        compare_hpred0 (fun _ _ => 0) hpred2 hpred1
+      }
+    | _ =>
+      if inst {
+        compare_hpred0 compare_inst hpred1 hpred2
+      } else {
+        compare_hpred0 (fun _ _ => 0) hpred1 hpred2
+      }
+    }
+  };
+
+let equal_hpred inst::inst=false hpred1 hpred2 => compare_hpred inst::inst hpred1 hpred2 == 0;
+
+type hpara = hpara0 inst;
+
+let compare_hpara = compare_hpara0 (fun _ _ => 0);
+
+let equal_hpara hpara1 hpara2 => compare_hpara hpara1 hpara2 == 0;
+
+type hpara_dll = hpara_dll0 inst;
+
+let compare_hpara_dll = compare_hpara_dll0 (fun _ _ => 0);
+
+let equal_hpara_dll hpara1 hpara2 => compare_hpara_dll hpara1 hpara2 == 0;
 
 
 /** Return the lhs expression of a hpred */
@@ -222,343 +293,6 @@ let is_static_local_name pname pvar => {
   }
 };
 
-let ident_exp_compare = pair_compare Ident.compare Exp.compare;
-
-let ident_exp_equal ide1 ide2 => ident_exp_compare ide1 ide2 == 0;
-
-let exp_list_compare = IList.compare Exp.compare;
-
-
-/** Compare atoms. Equalities come before disequalities */
-let atom_compare a b =>
-  if (a === b) {
-    0
-  } else {
-    switch (a, b) {
-    | (Aeq e1 e2, Aeq f1 f2) =>
-      let n = Exp.compare e1 f1;
-      if (n != 0) {
-        n
-      } else {
-        Exp.compare e2 f2
-      }
-    | (Aeq _, _) => (-1)
-    | (_, Aeq _) => 1
-    | (Aneq e1 e2, Aneq f1 f2) =>
-      let n = Exp.compare e1 f1;
-      if (n != 0) {
-        n
-      } else {
-        Exp.compare e2 f2
-      }
-    | (Aneq _, _) => (-1)
-    | (_, Aneq _) => 1
-    | (Apred a1 es1, Apred a2 es2) =>
-      let n = PredSymb.compare a1 a2;
-      if (n != 0) {
-        n
-      } else {
-        IList.compare Exp.compare es1 es2
-      }
-    | (Apred _, _) => (-1)
-    | (_, Apred _) => 1
-    | (Anpred a1 es1, Anpred a2 es2) =>
-      let n = PredSymb.compare a1 a2;
-      if (n != 0) {
-        n
-      } else {
-        IList.compare Exp.compare es1 es2
-      }
-    }
-  };
-
-let atom_equal x y => atom_compare x y == 0;
-
-let lseg_kind_compare k1 k2 =>
-  switch (k1, k2) {
-  | (Lseg_NE, Lseg_NE) => 0
-  | (Lseg_NE, Lseg_PE) => (-1)
-  | (Lseg_PE, Lseg_NE) => 1
-  | (Lseg_PE, Lseg_PE) => 0
-  };
-
-let lseg_kind_equal k1 k2 => lseg_kind_compare k1 k2 == 0;
-
-let zero_flag_compare = opt_compare bool_compare;
-
-let inst_compare_base inst1 inst2 =>
-  switch (inst1, inst2) {
-  | (Iabstraction, Iabstraction) => 0
-  | (Iabstraction, _) => (-1)
-  | (_, Iabstraction) => 1
-  | (Iactual_precondition, Iactual_precondition) => 0
-  | (Iactual_precondition, _) => (-1)
-  | (_, Iactual_precondition) => 1
-  | (Ialloc, Ialloc) => 0
-  | (Ialloc, _) => (-1)
-  | (_, Ialloc) => 1
-  | (Iformal zero_flag1 null_case_flag1, Iformal zero_flag2 null_case_flag2) =>
-    let n = zero_flag_compare zero_flag1 zero_flag2;
-    if (n != 0) {
-      n
-    } else {
-      bool_compare null_case_flag1 null_case_flag2
-    }
-  | (Iformal _, _) => (-1)
-  | (_, Iformal _) => 1
-  | (Iinitial, Iinitial) => 0
-  | (Iinitial, _) => (-1)
-  | (_, Iinitial) => 1
-  | (Ilookup, Ilookup) => 0
-  | (Ilookup, _) => (-1)
-  | (_, Ilookup) => 1
-  | (Inone, Inone) => 0
-  | (Inone, _) => (-1)
-  | (_, Inone) => 1
-  | (Inullify, Inullify) => 0
-  | (Inullify, _) => (-1)
-  | (_, Inullify) => 1
-  | (
-      Irearrange zero_flag1 null_case_flag1 i1 path_pos1,
-      Irearrange zero_flag2 null_case_flag2 i2 path_pos2
-    ) =>
-    let n = zero_flag_compare zero_flag1 zero_flag2;
-    if (n != 0) {
-      n
-    } else {
-      let n = bool_compare null_case_flag1 null_case_flag2;
-      if (n != 0) {
-        n
-      } else {
-        let n = int_compare i1 i2;
-        if (n != 0) {
-          n
-        } else {
-          PredSymb.compare_path_pos path_pos1 path_pos2
-        }
-      }
-    }
-  | (Irearrange _, _) => (-1)
-  | (_, Irearrange _) => 1
-  | (Itaint, Itaint) => 0
-  | (Itaint, _) => (-1)
-  | (_, Itaint) => 1
-  | (
-      Iupdate zero_flag1 null_case_flag1 i1 path_pos1,
-      Iupdate zero_flag2 null_case_flag2 i2 path_pos2
-    ) =>
-    let n = zero_flag_compare zero_flag1 zero_flag2;
-    if (n != 0) {
-      n
-    } else {
-      let n = bool_compare null_case_flag1 null_case_flag2;
-      if (n != 0) {
-        n
-      } else {
-        let n = int_compare i1 i2;
-        if (n != 0) {
-          n
-        } else {
-          PredSymb.compare_path_pos path_pos1 path_pos2
-        }
-      }
-    }
-  | (Iupdate _, _) => (-1)
-  | (_, Iupdate _) => 1
-  | (Ireturn_from_call i1, Ireturn_from_call i2) => int_compare i1 i2
-  };
-
-let inst_compare inst::inst inst1 inst2 => inst ? inst_compare_base inst1 inst2 : 0;
-
-/* Comparison for strexps */
-let rec strexp_compare inst::inst=false se1 se2 =>
-  if (se1 === se2) {
-    0
-  } else {
-    switch (se1, se2) {
-    | (Eexp e1 i1, Eexp e2 i2) =>
-      let n = Exp.compare e1 e2;
-      if (n != 0) {
-        n
-      } else {
-        inst_compare inst::inst i1 i2
-      }
-    | (Eexp _, _) => (-1)
-    | (_, Eexp _) => 1
-    | (Estruct fel1 i1, Estruct fel2 i2) =>
-      let n = fld_strexp_list_compare fel1 fel2;
-      if (n != 0) {
-        n
-      } else {
-        inst_compare inst::inst i1 i2
-      }
-    | (Estruct _, _) => (-1)
-    | (_, Estruct _) => 1
-    | (Earray e1 esel1 i1, Earray e2 esel2 i2) =>
-      let n = Exp.compare e1 e2;
-      if (n != 0) {
-        n
-      } else {
-        let n = exp_strexp_list_compare esel1 esel2;
-        if (n != 0) {
-          n
-        } else {
-          inst_compare inst::inst i1 i2
-        }
-      }
-    }
-  }
-and fld_strexp_compare fse1 fse2 => pair_compare Ident.compare_fieldname strexp_compare fse1 fse2
-and fld_strexp_list_compare fsel1 fsel2 => IList.compare fld_strexp_compare fsel1 fsel2
-and exp_strexp_compare ese1 ese2 => pair_compare Exp.compare strexp_compare ese1 ese2
-and exp_strexp_list_compare esel1 esel2 => IList.compare exp_strexp_compare esel1 esel2;
-
-
-/** Comparsion between heap predicates. Hpointsto comes before others. */
-let rec hpred_compare inst::inst=false hpred1 hpred2 =>
-  if (hpred1 === hpred2) {
-    0
-  } else {
-    switch (hpred1, hpred2) {
-    | (Hpointsto e1 _ _, Hlseg _ _ e2 _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
-    | (Hpointsto e1 _ _, Hdllseg _ _ e2 _ _ _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
-    | (Hlseg _ _ e1 _ _, Hpointsto e2 _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
-    | (Hlseg _ _ e1 _ _, Hdllseg _ _ e2 _ _ _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
-    | (Hdllseg _ _ e1 _ _ _ _, Hpointsto e2 _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
-    | (Hdllseg _ _ e1 _ _ _ _, Hlseg _ _ e2 _ _) when Exp.compare e2 e1 != 0 => Exp.compare e2 e1
-    | (Hpointsto e1 se1 te1, Hpointsto e2 se2 te2) =>
-      let n = Exp.compare e2 e1;
-      if (n != 0) {
-        n
-      } else {
-        let n = strexp_compare inst::inst se2 se1;
-        if (n != 0) {
-          n
-        } else {
-          Exp.compare te2 te1
-        }
-      }
-    | (Hpointsto _, _) => (-1)
-    | (_, Hpointsto _) => 1
-    | (Hlseg k1 hpar1 e1 f1 el1, Hlseg k2 hpar2 e2 f2 el2) =>
-      let n = Exp.compare e2 e1;
-      if (n != 0) {
-        n
-      } else {
-        let n = lseg_kind_compare k2 k1;
-        if (n != 0) {
-          n
-        } else {
-          let n = hpara_compare hpar2 hpar1;
-          if (n != 0) {
-            n
-          } else {
-            let n = Exp.compare f2 f1;
-            if (n != 0) {
-              n
-            } else {
-              exp_list_compare el2 el1
-            }
-          }
-        }
-      }
-    | (Hlseg _, Hdllseg _) => (-1)
-    | (Hdllseg _, Hlseg _) => 1
-    | (Hdllseg k1 hpar1 e1 f1 g1 h1 el1, Hdllseg k2 hpar2 e2 f2 g2 h2 el2) =>
-      let n = Exp.compare e2 e1;
-      if (n != 0) {
-        n
-      } else {
-        let n = lseg_kind_compare k2 k1;
-        if (n != 0) {
-          n
-        } else {
-          let n = hpara_dll_compare hpar2 hpar1;
-          if (n != 0) {
-            n
-          } else {
-            let n = Exp.compare f2 f1;
-            if (n != 0) {
-              n
-            } else {
-              let n = Exp.compare g2 g1;
-              if (n != 0) {
-                n
-              } else {
-                let n = Exp.compare h2 h1;
-                if (n != 0) {
-                  n
-                } else {
-                  exp_list_compare el2 el1
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-and hpred_list_compare l1 l2 => IList.compare hpred_compare l1 l2
-and hpara_compare hp1 hp2 => {
-  let n = Ident.compare hp1.root hp2.root;
-  if (n != 0) {
-    n
-  } else {
-    let n = Ident.compare hp1.next hp2.next;
-    if (n != 0) {
-      n
-    } else {
-      let n = IList.compare Ident.compare hp1.svars hp2.svars;
-      if (n != 0) {
-        n
-      } else {
-        let n = IList.compare Ident.compare hp1.evars hp2.evars;
-        if (n != 0) {
-          n
-        } else {
-          hpred_list_compare hp1.body hp2.body
-        }
-      }
-    }
-  }
-}
-and hpara_dll_compare hp1 hp2 => {
-  let n = Ident.compare hp1.cell hp2.cell;
-  if (n != 0) {
-    n
-  } else {
-    let n = Ident.compare hp1.blink hp2.blink;
-    if (n != 0) {
-      n
-    } else {
-      let n = Ident.compare hp1.flink hp2.flink;
-      if (n != 0) {
-        n
-      } else {
-        let n = IList.compare Ident.compare hp1.svars_dll hp2.svars_dll;
-        if (n != 0) {
-          n
-        } else {
-          let n = IList.compare Ident.compare hp1.evars_dll hp2.evars_dll;
-          if (n != 0) {
-            n
-          } else {
-            hpred_list_compare hp1.body_dll hp2.body_dll
-          }
-        }
-      }
-    }
-  }
-};
-
-let strexp_equal inst::inst=false se1 se2 => strexp_compare inst::inst se1 se2 == 0;
-
-let hpred_equal inst::inst=false hpred1 hpred2 => hpred_compare inst::inst hpred1 hpred2 == 0;
-
-let hpara_equal hpara1 hpara2 => hpara_compare hpara1 hpara2 == 0;
-
-let hpara_dll_equal hpara1 hpara2 => hpara_dll_compare hpara1 hpara2 == 0;
-
 
 /** {2 Sets of expressions} */
 let elist_to_eset es => IList.fold_left (fun set e => Exp.Set.add e set) Exp.Set.empty es;
@@ -567,7 +301,7 @@ let elist_to_eset es => IList.fold_left (fun set e => Exp.Set.add e set) Exp.Set
 /** {2 Sets of heap predicates} */
 let module HpredSet = Set.Make {
   type t = hpred;
-  let compare = hpred_compare inst::false;
+  let compare = compare_hpred inst::false;
 };
 
 
@@ -891,14 +625,14 @@ let module Predicates: {
   /** hash tables for hpara */
   let module HparaHash = Hashtbl.Make {
     type t = hpara;
-    let equal = hpara_equal;
+    let equal = equal_hpara;
     let hash = Hashtbl.hash;
   };
 
   /** hash tables for hpara_dll */
   let module HparaDllHash = Hashtbl.Make {
     type t = hpara_dll;
-    let equal = hpara_dll_equal;
+    let equal = equal_hpara_dll;
     let hash = Hashtbl.hash;
   };
 
@@ -1915,36 +1649,15 @@ let rec sorted_list_check_consecutives f =>
 
 
 /** substitution */
-type subst = list (Ident.t, Exp.t);
+type ident_exp = (Ident.t, Exp.t) [@@deriving compare];
 
+let equal_ident_exp ide1 ide2 => compare_ident_exp ide1 ide2 == 0;
 
-/** Comparison between substitutions. */
-let rec sub_compare (sub1: subst) (sub2: subst) =>
-  if (sub1 === sub2) {
-    0
-  } else {
-    switch (sub1, sub2) {
-    | ([], []) => 0
-    | ([], [_, ..._]) => (-1)
-    | ([(i1, e1), ...sub1'], [(i2, e2), ...sub2']) =>
-      let n = Ident.compare i1 i2;
-      if (n != 0) {
-        n
-      } else {
-        let n = Exp.compare e1 e2;
-        if (n != 0) {
-          n
-        } else {
-          sub_compare sub1' sub2'
-        }
-      }
-    | ([_, ..._], []) => 1
-    }
-  };
+type subst = list ident_exp [@@deriving compare];
 
 
 /** Equality for substitutions. */
-let sub_equal sub1 sub2 => sub_compare sub1 sub2 == 0;
+let equal_subst sub1 sub2 => compare_subst sub1 sub2 == 0;
 
 let sub_check_duplicated_ids sub => {
   let f (id1, _) (id2, _) => Ident.equal id1 id2;
@@ -1956,8 +1669,8 @@ let sub_check_duplicated_ids sub => {
     For all (id1, e1), (id2, e2) in the input list,
     if id1 = id2, then e1 = e2. */
 let sub_of_list sub => {
-  let sub' = IList.sort ident_exp_compare sub;
-  let sub'' = remove_duplicates_from_sorted ident_exp_equal sub';
+  let sub' = IList.sort compare_ident_exp sub;
+  let sub'' = remove_duplicates_from_sorted equal_ident_exp sub';
   if (sub_check_duplicated_ids sub'') {
     assert false
   };
@@ -1967,7 +1680,7 @@ let sub_of_list sub => {
 
 /** like sub_of_list, but allow duplicate ids and only keep the first occurrence */
 let sub_of_list_duplicates sub => {
-  let sub' = IList.sort ident_exp_compare sub;
+  let sub' = IList.sort compare_ident_exp sub;
   let rec remove_duplicate_ids =
     fun
     | [(id1, e1), (id2, e2), ...l] =>
@@ -1992,8 +1705,8 @@ let sub_empty = sub_of_list [];
 /** Join two substitutions into one.
     For all id in dom(sub1) cap dom(sub2), sub1(id) = sub2(id). */
 let sub_join sub1 sub2 => {
-  let sub = sorted_list_merge ident_exp_compare sub1 sub2;
-  let sub' = remove_duplicates_from_sorted ident_exp_equal sub;
+  let sub = sorted_list_merge compare_ident_exp sub1 sub2;
+  let sub' = remove_duplicates_from_sorted equal_ident_exp sub;
   if (sub_check_duplicated_ids sub') {
     assert false
   };
@@ -2015,7 +1728,7 @@ let sub_symmetric_difference sub1_in sub2_in => {
       let sub_common = reverse_with_base [] sub_common;
       (sub_common, sub1_only', sub2_only')
     | ([id_e1, ...sub1'], [id_e2, ...sub2']) =>
-      let n = ident_exp_compare id_e1 id_e2;
+      let n = compare_ident_exp id_e1 id_e2;
       if (n == 0) {
         diff [id_e1, ...sub_common] sub1_only sub2_only sub1' sub2'
       } else if (n < 0) {
@@ -2280,145 +1993,6 @@ let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => Exp.t) instr => 
 /** apply [subst] to all id's in [instr], including binder id's */
 let instr_sub (subst: subst) instr => instr_sub_ids sub_id_binders::true (apply_sub subst) instr;
 
-let id_typ_compare (id1, typ1) (id2, typ2) => {
-  let n = Ident.compare id1 id2;
-  if (n != 0) {
-    n
-  } else {
-    Typ.compare typ1 typ2
-  }
-};
-
-let exp_typ_compare (exp1, typ1) (exp2, typ2) => {
-  let n = Exp.compare exp1 exp2;
-  if (n != 0) {
-    n
-  } else {
-    Typ.compare typ1 typ2
-  }
-};
-
-let instr_compare instr1 instr2 =>
-  switch (instr1, instr2) {
-  | (Load id1 e1 t1 loc1, Load id2 e2 t2 loc2) =>
-    let n = Ident.compare id1 id2;
-    if (n != 0) {
-      n
-    } else {
-      let n = Exp.compare e1 e2;
-      if (n != 0) {
-        n
-      } else {
-        let n = Typ.compare t1 t2;
-        if (n != 0) {
-          n
-        } else {
-          Location.compare loc1 loc2
-        }
-      }
-    }
-  | (Load _, _) => (-1)
-  | (_, Load _) => 1
-  | (Store e11 t1 e21 loc1, Store e12 t2 e22 loc2) =>
-    let n = Exp.compare e11 e12;
-    if (n != 0) {
-      n
-    } else {
-      let n = Typ.compare t1 t2;
-      if (n != 0) {
-        n
-      } else {
-        let n = Exp.compare e21 e22;
-        if (n != 0) {
-          n
-        } else {
-          Location.compare loc1 loc2
-        }
-      }
-    }
-  | (Store _, _) => (-1)
-  | (_, Store _) => 1
-  | (Prune cond1 loc1 true_branch1 ik1, Prune cond2 loc2 true_branch2 ik2) =>
-    let n = Exp.compare cond1 cond2;
-    if (n != 0) {
-      n
-    } else {
-      let n = Location.compare loc1 loc2;
-      if (n != 0) {
-        n
-      } else {
-        let n = bool_compare true_branch1 true_branch2;
-        if (n != 0) {
-          n
-        } else {
-          Pervasives.compare ik1 ik2
-        }
-      }
-    }
-  | (Prune _, _) => (-1)
-  | (_, Prune _) => 1
-  | (Call ret_id1 e1 arg_ts1 loc1 cf1, Call ret_id2 e2 arg_ts2 loc2 cf2) =>
-    let n = opt_compare id_typ_compare ret_id1 ret_id2;
-    if (n != 0) {
-      n
-    } else {
-      let n = Exp.compare e1 e2;
-      if (n != 0) {
-        n
-      } else {
-        let n = IList.compare exp_typ_compare arg_ts1 arg_ts2;
-        if (n != 0) {
-          n
-        } else {
-          let n = Location.compare loc1 loc2;
-          if (n != 0) {
-            n
-          } else {
-            CallFlags.compare cf1 cf2
-          }
-        }
-      }
-    }
-  | (Call _, _) => (-1)
-  | (_, Call _) => 1
-  | (Nullify pvar1 loc1, Nullify pvar2 loc2) =>
-    let n = Pvar.compare pvar1 pvar2;
-    if (n != 0) {
-      n
-    } else {
-      Location.compare loc1 loc2
-    }
-  | (Nullify _, _) => (-1)
-  | (_, Nullify _) => 1
-  | (Abstract loc1, Abstract loc2) => Location.compare loc1 loc2
-  | (Abstract _, _) => (-1)
-  | (_, Abstract _) => 1
-  | (Remove_temps temps1 loc1, Remove_temps temps2 loc2) =>
-    let n = IList.compare Ident.compare temps1 temps2;
-    if (n != 0) {
-      n
-    } else {
-      Location.compare loc1 loc2
-    }
-  | (Remove_temps _, _) => (-1)
-  | (_, Remove_temps _) => 1
-  | (Declare_locals ptl1 loc1, Declare_locals ptl2 loc2) =>
-    let pt_compare (pv1, t1) (pv2, t2) => {
-      let n = Pvar.compare pv1 pv2;
-      if (n != 0) {
-        n
-      } else {
-        Typ.compare t1 t2
-      }
-    };
-    let n = IList.compare pt_compare ptl1 ptl2;
-    if (n != 0) {
-      n
-    } else {
-      Location.compare loc1 loc2
-    }
-  };
-
 
 /** compare expressions from different procedures without considering loc's, ident's, and pvar's.
     the [exp_map] param gives a mapping of names used in the procedure of [e1] to names used in the
@@ -2515,7 +2089,7 @@ let exp_typ_compare_structural (e1, t1) (e2, t2) exp_map => {
 /** compare instructions from different procedures without considering loc's, ident's, and pvar's.
     the [exp_map] param gives a mapping of names used in the procedure of [instr1] to identifiers
     used in the procedure of [instr2] */
-let instr_compare_structural instr1 instr2 exp_map => {
+let compare_structural_instr instr1 instr2 exp_map => {
   let id_typ_opt_compare_structural id_typ1 id_typ2 exp_map => {
     let id_typ_compare_structural (id1, typ1) (id2, typ2) => {
       let (n, exp_map) = exp_compare_structural (Var id1) (Var id2) exp_map;
@@ -2660,7 +2234,7 @@ let instr_compare_structural instr1 instr2 exp_map => {
         ptl1
         ptl2
     }
-  | _ => (instr_compare instr1 instr2, exp_map)
+  | _ => (compare_instr instr1 instr2, exp_map)
   }
 };
 
@@ -2726,7 +2300,7 @@ let hpred_replace_exp epairs =>
 /** {2 Compaction} */
 let module HpredInstHash = Hashtbl.Make {
   type t = hpred;
-  let equal = hpred_equal inst::true;
+  let equal = equal_hpred inst::true;
   let hash = Hashtbl.hash;
 };
 

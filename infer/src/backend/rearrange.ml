@@ -217,7 +217,7 @@ let rec _strexp_extend_values
                   let replace acc (res_atoms', res_se', res_typ') =
                     let replace_fse = replace_fv res_se' in
                     let res_fsel' =
-                      IList.sort Sil.fld_strexp_compare (IList.map replace_fse fsel) in
+                      IList.sort [%compare: Ident.fieldname * Sil.strexp] (IList.map replace_fse fsel) in
                     let replace_fta (f, t, a) =
                       let f', t' = replace_fv res_typ' (f, t) in
                       (f', t', a) in
@@ -230,7 +230,7 @@ let rec _strexp_extend_values
                   let atoms', se', res_typ' =
                     create_struct_values
                       pname tenv orig_prop footprint_part kind max_stamp typ' off' inst in
-                  let res_fsel' = IList.sort Sil.fld_strexp_compare ((f, se'):: fsel) in
+                  let res_fsel' = IList.sort [%compare: Ident.fieldname * Sil.strexp] ((f, se'):: fsel) in
                   let replace_fta (f', t', a') =
                     if Ident.equal_fieldname f' f then (f, res_typ', a') else (f', t', a') in
                   let fields' =
@@ -312,7 +312,7 @@ and array_case_analysis_index pname tenv orig_prop
       create_struct_values
         pname tenv orig_prop footprint_part kind max_stamp typ_cont off inst in
     check_sound elem_typ;
-    let cont_new = IList.sort Sil.exp_strexp_compare ((index, elem_se):: array_cont) in
+    let cont_new = IList.sort [%compare: Exp.t * Sil.strexp] ((index, elem_se):: array_cont) in
     let array_new = Sil.Earray (array_len, cont_new, inst_arr) in
     let typ_new = Typ.Tarray (elem_typ, typ_array_len) in
     [(atoms, array_new, typ_new)]
@@ -325,7 +325,7 @@ and array_case_analysis_index pname tenv orig_prop
           create_struct_values
             pname tenv orig_prop footprint_part kind max_stamp typ_cont off inst in
         check_sound elem_typ;
-        let cont_new = IList.sort Sil.exp_strexp_compare ((index, elem_se):: array_cont) in
+        let cont_new = IList.sort [%compare: Exp.t * Sil.strexp] ((index, elem_se):: array_cont) in
         let array_new = Sil.Earray (array_len, cont_new, inst_arr) in
         let typ_new = Typ.Tarray (elem_typ, typ_array_len) in
         [(atoms, array_new, typ_new)]
@@ -554,7 +554,7 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
             | _ ->
                 L.d_warning "Cannot extend "; Sil.d_exp lexp; L.d_strln " in"; Prop.d_prop (Prop.prop_iter_to_prop tenv iter); L.d_ln();
                 [([], footprint_sigma)] in
-          IList.map (fun (atoms, sigma') -> (atoms, IList.stable_sort Sil.hpred_compare sigma')) atoms_sigma_list in
+          IList.map (fun (atoms, sigma') -> (atoms, IList.stable_sort Sil.compare_hpred sigma')) atoms_sigma_list in
         let iter_atoms_fp_sigma_list =
           list_product iter_list atoms_fp_sigma_list in
         IList.map (fun (iter, (atoms, fp_sigma)) ->

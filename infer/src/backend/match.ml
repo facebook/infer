@@ -335,7 +335,7 @@ let rec iter_match_with_impl tenv iter condition sub vars hpat hpats =
         | (None, _) when not hpat.flag ->
             (* L.out "@[.... iter_match_with_impl (lseg not-matched) ....@\n@."; *)
             None
-        | (None, _) when Sil.lseg_kind_equal k2 Sil.Lseg_NE ->
+        | (None, _) when Sil.equal_lseg_kind k2 Sil.Lseg_NE ->
             (* L.out "@[.... iter_match_with_impl (lseg not-matched) ....@\n@."; *)
             do_para_lseg ()
         | (None, _) ->
@@ -390,7 +390,7 @@ let rec iter_match_with_impl tenv iter condition sub vars hpat hpats =
               | Some _ -> None
       in begin match ((Prop.prop_iter_find iter filter), hpats) with
         | (None, _) when not hpat.flag -> None
-        | (None, _) when Sil.lseg_kind_equal k2 Sil.Lseg_NE -> do_para_dllseg ()
+        | (None, _) when Sil.equal_lseg_kind k2 Sil.Lseg_NE -> do_para_dllseg ()
         | (None, _) -> execute_with_backtracking [do_emp_dllseg; do_para_dllseg]
         | (Some iter_cur, []) -> do_empty_hpats iter_cur ()
         | (Some iter_cur, _) -> execute_with_backtracking [do_nonempty_hpats iter_cur; do_next iter_cur]

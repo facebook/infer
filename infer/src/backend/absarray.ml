@@ -271,7 +271,7 @@ end = struct
   let replace_strexp_sigma footprint_part ((_, hpred, syn_offs) : t) se_in sigma_in =
     let new_sigma = hpred :: sigma_in in
     let sigma' = replace_strexp tenv footprint_part (new_sigma, hpred, syn_offs) se_in in
-    IList.sort Sil.hpred_compare sigma'
+    IList.sort Sil.compare_hpred sigma'
 *)
 end
 

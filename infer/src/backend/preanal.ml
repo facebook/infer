@@ -127,7 +127,7 @@ module NullifyTransferFunctions = struct
   let is_last_instr_in_node instr node =
     let rec is_last_instr instr = function
       | [] -> true
-      | last_instr :: [] -> Sil.instr_compare instr last_instr = 0
+      | last_instr :: [] -> Sil.compare_instr instr last_instr = 0
       | _ :: instrs -> is_last_instr instr instrs in
     is_last_instr instr (CFG.instrs node)
 

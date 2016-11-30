@@ -384,7 +384,7 @@ let in_cycle cycle edge =
   match cycle with
   | Some cycle' ->
       IList.mem (fun (fn, se) (_,fn',se') ->
-          Ident.equal_fieldname fn fn' && Sil.strexp_equal se se') edge cycle'
+          Ident.equal_fieldname fn fn' && Sil.equal_strexp se se') edge cycle'
   | _ -> false
 
 let node_in_cycle cycle node =

@@ -98,8 +98,8 @@ let get_edges footprint_part g =
   IList.map (fun hpred -> Ehpred hpred) hpreds @ IList.map (fun a -> Eatom a) atoms @ IList.map (fun entry -> Esub_entry entry) subst_entries
 
 let edge_equal e1 e2 = match e1, e2 with
-  | Ehpred hp1, Ehpred hp2 -> Sil.hpred_equal hp1 hp2
-  | Eatom a1, Eatom a2 -> Sil.atom_equal a1 a2
+  | Ehpred hp1, Ehpred hp2 -> Sil.equal_hpred hp1 hp2
+  | Eatom a1, Eatom a2 -> Sil.equal_atom a1 a2
   | Esub_entry (x1, e1), Esub_entry (x2, e2) -> Ident.equal x1 x2 && Exp.equal e1 e2
   | _ -> false
 

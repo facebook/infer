@@ -135,7 +135,7 @@ let filter_atoms tenv ~f prop =
 let remove tenv prop atom =
   if is_pred atom then
     let natom = Prop.atom_normalize_prop tenv prop atom in
-    let f a = not (Sil.atom_equal natom a) in
+    let f a = not (Sil.equal_atom natom a) in
     filter_atoms tenv ~f prop
   else
     prop
@@ -295,7 +295,7 @@ let find_equal_formal_path tenv e prop =
   let rec find_in_sigma e seen_hpreds =
     IList.fold_right (
       fun hpred res ->
-        if IList.mem Sil.hpred_equal hpred seen_hpreds then None
+        if IList.mem Sil.equal_hpred hpred seen_hpreds then None
         else
           let seen_hpreds = hpred :: seen_hpreds in
           match res with

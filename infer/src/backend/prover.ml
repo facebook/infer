@@ -565,7 +565,7 @@ let check_equal tenv prop e1 e2 =
     let eq = Sil.Aeq(n_e1, n_e2) in
     let n_eq = Prop.atom_normalize_prop tenv prop eq in
     let pi = prop.Prop.pi in
-    IList.exists (Sil.atom_equal n_eq) pi in
+    IList.exists (Sil.equal_atom n_eq) pi in
   check_equal () || check_equal_const () || check_equal_pi ()
 
 (** Check [ |- e=0]. Result [false] means "don't know". *)
@@ -769,7 +769,7 @@ let check_atom tenv prop a0 =
     when IntLit.isone i -> check_lt_normalized tenv prop e1 e2
   | Sil.Aeq (e1, e2) -> check_equal tenv prop e1 e2
   | Sil.Aneq (e1, e2) -> check_disequal tenv prop e1 e2
-  | Sil.Apred _ | Anpred _ -> IList.exists (Sil.atom_equal a) prop.Prop.pi
+  | Sil.Apred _ | Anpred _ -> IList.exists (Sil.equal_atom a) prop.Prop.pi
 
 (** Check [prop |- e1<=e2]. Result [false] means "don't know". *)
 let check_le tenv prop e1 e2 =
@@ -1432,12 +1432,12 @@ let filter_ne_lhs sub e0 = function
 
 let filter_hpred sub hpred2 hpred1 = match (Sil.hpred_sub sub hpred1), hpred2 with
   | Sil.Hlseg(Sil.Lseg_NE, hpara1, e1, f1, el1), Sil.Hlseg(Sil.Lseg_PE, _, _, _, _) ->
-      if Sil.hpred_equal (Sil.Hlseg(Sil.Lseg_PE, hpara1, e1, f1, el1)) hpred2 then Some false else None
+      if Sil.equal_hpred (Sil.Hlseg(Sil.Lseg_PE, hpara1, e1, f1, el1)) hpred2 then Some false else None
   | Sil.Hlseg(Sil.Lseg_PE, hpara1, e1, f1, el1), Sil.Hlseg(Sil.Lseg_NE, _, _, _, _) ->
-      if Sil.hpred_equal (Sil.Hlseg(Sil.Lseg_NE, hpara1, e1, f1, el1)) hpred2 then Some true else None (* return missing disequality *)
+      if Sil.equal_hpred (Sil.Hlseg(Sil.Lseg_NE, hpara1, e1, f1, el1)) hpred2 then Some true else None (* return missing disequality *)
   | Sil.Hpointsto(e1, _, _), Sil.Hlseg(_, _, e2, _, _) ->
       if Exp.equal e1 e2 then Some false else None
-  | hpred1, hpred2 -> if Sil.hpred_equal hpred1 hpred2 then Some false else None
+  | hpred1, hpred2 -> if Sil.equal_hpred hpred1 hpred2 then Some false else None
 
 let hpred_has_primed_lhs sub hpred =
   let rec find_primed e = match e with

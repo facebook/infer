@@ -279,7 +279,7 @@ let mark_unchanged_pdescs cfg_new cfg_old => {
           IList.equal
             (
               fun i1 i2 => {
-                let (n, exp_map') = Sil.instr_compare_structural i1 i2 !exp_map;
+                let (n, exp_map') = Sil.compare_structural_instr i1 i2 !exp_map;
                 exp_map := exp_map';
                 n
               }
