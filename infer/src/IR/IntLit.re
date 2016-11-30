@@ -36,25 +36,11 @@ let to_signed (unsigned, i, ptr) =>
       (false, i, ptr)
   };
 
-let compare (unsigned1, i1, _) (unsigned2, i2, _) => {
-  let n = bool_compare unsigned1 unsigned2;
-  if (n != 0) {
-    n
-  } else {
-    Int64.compare i1 i2
-  }
-};
+let compare (unsigned1, i1, _) (unsigned2, i2, _) =>
+  [%compare : (bool, Int64.t)] (unsigned1, i1) (unsigned2, i2);
 
-let compare_value (unsigned1, i1, _) (unsigned2, i2, _) => {
-  let area1 = area unsigned1 i1;
-  let area2 = area unsigned2 i2;
-  let n = int_compare area1 area2;
-  if (n != 0) {
-    n
-  } else {
-    Int64.compare i1 i2
-  }
-};
+let compare_value (unsigned1, i1, _) (unsigned2, i2, _) =>
+  [%compare : (int, Int64.t)] (area unsigned1 i1, i1) (area unsigned2 i2, i2);
 
 let eq i1 i2 => compare_value i1 i2 == 0;
 
