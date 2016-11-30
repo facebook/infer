@@ -17,8 +17,11 @@ type curr_class =
   (*class name and name of (optional) super class , and a list of protocols *)
   | ContextCategory of string * string (* category name and corresponding class *)
   | ContextProtocol of string  (* category name and corresponding class *)
-  | ContextClsDeclPtr of Clang_ast_t.pointer
+  | ContextClsDeclPtr of int
   | ContextNoCls
+[@@deriving compare]
+
+val equal_curr_class : curr_class -> curr_class -> bool
 
 type str_node_map = (string, Procdesc.Node.t) Hashtbl.t
 
@@ -51,10 +54,6 @@ val get_curr_class_name : curr_class -> string
 val get_curr_class_decl_ptr : curr_class -> Clang_ast_t.pointer
 
 val curr_class_to_string : curr_class -> string
-
-val curr_class_compare : curr_class -> curr_class -> int
-
-val curr_class_equal : curr_class -> curr_class -> bool
 
 val is_objc_method : t -> bool
 

@@ -14,13 +14,25 @@ open! Utils
 
 module L = Logging
 
+type pointer (* = Clang_ast_t.pointer *) = int [@@deriving compare]
+
+type _super = string option
+let compare__super _ _ = 0
+
+type _protos = string list
+let compare__protos _ _ = 0
+
 type curr_class =
-  | ContextCls of string * string option * string list
+  | ContextCls of string * _super * _protos
   (*class name and name of (optional) super class , and a list of protocols *)
   | ContextCategory of string * string (* category name and corresponding class *)
   | ContextProtocol of string  (* category name and corresponding class *)
-  | ContextClsDeclPtr of Clang_ast_t.pointer
+  | ContextClsDeclPtr of pointer
   | ContextNoCls
+[@@deriving compare]
+
+let equal_curr_class curr_class1 curr_class2 =
+  compare_curr_class curr_class1 curr_class2 == 0
 
 type str_node_map = (string, Procdesc.Node.t) Hashtbl.t
 
@@ -96,29 +108,6 @@ let curr_class_to_string curr_class =
   | ContextProtocol name -> ("protocol " ^ name)
   | ContextClsDeclPtr ptr -> ("decl_ptr: " ^ string_of_int ptr)
   | ContextNoCls -> "no class"
-
-let curr_class_compare curr_class1 curr_class2 =
-  match curr_class1, curr_class2 with
-  | ContextCls (name1, _, _), ContextCls (name2, _, _) ->
-      String.compare name1 name2
-  | ContextCls (_, _, _), _ -> -1
-  | _, ContextCls (_, _, _) -> 1
-  | ContextCategory (name1, cls1), ContextCategory (name2, cls2) ->
-      pair_compare String.compare String.compare (name1, cls1) (name2, cls2)
-  | ContextCategory (_, _), _ -> -1
-  | _, ContextCategory (_, _) -> 1
-  | ContextProtocol name1, ContextProtocol name2 ->
-      String.compare name1 name2
-  | ContextProtocol _, _ -> -1
-  | _, ContextProtocol _ -> 1
-  | ContextClsDeclPtr ptr1, ContextClsDeclPtr ptr2 ->
-      ptr1 - ptr2
-  | ContextClsDeclPtr _, _ -> -1
-  | _, ContextClsDeclPtr _ -> 1
-  | ContextNoCls, ContextNoCls -> 0
-
-let curr_class_equal curr_class1 curr_class2 =
-  curr_class_compare curr_class1 curr_class2 == 0
 
 let create_curr_class tenv class_name ck =
   let class_tn_name = Typename.TN_csu (Csu.Class ck, (Mangled.from_string class_name)) in
