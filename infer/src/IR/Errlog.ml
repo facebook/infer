@@ -31,7 +31,7 @@ type err_data =
   (int * int) * int * Location.t * L.ml_loc option * loc_trace *
   Exceptions.err_class * Exceptions.exception_visibility
 
-let err_data_compare
+let compare_err_data
     (_, _, loc1, _, _, _, _)
     (_, _, loc2, _, _, _, _) =
   Location.compare loc1 loc2
@@ -39,7 +39,7 @@ let err_data_compare
 module ErrDataSet = (* set err_data with no repeated loc *)
   Set.Make(struct
     type t = err_data
-    let compare = err_data_compare
+    let compare = compare_err_data
   end)
 
 (** Hash table to implement error logs *)
@@ -253,7 +253,7 @@ module Err_table = struct
   module LocMap =
     Map.Make(struct
       type t = ErrDataSet.elt
-      let compare = err_data_compare
+      let compare = compare_err_data
     end)
 
   let print_err_table_details fmt err_table =
