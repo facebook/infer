@@ -23,11 +23,10 @@ let module F = Format;
 type t =
   | Neg /** Unary minus */
   | BNot /** Bitwise complement (~) */
-  | LNot /** Logical Not (!) */;
+  | LNot /** Logical Not (!) */
+[@@deriving compare];
 
 let equal: t => t => bool;
-
-let compare: t => t => int;
 
 
 /** String representation of a unary operator. */

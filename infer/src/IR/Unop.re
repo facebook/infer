@@ -23,18 +23,8 @@ let module F = Format;
 type t =
   | Neg /** Unary minus */
   | BNot /** Bitwise complement (~) */
-  | LNot /** Logical Not (!) */;
-
-let compare o1 o2 =>
-  switch (o1, o2) {
-  | (Neg, Neg) => 0
-  | (Neg, _) => (-1)
-  | (_, Neg) => 1
-  | (BNot, BNot) => 0
-  | (BNot, _) => (-1)
-  | (_, BNot) => 1
-  | (LNot, LNot) => 0
-  };
+  | LNot /** Logical Not (!) */
+[@@deriving compare];
 
 let equal o1 o2 => compare o1 o2 == 0;
 
