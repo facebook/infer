@@ -25,7 +25,7 @@ let can_rename id =
 
 (** {2 Utility functions for sigma} *)
 
-let sigma_equal sigma1 sigma2 =
+let equal_sigma sigma1 sigma2 =
   let rec f sigma1_rest sigma2_rest =
     match (sigma1_rest, sigma2_rest) with
     | [], [] -> ()
@@ -1314,7 +1314,7 @@ let sigma_renaming_check (lhs: side) (sigma: Prop.sigma) (sigma_new: Prop.sigma)
   let fav_sigma = Prop.sigma_fav sigma_new in
   let sub = Rename.to_subst_proj lhs fav_sigma in
   let sigma' = Prop.sigma_sub sub sigma_new in
-  sigma_equal sigma sigma'
+  equal_sigma sigma sigma'
 
 let sigma_renaming_check_lhs = sigma_renaming_check Lhs
 let sigma_renaming_check_rhs = sigma_renaming_check Rhs

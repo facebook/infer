@@ -524,7 +524,7 @@ end
 
 module PropMap = Map.Make (struct
     type t = Prop.normal Prop.t
-    let compare = Prop.prop_compare
+    let compare = Prop.compare_prop
   end)
 
 (* =============== START of the PathSet module ===============*)

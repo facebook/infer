@@ -711,7 +711,7 @@ let collect_analysis_result tenv wl pdesc : Paths.PathSet.t =
 module Pmap = Map.Make
     (struct
       type t = Prop.normal Prop.t
-      let compare = Prop.prop_compare
+      let compare = Prop.compare_prop
     end)
 
 let vset_ref_add_path vset_ref path =

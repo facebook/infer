@@ -83,11 +83,11 @@ module Jprop = struct
   (** Comparison for joined_prop *)
   let rec compare jp1 jp2 = match jp1, jp2 with
     | Prop (_, p1), Prop (_, p2) ->
-        Prop.prop_compare p1 p2
+        Prop.compare_prop p1 p2
     | Prop _, _ -> - 1
     | _, Prop _ -> 1
     | Joined (_, p1, jp1, jq1), Joined (_, p2, jp2, jq2) ->
-        let n = Prop.prop_compare p1 p2 in
+        let n = Prop.compare_prop p1 p2 in
         if n <> 0 then n
         else
           let n = compare jp1 jp2 in
@@ -827,6 +827,6 @@ let rec post_equal pl1 pl2 = match pl1, pl2 with
   | [], _:: _ -> false
   | _:: _,[] -> false
   | p1:: pl1', p2:: pl2' ->
-      if Prop.prop_equal p1 p2 then post_equal pl1' pl2'
+      if Prop.equal_prop p1 p2 then post_equal pl1' pl2'
       else false
 *)

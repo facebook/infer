@@ -20,7 +20,7 @@ module F = Format
 module PropSet =
   Set.Make(struct
     type t = Prop.normal Prop.t
-    let compare = Prop.prop_compare
+    let compare = Prop.compare_prop
   end)
 
 let compare = PropSet.compare

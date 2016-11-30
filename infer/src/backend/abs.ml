@@ -1194,8 +1194,8 @@ let check_junk ?original_prop pname tenv prop =
   let sigma_new = remove_junk false fav_sub_sigmafp prop.Prop.sigma in
   let sigma_fp_new = remove_junk true (Sil.fav_new ()) prop.Prop.sigma_fp in
   if
-    Prop.sigma_equal prop.Prop.sigma sigma_new
-    && Prop.sigma_equal prop.Prop.sigma_fp sigma_fp_new
+    Prop.equal_sigma prop.Prop.sigma sigma_new
+    && Prop.equal_sigma prop.Prop.sigma_fp sigma_fp_new
   then prop
   else Prop.normalize tenv (Prop.set prop ~sigma:sigma_new ~sigma_fp:sigma_fp_new)
 

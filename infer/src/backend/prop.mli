@@ -44,13 +44,13 @@ type struct_init_mode =
 (** {2 Basic Functions for propositions} *)
 
 (** Compare propositions *)
-val prop_compare : 'a t -> 'a t -> int
+val compare_prop : 'a t -> 'a t -> int
 
 (** Check the equality of two sigma's *)
-val sigma_equal : sigma -> sigma -> bool
+val equal_sigma : sigma -> sigma -> bool
 
 (** Check the equality of two propositions *)
-val prop_equal : 'a t -> 'a t -> bool
+val equal_prop : 'a t -> 'a t -> bool
 
 (** Pretty print a substitution. *)
 val pp_sub : printenv -> Format.formatter -> subst -> unit

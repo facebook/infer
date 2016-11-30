@@ -30,8 +30,14 @@ type normal (** kind for normal props, i.e. normalized *)
 
 type exposed (** kind for exposed props *)
 
-type pi = Sil.atom list
-type sigma = Sil.hpred list
+type pi = Sil.atom list [@@deriving compare]
+type sigma = Sil.hpred list [@@deriving compare]
+
+let equal_pi pi1 pi2 =
+  compare_pi pi1 pi2 = 0
+
+let equal_sigma sigma1 sigma2 =
+  compare_sigma sigma1 sigma2 = 0
 
 
 module Core : sig
@@ -44,7 +50,7 @@ module Core : sig
       pi: pi;  (** pure part *)
       sigma_fp : sigma;  (** abduced spatial part *)
       pi_fp: pi;  (** abduced pure part *)
-    }
+    } [@@deriving compare]
 
   (** Proposition [true /\ emp]. *)
   val prop_emp : normal t
@@ -72,7 +78,7 @@ end = struct
       pi: pi;  (** pure part *)
       sigma_fp : sigma;  (** abduced spatial part *)
       pi_fp: pi;  (** abduced pure part *)
-    }
+    } [@@deriving compare]
 
   (** Proposition [true /\ emp]. *)
   let prop_emp : normal t =
@@ -104,47 +110,13 @@ include Core
 
 (** {1 Functions for Comparison} *)
 
-(** Comparison between lists of equalities and disequalities. Lexicographical order. *)
-let rec pi_compare pi1 pi2 =
-  if pi1 == pi2 then 0
-  else match (pi1, pi2) with
-    | ([],[]) -> 0
-    | ([], _:: _) -> - 1
-    | (_:: _,[]) -> 1
-    | (a1:: pi1', a2:: pi2') ->
-        let n = Sil.compare_atom a1 a2 in
-        if n <> 0 then n
-        else pi_compare pi1' pi2'
-
-let pi_equal pi1 pi2 =
-  pi_compare pi1 pi2 = 0
-
-(** Comparsion between lists of heap predicates. Lexicographical order. *)
-let rec sigma_compare sigma1 sigma2 =
-  if sigma1 == sigma2 then 0
-  else match (sigma1, sigma2) with
-    | ([],[]) -> 0
-    | ([], _:: _) -> - 1
-    | (_:: _,[]) -> 1
-    | (h1:: sigma1', h2:: sigma2') ->
-        let n = Sil.compare_hpred h1 h2 in
-        if n <> 0 then n
-        else sigma_compare sigma1' sigma2'
-
-let sigma_equal sigma1 sigma2 =
-  sigma_compare sigma1 sigma2 = 0
-
 (** Comparison between propositions. Lexicographical order. *)
-let prop_compare p1 p2 =
-  sigma_compare p1.sigma p2.sigma
-  |> next Sil.compare_subst p1.sub p2.sub
-  |> next pi_compare p1.pi p2.pi
-  |> next sigma_compare p1.sigma_fp p2.sigma_fp
-  |> next pi_compare p1.pi_fp p2.pi_fp
+let compare_prop p1 p2 =
+  compare (fun _ _ -> 0) p1 p2
 
 (** Check the equality of two propositions *)
-let prop_equal p1 p2 =
-  prop_compare p1 p2 = 0
+let equal_prop p1 p2 =
+  compare_prop p1 p2 = 0
 
 (** {1 Functions for Pretty Printing} *)
 
@@ -1445,7 +1417,7 @@ module Normalize = struct
   let sigma_normalize tenv sub sigma =
     let sigma' =
       IList.stable_sort Sil.compare_hpred (IList.map (hpred_normalize tenv sub) sigma) in
-    if sigma_equal sigma sigma' then sigma else sigma'
+    if equal_sigma sigma sigma' then sigma else sigma'
 
   let pi_tighten_ineq tenv pi =
     let ineq_list, nonineq_list = IList.partition atom_is_inequality pi in
@@ -1543,7 +1515,7 @@ module Normalize = struct
         Sil.compare_atom
         ((IList.filter filter_useful_atom nonineq_list) @ ineq_list) in
     let pi'' = pi_sorted_remove_redundant pi' in
-    if pi_equal pi0 pi'' then pi0 else pi''
+    if equal_pi pi0 pi'' then pi0 else pi''
 
   (** normalize the footprint part, and rename any primed vars
       in the footprint with fresh footprint vars *)
