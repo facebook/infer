@@ -67,11 +67,7 @@ let do_side side f e1 e2 =
 
 module EPset = Set.Make
     (struct
-      type t = Exp.t * Exp.t
-      let compare (e1, e1') (e2, e2') =
-        match (Exp.compare e1 e2) with
-        | i when i <> 0 -> i
-        | _ -> Exp.compare e1' e2'
+      type t = Exp.t * Exp.t [@@deriving compare]
     end)
 
 (** {2 Module for maintaining information about noninjectivity during join} *)
