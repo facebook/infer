@@ -21,7 +21,7 @@ module type Node = sig
   val id : t -> id
   val loc : t -> Location.t
   val underlying_id : t -> Procdesc.Node.id
-  val id_compare : id -> id -> int
+  val compare_id : id -> id -> int
   val pp_id : Format.formatter -> id -> unit
 end
 

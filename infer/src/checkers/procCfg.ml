@@ -15,7 +15,7 @@ module F = Format
     file). Defines useful wrappers that allows us to do tricks like turn a forward cfg into a
     backward one, or view a cfg as having a single instruction per node. *)
 
-type index = Node_index | Instr_index of int
+type index = Node_index | Instr_index of int [@@deriving compare]
 
 module type Node = sig
   type t
@@ -25,7 +25,7 @@ module type Node = sig
   val id : t -> id
   val loc : t -> Location.t
   val underlying_id : t -> Procdesc.Node.id
-  val id_compare : id -> id -> int
+  val compare_id : id -> id -> int
   val pp_id : F.formatter -> id -> unit
 end
 
@@ -37,7 +37,7 @@ module DefaultNode = struct
   let id = Procdesc.Node.get_id
   let loc = Procdesc.Node.get_loc
   let underlying_id = id
-  let id_compare = Procdesc.Node.compare_id
+  let compare_id = Procdesc.Node.compare_id
   let pp_id = Procdesc.Node.pp_id
 end
 
@@ -53,16 +53,12 @@ module InstrNode = struct
 
   let loc t = Procdesc.Node.get_loc t
 
-  let index_compare index1 index2 = match index1, index2 with
-    | Node_index, Node_index -> 0
-    | Instr_index i1, Instr_index i2 -> int_compare i1 i2
-    | Node_index, Instr_index _ -> 1
-    | Instr_index _, Node_index -> -1
+  let compare_index = compare_index
 
-  let id_compare (id1, index1) (id2, index2) =
+  let compare_id (id1, index1) (id2, index2) =
     let n = Procdesc.Node.compare_id id1 id2 in
     if n <> 0 then n
-    else index_compare index1 index2
+    else compare_index index1 index2
 
   let pp_id fmt (id, index) = match index with
     | Node_index -> Procdesc.Node.pp_id fmt id
@@ -234,10 +230,10 @@ end
 
 module NodeIdMap (CFG : S) = Map.Make(struct
     type t = CFG.id
-    let compare = CFG.id_compare
+    let compare = CFG.compare_id
   end)
 
 module NodeIdSet (CFG : S) = Set.Make(struct
     type t = CFG.id
-    let compare = CFG.id_compare
+    let compare = CFG.compare_id
   end)

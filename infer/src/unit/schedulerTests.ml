@@ -25,7 +25,7 @@ module MockNode = struct
   let loc _ = assert false
   let underlying_id _ = assert false
   let kind _ = Procdesc.Node.Stmt_node ""
-  let id_compare = int_compare
+  let compare_id = int_compare
   let pp_id fmt i =
     F.fprintf fmt "%i" i
 end
@@ -35,13 +35,13 @@ module MockProcCfg = struct
   include (MockNode : module type of MockNode with type t := node)
   type t = (node * node list) list
 
-  let id_compare = int_compare
+  let compare_id = int_compare
 
   let succs t n =
     try
       let node_id = id n in
       IList.find
-        (fun (node, _) -> id_compare (id node) node_id = 0)
+        (fun (node, _) -> compare_id (id node) node_id = 0)
         t
       |> snd
     with Not_found -> []
@@ -51,7 +51,7 @@ module MockProcCfg = struct
       let node_id = id n in
       IList.filter
         (fun (_, succs) ->
-           IList.exists (fun node -> id_compare (id node) node_id = 0) succs)
+           IList.exists (fun node -> compare_id (id node) node_id = 0) succs)
         t
       |> IList.map fst
     with Not_found -> []
