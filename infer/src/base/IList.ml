@@ -7,6 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+type 'a t = 'a list [@@deriving compare]
+
+let equal cmp l1 l2 =
+  compare cmp l1 l2 = 0
+
 let exists = List.exists
 let filter = List.filter
 let find = List.find
@@ -82,20 +87,6 @@ let rec drop_first n = function
 
 let drop_last n list =
   rev (drop_first n (rev list))
-
-(** Generic comparison of lists given a compare function for the elements of the list *)
-let rec compare cmp l1 l2 =
-  match l1, l2 with
-  | [],[] -> 0
-  | [], _ -> - 1
-  | _, [] -> 1
-  | x1:: l1', x2:: l2' ->
-      let n = cmp x1 x2 in
-      if n <> 0 then n else compare cmp l1' l2'
-
-(** Generic equality of lists given a compare function for the elements of the list *)
-let equal cmp l1 l2 =
-  compare cmp l1 l2 = 0
 
 (** Returns (reverse input_list) *)
 let rec rev_with_acc acc = function

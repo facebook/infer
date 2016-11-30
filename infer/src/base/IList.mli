@@ -7,11 +7,10 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-(** Generic comparison of lists given a compare function for the elements of the list *)
-val compare : ('a -> 'b -> int) -> 'a list -> 'b list -> int
+type 'a t = 'a list [@@deriving compare]
 
 (** Generic equality of lists given a compare function for the elements of the list *)
-val equal : ('a -> 'b -> int) -> 'a list -> 'b list -> bool
+val equal : ('a -> 'a -> int) -> 'a list -> 'a list -> bool
 
 (** tail-recursive variant of List.append *)
 val append : 'a list -> 'a list -> 'a list
