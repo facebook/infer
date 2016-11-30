@@ -164,10 +164,7 @@ let instrs_normalize instrs =
 let mk_find_duplicate_nodes proc_desc : (Procdesc.Node.t -> Procdesc.NodeSet.t) =
   let module M = (* map from (loc,kind) *)
     Map.Make(struct
-      type t = Location.t * Procdesc.Node.nodekind
-      let compare (loc1, k1) (loc2, k2) =
-        let n = Location.compare loc1 loc2 in
-        if n <> 0 then n else Procdesc.Node.compare_nodekind k1 k2
+      type t = Location.t * Procdesc.Node.nodekind [@@deriving compare]
     end) in
 
   let module S = (* set of nodes with normalized insructions *)
