@@ -24,33 +24,8 @@ type t =
   | Cstr string /** string constants */
   | Cfloat float /** float constants */
   | Cclass Ident.name /** class constant */
-  | Cptr_to_fld Ident.fieldname Typ.t /** pointer to field constant, and type of the surrounding Csu.t type */;
-
-let compare (c1: t) (c2: t) :int =>
-  switch (c1, c2) {
-  | (Cint i1, Cint i2) => IntLit.compare i1 i2
-  | (Cint _, _) => (-1)
-  | (_, Cint _) => 1
-  | (Cfun fn1, Cfun fn2) => Procname.compare fn1 fn2
-  | (Cfun _, _) => (-1)
-  | (_, Cfun _) => 1
-  | (Cstr s1, Cstr s2) => string_compare s1 s2
-  | (Cstr _, _) => (-1)
-  | (_, Cstr _) => 1
-  | (Cfloat f1, Cfloat f2) => float_compare f1 f2
-  | (Cfloat _, _) => (-1)
-  | (_, Cfloat _) => 1
-  | (Cclass c1, Cclass c2) => Ident.compare_name c1 c2
-  | (Cclass _, _) => (-1)
-  | (_, Cclass _) => 1
-  | (Cptr_to_fld fn1 t1, Cptr_to_fld fn2 t2) =>
-    let n = Ident.compare_fieldname fn1 fn2;
-    if (n != 0) {
-      n
-    } else {
-      Typ.compare t1 t2
-    }
-  };
+  | Cptr_to_fld Ident.fieldname Typ.t /** pointer to field constant, and type of the surrounding Csu.t type */
+[@@deriving compare];
 
 let equal c1 c2 => compare c1 c2 == 0;
 
