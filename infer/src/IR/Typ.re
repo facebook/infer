@@ -34,53 +34,8 @@ type ikind =
   | ILongLong /** [long long] (or [_int64] on Microsoft Visual C) */
   | IULongLong /** [unsigned long long] (or [unsigned _int64] on Microsoft Visual C) */
   | I128 /** [__int128_t] */
-  | IU128 /** [__uint128_t] */;
-
-
-/** comparison for ikind */
-let ikind_compare k1 k2 =>
-  switch (k1, k2) {
-  | (IChar, IChar) => 0
-  | (IChar, _) => (-1)
-  | (_, IChar) => 1
-  | (ISChar, ISChar) => 0
-  | (ISChar, _) => (-1)
-  | (_, ISChar) => 1
-  | (IUChar, IUChar) => 0
-  | (IUChar, _) => (-1)
-  | (_, IUChar) => 1
-  | (IBool, IBool) => 0
-  | (IBool, _) => (-1)
-  | (_, IBool) => 1
-  | (IInt, IInt) => 0
-  | (IInt, _) => (-1)
-  | (_, IInt) => 1
-  | (IUInt, IUInt) => 0
-  | (IUInt, _) => (-1)
-  | (_, IUInt) => 1
-  | (IShort, IShort) => 0
-  | (IShort, _) => (-1)
-  | (_, IShort) => 1
-  | (IUShort, IUShort) => 0
-  | (IUShort, _) => (-1)
-  | (_, IUShort) => 1
-  | (ILong, ILong) => 0
-  | (ILong, _) => (-1)
-  | (_, ILong) => 1
-  | (IULong, IULong) => 0
-  | (IULong, _) => (-1)
-  | (_, IULong) => 1
-  | (ILongLong, ILongLong) => 0
-  | (ILongLong, _) => (-1)
-  | (_, ILongLong) => 1
-  | (IULongLong, IULongLong) => 0
-  | (IULongLong, _) => (-1)
-  | (_, IULongLong) => 1
-  | (I128, I128) => 0
-  | (I128, _) => (-1)
-  | (_, I128) => 1
-  | (IU128, IU128) => 0
-  };
+  | IU128 /** [__uint128_t] */
+[@@deriving compare];
 
 let ikind_to_string =
   fun
@@ -122,7 +77,8 @@ let int_of_int64_kind i ik => IntLit.of_int64_unsigned i (ikind_is_unsigned ik);
 type fkind =
   | FFloat /** [float] */
   | FDouble /** [double] */
-  | FLongDouble /** [long double] */;
+  | FLongDouble /** [long double] */
+[@@deriving compare];
 
 
 /** comparison for fkind */
@@ -150,24 +106,8 @@ type ptr_kind =
   | Pk_reference /** C++ reference */
   | Pk_objc_weak /** Obj-C __weak pointer */
   | Pk_objc_unsafe_unretained /** Obj-C __unsafe_unretained pointer */
-  | Pk_objc_autoreleasing /** Obj-C __autoreleasing pointer */;
-
-let ptr_kind_compare pk1 pk2 =>
-  switch (pk1, pk2) {
-  | (Pk_pointer, Pk_pointer) => 0
-  | (Pk_pointer, _) => (-1)
-  | (_, Pk_pointer) => 1
-  | (Pk_reference, Pk_reference) => 0
-  | (_, Pk_reference) => (-1)
-  | (Pk_reference, _) => 1
-  | (Pk_objc_weak, Pk_objc_weak) => 0
-  | (Pk_objc_weak, _) => (-1)
-  | (_, Pk_objc_weak) => 1
-  | (Pk_objc_unsafe_unretained, Pk_objc_unsafe_unretained) => 0
-  | (Pk_objc_unsafe_unretained, _) => (-1)
-  | (_, Pk_objc_unsafe_unretained) => 1
-  | (Pk_objc_autoreleasing, Pk_objc_autoreleasing) => 0
-  };
+  | Pk_objc_autoreleasing /** Obj-C __autoreleasing pointer */
+[@@deriving compare];
 
 let ptr_kind_string =
   fun
@@ -179,7 +119,7 @@ let ptr_kind_string =
 
 
 /** statically determined length of an array type, if any */
-type static_length = option IntLit.t;
+type static_length = option IntLit.t [@@deriving compare];
 
 
 /** types for sil (structured) expressions */
@@ -190,42 +130,8 @@ type t =
   | Tfun bool /** function type with noreturn attribute */
   | Tptr t ptr_kind /** pointer type */
   | Tstruct Typename.t /** structured value type name */
-  | Tarray t static_length /** array type with statically fixed length */;
-
-
-/** Comparision for types. */
-let rec compare t1 t2 =>
-  if (t1 === t2) {
-    0
-  } else {
-    switch (t1, t2) {
-    | (Tint ik1, Tint ik2) => ikind_compare ik1 ik2
-    | (Tint _, _) => (-1)
-    | (_, Tint _) => 1
-    | (Tfloat fk1, Tfloat fk2) => fkind_compare fk1 fk2
-    | (Tfloat _, _) => (-1)
-    | (_, Tfloat _) => 1
-    | (Tvoid, Tvoid) => 0
-    | (Tvoid, _) => (-1)
-    | (_, Tvoid) => 1
-    | (Tfun noreturn1, Tfun noreturn2) => bool_compare noreturn1 noreturn2
-    | (Tfun _, _) => (-1)
-    | (_, Tfun _) => 1
-    | (Tptr t1' pk1, Tptr t2' pk2) =>
-      let n = compare t1' t2';
-      if (n != 0) {
-        n
-      } else {
-        ptr_kind_compare pk1 pk2
-      }
-    | (Tptr _, _) => (-1)
-    | (_, Tptr _) => 1
-    | (Tstruct tn1, Tstruct tn2) => Typename.compare tn1 tn2
-    | (Tstruct _, _) => (-1)
-    | (_, Tstruct _) => 1
-    | (Tarray t1 _, Tarray t2 _) => compare t1 t2
-    }
-  };
+  | Tarray t static_length /** array type with statically fixed length */
+[@@deriving compare];
 
 let equal t1 t2 => compare t1 t2 == 0;
 

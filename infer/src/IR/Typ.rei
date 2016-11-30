@@ -32,7 +32,8 @@ type ikind =
   | ILongLong /** [long long] (or [_int64] on Microsoft Visual C) */
   | IULongLong /** [unsigned long long] (or [unsigned _int64] on Microsoft Visual C) */
   | I128 /** [__int128_t] */
-  | IU128 /** [__uint128_t] */;
+  | IU128 /** [__uint128_t] */
+[@@deriving compare];
 
 
 /** Check wheter the integer kind is a char */
@@ -52,7 +53,8 @@ let int_of_int64_kind: int64 => ikind => IntLit.t;
 type fkind =
   | FFloat /** [float] */
   | FDouble /** [double] */
-  | FLongDouble /** [long double] */;
+  | FLongDouble /** [long double] */
+[@@deriving compare];
 
 
 /** kind of pointer */
@@ -61,15 +63,12 @@ type ptr_kind =
   | Pk_reference /** C++ reference */
   | Pk_objc_weak /** Obj-C __weak pointer */
   | Pk_objc_unsafe_unretained /** Obj-C __unsafe_unretained pointer */
-  | Pk_objc_autoreleasing /** Obj-C __autoreleasing pointer */;
-
-
-/** Comparision for ptr_kind */
-let ptr_kind_compare: ptr_kind => ptr_kind => int;
+  | Pk_objc_autoreleasing /** Obj-C __autoreleasing pointer */
+[@@deriving compare];
 
 
 /** statically determined length of an array type, if any */
-type static_length = option IntLit.t;
+type static_length = option IntLit.t [@@deriving compare];
 
 
 /** types for sil (structured) expressions */
@@ -80,11 +79,8 @@ type t =
   | Tfun bool /** function type with noreturn attribute */
   | Tptr t ptr_kind /** pointer type */
   | Tstruct Typename.t /** structured value type name */
-  | Tarray t static_length /** array type with statically fixed length */;
-
-
-/** Comparision for types. */
-let compare: t => t => int;
+  | Tarray t static_length /** array type with statically fixed length */
+[@@deriving compare];
 
 
 /** type comparison that treats T* [] and T** as the same type. Needed for C/C++ */

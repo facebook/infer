@@ -992,7 +992,7 @@ and dynamic_length_partial_join l1 l2 =
   option_partial_join (fun len1 len2 -> Some (length_partial_join len1 len2)) l1 l2
 
 and typ_partial_join t1 t2 = match t1, t2 with
-  | Typ.Tptr (t1, pk1), Typ.Tptr (t2, pk2) when Typ.ptr_kind_compare pk1 pk2 = 0 ->
+  | Typ.Tptr (t1, pk1), Typ.Tptr (t2, pk2) when Typ.compare_ptr_kind pk1 pk2 = 0 ->
       Typ.Tptr (typ_partial_join t1 t2, pk1)
   | Typ.Tarray (typ1, len1), Typ.Tarray (typ2, len2) ->
       let t = typ_partial_join typ1 typ2 in
