@@ -16,6 +16,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Documented
 @Target(ElementType.TYPE)
@@ -46,8 +47,9 @@ public class ThreadSafeExample{
   }
 
   Lock mLock;
+  ReentrantLock mReentrantLock;
 
-  public void tsBadInOneBranch(boolean b) {
+  public void lockInOneBranchBad(boolean b) {
     if (b) {
       mLock.lock();
     }
@@ -57,15 +59,25 @@ public class ThreadSafeExample{
     }
   }
 
-  // doesn't work because we don't model lock
-  public void FP_tsWithLockOk() {
+  public void afterUnlockBad() {
+    mLock.lock();
+    mLock.unlock();
+    f = 42;
+  }
+
+  public void afterReentrantLockUnlockBad() {
+    mReentrantLock.lock();
+    mReentrantLock.unlock();
+    f = 42;
+  }
+
+  public void withLockOk() {
     mLock.lock();
     f = 42;
     mLock.unlock();
   }
 
-  // doesn't work because we don't model lock
-  public void FP_tsWithLockBothBranchesOk(boolean b) {
+  public void withLockBothBranchesOk(boolean b) {
     if (b) {
       mLock.lock();
     } else {
@@ -73,6 +85,41 @@ public class ThreadSafeExample{
     }
     f = 42;
     mLock.unlock();
+  }
+
+  public void withReentrantLockOk() {
+    mReentrantLock.lock();
+    f = 42;
+    mReentrantLock.unlock();
+  }
+
+  public void withReentrantLockTryLockOk() {
+    if (mReentrantLock.tryLock()) {
+      f = 42;
+      mReentrantLock.unlock();
+    }
+  }
+
+  public void withReentrantLockInterruptiblyOk() throws InterruptedException {
+    mReentrantLock.lockInterruptibly();
+    f = 42;
+    mReentrantLock.unlock();
+  }
+
+  // our "squish all locks into one" abstraction is not ideal here
+  public void FP_unlockOneLock() {
+    mLock.lock();
+    mReentrantLock.lock();
+    mReentrantLock.unlock();
+    f = 42;
+    mLock.unlock();
+  }
+
+  // we don't model the case where `tryLock` fails
+  public void FN_withReentrantLockTryLockBad() {
+    if (!mReentrantLock.tryLock()) {
+      f = 42;
+    }
   }
 
 }

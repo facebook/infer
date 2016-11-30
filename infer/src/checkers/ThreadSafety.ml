@@ -29,9 +29,32 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module Domain = ThreadSafetyDomain
   type extras = ProcData.no_extras
 
-  let is_lock_procedure pn = Procname.equal pn BuiltinDecl.__set_locked_attribute
+  type lock_model =
+    | Lock
+    | Unlock
+    | None
 
-  let is_unlock_procedure pn = Procname.equal pn BuiltinDecl.__delete_locked_attribute
+  let get_lock_model = function
+    | Procname.Java java_pname ->
+        begin
+          match Procname.java_get_class_name java_pname, Procname.java_get_method java_pname with
+          | "java.util.concurrent.locks.Lock", "lock" ->
+              Lock
+          | "java.util.concurrent.locks.ReentrantLock",
+            ("lock" | "tryLock" | "lockInterruptibly") ->
+              Lock
+          | ("java.util.concurrent.locks.Lock" | "java.util.concurrent.locks.ReentrantLock"),
+            "unlock" ->
+              Unlock
+          | _ ->
+              None
+        end
+    | pname when Procname.equal pname BuiltinDecl.__set_locked_attribute ->
+        Lock
+    | pname when Procname.equal pname BuiltinDecl.__delete_locked_attribute ->
+        Unlock
+    | _ ->
+        None
 
   let add_path_to_state exp typ pathdomainstate =
     IList.fold_left
@@ -45,11 +68,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       not is_locked && not (Procdesc.is_java_synchronized pdesc) in
     function
     | Sil.Call (_, Const (Cfun pn), _, _, _) ->
-        if is_lock_procedure pn
-        then true, (readstate,writestate)
-        else if is_unlock_procedure pn
-        then false, (readstate,writestate)
-        else astate
+        let lockstate' = match get_lock_model pn with
+          | Lock -> true
+          | Unlock -> false
+          | None -> lockstate in
+        lockstate', snd astate
 
     | Sil.Store ((Lfield ( _, _, typ) as lhsfield) , _, _, _) ->
         if is_unprotected lockstate then (* abstracts no lock being held*)
