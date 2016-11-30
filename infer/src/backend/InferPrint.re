@@ -345,7 +345,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc =>
             let eq o y =>
               switch (o, y) {
               | (None, _) => false
-              | (Some x, y) => string_equal x y
+              | (Some x, y) => Core.Std.String.equal x y
               };
             IList.mem eq issue_bucket high_buckets
           };
@@ -1273,7 +1273,7 @@ let module AnalysisResults = {
       if (n != 0) {
         n
       } else {
-        int_compare
+        Core.Std.Int.compare
           summ1.Specs.attributes.ProcAttributes.loc.Location.line
           summ2.Specs.attributes.ProcAttributes.loc.Location.line
       }
@@ -1283,7 +1283,7 @@ let module AnalysisResults = {
 
   /** Create an iterator which loads spec files one at a time */
   let iterator_of_spec_files () => {
-    let sorted_spec_files = IList.sort string_compare (spec_files_from_cmdline ());
+    let sorted_spec_files = IList.sort Core.Std.String.compare (spec_files_from_cmdline ());
     let do_spec f fname =>
       switch (Specs.load_summary (DB.filename_from_string fname)) {
       | None =>

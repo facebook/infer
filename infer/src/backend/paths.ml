@@ -490,7 +490,7 @@ end = struct
           () in
     iter_shortest_sequence g pos_opt path;
     let compare lt1 lt2 =
-      let n = int_compare lt1.Errlog.lt_level lt2.Errlog.lt_level in
+      let n = Core.Std.Int.compare lt1.Errlog.lt_level lt2.Errlog.lt_level in
       if n <> 0 then n else Location.compare lt1.Errlog.lt_loc lt2.Errlog.lt_loc in
     let relevant lt = lt.Errlog.lt_node_tags <> [] in
     IList.remove_irrelevant_duplicates compare relevant (IList.rev !trace)

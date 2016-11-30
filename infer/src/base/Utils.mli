@@ -29,50 +29,6 @@ val initial_timeofday : float
 (** Compare police: generic compare disabled. *)
 val compare : unit
 
-(** Comparison for booleans *)
-val bool_compare : bool -> bool -> int
-
-(** Equality for booleans *)
-val bool_equal : bool -> bool -> bool
-
-(** Efficient comparison for integers *)
-val int_compare : int -> int -> int
-
-(** Equality for integers *)
-val int_equal : int -> int -> bool
-
-(** Extend and equality function to an option type. *)
-val opt_equal : ('a -> 'a -> bool) -> 'a option -> 'a option -> bool
-
-(** Comparison of option type. *)
-val opt_compare : ('a -> 'a -> int) -> 'a option -> 'a option -> int
-
-(** Generic comparison of pairs given a compare function for each element of the pair. *)
-val pair_compare : ('a -> 'b -> int) -> ('c -> 'd -> int) -> ('a * 'c) -> ('b * 'd) -> int
-
-(** Generic comparison of triples given a compare function for each element of the triple. *)
-val triple_compare :
-  ('a -> 'b -> int) -> ('c -> 'd -> int) -> ('e -> 'f -> int) ->
-  ('a * 'c * 'e) -> ('b * 'd * 'f) -> int
-
-(** Generic equality of triples given an equal function for each element of the triple. *)
-val triple_equal :
-  ('a -> 'b -> bool) -> ('c -> 'd -> bool) -> ('e -> 'f -> bool) ->
-  ('a * 'c * 'e) -> ('b * 'd * 'f) -> bool
-
-(** Comparison for strings *)
-val string_compare : string -> string -> int
-
-(** Equality for strings *)
-val string_equal : string -> string -> bool
-
-(** Comparison for floats *)
-val float_compare : float -> float -> int
-
-(** Use this function to compare sum types (ONLY!) in the default case of your custom compare
-    function. It will fail if you try to check equality of parameterized constructors *)
-val tags_compare: 'a -> 'a -> int
-
 (** Return the first component of a triple. *)
 val fst3 : 'a * 'b * 'c -> 'a
 
@@ -263,14 +219,6 @@ val proc_flags_find : proc_flags -> string -> string
 
 (** [join_strings sep parts] contatenates the elements of [parts] using [sep] as separator *)
 val join_strings : string -> string list -> string
-
-(** [next compare] transforms the comparison function [compare] to another function taking
-    the outcome of another comparison as last parameter and only performs this comparison if this value
-    is different from 0. Useful to combine comparison functions using the operator |>. The outcome of
-    the expression [Int.compare x y |> next Set.compare s t] is: [Int.compare x y] if this value is
-    not [0], skipping the evaluation of [Set.compare s t] in such case; or [Set.compare s t] in case
-    [Int.compare x y] is [0] *)
-val next : ('a -> 'a -> int) -> ('a -> 'a -> int -> int)
 
 (** Functional fold function over all the file of a directory *)
 val directory_fold : ('a -> string -> 'a) -> 'a -> string -> 'a

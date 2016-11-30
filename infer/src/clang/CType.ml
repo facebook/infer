@@ -38,7 +38,7 @@ let mk_structname n = Typename.TN_csu (Csu.Struct, Mangled.from_string n)
 let is_class typ =
   match typ with
   | Typ.Tptr (Tstruct ((TN_csu _) as name), _) ->
-      string_equal (Typename.name name) CFrontend_config.objc_class
+      Core.Std.String.equal (Typename.name name) CFrontend_config.objc_class
   | _ -> false
 
 let rec return_type_of_function_type_ptr type_ptr =

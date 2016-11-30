@@ -25,7 +25,7 @@ module MockNode = struct
   let loc _ = assert false
   let underlying_id _ = assert false
   let kind _ = Procdesc.Node.Stmt_node ""
-  let compare_id = int_compare
+  let compare_id = Core.Std.Int.compare
   let pp_id fmt i =
     F.fprintf fmt "%i" i
 end
@@ -35,7 +35,7 @@ module MockProcCfg = struct
   include (MockNode : module type of MockNode with type t := node)
   type t = (node * node list) list
 
-  let compare_id = int_compare
+  let compare_id = Core.Std.Int.compare
 
   let succs t n =
     try

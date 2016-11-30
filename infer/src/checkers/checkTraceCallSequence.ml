@@ -152,7 +152,7 @@ module State = struct
           let elem' = Elem.set_env elem env' in
           [elem']
       | Some b' ->
-          if bool_equal b b' then [elem]
+          if Core.Std.Bool.equal b b' then [elem]
           else [] in
     map2 f s
 
@@ -230,7 +230,7 @@ module BooleanVars = struct
   let exp_boolean_var exp = match exp with
     | Exp.Lvar pvar when Pvar.is_local pvar ->
         let name = Mangled.to_string (Pvar.get_name pvar) in
-        if IList.mem string_equal name boolean_variables
+        if IList.mem Core.Std.String.equal name boolean_variables
         then Some name
         else None
     | _ -> None

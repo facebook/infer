@@ -2019,7 +2019,7 @@ let rec exp_compare_structural e1 e2 exp_map => {
         if (n != 0) {
           n
         } else {
-          opt_compare Typ.compare to1 to2
+          [%compare : option Typ.t] to1 to2
         },
         exp_map
       )
@@ -2159,7 +2159,7 @@ let compare_structural_instr instr1 instr2 exp_map => {
       if (n != 0) {
         n
       } else {
-        let n = bool_compare true_branch1 true_branch2;
+        let n = Core.Std.Bool.compare true_branch1 true_branch2;
         if (n != 0) {
           n
         } else {

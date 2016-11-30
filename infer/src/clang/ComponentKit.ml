@@ -99,9 +99,9 @@ let mutable_local_vars_advice context an =
     let objc_whitelist = ["NSError"] in
     match get_referenced_type qual_type with
     | Some CXXRecordDecl (_, ndi, _, _, _, _, _, _) ->
-        IList.mem string_equal ndi.ni_name cpp_whitelist
+        IList.mem Core.Std.String.equal ndi.ni_name cpp_whitelist
     | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
-        IList.mem string_equal ndi.ni_name objc_whitelist
+        IList.mem Core.Std.String.equal ndi.ni_name objc_whitelist
     | _ -> false in
 
   match an with
@@ -170,7 +170,7 @@ let component_with_unconventional_superclass_advice context an =
           let has_conventional_superclass =
             let open CFrontend_config in
             match superclass_name with
-            | Some name when IList.mem string_equal name [
+            | Some name when IList.mem Core.Std.String.equal name [
                 ckcomponent_cl;
                 ckcomponentcontroller_cl;
                 "CKCompositeComponent";

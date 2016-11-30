@@ -22,7 +22,8 @@ let is_destroy_method pname =
   match pname with
   | Procname.Java pname_java ->
       let method_name = Procname.java_get_method pname_java in
-      string_equal method_name on_destroy || string_equal method_name on_destroy_view
+      Core.Std.String.equal method_name on_destroy
+      || Core.Std.String.equal method_name on_destroy_view
   | _ ->
       false
 

@@ -25,7 +25,8 @@ let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt l
           ] in
         let in_casts expected given =
           IList.exists (fun (x, y) ->
-              string_equal (Typename.name expected) x && string_equal (Typename.name given) y
+              Core.Std.String.equal (Typename.name expected) x
+              && Core.Std.String.equal (Typename.name given) y
             ) casts in
         match PatternMatch.type_get_class_name typ_expected,
               PatternMatch.type_get_class_name typ_found with

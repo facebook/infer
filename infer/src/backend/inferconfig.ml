@@ -124,7 +124,7 @@ module FileOrProcMatcher = struct
             (fun p ->
                match p.Config.method_name with
                | None -> true
-               | Some m -> string_equal m method_name)
+               | Some m -> Core.Std.String.equal m method_name)
             class_patterns
         with Not_found -> false in
 
@@ -221,7 +221,7 @@ let filters_from_inferconfig inferconfig : filters =
   let error_filter =
     function error_name ->
       let error_str = Localise.to_string error_name in
-      not (IList.exists (string_equal error_str) inferconfig.suppress_errors) in
+      not (IList.exists (Core.Std.String.equal error_str) inferconfig.suppress_errors) in
   {
     path_filter = path_filter;
     error_filter = error_filter;

@@ -41,10 +41,10 @@ module NodeVisitSet =
             - 1
         | Some d1, Some d2 ->
             (* shorter distance to exit is better *)
-            int_compare d1 d2 in
+            Core.Std.Int.compare d1 d2 in
       if n <> 0 then n else compare_ids n1 n2
     let compare_number_of_visits x1 x2 =
-      let n = int_compare x1.visits x2.visits in (* visited fewer times is better *)
+      let n = Core.Std.Int.compare x1.visits x2.visits in (* visited fewer times is better *)
       if n <> 0 then n else compare_distance_to_exit x1 x2
     let compare x1 x2 =
       if !Config.footprint then
@@ -728,7 +728,7 @@ let compute_visited vset =
     let node_loc = Procdesc.Node.get_loc n in
     let instrs_loc = IList.map Sil.instr_get_loc (Procdesc.Node.get_instrs n) in
     let lines = IList.map (fun loc -> loc.Location.line) (node_loc :: instrs_loc) in
-    IList.remove_duplicates int_compare (IList.sort int_compare lines) in
+    IList.remove_duplicates Core.Std.Int.compare (IList.sort Core.Std.Int.compare lines) in
   let do_node n =
     res :=
       Specs.Visitedset.add (Procdesc.Node.get_id n, node_get_all_lines n) !res in

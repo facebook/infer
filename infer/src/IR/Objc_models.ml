@@ -201,8 +201,8 @@ struct
     | Core_graphics -> core_graphics_types
 
   let is_objc_memory_model_controlled o =
-    IList.mem (string_equal) o core_foundation_types ||
-    IList.mem (string_equal) o core_graphics_types
+    IList.mem Core.Std.String.equal o core_foundation_types ||
+    IList.mem Core.Std.String.equal o core_graphics_types
 
   let rec is_core_lib lib typ =
     match typ with
@@ -210,7 +210,7 @@ struct
         is_core_lib lib styp
     | Typ.Tstruct name ->
         let core_lib_types = core_lib_to_type_list lib in
-        IList.mem string_equal (Typename.name name) core_lib_types
+        IList.mem Core.Std.String.equal (Typename.name name) core_lib_types
     | _ -> false
 
   let is_core_foundation_type typ =

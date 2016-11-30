@@ -82,7 +82,7 @@ let run_compilation_file compilation_database file =
       let found = ref false in
       Array.iteri (fun i key_val ->
           match string_split_character key_val '=' with
-          | Some var, args when string_equal var CLOpt.args_env_var ->
+          | Some var, args when Core.Std.String.equal var CLOpt.args_env_var ->
               found := true ;
               env0.(i) <-
                 F.sprintf "%s=%s%c--fcp-syntax-only" CLOpt.args_env_var args CLOpt.env_var_sep

@@ -49,7 +49,7 @@ let printf_like_function
   try
     Some (
       IList.find
-        (fun printf -> string_equal printf.unique_id (Procname.to_unique_id proc_name))
+        (fun printf -> Core.Std.String.equal printf.unique_id (Procname.to_unique_id proc_name))
         !printf_like_functions)
   with Not_found -> None
 
@@ -70,15 +70,15 @@ let format_type_matches_given_type
   match format_type with
   | "d" | "i" | "u" | "x" | "X" | "o" ->
       IList.mem
-        string_equal
+        Core.Std.String.equal
         given_type
         ["java.lang.Integer"; "java.lang.Long"; "java.lang.Short"; "java.lang.Byte"]
   | "a" | "A" | "f" | "F" | "g" | "G" | "e" | "E" ->
       IList.mem
-        string_equal
+        Core.Std.String.equal
         given_type
         ["java.lang.Double"; "java.lang.Float"]
-  | "c" -> string_equal given_type "java.lang.Character"
+  | "c" -> Core.Std.String.equal given_type "java.lang.Character"
   | "b" | "h" | "H" | "s" -> true  (* accepts pretty much anything, even null *)
   | _ -> false
 

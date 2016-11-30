@@ -16,7 +16,7 @@ let patch = @INFER_PATCH@
 
 let commit = "@INFER_GIT_COMMIT@"
 let branch = "@INFER_GIT_BRANCH@"
-let is_release = string_equal "@IS_RELEASE_TREE@" "yes"
+let is_release = Core.Std.String.equal "@IS_RELEASE_TREE@" "yes"
 let tag = Printf.sprintf "v%d.%d.%d" major minor patch
 
 let versionString =

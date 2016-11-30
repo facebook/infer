@@ -94,7 +94,7 @@ let is_foreign tu_opt v =
   let is_orig_file f = match tu_opt with
     | Some orig_file ->
         let orig_path = DB.source_file_to_abs_path orig_file in
-        string_equal orig_path (DB.source_file_to_abs_path f)
+        Core.Std.String.equal orig_path (DB.source_file_to_abs_path f)
     | None -> assert false in
   Option.map_default (fun f -> not (is_orig_file f)) false (Pvar.get_source_file v)
 

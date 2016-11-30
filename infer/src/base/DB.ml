@@ -144,7 +144,7 @@ let source_file_of_header header_file =
   let header_file_exts = ["h"; "hh"; "hpp"; "hxx"] in
   let file_no_ext, ext_opt = Core.Std.Filename.split_extension abs_path in
   let file_opt = match ext_opt with
-    | Some ext when IList.mem string_equal ext header_file_exts -> (
+    | Some ext when IList.mem Core.Std.String.equal ext header_file_exts -> (
         let possible_files = IList.map (fun ext -> file_no_ext ^ "." ^ ext) source_file_exts in
         try Some (IList.find source_file_path_exists possible_files)
         with Not_found -> None

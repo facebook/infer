@@ -116,7 +116,7 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc
     let throwable_found = ref false in
     let typ_is_throwable = function
       | Typ.Tstruct (TN_csu (Class Java, _) as name) ->
-          string_equal (Typename.name name) "java.lang.Throwable"
+          Core.Std.String.equal (Typename.name name) "java.lang.Throwable"
       | _ -> false in
     let do_instr = function
       | Sil.Call (_, Exp.Const (Const.Cfun pn), [_; (Exp.Sizeof(t, _, _), _)], _, _) when
@@ -273,7 +273,7 @@ let check_constructor_initialization tenv
               let should_check_field_initialization =
                 let in_current_class =
                   let fld_cname = Ident.java_fieldname_get_class fn in
-                  string_equal (Typename.name name) fld_cname in
+                  Core.Std.String.equal (Typename.name name) fld_cname in
                 not injector_readonly_annotated &&
                 PatternMatch.type_is_class ft &&
                 in_current_class &&

@@ -95,10 +95,10 @@ module ST = struct
         let drop_prefix str =
           Str.replace_first (Str.regexp "^[A-Za-z]+_") "" str in
         let normalized_equal s1 s2 =
-          string_equal (normalize s1) (normalize s2) in
+          Core.Std.String.equal (normalize s1) (normalize s2) in
 
         let is_parameter_suppressed =
-          IList.mem string_equal a.class_name [Annotations.suppressLint] &&
+          IList.mem Core.Std.String.equal a.class_name [Annotations.suppressLint] &&
           IList.mem normalized_equal kind a.parameters in
         let is_annotation_suppressed =
           string_is_suffix (normalize (drop_prefix kind)) (normalize a.class_name) in

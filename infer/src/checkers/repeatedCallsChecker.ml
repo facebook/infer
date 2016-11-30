@@ -76,8 +76,8 @@ struct
       !found in
 
     let module DFAllocCheck = Dataflow.MakeDF(struct
-        type t = Location.t option
-        let equal = opt_equal Location.equal
+        type t = Location.t option [@@deriving compare]
+        let equal x y = compare x y = 0
         let _join _paths l1o l2o = (* join with left priority *)
           match l1o, l2o with
           | None, None ->

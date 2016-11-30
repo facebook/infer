@@ -818,7 +818,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
           | _ -> false)
         (Attribute.get_for_exp tenv prop guarded_by_exp) in
     let guardedby_is_self_referential =
-      string_equal "itself" (String.lowercase guarded_by_str) ||
+      Core.Std.String.equal "itself" (String.lowercase guarded_by_str) ||
       string_is_suffix guarded_by_str (Ident.fieldname_to_string accessed_fld) in
     let proc_has_suppress_guarded_by_annot pdesc =
       let proc_signature =

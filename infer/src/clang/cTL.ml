@@ -288,7 +288,7 @@ let node_to_unique_string_id an =
 (* true iff an ast node is a node of type among the list tl *)
 let node_has_type tl an =
   let an_str = node_to_string an in
-  IList.mem (string_equal) an_str tl
+  IList.mem Core.Std.String.equal an_str tl
 
 (* given a decl returns a stmt such that decl--->stmt via label trs *)
 let transition_decl_to_stmt d trs =
@@ -467,7 +467,7 @@ and in_node node_type_list phi an lctx =
   let holds_for_one_node n =
     match lctx.CLintersContext.et_evaluation_node with
     | Some id ->
-        (string_equal id (node_to_unique_string_id an)) && (eval_formula phi an lctx)
+        (Core.Std.String.equal id (node_to_unique_string_id an)) && (eval_formula phi an lctx)
     | None ->
         (node_has_type [n] an) && (eval_formula phi an lctx) in
   IList.exists holds_for_one_node node_type_list

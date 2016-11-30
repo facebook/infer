@@ -273,7 +273,7 @@ let method_is_initializer
         match proc_attributes.ProcAttributes.proc_name with
         | Procname.Java pname_java ->
             let mname = Procname.java_get_method pname_java in
-            IList.exists (string_equal mname) initializer_methods
+            IList.exists (Core.Std.String.equal mname) initializer_methods
         | _ ->
             false
       else

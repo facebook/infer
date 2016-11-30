@@ -384,7 +384,7 @@ let mk_path_list ?(default=[]) ?(deprecated=[]) ~long ?short ?exes ?(meta="path"
 let mk_symbol ~default ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let strings = IList.map fst symbols in
   let sym_to_str = IList.map (fun (x,y) -> (y,x)) symbols in
-  let of_string str = IList.assoc string_equal str symbols in
+  let of_string str = IList.assoc Core.Std.String.equal str symbols in
   let to_string sym = IList.assoc ( = ) sym sym_to_str in
   mk ~deprecated ~long ?short ~default ?exes ~meta doc
     ~default_to_string:(fun s -> to_string s)
@@ -394,7 +394,7 @@ let mk_symbol ~default ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") d
 
 let mk_symbol_opt ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let strings = IList.map fst symbols in
-  let of_string str = IList.assoc string_equal str symbols in
+  let of_string str = IList.assoc Core.Std.String.equal str symbols in
   mk ~deprecated ~long ?short ~default:None ?exes ~meta doc
     ~default_to_string:(fun _ -> "")
     ~mk_setter:(fun var str -> var := Some (of_string str))
@@ -403,7 +403,7 @@ let mk_symbol_opt ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
 
 let mk_symbol_seq ?(default=[]) ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let sym_to_str = IList.map (fun (x,y) -> (y,x)) symbols in
-  let of_string str = IList.assoc string_equal str symbols in
+  let of_string str = IList.assoc Core.Std.String.equal str symbols in
   let to_string sym = IList.assoc ( = ) sym sym_to_str in
   mk ~deprecated ~long ?short ~default ?exes ~meta:(",-separated sequence" ^ meta) doc
     ~default_to_string:(fun syms -> String.concat " " (IList.map to_string syms))
@@ -453,7 +453,8 @@ let decode_inferconfig_to_argv current_exe path =
       let {decode_json} =
         IList.find
           (fun {long; short} ->
-             string_equal key long || (* for deprecated options *) string_equal key short)
+             Core.Std.String.equal key long
+             || (* for deprecated options *) Core.Std.String.equal key short)
           desc_list in
       decode_json json_val @ result
     with
@@ -568,7 +569,7 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
     let is_not_dup_with_doc speclist (opt, _, doc) =
       opt = "" ||
       IList.for_all (fun (opt', _, doc') ->
-          (doc <> "" && doc' = "") || (not (string_equal opt opt'))) speclist in
+          (doc <> "" && doc' = "") || (not (Core.Std.String.equal opt opt'))) speclist in
     let unique_exe_speclist = IList.filter (is_not_dup_with_doc !curr_speclist) exe_speclist in
     curr_speclist := IList.filter (is_not_dup_with_doc unique_exe_speclist) !curr_speclist @
                      (match header with

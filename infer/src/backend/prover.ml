@@ -1639,8 +1639,7 @@ let get_overrides_of tenv supertype pname =
 (** Check the equality of two types ignoring flags in the subtyping components *)
 let texp_equal_modulo_subtype_flag texp1 texp2 = match texp1, texp2 with
   | Exp.Sizeof (t1, len1, st1), Exp.Sizeof (t2, len2, st2) ->
-      Typ.equal t1 t2
-      && (opt_equal Exp.equal len1 len2)
+      [%compare.equal: Typ.t * Exp.t option] (t1, len1) (t2, len2)
       && Subtype.equal_modulo_flag st1 st2
   | _ -> Exp.equal texp1 texp2
 
@@ -2220,7 +2219,7 @@ exception NO_COVER
 (** Find miminum set of pi's in [cases] whose disjunction covers true *)
 let find_minimum_pure_cover tenv cases =
   let cases =
-    let compare (pi1, _) (pi2, _) = int_compare (IList.length pi1) (IList.length pi2)
+    let compare (pi1, _) (pi2, _) = Core.Std.Int.compare (IList.length pi1) (IList.length pi2)
     in IList.sort compare cases in
   let rec grow seen todo = match todo with
     | [] -> raise NO_COVER

@@ -37,7 +37,7 @@ let value_of_argv_option argv opt_name =>
         let result' =
           if (Option.is_some result) {
             result
-          } else if (string_equal opt_name prev_arg) {
+          } else if (Core.Std.String.equal opt_name prev_arg) {
             Some arg
           } else {
             None
@@ -50,7 +50,7 @@ let value_of_argv_option argv opt_name =>
 
 let value_of_option {orig_argv} => value_of_argv_option orig_argv;
 
-let has_flag {orig_argv} flag => IList.exists (string_equal flag) orig_argv;
+let has_flag {orig_argv} flag => IList.exists (Core.Std.String.equal flag) orig_argv;
 
 let can_attach_ast_exporter cmd =>
   has_flag cmd "-cc1" && (
@@ -84,14 +84,14 @@ let clang_cc1_cmd_sanitizer cmd => {
   /* command line options not supported by the opensource compiler or the plugins */
   let flags_blacklist = ["-fembed-bitcode-marker", "-fno-canonical-system-headers"];
   let replace_option_arg option arg =>
-    if (string_equal option "-arch" && string_equal arg "armv7k") {
+    if (Core.Std.String.equal option "-arch" && Core.Std.String.equal arg "armv7k") {
       "armv7"
       /* replace armv7k arch with armv7 */
     } else if (
-      string_equal option "-isystem"
+      Core.Std.String.equal option "-isystem"
     ) {
       switch Config.clang_include_to_override {
-      | Some to_replace when string_equal arg to_replace =>
+      | Some to_replace when Core.Std.String.equal arg to_replace =>
         fcp_dir /\/ "clang" /\/ "install" /\/ "lib" /\/ "clang" /\/ "4.0.0" /\/ "include"
       | _ => arg
       }
@@ -110,7 +110,7 @@ let clang_cc1_cmd_sanitizer cmd => {
     | [] =>
       /* return non-reversed list */
       IList.rev (post_args_rev @ res_rev)
-    | [flag, ...tl] when IList.mem string_equal flag flags_blacklist =>
+    | [flag, ...tl] when IList.mem Core.Std.String.equal flag flags_blacklist =>
       filter_unsupported_args_and_swap_includes (flag, res_rev) tl
     | [arg, ...tl] => {
         let res_rev' = [replace_option_arg prev arg, ...res_rev];

@@ -88,7 +88,7 @@ let clean_results_dir () =
         let rec cleandir dir =
           match Unix.readdir dir with
           | entry ->
-              if (IList.exists (string_equal entry) dirs) then (
+              if (IList.exists (Core.Std.String.equal entry) dirs) then (
                 rmtree (name // entry)
               ) else if not (entry = Filename.current_dir_name
                              || entry = Filename.parent_dir_name) then (

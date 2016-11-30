@@ -175,7 +175,7 @@ let callback_test_dataflow { Callbacks.proc_desc; tenv } =
   let verbose = false in
   let module DFCount = MakeDF(struct
       type t = int
-      let equal = int_equal
+      let equal = Core.Std.Int.equal
       let join n m = if n = 0 then m else n
       let do_node _ n s =
         if verbose then L.stdout "visiting node %a with state %d@." Procdesc.Node.pp n s;

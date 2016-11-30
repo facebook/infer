@@ -60,7 +60,7 @@ let parse_stack_frame frame_str =
   let class_str = Str.matched_group 1 qualified_procname in
   let method_str = Str.matched_group 2 qualified_procname in
   (* Native methods don't have debugging info *)
-  if string_equal file_and_line "Native Method" then
+  if Core.Std.String.equal file_and_line "Native Method" then
     make_frame class_str method_str "Native Method" None
   else begin
     (* Separate the filename and line number.

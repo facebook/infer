@@ -1335,7 +1335,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
     let is_not_const (e, _, i) =
       match AttributesTable.load_attributes callee_pname with
       | Some attrs ->
-          let is_const = IList.mem int_equal i attrs.ProcAttributes.const_formals in
+          let is_const = IList.mem Core.Std.Int.equal i attrs.ProcAttributes.const_formals in
           if is_const then (
             L.d_str (Printf.sprintf "Not havocing const argument number %d: " i);
             Sil.d_exp e;

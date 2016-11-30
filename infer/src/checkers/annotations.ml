@@ -75,7 +75,7 @@ let ia_get ia ann_name =
 let ma_contains ma ann_names =
   let found = ref false in
   ma_iter (fun a ->
-      if IList.exists (string_equal a.Annot.class_name) ann_names then found := true
+      if IList.exists (Core.Std.String.equal a.Annot.class_name) ann_names then found := true
     ) ma;
   !found
 

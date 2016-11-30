@@ -67,7 +67,7 @@ let is_modeled_builtin funct =
   funct = CFrontend_config.builtin_memset_chk
 
 let is_modeled_attribute attr_name =
-  IList.mem string_equal attr_name CFrontend_config.modeled_function_attributes
+  IList.mem Core.Std.String.equal attr_name CFrontend_config.modeled_function_attributes
 
 let get_first_param_typedef_string_opt type_ptr =
   match Ast_utils.get_desugared_type type_ptr with

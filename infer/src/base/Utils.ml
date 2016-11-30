@@ -31,89 +31,19 @@ let initial_timeofday = Unix.gettimeofday ()
 (** Compare police: generic compare disabled. *)
 let compare = ()
 
-let string_equal (s1: string) (s2: string) = s1 = s2
-
-let string_compare (s1: string) (s2: string) = Pervasives.compare s1 s2
-
-let float_compare (f1: float) (f2: float) = Pervasives.compare f1 f2
-
-let bool_compare (b1: bool) (b2: bool) = Pervasives.compare b1 b2
-
-let bool_equal (b1: bool) (b2: bool) = b1 = b2
-
-(** Extend and equality function to an option type. *)
-let opt_equal cmp x1 x2 = match x1, x2 with
-  | None, None -> true
-  | Some _, None -> false
-  | None, Some _ -> false
-  | Some y1, Some y2 -> cmp y1 y2
-
-let opt_compare cmp x1 x2 =
-  match x1, x2 with
-  | Some y1, Some y2 -> cmp y1 y2
-  | None, None -> 0
-  | None, _ -> -1
-  | _, None -> 1
-
-(** Efficient comparison for integers *)
-let int_compare (i: int) (j: int) = (Obj.magic (i > j)) - (Obj.magic (i < j))
-
-let int_equal (i: int) (j: int) = i = j
-
-(** Generic comparison of pairs given a compare function for each element of the pair. *)
-let pair_compare compare compare' (x1, y1) (x2, y2) =
-  let n = compare x1 x2 in
-  if n <> 0 then n else compare' y1 y2
-
-(** Generic comparison of triples given a compare function for each element of the triple *)
-let triple_compare compare compare' compare'' (x1, y1, z1) (x2, y2, z2) =
-  let n = compare x1 x2 in
-  if n <> 0 then n else let n = compare' y1 y2 in
-    if n <> 0 then n else compare'' z1 z2
-
-(** Generic equality of triples given an equal function for each element of the triple *)
-let triple_equal x_equal y_equal z_equal (x1, y1, z1) (x2, y2, z2) =
-  x_equal x1 x2 && y_equal y1 y2 && z_equal z1 z2
-
 let fst3 (x,_,_) = x
 let snd3 (_,x,_) = x
 let trd3 (_,_,x) = x
 
 let int_of_bool b = if b then 1 else 0
 
-let tags_compare (x : 'a) (y : 'a) =
-  let x = Obj.repr x
-  and y = Obj.repr y in
-  if Obj.is_int x
-  then
-    if Obj.is_int y
-    (* we can use (-) because tags are small and won't overflow *)
-    then Obj.obj x - Obj.obj y
-    else -1
-  else if Obj.is_int y
-  then 1
-  else
-    let r = Obj.tag x - Obj.tag y in
-    if r = 0
-    then failwith "Comparing parameterized constructors"
-    else r
-
 (** {2 Useful Modules} *)
 
 (** Set of integers *)
-module IntSet =
-  Set.Make(struct
-    type t = int
-    let compare = int_compare
-  end)
+module IntSet = Set.Make(Core.Std.Int)
 
 (** Hash table over strings *)
-module StringHash = Hashtbl.Make (
-  struct
-    type t = string
-    let equal (s1: string) (s2: string) = s1 = s2
-    let hash = Hashtbl.hash
-  end)
+module StringHash = Hashtbl.Make (Core.Std.String)
 
 (** Set of strings *)
 module StringSet = Set.Make(String)
@@ -133,21 +63,15 @@ let string_list_intersection a b =
   StringSet.inter (string_set_of_list a) (string_set_of_list b)
 
 module StringPPSet = PrettyPrintable.MakePPSet(struct
-    type t = string
-    let compare = string_compare
+    include Core.Std.String
     let pp_element fmt s = F.fprintf fmt "%s" s
   end)
 
 (** Maps from integers *)
-module IntMap = Map.Make (struct
-    type t = int
-    let compare = int_compare
-  end)
+module IntMap = Map.Make (Core.Std.Int)
 
 (** Maps from strings *)
-module StringMap = Map.Make (struct
-    type t = string
-    let compare (s1: string) (s2: string) = Pervasives.compare s1 s2 end)
+module StringMap = Map.Make (Core.Std.String)
 
 (** {2 Printing} *)
 
@@ -536,11 +460,6 @@ let join_strings sep = function
   | [] -> ""
   | hd:: tl ->
       IList.fold_left (fun str p -> str ^ sep ^ p) hd tl
-
-let next compare =
-  fun x y n ->
-    if n <> 0 then n
-    else compare x y
 
 
 let directory_fold f init path =

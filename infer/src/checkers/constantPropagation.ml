@@ -27,7 +27,9 @@ module ConstantMap = Exp.Map
 
 (** Dataflow struct *)
 module ConstantFlow = Dataflow.MakeDF(struct
-    type t = (Const.t option) ConstantMap.t
+    type t = (Const.t option) ConstantMap.t [@@deriving compare]
+
+    let equal m n = compare m n = 0
 
     let pp fmt constants =
       let pp_key fmt = Exp.pp fmt in
@@ -37,11 +39,6 @@ module ConstantFlow = Dataflow.MakeDF(struct
       Format.fprintf fmt "[@.";
       ConstantMap.iter print_kv constants;
       Format.fprintf fmt "]@."
-
-    (* Item - wise equality where values are equal iff
-       - both are None
-       - both are a constant and equal wrt. Const.equal *)
-    let equal m n = ConstantMap.equal (opt_equal Const.equal) m n
 
     let join = ConstantMap.merge merge_values
 

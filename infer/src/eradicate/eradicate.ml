@@ -88,7 +88,7 @@ struct
         | Some (typ_found, _, _) -> Some typ_found
         | None -> None in
       let ret_implicitly_nullable =
-        string_equal (PatternMatch.get_type_name ret_type) "java.lang.Void" in
+        Core.Std.String.equal (PatternMatch.get_type_name ret_type) "java.lang.Void" in
       State.set_node exit_node;
 
       if checks.TypeCheck.check_ret_type <> [] then
