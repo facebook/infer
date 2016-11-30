@@ -25,10 +25,6 @@ let compute_max_from_nonempty_int_list l =
 let compute_min_from_nonempty_int_list l =
   IList.hd (IList.sort IntLit.compare_value l)
 
-let exp_pair_compare (e1, e2) (f1, f2) =
-  let c1 = Exp.compare e1 f1 in
-  if c1 <> 0 then c1 else Exp.compare e2 f2
-
 let rec list_rev_acc acc = function
   | [] -> acc
   | x:: l -> list_rev_acc (x:: acc) l
@@ -76,11 +72,8 @@ module DiffConstr : sig
 
 end = struct
 
-  type t = Exp.t * Exp.t * IntLit.t
+  type t = Exp.t * Exp.t * IntLit.t [@@deriving compare]
 
-  let compare (e1, e2, n) (f1, f2, m) =
-    let c1 = exp_pair_compare (e1, e2) (f1, f2) in
-    if c1 <> 0 then c1 else IntLit.compare_value n m
   let equal entry1 entry2 = compare entry1 entry2 = 0
 
   let to_leq (e1, e2, n) =
@@ -131,7 +124,7 @@ end = struct
 
   let sort_then_remove_redundancy constraints =
     let constraints_sorted = IList.sort compare constraints in
-    let have_same_key (e1, e2, _) (f1, f2, _) = exp_pair_compare (e1, e2) (f1, f2) = 0 in
+    let have_same_key (e1, e2, _) (f1, f2, _) = [%compare: Exp.t * Exp.t] (e1, e2) (f1, f2) = 0 in
     remove_redundancy have_same_key [] constraints_sorted
 
   let remove_redundancy constraints =
@@ -146,7 +139,7 @@ end = struct
     | constr:: rest, constr':: rest' ->
         let e1, e2, n = constr in
         let f1, f2, m = constr' in
-        let c1 = exp_pair_compare (e1, e2) (f1, f2) in
+        let c1 = [%compare: Exp.t * Exp.t] (e1, e2) (f1, f2) in
         if c1 = 0 && IntLit.lt n m then
           combine acc_todos acc_seen constraints_new rest'
         else if c1 = 0 then
