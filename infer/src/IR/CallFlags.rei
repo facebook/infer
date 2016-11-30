@@ -26,9 +26,8 @@ type t = {
   cf_noreturn: bool,
   cf_is_objc_block: bool,
   cf_targets: list Procname.t
-};
-
-let compare: t => t => int;
+}
+[@@deriving compare];
 
 let pp: F.formatter => t => unit;
 
