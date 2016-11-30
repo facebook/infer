@@ -173,7 +173,7 @@ and get_contents pe coo f = function
 (* true if node is the sorce node of the expression e*)
 let is_source_node_of_exp e node =
   match node with
-  | Dotpointsto (_, e', _) -> Exp.compare e e' = 0
+  | Dotpointsto (_, e', _) -> Exp.equal e e'
   | _ -> false
 
 (* given a node returns its coordinates and the expression. Return -1 in case the expressio doesn.t*)
@@ -203,7 +203,7 @@ let rec look_up_for_back_pointer e dotnodes lambda =
   match dotnodes with
   | [] -> []
   | Dotdllseg(coo, _, _, _, e4, _, _, _):: dotnodes' ->
-      if Exp.compare e e4 = 0 && lambda = coo.lambda then [coo.id + 1]
+      if Exp.equal e e4 && lambda = coo.lambda then [coo.id + 1]
       else look_up_for_back_pointer e dotnodes' lambda
   | _:: dotnodes' -> look_up_for_back_pointer e dotnodes' lambda
 
@@ -213,7 +213,7 @@ let rec select_nodes_exp_lambda dotnodes e lambda =
   | [] -> []
   | node:: l' ->
       let (coo, e') = get_coordinate_and_exp node in
-      if (Exp.compare e e' = 0) && lambda = coo.lambda
+      if (Exp.equal e e') && lambda = coo.lambda
       then node:: select_nodes_exp_lambda l' e lambda
       else select_nodes_exp_lambda l' e lambda
 
@@ -1157,7 +1157,7 @@ let rec select_node_at_address nodes e =
   | [] -> None
   | n:: l' ->
       let e' = get_node_addr n in
-      if (Exp.compare e e' = 0) then Some n
+      if (Exp.equal e e') then Some n
       else select_node_at_address l' e
 
 (* look-up the ids in the list of nodes corresponding to expression e*)
