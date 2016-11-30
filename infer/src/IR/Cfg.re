@@ -265,7 +265,7 @@ let mark_unchanged_pdescs cfg_new cfg_old => {
       /* nodes are the same if they have the same id, instructions, and succs/preds up to renaming
          with [exp_map] and [id_map] */
       let node_eq (n1: Procdesc.Node.t) (n2: Procdesc.Node.t) => {
-        let id_compare (n1: Procdesc.Node.t) (n2: Procdesc.Node.t) =>
+        let compare_id (n1: Procdesc.Node.t) (n2: Procdesc.Node.t) =>
           try {
             let n1_mapping = Procdesc.NodeMap.find n1 !node_map;
             Procdesc.Node.compare n1_mapping n2
@@ -286,7 +286,7 @@ let mark_unchanged_pdescs cfg_new cfg_old => {
             )
             instrs1
             instrs2;
-        id_compare n1 n2 == 0 &&
+        compare_id n1 n2 == 0 &&
         IList.equal Procdesc.Node.compare (Procdesc.Node.get_succs n1) (Procdesc.Node.get_succs n2) &&
         IList.equal Procdesc.Node.compare (Procdesc.Node.get_preds n1) (Procdesc.Node.get_preds n2) &&
         instrs_eq (Procdesc.Node.get_instrs n1) (Procdesc.Node.get_instrs n2)
