@@ -26,13 +26,13 @@ sig
 
   val property_name : Clang_ast_t.obj_c_property_impl_decl_info -> Clang_ast_t.named_decl_info
 
-  val property_attribute_compare :
+  val compare_property_attribute :
     Clang_ast_t.property_attribute -> Clang_ast_t.property_attribute -> int
 
   val generated_ivar_name :
     Clang_ast_t.named_decl_info -> Clang_ast_t.named_decl_info
 
-  val property_attribute_eq :
+  val equal_property_attribute :
     Clang_ast_t.property_attribute -> Clang_ast_t.property_attribute -> bool
 
   val get_memory_management_attributes : unit -> Clang_ast_t.property_attribute list

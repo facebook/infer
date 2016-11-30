@@ -122,7 +122,7 @@ let is_ivar_atomic stmt =
       (match Ast_utils.get_decl ivar_pointer with
        | Some d ->
            let attributes = get_ivar_attributes d in
-           IList.exists (Ast_utils.property_attribute_eq `Atomic) attributes
+           IList.exists (Ast_utils.equal_property_attribute `Atomic) attributes
        | _ -> false)
   | _ -> false
 

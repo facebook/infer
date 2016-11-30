@@ -108,45 +108,14 @@ struct
         }
     | _ -> make_name_decl property_name.Clang_ast_t.ni_name
 
-  let property_attribute_compare att1 att2 =
-    match att1, att2 with
-      `Readonly, `Readonly -> 0
-    | `Readonly, _ -> -1
-    | _, `Readonly -> 1
-    | `Assign, `Assign -> 0
-    | `Assign, _ -> -1
-    | _, `Assign -> 1
-    | `Readwrite, `Readwrite -> 0
-    | `Readwrite, _ -> -1
-    | _, `Readwrite -> 1
-    | `Retain, `Retain -> 0
-    | `Retain, _ -> -1
-    | _, `Retain -> 1
-    | `Copy, `Copy -> 0
-    | `Copy, _ -> -1
-    | _, `Copy -> 1
-    | `Nonatomic, `Nonatomic -> 0
-    | `Nonatomic, _ -> -1
-    | _, `Nonatomic -> 1
-    | `Atomic, `Atomic -> 0
-    | `Atomic, _ -> 1
-    | _, `Atomic -> 1
-    | `Weak, `Weak -> 0
-    | `Weak, _ -> -1
-    | _, `Weak -> 1
-    | `Strong, `Strong -> 0
-    | `Strong, _ -> -1
-    | _, `Strong -> 1
-    | `Unsafe_unretained, `Unsafe_unretained -> 0
-    | `Unsafe_unretained, _ -> -1
-    | _, `Unsafe_unretained -> 1
-    | `ExplicitGetter, `ExplicitGetter -> 0
-    | `ExplicitGetter, _ -> -1
-    | _, `ExplicitGetter -> 1
-    | `ExplicitSetter, `ExplicitSetter -> 0
+  let compare_property_attribute =
+    [%compare: [
+      `Readonly | `Assign | `Readwrite | `Retain | `Copy | `Nonatomic | `Atomic
+      | `Weak | `Strong | `Unsafe_unretained | `ExplicitGetter | `ExplicitSetter
+    ]]
 
-  let property_attribute_eq att1 att2 =
-    property_attribute_compare att1 att2 = 0
+  let equal_property_attribute att1 att2 =
+    compare_property_attribute att1 att2 = 0
 
   let get_memory_management_attributes () =
     [`Assign; `Retain; `Copy; `Weak; `Strong; `Unsafe_unretained]
