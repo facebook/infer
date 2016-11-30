@@ -478,11 +478,11 @@ let write_html_proc source proof_cover table_nodes_at_linenum global_err_log pro
   let proc_loc = Procdesc.get_loc proc_desc in
   let process_proc =
     Procdesc.is_defined proc_desc &&
-    DB.source_file_equal proc_loc.Location.file source &&
+    DB.equal_source_file proc_loc.Location.file source &&
     match AttributesTable.find_file_capturing_procedure proc_name with
     | None -> true
     | Some (source_captured, _) ->
-        DB.source_file_equal source_captured (Procdesc.get_loc proc_desc).file in
+        DB.equal_source_file source_captured (Procdesc.get_loc proc_desc).file in
   if process_proc then
     begin
       IList.iter process_node (Procdesc.get_nodes proc_desc);

@@ -63,7 +63,7 @@ let rec pvar_kind_compare k1 k2 =>
   | (Abduced_ref_param _, _) => (-1)
   | (_, Abduced_ref_param _) => 1
   | (Global_var (f1, const1, pod1), Global_var (f2, const2, pod2)) =>
-    let n = DB.source_file_compare f1 f2;
+    let n = DB.compare_source_file f1 f2;
     if (n != 0) {
       n
     } else {

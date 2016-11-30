@@ -25,7 +25,7 @@ let compare loc1 loc2 => {
   if (n != 0) {
     n
   } else {
-    DB.source_file_compare loc1.file loc2.file
+    DB.compare_source_file loc1.file loc2.file
   }
 };
 

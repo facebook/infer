@@ -109,7 +109,7 @@ let report_siof tenv trace pdesc gname loc =
 
   let pp_sink f sink =
     let pp_source f v = match Pvar.get_source_file v with
-      | Some source_file when not (DB.source_file_equal DB.source_file_empty source_file) ->
+      | Some source_file when not (DB.equal_source_file DB.source_file_empty source_file) ->
           F.fprintf f " from file %s" (DB.source_file_to_string source_file)
       | _ ->
           () in

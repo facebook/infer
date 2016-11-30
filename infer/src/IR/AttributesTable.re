@@ -77,7 +77,7 @@ let store_attributes (proc_attributes: ProcAttributes.t) => {
     | Some proc_attributes_on_disk =>
       let higher_rank_than_on_disk () =>
         proc_attributes.is_defined &&
-        DB.source_file_compare proc_attributes.loc.file proc_attributes_on_disk.loc.file > 0;
+        DB.compare_source_file proc_attributes.loc.file proc_attributes_on_disk.loc.file > 0;
       let becomes_defined = proc_attributes.is_defined && not proc_attributes_on_disk.is_defined;
       /* Only overwrite the attribute file if the procedure becomes defined
          or its associated file has higher rank (alphabetically) than on disk. */
@@ -217,7 +217,7 @@ let find_file_capturing_procedure pname =>
     let origin =
       /* Procedure coming from include files if it has different location
          than the file where it was captured. */
-      DB.source_file_compare source_file proc_attributes.ProcAttributes.loc.file != 0 ?
+      DB.compare_source_file source_file proc_attributes.ProcAttributes.loc.file != 0 ?
         `Include : `Source;
     let cfg_fname = DB.source_dir_get_internal_file source_dir ".cfg";
     let cfg_fname_exists = Sys.file_exists (DB.filename_to_string cfg_fname);

@@ -26,24 +26,14 @@ type source_file =
   | Absolute of string
   | RelativeProjectRoot of string (* relative to project root *)
   | RelativeInferModel of string (* relative to infer models *)
+[@@deriving compare]
 
-let source_file_compare sf1 sf2 =
-  match sf1, sf2 with
-  | Absolute p1, Absolute p2 -> string_compare p1 p2
-  | Absolute _, _ -> -1
-  | _, Absolute _ -> 1
-  | RelativeProjectRoot p1, RelativeProjectRoot p2 -> string_compare p1 p2
-  | RelativeProjectRoot _, _ -> -1
-  | _, RelativeProjectRoot _ -> 1
-  | RelativeInferModel p1, RelativeInferModel p2 -> string_compare p1 p2
-
-let source_file_equal sf1 sf2 =
-  (source_file_compare sf1 sf2) = 0
+let equal_source_file sf1 sf2 =
+  compare_source_file sf1 sf2 = 0
 
 module OrderedSourceFile =
 struct
-  type t = source_file
-  let compare = source_file_compare
+  type t = source_file [@@deriving compare]
 end
 
 module SourceFileMap = Map.Make(OrderedSourceFile)
@@ -165,9 +155,7 @@ let source_file_of_header header_file =
 (** {2 Source Dirs} *)
 
 (** source directory: the directory inside the results dir corresponding to a source file *)
-type source_dir = string
-
-let source_dir_compare = string_compare
+type source_dir = string [@@deriving compare]
 
 (** expose the source dir as a string *)
 let source_dir_to_string source_dir = source_dir
@@ -204,15 +192,13 @@ let find_source_dirs () =
 
 (** {2 Filename} *)
 
-type filename = string
+type filename = string [@@deriving compare]
 
 let filename_concat = Filename.concat
 
 let filename_to_string s = s
 
 let filename_from_string s = s
-
-let filename_compare = Pervasives.compare
 
 let filename_add_suffix fn s = fn ^ s
 
@@ -224,14 +210,12 @@ let file_remove = Sys.remove
 
 module FilenameSet = Set.Make(
   struct
-    type t = filename
-    let compare = filename_compare
+    type t = filename [@@deriving compare]
   end)
 
 module FilenameMap = Map.Make(
   struct
-    type t = filename
-    let compare = filename_compare
+    type t = filename [@@deriving compare]
   end)
 
 (** Return the time when a file was last modified. The file must exist. *)
@@ -342,7 +326,7 @@ module Results_dir = struct
     create_dir specs_dir;
     create_dir (path_to_filename Abs_root [Config.attributes_dir_name]);
     create_dir (path_to_filename Abs_root [Config.captured_dir_name]);
-    if not (source_file_equal source source_file_empty) then
+    if not (equal_source_file source source_file_empty) then
       create_dir (path_to_filename (Abs_source_dir source) [])
 
   let clean_specs_dir () =

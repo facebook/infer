@@ -15,14 +15,13 @@ open! Utils
 (** {2 Filename} *)
 
 (** generic file name *)
-type filename
+type filename [@@deriving compare]
 
 module FilenameSet : Set.S with type elt = filename
 module FilenameMap : Map.S with type key = filename
 
 val filename_from_string : string -> filename
 val filename_to_string : filename -> string
-val filename_compare : filename -> filename -> int
 val chop_extension : filename -> filename
 val filename_concat : filename -> string -> filename
 val filename_add_suffix : filename -> string -> filename
@@ -39,7 +38,10 @@ val mark_file_updated : string -> unit
 (** Return whether filename was updated after analysis started. File doesn't have to exist *)
 val file_was_updated_after_start : filename -> bool
 
-type source_file
+type source_file [@@deriving compare]
+
+(** equality of source files *)
+val equal_source_file : source_file -> source_file -> bool
 
 (** {2 Results Directory} *)
 
@@ -86,14 +88,8 @@ module SourceFileMap : Map.S with type key = source_file
 (** Set of source files *)
 module SourceFileSet : Set.S with type elt = source_file
 
-(** comparison of source files *)
-val source_file_compare : source_file -> source_file -> int
-
 (** compute line count of a source file *)
 val source_file_line_count : source_file -> int
-
-(** equality of source files *)
-val source_file_equal : source_file -> source_file -> bool
 
 (** empty source file *)
 val source_file_empty : source_file
@@ -130,9 +126,7 @@ val source_file_of_header : source_file -> source_file option
 (** {2 Source Dirs} *)
 
 (** source directory: the directory inside the results dir corresponding to a source file *)
-type source_dir
-
-val source_dir_compare : source_dir -> source_dir -> int
+type source_dir [@@deriving compare]
 
 (** expose the source dir as a string *)
 val source_dir_to_string : source_dir -> string

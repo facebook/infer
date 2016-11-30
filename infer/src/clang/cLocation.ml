@@ -31,8 +31,8 @@ let should_do_frontend_check trans_unit_ctx (loc_start, _) =
   match loc_start.Clang_ast_t.sl_file with
   | Some file ->
       let source_file = (DB.source_file_from_abs_path file) in
-      DB.source_file_equal source_file trans_unit_ctx.CFrontend_config.source_file ||
-      (source_file_in_project source_file &&  not Config.testing_mode)
+      DB.equal_source_file source_file trans_unit_ctx.CFrontend_config.source_file ||
+      (source_file_in_project source_file && not Config.testing_mode)
   | None -> false
 
 (** We translate by default the instructions in the current file.  In C++ development, we also
@@ -52,7 +52,7 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
   (* it's not necessary to compare inodes here because both files come from
      the same context - they are produced by the same invocation of ASTExporter
      which uses same logic to produce both files *)
-  let equal_current_source = DB.source_file_equal trans_unit_ctx.CFrontend_config.source_file
+  let equal_current_source = DB.equal_source_file trans_unit_ctx.CFrontend_config.source_file
   in
   let equal_header_of_current_source maybe_header =
     (* DB.source_file_of_header will cache calls to filesystem *)

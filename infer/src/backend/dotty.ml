@@ -1017,7 +1017,7 @@ let pp_cfgnode pdesc fmt (n: Procdesc.Node.t) =
 let print_icfg source fmt cfg =
   let print_node pdesc node =
     let loc = Procdesc.Node.get_loc node in
-    if (Config.dotty_cfg_libs || DB.source_file_equal loc.Location.file source) then
+    if (Config.dotty_cfg_libs || DB.equal_source_file loc.Location.file source) then
       F.fprintf fmt "%a\n" (pp_cfgnode pdesc) node in
   Cfg.iter_all_nodes print_node cfg
 

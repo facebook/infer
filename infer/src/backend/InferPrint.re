@@ -1287,7 +1287,7 @@ let module AnalysisResults = {
     apply_without_gc (IList.iter load_file) (spec_files_from_cmdline ());
     let summ_cmp (_, summ1) (_, summ2) => {
       let n =
-        DB.source_file_compare
+        DB.compare_source_file
           summ1.Specs.attributes.ProcAttributes.loc.Location.file
           summ2.Specs.attributes.ProcAttributes.loc.Location.file;
       if (n != 0) {
