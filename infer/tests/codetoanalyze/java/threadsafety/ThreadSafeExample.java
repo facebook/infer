@@ -77,6 +77,32 @@ public class ThreadSafeExample{
     mLock.unlock();
   }
 
+  // shouldn't report here because it's a private method
+  private void assignInPrivateMethodOk() {
+    f = 24;
+  }
+
+  // but should report here, because now it's called
+  public void callPublicMethodBad() {
+    assignInPrivateMethodOk();
+  }
+
+  public synchronized void callFromSynchronizedPublicMethodOk() {
+    assignInPrivateMethodOk();
+  }
+
+  private synchronized void synchronizedCallerOk() {
+    assignInPrivateMethodOk();
+  }
+
+  public void callFromUnsynchronizedPublicMethodOk() {
+    synchronizedCallerOk();
+  }
+
+  // doesn't work because we don't model lock
+  public void FP_tsWithLockOk() {
+  }
+
   public void withLockBothBranchesOk(boolean b) {
     if (b) {
       mLock.lock();
@@ -106,13 +132,34 @@ public class ThreadSafeExample{
     mReentrantLock.unlock();
   }
 
-  // our "squish all locks into one" abstraction is not ideal here
+  private void acquireLock() {
+    mLock.lock();
+  }
+
+  public void acquireLockInCalleeOk() {
+    acquireLock();
+    f = 42;
+    mLock.unlock();
+  }
+
+  private void releaseLock() {
+    mLock.unlock();
+  }
+
+  // our "squish all locks into one" abstraction is not ideal here...
   public void FP_unlockOneLock() {
     mLock.lock();
     mReentrantLock.lock();
     mReentrantLock.unlock();
     f = 42;
     mLock.unlock();
+  }
+
+  // ... or here
+  public void FN_releaseLockInCalleeBad() {
+    mLock.lock();
+    releaseLock();
+    f = 42;
   }
 
   // we don't model the case where `tryLock` fails
