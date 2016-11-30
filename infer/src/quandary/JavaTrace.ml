@@ -20,11 +20,7 @@ module JavaSource = struct
       | Footprint of AccessPath.t (** source that was read from the environment. *)
       | Intent
       | Other (** for testing or uncategorized sources *)
-
-    let compare sk1 sk2 = match sk1, sk2 with
-      | PrivateData, PrivateData -> 0
-      | Footprint ap1, Footprint ap2 -> AccessPath.compare ap1 ap2
-      | _ -> tags_compare sk1 sk2
+    [@@deriving compare]
 
     let pp fmt = function
       | Intent -> F.fprintf fmt "Intent"
@@ -37,7 +33,7 @@ module JavaSource = struct
     {
       kind : Kind.t;
       site : CallSite.t;
-    }
+    } [@@deriving compare]
 
   let is_footprint t = match t.kind with
     | Kind.Footprint _ -> true
@@ -88,16 +84,6 @@ module JavaSource = struct
   let with_callsite t callee_site =
     { t with site = callee_site; }
 
-  let compare src1 src2 =
-    if src1 == src2
-    then
-      0
-    else
-      let n = Kind.compare src1.kind src2.kind in
-      if n <> 0
-      then n
-      else CallSite.compare src1.site src2.site
-
   let pp fmt s =
     F.fprintf fmt "%a(%a)" Kind.pp s.kind CallSite.pp s.site
 
@@ -115,8 +101,7 @@ module JavaSink = struct
       | Intent (** sink that trusts an Intent *)
       | Logging (** sink that logs one or more of its arguments *)
       | Other (** for testing or uncategorized sinks *)
-
-    let compare snk1 snk2 = tags_compare snk1 snk2
+    [@@deriving compare]
 
     let pp fmt = function
       | Intent -> F.fprintf fmt "Intent"
@@ -128,7 +113,7 @@ module JavaSink = struct
     {
       kind : Kind.t;
       site : CallSite.t;
-    }
+    } [@@deriving compare]
 
   let kind t =
     t.kind
@@ -189,16 +174,6 @@ module JavaSink = struct
 
   let with_callsite t callee_site =
     { t with site = callee_site; }
-
-  let compare snk1 snk2 =
-    if snk1 == snk2
-    then
-      0
-    else
-      let n = Kind.compare snk1.kind snk2.kind in
-      if n <> 0
-      then n
-      else CallSite.compare snk1.site snk2.site
 
   let pp fmt s =
     F.fprintf fmt "%a(%a)" Kind.pp s.kind CallSite.pp s.site
