@@ -75,22 +75,31 @@ module Path : sig
   val get_description : t -> string option
 *)
 end = struct
-  type session = int
+  type session = int [@@deriving compare]
   type stats =
     { mutable max_length : int; (* length of the longest linear sequence *)
       mutable linear_num : float; (* number of linear sequences described by the path *) }
 
-  type path =
+  (* type aliases for components of t values that compare should ignore *)
+  type _stats = stats
+  let compare__stats _ _ = 0
+
+  type _procname = Procname.t
+  let compare__procname _ _ = 0
+
+  type _string_option = string option
+  let compare__string_option _ _ = 0
+
+  type t =
     (* INVARIANT: stats are always set to dummy_stats unless we are in the middle of a traversal *)
     (* in particular: a new traversal cannot be initiated during an existing traversal *)
-    | Pstart of Procdesc.Node.t * stats (** start node *)
-    | Pnode of Procdesc.Node.t * Typename.t option * session * path * stats * string option
+    | Pstart of Procdesc.Node.t * _stats (** start node *)
+    | Pnode of Procdesc.Node.t * Typename.t option * session * t * _stats * _string_option
     (** we got to [node] from last [session] perhaps propagating exception [exn_opt],
         and continue with [path].  *)
-    | Pjoin of path * path * stats (** join of two paths *)
-    | Pcall of path * Procname.t * path * stats (** add a sub-path originating from a call *)
-
-  type t = path
+    | Pjoin of t * t * _stats (** join of two paths *)
+    | Pcall of t * _procname * t * _stats (** add a sub-path originating from a call *)
+  [@@deriving compare]
 
   let get_dummy_stats () =
     { max_length = - 1;
@@ -123,34 +132,6 @@ end = struct
     | Pcall(p1, _, _, _) -> curr_node p1
     | Pjoin _ ->
         None
-
-  let exname_opt_compare eo1 eo2 = match eo1, eo2 with
-    | None, None -> 0
-    | None, _ -> -1
-    | _, None -> 1
-    | Some n1, Some n2 -> Typename.compare n1 n2
-
-  let rec compare p1 p2 : int =
-    if p1 == p2 then 0 else match p1, p2 with
-      | Pstart (n1, _), Pstart (n2, _) ->
-          Procdesc.Node.compare n1 n2
-      | Pstart _, _ -> - 1
-      | _, Pstart _ -> 1
-      | Pnode (n1, eo1, s1, p1, _, _), Pnode (n2, eo2, s2, p2, _, _) ->
-          let n = Procdesc.Node.compare n1 n2 in
-          if n <> 0 then n else let n = exname_opt_compare eo1 eo2 in
-            if n <> 0 then n else let n = int_compare s1 s2 in
-              if n <> 0 then n else compare p1 p2
-      | Pnode _, _ -> - 1
-      | _, Pnode _ -> 1
-      | Pjoin (p1, q1, _), Pjoin (p2, q2, _) ->
-          let n = compare p1 p2 in
-          if n <> 0 then n else compare q1 q2
-      | Pjoin _, _ -> -1
-      | _, Pjoin _ -> 1
-      | Pcall(p1, _, sub1, _), Pcall(p2, _, sub2, _) ->
-          let n = compare p1 p2 in
-          if n <> 0 then n else compare sub1 sub2
 
   let start node = Pstart (node, get_dummy_stats ())
 
@@ -387,7 +368,7 @@ end = struct
     L.d_str (stats_string path)
 
   module PathMap = Map.Make (struct
-      type t = path
+      type nonrec t = t
       let compare = compare
     end)
 
