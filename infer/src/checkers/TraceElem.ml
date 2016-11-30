@@ -10,9 +10,8 @@
 module F = Format
 
 module type Kind = sig
-  type t
+  type t [@@deriving compare]
 
-  val compare : t -> t -> int
   val pp : F.formatter -> t -> unit
 end
 
