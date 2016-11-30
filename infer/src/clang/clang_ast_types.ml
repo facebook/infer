@@ -17,7 +17,7 @@ open! Utils
 (* Type pointers *)
 
 exception Not_Clang_Pointer
-type class_info = string * [`CPP | `OBJC]
+type class_info = string * [`CPP | `OBJC] [@@deriving compare]
 
 type t_ptr = [
   | `TPtr of int
@@ -27,11 +27,11 @@ type t_ptr = [
   | `ClassType of class_info
   | `StructType of string
   | `DeclPtr of int
-  | `ErrorType]
+  | `ErrorType
+] [@@deriving compare]
 
 module TypePointerOrd = struct
-  type t = t_ptr
-  let compare = Pervasives.compare
+  type t = t_ptr [@@deriving compare]
 end
 
 module TypePointerMap = Map.Make(TypePointerOrd)
