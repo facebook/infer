@@ -69,9 +69,8 @@ end
 
 (** Environment for boolean variables. *)
 module Env = struct
-  type t = bool StringMap.t
+  type t = bool StringMap.t [@@deriving compare]
   let empty = StringMap.empty
-  let compare = StringMap.compare bool_compare
   let add = StringMap.add
   let remove = StringMap.remove
   let get map name =
@@ -85,10 +84,7 @@ end
 
 (** Element for the set domain: an integer (for pending traces), and an environment. *)
 module Elem = struct
-  type t = int * Env.t
-  let compare (i1, env1) (i2, env2) =
-    let n = int_compare i1 i2 in
-    if n <> 0 then n else Env.compare env1 env2
+  type t = int * Env.t [@@deriving compare]
   let pp fmt (i, env) = F.fprintf fmt "(%d %a)" i Env.pp env
   let zero = (0, Env.empty)
   let is_consistent (i, _) = i >= 0
