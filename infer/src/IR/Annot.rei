@@ -21,11 +21,8 @@ let module F = Format;
 type t = {
   class_name: string, /** name of the annotation */
   parameters: list string /** currently only one string parameter */
-};
-
-
-/** Compare function for annotations. */
-let compare: t => t => int;
+}
+[@@deriving compare];
 
 
 /** Pretty print an annotation. */
@@ -36,10 +33,7 @@ let module Map: PrettyPrintable.PPMap with type key = t;
 let module Item: {
 
   /** Annotation for one item: a list of annotations with visibility. */
-  type nonrec t = list (t, bool);
-
-  /** Compare function for annotation items. */
-  let compare: t => t => int;
+  type nonrec t = list (t, bool) [@@deriving compare];
 
   /** Pretty print an item annotation. */
   let pp: F.formatter => t => unit;
@@ -57,10 +51,7 @@ let module Class: {let objc: Item.t; let cpp: Item.t;};
 let module Method: {
 
   /** Annotation for a method: return value and list of parameters. */
-  type t = (Item.t, list Item.t);
-
-  /** Compare function for Method annotations. */
-  let compare: t => t => int;
+  type t = (Item.t, list Item.t) [@@deriving compare];
 
   /** Empty method annotation. */
   let empty: t;

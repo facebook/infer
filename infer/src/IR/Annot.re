@@ -23,18 +23,8 @@ let module F = Format;
 type t = {
   class_name: string, /** name of the annotation */
   parameters: list string /** currently only one string parameter */
-};
-
-
-/** Compare function for annotations. */
-let compare a1 a2 => {
-  let n = string_compare a1.class_name a2.class_name;
-  if (n != 0) {
-    n
-  } else {
-    IList.compare string_compare a1.parameters a2.parameters
-  }
-};
+}
+[@@deriving compare];
 
 
 /** Pretty print an annotation. */
@@ -49,20 +39,10 @@ let module Map = PrettyPrintable.MakePPMap {
 let module Item = {
 
   /** Annotation for one item: a list of annotations with visibility. */
-  type nonrec t = list (t, bool);
-
-  /** Compare function for annotation items. */
-  let compare ia1 ia2 => {
-    let cmp (a1, b1) (a2, b2) => {
-      let n = compare a1 a2;
-      if (n != 0) {
-        n
-      } else {
-        bool_compare b1 b2
-      }
-    };
-    IList.compare cmp ia1 ia2
-  };
+  /* Don't use nonrec due to https://github.com/janestreet/ppx_compare/issues/2 */
+  /* type nonrec t = list (t, bool) [@@deriving compare]; */
+  type _t = list (t, bool) [@@deriving compare];
+  type t = _t [@@deriving compare];
 
   /** Pretty print an item annotation. */
   let pp fmt ann => {
@@ -92,10 +72,7 @@ let module Class = {
 let module Method = {
 
   /** Annotation for a method: return value and list of parameters. */
-  type t = (Item.t, list Item.t);
-
-  /** Compare function for Method annotations. */
-  let compare (ia1, ial1) (ia2, ial2) => IList.compare Item.compare [ia1, ...ial1] [ia2, ...ial2];
+  type t = (Item.t, list Item.t) [@@deriving compare];
 
   /** Pretty print a method annotation. */
   let pp s fmt (ia, ial) => F.fprintf fmt "%a %s(%a)" Item.pp ia s (pp_seq Item.pp) ial;
