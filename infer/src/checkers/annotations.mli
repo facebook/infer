@@ -22,12 +22,13 @@ val suppress_warnings : string
 type annotation =
   | Nullable
   | Present
+[@@deriving compare]
 
 (** Method signature with annotations. *)
 type annotated_signature = {
   ret : Annot.Item.t * Typ.t; (** Annotated return type. *)
   params: (Mangled.t * Annot.Item.t * Typ.t) list (** Annotated parameters. *)
-}
+} [@@deriving compare]
 
 (** Check if the annotated signature is for a wrapper of an anonymous inner class method.
     These wrappers have the same name as the original method, every type is Object, and the parameters
@@ -48,8 +49,6 @@ val annotated_signature_mark_return :
 (** Mark the return of the annotated signature @Strict. *)
 val annotated_signature_mark_return_strict :
   annotated_signature -> annotated_signature
-
-val equal : annotated_signature -> annotated_signature -> bool
 
 (** Get a method signature with annotations from a proc_attributes. *)
 val get_annotated_signature : ProcAttributes.t -> annotated_signature

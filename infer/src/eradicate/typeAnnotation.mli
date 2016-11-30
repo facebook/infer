@@ -11,14 +11,15 @@ open! Utils
 
 (** Nodule to represent annotations on types. *)
 
-type t
+type t [@@deriving compare]
+
+val equal : t -> t -> bool
 
 val const : Annotations.annotation -> bool -> TypeOrigin.t -> t
 
 (** Human-readable description of the origin of a nullable value. *)
 val descr_origin : Tenv.t -> t -> TypeErr.origin_descr
 
-val equal : t -> t -> bool
 val from_item_annotation : Annot.Item.t -> TypeOrigin.t -> t
 val get_origin : t -> TypeOrigin.t
 val get_value : Annotations.annotation -> t -> bool

@@ -18,19 +18,7 @@ module L = Logging
 type annotated_signature = {
   ret : Annot.Item.t * Typ.t; (** Annotated return type. *)
   params: (Mangled.t * Annot.Item.t * Typ.t) list (** Annotated parameters. *)
-}
-
-let param_equal (s1, ia1, t1) (s2, ia2, t2) =
-  Mangled.equal s1 s2 &&
-  Annot.Item.compare ia1 ia2 = 0 &&
-  Typ.equal t1 t2
-
-let equal as1 as2 =
-  let ia1, t1 = as1.ret
-  and ia2, t2 = as2.ret in
-  Annot.Item.compare ia1 ia2 = 0 &&
-  Typ.equal t1 t2 &&
-  IList.for_all2 param_equal as1.params as2.params
+} [@@deriving compare]
 
 let visibleForTesting = "com.google.common.annotations.VisibleForTesting"
 let suppressLint = "android.annotation.SuppressLint"
@@ -228,6 +216,7 @@ let ia_is_guarded_by ia =
 type annotation =
   | Nullable
   | Present
+[@@deriving compare]
 
 let ia_is ann ia = match ann with
   | Nullable -> ia_is_nullable ia

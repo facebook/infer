@@ -44,29 +44,24 @@ module M = Map.Make (struct
     type t = Exp.t
     let compare = Exp.compare end)
 
-type range = Typ.t * TypeAnnotation.t * (Location.t list)
+type range = Typ.t * TypeAnnotation.t * (Location.t list) [@@deriving compare]
 
 type 'a t =
   {
     map: range M.t;
     extension : 'a;
-  }
+  } [@@deriving compare]
+
+(* Ignore the extension field, which is a pure instrumentation *)
+let compare t1 t2 = compare_t (fun _ _ -> 0) t1 t2
+
+let equal t1 t2 = 0 = compare t1 t2
 
 let empty ext =
   {
     map = M.empty;
     extension = ext.empty;
   }
-
-let locs_compare = IList.compare Location.compare
-let locs_equal locs1 locs2 = locs_compare locs1 locs2 = 0
-
-let range_equal (typ1, ta1, locs1) (typ2, ta2, locs2) =
-  Typ.equal typ1 typ2 && TypeAnnotation.equal ta1 ta2 && locs_equal locs1 locs2
-
-let equal t1 t2 =
-  (* Ignore the calls field, which is a pure instrumentation *)
-  M.equal range_equal t1.map t2.map
 
 let pp ext fmt typestate =
   let pp_loc fmt loc = F.fprintf fmt "%d" loc.Location.line in

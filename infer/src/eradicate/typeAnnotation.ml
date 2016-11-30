@@ -18,18 +18,15 @@ module P = Printf
 module AnnotationsMap = Map.Make (
   struct
     open Annotations
-    type t = annotation
-    let compare a1 a2 = match a1, a2 with
-      | Nullable, Nullable -> 0
-      | Nullable, _ -> -1
-      | _, Nullable -> 1
-      | Present, Present -> 0
+    type t = annotation [@@deriving compare]
   end)
 
 type t = {
   map : bool AnnotationsMap.t;
   origin : TypeOrigin.t;
-}
+} [@@deriving compare]
+
+let equal ta1 ta2 = 0 = compare ta1 ta2
 
 let get_value ann ta =
   try
@@ -53,12 +50,6 @@ let set_nullable b =
 
 let set_present b =
   set_value Annotations.Present b
-
-
-let equal ta1 ta2 =
-  bool_equal (get_nullable ta1) (get_nullable ta2) &&
-  bool_equal (get_present ta1) (get_present ta2) &&
-  TypeOrigin.equal ta1.origin ta2.origin
 
 let to_string ta =
   let nullable_s = if get_nullable ta then " @Nullable" else "" in

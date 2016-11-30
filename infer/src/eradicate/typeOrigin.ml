@@ -22,7 +22,7 @@ type proc_origin =
     loc: Location.t;
     annotated_signature : Annotations.annotated_signature;
     is_library : bool;
-  }
+  } [@@deriving compare]
 
 type t =
   | Const of Location.t
@@ -32,38 +32,9 @@ type t =
   | New
   | ONone
   | Undef
+[@@deriving compare]
 
-let proc_origin_equal po1 po2 =
-  Procname.equal po1.pname po2.pname &&
-  Location.equal po1.loc po2.loc &&
-  Annotations.equal po1.annotated_signature po2.annotated_signature &&
-  bool_equal po1.is_library po2.is_library
-
-let equal o1 o2 = match o1, o2 with
-  | Const loc1, Const loc2 ->
-      Location.equal loc1 loc2
-  | Const _, _
-  | _, Const _ -> false
-  | Field (fn1, loc1), Field (fn2, loc2) ->
-      Ident.equal_fieldname fn1 fn2 &&
-      Location.equal loc1 loc2
-  | Field _, _
-  | _, Field _ -> false
-  | Formal s1, Formal s2 ->
-      Mangled.equal s1 s2
-  | Formal _, _
-  | _, Formal _ -> false
-  | Proc po1 , Proc po2 ->
-      proc_origin_equal po1 po2
-  | Proc _, _
-  | _, Proc _ -> false
-  | New, New -> true
-  | New, _
-  | _, New -> false
-  | ONone, ONone -> true
-  | ONone, _
-  | _, ONone -> false
-  | Undef, Undef -> true
+let equal o1 o2 = 0 = compare o1 o2
 
 let to_string = function
   | Const _ -> "Const"
