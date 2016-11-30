@@ -24,14 +24,14 @@ module Jprop : sig
   (** Comparison for joined_prop *)
   val compare : 'a t -> 'a t -> int
 
+  (** Return true if the two join_prop's are equal *)
+  val equal : 'a t -> 'a t -> bool
+
   (** Dump the toplevel prop *)
   val d_shallow : Prop.normal t -> unit
 
   (** dump a joined prop list, the boolean indicates whether to print toplevel props only *)
   val d_list : bool -> Prop.normal t list -> unit
-
-  (** Return true if the two join_prop's are equal *)
-  val equal : 'a t -> 'a t -> bool
 
   (** Add fav to a jprop *)
   val fav_add : Sil.fav -> 'a t -> unit

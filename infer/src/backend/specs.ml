@@ -20,10 +20,22 @@ module F = Format
 (** Module for joined props *)
 module Jprop = struct
 
+  (* type aliases for component of t values that compare should ignore *)
+  type _id = int
+  let compare__id _ _ = 0
+
   (** Remember when a prop is obtained as the join of two other props; the first parameter is an id *)
   type 'a t =
-    | Prop of int * 'a Prop.t
-    | Joined of int * 'a Prop.t * 'a t * 'a t
+    | Prop of _id * 'a Prop.t
+    | Joined of _id * 'a Prop.t * 'a t * 'a t
+  [@@deriving compare]
+
+  (** Comparison for joined_prop *)
+  let compare jp1 jp2 = compare_t (fun _ _ -> 0) jp1 jp2
+
+  (** Return true if the two join_prop's are equal *)
+  let equal jp1 jp2 =
+    compare jp1 jp2 == 0
 
   let to_prop = function
     | Prop (_, p) -> p
@@ -79,23 +91,6 @@ module Jprop = struct
 
   (** dump a joined prop list, the boolean indicates whether to print toplevel props only *)
   let d_list (shallow: bool) (jplist: Prop.normal t list) = L.add_print_action (L.PTjprop_list, Obj.repr (shallow, jplist))
-
-  (** Comparison for joined_prop *)
-  let rec compare jp1 jp2 = match jp1, jp2 with
-    | Prop (_, p1), Prop (_, p2) ->
-        Prop.compare_prop p1 p2
-    | Prop _, _ -> - 1
-    | _, Prop _ -> 1
-    | Joined (_, p1, jp1, jq1), Joined (_, p2, jp2, jq2) ->
-        let n = Prop.compare_prop p1 p2 in
-        if n <> 0 then n
-        else
-          let n = compare jp1 jp2 in
-          if n <> 0 then n else compare jq1 jq2
-
-  (** Return true if the two join_prop's are equal *)
-  let equal jp1 jp2 =
-    compare jp1 jp2 == 0
 
   let rec fav_add fav = function
     | Prop (_, p) -> Prop.prop_fav_add fav p
@@ -229,8 +224,7 @@ module CallStats = struct (** module for tracing stats of function calls *)
   module PnameLocHash = Hashtbl.Make (struct
       type t = Procname.t * Location.t
       let hash (pname, loc) = Hashtbl.hash (Procname.hash_pname pname, loc.Location.line)
-      let equal (pname1, loc1) (pname2, loc2) =
-        Location.equal loc1 loc2 && Procname.equal pname1 pname2
+      let equal = [%compare.equal: Procname.t * Location.t]
     end)
 
   (** kind of result of a procedure call *)
@@ -280,9 +274,8 @@ module CallStats = struct (** module for tracing stats of function calls *)
     let elems = ref [] in
     PnameLocHash.iter (fun x tr -> elems := (x, tr) :: !elems) t;
     let sorted_elems =
-      let compare ((pname1, loc1), _) ((pname2, loc2), _) =
-        let n = Procname.compare pname1 pname2 in
-        if n <> 0 then n else Location.compare loc1 loc2 in
+      let compare (pname_loc1, _) (pname_loc2, _) =
+        [%compare: Procname.t * Location.t] pname_loc1 pname_loc2 in
       IList.sort compare !elems in
     IList.iter (fun (x, tr) -> f x tr) sorted_elems
 
