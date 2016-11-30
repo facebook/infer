@@ -16,11 +16,7 @@ open! Utils;
 /** Module for Mangled Names */
 
 /** Type of mangled names */
-type t;
-
-
-/** Comparison for mangled names */
-let compare: t => t => int;
+type t [@@deriving compare];
 
 
 /** Equality for mangled names */
