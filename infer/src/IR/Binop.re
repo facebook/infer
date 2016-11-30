@@ -42,75 +42,8 @@ type t =
   | BOr /** inclusive-or */
   | LAnd /** logical and. Does not always evaluate both operands. */
   | LOr /** logical or. Does not always evaluate both operands. */
-  | PtrFld /** field offset via pointer to field: takes the address of a Csu.t and a Cptr_to_fld constant to form an Lfield expression (see prop.ml) */;
-
-let compare o1 o2 =>
-  switch (o1, o2) {
-  | (PlusA, PlusA) => 0
-  | (PlusA, _) => (-1)
-  | (_, PlusA) => 1
-  | (PlusPI, PlusPI) => 0
-  | (PlusPI, _) => (-1)
-  | (_, PlusPI) => 1
-  | (MinusA, MinusA) => 0
-  | (MinusA, _) => (-1)
-  | (_, MinusA) => 1
-  | (MinusPI, MinusPI) => 0
-  | (MinusPI, _) => (-1)
-  | (_, MinusPI) => 1
-  | (MinusPP, MinusPP) => 0
-  | (MinusPP, _) => (-1)
-  | (_, MinusPP) => 1
-  | (Mult, Mult) => 0
-  | (Mult, _) => (-1)
-  | (_, Mult) => 1
-  | (Div, Div) => 0
-  | (Div, _) => (-1)
-  | (_, Div) => 1
-  | (Mod, Mod) => 0
-  | (Mod, _) => (-1)
-  | (_, Mod) => 1
-  | (Shiftlt, Shiftlt) => 0
-  | (Shiftlt, _) => (-1)
-  | (_, Shiftlt) => 1
-  | (Shiftrt, Shiftrt) => 0
-  | (Shiftrt, _) => (-1)
-  | (_, Shiftrt) => 1
-  | (Lt, Lt) => 0
-  | (Lt, _) => (-1)
-  | (_, Lt) => 1
-  | (Gt, Gt) => 0
-  | (Gt, _) => (-1)
-  | (_, Gt) => 1
-  | (Le, Le) => 0
-  | (Le, _) => (-1)
-  | (_, Le) => 1
-  | (Ge, Ge) => 0
-  | (Ge, _) => (-1)
-  | (_, Ge) => 1
-  | (Eq, Eq) => 0
-  | (Eq, _) => (-1)
-  | (_, Eq) => 1
-  | (Ne, Ne) => 0
-  | (Ne, _) => (-1)
-  | (_, Ne) => 1
-  | (BAnd, BAnd) => 0
-  | (BAnd, _) => (-1)
-  | (_, BAnd) => 1
-  | (BXor, BXor) => 0
-  | (BXor, _) => (-1)
-  | (_, BXor) => 1
-  | (BOr, BOr) => 0
-  | (BOr, _) => (-1)
-  | (_, BOr) => 1
-  | (LAnd, LAnd) => 0
-  | (LAnd, _) => (-1)
-  | (_, LAnd) => 1
-  | (LOr, LOr) => 0
-  | (LOr, _) => (-1)
-  | (_, LOr) => 1
-  | (PtrFld, PtrFld) => 0
-  };
+  | PtrFld /** field offset via pointer to field: takes the address of a Csu.t and a Cptr_to_fld constant to form an Lfield expression (see prop.ml) */
+[@@deriving compare];
 
 let equal o1 o2 => compare o1 o2 == 0;
 
