@@ -24,7 +24,7 @@ module TraceElem = struct
   type t = {
     site : CallSite.t;
     kind: [`Call | `Access] * Kind.t;
-  }
+  } [@@deriving compare]
 
   let call_site { site; } = site
 
@@ -33,14 +33,6 @@ module TraceElem = struct
   let make kind site = { kind = (`Call, kind); site; }
 
   let with_callsite { kind=(_, kind); } site = { kind=(`Call, kind); site; }
-
-  let compare t1 t2 =
-    let n = CallSite.compare t1.site t2.site in
-    if n <> 0 then n
-    else
-      let n = tags_compare (fst t1.kind) (fst t2.kind) in
-      if n <> 0 then n
-      else Kind.compare (snd t1.kind) (snd t2.kind)
 
   let pp fmt { site; kind; } =
     F.fprintf fmt "Access to %a at %a" Kind.pp (snd kind) CallSite.pp site
