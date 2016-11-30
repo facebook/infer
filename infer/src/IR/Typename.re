@@ -13,7 +13,10 @@ let module F = Format;
 
 /** Named types. */
 type t =
-  | TN_csu Csu.t Mangled.t;
+  | TN_csu Csu.t Mangled.t
+[@@deriving compare];
+
+let equal tn1 tn2 => compare tn1 tn2 == 0;
 
 let to_string =
   fun
@@ -24,19 +27,6 @@ let pp f typename => F.fprintf f "%s" (to_string typename);
 let name =
   fun
   | TN_csu _ name => Mangled.to_string name;
-
-let compare tn1 tn2 =>
-  switch (tn1, tn2) {
-  | (TN_csu csu1 n1, TN_csu csu2 n2) =>
-    let n = Csu.compare csu1 csu2;
-    if (n != 0) {
-      n
-    } else {
-      Mangled.compare n1 n2
-    }
-  };
-
-let equal tn1 tn2 => compare tn1 tn2 == 0;
 
 let module Java = {
   let from_string class_name_str =>
@@ -50,9 +40,7 @@ let module Java = {
   let java_lang_cloneable = from_string "java.lang.Cloneable";
 };
 
-type typename_t = t;
-
 let module Set = Set.Make {
-  type t = typename_t;
+  type nonrec t = t;
   let compare = compare;
 };

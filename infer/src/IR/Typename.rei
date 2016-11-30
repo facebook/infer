@@ -11,7 +11,12 @@ open! Utils;
 
 /** Named types. */
 type t =
-  | TN_csu Csu.t Mangled.t;
+  | TN_csu Csu.t Mangled.t
+[@@deriving compare];
+
+
+/** Equality for typenames */
+let equal: t => t => bool;
 
 
 /** convert the typename to a string */
@@ -22,14 +27,6 @@ let pp: Format.formatter => t => unit;
 
 /** name of the typename without qualifier */
 let name: t => string;
-
-
-/** Comparison for typenames */
-let compare: t => t => int;
-
-
-/** Equality for typenames */
-let equal: t => t => bool;
 
 let module Java: {
 
