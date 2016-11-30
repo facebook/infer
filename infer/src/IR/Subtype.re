@@ -39,20 +39,23 @@ let list_to_string list => {
 
 type t' =
   | Exact /** denotes the current type only */
-  | Subtypes (list Typename.t);
+  | Subtypes (list Typename.t)
+[@@deriving compare];
+
+let equal_modulo_flag (st1, _) (st2, _) => compare_t' st1 st2 == 0;
 
 
 /** denotes the current type and a list of types that are not their subtypes  */
 type kind =
   | CAST
   | INSTOF
-  | NORMAL;
+  | NORMAL
+[@@deriving compare];
 
-type t = (t', kind);
+type t = (t', kind) [@@deriving compare];
 
 let module SubtypesPair = {
-  type t = (Typename.t, Typename.t);
-  let compare (e1: t) (e2: t) :int => pair_compare Typename.compare Typename.compare e1 e2;
+  type t = (Typename.t, Typename.t) [@@deriving compare];
 };
 
 let module SubtypesMap = Map.Make SubtypesPair;
@@ -148,31 +151,6 @@ let join (s1, flag1) (s2, flag2) => {
   let flag = join_flag flag1 flag2;
   (s, flag)
 };
-
-let subtypes_compare l1 l2 => IList.compare Typename.compare l1 l2;
-
-let compare_flag flag1 flag2 =>
-  switch (flag1, flag2) {
-  | (CAST, CAST) => 0
-  | (INSTOF, INSTOF) => 0
-  | (NORMAL, NORMAL) => 0
-  | (CAST, _) => (-1)
-  | (_, CAST) => 1
-  | (INSTOF, NORMAL) => (-1)
-  | (NORMAL, INSTOF) => 1
-  };
-
-let compare_subt s1 s2 =>
-  switch (s1, s2) {
-  | (Exact, Exact) => 0
-  | (Exact, _) => (-1)
-  | (_, Exact) => 1
-  | (Subtypes l1, Subtypes l2) => subtypes_compare l1 l2
-  };
-
-let compare t1 t2 => pair_compare compare_subt compare_flag t1 t2;
-
-let equal_modulo_flag (st1, _) (st2, _) => compare_subt st1 st2 == 0;
 
 let update_flag c1 c2 flag flag' =>
   switch flag {

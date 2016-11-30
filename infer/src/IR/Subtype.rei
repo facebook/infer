@@ -18,9 +18,7 @@ let module L = Logging;
 
 let module F = Format;
 
-type t;
-
-let compare: t => t => int;
+type t [@@deriving compare];
 
 let pp: F.formatter => t => unit;
 
