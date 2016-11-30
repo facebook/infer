@@ -583,32 +583,12 @@ let pp_tests_of_report fmt report => {
   IList.iter pp_row report
 };
 
-let tests_jsonbug_compare bug1 bug2 => {
-  open Jsonbug_t;
-  let n = string_compare bug1.file bug2.file;
-  if (n != 0) {
-    n
-  } else {
-    let n = string_compare bug1.procedure bug2.procedure;
-    if (n != 0) {
-      n
-    } else {
-      let n =
-        int_compare
-          (bug1.line - bug1.procedure_start_line) (bug2.line - bug2.procedure_start_line);
-      if (n != 0) {
-        n
-      } else {
-        let n = string_compare bug1.bug_type bug2.bug_type;
-        if (n != 0) {
-          n
-        } else {
-          int_compare bug1.hash bug2.hash
-        }
-      }
-    }
-  }
-};
+let tests_jsonbug_compare bug1 bug2 =>
+  Jsonbug_t.(
+    [%compare : (string, string, int, string, int)]
+      (bug1.file, bug1.procedure, bug1.line - bug1.procedure_start_line, bug1.bug_type, bug1.hash)
+      (bug2.file, bug2.procedure, bug2.line - bug2.procedure_start_line, bug2.bug_type, bug2.hash)
+  );
 
 let module IssuesTxt = {
 
