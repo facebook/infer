@@ -18,49 +18,60 @@ let module L = Logging;
 
 let module F = Format;
 
-type java_type = (option string, string); /* e.g. ("", "int") for primitive types or ("java.io", "PrintWriter") for objects */
+/* e.g. ("", "int") for primitive types or ("java.io", "PrintWriter") for objects */
+type java_type = (option string, string);
+
+/* compare in inverse order */
+let compare_java_type (p1, c1) (p2, c2) => [%compare : (string, option string)] (c1, p1) (c2, p2);
 
 type method_kind =
+  | Non_Static /* in Java, procedures called with invokevirtual, invokespecial, and invokeinterface */
   | Static /* in Java, procedures called with invokestatic */
-  | Non_Static /* in Java, procedures called with invokevirtual, invokespecial, and invokeinterface */;
+[@@deriving compare];
 
 
 /** Type of java procedure names. */
 type java = {
-  class_name: java_type,
-  return_type: option java_type, /* option because constructors have no return type */
   method_name: string,
   parameters: list java_type,
+  class_name: java_type,
+  return_type: option java_type, /* option because constructors have no return type */
   kind: method_kind
-};
+}
+[@@deriving compare];
 
 
 /** Type of c procedure names. */
-type c = (string, option string);
+type c = (string, option string) [@@deriving compare];
 
 type objc_cpp_method_kind =
   | CPPMethod (option string) /** with mangling */
   | CPPConstructor (option string) /** with mangling */
+  | ObjCClassMethod
   | ObjCInstanceMethod
   | ObjCInternalMethod
-  | ObjCClassMethod;
+[@@deriving compare];
 
 
 /** Type of Objective C and C++ procedure names: method signatures. */
-type objc_cpp = {class_name: string, method_name: string, kind: objc_cpp_method_kind};
+type objc_cpp = {method_name: string, class_name: string, kind: objc_cpp_method_kind}
+[@@deriving compare];
 
 
 /** Type of Objective C block names. */
-type block = string;
+type block = string [@@deriving compare];
 
 
 /** Type of procedure names. */
 type t =
   | Java java
   | C c
-  | ObjC_Cpp objc_cpp
+  | Linters_dummy_method
   | Block block
-  | Linters_dummy_method;
+  | ObjC_Cpp objc_cpp
+[@@deriving compare];
+
+let equal pn1 pn2 => compare pn1 pn2 == 0;
 
 
 /** Level of verbosity of some to_string functions. */
@@ -78,23 +89,6 @@ let is_verbose v =>
   switch v {
   | Verbose => true
   | _ => false
-  };
-
-type proc_name = t;
-
-let mangled_compare so1 so2 =>
-  switch (so1, so2) {
-  | (None, None) => 0
-  | (None, Some _) => (-1)
-  | (Some _, None) => 1
-  | (Some s1, Some s2) => string_compare s1 s2
-  };
-
-let method_kind_compare k0 k1 =>
-  switch (k0, k1) {
-  | _ when k0 == k1 => 0
-  | (Static, _) => 1
-  | (Non_Static, _) => (-1)
   };
 
 
@@ -129,58 +123,6 @@ let java_return_type_to_string j verbosity =>
   | None => ""
   | Some typ => java_type_to_string_verbosity typ verbosity
   };
-
-let java_type_compare (p1, c1) (p2, c2) => string_compare c1 c2 |> next mangled_compare p1 p2;
-
-let rec java_type_list_compare jt1 jt2 =>
-  switch (jt1, jt2) {
-  | ([], []) => 0
-  | ([], _) => (-1)
-  | (_, []) => 1
-  | ([x1, ...rest1], [x2, ...rest2]) =>
-    java_type_compare x1 x2 |> next java_type_list_compare rest1 rest2
-  };
-
-let java_return_type_compare jr1 jr2 =>
-  switch (jr1, jr2) {
-  | (None, None) => 0
-  | (None, Some _) => (-1)
-  | (Some _, None) => 1
-  | (Some jt1, Some jt2) => java_type_compare jt1 jt2
-  };
-
-
-/** Compare java procedure names. */
-let java_compare (j1: java) (j2: java) =>
-  string_compare j1.method_name j2.method_name |>
-  next java_type_list_compare j1.parameters j2.parameters |>
-  next java_type_compare j1.class_name j2.class_name |>
-  next java_return_type_compare j1.return_type j2.return_type |>
-  next method_kind_compare j1.kind j2.kind;
-
-let objc_cpp_method_kind_compare k1 k2 =>
-  switch (k1, k2) {
-  | (CPPMethod mangled1, CPPMethod mangled2) => mangled_compare mangled1 mangled2
-  | (CPPMethod _, _) => (-1)
-  | (_, CPPMethod _) => 1
-  | (CPPConstructor mangled1, CPPConstructor mangled2) => mangled_compare mangled1 mangled2
-  | (CPPConstructor _, _) => (-1)
-  | (_, CPPConstructor _) => 1
-  | (ObjCClassMethod, ObjCClassMethod) => 0
-  | (ObjCClassMethod, _) => (-1)
-  | (_, ObjCClassMethod) => 1
-  | (ObjCInstanceMethod, ObjCInstanceMethod) => 0
-  | (ObjCInstanceMethod, _) => (-1)
-  | (_, ObjCInstanceMethod) => 1
-  | (ObjCInternalMethod, ObjCInternalMethod) => 0
-  };
-
-
-/** Compare c_method signatures. */
-let c_meth_sig_compare osig1 osig2 =>
-  string_compare osig1.method_name osig2.method_name |>
-  next string_compare osig1.class_name osig2.class_name |>
-  next objc_cpp_method_kind_compare osig1.kind osig2.kind;
 
 
 /** Given a package.class_name string, it looks for the latest dot and split the string
@@ -595,56 +537,22 @@ let to_filename proc_name =>
 let pp f pn => F.fprintf f "%s" (to_string pn);
 
 
-/** Compare function for Procname.t types.
-    These rules create an ordered set of procnames grouped with the following
-    priority (lowest to highest): */
-let compare pn1 pn2 =>
-  switch (pn1, pn2) {
-  | (Java j1, Java j2) => java_compare j1 j2
-  | (Java _, _) => (-1)
-  | (_, Java _) => 1
-  | (
-      C (c1, c2), /* Compare C_function types */
-      C (c3, c4)
-    ) =>
-    string_compare c1 c3 |> next mangled_compare c2 c4
-  | (C _, _) => (-1)
-  | (_, C _) => 1
-  | (
-      Block s1, /* Compare ObjC_block types */
-      Block s2
-    ) =>
-    string_compare s1 s2
-  | (
-      Linters_dummy_method, /* Compare fake methods used in linters */
-      Linters_dummy_method
-    ) => 0
-  | (Linters_dummy_method, _) => (-1)
-  | (_, Linters_dummy_method) => 1
-  | (Block _, _) => (-1)
-  | (_, Block _) => 1
-  | (ObjC_Cpp osig1, ObjC_Cpp osig2) => c_meth_sig_compare osig1 osig2
-  };
-
-let equal pn1 pn2 => compare pn1 pn2 == 0;
-
-
 /** hash function for procname */
 let hash_pname = Hashtbl.hash;
 
 let module Hash = Hashtbl.Make {
-  type t = proc_name;
+  type nonrec t = t;
   let equal = equal;
   let hash = hash_pname;
 };
 
 let module Map = Map.Make {
-  type t = proc_name;
+  type nonrec t = t;
   let compare = compare;
 };
 
 let module Set = Set.Make {
-  type t = proc_name;
+  type nonrec t = t;
   let compare = compare;
 };
 

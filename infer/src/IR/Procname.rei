@@ -35,22 +35,27 @@ type block;
 type t =
   | Java java
   | C c
-  | ObjC_Cpp objc_cpp
+  | Linters_dummy_method
   | Block block
-  | Linters_dummy_method;
+  | ObjC_Cpp objc_cpp
+[@@deriving compare];
+
+
+/** Equality for proc names. */
+let equal: t => t => bool;
 
 type java_type = (option string, string);
 
 type method_kind =
-  | Static /* in Java, procedures called with invokestatic */
-  | Non_Static /* in Java, procedures called with invokevirtual, invokespecial, and invokeinterface */;
+  | Non_Static /* in Java, procedures called with invokevirtual, invokespecial, and invokeinterface */
+  | Static /* in Java, procedures called with invokestatic */;
 
 type objc_cpp_method_kind =
   | CPPMethod (option string) /** with mangling */
   | CPPConstructor (option string) /** with mangling */
+  | ObjCClassMethod
   | ObjCInstanceMethod
-  | ObjCInternalMethod
-  | ObjCClassMethod;
+  | ObjCInternalMethod;
 
 
 /** Hash tables with proc names as keys. */
@@ -69,16 +74,8 @@ let module Set: Set.S with type elt = t;
 let c: string => string => c;
 
 
-/** Comparison for proc names. */
-let compare: t => t => int;
-
-
 /** Empty block name. */
 let empty_block: t;
-
-
-/** Equality for proc names. */
-let equal: t => t => bool;
 
 
 /** Convert a string to a proc name. */
