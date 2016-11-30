@@ -10,18 +10,17 @@
 (** Single abstraction for all the kinds of variables in SIL *)
 
 type t = private
-  | ProgramVar of Pvar.t
   | LogicalVar of Ident.t
+  | ProgramVar of Pvar.t
+[@@deriving compare]
+
+val equal : t -> t -> bool
 
 val of_id : Ident.t -> t
 
 val of_pvar : Pvar.t -> t
 
 val to_exp : t -> Exp.t
-
-val equal : t -> t -> bool
-
-val compare : t -> t -> int
 
 val pp : Format.formatter -> t -> unit
 
