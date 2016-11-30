@@ -32,7 +32,7 @@ type lookup = Typename.t => option t;
 
 
 /** Comparision for fieldnames * types * item annotations. */
-let fld_typ_ann_compare:
+let compare_fld_typ_ann:
   (Ident.fieldname, Typ.t, Annot.Item.t) => (Ident.fieldname, Typ.t, Annot.Item.t) => int;
 
 

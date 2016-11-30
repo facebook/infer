@@ -32,8 +32,7 @@ type t = {
 
 type lookup = Typename.t => option t;
 
-let fld_typ_ann_compare fta1 fta2 =>
-  triple_compare Ident.compare_fieldname Typ.compare Annot.Item.compare fta1 fta2;
+let compare_fld_typ_ann = [%compare : (Ident.fieldname, Typ.t, Annot.Item.t)];
 
 let pp pe pp_base name f {fields} =>
   if false {
