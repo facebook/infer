@@ -275,7 +275,7 @@ end = struct
   let contains_position path pos =
     let found = ref false in
     let f node =
-      if PredSymb.path_pos_equal (get_path_pos node) pos then found := true;
+      if PredSymb.equal_path_pos (get_path_pos node) pos then found := true;
       true in
     Invariant.compute_stats true f path;
     Invariant.reset_stats path;
@@ -318,7 +318,7 @@ end = struct
       (pos_opt : PredSymb.path_pos option) (path: t) : unit =
     let filter node = match pos_opt with
       | None -> true
-      | Some pos -> PredSymb.path_pos_equal (get_path_pos node) pos in
+      | Some pos -> PredSymb.equal_path_pos (get_path_pos node) pos in
     let path_pos_at_path p =
       try
         match curr_node p with

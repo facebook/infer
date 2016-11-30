@@ -334,7 +334,7 @@ let inst_compare_base inst1 inst2 =>
         if (n != 0) {
           n
         } else {
-          PredSymb.path_pos_compare path_pos1 path_pos2
+          PredSymb.compare_path_pos path_pos1 path_pos2
         }
       }
     }
@@ -359,7 +359,7 @@ let inst_compare_base inst1 inst2 =>
         if (n != 0) {
           n
         } else {
-          PredSymb.path_pos_compare path_pos1 path_pos2
+          PredSymb.compare_path_pos path_pos1 path_pos2
         }
       }
     }

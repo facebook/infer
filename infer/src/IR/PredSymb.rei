@@ -41,9 +41,8 @@ type mem_kind =
   | Mmalloc /** memory allocated with malloc */
   | Mnew /** memory allocated with new */
   | Mnew_array /** memory allocated with new[] */
-  | Mobjc /** memory allocated with objective-c alloc */;
-
-let mem_kind_compare: mem_kind => mem_kind => int;
+  | Mobjc /** memory allocated with objective-c alloc */
+[@@deriving compare];
 
 
 /** resource that can be allocated */
@@ -51,17 +50,15 @@ type resource =
   | Rmemory mem_kind
   | Rfile
   | Rignore
-  | Rlock;
-
-let resource_compare: resource => resource => int;
+  | Rlock
+[@@deriving compare];
 
 
 /** kind of resource action */
 type res_act_kind =
   | Racquire
-  | Rrelease;
-
-let res_act_kind_compare: res_act_kind => res_act_kind => int;
+  | Rrelease
+[@@deriving compare];
 
 
 /** kind of dangling pointers */
@@ -75,11 +72,9 @@ type dangling_kind =
 
 
 /** position in a path: proc name, node id */
-type path_pos = (Procname.t, int);
+type path_pos = (Procname.t, int) [@@deriving compare];
 
-let path_pos_compare: path_pos => path_pos => int;
-
-let path_pos_equal: path_pos => path_pos => bool;
+let equal_path_pos: path_pos => path_pos => bool;
 
 type taint_kind =
   | Tk_unverified_SSL_socket
@@ -128,9 +123,8 @@ type t =
   /** denotes an object registered as an observers to a notification center */
   | Aobserver
   /** denotes an object unsubscribed from observers of a notification center */
-  | Aunsubscribed_observer;
-
-let compare: t => t => int;
+  | Aunsubscribed_observer
+[@@deriving compare];
 
 let equal: t => t => bool;
 
@@ -153,11 +147,10 @@ type category =
   | ACobjc_null
   | ACundef
   | ACretval
-  | ACobserver;
+  | ACobserver
+[@@deriving compare];
 
-let category_compare: category => category => int;
-
-let category_equal: category => category => bool;
+let equal_category: category => category => bool;
 
 
 /**  Return the category to which the attribute belongs. */

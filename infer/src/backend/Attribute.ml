@@ -30,7 +30,7 @@ let add tenv ?(footprint = false) ?(polarity = true) prop attr args =
 let attributes_in_same_category attr1 attr2 =
   let cat1 = PredSymb.to_category attr1 in
   let cat2 = PredSymb.to_category attr2 in
-  PredSymb.category_equal cat1 cat2
+  PredSymb.equal_category cat1 cat2
 
 (** Replace an attribute associated to the expression *)
 let add_or_replace_check_changed tenv check_attribute_change prop atom0 =
@@ -88,7 +88,7 @@ let get tenv prop exp category =
     Some
       (IList.find (function
            | Sil.Apred (att, _) | Anpred (att, _) ->
-               PredSymb.category_equal (PredSymb.to_category att) category
+               PredSymb.equal_category (PredSymb.to_category att) category
            | _ -> false
          ) atts)
   with Not_found -> None
@@ -150,8 +150,8 @@ let remove_for_attr tenv prop att0 =
 let remove_resource tenv ra_kind ra_res =
   let f = function
     | Sil.Apred (Aresource res_action, _) ->
-        PredSymb.res_act_kind_compare res_action.ra_kind ra_kind <> 0
-        || PredSymb.resource_compare res_action.ra_res ra_res <> 0
+        PredSymb.compare_res_act_kind res_action.ra_kind ra_kind <> 0
+        || PredSymb.compare_resource res_action.ra_res ra_res <> 0
     | _ -> true in
   filter_atoms tenv ~f
 

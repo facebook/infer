@@ -590,7 +590,7 @@ let prop_footprint_add_pi_sigma_starfld_sigma tenv
 let check_attr_dealloc_mismatch att_old att_new = match att_old, att_new with
   | PredSymb.Aresource ({ ra_kind = Racquire; ra_res = Rmemory mk_old } as ra_old),
     PredSymb.Aresource ({ ra_kind = Rrelease; ra_res = Rmemory mk_new } as ra_new)
-    when PredSymb.mem_kind_compare mk_old mk_new <> 0 ->
+    when PredSymb.compare_mem_kind mk_old mk_new <> 0 ->
       let desc = Errdesc.explain_allocation_mismatch ra_old ra_new in
       raise (Exceptions.Deallocation_mismatch (desc, __POS__))
   | _ -> ()
