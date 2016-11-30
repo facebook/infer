@@ -21,15 +21,13 @@ module type S = sig
 end
 
 module Dummy = struct
-  type t = unit
+  type t = unit [@@deriving compare]
 
   let call_site _ = CallSite.dummy
 
   let kind t = t
 
   let make kind _ = kind
-
-  let compare = Pervasives.compare
 
   let pp _ () = ()
 
