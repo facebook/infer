@@ -28,64 +28,9 @@ type pvar_kind =
   /** synthetic variable to represent param passed by reference */
   | Global_var (DB.source_file, bool, bool) /** global variable: translation unit + is it compile constant? + is it POD? */
   | Seed_var /** variable used to store the initial value of formal parameters */
+[@@deriving compare]
 /** Names for program variables. */
-and t = {pv_name: Mangled.t, pv_kind: pvar_kind};
-
-let rec pvar_kind_compare k1 k2 =>
-  switch (k1, k2) {
-  | (Local_var n1, Local_var n2) => Procname.compare n1 n2
-  | (Local_var _, _) => (-1)
-  | (_, Local_var _) => 1
-  | (Callee_var n1, Callee_var n2) => Procname.compare n1 n2
-  | (Callee_var _, _) => (-1)
-  | (_, Callee_var _) => 1
-  | (Abduced_retvar p1 l1, Abduced_retvar p2 l2) =>
-    let n = Procname.compare p1 p2;
-    if (n != 0) {
-      n
-    } else {
-      Location.compare l1 l2
-    }
-  | (Abduced_retvar _, _) => (-1)
-  | (_, Abduced_retvar _) => 1
-  | (Abduced_ref_param p1 pv1 l1, Abduced_ref_param p2 pv2 l2) =>
-    let n = Procname.compare p1 p2;
-    if (n != 0) {
-      n
-    } else {
-      let n = compare pv1 pv2;
-      if (n != 0) {
-        n
-      } else {
-        Location.compare l1 l2
-      }
-    }
-  | (Abduced_ref_param _, _) => (-1)
-  | (_, Abduced_ref_param _) => 1
-  | (Global_var (f1, const1, pod1), Global_var (f2, const2, pod2)) =>
-    let n = DB.compare_source_file f1 f2;
-    if (n != 0) {
-      n
-    } else {
-      let n = bool_compare const1 const2;
-      if (n != 0) {
-        n
-      } else {
-        bool_compare pod1 pod2
-      }
-    }
-  | (Global_var _, _) => (-1)
-  | (_, Global_var _) => 1
-  | (Seed_var, Seed_var) => 0
-  }
-and compare pv1 pv2 => {
-  let n = Mangled.compare pv1.pv_name pv2.pv_name;
-  if (n != 0) {
-    n
-  } else {
-    pvar_kind_compare pv1.pv_kind pv2.pv_kind
-  }
-};
+and t = {pv_name: Mangled.t, pv_kind: pvar_kind} [@@deriving compare];
 
 let equal pvar1 pvar2 => compare pvar1 pvar2 == 0;
 

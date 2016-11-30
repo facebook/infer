@@ -23,11 +23,11 @@ let module F = Format;
         3) global variables
         4) seed variables, used to store the initial value of formal parameters
     */
-type t;
+type t [@@deriving compare];
 
 
-/** Compare two pvar's */
-let compare: t => t => int;
+/** Equality for pvar's */
+let equal: t => t => bool;
 
 
 /** Dump a program variable. */
@@ -36,10 +36,6 @@ let d: t => unit;
 
 /** Dump a list of program variables. */
 let d_list: list t => unit;
-
-
-/** Equality for pvar's */
-let equal: t => t => bool;
 
 
 /** Get the name component of a program variable. */
