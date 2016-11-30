@@ -43,9 +43,11 @@ module ErrDataSet = (* set err_data with no repeated loc *)
   end)
 
 (** Hash table to implement error logs *)
-module ErrLogHash = Hashtbl.Make (struct
+module ErrLogHash = struct
+  module Key = struct
 
     type t = Exceptions.err_kind * bool * Localise.t * Localise.error_desc * string
+    [@@deriving compare]
 
     let hash (ekind, in_footprint, err_name, desc, _) =
       Hashtbl.hash (ekind, in_footprint, err_name, Localise.error_desc_hash desc)
@@ -56,12 +58,18 @@ module ErrLogHash = Hashtbl.Make (struct
       (ekind1, in_footprint1, err_name1) = (ekind2, in_footprint2, err_name2) &&
       Localise.error_desc_equal desc1 desc2
 
-  end)
+  end
+  include Hashtbl.Make (Key)
+end
 
 (** Type of the error log, to be reset once per function.
     Map err_kind, fotprint / re - execution flag, error name,
     error description, severity, to set of err_data. *)
 type t = ErrDataSet.t ErrLogHash.t
+
+let compare x y =
+  let bindings x = ErrLogHash.fold (fun k d l -> (k, d) :: l) x [] in
+  [%compare: (ErrLogHash.Key.t * ErrDataSet.t) list] (bindings x) (bindings y)
 
 (** Empty error log *)
 let empty () = ErrLogHash.create 13

@@ -1,128 +1,128 @@
 /* @generated */
 digraph iCFG {
-"foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()(_ZZ3foovENK3$_1clEv).985fe31737ac21d3fc164c617feba422_3" [label="3:  Return Stmt \n   *&return:int=(1 / 0) [line 19]\n " shape="box"]
+"bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_1" [label="1: Start bar\nFormals: \nLocals:  func:class bar::lambda_shared_lambda_lambda1.cpp:11:15 0$?%__sil_tmpSIL_materialize_temp__n$1:class bar::lambda_shared_lambda_lambda1.cpp:11:15 \n   DECLARE_LOCALS(&return,&func,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 10]\n " color=yellow style=filled]
 	
 
-	 "foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()(_ZZ3foovENK3$_1clEv).985fe31737ac21d3fc164c617feba422_3" -> "foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()(_ZZ3foovENK3$_1clEv).985fe31737ac21d3fc164c617feba422_2" ;
-"foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()(_ZZ3foovENK3$_1clEv).985fe31737ac21d3fc164c617feba422_2" [label="2: Exit foo::lambda_shared_lambda_lambda1.cpp:19:17_operator() \n  " color=yellow style=filled]
+	 "bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_1" -> "bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_4" ;
+"bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_2" [label="2: Exit bar \n  " color=yellow style=filled]
+	
+
+"bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_3" [label="3:  Return Stmt \n   n$0=_fun_bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(&func:class bar::lambda_shared_lambda_lambda1.cpp:11:15&) [line 15]\n  *&return:int=(7 / n$0) [line 15]\n " shape="box"]
+	
+
+	 "bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_3" -> "bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_2" ;
+"bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_4" [label="4:  DeclStmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$1:class bar::lambda_shared_lambda_lambda1.cpp:11:15=(_fun_bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()) [line 11]\n  _fun_bar::lambda_shared_lambda_lambda1.cpp:11:15_(&func:class bar::lambda_shared_lambda_lambda1.cpp:11:15*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class bar::lambda_shared_lambda_lambda1.cpp:11:15&) [line 11]\n " shape="box"]
+	
+
+	 "bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_4" -> "bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_3" ;
+"foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_1" [label="1: Start foo\nFormals: \nLocals:  y:class foo::lambda_shared_lambda_lambda1.cpp:20:12 0$?%__sil_tmpSIL_materialize_temp__n$1:class foo::lambda_shared_lambda_lambda1.cpp:20:12 unused:class foo::lambda_shared_lambda_lambda1.cpp:19:17 0$?%__sil_tmpSIL_materialize_temp__n$2:class foo::lambda_shared_lambda_lambda1.cpp:19:17 \n   DECLARE_LOCALS(&return,&y,&0$?%__sil_tmpSIL_materialize_temp__n$1,&unused,&0$?%__sil_tmpSIL_materialize_temp__n$2); [line 18]\n " color=yellow style=filled]
+	
+
+	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_1" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_5" ;
+"foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_2" [label="2: Exit foo \n  " color=yellow style=filled]
+	
+
+"foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_3" [label="3:  Return Stmt \n   n$0=_fun_foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(&y:class foo::lambda_shared_lambda_lambda1.cpp:20:12&,3:int) [line 21]\n  *&return:int=(5 / (4 - n$0)) [line 21]\n " shape="box"]
+	
+
+	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_3" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_2" ;
+"foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_4" [label="4:  DeclStmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$1:class foo::lambda_shared_lambda_lambda1.cpp:20:12=(_fun_foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()) [line 20]\n  _fun_foo::lambda_shared_lambda_lambda1.cpp:20:12_(&y:class foo::lambda_shared_lambda_lambda1.cpp:20:12*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class foo::lambda_shared_lambda_lambda1.cpp:20:12&) [line 20]\n " shape="box"]
+	
+
+	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_4" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_3" ;
+"foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_5" [label="5:  DeclStmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$2:class foo::lambda_shared_lambda_lambda1.cpp:19:17=(_fun_foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()) [line 19]\n  _fun_foo::lambda_shared_lambda_lambda1.cpp:19:17_(&unused:class foo::lambda_shared_lambda_lambda1.cpp:19:17*,&0$?%__sil_tmpSIL_materialize_temp__n$2:class foo::lambda_shared_lambda_lambda1.cpp:19:17&) [line 19]\n " shape="box"]
+	
+
+	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_5" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_4" ;
+"fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_1" [label="1: Start fooOK\nFormals: \nLocals:  y:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12 0$?%__sil_tmpSIL_materialize_temp__n$1:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12 \n   DECLARE_LOCALS(&return,&y,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 24]\n " color=yellow style=filled]
+	
+
+	 "fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_1" -> "fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_4" ;
+"fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_2" [label="2: Exit fooOK \n  " color=yellow style=filled]
+	
+
+"fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_3" [label="3:  Return Stmt \n   n$0=_fun_fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()(&y:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12&,3:int) [line 27]\n  *&return:int=(5 / (4 - n$0)) [line 27]\n " shape="box"]
+	
+
+	 "fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_3" -> "fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_2" ;
+"fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_4" [label="4:  DeclStmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$1:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12=(_fun_fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()) [line 26]\n  _fun_fooOK::lambda_shared_lambda_lambda1.cpp:26:12_(&y:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12&) [line 26]\n " shape="box"]
+	
+
+	 "fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_4" -> "fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_3" ;
+"bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_1" [label="1: Start bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()\nFormals:  this:class bar::lambda_shared_lambda_lambda1.cpp:11:15*\nLocals:  i:int \n   DECLARE_LOCALS(&return,&i); [line 11]\n " color=yellow style=filled]
+	
+
+	 "bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_1" -> "bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_4" ;
+"bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_2" [label="2: Exit bar::lambda_shared_lambda_lambda1.cpp:11:15_operator() \n  " color=yellow style=filled]
+	
+
+"bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_3" [label="3:  Return Stmt \n   n$0=*&i:int [line 13]\n  *&return:int=n$0 [line 13]\n " shape="box"]
+	
+
+	 "bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_3" -> "bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_2" ;
+"bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_4" [label="4:  DeclStmt \n   *&i:int=0 [line 12]\n " shape="box"]
+	
+
+	 "bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_4" -> "bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_3" ;
+"bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_}.6a9e9fc47abfe378dd0d5c66eaa11486_1" [label="1: Start bar::lambda_shared_lambda_lambda1.cpp:11:15_\nFormals:  this:class bar::lambda_shared_lambda_lambda1.cpp:11:15* __param_0:class bar::lambda_shared_lambda_lambda1.cpp:11:15&\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
+	
+
+	 "bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_}.6a9e9fc47abfe378dd0d5c66eaa11486_1" -> "bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_}.6a9e9fc47abfe378dd0d5c66eaa11486_2" ;
+"bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_}.6a9e9fc47abfe378dd0d5c66eaa11486_2" [label="2: Exit bar::lambda_shared_lambda_lambda1.cpp:11:15_ \n  " color=yellow style=filled]
 	
 
 "foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()(_ZZ3foovENK3$_1clEv).985fe31737ac21d3fc164c617feba422_1" [label="1: Start foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()\nFormals:  this:class foo::lambda_shared_lambda_lambda1.cpp:19:17*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
 	
 
 	 "foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()(_ZZ3foovENK3$_1clEv).985fe31737ac21d3fc164c617feba422_1" -> "foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()(_ZZ3foovENK3$_1clEv).985fe31737ac21d3fc164c617feba422_3" ;
-"foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_3" [label="3:  Return Stmt \n   n$0=*&i:int [line 20]\n  *&i:int=(n$0 + 1) [line 20]\n  n$1=*&i:int [line 20]\n  *&return:int=n$1 [line 20]\n " shape="box"]
+"foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()(_ZZ3foovENK3$_1clEv).985fe31737ac21d3fc164c617feba422_2" [label="2: Exit foo::lambda_shared_lambda_lambda1.cpp:19:17_operator() \n  " color=yellow style=filled]
 	
 
-	 "foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_3" -> "foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_2" ;
-"foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_2" [label="2: Exit foo::lambda_shared_lambda_lambda1.cpp:20:12_operator() \n  " color=yellow style=filled]
+"foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()(_ZZ3foovENK3$_1clEv).985fe31737ac21d3fc164c617feba422_3" [label="3:  Return Stmt \n   *&return:int=(1 / 0) [line 19]\n " shape="box"]
 	
 
-"foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_1" [label="1: Start foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()\nFormals:  this:class foo::lambda_shared_lambda_lambda1.cpp:20:12* i:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+	 "foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()(_ZZ3foovENK3$_1clEv).985fe31737ac21d3fc164c617feba422_3" -> "foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()(_ZZ3foovENK3$_1clEv).985fe31737ac21d3fc164c617feba422_2" ;
+"foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_}.5561ce7b5dc8b401fdf94ad612389a2a_1" [label="1: Start foo::lambda_shared_lambda_lambda1.cpp:19:17_\nFormals:  this:class foo::lambda_shared_lambda_lambda1.cpp:19:17* __param_0:class foo::lambda_shared_lambda_lambda1.cpp:19:17&\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
 	
 
-	 "foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_1" -> "foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_3" ;
-"foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_5" [label="5:  DeclStmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$2:class foo::lambda_shared_lambda_lambda1.cpp:19:17=(_fun_foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()) [line 19]\n  _fun_foo::lambda_shared_lambda_lambda1.cpp:19:17_(&unused:class foo::lambda_shared_lambda_lambda1.cpp:19:17*,&0$?%__sil_tmpSIL_materialize_temp__n$2:class foo::lambda_shared_lambda_lambda1.cpp:19:17&) [line 19]\n " shape="box"]
-	
-
-	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_5" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_4" ;
-"foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_4" [label="4:  DeclStmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$1:class foo::lambda_shared_lambda_lambda1.cpp:20:12=(_fun_foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()) [line 20]\n  _fun_foo::lambda_shared_lambda_lambda1.cpp:20:12_(&y:class foo::lambda_shared_lambda_lambda1.cpp:20:12*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class foo::lambda_shared_lambda_lambda1.cpp:20:12&) [line 20]\n " shape="box"]
-	
-
-	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_4" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_3" ;
-"foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_3" [label="3:  Return Stmt \n   n$0=_fun_foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(&y:class foo::lambda_shared_lambda_lambda1.cpp:20:12&,3:int) [line 21]\n  *&return:int=(5 / (4 - n$0)) [line 21]\n " shape="box"]
-	
-
-	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_3" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_2" ;
-"foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_2" [label="2: Exit foo \n  " color=yellow style=filled]
-	
-
-"foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_1" [label="1: Start foo\nFormals: \nLocals:  y:class foo::lambda_shared_lambda_lambda1.cpp:20:12 0$?%__sil_tmpSIL_materialize_temp__n$1:class foo::lambda_shared_lambda_lambda1.cpp:20:12 unused:class foo::lambda_shared_lambda_lambda1.cpp:19:17 0$?%__sil_tmpSIL_materialize_temp__n$2:class foo::lambda_shared_lambda_lambda1.cpp:19:17 \n   DECLARE_LOCALS(&return,&y,&0$?%__sil_tmpSIL_materialize_temp__n$1,&unused,&0$?%__sil_tmpSIL_materialize_temp__n$2); [line 18]\n " color=yellow style=filled]
-	
-
-	 "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_1" -> "foo{d41d8cd98f00b204e9800998ecf8427e_Z3foov}.cec094ac2a03268f9ce740007750b9a1_5" ;
-"foo::lambda_shared_lambda_lambda1.cpp:20:12_{_ZZ3foovEN3$_2C1EOS_}.0e1564c2cc993b8beca9a7d9955e04a5_2" [label="2: Exit foo::lambda_shared_lambda_lambda1.cpp:20:12_ \n  " color=yellow style=filled]
+	 "foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_}.5561ce7b5dc8b401fdf94ad612389a2a_1" -> "foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_}.5561ce7b5dc8b401fdf94ad612389a2a_2" ;
+"foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_}.5561ce7b5dc8b401fdf94ad612389a2a_2" [label="2: Exit foo::lambda_shared_lambda_lambda1.cpp:19:17_ \n  " color=yellow style=filled]
 	
 
 "foo::lambda_shared_lambda_lambda1.cpp:20:12_{_ZZ3foovEN3$_2C1EOS_}.0e1564c2cc993b8beca9a7d9955e04a5_1" [label="1: Start foo::lambda_shared_lambda_lambda1.cpp:20:12_\nFormals:  this:class foo::lambda_shared_lambda_lambda1.cpp:20:12* __param_0:class foo::lambda_shared_lambda_lambda1.cpp:20:12&\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
 	 "foo::lambda_shared_lambda_lambda1.cpp:20:12_{_ZZ3foovEN3$_2C1EOS_}.0e1564c2cc993b8beca9a7d9955e04a5_1" -> "foo::lambda_shared_lambda_lambda1.cpp:20:12_{_ZZ3foovEN3$_2C1EOS_}.0e1564c2cc993b8beca9a7d9955e04a5_2" ;
-"bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_}.6a9e9fc47abfe378dd0d5c66eaa11486_2" [label="2: Exit bar::lambda_shared_lambda_lambda1.cpp:11:15_ \n  " color=yellow style=filled]
+"foo::lambda_shared_lambda_lambda1.cpp:20:12_{_ZZ3foovEN3$_2C1EOS_}.0e1564c2cc993b8beca9a7d9955e04a5_2" [label="2: Exit foo::lambda_shared_lambda_lambda1.cpp:20:12_ \n  " color=yellow style=filled]
 	
 
-"bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_}.6a9e9fc47abfe378dd0d5c66eaa11486_1" [label="1: Start bar::lambda_shared_lambda_lambda1.cpp:11:15_\nFormals:  this:class bar::lambda_shared_lambda_lambda1.cpp:11:15* __param_0:class bar::lambda_shared_lambda_lambda1.cpp:11:15&\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
+"foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_1" [label="1: Start foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()\nFormals:  this:class foo::lambda_shared_lambda_lambda1.cpp:20:12* i:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
-	 "bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_}.6a9e9fc47abfe378dd0d5c66eaa11486_1" -> "bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_}.6a9e9fc47abfe378dd0d5c66eaa11486_2" ;
-"fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_4" [label="4:  DeclStmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$1:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12=(_fun_fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()) [line 26]\n  _fun_fooOK::lambda_shared_lambda_lambda1.cpp:26:12_(&y:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12&) [line 26]\n " shape="box"]
+	 "foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_1" -> "foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_3" ;
+"foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_2" [label="2: Exit foo::lambda_shared_lambda_lambda1.cpp:20:12_operator() \n  " color=yellow style=filled]
 	
 
-	 "fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_4" -> "fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_3" ;
-"fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_3" [label="3:  Return Stmt \n   n$0=_fun_fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()(&y:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12&,3:int) [line 27]\n  *&return:int=(5 / (4 - n$0)) [line 27]\n " shape="box"]
+"foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_3" [label="3:  Return Stmt \n   n$0=*&i:int [line 20]\n  *&i:int=(n$0 + 1) [line 20]\n  n$1=*&i:int [line 20]\n  *&return:int=n$1 [line 20]\n " shape="box"]
 	
 
-	 "fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_3" -> "fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_2" ;
-"fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_2" [label="2: Exit fooOK \n  " color=yellow style=filled]
-	
-
-"fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_1" [label="1: Start fooOK\nFormals: \nLocals:  y:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12 0$?%__sil_tmpSIL_materialize_temp__n$1:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12 \n   DECLARE_LOCALS(&return,&y,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 24]\n " color=yellow style=filled]
-	
-
-	 "fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_1" -> "fooOK{d41d8cd98f00b204e9800998ecf8427e_Z5fooOKv}.47d0d2e9b234595bd6caff2a4331e134_4" ;
-"fooOK::lambda_shared_lambda_lambda1.cpp:26:12_{_ZZ5fooOKvEN3$_3C1EOS_}.53c636602c55e8b65c0551285317a32e_2" [label="2: Exit fooOK::lambda_shared_lambda_lambda1.cpp:26:12_ \n  " color=yellow style=filled]
-	
-
+	 "foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_3" -> "foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_2" ;
 "fooOK::lambda_shared_lambda_lambda1.cpp:26:12_{_ZZ5fooOKvEN3$_3C1EOS_}.53c636602c55e8b65c0551285317a32e_1" [label="1: Start fooOK::lambda_shared_lambda_lambda1.cpp:26:12_\nFormals:  this:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12* __param_0:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12&\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
 	
 
 	 "fooOK::lambda_shared_lambda_lambda1.cpp:26:12_{_ZZ5fooOKvEN3$_3C1EOS_}.53c636602c55e8b65c0551285317a32e_1" -> "fooOK::lambda_shared_lambda_lambda1.cpp:26:12_{_ZZ5fooOKvEN3$_3C1EOS_}.53c636602c55e8b65c0551285317a32e_2" ;
-"fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()(_ZZ5fooOKvENK3$_3clEi).28114dfeeb5c9cb201f2f32c650e906c_3" [label="3:  Return Stmt \n   n$0=*&i:int [line 26]\n  *&i:int=(n$0 + 1) [line 26]\n  *&return:int=n$0 [line 26]\n " shape="box"]
-	
-
-	 "fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()(_ZZ5fooOKvENK3$_3clEi).28114dfeeb5c9cb201f2f32c650e906c_3" -> "fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()(_ZZ5fooOKvENK3$_3clEi).28114dfeeb5c9cb201f2f32c650e906c_2" ;
-"fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()(_ZZ5fooOKvENK3$_3clEi).28114dfeeb5c9cb201f2f32c650e906c_2" [label="2: Exit fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator() \n  " color=yellow style=filled]
+"fooOK::lambda_shared_lambda_lambda1.cpp:26:12_{_ZZ5fooOKvEN3$_3C1EOS_}.53c636602c55e8b65c0551285317a32e_2" [label="2: Exit fooOK::lambda_shared_lambda_lambda1.cpp:26:12_ \n  " color=yellow style=filled]
 	
 
 "fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()(_ZZ5fooOKvENK3$_3clEi).28114dfeeb5c9cb201f2f32c650e906c_1" [label="1: Start fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()\nFormals:  this:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12* i:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
 	
 
 	 "fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()(_ZZ5fooOKvENK3$_3clEi).28114dfeeb5c9cb201f2f32c650e906c_1" -> "fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()(_ZZ5fooOKvENK3$_3clEi).28114dfeeb5c9cb201f2f32c650e906c_3" ;
-"foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_}.5561ce7b5dc8b401fdf94ad612389a2a_2" [label="2: Exit foo::lambda_shared_lambda_lambda1.cpp:19:17_ \n  " color=yellow style=filled]
+"fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()(_ZZ5fooOKvENK3$_3clEi).28114dfeeb5c9cb201f2f32c650e906c_2" [label="2: Exit fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator() \n  " color=yellow style=filled]
 	
 
-"foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_}.5561ce7b5dc8b401fdf94ad612389a2a_1" [label="1: Start foo::lambda_shared_lambda_lambda1.cpp:19:17_\nFormals:  this:class foo::lambda_shared_lambda_lambda1.cpp:19:17* __param_0:class foo::lambda_shared_lambda_lambda1.cpp:19:17&\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
+"fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()(_ZZ5fooOKvENK3$_3clEi).28114dfeeb5c9cb201f2f32c650e906c_3" [label="3:  Return Stmt \n   n$0=*&i:int [line 26]\n  *&i:int=(n$0 + 1) [line 26]\n  *&return:int=n$0 [line 26]\n " shape="box"]
 	
 
-	 "foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_}.5561ce7b5dc8b401fdf94ad612389a2a_1" -> "foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_}.5561ce7b5dc8b401fdf94ad612389a2a_2" ;
-"bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_4" [label="4:  DeclStmt \n   *&i:int=0 [line 12]\n " shape="box"]
-	
-
-	 "bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_4" -> "bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_3" ;
-"bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_3" [label="3:  Return Stmt \n   n$0=*&i:int [line 13]\n  *&return:int=n$0 [line 13]\n " shape="box"]
-	
-
-	 "bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_3" -> "bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_2" ;
-"bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_2" [label="2: Exit bar::lambda_shared_lambda_lambda1.cpp:11:15_operator() \n  " color=yellow style=filled]
-	
-
-"bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_1" [label="1: Start bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()\nFormals:  this:class bar::lambda_shared_lambda_lambda1.cpp:11:15*\nLocals:  i:int \n   DECLARE_LOCALS(&return,&i); [line 11]\n " color=yellow style=filled]
-	
-
-	 "bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_1" -> "bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_4" ;
-"bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_4" [label="4:  DeclStmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$1:class bar::lambda_shared_lambda_lambda1.cpp:11:15=(_fun_bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()) [line 11]\n  _fun_bar::lambda_shared_lambda_lambda1.cpp:11:15_(&func:class bar::lambda_shared_lambda_lambda1.cpp:11:15*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class bar::lambda_shared_lambda_lambda1.cpp:11:15&) [line 11]\n " shape="box"]
-	
-
-	 "bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_4" -> "bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_3" ;
-"bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_3" [label="3:  Return Stmt \n   n$0=_fun_bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(&func:class bar::lambda_shared_lambda_lambda1.cpp:11:15&) [line 15]\n  *&return:int=(7 / n$0) [line 15]\n " shape="box"]
-	
-
-	 "bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_3" -> "bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_2" ;
-"bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_2" [label="2: Exit bar \n  " color=yellow style=filled]
-	
-
-"bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_1" [label="1: Start bar\nFormals: \nLocals:  func:class bar::lambda_shared_lambda_lambda1.cpp:11:15 0$?%__sil_tmpSIL_materialize_temp__n$1:class bar::lambda_shared_lambda_lambda1.cpp:11:15 \n   DECLARE_LOCALS(&return,&func,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 10]\n " color=yellow style=filled]
-	
-
-	 "bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_1" -> "bar{d41d8cd98f00b204e9800998ecf8427e_Z3barv}.fd8b7c2b286499dc294bdb8f8b246862_4" ;
+	 "fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()(_ZZ5fooOKvENK3$_3clEi).28114dfeeb5c9cb201f2f32c650e906c_3" -> "fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()(_ZZ5fooOKvENK3$_3clEi).28114dfeeb5c9cb201f2f32c650e906c_2" ;
 }

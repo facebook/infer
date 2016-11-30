@@ -1,26 +1,26 @@
 /* @generated */
 digraph iCFG {
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_6" [label="6:  DeclStmt \n   *&x:int=2 [line 11]\n " shape="box"]
-	
-
-	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_6" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_5" ;
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_5" [label="5:  DeclStmt \n   n$2=_fun___new(sizeof(int):unsigned long) [line 12]\n  *&i:int*=n$2 [line 12]\n " shape="box"]
-	
-
-	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_5" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_4" ;
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_4" [label="4:  CXXNewExpr \n   n$1=_fun___new(sizeof(int):unsigned long) [line 13]\n " shape="box"]
-	
-
-	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_4" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" ;
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" [label="3:  Call delete \n   n$0=*&i:int* [line 14]\n  _fun___delete(n$0:int*) [line 14]\n " shape="box"]
-	
-
-	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" ;
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" [label="2: Exit test \n  " color=yellow style=filled]
-	
-
 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_1" [label="1: Start test\nFormals: \nLocals:  i:int* x:int \n   DECLARE_LOCALS(&return,&i,&x); [line 10]\n " color=yellow style=filled]
 	
 
 	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_1" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_6" ;
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" [label="2: Exit test \n  " color=yellow style=filled]
+	
+
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" [label="3:  Call delete \n   n$0=*&i:int* [line 14]\n  _fun___delete(n$0:int*) [line 14]\n " shape="box"]
+	
+
+	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" ;
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_4" [label="4:  CXXNewExpr \n   n$1=_fun___new(sizeof(int):unsigned long) [line 13]\n " shape="box"]
+	
+
+	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_4" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" ;
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_5" [label="5:  DeclStmt \n   n$2=_fun___new(sizeof(int):unsigned long) [line 12]\n  *&i:int*=n$2 [line 12]\n " shape="box"]
+	
+
+	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_5" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_4" ;
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_6" [label="6:  DeclStmt \n   *&x:int=2 [line 11]\n " shape="box"]
+	
+
+	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_6" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_5" ;
 }

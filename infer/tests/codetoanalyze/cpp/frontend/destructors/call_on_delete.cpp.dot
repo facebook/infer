@@ -1,32 +1,32 @@
 /* @generated */
 digraph iCFG {
-"deleteInt{d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi}.647508014cd09d4d2e192f8294614963_3" [label="3:  Call delete \n   n$0=*&x:int* [line 16]\n  _fun___delete(n$0:int*) [line 16]\n " shape="box"]
+"X_~X(_ZN1XD0Ev).79046c7c7695389a6748314fdf070e54_1" [label="1: Start X_~X\nFormals:  this:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
 	
 
-	 "deleteInt{d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi}.647508014cd09d4d2e192f8294614963_3" -> "deleteInt{d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi}.647508014cd09d4d2e192f8294614963_2" ;
-"deleteInt{d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi}.647508014cd09d4d2e192f8294614963_2" [label="2: Exit deleteInt \n  " color=yellow style=filled]
+	 "X_~X(_ZN1XD0Ev).79046c7c7695389a6748314fdf070e54_1" -> "X_~X(_ZN1XD0Ev).79046c7c7695389a6748314fdf070e54_2" ;
+"X_~X(_ZN1XD0Ev).79046c7c7695389a6748314fdf070e54_2" [label="2: Exit X_~X \n  " color=yellow style=filled]
 	
 
 "deleteInt{d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi}.647508014cd09d4d2e192f8294614963_1" [label="1: Start deleteInt\nFormals:  x:int*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
 	 "deleteInt{d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi}.647508014cd09d4d2e192f8294614963_1" -> "deleteInt{d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi}.647508014cd09d4d2e192f8294614963_3" ;
-"X_~X(_ZN1XD0Ev).79046c7c7695389a6748314fdf070e54_2" [label="2: Exit X_~X \n  " color=yellow style=filled]
+"deleteInt{d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi}.647508014cd09d4d2e192f8294614963_2" [label="2: Exit deleteInt \n  " color=yellow style=filled]
 	
 
-"X_~X(_ZN1XD0Ev).79046c7c7695389a6748314fdf070e54_1" [label="1: Start X_~X\nFormals:  this:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
+"deleteInt{d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi}.647508014cd09d4d2e192f8294614963_3" [label="3:  Call delete \n   n$0=*&x:int* [line 16]\n  _fun___delete(n$0:int*) [line 16]\n " shape="box"]
 	
 
-	 "X_~X(_ZN1XD0Ev).79046c7c7695389a6748314fdf070e54_1" -> "X_~X(_ZN1XD0Ev).79046c7c7695389a6748314fdf070e54_2" ;
-"deleteX{d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X}.e65990f4969cec963a8cf25f2a7e0fa6_3" [label="3:  Call delete \n   n$0=*&x:class X* [line 14]\n  _fun___delete(n$0:class X*) [line 14]\n " shape="box"]
-	
-
-	 "deleteX{d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X}.e65990f4969cec963a8cf25f2a7e0fa6_3" -> "deleteX{d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X}.e65990f4969cec963a8cf25f2a7e0fa6_2" ;
-"deleteX{d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X}.e65990f4969cec963a8cf25f2a7e0fa6_2" [label="2: Exit deleteX \n  " color=yellow style=filled]
-	
-
+	 "deleteInt{d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi}.647508014cd09d4d2e192f8294614963_3" -> "deleteInt{d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi}.647508014cd09d4d2e192f8294614963_2" ;
 "deleteX{d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X}.e65990f4969cec963a8cf25f2a7e0fa6_1" [label="1: Start deleteX\nFormals:  x:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
 	
 
 	 "deleteX{d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X}.e65990f4969cec963a8cf25f2a7e0fa6_1" -> "deleteX{d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X}.e65990f4969cec963a8cf25f2a7e0fa6_3" ;
+"deleteX{d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X}.e65990f4969cec963a8cf25f2a7e0fa6_2" [label="2: Exit deleteX \n  " color=yellow style=filled]
+	
+
+"deleteX{d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X}.e65990f4969cec963a8cf25f2a7e0fa6_3" [label="3:  Call delete \n   n$0=*&x:class X* [line 14]\n  _fun___delete(n$0:class X*) [line 14]\n " shape="box"]
+	
+
+	 "deleteX{d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X}.e65990f4969cec963a8cf25f2a7e0fa6_3" -> "deleteX{d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X}.e65990f4969cec963a8cf25f2a7e0fa6_2" ;
 }

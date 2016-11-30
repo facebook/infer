@@ -147,7 +147,7 @@ let module NodeSet: Set.S with type elt = Node.t;
 /** procedure descriptions */
 
 /** proc description */
-type t;
+type t [@@deriving compare];
 
 
 /** append a list of new local variables to the existing list of local variables */

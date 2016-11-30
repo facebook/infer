@@ -1,22 +1,22 @@
 /* @generated */
 digraph iCFG {
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_5" [label="5:  DeclStmt \n   *&v:int=3 [line 11]\n " shape="box"]
-	
-
-	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_5" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_4" ;
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_4" [label="4:  DeclStmt \n   *&r:int&=&v [line 12]\n " shape="box"]
-	
-
-	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_4" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" ;
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" [label="3:  DeclStmt \n   *&p:int*=&v [line 13]\n " shape="box"]
-	
-
-	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" ;
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" [label="2: Exit test \n  " color=yellow style=filled]
-	
-
 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_1" [label="1: Start test\nFormals: \nLocals:  p:int* r:int& v:int \n   DECLARE_LOCALS(&return,&p,&r,&v); [line 10]\n " color=yellow style=filled]
 	
 
 	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_1" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_5" ;
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" [label="2: Exit test \n  " color=yellow style=filled]
+	
+
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" [label="3:  DeclStmt \n   *&p:int*=&v [line 13]\n " shape="box"]
+	
+
+	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" ;
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_4" [label="4:  DeclStmt \n   *&r:int&=&v [line 12]\n " shape="box"]
+	
+
+	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_4" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" ;
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_5" [label="5:  DeclStmt \n   *&v:int=3 [line 11]\n " shape="box"]
+	
+
+	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_5" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_4" ;
 }

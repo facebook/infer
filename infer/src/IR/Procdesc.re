@@ -328,7 +328,8 @@ type t = {
   mutable nodes_num: int, /** number of nodes */
   mutable start_node: Node.t, /** start node of this procedure */
   mutable exit_node: Node.t /** exit node of ths procedure */
-};
+}
+[@@deriving compare];
 
 
 /** Only call from Cfg */

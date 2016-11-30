@@ -1,44 +1,44 @@
 /* @generated */
 digraph iCFG {
-"test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_4" [label="4:  Call _fun_A_fun \n   n$4=*&a_ptr:class A* [line 25]\n  _=*n$4:class A [line 25]\n  n$6=_fun_A_fun(n$4:class A*) [line 25]\n " shape="box"]
-	
-
-	 "test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_4" -> "test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_3" ;
-"test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_3" [label="3:  Call _fun_A::AIn_fun \n   n$0=*&a_ptr:class A* [line 26]\n  n$1=*n$0.in:class A::AIn* [line 26]\n  _=*n$1:class A::AIn [line 26]\n  n$3=_fun_A::AIn_fun(n$1:class A::AIn*) [line 26]\n " shape="box"]
-	
-
-	 "test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_3" -> "test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_2" ;
-"test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_2" [label="2: Exit test_call \n  " color=yellow style=filled]
-	
-
 "test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_1" [label="1: Start test_call\nFormals: \nLocals:  a_ptr:class A* \n   DECLARE_LOCALS(&return,&a_ptr); [line 23]\n " color=yellow style=filled]
 	
 
 	 "test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_1" -> "test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_4" ;
-"A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_4" [label="4:  DeclStmt \n   *&c:int=10 [line 18]\n " shape="box"]
+"test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_2" [label="2: Exit test_call \n  " color=yellow style=filled]
 	
 
-	 "A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_4" -> "A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_3" ;
-"A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_3" [label="3:  Return Stmt \n   n$0=*&c:int [line 19]\n  *&return:int=(n$0 + 1) [line 19]\n " shape="box"]
+"test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_3" [label="3:  Call _fun_A::AIn_fun \n   n$0=*&a_ptr:class A* [line 26]\n  n$1=*n$0.in:class A::AIn* [line 26]\n  _=*n$1:class A::AIn [line 26]\n  n$3=_fun_A::AIn_fun(n$1:class A::AIn*) [line 26]\n " shape="box"]
 	
 
-	 "A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_3" -> "A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_2" ;
-"A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_2" [label="2: Exit A_fun \n  " color=yellow style=filled]
+	 "test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_3" -> "test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_2" ;
+"test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_4" [label="4:  Call _fun_A_fun \n   n$4=*&a_ptr:class A* [line 25]\n  _=*n$4:class A [line 25]\n  n$6=_fun_A_fun(n$4:class A*) [line 25]\n " shape="box"]
 	
 
+	 "test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_4" -> "test_call{d41d8cd98f00b204e9800998ecf8427e_Z9test_callv}.617851b749bcf9d3ff8d24b6b3bb4fee_3" ;
 "A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_1" [label="1: Start A_fun\nFormals:  this:class A*\nLocals:  c:int \n   DECLARE_LOCALS(&return,&c); [line 17]\n " color=yellow style=filled]
 	
 
 	 "A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_1" -> "A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_4" ;
-"A::AIn_fun(_ZN1A3AIn3funEv).72e2fc9b2dd94a724697bd791589e12c_3" [label="3:  Return Stmt \n   *&return:int=1 [line 13]\n " shape="box"]
+"A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_2" [label="2: Exit A_fun \n  " color=yellow style=filled]
 	
 
-	 "A::AIn_fun(_ZN1A3AIn3funEv).72e2fc9b2dd94a724697bd791589e12c_3" -> "A::AIn_fun(_ZN1A3AIn3funEv).72e2fc9b2dd94a724697bd791589e12c_2" ;
-"A::AIn_fun(_ZN1A3AIn3funEv).72e2fc9b2dd94a724697bd791589e12c_2" [label="2: Exit A::AIn_fun \n  " color=yellow style=filled]
+"A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_3" [label="3:  Return Stmt \n   n$0=*&c:int [line 19]\n  *&return:int=(n$0 + 1) [line 19]\n " shape="box"]
 	
 
+	 "A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_3" -> "A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_2" ;
+"A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_4" [label="4:  DeclStmt \n   *&c:int=10 [line 18]\n " shape="box"]
+	
+
+	 "A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_4" -> "A_fun(_ZN1A3funEv).f7fa758d33d866ee76c4572b4c676157_3" ;
 "A::AIn_fun(_ZN1A3AIn3funEv).72e2fc9b2dd94a724697bd791589e12c_1" [label="1: Start A::AIn_fun\nFormals:  this:class A::AIn*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
 	
 
 	 "A::AIn_fun(_ZN1A3AIn3funEv).72e2fc9b2dd94a724697bd791589e12c_1" -> "A::AIn_fun(_ZN1A3AIn3funEv).72e2fc9b2dd94a724697bd791589e12c_3" ;
+"A::AIn_fun(_ZN1A3AIn3funEv).72e2fc9b2dd94a724697bd791589e12c_2" [label="2: Exit A::AIn_fun \n  " color=yellow style=filled]
+	
+
+"A::AIn_fun(_ZN1A3AIn3funEv).72e2fc9b2dd94a724697bd791589e12c_3" [label="3:  Return Stmt \n   *&return:int=1 [line 13]\n " shape="box"]
+	
+
+	 "A::AIn_fun(_ZN1A3AIn3funEv).72e2fc9b2dd94a724697bd791589e12c_3" -> "A::AIn_fun(_ZN1A3AIn3funEv).72e2fc9b2dd94a724697bd791589e12c_2" ;
 }

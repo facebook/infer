@@ -1,58 +1,58 @@
 /* @generated */
 digraph iCFG {
-"main.fad58de7366495db4650cfefac2fcd61_14" [label="14:  DeclStmt \n   *&aWeakRef:class A__weak *=0 [line 22]\n " shape="box"]
-	
-
-	 "main.fad58de7366495db4650cfefac2fcd61_14" -> "main.fad58de7366495db4650cfefac2fcd61_13" ;
-"main.fad58de7366495db4650cfefac2fcd61_13" [label="13:  DeclStmt \n   _fun___objc_retain(0:class A*) [line 23]\n  *&aStrongRef:class A*=0 [line 23]\n " shape="box"]
-	
-
-	 "main.fad58de7366495db4650cfefac2fcd61_13" -> "main.fad58de7366495db4650cfefac2fcd61_12" ;
-"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   *&anUnsafeUnretRef:class A__unsafe_unretained *=0 [line 24]\n " shape="box"]
-	
-
-	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;
-"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  DeclStmt \n   _fun___objc_retain(0:class A__autoreleasing *) [line 25]\n  _fun___set_autorelease_attribute(0:class A__autoreleasing *) [line 25]\n  *&anAutoRelRef:class A__autoreleasing *=0 [line 25]\n " shape="box"]
-	
-
-	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
-"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  DeclStmt \n   _fun___objc_retain(0:class A*) [line 26]\n  *&aStdRef:class A*=0 [line 26]\n " shape="box"]
-	
-
-	 "main.fad58de7366495db4650cfefac2fcd61_10" -> "main.fad58de7366495db4650cfefac2fcd61_9" ;
-"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  BinaryOperatorStmt: Assign \n   n$9=_fun___objc_alloc_no_fail(sizeof(class A):unsigned long) [line 29]\n  *&aStrongRef:class A*=n$9 [line 29]\n " shape="box"]
-	
-
-	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
-"main.fad58de7366495db4650cfefac2fcd61_8" [label="8:  BinaryOperatorStmt: Assign \n   n$7=*&aStrongRef:class A* [line 31]\n  _fun___objc_retain(n$7:class A*) [line 31]\n  n$8=*&aStdRef:class A* [line 31]\n  *&aStdRef:class A*=n$7 [line 31]\n  _fun___objc_release(n$8:class A*) [line 31]\n " shape="box"]
-	
-
-	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
-"main.fad58de7366495db4650cfefac2fcd61_7" [label="7:  BinaryOperatorStmt: Assign \n   _fun___objc_retain(0:class A*) [line 33]\n  n$6=*&aStrongRef:class A* [line 33]\n  *&aStrongRef:class A*=0 [line 33]\n  _fun___objc_release(n$6:class A*) [line 33]\n " shape="box"]
-	
-
-	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  BinaryOperatorStmt: Assign \n   n$4=*&aStdRef:class A* [line 35]\n  _fun___objc_retain(n$4:class A*) [line 35]\n  n$5=*&aWeakRef:class A* [line 35]\n  *&aWeakRef:class A*=n$4 [line 35]\n  _fun___objc_release(n$5:class A*) [line 35]\n " shape="box"]
-	
-
-	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&aStdRef:class A* [line 37]\n  _fun___objc_retain(n$2:class A*) [line 37]\n  n$3=*&anAutoRelRef:class A* [line 37]\n  *&anAutoRelRef:class A*=n$2 [line 37]\n  _fun___objc_release(n$3:class A*) [line 37]\n " shape="box"]
-	
-
-	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  BinaryOperatorStmt: Assign \n   n$0=*&aStdRef:class A* [line 39]\n  _fun___objc_retain(n$0:class A*) [line 39]\n  n$1=*&anUnsafeUnretRef:class A* [line 39]\n  *&anUnsafeUnretRef:class A*=n$0 [line 39]\n  _fun___objc_release(n$1:class A*) [line 39]\n " shape="box"]
-	
-
-	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 42]\n " shape="box"]
-	
-
-	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
-	
-
 "main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  aStdRef:class A* anAutoRelRef:class A__autoreleasing * anUnsafeUnretRef:class A__unsafe_unretained * aStrongRef:class A* aWeakRef:class A__weak * \n   DECLARE_LOCALS(&return,&aStdRef,&anAutoRelRef,&anUnsafeUnretRef,&aStrongRef,&aWeakRef); [line 20]\n " color=yellow style=filled]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_14" ;
+"main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
+	
+
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 42]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  BinaryOperatorStmt: Assign \n   n$0=*&aStdRef:class A* [line 39]\n  _fun___objc_retain(n$0:class A*) [line 39]\n  n$1=*&anUnsafeUnretRef:class A* [line 39]\n  *&anUnsafeUnretRef:class A*=n$0 [line 39]\n  _fun___objc_release(n$1:class A*) [line 39]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&aStdRef:class A* [line 37]\n  _fun___objc_retain(n$2:class A*) [line 37]\n  n$3=*&anAutoRelRef:class A* [line 37]\n  *&anAutoRelRef:class A*=n$2 [line 37]\n  _fun___objc_release(n$3:class A*) [line 37]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  BinaryOperatorStmt: Assign \n   n$4=*&aStdRef:class A* [line 35]\n  _fun___objc_retain(n$4:class A*) [line 35]\n  n$5=*&aWeakRef:class A* [line 35]\n  *&aWeakRef:class A*=n$4 [line 35]\n  _fun___objc_release(n$5:class A*) [line 35]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
+"main.fad58de7366495db4650cfefac2fcd61_7" [label="7:  BinaryOperatorStmt: Assign \n   _fun___objc_retain(0:class A*) [line 33]\n  n$6=*&aStrongRef:class A* [line 33]\n  *&aStrongRef:class A*=0 [line 33]\n  _fun___objc_release(n$6:class A*) [line 33]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
+"main.fad58de7366495db4650cfefac2fcd61_8" [label="8:  BinaryOperatorStmt: Assign \n   n$7=*&aStrongRef:class A* [line 31]\n  _fun___objc_retain(n$7:class A*) [line 31]\n  n$8=*&aStdRef:class A* [line 31]\n  *&aStdRef:class A*=n$7 [line 31]\n  _fun___objc_release(n$8:class A*) [line 31]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
+"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  BinaryOperatorStmt: Assign \n   n$9=_fun___objc_alloc_no_fail(sizeof(class A):unsigned long) [line 29]\n  *&aStrongRef:class A*=n$9 [line 29]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
+"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  DeclStmt \n   _fun___objc_retain(0:class A*) [line 26]\n  *&aStdRef:class A*=0 [line 26]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_10" -> "main.fad58de7366495db4650cfefac2fcd61_9" ;
+"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  DeclStmt \n   _fun___objc_retain(0:class A__autoreleasing *) [line 25]\n  _fun___set_autorelease_attribute(0:class A__autoreleasing *) [line 25]\n  *&anAutoRelRef:class A__autoreleasing *=0 [line 25]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
+"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   *&anUnsafeUnretRef:class A__unsafe_unretained *=0 [line 24]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;
+"main.fad58de7366495db4650cfefac2fcd61_13" [label="13:  DeclStmt \n   _fun___objc_retain(0:class A*) [line 23]\n  *&aStrongRef:class A*=0 [line 23]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_13" -> "main.fad58de7366495db4650cfefac2fcd61_12" ;
+"main.fad58de7366495db4650cfefac2fcd61_14" [label="14:  DeclStmt \n   *&aWeakRef:class A__weak *=0 [line 22]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_14" -> "main.fad58de7366495db4650cfefac2fcd61_13" ;
 }

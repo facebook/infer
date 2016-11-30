@@ -1,52 +1,52 @@
 /* @generated */
 digraph iCFG {
-"NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_4" [label="4:  Call _fun___infer_assume \n   n$1=*&callback:_fn_(*) [line 46]\n  n$2=_fun___infer_assume((n$1 != 0):_fn_(*)) [line 46]\n " shape="box"]
-	
-
-	 "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_4" -> "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_3" ;
-"NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_3" [label="3:  Call n$0 \n   n$0=*&callback:_fn_(*) [line 47]\n  n$0(0:class NSError*,0:struct objc_object*) [line 47]\n " shape="box"]
-	
-
-	 "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_3" -> "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_2" ;
-"NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_2" [label="2: Exit NonnullAtrributeTest \n  " color=yellow style=filled]
-	
-
 "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_1" [label="1: Start NonnullAtrributeTest\nFormals:  callback:_fn_(*)\nLocals:  \n   DECLARE_LOCALS(&return); [line 46]\n " color=yellow style=filled]
 	
 
 	 "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_1" -> "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_4" ;
-"NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_6" [label="6:  Call _fun___infer_assume \n   n$5=*&a:class NonnullA* [line 38]\n  n$6=_fun___infer_assume((n$5 != 0):class NonnullA*) [line 38]\n " shape="box"]
+"NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_2" [label="2: Exit NonnullAtrributeTest \n  " color=yellow style=filled]
 	
 
-	 "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_6" -> "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_5" ;
-"NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_5" [label="5:  DeclStmt \n   n$3=*&a:class NonnullA* [line 39]\n  n$4=_fun_NonnullA_getA(n$3:class NonnullA*) virtual [line 39]\n  _fun___objc_retain(n$4:class NonnullA*) [line 39]\n  *&a1:class NonnullA*=n$4 [line 39]\n " shape="box"]
+"NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_3" [label="3:  Call n$0 \n   n$0=*&callback:_fn_(*) [line 47]\n  n$0(0:class NSError*,0:struct objc_object*) [line 47]\n " shape="box"]
 	
 
-	 "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_5" -> "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_4" ;
-"NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_4" [label="4:  DeclStmt \n   n$1=*&a1:class NonnullA* [line 40]\n  n$2=*n$1.x:int [line 40]\n  *&y:int=n$2 [line 40]\n " shape="box"]
+	 "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_3" -> "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_2" ;
+"NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_4" [label="4:  Call _fun___infer_assume \n   n$1=*&callback:_fn_(*) [line 46]\n  n$2=_fun___infer_assume((n$1 != 0):_fn_(*)) [line 46]\n " shape="box"]
 	
 
-	 "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_4" -> "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_3" ;
-"NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_3" [label="3:  Return Stmt \n   n$0=*&self:class NonnullC* [line 41]\n  *&return:struct objc_object*=n$0 [line 41]\n " shape="box"]
-	
-
-	 "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_3" -> "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_2" ;
-"NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_2" [label="2: Exit NonnullC_initWithCoder:and: \n  " color=yellow style=filled]
-	
-
-"NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_1" [label="1: Start NonnullC_initWithCoder:and:\nFormals:  self:class NonnullC* aDecoder:class NSString* a:class NonnullA*\nLocals:  y:int a1:class NonnullA* \n   DECLARE_LOCALS(&return,&y,&a1); [line 38]\n " color=yellow style=filled]
-	
-
-	 "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_1" -> "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_6" ;
-"NonnullA_getAinstance.1cb37dc85497efff1c8ebaff3ed319d6_3" [label="3:  Return Stmt \n   n$0=_fun___objc_alloc_no_fail(sizeof(class NonnullA):unsigned long) [line 26]\n  n$1=_fun_NSObject_init(n$0:class NonnullA*) virtual [line 26]\n  *&return:class NonnullA*=n$1 [line 26]\n  n$2=_fun___set_autorelease_attribute(n$1:class NonnullA*) [line 26]\n " shape="box"]
-	
-
-	 "NonnullA_getAinstance.1cb37dc85497efff1c8ebaff3ed319d6_3" -> "NonnullA_getAinstance.1cb37dc85497efff1c8ebaff3ed319d6_2" ;
-"NonnullA_getAinstance.1cb37dc85497efff1c8ebaff3ed319d6_2" [label="2: Exit NonnullA_getA \n  " color=yellow style=filled]
-	
-
+	 "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_4" -> "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_3" ;
 "NonnullA_getAinstance.1cb37dc85497efff1c8ebaff3ed319d6_1" [label="1: Start NonnullA_getA\nFormals:  self:class NonnullA*\nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
 	
 
 	 "NonnullA_getAinstance.1cb37dc85497efff1c8ebaff3ed319d6_1" -> "NonnullA_getAinstance.1cb37dc85497efff1c8ebaff3ed319d6_3" ;
+"NonnullA_getAinstance.1cb37dc85497efff1c8ebaff3ed319d6_2" [label="2: Exit NonnullA_getA \n  " color=yellow style=filled]
+	
+
+"NonnullA_getAinstance.1cb37dc85497efff1c8ebaff3ed319d6_3" [label="3:  Return Stmt \n   n$0=_fun___objc_alloc_no_fail(sizeof(class NonnullA):unsigned long) [line 26]\n  n$1=_fun_NSObject_init(n$0:class NonnullA*) virtual [line 26]\n  *&return:class NonnullA*=n$1 [line 26]\n  n$2=_fun___set_autorelease_attribute(n$1:class NonnullA*) [line 26]\n " shape="box"]
+	
+
+	 "NonnullA_getAinstance.1cb37dc85497efff1c8ebaff3ed319d6_3" -> "NonnullA_getAinstance.1cb37dc85497efff1c8ebaff3ed319d6_2" ;
+"NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_1" [label="1: Start NonnullC_initWithCoder:and:\nFormals:  self:class NonnullC* aDecoder:class NSString* a:class NonnullA*\nLocals:  y:int a1:class NonnullA* \n   DECLARE_LOCALS(&return,&y,&a1); [line 38]\n " color=yellow style=filled]
+	
+
+	 "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_1" -> "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_6" ;
+"NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_2" [label="2: Exit NonnullC_initWithCoder:and: \n  " color=yellow style=filled]
+	
+
+"NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_3" [label="3:  Return Stmt \n   n$0=*&self:class NonnullC* [line 41]\n  *&return:struct objc_object*=n$0 [line 41]\n " shape="box"]
+	
+
+	 "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_3" -> "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_2" ;
+"NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_4" [label="4:  DeclStmt \n   n$1=*&a1:class NonnullA* [line 40]\n  n$2=*n$1.x:int [line 40]\n  *&y:int=n$2 [line 40]\n " shape="box"]
+	
+
+	 "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_4" -> "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_3" ;
+"NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_5" [label="5:  DeclStmt \n   n$3=*&a:class NonnullA* [line 39]\n  n$4=_fun_NonnullA_getA(n$3:class NonnullA*) virtual [line 39]\n  _fun___objc_retain(n$4:class NonnullA*) [line 39]\n  *&a1:class NonnullA*=n$4 [line 39]\n " shape="box"]
+	
+
+	 "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_5" -> "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_4" ;
+"NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_6" [label="6:  Call _fun___infer_assume \n   n$5=*&a:class NonnullA* [line 38]\n  n$6=_fun___infer_assume((n$5 != 0):class NonnullA*) [line 38]\n " shape="box"]
+	
+
+	 "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_6" -> "NonnullC_initWithCoder:and:instance.8df956d70c2eb250791a4bce3b9e39f7_5" ;
 }

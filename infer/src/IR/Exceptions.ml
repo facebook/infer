@@ -35,8 +35,7 @@ type exception_severity =
 type err_class = Checker | Prover | Nocat
 
 (** kind of error/warning *)
-type err_kind =
-    Kwarning | Kerror | Kinfo | Kadvice
+type err_kind = Kwarning | Kerror | Kinfo | Kadvice [@@deriving compare]
 
 exception Abduction_case_not_implemented of L.ml_loc
 exception Analysis_stops of Localise.error_desc * L.ml_loc option

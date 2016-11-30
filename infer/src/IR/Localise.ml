@@ -95,7 +95,7 @@ type error_desc = {
   advice : string option;
   tags : (string * string) list;
   dotty : string option;
-}
+} [@@deriving compare]
 
 (** empty error description *)
 let no_desc: error_desc = {

@@ -21,7 +21,8 @@ let module F = Format;
 
 /** {2 Programs and Types} */
 type func_attribute =
-  | FA_sentinel int int;
+  | FA_sentinel int int
+[@@deriving compare];
 
 
 /** Return the value of the FA_sentinel attribute in [attr_list] if it is found */
@@ -33,7 +34,8 @@ type access =
   | Default
   | Public
   | Private
-  | Protected;
+  | Protected
+[@@deriving compare];
 
 type mem_kind =
   | Mmalloc /** memory allocated with malloc */

@@ -22,7 +22,7 @@ type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
 val string_to_analyzer : (string * analyzer) list
 
 
-type language = Clang | Java
+type language = Clang | Java [@@deriving compare]
 
 val string_of_language : language -> string
 

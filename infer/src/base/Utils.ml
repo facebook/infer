@@ -516,6 +516,11 @@ let filename_to_relative root fname =
 (** flags for a procedure *)
 type proc_flags = (string, string) Hashtbl.t
 
+let compare_proc_flags x y =
+  let bindings x = Hashtbl.fold (fun k d l -> (k, d) :: l) x [] in
+  [%compare: (string * string) list] (bindings x) (bindings y)
+
+
 let proc_flags_empty () : proc_flags = Hashtbl.create 1
 
 let proc_flag_skip = "skip"

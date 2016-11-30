@@ -1,184 +1,184 @@
 /* @generated */
 digraph iCFG {
-"function::X3_get(_ZN8function2X33getEv).36ddcd58af5a86b9c0b85830a216fad3_3" [label="3:  Return Stmt \n   *&return:int=0 [line 21]\n " shape="box"]
-	
-
-	 "function::X3_get(_ZN8function2X33getEv).36ddcd58af5a86b9c0b85830a216fad3_3" -> "function::X3_get(_ZN8function2X33getEv).36ddcd58af5a86b9c0b85830a216fad3_2" ;
-"function::X3_get(_ZN8function2X33getEv).36ddcd58af5a86b9c0b85830a216fad3_2" [label="2: Exit function::X3_get \n  " color=yellow style=filled]
-	
-
-"function::X3_get(_ZN8function2X33getEv).36ddcd58af5a86b9c0b85830a216fad3_1" [label="1: Start function::X3_get\nFormals:  this:class function::X3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
-	
-
-	 "function::X3_get(_ZN8function2X33getEv).36ddcd58af5a86b9c0b85830a216fad3_1" -> "function::X3_get(_ZN8function2X33getEv).36ddcd58af5a86b9c0b85830a216fad3_3" ;
-"function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_3" [label="3:  Return Stmt \n   n$0=_fun_function::createAndGetVal<X3>() [line 74]\n  n$1=_fun_function::createAndGetVal<X1>() [line 74]\n  *&return:int=(n$0 / n$1) [line 74]\n " shape="box"]
-	
-
-	 "function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_3" -> "function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_2" ;
-"function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_2" [label="2: Exit function::div1_create_and_get_val \n  " color=yellow style=filled]
-	
-
-"function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_1" [label="1: Start function::div1_create_and_get_val\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 73]\n " color=yellow style=filled]
-	
-
-	 "function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_1" -> "function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_3" ;
-"function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_4" [label="4:  DeclStmt \n   _fun_function::X3_X3(&x:class function::X3*) [line 37]\n " shape="box"]
-	
-
-	 "function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_4" -> "function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_3" ;
-"function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_3" [label="3:  Return Stmt \n   n$0=_fun_function::getVal<X3>(&x:class function::X3&) [line 38]\n  *&return:int=n$0 [line 38]\n " shape="box"]
-	
-
-	 "function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_3" -> "function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_2" ;
-"function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_2" [label="2: Exit function::createAndGetVal<X3> \n  " color=yellow style=filled]
-	
-
-"function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_1" [label="1: Start function::createAndGetVal<X3>\nFormals: \nLocals:  x:class function::X3 \n   DECLARE_LOCALS(&return,&x); [line 36]\n " color=yellow style=filled]
-	
-
-	 "function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_1" -> "function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_4" ;
-"function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_4" [label="4:  DeclStmt \n   _fun_function::X1_X1(&x:class function::X1*) [line 37]\n " shape="box"]
-	
-
-	 "function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_4" -> "function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_3" ;
-"function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_3" [label="3:  Return Stmt \n   n$0=_fun_function::getVal<X1>(&x:class function::X1&) [line 38]\n  *&return:int=n$0 [line 38]\n " shape="box"]
-	
-
-	 "function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_3" -> "function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_2" ;
-"function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_2" [label="2: Exit function::createAndGetVal<X1> \n  " color=yellow style=filled]
-	
-
 "function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_1" [label="1: Start function::createAndGetVal<X1>\nFormals: \nLocals:  x:class function::X1 \n   DECLARE_LOCALS(&return,&x); [line 36]\n " color=yellow style=filled]
 	
 
 	 "function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_1" -> "function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_4" ;
-"function::div0_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div0_create_and_get_.28e59ca4d77f643eebc2ef038ba892be_3" [label="3:  Return Stmt \n   n$0=_fun_function::createAndGetVal<X1>() [line 70]\n  n$1=_fun_function::createAndGetVal<X3>() [line 70]\n  *&return:int=(n$0 / n$1) [line 70]\n " shape="box"]
+"function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_2" [label="2: Exit function::createAndGetVal<X1> \n  " color=yellow style=filled]
 	
 
-	 "function::div0_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div0_create_and_get_.28e59ca4d77f643eebc2ef038ba892be_3" -> "function::div0_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div0_create_and_get_.28e59ca4d77f643eebc2ef038ba892be_2" ;
-"function::div0_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div0_create_and_get_.28e59ca4d77f643eebc2ef038ba892be_2" [label="2: Exit function::div0_create_and_get_val \n  " color=yellow style=filled]
+"function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_3" [label="3:  Return Stmt \n   n$0=_fun_function::getVal<X1>(&x:class function::X1&) [line 38]\n  *&return:int=n$0 [line 38]\n " shape="box"]
 	
 
-"function::div0_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div0_create_and_get_.28e59ca4d77f643eebc2ef038ba892be_1" [label="1: Start function::div0_create_and_get_val\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 69]\n " color=yellow style=filled]
+	 "function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_3" -> "function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_2" ;
+"function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_4" [label="4:  DeclStmt \n   _fun_function::X1_X1(&x:class function::X1*) [line 37]\n " shape="box"]
 	
 
-	 "function::div0_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div0_create_and_get_.28e59ca4d77f643eebc2ef038ba892be_1" -> "function::div0_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div0_create_and_get_.28e59ca4d77f643eebc2ef038ba892be_3" ;
-"function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_5" [label="5:  DeclStmt \n   _fun_function::X1_X1(&x1:class function::X1*) [line 58]\n " shape="box"]
+	 "function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_4" -> "function::createAndGetVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X1EE.72b32ba2c801b1fadf7af44dbf7cb2d2_3" ;
+"function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_1" [label="1: Start function::createAndGetVal<X3>\nFormals: \nLocals:  x:class function::X3 \n   DECLARE_LOCALS(&return,&x); [line 36]\n " color=yellow style=filled]
 	
 
-	 "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_5" -> "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_4" ;
-"function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_4" [label="4:  DeclStmt \n   _fun_function::X3_X3(&x3:class function::X3*) [line 59]\n " shape="box"]
+	 "function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_1" -> "function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_4" ;
+"function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_2" [label="2: Exit function::createAndGetVal<X3> \n  " color=yellow style=filled]
 	
 
-	 "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_4" -> "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_3" ;
-"function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_3" [label="3:  Return Stmt \n   n$0=_fun_function::getVal<X1>(&x1:class function::X1&) [line 60]\n  n$1=_fun_function::getVal<X3>(&x3:class function::X3&) [line 60]\n  *&return:int=(n$0 / n$1) [line 60]\n " shape="box"]
+"function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_3" [label="3:  Return Stmt \n   n$0=_fun_function::getVal<X3>(&x:class function::X3&) [line 38]\n  *&return:int=n$0 [line 38]\n " shape="box"]
 	
 
-	 "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_3" -> "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_2" ;
-"function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_2" [label="2: Exit function::div0_get_val \n  " color=yellow style=filled]
+	 "function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_3" -> "function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_2" ;
+"function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_4" [label="4:  DeclStmt \n   _fun_function::X3_X3(&x:class function::X3*) [line 37]\n " shape="box"]
 	
 
-"function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_1" [label="1: Start function::div0_get_val\nFormals: \nLocals:  x3:class function::X3 x1:class function::X1 \n   DECLARE_LOCALS(&return,&x3,&x1); [line 57]\n " color=yellow style=filled]
-	
-
-	 "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_1" -> "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_5" ;
-"function::X3_X3{_ZN8function2X3C1Ev}.8dd5b7e648f6e1760b4365f3e42720db_2" [label="2: Exit function::X3_X3 \n  " color=yellow style=filled]
-	
-
-"function::X3_X3{_ZN8function2X3C1Ev}.8dd5b7e648f6e1760b4365f3e42720db_1" [label="1: Start function::X3_X3\nFormals:  this:class function::X3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
-	
-
-	 "function::X3_X3{_ZN8function2X3C1Ev}.8dd5b7e648f6e1760b4365f3e42720db_1" -> "function::X3_X3{_ZN8function2X3C1Ev}.8dd5b7e648f6e1760b4365f3e42720db_2" ;
-"function::createAndDiv<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X1EEEiv}.d6152111f53dea444f73eff8f799b058_3" [label="3:  Return Stmt \n   n$0=_fun_function::createAndGetVal<X1>() [line 43]\n  *&return:int=(1 / n$0) [line 43]\n " shape="box"]
-	
-
-	 "function::createAndDiv<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X1EEEiv}.d6152111f53dea444f73eff8f799b058_3" -> "function::createAndDiv<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X1EEEiv}.d6152111f53dea444f73eff8f799b058_2" ;
-"function::createAndDiv<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X1EEEiv}.d6152111f53dea444f73eff8f799b058_2" [label="2: Exit function::createAndDiv<X1> \n  " color=yellow style=filled]
-	
-
+	 "function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_4" -> "function::createAndGetVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function15createAndGetValINS_2X3EE.63af77a93435d1c46d66bada1e53b609_3" ;
 "function::createAndDiv<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X1EEEiv}.d6152111f53dea444f73eff8f799b058_1" [label="1: Start function::createAndDiv<X1>\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 42]\n " color=yellow style=filled]
 	
 
 	 "function::createAndDiv<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X1EEEiv}.d6152111f53dea444f73eff8f799b058_1" -> "function::createAndDiv<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X1EEEiv}.d6152111f53dea444f73eff8f799b058_3" ;
-"function::X1_getVal(_ZN8function2X16getValEv).e9f63e9946adfb180c8a1aa70b5f67be_3" [label="3:  Return Stmt \n   *&return:int=1 [line 13]\n " shape="box"]
+"function::createAndDiv<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X1EEEiv}.d6152111f53dea444f73eff8f799b058_2" [label="2: Exit function::createAndDiv<X1> \n  " color=yellow style=filled]
 	
 
-	 "function::X1_getVal(_ZN8function2X16getValEv).e9f63e9946adfb180c8a1aa70b5f67be_3" -> "function::X1_getVal(_ZN8function2X16getValEv).e9f63e9946adfb180c8a1aa70b5f67be_2" ;
-"function::X1_getVal(_ZN8function2X16getValEv).e9f63e9946adfb180c8a1aa70b5f67be_2" [label="2: Exit function::X1_getVal \n  " color=yellow style=filled]
+"function::createAndDiv<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X1EEEiv}.d6152111f53dea444f73eff8f799b058_3" [label="3:  Return Stmt \n   n$0=_fun_function::createAndGetVal<X1>() [line 43]\n  *&return:int=(1 / n$0) [line 43]\n " shape="box"]
+	
+
+	 "function::createAndDiv<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X1EEEiv}.d6152111f53dea444f73eff8f799b058_3" -> "function::createAndDiv<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X1EEEiv}.d6152111f53dea444f73eff8f799b058_2" ;
+"function::createAndDiv<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X3EEEiv}.8c98e792f12fc95b93d3d09a56f0fa20_1" [label="1: Start function::createAndDiv<X3>\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 42]\n " color=yellow style=filled]
+	
+
+	 "function::createAndDiv<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X3EEEiv}.8c98e792f12fc95b93d3d09a56f0fa20_1" -> "function::createAndDiv<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X3EEEiv}.8c98e792f12fc95b93d3d09a56f0fa20_3" ;
+"function::createAndDiv<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X3EEEiv}.8c98e792f12fc95b93d3d09a56f0fa20_2" [label="2: Exit function::createAndDiv<X3> \n  " color=yellow style=filled]
+	
+
+"function::createAndDiv<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X3EEEiv}.8c98e792f12fc95b93d3d09a56f0fa20_3" [label="3:  Return Stmt \n   n$0=_fun_function::createAndGetVal<X3>() [line 43]\n  *&return:int=(1 / n$0) [line 43]\n " shape="box"]
+	
+
+	 "function::createAndDiv<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X3EEEiv}.8c98e792f12fc95b93d3d09a56f0fa20_3" -> "function::createAndDiv<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X3EEEiv}.8c98e792f12fc95b93d3d09a56f0fa20_2" ;
+"function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_1" [label="1: Start function::div0_get_val\nFormals: \nLocals:  x3:class function::X3 x1:class function::X1 \n   DECLARE_LOCALS(&return,&x3,&x1); [line 57]\n " color=yellow style=filled]
+	
+
+	 "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_1" -> "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_5" ;
+"function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_2" [label="2: Exit function::div0_get_val \n  " color=yellow style=filled]
+	
+
+"function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_3" [label="3:  Return Stmt \n   n$0=_fun_function::getVal<X1>(&x1:class function::X1&) [line 60]\n  n$1=_fun_function::getVal<X3>(&x3:class function::X3&) [line 60]\n  *&return:int=(n$0 / n$1) [line 60]\n " shape="box"]
+	
+
+	 "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_3" -> "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_2" ;
+"function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_4" [label="4:  DeclStmt \n   _fun_function::X3_X3(&x3:class function::X3*) [line 59]\n " shape="box"]
+	
+
+	 "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_4" -> "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_3" ;
+"function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_5" [label="5:  DeclStmt \n   _fun_function::X1_X1(&x1:class function::X1*) [line 58]\n " shape="box"]
+	
+
+	 "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_5" -> "function::div0_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div0_get_valEv}.5f9a22249598bb83d4e5a52d3e0f6561_4" ;
+"function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_1" [label="1: Start function::div1_get_val\nFormals: \nLocals:  x3:class function::X3 x1:class function::X1 \n   DECLARE_LOCALS(&return,&x3,&x1); [line 63]\n " color=yellow style=filled]
+	
+
+	 "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_1" -> "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_5" ;
+"function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_2" [label="2: Exit function::div1_get_val \n  " color=yellow style=filled]
+	
+
+"function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_3" [label="3:  Return Stmt \n   n$0=_fun_function::getVal<X3>(&x3:class function::X3&) [line 66]\n  n$1=_fun_function::getVal<X1>(&x1:class function::X1&) [line 66]\n  *&return:int=(n$0 / n$1) [line 66]\n " shape="box"]
+	
+
+	 "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_3" -> "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_2" ;
+"function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_4" [label="4:  DeclStmt \n   _fun_function::X3_X3(&x3:class function::X3*) [line 65]\n " shape="box"]
+	
+
+	 "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_4" -> "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_3" ;
+"function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_5" [label="5:  DeclStmt \n   _fun_function::X1_X1(&x1:class function::X1*) [line 64]\n " shape="box"]
+	
+
+	 "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_5" -> "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_4" ;
+"function::div0_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div0_create_and_get_.28e59ca4d77f643eebc2ef038ba892be_1" [label="1: Start function::div0_create_and_get_val\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 69]\n " color=yellow style=filled]
+	
+
+	 "function::div0_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div0_create_and_get_.28e59ca4d77f643eebc2ef038ba892be_1" -> "function::div0_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div0_create_and_get_.28e59ca4d77f643eebc2ef038ba892be_3" ;
+"function::div0_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div0_create_and_get_.28e59ca4d77f643eebc2ef038ba892be_2" [label="2: Exit function::div0_create_and_get_val \n  " color=yellow style=filled]
+	
+
+"function::div0_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div0_create_and_get_.28e59ca4d77f643eebc2ef038ba892be_3" [label="3:  Return Stmt \n   n$0=_fun_function::createAndGetVal<X1>() [line 70]\n  n$1=_fun_function::createAndGetVal<X3>() [line 70]\n  *&return:int=(n$0 / n$1) [line 70]\n " shape="box"]
+	
+
+	 "function::div0_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div0_create_and_get_.28e59ca4d77f643eebc2ef038ba892be_3" -> "function::div0_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div0_create_and_get_.28e59ca4d77f643eebc2ef038ba892be_2" ;
+"function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_1" [label="1: Start function::div1_create_and_get_val\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 73]\n " color=yellow style=filled]
+	
+
+	 "function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_1" -> "function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_3" ;
+"function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_2" [label="2: Exit function::div1_create_and_get_val \n  " color=yellow style=filled]
+	
+
+"function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_3" [label="3:  Return Stmt \n   n$0=_fun_function::createAndGetVal<X3>() [line 74]\n  n$1=_fun_function::createAndGetVal<X1>() [line 74]\n  *&return:int=(n$0 / n$1) [line 74]\n " shape="box"]
+	
+
+	 "function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_3" -> "function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_2" ;
+"function::X1_X1{_ZN8function2X1C1Ev}.2af0b35268d3226ea8d5932e7ebc85b9_1" [label="1: Start function::X1_X1\nFormals:  this:class function::X1*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "function::X1_X1{_ZN8function2X1C1Ev}.2af0b35268d3226ea8d5932e7ebc85b9_1" -> "function::X1_X1{_ZN8function2X1C1Ev}.2af0b35268d3226ea8d5932e7ebc85b9_2" ;
+"function::X1_X1{_ZN8function2X1C1Ev}.2af0b35268d3226ea8d5932e7ebc85b9_2" [label="2: Exit function::X1_X1 \n  " color=yellow style=filled]
 	
 
 "function::X1_getVal(_ZN8function2X16getValEv).e9f63e9946adfb180c8a1aa70b5f67be_1" [label="1: Start function::X1_getVal\nFormals:  this:class function::X1*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
 	
 
 	 "function::X1_getVal(_ZN8function2X16getValEv).e9f63e9946adfb180c8a1aa70b5f67be_1" -> "function::X1_getVal(_ZN8function2X16getValEv).e9f63e9946adfb180c8a1aa70b5f67be_3" ;
-"function::getVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X3EEEiRT_}.2c1638059f708e038669a56ed439a868_3" [label="3:  Return Stmt \n   n$0=*&x:class function::X3& [line 32]\n  _=*n$0:class function::X3 [line 32]\n  n$2=_fun_function::X3_get(n$0:class function::X3&) [line 32]\n  *&return:int=n$2 [line 32]\n " shape="box"]
+"function::X1_getVal(_ZN8function2X16getValEv).e9f63e9946adfb180c8a1aa70b5f67be_2" [label="2: Exit function::X1_getVal \n  " color=yellow style=filled]
 	
 
-	 "function::getVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X3EEEiRT_}.2c1638059f708e038669a56ed439a868_3" -> "function::getVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X3EEEiRT_}.2c1638059f708e038669a56ed439a868_2" ;
-"function::getVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X3EEEiRT_}.2c1638059f708e038669a56ed439a868_2" [label="2: Exit function::getVal<X3> \n  " color=yellow style=filled]
+"function::X1_getVal(_ZN8function2X16getValEv).e9f63e9946adfb180c8a1aa70b5f67be_3" [label="3:  Return Stmt \n   *&return:int=1 [line 13]\n " shape="box"]
 	
 
-"function::getVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X3EEEiRT_}.2c1638059f708e038669a56ed439a868_1" [label="1: Start function::getVal<X3>\nFormals:  x:class function::X3&\nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n " color=yellow style=filled]
-	
-
-	 "function::getVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X3EEEiRT_}.2c1638059f708e038669a56ed439a868_1" -> "function::getVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X3EEEiRT_}.2c1638059f708e038669a56ed439a868_3" ;
-"function::X2_getVal(_ZN8function2X26getValEv).08a78a7624b8c528a9115d6545ca7d87_3" [label="3:  Return Stmt \n   *&return:int=0 [line 17]\n " shape="box"]
-	
-
-	 "function::X2_getVal(_ZN8function2X26getValEv).08a78a7624b8c528a9115d6545ca7d87_3" -> "function::X2_getVal(_ZN8function2X26getValEv).08a78a7624b8c528a9115d6545ca7d87_2" ;
-"function::X2_getVal(_ZN8function2X26getValEv).08a78a7624b8c528a9115d6545ca7d87_2" [label="2: Exit function::X2_getVal \n  " color=yellow style=filled]
-	
-
+	 "function::X1_getVal(_ZN8function2X16getValEv).e9f63e9946adfb180c8a1aa70b5f67be_3" -> "function::X1_getVal(_ZN8function2X16getValEv).e9f63e9946adfb180c8a1aa70b5f67be_2" ;
 "function::X2_getVal(_ZN8function2X26getValEv).08a78a7624b8c528a9115d6545ca7d87_1" [label="1: Start function::X2_getVal\nFormals:  this:class function::X2*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
 	
 
 	 "function::X2_getVal(_ZN8function2X26getValEv).08a78a7624b8c528a9115d6545ca7d87_1" -> "function::X2_getVal(_ZN8function2X26getValEv).08a78a7624b8c528a9115d6545ca7d87_3" ;
-"function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_5" [label="5:  DeclStmt \n   _fun_function::X1_X1(&x1:class function::X1*) [line 64]\n " shape="box"]
+"function::X2_getVal(_ZN8function2X26getValEv).08a78a7624b8c528a9115d6545ca7d87_2" [label="2: Exit function::X2_getVal \n  " color=yellow style=filled]
 	
 
-	 "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_5" -> "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_4" ;
-"function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_4" [label="4:  DeclStmt \n   _fun_function::X3_X3(&x3:class function::X3*) [line 65]\n " shape="box"]
+"function::X2_getVal(_ZN8function2X26getValEv).08a78a7624b8c528a9115d6545ca7d87_3" [label="3:  Return Stmt \n   *&return:int=0 [line 17]\n " shape="box"]
 	
 
-	 "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_4" -> "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_3" ;
-"function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_3" [label="3:  Return Stmt \n   n$0=_fun_function::getVal<X3>(&x3:class function::X3&) [line 66]\n  n$1=_fun_function::getVal<X1>(&x1:class function::X1&) [line 66]\n  *&return:int=(n$0 / n$1) [line 66]\n " shape="box"]
+	 "function::X2_getVal(_ZN8function2X26getValEv).08a78a7624b8c528a9115d6545ca7d87_3" -> "function::X2_getVal(_ZN8function2X26getValEv).08a78a7624b8c528a9115d6545ca7d87_2" ;
+"function::X3_X3{_ZN8function2X3C1Ev}.8dd5b7e648f6e1760b4365f3e42720db_1" [label="1: Start function::X3_X3\nFormals:  this:class function::X3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
-	 "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_3" -> "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_2" ;
-"function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_2" [label="2: Exit function::div1_get_val \n  " color=yellow style=filled]
+	 "function::X3_X3{_ZN8function2X3C1Ev}.8dd5b7e648f6e1760b4365f3e42720db_1" -> "function::X3_X3{_ZN8function2X3C1Ev}.8dd5b7e648f6e1760b4365f3e42720db_2" ;
+"function::X3_X3{_ZN8function2X3C1Ev}.8dd5b7e648f6e1760b4365f3e42720db_2" [label="2: Exit function::X3_X3 \n  " color=yellow style=filled]
 	
 
-"function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_1" [label="1: Start function::div1_get_val\nFormals: \nLocals:  x3:class function::X3 x1:class function::X1 \n   DECLARE_LOCALS(&return,&x3,&x1); [line 63]\n " color=yellow style=filled]
+"function::X3_get(_ZN8function2X33getEv).36ddcd58af5a86b9c0b85830a216fad3_1" [label="1: Start function::X3_get\nFormals:  this:class function::X3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
 	
 
-	 "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_1" -> "function::div1_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function12div1_get_valEv}.0893885c4d68df45bb6a2173025afb22_5" ;
-"function::getVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X1EEEiRT_}.74c27739e8cb13470b8ad4edd34019b5_3" [label="3:  Return Stmt \n   n$0=*&x:class function::X1& [line 26]\n  _=*n$0:class function::X1 [line 26]\n  n$2=_fun_function::X1_getVal(n$0:class function::X1&) [line 26]\n  *&return:int=n$2 [line 26]\n " shape="box"]
+	 "function::X3_get(_ZN8function2X33getEv).36ddcd58af5a86b9c0b85830a216fad3_1" -> "function::X3_get(_ZN8function2X33getEv).36ddcd58af5a86b9c0b85830a216fad3_3" ;
+"function::X3_get(_ZN8function2X33getEv).36ddcd58af5a86b9c0b85830a216fad3_2" [label="2: Exit function::X3_get \n  " color=yellow style=filled]
 	
 
-	 "function::getVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X1EEEiRT_}.74c27739e8cb13470b8ad4edd34019b5_3" -> "function::getVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X1EEEiRT_}.74c27739e8cb13470b8ad4edd34019b5_2" ;
-"function::getVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X1EEEiRT_}.74c27739e8cb13470b8ad4edd34019b5_2" [label="2: Exit function::getVal<X1> \n  " color=yellow style=filled]
+"function::X3_get(_ZN8function2X33getEv).36ddcd58af5a86b9c0b85830a216fad3_3" [label="3:  Return Stmt \n   *&return:int=0 [line 21]\n " shape="box"]
 	
 
+	 "function::X3_get(_ZN8function2X33getEv).36ddcd58af5a86b9c0b85830a216fad3_3" -> "function::X3_get(_ZN8function2X33getEv).36ddcd58af5a86b9c0b85830a216fad3_2" ;
 "function::getVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X1EEEiRT_}.74c27739e8cb13470b8ad4edd34019b5_1" [label="1: Start function::getVal<X1>\nFormals:  x:class function::X1&\nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
 	
 
 	 "function::getVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X1EEEiRT_}.74c27739e8cb13470b8ad4edd34019b5_1" -> "function::getVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X1EEEiRT_}.74c27739e8cb13470b8ad4edd34019b5_3" ;
-"function::X1_X1{_ZN8function2X1C1Ev}.2af0b35268d3226ea8d5932e7ebc85b9_2" [label="2: Exit function::X1_X1 \n  " color=yellow style=filled]
+"function::getVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X1EEEiRT_}.74c27739e8cb13470b8ad4edd34019b5_2" [label="2: Exit function::getVal<X1> \n  " color=yellow style=filled]
 	
 
-"function::X1_X1{_ZN8function2X1C1Ev}.2af0b35268d3226ea8d5932e7ebc85b9_1" [label="1: Start function::X1_X1\nFormals:  this:class function::X1*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+"function::getVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X1EEEiRT_}.74c27739e8cb13470b8ad4edd34019b5_3" [label="3:  Return Stmt \n   n$0=*&x:class function::X1& [line 26]\n  _=*n$0:class function::X1 [line 26]\n  n$2=_fun_function::X1_getVal(n$0:class function::X1&) [line 26]\n  *&return:int=n$2 [line 26]\n " shape="box"]
 	
 
-	 "function::X1_X1{_ZN8function2X1C1Ev}.2af0b35268d3226ea8d5932e7ebc85b9_1" -> "function::X1_X1{_ZN8function2X1C1Ev}.2af0b35268d3226ea8d5932e7ebc85b9_2" ;
-"function::createAndDiv<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X3EEEiv}.8c98e792f12fc95b93d3d09a56f0fa20_3" [label="3:  Return Stmt \n   n$0=_fun_function::createAndGetVal<X3>() [line 43]\n  *&return:int=(1 / n$0) [line 43]\n " shape="box"]
+	 "function::getVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X1EEEiRT_}.74c27739e8cb13470b8ad4edd34019b5_3" -> "function::getVal<X1>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X1EEEiRT_}.74c27739e8cb13470b8ad4edd34019b5_2" ;
+"function::getVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X3EEEiRT_}.2c1638059f708e038669a56ed439a868_1" [label="1: Start function::getVal<X3>\nFormals:  x:class function::X3&\nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n " color=yellow style=filled]
 	
 
-	 "function::createAndDiv<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X3EEEiv}.8c98e792f12fc95b93d3d09a56f0fa20_3" -> "function::createAndDiv<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X3EEEiv}.8c98e792f12fc95b93d3d09a56f0fa20_2" ;
-"function::createAndDiv<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X3EEEiv}.8c98e792f12fc95b93d3d09a56f0fa20_2" [label="2: Exit function::createAndDiv<X3> \n  " color=yellow style=filled]
+	 "function::getVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X3EEEiRT_}.2c1638059f708e038669a56ed439a868_1" -> "function::getVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X3EEEiRT_}.2c1638059f708e038669a56ed439a868_3" ;
+"function::getVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X3EEEiRT_}.2c1638059f708e038669a56ed439a868_2" [label="2: Exit function::getVal<X3> \n  " color=yellow style=filled]
 	
 
-"function::createAndDiv<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X3EEEiv}.8c98e792f12fc95b93d3d09a56f0fa20_1" [label="1: Start function::createAndDiv<X3>\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 42]\n " color=yellow style=filled]
+"function::getVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X3EEEiRT_}.2c1638059f708e038669a56ed439a868_3" [label="3:  Return Stmt \n   n$0=*&x:class function::X3& [line 32]\n  _=*n$0:class function::X3 [line 32]\n  n$2=_fun_function::X3_get(n$0:class function::X3&) [line 32]\n  *&return:int=n$2 [line 32]\n " shape="box"]
 	
 
-	 "function::createAndDiv<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X3EEEiv}.8c98e792f12fc95b93d3d09a56f0fa20_1" -> "function::createAndDiv<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function12createAndDivINS_2X3EEEiv}.8c98e792f12fc95b93d3d09a56f0fa20_3" ;
+	 "function::getVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X3EEEiRT_}.2c1638059f708e038669a56ed439a868_3" -> "function::getVal<X3>{d41d8cd98f00b204e9800998ecf8427e_ZN8function6getValINS_2X3EEEiRT_}.2c1638059f708e038669a56ed439a868_2" ;
 }

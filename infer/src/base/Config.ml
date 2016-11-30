@@ -32,7 +32,7 @@ let clang_frontend_action_symbols = [
   ("lint_and_capture", `Lint_and_capture);
 ]
 
-type language = Clang | Java
+type language = Clang | Java [@@deriving compare]
 
 let string_of_language = function
   | Java -> "Java"

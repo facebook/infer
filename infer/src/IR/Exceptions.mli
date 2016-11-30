@@ -27,8 +27,7 @@ type exception_severity =
   | Low (** low severity bug *)
 
 (** kind of error/warning *)
-type err_kind =
-    Kwarning | Kerror | Kinfo | Kadvice
+type err_kind = Kwarning | Kerror | Kinfo | Kadvice [@@deriving compare]
 
 (** class of error *)
 type err_class = Checker | Prover | Nocat

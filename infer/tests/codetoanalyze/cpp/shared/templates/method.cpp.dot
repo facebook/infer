@@ -1,281 +1,281 @@
 /* @generated */
 digraph iCFG {
-"method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_3" [label="3:  Return Stmt \n   *&return:int=0 [line 17]\n " shape="box"]
-	
-
-	 "method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_3" -> "method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_2" ;
-"method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_2" [label="2: Exit method::X2_get \n  " color=yellow style=filled]
-	
-
-"method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_1" [label="1: Start method::X2_get\nFormals:  this:class method::X2*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
-	
-
-	 "method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_1" -> "method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_3" ;
-"method::GetterTempl<X2>_get<X1>(_ZN6method11GetterTemplINS_2X2EE3getINS_2X1EEEiRS1_RT_).50eaec9bda9895bdc81a6c246d9ea459_3" [label="3:  Return Stmt \n   n$0=*&t:class method::X2& [line 35]\n  _=*n$0:class method::X2 [line 35]\n  n$2=_fun_method::X2_get(n$0:class method::X2&) [line 35]\n  n$3=*&s:class method::X1& [line 35]\n  _=*n$3:class method::X1 [line 35]\n  n$5=_fun_method::X1_get(n$3:class method::X1&) [line 35]\n  *&return:int=(n$2 + n$5) [line 35]\n " shape="box"]
-	
-
-	 "method::GetterTempl<X2>_get<X1>(_ZN6method11GetterTemplINS_2X2EE3getINS_2X1EEEiRS1_RT_).50eaec9bda9895bdc81a6c246d9ea459_3" -> "method::GetterTempl<X2>_get<X1>(_ZN6method11GetterTemplINS_2X2EE3getINS_2X1EEEiRS1_RT_).50eaec9bda9895bdc81a6c246d9ea459_2" ;
-"method::GetterTempl<X2>_get<X1>(_ZN6method11GetterTemplINS_2X2EE3getINS_2X1EEEiRS1_RT_).50eaec9bda9895bdc81a6c246d9ea459_2" [label="2: Exit method::GetterTempl<X2>_get<X1> \n  " color=yellow style=filled]
-	
-
-"method::GetterTempl<X2>_get<X1>(_ZN6method11GetterTemplINS_2X2EE3getINS_2X1EEEiRS1_RT_).50eaec9bda9895bdc81a6c246d9ea459_1" [label="1: Start method::GetterTempl<X2>_get<X1>\nFormals:  this:class method::GetterTempl<X2>* t:class method::X2& s:class method::X1&\nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
-	
-
-	 "method::GetterTempl<X2>_get<X1>(_ZN6method11GetterTemplINS_2X2EE3getINS_2X1EEEiRS1_RT_).50eaec9bda9895bdc81a6c246d9ea459_1" -> "method::GetterTempl<X2>_get<X1>(_ZN6method11GetterTemplINS_2X2EE3getINS_2X1EEEiRS1_RT_).50eaec9bda9895bdc81a6c246d9ea459_3" ;
-"method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_6" [label="6:  DeclStmt \n   _fun_method::X1_X1(&x1:class method::X1*) [line 66]\n " shape="box"]
-	
-
-	 "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_6" -> "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_5" ;
-"method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_5" [label="5:  DeclStmt \n   _fun_method::X2_X2(&x2:class method::X2*) [line 67]\n " shape="box"]
-	
-
-	 "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_5" -> "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_4" ;
-"method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_4" [label="4:  DeclStmt \n   _fun_method::GetterTempl<X2>_GetterTempl(&g:class method::GetterTempl<X2>*) [line 68]\n " shape="box"]
-	
-
-	 "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_4" -> "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_3" ;
-"method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_3" [label="3:  Return Stmt \n   _=*&g:class method::GetterTempl<X2> [line 69]\n  n$1=_fun_method::GetterTempl<X2>_get<X1>(&g:class method::GetterTempl<X2>&,&x2:class method::X2&,&x1:class method::X1&) [line 69]\n  *&return:int=(1 / n$1) [line 69]\n " shape="box"]
-	
-
-	 "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_3" -> "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_2" ;
-"method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_2" [label="2: Exit method::div1_getter_templ \n  " color=yellow style=filled]
-	
-
-"method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_1" [label="1: Start method::div1_getter_templ\nFormals: \nLocals:  g:class method::GetterTempl<X2> x2:class method::X2 x1:class method::X1 \n   DECLARE_LOCALS(&return,&g,&x2,&x1); [line 65]\n " color=yellow style=filled]
-	
-
-	 "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_1" -> "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_6" ;
-"method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_5" [label="5:  DeclStmt \n   _fun_method::X2_X2(&x2:class method::X2*) [line 40]\n " shape="box"]
-	
-
-	 "method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_5" -> "method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_4" ;
-"method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_4" [label="4:  DeclStmt \n   _fun_method::Getter_Getter(&g:class method::Getter*) [line 41]\n " shape="box"]
-	
-
-	 "method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_4" -> "method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_3" ;
-"method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_3" [label="3:  Return Stmt \n   _=*&g:class method::Getter [line 42]\n  n$1=_fun_method::Getter_get<X2>(&g:class method::Getter&,&x2:class method::X2&) [line 42]\n  *&return:int=(1 / n$1) [line 42]\n " shape="box"]
-	
-
-	 "method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_3" -> "method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_2" ;
-"method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_2" [label="2: Exit method::div0_getter \n  " color=yellow style=filled]
-	
-
 "method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_1" [label="1: Start method::div0_getter\nFormals: \nLocals:  g:class method::Getter x2:class method::X2 \n   DECLARE_LOCALS(&return,&g,&x2); [line 39]\n " color=yellow style=filled]
 	
 
 	 "method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_1" -> "method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_5" ;
-"method::Getter_get<X1>(_ZN6method6Getter3getINS_2X1EEEiRT_).80d274ae0eea8a42827f3ee5d82d22ec_3" [label="3:  Return Stmt \n   n$0=*&s:class method::X1& [line 27]\n  _=*n$0:class method::X1 [line 27]\n  n$2=_fun_method::X1_get(n$0:class method::X1&) [line 27]\n  *&return:int=n$2 [line 27]\n " shape="box"]
+"method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_2" [label="2: Exit method::div0_getter \n  " color=yellow style=filled]
 	
 
-	 "method::Getter_get<X1>(_ZN6method6Getter3getINS_2X1EEEiRT_).80d274ae0eea8a42827f3ee5d82d22ec_3" -> "method::Getter_get<X1>(_ZN6method6Getter3getINS_2X1EEEiRT_).80d274ae0eea8a42827f3ee5d82d22ec_2" ;
-"method::Getter_get<X1>(_ZN6method6Getter3getINS_2X1EEEiRT_).80d274ae0eea8a42827f3ee5d82d22ec_2" [label="2: Exit method::Getter_get<X1> \n  " color=yellow style=filled]
+"method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_3" [label="3:  Return Stmt \n   _=*&g:class method::Getter [line 42]\n  n$1=_fun_method::Getter_get<X2>(&g:class method::Getter&,&x2:class method::X2&) [line 42]\n  *&return:int=(1 / n$1) [line 42]\n " shape="box"]
+	
+
+	 "method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_3" -> "method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_2" ;
+"method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_4" [label="4:  DeclStmt \n   _fun_method::Getter_Getter(&g:class method::Getter*) [line 41]\n " shape="box"]
+	
+
+	 "method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_4" -> "method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_3" ;
+"method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_5" [label="5:  DeclStmt \n   _fun_method::X2_X2(&x2:class method::X2*) [line 40]\n " shape="box"]
+	
+
+	 "method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_5" -> "method::div0_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div0_getterEv}.b3a69879844798f94a8c9941bccd13fb_4" ;
+"method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_1" [label="1: Start method::div1_getter\nFormals: \nLocals:  g:class method::Getter x1:class method::X1 \n   DECLARE_LOCALS(&return,&g,&x1); [line 45]\n " color=yellow style=filled]
+	
+
+	 "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_1" -> "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_5" ;
+"method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_2" [label="2: Exit method::div1_getter \n  " color=yellow style=filled]
+	
+
+"method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_3" [label="3:  Return Stmt \n   _=*&g:class method::Getter [line 48]\n  n$1=_fun_method::Getter_get<X1>(&g:class method::Getter&,&x1:class method::X1&) [line 48]\n  *&return:int=(1 / n$1) [line 48]\n " shape="box"]
+	
+
+	 "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_3" -> "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_2" ;
+"method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_4" [label="4:  DeclStmt \n   _fun_method::Getter_Getter(&g:class method::Getter*) [line 47]\n " shape="box"]
+	
+
+	 "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_4" -> "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_3" ;
+"method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_5" [label="5:  DeclStmt \n   _fun_method::X1_X1(&x1:class method::X1*) [line 46]\n " shape="box"]
+	
+
+	 "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_5" -> "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_4" ;
+"method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_1" [label="1: Start method::div0_getter_templ\nFormals: \nLocals:  g:class method::GetterTempl<X3> x3:class method::X3 x2:class method::X2 \n   DECLARE_LOCALS(&return,&g,&x3,&x2); [line 51]\n " color=yellow style=filled]
+	
+
+	 "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_1" -> "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_6" ;
+"method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_2" [label="2: Exit method::div0_getter_templ \n  " color=yellow style=filled]
+	
+
+"method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_3" [label="3:  Return Stmt \n   _=*&g:class method::GetterTempl<X3> [line 55]\n  n$1=_fun_method::GetterTempl<X3>_get<X2>(&g:class method::GetterTempl<X3>&,&x3:class method::X3&,&x2:class method::X2&) [line 55]\n  *&return:int=(1 / n$1) [line 55]\n " shape="box"]
+	
+
+	 "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_3" -> "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_2" ;
+"method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_4" [label="4:  DeclStmt \n   _fun_method::GetterTempl<X3>_GetterTempl(&g:class method::GetterTempl<X3>*) [line 54]\n " shape="box"]
+	
+
+	 "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_4" -> "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_3" ;
+"method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_5" [label="5:  DeclStmt \n   _fun_method::X3_X3(&x3:class method::X3*) [line 53]\n " shape="box"]
+	
+
+	 "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_5" -> "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_4" ;
+"method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_6" [label="6:  DeclStmt \n   _fun_method::X2_X2(&x2:class method::X2*) [line 52]\n " shape="box"]
+	
+
+	 "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_6" -> "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_5" ;
+"method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_1" [label="1: Start method::div0_getter_templ2\nFormals: \nLocals:  g:class method::GetterTempl<X2> x2_2:class method::X2 x2_1:class method::X2 \n   DECLARE_LOCALS(&return,&g,&x2_2,&x2_1); [line 58]\n " color=yellow style=filled]
+	
+
+	 "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_1" -> "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_6" ;
+"method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_2" [label="2: Exit method::div0_getter_templ2 \n  " color=yellow style=filled]
+	
+
+"method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_3" [label="3:  Return Stmt \n   _=*&g:class method::GetterTempl<X2> [line 62]\n  n$1=_fun_method::GetterTempl<X2>_get<X2>(&g:class method::GetterTempl<X2>&,&x2_1:class method::X2&,&x2_2:class method::X2&) [line 62]\n  *&return:int=(1 / n$1) [line 62]\n " shape="box"]
+	
+
+	 "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_3" -> "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_2" ;
+"method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_4" [label="4:  DeclStmt \n   _fun_method::GetterTempl<X2>_GetterTempl(&g:class method::GetterTempl<X2>*) [line 61]\n " shape="box"]
+	
+
+	 "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_4" -> "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_3" ;
+"method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_5" [label="5:  DeclStmt \n   _fun_method::X2_X2(&x2_2:class method::X2*) [line 60]\n " shape="box"]
+	
+
+	 "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_5" -> "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_4" ;
+"method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_6" [label="6:  DeclStmt \n   _fun_method::X2_X2(&x2_1:class method::X2*) [line 59]\n " shape="box"]
+	
+
+	 "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_6" -> "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_5" ;
+"method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_1" [label="1: Start method::div1_getter_templ\nFormals: \nLocals:  g:class method::GetterTempl<X2> x2:class method::X2 x1:class method::X1 \n   DECLARE_LOCALS(&return,&g,&x2,&x1); [line 65]\n " color=yellow style=filled]
+	
+
+	 "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_1" -> "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_6" ;
+"method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_2" [label="2: Exit method::div1_getter_templ \n  " color=yellow style=filled]
+	
+
+"method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_3" [label="3:  Return Stmt \n   _=*&g:class method::GetterTempl<X2> [line 69]\n  n$1=_fun_method::GetterTempl<X2>_get<X1>(&g:class method::GetterTempl<X2>&,&x2:class method::X2&,&x1:class method::X1&) [line 69]\n  *&return:int=(1 / n$1) [line 69]\n " shape="box"]
+	
+
+	 "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_3" -> "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_2" ;
+"method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_4" [label="4:  DeclStmt \n   _fun_method::GetterTempl<X2>_GetterTempl(&g:class method::GetterTempl<X2>*) [line 68]\n " shape="box"]
+	
+
+	 "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_4" -> "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_3" ;
+"method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_5" [label="5:  DeclStmt \n   _fun_method::X2_X2(&x2:class method::X2*) [line 67]\n " shape="box"]
+	
+
+	 "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_5" -> "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_4" ;
+"method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_6" [label="6:  DeclStmt \n   _fun_method::X1_X1(&x1:class method::X1*) [line 66]\n " shape="box"]
+	
+
+	 "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_6" -> "method::div1_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div1_getter_templEv}.d19286fd5cb40893bfa6b34994b7f95b_5" ;
+"method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_1" [label="1: Start method::div1_getter_templ2\nFormals: \nLocals:  g:class method::GetterTempl<X1> x1_2:class method::X1 x1_1:class method::X1 \n   DECLARE_LOCALS(&return,&g,&x1_2,&x1_1); [line 72]\n " color=yellow style=filled]
+	
+
+	 "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_1" -> "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_6" ;
+"method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_2" [label="2: Exit method::div1_getter_templ2 \n  " color=yellow style=filled]
+	
+
+"method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_3" [label="3:  Return Stmt \n   _=*&g:class method::GetterTempl<X1> [line 76]\n  n$1=_fun_method::GetterTempl<X1>_get<X1>(&g:class method::GetterTempl<X1>&,&x1_1:class method::X1&,&x1_2:class method::X1&) [line 76]\n  *&return:int=(1 / n$1) [line 76]\n " shape="box"]
+	
+
+	 "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_3" -> "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_2" ;
+"method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_4" [label="4:  DeclStmt \n   _fun_method::GetterTempl<X1>_GetterTempl(&g:class method::GetterTempl<X1>*) [line 75]\n " shape="box"]
+	
+
+	 "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_4" -> "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_3" ;
+"method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_5" [label="5:  DeclStmt \n   _fun_method::X1_X1(&x1_2:class method::X1*) [line 74]\n " shape="box"]
+	
+
+	 "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_5" -> "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_4" ;
+"method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_6" [label="6:  DeclStmt \n   _fun_method::X1_X1(&x1_1:class method::X1*) [line 73]\n " shape="box"]
+	
+
+	 "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_6" -> "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_5" ;
+"method::Getter_Getter{_ZN6method6GetterC1Ev}.da94695cba54f2d041689230d7249330_1" [label="1: Start method::Getter_Getter\nFormals:  this:class method::Getter*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+	
+
+	 "method::Getter_Getter{_ZN6method6GetterC1Ev}.da94695cba54f2d041689230d7249330_1" -> "method::Getter_Getter{_ZN6method6GetterC1Ev}.da94695cba54f2d041689230d7249330_2" ;
+"method::Getter_Getter{_ZN6method6GetterC1Ev}.da94695cba54f2d041689230d7249330_2" [label="2: Exit method::Getter_Getter \n  " color=yellow style=filled]
 	
 
 "method::Getter_get<X1>(_ZN6method6Getter3getINS_2X1EEEiRT_).80d274ae0eea8a42827f3ee5d82d22ec_1" [label="1: Start method::Getter_get<X1>\nFormals:  this:class method::Getter* s:class method::X1&\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
 	
 
 	 "method::Getter_get<X1>(_ZN6method6Getter3getINS_2X1EEEiRT_).80d274ae0eea8a42827f3ee5d82d22ec_1" -> "method::Getter_get<X1>(_ZN6method6Getter3getINS_2X1EEEiRT_).80d274ae0eea8a42827f3ee5d82d22ec_3" ;
-"method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_3" [label="3:  Return Stmt \n   *&return:int=1 [line 13]\n " shape="box"]
+"method::Getter_get<X1>(_ZN6method6Getter3getINS_2X1EEEiRT_).80d274ae0eea8a42827f3ee5d82d22ec_2" [label="2: Exit method::Getter_get<X1> \n  " color=yellow style=filled]
 	
 
-	 "method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_3" -> "method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_2" ;
-"method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_2" [label="2: Exit method::X1_get \n  " color=yellow style=filled]
+"method::Getter_get<X1>(_ZN6method6Getter3getINS_2X1EEEiRT_).80d274ae0eea8a42827f3ee5d82d22ec_3" [label="3:  Return Stmt \n   n$0=*&s:class method::X1& [line 27]\n  _=*n$0:class method::X1 [line 27]\n  n$2=_fun_method::X1_get(n$0:class method::X1&) [line 27]\n  *&return:int=n$2 [line 27]\n " shape="box"]
 	
 
-"method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_1" [label="1: Start method::X1_get\nFormals:  this:class method::X1*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
-	
-
-	 "method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_1" -> "method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_3" ;
-"method::X3_X3{_ZN6method2X3C1Ev}.4a21083a9d67665819c3bb8a34a23eb1_2" [label="2: Exit method::X3_X3 \n  " color=yellow style=filled]
-	
-
-"method::X3_X3{_ZN6method2X3C1Ev}.4a21083a9d67665819c3bb8a34a23eb1_1" [label="1: Start method::X3_X3\nFormals:  this:class method::X3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
-	
-
-	 "method::X3_X3{_ZN6method2X3C1Ev}.4a21083a9d67665819c3bb8a34a23eb1_1" -> "method::X3_X3{_ZN6method2X3C1Ev}.4a21083a9d67665819c3bb8a34a23eb1_2" ;
-"method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_3" [label="3:  Return Stmt \n   n$0=*&t:class method::X3& [line 35]\n  _=*n$0:class method::X3 [line 35]\n  n$2=_fun_method::X3_get(n$0:class method::X3&) [line 35]\n  n$3=*&s:class method::X2& [line 35]\n  _=*n$3:class method::X2 [line 35]\n  n$5=_fun_method::X2_get(n$3:class method::X2&) [line 35]\n  *&return:int=(n$2 + n$5) [line 35]\n " shape="box"]
-	
-
-	 "method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_3" -> "method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_2" ;
-"method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_2" [label="2: Exit method::GetterTempl<X3>_get<X2> \n  " color=yellow style=filled]
-	
-
-"method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_1" [label="1: Start method::GetterTempl<X3>_get<X2>\nFormals:  this:class method::GetterTempl<X3>* t:class method::X3& s:class method::X2&\nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
-	
-
-	 "method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_1" -> "method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_3" ;
-"method::Getter_Getter{_ZN6method6GetterC1Ev}.da94695cba54f2d041689230d7249330_2" [label="2: Exit method::Getter_Getter \n  " color=yellow style=filled]
-	
-
-"method::Getter_Getter{_ZN6method6GetterC1Ev}.da94695cba54f2d041689230d7249330_1" [label="1: Start method::Getter_Getter\nFormals:  this:class method::Getter*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
-	
-
-	 "method::Getter_Getter{_ZN6method6GetterC1Ev}.da94695cba54f2d041689230d7249330_1" -> "method::Getter_Getter{_ZN6method6GetterC1Ev}.da94695cba54f2d041689230d7249330_2" ;
-"method::X1_X1{_ZN6method2X1C1Ev}.8cb38ad325fedb5620011ba6bd7680c1_2" [label="2: Exit method::X1_X1 \n  " color=yellow style=filled]
-	
-
-"method::X1_X1{_ZN6method2X1C1Ev}.8cb38ad325fedb5620011ba6bd7680c1_1" [label="1: Start method::X1_X1\nFormals:  this:class method::X1*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
-	
-
-	 "method::X1_X1{_ZN6method2X1C1Ev}.8cb38ad325fedb5620011ba6bd7680c1_1" -> "method::X1_X1{_ZN6method2X1C1Ev}.8cb38ad325fedb5620011ba6bd7680c1_2" ;
-"method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev}.437eaf33f694c0d050cfba2776c18593_2" [label="2: Exit method::GetterTempl<X1>_GetterTempl \n  " color=yellow style=filled]
-	
-
-"method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev}.437eaf33f694c0d050cfba2776c18593_1" [label="1: Start method::GetterTempl<X1>_GetterTempl\nFormals:  this:class method::GetterTempl<X1>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
-	
-
-	 "method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev}.437eaf33f694c0d050cfba2776c18593_1" -> "method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev}.437eaf33f694c0d050cfba2776c18593_2" ;
-"method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev}.456ed7970a3c5fb7ada2553bbce85a95_2" [label="2: Exit method::GetterTempl<X3>_GetterTempl \n  " color=yellow style=filled]
-	
-
-"method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev}.456ed7970a3c5fb7ada2553bbce85a95_1" [label="1: Start method::GetterTempl<X3>_GetterTempl\nFormals:  this:class method::GetterTempl<X3>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
-	
-
-	 "method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev}.456ed7970a3c5fb7ada2553bbce85a95_1" -> "method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev}.456ed7970a3c5fb7ada2553bbce85a95_2" ;
-"method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_6" [label="6:  DeclStmt \n   _fun_method::X1_X1(&x1_1:class method::X1*) [line 73]\n " shape="box"]
-	
-
-	 "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_6" -> "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_5" ;
-"method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_5" [label="5:  DeclStmt \n   _fun_method::X1_X1(&x1_2:class method::X1*) [line 74]\n " shape="box"]
-	
-
-	 "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_5" -> "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_4" ;
-"method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_4" [label="4:  DeclStmt \n   _fun_method::GetterTempl<X1>_GetterTempl(&g:class method::GetterTempl<X1>*) [line 75]\n " shape="box"]
-	
-
-	 "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_4" -> "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_3" ;
-"method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_3" [label="3:  Return Stmt \n   _=*&g:class method::GetterTempl<X1> [line 76]\n  n$1=_fun_method::GetterTempl<X1>_get<X1>(&g:class method::GetterTempl<X1>&,&x1_1:class method::X1&,&x1_2:class method::X1&) [line 76]\n  *&return:int=(1 / n$1) [line 76]\n " shape="box"]
-	
-
-	 "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_3" -> "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_2" ;
-"method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_2" [label="2: Exit method::div1_getter_templ2 \n  " color=yellow style=filled]
-	
-
-"method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_1" [label="1: Start method::div1_getter_templ2\nFormals: \nLocals:  g:class method::GetterTempl<X1> x1_2:class method::X1 x1_1:class method::X1 \n   DECLARE_LOCALS(&return,&g,&x1_2,&x1_1); [line 72]\n " color=yellow style=filled]
-	
-
-	 "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_1" -> "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_6" ;
-"method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev}.f096fcbcaf25ca13b754a9505447ff1c_2" [label="2: Exit method::GetterTempl<X2>_GetterTempl \n  " color=yellow style=filled]
-	
-
-"method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev}.f096fcbcaf25ca13b754a9505447ff1c_1" [label="1: Start method::GetterTempl<X2>_GetterTempl\nFormals:  this:class method::GetterTempl<X2>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
-	
-
-	 "method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev}.f096fcbcaf25ca13b754a9505447ff1c_1" -> "method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev}.f096fcbcaf25ca13b754a9505447ff1c_2" ;
-"method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_6" [label="6:  DeclStmt \n   _fun_method::X2_X2(&x2:class method::X2*) [line 52]\n " shape="box"]
-	
-
-	 "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_6" -> "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_5" ;
-"method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_5" [label="5:  DeclStmt \n   _fun_method::X3_X3(&x3:class method::X3*) [line 53]\n " shape="box"]
-	
-
-	 "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_5" -> "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_4" ;
-"method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_4" [label="4:  DeclStmt \n   _fun_method::GetterTempl<X3>_GetterTempl(&g:class method::GetterTempl<X3>*) [line 54]\n " shape="box"]
-	
-
-	 "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_4" -> "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_3" ;
-"method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_3" [label="3:  Return Stmt \n   _=*&g:class method::GetterTempl<X3> [line 55]\n  n$1=_fun_method::GetterTempl<X3>_get<X2>(&g:class method::GetterTempl<X3>&,&x3:class method::X3&,&x2:class method::X2&) [line 55]\n  *&return:int=(1 / n$1) [line 55]\n " shape="box"]
-	
-
-	 "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_3" -> "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_2" ;
-"method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_2" [label="2: Exit method::div0_getter_templ \n  " color=yellow style=filled]
-	
-
-"method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_1" [label="1: Start method::div0_getter_templ\nFormals: \nLocals:  g:class method::GetterTempl<X3> x3:class method::X3 x2:class method::X2 \n   DECLARE_LOCALS(&return,&g,&x3,&x2); [line 51]\n " color=yellow style=filled]
-	
-
-	 "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_1" -> "method::div0_getter_templ{d41d8cd98f00b204e9800998ecf8427e_ZN6method17div0_getter_templEv}.dac1de8ac6cd3930269c17ae1cb619f3_6" ;
-"method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_5" [label="5:  DeclStmt \n   _fun_method::X1_X1(&x1:class method::X1*) [line 46]\n " shape="box"]
-	
-
-	 "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_5" -> "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_4" ;
-"method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_4" [label="4:  DeclStmt \n   _fun_method::Getter_Getter(&g:class method::Getter*) [line 47]\n " shape="box"]
-	
-
-	 "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_4" -> "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_3" ;
-"method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_3" [label="3:  Return Stmt \n   _=*&g:class method::Getter [line 48]\n  n$1=_fun_method::Getter_get<X1>(&g:class method::Getter&,&x1:class method::X1&) [line 48]\n  *&return:int=(1 / n$1) [line 48]\n " shape="box"]
-	
-
-	 "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_3" -> "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_2" ;
-"method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_2" [label="2: Exit method::div1_getter \n  " color=yellow style=filled]
-	
-
-"method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_1" [label="1: Start method::div1_getter\nFormals: \nLocals:  g:class method::Getter x1:class method::X1 \n   DECLARE_LOCALS(&return,&g,&x1); [line 45]\n " color=yellow style=filled]
-	
-
-	 "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_1" -> "method::div1_getter{d41d8cd98f00b204e9800998ecf8427e_ZN6method11div1_getterEv}.03b758f8577af551d06f352c5c64124a_5" ;
-"method::X2_X2{_ZN6method2X2C1Ev}.0e26302c6141b4417297e231825a8f30_2" [label="2: Exit method::X2_X2 \n  " color=yellow style=filled]
-	
-
-"method::X2_X2{_ZN6method2X2C1Ev}.0e26302c6141b4417297e231825a8f30_1" [label="1: Start method::X2_X2\nFormals:  this:class method::X2*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
-	
-
-	 "method::X2_X2{_ZN6method2X2C1Ev}.0e26302c6141b4417297e231825a8f30_1" -> "method::X2_X2{_ZN6method2X2C1Ev}.0e26302c6141b4417297e231825a8f30_2" ;
-"method::Getter_get<X2>(_ZN6method6Getter3getINS_2X2EEEiRT_).f1459c43231792fae979e813829e9a89_3" [label="3:  Return Stmt \n   n$0=*&s:class method::X2& [line 27]\n  _=*n$0:class method::X2 [line 27]\n  n$2=_fun_method::X2_get(n$0:class method::X2&) [line 27]\n  *&return:int=n$2 [line 27]\n " shape="box"]
-	
-
-	 "method::Getter_get<X2>(_ZN6method6Getter3getINS_2X2EEEiRT_).f1459c43231792fae979e813829e9a89_3" -> "method::Getter_get<X2>(_ZN6method6Getter3getINS_2X2EEEiRT_).f1459c43231792fae979e813829e9a89_2" ;
-"method::Getter_get<X2>(_ZN6method6Getter3getINS_2X2EEEiRT_).f1459c43231792fae979e813829e9a89_2" [label="2: Exit method::Getter_get<X2> \n  " color=yellow style=filled]
-	
-
+	 "method::Getter_get<X1>(_ZN6method6Getter3getINS_2X1EEEiRT_).80d274ae0eea8a42827f3ee5d82d22ec_3" -> "method::Getter_get<X1>(_ZN6method6Getter3getINS_2X1EEEiRT_).80d274ae0eea8a42827f3ee5d82d22ec_2" ;
 "method::Getter_get<X2>(_ZN6method6Getter3getINS_2X2EEEiRT_).f1459c43231792fae979e813829e9a89_1" [label="1: Start method::Getter_get<X2>\nFormals:  this:class method::Getter* s:class method::X2&\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
 	
 
 	 "method::Getter_get<X2>(_ZN6method6Getter3getINS_2X2EEEiRT_).f1459c43231792fae979e813829e9a89_1" -> "method::Getter_get<X2>(_ZN6method6Getter3getINS_2X2EEEiRT_).f1459c43231792fae979e813829e9a89_3" ;
-"method::X3_get(_ZN6method2X33getEv).11ad10e5bda3b9c50c787dd79afd7cd9_3" [label="3:  Return Stmt \n   *&return:int=0 [line 21]\n " shape="box"]
+"method::Getter_get<X2>(_ZN6method6Getter3getINS_2X2EEEiRT_).f1459c43231792fae979e813829e9a89_2" [label="2: Exit method::Getter_get<X2> \n  " color=yellow style=filled]
 	
 
-	 "method::X3_get(_ZN6method2X33getEv).11ad10e5bda3b9c50c787dd79afd7cd9_3" -> "method::X3_get(_ZN6method2X33getEv).11ad10e5bda3b9c50c787dd79afd7cd9_2" ;
-"method::X3_get(_ZN6method2X33getEv).11ad10e5bda3b9c50c787dd79afd7cd9_2" [label="2: Exit method::X3_get \n  " color=yellow style=filled]
+"method::Getter_get<X2>(_ZN6method6Getter3getINS_2X2EEEiRT_).f1459c43231792fae979e813829e9a89_3" [label="3:  Return Stmt \n   n$0=*&s:class method::X2& [line 27]\n  _=*n$0:class method::X2 [line 27]\n  n$2=_fun_method::X2_get(n$0:class method::X2&) [line 27]\n  *&return:int=n$2 [line 27]\n " shape="box"]
 	
 
-"method::X3_get(_ZN6method2X33getEv).11ad10e5bda3b9c50c787dd79afd7cd9_1" [label="1: Start method::X3_get\nFormals:  this:class method::X3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
+	 "method::Getter_get<X2>(_ZN6method6Getter3getINS_2X2EEEiRT_).f1459c43231792fae979e813829e9a89_3" -> "method::Getter_get<X2>(_ZN6method6Getter3getINS_2X2EEEiRT_).f1459c43231792fae979e813829e9a89_2" ;
+"method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev}.437eaf33f694c0d050cfba2776c18593_1" [label="1: Start method::GetterTempl<X1>_GetterTempl\nFormals:  this:class method::GetterTempl<X1>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
 	
 
-	 "method::X3_get(_ZN6method2X33getEv).11ad10e5bda3b9c50c787dd79afd7cd9_1" -> "method::X3_get(_ZN6method2X33getEv).11ad10e5bda3b9c50c787dd79afd7cd9_3" ;
-"method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_6" [label="6:  DeclStmt \n   _fun_method::X2_X2(&x2_1:class method::X2*) [line 59]\n " shape="box"]
-	
-
-	 "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_6" -> "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_5" ;
-"method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_5" [label="5:  DeclStmt \n   _fun_method::X2_X2(&x2_2:class method::X2*) [line 60]\n " shape="box"]
-	
-
-	 "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_5" -> "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_4" ;
-"method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_4" [label="4:  DeclStmt \n   _fun_method::GetterTempl<X2>_GetterTempl(&g:class method::GetterTempl<X2>*) [line 61]\n " shape="box"]
-	
-
-	 "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_4" -> "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_3" ;
-"method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_3" [label="3:  Return Stmt \n   _=*&g:class method::GetterTempl<X2> [line 62]\n  n$1=_fun_method::GetterTempl<X2>_get<X2>(&g:class method::GetterTempl<X2>&,&x2_1:class method::X2&,&x2_2:class method::X2&) [line 62]\n  *&return:int=(1 / n$1) [line 62]\n " shape="box"]
-	
-
-	 "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_3" -> "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_2" ;
-"method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_2" [label="2: Exit method::div0_getter_templ2 \n  " color=yellow style=filled]
-	
-
-"method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_1" [label="1: Start method::div0_getter_templ2\nFormals: \nLocals:  g:class method::GetterTempl<X2> x2_2:class method::X2 x2_1:class method::X2 \n   DECLARE_LOCALS(&return,&g,&x2_2,&x2_1); [line 58]\n " color=yellow style=filled]
-	
-
-	 "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_1" -> "method::div0_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div0_getter_templ2Ev}.c3f10a7ebfb57bae5844dff8aaa7255c_6" ;
-"method::GetterTempl<X1>_get<X1>(_ZN6method11GetterTemplINS_2X1EE3getIS1_EEiRS1_RT_).cfdb3dd8a7f15c49f42389f94b3f8bc7_3" [label="3:  Return Stmt \n   n$0=*&t:class method::X1& [line 35]\n  _=*n$0:class method::X1 [line 35]\n  n$2=_fun_method::X1_get(n$0:class method::X1&) [line 35]\n  n$3=*&s:class method::X1& [line 35]\n  _=*n$3:class method::X1 [line 35]\n  n$5=_fun_method::X1_get(n$3:class method::X1&) [line 35]\n  *&return:int=(n$2 + n$5) [line 35]\n " shape="box"]
-	
-
-	 "method::GetterTempl<X1>_get<X1>(_ZN6method11GetterTemplINS_2X1EE3getIS1_EEiRS1_RT_).cfdb3dd8a7f15c49f42389f94b3f8bc7_3" -> "method::GetterTempl<X1>_get<X1>(_ZN6method11GetterTemplINS_2X1EE3getIS1_EEiRS1_RT_).cfdb3dd8a7f15c49f42389f94b3f8bc7_2" ;
-"method::GetterTempl<X1>_get<X1>(_ZN6method11GetterTemplINS_2X1EE3getIS1_EEiRS1_RT_).cfdb3dd8a7f15c49f42389f94b3f8bc7_2" [label="2: Exit method::GetterTempl<X1>_get<X1> \n  " color=yellow style=filled]
+	 "method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev}.437eaf33f694c0d050cfba2776c18593_1" -> "method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev}.437eaf33f694c0d050cfba2776c18593_2" ;
+"method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev}.437eaf33f694c0d050cfba2776c18593_2" [label="2: Exit method::GetterTempl<X1>_GetterTempl \n  " color=yellow style=filled]
 	
 
 "method::GetterTempl<X1>_get<X1>(_ZN6method11GetterTemplINS_2X1EE3getIS1_EEiRS1_RT_).cfdb3dd8a7f15c49f42389f94b3f8bc7_1" [label="1: Start method::GetterTempl<X1>_get<X1>\nFormals:  this:class method::GetterTempl<X1>* t:class method::X1& s:class method::X1&\nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
 	
 
 	 "method::GetterTempl<X1>_get<X1>(_ZN6method11GetterTemplINS_2X1EE3getIS1_EEiRS1_RT_).cfdb3dd8a7f15c49f42389f94b3f8bc7_1" -> "method::GetterTempl<X1>_get<X1>(_ZN6method11GetterTemplINS_2X1EE3getIS1_EEiRS1_RT_).cfdb3dd8a7f15c49f42389f94b3f8bc7_3" ;
-"method::GetterTempl<X2>_get<X2>(_ZN6method11GetterTemplINS_2X2EE3getIS1_EEiRS1_RT_).1ed26b1d272224ecb2da552b376bc478_3" [label="3:  Return Stmt \n   n$0=*&t:class method::X2& [line 35]\n  _=*n$0:class method::X2 [line 35]\n  n$2=_fun_method::X2_get(n$0:class method::X2&) [line 35]\n  n$3=*&s:class method::X2& [line 35]\n  _=*n$3:class method::X2 [line 35]\n  n$5=_fun_method::X2_get(n$3:class method::X2&) [line 35]\n  *&return:int=(n$2 + n$5) [line 35]\n " shape="box"]
+"method::GetterTempl<X1>_get<X1>(_ZN6method11GetterTemplINS_2X1EE3getIS1_EEiRS1_RT_).cfdb3dd8a7f15c49f42389f94b3f8bc7_2" [label="2: Exit method::GetterTempl<X1>_get<X1> \n  " color=yellow style=filled]
 	
 
-	 "method::GetterTempl<X2>_get<X2>(_ZN6method11GetterTemplINS_2X2EE3getIS1_EEiRS1_RT_).1ed26b1d272224ecb2da552b376bc478_3" -> "method::GetterTempl<X2>_get<X2>(_ZN6method11GetterTemplINS_2X2EE3getIS1_EEiRS1_RT_).1ed26b1d272224ecb2da552b376bc478_2" ;
-"method::GetterTempl<X2>_get<X2>(_ZN6method11GetterTemplINS_2X2EE3getIS1_EEiRS1_RT_).1ed26b1d272224ecb2da552b376bc478_2" [label="2: Exit method::GetterTempl<X2>_get<X2> \n  " color=yellow style=filled]
+"method::GetterTempl<X1>_get<X1>(_ZN6method11GetterTemplINS_2X1EE3getIS1_EEiRS1_RT_).cfdb3dd8a7f15c49f42389f94b3f8bc7_3" [label="3:  Return Stmt \n   n$0=*&t:class method::X1& [line 35]\n  _=*n$0:class method::X1 [line 35]\n  n$2=_fun_method::X1_get(n$0:class method::X1&) [line 35]\n  n$3=*&s:class method::X1& [line 35]\n  _=*n$3:class method::X1 [line 35]\n  n$5=_fun_method::X1_get(n$3:class method::X1&) [line 35]\n  *&return:int=(n$2 + n$5) [line 35]\n " shape="box"]
 	
 
+	 "method::GetterTempl<X1>_get<X1>(_ZN6method11GetterTemplINS_2X1EE3getIS1_EEiRS1_RT_).cfdb3dd8a7f15c49f42389f94b3f8bc7_3" -> "method::GetterTempl<X1>_get<X1>(_ZN6method11GetterTemplINS_2X1EE3getIS1_EEiRS1_RT_).cfdb3dd8a7f15c49f42389f94b3f8bc7_2" ;
+"method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev}.f096fcbcaf25ca13b754a9505447ff1c_1" [label="1: Start method::GetterTempl<X2>_GetterTempl\nFormals:  this:class method::GetterTempl<X2>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
+	
+
+	 "method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev}.f096fcbcaf25ca13b754a9505447ff1c_1" -> "method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev}.f096fcbcaf25ca13b754a9505447ff1c_2" ;
+"method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev}.f096fcbcaf25ca13b754a9505447ff1c_2" [label="2: Exit method::GetterTempl<X2>_GetterTempl \n  " color=yellow style=filled]
+	
+
+"method::GetterTempl<X2>_get<X1>(_ZN6method11GetterTemplINS_2X2EE3getINS_2X1EEEiRS1_RT_).50eaec9bda9895bdc81a6c246d9ea459_1" [label="1: Start method::GetterTempl<X2>_get<X1>\nFormals:  this:class method::GetterTempl<X2>* t:class method::X2& s:class method::X1&\nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
+	
+
+	 "method::GetterTempl<X2>_get<X1>(_ZN6method11GetterTemplINS_2X2EE3getINS_2X1EEEiRS1_RT_).50eaec9bda9895bdc81a6c246d9ea459_1" -> "method::GetterTempl<X2>_get<X1>(_ZN6method11GetterTemplINS_2X2EE3getINS_2X1EEEiRS1_RT_).50eaec9bda9895bdc81a6c246d9ea459_3" ;
+"method::GetterTempl<X2>_get<X1>(_ZN6method11GetterTemplINS_2X2EE3getINS_2X1EEEiRS1_RT_).50eaec9bda9895bdc81a6c246d9ea459_2" [label="2: Exit method::GetterTempl<X2>_get<X1> \n  " color=yellow style=filled]
+	
+
+"method::GetterTempl<X2>_get<X1>(_ZN6method11GetterTemplINS_2X2EE3getINS_2X1EEEiRS1_RT_).50eaec9bda9895bdc81a6c246d9ea459_3" [label="3:  Return Stmt \n   n$0=*&t:class method::X2& [line 35]\n  _=*n$0:class method::X2 [line 35]\n  n$2=_fun_method::X2_get(n$0:class method::X2&) [line 35]\n  n$3=*&s:class method::X1& [line 35]\n  _=*n$3:class method::X1 [line 35]\n  n$5=_fun_method::X1_get(n$3:class method::X1&) [line 35]\n  *&return:int=(n$2 + n$5) [line 35]\n " shape="box"]
+	
+
+	 "method::GetterTempl<X2>_get<X1>(_ZN6method11GetterTemplINS_2X2EE3getINS_2X1EEEiRS1_RT_).50eaec9bda9895bdc81a6c246d9ea459_3" -> "method::GetterTempl<X2>_get<X1>(_ZN6method11GetterTemplINS_2X2EE3getINS_2X1EEEiRS1_RT_).50eaec9bda9895bdc81a6c246d9ea459_2" ;
 "method::GetterTempl<X2>_get<X2>(_ZN6method11GetterTemplINS_2X2EE3getIS1_EEiRS1_RT_).1ed26b1d272224ecb2da552b376bc478_1" [label="1: Start method::GetterTempl<X2>_get<X2>\nFormals:  this:class method::GetterTempl<X2>* t:class method::X2& s:class method::X2&\nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
 	
 
 	 "method::GetterTempl<X2>_get<X2>(_ZN6method11GetterTemplINS_2X2EE3getIS1_EEiRS1_RT_).1ed26b1d272224ecb2da552b376bc478_1" -> "method::GetterTempl<X2>_get<X2>(_ZN6method11GetterTemplINS_2X2EE3getIS1_EEiRS1_RT_).1ed26b1d272224ecb2da552b376bc478_3" ;
+"method::GetterTempl<X2>_get<X2>(_ZN6method11GetterTemplINS_2X2EE3getIS1_EEiRS1_RT_).1ed26b1d272224ecb2da552b376bc478_2" [label="2: Exit method::GetterTempl<X2>_get<X2> \n  " color=yellow style=filled]
+	
+
+"method::GetterTempl<X2>_get<X2>(_ZN6method11GetterTemplINS_2X2EE3getIS1_EEiRS1_RT_).1ed26b1d272224ecb2da552b376bc478_3" [label="3:  Return Stmt \n   n$0=*&t:class method::X2& [line 35]\n  _=*n$0:class method::X2 [line 35]\n  n$2=_fun_method::X2_get(n$0:class method::X2&) [line 35]\n  n$3=*&s:class method::X2& [line 35]\n  _=*n$3:class method::X2 [line 35]\n  n$5=_fun_method::X2_get(n$3:class method::X2&) [line 35]\n  *&return:int=(n$2 + n$5) [line 35]\n " shape="box"]
+	
+
+	 "method::GetterTempl<X2>_get<X2>(_ZN6method11GetterTemplINS_2X2EE3getIS1_EEiRS1_RT_).1ed26b1d272224ecb2da552b376bc478_3" -> "method::GetterTempl<X2>_get<X2>(_ZN6method11GetterTemplINS_2X2EE3getIS1_EEiRS1_RT_).1ed26b1d272224ecb2da552b376bc478_2" ;
+"method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev}.456ed7970a3c5fb7ada2553bbce85a95_1" [label="1: Start method::GetterTempl<X3>_GetterTempl\nFormals:  this:class method::GetterTempl<X3>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
+	
+
+	 "method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev}.456ed7970a3c5fb7ada2553bbce85a95_1" -> "method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev}.456ed7970a3c5fb7ada2553bbce85a95_2" ;
+"method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev}.456ed7970a3c5fb7ada2553bbce85a95_2" [label="2: Exit method::GetterTempl<X3>_GetterTempl \n  " color=yellow style=filled]
+	
+
+"method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_1" [label="1: Start method::GetterTempl<X3>_get<X2>\nFormals:  this:class method::GetterTempl<X3>* t:class method::X3& s:class method::X2&\nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
+	
+
+	 "method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_1" -> "method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_3" ;
+"method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_2" [label="2: Exit method::GetterTempl<X3>_get<X2> \n  " color=yellow style=filled]
+	
+
+"method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_3" [label="3:  Return Stmt \n   n$0=*&t:class method::X3& [line 35]\n  _=*n$0:class method::X3 [line 35]\n  n$2=_fun_method::X3_get(n$0:class method::X3&) [line 35]\n  n$3=*&s:class method::X2& [line 35]\n  _=*n$3:class method::X2 [line 35]\n  n$5=_fun_method::X2_get(n$3:class method::X2&) [line 35]\n  *&return:int=(n$2 + n$5) [line 35]\n " shape="box"]
+	
+
+	 "method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_3" -> "method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_2" ;
+"method::X1_X1{_ZN6method2X1C1Ev}.8cb38ad325fedb5620011ba6bd7680c1_1" [label="1: Start method::X1_X1\nFormals:  this:class method::X1*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "method::X1_X1{_ZN6method2X1C1Ev}.8cb38ad325fedb5620011ba6bd7680c1_1" -> "method::X1_X1{_ZN6method2X1C1Ev}.8cb38ad325fedb5620011ba6bd7680c1_2" ;
+"method::X1_X1{_ZN6method2X1C1Ev}.8cb38ad325fedb5620011ba6bd7680c1_2" [label="2: Exit method::X1_X1 \n  " color=yellow style=filled]
+	
+
+"method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_1" [label="1: Start method::X1_get\nFormals:  this:class method::X1*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
+	
+
+	 "method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_1" -> "method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_3" ;
+"method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_2" [label="2: Exit method::X1_get \n  " color=yellow style=filled]
+	
+
+"method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_3" [label="3:  Return Stmt \n   *&return:int=1 [line 13]\n " shape="box"]
+	
+
+	 "method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_3" -> "method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_2" ;
+"method::X2_X2{_ZN6method2X2C1Ev}.0e26302c6141b4417297e231825a8f30_1" [label="1: Start method::X2_X2\nFormals:  this:class method::X2*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
+	
+
+	 "method::X2_X2{_ZN6method2X2C1Ev}.0e26302c6141b4417297e231825a8f30_1" -> "method::X2_X2{_ZN6method2X2C1Ev}.0e26302c6141b4417297e231825a8f30_2" ;
+"method::X2_X2{_ZN6method2X2C1Ev}.0e26302c6141b4417297e231825a8f30_2" [label="2: Exit method::X2_X2 \n  " color=yellow style=filled]
+	
+
+"method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_1" [label="1: Start method::X2_get\nFormals:  this:class method::X2*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
+	
+
+	 "method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_1" -> "method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_3" ;
+"method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_2" [label="2: Exit method::X2_get \n  " color=yellow style=filled]
+	
+
+"method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_3" [label="3:  Return Stmt \n   *&return:int=0 [line 17]\n " shape="box"]
+	
+
+	 "method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_3" -> "method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_2" ;
+"method::X3_X3{_ZN6method2X3C1Ev}.4a21083a9d67665819c3bb8a34a23eb1_1" [label="1: Start method::X3_X3\nFormals:  this:class method::X3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+	
+
+	 "method::X3_X3{_ZN6method2X3C1Ev}.4a21083a9d67665819c3bb8a34a23eb1_1" -> "method::X3_X3{_ZN6method2X3C1Ev}.4a21083a9d67665819c3bb8a34a23eb1_2" ;
+"method::X3_X3{_ZN6method2X3C1Ev}.4a21083a9d67665819c3bb8a34a23eb1_2" [label="2: Exit method::X3_X3 \n  " color=yellow style=filled]
+	
+
+"method::X3_get(_ZN6method2X33getEv).11ad10e5bda3b9c50c787dd79afd7cd9_1" [label="1: Start method::X3_get\nFormals:  this:class method::X3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
+	
+
+	 "method::X3_get(_ZN6method2X33getEv).11ad10e5bda3b9c50c787dd79afd7cd9_1" -> "method::X3_get(_ZN6method2X33getEv).11ad10e5bda3b9c50c787dd79afd7cd9_3" ;
+"method::X3_get(_ZN6method2X33getEv).11ad10e5bda3b9c50c787dd79afd7cd9_2" [label="2: Exit method::X3_get \n  " color=yellow style=filled]
+	
+
+"method::X3_get(_ZN6method2X33getEv).11ad10e5bda3b9c50c787dd79afd7cd9_3" [label="3:  Return Stmt \n   *&return:int=0 [line 21]\n " shape="box"]
+	
+
+	 "method::X3_get(_ZN6method2X33getEv).11ad10e5bda3b9c50c787dd79afd7cd9_3" -> "method::X3_get(_ZN6method2X33getEv).11ad10e5bda3b9c50c787dd79afd7cd9_2" ;
 }

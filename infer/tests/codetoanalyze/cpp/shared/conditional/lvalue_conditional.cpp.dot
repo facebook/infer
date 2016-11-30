@@ -1,255 +1,255 @@
 /* @generated */
 digraph iCFG {
-"div1_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div1_assign_conditionalv}.92f869873008e2be38561a2db0cbf69c_3" [label="3:  Return Stmt \n   n$0=_fun_assign_conditional(1:int) [line 43]\n  *&return:int=(1 / n$0) [line 43]\n " shape="box"]
+"div0_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_lvaluev}.33971c4fb1631ae7849c0b6e9319d4ed_1" [label="1: Start div0_choose_lvalue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 33]\n " color=yellow style=filled]
 	
 
-	 "div1_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div1_assign_conditionalv}.92f869873008e2be38561a2db0cbf69c_3" -> "div1_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div1_assign_conditionalv}.92f869873008e2be38561a2db0cbf69c_2" ;
-"div1_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div1_assign_conditionalv}.92f869873008e2be38561a2db0cbf69c_2" [label="2: Exit div1_assign_conditional \n  " color=yellow style=filled]
+	 "div0_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_lvaluev}.33971c4fb1631ae7849c0b6e9319d4ed_1" -> "div0_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_lvaluev}.33971c4fb1631ae7849c0b6e9319d4ed_3" ;
+"div0_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_lvaluev}.33971c4fb1631ae7849c0b6e9319d4ed_2" [label="2: Exit div0_choose_lvalue \n  " color=yellow style=filled]
 	
 
+"div0_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_lvaluev}.33971c4fb1631ae7849c0b6e9319d4ed_3" [label="3:  Return Stmt \n   n$0=_fun_choose_lvalue(1:int) [line 33]\n  *&return:int=(1 / n$0) [line 33]\n " shape="box"]
+	
+
+	 "div0_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_lvaluev}.33971c4fb1631ae7849c0b6e9319d4ed_3" -> "div0_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_lvaluev}.33971c4fb1631ae7849c0b6e9319d4ed_2" ;
+"div1_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_lvaluev}.946cb482a75d8e7dcce087e5daa1e2a4_1" [label="1: Start div1_choose_lvalue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 35]\n " color=yellow style=filled]
+	
+
+	 "div1_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_lvaluev}.946cb482a75d8e7dcce087e5daa1e2a4_1" -> "div1_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_lvaluev}.946cb482a75d8e7dcce087e5daa1e2a4_3" ;
+"div1_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_lvaluev}.946cb482a75d8e7dcce087e5daa1e2a4_2" [label="2: Exit div1_choose_lvalue \n  " color=yellow style=filled]
+	
+
+"div1_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_lvaluev}.946cb482a75d8e7dcce087e5daa1e2a4_3" [label="3:  Return Stmt \n   n$0=_fun_choose_lvalue(0:int) [line 35]\n  *&return:int=(1 / n$0) [line 35]\n " shape="box"]
+	
+
+	 "div1_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_lvaluev}.946cb482a75d8e7dcce087e5daa1e2a4_3" -> "div1_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_lvaluev}.946cb482a75d8e7dcce087e5daa1e2a4_2" ;
+"div0_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_rvaluev}.659babbaece0692d30930dde0b8bc14b_1" [label="1: Start div0_choose_rvalue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 37]\n " color=yellow style=filled]
+	
+
+	 "div0_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_rvaluev}.659babbaece0692d30930dde0b8bc14b_1" -> "div0_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_rvaluev}.659babbaece0692d30930dde0b8bc14b_3" ;
+"div0_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_rvaluev}.659babbaece0692d30930dde0b8bc14b_2" [label="2: Exit div0_choose_rvalue \n  " color=yellow style=filled]
+	
+
+"div0_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_rvaluev}.659babbaece0692d30930dde0b8bc14b_3" [label="3:  Return Stmt \n   n$0=_fun_choose_rvalue(1:int) [line 37]\n  *&return:int=(1 / n$0) [line 37]\n " shape="box"]
+	
+
+	 "div0_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_rvaluev}.659babbaece0692d30930dde0b8bc14b_3" -> "div0_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_rvaluev}.659babbaece0692d30930dde0b8bc14b_2" ;
+"div1_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_rvaluev}.fef13b1fcbaa224805a1550f767822a9_1" [label="1: Start div1_choose_rvalue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 39]\n " color=yellow style=filled]
+	
+
+	 "div1_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_rvaluev}.fef13b1fcbaa224805a1550f767822a9_1" -> "div1_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_rvaluev}.fef13b1fcbaa224805a1550f767822a9_3" ;
+"div1_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_rvaluev}.fef13b1fcbaa224805a1550f767822a9_2" [label="2: Exit div1_choose_rvalue \n  " color=yellow style=filled]
+	
+
+"div1_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_rvaluev}.fef13b1fcbaa224805a1550f767822a9_3" [label="3:  Return Stmt \n   n$0=_fun_choose_rvalue(0:int) [line 39]\n  *&return:int=(1 / n$0) [line 39]\n " shape="box"]
+	
+
+	 "div1_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_rvaluev}.fef13b1fcbaa224805a1550f767822a9_3" -> "div1_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_rvaluev}.fef13b1fcbaa224805a1550f767822a9_2" ;
+"div0_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div0_assign_conditionalv}.e27c458f48e2fd3eb2c37a500947ad83_1" [label="1: Start div0_assign_conditional\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 41]\n " color=yellow style=filled]
+	
+
+	 "div0_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div0_assign_conditionalv}.e27c458f48e2fd3eb2c37a500947ad83_1" -> "div0_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div0_assign_conditionalv}.e27c458f48e2fd3eb2c37a500947ad83_3" ;
+"div0_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div0_assign_conditionalv}.e27c458f48e2fd3eb2c37a500947ad83_2" [label="2: Exit div0_assign_conditional \n  " color=yellow style=filled]
+	
+
+"div0_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div0_assign_conditionalv}.e27c458f48e2fd3eb2c37a500947ad83_3" [label="3:  Return Stmt \n   n$0=_fun_assign_conditional(0:int) [line 41]\n  *&return:int=(1 / n$0) [line 41]\n " shape="box"]
+	
+
+	 "div0_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div0_assign_conditionalv}.e27c458f48e2fd3eb2c37a500947ad83_3" -> "div0_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div0_assign_conditionalv}.e27c458f48e2fd3eb2c37a500947ad83_2" ;
 "div1_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div1_assign_conditionalv}.92f869873008e2be38561a2db0cbf69c_1" [label="1: Start div1_assign_conditional\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 43]\n " color=yellow style=filled]
 	
 
 	 "div1_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div1_assign_conditionalv}.92f869873008e2be38561a2db0cbf69c_1" -> "div1_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div1_assign_conditionalv}.92f869873008e2be38561a2db0cbf69c_3" ;
-"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_11" [label="11:  DeclStmt \n   *&v1:int=0 [line 11]\n " shape="box"]
+"div1_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div1_assign_conditionalv}.92f869873008e2be38561a2db0cbf69c_2" [label="2: Exit div1_assign_conditional \n  " color=yellow style=filled]
 	
 
-	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_11" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_10" ;
+"div1_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div1_assign_conditionalv}.92f869873008e2be38561a2db0cbf69c_3" [label="3:  Return Stmt \n   n$0=_fun_assign_conditional(1:int) [line 43]\n  *&return:int=(1 / n$0) [line 43]\n " shape="box"]
+	
+
+	 "div1_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div1_assign_conditionalv}.92f869873008e2be38561a2db0cbf69c_3" -> "div1_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div1_assign_conditionalv}.92f869873008e2be38561a2db0cbf69c_2" ;
+"div0_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div0_temp_lvaluev}.d905fe7f39ce34b39ca169929ea65e7d_1" [label="1: Start div0_temp_lvalue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 45]\n " color=yellow style=filled]
+	
+
+	 "div0_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div0_temp_lvaluev}.d905fe7f39ce34b39ca169929ea65e7d_1" -> "div0_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div0_temp_lvaluev}.d905fe7f39ce34b39ca169929ea65e7d_3" ;
+"div0_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div0_temp_lvaluev}.d905fe7f39ce34b39ca169929ea65e7d_2" [label="2: Exit div0_temp_lvalue \n  " color=yellow style=filled]
+	
+
+"div0_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div0_temp_lvaluev}.d905fe7f39ce34b39ca169929ea65e7d_3" [label="3:  Return Stmt \n   n$0=_fun_div_temp_lvalue(1:int,0:int) [line 45]\n  *&return:int=n$0 [line 45]\n " shape="box"]
+	
+
+	 "div0_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div0_temp_lvaluev}.d905fe7f39ce34b39ca169929ea65e7d_3" -> "div0_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div0_temp_lvaluev}.d905fe7f39ce34b39ca169929ea65e7d_2" ;
+"div1_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div1_temp_lvaluev}.3b77e4a6c86c90b394ed42389d225e28_1" [label="1: Start div1_temp_lvalue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 47]\n " color=yellow style=filled]
+	
+
+	 "div1_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div1_temp_lvaluev}.3b77e4a6c86c90b394ed42389d225e28_1" -> "div1_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div1_temp_lvaluev}.3b77e4a6c86c90b394ed42389d225e28_3" ;
+"div1_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div1_temp_lvaluev}.3b77e4a6c86c90b394ed42389d225e28_2" [label="2: Exit div1_temp_lvalue \n  " color=yellow style=filled]
+	
+
+"div1_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div1_temp_lvaluev}.3b77e4a6c86c90b394ed42389d225e28_3" [label="3:  Return Stmt \n   n$0=_fun_div_temp_lvalue(0:int,1:int) [line 47]\n  *&return:int=n$0 [line 47]\n " shape="box"]
+	
+
+	 "div1_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div1_temp_lvaluev}.3b77e4a6c86c90b394ed42389d225e28_3" -> "div1_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div1_temp_lvaluev}.3b77e4a6c86c90b394ed42389d225e28_2" ;
+"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_1" [label="1: Start choose_lvalue\nFormals:  a:int\nLocals:  v3:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int& v2:int v1:int \n   DECLARE_LOCALS(&return,&v3,&0$?%__sil_tmpSIL_temp_conditional___n$1,&v2,&v1); [line 10]\n " color=yellow style=filled]
+	
+
+	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_1" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_11" ;
+"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_2" [label="2: Exit choose_lvalue \n  " color=yellow style=filled]
+	
+
+"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_3" [label="3:  Return Stmt \n   n$0=*&v3:int [line 13]\n  *&return:int=n$0 [line 13]\n " shape="box"]
+	
+
+	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_3" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_2" ;
+"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_4" [label="4: + \n  " ]
+	
+
+	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_4" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_9" ;
+"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_5" [label="5: Prune (true branch) \n   n$2=*&a:int [line 12]\n  PRUNE((n$2 != 0), true); [line 12]\n " shape="invhouse"]
+	
+
+	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_5" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_7" ;
+"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_6" [label="6: Prune (false branch) \n   n$2=*&a:int [line 12]\n  PRUNE((n$2 == 0), false); [line 12]\n " shape="invhouse"]
+	
+
+	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_6" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_8" ;
+"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v1 [line 12]\n " shape="box"]
+	
+
+	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_7" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_4" ;
+"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_8" [label="8:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v2 [line 12]\n " shape="box"]
+	
+
+	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_8" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_4" ;
+"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_9" [label="9:  DeclStmt \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int& [line 12]\n  n$4=*n$3:int [line 12]\n  *&v3:int=n$4 [line 12]\n " shape="box"]
+	
+
+	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_9" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_3" ;
 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_10" [label="10:  DeclStmt \n   *&v2:int=1 [line 11]\n " shape="box"]
 	
 
 	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_10" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_5" ;
 	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_10" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_6" ;
-"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_9" [label="9:  DeclStmt \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int& [line 12]\n  n$4=*n$3:int [line 12]\n  *&v3:int=n$4 [line 12]\n " shape="box"]
+"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_11" [label="11:  DeclStmt \n   *&v1:int=0 [line 11]\n " shape="box"]
 	
 
-	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_9" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_3" ;
-"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_8" [label="8:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v2 [line 12]\n " shape="box"]
+	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_11" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_10" ;
+"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_1" [label="1: Start choose_rvalue\nFormals:  a:int\nLocals:  v3:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int v1:int \n   DECLARE_LOCALS(&return,&v3,&0$?%__sil_tmpSIL_temp_conditional___n$1,&v1); [line 16]\n " color=yellow style=filled]
 	
 
-	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_8" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_4" ;
-"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v1 [line 12]\n " shape="box"]
+	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_1" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_10" ;
+"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_2" [label="2: Exit choose_rvalue \n  " color=yellow style=filled]
 	
 
-	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_7" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_4" ;
-"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_6" [label="6: Prune (false branch) \n   n$2=*&a:int [line 12]\n  PRUNE((n$2 == 0), false); [line 12]\n " shape="invhouse"]
+"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_3" [label="3:  Return Stmt \n   n$0=*&v3:int [line 19]\n  *&return:int=n$0 [line 19]\n " shape="box"]
 	
 
-	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_6" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_8" ;
-"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_5" [label="5: Prune (true branch) \n   n$2=*&a:int [line 12]\n  PRUNE((n$2 != 0), true); [line 12]\n " shape="invhouse"]
+	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_3" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_2" ;
+"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_4" [label="4: + \n  " ]
 	
 
-	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_5" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_7" ;
-"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_4" [label="4: + \n  " ]
+	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_4" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_9" ;
+"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_5" [label="5: Prune (true branch) \n   n$2=*&a:int [line 18]\n  PRUNE((n$2 != 0), true); [line 18]\n " shape="invhouse"]
 	
 
-	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_4" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_9" ;
-"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_3" [label="3:  Return Stmt \n   n$0=*&v3:int [line 13]\n  *&return:int=n$0 [line 13]\n " shape="box"]
+	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_5" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_7" ;
+"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_6" [label="6: Prune (false branch) \n   n$2=*&a:int [line 18]\n  PRUNE((n$2 == 0), false); [line 18]\n " shape="invhouse"]
 	
 
-	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_3" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_2" ;
-"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_2" [label="2: Exit choose_lvalue \n  " color=yellow style=filled]
+	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_6" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_8" ;
+"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_7" [label="7:  ConditinalStmt Branch \n   n$3=*&v1:int [line 18]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$3 [line 18]\n " shape="box"]
 	
 
-"choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_1" [label="1: Start choose_lvalue\nFormals:  a:int\nLocals:  v3:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int& v2:int v1:int \n   DECLARE_LOCALS(&return,&v3,&0$?%__sil_tmpSIL_temp_conditional___n$1,&v2,&v1); [line 10]\n " color=yellow style=filled]
+	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_7" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_4" ;
+"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_8" [label="8:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=1 [line 18]\n " shape="box"]
 	
 
-	 "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_1" -> "choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_lvaluei}.6c25176eadbe218811c9816a2afa04be_11" ;
-"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_11" [label="11:  DeclStmt \n   *&v1:int=0 [line 23]\n " shape="box"]
+	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_8" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_4" ;
+"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_9" [label="9:  DeclStmt \n   n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 18]\n  *&v3:int=n$4 [line 18]\n " shape="box"]
 	
 
-	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_11" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_10" ;
-"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_10" [label="10:  DeclStmt \n   *&v2:int=0 [line 23]\n " shape="box"]
-	
-
-	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_10" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_5" ;
-	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_10" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_6" ;
-"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_9" [label="9:  BinaryOperatorStmt: Assign \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int& [line 24]\n  *n$3:int=1 [line 24]\n " shape="box"]
-	
-
-	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_9" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_3" ;
-"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_8" [label="8:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v2 [line 24]\n " shape="box"]
-	
-
-	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_8" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_4" ;
-"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v1 [line 24]\n " shape="box"]
-	
-
-	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_7" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_4" ;
-"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_6" [label="6: Prune (false branch) \n   n$2=*&a:int [line 24]\n  PRUNE((n$2 == 0), false); [line 24]\n " shape="invhouse"]
-	
-
-	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_6" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_8" ;
-"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_5" [label="5: Prune (true branch) \n   n$2=*&a:int [line 24]\n  PRUNE((n$2 != 0), true); [line 24]\n " shape="invhouse"]
-	
-
-	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_5" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_7" ;
-"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_4" [label="4: + \n  " ]
-	
-
-	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_4" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_9" ;
-"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_3" [label="3:  Return Stmt \n   n$0=*&v1:int [line 25]\n  *&return:int=n$0 [line 25]\n " shape="box"]
-	
-
-	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_3" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_2" ;
-"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_2" [label="2: Exit assign_conditional \n  " color=yellow style=filled]
-	
-
-"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_1" [label="1: Start assign_conditional\nFormals:  a:int\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$1:int& v2:int v1:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$1,&v2,&v1); [line 22]\n " color=yellow style=filled]
-	
-
-	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_1" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_11" ;
-"div1_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div1_temp_lvaluev}.3b77e4a6c86c90b394ed42389d225e28_3" [label="3:  Return Stmt \n   n$0=_fun_div_temp_lvalue(0:int,1:int) [line 47]\n  *&return:int=n$0 [line 47]\n " shape="box"]
-	
-
-	 "div1_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div1_temp_lvaluev}.3b77e4a6c86c90b394ed42389d225e28_3" -> "div1_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div1_temp_lvaluev}.3b77e4a6c86c90b394ed42389d225e28_2" ;
-"div1_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div1_temp_lvaluev}.3b77e4a6c86c90b394ed42389d225e28_2" [label="2: Exit div1_temp_lvalue \n  " color=yellow style=filled]
-	
-
-"div1_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div1_temp_lvaluev}.3b77e4a6c86c90b394ed42389d225e28_1" [label="1: Start div1_temp_lvalue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 47]\n " color=yellow style=filled]
-	
-
-	 "div1_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div1_temp_lvaluev}.3b77e4a6c86c90b394ed42389d225e28_1" -> "div1_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div1_temp_lvaluev}.3b77e4a6c86c90b394ed42389d225e28_3" ;
-"div0_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div0_assign_conditionalv}.e27c458f48e2fd3eb2c37a500947ad83_3" [label="3:  Return Stmt \n   n$0=_fun_assign_conditional(0:int) [line 41]\n  *&return:int=(1 / n$0) [line 41]\n " shape="box"]
-	
-
-	 "div0_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div0_assign_conditionalv}.e27c458f48e2fd3eb2c37a500947ad83_3" -> "div0_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div0_assign_conditionalv}.e27c458f48e2fd3eb2c37a500947ad83_2" ;
-"div0_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div0_assign_conditionalv}.e27c458f48e2fd3eb2c37a500947ad83_2" [label="2: Exit div0_assign_conditional \n  " color=yellow style=filled]
-	
-
-"div0_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div0_assign_conditionalv}.e27c458f48e2fd3eb2c37a500947ad83_1" [label="1: Start div0_assign_conditional\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 41]\n " color=yellow style=filled]
-	
-
-	 "div0_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div0_assign_conditionalv}.e27c458f48e2fd3eb2c37a500947ad83_1" -> "div0_assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z23div0_assign_conditionalv}.e27c458f48e2fd3eb2c37a500947ad83_3" ;
-"div0_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_rvaluev}.659babbaece0692d30930dde0b8bc14b_3" [label="3:  Return Stmt \n   n$0=_fun_choose_rvalue(1:int) [line 37]\n  *&return:int=(1 / n$0) [line 37]\n " shape="box"]
-	
-
-	 "div0_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_rvaluev}.659babbaece0692d30930dde0b8bc14b_3" -> "div0_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_rvaluev}.659babbaece0692d30930dde0b8bc14b_2" ;
-"div0_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_rvaluev}.659babbaece0692d30930dde0b8bc14b_2" [label="2: Exit div0_choose_rvalue \n  " color=yellow style=filled]
-	
-
-"div0_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_rvaluev}.659babbaece0692d30930dde0b8bc14b_1" [label="1: Start div0_choose_rvalue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 37]\n " color=yellow style=filled]
-	
-
-	 "div0_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_rvaluev}.659babbaece0692d30930dde0b8bc14b_1" -> "div0_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_rvaluev}.659babbaece0692d30930dde0b8bc14b_3" ;
-"div1_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_lvaluev}.946cb482a75d8e7dcce087e5daa1e2a4_3" [label="3:  Return Stmt \n   n$0=_fun_choose_lvalue(0:int) [line 35]\n  *&return:int=(1 / n$0) [line 35]\n " shape="box"]
-	
-
-	 "div1_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_lvaluev}.946cb482a75d8e7dcce087e5daa1e2a4_3" -> "div1_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_lvaluev}.946cb482a75d8e7dcce087e5daa1e2a4_2" ;
-"div1_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_lvaluev}.946cb482a75d8e7dcce087e5daa1e2a4_2" [label="2: Exit div1_choose_lvalue \n  " color=yellow style=filled]
-	
-
-"div1_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_lvaluev}.946cb482a75d8e7dcce087e5daa1e2a4_1" [label="1: Start div1_choose_lvalue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 35]\n " color=yellow style=filled]
-	
-
-	 "div1_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_lvaluev}.946cb482a75d8e7dcce087e5daa1e2a4_1" -> "div1_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_lvaluev}.946cb482a75d8e7dcce087e5daa1e2a4_3" ;
-"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_9" [label="9:  DeclStmt \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int [line 29]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:int=n$6 [line 29]\n  *&r:int&=&0$?%__sil_tmpSIL_materialize_temp__n$2 [line 29]\n " shape="box"]
-	
-
-	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_9" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_3" ;
-"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_8" [label="8:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int=1 [line 29]\n " shape="box"]
-	
-
-	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_8" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_4" ;
-"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_7" [label="7:  ConditinalStmt Branch \n   n$5=*&b:int [line 29]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$3:int=n$5 [line 29]\n " shape="box"]
-	
-
-	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_7" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_4" ;
-"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_6" [label="6: Prune (false branch) \n   n$4=*&a:int [line 29]\n  PRUNE((n$4 == 0), false); [line 29]\n " shape="invhouse"]
-	
-
-	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_6" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_8" ;
-"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_5" [label="5: Prune (true branch) \n   n$4=*&a:int [line 29]\n  PRUNE((n$4 != 0), true); [line 29]\n " shape="invhouse"]
-	
-
-	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_5" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_7" ;
-"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_4" [label="4: + \n  " ]
-	
-
-	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_4" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_9" ;
-"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_3" [label="3:  Return Stmt \n   n$0=*&r:int& [line 30]\n  n$1=*n$0:int [line 30]\n  *&return:int=(1 / n$1) [line 30]\n " shape="box"]
-	
-
-	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_3" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_2" ;
-"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_2" [label="2: Exit div_temp_lvalue \n  " color=yellow style=filled]
-	
-
-"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_1" [label="1: Start div_temp_lvalue\nFormals:  a:int b:int\nLocals:  r:int& 0$?%__sil_tmpSIL_materialize_temp__n$2:int 0$?%__sil_tmpSIL_temp_conditional___n$3:int \n   DECLARE_LOCALS(&return,&r,&0$?%__sil_tmpSIL_materialize_temp__n$2,&0$?%__sil_tmpSIL_temp_conditional___n$3); [line 28]\n " color=yellow style=filled]
-	
-
-	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_1" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_5" ;
-	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_1" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_6" ;
-"div0_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div0_temp_lvaluev}.d905fe7f39ce34b39ca169929ea65e7d_3" [label="3:  Return Stmt \n   n$0=_fun_div_temp_lvalue(1:int,0:int) [line 45]\n  *&return:int=n$0 [line 45]\n " shape="box"]
-	
-
-	 "div0_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div0_temp_lvaluev}.d905fe7f39ce34b39ca169929ea65e7d_3" -> "div0_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div0_temp_lvaluev}.d905fe7f39ce34b39ca169929ea65e7d_2" ;
-"div0_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div0_temp_lvaluev}.d905fe7f39ce34b39ca169929ea65e7d_2" [label="2: Exit div0_temp_lvalue \n  " color=yellow style=filled]
-	
-
-"div0_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div0_temp_lvaluev}.d905fe7f39ce34b39ca169929ea65e7d_1" [label="1: Start div0_temp_lvalue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 45]\n " color=yellow style=filled]
-	
-
-	 "div0_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div0_temp_lvaluev}.d905fe7f39ce34b39ca169929ea65e7d_1" -> "div0_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z16div0_temp_lvaluev}.d905fe7f39ce34b39ca169929ea65e7d_3" ;
-"div0_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_lvaluev}.33971c4fb1631ae7849c0b6e9319d4ed_3" [label="3:  Return Stmt \n   n$0=_fun_choose_lvalue(1:int) [line 33]\n  *&return:int=(1 / n$0) [line 33]\n " shape="box"]
-	
-
-	 "div0_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_lvaluev}.33971c4fb1631ae7849c0b6e9319d4ed_3" -> "div0_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_lvaluev}.33971c4fb1631ae7849c0b6e9319d4ed_2" ;
-"div0_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_lvaluev}.33971c4fb1631ae7849c0b6e9319d4ed_2" [label="2: Exit div0_choose_lvalue \n  " color=yellow style=filled]
-	
-
-"div0_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_lvaluev}.33971c4fb1631ae7849c0b6e9319d4ed_1" [label="1: Start div0_choose_lvalue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 33]\n " color=yellow style=filled]
-	
-
-	 "div0_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_lvaluev}.33971c4fb1631ae7849c0b6e9319d4ed_1" -> "div0_choose_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div0_choose_lvaluev}.33971c4fb1631ae7849c0b6e9319d4ed_3" ;
-"div1_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_rvaluev}.fef13b1fcbaa224805a1550f767822a9_3" [label="3:  Return Stmt \n   n$0=_fun_choose_rvalue(0:int) [line 39]\n  *&return:int=(1 / n$0) [line 39]\n " shape="box"]
-	
-
-	 "div1_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_rvaluev}.fef13b1fcbaa224805a1550f767822a9_3" -> "div1_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_rvaluev}.fef13b1fcbaa224805a1550f767822a9_2" ;
-"div1_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_rvaluev}.fef13b1fcbaa224805a1550f767822a9_2" [label="2: Exit div1_choose_rvalue \n  " color=yellow style=filled]
-	
-
-"div1_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_rvaluev}.fef13b1fcbaa224805a1550f767822a9_1" [label="1: Start div1_choose_rvalue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 39]\n " color=yellow style=filled]
-	
-
-	 "div1_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_rvaluev}.fef13b1fcbaa224805a1550f767822a9_1" -> "div1_choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z18div1_choose_rvaluev}.fef13b1fcbaa224805a1550f767822a9_3" ;
+	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_9" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_3" ;
 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_10" [label="10:  DeclStmt \n   *&v1:int=0 [line 17]\n " shape="box"]
 	
 
 	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_10" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_5" ;
 	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_10" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_6" ;
-"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_9" [label="9:  DeclStmt \n   n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 18]\n  *&v3:int=n$4 [line 18]\n " shape="box"]
+"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_1" [label="1: Start assign_conditional\nFormals:  a:int\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$1:int& v2:int v1:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$1,&v2,&v1); [line 22]\n " color=yellow style=filled]
 	
 
-	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_9" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_3" ;
-"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_8" [label="8:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=1 [line 18]\n " shape="box"]
+	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_1" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_11" ;
+"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_2" [label="2: Exit assign_conditional \n  " color=yellow style=filled]
 	
 
-	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_8" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_4" ;
-"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_7" [label="7:  ConditinalStmt Branch \n   n$3=*&v1:int [line 18]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$3 [line 18]\n " shape="box"]
+"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_3" [label="3:  Return Stmt \n   n$0=*&v1:int [line 25]\n  *&return:int=n$0 [line 25]\n " shape="box"]
 	
 
-	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_7" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_4" ;
-"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_6" [label="6: Prune (false branch) \n   n$2=*&a:int [line 18]\n  PRUNE((n$2 == 0), false); [line 18]\n " shape="invhouse"]
+	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_3" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_2" ;
+"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_4" [label="4: + \n  " ]
 	
 
-	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_6" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_8" ;
-"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_5" [label="5: Prune (true branch) \n   n$2=*&a:int [line 18]\n  PRUNE((n$2 != 0), true); [line 18]\n " shape="invhouse"]
+	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_4" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_9" ;
+"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_5" [label="5: Prune (true branch) \n   n$2=*&a:int [line 24]\n  PRUNE((n$2 != 0), true); [line 24]\n " shape="invhouse"]
 	
 
-	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_5" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_7" ;
-"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_4" [label="4: + \n  " ]
+	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_5" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_7" ;
+"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_6" [label="6: Prune (false branch) \n   n$2=*&a:int [line 24]\n  PRUNE((n$2 == 0), false); [line 24]\n " shape="invhouse"]
 	
 
-	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_4" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_9" ;
-"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_3" [label="3:  Return Stmt \n   n$0=*&v3:int [line 19]\n  *&return:int=n$0 [line 19]\n " shape="box"]
+	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_6" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_8" ;
+"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v1 [line 24]\n " shape="box"]
 	
 
-	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_3" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_2" ;
-"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_2" [label="2: Exit choose_rvalue \n  " color=yellow style=filled]
+	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_7" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_4" ;
+"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_8" [label="8:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int&=&v2 [line 24]\n " shape="box"]
 	
 
-"choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_1" [label="1: Start choose_rvalue\nFormals:  a:int\nLocals:  v3:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int v1:int \n   DECLARE_LOCALS(&return,&v3,&0$?%__sil_tmpSIL_temp_conditional___n$1,&v1); [line 16]\n " color=yellow style=filled]
+	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_8" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_4" ;
+"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_9" [label="9:  BinaryOperatorStmt: Assign \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int& [line 24]\n  *n$3:int=1 [line 24]\n " shape="box"]
 	
 
-	 "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_1" -> "choose_rvalue{d41d8cd98f00b204e9800998ecf8427e_Z13choose_rvaluei}.b9522bc4f4323bf8a76186f0fba3aa14_10" ;
+	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_9" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_3" ;
+"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_10" [label="10:  DeclStmt \n   *&v2:int=0 [line 23]\n " shape="box"]
+	
+
+	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_10" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_5" ;
+	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_10" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_6" ;
+"assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_11" [label="11:  DeclStmt \n   *&v1:int=0 [line 23]\n " shape="box"]
+	
+
+	 "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_11" -> "assign_conditional{d41d8cd98f00b204e9800998ecf8427e_Z18assign_conditionali}.9f86abcf482de92349afc0d0bb49b701_10" ;
+"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_1" [label="1: Start div_temp_lvalue\nFormals:  a:int b:int\nLocals:  r:int& 0$?%__sil_tmpSIL_materialize_temp__n$2:int 0$?%__sil_tmpSIL_temp_conditional___n$3:int \n   DECLARE_LOCALS(&return,&r,&0$?%__sil_tmpSIL_materialize_temp__n$2,&0$?%__sil_tmpSIL_temp_conditional___n$3); [line 28]\n " color=yellow style=filled]
+	
+
+	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_1" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_5" ;
+	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_1" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_6" ;
+"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_2" [label="2: Exit div_temp_lvalue \n  " color=yellow style=filled]
+	
+
+"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_3" [label="3:  Return Stmt \n   n$0=*&r:int& [line 30]\n  n$1=*n$0:int [line 30]\n  *&return:int=(1 / n$1) [line 30]\n " shape="box"]
+	
+
+	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_3" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_2" ;
+"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_4" [label="4: + \n  " ]
+	
+
+	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_4" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_9" ;
+"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_5" [label="5: Prune (true branch) \n   n$4=*&a:int [line 29]\n  PRUNE((n$4 != 0), true); [line 29]\n " shape="invhouse"]
+	
+
+	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_5" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_7" ;
+"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_6" [label="6: Prune (false branch) \n   n$4=*&a:int [line 29]\n  PRUNE((n$4 == 0), false); [line 29]\n " shape="invhouse"]
+	
+
+	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_6" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_8" ;
+"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_7" [label="7:  ConditinalStmt Branch \n   n$5=*&b:int [line 29]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$3:int=n$5 [line 29]\n " shape="box"]
+	
+
+	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_7" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_4" ;
+"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_8" [label="8:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$3:int=1 [line 29]\n " shape="box"]
+	
+
+	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_8" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_4" ;
+"div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_9" [label="9:  DeclStmt \n   n$6=*&0$?%__sil_tmpSIL_temp_conditional___n$3:int [line 29]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:int=n$6 [line 29]\n  *&r:int&=&0$?%__sil_tmpSIL_materialize_temp__n$2 [line 29]\n " shape="box"]
+	
+
+	 "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_9" -> "div_temp_lvalue{d41d8cd98f00b204e9800998ecf8427e_Z15div_temp_lvalueii}.8b8806a213153b17b56e7747ab0fd495_3" ;
 }

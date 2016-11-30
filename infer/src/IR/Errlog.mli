@@ -26,7 +26,7 @@ val make_trace_element : int -> Location.t -> string -> (string * string) list -
 type loc_trace = loc_trace_elem list
 
 (** Type of the error log *)
-type t
+type t [@@deriving compare]
 
 (** Empty error log *)
 val empty : unit -> t

@@ -1,40 +1,40 @@
 /* @generated */
 digraph iCFG {
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" [label="3:  Call _fun_A_method \n   n$0=*&a_ptr:class A* [line 25]\n  _=*n$0:class A [line 25]\n  n$2=_fun_A_method(n$0:class A*) [line 25]\n " shape="box"]
-	
-
-	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" ;
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" [label="2: Exit test \n  " color=yellow style=filled]
-	
-
 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_1" [label="1: Start test\nFormals: \nLocals:  a_ptr:class A* \n   DECLARE_LOCALS(&return,&a_ptr); [line 23]\n " color=yellow style=filled]
 	
 
 	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_1" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" ;
-"A_init(_ZN1A4initEi).e819fb4dba0f06bae8d9c904ce3e3362_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class A* [line 14]\n  n$1=*&val:int [line 14]\n  *n$0.field:int=n$1 [line 14]\n " shape="box"]
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-	 "A_init(_ZN1A4initEi).e819fb4dba0f06bae8d9c904ce3e3362_3" -> "A_init(_ZN1A4initEi).e819fb4dba0f06bae8d9c904ce3e3362_2" ;
-"A_init(_ZN1A4initEi).e819fb4dba0f06bae8d9c904ce3e3362_2" [label="2: Exit A_init \n  " color=yellow style=filled]
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" [label="3:  Call _fun_A_method \n   n$0=*&a_ptr:class A* [line 25]\n  _=*n$0:class A [line 25]\n  n$2=_fun_A_method(n$0:class A*) [line 25]\n " shape="box"]
 	
 
-"A_init(_ZN1A4initEi).e819fb4dba0f06bae8d9c904ce3e3362_1" [label="1: Start A_init\nFormals:  this:class A* val:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
-	
-
-	 "A_init(_ZN1A4initEi).e819fb4dba0f06bae8d9c904ce3e3362_1" -> "A_init(_ZN1A4initEi).e819fb4dba0f06bae8d9c904ce3e3362_3" ;
-"A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_4" [label="4:  Call _fun_A_init \n   n$2=*&this:class A* [line 19]\n  _=*n$2:class A [line 19]\n  _fun_A_init(n$2:class A*,10:int) [line 19]\n " shape="box"]
-	
-
-	 "A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_4" -> "A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_3" ;
-"A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_3" [label="3:  Return Stmt \n   n$0=*&this:class A* [line 20]\n  n$1=*n$0.field:int [line 20]\n  *&return:int=n$1 [line 20]\n " shape="box"]
-	
-
-	 "A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_3" -> "A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_2" ;
-"A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_2" [label="2: Exit A_method \n  " color=yellow style=filled]
-	
-
+	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_3" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testv}.8c08101fe48ee96867ff8578442d10bc_2" ;
 "A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_1" [label="1: Start A_method\nFormals:  this:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
 	 "A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_1" -> "A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_4" ;
+"A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_2" [label="2: Exit A_method \n  " color=yellow style=filled]
+	
+
+"A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_3" [label="3:  Return Stmt \n   n$0=*&this:class A* [line 20]\n  n$1=*n$0.field:int [line 20]\n  *&return:int=n$1 [line 20]\n " shape="box"]
+	
+
+	 "A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_3" -> "A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_2" ;
+"A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_4" [label="4:  Call _fun_A_init \n   n$2=*&this:class A* [line 19]\n  _=*n$2:class A [line 19]\n  _fun_A_init(n$2:class A*,10:int) [line 19]\n " shape="box"]
+	
+
+	 "A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_4" -> "A_method(_ZN1A6methodEv).e602354a5cbf7fd2460e929638d9e139_3" ;
+"A_init(_ZN1A4initEi).e819fb4dba0f06bae8d9c904ce3e3362_1" [label="1: Start A_init\nFormals:  this:class A* val:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+	
+
+	 "A_init(_ZN1A4initEi).e819fb4dba0f06bae8d9c904ce3e3362_1" -> "A_init(_ZN1A4initEi).e819fb4dba0f06bae8d9c904ce3e3362_3" ;
+"A_init(_ZN1A4initEi).e819fb4dba0f06bae8d9c904ce3e3362_2" [label="2: Exit A_init \n  " color=yellow style=filled]
+	
+
+"A_init(_ZN1A4initEi).e819fb4dba0f06bae8d9c904ce3e3362_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class A* [line 14]\n  n$1=*&val:int [line 14]\n  *n$0.field:int=n$1 [line 14]\n " shape="box"]
+	
+
+	 "A_init(_ZN1A4initEi).e819fb4dba0f06bae8d9c904ce3e3362_3" -> "A_init(_ZN1A4initEi).e819fb4dba0f06bae8d9c904ce3e3362_2" ;
 }

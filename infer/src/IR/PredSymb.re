@@ -19,7 +19,8 @@ let module L = Logging;
 let module F = Format;
 
 type func_attribute =
-  | FA_sentinel int int /** __attribute__((sentinel(int, int))) */;
+  | FA_sentinel int int /** __attribute__((sentinel(int, int))) */
+[@@deriving compare];
 
 
 /** Visibility modifiers. */
@@ -27,7 +28,8 @@ type access =
   | Default
   | Public
   | Private
-  | Protected;
+  | Protected
+[@@deriving compare];
 
 
 /** Return the value of the FA_sentinel attribute in [attr_list] if it is found */

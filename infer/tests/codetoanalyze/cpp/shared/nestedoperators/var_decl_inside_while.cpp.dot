@@ -1,116 +1,116 @@
 /* @generated */
 digraph iCFG {
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_17" [label="17:  DeclStmt \n   *&x:int=10 [line 21]\n " shape="box"]
+"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_1" [label="1: Start simple_assignment\nFormals: \nLocals:  a:int result:int x:int \n   DECLARE_LOCALS(&return,&a,&result,&x); [line 10]\n " color=yellow style=filled]
 	
 
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_17" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_16" ;
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_16" [label="16:  DeclStmt \n   *&result:int=0 [line 22]\n " shape="box"]
+	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_1" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_11" ;
+"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_2" [label="2: Exit simple_assignment \n  " color=yellow style=filled]
 	
 
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_16" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_4" ;
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_15" [label="15:  BinaryOperatorStmt: AddAssign \n   n$6=*&a:int [line 24]\n  n$7=*&result:int [line 24]\n  *&result:int=(n$7 + n$6) [line 24]\n " shape="box"]
+"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_3" [label="3:  Return Stmt \n   *&return:int=0 [line 17]\n " shape="box"]
 	
 
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_15" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_14" ;
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_14" [label="14:  BinaryOperatorStmt: SubAssign \n   n$5=*&x:int [line 25]\n  *&x:int=(n$5 - 1) [line 25]\n " shape="box"]
+	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_3" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_2" ;
+"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_4" [label="4: + \n  " ]
 	
 
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_14" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_4" ;
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_13" [label="13:  DeclStmt \n   n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 23]\n  *&a:int=n$4 [line 23]\n " shape="box"]
+	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_4" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_7" ;
+"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_5" [label="5: Prune (true branch) \n   n$0=*&a:int [line 13]\n  PRUNE((n$0 != 0), true); [line 13]\n " shape="invhouse"]
 	
 
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_13" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_5" ;
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_13" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_6" ;
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_12" [label="12:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=0 [line 23]\n " shape="box"]
+	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_5" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_9" ;
+"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_6" [label="6: Prune (false branch) \n   n$0=*&a:int [line 13]\n  PRUNE((n$0 == 0), false); [line 13]\n " shape="invhouse"]
 	
 
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_12" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_7" ;
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_11" [label="11:  ConditinalStmt Branch \n   n$3=*&x:int [line 23]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$3 [line 23]\n " shape="box"]
-	
-
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_11" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_7" ;
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_10" [label="10: Prune (false branch) \n   PRUNE(((n$2 > 0) == 0), false); [line 23]\n " shape="invhouse"]
-	
-
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_10" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_12" ;
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_9" [label="9: Prune (true branch) \n   PRUNE(((n$2 > 0) != 0), true); [line 23]\n " shape="invhouse"]
-	
-
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_9" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_11" ;
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_8" [label="8:  BinaryOperatorStmt: GT \n   n$2=*&x:int [line 23]\n " shape="box"]
-	
-
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_8" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_9" ;
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_8" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_10" ;
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_7" [label="7: + \n  " ]
-	
-
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_7" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_13" ;
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_6" [label="6: Prune (false branch) \n   n$0=*&a:int [line 23]\n  PRUNE((n$0 == 0), false); [line 23]\n " shape="invhouse"]
-	
-
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_6" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_3" ;
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_5" [label="5: Prune (true branch) \n   n$0=*&a:int [line 23]\n  PRUNE((n$0 != 0), true); [line 23]\n " shape="invhouse"]
-	
-
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_5" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_15" ;
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_4" [label="4: + \n  " ]
-	
-
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_4" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_8" ;
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_3" [label="3:  Return Stmt \n   *&return:int=0 [line 27]\n " shape="box"]
-	
-
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_3" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_2" ;
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_2" [label="2: Exit conditional_assignment \n  " color=yellow style=filled]
-	
-
-"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_1" [label="1: Start conditional_assignment\nFormals: \nLocals:  a:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int result:int x:int \n   DECLARE_LOCALS(&return,&a,&0$?%__sil_tmpSIL_temp_conditional___n$1,&result,&x); [line 20]\n " color=yellow style=filled]
-	
-
-	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_1" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_17" ;
-"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_11" [label="11:  DeclStmt \n   *&x:int=10 [line 11]\n " shape="box"]
-	
-
-	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_11" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_10" ;
-"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_10" [label="10:  DeclStmt \n   *&result:int=0 [line 12]\n " shape="box"]
-	
-
-	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_10" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_4" ;
-"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$3=*&a:int [line 14]\n  n$4=*&result:int [line 14]\n  *&result:int=(n$4 + n$3) [line 14]\n " shape="box"]
-	
-
-	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_9" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_8" ;
-"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_8" [label="8:  BinaryOperatorStmt: SubAssign \n   n$2=*&x:int [line 15]\n  *&x:int=(n$2 - 1) [line 15]\n " shape="box"]
-	
-
-	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_8" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_4" ;
+	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_6" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_3" ;
 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_7" [label="7:  DeclStmt \n   n$1=*&x:int [line 13]\n  *&a:int=n$1 [line 13]\n " shape="box"]
 	
 
 	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_7" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_5" ;
 	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_7" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_6" ;
-"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_6" [label="6: Prune (false branch) \n   n$0=*&a:int [line 13]\n  PRUNE((n$0 == 0), false); [line 13]\n " shape="invhouse"]
+"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_8" [label="8:  BinaryOperatorStmt: SubAssign \n   n$2=*&x:int [line 15]\n  *&x:int=(n$2 - 1) [line 15]\n " shape="box"]
 	
 
-	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_6" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_3" ;
-"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_5" [label="5: Prune (true branch) \n   n$0=*&a:int [line 13]\n  PRUNE((n$0 != 0), true); [line 13]\n " shape="invhouse"]
+	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_8" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_4" ;
+"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$3=*&a:int [line 14]\n  n$4=*&result:int [line 14]\n  *&result:int=(n$4 + n$3) [line 14]\n " shape="box"]
 	
 
-	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_5" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_9" ;
-"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_4" [label="4: + \n  " ]
+	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_9" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_8" ;
+"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_10" [label="10:  DeclStmt \n   *&result:int=0 [line 12]\n " shape="box"]
 	
 
-	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_4" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_7" ;
-"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_3" [label="3:  Return Stmt \n   *&return:int=0 [line 17]\n " shape="box"]
+	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_10" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_4" ;
+"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_11" [label="11:  DeclStmt \n   *&x:int=10 [line 11]\n " shape="box"]
 	
 
-	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_3" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_2" ;
-"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_2" [label="2: Exit simple_assignment \n  " color=yellow style=filled]
+	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_11" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_10" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_1" [label="1: Start conditional_assignment\nFormals: \nLocals:  a:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int result:int x:int \n   DECLARE_LOCALS(&return,&a,&0$?%__sil_tmpSIL_temp_conditional___n$1,&result,&x); [line 20]\n " color=yellow style=filled]
 	
 
-"simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_1" [label="1: Start simple_assignment\nFormals: \nLocals:  a:int result:int x:int \n   DECLARE_LOCALS(&return,&a,&result,&x); [line 10]\n " color=yellow style=filled]
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_1" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_17" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_2" [label="2: Exit conditional_assignment \n  " color=yellow style=filled]
 	
 
-	 "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_1" -> "simple_assignment{d41d8cd98f00b204e9800998ecf8427e_Z17simple_assignmentv}.f2476d27e133ad644b5f3061dd1513c2_11" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_3" [label="3:  Return Stmt \n   *&return:int=0 [line 27]\n " shape="box"]
+	
+
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_3" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_2" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_4" [label="4: + \n  " ]
+	
+
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_4" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_8" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_5" [label="5: Prune (true branch) \n   n$0=*&a:int [line 23]\n  PRUNE((n$0 != 0), true); [line 23]\n " shape="invhouse"]
+	
+
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_5" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_15" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_6" [label="6: Prune (false branch) \n   n$0=*&a:int [line 23]\n  PRUNE((n$0 == 0), false); [line 23]\n " shape="invhouse"]
+	
+
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_6" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_3" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_7" [label="7: + \n  " ]
+	
+
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_7" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_13" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_8" [label="8:  BinaryOperatorStmt: GT \n   n$2=*&x:int [line 23]\n " shape="box"]
+	
+
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_8" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_9" ;
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_8" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_10" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_9" [label="9: Prune (true branch) \n   PRUNE(((n$2 > 0) != 0), true); [line 23]\n " shape="invhouse"]
+	
+
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_9" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_11" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_10" [label="10: Prune (false branch) \n   PRUNE(((n$2 > 0) == 0), false); [line 23]\n " shape="invhouse"]
+	
+
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_10" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_12" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_11" [label="11:  ConditinalStmt Branch \n   n$3=*&x:int [line 23]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$3 [line 23]\n " shape="box"]
+	
+
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_11" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_7" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_12" [label="12:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=0 [line 23]\n " shape="box"]
+	
+
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_12" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_7" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_13" [label="13:  DeclStmt \n   n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 23]\n  *&a:int=n$4 [line 23]\n " shape="box"]
+	
+
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_13" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_5" ;
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_13" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_6" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_14" [label="14:  BinaryOperatorStmt: SubAssign \n   n$5=*&x:int [line 25]\n  *&x:int=(n$5 - 1) [line 25]\n " shape="box"]
+	
+
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_14" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_4" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_15" [label="15:  BinaryOperatorStmt: AddAssign \n   n$6=*&a:int [line 24]\n  n$7=*&result:int [line 24]\n  *&result:int=(n$7 + n$6) [line 24]\n " shape="box"]
+	
+
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_15" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_14" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_16" [label="16:  DeclStmt \n   *&result:int=0 [line 22]\n " shape="box"]
+	
+
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_16" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_4" ;
+"conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_17" [label="17:  DeclStmt \n   *&x:int=10 [line 21]\n " shape="box"]
+	
+
+	 "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_17" -> "conditional_assignment{d41d8cd98f00b204e9800998ecf8427e_Z22conditional_assignmentv}.c078a188d7d36f14d9f7aa33b9b3b227_16" ;
 }

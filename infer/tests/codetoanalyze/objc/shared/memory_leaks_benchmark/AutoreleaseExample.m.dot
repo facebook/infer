@@ -1,138 +1,138 @@
 /* @generated */
 digraph iCFG {
-"Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_4" [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString):unsigned long) [line 23]\n  *&s:class NSString*=n$2 [line 23]\n " shape="box"]
-	
-
-	 "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_4" -> "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_3" ;
-"Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_3" [label="3:  Return Stmt \n   n$0=*&s:class NSString* [line 24]\n  n$1=_fun___set_autorelease_attribute(n$0:class NSString*) [line 24]\n  *&return:class NSString*=n$1 [line 24]\n " shape="box"]
-	
-
-	 "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_3" -> "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_2" ;
-"Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_2" [label="2: Exit Auto_autorelease_main \n  " color=yellow style=filled]
-	
-
-"Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_1" [label="1: Start Auto_autorelease_main\nFormals:  self:class Auto*\nLocals:  s:class NSString* \n   DECLARE_LOCALS(&return,&s); [line 22]\n " color=yellow style=filled]
-	
-
-	 "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_1" -> "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_4" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_11" [label="11:  DeclStmt \n   *&s1:class Auto*=0 [line 35]\n " shape="box"]
-	
-
-	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_11" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" [label="10:  DeclStmt \n   *&s2:class Auto*=0 [line 36]\n " shape="box"]
-	
-
-	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" [label="9:  DeclStmt \n   *&s3:class Auto*=0 [line 37]\n " shape="box"]
-	
-
-	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" [label="8:  BinaryOperatorStmt: Assign \n   n$5=_fun_createA() [line 39]\n  *&s1:class Auto*=n$5 [line 39]\n " shape="box"]
-	
-
-	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_7" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_7" [label="7:  Message Call: retain \n   n$3=*&s1:class Auto* [line 40]\n  n$4=_fun___objc_retain(n$3:class Auto*) [line 40]\n " shape="box"]
-	
-
-	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_7" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=_fun_createA() [line 41]\n  *&s2:class Auto*=n$2 [line 41]\n " shape="box"]
-	
-
-	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 42]\n  *&s3:class Auto*=n$1 [line 42]\n " shape="box"]
-	
-
-	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" [label="4:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool(&s1:class Auto*,&s2:class Auto*,&s3:class Auto*) [line 38]\n " shape="box"]
-	
-
-	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_3" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_3" [label="3:  Return Stmt \n   *&return:int=0 [line 44]\n " shape="box"]
-	
-
-	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_3" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_2" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_2" [label="2: Exit autorelease_test1 \n  " color=yellow style=filled]
-	
-
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_1" [label="1: Start autorelease_test1\nFormals: \nLocals:  s3:class Auto* s2:class Auto* s1:class Auto* \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 34]\n " color=yellow style=filled]
-	
-
-	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_1" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_11" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" [label="6:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class NSAutoreleasePool):unsigned long) [line 60]\n  n$5=_fun_NSObject_init(n$4:class NSAutoreleasePool*) virtual [line 60]\n  *&pool:class NSAutoreleasePool*=n$5 [line 60]\n " shape="box"]
-	
-
-	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" [label="5:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString):unsigned long) [line 61]\n  n$3=_fun___set_autorelease_attribute(n$2:class NSString*) [line 61]\n  *&string:class NSString*=n$3 [line 61]\n " shape="box"]
-	
-
-	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" [label="4:  Message Call: release \n   n$1=*&pool:class NSAutoreleasePool* [line 63]\n  _fun___objc_release_autorelease_pool(n$1:class NSAutoreleasePool*) [line 63]\n " shape="box"]
-	
-
-	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" [label="3:  DeclStmt \n   n$0=*&string:class NSString* [line 64]\n  *&c:class NSString*=n$0 [line 64]\n " shape="box"]
-	
-
-	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_2" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_2" [label="2: Exit autorelease_test3 \n  " color=yellow style=filled]
-	
-
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_1" [label="1: Start autorelease_test3\nFormals: \nLocals:  c:class NSString* string:class NSString* pool:class NSAutoreleasePool* \n   DECLARE_LOCALS(&return,&c,&string,&pool); [line 59]\n " color=yellow style=filled]
-	
-
-	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_1" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" ;
-"createA.48a5d7f480131d59bba69d521715b836_4" [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class Auto):unsigned long) [line 30]\n  n$3=_fun_NSObject_init(n$2:class Auto*) virtual [line 30]\n  *&s1:class Auto*=n$3 [line 30]\n " shape="box"]
-	
-
-	 "createA.48a5d7f480131d59bba69d521715b836_4" -> "createA.48a5d7f480131d59bba69d521715b836_3" ;
-"createA.48a5d7f480131d59bba69d521715b836_3" [label="3:  Return Stmt \n   n$0=*&s1:class Auto* [line 31]\n  n$1=_fun___set_autorelease_attribute(n$0:class Auto*) [line 31]\n  *&return:class Auto*=n$1 [line 31]\n " shape="box"]
-	
-
-	 "createA.48a5d7f480131d59bba69d521715b836_3" -> "createA.48a5d7f480131d59bba69d521715b836_2" ;
-"createA.48a5d7f480131d59bba69d521715b836_2" [label="2: Exit createA \n  " color=yellow style=filled]
-	
-
 "createA.48a5d7f480131d59bba69d521715b836_1" [label="1: Start createA\nFormals: \nLocals:  s1:class Auto* \n   DECLARE_LOCALS(&return,&s1); [line 29]\n " color=yellow style=filled]
 	
 
 	 "createA.48a5d7f480131d59bba69d521715b836_1" -> "createA.48a5d7f480131d59bba69d521715b836_4" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_10" [label="10:  DeclStmt \n   *&s1:class Auto*=0 [line 48]\n " shape="box"]
+"createA.48a5d7f480131d59bba69d521715b836_2" [label="2: Exit createA \n  " color=yellow style=filled]
 	
 
-	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_10" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" [label="9:  DeclStmt \n   *&s2:class Auto*=0 [line 49]\n " shape="box"]
+"createA.48a5d7f480131d59bba69d521715b836_3" [label="3:  Return Stmt \n   n$0=*&s1:class Auto* [line 31]\n  n$1=_fun___set_autorelease_attribute(n$0:class Auto*) [line 31]\n  *&return:class Auto*=n$1 [line 31]\n " shape="box"]
 	
 
-	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" [label="8:  DeclStmt \n   *&s3:class Auto*=0 [line 50]\n " shape="box"]
+	 "createA.48a5d7f480131d59bba69d521715b836_3" -> "createA.48a5d7f480131d59bba69d521715b836_2" ;
+"createA.48a5d7f480131d59bba69d521715b836_4" [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class Auto):unsigned long) [line 30]\n  n$3=_fun_NSObject_init(n$2:class Auto*) virtual [line 30]\n  *&s1:class Auto*=n$3 [line 30]\n " shape="box"]
 	
 
-	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" [label="7:  BinaryOperatorStmt: Assign \n   n$3=_fun_createA() [line 52]\n  *&s1:class Auto*=n$3 [line 52]\n " shape="box"]
+	 "createA.48a5d7f480131d59bba69d521715b836_4" -> "createA.48a5d7f480131d59bba69d521715b836_3" ;
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_1" [label="1: Start autorelease_test1\nFormals: \nLocals:  s3:class Auto* s2:class Auto* s1:class Auto* \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 34]\n " color=yellow style=filled]
 	
 
-	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_6" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=_fun_createA() [line 53]\n  *&s2:class Auto*=n$2 [line 53]\n " shape="box"]
+	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_1" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_11" ;
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_2" [label="2: Exit autorelease_test1 \n  " color=yellow style=filled]
 	
 
-	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_6" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_5" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 54]\n  *&s3:class Auto*=n$1 [line 54]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_3" [label="3:  Return Stmt \n   *&return:int=0 [line 44]\n " shape="box"]
 	
 
-	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_5" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" [label="4:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool(&s1:class Auto*,&s3:class Auto*,&s2:class Auto*) [line 51]\n " shape="box"]
+	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_3" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_2" ;
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" [label="4:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool(&s1:class Auto*,&s2:class Auto*,&s3:class Auto*) [line 38]\n " shape="box"]
 	
 
-	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_3" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_3" [label="3:  Return Stmt \n   *&return:int=0 [line 56]\n " shape="box"]
+	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_3" ;
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 42]\n  *&s3:class Auto*=n$1 [line 42]\n " shape="box"]
 	
 
-	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_3" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_2" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_2" [label="2: Exit autorelease_test2 \n  " color=yellow style=filled]
+	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" ;
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=_fun_createA() [line 41]\n  *&s2:class Auto*=n$2 [line 41]\n " shape="box"]
 	
 
+	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" ;
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_7" [label="7:  Message Call: retain \n   n$3=*&s1:class Auto* [line 40]\n  n$4=_fun___objc_retain(n$3:class Auto*) [line 40]\n " shape="box"]
+	
+
+	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_7" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" ;
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" [label="8:  BinaryOperatorStmt: Assign \n   n$5=_fun_createA() [line 39]\n  *&s1:class Auto*=n$5 [line 39]\n " shape="box"]
+	
+
+	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_7" ;
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" [label="9:  DeclStmt \n   *&s3:class Auto*=0 [line 37]\n " shape="box"]
+	
+
+	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" ;
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" [label="10:  DeclStmt \n   *&s2:class Auto*=0 [line 36]\n " shape="box"]
+	
+
+	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" ;
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_11" [label="11:  DeclStmt \n   *&s1:class Auto*=0 [line 35]\n " shape="box"]
+	
+
+	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_11" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" ;
 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_1" [label="1: Start autorelease_test2\nFormals: \nLocals:  s3:class Auto* s2:class Auto* s1:class Auto* \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 47]\n " color=yellow style=filled]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_1" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_10" ;
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_2" [label="2: Exit autorelease_test2 \n  " color=yellow style=filled]
+	
+
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_3" [label="3:  Return Stmt \n   *&return:int=0 [line 56]\n " shape="box"]
+	
+
+	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_3" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_2" ;
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" [label="4:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool(&s1:class Auto*,&s3:class Auto*,&s2:class Auto*) [line 51]\n " shape="box"]
+	
+
+	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_3" ;
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 54]\n  *&s3:class Auto*=n$1 [line 54]\n " shape="box"]
+	
+
+	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_5" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" ;
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=_fun_createA() [line 53]\n  *&s2:class Auto*=n$2 [line 53]\n " shape="box"]
+	
+
+	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_6" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_5" ;
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" [label="7:  BinaryOperatorStmt: Assign \n   n$3=_fun_createA() [line 52]\n  *&s1:class Auto*=n$3 [line 52]\n " shape="box"]
+	
+
+	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_6" ;
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" [label="8:  DeclStmt \n   *&s3:class Auto*=0 [line 50]\n " shape="box"]
+	
+
+	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" ;
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" [label="9:  DeclStmt \n   *&s2:class Auto*=0 [line 49]\n " shape="box"]
+	
+
+	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" ;
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_10" [label="10:  DeclStmt \n   *&s1:class Auto*=0 [line 48]\n " shape="box"]
+	
+
+	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_10" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" ;
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_1" [label="1: Start autorelease_test3\nFormals: \nLocals:  c:class NSString* string:class NSString* pool:class NSAutoreleasePool* \n   DECLARE_LOCALS(&return,&c,&string,&pool); [line 59]\n " color=yellow style=filled]
+	
+
+	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_1" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" ;
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_2" [label="2: Exit autorelease_test3 \n  " color=yellow style=filled]
+	
+
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" [label="3:  DeclStmt \n   n$0=*&string:class NSString* [line 64]\n  *&c:class NSString*=n$0 [line 64]\n " shape="box"]
+	
+
+	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_2" ;
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" [label="4:  Message Call: release \n   n$1=*&pool:class NSAutoreleasePool* [line 63]\n  _fun___objc_release_autorelease_pool(n$1:class NSAutoreleasePool*) [line 63]\n " shape="box"]
+	
+
+	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" ;
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" [label="5:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString):unsigned long) [line 61]\n  n$3=_fun___set_autorelease_attribute(n$2:class NSString*) [line 61]\n  *&string:class NSString*=n$3 [line 61]\n " shape="box"]
+	
+
+	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" ;
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" [label="6:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class NSAutoreleasePool):unsigned long) [line 60]\n  n$5=_fun_NSObject_init(n$4:class NSAutoreleasePool*) virtual [line 60]\n  *&pool:class NSAutoreleasePool*=n$5 [line 60]\n " shape="box"]
+	
+
+	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" ;
+"Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_1" [label="1: Start Auto_autorelease_main\nFormals:  self:class Auto*\nLocals:  s:class NSString* \n   DECLARE_LOCALS(&return,&s); [line 22]\n " color=yellow style=filled]
+	
+
+	 "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_1" -> "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_4" ;
+"Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_2" [label="2: Exit Auto_autorelease_main \n  " color=yellow style=filled]
+	
+
+"Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_3" [label="3:  Return Stmt \n   n$0=*&s:class NSString* [line 24]\n  n$1=_fun___set_autorelease_attribute(n$0:class NSString*) [line 24]\n  *&return:class NSString*=n$1 [line 24]\n " shape="box"]
+	
+
+	 "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_3" -> "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_2" ;
+"Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_4" [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString):unsigned long) [line 23]\n  *&s:class NSString*=n$2 [line 23]\n " shape="box"]
+	
+
+	 "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_4" -> "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_3" ;
 }

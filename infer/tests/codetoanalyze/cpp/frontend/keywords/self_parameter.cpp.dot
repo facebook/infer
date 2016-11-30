@@ -1,36 +1,36 @@
 /* @generated */
 digraph iCFG {
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testP1A}.7a412acadb48a203ae4f2e6c04b46938_3" [label="3:  Return Stmt \n   n$0=*&a:class A* [line 17]\n  _=*n$0:class A [line 17]\n  n$2=_fun_A_meth_with_self(n$0:class A*,1:int,2:int) [line 17]\n  n$3=_fun_fun_with_self(10:int) [line 17]\n  *&return:int=(n$2 + n$3) [line 17]\n " shape="box"]
-	
-
-	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testP1A}.7a412acadb48a203ae4f2e6c04b46938_3" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testP1A}.7a412acadb48a203ae4f2e6c04b46938_2" ;
-"test{d41d8cd98f00b204e9800998ecf8427e_Z4testP1A}.7a412acadb48a203ae4f2e6c04b46938_2" [label="2: Exit test \n  " color=yellow style=filled]
-	
-
 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testP1A}.7a412acadb48a203ae4f2e6c04b46938_1" [label="1: Start test\nFormals:  a:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
 	
 
 	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testP1A}.7a412acadb48a203ae4f2e6c04b46938_1" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testP1A}.7a412acadb48a203ae4f2e6c04b46938_3" ;
-"A_meth_with_self(_ZN1A14meth_with_selfEii).3d68189dc22d8f38e7c0da9ff88e3d4d_3" [label="3:  Return Stmt \n   n$0=*&self:int [line 12]\n  n$1=*&b:int [line 12]\n  *&return:int=(n$0 + n$1) [line 12]\n " shape="box"]
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testP1A}.7a412acadb48a203ae4f2e6c04b46938_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-	 "A_meth_with_self(_ZN1A14meth_with_selfEii).3d68189dc22d8f38e7c0da9ff88e3d4d_3" -> "A_meth_with_self(_ZN1A14meth_with_selfEii).3d68189dc22d8f38e7c0da9ff88e3d4d_2" ;
-"A_meth_with_self(_ZN1A14meth_with_selfEii).3d68189dc22d8f38e7c0da9ff88e3d4d_2" [label="2: Exit A_meth_with_self \n  " color=yellow style=filled]
+"test{d41d8cd98f00b204e9800998ecf8427e_Z4testP1A}.7a412acadb48a203ae4f2e6c04b46938_3" [label="3:  Return Stmt \n   n$0=*&a:class A* [line 17]\n  _=*n$0:class A [line 17]\n  n$2=_fun_A_meth_with_self(n$0:class A*,1:int,2:int) [line 17]\n  n$3=_fun_fun_with_self(10:int) [line 17]\n  *&return:int=(n$2 + n$3) [line 17]\n " shape="box"]
 	
 
-"A_meth_with_self(_ZN1A14meth_with_selfEii).3d68189dc22d8f38e7c0da9ff88e3d4d_1" [label="1: Start A_meth_with_self\nFormals:  this:class A* self:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
-	
-
-	 "A_meth_with_self(_ZN1A14meth_with_selfEii).3d68189dc22d8f38e7c0da9ff88e3d4d_1" -> "A_meth_with_self(_ZN1A14meth_with_selfEii).3d68189dc22d8f38e7c0da9ff88e3d4d_3" ;
-"fun_with_self{d41d8cd98f00b204e9800998ecf8427e_Z13fun_with_selfi}.233795f267cd90fecfceba5afd62aea4_3" [label="3:  Return Stmt \n   n$0=*&self:int [line 15]\n  *&return:int=n$0 [line 15]\n " shape="box"]
-	
-
-	 "fun_with_self{d41d8cd98f00b204e9800998ecf8427e_Z13fun_with_selfi}.233795f267cd90fecfceba5afd62aea4_3" -> "fun_with_self{d41d8cd98f00b204e9800998ecf8427e_Z13fun_with_selfi}.233795f267cd90fecfceba5afd62aea4_2" ;
-"fun_with_self{d41d8cd98f00b204e9800998ecf8427e_Z13fun_with_selfi}.233795f267cd90fecfceba5afd62aea4_2" [label="2: Exit fun_with_self \n  " color=yellow style=filled]
-	
-
+	 "test{d41d8cd98f00b204e9800998ecf8427e_Z4testP1A}.7a412acadb48a203ae4f2e6c04b46938_3" -> "test{d41d8cd98f00b204e9800998ecf8427e_Z4testP1A}.7a412acadb48a203ae4f2e6c04b46938_2" ;
 "fun_with_self{d41d8cd98f00b204e9800998ecf8427e_Z13fun_with_selfi}.233795f267cd90fecfceba5afd62aea4_1" [label="1: Start fun_with_self\nFormals:  self:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
 	 "fun_with_self{d41d8cd98f00b204e9800998ecf8427e_Z13fun_with_selfi}.233795f267cd90fecfceba5afd62aea4_1" -> "fun_with_self{d41d8cd98f00b204e9800998ecf8427e_Z13fun_with_selfi}.233795f267cd90fecfceba5afd62aea4_3" ;
+"fun_with_self{d41d8cd98f00b204e9800998ecf8427e_Z13fun_with_selfi}.233795f267cd90fecfceba5afd62aea4_2" [label="2: Exit fun_with_self \n  " color=yellow style=filled]
+	
+
+"fun_with_self{d41d8cd98f00b204e9800998ecf8427e_Z13fun_with_selfi}.233795f267cd90fecfceba5afd62aea4_3" [label="3:  Return Stmt \n   n$0=*&self:int [line 15]\n  *&return:int=n$0 [line 15]\n " shape="box"]
+	
+
+	 "fun_with_self{d41d8cd98f00b204e9800998ecf8427e_Z13fun_with_selfi}.233795f267cd90fecfceba5afd62aea4_3" -> "fun_with_self{d41d8cd98f00b204e9800998ecf8427e_Z13fun_with_selfi}.233795f267cd90fecfceba5afd62aea4_2" ;
+"A_meth_with_self(_ZN1A14meth_with_selfEii).3d68189dc22d8f38e7c0da9ff88e3d4d_1" [label="1: Start A_meth_with_self\nFormals:  this:class A* self:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "A_meth_with_self(_ZN1A14meth_with_selfEii).3d68189dc22d8f38e7c0da9ff88e3d4d_1" -> "A_meth_with_self(_ZN1A14meth_with_selfEii).3d68189dc22d8f38e7c0da9ff88e3d4d_3" ;
+"A_meth_with_self(_ZN1A14meth_with_selfEii).3d68189dc22d8f38e7c0da9ff88e3d4d_2" [label="2: Exit A_meth_with_self \n  " color=yellow style=filled]
+	
+
+"A_meth_with_self(_ZN1A14meth_with_selfEii).3d68189dc22d8f38e7c0da9ff88e3d4d_3" [label="3:  Return Stmt \n   n$0=*&self:int [line 12]\n  n$1=*&b:int [line 12]\n  *&return:int=(n$0 + n$1) [line 12]\n " shape="box"]
+	
+
+	 "A_meth_with_self(_ZN1A14meth_with_selfEii).3d68189dc22d8f38e7c0da9ff88e3d4d_3" -> "A_meth_with_self(_ZN1A14meth_with_selfEii).3d68189dc22d8f38e7c0da9ff88e3d4d_2" ;
 }

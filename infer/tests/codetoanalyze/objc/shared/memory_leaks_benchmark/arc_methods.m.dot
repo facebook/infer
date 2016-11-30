@@ -1,60 +1,60 @@
 /* @generated */
 digraph iCFG {
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_7" [label="7:  DeclStmt \n   n$3=_fun_ArcMethodsA_newA() [line 42]\n  *&a1:class ArcMethodsA*=n$3 [line 42]\n " shape="box"]
-	
-
-	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_7" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_6" ;
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_6" [label="6:  DeclStmt \n   n$2=*&a1:class ArcMethodsA* [line 43]\n  _fun___objc_retain(n$2:class ArcMethodsA*) [line 43]\n  *&aa:class ArcMethodsA*=n$2 [line 43]\n " shape="box"]
-	
-
-	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_6" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_5" ;
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_5" [label="5:  DeclStmt \n   n$1=_fun_ArcMethodsA_someA() [line 44]\n  _fun___objc_retain(n$1:class ArcMethodsA*) [line 44]\n  *&a2:class ArcMethodsA*=n$1 [line 44]\n " shape="box"]
-	
-
-	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_5" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_4" ;
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_4" [label="4:  DeclStmt \n   n$0=*&a2:class ArcMethodsA* [line 45]\n  _fun___objc_retain(n$0:class ArcMethodsA*) [line 45]\n  *&ab:class ArcMethodsA*=n$0 [line 45]\n " shape="box"]
-	
-
-	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_4" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_3" ;
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_3" [label="3:  Return Stmt \n   *&return:int=0 [line 46]\n " shape="box"]
-	
-
-	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_3" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_2" ;
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_2" [label="2: Exit main_arc_methods \n  " color=yellow style=filled]
-	
-
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_1" [label="1: Start main_arc_methods\nFormals: \nLocals:  ab:class ArcMethodsA* a2:class ArcMethodsA* aa:class ArcMethodsA* a1:class ArcMethodsA* \n   DECLARE_LOCALS(&return,&ab,&a2,&aa,&a1); [line 35]\n " color=yellow style=filled]
-	
-
-	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_1" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_7" ;
-"ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_4" [label="4:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(class ArcMethodsA):unsigned long) [line 23]\n  n$2=_fun_NSObject_init(n$1:class ArcMethodsA*) virtual [line 23]\n  *&a:class ArcMethodsA*=n$2 [line 23]\n " shape="box"]
-	
-
-	 "ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_4" -> "ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_3" ;
-"ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_3" [label="3:  Return Stmt \n   n$0=*&a:class ArcMethodsA* [line 24]\n  *&return:class ArcMethodsA*=n$0 [line 24]\n " shape="box"]
-	
-
-	 "ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_3" -> "ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_2" ;
-"ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_2" [label="2: Exit ArcMethodsA_newA \n  " color=yellow style=filled]
-	
-
 "ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_1" [label="1: Start ArcMethodsA_newA\nFormals: \nLocals:  a:class ArcMethodsA* \n   DECLARE_LOCALS(&return,&a); [line 22]\n " color=yellow style=filled]
 	
 
 	 "ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_1" -> "ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_4" ;
-"ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_4" [label="4:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(class ArcMethodsA):unsigned long) [line 28]\n  n$6=_fun_NSObject_init(n$5:class ArcMethodsA*) virtual [line 28]\n  *&a:class ArcMethodsA*=n$6 [line 28]\n " shape="box"]
+"ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_2" [label="2: Exit ArcMethodsA_newA \n  " color=yellow style=filled]
 	
 
-	 "ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_4" -> "ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_3" ;
-"ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_3" [label="3:  Return Stmt \n   n$3=*&a:class ArcMethodsA* [line 30]\n  *&return:class ArcMethodsA*=n$3 [line 30]\n  n$4=_fun___set_autorelease_attribute(n$3:class ArcMethodsA*) [line 30]\n " shape="box"]
+"ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_3" [label="3:  Return Stmt \n   n$0=*&a:class ArcMethodsA* [line 24]\n  *&return:class ArcMethodsA*=n$0 [line 24]\n " shape="box"]
 	
 
-	 "ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_3" -> "ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_2" ;
-"ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_2" [label="2: Exit ArcMethodsA_someA \n  " color=yellow style=filled]
+	 "ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_3" -> "ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_2" ;
+"ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_4" [label="4:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(class ArcMethodsA):unsigned long) [line 23]\n  n$2=_fun_NSObject_init(n$1:class ArcMethodsA*) virtual [line 23]\n  *&a:class ArcMethodsA*=n$2 [line 23]\n " shape="box"]
 	
 
+	 "ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_4" -> "ArcMethodsA_newAclass.a1a593730f09207bdfeee07b0a5c2a2b_3" ;
 "ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_1" [label="1: Start ArcMethodsA_someA\nFormals: \nLocals:  a:class ArcMethodsA* \n   DECLARE_LOCALS(&return,&a); [line 27]\n " color=yellow style=filled]
 	
 
 	 "ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_1" -> "ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_4" ;
+"ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_2" [label="2: Exit ArcMethodsA_someA \n  " color=yellow style=filled]
+	
+
+"ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_3" [label="3:  Return Stmt \n   n$3=*&a:class ArcMethodsA* [line 30]\n  *&return:class ArcMethodsA*=n$3 [line 30]\n  n$4=_fun___set_autorelease_attribute(n$3:class ArcMethodsA*) [line 30]\n " shape="box"]
+	
+
+	 "ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_3" -> "ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_2" ;
+"ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_4" [label="4:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(class ArcMethodsA):unsigned long) [line 28]\n  n$6=_fun_NSObject_init(n$5:class ArcMethodsA*) virtual [line 28]\n  *&a:class ArcMethodsA*=n$6 [line 28]\n " shape="box"]
+	
+
+	 "ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_4" -> "ArcMethodsA_someAclass.c9d4f8751e9d91ae9809cf7cbd0e44db_3" ;
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_1" [label="1: Start main_arc_methods\nFormals: \nLocals:  ab:class ArcMethodsA* a2:class ArcMethodsA* aa:class ArcMethodsA* a1:class ArcMethodsA* \n   DECLARE_LOCALS(&return,&ab,&a2,&aa,&a1); [line 35]\n " color=yellow style=filled]
+	
+
+	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_1" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_7" ;
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_2" [label="2: Exit main_arc_methods \n  " color=yellow style=filled]
+	
+
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_3" [label="3:  Return Stmt \n   *&return:int=0 [line 46]\n " shape="box"]
+	
+
+	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_3" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_2" ;
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_4" [label="4:  DeclStmt \n   n$0=*&a2:class ArcMethodsA* [line 45]\n  _fun___objc_retain(n$0:class ArcMethodsA*) [line 45]\n  *&ab:class ArcMethodsA*=n$0 [line 45]\n " shape="box"]
+	
+
+	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_4" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_3" ;
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_5" [label="5:  DeclStmt \n   n$1=_fun_ArcMethodsA_someA() [line 44]\n  _fun___objc_retain(n$1:class ArcMethodsA*) [line 44]\n  *&a2:class ArcMethodsA*=n$1 [line 44]\n " shape="box"]
+	
+
+	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_5" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_4" ;
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_6" [label="6:  DeclStmt \n   n$2=*&a1:class ArcMethodsA* [line 43]\n  _fun___objc_retain(n$2:class ArcMethodsA*) [line 43]\n  *&aa:class ArcMethodsA*=n$2 [line 43]\n " shape="box"]
+	
+
+	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_6" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_5" ;
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_7" [label="7:  DeclStmt \n   n$3=_fun_ArcMethodsA_newA() [line 42]\n  *&a1:class ArcMethodsA*=n$3 [line 42]\n " shape="box"]
+	
+
+	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_7" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_6" ;
 }

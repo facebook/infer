@@ -1,134 +1,134 @@
 /* @generated */
 digraph iCFG {
-"binary_conditional::X_X{_ZN18binary_conditional1XC1EOS0_}.4bd5b5f6d082e3a4895874a95aa2bc28_2" [label="2: Exit binary_conditional::X_X \n  " color=yellow style=filled]
+"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_1" [label="1: Start binary_conditional::binaryConditional\nFormals: \nLocals:  x:class binary_conditional::X 0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X 0$?%__sil_tmpSIL_temp_conditional___n$2:class binary_conditional::X 0$?%__sil_tmpSIL_materialize_temp__n$4:class binary_conditional::X a:class binary_conditional::X \n   DECLARE_LOCALS(&return,&x,&0$?%__sil_tmpSIL_materialize_temp__n$0,&0$?%__sil_tmpSIL_temp_conditional___n$2,&0$?%__sil_tmpSIL_materialize_temp__n$4,&a); [line 22]\n " color=yellow style=filled]
 	
 
-"binary_conditional::X_X{_ZN18binary_conditional1XC1EOS0_}.4bd5b5f6d082e3a4895874a95aa2bc28_1" [label="1: Start binary_conditional::X_X\nFormals:  this:class binary_conditional::X* __param_0:class binary_conditional::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_1" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_11" ;
+"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_2" [label="2: Exit binary_conditional::binaryConditional \n  " color=yellow style=filled]
 	
 
-	 "binary_conditional::X_X{_ZN18binary_conditional1XC1EOS0_}.4bd5b5f6d082e3a4895874a95aa2bc28_1" -> "binary_conditional::X_X{_ZN18binary_conditional1XC1EOS0_}.4bd5b5f6d082e3a4895874a95aa2bc28_2" ;
-"binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_4" [label="4:  DeclStmt \n   _fun_binary_conditional::X_X(&x:class binary_conditional::X*) [line 17]\n " shape="box"]
+"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_3" [label="3: + \n  " ]
 	
 
-	 "binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_4" -> "binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_3" ;
-"binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_3" [label="3:  Return Stmt \n   n$0=*&__return_param:class binary_conditional::X* [line 18]\n  _fun_binary_conditional::X_X(n$0:class binary_conditional::X*,&x:class binary_conditional::X&) [line 18]\n " shape="box"]
-	
-
-	 "binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_3" -> "binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_2" ;
-"binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_2" [label="2: Exit binary_conditional::getX \n  " color=yellow style=filled]
-	
-
-"binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_1" [label="1: Start binary_conditional::getX\nFormals:  __return_param:class binary_conditional::X*\nLocals:  x:class binary_conditional::X \n   DECLARE_LOCALS(&return,&x); [line 16]\n " color=yellow style=filled]
-	
-
-	 "binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_1" -> "binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_4" ;
-"binary_conditional::X_X{_ZN18binary_conditional1XC1Ev}.8b205ac1bfab1089a003718675527bf2_2" [label="2: Exit binary_conditional::X_X \n  " color=yellow style=filled]
-	
-
-"binary_conditional::X_X{_ZN18binary_conditional1XC1Ev}.8b205ac1bfab1089a003718675527bf2_1" [label="1: Start binary_conditional::X_X\nFormals:  this:class binary_conditional::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
-	
-
-	 "binary_conditional::X_X{_ZN18binary_conditional1XC1Ev}.8b205ac1bfab1089a003718675527bf2_1" -> "binary_conditional::X_X{_ZN18binary_conditional1XC1Ev}.8b205ac1bfab1089a003718675527bf2_2" ;
-"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_10" [label="10:  DeclStmt \n   _fun_binary_conditional::X_X(&a:class binary_conditional::X*) [line 28]\n " shape="box"]
-	
-
-	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_10" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_4" ;
-"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_9" [label="9:  DeclStmt \n   n$7=*&0$?%__sil_tmpSIL_temp_conditional___n$1:class binary_conditional::X [line 29]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X=n$7 [line 29]\n  _fun_binary_conditional::X_X(&x:class binary_conditional::X*,&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X&) [line 29]\n " shape="box"]
-	
-
-	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_9" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_2" ;
-"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_8" [label="8:  ConditinalStmt Branch \n   _fun_binary_conditional::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X*,&a:class binary_conditional::X&) [line 29]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:class binary_conditional::X=&0$?%__sil_tmpSIL_materialize_temp__n$0 [line 29]\n " shape="box"]
-	
-
-	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_8" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_3" ;
-"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_7" [label="7:  ConditinalStmt Branch \n   _fun_binary_conditional::getX(&0$?%__sil_tmpSIL_materialize_temp__n$5:class binary_conditional::X*) [line 29]\n  _fun_binary_conditional::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X*,&0$?%__sil_tmpSIL_materialize_temp__n$5:class binary_conditional::X&) [line 29]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:class binary_conditional::X=&0$?%__sil_tmpSIL_materialize_temp__n$0 [line 29]\n " shape="box"]
-	
-
-	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_7" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_3" ;
-"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_6" [label="6: Prune (false branch) \n   PRUNE((n$4 == 0), false); [line 29]\n " shape="invhouse"]
-	
-
-	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_6" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_8" ;
-"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_5" [label="5: Prune (true branch) \n   PRUNE((n$4 != 0), true); [line 29]\n " shape="invhouse"]
-	
-
-	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_5" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_7" ;
-"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_4" [label="4:  Call _fun_binary_conditional::X_operator_bool \n   _fun_binary_conditional::getX(&0$?%__sil_tmp__temp_return_n$3:class binary_conditional::X*) [line 29]\n  n$4=_fun_binary_conditional::X_operator_bool(&0$?%__sil_tmp__temp_return_n$3:class binary_conditional::X&) [line 29]\n " shape="box"]
-	
-
-	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_4" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_5" ;
-	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_4" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_6" ;
-"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_3" [label="3: + \n  " ]
-	
-
-	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_3" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_9" ;
-"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_2" [label="2: Exit binary_conditional::conditional \n  " color=yellow style=filled]
-	
-
-"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_1" [label="1: Start binary_conditional::conditional\nFormals: \nLocals:  x:class binary_conditional::X 0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X 0$?%__sil_tmpSIL_temp_conditional___n$1:class binary_conditional::X 0$?%__sil_tmp__temp_return_n$3:class binary_conditional::X 0$?%__sil_tmpSIL_materialize_temp__n$5:class binary_conditional::X a:class binary_conditional::X \n   DECLARE_LOCALS(&return,&x,&0$?%__sil_tmpSIL_materialize_temp__n$0,&0$?%__sil_tmpSIL_temp_conditional___n$1,&0$?%__sil_tmp__temp_return_n$3,&0$?%__sil_tmpSIL_materialize_temp__n$5,&a); [line 27]\n " color=yellow style=filled]
-	
-
-	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_1" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_10" ;
-"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_11" [label="11:  DeclStmt \n   _fun_binary_conditional::X_X(&a:class binary_conditional::X*) [line 23]\n " shape="box"]
-	
-
-	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_11" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_9" ;
-"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_10" [label="10:  DeclStmt \n   n$5=*&0$?%__sil_tmpSIL_temp_conditional___n$2:class binary_conditional::X [line 24]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X=n$5 [line 24]\n  _fun_binary_conditional::X_X(&x:class binary_conditional::X*,&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X&) [line 24]\n " shape="box"]
-	
-
-	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_10" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_2" ;
-"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_9" [label="9:  BinaryConditinalStmt Init \n   _fun_binary_conditional::getX(&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X*) [line 24]\n " shape="box"]
-	
-
-	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_9" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_4" ;
-"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_8" [label="8:  ConditinalStmt Branch \n   _fun_binary_conditional::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X*,&a:class binary_conditional::X&) [line 24]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$2:class binary_conditional::X=&0$?%__sil_tmpSIL_materialize_temp__n$0 [line 24]\n " shape="box"]
-	
-
-	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_8" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_3" ;
-"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_materialize_temp__n$4:class binary_conditional::X=&0$?%__sil_tmpSIL_materialize_temp__n$0 [line 24]\n  _fun_binary_conditional::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X*,&0$?%__sil_tmpSIL_materialize_temp__n$4:class binary_conditional::X&) [line 24]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$2:class binary_conditional::X=&0$?%__sil_tmpSIL_materialize_temp__n$0 [line 24]\n " shape="box"]
-	
-
-	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_7" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_3" ;
-"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_6" [label="6: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 24]\n " shape="invhouse"]
-	
-
-	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_6" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_8" ;
-"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_5" [label="5: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 24]\n " shape="invhouse"]
-	
-
-	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_5" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_7" ;
+	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_3" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_10" ;
 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_4" [label="4:  Call _fun_binary_conditional::X_operator_bool \n   n$3=_fun_binary_conditional::X_operator_bool(&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X&) [line 24]\n " shape="box"]
 	
 
 	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_4" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_5" ;
 	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_4" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_6" ;
-"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_3" [label="3: + \n  " ]
+"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_5" [label="5: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 24]\n " shape="invhouse"]
 	
 
-	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_3" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_10" ;
-"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_2" [label="2: Exit binary_conditional::binaryConditional \n  " color=yellow style=filled]
+	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_5" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_7" ;
+"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_6" [label="6: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 24]\n " shape="invhouse"]
 	
 
-"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_1" [label="1: Start binary_conditional::binaryConditional\nFormals: \nLocals:  x:class binary_conditional::X 0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X 0$?%__sil_tmpSIL_temp_conditional___n$2:class binary_conditional::X 0$?%__sil_tmpSIL_materialize_temp__n$4:class binary_conditional::X a:class binary_conditional::X \n   DECLARE_LOCALS(&return,&x,&0$?%__sil_tmpSIL_materialize_temp__n$0,&0$?%__sil_tmpSIL_temp_conditional___n$2,&0$?%__sil_tmpSIL_materialize_temp__n$4,&a); [line 22]\n " color=yellow style=filled]
+	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_6" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_8" ;
+"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_materialize_temp__n$4:class binary_conditional::X=&0$?%__sil_tmpSIL_materialize_temp__n$0 [line 24]\n  _fun_binary_conditional::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X*,&0$?%__sil_tmpSIL_materialize_temp__n$4:class binary_conditional::X&) [line 24]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$2:class binary_conditional::X=&0$?%__sil_tmpSIL_materialize_temp__n$0 [line 24]\n " shape="box"]
 	
 
-	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_1" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_11" ;
-"binary_conditional::X_operator_bool(_ZN18binary_conditional1XcvbEv).ac4783c70fd7f052bb11fb683aec2300_3" [label="3:  Return Stmt \n   *&return:_Bool=1 [line 13]\n " shape="box"]
+	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_7" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_3" ;
+"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_8" [label="8:  ConditinalStmt Branch \n   _fun_binary_conditional::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X*,&a:class binary_conditional::X&) [line 24]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$2:class binary_conditional::X=&0$?%__sil_tmpSIL_materialize_temp__n$0 [line 24]\n " shape="box"]
 	
 
-	 "binary_conditional::X_operator_bool(_ZN18binary_conditional1XcvbEv).ac4783c70fd7f052bb11fb683aec2300_3" -> "binary_conditional::X_operator_bool(_ZN18binary_conditional1XcvbEv).ac4783c70fd7f052bb11fb683aec2300_2" ;
-"binary_conditional::X_operator_bool(_ZN18binary_conditional1XcvbEv).ac4783c70fd7f052bb11fb683aec2300_2" [label="2: Exit binary_conditional::X_operator_bool \n  " color=yellow style=filled]
+	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_8" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_3" ;
+"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_9" [label="9:  BinaryConditinalStmt Init \n   _fun_binary_conditional::getX(&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X*) [line 24]\n " shape="box"]
+	
+
+	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_9" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_4" ;
+"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_10" [label="10:  DeclStmt \n   n$5=*&0$?%__sil_tmpSIL_temp_conditional___n$2:class binary_conditional::X [line 24]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X=n$5 [line 24]\n  _fun_binary_conditional::X_X(&x:class binary_conditional::X*,&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X&) [line 24]\n " shape="box"]
+	
+
+	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_10" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_2" ;
+"binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_11" [label="11:  DeclStmt \n   _fun_binary_conditional::X_X(&a:class binary_conditional::X*) [line 23]\n " shape="box"]
+	
+
+	 "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_11" -> "binary_conditional::binaryConditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional17binar.09917000e376be5dfbf0e2b7b90db84c_9" ;
+"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_1" [label="1: Start binary_conditional::conditional\nFormals: \nLocals:  x:class binary_conditional::X 0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X 0$?%__sil_tmpSIL_temp_conditional___n$1:class binary_conditional::X 0$?%__sil_tmp__temp_return_n$3:class binary_conditional::X 0$?%__sil_tmpSIL_materialize_temp__n$5:class binary_conditional::X a:class binary_conditional::X \n   DECLARE_LOCALS(&return,&x,&0$?%__sil_tmpSIL_materialize_temp__n$0,&0$?%__sil_tmpSIL_temp_conditional___n$1,&0$?%__sil_tmp__temp_return_n$3,&0$?%__sil_tmpSIL_materialize_temp__n$5,&a); [line 27]\n " color=yellow style=filled]
+	
+
+	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_1" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_10" ;
+"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_2" [label="2: Exit binary_conditional::conditional \n  " color=yellow style=filled]
+	
+
+"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_3" [label="3: + \n  " ]
+	
+
+	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_3" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_9" ;
+"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_4" [label="4:  Call _fun_binary_conditional::X_operator_bool \n   _fun_binary_conditional::getX(&0$?%__sil_tmp__temp_return_n$3:class binary_conditional::X*) [line 29]\n  n$4=_fun_binary_conditional::X_operator_bool(&0$?%__sil_tmp__temp_return_n$3:class binary_conditional::X&) [line 29]\n " shape="box"]
+	
+
+	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_4" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_5" ;
+	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_4" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_6" ;
+"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_5" [label="5: Prune (true branch) \n   PRUNE((n$4 != 0), true); [line 29]\n " shape="invhouse"]
+	
+
+	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_5" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_7" ;
+"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_6" [label="6: Prune (false branch) \n   PRUNE((n$4 == 0), false); [line 29]\n " shape="invhouse"]
+	
+
+	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_6" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_8" ;
+"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_7" [label="7:  ConditinalStmt Branch \n   _fun_binary_conditional::getX(&0$?%__sil_tmpSIL_materialize_temp__n$5:class binary_conditional::X*) [line 29]\n  _fun_binary_conditional::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X*,&0$?%__sil_tmpSIL_materialize_temp__n$5:class binary_conditional::X&) [line 29]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:class binary_conditional::X=&0$?%__sil_tmpSIL_materialize_temp__n$0 [line 29]\n " shape="box"]
+	
+
+	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_7" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_3" ;
+"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_8" [label="8:  ConditinalStmt Branch \n   _fun_binary_conditional::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X*,&a:class binary_conditional::X&) [line 29]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:class binary_conditional::X=&0$?%__sil_tmpSIL_materialize_temp__n$0 [line 29]\n " shape="box"]
+	
+
+	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_8" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_3" ;
+"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_9" [label="9:  DeclStmt \n   n$7=*&0$?%__sil_tmpSIL_temp_conditional___n$1:class binary_conditional::X [line 29]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X=n$7 [line 29]\n  _fun_binary_conditional::X_X(&x:class binary_conditional::X*,&0$?%__sil_tmpSIL_materialize_temp__n$0:class binary_conditional::X&) [line 29]\n " shape="box"]
+	
+
+	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_9" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_2" ;
+"binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_10" [label="10:  DeclStmt \n   _fun_binary_conditional::X_X(&a:class binary_conditional::X*) [line 28]\n " shape="box"]
+	
+
+	 "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_10" -> "binary_conditional::conditional{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional11conditional.f20f612a576bee7cbbfe5f189b8a4f86_4" ;
+"binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_1" [label="1: Start binary_conditional::getX\nFormals:  __return_param:class binary_conditional::X*\nLocals:  x:class binary_conditional::X \n   DECLARE_LOCALS(&return,&x); [line 16]\n " color=yellow style=filled]
+	
+
+	 "binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_1" -> "binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_4" ;
+"binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_2" [label="2: Exit binary_conditional::getX \n  " color=yellow style=filled]
+	
+
+"binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_3" [label="3:  Return Stmt \n   n$0=*&__return_param:class binary_conditional::X* [line 18]\n  _fun_binary_conditional::X_X(n$0:class binary_conditional::X*,&x:class binary_conditional::X&) [line 18]\n " shape="box"]
+	
+
+	 "binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_3" -> "binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_2" ;
+"binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_4" [label="4:  DeclStmt \n   _fun_binary_conditional::X_X(&x:class binary_conditional::X*) [line 17]\n " shape="box"]
+	
+
+	 "binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_4" -> "binary_conditional::getX{d41d8cd98f00b204e9800998ecf8427e_ZN18binary_conditional4getXEv}.1a31099193fd0f833e07c4796d3b0f85_3" ;
+"binary_conditional::X_X{_ZN18binary_conditional1XC1Ev}.8b205ac1bfab1089a003718675527bf2_1" [label="1: Start binary_conditional::X_X\nFormals:  this:class binary_conditional::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "binary_conditional::X_X{_ZN18binary_conditional1XC1Ev}.8b205ac1bfab1089a003718675527bf2_1" -> "binary_conditional::X_X{_ZN18binary_conditional1XC1Ev}.8b205ac1bfab1089a003718675527bf2_2" ;
+"binary_conditional::X_X{_ZN18binary_conditional1XC1Ev}.8b205ac1bfab1089a003718675527bf2_2" [label="2: Exit binary_conditional::X_X \n  " color=yellow style=filled]
 	
 
 "binary_conditional::X_operator_bool(_ZN18binary_conditional1XcvbEv).ac4783c70fd7f052bb11fb683aec2300_1" [label="1: Start binary_conditional::X_operator_bool\nFormals:  this:class binary_conditional::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
 	
 
 	 "binary_conditional::X_operator_bool(_ZN18binary_conditional1XcvbEv).ac4783c70fd7f052bb11fb683aec2300_1" -> "binary_conditional::X_operator_bool(_ZN18binary_conditional1XcvbEv).ac4783c70fd7f052bb11fb683aec2300_3" ;
-"binary_conditional::X_X{_ZN18binary_conditional1XC1ERKS0_}.0e1cd4b0d7172e9f75221a1b50d4832a_2" [label="2: Exit binary_conditional::X_X \n  " color=yellow style=filled]
+"binary_conditional::X_operator_bool(_ZN18binary_conditional1XcvbEv).ac4783c70fd7f052bb11fb683aec2300_2" [label="2: Exit binary_conditional::X_operator_bool \n  " color=yellow style=filled]
+	
+
+"binary_conditional::X_operator_bool(_ZN18binary_conditional1XcvbEv).ac4783c70fd7f052bb11fb683aec2300_3" [label="3:  Return Stmt \n   *&return:_Bool=1 [line 13]\n " shape="box"]
+	
+
+	 "binary_conditional::X_operator_bool(_ZN18binary_conditional1XcvbEv).ac4783c70fd7f052bb11fb683aec2300_3" -> "binary_conditional::X_operator_bool(_ZN18binary_conditional1XcvbEv).ac4783c70fd7f052bb11fb683aec2300_2" ;
+"binary_conditional::X_X{_ZN18binary_conditional1XC1EOS0_}.4bd5b5f6d082e3a4895874a95aa2bc28_1" [label="1: Start binary_conditional::X_X\nFormals:  this:class binary_conditional::X* __param_0:class binary_conditional::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "binary_conditional::X_X{_ZN18binary_conditional1XC1EOS0_}.4bd5b5f6d082e3a4895874a95aa2bc28_1" -> "binary_conditional::X_X{_ZN18binary_conditional1XC1EOS0_}.4bd5b5f6d082e3a4895874a95aa2bc28_2" ;
+"binary_conditional::X_X{_ZN18binary_conditional1XC1EOS0_}.4bd5b5f6d082e3a4895874a95aa2bc28_2" [label="2: Exit binary_conditional::X_X \n  " color=yellow style=filled]
 	
 
 "binary_conditional::X_X{_ZN18binary_conditional1XC1ERKS0_}.0e1cd4b0d7172e9f75221a1b50d4832a_1" [label="1: Start binary_conditional::X_X\nFormals:  this:class binary_conditional::X* __param_0:class binary_conditional::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
 	 "binary_conditional::X_X{_ZN18binary_conditional1XC1ERKS0_}.0e1cd4b0d7172e9f75221a1b50d4832a_1" -> "binary_conditional::X_X{_ZN18binary_conditional1XC1ERKS0_}.0e1cd4b0d7172e9f75221a1b50d4832a_2" ;
+"binary_conditional::X_X{_ZN18binary_conditional1XC1ERKS0_}.0e1cd4b0d7172e9f75221a1b50d4832a_2" [label="2: Exit binary_conditional::X_X \n  " color=yellow style=filled]
+	
+
 }

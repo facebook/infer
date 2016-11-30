@@ -1,178 +1,178 @@
 /* @generated */
 digraph iCFG {
-"struct_pass_by_value::temp_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div1E.c2f3b875dc095c438ab088cd02fc816a_3" [label="3:  Return Stmt \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:class struct_pass_by_value::X*,1:int) [line 39]\n  _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class struct_pass_by_value::X&) [line 39]\n  n$2=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X) [line 39]\n  *&return:int=(1 / n$2) [line 39]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::temp_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div1E.c2f3b875dc095c438ab088cd02fc816a_3" -> "struct_pass_by_value::temp_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div1E.c2f3b875dc095c438ab088cd02fc816a_2" ;
-"struct_pass_by_value::temp_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div1E.c2f3b875dc095c438ab088cd02fc816a_2" [label="2: Exit struct_pass_by_value::temp_div1 \n  " color=yellow style=filled]
-	
-
-"struct_pass_by_value::temp_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div1E.c2f3b875dc095c438ab088cd02fc816a_1" [label="1: Start struct_pass_by_value::temp_div1\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X 0$?%__sil_tmpSIL_materialize_temp__n$1:class struct_pass_by_value::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$0,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 39]\n " color=yellow style=filled]
-	
-
-	 "struct_pass_by_value::temp_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div1E.c2f3b875dc095c438ab088cd02fc816a_1" -> "struct_pass_by_value::temp_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div1E.c2f3b875dc095c438ab088cd02fc816a_3" ;
-"struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_4" [label="4:  DeclStmt \n   _fun_struct_pass_by_value::X_X(&x:class struct_pass_by_value::X*,0:int) [line 28]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_4" -> "struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_3" ;
-"struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_3" [label="3:  Return Stmt \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X*,&x:class struct_pass_by_value::X&) [line 29]\n  n$1=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X) [line 29]\n  *&return:int=(1 / n$1) [line 29]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_3" -> "struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_2" ;
-"struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_2" [label="2: Exit struct_pass_by_value::var_div0 \n  " color=yellow style=filled]
-	
-
 "struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_1" [label="1: Start struct_pass_by_value::var_div0\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X x:class struct_pass_by_value::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$0,&x); [line 27]\n " color=yellow style=filled]
 	
 
 	 "struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_1" -> "struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_4" ;
-"struct_pass_by_value::Y_Y{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.736370021d32429c3bc817e82f75265a_3" [label="3:  Constructor Init \n   n$0=*&this:class struct_pass_by_value::Y* [line 18]\n  n$1=*&x:class struct_pass_by_value::X& [line 18]\n  _fun_struct_pass_by_value::X_X(n$0.x:class struct_pass_by_value::X*,n$1:class struct_pass_by_value::X&) [line 18]\n " shape="box"]
+"struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_2" [label="2: Exit struct_pass_by_value::var_div0 \n  " color=yellow style=filled]
 	
 
-	 "struct_pass_by_value::Y_Y{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.736370021d32429c3bc817e82f75265a_3" -> "struct_pass_by_value::Y_Y{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.736370021d32429c3bc817e82f75265a_2" ;
-"struct_pass_by_value::Y_Y{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.736370021d32429c3bc817e82f75265a_2" [label="2: Exit struct_pass_by_value::Y_Y \n  " color=yellow style=filled]
+"struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_3" [label="3:  Return Stmt \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X*,&x:class struct_pass_by_value::X&) [line 29]\n  n$1=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X) [line 29]\n  *&return:int=(1 / n$1) [line 29]\n " shape="box"]
 	
 
-"struct_pass_by_value::Y_Y{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.736370021d32429c3bc817e82f75265a_1" [label="1: Start struct_pass_by_value::Y_Y\nFormals:  this:class struct_pass_by_value::Y* x:class struct_pass_by_value::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+	 "struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_3" -> "struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_2" ;
+"struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_4" [label="4:  DeclStmt \n   _fun_struct_pass_by_value::X_X(&x:class struct_pass_by_value::X*,0:int) [line 28]\n " shape="box"]
 	
 
-	 "struct_pass_by_value::Y_Y{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.736370021d32429c3bc817e82f75265a_1" -> "struct_pass_by_value::Y_Y{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.736370021d32429c3bc817e82f75265a_3" ;
-"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1EOS0_}.e578248f6f436e1fb43a4657a6eb3ad0_3" [label="3:  Constructor Init \n   n$0=*&this:class struct_pass_by_value::X* [line 12]\n  n$1=*&__param_0:class struct_pass_by_value::X& [line 12]\n  n$2=*n$1.f:int [line 12]\n  *n$0.f:int=n$2 [line 12]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1EOS0_}.e578248f6f436e1fb43a4657a6eb3ad0_3" -> "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1EOS0_}.e578248f6f436e1fb43a4657a6eb3ad0_2" ;
-"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1EOS0_}.e578248f6f436e1fb43a4657a6eb3ad0_2" [label="2: Exit struct_pass_by_value::X_X \n  " color=yellow style=filled]
-	
-
-"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1EOS0_}.e578248f6f436e1fb43a4657a6eb3ad0_1" [label="1: Start struct_pass_by_value::X_X\nFormals:  this:class struct_pass_by_value::X* __param_0:class struct_pass_by_value::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
-	
-
-	 "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1EOS0_}.e578248f6f436e1fb43a4657a6eb3ad0_1" -> "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1EOS0_}.e578248f6f436e1fb43a4657a6eb3ad0_3" ;
-"struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_5" [label="5:  DeclStmt \n   _fun_struct_pass_by_value::X_X(&x:class struct_pass_by_value::X*,0:int) [line 48]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_5" -> "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_4" ;
-"struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_4" [label="4:  Call _fun_struct_pass_by_value::set_f \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$1:class struct_pass_by_value::X*,&x:class struct_pass_by_value::X&) [line 49]\n  _fun_struct_pass_by_value::set_f(&0$?%__sil_tmp__temp_construct_n$1:class struct_pass_by_value::X,1:int) [line 49]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_4" -> "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_3" ;
-"struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 50]\n  *&return:int=(1 / n$0) [line 50]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_3" -> "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_2" ;
-"struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_2" [label="2: Exit struct_pass_by_value::param_get_copied_div0 \n  " color=yellow style=filled]
-	
-
-"struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_1" [label="1: Start struct_pass_by_value::param_get_copied_div0\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$1:class struct_pass_by_value::X x:class struct_pass_by_value::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$1,&x); [line 47]\n " color=yellow style=filled]
-	
-
-	 "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_1" -> "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_5" ;
-"struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_4" [label="4:  DeclStmt \n   _fun_struct_pass_by_value::X_X(&x:class struct_pass_by_value::X*,1:int) [line 33]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_4" -> "struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_3" ;
-"struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_3" [label="3:  Return Stmt \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X*,&x:class struct_pass_by_value::X&) [line 34]\n  n$1=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X) [line 34]\n  *&return:int=(1 / n$1) [line 34]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_3" -> "struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_2" ;
-"struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_2" [label="2: Exit struct_pass_by_value::var_div1 \n  " color=yellow style=filled]
-	
-
+	 "struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_4" -> "struct_pass_by_value::var_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div0Ev}.b50945d4bcfea3c9ef041a6f502a8c29_3" ;
 "struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_1" [label="1: Start struct_pass_by_value::var_div1\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X x:class struct_pass_by_value::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$0,&x); [line 32]\n " color=yellow style=filled]
 	
 
 	 "struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_1" -> "struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_4" ;
-"struct_pass_by_value::set_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5set_fENS_1XEi}.01a84b9638a9a7c2a81e5c2f4f1e72dd_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&val:class struct_pass_by_value::X& [line 25]\n  n$1=*&f:int [line 25]\n  *n$0.f:int=n$1 [line 25]\n " shape="box"]
+"struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_2" [label="2: Exit struct_pass_by_value::var_div1 \n  " color=yellow style=filled]
 	
 
-	 "struct_pass_by_value::set_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5set_fENS_1XEi}.01a84b9638a9a7c2a81e5c2f4f1e72dd_3" -> "struct_pass_by_value::set_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5set_fENS_1XEi}.01a84b9638a9a7c2a81e5c2f4f1e72dd_2" ;
-"struct_pass_by_value::set_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5set_fENS_1XEi}.01a84b9638a9a7c2a81e5c2f4f1e72dd_2" [label="2: Exit struct_pass_by_value::set_f \n  " color=yellow style=filled]
+"struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_3" [label="3:  Return Stmt \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X*,&x:class struct_pass_by_value::X&) [line 34]\n  n$1=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X) [line 34]\n  *&return:int=(1 / n$1) [line 34]\n " shape="box"]
 	
 
-"struct_pass_by_value::set_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5set_fENS_1XEi}.01a84b9638a9a7c2a81e5c2f4f1e72dd_1" [label="1: Start struct_pass_by_value::set_f\nFormals:  val:class struct_pass_by_value::X& f:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
+	 "struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_3" -> "struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_2" ;
+"struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_4" [label="4:  DeclStmt \n   _fun_struct_pass_by_value::X_X(&x:class struct_pass_by_value::X*,1:int) [line 33]\n " shape="box"]
 	
 
-	 "struct_pass_by_value::set_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5set_fENS_1XEi}.01a84b9638a9a7c2a81e5c2f4f1e72dd_1" -> "struct_pass_by_value::set_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5set_fENS_1XEi}.01a84b9638a9a7c2a81e5c2f4f1e72dd_3" ;
-"struct_pass_by_value::temp_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div0E.955f8134284fae0be46662e8c14b3e6b_3" [label="3:  Return Stmt \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:class struct_pass_by_value::X*,0:int) [line 37]\n  _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class struct_pass_by_value::X&) [line 37]\n  n$2=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X) [line 37]\n  *&return:int=(1 / n$2) [line 37]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::temp_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div0E.955f8134284fae0be46662e8c14b3e6b_3" -> "struct_pass_by_value::temp_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div0E.955f8134284fae0be46662e8c14b3e6b_2" ;
-"struct_pass_by_value::temp_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div0E.955f8134284fae0be46662e8c14b3e6b_2" [label="2: Exit struct_pass_by_value::temp_div0 \n  " color=yellow style=filled]
-	
-
+	 "struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_4" -> "struct_pass_by_value::var_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value8var_div1Ev}.44a2dea33a39cb9786b9cd2ae7880810_3" ;
 "struct_pass_by_value::temp_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div0E.955f8134284fae0be46662e8c14b3e6b_1" [label="1: Start struct_pass_by_value::temp_div0\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X 0$?%__sil_tmpSIL_materialize_temp__n$1:class struct_pass_by_value::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$0,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 37]\n " color=yellow style=filled]
 	
 
 	 "struct_pass_by_value::temp_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div0E.955f8134284fae0be46662e8c14b3e6b_1" -> "struct_pass_by_value::temp_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div0E.955f8134284fae0be46662e8c14b3e6b_3" ;
-"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1ERKS0_}.ea46500d07fae3734e7abb6abd24bcd7_3" [label="3:  Constructor Init \n   n$0=*&this:class struct_pass_by_value::X* [line 12]\n  n$1=*&__param_0:class struct_pass_by_value::X& [line 12]\n  n$2=*n$1.f:int [line 12]\n  *n$0.f:int=n$2 [line 12]\n " shape="box"]
+"struct_pass_by_value::temp_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div0E.955f8134284fae0be46662e8c14b3e6b_2" [label="2: Exit struct_pass_by_value::temp_div0 \n  " color=yellow style=filled]
 	
 
-	 "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1ERKS0_}.ea46500d07fae3734e7abb6abd24bcd7_3" -> "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1ERKS0_}.ea46500d07fae3734e7abb6abd24bcd7_2" ;
-"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1ERKS0_}.ea46500d07fae3734e7abb6abd24bcd7_2" [label="2: Exit struct_pass_by_value::X_X \n  " color=yellow style=filled]
+"struct_pass_by_value::temp_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div0E.955f8134284fae0be46662e8c14b3e6b_3" [label="3:  Return Stmt \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:class struct_pass_by_value::X*,0:int) [line 37]\n  _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class struct_pass_by_value::X&) [line 37]\n  n$2=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X) [line 37]\n  *&return:int=(1 / n$2) [line 37]\n " shape="box"]
 	
 
-"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1ERKS0_}.ea46500d07fae3734e7abb6abd24bcd7_1" [label="1: Start struct_pass_by_value::X_X\nFormals:  this:class struct_pass_by_value::X* __param_0:class struct_pass_by_value::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	 "struct_pass_by_value::temp_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div0E.955f8134284fae0be46662e8c14b3e6b_3" -> "struct_pass_by_value::temp_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div0E.955f8134284fae0be46662e8c14b3e6b_2" ;
+"struct_pass_by_value::temp_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div1E.c2f3b875dc095c438ab088cd02fc816a_1" [label="1: Start struct_pass_by_value::temp_div1\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X 0$?%__sil_tmpSIL_materialize_temp__n$1:class struct_pass_by_value::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$0,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 39]\n " color=yellow style=filled]
 	
 
-	 "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1ERKS0_}.ea46500d07fae3734e7abb6abd24bcd7_1" -> "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1ERKS0_}.ea46500d07fae3734e7abb6abd24bcd7_3" ;
-"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1Ei}.1ac726fe4a35133cf30c894f71329f91_3" [label="3:  Constructor Init \n   n$0=*&this:class struct_pass_by_value::X* [line 14]\n  n$1=*&f:int [line 14]\n  *n$0.f:int=n$1 [line 14]\n " shape="box"]
+	 "struct_pass_by_value::temp_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div1E.c2f3b875dc095c438ab088cd02fc816a_1" -> "struct_pass_by_value::temp_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div1E.c2f3b875dc095c438ab088cd02fc816a_3" ;
+"struct_pass_by_value::temp_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div1E.c2f3b875dc095c438ab088cd02fc816a_2" [label="2: Exit struct_pass_by_value::temp_div1 \n  " color=yellow style=filled]
 	
 
-	 "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1Ei}.1ac726fe4a35133cf30c894f71329f91_3" -> "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1Ei}.1ac726fe4a35133cf30c894f71329f91_2" ;
-"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1Ei}.1ac726fe4a35133cf30c894f71329f91_2" [label="2: Exit struct_pass_by_value::X_X \n  " color=yellow style=filled]
+"struct_pass_by_value::temp_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div1E.c2f3b875dc095c438ab088cd02fc816a_3" [label="3:  Return Stmt \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:class struct_pass_by_value::X*,1:int) [line 39]\n  _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class struct_pass_by_value::X&) [line 39]\n  n$2=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X) [line 39]\n  *&return:int=(1 / n$2) [line 39]\n " shape="box"]
 	
 
-"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1Ei}.1ac726fe4a35133cf30c894f71329f91_1" [label="1: Start struct_pass_by_value::X_X\nFormals:  this:class struct_pass_by_value::X* f:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
-	
-
-	 "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1Ei}.1ac726fe4a35133cf30c894f71329f91_1" -> "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1Ei}.1ac726fe4a35133cf30c894f71329f91_3" ;
-"struct_pass_by_value::get_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5get_fENS_1XE}.cb4c7bfb8c92188ef5a8c858af4ccdc2_3" [label="3:  Return Stmt \n   n$0=*&val:class struct_pass_by_value::X& [line 22]\n  n$1=*n$0.f:int [line 22]\n  *&return:int=n$1 [line 22]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::get_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5get_fENS_1XE}.cb4c7bfb8c92188ef5a8c858af4ccdc2_3" -> "struct_pass_by_value::get_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5get_fENS_1XE}.cb4c7bfb8c92188ef5a8c858af4ccdc2_2" ;
-"struct_pass_by_value::get_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5get_fENS_1XE}.cb4c7bfb8c92188ef5a8c858af4ccdc2_2" [label="2: Exit struct_pass_by_value::get_f \n  " color=yellow style=filled]
-	
-
-"struct_pass_by_value::get_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5get_fENS_1XE}.cb4c7bfb8c92188ef5a8c858af4ccdc2_1" [label="1: Start struct_pass_by_value::get_f\nFormals:  val:class struct_pass_by_value::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
-	
-
-	 "struct_pass_by_value::get_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5get_fENS_1XE}.cb4c7bfb8c92188ef5a8c858af4ccdc2_1" -> "struct_pass_by_value::get_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5get_fENS_1XE}.cb4c7bfb8c92188ef5a8c858af4ccdc2_3" ;
-"struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_5" [label="5:  DeclStmt \n   _fun_struct_pass_by_value::X_X(&x:class struct_pass_by_value::X*,1:int) [line 54]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_5" -> "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_4" ;
-"struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_4" [label="4:  Call _fun_struct_pass_by_value::set_f \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$1:class struct_pass_by_value::X*,&x:class struct_pass_by_value::X&) [line 55]\n  _fun_struct_pass_by_value::set_f(&0$?%__sil_tmp__temp_construct_n$1:class struct_pass_by_value::X,0:int) [line 55]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_4" -> "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_3" ;
-"struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 56]\n  *&return:int=(1 / n$0) [line 56]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_3" -> "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_2" ;
-"struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_2" [label="2: Exit struct_pass_by_value::param_get_copied_div1 \n  " color=yellow style=filled]
-	
-
-"struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_1" [label="1: Start struct_pass_by_value::param_get_copied_div1\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$1:class struct_pass_by_value::X x:class struct_pass_by_value::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$1,&x); [line 53]\n " color=yellow style=filled]
-	
-
-	 "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_1" -> "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_5" ;
-"struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_5" [label="5:  DeclStmt \n   _fun_struct_pass_by_value::X_X(&x:class struct_pass_by_value::X*,0:int) [line 42]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_5" -> "struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_4" ;
-"struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_4" [label="4:  DeclStmt \n   _fun_struct_pass_by_value::Y_Y(&y:class struct_pass_by_value::Y*,&x:class struct_pass_by_value::X&) [line 43]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_4" -> "struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_3" ;
-"struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_3" [label="3:  Return Stmt \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X*,&y.x:class struct_pass_by_value::X&) [line 44]\n  n$1=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X) [line 44]\n  *&return:int=(1 / n$1) [line 44]\n " shape="box"]
-	
-
-	 "struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_3" -> "struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_2" ;
-"struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_2" [label="2: Exit struct_pass_by_value::field_div0 \n  " color=yellow style=filled]
-	
-
+	 "struct_pass_by_value::temp_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div1E.c2f3b875dc095c438ab088cd02fc816a_3" -> "struct_pass_by_value::temp_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value9temp_div1E.c2f3b875dc095c438ab088cd02fc816a_2" ;
 "struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_1" [label="1: Start struct_pass_by_value::field_div0\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X y:class struct_pass_by_value::Y x:class struct_pass_by_value::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$0,&y,&x); [line 41]\n " color=yellow style=filled]
 	
 
 	 "struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_1" -> "struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_5" ;
+"struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_2" [label="2: Exit struct_pass_by_value::field_div0 \n  " color=yellow style=filled]
+	
+
+"struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_3" [label="3:  Return Stmt \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X*,&y.x:class struct_pass_by_value::X&) [line 44]\n  n$1=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:class struct_pass_by_value::X) [line 44]\n  *&return:int=(1 / n$1) [line 44]\n " shape="box"]
+	
+
+	 "struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_3" -> "struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_2" ;
+"struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_4" [label="4:  DeclStmt \n   _fun_struct_pass_by_value::Y_Y(&y:class struct_pass_by_value::Y*,&x:class struct_pass_by_value::X&) [line 43]\n " shape="box"]
+	
+
+	 "struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_4" -> "struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_3" ;
+"struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_5" [label="5:  DeclStmt \n   _fun_struct_pass_by_value::X_X(&x:class struct_pass_by_value::X*,0:int) [line 42]\n " shape="box"]
+	
+
+	 "struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_5" -> "struct_pass_by_value::field_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value10field_di.ca84c458510b1f9d817aea3175d1cd81_4" ;
+"struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_1" [label="1: Start struct_pass_by_value::param_get_copied_div0\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$1:class struct_pass_by_value::X x:class struct_pass_by_value::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$1,&x); [line 47]\n " color=yellow style=filled]
+	
+
+	 "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_1" -> "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_5" ;
+"struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_2" [label="2: Exit struct_pass_by_value::param_get_copied_div0 \n  " color=yellow style=filled]
+	
+
+"struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 50]\n  *&return:int=(1 / n$0) [line 50]\n " shape="box"]
+	
+
+	 "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_3" -> "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_2" ;
+"struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_4" [label="4:  Call _fun_struct_pass_by_value::set_f \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$1:class struct_pass_by_value::X*,&x:class struct_pass_by_value::X&) [line 49]\n  _fun_struct_pass_by_value::set_f(&0$?%__sil_tmp__temp_construct_n$1:class struct_pass_by_value::X,1:int) [line 49]\n " shape="box"]
+	
+
+	 "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_4" -> "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_3" ;
+"struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_5" [label="5:  DeclStmt \n   _fun_struct_pass_by_value::X_X(&x:class struct_pass_by_value::X*,0:int) [line 48]\n " shape="box"]
+	
+
+	 "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_5" -> "struct_pass_by_value::param_get_copied_div0{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.70e30664cd42ec2eff5f51357e73ee43_4" ;
+"struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_1" [label="1: Start struct_pass_by_value::param_get_copied_div1\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$1:class struct_pass_by_value::X x:class struct_pass_by_value::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$1,&x); [line 53]\n " color=yellow style=filled]
+	
+
+	 "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_1" -> "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_5" ;
+"struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_2" [label="2: Exit struct_pass_by_value::param_get_copied_div1 \n  " color=yellow style=filled]
+	
+
+"struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 56]\n  *&return:int=(1 / n$0) [line 56]\n " shape="box"]
+	
+
+	 "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_3" -> "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_2" ;
+"struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_4" [label="4:  Call _fun_struct_pass_by_value::set_f \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$1:class struct_pass_by_value::X*,&x:class struct_pass_by_value::X&) [line 55]\n  _fun_struct_pass_by_value::set_f(&0$?%__sil_tmp__temp_construct_n$1:class struct_pass_by_value::X,0:int) [line 55]\n " shape="box"]
+	
+
+	 "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_4" -> "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_3" ;
+"struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_5" [label="5:  DeclStmt \n   _fun_struct_pass_by_value::X_X(&x:class struct_pass_by_value::X*,1:int) [line 54]\n " shape="box"]
+	
+
+	 "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_5" -> "struct_pass_by_value::param_get_copied_div1{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_valu.682445e113d05859d6e3646c64b0f21a_4" ;
+"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1EOS0_}.e578248f6f436e1fb43a4657a6eb3ad0_1" [label="1: Start struct_pass_by_value::X_X\nFormals:  this:class struct_pass_by_value::X* __param_0:class struct_pass_by_value::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1EOS0_}.e578248f6f436e1fb43a4657a6eb3ad0_1" -> "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1EOS0_}.e578248f6f436e1fb43a4657a6eb3ad0_3" ;
+"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1EOS0_}.e578248f6f436e1fb43a4657a6eb3ad0_2" [label="2: Exit struct_pass_by_value::X_X \n  " color=yellow style=filled]
+	
+
+"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1EOS0_}.e578248f6f436e1fb43a4657a6eb3ad0_3" [label="3:  Constructor Init \n   n$0=*&this:class struct_pass_by_value::X* [line 12]\n  n$1=*&__param_0:class struct_pass_by_value::X& [line 12]\n  n$2=*n$1.f:int [line 12]\n  *n$0.f:int=n$2 [line 12]\n " shape="box"]
+	
+
+	 "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1EOS0_}.e578248f6f436e1fb43a4657a6eb3ad0_3" -> "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1EOS0_}.e578248f6f436e1fb43a4657a6eb3ad0_2" ;
+"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1ERKS0_}.ea46500d07fae3734e7abb6abd24bcd7_1" [label="1: Start struct_pass_by_value::X_X\nFormals:  this:class struct_pass_by_value::X* __param_0:class struct_pass_by_value::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1ERKS0_}.ea46500d07fae3734e7abb6abd24bcd7_1" -> "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1ERKS0_}.ea46500d07fae3734e7abb6abd24bcd7_3" ;
+"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1ERKS0_}.ea46500d07fae3734e7abb6abd24bcd7_2" [label="2: Exit struct_pass_by_value::X_X \n  " color=yellow style=filled]
+	
+
+"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1ERKS0_}.ea46500d07fae3734e7abb6abd24bcd7_3" [label="3:  Constructor Init \n   n$0=*&this:class struct_pass_by_value::X* [line 12]\n  n$1=*&__param_0:class struct_pass_by_value::X& [line 12]\n  n$2=*n$1.f:int [line 12]\n  *n$0.f:int=n$2 [line 12]\n " shape="box"]
+	
+
+	 "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1ERKS0_}.ea46500d07fae3734e7abb6abd24bcd7_3" -> "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1ERKS0_}.ea46500d07fae3734e7abb6abd24bcd7_2" ;
+"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1Ei}.1ac726fe4a35133cf30c894f71329f91_1" [label="1: Start struct_pass_by_value::X_X\nFormals:  this:class struct_pass_by_value::X* f:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+	
+
+	 "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1Ei}.1ac726fe4a35133cf30c894f71329f91_1" -> "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1Ei}.1ac726fe4a35133cf30c894f71329f91_3" ;
+"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1Ei}.1ac726fe4a35133cf30c894f71329f91_2" [label="2: Exit struct_pass_by_value::X_X \n  " color=yellow style=filled]
+	
+
+"struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1Ei}.1ac726fe4a35133cf30c894f71329f91_3" [label="3:  Constructor Init \n   n$0=*&this:class struct_pass_by_value::X* [line 14]\n  n$1=*&f:int [line 14]\n  *n$0.f:int=n$1 [line 14]\n " shape="box"]
+	
+
+	 "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1Ei}.1ac726fe4a35133cf30c894f71329f91_3" -> "struct_pass_by_value::X_X{_ZN20struct_pass_by_value1XC1Ei}.1ac726fe4a35133cf30c894f71329f91_2" ;
+"struct_pass_by_value::Y_Y{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.736370021d32429c3bc817e82f75265a_1" [label="1: Start struct_pass_by_value::Y_Y\nFormals:  this:class struct_pass_by_value::Y* x:class struct_pass_by_value::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+	
+
+	 "struct_pass_by_value::Y_Y{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.736370021d32429c3bc817e82f75265a_1" -> "struct_pass_by_value::Y_Y{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.736370021d32429c3bc817e82f75265a_3" ;
+"struct_pass_by_value::Y_Y{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.736370021d32429c3bc817e82f75265a_2" [label="2: Exit struct_pass_by_value::Y_Y \n  " color=yellow style=filled]
+	
+
+"struct_pass_by_value::Y_Y{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.736370021d32429c3bc817e82f75265a_3" [label="3:  Constructor Init \n   n$0=*&this:class struct_pass_by_value::Y* [line 18]\n  n$1=*&x:class struct_pass_by_value::X& [line 18]\n  _fun_struct_pass_by_value::X_X(n$0.x:class struct_pass_by_value::X*,n$1:class struct_pass_by_value::X&) [line 18]\n " shape="box"]
+	
+
+	 "struct_pass_by_value::Y_Y{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.736370021d32429c3bc817e82f75265a_3" -> "struct_pass_by_value::Y_Y{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.736370021d32429c3bc817e82f75265a_2" ;
+"struct_pass_by_value::get_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5get_fENS_1XE}.cb4c7bfb8c92188ef5a8c858af4ccdc2_1" [label="1: Start struct_pass_by_value::get_f\nFormals:  val:class struct_pass_by_value::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
+	
+
+	 "struct_pass_by_value::get_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5get_fENS_1XE}.cb4c7bfb8c92188ef5a8c858af4ccdc2_1" -> "struct_pass_by_value::get_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5get_fENS_1XE}.cb4c7bfb8c92188ef5a8c858af4ccdc2_3" ;
+"struct_pass_by_value::get_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5get_fENS_1XE}.cb4c7bfb8c92188ef5a8c858af4ccdc2_2" [label="2: Exit struct_pass_by_value::get_f \n  " color=yellow style=filled]
+	
+
+"struct_pass_by_value::get_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5get_fENS_1XE}.cb4c7bfb8c92188ef5a8c858af4ccdc2_3" [label="3:  Return Stmt \n   n$0=*&val:class struct_pass_by_value::X& [line 22]\n  n$1=*n$0.f:int [line 22]\n  *&return:int=n$1 [line 22]\n " shape="box"]
+	
+
+	 "struct_pass_by_value::get_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5get_fENS_1XE}.cb4c7bfb8c92188ef5a8c858af4ccdc2_3" -> "struct_pass_by_value::get_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5get_fENS_1XE}.cb4c7bfb8c92188ef5a8c858af4ccdc2_2" ;
+"struct_pass_by_value::set_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5set_fENS_1XEi}.01a84b9638a9a7c2a81e5c2f4f1e72dd_1" [label="1: Start struct_pass_by_value::set_f\nFormals:  val:class struct_pass_by_value::X& f:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
+	
+
+	 "struct_pass_by_value::set_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5set_fENS_1XEi}.01a84b9638a9a7c2a81e5c2f4f1e72dd_1" -> "struct_pass_by_value::set_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5set_fENS_1XEi}.01a84b9638a9a7c2a81e5c2f4f1e72dd_3" ;
+"struct_pass_by_value::set_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5set_fENS_1XEi}.01a84b9638a9a7c2a81e5c2f4f1e72dd_2" [label="2: Exit struct_pass_by_value::set_f \n  " color=yellow style=filled]
+	
+
+"struct_pass_by_value::set_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5set_fENS_1XEi}.01a84b9638a9a7c2a81e5c2f4f1e72dd_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&val:class struct_pass_by_value::X& [line 25]\n  n$1=*&f:int [line 25]\n  *n$0.f:int=n$1 [line 25]\n " shape="box"]
+	
+
+	 "struct_pass_by_value::set_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5set_fENS_1XEi}.01a84b9638a9a7c2a81e5c2f4f1e72dd_3" -> "struct_pass_by_value::set_f{d41d8cd98f00b204e9800998ecf8427e_ZN20struct_pass_by_value5set_fENS_1XEi}.01a84b9638a9a7c2a81e5c2f4f1e72dd_2" ;
 }

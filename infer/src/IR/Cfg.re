@@ -45,10 +45,25 @@ let create_proc_desc cfg (proc_attributes: ProcAttributes.t) => {
 
 
 /** Iterate over all the nodes in the cfg */
-let iter_all_nodes f cfg => {
+let iter_all_nodes sorted::sorted=false f cfg => {
   let do_proc_desc _ (pdesc: Procdesc.t) =>
     IList.iter (fun node => f pdesc node) (Procdesc.get_nodes pdesc);
-  iter_proc_desc cfg do_proc_desc
+  if (not sorted) {
+    iter_proc_desc cfg do_proc_desc
+  } else {
+    Procname.Hash.fold
+      (
+        fun _ pdesc desc_nodes =>
+          IList.fold_left
+            (fun desc_nodes node => [(pdesc, node), ...desc_nodes])
+            desc_nodes
+            (Procdesc.get_nodes pdesc)
+      )
+      cfg.proc_desc_table
+      [] |>
+    IList.sort [%compare : (Procdesc.t, Procdesc.Node.t)] |>
+    IList.iter (fun (d, n) => f d n)
+  }
 };
 
 

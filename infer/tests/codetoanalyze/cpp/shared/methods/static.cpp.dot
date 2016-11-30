@@ -1,36 +1,36 @@
 /* @generated */
 digraph iCFG {
-"div0_instance{d41d8cd98f00b204e9800998ecf8427e_Z13div0_instanceP1A}.876059188e65719ffcc9521e84c08f34_3" [label="3:  Call _fun_A_fun \n   n$0=*&a:class A* [line 21]\n  n$1=_fun_A_fun(0:int) [line 21]\n " shape="box"]
-	
-
-	 "div0_instance{d41d8cd98f00b204e9800998ecf8427e_Z13div0_instanceP1A}.876059188e65719ffcc9521e84c08f34_3" -> "div0_instance{d41d8cd98f00b204e9800998ecf8427e_Z13div0_instanceP1A}.876059188e65719ffcc9521e84c08f34_2" ;
-"div0_instance{d41d8cd98f00b204e9800998ecf8427e_Z13div0_instanceP1A}.876059188e65719ffcc9521e84c08f34_2" [label="2: Exit div0_instance \n  " color=yellow style=filled]
-	
-
-"div0_instance{d41d8cd98f00b204e9800998ecf8427e_Z13div0_instanceP1A}.876059188e65719ffcc9521e84c08f34_1" [label="1: Start div0_instance\nFormals:  a:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
-	
-
-	 "div0_instance{d41d8cd98f00b204e9800998ecf8427e_Z13div0_instanceP1A}.876059188e65719ffcc9521e84c08f34_1" -> "div0_instance{d41d8cd98f00b204e9800998ecf8427e_Z13div0_instanceP1A}.876059188e65719ffcc9521e84c08f34_3" ;
-"div0_class{d41d8cd98f00b204e9800998ecf8427e_Z10div0_classv}.9cfd421cda204026c57c20d56173738a_3" [label="3:  Call _fun_A_fun \n   n$0=_fun_A_fun(0:int) [line 17]\n " shape="box"]
-	
-
-	 "div0_class{d41d8cd98f00b204e9800998ecf8427e_Z10div0_classv}.9cfd421cda204026c57c20d56173738a_3" -> "div0_class{d41d8cd98f00b204e9800998ecf8427e_Z10div0_classv}.9cfd421cda204026c57c20d56173738a_2" ;
-"div0_class{d41d8cd98f00b204e9800998ecf8427e_Z10div0_classv}.9cfd421cda204026c57c20d56173738a_2" [label="2: Exit div0_class \n  " color=yellow style=filled]
-	
-
 "div0_class{d41d8cd98f00b204e9800998ecf8427e_Z10div0_classv}.9cfd421cda204026c57c20d56173738a_1" [label="1: Start div0_class\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
 	
 
 	 "div0_class{d41d8cd98f00b204e9800998ecf8427e_Z10div0_classv}.9cfd421cda204026c57c20d56173738a_1" -> "div0_class{d41d8cd98f00b204e9800998ecf8427e_Z10div0_classv}.9cfd421cda204026c57c20d56173738a_3" ;
-"A_fun(_ZN1A3funEi).5d18338a76054ff41591eb96e41ae8cd_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 15]\n  *&return:int=(1 / n$0) [line 15]\n " shape="box"]
+"div0_class{d41d8cd98f00b204e9800998ecf8427e_Z10div0_classv}.9cfd421cda204026c57c20d56173738a_2" [label="2: Exit div0_class \n  " color=yellow style=filled]
 	
 
-	 "A_fun(_ZN1A3funEi).5d18338a76054ff41591eb96e41ae8cd_3" -> "A_fun(_ZN1A3funEi).5d18338a76054ff41591eb96e41ae8cd_2" ;
-"A_fun(_ZN1A3funEi).5d18338a76054ff41591eb96e41ae8cd_2" [label="2: Exit A_fun \n  " color=yellow style=filled]
+"div0_class{d41d8cd98f00b204e9800998ecf8427e_Z10div0_classv}.9cfd421cda204026c57c20d56173738a_3" [label="3:  Call _fun_A_fun \n   n$0=_fun_A_fun(0:int) [line 17]\n " shape="box"]
 	
 
+	 "div0_class{d41d8cd98f00b204e9800998ecf8427e_Z10div0_classv}.9cfd421cda204026c57c20d56173738a_3" -> "div0_class{d41d8cd98f00b204e9800998ecf8427e_Z10div0_classv}.9cfd421cda204026c57c20d56173738a_2" ;
 "A_fun(_ZN1A3funEi).5d18338a76054ff41591eb96e41ae8cd_1" [label="1: Start A_fun\nFormals:  a:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
 	 "A_fun(_ZN1A3funEi).5d18338a76054ff41591eb96e41ae8cd_1" -> "A_fun(_ZN1A3funEi).5d18338a76054ff41591eb96e41ae8cd_3" ;
+"A_fun(_ZN1A3funEi).5d18338a76054ff41591eb96e41ae8cd_2" [label="2: Exit A_fun \n  " color=yellow style=filled]
+	
+
+"A_fun(_ZN1A3funEi).5d18338a76054ff41591eb96e41ae8cd_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 15]\n  *&return:int=(1 / n$0) [line 15]\n " shape="box"]
+	
+
+	 "A_fun(_ZN1A3funEi).5d18338a76054ff41591eb96e41ae8cd_3" -> "A_fun(_ZN1A3funEi).5d18338a76054ff41591eb96e41ae8cd_2" ;
+"div0_instance{d41d8cd98f00b204e9800998ecf8427e_Z13div0_instanceP1A}.876059188e65719ffcc9521e84c08f34_1" [label="1: Start div0_instance\nFormals:  a:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
+	
+
+	 "div0_instance{d41d8cd98f00b204e9800998ecf8427e_Z13div0_instanceP1A}.876059188e65719ffcc9521e84c08f34_1" -> "div0_instance{d41d8cd98f00b204e9800998ecf8427e_Z13div0_instanceP1A}.876059188e65719ffcc9521e84c08f34_3" ;
+"div0_instance{d41d8cd98f00b204e9800998ecf8427e_Z13div0_instanceP1A}.876059188e65719ffcc9521e84c08f34_2" [label="2: Exit div0_instance \n  " color=yellow style=filled]
+	
+
+"div0_instance{d41d8cd98f00b204e9800998ecf8427e_Z13div0_instanceP1A}.876059188e65719ffcc9521e84c08f34_3" [label="3:  Call _fun_A_fun \n   n$0=*&a:class A* [line 21]\n  n$1=_fun_A_fun(0:int) [line 21]\n " shape="box"]
+	
+
+	 "div0_instance{d41d8cd98f00b204e9800998ecf8427e_Z13div0_instanceP1A}.876059188e65719ffcc9521e84c08f34_3" -> "div0_instance{d41d8cd98f00b204e9800998ecf8427e_Z13div0_instanceP1A}.876059188e65719ffcc9521e84c08f34_2" ;
 }

@@ -54,7 +54,7 @@ let get_defined_procs: cfg => list Procdesc.t;
 
 
 /** Iterate over all the nodes in the cfg */
-let iter_all_nodes: (Procdesc.t => Procdesc.Node.t => unit) => cfg => unit;
+let iter_all_nodes: sorted::bool? => (Procdesc.t => Procdesc.Node.t => unit) => cfg => unit;
 
 
 /** checks whether a cfg is connected or not */

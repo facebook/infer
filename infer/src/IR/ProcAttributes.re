@@ -18,7 +18,8 @@ let module F = Format;
 /** Type for ObjC accessors */
 type objc_accessor_type =
   | Objc_getter Ident.fieldname
-  | Objc_setter Ident.fieldname;
+  | Objc_setter Ident.fieldname
+[@@deriving compare];
 
 type t = {
   access: PredSymb.access, /** visibility access */
@@ -47,7 +48,8 @@ type t = {
   proc_name: Procname.t, /** name of the procedure */
   ret_type: Typ.t, /** return type */
   source_file_captured: DB.source_file /** source file where the procedure was captured */
-};
+}
+[@@deriving compare];
 
 let default proc_name language => {
   access: PredSymb.Default,

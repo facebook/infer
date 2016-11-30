@@ -1,25 +1,25 @@
 /* @generated */
 digraph iCFG {
-"is_trivial_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_trivial_examplev}.a376ea8b8aa281541835e3ee803697fb_3" [label="3:  Return Stmt \n   *&return:int=1 [line 10]\n " shape="box"]
-	
-
-	 "is_trivial_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_trivial_examplev}.a376ea8b8aa281541835e3ee803697fb_3" -> "is_trivial_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_trivial_examplev}.a376ea8b8aa281541835e3ee803697fb_2" ;
-"is_trivial_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_trivial_examplev}.a376ea8b8aa281541835e3ee803697fb_2" [label="2: Exit is_trivial_example \n  " color=yellow style=filled]
-	
-
 "is_trivial_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_trivial_examplev}.a376ea8b8aa281541835e3ee803697fb_1" [label="1: Start is_trivial_example\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
 	 "is_trivial_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_trivial_examplev}.a376ea8b8aa281541835e3ee803697fb_1" -> "is_trivial_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_trivial_examplev}.a376ea8b8aa281541835e3ee803697fb_3" ;
-"is_pointer_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_pointer_examplev}.47c0e3b14c3c00d85ae198b4a6682790_3" [label="3:  Return Stmt \n   *&return:int=0 [line 12]\n " shape="box"]
+"is_trivial_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_trivial_examplev}.a376ea8b8aa281541835e3ee803697fb_2" [label="2: Exit is_trivial_example \n  " color=yellow style=filled]
 	
 
-	 "is_pointer_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_pointer_examplev}.47c0e3b14c3c00d85ae198b4a6682790_3" -> "is_pointer_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_pointer_examplev}.47c0e3b14c3c00d85ae198b4a6682790_2" ;
-"is_pointer_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_pointer_examplev}.47c0e3b14c3c00d85ae198b4a6682790_2" [label="2: Exit is_pointer_example \n  " color=yellow style=filled]
+"is_trivial_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_trivial_examplev}.a376ea8b8aa281541835e3ee803697fb_3" [label="3:  Return Stmt \n   *&return:int=1 [line 10]\n " shape="box"]
 	
 
+	 "is_trivial_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_trivial_examplev}.a376ea8b8aa281541835e3ee803697fb_3" -> "is_trivial_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_trivial_examplev}.a376ea8b8aa281541835e3ee803697fb_2" ;
 "is_pointer_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_pointer_examplev}.47c0e3b14c3c00d85ae198b4a6682790_1" [label="1: Start is_pointer_example\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
 	 "is_pointer_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_pointer_examplev}.47c0e3b14c3c00d85ae198b4a6682790_1" -> "is_pointer_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_pointer_examplev}.47c0e3b14c3c00d85ae198b4a6682790_3" ;
+"is_pointer_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_pointer_examplev}.47c0e3b14c3c00d85ae198b4a6682790_2" [label="2: Exit is_pointer_example \n  " color=yellow style=filled]
+	
+
+"is_pointer_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_pointer_examplev}.47c0e3b14c3c00d85ae198b4a6682790_3" [label="3:  Return Stmt \n   *&return:int=0 [line 12]\n " shape="box"]
+	
+
+	 "is_pointer_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_pointer_examplev}.47c0e3b14c3c00d85ae198b4a6682790_3" -> "is_pointer_example{d41d8cd98f00b204e9800998ecf8427e_Z18is_pointer_examplev}.47c0e3b14c3c00d85ae198b4a6682790_2" ;
 }

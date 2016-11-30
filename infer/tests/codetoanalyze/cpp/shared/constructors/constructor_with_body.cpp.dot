@@ -1,100 +1,100 @@
 /* @generated */
 digraph iCFG {
-"constructor_with_body::X_init(_ZN21constructor_with_body1X4initEv).a4b1415815341c1571fba5d00892033f_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class constructor_with_body::X* [line 14]\n  *n$0.f:int=0 [line 14]\n " shape="box"]
-	
-
-	 "constructor_with_body::X_init(_ZN21constructor_with_body1X4initEv).a4b1415815341c1571fba5d00892033f_3" -> "constructor_with_body::X_init(_ZN21constructor_with_body1X4initEv).a4b1415815341c1571fba5d00892033f_2" ;
-"constructor_with_body::X_init(_ZN21constructor_with_body1X4initEv).a4b1415815341c1571fba5d00892033f_2" [label="2: Exit constructor_with_body::X_init \n  " color=yellow style=filled]
-	
-
-"constructor_with_body::X_init(_ZN21constructor_with_body1X4initEv).a4b1415815341c1571fba5d00892033f_1" [label="1: Start constructor_with_body::X_init\nFormals:  this:class constructor_with_body::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
-	
-
-	 "constructor_with_body::X_init(_ZN21constructor_with_body1X4initEv).a4b1415815341c1571fba5d00892033f_1" -> "constructor_with_body::X_init(_ZN21constructor_with_body1X4initEv).a4b1415815341c1571fba5d00892033f_3" ;
-"constructor_with_body::X_div(_ZN21constructor_with_body1X3divEv).013e59e82029af6304fe56228d9a9441_3" [label="3:  Return Stmt \n   n$0=*&this:class constructor_with_body::X* [line 21]\n  n$1=*n$0.f:int [line 21]\n  *&return:int=(1 / n$1) [line 21]\n " shape="box"]
-	
-
-	 "constructor_with_body::X_div(_ZN21constructor_with_body1X3divEv).013e59e82029af6304fe56228d9a9441_3" -> "constructor_with_body::X_div(_ZN21constructor_with_body1X3divEv).013e59e82029af6304fe56228d9a9441_2" ;
-"constructor_with_body::X_div(_ZN21constructor_with_body1X3divEv).013e59e82029af6304fe56228d9a9441_2" [label="2: Exit constructor_with_body::X_div \n  " color=yellow style=filled]
-	
-
-"constructor_with_body::X_div(_ZN21constructor_with_body1X3divEv).013e59e82029af6304fe56228d9a9441_1" [label="1: Start constructor_with_body::X_div\nFormals:  this:class constructor_with_body::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
-	
-
-	 "constructor_with_body::X_div(_ZN21constructor_with_body1X3divEv).013e59e82029af6304fe56228d9a9441_1" -> "constructor_with_body::X_div(_ZN21constructor_with_body1X3divEv).013e59e82029af6304fe56228d9a9441_3" ;
-"constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_4" [label="4:  DeclStmt \n   _fun_constructor_with_body::X_X(&x:class constructor_with_body::X*,0:int,1:int) [line 41]\n " shape="box"]
-	
-
-	 "constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_4" -> "constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_3" ;
-"constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_3" [label="3:  Call _fun_constructor_with_body::X_div \n   _=*&x:class constructor_with_body::X [line 42]\n  n$1=_fun_constructor_with_body::X_div(&x:class constructor_with_body::X&) [line 42]\n " shape="box"]
-	
-
-	 "constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_3" -> "constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_2" ;
-"constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_2" [label="2: Exit constructor_with_body::test_div1 \n  " color=yellow style=filled]
-	
-
-"constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_1" [label="1: Start constructor_with_body::test_div1\nFormals: \nLocals:  x:class constructor_with_body::X \n   DECLARE_LOCALS(&return,&x); [line 40]\n " color=yellow style=filled]
-	
-
-	 "constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_1" -> "constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_4" ;
-"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_5" [label="5:  DeclStmt \n   n$4=*&a:int [line 25]\n  n$5=*&b:int [line 25]\n  *&c:int=(n$4 + n$5) [line 25]\n " shape="box"]
-	
-
-	 "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_5" -> "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_4" ;
-"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_4" [label="4:  Call _fun_constructor_with_body::X_init \n   n$2=*&this:class constructor_with_body::X* [line 26]\n  _=*n$2:class constructor_with_body::X [line 26]\n  _fun_constructor_with_body::X_init(n$2:class constructor_with_body::X*) [line 26]\n " shape="box"]
-	
-
-	 "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_4" -> "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_3" ;
-"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class constructor_with_body::X* [line 27]\n  n$1=*&c:int [line 27]\n  *n$0.f:int=n$1 [line 27]\n " shape="box"]
-	
-
-	 "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_3" -> "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_2" ;
-"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_2" [label="2: Exit constructor_with_body::X_X \n  " color=yellow style=filled]
-	
-
-"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_1" [label="1: Start constructor_with_body::X_X\nFormals:  this:class constructor_with_body::X* a:int b:int\nLocals:  c:int \n   DECLARE_LOCALS(&return,&c); [line 24]\n " color=yellow style=filled]
-	
-
-	 "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_1" -> "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_5" ;
-"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Ev}.fab61542b5e3338152a9ce3e83b292c1_3" [label="3:  Call _fun_constructor_with_body::X_init \n   n$0=*&this:class constructor_with_body::X* [line 17]\n  _=*n$0:class constructor_with_body::X [line 17]\n  _fun_constructor_with_body::X_init(n$0:class constructor_with_body::X*) [line 17]\n " shape="box"]
-	
-
-	 "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Ev}.fab61542b5e3338152a9ce3e83b292c1_3" -> "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Ev}.fab61542b5e3338152a9ce3e83b292c1_2" ;
-"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Ev}.fab61542b5e3338152a9ce3e83b292c1_2" [label="2: Exit constructor_with_body::X_X \n  " color=yellow style=filled]
-	
-
-"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Ev}.fab61542b5e3338152a9ce3e83b292c1_1" [label="1: Start constructor_with_body::X_X\nFormals:  this:class constructor_with_body::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
-	
-
-	 "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Ev}.fab61542b5e3338152a9ce3e83b292c1_1" -> "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Ev}.fab61542b5e3338152a9ce3e83b292c1_3" ;
-"constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_4" [label="4:  DeclStmt \n   _fun_constructor_with_body::X_X(&x:class constructor_with_body::X*) [line 36]\n " shape="box"]
-	
-
-	 "constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_4" -> "constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_3" ;
-"constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_3" [label="3:  Call _fun_constructor_with_body::X_div \n   _=*&x:class constructor_with_body::X [line 37]\n  n$1=_fun_constructor_with_body::X_div(&x:class constructor_with_body::X&) [line 37]\n " shape="box"]
-	
-
-	 "constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_3" -> "constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_2" ;
-"constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_2" [label="2: Exit constructor_with_body::test_div0_default_constructor \n  " color=yellow style=filled]
-	
-
-"constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_1" [label="1: Start constructor_with_body::test_div0_default_constructor\nFormals: \nLocals:  x:class constructor_with_body::X \n   DECLARE_LOCALS(&return,&x); [line 35]\n " color=yellow style=filled]
-	
-
-	 "constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_1" -> "constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_4" ;
-"constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_4" [label="4:  DeclStmt \n   _fun_constructor_with_body::X_X(&x:class constructor_with_body::X*,-2:int,2:int) [line 31]\n " shape="box"]
-	
-
-	 "constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_4" -> "constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_3" ;
-"constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_3" [label="3:  Call _fun_constructor_with_body::X_div \n   _=*&x:class constructor_with_body::X [line 32]\n  n$1=_fun_constructor_with_body::X_div(&x:class constructor_with_body::X&) [line 32]\n " shape="box"]
-	
-
-	 "constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_3" -> "constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_2" ;
-"constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_2" [label="2: Exit constructor_with_body::test_div0 \n  " color=yellow style=filled]
-	
-
 "constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_1" [label="1: Start constructor_with_body::test_div0\nFormals: \nLocals:  x:class constructor_with_body::X \n   DECLARE_LOCALS(&return,&x); [line 30]\n " color=yellow style=filled]
 	
 
 	 "constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_1" -> "constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_4" ;
+"constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_2" [label="2: Exit constructor_with_body::test_div0 \n  " color=yellow style=filled]
+	
+
+"constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_3" [label="3:  Call _fun_constructor_with_body::X_div \n   _=*&x:class constructor_with_body::X [line 32]\n  n$1=_fun_constructor_with_body::X_div(&x:class constructor_with_body::X&) [line 32]\n " shape="box"]
+	
+
+	 "constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_3" -> "constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_2" ;
+"constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_4" [label="4:  DeclStmt \n   _fun_constructor_with_body::X_X(&x:class constructor_with_body::X*,-2:int,2:int) [line 31]\n " shape="box"]
+	
+
+	 "constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_4" -> "constructor_with_body::test_div0{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.af736390f22d9dcebbfc405ec2a926d0_3" ;
+"constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_1" [label="1: Start constructor_with_body::test_div0_default_constructor\nFormals: \nLocals:  x:class constructor_with_body::X \n   DECLARE_LOCALS(&return,&x); [line 35]\n " color=yellow style=filled]
+	
+
+	 "constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_1" -> "constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_4" ;
+"constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_2" [label="2: Exit constructor_with_body::test_div0_default_constructor \n  " color=yellow style=filled]
+	
+
+"constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_3" [label="3:  Call _fun_constructor_with_body::X_div \n   _=*&x:class constructor_with_body::X [line 37]\n  n$1=_fun_constructor_with_body::X_div(&x:class constructor_with_body::X&) [line 37]\n " shape="box"]
+	
+
+	 "constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_3" -> "constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_2" ;
+"constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_4" [label="4:  DeclStmt \n   _fun_constructor_with_body::X_X(&x:class constructor_with_body::X*) [line 36]\n " shape="box"]
+	
+
+	 "constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_4" -> "constructor_with_body::test_div0_default_constructor{d41d8cd98f00b204e9800998ecf8427e_ZN21constructo.48f03f3d51ace6003d29d7d848bbb880_3" ;
+"constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_1" [label="1: Start constructor_with_body::test_div1\nFormals: \nLocals:  x:class constructor_with_body::X \n   DECLARE_LOCALS(&return,&x); [line 40]\n " color=yellow style=filled]
+	
+
+	 "constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_1" -> "constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_4" ;
+"constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_2" [label="2: Exit constructor_with_body::test_div1 \n  " color=yellow style=filled]
+	
+
+"constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_3" [label="3:  Call _fun_constructor_with_body::X_div \n   _=*&x:class constructor_with_body::X [line 42]\n  n$1=_fun_constructor_with_body::X_div(&x:class constructor_with_body::X&) [line 42]\n " shape="box"]
+	
+
+	 "constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_3" -> "constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_2" ;
+"constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_4" [label="4:  DeclStmt \n   _fun_constructor_with_body::X_X(&x:class constructor_with_body::X*,0:int,1:int) [line 41]\n " shape="box"]
+	
+
+	 "constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_4" -> "constructor_with_body::test_div1{d41d8cd98f00b204e9800998ecf8427e_ZN21constructor_with_body9test_div.47cd8983302bd2a036476649ed5e67e2_3" ;
+"constructor_with_body::X_init(_ZN21constructor_with_body1X4initEv).a4b1415815341c1571fba5d00892033f_1" [label="1: Start constructor_with_body::X_init\nFormals:  this:class constructor_with_body::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+	
+
+	 "constructor_with_body::X_init(_ZN21constructor_with_body1X4initEv).a4b1415815341c1571fba5d00892033f_1" -> "constructor_with_body::X_init(_ZN21constructor_with_body1X4initEv).a4b1415815341c1571fba5d00892033f_3" ;
+"constructor_with_body::X_init(_ZN21constructor_with_body1X4initEv).a4b1415815341c1571fba5d00892033f_2" [label="2: Exit constructor_with_body::X_init \n  " color=yellow style=filled]
+	
+
+"constructor_with_body::X_init(_ZN21constructor_with_body1X4initEv).a4b1415815341c1571fba5d00892033f_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class constructor_with_body::X* [line 14]\n  *n$0.f:int=0 [line 14]\n " shape="box"]
+	
+
+	 "constructor_with_body::X_init(_ZN21constructor_with_body1X4initEv).a4b1415815341c1571fba5d00892033f_3" -> "constructor_with_body::X_init(_ZN21constructor_with_body1X4initEv).a4b1415815341c1571fba5d00892033f_2" ;
+"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Ev}.fab61542b5e3338152a9ce3e83b292c1_1" [label="1: Start constructor_with_body::X_X\nFormals:  this:class constructor_with_body::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
+	
+
+	 "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Ev}.fab61542b5e3338152a9ce3e83b292c1_1" -> "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Ev}.fab61542b5e3338152a9ce3e83b292c1_3" ;
+"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Ev}.fab61542b5e3338152a9ce3e83b292c1_2" [label="2: Exit constructor_with_body::X_X \n  " color=yellow style=filled]
+	
+
+"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Ev}.fab61542b5e3338152a9ce3e83b292c1_3" [label="3:  Call _fun_constructor_with_body::X_init \n   n$0=*&this:class constructor_with_body::X* [line 17]\n  _=*n$0:class constructor_with_body::X [line 17]\n  _fun_constructor_with_body::X_init(n$0:class constructor_with_body::X*) [line 17]\n " shape="box"]
+	
+
+	 "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Ev}.fab61542b5e3338152a9ce3e83b292c1_3" -> "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Ev}.fab61542b5e3338152a9ce3e83b292c1_2" ;
+"constructor_with_body::X_div(_ZN21constructor_with_body1X3divEv).013e59e82029af6304fe56228d9a9441_1" [label="1: Start constructor_with_body::X_div\nFormals:  this:class constructor_with_body::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
+	
+
+	 "constructor_with_body::X_div(_ZN21constructor_with_body1X3divEv).013e59e82029af6304fe56228d9a9441_1" -> "constructor_with_body::X_div(_ZN21constructor_with_body1X3divEv).013e59e82029af6304fe56228d9a9441_3" ;
+"constructor_with_body::X_div(_ZN21constructor_with_body1X3divEv).013e59e82029af6304fe56228d9a9441_2" [label="2: Exit constructor_with_body::X_div \n  " color=yellow style=filled]
+	
+
+"constructor_with_body::X_div(_ZN21constructor_with_body1X3divEv).013e59e82029af6304fe56228d9a9441_3" [label="3:  Return Stmt \n   n$0=*&this:class constructor_with_body::X* [line 21]\n  n$1=*n$0.f:int [line 21]\n  *&return:int=(1 / n$1) [line 21]\n " shape="box"]
+	
+
+	 "constructor_with_body::X_div(_ZN21constructor_with_body1X3divEv).013e59e82029af6304fe56228d9a9441_3" -> "constructor_with_body::X_div(_ZN21constructor_with_body1X3divEv).013e59e82029af6304fe56228d9a9441_2" ;
+"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_1" [label="1: Start constructor_with_body::X_X\nFormals:  this:class constructor_with_body::X* a:int b:int\nLocals:  c:int \n   DECLARE_LOCALS(&return,&c); [line 24]\n " color=yellow style=filled]
+	
+
+	 "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_1" -> "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_5" ;
+"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_2" [label="2: Exit constructor_with_body::X_X \n  " color=yellow style=filled]
+	
+
+"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class constructor_with_body::X* [line 27]\n  n$1=*&c:int [line 27]\n  *n$0.f:int=n$1 [line 27]\n " shape="box"]
+	
+
+	 "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_3" -> "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_2" ;
+"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_4" [label="4:  Call _fun_constructor_with_body::X_init \n   n$2=*&this:class constructor_with_body::X* [line 26]\n  _=*n$2:class constructor_with_body::X [line 26]\n  _fun_constructor_with_body::X_init(n$2:class constructor_with_body::X*) [line 26]\n " shape="box"]
+	
+
+	 "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_4" -> "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_3" ;
+"constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_5" [label="5:  DeclStmt \n   n$4=*&a:int [line 25]\n  n$5=*&b:int [line 25]\n  *&c:int=(n$4 + n$5) [line 25]\n " shape="box"]
+	
+
+	 "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_5" -> "constructor_with_body::X_X{_ZN21constructor_with_body1XC1Eii}.5d491c6deba9d56c30b1893fa1925162_4" ;
 }

@@ -1019,7 +1019,7 @@ let print_icfg source fmt cfg =
     let loc = Procdesc.Node.get_loc node in
     if (Config.dotty_cfg_libs || DB.equal_source_file loc.Location.file source) then
       F.fprintf fmt "%a\n" (pp_cfgnode pdesc) node in
-  Cfg.iter_all_nodes print_node cfg
+  Cfg.iter_all_nodes ~sorted:true print_node cfg
 
 let write_icfg_dotty_to_file source cfg fname =
   let chan = open_out fname in

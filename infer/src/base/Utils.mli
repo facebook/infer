@@ -244,7 +244,7 @@ val do_outf : outfile option -> (outfile -> unit) -> unit
 val close_outf : outfile -> unit
 
 (** flags for a procedure *)
-type proc_flags = (string, string) Hashtbl.t
+type proc_flags = (string, string) Hashtbl.t [@@deriving compare]
 
 (** keys for proc_flags *)
 

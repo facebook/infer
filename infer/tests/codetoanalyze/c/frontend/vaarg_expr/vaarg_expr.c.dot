@@ -1,51 +1,51 @@
 /* @generated */
 digraph iCFG {
-"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_12" [label="12:  Call _fun___builtin_va_start \n   _fun___builtin_va_start(&valist:void*,&x:int&) [line 14]\n " shape="box"]
+"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_1" [label="1: Start vaarg_foo\nFormals:  x:int\nLocals:  val:int i:int valist:void[1] \n   DECLARE_LOCALS(&return,&val,&i,&valist); [line 12]\n " color=yellow style=filled]
 	
 
-	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_12" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_11" ;
-"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_11" [label="11:  DeclStmt \n   *&i:int=n$2 [line 15]\n " shape="box"]
+	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_1" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_12" ;
+"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_2" [label="2: Exit vaarg_foo \n  " color=yellow style=filled]
 	
 
-	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_11" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_6" ;
-"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_10" [label="10:  BinaryOperatorStmt: Assign \n   *&val:int=(4 / 0) [line 20]\n " shape="box"]
+"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_3" [label="3:  Return Stmt \n   n$0=*&val:int [line 23]\n  *&return:int=n$0 [line 23]\n " shape="box"]
 	
 
-	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_10" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_5" ;
-"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_9" [label="9:  BinaryOperatorStmt: Assign \n   *&val:int=(9 / 0) [line 18]\n " shape="box"]
+	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_3" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_2" ;
+"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_4" [label="4:  Call _fun___builtin_va_end \n   _fun___builtin_va_end(&valist:void*) [line 22]\n " shape="box"]
 	
 
-	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_9" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_5" ;
-"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_8" [label="8: Prune (false branch) \n   PRUNE(((n$1 == 9) == 0), false); [line 17]\n " shape="invhouse"]
+	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_4" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_3" ;
+"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_5" [label="5: + \n  " ]
 	
 
-	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_8" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_10" ;
-"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_7" [label="7: Prune (true branch) \n   PRUNE(((n$1 == 9) != 0), true); [line 17]\n " shape="invhouse"]
-	
-
-	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_7" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_9" ;
+	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_5" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_4" ;
 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_6" [label="6:  BinaryOperatorStmt: EQ \n   n$1=*&i:int [line 17]\n " shape="box"]
 	
 
 	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_6" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_7" ;
 	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_6" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_8" ;
-"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_5" [label="5: + \n  " ]
+"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_7" [label="7: Prune (true branch) \n   PRUNE(((n$1 == 9) != 0), true); [line 17]\n " shape="invhouse"]
 	
 
-	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_5" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_4" ;
-"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_4" [label="4:  Call _fun___builtin_va_end \n   _fun___builtin_va_end(&valist:void*) [line 22]\n " shape="box"]
+	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_7" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_9" ;
+"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_8" [label="8: Prune (false branch) \n   PRUNE(((n$1 == 9) == 0), false); [line 17]\n " shape="invhouse"]
 	
 
-	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_4" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_3" ;
-"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_3" [label="3:  Return Stmt \n   n$0=*&val:int [line 23]\n  *&return:int=n$0 [line 23]\n " shape="box"]
+	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_8" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_10" ;
+"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_9" [label="9:  BinaryOperatorStmt: Assign \n   *&val:int=(9 / 0) [line 18]\n " shape="box"]
 	
 
-	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_3" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_2" ;
-"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_2" [label="2: Exit vaarg_foo \n  " color=yellow style=filled]
+	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_9" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_5" ;
+"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_10" [label="10:  BinaryOperatorStmt: Assign \n   *&val:int=(4 / 0) [line 20]\n " shape="box"]
 	
 
-"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_1" [label="1: Start vaarg_foo\nFormals:  x:int\nLocals:  val:int i:int valist:void[1] \n   DECLARE_LOCALS(&return,&val,&i,&valist); [line 12]\n " color=yellow style=filled]
+	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_10" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_5" ;
+"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_11" [label="11:  DeclStmt \n   *&i:int=n$2 [line 15]\n " shape="box"]
 	
 
-	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_1" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_12" ;
+	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_11" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_6" ;
+"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_12" [label="12:  Call _fun___builtin_va_start \n   _fun___builtin_va_start(&valist:void*,&x:int&) [line 14]\n " shape="box"]
+	
+
+	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_12" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_11" ;
 }

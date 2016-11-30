@@ -1,169 +1,169 @@
 /* @generated */
 digraph iCFG {
-"f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_4" [label="4:  DeclStmt \n   _fun_B_B(&b:class B*,0:int) [line 33]\n " shape="box"]
-	
-
-	 "f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_4" -> "f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_3" ;
-"f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_3" [label="3:  Return Stmt \n   n$0=*&b.f:int [line 34]\n  *&return:int=(1 / n$0) [line 34]\n " shape="box"]
-	
-
-	 "f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_3" -> "f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_2" ;
-"f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_2" [label="2: Exit f_div0 \n  " color=yellow style=filled]
-	
-
-"f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_1" [label="1: Start f_div0\nFormals: \nLocals:  b:class B \n   DECLARE_LOCALS(&return,&b); [line 32]\n " color=yellow style=filled]
-	
-
-	 "f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_1" -> "f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_4" ;
-"delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_5" [label="5:  DeclStmt \n   _fun_B_B(&b:class B*,-1:int,0:int) [line 49]\n " shape="box"]
-	
-
-	 "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_5" -> "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_4" ;
-"delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_4" [label="4:  DeclStmt \n   n$1=*&b.f:int [line 50]\n  *&v:int=(1 / n$1) [line 50]\n " shape="box"]
-	
-
-	 "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_4" -> "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_3" ;
-"delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_3" [label="3:  Return Stmt \n   n$0=*&b.f2:int [line 51]\n  *&return:int=(1 / n$0) [line 51]\n " shape="box"]
-	
-
-	 "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_3" -> "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_2" ;
-"delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_2" [label="2: Exit delegate_constr_f2_div0 \n  " color=yellow style=filled]
-	
-
-"delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_1" [label="1: Start delegate_constr_f2_div0\nFormals: \nLocals:  v:int b:class B \n   DECLARE_LOCALS(&return,&v,&b); [line 48]\n " color=yellow style=filled]
-	
-
-	 "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_1" -> "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_5" ;
-"B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_4" [label="4:  Constructor Init \n   n$2=*&this:class B* [line 24]\n  n$3=*&a:int [line 24]\n  n$4=*&b:int [line 24]\n  _fun_B_B(n$2:class B*,(n$3 + n$4):int) [line 24]\n " shape="box"]
-	
-
-	 "B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_4" -> "B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_3" ;
-"B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class B* [line 24]\n  n$1=*&b:int [line 24]\n  *n$0.f2:int=n$1 [line 24]\n " shape="box"]
-	
-
-	 "B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_3" -> "B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_2" ;
-"B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_2" [label="2: Exit B_B \n  " color=yellow style=filled]
-	
-
-"B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_1" [label="1: Start B_B\nFormals:  this:class B* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
-	
-
-	 "B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_1" -> "B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_4" ;
-"A_A{_ZN1AC1Ei}.8bf754e28d859fc3223ff4eaddf03699_3" [label="3:  Constructor Init \n   n$0=*&this:class A* [line 12]\n  n$1=*&f:int [line 12]\n  *n$0.f:int=n$1 [line 12]\n " shape="box"]
-	
-
-	 "A_A{_ZN1AC1Ei}.8bf754e28d859fc3223ff4eaddf03699_3" -> "A_A{_ZN1AC1Ei}.8bf754e28d859fc3223ff4eaddf03699_2" ;
-"A_A{_ZN1AC1Ei}.8bf754e28d859fc3223ff4eaddf03699_2" [label="2: Exit A_A \n  " color=yellow style=filled]
-	
-
-"A_A{_ZN1AC1Ei}.8bf754e28d859fc3223ff4eaddf03699_1" [label="1: Start A_A\nFormals:  this:class A* f:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
-	
-
-	 "A_A{_ZN1AC1Ei}.8bf754e28d859fc3223ff4eaddf03699_1" -> "A_A{_ZN1AC1Ei}.8bf754e28d859fc3223ff4eaddf03699_3" ;
-"f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_7" [label="7:  DeclStmt \n   _fun_B_B(&b:class B*,1:int) [line 55]\n " shape="box"]
-	
-
-	 "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_7" -> "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_6" ;
-"f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_6" [label="6:  DeclStmt \n   n$4=*&b.f:int [line 56]\n  *&v:int=(1 / n$4) [line 56]\n " shape="box"]
-	
-
-	 "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_6" -> "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_5" ;
-"f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_5" [label="5:  DeclStmt \n   n$3=*&b.f2:int [line 57]\n  *&v2:int=(1 / n$3) [line 57]\n " shape="box"]
-	
-
-	 "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_5" -> "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_4" ;
-"f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_4" [label="4:  DeclStmt \n   n$2=*&b.t.v:int [line 58]\n  *&v3:int=(1 / n$2) [line 58]\n " shape="box"]
-	
-
-	 "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_4" -> "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_3" ;
-"f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_3" [label="3:  Return Stmt \n   n$0=*&v:int [line 59]\n  n$1=*&v2:int [line 59]\n  *&return:int=(n$0 + n$1) [line 59]\n " shape="box"]
-	
-
-	 "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_3" -> "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_2" ;
-"f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_2" [label="2: Exit f_f2_div1 \n  " color=yellow style=filled]
-	
-
-"f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_1" [label="1: Start f_f2_div1\nFormals: \nLocals:  v3:int v2:int v:int b:class B \n   DECLARE_LOCALS(&return,&v3,&v2,&v,&b); [line 54]\n " color=yellow style=filled]
-	
-
-	 "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_1" -> "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_7" ;
-"t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_4" [label="4:  DeclStmt \n   _fun_B_B(&b:class B*,0:int) [line 38]\n " shape="box"]
-	
-
-	 "t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_4" -> "t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_3" ;
-"t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_3" [label="3:  Return Stmt \n   n$0=*&b.t.v:int [line 39]\n  *&return:int=(1 / n$0) [line 39]\n " shape="box"]
-	
-
-	 "t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_3" -> "t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_2" ;
-"t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_2" [label="2: Exit t_div0 \n  " color=yellow style=filled]
-	
-
-"t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_1" [label="1: Start t_div0\nFormals: \nLocals:  b:class B \n   DECLARE_LOCALS(&return,&b); [line 37]\n " color=yellow style=filled]
-	
-
-	 "t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_1" -> "t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_4" ;
-"B::T_T{_ZN1B1TC1Ei}.b06afec76600b2b680497c48b5885068_3" [label="3:  Constructor Init \n   n$0=*&this:class B::T* [line 18]\n  n$1=*&v:int [line 18]\n  *n$0.v:int=n$1 [line 18]\n " shape="box"]
-	
-
-	 "B::T_T{_ZN1B1TC1Ei}.b06afec76600b2b680497c48b5885068_3" -> "B::T_T{_ZN1B1TC1Ei}.b06afec76600b2b680497c48b5885068_2" ;
-"B::T_T{_ZN1B1TC1Ei}.b06afec76600b2b680497c48b5885068_2" [label="2: Exit B::T_T \n  " color=yellow style=filled]
-	
-
-"B::T_T{_ZN1B1TC1Ei}.b06afec76600b2b680497c48b5885068_1" [label="1: Start B::T_T\nFormals:  this:class B::T* v:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
-	
-
-	 "B::T_T{_ZN1B1TC1Ei}.b06afec76600b2b680497c48b5885068_1" -> "B::T_T{_ZN1B1TC1Ei}.b06afec76600b2b680497c48b5885068_3" ;
-"f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_4" [label="4:  DeclStmt \n   _fun_B_B(&b:class B*,0:int) [line 28]\n " shape="box"]
-	
-
-	 "f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_4" -> "f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_3" ;
-"f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_3" [label="3:  Return Stmt \n   n$0=*&b.f2:int [line 29]\n  *&return:int=(1 / n$0) [line 29]\n " shape="box"]
-	
-
-	 "f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_3" -> "f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_2" ;
-"f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_2" [label="2: Exit f2_div0 \n  " color=yellow style=filled]
-	
-
 "f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_1" [label="1: Start f2_div0\nFormals: \nLocals:  b:class B \n   DECLARE_LOCALS(&return,&b); [line 27]\n " color=yellow style=filled]
 	
 
 	 "f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_1" -> "f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_4" ;
-"delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_5" [label="5:  DeclStmt \n   _fun_B_B(&b:class B*,-1:int,1:int) [line 43]\n " shape="box"]
+"f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_2" [label="2: Exit f2_div0 \n  " color=yellow style=filled]
 	
 
-	 "delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_5" -> "delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_4" ;
-"delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_4" [label="4:  DeclStmt \n   n$1=*&b.f2:int [line 44]\n  *&v:int=(1 / n$1) [line 44]\n " shape="box"]
+"f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_3" [label="3:  Return Stmt \n   n$0=*&b.f2:int [line 29]\n  *&return:int=(1 / n$0) [line 29]\n " shape="box"]
 	
 
-	 "delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_4" -> "delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_3" ;
-"delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_3" [label="3:  Return Stmt \n   n$0=*&b.f:int [line 45]\n  *&return:int=(1 / n$0) [line 45]\n " shape="box"]
+	 "f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_3" -> "f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_2" ;
+"f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_4" [label="4:  DeclStmt \n   _fun_B_B(&b:class B*,0:int) [line 28]\n " shape="box"]
 	
 
-	 "delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_3" -> "delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_2" ;
-"delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_2" [label="2: Exit delegate_constr_f_div0 \n  " color=yellow style=filled]
+	 "f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_4" -> "f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z7f2_div0v}.6d6861d749c71be711a71007e9543e27_3" ;
+"f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_1" [label="1: Start f_div0\nFormals: \nLocals:  b:class B \n   DECLARE_LOCALS(&return,&b); [line 32]\n " color=yellow style=filled]
 	
 
+	 "f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_1" -> "f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_4" ;
+"f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_2" [label="2: Exit f_div0 \n  " color=yellow style=filled]
+	
+
+"f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_3" [label="3:  Return Stmt \n   n$0=*&b.f:int [line 34]\n  *&return:int=(1 / n$0) [line 34]\n " shape="box"]
+	
+
+	 "f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_3" -> "f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_2" ;
+"f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_4" [label="4:  DeclStmt \n   _fun_B_B(&b:class B*,0:int) [line 33]\n " shape="box"]
+	
+
+	 "f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_4" -> "f_div0{d41d8cd98f00b204e9800998ecf8427e_Z6f_div0v}.d7919065c162b30e23129b41b4d83add_3" ;
+"t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_1" [label="1: Start t_div0\nFormals: \nLocals:  b:class B \n   DECLARE_LOCALS(&return,&b); [line 37]\n " color=yellow style=filled]
+	
+
+	 "t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_1" -> "t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_4" ;
+"t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_2" [label="2: Exit t_div0 \n  " color=yellow style=filled]
+	
+
+"t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_3" [label="3:  Return Stmt \n   n$0=*&b.t.v:int [line 39]\n  *&return:int=(1 / n$0) [line 39]\n " shape="box"]
+	
+
+	 "t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_3" -> "t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_2" ;
+"t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_4" [label="4:  DeclStmt \n   _fun_B_B(&b:class B*,0:int) [line 38]\n " shape="box"]
+	
+
+	 "t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_4" -> "t_div0{d41d8cd98f00b204e9800998ecf8427e_Z6t_div0v}.3ab75fb254c81a27c1e611abc8f785cb_3" ;
 "delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_1" [label="1: Start delegate_constr_f_div0\nFormals: \nLocals:  v:int b:class B \n   DECLARE_LOCALS(&return,&v,&b); [line 42]\n " color=yellow style=filled]
 	
 
 	 "delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_1" -> "delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_5" ;
-"B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_5" [label="5:  Constructor Init \n   n$4=*&this:class B* [line 22]\n  n$5=*&a:int [line 22]\n  _fun_A_A(n$4:class B*,n$5:int) [line 22]\n " shape="box"]
+"delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_2" [label="2: Exit delegate_constr_f_div0 \n  " color=yellow style=filled]
 	
 
-	 "B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_5" -> "B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_4" ;
-"B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_4" [label="4:  Constructor Init \n   n$2=*&this:class B* [line 22]\n  n$3=*&a:int [line 22]\n  *n$2.f2:int=n$3 [line 22]\n " shape="box"]
+"delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_3" [label="3:  Return Stmt \n   n$0=*&b.f:int [line 45]\n  *&return:int=(1 / n$0) [line 45]\n " shape="box"]
 	
 
-	 "B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_4" -> "B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_3" ;
-"B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_3" [label="3:  Constructor Init \n   n$0=*&this:class B* [line 22]\n  n$1=*&a:int [line 22]\n  _fun_B::T_T(n$0.t:class B::T*,n$1:int) [line 22]\n " shape="box"]
+	 "delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_3" -> "delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_2" ;
+"delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_4" [label="4:  DeclStmt \n   n$1=*&b.f2:int [line 44]\n  *&v:int=(1 / n$1) [line 44]\n " shape="box"]
 	
 
-	 "B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_3" -> "B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_2" ;
-"B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_2" [label="2: Exit B_B \n  " color=yellow style=filled]
+	 "delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_4" -> "delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_3" ;
+"delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_5" [label="5:  DeclStmt \n   _fun_B_B(&b:class B*,-1:int,1:int) [line 43]\n " shape="box"]
 	
 
+	 "delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_5" -> "delegate_constr_f_div0{d41d8cd98f00b204e9800998ecf8427e_Z22delegate_constr_f_div0v}.5b81902520df6ab21a21f683c64fcbaa_4" ;
+"delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_1" [label="1: Start delegate_constr_f2_div0\nFormals: \nLocals:  v:int b:class B \n   DECLARE_LOCALS(&return,&v,&b); [line 48]\n " color=yellow style=filled]
+	
+
+	 "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_1" -> "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_5" ;
+"delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_2" [label="2: Exit delegate_constr_f2_div0 \n  " color=yellow style=filled]
+	
+
+"delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_3" [label="3:  Return Stmt \n   n$0=*&b.f2:int [line 51]\n  *&return:int=(1 / n$0) [line 51]\n " shape="box"]
+	
+
+	 "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_3" -> "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_2" ;
+"delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_4" [label="4:  DeclStmt \n   n$1=*&b.f:int [line 50]\n  *&v:int=(1 / n$1) [line 50]\n " shape="box"]
+	
+
+	 "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_4" -> "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_3" ;
+"delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_5" [label="5:  DeclStmt \n   _fun_B_B(&b:class B*,-1:int,0:int) [line 49]\n " shape="box"]
+	
+
+	 "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_5" -> "delegate_constr_f2_div0{d41d8cd98f00b204e9800998ecf8427e_Z23delegate_constr_f2_div0v}.f48835ee55e284ebd0cc90e796ee56a0_4" ;
+"f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_1" [label="1: Start f_f2_div1\nFormals: \nLocals:  v3:int v2:int v:int b:class B \n   DECLARE_LOCALS(&return,&v3,&v2,&v,&b); [line 54]\n " color=yellow style=filled]
+	
+
+	 "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_1" -> "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_7" ;
+"f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_2" [label="2: Exit f_f2_div1 \n  " color=yellow style=filled]
+	
+
+"f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_3" [label="3:  Return Stmt \n   n$0=*&v:int [line 59]\n  n$1=*&v2:int [line 59]\n  *&return:int=(n$0 + n$1) [line 59]\n " shape="box"]
+	
+
+	 "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_3" -> "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_2" ;
+"f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_4" [label="4:  DeclStmt \n   n$2=*&b.t.v:int [line 58]\n  *&v3:int=(1 / n$2) [line 58]\n " shape="box"]
+	
+
+	 "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_4" -> "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_3" ;
+"f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_5" [label="5:  DeclStmt \n   n$3=*&b.f2:int [line 57]\n  *&v2:int=(1 / n$3) [line 57]\n " shape="box"]
+	
+
+	 "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_5" -> "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_4" ;
+"f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_6" [label="6:  DeclStmt \n   n$4=*&b.f:int [line 56]\n  *&v:int=(1 / n$4) [line 56]\n " shape="box"]
+	
+
+	 "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_6" -> "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_5" ;
+"f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_7" [label="7:  DeclStmt \n   _fun_B_B(&b:class B*,1:int) [line 55]\n " shape="box"]
+	
+
+	 "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_7" -> "f_f2_div1{d41d8cd98f00b204e9800998ecf8427e_Z9f_f2_div1v}.d3accd3ce3fcd0797a01f360d25f9dbf_6" ;
+"A_A{_ZN1AC1Ei}.8bf754e28d859fc3223ff4eaddf03699_1" [label="1: Start A_A\nFormals:  this:class A* f:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "A_A{_ZN1AC1Ei}.8bf754e28d859fc3223ff4eaddf03699_1" -> "A_A{_ZN1AC1Ei}.8bf754e28d859fc3223ff4eaddf03699_3" ;
+"A_A{_ZN1AC1Ei}.8bf754e28d859fc3223ff4eaddf03699_2" [label="2: Exit A_A \n  " color=yellow style=filled]
+	
+
+"A_A{_ZN1AC1Ei}.8bf754e28d859fc3223ff4eaddf03699_3" [label="3:  Constructor Init \n   n$0=*&this:class A* [line 12]\n  n$1=*&f:int [line 12]\n  *n$0.f:int=n$1 [line 12]\n " shape="box"]
+	
+
+	 "A_A{_ZN1AC1Ei}.8bf754e28d859fc3223ff4eaddf03699_3" -> "A_A{_ZN1AC1Ei}.8bf754e28d859fc3223ff4eaddf03699_2" ;
 "B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_1" [label="1: Start B_B\nFormals:  this:class B* a:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
 	
 
 	 "B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_1" -> "B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_5" ;
+"B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_2" [label="2: Exit B_B \n  " color=yellow style=filled]
+	
+
+"B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_3" [label="3:  Constructor Init \n   n$0=*&this:class B* [line 22]\n  n$1=*&a:int [line 22]\n  _fun_B::T_T(n$0.t:class B::T*,n$1:int) [line 22]\n " shape="box"]
+	
+
+	 "B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_3" -> "B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_2" ;
+"B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_4" [label="4:  Constructor Init \n   n$2=*&this:class B* [line 22]\n  n$3=*&a:int [line 22]\n  *n$2.f2:int=n$3 [line 22]\n " shape="box"]
+	
+
+	 "B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_4" -> "B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_3" ;
+"B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_5" [label="5:  Constructor Init \n   n$4=*&this:class B* [line 22]\n  n$5=*&a:int [line 22]\n  _fun_A_A(n$4:class B*,n$5:int) [line 22]\n " shape="box"]
+	
+
+	 "B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_5" -> "B_B{_ZN1BC1Ei}.206ff47250d7f38f694e364cf9f51809_4" ;
+"B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_1" [label="1: Start B_B\nFormals:  this:class B* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+	
+
+	 "B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_1" -> "B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_4" ;
+"B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_2" [label="2: Exit B_B \n  " color=yellow style=filled]
+	
+
+"B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class B* [line 24]\n  n$1=*&b:int [line 24]\n  *n$0.f2:int=n$1 [line 24]\n " shape="box"]
+	
+
+	 "B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_3" -> "B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_2" ;
+"B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_4" [label="4:  Constructor Init \n   n$2=*&this:class B* [line 24]\n  n$3=*&a:int [line 24]\n  n$4=*&b:int [line 24]\n  _fun_B_B(n$2:class B*,(n$3 + n$4):int) [line 24]\n " shape="box"]
+	
+
+	 "B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_4" -> "B_B{_ZN1BC1Eii}.5ecb4fcfd023151430fa5bca33f9d0a1_3" ;
+"B::T_T{_ZN1B1TC1Ei}.b06afec76600b2b680497c48b5885068_1" [label="1: Start B::T_T\nFormals:  this:class B::T* v:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+	
+
+	 "B::T_T{_ZN1B1TC1Ei}.b06afec76600b2b680497c48b5885068_1" -> "B::T_T{_ZN1B1TC1Ei}.b06afec76600b2b680497c48b5885068_3" ;
+"B::T_T{_ZN1B1TC1Ei}.b06afec76600b2b680497c48b5885068_2" [label="2: Exit B::T_T \n  " color=yellow style=filled]
+	
+
+"B::T_T{_ZN1B1TC1Ei}.b06afec76600b2b680497c48b5885068_3" [label="3:  Constructor Init \n   n$0=*&this:class B::T* [line 18]\n  n$1=*&v:int [line 18]\n  *n$0.v:int=n$1 [line 18]\n " shape="box"]
+	
+
+	 "B::T_T{_ZN1B1TC1Ei}.b06afec76600b2b680497c48b5885068_3" -> "B::T_T{_ZN1B1TC1Ei}.b06afec76600b2b680497c48b5885068_2" ;
 }

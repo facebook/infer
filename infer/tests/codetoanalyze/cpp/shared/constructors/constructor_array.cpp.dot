@@ -1,118 +1,118 @@
 /* @generated */
 digraph iCFG {
-"Z_Z{_ZN1ZC1Ev}.e5db815c377ac8d89bbc83caf274d4d3_2" [label="2: Exit Z_Z \n  " color=yellow style=filled]
-	
-
-"Z_Z{_ZN1ZC1Ev}.e5db815c377ac8d89bbc83caf274d4d3_1" [label="1: Start Z_Z\nFormals:  this:class Z*\nLocals:  \n   DECLARE_LOCALS(&return); [line 27]\n " color=yellow style=filled]
-	
-
-	 "Z_Z{_ZN1ZC1Ev}.e5db815c377ac8d89bbc83caf274d4d3_1" -> "Z_Z{_ZN1ZC1Ev}.e5db815c377ac8d89bbc83caf274d4d3_2" ;
-"array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_4" [label="4:  DeclStmt \n   _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$3:class Person*) [line 18]\n  _fun_Person_Person(&arr[0]:class Person*,&0$?%__sil_tmpSIL_materialize_temp__n$3:class Person&) [line 18]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$2:class Person*) [line 18]\n  _fun_Person_Person(&arr[1]:class Person*,&0$?%__sil_tmpSIL_materialize_temp__n$2:class Person&) [line 18]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$1:class Person*) [line 18]\n  _fun_Person_Person(&arr[2]:class Person*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class Person&) [line 18]\n " shape="box"]
-	
-
-	 "array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_4" -> "array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_3" ;
-"array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_3" [label="3:  Return Stmt \n   n$0=*&arr[0].x:int [line 19]\n  *&return:int=n$0 [line 19]\n " shape="box"]
-	
-
-	 "array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_3" -> "array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_2" ;
-"array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_2" [label="2: Exit array_of_person \n  " color=yellow style=filled]
-	
-
 "array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_1" [label="1: Start array_of_person\nFormals: \nLocals:  arr:class Person[10] 0$?%__sil_tmpSIL_materialize_temp__n$1:class Person 0$?%__sil_tmpSIL_materialize_temp__n$2:class Person 0$?%__sil_tmpSIL_materialize_temp__n$3:class Person \n   DECLARE_LOCALS(&return,&arr,&0$?%__sil_tmpSIL_materialize_temp__n$1,&0$?%__sil_tmpSIL_materialize_temp__n$2,&0$?%__sil_tmpSIL_materialize_temp__n$3); [line 17]\n " color=yellow style=filled]
 	
 
 	 "array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_1" -> "array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_4" ;
-"Person_Person{_ZN6PersonC1Ev}.eae7ac90d0b106ac1ffce8f205a2d898_2" [label="2: Exit Person_Person \n  " color=yellow style=filled]
+"array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_2" [label="2: Exit array_of_person \n  " color=yellow style=filled]
 	
 
-"Person_Person{_ZN6PersonC1Ev}.eae7ac90d0b106ac1ffce8f205a2d898_1" [label="1: Start Person_Person\nFormals:  this:class Person*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
+"array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_3" [label="3:  Return Stmt \n   n$0=*&arr[0].x:int [line 19]\n  *&return:int=n$0 [line 19]\n " shape="box"]
 	
 
-	 "Person_Person{_ZN6PersonC1Ev}.eae7ac90d0b106ac1ffce8f205a2d898_1" -> "Person_Person{_ZN6PersonC1Ev}.eae7ac90d0b106ac1ffce8f205a2d898_2" ;
-"matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_4" [label="4:  DeclStmt \n   _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$4:class Person*) [line 23]\n  _fun_Person_Person(&arr[0][0]:class Person*,&0$?%__sil_tmpSIL_materialize_temp__n$4:class Person&) [line 23]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$3:class Person*) [line 23]\n  _fun_Person_Person(&arr[0][1]:class Person*,&0$?%__sil_tmpSIL_materialize_temp__n$3:class Person&) [line 23]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$2:class Person*) [line 23]\n  _fun_Person_Person(&arr[1][0]:class Person*,&0$?%__sil_tmpSIL_materialize_temp__n$2:class Person&) [line 23]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$1:class Person*) [line 23]\n  _fun_Person_Person(&arr[1][1]:class Person*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class Person&) [line 23]\n " shape="box"]
+	 "array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_3" -> "array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_2" ;
+"array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_4" [label="4:  DeclStmt \n   _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$3:class Person*) [line 18]\n  _fun_Person_Person(&arr[0]:class Person*,&0$?%__sil_tmpSIL_materialize_temp__n$3:class Person&) [line 18]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$2:class Person*) [line 18]\n  _fun_Person_Person(&arr[1]:class Person*,&0$?%__sil_tmpSIL_materialize_temp__n$2:class Person&) [line 18]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$1:class Person*) [line 18]\n  _fun_Person_Person(&arr[2]:class Person*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class Person&) [line 18]\n " shape="box"]
 	
 
-	 "matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_4" -> "matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_3" ;
-"matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_3" [label="3:  Return Stmt \n   n$0=*&arr[0][1].x:int [line 24]\n  *&return:int=n$0 [line 24]\n " shape="box"]
-	
-
-	 "matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_3" -> "matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_2" ;
-"matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_2" [label="2: Exit matrix_of_person \n  " color=yellow style=filled]
-	
-
+	 "array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_4" -> "array_of_person{d41d8cd98f00b204e9800998ecf8427e_Z15array_of_personv}.5e6676e141cccf7b269a7c471feae769_3" ;
 "matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_1" [label="1: Start matrix_of_person\nFormals: \nLocals:  arr:class Person[2][2] 0$?%__sil_tmpSIL_materialize_temp__n$1:class Person 0$?%__sil_tmpSIL_materialize_temp__n$2:class Person 0$?%__sil_tmpSIL_materialize_temp__n$3:class Person 0$?%__sil_tmpSIL_materialize_temp__n$4:class Person \n   DECLARE_LOCALS(&return,&arr,&0$?%__sil_tmpSIL_materialize_temp__n$1,&0$?%__sil_tmpSIL_materialize_temp__n$2,&0$?%__sil_tmpSIL_materialize_temp__n$3,&0$?%__sil_tmpSIL_materialize_temp__n$4); [line 22]\n " color=yellow style=filled]
 	
 
 	 "matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_1" -> "matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_4" ;
-"Person_Person{_ZN6PersonC1EOS_}.6d4e3106e5a54c5fcbdd4905bee9b887_3" [label="3:  Constructor Init \n   n$0=*&this:class Person* [line 10]\n  n$1=*&__param_0:class Person& [line 10]\n  n$2=*n$1.x:int [line 10]\n  *n$0.x:int=n$2 [line 10]\n " shape="box"]
+"matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_2" [label="2: Exit matrix_of_person \n  " color=yellow style=filled]
 	
 
-	 "Person_Person{_ZN6PersonC1EOS_}.6d4e3106e5a54c5fcbdd4905bee9b887_3" -> "Person_Person{_ZN6PersonC1EOS_}.6d4e3106e5a54c5fcbdd4905bee9b887_2" ;
-"Person_Person{_ZN6PersonC1EOS_}.6d4e3106e5a54c5fcbdd4905bee9b887_2" [label="2: Exit Person_Person \n  " color=yellow style=filled]
+"matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_3" [label="3:  Return Stmt \n   n$0=*&arr[0][1].x:int [line 24]\n  *&return:int=n$0 [line 24]\n " shape="box"]
+	
+
+	 "matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_3" -> "matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_2" ;
+"matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_4" [label="4:  DeclStmt \n   _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$4:class Person*) [line 23]\n  _fun_Person_Person(&arr[0][0]:class Person*,&0$?%__sil_tmpSIL_materialize_temp__n$4:class Person&) [line 23]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$3:class Person*) [line 23]\n  _fun_Person_Person(&arr[0][1]:class Person*,&0$?%__sil_tmpSIL_materialize_temp__n$3:class Person&) [line 23]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$2:class Person*) [line 23]\n  _fun_Person_Person(&arr[1][0]:class Person*,&0$?%__sil_tmpSIL_materialize_temp__n$2:class Person&) [line 23]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$1:class Person*) [line 23]\n  _fun_Person_Person(&arr[1][1]:class Person*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class Person&) [line 23]\n " shape="box"]
+	
+
+	 "matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_4" -> "matrix_of_person{d41d8cd98f00b204e9800998ecf8427e_Z16matrix_of_personv}.42bf08ed339376ba5c4530035307761f_3" ;
+"initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_1" [label="1: Start initialization_c_style\nFormals: \nLocals:  z2:class Z z:class Z[2] \n   DECLARE_LOCALS(&return,&z2,&z); [line 32]\n " color=yellow style=filled]
+	
+
+	 "initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_1" -> "initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_4" ;
+"initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_2" [label="2: Exit initialization_c_style \n  " color=yellow style=filled]
+	
+
+"initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_3" [label="3:  DeclStmt \n   _fun_Z_Z(&z2:class Z*) [line 34]\n " shape="box"]
+	
+
+	 "initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_3" -> "initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_2" ;
+"initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_4" [label="4:  DeclStmt \n   *&z[0].a:int=1 [line 33]\n  *&z[0].b:int=2 [line 33]\n  *&z[1].a:int=2 [line 33]\n  *&z[1].b:int=3 [line 33]\n " shape="box"]
+	
+
+	 "initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_4" -> "initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_3" ;
+"initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_1" [label="1: Start initialization_mixed_styles_not_handled_correctly\nFormals: \nLocals:  z2:class Z z:class Z[2] old:class Z \n   DECLARE_LOCALS(&return,&z2,&z,&old); [line 39]\n " color=yellow style=filled]
+	
+
+	 "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_1" -> "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_5" ;
+"initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_2" [label="2: Exit initialization_mixed_styles_not_handled_correctly \n  " color=yellow style=filled]
+	
+
+"initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_3" [label="3:  DeclStmt \n   _fun_Z_Z(&z2:class Z*) [line 42]\n " shape="box"]
+	
+
+	 "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_3" -> "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_2" ;
+"initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_4" [label="4:  DeclStmt \n   _fun_Z_Z(&z[1]:class Z*,&old:class Z&) [line 41]\n " shape="box"]
+	
+
+	 "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_4" -> "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_3" ;
+"initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_5" [label="5:  DeclStmt \n   _fun_Z_Z(&old:class Z*) [line 40]\n " shape="box"]
+	
+
+	 "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_5" -> "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_4" ;
+"Person_Person{_ZN6PersonC1Ev}.eae7ac90d0b106ac1ffce8f205a2d898_1" [label="1: Start Person_Person\nFormals:  this:class Person*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
+	
+
+	 "Person_Person{_ZN6PersonC1Ev}.eae7ac90d0b106ac1ffce8f205a2d898_1" -> "Person_Person{_ZN6PersonC1Ev}.eae7ac90d0b106ac1ffce8f205a2d898_2" ;
+"Person_Person{_ZN6PersonC1Ev}.eae7ac90d0b106ac1ffce8f205a2d898_2" [label="2: Exit Person_Person \n  " color=yellow style=filled]
 	
 
 "Person_Person{_ZN6PersonC1EOS_}.6d4e3106e5a54c5fcbdd4905bee9b887_1" [label="1: Start Person_Person\nFormals:  this:class Person* __param_0:class Person&\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
 	 "Person_Person{_ZN6PersonC1EOS_}.6d4e3106e5a54c5fcbdd4905bee9b887_1" -> "Person_Person{_ZN6PersonC1EOS_}.6d4e3106e5a54c5fcbdd4905bee9b887_3" ;
-"Person_Person{_ZN6PersonC1Ei}.2819442115554db893a15b95877c8b8d_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person* [line 12]\n  n$1=*&i:int [line 12]\n  *n$0.x:int=n$1 [line 12]\n " shape="box"]
+"Person_Person{_ZN6PersonC1EOS_}.6d4e3106e5a54c5fcbdd4905bee9b887_2" [label="2: Exit Person_Person \n  " color=yellow style=filled]
 	
 
-	 "Person_Person{_ZN6PersonC1Ei}.2819442115554db893a15b95877c8b8d_3" -> "Person_Person{_ZN6PersonC1Ei}.2819442115554db893a15b95877c8b8d_2" ;
-"Person_Person{_ZN6PersonC1Ei}.2819442115554db893a15b95877c8b8d_2" [label="2: Exit Person_Person \n  " color=yellow style=filled]
+"Person_Person{_ZN6PersonC1EOS_}.6d4e3106e5a54c5fcbdd4905bee9b887_3" [label="3:  Constructor Init \n   n$0=*&this:class Person* [line 10]\n  n$1=*&__param_0:class Person& [line 10]\n  n$2=*n$1.x:int [line 10]\n  *n$0.x:int=n$2 [line 10]\n " shape="box"]
 	
 
+	 "Person_Person{_ZN6PersonC1EOS_}.6d4e3106e5a54c5fcbdd4905bee9b887_3" -> "Person_Person{_ZN6PersonC1EOS_}.6d4e3106e5a54c5fcbdd4905bee9b887_2" ;
 "Person_Person{_ZN6PersonC1Ei}.2819442115554db893a15b95877c8b8d_1" [label="1: Start Person_Person\nFormals:  this:class Person* i:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
 	 "Person_Person{_ZN6PersonC1Ei}.2819442115554db893a15b95877c8b8d_1" -> "Person_Person{_ZN6PersonC1Ei}.2819442115554db893a15b95877c8b8d_3" ;
-"Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_4" [label="4:  Constructor Init \n   n$3=*&this:class Z* [line 27]\n  n$4=*&__param_0:class Z& [line 27]\n  n$5=*n$4.a:int [line 27]\n  *n$3.a:int=n$5 [line 27]\n " shape="box"]
+"Person_Person{_ZN6PersonC1Ei}.2819442115554db893a15b95877c8b8d_2" [label="2: Exit Person_Person \n  " color=yellow style=filled]
 	
 
-	 "Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_4" -> "Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_3" ;
-"Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_3" [label="3:  Constructor Init \n   n$0=*&this:class Z* [line 27]\n  n$1=*&__param_0:class Z& [line 27]\n  n$2=*n$1.b:int [line 27]\n  *n$0.b:int=n$2 [line 27]\n " shape="box"]
+"Person_Person{_ZN6PersonC1Ei}.2819442115554db893a15b95877c8b8d_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person* [line 12]\n  n$1=*&i:int [line 12]\n  *n$0.x:int=n$1 [line 12]\n " shape="box"]
 	
 
-	 "Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_3" -> "Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_2" ;
-"Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_2" [label="2: Exit Z_Z \n  " color=yellow style=filled]
+	 "Person_Person{_ZN6PersonC1Ei}.2819442115554db893a15b95877c8b8d_3" -> "Person_Person{_ZN6PersonC1Ei}.2819442115554db893a15b95877c8b8d_2" ;
+"Z_Z{_ZN1ZC1Ev}.e5db815c377ac8d89bbc83caf274d4d3_1" [label="1: Start Z_Z\nFormals:  this:class Z*\nLocals:  \n   DECLARE_LOCALS(&return); [line 27]\n " color=yellow style=filled]
+	
+
+	 "Z_Z{_ZN1ZC1Ev}.e5db815c377ac8d89bbc83caf274d4d3_1" -> "Z_Z{_ZN1ZC1Ev}.e5db815c377ac8d89bbc83caf274d4d3_2" ;
+"Z_Z{_ZN1ZC1Ev}.e5db815c377ac8d89bbc83caf274d4d3_2" [label="2: Exit Z_Z \n  " color=yellow style=filled]
 	
 
 "Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_1" [label="1: Start Z_Z\nFormals:  this:class Z* __param_0:class Z&\nLocals:  \n   DECLARE_LOCALS(&return); [line 27]\n " color=yellow style=filled]
 	
 
 	 "Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_1" -> "Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_4" ;
-"initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_4" [label="4:  DeclStmt \n   *&z[0].a:int=1 [line 33]\n  *&z[0].b:int=2 [line 33]\n  *&z[1].a:int=2 [line 33]\n  *&z[1].b:int=3 [line 33]\n " shape="box"]
+"Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_2" [label="2: Exit Z_Z \n  " color=yellow style=filled]
 	
 
-	 "initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_4" -> "initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_3" ;
-"initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_3" [label="3:  DeclStmt \n   _fun_Z_Z(&z2:class Z*) [line 34]\n " shape="box"]
+"Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_3" [label="3:  Constructor Init \n   n$0=*&this:class Z* [line 27]\n  n$1=*&__param_0:class Z& [line 27]\n  n$2=*n$1.b:int [line 27]\n  *n$0.b:int=n$2 [line 27]\n " shape="box"]
 	
 
-	 "initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_3" -> "initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_2" ;
-"initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_2" [label="2: Exit initialization_c_style \n  " color=yellow style=filled]
+	 "Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_3" -> "Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_2" ;
+"Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_4" [label="4:  Constructor Init \n   n$3=*&this:class Z* [line 27]\n  n$4=*&__param_0:class Z& [line 27]\n  n$5=*n$4.a:int [line 27]\n  *n$3.a:int=n$5 [line 27]\n " shape="box"]
 	
 
-"initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_1" [label="1: Start initialization_c_style\nFormals: \nLocals:  z2:class Z z:class Z[2] \n   DECLARE_LOCALS(&return,&z2,&z); [line 32]\n " color=yellow style=filled]
-	
-
-	 "initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_1" -> "initialization_c_style{d41d8cd98f00b204e9800998ecf8427e_Z22initialization_c_stylev}.c0bdd3ee3a78e2dd5959c9d641c82699_4" ;
-"initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_5" [label="5:  DeclStmt \n   _fun_Z_Z(&old:class Z*) [line 40]\n " shape="box"]
-	
-
-	 "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_5" -> "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_4" ;
-"initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_4" [label="4:  DeclStmt \n   _fun_Z_Z(&z[1]:class Z*,&old:class Z&) [line 41]\n " shape="box"]
-	
-
-	 "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_4" -> "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_3" ;
-"initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_3" [label="3:  DeclStmt \n   _fun_Z_Z(&z2:class Z*) [line 42]\n " shape="box"]
-	
-
-	 "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_3" -> "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_2" ;
-"initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_2" [label="2: Exit initialization_mixed_styles_not_handled_correctly \n  " color=yellow style=filled]
-	
-
-"initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_1" [label="1: Start initialization_mixed_styles_not_handled_correctly\nFormals: \nLocals:  z2:class Z z:class Z[2] old:class Z \n   DECLARE_LOCALS(&return,&z2,&z,&old); [line 39]\n " color=yellow style=filled]
-	
-
-	 "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_1" -> "initialization_mixed_styles_not_handled_correctly{d41d8cd98f00b204e9800998ecf8427e_Z49initialization.dec4886d2469fb0c4ff79226de4af4c3_5" ;
+	 "Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_4" -> "Z_Z{_ZN1ZC1ERKS_}.123cfb51e40551ce9740cbf4b98a93b1_3" ;
 }
