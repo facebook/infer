@@ -17,17 +17,13 @@ type t =
   {
     site : CallSite.t;
   }
+[@@deriving compare]
 
 let make site =
   { site }
 
 let site t =
   t.site
-
-let compare pt1 pt2 =
-  (match pt1, pt2 with
-   | {site=site1}, {site=site2} -> CallSite.compare site1 site2
-  )[@warning "+9"]
 
 let pp fmt s =
   F.fprintf fmt "%a" CallSite.pp s.site
