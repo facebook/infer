@@ -13,10 +13,11 @@ open! Utils;
 type t = {
   line: int, /** The line number. -1 means "do not know" */
   col: int, /** The column number. -1 means "do not know" */
-  file: DB.source_file, /** The name of the source file */
-};
+  file: DB.source_file /** The name of the source file */
+}
+[@@deriving compare];
 
-let compare: t => t => int;
+let equal: t => t => bool;
 
 
 /** Dump a location. */
@@ -25,8 +26,6 @@ let d: t => unit;
 
 /** Dummy location */
 let dummy: t;
-
-let equal: t => t => bool;
 
 
 /** Pretty print a location. */
