@@ -353,7 +353,7 @@ let tainted_params callee_pname =
 
 let has_taint_annotation fieldname (struct_typ: StructTyp.t) =
   let fld_has_taint_annot (fname, _, annot) =
-    Ident.fieldname_equal fieldname fname &&
+    Ident.equal_fieldname fieldname fname &&
     (Annotations.ia_is_privacy_source annot || Annotations.ia_is_integrity_source annot) in
   IList.exists fld_has_taint_annot struct_typ.fields ||
   IList.exists fld_has_taint_annot struct_typ.statics

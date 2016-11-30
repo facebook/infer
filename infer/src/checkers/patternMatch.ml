@@ -123,7 +123,7 @@ let get_field_type_name tenv
   | Tstruct name | Tptr (Tstruct name, _) -> (
       match Tenv.lookup tenv name with
       | Some { fields } -> (
-          match IList.find (function | (fn, _, _) -> Ident.fieldname_equal fn fieldname) fields with
+          match IList.find (function | (fn, _, _) -> Ident.equal_fieldname fn fieldname) fields with
           | _, ft, _ -> Some (get_type_name ft)
           | exception Not_found -> None
         )

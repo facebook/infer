@@ -86,28 +86,28 @@ module H = Hashtbl.Make(struct
       | Condition_redundant _, _
       | _, Condition_redundant _ -> false
       | Field_not_initialized (fn1, pn1), Field_not_initialized (fn2, pn2) ->
-          Ident.fieldname_equal fn1 fn2 &&
+          Ident.equal_fieldname fn1 fn2 &&
           Procname.equal pn1 pn2
       | Field_not_initialized (_, _), _
       | _, Field_not_initialized (_, _) -> false
       | Field_not_mutable (fn1, _), Field_not_mutable (fn2, _) ->
-          Ident.fieldname_equal fn1 fn2
+          Ident.equal_fieldname fn1 fn2
       | Field_not_mutable _, _
       | _, Field_not_mutable _ -> false
       | Field_annotation_inconsistent (ann1, fn1, _),
         Field_annotation_inconsistent (ann2, fn2, _) ->
           ann1 = ann2 &&
-          Ident.fieldname_equal fn1 fn2
+          Ident.equal_fieldname fn1 fn2
       | Field_annotation_inconsistent _, _
       | _, Field_annotation_inconsistent _ -> false
       | Field_over_annotated (fn1, pn1), Field_over_annotated (fn2, pn2) ->
-          Ident.fieldname_equal fn1 fn2 &&
+          Ident.equal_fieldname fn1 fn2 &&
           Procname.equal pn1 pn2
       | Field_over_annotated (_, _), _
       | _, Field_over_annotated (_, _) -> false
       | Null_field_access (so1, fn1, _, ii1), Null_field_access (so2, fn2, _, ii2) ->
           (opt_equal string_equal) so1 so2 &&
-          Ident.fieldname_equal fn1 fn2 &&
+          Ident.equal_fieldname fn1 fn2 &&
           bool_equal ii1 ii2
       | Null_field_access _, _
       | _, Null_field_access _ -> false

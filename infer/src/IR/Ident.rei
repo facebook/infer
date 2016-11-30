@@ -16,19 +16,35 @@ open! Utils;
 /** Identifiers: program variables and logical variables */
 
 /** Program and logical variables. */
-type t;
+type t [@@deriving compare];
+
+
+/** Equality for identifiers. */
+let equal: t => t => bool;
 
 
 /** Names used to replace strings. */
-type name;
+type name [@@deriving compare];
+
+
+/** Equality for names. */
+let equal_name: name => name => bool;
 
 
 /** Names for fields of class/struct/union */
-type fieldname;
+type fieldname [@@deriving compare];
+
+
+/** Equality for field names. */
+let equal_fieldname: fieldname => fieldname => bool;
 
 
 /** Kind of identifiers. */
-type kind;
+type kind [@@deriving compare];
+
+
+/** Equality for kind. */
+let equal_kind: kind => kind => bool;
 
 
 /** Set for identifiers. */
@@ -208,44 +224,6 @@ let get_stamp: t => int;
 
 /** Set the stamp of the identifier */
 let set_stamp: t => int => t;
-
-
-/** {2 Comparision Functions} */
-
-/** Comparison for names. */
-let name_compare: name => name => int;
-
-
-/** Comparison for field names. */
-let fieldname_compare: fieldname => fieldname => int;
-
-
-/** Equality for names. */
-let name_equal: name => name => bool;
-
-
-/** Equality for field names. */
-let fieldname_equal: fieldname => fieldname => bool;
-
-
-/** Equality for kind. */
-let kind_equal: kind => kind => bool;
-
-
-/** Comparison for identifiers. */
-let compare: t => t => int;
-
-
-/** Equality for identifiers. */
-let equal: t => t => bool;
-
-
-/** Comparison for lists of identities */
-let ident_list_compare: list t => list t => int;
-
-
-/** Equality for lists of identities */
-let ident_list_equal: list t => list t => bool;
 
 
 /** {2 Pretty Printing} */

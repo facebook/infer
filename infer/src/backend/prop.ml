@@ -1270,7 +1270,7 @@ module Normalize = struct
           (* n1-e1 == n2 -> e1==n1-n2 *)
           (e1, Exp.int (n1 -- n2))
       | Lfield (e1', fld1, _), Lfield (e2', fld2, _) ->
-          if Ident.fieldname_equal fld1 fld2
+          if Ident.equal_fieldname fld1 fld2
           then normalize_eq (e1', e2')
           else eq
       | Lindex (e1', idx1), Lindex (e2', idx2) ->

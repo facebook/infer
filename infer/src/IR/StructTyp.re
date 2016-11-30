@@ -33,7 +33,7 @@ type t = {
 type lookup = Typename.t => option t;
 
 let fld_typ_ann_compare fta1 fta2 =>
-  triple_compare Ident.fieldname_compare Typ.compare Annot.Item.compare fta1 fta2;
+  triple_compare Ident.compare_fieldname Typ.compare Annot.Item.compare fta1 fta2;
 
 let pp pe pp_base name f {fields} =>
   if false {
@@ -107,7 +107,7 @@ let fld_typ lookup::lookup default::default fn (typ: Typ.t) =>
   | Tstruct name =>
     switch (lookup name) {
     | Some {fields} =>
-      try (snd3 (IList.find (fun (f, _, _) => Ident.fieldname_equal f fn) fields)) {
+      try (snd3 (IList.find (fun (f, _, _) => Ident.equal_fieldname f fn) fields)) {
       | Not_found => default
       }
     | None => default
@@ -123,7 +123,7 @@ let get_field_type_and_annotation lookup::lookup fn (typ: Typ.t) =>
     | Some {fields, statics} =>
       try {
         let (_, t, a) =
-          IList.find (fun (f, _, _) => Ident.fieldname_equal f fn) (fields @ statics);
+          IList.find (fun (f, _, _) => Ident.equal_fieldname f fn) (fields @ statics);
         Some (t, a)
       } {
       | Not_found => None

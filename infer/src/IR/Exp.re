@@ -133,7 +133,7 @@ let rec compare e1 e2 =>
     if (n != 0) {
       n
     } else {
-      let n = Ident.fieldname_compare f1 f2;
+      let n = Ident.compare_fieldname f1 f2;
       if (n != 0) {
         n
       } else {

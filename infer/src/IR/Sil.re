@@ -408,7 +408,7 @@ let rec strexp_compare inst::inst=false se1 se2 =>
       }
     }
   }
-and fld_strexp_compare fse1 fse2 => pair_compare Ident.fieldname_compare strexp_compare fse1 fse2
+and fld_strexp_compare fse1 fse2 => pair_compare Ident.compare_fieldname strexp_compare fse1 fse2
 and fld_strexp_list_compare fsel1 fsel2 => IList.compare fld_strexp_compare fsel1 fsel2
 and exp_strexp_compare ese1 ese2 => pair_compare Exp.compare strexp_compare ese1 ese2
 and exp_strexp_list_compare esel1 esel2 => IList.compare exp_strexp_compare esel1 esel2;
@@ -508,11 +508,11 @@ and hpara_compare hp1 hp2 => {
     if (n != 0) {
       n
     } else {
-      let n = Ident.ident_list_compare hp1.svars hp2.svars;
+      let n = IList.compare Ident.compare hp1.svars hp2.svars;
       if (n != 0) {
         n
       } else {
-        let n = Ident.ident_list_compare hp1.evars hp2.evars;
+        let n = IList.compare Ident.compare hp1.evars hp2.evars;
         if (n != 0) {
           n
         } else {
@@ -535,11 +535,11 @@ and hpara_dll_compare hp1 hp2 => {
       if (n != 0) {
         n
       } else {
-        let n = Ident.ident_list_compare hp1.svars_dll hp2.svars_dll;
+        let n = IList.compare Ident.compare hp1.svars_dll hp2.svars_dll;
         if (n != 0) {
           n
         } else {
-          let n = Ident.ident_list_compare hp1.evars_dll hp2.evars_dll;
+          let n = IList.compare Ident.compare hp1.evars_dll hp2.evars_dll;
           if (n != 0) {
             n
           } else {
@@ -2479,7 +2479,7 @@ let rec exp_compare_structural e1 e2 exp_map => {
       if (n != 0) {
         n
       } else {
-        let n = Ident.fieldname_compare f1 f2;
+        let n = Ident.compare_fieldname f1 f2;
         if (n != 0) {
           n
         } else {

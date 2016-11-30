@@ -1335,7 +1335,7 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 : subst2 * ((Ide
   | _, [] -> subs, fsel1, []
   | (f1, se1) :: fsel1', (f2, se2) :: fsel2' ->
       begin
-        match Ident.fieldname_compare f1 f2 with
+        match Ident.compare_fieldname f1 f2 with
         | 0 ->
             let typ' = StructTyp.fld_typ ~lookup ~default:Typ.Tvoid f2 typ2 in
             let subs', se_frame, se_missing =

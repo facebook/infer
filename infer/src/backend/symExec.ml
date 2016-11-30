@@ -17,7 +17,7 @@ module F = Format
 
 let rec fldlist_assoc fld = function
   | [] -> raise Not_found
-  | (fld', x, _):: l -> if Ident.fieldname_equal fld fld' then x else fldlist_assoc fld l
+  | (fld', x, _):: l -> if Ident.equal_fieldname fld fld' then x else fldlist_assoc fld l
 
 let unroll_type tenv (typ: Typ.t) (off: Sil.offset) =
   let fail fld_to_string fld =
@@ -141,17 +141,17 @@ let rec apply_offlist
       match Tenv.lookup tenv name with
       | Some ({fields} as struct_typ) -> (
           let t' = unroll_type tenv typ (Sil.Off_fld (fld, fld_typ)) in
-          match IList.find (fun fse -> Ident.fieldname_equal fld (fst fse)) fsel with
+          match IList.find (fun fse -> Ident.equal_fieldname fld (fst fse)) fsel with
           | _, se' ->
               let res_e', res_se', res_t', res_pred_insts_op' =
                 apply_offlist
                   pdesc tenv p fp_root nullify_struct
                   (root_lexp, se', t') offlist' f inst lookup_inst in
               let replace_fse fse =
-                if Ident.fieldname_equal fld (fst fse) then (fld, res_se') else fse in
+                if Ident.equal_fieldname fld (fst fse) then (fld, res_se') else fse in
               let res_se = Sil.Estruct (IList.map replace_fse fsel, inst') in
               let replace_fta (f, t, a) =
-                if Ident.fieldname_equal fld f then (fld, res_t', a) else (f, t, a) in
+                if Ident.equal_fieldname fld f then (fld, res_t', a) else (f, t, a) in
               let fields' = IList.map replace_fta fields in
               ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
               (res_e', res_se, typ, res_pred_insts_op')

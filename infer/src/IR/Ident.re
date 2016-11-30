@@ -18,119 +18,72 @@ let module L = Logging;
 
 let module F = Format;
 
-type name = string;
+type name = string [@@deriving compare];
 
-type fieldname = {fpos: int, fname: Mangled.t};
+let equal_name x y => 0 == compare_name x y;
 
-type kind = int;
+type fieldname = {fpos: int, fname: Mangled.t} [@@deriving compare];
 
-let kprimed = (-1);
+let equal_fieldname x y => 0 == compare_fieldname x y;
 
-let knormal = 0;
+type kind =
+  | KNone
+  /** special kind of "null ident" (basically, a more compact way of implementing an ident option).
+      useful for situations when an instruction requires an id, but no one should read the result. */
+  | KFootprint
+  | KNormal
+  | KPrimed
+[@@deriving compare];
 
-let kfootprint = 1;
+let kfootprint = KFootprint;
 
+let knormal = KNormal;
 
-/** special kind of "null ident" (basically, a more compact way of implementing an ident option).
-    useful for situations when an instruction requires an id, but no one should read the result. */
-let knone = 2;
+let kprimed = KPrimed;
+
+let equal_kind x y => 0 == compare_kind x y;
 
 /* timestamp for a path identifier */
 let path_ident_stamp = (-3);
 
-type t = {kind: int, name: name, stamp: int};
+type t = {kind: kind, name: name, stamp: int} [@@deriving compare];
 
-type _ident = t;
-
-
-/** {2 Comparison Functions} */
-let name_compare = string_compare;
-
-let fieldname_compare fn1 fn2 => {
-  let n = int_compare fn1.fpos fn2.fpos;
-  if (n != 0) {
-    n
-  } else {
-    Mangled.compare fn1.fname fn2.fname
-  }
-};
-
-let name_equal = string_equal;
-
-let kind_equal k1 k2 => k1 === k2;
-
-let compare i1 i2 => {
-  let n = i2.kind - i1.kind;
-  if (n != 0) {
-    n
-  } else {
-    let n = name_compare i1.name i2.name;
-    if (n != 0) {
-      n
-    } else {
-      int_compare i1.stamp i2.stamp
-    }
-  }
-};
-
-let equal i1 i2 =>
-  i1.stamp === i2.stamp &&
-  i1.kind === i2.kind && name_equal i1.name i2.name /* most unlikely first */;
-
-let fieldname_equal fn1 fn2 => fieldname_compare fn1 fn2 == 0;
-
-let rec ident_list_compare il1 il2 =>
-  switch (il1, il2) {
-  | ([], []) => 0
-  | ([], _) => (-1)
-  | (_, []) => 1
-  | ([i1, ...l1], [i2, ...l2]) =>
-    let n = compare i1 i2;
-    if (n != 0) {
-      n
-    } else {
-      ident_list_compare l1 l2
-    }
-  };
-
-let ident_list_equal ids1 ids2 => ident_list_compare ids1 ids2 == 0;
+/* most unlikely first */
+let equal i1 i2 => i1.stamp === i2.stamp && i1.kind === i2.kind && equal_name i1.name i2.name;
 
 
 /** {2 Set for identifiers} */
 let module IdentSet = Set.Make {
-  type t = _ident;
+  type nonrec t = t;
   let compare = compare;
 };
 
 let module IdentMap = Map.Make {
-  type t = _ident;
+  type nonrec t = t;
   let compare = compare;
 };
 
 let module IdentHash = Hashtbl.Make {
-  type t = _ident;
+  type nonrec t = t;
   let equal = equal;
   let hash (id: t) => Hashtbl.hash id;
 };
 
 let module FieldSet = Set.Make {
-  type t = fieldname;
-  let compare = fieldname_compare;
+  type t = fieldname [@@deriving compare];
 };
 
 let module FieldMap = Map.Make {
-  type t = fieldname;
-  let compare = fieldname_compare;
+  type t = fieldname [@@deriving compare];
 };
 
 let idlist_to_idset ids => IList.fold_left (fun set id => IdentSet.add id set) IdentSet.empty ids;
 
 
 /** {2 Conversion between Names and Strings} */
-
 let module NameHash = Hashtbl.Make {
   type t = name;
-  let equal = name_equal;
+  let equal = equal_name;
   let hash = Hashtbl.hash;
 };
 
@@ -215,7 +168,7 @@ let fieldname_hidden = create_fieldname (Mangled.from_string ".hidden") 0;
 
 
 /** hidded fieldname constant */
-let fieldname_is_hidden fn => fieldname_equal fn fieldname_hidden;
+let fieldname_is_hidden fn => equal_fieldname fn fieldname_hidden;
 
 
 /** {2 Functions and Hash Tables for Managing Stamps} */
@@ -288,9 +241,9 @@ let name_return = Mangled.from_string "return";
 
 /** Return the standard name for the given kind */
 let standard_name kind =>
-  if (kind === knormal || kind === knone) {
+  if (kind === KNormal || kind === KNone) {
     name_normal
-  } else if (kind === kfootprint) {
+  } else if (kind === KFootprint) {
     name_footprint
   } else {
     name_primed
@@ -309,21 +262,21 @@ let create kind stamp => create_with_stamp kind (standard_name kind) stamp;
 
 
 /** Generate a normal identifier with the given name and stamp */
-let create_normal name stamp => create_with_stamp knormal name stamp;
+let create_normal name stamp => create_with_stamp KNormal name stamp;
 
 
 /** Create a fresh identifier with default name for the given kind. */
 let create_fresh kind => NameGenerator.create_fresh_ident kind (standard_name kind);
 
-let create_none () => create_fresh knone;
+let create_none () => create_fresh KNone;
 
 
 /** Generate a primed identifier with the given name and stamp */
-let create_primed name stamp => create_with_stamp kprimed name stamp;
+let create_primed name stamp => create_with_stamp KPrimed name stamp;
 
 
 /** Generate a footprint identifier with the given name and stamp */
-let create_footprint name stamp => create_with_stamp kfootprint name stamp;
+let create_footprint name stamp => create_with_stamp KFootprint name stamp;
 
 
 /** {2 Functions for Identifiers} */
@@ -331,23 +284,23 @@ let create_footprint name stamp => create_with_stamp kfootprint name stamp;
 /** Get a name of an identifier */
 let get_name id => id.name;
 
-let is_primed (id: t) => id.kind === kprimed;
+let is_primed (id: t) => id.kind === KPrimed;
 
-let is_normal (id: t) => id.kind === knormal || id.kind === knone;
+let is_normal (id: t) => id.kind === KNormal || id.kind === KNone;
 
-let is_footprint (id: t) => id.kind === kfootprint;
+let is_footprint (id: t) => id.kind === KFootprint;
 
-let is_none (id: t) => id.kind == knone;
+let is_none (id: t) => id.kind == KNone;
 
-let is_path (id: t) => id.kind === knormal && id.stamp == path_ident_stamp;
+let is_path (id: t) => id.kind === KNormal && id.stamp == path_ident_stamp;
 
 let make_unprimed id =>
-  if (id.kind != kprimed) {
+  if (id.kind != KPrimed) {
     assert false
-  } else if (id.kind === knone) {
-    {...id, kind: knone}
+  } else if (id.kind === KNone) {
+    {...id, kind: KNone}
   } else {
-    {...id, kind: knormal}
+    {...id, kind: KNormal}
   };
 
 
@@ -367,14 +320,14 @@ let create_path pathstring =>
 
 /** Convert an identifier to a string. */
 let to_string id =>
-  if (id.kind === knone) {
+  if (id.kind === KNone) {
     "_"
   } else {
     let base_name = name_to_string id.name;
     let prefix =
-      if (id.kind === kfootprint) {
+      if (id.kind === KFootprint) {
         "@"
-      } else if (id.kind === knormal) {
+      } else if (id.kind === KNormal) {
         ""
       } else {
         "_"
@@ -406,9 +359,9 @@ let pp pe f id =>
   | PP_LATEX =>
     let base_name = name_to_string id.name;
     let style =
-      if (id.kind == kfootprint) {
+      if (id.kind == KFootprint) {
         Latex.Boldface
-      } else if (id.kind == knormal) {
+      } else if (id.kind == KNormal) {
         Latex.Roman
       } else {
         Latex.Roman

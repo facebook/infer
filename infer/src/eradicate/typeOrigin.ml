@@ -45,7 +45,7 @@ let equal o1 o2 = match o1, o2 with
   | Const _, _
   | _, Const _ -> false
   | Field (fn1, loc1), Field (fn2, loc2) ->
-      Ident.fieldname_equal fn1 fn2 &&
+      Ident.equal_fieldname fn1 fn2 &&
       Location.equal loc1 loc2
   | Field _, _
   | _, Field _ -> false

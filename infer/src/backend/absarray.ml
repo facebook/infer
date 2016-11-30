@@ -76,8 +76,8 @@ end = struct
     | Sil.Estruct (fsel, _), Tstruct name, Field (fld, _) :: syn_offs' -> (
         match Tenv.lookup tenv name with
         | Some { fields } ->
-            let se' = snd (IList.find (fun (f', _) -> Ident.fieldname_equal f' fld) fsel) in
-            let t' = snd3 (IList.find (fun (f', _, _) -> Ident.fieldname_equal f' fld) fields) in
+            let se' = snd (IList.find (fun (f', _) -> Ident.equal_fieldname f' fld) fsel) in
+            let t' = snd3 (IList.find (fun (f', _, _) -> Ident.equal_fieldname f' fld) fields) in
             get_strexp_at_syn_offsets tenv se' t' syn_offs'
         | None ->
             fail ()
@@ -96,14 +96,14 @@ end = struct
     | Sil.Estruct (fsel, inst), Tstruct name, Field (fld, _) :: syn_offs' -> (
         match Tenv.lookup tenv name with
         | Some { fields } ->
-            let se' = snd (IList.find (fun (f', _) -> Ident.fieldname_equal f' fld) fsel) in
+            let se' = snd (IList.find (fun (f', _) -> Ident.equal_fieldname f' fld) fsel) in
             let t' = (fun (_,y,_) -> y)
                 (IList.find (fun (f', _, _) ->
-                     Ident.fieldname_equal f' fld) fields) in
+                     Ident.equal_fieldname f' fld) fields) in
             let se_mod = replace_strexp_at_syn_offsets tenv se' t' syn_offs' update in
             let fsel' =
               IList.map (fun (f'', se'') ->
-                  if Ident.fieldname_equal f'' fld then (fld, se_mod) else (f'', se'')
+                  if Ident.equal_fieldname f'' fld then (fld, se_mod) else (f'', se'')
                 ) fsel in
             Sil.Estruct (fsel', inst)
         | None ->
@@ -178,7 +178,7 @@ end = struct
       | (f, se) :: fsel' ->
           begin
             try
-              let t = snd3 (IList.find (fun (f', _, _) -> Ident.fieldname_equal f' f) ftal) in
+              let t = snd3 (IList.find (fun (f', _, _) -> Ident.equal_fieldname f' f) ftal) in
               find_offset_sexp sigma_other hpred root ((Field (f, typ)) :: offs) se t
             with Not_found ->
               L.d_strln ("Can't find field " ^ (Ident.fieldname_to_string f) ^ " in StrexpMatch.find")

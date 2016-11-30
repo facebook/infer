@@ -384,7 +384,7 @@ let in_cycle cycle edge =
   match cycle with
   | Some cycle' ->
       IList.mem (fun (fn, se) (_,fn',se') ->
-          Ident.fieldname_equal fn fn' && Sil.strexp_equal se se') edge cycle'
+          Ident.equal_fieldname fn fn' && Sil.strexp_equal se se') edge cycle'
   | _ -> false
 
 let node_in_cycle cycle node =
@@ -655,7 +655,7 @@ let filter_useless_spec_dollar_box (nodes: dotty_node list) (links: link list) =
         else boxes_pointing_at n ln' in
   let is_spec_variable = function
     | Exp.Var id ->
-        Ident.is_normal id && Ident.name_equal (Ident.get_name id) Ident.name_spec
+        Ident.is_normal id && Ident.equal_name (Ident.get_name id) Ident.name_spec
     | _ -> false in
   let handle_one_node node =
     match node with

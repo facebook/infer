@@ -40,11 +40,11 @@ let compare (c1: t) (c2: t) :int =>
   | (Cfloat f1, Cfloat f2) => float_compare f1 f2
   | (Cfloat _, _) => (-1)
   | (_, Cfloat _) => 1
-  | (Cclass c1, Cclass c2) => Ident.name_compare c1 c2
+  | (Cclass c1, Cclass c2) => Ident.compare_name c1 c2
   | (Cclass _, _) => (-1)
   | (_, Cclass _) => 1
   | (Cptr_to_fld fn1 t1, Cptr_to_fld fn2 t2) =>
-    let n = Ident.fieldname_compare fn1 fn2;
+    let n = Ident.compare_fieldname fn1 fn2;
     if (n != 0) {
       n
     } else {

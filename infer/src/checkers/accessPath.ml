@@ -42,7 +42,7 @@ let access_compare access1 access2 =
   else
     match access1, access2 with
     | FieldAccess (f1, typ1), FieldAccess (f2, typ2) ->
-        let n = Ident.fieldname_compare f1 f2 in
+        let n = Ident.compare_fieldname f1 f2 in
         if n <> 0
         then n
         else Typ.compare typ1 typ2

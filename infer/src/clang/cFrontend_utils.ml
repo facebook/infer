@@ -581,7 +581,7 @@ struct
       match field_tuple, l with
       | (field, typ, annot), ((old_field, old_typ, old_annot) as old_field_tuple :: rest) ->
           let ret_list, ret_found = replace_field field_tuple rest found in
-          if Ident.fieldname_equal field old_field && Typ.equal typ old_typ then
+          if Ident.equal_fieldname field old_field && Typ.equal typ old_typ then
             let annotations = append_no_duplicates_annotations annot old_annot in
             (field, typ, annotations) :: ret_list, true
           else old_field_tuple :: ret_list, ret_found
@@ -599,7 +599,7 @@ struct
 
   let sort_fields fields =
     let compare (name1, _, _) (name2, _, _) =
-      Ident.fieldname_compare name1 name2 in
+      Ident.compare_fieldname name1 name2 in
     IList.sort compare fields
 
 

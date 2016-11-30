@@ -582,7 +582,7 @@ let vpath_find tenv prop _exp : DExp.t option * Typ.t option =
                  | Exp.Sizeof (Tstruct name, _, _) -> (
                      match Tenv.lookup tenv name with
                      | Some {fields} -> (
-                         match IList.find (fun (f', _, _) -> Ident.fieldname_equal f' f) fields with
+                         match IList.find (fun (f', _, _) -> Ident.equal_fieldname f' f) fields with
                          | _, t, _ -> Some t
                          | exception Not_found -> None
                        )
@@ -684,7 +684,7 @@ let explain_dexp_access prop dexp is_nullable =
           (L.d_strln ("lookup_fld: can't find field " ^ Ident.fieldname_to_string f));
         None
     | (f1, se):: fsel' ->
-        if Ident.fieldname_equal f1 f then Some se
+        if Ident.equal_fieldname f1 f then Some se
         else lookup_fld fsel' f in
   let rec lookup_esel esel e = match esel with
     | [] ->
