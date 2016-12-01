@@ -67,7 +67,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let is_unprotected is_locked =
       not is_locked && not (Procdesc.is_java_synchronized pdesc) in
     function
-    | Sil.Call (_, Const (Cfun pn), _, _, _) ->
+    | Sil.Call (_, Const (Cfun pn), _, loc, _) ->
         begin
           (* assuming that modeled procedures do not have useful summaries *)
           match get_lock_model pn with
@@ -78,12 +78,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | None ->
               begin
                 match Summary.read_summary pdesc pn with
-                | Some ((callee_lockstate, _) as summary) ->
+                | Some (callee_lockstate, (callee_reads, callee_writes)) ->
                     let lockstate' = callee_lockstate || lockstate in
                     let _, read_writestate' =
                       if is_unprotected lockstate'
-                      then ThreadSafetyDomain.join summary astate
-                      else astate in
+                      then
+                        let call_site = CallSite.make pn loc in
+                        let callee_readstate =
+                          ThreadSafetyDomain.PathDomain.with_callsite callee_reads call_site in
+                        let callee_writestate =
+                          ThreadSafetyDomain.PathDomain.with_callsite callee_writes call_site in
+                        let callee_astate =
+                          callee_lockstate, (callee_readstate, callee_writestate) in
+                        ThreadSafetyDomain.join callee_astate astate
+                      else
+                        astate in
                     lockstate', read_writestate'
                 | None ->
                     astate
@@ -189,29 +198,42 @@ let calculate_addendum_message tenv pname =
       else ""
   | _ -> ""
 
-let report_thread_safety_errors ( _, tenv, pname, pdesc) writestate =
-  let report_one_error access_path loc =
+let report_thread_safety_errors ( _, tenv, pname, pdesc) trace =
+  let open ThreadSafetyDomain in
+  let trace_of_pname callee_pname =
+    match Summary.read_summary pdesc callee_pname with
+    | Some (_, (_, callee_trace)) -> callee_trace
+    | _ -> PathDomain.initial in
+  let report_one_path ((_, sinks) as path) =
+    let pp_accesses fmt sink =
+      let _, accesses = PathDomain.Sink.kind sink in
+      AccessPath.pp_access_list fmt accesses in
+    let initial_sink, _ = IList.hd (IList.rev sinks) in
+    let final_sink, _ = IList.hd sinks in
+    let initial_sink_site = PathDomain.Sink.call_site initial_sink in
+    let final_sink_site = PathDomain.Sink.call_site final_sink in
+    let desc_of_sink sink =
+      if CallSite.equal (PathDomain.Sink.call_site sink) final_sink_site
+      then
+        Format.asprintf "access to %a" pp_accesses sink
+      else
+        Format.asprintf
+          "call to %a" Procname.pp (CallSite.pname (PathDomain.Sink.call_site sink)) in
+    let loc = CallSite.loc (PathDomain.Sink.call_site initial_sink) in
+    let ltr = PathDomain.to_sink_loc_trace ~desc_of_sink path in
+    let msg = Localise.to_string Localise.thread_safety_error in
     let description =
-      F.asprintf "Method %a writes to field %a outside of synchronization at %a. %s"
+      Format.asprintf "Public method %a%s writes to field %a outside of synchronization.%s"
         Procname.pp pname
-        AccessPath.pp_access_list access_path
-        Location.pp loc
-        (calculate_addendum_message tenv pname)
-    in
-    Checkers.ST.report_error tenv
-      pname
-      pdesc
-      (Localise.to_string Localise.thread_safety_error)
-      (Procdesc.get_loc pdesc)
-      description
-  in
-  ThreadSafetyDomain.PathDomain.Sinks.iter
-    (fun sink ->
-       let _, accesses = ThreadSafetyDomain.PathDomain.Sink.kind sink in
-       let loc = CallSite.loc (ThreadSafetyDomain.PathDomain.Sink.call_site sink) in
-       report_one_error accesses loc)
-    (ThreadSafetyDomain.PathDomain.sinks writestate)
+        (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
+        pp_accesses final_sink
+        (calculate_addendum_message tenv pname) in
+    let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
+    Reporting.log_error pname ~loc ~ltr exn in
 
+  IList.iter
+    report_one_path
+    (PathDomain.get_reportable_sink_paths trace ~trace_of_pname)
 
 (* For now, just checks if there is one active element amongst the posts of the analyzed methods.
    This indicates that the method races with itself. To be refined later. *)

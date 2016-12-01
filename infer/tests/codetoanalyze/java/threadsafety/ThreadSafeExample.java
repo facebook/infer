@@ -87,6 +87,15 @@ public class ThreadSafeExample{
     assignInPrivateMethodOk();
   }
 
+  private void callAssignInPrivateMethod() {
+    assignInPrivateMethodOk();
+  }
+
+  // should report a deeperTraceBade -> callAssignInPrivateMethod -> assignInPrivateMethodOk trace
+  public void deeperTraceBad() {
+    callAssignInPrivateMethod();
+  }
+
   public synchronized void callFromSynchronizedPublicMethodOk() {
     assignInPrivateMethodOk();
   }
