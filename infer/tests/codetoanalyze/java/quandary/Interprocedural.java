@@ -295,23 +295,4 @@ class Interprocedural {
     InferTaint.inferSensitiveSink(notASource);
   }
 
-  static void sourceAndSink(Obj o) {
-    InferTaint.inferSensitiveSink(o.f);
-    o.f = InferTaint.inferSecretSource();
-  }
-
-  static void callSourceAndSinkOk(Obj o) {
-    sourceAndSink(o);
-  }
-
-  static void callSourceAndSinkBad1(Obj o) {
-    sourceAndSink(o);
-    InferTaint.inferSensitiveSink(InferTaint.inferSecretSource());
-  }
-
-  static void callSourceAndSinkBad2(Obj o) {
-    o.f = InferTaint.inferSecretSource();
-    sourceAndSink(o);
-  }
-
 }
