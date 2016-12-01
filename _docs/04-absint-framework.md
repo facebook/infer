@@ -50,7 +50,7 @@ Other examples of simple intraprocedural checkers are [addressTaken.ml](https://
 
 ## Basic error reporting
 
-Useful analyses have output. Basic printing to stderr or stderr is good for debugging, but to report a programmer-readable error that is tied to a source code location, you'll want to use `Reporting.log_error` or `Checkers.ST.report_error`. Some examples of error-logging code: [1](https://github.com/facebook/infer/blob/master/infer/src/checkers/checkDeadCode.ml#L66) [2](https://github.com/facebook/infer/blob/master/infer/src/checkers/ThreadSafety.ml#L166), [3](https://github.com/facebook/infer/blob/master/infer/src/checkers/annotationReachability.ml#L224), or [4](https://github.com/facebook/infer/blob/master/infer/src/quandary/TaintAnalysis.ml#L182).
+Useful analyses have output. Basic printing to stderr or stderr is good for debugging, but to report a programmer-readable error that is tied to a source code location, you'll want to use `Reporting.log_error`. Some examples of error-logging code: [1](https://github.com/facebook/infer/blob/master/infer/src/checkers/ThreadSafety.ml#L166), [2](https://github.com/facebook/infer/blob/master/infer/src/checkers/annotationReachability.ml#L224), or [3](https://github.com/facebook/infer/blob/master/infer/src/quandary/TaintAnalysis.ml#L186).
 
 ## By example: interprocedural analysis
 
@@ -81,7 +81,7 @@ along with adding the `Specs.siof` [field](https://github.com/facebook/infer/blo
 Part (2a) is [here](https://github.com/facebook/infer/blob/master/infer/src/checkers/Siof.ml#L65):
 
 ```
-match Summary.read_summary tenv pdesc callee_pname with
+match Summary.read_summary pdesc callee_pname with
 ```
 
 This says: "read the summary for `callee_pname` from procedure `pdesc` with type environment `tenv`". You must then add logic for applying the summary to the current abstract state (often, this is as simple as doing a join).
@@ -100,6 +100,8 @@ let checker callback =
 ```
 
 That's it! We now have an interprocedural analysis.
+
+One very important note here: a current (and soon-to-be-lifted) limitation prevents us from running multiple interprocedural checkers at the same time. If you register an interprocedural checker, be sure to unregister the other other ones. Otherwise, there's a risk that the checkers will clobber each other's results.
 
 ## Relevant code
 
