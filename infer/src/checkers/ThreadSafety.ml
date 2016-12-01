@@ -56,11 +56,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ ->
         None
 
-  let add_path_to_state exp typ pathdomainstate =
+  let add_path_to_state exp typ loc path_state =
     IList.fold_left
-      (fun pathdomainstate_acc rawpath -> ThreadSafetyDomain.PathDomain.add
-          rawpath pathdomainstate_acc)
-      pathdomainstate
+      (fun acc rawpath ->
+         ThreadSafetyDomain.PathDomain.add_sink (ThreadSafetyDomain.make_access rawpath loc) acc)
+      path_state
       (AccessPath.of_exp exp typ ~f_resolve_id:(fun _ -> None))
 
   let exec_instr ((lockstate, (readstate,writestate)) as astate) { ProcData.pdesc; } _ =
@@ -90,9 +90,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               end
         end
 
-    | Sil.Store ((Lfield ( _, _, typ) as lhsfield) , _, _, _) ->
+    | Sil.Store ((Lfield ( _, _, typ) as lhsfield) , _, _, loc) ->
         if is_unprotected lockstate then (* abstracts no lock being held*)
-          (lockstate, (readstate, add_path_to_state lhsfield typ writestate))
+          (lockstate, (readstate, add_path_to_state lhsfield typ loc writestate))
         else astate
 
     (* Note: it appears that the third arg of Store is never an Lfield in the targets of,
@@ -100,9 +100,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Store (_, _, Lfield _, _) ->
         failwith "Unexpected store instruction with rhs field"
 
-    | Sil.Load (_, (Lfield ( _, _, typ) as rhsfield) , _, _) ->
+    | Sil.Load (_, (Lfield ( _, _, typ) as rhsfield) , _, loc) ->
         if is_unprotected lockstate then (* abstracts no lock being held*)
-          (lockstate, (add_path_to_state rhsfield typ readstate, writestate))
+          (lockstate, (add_path_to_state rhsfield typ loc readstate, writestate))
         else astate
 
     |  _  ->
@@ -190,11 +190,12 @@ let calculate_addendum_message tenv pname =
   | _ -> ""
 
 let report_thread_safety_errors ( _, tenv, pname, pdesc) writestate =
-  let report_one_error access_path =
+  let report_one_error access_path loc =
     let description =
-      F.asprintf "Method %a writes to field %a outside of synchronization. %s"
+      F.asprintf "Method %a writes to field %a outside of synchronization at %a. %s"
         Procname.pp pname
         AccessPath.pp_access_list access_path
+        Location.pp loc
         (calculate_addendum_message tenv pname)
     in
     Checkers.ST.report_error tenv
@@ -204,7 +205,12 @@ let report_thread_safety_errors ( _, tenv, pname, pdesc) writestate =
       (Procdesc.get_loc pdesc)
       description
   in
-  IList.iter report_one_error (IList.map snd (ThreadSafetyDomain.PathDomain.elements writestate))
+  ThreadSafetyDomain.PathDomain.Sinks.iter
+    (fun sink ->
+       let _, accesses = ThreadSafetyDomain.PathDomain.Sink.kind sink in
+       let loc = CallSite.loc (ThreadSafetyDomain.PathDomain.Sink.call_site sink) in
+       report_one_error accesses loc)
+    (ThreadSafetyDomain.PathDomain.sinks writestate)
 
 
 (* For now, just checks if there is one active element amongst the posts of the analyzed methods.
