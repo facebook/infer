@@ -49,8 +49,10 @@ $(INFERCLANG_WRAPPERS_PATHS): Makefile
 	cd $(@D) && \
 	$(LN_S) ../../bin/InferClang $(@F)
 
+$(BIN_DIR):
+	$(MKDIR_P) $@
 
-$(INFERTRACEBUGS_BIN_RELPATH): Makefile
+$(INFERTRACEBUGS_BIN_RELPATH): Makefile $(BIN_DIR)
 	$(REMOVE) $@ && \
 	cd $(@D) && \
 	$(LN_S) ../lib/python/$(@F) $(@F)
