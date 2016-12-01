@@ -18,7 +18,34 @@ let module L = Logging;
 
 let module F = Format;
 
-type name = string [@@deriving compare];
+let module Name = {
+  type t =
+    | Primed
+    | Normal
+    | Footprint
+    | Spec
+    | FromString string
+  [@@deriving compare];
+  let primed = "t";
+  let normal = "n";
+  let footprint = "f";
+  let spec = "val";
+  let from_string s => FromString s;
+  let to_string =
+    fun
+    | Primed => primed
+    | Normal => normal
+    | Footprint => footprint
+    | Spec => spec
+    | FromString s => s;
+  let equal n1 n2 => compare n1 n2 == 0;
+};
+
+type name = Name.t [@@deriving compare];
+
+let name_spec = Name.Spec;
+
+let name_primed = Name.Primed;
 
 let equal_name x y => 0 == compare_name x y;
 
@@ -46,7 +73,7 @@ let equal_kind x y => 0 == compare_kind x y;
 /* timestamp for a path identifier */
 let path_ident_stamp = (-3);
 
-type t = {kind: kind, name: name, stamp: int} [@@deriving compare];
+type t = {kind: kind, name: Name.t, stamp: int} [@@deriving compare];
 
 /* most unlikely first */
 let equal i1 i2 => i1.stamp === i2.stamp && i1.kind === i2.kind && equal_name i1.name i2.name;
@@ -89,7 +116,7 @@ let module NameHash = Hashtbl.Make {
 
 
 /** Convert a string to a name */
-let string_to_name (s: string) => s;
+let string_to_name = Name.from_string;
 
 
 /** Create a field name with the given position (field number in the CSU) */
@@ -97,7 +124,7 @@ let create_fieldname (n: Mangled.t) (position: int) => {fpos: position, fname: n
 
 
 /** Convert a name to a string. */
-let name_to_string (name: name) => name;
+let name_to_string = Name.to_string;
 
 
 /** Convert a fieldname to a string. */
@@ -219,22 +246,6 @@ let module NameGenerator = {
 };
 
 
-/** Name used for primed tmp variables */
-let name_primed = string_to_name "t";
-
-
-/** Name used for normal tmp variables */
-let name_normal = string_to_name "n";
-
-
-/** Name used for footprint tmp variables */
-let name_footprint = string_to_name "f";
-
-
-/** Name used for spec variables */
-let name_spec = string_to_name "val";
-
-
 /** Name used for the return variable */
 let name_return = Mangled.from_string "return";
 
@@ -242,11 +253,11 @@ let name_return = Mangled.from_string "return";
 /** Return the standard name for the given kind */
 let standard_name kind =>
   if (kind === KNormal || kind === KNone) {
-    name_normal
+    Name.Normal
   } else if (kind === KFootprint) {
-    name_footprint
+    Name.Footprint
   } else {
-    name_primed
+    Name.Primed
   };
 
 

@@ -49,8 +49,18 @@ module MakePPSet (Ord : SetOrderedType) = struct
   let pp_element = Ord.pp_element
 
   let pp fmt s =
-    let pp_item fmt e = F.fprintf fmt "%a" Ord.pp_element e in
-    pp_collection ~pp_item fmt (elements s)
+    pp_collection ~pp_item:pp_element fmt (elements s)
+end
+
+module MakePPCompareSet
+    (Ord : sig include SetOrderedType val compare_pp : t -> t -> int end) = struct
+  include Set.Make(Ord)
+
+  let pp_element = Ord.pp_element
+
+  let pp fmt s =
+    let elements_alpha = IList.sort Ord.compare_pp (elements s) in
+    pp_collection ~pp_item:pp_element fmt elements_alpha
 end
 
 module MakePPMap (Ord : MapOrderedType) = struct

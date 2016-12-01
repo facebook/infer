@@ -38,13 +38,15 @@ module type PPMap = sig
 end
 
 module MakePPSet : functor (Ord : SetOrderedType) -> sig
-  include Set.S with type elt = Ord.t
-  val pp_element : F.formatter -> Ord.t -> unit
-  val pp : F.formatter -> t -> unit
+  include PPSet with type elt = Ord.t
 end
 
+(** Use a comparison function to determine the order of the elements printed *)
+module MakePPCompareSet :
+  functor (Ord : sig include SetOrderedType val compare_pp : t -> t -> int end) -> sig
+    include PPSet with type elt = Ord.t
+  end
+
 module MakePPMap : functor (Ord : MapOrderedType) -> sig
-  include Map.S with type key = Ord.t
-  val pp_key : F.formatter -> Ord.t -> unit
-  val pp : pp_value:(F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
+  include PPMap with type key = Ord.t
 end

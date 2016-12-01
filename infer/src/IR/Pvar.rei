@@ -30,6 +30,10 @@ type t [@@deriving compare];
 let equal: t => t => bool;
 
 
+/** Compare two pvar's in alphabetical order */
+let compare_alpha: t => t => int;
+
+
 /** Dump a program variable. */
 let d: t => unit;
 

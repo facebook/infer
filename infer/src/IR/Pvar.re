@@ -30,7 +30,10 @@ type pvar_kind =
   | Seed_var /** variable used to store the initial value of formal parameters */
 [@@deriving compare]
 /** Names for program variables. */
-and t = {pv_name: Mangled.t, pv_kind: pvar_kind} [@@deriving compare];
+and t = {pv_hash: int, pv_name: Mangled.t, pv_kind: pvar_kind} [@@deriving compare];
+
+let compare_alpha pv1 pv2 =>
+  [%compare : (Mangled.t, pvar_kind)] (pv1.pv_name, pv1.pv_kind) (pv2.pv_name, pv2.pv_kind);
 
 let equal pvar1 pvar2 => compare pvar1 pvar2 == 0;
 
@@ -270,9 +273,12 @@ let to_callee pname pvar =>
     assert false
   };
 
+let name_hash (name: Mangled.t) => Hashtbl.hash name;
+
 
 /** [mk name proc_name] creates a program var with the given function name */
 let mk (name: Mangled.t) (proc_name: Procname.t) :t => {
+  pv_hash: name_hash name,
   pv_name: name,
   pv_kind: Local_var proc_name
 };
@@ -283,6 +289,7 @@ let get_ret_pvar pname => mk Ident.name_return pname;
 /** [mk_callee name proc_name] creates a program var
     for a callee function with the given function name */
 let mk_callee (name: Mangled.t) (proc_name: Procname.t) :t => {
+  pv_hash: name_hash name,
   pv_name: name,
   pv_kind: Callee_var proc_name
 };
@@ -290,6 +297,7 @@ let mk_callee (name: Mangled.t) (proc_name: Procname.t) :t => {
 
 /** create a global variable with the given name */
 let mk_global is_constexpr::is_constexpr=false is_pod::is_pod=true (name: Mangled.t) fname :t => {
+  pv_hash: name_hash name,
   pv_name: name,
   pv_kind: Global_var (fname, is_constexpr, is_pod)
 };
@@ -306,12 +314,12 @@ let mk_tmp name pname => {
 /** create an abduced return variable for a call to [proc_name] at [loc] */
 let mk_abduced_ret (proc_name: Procname.t) (loc: Location.t) :t => {
   let name = Mangled.from_string ("$RET_" ^ Procname.to_unique_id proc_name);
-  {pv_name: name, pv_kind: Abduced_retvar proc_name loc}
+  {pv_hash: name_hash name, pv_name: name, pv_kind: Abduced_retvar proc_name loc}
 };
 
 let mk_abduced_ref_param (proc_name: Procname.t) (pv: t) (loc: Location.t) :t => {
   let name = Mangled.from_string ("$REF_PARAM_" ^ Procname.to_unique_id proc_name);
-  {pv_name: name, pv_kind: Abduced_ref_param proc_name pv loc}
+  {pv_hash: name_hash name, pv_name: name, pv_kind: Abduced_ref_param proc_name pv loc}
 };
 
 let get_source_file pvar =>
@@ -341,8 +349,9 @@ let get_initializer_pname {pv_name, pv_kind} =>
   | _ => None
   };
 
-let module Set = PrettyPrintable.MakePPSet {
+let module Set = PrettyPrintable.MakePPCompareSet {
   type nonrec t = t;
   let compare = compare;
+  let compare_pp = compare_alpha;
   let pp_element = pp pe_text;
 };

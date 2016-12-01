@@ -124,12 +124,27 @@ module NullifyTransferFunctions = struct
         (reaching_defs', to_nullify)
     | None -> astate
 
+  let cache_node = ref (Procdesc.Node.dummy ())
+  let cache_instr = ref Sil.skip_instr
+
+  let last_instr_in_node node =
+    let get_last_instr () =
+      let instrs = CFG.instrs node in
+      match IList.rev instrs with
+      | instr :: _ -> instr
+      | [] -> Sil.skip_instr in
+    if node == !cache_node
+    then !cache_instr
+    else
+      begin
+        let last_instr = get_last_instr () in
+        cache_node := node;
+        cache_instr := last_instr;
+        last_instr
+      end
+
   let is_last_instr_in_node instr node =
-    let rec is_last_instr instr = function
-      | [] -> true
-      | last_instr :: [] -> Sil.compare_instr instr last_instr = 0
-      | _ :: instrs -> is_last_instr instr instrs in
-    is_last_instr instr (CFG.instrs node)
+    last_instr_in_node node == instr
 
   let exec_instr ((active_defs, to_nullify) as astate) extras node instr =
     let astate' = match instr with

@@ -24,7 +24,6 @@ codetoanalyze/objc/shared/assertions/NSAssert_example.m, NSAssert_addTarget:, 1,
 codetoanalyze/objc/shared/assertions/NSAssert_example.m, NSAssert_initWithRequest:, 1, MEMORY_LEAK, [start of procedure initWithRequest:,Condition is false,Condition is true,Condition is true]
 codetoanalyze/objc/shared/assertions/NSAssert_example.m, test1, 1, MEMORY_LEAK, [start of procedure test1(),Condition is false,Condition is true,Condition is true,Condition is true]
 codetoanalyze/objc/shared/assertions/NSAssert_example.m, test1, 1, MEMORY_LEAK, [start of procedure test1(),Condition is false,Condition is true,Condition is true]
-codetoanalyze/objc/shared/assertions/NSAssert_example.m, test2, 1, MEMORY_LEAK, [start of procedure test2(),Condition is false,Condition is true,Condition is true,Condition is true]
 codetoanalyze/objc/shared/assertions/NSAssert_example.m, test2, 1, MEMORY_LEAK, [start of procedure test2(),Condition is false,Condition is true,Condition is true]
 codetoanalyze/objc/shared/block/BlockVar.m, BlockVar_blockPostBad, 5, NULL_DEREFERENCE, [start of procedure blockPostBad,start of procedure block,return from a call to __objc_anonymous_block_BlockVar_blockPostBad______2]
 codetoanalyze/objc/shared/block/BlockVar.m, BlockVar_capturedNullDeref, 5, NULL_DEREFERENCE, [start of procedure capturedNullDeref,start of procedure block]
