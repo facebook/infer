@@ -9,21 +9,6 @@
 
 package codetoanalyze.java.checkers;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-@Documented
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.CLASS)
-@interface ThreadSafe {
-}
-
 @ThreadSafe
 public class ThreadSafeExample{
 
@@ -44,37 +29,6 @@ public class ThreadSafeExample{
 
   public void tsBad() {
     f = 24;
-  }
-
-  Lock mLock;
-  ReentrantLock mReentrantLock;
-
-  public void lockInOneBranchBad(boolean b) {
-    if (b) {
-      mLock.lock();
-    }
-    f = 24;
-    if (b) {
-      mLock.unlock();
-    }
-  }
-
-  public void afterUnlockBad() {
-    mLock.lock();
-    mLock.unlock();
-    f = 42;
-  }
-
-  public void afterReentrantLockUnlockBad() {
-    mReentrantLock.lock();
-    mReentrantLock.unlock();
-    f = 42;
-  }
-
-  public void withLockOk() {
-    mLock.lock();
-    f = 42;
-    mLock.unlock();
   }
 
   // shouldn't report here because it's a private method
@@ -119,72 +73,6 @@ public class ThreadSafeExample{
 
   public void transitivelyCallConstructorOk() {
     returnConstructorOk();
-  }
-
-  public void withLockBothBranchesOk(boolean b) {
-    if (b) {
-      mLock.lock();
-    } else {
-      mLock.lock();
-    }
-    f = 42;
-    mLock.unlock();
-  }
-
-  public void withReentrantLockOk() {
-    mReentrantLock.lock();
-    f = 42;
-    mReentrantLock.unlock();
-  }
-
-  public void withReentrantLockTryLockOk() {
-    if (mReentrantLock.tryLock()) {
-      f = 42;
-      mReentrantLock.unlock();
-    }
-  }
-
-  public void withReentrantLockInterruptiblyOk() throws InterruptedException {
-    mReentrantLock.lockInterruptibly();
-    f = 42;
-    mReentrantLock.unlock();
-  }
-
-  private void acquireLock() {
-    mLock.lock();
-  }
-
-  public void acquireLockInCalleeOk() {
-    acquireLock();
-    f = 42;
-    mLock.unlock();
-  }
-
-  private void releaseLock() {
-    mLock.unlock();
-  }
-
-  // our "squish all locks into one" abstraction is not ideal here...
-  public void FP_unlockOneLock() {
-    mLock.lock();
-    mReentrantLock.lock();
-    mReentrantLock.unlock();
-    f = 42;
-    mLock.unlock();
-  }
-
-  // ... or here
-  public void FN_releaseLockInCalleeBad() {
-    mLock.lock();
-    releaseLock();
-    f = 42;
-  }
-
-  // we don't model the case where `tryLock` fails
-  public void FN_withReentrantLockTryLockBad() {
-    if (!mReentrantLock.tryLock()) {
-      f = 42;
-    }
   }
 
 }
