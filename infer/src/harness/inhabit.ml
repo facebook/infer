@@ -202,22 +202,18 @@ let inhabit_call tenv (procname, receiver) cfg env =
   with Not_found -> env
 
 (** create a dummy file for the harness and associate them in the exe_env *)
-let create_dummy_harness_file harness_name =
-  let dummy_file_name =
-    let dummy_file_dir =
-      Filename.get_temp_dir_name () in
-    let file_str =
-      Procname.java_get_class_name
-        harness_name ^ "_" ^Procname.java_get_method harness_name ^ ".java" in
-    Filename.concat dummy_file_dir file_str in
-  DB.source_file_from_string dummy_file_name
+let create_dummy_harness_filename harness_name =
+  let dummy_file_dir =
+    Filename.get_temp_dir_name () in
+  let file_str =
+    Procname.java_get_class_name
+      harness_name ^ "_" ^Procname.java_get_method harness_name ^ ".java" in
+  Filename.concat dummy_file_dir file_str
 
 (** write the SIL for the harness to a file *)
 (* TODO (t3040429): fill this file up with Java-like code that matches the SIL *)
-let write_harness_to_file harness_instrs harness_file =
-  let harness_file =
-    let harness_file_name = DB.source_file_to_abs_path harness_file in
-    create_outfile harness_file_name in
+let write_harness_to_file harness_instrs harness_file_name =
+  let harness_file = create_outfile harness_file_name in
   let pp_harness fmt = IList.iter (fun instr ->
       Format.fprintf fmt "%a\n" (Sil.pp_instr pe_text) instr) harness_instrs in
   do_outf harness_file (fun outf ->
@@ -266,7 +262,7 @@ let setup_harness_cfg harness_name env cg cfg =
 let inhabit_trace tenv trace harness_name cg cfg =
   if IList.length trace > 0 then
     let source_file = Cg.get_source cg in
-    let harness_file = create_dummy_harness_file harness_name in
+    let harness_filename = create_dummy_harness_filename harness_name in
     let start_line = 1 in
     let empty_env =
       let pc = { Location.line = start_line; col = 1; file = source_file; } in
@@ -279,5 +275,5 @@ let inhabit_trace tenv trace harness_name cg cfg =
     let env'' = IList.fold_left (fun env to_call -> inhabit_call tenv to_call cfg env) empty_env trace in
     try
       setup_harness_cfg harness_name env'' cg cfg;
-      write_harness_to_file (IList.rev env''.instrs) harness_file
+      write_harness_to_file (IList.rev env''.instrs) harness_filename
     with Not_found -> ()

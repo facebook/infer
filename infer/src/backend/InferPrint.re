@@ -477,18 +477,6 @@ let module IssuesJson = {
   let is_first_item = ref true;
   let pp_json_open fmt () => F.fprintf fmt "[@?";
   let pp_json_close fmt () => F.fprintf fmt "]\n@?";
-  let expand_links_under_buck_out file =>
-    if (Utils.string_is_prefix Config.buck_generated_folder file) {
-      try {
-        let file = Unix.readlink file;
-        let source_file = DB.source_file_from_string file;
-        DB.source_file_to_rel_path source_file
-      } {
-      | Unix.Unix_error _ => file
-      }
-    } else {
-      file
-    };
 
   /** Write bug report in JSON format */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname err_log => {
@@ -522,7 +510,7 @@ let module IssuesJson = {
         let kind = Exceptions.err_kind_string ekind;
         let bug_type = Localise.to_string error_name;
         let procedure_id = Procname.to_filename procname;
-        let file = expand_links_under_buck_out (DB.source_file_to_string source_file);
+        let file = DB.source_file_to_string source_file;
         let json_ml_loc =
           switch ml_loc_opt {
           | Some (file, lnum, cnum, enum) when Config.reports_include_ml_loc =>

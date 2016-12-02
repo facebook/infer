@@ -94,21 +94,21 @@ val source_file_line_count : source_file -> int
 (** empty source file *)
 val source_file_empty : source_file
 
+(** create source file from absolute path *)
 val source_file_from_abs_path : string -> source_file
 
 (** string encoding of a source file (including path) as a single filename *)
 val source_file_encoding : source_file -> string
 
-(** convert a source file to a string *)
+(** convert a source file to a string
+    WARNING: result may not be valid file path, do not use this function to perform operations
+             on filenames *)
 val source_file_to_string : source_file -> string
-
-(** convert a string obtained by source_file_to_string to a source file *)
-val source_file_from_string : string -> source_file
 
 (** pretty print source_file *)
 val source_file_pp : Format.formatter -> source_file -> unit
 
-(** get the full path of a source file, raise No_project_root exception when used with a relative source file and no project root specified *)
+(** get the full path of a source file *)
 val source_file_to_abs_path : source_file -> string
 
 (** get the relative path of a source file *)
@@ -125,6 +125,9 @@ val source_file_is_under_project_root : source_file -> bool
 (** Return approximate source file corresponding to the parameter if it's header file and
     file exists. returns None otherwise *)
 val source_file_of_header : source_file -> source_file option
+
+(** Set of files read from --changed-files-index file, None if option not specified *)
+val changed_source_files_set :  SourceFileSet.t option
 
 (** {2 Source Dirs} *)
 
@@ -170,6 +173,3 @@ val fold_paths_matching :
 
 (** Return all file paths recursively under the given directory which match the given predicate *)
 val paths_matching : string -> (string -> bool) -> string list
-
-(** Set of files read from --changed-files-index file, None if option not specified *)
-val changed_source_files_set :  SourceFileSet.t option

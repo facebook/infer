@@ -262,7 +262,7 @@ let test () =
   directory_iter
     (fun path ->
        if DB.is_source_file path then
-         let source_file = (DB.source_file_from_string path) in
+         let source_file = DB.source_file_from_abs_path path in
          let matching = matching_analyzers source_file in
          if matching <> [] then
            let matching_s = join_strings ", " (IList.map fst matching) in

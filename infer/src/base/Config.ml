@@ -650,7 +650,8 @@ and calls_csv =
 
 and changed_files_index =
   CLOpt.mk_path_opt ~long:"changed-files-index" ~exes:CLOpt.[Toplevel] ~meta:"file"
-    "Specify the file containing the list of files from which reactive analysis should start"
+    "Specify the file containing the list of source files from which reactive analysis should \
+     start. Source files should be specified relative to project root or be absolute"
 
 and check_duplicate_symbols =
   CLOpt.mk_bool ~long:"check-duplicate-symbols"

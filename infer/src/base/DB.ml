@@ -40,12 +40,6 @@ module SourceFileMap = Map.Make(OrderedSourceFile)
 
 module SourceFileSet = Set.Make(OrderedSourceFile)
 
-let source_file_from_string path =
-  if Filename.is_relative path then
-    RelativeProjectRoot path
-  else
-    Absolute path
-
 let rel_path_from_abs_path root fname =
   let relative_complemented_fname = filename_to_relative root fname in
   if string_is_prefix root fname &&
@@ -53,7 +47,6 @@ let rel_path_from_abs_path root fname =
     Some relative_complemented_fname
   else None (* The project root is not a prefix of the file name *)
 
-(** convert a project root directory and a full path to a rooted source file *)
 let source_file_from_abs_path fname =
   (* IMPORTANT: results of realpath are cached to not ruin performance *)
   let fname_real = realpath fname in
@@ -75,8 +68,8 @@ let curr_encoding = `Enc_crc
 
 let source_file_to_string fname =
   match fname with
+  | RelativeInferModel path -> "INFER_MODEL/" ^ path
   | RelativeProjectRoot path
-  | RelativeInferModel path
   | Absolute path -> path
 
 let source_file_pp fmt fname =
@@ -96,7 +89,7 @@ let source_file_line_count source_file =
 let source_file_to_rel_path fname =
   match fname with
   | RelativeProjectRoot path -> path
-  | _ -> source_file_to_abs_path fname |> filename_to_relative Config.project_root
+  | _ -> source_file_to_abs_path fname
 
 (** string encoding of a source file (including path) as a single filename *)
 let source_file_encoding source_file =
@@ -154,6 +147,20 @@ let source_file_of_header header_file =
       )
     | _ -> None in
   Option.map source_file_from_abs_path file_opt
+
+let changed_source_files_set =
+  let create_source_file path =
+    if Filename.is_relative path then
+      (* sources in changed-files-index may be specified relative to project root *)
+      RelativeProjectRoot path
+    else
+      source_file_from_abs_path path in
+  Option.map_default read_file None Config.changed_files_index |>
+  Option.map (
+    IList.fold_left
+      (fun changed_files line -> SourceFileSet.add (create_source_file line) changed_files)
+      SourceFileSet.empty
+  )
 
 (** {2 Source Dirs} *)
 
@@ -405,11 +412,3 @@ let fold_paths_matching ~dir ~p ~init ~f =
     matcher function p *)
 let paths_matching dir p =
   fold_paths_matching ~dir ~p ~init:[] ~f:(fun x xs -> x :: xs)
-
-let changed_source_files_set =
-  Option.map_default read_file None Config.changed_files_index |>
-  Option.map (
-    IList.fold_left
-      (fun changed_files line -> SourceFileSet.add (source_file_from_string line) changed_files)
-      SourceFileSet.empty
-  )

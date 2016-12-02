@@ -625,12 +625,6 @@ struct
     let class_name = Ast_utils.get_class_name_from_member field_qual_name in
     Ident.create_fieldname (Mangled.mangled field_name class_name) 0
 
-  let get_rel_file_path file_opt =
-    match file_opt with
-    | Some file ->
-        DB.source_file_to_string (DB.source_file_from_abs_path file)
-    | None -> ""
-
   let is_cpp_translation translation_unit_context =
     let lang = translation_unit_context.CFrontend_config.lang in
     lang = CFrontend_config.CPP || lang = CFrontend_config.ObjCPP
@@ -660,6 +654,11 @@ struct
          | _ -> assert false)
 
   let mk_procname_from_function translation_unit_context name function_decl_info_opt =
+    let get_rel_file_path file_opt =
+      match file_opt with
+      | Some file ->
+          DB.source_file_to_string (DB.source_file_from_abs_path file)
+      | None -> "" in
     let file =
       match function_decl_info_opt with
       | Some (decl_info, function_decl_info) ->
