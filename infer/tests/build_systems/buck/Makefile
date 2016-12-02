@@ -20,14 +20,18 @@ include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/base.make
 
 $(JAR_OUTPUT): $(JAVA_SOURCE_FILES)
-	NO_BUCKD=1 buck build --no-cache //infer/tests/codetoanalyze/java/infer:compile
+	$(call silent_on_success,\
+	  cd $(ROOT_DIR) && \
+	  INFER_BIN=$(INFER_BIN) NO_BUCKD=1 buck build --no-cache //infer/tests/codetoanalyze/java/infer:compile)
 
 .PHONY: genrule
 genrule: $(JAR_OUTPUT)
-	NO_BUCKD=1 buck build --no-cache //infer/tests/codetoanalyze/java/infer:run_infer
+	$(call silent_on_success,\
+	  cd $(ROOT_DIR) && \
+	  INFER_BIN=$(INFER_BIN) NO_BUCKD=1 buck build --no-cache //infer/tests/codetoanalyze/java/infer:run_infer)
 
 infer-out/report.json: genrule $(INFER_BIN) $(JAVA_SOURCE_FILES)
 	$(call silent_on_success,\
 	  cd $(ROOT_DIR) && \
-	  NO_BUCKD=1 $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out  -- \
+	  INFER_BIN=$(INFER_BIN) NO_BUCKD=1 $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out  -- \
 	    buck build --no-cache //infer/tests/codetoanalyze/java/infer:compile)

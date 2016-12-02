@@ -1,5 +1,7 @@
 # TODO: this file exists only to support buck integration in infer/tests/build_systems/build_integration_tests.py
 
+import os
+
 sources = glob(['**/*.java'])
 
 java_library(
@@ -23,7 +25,7 @@ genrule(
     srcs = sources,
     out = 'infer-out',
     bash = ' '.join([
-        'infer',
+        os.getenv('INFER_BIN', 'infer'),
         '--sourcepath',
         '$SRCDIR',
         '--classpath',
