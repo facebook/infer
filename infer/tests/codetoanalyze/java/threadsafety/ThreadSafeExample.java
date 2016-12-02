@@ -108,8 +108,17 @@ public class ThreadSafeExample{
     synchronizedCallerOk();
   }
 
-  // doesn't work because we don't model lock
-  public void FP_tsWithLockOk() {
+  // although the constructor touches f, we shouldn't complain here
+  public void callConstructorOk() {
+    new ThreadSafeExample();
+  }
+
+  private Object returnConstructorOk() {
+    return new ThreadSafeExample();
+  }
+
+  public void transitivelyCallConstructorOk() {
+    returnConstructorOk();
   }
 
   public void withLockBothBranchesOk(boolean b) {

@@ -23,6 +23,10 @@ module Summary = Summary.Make (struct
       payload.Specs.threadsafety
   end)
 
+let is_initializer tenv proc_name =
+  Procname.is_constructor proc_name ||
+  Procname.is_class_initializer proc_name ||
+  FbThreadSafety.is_custom_init tenv proc_name
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
@@ -63,7 +67,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       path_state
       (AccessPath.of_exp exp typ ~f_resolve_id:(fun _ -> None))
 
-  let exec_instr ((lockstate, (readstate,writestate)) as astate) { ProcData.pdesc; } _ =
+  let exec_instr ((lockstate, (readstate,writestate)) as astate) { ProcData.pdesc; tenv; } _ =
     let is_unprotected is_locked =
       not is_locked && not (Procdesc.is_java_synchronized pdesc) in
     function
@@ -81,7 +85,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 | Some (callee_lockstate, (callee_reads, callee_writes)) ->
                     let lockstate' = callee_lockstate || lockstate in
                     let _, read_writestate' =
-                      if is_unprotected lockstate'
+                      (* TODO (14842325): report on constructors that aren't threadsafe
+                         (e.g., constructors that access static fields) *)
+                      if is_unprotected lockstate' && not (is_initializer tenv pn)
                       then
                         let call_site = CallSite.make pn loc in
                         let callee_readstate =
@@ -152,10 +158,8 @@ module ResultsTableType = Map.Make (struct
   end)
 
 let should_report_on_proc (_,tenv,proc_name,proc_desc) =
-  not (FbThreadSafety.is_custom_init tenv proc_name) &&
+  not (is_initializer tenv proc_name) &&
   not (Procname.java_is_autogen_method proc_name) &&
-  not (Procname.is_constructor proc_name) &&
-  not (Procname.is_class_initializer proc_name) &&
   Procdesc.get_access proc_desc <> PredSymb.Private
 
 (* creates a map from proc_envs to postconditions *)
