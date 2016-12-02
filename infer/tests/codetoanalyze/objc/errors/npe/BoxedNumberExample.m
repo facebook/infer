@@ -33,4 +33,12 @@ typedef NS_ENUM(NSUInteger, SpacingEnum) {
   }
 }
 
+// no null dereference because of models
+- (void)test:(int)n {
+  NSMutableDictionary* reactionsPerOffset = [NSMutableDictionary new];
+  NSNumber* randomIndex = @(arc4random_uniform(n));
+  reactionsPerOffset[randomIndex] =
+      @([reactionsPerOffset[randomIndex] integerValue] + 1);
+}
+
 @end

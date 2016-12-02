@@ -11,58 +11,87 @@
 
 @implementation NSNumber
 
+- (id)initWithInt:(int)v {
+  self->value = (double)v;
+  return self;
+}
+
+- (id)initWithFloat:(float)v {
+  return [self initWithInt:(int)v];
+}
+
+- (id)initWithBool:(BOOL)v {
+  return [self initWithInt:(int)v];
+}
+
+- (id)initWithDouble:(double)v {
+  return [self initWithInt:(int)v];
+}
+
+- (id)initWithUnsignedInteger:(NSUInteger)v {
+  return [self initWithInt:(int)v];
+}
+
 + (NSNumber*)numberWithInt:(int)value {
   // using alloc as the documentation doesn't say it may return nil
   NSNumber* number = [self alloc];
   return [number initWithInt:value];
 }
 
-- (id)initWithInt:(int)v {
-  self->value = (double)v;
-  return self;
++ (NSNumber*)numberWithChar:(char)value {
+  return [NSNumber numberWithInt:(int)value];
 }
 
-+ (NSNumber*)numberWithFloat:(float)value {
-  // using alloc as the documentation doesn't say it may return nil
-  NSNumber* number = [NSNumber alloc];
-  return [number initWithInt:value];
-}
-
-- (id)initWithFloat:(float)v {
-  self->value = (double)v;
-  return self;
-}
-
-+ (NSNumber*)numberWithDouble:(double)value {
-  // using alloc as the documentation doesn't say it may return nil
-  NSNumber* number = [self alloc];
-  return [number initWithInt:value];
-}
-
-- (id)initWithDouble:(double)v {
-  self->value = v;
-  return self;
++ (NSNumber*)numberWithShort:(short)value {
+  return [NSNumber numberWithInt:(int)value];
 }
 
 + (NSNumber*)numberWithBool:(BOOL)value {
-  // using alloc as the documentation doesn't say it may return nil
-  NSNumber* number = [self alloc];
-  return [number initWithBool:value];
+  return [NSNumber numberWithInt:(int)value];
 }
 
-- (id)initWithBool:(BOOL)v {
-  self->value = (double)v;
-  return self;
++ (NSNumber*)numberWithInteger:(NSInteger)value {
+  return [NSNumber numberWithInt:(int)value];
 }
 
-- (id)initWithUnsignedInteger:(NSUInteger)v {
-  self->value = v;
-  return self;
++ (NSNumber*)numberWithFloat:(float)value {
+  return [NSNumber numberWithInt:(int)value];
+}
+
++ (NSNumber*)numberWithDouble:(double)value {
+  return [NSNumber numberWithInt:(int)value];
+}
+
++ (NSNumber*)numberWithLong:(long)value {
+  return [NSNumber numberWithInt:(int)value];
+}
+
++ (NSNumber*)numberWithLongLong:(long long)value {
+  return [NSNumber numberWithInt:(int)value];
+}
+
++ (NSNumber*)numberWithUnsignedInt:(unsigned int)value {
+  return [NSNumber numberWithInt:(int)value];
+}
+
++ (NSNumber*)numberWithUnsignedChar:(unsigned char)value {
+  return [NSNumber numberWithInt:(int)value];
+}
+
++ (NSNumber*)numberWithUnsignedShort:(unsigned short)value {
+  return [NSNumber numberWithInt:(int)value];
 }
 
 + (NSNumber*)numberWithUnsignedInteger:(NSUInteger)value {
-  NSNumber* number = [self alloc];
-  return [number initWithUnsignedInteger:value];
+  return [NSNumber numberWithInt:(int)value];
+}
+
++ (NSNumber*)numberWithUnsignedLong:(unsigned long)value {
+  return [NSNumber numberWithInt:(int)value];
+}
+
++ (NSNumber*)numberWithUnsignedLongLong:(unsigned long long)value {
+  return [NSNumber numberWithInt:(int)value];
 }
 
 @end
