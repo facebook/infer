@@ -69,6 +69,7 @@ infer/tests/codetoanalyze/java/infer/GuardedByExample.java, void GuardedByExampl
 infer/tests/codetoanalyze/java/infer/GuardedByExample.java, void GuardedByExample.writeFBadWrongLock(), 2, UNSAFE_GUARDED_BY_ACCESS, [start of procedure writeFBadWrongLock()]
 infer/tests/codetoanalyze/java/infer/HashMapExample.java, int HashMapExample.getOneIntegerWithoutCheck(), 6, NULL_DEREFERENCE, [start of procedure getOneIntegerWithoutCheck()]
 infer/tests/codetoanalyze/java/infer/HashMapExample.java, void HashMapExample.getTwoIntegersWithOneCheck(Integer,Integer), 11, NULL_DEREFERENCE, [start of procedure getTwoIntegersWithOneCheck(...),Taking true branch,Taking true branch]
+infer/tests/codetoanalyze/java/infer/IntegerExample.java, void IntegerExample.testIntegerEqualsBad(), 6, NULL_DEREFERENCE, [start of procedure testIntegerEqualsBad(),Taking true branch]
 infer/tests/codetoanalyze/java/infer/InvokeDynamic.java, int InvokeDynamic.lambda$npeInLambdaBad$1(String,String), 1, NULL_DEREFERENCE, [start of procedure lambda$npeInLambdaBad$1(...)]
 infer/tests/codetoanalyze/java/infer/InvokeDynamic.java, void InvokeDynamic.invokeDynamicThenNpeBad(List), 5, NULL_DEREFERENCE, [start of procedure invokeDynamicThenNpeBad(...)]
 infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java, String NullPointerExceptions.hashmapNPE(HashMap,Object), 1, NULL_DEREFERENCE, [start of procedure hashmapNPE(...)]

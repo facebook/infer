@@ -7,11 +7,13 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+package codetoanalyze.java.infer;
+
 import java.util.HashMap;
 
 public class IntegerExample {
 
-    private static void testIntegerEquals() {
+    private static void testIntegerEqualsGood() {
         Integer a = new Integer(42);
         Integer b = new Integer(42);
         Integer c = null;
@@ -24,5 +26,27 @@ public class IntegerExample {
             c.intValue();
         }
     }
+
+  private static void testIntegerEqualsBad() {
+    Integer a = new Integer(42);
+    Integer b = new Integer(42);
+    Integer c = null;
+
+    if (a.equals(b)) {
+      c.intValue();
+    }
+
+  }
+
+  private static void testIntegerEqualsFN() {
+    Integer a = new Integer(42);
+    Integer b = new Integer(42);
+    Integer c = null;
+
+    if (a == b) {
+      c.intValue();
+    }
+
+  }
 
 }

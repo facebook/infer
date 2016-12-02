@@ -144,6 +144,7 @@ codetoanalyze/java/infer/HashMapExample.java, void HashMapExample.putIntegerTwic
 codetoanalyze/java/infer/HashMapExample.java, void HashMapExample.putIntegerTwiceThenGetTwice(HashMap), 7, RETURN_VALUE_IGNORED, [start of procedure putIntegerTwiceThenGetTwice(...)]
 codetoanalyze/java/infer/HashMapExample.java, void HashMapExample.putIntegerTwiceThenGetTwice(HashMap), 12, RETURN_VALUE_IGNORED, [start of procedure putIntegerTwiceThenGetTwice(...)]
 codetoanalyze/java/infer/HashMapExample.java, void HashMapExample.putIntegerTwiceThenGetTwice(HashMap), 13, RETURN_VALUE_IGNORED, [start of procedure putIntegerTwiceThenGetTwice(...)]
+codetoanalyze/java/infer/IntegerExample.java, void IntegerExample.testIntegerEqualsBad(), 6, NULL_DEREFERENCE, [start of procedure testIntegerEqualsBad(),Taking true branch]
 codetoanalyze/java/infer/InvokeDynamic.java, int InvokeDynamic.lambda$npeInLambdaBad$1(String,String), 1, NULL_DEREFERENCE, [start of procedure lambda$npeInLambdaBad$1(...)]
 codetoanalyze/java/infer/InvokeDynamic.java, void InvokeDynamic.invokeDynamicThenNpeBad(List), 5, NULL_DEREFERENCE, [start of procedure invokeDynamicThenNpeBad(...)]
 codetoanalyze/java/infer/JunitAssertion.java, void JunitAssertion.consistentAssertion(JunitAssertion$A), 1, PRECONDITION_NOT_MET, [start of procedure consistentAssertion(...),Taking false branch]
