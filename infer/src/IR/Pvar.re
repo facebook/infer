@@ -67,8 +67,8 @@ let rec _pp f pv => {
   | Global_var (fname, is_const, is_pod) =>
     F.fprintf
       f
-      "#GB<%s%s%s>$%a"
-      (DB.source_file_to_string fname)
+      "#GB<%a%s%s>$%a"
+      DB.source_file_pp fname
       (if is_const {"|const"} else {""})
       (
         if (not is_pod) {

@@ -118,7 +118,7 @@ let do_frontend_checks trans_unit_ctx ast =
   try
     parse_ctl_file Config.linters_def_file;
     let source_file = trans_unit_ctx.CFrontend_config.source_file in
-    Logging.out "Start linting file %s@\n" (DB.source_file_to_string source_file);
+    Logging.out "Start linting file %a@\n" DB.source_file_pp source_file;
     match ast with
     | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
         let context =
@@ -132,7 +132,7 @@ let do_frontend_checks trans_unit_ctx ast =
         IList.iter (do_frontend_checks_decl context) allowed_decls;
         if (LintIssues.exists_issues ()) then
           store_issues source_file;
-        Logging.out "End linting file %s@\n" (DB.source_file_to_string source_file);
+        Logging.out "End linting file %a@\n" DB.source_file_pp source_file;
         CTL.save_dotty_when_in_debug_mode trans_unit_ctx.CFrontend_config.source_file;
     | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
   with

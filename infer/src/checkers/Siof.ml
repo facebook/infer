@@ -110,7 +110,7 @@ let report_siof trace pdesc gname loc =
   let pp_sink f sink =
     let pp_source f v = match Pvar.get_source_file v with
       | Some source_file when not (DB.equal_source_file DB.source_file_empty source_file) ->
-          F.fprintf f " from file %s" (DB.source_file_to_string source_file)
+          F.fprintf f " from file %a" DB.source_file_pp source_file
       | _ ->
           () in
     let v = SiofTrace.Sink.kind sink in

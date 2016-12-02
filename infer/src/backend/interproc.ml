@@ -1575,8 +1575,8 @@ let print_stats_cfg proc_shadowed source cfg =
     (* F.fprintf fmt "VISITED: %a@\n" (pp_seq pp_node) nodes_visited;
        F.fprintf fmt "TOTAL: %a@\n" (pp_seq pp_node) nodes_total; *)
     F.fprintf fmt "@\n++++++++++++++++++++++++++++++++++++++++++++++++++@\n";
-    F.fprintf fmt "+ FILE: %s  VISITED: %d/%d SYMOPS: %d@\n"
-      (DB.source_file_to_string source)
+    F.fprintf fmt "+ FILE: %a  VISITED: %d/%d SYMOPS: %d@\n"
+      DB.source_file_pp source
       (IList.length nodes_visited)
       (IList.length nodes_total)
       !tot_symops;

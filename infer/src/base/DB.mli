@@ -105,6 +105,9 @@ val source_file_to_string : source_file -> string
 (** convert a string obtained by source_file_to_string to a source file *)
 val source_file_from_string : string -> source_file
 
+(** pretty print source_file *)
+val source_file_pp : Format.formatter -> source_file -> unit
+
 (** get the full path of a source file, raise No_project_root exception when used with a relative source file and no project root specified *)
 val source_file_to_abs_path : source_file -> string
 

@@ -19,11 +19,14 @@ let print_unix_error cmd e =
 
 (** Prints an error message to a log file, prints a message saying that the error can be
     found in that file, and exits, with default code 1 or a given code. *)
-let print_error_and_exit ?(exit_code=1) f el =
-  Logging.do_err f el;
-  let log_file = snd (Logging.log_file_names ()) in
-  Logging.stderr "@\nAn error occured. Please find details in %s@\n@\n%!" log_file;
-  exit exit_code
+let print_error_and_exit ?(exit_code=1) fmt =
+  Format.kfprintf (fun _ ->
+      Logging.do_err "%s" (Format.flush_str_formatter ());
+      let log_file = snd (Logging.log_file_names ()) in
+      Logging.stderr "@\nAn error occured. Please find details in %s@\n@\n%!" log_file;
+      exit exit_code
+    )
+    Format.str_formatter fmt
 
 (** Executes a command and catches a potential exception and prints it. *)
 let exec_command cmd args env =

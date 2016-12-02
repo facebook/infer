@@ -22,7 +22,7 @@ val exec_command : string -> string array -> string array -> unit
 (** Prints an error message to a log file, prints a message saying that the error can be
     found in that file, and exist, with default code 1 or a given code. *)
 val print_error_and_exit :
-  ?exit_code:int -> ('a -> unit, Format.formatter, unit) format -> 'a -> 'b
+  ?exit_code:int -> ('a, Format.formatter, unit, 'b) format4 -> 'a
 
 (** Prints information about a unix error *)
 val print_unix_error : string -> exn -> unit

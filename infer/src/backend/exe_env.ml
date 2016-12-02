@@ -104,9 +104,9 @@ let add_cg (exe_env: t) (source_dir : DB.source_dir) =
                 if Config.check_duplicate_symbols &&
                    multiply_defined &&
                    origin <> `Include then
-                  L.stderr "@.DUPLICATE_SYMBOLS source: %s source_captured:%s pname:%a@."
-                    (DB.source_file_to_string source)
-                    (DB.source_file_to_string source_captured)
+                  L.stderr "@.DUPLICATE_SYMBOLS source: %a source_captured:%a pname:%a@."
+                    DB.source_file_pp source
+                    DB.source_file_pp source_captured
                     Procname.pp pname
            ))
         defined_procs;

@@ -15,14 +15,6 @@ module CLOpt = CommandLineOption
 
 (** Module to create a makefile with dependencies between clusters *)
 
-(* this relies on the assumption that a source_file
-   can be converted to a string, then pname, then back *)
-let source_file_from_pname pname =
-  DB.source_file_from_string (Procname.to_string pname)
-
-let source_file_to_pname fname =
-  Procname.from_string_c_fun (DB.source_file_to_string fname)
-
 let cluster_should_be_analyzed cluster =
   let fname = DB.source_dir_to_string cluster in
   let in_ondemand_config = Option.map (StringSet.mem fname) Ondemand.dirs_to_analyze in

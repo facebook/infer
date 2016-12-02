@@ -44,7 +44,7 @@ let register_perf_stats_report source_file => {
 
 let init_global_state_for_capture_and_linters source_file => {
   Logging.set_log_file_identifier
-    CommandLineOption.Clang (Some (Filename.basename (DB.source_file_to_string source_file)));
+    CommandLineOption.Clang (Some (Filename.basename (DB.source_file_to_abs_path source_file)));
   register_perf_stats_report source_file;
   Config.curr_language := Config.Clang;
   DB.Results_dir.init source_file;
@@ -80,10 +80,12 @@ let run_clang_frontend ast_source => {
       {CFrontend_config.source_file: source_file, lang}
     | _ => assert false
     };
-  let ast_filename =
+  let pp_ast_filename fmt ast_source =>
     switch ast_source {
-    | `File path => path
-    | `Pipe _ => "stdin of " ^ DB.source_file_to_string trans_unit_ctx.CFrontend_config.source_file
+    | `File path => Format.fprintf fmt "%s" path
+    | `Pipe _ =>
+      Format.fprintf
+        fmt "stdin of %a" DB.source_file_pp trans_unit_ctx.CFrontend_config.source_file
     };
   let (decl_index, stmt_index, type_index, ivar_to_property_index) = Clang_ast_main.index_node_pointers ast_decl;
   CFrontend_config.pointer_decl_index := decl_index;
@@ -91,14 +93,15 @@ let run_clang_frontend ast_source => {
   CFrontend_config.pointer_type_index := type_index;
   CFrontend_config.ivar_to_property_index := ivar_to_property_index;
   Logging.out "Clang frontend action is  %s@\n" Config.clang_frontend_action_string;
-  Logging.out "Start %s of AST from %s@\n" Config.clang_frontend_action_string ast_filename;
+  Logging.out
+    "Start %s of AST from %a@\n" Config.clang_frontend_action_string pp_ast_filename ast_source;
   if Config.clang_frontend_do_lint {
     CFrontend_checkers_main.do_frontend_checks trans_unit_ctx ast_decl
   };
   if Config.clang_frontend_do_capture {
     CFrontend.do_source_file trans_unit_ctx ast_decl
   };
-  Logging.out "End translation AST file %s... OK!@\n" ast_filename;
+  Logging.out "End translation AST file %a... OK!@\n" pp_ast_filename ast_source;
   print_elapsed ()
 };
 

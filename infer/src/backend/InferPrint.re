@@ -839,7 +839,7 @@ let module Stats = {
             let pp1 fmt () => F.fprintf fmt "%d: %s" stats.nerrors type_str;
             let pp2 fmt () =>
               F.fprintf
-                fmt "  %s:%d" (DB.source_file_to_string loc.Location.file) loc.Location.line;
+                fmt "  %a:%d" DB.source_file_pp loc.Location.file loc.Location.line;
             let pp3 fmt () => F.fprintf fmt "  (%a)" Localise.pp_error_desc error_desc;
             [pp_to_string pp1 (), pp_to_string pp2 (), pp_to_string pp3 ()]
           };

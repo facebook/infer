@@ -252,7 +252,7 @@ let save_dotty_when_in_debug_mode source_file =
   | Some tracker ->
       let dotty_dir = Config.results_dir // Config.lint_dotty_dir_name in
       create_dir dotty_dir;
-      let source_file_basename = Filename.basename (DB.source_file_to_string source_file) in
+      let source_file_basename = Filename.basename (DB.source_file_to_abs_path source_file) in
       let file = dotty_dir // (source_file_basename ^ ".dot") in
       let dotty = Debug.EvaluationTracker.DottyPrinter.dotty_of_ctl_evaluation !tracker in
       with_file file ~f:(fun oc -> output_string oc dotty)

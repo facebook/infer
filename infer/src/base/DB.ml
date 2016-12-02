@@ -79,6 +79,9 @@ let source_file_to_string fname =
   | RelativeInferModel path
   | Absolute path -> path
 
+let source_file_pp fmt fname =
+  Format.fprintf fmt "%s" (source_file_to_string fname)
+
 (* Checking if the path exists may be needed only in some cases, hence the flag check_exists *)
 let source_file_to_abs_path fname =
   match fname with

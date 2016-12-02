@@ -240,24 +240,14 @@ type st_report_error =
 let report_error_now tenv
     (st_report_error : st_report_error) err_instance loc pdesc : unit =
   let pname = Procdesc.get_proc_name pdesc in
-  let demo_mode = true in
-  let do_print_base ew_string kind_s s =
+  let do_print ew_string kind_s s =
+    L.stdout "%a:%d " DB.source_file_pp loc.Location.file loc.Location.line;
     let mname = match pname with
       | Procname.Java pname_java ->
           Procname.java_get_method pname_java
       | _ ->
           Procname.to_simplified_string pname in
     L.stdout "%s %s in %s %s@." ew_string kind_s mname s in
-  let do_print ew_string kind_s s =
-    L.stdout "%s:%d " (DB.source_file_to_string loc.Location.file) loc.Location.line;
-    do_print_base ew_string kind_s s in
-  let do_print_demo ew_string kind_s s = (* demo mode print for Eclipse and ocaml plugin *)
-    let process_path s = filename_to_relative (Sys.getcwd ()) s in
-    L.stdout
-      "File %s, line %d, characters 0-10:\n"
-      (process_path (DB.source_file_to_string loc.Location.file))
-      loc.Location.line;
-    do_print_base ew_string kind_s s in
 
   let is_err, kind_s, description, advice, field_name, origin_loc = match err_instance with
     | Condition_redundant (b, s_opt, nonnull) ->
@@ -458,7 +448,7 @@ let report_error_now tenv
         None,
         None in
   let ew_string = if is_err then "Error" else "Warning" in
-  (if demo_mode then do_print_demo else do_print) ew_string kind_s description;
+  do_print ew_string kind_s description;
   let always_report = Strict.err_instance_get_strict tenv err_instance <> None in
   st_report_error
     pname

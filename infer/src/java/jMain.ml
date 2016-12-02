@@ -64,8 +64,8 @@ let store_icfg source_file tenv cg cfg =
 let do_source_file
     linereader classes program tenv
     source_basename package_opt source_file =
-  L.out_debug "\nfilename: %s (%s)@."
-    (DB.source_file_to_string source_file) source_basename;
+  L.out_debug "\nfilename: %a (%s)@."
+    DB.source_file_pp source_file source_basename;
   let call_graph, cfg =
     JFrontend.compute_source_icfg
       linereader classes program tenv

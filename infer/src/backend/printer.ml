@@ -505,12 +505,8 @@ let write_html_file linereader filename procs =
       (DB.Results_dir.Abs_source_dir filename)
       [".."; fname_encoding] in
   let pp_prelude () =
-    let s =
-      "<center><h1>File " ^
-      (DB.source_file_to_string filename) ^
-      "</h1></center>\n" ^
-      "<table class=\"code\">\n" in
-    F.fprintf fmt "%s" s in
+    F.fprintf fmt "<center><h1>File %a </h1></center>\n<table class=\"code\">\n"
+      DB.source_file_pp filename in
   let print_one_line proof_cover table_nodes_at_linenum table_err_per_line line_number =
     let line_html =
       match LineReader.from_file_linenum linereader filename line_number with

@@ -129,10 +129,10 @@ struct
                 match proc_performs_allocation tenv proc_desc AllPaths with
                 | Some alloc_loc ->
                     let description =
-                      Printf.sprintf "call to %s seen before on line %d (may allocate at %s:%n)"
+                      Format.asprintf "call to %s seen before on line %d (may allocate at %a:%d)"
                         (Procname.to_simplified_string callee_pname)
                         loc_old.Location.line
-                        (DB.source_file_to_string alloc_loc.Location.file)
+                        DB.source_file_pp alloc_loc.Location.file
                         alloc_loc.Location.line in
                     Checkers.ST.report_error tenv
                       curr_pname curr_pdesc checkers_repeated_calls_name loc description

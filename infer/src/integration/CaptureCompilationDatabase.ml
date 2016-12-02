@@ -95,8 +95,8 @@ let run_compilation_file compilation_database file =
         Array.append env0 [|CLOpt.args_env_var ^ "=--fcp-syntax-only"|] in
     (Some compilation_data.dir, wrapper_cmd, args, env)
   with Not_found ->
-    Process.print_error_and_exit "Failed to find compilation data for %s \n%!"
-      (DB.source_file_to_string file)
+    Process.print_error_and_exit "Failed to find compilation data for %a \n%!"
+      DB.source_file_pp file
 
 let run_compilation_database compilation_database should_capture_file =
   let number_of_files = CompilationDatabase.get_size compilation_database in
@@ -104,7 +104,8 @@ let run_compilation_database compilation_database should_capture_file =
   Logging.stdout "Starting %s %d files \n%!" capture_text number_of_files;
   let jobs_stack = create_files_stack compilation_database should_capture_file in
   let capture_text_upper = String.capitalize capture_text in
-  let job_to_string = fun file -> capture_text_upper ^ " " ^ (DB.source_file_to_string file) in
+  let job_to_string =
+    fun file -> Format.asprintf "%s %a" capture_text_upper DB.source_file_pp file in
   Process.run_jobs_in_parallel jobs_stack (run_compilation_file compilation_database) job_to_string
 
 (** Computes the compilation database files. *)
