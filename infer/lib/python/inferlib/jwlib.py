@@ -213,19 +213,26 @@ class CompilerCall(object):
                 try:
                     subprocess.check_call(command, stderr=file_out)
                 except subprocess.CalledProcessError:
-                    error_msg = 'ERROR: failure during compilation command.' \
-                                + '\nYou can run the failing compilation ' \
-                                + 'command again by copy-pasting the\nlines ' \
-                                + 'below in your terminal:\n\n"""\n' \
-                                + 'python <<EOF\n' \
-                                + 'import subprocess\n' \
-                                + 'cmd = {}\n' \
-                                + 'subprocess.check_call(cmd)\n' \
-                                + 'EOF\n"""\n'
-                    failing_cmd = filter(lambda arg: arg != '-verbose',
-                                         command)
-                    utils.stderr(error_msg.format(failing_cmd))
-                    subprocess.check_call(failing_cmd)
+                    try:
+                        fallback_command = ['javac'] + cli_args + \
+                                           ['@' + str(self.command_line_file)]
+                        subprocess.check_call(
+                            fallback_command, stderr=file_out)
+                    except subprocess.CalledProcessError:
+                        error_msg = 'ERROR: failure during compilation ' \
+                                    + 'command.\nYou can run the failing ' \
+                                    + 'compilation command again by ' \
+                                    + 'copy-pasting the\nlines below in ' \
+                                    + 'your terminal:\n\n"""\n' \
+                                    + 'python <<EOF\n' \
+                                    + 'import subprocess\n' \
+                                    + 'cmd = {}\n' \
+                                    + 'subprocess.check_call(cmd)\n' \
+                                    + 'EOF\n"""\n'
+                        failing_cmd = filter(lambda arg: arg != '-verbose',
+                                             command)
+                        utils.stderr(error_msg.format(failing_cmd))
+                        subprocess.check_call(failing_cmd)
 
         return os.EX_OK
 
