@@ -44,11 +44,14 @@ module type S = sig
   (** get the passthroughs of the trace *)
   val passthroughs : t -> Passthroughs.t
 
-  (** get the reportable source-sink flows in this trace *)
-  val get_reports : t -> (Source.t * Sink.t * Passthroughs.t) list
+  (** get the reportable source-sink flows in this trace. specifying [cur_site] restricts the
+      reported paths to ones introduced by the call at [cur_site]  *)
+  val get_reports : ?cur_site:CallSite.t -> t -> (Source.t * Sink.t * Passthroughs.t) list
 
-  (** get a path for each of the reportable source -> sink flows in this trace *)
-  val get_reportable_paths : t -> trace_of_pname:(Procname.t -> t) -> path list
+  (** get a path for each of the reportable source -> sink flows in this trace. specifying
+      [cur_site] restricts the reported paths to ones introduced by the call at [cur_site] *)
+  val get_reportable_paths :
+    ?cur_site:CallSite.t -> t -> trace_of_pname:(Procname.t -> t) -> path list
 
   (** create a loc_trace from a path; [source_should_nest s] should be true when we are going one
       deeper into a call-chain, ie when lt_level should be bumper in the next loc_trace_elem, and
@@ -156,15 +159,25 @@ module Make (Spec : Spec) = struct
     (* sources empty => sinks empty and passthroughs empty *)
     Sources.is_empty t.sources
 
-  let get_reports t =
+  let get_reports ?cur_site t =
     if Sinks.is_empty t.sinks || Sources.is_empty t.sources
     then
       []
     else
+      let should_report_at_site source sink = match cur_site with
+        | None ->
+            true
+        | Some call_site ->
+            (* report when: (1) [cur_site] introduces the sink, and (2) [cur_site] does not also
+               introduce the source. otherwise, we'll report paths that don't respect control
+               flow. *)
+            CallSite.equal call_site (Sink.call_site sink) &&
+            not (CallSite.equal call_site (Source.call_site source)) in
+
       (* written to avoid closure allocations in hot code. change with caution. *)
       let report_source source sinks acc0 =
         let report_one sink acc =
-          if Spec.should_report source sink
+          if Spec.should_report source sink && should_report_at_site source sink
           then (source, sink, t.passthroughs) :: acc
           else acc in
         Sinks.fold report_one sinks acc0 in
@@ -202,7 +215,7 @@ module Make (Spec : Spec) = struct
       pp_passthroughs cur_passthroughs
       pp_sinks (IList.rev sinks_passthroughs)
 
-  let get_reportable_paths t ~trace_of_pname =
+  let get_reportable_paths ?cur_site t ~trace_of_pname =
     let expand_path source sink =
       let sources_of_pname pname =
         let trace = trace_of_pname pname in
@@ -220,7 +233,7 @@ module Make (Spec : Spec) = struct
       (fun (source, sink, passthroughs) ->
          let sources_passthroughs, sinks_passthroughs = expand_path source sink in
          passthroughs, sources_passthroughs, sinks_passthroughs)
-      (get_reports t)
+      (get_reports ?cur_site t)
 
   let to_loc_trace
       ?(desc_of_source=fun source ->

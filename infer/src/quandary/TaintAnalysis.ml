@@ -154,7 +154,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       TaintDomain.add_trace id_ap trace access_tree
 
     (** log any new reportable source-sink flows in [trace] *)
-    let report_trace trace callee_site (proc_data : formal_map ProcData.t) =
+    let report_trace trace cur_site (proc_data : formal_map ProcData.t) =
       let trace_of_pname pname =
         match Summary.read_summary proc_data.pdesc pname with
         | Some summary ->
@@ -179,24 +179,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         let trace_str = F.asprintf "%a" pp_path_short path in
         let ltr = TraceDomain.to_loc_trace path in
         let exn = Exceptions.Checkers (msg, Localise.verbatim_desc trace_str) in
-        Reporting.log_error caller_pname ~loc:(CallSite.loc callee_site) ~ltr exn in
+        Reporting.log_error caller_pname ~loc:(CallSite.loc cur_site) ~ltr exn in
 
-      let reportable_paths = TraceDomain.get_reportable_paths trace ~trace_of_pname in
-      IList.iter
-        (fun ((_, sources, sinks) as path) ->
-           (* this is the first callee in a chain that transitively calls a sink *)
-           let indirect_sink = fst (IList.hd (IList.rev sinks)) in
-           let indirect_sink_site = TraceDomain.Sink.call_site indirect_sink in
-           (* report when: (1) this call site introduces the sink, and (2) this call site does not
-              also introduce the source. otherwise, we'll report paths that don't respect control
-              flow. *)
-           if CallSite.equal indirect_sink_site callee_site &&
-              (* the is the first callee in a chain that transitively returns a source *)
-              let indirect_source = fst (IList.hd (IList.rev sources)) in
-              not (CallSite.equal indirect_sink_site (TraceDomain.Source.call_site indirect_source))
-           then
-             report_error path)
-        reportable_paths
+      IList.iter report_error (TraceDomain.get_reportable_paths ~cur_site trace ~trace_of_pname)
 
     let add_sinks sinks actuals ({ Domain.access_tree; id_map; } as astate) proc_data callee_site =
       let f_resolve_id = resolve_id id_map in

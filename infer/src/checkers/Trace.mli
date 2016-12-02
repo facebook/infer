@@ -44,11 +44,14 @@ module type S = sig
   (** get the passthroughs of the trace *)
   val passthroughs : t -> Passthroughs.t
 
-  (** get the reportable source-sink flows in this trace *)
-  val get_reports : t -> (Source.t * Sink.t * Passthroughs.t) list
+  (** get the reportable source-sink flows in this trace. specifying [cur_site] restricts the
+      reported paths to ones introduced by the call at [cur_site]  *)
+  val get_reports : ?cur_site:CallSite.t -> t -> (Source.t * Sink.t * Passthroughs.t) list
 
-  (** get a path for each of the reportable source -> sink flows in this trace *)
-  val get_reportable_paths : t -> trace_of_pname:(Procname.t -> t) -> path list
+  (** get a path for each of the reportable source -> sink flows in this trace. specifying
+      [cur_site] restricts the reported paths to ones introduced by the call at [cur_site] *)
+  val get_reportable_paths :
+    ?cur_site:CallSite.t -> t -> trace_of_pname:(Procname.t -> t) -> path list
 
   (** create a loc_trace from a path; [source_should_nest s] should be true when we are going one
       deeper into a call-chain, ie when lt_level should be bumper in the next loc_trace_elem, and
