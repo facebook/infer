@@ -93,6 +93,7 @@ let print_stdout_legend () => {
 };
 
 let main makefile => {
+  BuiltinDefn.init ();
   switch Config.modified_targets {
   | Some file => MergeCapture.modified_file file
   | None => ()
