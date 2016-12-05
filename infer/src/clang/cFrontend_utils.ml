@@ -761,7 +761,9 @@ struct
           | Clang_ast_t.ClassTemplateSpecializationDecl(_, _, _, _, _, _, _, {xrdi_is_pod}, _) ->
               xrdi_is_pod
           | _ -> true) true in
-    Pvar.mk_global ~is_constexpr ~is_pod (mk_name name_string simple_name) translation_unit
+    Pvar.mk_global ~is_constexpr ~is_pod
+      ~is_static_local:(var_decl_info.Clang_ast_t.vdi_is_static_local)
+      (mk_name name_string simple_name) translation_unit
 
   let mk_sil_var trans_unit_ctx named_decl_info decl_info_type_ptr_opt procname outer_procname =
     match decl_info_type_ptr_opt with

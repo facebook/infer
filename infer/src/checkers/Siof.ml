@@ -30,6 +30,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let get_globals astate loc e =
     let is_dangerous_global pv =
       Pvar.is_global pv
+      && not (Pvar.is_static_local pv)
       && not (Pvar.is_pod pv)
       && not (Pvar.is_compile_constant pv) in
     let globals = Exp.get_vars e |> snd |> IList.filter is_dangerous_global in

@@ -26,7 +26,9 @@ type pvar_kind =
   | Abduced_retvar Procname.t Location.t /** synthetic variable to represent return value */
   | Abduced_ref_param Procname.t t Location.t
   /** synthetic variable to represent param passed by reference */
-  | Global_var (DB.source_file, bool, bool) /** global variable: translation unit + is it compile constant? + is it POD? */
+  | Global_var (DB.source_file, bool, bool, bool)
+  /** global variable: translation unit + is it compile constant? + is it POD? + is it a static
+      local? */
   | Seed_var /** variable used to store the initial value of formal parameters */
 [@@deriving compare]
 /** Names for program variables. */
@@ -64,11 +66,12 @@ let rec _pp f pv => {
     } else {
       F.fprintf f "%a$%a%a|abducedRefParam" Procname.pp n Location.pp l Mangled.pp name
     }
-  | Global_var (fname, is_const, is_pod) =>
+  | Global_var (fname, is_const, is_pod, _) =>
     F.fprintf
       f
       "#GB<%a%s%s>$%a"
-      DB.source_file_pp fname
+      DB.source_file_pp
+      fname
       (if is_const {"|const"} else {""})
       (
         if (not is_pod) {
@@ -227,6 +230,12 @@ let is_global pv =>
   | _ => false
   };
 
+let is_static_local pv =>
+  switch pv.pv_kind {
+  | Global_var (_, _, _, true) => true
+  | _ => false
+  };
+
 
 /** Check if a pvar is the special "this" var */
 let is_this pvar => Mangled.equal (get_name pvar) (Mangled.from_string "this");
@@ -296,10 +305,16 @@ let mk_callee (name: Mangled.t) (proc_name: Procname.t) :t => {
 
 
 /** create a global variable with the given name */
-let mk_global is_constexpr::is_constexpr=false is_pod::is_pod=true (name: Mangled.t) fname :t => {
+let mk_global
+    is_constexpr::is_constexpr=false
+    is_pod::is_pod=true
+    is_static_local::is_static_local=false
+    (name: Mangled.t)
+    fname
+    :t => {
   pv_hash: name_hash name,
   pv_name: name,
-  pv_kind: Global_var (fname, is_constexpr, is_pod)
+  pv_kind: Global_var (fname, is_constexpr, is_pod, is_static_local)
 };
 
 
@@ -324,19 +339,19 @@ let mk_abduced_ref_param (proc_name: Procname.t) (pv: t) (loc: Location.t) :t =>
 
 let get_source_file pvar =>
   switch pvar.pv_kind {
-  | Global_var (f, _, _) => Some f
+  | Global_var (f, _, _, _) => Some f
   | _ => None
   };
 
 let is_compile_constant pvar =>
   switch pvar.pv_kind {
-  | Global_var (_, b, _) => b
+  | Global_var (_, b, _, _) => b
   | _ => false
   };
 
 let is_pod pvar =>
   switch pvar.pv_kind {
-  | Global_var (_, _, b) => b
+  | Global_var (_, _, b, _) => b
   | _ => true
   };
 

@@ -62,11 +62,15 @@ let is_abduced: t => bool;
 let is_callee: t => bool;
 
 
-/** Check if the pvar is a global var */
+/** Check if the pvar is a global var or a static local var */
 let is_global: t => bool;
 
 
-/** Check if the pvar is a local var */
+/** Check if the pvar is a static variable declared inside a function */
+let is_static_local: t => bool;
+
+
+/** Check if the pvar is a (non-static) local var */
 let is_local: t => bool;
 
 
@@ -104,7 +108,13 @@ let mk_callee: Mangled.t => Procname.t => t;
 
 
 /** create a global variable with the given name */
-let mk_global: is_constexpr::bool? => is_pod::bool? => Mangled.t => DB.source_file => t;
+let mk_global:
+  is_constexpr::bool? =>
+  is_pod::bool? =>
+  is_static_local::bool? =>
+  Mangled.t =>
+  DB.source_file =>
+  t;
 
 
 /** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! */
