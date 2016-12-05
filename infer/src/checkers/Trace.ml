@@ -91,28 +91,28 @@ end
 module Expander (TraceElem : TraceElem.S) = struct
 
   let expand elem0 ~elems_passthroughs_of_pname =
-    let rec expand_ elem elems_passthroughs_acc =
+    let rec expand_ elem (elems_passthroughs_acc, seen_acc) =
       let elem_site = TraceElem.call_site elem in
       let elem_kind = TraceElem.kind elem in
+      let seen_acc' = CallSite.Set.add elem_site seen_acc in
       let elems, passthroughs = elems_passthroughs_of_pname (CallSite.pname elem_site) in
-      let is_recursive elem_site callee_elem =
-        Procname.equal
-          (CallSite.pname elem_site) (CallSite.pname (TraceElem.call_site callee_elem)) in
+      let is_recursive callee_elem seen =
+        CallSite.Set.mem (TraceElem.call_site callee_elem) seen in
       (* find sinks that are the same kind as the caller, but have a different procname *)
       let matching_elems =
         IList.filter
           (fun callee_elem ->
              TraceElem.Kind.compare (TraceElem.kind callee_elem) elem_kind = 0 &&
-             not (is_recursive elem_site callee_elem))
+             not (is_recursive callee_elem seen_acc'))
           elems in
       match matching_elems with
       | callee_elem :: _ ->
           (* TODO: pick the shortest path to a sink here instead (t14242809) *)
           (* arbitrarily pick one elem and explore it further *)
-          expand_ callee_elem ((elem, passthroughs) :: elems_passthroughs_acc)
+          expand_ callee_elem ((elem, passthroughs) :: elems_passthroughs_acc, seen_acc')
       | _ ->
-          (elem, Passthrough.Set.empty) :: elems_passthroughs_acc in
-    expand_ elem0 []
+          (elem, Passthrough.Set.empty) :: elems_passthroughs_acc, seen_acc' in
+    fst (expand_ elem0 ([], CallSite.Set.empty))
 end
 
 module Make (Spec : Spec) = struct

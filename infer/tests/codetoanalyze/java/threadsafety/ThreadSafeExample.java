@@ -31,6 +31,20 @@ public class ThreadSafeExample{
     f = 24;
   }
 
+  public void recursiveBad() {
+    f = 44;
+    recursiveBad();
+  }
+
+  private void evenOk() {
+    f = 44;
+    oddBad();
+  }
+
+  public void oddBad() {
+    evenOk(); // should report here
+  }
+
   // shouldn't report here because it's a private method
   private void assignInPrivateMethodOk() {
     f = 24;
