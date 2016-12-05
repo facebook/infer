@@ -171,10 +171,8 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
 
 
 def _is_user_visible(project_root, report):
-    filename = report[JSON_INDEX_FILENAME]
     kind = report[JSON_INDEX_KIND]
-    return (os.path.isfile(os.path.join(project_root, filename)) and
-            kind in [ISSUE_KIND_ERROR, ISSUE_KIND_WARNING, ISSUE_KIND_ADVICE])
+    return kind in [ISSUE_KIND_ERROR, ISSUE_KIND_WARNING, ISSUE_KIND_ADVICE]
 
 
 def print_and_save_errors(infer_out, project_root, json_report, bugs_out,

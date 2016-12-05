@@ -11,6 +11,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import codecs
+import os
 
 from . import colorize, config
 
@@ -67,6 +68,8 @@ def build_source_context(source_name, mode, report_line):
     # get source excerpt
     line_number = 1
     excerpt = ''
+    if not os.path.isfile(source_name):
+        return ''
     with codecs.open(source_name, 'r',
                      encoding=config.CODESET, errors="replace") as source_file:
         # avoid going past the end of the file

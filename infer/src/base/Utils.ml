@@ -600,8 +600,19 @@ let rec create_path path =
 let realpath_cache = Hashtbl.create 1023
 
 let realpath path =
-  try Hashtbl.find realpath_cache path
-  with Not_found ->
-    let realpath = Core.Std.Filename.realpath path in
-    Hashtbl.add realpath_cache path realpath;
-    realpath
+  match Hashtbl.find realpath_cache path with
+  | exception Not_found -> (
+      match Core.Std.Filename.realpath path with
+      | realpath ->
+          Hashtbl.add realpath_cache path (Ok realpath);
+          realpath
+      | exception Unix.Unix_error (code, f, arg) ->
+          F.eprintf
+            "WARNING: Failed to resolve file %s with \"%s\" \n@." arg (Unix.error_message code);
+          (* cache failures as well *)
+          Hashtbl.add realpath_cache path (Error (code, f, arg));
+          raise (Unix.Unix_error (code, f, arg))
+
+    )
+  | Ok path -> path
+  | Error (code, f, arg) -> raise (Unix.Unix_error (code, f, arg))

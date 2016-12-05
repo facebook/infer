@@ -48,14 +48,14 @@ let rel_path_from_abs_path root fname =
   else None (* The project root is not a prefix of the file name *)
 
 let source_file_from_abs_path fname =
-  (* IMPORTANT: results of realpath are cached to not ruin performance *)
-  let fname_real = realpath fname in
-  let project_root_real = realpath Config.project_root in
-  let models_dir_real = Config.models_src_dir in
   if Filename.is_relative fname then
     (failwithf
        "ERROR: Path %s is relative, when absolute path was expected .@."
        fname);
+  (* try to get realpath of source file. Use original if it fails *)
+  let fname_real = try realpath fname with Unix.Unix_error _ -> fname in
+  let project_root_real = realpath Config.project_root in
+  let models_dir_real = Config.models_src_dir in
   match rel_path_from_abs_path project_root_real fname_real with
   | Some path -> RelativeProjectRoot path
   | None -> (

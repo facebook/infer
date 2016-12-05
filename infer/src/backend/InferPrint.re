@@ -386,13 +386,6 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc =>
     }
   };
 
-let is_file source_file =>
-  switch (Unix.stat (DB.source_file_to_abs_path source_file)) {
-  | {st_kind: S_REG | S_LNK} => true
-  | _ => false
-  | exception Unix.Unix_error _ => false
-  };
-
 let module IssuesCsv = {
   let csv_issues_id = ref 0;
   let pp_header fmt () =>
@@ -427,8 +420,7 @@ let module IssuesCsv = {
         };
       if (
         in_footprint &&
-        error_filter source_file error_desc error_name &&
-        should_report ekind error_name error_desc && is_file source_file
+        error_filter source_file error_desc error_name && should_report ekind error_name error_desc
       ) {
         let err_desc_string = error_desc_to_csv_string error_desc;
         let err_advice_string = error_advice_to_csv_string error_desc;
@@ -504,8 +496,7 @@ let module IssuesJson = {
       if (
         in_footprint &&
         error_filter source_file error_desc error_name &&
-        should_report_source_file &&
-        should_report ekind error_name error_desc && is_file source_file
+        should_report_source_file && should_report ekind error_name error_desc
       ) {
         let kind = Exceptions.err_kind_string ekind;
         let bug_type = Localise.to_string error_name;
@@ -826,8 +817,7 @@ let module Stats = {
           let error_strs = {
             let pp1 fmt () => F.fprintf fmt "%d: %s" stats.nerrors type_str;
             let pp2 fmt () =>
-              F.fprintf
-                fmt "  %a:%d" DB.source_file_pp loc.Location.file loc.Location.line;
+              F.fprintf fmt "  %a:%d" DB.source_file_pp loc.Location.file loc.Location.line;
             let pp3 fmt () => F.fprintf fmt "  (%a)" Localise.pp_error_desc error_desc;
             [pp_to_string pp1 (), pp_to_string pp2 (), pp_to_string pp3 ()]
           };
