@@ -126,8 +126,10 @@ val source_file_is_under_project_root : source_file -> bool
     file exists. returns None otherwise *)
 val source_file_of_header : source_file -> source_file option
 
-(** Set of files read from --changed-files-index file, None if option not specified *)
-val changed_source_files_set :  SourceFileSet.t option
+(** Set of files read from --changed-files-index file, None if option not specified
+    NOTE: it may include extra source_files if --changed-files-index contains paths to
+          header files *)
+val changed_source_files_set : SourceFileSet.t option
 
 (** {2 Source Dirs} *)
 

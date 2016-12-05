@@ -25,13 +25,7 @@ let should_capture_file_from_index () =
            Process.print_error_and_exit "Error reading the changed files index %s.\n%!" index
        | None -> function _ -> true)
   | Some files_set ->
-      function source_file ->
-        DB.SourceFileSet.mem source_file files_set ||
-        (* as fallback try to capture corresponding source file for headers *)
-        Option.map_default
-          (fun src -> DB.SourceFileSet.mem src files_set)
-          false
-          (DB.source_file_of_header source_file)
+      function source_file -> DB.SourceFileSet.mem source_file files_set
 
 (** The buck targets are assumed to start with //, aliases are not supported. *)
 let check_args_for_targets args =

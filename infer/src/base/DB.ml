@@ -158,7 +158,14 @@ let changed_source_files_set =
   Option.map_default read_file None Config.changed_files_index |>
   Option.map (
     IList.fold_left
-      (fun changed_files line -> SourceFileSet.add (create_source_file line) changed_files)
+      (fun changed_files line ->
+         let source_file = create_source_file line in
+         let changed_files' = SourceFileSet.add source_file changed_files in
+         (* Add source corresponding to changed header if it exists *)
+         match source_file_of_header source_file with
+         | Some src -> SourceFileSet.add src changed_files'
+         | None -> changed_files'
+      )
       SourceFileSet.empty
   )
 
