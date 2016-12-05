@@ -44,7 +44,7 @@ RUN VERSION=1.2.2; \
 RUN opam init -y --comp=4.02.3
 
 # Download the latest Infer release
-RUN INFER_VERSION=v0.9.3; \
+RUN INFER_VERSION=v0.9.4.1; \
     cd /opt && \
     curl -sL \
       https://github.com/facebook/infer/releases/download/${INFER_VERSION}/infer-linux64-${INFER_VERSION}.tar.xz | \
