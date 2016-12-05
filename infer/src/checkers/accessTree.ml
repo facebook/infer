@@ -12,30 +12,57 @@ open! Utils
 module F = Format
 module L = Logging
 
-(** tree of (trace, access path) associations organized by structure of access paths *)
-module Make (TraceDomain : AbstractDomain.S) = struct
-
+module type S = sig
+  module TraceDomain : AbstractDomain.S
   module AccessMap = AccessPath.AccessMap
   module BaseMap = AccessPath.BaseMap
 
   type node = TraceDomain.astate * tree
   and tree =
-    | Subtree of node AccessMap.t (* map from access -> nodes. a leaf is encoded as an empty map *)
-    | Star (* special leaf for starred access paths *)
+    | Subtree of node AccessMap.t
+    | Star
 
-  (* map from base var -> access subtree *)
+  type t = node BaseMap.t
+
+  include AbstractDomain.S with type astate = t
+
+  val empty : t
+
+  val empty_node : node
+
+  val make_node : TraceDomain.astate -> node AccessMap.t -> node
+
+  val make_access_node : TraceDomain.astate -> AccessPath.access -> TraceDomain.astate -> node
+
+  val make_normal_leaf : TraceDomain.astate -> node
+
+  val make_starred_leaf : TraceDomain.astate -> node
+
+  val get_node : AccessPath.t -> t -> node option
+
+  val get_trace : AccessPath.t -> t -> TraceDomain.astate option
+
+  val add_node : AccessPath.t -> node -> t -> t
+
+  val add_trace : AccessPath.t -> TraceDomain.astate -> t -> t
+
+  val fold : ('a -> AccessPath.t -> TraceDomain.astate -> 'a) -> t -> 'a -> 'a
+
+  val pp_node : F.formatter -> node -> unit
+end
+
+module Make (TraceDomain : AbstractDomain.S) = struct
+  module TraceDomain = TraceDomain
+  module AccessMap = AccessPath.AccessMap
+  module BaseMap = AccessPath.BaseMap
+
+  type node = TraceDomain.astate * tree
+  and tree =
+    | Subtree of node AccessMap.t
+    | Star
+
   type t = node BaseMap.t
   type astate = t
-
-  (** Here's how to represent a few different kinds of trace * access path associations:
-      (x, T)               := { x |-> (T, Subtree {}) }
-      (x.f, T)             := { x |-> (empty, Subtree { f |-> (T, Subtree {}) }) }
-      (x*, T)              := { x |-> (T, Star) }
-      (x.f*, T)            := { x |-> (empty, Subtree { f |-> (T, Star) }) }
-      (x, T1), (y, T2)     := { x |-> (T1, Subtree {}), y |-> (T2, Subtree {}) }
-      (x.f, T1), (x.g, T2) := { x |-> (empty, Subtree { f |-> (T1, Subtree {}),
-                                                        g |-> (T2, Subtree {}) }) }
-  *)
 
   let empty = BaseMap.empty
 
@@ -56,9 +83,6 @@ module Make (TraceDomain : AbstractDomain.S) = struct
   let make_access_node base_trace access trace =
     make_node base_trace (AccessMap.singleton access (make_normal_leaf trace))
 
-  let make_empty_trace_access_node trace access =
-    make_access_node TraceDomain.initial access trace
-
   (** find all of the traces in the subtree and join them with [orig_trace] *)
   let rec join_all_traces orig_trace = function
     | Subtree subtree ->
@@ -70,7 +94,6 @@ module Make (TraceDomain : AbstractDomain.S) = struct
     | Star ->
         orig_trace
 
-  (** retrieve the trace and subtree associated with [ap] from [tree] *)
   let get_node ap tree =
     let rec accesses_get_node access_list trace tree =
       match access_list, tree with
@@ -96,7 +119,6 @@ module Make (TraceDomain : AbstractDomain.S) = struct
     | exception Not_found ->
         None
 
-  (** retrieve the trace associated with [ap] from [tree] *)
   let get_trace ap tree =
     Option.map fst (get_node ap tree)
 
@@ -207,7 +229,6 @@ module Make (TraceDomain : AbstractDomain.S) = struct
           trace, Subtree (AccessMap.add access access_node' subtree) in
     access_tree_add_trace_ ~seen_array_access accesses node
 
-  (** add ([ap], [node]) to [tree]. *)
   let add_node ap node_to_add tree =
     let base, accesses = AccessPath.extract ap in
     let is_exact = AccessPath.is_exact ap in
@@ -218,12 +239,6 @@ module Make (TraceDomain : AbstractDomain.S) = struct
       access_tree_add_trace ~node_to_add ~seen_array_access:false ~is_exact accesses base_node in
     BaseMap.add base base_node' tree
 
-  (** add [ap] to [tree] and associate its leaf node with [trace].
-      if [ap] or a suffix of [ap] is not already present in the tree, it will be added with empty
-      traces associated with each of the inner nodes.
-      if [ap] is already present in the tree and contains no array accesses, this overwrites the
-      existing trace. if [ap] does contain array accesses, it joins the existing trace with [trace].
-  *)
   let add_trace ap trace tree =
     add_node ap (make_normal_leaf trace) tree
 
@@ -245,9 +260,6 @@ module Make (TraceDomain : AbstractDomain.S) = struct
 
   let node_fold (f : 'a -> AccessPath.t -> TraceDomain.astate -> 'a) base node acc =
     node_fold_ f base [] node acc
-
-  let access_map_fold (f : 'a -> AccessPath.t -> TraceDomain.astate -> 'a) base m acc =
-    access_map_fold_ f base [] m acc
 
   let fold (f : 'a ->  AccessPath.t -> TraceDomain.astate -> 'a) tree acc_ =
     BaseMap.fold (fun base node acc -> node_fold f base node acc) tree acc_
