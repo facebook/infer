@@ -1,6 +1,7 @@
 codetoanalyze/c/errors/arithmetic/array_out_of_bounds.c, bound_error, 2, ARRAY_OUT_OF_BOUNDS_L1
 codetoanalyze/c/errors/arithmetic/array_out_of_bounds.c, bound_error_nested, 2, ARRAY_OUT_OF_BOUNDS_L1
 codetoanalyze/c/errors/arithmetic/divide_by_zero.c, arith_divide_by_zero, 3, DIVIDE_BY_ZERO
+codetoanalyze/c/errors/arithmetic/test_sizeof.c, my_realloc, 10, UNINITIALIZED_VALUE
 codetoanalyze/c/errors/arithmetic/unsigned_values.c, signed_array, 3, DIVIDE_BY_ZERO
 codetoanalyze/c/errors/arithmetic/unsigned_values.c, signed_field, 3, DIVIDE_BY_ZERO
 codetoanalyze/c/errors/arithmetic/unsigned_values.c, signed_int, 3, DIVIDE_BY_ZERO

@@ -625,6 +625,11 @@ let check_disequal tenv prop e1 e2 =
         if IntLit.iszero d then not (Const.equal c1 c2) else Const.equal c1 c2
     | Exp.Lindex(Exp.Const c1, Exp.Const d1), Exp.Lindex (Exp.Const c2, Exp.Const d2) ->
         Const.equal c1 c2 && not (Const.equal d1 d2)
+    | Exp.Const (Const.Cint n), Exp.BinOp (Binop.Mult, Exp.Sizeof _, e21)
+    | Exp.Const (Const.Cint n), Exp.BinOp (Binop.Mult, e21, Sizeof _)
+    | Exp.BinOp (Binop.Mult, Exp.Sizeof _, e21), Exp.Const (Const.Cint n)
+    | Exp.BinOp (Binop.Mult, e21, Exp.Sizeof _), Exp.Const (Const.Cint n) ->
+        IntLit.iszero n && not (Exp.is_zero e21)
     | _, _ -> false in
   let ineq = lazy (Inequalities.from_prop tenv prop) in
   let check_pi_implies_disequal e1 e2 =
@@ -1203,6 +1208,14 @@ let exp_imply tenv calc_missing subs e1_in e2_in : subst2 =
         do_imply subs (Exp.Var v1) (Exp.BinOp (Binop.MinusA, e2, e1))
     | Exp.BinOp (Binop.PlusPI, Exp.Lvar pv1, e1), e2 ->
         do_imply subs (Exp.Lvar pv1) (Exp.BinOp (Binop.MinusA, e2, e1))
+    | Exp.Sizeof (t1, None, st1), Exp.Sizeof (t2, None, st2)
+      when Typ.equal t1 t2 && Subtype.equal_modulo_flag st1 st2 -> subs
+    | Exp.Sizeof (t1, Some d1, st1), Exp.Sizeof (t2, Some d2, st2)
+      when Typ.equal t1 t2 && Exp.equal d1 d2 && Subtype.equal_modulo_flag st1 st2 -> subs
+    | e', Exp.Const (Const.Cint n)
+    | Exp.Const (Const.Cint n), e'
+      when IntLit.iszero n && check_disequal tenv Prop.prop_emp e' Exp.zero ->
+        raise (IMPL_EXC ("expressions not equal", subs, (EXC_FALSE_EXPS (e1, e2))))
     | e1, Exp.Const _ ->
         raise (IMPL_EXC ("lhs not constant", subs, (EXC_FALSE_EXPS (e1, e2))))
     | Exp.Lfield(e1, fd1, _), Exp.Lfield(e2, fd2, _) when fd1 == fd2 ->
