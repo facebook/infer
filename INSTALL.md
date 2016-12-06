@@ -20,6 +20,8 @@ compile everything from source (see the end of this document).
 
 - opam >= 1.2.0 (instructions [here](https://opam.ocaml.org/doc/Install.html#OSX))
 - Python 2.7
+- pkg-config
+- libffi >= 3.0
 - Java (only needed for the Java analysis)
 - clang in Xcode command line tools. You can install them with the command
   `xcode-select --install` (only needed for the C/Objective-C analysis)
@@ -44,6 +46,8 @@ compile everything from source (see the end of this document).
 
 - opam >= 1.2.0
 - Python 2.7
+- pkg-config
+- libffi >= 3.0
 - Java (only needed for the Java analysis)
 - gcc >= 4.7.2 or clang >= 3.1 (only needed for the C/Objective-C analysis)
 - autoconf >= 2.63 and automake >= 1.11.1 (if building from git)
@@ -108,11 +112,13 @@ sudo apt-get install -y \
   automake \
   build-essential \
   git \
+  libffi-dev \
   libgmp-dev \
   libmpc-dev \
   libmpfr-dev \
   m4 \
   openjdk-7-jdk \
+  pkg-config \
   python-software-properties \
   unzip \
   zlib1g-dev
@@ -126,6 +132,7 @@ sudo apt install -y \
   automake \
   build-essential \
   git \
+  libffi-dev \
   libgmp-dev \
   libmpc-dev \
   libmpfr-dev \
@@ -154,11 +161,13 @@ sudo apt-get install -y \
   g++-4.8 \
   gcc-4.8 \
   git \
+  libffi-dev \
   libgmp-dev \
   libmpc-dev \
   libmpfr-dev \
   m4 \
   openjdk-7-jdk \
+  pkg-config \
   python-software-properties \
   unzip \
   zlib1g-dev
