@@ -96,17 +96,17 @@
   dependencies:
     conf-which-actual "git://github.com/npm-opam/conf-which.git#1.0.0"
 
-"@opam-alpha/core@113.33.3":
-  version "113.33.3"
-  resolved core-113.33.3.tgz#f7a586a0f9a3efbe195c1b98ebd51ccaf2f8bfd9
-  dependencies:
-    core-actual "git://github.com/npm-opam/core.git#113.33.03"
-
 "@opam-alpha/core_kernel@>= 113.33.03 < 113.34.00":
   version "113.33.3"
   resolved core_kernel-113.33.3.tgz#aa062b596d1c414294d6e8955edfd3d325090c82
   dependencies:
     core_kernel-actual "git://github.com/npm-opam/core_kernel.git#113.33.03"
+
+"@opam-alpha/core@113.33.3":
+  version "113.33.3"
+  resolved core-113.33.3.tgz#f7a586a0f9a3efbe195c1b98ebd51ccaf2f8bfd9
+  dependencies:
+    core-actual "git://github.com/npm-opam/core.git#113.33.03"
 
 "@opam-alpha/cppo@*", "@opam-alpha/cppo@>= 1.1.2", "@opam-alpha/cppo@>= 1.2.2":
   version "1.4.0"
@@ -144,7 +144,7 @@
   dependencies:
     fieldslib-actual "git://github.com/npm-opam/fieldslib.git#113.33.03"
 
-"@opam-alpha/javalib@>= 2.3.2", "@opam-alpha/javalib@^ 2.3.3":
+"@opam-alpha/javalib@^ 2.3.3", "@opam-alpha/javalib@>= 2.3.2":
   version "2.3.3"
   resolved javalib-2.3.3.tgz#1cb16fe3bbc6998a13d3ae6725c1189989555a18
   dependencies:
@@ -186,7 +186,7 @@
   dependencies:
     merlin-actual "git://github.com/npm-opam/merlin.git#2.5.1"
 
-"@opam-alpha/ocaml@4.2.3", "@opam-alpha/ocaml@= 4.02.3":
+"@opam-alpha/ocaml@= 4.02.3", "@opam-alpha/ocaml@4.2.3":
   version "4.2.3"
   resolved ocaml-4.2.3.tgz#44c6e23fbb716196d4a6121f7751e09c0ad34018
   dependencies:
@@ -370,7 +370,7 @@
   dependencies:
     ppx_variants_conv-actual "git://github.com/npm-opam/ppx_variants_conv.git#113.33.03"
 
-"@opam-alpha/re@*", "@opam-alpha/re@>= 1.5.0", "@opam-alpha/re@^ 1.5.0":
+"@opam-alpha/re@*", "@opam-alpha/re@^ 1.5.0", "@opam-alpha/re@>= 1.5.0":
   version "1.6.1"
   resolved re-1.6.1.tgz#e196b2566b10afb76011c71c44d7b0fbf5a70e6f
   dependencies:
@@ -528,7 +528,7 @@
 
 "camlp4-actual@git://github.com/npm-opam/camlp4.git#4.4.031":
   version "4.4.27"
-  resolved camlp4.git-2107c41c5957765525497b40f09a5b0031363214#a207f1ce847b111e7fe7071fe021439ce8d89f33
+  resolved camlp4.git-3de62b487a269eee9eaffc7333c3f19ffb3edbc0#ffe369bd4c023fee9f9c3decdaa27941cf0423ed
   dependencies:
     "@opam-alpha/conf-which" "*"
     "@opam-alpha/ocamlbuild" "*"
@@ -605,30 +605,6 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"core-actual@git://github.com/npm-opam/core.git#113.33.03":
-  version "113.33.3"
-  resolved core.git-c3882164058f3222be59d1bbabe455ec37060713#4a82970a8e31aa5fe29e22f84291d6c431e02d36
-  dependencies:
-    "@opam-alpha/bin_prot" ">= 113.33.03 < 113.34.00"
-    "@opam-alpha/core_kernel" ">= 113.33.03 < 113.34.00"
-    "@opam-alpha/fieldslib" ">= 113.33.03 < 113.34.00"
-    "@opam-alpha/js-build-tools" ">= 113.33.04 < 113.34.00"
-    "@opam-alpha/ocamlbuild" "*"
-    "@opam-alpha/ocamlfind" ">= 1.3.2"
-    "@opam-alpha/ppx_assert" ">= 113.33.03 < 113.34.00"
-    "@opam-alpha/ppx_bench" ">= 113.33.03 < 113.34.00"
-    "@opam-alpha/ppx_driver" ">= 113.33.03 < 113.34.00"
-    "@opam-alpha/ppx_expect" ">= 113.33.03 < 113.34.00"
-    "@opam-alpha/ppx_inline_test" ">= 113.33.03 < 113.34.00"
-    "@opam-alpha/ppx_jane" ">= 113.33.03 < 113.34.00"
-    "@opam-alpha/sexplib" ">= 113.33.03 < 113.34.00"
-    "@opam-alpha/typerep" ">= 113.33.03 < 113.34.00"
-    "@opam-alpha/variantslib" ">= 113.33.03 < 113.34.00"
-    dependency-env "https://github.com/npm-ml/dependency-env.git"
-    nopam "https://github.com/yunxing/nopam.git"
-    opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
-    substs "https://github.com/yunxing/substs.git"
-
 "core_kernel-actual@git://github.com/npm-opam/core_kernel.git#113.33.03":
   version "113.33.3"
   resolved core_kernel.git-c96de383e5a1f9587c6c2dc8ffc003afba96898a#91f40f3c3bc9cfb278f9d83b43d5c7134255c17d
@@ -645,6 +621,30 @@
     "@opam-alpha/ppx_inline_test" ">= 113.33.03 < 113.34.00"
     "@opam-alpha/ppx_jane" ">= 113.33.03 < 113.34.00"
     "@opam-alpha/result" "*"
+    "@opam-alpha/sexplib" ">= 113.33.03 < 113.34.00"
+    "@opam-alpha/typerep" ">= 113.33.03 < 113.34.00"
+    "@opam-alpha/variantslib" ">= 113.33.03 < 113.34.00"
+    dependency-env "https://github.com/npm-ml/dependency-env.git"
+    nopam "https://github.com/yunxing/nopam.git"
+    opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
+    substs "https://github.com/yunxing/substs.git"
+
+"core-actual@git://github.com/npm-opam/core.git#113.33.03":
+  version "113.33.3"
+  resolved core.git-c3882164058f3222be59d1bbabe455ec37060713#4a82970a8e31aa5fe29e22f84291d6c431e02d36
+  dependencies:
+    "@opam-alpha/bin_prot" ">= 113.33.03 < 113.34.00"
+    "@opam-alpha/core_kernel" ">= 113.33.03 < 113.34.00"
+    "@opam-alpha/fieldslib" ">= 113.33.03 < 113.34.00"
+    "@opam-alpha/js-build-tools" ">= 113.33.04 < 113.34.00"
+    "@opam-alpha/ocamlbuild" "*"
+    "@opam-alpha/ocamlfind" ">= 1.3.2"
+    "@opam-alpha/ppx_assert" ">= 113.33.03 < 113.34.00"
+    "@opam-alpha/ppx_bench" ">= 113.33.03 < 113.34.00"
+    "@opam-alpha/ppx_driver" ">= 113.33.03 < 113.34.00"
+    "@opam-alpha/ppx_expect" ">= 113.33.03 < 113.34.00"
+    "@opam-alpha/ppx_inline_test" ">= 113.33.03 < 113.34.00"
+    "@opam-alpha/ppx_jane" ">= 113.33.03 < 113.34.00"
     "@opam-alpha/sexplib" ">= 113.33.03 < 113.34.00"
     "@opam-alpha/typerep" ">= 113.33.03 < 113.34.00"
     "@opam-alpha/variantslib" ">= 113.33.03 < 113.34.00"
@@ -841,8 +841,9 @@ libffi@*:
 
 "ocp-build-actual@git://github.com/npm-opam/ocp-build.git#1.99.17":
   version "1.99.17"
-  resolved ocp-build.git-175e8330b2ac994033684c00592ee0d4d615a3f1#aa52c8fe1493b53cbfe206a86918f69b3a59ff94
+  resolved ocp-build.git-54246986dbdc9344d0a6d1c422b731ec4d027f52#8d3258d6709f2ff59f33fd0f7795f8ea621b55b4
   dependencies:
+    "@opam-alpha/camlp4" "*"
     "@opam-alpha/typerex-build" "= 1.99.17"
     dependency-env "https://github.com/npm-ml/dependency-env.git"
     nopam "https://github.com/yunxing/nopam.git"
