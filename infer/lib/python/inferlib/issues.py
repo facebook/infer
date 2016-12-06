@@ -98,16 +98,15 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
         line = report[JSON_INDEX_LINE]
 
         source_context = ''
-        if formatter == colorize.TERMINAL_FORMATTER:
-            source_context = source.build_source_context(
-                os.path.join(project_root, filename),
-                formatter,
-                line,
-            )
-            indenter = source.Indenter() \
-                             .indent_push() \
-                             .add(source_context)
-            source_context = '\n' + unicode(indenter)
+        source_context = source.build_source_context(
+            os.path.join(project_root, filename),
+            formatter,
+            line,
+        )
+        indenter = source.Indenter() \
+                         .indent_push() \
+                         .add(source_context)
+        source_context = '\n' + unicode(indenter)
 
         msg = text_of_report(report)
         if report[JSON_INDEX_KIND] == ISSUE_KIND_ERROR:
