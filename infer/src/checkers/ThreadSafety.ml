@@ -23,6 +23,17 @@ module Summary = Summary.Make (struct
       payload.Specs.threadsafety
   end)
 
+(* we want to consider Builder classes and other safe immutablility-ensuring patterns as
+   thread-safe. we are overly friendly about this for now; any class whose name ends with `Builder`
+   is assumed to be thread-safe. in the future, we can ask for builder classes to be annotated with
+   @Builder and verify that annotated classes satisfy the expected invariants. *)
+let is_builder_class class_name =
+  string_is_suffix "Builder" class_name
+
+let is_call_to_builder_class_method = function
+  | Procname.Java java_pname -> is_builder_class (Procname.java_get_class_name java_pname)
+  | _ -> false
+
 let is_initializer tenv proc_name =
   Procname.is_constructor proc_name ||
   Procname.is_class_initializer proc_name ||
@@ -92,7 +103,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     let _, read_writestate' =
                       (* TODO (14842325): report on constructors that aren't threadsafe
                          (e.g., constructors that access static fields) *)
-                      if is_unprotected lockstate' && not (is_initializer tenv pn)
+                      if is_unprotected lockstate' &&
+                         not (is_initializer tenv pn) &&
+                         not (is_call_to_builder_class_method pn)
                       then
                         let call_site = CallSite.make pn loc in
                         let callee_readstate =
