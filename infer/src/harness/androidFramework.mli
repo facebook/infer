@@ -37,6 +37,3 @@ val get_lifecycle_for_framework_typ_opt : Tenv.t -> Typename.t -> string list ->
 
 (** return true if [class_name] is the name of a class that belong to the Android framework *)
 val is_android_lib_class : Typename.t -> bool
-
-(** Path to the android.jar file containing real code, not just the method stubs as in the SDK *)
-val non_stub_android_jar : unit -> string

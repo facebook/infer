@@ -72,11 +72,6 @@ let is_model procname =
 let split_classpath cp = Str.split (Str.regexp JFile.sep) cp
 
 
-(** Add the android.jar containing bytecode at the beginning of the class path *)
-let add_android_jar paths =
-  AndroidFramework.non_stub_android_jar () :: paths
-
-
 let append_path classpath path =
   if Sys.file_exists path then
     let full_path = filename_to_absolute path in
@@ -188,7 +183,7 @@ let load_from_verbose_output () =
           IList.fold_left
             append_path
             ""
-            ((StringSet.elements roots) @ (add_android_jar paths)) in
+            ((StringSet.elements roots) @ paths) in
         (classpath, sources, classes) in
   loop [] StringSet.empty StringMap.empty JBasics.ClassSet.empty
 

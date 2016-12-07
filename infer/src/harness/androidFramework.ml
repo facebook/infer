@@ -106,7 +106,3 @@ let get_lifecycle_for_framework_typ_opt tenv lifecycle_typ lifecycle_proc_strs =
 
 (** return the complete list of (package, lifecycle_classname, lifecycle_methods) trios *)
 let get_lifecycles = android_lifecycles
-
-let non_stub_android_jar () =
-  let root_dir = Filename.dirname (Filename.dirname Sys.executable_name) in
-  IList.fold_left Filename.concat root_dir ["lib"; "java"; "android"; "android-19.jar"]
