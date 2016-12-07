@@ -739,8 +739,9 @@ and copy_propagation =
 
 and cxx_experimental =
   CLOpt.mk_bool ~deprecated:["cxx-experimental"] ~long:"cxx"
+    ~default:true
     ~exes:CLOpt.[Clang]
-    "Analyze C++ methods, still experimental"
+    "Analyze C++ methods"
 
 and (
   developer_mode,
