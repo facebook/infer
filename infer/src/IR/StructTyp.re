@@ -34,16 +34,26 @@ type lookup = Typename.t => option t;
 
 let compare_fld_typ_ann = [%compare : (Ident.fieldname, Typ.t, Annot.Item.t)];
 
-let pp pe name f {fields} =>
-  if false {
+let pp pe name f {fields, supers, methods, annots} =>
+  if Config.debug_mode {
     /* change false to true to print the details of struct */
     F.fprintf
       f
-      "%a {%a}"
+      "%a \n\tfields: {%a\n\t}\n\tsupers: {%a\n\t}\n\tmethods: {%a\n\t}\n\tannots: {%a\n\t}"
       Typename.pp
       name
-      (pp_seq (fun f (fld, t, _) => F.fprintf f "%a %a" (Typ.pp_full pe) t Ident.pp_fieldname fld))
+      (
+        pp_seq (
+          fun f (fld, t, _) => F.fprintf f "\n\t\t%a %a" (Typ.pp_full pe) t Ident.pp_fieldname fld
+        )
+      )
       fields
+      (pp_seq (fun f n => F.fprintf f "\n\t\t%a" Typename.pp n))
+      supers
+      (pp_seq (fun f m => F.fprintf f "\n\t\t%a" Procname.pp m))
+      methods
+      Annot.Item.pp
+      annots
   } else {
     F.fprintf f "%a" Typename.pp name
   };

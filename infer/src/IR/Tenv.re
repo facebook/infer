@@ -22,6 +22,16 @@ let module TypenameHash = Hashtbl.Make {
 /** Type for type environment. */
 type t = TypenameHash.t StructTyp.t;
 
+let pp fmt (tenv: t) =>
+  TypenameHash.iter
+    (
+      fun name typ => {
+        Format.fprintf fmt "@[<6>NAME: %s@." (Typename.to_string name);
+        Format.fprintf fmt "@[<6>TYPE: %a@." (StructTyp.pp pe_text name) typ
+      }
+    )
+    tenv;
+
 
 /** Create a new type environment. */
 let create () => TypenameHash.create 1000;
@@ -118,19 +128,17 @@ let load_from_file (filename: DB.filename) :option t =>
 
 
 /** Save a type environment into a file */
-let store_to_file (filename: DB.filename) (tenv: t) =>
+let store_to_file (filename: DB.filename) (tenv: t) => {
   Serialization.to_file tenv_serializer filename tenv;
+  if Config.debug_mode {
+    let debug_filename = DB.filename_to_string (DB.filename_add_suffix filename ".debug");
+    let out_channel = open_out debug_filename;
+    let fmt = Format.formatter_of_out_channel out_channel;
+    Format.fprintf fmt "%a" pp tenv;
+    close_out out_channel
+  }
+};
 
 let iter f tenv => TypenameHash.iter f tenv;
 
 let fold f tenv => TypenameHash.fold f tenv;
-
-let pp fmt (tenv: t) =>
-  TypenameHash.iter
-    (
-      fun name typ => {
-        Format.fprintf fmt "@[<6>NAME: %s@." (Typename.to_string name);
-        Format.fprintf fmt "@[<6>TYPE: %a@." (StructTyp.pp pe_text name) typ
-      }
-    )
-    tenv;
