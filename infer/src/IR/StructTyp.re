@@ -34,20 +34,18 @@ type lookup = Typename.t => option t;
 
 let compare_fld_typ_ann = [%compare : (Ident.fieldname, Typ.t, Annot.Item.t)];
 
-let pp pe pp_base name f {fields} =>
+let pp pe name f {fields} =>
   if false {
     /* change false to true to print the details of struct */
     F.fprintf
       f
-      "%a {%a} %a"
+      "%a {%a}"
       Typename.pp
       name
       (pp_seq (fun f (fld, t, _) => F.fprintf f "%a %a" (Typ.pp_full pe) t Ident.pp_fieldname fld))
       fields
-      pp_base
-      ()
   } else {
-    F.fprintf f "%a %a" Typename.pp name pp_base ()
+    F.fprintf f "%a" Typename.pp name
   };
 
 let internal_mk_struct

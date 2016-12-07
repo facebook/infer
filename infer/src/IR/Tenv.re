@@ -130,7 +130,7 @@ let pp fmt (tenv: t) =>
     (
       fun name typ => {
         Format.fprintf fmt "@[<6>NAME: %s@." (Typename.to_string name);
-        Format.fprintf fmt "@[<6>TYPE: %a@." (StructTyp.pp pe_text (fun _ () => ()) name) typ
+        Format.fprintf fmt "@[<6>TYPE: %a@." (StructTyp.pp pe_text name) typ
       }
     )
     tenv;

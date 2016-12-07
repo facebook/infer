@@ -37,7 +37,7 @@ let compare_fld_typ_ann:
 
 
 /** Pretty print a struct type. */
-let pp: printenv => (F.formatter => unit => unit) => Typename.t => F.formatter => t => unit;
+let pp: printenv => Typename.t => F.formatter => t => unit;
 
 
 /** Construct a struct_typ, normalizing field types */
