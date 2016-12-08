@@ -35,7 +35,7 @@ type t =
     if_jumps : int NodeTbl.t;
     goto_jumps : (int, jump_kind) Hashtbl.t;
     cn : JBasics.class_name;
-    source_file : DB.SourceFile.t;
+    source_file : SourceFile.t;
     program : JClasspath.program;
   }
 

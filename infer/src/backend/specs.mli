@@ -242,7 +242,7 @@ val pp_specs : printenv -> Format.formatter -> Prop.normal spec list -> unit
 
 (** Print the summary in html format *)
 val pp_summary_html :
-  whole_seconds:bool -> DB.SourceFile.t -> color -> Format.formatter -> summary -> unit
+  whole_seconds:bool -> SourceFile.t -> color -> Format.formatter -> summary -> unit
 
 (** Print the summary in latext format *)
 val pp_summary_latex : whole_seconds:bool -> color -> Format.formatter -> summary -> unit

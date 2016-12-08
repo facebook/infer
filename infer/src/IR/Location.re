@@ -17,7 +17,7 @@ let module L = Logging;
 type t = {
   line: int, /** The line number. -1 means "do not know" */
   col: int, /** The column number. -1 means "do not know" */
-  file: DB.SourceFile.t /** The name of the source file */
+  file: SourceFile.t /** The name of the source file */
 }
 [@@deriving compare];
 
@@ -29,7 +29,7 @@ let d (loc: t) => L.add_print_action (L.PTloc, Obj.repr loc);
 
 
 /** Dummy location */
-let dummy = {line: (-1), col: (-1), file: DB.SourceFile.empty};
+let dummy = {line: (-1), col: (-1), file: SourceFile.empty};
 
 
 /** Pretty print a location */

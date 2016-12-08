@@ -18,14 +18,14 @@ let capture_text =
 
 (** Read the files to compile from the changed files index. *)
 let should_capture_file_from_index () =
-  match DB.SourceFile.changed_files_set with
+  match SourceFile.changed_files_set with
   | None ->
       (match Config.changed_files_index with
        | Some index ->
            Process.print_error_and_exit "Error reading the changed files index %s.\n%!" index
        | None -> function _ -> true)
   | Some files_set ->
-      function source_file -> DB.SourceFile.Set.mem source_file files_set
+      function source_file -> SourceFile.Set.mem source_file files_set
 
 (** The buck targets are assumed to start with //, aliases are not supported. *)
 let check_args_for_targets args =
@@ -90,7 +90,7 @@ let run_compilation_file compilation_database file =
     (Some compilation_data.dir, wrapper_cmd, args, env)
   with Not_found ->
     Process.print_error_and_exit "Failed to find compilation data for %a \n%!"
-      DB.SourceFile.pp file
+      SourceFile.pp file
 
 let run_compilation_database compilation_database should_capture_file =
   let number_of_files = CompilationDatabase.get_size compilation_database in
@@ -99,7 +99,7 @@ let run_compilation_database compilation_database should_capture_file =
   let jobs_stack = create_files_stack compilation_database should_capture_file in
   let capture_text_upper = String.capitalize capture_text in
   let job_to_string =
-    fun file -> Format.asprintf "%s %a" capture_text_upper DB.SourceFile.pp file in
+    fun file -> Format.asprintf "%s %a" capture_text_upper SourceFile.pp file in
   Process.run_jobs_in_parallel jobs_stack (run_compilation_file compilation_database) job_to_string
 
 (** Computes the compilation database files. *)

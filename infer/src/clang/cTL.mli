@@ -61,7 +61,7 @@ type ast_node =
 
 val eval_formula : t -> ast_node -> CLintersContext.context -> bool
 
-val save_dotty_when_in_debug_mode : DB.SourceFile.t -> unit
+val save_dotty_when_in_debug_mode : SourceFile.t -> unit
 
 
 module Debug : sig

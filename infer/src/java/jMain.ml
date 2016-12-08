@@ -28,7 +28,7 @@ let () =
 
 let register_perf_stats_report source_file =
   let stats_dir = Filename.concat Config.results_dir Config.frontend_stats_dir_name in
-  let abbrev_source_file = DB.SourceFile.encoding source_file in
+  let abbrev_source_file = SourceFile.encoding source_file in
   let stats_file = Config.perf_stats_prefix ^ "_" ^ abbrev_source_file ^ ".json" in
   create_dir Config.results_dir ;
   create_dir stats_dir ;
@@ -65,7 +65,7 @@ let do_source_file
     linereader classes program tenv
     source_basename package_opt source_file =
   L.out_debug "\nfilename: %a (%s)@."
-    DB.SourceFile.pp source_file source_basename;
+    SourceFile.pp source_file source_basename;
   let call_graph, cfg =
     JFrontend.compute_source_icfg
       linereader classes program tenv
@@ -81,7 +81,7 @@ let capture_libs linereader program tenv =
     | Javalib.JClass _ ->
         begin
           let fake_source_file =
-            DB.SourceFile.from_abs_path (JFrontend.path_of_cached_classname cn) in
+            SourceFile.from_abs_path (JFrontend.path_of_cached_classname cn) in
           init_global_state fake_source_file;
           let call_graph, cfg =
             JFrontend.compute_class_icfg fake_source_file linereader program tenv node in
@@ -126,7 +126,7 @@ let do_all_files classpath sources classes =
       IList.exists
         (fun pattern -> Str.string_match (Str.regexp pattern) path 0)
         Config.skip_analysis_in_path in
-    is_path_matching (DB.SourceFile.to_rel_path source_file)
+    is_path_matching (SourceFile.to_rel_path source_file)
     || Inferconfig.skip_translation_matcher source_file Procname.empty_block in
   let translate_source_file basename (package_opt, _) source_file =
     init_global_state source_file;

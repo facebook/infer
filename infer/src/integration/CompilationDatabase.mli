@@ -21,9 +21,9 @@ val empty : unit -> t
 
 val get_size : t -> int
 
-val iter : t -> (DB.SourceFile.t -> compilation_data -> unit) -> unit
+val iter : t -> (SourceFile.t -> compilation_data -> unit) -> unit
 
-val find : t -> DB.SourceFile.t -> compilation_data
+val find : t -> SourceFile.t -> compilation_data
 
 val decode_json_file : t -> string -> unit
 

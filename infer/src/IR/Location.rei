@@ -13,7 +13,7 @@ open! Utils;
 type t = {
   line: int, /** The line number. -1 means "do not know" */
   col: int, /** The column number. -1 means "do not know" */
-  file: DB.SourceFile.t /** The name of the source file */
+  file: SourceFile.t /** The name of the source file */
 }
 [@@deriving compare];
 

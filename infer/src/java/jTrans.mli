@@ -37,7 +37,7 @@ val create_native_procdesc :
 (** [create_procdesc source_file program linereader icfg cm proc_name] creates
     a procedure description for the concrete method cm and adds it to cfg *)
 val create_cm_procdesc :
-  DB.SourceFile.t ->
+  SourceFile.t ->
   JClasspath.program ->
   Printer.LineReader.t ->
   JContext.icfg ->

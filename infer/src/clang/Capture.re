@@ -35,7 +35,7 @@ let validate_decl_from_channel chan =>
 
 let register_perf_stats_report source_file => {
   let stats_dir = Filename.concat Config.results_dir Config.frontend_stats_dir_name;
-  let abbrev_source_file = DB.SourceFile.encoding source_file;
+  let abbrev_source_file = SourceFile.encoding source_file;
   let stats_file = Config.perf_stats_prefix ^ "_" ^ abbrev_source_file ^ ".json";
   create_dir Config.results_dir;
   create_dir stats_dir;
@@ -44,7 +44,7 @@ let register_perf_stats_report source_file => {
 
 let init_global_state_for_capture_and_linters source_file => {
   Logging.set_log_file_identifier
-    CommandLineOption.Clang (Some (Filename.basename (DB.SourceFile.to_abs_path source_file)));
+    CommandLineOption.Clang (Some (Filename.basename (SourceFile.to_abs_path source_file)));
   register_perf_stats_report source_file;
   Config.curr_language := Config.Clang;
   DB.Results_dir.init source_file;
@@ -67,7 +67,7 @@ let run_clang_frontend ast_source => {
     switch ast_decl {
     | Clang_ast_t.TranslationUnitDecl (_, _, _, info) =>
       Config.arc_mode := info.Clang_ast_t.tudi_arc_enabled;
-      let source_file = DB.SourceFile.from_abs_path info.Clang_ast_t.tudi_input_path;
+      let source_file = SourceFile.from_abs_path info.Clang_ast_t.tudi_input_path;
       init_global_state_for_capture_and_linters source_file;
       let lang =
         switch info.Clang_ast_t.tudi_input_kind {
@@ -84,8 +84,7 @@ let run_clang_frontend ast_source => {
     switch ast_source {
     | `File path => Format.fprintf fmt "%s" path
     | `Pipe _ =>
-      Format.fprintf
-        fmt "stdin of %a" DB.SourceFile.pp trans_unit_ctx.CFrontend_config.source_file
+      Format.fprintf fmt "stdin of %a" SourceFile.pp trans_unit_ctx.CFrontend_config.source_file
     };
   let (decl_index, stmt_index, type_index, ivar_to_property_index) = Clang_ast_main.index_node_pointers ast_decl;
   CFrontend_config.pointer_decl_index := decl_index;

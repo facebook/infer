@@ -29,8 +29,8 @@ val split_classpath : string -> string list
 
 (** map entry for source files with potential basname collision within the same compiler call *)
 type file_entry =
-  | Singleton of DB.SourceFile.t
-  | Duplicate of (string * DB.SourceFile.t) list
+  | Singleton of SourceFile.t
+  | Duplicate of (string * SourceFile.t) list
 
 (** load the list of source files and the list of classes from the javac verbose file *)
 val load_sources_and_classes : unit ->

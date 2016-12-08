@@ -132,7 +132,7 @@ struct
                       Format.asprintf "call to %s seen before on line %d (may allocate at %a:%d)"
                         (Procname.to_simplified_string callee_pname)
                         loc_old.Location.line
-                        DB.SourceFile.pp alloc_loc.Location.file
+                        SourceFile.pp alloc_loc.Location.file
                         alloc_loc.Location.line in
                     Checkers.ST.report_error tenv
                       curr_pname curr_pdesc checkers_repeated_calls_name loc description

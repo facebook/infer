@@ -109,12 +109,7 @@ let mk_callee: Mangled.t => Procname.t => t;
 
 /** create a global variable with the given name */
 let mk_global:
-  is_constexpr::bool? =>
-  is_pod::bool? =>
-  is_static_local::bool? =>
-  Mangled.t =>
-  DB.SourceFile.t =>
-  t;
+  is_constexpr::bool? => is_pod::bool? => is_static_local::bool? => Mangled.t => SourceFile.t => t;
 
 
 /** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! */
@@ -146,7 +141,7 @@ let to_string: t => string;
 
 
 /** Get the source file corresponding to a global, if known. Returns [None] if not a global. */
-let get_source_file: t => option DB.SourceFile.t;
+let get_source_file: t => option SourceFile.t;
 
 
 /** Is the variable's value a compile-time constant? Always (potentially incorrectly) returns

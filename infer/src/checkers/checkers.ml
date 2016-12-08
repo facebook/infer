@@ -25,7 +25,7 @@ module PP = struct
       match Printer.LineReader.from_loc linereader { loc with Location.line = n } with
       | Some s -> F.fprintf fmt "%s%s@\n" (if n = loc.Location.line then "-->" else "   ") s
       | _ -> () in
-    F.fprintf fmt "%a:%d@\n" DB.SourceFile.pp loc.Location.file loc.Location.line;
+    F.fprintf fmt "%a:%d@\n" SourceFile.pp loc.Location.file loc.Location.line;
     for n = loc.Location.line - nbefore to loc.Location.line + nafter do printline n done
 end (* PP *)
 
@@ -144,7 +144,7 @@ module ST = struct
           begin
             L.stdout "%s: %a: %s@."
               kind
-              DB.SourceFile.pp loc.Location.file
+              SourceFile.pp loc.Location.file
               (Procname.to_string proc_name);
             L.stdout "%s@." description
           end;
@@ -370,7 +370,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
         let missing = IList.filter was_not_found formal_names in
         let loc = Procdesc.get_loc proc_desc in
         let pp_file_loc fmt () =
-          F.fprintf fmt "%a:%d" DB.SourceFile.pp loc.Location.file loc.Location.line in
+          F.fprintf fmt "%a:%d" SourceFile.pp loc.Location.file loc.Location.line in
         L.stdout "Null Checks of Formal Parameters: ";
         L.stdout "%d out of %d parameters checked (missing checks on: %a)[%a]@."
           nchecks nformals (pp_seq Mangled.pp) missing pp_file_loc ();

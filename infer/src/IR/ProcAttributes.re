@@ -40,14 +40,14 @@ type t = {
   is_synthetic_method: bool, /** the procedure is a synthetic method */
   language: Config.language, /** language of the procedure */
   loc: Location.t, /** location of this procedure in the source code */
-  translation_unit: option DB.SourceFile.t, /** translation unit to which the procedure belongs */
+  translation_unit: option SourceFile.t, /** translation unit to which the procedure belongs */
   mutable locals: list (Mangled.t, Typ.t), /** name and type of local variables */
   method_annotation: Annot.Method.t, /** annotations for java methods */
   objc_accessor: option objc_accessor_type, /** type of ObjC accessor, if any */
   proc_flags: proc_flags, /** flags of the procedure */
   proc_name: Procname.t, /** name of the procedure */
   ret_type: Typ.t, /** return type */
-  source_file_captured: DB.SourceFile.t /** source file where the procedure was captured */
+  source_file_captured: SourceFile.t /** source file where the procedure was captured */
 }
 [@@deriving compare];
 
@@ -77,5 +77,5 @@ let default proc_name language => {
   proc_flags: proc_flags_empty (),
   proc_name,
   ret_type: Typ.Tvoid,
-  source_file_captured: DB.SourceFile.empty
+  source_file_captured: SourceFile.empty
 };

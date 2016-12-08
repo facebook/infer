@@ -109,8 +109,8 @@ module Interprocedural = Analyzer.Interprocedural (Summary)
 let is_foreign tu_opt v =
   let is_orig_file f = match tu_opt with
     | Some orig_file ->
-        let orig_path = DB.SourceFile.to_abs_path orig_file in
-        Core.Std.String.equal orig_path (DB.SourceFile.to_abs_path f)
+        let orig_path = SourceFile.to_abs_path orig_file in
+        Core.Std.String.equal orig_path (SourceFile.to_abs_path f)
     | None -> assert false in
   Option.map_default (fun f -> not (is_orig_file f)) false (Pvar.get_source_file v)
 
@@ -125,8 +125,8 @@ let report_siof trace pdesc gname loc =
 
   let pp_sink f sink =
     let pp_source f v = match Pvar.get_source_file v with
-      | Some source_file when not (DB.SourceFile.equal DB.SourceFile.empty source_file) ->
-          F.fprintf f " from file %a" DB.SourceFile.pp source_file
+      | Some source_file when not (SourceFile.equal SourceFile.empty source_file) ->
+          F.fprintf f " from file %a" SourceFile.pp source_file
       | _ ->
           () in
     let v = SiofTrace.Sink.kind sink in

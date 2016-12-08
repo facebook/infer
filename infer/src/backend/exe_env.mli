@@ -32,7 +32,7 @@ val add_cg : initial -> DB.source_dir -> unit
 val get_cg : t -> Cg.t
 
 (** return the source file associated to the procedure *)
-val get_source : t -> Procname.t -> DB.SourceFile.t option
+val get_source : t -> Procname.t -> SourceFile.t option
 
 (** return the type environment associated to the procedure *)
 val get_tenv : ?create:bool -> t -> Procname.t -> Tenv.t
@@ -44,4 +44,4 @@ val get_cfg : t -> Procname.t -> Cfg.cfg option
 val get_proc_desc : t -> Procname.t -> Procdesc.t option
 
 (** [iter_files f exe_env] applies [f] to the source file and tenv and cfg for each file in [exe_env] *)
-val iter_files : (DB.SourceFile.t -> Cfg.cfg -> unit) -> t -> unit
+val iter_files : (SourceFile.t -> Cfg.cfg -> unit) -> t -> unit

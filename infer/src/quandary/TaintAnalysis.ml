@@ -579,7 +579,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     then
       begin
         Ondemand.set_callbacks callbacks;
-        analyze_ondemand DB.SourceFile.empty proc_desc;
+        analyze_ondemand SourceFile.empty proc_desc;
         Ondemand.unset_callbacks ();
       end
 

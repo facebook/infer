@@ -1017,7 +1017,7 @@ let pp_cfgnode pdesc fmt (n: Procdesc.Node.t) =
 let print_icfg source fmt cfg =
   let print_node pdesc node =
     let loc = Procdesc.Node.get_loc node in
-    if (Config.dotty_cfg_libs || DB.SourceFile.equal loc.Location.file source) then
+    if (Config.dotty_cfg_libs || SourceFile.equal loc.Location.file source) then
       F.fprintf fmt "%a\n" (pp_cfgnode pdesc) node in
   Cfg.iter_all_nodes ~sorted:true print_node cfg
 
@@ -1035,7 +1035,7 @@ let print_icfg_dotty source cfg =
     match Config.icfg_dotty_outfile with
     | Some file -> file
     | None when Config.frontend_tests = true ->
-        (DB.SourceFile.to_abs_path source) ^ ".test.dot"
+        (SourceFile.to_abs_path source) ^ ".test.dot"
     | None ->
         DB.filename_to_string
           (DB.Results_dir.path_to_filename
@@ -1402,7 +1402,7 @@ let print_specs_xml signature specs loc fmt =
   let xml_specifications = Io_infer.Xml.create_tree "specifications" [] list_of_specs_xml in
   let xml_signature = Io_infer.Xml.create_tree "signature" [("name", signature)] [] in
   let proc_summary = Io_infer.Xml.create_tree "procedure"
-      [("file", DB.SourceFile.to_string loc.Location.file);
+      [("file", SourceFile.to_string loc.Location.file);
        ("line", string_of_int loc.Location.line)]
       [xml_signature; xml_specifications] in
   Io_infer.Xml.pp_document true fmt proc_summary

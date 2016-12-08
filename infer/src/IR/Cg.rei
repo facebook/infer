@@ -43,7 +43,7 @@ let calls_recursively: t => Procname.t => Procname.t => bool;
 
 
 /** Create an empty call graph */
-let create: option DB.SourceFile.t => t;
+let create: option SourceFile.t => t;
 
 
 /** [extend cg1 gc2] extends [cg1] in place with nodes and edges from [gc2];
@@ -104,7 +104,7 @@ let get_recursive_dependents: t => Procname.t => Procname.Set.t;
 
 
 /** Return the path of the source file */
-let get_source: t => DB.SourceFile.t;
+let get_source: t => SourceFile.t;
 
 
 /** Load a call graph from a file */
@@ -120,7 +120,7 @@ let remove_node_defined: t => Procname.t => unit;
 
 
 /** Print the call graph as a dotty file. */
-let save_call_graph_dotty: DB.SourceFile.t => (Procname.t => list 'a) => t => unit;
+let save_call_graph_dotty: SourceFile.t => (Procname.t => list 'a) => t => unit;
 
 
 /** Save a call graph into a file */

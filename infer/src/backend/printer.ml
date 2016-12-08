@@ -20,7 +20,7 @@ module F = Format
 module LineReader =
 struct
   (** Map a file name to an array of string, one for each line in the file. *)
-  type t = (DB.SourceFile.t, string array) Hashtbl.t
+  type t = (SourceFile.t, string array) Hashtbl.t
 
   let create () =
     Hashtbl.create 1
@@ -48,7 +48,7 @@ struct
       Some (Hashtbl.find hash fname)
     with Not_found ->
     try
-      let lines_arr = read_file (DB.SourceFile.to_abs_path fname) in
+      let lines_arr = read_file (SourceFile.to_abs_path fname) in
       Hashtbl.add hash fname lines_arr;
       Some lines_arr
     with exn when SymOp.exn_not_failure exn -> None
@@ -98,8 +98,8 @@ module NodesHtml : sig
   val start_node :
     int -> Location.t -> Procname.t -> Procdesc.Node.t list ->
     Procdesc.Node.t list -> Procdesc.Node.t list ->
-    DB.SourceFile.t -> bool
-  val finish_node : Procname.t -> int -> DB.SourceFile.t -> unit
+    SourceFile.t -> bool
+  val finish_node : Procname.t -> int -> SourceFile.t -> unit
 end = struct
   let log_files = Hashtbl.create 11
 
@@ -478,11 +478,11 @@ let write_html_proc source proof_cover table_nodes_at_linenum global_err_log pro
   let proc_loc = Procdesc.get_loc proc_desc in
   let process_proc =
     Procdesc.is_defined proc_desc &&
-    DB.SourceFile.equal proc_loc.Location.file source &&
+    SourceFile.equal proc_loc.Location.file source &&
     match AttributesTable.find_file_capturing_procedure proc_name with
     | None -> true
     | Some (source_captured, _) ->
-        DB.SourceFile.equal source_captured (Procdesc.get_loc proc_desc).file in
+        SourceFile.equal source_captured (Procdesc.get_loc proc_desc).file in
   if process_proc then
     begin
       IList.iter process_node (Procdesc.get_nodes proc_desc);
@@ -499,14 +499,14 @@ let write_html_proc source proof_cover table_nodes_at_linenum global_err_log pro
 
 (** Create filename.ext.html. *)
 let write_html_file linereader filename procs =
-  let fname_encoding = DB.SourceFile.encoding filename in
+  let fname_encoding = SourceFile.encoding filename in
   let (fd, fmt) =
     Io_infer.Html.create
       (DB.Results_dir.Abs_source_dir filename)
       [".."; fname_encoding] in
   let pp_prelude () =
     F.fprintf fmt "<center><h1>File %a </h1></center>\n<table class=\"code\">\n"
-      DB.SourceFile.pp filename in
+      SourceFile.pp filename in
   let print_one_line proof_cover table_nodes_at_linenum table_err_per_line line_number =
     let line_html =
       match LineReader.from_file_linenum linereader filename line_number with
@@ -592,15 +592,15 @@ let write_all_html_files exe_env =
     Exe_env.iter_files
       (fun _ cfg ->
          let source_files_in_cfg =
-           let files = ref DB.SourceFile.Set.empty in
+           let files = ref SourceFile.Set.empty in
            Cfg.iter_proc_desc cfg
              (fun _ proc_desc ->
                 if Procdesc.is_defined proc_desc
                 then
                   let file = (Procdesc.get_loc proc_desc).Location.file in
-                  files := DB.SourceFile.Set.add file !files);
+                  files := SourceFile.Set.add file !files);
            !files in
-         DB.SourceFile.Set.iter
+         SourceFile.Set.iter
            (fun file ->
               write_html_file linereader file (Cfg.get_all_procs cfg))
            source_files_in_cfg)

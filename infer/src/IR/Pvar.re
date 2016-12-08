@@ -26,7 +26,7 @@ type pvar_kind =
   | Abduced_retvar Procname.t Location.t /** synthetic variable to represent return value */
   | Abduced_ref_param Procname.t t Location.t
   /** synthetic variable to represent param passed by reference */
-  | Global_var (DB.SourceFile.t, bool, bool, bool)
+  | Global_var (SourceFile.t, bool, bool, bool)
   /** global variable: translation unit + is it compile constant? + is it POD? + is it a static
       local? */
   | Seed_var /** variable used to store the initial value of formal parameters */
@@ -70,7 +70,7 @@ let rec _pp f pv => {
     F.fprintf
       f
       "#GB<%a%s%s>$%a"
-      DB.SourceFile.pp
+      SourceFile.pp
       fname
       (if is_const {"|const"} else {""})
       (
