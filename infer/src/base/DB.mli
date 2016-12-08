@@ -38,10 +38,63 @@ val mark_file_updated : string -> unit
 (** Return whether filename was updated after analysis started. File doesn't have to exist *)
 val file_was_updated_after_start : filename -> bool
 
-type source_file [@@deriving compare]
+(** {2 Source Files} *)
+module SourceFile : sig
+  type t [@@deriving compare]
 
-(** equality of source files *)
-val equal_source_file : source_file -> source_file -> bool
+  (** equality of source files *)
+  val equal : t -> t -> bool
+
+  (** Maps from source_file *)
+  module Map : Map.S with type key = t
+
+  (** Set of source files *)
+  module Set : Set.S with type elt = t
+
+  (** compute line count of a source file *)
+  val line_count : t -> int
+
+  (** empty source file *)
+  val empty : t
+
+  (** create source file from absolute path *)
+  val from_abs_path : string -> t
+
+  (** string encoding of a source file (including path) as a single filename *)
+  val encoding : t -> string
+
+  (** convert a source file to a string
+      WARNING: result may not be valid file path, do not use this function to perform operations
+               on filenames *)
+  val to_string : t -> string
+
+  (** pretty print t *)
+  val pp : Format.formatter -> t -> unit
+
+  (** get the full path of a source file *)
+  val to_abs_path : t -> string
+
+  (** get the relative path of a source file *)
+  val to_rel_path : t -> string
+
+  val is_infer_model : t -> bool
+
+  (** Returns true if the file is a C++ model *)
+  val is_cpp_model : t -> bool
+
+  (** Returns true if the file is in project root *)
+  val is_under_project_root : t -> bool
+
+  (** Return approximate source file corresponding to the parameter if it's header file and
+      file exists. returns None otherwise *)
+  val of_header : t -> t option
+
+  (** Set of files read from --changed-files-index file, None if option not specified
+      NOTE: it may include extra source_files if --changed-files-index contains paths to
+            header files *)
+  val changed_files_set : Set.t option
+
+end
 
 (** {2 Results Directory} *)
 
@@ -53,7 +106,7 @@ module Results_dir : sig
   type path_kind =
     | Abs_root
     (** absolute path implicitly rooted at the root of the results dir *)
-    | Abs_source_dir of source_file
+    | Abs_source_dir of SourceFile.t
     (** absolute path implicitly rooted at the source directory for the file *)
     | Rel
     (** relative path *)
@@ -65,7 +118,7 @@ module Results_dir : sig
   val specs_dir : filename
 
   (** Initialize the results directory *)
-  val init : source_file -> unit
+  val init : SourceFile.t -> unit
 
   (** Clean up specs directory *)
   val clean_specs_dir : unit -> unit
@@ -80,57 +133,6 @@ type origin =
   | Spec_lib
   | Models
 
-(** {2 Source Files} *)
-
-(** Maps from source_file *)
-module SourceFileMap : Map.S with type key = source_file
-
-(** Set of source files *)
-module SourceFileSet : Set.S with type elt = source_file
-
-(** compute line count of a source file *)
-val source_file_line_count : source_file -> int
-
-(** empty source file *)
-val source_file_empty : source_file
-
-(** create source file from absolute path *)
-val source_file_from_abs_path : string -> source_file
-
-(** string encoding of a source file (including path) as a single filename *)
-val source_file_encoding : source_file -> string
-
-(** convert a source file to a string
-    WARNING: result may not be valid file path, do not use this function to perform operations
-             on filenames *)
-val source_file_to_string : source_file -> string
-
-(** pretty print source_file *)
-val source_file_pp : Format.formatter -> source_file -> unit
-
-(** get the full path of a source file *)
-val source_file_to_abs_path : source_file -> string
-
-(** get the relative path of a source file *)
-val source_file_to_rel_path : source_file -> string
-
-val source_file_is_infer_model : source_file -> bool
-
-(** Returns true if the file is a C++ model *)
-val source_file_is_cpp_model : source_file -> bool
-
-(** Returns true if the file is in project root *)
-val source_file_is_under_project_root : source_file -> bool
-
-(** Return approximate source file corresponding to the parameter if it's header file and
-    file exists. returns None otherwise *)
-val source_file_of_header : source_file -> source_file option
-
-(** Set of files read from --changed-files-index file, None if option not specified
-    NOTE: it may include extra source_files if --changed-files-index contains paths to
-          header files *)
-val changed_source_files_set : SourceFileSet.t option
-
 (** {2 Source Dirs} *)
 
 (** source directory: the directory inside the results dir corresponding to a source file *)
@@ -143,7 +145,7 @@ val source_dir_to_string : source_dir -> string
 val source_dir_get_internal_file : source_dir -> string -> filename
 
 (** get the source directory corresponding to a source file *)
-val source_dir_from_source_file : source_file -> source_dir
+val source_dir_from_source_file : SourceFile.t -> source_dir
 
 (** directory where the results of the capture phase are stored *)
 val captured_dir : filename

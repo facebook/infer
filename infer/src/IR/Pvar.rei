@@ -113,7 +113,7 @@ let mk_global:
   is_pod::bool? =>
   is_static_local::bool? =>
   Mangled.t =>
-  DB.source_file =>
+  DB.SourceFile.t =>
   t;
 
 
@@ -146,7 +146,7 @@ let to_string: t => string;
 
 
 /** Get the source file corresponding to a global, if known. Returns [None] if not a global. */
-let get_source_file: t => option DB.source_file;
+let get_source_file: t => option DB.SourceFile.t;
 
 
 /** Is the variable's value a compile-time constant? Always (potentially incorrectly) returns

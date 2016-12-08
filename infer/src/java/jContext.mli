@@ -43,7 +43,7 @@ type t = private
     if_jumps : int NodeTbl.t;
     goto_jumps : (int, jump_kind) Hashtbl.t;
     cn : JBasics.class_name;
-    source_file : DB.source_file;
+    source_file : DB.SourceFile.t;
     program : JClasspath.program;
   }
 
@@ -54,7 +54,7 @@ val create_context :
   Procdesc.t ->
   JBir.t ->
   JBasics.class_name ->
-  DB.source_file ->
+  DB.SourceFile.t ->
   JClasspath.program ->
   t
 

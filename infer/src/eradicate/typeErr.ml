@@ -241,7 +241,7 @@ let report_error_now tenv
     (st_report_error : st_report_error) err_instance loc pdesc : unit =
   let pname = Procdesc.get_proc_name pdesc in
   let do_print ew_string kind_s s =
-    L.stdout "%a:%d " DB.source_file_pp loc.Location.file loc.Location.line;
+    L.stdout "%a:%d " DB.SourceFile.pp loc.Location.file loc.Location.line;
     let mname = match pname with
       | Procname.Java pname_java ->
           Procname.java_get_method pname_java

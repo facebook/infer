@@ -150,7 +150,7 @@ module MakeNoCFG
       then
         begin
           Ondemand.set_callbacks callbacks;
-          let post_opt = analyze_ondemand_ DB.source_file_empty proc_desc in
+          let post_opt = analyze_ondemand_ DB.SourceFile.empty proc_desc in
           Ondemand.unset_callbacks ();
           post_opt
         end

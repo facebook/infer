@@ -84,13 +84,13 @@ let append_path classpath path =
 
 
 type file_entry =
-  | Singleton of DB.source_file
-  | Duplicate of (string * DB.source_file) list
+  | Singleton of DB.SourceFile.t
+  | Duplicate of (string * DB.SourceFile.t) list
 
 (* Open the source file and search for the package declaration.
    Only the case where the package is declared in a single line is supported *)
 let read_package_declaration source_file =
-  let path = DB.source_file_to_abs_path source_file in
+  let path = DB.SourceFile.to_abs_path source_file in
   let file_in = open_in path in
   let remove_trailing_semicolon =
     Str.replace_first (Str.regexp ";") "" in
@@ -117,7 +117,7 @@ let add_source_file path map =
   let basename = Filename.basename path in
   let entry =
     let current_source_file =
-      DB.source_file_from_abs_path (convert_to_absolute path) in
+      DB.SourceFile.from_abs_path (convert_to_absolute path) in
     try
       match StringMap.find basename map with
       | Singleton previous_source_file ->

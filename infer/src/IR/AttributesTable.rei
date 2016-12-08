@@ -35,7 +35,7 @@ let pname_is_cpp_model: Procname.t => bool;
 /* Find the file where the procedure was captured, if a cfg for that file exists.
    Return also a boolean indicating whether the procedure is defined in an
    include file. */
-let find_file_capturing_procedure: Procname.t => option (DB.source_file, [ | `Include | `Source]);
+let find_file_capturing_procedure: Procname.t => option (DB.SourceFile.t, [ | `Include | `Source]);
 
 let is_whitelisted_cpp_method: string => bool;
 

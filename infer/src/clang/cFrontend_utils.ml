@@ -657,7 +657,7 @@ struct
     let get_rel_file_path file_opt =
       match file_opt with
       | Some file ->
-          DB.source_file_to_string (DB.source_file_from_abs_path file)
+          DB.SourceFile.to_string (DB.SourceFile.from_abs_path file)
       | None -> "" in
     let file =
       match function_decl_info_opt with
@@ -747,7 +747,7 @@ struct
       | Some "extern", None ->
           (* some compilers simply disregard "extern" when the global is given some initialisation
              code, which is why we make sure that [vdi_init_expr] is None here... *)
-          DB.source_file_empty
+          DB.SourceFile.empty
       | _ ->
           source_file in
     let is_constexpr = var_decl_info.Clang_ast_t.vdi_is_const_expr in

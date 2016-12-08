@@ -43,14 +43,14 @@ type node_info = {
 
 /** Type for call graph */
 type t = {
-  source: DB.source_file, /** path for the source file */
+  source: DB.SourceFile.t, /** path for the source file */
   node_map: Procname.Hash.t node_info /** map from node to node_info */
 };
 
 let create source_opt => {
   let source =
     switch source_opt {
-    | None => DB.source_file_empty
+    | None => DB.SourceFile.empty
     | Some source => source
     };
   {source, node_map: Procname.Hash.create 3}
@@ -350,7 +350,7 @@ let extend cg_old cg_new => {
 
 
 /** Begin support for serialization */
-let callgraph_serializer: Serialization.serializer (DB.source_file, nodes_and_edges) = Serialization.create_serializer Serialization.cg_key;
+let callgraph_serializer: Serialization.serializer (DB.SourceFile.t, nodes_and_edges) = Serialization.create_serializer Serialization.cg_key;
 
 
 /** Load a call graph from a file */

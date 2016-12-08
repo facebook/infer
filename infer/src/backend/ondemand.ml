@@ -17,15 +17,15 @@ module F = Format
 (** Directories to analyze from the ondemand file. *)
 let dirs_to_analyze =
   let process_changed_files changed_files =
-    DB.SourceFileSet.fold
+    DB.SourceFile.Set.fold
       (fun source_file source_dir_set ->
          let source_dir = DB.source_dir_from_source_file source_file in
          StringSet.add (DB.source_dir_to_string source_dir) source_dir_set
       )
       changed_files StringSet.empty in
-  Option.map process_changed_files DB.changed_source_files_set
+  Option.map process_changed_files DB.SourceFile.changed_files_set
 
-type analyze_ondemand = DB.source_file -> Procdesc.t -> unit
+type analyze_ondemand = DB.SourceFile.t -> Procdesc.t -> unit
 
 type get_proc_desc = Procname.t -> Procdesc.t option
 
@@ -124,7 +124,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
              failwith ("ERROR: "^(Procname.to_string callee_pname)
                        ^" not equal to "^(Procname.to_string attribute_pname));
            attributes.loc.file)
-        DB.source_file_empty
+        DB.SourceFile.empty
         attributes_opt in
     let call_graph =
       let cg = Cg.create (Some source) in

@@ -14,7 +14,7 @@ open Javalib_pack
 
 
 let is_suppress_warnings_annotated =
-  Inferconfig.suppress_warnings_matcher DB.source_file_empty
+  Inferconfig.suppress_warnings_matcher DB.SourceFile.empty
 
 let suppress_warnings =
   ({ Annot.

@@ -15,7 +15,7 @@ type clang_lang = C | CPP | ObjC | ObjCPP
 
 type translation_unit_context = {
   lang : clang_lang;
-  source_file : DB.source_file
+  source_file : DB.SourceFile.t
 }
 
 (** Constants *)

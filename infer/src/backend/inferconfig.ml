@@ -11,7 +11,7 @@ open! Utils
 
 module L = Logging
 
-type path_filter = DB.source_file -> bool
+type path_filter = DB.SourceFile.t -> bool
 type error_filter = Localise.t -> bool
 type proc_filter = Procname.t -> bool
 
@@ -43,7 +43,7 @@ type filter_config =
 
 let is_matching patterns =
   fun source_file ->
-    let path = DB.source_file_to_rel_path source_file in
+    let path = DB.SourceFile.to_rel_path source_file in
     IList.exists
       (fun pattern ->
          try
@@ -60,7 +60,7 @@ let match_method language proc_name method_name =
 
 (* Module to create matcher based on strings present in the source file *)
 module FileContainsStringMatcher = struct
-  type matcher = DB.source_file -> bool
+  type matcher = DB.SourceFile.t -> bool
 
   let default_matcher : matcher = fun _ -> false
 
@@ -77,18 +77,18 @@ module FileContainsStringMatcher = struct
     if s_patterns = [] then
       default_matcher
     else
-      let source_map = ref DB.SourceFileMap.empty in
+      let source_map = ref DB.SourceFile.Map.empty in
       let regexp =
         Str.regexp (join_strings "\\|" s_patterns) in
       fun source_file ->
         try
-          DB.SourceFileMap.find source_file !source_map
+          DB.SourceFile.Map.find source_file !source_map
         with Not_found ->
         try
-          let file_in = open_in (DB.source_file_to_abs_path source_file) in
+          let file_in = open_in (DB.SourceFile.to_abs_path source_file) in
           let pattern_found = file_contains regexp file_in in
           close_in file_in;
-          source_map := DB.SourceFileMap.add source_file pattern_found !source_map;
+          source_map := DB.SourceFile.Map.add source_file pattern_found !source_map;
           pattern_found
         with Sys_error _ -> false
 end
@@ -96,7 +96,7 @@ end
 (* Module to create matcher based on source file names or class names and method names *)
 module FileOrProcMatcher = struct
 
-  type matcher = DB.source_file -> Procname.t -> bool
+  type matcher = DB.SourceFile.t -> Procname.t -> bool
 
   let default_matcher : matcher =
     fun _ _ -> false
@@ -262,11 +262,11 @@ let test () =
   directory_iter
     (fun path ->
        if DB.is_source_file path then
-         let source_file = DB.source_file_from_abs_path path in
+         let source_file = DB.SourceFile.from_abs_path path in
          let matching = matching_analyzers source_file in
          if matching <> [] then
            let matching_s = join_strings ", " (IList.map fst matching) in
            L.stderr "%s -> {%s}@."
-             (DB.source_file_to_rel_path source_file)
+             (DB.SourceFile.to_rel_path source_file)
              matching_s)
     (Sys.getcwd ())

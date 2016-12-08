@@ -43,7 +43,7 @@ let make_frame class_str method_str file_str line_num =
   { class_str; method_str; file_str; line_num; }
 
 let frame_matches_location frame_obj loc =
-  let lfname = DB.source_file_to_string loc.Location.file in
+  let lfname = DB.SourceFile.to_string loc.Location.file in
   let matches_file = Utils.string_is_suffix frame_obj.file_str lfname in
   let matches_line = match frame_obj.line_num with
     | None -> false

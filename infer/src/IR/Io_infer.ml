@@ -223,7 +223,7 @@ struct
 
   (** Print an html link to the given line number of the current source file *)
   let pp_line_link ?(with_name = false) ?(text = None) source path_to_root fmt linenum =
-    let fname = DB.source_file_encoding source in
+    let fname = DB.SourceFile.encoding source in
     let linenum_str = string_of_int linenum in
     let name = "LINE" ^ linenum_str in
     pp_link

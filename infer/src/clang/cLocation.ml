@@ -14,13 +14,13 @@ open! Utils
 let clang_to_sil_location trans_unit_ctx clang_loc =
   let line = Option.default (-1) clang_loc.Clang_ast_t.sl_line in
   let col = Option.default (-1) clang_loc.Clang_ast_t.sl_column in
-  let file = Option.map_default DB.source_file_from_abs_path
+  let file = Option.map_default DB.SourceFile.from_abs_path
       trans_unit_ctx.CFrontend_config.source_file clang_loc.Clang_ast_t.sl_file in
   Location.{line; col; file}
 
 let source_file_in_project source_file =
-  let file_in_project = DB.source_file_is_under_project_root source_file in
-  let rel_source_file = DB.source_file_to_string source_file in
+  let file_in_project = DB.SourceFile.is_under_project_root source_file in
+  let rel_source_file = DB.SourceFile.to_string source_file in
   let file_should_be_skipped =
     IList.exists
       (fun path -> string_is_prefix path rel_source_file)
@@ -30,8 +30,8 @@ let source_file_in_project source_file =
 let should_do_frontend_check trans_unit_ctx (loc_start, _) =
   match loc_start.Clang_ast_t.sl_file with
   | Some file ->
-      let source_file = (DB.source_file_from_abs_path file) in
-      DB.equal_source_file source_file trans_unit_ctx.CFrontend_config.source_file ||
+      let source_file = (DB.SourceFile.from_abs_path file) in
+      DB.SourceFile.equal source_file trans_unit_ctx.CFrontend_config.source_file ||
       (source_file_in_project source_file && not Config.testing_mode)
   | None -> false
 
@@ -46,24 +46,24 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
     | None -> false
   in
   let map_file_of pred loc =
-    let path_pred path = pred (DB.source_file_from_abs_path path) in
+    let path_pred path = pred (DB.SourceFile.from_abs_path path) in
     map_path_of path_pred loc
   in
   (* it's not necessary to compare inodes here because both files come from
      the same context - they are produced by the same invocation of ASTExporter
      which uses same logic to produce both files *)
-  let equal_current_source = DB.equal_source_file trans_unit_ctx.CFrontend_config.source_file
+  let equal_current_source = DB.SourceFile.equal trans_unit_ctx.CFrontend_config.source_file
   in
   let equal_header_of_current_source maybe_header =
-    (* DB.source_file_of_header will cache calls to filesystem *)
-    let source_of_header_opt = DB.source_file_of_header maybe_header in
+    (* DB.SourceFile.of_header will cache calls to filesystem *)
+    let source_of_header_opt = DB.SourceFile.of_header maybe_header in
     Option.map_default equal_current_source false source_of_header_opt
   in
   let file_in_project = map_file_of source_file_in_project loc_end
                         || map_file_of source_file_in_project loc_start in
   let translate_on_demand = translate_when_used || file_in_project || Config.models_mode in
-  let file_in_models = map_file_of DB.source_file_is_cpp_model loc_end
-                       || map_file_of DB.source_file_is_cpp_model loc_start in
+  let file_in_models = map_file_of DB.SourceFile.is_cpp_model loc_end
+                       || map_file_of DB.SourceFile.is_cpp_model loc_start in
   map_file_of equal_current_source loc_end
   || map_file_of equal_current_source loc_start
   || file_in_models

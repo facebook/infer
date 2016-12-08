@@ -25,8 +25,8 @@ let is_in_main_file translation_unit_context an =
   | None ->
       false
   | Some file ->
-      DB.equal_source_file
-        (DB.source_file_from_abs_path file)
+      DB.SourceFile.equal
+        (DB.SourceFile.from_abs_path file)
         translation_unit_context.CFrontend_config.source_file
 
 let is_ck_context (context: CLintersContext.context) an =
@@ -316,7 +316,7 @@ let component_file_line_count_info (context: CLintersContext.context) dec =
   | Clang_ast_t.TranslationUnitDecl _ when condition ->
       let source_file =
         context.translation_unit_context.CFrontend_config.source_file in
-      let line_count = DB.source_file_line_count source_file in
+      let line_count = DB.SourceFile.line_count source_file in
       IList.map (fun i -> {
             CIssue.issue = CIssue.Component_file_line_count;
             CIssue.description = "Line count analytics";

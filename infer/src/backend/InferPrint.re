@@ -104,7 +104,7 @@ let loc_trace_to_jsonbug_record trace_list ekind =>
       IList.map (fun tag => {Jsonbug_j.tag: fst tag, value: snd tag}) tags_list;
     let trace_item_to_record trace_item => {
       Jsonbug_j.level: trace_item.Errlog.lt_level,
-      filename: DB.source_file_to_string trace_item.Errlog.lt_loc.Location.file,
+      filename: DB.SourceFile.to_string trace_item.Errlog.lt_loc.Location.file,
       line_number: trace_item.Errlog.lt_loc.Location.line,
       description: trace_item.Errlog.lt_description,
       node_tags: node_tags_to_records trace_item.Errlog.lt_node_tags
@@ -193,7 +193,7 @@ let summary_values top_proc_set summary => {
     verr:
       Errlog.size (fun ekind in_footprint => ekind == Exceptions.Kerror && in_footprint) err_log,
     vflags: attributes.ProcAttributes.proc_flags,
-    vfile: DB.source_file_to_string attributes.ProcAttributes.loc.Location.file,
+    vfile: DB.SourceFile.to_string attributes.ProcAttributes.loc.Location.file,
     vline: attributes.ProcAttributes.loc.Location.line,
     vtop: if is_top {"Y"} else {"N"},
     vsignature: signature,
@@ -435,7 +435,7 @@ let module IssuesCsv = {
         let kind = Exceptions.err_kind_string ekind;
         let type_str = Localise.to_string error_name;
         let procedure_id = Procname.to_filename procname;
-        let filename = DB.source_file_to_string source_file;
+        let filename = DB.SourceFile.to_string source_file;
         let always_report =
           switch (Localise.error_desc_extract_tag_value error_desc "always_report") {
           | "" => "false"
@@ -491,7 +491,7 @@ let module IssuesJson = {
         | None => (loc.Location.file, 0)
         };
       let should_report_source_file =
-        not (DB.source_file_is_infer_model source_file) ||
+        not (DB.SourceFile.is_infer_model source_file) ||
         Config.debug_mode || Config.debug_exceptions;
       if (
         in_footprint &&
@@ -501,7 +501,7 @@ let module IssuesJson = {
         let kind = Exceptions.err_kind_string ekind;
         let bug_type = Localise.to_string error_name;
         let procedure_id = Procname.to_filename procname;
-        let file = DB.source_file_to_string source_file;
+        let file = DB.SourceFile.to_string source_file;
         let json_ml_loc =
           switch ml_loc_opt {
           | Some (file, lnum, cnum, enum) when Config.reports_include_ml_loc =>
@@ -629,7 +629,7 @@ let module IssuesXml = {
         [("num", string_of_int !num)]
         [
           level_to_xml lt.Errlog.lt_level,
-          file_to_xml (DB.source_file_to_string loc.Location.file),
+          file_to_xml (DB.SourceFile.to_string loc.Location.file),
           line_to_xml loc.Location.line,
           code_to_xml code,
           description_to_xml lt.Errlog.lt_description,
@@ -660,7 +660,7 @@ let module IssuesXml = {
           let error_line = string_of_int loc.Location.line;
           let procedure_name = Procname.to_string proc_name;
           let procedure_id = Procname.to_filename proc_name;
-          let filename = DB.source_file_to_string source_file;
+          let filename = DB.SourceFile.to_string source_file;
           let bug_hash = get_bug_hash kind type_str procedure_id filename node_key error_desc;
           let forest = [
             subtree Io_infer.Xml.tag_class error_class,
@@ -706,7 +706,7 @@ let module CallsCsv = {
       pp "\"%s\"," (Escape.escape_csv (Procname.to_string callee_name));
       pp "\"%s\"," (Escape.escape_csv (Procname.to_filename callee_name));
       pp
-        "%s," (DB.source_file_to_string summary.Specs.attributes.ProcAttributes.loc.Location.file);
+        "%s," (DB.SourceFile.to_string summary.Specs.attributes.ProcAttributes.loc.Location.file);
       pp "%d," loc.Location.line;
       pp "%a@\n" Specs.CallStats.pp_trace trace
     };
@@ -740,7 +740,7 @@ let module TopProcedures: {
 
 let module Stats = {
   type t = {
-    files: Hashtbl.t DB.source_file unit,
+    files: Hashtbl.t DB.SourceFile.t unit,
     mutable nchecked: int,
     mutable ndefective: int,
     mutable nerrors: int,
@@ -817,7 +817,7 @@ let module Stats = {
           let error_strs = {
             let pp1 fmt () => F.fprintf fmt "%d: %s" stats.nerrors type_str;
             let pp2 fmt () =>
-              F.fprintf fmt "  %a:%d" DB.source_file_pp loc.Location.file loc.Location.line;
+              F.fprintf fmt "  %a:%d" DB.SourceFile.pp loc.Location.file loc.Location.line;
             let pp3 fmt () => F.fprintf fmt "  (%a)" Localise.pp_error_desc error_desc;
             [pp_to_string pp1 (), pp_to_string pp2 (), pp_to_string pp3 ()]
           };
@@ -1245,7 +1245,7 @@ let module AnalysisResults = {
     apply_without_gc (IList.iter load_file) (spec_files_from_cmdline ());
     let summ_cmp (_, summ1) (_, summ2) => {
       let n =
-        DB.compare_source_file
+        DB.SourceFile.compare
           summ1.Specs.attributes.ProcAttributes.loc.Location.file
           summ2.Specs.attributes.ProcAttributes.loc.Location.file;
       if (n != 0) {

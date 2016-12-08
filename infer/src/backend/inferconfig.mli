@@ -10,7 +10,7 @@
 open! Utils
 
 (** Filter type for a source file *)
-type path_filter = DB.source_file -> bool
+type path_filter = DB.SourceFile.t -> bool
 
 (** Filter type for an error name. *)
 type error_filter = Localise.t -> bool
@@ -31,9 +31,9 @@ val do_not_filter : filters
 (** Create filters based on the config file *)
 val create_filters : Config.analyzer -> filters
 
-val never_return_null_matcher : DB.source_file -> Procname.t -> bool
-val suppress_warnings_matcher : DB.source_file -> Procname.t -> bool
-val skip_translation_matcher : DB.source_file -> Procname.t -> bool
+val never_return_null_matcher : DB.SourceFile.t -> Procname.t -> bool
+val suppress_warnings_matcher : DB.SourceFile.t -> Procname.t -> bool
+val skip_translation_matcher : DB.SourceFile.t -> Procname.t -> bool
 val modeled_expensive_matcher : (string -> bool) -> Procname.t -> bool
 
 (** Load the config file and list the files to report on *)

@@ -54,7 +54,7 @@ val pp_errors : Format.formatter -> t -> unit
 val pp_warnings : Format.formatter -> t -> unit
 
 (** Print an error log in html format *)
-val pp_html : DB.source_file -> DB.Results_dir.path -> Format.formatter -> t -> unit
+val pp_html : DB.SourceFile.t -> DB.Results_dir.path -> Format.formatter -> t -> unit
 
 (** Return the number of elements in the error log which satisfy the filter.  *)
 val size : (Exceptions.err_kind -> bool -> bool) -> t -> int

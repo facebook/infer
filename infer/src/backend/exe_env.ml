@@ -16,7 +16,7 @@ module L = Logging
 
 (** per-file data: type environment and cfg *)
 type file_data =
-  { source: DB.source_file;
+  { source: DB.SourceFile.t;
     tenv_file: DB.filename;
     mutable tenv: Tenv.t option;
     cfg_file: DB.filename;
@@ -64,7 +64,7 @@ type t =
   { cg: Cg.t; (** global call graph *)
     proc_map: file_data Procname.Hash.t; (** map from procedure name to file data *)
     file_map: file_data FilenameHash.t; (** map from cg fname to file data *)
-    mutable source_files : DB.SourceFileSet.t; (** Source files in the execution environment *)
+    mutable source_files : DB.SourceFile.Set.t; (** Source files in the execution environment *)
   }
 
 (** initial state, used to add cg's *)
@@ -78,7 +78,7 @@ let create () =
   { cg = Cg.create None;
     proc_map = Procname.Hash.create 17;
     file_map = FilenameHash.create 1;
-    source_files = DB.SourceFileSet.empty;
+    source_files = DB.SourceFile.Set.empty;
   }
 
 (** add call graph from fname in the spec db,
@@ -90,7 +90,7 @@ let add_cg (exe_env: t) (source_dir : DB.source_dir) =
       L.stderr "cannot load %s@." (DB.filename_to_string cg_fname)
   | Some cg ->
       let source = Cg.get_source cg in
-      exe_env.source_files <- DB.SourceFileSet.add source exe_env.source_files;
+      exe_env.source_files <- DB.SourceFile.Set.add source exe_env.source_files;
       let defined_procs = Cg.get_defined_nodes cg in
 
       IList.iter
@@ -99,14 +99,14 @@ let add_cg (exe_env: t) (source_dir : DB.source_dir) =
             | None ->
                 ()
             | Some (source_captured, origin) ->
-                let multiply_defined = DB.compare_source_file source source_captured <> 0 in
+                let multiply_defined = DB.SourceFile.compare source source_captured <> 0 in
                 if multiply_defined then Cg.remove_node_defined cg pname;
                 if Config.check_duplicate_symbols &&
                    multiply_defined &&
                    origin <> `Include then
                   L.stderr "@.DUPLICATE_SYMBOLS source: %a source_captured:%a pname:%a@."
-                    DB.source_file_pp source
-                    DB.source_file_pp source_captured
+                    DB.SourceFile.pp source
+                    DB.SourceFile.pp source_captured
                     Procname.pp pname
            ))
         defined_procs;
@@ -190,13 +190,13 @@ let get_proc_desc exe_env pname =
 let iter_files f exe_env =
   let do_file _ file_data seen_files_acc =
     let fname = file_data.source in
-    if DB.SourceFileSet.mem fname seen_files_acc ||
+    if DB.SourceFile.Set.mem fname seen_files_acc ||
        (* only files added with add_cg* functions *)
-       not (DB.SourceFileSet.mem fname exe_env.source_files)
+       not (DB.SourceFile.Set.mem fname exe_env.source_files)
     then seen_files_acc
     else
       begin
         Option.may (fun cfg -> f fname cfg) (file_data_to_cfg file_data);
-        DB.SourceFileSet.add fname seen_files_acc
+        DB.SourceFile.Set.add fname seen_files_acc
       end in
-  ignore (Procname.Hash.fold do_file exe_env.proc_map DB.SourceFileSet.empty)
+  ignore (Procname.Hash.fold do_file exe_env.proc_map DB.SourceFile.Set.empty)
