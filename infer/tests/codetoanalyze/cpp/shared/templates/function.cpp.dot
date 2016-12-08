@@ -112,11 +112,11 @@ digraph iCFG {
 	
 
 	 "function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_3" -> "function::div1_create_and_get_val{d41d8cd98f00b204e9800998ecf8427e_ZN8function23div1_create_and_get_.196671f44f478621c0c5fce9d52e470d_2" ;
-"function::X1_X1{_ZN8function2X1C1Ev}.2af0b35268d3226ea8d5932e7ebc85b9_1" [label="1: Start function::X1_X1\nFormals:  this:class function::X1*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+"function::X1_X1{_ZN8function2X1C1Ev|constexpr}.d70114d1cc16d2814756f7458be1da00_1" [label="1: Start function::X1_X1\nFormals:  this:class function::X1*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
-	 "function::X1_X1{_ZN8function2X1C1Ev}.2af0b35268d3226ea8d5932e7ebc85b9_1" -> "function::X1_X1{_ZN8function2X1C1Ev}.2af0b35268d3226ea8d5932e7ebc85b9_2" ;
-"function::X1_X1{_ZN8function2X1C1Ev}.2af0b35268d3226ea8d5932e7ebc85b9_2" [label="2: Exit function::X1_X1 \n  " color=yellow style=filled]
+	 "function::X1_X1{_ZN8function2X1C1Ev|constexpr}.d70114d1cc16d2814756f7458be1da00_1" -> "function::X1_X1{_ZN8function2X1C1Ev|constexpr}.d70114d1cc16d2814756f7458be1da00_2" ;
+"function::X1_X1{_ZN8function2X1C1Ev|constexpr}.d70114d1cc16d2814756f7458be1da00_2" [label="2: Exit function::X1_X1 \n  " color=yellow style=filled]
 	
 
 "function::X1_getVal(_ZN8function2X16getValEv).e9f63e9946adfb180c8a1aa70b5f67be_1" [label="1: Start function::X1_getVal\nFormals:  this:class function::X1*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
@@ -141,11 +141,11 @@ digraph iCFG {
 	
 
 	 "function::X2_getVal(_ZN8function2X26getValEv).08a78a7624b8c528a9115d6545ca7d87_3" -> "function::X2_getVal(_ZN8function2X26getValEv).08a78a7624b8c528a9115d6545ca7d87_2" ;
-"function::X3_X3{_ZN8function2X3C1Ev}.8dd5b7e648f6e1760b4365f3e42720db_1" [label="1: Start function::X3_X3\nFormals:  this:class function::X3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+"function::X3_X3{_ZN8function2X3C1Ev|constexpr}.dd49de90bff9fe17df24a39f37fbfb5e_1" [label="1: Start function::X3_X3\nFormals:  this:class function::X3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
-	 "function::X3_X3{_ZN8function2X3C1Ev}.8dd5b7e648f6e1760b4365f3e42720db_1" -> "function::X3_X3{_ZN8function2X3C1Ev}.8dd5b7e648f6e1760b4365f3e42720db_2" ;
-"function::X3_X3{_ZN8function2X3C1Ev}.8dd5b7e648f6e1760b4365f3e42720db_2" [label="2: Exit function::X3_X3 \n  " color=yellow style=filled]
+	 "function::X3_X3{_ZN8function2X3C1Ev|constexpr}.dd49de90bff9fe17df24a39f37fbfb5e_1" -> "function::X3_X3{_ZN8function2X3C1Ev|constexpr}.dd49de90bff9fe17df24a39f37fbfb5e_2" ;
+"function::X3_X3{_ZN8function2X3C1Ev|constexpr}.dd49de90bff9fe17df24a39f37fbfb5e_2" [label="2: Exit function::X3_X3 \n  " color=yellow style=filled]
 	
 
 "function::X3_get(_ZN8function2X33getEv).36ddcd58af5a86b9c0b85830a216fad3_1" [label="1: Start function::X3_get\nFormals:  this:class function::X3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]

@@ -64,11 +64,11 @@ digraph iCFG {
 	
 
 	 "bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_4" -> "bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()(_ZZ3barvENK3$_0clEv).cb0ea2b31d556c91fda839346a13c429_3" ;
-"bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_}.6a9e9fc47abfe378dd0d5c66eaa11486_1" [label="1: Start bar::lambda_shared_lambda_lambda1.cpp:11:15_\nFormals:  this:class bar::lambda_shared_lambda_lambda1.cpp:11:15* __param_0:class bar::lambda_shared_lambda_lambda1.cpp:11:15&\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
+"bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_|constexpr}.68f000ed84f149c35db36dbee322ee91_1" [label="1: Start bar::lambda_shared_lambda_lambda1.cpp:11:15_\nFormals:  this:class bar::lambda_shared_lambda_lambda1.cpp:11:15* __param_0:class bar::lambda_shared_lambda_lambda1.cpp:11:15&\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
 	
 
-	 "bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_}.6a9e9fc47abfe378dd0d5c66eaa11486_1" -> "bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_}.6a9e9fc47abfe378dd0d5c66eaa11486_2" ;
-"bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_}.6a9e9fc47abfe378dd0d5c66eaa11486_2" [label="2: Exit bar::lambda_shared_lambda_lambda1.cpp:11:15_ \n  " color=yellow style=filled]
+	 "bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_|constexpr}.68f000ed84f149c35db36dbee322ee91_1" -> "bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_|constexpr}.68f000ed84f149c35db36dbee322ee91_2" ;
+"bar::lambda_shared_lambda_lambda1.cpp:11:15_{_ZZ3barvEN3$_0C1EOS_|constexpr}.68f000ed84f149c35db36dbee322ee91_2" [label="2: Exit bar::lambda_shared_lambda_lambda1.cpp:11:15_ \n  " color=yellow style=filled]
 	
 
 "foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()(_ZZ3foovENK3$_1clEv).985fe31737ac21d3fc164c617feba422_1" [label="1: Start foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()\nFormals:  this:class foo::lambda_shared_lambda_lambda1.cpp:19:17*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
@@ -82,18 +82,18 @@ digraph iCFG {
 	
 
 	 "foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()(_ZZ3foovENK3$_1clEv).985fe31737ac21d3fc164c617feba422_3" -> "foo::lambda_shared_lambda_lambda1.cpp:19:17_operator()(_ZZ3foovENK3$_1clEv).985fe31737ac21d3fc164c617feba422_2" ;
-"foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_}.5561ce7b5dc8b401fdf94ad612389a2a_1" [label="1: Start foo::lambda_shared_lambda_lambda1.cpp:19:17_\nFormals:  this:class foo::lambda_shared_lambda_lambda1.cpp:19:17* __param_0:class foo::lambda_shared_lambda_lambda1.cpp:19:17&\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
+"foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_|constexpr}.25ecbe4cd4358789b7faa260bac47ee9_1" [label="1: Start foo::lambda_shared_lambda_lambda1.cpp:19:17_\nFormals:  this:class foo::lambda_shared_lambda_lambda1.cpp:19:17* __param_0:class foo::lambda_shared_lambda_lambda1.cpp:19:17&\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
 	
 
-	 "foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_}.5561ce7b5dc8b401fdf94ad612389a2a_1" -> "foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_}.5561ce7b5dc8b401fdf94ad612389a2a_2" ;
-"foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_}.5561ce7b5dc8b401fdf94ad612389a2a_2" [label="2: Exit foo::lambda_shared_lambda_lambda1.cpp:19:17_ \n  " color=yellow style=filled]
+	 "foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_|constexpr}.25ecbe4cd4358789b7faa260bac47ee9_1" -> "foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_|constexpr}.25ecbe4cd4358789b7faa260bac47ee9_2" ;
+"foo::lambda_shared_lambda_lambda1.cpp:19:17_{_ZZ3foovEN3$_1C1EOS_|constexpr}.25ecbe4cd4358789b7faa260bac47ee9_2" [label="2: Exit foo::lambda_shared_lambda_lambda1.cpp:19:17_ \n  " color=yellow style=filled]
 	
 
-"foo::lambda_shared_lambda_lambda1.cpp:20:12_{_ZZ3foovEN3$_2C1EOS_}.0e1564c2cc993b8beca9a7d9955e04a5_1" [label="1: Start foo::lambda_shared_lambda_lambda1.cpp:20:12_\nFormals:  this:class foo::lambda_shared_lambda_lambda1.cpp:20:12* __param_0:class foo::lambda_shared_lambda_lambda1.cpp:20:12&\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+"foo::lambda_shared_lambda_lambda1.cpp:20:12_{_ZZ3foovEN3$_2C1EOS_|constexpr}.14018904662c08772f67990b03baa6c4_1" [label="1: Start foo::lambda_shared_lambda_lambda1.cpp:20:12_\nFormals:  this:class foo::lambda_shared_lambda_lambda1.cpp:20:12* __param_0:class foo::lambda_shared_lambda_lambda1.cpp:20:12&\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
-	 "foo::lambda_shared_lambda_lambda1.cpp:20:12_{_ZZ3foovEN3$_2C1EOS_}.0e1564c2cc993b8beca9a7d9955e04a5_1" -> "foo::lambda_shared_lambda_lambda1.cpp:20:12_{_ZZ3foovEN3$_2C1EOS_}.0e1564c2cc993b8beca9a7d9955e04a5_2" ;
-"foo::lambda_shared_lambda_lambda1.cpp:20:12_{_ZZ3foovEN3$_2C1EOS_}.0e1564c2cc993b8beca9a7d9955e04a5_2" [label="2: Exit foo::lambda_shared_lambda_lambda1.cpp:20:12_ \n  " color=yellow style=filled]
+	 "foo::lambda_shared_lambda_lambda1.cpp:20:12_{_ZZ3foovEN3$_2C1EOS_|constexpr}.14018904662c08772f67990b03baa6c4_1" -> "foo::lambda_shared_lambda_lambda1.cpp:20:12_{_ZZ3foovEN3$_2C1EOS_|constexpr}.14018904662c08772f67990b03baa6c4_2" ;
+"foo::lambda_shared_lambda_lambda1.cpp:20:12_{_ZZ3foovEN3$_2C1EOS_|constexpr}.14018904662c08772f67990b03baa6c4_2" [label="2: Exit foo::lambda_shared_lambda_lambda1.cpp:20:12_ \n  " color=yellow style=filled]
 	
 
 "foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_1" [label="1: Start foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()\nFormals:  this:class foo::lambda_shared_lambda_lambda1.cpp:20:12* i:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
@@ -107,11 +107,11 @@ digraph iCFG {
 	
 
 	 "foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_3" -> "foo::lambda_shared_lambda_lambda1.cpp:20:12_operator()(_ZZ3foovENK3$_2clEi).83f062e992857d1735d2bdb1eb5970f7_2" ;
-"fooOK::lambda_shared_lambda_lambda1.cpp:26:12_{_ZZ5fooOKvEN3$_3C1EOS_}.53c636602c55e8b65c0551285317a32e_1" [label="1: Start fooOK::lambda_shared_lambda_lambda1.cpp:26:12_\nFormals:  this:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12* __param_0:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12&\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
+"fooOK::lambda_shared_lambda_lambda1.cpp:26:12_{_ZZ5fooOKvEN3$_3C1EOS_|constexpr}.e40f482f89dbbcf3e614ef60cf608ecb_1" [label="1: Start fooOK::lambda_shared_lambda_lambda1.cpp:26:12_\nFormals:  this:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12* __param_0:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12&\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
 	
 
-	 "fooOK::lambda_shared_lambda_lambda1.cpp:26:12_{_ZZ5fooOKvEN3$_3C1EOS_}.53c636602c55e8b65c0551285317a32e_1" -> "fooOK::lambda_shared_lambda_lambda1.cpp:26:12_{_ZZ5fooOKvEN3$_3C1EOS_}.53c636602c55e8b65c0551285317a32e_2" ;
-"fooOK::lambda_shared_lambda_lambda1.cpp:26:12_{_ZZ5fooOKvEN3$_3C1EOS_}.53c636602c55e8b65c0551285317a32e_2" [label="2: Exit fooOK::lambda_shared_lambda_lambda1.cpp:26:12_ \n  " color=yellow style=filled]
+	 "fooOK::lambda_shared_lambda_lambda1.cpp:26:12_{_ZZ5fooOKvEN3$_3C1EOS_|constexpr}.e40f482f89dbbcf3e614ef60cf608ecb_1" -> "fooOK::lambda_shared_lambda_lambda1.cpp:26:12_{_ZZ5fooOKvEN3$_3C1EOS_|constexpr}.e40f482f89dbbcf3e614ef60cf608ecb_2" ;
+"fooOK::lambda_shared_lambda_lambda1.cpp:26:12_{_ZZ5fooOKvEN3$_3C1EOS_|constexpr}.e40f482f89dbbcf3e614ef60cf608ecb_2" [label="2: Exit fooOK::lambda_shared_lambda_lambda1.cpp:26:12_ \n  " color=yellow style=filled]
 	
 
 "fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()(_ZZ5fooOKvENK3$_3clEi).28114dfeeb5c9cb201f2f32c650e906c_1" [label="1: Start fooOK::lambda_shared_lambda_lambda1.cpp:26:12_operator()\nFormals:  this:class fooOK::lambda_shared_lambda_lambda1.cpp:26:12* i:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]

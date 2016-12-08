@@ -130,11 +130,11 @@ digraph iCFG {
 	
 
 	 "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_6" -> "method::div1_getter_templ2{d41d8cd98f00b204e9800998ecf8427e_ZN6method18div1_getter_templ2Ev}.e7b161dce40ef80e85fd9f2ccc57e6ec_5" ;
-"method::Getter_Getter{_ZN6method6GetterC1Ev}.da94695cba54f2d041689230d7249330_1" [label="1: Start method::Getter_Getter\nFormals:  this:class method::Getter*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+"method::Getter_Getter{_ZN6method6GetterC1Ev|constexpr}.d128e36e3b02a438691df8243919105b_1" [label="1: Start method::Getter_Getter\nFormals:  this:class method::Getter*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
 	
 
-	 "method::Getter_Getter{_ZN6method6GetterC1Ev}.da94695cba54f2d041689230d7249330_1" -> "method::Getter_Getter{_ZN6method6GetterC1Ev}.da94695cba54f2d041689230d7249330_2" ;
-"method::Getter_Getter{_ZN6method6GetterC1Ev}.da94695cba54f2d041689230d7249330_2" [label="2: Exit method::Getter_Getter \n  " color=yellow style=filled]
+	 "method::Getter_Getter{_ZN6method6GetterC1Ev|constexpr}.d128e36e3b02a438691df8243919105b_1" -> "method::Getter_Getter{_ZN6method6GetterC1Ev|constexpr}.d128e36e3b02a438691df8243919105b_2" ;
+"method::Getter_Getter{_ZN6method6GetterC1Ev|constexpr}.d128e36e3b02a438691df8243919105b_2" [label="2: Exit method::Getter_Getter \n  " color=yellow style=filled]
 	
 
 "method::Getter_get<X1>(_ZN6method6Getter3getINS_2X1EEEiRT_).80d274ae0eea8a42827f3ee5d82d22ec_1" [label="1: Start method::Getter_get<X1>\nFormals:  this:class method::Getter* s:class method::X1&\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
@@ -159,11 +159,11 @@ digraph iCFG {
 	
 
 	 "method::Getter_get<X2>(_ZN6method6Getter3getINS_2X2EEEiRT_).f1459c43231792fae979e813829e9a89_3" -> "method::Getter_get<X2>(_ZN6method6Getter3getINS_2X2EEEiRT_).f1459c43231792fae979e813829e9a89_2" ;
-"method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev}.437eaf33f694c0d050cfba2776c18593_1" [label="1: Start method::GetterTempl<X1>_GetterTempl\nFormals:  this:class method::GetterTempl<X1>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
+"method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev|constexpr}.99cb20fdc45ff99a79df49aaa384be93_1" [label="1: Start method::GetterTempl<X1>_GetterTempl\nFormals:  this:class method::GetterTempl<X1>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
 	
 
-	 "method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev}.437eaf33f694c0d050cfba2776c18593_1" -> "method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev}.437eaf33f694c0d050cfba2776c18593_2" ;
-"method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev}.437eaf33f694c0d050cfba2776c18593_2" [label="2: Exit method::GetterTempl<X1>_GetterTempl \n  " color=yellow style=filled]
+	 "method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev|constexpr}.99cb20fdc45ff99a79df49aaa384be93_1" -> "method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev|constexpr}.99cb20fdc45ff99a79df49aaa384be93_2" ;
+"method::GetterTempl<X1>_GetterTempl{_ZN6method11GetterTemplINS_2X1EEC1Ev|constexpr}.99cb20fdc45ff99a79df49aaa384be93_2" [label="2: Exit method::GetterTempl<X1>_GetterTempl \n  " color=yellow style=filled]
 	
 
 "method::GetterTempl<X1>_get<X1>(_ZN6method11GetterTemplINS_2X1EE3getIS1_EEiRS1_RT_).cfdb3dd8a7f15c49f42389f94b3f8bc7_1" [label="1: Start method::GetterTempl<X1>_get<X1>\nFormals:  this:class method::GetterTempl<X1>* t:class method::X1& s:class method::X1&\nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
@@ -177,11 +177,11 @@ digraph iCFG {
 	
 
 	 "method::GetterTempl<X1>_get<X1>(_ZN6method11GetterTemplINS_2X1EE3getIS1_EEiRS1_RT_).cfdb3dd8a7f15c49f42389f94b3f8bc7_3" -> "method::GetterTempl<X1>_get<X1>(_ZN6method11GetterTemplINS_2X1EE3getIS1_EEiRS1_RT_).cfdb3dd8a7f15c49f42389f94b3f8bc7_2" ;
-"method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev}.f096fcbcaf25ca13b754a9505447ff1c_1" [label="1: Start method::GetterTempl<X2>_GetterTempl\nFormals:  this:class method::GetterTempl<X2>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
+"method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev|constexpr}.010694f20681bb0e41c88279a8b1dea2_1" [label="1: Start method::GetterTempl<X2>_GetterTempl\nFormals:  this:class method::GetterTempl<X2>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
 	
 
-	 "method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev}.f096fcbcaf25ca13b754a9505447ff1c_1" -> "method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev}.f096fcbcaf25ca13b754a9505447ff1c_2" ;
-"method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev}.f096fcbcaf25ca13b754a9505447ff1c_2" [label="2: Exit method::GetterTempl<X2>_GetterTempl \n  " color=yellow style=filled]
+	 "method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev|constexpr}.010694f20681bb0e41c88279a8b1dea2_1" -> "method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev|constexpr}.010694f20681bb0e41c88279a8b1dea2_2" ;
+"method::GetterTempl<X2>_GetterTempl{_ZN6method11GetterTemplINS_2X2EEC1Ev|constexpr}.010694f20681bb0e41c88279a8b1dea2_2" [label="2: Exit method::GetterTempl<X2>_GetterTempl \n  " color=yellow style=filled]
 	
 
 "method::GetterTempl<X2>_get<X1>(_ZN6method11GetterTemplINS_2X2EE3getINS_2X1EEEiRS1_RT_).50eaec9bda9895bdc81a6c246d9ea459_1" [label="1: Start method::GetterTempl<X2>_get<X1>\nFormals:  this:class method::GetterTempl<X2>* t:class method::X2& s:class method::X1&\nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
@@ -206,11 +206,11 @@ digraph iCFG {
 	
 
 	 "method::GetterTempl<X2>_get<X2>(_ZN6method11GetterTemplINS_2X2EE3getIS1_EEiRS1_RT_).1ed26b1d272224ecb2da552b376bc478_3" -> "method::GetterTempl<X2>_get<X2>(_ZN6method11GetterTemplINS_2X2EE3getIS1_EEiRS1_RT_).1ed26b1d272224ecb2da552b376bc478_2" ;
-"method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev}.456ed7970a3c5fb7ada2553bbce85a95_1" [label="1: Start method::GetterTempl<X3>_GetterTempl\nFormals:  this:class method::GetterTempl<X3>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
+"method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev|constexpr}.fe29dc8f5882f416cccaa3bd07be8d4d_1" [label="1: Start method::GetterTempl<X3>_GetterTempl\nFormals:  this:class method::GetterTempl<X3>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
 	
 
-	 "method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev}.456ed7970a3c5fb7ada2553bbce85a95_1" -> "method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev}.456ed7970a3c5fb7ada2553bbce85a95_2" ;
-"method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev}.456ed7970a3c5fb7ada2553bbce85a95_2" [label="2: Exit method::GetterTempl<X3>_GetterTempl \n  " color=yellow style=filled]
+	 "method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev|constexpr}.fe29dc8f5882f416cccaa3bd07be8d4d_1" -> "method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev|constexpr}.fe29dc8f5882f416cccaa3bd07be8d4d_2" ;
+"method::GetterTempl<X3>_GetterTempl{_ZN6method11GetterTemplINS_2X3EEC1Ev|constexpr}.fe29dc8f5882f416cccaa3bd07be8d4d_2" [label="2: Exit method::GetterTempl<X3>_GetterTempl \n  " color=yellow style=filled]
 	
 
 "method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_1" [label="1: Start method::GetterTempl<X3>_get<X2>\nFormals:  this:class method::GetterTempl<X3>* t:class method::X3& s:class method::X2&\nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
@@ -224,11 +224,11 @@ digraph iCFG {
 	
 
 	 "method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_3" -> "method::GetterTempl<X3>_get<X2>(_ZN6method11GetterTemplINS_2X3EE3getINS_2X2EEEiRS1_RT_).d93b4f2835d5b2fd36296c63e70f58c2_2" ;
-"method::X1_X1{_ZN6method2X1C1Ev}.8cb38ad325fedb5620011ba6bd7680c1_1" [label="1: Start method::X1_X1\nFormals:  this:class method::X1*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+"method::X1_X1{_ZN6method2X1C1Ev|constexpr}.5c9da210984420e58374ce0e958b18be_1" [label="1: Start method::X1_X1\nFormals:  this:class method::X1*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
-	 "method::X1_X1{_ZN6method2X1C1Ev}.8cb38ad325fedb5620011ba6bd7680c1_1" -> "method::X1_X1{_ZN6method2X1C1Ev}.8cb38ad325fedb5620011ba6bd7680c1_2" ;
-"method::X1_X1{_ZN6method2X1C1Ev}.8cb38ad325fedb5620011ba6bd7680c1_2" [label="2: Exit method::X1_X1 \n  " color=yellow style=filled]
+	 "method::X1_X1{_ZN6method2X1C1Ev|constexpr}.5c9da210984420e58374ce0e958b18be_1" -> "method::X1_X1{_ZN6method2X1C1Ev|constexpr}.5c9da210984420e58374ce0e958b18be_2" ;
+"method::X1_X1{_ZN6method2X1C1Ev|constexpr}.5c9da210984420e58374ce0e958b18be_2" [label="2: Exit method::X1_X1 \n  " color=yellow style=filled]
 	
 
 "method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_1" [label="1: Start method::X1_get\nFormals:  this:class method::X1*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
@@ -242,11 +242,11 @@ digraph iCFG {
 	
 
 	 "method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_3" -> "method::X1_get(_ZN6method2X13getEv).c19bee41d10fec73ba5982eab7aff9bc_2" ;
-"method::X2_X2{_ZN6method2X2C1Ev}.0e26302c6141b4417297e231825a8f30_1" [label="1: Start method::X2_X2\nFormals:  this:class method::X2*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
+"method::X2_X2{_ZN6method2X2C1Ev|constexpr}.2cdd5e120ff21c2501fa0bb4e9b5fc0a_1" [label="1: Start method::X2_X2\nFormals:  this:class method::X2*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
-	 "method::X2_X2{_ZN6method2X2C1Ev}.0e26302c6141b4417297e231825a8f30_1" -> "method::X2_X2{_ZN6method2X2C1Ev}.0e26302c6141b4417297e231825a8f30_2" ;
-"method::X2_X2{_ZN6method2X2C1Ev}.0e26302c6141b4417297e231825a8f30_2" [label="2: Exit method::X2_X2 \n  " color=yellow style=filled]
+	 "method::X2_X2{_ZN6method2X2C1Ev|constexpr}.2cdd5e120ff21c2501fa0bb4e9b5fc0a_1" -> "method::X2_X2{_ZN6method2X2C1Ev|constexpr}.2cdd5e120ff21c2501fa0bb4e9b5fc0a_2" ;
+"method::X2_X2{_ZN6method2X2C1Ev|constexpr}.2cdd5e120ff21c2501fa0bb4e9b5fc0a_2" [label="2: Exit method::X2_X2 \n  " color=yellow style=filled]
 	
 
 "method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_1" [label="1: Start method::X2_get\nFormals:  this:class method::X2*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
@@ -260,11 +260,11 @@ digraph iCFG {
 	
 
 	 "method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_3" -> "method::X2_get(_ZN6method2X23getEv).3f95c152d065b47a66bdd4899bf84447_2" ;
-"method::X3_X3{_ZN6method2X3C1Ev}.4a21083a9d67665819c3bb8a34a23eb1_1" [label="1: Start method::X3_X3\nFormals:  this:class method::X3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+"method::X3_X3{_ZN6method2X3C1Ev|constexpr}.30edcbb25b963828789ed90cc7bb6dfa_1" [label="1: Start method::X3_X3\nFormals:  this:class method::X3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
-	 "method::X3_X3{_ZN6method2X3C1Ev}.4a21083a9d67665819c3bb8a34a23eb1_1" -> "method::X3_X3{_ZN6method2X3C1Ev}.4a21083a9d67665819c3bb8a34a23eb1_2" ;
-"method::X3_X3{_ZN6method2X3C1Ev}.4a21083a9d67665819c3bb8a34a23eb1_2" [label="2: Exit method::X3_X3 \n  " color=yellow style=filled]
+	 "method::X3_X3{_ZN6method2X3C1Ev|constexpr}.30edcbb25b963828789ed90cc7bb6dfa_1" -> "method::X3_X3{_ZN6method2X3C1Ev|constexpr}.30edcbb25b963828789ed90cc7bb6dfa_2" ;
+"method::X3_X3{_ZN6method2X3C1Ev|constexpr}.30edcbb25b963828789ed90cc7bb6dfa_2" [label="2: Exit method::X3_X3 \n  " color=yellow style=filled]
 	
 
 "method::X3_get(_ZN6method2X33getEv).11ad10e5bda3b9c50c787dd79afd7cd9_1" [label="1: Start method::X3_get\nFormals:  this:class method::X3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]

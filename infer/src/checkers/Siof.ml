@@ -27,12 +27,23 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module Domain = SiofDomain
   type extras = ProcData.no_extras
 
-  let get_globals astate loc e =
+  let is_compile_time_constructed pdesc pv =
+    let init_pname = Pvar.get_initializer_pname pv in
+    match Option.map_default (Summary.read_summary pdesc) None init_pname with
+    | Some Domain.Bottom ->
+        (* we analyzed the initializer for this global and found that it doesn't require any runtime
+           initialization so cannot participate in SIOF *)
+        true
+    | _ ->
+        false
+
+  let get_globals astate pdesc loc e =
     let is_dangerous_global pv =
       Pvar.is_global pv
       && not (Pvar.is_static_local pv)
       && not (Pvar.is_pod pv)
-      && not (Pvar.is_compile_constant pv) in
+      && not (Pvar.is_compile_constant pv)
+      && not (is_compile_time_constructed pdesc pv) in
     let globals = Exp.get_vars e |> snd |> IList.filter is_dangerous_global in
     if globals = [] then
       Domain.Bottom
@@ -47,9 +58,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           globals in
       Domain.NonBottom globals_trace
 
-  let add_params_globals astate loc params =
+  let add_params_globals astate pdesc loc params =
     IList.map fst params
-    |> IList.map (fun e -> get_globals astate loc e)
+    |> IList.map (fun e -> get_globals astate pdesc loc e)
     |> IList.fold_left Domain.join astate
 
   let at_least_bottom =
@@ -59,7 +70,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Load (_, exp, _, loc)
     | Store (_, _, exp, loc)
     | Prune (exp, loc, _, _) ->
-        Domain.join astate (get_globals astate loc exp)
+        Domain.join astate (get_globals astate pdesc loc exp)
+    | Call (_, Const (Cfun callee_pname), _::params_without_self, loc, _)
+      when Procname.is_c_method callee_pname && Procname.is_constructor callee_pname
+           && Procname.is_constexpr callee_pname ->
+        add_params_globals astate pdesc loc params_without_self
     | Call (_, Const (Cfun callee_pname), params, loc, _) ->
         let callsite = CallSite.make callee_pname loc in
         let callee_globals =
@@ -68,13 +83,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               Domain.NonBottom (SiofTrace.with_callsite trace callsite)
           | _ ->
               Domain.Bottom in
-        add_params_globals astate loc params
+        add_params_globals astate pdesc loc params
         |> Domain.join callee_globals
         |>
         (* make sure it's not Bottom: we made a function call so this needs initialization *)
         at_least_bottom
     | Call (_, _, params, loc, _) ->
-        add_params_globals astate loc params
+        add_params_globals astate pdesc loc params
         |>
         (* make sure it's not Bottom: we made a function call so this needs initialization *)
         at_least_bottom

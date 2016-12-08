@@ -23,4 +23,6 @@ SOURCES = \
   siof/siof_templated.cpp \
   siof/siof_different_tu.cpp \
 
+HEADERS = siof/siof_types.h
+
 include $(TESTS_DIR)/clang.make

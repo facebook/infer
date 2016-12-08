@@ -687,8 +687,8 @@ struct
 
   let mk_procname_from_cpp_method class_name method_name ?meth_decl mangled =
     let method_kind = match meth_decl with
-      | Some (Clang_ast_t.CXXConstructorDecl _) ->
-          Procname.CPPConstructor mangled
+      | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_constexpr})) ->
+          Procname.CPPConstructor (mangled, xmdi_is_constexpr)
       | _ ->
           Procname.CPPMethod mangled in
     Procname.ObjC_Cpp

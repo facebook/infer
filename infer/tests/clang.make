@@ -12,7 +12,7 @@ CLEAN_EXTRA += duplicates.txt
 
 include $(TESTS_DIR)/base.make
 
-infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
+infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(HEADERS)
 	$(call silent_on_success,\
 	  $(INFER_BIN) --check-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- clang $(CLANG_OPTIONS) $(SOURCES) 2>duplicates.txt)
 	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0

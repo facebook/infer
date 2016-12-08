@@ -96,11 +96,11 @@ digraph iCFG {
 	
 
 	 "A_div0(_ZN1A4div0Ev).a57f6f9d35e6a2053e6f8f5e86b8a040_3" -> "A_div0(_ZN1A4div0Ev).a57f6f9d35e6a2053e6f8f5e86b8a040_2" ;
-"B<A>_B{_ZN1BI1AEC1Ev}.8f5152d327f8fb16714da77a1cf709d7_1" [label="1: Start B<A>_B\nFormals:  this:class B<A>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+"B<A>_B{_ZN1BI1AEC1Ev|constexpr}.cf068a195e22b078f6ed82a38e99bad4_1" [label="1: Start B<A>_B\nFormals:  this:class B<A>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
-	 "B<A>_B{_ZN1BI1AEC1Ev}.8f5152d327f8fb16714da77a1cf709d7_1" -> "B<A>_B{_ZN1BI1AEC1Ev}.8f5152d327f8fb16714da77a1cf709d7_2" ;
-"B<A>_B{_ZN1BI1AEC1Ev}.8f5152d327f8fb16714da77a1cf709d7_2" [label="2: Exit B<A>_B \n  " color=yellow style=filled]
+	 "B<A>_B{_ZN1BI1AEC1Ev|constexpr}.cf068a195e22b078f6ed82a38e99bad4_1" -> "B<A>_B{_ZN1BI1AEC1Ev|constexpr}.cf068a195e22b078f6ed82a38e99bad4_2" ;
+"B<A>_B{_ZN1BI1AEC1Ev|constexpr}.cf068a195e22b078f6ed82a38e99bad4_2" [label="2: Exit B<A>_B \n  " color=yellow style=filled]
 	
 
 "B<A>_div0(_ZN1BI1AE4div0Ev).f18868f324b2038b2d87c90f3ffeeee3_1" [label="1: Start B<A>_div0\nFormals:  this:class B<A>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
@@ -114,11 +114,11 @@ digraph iCFG {
 	
 
 	 "B<A>_div0(_ZN1BI1AE4div0Ev).f18868f324b2038b2d87c90f3ffeeee3_3" -> "B<A>_div0(_ZN1BI1AE4div0Ev).f18868f324b2038b2d87c90f3ffeeee3_2" ;
-"B<int>_B{_ZN1BIiEC1Ev}.0ea2ad6596256d0d6b6107dd3d2895ef_1" [label="1: Start B<int>_B\nFormals:  this:class B<int>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+"B<int>_B{_ZN1BIiEC1Ev|constexpr}.e3f04c30666d48eaf0f5ef57849527bd_1" [label="1: Start B<int>_B\nFormals:  this:class B<int>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
-	 "B<int>_B{_ZN1BIiEC1Ev}.0ea2ad6596256d0d6b6107dd3d2895ef_1" -> "B<int>_B{_ZN1BIiEC1Ev}.0ea2ad6596256d0d6b6107dd3d2895ef_2" ;
-"B<int>_B{_ZN1BIiEC1Ev}.0ea2ad6596256d0d6b6107dd3d2895ef_2" [label="2: Exit B<int>_B \n  " color=yellow style=filled]
+	 "B<int>_B{_ZN1BIiEC1Ev|constexpr}.e3f04c30666d48eaf0f5ef57849527bd_1" -> "B<int>_B{_ZN1BIiEC1Ev|constexpr}.e3f04c30666d48eaf0f5ef57849527bd_2" ;
+"B<int>_B{_ZN1BIiEC1Ev|constexpr}.e3f04c30666d48eaf0f5ef57849527bd_2" [label="2: Exit B<int>_B \n  " color=yellow style=filled]
 	
 
 "B<int>_div0(_ZN1BIiE4div0Ev).9551e764ca77ab3d3fd6584814575acf_1" [label="1: Start B<int>_div0\nFormals:  this:class B<int>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]

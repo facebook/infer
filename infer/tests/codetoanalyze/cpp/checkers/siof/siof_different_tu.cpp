@@ -26,3 +26,17 @@ SomeNonPODObject& getFunctionStaticNonPOD() {
 }
 
 SomeNonPODObject& getGlobalNonPOD() { return global_object2; }
+
+// initialise static class field
+SomeConstexprObject SomeConstexprObject::instance_;
+
+SomeConstexprObject& getGlobalConstexpr() {
+  return SomeConstexprObject::singletonMethod();
+}
+
+// initialise static class field
+template <typename T>
+SomeTemplatedConstexprObject<T> SomeTemplatedConstexprObject<T>::instance_;
+SomeTemplatedConstexprObject<int>& getGlobalTemplatedConstexpr() {
+  return SomeTemplatedConstexprObject<int>::singletonMethod();
+}

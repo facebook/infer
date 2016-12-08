@@ -52,7 +52,7 @@ type method_kind =
 
 type objc_cpp_method_kind =
   | CPPMethod (option string) /** with mangling */
-  | CPPConstructor (option string) /** with mangling */
+  | CPPConstructor (option string, bool) /** with mangling + is it constexpr? */
   | ObjCClassMethod
   | ObjCInstanceMethod
   | ObjCInternalMethod;
@@ -108,6 +108,10 @@ let is_objc_constructor: string => bool;
 
 /** Check if this is a constructor. */
 let is_constructor: t => bool;
+
+
+/** Check if this is a constexpr function. */
+let is_constexpr: t => bool;
 
 
 /** Check if this is a Java procedure name. */

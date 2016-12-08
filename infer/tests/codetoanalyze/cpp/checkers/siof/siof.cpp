@@ -11,7 +11,6 @@
 
 extern SomeNonPODObject extern_global_object;
 SomeNonPODObject global_object;
-
 extern int access_to_non_pod();
 
 struct SomeOtherNonPODObject {
@@ -41,3 +40,10 @@ int X::static_pod_accesses_non_pod = access_to_non_pod(); // SIOF!
 
 SomeNonPODObject initWithStatic = getFunctionStaticNonPOD(); // OK
 SomeNonPODObject initWithGlobal = getGlobalNonPOD(); // SIOF!
+
+extern SomeConstexprObject& getGlobalConstexpr();
+SomeConstexprObject initWithConstexpr = getGlobalConstexpr();
+
+extern SomeTemplatedConstexprObject<int>& getGlobalTemplatedConstexpr();
+SomeTemplatedConstexprObject<int> initWithTemplatedConstexpr =
+    getGlobalTemplatedConstexpr();

@@ -46,7 +46,7 @@ type c = (string, option string) [@@deriving compare];
 
 type objc_cpp_method_kind =
   | CPPMethod (option string) /** with mangling */
-  | CPPConstructor (option string) /** with mangling */
+  | CPPConstructor (option string, bool) /** with mangling + is it constexpr? */
   | ObjCClassMethod
   | ObjCInstanceMethod
   | ObjCInternalMethod
@@ -162,6 +162,11 @@ let is_java =
 let is_c_method =
   fun
   | ObjC_Cpp _ => true
+  | _ => false;
+
+let is_constexpr =
+  fun
+  | ObjC_Cpp {kind: CPPConstructor (_, true)} => true
   | _ => false;
 
 
@@ -479,14 +484,15 @@ let c_method_to_string osig detail_level =>
           | Some s => s
           }
         ) ^ ")"
-      | CPPConstructor m =>
+      | CPPConstructor (m, is_constexpr) =>
         "{" ^
         (
           switch m {
           | None => ""
           | Some s => s
           }
-        ) ^ "}"
+        ) ^
+        (if is_constexpr {"|constexpr"} else {""}) ^ "}"
       | ObjCClassMethod => "class"
       | ObjCInstanceMethod => "instance"
       | ObjCInternalMethod => "internal"
