@@ -308,6 +308,12 @@ module Make (TaintSpecification : TaintSpec.S) = struct
              exception is "returned" from a void function. skip code like this for now
              (fix via t14159157 later *)
           astate
+      | Sil.Store (Exp.Lvar lhs_pvar, _, rhs_exp, _)
+        when Pvar.is_return lhs_pvar && Exp.is_null_literal rhs_exp &&
+             Typ.equal Tvoid (Procdesc.get_ret_type proc_data.pdesc) ->
+          (* similar to the case above; the Java frontend translates "return no exception" as
+             `return null` in a void function *)
+          astate
       | Sil.Store (lhs_exp, lhs_typ, rhs_exp, loc) ->
           let lhs_access_path =
             match AccessPath.of_lhs_exp lhs_exp lhs_typ ~f_resolve_id with

@@ -199,6 +199,16 @@ public class Basics {
     return o;
   }
 
+  void synchronizedOk(Object o) {
+    synchronized(o) {
+    }
+  }
+
+  // this is to test that we don't crash due to the slightly odd translation of synchronized
+  void callSynchronizedOk(Object o) {
+    synchronizedOk(o);
+  }
+
   /** "known false positive" tests demonstrating limitations. an ideal analysis would not report on
       these tests, but we do. */
 
