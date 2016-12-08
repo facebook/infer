@@ -124,18 +124,18 @@ module JavaSink = struct
   let make kind site =
     { kind; site; }
 
-  let get site _ =
+  let get site actuals =
     (* taint all the inputs of [pname]. for non-static procedures, taints the "this" parameter only
        if [taint_this] is true. *)
-    let taint_all ?(taint_this=false) pname kind site ~report_reachable =
-      let params =
-        let all_params = Procname.java_get_parameters pname in
+    let taint_all ?(taint_this=false) kind site ~report_reachable =
+      let actuals_to_taint, offset =
         if Procname.java_is_static (CallSite.pname site) || taint_this
-        then all_params
-        else IList.tl all_params in
+        then actuals, 0
+        else IList.tl actuals, 1 in
+      let sink = make kind site in
       IList.mapi
-        (fun param_num _ -> Sink.make_sink_param (make kind site) param_num ~report_reachable)
-        params in
+        (fun param_num _ -> Sink.make_sink_param sink (param_num + offset) ~report_reachable)
+        actuals_to_taint in
     (* taint the nth non-"this" parameter (0-indexed) *)
     let taint_nth n kind site ~report_reachable =
       let first_index = if Procname.java_is_static (CallSite.pname site) then n else n + 1 in
@@ -163,7 +163,7 @@ module JavaSink = struct
           | "android.app.Activity", ("startActivityFromChild" | "startActivityFromFragment") ->
               taint_nth 1 Intent site ~report_reachable:true
           | "android.util.Log", ("e" | "println" | "w" | "wtf") ->
-              taint_all pname Logging site ~report_reachable:true
+              taint_all Logging site ~report_reachable:true
           | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink" ->
               [Sink.make_sink_param (make Other site) 0 ~report_reachable:false]
           | _ ->
