@@ -215,7 +215,7 @@ struct
            let class_decl = Ast_utils.get_decl parent_ptr in
            (match class_decl with
             | Some (CXXRecordDecl _)
-            | Some (ClassTemplateSpecializationDecl _) when Config.cxx_experimental ->
+            | Some (ClassTemplateSpecializationDecl _) when Config.cxx ->
                 let curr_class = CContext.ContextClsDeclPtr parent_ptr in
                 process_methods trans_unit_ctx tenv cg cfg curr_class [dec]
             | Some dec ->

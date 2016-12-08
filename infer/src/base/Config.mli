@@ -172,7 +172,7 @@ val continue_capture : bool
 val copy_propagation : bool
 val crashcontext : bool
 val create_harness : bool
-val cxx_experimental : bool
+val cxx : bool
 val debug_mode : bool
 val debug_exceptions : bool
 val dependency_mode : bool

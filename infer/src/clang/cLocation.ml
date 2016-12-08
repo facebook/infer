@@ -67,8 +67,8 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
   map_file_of equal_current_source loc_end
   || map_file_of equal_current_source loc_start
   || file_in_models
-  || (Config.cxx_experimental && map_file_of equal_header_of_current_source loc_start)
-  || (Config.cxx_experimental && decl_trans_context = `Translation && translate_on_demand
+  || (Config.cxx && map_file_of equal_header_of_current_source loc_start)
+  || (Config.cxx && decl_trans_context = `Translation && translate_on_demand
       && not Config.testing_mode)
 
 let should_translate_lib trans_unit_ctx source_range decl_trans_context ~translate_when_used =

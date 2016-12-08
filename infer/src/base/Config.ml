@@ -737,7 +737,7 @@ and copy_propagation =
   CLOpt.mk_bool ~deprecated:["copy-propagation"] ~long:"copy-propagation"
     "Perform copy-propagation on the IR"
 
-and cxx_experimental =
+and cxx =
   CLOpt.mk_bool ~deprecated:["cxx-experimental"] ~long:"cxx"
     ~default:true
     ~exes:CLOpt.[Clang]
@@ -1470,7 +1470,7 @@ and continue_capture = !continue
 and copy_propagation = !copy_propagation
 and crashcontext = !crashcontext
 and create_harness = !android_harness
-and cxx_experimental = !cxx_experimental
+and cxx = !cxx
 and debug_mode = !debug
 and debug_exceptions = !debug_exceptions
 and dependency_mode = !dependencies
