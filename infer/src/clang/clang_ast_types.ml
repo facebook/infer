@@ -55,3 +55,12 @@ let pointer_to_type_ptr raw = `TPtr raw
 let type_ptr_to_pointer type_ptr = match type_ptr with
   | `TPtr raw -> raw
   | _ -> 0 (* invalid pointer *)
+
+
+(* Source files *)
+
+type src_file = SourceFile.t
+
+let source_file_of_string = SourceFile.from_abs_path
+
+let string_of_source_file = SourceFile.to_abs_path

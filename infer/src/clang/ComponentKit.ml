@@ -24,10 +24,8 @@ let is_in_main_file translation_unit_context an =
   match file_opt with
   | None ->
       false
-  | Some file ->
-      SourceFile.equal
-        (SourceFile.from_abs_path file)
-        translation_unit_context.CFrontend_config.source_file
+  | Some source_file ->
+      SourceFile.equal source_file translation_unit_context.CFrontend_config.source_file
 
 let is_ck_context (context: CLintersContext.context) an =
   context.is_ck_translation_unit

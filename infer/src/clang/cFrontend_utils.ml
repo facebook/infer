@@ -654,18 +654,13 @@ struct
          | _ -> assert false)
 
   let mk_procname_from_function translation_unit_context name function_decl_info_opt =
-    let get_rel_file_path file_opt =
-      match file_opt with
-      | Some file ->
-          SourceFile.to_string (SourceFile.from_abs_path file)
-      | None -> "" in
     let file =
       match function_decl_info_opt with
       | Some (decl_info, function_decl_info) ->
           (match function_decl_info.Clang_ast_t.fdi_storage_class with
            | Some "static" ->
                let file_opt = (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file in
-               get_rel_file_path file_opt
+               Option.map_default SourceFile.to_string "" file_opt
            | _ -> "")
       | None -> "" in
     let mangled_opt = match function_decl_info_opt with

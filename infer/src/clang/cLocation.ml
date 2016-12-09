@@ -14,8 +14,8 @@ open! Utils
 let clang_to_sil_location trans_unit_ctx clang_loc =
   let line = Option.default (-1) clang_loc.Clang_ast_t.sl_line in
   let col = Option.default (-1) clang_loc.Clang_ast_t.sl_column in
-  let file = Option.map_default SourceFile.from_abs_path
-      trans_unit_ctx.CFrontend_config.source_file clang_loc.Clang_ast_t.sl_file in
+  let file =
+    Option.default trans_unit_ctx.CFrontend_config.source_file clang_loc.Clang_ast_t.sl_file in
   Location.{line; col; file}
 
 let source_file_in_project source_file =
@@ -29,8 +29,7 @@ let source_file_in_project source_file =
 
 let should_do_frontend_check trans_unit_ctx (loc_start, _) =
   match loc_start.Clang_ast_t.sl_file with
-  | Some file ->
-      let source_file = (SourceFile.from_abs_path file) in
+  | Some source_file ->
       SourceFile.equal source_file trans_unit_ctx.CFrontend_config.source_file ||
       (source_file_in_project source_file && not Config.testing_mode)
   | None -> false
@@ -40,14 +39,10 @@ let should_do_frontend_check trans_unit_ctx (loc_start, _) =
     translate the headers because the dot files in the frontend tests should contain nothing else
     than the source file to avoid conflicts between different versions of the libraries. *)
 let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~translate_when_used =
-  let map_path_of pred loc =
+  let map_file_of pred loc =
     match loc.Clang_ast_t.sl_file with
     | Some f -> pred f
     | None -> false
-  in
-  let map_file_of pred loc =
-    let path_pred path = pred (SourceFile.from_abs_path path) in
-    map_path_of path_pred loc
   in
   (* it's not necessary to compare inodes here because both files come from
      the same context - they are produced by the same invocation of ASTExporter
