@@ -29,15 +29,15 @@ let print_error_and_exit ?(exit_code=1) fmt =
     terminate. The standard out and error are not redirected.  If the command fails to execute,
     print an error message and exit. *)
 let create_process_and_wait ~prog ~args =
-  let pid =
-    Unix.create_process prog (Array.of_list (prog :: args)) Unix.stdin Unix.stdout Unix.stderr in
-  let _, status = Unix.waitpid [] pid in
-  let exit_code = match status with
-    | Unix.WEXITED i -> i
-    | _ -> 1 in
-  if exit_code <> 0 then
-    print_error_and_exit ~exit_code:exit_code
-      "Failed to execute: %s\n" (String.concat ~sep:" " (prog :: args))
+  let open! Core.Std in
+  Unix.fork_exec ~prog ~args:(prog :: args) ()
+  |> Unix.waitpid
+  |> function
+  | Ok () -> ()
+  | Error err as status ->
+      L.do_err "Executing: %s@\n%s@\n"
+        (String.concat ~sep:" " (prog :: args)) (Unix.Exit_or_signal.to_string_hum status) ;
+      exit (match err with `Exit_non_zero i -> i | `Signal _ -> 1)
 
 (** Given a process id and a function that describes the command that the process id
     represents, prints a message explaining the command and its status, if in debug or stats mode.
