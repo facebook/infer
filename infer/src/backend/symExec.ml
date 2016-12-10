@@ -386,7 +386,7 @@ let call_should_be_skipped callee_summary =
 (** In case of constant string dereference, return the result immediately *)
 let check_constant_string_dereference lexp =
   let string_lookup s n =
-    let c = try Char.code (String.get s (IntLit.to_int n)) with Invalid_argument _ -> 0 in
+    let c = try Char.to_int (String.get s (IntLit.to_int n)) with Invalid_argument _ -> 0 in
     Exp.int (IntLit.of_int c) in
   match lexp with
   | Exp.BinOp(Binop.PlusPI, Exp.Const (Const.Cstr s), e)

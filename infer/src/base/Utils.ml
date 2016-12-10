@@ -15,6 +15,7 @@ module Array = Core.Std.Array
 module Bool = Core.Std.Bool
 module Bytes = Core.Std.Bytes
 module Caml = Core.Std.Caml
+module Char = Core.Std.Char
 module Filename = Core.Std.Filename
 module Fn = Core.Std.Fn
 module In_channel = Core.Std.In_channel

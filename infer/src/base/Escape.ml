@@ -27,7 +27,7 @@ let escape_map map_fun s =
 let escape_csv s =
   let map = function
     | '"' -> Some "\"\""
-    | c when Char.code c > 127 -> Some "?" (* non-ascii character: escape *)
+    | c when Char.to_int c > 127 -> Some "?" (* non-ascii character: escape *)
     | _ -> None in
   escape_map map s
 
@@ -39,8 +39,8 @@ let escape_xml s =
     | '<' -> Some "&lt;"
     | '&' -> Some "&amp;"
     | '%' -> Some "&#37;"
-    | c when Char.code c > 127 -> (* non-ascii character: escape *)
-        Some ("&#" ^ string_of_int (Char.code c) ^ ";")
+    | c when Char.to_int c > 127 -> (* non-ascii character: escape *)
+        Some ("&#" ^ string_of_int (Char.to_int c) ^ ";")
     | _ -> None in
   escape_map map s
 
@@ -63,6 +63,6 @@ let escape_path s =
    as Python may need to see them *)
 let escape_filename s =
   let map = function
-    | c when Char.code c > 127 -> Some "?" (* non-ascii character: escape *)
+    | c when Char.to_int c > 127 -> Some "?" (* non-ascii character: escape *)
     | _ -> None in
   escape_map map s
