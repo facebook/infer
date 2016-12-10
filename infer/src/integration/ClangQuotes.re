@@ -31,7 +31,7 @@ let quote style =>
   };
 
 let mk_arg_file prefix style args => {
-  let temp_dir = Config.results_dir /\/ "clang";
+  let temp_dir = Config.results_dir ^\/ "clang";
   Utils.create_dir temp_dir;
   let file = Filename.temp_file in_dir::temp_dir prefix ".txt";
   let write_args outc =>

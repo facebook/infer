@@ -16,11 +16,11 @@ type t = {
 };
 
 let fcp_dir =
-  Config.bin_dir /\/ Filename.parent_dir_name /\/ Filename.parent_dir_name /\/ "facebook-clang-plugins";
+  Config.bin_dir ^\/ Filename.parent_dir_name ^\/ Filename.parent_dir_name ^\/ "facebook-clang-plugins";
 
 
 /** path of the plugin to load in clang */
-let plugin_path = fcp_dir /\/ "libtooling" /\/ "build" /\/ "FacebookClangPlugin.dylib";
+let plugin_path = fcp_dir ^\/ "libtooling" ^\/ "build" ^\/ "FacebookClangPlugin.dylib";
 
 
 /** name of the plugin to use */
@@ -92,14 +92,14 @@ let clang_cc1_cmd_sanitizer cmd => {
     ) {
       switch Config.clang_include_to_override {
       | Some to_replace when String.equal arg to_replace =>
-        fcp_dir /\/ "clang" /\/ "install" /\/ "lib" /\/ "clang" /\/ "4.0.0" /\/ "include"
+        fcp_dir ^\/ "clang" ^\/ "install" ^\/ "lib" ^\/ "clang" ^\/ "4.0.0" ^\/ "include"
       | _ => arg
       }
     } else {
       arg
     };
   let post_args_rev =
-    [] |> IList.rev_append ["-include", Config.lib_dir /\/ "clang_wrappers" /\/ "global_defines.h"] |>
+    [] |> IList.rev_append ["-include", Config.lib_dir ^\/ "clang_wrappers" ^\/ "global_defines.h"] |>
     /* Never error on warnings. Clang is often more strict than Apple's version.  These arguments
        are appended at the end to override previous opposite settings.  How it's done: suppress
        all the warnings, since there are no warnings, compiler can't elevate them to error

@@ -59,9 +59,9 @@ let swap_command cmd =
   let clang = "clang" in
   let clangplusplus = "clang++" in
   if String.is_suffix ~suffix:plusplus cmd then
-    Config.wrappers_dir // clangplusplus
+    Config.wrappers_dir ^/ clangplusplus
   else
-    Config.wrappers_dir // clang
+    Config.wrappers_dir ^/ clang
 
 let run_compilation_file compilation_database file =
   try
@@ -124,7 +124,7 @@ let get_compilation_database_files_buck () =
 (** Compute the compilation database files. *)
 let get_compilation_database_files_xcodebuild () =
   let prog_args = IList.rev Config.rest in
-  let temp_dir = Config.results_dir // "clang" in
+  let temp_dir = Config.results_dir ^/ "clang" in
   Utils.create_dir temp_dir;
   let tmp_file = Filename.temp_file ~in_dir:temp_dir "cdb" ".json" in
   let xcodebuild_prog, xcodebuild_args =

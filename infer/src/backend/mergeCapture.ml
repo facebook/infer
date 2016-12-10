@@ -188,7 +188,7 @@ let process_merge_file deps_file =
     | target :: _ :: target_results_dir :: _ ->
         let infer_out_src =
           if Filename.is_relative target_results_dir then
-            Filename.dirname (buck_out ()) // target_results_dir
+            Filename.dirname (buck_out ()) ^/ target_results_dir
           else target_results_dir in
         let skiplevels = 2 in (* Don't link toplevel files, definitely not .start *)
         if should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst

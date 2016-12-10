@@ -82,9 +82,9 @@ let collect_all_summaries root_summaries_dir stacktrace_file stacktraces_dir =
   let pair_for_stacktrace_file = match stacktrace_file with
     | None -> None
     | Some file ->
-        let crashcontext_dir = Config.results_dir // "crashcontext" in
+        let crashcontext_dir = Config.results_dir ^/ "crashcontext" in
         Utils.create_dir crashcontext_dir;
-        Some (file, crashcontext_dir // "crashcontext.json") in
+        Some (file, crashcontext_dir ^/ "crashcontext.json") in
   let trace_file_regexp = Str.regexp "\\(.*\\)\\.json" in
   let pairs_for_stactrace_dir = match stacktraces_dir with
     | None -> []
@@ -124,7 +124,7 @@ let crashcontext_epilogue ~in_buck_mode =
       let buck_out = match Config.buck_out with
         | Some dir -> dir
         | None -> "buck-out" in
-      Config.project_root // buck_out
+      Config.project_root ^/ buck_out
     end
     else Config.results_dir in
   collect_all_summaries

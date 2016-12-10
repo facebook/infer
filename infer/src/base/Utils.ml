@@ -121,7 +121,7 @@ module FileNormalize = struct
   (* concatenate a list of strings representing a path into a filename *)
   let rec list_to_fname base path = match path with
     | [] -> base
-    | x :: path' -> list_to_fname (base // x) path'
+    | x :: path' -> list_to_fname (base ^/ x) path'
 
   (* normalize a path where done_l is a reversed path from the root already normalized *)
   (* and todo_l is the path still to normalize *)
@@ -145,7 +145,7 @@ module FileNormalize = struct
     let is_relative = Filename.is_relative fname in
     let must_normalize = fname_contains_current_parent fname in
     let simple_case () =
-      if is_relative then Unix.getcwd () // fname
+      if is_relative then Unix.getcwd () ^/ fname
       else fname in
     if must_normalize then begin
       let done_l, todo_l =
@@ -189,7 +189,7 @@ let filename_to_relative root fname =
       String.sub s2 ~pos:(n1 + 1) ~len:(n2 - (n1 + 1))
     else s2 in
   let norm_root = (* norm_root is root without any trailing / *)
-    Filename.dirname root // Filename.basename root in
+    Filename.dirname root ^/ Filename.basename root in
   let remainder = (* remove the path prefix to root including trailing / *)
     string_strict_subtract norm_root fname in
   remainder
@@ -197,7 +197,7 @@ let filename_to_relative root fname =
 
 let directory_fold f init path =
   let collect current_dir (accu, dirs) path =
-    let full_path = current_dir // path in
+    let full_path = current_dir ^/ path in
     try
       if Sys.is_directory full_path = `Yes then
         (accu, full_path:: dirs)
@@ -219,7 +219,7 @@ let directory_fold f init path =
 
 let directory_iter f path =
   let apply current_dir dirs path =
-    let full_path = current_dir // path in
+    let full_path = current_dir ^/ path in
     try
       if Sys.is_directory full_path = `Yes then
         full_path:: dirs

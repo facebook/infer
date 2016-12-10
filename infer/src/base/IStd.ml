@@ -46,5 +46,3 @@ let failwithf fmt =
 let invalid_argf fmt =
   Format.kfprintf (fun _ -> invalid_arg (Format.flush_str_formatter ()))
     Format.str_formatter fmt
-
-let ( // ) = Filename.concat

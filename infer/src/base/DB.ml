@@ -247,7 +247,7 @@ let fold_paths_matching ~dir ~p ~init ~f =
   let rec paths path_list dir =
     Array.fold
       ~f:(fun acc file ->
-         let path = dir // file in
+         let path = dir ^/ file in
          if Sys.is_directory path = `Yes then (paths acc path)
          else if p path then f path acc
          else acc)

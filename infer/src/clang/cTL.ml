@@ -250,10 +250,10 @@ let debug_eval_end result =
 let save_dotty_when_in_debug_mode source_file =
   match ctl_evaluation_tracker with
   | Some tracker ->
-      let dotty_dir = Config.results_dir // Config.lint_dotty_dir_name in
+      let dotty_dir = Config.results_dir ^/ Config.lint_dotty_dir_name in
       Utils.create_dir dotty_dir;
       let source_file_basename = Filename.basename (SourceFile.to_abs_path source_file) in
-      let file = dotty_dir // (source_file_basename ^ ".dot") in
+      let file = dotty_dir ^/ (source_file_basename ^ ".dot") in
       let dotty = Debug.EvaluationTracker.DottyPrinter.dotty_of_ctl_evaluation !tracker in
       Utils.with_file file ~f:(fun oc -> output_string oc dotty)
   | _ -> ()

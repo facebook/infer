@@ -42,7 +42,7 @@ let pp_prolog fmt clusters =
     IList.map (F.sprintf "--clang-compilation-db-files %s") !Config.clang_compilation_db_files
     |> String.concat ~sep:" " in
   F.fprintf fmt "INFERANALYZE= %s -results_dir '%s' %s \n@."
-    (Config.bin_dir // (CLOpt.exe_name Analyze))
+    (Config.bin_dir ^/ (CLOpt.exe_name Analyze))
     (Escape.escape_map
        (fun c -> if c = '#' then Some "\\#" else None)
        Config.results_dir)

@@ -23,7 +23,7 @@ let rec rmtree name =
         match Unix.readdir dir with
         | entry ->
             if not (entry = Filename.current_dir_name || entry = Filename.parent_dir_name) then (
-              rmtree (name // entry)
+              rmtree (name ^/ entry)
             );
             rmdir dir
         | exception End_of_file ->
@@ -76,8 +76,8 @@ let remove_results_dir () =
   rmtree Config.results_dir
 
 let create_results_dir () =
-  Unix.mkdir_p (Config.results_dir // Config.captured_dir_name) ;
-  Unix.mkdir_p (Config.results_dir // Config.specs_dir_name)
+  Unix.mkdir_p (Config.results_dir ^/ Config.captured_dir_name) ;
+  Unix.mkdir_p (Config.results_dir ^/ Config.specs_dir_name)
 
 let clean_results_dir () =
   let dirs = ["classnames"; "filelists"; "multicore"; "sources"] in
@@ -89,10 +89,10 @@ let clean_results_dir () =
           match Unix.readdir dir with
           | entry ->
               if (IList.exists (String.equal entry) dirs) then (
-                rmtree (name // entry)
+                rmtree (name ^/ entry)
               ) else if not (entry = Filename.current_dir_name
                              || entry = Filename.parent_dir_name) then (
-                clean (name // entry)
+                clean (name ^/ entry)
               );
               cleandir dir
           | exception End_of_file ->
@@ -116,7 +116,7 @@ let register_perf_stats_report () =
 
 
 let touch_start_file () =
-  let start = Config.results_dir // Config.start_filename in
+  let start = Config.results_dir ^/ Config.start_filename in
   let flags =
     Unix.O_CREAT :: Unix.O_WRONLY :: (if Config.continue_capture then [Unix.O_EXCL] else []) in
   (* create new file, or open existing file for writing to update modified timestamp *)
@@ -170,7 +170,7 @@ let capture build_cmd = function
     )
   | Genrule ->
       L.stdout "Capturing for Buck genrule compatibility...@\n";
-      let infer_java = Config.bin_dir // "InferJava" in
+      let infer_java = Config.bin_dir ^/ "InferJava" in
       run_command ~prog:infer_java ~args:[] (fun _ -> ())
   | Xcode when Config.xcpretty ->
       L.stdout "Capturing using xcpretty...@\n";
@@ -180,7 +180,7 @@ let capture build_cmd = function
   | build_mode ->
       L.stdout "Capturing in %s mode...@." (string_of_build_mode build_mode);
       let in_buck_mode = build_mode = Buck in
-      let infer_py = Config.lib_dir // "python" // "infer.py" in
+      let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
       run_command
         ~prog:infer_py ~args:(
         Config.anon_args @
@@ -227,11 +227,11 @@ let capture build_cmd = function
         )
 
 let run_parallel_analysis () =
-  let multicore_dir = Config.results_dir // Config.multicore_dir_name in
+  let multicore_dir = Config.results_dir ^/ Config.multicore_dir_name in
   rmtree multicore_dir ;
   Unix.mkdir_p multicore_dir ;
   InferAnalyze.print_stdout_legend ();
-  InferAnalyze.main (multicore_dir // "Makefile") ;
+  InferAnalyze.main (multicore_dir ^/ "Makefile") ;
   let cwd = Unix.getcwd () in
   Unix.chdir multicore_dir ;
   run_command
@@ -282,7 +282,7 @@ let analyze = function
       (* In Java and Javac modes, analysis is invoked from capture. *)
       ()
   | Analyze | Ant | Buck | ClangCompilationDatabase | Gradle | Genrule | Make | Mvn | Ndk | Xcode ->
-      if (Sys.file_exists Config.(results_dir // captured_dir_name)) <> `Yes then (
+      if (Sys.file_exists Config.(results_dir ^/ captured_dir_name)) <> `Yes then (
         L.stderr "There was nothing to analyze, exiting" ;
         Config.print_usage_exit ()
       );

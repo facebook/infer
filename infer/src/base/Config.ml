@@ -247,31 +247,31 @@ let bin_dir =
   Filename.dirname real_exe_name
 
 let lib_dir =
-  bin_dir // Filename.parent_dir_name // "lib"
+  bin_dir ^/ Filename.parent_dir_name ^/ "lib"
 
 let etc_dir =
-  bin_dir // Filename.parent_dir_name // "etc"
+  bin_dir ^/ Filename.parent_dir_name ^/ "etc"
 
 (** Path to lib/specs to retrieve the default models *)
 let models_dir =
-  lib_dir // specs_dir_name
+  lib_dir ^/ specs_dir_name
 
 let models_jar =
-  lib_dir // "java" // "models.jar"
+  lib_dir ^/ "java" ^/ "models.jar"
 
 let models_src_dir =
-  let dir = bin_dir // Filename.parent_dir_name // "models" in
+  let dir = bin_dir ^/ Filename.parent_dir_name ^/ "models" in
   Utils.filename_to_absolute dir (* Normalize the path *)
 
-let relative_cpp_extra_include_dir = "cpp" // "include"
+let relative_cpp_extra_include_dir = "cpp" ^/ "include"
 
-let cpp_extra_include_dir = models_src_dir // relative_cpp_extra_include_dir
+let cpp_extra_include_dir = models_src_dir ^/ relative_cpp_extra_include_dir
 
 let relative_cpp_models_dir =
-  relative_cpp_extra_include_dir // "infer_model"
+  relative_cpp_extra_include_dir ^/ "infer_model"
 
 let wrappers_dir =
-  lib_dir // "wrappers"
+  lib_dir ^/ "wrappers"
 
 let ncpu =
   try
@@ -445,8 +445,8 @@ and project_root = !project_root
 
 let inferconfig_path =
   match inferconfig_home with
-  | Some dir -> dir // inferconfig_file
-  | None -> project_root // inferconfig_file
+  | Some dir -> dir ^/ inferconfig_file
+  | None -> project_root ^/ inferconfig_file
 
 (* Proceed to declare and parse the remaining options *)
 
@@ -1139,7 +1139,7 @@ and report_custom_error =
 
 and report_hook =
   CLOpt.mk_string_opt ~long:"report-hook"
-    ~default:(lib_dir // "python" // "report.py")
+    ~default:(lib_dir ^/ "python" ^/ "report.py")
     ~meta:"script"
     "Specify a script to be executed after the analysis results are written.  This script will be \
      passed --issues-csv, --issues-json, --issues-txt, --issues-xml, --project-root, and \
@@ -1147,7 +1147,7 @@ and report_hook =
 
 and results_dir =
   CLOpt.mk_path ~deprecated:["results_dir"; "-out"] ~long:"results-dir" ~short:"o"
-    ~default:(init_work_dir // "infer-out")
+    ~default:(init_work_dir ^/ "infer-out")
     ~exes:CLOpt.[Toplevel;Analyze;Clang;Java;Print]
     ~meta:"dir" "Write results and internal files in the specified directory"
 
@@ -1646,7 +1646,7 @@ let specs_library =
       let add_spec_lib specs_library filename =
         let basename = Filename.basename filename in
         let key = basename ^ Utils.string_crc_hex32 filename in
-        let key_dir = cache_dir // key in
+        let key_dir = cache_dir ^/ key in
         let extract_specs dest_dir filename =
           if Filename.check_suffix filename ".jar" then
             match (Unix.mkdir dest_dir ~perm:0o700) with
@@ -1656,7 +1656,7 @@ let specs_library =
                 let zip_channel = Zip.open_in filename in
                 let entries = Zip.entries zip_channel in
                 let extract_entry (entry : Zip.entry) =
-                  let dest_file = dest_dir // (Filename.basename entry.filename) in
+                  let dest_file = dest_dir ^/ (Filename.basename entry.filename) in
                   if Filename.check_suffix entry.filename specs_files_suffix
                   then Zip.copy_entry_to_file zip_channel entry dest_file in
                 IList.iter extract_entry entries;
