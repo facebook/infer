@@ -9,12 +9,12 @@
 type t;
 
 
-/** [mk qs argv] finds the type of command depending on its arguments [argv]. The quoting style of
-    the arguments have to be provided, so that the command may be run later on. Beware that this
+/** [mk qs prog args] finds the type of command depending on its arguments [args]. The quoting style
+    of the arguments have to be provided, so that the command may be run later on. Beware that this
     doesn't look inside argument files. This can be used to create a "clang -### ..." command on
     which to call [command_to_run], but other functions from the module will not work as expected
     unless the command has been normalized by "clang -### ...". */
-let mk: ClangQuotes.style => array string => t;
+let mk: ClangQuotes.style => prog::string => args::list string => t;
 
 
 /** Make a command into a string ready to be passed to a shell to be executed. Fine to call with

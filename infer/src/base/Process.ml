@@ -29,23 +29,24 @@ let print_error_and_exit ?(exit_code=1) fmt =
     Format.str_formatter fmt
 
 (** Executes a command and catches a potential exception and prints it. *)
-let exec_command cmd args env =
-  try Unix.execve cmd args env
+let exec_command ~prog ~args env =
+  try Unix.execve prog (Array.of_list (prog :: args)) env
   with (Unix.Unix_error _ as e) ->
-    print_unix_error cmd e
+    print_unix_error (String.concat ~sep:" " (prog :: args)) e
 
 (** Given a command to be executed, create a process to execute this command, and wait for it to
     terminate. The standard out and error are not redirected.  If the command fails to execute,
     print an error message and exit. *)
-let create_process_and_wait cmd =
-  let pid = Unix.create_process cmd.(0) cmd Unix.stdin Unix.stdout Unix.stderr in
+let create_process_and_wait ~prog ~args =
+  let pid =
+    Unix.create_process prog (Array.of_list (prog :: args)) Unix.stdin Unix.stdout Unix.stderr in
   let _, status = Unix.waitpid [] pid in
   let exit_code = match status with
     | Unix.WEXITED i -> i
     | _ -> 1 in
   if exit_code <> 0 then
     print_error_and_exit ~exit_code:exit_code
-      "Failed to execute: %s\n" (String.concat ~sep:" " (Array.to_list cmd))
+      "Failed to execute: %s\n" (String.concat ~sep:" " (prog :: args))
 
 (** Given a process id and a function that describes the command that the process id
     represents, prints a message explaining the command and its status, if in debug or stats mode.
@@ -86,28 +87,27 @@ let pid_to_program jobsMap pid =
     IntMap.find pid jobsMap
   with Not_found -> ""
 
-(** [run_jobs_in_parallel jobs_stack gen_cmd cmd_to_string] runs the jobs in the given stack, by
+(** [run_jobs_in_parallel jobs_stack gen_prog prog_to_string] runs the jobs in the given stack, by
     spawning the jobs in batches of n, where n is [Config.jobs]. It then waits for all those jobs
-    and starts a new batch and so on. [gen_cmd] should return a tuple [(dir_opt, command, args,
-    env)] where [dir_opt] is an optional directory to chdir to before executing the process, and
-    [command], [args], [env] are the same as for [exec_command]. [cmd_to_string] is used for
-    printing information about the job's status. *)
-let run_jobs_in_parallel jobs_stack gen_cmd cmd_to_string =
+    and starts a new batch and so on. [gen_prog] should return a tuple [(dir_opt, command, args,
+    env)] where [dir_opt] is an optional directory to chdir to before executing [command] with
+    [args] in [env]. [prog_to_string] is used for printing information about the job's status. *)
+let run_jobs_in_parallel jobs_stack gen_prog prog_to_string =
   let run_job () =
     let jobs_map = ref IntMap.empty in
     let current_jobs_count = start_current_jobs_count () in
     while not (Stack.is_empty jobs_stack) do
-      let job_cmd = Stack.pop jobs_stack in
-      let (dir_opt, cmd, args, env) = gen_cmd job_cmd in
+      let job_prog = Stack.pop jobs_stack in
+      let (dir_opt, prog, args, env) = gen_prog job_prog in
       Pervasives.incr current_jobs_count;
       match Unix.fork () with
       | 0 ->
           (match dir_opt with
            | Some dir -> Unix.chdir dir
            | None -> ());
-          exec_command cmd args env
+          exec_command ~prog ~args env
       | pid_child ->
-          jobs_map := IntMap.add pid_child (cmd_to_string job_cmd) !jobs_map;
+          jobs_map := IntMap.add pid_child (prog_to_string job_prog) !jobs_map;
           if Stack.length jobs_stack = 0 || !current_jobs_count >= Config.jobs then
             wait_for_child (pid_to_program !jobs_map) current_jobs_count jobs_map
     done in

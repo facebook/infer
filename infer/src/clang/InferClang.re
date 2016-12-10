@@ -8,8 +8,8 @@
  */
 open! Utils;
 
-let () = {
-  let xx_suffix = String.is_suffix suffix::"++" Sys.argv.(0) ? "++" : "";
-  let args = Array.copy Sys.argv;
-  ClangWrapper.exe args xx_suffix
-};
+let () =
+  switch (Array.to_list Sys.argv) {
+  | [prog, ...args] => ClangWrapper.exe prog::prog args::args
+  | [] => assert false /* Sys.argv is never empty */
+  };

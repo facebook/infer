@@ -8,4 +8,4 @@
  */
 open! Utils;
 
-let exe: array string => string => unit;
+let exe: prog::string => args::list string => unit;

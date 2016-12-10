@@ -125,7 +125,7 @@ let touch_start_file () =
   with Unix.Unix_error (Unix.EEXIST, _, _) -> ()
 
 
-let run_command prog args after_wait =
+let run_command ~prog ~args after_wait =
   let open! Core.Std in
   let status = Unix.waitpid (Unix.fork_exec ~prog ~args:(prog :: args) ()) in
   after_wait status ;
@@ -174,7 +174,7 @@ let capture build_cmd = function
   | Genrule ->
       L.stdout "Capturing for Buck genrule compatibility...@\n";
       let infer_java = Config.bin_dir // "InferJava" in
-      run_command infer_java [] (fun _ -> ())
+      run_command ~prog:infer_java ~args:[] (fun _ -> ())
   | Xcode when Config.xcpretty ->
       L.stdout "Capturing using xcpretty...@\n";
       check_xcpretty ();
@@ -185,7 +185,7 @@ let capture build_cmd = function
       let in_buck_mode = build_mode = Buck in
       let infer_py = Config.lib_dir // "python" // "infer.py" in
       run_command
-        infer_py (
+        ~prog:infer_py ~args:(
         Config.anon_args @
         ["--analyzer";
          IList.assoc (=) Config.analyzer
@@ -238,7 +238,7 @@ let run_parallel_analysis () =
   let cwd = Unix.getcwd () in
   Unix.chdir multicore_dir ;
   run_command
-    "make" (
+    ~prog:"make" ~args:(
     "-k" ::
     "-j" :: (string_of_int Config.jobs) ::
     (Option.map_default (fun l -> ["-l"; string_of_float l]) [] Config.load_average) @

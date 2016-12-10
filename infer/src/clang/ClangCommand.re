@@ -120,12 +120,11 @@ let clang_cc1_cmd_sanitizer cmd => {
   file_arg_cmd_sanitizer {...cmd, argv: clang_arguments}
 };
 
-let mk quoting_style argv => {
-  let argv_list = Array.to_list argv;
-  switch argv_list {
-  | [exec, ...argv_no_exec] => {exec, orig_argv: argv_no_exec, argv: argv_no_exec, quoting_style}
-  | [] => failwith "argv cannot be an empty list"
-  }
+let mk quoting_style prog::prog args::args => {
+  exec: prog,
+  orig_argv: args,
+  argv: args,
+  quoting_style
 };
 
 let command_to_run cmd => {

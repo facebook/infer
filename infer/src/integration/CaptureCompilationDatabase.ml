@@ -70,7 +70,7 @@ let run_compilation_file compilation_database file =
     let arg_file =
       ClangQuotes.mk_arg_file
         "cdb_clang_args_" ClangQuotes.EscapedNoQuotes [compilation_data.args] in
-    let args = Array.of_list [wrapper_cmd; "@" ^ arg_file] in
+    let args = ["@" ^ arg_file] in
     let env =
       let env0 = Unix.environment () in
       let found = ref false in
@@ -109,9 +109,8 @@ let get_compilation_database_files_buck () =
   | buck :: build :: args ->
       (check_args_for_targets args;
        let args_with_flavor = add_flavor_to_targets args in
-       let buck_build = Array.of_list
-           (buck :: build :: "--config" :: "*//cxx.pch_enabled=false" :: args_with_flavor) in
-       Process.create_process_and_wait buck_build;
+       let args = build :: "--config" :: "*//cxx.pch_enabled=false" :: args_with_flavor in
+       Process.create_process_and_wait ~prog:buck ~args;
        let buck_targets_list = buck :: "targets" :: "--show-output" :: args_with_flavor in
        let buck_targets = String.concat ~sep:" " buck_targets_list in
        try
@@ -135,20 +134,20 @@ let get_compilation_database_files_buck () =
 
 (** Compute the compilation database files. *)
 let get_compilation_database_files_xcodebuild () =
-  let cmd_and_args = IList.rev Config.rest in
+  let prog_args = IList.rev Config.rest in
   let temp_dir = Config.results_dir // "clang" in
   create_dir temp_dir;
   let tmp_file = Filename.temp_file ~in_dir:temp_dir "cdb" ".json" in
-  let xcodebuild_cmd, xcodebuild_args =
-    match cmd_and_args with
-    | [] -> failwith("Build command cannot be empty")
-    | cmd :: _ -> cmd, cmd_and_args in
-  let xcpretty_cmd = "xcpretty" in
-  let xcpretty_cmd_args =
-    [xcpretty_cmd; "--report"; "json-compilation-database"; "--output"; tmp_file] in
+  let xcodebuild_prog, xcodebuild_args =
+    match prog_args with
+    | prog :: args -> (prog, args)
+    | [] -> failwith("Build command cannot be empty") in
+  let xcpretty_prog = "xcpretty" in
+  let xcpretty_args = ["--report"; "json-compilation-database"; "--output"; tmp_file] in
   let producer_status, consumer_status =
-    Process.pipeline ~producer_prog:xcodebuild_cmd ~producer_args:xcodebuild_args
-      ~consumer_prog:xcpretty_cmd ~consumer_args:xcpretty_cmd_args in
+    Process.pipeline
+      ~producer_prog:xcodebuild_prog ~producer_args:xcodebuild_args
+      ~consumer_prog:xcpretty_prog ~consumer_args:xcpretty_args in
   match producer_status, consumer_status with
   | Ok (), Ok () -> [tmp_file]
   | _ ->
