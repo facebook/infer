@@ -84,7 +84,9 @@ let timeout_action _ =
   raise (SymOp.Analysis_failure_exe (FKtimeout))
 
 let () =
-  (* Can't use Core since it wraps signal handlers with a catch-all exception handler that exits *)
+  (* Can't use Core since it wraps signal handlers and alarms with catch-all exception handlers that
+     exit, while we need to propagate the timeout exceptions. *)
+  let module Gc = Caml.Gc in
   let module Sys = Caml.Sys in
   match Config.os_type with
   | Config.Unix | Config.Cygwin ->

@@ -18,6 +18,7 @@ module Caml = Core.Std.Caml
 module Char = Core.Std.Char
 module Filename = Core.Std.Filename
 module Fn = Core.Std.Fn
+module Gc = Core.Std.Gc
 module In_channel = Core.Std.In_channel
 module Int = Core.Std.Int
 module Option = Core.Std.Option

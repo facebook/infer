@@ -1224,10 +1224,10 @@ let module AnalysisResults = {
   /** apply [f] to [arg] with the gc compaction disabled during the execution */
   let apply_without_gc f arg => {
     let stat = Gc.get ();
-    let space_oh = stat.Gc.space_overhead;
-    Gc.set {...stat, Gc.space_overhead: 10000};
+    let space_oh = stat.space_overhead;
+    Gc.set {...stat, space_overhead: 10000};
     let res = f arg;
-    Gc.set {...stat, Gc.space_overhead: space_oh};
+    Gc.set {...stat, space_overhead: space_oh};
     res
   };
 

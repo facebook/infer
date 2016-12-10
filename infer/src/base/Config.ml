@@ -1387,8 +1387,8 @@ let post_parsing_initialization () =
   let set_minor_heap_size nMb = (* increase the minor heap size to speed up gc *)
     let ctrl = Gc.get () in
     let words_of_Mb nMb = nMb * 1024 * 1024 * 8 / Sys.word_size in
-    let new_size = max ctrl.Gc.minor_heap_size (words_of_Mb nMb) in
-    Gc.set { ctrl with Gc.minor_heap_size = new_size }
+    let new_size = max ctrl.minor_heap_size (words_of_Mb nMb) in
+    Gc.set { ctrl with minor_heap_size = new_size }
   in
   set_minor_heap_size 8 ;
 
