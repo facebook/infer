@@ -104,7 +104,7 @@ let get_compilation_database_files_buck () =
        let buck_targets_list = buck :: "targets" :: "--show-output" :: args_with_flavor in
        let buck_targets = String.concat ~sep:" " buck_targets_list in
        try
-         match fst @@ Utils.with_process_in buck_targets Std.input_list with
+         match fst @@ Utils.with_process_in buck_targets In_channel.input_lines with
          | [] -> Logging.stdout "There are no files to process, exiting."; exit 0
          | lines ->
              Logging.out "Reading compilation database from:@\n%s@\n" (String.concat ~sep:"\n" lines);

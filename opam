@@ -31,7 +31,6 @@ depends: [
   "conf-autoconf"
   "ctypes" {>="0.9.2"}
   "ctypes-foreign" {>="0.4.0"}
-  "extlib-compat" {>="1.5.4"}
   "javalib" {>="2.3.3"}
   "ocamlfind" {build}
   "ounit" {="2.0.0"}
