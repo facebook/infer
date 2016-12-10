@@ -56,7 +56,7 @@ let link_exists s =
 
 (* Table mapping directories to multilinks.
    Used for the hashed directories where attrbute files are stored. *)
-let multilinks_dir_table = StringHash.create 16
+let multilinks_dir_table = String.Table.create ~size:16 ()
 
 
 (* Add a multilink for attributes to the internal per-directory table.
@@ -66,7 +66,7 @@ let add_multilink_attr ~stats src dst =
   let attr_dir_name = Filename.basename attr_dir in
   let multilinks =
     try
-      StringHash.find multilinks_dir_table attr_dir_name
+      String.Table.find_exn multilinks_dir_table attr_dir_name
     with
     | Not_found ->
         let multilinks = match Multilinks.read ~dir:attr_dir with
@@ -75,7 +75,7 @@ let add_multilink_attr ~stats src dst =
               multilinks
           | None ->
               Multilinks.create () in
-        StringHash.add multilinks_dir_table attr_dir_name multilinks;
+        String.Table.set multilinks_dir_table ~key:attr_dir_name ~data:multilinks;
         multilinks in
   Multilinks.add multilinks src;
   stats.files_multilinked <- stats.files_multilinked + 1
@@ -92,11 +92,11 @@ let create_link ~stats src dst =
   stats.files_linked <- stats.files_linked + 1
 
 let create_multilinks () =
-  let do_dir dir multilinks =
+  let do_dir ~key:dir ~data:multilinks =
     let attributes_dir =
       Filename.concat (Filename.concat Config.results_dir Config.attributes_dir_name) dir in
     Multilinks.write multilinks ~dir:attributes_dir in
-  StringHash.iter do_dir multilinks_dir_table
+  String.Table.iteri ~f:do_dir multilinks_dir_table
 
 
 (** Create symbolic links recursively from the destination to the source.

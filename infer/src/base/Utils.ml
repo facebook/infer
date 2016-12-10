@@ -87,9 +87,6 @@ let int_of_bool b = if b then 1 else 0
 (** Set of integers *)
 module IntSet = Set.Make(Int)
 
-(** Hash table over strings *)
-module StringHash = Hashtbl.Make (String)
-
 (** Maps from integers *)
 module IntMap = Map.Make (Int)
 

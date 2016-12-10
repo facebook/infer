@@ -75,9 +75,6 @@ val int_of_bool : bool -> int
 (** Set of integers *)
 module IntSet : Set.S with type elt = int
 
-(** Hash table over strings *)
-module StringHash : Hashtbl.S with type key = string
-
 (** Maps from integers *)
 module IntMap : Map.S with type key = int
 

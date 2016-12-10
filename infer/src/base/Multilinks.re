@@ -14,16 +14,16 @@ let module L = Logging;
 
 let multilink_file_name = "multilink.txt";
 
-type t = StringHash.t string;
+type t = String.Table.t string;
 
-let add multilinks fname => StringHash.replace multilinks (Filename.basename fname) fname;
+let add multilinks fname => String.Table.set multilinks key::(Filename.basename fname) data::fname;
 
-let create () :t => StringHash.create 1;
+let create () :t => String.Table.create size::1 ();
 
 /* Cache of multilinks files read from disk */
-let multilink_files_cache = StringHash.create 1;
+let multilink_files_cache = String.Table.create size::1 ();
 
-let reset_cache () => StringHash.reset multilink_files_cache;
+let reset_cache () => String.Table.clear multilink_files_cache;
 
 let read dir::dir :option t => {
   let multilink_fname = Filename.concat dir multilink_file_name;
@@ -31,8 +31,8 @@ let read dir::dir :option t => {
   | None => None
   | Some lines =>
     let links = create ();
-    IList.iter (fun line => StringHash.add links (Filename.basename line) line) lines;
-    StringHash.add multilink_files_cache dir links;
+    IList.iter (fun line => String.Table.set links key::(Filename.basename line) data::line) lines;
+    String.Table.set multilink_files_cache key::dir data::links;
     Some links
   }
 };
@@ -41,12 +41,12 @@ let read dir::dir :option t => {
 let write multilinks dir::dir => {
   let fname = Filename.concat dir multilink_file_name;
   let outc = open_out fname;
-  StringHash.iter (fun _ src => output_string outc (src ^ "\n")) multilinks;
+  String.Table.iteri f::(fun key::_ data::src => output_string outc (src ^ "\n")) multilinks;
   close_out outc
 };
 
 let lookup dir::dir =>
-  try (Some (StringHash.find multilink_files_cache dir)) {
+  try (Some (String.Table.find_exn multilink_files_cache dir)) {
   | Not_found => read dir::dir
   };
 
@@ -60,7 +60,7 @@ let resolve fname => {
     switch (lookup dir::dir) {
     | None => fname
     | Some links =>
-      try (DB.filename_from_string (StringHash.find links base)) {
+      try (DB.filename_from_string (String.Table.find_exn links base)) {
       | Not_found => fname
       }
     }
