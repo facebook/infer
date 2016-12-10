@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 let module L = Logging;
 
@@ -205,7 +205,7 @@ let module Node = {
     let pe =
       switch instro {
       | None => pe0
-      | Some instr => pe_extend_colormap pe0 (Obj.repr instr) Red
+      | Some instr => Pp.extend_colormap pe0 (Obj.repr instr) Red
       };
     let instrs = get_instrs node;
     let pp_loc fmt () => F.fprintf fmt " %a " Location.pp (get_loc node);
@@ -267,8 +267,8 @@ let module Node = {
       | Start_node _ => "Start"
       | Join_node => "Join"
       };
-    let pp fmt () => F.fprintf fmt "%s\n%a@?" str (pp_instrs pe None sub_instrs::true) node;
-    pp_to_string pp ()
+    let pp fmt => F.fprintf fmt "%s\n%a@?" str (pp_instrs pe None sub_instrs::true) node;
+    F.asprintf "%t" pp
   };
 };
 

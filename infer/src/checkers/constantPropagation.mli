@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 type const_map = Procdesc.Node.t -> Exp.t -> Const.t option
 

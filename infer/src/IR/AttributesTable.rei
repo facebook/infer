@@ -8,7 +8,7 @@
  */
 
 /** Module to manage the table of attributes. */
-open! Utils;
+open! IStd;
 
 
 /** Save .attr file for the procedure into the attributes database. */

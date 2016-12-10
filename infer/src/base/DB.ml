@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Database of analysis results *)
 
@@ -26,7 +26,7 @@ let source_dir_to_string source_dir = source_dir
 (** get the path to an internal file with the given extention (.cfg, .cg, .tenv) *)
 let source_dir_get_internal_file source_dir extension =
   let source_dir_name =
-    string_append_crc_cutoff (Filename.chop_extension (Filename.basename source_dir)) in
+    Utils.string_append_crc_cutoff (Filename.chop_extension (Filename.basename source_dir)) in
   let fname = source_dir_name ^ extension in
   Filename.concat source_dir fname
 
@@ -93,7 +93,7 @@ let file_modified_time ?(symlink=false) fname =
 let filename_create_dir fname =
   let dirname = Filename.dirname fname in
   if (Sys.file_exists dirname) != `Yes
-  then create_dir dirname
+  then Utils.create_dir dirname
 
 let read_whole_file fd =
   In_channel.input_all (Unix.in_channel_of_descr fd)
@@ -110,7 +110,7 @@ let update_file_with_lock dir fname update =
         L.stderr "reset_file: lseek fail@.";
         assert false
       end in
-  create_dir dir;
+  Utils.create_dir dir;
   let path = Filename.concat dir fname in
   let fd = Unix.openfile path ~mode:Unix.[O_CREAT; O_SYNC; O_RDWR] ~perm:0o640 in
   Unix.lockf fd ~mode:Unix.F_LOCK ~len:0L;
@@ -179,15 +179,15 @@ module Results_dir = struct
 
   (** initialize the results directory *)
   let init source =
-    create_dir Config.results_dir;
-    create_dir specs_dir;
-    create_dir (path_to_filename Abs_root [Config.attributes_dir_name]);
-    create_dir (path_to_filename Abs_root [Config.captured_dir_name]);
+    Utils.create_dir Config.results_dir;
+    Utils.create_dir specs_dir;
+    Utils.create_dir (path_to_filename Abs_root [Config.attributes_dir_name]);
+    Utils.create_dir (path_to_filename Abs_root [Config.captured_dir_name]);
     if not (SourceFile.equal source SourceFile.empty) then
-      create_dir (path_to_filename (Abs_source_dir source) [])
+      Utils.create_dir (path_to_filename (Abs_source_dir source) [])
 
   let clean_specs_dir () =
-    create_dir specs_dir; (* create dir just in case it doesn't exist to avoid errors *)
+    Utils.create_dir specs_dir; (* create dir just in case it doesn't exist to avoid errors *)
     let files_to_remove = Array.map ~f:(Filename.concat specs_dir) (Sys.readdir specs_dir) in
     Array.iter ~f:Sys.remove files_to_remove
 
@@ -196,11 +196,11 @@ module Results_dir = struct
     let rec create = function
       | [] ->
           let fname = path_to_filename pk [] in
-          create_dir fname;
+          Utils.create_dir fname;
           fname
       | name:: names ->
           let new_path = Filename.concat (create names) name in
-          create_dir new_path;
+          Utils.create_dir new_path;
           new_path in
     let filename, dir_path = match IList.rev path with
       | filename:: dir_path -> filename, dir_path

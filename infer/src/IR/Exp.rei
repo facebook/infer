@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Expressions */
@@ -152,8 +152,7 @@ let lt: t => t => t;
 /** Extract the ids and pvars from an expression */
 let get_vars: t => (list Ident.t, list Pvar.t);
 
-let pp_printenv:
-  printenv => (printenv => F.formatter => Typ.t => unit) => F.formatter => t => unit;
+let pp_printenv: Pp.env => (Pp.env => F.formatter => Typ.t => unit) => F.formatter => t => unit;
 
 let pp: F.formatter => t => unit;
 

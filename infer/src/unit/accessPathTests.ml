@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open !Utils
+open! IStd
 
 module F = Format
 
@@ -139,7 +139,7 @@ let tests =
       let pp_diff fmt (actual, expected) =
         F.fprintf fmt "Expected %s but got %s" expected actual in
       let assert_eq input_aps expected =
-        let input = pp_to_string AccessPathDomains.Set.pp input_aps in
+        let input = F.asprintf "%a" AccessPathDomains.Set.pp input_aps in
         assert_equal ~cmp:(=) ~pp_diff input expected in
       let aps1 = AccessPathDomains.Set.of_list [x_exact; x_abstract] in (* { x*, x } *)
       let aps2 = AccessPathDomains.Set.add xF_exact aps1 in (* x*, x, x.f *)

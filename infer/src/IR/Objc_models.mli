@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** This module models special c struct types from the Apple's Core Foundation libraries
     for which there are particular rules for memory management. *)

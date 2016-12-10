@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Constants */
@@ -37,7 +37,7 @@ let kind_equal: t => t => bool;
 
 
 /** Pretty print a const */
-let pp: printenv => F.formatter => t => unit;
+let pp: Pp.env => F.formatter => t => unit;
 
 let to_string: t => string;
 

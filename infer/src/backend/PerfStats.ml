@@ -9,7 +9,7 @@
 
 (** Performance Statistics gathering and reporting *)
 
-open! Utils
+open! IStd
 
 type perf_stats = {
   rtime : float;
@@ -122,11 +122,11 @@ let stats () =
   let exit_times = Unix.times () in
   let at = AttributesTable.stats () in
   {
-    rtime = exit_timeofday -. initial_timeofday;
-    utime = exit_times.tms_utime -. initial_times.tms_utime;
-    stime = exit_times.tms_stime -. initial_times.tms_stime;
-    cutime = exit_times.tms_cutime -. initial_times.tms_cutime;
-    cstime = exit_times.tms_cstime -. initial_times.tms_cstime;
+    rtime = exit_timeofday -. Utils.initial_timeofday;
+    utime = exit_times.tms_utime -. Utils.initial_times.tms_utime;
+    stime = exit_times.tms_stime -. Utils.initial_times.tms_stime;
+    cutime = exit_times.tms_cutime -. Utils.initial_times.tms_cutime;
+    cstime = exit_times.tms_cstime -. Utils.initial_times.tms_cstime;
     minor_gb = words_to_gb gc_stats.minor_words;
     promoted_gb = words_to_gb gc_stats.promoted_words;
     major_gb = words_to_gb gc_stats.major_words;

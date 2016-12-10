@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Module for utility functions for the whole frontend. Includes functions for transformations of
     ast nodes and general utility functions such as functions on lists *)
@@ -670,7 +670,7 @@ struct
       match mangled_opt with
       | Some m when is_cpp_translation translation_unit_context -> m
       | _ -> "" in
-    let mangled = (string_crc_hex32 file) ^ mangled_name in
+    let mangled = (Utils.string_crc_hex32 file) ^ mangled_name in
     if String.length file == 0 && String.length mangled_name == 0 then
       Procname.from_string_c_fun name
     else
@@ -776,7 +776,7 @@ struct
           let start_location = fst decl_info.Clang_ast_t.di_source_range in
           let line_opt = start_location.Clang_ast_t.sl_line in
           let line_str = match line_opt with | Some line -> string_of_int line | None -> "" in
-          let mangled = string_crc_hex32 line_str in
+          let mangled = Utils.string_crc_hex32 line_str in
           let mangled_name = Mangled.mangled name_string mangled in
           Pvar.mk mangled_name procname
     | None ->

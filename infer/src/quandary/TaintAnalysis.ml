@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module F = Format
 module L = Logging
@@ -353,7 +353,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             | _ ->
                 failwithf
                   "Unexpected cast %a in procedure %a at line %a"
-                  (Sil.pp_instr pe_text) instr
+                  (Sil.pp_instr Pp.text) instr
                   Procname.pp (Procdesc.get_proc_name (proc_data.pdesc))
                   Location.pp loc
           else

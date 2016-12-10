@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module L = Logging
 module F = Format
@@ -77,7 +77,7 @@ module Env = struct
   let pp fmt map =
     let pp_elem fmt (s, b) = F.fprintf fmt "%s:%b" s b in
     let l = String.Map.to_alist map in
-    if l <> [] then F.fprintf fmt "%a" (pp_seq pp_elem) l
+    if l <> [] then F.fprintf fmt "%a" (Pp.seq pp_elem) l
 end
 
 (** Element for the set domain: an integer (for pending traces), and an environment. *)
@@ -104,9 +104,9 @@ module State = struct
   let to_string n =
     let pp_intset fmt s =
       ElemSet.iter (fun d -> F.fprintf fmt "%a " Elem.pp d) s in
-    let pp fmt () =
+    let pp fmt =
       Format.fprintf fmt "{%a}" pp_intset n in
-    pp_to_string pp ()
+    F.asprintf "%t" pp
 
   (** Initial balanced state with empty environment. *)
   let balanced = ElemSet.singleton Elem.zero

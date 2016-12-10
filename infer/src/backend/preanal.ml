@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** mutate the cfg/cg to add dynamic dispatch handling *)
 let add_dispatch_calls pdesc cg tenv ~handle_dynamic_dispatch =

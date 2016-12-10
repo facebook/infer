@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Symbolic Execution *)
 
@@ -1200,7 +1200,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         | [], _ ->
             ret_old_path [prop_]
         | _ ->
-            L.err "Pvar %a appears on the LHS of >1 heap predicate!@." (Pvar.pp pe_text) pvar;
+            L.err "Pvar %a appears on the LHS of >1 heap predicate!@." (Pvar.pp Pp.text) pvar;
             assert false
       end
   | Sil.Abstract _ ->

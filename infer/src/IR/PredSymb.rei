@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Predicate Symbols */
@@ -160,7 +160,7 @@ let is_undef: t => bool;
 
 
 /** convert the attribute to a string */
-let to_string: printenv => t => string;
+let to_string: Pp.env => t => string;
 
 
 /** Dump an attribute. */

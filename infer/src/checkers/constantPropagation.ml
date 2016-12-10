@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module L = Logging
 
@@ -34,7 +34,7 @@ module ConstantFlow = Dataflow.MakeDF(struct
     let pp fmt constants =
       let pp_key fmt = Exp.pp fmt in
       let print_kv k = function
-        | Some v -> Format.fprintf fmt "  %a -> %a@." pp_key k (Const.pp pe_text) v
+        | Some v -> Format.fprintf fmt "  %a -> %a@." pp_key k (Const.pp Pp.text) v
         | _ -> Format.fprintf fmt "  %a -> None@." pp_key k in
       Format.fprintf fmt "[@.";
       ConstantMap.iter print_kv constants;
@@ -113,7 +113,7 @@ module ConstantFlow = Dataflow.MakeDF(struct
           L.stdout "Node %i:" (Procdesc.Node.get_id node :> int);
           L.stdout "%a" pp constants;
           IList.iter
-            (fun instr -> L.stdout "%a@." (Sil.pp_instr pe_text) instr)
+            (fun instr -> L.stdout "%a@." (Sil.pp_instr Pp.text) instr)
             (Procdesc.Node.get_instrs node)
         end;
       let constants =

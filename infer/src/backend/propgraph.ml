@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Propositions seen as graphs *)
 
@@ -118,9 +118,9 @@ let iter_edges footprint_part f g =
 type diff =
   { diff_newgraph : t; (** the new graph *)
     diff_changed_norm : Obj.t list; (** objects changed in the normal part *)
-    diff_cmap_norm : colormap; (** colormap for the normal part *)
+    diff_cmap_norm : Pp.colormap; (** colormap for the normal part *)
     diff_changed_foot : Obj.t list; (** objects changed in the footprint part *)
-    diff_cmap_foot : colormap (** colormap for the footprint part *) }
+    diff_cmap_foot : Pp.colormap (** colormap for the footprint part *) }
 
 (** Compute the subobjects in [e2] which are different from those in [e1] *)
 let compute_exp_diff (e1: Exp.t) (e2: Exp.t) : Obj.t list =
@@ -193,7 +193,7 @@ let compute_diff default_color oldgraph newgraph : diff =
             () in
     IList.iter build_changed newedges;
     let colormap (o: Obj.t) =
-      if IList.exists (fun x -> x == o) !changed then Red
+      if IList.exists (fun x -> x == o) !changed then Pp.Red
       else default_color in
     !changed, colormap in
   let changed_norm, colormap_norm = compute_changed false in
@@ -218,29 +218,29 @@ let pp_proplist pe0 s (base_prop, extract_stack) f plist =
   let add_base_stack prop =
     if extract_stack then Prop.set prop ~sigma:(base_stack @ prop.Prop.sigma)
     else Prop.expose prop in
-  let update_pe_diff (prop: Prop.normal Prop.t) : printenv =
+  let update_pe_diff (prop: Prop.normal Prop.t) : Pp.env =
     if Config.print_using_diff then
       let diff = compute_diff Blue (from_prop base_prop) (from_prop prop) in
       let cmap_norm = diff_get_colormap false diff in
       let cmap_foot = diff_get_colormap true diff in
-      { pe0 with pe_cmap_norm = cmap_norm; pe_cmap_foot = cmap_foot }
+      { pe0 with cmap_norm; cmap_foot }
     else pe0 in
   let rec pp_seq_newline n f = function
     | [] -> ()
     | [_x] ->
         let pe = update_pe_diff _x in
         let x = add_base_stack _x in
-        (match pe.pe_kind with
-         | PP_TEXT -> F.fprintf f "%s %d of %d:@\n%a" s n num (Prop.pp_prop pe) x
-         | PP_HTML -> F.fprintf f "%s %d of %d:@\n%a@\n" s n num (Prop.pp_prop pe) x
-         | PP_LATEX -> F.fprintf f "@[%a@]@\n" (Prop.pp_prop pe) x)
+        (match pe.kind with
+         | TEXT -> F.fprintf f "%s %d of %d:@\n%a" s n num (Prop.pp_prop pe) x
+         | HTML -> F.fprintf f "%s %d of %d:@\n%a@\n" s n num (Prop.pp_prop pe) x
+         | LATEX -> F.fprintf f "@[%a@]@\n" (Prop.pp_prop pe) x)
     | _x:: l ->
         let pe = update_pe_diff _x in
         let x = add_base_stack _x in
-        (match pe.pe_kind with
-         | PP_TEXT -> F.fprintf f "%s %d of %d:@\n%a@\n%a" s n num (Prop.pp_prop pe) x (pp_seq_newline (n + 1)) l
-         | PP_HTML -> F.fprintf f "%s %d of %d:@\n%a@\n%a" s n num (Prop.pp_prop pe) x (pp_seq_newline (n + 1)) l
-         | PP_LATEX -> F.fprintf f "@[%a@]\\\\@\n\\bigvee\\\\@\n%a" (Prop.pp_prop pe) x (pp_seq_newline (n + 1)) l)
+        (match pe.kind with
+         | TEXT -> F.fprintf f "%s %d of %d:@\n%a@\n%a" s n num (Prop.pp_prop pe) x (pp_seq_newline (n + 1)) l
+         | HTML -> F.fprintf f "%s %d of %d:@\n%a@\n%a" s n num (Prop.pp_prop pe) x (pp_seq_newline (n + 1)) l
+         | LATEX -> F.fprintf f "@[%a@]\\\\@\n\\bigvee\\\\@\n%a" (Prop.pp_prop pe) x (pp_seq_newline (n + 1)) l)
   in pp_seq_newline 1 f plist
 
 (** dump a propset *)

@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** Program variables. */
@@ -117,15 +117,15 @@ let mk_tmp: string => Procname.t => t;
 
 
 /** Pretty print a program variable. */
-let pp: printenv => F.formatter => t => unit;
+let pp: Pp.env => F.formatter => t => unit;
 
 
 /** Pretty print a list of program variables. */
-let pp_list: printenv => F.formatter => list t => unit;
+let pp_list: Pp.env => F.formatter => list t => unit;
 
 
 /** Pretty print a pvar which denotes a value, not an address */
-let pp_value: printenv => F.formatter => t => unit;
+let pp_value: Pp.env => F.formatter => t => unit;
 
 
 /** Turn an ordinary program variable into a callee program variable */

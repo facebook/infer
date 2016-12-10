@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Decompiled Expressions */
@@ -50,7 +50,7 @@ let pp: F.formatter => t => unit;
 
 
 /** Pretty print a value path */
-let pp_vpath: printenv => F.formatter => vpath => unit;
+let pp_vpath: Pp.env => F.formatter => vpath => unit;
 
 
 /** return true if [dexp] contains a temporary pvar */

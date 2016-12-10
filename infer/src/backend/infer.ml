@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Top-level driver that orchestrates build system integration, frontends, backend, and
     reporting *)
@@ -147,7 +147,7 @@ let check_xcpretty () =
       exit 1
 
 let capture_with_compilation_database db_files =
-  Config.clang_compilation_db_files := IList.map filename_to_absolute db_files;
+  Config.clang_compilation_db_files := IList.map Utils.filename_to_absolute db_files;
   let compilation_database = CompilationDatabase.from_json_files db_files in
   CaptureCompilationDatabase.capture_files_in_database compilation_database
 
@@ -301,7 +301,7 @@ let analyze = function
 (** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)
 let fail_on_issue_epilogue () =
   let issues_json = DB.Results_dir.(path_to_filename Abs_root ["report.json"]) in
-  match read_file (DB.filename_to_string issues_json) with
+  match Utils.read_file (DB.filename_to_string issues_json) with
   | Some lines ->
       let issues = Jsonbug_j.report_of_string @@ String.concat ~sep:"" lines in
       if issues <> [] then exit Config.fail_on_issue_exit_code

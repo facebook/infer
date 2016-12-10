@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Implementation of Abstraction Functions *)
 
@@ -99,7 +99,7 @@ let mk_rule_ptspts_ls tenv impl_ok1 impl_ok2 (para: Sil.hpara) =
   let (para_fst_start, para_fst_rest) =
     let mark_impl_flag hpred = { Match.hpred = hpred; Match.flag = impl_ok1 } in
     match para_fst with
-    | [] -> L.out "@.@.ERROR (Empty Para): %a @.@." (Sil.pp_hpara pe_text) para; assert false
+    | [] -> L.out "@.@.ERROR (Empty Para): %a @.@." (Sil.pp_hpara Pp.text) para; assert false
     | hpred :: hpreds ->
         let hpat = mark_impl_flag hpred in
         let hpats = IList.map mark_impl_flag hpreds in
@@ -128,7 +128,7 @@ let mk_rule_ptsls_ls tenv k2 impl_ok1 impl_ok2 para =
   let (ids_exist, para_inst) = Sil.hpara_instantiate para exp_base exp_next exps_shared in
   let (para_inst_start, para_inst_rest) =
     match para_inst with
-    | [] -> L.out "@.@.ERROR (Empty Para): %a @.@." (Sil.pp_hpara pe_text) para; assert false
+    | [] -> L.out "@.@.ERROR (Empty Para): %a @.@." (Sil.pp_hpara Pp.text) para; assert false
     | hpred :: hpreds ->
         let allow_impl hpred = { Match.hpred = hpred; Match.flag = impl_ok1 } in
         (allow_impl hpred, IList.map allow_impl hpreds) in
@@ -252,7 +252,7 @@ let mk_rule_ptspts_dll tenv impl_ok1 impl_ok2 para =
   let (para_fst_start, para_fst_rest) =
     let mark_impl_flag hpred = { Match.hpred = hpred; Match.flag = impl_ok1 } in
     match para_fst with
-    | [] -> L.out "@.@.ERROR (Empty DLL para): %a@.@." (Sil.pp_hpara_dll pe_text) para; assert false
+    | [] -> L.out "@.@.ERROR (Empty DLL para): %a@.@." (Sil.pp_hpara_dll Pp.text) para; assert false
     | hpred :: hpreds ->
         let hpat = mark_impl_flag hpred in
         let hpats = IList.map mark_impl_flag hpreds in

@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Propositions seen as graphs *)
 
@@ -62,17 +62,17 @@ type diff
 
 (** [compute_diff default_color oldgraph newgraph] returns the list of edges
     which are only in [newgraph] *)
-val compute_diff : color -> t -> t -> diff
+val compute_diff : Pp.color -> t -> t -> diff
 
 (** [diff_get_colormap footprint_part diff] returns the colormap of a computed diff,
     selecting the footprint colormap if [footprint_part] is true. *)
-val diff_get_colormap : bool -> diff -> colormap
+val diff_get_colormap : bool -> diff -> Pp.colormap
 
 (** Print a list of propositions, prepending each one with the given string,
     If !Config.pring_using_diff is true, print the diff w.r.t. the given prop,
     extracting its local stack vars if the boolean is true. *)
 val pp_proplist :
-  printenv -> string -> (Prop.normal Prop.t * bool) ->
+  Pp.env -> string -> (Prop.normal Prop.t * bool) ->
   Format.formatter -> Prop.normal Prop.t list -> unit
 
 (** dump a prop list coming form the given initial prop *)

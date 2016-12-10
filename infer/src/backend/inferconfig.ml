@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module L = Logging
 
@@ -161,7 +161,7 @@ module FileOrProcMatcher = struct
     let pp_method_pattern fmt mp =
       let pp_params fmt l =
         Format.fprintf fmt "[%a]"
-          (pp_semicolon_seq_oneline pe_text pp_string) l in
+          (Pp.semicolon_seq_oneline Pp.text pp_string) l in
       Format.fprintf fmt "%a%a%a"
         (pp_key_value pp_string) ("class", Some mp.Config.class_name)
         (pp_key_value pp_string) ("method", mp.Config.method_name)
@@ -260,7 +260,7 @@ let test () =
     IList.fold_left
       (fun l (n, a, f) -> if f.path_filter path then (n,a) :: l else l)
       [] filters in
-  directory_iter
+  Utils.directory_iter
     (fun path ->
        if DB.is_source_file path then
          let source_file = SourceFile.from_abs_path path in

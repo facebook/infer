@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open !Utils
+open! IStd
 
 module F = Format
 
@@ -137,7 +137,7 @@ let tests =
 
   let get_trace_str access_path tree =
     match Domain.get_trace access_path tree with
-    | Some trace -> pp_to_string MockTraceDomain.pp trace
+    | Some trace -> F.asprintf "%a" MockTraceDomain.pp trace
     | None -> no_trace in
 
   let assert_traces_eq access_path tree expected_trace_str =

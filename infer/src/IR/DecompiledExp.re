@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Decompiled Expressions */
@@ -49,7 +49,7 @@ let eradicate_java () => Config.eradicate && java ();
 let rec to_string =
   fun
   | Darray de1 de2 => to_string de1 ^ "[" ^ to_string de2 ^ "]"
-  | Dbinop op de1 de2 => "(" ^ to_string de1 ^ Binop.str pe_text op ^ to_string de2 ^ ")"
+  | Dbinop op de1 de2 => "(" ^ to_string de1 ^ Binop.str Pp.text op ^ to_string de2 ^ ")"
   | Dconst (Cfun pn) => Procname.to_simplified_string pn
   | Dconst c => Const.to_string c
   | Dderef de => "*" ^ to_string de
@@ -61,7 +61,7 @@ let rec to_string =
             F.fprintf fmt "..."
           }
         } else {
-          pp_comma_seq pp_arg fmt des
+          Pp.comma_seq pp_arg fmt des
         };
       let pp_fun fmt => (
         fun
@@ -81,7 +81,7 @@ let rec to_string =
         | [a, ...args'] when isvirtual => (Some a, args')
         | _ => (None, args)
         };
-      let pp fmt () => {
+      let pp fmt => {
         let pp_receiver fmt => (
           fun
           | None => ()
@@ -89,7 +89,7 @@ let rec to_string =
         );
         F.fprintf fmt "%a%a(%a)" pp_receiver receiver pp_fun fun_dexp pp_args args'
       };
-      pp_to_string pp ()
+      F.asprintf "%t" pp
     }
   | Darrow (Dpvar pv) f when Pvar.is_this pv =>
     /* this->fieldname */
@@ -130,7 +130,7 @@ let rec to_string =
       ampersand ^ s
     }
   | Dunop op de => Unop.str op ^ to_string de
-  | Dsizeof typ _ _ => pp_to_string (Typ.pp_full pe_text) typ
+  | Dsizeof typ _ _ => F.asprintf "%a" (Typ.pp_full Pp.text) typ
   | Dunknown => "unknown"
   | Dretcall de _ _ _ => "returned by " ^ to_string de;
 
@@ -145,12 +145,12 @@ let pp_vpath pe fmt vpath => {
     fun
     | Some de => pp fmt de
     | None => ();
-  if (pe.pe_kind === PP_HTML) {
+  if (pe.Pp.kind === Pp.HTML) {
     F.fprintf
       fmt
       " %a{vpath: %a}%a"
       Io_infer.Html.pp_start_color
-      Orange
+      Pp.Orange
       pp
       vpath
       Io_infer.Html.pp_end_color

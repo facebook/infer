@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Expressions */
@@ -230,7 +230,7 @@ let rec pp_ pe pp_t f e => {
   | Exn e => F.fprintf f "EXN %a" pp_exp e
   | Closure {name, captured_vars} =>
     let id_exps = IList.map (fun (id_exp, _, _) => id_exp) captured_vars;
-    F.fprintf f "(%a)" (pp_comma_seq pp_exp) [Const (Cfun name), ...id_exps]
+    F.fprintf f "(%a)" (Pp.comma_seq pp_exp) [Const (Cfun name), ...id_exps]
   | Lvar pv => Pvar.pp pe f pv
   | Lfield e fld _ => F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld
   | Lindex e1 e2 => F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
@@ -242,6 +242,6 @@ let rec pp_ pe pp_t f e => {
 
 let pp_printenv pe pp_typ f e => pp_ pe (pp_typ pe) f e;
 
-let pp f e => pp_printenv pe_text Typ.pp f e;
+let pp f e => pp_printenv Pp.text Typ.pp f e;
 
 let to_string e => F.asprintf "%a" pp e;

@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module F = Format
 module L = Logging
@@ -103,7 +103,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (Procname.to_filename caller)
         suffix in
     let fpath = Filename.concat dir fname in
-    create_dir dir;
+    Utils.create_dir dir;
     Ag_util.Json.to_file Stacktree_j.write_stacktree fpath stacktree
 
   let exec_instr astate proc_data _ = function

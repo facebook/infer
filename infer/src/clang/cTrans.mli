@@ -7,6 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module CTrans_funct(F: CModule_type.CFrontend) : CModule_type.CTranslation

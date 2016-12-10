@@ -8,7 +8,7 @@
  *)
 
 open CFrontend_utils
-open !Utils
+open! IStd
 
 let get_source_range an =
   match an with

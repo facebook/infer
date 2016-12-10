@@ -9,7 +9,7 @@
 
 (** Definition and parsing of command line arguments *)
 
-open! Utils
+open! IStd
 
 module F = Format
 module YBU = Yojson.Basic.Util
@@ -352,7 +352,7 @@ let mk_path_helper ~setter ~default_to_string
          that [!arg_being_parsed] points at the option name position in [!args_to_parse], as is the
          case e.g. when calling
          [Arg.parse_argv_dynamic ~current:arg_being_parsed !args_to_parse ...]. *)
-      let abs_path = filename_to_absolute str in
+      let abs_path = Utils.filename_to_absolute str in
       (!args_to_parse).(!arg_being_parsed + 1) <- abs_path;
       abs_path
     ) else
@@ -440,7 +440,7 @@ let mk_rest ?(exes=[]) doc =
   rest
 
 let decode_inferconfig_to_argv current_exe path =
-  let json = match read_optional_json_file path with
+  let json = match Utils.read_optional_json_file path with
     | Ok json ->
         json
     | Error msg ->

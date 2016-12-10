@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Types */
@@ -176,8 +176,8 @@ let pp pe f te =>
   };
 
 let to_string typ => {
-  let pp fmt () => pp_full pe_text fmt typ;
-  pp_to_string pp ()
+  let pp fmt => pp_full Pp.text fmt typ;
+  F.asprintf "%t" pp
 };
 
 

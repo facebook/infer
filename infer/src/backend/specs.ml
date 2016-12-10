@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Specifications and spec table *)
 
@@ -266,7 +266,7 @@ module CallStats = struct (** module for tracing stats of function calls *)
     s1 ^ ":" ^ s2
 
   let pp_trace fmt tr =
-    pp_seq
+    Pp.seq
       (fun fmt x -> F.fprintf fmt "%s" (tr_elem_str x))
       fmt (IList.rev tr)
 
@@ -369,19 +369,19 @@ let pp_spec pe num_opt fmt spec =
   let pre = Jprop.to_prop spec.pre in
   let pe_post = Prop.prop_update_obj_sub pe pre in
   let post_list = IList.map fst spec.posts in
-  match pe.pe_kind with
-  | PP_TEXT ->
+  match pe.Pp.kind with
+  | TEXT ->
       F.fprintf fmt "--------------------------- %s ---------------------------@\n" num_str;
-      F.fprintf fmt "PRE:@\n%a@\n" (Prop.pp_prop pe_text) pre;
+      F.fprintf fmt "PRE:@\n%a@\n" (Prop.pp_prop Pp.text) pre;
       F.fprintf fmt "%a@\n" (Propgraph.pp_proplist pe_post "POST" (pre, true)) post_list;
       F.fprintf fmt "----------------------------------------------------------------"
-  | PP_HTML ->
+  | HTML ->
       F.fprintf fmt "--------------------------- %s ---------------------------@\n" num_str;
-      F.fprintf fmt "PRE:@\n%a%a%a@\n" Io_infer.Html.pp_start_color Blue (Prop.pp_prop (pe_html Blue)) pre Io_infer.Html.pp_end_color ();
+      F.fprintf fmt "PRE:@\n%a%a%a@\n" Io_infer.Html.pp_start_color Pp.Blue (Prop.pp_prop (Pp.html Blue)) pre Io_infer.Html.pp_end_color ();
       F.fprintf fmt "%a" (Propgraph.pp_proplist pe_post "POST" (pre, true)) post_list;
       F.fprintf fmt "----------------------------------------------------------------"
-  | PP_LATEX ->
-      F.fprintf fmt "\\textbf{\\large Requires}\\\\@\n@[%a%a%a@]\\\\@\n" Latex.pp_color Blue (Prop.pp_prop (pe_latex Blue)) pre Latex.pp_color pe.pe_color;
+  | LATEX ->
+      F.fprintf fmt "\\textbf{\\large Requires}\\\\@\n@[%a%a%a@]\\\\@\n" Latex.pp_color Pp.Blue (Prop.pp_prop (Pp.latex Blue)) pre Latex.pp_color pe.Pp.color;
       F.fprintf fmt "\\textbf{\\large Ensures}\\\\@\n@[%a@]" (Propgraph.pp_proplist pe_post "POST" (pre, true)) post_list
 
 (** Dump a spec *)
@@ -390,12 +390,12 @@ let d_spec (spec: 'a spec) = L.add_print_action (L.PTspec, Obj.repr spec)
 let pp_specs pe fmt specs =
   let total = IList.length specs in
   let cnt = ref 0 in
-  match pe.pe_kind with
-  | PP_TEXT ->
+  match pe.Pp.kind with
+  | TEXT ->
       IList.iter (fun spec -> incr cnt; F.fprintf fmt "%a@\n" (pp_spec pe (Some (!cnt, total))) spec) specs
-  | PP_HTML ->
+  | HTML ->
       IList.iter (fun spec -> incr cnt; F.fprintf fmt "%a<br>@\n" (pp_spec pe (Some (!cnt, total))) spec) specs
-  | PP_LATEX ->
+  | LATEX ->
       IList.iter (fun spec -> incr cnt; F.fprintf fmt "\\subsection*{Spec %d of %d}@\n\\(%a\\)@\n" !cnt total (pp_spec pe None) spec) specs
 
 (** Print the decpendency map *)
@@ -417,18 +417,18 @@ let get_signature summary =
   let s = ref "" in
   IList.iter
     (fun (p, typ) ->
-       let pp f () = F.fprintf f "%a %a" (Typ.pp_full pe_text) typ Mangled.pp p in
-       let decl = pp_to_string pp () in
+       let pp f = F.fprintf f "%a %a" (Typ.pp_full Pp.text) typ Mangled.pp p in
+       let decl = F.asprintf "%t" pp in
        s := if !s = "" then decl else !s ^ ", " ^ decl)
     summary.attributes.ProcAttributes.formals;
-  let pp f () =
+  let pp f =
     F.fprintf
       f
       "%a %a"
-      (Typ.pp_full pe_text)
+      (Typ.pp_full Pp.text)
       summary.attributes.ProcAttributes.ret_type
       Procname.pp summary.attributes.ProcAttributes.proc_name in
-  let decl = pp_to_string pp () in
+  let decl = F.asprintf "%t" pp in
   decl ^ "(" ^ !s ^ ")"
 
 let get_specs_from_preposts preposts =
@@ -460,7 +460,7 @@ let pp_payload pe fmt { preposts; typestate; crashcontext_frame; quandary; siof;
 
 let pp_summary_text ~whole_seconds fmt summary =
   let err_log = summary.attributes.ProcAttributes.err_log in
-  let pe = pe_text in
+  let pe = Pp.text in
   pp_summary_no_stats_specs fmt summary;
   F.fprintf fmt "%a@\n%a%a"
     pp_errlog err_log
@@ -469,7 +469,7 @@ let pp_summary_text ~whole_seconds fmt summary =
 
 let pp_summary_latex ~whole_seconds color fmt summary =
   let err_log = summary.attributes.ProcAttributes.err_log in
-  let pe = pe_latex color in
+  let pe = Pp.latex color in
   F.fprintf fmt "\\begin{verbatim}@\n";
   pp_summary_no_stats_specs fmt summary;
   F.fprintf fmt "%a@\n" pp_errlog err_log;
@@ -479,7 +479,7 @@ let pp_summary_latex ~whole_seconds color fmt summary =
 
 let pp_summary_html ~whole_seconds source color fmt summary =
   let err_log = summary.attributes.ProcAttributes.err_log in
-  let pe = pe_html color in
+  let pe = Pp.html color in
   Io_infer.Html.pp_start_color fmt Black;
   F.fprintf fmt "@\n%a" pp_summary_no_stats_specs summary;
   Io_infer.Html.pp_end_color fmt ();

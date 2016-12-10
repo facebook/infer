@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Module for user-defined checkers. *)
 
@@ -373,7 +373,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
           F.fprintf fmt "%a:%d" SourceFile.pp loc.Location.file loc.Location.line in
         L.stdout "Null Checks of Formal Parameters: ";
         L.stdout "%d out of %d parameters checked (missing checks on: %a)[%a]@."
-          nchecks nformals (pp_seq Mangled.pp) missing pp_file_loc ();
+          nchecks nformals (Pp.seq Mangled.pp) missing pp_file_loc ();
 
         let linereader = Printer.LineReader.create () in
         L.stdout "%a@." (PP.pp_loc_range linereader 10 10) loc
@@ -389,7 +389,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
                L.stdout "call in %s %s: %a with first arg: %a@."
                  (Procname.java_get_class_name pname_java)
                  (Procname.java_get_method pname_java)
-                 (Sil.pp_instr pe_text) instr
+                 (Sil.pp_instr Pp.text) instr
                  Exp.pp arg1
            | _ ->
                ())

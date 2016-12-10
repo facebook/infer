@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Functions for Propositions (i.e., Symbolic Heaps) *)
 
@@ -122,17 +122,17 @@ let equal_prop p1 p2 =
 
 (** Pretty print a footprint. *)
 let pp_footprint _pe f fp =
-  let pe = { _pe with pe_cmap_norm = _pe.pe_cmap_foot } in
+  let pe = { _pe with Pp.cmap_norm = _pe.Pp.cmap_foot } in
   let pp_pi f () =
     if fp.pi_fp != [] then
-      F.fprintf f "%a ;@\n" (pp_semicolon_seq_oneline pe (Sil.pp_atom pe)) fp.pi_fp in
+      F.fprintf f "%a ;@\n" (Pp.semicolon_seq_oneline pe (Sil.pp_atom pe)) fp.pi_fp in
   if fp.pi_fp != [] || fp.sigma_fp != [] then
     F.fprintf f "@\n[footprint@\n  @[%a%a@]  ]"
-      pp_pi () (pp_semicolon_seq pe (Sil.pp_hpred pe)) fp.sigma_fp
+      pp_pi () (Pp.semicolon_seq pe (Sil.pp_hpred pe)) fp.sigma_fp
 
-let pp_texp_simple pe = match pe.pe_opt with
-  | PP_SIM_DEFAULT -> Sil.pp_texp pe
-  | PP_SIM_WITH_TYP -> Sil.pp_texp_full pe
+let pp_texp_simple pe = match pe.Pp.opt with
+  | SIM_DEFAULT -> Sil.pp_texp pe
+  | SIM_WITH_TYP -> Sil.pp_texp_full pe
 
 (** Pretty print a pointsto representing a stack variable as an equality *)
 let pp_hpred_stackvar pe0 f (hpred : Sil.hpred) =
@@ -141,13 +141,13 @@ let pp_hpred_stackvar pe0 f (hpred : Sil.hpred) =
     | Hpointsto (Exp.Lvar pvar, se, te) ->
         let pe' = match se with
           | Eexp (Exp.Var _, _) when not (Pvar.is_global pvar) ->
-              { pe with pe_obj_sub = None } (* dont use obj sub on the var defining it *)
+              { pe with obj_sub = None } (* dont use obj sub on the var defining it *)
           | _ -> pe in
-        (match pe'.pe_kind with
-         | PP_TEXT | PP_HTML ->
+        (match pe'.kind with
+         | TEXT | HTML ->
              F.fprintf f "%a = %a:%a"
                (Pvar.pp_value pe') pvar (Sil.pp_sexp pe') se (pp_texp_simple pe') te
-         | PP_LATEX ->
+         | LATEX ->
              F.fprintf f "%a{=}%a" (Pvar.pp_value pe') pvar (Sil.pp_sexp pe') se)
     | Hpointsto _ | Hlseg _ | Hdllseg _ -> assert false (* should not happen *)
   end;
@@ -156,7 +156,7 @@ let pp_hpred_stackvar pe0 f (hpred : Sil.hpred) =
 (** Pretty print a substitution. *)
 let pp_sub pe f sub =
   let pi_sub = IList.map (fun (id, e) -> Sil.Aeq (Var id, e)) (Sil.sub_to_list sub) in
-  (pp_semicolon_seq_oneline pe (Sil.pp_atom pe)) f pi_sub
+  (Pp.semicolon_seq_oneline pe (Sil.pp_atom pe)) f pi_sub
 
 (** Dump a substitution. *)
 let d_sub (sub: Sil.subst) = L.add_print_action (PTsub, Obj.repr sub)
@@ -165,30 +165,30 @@ let pp_sub_entry pe0 f entry =
   let pe, changed = Sil.color_pre_wrapper pe0 f entry in
   let (x, e) = entry in
   begin
-    match pe.pe_kind with
-    | PP_TEXT | PP_HTML ->
+    match pe.kind with
+    | TEXT | HTML ->
         F.fprintf f "%a = %a" (Ident.pp pe) x (Sil.pp_exp_printenv pe) e
-    | PP_LATEX ->
+    | LATEX ->
         F.fprintf f "%a{=}%a" (Ident.pp pe) x (Sil.pp_exp_printenv pe) e
   end;
   Sil.color_post_wrapper changed pe0 f
 
 (** Pretty print a substitution as a list of (ident,exp) pairs *)
 let pp_subl pe =
-  if Config.smt_output then pp_semicolon_seq pe (pp_sub_entry pe)
-  else pp_semicolon_seq_oneline pe (pp_sub_entry pe)
+  if Config.smt_output then Pp.semicolon_seq pe (pp_sub_entry pe)
+  else Pp.semicolon_seq_oneline pe (pp_sub_entry pe)
 
 (** Pretty print a pi. *)
 let pp_pi pe =
-  if Config.smt_output then pp_semicolon_seq pe (Sil.pp_atom pe)
-  else pp_semicolon_seq_oneline pe (Sil.pp_atom pe)
+  if Config.smt_output then Pp.semicolon_seq pe (Sil.pp_atom pe)
+  else Pp.semicolon_seq_oneline pe (Sil.pp_atom pe)
 
 (** Dump a pi. *)
 let d_pi (pi: pi) = L.add_print_action (PTpi, Obj.repr pi)
 
 (** Pretty print a sigma. *)
 let pp_sigma pe =
-  pp_semicolon_seq pe (Sil.pp_hpred pe)
+  Pp.semicolon_seq pe (Sil.pp_hpred pe)
 
 (** Split sigma into stack and nonstack parts.
     The boolean indicates whether the stack should only include local variales. *)
@@ -203,12 +203,12 @@ let pp_sigma_simple pe env fmt sigma =
   let sigma_stack, sigma_nonstack = sigma_get_stack_nonstack false sigma in
   let pp_stack fmt _sg =
     let sg = IList.sort Sil.compare_hpred _sg in
-    if sg != [] then Format.fprintf fmt "%a" (pp_semicolon_seq pe (pp_hpred_stackvar pe)) sg in
+    if sg != [] then Format.fprintf fmt "%a" (Pp.semicolon_seq pe (pp_hpred_stackvar pe)) sg in
   let pp_nl fmt doit = if doit then
-      (match pe.pe_kind with
-       | PP_TEXT | PP_HTML -> Format.fprintf fmt " ;@\n"
-       | PP_LATEX -> Format.fprintf fmt " ; \\\\@\n") in
-  let pp_nonstack fmt = pp_semicolon_seq pe (Sil.pp_hpred_env pe (Some env)) fmt in
+      (match pe.Pp.kind with
+       | TEXT | HTML -> Format.fprintf fmt " ;@\n"
+       | LATEX -> Format.fprintf fmt " ; \\\\@\n") in
+  let pp_nonstack fmt = Pp.semicolon_seq pe (Sil.pp_hpred_env pe (Some env)) fmt in
   if sigma_stack != [] || sigma_nonstack != [] then
     Format.fprintf fmt "%a%a%a"
       pp_stack sigma_stack pp_nl
@@ -232,37 +232,37 @@ let get_pure (p: 'a t) : pi =
 (** Print existential quantification *)
 let pp_evars pe f evars =
   if evars != []
-  then match pe.pe_kind with
-    | PP_TEXT | PP_HTML ->
-        F.fprintf f "exists [%a]. " (pp_comma_seq (Ident.pp pe)) evars
-    | PP_LATEX ->
-        F.fprintf f "\\exists %a. " (pp_comma_seq (Ident.pp pe)) evars
+  then match pe.Pp.kind with
+    | TEXT | HTML ->
+        F.fprintf f "exists [%a]. " (Pp.comma_seq (Ident.pp pe)) evars
+    | LATEX ->
+        F.fprintf f "\\exists %a. " (Pp.comma_seq (Ident.pp pe)) evars
 
 (** Print an hpara in simple mode *)
 let pp_hpara_simple _pe env n f pred =
-  let pe = pe_reset_obj_sub _pe in (* no free vars: disable object substitution *)
-  match pe.pe_kind with
-  | PP_TEXT | PP_HTML ->
+  let pe = Pp.reset_obj_sub _pe in (* no free vars: disable object substitution *)
+  match pe.kind with
+  | TEXT | HTML ->
       F.fprintf f "P%d = %a%a"
         n (pp_evars pe) pred.Sil.evars
-        (pp_semicolon_seq pe (Sil.pp_hpred_env pe (Some env))) pred.Sil.body
-  | PP_LATEX ->
+        (Pp.semicolon_seq pe (Sil.pp_hpred_env pe (Some env))) pred.Sil.body
+  | LATEX ->
       F.fprintf f "P_{%d} = %a%a\\\\"
         n (pp_evars pe) pred.Sil.evars
-        (pp_semicolon_seq pe (Sil.pp_hpred_env pe (Some env))) pred.Sil.body
+        (Pp.semicolon_seq pe (Sil.pp_hpred_env pe (Some env))) pred.Sil.body
 
 (** Print an hpara_dll in simple mode *)
 let pp_hpara_dll_simple _pe env n f pred =
-  let pe = pe_reset_obj_sub _pe in (* no free vars: disable object substitution *)
-  match pe.pe_kind with
-  | PP_TEXT | PP_HTML ->
+  let pe = Pp.reset_obj_sub _pe in (* no free vars: disable object substitution *)
+  match pe.kind with
+  | TEXT | HTML ->
       F.fprintf f "P%d = %a%a"
         n (pp_evars pe) pred.Sil.evars_dll
-        (pp_semicolon_seq pe (Sil.pp_hpred_env pe (Some env))) pred.Sil.body_dll
-  | PP_LATEX ->
+        (Pp.semicolon_seq pe (Sil.pp_hpred_env pe (Some env))) pred.Sil.body_dll
+  | LATEX ->
       F.fprintf f "P_{%d} = %a%a"
         n (pp_evars pe) pred.Sil.evars_dll
-        (pp_semicolon_seq pe (Sil.pp_hpred_env pe (Some env))) pred.Sil.body_dll
+        (Pp.semicolon_seq pe (Sil.pp_hpred_env pe (Some env))) pred.Sil.body_dll
 
 (** Create an environment mapping (ident) expressions to the program variables containing them *)
 let create_pvar_env (sigma: sigma) : (Exp.t -> Exp.t) =
@@ -281,12 +281,12 @@ let create_pvar_env (sigma: sigma) : (Exp.t -> Exp.t) =
 (** Update the object substitution given the stack variables in the prop *)
 let prop_update_obj_sub pe prop =
   if !Config.pp_simple
-  then pe_set_obj_sub pe (create_pvar_env prop.sigma)
+  then Pp.set_obj_sub pe (create_pvar_env prop.sigma)
   else pe
 
 (** Pretty print a footprint in simple mode. *)
 let pp_footprint_simple _pe env f fp =
-  let pe = { _pe with pe_cmap_norm = _pe.pe_cmap_foot } in
+  let pe = { _pe with Pp.cmap_norm = _pe.Pp.cmap_foot } in
   let pp_pure f pi =
     if pi != [] then
       F.fprintf f "%a *@\n" (pp_pi pe) pi in
@@ -305,7 +305,7 @@ let prop_pred_env prop =
 (** Pretty print a proposition. *)
 let pp_prop pe0 f prop =
   let pe = prop_update_obj_sub pe0 prop in
-  let latex = pe.pe_kind == PP_LATEX in
+  let latex = pe.Pp.kind == Pp.LATEX in
   let do_print f () =
     let subl = Sil.sub_to_list prop.sub in
     (* since prop diff is based on physical equality, we need to extract the sub verbatim *)
@@ -339,11 +339,11 @@ let pp_prop pe0 f prop =
     else
       F.fprintf f "%a%a%a" pp_pure () (pp_sigma pe) prop.sigma (pp_footprint pe) prop in
   if !Config.forcing_delayed_prints then (* print in html mode *)
-    F.fprintf f "%a%a%a" Io_infer.Html.pp_start_color Blue do_print () Io_infer.Html.pp_end_color ()
+    F.fprintf f "%a%a%a" Io_infer.Html.pp_start_color Pp.Blue do_print () Io_infer.Html.pp_end_color ()
   else
     do_print f () (** print in text mode *)
 
-let pp_prop_with_typ pe f p = pp_prop { pe with pe_opt = PP_SIM_WITH_TYP } f p
+let pp_prop_with_typ pe f p = pp_prop { pe with opt = SIM_WITH_TYP } f p
 
 (** Dump a proposition. *)
 let d_prop (prop: 'a t) = L.add_print_action (PTprop, Obj.repr prop)
@@ -1345,7 +1345,7 @@ module Normalize = struct
       | Var _ ->
           Estruct ([], inst)
       | te ->
-          L.err "trying to create ptsto with type: %a@\n@." (Sil.pp_texp_full pe_text) te;
+          L.err "trying to create ptsto with type: %a@\n@." (Sil.pp_texp_full Pp.text) te;
           assert false in
     let strexp : Sil.strexp = match expo with
       | Some e -> Eexp (e, inst)
@@ -2340,8 +2340,8 @@ let prop_iter_make_id_primed tenv id iter =
           | Aeq (Var id1, e1) when Sil.ident_in_exp id1 e1 ->
               L.out "@[<2>#### ERROR: an assumption of the analyzer broken ####@\n";
               L.out "Broken Assumption: id notin e for all (id,e) in sub@\n";
-              L.out "(id,e) : (%a,%a)@\n" (Ident.pp pe_text) id1 Exp.pp e1;
-              L.out "PROP : %a@\n@." (pp_prop pe_text) (prop_iter_to_prop tenv iter);
+              L.out "(id,e) : (%a,%a)@\n" (Ident.pp Pp.text) id1 Exp.pp e1;
+              L.out "PROP : %a@\n@." (pp_prop Pp.text) (prop_iter_to_prop tenv iter);
               assert false
           | Aeq (Var id1, e1) when Ident.equal pid id1 ->
               split pairs_unpid ((id1, e1):: pairs_pid) eqs_cur

@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Support for localisation *)
 
@@ -113,7 +113,7 @@ let custom_desc_with_advice description advice tags =
 (** pretty print an error description *)
 let pp_error_desc fmt err_desc =
   let pp_item fmt s = F.fprintf fmt "%s" s in
-  pp_seq pp_item fmt err_desc.descriptions
+  Pp.seq pp_item fmt err_desc.descriptions
 
 (** pretty print an error advice *)
 let pp_error_advice fmt err_desc =
@@ -379,8 +379,8 @@ let deref_str_dangling dangling_kind_opt =
 (** dereference strings for a pointer size mismatch *)
 let deref_str_pointer_size_mismatch typ_from_instr typ_of_object =
   let str_from_typ typ =
-    let pp f () = Typ.pp_full pe_text f typ in
-    pp_to_string pp () in
+    let pp f = Typ.pp_full Pp.text f typ in
+    F.asprintf "%t" pp in
   { tags = Tags.create ();
     value_pre = Some (pointer_or_object ());
     value_post = Some ("of type " ^ str_from_typ typ_from_instr);

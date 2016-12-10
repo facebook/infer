@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module F = Format
 module L = Logging
@@ -285,13 +285,13 @@ let param_is_nullable pvar ann_sig =
 let pp_annotated_signature proc_name fmt annotated_signature =
   let pp_ia fmt ia = if ia <> [] then F.fprintf fmt "%a " Annot.Item.pp ia in
   let pp_annotated_param fmt (p, ia, t) =
-    F.fprintf fmt " %a%a %a" pp_ia ia (Typ.pp_full pe_text) t Mangled.pp p in
+    F.fprintf fmt " %a%a %a" pp_ia ia (Typ.pp_full Pp.text) t Mangled.pp p in
   let ia, ret_type = annotated_signature.ret in
   F.fprintf fmt "%a%a %s (%a )"
     pp_ia ia
-    (Typ.pp_full pe_text) ret_type
+    (Typ.pp_full Pp.text) ret_type
     (Procname.to_simplified_string proc_name)
-    (pp_comma_seq pp_annotated_param) annotated_signature.params
+    (Pp.comma_seq pp_annotated_param) annotated_signature.params
 
 let mk_ann_str s = { Annot.class_name = s; parameters = [] }
 let mk_ann = function

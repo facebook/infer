@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Struct Types */
@@ -37,7 +37,7 @@ let compare_fld_typ_ann:
 
 
 /** Pretty print a struct type. */
-let pp: printenv => Typename.t => F.formatter => t => unit;
+let pp: Pp.env => Typename.t => F.formatter => t => unit;
 
 
 /** Construct a struct_typ, normalizing field types */

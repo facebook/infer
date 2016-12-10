@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 let get_name_of_local (curr_f: Procdesc.t) (x, _) => Pvar.mk x (Procdesc.get_proc_name curr_f);
 

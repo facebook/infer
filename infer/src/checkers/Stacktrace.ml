@@ -9,7 +9,7 @@
 
 (** Module for parsing stack traces and using them to guide Infer analysis *)
 
-open! Utils
+open! IStd
 
 module F = Format
 

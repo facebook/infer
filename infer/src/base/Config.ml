@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Configuration values: either constant, determined at compile time, or set at startup
     time by system calls, environment variables, or command line options *)
@@ -236,7 +236,7 @@ let initial_analysis_time = Unix.time ()
 (* Resolve symlinks to get to the real executable. The real executable is located in [bin_dir]
    below, which allows us to find [lib_dir], [models_dir], etc., relative to it. *)
 let real_exe_name =
-  realpath Sys.executable_name
+  Utils.realpath Sys.executable_name
 
 let current_exe =
   if !Sys.interactive then CLOpt.Interactive
@@ -275,7 +275,7 @@ let wrappers_dir =
 
 let ncpu =
   try
-    with_process_in
+    Utils.with_process_in
       "getconf _NPROCESSORS_ONLN 2>/dev/null"
       (fun chan -> Scanf.fscanf chan "%d" (fun n -> n))
     |> fst
@@ -410,13 +410,13 @@ let init_work_dir, is_originator =
               Sys.getcwd ()
         | None ->
             Sys.getcwd () in
-      let real_cwd = realpath cwd in
+      let real_cwd = Utils.realpath cwd in
       Unix.putenv ~key:"INFER_CWD" ~data:real_cwd;
       (real_cwd, true)
 
 (** Resolve relative paths passed as command line options, i.e., with respect to the working
     directory of the initial invocation of infer. *)
-let resolve = filename_to_absolute
+let resolve = Utils.filename_to_absolute
 
 
 (** Command Line options *)
@@ -1201,7 +1201,7 @@ and specs_library =
       let validate_path path =
         if Filename.is_relative path then
           failwith ("Failing because path " ^ path ^ " is not absolute") in
-      match read_file (resolve fname) with
+      match Utils.read_file (resolve fname) with
       | Some pathlist ->
           IList.iter validate_path pathlist;
           pathlist
@@ -1628,7 +1628,7 @@ let patterns_suppress_warnings =
     [] in
   match !suppress_warnings_out with
   | Some path -> (
-      match read_optional_json_file path with
+      match Utils.read_optional_json_file path with
       | Ok json -> (
           let json_key = "suppress_warnings" in
           match Yojson.Basic.Util.member json_key json with
@@ -1645,7 +1645,7 @@ let specs_library =
   | Some cache_dir when use_jar_cache ->
       let add_spec_lib specs_library filename =
         let basename = Filename.basename filename in
-        let key = basename ^ string_crc_hex32 filename in
+        let key = basename ^ Utils.string_crc_hex32 filename in
         let key_dir = cache_dir // key in
         let extract_specs dest_dir filename =
           if Filename.check_suffix filename ".jar" then

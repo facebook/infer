@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module L = Logging
 module F = Format
@@ -227,7 +227,7 @@ let reset_proposition_counter () = proposition_counter:= 0
 
 let reset_dotty_spec_counter () = spec_counter:= 0
 
-let color_to_str c =
+let color_to_str (c : Pp.color) =
   match c with
   | Black -> "black"
   | Blue -> "blue"
@@ -237,8 +237,8 @@ let color_to_str c =
 
 let make_dangling_boxes pe allocated_nodes (sigma_lambda: (Sil.hpred * int) list) =
   let exp_color hpred (exp : Exp.t) =
-    if pe.pe_cmap_norm (Obj.repr hpred) == Red then Red
-    else pe.pe_cmap_norm (Obj.repr exp) in
+    if pe.Pp.cmap_norm (Obj.repr hpred) == Pp.Red then Pp.Red
+    else pe.Pp.cmap_norm (Obj.repr exp) in
   let get_rhs_predicate (hpred, lambda) =
     let n = !dotty_state_count in
     incr dotty_state_count;
@@ -322,8 +322,8 @@ let rec dotty_mk_node pe sigma =
   | [] -> []
   | (hpred, lambda) :: sigma' ->
       let exp_color (exp : Exp.t) =
-        if pe.pe_cmap_norm (Obj.repr hpred) == Red then Red
-        else pe.pe_cmap_norm (Obj.repr exp) in
+        if pe.Pp.cmap_norm (Obj.repr hpred) == Pp.Red then Pp.Red
+        else pe.Pp.cmap_norm (Obj.repr exp) in
       do_hpred_lambda exp_color (hpred, lambda) @ dotty_mk_node pe sigma'
 
 let set_exps_neq_zero pi =
@@ -823,13 +823,13 @@ and pp_dotty f kind (_prop: Prop.normal Prop.t) cycle =
         let diff = Propgraph.compute_diff Black (Propgraph.from_prop pre) (Propgraph.from_prop _prop) in
         let cmap_norm = Propgraph.diff_get_colormap false diff in
         let cmap_foot = Propgraph.diff_get_colormap true diff in
-        let pe = { (Prop.prop_update_obj_sub pe_text pre) with pe_cmap_norm = cmap_norm; pe_cmap_foot = cmap_foot } in
+        let pe = { (Prop.prop_update_obj_sub Pp.text pre) with cmap_norm; cmap_foot } in
         (* add stack vars from pre *)
         let pre_stack = fst (Prop.sigma_get_stack_nonstack true pre.Prop.sigma) in
         let prop = Prop.set _prop ~sigma:(pre_stack @ _prop.Prop.sigma) in
         pe, Prop.normalize (Tenv.create ()) prop
     | _ ->
-        let pe = Prop.prop_update_obj_sub pe_text _prop in
+        let pe = Prop.prop_update_obj_sub Pp.text _prop in
         pe, _prop in
   dangling_dotboxes := [];
   nil_dotboxes :=[];
@@ -901,7 +901,7 @@ let pp_dotty_prop fmt (prop, cycle) =
 
 let dotty_prop_to_str prop cycle =
   try
-    Some (pp_to_string (pp_dotty_prop) (prop, cycle))
+    Some (F.asprintf "%a" (pp_dotty_prop) (prop, cycle))
   with exn when SymOp.exn_not_failure exn -> None
 
 (* create a dotty file with a single proposition *)
@@ -940,11 +940,11 @@ let pp_cfgnodename pname fmt (n : Procdesc.Node.t) =
 
 let pp_etlist fmt etl =
   IList.iter (fun (id, ty) ->
-      Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full pe_text) ty) etl
+      Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) ty) etl
 
 let pp_local_list fmt etl =
   IList.iter (fun (id, ty) ->
-      Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full pe_text) ty) etl
+      Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) ty) etl
 
 let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
   let pp_label fmt n =
@@ -966,8 +966,8 @@ let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
     | Procdesc.Node.Stmt_node s -> Format.fprintf fmt " %s" s
     | Procdesc.Node.Skip_node s -> Format.fprintf fmt "Skip %s" s in
   let instr_string i =
-    let pp f () = Sil.pp_instr pe_text f i in
-    let str = pp_to_string pp () in
+    let pp f = Sil.pp_instr Pp.text f i in
+    let str = F.asprintf "%t" pp in
     Escape.escape_dotty str in
   let pp_instrs fmt instrs =
     IList.iter (fun i -> F.fprintf fmt " %s\\n " (instr_string i)) instrs in
@@ -1103,11 +1103,11 @@ let set_dangling_nodes = ref []
 (* convert an exp into a string which is xml friendly, ie. special character are replaced by*)
 (* the proper xml way to visualize them*)
 let exp_to_xml_string e =
-  pp_to_string (Sil.pp_exp_printenv (pe_html Black)) e
+  F.asprintf "%a" (Sil.pp_exp_printenv (Pp.html Black)) e
 
 (* convert an atom into an xml-friendly string without special characters *)
 let atom_to_xml_string a =
-  pp_to_string (Sil.pp_atom (pe_html Black)) a
+  F.asprintf "%a" (Sil.pp_atom (Pp.html Black)) a
 
 (* return the dangling node corresponding to an expression it exists or None *)
 let exp_dangling_node e =

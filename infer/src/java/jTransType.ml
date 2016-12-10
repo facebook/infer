@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 open Javalib_pack
 open Sawja_pack
@@ -247,8 +247,8 @@ let collect_models_class_fields classpath_field_map cn cf fields =
       (* TODO (#6711750): fix type equality for arrays before failing here *)
       let () = Logging.stderr "Found inconsistent types for %s\n\tclasspath: %a\n\tmodels: %a\n@."
           (Ident.fieldname_to_string field_name)
-          (Typ.pp_full pe_text) classpath_ft
-          (Typ.pp_full pe_text) field_type in fields
+          (Typ.pp_full Pp.text) classpath_ft
+          (Typ.pp_full Pp.text) field_type in fields
   with Not_found ->
     if Javalib.is_static_field (Javalib.ClassField cf) then
       ((field_name, field_type, annotation):: static, nonstatic)

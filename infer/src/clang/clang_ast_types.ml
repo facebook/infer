@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (* This module adds more structure to some fields in AST *)
 (* The implementation is replacement of default one from *)

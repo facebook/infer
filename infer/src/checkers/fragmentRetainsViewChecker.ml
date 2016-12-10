@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Make sure callbacks are always unregistered. drive the point home by reporting possible NPE's *)
 

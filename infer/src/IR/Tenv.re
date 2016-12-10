@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** Module for Type Environments. */
@@ -27,7 +27,7 @@ let pp fmt (tenv: t) =>
     (
       fun name typ => {
         Format.fprintf fmt "@[<6>NAME: %s@." (Typename.to_string name);
-        Format.fprintf fmt "@[<6>TYPE: %a@." (StructTyp.pp pe_text name) typ
+        Format.fprintf fmt "@[<6>TYPE: %a@." (StructTyp.pp Pp.text name) typ
       }
     )
     tenv;

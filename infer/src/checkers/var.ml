@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Single abstraction for all the kinds of variables in SIL *)
 
@@ -34,8 +34,8 @@ let compare_alpha v1 v2 = match v1, v2 with
   | _ -> compare v1 v2
 
 let pp fmt = function
-  | ProgramVar pv -> (Pvar.pp pe_text) fmt pv
-  | LogicalVar id -> (Ident.pp pe_text) fmt id
+  | ProgramVar pv -> (Pvar.pp Pp.text) fmt pv
+  | LogicalVar id -> (Ident.pp Pp.text) fmt id
 
 module Map = PrettyPrintable.MakePPMap(struct
     type nonrec t = t

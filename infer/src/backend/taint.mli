@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** returns true if [callee_pname] returns a tainted value *)
 val returns_tainted : Procname.t -> ProcAttributes.t option -> PredSymb.taint_kind option

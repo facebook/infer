@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module L = Logging
 module F = Format
@@ -95,22 +95,22 @@ module ComplexExpressions = struct
       | DExp.Ddot (de, f) ->
           dexp_to_string de ^ "." ^ Ident.fieldname_to_string f
       | DExp.Dbinop (op, de1, de2) ->
-          "(" ^ dexp_to_string de1 ^ (Binop.str pe_text op) ^ dexp_to_string de2 ^ ")"
+          "(" ^ dexp_to_string de1 ^ (Binop.str Pp.text op) ^ dexp_to_string de2 ^ ")"
       | DExp.Dconst (Const.Cfun pn) ->
           Procname.to_unique_id pn
       | DExp.Dconst c ->
-          pp_to_string (Const.pp pe_text) c
+          F.asprintf "%a" (Const.pp Pp.text) c
       | DExp.Dderef de ->
           dexp_to_string de
       | DExp.Dfcall (fun_dexp, args, _, { CallFlags.cf_virtual = isvirtual })
       | DExp.Dretcall (fun_dexp, args, _, { CallFlags.cf_virtual = isvirtual })
         when functions_idempotent () ->
           let pp_arg fmt de = F.fprintf fmt "%s" (dexp_to_string de) in
-          let pp_args fmt des = (pp_comma_seq) pp_arg fmt des in
-          let pp fmt () =
+          let pp_args fmt des = Pp.comma_seq pp_arg fmt des in
+          let pp fmt =
             let virt = if isvirtual then "V" else "" in
             F.fprintf fmt "%a(%a)%s" pp_arg fun_dexp pp_args args virt in
-          pp_to_string pp ()
+          F.asprintf "%t" pp
       | DExp.Dfcall _
       | DExp.Dretcall _ ->
           case_not_handled ()

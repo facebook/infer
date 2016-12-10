@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module L = Logging
 module F = Format
@@ -64,8 +64,8 @@ let print_procedures cfg =
         procs)
 
 let print_nodes nodes =
-  IList.iter (fun node -> Logging.do_out "%s" (Procdesc.Node.get_description pe_text node)) nodes
+  IList.iter (fun node -> Logging.do_out "%s" (Procdesc.Node.get_description Pp.text node)) nodes
 
 let instrs_to_string instrs =
-  let pp fmt () = Format.fprintf fmt "%a" (Sil.pp_instr_list pe_text) instrs in
-  pp_to_string pp ()
+  let pp fmt = Format.fprintf fmt "%a" (Sil.pp_instr_list Pp.text) instrs in
+  F.asprintf "%t" pp

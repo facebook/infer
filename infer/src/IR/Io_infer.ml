@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Module to handle IO. Includes html and xml modules. *)
 
@@ -164,7 +164,7 @@ struct
 
   (** Print start color *)
   let pp_start_color fmt color =
-    F.fprintf fmt "%s" ("<span class='" ^ (color_string color) ^ "'>")
+    F.fprintf fmt "%s" ("<span class='" ^ (Pp.color_string color) ^ "'>")
 
   (** Print end color *)
   let pp_end_color fmt () =
@@ -199,7 +199,7 @@ struct
       then "dangling"
       else if isproof then "visitedproof" else "visited" in
     let node_text =
-      let pp fmt () =
+      let pp fmt =
         Format.fprintf fmt
           "<span class='%s'>%s\
            <span class='expansion'>\
@@ -207,12 +207,12 @@ struct
            </span>\
            </span>"
           style_class display_name id
-          (pp_seq Format.pp_print_int) preds
-          (pp_seq Format.pp_print_int) succs
-          (pp_seq Format.pp_print_int) exn
+          (Pp.seq Format.pp_print_int) preds
+          (Pp.seq Format.pp_print_int) succs
+          (Pp.seq Format.pp_print_int) exn
           description
           (if not isvisited then "\nNOT VISITED" else "") in
-      pp_to_string pp () in
+      F.asprintf "%t" pp in
     if not isvisited
     then F.fprintf fmt " %s" node_text
     else pp_link ~path: (path_to_root @ ["nodes"; node_fname]) fmt node_text
@@ -308,7 +308,7 @@ struct
     pp fmt "%s=\"%s\"" name value
 
   let pp_attributes fmt l =
-    pp_seq pp_attribute fmt l
+    Pp.seq pp_attribute fmt l
 
   (** print an xml node *)
   let rec pp_node newline indent fmt = function

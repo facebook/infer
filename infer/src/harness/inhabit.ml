@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Generate a procedure that calls a given sequence of methods. Useful for harness/test
  * generation. *)
@@ -141,7 +141,7 @@ let rec inhabit_typ tenv typ cfg env =
       | Typ.Tint (_) -> (Exp.Const (Const.Cint (IntLit.zero)), env)
       | Typ.Tfloat (_) -> (Exp.Const (Const.Cfloat 0.0), env)
       | typ ->
-          L.err "Couldn't inhabit typ: %a@." (Typ.pp pe_text) typ;
+          L.err "Couldn't inhabit typ: %a@." (Typ.pp Pp.text) typ;
           assert false in
     let (inhabited_exp, env') =
       inhabit_internal typ { env with cur_inhabiting = TypSet.add typ env.cur_inhabiting } in
@@ -213,12 +213,12 @@ let create_dummy_harness_filename harness_name =
 (** write the SIL for the harness to a file *)
 (* TODO (t3040429): fill this file up with Java-like code that matches the SIL *)
 let write_harness_to_file harness_instrs harness_file_name =
-  let harness_file = create_outfile harness_file_name in
+  let harness_file = Utils.create_outfile harness_file_name in
   let pp_harness fmt = IList.iter (fun instr ->
-      Format.fprintf fmt "%a\n" (Sil.pp_instr pe_text) instr) harness_instrs in
-  do_outf harness_file (fun outf ->
+      Format.fprintf fmt "%a\n" (Sil.pp_instr Pp.text) instr) harness_instrs in
+  Utils.do_outf harness_file (fun outf ->
       pp_harness outf.fmt;
-      close_outf outf)
+      Utils.close_outf outf)
 
 (** add the harness proc to the cg and make sure its callees can be looked up by sym execution *)
 let add_harness_to_cg harness_name harness_node cg =

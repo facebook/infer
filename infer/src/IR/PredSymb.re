@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Predicate Symbols */
@@ -237,7 +237,7 @@ let to_string pe =>
         };
       let str_vpath =
         if Config.trace_error {
-          pp_to_string (DecompiledExp.pp_vpath pe) ra.ra_vpath
+          F.asprintf "%a" (DecompiledExp.pp_vpath pe) ra.ra_vpath
         } else {
           ""
         };

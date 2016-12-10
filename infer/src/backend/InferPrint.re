@@ -7,7 +7,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 let module L = Logging;
 
@@ -48,25 +48,25 @@ let begin_latex_file fmt => {
 };
 
 let error_desc_to_csv_string error_desc => {
-  let pp fmt () => F.fprintf fmt "%a" Localise.pp_error_desc error_desc;
-  Escape.escape_csv (pp_to_string pp ())
+  let pp fmt => F.fprintf fmt "%a" Localise.pp_error_desc error_desc;
+  Escape.escape_csv (F.asprintf "%t" pp)
 };
 
 let error_advice_to_csv_string error_desc => {
-  let pp fmt () => F.fprintf fmt "%a" Localise.pp_error_advice error_desc;
-  Escape.escape_csv (pp_to_string pp ())
+  let pp fmt => F.fprintf fmt "%a" Localise.pp_error_advice error_desc;
+  Escape.escape_csv (F.asprintf "%t" pp)
 };
 
 let error_desc_to_plain_string error_desc => {
-  let pp fmt () => F.fprintf fmt "%a" Localise.pp_error_desc error_desc;
-  pp_to_string pp ()
+  let pp fmt => F.fprintf fmt "%a" Localise.pp_error_desc error_desc;
+  F.asprintf "%t" pp
 };
 
 let error_desc_to_dotty_string error_desc => Localise.error_desc_get_dotty error_desc;
 
 let error_desc_to_xml_string error_desc => {
-  let pp fmt () => F.fprintf fmt "%a" Localise.pp_error_desc error_desc;
-  Escape.escape_xml (pp_to_string pp ())
+  let pp fmt => F.fprintf fmt "%a" Localise.pp_error_desc error_desc;
+  Escape.escape_xml (F.asprintf "%t" pp)
 };
 
 let error_desc_to_xml_tags error_desc => {
@@ -163,8 +163,8 @@ let summary_values top_proc_set summary => {
   };
   let proof_trace = {
     let pp_line fmt l => F.fprintf fmt "%d" l;
-    let pp fmt () => F.fprintf fmt "%a" (pp_seq pp_line) lines_visited;
-    pp_to_string pp ()
+    let pp fmt => F.fprintf fmt "%a" (Pp.seq pp_line) lines_visited;
+    F.asprintf "%t" pp
   };
   let node_coverage =
     if (nodes_nr == 0) {
@@ -182,7 +182,7 @@ let summary_values top_proc_set summary => {
     and c2 = 1;
     logscale (c1 * in_calls + c2 * out_calls)
   };
-  let pp_failure failure => pp_to_string SymOp.pp_failure_kind failure;
+  let pp_failure failure => F.asprintf "%a" SymOp.pp_failure_kind failure;
   {
     vname: Procname.to_string proc_name,
     vname_id: Procname.to_filename proc_name,
@@ -428,8 +428,8 @@ let module IssuesCsv = {
           let xml_node =
             Io_infer.Xml.create_tree
               Io_infer.Xml.tag_qualifier_tags [] (error_desc_to_xml_tags error_desc);
-          let p fmt () => F.fprintf fmt "%a" (Io_infer.Xml.pp_document false) xml_node;
-          let s = pp_to_string p ();
+          let p fmt => F.fprintf fmt "%a" (Io_infer.Xml.pp_document false) xml_node;
+          let s = F.asprintf "%t" p;
           Escape.escape_csv s
         };
         let kind = Exceptions.err_kind_string ekind;
@@ -547,7 +547,7 @@ let pp_tests_of_report fmt report => {
   let pp_trace fmt trace =>
     if Config.print_traces_in_tests {
       let trace_without_empty_descs = IList.filter (fun {description} => description != "") trace;
-      F.fprintf fmt ", [%a]" (pp_comma_seq pp_trace_elem) trace_without_empty_descs
+      F.fprintf fmt ", [%a]" (Pp.comma_seq pp_trace_elem) trace_without_empty_descs
     };
   let pp_row jsonbug =>
     F.fprintf
@@ -791,13 +791,13 @@ let module Stats = {
         | None => ""
         };
       let line = {
-        let pp fmt () => {
+        let pp fmt => {
           if (description != "") {
             F.fprintf fmt "%s%4s  // %s@\n" (indent_string (level + indent_num)) " " description
           };
           F.fprintf fmt "%s%04d: %s" (indent_string (level + indent_num)) loc.Location.line code
         };
-        pp_to_string pp ()
+        F.asprintf "%t" pp
       };
       res := [line, "", ...!res]
     };
@@ -814,11 +814,11 @@ let module Stats = {
           found_errors := true;
           stats.nerrors = stats.nerrors + 1;
           let error_strs = {
-            let pp1 fmt () => F.fprintf fmt "%d: %s" stats.nerrors type_str;
-            let pp2 fmt () =>
+            let pp1 fmt => F.fprintf fmt "%d: %s" stats.nerrors type_str;
+            let pp2 fmt =>
               F.fprintf fmt "  %a:%d" SourceFile.pp loc.Location.file loc.Location.line;
-            let pp3 fmt () => F.fprintf fmt "  (%a)" Localise.pp_error_desc error_desc;
-            [pp_to_string pp1 (), pp_to_string pp2 (), pp_to_string pp3 ()]
+            let pp3 fmt => F.fprintf fmt "  (%a)" Localise.pp_error_desc error_desc;
+            [F.asprintf "%t" pp1, F.asprintf "%t" pp2, F.asprintf "%t" pp3]
           };
           let trace = loc_trace_to_string_list linereader 1 ltr;
           stats.saved_errors = IList.rev_append (error_strs @ trace @ [""]) stats.saved_errors
@@ -881,7 +881,7 @@ let module Stats = {
 
 let module Report = {
   let pp_header fmt () => {
-    F.fprintf fmt "Infer Analysis Results -- generated %a@\n@\n" pp_current_time ();
+    F.fprintf fmt "Infer Analysis Results -- generated %a@\n@\n" Pp.current_time ();
     F.fprintf fmt "Summary Report@\n@\n"
   };
   let pp_stats fmt stats => Stats.pp fmt stats;
@@ -919,8 +919,8 @@ let module Summary = {
         not (DB.file_exists xml_file) ||
         DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time xml_file
       ) {
-        let xml_out = create_outfile (DB.filename_to_string xml_file);
-        do_outf
+        let xml_out = Utils.create_outfile (DB.filename_to_string xml_file);
+        Utils.do_outf
           xml_out
           (
             fun outf => {
@@ -929,7 +929,7 @@ let module Summary = {
                 specs
                 summary.Specs.attributes.ProcAttributes.loc
                 outf.fmt;
-              close_outf outf
+              Utils.close_outf outf
             }
           )
       }
@@ -1017,7 +1017,7 @@ type bug_format_kind =
   | Xml
   | Latex;
 
-let pp_issues_in_format (format_kind, outf) =>
+let pp_issues_in_format (format_kind, outf: Utils.outfile) =>
   switch format_kind {
   | Json => IssuesJson.pp_issues_of_error_log outf.fmt
   | Csv => IssuesCsv.pp_issues_of_error_log outf.fmt
@@ -1027,7 +1027,7 @@ let pp_issues_in_format (format_kind, outf) =>
   | Latex => failwith "Printing issues in latex is not implemented"
   };
 
-let pp_procs_in_format (format_kind, outf) =>
+let pp_procs_in_format (format_kind, outf: Utils.outfile) =>
   switch format_kind {
   | Csv => ProcsCsv.pp_summary outf.fmt
   | Xml => ProcsXml.pp_proc outf.fmt
@@ -1037,7 +1037,7 @@ let pp_procs_in_format (format_kind, outf) =>
   | Text => failwith "Printing procs in json/latex/tests/text is not implemented"
   };
 
-let pp_calls_in_format (format_kind, outf) =>
+let pp_calls_in_format (format_kind, outf: Utils.outfile) =>
   switch format_kind {
   | Csv => CallsCsv.pp_calls outf.fmt
   | Json
@@ -1057,7 +1057,7 @@ let pp_stats_in_format (format_kind, _) =>
   | Latex => failwith "Printing stats in json/tests/text/xml/latex is not implemented"
   };
 
-let pp_summary_in_format (format_kind, outf) =>
+let pp_summary_in_format (format_kind, outf: Utils.outfile) =>
   switch format_kind {
   | Latex => Summary.write_summary_latex outf.fmt
   | Json
@@ -1137,10 +1137,10 @@ let pp_summary_by_report_kind
 };
 
 let pp_json_report_by_report_kind formats_by_report_kind fname =>
-  switch (read_file fname) {
+  switch (Utils.read_file fname) {
   | Some report_lines =>
     let pp_json_issues format_list report => {
-      let pp_json_issue (format_kind, outf) =>
+      let pp_json_issue (format_kind, outf: Utils.outfile) =>
         switch format_kind {
         | Tests => pp_tests_of_report outf.fmt report
         | Text => pp_text_of_report outf.fmt report
@@ -1319,7 +1319,7 @@ let register_perf_stats_report () => {
 
 let mk_format format_kind fname =>
   Option.value_map
-    f::(fun out_file => [(format_kind, out_file)]) default::[] (create_outfile fname);
+    f::(fun out_file => [(format_kind, out_file)]) default::[] (Utils.create_outfile fname);
 
 let init_issues_format_list report_csv report_json => {
   let csv_format = Option.value_map f::(mk_format Csv) default::[] report_csv;
@@ -1353,7 +1353,7 @@ let init_summary_format_list () => {
 
 let init_files format_list_by_kind => {
   let init_files_of_report_kind (report_kind, format_list) => {
-    let init_files_of_format (format_kind, outfile) =>
+    let init_files_of_format (format_kind, outfile: Utils.outfile) =>
       switch (format_kind, report_kind) {
       | (Csv, Issues) => IssuesCsv.pp_header outfile.fmt ()
       | (Csv, Procs) => ProcsCsv.pp_header outfile.fmt ()
@@ -1371,7 +1371,7 @@ let init_files format_list_by_kind => {
 
 let finalize_and_close_files format_list_by_kind stats pdflatex => {
   let close_files_of_report_kind (report_kind, format_list) => {
-    let close_files_of_format (format_kind, outfile) => {
+    let close_files_of_format (format_kind, outfile: Utils.outfile) => {
       switch (format_kind, report_kind) {
       | (Csv, Stats) => F.fprintf outfile.fmt "%a@?" Report.pp_stats stats
       | (Json, Issues) => IssuesJson.pp_json_close outfile.fmt ()
@@ -1380,7 +1380,7 @@ let finalize_and_close_files format_list_by_kind stats pdflatex => {
       | (Latex, Summary) => Latex.pp_end outfile.fmt ()
       | (Csv | Latex | Tests | Text | Xml | Json, _) => ()
       };
-      close_outf outfile;
+      Utils.close_outf outfile;
       if ((format_kind, report_kind) == (Latex, Summary)) {
         pdflatex outfile.fname;
         let pdf_name = Filename.chop_extension outfile.fname ^ ".pdf";

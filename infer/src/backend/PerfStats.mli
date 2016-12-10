@@ -9,7 +9,7 @@
 
 (** Performance Statistics gathering and reporting *)
 
-open! Utils
+open! IStd
 
 type perf_stats
 

@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Module for utility functions for the whole frontend. Includes functions for transformations of
     ast nodes and general utility functions such as functions on lists *)

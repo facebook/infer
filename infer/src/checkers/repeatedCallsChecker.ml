@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module L = Logging
 module F = Format
@@ -37,7 +37,7 @@ struct
     InstrSet.inter calls1 calls2
 
   let pp fmt calls =
-    let pp_call instr = F.fprintf fmt "  %a@\n" (Sil.pp_instr pe_text) instr in
+    let pp_call instr = F.fprintf fmt "  %a@\n" (Sil.pp_instr Pp.text) instr in
     if not (InstrSet.is_empty calls) then
       begin
         F.fprintf fmt "Calls:@\n";

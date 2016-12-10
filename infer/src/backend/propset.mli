@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Functions for Sets of Propositions with and without sharing *)
 
@@ -76,7 +76,7 @@ val filter : (Prop.normal Prop.t -> bool) -> t -> t
 (** {2 Pretty print} *)
 
 (** Pretty print a set of propositions, obtained from the given prop. *)
-val pp : printenv -> Prop.normal Prop.t -> Format.formatter -> t -> unit
+val pp : Pp.env -> Prop.normal Prop.t -> Format.formatter -> t -> unit
 
 (** dump a propset coming form the given initial prop *)
 val d : Prop.normal Prop.t -> t -> unit

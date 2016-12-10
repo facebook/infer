@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language */
@@ -309,21 +309,29 @@ let module HpredSet = Set.Make {
 
 /** Begin change color if using diff printing, return updated printenv and change status */
 let color_pre_wrapper pe f x =>
-  if (Config.print_using_diff && pe.pe_kind !== PP_TEXT) {
-    let color = pe.pe_cmap_norm (Obj.repr x);
-    if (color !== pe.pe_color) {
+  if (Config.print_using_diff && pe.Pp.kind !== Pp.TEXT) {
+    let color = pe.Pp.cmap_norm (Obj.repr x);
+    if (color !== pe.Pp.color) {
       (
-        if (pe.pe_kind === PP_HTML) {
+        if (pe.Pp.kind === Pp.HTML) {
           Io_infer.Html.pp_start_color
         } else {
           Latex.pp_color
         }
       )
         f color;
-      if (color === Red) {
-        (/** All subexpressiona red */ {...pe, pe_cmap_norm: colormap_red, pe_color: Red}, true)
+      if (color === Pp.Red) {
+        (
+          Pp.{
+            /** All subexpressiona red */
+            ...pe,
+            cmap_norm: colormap_red,
+            color: Red
+          },
+          true
+        )
       } else {
-        ({...pe, pe_color: color}, true)
+        (Pp.{...pe, color}, true)
       }
     } else {
       (pe, false)
@@ -336,10 +344,10 @@ let color_pre_wrapper pe f x =>
 /** Close color annotation if changed */
 let color_post_wrapper changed pe f =>
   if changed {
-    if (pe.pe_kind === PP_HTML) {
+    if (pe.Pp.kind === Pp.HTML) {
       Io_infer.Html.pp_end_color f ()
     } else {
-      Latex.pp_color f pe.pe_color
+      Latex.pp_color f pe.Pp.color
     }
   };
 
@@ -347,7 +355,7 @@ let color_post_wrapper changed pe f =>
 /** Print a sequence with difference mode if enabled. */
 let pp_seq_diff pp pe0 f =>
   if (not Config.print_using_diff) {
-    pp_comma_seq pp f
+    Pp.comma_seq pp f
   } else {
     let rec doit =
       fun
@@ -372,7 +380,7 @@ let pp_seq_diff pp pe0 f =>
 let pp_exp_printenv pe0 f e0 => {
   let (pe, changed) = color_pre_wrapper pe0 f e0;
   let e =
-    switch pe.pe_obj_sub {
+    switch pe.Pp.obj_sub {
     | Some sub => Obj.obj (sub (Obj.repr e0)) /* apply object substitution to expression */
     | None => e0
     };
@@ -393,7 +401,7 @@ let d_exp (e: Exp.t) => L.add_print_action (L.PTexp, Obj.repr e);
 
 
 /** Pretty print a list of expressions. */
-let pp_exp_list pe f expl => (pp_seq (pp_exp_printenv pe)) f expl;
+let pp_exp_list pe f expl => (Pp.seq (pp_exp_printenv pe)) f expl;
 
 
 /** dump a list of expressions. */
@@ -430,7 +438,7 @@ let pp_offset pe f =>
 
 
 /** Convert an offset to a string */
-let offset_to_string e => pp_to_string (pp_offset pe_text) e;
+let offset_to_string e => F.asprintf "%a" (pp_offset Pp.text) e;
 
 
 /** dump an offset. */
@@ -511,7 +519,7 @@ let pp_instr pe0 f instr => {
       "%a(%a)%a %a"
       (pp_exp_printenv pe)
       e
-      (pp_comma_seq (pp_exp_typ pe))
+      (Pp.comma_seq (pp_exp_typ pe))
       arg_ts
       CallFlags.pp
       cf
@@ -523,7 +531,7 @@ let pp_instr pe0 f instr => {
     F.fprintf f "REMOVE_TEMPS(%a); %a" (Ident.pp_list pe) temps Location.pp loc
   | Declare_locals ptl loc =>
     let pp_typ fmt (pvar, _) => F.fprintf fmt "%a" (Pvar.pp pe) pvar;
-    F.fprintf f "DECLARE_LOCALS(%a); %a" (pp_comma_seq pp_typ) ptl Location.pp loc
+    F.fprintf f "DECLARE_LOCALS(%a); %a" (Pp.comma_seq pp_typ) ptl Location.pp loc
   };
   color_post_wrapper changed pe0 f
 };
@@ -552,27 +560,27 @@ let pp_atom pe0 f a => {
   let (pe, changed) = color_pre_wrapper pe0 f a;
   switch a {
   | Aeq (BinOp op e1 e2) (Const (Cint i)) when IntLit.isone i =>
-    switch pe.pe_kind {
-    | PP_TEXT
-    | PP_HTML => F.fprintf f "%a" (pp_exp_printenv pe) (Exp.BinOp op e1 e2)
-    | PP_LATEX => F.fprintf f "%a" (pp_exp_printenv pe) (Exp.BinOp op e1 e2)
+    switch pe.Pp.kind {
+    | TEXT
+    | HTML => F.fprintf f "%a" (pp_exp_printenv pe) (Exp.BinOp op e1 e2)
+    | LATEX => F.fprintf f "%a" (pp_exp_printenv pe) (Exp.BinOp op e1 e2)
     }
   | Aeq e1 e2 =>
-    switch pe.pe_kind {
-    | PP_TEXT
-    | PP_HTML => F.fprintf f "%a = %a" (pp_exp_printenv pe) e1 (pp_exp_printenv pe) e2
-    | PP_LATEX => F.fprintf f "%a{=}%a" (pp_exp_printenv pe) e1 (pp_exp_printenv pe) e2
+    switch pe.Pp.kind {
+    | TEXT
+    | HTML => F.fprintf f "%a = %a" (pp_exp_printenv pe) e1 (pp_exp_printenv pe) e2
+    | LATEX => F.fprintf f "%a{=}%a" (pp_exp_printenv pe) e1 (pp_exp_printenv pe) e2
     }
   | Aneq e1 e2 =>
-    switch pe.pe_kind {
-    | PP_TEXT
-    | PP_HTML => F.fprintf f "%a != %a" (pp_exp_printenv pe) e1 (pp_exp_printenv pe) e2
-    | PP_LATEX => F.fprintf f "%a{\\neq}%a" (pp_exp_printenv pe) e1 (pp_exp_printenv pe) e2
+    switch pe.Pp.kind {
+    | TEXT
+    | HTML => F.fprintf f "%a != %a" (pp_exp_printenv pe) e1 (pp_exp_printenv pe) e2
+    | LATEX => F.fprintf f "%a{\\neq}%a" (pp_exp_printenv pe) e1 (pp_exp_printenv pe) e2
     }
   | Apred a es =>
-    F.fprintf f "%s(%a)" (PredSymb.to_string pe a) (pp_comma_seq (pp_exp_printenv pe)) es
+    F.fprintf f "%s(%a)" (PredSymb.to_string pe a) (Pp.comma_seq (pp_exp_printenv pe)) es
   | Anpred a es =>
-    F.fprintf f "!%s(%a)" (PredSymb.to_string pe a) (pp_comma_seq (pp_exp_printenv pe)) es
+    F.fprintf f "!%s(%a)" (PredSymb.to_string pe a) (Pp.comma_seq (pp_exp_printenv pe)) es
   };
   color_post_wrapper changed pe0 f
 };
@@ -733,9 +741,9 @@ let module Predicates: {
 
 /********* END OF MODULE Predicates **********/
 let pp_texp_simple pe =>
-  switch pe.pe_opt {
-  | PP_SIM_DEFAULT => pp_texp pe
-  | PP_SIM_WITH_TYP => pp_texp_full pe
+  switch pe.Pp.opt {
+  | SIM_DEFAULT => pp_texp pe
+  | SIM_WITH_TYP => pp_texp_full pe
   };
 
 let inst_abstraction = Iabstraction;
@@ -906,8 +914,8 @@ let update_inst inst_old inst_new => {
 /** describe an instrumentation with a string */
 let pp_inst pe f inst => {
   let str = inst_to_string inst;
-  if (pe.pe_kind === PP_HTML) {
-    F.fprintf f " %a%s%a" Io_infer.Html.pp_start_color Orange str Io_infer.Html.pp_end_color ()
+  if (pe.Pp.kind === Pp.HTML) {
+    F.fprintf f " %a%s%a" Io_infer.Html.pp_start_color Pp.Orange str Io_infer.Html.pp_end_color ()
   } else {
     F.fprintf f "%s%s%s" (Binop.str pe Lt) str (Binop.str pe Gt)
   }
@@ -925,12 +933,12 @@ let rec pp_sexp_env pe0 envo f se => {
   switch se {
   | Eexp e inst => F.fprintf f "%a%a" (pp_exp_printenv pe) e (pp_inst_if_trace pe) inst
   | Estruct fel inst =>
-    switch pe.pe_kind {
-    | PP_TEXT
-    | PP_HTML =>
+    switch pe.Pp.kind {
+    | TEXT
+    | HTML =>
       let pp_diff f (n, se) => F.fprintf f "%a:%a" Ident.pp_fieldname n (pp_sexp_env pe envo) se;
       F.fprintf f "{%a}%a" (pp_seq_diff pp_diff pe) fel (pp_inst_if_trace pe) inst
-    | PP_LATEX =>
+    | LATEX =>
       let pp_diff f (n, se) =>
         F.fprintf f "%a:%a" (Ident.pp_fieldname_latex Latex.Boldface) n (pp_sexp_env pe envo) se;
       F.fprintf f "\\{%a\\}%a" (pp_seq_diff pp_diff pe) fel (pp_inst_if_trace pe) inst
@@ -959,20 +967,20 @@ let rec pp_hpred_env pe0 envo f hpred => {
     let pe' =
       switch (e, se) {
       | (Lvar pvar, Eexp (Var _) _) when not (Pvar.is_global pvar) =>
-        {...pe, pe_obj_sub: None} /* dont use obj sub on the var defining it */
+        Pp.{...pe, obj_sub: None} /* dont use obj sub on the var defining it */
       | _ => pe
       };
-    switch pe'.pe_kind {
-    | PP_TEXT
-    | PP_HTML =>
+    switch pe'.Pp.kind {
+    | TEXT
+    | HTML =>
       F.fprintf
         f "%a|->%a:%a" (pp_exp_printenv pe') e (pp_sexp_env pe' envo) se (pp_texp_simple pe') te
-    | PP_LATEX => F.fprintf f "%a\\mapsto %a" (pp_exp_printenv pe') e (pp_sexp_env pe' envo) se
+    | LATEX => F.fprintf f "%a\\mapsto %a" (pp_exp_printenv pe') e (pp_sexp_env pe' envo) se
     }
   | Hlseg k hpara e1 e2 elist =>
-    switch pe.pe_kind {
-    | PP_TEXT
-    | PP_HTML =>
+    switch pe.Pp.kind {
+    | TEXT
+    | HTML =>
       F.fprintf
         f
         "lseg%a(%a,%a,[%a],%a)"
@@ -982,11 +990,11 @@ let rec pp_hpred_env pe0 envo f hpred => {
         e1
         (pp_exp_printenv pe)
         e2
-        (pp_comma_seq (pp_exp_printenv pe))
+        (Pp.comma_seq (pp_exp_printenv pe))
         elist
         (pp_hpara_env pe envo)
         hpara
-    | PP_LATEX =>
+    | LATEX =>
       F.fprintf
         f
         "\\textsf{lseg}_{%a}(%a,%a,[%a],%a)"
@@ -996,15 +1004,15 @@ let rec pp_hpred_env pe0 envo f hpred => {
         e1
         (pp_exp_printenv pe)
         e2
-        (pp_comma_seq (pp_exp_printenv pe))
+        (Pp.comma_seq (pp_exp_printenv pe))
         elist
         (pp_hpara_env pe envo)
         hpara
     }
   | Hdllseg k hpara_dll iF oB oF iB elist =>
-    switch pe.pe_kind {
-    | PP_TEXT
-    | PP_HTML =>
+    switch pe.Pp.kind {
+    | TEXT
+    | HTML =>
       F.fprintf
         f
         "dllseg%a(%a,%a,%a,%a,[%a],%a)"
@@ -1018,11 +1026,11 @@ let rec pp_hpred_env pe0 envo f hpred => {
         oF
         (pp_exp_printenv pe)
         iB
-        (pp_comma_seq (pp_exp_printenv pe))
+        (Pp.comma_seq (pp_exp_printenv pe))
         elist
         (pp_hpara_dll_env pe envo)
         hpara_dll
-    | PP_LATEX =>
+    | LATEX =>
       F.fprintf
         f
         "\\textsf{dllseg}_{%a}(%a,%a,%a,%a,[%a],%a)"
@@ -1036,7 +1044,7 @@ let rec pp_hpred_env pe0 envo f hpred => {
         oF
         (pp_exp_printenv pe)
         iB
-        (pp_comma_seq (pp_exp_printenv pe))
+        (Pp.comma_seq (pp_exp_printenv pe))
         elist
         (pp_hpara_dll_env pe envo)
         hpara_dll
@@ -1055,9 +1063,9 @@ and pp_hpara_env pe envo f hpara =>
       r
       (Ident.pp pe)
       n
-      (pp_seq (Ident.pp pe))
+      (Pp.seq (Ident.pp pe))
       svars
-      (pp_seq (Ident.pp pe))
+      (Pp.seq (Ident.pp pe))
       evars
       (pp_star_seq (pp_hpred_env pe envo))
       b
@@ -1083,9 +1091,9 @@ and pp_hpara_dll_env pe envo f hpara_dll =>
       oB
       (Ident.pp pe)
       oF
-      (pp_seq (Ident.pp pe))
+      (Pp.seq (Ident.pp pe))
       svars
-      (pp_seq (Ident.pp pe))
+      (Pp.seq (Ident.pp pe))
       evars
       (pp_star_seq (pp_hpred_env pe envo))
       b
@@ -1115,7 +1123,7 @@ let d_sexp (se: strexp) => L.add_print_action (L.PTsexp, Obj.repr se);
 
 /** Pretty print a list of expressions. */
 let pp_sexp_list pe f sel =>
-  F.fprintf f "%a" (pp_seq (fun f se => F.fprintf f "%a" (pp_sexp pe) se)) sel;
+  F.fprintf f "%a" (Pp.seq (fun f se => F.fprintf f "%a" (pp_sexp pe) se)) sel;
 
 
 /** dump a list of expressions. */
@@ -1393,7 +1401,7 @@ let fav_to_list fav => IList.rev !fav;
 
 
 /** Pretty print a fav. */
-let pp_fav pe f fav => (pp_seq (Ident.pp pe)) f (fav_to_list fav);
+let pp_fav pe f fav => (Pp.seq (Ident.pp pe)) f (fav_to_list fav);
 
 
 /** Copy a [fav]. */

@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 open Javalib_pack
 
@@ -74,7 +74,7 @@ let split_classpath cp = Str.split (Str.regexp JFile.sep) cp
 
 let append_path classpath path =
   if Sys.file_exists path = `Yes then
-    let full_path = filename_to_absolute path in
+    let full_path = Utils.filename_to_absolute path in
     if String.length classpath = 0 then
       full_path
     else
@@ -216,7 +216,7 @@ let search_classes path =
     let cn, root_dir =
       Javalib.extract_class_name_from_file class_filename in
     (add_root_path root_dir roots, JBasics.ClassSet.add cn classes) in
-  directory_fold
+  Utils.directory_fold
     (fun accu p ->
        let paths, classes = accu in
        if Filename.check_suffix p "class" then
@@ -237,7 +237,7 @@ let search_sources () =
   match Config.sourcepath with
   | None -> initial_map
   | Some sourcepath ->
-      directory_fold
+      Utils.directory_fold
         (fun map p ->
            if Filename.check_suffix p "java"
            then add_source_file p map

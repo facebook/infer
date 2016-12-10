@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Create descriptions of analysis errors *)
 
@@ -63,9 +63,9 @@ let explain_deallocate_stack_var pvar ra =
 (** Explain a deallocate constant string error *)
 let explain_deallocate_constant_string s ra =
   let const_str =
-    let pp fmt () =
+    let pp fmt =
       Exp.pp fmt (Exp.Const (Const.Cstr s)) in
-    pp_to_string pp () in
+    F.asprintf "%t" pp in
   Localise.desc_deallocate_static_memory const_str ra.PredSymb.ra_pname ra.PredSymb.ra_loc
 
 let verbose = Config.trace_error
@@ -489,8 +489,8 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
   let value_str_from_pvars_vpath pvars vpath =
     if pvars <> [] then
       begin
-        let pp = pp_seq (Pvar.pp_value pe_text) in
-        let desc_string = pp_to_string pp pvars in
+        let pp = Pp.seq (Pvar.pp_value Pp.text) in
+        let desc_string = F.asprintf "%a" pp pvars in
         Some desc_string
       end
     else match vpath with
@@ -1059,8 +1059,8 @@ let explain_divide_by_zero tenv exp node loc =
 (** explain a return expression required *)
 let explain_return_expression_required loc typ =
   let typ_str =
-    let pp fmt () = Typ.pp_full pe_text fmt typ in
-    pp_to_string pp () in
+    let pp fmt = Typ.pp_full Pp.text fmt typ in
+    F.asprintf "%t" pp in
   Localise.desc_return_expression_required typ_str loc
 
 (** Explain retain cycle value error *)
@@ -1129,8 +1129,8 @@ let explain_unary_minus_applied_to_unsigned_expression tenv exp typ node loc =
     | Some de -> Some (DExp.to_string de)
     | None -> None in
   let typ_str =
-    let pp fmt () = Typ.pp_full pe_text fmt typ in
-    pp_to_string pp () in
+    let pp fmt = Typ.pp_full Pp.text fmt typ in
+    F.asprintf "%t" pp in
   Localise.desc_unary_minus_applied_to_unsigned_expression exp_str_opt typ_str loc
 
 (** explain a test for NULL of a dereferenced pointer *)

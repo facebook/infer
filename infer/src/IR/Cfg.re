@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 let module L = Logging;
 
@@ -157,8 +157,8 @@ let inline_synthetic_method ret_id etl pdesc loc_call :option Sil.instr => {
   let found instr instr' => {
     modified := Some instr';
     if debug {
-      L.stderr "XX inline_synthetic_method found instr: %a@." (Sil.pp_instr pe_text) instr;
-      L.stderr "XX inline_synthetic_method instr': %a@." (Sil.pp_instr pe_text) instr'
+      L.stderr "XX inline_synthetic_method found instr: %a@." (Sil.pp_instr Pp.text) instr;
+      L.stderr "XX inline_synthetic_method instr': %a@." (Sil.pp_instr Pp.text) instr'
     }
   };
   let do_instr _ instr =>

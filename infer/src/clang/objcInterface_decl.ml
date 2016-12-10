@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** In this module an ObjC interface declaration or implementation is processed. The class  *)
 (** is saved in the tenv as a struct with the corresponding fields, potential superclass and *)
@@ -132,7 +132,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
   (match Tenv.lookup tenv interface_name with
    | Some st ->
        Logging.out_debug "  >>>OK. Found typ='%a'\n"
-         (StructTyp.pp pe_text interface_name) st
+         (StructTyp.pp Pp.text interface_name) st
    | None -> Logging.out_debug "  >>>NOT Found!!\n");
   Typ.Tstruct interface_name
 

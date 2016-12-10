@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** Module for Names and Identifiers */
@@ -364,10 +364,10 @@ let pp_fieldname_latex style f fn => Latex.pp_string style f (Mangled.to_string 
 
 /** Pretty print an identifier. */
 let pp pe f id =>
-  switch pe.pe_kind {
-  | PP_TEXT
-  | PP_HTML => F.fprintf f "%s" (to_string id)
-  | PP_LATEX =>
+  switch pe.Pp.kind {
+  | TEXT
+  | HTML => F.fprintf f "%s" (to_string id)
+  | LATEX =>
     let base_name = name_to_string id.name;
     let style =
       if (id.kind == KFootprint) {
@@ -382,8 +382,8 @@ let pp pe f id =>
 
 
 /** pretty printer for lists of identifiers */
-let pp_list pe => pp_comma_seq (pp pe);
+let pp_list pe => Pp.comma_seq (pp pe);
 
 
 /** pretty printer for lists of names */
-let pp_name_list = pp_comma_seq pp_name;
+let pp_name_list = Pp.comma_seq pp_name;

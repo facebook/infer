@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Annotations */
@@ -47,11 +47,11 @@ let module Item = {
   /** Pretty print an item annotation. */
   let pp fmt ann => {
     let pp fmt (a, _) => pp fmt a;
-    F.fprintf fmt "<%a>" (pp_seq pp) ann
+    F.fprintf fmt "<%a>" (Pp.seq pp) ann
   };
   let to_string ann => {
-    let pp fmt () => pp fmt ann;
-    pp_to_string pp ()
+    let pp fmt => pp fmt ann;
+    F.asprintf "%t" pp
   };
 
   /** Empty item annotation. */
@@ -75,7 +75,7 @@ let module Method = {
   type t = (Item.t, list Item.t) [@@deriving compare];
 
   /** Pretty print a method annotation. */
-  let pp s fmt (ia, ial) => F.fprintf fmt "%a %s(%a)" Item.pp ia s (pp_seq Item.pp) ial;
+  let pp s fmt (ia, ial) => F.fprintf fmt "%a %s(%a)" Item.pp ia s (Pp.seq Item.pp) ial;
 
   /** Empty method annotation. */
   let empty = ([], []);

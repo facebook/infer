@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module CLOpt = CommandLineOption
 module F = Format
@@ -126,7 +126,7 @@ let get_compilation_database_files_buck () =
 let get_compilation_database_files_xcodebuild () =
   let prog_args = IList.rev Config.rest in
   let temp_dir = Config.results_dir // "clang" in
-  create_dir temp_dir;
+  Utils.create_dir temp_dir;
   let tmp_file = Filename.temp_file ~in_dir:temp_dir "cdb" ".json" in
   let xcodebuild_prog, xcodebuild_args =
     match prog_args with

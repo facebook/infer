@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Implementation of "Smart" Pattern Matching for higher order singly-linked list predicate.
 
@@ -25,9 +25,9 @@ val hpara_dll_match_with_impl : Tenv.t -> bool -> Sil.hpara_dll -> Sil.hpara_dll
     considered during pattern matching. *)
 type hpred_pat = { hpred : Sil.hpred; flag : bool }
 
-val pp_hpat : printenv -> Format.formatter -> hpred_pat -> unit
+val pp_hpat : Pp.env -> Format.formatter -> hpred_pat -> unit
 
-val pp_hpat_list : printenv -> Format.formatter -> hpred_pat list -> unit
+val pp_hpat_list : Pp.env -> Format.formatter -> hpred_pat list -> unit
 
 type sidecondition = Prop.normal Prop.t -> Sil.subst -> bool
 

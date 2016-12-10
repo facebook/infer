@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** log messages at different levels of verbosity *)
 
@@ -225,7 +225,7 @@ let warning_position (s: string) (ml_loc: ml_loc) =
 let d_str (s: string) = add_print_action (PTstr, Obj.repr s)
 
 (** dump a string with the given color *)
-let d_str_color (c: color) (s: string) = add_print_action (PTstr_color, Obj.repr (s, c))
+let d_str_color (c: Pp.color) (s: string) = add_print_action (PTstr_color, Obj.repr (s, c))
 
 (** dump an error string *)
 let d_error (s: string) = add_print_action (PTerror, Obj.repr s)
@@ -240,7 +240,7 @@ let d_info (s: string) = add_print_action (PTinfo, Obj.repr s)
 let d_strln (s: string) = add_print_action (PTstrln, Obj.repr s)
 
 (** dump a string plus newline with the given color *)
-let d_strln_color (c: color) (s: string) = add_print_action (PTstrln_color, Obj.repr (s, c))
+let d_strln_color (c: Pp.color) (s: string) = add_print_action (PTstrln_color, Obj.repr (s, c))
 
 (** dump a newline *)
 let d_ln () = add_print_action (PTstrln, Obj.repr "")

@@ -9,7 +9,7 @@
 
 (** Module to store a set of issues per procedure *)
 
-open! Utils
+open! IStd
 
 let errLogMap = ref Procname.Map.empty
 

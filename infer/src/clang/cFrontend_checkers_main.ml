@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 open CFrontend_utils
 open Lexing
 open Ctl_lexer
@@ -109,7 +109,7 @@ let context_with_ck_set context decl_list =
 let store_issues source_file =
   let abbrev_source_file = SourceFile.encoding source_file in
   let lint_issues_dir = Config.results_dir // Config.lint_issues_dir_name in
-  create_dir lint_issues_dir;
+  Utils.create_dir lint_issues_dir;
   let lint_issues_file =
     DB.filename_from_string (Filename.concat lint_issues_dir (abbrev_source_file ^ ".issue")) in
   LintIssues.store_issues lint_issues_file !LintIssues.errLogMap

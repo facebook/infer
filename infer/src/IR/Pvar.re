@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language */
@@ -131,20 +131,20 @@ let pp_latex f pv => {
 
 /** Pretty print a pvar which denotes a value, not an address */
 let pp_value pe f pv =>
-  switch pe.pe_kind {
-  | PP_TEXT => _pp f pv
-  | PP_HTML => _pp f pv
-  | PP_LATEX => pp_latex f pv
+  switch pe.Pp.kind {
+  | TEXT => _pp f pv
+  | HTML => _pp f pv
+  | LATEX => pp_latex f pv
   };
 
 
 /** Pretty print a program variable. */
 let pp pe f pv => {
   let ampersand =
-    switch pe.pe_kind {
-    | PP_TEXT => "&"
-    | PP_HTML => "&amp;"
-    | PP_LATEX => "\\&"
+    switch pe.Pp.kind {
+    | TEXT => "&"
+    | HTML => "&amp;"
+    | LATEX => "\\&"
     };
   F.fprintf f "%s%a" ampersand (pp_value pe) pv
 };
@@ -155,7 +155,7 @@ let d (pvar: t) => L.add_print_action (L.PTpvar, Obj.repr pvar);
 
 
 /** Pretty print a list of program variables. */
-let pp_list pe f pvl => F.fprintf f "%a" (pp_seq (fun f e => F.fprintf f "%a" (pp pe) e)) pvl;
+let pp_list pe f pvl => F.fprintf f "%a" (Pp.seq (fun f e => F.fprintf f "%a" (pp pe) e)) pvl;
 
 
 /** Dump a list of program variables. */
@@ -369,5 +369,5 @@ let module Set = PrettyPrintable.MakePPCompareSet {
   type nonrec t = t;
   let compare = compare;
   let compare_pp = compare_alpha;
-  let pp_element = pp pe_text;
+  let pp_element = pp Pp.text;
 };

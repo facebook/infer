@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** node of the control flow graph */
@@ -60,7 +60,7 @@ let module Node: {
   let get_callees: t => list Procname.t;
 
   /** Return a description of the node */
-  let get_description: printenv => t => string;
+  let get_description: Pp.env => t => string;
 
   /** Get the distance to the exit node, if it has been computed */
   let get_distance_to_exit: t => option int;
@@ -113,7 +113,7 @@ let module Node: {
 
   /** Print extended instructions for the node,
       highlighting the given subinstruction if present */
-  let pp_instrs: printenv => sub_instrs::bool => option Sil.instr => Format.formatter => t => unit;
+  let pp_instrs: Pp.env => sub_instrs::bool => option Sil.instr => Format.formatter => t => unit;
 
   /** Replace the instructions to be executed. */
   let replace_instrs: t => list Sil.instr => unit;

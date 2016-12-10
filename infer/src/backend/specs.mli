@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Specifications and spec table *)
 
@@ -48,10 +48,10 @@ module Jprop : sig
   val map : ('a Prop.t -> 'b Prop.t) -> 'a t -> 'b t
 
   (** Print a list of joined props, the boolean indicates whether to print subcomponents of joined props *)
-  val pp_list : printenv -> bool -> Format.formatter -> Prop.normal t list -> unit
+  val pp_list : Pp.env -> bool -> Format.formatter -> Prop.normal t list -> unit
 
   (** Print the toplevel prop *)
-  val pp_short : printenv -> Format.formatter -> Prop.normal t -> unit
+  val pp_short : Pp.env -> Format.formatter -> Prop.normal t -> unit
 
   (** Extract the number associated to the toplevel jprop of a prop *)
   val to_number : 'a t -> int
@@ -235,17 +235,17 @@ val summary_exists : Procname.t -> bool
 val normalized_specs_to_specs : NormSpec.t list -> Prop.normal spec list
 
 (** Print the spec *)
-val pp_spec : printenv -> (int * int) option -> Format.formatter -> Prop.normal spec -> unit
+val pp_spec : Pp.env -> (int * int) option -> Format.formatter -> Prop.normal spec -> unit
 
 (** Print the specs *)
-val pp_specs : printenv -> Format.formatter -> Prop.normal spec list -> unit
+val pp_specs : Pp.env -> Format.formatter -> Prop.normal spec list -> unit
 
 (** Print the summary in html format *)
 val pp_summary_html :
-  whole_seconds:bool -> SourceFile.t -> color -> Format.formatter -> summary -> unit
+  whole_seconds:bool -> SourceFile.t -> Pp.color -> Format.formatter -> summary -> unit
 
 (** Print the summary in latext format *)
-val pp_summary_latex : whole_seconds:bool -> color -> Format.formatter -> summary -> unit
+val pp_summary_latex : whole_seconds:bool -> Pp.color -> Format.formatter -> summary -> unit
 
 (** Print the summary in text format *)
 val pp_summary_text : whole_seconds:bool -> Format.formatter -> summary -> unit

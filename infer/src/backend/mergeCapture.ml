@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module L = Logging
 module F = Format
@@ -197,7 +197,7 @@ let process_merge_file deps_file =
         () in
   Option.iter
     ~f:(fun lines -> IList.iter process_line lines)
-    (read_file deps_file);
+    (Utils.read_file deps_file);
   create_multilinks ();
   L.stdout "Captured results merged.@.";
   L.stdout "Targets merged: %d@." stats.targets_merged;

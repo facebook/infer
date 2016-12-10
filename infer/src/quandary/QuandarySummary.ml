@@ -9,7 +9,7 @@
 
 (** summary type for Quandary taint analysis *)
 
-open! Utils
+open! IStd
 
 module F = Format
 module L = Logging

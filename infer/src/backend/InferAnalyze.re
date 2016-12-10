@@ -7,7 +7,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** Main module for the analysis after the capture phase */
@@ -113,7 +113,7 @@ let main makefile => {
       ClusterMakefile.create_cluster_makefile clusters makefile
     } else {
       IList.iteri (fun i cluster => analyze_cluster i cluster) clusters;
-      L.stdout "@\nAnalysis finished in %as@." pp_elapsed_time ()
+      L.stdout "@\nAnalysis finished in %as@." Pp.elapsed_time ()
     };
     output_json_makefile_stats clusters
   }

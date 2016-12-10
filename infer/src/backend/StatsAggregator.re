@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 let aggregated_stats_filename = "aggregated_stats.json";
 
@@ -173,9 +173,9 @@ let generate_files () => {
   let aggregated_frontend_stats_dir = Filename.concat infer_out Config.frontend_stats_dir_name;
   let aggregated_backend_stats_dir = Filename.concat infer_out Config.backend_stats_dir_name;
   let aggregated_reporting_stats_dir = Filename.concat infer_out Config.reporting_stats_dir_name;
-  create_dir aggregated_frontend_stats_dir;
-  create_dir aggregated_backend_stats_dir;
-  create_dir aggregated_reporting_stats_dir;
+  Utils.create_dir aggregated_frontend_stats_dir;
+  Utils.create_dir aggregated_backend_stats_dir;
+  Utils.create_dir aggregated_reporting_stats_dir;
   let write_to_json_file_opt destfile json =>
     switch json {
     | Some j => Utils.write_json_to_file destfile j

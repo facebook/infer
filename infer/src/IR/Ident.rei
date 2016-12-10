@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** Identifiers: program variables and logical variables */
@@ -245,7 +245,7 @@ let pp_fieldname_latex: Latex.style => Format.formatter => fieldname => unit;
 
 
 /** Pretty print an identifier. */
-let pp: printenv => Format.formatter => t => unit;
+let pp: Pp.env => Format.formatter => t => unit;
 
 
 /** Convert an identifier to a string. */
@@ -253,7 +253,7 @@ let to_string: t => string;
 
 
 /** Pretty print a list of identifiers. */
-let pp_list: printenv => Format.formatter => list t => unit;
+let pp_list: Pp.env => Format.formatter => list t => unit;
 
 
 /** Pretty print a list of names. */

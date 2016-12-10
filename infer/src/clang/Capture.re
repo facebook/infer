@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 let module CLOpt = CommandLineOption;
 
@@ -37,8 +37,8 @@ let register_perf_stats_report source_file => {
   let stats_dir = Filename.concat Config.results_dir Config.frontend_stats_dir_name;
   let abbrev_source_file = SourceFile.encoding source_file;
   let stats_file = Config.perf_stats_prefix ^ "_" ^ abbrev_source_file ^ ".json";
-  create_dir Config.results_dir;
-  create_dir stats_dir;
+  Utils.create_dir Config.results_dir;
+  Utils.create_dir stats_dir;
   PerfStats.register_report_at_exit (Filename.concat stats_dir stats_file)
 };
 
@@ -119,7 +119,7 @@ let run_clang clang_command read => {
     exit exit_code
   };
   /* NOTE: exceptions will propagate through without exiting here */
-  switch (with_process_in clang_command read) {
+  switch (Utils.with_process_in clang_command read) {
   | (res, Ok ()) => res
   | (_, Error (`Exit_non_zero n)) =>
     /* exit with the same error code as clang in case of compilation failure */
@@ -164,13 +164,13 @@ let cc1_capture clang_cmd => {
   let source_path = {
     let orig_argv = ClangCommand.get_orig_argv clang_cmd;
     /* the source file is always the last argument of the original -cc1 clang command */
-    filename_to_absolute orig_argv.(Array.length orig_argv - 1)
+    Utils.filename_to_absolute orig_argv.(Array.length orig_argv - 1)
   };
   Logging.out "@\n*** Beginning capture of file %s ***@\n" source_path;
   if (Config.analyzer == Config.Compile || CLocation.is_file_blacklisted source_path) {
     Logging.out "@\n Skip the analysis of source file %s@\n@\n" source_path;
     /* We still need to run clang, but we don't have to attach the plugin. */
-    run_clang (ClangCommand.command_to_run clang_cmd) consume_in
+    run_clang (ClangCommand.command_to_run clang_cmd) Utils.consume_in
   } else {
     switch Config.clang_biniou_file {
     | Some fname => run_and_validate_clang_frontend (`File fname)
@@ -195,5 +195,5 @@ let capture clang_cmd =>
        absolute paths. */
     let command_to_run = ClangCommand.command_to_run clang_cmd;
     Logging.out "Running non-cc command without capture: %s@\n" command_to_run;
-    run_clang command_to_run consume_in
+    run_clang command_to_run Utils.consume_in
   };

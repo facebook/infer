@@ -10,7 +10,7 @@
 /** Given a clang command, normalize it via `clang -###` if needed to get a clear view of what work
     is being done and which source files are being compiled, if any, then replace compilation
     commands by our own clang with our plugin attached for each source file. */
-open! Utils;
+open! IStd;
 
 type action_item =
   | Command ClangCommand.t
@@ -73,7 +73,7 @@ let normalize prog::prog args::args :list action_item => {
     | End_of_file => ()
     };
   /* collect stdout and stderr output together (in reverse order) */
-  with_process_in clang_hashhashhash consume_input |> ignore;
+  Utils.with_process_in clang_hashhashhash consume_input |> ignore;
   normalized_commands := IList.rev !normalized_commands;
   !normalized_commands
 };

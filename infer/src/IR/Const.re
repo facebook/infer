@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Constants */
@@ -45,8 +45,8 @@ let pp pe f =>
   fun
   | Cint i => IntLit.pp f i
   | Cfun fn =>
-    switch pe.pe_kind {
-    | PP_HTML => F.fprintf f "_fun_%s" (Escape.escape_xml (Procname.to_string fn))
+    switch pe.Pp.kind {
+    | HTML => F.fprintf f "_fun_%s" (Escape.escape_xml (Procname.to_string fn))
     | _ => F.fprintf f "_fun_%s" (Procname.to_string fn)
     }
   | Cstr s => F.fprintf f "\"%s\"" (String.escaped s)
@@ -54,7 +54,7 @@ let pp pe f =>
   | Cclass c => F.fprintf f "%a" Ident.pp_name c
   | Cptr_to_fld fn _ => F.fprintf f "__fld_%a" Ident.pp_fieldname fn;
 
-let to_string c => pp_to_string (pp pe_text) c;
+let to_string c => F.asprintf "%a" (pp Pp.text) c;
 
 let iszero_int_float =
   fun

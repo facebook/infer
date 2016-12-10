@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** log messages at different levels of verbosity *)
 
@@ -123,13 +123,13 @@ val warning_position: string -> ml_loc -> unit
 val d_str : string -> unit
 
 (** dump a string with the given color *)
-val d_str_color : color -> string -> unit
+val d_str_color : Pp.color -> string -> unit
 
 (** dump a string plus newline *)
 val d_strln : string -> unit
 
 (** dump a string plus newline with the given color *)
-val d_strln_color : color -> string -> unit
+val d_strln_color : Pp.color -> string -> unit
 
 (** dump a newline *)
 val d_ln : unit -> unit

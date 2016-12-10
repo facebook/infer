@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Module to handle IO. Includes html and xml modules. *)
 
@@ -58,7 +58,7 @@ module Html : sig
     ?with_name: bool -> SourceFile.t -> string list -> Format.formatter -> int * int * int -> unit
 
   (** Print start color *)
-  val pp_start_color : Format.formatter -> color -> unit
+  val pp_start_color : Format.formatter -> Pp.color -> unit
 end
 
 (** Create and print xml trees *)

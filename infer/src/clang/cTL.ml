@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 open CFrontend_utils
 
@@ -83,7 +83,7 @@ module Debug = struct
         else Format.fprintf fmt "(... OR ...)"
     | Implies (phi1, phi2) -> Format.fprintf fmt "(%a ==> %a)" pp_formula phi1 pp_formula phi2
     | InNode (nl, phi) -> Format.fprintf fmt "IN-NODE %a: (%a)"
-                            (Utils.pp_comma_seq Format.pp_print_string) nl
+                            (Pp.comma_seq Format.pp_print_string) nl
                             pp_formula phi
     | AX phi -> Format.fprintf fmt "AX(%a)" pp_formula phi
     | EX (trs, phi) -> Format.fprintf fmt "EX[->%a](%a)" pp_transition trs pp_formula phi
@@ -95,11 +95,11 @@ module Debug = struct
     | EU (trs, phi1, phi2) -> Format.fprintf fmt "E[->%a][%a UNTIL %a]"
                                 pp_transition trs pp_formula phi1 pp_formula phi2
     | EH (arglist, phi) -> Format.fprintf fmt "EH[%a](%a)"
-                             (Utils.pp_comma_seq Format.pp_print_string) arglist
+                             (Pp.comma_seq Format.pp_print_string) arglist
                              pp_formula phi
     | ET (arglist, trans, phi)
     | ETX (arglist, trans, phi)  -> Format.fprintf fmt "ETX[%a][%a](%a)"
-                                      (Utils.pp_comma_seq Format.pp_print_string) arglist
+                                      (Pp.comma_seq Format.pp_print_string) arglist
                                       pp_transition trans
                                       pp_formula phi
 
@@ -197,7 +197,7 @@ module Debug = struct
                 | Or _ when num_children = 2 -> "(...) OR (...)"
                 | Implies _ when num_children = 2 -> "(...) ==> (...)"
                 | Not _ -> "NOT(...)"
-                | _ -> Utils.pp_to_string pp_formula phi in
+                | _ -> Format.asprintf "%a" pp_formula phi in
               Format.sprintf "(%d)\\n%s\\n%s\\n%s"
                 root_node.id
                 (Escape.escape_dotty (string_of_ast_node root_node.content.ast_node))
@@ -251,11 +251,11 @@ let save_dotty_when_in_debug_mode source_file =
   match ctl_evaluation_tracker with
   | Some tracker ->
       let dotty_dir = Config.results_dir // Config.lint_dotty_dir_name in
-      create_dir dotty_dir;
+      Utils.create_dir dotty_dir;
       let source_file_basename = Filename.basename (SourceFile.to_abs_path source_file) in
       let file = dotty_dir // (source_file_basename ^ ".dot") in
       let dotty = Debug.EvaluationTracker.DottyPrinter.dotty_of_ctl_evaluation !tracker in
-      with_file file ~f:(fun oc -> output_string oc dotty)
+      Utils.with_file file ~f:(fun oc -> output_string oc dotty)
   | _ -> ()
 
 (* Helper functions *)

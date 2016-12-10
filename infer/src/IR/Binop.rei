@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Binary Operators */
@@ -69,4 +69,4 @@ let is_zero_runit: t => bool;
 
 
 /** String representation of a binary operator. */
-let str: printenv => t => string;
+let str: Pp.env => t => string;

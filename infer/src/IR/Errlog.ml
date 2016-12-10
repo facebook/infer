@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module L = Logging
 module F = Format
@@ -211,11 +211,11 @@ let log_issue _ekind err_log loc node_id_key session ltr exn =
       L.err "@\n%a@\n@?" (Exceptions.pp_err node_id_key loc ekind ex_name desc ml_loc_opt) ();
       if _ekind <> Exceptions.Kerror then begin
         let warn_str =
-          let pp fmt () =
+          let pp fmt =
             Format.fprintf fmt "%s %a"
               (Localise.to_string err_name)
               Localise.pp_error_desc desc in
-          pp_to_string pp () in
+          F.asprintf "%t" pp in
         let d = match ekind with
           | Exceptions.Kerror -> L.d_error
           | Exceptions.Kwarning -> L.d_warning

@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Given an command to be executed, creates a process to execute this command,
     and waits for its execution. The standard out and error are not redirected.

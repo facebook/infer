@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 open CFrontend_utils
 
 (** Define the signature of a method consisting of its name, its arguments, *)

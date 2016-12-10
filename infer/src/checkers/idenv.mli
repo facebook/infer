@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Environment for temporary identifiers used in instructions.
     Lazy implementation: only created when actually used. *)

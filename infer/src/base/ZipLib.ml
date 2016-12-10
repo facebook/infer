@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module L = Logging
 
@@ -21,7 +21,7 @@ type zip_library = {
 
 let get_cache_dir infer_cache zip_filename =
   let basename = Filename.basename zip_filename in
-  let key = basename ^ string_crc_hex32 zip_filename in
+  let key = basename ^ Utils.string_crc_hex32 zip_filename in
   Filename.concat infer_cache key
 
 let load_from_cache serializer zip_path cache_dir zip_library =

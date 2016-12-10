@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module L = Logging
 module F = Format
@@ -320,7 +320,7 @@ let print_exception_html s exn =
   let ml_loc_string = match ml_loc_opt with
     | None -> ""
     | Some ml_loc -> " " ^ L.ml_loc_to_string ml_loc in
-  let desc_str = pp_to_string Localise.pp_error_desc desc in
+  let desc_str = F.asprintf "%a" Localise.pp_error_desc desc in
   (L.d_strln_color Red) (s ^ (Localise.to_string err_name) ^ " " ^ desc_str ^ ml_loc_string)
 
 (** string describing an error kind *)

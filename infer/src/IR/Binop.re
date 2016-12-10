@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Binary Operators */
@@ -122,8 +122,8 @@ let text =
 
 /** Pretty print a binary operator. */
 let str pe binop =>
-  switch pe.pe_kind {
-  | PP_HTML =>
+  switch pe.Pp.kind {
+  | HTML =>
     switch binop {
     | Ge => " &gt;= "
     | Le => " &lt;= "
@@ -133,7 +133,7 @@ let str pe binop =>
     | Shiftrt => " &gt;&gt; "
     | _ => text binop
     }
-  | PP_LATEX =>
+  | LATEX =>
     switch binop {
     | Ge => " \\geq "
     | Le => " \\leq "

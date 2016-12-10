@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Translate an enumeration declaration by adding it to the tenv and *)
 (** translating the code and adding it to a fake procdesc *)

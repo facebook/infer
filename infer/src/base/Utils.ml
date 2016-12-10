@@ -7,230 +7,15 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
-
-(** General utility functions and definition with global scope *)
-
-module Arg = Core.Std.Arg
-module Array = Core.Std.Array
-module Bool = Core.Std.Bool
-module Bytes = Core.Std.Bytes
-module Caml = Core.Std.Caml
-module Char = Core.Std.Char
-module Exn = Core.Std.Exn
-module Filename = Core.Std.Filename
-module Fn = Core.Std.Fn
-module Gc = Core.Std.Gc
-module In_channel = Core.Std.In_channel
-module Int = Core.Std.Int
-module Int32 = Core.Std.Int32
-module Int63 = Core.Std.Int63
-module Int64 = Core.Std.Int64
-module Lazy = Core.Std.Lazy
-module Nativeint = Core.Std.Nativeint
-module Option = Core.Std.Option
-module Pid = Core.Std.Pid
-module Printexc = Core.Std.Printexc
-module Printf = Core.Std.Printf
-module Queue = Core.Std.Queue
-module Random = Core.Std.Random
-module Signal = Core.Std.Signal
-module Stack = Core.Std.Stack
-module String = Core.Std.String
-module Sys = struct
-  include Core.Std.Sys
-
-  (* Core_sys does not catch Unix_error ENAMETOOLONG, see
-     https://github.com/janestreet/core/issues/76 *)
-  let file_exists ?follow_symlinks path =
-    try file_exists ?follow_symlinks path
-    with Unix.Unix_error _ -> `Unknown
-
-  let is_directory ?follow_symlinks path =
-    try is_directory ?follow_symlinks path
-    with Unix.Unix_error _ -> `Unknown
-
-  let is_file ?follow_symlinks path =
-    try is_file ?follow_symlinks path
-    with Unix.Unix_error _ -> `Unknown
-end
-module Unix = Core.Std.Unix
-
-module IntSet = Caml.Set.Make(Int)
+open! IStd
 
 module F = Format
-
-(** List police: don't use the list module to avoid non-tail recursive
-    functions and builtin equality. Use IList instead. *)
-module List = struct end
-
-type ('a, 'b) result =
-  | Ok of 'a
-  | Error of 'b
 
 (** initial process times *)
 let initial_times = Unix.times ()
 
 (** precise time of day at the start of the analysis *)
 let initial_timeofday = Unix.gettimeofday ()
-
-(** {2 Generic Utility Functions} *)
-
-(** Compare police: generic compare disabled. *)
-let compare = ()
-
-let fst3 (x,_,_) = x
-let snd3 (_,x,_) = x
-let trd3 (_,_,x) = x
-
-(** {2 Printing} *)
-
-(** Kind of simple printing: default or with full types *)
-type pp_simple_kind = PP_SIM_DEFAULT | PP_SIM_WITH_TYP
-
-(** Kind of printing *)
-type printkind = PP_TEXT | PP_LATEX | PP_HTML
-
-(** Colors supported in printing *)
-type color = Black | Blue | Green | Orange | Red
-
-(** map subexpressions (as Obj.t element compared by physical equality) to colors *)
-type colormap = Obj.t -> color
-
-(** Print environment threaded through all the printing functions *)
-type printenv = {
-  pe_opt : pp_simple_kind; (** Current option for simple printing *)
-  pe_kind : printkind; (** Current kind of printing *)
-  pe_cmap_norm : colormap; (** Current colormap for the normal part *)
-  pe_cmap_foot : colormap; (** Current colormap for the footprint part *)
-  pe_color : color; (** Current color *)
-  pe_obj_sub : (Obj.t -> Obj.t) option (** generic object substitution *)
-}
-
-(** Create a colormap of a given color *)
-let colormap_from_color color (_: Obj.t) = color
-
-(** standard colormap: black *)
-let colormap_black (_: Obj.t) = Black
-
-(** red colormap *)
-let colormap_red (_: Obj.t) = Red
-
-(** Default text print environment *)
-let pe_text =
-  { pe_opt = PP_SIM_DEFAULT;
-    pe_kind = PP_TEXT;
-    pe_cmap_norm = colormap_black;
-    pe_cmap_foot = colormap_black;
-    pe_color = Black;
-    pe_obj_sub = None }
-
-(** Default html print environment *)
-let pe_html color =
-  { pe_text with
-    pe_kind = PP_HTML;
-    pe_cmap_norm = colormap_from_color color;
-    pe_cmap_foot = colormap_from_color color;
-    pe_color = color }
-
-(** Default latex print environment *)
-let pe_latex color =
-  { pe_opt = PP_SIM_DEFAULT;
-    pe_kind = PP_LATEX;
-    pe_cmap_norm = colormap_from_color color;
-    pe_cmap_foot = colormap_from_color color;
-    pe_color = color;
-    pe_obj_sub = None }
-
-(** Extend the normal colormap for the given object with the given color *)
-let pe_extend_colormap pe (x: Obj.t) (c: color) =
-  let colormap (y: Obj.t) =
-    if x == y then c
-    else pe.pe_cmap_norm y in
-  { pe with pe_cmap_norm = colormap }
-
-(** Set the object substitution, which is supposed to preserve the type.
-    Currently only used for a map from (identifier) expressions to the program var containing them *)
-let pe_set_obj_sub pe (sub: 'a -> 'a) =
-  let new_obj_sub x =
-    let x' = Obj.repr (sub (Obj.obj x)) in
-    match pe.pe_obj_sub with
-    | None -> x'
-    | Some sub' -> sub' x' in
-  { pe with pe_obj_sub = Some (new_obj_sub) }
-
-(** Reset the object substitution, so that no substitution takes place *)
-let pe_reset_obj_sub pe =
-  { pe with pe_obj_sub = None }
-
-(** string representation of colors *)
-let color_string = function
-  | Black -> "color_black"
-  | Blue -> "color_blue"
-  | Green -> "color_green"
-  | Orange -> "color_orange"
-  | Red -> "color_red"
-
-(** Pretty print a space-separated sequence *)
-let rec pp_seq pp f = function
-  | [] -> ()
-  | [x] -> F.fprintf f "%a" pp x
-  | x:: l -> F.fprintf f "%a %a" pp x (pp_seq pp) l
-
-(** Print a comma-separated sequence *)
-let rec pp_comma_seq pp f = function
-  | [] -> ()
-  | [x] -> F.fprintf f "%a" pp x
-  | x:: l -> F.fprintf f "%a,%a" pp x (pp_comma_seq pp) l
-
-(** Print a ;-separated sequence. *)
-let rec _pp_semicolon_seq oneline pe pp f =
-  let pp_sep fmt () =
-    if oneline then F.fprintf fmt " " else F.fprintf fmt "@\n" in
-  function
-  | [] -> ()
-  | [x] -> F.fprintf f "%a" pp x
-  | x:: l ->
-      (match pe.pe_kind with
-       | PP_TEXT | PP_HTML ->
-           F.fprintf f "%a ; %a%a" pp x pp_sep () (_pp_semicolon_seq oneline pe pp) l
-       | PP_LATEX ->
-           F.fprintf f "%a ;\\\\%a %a" pp x pp_sep () (_pp_semicolon_seq oneline pe pp) l)
-
-(** Print a ;-separated sequence with newlines. *)
-let pp_semicolon_seq pe = _pp_semicolon_seq false pe
-
-(** Print a ;-separated sequence on one line. *)
-let pp_semicolon_seq_oneline pe = _pp_semicolon_seq true pe
-
-(** Print an or-separated sequence. *)
-let pp_or_seq pe pp f = function
-  | [] -> ()
-  | [x] -> F.fprintf f "%a" pp x
-  | x:: l ->
-      (match pe.pe_kind with
-       | PP_TEXT ->
-           F.fprintf f "%a || %a" pp x (pp_semicolon_seq pe pp) l
-       | PP_HTML ->
-           F.fprintf f "%a &or; %a" pp x (pp_semicolon_seq pe pp) l
-       | PP_LATEX ->
-           F.fprintf f "%a \\vee %a" pp x (pp_semicolon_seq pe pp) l)
-
-(** Produce a string from a 1-argument pretty printer function *)
-let pp_to_string pp x =
-  let buf = Buffer.create 1 in
-  let fmt = Format.formatter_of_buffer buf in
-  Format.fprintf fmt "%a@?" pp x;
-  Buffer.contents buf
-
-(** Print the current time and date in a format similar to the "date" command *)
-let pp_current_time f () =
-  let tm = Unix.localtime (Unix.time ()) in
-  F.fprintf f "%02d/%02d/%4d %02d:%02d" tm.Unix.tm_mday tm.Unix.tm_mon (tm.Unix.tm_year + 1900) tm.Unix.tm_hour tm.Unix.tm_min
-
-(** Print the time in seconds elapsed since the beginning of the execution of the current command. *)
-let pp_elapsed_time fmt () =
-  let elapsed = Unix.gettimeofday () -. initial_timeofday in
-  Format.fprintf fmt "%f" elapsed
 
 (** read a source file and return a list of lines, or None in case of error *)
 let read_file fname =
@@ -316,8 +101,6 @@ let do_outf outf_opt f =
 (** close an outfile *)
 let close_outf outf =
   close_out outf.out_c
-
-let ( // ) = Filename.concat
 
 (** convert a filename to absolute path and normalize by removing occurrences of "." and ".." *)
 module FileNormalize = struct
@@ -511,15 +294,6 @@ let with_process_in command read =
     consume_in chan;
     Unix.close_process_in chan in
   do_finally f g
-
-let failwithf fmt =
-  Format.kfprintf (fun _ -> failwith (Format.flush_str_formatter ()))
-    Format.str_formatter fmt
-
-let invalid_argf fmt =
-  Format.kfprintf (fun _ -> invalid_arg (Format.flush_str_formatter ()))
-    Format.str_formatter fmt
-
 
 (** Create a directory if it does not exist already. *)
 let create_dir dir =

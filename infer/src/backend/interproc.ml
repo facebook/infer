@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Interprocedural Analysis *)
 
@@ -1034,7 +1034,7 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Procdesc.t) source
         (pp_intra_stats wl pdesc) pname;
       L.out "#### [FUNCTION %a] Footprint Analysis result ####@\n%a@."
         Procname.pp pname
-        (Paths.PathSet.pp pe_text) results;
+        (Paths.PathSet.pp Pp.text) results;
       let specs = try extract_specs tenv pdesc results with
         | Exceptions.Leak _ ->
             let exn =
@@ -1088,11 +1088,11 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Procdesc.t) source
       L.out "@.@.================================================";
       L.out "@. *** CANDIDATE PRECONDITIONS FOR %a: " Procname.pp pname;
       L.out "@.================================================@.";
-      L.out "@.%a @.@." (Specs.Jprop.pp_list pe_text false) candidate_preconditions;
+      L.out "@.%a @.@." (Specs.Jprop.pp_list Pp.text false) candidate_preconditions;
       L.out "@.@.================================================";
       L.out "@. *** VALID PRECONDITIONS FOR %a: " Procname.pp pname;
       L.out "@.================================================@.";
-      L.out "@.%a @.@." (Specs.Jprop.pp_list pe_text true) valid_preconditions;
+      L.out "@.%a @.@." (Specs.Jprop.pp_list Pp.text true) valid_preconditions;
       specs, Specs.RE_EXECUTION in
     go, get_results in
 
@@ -1196,7 +1196,7 @@ let report_runtime_exceptions tenv pdesc summary =
   let report (pre, runtime_exception) =
     if should_report pre then
       let pre_str =
-        pp_to_string (Prop.pp_prop pe_text) (Specs.Jprop.to_prop pre) in
+        F.asprintf "%a" (Prop.pp_prop Pp.text) (Specs.Jprop.to_prop pre) in
       let exn_desc = Localise.java_unchecked_exn_desc pname runtime_exception pre_str in
       let exn = Exceptions.Java_runtime_exception (runtime_exception, pre_str, exn_desc) in
       Reporting.log_error pname exn in
@@ -1242,7 +1242,7 @@ let update_specs tenv proc_name phase (new_specs : Specs.NormSpec.t list)
     then begin
       changed:= true;
       L.out "Specs changed: removing pre of spec@\n%a@."
-        (Specs.pp_spec pe_text None) old_spec;
+        (Specs.pp_spec Pp.text None) old_spec;
       current_specs := SpecMap.remove old_spec.Specs.pre !current_specs end
     else () in
   let add_spec spec = (* add a new spec by doing union of the posts *)
@@ -1256,7 +1256,7 @@ let update_specs tenv proc_name phase (new_specs : Specs.NormSpec.t list)
       if not (Paths.PathSet.equal old_post new_post) then begin
         changed := true;
         L.out "Specs changed: added new post@\n%a@."
-          (Propset.pp pe_text (Specs.Jprop.to_prop spec.Specs.pre))
+          (Propset.pp Pp.text (Specs.Jprop.to_prop spec.Specs.pre))
           (Paths.PathSet.to_propset tenv new_post);
         current_specs :=
           SpecMap.add spec.Specs.pre (new_post, new_visited)
@@ -1265,7 +1265,7 @@ let update_specs tenv proc_name phase (new_specs : Specs.NormSpec.t list)
     with Not_found ->
       changed := true;
       L.out "Specs changed: added new pre@\n%a@."
-        (Specs.Jprop.pp_short pe_text) spec.Specs.pre;
+        (Specs.Jprop.pp_short Pp.text) spec.Specs.pre;
       current_specs :=
         SpecMap.add
           spec.Specs.pre

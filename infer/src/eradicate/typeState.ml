@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module L = Logging
 module F = Format
@@ -65,12 +65,12 @@ let empty ext =
 
 let pp ext fmt typestate =
   let pp_loc fmt loc = F.fprintf fmt "%d" loc.Location.line in
-  let pp_locs fmt locs = F.fprintf fmt " [%a]" (pp_seq pp_loc) locs in
+  let pp_locs fmt locs = F.fprintf fmt " [%a]" (Pp.seq pp_loc) locs in
   let pp_one exp (typ, ta, locs) =
     F.fprintf fmt "  %a -> [%s] %s %a%a@\n"
       Exp.pp exp
       (TypeOrigin.to_string (TypeAnnotation.get_origin ta)) (TypeAnnotation.to_string ta)
-      (Typ.pp_full pe_text) typ
+      (Typ.pp_full Pp.text) typ
       pp_locs locs in
   let pp_map map = M.iter pp_one map in
 

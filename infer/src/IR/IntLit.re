@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 let module F = Format;
 
@@ -121,4 +121,4 @@ let pp f (unsigned, n, ptr) =>
     F.fprintf f "%Ld" n
   };
 
-let to_string i => pp_to_string pp i;
+let to_string i => F.asprintf "%a" pp i;

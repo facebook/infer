@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module L = Logging
 module F = Format
@@ -46,7 +46,7 @@ module State = struct
 
   let pp fmt t =
     F.fprintf fmt "visited: %a"
-      (pp_seq Procdesc.Node.pp) (Procdesc.NodeSet.elements t.visited)
+      (Pp.seq Procdesc.Node.pp) (Procdesc.NodeSet.elements t.visited)
 
   let num_visited t =
     Procdesc.NodeSet.cardinal t.visited

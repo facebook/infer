@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 open CFrontend_utils
 
@@ -45,8 +45,11 @@ let captured_variables_cxx_ref dec =
 
 type t = string * string list (* (name, [param1,...,paramK]) *)
 
-let pp_predicate fmt (name, args) =
-  Format.fprintf fmt "%s(%a)" name (Utils.pp_comma_seq Format.pp_print_string) args
+let pp_predicate fmt (name, arglist) =
+  Format.fprintf fmt "%s(%a)" name (Pp.comma_seq Format.pp_print_string) arglist
+
+let is_declaration_kind decl s =
+  Clang_ast_proj.get_decl_kind_string decl = s
 
 (* st |= call_method(m) *)
 let call_method m st =

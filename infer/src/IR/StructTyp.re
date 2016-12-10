@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Struct Types */
@@ -43,14 +43,14 @@ let pp pe name f {fields, supers, methods, annots} =>
       Typename.pp
       name
       (
-        pp_seq (
+        Pp.seq (
           fun f (fld, t, _) => F.fprintf f "\n\t\t%a %a" (Typ.pp_full pe) t Ident.pp_fieldname fld
         )
       )
       fields
-      (pp_seq (fun f n => F.fprintf f "\n\t\t%a" Typename.pp n))
+      (Pp.seq (fun f n => F.fprintf f "\n\t\t%a" Typename.pp n))
       supers
-      (pp_seq (fun f m => F.fprintf f "\n\t\t%a" Procname.pp m))
+      (Pp.seq (fun f m => F.fprintf f "\n\t\t%a" Procname.pp m))
       methods
       Annot.Item.pp
       annots

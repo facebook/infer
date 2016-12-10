@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Functions for Propositions (i.e., Symbolic Heaps) *)
 
@@ -736,7 +736,7 @@ let get_smt_key a p =
   let tmp_filename = Filename.temp_file "smt_query" ".cns" in
   let outc_tmp = open_out tmp_filename in
   let fmt_tmp = F.formatter_of_out_channel outc_tmp in
-  let () = F.fprintf fmt_tmp "%a%a" (Sil.pp_atom pe_text) a (Prop.pp_prop pe_text) p in
+  let () = F.fprintf fmt_tmp "%a%a" (Sil.pp_atom Pp.text) a (Prop.pp_prop Pp.text) p in
   close_out outc_tmp;
   Digest.to_hex (Digest.file tmp_filename)
 
@@ -757,7 +757,7 @@ let check_atom tenv prop a0 =
     L.d_str "CHECK_ATOM_BOUND: "; Sil.d_atom a; L.d_ln ();
     L.d_str "WHERE:"; L.d_ln(); Prop.d_prop prop_no_fp; L.d_ln (); L.d_ln ();
     F.fprintf fmt "ID: %s @\nCHECK_ATOM_BOUND: %a@\nWHERE:@\n%a"
-      key (Sil.pp_atom pe_text) a (Prop.pp_prop pe_text) prop_no_fp;
+      key (Sil.pp_atom Pp.text) a (Prop.pp_prop Pp.text) prop_no_fp;
     close_out outc;
   end;
   match a with

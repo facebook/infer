@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Functions for "Smart" Pattern Matching *)
 
@@ -142,7 +142,7 @@ and isel_match isel1 sub vars isel2 =
       let idx2 = Sil.exp_sub sub idx2 in
       let sanity_check = not (IList.exists (fun id -> Sil.ident_in_exp id idx2) vars) in
       if (not sanity_check) then begin
-        let pe = pe_text in
+        let pe = Pp.text in
         L.out "@[.... Sanity Check Failure while Matching Index-Strexps ....@.";
         L.out "@[<4>    IDX1: %a, STREXP1: %a@." (Sil.pp_exp_printenv pe) idx1 (Sil.pp_sexp pe) se1';
         L.out "@[<4>    IDX2: %a, STREXP2: %a@\n@." (Sil.pp_exp_printenv pe) idx2 (Sil.pp_sexp pe) se2';

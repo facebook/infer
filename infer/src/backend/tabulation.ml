@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Interprocedural footprint analysis *)
 
@@ -295,7 +295,7 @@ let check_dereferences tenv callee_pname actual_pre sub spec_pre formal_params =
       (L.d_strln_color Red) "found error in dereference";
       L.d_strln "spec_pre:"; Prop.d_prop spec_pre; L.d_ln();
       L.d_str "exp "; Sil.d_exp e;
-      L.d_strln (" desc: " ^ (pp_to_string Localise.pp_error_desc error_desc));
+      L.d_strln (" desc: " ^ (F.asprintf "%a" Localise.pp_error_desc error_desc));
       error_desc in
     let deref_no_null_check_pos =
       if Exp.equal e_sub Exp.zero then

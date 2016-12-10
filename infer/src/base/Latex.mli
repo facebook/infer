@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 type style =
   | Boldface
@@ -22,7 +22,7 @@ val convert_string : string -> string
 val pp_string : style -> Format.formatter -> string -> unit
 
 (** Print color command *)
-val pp_color : Format.formatter -> color -> unit
+val pp_color : Format.formatter -> Pp.color -> unit
 
 (** Prelude for a latex file with the given author and title and table of contents flag *)
 val pp_begin : Format.formatter -> (string * string * bool) -> unit

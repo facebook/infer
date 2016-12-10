@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Printers for the analysis results *)
 
@@ -179,7 +179,7 @@ end
 (** Execute the delayed print actions *)
 let force_delayed_print fmt =
   let pe_default =
-    if Config.write_html then pe_html Black else pe_text in
+    if Config.write_html then Pp.html Black else Pp.text in
   function
   | (L.PTatom, a) ->
       let (a: Sil.atom) = Obj.obj a in
@@ -209,21 +209,21 @@ let force_delayed_print fmt =
       if Config.write_html
       then
         F.fprintf fmt "%a%a%a"
-          Io_infer.Html.pp_start_color Green
-          (Sil.pp_instr (pe_html Green)) i
+          Io_infer.Html.pp_start_color Pp.Green
+          (Sil.pp_instr (Pp.html Green)) i
           Io_infer.Html.pp_end_color ()
       else
-        Sil.pp_instr pe_text fmt i
+        Sil.pp_instr Pp.text fmt i
   | (L.PTinstr_list, il) ->
       let (il: Sil.instr list) = Obj.obj il in
       if Config.write_html
       then
         F.fprintf fmt "%a%a%a"
-          Io_infer.Html.pp_start_color Green
-          (Sil.pp_instr_list (pe_html Green)) il
+          Io_infer.Html.pp_start_color Pp.Green
+          (Sil.pp_instr_list (Pp.html Green)) il
           Io_infer.Html.pp_end_color ()
       else
-        Sil.pp_instr_list pe_text fmt il
+        Sil.pp_instr_list Pp.text fmt il
   | (L.PTjprop_list, shallow_jpl) ->
       let ((shallow: bool), (jpl: Prop.normal Specs.Jprop.t list)) = Obj.obj shallow_jpl in
       Specs.Jprop.pp_list pe_default shallow fmt jpl
@@ -238,12 +238,12 @@ let force_delayed_print fmt =
       if Config.write_html
       then
         F.fprintf fmt "%a%a%a"
-          Io_infer.Html.pp_start_color Green
-          (Procdesc.Node.pp_instrs (pe_html Green) io ~sub_instrs: b) n
+          Io_infer.Html.pp_start_color Pp.Green
+          (Procdesc.Node.pp_instrs (Pp.html Green) io ~sub_instrs: b) n
           Io_infer.Html.pp_end_color ()
       else
         F.fprintf fmt "%a"
-          (Procdesc.Node.pp_instrs pe_text io ~sub_instrs: b) n
+          (Procdesc.Node.pp_instrs Pp.text io ~sub_instrs: b) n
   | (L.PToff, off) ->
       let (off: Sil.offset) = Obj.obj off in
       Sil.pp_offset pe_default fmt off
@@ -286,13 +286,13 @@ let force_delayed_print fmt =
   | (L.PTspec, spec) ->
       let (spec: Prop.normal Specs.spec) = Obj.obj spec in
       Specs.pp_spec
-        (if Config.write_html then pe_html Blue else pe_text)
+        (if Config.write_html then Pp.html Blue else Pp.text)
         None fmt spec
   | (L.PTstr, s) ->
       let (s: string) = Obj.obj s in
       F.fprintf fmt "%s" s
   | (L.PTstr_color, s) ->
-      let (s: string), (c: color) = Obj.obj s in
+      let (s: string), (c: Pp.color) = Obj.obj s in
       if Config.write_html
       then
         F.fprintf fmt "%a%s%a"
@@ -305,7 +305,7 @@ let force_delayed_print fmt =
       let (s: string) = Obj.obj s in
       F.fprintf fmt "%s@\n" s
   | (L.PTstrln_color, s) ->
-      let (s: string), (c: color) = Obj.obj s in
+      let (s: string), (c: Pp.color) = Obj.obj s in
       if Config.write_html
       then
         F.fprintf fmt "%a%s%a@\n"
@@ -325,13 +325,13 @@ let force_delayed_print fmt =
       Typ.pp_full pe_default fmt t
   | (L.PTtyp_list, tl) ->
       let (tl: Typ.t list) = Obj.obj tl in
-      (pp_seq (Typ.pp pe_default)) fmt tl
+      (Pp.seq (Typ.pp pe_default)) fmt tl
   | (L.PTerror, s) ->
       let (s: string) = Obj.obj s in
       if Config.write_html
       then
         F.fprintf fmt "%aERROR: %s%a"
-          Io_infer.Html.pp_start_color Red
+          Io_infer.Html.pp_start_color Pp.Red
           s
           Io_infer.Html.pp_end_color ()
       else
@@ -341,7 +341,7 @@ let force_delayed_print fmt =
       if Config.write_html
       then
         F.fprintf fmt "%aWARNING: %s%a"
-          Io_infer.Html.pp_start_color Orange
+          Io_infer.Html.pp_start_color Pp.Orange
           s
           Io_infer.Html.pp_end_color ()
       else
@@ -351,7 +351,7 @@ let force_delayed_print fmt =
       if Config.write_html
       then
         F.fprintf fmt "%aINFO: %s%a"
-          Io_infer.Html.pp_start_color Blue
+          Io_infer.Html.pp_start_color Pp.Blue
           s
           Io_infer.Html.pp_end_color ()
       else
@@ -382,15 +382,15 @@ let start_session node (loc: Location.t) proc_name session source =
       source
    then
      F.fprintf !curr_html_formatter "%a<LISTING>%a</LISTING>%a"
-       Io_infer.Html.pp_start_color Green
-       (Procdesc.Node.pp_instrs (pe_html Green) None ~sub_instrs: true) node
+       Io_infer.Html.pp_start_color Pp.Green
+       (Procdesc.Node.pp_instrs (Pp.html Green) None ~sub_instrs: true) node
        Io_infer.Html.pp_end_color ());
   F.fprintf !curr_html_formatter "%a%a"
     Io_infer.Html.pp_hline ()
     (Io_infer.Html.pp_session_link source ~with_name: true [".."])
     ((node_id :> int), session, loc.Location.line);
   F.fprintf !curr_html_formatter "<LISTING>%a"
-    Io_infer.Html.pp_start_color Black
+    Io_infer.Html.pp_start_color Pp.Black
 
 let node_start_session node loc proc_name session source =
   if Config.write_html then
@@ -431,7 +431,7 @@ let write_proc_html source whole_seconds pdesc =
            Io_infer.Html.pp_node_link
              []
              (Procdesc.Node.get_proc_name n)
-             ~description:(Procdesc.Node.get_description (pe_html Black) n)
+             ~description:(Procdesc.Node.get_description (Pp.html Black) n)
              ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds n) :> int list)
              ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs n) :> int list)
              ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn n) :> int list)
@@ -454,7 +454,7 @@ let create_table_err_per_line err_log =
     let err_str =
       Localise.to_string err_name ^
       " " ^
-      (pp_to_string Localise.pp_error_desc desc) in
+      (F.asprintf "%a" Localise.pp_error_desc desc) in
     try
       let set = Hashtbl.find err_per_line loc.Location.line in
       Hashtbl.replace err_per_line loc.Location.line (String.Set.add set err_str)
@@ -539,7 +539,7 @@ let write_html_file linereader filename procs =
          Io_infer.Html.pp_node_link
            [fname_encoding]
            (Procdesc.Node.get_proc_name n)
-           ~description:(Procdesc.Node.get_description (pe_html Black) n)
+           ~description:(Procdesc.Node.get_description (Pp.html Black) n)
            ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds n) :> int list)
            ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs n) :> int list)
            ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn n) :> int list)

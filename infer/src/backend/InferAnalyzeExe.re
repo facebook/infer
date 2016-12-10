@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** Main module for the analysis after the capture phase */
@@ -21,8 +21,8 @@ let register_perf_stats_report () => {
     };
   let stats_base = Config.perf_stats_prefix ^ Filename.basename cluster ^ ".json";
   let stats_file = Filename.concat stats_dir stats_base;
-  create_dir Config.results_dir;
-  create_dir stats_dir;
+  Utils.create_dir Config.results_dir;
+  Utils.create_dir stats_dir;
   PerfStats.register_report_at_exit stats_file
 };
 

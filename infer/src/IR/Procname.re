@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** Module for Procedure Names */
@@ -541,7 +541,7 @@ let to_simplified_string withclass::withclass=false p =>
 
 /** Convert a proc name to a filename */
 let to_filename proc_name =>
-  Escape.escape_filename @@ string_append_crc_cutoff @@ to_unique_id proc_name;
+  Escape.escape_filename @@ Utils.string_append_crc_cutoff @@ to_unique_id proc_name;
 
 
 /** Pretty print a proc name */

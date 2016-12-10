@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 let count_newlines (path: string): int =
   let open! Core.Std in
@@ -35,7 +35,7 @@ module Map = Map.Make(OrderedSourceFile)
 module Set = Set.Make(OrderedSourceFile)
 
 let rel_path_from_abs_path root fname =
-  let relative_complemented_fname = filename_to_relative root fname in
+  let relative_complemented_fname = Utils.filename_to_relative root fname in
   if String.is_prefix ~prefix:root fname &&
      Filename.is_relative relative_complemented_fname then
     Some relative_complemented_fname
@@ -47,8 +47,8 @@ let from_abs_path fname =
        "ERROR: Path %s is relative, when absolute path was expected .@."
        fname);
   (* try to get realpath of source file. Use original if it fails *)
-  let fname_real = try realpath fname with Unix.Unix_error _ -> fname in
-  let project_root_real = realpath Config.project_root in
+  let fname_real = try Utils.realpath fname with Unix.Unix_error _ -> fname in
+  let project_root_real = Utils.realpath Config.project_root in
   let models_dir_real = Config.models_src_dir in
   match rel_path_from_abs_path project_root_real fname_real with
   | Some path -> RelativeProjectRoot path
@@ -100,7 +100,7 @@ let encoding source_file =
   | `Enc_crc ->
       let base = Filename.basename source_file_s in
       let dir = prefix ^ Filename.dirname source_file_s in
-      string_append_crc_cutoff ~key:dir base
+      Utils.string_append_crc_cutoff ~key:dir base
 
 let empty = Absolute ""
 
@@ -149,7 +149,7 @@ let changed_files_set =
       RelativeProjectRoot path
     else
       from_abs_path path in
-  Option.bind Config.changed_files_index read_file |>
+  Option.bind Config.changed_files_index Utils.read_file |>
   Option.map ~f:(
     IList.fold_left
       (fun changed_files line ->

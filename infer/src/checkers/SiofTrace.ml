@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module F = Format
 module L = Logging
@@ -15,7 +15,7 @@ module L = Logging
 module Global = struct
   type t = Pvar.t
   let compare = Pvar.compare
-  let pp fmt pvar = (Pvar.pp pe_text) fmt pvar
+  let pp fmt pvar = (Pvar.pp Pp.text) fmt pvar
 end
 
 module TraceElem = struct

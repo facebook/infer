@@ -10,7 +10,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-open! Utils;
+open! IStd;
 
 
 /** The Smallfoot Intermediate Language */
@@ -321,19 +321,19 @@ let hpred_get_lhs: hpred => Exp.t;
 /** {2 Pretty Printing} */
 
 /** Begin change color if using diff printing, return updated printenv and change status */
-let color_pre_wrapper: printenv => F.formatter => 'a => (printenv, bool);
+let color_pre_wrapper: Pp.env => F.formatter => 'a => (Pp.env, bool);
 
 
 /** Close color annotation if changed */
-let color_post_wrapper: bool => printenv => F.formatter => unit;
+let color_post_wrapper: bool => Pp.env => F.formatter => unit;
 
 
 /** Pretty print an expression. */
-let pp_exp_printenv: printenv => F.formatter => Exp.t => unit;
+let pp_exp_printenv: Pp.env => F.formatter => Exp.t => unit;
 
 
 /** Pretty print an expression with type. */
-let pp_exp_typ: printenv => F.formatter => (Exp.t, Typ.t) => unit;
+let pp_exp_typ: Pp.env => F.formatter => (Exp.t, Typ.t) => unit;
 
 
 /** dump an expression. */
@@ -341,11 +341,11 @@ let d_exp: Exp.t => unit;
 
 
 /** Pretty print a type. */
-let pp_texp: printenv => F.formatter => Exp.t => unit;
+let pp_texp: Pp.env => F.formatter => Exp.t => unit;
 
 
 /** Pretty print a type with all the details. */
-let pp_texp_full: printenv => F.formatter => Exp.t => unit;
+let pp_texp_full: Pp.env => F.formatter => Exp.t => unit;
 
 
 /** Dump a type expression with all the details. */
@@ -353,7 +353,7 @@ let d_texp_full: Exp.t => unit;
 
 
 /** Pretty print a list of expressions. */
-let pp_exp_list: printenv => F.formatter => list Exp.t => unit;
+let pp_exp_list: Pp.env => F.formatter => list Exp.t => unit;
 
 
 /** Dump a list of expressions. */
@@ -361,7 +361,7 @@ let d_exp_list: list Exp.t => unit;
 
 
 /** Pretty print an offset */
-let pp_offset: printenv => F.formatter => offset => unit;
+let pp_offset: Pp.env => F.formatter => offset => unit;
 
 
 /** Convert an offset to a string */
@@ -373,7 +373,7 @@ let d_offset: offset => unit;
 
 
 /** Pretty print a list of offsets */
-let pp_offset_list: printenv => F.formatter => list offset => unit;
+let pp_offset_list: Pp.env => F.formatter => list offset => unit;
 
 
 /** Dump a list of offsets */
@@ -389,7 +389,7 @@ let instr_get_exps: instr => list Exp.t;
 
 
 /** Pretty print an instruction. */
-let pp_instr: printenv => F.formatter => instr => unit;
+let pp_instr: Pp.env => F.formatter => instr => unit;
 
 
 /** Dump an instruction. */
@@ -397,7 +397,7 @@ let d_instr: instr => unit;
 
 
 /** Pretty print a list of instructions. */
-let pp_instr_list: printenv => F.formatter => list instr => unit;
+let pp_instr_list: Pp.env => F.formatter => list instr => unit;
 
 
 /** Dump a list of instructions. */
@@ -405,7 +405,7 @@ let d_instr_list: list instr => unit;
 
 
 /** Pretty print an atom. */
-let pp_atom: printenv => F.formatter => atom => unit;
+let pp_atom: Pp.env => F.formatter => atom => unit;
 
 
 /** Dump an atom. */
@@ -417,7 +417,7 @@ let inst_to_string: inst => string;
 
 
 /** Pretty print a strexp. */
-let pp_sexp: printenv => F.formatter => strexp => unit;
+let pp_sexp: Pp.env => F.formatter => strexp => unit;
 
 
 /** Dump a strexp. */
@@ -425,7 +425,7 @@ let d_sexp: strexp => unit;
 
 
 /** Pretty print a strexp list. */
-let pp_sexp_list: printenv => F.formatter => list strexp => unit;
+let pp_sexp_list: Pp.env => F.formatter => list strexp => unit;
 
 
 /** Dump a strexp. */
@@ -433,7 +433,7 @@ let d_sexp_list: list strexp => unit;
 
 
 /** Pretty print a hpred. */
-let pp_hpred: printenv => F.formatter => hpred => unit;
+let pp_hpred: Pp.env => F.formatter => hpred => unit;
 
 
 /** Dump a hpred. */
@@ -441,19 +441,19 @@ let d_hpred: hpred => unit;
 
 
 /** Pretty print a hpara. */
-let pp_hpara: printenv => F.formatter => hpara => unit;
+let pp_hpara: Pp.env => F.formatter => hpara => unit;
 
 
 /** Pretty print a list of hparas. */
-let pp_hpara_list: printenv => F.formatter => list hpara => unit;
+let pp_hpara_list: Pp.env => F.formatter => list hpara => unit;
 
 
 /** Pretty print a hpara_dll. */
-let pp_hpara_dll: printenv => F.formatter => hpara_dll => unit;
+let pp_hpara_dll: Pp.env => F.formatter => hpara_dll => unit;
 
 
 /** Pretty print a list of hpara_dlls. */
-let pp_hpara_dll_list: printenv => F.formatter => list hpara_dll => unit;
+let pp_hpara_dll_list: Pp.env => F.formatter => list hpara_dll => unit;
 
 
 /** Module Predicates records the occurrences of predicates as parameters
@@ -486,7 +486,7 @@ let module Predicates: {
 
 
 /** Pretty print a hpred with optional predicate env */
-let pp_hpred_env: printenv => option Predicates.env => F.formatter => hpred => unit;
+let pp_hpred_env: Pp.env => option Predicates.env => F.formatter => hpred => unit;
 
 
 /** {2 Functions for traversing SIL data types} */
@@ -562,7 +562,7 @@ let fav_duplicates: ref bool;
 
 
 /** Pretty print a fav. */
-let pp_fav: printenv => F.formatter => fav => unit;
+let pp_fav: Pp.env => F.formatter => fav => unit;
 
 
 /** Create a new [fav]. */

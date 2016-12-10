@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** mapping of ids to raw access paths. useful for id-normalizing access paths *)
 

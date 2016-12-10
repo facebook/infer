@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (** Execution Paths *)
 
@@ -118,7 +118,7 @@ module PathSet : sig
   val partition : (Prop.normal Prop.t -> bool) -> t -> t * t
 
   (** pretty print the pathset *)
-  val pp : printenv -> Format.formatter -> t -> unit
+  val pp : Pp.env -> Format.formatter -> t -> unit
 
   (** number of elements in the pathset *)
   val size : t -> int

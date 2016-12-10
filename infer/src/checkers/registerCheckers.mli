@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 (* val active_procedure_checkers : unit -> *)
 (*   (Callbacks.proc_callback_t * bool * Config.language option) list *)

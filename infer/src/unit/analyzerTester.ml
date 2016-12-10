@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
+open! IStd
 
 module F = Format
 module L = Logging
@@ -31,7 +31,7 @@ module StructuredSil = struct
   type structured_program = structured_instr list
 
   let rec pp_structured_instr fmt = function
-    | Cmd instr -> (Sil.pp_instr pe_text) fmt instr
+    | Cmd instr -> (Sil.pp_instr Pp.text) fmt instr
     | If (exp, then_instrs, else_instrs) ->
         (* TODO (t10287763): indent bodies of if/while *)
         F.fprintf fmt "if (%a) {@.%a@.} else {@.%a@.}"
@@ -254,7 +254,7 @@ module Make
       let post_str =
         try
           let state = M.find node_id inv_map in
-          pp_to_string pp_state state.post
+          F.asprintf "%a" pp_state state.post
         with Not_found -> "_|_" in
       if inv_str <> post_str then
         let error_msg =
