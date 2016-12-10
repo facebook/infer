@@ -125,29 +125,28 @@ let touch_start_file () =
   with Unix.Unix_error (Unix.EEXIST, _, _) -> ()
 
 
-let run_command cmd_list after_wait =
-  let cmd = Array.of_list cmd_list in
-  let pid = Unix.create_process cmd.(0) cmd Unix.stdin Unix.stdout Unix.stderr in
-  let _, status = Unix.waitpid [] pid in
-  let exit_code = match status with Unix.WEXITED i -> i | _ -> 1 in
-  after_wait exit_code ;
-  if exit_code <> 0 then (
-    L.do_err "Failed to execute: %s@\n" (String.concat ~sep:" " cmd_list) ;
-    exit exit_code
-  )
+let run_command prog args after_wait =
+  let open! Core.Std in
+  let status = Unix.waitpid (Unix.fork_exec ~prog ~args:(prog :: args) ()) in
+  after_wait status ;
+  match status with
+  | Ok () -> ()
+  | Error _ ->
+      L.do_err "%s@\n%s@\n"
+        (String.concat ~sep:" " (prog :: args)) (Unix.Exit_or_signal.to_string_hum status) ;
+      exit 1
 
 
 let check_xcpretty () =
-  let open Core.Std in
-  let exit_code = Unix.system "xcpretty --version" in
-  match exit_code with
+  let open! Core.Std in
+  match Unix.system "xcpretty --version" with
   | Ok () -> ()
   | Error _ ->
       L.stderr
         "@.xcpretty not found in the path. Please, install xcpretty \
          for a more robust integration with xcodebuild. Otherwise use the option \
          --no-xcpretty.@.@.";
-      Unix.exit_immediately 1
+      exit 1
 
 let capture_with_compilation_database db_files =
   Config.clang_compilation_db_files := IList.map filename_to_absolute db_files;
@@ -172,21 +171,21 @@ let capture build_cmd = function
              infer -- clang-compilation-database file.json." ;
           Config.print_usage_exit ()
     )
+  | Genrule ->
+      L.stdout "Capturing for Buck genrule compatibility...@\n";
+      let infer_java = Config.bin_dir // "InferJava" in
+      run_command infer_java [] (fun _ -> ())
   | Xcode when Config.xcpretty ->
       L.stdout "Capturing using xcpretty...@\n";
       check_xcpretty ();
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_xcodebuild () in
       capture_with_compilation_database json_cdb
-  | Genrule ->
-      L.stdout "Capturing for Buck genrule compatibility...@\n";
-      let infer_java = Config.bin_dir // "InferJava" in
-      run_command [infer_java] (function _ -> ())
   | build_mode ->
       L.stdout "Capturing in %s mode...@." (string_of_build_mode build_mode);
       let in_buck_mode = build_mode = Buck in
       let infer_py = Config.lib_dir // "python" // "infer.py" in
-      run_command (
-        infer_py ::
+      run_command
+        infer_py (
         Config.anon_args @
         ["--analyzer";
          IList.assoc (=) Config.analyzer
@@ -224,8 +223,8 @@ let capture build_cmd = function
         (match Config.xcode_developer_dir with None -> [] | Some d ->
             ["--xcode-developer-dir"; d]) @
         ("--" :: build_cmd)
-      ) (fun exit_code ->
-          if exit_code = Config.infer_py_argparse_error_exit_code then
+      ) (fun status ->
+          if status = Result.Error (`Exit_non_zero Config.infer_py_argparse_error_exit_code) then
             (* swallow infer.py argument parsing error *)
             Config.print_usage_exit ()
         )
@@ -238,8 +237,8 @@ let run_parallel_analysis () =
   InferAnalyze.main (multicore_dir // "Makefile") ;
   let cwd = Unix.getcwd () in
   Unix.chdir multicore_dir ;
-  run_command (
-    "make" ::
+  run_command
+    "make" (
     "-k" ::
     "-j" :: (string_of_int Config.jobs) ::
     (Option.map_default (fun l -> ["-l"; string_of_float l]) [] Config.load_average) @
