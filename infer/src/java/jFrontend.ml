@@ -111,7 +111,7 @@ let cache_classname cn =
     split [] (Filename.dirname path) in
   let rec mkdir l p =
     let () =
-      if not (Sys.file_exists p) then
+      if (Sys.file_exists p) != `Yes then
         Unix.mkdir p ~perm:493 in
     match l with
     | [] -> ()
@@ -122,7 +122,7 @@ let cache_classname cn =
   close_out file_out
 
 let is_classname_cached cn =
-  Sys.file_exists (path_of_cached_classname cn)
+  Sys.file_exists (path_of_cached_classname cn) = `Yes
 
 
 (* Given a source file and a class, translates the code of this class.

@@ -61,7 +61,7 @@ let write_and_delete proc_name (proc_attributes: ProcAttributes.t) => {
   Serialization.to_file serializer (attributes_file proc_attributes.is_defined) proc_attributes;
   if proc_attributes.is_defined {
     let fname_declared = DB.filename_to_string (attributes_file false);
-    if (Sys.file_exists fname_declared) {
+    if (Sys.file_exists fname_declared == `Yes) {
       try (Unix.unlink fname_declared) {
       | Unix.Unix_error _ => ()
       }
@@ -220,7 +220,7 @@ let find_file_capturing_procedure pname =>
       SourceFile.compare source_file proc_attributes.ProcAttributes.loc.file != 0 ?
         `Include : `Source;
     let cfg_fname = DB.source_dir_get_internal_file source_dir ".cfg";
-    let cfg_fname_exists = Sys.file_exists (DB.filename_to_string cfg_fname);
+    let cfg_fname_exists = Sys.file_exists (DB.filename_to_string cfg_fname) == `Yes;
     if cfg_fname_exists {
       Some (source_file, origin)
     } else {

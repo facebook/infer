@@ -11,12 +11,32 @@
 (** General utility functions and definition with global scope *)
 
 module Bool = Core.Std.Bool
+module Caml = Core.Std.Caml
 module Filename = Core.Std.Filename
 module In_channel = Core.Std.In_channel
 module Int = Core.Std.Int
 module Pid = Core.Std.Pid
 module String = Core.Std.String
 module Unix = Core.Std.Unix
+module Signal = Core.Std.Signal
+
+module Sys = struct
+  include Core.Std.Sys
+
+  (* Core_sys does not catch Unix_error ENAMETOOLONG, see
+     https://github.com/janestreet/core/issues/76 *)
+  let file_exists ?follow_symlinks path =
+    try file_exists ?follow_symlinks path
+    with Unix.Unix_error _ -> `Unknown
+
+  let is_directory ?follow_symlinks path =
+    try is_directory ?follow_symlinks path
+    with Unix.Unix_error _ -> `Unknown
+
+  let is_file ?follow_symlinks path =
+    try is_file ?follow_symlinks path
+    with Unix.Unix_error _ -> `Unknown
+end
 
 module F = Format
 
@@ -440,7 +460,7 @@ let directory_fold f init path =
   let collect current_dir (accu, dirs) path =
     let full_path = current_dir // path in
     try
-      if Sys.is_directory full_path then
+      if Sys.is_directory full_path = `Yes then
         (accu, full_path:: dirs)
       else
         (f accu full_path, dirs)
@@ -452,7 +472,7 @@ let directory_fold f init path =
     | d:: tl ->
         let (new_accu, new_dirs) = Array.fold_left (collect d) (accu, tl) (Sys.readdir d) in
         loop new_accu new_dirs in
-  if Sys.is_directory path then
+  if Sys.is_directory path = `Yes then
     loop init [path]
   else
     f init path
@@ -462,7 +482,7 @@ let directory_iter f path =
   let apply current_dir dirs path =
     let full_path = current_dir // path in
     try
-      if Sys.is_directory full_path then
+      if Sys.is_directory full_path = `Yes then
         full_path:: dirs
       else
         let () = f full_path in
@@ -475,7 +495,7 @@ let directory_iter f path =
     | d:: tl ->
         let new_dirs = Array.fold_left (apply d) tl (Sys.readdir d) in
         loop new_dirs in
-  if Sys.is_directory path then
+  if Sys.is_directory path = `Yes then
     loop [path]
   else
     f path
@@ -503,7 +523,7 @@ let string_append_crc_cutoff ?(cutoff=100) ?(key="") name =
   name_up_to_cutoff ^ "." ^ crc_str
 
 let read_optional_json_file path =
-  if Sys.file_exists path then
+  if Sys.file_exists path = `Yes then
     try
       Ok (Yojson.Basic.from_file path)
     with Sys_error msg | Yojson.Json_error msg ->

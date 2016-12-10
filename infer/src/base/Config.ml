@@ -392,26 +392,27 @@ let patterns_of_json_with_key json_key json =
 (** The working directory of the initial invocation of infer, to which paths passed as command line
     options are relative. *)
 let init_work_dir, is_originator =
-  try
-    (Sys.getenv "INFER_CWD", false)
-  with Not_found ->
-    let cwd =
-      (* Use PWD if it denotes the same inode as ., to try to avoid paths with symlinks resolved *)
-      (* Approach is borrowed from llvm implementation of *)
-      (* llvm::sys::fs::current_path (implemented in Path.inc file) *)
-      try
-        let pwd = Sys.getenv "PWD" in
-        let pwd_stat = Unix.stat pwd in
-        let dot_stat = Unix.stat "." in
-        if pwd_stat.st_dev = dot_stat.st_dev && pwd_stat.st_ino = dot_stat.st_ino then
-          pwd
-        else
-          Sys.getcwd ()
-      with _ ->
-        Sys.getcwd () in
-    let real_cwd = realpath cwd in
-    Unix.putenv ~key:"INFER_CWD" ~data:real_cwd;
-    (real_cwd, true)
+  match Sys.getenv "INFER_CWD" with
+  | Some dir ->
+      (dir, false)
+  | None ->
+      let cwd =
+        (* Use PWD if it denotes the same inode as ., to try to avoid paths with symlinks resolved *)
+        (* Approach is borrowed from llvm implementation of *)
+        (* llvm::sys::fs::current_path (implemented in Path.inc file) *)
+        match Sys.getenv "PWD" with
+        | Some pwd ->
+            let pwd_stat = Unix.stat pwd in
+            let dot_stat = Unix.stat "." in
+            if pwd_stat.st_dev = dot_stat.st_dev && pwd_stat.st_ino = dot_stat.st_ino then
+              pwd
+            else
+              Sys.getcwd ()
+        | None ->
+            Sys.getcwd () in
+      let real_cwd = realpath cwd in
+      Unix.putenv ~key:"INFER_CWD" ~data:real_cwd;
+      (real_cwd, true)
 
 (** Resolve relative paths passed as command line options, i.e., with respect to the working
     directory of the initial invocation of infer. *)

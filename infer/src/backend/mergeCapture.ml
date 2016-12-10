@@ -106,10 +106,10 @@ let create_multilinks () =
 let rec slink ~stats ~skiplevels src dst =
   if debug >=3
   then L.stderr "slink src:%s dst:%s skiplevels:%d@." src dst skiplevels;
-  if Sys.is_directory src
+  if Sys.is_directory src = `Yes
   then
     begin
-      if not (Sys.file_exists dst)
+      if (Sys.file_exists dst) != `Yes
       then Unix.mkdir dst ~perm:0o700;
       let items = Sys.readdir src in
       Array.iter
@@ -139,22 +139,22 @@ let should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst =
         file time_orig time_link;
     time_link > time_orig in
   let symlinks_up_to_date captured_file =
-    if Sys.is_directory captured_file then
+    if Sys.is_directory captured_file = `Yes then
       let contents = Array.to_list (Sys.readdir captured_file) in
       IList.for_all
         (fun file ->
            let file_path = Filename.concat captured_file file in
-           Sys.file_exists file_path &&
+           Sys.file_exists file_path = `Yes &&
            (not check_timestamp_of_symlinks || symlink_up_to_date file_path))
         contents
     else true in
   let check_file captured_file =
-    Sys.file_exists captured_file &&
+    Sys.file_exists captured_file = `Yes &&
     symlinks_up_to_date captured_file in
   let was_copied () =
     let captured_src = Filename.concat infer_out_src Config.captured_dir_name in
     let captured_dst = Filename.concat infer_out_dst Config.captured_dir_name in
-    if Sys.file_exists captured_src && Sys.is_directory captured_src
+    if Sys.file_exists captured_src = `Yes && Sys.is_directory captured_src = `Yes
     then
       begin
         let captured_files = Array.to_list (Sys.readdir captured_src) in

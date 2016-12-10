@@ -283,8 +283,8 @@ let analyze = function
   | Java | Javac ->
       (* In Java and Javac modes, analysis is invoked from capture. *)
       ()
-  | Analyze | Ant | Buck | ClangCompilationDatabase | Genrule | Gradle | Make | Mvn | Ndk | Xcode ->
-      if not (Sys.file_exists Config.(results_dir // captured_dir_name)) then (
+  | Analyze | Ant | Buck | ClangCompilationDatabase | Gradle | Genrule | Make | Mvn | Ndk | Xcode ->
+      if (Sys.file_exists Config.(results_dir // captured_dir_name)) != `Yes then (
         L.stderr "There was nothing to analyze, exiting" ;
         Config.print_usage_exit ()
       );

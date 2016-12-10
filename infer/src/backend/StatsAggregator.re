@@ -18,10 +18,7 @@ let json_files_to_ignore_regex = Str.regexp (
   "\\|" ^ Str.quote aggregated_stats_by_target_filename ^ "\\)$"
 );
 
-let dir_exists dir =>
-  try (Sys.is_directory dir) {
-  | Sys_error _ => false
-  };
+let dir_exists dir => Sys.is_directory dir == `Yes;
 
 let find_json_files_in_dir dir => {
   let is_valid_json_file path => {

@@ -83,7 +83,9 @@ let timeout_action _ =
   unset_alarm ();
   raise (SymOp.Analysis_failure_exe (FKtimeout))
 
-let () = begin
+let () =
+  (* Can't use Core since it wraps signal handlers with a catch-all exception handler that exits *)
+  let module Sys = Caml.Sys in
   match Config.os_type with
   | Config.Unix | Config.Cygwin ->
       Sys.set_signal Sys.sigvtalrm (Sys.Signal_handle timeout_action);
@@ -92,7 +94,6 @@ let () = begin
       SymOp.set_wallclock_timeout_handler timeout_action;
       (* use the Gc alarm for periodic timeout checks *)
       ignore (Gc.create_alarm SymOp.check_wallclock_alarm)
-end
 
 let unwind () =
   unset_alarm ();

@@ -59,7 +59,7 @@ let collect_specs_filenames jar_filename =
 
 let add_models jar_filename =
   models_jar := jar_filename;
-  if Sys.file_exists !models_jar then
+  if Sys.file_exists !models_jar = `Yes then
     collect_specs_filenames jar_filename
   else
     failwith "Java model file not found"
@@ -73,7 +73,7 @@ let split_classpath cp = Str.split (Str.regexp JFile.sep) cp
 
 
 let append_path classpath path =
-  if Sys.file_exists path then
+  if Sys.file_exists path = `Yes then
     let full_path = filename_to_absolute path in
     if String.length classpath = 0 then
       full_path

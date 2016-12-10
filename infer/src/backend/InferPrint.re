@@ -23,7 +23,7 @@ let print_usage_exit err_s => {
 let load_specfiles () => {
   let specs_files_in_dir dir => {
     let is_specs_file fname =>
-      not (Sys.is_directory fname) && Filename.check_suffix fname Config.specs_files_suffix;
+      Sys.is_directory fname != `Yes && Filename.check_suffix fname Config.specs_files_suffix;
     let all_filenames =
       try (Array.to_list (Sys.readdir dir)) {
       | Sys_error _ => []

@@ -38,7 +38,7 @@ let () = {
   if Config.print_builtins {
     Builtin.print_and_exit ()
   };
-  if (not (Sys.file_exists Config.results_dir)) {
+  if (Sys.file_exists Config.results_dir != `Yes) {
     L.err "ERROR: results directory %s does not exist@.@." Config.results_dir;
     Config.print_usage_exit ()
   };

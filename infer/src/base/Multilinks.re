@@ -52,7 +52,7 @@ let lookup dir::dir =>
 
 let resolve fname => {
   let fname_s = DB.filename_to_string fname;
-  if (Sys.file_exists fname_s) {
+  if (Sys.file_exists fname_s == `Yes) {
     fname
   } else {
     let base = Filename.basename fname_s;

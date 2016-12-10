@@ -49,7 +49,7 @@ let find_source_dirs () =
       files in
   IList.iter (fun fname ->
       let dir = Filename.concat captured_dir fname in
-      if Sys.is_directory dir then add_cg_files_from_dir dir)
+      if Sys.is_directory dir = `Yes then add_cg_files_from_dir dir)
     files_in_results_dir;
   IList.rev !source_dirs
 
@@ -67,7 +67,7 @@ let filename_add_suffix fn s = fn ^ s
 
 let chop_extension = Filename.chop_extension
 
-let file_exists = Sys.file_exists
+let file_exists path = Sys.file_exists path = `Yes
 
 let file_remove = Sys.remove
 
@@ -92,7 +92,7 @@ let file_modified_time ?(symlink=false) fname =
 
 let filename_create_dir fname =
   let dirname = Filename.dirname fname in
-  if not (Sys.file_exists dirname)
+  if (Sys.file_exists dirname) != `Yes
   then create_dir dirname
 
 let read_whole_file fd =
@@ -248,7 +248,7 @@ let fold_paths_matching ~dir ~p ~init ~f =
     Array.fold_left
       (fun acc file ->
          let path = dir // file in
-         if Sys.is_directory path then (paths acc path)
+         if Sys.is_directory path = `Yes then (paths acc path)
          else if p path then f path acc
          else acc)
       path_list

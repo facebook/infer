@@ -11,12 +11,15 @@
 (** General utility functions *)
 
 module Bool = Core.Std.Bool
+module Caml = Core.Std.Caml
 module Filename = Core.Std.Filename
 module In_channel = Core.Std.In_channel
 module Int = Core.Std.Int
 module Pid = Core.Std.Pid
 module String = Core.Std.String
 module Unix = Core.Std.Unix
+module Signal = Core.Std.Signal
+module Sys : module type of Core.Std.Sys
 
 (** {2 Generic Utility Functions} *)
 

@@ -28,7 +28,7 @@ let load_from_cache serializer zip_path cache_dir zip_library =
   let absolute_path = Filename.concat cache_dir zip_path in
   let deserialize = Serialization.from_file serializer in
   let extract to_path =
-    if not (Sys.file_exists to_path) then
+    if (Sys.file_exists to_path) != `Yes then
       begin
         Unix.mkdir_p (Filename.dirname to_path);
         let lazy zip_channel = zip_library.zip_channel in
@@ -82,7 +82,7 @@ let zip_libraries =
         IList.fold_left add_zip [] Config.specs_library in
     if Config.checkers then
       zip_libs
-    else if Sys.file_exists Config.models_jar then
+    else if Sys.file_exists Config.models_jar = `Yes then
       (mk_zip_lib true Config.models_jar) :: zip_libs
     else
       zip_libs

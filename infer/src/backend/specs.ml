@@ -548,7 +548,7 @@ let specs_models_filename pname =
   DB.filename_from_string (Filename.concat Config.models_dir (specs_filename pname))
 
 let summary_exists_in_models pname =
-  Sys.file_exists (DB.filename_to_string (specs_models_filename pname))
+  Sys.file_exists (DB.filename_to_string (specs_models_filename pname)) = `Yes
 
 let summary_serializer : summary Serialization.serializer =
   Serialization.create_serializer Serialization.summary_key

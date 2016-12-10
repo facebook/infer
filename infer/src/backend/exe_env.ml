@@ -26,7 +26,7 @@ type file_data =
 (** get the path to the tenv file, which either one tenv file per source file or a global tenv file *)
 let tenv_filename file_base =
   let per_source_tenv_filename = DB.filename_add_suffix file_base ".tenv" in
-  if Sys.file_exists (DB.filename_to_string per_source_tenv_filename) then
+  if Sys.file_exists (DB.filename_to_string per_source_tenv_filename) = `Yes then
     per_source_tenv_filename
   else
     DB.global_tenv_fname
