@@ -105,7 +105,7 @@ let with_base_var var = function
   | Abstracted ((_, base_typ), accesses) -> Abstracted ((var, base_typ), accesses)
 
 let rec is_prefix_path path1 path2 =
-  if path1 == path2
+  if phys_equal path1 path2
   then true
   else
     match path1, path2 with
@@ -114,7 +114,7 @@ let rec is_prefix_path path1 path2 =
     | access1 :: p1, access2 :: p2 -> equal_access access1 access2 && is_prefix_path p1 p2
 
 let is_prefix ((base1, path1) as ap1) ((base2, path2) as ap2) =
-  if ap1 == ap2
+  if phys_equal ap1 ap2
   then true
   else
     equal_base base1 base2 && is_prefix_path path1 path2

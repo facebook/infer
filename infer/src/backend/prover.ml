@@ -484,7 +484,7 @@ end = struct
           IList.map (function
               | _, Exp.Const (Const.Cint n) -> n
               | _ -> assert false) e_upper_list in
-        if upper_list == [] then None
+        if upper_list = [] then None
         else Some (compute_min_from_nonempty_int_list upper_list)
 
   (** Find a IntLit.t n such that [t |- n < e] if possible. *)
@@ -501,7 +501,7 @@ end = struct
           IList.map (function
               | Exp.Const (Const.Cint n), _ -> n
               | _ -> assert false) e_lower_list in
-        if lower_list == [] then None
+        if lower_list = [] then None
         else Some (compute_max_from_nonempty_int_list lower_list)
 
   (** Return [true] if a simple inconsistency is detected *)
@@ -651,7 +651,7 @@ let check_disequal tenv prop e1 e2 =
                let sigma_irrelevant' = hpred :: sigma_irrelevant
                in f sigma_irrelevant' e sigma_rest
            | Some _ ->
-               if (k == Sil.Lseg_NE || check_pi_implies_disequal e1 e2) then
+               if (k = Sil.Lseg_NE || check_pi_implies_disequal e1 e2) then
                  let sigma_irrelevant' = (IList.rev sigma_irrelevant) @ sigma_rest
                  in Some (true, sigma_irrelevant')
                else if (Exp.equal e2 Exp.zero) then
@@ -661,7 +661,7 @@ let check_disequal tenv prop e1 e2 =
                  let sigma_rest' = (IList.rev sigma_irrelevant) @ sigma_rest
                  in f [] e2 sigma_rest')
       | Sil.Hdllseg (Sil.Lseg_NE, _, iF, _, _, iB, _) :: sigma_rest ->
-          if is_root tenv prop iF e != None || is_root tenv prop iB e != None then
+          if is_root tenv prop iF e <> None || is_root tenv prop iB e <> None then
             let sigma_irrelevant' = (IList.rev sigma_irrelevant) @ sigma_rest
             in Some (true, sigma_irrelevant')
           else
@@ -737,7 +737,7 @@ let get_smt_key a p =
   let outc_tmp = open_out tmp_filename in
   let fmt_tmp = F.formatter_of_out_channel outc_tmp in
   let () = F.fprintf fmt_tmp "%a%a" (Sil.pp_atom Pp.text) a (Prop.pp_prop Pp.text) p in
-  close_out outc_tmp;
+  Out_channel.close outc_tmp;
   Digest.to_hex (Digest.file tmp_filename)
 
 (** Check whether [prop |- a]. False means dont know. *)
@@ -758,7 +758,7 @@ let check_atom tenv prop a0 =
     L.d_str "WHERE:"; L.d_ln(); Prop.d_prop prop_no_fp; L.d_ln (); L.d_ln ();
     F.fprintf fmt "ID: %s @\nCHECK_ATOM_BOUND: %a@\nWHERE:@\n%a"
       key (Sil.pp_atom Pp.text) a (Prop.pp_prop Pp.text) prop_no_fp;
-    close_out outc;
+    Out_channel.close outc;
   end;
   match a with
   | Sil.Aeq (Exp.BinOp (Binop.Le, e1, e2), Exp.Const (Const.Cint i))
@@ -780,14 +780,14 @@ let check_allocatedness tenv prop e =
   let spatial_part = prop.Prop.sigma in
   let f = function
     | Sil.Hpointsto (base, _, _) ->
-        is_root tenv prop base n_e != None
+        is_root tenv prop base n_e <> None
     | Sil.Hlseg (k, _, e1, e2, _) ->
-        if k == Sil.Lseg_NE || check_disequal tenv prop e1 e2 then
-          is_root tenv prop e1 n_e != None
+        if k = Sil.Lseg_NE || check_disequal tenv prop e1 e2 then
+          is_root tenv prop e1 n_e <> None
         else false
     | Sil.Hdllseg (k, _, iF, oB, oF, iB, _) ->
-        if k == Sil.Lseg_NE || check_disequal tenv prop iF oF || check_disequal tenv prop iB oB then
-          is_root tenv prop iF n_e != None || is_root tenv prop iB n_e != None
+        if k = Sil.Lseg_NE || check_disequal tenv prop iF oF || check_disequal tenv prop iB oB then
+          is_root tenv prop iF n_e <> None || is_root tenv prop iB n_e <> None
         else false
   in IList.exists f spatial_part
 
@@ -1047,25 +1047,25 @@ end = struct
   let _d_missing sub =
     L.d_strln "SUB: ";
     L.d_increase_indent 1; Prop.d_sub sub; L.d_decrease_indent 1;
-    if !missing_pi != [] && !missing_sigma != []
+    if !missing_pi <> [] && !missing_sigma <> []
     then (L.d_ln (); Prop.d_pi !missing_pi; L.d_str "*"; L.d_ln (); Prop.d_sigma !missing_sigma)
-    else if !missing_pi != []
+    else if !missing_pi <> []
     then (L.d_ln (); Prop.d_pi !missing_pi)
-    else if !missing_sigma != []
+    else if !missing_sigma <> []
     then (L.d_ln (); Prop.d_sigma !missing_sigma);
-    if !missing_fld != [] then
+    if !missing_fld <> [] then
       begin
         L.d_ln ();
         L.d_strln "MISSING FLD: "; L.d_increase_indent 1; Prop.d_sigma !missing_fld; L.d_decrease_indent 1
       end;
-    if !missing_typ != [] then
+    if !missing_typ <> [] then
       begin
         L.d_ln ();
         L.d_strln "MISSING TYPING: "; L.d_increase_indent 1; d_typings !missing_typ; L.d_decrease_indent 1
       end
 
   let d_missing sub = (* optional print of missing: if print something, prepend with newline *)
-    if !missing_pi != [] || !missing_sigma!=[] || !missing_fld != [] || !missing_typ != [] || Sil.sub_to_list sub != [] then
+    if !missing_pi <> [] || !missing_sigma <> [] || !missing_fld <> [] || !missing_typ <> [] || Sil.sub_to_list sub <> [] then
       begin
         L.d_ln ();
         L.d_str "[";
@@ -1074,7 +1074,7 @@ end = struct
       end
 
   let d_frame_fld () = (* optional print of frame fld: if print something, prepend with newline *)
-    if !frame_fld != [] then
+    if !frame_fld <> [] then
       begin
         L.d_ln ();
         L.d_strln "[FRAME FLD:";
@@ -1082,7 +1082,7 @@ end = struct
       end
 
   let d_frame_typ () = (* optional print of frame typ: if print something, prepend with newline *)
-    if !frame_typ != [] then
+    if !frame_typ <> [] then
       begin
         L.d_ln ();
         L.d_strln "[FRAME TYPING:";
@@ -1202,7 +1202,7 @@ let exp_imply tenv calc_missing subs e1_in e2_in : subst2 =
         raise (IMPL_EXC ("pointer+index cannot evaluate to a constant", subs, (EXC_FALSE_EXPS (e1, e2))))
     | Exp.Const (Const.Cint n1), Exp.BinOp (Binop.PlusA, f1, Exp.Const (Const.Cint n2)) ->
         do_imply subs (Exp.int (n1 -- n2)) f1
-    | Exp.BinOp(op1, e1, f1), Exp.BinOp(op2, e2, f2) when op1 == op2 ->
+    | Exp.BinOp(op1, e1, f1), Exp.BinOp(op2, e2, f2) when op1 = op2 ->
         do_imply (do_imply subs e1 e2) f1 f2
     | Exp.BinOp (Binop.PlusA, Exp.Var v1, e1), e2 ->
         do_imply subs (Exp.Var v1) (Exp.BinOp (Binop.MinusA, e2, e1))
@@ -1218,7 +1218,7 @@ let exp_imply tenv calc_missing subs e1_in e2_in : subst2 =
         raise (IMPL_EXC ("expressions not equal", subs, (EXC_FALSE_EXPS (e1, e2))))
     | e1, Exp.Const _ ->
         raise (IMPL_EXC ("lhs not constant", subs, (EXC_FALSE_EXPS (e1, e2))))
-    | Exp.Lfield(e1, fd1, _), Exp.Lfield(e2, fd2, _) when fd1 == fd2 ->
+    | Exp.Lfield(e1, fd1, _), Exp.Lfield(e2, fd2, _) when Ident.equal_fieldname fd1 fd2 ->
         do_imply subs e1 e2
     | Exp.Lindex(e1, f1), Exp.Lindex(e2, f2) ->
         do_imply (do_imply subs e1 e2) f1 f2
@@ -1284,8 +1284,8 @@ let rec sexp_imply tenv source calc_index_frame calc_missing subs se1 se2 typ2 :
       (exp_imply tenv calc_missing subs e1 e2, None, None)
   | Sil.Estruct (fsel1, inst1), Sil.Estruct (fsel2, _) ->
       let subs', fld_frame, fld_missing = struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 in
-      let fld_frame_opt = if fld_frame != [] then Some (Sil.Estruct (fld_frame, inst1)) else None in
-      let fld_missing_opt = if fld_missing != [] then Some (Sil.Estruct (fld_missing, inst1)) else None in
+      let fld_frame_opt = if fld_frame <> [] then Some (Sil.Estruct (fld_frame, inst1)) else None in
+      let fld_missing_opt = if fld_missing <> [] then Some (Sil.Estruct (fld_missing, inst1)) else None in
       subs', fld_frame_opt, fld_missing_opt
   | Sil.Estruct _, Sil.Eexp (e2, _) ->
       begin
@@ -1304,11 +1304,11 @@ let rec sexp_imply tenv source calc_index_frame calc_missing subs se1 se2 typ2 :
       let subs' = array_len_imply tenv calc_missing subs len1 len2 indices2 in
       let subs'', index_frame, index_missing =
         array_imply tenv source calc_index_frame calc_missing subs' esel1 esel2 typ2 in
-      let index_frame_opt = if index_frame != []
+      let index_frame_opt = if index_frame <> []
         then Some (Sil.Earray (len1, index_frame, inst1))
         else None in
       let index_missing_opt =
-        if index_missing != [] &&
+        if index_missing <> [] &&
            (Config.allow_missing_index_in_proc_call || !Config.footprint)
         then Some (Sil.Earray (len1, index_missing, inst1))
         else None in
@@ -1846,7 +1846,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                raise (Exceptions.Abduction_case_not_implemented __POS__))
         | _ -> ()
       in
-      if Exp.equal e2 f2 && k == Sil.Lseg_PE then (subs, prop1)
+      if Exp.equal e2 f2 && k = Sil.Lseg_PE then (subs, prop1)
       else
         (match Prop.prop_iter_create prop1 with
          | None -> raise (IMPL_EXC ("lhs is empty", subs, EXC_FALSE))
@@ -2149,7 +2149,7 @@ let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2
     L.d_increase_indent 1; Prop.d_pi pi1; L.d_decrease_indent 1; L.d_ln ();
     L.d_strln "pi2:";
     L.d_increase_indent 1; Prop.d_pi pi2; L.d_decrease_indent 1; L.d_ln ();
-    if pi2_bcheck != []
+    if pi2_bcheck <> []
     then (L.d_str "pi2 bounds checks: "; Prop.d_pi pi2_bcheck; L.d_ln ());
     L.d_strln "returns";
     L.d_strln "sub1: ";
@@ -2169,7 +2169,7 @@ let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2
     L.d_increase_indent 1; d_impl (sub1, sub2) (prop1, prop2); L.d_decrease_indent 1; L.d_ln ();
     L.d_strln"returning TRUE";
     let frame = frame_prop.Prop.sigma in
-    if check_frame_empty && frame != [] then raise (IMPL_EXC("frame not empty", subs, EXC_FALSE));
+    if check_frame_empty && frame <> [] then raise (IMPL_EXC("frame not empty", subs, EXC_FALSE));
     Some ((sub1, sub2), frame)
   with
   | IMPL_EXC (s, subs, body) ->

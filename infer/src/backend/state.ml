@@ -151,7 +151,7 @@ let instrs_normalize instrs =
       | _ -> ids in
     IList.fold_left do_instr [] instrs in
   let subst =
-    let count = ref min_int in
+    let count = ref Int.min_value in
     let gensym id =
       incr count;
       Ident.set_stamp id !count in

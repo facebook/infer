@@ -145,7 +145,7 @@ let pp_vpath pe fmt vpath => {
     fun
     | Some de => pp fmt de
     | None => ();
-  if (pe.Pp.kind === Pp.HTML) {
+  if (pe.Pp.kind == Pp.HTML) {
     F.fprintf
       fmt
       " %a{vpath: %a}%a"

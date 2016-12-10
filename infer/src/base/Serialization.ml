@@ -67,7 +67,7 @@ let create_serializer (key : key) : 'a serializer =
     | inc ->
         let read () =
           try
-            seek_in inc 0 ;
+            In_channel.seek inc 0L ;
             match_data (Marshal.from_channel inc) fname
           with
           | Sys_error _ -> None in
@@ -80,7 +80,7 @@ let create_serializer (key : key) : 'a serializer =
         (* which indicates that another process is writing the same file. *)
         SymOp.try_finally
           (fun () -> retry_exception timeout catch_exn read ())
-          (fun () -> close_in inc) in
+          (fun () -> In_channel.close inc) in
   let to_file (fname : DB.filename) (value : 'a) =
     let fname_str = DB.filename_to_string fname in
     (* support nonblocking reads and writes in parallel: *)
@@ -89,7 +89,7 @@ let create_serializer (key : key) : 'a serializer =
         ~in_dir:(Filename.dirname fname_str) (Filename.basename fname_str) ".tmp" in
     let outc = open_out_bin fname_tmp in
     Marshal.to_channel outc (key, version, value) [];
-    close_out outc;
+    Out_channel.close outc;
     Unix.rename ~src:fname_tmp ~dst:fname_str in
   (from_string, from_file, to_file)
 

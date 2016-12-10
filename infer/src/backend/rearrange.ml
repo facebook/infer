@@ -294,7 +294,7 @@ and array_case_analysis_index pname tenv orig_prop
     index off inst_arr inst
   =
   let check_sound t' =
-    if not (Typ.equal typ_cont t' || array_cont == [])
+    if not (Typ.equal typ_cont t' || array_cont = [])
     then raise (Exceptions.Bad_footprint __POS__) in
   let index_in_array =
     IList.exists (fun (i, _) -> Prover.check_equal tenv Prop.prop_emp index i) array_cont in

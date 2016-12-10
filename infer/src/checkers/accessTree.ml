@@ -123,7 +123,7 @@ module Make (TraceDomain : AbstractDomain.S) = struct
     Option.map ~f:fst (get_node ap tree)
 
   let rec access_tree_lteq ((lhs_trace, lhs_tree) as lhs) ((rhs_trace, rhs_tree) as rhs) =
-    if lhs == rhs
+    if phys_equal lhs rhs
     then true
     else
       TraceDomain.(<=) ~lhs:lhs_trace ~rhs:rhs_trace &&
@@ -142,7 +142,7 @@ module Make (TraceDomain : AbstractDomain.S) = struct
           false
 
   let (<=) ~lhs ~rhs =
-    if lhs == rhs
+    if phys_equal lhs rhs
     then true
     else
       BaseMap.for_all
@@ -154,7 +154,7 @@ module Make (TraceDomain : AbstractDomain.S) = struct
         lhs
 
   let node_join f_node_merge f_trace_merge ((trace1, tree1) as node1) ((trace2, tree2) as node2) =
-    if node1 == node2
+    if phys_equal node1 node2
     then node1
     else
       let trace' = f_trace_merge trace1 trace2 in
@@ -163,21 +163,21 @@ module Make (TraceDomain : AbstractDomain.S) = struct
       match tree1, tree2 with
       | Subtree subtree1, Subtree subtree2 ->
           let tree' = AccessMap.merge (fun _ v1 v2 -> f_node_merge v1 v2) subtree1 subtree2 in
-          if trace' == trace1 && tree' == subtree1
+          if phys_equal trace' trace1 && phys_equal tree' subtree1
           then node1
-          else if trace' == trace2 && tree' == subtree2
+          else if phys_equal trace' trace2 && phys_equal tree' subtree2
           then node2
           else trace', Subtree tree'
       | Star, t ->
           (* vacuum up all the traces associated with the subtree t and join them with trace' *)
           let trace'' = join_all_traces trace' t in
-          if trace'' == trace1
+          if phys_equal trace'' trace1
           then node1
           else trace'', Star
       | t, Star ->
           (* same as above, but kind-of duplicated to allow address equality optimization *)
           let trace'' = join_all_traces trace' t in
-          if trace'' == trace2
+          if phys_equal trace'' trace2
           then node2
           else trace'', Star
 
@@ -185,9 +185,9 @@ module Make (TraceDomain : AbstractDomain.S) = struct
     match node1_opt, node2_opt with
     | Some node1, Some node2 ->
         let joined_node = node_join node_merge TraceDomain.join node1 node2 in
-        if joined_node == node1
+        if phys_equal joined_node node1
         then node1_opt
-        else if joined_node == node2
+        else if phys_equal joined_node node2
         then node2_opt
         else Some joined_node
     | None, node_opt | node_opt, None ->
@@ -243,7 +243,7 @@ module Make (TraceDomain : AbstractDomain.S) = struct
     add_node ap (make_normal_leaf trace) tree
 
   let join tree1 tree2 =
-    if tree1 == tree2
+    if phys_equal tree1 tree2
     then tree1
     else BaseMap.merge (fun _ n1 n2 -> node_merge n1 n2) tree1 tree2
 
@@ -271,13 +271,13 @@ module Make (TraceDomain : AbstractDomain.S) = struct
         then make_starred_leaf trace
         else
           let subtree' = AccessMap.map node_add_stars subtree in
-          if subtree' == subtree
+          if phys_equal subtree' subtree
           then node
           else trace, Subtree subtree'
     | Star -> node
 
   let widen ~prev ~next ~num_iters =
-    if prev == next
+    if phys_equal prev next
     then prev
     else
       let trace_widen prev next =
@@ -286,14 +286,14 @@ module Make (TraceDomain : AbstractDomain.S) = struct
         match prev_node_opt, next_node_opt with
         | Some prev_node, Some next_node ->
             let widened_node = node_join node_widen trace_widen prev_node next_node in
-            if widened_node == prev_node
+            if phys_equal widened_node prev_node
             then prev_node_opt
-            else if widened_node == next_node
+            else if phys_equal widened_node next_node
             then next_node_opt
             else Some widened_node
         | None, Some next_node ->
             let widened_node = node_add_stars next_node in
-            if widened_node == next_node
+            if phys_equal widened_node next_node
             then next_node_opt
             else Some widened_node
         | Some _, None | None, None ->

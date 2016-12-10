@@ -142,7 +142,7 @@ let get_source exe_env pname =
     (get_file_data exe_env pname)
 
 let file_data_to_tenv file_data =
-  if file_data.tenv == None
+  if file_data.tenv = None
   then file_data.tenv <- Tenv.load_from_file file_data.tenv_file;
   file_data.tenv
 

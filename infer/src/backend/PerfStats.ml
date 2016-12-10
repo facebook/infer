@@ -148,7 +148,7 @@ let register_report_at_exit file =
           Unix.mkdir_p (Filename.dirname file);
           let stats_oc = open_out file in
           Yojson.Basic.pretty_to_channel stats_oc json_stats ;
-          close_out stats_oc
+          Out_channel.close stats_oc
         with exc ->
           Format.eprintf "Info: failed to write stats to %s@\n%s@\n%s@\n%s@."
             file (Exn.to_string exc) (Yojson.Basic.pretty_to_string json_stats)

@@ -109,14 +109,14 @@ let size filter (err_log: t) =
 (** Print errors from error log *)
 let pp_errors fmt (errlog : t) =
   let f (ekind, _, ename, _, _) _ =
-    if ekind == Exceptions.Kerror then
+    if ekind = Exceptions.Kerror then
       F.fprintf fmt "%a@ " Localise.pp ename in
   ErrLogHash.iter f errlog
 
 (** Print warnings from error log *)
 let pp_warnings fmt (errlog : t) =
   let f (ekind, _, ename, desc, _) _ =
-    if ekind == Exceptions.Kwarning then
+    if ekind = Exceptions.Kwarning then
       F.fprintf fmt "%a %a@ " Localise.pp ename Localise.pp_error_desc desc in
   ErrLogHash.iter f errlog
 
@@ -128,7 +128,7 @@ let pp_html source path_to_root fmt (errlog: t) =
       Io_infer.Html.pp_session_link source path_to_root fmt (nodeid, session, loc.Location.line) in
     ErrDataSet.iter (pp_nodeid_session_loc fmt) eds in
   let f do_fp ek (ekind, infp, err_name, desc, _) eds =
-    if ekind == ek && do_fp == infp
+    if ekind = ek && do_fp = infp
     then
       F.fprintf fmt "<br>%a %a %a"
         Localise.pp err_name
@@ -195,8 +195,8 @@ let log_issue _ekind err_log loc node_id_key session ltr exn =
         not Mleak_buckets.should_raise_leak_unknown_origin
     | _ -> false in
   let log_it =
-    visibility == Exceptions.Exn_user ||
-    (Config.developer_mode && visibility == Exceptions.Exn_developer) in
+    visibility = Exceptions.Exn_user ||
+    (Config.developer_mode && visibility = Exceptions.Exn_developer) in
   if log_it && not hide_java_loc_zero && not hide_memory_error then begin
     let added =
       add_issue err_log

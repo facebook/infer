@@ -28,7 +28,8 @@ module Set = struct
 
   let normalize aps =
     APSet.filter
-      (fun lhs -> not (APSet.exists (fun rhs -> lhs != rhs && AccessPath.(<=) ~lhs ~rhs) aps))
+      (fun lhs ->
+         not (APSet.exists (fun rhs -> not (phys_equal lhs rhs) && AccessPath.(<=) ~lhs ~rhs) aps))
       aps
 
   let add = APSet.add
@@ -44,7 +45,7 @@ module Set = struct
     APSet.mem ap aps || APSet.exists (has_overlap ap) aps
 
   let (<=) ~lhs ~rhs =
-    if lhs == rhs
+    if phys_equal lhs rhs
     then true
     else
       let rhs_contains lhs_ap =
@@ -52,12 +53,12 @@ module Set = struct
       APSet.subset lhs rhs || APSet.for_all rhs_contains lhs
 
   let join aps1 aps2 =
-    if aps1 == aps2
+    if phys_equal aps1 aps2
     then aps1
     else APSet.union aps1 aps2
 
   let widen ~prev ~next ~num_iters:_ =
-    if prev == next
+    if phys_equal prev next
     then prev
     else
       let abstract_access_path ap aps = match ap with

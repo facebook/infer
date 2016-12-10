@@ -336,7 +336,7 @@ module Make (Spec : Spec) = struct
           |> Sinks.union caller_trace.sinks in
 
       let passthroughs =
-        if sources == caller_trace.sources && sinks == caller_trace.sinks
+        if phys_equal sources caller_trace.sources && phys_equal sinks caller_trace.sinks
         then
           (* this callee didn't add any new sources or any news sinks; it's just a passthrough *)
           Passthroughs.add (Passthrough.make callee_site) caller_trace.passthroughs
@@ -352,13 +352,13 @@ module Make (Spec : Spec) = struct
     { sources; sinks; passthroughs; }
 
   let (<=) ~lhs ~rhs =
-    lhs == rhs ||
+    phys_equal lhs rhs ||
     (Sources.subset lhs.sources rhs.sources &&
      Sinks.subset lhs.sinks rhs.sinks &&
      Passthroughs.subset lhs.passthroughs rhs.passthroughs)
 
   let join t1 t2 =
-    if t1 == t2
+    if phys_equal t1 t2
     then t1
     else
       let sources = Sources.union t1.sources t2.sources in

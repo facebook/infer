@@ -78,7 +78,7 @@ let path_ident_stamp = (-3);
 type t = {kind: kind, name: Name.t, stamp: int} [@@deriving compare];
 
 /* most unlikely first */
-let equal i1 i2 => i1.stamp === i2.stamp && i1.kind === i2.kind && equal_name i1.name i2.name;
+let equal i1 i2 => i1.stamp == i2.stamp && i1.kind == i2.kind && equal_name i1.name i2.name;
 
 
 /** {2 Set for identifiers} */
@@ -254,9 +254,9 @@ let name_return = Mangled.from_string "return";
 
 /** Return the standard name for the given kind */
 let standard_name kind =>
-  if (kind === KNormal || kind === KNone) {
+  if (kind == KNormal || kind == KNone) {
     Name.Normal
-  } else if (kind === KFootprint) {
+  } else if (kind == KFootprint) {
     Name.Footprint
   } else {
     Name.Primed
@@ -297,20 +297,20 @@ let create_footprint name stamp => create_with_stamp KFootprint name stamp;
 /** Get a name of an identifier */
 let get_name id => id.name;
 
-let is_primed (id: t) => id.kind === KPrimed;
+let is_primed (id: t) => id.kind == KPrimed;
 
-let is_normal (id: t) => id.kind === KNormal || id.kind === KNone;
+let is_normal (id: t) => id.kind == KNormal || id.kind == KNone;
 
-let is_footprint (id: t) => id.kind === KFootprint;
+let is_footprint (id: t) => id.kind == KFootprint;
 
 let is_none (id: t) => id.kind == KNone;
 
-let is_path (id: t) => id.kind === KNormal && id.stamp == path_ident_stamp;
+let is_path (id: t) => id.kind == KNormal && id.stamp == path_ident_stamp;
 
 let make_unprimed id =>
   if (id.kind != KPrimed) {
     assert false
-  } else if (id.kind === KNone) {
+  } else if (id.kind == KNone) {
     {...id, kind: KNone}
   } else {
     {...id, kind: KNormal}
@@ -333,14 +333,14 @@ let create_path pathstring =>
 
 /** Convert an identifier to a string. */
 let to_string id =>
-  if (id.kind === KNone) {
+  if (id.kind == KNone) {
     "_"
   } else {
     let base_name = name_to_string id.name;
     let prefix =
-      if (id.kind === KFootprint) {
+      if (id.kind == KFootprint) {
         "@"
-      } else if (id.kind === KNormal) {
+      } else if (id.kind == KNormal) {
         ""
       } else {
         "_"

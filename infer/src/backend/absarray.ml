@@ -218,7 +218,7 @@ end = struct
 
   (** Replace the current hpred *)
   let replace_hpred ((sigma, hpred, _) : t) hpred' =
-    IList.map (fun hpred'' -> if hpred''== hpred then hpred' else hpred'') sigma
+    IList.map (fun hpred'' -> if phys_equal hpred'' hpred then hpred' else hpred'') sigma
 
   (** Replace the strexp at the given offset in the given hpred *)
   let hpred_replace_strexp tenv footprint_part hpred syn_offs update =
@@ -441,7 +441,7 @@ let keep_only_indices tenv
       | Sil.Earray (len, esel, inst) ->
           let esel', esel_leftover' =
             IList.partition (fun (e, _) -> IList.exists (Exp.equal e) indices) esel in
-          if esel_leftover' == [] then (sigma, false)
+          if esel_leftover' = [] then (sigma, false)
           else begin
             let se' = Sil.Earray (len, esel', inst) in
             let sigma' = StrexpMatch.replace_strexp tenv footprint_part matched se' in
@@ -479,7 +479,7 @@ let strexp_do_abstract tenv
       if Config.trace_absarray then (L.d_str "keep "; d_keys keep_keys; L.d_ln ());
       keep p path keep_keys in
     let p3, changed3 =
-      if blur_keys == [] then (p2, false)
+      if blur_keys = [] then (p2, false)
       else begin
         if Config.trace_absarray then (L.d_str "blur "; d_keys blur_keys; L.d_ln ());
         blur p2 path blur_keys
@@ -493,7 +493,7 @@ let strexp_do_abstract tenv
     let keep_ksel, remove_ksel = IList.partition should_keep ksel in
     let keep_keys, _, _ =
       IList.map fst keep_ksel, IList.map fst remove_ksel, IList.map fst ksel in
-    let keep_keys' = if keep_keys == [] then default_keys else keep_keys in
+    let keep_keys' = if keep_keys = [] then default_keys else keep_keys in
     abstract keep_keys' keep_keys' in
   let do_array_footprint esel =
     (* array case footprint: keep only the last index, and blur it *)
@@ -512,7 +512,7 @@ let strexp_do_abstract tenv
   let filter_abstract d_keys should_keep abstract ksel default_keys =
     let keep_ksel = IList.filter should_keep ksel in
     let keep_keys = IList.map fst keep_ksel in
-    let keep_keys' = if keep_keys == [] then default_keys else keep_keys in
+    let keep_keys' = if keep_keys = [] then default_keys else keep_keys in
     if Config.trace_absarray then (L.d_str "keep "; d_keys keep_keys'; L.d_ln ());
     abstract keep_keys' [] in
   let do_array_reexecution esel =

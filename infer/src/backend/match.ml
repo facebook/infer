@@ -424,7 +424,7 @@ and hpara_common_match_with_impl tenv impl_ok ids1 sigma1 eids2 ids2 sigma2 =
       (sub_eids, eids_fresh) in
     let sub = Sil.sub_of_list (sub_ids @ sub_eids) in
     match sigma2 with
-    | [] -> if sigma1 == [] then true else false
+    | [] -> if sigma1 = [] then true else false
     | hpred2 :: sigma2 ->
         let (hpat2, hpats2) =
           let (hpred2_ren, sigma2_ren) = (Sil.hpred_sub sub hpred2, Prop.sigma_sub sub sigma2) in
@@ -496,7 +496,7 @@ let rec generate_todos_from_strexp mode todos sexp1 sexp2 =
   | Sil.Eexp _, _ ->
       None
   | Sil.Estruct (fel1, _), Sil.Estruct (fel2, _) -> (* assume sorted w.r.t. fields *)
-      if (IList.length fel1 <> IList.length fel2) && mode == Exact
+      if (IList.length fel1 <> IList.length fel2) && mode = Exact
       then None
       else generate_todos_from_fel mode todos fel1 fel2
   | Sil.Estruct _, _ ->
@@ -513,9 +513,9 @@ and generate_todos_from_fel mode todos fel1 fel2 =
   | [], [] ->
       Some todos
   | [], _ ->
-      if mode == RFieldForget then Some todos else None
+      if mode = RFieldForget then Some todos else None
   | _, [] ->
-      if mode == LFieldForget then Some todos else None
+      if mode = LFieldForget then Some todos else None
   | (fld1, strexp1) :: fel1', (fld2, strexp2) :: fel2' ->
       let n = Ident.compare_fieldname fld1 fld2 in
       if (n = 0) then
@@ -524,9 +524,9 @@ and generate_todos_from_fel mode todos fel1 fel2 =
           | None -> None
           | Some todos' -> generate_todos_from_fel mode todos' fel1' fel2'
         end
-      else if (n < 0 && mode == LFieldForget) then
+      else if (n < 0 && mode = LFieldForget) then
         generate_todos_from_fel mode todos fel1' fel2
-      else if (n > 0 && mode == RFieldForget) then
+      else if (n > 0 && mode = RFieldForget) then
         generate_todos_from_fel mode todos fel1 fel2'
       else
         None

@@ -31,7 +31,7 @@ let parse_ctl_file filename =
       let lexbuf = Lexing.from_channel inx in
       lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = fn };
       let _ = parse_with_error lexbuf in
-      close_in inx
+      In_channel.close inx
   | None ->
       Logging.out "No linters file specified. Nothing to parse.\n"
 

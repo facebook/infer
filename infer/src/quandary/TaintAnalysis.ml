@@ -48,14 +48,14 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       { access_tree; id_map; }
 
     let (<=) ~lhs ~rhs =
-      if lhs == rhs
+      if phys_equal lhs rhs
       then true
       else
         TaintDomain.(<=) ~lhs:lhs.access_tree ~rhs:rhs.access_tree &&
         IdMapDomain.(<=) ~lhs:lhs.id_map ~rhs:rhs.id_map
 
     let join astate1 astate2 =
-      if astate1 == astate2
+      if phys_equal astate1 astate2
       then astate1
       else
         let access_tree = TaintDomain.join astate1.access_tree astate2.access_tree in
@@ -63,7 +63,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         { access_tree; id_map; }
 
     let widen ~prev ~next ~num_iters =
-      if prev == next
+      if phys_equal prev next
       then prev
       else
         let access_tree =
@@ -281,7 +281,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             let output_trace = TaintSpecification.of_summary_trace in_out_summary.output_trace in
             let appended_trace = TraceDomain.append in_trace output_trace callee_site in
             let joined_trace = TraceDomain.join caller_trace appended_trace in
-            if appended_trace == joined_trace
+            if phys_equal appended_trace joined_trace
             then
               access_tree
             else

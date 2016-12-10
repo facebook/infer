@@ -53,7 +53,7 @@ module Domain = struct
           try CallsDomain.find key call_map
           with Not_found -> CallSiteSet.empty in
         let call_set' = CallSiteSet.add call call_set in
-        if call_set' == call_set
+        if phys_equal call_set' call_set
         then astate
         else NonBottom (CallsDomain.add key call_set' call_map, vars)
 

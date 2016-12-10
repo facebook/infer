@@ -71,4 +71,4 @@ let create_cluster_makefile (clusters: Cluster.t list) (fname: string) =
   pp_prolog fmt clusters;
   IList.iteri do_cluster clusters;
   pp_epilog fmt () ;
-  close_out outc
+  Out_channel.close outc

@@ -25,7 +25,7 @@ let read_file fname =
   let cleanup () =
     match !cin_ref with
     | None -> ()
-    | Some cin -> close_in cin in
+    | Some cin -> In_channel.close cin in
   try
     let cin = open_in fname in
     cin_ref := Some cin;
@@ -50,11 +50,11 @@ let copy_file fname_from fname_to =
   let cleanup () =
     begin match !cin_ref with
       | None -> ()
-      | Some cin -> close_in cin
+      | Some cin -> In_channel.close cin
     end;
     begin match !cout_ref with
       | None -> ()
-      | Some cout -> close_out cout
+      | Some cout -> Out_channel.close cout
     end in
   try
     let cin = open_in fname_from in
@@ -101,7 +101,7 @@ let do_outf outf_opt f =
 
 (** close an outfile *)
 let close_outf outf =
-  close_out outf.out_c
+  Out_channel.close outf.out_c
 
 (** convert a filename to absolute path and normalize by removing occurrences of "." and ".." *)
 module FileNormalize = struct
@@ -277,7 +277,7 @@ let do_finally f g =
 let with_file file ~f =
   let oc = open_out file in
   let f () = f oc in
-  let g () = close_out oc in
+  let g () = Out_channel.close oc in
   do_finally f g |> fst
 
 let write_json_to_file destfile json =
@@ -299,7 +299,7 @@ let with_process_in command read =
 (** Create a directory if it does not exist already. *)
 let create_dir dir =
   try
-    if (Unix.stat dir).Unix.st_kind != Unix.S_DIR then
+    if (Unix.stat dir).Unix.st_kind <> Unix.S_DIR then
       failwithf "@.ERROR: file %s exists and is not a directory@." dir
   with Unix.Unix_error _ ->
   try Unix.mkdir dir ~perm:0o700 with

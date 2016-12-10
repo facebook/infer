@@ -42,7 +42,7 @@ let write multilinks dir::dir => {
   let fname = Filename.concat dir multilink_file_name;
   let outc = open_out fname;
   String.Table.iteri f::(fun key::_ data::src => output_string outc (src ^ "\n")) multilinks;
-  close_out outc
+  Out_channel.close outc
 };
 
 let lookup dir::dir =>

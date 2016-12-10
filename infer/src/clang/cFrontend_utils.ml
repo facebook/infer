@@ -671,7 +671,7 @@ struct
       | Some m when is_cpp_translation translation_unit_context -> m
       | _ -> "" in
     let mangled = (Utils.string_crc_hex32 file) ^ mangled_name in
-    if String.length file == 0 && String.length mangled_name == 0 then
+    if String.length file = 0 && String.length mangled_name = 0 then
       Procname.from_string_c_fun name
     else
       Procname.C (Procname.c name mangled)

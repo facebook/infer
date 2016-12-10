@@ -282,7 +282,7 @@ let analyze = function
       (* In Java and Javac modes, analysis is invoked from capture. *)
       ()
   | Analyze | Ant | Buck | ClangCompilationDatabase | Gradle | Genrule | Make | Mvn | Ndk | Xcode ->
-      if (Sys.file_exists Config.(results_dir // captured_dir_name)) != `Yes then (
+      if (Sys.file_exists Config.(results_dir // captured_dir_name)) <> `Yes then (
         L.stderr "There was nothing to analyze, exiting" ;
         Config.print_usage_exit ()
       );
@@ -309,7 +309,7 @@ let () =
   if Config.developer_mode then Printexc.record_backtrace true ;
   let build_cmd = IList.rev Config.rest in
   let build_mode = match build_cmd with path :: _ -> build_mode_of_string path | [] -> Analyze in
-  if build_mode != Analyze && not Config.buck && not Config.reactive_mode then
+  if build_mode <> Analyze && not Config.buck && not Config.reactive_mode then
     remove_results_dir () ;
   create_results_dir () ;
   (* re-set log files, as default files were in results_dir removed above *)

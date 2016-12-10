@@ -1403,7 +1403,7 @@ let pp_summary_and_issues formats_by_report_kind => {
   let iterate_summaries = AnalysisResults.get_summary_iterator ();
   let top_proc = TopProcedures.create ();
   let top_proc_set = TopProcedures.top_set top_proc;
-  if (!compute_top_procedures && (Config.procs_csv !== None || Config.procs_xml !== None)) {
+  if (!compute_top_procedures && (Config.procs_csv != None || Config.procs_xml != None)) {
     iterate_summaries (TopProcedures.process_summary top_proc)
   };
   iterate_summaries (process_summary filters formats_by_report_kind linereader stats top_proc_set);

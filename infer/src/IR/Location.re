@@ -37,7 +37,7 @@ let pp f (loc: t) => F.fprintf f "[line %d]" loc.line;
 
 let to_string loc => {
   let s = string_of_int loc.line;
-  if (loc.col !== (-1)) {
+  if (loc.col != (-1)) {
     s ^ ":" ^ string_of_int loc.col
   } else {
     s

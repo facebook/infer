@@ -355,4 +355,4 @@ let pp_err (_, node_key) loc ekind ex_name desc ml_loc_opt fmt () =
 (** Return true if the exception is not serious and should be handled in timeout mode *)
 let handle_exception exn =
   let _, _, _, visibility, _, _, _ = recognize_exception exn in
-  visibility == Exn_user || visibility == Exn_developer
+  visibility = Exn_user || visibility = Exn_developer

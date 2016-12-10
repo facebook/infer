@@ -114,7 +114,7 @@ let map_join m1 m2 =
         let ta1' = TypeAnnotation.with_origin ta1 TypeOrigin.Undef in
         (t1, ta1', locs1) in
       tjoined := M.add exp1 range1' !tjoined in
-  if m1 == m2 then m1
+  if phys_equal m1 m2 then m1
   else (
     M.iter extend_lhs m2;
     M.iter missing_rhs m1;
@@ -141,17 +141,17 @@ let lookup_pvar pvar typestate =
 
 let add_id id range typestate =
   let map' = M.add (Exp.Var id) range typestate.map in
-  if map' == typestate.map then typestate
+  if phys_equal map' typestate.map then typestate
   else { typestate with map = map' }
 
 let add pvar range typestate =
   let map' = M.add (Exp.Lvar pvar) range typestate.map in
-  if map' == typestate.map then typestate
+  if phys_equal map' typestate.map then typestate
   else { typestate with map = map' }
 
 let remove_id id typestate =
   let map' = M.remove (Exp.Var id) typestate.map in
-  if map' == typestate.map then typestate
+  if phys_equal map' typestate.map then typestate
   else { typestate with map = map' }
 
 let get_extension typestate = typestate.extension

@@ -142,7 +142,7 @@ let find_normal_variable_funcall
         Some (fun_exp, IList.map fst args, loc, call_flags)
     | _ -> None in
   let res = find_in_node_or_preds node find_declaration in
-  if verbose && res == None
+  if verbose && res = None
   then
     (L.d_str
        ("find_normal_variable_funcall could not find " ^
@@ -251,7 +251,7 @@ let rec _find_normal_variable_load tenv (seen : Exp.Set.t) node id : DExp.t opti
         Some (DExp.Dpvar pvar)
     | _ -> None in
   let res = find_in_node_or_preds node find_declaration in
-  if verbose && res == None
+  if verbose && res = None
   then
     (L.d_str
        ("find_normal_variable_load could not find " ^
@@ -560,7 +560,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
     | Some _ -> (* we know it has been allocated *)
         Exceptions.Exn_user, bucket
     | None ->
-        if leak_from_list_abstraction hpred prop && value_str != None
+        if leak_from_list_abstraction hpred prop && value_str <> None
         then
           (* we don't know it's been allocated,
              but it's coming from list abstraction and we have a name *)

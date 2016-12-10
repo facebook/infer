@@ -137,7 +137,7 @@ let store_to_file (filename: DB.filename) (tenv: t) => {
     let out_channel = open_out debug_filename;
     let fmt = Format.formatter_of_out_channel out_channel;
     Format.fprintf fmt "%a" pp tenv;
-    close_out out_channel
+    Out_channel.close out_channel
   }
 };
 

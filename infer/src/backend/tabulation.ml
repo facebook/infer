@@ -123,7 +123,7 @@ let spec_find_rename trace_call (proc_name : Procname.t)
     let f spec =
       incr count; (!count, spec_rename_vars proc_name spec) in
     let specs, formals = Specs.get_specs_formals proc_name in
-    if specs == [] then
+    if specs = [] then
       begin
         trace_call Specs.CallStats.CR_not_found;
         raise (Exceptions.Precondition_not_found
@@ -303,7 +303,7 @@ let check_dereferences tenv callee_pname actual_pre sub spec_pre formal_params =
         | Some (_, pos) -> Some pos
         | None -> None
       else None in
-    if deref_no_null_check_pos != None
+    if deref_no_null_check_pos <> None
     then
       (* only report a dereference null error if we know
          there was a dereference without null check *)
@@ -854,7 +854,7 @@ let mk_actual_precondition tenv prop actual_params formal_params =
     let rec comb fpars apars = match fpars, apars with
       | f:: fpars', a:: apars' -> (f, a) :: comb fpars' apars'
       | [], _ ->
-          if apars != [] then
+          if apars <> [] then
             begin
               let str =
                 "more actual pars than formal pars in fun call (" ^
@@ -1078,12 +1078,12 @@ let exe_spec
             (* missing fields minus hidden fields *)
             let missing_fld_nohidden =
               IList.filter (fun hp -> not (hpred_missing_hidden hp)) missing_fld in
-            if !Config.footprint = false && split.missing_sigma != [] then
+            if !Config.footprint = false && split.missing_sigma <> [] then
               begin
                 L.d_strln "Implication error: missing_sigma not empty in re-execution";
                 Invalid_res Missing_sigma_not_empty
               end
-            else if !Config.footprint = false && missing_fld_nohidden != [] then
+            else if !Config.footprint = false && missing_fld_nohidden <> [] then
               begin
                 L.d_strln "Implication error: missing_fld not empty in re-execution";
                 Invalid_res Missing_fld_not_empty
@@ -1117,7 +1117,7 @@ let prop_pure_to_footprint tenv (p: 'a Prop.t) : Prop.normal Prop.t =
     Sil.fav_for_all a_fav Ident.is_footprint in
   let pure = Prop.get_pure p in
   let new_footprint_atoms = IList.filter is_footprint_atom_not_attribute pure in
-  if new_footprint_atoms == []
+  if new_footprint_atoms = []
   then p
   else (* add pure fact to footprint *)
     Prop.normalize tenv (Prop.set p ~pi_fp:(p.Prop.pi_fp @ new_footprint_atoms))
@@ -1134,7 +1134,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
   let invalid_res =
     IList.map (function Valid_res _ -> assert false | Invalid_res ir -> ir) invalid_res0 in
   let valid_res_miss_pi, valid_res_no_miss_pi =
-    IList.partition (fun vr -> vr.vr_pi != []) valid_res in
+    IList.partition (fun vr -> vr.vr_pi <> []) valid_res in
   let _, valid_res_cons_pre_missing =
     IList.partition (fun vr -> vr.incons_pre_missing) valid_res in
   let deref_errors = IList.filter (function Dereference_error _ -> true | _ -> false) invalid_res in
@@ -1144,7 +1144,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
   let res_with_path_idents =
     if !Config.footprint then
       begin
-        if valid_res_cons_pre_missing == [] then
+        if valid_res_cons_pre_missing = [] then
           (* no valid results where actual pre and missing are consistent *)
           begin
             if deref_errors <> [] then (* dereference error detected *)
@@ -1222,9 +1222,9 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
             (fun (p, path) -> (prop_pure_to_footprint tenv p, path))
             (IList.flatten (IList.map process_valid_res valid_res))
       end
-    else if valid_res_no_miss_pi != [] then
+    else if valid_res_no_miss_pi <> [] then
       IList.flatten (IList.map (fun vr -> vr.vr_cons_res) valid_res_no_miss_pi)
-    else if valid_res_miss_pi == [] then
+    else if valid_res_miss_pi = [] then
       raise (Exceptions.Precondition_not_met (call_desc None, __POS__))
     else
       begin

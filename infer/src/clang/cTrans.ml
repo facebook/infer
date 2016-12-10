@@ -28,7 +28,7 @@ struct
     let open CContext in
     let (selector, method_pointer_opt, mc_type) =
       CMethod_trans.get_objc_method_data obj_c_message_expr_info in
-    let is_instance = mc_type != CMethod_trans.MCStatic in
+    let is_instance = mc_type <> CMethod_trans.MCStatic in
     let method_kind = Procname.objc_method_kind_of_bool is_instance in
     let ms_opt =
       match method_pointer_opt with
@@ -1631,7 +1631,7 @@ struct
     let res_trans_subexpr_list =
       initListExpr_initializers_trans trans_state var_exp 0 stmts typ false stmt_info in
     let rh_exps = collect_exprs res_trans_subexpr_list in
-    if IList.length rh_exps == 0 then
+    if IList.length rh_exps = 0 then
       let exps =
         match Sil.zero_value_of_numerical_type_option var_type with
         | Some zero_exp -> [(zero_exp, typ)]
@@ -1645,7 +1645,7 @@ struct
           let i = IList.length lh - IList.length rh_exps in
           IList.drop_last i lh
         else lh in
-      if IList.length rh_exps == IList.length lh then
+      if IList.length rh_exps = IList.length lh then
         (* Creating new instructions by assigning right hand side to left hand side expressions *)
         let assign_instr (lh_exp, lh_t) (rh_exp, _) = Sil.Store (lh_exp, lh_t, rh_exp, sil_loc) in
         let assign_instrs =

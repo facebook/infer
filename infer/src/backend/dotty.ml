@@ -237,7 +237,7 @@ let color_to_str (c : Pp.color) =
 
 let make_dangling_boxes pe allocated_nodes (sigma_lambda: (Sil.hpred * int) list) =
   let exp_color hpred (exp : Exp.t) =
-    if pe.Pp.cmap_norm (Obj.repr hpred) == Pp.Red then Pp.Red
+    if pe.Pp.cmap_norm (Obj.repr hpred) = Pp.Red then Pp.Red
     else pe.Pp.cmap_norm (Obj.repr exp) in
   let get_rhs_predicate (hpred, lambda) =
     let n = !dotty_state_count in
@@ -322,7 +322,7 @@ let rec dotty_mk_node pe sigma =
   | [] -> []
   | (hpred, lambda) :: sigma' ->
       let exp_color (exp : Exp.t) =
-        if pe.Pp.cmap_norm (Obj.repr hpred) == Pp.Red then Pp.Red
+        if pe.Pp.cmap_norm (Obj.repr hpred) = Pp.Red then Pp.Red
         else pe.Pp.cmap_norm (Obj.repr exp) in
       do_hpred_lambda exp_color (hpred, lambda) @ dotty_mk_node pe sigma'
 
@@ -517,7 +517,7 @@ let rec dotty_mk_set_links dotnodes sigma p f cycle =
              try get_coordinate_id (IList.hd (IList.filter (is_source_node_of_exp e) nodes_e))
              with exn when SymOp.exn_not_failure exn -> assert false in
            (* we need to exclude the address node from the sorce of fields. no fields should start from there*)
-           let nl'= IList.filter (fun id -> address_struct_id != id) nl in
+           let nl'= IList.filter (fun id -> address_struct_id <> id) nl in
            let links_from_fields = IList.flatten (IList.map ff nl') in
            let lnk_from_address_struct = if !print_full_prop then
                let trg_label = strip_special_chars (Exp.to_string e) in
@@ -632,7 +632,7 @@ let filter_useless_spec_dollar_box (nodes: dotty_node list) (links: link list) =
   let remove_links_from ln = IList.filter (fun n' -> not (IList.mem Pervasives.(=) n' ln)) !tmp_links in
   let remove_node n ns =
     IList.filter (fun n' -> match n' with
-        | Dotpointsto _ -> (get_coordinate_id n')!= (get_coordinate_id n)
+        | Dotpointsto _ -> (get_coordinate_id n') <> (get_coordinate_id n)
         | _ -> true
       ) ns in
   let rec boxes_pointed_by n lns =
@@ -910,7 +910,7 @@ let dotty_prop_to_dotty_file fname prop cycle =
     let out_dot = open_out fname in
     let fmt_dot = Format.formatter_of_out_channel out_dot in
     pp_dotty_prop fmt_dot (prop, cycle);
-    close_out out_dot
+    Out_channel.close out_dot
   with exn when SymOp.exn_not_failure exn ->
     ()
 
@@ -927,7 +927,7 @@ let pp_proplist_parsed2dotty_file filename plist =
     let outc = open_out filename in
     let fmt = F.formatter_of_out_channel outc in
     F.fprintf fmt "#### Dotty version:  ####@.%a@.@." pp_list plist;
-    close_out outc
+    Out_channel.close outc
   with exn when SymOp.exn_not_failure exn ->
     ()
 
@@ -1027,7 +1027,7 @@ let write_icfg_dotty_to_file source cfg fname =
   F.fprintf fmt "/* @@%s */@\ndigraph iCFG {@\n" "generated";
   print_icfg source fmt cfg;
   F.fprintf fmt "}\n";
-  close_out chan
+  Out_channel.close chan
 
 let print_icfg_dotty source cfg =
   let fname =
@@ -1063,7 +1063,7 @@ let pp_speclist_to_file (filename : DB.filename) spec_list =
   let outc = open_out (DB.filename_to_string (DB.filename_add_suffix filename ".dot")) in
   let fmt = F.formatter_of_out_channel outc in
   let () = F.fprintf fmt "#### Dotty version:  ####@\n%a@\n@\n" (pp_speclist_dotty) spec_list in
-  close_out outc;
+  Out_channel.close outc;
   Config.pp_simple := pp_simple_saved
 
 let pp_speclist_dotty_file (filename : DB.filename) spec_list =
@@ -1277,7 +1277,7 @@ let prop_to_set_of_visual_heaps prop =
   let result = ref [] in
   working_list := [(!global_node_counter, prop.Prop.sigma)];
   incr global_node_counter;
-  while (!working_list!=[]) do
+  while (!working_list <> []) do
     set_dangling_nodes:=[];
     let (n, h) = IList.hd !working_list in
     working_list:= IList.tl !working_list;

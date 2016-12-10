@@ -21,7 +21,7 @@ module Domain = struct
   (* return true if the key-value bindings in [rhs] are a subset of the key-value bindings in
      [lhs] *)
   let (<=) ~lhs ~rhs =
-    if lhs == rhs
+    if phys_equal lhs rhs
     then true
     else
       Var.Map.for_all
@@ -31,7 +31,7 @@ module Domain = struct
         rhs
 
   let join astate1 astate2 =
-    if astate1 == astate2
+    if phys_equal astate1 astate2
     then astate1
     else
       let keep_if_same _ v1_opt v2_opt = match v1_opt, v2_opt with

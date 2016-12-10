@@ -133,7 +133,7 @@ module NullifyTransferFunctions = struct
       match IList.rev instrs with
       | instr :: _ -> instr
       | [] -> Sil.skip_instr in
-    if node == !cache_node
+    if phys_equal node !cache_node
     then !cache_instr
     else
       begin
@@ -144,7 +144,7 @@ module NullifyTransferFunctions = struct
       end
 
   let is_last_instr_in_node instr node =
-    last_instr_in_node node == instr
+    phys_equal (last_instr_in_node node) instr
 
   let exec_instr ((active_defs, to_nullify) as astate) extras node instr =
     let astate' = match instr with
@@ -188,7 +188,7 @@ let remove_dead_frontend_stores pdesc liveness_inv_map =
   let node_remove_dead_stores node =
     let instr_nodes = BackwardCfg.instr_ids node in
     let instr_nodes' = IList.filter_changed is_used_store instr_nodes in
-    if instr_nodes' != instr_nodes
+    if not (phys_equal instr_nodes' instr_nodes)
     then
       Procdesc.Node.replace_instrs node (IList.rev_map fst instr_nodes') in
   Procdesc.iter_nodes node_remove_dead_stores pdesc
@@ -285,7 +285,7 @@ let do_copy_propagation pdesc tenv =
                match CopyProp.extract_pre id copy_prop_inv_map with
                | Some pre when not (CopyPropagation.Domain.is_empty pre) ->
                    let instr' = Sil.instr_sub_ids ~sub_id_binders:false (id_sub pre) instr in
-                   instr' :: instrs, changed || instr' != instr
+                   instr' :: instrs, changed || not (phys_equal instr' instr)
                | _ ->
                    instr :: instrs, changed
              end

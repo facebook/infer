@@ -1117,7 +1117,7 @@ and progress_bar =
     "Show a progress bar"
 
 and quiet =
-  CLOpt.mk_bool ~long:"quiet" ~short:"q" ~default:(current_exe != CLOpt.Print)
+  CLOpt.mk_bool ~long:"quiet" ~short:"q" ~default:(current_exe <> CLOpt.Print)
     ~exes:CLOpt.[Print]
     "Do not print specs on standard output"
 

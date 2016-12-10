@@ -28,7 +28,7 @@ let load_from_cache serializer zip_path cache_dir zip_library =
   let absolute_path = Filename.concat cache_dir zip_path in
   let deserialize = Serialization.from_file serializer in
   let extract to_path =
-    if (Sys.file_exists to_path) != `Yes then
+    if (Sys.file_exists to_path) <> `Yes then
       begin
         Unix.mkdir_p (Filename.dirname to_path);
         let lazy zip_channel = zip_library.zip_channel in

@@ -386,7 +386,7 @@ let pp_graph_dotty get_specs (g: t) fmt => {
     | exn when SymOp.exn_not_failure exn => (-1)
     };
   let get_color (n, _) =>
-    if (num_specs n !== 0) {
+    if (num_specs n != 0) {
       "green"
     } else {
       "red"
@@ -434,5 +434,5 @@ let save_call_graph_dotty source get_specs (g: t) => {
   let outc = open_out (DB.filename_to_string fname_dot);
   let fmt = F.formatter_of_out_channel outc;
   pp_graph_dotty get_specs g fmt;
-  close_out outc
+  Out_channel.close outc
 };

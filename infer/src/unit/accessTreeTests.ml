@@ -26,7 +26,7 @@ module MockTraceDomain = struct
   (* stop others from creating top by accident, adding to top, or removing it *)
   let add e s =
     assert (e <> top_str);
-    if s == top
+    if phys_equal s top
     then top
     else add e s
 
@@ -43,7 +43,7 @@ module MockTraceDomain = struct
 
   (* similarly, hack printing so top looks different *)
   let pp fmt s =
-    if s == top
+    if phys_equal s top
     then F.fprintf fmt "T"
     else pp fmt s
 end

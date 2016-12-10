@@ -379,7 +379,7 @@ let get_const_args_indices ~shift args =
 
 (** Creates a procedure description. *)
 let create_local_procdesc trans_unit_ctx cfg tenv ms fbody captured is_objc_inst_method =
-  let defined = not ((IList.length fbody) == 0) in
+  let defined = not ((IList.length fbody) = 0) in
   let proc_name = CMethod_signature.ms_get_name ms in
   let pname = Procname.to_string proc_name in
   let attributes = sil_func_attributes_of_attributes (CMethod_signature.ms_get_attributes ms) in

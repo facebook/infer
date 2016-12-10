@@ -124,9 +124,9 @@ let equal_prop p1 p2 =
 let pp_footprint _pe f fp =
   let pe = { _pe with Pp.cmap_norm = _pe.Pp.cmap_foot } in
   let pp_pi f () =
-    if fp.pi_fp != [] then
+    if fp.pi_fp <> [] then
       F.fprintf f "%a ;@\n" (Pp.semicolon_seq_oneline pe (Sil.pp_atom pe)) fp.pi_fp in
-  if fp.pi_fp != [] || fp.sigma_fp != [] then
+  if fp.pi_fp <> [] || fp.sigma_fp <> [] then
     F.fprintf f "@\n[footprint@\n  @[%a%a@]  ]"
       pp_pi () (Pp.semicolon_seq pe (Sil.pp_hpred pe)) fp.sigma_fp
 
@@ -203,23 +203,23 @@ let pp_sigma_simple pe env fmt sigma =
   let sigma_stack, sigma_nonstack = sigma_get_stack_nonstack false sigma in
   let pp_stack fmt _sg =
     let sg = IList.sort Sil.compare_hpred _sg in
-    if sg != [] then Format.fprintf fmt "%a" (Pp.semicolon_seq pe (pp_hpred_stackvar pe)) sg in
+    if sg <> [] then Format.fprintf fmt "%a" (Pp.semicolon_seq pe (pp_hpred_stackvar pe)) sg in
   let pp_nl fmt doit = if doit then
       (match pe.Pp.kind with
        | TEXT | HTML -> Format.fprintf fmt " ;@\n"
        | LATEX -> Format.fprintf fmt " ; \\\\@\n") in
   let pp_nonstack fmt = Pp.semicolon_seq pe (Sil.pp_hpred_env pe (Some env)) fmt in
-  if sigma_stack != [] || sigma_nonstack != [] then
+  if sigma_stack <> [] || sigma_nonstack <> [] then
     Format.fprintf fmt "%a%a%a"
       pp_stack sigma_stack pp_nl
-      (sigma_stack != [] && sigma_nonstack != []) pp_nonstack sigma_nonstack
+      (sigma_stack <> [] && sigma_nonstack <> []) pp_nonstack sigma_nonstack
 
 (** Dump a sigma. *)
 let d_sigma (sigma: sigma) = L.add_print_action (PTsigma, Obj.repr sigma)
 
 (** Dump a pi and a sigma *)
 let d_pi_sigma pi sigma =
-  let d_separator () = if pi != [] && sigma != [] then L.d_strln " *" in
+  let d_separator () = if pi <> [] && sigma <> [] then L.d_strln " *" in
   d_pi pi; d_separator (); d_sigma sigma
 
 let pi_of_subst sub =
@@ -231,7 +231,7 @@ let get_pure (p: 'a t) : pi =
 
 (** Print existential quantification *)
 let pp_evars pe f evars =
-  if evars != []
+  if evars <> []
   then match pe.Pp.kind with
     | TEXT | HTML ->
         F.fprintf f "exists [%a]. " (Pp.comma_seq (Ident.pp pe)) evars
@@ -288,9 +288,9 @@ let prop_update_obj_sub pe prop =
 let pp_footprint_simple _pe env f fp =
   let pe = { _pe with Pp.cmap_norm = _pe.Pp.cmap_foot } in
   let pp_pure f pi =
-    if pi != [] then
+    if pi <> [] then
       F.fprintf f "%a *@\n" (pp_pi pe) pi in
-  if fp.pi_fp != [] || fp.sigma_fp != [] then
+  if fp.pi_fp <> [] || fp.sigma_fp <> [] then
     F.fprintf f "@\n[footprint@\n   @[%a%a@]  ]"
       pp_pure fp.pi_fp
       (pp_sigma_simple pe env) fp.sigma_fp
@@ -305,14 +305,14 @@ let prop_pred_env prop =
 (** Pretty print a proposition. *)
 let pp_prop pe0 f prop =
   let pe = prop_update_obj_sub pe0 prop in
-  let latex = pe.Pp.kind == Pp.LATEX in
+  let latex = pe.Pp.kind = Pp.LATEX in
   let do_print f () =
     let subl = Sil.sub_to_list prop.sub in
     (* since prop diff is based on physical equality, we need to extract the sub verbatim *)
     let pi = prop.pi in
     let pp_pure f () =
-      if subl != [] then F.fprintf f "%a ;@\n" (pp_subl pe) subl;
-      if pi != [] then F.fprintf f "%a ;@\n" (pp_pi pe) pi in
+      if subl <> [] then F.fprintf f "%a ;@\n" (pp_subl pe) subl;
+      if pi <> [] then F.fprintf f "%a ;@\n" (pp_pi pe) pi in
     if !Config.pp_simple || latex then
       begin
         let env = prop_pred_env prop in
@@ -2117,7 +2117,7 @@ let prop_ren_sub tenv (ren_sub: Sil.subst) (prop: normal t) : normal t =
 let exist_quantify tenv fav (prop : normal t) : normal t =
   let ids = Sil.fav_to_list fav in
   if IList.exists Ident.is_primed ids then assert false; (* sanity check *)
-  if ids == [] then prop else
+  if ids = [] then prop else
     let gen_fresh_id_sub id = (id, Exp.Var (Ident.create_fresh Ident.kprimed)) in
     let ren_sub = Sil.sub_of_list (IList.map gen_fresh_id_sub ids) in
     let prop' =

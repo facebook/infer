@@ -381,7 +381,7 @@ let call_should_be_skipped callee_summary =
   (* skip abstract methods *)
   || callee_summary.Specs.attributes.ProcAttributes.is_abstract
   (* treat calls with no specs as skip functions in angelic mode *)
-  || (Config.angelic_execution && Specs.get_specs_from_payload callee_summary == [])
+  || (Config.angelic_execution && Specs.get_specs_from_payload callee_summary = [])
 
 (** In case of constant string dereference, return the result immediately *)
 let check_constant_string_dereference lexp =

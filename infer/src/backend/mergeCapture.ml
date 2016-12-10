@@ -108,7 +108,7 @@ let rec slink ~stats ~skiplevels src dst =
   if Sys.is_directory src = `Yes
   then
     begin
-      if (Sys.file_exists dst) != `Yes
+      if (Sys.file_exists dst) <> `Yes
       then Unix.mkdir dst ~perm:0o700;
       let items = Sys.readdir src in
       Array.iter

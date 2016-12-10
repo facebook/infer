@@ -61,15 +61,15 @@ let tests =
       begin
         match ProcCfg.Normal.instrs n1 with
         | [instr1; instr2] ->
-            assert_bool "First instr should be dummy_instr1" (instr1 == dummy_instr1);
-            assert_bool "Second instr should be dummy_instr2" (instr2 == dummy_instr2);
+            assert_bool "First instr should be dummy_instr1" (phys_equal instr1 dummy_instr1);
+            assert_bool "Second instr should be dummy_instr2" (phys_equal instr2 dummy_instr2);
         | _ -> assert_failure "Expected exactly two instructions"
       end;
       begin
         match BackwardCfg.instrs n1 with
         | [instr1; instr2] ->
-            assert_bool "First instr should be dummy_instr2" (instr1 == dummy_instr2);
-            assert_bool "Second instr should be dummy_instr1" (instr2 == dummy_instr1);
+            assert_bool "First instr should be dummy_instr2" (phys_equal instr1 dummy_instr2);
+            assert_bool "Second instr should be dummy_instr1" (phys_equal instr2 dummy_instr1);
         | _ -> assert_failure "Expected exactly two instructions"
       end;
       begin
@@ -77,10 +77,10 @@ let tests =
         match InstrCfg.instr_ids n1 with
         | [ (instr1, Some (id1, ProcCfg.Instr_index 0));
             (instr2, Some (id2, ProcCfg.Instr_index 1)); ] ->
-            assert_bool "First instr should be dummy_instr1" (instr1 == dummy_instr1);
-            assert_bool "Second instr should be dummy_instr2" (instr2 == dummy_instr2);
-            assert_bool "id1 should be id of underlying node" (id1 == node_id);
-            assert_bool "id2 should be id of underlying node" (id2 == node_id);
+            assert_bool "First instr should be dummy_instr1" (phys_equal instr1 dummy_instr1);
+            assert_bool "Second instr should be dummy_instr2" (phys_equal instr2 dummy_instr2);
+            assert_bool "id1 should be id of underlying node" (phys_equal id1 node_id);
+            assert_bool "id2 should be id of underlying node" (phys_equal id2 node_id);
         | _ -> assert_failure "Expected exactly two instructions with correct indices"
       end;
       let backward_node_id, _ = BackwardInstrCfg.id n1 in
@@ -88,10 +88,10 @@ let tests =
         match BackwardInstrCfg.instr_ids n1 with
         | [ (instr1, Some (id1, ProcCfg.Instr_index 1));
             (instr2, Some (id2, ProcCfg.Instr_index 0)); ] ->
-            assert_bool "First instr should be dummy_instr2" (instr1 == dummy_instr2);
-            assert_bool "Second instr should be dummy_instr1" (instr2 == dummy_instr1);
-            assert_bool "id1 should be id of underlying node" (id1 == backward_node_id);
-            assert_bool "id2 should be id of underlying node" (id2 == backward_node_id);
+            assert_bool "First instr should be dummy_instr2" (phys_equal instr1 dummy_instr2);
+            assert_bool "Second instr should be dummy_instr1" (phys_equal instr2 dummy_instr1);
+            assert_bool "id1 should be id of underlying node" (phys_equal id1 backward_node_id);
+            assert_bool "id2 should be id of underlying node" (phys_equal id2 backward_node_id);
         | _ -> assert_failure "Expected exactly two instructions with correct indices"
       end;
       assert_bool

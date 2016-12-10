@@ -41,7 +41,7 @@ struct
       done;
       assert false (* execution never reaches here *)
     with End_of_file ->
-      (close_in cin;
+      (In_channel.close cin;
        Array.of_list (IList.rev !lines))
 
   let file_data (hash: t) fname =
@@ -399,7 +399,7 @@ let node_start_session node loc proc_name session source =
 
 (** Finish a session, and perform delayed print actions if required *)
 let node_finish_session node source =
-  if Config.test == false then force_delayed_prints ()
+  if Config.test = false then force_delayed_prints ()
   else L.reset_delayed_prints ();
   if Config.write_html then begin
     F.fprintf !curr_html_formatter "</LISTING>%a"

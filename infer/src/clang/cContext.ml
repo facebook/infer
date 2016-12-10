@@ -33,7 +33,7 @@ type curr_class =
 [@@deriving compare]
 
 let equal_curr_class curr_class1 curr_class2 =
-  compare_curr_class curr_class1 curr_class2 == 0
+  compare_curr_class curr_class1 curr_class2 = 0
 
 type str_node_map = (string, Procdesc.Node.t) Hashtbl.t
 

@@ -103,7 +103,7 @@ let read_package_declaration source_file =
       | hd::package::[] when hd = "package" -> package
       | _ -> loop ()
     with End_of_file ->
-      close_in file_in;
+      In_channel.close file_in;
       empty_package in
   loop ()
 
@@ -177,7 +177,7 @@ let load_from_verbose_output () =
     | JBasics.Class_structure_error _
     | Invalid_argument _ -> loop paths roots sources classes
     | End_of_file ->
-        close_in file_in;
+        In_channel.close file_in;
         let classpath =
           IList.fold_left
             append_path

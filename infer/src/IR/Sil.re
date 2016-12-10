@@ -204,7 +204,7 @@ type hpred = hpred0 inst;
 
 /** Comparsion between heap predicates. Reverse natural order, and order first by anchor exp. */
 let compare_hpred inst::inst=false hpred1 hpred2 =>
-  if (hpred1 === hpred2) {
+  if (phys_equal hpred1 hpred2) {
     0
   } else {
     switch (hpred1, hpred2) {
@@ -311,18 +311,18 @@ let module HpredSet = Caml.Set.Make {
 
 /** Begin change color if using diff printing, return updated printenv and change status */
 let color_pre_wrapper pe f x =>
-  if (Config.print_using_diff && pe.Pp.kind !== Pp.TEXT) {
+  if (Config.print_using_diff && pe.Pp.kind != Pp.TEXT) {
     let color = pe.Pp.cmap_norm (Obj.repr x);
-    if (color !== pe.Pp.color) {
+    if (color != pe.Pp.color) {
       (
-        if (pe.Pp.kind === Pp.HTML) {
+        if (pe.Pp.kind == Pp.HTML) {
           Io_infer.Html.pp_start_color
         } else {
           Latex.pp_color
         }
       )
         f color;
-      if (color === Pp.Red) {
+      if (color == Pp.Red) {
         (
           Pp.{
             /** All subexpressiona red */
@@ -346,7 +346,7 @@ let color_pre_wrapper pe f x =>
 /** Close color annotation if changed */
 let color_post_wrapper changed pe f =>
   if changed {
-    if (pe.Pp.kind === Pp.HTML) {
+    if (pe.Pp.kind == Pp.HTML) {
       Io_infer.Html.pp_end_color f ()
     } else {
       Latex.pp_color f pe.Pp.color
@@ -719,8 +719,8 @@ let module Predicates: {
       which are then visited as well.
       Can be applied only once, as it destroys the todo list */
   let iter (env: env) f f_dll =>
-    while (env.todo !== [] || env.todo_dll !== []) {
-      if (env.todo !== []) {
+    while (env.todo != [] || env.todo_dll != []) {
+      if (env.todo != []) {
         let hpara = IList.hd env.todo;
         let () = env.todo = IList.tl env.todo;
         let (n, emitted) = HparaHash.find env.hash hpara;
@@ -728,7 +728,7 @@ let module Predicates: {
           f n hpara
         }
       } else if (
-        env.todo_dll !== []
+        env.todo_dll != []
       ) {
         let hpara_dll = IList.hd env.todo_dll;
         let () = env.todo_dll = IList.tl env.todo_dll;
@@ -916,7 +916,7 @@ let update_inst inst_old inst_new => {
 /** describe an instrumentation with a string */
 let pp_inst pe f inst => {
   let str = inst_to_string inst;
-  if (pe.Pp.kind === Pp.HTML) {
+  if (pe.Pp.kind == Pp.HTML) {
     F.fprintf f " %a%s%a" Io_infer.Html.pp_start_color Pp.Orange str Io_infer.Html.pp_end_color ()
   } else {
     F.fprintf f "%s%s%s" (Binop.str pe Lt) str (Binop.str pe Gt)
@@ -1833,7 +1833,7 @@ let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
   | Lvar _ => exp
   | Exn e =>
     let e' = exp_sub_ids f e;
-    if (e' === e) {
+    if (phys_equal e' e) {
       exp
     } else {
       Exp.Exn e'
@@ -1844,7 +1844,7 @@ let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
         (
           fun ((e, pvar, typ) as captured) => {
             let e' = exp_sub_ids f e;
-            if (e' === e) {
+            if (phys_equal e' e) {
               captured
             } else {
               (e', pvar, typ)
@@ -1852,7 +1852,7 @@ let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
           }
         )
         c.captured_vars;
-    if (captured_vars === c.captured_vars) {
+    if (phys_equal captured_vars c.captured_vars) {
       exp
     } else {
       Exp.Closure {...c, captured_vars}
@@ -1860,14 +1860,14 @@ let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
   | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _) => exp
   | Cast t e =>
     let e' = exp_sub_ids f e;
-    if (e' === e) {
+    if (phys_equal e' e) {
       exp
     } else {
       Exp.Cast t e'
     }
   | UnOp op e typ_opt =>
     let e' = exp_sub_ids f e;
-    if (e' === e) {
+    if (phys_equal e' e) {
       exp
     } else {
       Exp.UnOp op e' typ_opt
@@ -1875,14 +1875,14 @@ let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
   | BinOp op e1 e2 =>
     let e1' = exp_sub_ids f e1;
     let e2' = exp_sub_ids f e2;
-    if (e1' === e1 && e2' === e2) {
+    if (phys_equal e1' e1 && phys_equal e2' e2) {
       exp
     } else {
       Exp.BinOp op e1' e2'
     }
   | Lfield e fld typ =>
     let e' = exp_sub_ids f e;
-    if (e' === e) {
+    if (phys_equal e' e) {
       exp
     } else {
       Exp.Lfield e' fld typ
@@ -1890,7 +1890,7 @@ let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
   | Lindex e1 e2 =>
     let e1' = exp_sub_ids f e1;
     let e2' = exp_sub_ids f e2;
-    if (e1' === e1 && e2' === e2) {
+    if (phys_equal e1' e1 && phys_equal e2' e2) {
       exp
     } else {
       Exp.Lindex e1' e2'
@@ -1899,7 +1899,7 @@ let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
     switch l_opt {
     | Some l =>
       let l' = exp_sub_ids f l;
-      if (l' === l) {
+      if (phys_equal l' l) {
         exp
       } else {
         Exp.Sizeof t (Some l') s
@@ -1938,7 +1938,7 @@ let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => Exp.t) instr => 
         id
       };
     let rhs_exp' = exp_sub_ids f rhs_exp;
-    if (id' === id && rhs_exp' === rhs_exp) {
+    if (phys_equal id' id && phys_equal rhs_exp' rhs_exp) {
       instr
     } else {
       Load id' rhs_exp' typ loc
@@ -1946,7 +1946,7 @@ let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => Exp.t) instr => 
   | Store lhs_exp typ rhs_exp loc =>
     let lhs_exp' = exp_sub_ids f lhs_exp;
     let rhs_exp' = exp_sub_ids f rhs_exp;
-    if (lhs_exp' === lhs_exp && rhs_exp' === rhs_exp) {
+    if (phys_equal lhs_exp' lhs_exp && phys_equal rhs_exp' rhs_exp) {
       instr
     } else {
       Store lhs_exp' typ rhs_exp' loc
@@ -1969,7 +1969,7 @@ let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => Exp.t) instr => 
         (
           fun ((actual, typ) as actual_pair) => {
             let actual' = exp_sub_ids f actual;
-            if (actual' === actual) {
+            if (phys_equal actual' actual) {
               actual_pair
             } else {
               (actual', typ)
@@ -1977,21 +1977,21 @@ let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => Exp.t) instr => 
           }
         )
         actuals;
-    if (ret_id' === ret_id && fun_exp' === fun_exp && actuals' === actuals) {
+    if (phys_equal ret_id' ret_id && phys_equal fun_exp' fun_exp && phys_equal actuals' actuals) {
       instr
     } else {
       Call ret_id' fun_exp' actuals' call_flags loc
     }
   | Prune exp loc true_branch if_kind =>
     let exp' = exp_sub_ids f exp;
-    if (exp' === exp) {
+    if (phys_equal exp' exp) {
       instr
     } else {
       Prune exp' loc true_branch if_kind
     }
   | Remove_temps ids loc =>
     let ids' = IList.map_changed sub_id ids;
-    if (ids' === ids) {
+    if (phys_equal ids' ids) {
       instr
     } else {
       Remove_temps ids' loc

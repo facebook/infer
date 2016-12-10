@@ -325,7 +325,7 @@ let compute_distance_to_exit_node pdesc => {
         next_nodes := node.preds @ !next_nodes
       };
     IList.iter do_node nodes;
-    if (!next_nodes !== []) {
+    if (!next_nodes != []) {
       mark_distance (dist + 1) !next_nodes
     }
   };

@@ -229,7 +229,7 @@ let _line_tag tags tag loc =
   let line_str = string_of_int loc.Location.line in
   Tags.add tags tag line_str;
   let s = "line " ^ line_str in
-  if (loc.Location.col != -1) then
+  if (loc.Location.col <> -1) then
     let col_str = string_of_int loc.Location.col in
     s ^ ", column " ^ col_str
   else s

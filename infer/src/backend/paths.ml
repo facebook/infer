@@ -150,7 +150,7 @@ end = struct
   module Invariant = struct
     (** check whether a stats is the dummy stats *)
     let stats_is_dummy stats =
-      stats.max_length == - 1
+      stats.max_length = - 1
 
     (** return the stats of the path, assumes that the stats are computed *)
     let get_stats = function
@@ -422,7 +422,7 @@ end = struct
   let rec contains p1 p2 = match p2 with
     | Pjoin (p2', p2'', _) ->
         contains p1 p2' || contains p1 p2''
-    | _ -> p1 == p2
+    | _ -> phys_equal p1 p2
 
   let create_loc_trace path pos_opt : Errlog.loc_trace =
     let trace = ref [] in

@@ -73,7 +73,7 @@ let latex color =
 (** Extend the normal colormap for the given object with the given color *)
 let extend_colormap pe (x: Obj.t) (c: color) =
   let colormap (y: Obj.t) =
-    if x == y then c
+    if phys_equal x y then c
     else pe.cmap_norm y in
   { pe with cmap_norm = colormap }
 

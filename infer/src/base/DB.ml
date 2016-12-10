@@ -92,7 +92,7 @@ let file_modified_time ?(symlink=false) fname =
 
 let filename_create_dir fname =
   let dirname = Filename.dirname fname in
-  if (Sys.file_exists dirname) != `Yes
+  if (Sys.file_exists dirname) <> `Yes
   then Utils.create_dir dirname
 
 let read_whole_file fd =
@@ -161,7 +161,7 @@ module Results_dir = struct
     let rec f = function
       | [] -> base
       | name:: names ->
-          Filename.concat (f names) (if name ==".." then Filename.parent_dir_name else name) in
+          Filename.concat (f names) (if String.equal name ".." then Filename.parent_dir_name else name) in
     f (IList.rev path)
 
   (** convert a path to a filename *)

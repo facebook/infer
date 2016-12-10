@@ -111,7 +111,7 @@ let cache_classname cn =
     split [] (Filename.dirname path) in
   let rec mkdir l p =
     let () =
-      if (Sys.file_exists p) != `Yes then
+      if (Sys.file_exists p) <> `Yes then
         Unix.mkdir p ~perm:493 in
     match l with
     | [] -> ()
@@ -119,7 +119,7 @@ let cache_classname cn =
   mkdir splitted_root_dir Filename.dir_sep;
   let file_out = open_out(path) in
   output_string file_out (string_of_float (Unix.time ()));
-  close_out file_out
+  Out_channel.close file_out
 
 let is_classname_cached cn =
   Sys.file_exists (path_of_cached_classname cn) = `Yes

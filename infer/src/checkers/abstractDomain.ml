@@ -29,7 +29,7 @@ module BottomLifted (Domain : S) = struct
   let initial = Bottom
 
   let (<=) ~lhs ~rhs =
-    if lhs == rhs
+    if phys_equal lhs rhs
     then true
     else
       match lhs, rhs with
@@ -38,7 +38,7 @@ module BottomLifted (Domain : S) = struct
       | NonBottom lhs, NonBottom rhs -> Domain.(<=) ~lhs ~rhs
 
   let join astate1 astate2 =
-    if astate1 == astate2
+    if phys_equal astate1 astate2
     then astate1
     else
       match astate1, astate2 with
@@ -47,7 +47,7 @@ module BottomLifted (Domain : S) = struct
       | NonBottom a1, NonBottom a2 -> NonBottom (Domain.join a1 a2)
 
   let widen ~prev ~next ~num_iters =
-    if prev == next
+    if phys_equal prev next
     then prev
     else
       match prev, next with
@@ -66,18 +66,18 @@ module Pair (Domain1 : S) (Domain2 : S) = struct
   let initial = Domain1.initial, Domain2.initial
 
   let (<=) ~lhs ~rhs =
-    if lhs == rhs
+    if phys_equal lhs rhs
     then true
     else
       Domain1.(<=) ~lhs:(fst lhs) ~rhs:(fst rhs) && Domain2.(<=) ~lhs:(snd lhs) ~rhs:(snd rhs)
 
   let join astate1 astate2 =
-    if astate1 == astate2
+    if phys_equal astate1 astate2
     then astate1
     else Domain1.join (fst astate1) (fst astate2), Domain2.join (snd astate1) (snd astate2)
 
   let widen ~prev ~next ~num_iters =
-    if prev == next
+    if phys_equal prev next
     then prev
     else
       Domain1.widen ~prev:(fst prev) ~next:(fst next) ~num_iters,
@@ -94,12 +94,12 @@ module FiniteSet (S : PrettyPrintable.PPSet) = struct
   let initial = empty
 
   let (<=) ~lhs ~rhs =
-    if lhs == rhs
+    if phys_equal lhs rhs
     then true
     else subset lhs rhs
 
   let join astate1 astate2 =
-    if astate1 == astate2
+    if phys_equal astate1 astate2
     then astate1
     else union astate1 astate2
 
@@ -115,7 +115,7 @@ module Map (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
 
   (** true if all keys in [lhs] are in [rhs], and each lhs value <= corresponding rhs value *)
   let (<=) ~lhs ~rhs =
-    if lhs == rhs
+    if phys_equal lhs rhs
     then true
     else
       M.for_all
@@ -125,7 +125,7 @@ module Map (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
         lhs
 
   let join astate1 astate2 =
-    if astate1 == astate2
+    if phys_equal astate1 astate2
     then astate1
     else
       M.merge

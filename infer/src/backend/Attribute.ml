@@ -48,7 +48,7 @@ let add_or_replace_check_changed tenv check_attribute_change prop atom0 =
             atom in
       let pi = prop.Prop.pi in
       let pi' = IList.map_changed atom_map pi in
-      if pi == pi'
+      if phys_equal pi pi'
       then Prop.prop_atom_and tenv prop natom
       else Prop.normalize tenv (Prop.set prop ~pi:pi')
   | _ ->
@@ -127,7 +127,7 @@ let has_dangling_uninit tenv prop exp =
 let filter_atoms tenv ~f prop =
   let pi0 = prop.Prop.pi in
   let pi1 = IList.filter_changed f pi0 in
-  if pi1 == pi0 then
+  if phys_equal pi1 pi0 then
     prop
   else
     Prop.normalize tenv (Prop.set prop ~pi:pi1)
@@ -166,7 +166,7 @@ let map_resource tenv prop f =
     | atom -> atom in
   let pi0 = prop.Prop.pi in
   let pi1 = IList.map_changed atom_map pi0 in
-  if pi1 == pi0 then
+  if phys_equal pi1 pi0 then
     prop
   else
     Prop.normalize tenv (Prop.set prop ~pi:pi1)

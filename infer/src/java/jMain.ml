@@ -15,7 +15,7 @@ open Javalib_pack
 module L = Logging
 
 let () =
-  match Config.models_mode, Sys.file_exists Config.models_jar == `Yes with
+  match Config.models_mode, Sys.file_exists Config.models_jar = `Yes with
   | true, false ->
       ()
   | false, false ->

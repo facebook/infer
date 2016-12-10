@@ -36,7 +36,7 @@ module Jprop = struct
 
   (** Return true if the two join_prop's are equal *)
   let equal jp1 jp2 =
-    compare jp1 jp2 == 0
+    compare jp1 jp2 = 0
 
   let to_prop = function
     | Prop (_, p) -> p
@@ -408,10 +408,10 @@ let describe_timestamp summary =
   ("Timestamp", Printf.sprintf "%d" summary.timestamp)
 
 let describe_status summary =
-  ("Status", if summary.status == ACTIVE then "ACTIVE" else "INACTIVE")
+  ("Status", if summary.status = ACTIVE then "ACTIVE" else "INACTIVE")
 
 let describe_phase summary =
-  ("Phase", if summary.phase == FOOTPRINT then "FOOTPRINT" else "RE_EXECUTION")
+  ("Phase", if summary.phase = FOOTPRINT then "FOOTPRINT" else "RE_EXECUTION")
 
 (** Return the signature of a procedure declaration as a string *)
 let get_signature summary =

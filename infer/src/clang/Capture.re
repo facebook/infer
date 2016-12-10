@@ -155,7 +155,7 @@ let run_plugin_and_frontend source_path frontend clang_args => {
       Config.etc_dir
       biniou_fname
       basename;
-    close_out debug_script_out
+    Out_channel.close debug_script_out
   };
   run_clang clang_command frontend
 };

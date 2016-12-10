@@ -530,7 +530,7 @@ let forward_tabulate tenv pdesc wl source =
     let log_string proc_name =
       let summary = Specs.get_summary_unsafe "forward_tabulate" proc_name in
       let phase_string =
-        if Specs.get_phase summary == Specs.FOOTPRINT then "FP" else "RE" in
+        if Specs.get_phase summary = Specs.FOOTPRINT then "FP" else "RE" in
       let timestamp = Specs.get_timestamp summary in
       F.sprintf "[%s:%d] %s" phase_string timestamp (Procname.to_string proc_name) in
     L.d_strln ("**** " ^ (log_string pname) ^ " " ^
@@ -1236,7 +1236,7 @@ let update_specs tenv proc_name phase (new_specs : Specs.NormSpec.t list)
               (Paths.PathSet.from_renamed_list spec.Specs.posts, spec.Specs.visited) map)
          SpecMap.empty old_specs) in
   let re_exe_filter old_spec = (* filter out pres which failed re-exe *)
-    if phase == Specs.RE_EXECUTION &&
+    if phase = Specs.RE_EXECUTION &&
        not (IList.exists
               (fun new_spec -> Specs.Jprop.equal new_spec.Specs.pre old_spec.Specs.pre)
               new_specs)
@@ -1326,9 +1326,9 @@ let analyze_proc source exe_env proc_desc : Specs.summary =
   let prev_summary = Specs.get_summary_unsafe "analyze_proc" proc_name in
   let updated_summary =
     update_summary tenv prev_summary specs phase proc_name elapsed res in
-  if !Config.curr_language == Config.Clang && Config.report_custom_error then
+  if !Config.curr_language = Config.Clang && Config.report_custom_error then
     report_custom_errors tenv updated_summary;
-  if !Config.curr_language == Config.Java && Config.report_runtime_exceptions then
+  if !Config.curr_language = Config.Java && Config.report_runtime_exceptions then
     report_runtime_exceptions tenv proc_desc updated_summary;
   updated_summary
 
@@ -1396,7 +1396,7 @@ let perform_transition exe_env tenv proc_name source =
         [] in
     transition_footprint_re_exe tenv proc_name joined_pres in
   match Specs.get_summary proc_name with
-  | Some summary when Specs.get_phase summary == Specs.FOOTPRINT ->
+  | Some summary when Specs.get_phase summary = Specs.FOOTPRINT ->
       transition ()
   | _ -> ()
 
@@ -1531,7 +1531,7 @@ let print_stats_cfg proc_shadowed source cfg =
   let err_table = Errlog.create_err_table () in
   let filter pdesc =
     let pname = Procdesc.get_proc_name pdesc in
-    Specs.summary_exists pname && Specs.get_specs pname != [] in
+    Specs.summary_exists pname && Specs.get_specs pname <> [] in
   let nodes_visited, nodes_total = visited_and_total_nodes ~filter cfg in
   let num_proc = ref 0 in
   let num_nospec_noerror_proc = ref 0 in
@@ -1599,7 +1599,7 @@ let print_stats_cfg proc_shadowed source cfg =
       let outc = open_out (DB.filename_to_string stats_file) in
       let fmt = F.formatter_of_out_channel outc in
       print_file_stats fmt ();
-      close_out outc
+      Out_channel.close outc
     with Sys_error _ -> () in
   IList.iter compute_stats_proc (Cfg.get_defined_procs cfg);
   L.out "%a" print_file_stats ();

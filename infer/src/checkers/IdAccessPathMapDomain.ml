@@ -23,7 +23,7 @@ let pp fmt astate =
 let initial = IdMap.empty
 
 let (<=) ~lhs ~rhs =
-  if lhs == rhs
+  if phys_equal lhs rhs
   then true
   else
     try
@@ -37,7 +37,7 @@ let (<=) ~lhs ~rhs =
     with Not_found -> false
 
 let join astate1 astate2 =
-  if astate1 == astate2
+  if phys_equal astate1 astate2
   then astate1
   else
     IdMap.merge

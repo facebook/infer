@@ -87,7 +87,7 @@ module FileContainsStringMatcher = struct
         try
           let file_in = open_in (SourceFile.to_abs_path source_file) in
           let pattern_found = file_contains regexp file_in in
-          close_in file_in;
+          In_channel.close file_in;
           source_map := SourceFile.Map.add source_file pattern_found !source_map;
           pattern_found
         with Sys_error _ -> false

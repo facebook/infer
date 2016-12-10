@@ -70,7 +70,7 @@ let set_log_file_identifier (current_exe : CLOpt.exe) string_opt =
           if Lazy.is_val fmt_chan_file then (
             let (fmt, chan, _) = Lazy.force fmt_chan_file in
             F.pp_print_flush fmt () ;
-            Pervasives.close_out_noerr chan
+            Out_channel.close chan
           ) in
         close out_fmt_chan_file ;
         close err_fmt_chan_file
