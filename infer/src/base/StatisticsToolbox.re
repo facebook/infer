@@ -51,7 +51,7 @@ let compute_statistics values => {
   let average = sum /. float_of_int num_elements;
   let values_arr = Array.of_list values;
   Array.sort
-    (
+    cmp::(
       fun a b =>
         if (a == b) {
           0

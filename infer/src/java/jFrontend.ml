@@ -71,7 +71,7 @@ let add_edges
   if not super_call then
     (* the exceptions node is just before the exit node *)
     Procdesc.node_set_succs_exn context.procdesc exn_node exit_nodes exit_nodes;
-  Array.iteri connect_nodes method_body_nodes
+  Array.iteri ~f:connect_nodes method_body_nodes
 
 
 (** Add a concrete method. *)
@@ -90,7 +90,7 @@ let add_cmethod source_file program linereader icfg cm proc_name =
       let instrs = JBir.code jbir_code in
       let context =
         JContext.create_context icfg procdesc jbir_code cn source_file program in
-      let method_body_nodes = Array.mapi (JTrans.instruction context) instrs in
+      let method_body_nodes = Array.mapi ~f:(JTrans.instruction context) instrs in
       add_edges context start_node exn_node [exit_node] method_body_nodes jbir_code false
 
 

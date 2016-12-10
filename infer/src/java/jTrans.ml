@@ -172,11 +172,11 @@ let translate_locals program tenv formals bytecode jbir_code =
   (* TODO (#4040807): Needs to add the JBir temporary variables since other parts of the
      code are still relying on those *)
   let with_jbir_vars =
-    Array.fold_left
-      (fun accu jbir_var ->
+    Array.fold
+      ~f:(fun accu jbir_var ->
          let var = Mangled.from_string (JBir.var_name_g jbir_var) in
          collect accu (var, Typ.Tvoid))
-      with_bytecode_vars
+      ~init:with_bytecode_vars
       (JBir.vars jbir_code) in
   snd with_jbir_vars
 
@@ -245,7 +245,7 @@ let get_implementation cm =
       let bytecode = Lazy.force t in
       let c_code =
         Array.map
-          (function
+          ~f:(function
             | (JCode.OpInvoke (`Dynamic _, ms)) ->
                 JCode.OpInvoke (`Static JBasics.java_lang_object, ms)
             | opcode ->

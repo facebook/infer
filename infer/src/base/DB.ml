@@ -188,8 +188,8 @@ module Results_dir = struct
 
   let clean_specs_dir () =
     create_dir specs_dir; (* create dir just in case it doesn't exist to avoid errors *)
-    let files_to_remove = Array.map (Filename.concat specs_dir) (Sys.readdir specs_dir) in
-    Array.iter Sys.remove files_to_remove
+    let files_to_remove = Array.map ~f:(Filename.concat specs_dir) (Sys.readdir specs_dir) in
+    Array.iter ~f:Sys.remove files_to_remove
 
   (** create a file at the given path, creating any missing directories *)
   let create_file pk path =
@@ -245,13 +245,13 @@ let mark_file_updated fname =
 (** Fold over all file paths recursively under [dir] which match [p]. *)
 let fold_paths_matching ~dir ~p ~init ~f =
   let rec paths path_list dir =
-    Array.fold_left
-      (fun acc file ->
+    Array.fold
+      ~f:(fun acc file ->
          let path = dir // file in
          if Sys.is_directory path = `Yes then (paths acc path)
          else if p path then f path acc
          else acc)
-      path_list
+      ~init:path_list
       (Sys.readdir dir) in
   paths init dir
 

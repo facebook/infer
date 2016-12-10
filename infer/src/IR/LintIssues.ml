@@ -52,5 +52,5 @@ let load_issues_to_errlog_map dir =
           ) !errLogMap map
     | None -> () in
   match children_opt with
-  | Some children -> Array.iter load_issues_to_map children
+  | Some children -> Array.iter ~f:load_issues_to_map children
   | None -> ()

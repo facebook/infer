@@ -10,7 +10,10 @@
 
 (** General utility functions *)
 
+module Arg = Core.Std.Arg
+module Array = Core.Std.Array
 module Bool = Core.Std.Bool
+module Bytes = Core.Std.Bytes
 module Caml = Core.Std.Caml
 module Filename = Core.Std.Filename
 module Fn = Core.Std.Fn

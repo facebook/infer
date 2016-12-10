@@ -10,7 +10,10 @@
 
 (** General utility functions and definition with global scope *)
 
+module Arg = Core.Std.Arg
+module Array = Core.Std.Array
 module Bool = Core.Std.Bool
+module Bytes = Core.Std.Bytes
 module Caml = Core.Std.Caml
 module Filename = Core.Std.Filename
 module Fn = Core.Std.Fn
@@ -465,7 +468,7 @@ let directory_fold f init path =
     match dirs with
     | [] -> accu
     | d:: tl ->
-        let (new_accu, new_dirs) = Array.fold_left (collect d) (accu, tl) (Sys.readdir d) in
+        let (new_accu, new_dirs) = Array.fold ~f:(collect d) ~init:(accu, tl) (Sys.readdir d) in
         loop new_accu new_dirs in
   if Sys.is_directory path = `Yes then
     loop init [path]
@@ -488,7 +491,7 @@ let directory_iter f path =
     match dirs with
     | [] -> ()
     | d:: tl ->
-        let new_dirs = Array.fold_left (apply d) tl (Sys.readdir d) in
+        let new_dirs = Array.fold ~f:(apply d) ~init:tl (Sys.readdir d) in
         loop new_dirs in
   if Sys.is_directory path = `Yes then
     loop [path]

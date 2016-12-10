@@ -106,13 +106,12 @@ let print_stack_info = ref false
 
 (* replace a dollar sign in a name with a D. We need this because dotty get confused if there is*)
 (* a dollar sign i a label*)
-let strip_special_chars s =
-  let b = Bytes.of_string s in
+let strip_special_chars b =
   let replace st c c' =
-    if Bytes.contains st c then begin
-      let idx = Bytes.index st c in
+    if String.contains st c then begin
+      let idx = String.index_exn st c in
       try
-        Bytes.set st idx c';
+        String.set st idx c';
         st
       with Invalid_argument _ -> L.out "@\n@\n Invalid argument!!! @\n @.@.@."; assert false
     end else st in
@@ -124,7 +123,7 @@ let strip_special_chars s =
   let s5 = replace s4 ')' 'B' in
   let s6 = replace s5 '+' 'P' in
   let s7 = replace s6 '-' 'M' in
-  Bytes.to_string s7
+  s7
 
 let rec strexp_to_string pe coo f se =
   match se with

@@ -515,7 +515,7 @@ let define_condition_side_effects e_cond instrs_cond sil_loc =
 
 let fix_param_exps_mismatch params_stmt exps_param =
   let diff = IList.length params_stmt - IList.length exps_param in
-  let args = if diff >0 then Array.make diff dummy_exp
+  let args = if diff >0 then Array.create ~len:diff dummy_exp
     else assert false in
   let exps'= exps_param @ (Array.to_list args) in
   exps'

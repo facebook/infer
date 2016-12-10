@@ -113,7 +113,7 @@ let rec slink ~stats ~skiplevels src dst =
       then Unix.mkdir dst ~perm:0o700;
       let items = Sys.readdir src in
       Array.iter
-        (fun item ->
+        ~f:(fun item ->
            slink ~stats ~skiplevels:(skiplevels - 1)
              (Filename.concat src item) (Filename.concat dst item))
         items
