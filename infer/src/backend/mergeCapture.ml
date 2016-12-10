@@ -83,13 +83,13 @@ let add_multilink_attr ~stats src dst =
 
 let create_link ~stats src dst =
   if link_exists dst then Unix.unlink dst;
-  Unix.symlink src dst;
+  Unix.symlink ~src ~dst;
   (* Set the accessed and modified time of the original file slightly in the past.  Due to
      the coarse precision of the timestamps, it is possible for the source and destination of a
      link to have the same modification time. When this happens, the files will be considered to
      need re-analysis every time, indefinitely. *)
   let near_past = Unix.gettimeofday () -. 1. in
-  Unix.utimes src near_past near_past;
+  Unix.utimes src ~access:near_past ~modif:near_past;
   stats.files_linked <- stats.files_linked + 1
 
 let create_multilinks () =
@@ -110,7 +110,7 @@ let rec slink ~stats ~skiplevels src dst =
   then
     begin
       if not (Sys.file_exists dst)
-      then Unix.mkdir dst 0o700;
+      then Unix.mkdir dst ~perm:0o700;
       let items = Sys.readdir src in
       Array.iter
         (fun item ->

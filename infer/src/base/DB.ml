@@ -14,8 +14,6 @@ open! Utils
 
 module F = Format
 module L = Logging
-module Unix = Core.Std.Unix
-module In_channel = Core.Std.In_channel
 
 (** {2 Source Dirs} *)
 

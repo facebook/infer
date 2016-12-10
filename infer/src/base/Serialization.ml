@@ -90,7 +90,7 @@ let create_serializer (key : key) : 'a serializer =
     let outc = open_out_bin fname_tmp in
     Marshal.to_channel outc (key, version, value) [];
     close_out outc;
-    Unix.rename fname_tmp fname_str in
+    Unix.rename ~src:fname_tmp ~dst:fname_str in
   (from_string, from_file, to_file)
 
 

@@ -140,8 +140,8 @@ struct
     let fd =
       Unix.openfile
         (DB.filename_to_string full_fname)
-        [Unix.O_WRONLY; Unix.O_APPEND]
-        0o777 in
+        ~mode:Unix.[O_WRONLY; O_APPEND]
+        ~perm:0o777 in
     let outc = Unix.out_channel_of_descr fd in
     let fmt = F.formatter_of_out_channel outc in
     (fd, fmt)

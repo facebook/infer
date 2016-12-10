@@ -14,11 +14,11 @@ open! Utils
 
 module Html : sig
   (** Close an Html file *)
-  val close : Unix.file_descr * Format.formatter -> unit
+  val close : Unix.File_descr.t * Format.formatter -> unit
 
   (** Create a new html file *)
   val create :
-    DB.Results_dir.path_kind -> DB.Results_dir.path -> Unix.file_descr * Format.formatter
+    DB.Results_dir.path_kind -> DB.Results_dir.path -> Unix.File_descr.t * Format.formatter
 
   (** Return true if the html file was modified since the beginning of the analysis *)
   val modified_during_analysis : SourceFile.t -> DB.Results_dir.path -> bool
@@ -27,7 +27,7 @@ module Html : sig
   val node_filename : Procname.t -> int -> string
 
   (** Open an Html file to append data *)
-  val open_out : SourceFile.t -> DB.Results_dir.path -> Unix.file_descr * Format.formatter
+  val open_out : SourceFile.t -> DB.Results_dir.path -> Unix.File_descr.t * Format.formatter
 
   (** Print an html link to the given line number of the current source file *)
   val pp_line_link :

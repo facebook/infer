@@ -120,8 +120,8 @@ let run_clang clang_command read => {
   };
   /* NOTE: exceptions will propagate through without exiting here */
   switch (with_process_in clang_command read) {
-  | (res, Unix.WEXITED 0) => res
-  | (_, Unix.WEXITED n) =>
+  | (res, Ok ()) => res
+  | (_, Error (`Exit_non_zero n)) =>
     /* exit with the same error code as clang in case of compilation failure */
     exit_with_error n
   | _ => exit_with_error 1
@@ -143,11 +143,7 @@ let run_plugin_and_frontend source_path frontend clang_args => {
       String.concat
         sep::"^"
         (
-          (
-            try [Unix.getenv CLOpt.args_env_var] {
-            | Not_found => []
-            }
-          ) @ [
+          Core.Std.Option.to_list (Core.Std.Sys.getenv CLOpt.args_env_var) @ [
             "--clang-biniou-file",
             biniou_fname
           ]

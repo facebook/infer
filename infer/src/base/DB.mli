@@ -66,7 +66,7 @@ module Results_dir : sig
   val clean_specs_dir : unit -> unit
 
   (** create a file at the given path, creating any missing directories *)
-  val create_file : path_kind -> path -> Unix.file_descr
+  val create_file : path_kind -> path -> Unix.File_descr.t
 end
 
 (** origin of a analysis artifact: current results dir, a spec library, or models *)

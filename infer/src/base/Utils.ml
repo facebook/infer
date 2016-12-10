@@ -12,8 +12,11 @@
 
 module Bool = Core.Std.Bool
 module Filename = Core.Std.Filename
+module In_channel = Core.Std.In_channel
 module Int = Core.Std.Int
+module Pid = Core.Std.Pid
 module String = Core.Std.String
+module Unix = Core.Std.Unix
 
 module F = Format
 
@@ -483,7 +486,7 @@ let remove_directory_tree path =
   |> Stream.iter (fun ent ->
       match Fts.FTSENT.info ent with
       | FTS_D | FTS_DOT -> ()
-      | _ -> Core.Std.Unix.remove (Fts.FTSENT.name ent)
+      | _ -> Unix.remove (Fts.FTSENT.name ent)
     )
 
 
@@ -549,24 +552,13 @@ let create_dir dir =
     if (Unix.stat dir).Unix.st_kind != Unix.S_DIR then
       failwithf "@.ERROR: file %s exists and is not a directory@." dir
   with Unix.Unix_error _ ->
-  try Unix.mkdir dir 0o700 with
+  try Unix.mkdir dir ~perm:0o700 with
     Unix.Unix_error _ ->
       let created_concurrently = (* check if another process created it meanwhile *)
         try (Unix.stat dir).Unix.st_kind = Unix.S_DIR
         with Unix.Unix_error _ -> false in
       if not created_concurrently then
         failwithf "@.ERROR: cannot create directory %s@." dir
-
-(** [create_path path] will create a directory at [path], creating all the parent directories if
-    non-existing *)
-let rec create_path path =
-  try
-    Unix.mkdir path 0o700
-  with
-  | Unix.Unix_error (Unix.EEXIST, _, _) -> ()
-  | Unix.Unix_error (Unix.ENOENT, _, _) ->
-      create_path (Filename.dirname path);
-      create_dir path
 
 let realpath_cache = Hashtbl.create 1023
 

@@ -46,13 +46,13 @@ let set_log_file_identifier (current_exe : CLOpt.exe) string_opt =
       (match string_opt with
        | Some name -> name ^ "_"
        | None -> ""
-      ) ^ string_of_int (Unix.getpid ()) ^ "_" in
+      ) ^ Pid.to_string (Unix.getpid ()) ^ "_" in
     let exe_log_dir =
       let log_dir = Config.results_dir // Config.log_dir_name in
       log_dir // (log_dir_of_current_exe current_exe) in
     let fmt_chan_file name suffix = lazy (
       try
-        create_path exe_log_dir ;
+        Unix.mkdir_p exe_log_dir ;
         let file =
           (* the command-line option takes precedence if specified *)
           if name <> "" then name

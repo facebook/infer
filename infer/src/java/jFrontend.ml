@@ -112,7 +112,7 @@ let cache_classname cn =
   let rec mkdir l p =
     let () =
       if not (Sys.file_exists p) then
-        Unix.mkdir p 493 in
+        Unix.mkdir p ~perm:493 in
     match l with
     | [] -> ()
     | d:: tl -> mkdir tl (Filename.concat p d) in

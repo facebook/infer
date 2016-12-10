@@ -12,8 +12,11 @@
 
 module Bool = Core.Std.Bool
 module Filename = Core.Std.Filename
+module In_channel = Core.Std.In_channel
 module Int = Core.Std.Int
+module Pid = Core.Std.Pid
 module String = Core.Std.String
+module Unix = Core.Std.Unix
 
 (** {2 Generic Utility Functions} *)
 
@@ -227,7 +230,7 @@ val write_json_to_file : string -> Yojson.Basic.json -> unit
 
 val consume_in : in_channel -> unit
 
-val with_process_in: string -> (in_channel -> 'a) -> ('a * Unix.process_status)
+val with_process_in: string -> (in_channel -> 'a) -> ('a * Unix.Exit_or_signal.t)
 
 val failwithf : ('a, Format.formatter, unit, 'b) format4 -> 'a
 
@@ -235,10 +238,6 @@ val invalid_argf : ('a, Format.formatter, unit, 'b) format4 -> 'a
 
 (** create a directory if it does not exist already *)
 val create_dir : string -> unit
-
-(** [create_path path] will create a directory at [path], creating all the parent directories if
-    non-existing *)
-val create_path : string -> unit
 
 (** [realpath path] returns path with all symbolic links resolved. It caches results of previous
     calls to avoid expensive system calls *)

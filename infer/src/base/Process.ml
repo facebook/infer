@@ -8,9 +8,6 @@
  *)
 
 open! Utils
-
-module Pid = Core.Std.Pid
-
 module L = Logging
 module F = Format
 
@@ -43,7 +40,6 @@ let create_process_and_wait ~prog ~args =
     represents, prints a message explaining the command and its status, if in debug or stats mode.
     It also prints a dot to show progress of jobs being finished.  *)
 let print_status f pid status =
-  let open Core.Std in
   L.err "%a%s@."
     (fun fmt pid -> F.pp_print_string fmt (f pid)) pid
     (Unix.Exit_or_signal.to_string_hum status) ;
@@ -59,7 +55,6 @@ module PidMap = Map.Make (Pid)
     and all the other children and update the current jobs count.
     Use f to print the job status *)
 let rec wait_for_child f current_jobs_count jobs_map =
-  let open! Core.Std in
   let pid, status = Unix.wait `Any in
   Pervasives.decr current_jobs_count;
   Pervasives.incr waited_for_jobs;
@@ -103,7 +98,7 @@ let run_jobs_in_parallel jobs_stack gen_prog prog_to_string =
   L.out "Waited for %d jobs" !waited_for_jobs
 
 let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
-  let open Core.Std in
+  let open! Core.Std in
   let pipe_in, pipe_out = Unix.pipe () in
   match Unix.fork () with
   | `In_the_child ->

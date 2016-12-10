@@ -76,8 +76,8 @@ let remove_results_dir () =
   rmtree Config.results_dir
 
 let create_results_dir () =
-  create_path (Config.results_dir // Config.captured_dir_name) ;
-  create_path (Config.results_dir // Config.specs_dir_name)
+  Unix.mkdir_p (Config.results_dir // Config.captured_dir_name) ;
+  Unix.mkdir_p (Config.results_dir // Config.specs_dir_name)
 
 let clean_results_dir () =
   let dirs = ["classnames"; "filelists"; "multicore"; "sources"] in
@@ -111,17 +111,16 @@ let register_perf_stats_report () =
   let stats_dir = Filename.concat Config.results_dir Config.backend_stats_dir_name in
   let stats_base = Config.perf_stats_prefix ^ ".json" in
   let stats_file = Filename.concat stats_dir stats_base in
-  create_path stats_dir;
+  Unix.mkdir_p stats_dir;
   PerfStats.register_report_at_exit stats_file
 
 
 let touch_start_file () =
   let start = Config.results_dir // Config.start_filename in
-  let file_perm = 0o0666 in
   let flags =
     Unix.O_CREAT :: Unix.O_WRONLY :: (if Config.continue_capture then [Unix.O_EXCL] else []) in
   (* create new file, or open existing file for writing to update modified timestamp *)
-  try Unix.close (Unix.openfile start flags file_perm)
+  try Unix.close (Unix.openfile ~perm:0o0666 ~mode:flags start)
   with Unix.Unix_error (Unix.EEXIST, _, _) -> ()
 
 
@@ -138,7 +137,6 @@ let run_command ~prog ~args after_wait =
 
 
 let check_xcpretty () =
-  let open! Core.Std in
   match Unix.system "xcpretty --version" with
   | Ok () -> ()
   | Error _ ->
@@ -232,7 +230,7 @@ let capture build_cmd = function
 let run_parallel_analysis () =
   let multicore_dir = Config.results_dir // Config.multicore_dir_name in
   rmtree multicore_dir ;
-  create_path multicore_dir ;
+  Unix.mkdir_p multicore_dir ;
   InferAnalyze.print_stdout_legend ();
   InferAnalyze.main (multicore_dir // "Makefile") ;
   let cwd = Unix.getcwd () in

@@ -400,7 +400,7 @@ let init_work_dir, is_originator =
       (* Approach is borrowed from llvm implementation of *)
       (* llvm::sys::fs::current_path (implemented in Path.inc file) *)
       try
-        let pwd = Unix.getenv "PWD" in
+        let pwd = Sys.getenv "PWD" in
         let pwd_stat = Unix.stat pwd in
         let dot_stat = Unix.stat "." in
         if pwd_stat.st_dev = dot_stat.st_dev && pwd_stat.st_ino = dot_stat.st_ino then
@@ -410,7 +410,7 @@ let init_work_dir, is_originator =
       with _ ->
         Sys.getcwd () in
     let real_cwd = realpath cwd in
-    Unix.putenv "INFER_CWD" real_cwd;
+    Unix.putenv ~key:"INFER_CWD" ~data:real_cwd;
     (real_cwd, true)
 
 (** Resolve relative paths passed as command line options, i.e., with respect to the working
@@ -1648,7 +1648,7 @@ let specs_library =
         let key_dir = cache_dir // key in
         let extract_specs dest_dir filename =
           if Filename.check_suffix filename ".jar" then
-            match (Unix.mkdir dest_dir 0o700) with
+            match (Unix.mkdir dest_dir ~perm:0o700) with
             | exception Unix.Unix_error _ ->
                 ()
             | () ->
