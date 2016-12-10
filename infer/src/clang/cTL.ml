@@ -136,7 +136,7 @@ module Debug = struct
       let node = {id = t.next_id; content} in
       let create_subtree root = Tree (root, []) in
       let subtree' = create_subtree node in
-      Stack.push subtree' t.eval_stack;
+      Stack.push t.eval_stack subtree';
       {t with next_id = t.next_id + 1}
 
     let eval_end t result =
@@ -145,16 +145,16 @@ module Debug = struct
         | false -> Eval_false in
       if Stack.is_empty t.eval_stack then
         raise (Empty_stack "Unbalanced number of eval_begin/eval_end invocations");
-      let evaluated_tree = match Stack.pop t.eval_stack with
+      let evaluated_tree = match Stack.pop_exn t.eval_stack with
         | Tree ({id = _; content} as node, children) ->
             let content' = {content with eval_result = eval_result_of_bool result} in
             Tree ({node with content = content'}, children) in
       let forest' =
         if Stack.is_empty t.eval_stack then evaluated_tree :: t.forest
         else
-          let parent = match Stack.pop t.eval_stack with
+          let parent = match Stack.pop_exn t.eval_stack with
               Tree (node, children) -> Tree (node, evaluated_tree :: children) in
-          Stack.push parent t.eval_stack;
+          Stack.push t.eval_stack parent;
           t.forest in
       {t with forest = forest'}
 

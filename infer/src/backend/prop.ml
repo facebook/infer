@@ -1761,11 +1761,11 @@ end = struct
   let stack = Stack.create ()
   let init es =
     Stack.clear stack;
-    IList.iter (fun e -> Stack.push e stack) (IList.rev es)
+    IList.iter (fun e -> Stack.push stack e) (IList.rev es)
   let final () = Stack.clear stack
   let is_empty () = Stack.is_empty stack
-  let push e = Stack.push e stack
-  let pop () = Stack.pop stack
+  let push e = Stack.push stack e
+  let pop () = Stack.pop_exn stack
 end
 
 let sigma_get_start_lexps_sort sigma =

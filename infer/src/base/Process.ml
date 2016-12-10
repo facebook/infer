@@ -78,8 +78,8 @@ let run_jobs_in_parallel jobs_stack gen_prog prog_to_string =
   let run_job () =
     let jobs_map = ref PidMap.empty in
     let current_jobs_count = start_current_jobs_count () in
-    while not (Caml.Stack.is_empty jobs_stack) do
-      let job_prog = Caml.Stack.pop jobs_stack in
+    while not (Stack.is_empty jobs_stack) do
+      let job_prog = Stack.pop_exn jobs_stack in
       let (dir_opt, prog, args, env) = gen_prog job_prog in
       Pervasives.incr current_jobs_count;
       match Unix.fork () with
@@ -90,7 +90,7 @@ let run_jobs_in_parallel jobs_stack gen_prog prog_to_string =
           |> never_returns
       | `In_the_parent pid_child ->
           jobs_map := PidMap.add pid_child (prog_to_string job_prog) !jobs_map;
-          if Caml.Stack.length jobs_stack = 0 || !current_jobs_count >= Config.jobs then
+          if Stack.length jobs_stack = 0 || !current_jobs_count >= Config.jobs then
             wait_for_child (pid_to_program !jobs_map) current_jobs_count jobs_map
     done in
   run_job ();

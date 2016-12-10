@@ -50,7 +50,7 @@ let add_flavor_to_targets args =
 let create_files_stack compilation_database should_capture_file =
   let stack = Stack.create () in
   let add_to_stack file _ = if should_capture_file file then
-      Stack.push file stack in
+      Stack.push stack file in
   CompilationDatabase.iter compilation_database add_to_stack;
   stack
 

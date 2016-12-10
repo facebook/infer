@@ -30,7 +30,11 @@ module Nativeint = Core.Std.Nativeint
 module Option = Core.Std.Option
 module Pid = Core.Std.Pid
 module Printexc = Core.Std.Printexc
+module Printf = Core.Std.Printf
+module Queue = Core.Std.Queue
+module Random = Core.Std.Random
 module Signal = Core.Std.Signal
+module Stack = Core.Std.Stack
 module String = Core.Std.String
 module Sys : module type of Core.Std.Sys
 module Unix = Core.Std.Unix
