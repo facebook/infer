@@ -14,6 +14,8 @@ open! Utils
 
 module F = Format
 module L = Logging
+module Unix = Core.Std.Unix
+module In_channel = Core.Std.In_channel
 
 (** {2 Source Dirs} *)
 
@@ -96,16 +98,7 @@ let filename_create_dir fname =
   then create_dir dirname
 
 let read_whole_file fd =
-  let stats = Unix.fstat fd in
-  let size = stats.Unix.st_size in
-  let buf = Bytes.create size in
-  let nread = Unix.read fd buf 0 size in
-  if nread != size then
-    begin
-      L.stderr "Error nread:%d size:%d@." nread size;
-      assert false
-    end;
-  buf
+  In_channel.input_all (Unix.in_channel_of_descr fd)
 
 (** Update the file contents with the update function provided.
     If the directory does not exist, it is created.
@@ -113,34 +106,37 @@ let read_whole_file fd =
     A lock is used to allow write attempts in parallel. *)
 let update_file_with_lock dir fname update =
   let reset_file fd =
-    let n = Unix.lseek fd 0 Unix.SEEK_SET in
-    if n <> 0 then
+    let n = Unix.lseek fd 0L ~mode:Unix.SEEK_SET in
+    if n <> 0L then
       begin
         L.stderr "reset_file: lseek fail@.";
         assert false
       end in
   create_dir dir;
   let path = Filename.concat dir fname in
-  let fd = Unix.openfile path [Unix.O_CREAT; Unix.O_SYNC; Unix.O_RDWR] 0o640 in
-  Unix.lockf fd Unix.F_LOCK 0;
+  let fd = Unix.openfile path ~mode:Unix.[O_CREAT; O_SYNC; O_RDWR] ~perm:0o640 in
+  Unix.lockf fd ~mode:Unix.F_LOCK ~len:0L;
   let buf = read_whole_file fd in
   reset_file fd;
   let str = update buf in
-  let i = Unix.write fd str 0 (Bytes.length str) in
-  if (i = (Bytes.length str))
-  then (Unix.lockf fd Unix.F_ULOCK 0; Unix.close fd)
-  else (L.err "@.save_with_lock: fail on path: %s@." path;
-        assert false)
+  let i = Unix.write fd ~buf:str ~pos:0 ~len:(String.length str) in
+  if (i = String.length str) then (
+    Unix.lockf fd ~mode:Unix.F_ULOCK ~len:0L;
+    Unix.close fd
+  ) else (
+    L.err "@.save_with_lock: fail on path: %s@." path;
+    assert false
+  )
 
 (** Read a file using a lock to allow write attempts in parallel. *)
 let read_file_with_lock dir fname =
   let path = Filename.concat dir fname in
   try
-    let fd = Unix.openfile path [Unix.O_RSYNC; Unix.O_RDONLY] 0o646 in
+    let fd = Unix.openfile path ~mode:Unix.[O_RSYNC; O_RDONLY] ~perm:0o646 in
     try
-      Unix.lockf fd Unix.F_RLOCK 0;
+      Unix.lockf fd ~mode:Unix.F_RLOCK ~len:0L;
       let buf = read_whole_file fd in
-      Unix.lockf fd Unix.F_ULOCK 0;
+      Unix.lockf fd ~mode:Unix.F_ULOCK ~len:0L;
       Unix.close fd;
       Some buf
     with Unix.Unix_error _ ->
@@ -212,7 +208,7 @@ module Results_dir = struct
       | filename:: dir_path -> filename, dir_path
       | [] -> raise (Failure "create_path") in
     let full_fname = Filename.concat (create dir_path) filename in
-    Unix.openfile full_fname [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC] 0o777
+    Unix.openfile full_fname ~mode:Unix.[O_WRONLY; O_CREAT; O_TRUNC] ~perm:0o777
 end
 
 (** origin of a analysis artifact: current results dir, a spec library, or models *)
@@ -246,7 +242,7 @@ let file_was_updated_after_start fname =
     This guarantees that it appears updated after start. *)
 let mark_file_updated fname =
   let near_future = Unix.gettimeofday () +. 1. in
-  Unix.utimes fname near_future near_future
+  Unix.utimes fname ~access:near_future ~modif:near_future
 
 (** Fold over all file paths recursively under [dir] which match [p]. *)
 let fold_paths_matching ~dir ~p ~init ~f =
