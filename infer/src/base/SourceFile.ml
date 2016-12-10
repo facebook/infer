@@ -140,7 +140,7 @@ let of_header header_file =
         with Not_found -> None
       )
     | _ -> None in
-  Option.map from_abs_path file_opt
+  Option.map ~f:from_abs_path file_opt
 
 let changed_files_set =
   let create_source_file path =
@@ -149,8 +149,8 @@ let changed_files_set =
       RelativeProjectRoot path
     else
       from_abs_path path in
-  Option.map_default read_file None Config.changed_files_index |>
-  Option.map (
+  Option.bind Config.changed_files_index read_file |>
+  Option.map ~f:(
     IList.fold_left
       (fun changed_files line ->
          let source_file = create_source_file line in

@@ -199,7 +199,7 @@ let component_with_unconventional_superclass_advice context an =
       let if_decl_opt =
         Ast_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
       if Option.is_some if_decl_opt && is_ck_context context an then
-        check_interface (Option.get if_decl_opt)
+        check_interface (Option.value_exn if_decl_opt)
       else
         CTL.False, None
   | _ -> CTL.False, None
@@ -252,7 +252,8 @@ let component_with_multiple_factory_methods_advice context an =
   | _ -> CTL.False, None
 
 let in_ck_class (context: CLintersContext.context) =
-  Option.map_default is_component_or_controller_descendant_impl false context.current_objc_impl
+  Option.value_map ~f:is_component_or_controller_descendant_impl ~default:false
+    context.current_objc_impl
   && General_utils.is_objc_extension context.translation_unit_context
 
 (** Components shouldn't have side-effects in its initializer.

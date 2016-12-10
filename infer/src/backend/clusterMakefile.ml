@@ -17,7 +17,7 @@ module CLOpt = CommandLineOption
 
 let cluster_should_be_analyzed cluster =
   let fname = DB.source_dir_to_string cluster in
-  let in_ondemand_config = Option.map (StringSet.mem fname) Ondemand.dirs_to_analyze in
+  let in_ondemand_config = Option.map ~f:(StringSet.mem fname) Ondemand.dirs_to_analyze in
   let check_modified () =
     let modified =
       DB.file_was_updated_after_start (DB.filename_from_string fname) in

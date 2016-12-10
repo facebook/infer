@@ -862,7 +862,7 @@ module Normalize = struct
             | _ -> BinOp (ominus, x, y) in
           (* test if the extensible array at the end of [typ] has elements of type [elt] *)
           let extensible_array_element_typ_equal elt typ =
-            Option.map_default (Typ.equal elt) false
+            Option.value_map ~f:(Typ.equal elt) ~default:false
               (StructTyp.get_extensible_array_element_typ ~lookup typ) in
           begin
             match e1', e2' with
@@ -1094,7 +1094,7 @@ module Normalize = struct
 
   let texp_normalize tenv sub (exp : Exp.t) : Exp.t = match exp with
     | Sizeof (typ, len, st) ->
-        Sizeof (typ, Option.map (exp_normalize tenv sub) len, st)
+        Sizeof (typ, Option.map ~f:(exp_normalize tenv sub) len, st)
     | _ ->
         exp_normalize tenv sub exp
 
@@ -1975,7 +1975,7 @@ let rec exp_captured_ren ren (e : Exp.t) : Exp.t = match e with
   | Const _ ->
       e
   | Sizeof (t, len, st) ->
-      Sizeof (t, Option.map (exp_captured_ren ren) len, st)
+      Sizeof (t, Option.map ~f:(exp_captured_ren ren) len, st)
   | Cast (t, e) ->
       Cast (t, exp_captured_ren ren e)
   | UnOp (op, e, topt) ->

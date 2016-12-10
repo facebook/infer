@@ -250,7 +250,7 @@ let search_sources () =
 let load_from_arguments classes_out_path =
   let roots, classes = search_classes classes_out_path in
   let split cp_option =
-    Option.map_default split_classpath [] cp_option in
+    Option.value_map ~f:split_classpath ~default:[] cp_option in
   let combine path_list classpath =
     IList.fold_left append_path classpath (IList.rev path_list) in
   let classpath =

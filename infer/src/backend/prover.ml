@@ -394,9 +394,9 @@ end = struct
           if type_opt_is_unsigned t then add_lt_minus1_e e
       | Sil.Estruct (fsel, _), t ->
           let get_field_type f =
-            Option.map_default (fun t' ->
-                Option.map fst @@ StructTyp.get_field_type_and_annotation ~lookup f t'
-              ) None t in
+            Option.bind t (fun t' ->
+                Option.map ~f:fst @@ StructTyp.get_field_type_and_annotation ~lookup f t'
+              ) in
           IList.iter (fun (f, se) -> strexp_extract (se, get_field_type f)) fsel
       | Sil.Earray (len, isel, _), t ->
           let elt_t = match t with

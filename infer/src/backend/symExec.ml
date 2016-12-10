@@ -644,8 +644,8 @@ let resolve_and_analyze
       Ondemand.analyze_proc_name ~propagate_exceptions:true caller_pdesc callee_proc_name
     else
       (* Create the type sprecialized procedure description and analyze it directly *)
-      Option.may
-        (fun specialized_pdesc ->
+      Option.iter
+        ~f:(fun specialized_pdesc ->
            Ondemand.analyze_proc_desc ~propagate_exceptions:true caller_pdesc specialized_pdesc)
         (match Ondemand.get_proc_desc resolved_pname with
          | Some resolved_proc_desc ->
@@ -653,7 +653,7 @@ let resolve_and_analyze
          | None ->
              begin
                Option.map
-                 (fun callee_proc_desc ->
+                 ~f:(fun callee_proc_desc ->
                     Cfg.specialize_types callee_proc_desc resolved_pname args)
                  (Ondemand.get_proc_desc callee_proc_name)
              end) in
@@ -1118,7 +1118,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
               Ondemand.analyze_proc_name
                 ~propagate_exceptions:true current_pdesc resolved_pname;
               let callee_pdesc_opt = Ondemand.get_proc_desc resolved_pname in
-              let ret_typ_opt = Option.map Procdesc.get_ret_type callee_pdesc_opt in
+              let ret_typ_opt = Option.map ~f:Procdesc.get_ret_type callee_pdesc_opt in
               let sentinel_result =
                 if !Config.curr_language = Config.Clang then
                   check_variadic_sentinel_if_present
@@ -1126,10 +1126,10 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                 else [(prop_r, path)] in
               let do_call (prop, path) =
                 let resolved_summary_opt = Specs.get_summary resolved_pname in
-                if Option.map_default call_should_be_skipped true resolved_summary_opt then
+                if Option.value_map ~f:call_should_be_skipped ~default:true resolved_summary_opt then
                   (* If it's an ObjC getter or setter, call the builtin rather than skipping *)
                   let attrs_opt =
-                    let attr_opt = Option.map Procdesc.get_attributes callee_pdesc_opt in
+                    let attr_opt = Option.map ~f:Procdesc.get_attributes callee_pdesc_opt in
                     match attr_opt, resolved_pname with
                     | Some attrs, Procname.ObjC_Cpp _ -> Some attrs
                     | None, Procname.ObjC_Cpp _ -> AttributesTable.load_attributes resolved_pname
@@ -1162,7 +1162,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                       skip_call ~is_objc_instance_method prop path resolved_pname ret_annots
                         loc ret_id ret_typ_opt n_actual_params
                 else
-                  proc_call (Option.get resolved_summary_opt)
+                  proc_call (Option.value_exn resolved_summary_opt)
                     (call_args prop resolved_pname n_actual_params ret_id loc) in
               IList.flatten (IList.map do_call sentinel_result)
         )
@@ -1433,7 +1433,7 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
   else
     (* otherwise, add undefined attribute to retvals and actuals passed by ref *)
     let exps_to_mark =
-      let ret_exps = Option.map_default (fun (id, _) -> [Exp.Var id]) [] ret_id in
+      let ret_exps = Option.value_map ~f:(fun (id, _) -> [Exp.Var id]) ~default:[] ret_id in
       IList.fold_left
         (fun exps_to_mark (exp, _, _) -> exp :: exps_to_mark) ret_exps actuals_by_ref in
     let prop_with_undef_attr =

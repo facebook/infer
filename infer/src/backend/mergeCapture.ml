@@ -196,8 +196,8 @@ let process_merge_file deps_file =
         then slink ~stats ~skiplevels infer_out_src infer_out_dst
     | _ ->
         () in
-  Option.may
-    (fun lines -> IList.iter process_line lines)
+  Option.iter
+    ~f:(fun lines -> IList.iter process_line lines)
     (read_file deps_file);
   create_multilinks ();
   L.stdout "Captured results merged.@.";

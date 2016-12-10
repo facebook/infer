@@ -188,7 +188,7 @@ let summary_values top_proc_set summary => {
     vname_id: Procname.to_filename proc_name,
     vspecs: IList.length specs,
     vtime: Printf.sprintf "%.0f" stats.Specs.stats_time,
-    vto: Option.map_default pp_failure "NONE" stats.Specs.stats_failure,
+    vto: Option.value_map f::pp_failure default::"NONE" stats.Specs.stats_failure,
     vsymop: stats.Specs.symops,
     verr:
       Errlog.size (fun ekind in_footprint => ekind == Exceptions.Kerror && in_footprint) err_log,
@@ -1318,35 +1318,36 @@ let register_perf_stats_report () => {
 };
 
 let mk_format format_kind fname =>
-  Option.map_default (fun out_file => [(format_kind, out_file)]) [] (create_outfile fname);
+  Option.value_map
+    f::(fun out_file => [(format_kind, out_file)]) default::[] (create_outfile fname);
 
 let init_issues_format_list report_csv report_json => {
-  let csv_format = Option.map_default (mk_format Csv) [] report_csv;
-  let json_format = Option.map_default (mk_format Json) [] report_json;
-  let tests_format = Option.map_default (mk_format Tests) [] Config.bugs_tests;
-  let txt_format = Option.map_default (mk_format Text) [] Config.bugs_txt;
-  let xml_format = Option.map_default (mk_format Xml) [] Config.bugs_xml;
+  let csv_format = Option.value_map f::(mk_format Csv) default::[] report_csv;
+  let json_format = Option.value_map f::(mk_format Json) default::[] report_json;
+  let tests_format = Option.value_map f::(mk_format Tests) default::[] Config.bugs_tests;
+  let txt_format = Option.value_map f::(mk_format Text) default::[] Config.bugs_txt;
+  let xml_format = Option.value_map f::(mk_format Xml) default::[] Config.bugs_xml;
   csv_format @ json_format @ tests_format @ txt_format @ xml_format
 };
 
 let init_procs_format_list () => {
-  let csv_format = Option.map_default (mk_format Csv) [] Config.procs_csv;
-  let xml_format = Option.map_default (mk_format Xml) [] Config.procs_xml;
+  let csv_format = Option.value_map f::(mk_format Csv) default::[] Config.procs_csv;
+  let xml_format = Option.value_map f::(mk_format Xml) default::[] Config.procs_xml;
   csv_format @ xml_format
 };
 
 let init_calls_format_list () => {
-  let csv_format = Option.map_default (mk_format Csv) [] Config.calls_csv;
+  let csv_format = Option.value_map f::(mk_format Csv) default::[] Config.calls_csv;
   csv_format
 };
 
 let init_stats_format_list () => {
-  let csv_format = Option.map_default (mk_format Csv) [] Config.report;
+  let csv_format = Option.value_map f::(mk_format Csv) default::[] Config.report;
   csv_format
 };
 
 let init_summary_format_list () => {
-  let latex_format = Option.map_default (mk_format Latex) [] Config.latex;
+  let latex_format = Option.value_map f::(mk_format Latex) default::[] Config.latex;
   latex_format
 };
 

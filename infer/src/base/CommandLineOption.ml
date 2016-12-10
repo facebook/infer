@@ -262,7 +262,7 @@ let mk_bool ?(deprecated_no=[]) ?(default=false) ?(f=fun b -> b)
     else
       "no-" ^ long
   and noshort =
-    Option.map (fun short ->
+    Option.map ~f:(fun short ->
         let len = String.length short in
         if len > 1 && String.sub short ~pos:0 ~len:1 = "n" then
           String.sub short ~pos:1 ~len:(len - 1)
@@ -596,11 +596,11 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
   ;
   full_speclist := add_or_suppress_help (normalize !full_desc_list)
   ;
-  let env_args = decode_env_to_argv (Core.Std.Option.value (Sys.getenv args_env_var) ~default:"") in
+  let env_args = decode_env_to_argv (Option.value (Sys.getenv args_env_var) ~default:"") in
   (* begin transitional support for INFERCLANG_ARGS *)
   let c_args =
     Str.split (Str.regexp_string (String.make 1 ':'))
-      (Core.Std.Option.value (Sys.getenv "INFERCLANG_ARGS") ~default:"") in
+      (Option.value (Sys.getenv "INFERCLANG_ARGS") ~default:"") in
   let env_args = c_args @ env_args in
   (* end transitional support for INFERCLANG_ARGS *)
   let exe_name = Sys.executable_name in

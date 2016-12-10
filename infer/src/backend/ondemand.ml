@@ -23,7 +23,7 @@ let dirs_to_analyze =
          StringSet.add (DB.source_dir_to_string source_dir) source_dir_set
       )
       changed_files StringSet.empty in
-  Option.map process_changed_files SourceFile.changed_files_set
+  Option.map ~f:process_changed_files SourceFile.changed_files_set
 
 type analyze_ondemand = SourceFile.t -> Procdesc.t -> unit
 
@@ -117,14 +117,15 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     incr nesting;
     let attributes_opt =
       Specs.proc_resolve_attributes callee_pname in
-    let source = Option.map_default
-        (fun (attributes : ProcAttributes.t) ->
+    let source =
+      Option.value_map
+        ~f:(fun (attributes : ProcAttributes.t) ->
            let attribute_pname = attributes.proc_name in
            if not (Procname.equal callee_pname attribute_pname) then
              failwith ("ERROR: "^(Procname.to_string callee_pname)
                        ^" not equal to "^(Procname.to_string attribute_pname));
            attributes.loc.file)
-        SourceFile.empty
+        ~default:SourceFile.empty
         attributes_opt in
     let call_graph =
       let cg = Cg.create (Some source) in

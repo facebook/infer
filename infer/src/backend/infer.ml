@@ -239,7 +239,7 @@ let run_parallel_analysis () =
     ~prog:"make" ~args:(
     "-k" ::
     "-j" :: (string_of_int Config.jobs) ::
-    (Option.map_default (fun l -> ["-l"; string_of_float l]) [] Config.load_average) @
+    (Option.value_map ~f:(fun l -> ["-l"; string_of_float l]) ~default:[] Config.load_average) @
     (if Config.debug_mode then [] else ["-s"])
   ) (fun _ -> ());
   Unix.chdir cwd

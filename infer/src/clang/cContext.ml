@@ -102,7 +102,7 @@ let get_curr_class_decl_ptr curr_class =
 let curr_class_to_string curr_class =
   match curr_class with
   | ContextCls (name, superclass, protocols) ->
-      ("class " ^ name ^ ", superclass: " ^ (Option.default "" superclass) ^
+      ("class " ^ name ^ ", superclass: " ^ (Option.value ~default:"" superclass) ^
        ",  protocols: " ^ (IList.to_string (fun x -> x) protocols))
   | ContextCategory (name, cls) -> ("category " ^ name ^ " of class " ^ cls)
   | ContextProtocol name -> ("protocol " ^ name)

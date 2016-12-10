@@ -13,13 +13,13 @@
 module Bool = Core.Std.Bool
 module Caml = Core.Std.Caml
 module Filename = Core.Std.Filename
+module Fn = Core.Std.Fn
 module In_channel = Core.Std.In_channel
 module Int = Core.Std.Int
+module Option = Core.Std.Option
 module Pid = Core.Std.Pid
-module String = Core.Std.String
-module Unix = Core.Std.Unix
 module Signal = Core.Std.Signal
-
+module String = Core.Std.String
 module Sys = struct
   include Core.Std.Sys
 
@@ -37,6 +37,7 @@ module Sys = struct
     try is_file ?follow_symlinks path
     with Unix.Unix_error _ -> `Unknown
 end
+module Unix = Core.Std.Unix
 
 module F = Format
 
@@ -250,12 +251,6 @@ let pp_current_time f () =
 let pp_elapsed_time fmt () =
   let elapsed = Unix.gettimeofday () -. initial_timeofday in
   Format.fprintf fmt "%f" elapsed
-
-let string_value_or_empty_string
-    (string_option: string option): string =
-  match string_option with
-  | Some s -> s
-  | None -> ""
 
 (** read a source file and return a list of lines, or None in case of error *)
 let read_file fname =

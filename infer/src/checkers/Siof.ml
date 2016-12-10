@@ -29,7 +29,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let is_compile_time_constructed pdesc pv =
     let init_pname = Pvar.get_initializer_pname pv in
-    match Option.map_default (Summary.read_summary pdesc) None init_pname with
+    match Option.bind init_pname (Summary.read_summary pdesc) with
     | Some Domain.Bottom ->
         (* we analyzed the initializer for this global and found that it doesn't require any runtime
            initialization so cannot participate in SIOF *)
@@ -112,7 +112,7 @@ let is_foreign tu_opt v =
         let orig_path = SourceFile.to_abs_path orig_file in
         String.equal orig_path (SourceFile.to_abs_path f)
     | None -> assert false in
-  Option.map_default (fun f -> not (is_orig_file f)) false (Pvar.get_source_file v)
+  Option.value_map ~f:(fun f -> not (is_orig_file f)) ~default:false (Pvar.get_source_file v)
 
 let report_siof trace pdesc gname loc =
   let tu_opt =

@@ -432,7 +432,7 @@ let get_signature summary =
   decl ^ "(" ^ !s ^ ")"
 
 let get_specs_from_preposts preposts =
-  Option.map_default NormSpec.tospecs [] preposts
+  Option.value_map ~f:NormSpec.tospecs ~default:[] preposts
 
 let get_specs_from_payload summary =
   get_specs_from_preposts summary.payload.preposts

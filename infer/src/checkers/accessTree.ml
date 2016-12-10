@@ -120,7 +120,7 @@ module Make (TraceDomain : AbstractDomain.S) = struct
         None
 
   let get_trace ap tree =
-    Option.map fst (get_node ap tree)
+    Option.map ~f:fst (get_node ap tree)
 
   let rec access_tree_lteq ((lhs_trace, lhs_tree) as lhs) ((rhs_trace, rhs_tree) as rhs) =
     if lhs == rhs

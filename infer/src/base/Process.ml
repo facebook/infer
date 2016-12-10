@@ -84,7 +84,7 @@ let run_jobs_in_parallel jobs_stack gen_prog prog_to_string =
       Pervasives.incr current_jobs_count;
       match Unix.fork () with
       | `In_the_child ->
-          Core.Std.Option.iter dir_opt ~f:Unix.chdir ;
+          Option.iter dir_opt ~f:Unix.chdir ;
           Unix.exec ~prog ~args:(prog :: args) ~env ~use_path:false
           |> Unix.handle_unix_error
           |> never_returns

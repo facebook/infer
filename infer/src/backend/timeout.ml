@@ -107,7 +107,7 @@ let suspend_existing_timeout ~keep_symop_total =
 
 let resume_previous_timeout () =
   let status_opt = unwind () in
-  Option.may set_status status_opt
+  Option.iter ~f:set_status status_opt
 
 let exe_timeout f x =
   let suspend_existing_timeout_and_start_new_one () =

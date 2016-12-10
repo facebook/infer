@@ -49,7 +49,7 @@ let unregister_all_callbacks () =
 let get_procedure_definition exe_env proc_name =
   let tenv = Exe_env.get_tenv exe_env proc_name in
   Option.map
-    (fun proc_desc ->
+    ~f:(fun proc_desc ->
        let idenv = Idenv.create proc_desc
        and language = (Procdesc.get_attributes proc_desc).ProcAttributes.language in
        (idenv, tenv, proc_name, proc_desc, language))
@@ -81,8 +81,8 @@ let iterate_procedure_callbacks exe_env caller_pname =
         Specs.add_summary proc_name summary
     | None -> () in
 
-  Option.may
-    (fun (idenv, tenv, proc_name, proc_desc, _) ->
+  Option.iter
+    ~f:(fun (idenv, tenv, proc_name, proc_desc, _) ->
        IList.iter
          (fun (language_opt, proc_callback) ->
             let language_matches = match language_opt with
@@ -121,9 +121,9 @@ let iterate_cluster_callbacks all_procs exe_env proc_names =
 
   (* Procedures matching the given language or all if no language is specified. *)
   let relevant_procedures language_opt =
-    Option.map_default
-      (fun l -> IList.filter (fun p -> l = get_language p) proc_names)
-      proc_names
+    Option.value_map
+      ~f:(fun l -> IList.filter (fun p -> l = get_language p) proc_names)
+      ~default:proc_names
       language_opt in
 
   IList.iter

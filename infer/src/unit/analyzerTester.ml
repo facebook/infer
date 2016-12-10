@@ -148,7 +148,7 @@ module StructuredSil = struct
 
   let call_unknown ret_id_str_opt arg_strs =
     let args = IList.map (fun param_str -> (var_of_str param_str, dummy_typ)) arg_strs in
-    let ret_id = Option.map (fun (str, typ) -> (ident_of_str str, typ)) ret_id_str_opt in
+    let ret_id = Option.map ~f:(fun (str, typ) -> (ident_of_str str, typ)) ret_id_str_opt in
     make_call ret_id args
 
   let call_unknown_no_ret arg_strs =
@@ -246,7 +246,7 @@ module Make
     pdesc, assert_map
 
   let create_test test_program extras pp_opt test_pname _ =
-    let pp_state = Option.default I.TransferFunctions.Domain.pp pp_opt in
+    let pp_state = Option.value ~default:I.TransferFunctions.Domain.pp pp_opt in
     let pdesc, assert_map = structured_program_to_cfg test_program test_pname in
     let inv_map = I.exec_pdesc (ProcData.make pdesc (Tenv.create ()) extras) in
 

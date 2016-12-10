@@ -259,7 +259,7 @@ let report_error_now tenv
         name,
         P.sprintf
           "The condition %s is always %b according to the existing annotations."
-          (string_value_or_empty_string s_opt)
+          (Option.value s_opt ~default:"")
           b,
         Some "Consider adding a `@Nullable` annotation or removing the redundant check.",
         None,
@@ -338,7 +338,7 @@ let report_error_now tenv
         "ERADICATE_NULL_FIELD_ACCESS",
         P.sprintf
           "Object `%s` could be null when accessing %s `%s`. %s"
-          (string_value_or_empty_string s_opt)
+          (Option.value s_opt ~default:"")
           at_index
           (Ident.fieldname_to_simplified_string fn)
           origin_description,
@@ -351,14 +351,14 @@ let report_error_now tenv
               "ERADICATE_NULL_METHOD_CALL",
               P.sprintf
                 "The value of `%s` in the call to `%s` could be null. %s"
-                (string_value_or_empty_string s_opt)
+                (Option.value s_opt ~default:"")
                 (Procname.to_simplified_string pn)
                 origin_description
           | Annotations.Present ->
               "ERADICATE_VALUE_NOT_PRESENT",
               P.sprintf
                 "The value of `%s` in the call to `%s` is not @Present. %s"
-                (string_value_or_empty_string s_opt)
+                (Option.value s_opt ~default:"")
                 (Procname.to_simplified_string pn)
                 origin_description in
         true,

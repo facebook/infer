@@ -235,7 +235,7 @@ let rec pp_ pe pp_t f e => {
   | Lfield e fld _ => F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld
   | Lindex e1 e2 => F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
   | Sizeof t l s =>
-    let pp_len f l => Option.map_default (F.fprintf f "[%a]" pp_exp) () l;
+    let pp_len f l => Option.iter f::(F.fprintf f "[%a]" pp_exp) l;
     F.fprintf f "sizeof(%a%a%a)" pp_t t pp_len l Subtype.pp s
   }
 };

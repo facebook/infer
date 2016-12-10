@@ -276,7 +276,7 @@ let zero_value_of_numerical_type_option typ =>
 
 
 /** Returns the zero value of a type, for int, float and ptr types, fail otherwise */
-let zero_value_of_numerical_type typ => Option.get (zero_value_of_numerical_type_option typ);
+let zero_value_of_numerical_type typ => Option.value_exn (zero_value_of_numerical_type_option typ);
 
 
 /** Make a static local name in objc */
@@ -402,7 +402,7 @@ let d_exp_list (el: list Exp.t) => L.add_print_action (L.PTexp_list, Obj.repr el
 let pp_texp pe f =>
   fun
   | Exp.Sizeof t l s => {
-      let pp_len f l => Option.map_default (F.fprintf f "[%a]" (pp_exp_printenv pe)) () l;
+      let pp_len f l => Option.iter f::(F.fprintf f "[%a]" (pp_exp_printenv pe)) l;
       F.fprintf f "%a%a%a" (Typ.pp pe) t pp_len l Subtype.pp s
     }
   | e => (pp_exp_printenv pe) f e;
@@ -412,7 +412,7 @@ let pp_texp pe f =>
 let pp_texp_full pe f =>
   fun
   | Exp.Sizeof t l s => {
-      let pp_len f l => Option.map_default (F.fprintf f "[%a]" (pp_exp_printenv pe)) () l;
+      let pp_len f l => Option.iter f::(F.fprintf f "[%a]" (pp_exp_printenv pe)) l;
       F.fprintf f "%a%a%a" (Typ.pp_full pe) t pp_len l Subtype.pp s
     }
   | e => Exp.pp_printenv pe Typ.pp_full f e;
@@ -470,7 +470,10 @@ let instr_get_exps =
   | Load id e _ _ => [Exp.Var id, e]
   | Store e1 _ e2 _ => [e1, e2]
   | Prune cond _ _ _ => [cond]
-  | Call ret_id e _ _ _ => [e, ...Option.map_default (fun (id, _) => [Exp.Var id]) [] ret_id]
+  | Call ret_id e _ _ _ => [
+      e,
+      ...Option.value_map f::(fun (id, _) => [Exp.Var id]) default::[] ret_id
+    ]
   | Nullify pvar _ => [Exp.Lvar pvar]
   | Abstract _ => []
   | Remove_temps temps _ => IList.map (fun id => Exp.Var id) temps

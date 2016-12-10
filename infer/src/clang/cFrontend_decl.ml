@@ -211,7 +211,7 @@ struct
        | CXXConversionDecl (decl_info, _, _, _, _)
        | CXXDestructorDecl (decl_info, _, _, _, _) ->
            (* di_parent_pointer has pointer to lexical context such as class.*)
-           let parent_ptr = Option.get decl_info.Clang_ast_t.di_parent_pointer in
+           let parent_ptr = Option.value_exn decl_info.Clang_ast_t.di_parent_pointer in
            let class_decl = Ast_utils.get_decl parent_ptr in
            (match class_decl with
             | Some (CXXRecordDecl _)
@@ -230,7 +230,7 @@ struct
                 initializer *)
              let global = General_utils.mk_sil_global_var trans_unit_ctx named_decl_info vdi qt in
              (* safe to Option.get because it's a global *)
-             Option.get (Pvar.get_initializer_pname global) in
+             Option.value_exn (Pvar.get_initializer_pname global) in
            let ms = CMethod_signature.make_ms procname [] Ast_expressions.create_void_type
                [] decl_info.Clang_ast_t.di_source_range false trans_unit_ctx.CFrontend_config.lang
                None None None in

@@ -46,8 +46,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Prune (exp, _, _, _) ->
         exp_add_live exp astate
     | Sil.Call (ret_id, call_exp, params, _, _) ->
-        Option.map_default (fun (ret_id, _) -> Domain.remove (Var.of_id ret_id) astate)
-          astate ret_id
+        Option.value_map ~f:(fun (ret_id, _) -> Domain.remove (Var.of_id ret_id) astate)
+          ~default:astate ret_id
         |> exp_add_live call_exp
         |> IList.fold_right exp_add_live (IList.map fst params)
     | Sil.Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->

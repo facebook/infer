@@ -454,7 +454,7 @@ struct
     else
       let return_type_decl_opt = type_ptr_to_objc_interface rtp in
       let return_type_decl_pointer_opt =
-        Option.map if_decl_to_di_pointer_opt return_type_decl_opt in
+        Option.map ~f:if_decl_to_di_pointer_opt return_type_decl_opt in
       (Some type_decl_pointer) = return_type_decl_pointer_opt
 
   let is_objc_factory_method if_decl meth_decl =
@@ -660,7 +660,7 @@ struct
           (match function_decl_info.Clang_ast_t.fdi_storage_class with
            | Some "static" ->
                let file_opt = (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file in
-               Option.map_default SourceFile.to_string "" file_opt
+               Option.value_map ~f:SourceFile.to_string ~default:"" file_opt
            | _ -> "")
       | None -> "" in
     let mangled_opt = match function_decl_info_opt with
@@ -748,14 +748,14 @@ struct
     let is_constexpr = var_decl_info.Clang_ast_t.vdi_is_const_expr in
     let is_pod =
       Ast_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr
-      |> Option.map_default (function
+      |> Fn.flip Option.bind (function
           | Clang_ast_t.RecordType(_, decl_ptr) -> Ast_utils.get_decl decl_ptr
-          | _ -> None) None
-      |> Option.map_default (function
+          | _ -> None)
+      |> Option.value_map ~default:true ~f:(function
           | Clang_ast_t.CXXRecordDecl(_, _, _, _, _, _, _, {xrdi_is_pod})
           | Clang_ast_t.ClassTemplateSpecializationDecl(_, _, _, _, _, _, _, {xrdi_is_pod}, _) ->
               xrdi_is_pod
-          | _ -> true) true in
+          | _ -> true) in
     Pvar.mk_global ~is_constexpr ~is_pod
       ~is_static_local:(var_decl_info.Clang_ast_t.vdi_is_static_local)
       (mk_name name_string simple_name) translation_unit

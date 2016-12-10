@@ -137,7 +137,7 @@ let get_file_data exe_env pname =
 (** return the source file associated to the procedure *)
 let get_source exe_env pname =
   Option.map
-    (fun file_data -> file_data.source)
+    ~f:(fun file_data -> file_data.source)
     (get_file_data exe_env pname)
 
 let file_data_to_tenv file_data =
@@ -196,7 +196,7 @@ let iter_files f exe_env =
     then seen_files_acc
     else
       begin
-        Option.may (fun cfg -> f fname cfg) (file_data_to_cfg file_data);
+        Option.iter ~f:(fun cfg -> f fname cfg) (file_data_to_cfg file_data);
         SourceFile.Set.add fname seen_files_acc
       end in
   ignore (Procname.Hash.fold do_file exe_env.proc_map SourceFile.Set.empty)

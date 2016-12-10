@@ -390,7 +390,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
         loc
         call_flags
         when call_flags.CallFlags.cf_virtual && redirected_class_name id != None => {
-        let redirected_typ = Option.get (redirected_class_name id);
+        let redirected_typ = Option.value_exn (redirected_class_name id);
         let redirected_pname =
           Procname.replace_class
             (Procname.Java callee_pname_java) (extract_class_name redirected_typ)

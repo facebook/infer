@@ -13,13 +13,15 @@
 module Bool = Core.Std.Bool
 module Caml = Core.Std.Caml
 module Filename = Core.Std.Filename
+module Fn = Core.Std.Fn
 module In_channel = Core.Std.In_channel
 module Int = Core.Std.Int
+module Option = Core.Std.Option
 module Pid = Core.Std.Pid
-module String = Core.Std.String
-module Unix = Core.Std.Unix
 module Signal = Core.Std.Signal
+module String = Core.Std.String
 module Sys : module type of Core.Std.Sys
+module Unix = Core.Std.Unix
 
 (** {2 Generic Utility Functions} *)
 
@@ -164,9 +166,6 @@ val string_crc_hex32 : string -> string
     Cut the string if it exceeds the cutoff limit.
     Use an optional key to compute the crc.  *)
 val string_append_crc_cutoff : ?cutoff:int -> ?key:string -> string -> string
-
-(** The value of a string option or the empty string.: *)
-val string_value_or_empty_string : string option -> string
 
 (** copy a source file, return the number of lines, or None in case of error *)
 val copy_file : string -> string -> int option

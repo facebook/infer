@@ -438,7 +438,7 @@ struct
                   coming from ASTExporter.h in facebook-clang-plugins *)
                assert false)
       | None -> None in
-    let function_attr_opt = Option.map_default get_deprecated_attr_arg None decl_opt in
+    let function_attr_opt = Option.bind decl_opt get_deprecated_attr_arg in
     match function_attr_opt with
     | Some attr when CTrans_models.is_modeled_attribute attr ->
         Some (Procname.from_string_c_fun attr)
@@ -459,7 +459,7 @@ struct
     let context = trans_state.context in
     let name_info, decl_ptr, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
     let decl_opt = Ast_utils.get_function_decl_with_body decl_ptr in
-    Option.may (call_translation context) decl_opt;
+    Option.iter ~f:(call_translation context) decl_opt;
     let name = Ast_utils.get_qualified_name name_info in
     let typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let pname =
@@ -511,7 +511,7 @@ struct
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let name_info, decl_ptr, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
     let decl_opt = Ast_utils.get_function_decl_with_body decl_ptr in
-    Option.may (call_translation context) decl_opt;
+    Option.iter ~f:(call_translation context) decl_opt;
     let method_name = Ast_utils.get_unqualified_name name_info in
     let class_name = Ast_utils.get_class_name_from_member name_info in
     Logging.out_debug "!!!!! Dealing with method '%s' @." method_name;
@@ -853,7 +853,7 @@ struct
     (* we cannot translate the arguments of __builtin_object_size because preprocessing copies
        them verbatim from a call to a different function, and they might be side-effecting *)
     let should_translate_args =
-      not (Option.map_default CTrans_models.is_builtin_object_size false callee_pname_opt) in
+      not (Option.value_map ~f:CTrans_models.is_builtin_object_size ~default:false callee_pname_opt) in
     let params_stmt = if should_translate_args then params_stmt
       else [] in
     (* As we may have nodes coming from different parameters we need to  *)
@@ -865,12 +865,14 @@ struct
       let instruction' = exec_with_self_exception (exec_with_glvalue_as_reference instruction) in
       let res_trans_p = IList.map (instruction' trans_state_param) params_stmt in
       res_trans_callee :: res_trans_p in
-    match Option.map_default (CTrans_utils.builtin_trans trans_state_pri sil_loc si function_type
-                                result_trans_subexprs) None callee_pname_opt with
+    match Option.bind callee_pname_opt
+            (CTrans_utils.builtin_trans
+               trans_state_pri sil_loc si function_type result_trans_subexprs) with
     | Some builtin -> builtin
     | None ->
-        let is_cf_retain_release = Option.map_default
-            CTrans_models.is_cf_retain_release false callee_pname_opt in
+        let is_cf_retain_release =
+          Option.value_map
+            ~f:CTrans_models.is_cf_retain_release ~default:false callee_pname_opt in
         let act_params =
           let params = IList.tl (collect_exprs result_trans_subexprs) in
           if IList.length params = IList.length params_stmt then
@@ -884,7 +886,7 @@ struct
           else act_params in
         let res_trans_call =
           let cast_trans_fun = cast_trans act_params sil_loc function_type in
-          match Option.map_default cast_trans_fun None callee_pname_opt with
+          match Option.bind callee_pname_opt cast_trans_fun with
           | Some (instr, cast_exp) ->
               { empty_res_trans with
                 instrs = [instr];
@@ -902,7 +904,7 @@ struct
         let add_cg_edge callee_pname =
           Cg.add_edge context.CContext.cg procname callee_pname
         in
-        Option.may add_cg_edge callee_pname_opt;
+        Option.iter ~f:add_cg_edge callee_pname_opt;
         { res_trans_to_parent with exps = res_trans_call.exps }
 
   and cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt

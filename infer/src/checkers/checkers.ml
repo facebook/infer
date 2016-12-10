@@ -56,8 +56,8 @@ module ST = struct
     end
 
   let store_summary proc_name =
-    Option.may
-      (fun summary ->
+    Option.iter
+      ~f:(fun summary ->
          let summary' =
            { summary with
              Specs.timestamp = summary.Specs.timestamp + 1 } in
@@ -78,7 +78,7 @@ module ST = struct
     let lookup = Tenv.lookup tenv in
     let localized_description = Localise.custom_desc_with_advice
         description
-        (Option.default "" advice)
+        (Option.value ~default:"" advice)
         [("always_report", string_of_bool always_report)] in
     let exn = exception_kind kind localized_description in
     let proc_attributes = Specs.pdesc_resolve_attributes proc_desc in
@@ -602,8 +602,8 @@ let callback_print_access_to_globals { Callbacks.tenv; proc_desc; proc_name } =
         None in
   let do_instr _ = function
     | Sil.Load (_, e, _, loc) when get_global_var e <> None ->
-        Option.may (fun pvar -> do_pvar true pvar loc) (get_global_var e)
+        Option.iter ~f:(fun pvar -> do_pvar true pvar loc) (get_global_var e)
     | Sil.Store (e, _, _, loc) when get_global_var e <> None ->
-        Option.may (fun pvar -> do_pvar false pvar loc) (get_global_var e)
+        Option.iter ~f:(fun pvar -> do_pvar false pvar loc) (get_global_var e)
     | _ -> () in
   Procdesc.iter_instrs do_instr proc_desc

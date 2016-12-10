@@ -128,7 +128,7 @@ let get_translate_as_friend_decl decl_list =
     match get_friend_decl_opt decl with
     | Some decl ->
         let named_decl_tuple_opt = Clang_ast_proj.get_named_decl_tuple decl in
-        Option.map_default is_translate_as_friend_name false named_decl_tuple_opt
+        Option.value_map ~f:is_translate_as_friend_name ~default:false named_decl_tuple_opt
     | None -> false in
   match get_friend_decl_opt (IList.find is_translate_as_friend_decl decl_list) with
   | Some (Clang_ast_t.ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, _, [`Type t_ptr])) ->
@@ -165,7 +165,7 @@ and get_record_custom_type tenv decl =
   match decl with
   | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _)
   | CXXRecordDecl (_, _, _, _, decl_list, _, _, _) ->
-      Option.map (type_ptr_to_sil_type tenv) (get_translate_as_friend_decl decl_list)
+      Option.map ~f:(type_ptr_to_sil_type tenv) (get_translate_as_friend_decl decl_list)
   | _ -> None
 
 and get_record_declaration_struct_type tenv decl =

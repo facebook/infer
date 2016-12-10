@@ -396,7 +396,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                   astate_acc in
 
             let propagations =
-              TaintSpecification.handle_unknown_call callee_pname (Option.map snd ret) in
+              TaintSpecification.handle_unknown_call callee_pname (Option.map ~f:snd ret) in
             IList.fold_left handle_unknown_call_ astate propagations in
 
           let analyze_call astate_acc callee_pname =

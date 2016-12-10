@@ -171,7 +171,7 @@ let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
   | CXXConversionDecl (decl_info, _, qt, fdi, mdi), _
   | CXXDestructorDecl (decl_info, _, qt, fdi, mdi), _ ->
       let procname = General_utils.procname_of_decl trans_unit_ctx meth_decl in
-      let parent_ptr = Option.get decl_info.di_parent_pointer in
+      let parent_ptr = Option.value_exn decl_info.di_parent_pointer in
       let method_decl = Cpp_Meth_decl_info (fdi, mdi, parent_ptr, qt.Clang_ast_t.qt_type_ptr)  in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
       let ms = build_method_signature
@@ -181,7 +181,7 @@ let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
       ms, fdi.Clang_ast_t.fdi_body, (init_list_instrs @ non_null_instrs)
   | ObjCMethodDecl (decl_info, _, mdi), _ ->
       let procname = General_utils.procname_of_decl trans_unit_ctx meth_decl in
-      let parent_ptr = Option.get decl_info.di_parent_pointer in
+      let parent_ptr = Option.value_exn decl_info.di_parent_pointer in
       let method_decl = ObjC_Meth_decl_info (mdi, parent_ptr) in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
       let pointer_to_property_opt =

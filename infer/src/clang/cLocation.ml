@@ -12,10 +12,11 @@ open! Utils
 (** Module for function to retrieve the location (file, line, etc) of instructions *)
 
 let clang_to_sil_location trans_unit_ctx clang_loc =
-  let line = Option.default (-1) clang_loc.Clang_ast_t.sl_line in
-  let col = Option.default (-1) clang_loc.Clang_ast_t.sl_column in
+  let line = Option.value ~default:(-1) clang_loc.Clang_ast_t.sl_line in
+  let col = Option.value ~default:(-1) clang_loc.Clang_ast_t.sl_column in
   let file =
-    Option.default trans_unit_ctx.CFrontend_config.source_file clang_loc.Clang_ast_t.sl_file in
+    Option.value ~default:trans_unit_ctx.CFrontend_config.source_file
+      clang_loc.Clang_ast_t.sl_file in
   Location.{line; col; file}
 
 let source_file_in_project source_file =
@@ -52,7 +53,7 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
   let equal_header_of_current_source maybe_header =
     (* SourceFile.of_header will cache calls to filesystem *)
     let source_of_header_opt = SourceFile.of_header maybe_header in
-    Option.map_default equal_current_source false source_of_header_opt
+    Option.value_map ~f:equal_current_source ~default:false source_of_header_opt
   in
   let file_in_project = map_file_of source_file_in_project loc_end
                         || map_file_of source_file_in_project loc_start in

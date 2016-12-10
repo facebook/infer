@@ -1471,10 +1471,8 @@ let do_analysis exe_env =
       match Exe_env.get_proc_desc exe_env proc_name with
       | Some pdesc -> Some pdesc
       | None when Config.dynamic_dispatch = `Lazy ->
-          Option.map_default
+          Option.bind (Specs.get_summary proc_name)
             (fun summary -> summary.Specs.proc_desc_option)
-            None
-            (Specs.get_summary proc_name)
       | None -> None in
     let analyze_ondemand source proc_desc =
       let proc_name = Procdesc.get_proc_name proc_desc in

@@ -142,12 +142,7 @@ let run_plugin_and_frontend source_path frontend clang_args => {
     let infer_clang_options =
       String.concat
         sep::"^"
-        (
-          Core.Std.Option.to_list (Sys.getenv CLOpt.args_env_var) @ [
-            "--clang-biniou-file",
-            biniou_fname
-          ]
-        );
+        (Option.to_list (Sys.getenv CLOpt.args_env_var) @ ["--clang-biniou-file", biniou_fname]);
     Format.fprintf
       debug_script_fmt
       "%s=\"%s\" %s@\n"

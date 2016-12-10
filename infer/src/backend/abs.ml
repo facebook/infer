@@ -1114,7 +1114,8 @@ let check_junk ?original_prop pname tenv prop =
                 IList.iter do_entry entries;
                 !res in
               L.d_decrease_indent 1;
-              let is_undefined = Option.map_default PredSymb.is_undef false alloc_attribute in
+              let is_undefined =
+                Option.value_map ~f:PredSymb.is_undef ~default:false alloc_attribute in
               let resource = match Errdesc.hpred_is_open_resource tenv prop hpred with
                 | Some res -> res
                 | None -> PredSymb.Rmemory PredSymb.Mmalloc in

@@ -407,7 +407,7 @@ and _exp_rv_dexp tenv (_seen : Exp.Set.t) node e : DExp.t option =
         _exp_rv_dexp tenv seen node e1
     | Exp.Sizeof (typ, len, sub) ->
         if verbose then (L.d_str "exp_rv_dexp: type "; Sil.d_exp e; L.d_ln ());
-        Some (DExp.Dsizeof (typ, Option.map_default (_exp_rv_dexp tenv seen node) None len, sub))
+        Some (DExp.Dsizeof (typ, Option.bind len (_exp_rv_dexp tenv seen node), sub))
     | _ ->
         if verbose then (L.d_str "exp_rv_dexp: no match for  "; Sil.d_exp e; L.d_ln ());
         None
