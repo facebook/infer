@@ -207,7 +207,7 @@ let check_printf_args_ok tenv
               "%s Exception when analyzing %s: %s@."
               printf_args_name
               (Procname.to_string proc_name)
-              (Printexc.to_string e))
+              (Exn.to_string e))
       | None -> ())
   | _ -> ()
 

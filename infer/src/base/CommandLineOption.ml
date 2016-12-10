@@ -204,7 +204,7 @@ let mk ?(deprecated=[]) ?(exes=[])
     try closure str
     with exc ->
       raise (Arg.Bad ("bad value " ^ str ^ " for flag " ^ long
-                      ^ " (" ^ (Printexc.to_string exc) ^ ")")) in
+                      ^ " (" ^ (Exn.to_string exc) ^ ")")) in
   let spec = mk_spec setter in
   let doc =
     let default_string = default_to_string default in

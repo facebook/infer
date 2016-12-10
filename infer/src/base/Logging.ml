@@ -213,7 +213,7 @@ let pp_ml_loc_opt fmt ml_loc_opt =
 let assert_false ((file, lnum, cnum, _) as ml_loc) =
   Printf.eprintf "\nASSERT FALSE %s\nCALL STACK\n%s\n%!"
     (ml_loc_to_string ml_loc)
-    (Printexc.raw_backtrace_to_string (Printexc.get_callstack 1000));
+    (Printexc.get_backtrace ());
   raise (Assert_failure (file, lnum, cnum))
 
 (** print a warning with information of the position in the ml source where it oririnated.

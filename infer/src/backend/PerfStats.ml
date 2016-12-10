@@ -52,7 +52,7 @@ let to_json ps =
   ]
 
 let from_json json =
-  let open Yojson.Basic.Util in
+  let open! Yojson.Basic.Util in
   {
     rtime = json |> member "rtime" |> to_float;
     utime = json |> member "utime" |> to_float;
@@ -69,8 +69,7 @@ let from_json json =
     top_heap_gb = json |> member "top_heap_gb" |> to_float;
     stack_kb = json |> member "stack_kb" |> to_float;
     minor_heap_kb = json |> member "minor_heap_kb" |> to_float;
-    attributes_table =
-      json |> member "attributes_table" |> AttributesTable.from_json;
+    attributes_table = json |> member "attributes_table" |> AttributesTable.from_json;
   }
 
 let aggregate s =
@@ -152,9 +151,9 @@ let register_report_at_exit file =
           close_out stats_oc
         with exc ->
           Format.eprintf "Info: failed to write stats to %s@\n%s@\n%s@\n%s@."
-            file (Printexc.to_string exc) (Yojson.Basic.pretty_to_string json_stats)
+            file (Exn.to_string exc) (Yojson.Basic.pretty_to_string json_stats)
             (Printexc.get_backtrace ())
       with exc ->
         Format.eprintf "Info: failed to compute stats for %s@\n%s@\n%s@."
-          file (Printexc.to_string exc) (Printexc.get_backtrace ())
+          file (Exn.to_string exc) (Printexc.get_backtrace ())
     )

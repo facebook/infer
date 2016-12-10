@@ -305,7 +305,7 @@ let recognize_exception exn =
     | Failure _ as f ->
         raise f
     | exn ->
-        let exn_name = Printexc.to_string exn in
+        let exn_name = Exn.to_string exn in
         (Localise.from_string exn_name,
          Localise.no_desc, None, Exn_developer, Low, None, Nocat) in
   let visibility' =

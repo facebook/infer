@@ -168,10 +168,9 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     postprocess source;
     restore_global_state old_state;
   with exn ->
-    L.stderr "@.ONDEMAND EXCEPTION %a %s@.@.CALL STACK@.%s@.BACK TRACE@.%s@."
+    L.stderr "@.ONDEMAND EXCEPTION %a %s@.@.BACK TRACE@.%s@!"
       Procname.pp callee_pname
-      (Printexc.to_string exn)
-      (Printexc.raw_backtrace_to_string (Printexc.get_callstack 1000))
+      (Exn.to_string exn)
       (Printexc.get_backtrace ());
     restore_global_state old_state;
     if propagate_exceptions
@@ -185,7 +184,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
           log_error_and_continue exn kind
       | _ ->
           (* this happens with assert false or some other unrecognized exception *)
-          log_error_and_continue exn (FKcrash (Printexc.to_string exn))
+          log_error_and_continue exn (FKcrash (Exn.to_string exn))
 
 
 let analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc =
