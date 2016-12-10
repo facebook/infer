@@ -11,6 +11,7 @@
 (** General utility functions *)
 
 module Bool = Core.Std.Bool
+module Filename = Core.Std.Filename
 module Int = Core.Std.Int
 module String = Core.Std.String
 

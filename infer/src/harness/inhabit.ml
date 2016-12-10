@@ -204,10 +204,10 @@ let inhabit_call tenv (procname, receiver) cfg env =
 (** create a dummy file for the harness and associate them in the exe_env *)
 let create_dummy_harness_filename harness_name =
   let dummy_file_dir =
-    Filename.get_temp_dir_name () in
+    Filename.temp_dir_name in
   let file_str =
     Procname.java_get_class_name
-      harness_name ^ "_" ^Procname.java_get_method harness_name ^ ".java" in
+      harness_name ^ "_" ^ Procname.java_get_method harness_name ^ ".java" in
   Filename.concat dummy_file_dir file_str
 
 (** write the SIL for the harness to a file *)

@@ -86,7 +86,7 @@ let create_serializer (key : key) : 'a serializer =
     (* support nonblocking reads and writes in parallel: *)
     (* write to a tmp file and use rename which is atomic *)
     let fname_tmp = Filename.temp_file
-        ~temp_dir:(Filename.dirname fname_str) (Filename.basename fname_str) ".tmp" in
+        ~in_dir:(Filename.dirname fname_str) (Filename.basename fname_str) ".tmp" in
     let outc = open_out_bin fname_tmp in
     Marshal.to_channel outc (key, version, value) [];
     close_out outc;

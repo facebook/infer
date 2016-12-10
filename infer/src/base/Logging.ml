@@ -56,7 +56,7 @@ let set_log_file_identifier (current_exe : CLOpt.exe) string_opt =
         let file =
           (* the command-line option takes precedence if specified *)
           if name <> "" then name
-          else Filename.temp_file ~temp_dir:exe_log_dir name_prefix suffix in
+          else Filename.temp_file ~in_dir:exe_log_dir name_prefix suffix in
         let chan = Pervasives.open_out file in
         let fmt = F.formatter_of_out_channel chan in
         (fmt, chan, file)

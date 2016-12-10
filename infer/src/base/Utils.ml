@@ -11,6 +11,7 @@
 (** General utility functions and definition with global scope *)
 
 module Bool = Core.Std.Bool
+module Filename = Core.Std.Filename
 module Int = Core.Std.Int
 module String = Core.Std.String
 
@@ -572,7 +573,7 @@ let realpath_cache = Hashtbl.create 1023
 let realpath path =
   match Hashtbl.find realpath_cache path with
   | exception Not_found -> (
-      match Core.Std.Filename.realpath path with
+      match Filename.realpath path with
       | realpath ->
           Hashtbl.add realpath_cache path (Ok realpath);
           realpath
@@ -582,7 +583,6 @@ let realpath path =
           (* cache failures as well *)
           Hashtbl.add realpath_cache path (Error (code, f, arg));
           raise (Unix.Unix_error (code, f, arg))
-
     )
   | Ok path -> path
   | Error (code, f, arg) -> raise (Unix.Unix_error (code, f, arg))

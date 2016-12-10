@@ -138,7 +138,7 @@ let get_compilation_database_files_xcodebuild () =
   let cmd_and_args = IList.rev Config.rest in
   let temp_dir = Config.results_dir // "clang" in
   create_dir temp_dir;
-  let tmp_file = Filename.temp_file ~temp_dir:temp_dir "cdb" ".json" in
+  let tmp_file = Filename.temp_file ~in_dir:temp_dir "cdb" ".json" in
   let xcodebuild_cmd, xcodebuild_args =
     match cmd_and_args with
     | [] -> failwith("Build command cannot be empty")
