@@ -1560,10 +1560,10 @@ let sigma_partial_meet tenv (sigma1: Prop.sigma) (sigma2: Prop.sigma) : Prop.sig
 
 let widening_top =
   (* nearly max_int but not so close to overflow *)
-  IntLit.of_int64 Int64.max_int -- IntLit.of_int 1000
+  IntLit.of_int64 Int64.max_value -- IntLit.of_int 1000
 let widening_bottom =
   (* nearly min_int but not so close to underflow *)
-  IntLit.of_int64 Int64.min_int ++ IntLit.of_int 1000
+  IntLit.of_int64 Int64.min_value ++ IntLit.of_int 1000
 
 (** {2 Join and Meet for Pi} *)
 let pi_partial_join tenv mode

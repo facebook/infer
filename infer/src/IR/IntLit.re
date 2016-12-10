@@ -62,7 +62,7 @@ let of_int64_unsigned i unsigned => (unsigned, i, false);
 
 let of_int i => of_int64 (Int64.of_int i);
 
-let to_int (_, i, _) => Int64.to_int i;
+let to_int (_, i, _) => Int64.to_int_exn i;
 
 let null = (false, 0L, true);
 
@@ -94,21 +94,21 @@ let lift binop (unsigned1, i1, ptr1) (unsigned2, i2, ptr2) => (
 
 let lift1 unop (unsigned, i, ptr) => (unsigned, unop i, ptr);
 
-let add i1 i2 => lift Int64.add i1 i2;
+let add i1 i2 => lift Int64.(+) i1 i2;
 
-let mul i1 i2 => lift Int64.mul i1 i2;
+let mul i1 i2 => lift Int64.( * ) i1 i2;
 
-let div i1 i2 => lift Int64.div i1 i2;
+let div i1 i2 => lift Int64.(/) i1 i2;
 
 let rem i1 i2 => lift Int64.rem i1 i2;
 
-let logand i1 i2 => lift Int64.logand i1 i2;
+let logand i1 i2 => lift Int64.bit_and i1 i2;
 
-let logor i1 i2 => lift Int64.logor i1 i2;
+let logor i1 i2 => lift Int64.bit_or i1 i2;
 
-let logxor i1 i2 => lift Int64.logxor i1 i2;
+let logxor i1 i2 => lift Int64.bit_xor i1 i2;
 
-let lognot i => lift1 Int64.lognot i;
+let lognot i => lift1 Int64.bit_not i;
 
 let sub i1 i2 => add i1 (neg i2);
 
