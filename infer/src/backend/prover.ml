@@ -2232,7 +2232,7 @@ exception NO_COVER
 (** Find miminum set of pi's in [cases] whose disjunction covers true *)
 let find_minimum_pure_cover tenv cases =
   let cases =
-    let compare (pi1, _) (pi2, _) = Core.Std.Int.compare (IList.length pi1) (IList.length pi2)
+    let compare (pi1, _) (pi2, _) = Int.compare (IList.length pi1) (IList.length pi2)
     in IList.sort compare cases in
   let rec grow seen todo = match todo with
     | [] -> raise NO_COVER

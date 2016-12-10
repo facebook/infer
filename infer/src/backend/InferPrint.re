@@ -1250,7 +1250,7 @@ let module AnalysisResults = {
       if (n != 0) {
         n
       } else {
-        Core.Std.Int.compare
+        Int.compare
           summ1.Specs.attributes.ProcAttributes.loc.Location.line
           summ2.Specs.attributes.ProcAttributes.loc.Location.line
       }

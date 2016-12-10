@@ -10,6 +10,8 @@
 
 (** General utility functions *)
 
+module Int = Core.Std.Int
+
 (** {2 Generic Utility Functions} *)
 
 (** List police: don't use the list module to avoid non-tail recursive

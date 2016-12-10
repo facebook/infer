@@ -63,7 +63,7 @@ let module Node = {
     preds: [],
     exn: []
   };
-  let compare node1 node2 => Core.Std.Int.compare node1.id node2.id;
+  let compare node1 node2 => Int.compare node1.id node2.id;
   let hash node => Hashtbl.hash node.id;
   let equal node1 node2 => compare node1 node2 == 0;
 
@@ -71,7 +71,7 @@ let module Node = {
   let get_id node => node.id;
 
   /** compare node ids */
-  let compare_id = Core.Std.Int.compare;
+  let compare_id = Int.compare;
   let get_succs node => node.succs;
   type node = t;
   let module NodeSet = Set.Make {

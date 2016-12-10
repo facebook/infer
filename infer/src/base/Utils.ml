@@ -10,6 +10,8 @@
 
 (** General utility functions and definition with global scope *)
 
+module Int = Core.Std.Int
+
 module F = Format
 
 (** List police: don't use the list module to avoid non-tail recursive
@@ -40,7 +42,7 @@ let int_of_bool b = if b then 1 else 0
 (** {2 Useful Modules} *)
 
 (** Set of integers *)
-module IntSet = Set.Make(Core.Std.Int)
+module IntSet = Set.Make(Int)
 
 (** Hash table over strings *)
 module StringHash = Hashtbl.Make (Core.Std.String)
@@ -68,7 +70,7 @@ module StringPPSet = PrettyPrintable.MakePPSet(struct
   end)
 
 (** Maps from integers *)
-module IntMap = Map.Make (Core.Std.Int)
+module IntMap = Map.Make (Int)
 
 (** Maps from strings *)
 module StringMap = Map.Make (Core.Std.String)
