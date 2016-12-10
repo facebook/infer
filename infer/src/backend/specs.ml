@@ -144,7 +144,7 @@ module Visitedset =
 
 let visited_str vis =
   let s = ref "" in
-  let lines = ref IntSet.empty in
+  let lines = ref Int.Set.empty in
   let do_one (_, ns) =
     (* if IList.length ns > 1 then
        begin
@@ -152,9 +152,9 @@ let visited_str vis =
        IList.iter (fun n -> ss := !ss ^ " " ^ string_of_int n) ns;
        L.err "Node %d has lines %s@." node !ss
        end; *)
-    IList.iter (fun n -> lines := IntSet.add n !lines) ns in
+    IList.iter (fun n -> lines := Int.Set.add !lines n) ns in
   Visitedset.iter do_one vis;
-  IntSet.iter (fun n -> s := !s ^ " " ^ string_of_int n) !lines;
+  Int.Set.iter ~f:(fun n -> s := !s ^ " " ^ string_of_int n) !lines;
   !s
 
 (** A spec consists of:

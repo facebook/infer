@@ -55,6 +55,8 @@ module Sys = struct
 end
 module Unix = Core.Std.Unix
 
+module IntSet = Caml.Set.Make(Int)
+
 module F = Format
 
 (** List police: don't use the list module to avoid non-tail recursive
@@ -79,16 +81,6 @@ let compare = ()
 let fst3 (x,_,_) = x
 let snd3 (_,x,_) = x
 let trd3 (_,_,x) = x
-
-let int_of_bool b = if b then 1 else 0
-
-(** {2 Useful Modules} *)
-
-(** Set of integers *)
-module IntSet = Set.Make(Int)
-
-(** Maps from integers *)
-module IntMap = Map.Make (Int)
 
 (** {2 Printing} *)
 

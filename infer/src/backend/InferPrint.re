@@ -155,11 +155,11 @@ let summary_values top_proc_set summary => {
     let visited = ref Specs.Visitedset.empty;
     let do_spec spec => visited := Specs.Visitedset.union spec.Specs.visited !visited;
     IList.iter do_spec specs;
-    let visited_lines = ref IntSet.empty;
+    let visited_lines = ref Int.Set.empty;
     Specs.Visitedset.iter
-      (fun (_, ls) => IList.iter (fun l => visited_lines := IntSet.add l !visited_lines) ls)
+      (fun (_, ls) => IList.iter (fun l => visited_lines := Int.Set.add !visited_lines l) ls)
       !visited;
-    (Specs.Visitedset.cardinal !visited, IntSet.elements !visited_lines)
+    (Specs.Visitedset.cardinal !visited, Int.Set.elements !visited_lines)
   };
   let proof_trace = {
     let pp_line fmt l => F.fprintf fmt "%d" l;

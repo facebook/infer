@@ -39,6 +39,8 @@ module String = Core.Std.String
 module Sys : module type of Core.Std.Sys
 module Unix = Core.Std.Unix
 
+module IntSet : Caml.Set.S with type elt = int
+
 (** {2 Generic Utility Functions} *)
 
 (** List police: don't use the list module to avoid non-tail recursive
@@ -66,17 +68,6 @@ val snd3 : 'a * 'b * 'c -> 'b
 
 (** Return the third component of a triple. *)
 val trd3 : 'a * 'b * 'c -> 'c
-
-(** Convert a bool into an int *)
-val int_of_bool : bool -> int
-
-(** {2 Useful Modules} *)
-
-(** Set of integers *)
-module IntSet : Set.S with type elt = int
-
-(** Maps from integers *)
-module IntMap : Map.S with type key = int
 
 (** {2 Printing} *)
 

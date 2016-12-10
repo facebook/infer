@@ -350,7 +350,7 @@ struct
     { empty_res_trans with exps = [(exp, typ)]}
 
   let booleanValue_trans trans_state expr_info b =
-    characterLiteral_trans trans_state expr_info (Utils.int_of_bool b)
+    characterLiteral_trans trans_state expr_info (if b then 1 else 0)
 
   let floatingLiteral_trans trans_state expr_info float_string =
     let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in

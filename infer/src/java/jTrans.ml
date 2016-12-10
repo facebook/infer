@@ -628,13 +628,13 @@ let get_array_length context pc expr_list content_type =
 let detect_loop entry_pc impl =
   let code = (JBir.code impl) in
   let pc_bound = Array.length code in
-  let empty = IntSet.empty in
+  let empty = Int.Set.empty in
   let rec loop visited pc =
-    if (IntSet.mem pc visited) || pc >= pc_bound then
+    if (Int.Set.mem visited pc) || pc >= pc_bound then
       (false, visited)
     else
       begin
-        let visited_updated = IntSet.add pc visited in
+        let visited_updated = Int.Set.add visited pc in
         match code.(pc) with
         | JBir.Goto goto_pc when goto_pc = entry_pc -> (true, empty)
         | JBir.Goto goto_pc -> loop visited_updated goto_pc
