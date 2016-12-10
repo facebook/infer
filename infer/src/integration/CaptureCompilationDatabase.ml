@@ -64,6 +64,7 @@ let swap_command cmd =
     Config.wrappers_dir // clang
 
 let run_compilation_file compilation_database file =
+  let open! Core.Std in
   try
     let compilation_data = CompilationDatabase.find compilation_database file in
     let wrapper_cmd = swap_command compilation_data.command in
@@ -72,21 +73,10 @@ let run_compilation_file compilation_database file =
         "cdb_clang_args_" ClangQuotes.EscapedNoQuotes [compilation_data.args] in
     let args = ["@" ^ arg_file] in
     let env =
-      let env0 = Unix.environment () in
-      let found = ref false in
-      Array.iteri (fun i key_val ->
-          match String.rsplit2 key_val ~on:'=' with
-          | Some (var, args) when String.equal var CLOpt.args_env_var ->
-              found := true ;
-              env0.(i) <-
-                F.sprintf "%s=%s%c--fcp-syntax-only" CLOpt.args_env_var args CLOpt.env_var_sep
-          | _ ->
-              ()
-        ) env0 ;
-      if !found then
-        env0
-      else
-        Array.append env0 [|CLOpt.args_env_var ^ "=--fcp-syntax-only"|] in
+      `Extend [
+        (CLOpt.args_env_var,
+         String.concat ~sep:(String.of_char CLOpt.env_var_sep)
+           (Option.to_list (Sys.getenv CLOpt.args_env_var) @ ["--fcp-syntax-only"]))] in
     (Some compilation_data.dir, wrapper_cmd, args, env)
   with Not_found ->
     Process.print_error_and_exit "Failed to find compilation data for %a \n%!"
