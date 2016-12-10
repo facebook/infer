@@ -78,21 +78,6 @@ module IntSet : Set.S with type elt = int
 (** Hash table over strings *)
 module StringHash : Hashtbl.S with type key = string
 
-(** Set of strings *)
-module StringSet : Set.S with type elt = string
-
-(** Pretty Printable Set of strings *)
-module StringPPSet : PrettyPrintable.PPSet with type elt = string
-
-(** Pretty print a set of strings *)
-val pp_stringset : Format.formatter -> StringSet.t -> unit
-
-(** list of strings -> set of strings *)
-val string_set_of_list : string list -> StringSet.t
-
-(** List intersection *)
-val string_list_intersection : string list -> string list -> StringSet.t
-
 (** Maps from integers *)
 module IntMap : Map.S with type key = int
 

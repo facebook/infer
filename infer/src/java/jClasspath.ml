@@ -14,7 +14,7 @@ open Javalib_pack
 
 module L = Logging
 
-let models_specs_filenames = ref StringSet.empty
+let models_specs_filenames = ref String.Set.empty
 
 let models_jar = ref ""
 
@@ -50,7 +50,7 @@ let collect_specs_filenames jar_filename =
     if not (Filename.check_suffix filename Config.specs_files_suffix) then set
     else
       let proc_filename = (Filename.chop_extension (Filename.basename filename)) in
-      StringSet.add proc_filename set in
+      String.Set.add set proc_filename in
   models_specs_filenames :=
     IList.fold_left collect !models_specs_filenames (Zip.entries zip_channel);
   models_tenv := load_models_tenv zip_channel;
@@ -66,7 +66,7 @@ let add_models jar_filename =
 
 
 let is_model procname =
-  StringSet.mem (Procname.to_filename procname) !models_specs_filenames
+  String.Set.mem !models_specs_filenames (Procname.to_filename procname)
 
 
 let split_classpath cp = Str.split (Str.regexp JFile.sep) cp
@@ -141,8 +141,7 @@ let add_source_file path map =
 
 
 let add_root_path path roots =
-  if StringSet.mem path roots then roots
-  else StringSet.add path roots
+  String.Set.add roots path
 
 
 let load_from_verbose_output () =
@@ -183,9 +182,9 @@ let load_from_verbose_output () =
           IList.fold_left
             append_path
             ""
-            ((StringSet.elements roots) @ paths) in
+            ((String.Set.elements roots) @ paths) in
         (classpath, sources, classes) in
-  loop [] StringSet.empty StringMap.empty JBasics.ClassSet.empty
+  loop [] String.Set.empty StringMap.empty JBasics.ClassSet.empty
 
 
 let classname_of_class_filename class_filename =
@@ -225,7 +224,7 @@ let search_classes path =
        else if Filename.check_suffix p "jar" then
          (add_root_path p paths, collect_classnames classes p)
        else accu)
-    (StringSet.empty, JBasics.ClassSet.empty)
+    (String.Set.empty, JBasics.ClassSet.empty)
     path
 
 
@@ -255,7 +254,7 @@ let load_from_arguments classes_out_path =
     IList.fold_left append_path classpath (IList.rev path_list) in
   let classpath =
     combine (split Config.classpath) ""
-    |> combine (StringSet.elements roots)
+    |> combine (String.Set.elements roots)
     |> combine (split Config.bootclasspath) in
   (classpath, search_sources (), classes)
 

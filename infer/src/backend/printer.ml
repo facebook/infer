@@ -457,9 +457,9 @@ let create_table_err_per_line err_log =
       (pp_to_string Localise.pp_error_desc desc) in
     try
       let set = Hashtbl.find err_per_line loc.Location.line in
-      Hashtbl.replace err_per_line loc.Location.line (StringSet.add err_str set)
+      Hashtbl.replace err_per_line loc.Location.line (String.Set.add set err_str)
     with Not_found ->
-      Hashtbl.add err_per_line loc.Location.line (StringSet.singleton err_str) in
+      Hashtbl.add err_per_line loc.Location.line (String.Set.singleton err_str) in
   Errlog.iter add_err err_log;
   err_per_line
 
@@ -520,7 +520,7 @@ let write_html_file linereader filename procs =
     let errors_at_linenum =
       try
         let errset = Hashtbl.find table_err_per_line line_number in
-        StringSet.elements errset
+        String.Set.elements errset
       with Not_found -> [] in
     let linenum_str = string_of_int line_number in
     let line_str = "LINE" ^ linenum_str in

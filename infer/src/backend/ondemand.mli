@@ -12,7 +12,7 @@ open! Utils
 (** Module for on-demand analysis. *)
 
 (** Optional set of source dirs to analyze in on-demand mode. *)
-val dirs_to_analyze : StringSet.t option
+val dirs_to_analyze : String.Set.t option
 
 type analyze_ondemand = SourceFile.t -> Procdesc.t -> unit
 

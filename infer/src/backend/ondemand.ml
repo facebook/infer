@@ -20,9 +20,9 @@ let dirs_to_analyze =
     SourceFile.Set.fold
       (fun source_file source_dir_set ->
          let source_dir = DB.source_dir_from_source_file source_file in
-         StringSet.add (DB.source_dir_to_string source_dir) source_dir_set
+         String.Set.add source_dir_set (DB.source_dir_to_string source_dir)
       )
-      changed_files StringSet.empty in
+      changed_files String.Set.empty in
   Option.map ~f:process_changed_files SourceFile.changed_files_set
 
 type analyze_ondemand = SourceFile.t -> Procdesc.t -> unit

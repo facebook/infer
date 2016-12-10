@@ -24,12 +24,11 @@ let buck_out () = Filename.concat Config.project_root "buck-out"
 
 let infer_deps () = Filename.concat Config.results_dir Config.buck_infer_deps_file_name
 
-let modified_targets = ref StringSet.empty
+let modified_targets = ref String.Set.empty
 
 let modified_file file = match Utils.read_file file with
   | Some targets ->
-      modified_targets :=
-        IList.fold_left (fun s target -> StringSet.add target s) StringSet.empty targets
+      modified_targets := IList.fold_left String.Set.add String.Set.empty targets
   | None ->
       ()
 
@@ -167,7 +166,7 @@ let should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst =
     else
       true in
   let was_modified () =
-    StringSet.mem target !modified_targets in
+    String.Set.mem !modified_targets target in
   let r =
     was_modified () ||
     not (was_copied ()) in
