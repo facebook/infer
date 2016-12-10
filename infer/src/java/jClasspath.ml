@@ -119,7 +119,7 @@ let add_source_file path map =
     let current_source_file =
       SourceFile.from_abs_path (convert_to_absolute path) in
     try
-      match StringMap.find basename map with
+      match String.Map.find_exn map basename with
       | Singleton previous_source_file ->
           (* Another source file with the same base name has been found.
              Reading the package from the source file to resolve the ambiguity
@@ -137,7 +137,7 @@ let add_source_file path map =
     with Not_found ->
       (* Most common case: there is no conflict with the base name of the source file *)
       Singleton current_source_file in
-  StringMap.add basename entry map
+  String.Map.add ~key:basename ~data:entry map
 
 
 let add_root_path path roots =
@@ -184,7 +184,7 @@ let load_from_verbose_output () =
             ""
             ((String.Set.elements roots) @ paths) in
         (classpath, sources, classes) in
-  loop [] String.Set.empty StringMap.empty JBasics.ClassSet.empty
+  loop [] String.Set.empty String.Map.empty JBasics.ClassSet.empty
 
 
 let classname_of_class_filename class_filename =
@@ -232,7 +232,7 @@ let search_sources () =
   let initial_map =
     IList.fold_left
       (fun map path -> add_source_file path map)
-      StringMap.empty
+      String.Map.empty
       Config.sources in
   match Config.sourcepath with
   | None -> initial_map

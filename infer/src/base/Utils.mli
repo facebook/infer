@@ -81,9 +81,6 @@ module StringHash : Hashtbl.S with type key = string
 (** Maps from integers *)
 module IntMap : Map.S with type key = int
 
-(** Maps from strings *)
-module StringMap : Map.S with type key = string
-
 (** {2 Printing} *)
 
 (** Colors supported in printing *)

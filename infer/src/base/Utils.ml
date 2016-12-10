@@ -93,9 +93,6 @@ module StringHash = Hashtbl.Make (String)
 (** Maps from integers *)
 module IntMap = Map.Make (Int)
 
-(** Maps from strings *)
-module StringMap = Map.Make (String)
-
 (** {2 Printing} *)
 
 (** Kind of simple printing: default or with full types *)

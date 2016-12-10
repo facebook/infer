@@ -110,10 +110,10 @@ let get_compilation_database_files_buck () =
              Logging.out "Reading compilation database from:@\n%s@\n" (String.concat ~sep:"\n" lines);
              let scan_output compilation_database_files chan =
                Scanf.sscanf chan "%s %s"
-                 (fun target file -> StringMap.add target file compilation_database_files) in
+                 (fun target file -> String.Map.add ~key:target ~data:file compilation_database_files) in
              (* Map from targets to json output *)
-             let compilation_database_files = IList.fold_left scan_output StringMap.empty lines in
-             IList.map (snd) (StringMap.bindings compilation_database_files)
+             let compilation_database_files = IList.fold_left scan_output String.Map.empty lines in
+             String.Map.data compilation_database_files
        with Unix.Unix_error (err, _, _) ->
          Process.print_error_and_exit
            "Cannot execute %s\n%!"

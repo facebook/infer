@@ -153,12 +153,12 @@ let iterate_callbacks store_summary call_graph exe_env =
       IList.fold_left
         (fun map proc_name ->
            let proc_cluster = cluster_id proc_name in
-           let bucket = try StringMap.find proc_cluster map with Not_found -> [] in
-           StringMap.add proc_cluster (proc_name:: bucket) map)
-        StringMap.empty
+           let bucket = try String.Map.find_exn map proc_cluster with Not_found -> [] in
+           String.Map.add ~key:proc_cluster ~data:(proc_name:: bucket) map)
+        String.Map.empty
         proc_names in
     (* Return all values of the map *)
-    IList.map snd (StringMap.bindings cluster_map) in
+    String.Map.data cluster_map in
   let reset_summary proc_name =
     let attributes_opt =
       Specs.proc_resolve_attributes proc_name in

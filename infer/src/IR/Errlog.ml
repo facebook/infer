@@ -239,16 +239,16 @@ module Err_table = struct
     size filter err_table
 
   let pp_stats_footprint ekind fmt (err_table: err_log) =
-    let err_name_map = ref StringMap.empty in (* map error name to count *)
+    let err_name_map = ref String.Map.empty in (* map error name to count *)
     let count_err (err_name: Localise.t) n =
       let err_string = Localise.to_string err_name in
-      let count = try StringMap.find err_string !err_name_map with Not_found -> 0 in
-      err_name_map := StringMap.add err_string (count + n) !err_name_map in
+      let count = try String.Map.find_exn !err_name_map err_string with Not_found -> 0 in
+      err_name_map := String.Map.add ~key:err_string ~data:(count + n) !err_name_map in
     let count (ekind', in_footprint, err_name, _, _) eds =
       if ekind = ekind' && in_footprint then count_err err_name (ErrDataSet.cardinal eds) in
     ErrLogHash.iter count err_table;
-    let pp err_string count = F.fprintf fmt " %s:%d" err_string count in
-    StringMap.iter pp !err_name_map
+    let pp ~key:err_string ~data:count = F.fprintf fmt " %s:%d" err_string count in
+    String.Map.iteri ~f:pp !err_name_map
 
   module LocMap =
     Map.Make(struct

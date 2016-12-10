@@ -69,16 +69,14 @@ end
 
 (** Environment for boolean variables. *)
 module Env = struct
-  type t = bool StringMap.t [@@deriving compare]
-  let empty = StringMap.empty
-  let add = StringMap.add
-  let remove = StringMap.remove
-  let get map name =
-    try Some (StringMap.find name map)
-    with Not_found -> None
+  type t = bool String.Map.t [@@deriving compare]
+  let empty = String.Map.empty
+  let add key data map = String.Map.add ~key ~data map
+  let remove key map = String.Map.remove map key
+  let get map name = String.Map.find map name
   let pp fmt map =
     let pp_elem fmt (s, b) = F.fprintf fmt "%s:%b" s b in
-    let l = StringMap.bindings map in
+    let l = String.Map.to_alist map in
     if l <> [] then F.fprintf fmt "%a" (pp_seq pp_elem) l
 end
 

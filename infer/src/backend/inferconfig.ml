@@ -110,16 +110,16 @@ module FileOrProcMatcher = struct
           (fun map pattern ->
              let previous =
                try
-                 StringMap.find pattern.Config.class_name map
+                 String.Map.find_exn map pattern.Config.class_name
                with Not_found -> [] in
-             StringMap.add pattern.Config.class_name (pattern:: previous) map)
-          StringMap.empty
+             String.Map.add ~key:pattern.Config.class_name ~data:(pattern:: previous) map)
+          String.Map.empty
           m_patterns in
       let do_java pname_java =
         let class_name = Procname.java_get_class_name pname_java
         and method_name = Procname.java_get_method pname_java in
         try
-          let class_patterns = StringMap.find class_name pattern_map in
+          let class_patterns = String.Map.find_exn pattern_map class_name in
           IList.exists
             (fun p ->
                match p.Config.method_name with

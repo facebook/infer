@@ -116,7 +116,7 @@ let save_tenv tenv =
 (* The program is loaded and translated *)
 let do_all_files classpath sources classes =
   L.do_out "Translating %d source files (%d classes)@."
-    (StringMap.cardinal sources)
+    (String.Map.length sources)
     (JBasics.ClassSet.cardinal classes);
   let program = JClasspath.load_program classpath classes in
   let tenv = load_tenv () in
@@ -132,8 +132,8 @@ let do_all_files classpath sources classes =
     init_global_state source_file;
     if not (skip source_file) then
       do_source_file linereader classes program tenv basename package_opt source_file in
-  StringMap.iter
-    (fun basename file_entry ->
+  String.Map.iteri
+    ~f:(fun ~key:basename ~data:file_entry ->
        match file_entry with
        | JClasspath.Singleton source_file ->
            translate_source_file basename (None, source_file) source_file
@@ -154,7 +154,7 @@ let do_all_files classpath sources classes =
 let () =
   JBasics.set_permissive true;
   let classpath, sources, classes = JClasspath.load_sources_and_classes () in
-  if StringMap.is_empty sources then
+  if String.Map.is_empty sources then
     failwith "Failed to load any Java source code"
   else
     do_all_files classpath sources classes

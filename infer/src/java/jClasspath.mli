@@ -34,7 +34,7 @@ type file_entry =
 
 (** load the list of source files and the list of classes from the javac verbose file *)
 val load_sources_and_classes : unit ->
-  string * file_entry StringMap.t * JBasics.ClassSet.t
+  string * file_entry String.Map.t * JBasics.ClassSet.t
 
 type classmap = JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
 

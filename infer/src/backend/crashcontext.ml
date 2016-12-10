@@ -54,14 +54,14 @@ let stitch_summaries stacktrace_file summary_files out_file =
       summary_files in
   let summary_map = IList.fold_left
       (fun acc stacktree ->
-         StringMap.add (frame_id_of_summary stacktree) stacktree acc)
-      StringMap.empty
+         String.Map.add ~key:(frame_id_of_summary stacktree) ~data:stacktree acc)
+      String.Map.empty
       summaries in
   let expand_stack_frame frame =
     (* TODO: Implement k > 1 case *)
     let frame_id = frame_id_of_stackframe frame in
-    if StringMap.exists (fun key _ -> key = frame_id) summary_map then
-      StringMap.find frame_id summary_map
+    if String.Map.existsi ~f:(fun ~key ~data:_ -> key = frame_id) summary_map then
+      String.Map.find_exn summary_map frame_id
     else
       stracktree_of_frame frame in
   let expanded_frames = IList.map expand_stack_frame stacktrace.frames in
