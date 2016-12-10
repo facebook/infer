@@ -128,7 +128,7 @@ type summary_val = {
   vsymop: int,
   verr: int,
   vfile: string,
-  vflags: proc_flags,
+  vflags: ProcAttributes.proc_flags,
   vline: int,
   vtop: string,
   vsignature: string,

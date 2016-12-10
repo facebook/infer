@@ -464,7 +464,8 @@ let set_exit_node pdesc node => pdesc.exit_node = node;
 
 
 /** Set a flag for the proc desc */
-let set_flag pdesc key value => proc_flags_add pdesc.attributes.proc_flags key value;
+let set_flag pdesc key value =>
+  ProcAttributes.proc_flags_add pdesc.attributes.proc_flags key value;
 
 
 /** Set the start node of the proc desc */

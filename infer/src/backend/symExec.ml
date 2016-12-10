@@ -377,7 +377,7 @@ let check_inherently_dangerous_function caller_pname callee_pname =
 
 let call_should_be_skipped callee_summary =
   (* check skip flag *)
-  Specs.get_flag callee_summary proc_flag_skip <> None
+  Specs.get_flag callee_summary ProcAttributes.proc_flag_skip <> None
   (* skip abstract methods *)
   || callee_summary.Specs.attributes.ProcAttributes.is_abstract
   (* treat calls with no specs as skip functions in angelic mode *)
@@ -1539,7 +1539,7 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actu
       | _, None -> true
       | _, Some (id, _) -> Errdesc.id_is_assigned_then_dead (State.get_node ()) id in
     if is_ignored
-    && Specs.get_flag summary proc_flag_ignore_return = None then
+    && Specs.get_flag summary ProcAttributes.proc_flag_ignore_return = None then
       let err_desc = Localise.desc_return_value_ignored callee_pname loc in
       let exn = (Exceptions.Return_value_ignored (err_desc, __POS__)) in
       Reporting.log_warning caller_pname exn in

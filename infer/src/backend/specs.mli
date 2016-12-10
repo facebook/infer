@@ -215,7 +215,7 @@ val is_active : summary -> bool
 val init_summary :
   (Procname.t list * (* depend list *)
    Procdesc.Node.id list * (* nodes *)
-   proc_flags * (* procedure flags *)
+   ProcAttributes.proc_flags * (* procedure flags *)
    (Procname.t * Location.t) list * (* calls *)
    (Cg.in_out_calls option) * (* in and out calls *)
    ProcAttributes.t * (* attributes of the procedure *)

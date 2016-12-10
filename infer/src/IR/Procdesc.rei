@@ -188,7 +188,7 @@ let get_exit_node: t => Node.t;
 
 
 /** Get flags for the proc desc */
-let get_flags: t => proc_flags;
+let get_flags: t => ProcAttributes.proc_flags;
 
 
 /** Return name and type of formal parameters */

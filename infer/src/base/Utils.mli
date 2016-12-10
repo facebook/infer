@@ -213,24 +213,6 @@ val do_outf : outfile option -> (outfile -> unit) -> unit
 (** close an outfile *)
 val close_outf : outfile -> unit
 
-(** flags for a procedure *)
-type proc_flags = (string, string) Hashtbl.t [@@deriving compare]
-
-(** keys for proc_flags *)
-
-val proc_flag_skip : string (** key to specify that a function should be treated as a skip function *)
-
-val proc_flag_ignore_return : string (** key to specify that it is OK to ignore the return value *)
-
-(** empty proc flags *)
-val proc_flags_empty : unit -> proc_flags
-
-(** add a key value pair to a proc flags *)
-val proc_flags_add : proc_flags -> string -> string -> unit
-
-(** find a value for a key in the proc flags *)
-val proc_flags_find : proc_flags -> string -> string
-
 (** Functional fold function over all the file of a directory *)
 val directory_fold : ('a -> string -> 'a) -> 'a -> string -> 'a
 

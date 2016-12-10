@@ -10,6 +10,28 @@ open! Utils;
 
 
 /** Attributes of a procedure. */
+
+/** flags for a procedure */
+type proc_flags = Hashtbl.t string string [@@deriving compare];
+
+
+/** keys for proc_flags */
+let proc_flag_skip: string; /** key to specify that a function should be treated as a skip function */
+
+let proc_flag_ignore_return: string; /** key to specify that it is OK to ignore the return value */
+
+
+/** empty proc flags */
+let proc_flags_empty: unit => proc_flags;
+
+
+/** add a key value pair to a proc flags */
+let proc_flags_add: proc_flags => string => string => unit;
+
+
+/** find a value for a key in the proc flags */
+let proc_flags_find: proc_flags => string => string;
+
 type objc_accessor_type =
   | Objc_getter Ident.fieldname
   | Objc_setter Ident.fieldname

@@ -15,6 +15,25 @@ let module L = Logging;
 let module F = Format;
 
 
+/** flags for a procedure */
+type proc_flags = Hashtbl.t string string;
+
+let compare_proc_flags x y => {
+  let bindings x => Hashtbl.fold (fun k d l => [(k, d), ...l]) x [];
+  [%compare : list (string, string)] (bindings x) (bindings y)
+};
+
+let proc_flags_empty () :proc_flags => Hashtbl.create 1;
+
+let proc_flag_skip = "skip";
+
+let proc_flag_ignore_return = "ignore_return";
+
+let proc_flags_add proc_flags key value => Hashtbl.replace proc_flags key value;
+
+let proc_flags_find proc_flags key => Hashtbl.find proc_flags key;
+
+
 /** Type for ObjC accessors */
 type objc_accessor_type =
   | Objc_getter Ident.fieldname

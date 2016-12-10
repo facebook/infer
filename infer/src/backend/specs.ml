@@ -798,7 +798,7 @@ let reset_summary call_graph proc_name attributes_opt proc_desc_option =
   init_summary (
     Procname.Set.elements dependents,
     [],
-    proc_flags_empty (),
+    ProcAttributes.proc_flags_empty (),
     [],
     Some (Cg.get_calls call_graph proc_name),
     proc_attributes,
