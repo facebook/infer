@@ -95,13 +95,13 @@ module ST = struct
         let drop_prefix str =
           Str.replace_first (Str.regexp "^[A-Za-z]+_") "" str in
         let normalized_equal s1 s2 =
-          Core.Std.String.equal (normalize s1) (normalize s2) in
+          String.equal (normalize s1) (normalize s2) in
 
         let is_parameter_suppressed =
-          IList.mem Core.Std.String.equal a.class_name [Annotations.suppressLint] &&
+          IList.mem String.equal a.class_name [Annotations.suppressLint] &&
           IList.mem normalized_equal kind a.parameters in
         let is_annotation_suppressed =
-          string_is_suffix (normalize (drop_prefix kind)) (normalize a.class_name) in
+          String.is_suffix ~suffix:(normalize (drop_prefix kind)) (normalize a.class_name) in
 
         is_parameter_suppressed || is_annotation_suppressed in
 
@@ -235,9 +235,9 @@ let callback_check_write_to_parcel_java
           let method_name = Procname.java_get_method pname_java in
           (try
              class_name = "android.os.Parcel" &&
-             (String.sub method_name 0 5 = "write"
+             (String.sub method_name ~pos:0 ~len:5 = "write"
               ||
-              String.sub method_name 0 4 = "read")
+              String.sub method_name ~pos:0 ~len:4 = "read")
            with Invalid_argument _ -> false)
       | _ -> assert false in
 
@@ -247,8 +247,8 @@ let callback_check_write_to_parcel_java
           let wn = Procname.java_get_method wc in
           let postfix_length = String.length wn - 5 in (* covers writeList <-> readArrayList etc. *)
           (try
-             String.sub rn (String.length rn - postfix_length) postfix_length =
-             String.sub wn 5 postfix_length
+             String.sub rn ~pos:(String.length rn - postfix_length) ~len:postfix_length =
+             String.sub wn ~pos:5 ~len:postfix_length
            with Invalid_argument _ -> false)
       | _ ->
           false in

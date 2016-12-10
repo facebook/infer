@@ -141,7 +141,7 @@ let run_plugin_and_frontend source_path frontend clang_args => {
     Format.fprintf debug_script_fmt "%s \\@\n  > %s@\n" clang_command biniou_fname;
     let infer_clang_options =
       String.concat
-        "^"
+        sep::"^"
         (
           (
             try [Unix.getenv CLOpt.args_env_var] {

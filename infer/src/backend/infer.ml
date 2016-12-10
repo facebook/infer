@@ -88,7 +88,7 @@ let clean_results_dir () =
         let rec cleandir dir =
           match Unix.readdir dir with
           | entry ->
-              if (IList.exists (Core.Std.String.equal entry) dirs) then (
+              if (IList.exists (String.equal entry) dirs) then (
                 rmtree (name // entry)
               ) else if not (entry = Filename.current_dir_name
                              || entry = Filename.parent_dir_name) then (
@@ -132,7 +132,7 @@ let run_command cmd_list after_wait =
   let exit_code = match status with Unix.WEXITED i -> i | _ -> 1 in
   after_wait exit_code ;
   if exit_code <> 0 then (
-    L.do_err "Failed to execute: %s@\n" (String.concat " " cmd_list) ;
+    L.do_err "Failed to execute: %s@\n" (String.concat ~sep:" " cmd_list) ;
     exit exit_code
   )
 
@@ -306,7 +306,7 @@ let fail_on_issue_epilogue () =
   let issues_json = DB.Results_dir.(path_to_filename Abs_root ["report.json"]) in
   match read_file (DB.filename_to_string issues_json) with
   | Some lines ->
-      let issues = Jsonbug_j.report_of_string @@ String.concat "" lines in
+      let issues = Jsonbug_j.report_of_string @@ String.concat ~sep:"" lines in
       if issues <> [] then exit Config.fail_on_issue_exit_code
   | None -> ()
 

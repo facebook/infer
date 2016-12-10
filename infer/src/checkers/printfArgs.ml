@@ -49,7 +49,7 @@ let printf_like_function
   try
     Some (
       IList.find
-        (fun printf -> Core.Std.String.equal printf.unique_id (Procname.to_unique_id proc_name))
+        (fun printf -> String.equal printf.unique_id (Procname.to_unique_id proc_name))
         !printf_like_functions)
   with Not_found -> None
 
@@ -70,15 +70,15 @@ let format_type_matches_given_type
   match format_type with
   | "d" | "i" | "u" | "x" | "X" | "o" ->
       IList.mem
-        Core.Std.String.equal
+        String.equal
         given_type
         ["java.lang.Integer"; "java.lang.Long"; "java.lang.Short"; "java.lang.Byte"]
   | "a" | "A" | "f" | "F" | "g" | "G" | "e" | "E" ->
       IList.mem
-        Core.Std.String.equal
+        String.equal
         given_type
         ["java.lang.Double"; "java.lang.Float"]
-  | "c" -> Core.Std.String.equal given_type "java.lang.Character"
+  | "c" -> String.equal given_type "java.lang.Character"
   | "b" | "h" | "H" | "s" -> true  (* accepts pretty much anything, even null *)
   | _ -> false
 
@@ -108,7 +108,7 @@ let rec format_string_type_names
     let fmt_re = Str.regexp "%[0-9]*\\.?[0-9]*[A-mo-z]" in (* matches '%2.1d' etc. *)
     let _ = Str.search_forward fmt_re fmt_string start in
     let fmt_match = Str.matched_string fmt_string in
-    let fmt_type = String.sub fmt_match ((String.length fmt_match) - 1) 1 in
+    let fmt_type = String.sub fmt_match ~pos:((String.length fmt_match) - 1) ~len:1 in
     fmt_type:: format_string_type_names fmt_string (Str.match_end ())
   with Not_found -> []
 
@@ -221,6 +221,6 @@ let printf_signature_to_string
     "{%s; %d [%s] %s}"
     printf.unique_id
     printf.format_pos
-    (String.concat "," (IList.map string_of_int printf.fixed_pos))
+    (String.concat ~sep:"," (IList.map string_of_int printf.fixed_pos))
     (match printf.vararg_pos with | Some i -> string_of_int i | _ -> "-")
 *)

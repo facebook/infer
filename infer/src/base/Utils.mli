@@ -11,6 +11,7 @@
 (** General utility functions *)
 
 module Int = Core.Std.Int
+module String = Core.Std.String
 
 (** {2 Generic Utility Functions} *)
 
@@ -156,18 +157,6 @@ val string_crc_hex32 : string -> string
     Use an optional key to compute the crc.  *)
 val string_append_crc_cutoff : ?cutoff:int -> ?key:string -> string -> string
 
-(** Check if the lhs is a substring of the rhs. *)
-val string_is_prefix : string -> string -> bool
-
-(** Check if the lhs is a suffix of the rhs. *)
-val string_is_suffix : string -> string -> bool
-
-(** Check if the lhs is contained in the rhs. *)
-val string_contains : string -> string -> bool
-
-(** Split a string across the given character, if given. (e.g. split first.second with '.').*)
-val string_split_character : string -> char -> string option * string
-
 (** The value of a string option or the empty string.: *)
 val string_value_or_empty_string : string option -> string
 
@@ -218,9 +207,6 @@ val proc_flags_add : proc_flags -> string -> string -> unit
 
 (** find a value for a key in the proc flags *)
 val proc_flags_find : proc_flags -> string -> string
-
-(** [join_strings sep parts] contatenates the elements of [parts] using [sep] as separator *)
-val join_strings : string -> string list -> string
 
 (** Functional fold function over all the file of a directory *)
 val directory_fold : ('a -> string -> 'a) -> 'a -> string -> 'a

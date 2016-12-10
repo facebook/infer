@@ -49,11 +49,11 @@ let dashdash long =
   | _ -> "--" ^ long
 
 let short_meta {short; meta; spec} =
-  String.concat " "
+  String.concat ~sep:" "
     ((if short = "" then [] else ["| -" ^ short]) @
      (match spec with
       | Arg.Symbol (symbols, _) ->
-          ["{ " ^ (String.concat " | " symbols) ^ " }" ^ meta]
+          ["{ " ^ (String.concat ~sep:" | " symbols) ^ " }" ^ meta]
       | _ ->
           if meta = "" then [] else ["<" ^ meta ^ ">"]))
 
@@ -85,7 +85,7 @@ let xdesc {long; short; spec; doc} =
               action arg
             else
               raise (Arg.Bad (F.sprintf "wrong argument '%s'; option '%s' expects one of: %s"
-                                arg (dashdash long) (String.concat " | " symbols)))
+                                arg (dashdash long) (String.concat ~sep:" | " symbols)))
           )
     | _ ->
         spec
@@ -138,7 +138,7 @@ let pad_and_xform doc_width left_width desc =
             wrap_line "" doc_width s
           else [s] in
         IList.map wrap_line lines in
-      let doc = indent_doc (String.concat "\n" (IList.flatten wrapped_lines)) in
+      let doc = indent_doc (String.concat ~sep:"\n" (IList.flatten wrapped_lines)) in
       xdesc {desc with doc}
 
 let align desc_list =
@@ -257,15 +257,15 @@ let mk_bool ?(deprecated_no=[]) ?(default=false) ?(f=fun b -> b)
     ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let nolong =
     let len = String.length long in
-    if len > 3 && String.sub long 0 3 = "no-" then
-      String.sub long 3 (len - 3)
+    if len > 3 && String.sub long ~pos:0 ~len:3 = "no-" then
+      String.sub long ~pos:3 ~len:(len - 3)
     else
       "no-" ^ long
   and noshort =
     Option.map (fun short ->
         let len = String.length short in
-        if len > 1 && String.sub short 0 1 = "n" then
-          String.sub short 1 (len - 1)
+        if len > 1 && String.sub short ~pos:0 ~len:1 = "n" then
+          String.sub short ~pos:1 ~len:(len - 1)
         else
           "n" ^ short
       ) short
@@ -339,7 +339,7 @@ let mk_string_opt ?default ?(f=fun s -> s) ?(deprecated=[]) ~long ?short ?exes ?
 let mk_string_list ?(default=[]) ?(f=fun s -> s)
     ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   mk ~deprecated ~long ?short ~default ?exes ~meta doc
-    ~default_to_string:(String.concat ", ")
+    ~default_to_string:(String.concat ~sep:", ")
     ~mk_setter:(fun var str -> var := (f str) :: !var)
     ~decode_json:(list_json_decoder (string_json_decoder ~long))
     ~mk_spec:(fun set -> Arg.String set)
@@ -378,13 +378,13 @@ let mk_path_opt ?default ?(deprecated=[]) ~long ?short ?exes ?(meta="path") =
 let mk_path_list ?(default=[]) ?(deprecated=[]) ~long ?short ?exes ?(meta="path") =
   mk_path_helper
     ~setter:(fun var x -> var := x :: !var)
-    ~default_to_string:(String.concat ", ")
+    ~default_to_string:(String.concat ~sep:", ")
     ~default ~deprecated ~long ~short ~exes ~meta
 
 let mk_symbol ~default ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let strings = IList.map fst symbols in
   let sym_to_str = IList.map (fun (x,y) -> (y,x)) symbols in
-  let of_string str = IList.assoc Core.Std.String.equal str symbols in
+  let of_string str = IList.assoc String.equal str symbols in
   let to_string sym = IList.assoc ( = ) sym sym_to_str in
   mk ~deprecated ~long ?short ~default ?exes ~meta doc
     ~default_to_string:(fun s -> to_string s)
@@ -394,7 +394,7 @@ let mk_symbol ~default ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") d
 
 let mk_symbol_opt ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let strings = IList.map fst symbols in
-  let of_string str = IList.assoc Core.Std.String.equal str symbols in
+  let of_string str = IList.assoc String.equal str symbols in
   mk ~deprecated ~long ?short ~default:None ?exes ~meta doc
     ~default_to_string:(fun _ -> "")
     ~mk_setter:(fun var str -> var := Some (of_string str))
@@ -403,15 +403,15 @@ let mk_symbol_opt ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
 
 let mk_symbol_seq ?(default=[]) ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let sym_to_str = IList.map (fun (x,y) -> (y,x)) symbols in
-  let of_string str = IList.assoc Core.Std.String.equal str symbols in
+  let of_string str = IList.assoc String.equal str symbols in
   let to_string sym = IList.assoc ( = ) sym sym_to_str in
   mk ~deprecated ~long ?short ~default ?exes ~meta:(",-separated sequence" ^ meta) doc
-    ~default_to_string:(fun syms -> String.concat " " (IList.map to_string syms))
+    ~default_to_string:(fun syms -> String.concat ~sep:" " (IList.map to_string syms))
     ~mk_setter:(fun var str_seq ->
         var := IList.map of_string (Str.split (Str.regexp_string ",") str_seq))
     ~decode_json:(fun json ->
         [dashdash long;
-         String.concat "," (YBU.convert_each YBU.to_string json)])
+         String.concat ~sep:"," (YBU.convert_each YBU.to_string json)])
     ~mk_spec:(fun set -> Arg.String set)
 
 let mk_set_from_json ~default ~default_to_string ~f
@@ -453,8 +453,8 @@ let decode_inferconfig_to_argv current_exe path =
       let {decode_json} =
         IList.find
           (fun {long; short} ->
-             Core.Std.String.equal key long
-             || (* for deprecated options *) Core.Std.String.equal key short)
+             String.equal key long
+             || (* for deprecated options *) String.equal key short)
           desc_list in
       decode_json json_val @ result
     with
@@ -472,7 +472,7 @@ let decode_inferconfig_to_argv current_exe path =
 let env_var_sep = '^'
 
 let encode_argv_to_env argv =
-  String.concat (String.make 1 env_var_sep)
+  String.concat ~sep:(String.make 1 env_var_sep)
     (IList.filter (fun arg ->
          not (String.contains arg env_var_sep)
          || (
@@ -541,7 +541,9 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
     let norm k =
       let remove_no s =
         let len = String.length k in
-        if len > 3 && String.sub s 0 3 = "no-" then String.sub s 3 (len - 3) else s in
+        if len > 3 && String.sub s ~pos:0 ~len:3 = "no-"
+        then String.sub s ~pos:3 ~len:(len - 3)
+        else s in
       let remove_weird_chars = Str.global_replace (Str.regexp "[^a-z0-9-]") "" in
       remove_weird_chars @@ String.lowercase @@ remove_no k in
     let compare_specs {long = x} {long = y} =
@@ -569,7 +571,7 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
     let is_not_dup_with_doc speclist (opt, _, doc) =
       opt = "" ||
       IList.for_all (fun (opt', _, doc') ->
-          (doc <> "" && doc' = "") || (not (Core.Std.String.equal opt opt'))) speclist in
+          (doc <> "" && doc' = "") || (not (String.equal opt opt'))) speclist in
     let unique_exe_speclist = IList.filter (is_not_dup_with_doc !curr_speclist) exe_speclist in
     curr_speclist := IList.filter (is_not_dup_with_doc unique_exe_speclist) !curr_speclist @
                      (match header with
@@ -619,7 +621,7 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
   (* tests if msg indicates an unknown option, as opposed to a known option with bad argument *)
   let is_unknown msg =
     let prefix = exe_name ^ ": unknown option" in
-    prefix = (String.sub msg 0 (String.length prefix)) in
+    prefix = (String.sub msg ~pos:0 ~len:(String.length prefix)) in
   let rec parse_loop () =
     try
       Arg.parse_argv_dynamic ~current:arg_being_parsed !args_to_parse curr_speclist !anon_fun

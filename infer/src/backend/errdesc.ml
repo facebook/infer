@@ -21,7 +21,7 @@ let vector_class = ["std"; "vector"]
 let is_one_of_classes class_name classes =
   IList.exists (fun wrapper_class ->
       IList.for_all (fun wrapper_class_substring ->
-          Utils.string_contains wrapper_class_substring class_name) wrapper_class)
+          String.is_substring ~substring:wrapper_class_substring class_name) wrapper_class)
     classes
 
 let is_method_of_objc_cpp_class pname classes =
@@ -38,7 +38,7 @@ let is_special_field class_names field_name_opt field =
   let complete_fieldname = Ident.fieldname_to_complete_string field in
   let field_ok =
     match field_name_opt with
-    | Some field_name -> Utils.string_contains field_name complete_fieldname
+    | Some field_name -> String.is_substring ~substring:field_name complete_fieldname
     | None -> true in
   is_one_of_classes complete_fieldname class_names && field_ok
 

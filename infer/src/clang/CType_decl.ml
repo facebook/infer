@@ -120,7 +120,7 @@ let get_superclass_list_cpp decl =
 let get_translate_as_friend_decl decl_list =
   let is_translate_as_friend_name (_, name_info) =
     let translate_as_str = "infer_traits::TranslateAsType" in
-    string_contains translate_as_str (Ast_utils.get_qualified_name name_info) in
+    String.is_substring ~substring:translate_as_str (Ast_utils.get_qualified_name name_info) in
   let get_friend_decl_opt (decl : Clang_ast_t.decl) = match decl with
     | FriendDecl (_, `Type type_ptr) -> Ast_utils.get_decl_from_typ_ptr type_ptr
     | _ -> None in

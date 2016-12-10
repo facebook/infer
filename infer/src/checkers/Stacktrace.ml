@@ -44,7 +44,7 @@ let make_frame class_str method_str file_str line_num =
 
 let frame_matches_location frame_obj loc =
   let lfname = SourceFile.to_string loc.Location.file in
-  let matches_file = Utils.string_is_suffix frame_obj.file_str lfname in
+  let matches_file = String.is_suffix ~suffix:frame_obj.file_str lfname in
   let matches_line = match frame_obj.line_num with
     | None -> false
     | Some line -> line = loc.Location.line in
@@ -60,7 +60,7 @@ let parse_stack_frame frame_str =
   let class_str = Str.matched_group 1 qualified_procname in
   let method_str = Str.matched_group 2 qualified_procname in
   (* Native methods don't have debugging info *)
-  if Core.Std.String.equal file_and_line "Native Method" then
+  if String.equal file_and_line "Native Method" then
     make_frame class_str method_str "Native Method" None
   else begin
     (* Separate the filename and line number.
@@ -100,7 +100,7 @@ let of_json filename json =
   let frames =
     Yojson.Basic.Util.to_list (extract_json_member frames_key)
     |> IList.map Yojson.Basic.Util.to_string
-    |> IList.map String.trim
+    |> IList.map String.strip
     |> IList.filter (fun s -> s <> "")
     |> IList.map parse_stack_frame in
   make exception_name frames

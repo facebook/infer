@@ -107,7 +107,7 @@ let type_has_supertype
   has_supertype typ Typ.Set.empty
 
 let type_is_nested_in_direct_supertype tenv t n =
-  let is_nested_in cn1 cn2 = string_is_prefix (Typename.name cn1 ^ "$") (Typename.name cn2) in
+  let is_nested_in cn1 cn2 = String.is_prefix ~prefix:(Typename.name cn1 ^ "$") (Typename.name cn2) in
   IList.exists (is_nested_in n) (type_get_direct_supertypes tenv t)
 
 let rec get_type_name = function
@@ -273,7 +273,7 @@ let method_is_initializer
         match proc_attributes.ProcAttributes.proc_name with
         | Procname.Java pname_java ->
             let mname = Procname.java_get_method pname_java in
-            IList.exists (Core.Std.String.equal mname) initializer_methods
+            IList.exists (String.equal mname) initializer_methods
         | _ ->
             false
       else

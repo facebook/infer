@@ -127,7 +127,11 @@ let java_return_type_to_string j verbosity =>
 
 /** Given a package.class_name string, it looks for the latest dot and split the string
     in two (package, class_name) */
-let split_classname package_classname => string_split_character package_classname '.';
+let split_classname package_classname =>
+  switch (String.rsplit2 package_classname on::'.') {
+  | Some (x, y) => (Some x, y)
+  | None => (None, package_classname)
+  };
 
 let from_string_c_fun (s: string) => C (s, None);
 
@@ -308,17 +312,17 @@ let java_to_string withclass::withclass=false (j: java) verbosity =>
 
 /** Check if the class name is for an anonymous inner class. */
 let is_anonymous_inner_class_name class_name =>
-  switch (string_split_character class_name '$') {
-  | (Some _, s) =>
+  switch (String.rsplit2 class_name on::'$') {
+  | Some (_, s) =>
     let is_int =
       try {
-        ignore (int_of_string (String.trim s));
+        ignore (int_of_string (String.strip s));
         true
       } {
       | Failure _ => false
       };
     is_int
-  | (None, _) => false
+  | None => false
   };
 
 
@@ -362,8 +366,8 @@ let java_is_anonymous_inner_class_constructor =
 let java_is_access_method =
   fun
   | Java js =>
-    switch (string_split_character js.method_name '$') {
-    | (Some "access", s) =>
+    switch (String.rsplit2 js.method_name on::'$') {
+    | Some ("access", s) =>
       let is_int =
         try {
           ignore (int_of_string s);
@@ -395,7 +399,8 @@ let java_is_vararg =
     }
   | _ => false;
 
-let is_objc_constructor method_name => method_name == "new" || string_is_prefix "init" method_name;
+let is_objc_constructor method_name =>
+  method_name == "new" || String.is_prefix prefix::"init" method_name;
 
 let is_objc_kind =
   fun
@@ -449,9 +454,9 @@ let is_infer_undefined pn =>
 
 let get_global_name_of_initializer =
   fun
-  | C (name, _) when string_is_prefix Config.clang_initializer_prefix name => {
+  | C (name, _) when String.is_prefix prefix::Config.clang_initializer_prefix name => {
       let prefix_len = String.length Config.clang_initializer_prefix;
-      Some (String.sub name prefix_len (String.length name - prefix_len))
+      Some (String.sub name pos::prefix_len len::(String.length name - prefix_len))
     }
   | _ => None;
 

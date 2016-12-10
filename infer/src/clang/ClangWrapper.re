@@ -37,7 +37,7 @@ let normalize (args: array string) :list action_item => {
   Logging.out "clang -### invocation: %s@\n" clang_hashhashhash;
   let normalized_commands = ref [];
   let one_line line =>
-    if (string_is_prefix " \"" line) {
+    if (String.is_prefix prefix::" \"" line) {
       let cmd =
         /* massage line to remove edge-cases for splitting */
         "\"" ^ line ^ " \"" |>
@@ -112,7 +112,7 @@ let exe args xx_suffix => {
            files. */
       Logging.out
         "WARNING: `clang -### <args>` returned an empty set of commands to run and no error. Will run the original command directly:@\n  %s@\n"
-        (String.concat " " @@ Array.to_list args)
+        (String.concat sep::" " @@ Array.to_list args)
     };
     Process.create_process_and_wait args
   }

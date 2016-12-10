@@ -345,7 +345,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc =>
             let eq o y =>
               switch (o, y) {
               | (None, _) => false
-              | (Some x, y) => Core.Std.String.equal x y
+              | (Some x, y) => String.equal x y
               };
             IList.mem eq issue_bucket high_buckets
           };
@@ -1152,7 +1152,7 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =>
       IList.iter pp_json_issue format_list
     };
     let sorted_report = {
-      let report = Jsonbug_j.report_of_string (String.concat "\n" report_lines);
+      let report = Jsonbug_j.report_of_string (String.concat sep::"\n" report_lines);
       IList.sort tests_jsonbug_compare report
     };
     let pp_report_by_report_kind (report_kind, format_list) =>
@@ -1260,7 +1260,7 @@ let module AnalysisResults = {
 
   /** Create an iterator which loads spec files one at a time */
   let iterator_of_spec_files () => {
-    let sorted_spec_files = IList.sort Core.Std.String.compare (spec_files_from_cmdline ());
+    let sorted_spec_files = IList.sort String.compare (spec_files_from_cmdline ());
     let do_spec f fname =>
       switch (Specs.load_summary (DB.filename_from_string fname)) {
       | None =>

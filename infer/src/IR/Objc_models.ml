@@ -201,8 +201,8 @@ struct
     | Core_graphics -> core_graphics_types
 
   let is_objc_memory_model_controlled o =
-    IList.mem Core.Std.String.equal o core_foundation_types ||
-    IList.mem Core.Std.String.equal o core_graphics_types
+    IList.mem String.equal o core_foundation_types ||
+    IList.mem String.equal o core_graphics_types
 
   let rec is_core_lib lib typ =
     match typ with
@@ -210,7 +210,7 @@ struct
         is_core_lib lib styp
     | Typ.Tstruct name ->
         let core_lib_types = core_lib_to_type_list lib in
-        IList.mem Core.Std.String.equal (Typename.name name) core_lib_types
+        IList.mem String.equal (Typename.name name) core_lib_types
     | _ -> false
 
   let is_core_foundation_type typ =
@@ -225,11 +225,11 @@ struct
 
   let is_core_lib_create typ funct =
     is_core_lib_type typ &&
-    ((string_contains create funct) ||
-     (string_contains copy funct ))
+    ((String.is_substring ~substring:create funct) ||
+     (String.is_substring ~substring:copy funct ))
 
   let function_arg_is_cftype typ =
-    (string_contains cf_type typ)
+    (String.is_substring ~substring:cf_type typ)
 
   let is_core_lib_retain typ funct =
     function_arg_is_cftype typ && funct = cf_retain
@@ -241,12 +241,12 @@ struct
     try
       let cg_typ = IList.find
           (fun lib -> (funct = (lib^upper_release))) core_graphics_types in
-      (string_contains (cg_typ^ref) typ)
+      (String.is_substring ~substring:(cg_typ^ref) typ)
     with Not_found -> false
 
 (*
   let function_arg_is_core_pgraphics typ =
-    let res = (string_contains cf_type typ) in
+    let res = (String.is_substring ~substring:cf_type typ) in
     res
 *)
 end

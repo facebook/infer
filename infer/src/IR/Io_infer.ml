@@ -190,7 +190,7 @@ struct
   (** Print an html link to the given node. *)
   let pp_node_link path_to_root pname ~description ~preds ~succs ~exn ~isvisited ~isproof fmt id =
     let display_name =
-      (if description = "" then "N" else String.sub description 0 1)
+      (if description = "" then "N" else String.sub description ~pos:0 ~len:1)
       ^ "_"
       ^ (string_of_int id) in
     let node_fname = node_filename pname id in

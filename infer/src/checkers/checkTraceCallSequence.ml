@@ -230,7 +230,7 @@ module BooleanVars = struct
   let exp_boolean_var exp = match exp with
     | Exp.Lvar pvar when Pvar.is_local pvar ->
         let name = Mangled.to_string (Pvar.get_name pvar) in
-        if IList.mem Core.Std.String.equal name boolean_variables
+        if IList.mem String.equal name boolean_variables
         then Some name
         else None
     | _ -> None

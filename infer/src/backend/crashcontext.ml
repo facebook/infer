@@ -74,7 +74,7 @@ let collect_all_summaries root_summaries_dir stacktrace_file stacktraces_dir =
       (fun summaries path ->
          (* check if the file is a JSON file under the crashcontext dir *)
          if not (Sys.is_directory path) && Filename.check_suffix path "json" &&
-            string_is_suffix "crashcontext" (Filename.dirname path)
+            String.is_suffix ~suffix:"crashcontext" (Filename.dirname path)
          then path :: summaries
          else summaries)
       []

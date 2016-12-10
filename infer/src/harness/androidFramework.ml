@@ -22,8 +22,8 @@ let is_destroy_method pname =
   match pname with
   | Procname.Java pname_java ->
       let method_name = Procname.java_get_method pname_java in
-      Core.Std.String.equal method_name on_destroy
-      || Core.Std.String.equal method_name on_destroy_view
+      String.equal method_name on_destroy
+      || String.equal method_name on_destroy_view
   | _ ->
       false
 
@@ -79,7 +79,7 @@ let is_fragment tenv tname =
 (** return true if [class_name] is the name of a class that belong to the Android framework *)
 let is_android_lib_class class_name =
   let class_str = Typename.name class_name in
-  string_is_prefix "android" class_str || string_is_prefix "com.android" class_str
+  String.is_prefix ~prefix:"android" class_str || String.is_prefix ~prefix:"com.android" class_str
 
 (** given an Android framework type mangled string [lifecycle_typ] (e.g., android.app.Activity) and
     a list of method names [lifecycle_procs_strs], get the appropriate typ and procnames *)

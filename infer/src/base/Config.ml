@@ -240,7 +240,7 @@ let real_exe_name =
 
 let current_exe =
   if !Sys.interactive then CLOpt.Interactive
-  else try IList.assoc Core.Std.String.equal (Filename.basename real_exe_name) CLOpt.exes
+  else try IList.assoc String.equal (Filename.basename real_exe_name) CLOpt.exes
     with Not_found -> CLOpt.Toplevel
 
 let bin_dir =
@@ -319,8 +319,8 @@ let patterns_of_json_with_key json_key json =
   let detect_pattern assoc =
     match detect_language assoc with
     | Ok language ->
-        let is_method_pattern key = IList.exists (Core.Std.String.equal key) ["class"; "method"]
-        and is_source_contains key = IList.exists (Core.Std.String.equal key) ["source_contains"] in
+        let is_method_pattern key = IList.exists (String.equal key) ["class"; "method"]
+        and is_source_contains key = IList.exists (String.equal key) ["source_contains"] in
         let rec loop = function
           | [] ->
               Error ("Unknown pattern for " ^ json_key ^ " in " ^ inferconfig_file)
@@ -1611,7 +1611,7 @@ let clang_frontend_do_capture, clang_frontend_do_lint =
 let analyzer = match !analyzer with Some a -> a | None -> Infer
 
 let clang_frontend_action_string =
-  String.concat " and "
+  String.concat ~sep:" and "
     ((if clang_frontend_do_capture then ["translating"] else [])
      @ (if clang_frontend_do_lint then ["linting"] else []))
 

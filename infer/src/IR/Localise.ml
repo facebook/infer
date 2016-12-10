@@ -500,7 +500,7 @@ let dereference_string deref_str value_str access_opt loc =
     | Some (Returned_from_call _) -> true
     | _ -> false in
   let value_desc =
-    String.concat "" [
+    String.concat ~sep:"" [
       (match deref_str.value_pre with Some s -> s ^ " " | _ -> "");
       (if is_call_access then "returned by " else "");
       value_str;

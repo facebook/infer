@@ -283,7 +283,7 @@ let rec java_from_string =
   | "float" => Tfloat FFloat
   | "double" => Tfloat FDouble
   | typ_str when String.contains typ_str '[' => {
-      let stripped_typ = String.sub typ_str 0 (String.length typ_str - 2);
+      let stripped_typ = String.sub typ_str pos::0 len::(String.length typ_str - 2);
       Tptr (Tarray (java_from_string stripped_typ) None) Pk_pointer
     }
   | typ_str => Tstruct (Typename.Java.from_string typ_str);

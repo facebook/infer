@@ -624,15 +624,10 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       lowercase_str = "ui_thread" || lowercase_str = "ui-thread" || lowercase_str = "uithread" in
     is_invalid_exp_str str || is_ui_thread str in
   let guarded_by_str_is_this guarded_by_str =
-    string_is_suffix "this" guarded_by_str in
+    String.is_suffix ~suffix:"this" guarded_by_str in
   let guarded_by_str_is_class guarded_by_str class_str =
-    let dollar_normalize s =
-      String.map
-        (function
-          | '$' -> '.'
-          | c -> c)
-        s in
-    string_is_suffix (dollar_normalize guarded_by_str) (dollar_normalize (class_str ^ ".class")) in
+    let dollar_normalize s = String.map s ~f:(function '$' -> '.' | c -> c) in
+    String.is_suffix ~suffix:(dollar_normalize guarded_by_str) (dollar_normalize (class_str ^ ".class")) in
   let guarded_by_str_is_current_class guarded_by_str = function
     | Procname.Java java_pname ->
         (* programmers write @GuardedBy("MyClass.class") when the field is guarded by the class *)
@@ -642,7 +637,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
   let guarded_by_str_is_class_this class_name guarded_by_str =
     let fully_qualified_this =
       Printf.sprintf "%s.this" class_name in
-    string_is_suffix guarded_by_str fully_qualified_this
+    String.is_suffix ~suffix:guarded_by_str fully_qualified_this
   in
 
   (* return true if [guarded_by_str] is a suffix of "<name_of_super_class>.this" *)
@@ -719,11 +714,11 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
        of the object of type T in the current state." note that this is ambiguous when there are
        multiple objects of type T, but let's try to respect the intention *)
     let match_on_field_type typ flds =
-      match string_split_character guarded_by_str0 '.' with
-      | Some class_part, field_part ->
+      match String.rsplit2 guarded_by_str0 ~on:'.' with
+      | Some (class_part, field_part) ->
           let typ_matches_guarded_by _ = function
             | Typ.Tptr (ptr_typ, _) ->
-                string_is_suffix class_part (Typ.to_string ptr_typ);
+                String.is_suffix ~suffix:class_part (Typ.to_string ptr_typ);
             | _ ->
                 false in
           begin
@@ -797,8 +792,8 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       let exn = Exceptions.Unsafe_guarded_by_access (err_desc, __POS__) in
       Reporting.log_error pname exn in
     let rec is_read_write_lock typ =
-      let str_is_read_write_lock str = string_is_suffix "ReadWriteUpdateLock" str ||
-                                       string_is_suffix "ReadWriteLock" str  in
+      let str_is_read_write_lock str = String.is_suffix ~suffix:"ReadWriteUpdateLock" str ||
+                                       String.is_suffix ~suffix:"ReadWriteLock" str  in
       match typ with
       | Typ.Tstruct name -> str_is_read_write_lock (Typename.name name)
       | Typ.Tptr (typ, _) -> is_read_write_lock typ
@@ -818,8 +813,8 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
           | _ -> false)
         (Attribute.get_for_exp tenv prop guarded_by_exp) in
     let guardedby_is_self_referential =
-      Core.Std.String.equal "itself" (String.lowercase guarded_by_str) ||
-      string_is_suffix guarded_by_str (Ident.fieldname_to_string accessed_fld) in
+      String.equal "itself" (String.lowercase guarded_by_str) ||
+      String.is_suffix ~suffix:guarded_by_str (Ident.fieldname_to_string accessed_fld) in
     let proc_has_suppress_guarded_by_annot pdesc =
       let proc_signature =
         Annotations.get_annotated_signature (Procdesc.get_attributes pdesc) in

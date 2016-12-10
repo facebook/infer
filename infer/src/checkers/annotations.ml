@@ -53,7 +53,7 @@ let annot_ends_with annot ann_name =
   let filter s =
     let sl = String.length s in
     let al = String.length ann_name in
-    sl >= al && String.sub s (sl - al) al = ann_name in
+    sl >= al && String.sub s ~pos:(sl - al) ~len:al = ann_name in
   filter annot.Annot.class_name
 
 (** Check if there is an annotation in [ia] which ends with the given name *)
@@ -75,7 +75,7 @@ let ia_get ia ann_name =
 let ma_contains ma ann_names =
   let found = ref false in
   ma_iter (fun a ->
-      if IList.exists (Core.Std.String.equal a.Annot.class_name) ann_names then found := true
+      if IList.exists (String.equal a.Annot.class_name) ann_names then found := true
     ) ma;
   !found
 
@@ -254,8 +254,8 @@ let annotated_signature_is_anonymous_inner_class_wrapper ann_sig proc_name =
     let name_str = Mangled.to_string name in
     let len = String.length name_str in
     len >= 2 &&
-    String.sub name_str 0 1 = "x" &&
-    let s = String.sub name_str 1 (len - 1) in
+    String.sub name_str ~pos:0 ~len:1 = "x" &&
+    let s = String.sub name_str ~pos:1 ~len:(len - 1) in
     let is_int =
       try
         ignore (int_of_string s);

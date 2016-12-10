@@ -189,10 +189,7 @@ let load_from_verbose_output () =
 
 
 let classname_of_class_filename class_filename =
-  JBasics.make_cn
-    (String.map
-       (function | '/' -> '.' | c -> c)
-       class_filename)
+  JBasics.make_cn (String.map ~f:(function '/' -> '.' | c -> c) class_filename)
 
 
 let extract_classnames classnames jar_filename =

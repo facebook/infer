@@ -79,7 +79,7 @@ module FileContainsStringMatcher = struct
     else
       let source_map = ref SourceFile.Map.empty in
       let regexp =
-        Str.regexp (join_strings "\\|" s_patterns) in
+        Str.regexp (String.concat ~sep:"\\|" s_patterns) in
       fun source_file ->
         try
           SourceFile.Map.find source_file !source_map
@@ -124,7 +124,7 @@ module FileOrProcMatcher = struct
             (fun p ->
                match p.Config.method_name with
                | None -> true
-               | Some m -> Core.Std.String.equal m method_name)
+               | Some m -> String.equal m method_name)
             class_patterns
         with Not_found -> false in
 
@@ -221,7 +221,7 @@ let filters_from_inferconfig inferconfig : filters =
   let error_filter =
     function error_name ->
       let error_str = Localise.to_string error_name in
-      not (IList.exists (Core.Std.String.equal error_str) inferconfig.suppress_errors) in
+      not (IList.exists (String.equal error_str) inferconfig.suppress_errors) in
   {
     path_filter = path_filter;
     error_filter = error_filter;
@@ -265,7 +265,7 @@ let test () =
          let source_file = SourceFile.from_abs_path path in
          let matching = matching_analyzers source_file in
          if matching <> [] then
-           let matching_s = join_strings ", " (IList.map fst matching) in
+           let matching_s = String.concat ~sep:", " (IList.map fst matching) in
            L.stderr "%s -> {%s}@."
              (SourceFile.to_rel_path source_file)
              matching_s)

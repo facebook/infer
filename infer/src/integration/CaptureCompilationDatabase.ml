@@ -29,8 +29,8 @@ let should_capture_file_from_index () =
 
 (** The buck targets are assumed to start with //, aliases are not supported. *)
 let check_args_for_targets args =
-  if not (IList.exists (Utils.string_is_prefix "//") args) then
-    let args_s = String.concat " " args in
+  if not (IList.exists (String.is_prefix ~prefix:"//") args) then
+    let args_s = String.concat ~sep:" " args in
     Process.print_error_and_exit
       "Error reading buck command %s. Please, pass buck targets, aliases are not allowed.\n%!"
       args_s
@@ -43,7 +43,7 @@ let add_flavor_to_targets args =
     | _ -> assert false (* cannot happen *) in
   let process_arg arg =
     (* Targets are assumed to start with //, aliases are not allowed *)
-    if Utils.string_is_prefix "//" arg then arg ^ flavor
+    if String.is_prefix ~prefix:"//" arg then arg ^ flavor
     else arg in
   IList.map process_arg args
 
@@ -58,7 +58,7 @@ let swap_command cmd =
   let plusplus = "++" in
   let clang = "clang" in
   let clangplusplus = "clang++" in
-  if Utils.string_is_suffix plusplus cmd then
+  if String.is_suffix ~suffix:plusplus cmd then
     Config.wrappers_dir // clangplusplus
   else
     Config.wrappers_dir // clang
@@ -75,8 +75,8 @@ let run_compilation_file compilation_database file =
       let env0 = Unix.environment () in
       let found = ref false in
       Array.iteri (fun i key_val ->
-          match string_split_character key_val '=' with
-          | Some var, args when Core.Std.String.equal var CLOpt.args_env_var ->
+          match String.rsplit2 key_val ~on:'=' with
+          | Some (var, args) when String.equal var CLOpt.args_env_var ->
               found := true ;
               env0.(i) <-
                 F.sprintf "%s=%s%c--fcp-syntax-only" CLOpt.args_env_var args CLOpt.env_var_sep
@@ -113,12 +113,12 @@ let get_compilation_database_files_buck () =
            (buck :: build :: "--config" :: "*//cxx.pch_enabled=false" :: args_with_flavor) in
        Process.create_process_and_wait buck_build;
        let buck_targets_list = buck :: "targets" :: "--show-output" :: args_with_flavor in
-       let buck_targets = String.concat " " buck_targets_list in
+       let buck_targets = String.concat ~sep:" " buck_targets_list in
        try
          match fst @@ Utils.with_process_in buck_targets Std.input_list with
          | [] -> Logging.stdout "There are no files to process, exiting."; exit 0
          | lines ->
-             Logging.out "Reading compilation database from:@\n%s@\n" (String.concat "\n" lines);
+             Logging.out "Reading compilation database from:@\n%s@\n" (String.concat ~sep:"\n" lines);
              let scan_output compilation_database_files chan =
                Scanf.sscanf chan "%s %s"
                  (fun target file -> StringMap.add target file compilation_database_files) in
@@ -130,7 +130,7 @@ let get_compilation_database_files_buck () =
            "Cannot execute %s\n%!"
            (buck_targets ^ " " ^ (Unix.error_message err)))
   | _ ->
-      let cmd = String.concat " " cmd in
+      let cmd = String.concat ~sep:" " cmd in
       Process.print_error_and_exit "Incorrect buck command: %s. Please use buck build <targets>" cmd
 
 (** Compute the compilation database files. *)

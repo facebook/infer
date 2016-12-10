@@ -9,7 +9,7 @@
 open! Utils;
 
 let () = {
-  let xx_suffix = string_is_suffix "++" Sys.argv.(0) ? "++" : "";
+  let xx_suffix = String.is_suffix suffix::"++" Sys.argv.(0) ? "++" : "";
   let args = Array.copy Sys.argv;
   ClangWrapper.exe args xx_suffix
 };

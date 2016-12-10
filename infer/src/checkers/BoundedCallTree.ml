@@ -114,11 +114,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let matches_proc frame =
           let matches_class pname = match pname with
             | Procname.Java java_proc ->
-                Core.Std.String.equal
+                String.equal
                   frame.Stacktrace.class_str
                   (Procname.java_get_class_name java_proc)
             | Procname.ObjC_Cpp objc_cpp_prod ->
-                Core.Std.String.equal
+                String.equal
                   frame.Stacktrace.class_str
                   (Procname.objc_cpp_get_class_name objc_cpp_prod)
             | Procname.C _ -> true (* Needed for test code. *)

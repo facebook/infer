@@ -23,7 +23,7 @@ let source_file_in_project source_file =
   let rel_source_file = SourceFile.to_string source_file in
   let file_should_be_skipped =
     IList.exists
-      (fun path -> string_is_prefix path rel_source_file)
+      (fun path -> String.is_prefix ~prefix:path rel_source_file)
       Config.skip_translation_headers in
   file_in_project && not (file_should_be_skipped)
 

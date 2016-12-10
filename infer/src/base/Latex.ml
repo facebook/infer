@@ -28,7 +28,7 @@ let convert_string s =
       if c == '_' then s' := !s' ^ "\\_"
       else s' := !s' ^ Char.escaped (String.get s !cnt);
       incr cnt in
-    String.iter f s;
+    String.iter ~f s;
     !s'
   end
   else s

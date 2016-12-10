@@ -30,7 +30,7 @@ let res_dir_attr_filename defined::defined pname => {
     if (len < 2) {
       Filename.current_dir_name
     } else {
-      String.sub base (len - 2) 2
+      String.sub base pos::(len - 2) len::2
     }
   };
   let filename =
@@ -144,7 +144,7 @@ let is_whitelisted_cpp_method method_name =>
         IList.for_all
           (
             fun whitelisting_class_substring =>
-              Utils.string_contains whitelisting_class_substring method_name
+              String.is_substring substring::whitelisting_class_substring method_name
           )
           whitelisting_class
     )

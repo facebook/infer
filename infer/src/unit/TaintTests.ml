@@ -41,7 +41,7 @@ module MockTrace = Trace.Make(struct
       include MockTraceElem
 
       let get site =
-        if string_is_prefix "SOURCE" (Procname.to_string (CallSite.pname site))
+        if String.is_prefix ~prefix:"SOURCE" (Procname.to_string (CallSite.pname site))
         then Some site
         else None
 
@@ -54,7 +54,7 @@ module MockTrace = Trace.Make(struct
       include MockTraceElem
 
       let get site _ =
-        if string_is_prefix "SINK" (Procname.to_string (CallSite.pname site))
+        if String.is_prefix ~prefix:"SINK" (Procname.to_string (CallSite.pname site))
         then [Sink.make_sink_param site 0 ~report_reachable:false]
         else []
     end

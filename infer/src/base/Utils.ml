@@ -11,6 +11,7 @@
 (** General utility functions and definition with global scope *)
 
 module Int = Core.Std.Int
+module String = Core.Std.String
 
 module F = Format
 
@@ -45,7 +46,7 @@ let int_of_bool b = if b then 1 else 0
 module IntSet = Set.Make(Int)
 
 (** Hash table over strings *)
-module StringHash = Hashtbl.Make (Core.Std.String)
+module StringHash = Hashtbl.Make (String)
 
 (** Set of strings *)
 module StringSet = Set.Make(String)
@@ -65,7 +66,7 @@ let string_list_intersection a b =
   StringSet.inter (string_set_of_list a) (string_set_of_list b)
 
 module StringPPSet = PrettyPrintable.MakePPSet(struct
-    include Core.Std.String
+    include String
     let pp_element fmt s = F.fprintf fmt "%s" s
   end)
 
@@ -73,7 +74,7 @@ module StringPPSet = PrettyPrintable.MakePPSet(struct
 module IntMap = Map.Make (Int)
 
 (** Maps from strings *)
-module StringMap = Map.Make (Core.Std.String)
+module StringMap = Map.Make (String)
 
 (** {2 Printing} *)
 
@@ -224,35 +225,6 @@ let pp_current_time f () =
 let pp_elapsed_time fmt () =
   let elapsed = Unix.gettimeofday () -. initial_timeofday in
   Format.fprintf fmt "%f" elapsed
-
-(** Check if the lhs is a substring of the rhs. *)
-let string_is_prefix s1 s2 =
-  String.length s1 <= String.length s2 &&
-  String.sub s2 0 (String.length s1) = s1
-
-(** Check if the lhs is a postfix of the rhs. *)
-let string_is_suffix s1 s2 =
-  let l1 = String.length s1 in
-  let l2 = String.length s2 in
-  l1 <= l2 &&
-  String.sub s2 (l2 - l1) l1 = s1
-
-(** Check if the lhs is contained in the rhs. *)
-let string_contains s1 s2 =
-  let rexp = Str.regexp_string s1 in
-  try
-    ignore (Str.search_forward rexp s2 0);
-    true
-  with Not_found -> false
-
-(** Split a string across the given character, if given. (e.g. split first.second with '.').*)
-let string_split_character s c =
-  try
-    let index = String.rindex s c in
-    let lhs = String.sub s 0 index in
-    let rhs = String.sub s (index + 1) ((String.length s) - (1 + index)) in
-    (Some lhs, rhs)
-  with Not_found -> (None, s)
 
 let string_value_or_empty_string
     (string_option: string option): string =
@@ -429,8 +401,8 @@ let filename_to_absolute fname =
 let filename_to_relative root fname =
   let string_strict_subtract s1 s2 =
     let n1, n2 = String.length s1, String.length s2 in
-    if n1 < n2 && String.sub s2 0 n1 = s1 then
-      String.sub s2 (n1 + 1) (n2 - (n1 + 1))
+    if n1 < n2 && String.sub s2 ~pos:0 ~len:n1 = s1 then
+      String.sub s2 ~pos:(n1 + 1) ~len:(n2 - (n1 + 1))
     else s2 in
   let norm_root = (* norm_root is root without any trailing / *)
     Filename.dirname root // Filename.basename root in
@@ -457,11 +429,6 @@ let proc_flags_add proc_flags key value =
 
 let proc_flags_find proc_flags key =
   Hashtbl.find proc_flags key
-
-let join_strings sep = function
-  | [] -> ""
-  | hd:: tl ->
-      IList.fold_left (fun str p -> str ^ sep ^ p) hd tl
 
 
 let directory_fold f init path =
@@ -524,7 +491,7 @@ let string_append_crc_cutoff ?(cutoff=100) ?(key="") name =
   let name_up_to_cutoff =
     if String.length name <= cutoff
     then name
-    else String.sub name 0 cutoff in
+    else String.sub name ~pos:0 ~len:cutoff in
   let crc_str =
     let name_for_crc = name ^ key in
     string_crc_hex32 name_for_crc in

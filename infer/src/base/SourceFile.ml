@@ -10,7 +10,7 @@
 open! Utils
 
 let count_newlines (path: string): int =
-  let open Core.Std in
+  let open! Core.Std in
   let f file = In_channel.fold_lines file ~init:0 ~f:(fun i _ -> i + 1) in
   In_channel.with_file path ~f
 
@@ -25,6 +25,7 @@ let equal sf1 sf2 =
 
 module OrderedSourceFile =
 struct
+  (* Don't use nonrec due to https://github.com/janestreet/ppx_compare/issues/2 *)
   type _t = t [@@deriving compare]
   type t = _t [@@deriving compare]
 end
@@ -35,7 +36,7 @@ module Set = Set.Make(OrderedSourceFile)
 
 let rel_path_from_abs_path root fname =
   let relative_complemented_fname = filename_to_relative root fname in
-  if string_is_prefix root fname &&
+  if String.is_prefix ~prefix:root fname &&
      Filename.is_relative relative_complemented_fname then
     Some relative_complemented_fname
   else None (* The project root is not a prefix of the file name *)
@@ -111,20 +112,20 @@ let is_infer_model source_file = match source_file with
 let is_cpp_model file =
   match file with
   | RelativeInferModel path ->
-      string_is_prefix Config.relative_cpp_models_dir path
+      String.is_prefix ~prefix:Config.relative_cpp_models_dir path
   | _ -> false
 
 let is_under_project_root = function
   | RelativeProjectRoot _ -> true
   | Absolute _ | RelativeInferModel _ -> false
 
-let exists_cache = Hashtbl.create 256
+let exists_cache = String.Table.create ~size:256 ()
 
 let path_exists abs_path =
-  try Hashtbl.find exists_cache abs_path
+  try String.Table.find_exn exists_cache abs_path
   with Not_found ->
-    let result = Sys.file_exists  abs_path in
-    Hashtbl.add exists_cache abs_path result;
+    let result = Sys.file_exists abs_path in
+    String.Table.set exists_cache ~key:abs_path ~data:result;
     result
 
 let of_header header_file =
@@ -133,7 +134,7 @@ let of_header header_file =
   let header_exts = ["h"; "hh"; "hpp"; "hxx"] in
   let file_no_ext, ext_opt = Core.Std.Filename.split_extension abs_path in
   let file_opt = match ext_opt with
-    | Some ext when IList.mem Core.Std.String.equal ext header_exts -> (
+    | Some ext when IList.mem String.equal ext header_exts -> (
         let possible_files = IList.map (fun ext -> file_no_ext ^ "." ^ ext) source_exts in
         try Some (IList.find path_exists possible_files)
         with Not_found -> None

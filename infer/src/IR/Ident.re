@@ -138,10 +138,10 @@ let fieldname_to_complete_string fn => Mangled.to_string_full fn.fname;
 /** Convert a fieldname to a simplified string with at most one-level path. */
 let fieldname_to_simplified_string fn => {
   let s = Mangled.to_string fn.fname;
-  switch (string_split_character s '.') {
-  | (Some s1, s2) =>
-    switch (string_split_character s1 '.') {
-    | (Some _, s4) => s4 ^ "." ^ s2
+  switch (String.rsplit2 s on::'.') {
+  | Some (s1, s2) =>
+    switch (String.rsplit2 s1 on::'.') {
+    | Some (_, s4) => s4 ^ "." ^ s2
     | _ => s
     }
   | _ => s
@@ -152,8 +152,8 @@ let fieldname_to_simplified_string fn => {
 /** Convert a fieldname to a flat string without path. */
 let fieldname_to_flat_string fn => {
   let s = Mangled.to_string fn.fname;
-  switch (string_split_character s '.') {
-  | (Some _, s2) => s2
+  switch (String.rsplit2 s on::'.') {
+  | Some (_, s2) => s2
   | _ => s
   }
 };
@@ -162,16 +162,16 @@ let fieldname_to_flat_string fn => {
 /** Returns the class part of the fieldname */
 let java_fieldname_get_class fn => {
   let fn = fieldname_to_string fn;
-  let ri = String.rindex fn '.';
-  String.sub fn 0 ri
+  let ri = String.rindex_exn fn '.';
+  String.slice fn 0 ri
 };
 
 
 /** Returns the last component of the fieldname */
 let java_fieldname_get_field fn => {
   let fn = fieldname_to_string fn;
-  let ri = 1 + String.rindex fn '.';
-  String.sub fn ri (String.length fn - ri)
+  let ri = 1 + String.rindex_exn fn '.';
+  String.slice fn ri 0
 };
 
 
@@ -179,12 +179,12 @@ let java_fieldname_get_field fn => {
 let java_fieldname_is_outer_instance fn => {
   let fn = fieldname_to_string fn;
   let fn_len = String.length fn;
-  let this = ".this$";
-  let this_len = String.length this;
-  let zero_to_nine s => s >= "0" && s <= "9";
-  fn_len > this_len &&
-  String.sub fn (fn_len - this_len - 1) this_len == this &&
-  zero_to_nine (String.sub fn (fn_len - 1) 1)
+  fn_len != 0 && {
+    let this = ".this$";
+    let last_char = fn.[fn_len - 1];
+    (last_char >= '0' && last_char <= '9') &&
+    String.is_suffix fn suffix::(this ^ String.of_char last_char)
+  }
 };
 
 let fieldname_offset fn => fn.fpos;

@@ -34,7 +34,7 @@ struct
         let line =
           let len = String.length line_raw in
           if len > 0 && String.get line_raw (len -1) = '\013' then
-            String.sub line_raw 0 (len -1)
+            String.sub line_raw ~pos:0 ~len:(len -1)
           else line_raw in
         lines := line :: !lines
       done;

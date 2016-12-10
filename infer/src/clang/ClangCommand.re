@@ -37,7 +37,7 @@ let value_of_argv_option argv opt_name =>
         let result' =
           if (Option.is_some result) {
             result
-          } else if (Core.Std.String.equal opt_name prev_arg) {
+          } else if (String.equal opt_name prev_arg) {
             Some arg
           } else {
             None
@@ -50,7 +50,7 @@ let value_of_argv_option argv opt_name =>
 
 let value_of_option {orig_argv} => value_of_argv_option orig_argv;
 
-let has_flag {orig_argv} flag => IList.exists (Core.Std.String.equal flag) orig_argv;
+let has_flag {orig_argv} flag => IList.exists (String.equal flag) orig_argv;
 
 let can_attach_ast_exporter cmd =>
   has_flag cmd "-cc1" && (
@@ -58,7 +58,7 @@ let can_attach_ast_exporter cmd =>
     | None =>
       Logging.stderr "malformed -cc1 command has no \"-x\" flag!";
       false
-    | Some lang when string_is_prefix "assembler" lang => false
+    | Some lang when String.is_prefix prefix::"assembler" lang => false
     | Some _ => true
     }
   );
@@ -84,14 +84,14 @@ let clang_cc1_cmd_sanitizer cmd => {
   /* command line options not supported by the opensource compiler or the plugins */
   let flags_blacklist = ["-fembed-bitcode-marker", "-fno-canonical-system-headers"];
   let replace_option_arg option arg =>
-    if (Core.Std.String.equal option "-arch" && Core.Std.String.equal arg "armv7k") {
+    if (String.equal option "-arch" && String.equal arg "armv7k") {
       "armv7"
       /* replace armv7k arch with armv7 */
     } else if (
-      Core.Std.String.equal option "-isystem"
+      String.equal option "-isystem"
     ) {
       switch Config.clang_include_to_override {
-      | Some to_replace when Core.Std.String.equal arg to_replace =>
+      | Some to_replace when String.equal arg to_replace =>
         fcp_dir /\/ "clang" /\/ "install" /\/ "lib" /\/ "clang" /\/ "4.0.0" /\/ "include"
       | _ => arg
       }
@@ -110,7 +110,7 @@ let clang_cc1_cmd_sanitizer cmd => {
     | [] =>
       /* return non-reversed list */
       IList.rev (post_args_rev @ res_rev)
-    | [flag, ...tl] when IList.mem Core.Std.String.equal flag flags_blacklist =>
+    | [flag, ...tl] when IList.mem String.equal flag flags_blacklist =>
       filter_unsupported_args_and_swap_includes (flag, res_rev) tl
     | [arg, ...tl] => {
         let res_rev' = [replace_option_arg prev arg, ...res_rev];
@@ -132,12 +132,12 @@ let command_to_run cmd => {
   let mk_cmd normalizer => {
     let {exec, argv, quoting_style} = normalizer cmd;
     Printf.sprintf
-      "'%s' %s" exec (IList.map (ClangQuotes.quote quoting_style) argv |> String.concat " ")
+      "'%s' %s" exec (IList.map (ClangQuotes.quote quoting_style) argv |> String.concat sep::" ")
   };
   if (can_attach_ast_exporter cmd) {
     mk_cmd clang_cc1_cmd_sanitizer
   } else if (
-    string_is_prefix "clang" (Filename.basename cmd.exec)
+    String.is_prefix prefix::"clang" (Filename.basename cmd.exec)
   ) {
     /* `clang` supports argument files and the commands can be longer than the maximum length of the
        command line, so put arguments in a file */

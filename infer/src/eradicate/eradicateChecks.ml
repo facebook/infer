@@ -50,7 +50,7 @@ let classify_procedure proc_attributes =
     if Models.is_modelled_nullable pn then "M" (* modelled *)
     else if Specs.proc_is_library proc_attributes then "L" (* library *)
     else if not proc_attributes.ProcAttributes.is_defined then "S" (* skip *)
-    else if string_is_prefix "com.facebook" unique_id then "F" (* FB *)
+    else if String.is_prefix ~prefix:"com.facebook" unique_id then "F" (* FB *)
     else "?" in
   classification
 
@@ -116,7 +116,7 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc
     let throwable_found = ref false in
     let typ_is_throwable = function
       | Typ.Tstruct (TN_csu (Class Java, _) as name) ->
-          Core.Std.String.equal (Typename.name name) "java.lang.Throwable"
+          String.equal (Typename.name name) "java.lang.Throwable"
       | _ -> false in
     let do_instr = function
       | Sil.Call (_, Exp.Const (Const.Cfun pn), [_; (Exp.Sizeof(t, _, _), _)], _, _) when
@@ -133,8 +133,8 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc
     (* heuristic to check if the condition is the translation of try-with-resources *)
     match Printer.LineReader.from_loc linereader loc with
     | Some line ->
-        not (string_contains "==" line || string_contains "!=" line)
-        && (string_contains "}" line)
+        not (String.is_substring ~substring:"==" line || String.is_substring ~substring:"!=" line)
+        && (String.is_substring ~substring:"}" line)
         && contains_instanceof_throwable curr_pdesc node
     | None -> false in
 
@@ -273,7 +273,7 @@ let check_constructor_initialization tenv
               let should_check_field_initialization =
                 let in_current_class =
                   let fld_cname = Ident.java_fieldname_get_class fn in
-                  Core.Std.String.equal (Typename.name name) fld_cname in
+                  String.equal (Typename.name name) fld_cname in
                 not injector_readonly_annotated &&
                 PatternMatch.type_is_class ft &&
                 in_current_class &&

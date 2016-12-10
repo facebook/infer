@@ -28,7 +28,7 @@ module Summary = Summary.Make (struct
    is assumed to be thread-safe. in the future, we can ask for builder classes to be annotated with
    @Builder and verify that annotated classes satisfy the expected invariants. *)
 let is_builder_class class_name =
-  string_is_suffix "Builder" class_name
+  String.is_suffix ~suffix:"Builder" class_name
 
 let is_call_to_builder_class_method = function
   | Procname.Java java_pname -> is_builder_class (Procname.java_get_class_name java_pname)
