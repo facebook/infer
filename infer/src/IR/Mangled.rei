@@ -52,4 +52,4 @@ let pp: Format.formatter => t => unit;
 
 
 /** Set of Mangled. */
-let module MangledSet: Set.S with type elt = t;
+let module MangledSet: Caml.Set.S with type elt = t;

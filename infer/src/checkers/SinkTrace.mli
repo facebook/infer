@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (** Suffix of a normal trace: just sinks and passthroughs, but no sources *)
 module type S = sig
   include Trace.S

@@ -12,6 +12,8 @@
  */
 open! IStd;
 
+let module Hashtbl = Caml.Hashtbl;
+
 
 /** Module for call graphs */
 let module L = Logging;

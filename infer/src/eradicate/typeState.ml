@@ -40,7 +40,7 @@ let unit_ext : unit ext = {
 }
 
 
-module M = Map.Make (struct
+module M = Caml.Map.Make (struct
     type t = Exp.t
     let compare = Exp.compare end)
 

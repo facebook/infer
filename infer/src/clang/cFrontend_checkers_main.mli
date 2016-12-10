@@ -7,4 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 val do_frontend_checks : CFrontend_config.translation_unit_context -> Clang_ast_t.decl -> unit

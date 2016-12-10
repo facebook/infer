@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+module Hashtbl = Caml.Hashtbl
 
 (** Support for Execution environments *)
 

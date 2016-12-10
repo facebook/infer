@@ -18,7 +18,7 @@ module F = Format
 (** {2 Sets of Propositions} *)
 
 module PropSet =
-  Set.Make(struct
+  Caml.Set.Make(struct
     type t = Prop.normal Prop.t
     let compare = Prop.compare_prop
   end)

@@ -367,7 +367,7 @@ end = struct
   let d_stats path =
     L.d_str (stats_string path)
 
-  module PathMap = Map.Make (struct
+  module PathMap = Caml.Map.Make (struct
       type nonrec t = t
       let compare = compare
     end)
@@ -503,7 +503,7 @@ end = struct
 end
 (* =============== END of the Path module ===============*)
 
-module PropMap = Map.Make (struct
+module PropMap = Caml.Map.Make (struct
     type t = Prop.normal Prop.t
     let compare = Prop.compare_prop
   end)

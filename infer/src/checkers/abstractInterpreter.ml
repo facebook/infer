@@ -15,7 +15,7 @@ type 'a state = { pre: 'a; post: 'a; visit_count: int; }
 
 module type S = sig
   module TransferFunctions : TransferFunctions.S
-  module InvariantMap : Map.S with type key = TransferFunctions.CFG.id
+  module InvariantMap : Caml.Map.S with type key = TransferFunctions.CFG.id
   module Interprocedural
       (Summary : Summary.S with type summary = TransferFunctions.Domain.astate) :
   sig

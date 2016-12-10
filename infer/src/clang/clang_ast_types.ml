@@ -34,7 +34,7 @@ module TypePointerOrd = struct
   type t = t_ptr [@@deriving compare]
 end
 
-module TypePointerMap = Map.Make(TypePointerOrd)
+module TypePointerMap = Caml.Map.Make(TypePointerOrd)
 
 let rec type_ptr_to_string type_ptr = match type_ptr with
   | `TPtr raw -> "clang_ptr_" ^ (string_of_int raw)

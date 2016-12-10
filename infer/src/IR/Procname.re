@@ -12,6 +12,8 @@
  */
 open! IStd;
 
+let module Hashtbl = Caml.Hashtbl;
+
 
 /** Module for Procedure Names */
 let module L = Logging;
@@ -557,12 +559,12 @@ let module Hash = Hashtbl.Make {
   let hash = hash_pname;
 };
 
-let module Map = Map.Make {
+let module Map = Caml.Map.Make {
   type nonrec t = t;
   let compare = compare;
 };
 
-let module Set = Set.Make {
+let module Set = Caml.Set.Make {
   type nonrec t = t;
   let compare = compare;
 };

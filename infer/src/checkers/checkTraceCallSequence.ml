@@ -94,7 +94,7 @@ module Elem = struct
 end
 
 
-module ElemSet = Set.Make(Elem)
+module ElemSet = Caml.Set.Make(Elem)
 
 
 module State = struct

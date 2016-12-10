@@ -23,7 +23,7 @@ type curr_class =
 
 val equal_curr_class : curr_class -> curr_class -> bool
 
-type str_node_map = (string, Procdesc.Node.t) Hashtbl.t
+type str_node_map = (string, Procdesc.Node.t) Caml.Hashtbl.t
 
 type t =
   {

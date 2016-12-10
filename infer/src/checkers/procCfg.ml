@@ -228,12 +228,12 @@ module OneInstrPerNode (Base : S with type node = Procdesc.Node.t
       (instrs t)
 end
 
-module NodeIdMap (CFG : S) = Map.Make(struct
+module NodeIdMap (CFG : S) = Caml.Map.Make(struct
     type t = CFG.id
     let compare = CFG.compare_id
   end)
 
-module NodeIdSet (CFG : S) = Set.Make(struct
+module NodeIdSet (CFG : S) = Caml.Set.Make(struct
     type t = CFG.id
     let compare = CFG.compare_id
   end)

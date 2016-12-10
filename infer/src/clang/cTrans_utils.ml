@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+module Hashtbl = Caml.Hashtbl
 
 (** Utility methods to support the translation of clang ast constructs into sil instructions.  *)
 

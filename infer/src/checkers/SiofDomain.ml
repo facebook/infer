@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (* The domain for the analysis is sets of global variables if an initialization is needed at
    runtime, or Bottom if no initialization is needed. For instance, `int x = 32; int y = x * 52;`
    gives a summary of Bottom for both initializers corresponding to these globals, but `int x =

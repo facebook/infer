@@ -163,12 +163,12 @@ let instrs_normalize instrs =
     and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
 let mk_find_duplicate_nodes proc_desc : (Procdesc.Node.t -> Procdesc.NodeSet.t) =
   let module M = (* map from (loc,kind) *)
-    Map.Make(struct
+    Caml.Map.Make(struct
       type t = Location.t * Procdesc.Node.nodekind [@@deriving compare]
     end) in
 
   let module S = (* set of nodes with normalized insructions *)
-    Set.Make(struct
+    Caml.Set.Make(struct
       type t = Procdesc.Node.t * Sil.instr list
       let compare (n1, _) (n2, _) =
         Procdesc.Node.compare n1 n2

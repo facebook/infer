@@ -831,10 +831,10 @@ let abstract_gc tenv p =
   | None -> prop
   | Some iter -> Prop.prop_iter_to_prop tenv (Prop.prop_iter_gc_fields iter)
 
-module IdMap = Map.Make (Ident) (** maps from identifiers *)
+module IdMap = Caml.Map.Make (Ident) (** maps from identifiers *)
 
 module HpredSet =
-  Set.Make(struct
+  Caml.Set.Make(struct
     type t = Sil.hpred
     let compare = Sil.compare_hpred ~inst:false
   end)

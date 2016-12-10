@@ -58,7 +58,7 @@ let module SubtypesPair = {
   type t = (Typename.t, Typename.t) [@@deriving compare];
 };
 
-let module SubtypesMap = Map.Make SubtypesPair;
+let module SubtypesMap = Caml.Map.Make SubtypesPair;
 
 type subtMap = SubtypesMap.t bool;
 

@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (** combination of a trace with functions for handling unknown code and converting to and from
     summaries *)
 

@@ -61,7 +61,7 @@ module Jprop : sig
 end
 
 (** set of visited nodes: node id and list of lines of all the instructions *)
-module Visitedset : Set.S with type elt = Procdesc.Node.id * int list
+module Visitedset : Caml.Set.S with type elt = Procdesc.Node.id * int list
 
 (** convert a Visitedset to a string *)
 val visited_str : Visitedset.t -> string

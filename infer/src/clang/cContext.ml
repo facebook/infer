@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+module Hashtbl = Caml.Hashtbl
 
 (** Contains current class and current method to be translated as well as local variables, *)
 (** and the cg, cfg, and tenv corresponding to the current file. *)

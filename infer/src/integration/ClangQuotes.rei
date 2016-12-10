@@ -6,6 +6,8 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
+open! IStd;
+
 /* module for escaping clang arguments on the command line and put them into files */
 
 /** quoting style of the arguments */

@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 module F = Format
 
 (** Wrappers for making pretty-printable modules *)
@@ -26,27 +28,25 @@ module type MapOrderedType = sig
 end
 
 module type PPSet = sig
-  include Set.S
+  include Caml.Set.S
   val pp_element : F.formatter -> elt -> unit
   val pp : F.formatter -> t -> unit
 end
 
 module type PPMap = sig
-  include Map.S
+  include Caml.Map.S
   val pp_key : F.formatter -> key -> unit
   val pp : pp_value:(F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
 end
 
-module MakePPSet : functor (Ord : SetOrderedType) -> sig
-  include PPSet with type elt = Ord.t
-end
+module MakePPSet (Ord : SetOrderedType) : (PPSet with type elt = Ord.t)
 
 (** Use a comparison function to determine the order of the elements printed *)
-module MakePPCompareSet :
-  functor (Ord : sig include SetOrderedType val compare_pp : t -> t -> int end) -> sig
-    include PPSet with type elt = Ord.t
-  end
+module MakePPCompareSet
+    (Ord : sig
+       include SetOrderedType
+       val compare_pp : t -> t -> int
+     end)
+  : (PPSet with type elt = Ord.t)
 
-module MakePPMap : functor (Ord : MapOrderedType) -> sig
-  include PPMap with type key = Ord.t
-end
+module MakePPMap (Ord : MapOrderedType) : (PPMap with type key = Ord.t)

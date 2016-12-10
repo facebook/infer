@@ -12,6 +12,8 @@
  */
 open! IStd;
 
+let module Hashtbl = Caml.Hashtbl;
+
 
 /** The Smallfoot Intermediate Language: Types */
 let module L = Logging;
@@ -190,12 +192,12 @@ let d_list (tl: list t) => L.add_print_action (L.PTtyp_list, Obj.repr tl);
 
 
 /** {2 Sets and maps of types} */
-let module Set = Set.Make {
+let module Set = Caml.Set.Make {
   type nonrec t = t;
   let compare = compare;
 };
 
-let module Map = Map.Make {
+let module Map = Caml.Map.Make {
   type nonrec t = t;
   let compare = compare;
 };

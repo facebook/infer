@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (** Returns true if the passed-in list of decls contains an
     ObjCImplementationDecl of a descendant of CKComponent or
     CKComponentController.

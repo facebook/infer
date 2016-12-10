@@ -125,7 +125,6 @@ let touch_start_file () =
 
 
 let run_command ~prog ~args after_wait =
-  let open! Core.Std in
   let status = Unix.waitpid (Unix.fork_exec ~prog ~args:(prog :: args) ()) in
   after_wait status ;
   match status with
@@ -251,7 +250,6 @@ let execute_analyze () =
     run_parallel_analysis ()
 
 let report () =
-  let open! Core.Std in
   let report_csv = Some (Config.results_dir ^/ "report.csv") in
   let report_json = Some (Config.results_dir ^/ "report.json") in
   InferPrint.main ~report_csv ~report_json ;

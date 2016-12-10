@@ -61,15 +61,15 @@ let hash: t => int;
 
 
 /** Set of expressions. */
-let module Set: Set.S with type elt = t;
+let module Set: Caml.Set.S with type elt = t;
 
 
 /** Map with expression keys. */
-let module Map: Map.S with type key = t;
+let module Map: Caml.Map.S with type key = t;
 
 
 /** Hashtable with expression keys. */
-let module Hash: Hashtbl.S with type key = t;
+let module Hash: Caml.Hashtbl.S with type key = t;
 
 
 /** returns true is index is an array index of arr. */

@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+module Hashtbl = Caml.Hashtbl
 
 (** Printers for the analysis results *)
 

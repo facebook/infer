@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 type 'a parameter =
   { sink : 'a;
     (** sink type of the parameter *)

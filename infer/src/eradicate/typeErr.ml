@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+module Hashtbl = Caml.Hashtbl
 
 module L = Logging
 module P = Printf

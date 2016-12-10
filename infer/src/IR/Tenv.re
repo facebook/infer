@@ -8,6 +8,8 @@
  */
 open! IStd;
 
+let module Hashtbl = Caml.Hashtbl;
+
 
 /** Module for Type Environments. */
 

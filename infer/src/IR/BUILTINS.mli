@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (** List of all builtins that are interpreted specially by the backend *)
 module type S = sig
   type t

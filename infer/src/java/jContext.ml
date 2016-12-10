@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+module Hashtbl = Caml.Hashtbl
 
 open Javalib_pack
 open Sawja_pack

@@ -59,7 +59,7 @@ val directory_iter : (string -> unit) -> string -> unit
 (** Remove a directory and its contents *)
 val remove_directory_tree : string -> unit
 
-val read_optional_json_file : string -> (Yojson.Basic.json, string) result
+val read_optional_json_file : string -> (Yojson.Basic.json, string) Result.t
 
 val with_file : string -> f:(out_channel -> 'a) -> 'a
 

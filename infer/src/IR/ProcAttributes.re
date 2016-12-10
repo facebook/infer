@@ -8,6 +8,8 @@
  */
 open! IStd;
 
+let module Hashtbl = Caml.Hashtbl;
+
 
 /** Attributes of a procedure. */
 let module L = Logging;

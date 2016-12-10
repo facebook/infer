@@ -268,7 +268,7 @@ let equal_hpred: inst::bool? => hpred => hpred => bool;
 
 
 /** Sets of heap predicates */
-let module HpredSet: Set.S with type elt = hpred;
+let module HpredSet: Caml.Set.S with type elt = hpred;
 
 
 /** {2 Compaction} */

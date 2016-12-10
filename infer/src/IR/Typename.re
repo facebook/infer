@@ -40,7 +40,7 @@ let module Java = {
   let java_lang_cloneable = from_string "java.lang.Cloneable";
 };
 
-let module Set = Set.Make {
+let module Set = Caml.Set.Make {
   type nonrec t = t;
   let compare = compare;
 };

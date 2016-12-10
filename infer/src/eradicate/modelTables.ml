@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+module Hashtbl = Caml.Hashtbl
 
 (*
  * This file is a big bunch of tables; they read better with really long lines.

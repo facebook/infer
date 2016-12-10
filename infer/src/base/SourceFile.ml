@@ -10,7 +10,6 @@
 open! IStd
 
 let count_newlines (path: string): int =
-  let open! Core.Std in
   let f file = In_channel.fold_lines file ~init:0 ~f:(fun i _ -> i + 1) in
   In_channel.with_file path ~f
 
@@ -30,9 +29,9 @@ struct
   type t = _t [@@deriving compare]
 end
 
-module Map = Map.Make(OrderedSourceFile)
+module Map = Caml.Map.Make (OrderedSourceFile)
 
-module Set = Set.Make(OrderedSourceFile)
+module Set = Caml.Set.Make (OrderedSourceFile)
 
 let rel_path_from_abs_path root fname =
   let relative_complemented_fname = Utils.filename_to_relative root fname in

@@ -10,6 +10,7 @@
 open! IStd
 
 module F = Format
+module Hashtbl = Caml.Hashtbl
 
 (** initial process times *)
 let initial_times = Unix.times ()

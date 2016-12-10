@@ -12,6 +12,8 @@
  */
 open! IStd;
 
+let module Hashtbl = Caml.Hashtbl;
+
 
 /** The Smallfoot Intermediate Language: Expressions */
 let module L = Logging;
@@ -59,12 +61,12 @@ let equal e1 e2 => compare e1 e2 == 0;
 
 let hash = Hashtbl.hash;
 
-let module Set = Set.Make {
+let module Set = Caml.Set.Make {
   type nonrec t = t;
   let compare = compare;
 };
 
-let module Map = Map.Make {
+let module Map = Caml.Map.Make {
   type nonrec t = t;
   let compare = compare;
 };

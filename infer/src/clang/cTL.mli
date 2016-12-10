@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (* This module defines a language to define checkers. These checkers
    are intepreted over the AST of the program. A checker is defined by a
    CTL formula which express a condition saying when the checker should

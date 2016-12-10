@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 type context = {
   translation_unit_context : CFrontend_config.translation_unit_context;
   current_method : Clang_ast_t.decl option;

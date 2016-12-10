@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+module Hashtbl = Caml.Hashtbl
 
 (** Operators for the abstract domain. In particular, join and meet. *)
 
@@ -65,7 +66,7 @@ let do_side side f e1 e2 =
 
 (** {2 Sets for expression pairs} *)
 
-module EPset = Set.Make
+module EPset = Caml.Set.Make
     (struct
       type t = Exp.t * Exp.t [@@deriving compare]
     end)

@@ -12,7 +12,7 @@ open! IStd;
 /** Attributes of a procedure. */
 
 /** flags for a procedure */
-type proc_flags = Hashtbl.t string string [@@deriving compare];
+type proc_flags = Caml.Hashtbl.t string string [@@deriving compare];
 
 
 /** keys for proc_flags */

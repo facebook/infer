@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 type issue =
   | Assign_pointer_warning
   | Bad_pointer_comparison

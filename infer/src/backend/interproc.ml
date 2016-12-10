@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+module Hashtbl = Caml.Hashtbl
 
 (** Interprocedural Analysis *)
 
@@ -24,7 +25,7 @@ type visitednode =
 
 (** Set of nodes with number of visits *)
 module NodeVisitSet =
-  Set.Make(struct
+  Caml.Set.Make(struct
     type t = visitednode
     let compare_ids n1 n2 =
       (* higher id is better *)
@@ -708,7 +709,7 @@ let collect_analysis_result tenv wl pdesc : Paths.PathSet.t =
   let pathset = htable_retrieve wl.Worklist.path_set_visited exit_node_id in
   Paths.PathSet.map (remove_locals_formals_and_check tenv pdesc) pathset
 
-module Pmap = Map.Make
+module Pmap = Caml.Map.Make
     (struct
       type t = Prop.normal Prop.t
       let compare = Prop.compare_prop
@@ -1215,7 +1216,7 @@ let report_custom_errors tenv summary =
       Reporting.log_error pname exn in
   IList.iter report error_preconditions
 
-module SpecMap = Map.Make (struct
+module SpecMap = Caml.Map.Make (struct
     type t = Prop.normal Specs.Jprop.t
     let compare = Specs.Jprop.compare
   end)

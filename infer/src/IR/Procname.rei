@@ -59,15 +59,15 @@ type objc_cpp_method_kind =
 
 
 /** Hash tables with proc names as keys. */
-let module Hash: Hashtbl.S with type key = t;
+let module Hash: Caml.Hashtbl.S with type key = t;
 
 
 /** Maps from proc names. */
-let module Map: Map.S with type key = t;
+let module Map: Caml.Map.S with type key = t;
 
 
 /** Sets of proc names. */
-let module Set: Set.S with type elt = t;
+let module Set: Caml.Set.S with type elt = t;
 
 
 /** Create a C procedure name from plain and mangled name. */

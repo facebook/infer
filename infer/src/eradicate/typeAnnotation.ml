@@ -15,7 +15,7 @@ module P = Printf
 
 (** Module to represent annotations on types. *)
 
-module AnnotationsMap = Map.Make (
+module AnnotationsMap = Caml.Map.Make (
   struct
     open Annotations
     type t = annotation [@@deriving compare]

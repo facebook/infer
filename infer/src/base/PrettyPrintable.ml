@@ -7,31 +7,33 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 module F = Format
 
 (** Wrappers for making pretty-printable modules *)
 
 module type SetOrderedType = sig
-  include Set.OrderedType
+  include Caml.Set.OrderedType
 
   val pp_element : F.formatter -> t -> unit
 end
 
 module type MapOrderedType = sig
-  include Map.OrderedType
+  include Caml.Map.OrderedType
 
   val pp_key : F.formatter -> t -> unit
 end
 
 module type PPSet = sig
-  include Set.S
+  include Caml.Set.S
 
   val pp_element : F.formatter -> elt -> unit
   val pp : F.formatter -> t -> unit
 end
 
 module type PPMap = sig
-  include Map.S
+  include Caml.Map.S
 
   val pp_key : F.formatter -> key -> unit
   val pp : pp_value:(F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
@@ -44,7 +46,7 @@ let pp_collection ~pp_item fmt c =
   F.fprintf fmt "{ %a }" pp_collection c
 
 module MakePPSet (Ord : SetOrderedType) = struct
-  include Set.Make(Ord)
+  include Caml.Set.Make(Ord)
 
   let pp_element = Ord.pp_element
 
@@ -54,7 +56,7 @@ end
 
 module MakePPCompareSet
     (Ord : sig include SetOrderedType val compare_pp : t -> t -> int end) = struct
-  include Set.Make(Ord)
+  include Caml.Set.Make(Ord)
 
   let pp_element = Ord.pp_element
 
@@ -64,7 +66,7 @@ module MakePPCompareSet
 end
 
 module MakePPMap (Ord : MapOrderedType) = struct
-  include Map.Make(Ord)
+  include Caml.Map.Make(Ord)
 
   let pp_key = Ord.pp_key
 

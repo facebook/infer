@@ -12,6 +12,8 @@
  */
 open! IStd;
 
+let module Hashtbl = Caml.Hashtbl;
+
 
 /** Module for Names and Identifiers */
 let module L = Logging;
@@ -80,12 +82,12 @@ let equal i1 i2 => i1.stamp === i2.stamp && i1.kind === i2.kind && equal_name i1
 
 
 /** {2 Set for identifiers} */
-let module IdentSet = Set.Make {
+let module IdentSet = Caml.Set.Make {
   type nonrec t = t;
   let compare = compare;
 };
 
-let module IdentMap = Map.Make {
+let module IdentMap = Caml.Map.Make {
   type nonrec t = t;
   let compare = compare;
 };
@@ -96,11 +98,11 @@ let module IdentHash = Hashtbl.Make {
   let hash (id: t) => Hashtbl.hash id;
 };
 
-let module FieldSet = Set.Make {
+let module FieldSet = Caml.Set.Make {
   type t = fieldname [@@deriving compare];
 };
 
-let module FieldMap = Map.Make {
+let module FieldMap = Caml.Map.Make {
   type t = fieldname [@@deriving compare];
 };
 

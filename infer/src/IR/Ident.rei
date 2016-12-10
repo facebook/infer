@@ -48,23 +48,23 @@ let equal_kind: kind => kind => bool;
 
 
 /** Set for identifiers. */
-let module IdentSet: Set.S with type elt = t;
+let module IdentSet: Caml.Set.S with type elt = t;
 
 
 /** Hash table with ident as key. */
-let module IdentHash: Hashtbl.S with type key = t;
+let module IdentHash: Caml.Hashtbl.S with type key = t;
 
 
 /** Map with ident as key. */
-let module IdentMap: Map.S with type key = t;
+let module IdentMap: Caml.Map.S with type key = t;
 
 
 /** Set for fieldnames */
-let module FieldSet: Set.S with type elt = fieldname;
+let module FieldSet: Caml.Set.S with type elt = fieldname;
 
 
 /** Map for fieldnames */
-let module FieldMap: Map.S with type key = fieldname;
+let module FieldMap: Caml.Map.S with type key = fieldname;
 
 let module NameGenerator: {
   type t;
@@ -91,7 +91,7 @@ let kfootprint: kind;
 
 
 /** hash table with names as keys */
-let module NameHash: Hashtbl.S with type key = name;
+let module NameHash: Caml.Hashtbl.S with type key = name;
 
 
 /** Name used for primed tmp variables */

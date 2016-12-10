@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (** capture_files_in_database file runs the capture of the files for which
     we have compilation commands in the database. If the option changed-files-index
     is passed, we only capture the files there *)

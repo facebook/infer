@@ -170,7 +170,7 @@ let method_analysis callback =
 (* a results table is a Map where a key is an a procedure environment,
    i.e., something of type Idenv.t * Tenv.t * Procname.t * Procdesc.t
 *)
-module ResultsTableType = Map.Make (struct
+module ResultsTableType = Caml.Map.Make (struct
     type t = Idenv.t * Tenv.t * Procname.t * Procdesc.t
     let compare (_, _, pn1, _) (_,_,pn2,_) =  Procname.compare pn1 pn2
   end)

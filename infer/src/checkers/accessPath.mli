@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (** Module for naming heap locations via the path used to access them (e.g., x.f.g, y[a].b) *)
 
 type base = Var.t * Typ.t [@@deriving compare]

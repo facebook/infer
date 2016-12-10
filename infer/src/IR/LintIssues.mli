@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (** Module to store a set of issues per procedure *)
 
 val errLogMap : Errlog.t Procname.Map.t ref

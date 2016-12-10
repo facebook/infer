@@ -19,7 +19,7 @@ let checkers_repeated_calls_name = "CHECKERS_REPEATED_CALLS"
 module RepeatedCallsExtension : Eradicate.ExtensionT =
 struct
   module InstrSet =
-    Set.Make(struct
+    Caml.Set.Make(struct
       type t = Sil.instr
       let compare i1 i2 = match i1, i2 with
         | Sil.Call (_, e1, etl1, _, cf1), Sil.Call (_, e2, etl2, _, cf2) ->

@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+module Hashtbl = Caml.Hashtbl
 
 module L = Logging
 module F = Format
@@ -37,7 +38,7 @@ let compare_err_data
   Location.compare loc1 loc2
 
 module ErrDataSet = (* set err_data with no repeated loc *)
-  Set.Make(struct
+  Caml.Set.Make(struct
     type t = err_data
     let compare = compare_err_data
   end)
@@ -251,7 +252,7 @@ module Err_table = struct
     String.Map.iteri ~f:pp !err_name_map
 
   module LocMap =
-    Map.Make(struct
+    Caml.Map.Make(struct
       type t = ErrDataSet.elt
       let compare = compare_err_data
     end)

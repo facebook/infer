@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (** Module for parsing stack traces and using them to guide Infer analysis *)
 
 type frame = {

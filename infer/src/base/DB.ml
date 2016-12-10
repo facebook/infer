@@ -71,12 +71,12 @@ let file_exists path = Sys.file_exists path = `Yes
 
 let file_remove = Sys.remove
 
-module FilenameSet = Set.Make(
+module FilenameSet = Caml.Set.Make(
   struct
     type t = filename [@@deriving compare]
   end)
 
-module FilenameMap = Map.Make(
+module FilenameMap = Caml.Map.Make(
   struct
     type t = filename [@@deriving compare]
   end)

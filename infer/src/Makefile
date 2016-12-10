@@ -33,7 +33,7 @@ OCAMLBUILD_OPTIONS = \
   -cflags -principal \
   -cflags -strict-formats \
   -cflags -strict-sequence \
-  -cflags -w,$(OCAML_FATAL_WARNINGS)-4-9-32-40-41-42-45-48 \
+  -cflags -w,$(OCAML_FATAL_WARNINGS)-3-4-9-32-40-41-42-45-48 \
   -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*,checkers/stacktree_*}>: warn(-27-32-35-39)" \
   -tag-line "<*/{,*/}*.{ml,re}{,i}>: package(ppx_compare)" \
   -tag thread \

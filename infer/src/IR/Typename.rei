@@ -40,4 +40,4 @@ let module Java: {
   let java_lang_cloneable: t;
 };
 
-let module Set: Set.S with type elt = t;
+let module Set: Caml.Set.S with type elt = t;

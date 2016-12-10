@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (** Transfer functions that push abstract states across instructions. A typical client should
     implement the Make signature to allow the transfer functions to be used with any kind of CFG. *)
 

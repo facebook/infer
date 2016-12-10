@@ -64,7 +64,6 @@ let swap_command cmd =
     Config.wrappers_dir // clang
 
 let run_compilation_file compilation_database file =
-  let open! Core.Std in
   try
     let compilation_data = CompilationDatabase.find compilation_database file in
     let wrapper_cmd = swap_command compilation_data.command in

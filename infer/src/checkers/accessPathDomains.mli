@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (** Generic abstract domains backed by access paths *)
 
 (** add-only set of access paths. To make common operations efficient (namely, add, join, and

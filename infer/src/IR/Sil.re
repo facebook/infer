@@ -12,6 +12,8 @@
  */
 open! IStd;
 
+let module Hashtbl = Caml.Hashtbl;
+
 
 /** The Smallfoot Intermediate Language */
 let module L = Logging;
@@ -299,7 +301,7 @@ let elist_to_eset es => IList.fold_left (fun set e => Exp.Set.add e set) Exp.Set
 
 
 /** {2 Sets of heap predicates} */
-let module HpredSet = Set.Make {
+let module HpredSet = Caml.Set.Make {
   type t = hpred;
   let compare = compare_hpred inst::false;
 };

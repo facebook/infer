@@ -22,7 +22,7 @@ type jump_kind =
 
 (** Hastable for storing nodes that correspond to if-instructions. These are
     used when adding the edges in the contrl flow graph. *)
-module NodeTbl : Hashtbl.S with type key = Procdesc.Node.t
+module NodeTbl : Caml.Hashtbl.S with type key = Procdesc.Node.t
 
 
 (** data structure for saving the three structures tht contain the intermediate
@@ -41,7 +41,7 @@ type t = private
     impl : JBir.t;
     mutable var_map : (Pvar.t * Typ.t * Typ.t) JBir.VarMap.t;
     if_jumps : int NodeTbl.t;
-    goto_jumps : (int, jump_kind) Hashtbl.t;
+    goto_jumps : (int, jump_kind) Caml.Hashtbl.t;
     cn : JBasics.class_name;
     source_file : SourceFile.t;
     program : JClasspath.program;

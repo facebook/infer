@@ -121,19 +121,19 @@ let module Node: {
 
 
 /** Map with node id keys. */
-let module IdMap: Map.S with type key = Node.id;
+let module IdMap: Caml.Map.S with type key = Node.id;
 
 
 /** Hash table with nodes as keys. */
-let module NodeHash: Hashtbl.S with type key = Node.t;
+let module NodeHash: Caml.Hashtbl.S with type key = Node.t;
 
 
 /** Map over nodes. */
-let module NodeMap: Map.S with type key = Node.t;
+let module NodeMap: Caml.Map.S with type key = Node.t;
 
 
 /** Set of nodes. */
-let module NodeSet: Set.S with type elt = Node.t;
+let module NodeSet: Caml.Set.S with type elt = Node.t;
 
 
 /** procedure descriptions */

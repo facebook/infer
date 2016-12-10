@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 type t = Procname.t
 
 let builtin_decls = ref Procname.Set.empty

@@ -26,7 +26,6 @@ let print_error_and_exit ?(exit_code=1) fmt =
     terminate. The standard out and error are not redirected.  If the command fails to execute,
     print an error message and exit. *)
 let create_process_and_wait ~prog ~args =
-  let open! Core.Std in
   Unix.fork_exec ~prog ~args:(prog :: args) ()
   |> Unix.waitpid
   |> function
@@ -49,7 +48,7 @@ let start_current_jobs_count () = ref 0
 
 let waited_for_jobs = ref 0
 
-module PidMap = Map.Make (Pid)
+module PidMap = Caml.Map.Make (Pid)
 
 (** [wait_for_son pid_child f jobs_count] wait for pid_child
     and all the other children and update the current jobs count.
@@ -74,7 +73,6 @@ let pid_to_program jobsMap pid =
     env)] where [dir_opt] is an optional directory to chdir to before executing [command] with
     [args] in [env]. [prog_to_string] is used for printing information about the job's status. *)
 let run_jobs_in_parallel jobs_stack gen_prog prog_to_string =
-  let open! Core.Std in
   let run_job () =
     let jobs_map = ref PidMap.empty in
     let current_jobs_count = start_current_jobs_count () in
@@ -98,7 +96,6 @@ let run_jobs_in_parallel jobs_stack gen_prog prog_to_string =
   L.out "Waited for %d jobs" !waited_for_jobs
 
 let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
-  let open! Core.Std in
   let pipe_in, pipe_out = Unix.pipe () in
   match Unix.fork () with
   | `In_the_child ->

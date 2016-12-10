@@ -12,6 +12,8 @@
  */
 open! IStd;
 
+let module Hashtbl = Caml.Hashtbl;
+
 let module L = Logging;
 
 let module F = Format;
@@ -74,11 +76,11 @@ let module Node = {
   let compare_id = Int.compare;
   let get_succs node => node.succs;
   type node = t;
-  let module NodeSet = Set.Make {
+  let module NodeSet = Caml.Set.Make {
     type t = node;
     let compare = compare;
   };
-  let module IdMap = Map.Make {
+  let module IdMap = Caml.Map.Make {
     type t = id;
     let compare = compare_id;
   };
@@ -275,7 +277,7 @@ let module Node = {
 /* =============== END of module Node =============== */
 
 /** Map over nodes */
-let module NodeMap = Map.Make Node;
+let module NodeMap = Caml.Map.Make Node;
 
 
 /** Hash table with nodes as keys. */

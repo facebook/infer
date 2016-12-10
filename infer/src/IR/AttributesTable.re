@@ -8,6 +8,8 @@
  */
 open! IStd;
 
+let module Hashtbl = Caml.Hashtbl;
+
 let module F = Format;
 
 let module L = Logging;

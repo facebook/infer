@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (** Control-flow graph for a single procedure (as opposed to cfg.ml, which represents a cfg for a
     file). Defines useful wrappers that allows us to do tricks like turn a forward cfg to into a
     backward one, or view a cfg as having a single instruction per block *)
@@ -91,6 +93,6 @@ module OneInstrPerNode (Base : S with type node = DefaultNode.t and type id = De
      and type node = Base.node
      and type id = Base.id * index
 
-module NodeIdMap (CFG : S) : Map.S with type key = CFG.id
+module NodeIdMap (CFG : S) : Caml.Map.S with type key = CFG.id
 
-module NodeIdSet (CFG : S) : Set.S with type elt = CFG.id
+module NodeIdSet (CFG : S) : Caml.Set.S with type elt = CFG.id

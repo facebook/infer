@@ -110,13 +110,13 @@ let d_list: list t => unit;
 
 
 /** Sets of types. */
-let module Set: Set.S with type elt = t;
+let module Set: Caml.Set.S with type elt = t;
 
 
 /** Maps with type keys. */
-let module Map: Map.S with type key = t;
+let module Map: Caml.Map.S with type key = t;
 
-let module Tbl: Hashtbl.S with type key = t;
+let module Tbl: Caml.Hashtbl.S with type key = t;
 
 
 /** The name of a type */

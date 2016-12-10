@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 type 'a state = { pre: 'a; post: 'a; visit_count: int; }
 
 (** type of an intraprocedural abstract interpreter *)
