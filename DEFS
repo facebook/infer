@@ -1,0 +1,47 @@
+import os
+
+original_java_library = java_library
+def java_library(
+    name,
+    deps=[],
+    **kwargs
+    ):
+  compile_name = name + '_compile'
+  top_deps = []
+
+  if 'GENERATE_INFER_GENRULES' in os.environ:
+    export_srcs_name = name + '_export_srcs'
+    genrule(
+      name = export_srcs_name,
+      srcs = kwargs.get('srcs', []),
+      cmd = 'mkdir -p $OUT && cp -R $SRCDIR/* $OUT/',
+      out = 'src_copy',
+    )
+    infer_name = name + '_infer'
+    genrule(
+      name = infer_name,
+      cmd = ' '.join([
+        os.getenv('INFER_BIN', 'infer'),
+        '--results-dir', '$OUT',
+        '--classpath', '$(classpath :{})'.format(compile_name),
+        '--sourcepath', '$(location :{})'.format(export_srcs_name),
+        '--generated-classes', '$(location :{})'.format(compile_name),
+        '--', 'genrule'
+      ]),
+      out = 'infer_out',
+    )
+    top_deps += [':' + infer_name, ':' + export_srcs_name]
+
+  original_java_library(
+    name=name,
+    exported_deps=[
+      ':' + compile_name,
+    ],
+    deps=top_deps,
+    visibility = kwargs.get('visibility', [])
+  )
+  original_java_library(
+    name=compile_name,
+    deps=deps,
+    **kwargs
+  )

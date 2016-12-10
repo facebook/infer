@@ -2,11 +2,9 @@
 
 import os
 
-sources = glob(['**/*.java'])
-
 java_library(
     name = 'compile',
-    srcs = sources,
+    srcs = glob(['**/*.java']),
     deps = [
         '//dependencies/java/guava:guava',
         '//dependencies/java/jsr-305:jsr-305',
@@ -18,22 +16,4 @@ java_library(
      visibility = [
         'PUBLIC'
     ]
-)
-
-genrule(
-    name = 'run_infer',
-    srcs = sources,
-    out = 'infer-out',
-    bash = ' '.join([
-        os.getenv('INFER_BIN', 'infer'),
-        '--sourcepath',
-        '$SRCDIR',
-        '--classpath',
-        '$(classpath :compile)',
-        '--generated-classes',
-        '$(location :compile)',
-        '--out',
-        '$OUT',
-        '--',
-        'genrule']),
 )

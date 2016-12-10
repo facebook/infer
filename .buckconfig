@@ -1,3 +1,5 @@
+[buildfile]
+  includes = //DEFS
 
 [project]
   ignore = .git, .ml, .mli

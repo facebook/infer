@@ -24,7 +24,7 @@ $(JAR_OUTPUT): $(JAVA_SOURCE_FILES)
 
 .PHONY: genrule
 genrule: $(JAR_OUTPUT)
-	cd $(ROOT_DIR) && $(call silent_on_success, INFER_BIN=$(INFER_BIN) NO_BUCKD=1 buck build --no-cache //infer/tests/codetoanalyze/java/infer:run_infer)
+	cd $(ROOT_DIR) && $(call silent_on_success, INFER_BIN=$(INFER_BIN) NO_BUCKD=1 GENERATE_INFER_GENRULES=1 buck build --no-cache //infer/tests/build_systems/genrule/module2:module2_infer)
 
 infer-out/report.json: genrule $(INFER_BIN) $(JAVA_SOURCE_FILES)
 	cd $(ROOT_DIR) && $(call silent_on_success, INFER_BIN=$(INFER_BIN) NO_BUCKD=1 $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out  -- buck build --no-cache //infer/tests/codetoanalyze/java/infer:compile)
