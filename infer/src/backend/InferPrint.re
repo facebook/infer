@@ -1219,7 +1219,7 @@ let module AnalysisResults = {
     if (Config.anon_args == []) {
       load_specfiles ()
     } else {
-      Config.anon_args
+      List.rev Config.anon_args
     }
   };
 

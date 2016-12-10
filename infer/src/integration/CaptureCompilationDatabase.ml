@@ -93,7 +93,7 @@ let run_compilation_database compilation_database should_capture_file =
 
 (** Computes the compilation database files. *)
 let get_compilation_database_files_buck () =
-  let cmd = IList.rev_append Config.rest (IList.rev Config.buck_build_args) in
+  let cmd = List.rev_append Config.rest (IList.rev Config.buck_build_args) in
   match cmd with
   | buck :: build :: args ->
       (check_args_for_targets args;
@@ -123,7 +123,7 @@ let get_compilation_database_files_buck () =
 
 (** Compute the compilation database files. *)
 let get_compilation_database_files_xcodebuild () =
-  let prog_args = IList.rev Config.rest in
+  let prog_args = List.rev Config.rest in
   let temp_dir = Config.results_dir ^/ "clang" in
   Utils.create_dir temp_dir;
   let tmp_file = Filename.temp_file ~in_dir:temp_dir "cdb" ".json" in

@@ -479,11 +479,6 @@ let inferconfig_path =
 let anon_args =
   CLOpt.mk_anon ()
 
-and rest =
-  CLOpt.mk_rest
-    ~exes:CLOpt.[Toplevel]
-    "Stop argument processing, use remaining arguments as a build command"
-
 and abs_struct =
   CLOpt.mk_int ~deprecated:["absstruct"] ~long:"abs-struct" ~default:1
     ~meta:"int" "Specify abstraction level for fields of structs:\n\
@@ -1340,6 +1335,17 @@ and xml_specs =
   CLOpt.mk_bool ~deprecated:["xml"] ~long:"xml-specs"
     "Export specs into XML files file1.xml ... filen.xml"
 
+(* The "rest" args must appear after "--" on the command line, and hence after other args, so they
+   are allowed to refer to the other arg variables. *)
+let rest =
+  CLOpt.mk_subcommand
+    ~exes:CLOpt.[Toplevel]
+    "Stop argument processing, use remaining arguments as a build command"
+    (fun build_exe ->
+       match Filename.basename build_exe with
+       | _ -> []
+    )
+
 
 (** Parse Command Line Args *)
 
@@ -1428,7 +1434,7 @@ let print_usage_exit () =
 
 (** Freeze initialized configuration values *)
 
-let anon_args = IList.rev !anon_args
+let anon_args = !anon_args
 and rest = !rest
 and abs_struct = !abs_struct
 and abs_val_orig = !abs_val

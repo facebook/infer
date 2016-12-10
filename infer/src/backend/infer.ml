@@ -181,49 +181,50 @@ let capture build_cmd = function
       L.stdout "Capturing in %s mode...@." (string_of_build_mode build_mode);
       let in_buck_mode = build_mode = Buck in
       let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
-      run_command
-        ~prog:infer_py ~args:(
-        Config.anon_args @
-        ["--analyzer";
-         IList.assoc (=) Config.analyzer
-           (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)] @
-        (match Config.blacklist with
-         | Some s when in_buck_mode -> ["--blacklist-regex"; s]
-         | _ -> []) @
-        (if not Config.create_harness then [] else
-           ["--android-harness"]) @
-        (if not Config.buck then [] else
-           ["--buck"]) @
-        (match Config.java_jar_compiler with None -> [] | Some p ->
-            ["--java-jar-compiler"; p]) @
-        (match IList.rev Config.buck_build_args with
-         | args when in_buck_mode ->
-             IList.map (fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> IList.flatten
-         | _ -> []) @
-        (if not Config.debug_mode then [] else
-           ["--debug"]) @
-        (if not Config.debug_exceptions then [] else
-           ["--debug-exceptions"]) @
-        (if Config.filtering then [] else
-           ["--no-filtering"]) @
-        (if not Config.flavors || not in_buck_mode then [] else
-           ["--use-flavors"]) @
-        "-j" :: (string_of_int Config.jobs) ::
-        (match Config.load_average with None -> [] | Some l ->
-            ["-l"; string_of_float l]) @
-        (if not Config.pmd_xml then [] else
-           ["--pmd-xml"]) @
-        ["--project-root"; Config.project_root] @
-        (if not Config.reactive_mode then [] else
-           ["--reactive"]) @
-        "--out" :: Config.results_dir ::
-        (match Config.xcode_developer_dir with None -> [] | Some d ->
-            ["--xcode-developer-dir"; d]) @
-        ("--" :: build_cmd)
-      ) (fun status ->
-          if status = Result.Error (`Exit_non_zero Config.infer_py_argparse_error_exit_code) then
-            (* swallow infer.py argument parsing error *)
-            Config.print_usage_exit ()
+      let args =
+        List.rev_append Config.anon_args (
+          ["--analyzer";
+           IList.assoc (=) Config.analyzer
+             (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)] @
+          (match Config.blacklist with
+           | Some s when in_buck_mode -> ["--blacklist-regex"; s]
+           | _ -> []) @
+          (if not Config.create_harness then [] else
+             ["--android-harness"]) @
+          (if not Config.buck then [] else
+             ["--buck"]) @
+          (match Config.java_jar_compiler with None -> [] | Some p ->
+              ["--java-jar-compiler"; p]) @
+          (match IList.rev Config.buck_build_args with
+           | args when in_buck_mode ->
+               IList.map (fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> IList.flatten
+           | _ -> []) @
+          (if not Config.debug_mode then [] else
+             ["--debug"]) @
+          (if not Config.debug_exceptions then [] else
+             ["--debug-exceptions"]) @
+          (if Config.filtering then [] else
+             ["--no-filtering"]) @
+          (if not Config.flavors || not in_buck_mode then [] else
+             ["--use-flavors"]) @
+          "-j" :: (string_of_int Config.jobs) ::
+          (match Config.load_average with None -> [] | Some l ->
+              ["-l"; string_of_float l]) @
+          (if not Config.pmd_xml then [] else
+             ["--pmd-xml"]) @
+          ["--project-root"; Config.project_root] @
+          (if not Config.reactive_mode then [] else
+             ["--reactive"]) @
+          "--out" :: Config.results_dir ::
+          (match Config.xcode_developer_dir with None -> [] | Some d ->
+              ["--xcode-developer-dir"; d]) @
+          ("--" :: build_cmd)
+        ) in
+      run_command ~prog:infer_py ~args
+        (fun status ->
+           if status = Result.Error (`Exit_non_zero Config.infer_py_argparse_error_exit_code) then
+             (* swallow infer.py argument parsing error *)
+             Config.print_usage_exit ()
         )
 
 let run_parallel_analysis () =

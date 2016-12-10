@@ -224,8 +224,12 @@ let mk ?(deprecated=[]) ?(exes=[])
 
 (* arguments passed to Arg.parse_argv_dynamic, susceptible to be modified on the fly when parsing *)
 let args_to_parse : string array ref = ref (Array.of_list [])
+
 (* reference used by Arg.parse_argv_dynamic to track the index of the argument being parsed *)
 let arg_being_parsed : int ref = ref 0
+
+(* list of arg specifications currently being used by Arg.parse_argv_dynamic *)
+let curr_speclist : (Arg.key * Arg.spec * Arg.doc) list ref = ref []
 
 type 'a t =
   ?deprecated:string list -> long:Arg.key -> ?short:Arg.key ->
@@ -439,6 +443,21 @@ let mk_rest ?(exes=[]) doc =
   add exes {long = "--"; short = ""; meta = ""; doc; spec; decode_json = fun _ -> []} ;
   rest
 
+let accept_unknown_args = ref false
+
+let mk_subcommand ?(exes=[]) doc command_to_speclist =
+  let rest = ref [] in
+  let spec =
+    Arg.String (fun arg ->
+        rest := List.rev (Array.to_list (Array.slice !args_to_parse (!arg_being_parsed + 1) 0)) ;
+        accept_unknown_args := true ;
+        anon_fun := (fun _ -> ()) ;
+        curr_speclist := command_to_speclist arg
+      ) in
+  add exes {long = "--"; short = ""; meta = ""; doc; spec; decode_json = fun _ -> []} ;
+  rest
+
+
 let decode_inferconfig_to_argv current_exe path =
   let json = match Utils.read_optional_json_file path with
     | Ok json ->
@@ -501,8 +520,7 @@ let prefix_before_rest args =
 let args_env_var = "INFER_ARGS"
 
 let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe exe_usage =
-  let curr_speclist = ref []
-  and full_speclist = ref []
+  let full_speclist = ref []
   in
   let usage_msg = exe_usage current_exe
   in
@@ -619,16 +637,15 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
   args_to_parse := Array.of_list (exe_name :: all_args);
   arg_being_parsed := 0;
   (* tests if msg indicates an unknown option, as opposed to a known option with bad argument *)
-  let is_unknown msg =
-    let prefix = exe_name ^ ": unknown option" in
-    prefix = (String.sub msg ~pos:0 ~len:(String.length prefix)) in
+  let is_unknown msg = String.is_substring msg ~substring:": unknown option" in
+  accept_unknown_args := accept_unknown ;
   let rec parse_loop () =
     try
-      Arg.parse_argv_dynamic ~current:arg_being_parsed !args_to_parse curr_speclist !anon_fun
-        usage_msg
+      Arg.parse_argv_dynamic ~current:arg_being_parsed !args_to_parse curr_speclist
+        (fun arg -> !anon_fun arg) usage_msg
     with
     | Arg.Bad _ when incomplete -> parse_loop ()
-    | Arg.Bad msg when accept_unknown && is_unknown msg ->
+    | Arg.Bad msg when !accept_unknown_args && is_unknown msg ->
         !anon_fun !args_to_parse.(!arg_being_parsed);
         parse_loop ()
     | Arg.Bad usage_msg -> Pervasives.prerr_string usage_msg; exit 2

@@ -116,6 +116,17 @@ val mk_rest :
   ?exes:exe list -> string ->
   string list ref
 
+(** [mk_subcommand doc command_to_speclist] defines a [string list ref] of the command line
+    arguments following ["--"], in the reverse order they appeared on the command line.  For
+    example, calling [mk_subcommand] and parsing [exe -opt1 -opt2 -- arg1 arg2] will result in the
+    returned ref containing [arg2; arg1].  Additionally, the first arg following ["--"] is passed to
+    [command_to_speclist] to obtain a list of argument action specifications used when parsing the
+    remaining arguments. *)
+val mk_subcommand :
+  ?exes:exe list -> string ->
+  (string -> (Arg.key * Arg.spec * Arg.doc) list) ->
+  string list ref
+
 (** environment variable use to pass arguments from parent to child processes *)
 val args_env_var : string
 
