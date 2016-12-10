@@ -25,7 +25,9 @@ module Sys = struct
     with Unix.Unix_error _ -> `Unknown
 end
 
-include (Core.Std : module type of Core.Std with module Sys := Sys)
+include
+  (Core.Std : module type of Core.Std
+   with module Sys := Sys)
 
 let ( @ ) = Caml.List.append
 
@@ -34,7 +36,7 @@ let ( @ ) = Caml.List.append
 module IntSet = Caml.Set.Make(Int)
 
 
-(** Compare police: generic compare mostly disabled. *)
+(* Compare police: generic compare mostly disabled. *)
 let compare = No_polymorphic_compare.compare
 let equal = No_polymorphic_compare.equal
 
