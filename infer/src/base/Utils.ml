@@ -10,6 +10,7 @@
 
 (** General utility functions and definition with global scope *)
 
+module Bool = Core.Std.Bool
 module Int = Core.Std.Int
 module String = Core.Std.String
 

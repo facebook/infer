@@ -2159,7 +2159,7 @@ let compare_structural_instr instr1 instr2 exp_map => {
       if (n != 0) {
         n
       } else {
-        let n = Core.Std.Bool.compare true_branch1 true_branch2;
+        let n = Bool.compare true_branch1 true_branch2;
         if (n != 0) {
           n
         } else {

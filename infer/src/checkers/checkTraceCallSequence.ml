@@ -152,7 +152,7 @@ module State = struct
           let elem' = Elem.set_env elem env' in
           [elem']
       | Some b' ->
-          if Core.Std.Bool.equal b b' then [elem]
+          if Bool.equal b b' then [elem]
           else [] in
     map2 f s
 
