@@ -426,6 +426,13 @@ let mk_set_from_json ~default ~default_to_string ~f
     ~decode_json:(fun json -> [dashdash long; Yojson.Basic.to_string json])
     ~mk_spec:(fun set -> Arg.String set)
 
+let mk_json ?(deprecated=[]) ~long ?short ?exes ?(meta="json") doc =
+  mk ~deprecated ~long ?short ?exes ~meta doc
+    ~default:(`List []) ~default_to_string:Yojson.Basic.to_string
+    ~mk_setter:(fun var json -> var := Yojson.Basic.from_string json)
+    ~decode_json:(fun json -> [dashdash long; Yojson.Basic.to_string json])
+    ~mk_spec:(fun set -> Arg.String set)
+
 (** A ref to a function used during argument parsing to process anonymous arguments. By default,
     anonymous arguments are rejected. *)
 let anon_fun = ref (fun arg -> raise (Arg.Bad ("unexpected anonymous argument: " ^ arg)))

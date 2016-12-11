@@ -35,17 +35,6 @@ val ml_bucket_symbols :
 type os_type = Unix | Win32 | Cygwin
 
 
-type method_pattern = {
-  class_name : string;
-  method_name : string option;
-  parameters : (string list) option;
-}
-
-type pattern =
-  | Method_pattern of language * method_pattern
-  | Source_contains of language * string
-
-
 (** Constant configuration values *)
 
 val allow_missing_index_in_proc_call : bool
@@ -77,6 +66,7 @@ val global_tenv_filename : string
 val idempotent_getters : bool
 val incremental_procs : bool
 val infer_py_argparse_error_exit_code : int
+val inferconfig_file : string
 val initial_analysis_time : float
 val ivar_attributes : string
 val lib_dir : string
@@ -99,10 +89,9 @@ val multicore_dir_name : string
 val ncpu : int
 val nsnotification_center_checker_backend : bool
 val os_type : os_type
-val patterns_modeled_expensive : pattern list
-val patterns_never_returning_null : pattern list
-val patterns_skip_translation : pattern list
-val patterns_suppress_warnings : pattern list
+val patterns_modeled_expensive : string * Yojson.Basic.json
+val patterns_never_returning_null : string * Yojson.Basic.json
+val patterns_skip_translation : string * Yojson.Basic.json
 val perf_stats_prefix : string
 val proc_stats_filename : string
 val property_attributes : string
@@ -118,6 +107,7 @@ val sources : string list
 val sourcepath : string option
 val specs_dir_name : string
 val specs_files_suffix : string
+val suppress_warnings_annotations_long : string
 val start_filename : string
 val taint_analysis : bool
 val trace_absarray : bool
@@ -260,6 +250,7 @@ val stacktrace : string option
 val stacktraces_dir : string option
 val stats_mode : bool
 val subtype_multirange : bool
+val suppress_warnings_out : string option
 val svg : bool
 val symops_per_iteration : int
 val test : bool

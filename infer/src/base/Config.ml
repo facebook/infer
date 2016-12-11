@@ -52,17 +52,6 @@ let ml_bucket_symbols = [
 type os_type = Unix | Win32 | Cygwin
 
 
-type method_pattern = {
-  class_name : string;
-  method_name : string option;
-  parameters : (string list) option;
-}
-
-type pattern =
-  | Method_pattern of language * method_pattern
-  | Source_contains of language * string
-
-
 (** Constant configuration values *)
 
 (** If true, a precondition with e.g. index 3 in an array does not require the caller to
@@ -287,107 +276,6 @@ let os_type = match Sys.os_type with
   | "Cygwin" -> Cygwin
   | _ -> Unix
 
-
-(** Inferconfig parsing auxiliary functions *)
-
-let patterns_of_json_with_key json_key json =
-  let default_method_pattern = {
-    class_name = "";
-    method_name = None;
-    parameters = None
-  } in
-
-  let default_source_contains = "" in
-
-  let language_of_string = function
-    | "Java" ->
-        Ok Java
-    | l ->
-        Error ("Inferconfig JSON key " ^ json_key ^ " not supported for language " ^ l) in
-
-  let rec detect_language = function
-    | [] ->
-        Error ("No language found for " ^ json_key ^ " in " ^ inferconfig_file)
-    | ("language", `String s) :: _ ->
-        language_of_string s
-    | _:: tl ->
-        detect_language tl in
-
-  (* Detect the kind of pattern, method pattern or pattern based on the content of the source file.
-     Detecting the kind of patterns in a first step makes it easier to parse the parts of the
-     pattern in a second step *)
-  let detect_pattern assoc =
-    match detect_language assoc with
-    | Ok language ->
-        let is_method_pattern key = IList.exists (String.equal key) ["class"; "method"]
-        and is_source_contains key = IList.exists (String.equal key) ["source_contains"] in
-        let rec loop = function
-          | [] ->
-              Error ("Unknown pattern for " ^ json_key ^ " in " ^ inferconfig_file)
-          | (key, _) :: _ when is_method_pattern key ->
-              Ok (Method_pattern (language, default_method_pattern))
-          | (key, _) :: _ when is_source_contains key ->
-              Ok (Source_contains (language, default_source_contains))
-          | _:: tl -> loop tl in
-        loop assoc
-    | Error _ as error ->
-        error in
-
-  (* Translate a JSON entry into a matching pattern *)
-  let create_pattern (assoc : (string * Yojson.Basic.json) list) =
-    let collect_params l =
-      let collect accu = function
-        | `String s -> s:: accu
-        | _ -> failwith ("Unrecognised parameters in " ^ Yojson.Basic.to_string (`Assoc assoc)) in
-      IList.rev (IList.fold_left collect [] l) in
-    let create_method_pattern assoc =
-      let loop mp = function
-        | (key, `String s) when key = "class" ->
-            { mp with class_name = s }
-        | (key, `String s) when key = "method" ->
-            { mp with method_name = Some s }
-        | (key, `List l) when key = "parameters" ->
-            { mp with parameters = Some (collect_params l) }
-        | (key, _) when key = "language" -> mp
-        | _ -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc)) in
-      IList.fold_left loop default_method_pattern assoc
-    and create_string_contains assoc =
-      let loop sc = function
-        | (key, `String pattern) when key = "source_contains" -> pattern
-        | (key, _) when key = "language" -> sc
-        | _ -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc)) in
-      IList.fold_left loop default_source_contains assoc in
-    match detect_pattern assoc with
-    | Ok (Method_pattern (language, _)) ->
-        Ok (Method_pattern (language, create_method_pattern assoc))
-    | Ok (Source_contains (language, _)) ->
-        Ok (Source_contains (language, create_string_contains assoc))
-    | Error _ as error ->
-        error in
-
-  let warn_user msg =
-    F.eprintf "WARNING: in file %s: error parsing option %s@\n%s" inferconfig_file json_key msg in
-
-  (* Translate all the JSON entries into matching patterns *)
-  let rec translate accu = function
-    | `Assoc l -> (
-        match create_pattern l with
-        | Ok pattern ->
-            pattern :: accu
-        | Error msg ->
-            warn_user msg;
-            accu)
-    | `List l ->
-        IList.fold_left translate accu l
-    | json ->
-        warn_user (Printf.sprintf "expected list or assoc json type, but got value %s"
-                     (Yojson.Basic.to_string json));
-        accu in
-
-  translate [] json
-
-
-(** Command Line options *)
 
 (** The working directory of the initial invocation of infer, to which paths passed as command line
     options are relative. *)
@@ -1058,21 +946,27 @@ and out_file =
   CLOpt.mk_path ~deprecated:["out_file"] ~long:"out-file" ~default:""
     ~meta:"file" "Specify the file for the non-error logs of the analyzer"
 
-and (
-  patterns_modeled_expensive,
-  patterns_never_returning_null,
-  patterns_skip_translation) =
-  let mk_option ~deprecated ~long doc =
-    CLOpt.mk_set_from_json ~deprecated ~long ~default:[] ~default_to_string:(fun _ -> "[]")
-      ~exes:CLOpt.[Java]
-      ~f:(patterns_of_json_with_key long) doc in
-  ( mk_option ~deprecated:["modeled_expensive"] ~long:"modeled-expensive"
-      "Matcher or list of matchers for methods that should be considered expensive by the \
-       performance critical checker.",
-    mk_option ~deprecated:["never_returning_null"] ~long:"never-returning-null"
-      "Matcher or list of matchers for functions that never return `null`.",
-    mk_option ~deprecated:["skip_translation"] ~long:"skip-translation"
-      "Matcher or list of matchers for names of files that should not be analyzed at all.")
+and patterns_modeled_expensive =
+  let long = "modeled-expensive" in
+  (long,
+   CLOpt.mk_json ~deprecated:["modeled_expensive"] ~long
+     ~exes:CLOpt.[Java]
+     "Matcher or list of matchers for methods that should be considered expensive by the \
+      performance critical checker.")
+
+and patterns_never_returning_null =
+  let long = "never-returning-null" in
+  (long,
+   CLOpt.mk_json ~deprecated:["never_returning_null"] ~long
+     ~exes:CLOpt.[Java]
+     "Matcher or list of matchers for functions that never return `null`.")
+
+and patterns_skip_translation =
+  let long = "skip-translation" in
+  (long,
+   CLOpt.mk_json ~deprecated:["skip_translation"] ~long
+     ~exes:CLOpt.[Java]
+     "Matcher or list of matchers for names of files that should not be analyzed at all.")
 
 and pmd_xml =
   CLOpt.mk_bool ~long:"pmd-xml"
@@ -1534,9 +1428,9 @@ and objc_memory_model_on = !objc_memory_model
 and only_footprint = !only_footprint
 and optimistic_cast = !optimistic_cast
 and out_file_cmdline = !out_file
-and patterns_never_returning_null = !patterns_never_returning_null
-and patterns_skip_translation = !patterns_skip_translation
-and patterns_modeled_expensive = !patterns_modeled_expensive
+and patterns_never_returning_null = match patterns_never_returning_null with (k,r) -> (k,!r)
+and patterns_skip_translation = match patterns_skip_translation with (k,r) -> (k,!r)
+and patterns_modeled_expensive = match patterns_modeled_expensive with (k,r) -> (k,!r)
 and pmd_xml = !pmd_xml
 and precondition_stats = !precondition_stats
 and print_builtins = !print_builtins
@@ -1569,6 +1463,7 @@ and stacktrace = !stacktrace
 and stacktraces_dir = !stacktraces_dir
 and stats_mode = !stats
 and subtype_multirange = !subtype_multirange
+and suppress_warnings_out = !suppress_warnings_out
 and svg = !svg
 and symops_per_iteration = !symops_per_iteration
 and test = !test
@@ -1623,28 +1518,6 @@ let clang_frontend_action_string =
      @ (if clang_frontend_do_lint then ["linting"] else []))
 
 let dynamic_dispatch = if analyzer = Tracing then `Lazy else !dynamic_dispatch
-
-let patterns_suppress_warnings =
-  let error msg =
-    F.eprintf "There was an issue reading the option %s.@\n"
-      suppress_warnings_annotations_long ;
-    F.eprintf "If you did not call %s directly, this is likely a bug in Infer.@\n"
-      (Filename.basename Sys.executable_name) ;
-    F.eprintf "%s@." msg ;
-    [] in
-  match !suppress_warnings_out with
-  | Some path -> (
-      match Utils.read_optional_json_file path with
-      | Ok json -> (
-          let json_key = "suppress_warnings" in
-          match Yojson.Basic.Util.member json_key json with
-          | `Null -> []
-          | json -> patterns_of_json_with_key json_key json)
-      | Error msg -> error ("Could not read or parse the supplied " ^ path ^ ":\n" ^ msg))
-  | None when CLOpt.(current_exe <> Java) -> []
-  | None when Option.is_some generated_classes -> []
-  | None ->
-      error ("Error: The option " ^ suppress_warnings_annotations_long ^ " was not provided")
 
 let specs_library =
   match infer_cache with
