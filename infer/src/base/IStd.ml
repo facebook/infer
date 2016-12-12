@@ -7,27 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-module Sys = struct
-  include Core.Std.Sys
-
-  (* Core_sys does not catch Unix_error ENAMETOOLONG, see
-     https://github.com/janestreet/core/issues/76 *)
-  let file_exists ?follow_symlinks path =
-    try file_exists ?follow_symlinks path
-    with Unix.Unix_error _ -> `Unknown
-
-  let is_directory ?follow_symlinks path =
-    try is_directory ?follow_symlinks path
-    with Unix.Unix_error _ -> `Unknown
-
-  let is_file ?follow_symlinks path =
-    try is_file ?follow_symlinks path
-    with Unix.Unix_error _ -> `Unknown
-end
-
-include
-  (Core.Std : module type of Core.Std
-   with module Sys := Sys)
+include Core.Std
 
 let ( @ ) = Caml.List.append
 
