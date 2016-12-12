@@ -30,7 +30,13 @@ let parse_ctl_file filename =
       let inx = open_in fn in
       let lexbuf = Lexing.from_channel inx in
       lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = fn };
-      let _ = parse_with_error lexbuf in
+      (match parse_with_error lexbuf with
+       | Some parsed_checkers ->
+           Logging.out "#### Start Expanding checkers #####\n";
+           let checkers = CFrontend_errors.expand_checkers parsed_checkers in
+           Logging.out "#### Checkers Expanded #####\n";
+           IList.iter Ctl_parser_types.print_checker checkers
+       | None -> Logging.out "No linters found.\n");
       In_channel.close inx
   | None ->
       Logging.out "No linters file specified. Nothing to parse.\n"

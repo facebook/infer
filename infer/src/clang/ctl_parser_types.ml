@@ -37,3 +37,20 @@ type ctl_checker = {
   name : string; (* Checker's name *)
   definitions : clause list (* A list of let/set definitions *)
 }
+
+let infer_prefix = "__infer_ctl_"
+let formula_id_const = infer_prefix ^ "formula_id__"
+let report_when_const = "report_when"
+
+let print_checker c =
+  Logging.out "\n-------------------- \n";
+  Logging.out "\nChecker name: %s\n" c.name;
+  IList.iter (fun d -> (match d with
+      | CSet (clause_name, phi)
+      | CLet (clause_name, phi) ->
+          Logging.out "    %s=  \n    %a\n\n"
+            clause_name CTL.Debug.pp_formula phi
+      | CDesc (clause_name, s) ->
+          Logging.out "    %s=  \n    %s\n\n" clause_name s)
+    ) c.definitions;
+  Logging.out "\n-------------------- \n"

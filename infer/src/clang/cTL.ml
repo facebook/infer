@@ -97,7 +97,10 @@ module Debug = struct
     | EH (arglist, phi) -> Format.fprintf fmt "EH[%a](%a)"
                              (Pp.comma_seq Format.pp_print_string) arglist
                              pp_formula phi
-    | ET (arglist, trans, phi)
+    | ET (arglist, trans, phi) ->   Format.fprintf fmt "ET[%a][%a](%a)"
+                                      (Pp.comma_seq Format.pp_print_string) arglist
+                                      pp_transition trans
+                                      pp_formula phi
     | ETX (arglist, trans, phi)  -> Format.fprintf fmt "ETX[%a][%a](%a)"
                                       (Pp.comma_seq Format.pp_print_string) arglist
                                       pp_transition trans

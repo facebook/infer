@@ -21,3 +21,5 @@ val run_frontend_checkers_on_an :
     why special-casing is necessary here. *)
 val run_translation_unit_checker :
   CLintersContext.context -> Clang_ast_t.decl -> unit
+
+val expand_checkers : Ctl_parser_types.ctl_checker list -> Ctl_parser_types.ctl_checker list

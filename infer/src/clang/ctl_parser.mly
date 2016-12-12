@@ -62,21 +62,13 @@ checkers_list:
   ;
 
 checker:
- DEFINE_CHECKER IDENTIFIER ASSIGNMENT LEFT_BRACE clause_list RIGHT_BRACE
-  { let name = $2 in
-    let definitions = $5 in
-    Logging.out "\nParsed checker definition: %s\n" name;
-    IList.iter (fun d -> (match d with
-      | Ctl_parser_types.CSet (clause_name, phi)
-      | Ctl_parser_types.CLet (clause_name, phi) ->
-        Logging.out "    %s=  \n    %a\n\n"
-          clause_name CTL.Debug.pp_formula phi
-      | Ctl_parser_types.CDesc (clause_name, s) ->
-        Logging.out "    %s=  \n    %s\n\n" clause_name s)
-        ) definitions;
-    Logging.out "\n-------------------- \n";
-    { name = name; definitions = definitions }
-    }
+ DEFINE_CHECKER identifier ASSIGNMENT LEFT_BRACE clause_list RIGHT_BRACE
+  {
+    Logging.out "\nParsed checker definition";
+    let c = { name = $2; definitions = $5 } in
+    print_checker c;
+    c
+  }
 ;
 
 clause_list:
@@ -85,33 +77,34 @@ clause_list:
 ;
 
 clause:
-  | SET IDENTIFIER ASSIGNMENT formula
+  | SET identifier ASSIGNMENT formula
     { Logging.out "\tParsed set clause\n"; CSet ($2, $4) }
-  | SET IDENTIFIER ASSIGNMENT STRING
+  | SET identifier ASSIGNMENT STRING
     { Logging.out "\tParsed desc clause\n"; CDesc ($2, $4) }
-  | LET IDENTIFIER ASSIGNMENT formula
+  | LET identifier ASSIGNMENT formula
     { Logging.out "\tParsed let clause\n"; CLet ($2, $4) }
 ;
 
 atomic_formula:
   | TRUE { Logging.out "\tParsed True\n"; CTL.True }
   | FALSE { Logging.out "\tParsed False\n"; CTL.False }
-  | IDENTIFIER LEFT_PAREN params RIGHT_PAREN
+  | identifier LEFT_PAREN params RIGHT_PAREN
     { Logging.out "\tParsed predicate\n"; CTL.Atomic($1, $3) }
   ;
 
  formula_id:
-  | IDENTIFIER { Logging.out "\tParsed formula identifier '%s' \n" $1; CTL.Atomic($1, []) }
+  | identifier { Logging.out "\tParsed formula identifier '%s' \n" $1;
+                 CTL.Atomic($1, [formula_id_const]) }
   ;
 
 params:
   | {[]}
-  | IDENTIFIER { [$1] }
-  | IDENTIFIER COMMA params { $1 :: $3 }
+  | identifier { [$1] }
+  | identifier COMMA params { $1 :: $3 }
   ;
 
 transition_label:
-  | IDENTIFIER { match $1 with
+  | identifier { match $1 with
                   | "Body" | "body" -> Some CTL.Body
                   | "InitExpr" | "initexpr" -> Some CTL.InitExpr
                   | "Cond" | "cond" -> Some CTL.Cond
@@ -146,5 +139,14 @@ formula:
   | formula IMPLIES formula { Logging.out "\tParsed IMPLIES\n"; CTL.Implies ($1, $3) }
   | NOT formula { Logging.out "\tParsed NOT\n"; CTL.Not ($2) }
 ;
+
+identifier:
+ | IDENTIFIER { if Str.string_match (Str.regexp_string Ctl_parser_types.infer_prefix) $1 0 then (
+                      Logging.err
+                      "ERROR: %s contains __infer_ctl_ that is a reserved keyword which cannot be used in identifiers." $1;
+                      assert false)
+                else $1
+              }
+              ;
 
 %%

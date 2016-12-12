@@ -169,7 +169,7 @@ DEFINE-CHECKER global_var_init_with_calls_warning = {
 
   SET report_when =
 	   WHEN
-     		(ctl_is_global_var AND ctl_is_initialized_with_expensive_call)
+     		(is_global_var AND is_initialized_with_expensive_call)
 		 HOLDS-IN-NODE VarDecl;
 
   SET description =

@@ -33,7 +33,53 @@ let stmt_checkers_list =  [CFrontend_checkers.ctl_direct_atomic_property_access_
 let translation_unit_checkers_list = [ComponentKit.component_file_line_count_info;]
 
 
-
+(* expands use of let defined formula id in checkers with their definition *)
+let expand_checkers checkers =
+  let open CTL in
+  let open Ctl_parser_types in
+  let rec expand acc map =
+    match acc with
+    | True
+    | False -> acc
+    | Atomic (name, [p]) when formula_id_const = p ->
+        Logging.out "  -Expanding formula identifier '%s'\n" name;
+        (match Core.Std.String.Map.find map name with
+         | Some f1 -> expand f1 map
+         | None ->
+             Logging.out "[ERROR]: Formula identifier '%s' is undefined. Cannot expand." name;
+             assert false);
+    | Atomic _ -> acc
+    | Not f1 -> Not (expand f1 map)
+    | And (f1, f2) -> And (expand f1 map, expand f2 map)
+    | Or (f1, f2) -> Or (expand f1 map, expand f2 map)
+    | Implies (f1, f2) -> Implies (expand f1 map, expand f2 map)
+    | InNode (node_type_list, f1) -> InNode (node_type_list, expand f1 map)
+    | AU (f1, f2) -> AU (expand f1 map, expand f2 map)
+    | EU (trans, f1, f2) -> EU (trans, expand f1 map, expand f2 map)
+    | EF (trans, f1) -> EF (trans, expand f1 map)
+    | AF f1 -> AF (expand f1 map)
+    | AG f1 -> AG (expand f1 map)
+    | EX (trans, f1) -> EX (trans, expand f1 map)
+    | AX f1 -> AX (expand f1 map)
+    | EH (cl, f1) -> EH (cl, expand f1 map)
+    | EG (trans, f1) -> EG (trans, expand f1 map)
+    | ET (tl, sw, f1) -> ET (tl, sw, expand f1 map)
+    | ETX (tl, sw, f1) -> ETX (tl, sw, expand f1 map) in
+  let expand_one_checker c =
+    Logging.out " +Start expanding %s\n" c.name;
+    let map : CTL.t Core.Std.String.Map.t = Core.Std.String.Map.empty in
+    let map = IList.fold_left (fun map' d -> match d with
+        | CLet (k,formula) -> Core.Std.Map.add map' ~key:k ~data:formula
+        | _ -> map') map c.Ctl_parser_types.definitions in
+    let exp_defs = IList.fold_left (fun defs clause ->
+        match clause with
+        | CSet (report_when_const, phi) ->
+            Logging.out "  -Expanding report_when\n";
+            CSet (report_when_const, expand phi map) :: defs
+        | cl -> cl :: defs) [] c.definitions in
+    { c with definitions = exp_defs} in
+  let expanded_checkers = IList.map expand_one_checker checkers in
+  expanded_checkers
 
 
 
