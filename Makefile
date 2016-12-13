@@ -228,6 +228,7 @@ quick-test: test_this_build ocaml_unit_test
 
 .PHONY: test-replace
 test-replace:
+	@$(MAKE) -k run-test
 	@for file in $$(find $(INFER_DIR)/tests -name "*.exp.test"); do \
 	    mv -f $$file $$(dirname $$file)/$$(basename -s .exp.test $$file).exp; done
 	@for file in $$(find $(INFER_DIR)/tests -name "*.test.dot"); do \
