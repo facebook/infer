@@ -157,17 +157,15 @@ let capture build_cmd = function
       L.stdout "Capturing using Buck's compilation database...@\n";
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck () in
       capture_with_compilation_database json_cdb
-  | ClangCompilationDatabase -> (
+  | ClangCompilationDatabase ->
       L.stdout "Capturing using a compilation database file...@\n";
-      match Config.rest with
-      | arg :: _ ->
-          capture_with_compilation_database [arg]
-      | _ ->
-          failwith
-            "Error parsing arguments. Please, pass the compilation database json file as in \
-             infer -- clang-compilation-database file.json." ;
-          Config.print_usage_exit ()
-    )
+      let cmd_args = List.tl build_cmd |> Option.value ~default:[] in
+      if List.is_empty cmd_args then (
+        failwith
+          "Error parsing arguments. Please, pass the compilation database json file as in \
+           infer -- clang-compilation-database file.json." ;
+        Config.print_usage_exit ());
+      capture_with_compilation_database cmd_args
   | Genrule ->
       L.stdout "Capturing for Buck genrule compatibility...@\n";
       let infer_java = Config.bin_dir ^/ "InferJava" in
