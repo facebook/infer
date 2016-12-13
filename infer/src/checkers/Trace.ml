@@ -90,7 +90,7 @@ end
     the "original" trace element. The list is always non-empty. *)
 module Expander (TraceElem : TraceElem.S) = struct
 
-  let expand elem0 ~elems_passthroughs_of_pname =
+  let expand elem0 ~elems_passthroughs_of_pname ~filter_passthroughs =
     let rec expand_ elem (elems_passthroughs_acc, seen_acc) =
       let elem_site = TraceElem.call_site elem in
       let elem_kind = TraceElem.kind elem in
@@ -105,11 +105,13 @@ module Expander (TraceElem : TraceElem.S) = struct
              TraceElem.Kind.compare (TraceElem.kind callee_elem) elem_kind = 0 &&
              not (is_recursive callee_elem seen_acc'))
           elems in
+      (* arbitrarily pick one elem and explore it further *)
       match matching_elems with
       | callee_elem :: _ ->
           (* TODO: pick the shortest path to a sink here instead (t14242809) *)
-          (* arbitrarily pick one elem and explore it further *)
-          expand_ callee_elem ((elem, passthroughs) :: elems_passthroughs_acc, seen_acc')
+          let filtered_passthroughs =
+            filter_passthroughs elem_site (TraceElem.call_site callee_elem) passthroughs in
+          expand_ callee_elem ((elem, filtered_passthroughs) :: elems_passthroughs_acc, seen_acc')
       | _ ->
           (elem, Passthrough.Set.empty) :: elems_passthroughs_acc, seen_acc' in
     fst (expand_ elem0 ([], CallSite.Set.empty))
@@ -215,7 +217,26 @@ module Make (Spec : Spec) = struct
       pp_passthroughs cur_passthroughs
       pp_sinks (IList.rev sinks_passthroughs)
 
+  type passthrough_kind =
+    | Source (* passthroughs of a source *)
+    | Sink (* passthroughs of a sink *)
+    | Top_level (* passthroughs of a top-level source->sink path *)
+
   let get_reportable_paths ?cur_site t ~trace_of_pname =
+
+    let filter_passthroughs_ passthrough_kind start_site end_site passthroughs =
+      let line_number call_site =
+        (CallSite.loc call_site).Location.line in
+      let start_line = line_number start_site in
+      let end_line = line_number end_site in
+      let between_start_and_end passthrough =
+        let passthrough_line = line_number (Passthrough.site passthrough) in
+        match passthrough_kind with
+        | Source -> passthrough_line <= start_line
+        | Sink -> passthrough_line <= end_line
+        | Top_level -> passthrough_line >= start_line && passthrough_line <= end_line in
+      Passthrough.Set.filter between_start_and_end passthroughs in
+
     let expand_path source sink =
       let sources_of_pname pname =
         let trace = trace_of_pname pname in
@@ -224,15 +245,22 @@ module Make (Spec : Spec) = struct
         let trace = trace_of_pname pname in
         Sinks.elements (sinks trace), passthroughs trace in
       let sources_passthroughs =
-        SourceExpander.expand source ~elems_passthroughs_of_pname:sources_of_pname in
+        let filter_passthroughs = filter_passthroughs_ Source in
+        SourceExpander.expand
+          source ~elems_passthroughs_of_pname:sources_of_pname ~filter_passthroughs in
       let sinks_passthroughs =
-        SinkExpander.expand sink ~elems_passthroughs_of_pname:sinks_of_pname in
+        let filter_passthroughs = filter_passthroughs_ Sink in
+        SinkExpander.expand
+          sink ~elems_passthroughs_of_pname:sinks_of_pname ~filter_passthroughs in
       sources_passthroughs, sinks_passthroughs in
 
     IList.map
       (fun (source, sink, passthroughs) ->
          let sources_passthroughs, sinks_passthroughs = expand_path source sink in
-         passthroughs, sources_passthroughs, sinks_passthroughs)
+         let filtered_passthroughs =
+           filter_passthroughs_
+             Top_level (Source.call_site source) (Sink.call_site sink) passthroughs in
+         filtered_passthroughs, sources_passthroughs, sinks_passthroughs)
       (get_reports ?cur_site t)
 
   let to_loc_trace

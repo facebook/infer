@@ -239,6 +239,59 @@ class Interprocedural {
     InferTaint.inferSensitiveSink(o.f);
   }
 
+  static Object relevantPassthrough(Object param) {
+    return param;
+  }
+
+  static Object irrelevantPassthrough(Object param) {
+    return param;
+  }
+
+  // the following tests should show only "relevantPassthrough" in their traces
+  public static Object irrelevantPassthroughsIntraprocedural(Object param) {
+    Object irrelevant = irrelevantPassthrough(param);
+    Object source = InferTaint.inferSecretSource();
+    Object relevant = relevantPassthrough(source);
+    InferTaint.inferSensitiveSink(relevant);
+    return irrelevantPassthrough(relevant);
+  }
+
+  public static Object returnSourceIrrelevantPassthrough(Object param) {
+    Object irrelevant = irrelevantPassthrough(param);
+    Object source = InferTaint.inferSecretSource();
+    return relevantPassthrough(source);
+  }
+
+  public static Object irrelevantPassthroughsSourceInterprocedural(Object o) {
+    Object irrelevant = irrelevantPassthrough(o);
+    Object source = returnSourceIrrelevantPassthrough(irrelevant);
+    Object relevant = relevantPassthrough(source);
+    InferTaint.inferSensitiveSink(relevant);
+    return irrelevantPassthrough(source);
+  }
+
+  public static Object callSinkIrrelevantPassthrough(Object param) {
+    Object relevant = relevantPassthrough(param);
+    InferTaint.inferSensitiveSink(relevant);
+    Object irrelevant = irrelevantPassthrough(param);
+    return irrelevant;
+  }
+
+  public static Object irrelevantPassthroughsSinkInterprocedural(Object o) {
+    Object source = InferTaint.inferSecretSource();
+    Object relevant = relevantPassthrough(source);
+    callSinkIrrelevantPassthrough(relevant);
+    return irrelevantPassthrough(relevant);
+  }
+
+  public static Object irrelevantPassthroughsSourceAndSinkInterprocedural(Object o) {
+    Object irrelevant = irrelevantPassthrough(o);
+    Object source = returnSourceIrrelevantPassthrough(irrelevant);
+    Object relevant = relevantPassthrough(source);
+    callSinkIrrelevantPassthrough(relevant);
+    return irrelevantPassthrough(relevant);
+  }
+
   /** false negatives: an ideal analysis would report on these, but we do not */
 
   // this gets modeled as Object[] params in Java. need to treat the array is tainted if its
