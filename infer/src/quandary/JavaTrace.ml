@@ -59,7 +59,7 @@ module JavaSource = struct
     | Procname.Java pname ->
         begin
           match Procname.java_get_class_name pname, Procname.java_get_method pname with
-          | "android.content.Intent", ("parseUri" | "parseIntent") ->
+          | "android.content.Intent", ("getStringExtra" | "parseUri" | "parseIntent") ->
               Some (make Intent site)
           | "android.content.SharedPreferences", "getString" ->
               Some (make PrivateData site)
@@ -162,6 +162,23 @@ module JavaSink = struct
               taint_nth 0 Intent site ~report_reachable:true
           | "android.app.Activity", ("startActivityFromChild" | "startActivityFromFragment") ->
               taint_nth 1 Intent site ~report_reachable:true
+          | "android.content.Intent",
+            ("fillIn" |
+             "makeMainSelectorActivity" |
+             "parseIntent" |
+             "parseUri" |
+             "replaceExtras" |
+             "setAction" |
+             "setClassName" |
+             "setData" |
+             "setDataAndNormalize" |
+             "setDataAndType" |
+             "setDataAndTypeAndNormalize" |
+             "setPackage" |
+             "setSelector" |
+             "setType" |
+             "setTypeAndNormalize") ->
+              taint_all Intent site ~report_reachable:true
           | "android.util.Log", ("e" | "println" | "w" | "wtf") ->
               taint_all Logging site ~report_reachable:true
           | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink" ->
