@@ -9,7 +9,13 @@
 
 #import "NSArray.h"
 
-@implementation NSArray
+void __infer_assume(bool cond);
+
+@implementation NSArray {
+
+ @private
+  id elementData[10];
+}
 
 - (NSArray*)arrayByAddingObject:(id)anObject {
   id a = ((NSObject*)anObject)->isa;
@@ -23,6 +29,20 @@
 + (instancetype)arrayWithObject:(char*)anObject {
   id a = ((NSObject*)anObject)->isa;
   return [NSArray alloc];
+}
+
+- (id)objectAtIndexedSubscript:(NSUInteger)idx {
+  id obj = elementData[idx];
+  __infer_assume(obj != nil);
+  return obj;
+}
+
+- (int)count {
+  if (self == nil) {
+    return 0;
+  } else {
+    sizeof(elementData);
+  }
 }
 
 @end

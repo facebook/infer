@@ -88,7 +88,9 @@ let add_missing_fields tenv class_name ck missing_fields =
       Logging.out_debug " Updating info for class '%s' in tenv\n" class_name
   | _ -> ()
 
-let modelled_fields_in_classes = [("NSData", "_bytes", Typ.Tptr (Typ.Tvoid, Typ.Pk_pointer))]
+let modelled_fields_in_classes =
+  [("NSData", "_bytes", Typ.Tptr (Typ.Tvoid, Typ.Pk_pointer));
+   ("NSArray", "elementData", Typ.Tint Typ.IInt)]
 
 let modelled_field class_name_info =
   let modelled_field_in_class res (class_name, field_name, typ) =
