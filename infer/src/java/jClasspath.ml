@@ -14,6 +14,9 @@ open Javalib_pack
 
 module L = Logging
 
+(** version of Javalib.get_class that does not spam stderr *)
+let javalib_get_class = Utils.suppress_stderr2 Javalib.get_class
+
 let models_specs_filenames = ref String.Set.empty
 
 let models_jar = ref ""
@@ -297,7 +300,7 @@ let lookup_node cn program =
     Some (JBasics.ClassMap.find cn (get_classmap program))
   with Not_found ->
   try
-    let jclass = Javalib.get_class (get_classpath program) cn in
+    let jclass = javalib_get_class (get_classpath program) cn in
     add_class cn jclass program;
     Some jclass
   with
@@ -310,7 +313,7 @@ let collect_classes start_classmap jar_filename =
   let classpath = Javalib.class_path jar_filename in
   let collect classmap cn =
     try
-      JBasics.ClassMap.add cn (Javalib.get_class classpath cn) classmap
+      JBasics.ClassMap.add cn (javalib_get_class classpath cn) classmap
     with JBasics.Class_structure_error _ ->
       classmap in
   let classmap =

@@ -75,3 +75,7 @@ val create_dir : string -> unit
 (** [realpath path] returns path with all symbolic links resolved. It caches results of previous
     calls to avoid expensive system calls *)
 val realpath : string -> string
+
+(** wraps a function expecting 2 arguments in another that temporarily redirects stderr to /dev/null
+    for the duration of the function call *)
+val suppress_stderr2 : ('a -> 'b -> 'c) -> 'a -> 'b -> 'c

@@ -328,3 +328,14 @@ let realpath path =
     )
   | Ok path -> path
   | Error (code, f, arg) -> raise (Unix.Unix_error (code, f, arg))
+
+
+let suppress_stderr2 f2 x1 x2 =
+  let orig_stderr = Unix.dup Unix.stderr in
+  let silent_stderr = Unix.openfile "/dev/null" ~mode:[Unix.O_RDWR] in
+  let restore_stderr () =
+    Unix.dup2 ~src:orig_stderr ~dst:Unix.stderr;
+    Unix.close silent_stderr  in
+  Unix.dup2 ~src:silent_stderr ~dst:Unix.stderr;
+  let f () = f2 x1 x2 in
+  protect ~f ~finally:restore_stderr
