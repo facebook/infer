@@ -75,7 +75,7 @@ def build_source_context(source_name, mode, report_line):
         # avoid going past the end of the file
         for line in source_file:
             last_line = line_number
-            if start_line <= line_number < end_line:
+            if start_line <= line_number <= end_line:
                 excerpt += line
             elif line_number > end_line:
                 # OPTIM: no need to read past the last line of the excerpt
@@ -88,7 +88,7 @@ def build_source_context(source_name, mode, report_line):
     n_length = len(str(last_line))
     s = ''
     line_number = start_line
-    for line in excerpt.split('\n'):
+    for line in excerpt.split('\n')[:-1]:
         num = colorize.color((str(line_number) + '.').zfill(n_length),
                              colorize.DIM, mode)
         caret = '  '
