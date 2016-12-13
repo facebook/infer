@@ -45,7 +45,6 @@ CSV_PERF_FILENAME = 'performances.csv'
 STATS_FILENAME = 'stats.json'
 PROC_STATS_FILENAME = 'proc_stats.json'
 
-CSV_REPORT_FILENAME = 'report.csv'
 JSON_REPORT_FILENAME = 'report.json'
 INFER_BUCK_DEPS_FILENAME = 'infer-deps.txt'
 BUGS_FILENAME = 'bugs.txt'

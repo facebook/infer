@@ -31,9 +31,6 @@ ISSUE_KIND_WARNING = 'WARNING'
 ISSUE_KIND_INFO = 'INFO'
 ISSUE_KIND_ADVICE = 'ADVICE'
 
-# indices in rows of csv reports
-CSV_INDEX_TYPE = 2
-
 # field names in rows of json reports
 JSON_INDEX_DOTTY = 'dotty'
 JSON_INDEX_FILENAME = 'file'

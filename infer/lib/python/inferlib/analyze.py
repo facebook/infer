@@ -12,6 +12,7 @@ from __future__ import unicode_literals
 
 import argparse
 import csv
+import json
 import logging
 import multiprocessing
 import os
@@ -98,19 +99,20 @@ infer_group.add_argument('-pr', '--project-root',
                          help='Location of the project root '
                          '(default is current directory)')
 infer_group.add_argument('-j', '--multicore', metavar='n', type=int,
-                           default=multiprocessing.cpu_count(),
-                           dest='multicore', help='Set the number of cores to '
-                           'be used for the analysis (default uses all cores)')
+                         default=multiprocessing.cpu_count(),
+                         dest='multicore', help='Set the number of cores to '
+                         'be used for the analysis (default uses all cores)')
 infer_group.add_argument('-l', '--load-average', metavar='<float>', type=float,
                          help='Specifies that no new jobs (commands) should '
                          'be started if there are others jobs running and the '
                          'load average is at least <float>.')
 
 infer_group.add_argument('--buck', action='store_true', dest='buck',
-                           help='To use when run with buck')
+                         help='To use when run with buck')
 
 infer_group.add_argument('--java-jar-compiler',
                          metavar='<file>')
+
 
 def remove_infer_out(infer_out):
     # it is safe to ignore errors here because recreating the infer_out
@@ -270,12 +272,11 @@ class AnalyzerWrapper(object):
 
         return exit_status
 
-    def update_stats_with_warnings(self, csv_report):
-        with open(csv_report, 'r') as file_in:
-            reader = utils.locale_csv_reader(file_in)
-            rows = [row for row in reader][1:]
-            for row in rows:
-                key = row[issues.CSV_INDEX_TYPE]
+    def update_stats_with_warnings(self, json_report):
+        with open(json_report, 'r') as file_in:
+            entries = json.load(file_in)
+            for entry in entries:
+                key = entry[issues.JSON_INDEX_TYPE]
                 previous_value = self.stats['int'].get(key, 0)
                 self.stats['int'][key] = previous_value + 1
 
@@ -284,7 +285,6 @@ class AnalyzerWrapper(object):
         containing the list or errors found during the analysis"""
 
         out_dir = self.args.infer_out
-        csv_report = os.path.join(out_dir, config.CSV_REPORT_FILENAME)
         json_report = os.path.join(out_dir, config.JSON_REPORT_FILENAME)
         procs_report = os.path.join(self.args.infer_out, 'procs.csv')
 
@@ -292,7 +292,6 @@ class AnalyzerWrapper(object):
         infer_print_options = [
             '-q',
             '-results_dir', self.args.infer_out,
-            '-bugs', csv_report,
             '-bugs_json', json_report,
             '-procs', procs_report,
             '-analyzer', self.args.analyzer
@@ -307,7 +306,7 @@ class AnalyzerWrapper(object):
                 'Error with InferPrint with the command: {}'.format(
                     infer_print_cmd))
         else:
-            self.update_stats_with_warnings(csv_report)
+            self.update_stats_with_warnings(json_report)
 
         return exit_status
 

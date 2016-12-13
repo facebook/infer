@@ -14,7 +14,6 @@ from __future__ import unicode_literals
 
 import argparse
 import csv
-import io
 import json
 import logging
 import multiprocessing
@@ -38,8 +37,6 @@ ANALYSIS_SUMMARY_OUTPUT = 'analysis_summary.txt'
 DEFAULT_BUCK_OUT = os.path.join(utils.decode(os.getcwd()), 'buck-out')
 DEFAULT_BUCK_OUT_GEN = os.path.join(DEFAULT_BUCK_OUT, 'gen')
 
-INFER_CSV_REPORT = os.path.join(config.BUCK_INFER_OUT,
-                                config.CSV_REPORT_FILENAME)
 INFER_JSON_REPORT = os.path.join(config.BUCK_INFER_OUT,
                                  config.JSON_REPORT_FILENAME)
 INFER_STATS = os.path.join(config.BUCK_INFER_OUT, config.STATS_FILENAME)
@@ -136,7 +133,8 @@ def get_normalized_targets(targets):
             subprocess.check_output(buck_cmd).decode().strip().split('\n'))
         return targets
     except subprocess.CalledProcessError as e:
-        logging.error('Error while expanding targets with {0}'.format(buck_cmd))
+        logging.error('Error while expanding targets with {0}'.format(
+            buck_cmd))
         raise e
 
 
@@ -270,14 +268,6 @@ def load_stats(opened_jar):
         raise NotFoundInJar
 
 
-def load_csv_report(opened_jar):
-    try:
-        sio = io.StringIO(opened_jar.read(INFER_CSV_REPORT).decode())
-        return list(utils.locale_csv_reader(sio))
-    except KeyError:
-        raise NotFoundInJar
-
-
 def load_json_report(opened_jar):
     try:
         return json.loads(opened_jar.read(INFER_JSON_REPORT).decode())
@@ -304,9 +294,7 @@ def collect_results(args, start_time, targets):
     with open(os.path.join(args.infer_out, ANALYSIS_SUMMARY_OUTPUT), 'w') as f:
         f.write(buck_stats)
 
-    all_csv_rows = set()
     all_json_rows = set()
-    headers = []
     stats = init_stats(args, start_time)
 
     accumulation_whitelist = list(map(re.compile, [
@@ -340,12 +328,6 @@ def collect_results(args, start_time, targets):
                                 old_value = stats[type_k].get(key, 0)
                                 stats[type_k][key] = old_value + value
 
-                csv_rows = load_csv_report(jar)
-                if len(csv_rows) > 0:
-                    headers.append(csv_rows[0])
-                    for row in csv_rows[1:]:
-                        all_csv_rows.add(tuple(row))
-
                 json_rows = load_json_report(jar)
                 for row in json_rows:
                     all_json_rows.add(json.dumps(row))
@@ -357,12 +339,7 @@ def collect_results(args, start_time, targets):
         except zipfile.BadZipfile:
             logging.warn('Bad zip file %s', path)
 
-    csv_report = os.path.join(args.infer_out, config.CSV_REPORT_FILENAME)
     json_report = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
-
-    if len(headers) > 1:
-        if any(map(lambda x: x != headers[0], headers)):
-            raise Exception('Inconsistent reports found')
 
     # Convert all float values to integer values
     for key, value in stats.get('float', {}).items():
@@ -370,13 +347,6 @@ def collect_results(args, start_time, targets):
 
     # Delete the float entries before exporting the results
     del(stats['float'])
-
-    with open(csv_report, 'w') as report:
-        if len(headers) > 0:
-            writer = csv.writer(report)
-            all_csv_rows = [list(row) for row in all_csv_rows]
-            writer.writerows([headers[0]] + all_csv_rows)
-            report.flush()
 
     with open(json_report, 'w') as report:
         json_string = '['
