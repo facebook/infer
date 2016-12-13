@@ -231,13 +231,6 @@ fi
 AC_CHECK_TOOL([ATDGEN], [atdgen], [no])
 AC_ASSERT_PROG([atdgen], [$ATDGEN])
 
-AC_ARG_ENABLE(ocaml-annot,
-  AS_HELP_STRING([--disable-ocaml-annot], [do not build ocaml .annot files]),
-  ,
-  enable_ocaml_annot=yes)
-ENABLE_OCAML_ANNOT=$enable_ocaml_annot
-AC_SUBST([ENABLE_OCAML_ANNOT])
-
 AC_ARG_ENABLE(ocaml-bin-annot,
   AS_HELP_STRING([--disable-ocaml-bin-annot], [do not build ocaml .cmt files]),
   ,

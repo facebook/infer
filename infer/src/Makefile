@@ -10,8 +10,6 @@ include $(ROOT_DIR)/Makefile.config
 
 #### Global declarations ####
 
-INFER_BUILD_DIR = $(BUILD_DIR)/infer
-ANNOT_DIR = $(SRC_DIR)/_build
 ETC_DIR = $(INFER_DIR)/etc
 
 ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli
@@ -38,10 +36,6 @@ OCAMLBUILD_OPTIONS = \
   -tag-line "<*/{,*/}*.{ml,re}{,i}>: package(ppx_compare)" \
   -tag thread \
   -pkgs atdgen,core,ctypes.foreign,oUnit,str,unix,yojson,zip
-
-ifeq ($(ENABLE_OCAML_ANNOT),yes)
-OCAMLBUILD_OPTIONS += -cflags -annot
-endif
 
 ifeq ($(ENABLE_OCAML_BINANNOT),yes)
 OCAMLBUILD_OPTIONS += -cflags -bin-annot
@@ -130,7 +124,7 @@ CHECKCOPYRIGHT_MAIN = $(SCRIPT_SOURCES)/checkCopyright
 #### End of declarations ####
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
-EXTRA_DEPS = facebook facebook/checkers facebook/checkers/graphql facebook/scripts
+EXTRA_DEPS = facebook facebook/scripts
 else
 EXTRA_DEPS = opensource
 endif
@@ -193,9 +187,6 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERCLANG_MAIN).native $(INFERCLANG_BIN)
 	cd $(INFER_BUILD_DIR) && $(LN_S) -f InferClang InferClang++ && cd -
 endif
-ifeq ($(ENABLE_OCAML_ANNOT),yes)
-	rsync -a --include '*/' --include '*.annot' --exclude '*' $(INFER_BUILD_DIR)/ $(ANNOT_DIR)/
-endif
 
 ifeq ($(BUILD_C_ANALYZERS),yes)
 infer: $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) $(CLANG_BINIOU_DICT)
@@ -228,10 +219,10 @@ test_build: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_AT
 # to generate interface file.mli from implementation file.ml execute:
 #   make M=file mli
 mli:
-	ocamlfind ocamlc -package atdgen,oUnit,str,unix,yojson,zip $(addprefix -I ../_build/infer/,$(DEPENDENCIES)) -i $(M).ml > $(M).mli
+	ocamlfind ocamlc -package atdgen,oUnit,str,unix,yojson,zip $(addprefix -I $(INFER_BUILD_DIR),$(DEPENDENCIES)) -i $(M).ml > $(M).mli
 
 rei:
-	ocamlfind ocamlc -package atdgen,oUnit,str,unix,yojson,zip $(addprefix -I ../_build/infer/,$(DEPENDENCIES)) -i -pp refmt -impl $(M).re > $(M).rei
+	ocamlfind ocamlc -package atdgen,oUnit,str,unix,yojson,zip $(addprefix -I $(INFER_BUILD_DIR),$(DEPENDENCIES)) -i -pp refmt -impl $(M).re > $(M).rei
 
 # convert to reason
 %.re : %.ml
@@ -243,10 +234,9 @@ rei:
 roots:=Infer InferAnalyzeExe InferClang JMain InferPrintExe StatsAggregator
 clusters:=base clang java IR
 
-src_dirs:=$(shell find * -type d)
-ml_src_files:=$(shell find $(src_dirs) -regex '.*\.ml\(i\)*' -not -path facebook/scripts/eradicate_stats.ml -not -path 'stubs/c/*')
-re_src_files:=$(shell find $(src_dirs) -regex '.*\.re\(i\)*')
-inc_flags:=$(foreach dir,$(src_dirs),-I $(dir))
+ml_src_files:=$(shell find $(DEPENDENCIES) -regex '.*\.ml\(i\)*' -not -path facebook/scripts/eradicate_stats.ml -not -path 'stubs/c/*')
+re_src_files:=$(shell find $(DEPENDENCIES) -regex '.*\.re\(i\)*')
+inc_flags:=$(foreach dir,$(DEPENDENCIES),-I $(dir))
 root_flags:=$(foreach root,$(roots),-r $(root))
 cluster_flags:=$(foreach cluster,$(clusters),-c $(cluster))
 
@@ -376,9 +366,6 @@ test_clean:
 clean:
 	$(REMOVE_DIR) $(BUILD_DIR)
 	$(REMOVE) $(ETC_DIR)/clang_ast.dict
-ifeq ($(ENABLE_OCAML_ANNOT),yes)
-	$(REMOVE_DIR) $(ANNOT_DIR)
-endif
 	$(REMOVE) base/Version.ml
 	$(REMOVE) base/Version.ml.tmp.*
 	$(REMOVE) backend/jsonbug_{j,t}.ml{,i}
