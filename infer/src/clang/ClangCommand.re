@@ -16,7 +16,8 @@ type t = {
 };
 
 let fcp_dir =
-  Config.bin_dir ^\/ Filename.parent_dir_name ^\/ Filename.parent_dir_name ^\/ "facebook-clang-plugins";
+  Config.bin_dir ^\/
+  Filename.parent_dir_name ^\/ Filename.parent_dir_name ^\/ "facebook-clang-plugins";
 
 
 /** path of the plugin to load in clang */
@@ -174,7 +175,9 @@ let with_plugin_args args => {
       "-plugin-arg-" ^ plugin_name,
       "PREPEND_CURRENT_DIR=1"
     ];
-  let args_after_rev = [] |> argv_do_if Config.fcp_syntax_only (argv_cons "-fsyntax-only");
+  /* add -O0 option to avoid compiler obfuscation of AST */
+  let args_after_rev =
+    [] |> argv_cons "-O0" |> argv_do_if Config.fcp_syntax_only (argv_cons "-fsyntax-only");
   {...args, argv: IList.rev_append args_before_rev (args.argv @ IList.rev args_after_rev)}
 };
 
