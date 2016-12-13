@@ -47,8 +47,23 @@ class shared_ptr : public std__shared_ptr<T> {
 // use it to avoid compilation errors and make infer analyzer happy
 #define __cast_to_infer_ptr(self) ((infer_shared_ptr_t)self)
 
+  // provide overload for volatile void* to accomodate for situation when
+  // T is volatile ('volatile int' for example). 'void*' and 'nullptr_t'
+  // overloads are to avoid 'call to model_set is ambiguous' compilation errors
+  static void model_set(infer_shared_ptr_t self, nullptr_t value) {
+    *self = value;
+  }
+
   static void model_set(infer_shared_ptr_t self, const void* value) {
     *self = value;
+  }
+
+  static void model_set(infer_shared_ptr_t self, volatile void* value) {
+    *self = const_cast<const void*>(value);
+  }
+
+  static void model_set(infer_shared_ptr_t self, void* value) {
+    *self = const_cast<const void*>(value);
   }
 
   static void model_copy(infer_shared_ptr_t self, infer_shared_ptr_t other) {
