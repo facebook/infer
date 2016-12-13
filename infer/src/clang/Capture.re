@@ -132,23 +132,13 @@ let run_plugin_and_frontend source_path frontend clang_args => {
   let clang_command = ClangCommand.command_to_run (ClangCommand.with_plugin_args clang_args);
   if debug_mode {
     /* -cc1 clang commands always set -o explicitly */
-    let basename = source_path ^ ".capture";
+    let basename = source_path ^ ".ast";
     /* Emit the clang command with the extra args piped to InferClang */
     let frontend_script_fname = Printf.sprintf "%s.sh" basename;
     let debug_script_out = open_out frontend_script_fname;
     let debug_script_fmt = Format.formatter_of_out_channel debug_script_out;
     let biniou_fname = Printf.sprintf "%s.biniou" basename;
     Format.fprintf debug_script_fmt "%s \\@\n  > %s@\n" clang_command biniou_fname;
-    let infer_clang_options =
-      String.concat
-        sep::"^"
-        (Option.to_list (Sys.getenv CLOpt.args_env_var) @ ["--clang-biniou-file", biniou_fname]);
-    Format.fprintf
-      debug_script_fmt
-      "%s=\"%s\" %s@\n"
-      CLOpt.args_env_var
-      infer_clang_options
-      (ClangCommand.with_exec Sys.executable_name clang_args |> ClangCommand.command_to_run);
     Format.fprintf
       debug_script_fmt
       "bdump -x -d \"%s/clang_ast.dict\" -w '!!DUMMY!!' %s \\@\n  > %s.bdump"
