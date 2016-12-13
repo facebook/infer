@@ -103,7 +103,7 @@ module Analyzer =
     (Scheduler.ReversePostorder)
     (TransferFunctions)
 
-module Interprocedural = Analyzer.Interprocedural (Summary)
+module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
 
 
 let is_foreign tu_opt v =
@@ -176,7 +176,11 @@ let siof_check pdesc gname = function
       ()
 
 let checker ({ Callbacks.proc_desc; } as callback) =
-  let post = Interprocedural.checker callback ProcData.empty_extras in
+  let post =
+    Interprocedural.compute_and_store_post
+      ~compute_post:Analyzer.compute_post
+      ~make_extras:ProcData.make_empty_extras
+      callback in
   let pname = Procdesc.get_proc_name proc_desc in
   match Procname.get_global_name_of_initializer pname with
   | Some gname ->

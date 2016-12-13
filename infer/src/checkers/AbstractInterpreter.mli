@@ -17,14 +17,6 @@ module type S = sig
 
   module InvariantMap : Map.S with type key = TransferFunctions.CFG.id
 
-  (** create an interprocedural abstract interpreter given logic for handling summaries *)
-  module Interprocedural
-      (Summary : Summary.S with type summary = TransferFunctions.Domain.astate) :
-  sig
-    val checker : Callbacks.proc_callback_args -> TransferFunctions.extras ->
-      TransferFunctions.Domain.astate option
-  end
-
   (** invariant map from node id -> state representing postcondition for node id *)
   type invariant_map = TransferFunctions.Domain.astate state InvariantMap.t
 
@@ -60,3 +52,15 @@ module Make
     (MakeScheduler : Scheduler.Make)
     (MakeTransferFunctions : TransferFunctions.Make) :
   S with module TransferFunctions = MakeTransferFunctions(CFG)
+
+(** create an interprocedural abstract interpreter given logic for handling summaries *)
+module Interprocedural (Summary : Summary.S) : sig
+
+  (** compute and return the summary for the given procedure and store it on disk using
+      [compute_post]. *)
+  val compute_and_store_post :
+    compute_post: ('a ProcData.t -> Summary.summary option) ->
+    make_extras : (Procdesc.t -> 'a) ->
+    Callbacks.proc_callback_args ->
+    Summary.summary option
+end

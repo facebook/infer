@@ -15,6 +15,8 @@ type no_extras = unit
 
 let empty_extras = ()
 
+let make_empty_extras _ = ()
+
 let make pdesc tenv extras =
   { pdesc; tenv; extras; }
 

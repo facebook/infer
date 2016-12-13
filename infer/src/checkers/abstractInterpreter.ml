@@ -19,8 +19,14 @@ module type S = sig
   module Interprocedural
       (Summary : Summary.S with type summary = TransferFunctions.Domain.astate) :
   sig
-    val checker : Callbacks.proc_callback_args -> TransferFunctions.extras ->
-      TransferFunctions.Domain.astate option
+
+    (** compute and return the summary for the given procedure and store it on disk using
+        [compute_post]. *)
+    val compute_and_store_post :
+      compute_post: ('a ProcData.t -> Summary.summary option) ->
+      make_extras : (Procdesc.t -> 'a) ->
+      Callbacks.proc_callback_args ->
+      Summary.summary option
   end
 
   type invariant_map = TransferFunctions.Domain.astate state InvariantMap.t
@@ -129,35 +135,38 @@ module MakeNoCFG
     let inv_map = exec_cfg cfg proc_data in
     extract_post (CFG.id (CFG.exit_node cfg)) inv_map
 
-  module Interprocedural (Summ : Summary.S with type summary = Domain.astate) = struct
-
-    let checker { Callbacks.get_proc_desc; proc_desc; proc_name; tenv; } extras =
-      let analyze_ondemand_ _ pdesc =
-        match compute_post (ProcData.make pdesc tenv extras) with
-        | Some post ->
-            Summ.write_summary (Procdesc.get_proc_name pdesc) post;
-            Some post
-        | None ->
-            None in
-      let analyze_ondemand source pdesc =
-        ignore (analyze_ondemand_ source pdesc) in
-      let callbacks =
-        {
-          Ondemand.analyze_ondemand;
-          get_proc_desc;
-        } in
-      if Ondemand.procedure_should_be_analyzed proc_name
-      then
-        begin
-          Ondemand.set_callbacks callbacks;
-          let post_opt = analyze_ondemand_ SourceFile.empty proc_desc in
-          Ondemand.unset_callbacks ();
-          post_opt
-        end
-      else
-        Summ.read_summary proc_desc proc_name
-  end
 end
+
+module Interprocedural (Summ : Summary.S) = struct
+
+  let compute_and_store_post
+      ~compute_post ~make_extras { Callbacks.get_proc_desc; proc_desc; proc_name; tenv; } =
+    let analyze_ondemand_ _ pdesc =
+      match compute_post (ProcData.make pdesc tenv (make_extras pdesc)) with
+      | Some post ->
+          Summ.write_summary (Procdesc.get_proc_name pdesc) post;
+          Some post
+      | None ->
+          None in
+    let analyze_ondemand source pdesc =
+      ignore (analyze_ondemand_ source pdesc) in
+    let callbacks =
+      {
+        Ondemand.analyze_ondemand;
+        get_proc_desc;
+      } in
+    if Ondemand.procedure_should_be_analyzed proc_name
+    then
+      begin
+        Ondemand.set_callbacks callbacks;
+        let post_opt = analyze_ondemand_ SourceFile.empty proc_desc in
+        Ondemand.unset_callbacks ();
+        post_opt
+      end
+    else
+      Summ.read_summary proc_desc proc_name
+end
+
 
 module Make (C : ProcCfg.S) (S : Scheduler.Make) (T : TransferFunctions.Make) =
   MakeNoCFG (S (C)) (T (C))

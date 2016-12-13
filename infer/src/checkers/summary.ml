@@ -11,21 +11,27 @@ open! IStd
 
 module type Helper = sig
   type summary
+  (*  type astate*)
 
   (* update the specs payload with [summary] *)
   val update_payload : summary -> Specs.payload -> Specs.payload
   (* extract [summmary] from the specs payload *)
   val read_from_payload : Specs.payload -> summary option
+
+  (*val to_summary : astate -> summary*)
 end
 
 module type S = sig
   type summary
+  (*  type astate*)
 
   (* write the summary for [name] to persistent storage *)
   val write_summary : Procname.t -> summary -> unit
   (* read and return the summary for [callee_pname] called from [caller_pdesc]. does the analysis to
      create the summary if needed *)
   val read_summary : Procdesc.t -> Procname.t -> summary option
+
+  (*  val to_summary : astate -> summary*)
 end
 
 module Make (H : Helper) = struct

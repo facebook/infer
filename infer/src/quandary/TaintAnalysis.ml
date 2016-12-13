@@ -35,6 +35,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
   module TaintDomain = AccessTree.Make (TraceDomain)
   module IdMapDomain = IdAccessPathMapDomain
 
+  (** map from formals to their position *)
+  type formal_map = int AccessPath.BaseMap.t
+
   module Domain = struct
     type astate =
       {
@@ -83,8 +86,6 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     module CFG = CFG
     module Domain = Domain
 
-    (** map from formals to their position *)
-    type formal_map = int AccessPath.BaseMap.t
     type extras = formal_map
 
     let is_formal base formal_map =
@@ -547,46 +548,33 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       TraceDomain.Source.Set.fold add_summary_for_source (TraceDomain.sources trace) summary_acc in
     TaintDomain.fold add_summaries_for_trace access_tree []
 
-  let dummy_cg = Cg.create None
+  module Interprocedural = AbstractInterpreter.Interprocedural(Summary)
 
-  let checker { Callbacks.get_proc_desc; proc_name; proc_desc; tenv; } =
-    let analyze_ondemand _ pdesc =
-      let make_formal_access_paths pdesc =
-        let pname = Procdesc.get_proc_name pdesc in
-        let attrs = Procdesc.get_attributes pdesc in
-        let formals_with_nums =
-          IList.mapi
-            (fun index (name, typ) ->
-               let pvar = Pvar.mk name pname in
-               AccessPath.base_of_pvar pvar typ, index)
-            attrs.ProcAttributes.formals in
-        IList.fold_left
-          (fun formal_map (base, index) -> AccessPath.BaseMap.add base index formal_map)
-          AccessPath.BaseMap.empty
-          formals_with_nums in
+  let checker callback =
 
-      Preanal.doit ~handle_dynamic_dispatch:true pdesc dummy_cg tenv;
-      let formals = make_formal_access_paths pdesc in
-      let proc_data = ProcData.make pdesc tenv formals in
+    let compute_post (proc_data : formal_map ProcData.t) =
+      Preanal.doit ~handle_dynamic_dispatch:true proc_data.pdesc (Cg.create None) proc_data.tenv;
       match Analyzer.compute_post proc_data with
       | Some { access_tree; } ->
-          let summary = make_summary formals access_tree in
-          Summary.write_summary (Procdesc.get_proc_name pdesc) summary;
+          Some (make_summary proc_data.extras access_tree)
       | None ->
-          if Procdesc.Node.get_succs (Procdesc.get_start_node pdesc) <> []
-          then failwith "Couldn't compute post" in
+          if Procdesc.Node.get_succs (Procdesc.get_start_node proc_data.pdesc) <> []
+          then failwith "Couldn't compute post"
+          else None in
 
-    let callbacks =
-      {
-        Ondemand.analyze_ondemand;
-        get_proc_desc;
-      } in
-    if Ondemand.procedure_should_be_analyzed proc_name
-    then
-      begin
-        Ondemand.set_callbacks callbacks;
-        analyze_ondemand SourceFile.empty proc_desc;
-        Ondemand.unset_callbacks ();
-      end
+    let make_extras pdesc =
+      let pname = Procdesc.get_proc_name pdesc in
+      let attrs = Procdesc.get_attributes pdesc in
+      let formals_with_nums =
+        IList.mapi
+          (fun index (name, typ) ->
+             let pvar = Pvar.mk name pname in
+             AccessPath.base_of_pvar pvar typ, index)
+          attrs.ProcAttributes.formals in
+      IList.fold_left
+        (fun formal_map (base, index) -> AccessPath.BaseMap.add base index formal_map)
+        AccessPath.BaseMap.empty
+        formals_with_nums in
 
+    ignore(Interprocedural.compute_and_store_post ~compute_post ~make_extras callback)
 end

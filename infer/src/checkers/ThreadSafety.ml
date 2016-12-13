@@ -157,12 +157,16 @@ module Analyzer =
     (Scheduler.ReversePostorder)
     (TransferFunctions)
 
-module Interprocedural = Analyzer.Interprocedural (Summary)
+module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
 
 (*This is a "checker"*)
 let method_analysis callback =
   let proc_desc = callback.Callbacks.proc_desc in
-  let opost = Interprocedural.checker callback ProcData.empty_extras in
+  let opost =
+    Interprocedural.compute_and_store_post
+      ~compute_post:Analyzer.compute_post
+      ~make_extras:ProcData.make_empty_extras
+      callback in
   match opost with
   | Some post ->  (* I am printing to commandline and out to cater to javac and buck*)
       (L.stdout  "\n Procedure: %s@ "
@@ -201,7 +205,11 @@ let make_results_table get_proc_desc file_env =
       let callback_arg =
         {Callbacks.get_proc_desc; get_procs_in_file = (fun _ -> []);
          idenv; tenv; proc_name; proc_desc} in
-      match Interprocedural.checker callback_arg ProcData.empty_extras with
+      match
+        Interprocedural.compute_and_store_post
+          ~compute_post:Analyzer.compute_post
+          ~make_extras:ProcData.make_empty_extras
+          callback_arg with
       | Some post -> post
       | None -> ThreadSafetyDomain.initial
   in

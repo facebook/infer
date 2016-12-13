@@ -353,7 +353,7 @@ module Analyzer =
     (TransferFunctions)
 
 module Interprocedural = struct
-  include Analyzer.Interprocedural(Summary)
+  include AbstractInterpreter.Interprocedural(Summary)
 
   let is_expensive tenv pname =
     check_attributes Annotations.ia_is_expensive tenv pname
@@ -403,7 +403,10 @@ module Interprocedural = struct
       if not (IList.length calls = 0)
       then IList.iter (report_src_snk_path calls) src_annot_list in
 
-    match checker proc_data ProcData.empty_extras with
+    match compute_and_store_post
+            ~compute_post:Analyzer.compute_post
+            ~make_extras:ProcData.make_empty_extras
+            proc_data with
     | Some Domain.NonBottom (call_map, _) ->
         IList.iter (report_src_snk_paths call_map) (src_snk_pairs ())
     | Some Domain.Bottom | None ->
