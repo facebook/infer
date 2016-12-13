@@ -127,4 +127,13 @@ public class ReturnNotNullable {
     return cls.getResource(name);
   }
 
+  @DefinitelyNotNullable
+  Object definitelyDoesNotReturnNull() {
+      return new Object();
+  }
+
+  void callsnotnullableMethod() {
+    definitelyDoesNotReturnNull().toString();
+  }
+
 }

@@ -48,13 +48,11 @@ let ia_has_annotation_with
     ia;
   !found
 
-(** Return true if [annot] ends with [ann_name] *)
+(** Return true if [annot] ends with [ann_name], ignoring the package name *)
 let annot_ends_with annot ann_name =
-  let filter s =
-    let sl = String.length s in
-    let al = String.length ann_name in
-    sl >= al && String.sub s ~pos:(sl - al) ~len:al = ann_name in
-  filter annot.Annot.class_name
+  match String.rsplit2 annot.Annot.class_name ~on:'.' with
+  | None -> String.equal annot.Annot.class_name ann_name
+  | Some (_, annot_class_name) -> String.equal annot_class_name ann_name
 
 (** Check if there is an annotation in [ia] which ends with the given name *)
 let ia_ends_with ia ann_name =
