@@ -12,24 +12,23 @@ ANALYZER = crashcontext
 
 SOURCES = $(wildcard *.java)
 OBJECTS = $(patsubst %.java,%.class,$(SOURCES))
-EXP_TESTs = $(sort $(patsubst %.java,%.exp.test,$(SOURCES)))
+EXP_TESTs = $(sort $(patsubst %.java,%.exp.test.noreplace,$(SOURCES)))
 INFER_OUTs = $(patsubst %.java,infer-out-%,$(SOURCES))
 
 $(OBJECTS): $(SOURCES)
 	javac -cp $(CLASSPATH) $(SOURCES)
 
 # analyze a single source file and generate the test results for it
-%.exp.test: $(INFER_BIN) %.stacktrace.json %.java
+%.exp.test.noreplace: $(JAVA_DEPS) %.stacktrace.json %.java
 	$(call silent_on_success,\
 	  $(INFER_BIN) -a $(ANALYZER) -o infer-out-$* --stacktrace $*.stacktrace.json \
 	  -- javac -cp $(CLASSPATH) $*.java)
 #	add a newline at the end of the json when creating the exp.test
-	bash -c 'cat infer-out-$*/crashcontext/crashcontext.json <(echo) > $*.exp.test'
+	$(COPY) infer-out-$*/crashcontext/crashcontext.json $@ && echo >> $@
 
 # combine the test results for all the source files
 issues.exp.test: $(EXP_TESTs)
 	cat $(EXP_TESTs) > issues.exp.test
-
 
 default: compile
 
