@@ -50,12 +50,6 @@ OCAMLBUILD_OPTIONS += -quiet
 endif
 
 
-#### Base declaration ####
-
-C_STUBS_SOURCE = stubs/c/stubs.c
-# only one C object for now, the Makefile will need changing if more are added
-C_STUBS_OBJ = $(C_STUBS_SOURCE:.c=.o)
-
 #### Backend declarations ####
 
 INFER_MAIN = backend/infer
@@ -137,10 +131,6 @@ OCAMLBUILD_BASE = rebuild $(OCAMLBUILD_OPTIONS) -j $(NCPU) $(addprefix -I , $(DE
 # ocamlbuild with options necessary to build all targets at once, regardless of configure flags
 OCAMLBUILD_ALL = $(OCAMLBUILD_BASE) $(JAVA_OCAMLBUILD_OPTIONS)
 
-OCAMLBUILD_BYTE_OPTS = -lflags -custom,$(C_STUBS_OBJ) -I stubs/c
-
-OCAMLBUILD_NATIVE_OPTS = -lflags $(C_STUBS_OBJ) -I stubs/c
-
 # list of ocamlbuild targets common to all build targets -- native version
 INFER_BASE_TARGETS = \
   $(C_STUBS_OBJ) \
@@ -174,8 +164,7 @@ all: infer
 
 .PHONY: infer
 infer: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS)
-	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(OCAMLBUILD_NATIVE_OPTS) \
-	  $(INFER_CONFIG_TARGETS)
+	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(INFER_CONFIG_TARGETS)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(INFER_BIN)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERANALYZE_MAIN).native $(INFERANALYZE_BIN)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERPRINT_MAIN).native $(INFERPRINT_BIN)
@@ -194,8 +183,7 @@ endif
 
 .PHONY: byte
 byte: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
-	$(OCAMLBUILD_ALL) $(OCAMLBUILD_BYTE_OPTS) -build-dir $(INFER_BUILD_DIR) \
-	  $(INFER_ALL_TARGETS:.native=.byte)
+	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) $(INFER_ALL_TARGETS:.native=.byte)
 
 # to build only the single module <Module> (and its dependencies) with extra flags execute:
 #   make MFLAGS=<flags> M=<Module>.cm{o,x} module
@@ -212,7 +200,7 @@ module: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN
 
 .PHONY: test_build
 test_build: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
-	$(OCAMLBUILD_ALL) $(OCAMLBUILD_BYTE_OPTS) -build-dir $(TEST_BUILD_DIR) \
+	$(OCAMLBUILD_ALL) -build-dir $(TEST_BUILD_DIR) \
 	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
 	  $(INFER_ALL_TARGETS:.native=.byte)
 
@@ -234,7 +222,7 @@ rei:
 roots:=Infer InferAnalyzeExe InferClang JMain InferPrintExe StatsAggregator
 clusters:=base clang java IR
 
-ml_src_files:=$(shell find $(DEPENDENCIES) -regex '.*\.ml\(i\)*' -not -path facebook/scripts/eradicate_stats.ml -not -path 'stubs/c/*')
+ml_src_files:=$(shell find $(DEPENDENCIES) -regex '.*\.ml\(i\)*' -not -path facebook/scripts/eradicate_stats.ml)
 re_src_files:=$(shell find $(DEPENDENCIES) -regex '.*\.re\(i\)*')
 inc_flags:=$(foreach dir,$(DEPENDENCIES),-I $(dir))
 root_flags:=$(foreach root,$(roots),-r $(root))
@@ -256,7 +244,7 @@ dsort:
 	@ocamldep.opt -sort $(inc_flags) -ml-synonym .re -mli-synonym .rei $(ml_src_files) -pp refmt $(re_src_files)
 
 roots_grep_regex:=$(foreach root,$(roots),-e $(root)$$)
-dirs_find_regex:=$(foreach dir, $(DEPENDENCIES) stubs/ml,-path "./$(dir)/*" -o)
+dirs_find_regex:=$(foreach dir, $(DEPENDENCIES),-path "./$(dir)/*" -o)
 
 .PHONY: toplevel
 toplevel: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
@@ -276,7 +264,7 @@ toplevel: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDG
 	| rev | cut -f 2- -d '.' | rev \
 	| awk 'BEGIN { FS = "/"; OFS = "/" } ; {$$NF=toupper(substr($$NF,1,1))substr($$NF,2); print $$0}' \
 	| grep -v $(roots_grep_regex) > toplevel.mlpack
-	$(OCAMLBUILD_ALL) -I stubs/ml -build-dir $(INFER_BUILD_DIR) toplevel.cmo
+	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) toplevel.cmo
 
 .PHONY: checkCopyright
 checkCopyright: $(CHECKCOPYRIGHT_BIN)

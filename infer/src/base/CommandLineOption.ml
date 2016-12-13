@@ -144,8 +144,9 @@ let pad_and_xform doc_width left_width desc =
 let align desc_list =
   let min_term_width = 80 in
   let cur_term_width =
-    (* `CStubs.term_width ()` return 0 in case of failure *)
-    max (CStubs.term_width ()) min_term_width in
+    match Lazy.force IOCtl.terminal_width with
+    | Ok width -> width
+    | Error _ -> min_term_width in
   (* 2 blank columns before option + 2 columns of gap between flag and doc *)
   let extra_space = 4 in
   let min_left_width = 15 in

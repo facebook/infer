@@ -2,6 +2,7 @@ S src/**
 B _build/infer/**
 PKG atdgen
 PKG core
+PKG ctypes
 PKG javalib
 PKG ounit
 PKG ppx_compare
