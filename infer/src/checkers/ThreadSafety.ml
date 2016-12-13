@@ -83,7 +83,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       path_state
       (AccessPath.of_exp exp typ ~f_resolve_id:(fun _ -> None))
 
-  let exec_instr ((lockstate, (readstate,writestate)) as astate) { ProcData.pdesc; tenv; } _ =
+  let exec_instr
+      ({ ThreadSafetyDomain.locks; reads; writes; } as astate)
+      { ProcData.pdesc; tenv; } _ =
+
     let is_unprotected is_locked =
       not is_locked && not (Procdesc.is_java_synchronized pdesc) in
     function
@@ -92,41 +95,44 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (* assuming that modeled procedures do not have useful summaries *)
           match get_lock_model pn with
           | Lock ->
-              true, snd astate
+              { astate with locks = true; }
           | Unlock ->
-              false, snd astate
+              { astate with locks = false; }
           | None ->
               begin
                 match Summary.read_summary pdesc pn with
-                | Some (callee_lockstate, (callee_reads, callee_writes)) ->
-                    let lockstate' = callee_lockstate || lockstate in
-                    let _, read_writestate' =
+                | Some callee_astate ->
+                    let locks' = callee_astate.locks || locks in
+                    let astate' =
                       (* TODO (14842325): report on constructors that aren't threadsafe
                          (e.g., constructors that access static fields) *)
-                      if is_unprotected lockstate' &&
+                      if is_unprotected locks' &&
                          not (is_initializer tenv pn) &&
                          not (is_call_to_builder_class_method pn)
                       then
                         let call_site = CallSite.make pn loc in
-                        let callee_readstate =
-                          ThreadSafetyDomain.PathDomain.with_callsite callee_reads call_site in
-                        let callee_writestate =
-                          ThreadSafetyDomain.PathDomain.with_callsite callee_writes call_site in
-                        let callee_astate =
-                          callee_lockstate, (callee_readstate, callee_writestate) in
-                        ThreadSafetyDomain.join callee_astate astate
+                        let callee_reads =
+                          ThreadSafetyDomain.PathDomain.with_callsite callee_astate.reads call_site in
+                        let callee_writes =
+                          ThreadSafetyDomain.PathDomain.with_callsite callee_astate.writes call_site in
+                        let callee_astate' =
+                          { callee_astate with ThreadSafetyDomain.reads = callee_reads; writes = callee_writes; } in
+                        ThreadSafetyDomain.join callee_astate' astate
                       else
                         astate in
-                    lockstate', read_writestate'
+                    { astate' with locks = locks' }
                 | None ->
                     astate
               end
         end
 
     | Sil.Store ((Lfield ( _, _, typ) as lhsfield) , _, _, loc) ->
-        if is_unprotected lockstate then (* abstracts no lock being held*)
-          (lockstate, (readstate, add_path_to_state lhsfield typ loc writestate))
-        else astate
+        if is_unprotected locks (* abstracts no lock being held *)
+        then
+          let writes' = add_path_to_state lhsfield typ loc writes in
+          { astate with writes = writes'; }
+        else
+          astate
 
     (* Note: it appears that the third arg of Store is never an Lfield in the targets of,
        our translations, which is why we have not covered that case. *)
@@ -134,9 +140,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         failwith "Unexpected store instruction with rhs field"
 
     | Sil.Load (_, (Lfield ( _, _, typ) as rhsfield) , _, loc) ->
-        if is_unprotected lockstate then (* abstracts no lock being held*)
-          (lockstate, (add_path_to_state rhsfield typ loc readstate, writestate))
-        else astate
+        if is_unprotected locks (* abstracts no lock being held *)
+        then
+          let reads' = add_path_to_state rhsfield typ loc reads in
+          { astate with reads = reads'; }
+        else
+          astate
 
     |  _  ->
         astate
@@ -224,7 +233,7 @@ let report_thread_safety_errors ( _, tenv, pname, pdesc) trace =
   let open ThreadSafetyDomain in
   let trace_of_pname callee_pname =
     match Summary.read_summary pdesc callee_pname with
-    | Some (_, (_, callee_trace)) -> callee_trace
+    | Some astate -> astate.writes
     | _ -> PathDomain.initial in
   let report_one_path ((_, sinks) as path) =
     let pp_accesses fmt sink =
@@ -261,9 +270,9 @@ let report_thread_safety_errors ( _, tenv, pname, pdesc) trace =
    This indicates that the method races with itself. To be refined later. *)
 let process_results_table tab =
   ResultsTableType.iter   (* report errors for each method *)
-    (fun proc_env ( _,( _, writestate)) ->
+    (fun proc_env (astate : ThreadSafetyDomain.astate) ->
        if should_report_on_proc proc_env then
-         report_thread_safety_errors proc_env writestate
+         report_thread_safety_errors proc_env astate.writes
        else ()
     )
     tab

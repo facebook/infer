@@ -54,8 +54,47 @@ module LocksDomain = AbstractDomain.BooleanAnd
 
 module PathDomain = SinkTrace.Make(TraceElem)
 
-module ReadWriteDomain = AbstractDomain.Pair (PathDomain) (PathDomain)
+type astate =
+  { locks : LocksDomain.astate;
+    reads : PathDomain.astate;
+    writes : PathDomain.astate;
+  }
 
-include AbstractDomain.Pair (LocksDomain) (ReadWriteDomain)
-(* This is the ThreadSafety abstract domain *)
-(* a typical element is (){locked}, {vars and fields})  *)
+let initial =
+  let locks = LocksDomain.initial in
+  let reads = PathDomain.initial in
+  let writes = PathDomain.initial in
+  { locks; reads; writes; }
+
+let (<=) ~lhs ~rhs =
+  if phys_equal lhs rhs
+  then true
+  else
+    LocksDomain.(<=) ~lhs:lhs.locks ~rhs:rhs.locks &&
+    PathDomain.(<=) ~lhs:lhs.reads ~rhs:rhs.reads &&
+    PathDomain.(<=) ~lhs:lhs.writes ~rhs:rhs.writes
+
+let join astate1 astate2 =
+  if phys_equal astate1 astate2
+  then
+    astate1
+  else
+    let locks = LocksDomain.join astate1.locks astate2.locks in
+    let reads = PathDomain.join astate1.reads astate2.reads in
+    let writes = PathDomain.join astate1.writes astate2.writes in
+    { locks; reads; writes; }
+
+let widen ~prev ~next ~num_iters =
+  if phys_equal prev next
+  then
+    prev
+  else
+    let locks = LocksDomain.widen ~prev:prev.locks ~next:next.locks ~num_iters in
+    let reads = PathDomain.widen ~prev:prev.reads ~next:next.reads ~num_iters in
+    let writes = PathDomain.widen ~prev:prev.writes ~next:next.writes ~num_iters in
+    { locks; reads; writes; }
+
+let pp fmt { locks; reads; writes; } =
+  F.fprintf
+    fmt
+    "Locks: %a Reads: %a Writes: %a" LocksDomain.pp locks PathDomain.pp reads PathDomain.pp writes
