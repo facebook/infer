@@ -14,7 +14,8 @@ open! IStd
 module L = Logging
 module F = Format
 
-(** Directories to analyze from the ondemand file. *)
+(** Optional set of source dirs to analyze in on-demand mode. If None then all source dirs
+    will be analyzed *)
 let dirs_to_analyze =
   let process_changed_files changed_files =
     SourceFile.Set.fold
@@ -45,7 +46,7 @@ let unset_callbacks () =
 
 let nesting = ref 0
 
-let should_be_analyzed proc_attributes proc_name =
+let should_be_analyzed proc_name proc_attributes =
   let currently_analyzed () =
     match Specs.get_summary proc_name with
     | None -> false
@@ -62,8 +63,12 @@ let should_be_analyzed proc_attributes proc_name =
 
 let procedure_should_be_analyzed proc_name =
   match AttributesTable.load_attributes proc_name with
+  | Some proc_attributes when Config.reactive_capture && proc_attributes.is_defined = false ->
+      (* try to capture procedure first *)
+      let defined_proc_attributes = OndemandCapture.try_capture proc_attributes in
+      Option.value_map ~f:(should_be_analyzed proc_name) ~default:false defined_proc_attributes
   | Some proc_attributes ->
-      should_be_analyzed proc_attributes proc_name
+      should_be_analyzed proc_name proc_attributes
   | None ->
       false
 
@@ -120,11 +125,11 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     let source =
       Option.value_map
         ~f:(fun (attributes : ProcAttributes.t) ->
-           let attribute_pname = attributes.proc_name in
-           if not (Procname.equal callee_pname attribute_pname) then
-             failwith ("ERROR: "^(Procname.to_string callee_pname)
-                       ^" not equal to "^(Procname.to_string attribute_pname));
-           attributes.loc.file)
+            let attribute_pname = attributes.proc_name in
+            if not (Procname.equal callee_pname attribute_pname) then
+              failwith ("ERROR: "^(Procname.to_string callee_pname)
+                        ^" not equal to "^(Procname.to_string attribute_pname));
+            attributes.loc.file)
         ~default:SourceFile.empty
         attributes_opt in
     let call_graph =
@@ -192,7 +197,7 @@ let analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc =
   let proc_attributes = Procdesc.get_attributes callee_pdesc in
   match !callbacks_ref with
   | Some callbacks
-    when should_be_analyzed proc_attributes callee_pname ->
+    when should_be_analyzed callee_pname proc_attributes ->
       run_proc_analysis ~propagate_exceptions callbacks.analyze_ondemand curr_pdesc callee_pdesc
   | _ -> ()
 

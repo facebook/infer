@@ -37,9 +37,16 @@ infer-out-no-index/report.json: $(CMAKE_BUILD_DIR)/compile_commands.json $(INFER
 	$(call silent_on_success,\
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) -o infer-out-no-index -- clang-compilation-database $<)
 
-issues.exp.test: infer-out-with-index/report.json infer-out-no-index/report.json
+infer-out-reactive-capture/report.json: $(CMAKE_BUILD_DIR)/compile_commands.json $(INFER_BIN) $(SOURCES)
+	$(call silent_on_success,\
+	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) -o infer-out-reactive-capture --reactive-capture \
+	  --changed-files-index $(CMAKE_DIR)/index.txt -- clang-compilation-database $<)
+
+issues.exp.test: infer-out-with-index/report.json infer-out-no-index/report.json infer-out-reactive-capture/report.json
 	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.with-index \
 		--from-json-report infer-out-with-index/report.json
 	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.no-index \
 	  --from-json-report infer-out-no-index/report.json
-	cat $@.with-index $@.no-index > $@
+	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.reactive-capture \
+	  --from-json-report infer-out-reactive-capture/report.json
+	cat $@.with-index $@.no-index $@.reactive-capture > $@

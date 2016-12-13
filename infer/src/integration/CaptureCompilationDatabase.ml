@@ -143,6 +143,8 @@ let get_compilation_database_files_xcodebuild () =
       Logging.stderr "There was an error executing the build command";
       exit 1
 
-
 let capture_files_in_database compilation_database =
   run_compilation_database compilation_database (should_capture_file_from_index ())
+
+let capture_file_in_database compilation_database source_file =
+  run_compilation_database compilation_database (SourceFile.equal source_file)

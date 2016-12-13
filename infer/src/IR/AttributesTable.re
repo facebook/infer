@@ -109,11 +109,15 @@ let load_attributes proc_name =>
     proc_attributes
   };
 
-let load_defined_attributes proc_name =>
+let load_defined_attributes cache_none::cache_none proc_name =>
   try (Procname.Hash.find defined_attr_tbl proc_name) {
   | Not_found =>
     let proc_attributes = load_attr defined_only::true proc_name;
     if (proc_attributes != None) {
+      /* procedure just got defined, replace attribute in attr_tbl with defined version */
+      Procname.Hash.replace attr_tbl proc_name proc_attributes;
+      Procname.Hash.add defined_attr_tbl proc_name proc_attributes
+    } else if cache_none {
       Procname.Hash.add defined_attr_tbl proc_name proc_attributes
     };
     proc_attributes

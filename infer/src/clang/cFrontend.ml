@@ -53,6 +53,8 @@ let do_source_file translation_unit_context ast =
   (* This could be moved in the cfg_infer module *)
   let source_dir = DB.source_dir_from_source_file source_file in
   let tenv_file = DB.source_dir_get_internal_file source_dir ".tenv" in
+  (* Naming scheme of .cfg file matters for OndemandCapture module. If it
+     changes here, it should be changed there as well*)
   let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
   let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
   Cg.store_to_file cg_file call_graph;

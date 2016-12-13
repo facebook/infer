@@ -122,17 +122,23 @@ let get_file_data exe_env pname =
     Some (Procname.Hash.find exe_env.proc_map pname)
   with Not_found ->
     begin
-      match AttributesTable.load_attributes pname with
-      | None ->
-          L.err "can't find tenv_cfg_object for %a@." Procname.pp pname;
-          None
-      | Some proc_attributes ->
-          let source_file = proc_attributes.ProcAttributes.source_file_captured in
-          let source_dir = DB.source_dir_from_source_file source_file in
-          let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
-          let file_data = create_file_data exe_env.file_map source_file cg_fname in
-          Procname.Hash.replace exe_env.proc_map pname file_data;
-          Some file_data
+      let source_file_opt =
+        match AttributesTable.load_attributes pname with
+        | None ->
+            L.err "can't find tenv_cfg_object for %a@." Procname.pp pname;
+            None
+        | Some proc_attributes when Config.reactive_capture ->
+            let get_captured_file {ProcAttributes.source_file_captured} = source_file_captured in
+            OndemandCapture.try_capture proc_attributes |> Option.map ~f:get_captured_file
+        | Some proc_attributes ->
+            Some proc_attributes.ProcAttributes.source_file_captured in
+      let get_file_data_for_source source_file =
+        let source_dir = DB.source_dir_from_source_file source_file in
+        let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
+        let file_data = create_file_data exe_env.file_map source_file cg_fname in
+        Procname.Hash.replace exe_env.proc_map pname file_data;
+        file_data in
+      Option.map ~f:get_file_data_for_source source_file_opt
     end
 
 (** return the source file associated to the procedure *)

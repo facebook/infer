@@ -20,7 +20,7 @@ let load_attributes: Procname.t => option ProcAttributes.t;
 
 
 /** Load attrubutes for the procedure but only if is_defined is true */
-let load_defined_attributes: Procname.t => option ProcAttributes.t;
+let load_defined_attributes: cache_none::bool => Procname.t => option ProcAttributes.t;
 
 
 /** Given the name of an ObjC class, extract the type from the tenv where the class was defined. We

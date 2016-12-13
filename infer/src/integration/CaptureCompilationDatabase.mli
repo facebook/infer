@@ -14,6 +14,8 @@ open! IStd
     is passed, we only capture the files there *)
 val capture_files_in_database : CompilationDatabase.t -> unit
 
+val capture_file_in_database : CompilationDatabase.t -> SourceFile.t -> unit
+
 (** Get the compilation database files that contain the compilation given by the
     buck command. It will be the compilation of the passed targets only or also
     the dependencies according to the flag --use-compilation-database deps | no-deps *)

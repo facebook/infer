@@ -328,6 +328,9 @@ let store_cfg_to_file source_file::source_file (filename: DB.filename) (cfg: cfg
     | None => ()
     }
   };
+  /* NOTE: it's important to write attribute files to disk before writing .cfg file to disk.
+     OndemandCapture module relies on it - it uses existance of .cfg file as a barrier to make
+     sure that all attributes were written to disk (but not necessarily flushed) */
   save_attributes source_file cfg;
   Serialization.to_file cfg_serializer filename cfg
 };

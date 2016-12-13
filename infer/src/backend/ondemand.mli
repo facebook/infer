@@ -11,7 +11,8 @@ open! IStd
 
 (** Module for on-demand analysis. *)
 
-(** Optional set of source dirs to analyze in on-demand mode. *)
+(** Optional set of source dirs to analyze in on-demand mode. If None then all source dirs
+    will be analyzed *)
 val dirs_to_analyze : String.Set.t option
 
 type analyze_ondemand = SourceFile.t -> Procdesc.t -> unit
