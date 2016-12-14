@@ -10,20 +10,25 @@ include $(ROOT_DIR)/Makefile.config
 
 OBJC_MODELS_FILE = $(SPECS_LIB_DIR)/objc_models
 OBJC_MODELS_SOURCES = $(shell find src/ -name "*.m" -or -name "*.c")
+INFER_RESULTS = out/report.json
 
-all: $(OBJC_MODELS_FILE)
+all: install
 
-$(OBJC_MODELS_FILE): $(OBJC_MODELS_SOURCES) $(CLANG_DEPS)
+$(INFER_RESULTS): $(OBJC_MODELS_SOURCES) $(CLANG_DEPS)
 # make clean in src/ in case $(CLANG_DEPS) have changed
-	$(MAKE) -C src clean
-	$(INFER_BIN) -o out/ --models-mode --no-failures-allowed -- $(MAKE) -C src
+	@$(MAKE) -C src clean
+	$(INFER_BIN) -o $(@D) --models-mode --no-failures-allowed -- $(MAKE) -C src
 	touch $(OBJC_MODELS_FILE)
 
+$(OBJC_MODELS_FILE): $(INFER_RESULTS)
+	@$(INSTALL_DATA) $(dir $(INFER_RESULTS))/specs/*.specs $(SPECS_LIB_DIR)
+	@touch $@
+
 install: $(OBJC_MODELS_FILE)
-	$(INSTALL_DATA) -C out/specs/*.specs $(SPECS_LIB_DIR)
 
 clean:
-	@rm -f $(OBJC_MODELS_FILE)
-	$(MAKE) -C src clean
+	$(REMOVE) $(OBJC_MODELS_FILE)
+	$(REMOVE_DIR) $(dir $(INFER_RESULTS))
+	@$(MAKE) -C src clean
 
 .PHONY: all clean install

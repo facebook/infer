@@ -27,21 +27,25 @@ compile:
 	clang $(CLANG_OPTIONS) $(SOURCES)
 
 capture:
+	$(call silent_on_success,\
 	$(INFER_BIN) $(INFER_OPTIONS) --project-root $(ROOT) \
 	--icfg-dotty-outfile $(ROOT)/main.cpp.test.dot -- \
-	clang $(CLANG_OPTIONS) $(ROOT)/main.cpp
+	clang $(CLANG_OPTIONS) $(ROOT)/main.cpp)
 
+	$(call silent_on_success,\
 	$(INFER_BIN) $(INFER_OPTIONS) --project-root $(SYM_ROOT) \
 	--icfg-dotty-outfile $(SYM_ROOT)/main_symlink.cpp.test.dot -- \
-	clang $(CLANG_OPTIONS) $(SYM_ROOT)/main.cpp
+	clang $(CLANG_OPTIONS) $(SYM_ROOT)/main.cpp)
 
-	cd $(ROOT) && $(INFER_BIN) $(INFER_OPTIONS) \
-	--icfg-dotty-outfile main_default_root.cpp.test.dot -- \
-	clang $(CLANG_OPTIONS) main.cpp
+	cd $(ROOT) && \
+	$(call silent_on_success,\
+	$(INFER_BIN) $(INFER_OPTIONS) --icfg-dotty-outfile main_default_root.cpp.test.dot -- \
+	clang $(CLANG_OPTIONS) main.cpp)
 
-	cd $(SYM_ROOT) && $(INFER_BIN) $(INFER_OPTIONS) \
-	--icfg-dotty-outfile main_default_symlink.cpp.test.dot -- \
-	clang $(CLANG_OPTIONS) main.cpp
+	cd $(SYM_ROOT) && \
+	$(call silent_on_success,\
+	$(INFER_BIN) $(INFER_OPTIONS) --icfg-dotty-outfile main_default_symlink.cpp.test.dot -- \
+	clang $(CLANG_OPTIONS) main.cpp)
 
 # test_extra needs to be separate target. Otherwise commands from test
 # target in common Makefile won't run

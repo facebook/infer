@@ -11,20 +11,24 @@ include $(ROOT_DIR)/Makefile.config
 CPP_MODELS_FILE = $(SPECS_LIB_DIR)/cpp_models
 CPP_MODELS_SOURCES = $(shell find src/ -name "*.cpp")
 C_MODELS_SOURCES = $(shell find src/c_src/ -name "*.c")
+INFER_RESULTS = out/report.json
 
-all: $(CPP_MODELS_FILE)
+all: install
 
-$(CPP_MODELS_FILE): $(CPP_MODELS_SOURCES) $(C_MODELS_SOURCES) $(CLANG_DEPS)
+$(INFER_RESULTS): $(CPP_MODELS_SOURCES) $(C_MODELS_SOURCES) $(CLANG_DEPS)
 # make clean in src/ in case $(CLANG_DEPS) have changed
-	$(MAKE) -C src clean
-	$(INFER_BIN) -o out/ --models-mode --no-failures-allowed --cxx -- $(MAKE) -C src
-	touch $(CPP_MODELS_FILE)
+	@$(MAKE) -C src clean
+	$(INFER_BIN) -o $(@D) --models-mode --no-failures-allowed -- $(MAKE) -C src
+
+$(CPP_MODELS_FILE): $(INFER_RESULTS)
+	@$(INSTALL_DATA) $(dir $(INFER_RESULTS))/specs/*.specs $(SPECS_LIB_DIR)
+	@touch $@
 
 install: $(CPP_MODELS_FILE)
-	$(INSTALL_DATA) -C out/specs/*.specs $(SPECS_LIB_DIR)
 
 clean:
-	@rm -f $(CPP_MODELS_FILE)
-	$(MAKE) -C src clean
+	$(REMOVE) $(CPP_MODELS_FILE)
+	$(REMOVE_DIR) $(dir $(INFER_RESULTS))
+	@$(MAKE) -C src clean
 
 .PHONY: all clean install

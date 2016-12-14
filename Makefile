@@ -38,31 +38,14 @@ DIRECT_TESTS += objc_frontend_test objc_errors_test objc_linters_test objcpp_fro
 endif
 
 .PHONY: all
-all: infer inferTraceBugs
-
-# executable names that should point to InferClang to trigger capture
-INFERCLANG_WRAPPERS_BASENAMES = c++ cc clang clang++ g++ gcc
-INFERCLANG_WRAPPERS_PATHS = $(foreach cc,$(INFERCLANG_WRAPPERS_BASENAMES),$(LIB_DIR)/wrappers/$(cc))
-
-$(INFERCLANG_WRAPPERS_PATHS): Makefile
-	$(REMOVE) $@ && \
-	cd $(@D) && \
-	$(LN_S) ../../bin/InferClang $(@F)
-
-$(BIN_DIR):
-	$(MKDIR_P) $@
-
-$(INFERTRACEBUGS_BIN_RELPATH): Makefile $(BIN_DIR)
-	$(REMOVE) $@ && \
-	cd $(@D) && \
-	$(LN_S) ../lib/python/$(@F) $(@F)
+all: infer
 
 .PHONY: src_build
 src_build:
 ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(MAKE) -C facebook
+	@$(MAKE) -C facebook
 endif
-	$(MAKE) -C $(SRC_DIR) infer
+	@$(MAKE) -C $(SRC_DIR) infer
 ifeq ($(BUILD_C_ANALYZERS),yes)
 src_build: clang_plugin
 endif
@@ -70,31 +53,28 @@ endif
 .PHONY: infer
 infer: src_build
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
-	$(MAKE) -C $(ANNOTATIONS_DIR)
+	@$(MAKE) -C $(ANNOTATIONS_DIR)
 endif
-	$(MAKE) -C $(MODELS_DIR) all
-ifeq ($(BUILD_C_ANALYZERS),yes)
-infer: $(INFERCLANG_WRAPPERS_PATHS)
-endif
+	@$(MAKE) -C $(MODELS_DIR) all
 
 .PHONY: clang_setup
 clang_setup:
-	export CC="$(CC)" CFLAGS="$(CFLAGS)"; \
+	@export CC="$(CC)" CFLAGS="$(CFLAGS)"; \
 	export CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)"; \
 	export CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)"; \
-	$(FCP_DIR)/clang/setup.sh $(INFER_FCP_SETUP_OPTS)
+	$(FCP_DIR)/clang/setup.sh $(INFER_FCP_SETUP_OPTS) > /dev/null
 
 .PHONY: clang_plugin
 clang_plugin: clang_setup
 ifeq ($(IS_RELEASE_TREE),no)
-	$(MAKE) -C $(FCP_DIR)/libtooling all \
+	@$(MAKE) -C $(FCP_DIR)/libtooling all \
 	  CC=$(CC) CXX=$(CXX) \
 	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
 	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
 	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
 	  CLANG_PREFIX=$(CLANG_PREFIX) \
 	  CLANG_INCLUDES=$(CLANG_INCLUDES)
-	$(MAKE) -C $(FCP_DIR)/clang-ocaml all \
+	@$(MAKE) -C $(FCP_DIR)/clang-ocaml all \
           build/clang_ast_proj.ml build/clang_ast_proj.mli \
 	  CC=$(CC) CXX=$(CXX) \
 	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
@@ -104,29 +84,16 @@ ifeq ($(IS_RELEASE_TREE),no)
 	  CLANG_INCLUDES=$(CLANG_INCLUDES)
 endif
 
-.PHONY: inferTraceBugs
-inferTraceBugs: $(INFERTRACEBUGS_BIN_RELPATH)
-
-.PHONY: test_this_build
-test_this_build: clang_plugin
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(MAKE) -C facebook
-endif
-	$(MAKE) -C $(SRC_DIR) test_build
-
-.PHONY: test_oss_build
-test_oss_build: clang_plugin
-	$(MAKE) -C $(SRC_DIR) EXTRA_DEPS=opensource TEST_BUILD_DIR=$(BUILD_DIR)/opensource test_build
-
 .PHONY: test_build
-test_build: test_this_build
+test_build: clang_plugin
 ifeq ($(IS_FACEBOOK_TREE),yes)
-test_build: test_oss_build
+	@$(MAKE) -C facebook
 endif
+	@$(MAKE) -C $(SRC_DIR) test_build
 
 .PHONY: ocaml_unit_test
-ocaml_unit_test: test_this_build
-	$(TEST_BUILD_DIR)/unit/inferunit.byte
+ocaml_unit_test: test_build
+	$(call silent_on_success,$(TEST_BUILD_DIR)/unit/inferunit.byte)
 
 DIRECT_TESTS_REPLACE = $(patsubst %_frontend_test,%_frontend_replace,$(filter %_frontend_test,$(DIRECT_TESTS)))
 
@@ -138,7 +105,7 @@ define gen_direct_test_rule
 $(1): infer
 	($(MAKE) -C \
 	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $(1) | cut -f 1 -d _)/$(shell printf $(1) | cut -f 2 -d _) \
-	  $(shell printf $(1) | cut -f 3 -d _) \
+	  test \
 	3>&1 1>&2- 2>&3- ) \
 	| grep -v "warning: ignoring old commands for target" \
 	| grep -v "warning: overriding commands for target" \
@@ -146,7 +113,7 @@ $(1): infer
 
 .PHONY: $(1)_clean
 $(1)_clean:
-	$(MAKE) -C \
+	@$(MAKE) -C \
 	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $(1) | cut -f 1 -d _)/$(shell printf $(1) | cut -f 2 -d _) \
 	  clean
 endef
@@ -161,11 +128,15 @@ direct_tests: $(DIRECT_TESTS)
 define gen_build_system_test_rule
 .PHONY: build_$(1)_test
 build_$(1)_test: infer
-	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(1) test
+	@($(MAKE) -C $(INFER_DIR)/tests/build_systems/$(1) test \
+	3>&1 1>&2- 2>&3- ) \
+	| grep -v "warning: ignoring old commands for target" \
+	| grep -v "warning: overriding commands for target" \
+	; exit $$$${PIPESTATUS[0]}
 
 .PHONY: build_$(1)_clean
 build_$(1)_clean:
-	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(1) clean
+	@$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(1) clean
 endef
 
 $(foreach test,$(BUILD_SYSTEMS_TESTS), $(eval $(call gen_build_system_test_rule,$(test))))
@@ -199,17 +170,17 @@ check_missing_mli:
 	    test -f "$$x"i || echo Missing "$$x"i; done
 
 .PHONY: toplevel
-toplevel: infer
-	$(MAKE) -C $(SRC_DIR) toplevel
+toplevel: clang_plugin
+	@$(MAKE) -C $(SRC_DIR) toplevel
 
 .PHONY: inferScriptMode_test
-inferScriptMode_test: toplevel
+inferScriptMode_test: test_build
 	$(call silent_on_success,\
 	 INFER_REPL_BINARY=ocaml $(SCRIPT_DIR)/infer_repl $(INFER_DIR)/tests/repl/infer_batch_script.ml)
 
 .PHONY: checkCopyright
 checkCopyright:
-	$(MAKE) -C $(SRC_DIR) checkCopyright
+	@$(MAKE) -C $(SRC_DIR) checkCopyright
 
 .PHONY: run-test
 run-test: test_build ocaml_unit_test buck_test inferTraceBugs_test inferScriptMode_test checkCopyright
@@ -224,7 +195,7 @@ else
 endif
 
 .PHONY: quick-test
-quick-test: test_this_build ocaml_unit_test
+quick-test: test_build ocaml_unit_test
 
 .PHONY: test-replace
 test-replace:
@@ -239,7 +210,6 @@ test-replace:
 .PHONY: uninstall
 uninstall:
 	$(REMOVE_DIR) $(DESTDIR)$(libdir)/infer/
-	$(REMOVE) $(DESTDIR)$(bindir)/inferTraceBugs
 	$(REMOVE) $(DESTDIR)$(bindir)/infer
 
 .PHONY: test_clean
@@ -247,7 +217,7 @@ test_clean: $(foreach test,$(DIRECT_TESTS),$(test)_clean) \
             $(foreach test,$(BUILD_SYSTEMS_TESTS),build_$(test)_clean)
 
 .PHONY: install
-install: infer inferTraceBugs
+install: infer
 # create directory structure
 	test -d      $(DESTDIR)$(bindir) || \
 	  $(MKDIR_P) $(DESTDIR)$(bindir)
@@ -300,10 +270,12 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	@for i in $$(find infer/lib/clang_wrappers/*); do \
 	  $(INSTALL_PROGRAM) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
 	done
+#	  only for files that point to InferClang
 	(cd $(DESTDIR)$(libdir)/infer/infer/lib/wrappers/ && \
-	 $(REMOVE) $(INFERCLANG_WRAPPERS_BASENAMES) && \
-	 $(foreach cc,$(INFERCLANG_WRAPPERS_BASENAMES), \
-	  $(LN_S) ../../bin/InferClang $(cc);))
+	 $(foreach cc,$(shell find $(LIB_DIR)/wrappers -type l), \
+	  [ $(cc) -ef $(INFERCLANG_BIN) ] && \
+	  $(REMOVE) $(notdir $(cc)) && \
+	  $(LN_S) ../../bin/InferClang $(notdir $(cc));))
 	@for i in $$(find infer/lib/specs/*); do \
 	  $(INSTALL_DATA) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
 	done
@@ -349,26 +321,24 @@ endif
 	 $(LN_S) $(libdir)/infer/infer/lib/python/inferTraceBugs inferTraceBugs)
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(MAKE) -C facebook install
+	@$(MAKE) -C facebook install
 endif
 
 .PHONY: clean
 clean: test_clean
 ifeq ($(IS_RELEASE_TREE),no)
 ifeq ($(BUILD_C_ANALYZERS),yes)
-	$(MAKE) -C $(FCP_DIR) clean
-	$(MAKE) -C $(FCP_DIR)/clang-ocaml clean
-	$(REMOVE) $(INFERCLANG_WRAPPERS_PATHS)
+	@$(MAKE) -C $(FCP_DIR) clean
+	@$(MAKE) -C $(FCP_DIR)/clang-ocaml clean
 endif
 endif
-	$(MAKE) -C $(SRC_DIR) clean
-	$(MAKE) -C $(ANNOTATIONS_DIR) clean
-	$(MAKE) -C $(MODELS_DIR) clean
-	$(REMOVE) $(INFERTRACEBUGS_BIN_RELPATH)
+	@$(MAKE) -C $(SRC_DIR) clean
+	@$(MAKE) -C $(ANNOTATIONS_DIR) clean
+	@$(MAKE) -C $(MODELS_DIR) clean
 ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(MAKE) -C facebook clean
+	@$(MAKE) -C facebook clean
 endif
-	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot clean
+	@$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot clean
 	find $(INFER_DIR)/tests -name '*.o' -or -name '*.o.sh' -delete
 
 .PHONY: conf-clean

@@ -133,7 +133,6 @@ OCAMLBUILD_ALL = $(OCAMLBUILD_BASE) $(JAVA_OCAMLBUILD_OPTIONS)
 
 # list of ocamlbuild targets common to all build targets -- native version
 INFER_BASE_TARGETS = \
-  $(C_STUBS_OBJ) \
   $(INFER_MAIN).native \
   $(INFERANALYZE_MAIN).native \
   $(INFERPRINT_MAIN).native \
@@ -157,15 +156,34 @@ INFER_CONFIG_TARGETS += $(INFERCLANG_MAIN).native
 DEPENDENCIES += clang
 endif
 
+OCAML_BASE_SOURCES = \
+  $(wildcard $(DEPENDENCIES:=/[a-zA-Z]*.ml) $(DEPENDENCIES:=/[a-zA-Z]*.mli) \
+             $(DEPENDENCIES:=/[a-zA-Z]*.mll) $(DEPENDENCIES:=/[a-zA-Z]*.mly) \
+             $(DEPENDENCIES:=/[a-zA-Z]*.re) $(DEPENDENCIES:=/[a-zA-Z]*.rei)) \
+  $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS)
+OCAML_SOURCES = $(OCAML_BASE_SOURCES)
+ifeq ($(BUILD_C_ANALYZERS),yes)
+OCAML_SOURCES += $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
+endif
+OCAML_ALL_SOURCES = $(OCAML_BASE_SOURCES) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
+
 export OCAMLFIND_IGNORE_DUPS_IN=$(shell ocamlc -where)/compiler-libs
 
 .PHONY: all
 all: infer
 
-.PHONY: infer
-infer: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS)
+# single out infer.native as the source of truth for make, knowing that in fact several targets are
+# produced by the build
+$(INFER_BUILD_DIR)/$(INFER_MAIN).native: base/Version.ml $(BUILD_DIR) $(OCAML_SOURCES)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(INFER_CONFIG_TARGETS)
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(INFER_BIN)
+# let make know that the target is up-to-date even if ocamlbuild cached it
+	@touch $@
+
+$(BIN_DIR): Makefile
+	$(MKDIR_P) $@
+	@touch $@
+
+$(INFER_BIN): $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(BIN_DIR)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERANALYZE_MAIN).native $(INFERANALYZE_BIN)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERPRINT_MAIN).native $(INFERPRINT_BIN)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERUNIT_MAIN).native $(INFERUNIT_BIN)
@@ -174,16 +192,22 @@ ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 endif
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERCLANG_MAIN).native $(INFERCLANG_BIN)
-	cd $(INFER_BUILD_DIR) && $(LN_S) -f InferClang InferClang++ && cd -
 endif
+	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(INFER_BIN)
+
+.PHONY: infer
+infer: $(INFER_BIN)
 
 ifeq ($(BUILD_C_ANALYZERS),yes)
-infer: $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) $(CLANG_BINIOU_DICT)
+infer: $(CLANG_BINIOU_DICT)
 endif
 
-.PHONY: byte
-byte: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
+$(INFER_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(BUILD_DIR) $(OCAML_ALL_SOURCES)
 	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) $(INFER_ALL_TARGETS:.native=.byte)
+	@touch $@
+
+.PHONY: byte
+byte: $(INFER_BUILD_DIR)/$(INFER_MAIN).byte
 
 # to build only the single module <Module> (and its dependencies) with extra flags execute:
 #   make MFLAGS=<flags> M=<Module>.cm{o,x} module
@@ -193,16 +217,19 @@ M=
 MFLAGS=
 
 .PHONY: module
-module: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
+module: base/Version.ml $(BUILD_DIR) $(OCAML_ALL_SOURCES)
 	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) \
           $(MFLAGS) \
 	  $(M)
 
-.PHONY: test_build
-test_build: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
+$(TEST_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(BUILD_DIR) $(OCAML_ALL_SOURCES) toplevel.mlpack
 	$(OCAMLBUILD_ALL) -build-dir $(TEST_BUILD_DIR) \
 	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
-	  $(INFER_ALL_TARGETS:.native=.byte)
+	  $(INFER_ALL_TARGETS:.native=.byte) toplevel.cmo
+	@touch $@
+
+.PHONY: test_build
+test_build: $(TEST_BUILD_DIR)/$(INFER_MAIN).byte
 
 # to generate interface file.mli from implementation file.ml execute:
 #   make M=file mli
@@ -243,35 +270,42 @@ mod_dep.pdf: mod_dep.dot
 dsort:
 	@ocamldep.opt -sort $(inc_flags) -ml-synonym .re -mli-synonym .rei $(ml_src_files) -pp refmt $(re_src_files)
 
-roots_grep_regex:=$(foreach root,$(roots),-e $(root)$$)
-dirs_find_regex:=$(foreach dir, $(DEPENDENCIES),-path "./$(dir)/*" -o)
+define to_ocaml_module
+$(shell \
+  echo $(basename $(1)) \
+  | awk 'BEGIN { FS = "/"; OFS = "/" } ; {$$NF=toupper(substr($$NF,1,1))substr($$NF,2); print $$0}')
+endef
+
+toplevel.mlpack: base/Version.ml $(OCAML_ALL_SOURCES)
+#	We need to pack all the infer modules into another module to avoid name clashes with some
+#	of them coming from ocaml libraries (Ident for example).  To do that, we generate a .mlpack
+#	file containing namespaced modules.
+#	1. we filter out roots because they execute code upon loading
+#	2. each source file is converted to a module by capitalizing its first letter
+#	3. we `echo` each module individually to avoid too long a command line
+#	4. prevent race conditions by using a temp file
+	$(eval $@_tmp := $(shell mktemp $@.tmp.XXXX))
+	$(foreach module,\
+	  $(filter-out $(foreach root,$(roots),%/$(root)),\
+	  $(foreach source,\
+	    $(filter-out unit/% facebook/scripts/eradicate_stats.ml,$(OCAML_ALL_SOURCES)),\
+	    $(call to_ocaml_module,$(source)))),\
+	  $(shell echo $(module) >> $($@_tmp)))
+	mv $($@_tmp) $@
+
+$(INFER_BUILD_DIR)/toplevel.cmo: toplevel.mlpack $(BUILD_DIR)
+	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) toplevel.cmo
+	@touch $@
 
 .PHONY: toplevel
-toplevel: init $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
-	# We need to pack all infer modules into another module to avoid name clashes
-	# with some of them coming from ocaml libraries (Ident for example).
-	# To do that, we generate .mlpack file with source files. Steps:
-	# 1. find all interesting .re and .ml files - they need to be in one of
-	#    directories listed in $(DEPENDENCIES)
-	# 2. remove './' from the beginning of each line
-	# 3. remove extension from all files
-	# 4. make first letter of filename uppercase to produce valid ocaml module
-	# 5. filter out root modules since they run code when loading the module.
-	find . \( -name "*.ml" -o -name "*.mly" -o -name "*.mll" -o -name "*.re" \) \
-		\( $(dirs_find_regex) -false \) \
-		-not \( -path "./unit/*" -o -path "./facebook/scripts/eradicate_stats.ml" -o -name ".#*" \) \
-	| cut -c 3- \
-	| rev | cut -f 2- -d '.' | rev \
-	| awk 'BEGIN { FS = "/"; OFS = "/" } ; {$$NF=toupper(substr($$NF,1,1))substr($$NF,2); print $$0}' \
-	| grep -v $(roots_grep_regex) > toplevel.mlpack
-	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) toplevel.cmo
+toplevel: $(INFER_BUILD_DIR)/toplevel.cmo
 
 .PHONY: checkCopyright
 checkCopyright: $(CHECKCOPYRIGHT_BIN)
 
-$(CHECKCOPYRIGHT_BIN): sanitize $(BUILD_DIR) $(CHECKCOPYRIGHT_MAIN).ml
-	rebuild -quiet -r -j $(NCPU) -build-dir $(INFER_BUILD_DIR) -pkgs core,str -tag thread -use-ocamlfind $(CHECKCOPYRIGHT_MAIN).native
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BIN)
+$(CHECKCOPYRIGHT_BIN): $(BUILD_DIR) $(CHECKCOPYRIGHT_MAIN).ml
+	rebuild -quiet -r -j $(NCPU) -build-dir $(BUILD_DIR)/checkCopyright -pkgs core,str -tag thread -use-ocamlfind $(CHECKCOPYRIGHT_MAIN).native
+	$(INSTALL_PROGRAM) $(BUILD_DIR)/checkCopyright/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BIN)
 
 define gen_atdgen_rules
 # generate files using atdgen
@@ -293,8 +327,8 @@ $(foreach atd_type,j t,\
         $(call gen_atdgen_rules,$(INFERPRINT_ATDGEN_STUB_ATD),$(INFERPRINT_ATDGEN_STUB_BASE),$(atd_type))))
 
 $(foreach atd_type,j t,\
-		$(eval \
-				$(call gen_atdgen_rules,$(STACKTREE_ATDGEN_STUB_ATD),$(STACKTREE_ATDGEN_STUB_BASE),$(atd_type))))
+    $(eval \
+        $(call gen_atdgen_rules,$(STACKTREE_ATDGEN_STUB_ATD),$(STACKTREE_ATDGEN_STUB_BASE),$(atd_type))))
 
 # rebuild the artifacts of the AST files whenever they're upated in FCP
 $(foreach atd_type,b j t v,\
@@ -318,18 +352,8 @@ $(CLANG_BINIOU_DICT): $(CLANG_ATDGEN_STUB_ATD)
 	  | sort | uniq  \
 	  > $@
 
-.PHONY: init
-init: sanitize version $(BUILD_DIR)
-
-.PHONY: sanitize
-sanitize:
-ifneq ($(wildcard $(BUILD_DIR)/sanitize.sh),)
-	$(BUILD_DIR)/sanitize.sh
-endif
-
-.PHONY: version
-version: base/Version.ml.in Makefile
-	TMPFILE=$$(mktemp base/Version.ml.tmp.XXXX); \
+base/Version.ml: base/Version.ml.in Makefile
+	TMPFILE=$$(mktemp $@.tmp.XXXX); \
 	INFER_GIT_COMMIT=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --short HEAD || printf "unknown"); \
 	INFER_GIT_BRANCH=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --abbrev-ref HEAD || printf "unknown"); \
 	sed \
@@ -340,8 +364,7 @@ version: base/Version.ml.in Makefile
 	  -e "s|@INFER_GIT_COMMIT[@]|$$INFER_GIT_COMMIT|g" \
 	  -e "s|@INFER_GIT_BRANCH[@]|$$INFER_GIT_BRANCH|g" \
 	  $< > "$$TMPFILE"; \
-	$(INSTALL_DATA) -C "$$TMPFILE" base/Version.ml; \
-	rm -f "$$TMPFILE"
+	mv "$$TMPFILE" $@
 
 $(BUILD_DIR):
 	$(MKDIR_P) $(BUILD_DIR)
@@ -352,6 +375,8 @@ test_clean:
 
 .PHONY: clean
 clean:
+	$(REMOVE) $(INFER_ALL_TARGETS)
+	$(REMOVE) toplevel.mlpack
 	$(REMOVE_DIR) $(BUILD_DIR)
 	$(REMOVE) $(ETC_DIR)/clang_ast.dict
 	$(REMOVE) base/Version.ml

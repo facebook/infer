@@ -26,24 +26,24 @@ ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 all: java
 endif
 
-.PHONY: java clang clean $(CLANG_SUBDIRS)
+.PHONY: java clang clean clean_specs $(CLANG_SUBDIRS)
 
 clean_specs:
 	$(REMOVE) $(SPECS_LIB_DIR)/*.specs
 
 $(CLANG_SUBDIRS):
-	$(MAKE) -C $@ install
+	@$(MAKE) -C $@ install
 
-clang: clean_specs
-	$(MAKE) $(CLANG_SUBDIRS)
+clang:
+	@$(MAKE) $(CLANG_SUBDIRS)
 
-java: clean_specs
-	$(MAKE) -C $@ install
+java:
+	@$(MAKE) -C $@ install
 
 clean: clean_specs
-	$(MAKE) -C $(JAVA_MODELS_DIR) clean
-	$(MAKE) -C $(C_MODELS_DIR) clean
-	$(MAKE) -C $(CPP_MODELS_DIR) clean
+	@$(MAKE) -C $(JAVA_MODELS_DIR) clean
+	@$(MAKE) -C $(C_MODELS_DIR) clean
+	@$(MAKE) -C $(CPP_MODELS_DIR) clean
 ifneq (no, $(XCODE_SELECT))
-	$(MAKE) -C $(OBJC_MODELS_DIR) clean
+	@$(MAKE) -C $(OBJC_MODELS_DIR) clean
 endif

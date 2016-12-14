@@ -61,7 +61,7 @@ REMOVE = rm -vf
 REMOVE_DIR = rm -rvf
 RSYNC_A = rsync -aq
 endif
-COPY = cp -f -p
+COPY = cp -f
 COPY_DIR = cp -Rf
 
 ABSOLUTE_ROOT_DIR = $(shell cd $(ROOT_DIR) && pwd)
