@@ -32,6 +32,35 @@ let stmt_checkers_list =  [CFrontend_checkers.ctl_direct_atomic_property_access_
 (* List of checkers on translation unit that potentially output multiple issues *)
 let translation_unit_checkers_list = [ComponentKit.component_file_line_count_info;]
 
+let evaluate_place_holder ph an =
+  match ph with
+  | "%ivar_name%" -> CFrontend_checkers.ivar_name an
+  | "%decl_name%" -> CFrontend_checkers.decl_name an
+  | "%var_name%" ->  CFrontend_checkers.var_name an
+  | _ -> (Logging.err "ERROR: helper function %s is unknown. Stop.\n" ph;
+          assert false)
+
+(* given a message this function searches for a place-holder identifier,
+   eg %id%. Then it evaluates id and replaces %id% in message
+   with the result of its evaluation. The function keeps on checking if
+   other place-holders exist and repeats the process until there are
+    no place-holder left.
+*)
+let rec expand_message_string message an =
+  (* reg exp should match alphanumeric id with possibly somee _ *)
+  let re = Str.regexp "%[a-zA-Z0-9_]+%" in
+  try
+    let _ = Str.search_forward re message 0 in
+    let ms = Str.matched_string message in
+    let res = evaluate_place_holder ms an in
+    Logging.out "\nMatched string '%s'\n" ms;
+    let re_ms = Str.regexp_string ms in
+    let message' = Str.replace_first re_ms res message in
+    Logging.out "Replacing %s in message: \n %s \n" ms message;
+    Logging.out "Resulting message: \n %s \n" message';
+    expand_message_string message' an
+  with Not_found -> message
+
 
 (* expands use of let defined formula id in checkers with their definition *)
 let expand_checkers checkers =
@@ -112,8 +141,12 @@ let invoke_set_of_checkers_an an context =
   IList.iter (fun checker ->
       let condition, issue_desc_opt = checker context an in
       match  CTL.eval_formula condition an context, issue_desc_opt with
-      | true, Some issue_desc -> log_frontend_issue context.CLintersContext.translation_unit_context
-                                   context.CLintersContext.current_method key issue_desc
+      | true, Some issue_desc ->
+
+          let desc' = expand_message_string issue_desc.CIssue.description an in
+          let issue_desc' = {issue_desc with CIssue.description = desc'} in
+          log_frontend_issue context.CLintersContext.translation_unit_context
+            context.CLintersContext.current_method key issue_desc'
       | _, _ -> ()) checkers
 
 

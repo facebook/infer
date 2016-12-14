@@ -52,8 +52,8 @@ val location_from_dinfo :
 val location_from_decl :
   CLintersContext.context -> Clang_ast_t.decl -> Location.t
 
-val decl_name_from_an : CTL.ast_node -> string
+val decl_name : CTL.ast_node -> string
 
 val ivar_name : CTL.ast_node -> string
 
-val var_descs_name : CTL.ast_node -> string
+val var_name : CTL.ast_node -> string

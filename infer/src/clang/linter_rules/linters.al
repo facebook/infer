@@ -17,7 +17,7 @@ DEFINE-CHECKER DIRECT_ATOMIC_PROPERTY_ACCESS = {
 			AND NOT is_objc_dealloc()
 		HOLDS-IN-NODE ObjCIvarRefExpr;
 
-  	SET message = "Direct access to ivar %ivar_name of an atomic property";
+  	SET message = "Direct access to ivar %ivar_name% of an atomic property";
   	SET suggestion = "Accessing an ivar of an atomic property makes the property nonatomic";
 	  SET severity = "WARNING";
 };
@@ -31,7 +31,7 @@ DEFINE-CHECKER ASSIGN_POINTER_WARNING = {
 	  		is_assign_property() AND is_property_pointer_type()
       HOLDS-IN-NODE ObjCPropertyDecl;
 
-	 SET message = "Property `%decl_name` is a pointer type marked with the `assign` attribute";
+	 SET message = "Property `%decl_name%` is a pointer type marked with the `assign` attribute";
 	 SET suggestion = "Use a different attribute like `strong` or `weak`.";
 	 SET severity = "WARNING";
 };
@@ -71,7 +71,7 @@ DEFINE-CHECKER BAD_POINTER_COMPARISON = {
          		etx
 					HOLDS-IN-NODE IfStmt, ForStmt, WhileStmt, ConditionalOperator;
 
-  SET description = "Implicitly checking whether NSNumber pointer is nil";
+  SET message = "Implicitly checking whether NSNumber pointer is nil";
 
 	SET suggestion =
 		"Did you mean to compare against the unboxed value instead? Please either explicitly compare the NSNumber instance to nil, or use one of the NSNumber accessors before the comparison.";
@@ -127,7 +127,7 @@ DEFINE-CHECKER REGISTERED_OBSERVER_BEING_DEALLOCATED = {
 	    	NOT (eventually_addObserver IMPLIES eventually_removeObserver)
 			HOLDS-IN-NODE ObjCImplementationDecl, ObjCProtocolDecl;
 
-	SET description =
+	SET message =
 		"Object self is registered in a notification center but not being removed before deallocation";
 
 	SET suggestion =
@@ -145,7 +145,7 @@ DEFINE-CHECKER strong_delegate_warning = {
 				name_contains_delegate AND name_does_not_contains_queue AND is_strong_property()
 			HOLDS-IN-NODE ObjCPropertyDecl;
 
-  SET description = "Property or ivar %decl_name declared strong";
+  SET message = "Property or ivar %decl_name% declared strong";
   SET suggestion = "In general delegates should be declared weak or assign";
 
 };
@@ -172,8 +172,8 @@ DEFINE-CHECKER global_var_init_with_calls_warning = {
      		(is_global_var AND is_initialized_with_expensive_call)
 		 HOLDS-IN-NODE VarDecl;
 
-  SET description =
-       "Global variable %decl_name is initialized using a function or method call";
+  SET message =
+       "Global variable %decl_name% is initialized using a function or method call";
   SET suggestion =
         "If the function/method call is expensive, it can affect the starting time of the app.";
 };
@@ -185,8 +185,8 @@ DEFINE-CHECKER ctl_captured_cxx_ref_in_objc_block_warning = {
 				    captures_cxx_references()
          HOLDS-IN-NODE BlockDecl;
 
-	  SET description =
-	        "C++ Reference variable(s) %var_desc_name captured by Objective-C block";
+	  SET message =
+	        "C++ Reference variable(s) %var_name% captured by Objective-C block";
 
 	  SET suggestion = "C++ References are unmanaged and may be invalid by the time the block executes.";
 
