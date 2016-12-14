@@ -330,12 +330,15 @@ let realpath path =
   | Error (code, f, arg) -> raise (Unix.Unix_error (code, f, arg))
 
 
+(* never closed *)
+let devnull = lazy (Unix.openfile "/dev/null" ~mode:[Unix.O_WRONLY])
+
 let suppress_stderr2 f2 x1 x2 =
+  let restore_stderr src =
+    Unix.dup2 ~src ~dst:Unix.stderr;
+    Unix.close src in
   let orig_stderr = Unix.dup Unix.stderr in
-  let silent_stderr = Unix.openfile "/dev/null" ~mode:[Unix.O_RDWR] in
-  let restore_stderr () =
-    Unix.dup2 ~src:orig_stderr ~dst:Unix.stderr;
-    Unix.close silent_stderr  in
-  Unix.dup2 ~src:silent_stderr ~dst:Unix.stderr;
+  Unix.dup2 ~src:(Lazy.force devnull) ~dst:Unix.stderr;
   let f () = f2 x1 x2 in
-  protect ~f ~finally:restore_stderr
+  let finally () = restore_stderr orig_stderr in
+  protect ~f ~finally
