@@ -470,7 +470,10 @@ class BuildIntegrationTest(unittest.TestCase):
                'infer_args': reactive_args},
               {'compile': ['clang', '-c', 'hello2.c'],
                'infer_args': reactive_args},
-              {'compile': ['analyze']}])
+              {'compile': ['clang', '-c', 'hello3.c'],
+               'infer_args': reactive_args},
+              {'compile': ['analyze'],
+               'infer_args': ['--reactive']}])
 
     def test_clang_component_kit_analytics(self):
         test('componentkit_analytics',

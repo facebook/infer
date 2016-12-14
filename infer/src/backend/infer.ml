@@ -213,6 +213,8 @@ let capture build_cmd = function
           ["--project-root"; Config.project_root] @
           (if not Config.reactive_mode then [] else
              ["--reactive"]) @
+          (if not Config.continue_capture then [] else
+             ["--continue"]) @
           "--out" :: Config.results_dir ::
           (match Config.xcode_developer_dir with None -> [] | Some d ->
               ["--xcode-developer-dir"; d]) @

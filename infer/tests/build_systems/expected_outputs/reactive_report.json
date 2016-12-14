@@ -8,5 +8,10 @@
     "bug_type": "NULL_DEREFERENCE",
     "file": "hello2.c",
     "procedure": "test2"
+  },
+  {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "hello3.c",
+    "procedure": "test3"
   }
 ]
