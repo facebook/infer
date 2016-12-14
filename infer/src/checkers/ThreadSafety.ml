@@ -30,9 +30,25 @@ module Summary = Summary.Make (struct
 let is_builder_class class_name =
   String.is_suffix ~suffix:"Builder" class_name
 
+(* similarly, we assume that immutable classes safely encapsulate their state *)
+let is_immutable_collection_class class_name tenv =
+  let immutable_collections = [
+    "com.google.common.collect.ImmutableCollection";
+    "com.google.common.collect.ImmutableMap";
+    "com.google.common.collect.ImmutableTable";
+  ] in
+  PatternMatch.supertype_exists
+    tenv (fun typename _ -> IList.mem (=) (Typename.name typename) immutable_collections) class_name
+
 let is_call_to_builder_class_method = function
   | Procname.Java java_pname -> is_builder_class (Procname.java_get_class_name java_pname)
   | _ -> false
+
+let is_call_to_immutable_collection_method tenv = function
+  | Procname.Java java_pname ->
+      is_immutable_collection_class (Procname.java_get_class_type_name java_pname) tenv
+  | _ ->
+      false
 
 let is_initializer tenv proc_name =
   Procname.is_constructor proc_name ||
@@ -143,7 +159,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                          (e.g., constructors that access static fields) *)
                       if is_unprotected locks' &&
                          not (is_initializer tenv pn) &&
-                         not (is_call_to_builder_class_method pn)
+                         not (is_call_to_builder_class_method pn) &&
+                         not (is_call_to_immutable_collection_method tenv pn)
                       then
                         let call_site = CallSite.make pn loc in
                         let reads' =

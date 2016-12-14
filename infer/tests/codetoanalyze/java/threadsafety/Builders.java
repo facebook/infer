@@ -10,6 +10,7 @@
 package codetoanalyze.java.checkers;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.MyImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 
 @ThreadSafe
@@ -68,6 +69,10 @@ public class Builders {
   public Obj customBuilderOk3(Obj input) {
     Obj.Builder builder = new Obj.Builder();
     return builder.setFromObj(input).build();
+  }
+
+  public void writeImmutableListFieldOk(MyImmutableList<Object> list) {
+    list.writeFld();
   }
 
   public Obj mutateBad(Obj o) {
