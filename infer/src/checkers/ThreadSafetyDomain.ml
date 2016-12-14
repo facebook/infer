@@ -11,12 +11,17 @@ open! IStd
 
 module F = Format
 
+module RawAccessPath = struct
+  type t = AccessPath.raw
+  let compare = AccessPath.compare_raw
+  let pp = AccessPath.pp_raw
+  let pp_element = pp
+end
+
+module OwnershipDomain = AbstractDomain.InvertedSet(PrettyPrintable.MakePPSet(RawAccessPath))
+
 module TraceElem = struct
-  module Kind = struct
-    type t = AccessPath.raw
-    let compare = AccessPath.compare_raw
-    let pp = AccessPath.pp_raw
-  end
+  module Kind = RawAccessPath
 
   type t = {
     site : CallSite.t;
@@ -64,6 +69,8 @@ type astate =
     (** access paths written outside of synchronization *)
     id_map : IdAccessPathMapDomain.astate;
     (** map used to decompile temporary variables into access paths *)
+    owned : OwnershipDomain.astate;
+    (** access paths that must be owned by the current function *)
   }
 
 (** same as astate, but without [id_map] (since it's local) *)
@@ -74,7 +81,8 @@ let initial =
   let reads = PathDomain.initial in
   let writes = PathDomain.initial in
   let id_map = IdAccessPathMapDomain.initial in
-  { locks; reads; writes; id_map; }
+  let owned = OwnershipDomain.initial in
+  { locks; reads; writes; id_map; owned; }
 
 let (<=) ~lhs ~rhs =
   if phys_equal lhs rhs
@@ -83,7 +91,8 @@ let (<=) ~lhs ~rhs =
     LocksDomain.(<=) ~lhs:lhs.locks ~rhs:rhs.locks &&
     PathDomain.(<=) ~lhs:lhs.reads ~rhs:rhs.reads &&
     PathDomain.(<=) ~lhs:lhs.writes ~rhs:rhs.writes &&
-    IdAccessPathMapDomain.(<=) ~lhs:lhs.id_map ~rhs:rhs.id_map
+    IdAccessPathMapDomain.(<=) ~lhs:lhs.id_map ~rhs:rhs.id_map &&
+    OwnershipDomain.(<=) ~lhs:lhs.owned ~rhs:rhs.owned
 
 let join astate1 astate2 =
   if phys_equal astate1 astate2
@@ -94,7 +103,8 @@ let join astate1 astate2 =
     let reads = PathDomain.join astate1.reads astate2.reads in
     let writes = PathDomain.join astate1.writes astate2.writes in
     let id_map = IdAccessPathMapDomain.join astate1.id_map astate2.id_map in
-    { locks; reads; writes; id_map; }
+    let owned = OwnershipDomain.join astate1.owned astate2.owned in
+    { locks; reads; writes; id_map; owned; }
 
 let widen ~prev ~next ~num_iters =
   if phys_equal prev next
@@ -105,7 +115,8 @@ let widen ~prev ~next ~num_iters =
     let reads = PathDomain.widen ~prev:prev.reads ~next:next.reads ~num_iters in
     let writes = PathDomain.widen ~prev:prev.writes ~next:next.writes ~num_iters in
     let id_map = IdAccessPathMapDomain.widen ~prev:prev.id_map ~next:next.id_map ~num_iters in
-    { locks; reads; writes; id_map; }
+    let owned = OwnershipDomain.widen ~prev:prev.owned ~next:next.owned ~num_iters in
+    { locks; reads; writes; id_map; owned; }
 
 let pp_summary fmt (locks, reads, writes) =
   F.fprintf
@@ -115,9 +126,10 @@ let pp_summary fmt (locks, reads, writes) =
     PathDomain.pp reads
     PathDomain.pp writes
 
-let pp fmt { locks; reads; writes; id_map; } =
+let pp fmt { locks; reads; writes; id_map; owned; } =
   F.fprintf
     fmt
-    "%a Id Map: %a"
+    "%a Id Map: %a Owned: %a"
     pp_summary (locks, reads, writes)
     IdAccessPathMapDomain.pp id_map
+    OwnershipDomain.pp owned

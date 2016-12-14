@@ -80,11 +80,22 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     try Some (IdAccessPathMapDomain.find id id_map)
     with Not_found -> None
 
-  let add_path_to_state exp typ loc path_state id_map =
+  let add_path_to_state exp typ loc path_state id_map owned =
+    (* remove the last field of the access path, if it has any *)
+    let truncate = function
+      | base, []
+      | base, _ :: [] -> base, []
+      | base, accesses -> base, IList.rev (IList.tl (IList.rev accesses)) in
     let f_resolve_id = resolve_id id_map in
+
     IList.fold_left
       (fun acc rawpath ->
-         ThreadSafetyDomain.PathDomain.add_sink (ThreadSafetyDomain.make_access rawpath loc) acc)
+         let base_path = truncate rawpath in
+         if not (ThreadSafetyDomain.OwnershipDomain.mem base_path owned)
+         then
+           ThreadSafetyDomain.PathDomain.add_sink (ThreadSafetyDomain.make_access rawpath loc) acc
+         else
+           acc)
       path_state
       (AccessPath.of_exp exp typ ~f_resolve_id)
 
@@ -95,12 +106,25 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | None -> id_map
 
   let exec_instr
-      ({ ThreadSafetyDomain.locks; reads; writes; id_map; } as astate)
+      ({ ThreadSafetyDomain.locks; reads; writes; id_map; owned; } as astate)
       { ProcData.pdesc; tenv; } _ =
 
+    let is_allocation pn =
+      Procname.equal pn BuiltinDecl.__new ||
+      Procname.equal pn BuiltinDecl.__new_array in
     let is_unprotected is_locked =
       not is_locked && not (Procdesc.is_java_synchronized pdesc) in
+    let f_resolve_id = resolve_id id_map in
     function
+    | Sil.Call (Some (lhs_id, lhs_typ), Const (Cfun pn), _, _, _) when is_allocation pn ->
+        begin
+          match AccessPath.of_lhs_exp (Exp.Var lhs_id) lhs_typ ~f_resolve_id with
+          | Some lhs_access_path ->
+              let owned' = ThreadSafetyDomain.OwnershipDomain.add lhs_access_path owned in
+              { astate with owned = owned'; }
+          | None ->
+              astate
+        end
     | Sil.Call (_, Const (Cfun pn), _, loc, _) ->
         begin
           (* assuming that modeled procedures do not have useful summaries *)
@@ -131,7 +155,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         { astate with reads = reads'; writes = writes'; }
                       else
                         astate in
-                    { astate' with locks = locks' }
+                    { astate' with locks = locks'; }
                 | None ->
                     astate
               end
@@ -141,28 +165,43 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let id_map' = analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ astate in
         { astate with id_map = id_map'; }
 
-    | Sil.Store ((Lfield ( _, _, typ) as lhsfield) , _, _, loc) ->
-        if is_unprotected locks (* abstracts no lock being held *)
-        then
-          let writes' = add_path_to_state lhsfield typ loc writes id_map in
-          { astate with writes = writes'; }
-        else
-          astate
-
-    (* Note: it appears that the third arg of Store is never an Lfield in the targets of,
-       our translations, which is why we have not covered that case. *)
-    | Sil.Store (_, _, Lfield _, _) ->
-        failwith "Unexpected store instruction with rhs field"
+    | Sil.Store (lhs_exp, lhs_typ, rhs_exp, loc) ->
+        let writes' =
+          match lhs_exp with
+          | Lfield ( _, _, typ) when is_unprotected locks -> (* abstracts no lock being held *)
+              add_path_to_state lhs_exp typ loc writes id_map owned
+          | _ -> writes in
+        (* if rhs is owned, propagate ownership to lhs. otherwise, remove lhs from ownerhsip set
+           (since it may have previously held an owned memory loc and is now being reassigned *)
+        let owned' =
+          match AccessPath.of_lhs_exp lhs_exp lhs_typ ~f_resolve_id,
+                AccessPath.of_lhs_exp rhs_exp lhs_typ ~f_resolve_id with
+          | Some lhs_access_path, Some rhs_access_path ->
+              if ThreadSafetyDomain.OwnershipDomain.mem rhs_access_path owned
+              then ThreadSafetyDomain.OwnershipDomain.add lhs_access_path owned
+              else ThreadSafetyDomain.OwnershipDomain.remove lhs_access_path owned
+          | Some lhs_access_path, None ->
+              ThreadSafetyDomain.OwnershipDomain.remove lhs_access_path owned
+          | _ -> owned in
+        { astate with writes = writes'; owned = owned'; }
 
     | Sil.Load (lhs_id, rhs_exp, rhs_typ, loc) ->
         let id_map' = analyze_id_assignment (Var.of_id lhs_id) rhs_exp rhs_typ astate in
         let reads' =
           match rhs_exp with
           | Lfield ( _, _, typ) when is_unprotected locks ->
-              add_path_to_state rhs_exp typ loc reads id_map
+              add_path_to_state rhs_exp typ loc reads id_map owned
           | _ ->
               reads in
-        { astate with Domain.reads = reads'; id_map = id_map'; }
+        (* if rhs is owned, propagate ownership to lhs *)
+        let owned' =
+          match AccessPath.of_lhs_exp rhs_exp rhs_typ ~f_resolve_id with
+          | Some rhs_access_path
+            when ThreadSafetyDomain.OwnershipDomain.mem rhs_access_path owned ->
+              ThreadSafetyDomain.OwnershipDomain.add (AccessPath.of_id lhs_id rhs_typ) owned
+          | _ ->
+              owned in
+        { astate with Domain.reads = reads'; id_map = id_map'; owned = owned'; }
     |  _  ->
         astate
 end
