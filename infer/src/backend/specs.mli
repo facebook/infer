@@ -133,7 +133,7 @@ type payload =
     (** Procedure location and blame_range info for crashcontext analysis *)
     quandary : QuandarySummary.t option;
     siof : SiofDomain.astate option;
-    threadsafety : ThreadSafetyDomain.astate option;
+    threadsafety : ThreadSafetyDomain.summary option;
   }
 
 (** Procedure summary *)

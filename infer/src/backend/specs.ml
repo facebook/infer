@@ -321,7 +321,7 @@ type payload =
     (** Proc location and blame_range info for crashcontext analysis *)
     quandary : QuandarySummary.t option;
     siof : SiofDomain.astate option;
-    threadsafety : ThreadSafetyDomain.astate option;
+    threadsafety : ThreadSafetyDomain.summary option;
   }
 
 type summary =
@@ -456,7 +456,7 @@ let pp_payload pe fmt { preposts; typestate; crashcontext_frame; quandary; siof;
     (pp_opt Crashcontext.pp_stacktree) crashcontext_frame
     (pp_opt QuandarySummary.pp) quandary
     (pp_opt SiofDomain.pp) siof
-    (pp_opt ThreadSafetyDomain.pp) threadsafety
+    (pp_opt ThreadSafetyDomain.pp_summary) threadsafety
 
 
 let pp_summary_text ~whole_seconds fmt summary =

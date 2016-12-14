@@ -14,10 +14,10 @@ module L = Logging
 
 
 module Summary = Summary.Make (struct
-    type summary = ThreadSafetyDomain.astate
+    type summary = ThreadSafetyDomain.summary
 
-    let update_payload astate payload =
-      { payload with Specs.threadsafety = Some astate }
+    let update_payload summary payload =
+      { payload with Specs.threadsafety = Some summary }
 
     let read_from_payload payload =
       payload.Specs.threadsafety
@@ -47,7 +47,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   type lock_model =
     | Lock
     | Unlock
-    | None
+    | NoEffect
 
   let get_lock_model = function
     | Procname.Java java_pname ->
@@ -67,24 +67,35 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             "unlock" ->
               Unlock
           | _ ->
-              None
+              NoEffect
         end
     | pname when Procname.equal pname BuiltinDecl.__set_locked_attribute ->
         Lock
     | pname when Procname.equal pname BuiltinDecl.__delete_locked_attribute ->
         Unlock
     | _ ->
-        None
+        NoEffect
 
-  let add_path_to_state exp typ loc path_state =
+  let resolve_id (id_map : IdAccessPathMapDomain.astate) id =
+    try Some (IdAccessPathMapDomain.find id id_map)
+    with Not_found -> None
+
+  let add_path_to_state exp typ loc path_state id_map =
+    let f_resolve_id = resolve_id id_map in
     IList.fold_left
       (fun acc rawpath ->
          ThreadSafetyDomain.PathDomain.add_sink (ThreadSafetyDomain.make_access rawpath loc) acc)
       path_state
-      (AccessPath.of_exp exp typ ~f_resolve_id:(fun _ -> None))
+      (AccessPath.of_exp exp typ ~f_resolve_id)
+
+  let analyze_id_assignment lhs_id rhs_exp rhs_typ { ThreadSafetyDomain.id_map; } =
+    let f_resolve_id = resolve_id id_map in
+    match AccessPath.of_lhs_exp rhs_exp rhs_typ ~f_resolve_id with
+    | Some rhs_access_path -> IdAccessPathMapDomain.add lhs_id rhs_access_path id_map
+    | None -> id_map
 
   let exec_instr
-      ({ ThreadSafetyDomain.locks; reads; writes; } as astate)
+      ({ ThreadSafetyDomain.locks; reads; writes; id_map; } as astate)
       { ProcData.pdesc; tenv; } _ =
 
     let is_unprotected is_locked =
@@ -98,11 +109,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               { astate with locks = true; }
           | Unlock ->
               { astate with locks = false; }
-          | None ->
+          | NoEffect ->
               begin
                 match Summary.read_summary pdesc pn with
-                | Some callee_astate ->
-                    let locks' = callee_astate.locks || locks in
+                | Some (callee_locks, callee_reads, callee_writes) ->
+                    let locks' = callee_locks || locks in
                     let astate' =
                       (* TODO (14842325): report on constructors that aren't threadsafe
                          (e.g., constructors that access static fields) *)
@@ -111,13 +122,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                          not (is_call_to_builder_class_method pn)
                       then
                         let call_site = CallSite.make pn loc in
-                        let callee_reads =
-                          ThreadSafetyDomain.PathDomain.with_callsite callee_astate.reads call_site in
-                        let callee_writes =
-                          ThreadSafetyDomain.PathDomain.with_callsite callee_astate.writes call_site in
-                        let callee_astate' =
-                          { callee_astate with ThreadSafetyDomain.reads = callee_reads; writes = callee_writes; } in
-                        ThreadSafetyDomain.join callee_astate' astate
+                        let reads' =
+                          ThreadSafetyDomain.PathDomain.with_callsite callee_reads call_site
+                          |> ThreadSafetyDomain.PathDomain.join reads in
+                        let writes' =
+                          ThreadSafetyDomain.PathDomain.with_callsite callee_writes call_site
+                          |> ThreadSafetyDomain.PathDomain.join writes in
+                        { astate with reads = reads'; writes = writes'; }
                       else
                         astate in
                     { astate' with locks = locks' }
@@ -126,10 +137,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               end
         end
 
+    | Sil.Store (Exp.Lvar lhs_pvar, lhs_typ, rhs_exp, _) when Pvar.is_frontend_tmp lhs_pvar ->
+        let id_map' = analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ astate in
+        { astate with id_map = id_map'; }
+
     | Sil.Store ((Lfield ( _, _, typ) as lhsfield) , _, _, loc) ->
         if is_unprotected locks (* abstracts no lock being held *)
         then
-          let writes' = add_path_to_state lhsfield typ loc writes in
+          let writes' = add_path_to_state lhsfield typ loc writes id_map in
           { astate with writes = writes'; }
         else
           astate
@@ -139,14 +154,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Store (_, _, Lfield _, _) ->
         failwith "Unexpected store instruction with rhs field"
 
-    | Sil.Load (_, (Lfield ( _, _, typ) as rhsfield) , _, loc) ->
-        if is_unprotected locks (* abstracts no lock being held *)
-        then
-          let reads' = add_path_to_state rhsfield typ loc reads in
-          { astate with reads = reads'; }
-        else
-          astate
-
+    | Sil.Load (lhs_id, rhs_exp, rhs_typ, loc) ->
+        let id_map' = analyze_id_assignment (Var.of_id lhs_id) rhs_exp rhs_typ astate in
+        let reads' =
+          match rhs_exp with
+          | Lfield ( _, _, typ) when is_unprotected locks ->
+              add_path_to_state rhs_exp typ loc reads id_map
+          | _ ->
+              reads in
+        { astate with Domain.reads = reads'; id_map = id_map'; }
     |  _  ->
         astate
 end
@@ -159,26 +175,19 @@ module Analyzer =
 
 module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
 
+(* convert the abstract state to a summary by dropping the id map *)
+let compute_post pdesc =
+  match Analyzer.compute_post pdesc with
+  | Some { locks; reads; writes; } -> Some (locks, reads, writes)
+  | None -> None
+
 (*This is a "checker"*)
 let method_analysis callback =
-  let proc_desc = callback.Callbacks.proc_desc in
-  let opost =
-    Interprocedural.compute_and_store_post
-      ~compute_post:Analyzer.compute_post
-      ~make_extras:ProcData.make_empty_extras
-      callback in
-  match opost with
-  | Some post ->  (* I am printing to commandline and out to cater to javac and buck*)
-      (L.stdout  "\n Procedure: %s@ "
-         (Procname.to_string (Procdesc.get_proc_name proc_desc) )
-      );
-      L.stdout "\n POST: %a\n" ThreadSafetyDomain.pp post;
-      (L.out  "\n Procedure: %s@ "
-         (Procname.to_string (Procdesc.get_proc_name proc_desc) )
-      );
-      L.out "\n POST: %a\n" ThreadSafetyDomain.pp post
-  | None -> ()
-
+  Interprocedural.compute_and_store_post
+    ~compute_post
+    ~make_extras:ProcData.make_empty_extras
+    callback
+  |> ignore
 
 (* a results table is a Map where a key is an a procedure environment,
    i.e., something of type Idenv.t * Tenv.t * Procname.t * Procdesc.t
@@ -207,11 +216,14 @@ let make_results_table get_proc_desc file_env =
          idenv; tenv; proc_name; proc_desc} in
       match
         Interprocedural.compute_and_store_post
-          ~compute_post:Analyzer.compute_post
+          ~compute_post
           ~make_extras:ProcData.make_empty_extras
           callback_arg with
       | Some post -> post
-      | None -> ThreadSafetyDomain.initial
+      | None ->
+          ThreadSafetyDomain.LocksDomain.initial,
+          ThreadSafetyDomain.PathDomain.initial,
+          ThreadSafetyDomain.PathDomain.initial
   in
   map_post_computation_over_procs compute_post_for_procedure file_env
 
@@ -241,7 +253,7 @@ let report_thread_safety_errors ( _, tenv, pname, pdesc) trace =
   let open ThreadSafetyDomain in
   let trace_of_pname callee_pname =
     match Summary.read_summary pdesc callee_pname with
-    | Some astate -> astate.writes
+    | Some (_, _, writes) -> writes
     | _ -> PathDomain.initial in
   let report_one_path ((_, sinks) as path) =
     let pp_accesses fmt sink =
@@ -278,9 +290,9 @@ let report_thread_safety_errors ( _, tenv, pname, pdesc) trace =
    This indicates that the method races with itself. To be refined later. *)
 let process_results_table tab =
   ResultsTableType.iter   (* report errors for each method *)
-    (fun proc_env (astate : ThreadSafetyDomain.astate) ->
+    (fun proc_env (_, _, writes) ->
        if should_report_on_proc proc_env then
-         report_thread_safety_errors proc_env astate.writes
+         report_thread_safety_errors proc_env writes
        else ()
     )
     tab

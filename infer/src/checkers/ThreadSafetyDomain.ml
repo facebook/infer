@@ -55,16 +55,26 @@ module LocksDomain = AbstractDomain.BooleanAnd
 module PathDomain = SinkTrace.Make(TraceElem)
 
 type astate =
-  { locks : LocksDomain.astate;
+  {
+    locks : LocksDomain.astate;
+    (** boolean that is true if a lock must currently be held *)
     reads : PathDomain.astate;
+    (** access paths read outside of synchronization *)
     writes : PathDomain.astate;
+    (** access paths written outside of synchronization *)
+    id_map : IdAccessPathMapDomain.astate;
+    (** map used to decompile temporary variables into access paths *)
   }
+
+(** same as astate, but without [id_map] (since it's local) *)
+type summary = LocksDomain.astate * PathDomain.astate * PathDomain.astate
 
 let initial =
   let locks = LocksDomain.initial in
   let reads = PathDomain.initial in
   let writes = PathDomain.initial in
-  { locks; reads; writes; }
+  let id_map = IdAccessPathMapDomain.initial in
+  { locks; reads; writes; id_map; }
 
 let (<=) ~lhs ~rhs =
   if phys_equal lhs rhs
@@ -72,7 +82,8 @@ let (<=) ~lhs ~rhs =
   else
     LocksDomain.(<=) ~lhs:lhs.locks ~rhs:rhs.locks &&
     PathDomain.(<=) ~lhs:lhs.reads ~rhs:rhs.reads &&
-    PathDomain.(<=) ~lhs:lhs.writes ~rhs:rhs.writes
+    PathDomain.(<=) ~lhs:lhs.writes ~rhs:rhs.writes &&
+    IdAccessPathMapDomain.(<=) ~lhs:lhs.id_map ~rhs:rhs.id_map
 
 let join astate1 astate2 =
   if phys_equal astate1 astate2
@@ -82,7 +93,8 @@ let join astate1 astate2 =
     let locks = LocksDomain.join astate1.locks astate2.locks in
     let reads = PathDomain.join astate1.reads astate2.reads in
     let writes = PathDomain.join astate1.writes astate2.writes in
-    { locks; reads; writes; }
+    let id_map = IdAccessPathMapDomain.join astate1.id_map astate2.id_map in
+    { locks; reads; writes; id_map; }
 
 let widen ~prev ~next ~num_iters =
   if phys_equal prev next
@@ -92,9 +104,20 @@ let widen ~prev ~next ~num_iters =
     let locks = LocksDomain.widen ~prev:prev.locks ~next:next.locks ~num_iters in
     let reads = PathDomain.widen ~prev:prev.reads ~next:next.reads ~num_iters in
     let writes = PathDomain.widen ~prev:prev.writes ~next:next.writes ~num_iters in
-    { locks; reads; writes; }
+    let id_map = IdAccessPathMapDomain.widen ~prev:prev.id_map ~next:next.id_map ~num_iters in
+    { locks; reads; writes; id_map; }
 
-let pp fmt { locks; reads; writes; } =
+let pp_summary fmt (locks, reads, writes) =
   F.fprintf
     fmt
-    "Locks: %a Reads: %a Writes: %a" LocksDomain.pp locks PathDomain.pp reads PathDomain.pp writes
+    "Locks: %a Reads: %a Writes: %a"
+    LocksDomain.pp locks
+    PathDomain.pp reads
+    PathDomain.pp writes
+
+let pp fmt { locks; reads; writes; id_map; } =
+  F.fprintf
+    fmt
+    "%a Id Map: %a"
+    pp_summary (locks, reads, writes)
+    IdAccessPathMapDomain.pp id_map
