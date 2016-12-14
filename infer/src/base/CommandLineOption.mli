@@ -64,6 +64,8 @@ val mk_bool_group :
 
 val mk_int : default:int -> int ref t
 
+val mk_int_opt : ?default:int -> int option ref t
+
 val mk_float : default:float -> float ref t
 
 val mk_float_opt : ?default:float -> float option ref t

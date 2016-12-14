@@ -317,6 +317,11 @@ let mk_int ~default ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
     ~decode_json:(string_json_decoder ~long)
     ~mk_spec:(fun set -> Arg.String set)
 
+let mk_int_opt ?default ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
+  let default_to_string = function Some f -> string_of_int f | None -> "" in
+  let f s = Some (int_of_string s) in
+  mk_option ~deprecated ~long ?short ~default ~default_to_string ~f ?exes ~meta doc
+
 let mk_float ~default ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   mk ~deprecated ~long ?short ~default ?exes ~meta doc
     ~default_to_string:string_of_float

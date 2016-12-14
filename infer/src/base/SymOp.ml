@@ -58,10 +58,14 @@ let pp_failure_kind fmt = function
 (** Count the number of symbolic operations *)
 
 (** Timeout in seconds for each function *)
-let timeout_seconds = ref (Config.seconds_per_iteration *. (float_of_int Config.iterations))
+let timeout_seconds =
+  ref
+    (Option.map Config.seconds_per_iteration
+       ~f:(fun sec -> sec *. (float_of_int Config.iterations)))
 
 (** Timeout in SymOps *)
-let timeout_symops = ref (Config.symops_per_iteration * Config.iterations)
+let timeout_symops =
+  ref (Option.map Config.symops_per_iteration ~f:(fun symops -> symops * Config.iterations))
 
 let get_timeout_seconds () = !timeout_seconds
 
@@ -155,9 +159,11 @@ let reset_total () =
 let pay () =
   !gs.symop_count <- !gs.symop_count + 1;
   !gs.symop_total := !(!gs.symop_total) + 1;
-  if !gs.symop_count > !timeout_symops &&
-     !gs.alarm_active
-  then raise (Analysis_failure_exe (FKsymops_timeout !gs.symop_count));
+  (match !timeout_symops with
+   | Some symops when !gs.symop_count > symops && !gs.alarm_active ->
+       raise (Analysis_failure_exe (FKsymops_timeout !gs.symop_count))
+   | _ -> ()
+  );
   check_wallclock_alarm ()
 
 (** Reset the counter *)

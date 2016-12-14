@@ -1045,7 +1045,7 @@ and save_results =
     ~meta:"file.iar" "Save analysis results to Infer Analysis Results file file.iar"
 
 and seconds_per_iteration =
-  CLOpt.mk_float ~deprecated:["seconds_per_iteration"] ~long:"seconds-per-iteration" ~default:0.
+  CLOpt.mk_float_opt ~deprecated:["seconds_per_iteration"] ~long:"seconds-per-iteration"
     ~meta:"float" "Set the number of seconds per iteration (see --iterations)"
 
 and skip_analysis_in_path =
@@ -1135,7 +1135,7 @@ and svg =
     "Generate .dot and .svg files from specs"
 
 and symops_per_iteration =
-  CLOpt.mk_int ~deprecated:["symops_per_iteration"] ~long:"symops-per-iteration" ~default:0
+  CLOpt.mk_int_opt ~deprecated:["symops_per_iteration"] ~long:"symops-per-iteration"
     ~meta:"int" "Set the number of symbolic operations per iteration (see --iterations)"
 
 and test_filtering =
@@ -1295,16 +1295,14 @@ let post_parsing_initialization () =
   let symops_timeout, seconds_timeout =
     let default_symops_timeout = 333 in
     let default_seconds_timeout = 10.0 in
-    let long_symops_timeout = 1000 in
-    let long_seconds_timeout = 30.0 in
     if !models_mode then
-      (* use longer timeouts when analyzing models *)
-      long_symops_timeout, long_seconds_timeout
+      (* disable timeouts when analyzing models *)
+      (None, None)
     else
-      default_symops_timeout, default_seconds_timeout
+      (Some default_symops_timeout, Some default_seconds_timeout)
   in
-  if !seconds_per_iteration = 0. then seconds_per_iteration := seconds_timeout ;
-  if !symops_per_iteration = 0 then symops_per_iteration := symops_timeout ;
+  if !symops_per_iteration = None then symops_per_iteration := symops_timeout ;
+  if !seconds_per_iteration = None then seconds_per_iteration := seconds_timeout ;
 
   match !analyzer with
   | Some Checkers -> checkers := true

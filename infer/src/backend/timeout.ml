@@ -114,7 +114,7 @@ let resume_previous_timeout () =
 let exe_timeout f x =
   let suspend_existing_timeout_and_start_new_one () =
     suspend_existing_timeout ~keep_symop_total:true;
-    set_alarm (SymOp.get_timeout_seconds ());
+    Option.iter (SymOp.get_timeout_seconds ()) ~f:set_alarm;
     SymOp.set_alarm () in
   try
     suspend_existing_timeout_and_start_new_one ();

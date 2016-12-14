@@ -238,7 +238,7 @@ val report_runtime_exceptions : bool
 val reports_include_ml_loc : bool
 val results_dir : string
 val save_analysis_results : string option
-val seconds_per_iteration : float
+val seconds_per_iteration : float option
 val show_buckets : bool
 val show_progress_bar : bool
 val skip_analysis_in_path : string list
@@ -252,7 +252,7 @@ val stats_mode : bool
 val subtype_multirange : bool
 val suppress_warnings_out : string option
 val svg : bool
-val symops_per_iteration : int
+val symops_per_iteration : int option
 val test : bool
 val test_filtering : bool
 val testing_mode : bool
