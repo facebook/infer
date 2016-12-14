@@ -35,9 +35,15 @@ end
 (** Cartesian product of two domains. *)
 module Pair (Domain1 : S) (Domain2 : S) : S with type astate = Domain1.astate * Domain2.astate
 
-(** Lift a set to a domain. The elements of the set should be drawn from a *finite* collection of
-    possible values, since the widening operator here is just union. *)
+(** Lift a set to a powerset domain ordered by subset. The elements of the set should be drawn from
+    a *finite* collection of possible values, since the widening operator here is just union. *)
 module FiniteSet (Set : PrettyPrintable.PPSet) : sig
+  include PrettyPrintable.PPSet with type t = Set.t and type elt = Set.elt
+  include S with type astate = t
+end
+
+(** Lift a set to a powerset domain ordered by superset, so the join operator is intersection *)
+module InvertedSet (Set : PrettyPrintable.PPSet) : sig
   include PrettyPrintable.PPSet with type t = Set.t and type elt = Set.elt
   include S with type astate = t
 end

@@ -107,6 +107,26 @@ module FiniteSet (S : PrettyPrintable.PPSet) = struct
     join prev next
 end
 
+module InvertedSet (S : PrettyPrintable.PPSet) = struct
+  include S
+  type astate = t
+
+  let initial = empty
+
+  let (<=) ~lhs ~rhs =
+    if phys_equal lhs rhs
+    then true
+    else subset rhs lhs
+
+  let join astate1 astate2 =
+    if phys_equal astate1 astate2
+    then astate1
+    else inter astate1 astate2
+
+  let widen ~prev ~next ~num_iters:_ =
+    join prev next
+end
+
 module Map (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
   include M
   type astate = ValueDomain.astate M.t
