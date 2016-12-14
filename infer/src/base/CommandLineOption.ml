@@ -355,7 +355,7 @@ let mk_string_list ?(default=[]) ?(f=fun s -> s)
     ~mk_spec:(fun set -> Arg.String set)
 
 let mk_path_helper ~setter ~default_to_string
-    ~default ~deprecated ~long ~short ~exes ~meta doc =
+    ~default ~deprecated ~long ~short ~exes ~meta ~decode_json doc =
   let normalize_path_in_args_being_parsed str =
     if Filename.is_relative str then (
       (* Replace relative paths with absolute ones on the fly in the args being parsed. This assumes
@@ -368,26 +368,30 @@ let mk_path_helper ~setter ~default_to_string
     ) else
       str in
   mk ~deprecated ~long ?short ~default ?exes ~meta doc
-    ~default_to_string
+    ~decode_json ~default_to_string
     ~mk_setter:(fun var str ->
         let abs_path = normalize_path_in_args_being_parsed str in
         setter var abs_path)
-    ~decode_json:(string_json_decoder ~long)
     ~mk_spec:(fun set -> Arg.String set)
 
 let mk_path ~default ?(deprecated=[]) ~long ?short ?exes ?(meta="path") =
-  mk_path_helper ~setter:(fun var x -> var := x) ~default_to_string:(fun s -> s)
+  mk_path_helper
+    ~setter:(fun var x -> var := x)
+    ~decode_json:(string_json_decoder ~long)
+    ~default_to_string:(fun s -> s)
     ~default ~deprecated ~long ~short ~exes ~meta
 
 let mk_path_opt ?default ?(deprecated=[]) ~long ?short ?exes ?(meta="path") =
   mk_path_helper
     ~setter:(fun var x -> var := Some x)
+    ~decode_json:(string_json_decoder ~long)
     ~default_to_string:(function Some s -> s | None -> "")
     ~default ~deprecated ~long ~short ~exes ~meta
 
 let mk_path_list ?(default=[]) ?(deprecated=[]) ~long ?short ?exes ?(meta="path") =
   mk_path_helper
     ~setter:(fun var x -> var := x :: !var)
+    ~decode_json:(list_json_decoder (string_json_decoder ~long))
     ~default_to_string:(String.concat ~sep:", ")
     ~default ~deprecated ~long ~short ~exes ~meta
 
