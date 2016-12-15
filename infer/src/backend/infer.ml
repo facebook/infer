@@ -38,7 +38,7 @@ let rec rmtree name =
 
 
 type build_mode =
-  | Analyze | Ant | Buck | ClangCompilationDatabase | Gradle | Java | Javac | Make | Mvn | Ndk
+  | Analyze | Ant | Buck | Gradle | Java | Javac | Make | Mvn | Ndk
   | Xcode | Genrule
 
 let build_mode_of_string path =
@@ -46,7 +46,6 @@ let build_mode_of_string path =
   | "analyze" -> Analyze
   | "ant" -> Ant
   | "buck" -> Buck
-  | "clang-compilation-database" -> ClangCompilationDatabase
   | "genrule" -> Genrule
   | "gradle" | "gradlew" -> Gradle
   | "java" -> Java
@@ -61,7 +60,6 @@ let string_of_build_mode = function
   | Analyze -> "analyze"
   | Ant -> "ant"
   | Buck -> "buck"
-  | ClangCompilationDatabase -> "clang-compilation-database"
   | Genrule -> "genrule"
   | Gradle -> "gradle"
   | Java -> "java"
@@ -151,21 +149,12 @@ let capture_with_compilation_database db_files =
   CaptureCompilationDatabase.capture_files_in_database compilation_database
 
 let capture build_cmd = function
-  | Analyze ->
-      ()
+  | Analyze when not (List.is_empty !Config.clang_compilation_db_files) ->
+      capture_with_compilation_database !Config.clang_compilation_db_files
   | Buck when Config.use_compilation_database <> None ->
       L.stdout "Capturing using Buck's compilation database...@\n";
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck () in
       capture_with_compilation_database json_cdb
-  | ClangCompilationDatabase ->
-      L.stdout "Capturing using a compilation database file...@\n";
-      let cmd_args = List.tl build_cmd |> Option.value ~default:[] in
-      if List.is_empty cmd_args then (
-        failwith
-          "Error parsing arguments. Please, pass the compilation database json file as in \
-           infer -- clang-compilation-database file.json." ;
-        Config.print_usage_exit ());
-      capture_with_compilation_database cmd_args
   | Genrule ->
       L.stdout "Capturing for Buck genrule compatibility...@\n";
       let infer_java = Config.bin_dir ^/ "InferJava" in
@@ -282,7 +271,7 @@ let analyze = function
   | Java | Javac ->
       (* In Java and Javac modes, analysis is invoked from capture. *)
       ()
-  | Analyze | Ant | Buck | ClangCompilationDatabase | Gradle | Genrule | Make | Mvn | Ndk | Xcode ->
+  | Analyze | Ant | Buck | Gradle | Genrule | Make | Mvn | Ndk | Xcode ->
       if (Sys.file_exists Config.(results_dir ^/ captured_dir_name)) <> `Yes then (
         L.stderr "There was nothing to analyze, exiting" ;
         Config.print_usage_exit ()
