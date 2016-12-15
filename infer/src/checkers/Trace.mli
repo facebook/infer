@@ -70,6 +70,9 @@ module type S = sig
   (** add a sink to the current trace. *)
   val add_sink : Sink.t -> t -> t
 
+  (** replace sinks with new ones *)
+  val update_sinks : t -> Sinks.t -> t
+
   (** append the trace for given call site to the current caller trace *)
   val append : t -> t -> CallSite.t -> t
 

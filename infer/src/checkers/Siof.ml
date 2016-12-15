@@ -12,6 +12,8 @@ open! IStd
 module F = Format
 module L = Logging
 
+module GlobalsAccesses = SiofTrace.GlobalsAccesses
+
 module Summary = Summary.Make (struct
     type summary = SiofDomain.astate
 
@@ -37,40 +39,44 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ ->
         false
 
-  let get_globals astate pdesc loc e =
+  let get_globals pdesc loc e =
     let is_dangerous_global pv =
       Pvar.is_global pv
       && not (Pvar.is_static_local pv)
       && not (Pvar.is_pod pv)
       && not (Pvar.is_compile_constant pv)
       && not (is_compile_time_constructed pdesc pv) in
-    let globals = Exp.get_vars e |> snd |> IList.filter is_dangerous_global in
-    if globals = [] then
-      Domain.Bottom
+    let globals_accesses =
+      Exp.get_vars e |> snd |> IList.filter is_dangerous_global
+      |> IList.map (fun v -> (v, loc)) in
+    GlobalsAccesses.of_list globals_accesses
+
+  let add_globals astate outer_loc globals =
+    if GlobalsAccesses.is_empty globals then
+      astate
     else
       let trace = match astate with
         | Domain.Bottom -> SiofTrace.initial
         | Domain.NonBottom t -> t in
       let globals_trace =
-        IList.fold_left (fun trace_acc global ->
-            SiofTrace.add_sink (SiofTrace.make_access global loc) trace_acc)
-          trace
-          globals in
+        SiofTrace.add_sink (SiofTrace.make_access globals outer_loc) trace in
       Domain.NonBottom globals_trace
 
-  let add_params_globals astate pdesc loc params =
-    IList.map fst params
-    |> IList.map (fun e -> get_globals astate pdesc loc e)
-    |> IList.fold_left Domain.join astate
+  let add_params_globals astate pdesc call_loc params =
+    IList.map (fun (e, _) -> get_globals pdesc call_loc e) params
+    |> IList.fold_left GlobalsAccesses.union GlobalsAccesses.empty
+    |> add_globals astate (Procdesc.get_loc pdesc)
 
-  let at_least_bottom =
+  let at_least_nonbottom =
     Domain.join (Domain.NonBottom SiofTrace.initial)
 
-  let exec_instr astate { ProcData.pdesc; } _ (instr : Sil.instr) = match instr with
+  let exec_instr astate { ProcData.pdesc; } _ (instr : Sil.instr) =
+    match instr with
     | Load (_, exp, _, loc)
     | Store (_, _, exp, loc)
     | Prune (exp, loc, _, _) ->
-        Domain.join astate (get_globals astate pdesc loc exp)
+        let proc_loc = Procdesc.get_loc pdesc in
+        get_globals pdesc loc exp |> add_globals astate proc_loc
     | Call (_, Const (Cfun callee_pname), _::params_without_self, loc, _)
       when Procname.is_c_method callee_pname && Procname.is_constructor callee_pname
            && Procname.is_constexpr callee_pname ->
@@ -81,18 +87,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           match Summary.read_summary pdesc callee_pname with
           | Some (Domain.NonBottom trace) ->
               Domain.NonBottom (SiofTrace.with_callsite trace callsite)
-          | _ ->
+          | None | Some Domain.Bottom ->
               Domain.Bottom in
         add_params_globals astate pdesc loc params
         |> Domain.join callee_globals
         |>
         (* make sure it's not Bottom: we made a function call so this needs initialization *)
-        at_least_bottom
+        at_least_nonbottom
     | Call (_, _, params, loc, _) ->
         add_params_globals astate pdesc loc params
         |>
         (* make sure it's not Bottom: we made a function call so this needs initialization *)
-        at_least_bottom
+        at_least_nonbottom
     | Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
 end
@@ -106,7 +112,7 @@ module Analyzer =
 module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
 
 
-let is_foreign tu_opt v =
+let is_foreign tu_opt (v, _) =
   let is_orig_file f = match tu_opt with
     | Some orig_file ->
         let orig_path = SourceFile.to_abs_path orig_file in
@@ -123,62 +129,59 @@ let report_siof trace pdesc gname loc =
     | Some (SiofDomain.NonBottom summary) -> summary
     | _ -> SiofTrace.initial in
 
-  let pp_sink f sink =
-    let pp_source f v = match Pvar.get_source_file v with
-      | Some source_file when not (SourceFile.equal SourceFile.empty source_file) ->
-          F.fprintf f " from file %a" SourceFile.pp source_file
-      | _ ->
-          () in
-    let v = SiofTrace.Sink.kind sink in
-    F.fprintf f "%s%a" (Pvar.get_simplified_name v) pp_source v in
+  let report_one_path (passthroughs, path) =
+    let description, sink_path' = match path with
+      | [] -> assert false
+      | (final_sink, pt)::rest ->
+          let foreign_globals =
+            SiofTrace.Sink.kind final_sink |> GlobalsAccesses.filter (is_foreign tu_opt) in
+          let final_sink' =
+            let loc = CallSite.loc (SiofTrace.Sink.call_site final_sink) in
+            SiofTrace.make_access foreign_globals loc in
+          let description =
+            F.asprintf
+              "Initializer of %s accesses global variables from a different translation unit: %a"
+              gname
+              GlobalsAccesses.pp foreign_globals in
+          description, (passthroughs, (final_sink', pt)::rest) in
+    let ltr = SiofTrace.trace_of_error loc gname sink_path' in
+    let caller_pname = Procdesc.get_proc_name pdesc in
+    let msg = Localise.to_string Localise.static_initialization_order_fiasco in
+    let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
+    Reporting.log_error caller_pname ~loc ~ltr exn in
 
-  let trace_of_error path =
-    let desc_of_sink sink =
-      let callsite = SiofTrace.Sink.call_site sink in
-      if SiofTrace.is_intraprocedural_access sink then
-        Format.asprintf "access to %s" (Pvar.get_simplified_name (SiofTrace.Sink.kind sink))
-      else
-        Format.asprintf "call to %a" Procname.pp (CallSite.pname callsite) in
-    let sink_should_nest sink = not (SiofTrace.is_intraprocedural_access sink) in
-    let trace_elem_of_global =
-      Errlog.make_trace_element 0 loc
-        (Format.asprintf "initialization of %s" gname)
-        [] in
-    trace_elem_of_global::(SiofTrace.to_sink_loc_trace ~desc_of_sink ~sink_should_nest path) in
+  let has_foreign_sink (_, path) =
+    IList.exists
+      (fun (sink, _) ->
+         GlobalsAccesses.exists (is_foreign tu_opt)
+           (SiofTrace.Sink.kind sink))
+      path in
 
-  let report_one_path ((_, path) as sink_path) =
-    let final_sink = fst (IList.hd path) in
-    if is_foreign tu_opt (SiofTrace.Sink.kind final_sink) then (
-      let description =
-        F.asprintf
-          "The initializer of %s accesses global variables in another translation unit: %a"
-          gname
-          pp_sink final_sink in
-      let ltr = trace_of_error sink_path in
-      let caller_pname = Procdesc.get_proc_name pdesc in
-      let msg = Localise.to_string Localise.static_initialization_order_fiasco in
-      let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
-      Reporting.log_error caller_pname ~loc ~ltr exn
-    ); in
-
-  IList.iter report_one_path (SiofTrace.get_reportable_sink_paths trace ~trace_of_pname)
+  SiofTrace.get_reportable_sink_paths trace ~trace_of_pname
+  |> IList.filter has_foreign_sink
+  |> IList.iter report_one_path
 
 let siof_check pdesc gname = function
   | Some (SiofDomain.NonBottom post) ->
       let attrs = Procdesc.get_attributes pdesc in
-      let foreign_global_sinks =
-        SiofTrace.Sinks.filter
-          (fun sink -> is_foreign attrs.ProcAttributes.translation_unit (SiofTrace.Sink.kind sink))
-          (SiofTrace.sinks post) in
-      if not (SiofTrace.Sinks.is_empty foreign_global_sinks)
-      then report_siof post pdesc gname attrs.ProcAttributes.loc;
+      let all_globals = SiofTrace.Sinks.fold
+          (fun sink -> GlobalsAccesses.union (SiofTrace.Sink.kind sink))
+          (SiofTrace.sinks post) GlobalsAccesses.empty in
+      let tu_opt =
+        let attrs = Procdesc.get_attributes pdesc in
+        attrs.ProcAttributes.translation_unit in
+      if GlobalsAccesses.exists (is_foreign tu_opt) all_globals then
+        report_siof post pdesc gname attrs.ProcAttributes.loc;
   | Some SiofDomain.Bottom | None ->
       ()
+
+let compute_post proc_data =
+  Analyzer.compute_post proc_data |> Option.map ~f:SiofDomain.normalize
 
 let checker ({ Callbacks.proc_desc; } as callback) =
   let post =
     Interprocedural.compute_and_store_post
-      ~compute_post:Analyzer.compute_post
+      ~compute_post
       ~make_extras:ProcData.make_empty_extras
       callback in
   let pname = Procdesc.get_proc_name proc_desc in

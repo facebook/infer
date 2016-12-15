@@ -14,10 +14,14 @@ open! IStd
 
 module type S = sig
   module CFG : ProcCfg.S
-  module Domain : AbstractDomain.S (* abstract domain whose state we propagate *)
-  type extras (* read-only extra state (results of previous analyses, globals, etc.) *)
 
-  (* {A} instr {A'}. [node] is the node of the current instruction *)
+  (** abstract domain whose state we propagate *)
+  module Domain : AbstractDomain.S
+
+  (** read-only extra state (results of previous analyses, globals, etc.) *)
+  type extras
+
+  (** {A} instr {A'}. [node] is the node of the current instruction *)
   val exec_instr : Domain.astate -> extras ProcData.t -> CFG.node -> Sil.instr -> Domain.astate
 end
 

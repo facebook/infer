@@ -10,9 +10,12 @@
 #include "siof_types.h"
 
 SomeNonPODObject global_object2;
+SomeNonPODObject some_other_global_object2;
 
 int access_to_non_pod() {
   global_object2.some_method();
+  // access several global objects to check that we group the reports together
+  some_other_global_object2.some_method();
   return 5;
 }
 
@@ -25,7 +28,10 @@ SomeNonPODObject& getFunctionStaticNonPOD() {
   return instance;
 }
 
-SomeNonPODObject& getGlobalNonPOD() { return global_object2; }
+SomeNonPODObject& getGlobalNonPOD() {
+  some_other_global_object2.some_method();
+  return global_object2;
+}
 
 // initialise static class field
 SomeConstexprObject SomeConstexprObject::instance_;

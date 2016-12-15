@@ -393,11 +393,15 @@ let pp_specs pe fmt specs =
   let cnt = ref 0 in
   match pe.Pp.kind with
   | TEXT ->
-      IList.iter (fun spec -> incr cnt; F.fprintf fmt "%a@\n" (pp_spec pe (Some (!cnt, total))) spec) specs
+      IList.iter (fun spec -> incr cnt;
+                   F.fprintf fmt "%a" (pp_spec pe (Some (!cnt, total))) spec) specs
   | HTML ->
-      IList.iter (fun spec -> incr cnt; F.fprintf fmt "%a<br>@\n" (pp_spec pe (Some (!cnt, total))) spec) specs
+      IList.iter (fun spec -> incr cnt;
+                   F.fprintf fmt "%a<br>@\n" (pp_spec pe (Some (!cnt, total))) spec) specs
   | LATEX ->
-      IList.iter (fun spec -> incr cnt; F.fprintf fmt "\\subsection*{Spec %d of %d}@\n\\(%a\\)@\n" !cnt total (pp_spec pe None) spec) specs
+      IList.iter (fun spec -> incr cnt;
+                   F.fprintf fmt "\\subsection*{Spec %d of %d}@\n\\(%a\\)@\n"
+                     !cnt total (pp_spec pe None) spec) specs
 
 (** Print the decpendency map *)
 let pp_dependency_map fmt dependency_map =
@@ -450,7 +454,7 @@ let pp_payload pe fmt { preposts; typestate; crashcontext_frame; quandary; siof;
   let pp_opt pp fmt = function
     | Some x -> pp fmt x
     | None -> () in
-  F.fprintf fmt "%a%a%a%a%a%a"
+  F.fprintf fmt "%a%a%a%a%a%a@\n"
     (pp_specs pe) (get_specs_from_preposts preposts)
     (pp_opt (TypeState.pp TypeState.unit_ext)) typestate
     (pp_opt Crashcontext.pp_stacktree) crashcontext_frame

@@ -70,6 +70,8 @@ module type S = sig
   (** add a sink to the current trace. *)
   val add_sink : Sink.t -> t -> t
 
+  val update_sinks : t -> Sinks.t -> t
+
   (** append the trace for given call site to the current caller trace *)
   val append : t -> t -> CallSite.t -> t
 
@@ -333,6 +335,8 @@ module Make (Spec : Spec) = struct
   let add_sink sink t =
     let sinks = Sinks.add sink t.sinks in
     { t with sinks; }
+
+  let update_sinks t sinks = { t with sinks }
 
   (** compute caller_trace + callee_trace *)
   let append caller_trace callee_trace callee_site =

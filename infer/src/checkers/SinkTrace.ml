@@ -63,4 +63,13 @@ module Make (TraceElem : TraceElem.S) = struct
          add_sink callee_sink t_acc)
       initial
       (Sinks.elements (sinks t))
+
+  let pp fmt t =
+    let pp_passthroughs_if_not_empty fmt p =
+      if not (Passthroughs.is_empty p) then
+        F.fprintf fmt " via %a" Passthroughs.pp p in
+    F.fprintf
+      fmt
+      "%a%a"
+      Sinks.pp (sinks t) pp_passthroughs_if_not_empty (passthroughs t)
 end
