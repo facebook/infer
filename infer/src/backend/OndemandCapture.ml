@@ -34,18 +34,23 @@ let try_capture (attributes : ProcAttributes.t) : ProcAttributes.t option =
              (AttributesTable.load_defined_attributes ~cache_none:false attributes.proc_name) then (
           (* peek at the results to know if capture succeeded, but only in debug mode *)
           Logging.out
-            "Captured file %a to get procedure %a but it wasn't found there@."
+            "Captured file %a to get procedure %a but it wasn't found there@\n"
             SourceFile.pp definition_file
             Procname.pp attributes.proc_name
         )
       ) else (
         Logging.out
-          "Wanted to capture file %a to get procedure %a but file was already captured@."
+          "Wanted to capture file %a to get procedure %a but file was already captured@\n"
           SourceFile.pp definition_file
           Procname.pp attributes.proc_name
       )
     in
-    Option.may try_compile definition_file_opt
+    match definition_file_opt with
+    | None ->
+        Logging.out "Couldn't find source file for %a (declared in %a)@\n"
+          Procname.pp attributes.proc_name
+          SourceFile.pp decl_file
+    | Some file -> try_compile file
   );
   (* It's important to call load_defined_attributes again in all cases to make sure we try
      reading from disk again no matter which condition happened. If previous call to

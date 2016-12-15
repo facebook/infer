@@ -37,6 +37,7 @@ let parse_command_and_arguments command_and_arguments =
     and as a string. We pack this information into the compilationDatabase map, and remove the
     clang invocation part, because we will use a clang wrapper. *)
 let decode_json_file (database : t) json_path =
+  Logging.out "parsing compilation database from %s@\n" json_path;
   let exit_format_error () =
     failwith ("Json file doesn't have the expected format") in
   let json = Yojson.Basic.from_file json_path in
@@ -76,4 +77,5 @@ let decode_json_file (database : t) json_path =
 let from_json_files  db_json_files =
   let db = empty () in
   IList.iter (decode_json_file db) db_json_files;
+  Logging.out "created database with %d entries@\n" (get_size db);
   db
