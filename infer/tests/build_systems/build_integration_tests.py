@@ -61,7 +61,6 @@ CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
-    'componentkit_analytics',
     'componentkit_imports',
     'delete',
     'fail',
@@ -474,16 +473,6 @@ class BuildIntegrationTest(unittest.TestCase):
                'infer_args': reactive_args},
               {'compile': ['analyze'],
                'infer_args': ['--reactive']}])
-
-    def test_clang_component_kit_analytics(self):
-        test('componentkit_analytics',
-             'component quality analyzer emits analytics info when flag is '
-             'enabled',
-             os.path.join(CODETOANALYZE_DIR, 'componentkit'),
-             [{'compile': ['clang', '-x', 'objective-c++', '-std=c++11', '-c',
-                           '-fblocks', 'TestComponentKitAnalytics.mm'],
-               'infer_args': ['--cxx', '--no-filtering', '-a', 'linters',
-                              '--compute-analytics']}])
 
     def test_clang_component_kit_imports(self):
         test('componentkit_imports',
