@@ -61,7 +61,6 @@ CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
-    'make',
     'multiclang',
     'ndk-build',
     'pmd-xml',
@@ -342,7 +341,7 @@ class BuildIntegrationTest(unittest.TestCase):
              report_fname=report_fname,
              env=env)
 
-    def test_make_integration(
+    def _test_make_integration(
             self,
             enabled=None,
             root=os.path.join(CODETOANALYZE_DIR, 'make'),
@@ -430,7 +429,7 @@ class BuildIntegrationTest(unittest.TestCase):
             enabled=True,
             root=os.path.join(utf8_in_pwd_path),
             report_fname='utf8_in_pwd_javac_report.json')
-        self.test_make_integration(
+        self._test_make_integration(
             enabled=True,
             root=os.path.join(utf8_in_pwd_path, 'make'),
             report_fname='utf8_in_pwd_make_report.json')
