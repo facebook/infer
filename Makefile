@@ -157,8 +157,7 @@ $(BUILD_SYSTEMS_TESTS:%=build_%_clean):
 	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_clean,%,$@) clean)
 
 .PHONY: build_systems_tests
-build_systems_tests: infer $(BUILD_SYSTEMS_TESTS:%=build_%_test)
-	NO_BUCKD=1 $(INFER_DIR)/tests/build_systems/build_integration_tests.py
+build_systems_tests: $(BUILD_SYSTEMS_TESTS:%=build_%_test)
 
 .PHONY: print_build_systems_tests
 print_build_systems_tests: $(BUILD_SYSTEMS_TESTS:%=build_%_print)
@@ -220,8 +219,6 @@ test-replace:
 	    mv -f $$file $$(dirname $$file)/$$(basename -s .exp.test $$file).exp; done
 	@for file in $$(find $(INFER_DIR)/tests -name "*.test.dot"); do \
 	    mv -f $$file $$(dirname $$file)/$$(basename -s .test.dot $$file).dot; done
-	INFER_RECORD_INTEGRATION_TESTS=1 NO_BUCKD=1 \
-	  $(INFER_DIR)/tests/build_systems/build_integration_tests.py
 
 .PHONY: uninstall
 uninstall:
