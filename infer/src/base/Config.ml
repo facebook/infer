@@ -1246,13 +1246,23 @@ let rest =
           results_dir := classes_out_infer
         )
       ) in
+  let classpath_spec =
+    Arg.String (fun classpath ->
+        if !buck then (
+          let paths = String.split classpath ~on:':' in
+          let files = List.filter paths ~f:(fun path -> Sys.is_file path = `Yes) in
+          CLOpt.extend_env_args (List.concat_map files ~f:(fun file -> ["--specs-library"; file])) ;
+          specs_library := List.rev_append files !specs_library
+        )
+      ) in
   CLOpt.mk_subcommand
     ~exes:CLOpt.[Toplevel]
     "Stop argument processing, use remaining arguments as a build command"
     (fun build_exe ->
        match Filename.basename build_exe with
        | "java" | "javac" -> [
-           ("-classes_out", classes_out_spec, ""); ("-d", classes_out_spec, "")
+           ("-classes_out", classes_out_spec, ""); ("-d", classes_out_spec, "");
+           ("-classpath", classpath_spec, ""); ("-cp", classpath_spec, "")
          ]
        | _ -> []
     )
