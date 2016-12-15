@@ -1,7 +1,0 @@
-[
-  {
-    "bug_type": "NULL_DEREFERENCE",
-    "file": "hello.unknown_ext",
-    "procedure": "test"
-  }
-]

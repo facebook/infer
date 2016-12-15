@@ -61,7 +61,6 @@ CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
-    'unknown_ext',
     'utf8_in_pwd',
     'waf',
 ]
@@ -407,11 +406,6 @@ class BuildIntegrationTest(unittest.TestCase):
             root=os.path.join(utf8_in_pwd_path, 'make'),
             report_fname='utf8_in_pwd_make_report.json')
         shutil.rmtree(utf8_in_pwd_path, True) # remove copied dir
-
-    def test_unknown_extension(self):
-        test('unknown_ext', 'unknown extension',
-             CODETOANALYZE_DIR,
-             [{'compile': ['clang', '-x', 'c', '-c', 'hello.unknown_ext']}])
 
 
 if __name__ == '__main__':

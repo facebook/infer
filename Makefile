@@ -14,8 +14,9 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 endif
 
 BUILD_SYSTEMS_TESTS = \
-  assembly ck_analytics ck_imports clang_multiple_files clang_translation delete_results_dir \
-  fail_on_issue gradle javac linters make project_root_rel reactive utf8_in_procname
+  assembly ck_analytics ck_imports clang_multiple_files clang_translation clang_unknown_ext \
+  delete_results_dir fail_on_issue gradle javac linters make project_root_rel reactive \
+  utf8_in_procname
 ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif
