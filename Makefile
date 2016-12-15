@@ -112,6 +112,13 @@ $(DIRECT_TESTS:%=direct_%_test): infer
 	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $@ | cut -f 2 -d _)/$(shell printf $@ | cut -f 3 -d _) \
 	  test)
 
+.PHONY: $(DIRECT_TESTS:%=direct_%_print)
+$(DIRECT_TESTS:%=direct_%_print): infer
+	@$(call silence_make,\
+	$(MAKE) -C \
+	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $@ | cut -f 2 -d _)/$(shell printf $@ | cut -f 3 -d _) \
+	  print)
+
 .PHONY: $(DIRECT_TESTS:%=direct_%_clean)
 $(DIRECT_TESTS:%=direct_%_clean):
 	@$(call silence_make,\
@@ -122,10 +129,18 @@ $(DIRECT_TESTS:%=direct_%_clean):
 .PHONY: direct_tests
 direct_tests: $(DIRECT_TESTS:%=direct_%_test)
 
+.PHONY: print_direct_tests
+print_direct_tests: $(DIRECT_TESTS:%=direct_%_print)
+
 .PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_test)
 $(BUILD_SYSTEMS_TESTS:%=build_%_test): infer
 	@$(call silence_make,\
 	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_test,%,$@) test)
+
+.PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_print)
+$(BUILD_SYSTEMS_TESTS:%=build_%_print): infer
+	@$(call silence_make,\
+	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_print,%,$@) print)
 
 .PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_clean)
 $(BUILD_SYSTEMS_TESTS:%=build_%_clean):
@@ -136,8 +151,13 @@ $(BUILD_SYSTEMS_TESTS:%=build_%_clean):
 build_systems_tests: infer $(BUILD_SYSTEMS_TESTS:%=build_%_test)
 	NO_BUCKD=1 $(INFER_DIR)/tests/build_systems/build_integration_tests.py
 
+.PHONY: print_build_systems_tests
+print_build_systems_tests: $(BUILD_SYSTEMS_TESTS:%=build_%_print)
+
 .PHONY: endtoend_test
-endtoend_test: direct_tests build_systems_tests
+endtoend_test: print_direct_tests print_build_systems_tests
+# pre-compute all the results first so that the test failures show up near the end of the output
+	$(MAKE) direct_tests build_systems_tests
 
 .PHONY: inferTraceBugs_test
 inferTraceBugs_test: infer
