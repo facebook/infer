@@ -61,7 +61,6 @@ CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
-    'componentkit_imports',
     'delete',
     'fail',
     'gradle',
@@ -473,14 +472,6 @@ class BuildIntegrationTest(unittest.TestCase):
                'infer_args': reactive_args},
               {'compile': ['analyze'],
                'infer_args': ['--reactive']}])
-
-    def test_clang_component_kit_imports(self):
-        test('componentkit_imports',
-             'component quality analyzer skips imports',
-             os.path.join(CODETOANALYZE_DIR, 'componentkit'),
-             [{'compile': ['clang', '-x', 'objective-c++', '-std=c++11', '-c',
-                           '-fblocks', 'TestIgnoreImports.mm'],
-               'infer_args': ['--cxx', '--no-filtering', '-a', 'linters']}])
 
     def test_fail_on_issue(self):
         test('fail', '--fail-on-issue flag',

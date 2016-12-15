@@ -13,7 +13,7 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
   include $(ROOT_DIR)/facebook/Makefile.env
 endif
 
-BUILD_SYSTEMS_TESTS = assembly ck_analytics clang_translation linters project_root_rel
+BUILD_SYSTEMS_TESTS = assembly ck_analytics ck_imports clang_translation linters project_root_rel
 ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif
