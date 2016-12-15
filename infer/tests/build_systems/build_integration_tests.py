@@ -61,7 +61,6 @@ CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
-    'multiclang',
     'ndk-build',
     'pmd-xml',
     'reactive',
@@ -439,11 +438,6 @@ class BuildIntegrationTest(unittest.TestCase):
         test('unknown_ext', 'unknown extension',
              CODETOANALYZE_DIR,
              [{'compile': ['clang', '-x', 'c', '-c', 'hello.unknown_ext']}])
-
-    def test_clang_multiple_source_files(self):
-        test('multiclang', 'clang multiple source files',
-             CODETOANALYZE_DIR,
-             [{'compile': ['clang', '-c', 'hello.c', 'hello2.c']}])
 
     def test_reactive_multiple_capture(self):
         reactive_args = ['-a', 'capture', '--reactive', '--continue']
