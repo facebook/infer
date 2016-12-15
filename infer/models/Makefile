@@ -34,8 +34,7 @@ clean_specs:
 $(CLANG_SUBDIRS):
 	@$(MAKE) -C $@ install
 
-clang:
-	@$(MAKE) $(CLANG_SUBDIRS)
+clang: $(CLANG_SUBDIRS)
 
 java:
 	@$(MAKE) -C $@ install

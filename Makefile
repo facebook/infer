@@ -26,15 +26,15 @@ endif
 
 DIRECT_TESTS=
 ifeq ($(BUILD_C_ANALYZERS),yes)
-DIRECT_TESTS += c_errors_test c_frontend_test cpp_checkers_test cpp_errors_test cpp_frontend_test cpp_quandary_test
+DIRECT_TESTS += c_errors c_frontend cpp_checkers cpp_errors cpp_frontend cpp_quandary
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 DIRECT_TESTS += \
-  java_checkers_test java_eradicate_test java_infer_test java_tracing_test \
-  java_quandary_test java_threadsafety_test java_crashcontext_test java_harness_test
+  java_checkers java_eradicate java_infer java_tracing java_quandary java_threadsafety \
+  java_crashcontext java_harness
 endif
 ifneq ($(XCODE_SELECT),no)
-DIRECT_TESTS += objc_frontend_test objc_errors_test objc_linters_test objcpp_frontend_test objcpp_linters_test
+DIRECT_TESTS += objc_frontend objc_errors objc_linters objcpp_frontend objcpp_linters
 endif
 
 .PHONY: all
@@ -95,58 +95,49 @@ endif
 ocaml_unit_test: test_build
 	$(call silent_on_success,$(TEST_BUILD_DIR)/unit/inferunit.byte)
 
-DIRECT_TESTS_REPLACE = $(patsubst %_frontend_test,%_frontend_replace,$(filter %_frontend_test,$(DIRECT_TESTS)))
+DIRECT_TESTS_REPLACE = $(patsubst %_frontend,%_frontend_replace,$(filter %_frontend,$(DIRECT_TESTS)))
+
+define silence_make
+  ($(1) 2> >(grep -v "warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target") \
+  ; exit $${PIPESTATUS[0]})
+endef
 
 .PHONY: frontend_replace
 frontend_replace: $(DIRECT_TESTS_REPLACE)
 
-define gen_direct_test_rule
-.PHONY: $(1)
-$(1): infer
-	($(MAKE) -C \
-	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $(1) | cut -f 1 -d _)/$(shell printf $(1) | cut -f 2 -d _) \
-	  test \
-	3>&1 1>&2- 2>&3- ) \
-	| grep -v "warning: ignoring old commands for target" \
-	| grep -v "warning: overriding commands for target" \
-	; exit $$$${PIPESTATUS[0]}
+.PHONY: $(DIRECT_TESTS:%=direct_%_test)
+$(DIRECT_TESTS:%=direct_%_test): infer
+	@$(call silence_make,\
+	$(MAKE) -C \
+	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $@ | cut -f 2 -d _)/$(shell printf $@ | cut -f 3 -d _) \
+	  test)
 
-.PHONY: $(1)_clean
-$(1)_clean:
-	@$(MAKE) -C \
-	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $(1) | cut -f 1 -d _)/$(shell printf $(1) | cut -f 2 -d _) \
-	  clean
-endef
-
-$(foreach test,$(DIRECT_TESTS) $(DIRECT_TESTS_REPLACE),\
-    $(eval \
-        $(call gen_direct_test_rule,$(test))))
+.PHONY: $(DIRECT_TESTS:%=direct_%_clean)
+$(DIRECT_TESTS:%=direct_%_clean):
+	@$(call silence_make,\
+	$(MAKE) -C \
+	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $@ | cut -f 2 -d _)/$(shell printf $@ | cut -f 3 -d _) \
+	  clean)
 
 .PHONY: direct_tests
-direct_tests: $(DIRECT_TESTS)
+direct_tests: $(DIRECT_TESTS:%=direct_%_test)
 
-define gen_build_system_test_rule
-.PHONY: build_$(1)_test
-build_$(1)_test: infer
-	@($(MAKE) -C $(INFER_DIR)/tests/build_systems/$(1) test \
-	3>&1 1>&2- 2>&3- ) \
-	| grep -v "warning: ignoring old commands for target" \
-	| grep -v "warning: overriding commands for target" \
-	; exit $$$${PIPESTATUS[0]}
+.PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_test)
+$(BUILD_SYSTEMS_TESTS:%=build_%_test): infer
+	@$(call silence_make,\
+	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_test,%,$@) test)
 
-.PHONY: build_$(1)_clean
-build_$(1)_clean:
-	@$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(1) clean
-endef
-
-$(foreach test,$(BUILD_SYSTEMS_TESTS), $(eval $(call gen_build_system_test_rule,$(test))))
+.PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_clean)
+$(BUILD_SYSTEMS_TESTS:%=build_%_clean):
+	@$(call silence_make,\
+	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_clean,%,$@) clean)
 
 .PHONY: build_systems_tests
-build_systems_tests: infer $(foreach test,$(BUILD_SYSTEMS_TESTS),build_$(test)_test)
+build_systems_tests: infer $(BUILD_SYSTEMS_TESTS:%=build_%_test)
 	NO_BUCKD=1 $(INFER_DIR)/tests/build_systems/build_integration_tests.py
 
-.PHONY: buck_test
-buck_test: direct_tests build_systems_tests
+.PHONY: endtoend_test
+endtoend_test: direct_tests build_systems_tests
 
 .PHONY: inferTraceBugs_test
 inferTraceBugs_test: infer
@@ -182,16 +173,12 @@ inferScriptMode_test: test_build
 checkCopyright:
 	@$(MAKE) -C $(SRC_DIR) checkCopyright
 
-.PHONY: run-test
-run-test: test_build ocaml_unit_test buck_test inferTraceBugs_test inferScriptMode_test checkCopyright
-	$(MAKE) -C $(SRC_DIR) mod_dep.dot
-
 .PHONY: test
-test:
+test: test_build ocaml_unit_test endtoend_test inferTraceBugs_test inferScriptMode_test \
+      checkCopyright
+	@$(MAKE) -C $(SRC_DIR) mod_dep.dot
 ifeq (,$(findstring s,$(MAKEFLAGS)))
-	@$(MAKE) run-test && echo "ALL TESTS PASSED"
-else
-	@$(MAKE) run-test
+	@echo "ALL TESTS PASSED"
 endif
 
 .PHONY: quick-test
@@ -199,7 +186,7 @@ quick-test: test_build ocaml_unit_test
 
 .PHONY: test-replace
 test-replace:
-	@$(MAKE) -k run-test || true
+	@$(MAKE) -k endtoend_test || true
 	@for file in $$(find $(INFER_DIR)/tests -name "*.exp.test"); do \
 	    mv -f $$file $$(dirname $$file)/$$(basename -s .exp.test $$file).exp; done
 	@for file in $$(find $(INFER_DIR)/tests -name "*.test.dot"); do \
@@ -213,8 +200,7 @@ uninstall:
 	$(REMOVE) $(DESTDIR)$(bindir)/infer
 
 .PHONY: test_clean
-test_clean: $(foreach test,$(DIRECT_TESTS),$(test)_clean) \
-            $(foreach test,$(BUILD_SYSTEMS_TESTS),build_$(test)_clean)
+test_clean: $(DIRECT_TESTS:%=direct_%_clean) $(BUILD_SYSTEMS_TESTS:%=build_%_clean)
 
 .PHONY: install
 install: infer

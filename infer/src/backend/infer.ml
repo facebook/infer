@@ -305,6 +305,11 @@ let () =
   (* re-set log files, as default files were in results_dir removed above *)
   L.set_log_file_identifier Config.current_exe (Some (CLOpt.exe_name Config.current_exe)) ;
   if Config.is_originator then L.do_out "%s@\n" Config.version_string ;
+  (* infer might be called from a Makefile and itself uses `make` to run the analysis in parallel,
+     but cannot communicate with the parent make command. Since infer won't interfere with them
+     anyway, pretend that we are not called from another make to prevent make falling back to a
+     mono-threaded execution. *)
+  Unix.unsetenv "MAKEFLAGS";
   register_perf_stats_report () ;
   touch_start_file () ;
   capture build_cmd build_mode ;
