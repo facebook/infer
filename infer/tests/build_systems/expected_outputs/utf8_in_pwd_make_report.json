@@ -1,7 +1,0 @@
-[
-  {
-    "bug_type": "NULL_DEREFERENCE",
-    "file": "utf8_in_function_names.c",
-    "procedure": "test_\uc131\uacf5"
-  }
-]

@@ -61,7 +61,6 @@ CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
-    'utf8_in_pwd',
     'waf',
 ]
 
@@ -308,104 +307,11 @@ def test(name,
 
 class BuildIntegrationTest(unittest.TestCase):
 
-    def _test_javac_integration(
-            self,
-            enabled=None,
-            root=os.path.join(ROOT_DIR, 'examples'),
-            report_fname='javac_report.json'):
-        test('javac', 'javac',
-             root,
-             [{'compile': ['javac', 'Hello.java']}],
-             enabled=enabled,
-             report_fname=report_fname)
-
-    def _test_gradle_integration(
-            self,
-            enabled=None,
-            root=os.path.join(ROOT_DIR, 'examples', 'java_hello'),
-            report_fname='gradle_report.json'):
-        env = os.environ.copy()
-        env['PATH'] = '{}:{}'.format(
-            os.path.join(SCRIPT_DIR, 'mock'),
-            os.getenv('PATH'),
-        )
-        test('gradle', 'Gradle',
-             root,
-             [{'compile': ['gradle', 'build']}],
-             enabled=enabled,
-             report_fname=report_fname,
-             env=env)
-
-    def _test_make_integration(
-            self,
-            enabled=None,
-            root=os.path.join(CODETOANALYZE_DIR, 'make'),
-            report_fname='make_report.json'):
-        test('make', 'make',
-             root,
-             [{'compile': ['make', 'all']}],
-             clean_commands=[['make', 'clean']],
-             enabled=enabled,
-             report_fname=report_fname)
-
     def test_waf_integration(self):
         test('waf', 'waf',
              os.path.join(CODETOANALYZE_DIR, 'make'),
              [{'compile': ['./waf', 'build']}],
              clean_commands=[['make', 'clean']])
-
-    def _test_cmake_integration(
-            self,
-            enabled=None,
-            root=os.path.join(CODETOANALYZE_DIR, 'cmake'),
-            report_fname='cmake_report.json'):
-        build_root = os.path.join(root, 'build')
-        if test('cmake', 'CMake',
-                build_root,
-                [{'compile': ['cmake', '..']},
-                 {'compile': ['make', 'clean', 'all']}],
-                available=lambda: is_tool_available(['cmake', '--version']),
-                enabled=enabled,
-                report_fname=report_fname,
-                # remove build/ directory just in case
-                preprocess=lambda: shutil.rmtree(build_root, True),
-                # cmake produces absolute paths using the real path
-                postprocess=(lambda errors:
-                             make_paths_relative_in_report(
-                                 os.path.realpath(root), errors))):
-            # remove build/ directory
-            shutil.rmtree(build_root)
-
-    def test_utf8_in_pwd_integration(self):
-        if not 'utf8_in_pwd' in to_test:
-            print('\nSkipping utf8_in_pwd integration test')
-            return
-        print('\nRunning utf8_in_pwd integration test')
-
-        utf8_in_pwd_path = os.path.join(CODETOANALYZE_DIR, u'utf8_\u03B9n_pwd')
-
-        # copy non-unicode dir to one with unicode in it
-        shutil.rmtree(utf8_in_pwd_path, True) # remove just in case
-        shutil.copytree(os.path.join(CODETOANALYZE_DIR, 'utf8_in_pwd'),
-                        utf8_in_pwd_path)
-
-        self._test_cmake_integration(
-            enabled=True,
-            root=os.path.join(utf8_in_pwd_path, 'cmake'),
-            report_fname='utf8_in_pwd_cmake_report.json')
-        self._test_gradle_integration(
-            enabled=True,
-            root=os.path.join(utf8_in_pwd_path, 'gradle'),
-            report_fname='utf8_in_pwd_gradle_report.json')
-        self._test_javac_integration(
-            enabled=True,
-            root=os.path.join(utf8_in_pwd_path),
-            report_fname='utf8_in_pwd_javac_report.json')
-        self._test_make_integration(
-            enabled=True,
-            root=os.path.join(utf8_in_pwd_path, 'make'),
-            report_fname='utf8_in_pwd_make_report.json')
-        shutil.rmtree(utf8_in_pwd_path, True) # remove copied dir
 
 
 if __name__ == '__main__':
