@@ -61,7 +61,6 @@ CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
-    'javac',
     'locale',
     'make',
     'multiclang',
@@ -316,7 +315,7 @@ def test(name,
 
 class BuildIntegrationTest(unittest.TestCase):
 
-    def test_javac_integration(
+    def _test_javac_integration(
             self,
             enabled=None,
             root=os.path.join(ROOT_DIR, 'examples'),
@@ -437,7 +436,7 @@ class BuildIntegrationTest(unittest.TestCase):
             enabled=True,
             root=os.path.join(utf8_in_pwd_path, 'gradle'),
             report_fname='utf8_in_pwd_gradle_report.json')
-        self.test_javac_integration(
+        self._test_javac_integration(
             enabled=True,
             root=os.path.join(utf8_in_pwd_path),
             report_fname='utf8_in_pwd_javac_report.json')

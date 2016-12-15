@@ -17,9 +17,12 @@ OBJECTS = $(patsubst %.java,%.class,$(SOURCES))
 include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/base.make
 
+PROJECT_ROOT ?= $(TESTS_DIR)
+
 $(OBJECTS): $(SOURCES)
 	javac -cp $(CLASSPATH) $(SOURCES)
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES)
 	$(call silent_on_success,\
-	  $(INFER_BIN) --project-root $(TESTS_DIR) --inferconfig-home . $(INFER_OPTIONS) -a $(ANALYZER) -- javac -cp $(CLASSPATH) $(SOURCES))
+	  $(INFER_BIN) -a $(ANALYZER) --inferconfig-home . --project-root $(PROJECT_ROOT) $(INFER_OPTIONS) -- \
+	    javac -cp $(CLASSPATH) $(SOURCES))
