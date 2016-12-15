@@ -137,6 +137,9 @@ val args_env_var : string
 (** separator of argv elements when encoded into environment variables *)
 val env_var_sep : char
 
+(** [extend_env_args args] appends [args] to those passed via [args_env_var] *)
+val extend_env_args : string list -> unit
+
 (** [parse env_var exe_usage exe] parses command line arguments as specified by preceding calls to
     the [mk_*] functions, and returns a function that prints the usage message and help text then
     exits. [exe] is used to construct the help message appropriate for that executable. The decoded

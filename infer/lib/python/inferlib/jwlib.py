@@ -246,12 +246,6 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
             if self.javac.original_arguments is None:
                 raise Exception('No javac command detected')
 
-        if self.args.buck:
-            self.args.infer_out = os.path.join(
-                self.javac.args.classes_out,
-                config.BUCK_INFER_OUT)
-            self.args.infer_out = os.path.abspath(self.args.infer_out)
-
     def compute_buck_key(self):
         javac_version = self.javac.get_version()
         infer_version = utils.infer_key(self.args.analyzer)
@@ -296,7 +290,6 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
         infer_cmd = [utils.get_cmd_in_bin_dir('InferJava')]
 
         infer_cmd += [
-            '-results_dir', self.args.infer_out,
             '-verbose_out', self.javac.verbose_out,
             '-suppress_warnings_out', self.javac.suppress_warnings_out,
         ]

@@ -78,6 +78,8 @@ let buck_generated_folder = "buck-out/gen"
 
 let buck_infer_deps_file_name = "infer-deps.txt"
 
+let buck_results_dir_name = "infer"
+
 let captured_dir_name = "captured"
 
 let checks_disabled_by_default = [
@@ -1229,14 +1231,29 @@ and xml_specs =
   CLOpt.mk_bool ~deprecated:["xml"] ~long:"xml-specs"
     "Export specs into XML files file1.xml ... filen.xml"
 
+let javac_classes_out = ref None
+
 (* The "rest" args must appear after "--" on the command line, and hence after other args, so they
    are allowed to refer to the other arg variables. *)
 let rest =
+  let classes_out_spec =
+    Arg.String (fun classes_out ->
+        javac_classes_out := Some classes_out ;
+        if !buck then (
+          let classes_out_infer = resolve classes_out ^/ buck_results_dir_name in
+          (* extend env var args to pass args to children that do not receive the rest args *)
+          CLOpt.extend_env_args ["--results-dir"; classes_out_infer] ;
+          results_dir := classes_out_infer
+        )
+      ) in
   CLOpt.mk_subcommand
     ~exes:CLOpt.[Toplevel]
     "Stop argument processing, use remaining arguments as a build command"
     (fun build_exe ->
        match Filename.basename build_exe with
+       | "java" | "javac" -> [
+           ("-classes_out", classes_out_spec, ""); ("-d", classes_out_spec, "")
+         ]
        | _ -> []
     )
 

@@ -526,15 +526,20 @@ let prepend_to_argv args =
   args @ cl_args
 
 (** [prefix_before_rest (prefix @ ["--" :: rest])] is [prefix] where "--" is not in [prefix]. *)
-let prefix_before_rest args =
-  let rec prefix_before_rest_ rev_keep = function
-    | [] | "--" :: _ -> IList.rev rev_keep
-    | keep :: args -> prefix_before_rest_ (keep :: rev_keep) args in
-  prefix_before_rest_ [] args
+let rev_prefix_before_rest args =
+  let rec rev_prefix_before_rest_ rev_keep = function
+    | [] | "--" :: _ -> rev_keep
+    | keep :: args -> rev_prefix_before_rest_ (keep :: rev_keep) args in
+  rev_prefix_before_rest_ [] args
 
 
 (** environment variable use to pass arguments from parent to child processes *)
 let args_env_var = "INFER_ARGS"
+
+let extra_env_args = ref []
+
+let extend_env_args args =
+  extra_env_args := List.rev_append args !extra_env_args
 
 let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe exe_usage =
   let full_speclist = ref []
@@ -669,8 +674,14 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
     | Arg.Help usage_msg -> Pervasives.print_string usage_msg; exit 0
   in
   parse_loop ();
-  if not incomplete then
-    Unix.putenv
-      ~key:args_env_var
-      ~data:(encode_argv_to_env (prefix_before_rest (IList.tl (Array.to_list !args_to_parse)))) ;
+  if not incomplete then (
+    (* reread args_to_parse instead of using all_args since mk_path_helper may have modified them *)
+    let prog_args =
+      List.rev_append
+        (rev_prefix_before_rest (Array.to_list !args_to_parse))
+        (List.rev !extra_env_args) in
+    (* do not include program path in args passed via env var *)
+    let args = Option.value (List.tl prog_args) ~default:[] in
+    Unix.putenv ~key:args_env_var ~data:(encode_argv_to_env args)
+  );
   curr_usage
