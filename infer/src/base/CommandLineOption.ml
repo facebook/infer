@@ -621,6 +621,8 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
   (* speclist includes args for current exe with docs, and all other args without docs, so
      that all args can be parsed, but --help and parse failures only show external args for
      current exe *)
+  (* reset the speclist between calls to this function *)
+  curr_speclist := [];
   if current_exe = Toplevel then
     add_to_curr_speclist ~add_help:true ~header:"Toplevel options" current_exe
   else
