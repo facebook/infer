@@ -264,13 +264,20 @@ else
 fi
 AC_SUBST([NCPU])
 
-# tools that are optional, eg build systems to be run in integration tests
+# progs that are optional, eg build systems to be run in integration tests
 AC_CHECK_TOOL([ANT], [ant], [no])
 if test ! -z "$SANDCASTLE"; then
    BUCK=buck
    AC_SUBST([BUCK])
 else
   AC_CHECK_TOOL([BUCK], [buck], [no])
+fi
+AC_CHECK_TOOL([NDKBUILD], [ndk-build], [no])
+if test x"$NDKBUILD" = x"no"; then
+# ndk-build not in $PATH, look into potential android NDK install paths and record the absolute path
+# to ndk-build
+  AC_PATH_PROG([NDKBUILD], [ndk-build], [no],
+    [$PATH$PATH_SEPARATOR$ANDROID_NDK$PATH_SEPARATOR/opt/android_ndk/r10e])
 fi
 
 AC_CONFIG_FILES([

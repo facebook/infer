@@ -45,6 +45,7 @@ MKDIR_P_CMD = case "@MKDIR_P@" in \
     esac
 MKDIR_P = $(shell $(MKDIR_P_CMD))
 NCPU = @NCPU@
+NDKBUILD = @NDKBUILD@
 prefix = @prefix@
 USER_JAVA_HOME = @USER_JAVA_HOME@
 XCODE_SELECT = @XCODE_SELECT@

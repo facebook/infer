@@ -61,7 +61,6 @@ CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
-    'ndk-build',
     'pmd-xml',
     'reactive',
     'unknown_ext',
@@ -351,29 +350,6 @@ class BuildIntegrationTest(unittest.TestCase):
              clean_commands=[['make', 'clean']],
              enabled=enabled,
              report_fname=report_fname)
-
-    def test_ndkbuild_integration(self):
-        root = os.path.join(CODETOANALYZE_DIR, 'ndk-build', 'hello_app')
-        gen_lib_dir = os.path.join(root, 'libs')
-        gen_obj_dir = os.path.join(root, 'obj')
-        env = os.environ.copy()
-        ndk_dir = os.getenv('ANDROID_NDK',
-                            os.path.join(os.path.sep,
-                                         'opt',
-                                         'android_ndk',
-                                         'r10e'))
-        env['PATH'] = '{}:{}'.format(os.getenv('PATH'), ndk_dir)
-        if test('ndk-build', 'ndk-build',
-                root,
-                [{'compile': ['ndk-build', '-B',
-                              'NDK_LIBS_OUT=./libs', 'NDK_OUT=./obj']}],
-                clean_commands=[['ndk-build', 'clean']],
-                available=lambda: is_tool_available([
-                    os.path.join(ndk_dir, 'ndk-build'), '-v']),
-                env=env):
-            # remove libs/ and obj/ directories
-            shutil.rmtree(gen_lib_dir)
-            shutil.rmtree(gen_obj_dir)
 
     def test_waf_integration(self):
         test('waf', 'waf',
