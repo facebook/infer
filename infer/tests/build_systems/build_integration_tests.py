@@ -61,7 +61,6 @@ CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
-    'locale',
     'make',
     'multiclang',
     'ndk-build',
@@ -377,15 +376,6 @@ class BuildIntegrationTest(unittest.TestCase):
             # remove libs/ and obj/ directories
             shutil.rmtree(gen_lib_dir)
             shutil.rmtree(gen_obj_dir)
-
-    def test_wonky_locale_integration(self):
-        env = os.environ.copy()
-        env['LC_ALL'] = 'C'
-        test('locale', 'wonky locale',
-             os.path.join(CODETOANALYZE_DIR, 'make'),
-             [{'compile': ['clang', '-c', 'utf8_in_function_names.c']},
-              {'compile': ['clang', '-c', 'utf8_in_function_names.c']}],
-             env=env)
 
     def test_waf_integration(self):
         test('waf', 'waf',

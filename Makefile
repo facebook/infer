@@ -15,7 +15,7 @@ endif
 
 BUILD_SYSTEMS_TESTS = \
   assembly ck_analytics ck_imports clang_translation delete_results_dir fail_on_issue gradle \
-  javac linters project_root_rel
+  javac linters project_root_rel utf8_in_procname
 ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif
