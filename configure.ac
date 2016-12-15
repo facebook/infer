@@ -264,7 +264,8 @@ else
 fi
 AC_SUBST([NCPU])
 
-# progs that are optional, eg build systems to be run in integration tests
+# optional progs and libraries that, eg build systems to be run in integration tests
+
 AC_CHECK_TOOL([ANT], [ant], [no])
 if test ! -z "$SANDCASTLE"; then
    BUCK=buck
@@ -279,6 +280,8 @@ if test x"$NDKBUILD" = x"no"; then
   AC_PATH_PROG([NDKBUILD], [ndk-build], [no],
     [$PATH$PATH_SEPARATOR$ANDROID_NDK$PATH_SEPARATOR/opt/android_ndk/r10e])
 fi
+
+AC_CHECK_PYTHON_MODULE([$PYTHON27], [lxml])
 
 AC_CONFIG_FILES([
   Makefile.config

@@ -61,7 +61,6 @@ CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
-    'pmd-xml',
     'reactive',
     'unknown_ext',
     'utf8_in_pwd',
@@ -427,22 +426,6 @@ class BuildIntegrationTest(unittest.TestCase):
                'infer_args': reactive_args},
               {'compile': ['analyze'],
                'infer_args': ['--reactive']}])
-
-    def test_pmd_xml_output(self):
-        def pmd_check(infer_out):
-            assert os.path.exists(os.path.join(infer_out, 'report.xml'))
-        try:
-            from lxml import etree
-            has_lxml = True
-        except ImportError:
-            has_lxml = False
-
-        test('pmd-xml', 'PMD XML output',
-             CODETOANALYZE_DIR,
-             [{'compile': ['clang', '-c', 'hello.c'],
-               'infer_args': ['--pmd-xml']}],
-             extra_check=pmd_check,
-             available=lambda: has_lxml)
 
 
 if __name__ == '__main__':

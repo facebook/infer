@@ -47,6 +47,7 @@ MKDIR_P = $(shell $(MKDIR_P_CMD))
 NCPU = @NCPU@
 NDKBUILD = @NDKBUILD@
 prefix = @prefix@
+PYTHON_lxml = @PYTHON_lxml@
 USER_JAVA_HOME = @USER_JAVA_HOME@
 XCODE_SELECT = @XCODE_SELECT@
 

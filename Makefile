@@ -28,6 +28,9 @@ endif
 ifneq ($(NDKBUILD),no)
 BUILD_SYSTEMS_TESTS += ndk_build
 endif
+ifneq ($(PYTHON_lxml),no)
+BUILD_SYSTEMS_TESTS += results_xml
+endif
 
 DIRECT_TESTS=
 ifeq ($(BUILD_C_ANALYZERS),yes)
