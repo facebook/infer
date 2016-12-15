@@ -8,16 +8,14 @@
 TESTS_DIR=../../..
 
 # see explanations in cpp/errors/Makefile for the custom isystem
-CLANG_OPTIONS = -x c++ -std=c++11 -nostdinc++ -isystem$(ROOT_DIR) -isystem$(CLANG_INCLUDES)/c++/v1/ -c
+CLANG_OPTIONS = \
+  -nostdinc++ -isystem$(ROOT_DIR) -isystem$(CLANG_INCLUDES)/c++/v1/ \
+  -x c++ -std=c++11 -c
+INFER_OPTIONS = --headers
+
 
 SOURCES = \
   $(wildcard */*.cpp) \
   $(wildcard shared/*/*.cpp) \
 
 include $(TESTS_DIR)/clang-frontend.make
-
-compile:
-	clang $(CLANG_OPTIONS) $(SOURCES)
-
-capture:
-	$(call silent_on_success,$(INFER_BIN) -a capture --frontend-tests --cxx --headers --project-root $(TESTS_DIR) -- clang $(CLANG_OPTIONS) $(SOURCES))

@@ -5,12 +5,14 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-TESTS_DIR=../../..
+%.o: %.c
+	clang $(CLANG_OPTIONS) -o $@ $<
 
-CLANG_OPTIONS = -c
+%.o: %.cpp
+	clang++ $(CLANG_OPTIONS) -o $@ $<
 
-SOURCES = \
-  $(wildcard */*.c) \
-  $(wildcard */*.cpp) \
+%.o: %.m
+	clang $(CLANG_OPTIONS) -o $@ $<
 
-include $(TESTS_DIR)/clang-frontend.make
+%.o: %.mm
+	clang++ $(CLANG_OPTIONS) -o $@ $<

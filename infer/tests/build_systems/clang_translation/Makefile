@@ -19,40 +19,35 @@ SOURCES = \
   $(SYM_ROOT)/main_symlink.cpp \
   $(SYM_ROOT)/main_default_symlink.cpp \
 
+DOT_FILES = $(SOURCES:=.test.dot)
+CLEAN_EXTRA = $(DOT_FILES) $(foreach source,$(SOURCES),infer-out-$(basename $(notdir $(source))))
+
 include $(TESTS_DIR)/clang-frontend.make
 
-INFER_OPTIONS = -a capture --frontend-tests --cxx --skip-translation-headers exclude_dir
+INFER_OPTIONS = -a capture --frontend-tests --skip-translation-headers exclude_dir
 
-compile:
-	clang $(CLANG_OPTIONS) $(SOURCES)
+capture: $(DOT_FILES)
 
-capture:
+$(ROOT)/main.cpp.test.dot $(SYM_ROOT)/main_symlink.cpp.test.dot: $(SOURCES) $(CLANG_DEPS)
 	$(call silent_on_success,\
-	$(INFER_BIN) $(INFER_OPTIONS) --project-root $(ROOT) \
-	--icfg-dotty-outfile $(ROOT)/main.cpp.test.dot -- \
-	clang $(CLANG_OPTIONS) $(ROOT)/main.cpp)
+	$(INFER_BIN) $(INFER_OPTIONS) --results-dir infer-out-$(basename $(@F:.test.dot=)) \
+	  --project-root $(ROOT) --icfg-dotty-outfile $@ -- \
+	  clang $(CLANG_OPTIONS) $(@:.test.dot=))
 
+$(ROOT)/main_default_root.cpp.test.dot $(SYM_ROOT)/main_default_symlink.cpp.test.dot: \
+  $(CLANG_DEPS) $(SOURCES)
+	cd $(@D) && \
 	$(call silent_on_success,\
-	$(INFER_BIN) $(INFER_OPTIONS) --project-root $(SYM_ROOT) \
-	--icfg-dotty-outfile $(SYM_ROOT)/main_symlink.cpp.test.dot -- \
-	clang $(CLANG_OPTIONS) $(SYM_ROOT)/main.cpp)
-
-	cd $(ROOT) && \
-	$(call silent_on_success,\
-	$(INFER_BIN) $(INFER_OPTIONS) --icfg-dotty-outfile main_default_root.cpp.test.dot -- \
-	clang $(CLANG_OPTIONS) main.cpp)
-
-	cd $(SYM_ROOT) && \
-	$(call silent_on_success,\
-	$(INFER_BIN) $(INFER_OPTIONS) --icfg-dotty-outfile main_default_symlink.cpp.test.dot -- \
-	clang $(CLANG_OPTIONS) main.cpp)
+	$(INFER_BIN) $(INFER_OPTIONS) --results-dir $(CURDIR)/infer-out-$(basename $(@F:.test.dot=)) \
+	  --icfg-dotty-outfile $(@F) -- \
+	  clang $(CLANG_OPTIONS) $(@F:.test.dot=))
 
 # test_extra needs to be separate target. Otherwise commands from test
 # target in common Makefile won't run
 test: test_extra
 
 # all dot files should be exactly the same - if they aren't there is something wrong
-test_extra:
-	diff $(ROOT)/main.cpp.dot $(SYM_ROOT)/main_symlink.cpp.dot && \
-	diff $(ROOT)/main.cpp.dot $(ROOT)/main_default_root.cpp.dot && \
-	diff $(ROOT)/main.cpp.dot $(SYM_ROOT)/main_default_symlink.cpp.dot
+test_extra: $(DOT_FILES)
+	diff -u $(ROOT)/main.cpp.test.dot $(SYM_ROOT)/main_symlink.cpp.test.dot
+	diff -u $(ROOT)/main.cpp.test.dot $(ROOT)/main_default_root.cpp.test.dot
+	diff -u $(ROOT)/main.cpp.test.dot $(SYM_ROOT)/main_default_symlink.cpp.test.dot

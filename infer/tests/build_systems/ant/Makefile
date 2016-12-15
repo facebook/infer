@@ -18,7 +18,7 @@ include $(TESTS_DIR)/base.make
 $(OBJECTS): $(SOURCES)
 	ant
 
-infer-out/report.json: $(INFER_BIN) $(SOURCES)
+infer-out/report.json: $(JAVA_DEPS) $(SOURCES)
 	$(call silent_on_success,\
 	  $(INFER_BIN) -a $(ANALYZER) --project-root $(TESTS_DIR) --inferconfig-home . -- ant)
 

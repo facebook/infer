@@ -7,24 +7,14 @@
 
 ROOT_DIR = $(TESTS_DIR)/../..
 
-OBJECTS = $(foreach source,$(SOURCES),$(basename $(source)).o)
 CLEAN_EXTRA += duplicates.txt
 
+OBJECTS = $(foreach source,$(SOURCES),$(basename $(source)).o)
+
 include $(TESTS_DIR)/base.make
+include $(TESTS_DIR)/clang-base.make
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(HEADERS)
 	$(call silent_on_success,\
 	  $(INFER_BIN) --check-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- clang $(CLANG_OPTIONS) $(SOURCES) 2>duplicates.txt)
 	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
-
-%.o: %.c
-	clang $(CLANG_OPTIONS) -o $@ $<
-
-%.o: %.cpp
-	clang++ $(CLANG_OPTIONS) -o $@ $<
-
-%.o: %.m
-	clang $(CLANG_OPTIONS) -o $@ $<
-
-%.o: %.mm
-	clang++ $(CLANG_OPTIONS) -o $@ $<

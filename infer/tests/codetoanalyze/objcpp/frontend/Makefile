@@ -19,9 +19,3 @@ SOURCES = \
   $(wildcard */*.mm) \
 
 include $(TESTS_DIR)/clang-frontend.make
-
-compile:
-	clang $(CLANG_OPTIONS) $(SOURCES)
-
-capture:
-	$(call silent_on_success,$(INFER_BIN) -a capture --cxx --frontend-tests --continue --reactive --project-root $(TESTS_DIR) -- clang $(CLANG_OPTIONS) $(SOURCES))

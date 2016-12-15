@@ -12,7 +12,7 @@ CMAKE_BUILD_DIR = $(CMAKE_DIR)/_build
 
 ANALYZER = infer
 CLEAN_EXTRA = $(CMAKE_BUILD_DIR)
-INFER_OPTIONS = --cxx --report-custom-error --developer-mode --project-root $(CMAKE_DIR)
+INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(CMAKE_DIR)
 SOURCES = $(CMAKE_DIR)/hello.cpp
 OBJECTS = $(CMAKE_BUILD_DIR)/compile_commands.json
 INFERPRINT_OPTIONS = --issues-tests
@@ -29,15 +29,15 @@ $(CMAKE_BUILD_DIR)/compile_commands.json: $(SOURCES) $(CMAKE_DIR)/CMakeLists.txt
 infer-out/report.json:
 	# make this target empty - since this test defines issues.exp.test directly
 
-infer-out-with-index/report.json: $(CMAKE_BUILD_DIR)/compile_commands.json $(INFER_BIN) $(SOURCES)
+infer-out-with-index/report.json: $(CMAKE_BUILD_DIR)/compile_commands.json $(CLANG_DEPS) $(SOURCES)
 	$(call silent_on_success,\
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) -o infer-out-with-index --changed-files-index $(CMAKE_DIR)/index.txt --clang-compilation-db-files $<)
 
-infer-out-no-index/report.json: $(CMAKE_BUILD_DIR)/compile_commands.json $(INFER_BIN) $(SOURCES)
+infer-out-no-index/report.json: $(CMAKE_BUILD_DIR)/compile_commands.json $(CLANG_DEPS) $(SOURCES)
 	$(call silent_on_success,\
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) -o infer-out-no-index --clang-compilation-db-files $<)
 
-infer-out-reactive-capture/report.json: $(CMAKE_BUILD_DIR)/compile_commands.json $(INFER_BIN) $(SOURCES)
+infer-out-reactive-capture/report.json: $(CMAKE_BUILD_DIR)/compile_commands.json $(CLANG_DEPS) $(SOURCES)
 	$(call silent_on_success,\
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) -o infer-out-reactive-capture --reactive-capture \
 	  --changed-files-index $(CMAKE_DIR)/index.txt --clang-compilation-db-files $<)

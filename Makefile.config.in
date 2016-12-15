@@ -52,17 +52,13 @@ XCODE_SELECT = @XCODE_SELECT@
 ifneq (,$(findstring s,$(MAKEFLAGS)))
 # quiet mode
 LN_S = @LN_S@
-REMOVE = rm -f
-REMOVE_DIR = rm -rf
-RSYNC_A = rsync -av
 else
 LN_S = @LN_S@ -v
-REMOVE = rm -vf
-REMOVE_DIR = rm -rvf
-RSYNC_A = rsync -aq
 endif
 COPY = cp -f
 COPY_DIR = cp -Rf
+REMOVE = rm -f
+REMOVE_DIR = rm -rf
 
 ABSOLUTE_ROOT_DIR = $(shell cd $(ROOT_DIR) && pwd)
 
