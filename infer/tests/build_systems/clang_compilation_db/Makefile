@@ -8,7 +8,7 @@
 TESTS_DIR = ../..
 
 CMAKE_DIR = ../codetoanalyze/clang_compilation_database
-CMAKE_BUILD_DIR = $(CMAKE_DIR)/_build
+CMAKE_BUILD_DIR = $(CMAKE_DIR)/_build_infer
 
 ANALYZER = infer
 CLEAN_EXTRA = $(CMAKE_BUILD_DIR)
@@ -27,7 +27,7 @@ $(CMAKE_BUILD_DIR)/compile_commands.json: $(SOURCES) $(CMAKE_DIR)/CMakeLists.txt
 	$(CMAKE) -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
 
 infer-out/report.json:
-	# make this target empty - since this test defines issues.exp.test directly
+#	make this target empty - since this test defines issues.exp.test directly
 
 infer-out-with-index/report.json: $(CMAKE_BUILD_DIR)/compile_commands.json $(CLANG_DEPS) $(SOURCES)
 	$(call silent_on_success,\

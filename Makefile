@@ -21,7 +21,7 @@ ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck
 endif
 ifneq ($(CMAKE),no)
-BUILD_SYSTEMS_TESTS += clang_compilation_db
+BUILD_SYSTEMS_TESTS += clang_compilation_db cmake
 endif
 
 DIRECT_TESTS=

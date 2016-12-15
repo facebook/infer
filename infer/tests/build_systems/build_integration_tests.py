@@ -61,7 +61,6 @@ CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
-    'cmake',
     'componentkit_analytics',
     'componentkit_imports',
     'delete',
@@ -400,7 +399,7 @@ class BuildIntegrationTest(unittest.TestCase):
              [{'compile': ['./waf', 'build']}],
              clean_commands=[['make', 'clean']])
 
-    def test_cmake_integration(
+    def _test_cmake_integration(
             self,
             enabled=None,
             root=os.path.join(CODETOANALYZE_DIR, 'cmake'),
@@ -412,6 +411,7 @@ class BuildIntegrationTest(unittest.TestCase):
                  {'compile': ['make', 'clean', 'all']}],
                 available=lambda: is_tool_available(['cmake', '--version']),
                 enabled=enabled,
+                report_fname=report_fname,
                 # remove build/ directory just in case
                 preprocess=lambda: shutil.rmtree(build_root, True),
                 # cmake produces absolute paths using the real path
@@ -434,7 +434,7 @@ class BuildIntegrationTest(unittest.TestCase):
         shutil.copytree(os.path.join(CODETOANALYZE_DIR, 'utf8_in_pwd'),
                         utf8_in_pwd_path)
 
-        self.test_cmake_integration(
+        self._test_cmake_integration(
             enabled=True,
             root=os.path.join(utf8_in_pwd_path, 'cmake'),
             report_fname='utf8_in_pwd_cmake_report.json')
