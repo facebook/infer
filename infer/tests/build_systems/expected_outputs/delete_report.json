@@ -1,7 +1,0 @@
-[
-  {
-    "bug_type": "NULL_DEREFERENCE",
-    "file": "hello2.c",
-    "procedure": "test2"
-  }
-]
