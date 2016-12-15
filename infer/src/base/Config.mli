@@ -217,7 +217,6 @@ val nelseg : bool
 val no_translate_libs : bool
 val objc_memory_model_on : bool
 val only_footprint : bool
-val optimistic_cast : bool
 val out_file_cmdline : string
 val pmd_xml : bool
 val precondition_stats : bool

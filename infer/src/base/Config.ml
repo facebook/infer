@@ -940,10 +940,6 @@ and only_footprint =
   CLOpt.mk_bool ~deprecated:["only_footprint"] ~long:"only-footprint"
     "Skip the re-execution phase"
 
-and optimistic_cast =
-  CLOpt.mk_bool ~deprecated:["optimistic_cast"] ~long:"optimistic-cast"
-    "Allow cast of undefined values"
-
 and out_file =
   CLOpt.mk_path ~deprecated:["out_file"] ~long:"out-file" ~default:""
     ~meta:"file" "Specify the file for the non-error logs of the analyzer"
@@ -1451,7 +1447,6 @@ and nelseg = !nelseg
 and no_translate_libs = not !headers
 and objc_memory_model_on = !objc_memory_model
 and only_footprint = !only_footprint
-and optimistic_cast = !optimistic_cast
 and out_file_cmdline = !out_file
 and patterns_never_returning_null = match patterns_never_returning_null with (k,r) -> (k,!r)
 and patterns_skip_translation = match patterns_skip_translation with (k,r) -> (k,!r)

@@ -140,7 +140,7 @@ let execute___print_value { Builtin.tenv; pdesc; prop_; path; args; }
 let is_undefined_opt tenv prop n_lexp =
   let is_undef =
     Option.is_some (Attribute.get_undef tenv prop n_lexp) in
-  is_undef && (Config.angelic_execution || Config.optimistic_cast)
+  is_undef && Config.angelic_execution
 
 (** Creates an object in the heap with a given type, when the object is not known to be null or when
     it doesn't appear already in the heap. *)
