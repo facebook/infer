@@ -151,6 +151,8 @@ let capture_with_compilation_database db_files =
 let capture build_cmd = function
   | Analyze when not (List.is_empty !Config.clang_compilation_db_files) ->
       capture_with_compilation_database !Config.clang_compilation_db_files
+  | Analyze ->
+      ()
   | Buck when Config.use_compilation_database <> None ->
       L.stdout "Capturing using Buck's compilation database...@\n";
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck () in

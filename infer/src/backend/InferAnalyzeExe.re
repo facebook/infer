@@ -47,6 +47,5 @@ let () = {
     Printexc.record_backtrace true
   };
   print_prolog ();
-  RegisterCheckers.register ();
   InferAnalyze.main Config.makefile_cmdline
 };

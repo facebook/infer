@@ -11,22 +11,23 @@ include $(ROOT_DIR)/Makefile.config
 
 default: compile
 
-issues.exp.test: infer-out/report.json $(INFERPRINT_BIN)
+issues.exp.test$(TEST_SUFFIX): infer-out$(TEST_SUFFIX)/report.json $(INFERPRINT_BIN)
 	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@ --from-json-report $<
 
 .PHONY: compile
 compile: $(OBJECTS)
 
 .PHONY: analyze
-analyze: infer-out/report.json
+analyze: infer-out$(TEST_SUFFIX)/report.json
 
 .PHONY: print
-print: issues.exp.test
+print: issues.exp.test$(TEST_SUFFIX)
 
 .PHONY: test
-test: issues.exp.test
-	diff -u issues.exp issues.exp.test
+test: issues.exp.test$(TEST_SUFFIX)
+	diff -u issues.exp issues.exp.test$(TEST_SUFFIX)
 
 .PHONY: clean
 clean:
-	rm -rf codetoanalyze issues.exp.test infer-out $(OBJECTS) $(CLEAN_EXTRA)
+	$(REMOVE_DIR) codetoanalyze issues.exp.test$(TEST_SUFFIX) infer-out$(TEST_SUFFIX) \
+	  $(OBJECTS) $(CLEAN_EXTRA)
