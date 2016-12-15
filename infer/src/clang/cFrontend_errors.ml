@@ -120,15 +120,14 @@ let get_err_log translation_unit_context method_decl_opt =
 
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
 let log_frontend_issue translation_unit_context method_decl_opt key issue_desc =
-  let issue = issue_desc.CIssue.issue in
+  let name = issue_desc.CIssue.name in
   let loc = issue_desc.CIssue.loc in
   let errlog = get_err_log translation_unit_context method_decl_opt in
   let err_desc = Errdesc.explain_frontend_warning issue_desc.CIssue.description
       issue_desc.CIssue.suggestion loc in
-  let name = CIssue.to_string issue in
   let exn = Exceptions.Frontend_warning (name, err_desc, __POS__) in
   let trace = [ Errlog.make_trace_element 0 issue_desc.CIssue.loc "" [] ] in
-  let err_kind = CIssue.severity_of_issue issue in
+  let err_kind = issue_desc.CIssue.severity in
   let method_name = Ast_utils.full_name_of_decl_opt method_decl_opt in
   let key = Hashtbl.hash (key ^ method_name) in
   Reporting.log_issue_from_errlog err_kind errlog exn ~loc ~ltr:trace

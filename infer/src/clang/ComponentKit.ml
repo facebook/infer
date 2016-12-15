@@ -116,11 +116,12 @@ let mutable_local_vars_advice context an =
                       && not decl_info.di_is_implicit in
       if condition then
         CTL.True, Some {
-          CIssue.issue = CIssue.Mutable_local_variable_in_component_file;
-          CIssue.description = "Local variable '" ^ named_decl_info.ni_name
-                               ^ "' should be const to avoid reassignment";
-          CIssue.suggestion = Some "Add a const (after the asterisk for pointer types).";
-          CIssue.loc = CFrontend_checkers.location_from_dinfo context decl_info
+          CIssue.name = Localise.to_string Localise.mutable_local_variable_in_component_file;
+          severity = Exceptions.Kadvice;
+          description = "Local variable '" ^ named_decl_info.ni_name
+                        ^ "' should be const to avoid reassignment";
+          suggestion = Some "Add a const (after the asterisk for pointer types).";
+          loc = CFrontend_checkers.location_from_dinfo context decl_info
         }
       else CTL.False, None
   | _ -> CTL.False, None (* Should only be called with a VarDecl *)
@@ -142,13 +143,14 @@ let component_factory_function_advice context an =
         is_ck_context context an && is_component_if objc_interface in
       if condition then
         CTL.True, Some {
-          CIssue.issue = CIssue.Component_factory_function;
-          CIssue.description = "Break out composite components";
-          CIssue.suggestion = Some (
+          CIssue.name = Localise.to_string Localise.component_factory_function;
+          severity = Exceptions.Kadvice;
+          description = "Break out composite components";
+          suggestion = Some (
               "Prefer subclassing CKCompositeComponent to static helper functions \
                that return a CKComponent subclass."
             );
-          CIssue.loc = CFrontend_checkers.location_from_dinfo context decl_info
+          loc = CFrontend_checkers.location_from_dinfo context decl_info
         }
       else CTL.False, None
   | _ -> CTL.False, None (* Should only be called with FunctionDecl *)
@@ -182,12 +184,13 @@ let component_with_unconventional_superclass_advice context an =
             && not has_conventional_superclass in
           if condition then
             CTL.True, Some {
-              CIssue.issue = CIssue.Component_with_unconventional_superclass;
-              CIssue.description = "Never Subclass Components";
-              CIssue.suggestion = Some (
+              CIssue.name = Localise.to_string Localise.component_with_unconventional_superclass;
+              severity = Exceptions.Kadvice;
+              description = "Never Subclass Components";
+              suggestion = Some (
                   "Instead, create a new subclass of CKCompositeComponent."
                 );
-              CIssue.loc = CFrontend_checkers.location_from_decl context if_decl
+              loc = CFrontend_checkers.location_from_decl context if_decl
             }
           else
             CTL.False, None
@@ -232,12 +235,13 @@ let component_with_multiple_factory_methods_advice context an =
         let factory_methods = IList.filter (is_available_factory_method if_decl) decls in
         if (IList.length factory_methods) > 1 then
           CTL.True, Some {
-            CIssue.issue = CIssue.Component_with_multiple_factory_methods;
-            CIssue.description = "Avoid Overrides";
-            CIssue.suggestion =
+            CIssue.name = Localise.to_string Localise.component_with_multiple_factory_methods;
+            severity = Exceptions.Kadvice;
+            description = "Avoid Overrides";
+            suggestion =
               Some "Instead, always expose all parameters in a single \
                     designated initializer and document which are optional.";
-            CIssue.loc = CFrontend_checkers.location_from_dinfo context decl_info
+            loc = CFrontend_checkers.location_from_dinfo context decl_info
           }
         else
           CTL.False, None
@@ -285,11 +289,12 @@ let rec _component_initializer_with_side_effects_advice
          | Some "dispatch_async"
          | Some "dispatch_sync" ->
              CTL.True, Some {
-               CIssue.issue = CIssue.Component_initializer_with_side_effects;
-               CIssue.description = "No Side-effects";
-               CIssue.suggestion = Some "Your +new method should not modify any \
-                                         global variables or global state.";
-               CIssue.loc = CFrontend_checkers.location_from_stmt context call_stmt
+               CIssue.name = Localise.to_string Localise.component_initializer_with_side_effects;
+               severity = Exceptions.Kadvice;
+               description = "No Side-effects";
+               suggestion = Some "Your +new method should not modify any \
+                                  global variables or global state.";
+               loc = CFrontend_checkers.location_from_stmt context call_stmt
              }
          | _ ->
              CTL.False, None)
@@ -317,10 +322,11 @@ let component_file_line_count_info (context: CLintersContext.context) dec =
         context.translation_unit_context.CFrontend_config.source_file in
       let line_count = SourceFile.line_count source_file in
       IList.map (fun i -> {
-            CIssue.issue = CIssue.Component_file_line_count;
-            CIssue.description = "Line count analytics";
-            CIssue.suggestion = None;
-            CIssue.loc = {
+            CIssue.name = Localise.to_string Localise.component_file_line_count;
+            severity = Exceptions.Kinfo;
+            description = "Line count analytics";
+            suggestion = None;
+            loc = {
               Location.line = i;
               Location.col = 0;
               Location.file = source_file
@@ -361,9 +367,10 @@ let component_file_cyclomatic_complexity_info (context: CLintersContext.context)
   match cyclo_loc_opt an with
   | Some loc ->
       CTL.True, Some {
-        CIssue.issue = CIssue.Component_file_cyclomatic_complexity;
-        CIssue.description = "Cyclomatic Complexity Incremental Marker";
-        CIssue.suggestion = None;
-        CIssue.loc = loc
+        CIssue.name = Localise.to_string Localise.component_file_cyclomatic_complexity;
+        severity = Exceptions.Kinfo;
+        description = "Cyclomatic Complexity Incremental Marker";
+        suggestion = None;
+        loc = loc
       }
   | _ -> CTL.False, None

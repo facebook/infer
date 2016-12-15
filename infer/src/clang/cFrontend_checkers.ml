@@ -119,12 +119,13 @@ let ctl_ns_notification_warning lctx an =
   let condition = InNode (["ObjCImplementationDecl"; "ObjCProtocolDecl"],
                           Not (Implies (eventually_addObserver, eventually_removeObserver))) in
   let issue_desc = {
-    CIssue.issue = CIssue.Registered_observer_being_deallocated;
-    CIssue.description =
+    CIssue.name = Localise.to_string Localise.registered_observer_being_deallocated;
+    severity = Exceptions.Kwarning;
+    description =
       "Object self is registered in a notification center but not being removed before deallocation";
-    CIssue.suggestion =
+    suggestion =
       Some "Consider removing the object from the notification center before its deallocation.";
-    CIssue.loc = location_from_an lctx an;
+    loc = location_from_an lctx an;
   } in
   condition, Some issue_desc
 
@@ -152,7 +153,8 @@ let ctl_bad_pointer_comparison_warning lctx an =
   let condition = InNode (["IfStmt"; "ForStmt"; "WhileStmt"; "ConditionalOperator"], etx) in
   let issue_desc =
     { CIssue.
-      issue = CIssue.Bad_pointer_comparison;
+      name = Localise.to_string Localise.bad_pointer_comparison;
+      severity = Exceptions.Kwarning;
       description = "Implicitly checking whether NSNumber pointer is nil";
       suggestion =
         Some ("Did you mean to compare against the unboxed value instead? " ^
@@ -175,11 +177,12 @@ let ctl_strong_delegate_warning lctx an =
                                                      And (name_does_not_contains_queue,
                                                           is_strong_property))) in
   let issue_desc = {
-    CIssue.issue = CIssue.Strong_delegate_warning;
-    CIssue.description =
+    CIssue.name = Localise.to_string Localise.strong_delegate_warning;
+    severity = Exceptions.Kwarning;
+    description =
       "Property or ivar %decl_name% declared strong";
-    CIssue.suggestion = Some "In general delegates should be declared weak or assign";
-    CIssue.loc = location_from_an lctx an
+    suggestion = Some "In general delegates should be declared weak or assign";
+    loc = location_from_an lctx an
   } in
   condition, Some issue_desc
 
@@ -196,12 +199,14 @@ let ctl_global_var_init_with_calls_warning lctx an =
   let condition =
     InNode (["VarDecl"], And (ctl_is_global_var, ctl_is_initialized_with_expensive_call)) in
   let issue_desc = {
-    CIssue.issue = CIssue.Global_variable_initialized_with_function_or_method_call;
-    CIssue.description =
+    CIssue.name =
+      Localise.to_string Localise.global_variable_initialized_with_function_or_method_call;
+    severity = Exceptions.Kwarning;
+    description =
       "Global variable %decl_name% is initialized using a function or method call";
-    CIssue.suggestion = Some
+    suggestion = Some
         "If the function/method call is expensive, it can affect the starting time of the app.";
-    CIssue.loc = location_from_an lctx an
+    loc = location_from_an lctx an
   } in
   condition, Some issue_desc
 
@@ -212,11 +217,12 @@ let ctl_assign_pointer_warning lctx an =
                          And (Atomic ("is_assign_property", []),
                               Atomic ("is_property_pointer_type", []))) in
   let issue_desc =
-    { CIssue.issue = CIssue.Assign_pointer_warning;
-      CIssue.description =
+    { CIssue.name = Localise.to_string Localise.assign_pointer_warning;
+      severity = Exceptions.Kwarning;
+      description =
         "Property `%decl_name%` is a pointer type marked with the `assign` attribute";
-      CIssue.suggestion = Some "Use a different attribute like `strong` or `weak`.";
-      CIssue.loc = location_from_an lctx an
+      suggestion = Some "Use a different attribute like `strong` or `weak`.";
+      loc = location_from_an lctx an
     } in
   condition, Some issue_desc
 
@@ -233,11 +239,12 @@ let ctl_direct_atomic_property_access_warning lctx an =
                                     Not (Atomic ("is_objc_constructor", []))),
                                Not (Atomic ("is_objc_dealloc", [])))) in
   let issue_desc = {
-    CIssue.issue = CIssue.Direct_atomic_property_access;
-    CIssue.description = "Direct access to ivar %ivar_name% of an atomic property";
-    CIssue.suggestion =
+    CIssue.name = Localise.to_string Localise.direct_atomic_property_access;
+    severity = Exceptions.Kwarning;
+    description = "Direct access to ivar %ivar_name% of an atomic property";
+    suggestion =
       Some "Accessing an ivar of an atomic property makes the property nonatomic";
-    CIssue.loc = location_from_an lctx an
+    loc = location_from_an lctx an
   } in
   condition, Some issue_desc
 
@@ -246,12 +253,13 @@ let ctl_captured_cxx_ref_in_objc_block_warning lctx an  =
   let open CTL in
   let condition = InNode (["BlockDecl"], Atomic ("captures_cxx_references", [])) in
   let issue_desc = {
-    CIssue.issue = CIssue.Cxx_reference_captured_in_objc_block;
-    CIssue.description =
+    CIssue.name = Localise.to_string Localise.cxx_reference_captured_in_objc_block;
+    severity = Exceptions.Kwarning;
+    description =
       "C++ Reference variable(s) %var_name% captured by Objective-C block";
-    CIssue.suggestion = Some ("C++ References are unmanaged and may be invalid " ^
-                              "by the time the block executes.");
-    CIssue.loc = match an with
+    suggestion = Some ("C++ References are unmanaged and may be invalid " ^
+                       "by the time the block executes.");
+    loc = match an with
       | Stmt (Clang_ast_t.BlockExpr (_, _ , _, decl)) -> location_from_an lctx (Decl decl)
       | _ -> location_from_an lctx an;
   } in
