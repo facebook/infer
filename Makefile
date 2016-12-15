@@ -14,7 +14,8 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 endif
 
 BUILD_SYSTEMS_TESTS = \
-  assembly ck_analytics ck_imports clang_translation delete_results_dir linters project_root_rel
+  assembly ck_analytics ck_imports clang_translation delete_results_dir fail_on_issue linters \
+  project_root_rel
 ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif

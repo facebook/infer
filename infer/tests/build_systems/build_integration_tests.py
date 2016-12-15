@@ -61,7 +61,6 @@ CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
-    'fail',
     'gradle',
     'javac',
     'locale',
@@ -471,13 +470,6 @@ class BuildIntegrationTest(unittest.TestCase):
                'infer_args': reactive_args},
               {'compile': ['analyze'],
                'infer_args': ['--reactive']}])
-
-    def test_fail_on_issue(self):
-        test('fail', '--fail-on-issue flag',
-             CODETOANALYZE_DIR,
-             [{'compile': ['clang', '-c', 'hello.c'],
-               'infer_args': ['--fail-on-issue']}],
-             should_fail=2)
 
     def test_pmd_xml_output(self):
         def pmd_check(infer_out):
