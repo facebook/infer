@@ -61,7 +61,6 @@ CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
 ALL_TESTS = [
-    'reactive',
     'unknown_ext',
     'utf8_in_pwd',
     'waf',
@@ -413,19 +412,6 @@ class BuildIntegrationTest(unittest.TestCase):
         test('unknown_ext', 'unknown extension',
              CODETOANALYZE_DIR,
              [{'compile': ['clang', '-x', 'c', '-c', 'hello.unknown_ext']}])
-
-    def test_reactive_multiple_capture(self):
-        reactive_args = ['-a', 'capture', '--reactive', '--continue']
-        test('reactive', 'reactive with multiple capture',
-             CODETOANALYZE_DIR,
-             [{'compile': ['clang', '-c', 'hello.c'],
-               'infer_args': reactive_args},
-              {'compile': ['clang', '-c', 'hello2.c'],
-               'infer_args': reactive_args},
-              {'compile': ['clang', '-c', 'hello3.c'],
-               'infer_args': reactive_args},
-              {'compile': ['analyze'],
-               'infer_args': ['--reactive']}])
 
 
 if __name__ == '__main__':
