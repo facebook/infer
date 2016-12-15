@@ -306,13 +306,7 @@ def test(name,
     return True
 
 class BuildIntegrationTest(unittest.TestCase):
-
-    def test_waf_integration(self):
-        test('waf', 'waf',
-             os.path.join(CODETOANALYZE_DIR, 'make'),
-             [{'compile': ['./waf', 'build']}],
-             clean_commands=[['make', 'clean']])
-
+    pass
 
 if __name__ == '__main__':
     # hackish capturing of the arguments after '--'
