@@ -191,3 +191,18 @@ DEFINE-CHECKER ctl_captured_cxx_ref_in_objc_block_warning = {
 	  SET suggestion = "C++ References are unmanaged and may be invalid by the time the block executes.";
 
 	};
+
+	DEFINE-CHECKER ctl_unavailable_api_in_supported_ios_sdk_error = {
+		  SET report_when =
+			     WHEN
+					    WITH-TRANSITION PointerToDecl decl_unavailable_in_supported_ios_sdk
+	         HOLDS-IN-NODE DeclRefExpr, ObjCMessageExpr;
+
+		  SET message =
+		        "%decl_ref_or_selector_name% is available only starting \
+		         from ios sdk %available_ios_sdk% but we support earlier versions from \
+		         ios sdk %iphoneos_target_sdk_version%;
+
+		  SET suggestion = "This could cause a crash.";
+
+		};

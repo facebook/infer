@@ -846,6 +846,10 @@ and infer_cache =
   CLOpt.mk_path_opt ~deprecated:["infer_cache"; "-infer_cache"] ~long:"infer-cache"
     ~meta:"dir" "Select a directory to contain the infer cache (Buck and Java only)"
 
+and iphoneos_target_sdk_version =
+  CLOpt.mk_string_opt ~long:"iphoneos-target-sdk-version" ~exes:CLOpt.[Toplevel;Clang]
+    "Specify the target SDK version to use for iphoneos"
+
 and iterations =
   CLOpt.mk_int ~deprecated:["iterations"] ~long:"iterations" ~default:1
     ~meta:"int"
@@ -1433,6 +1437,7 @@ and frontend_stats = !frontend_stats
 and headers = !headers
 and icfg_dotty_outfile = !icfg_dotty_outfile
 and infer_cache = !infer_cache
+and iphoneos_target_sdk_version = !iphoneos_target_sdk_version
 and iterations = !iterations
 and java_jar_compiler = !java_jar_compiler
 and javac_verbose_out = !verbose_out

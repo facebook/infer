@@ -54,3 +54,7 @@ val is_stmt : string -> Clang_ast_t.stmt -> bool
 val is_decl : string -> Clang_ast_t.decl -> bool
 
 val pp_predicate : Format.formatter -> t -> unit
+
+val decl_unavailable_in_supported_ios_sdk : Clang_ast_t.decl -> bool
+
+val get_available_attr_ios_sdk : Clang_ast_t.decl -> string option

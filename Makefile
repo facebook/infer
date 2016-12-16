@@ -43,7 +43,7 @@ DIRECT_TESTS += \
   java_crashcontext java_harness
 endif
 ifneq ($(XCODE_SELECT),no)
-DIRECT_TESTS += objc_frontend objc_errors objc_linters objcpp_frontend objcpp_linters
+DIRECT_TESTS += objc_frontend objc_errors objc_linters objc_ioslinters objcpp_frontend objcpp_linters
 endif
 
 .PHONY: all

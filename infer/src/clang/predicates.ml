@@ -11,6 +11,20 @@ open! IStd
 
 open CFrontend_utils
 
+let get_available_attr_ios_sdk decl =
+  let open Clang_ast_t in
+  let decl_info = Clang_ast_proj.get_decl_tuple decl in
+  let rec get_available_attr attrs =
+    match attrs with
+    | [] -> None
+    | AvailabilityAttr attr_info :: _ ->
+        (match attr_info.Clang_ast_t.ai_parameters with
+         | "ios" :: version :: _ ->
+             Some (String.Search_pattern.replace_all
+                     (String.Search_pattern.create "_") ~in_:version ~with_:".")
+         | _ -> None)
+    | _ :: rest -> get_available_attr rest in
+  get_available_attr decl_info.Clang_ast_t.di_attributes
 
 let get_ivar_attributes ivar_decl =
   let open Clang_ast_t in
@@ -202,4 +216,11 @@ let isa classname stmt =
   | Some (_, _, expr_info) ->
       let typ = CFrontend_utils.Ast_utils.get_desugared_type expr_info.ei_type_ptr in
       CFrontend_utils.Ast_utils.is_ptr_to_objc_class typ classname
+  | _ -> false
+
+let decl_unavailable_in_supported_ios_sdk decl =
+  let available_attr_ios_sdk = get_available_attr_ios_sdk decl in
+  match available_attr_ios_sdk, Config.iphoneos_target_sdk_version with
+  | Some available_attr_ios_sdk, Some iphoneos_target_sdk_version ->
+      Utils.compare_versions available_attr_ios_sdk iphoneos_target_sdk_version = 1
   | _ -> false

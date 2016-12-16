@@ -19,10 +19,11 @@ open CFrontend_utils
 
 (* Transition labels used for example to switch from decl to stmt *)
 type transitions =
-  | Body (* decl to stmt *)
-  | InitExpr (* decl to stmt *)
-  | Super (* decl to decl *)
+  | Body (** decl to stmt *)
+  | InitExpr (** decl to stmt *)
+  | Super (** decl to decl *)
   | Cond
+  | PointerToDecl (** stmt to decl *)
 
 (* In formulas below prefix
    "E" means "exists a path"
@@ -60,7 +61,8 @@ module Debug = struct
       | Body -> Format.pp_print_string fmt "Body"
       | InitExpr -> Format.pp_print_string fmt "InitExpr"
       | Super -> Format.pp_print_string fmt "Super"
-      | Cond -> Format.pp_print_string fmt "Cond" in
+      | Cond -> Format.pp_print_string fmt "Cond"
+      | PointerToDecl -> Format.pp_print_string fmt "PointerToDecl" in
     match trans_opt with
     | Some trans -> pp_aux fmt trans
     | None -> Format.pp_print_string fmt "_"
@@ -337,6 +339,19 @@ let transition_stmt_to_stmt_via_condition st =
   | WhileStmt (_, [_; cond; _]) -> Some (Stmt cond)
   | _ -> None
 
+let transition_stmt_to_decl_via_pointer stmt =
+  let open Clang_ast_t in
+  match stmt with
+  | ObjCMessageExpr (_, _, _, obj_c_message_expr_info) ->
+      (match Ast_utils.get_decl_opt obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer with
+       | Some decl -> Some (Decl decl)
+       | None -> None)
+  | DeclRefExpr (_, _, _, decl_ref_expr_info) ->
+      (match Ast_utils.get_decl_opt_with_decl_ref decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
+       | Some decl -> Some (Decl decl)
+       | None -> None)
+  | _ -> None
+
 (* given a node an returns the node an' such that an transition to an' via label trans *)
 let next_state_via_transition an trans =
   match an, trans with
@@ -344,6 +359,8 @@ let next_state_via_transition an trans =
   | Decl d, Some InitExpr
   | Decl d, Some Body -> transition_decl_to_stmt d trans
   | Stmt st, Some Cond -> transition_stmt_to_stmt_via_condition st
+  | Stmt st, Some PointerToDecl ->
+      transition_stmt_to_decl_via_pointer st
   | _, _ -> None
 
 (* Evaluation of formulas *)
@@ -373,6 +390,8 @@ let eval_Atomic pred_name args an lcxt =
   | "in_node", [nodename], Stmt st -> Predicates.is_stmt nodename st
   | "in_node", [nodename], Decl d -> Predicates.is_decl nodename d
   | "isa", [classname], Stmt st -> Predicates.isa classname st
+  | "decl_unavailable_in_supported_ios_sdk", [], Decl decl ->
+      Predicates.decl_unavailable_in_supported_ios_sdk decl
   | _ -> failwith ("ERROR: Undefined Predicate or wrong set of arguments: " ^ pred_name)
 
 (* st, lcxt |= EF phi  <=>

@@ -41,7 +41,6 @@ let location_from_an lcxt an =
   | CTL.Stmt st -> location_from_stmt lcxt st
   | CTL.Decl d -> location_from_decl lcxt d
 
-
 let decl_name an =
   match an with
   | CTL.Decl dec ->
@@ -49,6 +48,34 @@ let decl_name an =
        | Some (_, n) -> n.Clang_ast_t.ni_name
        | None -> "")
   | _ -> ""
+
+let tag_name_of_node an =
+  match an with
+  | CTL.Stmt stmt -> Clang_ast_proj.get_stmt_kind_string stmt
+  | CTL.Decl decl -> Clang_ast_proj.get_decl_kind_string decl
+
+let decl_ref_or_selector_name an =
+  match CTL.next_state_via_transition an (Some CTL.PointerToDecl) with
+  | Some (CTL.Decl ObjCMethodDecl _ as decl_an) ->
+      "The selector " ^ (decl_name decl_an)
+  | Some (CTL.Decl _ as decl_an) ->
+      "The reference " ^ (decl_name decl_an)
+  | _ -> failwith("decl_ref_or_selector_name must be called with a DeclRefExpr \
+                   or an ObjCMessageExpr, but got " ^ (tag_name_of_node an))
+
+let iphoneos_target_sdk_version _ =
+  match Config.iphoneos_target_sdk_version with
+  | Some f -> f
+  | None -> "0"
+
+let available_ios_sdk an =
+  match CTL.next_state_via_transition an (Some CTL.PointerToDecl) with
+  | Some CTL.Decl decl ->
+      (match Predicates.get_available_attr_ios_sdk decl with
+       | Some version -> version
+       | None -> "")
+  | _ -> failwith("available_ios_sdk must be called with a DeclRefExpr \
+                   or an ObjCMessageExpr, but got " ^ (tag_name_of_node an))
 
 let ivar_name an =
   let open Clang_ast_t in
@@ -269,4 +296,23 @@ let ctl_captured_cxx_ref_in_objc_block_warning lctx an  =
       | Stmt (Clang_ast_t.BlockExpr (_, _ , _, decl)) -> location_from_an lctx (Decl decl)
       | _ -> location_from_an lctx an;
   } in
+  condition, Some issue_desc
+
+(** If the declaration has avilability attributes, check that it's compatible with
+    the iphoneos_target_sdk_version *)
+let ctl_unavailable_api_in_supported_ios_sdk_error lctx an =
+  let open CTL in
+  let condition =
+    InNode(["DeclRefExpr"; "ObjCMessageExpr"],
+           EX (Some PointerToDecl, (Atomic ("decl_unavailable_in_supported_ios_sdk", [])))) in
+  let issue_desc =
+    { CIssue.name = "UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK";
+      severity = Exceptions.Kerror;
+      mode = CIssue.On;
+      description =
+        "%decl_ref_or_selector_name% is not available in the required iOS SDK version \
+         %iphoneos_target_sdk_version% (only available from version %available_ios_sdk%)";
+      suggestion = Some "This could cause a crash.";
+      loc = location_from_an lctx an
+    } in
   condition, Some issue_desc

@@ -196,6 +196,7 @@ val generated_classes : string option
 val headers : bool
 val icfg_dotty_outfile : string option
 val infer_cache : string option
+val iphoneos_target_sdk_version : string option
 val is_originator : bool
 val iterations : int
 val java_jar_compiler : string option

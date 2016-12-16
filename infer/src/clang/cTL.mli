@@ -20,6 +20,7 @@ type transitions =
   | InitExpr (* decl to stmt *)
   | Super (* decl to decl *)
   | Cond
+  | PointerToDecl (* stmt to decl *)
 
 (* In formulas below prefix
    "E" means "exists a path"
@@ -65,6 +66,7 @@ val eval_formula : t -> ast_node -> CLintersContext.context -> bool
 
 val save_dotty_when_in_debug_mode : SourceFile.t -> unit
 
+val next_state_via_transition : ast_node -> transitions option -> ast_node option
 
 module Debug : sig
   val pp_formula : Format.formatter -> t -> unit

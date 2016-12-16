@@ -29,6 +29,12 @@ val ctl_direct_atomic_property_access_warning :
 val ctl_captured_cxx_ref_in_objc_block_warning :
   CLintersContext.context -> CTL.ast_node -> CTL.t * CIssue.issue_desc option
 
+(** Unavailable_api_in_supported_os_error :
+    If the declaration has avilability attributes, check that it's compatible with
+    the iphoneos_target_sdk_version *)
+val ctl_unavailable_api_in_supported_ios_sdk_error :
+  CLintersContext.context -> CTL.ast_node -> CTL.t * CIssue.issue_desc option
+
 val ctl_bad_pointer_comparison_warning :
   CLintersContext.context -> CTL.ast_node -> CTL.t * CIssue.issue_desc option
 
@@ -57,3 +63,9 @@ val decl_name : CTL.ast_node -> string
 val ivar_name : CTL.ast_node -> string
 
 val var_name : CTL.ast_node -> string
+
+val decl_ref_or_selector_name : CTL.ast_node -> string
+
+val iphoneos_target_sdk_version : CTL.ast_node -> string
+
+val available_ios_sdk : CTL.ast_node -> string
