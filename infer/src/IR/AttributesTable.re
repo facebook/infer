@@ -136,10 +136,10 @@ let get_correct_type_from_objc_class_name type_name =>
   Some (Typ.Tstruct type_name);
 
 
-/** Returns true if the method is defined as a C++ model */
-let pname_is_cpp_model callee_pname =>
+/** Returns true if the method is defined under project root */
+let pname_is_under_project_root callee_pname =>
   switch (load_attributes callee_pname) {
-  | Some attrs => SourceFile.is_cpp_model attrs.ProcAttributes.loc.Location.file
+  | Some attrs => SourceFile.is_under_project_root attrs.ProcAttributes.loc.Location.file
   | None => false
   };
 
