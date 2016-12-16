@@ -157,7 +157,7 @@ module Map (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
         astate2
 
   let widen ~prev ~next ~num_iters =
-    if prev == next
+    if phys_equal prev next
     then prev
     else
       M.merge
