@@ -68,7 +68,7 @@ val use_after_free : t
 val skip_function : t
 val skip_pointer_dereference : t
 val tainted_value_reaching_sensitive_function : t
-val thread_safety_error : t
+val thread_safety_violation : t
 
 (** description field of error messages *)
 type error_desc = {

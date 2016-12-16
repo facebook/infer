@@ -305,7 +305,7 @@ let calculate_addendum_message tenv pname =
       else ""
   | _ -> ""
 
-let report_thread_safety_errors ( _, tenv, pname, pdesc) trace =
+let report_thread_safety_violations ( _, tenv, pname, pdesc) trace =
   let open ThreadSafetyDomain in
   let trace_of_pname callee_pname =
     match Summary.read_summary pdesc callee_pname with
@@ -328,7 +328,7 @@ let report_thread_safety_errors ( _, tenv, pname, pdesc) trace =
           "call to %a" Procname.pp (CallSite.pname (PathDomain.Sink.call_site sink)) in
     let loc = CallSite.loc (PathDomain.Sink.call_site initial_sink) in
     let ltr = PathDomain.to_sink_loc_trace ~desc_of_sink path in
-    let msg = Localise.to_string Localise.thread_safety_error in
+    let msg = Localise.to_string Localise.thread_safety_violation in
     let description =
       Format.asprintf "Public method %a%s writes to field %a outside of synchronization.%s"
         Procname.pp pname
@@ -348,7 +348,7 @@ let process_results_table tab =
   ResultsTableType.iter   (* report errors for each method *)
     (fun proc_env (_, _, writes) ->
        if should_report_on_proc proc_env then
-         report_thread_safety_errors proc_env writes
+         report_thread_safety_violations proc_env writes
        else ()
     )
     tab

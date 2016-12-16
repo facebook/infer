@@ -365,7 +365,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
                 retain_cycle,
                 static_initialization_order_fiasco,
                 tainted_value_reaching_sensitive_function,
-                thread_safety_error,
+                thread_safety_violation,
                 unsafe_guarded_by_access
               ];
             IList.mem Localise.equal issue_type reportable_issue_types
