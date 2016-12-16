@@ -364,6 +364,11 @@ let should_report_on_file file_env =
           not (thread_safe_annotated_classes = [])
       | _ -> false
   in
+  let current_class_marked_not_threadsafe =
+    fun (_, tenv, pname, _) ->
+      PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname
+  in
+  not (IList.exists current_class_marked_not_threadsafe file_env) &&
   IList.exists current_class_or_super_marked_threadsafe file_env
 
 (*This is a "cluster checker" *)

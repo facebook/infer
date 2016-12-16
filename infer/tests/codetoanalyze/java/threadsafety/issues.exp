@@ -17,3 +17,4 @@ codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ThreadSafeExample.o
 codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ThreadSafeExample.recursiveBad(), 1, THREAD_SAFETY_ERROR, [access to codetoanalyze.java.checkers.ThreadSafeExample.f]
 codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ThreadSafeExample.recursiveBad(), 2, THREAD_SAFETY_ERROR, [call to void ThreadSafeExample.recursiveBad(),access to codetoanalyze.java.checkers.ThreadSafeExample.f]
 codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ThreadSafeExample.tsBad(), 1, THREAD_SAFETY_ERROR, [access to codetoanalyze.java.checkers.ThreadSafeExample.f]
+codetoanalyze/java/threadsafety/ThreadSafeExample.java, void YesThreadSafeExtendsNotThreadSafeExample.subsubmethodBad(), 1, THREAD_SAFETY_ERROR, [access to codetoanalyze.java.checkers.YesThreadSafeExtendsNotThreadSafeExample.subsubfield]

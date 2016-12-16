@@ -115,10 +115,13 @@ let guarded_by = "GuardedBy"
 let thread_safe = "ThreadSafe"
 let not_thread_safe = "NotThreadSafe"
 
+let ia_is_not_thread_safe ia =
+  ia_ends_with ia not_thread_safe
+
 (* we don't want it to just end with ThreadSafe, because this falls
    foul of the @NotThreadSafe annotation *)
 let ia_is_thread_safe ia =
-  ia_ends_with ia thread_safe && not (ia_ends_with ia not_thread_safe)
+  ia_ends_with ia thread_safe
 
 let ia_is_nullable ia =
   ia_ends_with ia nullable

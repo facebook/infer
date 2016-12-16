@@ -107,3 +107,27 @@ class ExtendsThreadSafeExample extends ThreadSafeExample{
   }
 
 }
+
+@NotThreadSafe
+class NotThreadSafeExtendsThreadSafeExample extends ThreadSafeExample{
+
+  Integer field;
+
+/* We don't want to warn on this */
+  public void newmethodBad() {
+     field = 22;
+  }
+
+}
+
+@ThreadSafe
+class YesThreadSafeExtendsNotThreadSafeExample extends NotThreadSafeExtendsThreadSafeExample{
+
+  Integer subsubfield;
+
+/* We do want to warn on this */
+  public void subsubmethodBad() {
+     subsubfield = 22;
+  }
+
+}
