@@ -156,8 +156,17 @@ module Map (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
         astate1
         astate2
 
-  let widen ~prev ~next ~num_iters:_ =
-    join prev next
+  let widen ~prev ~next ~num_iters =
+    if phys_equal prev next
+    then prev
+    else
+      M.merge
+        (fun _ v1_opt v2_opt -> match v1_opt, v2_opt with
+           | Some v1, Some v2 -> Some (ValueDomain.widen ~prev:v1 ~next:v2 ~num_iters)
+           | Some v, _ | _, Some v -> Some v
+           | None, None -> None)
+      prev
+      next
 
   let pp fmt astate =
     M.pp ~pp_value:ValueDomain.pp fmt astate
