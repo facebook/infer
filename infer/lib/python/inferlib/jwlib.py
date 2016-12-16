@@ -25,7 +25,6 @@ parser = argparse.ArgumentParser()
 
 current_directory = utils.decode(os.getcwd())
 
-parser.add_argument('-version', action='store_true')
 parser.add_argument('-d', dest='classes_out', default=current_directory)
 
 
@@ -67,74 +66,65 @@ class CompilerCall(object):
         self.args, self.remaining_args = parser.parse_known_args(arguments)
         self.verbose_out = None
 
-    def get_version(self):
-        assert self.args.version
-        return subprocess.check_output(
-            self.javac_cmd + self.original_arguments,
-            stderr=subprocess.STDOUT).strip()
-
     def run(self):
-        if self.args.version:
-            return subprocess.call(self.javac_cmd + self.original_arguments)
-        else:
-            javac_args = ['-verbose', '-g']
+        javac_args = ['-verbose', '-g']
 
-            if self.args.classes_out is not None:
-                javac_args += ['-d', self.args.classes_out]
+        if self.args.classes_out is not None:
+            javac_args += ['-d', self.args.classes_out]
 
-            javac_args += self.remaining_args
+        javac_args += self.remaining_args
 
-            def arg_must_go_on_cli(arg):
-                # as mandated by javac, argument files must not contain
-                # arguments
-                return arg.startswith('-J') or arg.startswith('@')
-            file_args = filter(lambda x: not arg_must_go_on_cli(x), javac_args)
-            cli_args = filter(arg_must_go_on_cli, javac_args)
+        def arg_must_go_on_cli(arg):
+            # as mandated by javac, argument files must not contain
+            # arguments
+            return arg.startswith('-J') or arg.startswith('@')
+        file_args = filter(lambda x: not arg_must_go_on_cli(x), javac_args)
+        cli_args = filter(arg_must_go_on_cli, javac_args)
 
-            # pass non-special args via a file to avoid blowing up the
-            # command line size limit
-            with tempfile.NamedTemporaryFile(
-                    mode='w',
-                    prefix='javac_args_',
-                    delete=False) as command_line:
-                escaped_args = map(lambda x: '"%s"' % (x.replace('"', '\\"')),
-                                   file_args)
-                command_line.write(utils.encode('\n'.join(escaped_args)))
-                command_line.write('\n')
-                self.command_line_file = command_line.name
+        # pass non-special args via a file to avoid blowing up the
+        # command line size limit
+        with tempfile.NamedTemporaryFile(
+                mode='w',
+                prefix='javac_args_',
+                delete=False) as command_line:
+            escaped_args = map(lambda x: '"%s"' % (x.replace('"', '\\"')),
+                               file_args)
+            command_line.write(utils.encode('\n'.join(escaped_args)))
+            command_line.write('\n')
+            self.command_line_file = command_line.name
 
-            with tempfile.NamedTemporaryFile(
-                    mode='w',
-                    suffix='.out',
-                    prefix='javac_',
-                    delete=False) as file_out:
-                self.verbose_out = file_out.name
+        with tempfile.NamedTemporaryFile(
+                mode='w',
+                suffix='.out',
+                prefix='javac_',
+                delete=False) as file_out:
+            self.verbose_out = file_out.name
 
-                command = self.javac_cmd + cli_args + \
-                          ['@' + str(self.command_line_file)]
+            command = self.javac_cmd + cli_args + \
+                      ['@' + str(self.command_line_file)]
+            try:
+                subprocess.check_call(command, stderr=file_out)
+            except subprocess.CalledProcessError:
                 try:
-                    subprocess.check_call(command, stderr=file_out)
+                    fallback_command = ['javac'] + cli_args + \
+                                       ['@' + str(self.command_line_file)]
+                    subprocess.check_call(
+                        fallback_command, stderr=file_out)
                 except subprocess.CalledProcessError:
-                    try:
-                        fallback_command = ['javac'] + cli_args + \
-                                           ['@' + str(self.command_line_file)]
-                        subprocess.check_call(
-                            fallback_command, stderr=file_out)
-                    except subprocess.CalledProcessError:
-                        error_msg = 'ERROR: failure during compilation ' \
-                                    + 'command.\nYou can run the failing ' \
-                                    + 'compilation command again by ' \
-                                    + 'copy-pasting the\nlines below in ' \
-                                    + 'your terminal:\n\n"""\n' \
-                                    + 'python <<EOF\n' \
-                                    + 'import subprocess\n' \
-                                    + 'cmd = {}\n' \
-                                    + 'subprocess.check_call(cmd)\n' \
-                                    + 'EOF\n"""\n'
-                        failing_cmd = filter(lambda arg: arg != '-verbose',
-                                             command)
-                        utils.stderr(error_msg.format(failing_cmd))
-                        subprocess.check_call(failing_cmd)
+                    error_msg = 'ERROR: failure during compilation ' \
+                                + 'command.\nYou can run the failing ' \
+                                + 'compilation command again by ' \
+                                + 'copy-pasting the\nlines below in ' \
+                                + 'your terminal:\n\n"""\n' \
+                                + 'python <<EOF\n' \
+                                + 'import subprocess\n' \
+                                + 'cmd = {}\n' \
+                                + 'subprocess.check_call(cmd)\n' \
+                                + 'EOF\n"""\n'
+                    failing_cmd = filter(lambda arg: arg != '-verbose',
+                                         command)
+                    utils.stderr(error_msg.format(failing_cmd))
+                    subprocess.check_call(failing_cmd)
 
         return os.EX_OK
 
@@ -144,39 +134,27 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
     def __init__(self, infer_args, compiler_call):
         analyze.AnalyzerWrapper.__init__(self, infer_args)
         self.javac = compiler_call
-        if not self.javac.args.version:
-            if self.javac.original_arguments is None:
-                raise Exception('No javac command detected')
-
-    def compute_buck_key(self):
-        javac_version = self.javac.get_version()
-        infer_version = utils.infer_key(self.args.analyzer)
-        return '/'.join([javac_version, infer_version])
+        if self.javac.original_arguments is None:
+            raise Exception('No javac command detected')
 
     def start(self):
-        if self.javac.args.version:
-            if self.args.buck:
-                utils.stderr(self.compute_buck_key())
-            else:
-                return self.javac.run()
-        else:
-            start_time = time.time()
+        start_time = time.time()
 
-            self._compile()
-            if self.args.analyzer == config.ANALYZER_COMPILE:
-                return os.EX_OK
+        self._compile()
+        if self.args.analyzer == config.ANALYZER_COMPILE:
+            return os.EX_OK
 
-            self._run_infer_frontend()
-            self.timing['capture'] = utils.elapsed_time(start_time)
-            if self.args.analyzer == config.ANALYZER_CAPTURE:
-                return os.EX_OK
+        self._run_infer_frontend()
+        self.timing['capture'] = utils.elapsed_time(start_time)
+        if self.args.analyzer == config.ANALYZER_CAPTURE:
+            return os.EX_OK
 
-            self.analyze_and_report()
-            self._close()
-            self.timing['total'] = utils.elapsed_time(start_time)
-            self.save_stats()
+        self.analyze_and_report()
+        self._close()
+        self.timing['total'] = utils.elapsed_time(start_time)
+        self.save_stats()
 
-            return self.stats
+        return self.stats
 
     def _run_infer_frontend(self):
         infer_cmd = [utils.get_cmd_in_bin_dir('InferJava')]

@@ -1174,17 +1174,17 @@ and verbose_out =
     ~meta:"file" ""
 
 and version =
-  CLOpt.mk_bool ~deprecated:["version"] ~long:"version"
-    ~exes:CLOpt.[Toplevel;Analyze;Clang;Java;Print] "Print version information and exit"
-
-and version_json =
-  CLOpt.mk_bool ~deprecated:["version_json"] ~long:"version-json"
+  let var = ref `None in
+  CLOpt.mk_set var `Full ~deprecated:["version"] ~long:"version"
+    ~exes:CLOpt.[Toplevel;Analyze;Clang;Java;Print]
+    "Print version information and exit" ;
+  CLOpt.mk_set var `Json ~deprecated:["version_json"] ~long:"version-json"
     ~exes:CLOpt.[Analyze;Clang;Java;Print]
-    "Print version json formatted"
-
-and version_vcs =
-  CLOpt.mk_bool ~long:"version-vcs"
-    ~exes:CLOpt.[Analyze;Clang;Java;Print] "Print version control system commit and exit"
+    "Print version information in json format and exit" ;
+  CLOpt.mk_set var `Vcs ~long:"version-vcs"
+    ~exes:CLOpt.[Analyze;Clang;Java;Print]
+    "Print version control system commit and exit" ;
+  var
 
 and whole_seconds =
   CLOpt.mk_bool ~deprecated:["whole_seconds"] ~long:"whole-seconds"
@@ -1244,6 +1244,7 @@ let rest =
           specs_library := List.rev_append files !specs_library
         )
       ) in
+  let version_spec = Arg.Unit (fun () -> version := `Javac) in
   CLOpt.mk_subcommand
     ~exes:CLOpt.[Toplevel]
     "Stop argument processing, use remaining arguments as a build command"
@@ -1251,7 +1252,8 @@ let rest =
        match Filename.basename build_exe with
        | "java" | "javac" -> [
            ("-classes_out", classes_out_spec, ""); ("-d", classes_out_spec, "");
-           ("-classpath", classpath_spec, ""); ("-cp", classpath_spec, "")
+           ("-classpath", classpath_spec, ""); ("-cp", classpath_spec, "");
+           ("-version", version_spec, "")
          ]
        | _ -> []
     )
@@ -1284,21 +1286,35 @@ let exe_usage (exe : CLOpt.exe) =
       version_string
 
 let post_parsing_initialization () =
-  F.set_margin !margin ;
+  (match !version with
+   | `Full ->
+       (* TODO(11791235) change back to stdout once buck integration is fixed *)
+       prerr_endline version_string
+   | `Javac when !buck ->
+       (* print buck key *)
+       let javac_version =
+         (* stderr contents of build command *)
+         let chans = Unix.open_process_full (String.concat ~sep:" " (List.rev !rest)) ~env:[||] in
+         let err = String.strip (In_channel.input_all chans.stderr) in
+         Unix.close_process_full chans |> ignore;
+         err in
+       let analyzer_name =
+         IList.assoc (=)
+           (match !analyzer with Some a -> a | None -> Infer)
+           (IList.map (fun (n,a) -> (a,n)) string_to_analyzer) in
+       let infer_version = Version.commit in
+       F.eprintf "%s/%s/%s@." javac_version analyzer_name infer_version
+   | `Javac ->
+       prerr_endline version_string
+   | `Json ->
+       print_endline Version.versionJson
+   | `Vcs ->
+       print_endline Version.commit
+   | `None -> ()
+  );
+  if !version <> `None then exit 0;
 
-  if !version then (
-    (* TODO(11791235) change back to stdout once buck integration is fixed *)
-    F.fprintf F.err_formatter "%s@." version_string ;
-    exit 0
-  );
-  if !version_json then (
-    F.fprintf F.std_formatter "%s@." Version.versionJson ;
-    exit 0
-  );
-  if !version_vcs then (
-    F.fprintf F.std_formatter "%s@." Version.commit ;
-    exit 0
-  );
+  F.set_margin !margin ;
 
   let set_minor_heap_size nMb = (* increase the minor heap size to speed up gc *)
     let ctrl = Gc.get () in

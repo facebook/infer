@@ -29,27 +29,6 @@ csv.field_size_limit(sys.maxsize)
 INFER_ANALYZE_BINARY = 'InferAnalyze'
 
 
-def get_infer_version():
-    try:
-        return subprocess.check_output([
-            utils.get_cmd_in_bin_dir(INFER_ANALYZE_BINARY), '-version'])
-    except subprocess.CalledProcessError:
-        utils.stdout('Failed to run {0} binary, exiting'
-                     .format(INFER_ANALYZE_BINARY))
-        sys.exit(os.EX_UNAVAILABLE)
-
-
-# https://github.com/python/cpython/blob/aa8ea3a6be22c92e774df90c6a6ee697915ca8ec/Lib/argparse.py
-class VersionAction(argparse._VersionAction):
-    def __call__(self, parser, namespace, values, option_string=None):
-        # set self.version so that argparse version action knows it
-        self.version = get_infer_version()
-        super(VersionAction, self).__call__(parser,
-                                            namespace,
-                                            values,
-                                            option_string)
-
-
 base_parser = argparse.ArgumentParser(add_help=False)
 base_group = base_parser.add_argument_group('global arguments')
 base_group.add_argument('-o', '--out', metavar='<directory>',
@@ -82,10 +61,6 @@ base_group.add_argument('-nf', '--no-filtering', action='store_true',
 base_group.add_argument('--android-harness', action='store_true',
                         help='''[experimental] Create harness to detect bugs
                         involving the Android lifecycle''')
-
-base_parser.add_argument('-v', '--version',
-                         help='''Print the version of Infer and exit''',
-                         action=VersionAction)
 
 base_group.add_argument('--pmd-xml',
                         action='store_true',
