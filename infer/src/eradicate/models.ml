@@ -139,7 +139,7 @@ let get_modelled_annotated_signature proc_attributes =
     else ann_sig in
   let lookup_models_strict ann_sig =
     if use_models
-       && Hashtbl.mem annotated_table_strict proc_id
+    && Hashtbl.mem annotated_table_strict proc_id
     then
       Annotations.annotated_signature_mark_return_strict ann_sig
     else
@@ -178,6 +178,10 @@ let is_check_state proc_name =
 (** Check if the procedure is one of the known Preconditions.checkArgument. *)
 let is_check_argument proc_name =
   table_has_procedure check_argument_table proc_name
+
+(** Check if the procedure does not return. *)
+let is_noreturn proc_name =
+  table_has_procedure noreturn_table proc_name
 
 (** Check if the procedure is Optional.get(). *)
 let is_optional_get proc_name =

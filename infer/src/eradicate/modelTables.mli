@@ -25,4 +25,5 @@ val containsKey_table : model_table_t
 val mapPut_table : model_table_t
 val optional_get_table : model_table_t
 val optional_isPresent_table : model_table_t
+val noreturn_table : model_table_t
 val true_on_null_table : model_table_t

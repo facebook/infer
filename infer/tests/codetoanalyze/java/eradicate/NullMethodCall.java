@@ -292,4 +292,19 @@ public class NullMethodCall {
       }
     }
   }
+
+  class SystemExitDoesNotReturn {
+    native boolean whoknows();
+
+    void testOK() {
+      String s = null;
+      if (whoknows()) {
+        s = "a";
+      }
+      else {
+        System.exit(1);
+      }
+      int n = s.length();
+    }
+  }
 }

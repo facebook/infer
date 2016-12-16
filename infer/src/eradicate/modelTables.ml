@@ -228,6 +228,13 @@ let annotated_list_present =
     (n, [o]), "com.google.common.base.Optional.of(java.lang.Object):com.google.common.base.Optional";
   ]
 
+(** Models for methods that do not return *)
+let noreturn_list =
+  [
+    (o, [o]), "java.lang.System.exit(int):void";
+  ]
+
+
 type model_table_t = (string, bool * bool list) Hashtbl.t
 
 let mk_table list =
@@ -248,4 +255,5 @@ let containsKey_table = mk_table containsKey_list
 let mapPut_table = mk_table mapPut_list
 let optional_get_table = mk_table optional_get_list
 let optional_isPresent_table = mk_table optional_isPresent_list
+let noreturn_table = mk_table noreturn_list
 let true_on_null_table = mk_table true_on_null_list

@@ -1066,7 +1066,12 @@ let typecheck_node
   let instr_ref_gen = TypeErr.InstrRef.create_generator node in
 
   let typestates_exn = ref [] in
+  let noreturn = ref false in
+
   let handle_exceptions typestate instr = match instr with
+    | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _)
+      when Models.is_noreturn callee_pname ->
+        noreturn := true
     | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _) ->
         let callee_attributes_opt =
           Specs.proc_resolve_attributes callee_pname in
@@ -1101,6 +1106,10 @@ let typecheck_node
   TypeErr.node_reset_forall canonical_node;
 
   let typestate_succ = IList.fold_left (do_instruction ext) typestate instrs in
-  if Procdesc.Node.get_kind node = Procdesc.Node.exn_sink_kind
-  then [], [] (* don't propagate exceptions to exit node *)
+  let dont_propagate =
+    Procdesc.Node.get_kind node = Procdesc.Node.exn_sink_kind (* don't propagate exceptions *)
+    ||
+    !noreturn in
+  if dont_propagate
+  then [], [] (* don't propagate to exit node *)
   else [typestate_succ], !typestates_exn
