@@ -9,10 +9,15 @@
 
 open! IStd
 
+type mode = On | Off
+
 type issue_desc = {
   name : string; (* issue name *)
   severity : Exceptions.err_kind;
+  mode : mode;
   description : string; (* Description in the error message *)
   suggestion : string option; (* an optional suggestion or correction *)
   loc : Location.t; (* location in the code *)
 }
+
+val should_run_check : mode -> bool

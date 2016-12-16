@@ -32,7 +32,7 @@ type exception_severity =
   | Low (* low severity bug *)
 
 (** class of error *)
-type err_class = Checker | Prover | Nocat
+type err_class = Checker | Prover | Nocat | Linters
 
 (** kind of error/warning *)
 type err_kind = Kwarning | Kerror | Kinfo | Kadvice [@@deriving compare]
@@ -183,7 +183,7 @@ let recognize_exception exn =
          desc, Some ml_loc, Exn_user, Medium, Some Kwarning, Nocat)
     | Frontend_warning (name, desc, ml_loc) ->
         (Localise.from_string name,
-         desc, Some ml_loc, Exn_user, Medium, None, Nocat)
+         desc, Some ml_loc, Exn_user, Medium, None, Linters)
     | Checkers (kind_s, desc) ->
         (Localise.from_string kind_s,
          desc, None, Exn_user, High, None, Prover)
@@ -335,6 +335,7 @@ let err_class_string = function
   | Checker -> "CHECKER"
   | Prover -> "PROVER"
   | Nocat -> ""
+  | Linters -> "Linters"
 
 (** wether to print the bug key together with the error message *)
 let print_key = false

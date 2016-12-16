@@ -300,8 +300,8 @@ let module ProcsXml = {
   let pp_procs_close fmt () => Io_infer.Xml.pp_close fmt "procedures";
 };
 
-let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc =>
-  if (not Config.filtering) {
+let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass =>
+  if (not Config.filtering || eclass == Exceptions.Linters) {
     true
   } else {
     let analyzer_is_whitelisted =
@@ -357,25 +357,13 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc =>
             let reportable_issue_types =
               Localise.[
                 Localise.from_string Config.default_failure_name,
-                assign_pointer_warning,
-                bad_pointer_comparison,
-                component_factory_function,
-                component_initializer_with_side_effects,
-                component_with_multiple_factory_methods,
-                component_with_unconventional_superclass,
                 context_leak,
-                cxx_reference_captured_in_objc_block,
-                direct_atomic_property_access,
                 empty_vector_access,
-                global_variable_initialized_with_function_or_method_call,
                 memory_leak,
-                mutable_local_variable_in_component_file,
                 quandary_taint_error,
-                registered_observer_being_deallocated,
                 resource_leak,
                 retain_cycle,
                 static_initialization_order_fiasco,
-                strong_delegate_warning,
                 tainted_value_reaching_sensitive_function,
                 thread_safety_error,
                 unsafe_guarded_by_access
@@ -422,7 +410,8 @@ let module IssuesCsv = {
         };
       if (
         in_footprint &&
-        error_filter source_file error_desc error_name && should_report ekind error_name error_desc
+        error_filter source_file error_desc error_name &&
+        should_report ekind error_name error_desc eclass
       ) {
         let err_desc_string = error_desc_to_csv_string error_desc;
         let err_advice_string = error_advice_to_csv_string error_desc;
@@ -498,7 +487,7 @@ let module IssuesJson = {
       if (
         in_footprint &&
         error_filter source_file error_desc error_name &&
-        should_report_source_file && should_report ekind error_name error_desc
+        should_report_source_file && should_report ekind error_name error_desc eclass
       ) {
         let kind = Exceptions.err_kind_string ekind;
         let bug_type = Localise.to_string error_name;

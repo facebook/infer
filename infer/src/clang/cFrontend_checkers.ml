@@ -121,6 +121,7 @@ let ctl_ns_notification_warning lctx an =
   let issue_desc = {
     CIssue.name = Localise.to_string Localise.registered_observer_being_deallocated;
     severity = Exceptions.Kwarning;
+    mode = CIssue.On;
     description =
       "Object self is registered in a notification center but not being removed before deallocation";
     suggestion =
@@ -155,6 +156,7 @@ let ctl_bad_pointer_comparison_warning lctx an =
     { CIssue.
       name = Localise.to_string Localise.bad_pointer_comparison;
       severity = Exceptions.Kwarning;
+      mode = CIssue.On;
       description = "Implicitly checking whether NSNumber pointer is nil";
       suggestion =
         Some ("Did you mean to compare against the unboxed value instead? " ^
@@ -179,6 +181,7 @@ let ctl_strong_delegate_warning lctx an =
   let issue_desc = {
     CIssue.name = Localise.to_string Localise.strong_delegate_warning;
     severity = Exceptions.Kwarning;
+    mode = CIssue.On;
     description =
       "Property or ivar %decl_name% declared strong";
     suggestion = Some "In general delegates should be declared weak or assign";
@@ -202,6 +205,7 @@ let ctl_global_var_init_with_calls_warning lctx an =
     CIssue.name =
       Localise.to_string Localise.global_variable_initialized_with_function_or_method_call;
     severity = Exceptions.Kwarning;
+    mode = CIssue.On;
     description =
       "Global variable %decl_name% is initialized using a function or method call";
     suggestion = Some
@@ -219,6 +223,7 @@ let ctl_assign_pointer_warning lctx an =
   let issue_desc =
     { CIssue.name = Localise.to_string Localise.assign_pointer_warning;
       severity = Exceptions.Kwarning;
+      mode = CIssue.On;
       description =
         "Property `%decl_name%` is a pointer type marked with the `assign` attribute";
       suggestion = Some "Use a different attribute like `strong` or `weak`.";
@@ -241,6 +246,7 @@ let ctl_direct_atomic_property_access_warning lctx an =
   let issue_desc = {
     CIssue.name = Localise.to_string Localise.direct_atomic_property_access;
     severity = Exceptions.Kwarning;
+    mode = CIssue.On;
     description = "Direct access to ivar %ivar_name% of an atomic property";
     suggestion =
       Some "Accessing an ivar of an atomic property makes the property nonatomic";
@@ -255,6 +261,7 @@ let ctl_captured_cxx_ref_in_objc_block_warning lctx an  =
   let issue_desc = {
     CIssue.name = Localise.to_string Localise.cxx_reference_captured_in_objc_block;
     severity = Exceptions.Kwarning;
+    mode = CIssue.On;
     description =
       "C++ Reference variable(s) %var_name% captured by Objective-C block";
     suggestion = Some ("C++ References are unmanaged and may be invalid " ^

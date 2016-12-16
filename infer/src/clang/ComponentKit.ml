@@ -118,6 +118,7 @@ let mutable_local_vars_advice context an =
         CTL.True, Some {
           CIssue.name = Localise.to_string Localise.mutable_local_variable_in_component_file;
           severity = Exceptions.Kadvice;
+          mode = CIssue.On;
           description = "Local variable '" ^ named_decl_info.ni_name
                         ^ "' should be const to avoid reassignment";
           suggestion = Some "Add a const (after the asterisk for pointer types).";
@@ -145,6 +146,7 @@ let component_factory_function_advice context an =
         CTL.True, Some {
           CIssue.name = Localise.to_string Localise.component_factory_function;
           severity = Exceptions.Kadvice;
+          mode = CIssue.On;
           description = "Break out composite components";
           suggestion = Some (
               "Prefer subclassing CKCompositeComponent to static helper functions \
@@ -186,6 +188,7 @@ let component_with_unconventional_superclass_advice context an =
             CTL.True, Some {
               CIssue.name = Localise.to_string Localise.component_with_unconventional_superclass;
               severity = Exceptions.Kadvice;
+              mode = CIssue.On;
               description = "Never Subclass Components";
               suggestion = Some (
                   "Instead, create a new subclass of CKCompositeComponent."
@@ -237,6 +240,7 @@ let component_with_multiple_factory_methods_advice context an =
           CTL.True, Some {
             CIssue.name = Localise.to_string Localise.component_with_multiple_factory_methods;
             severity = Exceptions.Kadvice;
+            mode = CIssue.On;
             description = "Avoid Overrides";
             suggestion =
               Some "Instead, always expose all parameters in a single \
@@ -291,6 +295,7 @@ let rec _component_initializer_with_side_effects_advice
              CTL.True, Some {
                CIssue.name = Localise.to_string Localise.component_initializer_with_side_effects;
                severity = Exceptions.Kadvice;
+               mode = CIssue.On;
                description = "No Side-effects";
                suggestion = Some "Your +new method should not modify any \
                                   global variables or global state.";
@@ -324,6 +329,7 @@ let component_file_line_count_info (context: CLintersContext.context) dec =
       IList.map (fun i -> {
             CIssue.name = Localise.to_string Localise.component_file_line_count;
             severity = Exceptions.Kinfo;
+            mode = CIssue.Off;
             description = "Line count analytics";
             suggestion = None;
             loc = {
@@ -369,6 +375,7 @@ let component_file_cyclomatic_complexity_info (context: CLintersContext.context)
       CTL.True, Some {
         CIssue.name = Localise.to_string Localise.component_file_cyclomatic_complexity;
         severity = Exceptions.Kinfo;
+        mode = CIssue.Off;
         description = "Cyclomatic Complexity Incremental Marker";
         suggestion = None;
         loc = loc
