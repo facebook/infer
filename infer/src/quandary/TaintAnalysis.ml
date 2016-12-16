@@ -12,31 +12,27 @@ open! IStd
 module F = Format
 module L = Logging
 
-(** Create a taint analysis from a trace domain *)
-
-module Summary = Summary.Make(struct
-    type summary = QuandarySummary.t
-
-    let update_payload summary payload =
-      { payload with Specs.quandary = Some summary; }
-
-    let read_from_payload payload =
-      match payload.Specs.quandary with
-      | None ->
-          (* abstract/native/interface methods will have None as a summary. treat them as skip *)
-          Some []
-      | summary_opt ->
-          summary_opt
-  end)
-
+(** Create a taint analysis from a specification *)
 module Make (TaintSpecification : TaintSpec.S) = struct
 
   module TraceDomain = TaintSpecification.Trace
-  module TaintDomain = AccessTree.Make (TraceDomain)
+  module TaintDomain = TaintSpecification.AccessTree
   module IdMapDomain = IdAccessPathMapDomain
 
   (** map from formals to their position *)
   type formal_map = int AccessPath.BaseMap.t
+
+  module Summary = Summary.Make(struct
+      type summary = QuandarySummary.t
+
+      let update_payload summary payload =
+        { payload with Specs.quandary = Some summary; }
+
+      let read_from_payload payload =
+        match payload.Specs.quandary with
+        | None -> Some (TaintSpecification.to_summary_access_tree TaintDomain.initial)
+        | summary_opt -> summary_opt
+    end)
 
   module Domain = struct
     type astate =
@@ -82,6 +78,12 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     | Var.ProgramVar pvar -> Pvar.is_global pvar
     | Var.LogicalVar _ -> false
 
+  let make_footprint_var formal_num =
+    Var.of_id (Ident.create_footprint Ident.name_spec formal_num)
+
+  let make_footprint_access_path formal_num access_path =
+    AccessPath.with_base_var (make_footprint_var formal_num) access_path
+
   module TransferFunctions (CFG : ProcCfg.S) = struct
     module CFG = CFG
     module Domain = Domain
@@ -104,13 +106,22 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       match TaintDomain.get_node access_path access_tree with
       | Some _ as node_opt ->
           node_opt
-      | None when is_rooted_in_environment access_path proc_data.extras ->
-          let call_site = CallSite.make (Procdesc.get_proc_name proc_data.ProcData.pdesc) loc in
-          let trace =
-            TraceDomain.of_source (TraceDomain.Source.make_footprint access_path call_site) in
-          Some (TaintDomain.make_normal_leaf trace)
       | None ->
-          None
+          let make_footprint_trace footprint_ap =
+            let call_site =
+              CallSite.make (Procdesc.get_proc_name proc_data.ProcData.pdesc) loc in
+            let trace =
+              TraceDomain.of_source
+                (TraceDomain.Source.make_footprint footprint_ap call_site) in
+            Some (TaintDomain.make_normal_leaf trace) in
+          let root, _ = AccessPath.extract access_path in
+          try
+            let formal_num = AccessPath.BaseMap.find root proc_data.extras in
+            make_footprint_trace (make_footprint_access_path formal_num access_path)
+          with Not_found ->
+            if is_global root
+            then make_footprint_trace access_path
+            else None
 
     (* get the trace associated with [access_path] in [access_tree]. *)
     let access_path_get_trace access_path access_tree proc_data loc =
@@ -159,9 +170,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       let trace_of_pname pname =
         match Summary.read_summary proc_data.pdesc pname with
         | Some summary ->
-            let join_output_trace acc { QuandarySummary.output_trace; } =
-              TraceDomain.join (TaintSpecification.of_summary_trace output_trace) acc in
-            IList.fold_left join_output_trace TraceDomain.initial summary
+            TaintDomain.fold
+              (fun acc _ trace -> TraceDomain.join trace acc)
+              (TaintSpecification.of_summary_access_tree summary)
+              TraceDomain.initial
         | None ->
             TraceDomain.initial in
 
@@ -219,81 +231,95 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       { astate with Domain.access_tree = access_tree'; }
 
     let apply_summary
-        ret_id
+        ret_opt
         actuals
         summary
         (astate_in : Domain.astate)
         proc_data
         callee_site =
       let callee_loc = CallSite.loc callee_site in
+      let caller_access_tree = astate_in.access_tree in
 
-      let apply_return ret_ap = function
-        | Some (ret_id, _) -> AccessPath.with_base_var (Var.of_id ret_id) ret_ap
-        | None -> failwith "Have summary for retval, but no ret id to bind it to!" in
-
-      let get_actual_ap_trace formal_num formal_ap access_tree =
+      let get_caller_ap formal_ap =
+        let apply_return ret_ap = match ret_opt with
+          | Some (ret_id, _) -> AccessPath.with_base_var (Var.of_id ret_id) ret_ap
+          | None -> failwith "Have summary for retval, but no ret id to bind it to!" in
         let get_actual_ap formal_num =
           let f_resolve_id = resolve_id astate_in.id_map in
-          let actual_exp, actual_typ =
-            try IList.nth actuals formal_num
-            with Failure _ -> failwithf "Bad formal number %d" formal_num in
-          AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id in
+          try
+            let actual_exp, actual_typ =
+              IList.nth actuals formal_num in
+            AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id
+          with Failure _ ->
+            None in
         let project ~formal_ap ~actual_ap =
           let projected_ap = AccessPath.append actual_ap (snd (AccessPath.extract formal_ap)) in
           if AccessPath.is_exact formal_ap
           then AccessPath.Exact projected_ap
           else AccessPath.Abstracted projected_ap in
-        match get_actual_ap formal_num with
-        | Some actual_ap ->
-            let projected_ap = project ~formal_ap ~actual_ap in
-            let projected_trace =
-              access_path_get_trace projected_ap access_tree proc_data callee_loc in
-            Some (projected_ap, projected_trace)
+        let base_var, _ = fst (AccessPath.extract formal_ap) in
+        match base_var with
+        | Var.ProgramVar pvar ->
+            if Pvar.is_return pvar
+            then Some (apply_return formal_ap)
+            else Some formal_ap
+        | Var.LogicalVar id ->
+            begin
+              (* summaries store the index of the formal parameter in the ident stamp *)
+              match get_actual_ap (Ident.get_stamp id) with
+              | Some actual_ap ->
+                  let projected_ap = project ~formal_ap ~actual_ap in
+                  Some projected_ap
+              | None ->
+                  None
+            end in
+
+      let get_caller_ap_node ap =
+        match get_caller_ap ap with
+        | Some caller_ap ->
+            let caller_node_opt =
+              access_path_get_node caller_ap caller_access_tree proc_data callee_loc in
+            let caller_node = match caller_node_opt with
+              | Some caller_node -> caller_node | None -> TaintDomain.empty_node in
+            caller_ap, caller_node
         | None ->
-            None in
+            ap, TaintDomain.empty_node in
 
-      let apply_one access_tree (in_out_summary : QuandarySummary.in_out_summary) =
-        let in_trace = match in_out_summary.input with
-          | In_empty ->
-              TraceDomain.initial
-          | In_formal (formal_num, formal_ap) ->
-              begin
-                match get_actual_ap_trace formal_num formal_ap access_tree with
-                | Some (_, actual_trace) -> actual_trace
-                | None -> TraceDomain.initial
-              end
-          | In_global global_ap ->
-              access_path_get_trace global_ap access_tree proc_data callee_loc in
+      let replace_footprint_sources callee_trace caller_trace =
+        let replace_footprint_source source acc =
+          match TraceDomain.Source.get_footprint_access_path source with
+          | Some footprint_access_path ->
+              let _, (caller_ap_trace, _) = get_caller_ap_node footprint_access_path in
+              TraceDomain.join caller_ap_trace acc
+          | None ->
+              acc in
+        TraceDomain.Sources.fold
+          replace_footprint_source (TraceDomain.sources callee_trace) caller_trace in
 
-        let caller_ap_trace_opt =
-          match in_out_summary.output with
-          | Out_return ret_ap ->
-              let caller_ret_ap = apply_return ret_ap ret_id in
-              let ret_trace =
-                access_path_get_trace caller_ret_ap access_tree proc_data callee_loc in
-              Some (caller_ret_ap, ret_trace)
-          | Out_formal (formal_num, formal_ap) ->
-              get_actual_ap_trace formal_num formal_ap access_tree
-          | Out_global global_ap ->
-              let global_trace = access_path_get_trace global_ap access_tree proc_data callee_loc in
-              Some (global_ap, global_trace) in
-        match caller_ap_trace_opt with
-        | Some (caller_ap, caller_trace) ->
-            let output_trace = TaintSpecification.of_summary_trace in_out_summary.output_trace in
-            let appended_trace = TraceDomain.append in_trace output_trace callee_site in
-            let joined_trace = TraceDomain.join caller_trace appended_trace in
-            if phys_equal appended_trace joined_trace
-            then
-              access_tree
-            else
-              begin
-                report_trace joined_trace callee_site proc_data;
-                TaintDomain.add_trace caller_ap joined_trace access_tree
-              end
-        | None ->
-            access_tree in
+      let add_to_caller_tree acc callee_ap callee_trace =
+        let can_assign ap =
+          let (base, _), accesses = AccessPath.extract ap in
+          match base with
+          | Var.LogicalVar id ->
+              (* Java is pass-by-value, so we can't assign directly to a formal *)
+              Ident.is_footprint id && accesses <> []
+          | Var.ProgramVar pvar ->
+              (* can't assign to callee locals in the caller *)
+              Pvar.is_global pvar || Pvar.is_return pvar in
+        let caller_ap, (caller_trace, caller_tree) = get_caller_ap_node callee_ap in
+        let caller_trace' = replace_footprint_sources callee_trace caller_trace in
+        let appended_trace =
+          TraceDomain.append caller_trace' callee_trace callee_site in
+        report_trace appended_trace callee_site proc_data;
+        if can_assign callee_ap
+        then TaintDomain.add_node caller_ap (appended_trace, caller_tree) acc
+        else acc in
 
-      let access_tree = IList.fold_left apply_one astate_in.access_tree summary in
+      let access_tree =
+        TaintDomain.fold
+          add_to_caller_tree
+          (TaintSpecification.of_summary_access_tree summary)
+          caller_access_tree in
       { astate_in with access_tree; }
 
     let exec_instr (astate : Domain.astate) (proc_data : formal_map ProcData.t) _ instr =
@@ -305,7 +331,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ astate
       | Sil.Store (Exp.Lvar lhs_pvar, _, Exp.Exn _, _) when Pvar.is_return lhs_pvar ->
           (* the Java frontend translates `throw Exception` as `return Exception`, which is a bit
-             wonky. this tranlsation causes problems for us in computing a summary when an
+             wonky. this translation causes problems for us in computing a summary when an
              exception is "returned" from a void function. skip code like this for now
              (fix via t14159157 later *)
           astate
@@ -470,83 +496,21 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       (Scheduler.ReversePostorder)
       (TransferFunctions)
 
-  (** grab footprint traces in [access_tree] and make them into inputs for the summary. for each
-      trace Footprint(T_out, a.b.c) associated with access path x.z.y, we will produce a summary of
-      the form (x.z.y, T_in) => (T_in + T_out, a.b.c) *)
   let make_summary formal_map access_tree =
-    let is_return (var, _) = match var with
-      | Var.ProgramVar pvar -> Pvar.is_return pvar
-      | Var.LogicalVar _ -> false in
-    let add_summaries_for_trace summary_acc access_path trace =
-      let summary_trace = TaintSpecification.to_summary_trace trace in
-      let output_opt =
-        let base, accesses = AccessPath.extract access_path in
-        match AccessPath.BaseMap.find base formal_map with
-        | index ->
-            (* Java is pass-by-value. thus, summaries should not include assignments to the formal
-               parameters (first part of the check) . however, they should reflect when a formal
-               passes through a sink (second part of the check) *)
-            if accesses = [] && TraceDomain.Sinks.is_empty (TraceDomain.sinks trace)
-            (* TODO: and if [base] is not passed by reference, for C/C++/Obj-C *)
-            then None
-            else Some (QuandarySummary.make_formal_output index access_path)
-        | exception Not_found ->
-            if is_return base
-            then Some (QuandarySummary.make_return_output access_path)
-            else if is_global base
-            then Some (QuandarySummary.make_global_output access_path)
-            else None in
+    let access_tree' =
+      AccessPath.BaseMap.fold
+        (fun base node acc ->
+           let base' =
+             try
+               let formal_index = AccessPath.BaseMap.find base formal_map in
+               make_footprint_var formal_index, snd base
+             with Not_found ->
+               base in
+           AccessPath.BaseMap.add base' node acc)
+        access_tree
+        TaintDomain.initial in
 
-      let add_summary_for_source source acc =
-        match TraceDomain.Source.get_footprint_access_path source with
-        | Some footprint_ap ->
-            let footprint_ap_base = fst (AccessPath.extract footprint_ap) in
-            begin
-              match AccessPath.BaseMap.find footprint_ap_base formal_map with
-              | formal_index ->
-                  let input = QuandarySummary.make_formal_input formal_index footprint_ap in
-                  begin
-                    match output_opt with
-                    | Some output ->
-                        (QuandarySummary.make_in_out_summary input output summary_trace) :: acc
-                    | None ->
-                        if not (TraceDomain.Sinks.is_empty (TraceDomain.sinks trace))
-                        then
-                          let output =
-                            QuandarySummary.make_formal_output formal_index footprint_ap in
-                          (QuandarySummary.make_in_out_summary input output summary_trace) :: acc
-                        else
-                          (* output access path is same as input access path and there were no sinks
-                             in this function. summary would be the identity function *)
-                          acc
-                  end
-              | exception Not_found ->
-                  if is_global footprint_ap_base
-                  then
-                    let input = QuandarySummary.make_global_input footprint_ap in
-                    let output =
-                      match output_opt with
-                      | Some output -> output
-                      | None -> QuandarySummary.make_global_output footprint_ap in
-                    (QuandarySummary.make_in_out_summary input output summary_trace) :: acc
-                  else
-                    failwithf
-                      "Couldn't find formal number for %a@." AccessPath.pp_base footprint_ap_base
-            end
-        | None ->
-            begin
-              match output_opt with
-              | Some output ->
-                  let summary =
-                    QuandarySummary.make_in_out_summary
-                      QuandarySummary.empty_input output summary_trace in
-                  summary :: acc
-              | None ->
-                  acc
-            end in
-
-      TraceDomain.Source.Set.fold add_summary_for_source (TraceDomain.sources trace) summary_acc in
-    TaintDomain.fold add_summaries_for_trace access_tree []
+    TaintSpecification.to_summary_access_tree access_tree'
 
   module Interprocedural = AbstractInterpreter.Interprocedural(Summary)
 

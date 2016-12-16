@@ -15,11 +15,12 @@ module L = Logging
 include
   TaintAnalysis.Make(struct
     module Trace = JavaTrace
+    module AccessTree = AccessTree.Make(Trace)
 
-    let to_summary_trace trace = QuandarySummary.Java trace
+    let to_summary_access_tree access_tree = QuandarySummary.AccessTree.Java access_tree
 
-    let of_summary_trace = function
-      | QuandarySummary.Java trace -> trace
+    let of_summary_access_tree = function
+      | QuandarySummary.AccessTree.Java access_tree -> access_tree
       | _ -> assert false
 
     let handle_unknown_call pname ret_typ_opt =

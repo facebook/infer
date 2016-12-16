@@ -18,14 +18,13 @@ type handle_unknown =
 
 module type S = sig
   module Trace : Trace.S
+  module AccessTree : module type of AccessTree.Make(Trace)
 
   (** return a summary for handling an unknown call at the given site with the given return type
       and actuals *)
   val handle_unknown_call : Procname.t -> Typ.t option -> handle_unknown list
 
-  (** convert a trace type into a summary trace. can be killed if we functorize specs.ml *)
-  val to_summary_trace : Trace.t -> QuandarySummary.summary_trace
+  val to_summary_access_tree : AccessTree.t -> QuandarySummary.AccessTree.t
 
-  (** convert summary trace into a trace type. can be killed if we functorized specs.ml *)
-  val of_summary_trace : QuandarySummary.summary_trace -> Trace.t
+  val of_summary_access_tree : QuandarySummary.AccessTree.t -> AccessTree.t
 end

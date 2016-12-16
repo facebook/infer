@@ -234,7 +234,7 @@ module Make (Spec : Spec) = struct
       let between_start_and_end passthrough =
         let passthrough_line = line_number (Passthrough.site passthrough) in
         match passthrough_kind with
-        | Source -> passthrough_line <= start_line
+        | Source -> passthrough_line >= end_line
         | Sink -> passthrough_line <= end_line
         | Top_level -> passthrough_line >= start_line && passthrough_line <= end_line in
       Passthrough.Set.filter between_start_and_end passthroughs in

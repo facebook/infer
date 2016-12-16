@@ -64,9 +64,10 @@ module MockTrace = Trace.Make(struct
 
 module MockTaintAnalysis = TaintAnalysis.Make(struct
     module Trace = MockTrace
+    module AccessTree = AccessTree.Make(Trace)
 
-    let of_summary_trace _ = assert false
-    let to_summary_trace _ = assert false
+    let of_summary_access_tree _ = assert false
+    let to_summary_access_tree _ = assert false
     let handle_unknown_call _ _ = []
   end)
 
