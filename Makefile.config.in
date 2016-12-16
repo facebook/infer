@@ -124,5 +124,5 @@ CLANG_DEPS = $(addprefix $(PYTHON_LIB_DIR)/, \
 JAVA_MODELS_JAR = $(LIB_DIR)/java/models.jar
 
 define silent_on_success
-  $(1) >/dev/null 2>/dev/null || (echo $(1); $(1) && exit 1)
+  $(1) >/dev/null 2>/dev/null || ($(1) && exit 1)
 endef
