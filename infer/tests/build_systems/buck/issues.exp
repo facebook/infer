@@ -56,7 +56,6 @@ infer/tests/codetoanalyze/java/infer/GuardedByExample.java, void GuardedByExampl
 infer/tests/codetoanalyze/java/infer/GuardedByExample.java, void GuardedByExample.guardedByTypeSyntaxBad(), 2, UNSAFE_GUARDED_BY_ACCESS, [start of procedure guardedByTypeSyntaxBad()]
 infer/tests/codetoanalyze/java/infer/GuardedByExample.java, void GuardedByExample.readFAfterBlockBad(), 3, UNSAFE_GUARDED_BY_ACCESS, [start of procedure readFAfterBlockBad()]
 infer/tests/codetoanalyze/java/infer/GuardedByExample.java, void GuardedByExample.readFBad(), 1, UNSAFE_GUARDED_BY_ACCESS, [start of procedure readFBad()]
-infer/tests/codetoanalyze/java/infer/GuardedByExample.java, void GuardedByExample.readFBadButSuppressedOther(), 1, UNSAFE_GUARDED_BY_ACCESS, [start of procedure readFBadButSuppressedOther()]
 infer/tests/codetoanalyze/java/infer/GuardedByExample.java, void GuardedByExample.readFBadWrongAnnotation(), 1, UNSAFE_GUARDED_BY_ACCESS, [start of procedure readFBadWrongAnnotation()]
 infer/tests/codetoanalyze/java/infer/GuardedByExample.java, void GuardedByExample.readFBadWrongLock(), 2, UNSAFE_GUARDED_BY_ACCESS, [start of procedure readFBadWrongLock()]
 infer/tests/codetoanalyze/java/infer/GuardedByExample.java, void GuardedByExample.readHBad(), 2, UNSAFE_GUARDED_BY_ACCESS, [start of procedure readHBad()]

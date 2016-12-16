@@ -310,33 +310,6 @@ let never_return_null_matcher =
 let skip_translation_matcher =
   FileOrProcMatcher.load_matcher (patterns_of_json_with_key Config.patterns_skip_translation)
 
-let suppress_warnings_matcher =
-  let error msg =
-    F.eprintf
-      "There was an issue reading the option %s.@\n\
-       If you did not call %s directly, this is likely a bug in Infer.@\n\
-       %s@."
-      Config.suppress_warnings_annotations_long
-      (Filename.basename Sys.executable_name)
-      msg ;
-    [] in
-  let patterns =
-    match Config.suppress_warnings_out with
-    | Some path -> (
-        match Utils.read_optional_json_file path with
-        | Ok json -> (
-            let json_key = "suppress_warnings" in
-            match Yojson.Basic.Util.member json_key json with
-            | `Null -> []
-            | json -> patterns_of_json_with_key (json_key, json))
-        | Error msg -> error ("Could not read or parse the supplied " ^ path ^ ":\n" ^ msg)
-      )
-    | None when Config.current_exe <> CLOpt.Java -> []
-    | None when Option.is_some Config.generated_classes -> []
-    | None ->
-        error ("The option " ^ Config.suppress_warnings_annotations_long ^ " was not provided") in
-  FileOrProcMatcher.load_matcher patterns
-
 let load_filters analyzer =
   {
     whitelist = Config.analysis_path_regex_whitelist analyzer;

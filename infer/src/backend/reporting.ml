@@ -52,14 +52,14 @@ let log_issue
     ?session
     ?ltr
     exn =
-  let should_suppress_warnings summary =
+  let should_suppress_lint summary =
     !Config.curr_language = Config.Java &&
     let annotated_signature =
       Annotations.get_annotated_signature summary.Specs.attributes in
     let ret_annotation, _ = annotated_signature.Annotations.ret in
-    Annotations.ia_is_suppress_warnings ret_annotation in
+    Annotations.ia_is_suppress_lint ret_annotation in
   match Specs.get_summary proc_name with
-  | Some summary when should_suppress_warnings summary -> ()
+  | Some summary when should_suppress_lint summary -> ()
   | Some summary ->
       let err_log = summary.Specs.attributes.ProcAttributes.err_log in
       log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr exn

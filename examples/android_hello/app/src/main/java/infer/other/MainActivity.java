@@ -9,6 +9,7 @@
 
 package infer.other;
 
+import android.annotation.SuppressLint;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 
@@ -23,7 +24,7 @@ public class MainActivity extends ActionBarActivity {
     source().toString();
   }
 
-  @SuppressWarnings("infer")
+  @SuppressLint("NULL_DEREFERENCE")
   void shouldNotBeReported() {
     source().toString();
   }

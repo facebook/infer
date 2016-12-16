@@ -34,9 +34,6 @@ LIB_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, 'lib')
 BIN_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, 'bin')
 JAVA_LIB_DIRECTORY = os.path.join(LIB_DIRECTORY, 'java')
 MODELS_JAR = os.path.join(JAVA_LIB_DIRECTORY, 'models.jar')
-ANNOT_PROCESSOR_JAR = os.path.join(JAVA_LIB_DIRECTORY, 'processor.jar')
-ANNOT_PROCESSOR_NAMES = \
-    'com.facebook.infer.annotprocess.CollectSuppressWarnings'
 WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'wrappers')
 XCODE_WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'xcode_wrappers')
 
@@ -57,8 +54,6 @@ IOS_BUILD_OUTPUT = 'build_output'
 LOG_FILE = 'toplevel.log'
 
 BUCK_INFER_OUT = 'infer'
-
-SUPRESS_WARNINGS_OUTPUT_FILENAME_OPTION = 'SuppressWarningsOutputFilename'
 
 
 # list of possible analyzers

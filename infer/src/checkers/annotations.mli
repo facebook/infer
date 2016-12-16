@@ -17,7 +17,6 @@ val expensive : string
 val performance_critical : string
 val no_allocation : string
 val on_bind : string
-val suppress_warnings : string
 
 type annotation =
   | Nullable
@@ -88,7 +87,7 @@ val ia_is_expensive : Annot.Item.t -> bool
 val ia_is_performance_critical : Annot.Item.t -> bool
 val ia_is_no_allocation : Annot.Item.t -> bool
 val ia_is_ignore_allocations : Annot.Item.t -> bool
-val ia_is_suppress_warnings : Annot.Item.t -> bool
+val ia_is_suppress_lint : Annot.Item.t -> bool
 val ia_is_privacy_source : Annot.Item.t -> bool
 val ia_is_privacy_sink : Annot.Item.t -> bool
 val ia_is_integrity_source : Annot.Item.t -> bool

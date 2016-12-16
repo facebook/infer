@@ -106,7 +106,6 @@ let performance_critical = "PerformanceCritical"
 let no_allocation = "NoAllocation"
 let ignore_allocations = "IgnoreAllocations"
 
-let suppress_warnings = "SuppressWarnings"
 let suppress_lint = "SuppressLint"
 let privacy_source = "PrivacySource"
 let privacy_sink = "PrivacySink"
@@ -193,8 +192,8 @@ let ia_is_no_allocation ia =
 let ia_is_ignore_allocations ia =
   ia_ends_with ia ignore_allocations
 
-let ia_is_suppress_warnings ia =
-  ia_ends_with ia suppress_warnings
+let ia_is_suppress_lint ia =
+  ia_ends_with ia suppress_lint
 
 let ia_is_privacy_source ia =
   ia_ends_with ia privacy_source

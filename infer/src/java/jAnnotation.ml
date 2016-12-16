@@ -13,15 +13,6 @@ open! IStd
 open Javalib_pack
 
 
-let is_suppress_warnings_annotated =
-  Inferconfig.suppress_warnings_matcher SourceFile.empty
-
-let suppress_warnings =
-  ({ Annot.
-     class_name = Annotations.suppress_warnings;
-     parameters = ["infer"] },
-   true)
-
 (** Translate an annotation. *)
 let translate a : Annot.t =
   let class_name = JBasics.cn_name a.JBasics.kind in
@@ -48,13 +39,9 @@ let translate_item avlist : Annot.Item.t =
 
 
 (** Translate a method annotation. *)
-let translate_method proc_name ann : Annot.Method.t =
+let translate_method ann : Annot.Method.t =
   let global_ann = ann.Javalib.ma_global in
   let param_ann = ann.Javalib.ma_parameters in
-  let ret_item =
-    let base_annotations = translate_item global_ann in
-    if is_suppress_warnings_annotated proc_name then
-      suppress_warnings :: base_annotations
-    else base_annotations in
+  let ret_item = translate_item global_ann in
   let param_items = IList.map translate_item param_ann in
   ret_item, param_items

@@ -107,7 +107,6 @@ val sources : string list
 val sourcepath : string option
 val specs_dir_name : string
 val specs_files_suffix : string
-val suppress_warnings_annotations_long : string
 val start_filename : string
 val taint_analysis : bool
 val trace_absarray : bool
@@ -249,7 +248,6 @@ val stacktrace : string option
 val stacktraces_dir : string option
 val stats_mode : bool
 val subtype_multirange : bool
-val suppress_warnings_out : string option
 val svg : bool
 val symops_per_iteration : int option
 val test : bool

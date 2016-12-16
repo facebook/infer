@@ -183,8 +183,6 @@ let specs_files_suffix = ".specs"
 
 let start_filename = ".start"
 
-let suppress_warnings_annotations_long = "suppress-warnings-annotations"
-
 (** If true performs taint analysis *)
 let taint_analysis = true
 
@@ -1123,11 +1121,6 @@ and subtype_multirange =
   CLOpt.mk_bool ~deprecated:["subtype_multirange"] ~long:"subtype-multirange" ~default:true
     "Use the multirange subtyping domain"
 
-(* Path to list of collected @SuppressWarnings annotations *)
-and suppress_warnings_out =
-  CLOpt.mk_path_opt ~deprecated:["suppress_warnings_out"] ~long:suppress_warnings_annotations_long
-    ~meta:"path" ""
-
 and svg =
   CLOpt.mk_bool ~deprecated:["svg"] ~long:"svg"
     "Generate .dot and .svg files from specs"
@@ -1483,7 +1476,6 @@ and stacktrace = !stacktrace
 and stacktraces_dir = !stacktraces_dir
 and stats_mode = !stats
 and subtype_multirange = !subtype_multirange
-and suppress_warnings_out = !suppress_warnings_out
 and svg = !svg
 and symops_per_iteration = !symops_per_iteration
 and test = !test

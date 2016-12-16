@@ -9,6 +9,8 @@
 
 package codetoanalyze.java.checkers;
 
+import android.annotation.SuppressLint;
+
 import com.facebook.infer.annotation.Expensive;
 import com.facebook.infer.annotation.PerformanceCritical;
 
@@ -18,7 +20,7 @@ interface I {
 
 class A implements I {
 
-  @SuppressWarnings("infer")
+  @SuppressLint("CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED")
   // Suppressing the sub-typing violation warning here as foo() is not annotated as @Expensive
   // in the interface. This report is legit but is not relevant for the current test.
   @Expensive

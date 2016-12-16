@@ -32,7 +32,6 @@ val do_not_filter : filters
 val create_filters : Config.analyzer -> filters
 
 val never_return_null_matcher : SourceFile.t -> Procname.t -> bool
-val suppress_warnings_matcher : SourceFile.t -> Procname.t -> bool
 val skip_translation_matcher : SourceFile.t -> Procname.t -> bool
 val modeled_expensive_matcher : (string -> bool) -> Procname.t -> bool
 

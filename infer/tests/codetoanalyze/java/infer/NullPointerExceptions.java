@@ -9,6 +9,7 @@
 
 package codetoanalyze.java.infer;
 
+import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
@@ -479,7 +480,7 @@ public class NullPointerExceptions {
     derefUndefinedCallee().toString();
   }
 
-  @SuppressWarnings("null") // TODO(#8647398): Add support for @SuppressWarnings with Ant
+  @SuppressLint("NULL_DEREFERENCE")
   void shouldNotReportNPE() {
     Object o = null;
     o.toString();

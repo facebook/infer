@@ -26,11 +26,7 @@ parser = argparse.ArgumentParser()
 current_directory = utils.decode(os.getcwd())
 
 parser.add_argument('-version', action='store_true')
-parser.add_argument('-cp', '-classpath', type=utils.decode,
-                    dest='classpath', default=os.getcwd())
 parser.add_argument('-d', dest='classes_out', default=current_directory)
-parser.add_argument('-processorpath', type=utils.decode, dest='processorpath')
-parser.add_argument('-processor', type=utils.decode, dest='processor')
 
 
 def _get_javac_args(args):
@@ -62,26 +58,6 @@ def create_infer_command(args, javac_arguments):
     )
 
 
-# return True if string is empty or an escaped variant of empty
-def _is_empty_classpath(string):
-    stripped = string.strip("'").strip('"')
-    if stripped == '':
-        return True
-    elif stripped == string:
-        return False
-    else:
-        return _is_empty_classpath(stripped)
-
-
-class AnnotationProcessorNotFound(Exception):
-
-    def __init__(self, path):
-        self.path = path
-
-    def __str__(self):
-        return repr(self.path + ' not found')
-
-
 class CompilerCall(object):
 
     def __init__(self, javac_cmd, arguments):
@@ -103,84 +79,10 @@ class CompilerCall(object):
         else:
             javac_args = ['-verbose', '-g']
 
-            if not os.path.isfile(config.ANNOT_PROCESSOR_JAR):
-                raise AnnotationProcessorNotFound(config.ANNOT_PROCESSOR_JAR)
             if self.args.classes_out is not None:
                 javac_args += ['-d', self.args.classes_out]
 
-            classpath = self.args.classpath
-            # the -processorpath option precludes searching the classpath for
-            # annotation processors, so we don't want to use it unless the
-            # javac command does
-            if self.args.processorpath is not None:
-                processorpath = os.pathsep.join([config.ANNOT_PROCESSOR_JAR,
-                                                 self.args.processorpath])
-                javac_args += ['-processorpath', processorpath]
-            else:
-                classpath = os.pathsep.join([config.ANNOT_PROCESSOR_JAR,
-                                             classpath])
-
-            at_args = [
-                arg for arg in self.remaining_args if arg.startswith('@')]
-            found_classpath = False
-            for at_arg in at_args:
-                # remove @ character
-                args_file_name = at_arg[1:]
-                with codecs.open(args_file_name, 'r',
-                                 encoding=config.CODESET) as args_file:
-                    args_file_contents = args_file.read()
-                prefix_suffix = args_file_contents.split('-classpath\n', 1)
-                if len(prefix_suffix) == 2:
-                    prefix, suffix = prefix_suffix
-                    with tempfile.NamedTemporaryFile(
-                            dir=self.args.infer_out,
-                            suffix='_cp',
-                            delete=False) as args_file_cp:
-                        cp_line, _, after_cp = suffix.partition('\n')
-                        # avoid errors the happen when we get -classpath '"',
-                        # -classpath '', or similar from the args file
-                        if _is_empty_classpath(cp_line):
-                            cp_line = '\n'
-                        else:
-                            cp_line = ':{}\n'.format(cp_line)
-                        cp_line = prefix + '-classpath\n' + classpath + cp_line
-                        cp_line += after_cp
-                        args_file_cp.write(cp_line)
-                        at_arg_cp = '@' + args_file_cp.name
-                        self.remaining_args = [
-                            at_arg_cp if arg == at_arg else arg
-                            for arg in self.remaining_args]
-                        found_classpath = True
-                        break
-
             javac_args += self.remaining_args
-
-            if not found_classpath:
-                # -classpath option not found in any args file
-                javac_args += ['-classpath', classpath]
-
-            # this overrides the default mechanism for discovering annotation
-            # processors (checking the manifest of the annotation processor
-            # JAR), so we don't want to use it unless the javac command does
-            if self.args.processor is not None:
-                processor = '{infer_processors},{original_processors}'.format(
-                    infer_processors=config.ANNOT_PROCESSOR_NAMES,
-                    original_processors=self.args.processor
-                )
-                javac_args += ['-processor', processor]
-
-            with tempfile.NamedTemporaryFile(
-                    mode='w',
-                    suffix='.out',
-                    prefix='annotations_',
-                    delete=False) as annot_out:
-                # Initialize the contents of the file to a valid empty
-                # json object.
-                annot_out.write('{}')
-                self.suppress_warnings_out = annot_out.name
-            javac_args += ['-A%s=%s' %
-                           (config.SUPRESS_WARNINGS_OUTPUT_FILENAME_OPTION,
-                            self.suppress_warnings_out)]
 
             def arg_must_go_on_cli(arg):
                 # as mandated by javac, argument files must not contain
@@ -281,7 +183,6 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
 
         infer_cmd += [
             '-verbose_out', self.javac.verbose_out,
-            '-suppress_warnings_out', self.javac.suppress_warnings_out,
         ]
 
         if self.args.debug:
@@ -304,7 +205,6 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
 
     def _close(self):
         os.remove(self.javac.verbose_out)
-        os.remove(self.javac.suppress_warnings_out)
 
 
 class AnalyzerWithJavac(AnalyzerWithFrontendWrapper):

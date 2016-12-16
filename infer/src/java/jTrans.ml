@@ -174,8 +174,8 @@ let translate_locals program tenv formals bytecode jbir_code =
   let with_jbir_vars =
     Array.fold
       ~f:(fun accu jbir_var ->
-         let var = Mangled.from_string (JBir.var_name_g jbir_var) in
-         collect accu (var, Typ.Tvoid))
+          let var = Mangled.from_string (JBir.var_name_g jbir_var) in
+          collect accu (var, Typ.Tvoid))
       ~init:with_bytecode_vars
       (JBir.vars jbir_code) in
   snd with_jbir_vars
@@ -246,10 +246,10 @@ let get_implementation cm =
       let c_code =
         Array.map
           ~f:(function
-            | (JCode.OpInvoke (`Dynamic _, ms)) ->
-                JCode.OpInvoke (`Static JBasics.java_lang_object, ms)
-            | opcode ->
-                opcode)
+              | (JCode.OpInvoke (`Dynamic _, ms)) ->
+                  JCode.OpInvoke (`Static JBasics.java_lang_object, ms)
+              | opcode ->
+                  opcode)
           bytecode.JCode.c_code in
       let hacked_bytecode = { bytecode with JCode.c_code; } in
       let jbir_code =
@@ -281,7 +281,7 @@ let create_am_procdesc program icfg am proc_name : Procdesc.t =
   let formals =
     formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
   let method_annotation =
-    JAnnotation.translate_method proc_name am.Javalib.am_annotations in
+    JAnnotation.translate_method am.Javalib.am_annotations in
   let procdesc =
     let proc_attributes =
       { (ProcAttributes.default proc_name Config.Java) with
@@ -313,7 +313,7 @@ let create_native_procdesc program icfg cm proc_name =
   let formals =
     formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
   let method_annotation =
-    JAnnotation.translate_method proc_name cm.Javalib.cm_annotations in
+    JAnnotation.translate_method cm.Javalib.cm_annotations in
   let proc_attributes =
     { (ProcAttributes.default proc_name Config.Java) with
       ProcAttributes.access = trans_access cm.Javalib.cm_access;
@@ -343,7 +343,7 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name =
       let loc_exit =
         get_location source_file jbir_code (Array.length (JBir.code jbir_code) - 1) in
       let method_annotation =
-        JAnnotation.translate_method proc_name cm.Javalib.cm_annotations in
+        JAnnotation.translate_method cm.Javalib.cm_annotations in
       update_constr_loc cn ms loc_start;
       update_init_loc cn ms loc_exit;
       let proc_attributes =
