@@ -1,0 +1,1 @@
+buck-out/genruletest/gen/infer/tests/build_systems/genrule/module2/module2_export_srcs/src_copy/Class2.java, void Class2.localNPE2(), 2, NULL_DEREFERENCE, [start of procedure localNPE2()]

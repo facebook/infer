@@ -10,19 +10,22 @@ ROOT_DIR = $(TESTS_DIR)/../..
 
 ANALYZER = infer
 SOURCES = $(wildcard $(TESTS_DIR)/codetoanalyze/java/infer/*.java)
-OBJECTS = $(ROOT_DIR)/buck-out/gen/infer/tests/codetoanalyze/java/infer/lib__compile__output/compile.jar
+OBJECTS = $(ROOT_DIR)/buck-out/gen/infer/tests/codetoanalyze/java/infer/lib__compile_compile__output/compile_compile.jar
 INFERPRINT_OPTIONS = --project-root $(ROOT_DIR) --issues-tests
-CLEAN_EXTRA = $(ROOT_DIR)/buck-out/ $(CURDIR)/buck-out/
+CLEAN_EXTRA = $(ROOT_DIR)/buck-out
 
 include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/base.make
 
-$(JAR_OUTPUT): $(JAVA_SOURCE_FILES)
-	cd $(ROOT_DIR) && $(call silent_on_success, INFER_BIN=$(INFER_BIN) NO_BUCKD=1 buck build --no-cache //infer/tests/codetoanalyze/java/infer:compile)
+$(OBJECTS): $(JAVA_SOURCE_FILES)
+	cd $(ROOT_DIR) && \
+	$(call silent_on_success,\
+	INFER_BIN=$(INFER_BIN) NO_BUCKD=1 \
+	buck build --no-cache //infer/tests/codetoanalyze/java/infer:compile)
 
-.PHONY: genrule
-genrule: $(JAR_OUTPUT)
-	cd $(ROOT_DIR) && $(call silent_on_success, INFER_BIN=$(INFER_BIN) NO_BUCKD=1 GENERATE_INFER_GENRULES=1 buck build --no-cache //infer/tests/build_systems/genrule/module2:module2_infer)
-
-infer-out/report.json: genrule $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
-	cd $(ROOT_DIR) && $(call silent_on_success, INFER_BIN=$(INFER_BIN) NO_BUCKD=1 $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out  -- buck build --no-cache //infer/tests/codetoanalyze/java/infer:compile)
+infer-out/report.json: $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
+	cd $(ROOT_DIR) && \
+	$(call silent_on_success,\
+	INFER_BIN=$(INFER_BIN) NO_BUCKD=1 \
+	$(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out -- \
+	  buck build --no-cache //infer/tests/codetoanalyze/java/infer:compile)

@@ -21,7 +21,7 @@ ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif
 ifneq ($(BUCK),no)
-BUILD_SYSTEMS_TESTS += buck
+BUILD_SYSTEMS_TESTS += buck genrule
 endif
 ifneq ($(CMAKE),no)
 BUILD_SYSTEMS_TESTS += clang_compilation_db cmake
