@@ -119,7 +119,7 @@ let ctl_ns_notification_warning lctx an =
   let condition = InNode (["ObjCImplementationDecl"; "ObjCProtocolDecl"],
                           Not (Implies (eventually_addObserver, eventually_removeObserver))) in
   let issue_desc = {
-    CIssue.name = Localise.to_string Localise.registered_observer_being_deallocated;
+    CIssue.name = "REGISTERED_OBSERVER_BEING_DEALLOCATED";
     severity = Exceptions.Kwarning;
     mode = CIssue.On;
     description =
@@ -154,7 +154,7 @@ let ctl_bad_pointer_comparison_warning lctx an =
   let condition = InNode (["IfStmt"; "ForStmt"; "WhileStmt"; "ConditionalOperator"], etx) in
   let issue_desc =
     { CIssue.
-      name = Localise.to_string Localise.bad_pointer_comparison;
+      name = "BAD_POINTER_COMPARISON";
       severity = Exceptions.Kwarning;
       mode = CIssue.On;
       description = "Implicitly checking whether NSNumber pointer is nil";
@@ -179,7 +179,7 @@ let ctl_strong_delegate_warning lctx an =
                                                      And (name_does_not_contains_queue,
                                                           is_strong_property))) in
   let issue_desc = {
-    CIssue.name = Localise.to_string Localise.strong_delegate_warning;
+    CIssue.name = "STRONG_DELEGATE_WARNING";
     severity = Exceptions.Kwarning;
     mode = CIssue.On;
     description =
@@ -202,8 +202,7 @@ let ctl_global_var_init_with_calls_warning lctx an =
   let condition =
     InNode (["VarDecl"], And (ctl_is_global_var, ctl_is_initialized_with_expensive_call)) in
   let issue_desc = {
-    CIssue.name =
-      Localise.to_string Localise.global_variable_initialized_with_function_or_method_call;
+    CIssue.name = "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL";
     severity = Exceptions.Kwarning;
     mode = CIssue.On;
     description =
@@ -221,7 +220,7 @@ let ctl_assign_pointer_warning lctx an =
                          And (Atomic ("is_assign_property", []),
                               Atomic ("is_property_pointer_type", []))) in
   let issue_desc =
-    { CIssue.name = Localise.to_string Localise.assign_pointer_warning;
+    { CIssue.name = "ASSIGN_POINTER_WARNING";
       severity = Exceptions.Kwarning;
       mode = CIssue.On;
       description =
@@ -244,7 +243,7 @@ let ctl_direct_atomic_property_access_warning lctx an =
                                     Not (Atomic ("is_objc_constructor", []))),
                                Not (Atomic ("is_objc_dealloc", [])))) in
   let issue_desc = {
-    CIssue.name = Localise.to_string Localise.direct_atomic_property_access;
+    CIssue.name = "DIRECT_ATOMIC_PROPERTY_ACCESS";
     severity = Exceptions.Kwarning;
     mode = CIssue.On;
     description = "Direct access to ivar %ivar_name% of an atomic property";
@@ -259,7 +258,7 @@ let ctl_captured_cxx_ref_in_objc_block_warning lctx an  =
   let open CTL in
   let condition = InNode (["BlockDecl"], Atomic ("captures_cxx_references", [])) in
   let issue_desc = {
-    CIssue.name = Localise.to_string Localise.cxx_reference_captured_in_objc_block;
+    CIssue.name = "CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK";
     severity = Exceptions.Kwarning;
     mode = CIssue.On;
     description =
