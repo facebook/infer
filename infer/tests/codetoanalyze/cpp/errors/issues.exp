@@ -128,6 +128,7 @@ codetoanalyze/cpp/errors/vector/empty_access.cpp, size_check0_empty, 2, EMPTY_VE
 codetoanalyze/cpp/errors/vector/empty_access.cpp, vector_as_param_by_value_empty, 2, EMPTY_VECTOR_ACCESS, [start of procedure vector_as_param_by_value_empty(),start of procedure vector_param_by_value_access()]
 codetoanalyze/cpp/errors/vector/empty_access.cpp, vector_as_param_clear, 3, EMPTY_VECTOR_ACCESS, [start of procedure vector_as_param_clear(),start of procedure vector_param_clear(),return from a call to vector_param_clear]
 codetoanalyze/cpp/errors/vector/empty_access.cpp, vector_as_param_empty, 2, EMPTY_VECTOR_ACCESS, [start of procedure vector_as_param_empty(),start of procedure vector_param_access()]
+codetoanalyze/cpp/errors/vector/iterator_access.cpp, iterator_access::possible_npe, 4, NULL_DEREFERENCE, [start of procedure iterator_access::possible_npe(),Condition is true,Condition is true,Condition is true]
 codetoanalyze/cpp/shared/attributes/deprecated_hack.cpp, derefFirstArg2_null_deref, 2, NULL_DEREFERENCE, [start of procedure derefFirstArg2_null_deref()]
 codetoanalyze/cpp/shared/attributes/deprecated_hack.cpp, derefFirstArg3_null_deref, 2, NULL_DEREFERENCE, [start of procedure derefFirstArg3_null_deref(),start of procedure derefFirstArg3()]
 codetoanalyze/cpp/shared/attributes/deprecated_hack.cpp, derefFirstArg_null_deref, 2, NULL_DEREFERENCE, [start of procedure derefFirstArg_null_deref()]
