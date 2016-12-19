@@ -138,6 +138,10 @@ $(DIRECT_TESTS:%=direct_%_clean):
 .PHONY: direct_tests
 direct_tests: $(DIRECT_TESTS:%=direct_%_test)
 
+# do not run these two tests in parallel otherwise Buck has a bad time
+build_genrule_test: build_buck_test
+build_genrule_print: build_buck_print
+
 .PHONY: print_direct_tests
 print_direct_tests: $(DIRECT_TESTS:%=direct_%_print)
 

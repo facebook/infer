@@ -33,6 +33,7 @@ $(ROOT_DIR)/buck-out/genruletest/gen/infer/tests/build_systems/genrule/module2/m
 	$(call silent_on_success,\
 	INFER_BIN="$(INFER_BIN)" NO_BUCKD=1 GENERATE_INFER_GENRULES=1 \
 	buck build --config project.buck_out=buck-out/genruletest --no-cache //infer/tests/build_systems/genrule/module2:module2_infer)
+	touch $@
 
 infer-out/report.json: $(ROOT_DIR)/buck-out/genruletest/gen/infer/tests/build_systems/genrule/module2/module2_infer/infer_out/report.json
 	$(MKDIR_P) infer-out
