@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
-open! Utils
+open! IStd
 
 let compilation_db = lazy (CompilationDatabase.from_json_files !Config.clang_compilation_db_files)
 
@@ -28,7 +28,11 @@ let try_capture (attributes : ProcAttributes.t) : ProcAttributes.t option =
          Cfg.store_cfg_to_file *)
       let cfg_filename = DB.source_dir_get_internal_file source_dir ".cfg" in
       if not (DB.file_exists cfg_filename) then (
-        CaptureCompilationDatabase.capture_file_in_database cdb definition_file;
+        Logging.out "Started capture of %a...@\n" SourceFile.pp definition_file;
+        Timeout.suspend_existing_timeout ~keep_symop_total:true;
+        protect
+          ~f:(fun () -> CaptureCompilationDatabase.capture_file_in_database cdb definition_file)
+          ~finally:Timeout.resume_previous_timeout;
         if Config.debug_mode &&
            Option.is_none
              (AttributesTable.load_defined_attributes ~cache_none:false attributes.proc_name) then (
