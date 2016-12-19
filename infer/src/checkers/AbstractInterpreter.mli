@@ -15,7 +15,7 @@ type 'a state = { pre: 'a; post: 'a; visit_count: int; }
 module type S = sig
   module TransferFunctions : TransferFunctions.S
 
-  module InvariantMap : Map.S with type key = TransferFunctions.CFG.id
+  module InvariantMap : Caml.Map.S with type key = TransferFunctions.CFG.id
 
   (** invariant map from node id -> state representing postcondition for node id *)
   type invariant_map = TransferFunctions.Domain.astate state InvariantMap.t

@@ -15,27 +15,21 @@ type 'a state = { pre: 'a; post: 'a; visit_count: int; }
 
 module type S = sig
   module TransferFunctions : TransferFunctions.S
-  module InvariantMap : Caml.Map.S with type key = TransferFunctions.CFG.id
-  module Interprocedural
-      (Summary : Summary.S with type summary = TransferFunctions.Domain.astate) :
-  sig
 
-    (** compute and return the summary for the given procedure and store it on disk using
-        [compute_post]. *)
-    val compute_and_store_post :
-      compute_post: ('a ProcData.t -> Summary.summary option) ->
-      make_extras : (Procdesc.t -> 'a) ->
-      Callbacks.proc_callback_args ->
-      Summary.summary option
-  end
+  module InvariantMap : Caml.Map.S with type key = TransferFunctions.CFG.id
 
   type invariant_map = TransferFunctions.Domain.astate state InvariantMap.t
 
   val compute_post : TransferFunctions.extras ProcData.t -> TransferFunctions.Domain.astate option
+
   val exec_cfg : TransferFunctions.CFG.t -> TransferFunctions.extras ProcData.t -> invariant_map
+
   val exec_pdesc : TransferFunctions.extras ProcData.t -> invariant_map
+
   val extract_post : InvariantMap.key -> 'a state InvariantMap.t -> 'a option
+
   val extract_pre : InvariantMap.key -> 'a state InvariantMap.t -> 'a option
+
   val extract_state : InvariantMap.key -> 'a InvariantMap.t -> 'a option
 end
 
