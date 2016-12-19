@@ -159,6 +159,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                          (e.g., constructors that access static fields) *)
                       if is_unprotected locks' &&
                          not (is_initializer tenv pn) &&
+                         not (FbThreadSafety.is_logging_method pn) &&
                          not (is_call_to_builder_class_method pn) &&
                          not (is_call_to_immutable_collection_method tenv pn)
                       then
