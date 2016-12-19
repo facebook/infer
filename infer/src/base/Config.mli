@@ -116,6 +116,7 @@ val use_jar_cache : bool
 val version_string : string
 val weak : string
 val whitelisted_cpp_methods : string list list
+val whitelisted_cpp_classes : string list list
 val wrappers_dir : string
 
 

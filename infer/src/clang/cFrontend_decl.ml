@@ -138,17 +138,64 @@ struct
   let process_methods trans_unit_ctx tenv cg cfg curr_class decl_list =
     IList.iter (process_one_method_decl trans_unit_ctx tenv cg cfg curr_class) decl_list
 
+  (** Given qualified name list and whitelist (list of list of qualifiers), return whether
+      qualified name matches whitelist. There are some complications due to following constraints:
+      1. 'std::' namespace may have inline namespace afterwards - std::move becomes std::__1::move
+         This happens on libc++ and to some extent on libstdc++. To workaround this problem, make
+         matching against 'std::' whitelists more fuzzy:
+          std::X::Y::Z will match std::.*::X::Y::Z (but only for 'std' namespace)
+      2. whitelist is specified without template specializations, but we want std::move to
+         match std::__1::move<const X&> and std::__1::move<int>. To do so, comparison function
+         for qualifiers will ignore template specializations.
+
+      For example:
+      Whitelist:
+        [["std", "move"], ["folly", "someFunction"]]
+      Passing qualifiers:
+        ["std", "blah", "blah<int>","move"]
+        ["folly","someFunction"]
+        ["folly","someFunction<int>"]
+        ["folly<int>","someFunction"]
+      NOT passing qualifiers:
+        ["std","blah", "move", "BAD"] - we don't want std::.*::X::.* to pass
+        ["stdBAD", "move"], - it's not std namespace anymore
+        ["folly", "BAD", "someFunction"] - unlike 'std' any other namespace needs all quals equal
+        ["folly","someFunction<int>", "BAD"] - same as previous example
+  *)
+  let is_whitelisted_qual_name qual_name whitelist =
+    let qual_equal q1 q2 =
+      (* qual_name may have qualifiers with template parameters -
+         drop them to whitelist all instantiations *)
+      let no_template_name s = List.hd_exn (String.split ~on:'<' s) in
+      String.equal (no_template_name q1) (no_template_name q2) in
+    let is_std_qual = String.equal "std" in
+    let method_matches whitelisted_method =
+      match whitelisted_method with
+      | first :: rest when is_std_qual first ->
+          (* add special handling for std:: namespace to avoid problems with inconsistent
+             inline namespaces (such as __1 in libc++) *)
+          List.hd qual_name |> Option.value_map ~default:false ~f:is_std_qual
+          && List.is_prefix (List.rev qual_name) ~prefix:(List.rev rest) ~equal:qual_equal
+      | _ -> List.equal ~equal:qual_equal whitelisted_method qual_name in
+    IList.exists method_matches whitelist
+
+  (** Given REVERSED list of method qualifiers (method_name::class_name::rest_quals), return
+      whether method should be translated based on method and class whitelists *)
+  let is_whitelisted_cpp_method qual_method_rev =
+    (* method is either explictely whitelisted, or all method of a class are whitelisted *)
+    is_whitelisted_qual_name (List.rev qual_method_rev) Config.whitelisted_cpp_methods ||
+    is_whitelisted_qual_name (List.tl_exn qual_method_rev |> List.rev)
+      Config.whitelisted_cpp_classes
+
+
+
   let should_translate_decl trans_unit_ctx dec decl_trans_context =
     let info = Clang_ast_proj.get_decl_tuple dec in
     let source_range = info.Clang_ast_t.di_source_range in
     let translate_when_used = match dec with
       | Clang_ast_t.FunctionDecl (_, name_info, _, _)
       | Clang_ast_t.CXXMethodDecl (_, name_info, _, _, _) ->
-          (* named_decl_info.ni_name has name without template parameters.*)
-          (* It makes it possible to capture whole family of function instantiations*)
-          (* to be named the same *)
-          let name = Ast_utils.get_qualified_name name_info in
-          AttributesTable.is_whitelisted_cpp_method name
+          is_whitelisted_cpp_method name_info.Clang_ast_t.ni_qual_name
       | _ -> false in
     let translate_location =
       CLocation.should_translate_lib trans_unit_ctx source_range decl_trans_context

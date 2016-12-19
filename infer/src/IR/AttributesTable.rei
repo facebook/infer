@@ -37,8 +37,6 @@ let pname_is_under_project_root: Procname.t => bool;
    include file. */
 let find_file_capturing_procedure: Procname.t => option (SourceFile.t, [ | `Include | `Source]);
 
-let is_whitelisted_cpp_method: string => bool;
-
 type t;
 
 let stats: unit => t;

@@ -143,18 +143,6 @@ let pname_is_under_project_root callee_pname =>
   | None => false
   };
 
-let is_whitelisted_cpp_method method_name =>
-  IList.exists
-    (
-      fun whitelisting_class =>
-        IList.for_all
-          (
-            fun whitelisting_class_substring =>
-              String.is_substring substring::whitelisting_class_substring method_name
-          )
-          whitelisting_class
-    )
-    Config.whitelisted_cpp_methods;
 
 type t = {
   num_bindings: int,

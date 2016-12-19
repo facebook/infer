@@ -203,8 +203,11 @@ let whitelisted_cpp_methods = [
   ["std"; "forward"];
   ["std"; "min"];
   ["std"; "max"];
-  ["std"; "__less"];
   ["google"; "CheckNotNull"];
+]
+
+let whitelisted_cpp_classes = [
+  ["std"; "__less"];
 ]
 
 
