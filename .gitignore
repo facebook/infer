@@ -18,8 +18,7 @@
 /infer/_build
 /infer/tests/codetoanalyze/java/*/codetoanalyze
 _build_infer
-*.exp.test
-*.exp.test.*
+*.exp.test*
 *.test.dot
 duplicates.txt
 *.ast.sh

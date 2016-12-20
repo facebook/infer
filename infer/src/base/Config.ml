@@ -26,6 +26,9 @@ let string_to_analyzer =
    ("tracing", Tracing); ("crashcontext", Crashcontext); ("linters", Linters);
    ("quandary", Quandary); ("threadsafety", Threadsafety)]
 
+let string_of_analyzer a =
+  IList.find (fun (_, a') -> a = a') string_to_analyzer |> fst
+
 let clang_frontend_action_symbols = [
   ("lint", `Lint);
   ("capture", `Capture);

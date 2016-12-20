@@ -209,7 +209,10 @@ let capture build_cmd = function
           "--out" :: Config.results_dir ::
           (match Config.xcode_developer_dir with None -> [] | Some d ->
               ["--xcode-developer-dir"; d]) @
-          ("--" :: build_cmd)
+          "--" ::
+          if in_buck_mode && Config.flavors then
+            Buck.add_flavors_to_buck_command build_cmd
+          else build_cmd
         ) in
       run_command ~prog:infer_py ~args
         (fun status ->

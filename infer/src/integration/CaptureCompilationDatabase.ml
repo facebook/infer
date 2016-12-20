@@ -29,11 +29,8 @@ let should_capture_file_from_index () =
 
 (** The buck targets are assumed to start with //, aliases are not supported. *)
 let check_args_for_targets args =
-  if not (IList.exists (String.is_prefix ~prefix:"//") args) then
-    let args_s = String.concat ~sep:" " args in
-    Process.print_error_and_exit
-      "Error reading buck command %s. Please, pass buck targets, aliases are not allowed.\n%!"
-      args_s
+  if not (IList.exists Buck.is_target_string args) then
+    Buck.no_targets_found_error_and_exit args
 
 let add_flavor_to_targets args =
   let flavor =

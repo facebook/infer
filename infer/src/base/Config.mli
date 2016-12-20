@@ -21,6 +21,7 @@ type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
 (** Association list of analyzers and their names *)
 val string_to_analyzer : (string * analyzer) list
 
+val string_of_analyzer : analyzer -> string
 
 type language = Clang | Java [@@deriving compare]
 
