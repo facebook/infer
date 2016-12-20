@@ -12,69 +12,38 @@ open! IStd
 module F = Format
 module L = Logging
 
-module JavaSource = struct
 
-  module Kind = struct
-    type t =
-      | PrivateData (** private user or device-specific data *)
-      | Footprint of AccessPath.t (** source that was read from the environment. *)
-      | Intent
-      | Other (** for testing or uncategorized sources *)
-    [@@deriving compare]
 
-    let pp fmt = function
-      | Intent -> F.fprintf fmt "Intent"
-      | PrivateData -> F.fprintf fmt "PrivateData"
-      | Footprint ap -> F.fprintf fmt "Footprint[%a]" AccessPath.pp ap
-      | Other -> F.fprintf fmt "Other"
-  end
-
+module Kind = struct
   type t =
-    {
-      kind : Kind.t;
-      site : CallSite.t;
-    } [@@deriving compare]
+    | PrivateData (** private user or device-specific data *)
+    | Intent
+    | Other (** for testing or uncategorized sources *)
+    | Unknown
+  [@@deriving compare]
 
-  let is_footprint t = match t.kind with
-    | Kind.Footprint _ -> true
-    | _ -> false
+  let unknown = Unknown
 
-  let get_footprint_access_path t = match t.kind with
-    | Kind.Footprint access_path -> Some access_path
-    | _ -> None
-
-  let call_site t =
-    t.site
-
-  let kind t =
-    t.kind
-
-  let make kind site =
-    { site; kind; }
-
-  let make_footprint ap site =
-    { kind = Kind.Footprint ap; site; }
-
-  let get site = match CallSite.pname site with
+  let get = function
     | Procname.Java pname ->
         begin
           match Procname.java_get_class_name pname, Procname.java_get_method pname with
           | "android.content.Intent", ("getStringExtra" | "parseUri" | "parseIntent") ->
-              Some (make Intent site)
+              Some Intent
           | "android.content.SharedPreferences", "getString" ->
-              Some (make PrivateData site)
+              Some PrivateData
           | "android.location.Location",
             ("getAltitude" | "getBearing" | "getLatitude" | "getLongitude" | "getSpeed") ->
-              Some (make PrivateData site)
+              Some PrivateData
           | "android.telephony.TelephonyManager",
             ("getDeviceId" |
              "getLine1Number" |
              "getSimSerialNumber" |
              "getSubscriberId" |
              "getVoiceMailNumber") ->
-              Some (make PrivateData site)
+              Some PrivateData
           | "com.facebook.infer.builtins.InferTaint", "inferSecretSource" ->
-              Some (make Other site)
+              Some Other
           | _ ->
               None
         end
@@ -84,15 +53,14 @@ module JavaSource = struct
   let get_tainted_formals pdesc =
     let make_untainted (name, typ) =
       name, typ, None in
-    let taint_formals_with_types type_strs kind pdesc formals =
+    let taint_formals_with_types type_strs kind formals =
       let taint_formal_with_types ((formal_name, formal_typ) as formal) =
         let matches_classname typ typ_str = match typ with
           | Typ.Tptr (Tstruct typename, _) -> Typename.name typename = typ_str
           | _ -> false in
         if IList.mem matches_classname formal_typ type_strs
         then
-          let site = CallSite.make (Procdesc.get_proc_name pdesc) (Procdesc.get_loc pdesc) in
-          formal_name, formal_typ, Some (make kind site)
+          formal_name, formal_typ, Some kind
         else
           make_untainted formal in
       IList.map taint_formal_with_types formals in
@@ -106,28 +74,23 @@ module JavaSource = struct
               taint_formals_with_types
                 ["java.lang.Integer"; "java.lang.String"]
                 Other
-                pdesc
                 formals
           | _ ->
-              IList.map make_untainted formals
+              Source.all_formals_untainted pdesc
         end
     | procname ->
         failwithf
           "Non-Java procedure %a where only Java procedures are expected"
           Procname.pp procname
 
-  let with_callsite t callee_site =
-    { t with site = callee_site; }
-
-  let pp fmt s =
-    F.fprintf fmt "%a(%a)" Kind.pp s.kind CallSite.pp s.site
-
-  module Set = PrettyPrintable.MakePPSet(struct
-      type nonrec t = t
-      let compare = compare
-      let pp_element = pp
-    end)
+  let pp fmt = function
+    | Intent -> F.fprintf fmt "Intent"
+    | PrivateData -> F.fprintf fmt "PrivateData"
+    | Other -> F.fprintf fmt "Other"
+    | Unknown -> F.fprintf fmt "Unknown"
 end
+
+module JavaSource = Source.Make(Kind)
 
 module JavaSink = struct
 
@@ -244,10 +207,10 @@ include
 
     let should_report source sink =
       match Source.kind source, Sink.kind sink with
-      | Source.Kind.Other, Sink.Kind.Other
-      | Source.Kind.PrivateData, Sink.Kind.Logging ->
+      | Kind.Other, Sink.Kind.Other
+      | Kind.PrivateData, Sink.Kind.Logging ->
           true
-      | Source.Kind.Intent, Sink.Kind.Intent ->
+      | Kind.Intent, Sink.Kind.Intent ->
           true
       | _ ->
           false

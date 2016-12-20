@@ -9,6 +9,25 @@
 
 open! IStd
 
+module F = Format
+
+let all_formals_untainted pdesc =
+  let make_untainted (name, typ) =
+    name, typ, None in
+  IList.map make_untainted (Procdesc.get_formals pdesc)
+
+module type Kind = sig
+  include TraceElem.Kind
+
+  val unknown : t
+
+  val get : Procname.t -> t option
+
+  (** return each formal of the function paired with either Some(kind) if the formal is a taint
+      source, or None if the formal is not a taint source *)
+  val get_tainted_formals : Procdesc.t -> (Mangled.t * Typ.t * t option) list
+end
+
 module type S = sig
   include TraceElem.S
 
@@ -21,6 +40,69 @@ module type S = sig
   val get : CallSite.t -> t option
 
   val get_tainted_formals : Procdesc.t -> (Mangled.t * Typ.t * t option) list
+end
+
+module Make (Kind : Kind) = struct
+  module Kind = Kind
+
+  type kind =
+    | Normal of Kind.t (** known source returned directly or transitively from a callee *)
+    | Footprint of AccessPath.t (** unknown source read from the environment *)
+  [@@ deriving compare]
+
+  let pp_kind fmt = function
+    | Normal kind -> Kind.pp fmt kind
+    | Footprint ap -> F.fprintf fmt "Footprint(%a)" AccessPath.pp ap
+
+  type t =
+    {
+      kind : kind;
+      site : CallSite.t;
+    } [@@deriving compare]
+
+  let is_footprint t = match t.kind with
+    | Footprint _ -> true
+    | _ -> false
+
+  let get_footprint_access_path t = match t.kind with
+    | Footprint ap -> Some ap
+    | _ -> None
+
+  let call_site t =
+    t.site
+
+  let kind t = match t.kind with
+    | Normal kind -> kind
+    | Footprint _ -> Kind.unknown
+
+  let make kind site =
+    { site; kind = Normal kind; }
+
+  let make_footprint ap site =
+    let kind = Footprint ap in
+    { site; kind; }
+
+  let get site = match Kind.get (CallSite.pname site) with
+    | Some kind -> Some (make kind site)
+    | None -> None
+
+  let get_tainted_formals pdesc =
+    let site = CallSite.make (Procdesc.get_proc_name pdesc) (Procdesc.get_loc pdesc) in
+    IList.map
+      (fun (name, typ, kind_opt) -> name, typ, Option.map kind_opt ~f:(fun kind -> make kind site))
+      (Kind.get_tainted_formals pdesc)
+
+  let with_callsite t callee_site =
+    { t with site = callee_site; }
+
+  let pp fmt s =
+    F.fprintf fmt "%a(%a)" pp_kind s.kind CallSite.pp s.site
+
+  module Set = PrettyPrintable.MakePPSet(struct
+      type nonrec t = t
+      let compare = compare
+      let pp_element = pp
+    end)
 end
 
 module Dummy = struct

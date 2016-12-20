@@ -17,6 +17,10 @@ module MockTraceElem = struct
     | Kind1
     | Kind2
     | Footprint
+    | Unknown
+  [@@deriving compare]
+
+  let unknown = Unknown
 
   let call_site _ = CallSite.dummy
 
@@ -24,23 +28,11 @@ module MockTraceElem = struct
 
   let make kind _ = kind
 
-  let compare t1 t2 =
-    match t1, t2 with
-    | Kind1, Kind1 -> 0
-    | Kind1, _ -> (-1)
-    | _, Kind1 -> 1
-    | Kind2, Kind2 -> 0
-    | Kind2, _ -> (-1)
-    | _, Kind2 -> 1
-    | Footprint, Footprint -> 0
-
-  let equal t1 t2 =
-    compare t1 t2 = 0
-
   let pp fmt = function
     | Kind1 -> F.fprintf fmt "Kind1"
     | Kind2 -> F.fprintf fmt "Kind2"
     | Footprint -> F.fprintf fmt "Footprint"
+    | Unknown -> F.fprintf fmt "Unknown"
 
   module Kind = struct
     type nonrec t = t
@@ -58,25 +50,23 @@ module MockTraceElem = struct
 end
 
 module MockSource = struct
-  include MockTraceElem
+  include
+    (Source.Make(struct
+       include MockTraceElem
 
-  let make = MockTraceElem.make
+       let get _ = assert false
+       let get_tainted_formals _ = assert false
+     end))
 
-  let is_footprint kind =
-    kind = Footprint
-
-  let make_footprint _ _ = Footprint
-
-  let get _ = assert false
-  let get_tainted_formals _ = []
-  let get_footprint_access_path _ = assert false
+  let equal source1 source2 = compare source1 source2 = 0
 end
 
 module MockSink = struct
   include MockTraceElem
 
-
   let get _ = assert false
+
+  let equal sink1 sink2 = compare sink1 sink2 = 0
 end
 
 
@@ -120,7 +110,8 @@ let tests =
   let append =
     let append_ _ =
       let call_site = CallSite.dummy in
-      let footprint_source = MockSource.make_footprint MockTraceElem.Kind1 call_site in
+      let footprint_ap = AccessPath.Exact (AccessPath.of_id (Ident.create_none ()) Typ.Tvoid) in
+      let footprint_source = MockSource.make_footprint footprint_ap call_site in
       let source_trace =
         MockTrace.of_source source1 in
       let footprint_trace =

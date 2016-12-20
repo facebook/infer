@@ -12,54 +12,17 @@ open! IStd
 module F = Format
 module L = Logging
 
-module CppSource = struct
 
-  module Kind = struct
-    type t =
-      | Footprint of AccessPath.t (** source that was read from the environment. *)
-      | EnvironmentVariable (** source that was read from an environment variable *)
-      | Other (** for testing or uncategorized sources *)
-    [@@deriving compare]
-
-    let equal sk1 sk2 =
-      compare sk1 sk2 = 0
-
-    let pp fmt = function
-      | Footprint ap -> F.fprintf fmt "Footprint[%a]" AccessPath.pp ap
-      | EnvironmentVariable -> F.fprintf fmt "EnvironmentVariable"
-      | Other -> F.fprintf fmt "Other"
-  end
-
+module Kind = struct
   type t =
-    {
-      kind : Kind.t;
-      site : CallSite.t;
-    } [@@deriving compare]
+    | EnvironmentVariable (** source that was read from an environment variable *)
+    | Other (** for testing or uncategorized sources *)
+    | Unknown
+  [@@deriving compare]
 
-  let equal t1 t2 =
-    compare t1 t2 = 0
+  let unknown = Unknown
 
-  let is_footprint t = match t.kind with
-    | Kind.Footprint _ -> true
-    | _ -> false
-
-  let get_footprint_access_path t = match t.kind with
-    | Kind.Footprint access_path -> Some access_path
-    | _ -> None
-
-  let call_site t =
-    t.site
-
-  let kind t =
-    t.kind
-
-  let make kind site =
-    { site; kind; }
-
-  let make_footprint ap site =
-    { kind = Kind.Footprint ap; site; }
-
-  let get site = match CallSite.pname site with
+  let get = function
     | (Procname.ObjC_Cpp cpp_pname) as pname ->
         begin
           match Procname.objc_cpp_get_class_name cpp_pname, Procname.get_method pname with
@@ -67,11 +30,11 @@ module CppSource = struct
           | "Namespace here", "method name here" -> None
           | _ -> None
         end
-    | (C _) as pname ->
+    | (Procname.C _) as pname ->
         begin
           match Procname.to_string pname with
-          | "getenv" -> Some (make EnvironmentVariable site)
-          | "__infer_taint_source" -> Some (make Other site)
+          | "getenv" -> Some EnvironmentVariable
+          | "__infer_taint_source" -> Some Other
           | _ -> None
         end
     | pname when BuiltinDecl.is_declared pname ->
@@ -80,20 +43,15 @@ module CppSource = struct
         failwithf "Non-C++ procname %a in C++ analysis@." Procname.pp pname
 
   let get_tainted_formals pdesc =
-    IList.map (fun (name, typ) -> name, typ, None) (Procdesc.get_formals pdesc)
+    Source.all_formals_untainted pdesc
 
-  let with_callsite t callee_site =
-    { t with site = callee_site; }
-
-  let pp fmt s =
-    F.fprintf fmt "%a(%a)" Kind.pp s.kind CallSite.pp s.site
-
-  module Set = PrettyPrintable.MakePPSet(struct
-      type nonrec t = t
-      let compare = compare
-      let pp_element = pp
-    end)
+  let pp fmt = function
+    | EnvironmentVariable -> F.fprintf fmt "EnvironmentVariable"
+    | Other -> F.fprintf fmt "Other"
+    | Unknown -> F.fprintf fmt "Unknown"
 end
+
+module CppSource = Source.Make(Kind)
 
 module CppSink = struct
 
@@ -177,9 +135,9 @@ include
 
     let should_report source sink =
       match Source.kind source, Sink.kind sink with
-      | Source.Kind.EnvironmentVariable, Sink.Kind.ShellExec ->
+      | Kind.EnvironmentVariable, Sink.Kind.ShellExec ->
           true
-      | Source.Kind.Other, Sink.Kind.Other ->
+      | Kind.Other, Sink.Kind.Other ->
           true
       | _ ->
           false

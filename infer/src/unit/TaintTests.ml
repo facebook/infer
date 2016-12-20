@@ -34,22 +34,21 @@ module MockTrace = Trace.Make(struct
           let compare = compare
           let pp_element = pp
         end)
-
     end
 
-    module Source = struct
-      include MockTraceElem
+    module Source = Source.Make(struct
+        include MockTraceElem
 
-      let get site =
-        if String.is_prefix ~prefix:"SOURCE" (Procname.to_string (CallSite.pname site))
-        then Some site
-        else None
+        let unknown = CallSite.dummy
 
-      let get_tainted_formals _ = assert false
-      let is_footprint _ = false
-      let make_footprint _ = assert false
-      let get_footprint_access_path _ = assert false
-    end
+        let get pname =
+          if String.is_prefix ~prefix:"SOURCE" (Procname.to_string pname)
+          then Some (CallSite.make pname Location.dummy)
+          else None
+
+        let get_tainted_formals _ =
+          []
+      end)
 
     module Sink = struct
       include MockTraceElem

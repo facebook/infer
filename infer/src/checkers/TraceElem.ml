@@ -18,7 +18,7 @@ module type Kind = sig
 end
 
 module type S = sig
-  type t
+  type t [@@deriving compare]
 
   module Kind : Kind
 
