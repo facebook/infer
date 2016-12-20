@@ -215,6 +215,11 @@ let whitelisted_cpp_classes = [
   ["std"; "__normal_iterator"]; (* libstdc++ internal name of vector iterator *)
 ]
 
+type dynamic_dispatch_policy = [
+  | `Lazy
+  | `Sound
+  | `None
+]
 
 (** Compile time configuration values *)
 

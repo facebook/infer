@@ -1478,11 +1478,15 @@ let do_analysis exe_env =
     let analyze_ondemand source proc_desc =
       let proc_name = Procdesc.get_proc_name proc_desc in
       let tenv = Exe_env.get_tenv exe_env proc_name in
-      if not (Config.eradicate || Config.checkers)
+      if not (Config.eradicate || Config.checkers) && not (Procdesc.did_preanalysis proc_desc)
       then
         (* Eradicate and the checkers don't need the Nullify/Remove_temps/Abstract instructions that
            the preanalysis inserts. *)
-        Preanal.doit proc_desc (Exe_env.get_cg exe_env) tenv;
+        begin
+          Preanal.do_liveness proc_desc tenv;
+          Preanal.do_abstraction proc_desc;
+          Preanal.do_dynamic_dispatch proc_desc (Exe_env.get_cg exe_env) tenv `None
+        end;
       let summaryfp =
         Config.run_in_footprint_mode (analyze_proc source exe_env) proc_desc in
       Specs.add_summary proc_name summaryfp;

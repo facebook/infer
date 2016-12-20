@@ -517,7 +517,12 @@ module Make (TaintSpecification : TaintSpec.S) = struct
   let checker callback =
 
     let compute_post (proc_data : formal_map ProcData.t) =
-      Preanal.doit ~handle_dynamic_dispatch:true proc_data.pdesc (Cg.create None) proc_data.tenv;
+      if not (Procdesc.did_preanalysis proc_data.pdesc)
+      then
+        begin
+          Preanal.do_liveness proc_data.pdesc proc_data.tenv;
+          Preanal.do_dynamic_dispatch proc_data.pdesc (Cg.create None) proc_data.tenv `Sound;
+        end;
       match Analyzer.compute_post proc_data with
       | Some { access_tree; } ->
           Some (make_summary proc_data.extras access_tree)

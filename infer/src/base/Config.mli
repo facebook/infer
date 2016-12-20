@@ -35,6 +35,11 @@ val ml_bucket_symbols :
 
 type os_type = Unix | Win32 | Cygwin
 
+type dynamic_dispatch_policy = [
+  | `Lazy
+  | `Sound
+  | `None
+]
 
 (** Constant configuration values *)
 

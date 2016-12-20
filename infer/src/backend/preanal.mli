@@ -10,7 +10,15 @@
 
 open! IStd
 
-(** Preanalysis for eliminating dead local variables *)
+(** Various preanalysis passes for transforming the IR in useful ways *)
 
-(** Perform liveness analysis *)
-val doit : ?handle_dynamic_dispatch:bool -> Procdesc.t -> Cg.t -> Tenv.t -> unit
+(** perform liveness analysis and insert Nullify/Remove_temps instructions into the IR to make it
+    easy for analyses to do abstract garbage collection *)
+val do_liveness : Procdesc.t -> Tenv.t -> unit
+
+(** add Abstract instructions into the IR to give hints about when abstraction should be
+    performed *)
+val do_abstraction : Procdesc.t -> unit
+
+(** add possible dynamic dispatch targets to the call_flags of each call site *)
+val do_dynamic_dispatch : Procdesc.t -> Cg.t -> Tenv.t -> Config.dynamic_dispatch_policy -> unit
