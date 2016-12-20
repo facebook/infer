@@ -54,7 +54,8 @@ val get_annotated_signature : ProcAttributes.t -> annotated_signature
 
 val nullable : string
 
-(** Return true if [annot] ends with [ann_name] *)
+(** [annot_ends_with annot ann_name] returns true if the class name of [annot], without the package,
+    is equal to [ann_name] *)
 val annot_ends_with : Annot.t -> string -> bool
 
 (** Check if there is an annotation in [ia] which ends with the given name *)

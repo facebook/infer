@@ -48,7 +48,8 @@ let ia_has_annotation_with
     ia;
   !found
 
-(** Return true if [annot] ends with [ann_name], ignoring the package name *)
+(** [annot_ends_with annot ann_name] returns true if the class name of [annot], without the package,
+    is equal to [ann_name] *)
 let annot_ends_with annot ann_name =
   match String.rsplit2 annot.Annot.class_name ~on:'.' with
   | None -> String.equal annot.Annot.class_name ann_name
