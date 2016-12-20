@@ -81,6 +81,41 @@ module JavaSource = struct
     | pname when BuiltinDecl.is_declared pname -> None
     | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
 
+  let get_tainted_formals pdesc =
+    let make_untainted (name, typ) =
+      name, typ, None in
+    let taint_formals_with_types type_strs kind pdesc formals =
+      let taint_formal_with_types ((formal_name, formal_typ) as formal) =
+        let matches_classname typ typ_str = match typ with
+          | Typ.Tptr (Tstruct typename, _) -> Typename.name typename = typ_str
+          | _ -> false in
+        if IList.mem matches_classname formal_typ type_strs
+        then
+          let site = CallSite.make (Procdesc.get_proc_name pdesc) (Procdesc.get_loc pdesc) in
+          formal_name, formal_typ, Some (make kind site)
+        else
+          make_untainted formal in
+      IList.map taint_formal_with_types formals in
+
+    let formals = Procdesc.get_formals pdesc in
+    match Procdesc.get_proc_name pdesc with
+    | Procname.Java java_pname ->
+        begin
+          match Procname.java_get_class_name java_pname, Procname.java_get_method java_pname with
+          | "codetoanalyze.java.quandary.TaintedFormals", "taintedContextBad" ->
+              taint_formals_with_types
+                ["java.lang.Integer"; "java.lang.String"]
+                Other
+                pdesc
+                formals
+          | _ ->
+              IList.map make_untainted formals
+        end
+    | procname ->
+        failwithf
+          "Non-Java procedure %a where only Java procedures are expected"
+          Procname.pp procname
+
   let with_callsite t callee_site =
     { t with site = callee_site; }
 

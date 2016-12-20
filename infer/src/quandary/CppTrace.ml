@@ -79,6 +79,9 @@ module CppSource = struct
     | pname ->
         failwithf "Non-C++ procname %a in C++ analysis@." Procname.pp pname
 
+  let get_tainted_formals pdesc =
+    IList.map (fun (name, typ) -> name, typ, None) (Procdesc.get_formals pdesc)
+
   let with_callsite t callee_site =
     { t with site = callee_site; }
 

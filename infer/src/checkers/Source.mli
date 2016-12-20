@@ -18,8 +18,12 @@ module type S = sig
 
   val get_footprint_access_path: t -> AccessPath.t option
 
-  (** return Some (kind) if the call site is a taint source, None otherwise *)
+  (** return Some (source) if the call site is a taint source, None otherwise *)
   val get : CallSite.t -> t option
+
+  (** return each formal of the function paired with either Some(source) if the formal is a taint
+      source, or None if the formal is not a taint source *)
+  val get_tainted_formals : Procdesc.t -> (Mangled.t * Typ.t * t option) list
 end
 
 module Dummy : S with type t = unit

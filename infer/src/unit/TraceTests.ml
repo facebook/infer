@@ -68,6 +68,7 @@ module MockSource = struct
   let make_footprint _ _ = Footprint
 
   let get _ = assert false
+  let get_tainted_formals _ = []
   let get_footprint_access_path _ = assert false
 end
 

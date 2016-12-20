@@ -18,8 +18,9 @@ module type S = sig
 
   val get_footprint_access_path: t -> AccessPath.t option
 
-  (** return Some (kind) if the call site is a taint source, None otherwise *)
   val get : CallSite.t -> t option
+
+  val get_tainted_formals : Procdesc.t -> (Mangled.t * Typ.t * t option) list
 end
 
 module Dummy = struct
@@ -37,7 +38,11 @@ module Dummy = struct
 
   let make_footprint _ _ = assert false
   let get_footprint_access_path _ = assert false
+
   let get _ = None
+
+  let get_tainted_formals pdesc =
+    IList.map (fun (name, typ) -> name, typ, None) (Procdesc.get_formals pdesc)
 
   module Kind = struct
     type nonrec t = t
