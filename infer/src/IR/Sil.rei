@@ -176,13 +176,11 @@ let inst_partial_join: inst => inst => inst;
 /** meet of instrumentations */
 let inst_partial_meet: inst => inst => inst;
 
-type _inst = inst;
-
 
 /** structured expressions represent a value of structured type, such as an array or a struct. */
 type strexp0 'inst =
   | Eexp Exp.t 'inst /** Base case: expression with instrumentation */
-  | Estruct (list (Ident.fieldname, strexp0 _inst)) 'inst /** C structure */
+  | Estruct (list (Ident.fieldname, strexp0 'inst)) 'inst /** C structure */
   /** Array of given length
       There are two conditions imposed / used in the array case.
       First, if some index and value pair appears inside an array
@@ -190,7 +188,7 @@ type strexp0 'inst =
       For instance, x |->[10 | e1: v1] implies that e1 <= 9.
       Second, if two indices appear in an array, they should be different.
       For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. */
-  | Earray Exp.t (list (Exp.t, strexp0 _inst)) 'inst
+  | Earray Exp.t (list (Exp.t, strexp0 'inst)) 'inst
 [@@deriving compare];
 
 type strexp = strexp0 inst;

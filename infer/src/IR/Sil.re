@@ -131,16 +131,11 @@ type inst =
   | Ireturn_from_call int
 [@@deriving compare];
 
-/* some occurrences of inst are always ignored by compare */
-type _inst = inst;
-
-let compare__inst _ _ => 0;
-
 
 /** structured expressions represent a value of structured type, such as an array or a struct. */
 type strexp0 'inst =
   | Eexp Exp.t 'inst /** Base case: expression with instrumentation */
-  | Estruct (list (Ident.fieldname, strexp0 _inst)) 'inst /** C structure */
+  | Estruct (list (Ident.fieldname, strexp0 'inst)) 'inst /** C structure */
   /** Array of given length
       There are two conditions imposed / used in the array case.
       First, if some index and value pair appears inside an array
@@ -148,13 +143,13 @@ type strexp0 'inst =
       For instance, x |->[10 | e1: v1] implies that e1 <= 9.
       Second, if two indices appear in an array, they should be different.
       For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. */
-  | Earray Exp.t (list (Exp.t, strexp0 _inst)) 'inst
+  | Earray Exp.t (list (Exp.t, strexp0 'inst)) 'inst
 [@@deriving compare];
 
 type strexp = strexp0 inst;
 
 let compare_strexp inst::inst=false se1 se2 =>
-  compare_strexp0 (inst ? compare_inst : compare__inst) se1 se2;
+  compare_strexp0 (inst ? compare_inst : (fun _ _ => 0)) se1 se2;
 
 let equal_strexp inst::inst=false se1 se2 => compare_strexp inst::inst se1 se2 == 0;
 
@@ -204,32 +199,7 @@ type hpred = hpred0 inst;
 
 /** Comparsion between heap predicates. Reverse natural order, and order first by anchor exp. */
 let compare_hpred inst::inst=false hpred1 hpred2 =>
-  if (phys_equal hpred1 hpred2) {
-    0
-  } else {
-    switch (hpred1, hpred2) {
-    | (
-        Hpointsto e1 _ _ | Hlseg _ _ e1 _ _ | Hdllseg _ _ e1 _ _ _ _,
-        Hpointsto e2 _ _ | Hlseg _ _ e2 _ _ | Hdllseg _ _ e2 _ _ _ _
-      )
-        when Exp.compare e2 e1 != 0 =>
-      Exp.compare e2 e1
-    | (Hpointsto _, Hpointsto _)
-    | (Hlseg _, Hlseg _)
-    | (Hdllseg _, Hdllseg _) =>
-      if inst {
-        compare_hpred0 compare_inst hpred2 hpred1
-      } else {
-        compare_hpred0 (fun _ _ => 0) hpred2 hpred1
-      }
-    | _ =>
-      if inst {
-        compare_hpred0 compare_inst hpred1 hpred2
-      } else {
-        compare_hpred0 (fun _ _ => 0) hpred1 hpred2
-      }
-    }
-  };
+  compare_hpred0 (inst ? compare_inst : (fun _ _ => 0)) hpred1 hpred2;
 
 let equal_hpred inst::inst=false hpred1 hpred2 => compare_hpred inst::inst hpred1 hpred2 == 0;
 
