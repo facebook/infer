@@ -338,7 +338,7 @@ let store_cfg_to_file source_file::source_file (filename: DB.filename) (cfg: cfg
 
 /** clone a procedure description and apply the type substitutions where
     the parameters are used */
-let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
+let specialize_types_proc callee_pdesc resolved_pdesc resolved_formals => {
   let resolved_pname = Procdesc.get_proc_name resolved_pdesc
   and callee_start_node = Procdesc.get_start_node callee_pdesc
   and callee_exit_node = Procdesc.get_exit_node callee_pdesc;
@@ -361,7 +361,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
     | Sil.Load id (Exp.Lvar origin_pvar as origin_exp) origin_typ loc => {
         let (_, specialized_typ) = {
           let pvar_name = Pvar.get_name origin_pvar;
-          try (IList.find (fun (n, _) => Mangled.equal n pvar_name) substitutions) {
+          try (IList.find (fun (n, _) => Mangled.equal n pvar_name) resolved_formals) {
           | Not_found => (pvar_name, origin_typ)
           }
         };
@@ -468,15 +468,20 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
     all the type of the parameters are replaced in the instructions according to the list.
     The virtual calls are also replaced to match the parameter types */
 let specialize_types callee_pdesc resolved_pname args => {
-  /* TODO (#9333890): This currently only works when the callee is defined in the same file.
-     Add support to search for the callee procedure description in the execution environment */
   let callee_attributes = Procdesc.get_attributes callee_pdesc;
   let resolved_formals =
-    IList.fold_left2
-      (fun accu (name, _) (_, arg_typ) => [(name, arg_typ), ...accu])
-      []
+    IList.map2
+      (
+        fun (param_name, param_typ) (_, arg_typ) =>
+          switch arg_typ {
+          | Typ.Tptr (Tstruct _) _ =>
+            /* Replace the type of the parameter by the type of the argument */
+            (param_name, arg_typ)
+          | _ => (param_name, param_typ)
+          }
+      )
       callee_attributes.formals
-      args |> IList.rev;
+      args;
   let resolved_attributes = {
     ...callee_attributes,
     formals: resolved_formals,
