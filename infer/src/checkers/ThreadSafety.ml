@@ -220,6 +220,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | _ ->
               owned in
         { astate with Domain.reads = reads'; id_map = id_map'; owned = owned'; }
+
+    | Sil.Remove_temps (ids, _) ->
+        let id_map' =
+          IList.fold_left
+            (fun acc id -> IdAccessPathMapDomain.remove (Var.of_id id) acc)
+            astate.id_map
+            ids in
+        { astate with id_map = id_map'; }
+
     |  _  ->
         astate
 end
@@ -231,20 +240,6 @@ module Analyzer =
     (TransferFunctions)
 
 module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
-
-(* convert the abstract state to a summary by dropping the id map *)
-let compute_post pdesc =
-  match Analyzer.compute_post pdesc with
-  | Some { locks; reads; writes; } -> Some (locks, reads, writes)
-  | None -> None
-
-(*This is a "checker"*)
-let method_analysis callback =
-  Interprocedural.compute_and_store_post
-    ~compute_post
-    ~make_extras:ProcData.make_empty_extras
-    callback
-  |> ignore
 
 (* a results table is a Map where a key is an a procedure environment,
    i.e., something of type Idenv.t * Tenv.t * Procname.t * Procdesc.t
@@ -259,6 +254,8 @@ let should_report_on_proc (_,tenv,proc_name,proc_desc) =
   not (Procname.java_is_autogen_method proc_name) &&
   Procdesc.get_access proc_desc <> PredSymb.Private
 
+let dummy_cg = Cg.create None
+
 (* creates a map from proc_envs to postconditions *)
 let make_results_table get_proc_desc file_env =
   (* make a Map sending each element e of list l to (f e) *)
@@ -268,6 +265,12 @@ let make_results_table get_proc_desc file_env =
   in
   let compute_post_for_procedure = (* takes proc_env as arg *)
     fun (idenv, tenv, proc_name, proc_desc) ->
+      (* convert the abstract state to a summary by dropping the id map *)
+      let compute_post ({ ProcData.pdesc; tenv; } as proc_data) =
+        if not (Procdesc.did_preanalysis pdesc) then Preanal.do_liveness pdesc tenv;
+        match Analyzer.compute_post proc_data with
+        | Some { locks; reads; writes; } -> Some (locks, reads, writes)
+        | None -> None in
       let callback_arg =
         {Callbacks.get_proc_desc; get_procs_in_file = (fun _ -> []);
          idenv; tenv; proc_name; proc_desc} in

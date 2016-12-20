@@ -39,7 +39,6 @@ let active_procedure_checkers () =
         RepeatedCallsChecker.callback_check_repeated_calls, checkers_enabled;
         PrintfArgs.callback_printf_args, checkers_enabled;
         AnnotationReachability.Interprocedural.check_and_report, checkers_enabled;
-        ThreadSafety.method_analysis, false;
       ] in
     (* make sure SimpleChecker.ml is not dead code *)
     if false then (let module SC = SimpleChecker.Make in ());
