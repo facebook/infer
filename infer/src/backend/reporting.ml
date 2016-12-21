@@ -63,7 +63,12 @@ let log_issue
   | Some summary ->
       let err_log = summary.Specs.attributes.ProcAttributes.err_log in
       log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr exn
-  | None -> ()
+  | None ->
+      failwithf
+        "Trying to report error on procedure %a, but cannot because no summary exists for this \
+         procedure. Did you mean to log the error on the caller of %a instead?"
+        Procname.pp proc_name
+        Procname.pp proc_name
 
 let log_error = log_issue Exceptions.Kerror
 let log_warning = log_issue Exceptions.Kwarning
