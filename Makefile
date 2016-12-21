@@ -142,6 +142,10 @@ direct_tests: $(DIRECT_TESTS:%=direct_%_test)
 build_genrule_test: build_buck_test
 build_genrule_print: build_buck_print
 
+# the waf test and the make test run the same `make` command
+build_waf_test: build_make_test
+build_waf_print: build_make_print
+
 .PHONY: print_direct_tests
 print_direct_tests: $(DIRECT_TESTS:%=direct_%_print)
 

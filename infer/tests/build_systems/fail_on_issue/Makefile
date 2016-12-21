@@ -22,6 +22,9 @@ ROOT_DIR = $(TESTS_DIR)/../..
 
 include $(ROOT_DIR)/Makefile.config
 
+# see base.make
+TEST_REL_DIR = $(patsubst $(abspath $(TESTS_DIR))/%,%,$(abspath $(CURDIR)))
+
 default: compile
 
 issues.exp.test: $(CLANG_DEPS) $(SOURCES)
@@ -37,7 +40,8 @@ print: issues.exp.test
 
 .PHONY: test
 test: issues.exp.test
-	diff -u issues.exp issues.exp.test
+	@cd $(TESTS_DIR) && \
+	diff -u $(TEST_REL_DIR)/issues.exp $(TEST_REL_DIR)/issues.exp.test
 
 .PHONY: clean
 clean:

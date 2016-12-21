@@ -15,6 +15,9 @@ ROOT_DIR = $(TESTS_DIR)/../..
 include $(TESTS_DIR)/java.make
 include $(ROOT_DIR)/Makefile.config
 
+# see base.make
+TEST_REL_DIR = $(patsubst $(abspath $(TESTS_DIR))/%,%,$(abspath $(CURDIR)))
+
 UTF8_DIR = $(shell printf '../codetoanalyze/utf8_\u03B9n_pwd')
 
 CMAKE_DIR = $(UTF8_DIR)/cmake
@@ -102,7 +105,8 @@ print: issues.exp.test
 
 .PHONY: test
 test: issues.exp.test
-	diff -u issues.exp issues.exp.test
+	@cd $(TESTS_DIR) && \
+	diff -u $(TEST_REL_DIR)/issues.exp $(TEST_REL_DIR)/issues.exp.test
 
 .PHONY: clean
 clean:
