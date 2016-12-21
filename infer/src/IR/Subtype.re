@@ -54,15 +54,18 @@ type kind =
 
 type t = (t', kind) [@@deriving compare];
 
-let module SubtypesPair = {
-  type t = (Typename.t, Typename.t) [@@deriving compare];
-};
+type result =
+  | No
+  | Unknown
+  | Yes
+[@@deriving compare];
 
-let module SubtypesMap = Caml.Map.Make SubtypesPair;
-
-type subtMap = SubtypesMap.t bool;
-
-let subtMap: ref subtMap = ref SubtypesMap.empty;
+let max_result res1 res2 =>
+  if (compare_result res1 res2 <= 0) {
+    res2
+  } else {
+    res1
+  };
 
 let is_interface tenv (class_name: Typename.t) =>
   switch (class_name, Tenv.lookup tenv class_name) {
@@ -80,25 +83,55 @@ let is_root_class class_name =>
 
 
 /** check if c1 is a subclass of c2 */
-let check_subclass_tenv tenv c1 c2 => {
-  let rec check (cn: Typename.t) =>
-    Typename.equal cn c2 ||
-    is_root_class c2 || (
-      switch (cn, Tenv.lookup tenv cn) {
-      | (TN_csu (Class _) _, Some {supers}) => IList.exists check supers
-      | _ => false
+let check_subclass_tenv tenv c1 c2 :result => {
+  let rec loop best_result classnames :result =>
+    /* Check if the name c2 is found in the list of super types and
+       keep the best results according to Yes > Unknown > No */
+    if (best_result == Yes) {
+      Yes
+    } else {
+      switch classnames {
+      | [] => best_result
+      | [cn, ...cns] => loop (max_result best_result (check cn)) cns
       }
-    );
-  check c1
+    }
+  and check cn :result =>
+    if (Typename.equal cn c2) {
+      Yes
+    } else {
+      switch (Tenv.lookup tenv cn) {
+      | None when is_root_class cn => No
+      | None => Unknown
+      | Some {supers} => loop No supers
+      }
+    };
+  if (is_root_class c2) {
+    Yes
+  } else {
+    check c1
+  }
 };
 
-let check_subtype tenv c1 c2 =>
-  try (SubtypesMap.find (c1, c2) !subtMap) {
-  | Not_found =>
-    let is_subt = check_subclass_tenv tenv c1 c2;
-    subtMap := SubtypesMap.add (c1, c2) is_subt !subtMap;
-    is_subt
-  };
+let module SubtypesMap = Caml.Map.Make {
+  /* pair of subtypes */
+  type t = (Typename.t, Typename.t) [@@deriving compare];
+};
+
+let check_subtype = {
+  let subtMap = ref SubtypesMap.empty;
+  fun tenv c1 c2 => (
+    try (SubtypesMap.find (c1, c2) !subtMap) {
+    | Not_found =>
+      let is_subt = check_subclass_tenv tenv c1 c2;
+      subtMap := SubtypesMap.add (c1, c2) is_subt !subtMap;
+      is_subt
+    }: result
+  )
+};
+
+let is_known_subtype tenv c1 c2 :bool => check_subtype tenv c1 c2 == Yes;
+
+let is_known_not_subtype tenv c1 c2 :bool => check_subtype tenv c1 c2 == No;
 
 let flag_to_string flag =>
   switch flag {
@@ -196,15 +229,9 @@ let subtypes_to_string t =>
   };
 
 /* c is a subtype when it does not appear in the list l of no-subtypes */
-let is_subtype tenv c l =>
-  try {
-    ignore (IList.find (check_subtype tenv c) l);
-    false
-  } {
-  | Not_found => true
-  };
+let no_subtype_in_list tenv c l => not (IList.exists (is_known_subtype tenv c) l);
 
-let is_strict_subtype tenv c1 c2 => check_subtype tenv c1 c2 && not (Typename.equal c1 c2);
+let is_strict_subtype tenv c1 c2 => is_known_subtype tenv c1 c2 && not (Typename.equal c1 c2);
 
 /* checks for redundancies when adding c to l
    Xi in A - { X1,..., Xn } is redundant in two cases:
@@ -213,9 +240,9 @@ let is_strict_subtype tenv c1 c2 => check_subtype tenv c1 c2 && not (Typename.eq
 let check_redundancies tenv c l => {
   let aux (l, add) ci => {
     let (l, should_add) =
-      if (check_subtype tenv ci c) {
+      if (is_known_subtype tenv ci c) {
         (l, true)
-      } else if (check_subtype tenv c ci) {
+      } else if (is_known_subtype tenv c ci) {
         ([ci, ...l], false)
       } else {
         ([ci, ...l], true)
@@ -242,7 +269,7 @@ let rec add_not_subtype tenv c1 l1 l2 =>
   switch l2 {
   | [] => l1
   | [c, ...rest] =>
-    if (check_subtype tenv c1 c) {
+    if (is_known_subtype tenv c1 c) {
       add_not_subtype tenv c1 l1 rest
     } else {
       /* checks for inconsistencies */
@@ -257,7 +284,7 @@ let rec add_not_subtype tenv c1 l1 l2 =>
   };
 
 let get_subtypes tenv (c1, (st1, flag1): t) (c2, (st2, flag2): t) => {
-  let is_sub = check_subtype tenv c1 c2;
+  let is_sub = is_known_subtype tenv c1 c2;
   let (pos_st, neg_st) =
     switch (st1, st2) {
     | (Exact, Exact) =>
@@ -267,7 +294,7 @@ let get_subtypes tenv (c1, (st1, flag1): t) (c2, (st2, flag2): t) => {
         (None, Some st1)
       }
     | (Exact, Subtypes l2) =>
-      if (is_sub && is_subtype tenv c1 l2) {
+      if (is_sub && no_subtype_in_list tenv c1 l2) {
         (Some st1, None)
       } else {
         (None, Some st1)
@@ -277,7 +304,7 @@ let get_subtypes tenv (c1, (st1, flag1): t) (c2, (st2, flag2): t) => {
         (Some st1, None)
       } else {
         let l1' = updates_head tenv c2 l1;
-        if (is_subtype tenv c2 l1) {
+        if (no_subtype_in_list tenv c2 l1) {
           (Some (Subtypes l1'), Some (Subtypes (add_not_subtype tenv c1 l1 [c2])))
         } else {
           (None, Some st1)
@@ -285,14 +312,14 @@ let get_subtypes tenv (c1, (st1, flag1): t) (c2, (st2, flag2): t) => {
       }
     | (Subtypes l1, Subtypes l2) =>
       if (is_interface tenv c2 || is_sub) {
-        if (is_subtype tenv c1 l2) {
+        if (no_subtype_in_list tenv c1 l2) {
           let l2' = updates_head tenv c1 l2;
           (Some (Subtypes (add_not_subtype tenv c1 l1 l2')), None)
         } else {
           (None, Some st1)
         }
       } else if (
-        (is_interface tenv c1 || check_subtype tenv c2 c1) && is_subtype tenv c2 l1
+        (is_interface tenv c1 || is_known_subtype tenv c2 c1) && no_subtype_in_list tenv c2 l1
       ) {
         let l1' = updates_head tenv c2 l1;
         (
@@ -308,9 +335,9 @@ let get_subtypes tenv (c1, (st1, flag1): t) (c2, (st2, flag2): t) => {
 
 let case_analysis_basic tenv (c1, st) (c2, (_, flag2)) => {
   let (pos_st, neg_st) =
-    if (check_subtype tenv c1 c2) {
+    if (is_known_subtype tenv c1 c2) {
       (Some st, None)
-    } else if (check_subtype tenv c2 c1) {
+    } else if (is_known_subtype tenv c2 c1) {
       switch st {
       | (Exact, _) =>
         if (Typename.equal c1 c2) {

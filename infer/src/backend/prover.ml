@@ -1544,7 +1544,7 @@ struct
   let rec check_subtype_java tenv (t1: Typ.t) (t2: Typ.t) =
     match t1, t2 with
     | Tstruct (TN_csu (Class Java, _) as cn1), Tstruct (TN_csu (Class Java, _) as cn2) ->
-        Subtype.check_subtype tenv cn1 cn2
+        Subtype.is_known_subtype tenv cn1 cn2
     | Tarray (dom_type1, _), Tarray (dom_type2, _) ->
         check_subtype_java tenv dom_type1 dom_type2
     | Tptr (dom_type1, _), Tptr (dom_type2, _) ->
@@ -1562,7 +1562,7 @@ struct
       check_subtype_java tenv t1 t2
     else
       match Typ.name t1, Typ.name t2 with
-      | Some cn1, Some cn2 -> Subtype.check_subtype tenv cn1 cn2
+      | Some cn1, Some cn2 -> Subtype.is_known_subtype tenv cn1 cn2
       | _ -> false
 
   let rec case_analysis_type tenv ((t1: Typ.t), st1) ((t2: Typ.t), st2) =
@@ -1580,7 +1580,7 @@ struct
       (* that get through the type system, but not in C++ because of multiple inheritance, *)
       (* and not in ObjC because of being weakly typed, *)
       (* and the algorithm will only work correctly if this is the case *)
-      when Subtype.check_subtype tenv cn1 cn2 || Subtype.check_subtype tenv cn2 cn1 ->
+      when Subtype.is_known_subtype tenv cn1 cn2 || Subtype.is_known_subtype tenv cn2 cn1 ->
         Subtype.case_analysis tenv (cn1, st1) (cn2, st2)
     | Tarray (dom_type1, _), Tarray (dom_type2, _) ->
         case_analysis_type tenv (dom_type1, st1) (dom_type2, st2)
