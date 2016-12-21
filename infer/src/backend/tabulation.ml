@@ -664,7 +664,11 @@ let prop_set_exn tenv pname prop se_exn =
 
 (** Include a subtrace for a procedure call if the callee is not a model. *)
 let include_subtrace callee_pname =
-  not (Specs.is_model callee_pname) && (AttributesTable.pname_is_under_project_root callee_pname)
+  match Specs.proc_resolve_attributes callee_pname with
+  | Some attrs ->
+      not attrs.ProcAttributes.is_model
+      && (SourceFile.is_under_project_root attrs.ProcAttributes.loc.Location.file)
+  | None -> false
 
 (** combine the spec's post with a splitting and actual precondition *)
 let combine tenv

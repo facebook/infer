@@ -291,6 +291,7 @@ let create_am_procdesc program icfg am proc_name : Procdesc.t =
         is_abstract = true;
         is_bridge_method = am.Javalib.am_bridge;
         is_defined = true;
+        is_model = Config.models_mode;
         is_synthetic_method = am.Javalib.am_synthetic;
         method_annotation;
         ret_type = JTransType.return_type program tenv ms;
@@ -320,6 +321,7 @@ let create_native_procdesc program icfg cm proc_name =
       exceptions = IList.map JBasics.cn_name cm.Javalib.cm_exceptions;
       formals;
       is_bridge_method = cm.Javalib.cm_bridge;
+      is_model = Config.models_mode;
       is_synthetic_method = cm.Javalib.cm_synthetic;
       method_annotation;
       ret_type = JTransType.return_type program tenv ms;
@@ -353,6 +355,7 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name =
           formals;
           is_bridge_method = cm.Javalib.cm_bridge;
           is_defined = true;
+          is_model = Config.models_mode;
           is_synthetic_method = cm.Javalib.cm_synthetic;
           is_java_synchronized_method = cm.Javalib.cm_synchronized;
           loc = loc_start;

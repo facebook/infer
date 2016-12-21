@@ -28,10 +28,6 @@ let load_defined_attributes: cache_none::bool => Procname.t => option ProcAttrib
     corresponds to the class definition. */
 let get_correct_type_from_objc_class_name: Typename.t => option Typ.t;
 
-
-/** Returns true if the method is defined under project root */
-let pname_is_under_project_root: Procname.t => bool;
-
 /* Find the file where the procedure was captured, if a cfg for that file exists.
    Return also a boolean indicating whether the procedure is defined in an
    include file. */
