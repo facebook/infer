@@ -37,8 +37,7 @@ let load_from_cache serializer zip_path cache_dir zip_library =
       end;
     DB.filename_from_string to_path in
   match deserialize (extract absolute_path) with
-  | Some data when zip_library.models -> Some (data, DB.Models)
-  | Some data -> Some (data, DB.Spec_lib)
+  | Some data -> Some data
   | None -> None
   | exception Not_found -> None
 
@@ -46,8 +45,7 @@ let load_from_zip serializer zip_path zip_library =
   let lazy zip_channel = zip_library.zip_channel in
   let deserialize = Serialization.from_string serializer in
   match deserialize (Zip.read_entry zip_channel (Zip.find_entry zip_channel zip_path)) with
-  | Some data when zip_library.models -> Some (data, DB.Models)
-  | Some data -> Some (data, DB.Spec_lib)
+  | Some data -> Some data
   | None -> None
   | exception Not_found -> None
 

@@ -337,7 +337,7 @@ type summary =
     proc_desc_option : Procdesc.t option;
   }
 
-type spec_tbl = (summary * DB.origin) Procname.Hash.t
+type spec_tbl = summary Procname.Hash.t
 
 let spec_tbl: spec_tbl = Procname.Hash.create 128
 
@@ -521,18 +521,12 @@ let payload_compact sh payload =
 let summary_compact sh summary =
   { summary with payload = payload_compact sh summary.payload }
 
-let set_summary_origin proc_name summary origin =
-  Procname.Hash.replace spec_tbl proc_name (summary, origin)
-
-let add_summary_origin (proc_name : Procname.t) (summary: summary) (origin: DB.origin) : unit =
+(** Add the summary to the table for the given function *)
+let add_summary (proc_name : Procname.t) (summary: summary) : unit =
   L.out "Adding summary for %a@\n@[<v 2>  %a@]@."
     Procname.pp proc_name
     (pp_summary_text ~whole_seconds:false) summary;
-  set_summary_origin proc_name summary origin
-
-(** Add the summary to the table for the given function *)
-let add_summary (proc_name : Procname.t) (summary: summary) : unit =
-  add_summary_origin proc_name summary DB.Res_dir
+  Procname.Hash.replace spec_tbl proc_name summary
 
 let specs_filename pname =
   let pname_file = Procname.to_filename pname in
@@ -578,25 +572,25 @@ let load_summary specs_file =
 
 (** Load procedure summary for the given procedure name and update spec table *)
 let load_summary_to_spec_table proc_name =
-  let add summ origin =
-    add_summary_origin proc_name summ origin;
+  let add summ =
+    add_summary proc_name summ;
     true in
   let load_summary_models models_dir =
     match load_summary models_dir with
     | None -> false
-    | Some summ -> add summ DB.Models in
+    | Some summ -> add summ in
   let rec load_summary_libs = function (* try to load the summary from a list of libs *)
     | [] -> false
     | spec_path :: spec_paths ->
         (match load_summary spec_path with
          | None -> load_summary_libs spec_paths
          | Some summ ->
-             add summ Spec_lib) in
+             add summ) in
   let load_summary_ziplibs zip_specs_filename =
     let zip_specs_path = Filename.concat Config.specs_dir_name zip_specs_filename in
     match ZipLib.load summary_serializer zip_specs_path with
     | None -> false
-    | Some (summary, origin) -> add summary origin in
+    | Some summary -> add summary in
   let default_spec_dir = res_dir_specs_filename proc_name in
   match load_summary default_spec_dir with
   | None ->
@@ -605,20 +599,15 @@ let load_summary_to_spec_table proc_name =
       load_summary_ziplibs (specs_filename proc_name) ||
       load_summary_libs (specs_library_filenames proc_name)
   | Some summ ->
-      add summ DB.Res_dir
+      add summ
 
-let rec get_summary_origin proc_name =
+let rec get_summary proc_name =
   try
     Some (Procname.Hash.find spec_tbl proc_name)
   with Not_found ->
     if load_summary_to_spec_table proc_name then
-      get_summary_origin proc_name
+      get_summary proc_name
     else None
-
-let get_summary proc_name =
-  match get_summary_origin proc_name with
-  | Some (summary, _) -> Some summary
-  | None -> None
 
 let get_summary_unsafe s proc_name =
   match get_summary proc_name with
@@ -670,11 +659,6 @@ let pdesc_resolve_attributes proc_desc =
   | None ->
       (* this should not happen *)
       assert false
-
-let is_model proc_name =
-  match get_summary_origin proc_name with
-  | None -> false
-  | Some (_, origin) -> origin = DB.Models
 
 let summary_exists proc_name =
   match get_summary proc_name with
@@ -729,9 +713,9 @@ let get_phase summary =
 
 (** Set the current status for the proc *)
 let set_status proc_name status =
-  match get_summary_origin proc_name with
+  match get_summary proc_name with
   | None -> raise (Failure ("Specs.set_status: " ^ (Procname.to_string proc_name) ^ " Not_found"))
-  | Some (summary, origin) -> set_summary_origin proc_name { summary with status = status } origin
+  | Some summary -> add_summary proc_name { summary with status = status }
 
 (** Create the initial dependency map with the given list of dependencies *)
 let mk_initial_dependency_map proc_list : dependency_map_t =
@@ -744,16 +728,16 @@ let re_initialize_dependency_map dependency_map =
 (** Update the dependency map of [proc_name] with the current
     timestamps of the dependents *)
 let update_dependency_map proc_name =
-  match get_summary_origin proc_name with
+  match get_summary proc_name with
   | None ->
       raise
         (Failure ("Specs.update_dependency_map: " ^ (Procname.to_string proc_name) ^ " Not_found"))
-  | Some (summary, origin) ->
+  | Some summary ->
       let current_dependency_map =
         Procname.Map.mapi
           (fun _ _ -> get_timestamp summary)
           summary.dependency_map in
-      set_summary_origin proc_name { summary with dependency_map = current_dependency_map } origin
+      add_summary proc_name { summary with dependency_map = current_dependency_map }
 
 let empty_payload =
   {
@@ -790,7 +774,7 @@ let init_summary
           ProcAttributes.proc_flags = proc_flags; };
       proc_desc_option;
     } in
-  Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name (summary, DB.Res_dir)
+  Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name summary
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 let reset_summary call_graph proc_name attributes_opt proc_desc_option =

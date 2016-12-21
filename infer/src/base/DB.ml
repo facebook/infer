@@ -209,12 +209,6 @@ module Results_dir = struct
     Unix.openfile full_fname ~mode:Unix.[O_WRONLY; O_CREAT; O_TRUNC] ~perm:0o777
 end
 
-(** origin of a analysis artifact: current results dir, a spec library, or models *)
-type origin =
-  | Res_dir
-  | Spec_lib
-  | Models
-
 let global_tenv_fname =
   let basename = Config.global_tenv_filename in
   filename_concat captured_dir basename

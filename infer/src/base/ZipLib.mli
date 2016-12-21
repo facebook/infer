@@ -12,4 +12,4 @@ open! IStd
 (** [load serializer path] searches for the file at the given path in the zip libraries.
     If Config.infer_cache is set, already deserialized data will be saved there and [path]
     will be searched from the cache first. *)
-val load : 'a Serialization.serializer -> string -> ('a * DB.origin) option
+val load : 'a Serialization.serializer -> string -> 'a option

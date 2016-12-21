@@ -162,9 +162,6 @@ val clear_spec_tbl : unit -> unit
 (** Dump a spec *)
 val d_spec : 'a spec -> unit
 
-(** Returns true if the procedure is a model *)
-val is_model: Procname.t -> bool
-
 (** Return the summary option for the procedure name *)
 val get_summary : Procname.t -> summary option
 

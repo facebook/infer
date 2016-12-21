@@ -69,12 +69,6 @@ module Results_dir : sig
   val create_file : path_kind -> path -> Unix.File_descr.t
 end
 
-(** origin of a analysis artifact: current results dir, a spec library, or models *)
-type origin =
-  | Res_dir
-  | Spec_lib
-  | Models
-
 (** {2 Source Dirs} *)
 
 (** source directory: the directory inside the results dir corresponding to a source file *)
