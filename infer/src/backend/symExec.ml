@@ -646,7 +646,7 @@ let resolve_and_analyze
       (* Create the type sprecialized procedure description and analyze it directly *)
       Option.iter
         ~f:(fun specialized_pdesc ->
-           Ondemand.analyze_proc_desc ~propagate_exceptions:true caller_pdesc specialized_pdesc)
+            Ondemand.analyze_proc_desc ~propagate_exceptions:true caller_pdesc specialized_pdesc)
         (match Ondemand.get_proc_desc resolved_pname with
          | Some resolved_proc_desc ->
              Some resolved_proc_desc
@@ -654,7 +654,7 @@ let resolve_and_analyze
              begin
                Option.map
                  ~f:(fun callee_proc_desc ->
-                    Cfg.specialize_types callee_proc_desc resolved_pname args)
+                     Cfg.specialize_types callee_proc_desc resolved_pname args)
                  (Ondemand.get_proc_desc callee_proc_name)
              end) in
   let resolved_pname = match callee_proc_name with
@@ -1060,12 +1060,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       | None -> (
           match callee_pname with
           | Java callee_pname_java when Config.dynamic_dispatch = `Lazy ->
-              let norm_prop, norm_args =
-                normalize_params
-                  tenv
-                  current_pname
-                  prop_
-                  (call_constructor_url_update_args callee_pname actual_params) in
+              let norm_prop, norm_args' = normalize_params tenv current_pname prop_ actual_params in
+              let norm_args = call_constructor_url_update_args callee_pname norm_args' in
               let exec_skip_call skipped_pname ret_annots ret_type =
                 skip_call norm_prop path skipped_pname ret_annots loc ret_id
                   (Some ret_type) norm_args in

@@ -13,8 +13,8 @@ import java.io.Serializable;
 
 // abstract so we don't have to implement every method of List
 public abstract class LinkedList<T>
-  extends AbstractSequentialList<T>
-  implements Serializable, Cloneable, Iterable<T>, Collection<T>, Deque<T>, List<T>, Queue<T> {
+  extends AbstractList<T>
+  implements Serializable, Cloneable, Iterable<T>, Collection<T>, Deque<T>, Queue<T> {
 
   @Override
   public boolean isEmpty() {

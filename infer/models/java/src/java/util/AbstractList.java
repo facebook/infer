@@ -12,7 +12,7 @@ package java.util;
 import com.facebook.infer.builtins.InferUndefined;
 
 // could make List an abstract class directly instead, but that breaks other models
-public abstract class AbstractList<T> extends AbstractCollection<T> implements List<T> {
+public abstract class AbstractList<T> extends AbstractCollection<T> {
 
   // need three-value state for unknown (-1), false (0), or true (1)
   // the reason we can't use a bool is that we want to return either true or false each time we call
@@ -25,7 +25,6 @@ public abstract class AbstractList<T> extends AbstractCollection<T> implements L
     mIsEmpty = 1;
   }
 
-  @Override
   public boolean isEmpty() {
     if (mIsEmpty < 0) {
       if (InferUndefined.boolean_undefined()) {
@@ -37,18 +36,15 @@ public abstract class AbstractList<T> extends AbstractCollection<T> implements L
     return mIsEmpty == 1;
   }
 
-  @Override
   public void add(int index, T toAdd) {
     mIsEmpty = 0;
   }
 
-  @Override
   public T remove(int index) {
     mIsEmpty = -1;
     return any();
   }
 
-  @Override
   public boolean remove(Object o) {
     boolean result = InferUndefined.boolean_undefined();
     if (result) {
@@ -57,7 +53,6 @@ public abstract class AbstractList<T> extends AbstractCollection<T> implements L
     return result;
   }
 
-  @Override
   public void clear() {
     mIsEmpty = 1;
   }

@@ -1563,7 +1563,9 @@ let clang_frontend_action_string =
     ((if clang_frontend_do_capture then ["translating"] else [])
      @ (if clang_frontend_do_lint then ["linting"] else []))
 
-let dynamic_dispatch = if analyzer = Tracing then `Lazy else !dynamic_dispatch
+let dynamic_dispatch =
+  if analyzer = Tracing || analyzer = Infer then `Lazy
+  else !dynamic_dispatch
 
 let specs_library =
   match infer_cache with

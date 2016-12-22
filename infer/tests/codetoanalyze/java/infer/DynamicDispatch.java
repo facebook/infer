@@ -27,10 +27,12 @@ public class DynamicDispatch {
     i.foo().toString();
   }
 
-  // TODO: this test currently fails, but will pass with handling of dynamic dispatch
   static void interfaceShouldNotCauseFalseNegativeHard(Interface i) {
-    // should be a warning since Impl's implementation of foo returns null
     i.foo().toString();
+  }
+
+  static void callWithBadImplementation(Impl impl) {
+    interfaceShouldNotCauseFalseNegativeHard(impl);
   }
 
   static class Supertype {

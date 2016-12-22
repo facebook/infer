@@ -75,8 +75,7 @@ public abstract class HashMap<K,V> extends AbstractMap<K,V>
 
   /* does explicit dynamic dispatch to help Infer out */
   private static boolean areEqual(Object x, Object y) {
-      return x == y
-          || (x instanceof Integer && ((Integer) x).equals(y));
+    return x == y;
   }
 
 }
