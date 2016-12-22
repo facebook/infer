@@ -1,9 +1,0 @@
-<component name="CopyrightManager">
-  <copyright>
-    <option name="notice" value="/*&#10; * Copyright &amp;#36;today.year-present Facebook, Inc.&#10; *&#10; */" />
-    <option name="keyword" value="Copyright" />
-    <option name="allowReplaceKeyword" value="" />
-    <option name="myName" value="Facebook" />
-    <option name="myLocal" value="true" />
-  </copyright>
-</component>
