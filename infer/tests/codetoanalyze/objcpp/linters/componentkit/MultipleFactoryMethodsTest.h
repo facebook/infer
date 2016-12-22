@@ -51,3 +51,11 @@
 + (instancetype)newWithObject1:(NSObject*)obj;
 + (instancetype)newWithObject2:(NSObject*)obj;
 @end
+
+// 4 initializers -> should output 3 issues
+@interface LotsOfInitializers : CKCompositeComponent
++ (instancetype)newWithObject1:(NSObject*)obj;
++ (instancetype)newWithObject2:(NSObject*)obj;
++ (instancetype)newWithObject3:(NSObject*)obj;
++ (instancetype)newWithObject4:(NSObject*)obj;
+@end

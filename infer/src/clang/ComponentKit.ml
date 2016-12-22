@@ -219,7 +219,10 @@ let component_with_unconventional_superclass_advice context an =
     additional factory methods are implementation-only, the rule doesn't catch
     it. While its existence is probably not good, I can't think of any reason
     there would be factory methods that aren't exposed outside of a class is
-    not useful if there's only one public factory method. *)
+    not useful if there's only one public factory method.
+
+    Given n factory methods, the rule should emit n-1 issues. Each issue's
+    location should point to the method declaration. *)
 let component_with_multiple_factory_methods_advice context an =
   let is_unavailable_attr attr = match attr with
     | Clang_ast_t.UnavailableAttr _ -> true
@@ -234,21 +237,18 @@ let component_with_multiple_factory_methods_advice context an =
 
   let check_interface if_decl =
     match if_decl with
-    | Clang_ast_t.ObjCInterfaceDecl (decl_info, _, decls, _, _) ->
+    | Clang_ast_t.ObjCInterfaceDecl (_, _, decls, _, _) ->
         let factory_methods = IList.filter (is_available_factory_method if_decl) decls in
-        if (IList.length factory_methods) > 1 then
-          CTL.True, Some {
-            CIssue.name = "COMPONENT_WITH_MULTIPLE_FACTORY_METHODS";
-            severity = Exceptions.Kadvice;
-            mode = CIssue.On;
-            description = "Avoid Overrides";
-            suggestion =
-              Some "Instead, always expose all parameters in a single \
-                    designated initializer and document which are optional.";
-            loc = CFrontend_checkers.location_from_dinfo context decl_info
-          }
-        else
-          CTL.False, None
+        CTL.True, IList.map (fun meth_decl -> {
+              CIssue.name = "COMPONENT_WITH_MULTIPLE_FACTORY_METHODS";
+              severity = Exceptions.Kadvice;
+              mode = CIssue.On;
+              description = "Avoid Overrides";
+              suggestion =
+                Some "Instead, always expose all parameters in a single \
+                      designated initializer and document which are optional.";
+              loc = CFrontend_checkers.location_from_decl context meth_decl
+            }) (IList.drop_first 1 factory_methods)
     | _ -> assert false in
   match an with
   | CTL.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
@@ -256,8 +256,8 @@ let component_with_multiple_factory_methods_advice context an =
         Ast_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
       (match if_decl_opt with
        | Some d when is_ck_context context an -> check_interface d
-       | _ -> CTL.False, None)
-  | _ -> CTL.False, None
+       | _ -> CTL.False, [])
+  | _ -> CTL.False, []
 
 let in_ck_class (context: CLintersContext.context) =
   Option.value_map ~f:is_component_or_controller_descendant_impl ~default:false

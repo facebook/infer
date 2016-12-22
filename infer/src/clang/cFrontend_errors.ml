@@ -24,11 +24,12 @@ let decl_single_checkers_list = [CFrontend_checkers.ctl_strong_delegate_warning;
                                  ComponentKit.component_with_unconventional_superclass_advice;
                                  ComponentKit.mutable_local_vars_advice;
                                  ComponentKit.component_factory_function_advice;
-                                 ComponentKit.component_file_cyclomatic_complexity_info;
-                                 ComponentKit.component_with_multiple_factory_methods_advice;]
+                                 ComponentKit.component_file_cyclomatic_complexity_info;]
 
 (* List of checkers on decls *)
-let decl_checkers_list = IList.map single_to_multi decl_single_checkers_list
+let decl_checkers_list =
+  ComponentKit.component_with_multiple_factory_methods_advice::
+  (IList.map single_to_multi decl_single_checkers_list)
 
 (* List of checkers on stmts *that return 0 or 1 issue* *)
 let stmt_single_checkers_list = [CFrontend_checkers.ctl_direct_atomic_property_access_warning;

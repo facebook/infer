@@ -31,3 +31,6 @@
 
 @implementation UnavailableInitializer2
 @end
+
+@implementation LotsOfInitializers
+@end
