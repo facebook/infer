@@ -26,7 +26,8 @@ let infer_deps () = Filename.concat Config.results_dir Config.buck_infer_deps_fi
 
 let modified_targets = ref String.Set.empty
 
-let modified_file file = match Utils.read_file file with
+let modified_file file =
+  match Utils.read_file file with
   | Some targets ->
       modified_targets := IList.fold_left String.Set.add String.Set.empty targets
   | None ->

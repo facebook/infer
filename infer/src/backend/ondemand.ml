@@ -173,7 +173,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     postprocess source;
     restore_global_state old_state;
   with exn ->
-    L.stderr "@.ONDEMAND EXCEPTION %a %s@.@.BACK TRACE@.%s@!"
+    L.stderr "@.ONDEMAND EXCEPTION %a %s@.@.BACK TRACE@.%s@?"
       Procname.pp callee_pname
       (Exn.to_string exn)
       (Printexc.get_backtrace ());

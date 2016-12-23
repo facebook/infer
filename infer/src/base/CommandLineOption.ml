@@ -547,6 +547,7 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
   let usage_msg = exe_usage current_exe
   in
   let curr_usage status =
+    prerr_endline (String.concat_array ~sep:" " !args_to_parse) ;
     Arg.usage !curr_speclist usage_msg ;
     exit status
   and full_usage status =

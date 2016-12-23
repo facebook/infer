@@ -225,18 +225,15 @@ let run_parallel_analysis () =
   let multicore_dir = Config.results_dir ^/ Config.multicore_dir_name in
   rmtree multicore_dir ;
   Unix.mkdir_p multicore_dir ;
-  InferAnalyze.print_stdout_legend ();
   InferAnalyze.main (multicore_dir ^/ "Makefile") ;
-  let cwd = Unix.getcwd () in
-  Unix.chdir multicore_dir ;
   run_command
     ~prog:"make" ~args:(
+    "-C" :: multicore_dir ::
     "-k" ::
     "-j" :: (string_of_int Config.jobs) ::
     (Option.value_map ~f:(fun l -> ["-l"; string_of_float l]) ~default:[] Config.load_average) @
     (if Config.debug_mode then [] else ["-s"])
-  ) (fun _ -> ());
-  Unix.chdir cwd
+  ) (fun _ -> ())
 
 let execute_analyze () =
   if Config.jobs = 1 then
@@ -262,11 +259,9 @@ let report () =
           "--project-root"; Config.project_root;
           "--results-dir"; Config.results_dir
         ] in
-      match (Unix.waitpid (Unix.fork_exec ~prog ~args:(prog :: args) ())) with
-      | Result.Ok _ -> ()
-      | Result.Error _ ->
-          L.stderr "** Error running the reporting script:@\n**   %s %s@\n** See error above@."
-            prog (String.concat ~sep:" " args)
+      if is_error (Unix.waitpid (Unix.fork_exec ~prog ~args:(prog :: args) ())) then
+        L.stderr "** Error running the reporting script:@\n**   %s %s@\n** See error above@."
+          prog (String.concat ~sep:" " args)
 
 let analyze = function
   | Buck when Config.use_compilation_database = None ->
@@ -301,7 +296,6 @@ let fail_on_issue_epilogue () =
   | None -> ()
 
 let () =
-  if Config.developer_mode then Printexc.record_backtrace true ;
   let build_cmd = IList.rev Config.rest in
   let build_mode = match build_cmd with path :: _ -> build_mode_of_string path | [] -> Analyze in
   if build_mode <> Analyze && not Config.buck && not Config.reactive_mode then
@@ -309,6 +303,7 @@ let () =
   create_results_dir () ;
   (* re-set log files, as default files were in results_dir removed above *)
   L.set_log_file_identifier Config.current_exe (Some (CLOpt.exe_name Config.current_exe)) ;
+  if Config.print_builtins then Builtin.print_and_exit () ;
   if Config.is_originator then L.do_out "%s@\n" Config.version_string ;
   (* infer might be called from a Makefile and itself uses `make` to run the analysis in parallel,
      but cannot communicate with the parent make command. Since infer won't interfere with them

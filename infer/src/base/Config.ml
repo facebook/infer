@@ -1331,6 +1331,8 @@ let post_parsing_initialization () =
   );
   if !version <> `None then exit 0;
 
+  if !developer_mode then Printexc.record_backtrace true ;
+
   F.set_margin !margin ;
 
   let set_minor_heap_size nMb = (* increase the minor heap size to speed up gc *)

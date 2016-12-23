@@ -17,7 +17,8 @@ all: install
 $(INFER_RESULTS): $(C_MODELS_SOURCES) $(CLANG_DEPS)
 # make clean in src/ in case $(CLANG_DEPS) have changed
 	@$(MAKE) -C src clean
-	@$(INFER_BIN) -o $(@D) --models-mode --no-failures-allowed -- $(MAKE) -C src
+	$(call silent_on_success,\
+	  $(INFER_BIN) -o $(@D) --models-mode --no-failures-allowed -- $(MAKE) -C src)
 
 $(C_MODELS_FILE): $(INFER_RESULTS)
 	@$(INSTALL_DATA) $(dir $(INFER_RESULTS))/specs/*.specs $(SPECS_LIB_DIR)

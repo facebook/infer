@@ -33,7 +33,8 @@ $(INFER_REPORT): $(ANDROID_JAR) $(JACKSON_JAR) $(JAVA_DEPS) $(INFER_ANNOTATIONS_
 	@rm -fr $(MODELS_OUT)
 	mkdir -p $(MODELS_OUT)
 	@rm -f $(DEPLOYED_MODELS_JAR)
-	$(INFER_BIN) --jobs 1 --buck --models-mode -- javac -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(JACKSON_JAR):$(INFER_ANNOTATIONS_JAR) $(JAVA_SOURCES)
+	$(call silent_on_success,\
+	  $(INFER_BIN) --jobs 1 --buck --models-mode -- javac -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(JACKSON_JAR):$(INFER_ANNOTATIONS_JAR) $(JAVA_SOURCES))
 
 $(MODELS_JAR): $(INFER_REPORT)
 	cd $(MODELS_OUT); jar cf ../$(MODELS_JAR) *

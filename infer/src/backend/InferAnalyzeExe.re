@@ -26,12 +26,6 @@ let register_perf_stats_report () => {
   PerfStats.register_report_at_exit stats_file
 };
 
-let print_prolog () =>
-  switch Config.cluster_cmdline {
-  | None => InferAnalyze.print_stdout_legend ()
-  | Some clname => L.stdout "Cluster %s@." clname
-  };
-
 let () = {
   Logging.set_log_file_identifier
     CommandLineOption.Analyze (Option.map f::Filename.basename Config.cluster_cmdline);
@@ -43,9 +37,5 @@ let () = {
     Config.print_usage_exit ()
   };
   register_perf_stats_report ();
-  if Config.developer_mode {
-    Printexc.record_backtrace true
-  };
-  print_prolog ();
   InferAnalyze.main Config.makefile_cmdline
 };

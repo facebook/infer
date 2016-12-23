@@ -188,11 +188,9 @@ let do_err fmt_string =
 let err_debug fmt_string =
   do_print_in_debug_mode !err_formatter fmt_string
 
-let stderr fmt_string =
-  do_print (Lazy.from_val F.err_formatter) fmt_string
+let stderr = F.eprintf
 
-let stdout fmt_string =
-  do_print (Lazy.from_val F.std_formatter) fmt_string
+let stdout = F.printf
 
 (** Type of location in ml source: __POS__ *)
 type ml_loc = string * int * int * int
