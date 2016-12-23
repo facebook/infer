@@ -35,5 +35,5 @@ test: issues.exp.test$(TEST_SUFFIX)
 
 .PHONY: clean
 clean:
-	$(REMOVE_DIR) codetoanalyze issues.exp.test$(TEST_SUFFIX) infer-out$(TEST_SUFFIX) \
+	$(REMOVE_DIR) codetoanalyze com issues.exp.test$(TEST_SUFFIX) infer-out$(TEST_SUFFIX) \
 	  $(OBJECTS) $(CLEAN_EXTRA)

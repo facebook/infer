@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-package com.facebook.infer.tests.codetoanalyze.java.errors;
+package codetoanalyze.java.errors;
 
 
 import android.app.DownloadManager;
