@@ -35,7 +35,7 @@ val get_cg : t -> Cg.t
 val get_source : t -> Procname.t -> SourceFile.t option
 
 (** return the type environment associated to the procedure *)
-val get_tenv : ?create:bool -> t -> Procname.t -> Tenv.t
+val get_tenv : t -> Procname.t -> Tenv.t
 
 (** return the cfg associated to the procedure *)
 val get_cfg : t -> Procname.t -> Cfg.cfg option
