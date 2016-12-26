@@ -90,6 +90,38 @@ module Pair (Domain1 : S) (Domain2 : S) = struct
     F.fprintf fmt "(%a, %a)" Domain1.pp astate1 Domain2.pp astate2
 end
 
+module Pair3 (Domain1 : S) (Domain2 : S) (Domain3 : S) = struct
+  type astate = Domain1.astate * Domain2.astate * Domain3.astate
+
+  let initial = Domain1.initial, Domain2.initial, Domain3.initial
+
+  let fst (x,_,_) = x
+  let snd (_,x,_) = x
+  let trd (_,_,x) = x
+
+  let (<=) ~lhs ~rhs =
+    if phys_equal lhs rhs
+    then true
+    else
+      Domain1.(<=) ~lhs:(fst lhs) ~rhs:(fst rhs) && Domain2.(<=) ~lhs:(snd lhs) ~rhs:(snd rhs) && Domain3.(<=) ~lhs:(trd lhs) ~rhs:(trd rhs) 
+
+  let join astate1 astate2 =
+    if phys_equal astate1 astate2
+    then astate1
+    else Domain1.join (fst astate1) (fst astate2), Domain2.join (snd astate1) (snd astate2), Domain3.join (trd astate1) (trd astate2)
+
+  let widen ~prev ~next ~num_iters =
+    if phys_equal prev next
+    then prev
+    else
+      Domain1.widen ~prev:(fst prev) ~next:(fst next) ~num_iters,
+      Domain2.widen ~prev:(snd prev) ~next:(snd next) ~num_iters,
+      Domain3.widen ~prev:(trd prev) ~next:(trd next) ~num_iters
+
+  let pp fmt (astate1, astate2, astate3) =
+    F.fprintf fmt "(%a, %a, %a)" Domain1.pp astate1 Domain2.pp astate2 Domain3.pp astate3
+end
+
 module FiniteSet (S : PrettyPrintable.PPSet) = struct
   include S
   type astate = t

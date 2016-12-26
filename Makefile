@@ -38,9 +38,9 @@ endif
 
 DIRECT_TESTS=
 ifeq ($(BUILD_C_ANALYZERS),yes)
-DIRECT_TESTS += c_errors c_frontend cpp_checkers cpp_errors cpp_frontend cpp_quandary
+DIRECT_TESTS += c_errors c_frontend c_bo cpp_checkers cpp_errors cpp_frontend cpp_quandary
 endif
-ifeq ($(BUILD_JAVA_ANALYZERS),yes)
+ifeq ($(BUILD_JAVA_ANALYZERS),no)
 DIRECT_TESTS += \
   java_checkers java_eradicate java_infer java_tracing java_quandary java_threadsafety \
   java_crashcontext java_harness

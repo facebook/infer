@@ -1,0 +1,4 @@
+codetoanalyze/c/bo/test1.c, main, 7, BUFFER-OVERRUN CHECKER, [Offset : [0, +oo] Size : [10, 10] @ codetoanalyze/c/bo/test1.c:25:10]
+codetoanalyze/c/bo/test1.c, main, 8, BUFFER-OVERRUN CHECKER, [Offset : [1, 10] Size : [10, 10] @ codetoanalyze/c/bo/test1.c:26:5]
+codetoanalyze/c/bo/test2.c, bar, 5, BUFFER-OVERRUN CHECKER, [Offset : [100, 100] Size : [10, 10] @ codetoanalyze/c/bo/test2.c:5:3 by call foo() ]
+codetoanalyze/c/bo/test2.c, bar, 5, BUFFER-OVERRUN CHECKER, [Offset : [20, 20] Size : [10, 10] @ codetoanalyze/c/bo/test2.c:7:3 by call foo() ]

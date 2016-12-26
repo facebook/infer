@@ -16,7 +16,7 @@ open! IStd
 
 (** Various kind of analyzers *)
 type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
-              | Crashcontext | Linters | Quandary | Threadsafety
+              | Crashcontext | Linters | Quandary | Threadsafety | Bo
 
 (** Association list of analyzers and their names *)
 val string_to_analyzer : (string * analyzer) list
@@ -144,7 +144,10 @@ val angelic_execution : bool
 val array_level : int
 val ast_file : string option
 val blacklist : string option
+val bo : bool
 val bootclasspath : string option
+val bo_debug : int
+val bo_filtering : int
 val buck : bool
 val buck_build_args : string list
 val buck_out : string option
@@ -266,7 +269,7 @@ val symops_per_iteration : int option
 val test : bool
 val test_filtering : bool
 val testing_mode : bool
-val threadsafety : bool
+val threadsafety : bool                
 val trace_error : bool
 val trace_ondemand : bool
 val trace_join : bool

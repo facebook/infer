@@ -310,7 +310,8 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
       switch Config.analyzer {
       | Checkers
       | Eradicate
-      | Tracing => true
+      | Tracing
+      | Bo => true
       | Capture
       | Compile
       | Crashcontext
