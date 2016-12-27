@@ -11,8 +11,8 @@
 open! IStd
 
 (** mutate the cfg/cg to add dynamic dispatch handling *)
-let add_dispatch_calls pdesc cg tenv policy =
-  let sound_dynamic_dispatch = policy = `Sound in
+let add_dispatch_calls pdesc cg tenv =
+  let sound_dynamic_dispatch = (Config.dynamic_dispatch = `Sound) in
   let node_add_dispatch_calls caller_pname node =
     let call_flags_is_dispatch call_flags =
       (* if sound dispatch is turned off, only consider dispatch for interface calls *)
@@ -59,8 +59,7 @@ let add_dispatch_calls pdesc cg tenv policy =
       IList.map replace_dispatch_calls instrs
       |> Procdesc.Node.replace_instrs node in
   let pname = Procdesc.get_proc_name pdesc in
-  if Procname.is_java pname then
-    Procdesc.iter_nodes (node_add_dispatch_calls pname) pdesc
+  Procdesc.iter_nodes (node_add_dispatch_calls pname) pdesc
 
 (** add instructions to perform abstraction *)
 let add_abstraction_instructions pdesc =
@@ -313,7 +312,9 @@ let do_abstraction pdesc =
   add_abstraction_instructions pdesc;
   Procdesc.signal_did_preanalysis pdesc
 
-let do_dynamic_dispatch pdesc cg tenv policy =
-  if policy <> `Lazy
-  then add_dispatch_calls pdesc cg tenv policy;
+let do_dynamic_dispatch pdesc cg tenv =
+  let pname = Procdesc.get_proc_name pdesc in
+  if Procname.is_java pname &&
+     (Config.dynamic_dispatch = `Interface || Config.dynamic_dispatch = `Sound)
+  then add_dispatch_calls pdesc cg tenv;
   Procdesc.signal_did_preanalysis pdesc

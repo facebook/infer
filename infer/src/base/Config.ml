@@ -216,9 +216,10 @@ let whitelisted_cpp_classes = [
 ]
 
 type dynamic_dispatch_policy = [
-  | `Lazy
-  | `Sound
   | `None
+  | `Interface
+  | `Sound
+  | `Lazy
 ]
 
 (** Compile time configuration values *)
@@ -739,12 +740,12 @@ and dotty_cfg_libs =
     "Print the cfg of the code coming from the libraries"
 
 and dynamic_dispatch =
-  CLOpt.mk_symbol ~long:"dynamic-dispatch" ~default:`None
+  CLOpt.mk_symbol_opt ~long:"dynamic-dispatch"
     "Specify treatment of dynamic dispatch in Java code: 'none' treats dynamic dispatch as a call \
      to unknown code, 'lazy' follows the JVM semantics and creates procedure descriptions during \
      symbolic execution using the type information found in the abstract state; 'sound' is \
      significantly more computationally expensive"
-    ~symbols:[("none", `None); ("lazy", `Lazy); ("sound", `Sound)]
+    ~symbols:[("none", `None); ("interface", `Interface); ("sound", `Sound); ("lazy", `Lazy)]
 
 and enable_checks =
   CLOpt.mk_string_list ~deprecated:["enable_checks"] ~long:"enable-checks" ~meta:"error name"
@@ -1566,8 +1567,13 @@ let clang_frontend_action_string =
      @ (if clang_frontend_do_lint then ["linting"] else []))
 
 let dynamic_dispatch =
-  if analyzer = Tracing || analyzer = Infer then `Lazy
-  else !dynamic_dispatch
+  let default_mode =
+    match analyzer with
+    | Infer
+    | Tracing -> `Lazy
+    | Quandary -> `Sound
+    | _ -> `None in
+  Option.value ~default:default_mode !dynamic_dispatch
 
 let specs_library =
   match infer_cache with

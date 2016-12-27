@@ -21,4 +21,4 @@ val do_liveness : Procdesc.t -> Tenv.t -> unit
 val do_abstraction : Procdesc.t -> unit
 
 (** add possible dynamic dispatch targets to the call_flags of each call site *)
-val do_dynamic_dispatch : Procdesc.t -> Cg.t -> Tenv.t -> Config.dynamic_dispatch_policy -> unit
+val do_dynamic_dispatch : Procdesc.t -> Cg.t -> Tenv.t -> unit

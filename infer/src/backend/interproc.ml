@@ -1485,7 +1485,7 @@ let do_analysis exe_env =
         begin
           Preanal.do_liveness proc_desc tenv;
           Preanal.do_abstraction proc_desc;
-          Preanal.do_dynamic_dispatch proc_desc (Exe_env.get_cg exe_env) tenv `None
+          Preanal.do_dynamic_dispatch proc_desc (Exe_env.get_cg exe_env) tenv
         end;
       let summaryfp =
         Config.run_in_footprint_mode (analyze_proc source exe_env) proc_desc in

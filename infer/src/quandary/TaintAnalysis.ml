@@ -520,7 +520,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       then
         begin
           Preanal.do_liveness proc_data.pdesc proc_data.tenv;
-          Preanal.do_dynamic_dispatch proc_data.pdesc (Cg.create None) proc_data.tenv `Sound;
+          Preanal.do_dynamic_dispatch proc_data.pdesc (Cg.create None) proc_data.tenv;
         end;
       match Analyzer.compute_post proc_data with
       | Some { access_tree; } ->

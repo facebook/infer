@@ -36,9 +36,10 @@ val ml_bucket_symbols :
 type os_type = Unix | Win32 | Cygwin
 
 type dynamic_dispatch_policy = [
-  | `Lazy
-  | `Sound
   | `None
+  | `Interface
+  | `Sound
+  | `Lazy
 ]
 
 (** Constant configuration values *)
@@ -175,7 +176,7 @@ val dependency_mode : bool
 val developer_mode : bool
 val disable_checks : string list
 val dotty_cfg_libs : bool
-val dynamic_dispatch : [ `None | `Lazy | `Sound ]
+val dynamic_dispatch : [ `None | `Interface | `Sound | `Lazy ]
 val enable_checks : string list
 val eradicate : bool
 val eradicate_condition_redundant : bool
