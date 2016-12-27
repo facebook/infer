@@ -566,13 +566,11 @@ struct
   type t = astate
 
   let pp : F.formatter -> t -> unit
-  = fun fmt (stack, heap, alias) ->
+  = fun fmt (stack, heap, _) ->
     F.fprintf fmt "Stack :@,";
     F.fprintf fmt "%a@," Stack.pp stack;
     F.fprintf fmt "Heap :@,";
-    F.fprintf fmt "%a" Heap.pp heap;
-    F.fprintf fmt "Alias :@,";
-    F.fprintf fmt "%a" Alias.pp alias
+    F.fprintf fmt "%a" Heap.pp heap
 
   let pp_summary : F.formatter -> t -> unit
   = fun fmt (_, heap, _) ->

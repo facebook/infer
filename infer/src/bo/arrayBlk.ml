@@ -15,7 +15,7 @@
  *)
 
 (* Abstract Array Block *)
-
+open! IStd
 open BasicDom
 
 module ArrInfo =
@@ -52,28 +52,28 @@ struct
 
   let join : t -> t -> t
   = fun a1 a2 ->
-    if a1 == a2 then a2 else
+    if phys_equal a1 a2 then a2 else
     { offset = Itv.join a1.offset a2.offset;
       size = Itv.join a1.size a2.size;
       stride = Itv.join a1.stride a2.stride; }
 
   let widen : prev:t -> next:t -> num_iters:int -> t
   = fun ~prev ~next ~num_iters ->
-    if prev == next then next else
+    if phys_equal prev next then next else
       { offset = Itv.widen ~prev:prev.offset ~next:next.offset ~num_iters;
         size = Itv.widen ~prev:prev.size ~next:next.size ~num_iters;
         stride = Itv.widen ~prev:prev.stride ~next:next.stride ~num_iters; }
 
   let eq : t -> t -> bool
   = fun a1 a2 ->
-    if a1 == a2 then true else
+    if phys_equal a1 a2 then true else
       Itv.eq a1.offset a2.offset
       && Itv.eq a1.size a2.size
       && Itv.eq a1.stride a2.stride
 
   let (<=) : lhs:t -> rhs:t -> bool
   = fun ~lhs ~rhs ->
-    if lhs == rhs then true else
+    if phys_equal lhs rhs then true else
       Itv.le ~lhs:lhs.offset ~rhs:rhs.offset
       && Itv.le ~lhs:lhs.size ~rhs:rhs.size
       && Itv.le ~lhs:lhs.stride ~rhs:rhs.stride
