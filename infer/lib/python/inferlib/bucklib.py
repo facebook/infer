@@ -294,7 +294,7 @@ def collect_results(args, start_time, targets):
     with open(os.path.join(args.infer_out, ANALYSIS_SUMMARY_OUTPUT), 'w') as f:
         f.write(buck_stats)
 
-    all_json_rows = set()
+    all_json_rows = []
     stats = init_stats(args, start_time)
 
     accumulation_whitelist = list(map(re.compile, [
@@ -328,9 +328,7 @@ def collect_results(args, start_time, targets):
                                 old_value = stats[type_k].get(key, 0)
                                 stats[type_k][key] = old_value + value
 
-                json_rows = load_json_report(jar)
-                for row in json_rows:
-                    all_json_rows.add(json.dumps(row))
+                all_json_rows += load_json_report(jar)
 
                 # Override normals
                 stats['normal'].update(target_stats.get('normal', {}))
@@ -340,6 +338,7 @@ def collect_results(args, start_time, targets):
             logging.warn('Bad zip file %s', path)
 
     json_report = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
+    utils.dump_json_to_path(all_json_rows, json_report)
 
     # Convert all float values to integer values
     for key, value in stats.get('float', {}).items():
@@ -348,15 +347,7 @@ def collect_results(args, start_time, targets):
     # Delete the float entries before exporting the results
     del(stats['float'])
 
-    with open(json_report, 'w') as report:
-        json_string = '['
-        json_string += ','.join(all_json_rows)
-        json_string += ']'
-        report.write(json_string)
-        report.flush()
-
     print('\n')
-    json_report = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
     bugs_out = os.path.join(args.infer_out, config.BUGS_FILENAME)
     issues.print_and_save_errors(args.infer_out, args.project_root,
                                  json_report, bugs_out, args.pmd_xml)
