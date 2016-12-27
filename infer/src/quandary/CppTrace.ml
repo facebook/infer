@@ -53,60 +53,26 @@ end
 
 module CppSource = Source.Make(Kind)
 
-module CppSink = struct
-
-  module Kind = struct
-    type t =
-      | ShellExec (** shell exec function *)
-      | Other (** for testing or uncategorized sinks *)
-    [@@deriving compare]
-
-    let equal snk1 snk2 =
-      compare snk1 snk2 = 0
-
-    let pp fmt = function
-      | ShellExec -> F.fprintf fmt "ShellExec"
-      | Other -> F.fprintf fmt "Other"
-  end
+module SinkKind = struct
 
   type t =
-    {
-      kind : Kind.t;
-      site : CallSite.t;
-    } [@@deriving compare]
+    | ShellExec (** shell exec function *)
+    | Other (** for testing or uncategorized sinks *)
+  [@@deriving compare]
 
-  let equal t1 t2 =
-    compare t1 t2 = 0
-
-  let kind t =
-    t.kind
-
-  let call_site t =
-    t.site
-
-  let make kind site =
-    { kind; site; }
-
-  let get site actuals =
-    let taint_all actuals sink ~report_reachable =
+  let get pname actuals =
+    let taint_all actuals kind ~report_reachable =
       IList.mapi
-        (fun actual_num _ -> Sink.make_sink_param sink actual_num ~report_reachable)
+        (fun actual_num _ -> kind, actual_num, report_reachable)
         actuals in
-    match CallSite.pname site with
-    | (Procname.ObjC_Cpp cpp_pname) as pname ->
-        begin
-          match Procname.objc_cpp_get_class_name cpp_pname, Procname.get_method pname with
-          (* placeholder for real sinks *)
-          | "Namespace here", "method name here" -> []
-          | _ -> []
-        end
-    | (C _ as pname) ->
+    match pname with
+    | Procname.C _ ->
         begin
           match Procname.to_string pname with
           | "execl" | "execlp" | "execle" | "execv" | "execvp" ->
-              taint_all actuals (make ShellExec site) ~report_reachable:false
+              taint_all actuals ShellExec ~report_reachable:false
           | "__infer_taint_sink" ->
-              [Sink.make_sink_param (make Other site) 0 ~report_reachable:false]
+              [Other, 0, false]
           | _ ->
               []
         end
@@ -115,18 +81,12 @@ module CppSink = struct
     | pname ->
         failwithf "Non-C++ procname %a in C++ analysis@." Procname.pp pname
 
-  let with_callsite t callee_site =
-    { t with site = callee_site; }
-
-  let pp fmt s =
-    F.fprintf fmt "%a(%a)" Kind.pp s.kind CallSite.pp s.site
-
-  module Set = PrettyPrintable.MakePPSet(struct
-      type nonrec t = t
-      let compare = compare
-      let pp_element = pp
-    end)
+  let pp fmt = function
+    | ShellExec -> F.fprintf fmt "ShellExec"
+    | Other -> F.fprintf fmt "Other"
 end
+
+module CppSink = Sink.Make(SinkKind)
 
 include
   Trace.Make(struct
@@ -135,9 +95,9 @@ include
 
     let should_report source sink =
       match Source.kind source, Sink.kind sink with
-      | Kind.EnvironmentVariable, Sink.Kind.ShellExec ->
+      | EnvironmentVariable, ShellExec ->
           true
-      | Kind.Other, Sink.Kind.Other ->
+      | Other, Other ->
           true
       | _ ->
           false

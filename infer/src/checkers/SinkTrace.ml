@@ -32,6 +32,8 @@ end
 
 module MakeSink(TraceElem : TraceElem.S) = struct
   include TraceElem
+  type parameter = { sink : t; index : int; report_reachable : bool; }
+
   let get _ _ = []
 end
 

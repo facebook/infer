@@ -12,9 +12,7 @@ open! IStd
 module F = Format
 module L = Logging
 
-
-
-module Kind = struct
+module SourceKind = struct
   type t =
     | PrivateData (** private user or device-specific data *)
     | Intent
@@ -90,58 +88,34 @@ module Kind = struct
     | Unknown -> F.fprintf fmt "Unknown"
 end
 
-module JavaSource = Source.Make(Kind)
+module JavaSource = Source.Make(SourceKind)
 
-module JavaSink = struct
-
-  module Kind = struct
-    type t =
-      | Intent (** sink that trusts an Intent *)
-      | Logging (** sink that logs one or more of its arguments *)
-      | Other (** for testing or uncategorized sinks *)
-    [@@deriving compare]
-
-    let pp fmt = function
-      | Intent -> F.fprintf fmt "Intent"
-      | Logging -> F.fprintf fmt "Logging"
-      | Other -> F.fprintf fmt "Other"
-  end
-
+module SinkKind = struct
   type t =
-    {
-      kind : Kind.t;
-      site : CallSite.t;
-    } [@@deriving compare]
+    | Intent (** sink that trusts an Intent *)
+    | Logging (** sink that logs one or more of its arguments *)
+    | Other (** for testing or uncategorized sinks *)
+  [@@deriving compare]
 
-  let kind t =
-    t.kind
-
-  let call_site t =
-    t.site
-
-  let make kind site =
-    { kind; site; }
-
-  let get site actuals =
+  let get pname actuals =
     (* taint all the inputs of [pname]. for non-static procedures, taints the "this" parameter only
        if [taint_this] is true. *)
-    let taint_all ?(taint_this=false) kind site ~report_reachable =
+    let taint_all ?(taint_this=false) kind ~report_reachable =
       let actuals_to_taint, offset =
-        if Procname.java_is_static (CallSite.pname site) || taint_this
+        if Procname.java_is_static pname || taint_this
         then actuals, 0
         else IList.tl actuals, 1 in
-      let sink = make kind site in
       IList.mapi
-        (fun param_num _ -> Sink.make_sink_param sink (param_num + offset) ~report_reachable)
+        (fun param_num _ -> kind, param_num + offset, report_reachable)
         actuals_to_taint in
     (* taint the nth non-"this" parameter (0-indexed) *)
-    let taint_nth n kind site ~report_reachable =
-      let first_index = if Procname.java_is_static (CallSite.pname site) then n else n + 1 in
-      [Sink.make_sink_param (make kind site) first_index ~report_reachable] in
-    match CallSite.pname site with
-    | Procname.Java pname ->
+    let taint_nth n kind ~report_reachable =
+      let first_index = if Procname.java_is_static pname then n else n + 1 in
+      [kind, first_index, report_reachable] in
+    match pname with
+    | Procname.Java java_pname ->
         begin
-          match Procname.java_get_class_name pname, Procname.java_get_method pname with
+          match Procname.java_get_class_name java_pname, Procname.java_get_method java_pname with
           | ("android.app.Activity" | "android.content.ContextWrapper" | "android.content.Context"),
             ("bindService" |
              "sendBroadcast" |
@@ -157,9 +131,9 @@ module JavaSink = struct
              "startActivityIfNeeded" |
              "startNextMatchingActivity" |
              "startService") ->
-              taint_nth 0 Intent site ~report_reachable:true
+              taint_nth 0 Intent ~report_reachable:true
           | "android.app.Activity", ("startActivityFromChild" | "startActivityFromFragment") ->
-              taint_nth 1 Intent site ~report_reachable:true
+              taint_nth 1 Intent ~report_reachable:true
           | "android.content.Intent",
             ("fillIn" |
              "makeMainSelectorActivity" |
@@ -176,29 +150,24 @@ module JavaSink = struct
              "setSelector" |
              "setType" |
              "setTypeAndNormalize") ->
-              taint_all Intent site ~report_reachable:true
+              taint_all Intent ~report_reachable:true
           | "android.util.Log", ("e" | "println" | "w" | "wtf") ->
-              taint_all Logging site ~report_reachable:true
+              taint_all Logging ~report_reachable:true
           | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink" ->
-              [Sink.make_sink_param (make Other site) 0 ~report_reachable:false]
+              [Other, 0, false]
           | _ ->
               []
         end
     | pname when BuiltinDecl.is_declared pname -> []
     | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
 
-  let with_callsite t callee_site =
-    { t with site = callee_site; }
-
-  let pp fmt s =
-    F.fprintf fmt "%a(%a)" Kind.pp s.kind CallSite.pp s.site
-
-  module Set = PrettyPrintable.MakePPSet(struct
-      type nonrec t = t
-      let compare = compare
-      let pp_element = pp
-    end)
+  let pp fmt = function
+    | Intent -> F.fprintf fmt "Intent"
+    | Logging -> F.fprintf fmt "Logging"
+    | Other -> F.fprintf fmt "Other"
 end
+
+module JavaSink = Sink.Make(SinkKind)
 
 include
   Trace.Make(struct
@@ -207,10 +176,10 @@ include
 
     let should_report source sink =
       match Source.kind source, Sink.kind sink with
-      | Kind.Other, Sink.Kind.Other
-      | Kind.PrivateData, Sink.Kind.Logging ->
+      | Other, Other
+      | PrivateData, Logging ->
           true
-      | Kind.Intent, Sink.Kind.Intent ->
+      | Intent, Intent ->
           true
       | _ ->
           false

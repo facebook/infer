@@ -12,30 +12,7 @@ open! IStd
 module F = Format
 
 module MockTrace = Trace.Make(struct
-    module MockTraceElem = struct
-      type t = CallSite.t
-
-      module Kind = struct
-        type t = unit
-        let compare _ _ = assert false
-        let pp _ _ = assert false
-      end
-
-      let call_site t = t
-      let kind _ = ()
-      let make _ site = site
-      let compare = CallSite.compare
-      let pp = CallSite.pp
-
-      let with_callsite t _ = t
-
-      module Set = PrettyPrintable.MakePPSet(struct
-          type nonrec t = t
-          let compare = compare
-          let pp_element = pp
-        end)
-    end
-
+    module MockTraceElem = CallSite
     module Source = Source.Make(struct
         include MockTraceElem
 
@@ -50,14 +27,14 @@ module MockTrace = Trace.Make(struct
           []
       end)
 
-    module Sink = struct
-      include MockTraceElem
+    module Sink = Sink.Make(struct
+        include MockTraceElem
 
-      let get site _ =
-        if String.is_prefix ~prefix:"SINK" (Procname.to_string (CallSite.pname site))
-        then [Sink.make_sink_param site 0 ~report_reachable:false]
-        else []
-    end
+        let get pname _ =
+          if String.is_prefix ~prefix:"SINK" (Procname.to_string pname)
+          then [CallSite.make pname Location.dummy, 0, false]
+          else []
+      end)
 
     let should_report _ _ = false
   end)

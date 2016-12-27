@@ -198,7 +198,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     let add_sinks sinks actuals ({ Domain.access_tree; id_map; } as astate) proc_data callee_site =
       let f_resolve_id = resolve_id id_map in
       (* add [sink] to the trace associated with the [formal_num]th actual *)
-      let add_sink_to_actual access_tree_acc (sink_param : TraceDomain.Sink.t Sink.parameter) =
+      let add_sink_to_actual access_tree_acc (sink_param : TraceDomain.Sink.parameter) =
         let actual_exp, actual_typ = IList.nth actuals sink_param.index in
         match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
         | Some actual_ap_raw ->
