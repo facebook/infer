@@ -23,7 +23,6 @@ SOURCES = \
   nested_loop_with_label.c \
   break_continue_return.c \
   goto_loop.c \
-  inf_loop.c \
-  main.c
+  inf_loop.c
 
 include $(TESTS_DIR)/clang.make
