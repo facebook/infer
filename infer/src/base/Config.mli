@@ -228,6 +228,7 @@ val only_footprint : bool
 val out_file_cmdline : string
 val pmd_xml : bool
 val precondition_stats : bool
+val print_logs : bool
 val print_builtins : bool
 val print_traces_in_tests : bool
 val print_types : bool

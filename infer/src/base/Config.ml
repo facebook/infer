@@ -991,6 +991,10 @@ and precondition_stats =
   CLOpt.mk_bool ~deprecated:["precondition_stats"] ~long:"precondition-stats"
     "Print stats about preconditions to standard output"
 
+and print_logs =
+  CLOpt.mk_bool ~long:"print-logs" ~exes:CLOpt.[Toplevel]
+    "Also log messages to stdout and stderr"
+
 and print_builtins =
   CLOpt.mk_bool ~deprecated:["print_builtins"] ~long:"print-builtins"
     "Print the builtin functions and exit"
@@ -1483,6 +1487,7 @@ and patterns_skip_translation = match patterns_skip_translation with (k,r) -> (k
 and patterns_modeled_expensive = match patterns_modeled_expensive with (k,r) -> (k,!r)
 and pmd_xml = !pmd_xml
 and precondition_stats = !precondition_stats
+and print_logs = !print_logs
 and print_builtins = !print_builtins
 and print_traces_in_tests = !print_traces_in_tests
 and print_types = !print_types

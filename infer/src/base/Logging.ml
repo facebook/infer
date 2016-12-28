@@ -17,6 +17,17 @@ module CLOpt = CommandLineOption
 
 (* log files *)
 
+let dup_formatter fmt1 fmt2 =
+  let (out_string1, flush1) =
+    Format.pp_get_formatter_output_functions fmt1 () in
+  let (out_string2, flush2) =
+    Format.pp_get_formatter_output_functions fmt2 () in
+  (* crude multiplexing; may cause garbled output if a formatter is shared between several
+     processes *)
+  let out_string s p n = out_string1 s p n; out_string2 s p n in
+  let flush () = flush1 (); flush2 () in
+  Format.pp_set_formatter_output_functions fmt1 out_string flush
+
 (** Name of dir for logging the output in the specific executable *)
 let log_dir_of_exe (exe : CLOpt.exe) =
   match exe with
@@ -60,6 +71,12 @@ let create_log_file exe name_prefix outerr =
   F.fprintf file_fmt
     "---- start logging from %d -------------------------------------------@."
     (Pid.to_int (Unix.getpid ()));
+  if Config.print_logs then (
+    let outerr_fmt = match outerr with
+      | `Out -> Format.std_formatter
+      | `Err -> Format.err_formatter in
+    dup_formatter file_fmt outerr_fmt
+  );
   (* flush files on exit *)
   Pervasives.at_exit (fun () -> close_log_file (lazy file_fmt) (lazy chan) (lazy file));
   (file_fmt, chan, file)
