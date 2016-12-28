@@ -14,6 +14,16 @@ INFER_OPTIONS = --bo-filtering 0 --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \
-  test1.c
+  trivial.c \
+  function_call.c \
+  for_loop.c \
+  while_loop.c \
+  do_while.c \
+  nested_loop.c \
+  nested_loop_with_label.c \
+  break_continue_return.c \
+  goto_loop.c \
+  inf_loop.c \
+  main.c
 
 include $(TESTS_DIR)/clang.make
