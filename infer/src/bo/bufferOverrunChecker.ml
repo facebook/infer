@@ -275,186 +275,172 @@ struct
     output_mem
 end
 
-module Interprocedural =
-struct
-  module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (Scheduler.ReversePostorder)
+module Analyzer =
+  AbstractInterpreter.Make
+    (ProcCfg.Normal)
+    (Scheduler.ReversePostorder)
     (TransferFunctions)
 
-  module CFG = ProcCfg.Normal
-  module Sem = BufferOverrunSemantics.Make (CFG)
-  module TransferFunctions = TransferFunctions (CFG)
+module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
+module CFG = Analyzer.TransferFunctions.CFG
+module Sem = BufferOverrunSemantics.Make (CFG)
 
-  module Report =
-  struct
-    type extras = Procname.t -> Procdesc.t option
+module Report =
+struct
+  type extras = Procname.t -> Procdesc.t option
 
-    let add_condition
-      : Procname.t -> CFG.node -> Exp.t -> Location.t -> Dom.Mem.astate
-        -> Dom.ConditionSet.t -> Dom.ConditionSet.t
-    = fun pname node exp loc mem cond_set ->
-      let array_access =
-        match exp with
-        | Exp.Var _ ->
-            let arr = Sem.eval exp mem loc |> Dom.Val.get_array_blk in
-            Some (arr, Itv.zero, true)
-        | Exp.Lindex (e1, e2)
-        | Exp.BinOp (Binop.PlusA, e1, e2) ->
-            let arr = Sem.eval e1 mem loc |> Dom.Val.get_array_blk in
-            let idx = Sem.eval e2 mem loc |> Dom.Val.get_itv in
-            Some (arr, idx, true)
-        | Exp.BinOp (Binop.MinusA, e1, e2) ->
-            let arr = Sem.eval e1 mem loc |> Dom.Val.get_array_blk in
-            let idx = Sem.eval e2 mem loc |> Dom.Val.get_itv in
-            Some (arr, idx, false)
-        | _ -> None
-      in
-      match array_access with
-      | Some (arr, idx, is_plus) ->
-          let site = Sem.get_allocsite pname node 0 0 in
-          let size = ArrayBlk.sizeof arr in
-          let offset = ArrayBlk.offsetof arr in
-          let idx = (if is_plus then Itv.plus else Itv.minus) offset idx in
-          (if Config.bo_debug >= 2 then
-             (F.fprintf F.err_formatter "@[<v 2>Add condition :@,";
-              F.fprintf F.err_formatter "array: %a@," ArrayBlk.pp arr;
-              F.fprintf F.err_formatter "  idx: %a@," Itv.pp idx;
-              F.fprintf F.err_formatter "@]@."));
-          if size <> Itv.bot && idx <> Itv.bot then
-             Dom.ConditionSet.add_bo_safety pname loc site ~size ~idx cond_set
-          else cond_set
-      | None -> cond_set
-  
-    let instantiate_cond
-      : Tenv.t -> Procname.t -> Procdesc.t option -> (Exp.t * Typ.t) list
-        -> Dom.Mem.t -> Summary.summary -> Location.t -> Dom.ConditionSet.t
-    = fun tenv caller_pname callee_pdesc params caller_mem summary loc ->
-      let callee_entry_mem = Dom.Summary.get_input summary in
-      let callee_cond = Dom.Summary.get_cond_set summary in
-      match callee_pdesc with
-      | Some pdesc ->
-          let subst_map =
-            Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem loc
-          in
-          let pname = Procdesc.get_proc_name pdesc in
-          Dom.ConditionSet.subst callee_cond subst_map caller_pname pname loc
-      | _ -> callee_cond
-
-    let print_debug_info : Sil.instr -> Dom.Mem.t -> Dom.ConditionSet.t -> unit
-    = fun instr pre cond_set ->
-      if Config.bo_debug >= 2 then
-        (F.fprintf F.err_formatter "@.@.================================@.";
-         F.fprintf F.err_formatter "@[<v 2>Pre-state : @,";
-         Dom.Mem.pp F.err_formatter pre;
-         F.fprintf F.err_formatter "@]@.@.";
-         Sil.pp_instr Pp.text F.err_formatter instr;
-         F.fprintf F.err_formatter "@[<v 2>@.@.";
-         Dom.ConditionSet.pp F.err_formatter cond_set;
-         F.fprintf F.err_formatter "@]@.";
-         F.fprintf F.err_formatter "================================@.@.")
-  
-    let collect_instr
-      : extras ProcData.t -> CFG.node -> Dom.ConditionSet.t * Dom.Mem.t
-        -> Sil.instr -> Dom.ConditionSet.t * Dom.Mem.t
-    = fun ({ pdesc; tenv; extras } as pdata) node (cond_set, mem) instr ->
-      let pname = Procdesc.get_proc_name pdesc in
-      let cond_set =
-        match instr with
-        | Sil.Load (_, exp, _, loc)
-        | Sil.Store (exp, _, _, loc) ->
-            add_condition pname node exp loc mem cond_set
-        | Sil.Call (_, Const (Cfun callee_pname), params, loc, _) ->
-            (match Summary.read_summary pdesc callee_pname with
-             | Some summary ->
-                 let callee = extras callee_pname in
-                 instantiate_cond tenv pname callee params mem summary loc
-                 |> Dom.ConditionSet.rm_invalid
-                 |> Dom.ConditionSet.join cond_set
-             | _ -> cond_set)
-        | _ -> cond_set
-      in
-      let mem = TransferFunctions.exec_instr mem pdata node instr in
-      print_debug_info instr mem cond_set;
-      (cond_set, mem)
-
-    let collect_instrs
-      : extras ProcData.t -> CFG.node -> Sil.instr list -> Dom.Mem.t
-        -> Dom.ConditionSet.t -> Dom.ConditionSet.t
-    = fun pdata node instrs mem cond_set ->
-      IList.fold_left (collect_instr pdata node) (cond_set, mem) instrs
-      |> fst
-
-    let collect_node
-      : extras ProcData.t -> Analyzer.invariant_map -> Dom.ConditionSet.t ->
-        CFG.node -> Dom.ConditionSet.t
-    = fun pdata inv_map cond_set node ->
-      let instrs = CFG.instr_ids node |> IList.map fst in
-      match Analyzer.extract_pre (CFG.id node) inv_map with
-      | Some mem -> collect_instrs pdata node instrs mem cond_set
-      | _ -> cond_set
-
-    let collect
-      : extras ProcData.t -> Analyzer.invariant_map -> Dom.ConditionSet.t
-    = fun ({ pdesc } as pdata) inv_map ->
-      let add_node1 acc node = collect_node pdata inv_map acc node in
-      Procdesc.fold_nodes add_node1 Dom.ConditionSet.empty pdesc
-
-    let report_error : Tenv.t -> Procdesc.t -> Dom.ConditionSet.t -> unit
-    = fun tenv pdesc conds ->
-      let pname = Procdesc.get_proc_name pdesc in
-      let report1 cond =
-        let safe = Dom.Condition.check cond in
-        let (caller_pname, loc) =
-          match Dom.Condition.get_trace cond with
-          | Dom.Condition.Inter (caller_pname, _, loc) -> (caller_pname, loc)
-          | Dom.Condition.Intra pname -> (pname, Dom.Condition.get_location cond)
-        in
-        (* report symbol-related alarms only in debug mode *)
-        if not safe && Procname.equal pname caller_pname then
-          let bo_kind = "BUFFER-OVERRUN CHECKER" in
-          let cond_str = Dom.Condition.to_string cond in
-          Checkers.ST.report_error tenv pname pdesc bo_kind loc cond_str
-      in
-      Dom.ConditionSet.iter report1 conds
-  end
-
-  let analyze_ondemand_
-    : Tenv.t -> Analyzer.TransferFunctions.extras -> Procdesc.t
-      -> Dom.Summary.t option
-  = fun tenv get_pdesc pdesc ->
-    let cfg = CFG.from_pdesc pdesc in
-    let pdata = ProcData.make pdesc tenv get_pdesc in
-    let pname = Procdesc.get_proc_name pdesc in
-    let inv_map = Analyzer.exec_pdesc pdata in
-    let entry_mem =
-      let entry_id = CFG.id (CFG.start_node cfg) in
-      Analyzer.extract_post entry_id inv_map
-    in
-    let exit_mem =
-      let exit_id = CFG.id (CFG.exit_node cfg) in
-      Analyzer.extract_post exit_id inv_map
-    in
-    let cond_set = Report.collect pdata inv_map in
-    Report.report_error tenv pdesc cond_set;
-    if Procname.get_method pname = "infer_print" then None else
-      match entry_mem, exit_mem with
-      | Some entry_mem, Some exit_mem ->
-          Summary.write_summary pname (entry_mem, exit_mem, cond_set);
-          Some (entry_mem, exit_mem, cond_set)
+  let add_condition
+    : Procname.t -> CFG.node -> Exp.t -> Location.t -> Dom.Mem.astate
+      -> Dom.ConditionSet.t -> Dom.ConditionSet.t
+  = fun pname node exp loc mem cond_set ->
+    let array_access =
+      match exp with
+      | Exp.Var _ ->
+          let arr = Sem.eval exp mem loc |> Dom.Val.get_array_blk in
+          Some (arr, Itv.zero, true)
+      | Exp.Lindex (e1, e2)
+      | Exp.BinOp (Binop.PlusA, e1, e2) ->
+          let arr = Sem.eval e1 mem loc |> Dom.Val.get_array_blk in
+          let idx = Sem.eval e2 mem loc |> Dom.Val.get_itv in
+          Some (arr, idx, true)
+      | Exp.BinOp (Binop.MinusA, e1, e2) ->
+          let arr = Sem.eval e1 mem loc |> Dom.Val.get_array_blk in
+          let idx = Sem.eval e2 mem loc |> Dom.Val.get_itv in
+          Some (arr, idx, false)
       | _ -> None
-
-  let checker : Callbacks.proc_callback_args -> Dom.Summary.t option
-  = fun { get_proc_desc; proc_desc; proc_name; tenv } ->
-    let analyze_ondemand _ pdesc =
-      ignore (analyze_ondemand_ tenv get_proc_desc pdesc)
     in
-    let callbacks = { Ondemand.analyze_ondemand; get_proc_desc } in
-    if Ondemand.procedure_should_be_analyzed proc_name then
-      (Ondemand.set_callbacks callbacks;
-       let post_opt = analyze_ondemand_ tenv get_proc_desc proc_desc in
-       Ondemand.unset_callbacks ();
-       post_opt)
-    else Summary.read_summary proc_desc proc_name
+    match array_access with
+    | Some (arr, idx, is_plus) ->
+        let site = Sem.get_allocsite pname node 0 0 in
+        let size = ArrayBlk.sizeof arr in
+        let offset = ArrayBlk.offsetof arr in
+        let idx = (if is_plus then Itv.plus else Itv.minus) offset idx in
+        (if Config.bo_debug >= 2 then
+           (F.fprintf F.err_formatter "@[<v 2>Add condition :@,";
+            F.fprintf F.err_formatter "array: %a@," ArrayBlk.pp arr;
+            F.fprintf F.err_formatter "  idx: %a@," Itv.pp idx;
+            F.fprintf F.err_formatter "@]@."));
+        if size <> Itv.bot && idx <> Itv.bot then
+          Dom.ConditionSet.add_bo_safety pname loc site ~size ~idx cond_set
+        else cond_set
+    | None -> cond_set
+
+  let instantiate_cond
+    : Tenv.t -> Procname.t -> Procdesc.t option -> (Exp.t * Typ.t) list
+      -> Dom.Mem.t -> Summary.summary -> Location.t -> Dom.ConditionSet.t
+  = fun tenv caller_pname callee_pdesc params caller_mem summary loc ->
+    let callee_entry_mem = Dom.Summary.get_input summary in
+    let callee_cond = Dom.Summary.get_cond_set summary in
+    match callee_pdesc with
+    | Some pdesc ->
+        let subst_map =
+          Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem loc
+        in
+        let pname = Procdesc.get_proc_name pdesc in
+        Dom.ConditionSet.subst callee_cond subst_map caller_pname pname loc
+    | _ -> callee_cond
+
+  let print_debug_info : Sil.instr -> Dom.Mem.t -> Dom.ConditionSet.t -> unit
+  = fun instr pre cond_set ->
+    if Config.bo_debug >= 2 then
+      (F.fprintf F.err_formatter "@.@.================================@.";
+       F.fprintf F.err_formatter "@[<v 2>Pre-state : @,";
+       Dom.Mem.pp F.err_formatter pre;
+       F.fprintf F.err_formatter "@]@.@.";
+       Sil.pp_instr Pp.text F.err_formatter instr;
+       F.fprintf F.err_formatter "@[<v 2>@.@.";
+       Dom.ConditionSet.pp F.err_formatter cond_set;
+       F.fprintf F.err_formatter "@]@.";
+       F.fprintf F.err_formatter "================================@.@.")
+
+  let collect_instr
+    : extras ProcData.t -> CFG.node -> Dom.ConditionSet.t * Dom.Mem.t
+      -> Sil.instr -> Dom.ConditionSet.t * Dom.Mem.t
+  = fun ({ pdesc; tenv; extras } as pdata) node (cond_set, mem) instr ->
+    let pname = Procdesc.get_proc_name pdesc in
+    let cond_set =
+      match instr with
+      | Sil.Load (_, exp, _, loc)
+      | Sil.Store (exp, _, _, loc) ->
+          add_condition pname node exp loc mem cond_set
+      | Sil.Call (_, Const (Cfun callee_pname), params, loc, _) ->
+          (match Summary.read_summary pdesc callee_pname with
+           | Some summary ->
+               let callee = extras callee_pname in
+               instantiate_cond tenv pname callee params mem summary loc
+               |> Dom.ConditionSet.rm_invalid
+               |> Dom.ConditionSet.join cond_set
+           | _ -> cond_set)
+      | _ -> cond_set
+    in
+    let mem = Analyzer.TransferFunctions.exec_instr mem pdata node instr in
+    print_debug_info instr mem cond_set;
+    (cond_set, mem)
+
+  let collect_instrs
+    : extras ProcData.t -> CFG.node -> Sil.instr list -> Dom.Mem.t
+      -> Dom.ConditionSet.t -> Dom.ConditionSet.t
+  = fun pdata node instrs mem cond_set ->
+    IList.fold_left (collect_instr pdata node) (cond_set, mem) instrs
+    |> fst
+
+  let collect_node
+    : extras ProcData.t -> Analyzer.invariant_map -> Dom.ConditionSet.t ->
+      CFG.node -> Dom.ConditionSet.t
+  = fun pdata inv_map cond_set node ->
+    let instrs = CFG.instr_ids node |> IList.map fst in
+    match Analyzer.extract_pre (CFG.id node) inv_map with
+    | Some mem -> collect_instrs pdata node instrs mem cond_set
+    | _ -> cond_set
+
+  let collect
+    : extras ProcData.t -> Analyzer.invariant_map -> Dom.ConditionSet.t
+  = fun ({ pdesc } as pdata) inv_map ->
+    let add_node1 acc node = collect_node pdata inv_map acc node in
+    Procdesc.fold_nodes add_node1 Dom.ConditionSet.empty pdesc
+
+  let report_error : Tenv.t -> Procdesc.t -> Dom.ConditionSet.t -> unit
+  = fun tenv pdesc conds ->
+    let pname = Procdesc.get_proc_name pdesc in
+    let report1 cond =
+      let safe = Dom.Condition.check cond in
+      let (caller_pname, loc) =
+        match Dom.Condition.get_trace cond with
+        | Dom.Condition.Inter (caller_pname, _, loc) -> (caller_pname, loc)
+        | Dom.Condition.Intra pname -> (pname, Dom.Condition.get_location cond)
+      in
+      (* report symbol-related alarms only in debug mode *)
+      if not safe && Procname.equal pname caller_pname then
+        let bo_kind = "BUFFER-OVERRUN CHECKER" in
+        let cond_str = Dom.Condition.to_string cond in
+        Checkers.ST.report_error tenv pname pdesc bo_kind loc cond_str
+    in
+    Dom.ConditionSet.iter report1 conds
 end
+
+let compute_post
+  : Analyzer.TransferFunctions.extras ProcData.t -> Summary.summary option
+= fun { pdesc; tenv; extras = get_pdesc } ->
+  let cfg = CFG.from_pdesc pdesc in
+  let pdata = ProcData.make pdesc tenv get_pdesc in
+  let pname = Procdesc.get_proc_name pdesc in
+  let inv_map = Analyzer.exec_pdesc pdata in
+  let entry_mem =
+    let entry_id = CFG.id (CFG.start_node cfg) in
+    Analyzer.extract_post entry_id inv_map
+  in
+  let exit_mem =
+    let exit_id = CFG.id (CFG.exit_node cfg) in
+    Analyzer.extract_post exit_id inv_map
+  in
+  let cond_set = Report.collect pdata inv_map in
+  Report.report_error tenv pdesc cond_set;
+  if Procname.get_method pname = "infer_print" then None else
+    match entry_mem, exit_mem with
+    | Some entry_mem, Some exit_mem ->
+        Summary.write_summary pname (entry_mem, exit_mem, cond_set);
+        Some (entry_mem, exit_mem, cond_set)
+    | _ -> None
 
 let print_summary : Procname.t -> Dom.Summary.t -> unit
 = fun proc_name s ->
@@ -465,6 +451,13 @@ let print_summary : Procname.t -> Dom.Summary.t -> unit
 
 let checker : Callbacks.proc_callback_args -> unit
 = fun ({ proc_name } as callback) ->
-  match Interprocedural.checker callback with
+  let make_extras _ = callback.get_proc_desc in
+  let post =
+    Interprocedural.compute_and_store_post
+      ~compute_post
+      ~make_extras
+      callback
+  in
+  match post with
   | Some s when Config.bo_debug >= 1 -> print_summary proc_name s
   | _ -> ()
