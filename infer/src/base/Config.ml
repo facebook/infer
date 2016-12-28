@@ -18,14 +18,14 @@ module F = Format
 
 
 type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
-              | Crashcontext | Linters | Quandary | Threadsafety | Bo
+              | Crashcontext | Linters | Quandary | Threadsafety | Bufferoverrun
 
 let string_to_analyzer =
   [("capture", Capture); ("compile", Compile);
    ("infer", Infer); ("eradicate", Eradicate); ("checkers", Checkers);
    ("tracing", Tracing); ("crashcontext", Crashcontext); ("linters", Linters);
    ("quandary", Quandary); ("threadsafety", Threadsafety);
-   ("bo", Bo)]
+   ("bufferoverrun", Bufferoverrun)]
 
 let string_of_analyzer a =
   IList.find (fun (_, a') -> a = a') string_to_analyzer |> fst
@@ -456,11 +456,11 @@ and analyzer =
     (* NOTE: if compilation fails here, it means you have added a new analyzer without updating the
        documentation of this option *)
     | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters
-    | Quandary | Threadsafety | Bo -> () in
+    | Quandary | Threadsafety | Bufferoverrun -> () in
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:"a"
     ~exes:CLOpt.[Driver]
     "Specify which analyzer to run (only one at a time is supported):\n\
-     - infer, eradicate, checkers, quandary, threadsafety, bo: run the specified analysis\n\
+     - infer, eradicate, checkers, quandary, threadsafety, bufferoverrun: run the specified analysis\n\
      - capture: run capture phase only (no analysis)\n\
      - compile: run compilation command without interfering (not supported by all frontends)\n\
      - crashcontext, tracing: experimental (see --crashcontext and --tracing)\n\
@@ -563,7 +563,7 @@ and check_duplicate_symbols =
     ~exes:CLOpt.[Analyze]
     "Check if a symbol with the same name is defined in more than one file."
 
-and checkers, crashcontext, eradicate, quandary, threadsafety, bo =
+and checkers, crashcontext, eradicate, quandary, threadsafety, bufferoverrun =
   let checkers =
     CLOpt.mk_bool ~deprecated:["checkers"] ~long:"checkers"
       "Activate the checkers instead of the full analysis"
@@ -588,12 +588,12 @@ and checkers, crashcontext, eradicate, quandary, threadsafety, bo =
       "Activate the thread safety analysis"
       [checkers] []
   in
-  let bo =
-    CLOpt.mk_bool_group ~deprecated:["bo"] ~long:"bo"
+  let bufferoverrun =
+    CLOpt.mk_bool_group ~deprecated:["bufferoverrun"] ~long:"bufferoverrn"
       "Activate the buffer overrun analysis"
       [checkers] []
   in
-  (checkers, crashcontext, eradicate, quandary, threadsafety, bo)
+  (checkers, crashcontext, eradicate, quandary, threadsafety, bufferoverrun)
 
 and checkers_repeated_calls =
   CLOpt.mk_bool ~long:"checkers-repeated-calls"
@@ -1366,7 +1366,7 @@ let post_parsing_initialization () =
   | Some Eradicate -> checkers := true; eradicate := true
   | Some Quandary -> checkers := true; quandary := true
   | Some Threadsafety -> checkers := true; threadsafety := true
-  | Some Bo -> checkers := true; bo := true
+  | Some Bufferoverrun -> checkers := true; bufferoverrun := true
   | Some Tracing -> tracing := true
   | Some (Capture | Compile | Infer | Linters) | None -> ()
 
@@ -1401,13 +1401,13 @@ and angelic_execution = !angelic_execution
 and array_level = !array_level
 and ast_file = !ast_file
 and blacklist = !blacklist
-and bo = !bo
 and bootclasspath = !bootclasspath
 and bo_debug = !bo_debug
 and bo_filtering = !bo_filtering
 and buck = !buck
 and buck_build_args = !buck_build_args
 and buck_out = !buck_out
+and bufferoverrun = !bufferoverrun
 and bugs_csv = !bugs_csv
 and bugs_json = !bugs_json
 and frontend_tests = !frontend_tests

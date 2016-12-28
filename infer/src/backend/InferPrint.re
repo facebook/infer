@@ -311,7 +311,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
       | Checkers
       | Eradicate
       | Tracing
-      | Bo => true
+      | Bufferoverrun => true
       | Capture
       | Compile
       | Crashcontext

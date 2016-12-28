@@ -308,7 +308,7 @@ let analyze driver_mode =
         false, false
     | _, (Capture | Compile) ->
         false, false
-    | _, (Infer | Eradicate | Checkers | Tracing | Crashcontext | Quandary | Threadsafety | Bo) ->
+    | _, (Infer | Eradicate | Checkers | Tracing | Crashcontext | Quandary | Threadsafety | Bufferoverrun) ->
         true, true
     | _, Linters ->
         false, true in
