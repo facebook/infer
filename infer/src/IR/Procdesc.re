@@ -522,8 +522,8 @@ let node_set_succs_exn pdesc (node: Node.t) succs exn =>
 
 
 /** Get loop heads for widening.
-    It collects all nodes that have a back edge, even when it does not
-    dominate the source node of the back edge.
+    It collects all target nodes of back-edges in a depth-first
+    traversal.
     */
 let get_loop_heads pdesc => {
   let rec set_loop_head_rec visited heads wl =>
