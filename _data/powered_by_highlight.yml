@@ -21,3 +21,6 @@
   - name: WhatsApp
     url: https://www.whatsapp.com
     img: static/images/whatsapp.svg
+  - name: Grab
+    url: https://www.grab.com
+    img: static/images/grab.png
