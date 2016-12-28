@@ -47,7 +47,14 @@ end
 module Pair (Domain1 : S) (Domain2 : S) : S with type astate = Domain1.astate * Domain2.astate
 
 (** Cartesian product of three domains. *)
-module Pair3 (Domain1 : S) (Domain2 : S) (Domain3 : S) : S with type astate = Domain1.astate * Domain2.astate * Domain3.astate
+module Pair3 (Domain1 : S) (Domain2 : S) (Domain3 : S) : sig
+  type astate =
+    { fst : Domain1.astate;
+      snd : Domain2.astate;
+      trd : Domain3.astate }
+
+  include S with type astate := astate
+end
 
 (** Lift a set to a powerset domain ordered by subset. The elements of the set should be drawn from
     a *finite* collection of possible values, since the widening operator here is just union. *)
