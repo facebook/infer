@@ -8,7 +8,6 @@
 TESTS_DIR = ../../..
 
 ANALYZER = bufferoverrun
-# see explanations in cpp/errors/Makefile for the custom isystem
 CLANG_OPTIONS = -c
 INFER_OPTIONS = --bo-filtering 0 --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
