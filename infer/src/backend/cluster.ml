@@ -41,5 +41,7 @@ let pp_cluster fmt (nr, cluster) =
   let pp_cl fmt n = Format.fprintf fmt "%s" (cl_name n) in
   store_to_file (DB.filename_from_string fname) (nr, cluster);
   F.fprintf fmt "%a: @\n" pp_cl nr;
-  F.fprintf fmt "\t$(INFERANALYZE) -cluster %s >%a@\n" fname pp_cl nr;
+  F.fprintf fmt "\t$(INFERANALYZE) -cluster '%s'@\n" fname;
+  (* touch the target of the rule to let `make` know that the job has been done *)
+  F.fprintf fmt "\t@@touch $@@@\n";
   F.fprintf fmt "@\n"

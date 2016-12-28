@@ -100,9 +100,7 @@ let main makefile => {
   | None => ()
   };
   switch Config.cluster_cmdline {
-  | Some fname =>
-    L.stdout "Cluster %s@." fname;
-    process_cluster_cmdline fname
+  | Some fname => process_cluster_cmdline fname
   | None =>
     print_stdout_legend ();
     if Config.allow_specs_cleanup {
