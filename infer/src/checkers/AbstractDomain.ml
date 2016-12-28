@@ -91,42 +91,35 @@ module Pair (Domain1 : S) (Domain2 : S) = struct
 end
 
 module Pair3 (Domain1 : S) (Domain2 : S) (Domain3 : S) = struct
-  type astate =
-    { fst : Domain1.astate;
-      snd : Domain2.astate;
-      trd : Domain3.astate }
+  type astate = Domain1.astate * Domain2.astate * Domain3.astate
 
-  let initial =
-    { fst = Domain1.initial;
-      snd = Domain2.initial;
-      trd = Domain3.initial }
+  let initial = Domain1.initial, Domain2.initial, Domain3.initial
+
+  let fst (x,_,_) = x
+  let snd (_,x,_) = x
+  let trd (_,_,x) = x
 
   let (<=) ~lhs ~rhs =
     if phys_equal lhs rhs
     then true
     else
-      Domain1.(<=) ~lhs:lhs.fst ~rhs:rhs.fst &&
-      Domain2.(<=) ~lhs:lhs.snd ~rhs:rhs.snd &&
-      Domain3.(<=) ~lhs:lhs.trd ~rhs:rhs.trd
+      Domain1.(<=) ~lhs:(fst lhs) ~rhs:(fst rhs) && Domain2.(<=) ~lhs:(snd lhs) ~rhs:(snd rhs) && Domain3.(<=) ~lhs:(trd lhs) ~rhs:(trd rhs) 
 
   let join astate1 astate2 =
     if phys_equal astate1 astate2
     then astate1
-    else
-      { fst = Domain1.join astate1.fst astate2.fst;
-        snd = Domain2.join astate1.snd astate2.snd;
-        trd = Domain3.join astate1.trd astate2.trd }
+    else Domain1.join (fst astate1) (fst astate2), Domain2.join (snd astate1) (snd astate2), Domain3.join (trd astate1) (trd astate2)
 
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next
     then prev
     else
-      { fst = Domain1.widen ~prev:prev.fst ~next:next.fst ~num_iters;
-        snd = Domain2.widen ~prev:prev.snd ~next:next.snd ~num_iters;
-        trd = Domain3.widen ~prev:prev.trd ~next:next.trd ~num_iters }
+      Domain1.widen ~prev:(fst prev) ~next:(fst next) ~num_iters,
+      Domain2.widen ~prev:(snd prev) ~next:(snd next) ~num_iters,
+      Domain3.widen ~prev:(trd prev) ~next:(trd next) ~num_iters
 
-  let pp fmt {fst; snd; trd} =
-    F.fprintf fmt "(%a, %a, %a)" Domain1.pp fst Domain2.pp snd Domain3.pp trd
+  let pp fmt (astate1, astate2, astate3) =
+    F.fprintf fmt "(%a, %a, %a)" Domain1.pp astate1 Domain2.pp astate2 Domain3.pp astate3
 end
 
 module FiniteSet (S : PrettyPrintable.PPSet) = struct
