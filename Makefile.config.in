@@ -106,7 +106,7 @@ JAVA_HOME=$(USER_JAVA_HOME)
 endif
 
 JAVA_DEPS = $(addprefix $(PYTHON_LIB_DIR)/, \
-              analyze.py config.py issues.py jwlib.py source.py utils.py) \
+              analyze.py bucklib.py config.py issues.py jwlib.py source.py utils.py) \
             $(addprefix $(CAPTURE_LIB_DIR)/, javac.py util.py) \
             $(INFER_BIN) \
             $(INFERANALYZE_BIN) \
