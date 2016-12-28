@@ -7,14 +7,13 @@
 
 TESTS_DIR = ../../..
 
-ANALYZER = bo
+ANALYZER = bufferoverrun
 # see explanations in cpp/errors/Makefile for the custom isystem
 CLANG_OPTIONS = -c
 INFER_OPTIONS = --bo-filtering 0 --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \
-  test1.c \
-  test2.c
+  test1.c
 
 include $(TESTS_DIR)/clang.make
