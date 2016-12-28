@@ -97,7 +97,7 @@ def dump_json_to_path(
         skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True,
         cls=None,
         indent=2,  # customized
-        separators=(',', ': '),  # default is (', ', ': ') with trailing space
+        separators=None,
         encoding=config.CODESET,  # customized
         default=None, sort_keys=False, **kw):
     with codecs.open(path, 'w',
