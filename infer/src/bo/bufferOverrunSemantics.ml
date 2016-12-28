@@ -16,7 +16,7 @@
 
 open! IStd
 open Core_kernel.Fn
-open BasicDom
+open AbsLoc
 
 module F = Format
 module L = Logging

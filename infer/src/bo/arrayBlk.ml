@@ -16,7 +16,7 @@
 
 (* Abstract Array Block *)
 open! IStd
-open BasicDom
+open AbsLoc
 
 module ArrInfo =
 struct

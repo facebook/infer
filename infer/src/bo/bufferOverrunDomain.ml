@@ -15,7 +15,7 @@
  *)
 
 open! IStd
-open BasicDom
+open AbsLoc
 
 module F = Format
 module L = Logging
