@@ -44,27 +44,29 @@ let set_log_file_identifier (current_exe : CLOpt.exe) string_opt =
   if should_setup_log_files then (
     let name_prefix =
       (match string_opt with
-       | Some name -> name ^ "_"
+       | Some name -> name ^ "-"
        | None -> ""
-      ) ^ Pid.to_string (Unix.getpid ()) ^ "_" in
+      ) in
     let exe_log_dir =
-      let log_dir = Config.results_dir ^/ Config.log_dir_name in
-      log_dir ^/ (log_dir_of_current_exe current_exe) in
+      Config.results_dir ^/ Config.log_dir_name ^/ log_dir_of_current_exe current_exe in
     let fmt_chan_file name suffix = lazy (
+      let file =
+        (* the command-line option takes precedence if specified *)
+        if name <> "" then name
+        else exe_log_dir ^/ name_prefix^suffix in
       try
         Unix.mkdir_p exe_log_dir ;
-        let file =
-          (* the command-line option takes precedence if specified *)
-          if name <> "" then name
-          else Filename.temp_file ~in_dir:exe_log_dir name_prefix suffix in
-        let chan = Pervasives.open_out file in
+        let chan = Pervasives.open_out_gen [Open_append; Open_creat] 0o666 file in
         let fmt = F.formatter_of_out_channel chan in
+        Format.fprintf fmt
+          "---- start logging from %d -------------------------------------------@\n"
+          (Pid.to_int (Unix.getpid ()));
         (fmt, chan, file)
       with Sys_error _ ->
-        failwithf "ERROR: cannot open log file %s@\n" name
+        failwithf "ERROR: cannot open log file \"%s\"" file
     ) in
-    let out_fmt_chan_file = fmt_chan_file Config.out_file_cmdline "-out.log" in
-    let err_fmt_chan_file = fmt_chan_file Config.err_file_cmdline "-err.log" in
+    let out_fmt_chan_file = fmt_chan_file Config.out_file_cmdline "out.log" in
+    let err_fmt_chan_file = fmt_chan_file Config.err_file_cmdline "err.log" in
     Pervasives.at_exit (fun () ->
         let close fmt_chan_file =
           if Lazy.is_val fmt_chan_file then (
@@ -84,7 +86,7 @@ let set_log_file_identifier (current_exe : CLOpt.exe) string_opt =
   )
 
 (* set up log files on startup if needed *)
-let () = set_log_file_identifier Config.current_exe (Some (CLOpt.exe_name Config.current_exe))
+let () = set_log_file_identifier Config.current_exe None
 
 let log_file_names () = (Lazy.force !out_file, Lazy.force !err_file)
 

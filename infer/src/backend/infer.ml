@@ -302,7 +302,7 @@ let () =
     remove_results_dir () ;
   create_results_dir () ;
   (* re-set log files, as default files were in results_dir removed above *)
-  L.set_log_file_identifier Config.current_exe (Some (CLOpt.exe_name Config.current_exe)) ;
+  L.set_log_file_identifier Config.current_exe None ;
   if Config.print_builtins then Builtin.print_and_exit () ;
   if Config.is_originator then L.do_out "%s@\n" Config.version_string ;
   (* infer might be called from a Makefile and itself uses `make` to run the analysis in parallel,
