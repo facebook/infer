@@ -24,6 +24,7 @@ struct
     { offset : Itv.t;
       size : Itv.t;
       stride : Itv.t; }
+    [@@deriving compare]
 
   type astate = t
 
@@ -41,14 +42,6 @@ struct
 
   let make : Itv.t * Itv.t * Itv.t -> t
   = fun (o, s, stride) -> { offset = o; size = s; stride = stride; }
-
-  let compare : t -> t -> int
-  = fun a1 a2 ->
-    let i = Itv.compare a1.offset a2.offset in
-    if i <> 0 then i else
-      let i = Itv.compare a1.size a2.size in
-      if i <> 0 then i else
-        Itv.compare a1.stride a2.stride
 
   let join : t -> t -> t
   = fun a1 a2 ->

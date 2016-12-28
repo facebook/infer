@@ -21,13 +21,7 @@ let sym_size = ref 0
 
 module Symbol =
 struct
-  type t = Procname.t * int
-
-  let compare : t -> t -> int
-  = fun x y -> 
-    let c = Procname.compare (fst x) (fst y) in
-    if c <> 0 then c
-    else (snd x) - (snd y)
+  type t = Procname.t * int [@@deriving compare]
 
   let eq : t -> t -> bool
   = fun x y -> compare x y = 0
@@ -55,10 +49,7 @@ module SymLinear =
 struct
   module M = Map.Make (Symbol)
 
-  type t = int M.t
-
-  let compare : t -> t -> int
-  = M.compare (fun x y -> x - y)
+  type t = int M.t [@@deriving compare]
 
   let empty : t
   = M.empty
@@ -189,7 +180,7 @@ struct
     | MinMax of min_max_t * int * Symbol.t
     | PInf
     | Bot
-
+  [@@deriving compare]
   and min_max_t = Min | Max
 
   let pp_min_max : F.formatter -> min_max_t -> unit
@@ -211,29 +202,6 @@ struct
         else
           F.fprintf fmt "%a + %d" SymLinear.pp x c
     | MinMax (m, c, x) -> F.fprintf fmt "%a(%d, %a)" pp_min_max m c Symbol.pp x
-
-  let compare : t -> t -> int
-  = fun x y ->
-    match x, y with
-    | MInf, MInf -> 0
-    | MInf, _ -> -1
-    | _, MInf -> 1
-    | Linear (c1, se1), Linear (c2, se2) ->
-        let i = c1 - c2 in
-        if i <> 0 then i else SymLinear.compare se1 se2
-    | Linear _, _ -> -1
-    | _, Linear _ -> 1
-    | MinMax (m1, c1, s1), MinMax (m2, c2, s2) ->
-        let i = compare m1 m2 in
-        if i <> 0 then i else
-          let i = c1 - c2 in
-          if i <> 0 then i else Symbol.compare s1 s2
-    | MinMax _, _ -> -1
-    | _, MinMax _ -> 1
-    | PInf, PInf -> 0
-    | PInf, _ -> -1
-    | _, PInf -> 1
-    | Bot, Bot -> 0
 
   let of_int : int -> t
   = fun n -> Linear (n, SymLinear.empty)
@@ -528,13 +496,9 @@ end
 module ItvPure =
 struct
   type astate = Bound.t * Bound.t
+  [@@deriving compare]
 
   type t = astate
-
-  let compare : t -> t -> int
-  = fun (x1, x2) (y1, y2) ->
-    let i = Bound.compare x1 y1 in
-    if i <> 0 then i else Bound.compare x2 y2
 
   let initial : t
   = (Bound.initial, Bound.initial)
@@ -869,7 +833,9 @@ let compare : t -> t -> int
   | Bottom, Bottom -> 0
   | Bottom, _ -> -1
   | _, Bottom -> 1
-  | NonBottom x, NonBottom y -> ItvPure.compare x y
+  | NonBottom x, NonBottom y -> ItvPure.compare_astate x y
+
+let compare_astate = compare
 
 let bot : t
 = initial

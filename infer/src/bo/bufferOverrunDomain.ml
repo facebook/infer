@@ -29,38 +29,12 @@ struct
       loc : Location.t;
       trace : trace;
       id : string }
+  [@@deriving compare]
   and trace = Intra of Procname.t
             | Inter of Procname.t * Procname.t * Location.t
+  [@@deriving compare]
 
   and astate = t
-
-  let trace_compare : trace -> trace -> int
-  = fun x y ->
-    match x, y with
-    | Intra _, Inter _ -> 1
-    | Inter _, Intra _ -> -1
-    | Intra p1, Intra p2 -> Procname.compare p1 p2
-    | Inter (caller1, callee1, l1), Inter (caller2, callee2, l2) ->
-        let i = Procname.compare caller1 caller2 in
-        if i <> 0 then i else
-          let i = Procname.compare callee1 callee2 in
-          if i <> 0 then i else
-            Location.compare l1 l2
-
-  let compare : t -> t -> int
-  = fun x y ->
-    let i = Itv.compare x.idx y.idx in
-    if i <> 0 then i else
-      let i = Itv.compare x.size y.size in
-      if i <> 0 then i else
-        let i = Procname.compare x.proc_name y.proc_name in
-        if i <> 0 then i else
-          let i = Location.compare x.loc y.loc in
-          if i <> 0 then i else
-            let i = trace_compare x.trace y.trace in
-            if i <> 0 then i else
-              String.compare x.id y.id
-
 
   let set_size_pos : t -> t
   = fun c ->
@@ -179,10 +153,7 @@ struct
   include AbstractDomain.FiniteSet (PPSet)
 
   module Map = Caml.Map.Make (struct
-      type t = Location.t
-
-      let compare : t -> t -> int
-      = fun l1 l2 -> Location.compare l1 l2
+      type t = Location.t [@@deriving compare]
     end)
 
   let add_bo_safety

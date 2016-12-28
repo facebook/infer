@@ -29,18 +29,7 @@ struct
     | Var of Var.t
     | Allocsite of Allocsite.t
     | Field of t * Ident.fieldname
-
-  let rec compare x y =
-    match x, y with
-    | Var v1, Var v2 -> Var.compare v1 v2
-    | Var _, _ -> -1
-    | _, Var _ -> 1
-    | Allocsite a1, Allocsite a2 -> Allocsite.compare a1 a2
-    | Allocsite _, _ -> -1
-    | _, Allocsite _ -> 1
-    | Field (f1, n1), Field (f2, n2) ->
-        let i = Ident.compare_fieldname n1 n2 in
-        if i <> 0 then i else compare f1 f2
+  [@@deriving compare]
 
   let rec pp fmt = function 
     | Var v -> 
@@ -75,7 +64,7 @@ module PowLoc =
 struct 
   include AbstractDomain.FiniteSet
     (struct 
-      include Set.Make (struct type t = Loc.t let compare = Loc.compare end)
+      include Set.Make (struct type t = Loc.t [@@deriving compare] end)
       let pp_element fmt e = Loc.pp fmt e
       let pp fmt s =
         Format.fprintf fmt "{";
