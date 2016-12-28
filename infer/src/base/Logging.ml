@@ -15,78 +15,88 @@ open! IStd
 module F = Format
 module CLOpt = CommandLineOption
 
+(* log files *)
 
 (** Name of dir for logging the output in the specific executable *)
-let log_dir_of_current_exe (current_exe : CLOpt.exe) =
-  match current_exe with
+let log_dir_of_exe (exe : CLOpt.exe) =
+  match exe with
   | Analyze -> "analyze"
   | Clang -> "clang"
   | Interactive -> "interactive"
   | Java -> "java"
   | Print -> "print"
-  | Toplevel -> "top_level"
+  | Toplevel -> "toplevel"
 
+let stdout_err_log_files =
+  (((lazy F.std_formatter), (lazy Pervasives.stdout),
+    (lazy "out log file not initialized, stdout used instead")),
+   ((lazy F.err_formatter), (lazy Pervasives.stderr),
+    (lazy "err log file not initialized, stderr used instead")))
 
-let out_file = ref (lazy "out log file not initialized, stdout used instead")
-let err_file = ref (lazy "err log file not initialized, stderr used instead")
-let out_chan = ref (lazy Pervasives.stdout)
-let err_chan = ref (lazy Pervasives.stderr)
-let out_formatter = ref (lazy F.std_formatter)
-let err_formatter = ref (lazy F.err_formatter)
-
-let set_log_file_identifier (current_exe : CLOpt.exe) string_opt =
-  let should_setup_log_files =
-    match current_exe with
-    | Analyze
-    | Clang -> Config.debug_mode || Config.stats_mode
-    | Toplevel -> true
-    | _ -> false in
-  if should_setup_log_files then (
-    let name_prefix =
-      (match string_opt with
-       | Some name -> name ^ "-"
-       | None -> ""
-      ) in
-    let exe_log_dir =
-      Config.results_dir ^/ Config.log_dir_name ^/ log_dir_of_current_exe current_exe in
-    let fmt_chan_file name suffix = lazy (
-      let file =
-        (* the command-line option takes precedence if specified *)
-        if name <> "" then name
-        else exe_log_dir ^/ name_prefix^suffix in
-      try
-        Unix.mkdir_p exe_log_dir ;
-        let chan = Pervasives.open_out_gen [Open_append; Open_creat] 0o666 file in
-        let fmt = F.formatter_of_out_channel chan in
-        Format.fprintf fmt
-          "---- start logging from %d -------------------------------------------@\n"
-          (Pid.to_int (Unix.getpid ()));
-        (fmt, chan, file)
-      with Sys_error _ ->
-        failwithf "ERROR: cannot open log file \"%s\"" file
-    ) in
-    let out_fmt_chan_file = fmt_chan_file Config.out_file_cmdline "out.log" in
-    let err_fmt_chan_file = fmt_chan_file Config.err_file_cmdline "err.log" in
-    Pervasives.at_exit (fun () ->
-        let close fmt_chan_file =
-          if Lazy.is_val fmt_chan_file then (
-            let (fmt, chan, _) = Lazy.force fmt_chan_file in
-            F.pp_print_flush fmt () ;
-            Out_channel.close chan
-          ) in
-        close out_fmt_chan_file ;
-        close err_fmt_chan_file
-      );
-    out_formatter := lazy (fst3 (Lazy.force out_fmt_chan_file)) ;
-    out_chan := lazy (snd3 (Lazy.force out_fmt_chan_file)) ;
-    out_file := lazy (trd3 (Lazy.force out_fmt_chan_file)) ;
-    err_formatter := lazy (fst3 (Lazy.force err_fmt_chan_file)) ;
-    err_chan := lazy (snd3 (Lazy.force err_fmt_chan_file)) ;
-    err_file := lazy (trd3 (Lazy.force err_fmt_chan_file))
+let close_log_file fmt chan file =
+  (* evaluating any of the three values will evaluate the rest *)
+  if Lazy.is_val fmt || Lazy.is_val chan || Lazy.is_val file then (
+    F.pp_print_flush (Lazy.force fmt) () ;
+    let c = Lazy.force chan in
+    if c <> stdout && c <> stderr then
+      Out_channel.close c
   )
 
-(* set up log files on startup if needed *)
-let () = set_log_file_identifier Config.current_exe None
+let create_log_file exe name_prefix outerr =
+  let log_dir = Config.results_dir ^/ Config.log_dir_name ^/ log_dir_of_exe exe in
+  let config_name = match outerr with
+    | `Out -> Config.out_file_cmdline
+    | `Err -> Config.err_file_cmdline in
+  let file =
+    (* the command-line option takes precedence if specified *)
+    if config_name <> "" then
+      config_name
+    else
+      let outerr_suffix = match outerr with `Out -> "out.log" | `Err -> "err.log" in
+      log_dir ^/ name_prefix ^ outerr_suffix in
+  Unix.mkdir_p log_dir ;
+  let chan = Pervasives.open_out_gen [Open_append; Open_creat] 0o666 file in
+  let file_fmt = F.formatter_of_out_channel chan in
+  F.fprintf file_fmt
+    "---- start logging from %d -------------------------------------------@."
+    (Pid.to_int (Unix.getpid ()));
+  (* flush files on exit *)
+  Pervasives.at_exit (fun () -> close_log_file (lazy file_fmt) (lazy chan) (lazy file));
+  (file_fmt, chan, file)
+
+let should_setup_log_files (exe : CLOpt.exe) = match exe with
+  | Analyze
+  | Clang -> Config.debug_mode || Config.stats_mode
+  | Toplevel -> true
+  | _ -> false
+
+let create_outerr_log_files exe prefix_opt =
+  let lazy3 x = (lazy (fst3 (Lazy.force x)),
+                 lazy (snd3 (Lazy.force x)),
+                 lazy (trd3 (Lazy.force x))) in
+  if should_setup_log_files exe then
+    let name_prefix = match prefix_opt with
+      | Some name -> name ^ "-"
+      | None -> "" in
+    (lazy (create_log_file exe name_prefix `Out) |> lazy3,
+     lazy (create_log_file exe name_prefix `Err) |> lazy3)
+  else
+    stdout_err_log_files
+
+let ((out_formatter, out_chan, out_file),
+     (err_formatter, err_chan, err_file)) =
+  let (o_fmt, o_c, o_f), (e_fmt, e_c, e_f) =
+    create_outerr_log_files Config.current_exe None in
+  ((ref o_fmt, ref o_c, ref o_f),
+   (ref e_fmt, ref e_c, ref e_f))
+
+let set_log_file_identifier exe prefix_opt =
+  let (o_fmt, o_c, o_f), (e_fmt, e_c, e_f) = create_outerr_log_files exe prefix_opt in
+  (* close previous log files *)
+  close_log_file !out_formatter !out_chan !out_file;
+  close_log_file !err_formatter !err_chan !err_file;
+  out_formatter := o_fmt; out_chan := o_c; out_file := o_f;
+  err_formatter := e_fmt; err_chan := e_c; err_file := e_f
 
 let log_file_names () = (Lazy.force !out_file, Lazy.force !err_file)
 
@@ -261,7 +271,7 @@ let d_decrease_indent (indent: int) =
 
 let log_progress_simple text =
   if Config.show_progress_bar then
-    F.fprintf Format.err_formatter "%s@?" text
+    F.fprintf F.err_formatter "%s@?" text
 
 let log_progress_file () =
   log_progress_simple Config.log_analysis_file
