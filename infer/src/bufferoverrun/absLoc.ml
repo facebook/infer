@@ -1,9 +1,9 @@
 (*
- * Copyright (c) 2016 - present 
+ * Copyright (c) 2016 - present
  * Kihong Heo (http://ropas.snu.ac.kr/~khheo)
  * Sungkeun Cho (http://ropas.snu.ac.kr/~skcho)
  * Kwangkeun Yi (http://ropas.snu.ac.kr/~kwang)
- * 
+ *
  * ROSAEC(Research On Software Analysis for Error-free Computing) Center
  * Programming Research Laboratory
  * Seoul National University, Korea
@@ -16,14 +16,14 @@
 
 module F = Format
 
-module Allocsite = 
+module Allocsite =
 struct
   include String
   let pp fmt s = Format.fprintf fmt "%s" s
   let make x = x
 end
 
-module Loc = 
+module Loc =
 struct
   type t =
     | Var of Var.t
@@ -31,8 +31,8 @@ struct
     | Field of t * Ident.fieldname
   [@@deriving compare]
 
-  let rec pp fmt = function 
-    | Var v -> 
+  let rec pp fmt = function
+    | Var v ->
         Var.pp F.str_formatter v;
         let s = F.flush_str_formatter () in
         if s.[0] = '&' then
@@ -60,10 +60,10 @@ struct
     | _ -> false
 end
 
-module PowLoc = 
-struct 
+module PowLoc =
+struct
   include AbstractDomain.FiniteSet
-    (struct 
+    (struct
       include Set.Make (struct type t = Loc.t [@@deriving compare] end)
       let pp_element fmt e = Loc.pp fmt e
       let pp fmt s =

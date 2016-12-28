@@ -120,8 +120,8 @@ struct
   = fun arr1 arr2 -> { arr1 with offset = Itv.prune_ne arr1.offset arr2.offset }
 end
 
-module PPMap = 
-struct 
+module PPMap =
+struct
   include PrettyPrintable.MakePPMap (struct
       include Allocsite
       let pp_key f k = pp f k

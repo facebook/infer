@@ -46,12 +46,12 @@ struct
     { c with size }
 
   let string_of_location : Location.t -> string
-  = fun loc -> 
+  = fun loc ->
     let fname = SourceFile.to_string loc.Location.file in
     let pos = Location.to_string loc in
     F.fprintf F.str_formatter "%s:%s" fname pos;
     F.flush_str_formatter ()
-   
+
   let pp_location : F.formatter -> t -> unit
   = fun fmt c ->
     F.fprintf fmt "%s" (string_of_location c.loc)
@@ -59,13 +59,13 @@ struct
   let pp : F.formatter -> t -> unit
   = fun fmt c ->
     let c = set_size_pos c in
-    if Config.bo_debug <= 1 then 
+    if Config.bo_debug <= 1 then
       F.fprintf fmt "%a < %a at %a" Itv.pp c.idx Itv.pp c.size pp_location c
     else
-      match c.trace with 
+      match c.trace with
         Inter (_, pname, loc) ->
           let pname = Procname.to_string pname in
-          F.fprintf fmt "%a < %a at %a by call %s() at %s" 
+          F.fprintf fmt "%a < %a at %a by call %s() at %s"
             Itv.pp c.idx Itv.pp c.size pp_location c pname (string_of_location loc)
       | Intra _ -> F.fprintf fmt "%a < %a at %a" Itv.pp c.idx Itv.pp c.size pp_location c
 
@@ -87,11 +87,11 @@ struct
 
   let filter1 : t -> bool
   = fun c ->
-    c.idx = Itv.top || c.size = Itv.top 
+    c.idx = Itv.top || c.size = Itv.top
     || (try Itv.lb c.idx = Itv.Bound.MInf with _ -> false)
     || (try Itv.lb c.size = Itv.Bound.MInf with _ -> false)
-    || (Itv.eq c.idx Itv.nat && Itv.eq c.size Itv.nat) 
- 
+    || (Itv.eq c.idx Itv.nat && Itv.eq c.size Itv.nat)
+
   let filter2 : t -> bool
   = fun c ->
     (not (Itv.is_finite c.idx) || not (Itv.is_finite c.size)) (* basically, alarms involving infinify are filtered *)
@@ -129,20 +129,20 @@ struct
   let to_string : t -> string
   = fun c ->
     let c = set_size_pos c in
-    "Offset : " ^ Itv.to_string c.idx ^ " Size : " ^ Itv.to_string c.size 
+    "Offset : " ^ Itv.to_string c.idx ^ " Size : " ^ Itv.to_string c.size
     ^ " @ " ^ string_of_location c.loc
-    ^ (match c.trace with 
+    ^ (match c.trace with
          Inter (_, pname, _) ->
           " by call "
            ^ Procname.to_string pname
-           ^ "() " 
+           ^ "() "
        | Intra _ -> "")
 
   let subst : t -> Itv.Bound.t Itv.SubstMap.t -> Procname.t -> Procname.t -> Location.t -> t
   = fun c subst_map caller_pname callee_pname loc ->
-    if Itv.is_symbolic c.idx || Itv.is_symbolic c.size then 
+    if Itv.is_symbolic c.idx || Itv.is_symbolic c.size then
       { c with idx = Itv.subst c.idx subst_map;
-               size = Itv.subst c.size subst_map; 
+               size = Itv.subst c.size subst_map;
                trace = Inter (caller_pname, callee_pname, loc) }
     else c
 end
@@ -167,7 +167,7 @@ struct
 
   let group : t -> t Map.t
   = fun x ->
-    fold (fun cond map -> 
+    fold (fun cond map ->
         let old_set = try Map.find cond.loc map with _ -> empty in
         Map.add cond.loc (add cond old_set) map) x Map.empty
 

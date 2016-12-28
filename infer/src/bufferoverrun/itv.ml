@@ -32,11 +32,11 @@ struct
     sym_size := !sym_size + 1;
     (pname, i)
 
-  let make : Procname.t -> int -> t 
+  let make : Procname.t -> int -> t
   = fun pname i -> (pname, i)
 
   let pp : F.formatter -> t -> unit
-  = fun fmt x -> 
+  = fun fmt x ->
     if Config.bo_debug <= 1 then
       F.fprintf fmt "s$%d" (snd x)
     else
@@ -412,7 +412,7 @@ struct
     | _, _ when is_zero x -> y
     | _, _ when is_zero y -> x
     | Linear (c1, x1), Linear (c2, x2) -> Linear (c1 + c2, SymLinear.plus x1 x2)
-    | MinMax (Max, c1, _), Linear (c2, x2) 
+    | MinMax (Max, c1, _), Linear (c2, x2)
     | Linear (c2, x2), MinMax (Max, c1, _) -> Linear (c1 + c2, x2)
     | _, _ -> MInf
 
@@ -423,7 +423,7 @@ struct
     | _, _ when is_zero x -> y
     | _, _ when is_zero y -> x
     | Linear (c1, x1), Linear (c2, x2) -> Linear (c1 + c2, SymLinear.plus x1 x2)
-    | MinMax (Min, c1, _), Linear (c2, x2) 
+    | MinMax (Min, c1, _), Linear (c2, x2)
     | Linear (c2, x2), MinMax (Min, c1, _) -> Linear (c1 + c2, x2)
     | _, _ -> PInf
 
@@ -510,11 +510,11 @@ struct
   = snd
 
   let is_finite : t -> bool
-  = fun (l, u) -> 
-    match Bound.is_const l, Bound.is_const u with 
+  = fun (l, u) ->
+    match Bound.is_const l, Bound.is_const u with
       Some _, Some _ -> true
     | _, _ -> false
-    
+
   let make : Bound.t -> Bound.t -> t
   = fun l u -> (l, u)
 
@@ -543,9 +543,9 @@ struct
     let lower = Bound.of_sym (SymLinear.get_new pname) in
     let upper = Bound.of_sym (SymLinear.get_new pname) in
     (lower, upper)
-  
+
   let make_sym : Procname.t -> int -> t
-  = fun pname i -> 
+  = fun pname i ->
     let lower = Bound.of_sym (SymLinear.make pname i) in
     let upper = Bound.of_sym (SymLinear.make pname (i+1)) in
     (lower, upper)
