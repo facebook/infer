@@ -18,24 +18,12 @@ let module L = Logging;
 
 let module F = Format;
 
-let list_to_string list => {
-  let rec aux list =>
-    switch list {
-    | [] => ""
-    | [el, ...rest] =>
-      let s = aux rest;
-      if (s == "") {
-        Typename.name el
-      } else {
-        Typename.name el ^ ", " ^ s
-      }
-    };
-  if (IList.length list == 0) {
+let list_to_string list =>
+  if (List.length list == 0) {
     "( sub )"
   } else {
-    "- {" ^ aux list ^ "}"
-  }
-};
+    "- {" ^ String.concat sep::", " (List.map f::Typename.name list) ^ "}"
+  };
 
 type t' =
   | Exact /** denotes the current type only */
