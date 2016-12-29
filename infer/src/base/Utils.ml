@@ -103,83 +103,21 @@ let do_outf outf_opt f =
 let close_outf outf =
   Out_channel.close outf.out_c
 
-(** convert a filename to absolute path and normalize by removing occurrences of "." and ".." *)
-module FileNormalize = struct
-  let rec fname_to_list_rev fname =
-    if fname = "" then [] else
-      let base = Filename.basename fname in
-      let dir = Filename.dirname fname in
-      let does_not_split = (* make sure it terminates whatever the implementation of Filename *)
-        fname = base || String.length dir >= String.length fname in
-      if does_not_split then [fname]
-      else base :: fname_to_list_rev dir
-
-  (* split a file name into a list of strings representing it as a path *)
-  let fname_to_list fname =
-    IList.rev (fname_to_list_rev fname)
-
-  (* concatenate a list of strings representing a path into a filename *)
-  let rec list_to_fname base path = match path with
-    | [] -> base
-    | x :: path' -> list_to_fname (base ^/ x) path'
-
-  (* normalize a path where done_l is a reversed path from the root already normalized *)
-  (* and todo_l is the path still to normalize *)
-  let rec normalize done_l todo_l = match done_l, todo_l with
-    | _, y :: tl when y = Filename.current_dir_name -> (* path/. --> path *)
-        normalize done_l tl
-    | [_], y :: tl when y = Filename.parent_dir_name -> (* /.. --> / *)
-        normalize done_l tl
-    | _ :: dl, y :: tl when y = Filename.parent_dir_name -> (* path/x/.. --> path *)
-        normalize dl tl
-    | _, y :: tl -> normalize (y :: done_l) tl
-    | _, [] -> IList.rev done_l
-
-  (* check if the filename contains "." or ".." *)
-  let fname_contains_current_parent fname =
-    let l = fname_to_list fname in
-    IList.exists (fun x -> x = Filename.current_dir_name || x = Filename.parent_dir_name) l
-
-  (* convert a filename to absolute path, if necessary, and normalize "." and ".." *)
-  let fname_to_absolute_normalize fname =
-    let is_relative = Filename.is_relative fname in
-    let must_normalize = fname_contains_current_parent fname in
-    let simple_case () =
-      if is_relative then Unix.getcwd () ^/ fname
-      else fname in
-    if must_normalize then begin
-      let done_l, todo_l =
-        if is_relative then
-          fname_to_list_rev (Unix.getcwd ()), fname_to_list fname
-        else match fname_to_list fname with
-          | [] -> [fname], [] (* should not happen *)
-          | root :: l -> [root], l in
-      let normal_l = normalize done_l todo_l in
-      match normal_l with
-      | base :: l -> list_to_fname base l
-      | [] -> (* should not happen *) simple_case ()
-    end
-    else simple_case ()
-
-  (*
-  let test () =
-  let test_fname fname =
-  let fname' = fname_to_absolute_normalize fname in
-  Format.fprintf Format.std_formatter "fname %s --> %s@." fname fname' in
-  let tests = [".";
-  "..";
-  "aaa.c";
-  "/";
-  "/..";
-  "../test.c";
-  "src/../././test.c"] in
-  List.map test_fname tests
-  *)
-end
 
 (** Convert a filename to an absolute one if it is relative, and normalize "." and ".." *)
 let filename_to_absolute fname =
-  FileNormalize.fname_to_absolute_normalize fname
+  let add_entry rev_done entry =
+    match entry, rev_done with
+    | ".", [] -> entry :: rev_done                  (* id on . *)
+    | ".", _ -> rev_done                            (* path/. --> path *)
+    | "..", ("." | "..") :: _ -> entry :: rev_done  (* id on {.,..}/.. *)
+    | "..", ["/"] -> rev_done                       (* /.. -> / *)
+    | "..", _ :: rev_done_parent -> rev_done_parent (* path/dir/.. --> path *)
+    | _ -> entry :: rev_done
+  in
+  let abs_fname = if Filename.is_absolute fname then fname else (Unix.getcwd ()) ^/ fname in
+  Filename.of_parts (List.rev (List.fold_left ~f:add_entry ~init:[] (Filename.parts abs_fname)))
+
 
 (** Convert an absolute filename to one relative to the current directory. *)
 let filename_to_relative root fname =
