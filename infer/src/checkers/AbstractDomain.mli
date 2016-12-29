@@ -46,9 +46,6 @@ end
 (** Cartesian product of two domains. *)
 module Pair (Domain1 : S) (Domain2 : S) : S with type astate = Domain1.astate * Domain2.astate
 
-(** Cartesian product of three domains. *)
-module Pair3 (Domain1 : S) (Domain2 : S) (Domain3 : S) : S with type astate = Domain1.astate * Domain2.astate * Domain3.astate
-
 (** Lift a set to a powerset domain ordered by subset. The elements of the set should be drawn from
     a *finite* collection of possible values, since the widening operator here is just union. *)
 module FiniteSet (Set : PrettyPrintable.PPSet) : sig

@@ -197,12 +197,44 @@ end
 
 module Val =
 struct
-  include AbstractDomain.Pair3 (Itv) (PowLoc) (ArrayBlk)
+  type astate = {
+    itv : Itv.astate;
+    powloc : PowLoc.astate;
+    arrayblk : ArrayBlk.astate;
+  }
 
   type t = astate
 
+  let initial : t
+  = { itv = Itv.initial; powloc = PowLoc.initial; arrayblk = ArrayBlk.initial }
+
   let bot : t
   = initial
+
+  let (<=) ~lhs ~rhs =
+    if phys_equal lhs rhs then true
+    else
+      Itv.(<=) ~lhs:(lhs.itv) ~rhs:(rhs.itv) 
+      && PowLoc.(<=) ~lhs:(lhs.powloc) ~rhs:(rhs.powloc) 
+      && ArrayBlk.(<=) ~lhs:(lhs.arrayblk) ~rhs:(rhs.arrayblk) 
+
+  let widen ~prev ~next ~num_iters =
+    if phys_equal prev next then prev
+    else
+      { itv = Itv.widen ~prev:(prev.itv) ~next:(next.itv) ~num_iters;
+        powloc = PowLoc.widen ~prev:(prev.powloc) ~next:(next.powloc) ~num_iters;
+        arrayblk = ArrayBlk.widen ~prev:(prev.arrayblk) ~next:(next.arrayblk) ~num_iters; }
+
+  let pp fmt x =
+    F.fprintf fmt "(%a, %a, %a)" Itv.pp x.itv PowLoc.pp x.powloc ArrayBlk.pp x.arrayblk
+
+  let join : t -> t -> t
+  = fun x y ->
+    if phys_equal x y then x
+    else
+      { itv = Itv.join x.itv y.itv; 
+        powloc = PowLoc.join x.powloc y.powloc; 
+        arrayblk = ArrayBlk.join x.arrayblk y.arrayblk }
 
   let rec joins : t list -> t
   = function
@@ -211,112 +243,113 @@ struct
     | a :: b -> join a (joins b)
 
   let get_itv : t -> Itv.t
-  = fst3
+  = fun x -> x.itv
 
   let get_pow_loc : t -> PowLoc.t
-  = snd3
+  = fun x -> x.powloc
 
   let get_array_blk : t -> ArrayBlk.astate
-  = trd3
+  = fun x -> x.arrayblk
 
   let get_all_locs : t -> PowLoc.t
-  = fun (_, p, a) -> ArrayBlk.get_pow_loc a |> PowLoc.join p
+  = fun x -> ArrayBlk.get_pow_loc x.arrayblk |> PowLoc.join x.powloc
 
   let top_itv : t
-  = (Itv.top, PowLoc.bot, ArrayBlk.bot)
+  = { initial with itv = Itv.top }
 
   let pos_itv : t
-  = (Itv.pos, PowLoc.bot, ArrayBlk.bot)
+  = { initial with itv = Itv.pos }
 
   let nat_itv : t
-  = (Itv.nat, PowLoc.bot, ArrayBlk.bot)
+  = { initial with itv = Itv.nat }
 
   let of_int : int -> t
-  = fun n -> (Itv.of_int n, PowLoc.bot, ArrayBlk.bot)
+  = fun n -> { initial with itv = Itv.of_int n }
 
   let of_pow_loc : PowLoc.t -> t
-  = fun x -> (Itv.bot, x, ArrayBlk.bot)
+  = fun x -> { initial with powloc = x }
 
   let of_array_blk : ArrayBlk.astate -> t
-  = fun a -> (Itv.bot, PowLoc.bot, a)
+  = fun a -> { initial with arrayblk = a }
 
   let zero : t
   = of_int 0
 
-  let get_new_sym : Procname.t -> t
-  = fun pname -> (Itv.get_new_sym pname, PowLoc.bot, ArrayBlk.bot)
+  let modify_itv : Itv.t -> t -> t
+  = fun i x -> { x with itv = i }
 
   let make_sym : Procname.t -> int -> t
-  = fun pname i -> (Itv.make_sym pname i, PowLoc.bot, ArrayBlk.bot)
+  = fun pname i -> { initial with itv = Itv.make_sym pname i }
 
   let unknown_bit : t -> t
-  = fun (_, x, a) -> (Itv.top, x, a)
+  = fun x -> { x with itv = Itv.top }
 
   let neg : t -> t
-  = fun (n, x, a) -> (Itv.neg n, x, a)
+  = fun x -> { x with itv = Itv.neg x.itv }
 
   let lnot : t -> t
-  = fun (n, x, a) -> (Itv.lnot n, x, a)
+  = fun x -> { x with itv = Itv.lnot x.itv }
 
-  let lift_itv_func : (Itv.t -> Itv.t -> Itv.t) -> t -> t -> t
-  = fun f (n1, _, _) (n2, _, _) -> (f n1 n2, PowLoc.bot, ArrayBlk.bot)
+  let lift_itv : (Itv.t -> Itv.t -> Itv.t) -> t -> t -> t
+  = fun f x y -> { initial with itv = f x.itv y.itv } 
 
   let plus : t -> t -> t
-  = fun (n1, _, a1) (n2, _, _) ->
-    (Itv.plus n1 n2, PowLoc.bot, ArrayBlk.plus_offset a1 n2)
+  = fun x y -> 
+    { x with itv = Itv.plus x.itv y.itv; arrayblk = ArrayBlk.plus_offset x.arrayblk y.itv }
 
   let minus : t -> t -> t
-  = fun (n1, _, a1) (n2, _, a2) ->
-    let n = Itv.join (Itv.minus n1 n2) (ArrayBlk.diff a1 a2) in
-    let a = ArrayBlk.minus_offset a1 n2 in
-    (n, PowLoc.bot, a)
+  = fun x y -> 
+    let n = Itv.join (Itv.minus x.itv y.itv) (ArrayBlk.diff x.arrayblk y.arrayblk) in
+    let a = ArrayBlk.minus_offset x.arrayblk y.itv in
+    { initial with itv = n; arrayblk = a}
 
   let mult : t -> t -> t
-  = lift_itv_func Itv.mult
+  = lift_itv Itv.mult
 
   let div : t -> t -> t
-  = lift_itv_func Itv.div
+  = lift_itv Itv.div
 
   let mod_sem : t -> t -> t
-  = lift_itv_func Itv.mod_sem
+  = lift_itv Itv.mod_sem
 
   let shiftlt : t -> t -> t
-  = lift_itv_func Itv.shiftlt
+  = lift_itv Itv.shiftlt
 
   let shiftrt : t -> t -> t
-  = lift_itv_func Itv.shiftrt
+  = lift_itv Itv.shiftrt
 
   let lt_sem : t -> t -> t
-  = lift_itv_func Itv.lt_sem
+  = lift_itv Itv.lt_sem
 
   let gt_sem : t -> t -> t
-  = lift_itv_func Itv.gt_sem
+  = lift_itv Itv.gt_sem
 
   let le_sem : t -> t -> t
-  = lift_itv_func Itv.le_sem
+  = lift_itv Itv.le_sem
 
   let ge_sem : t -> t -> t
-  = lift_itv_func Itv.ge_sem
+  = lift_itv Itv.ge_sem
 
   let eq_sem : t -> t -> t
-  = lift_itv_func Itv.eq_sem
+  = lift_itv Itv.eq_sem
 
   let ne_sem : t -> t -> t
-  = lift_itv_func Itv.ne_sem
+  = lift_itv Itv.ne_sem
 
   let land_sem : t -> t -> t
-  = lift_itv_func Itv.land_sem
+  = lift_itv Itv.land_sem
 
   let lor_sem : t -> t -> t
-  = lift_itv_func Itv.lor_sem
+  = lift_itv Itv.lor_sem
 
   let lift_prune1 : (Itv.t -> Itv.t) -> t -> t
-  = fun f (n, x, a) -> (f n, x, a)
+  = fun f x -> { x with itv = f x.itv } 
 
   let lift_prune2
     : (Itv.t -> Itv.t -> Itv.t)
       -> (ArrayBlk.astate -> ArrayBlk.astate -> ArrayBlk.astate) -> t -> t -> t
-  = fun f g (n1, x1, a1) (n2, _, a2) -> (f n1 n2, x1, g a1 a2)
+  = fun f g x y ->
+    { x with itv = f x.itv y.itv; arrayblk = g x.arrayblk y.arrayblk }
 
   let prune_zero : t -> t
   = lift_prune1 Itv.prune_zero
@@ -331,28 +364,32 @@ struct
   = lift_prune2 Itv.prune_ne ArrayBlk.prune_eq
 
   let plus_pi : t -> t -> t
-  = fun (_, _, a1) (n2, _, _) ->
-    (Itv.bot, PowLoc.bot, ArrayBlk.plus_offset a1 n2)
+  = fun x y ->
+    { initial with arrayblk = ArrayBlk.plus_offset x.arrayblk y.itv }
 
   let minus_pi : t -> t -> t
-  = fun (_, _, a1) (n2, _, _) ->
-    (Itv.bot, PowLoc.bot, ArrayBlk.minus_offset a1 n2)
+  = fun x y -> 
+    { initial with arrayblk = ArrayBlk.minus_offset x.arrayblk y.itv }
 
   let minus_pp : t -> t -> t
-  = fun (_, _, a1) (_, _, a2) -> (ArrayBlk.diff a1 a2, PowLoc.bot, ArrayBlk.bot)
+  = fun x y ->
+    { initial with itv = ArrayBlk.diff x.arrayblk y.arrayblk }
 
   let subst : t -> Itv.Bound.t Itv.SubstMap.t -> t
-  = fun (i, p, a) subst_map ->
-    (Itv.subst i subst_map, p, ArrayBlk.subst a subst_map)
+  = fun x subst_map ->
+    { x with itv = Itv.subst x.itv subst_map; 
+             arrayblk = ArrayBlk.subst x.arrayblk subst_map }
 
   let get_symbols : t -> Itv.Symbol.t list
-  = fun (i, _, a) -> IList.append (Itv.get_symbols i) (ArrayBlk.get_symbols a)
+  = fun x -> 
+    IList.append (Itv.get_symbols x.itv) (ArrayBlk.get_symbols x.arrayblk)
 
   let normalize : t -> t
-  = fun (i, l, a) -> (Itv.normalize i, l, ArrayBlk.normalize a)
+  = fun x -> 
+    { x with itv = Itv.normalize x.itv; arrayblk = ArrayBlk.normalize x.arrayblk }
 
   let pp_summary : F.formatter -> t -> unit
-  = fun fmt (i, _, a) -> F.fprintf fmt "(%a, %a)" Itv.pp i ArrayBlk.pp a
+  = fun fmt x -> F.fprintf fmt "(%a, %a)" Itv.pp x.itv ArrayBlk.pp x.arrayblk
 end
 
 module Stack =
@@ -462,7 +499,7 @@ struct
   = fun mem ->
     IList.flatten (IList.map (fun (_, v) -> Val.get_symbols v) (bindings mem))
 
-  let get_result : astate -> Val.t
+  let get_return : astate -> Val.t
   = fun mem ->
     let mem = filter (fun l _ -> Loc.is_return l) mem in
     if is_empty mem then Val.bot else snd (choose mem)
@@ -532,67 +569,89 @@ end
 
 module Mem =
 struct
-  include AbstractDomain.Pair3 (Stack) (Heap) (Alias)
-
+  type astate = { stack : Stack.astate; heap : Heap.astate; alias : Alias.astate }
   type t = astate
 
+  let initial : t
+  = { stack = Stack.initial; heap = Heap.initial; alias = Alias.initial }
+
+  let (<=) ~lhs ~rhs =
+    if phys_equal lhs rhs then true
+    else
+      Stack.(<=) ~lhs:(lhs.stack) ~rhs:(rhs.stack) 
+      && Heap.(<=) ~lhs:(lhs.heap) ~rhs:(rhs.heap) 
+      && Alias.(<=) ~lhs:(lhs.alias) ~rhs:(rhs.alias) 
+
+  let widen ~prev ~next ~num_iters =
+    if phys_equal prev next then prev
+    else
+      { stack = Stack.widen ~prev:(prev.stack) ~next:(next.stack) ~num_iters;
+        heap = Heap.widen ~prev:(prev.heap) ~next:(next.heap) ~num_iters;
+        alias = Alias.widen ~prev:(prev.alias) ~next:(next.alias) ~num_iters; }
+
+  let join : t -> t -> t
+  = fun x y ->
+    { stack = Stack.join x.stack y.stack; 
+      heap = Heap.join x.heap y.heap; 
+      alias = Alias.join x.alias y.alias }
+ 
   let pp : F.formatter -> t -> unit
-  = fun fmt (stack, heap, _) ->
+  = fun fmt x ->
     F.fprintf fmt "Stack :@,";
-    F.fprintf fmt "%a@," Stack.pp stack;
+    F.fprintf fmt "%a@," Stack.pp x.stack;
     F.fprintf fmt "Heap :@,";
-    F.fprintf fmt "%a" Heap.pp heap
+    F.fprintf fmt "%a" Heap.pp x.heap
 
   let pp_summary : F.formatter -> t -> unit
-  = fun fmt (_, heap, _) ->
+  = fun fmt x ->
     F.fprintf fmt "@[<v 0>Parameters :@,";
-    F.fprintf fmt "%a" Heap.pp_summary heap ;
+    F.fprintf fmt "%a" Heap.pp_summary x.heap ;
     F.fprintf fmt "@]"
 
   let find_stack : Loc.t -> t -> Val.t
-  = fun k m -> Stack.find k (fst3 m)
+  = fun k m -> Stack.find k m.stack
 
   let find_stack_set : PowLoc.t -> t -> Val.t
-  = fun k m -> Stack.find_set k (fst3 m)
+  = fun k m -> Stack.find_set k m.stack
 
   let find_heap : Loc.t -> t -> Val.t
-  = fun k m -> Heap.find k (snd3 m)
+  = fun k m -> Heap.find k m.heap
 
   let find_heap_set : PowLoc.t -> t -> Val.t
-  = fun k m -> Heap.find_set k (snd3 m)
+  = fun k m -> Heap.find_set k m.heap
 
   let find_alias : Ident.t -> t -> Pvar.t option
-  = fun k m -> Alias.find k (trd3 m)
+  = fun k m -> Alias.find k m.alias
 
   let load_alias : Ident.t -> Exp.t -> t -> t
-  = fun id e m -> (fst3 m, snd3 m, Alias.load id e (trd3 m))
+  = fun id e m -> { m with alias = Alias.load id e m.alias }
 
   let store_alias : Exp.t -> Exp.t -> t -> t
-  = fun e1 e2 m -> (fst3 m, snd3 m, Alias.store e1 e2 (trd3 m))
+  = fun e1 e2 m -> { m with alias = Alias.store e1 e2 m.alias }
 
   let add_stack : Loc.t -> Val.t -> t -> t
-  = fun k v m -> (Stack.add k v (fst3 m), snd3 m, trd3 m)
+  = fun k v m -> { m with stack = Stack.add k v m.stack }
 
   let add_heap : Loc.t -> Val.t -> t -> t
-  = fun k v m -> (fst3 m, Heap.add k v (snd3 m), trd3 m)
+  = fun k v m -> { m with heap = Heap.add k v m.heap }
 
   let strong_update_stack : PowLoc.t -> Val.t -> t -> t
-  = fun p v m -> (Stack.strong_update p v (fst3 m), snd3 m, trd3 m)
+  = fun p v m -> { m with stack = Stack.strong_update p v m.stack }
 
   let strong_update_heap : PowLoc.t -> Val.t -> t -> t
-  = fun p v m -> (fst3 m, Heap.strong_update p v (snd3 m), trd3 m)
+  = fun p v m -> { m with heap = Heap.strong_update p v m.heap }
 
   let weak_update_stack : PowLoc.t -> Val.t -> t -> t
-  = fun p v m -> (Stack.weak_update p v (fst3 m), snd3 m, trd3 m)
+  = fun p v m -> { m with stack = Stack.weak_update p v m.stack }
 
   let weak_update_heap : PowLoc.t -> Val.t -> t -> t
-  = fun p v m -> (fst3 m, Heap.weak_update p v (snd3 m), trd3 m)
+  = fun p v m -> { m with heap = Heap.weak_update p v m.heap }
 
   let get_heap_symbols : t -> Itv.Symbol.t list
-  = fun (_, m, _) -> Heap.get_symbols m
+  = fun m -> Heap.get_symbols m.heap
 
-  let get_result : t -> Val.t
-  = fun (_, m, _) -> Heap.get_result m
+  let get_return : t -> Val.t
+  = fun m -> Heap.get_return m.heap
 
   let can_strong_update : PowLoc.t -> bool
   = fun ploc ->
@@ -621,8 +680,8 @@ struct
   let get_symbols : t -> Itv.Symbol.t list
   = fun s -> Mem.get_heap_symbols (get_input s)
 
-  let get_result : t -> Val.t
-  = fun s -> Mem.get_result (get_output s)
+  let get_return : t -> Val.t
+  = fun s -> Mem.get_return (get_output s)
 
   let pp_symbols : F.formatter -> t -> unit
   = fun fmt s ->
@@ -635,7 +694,7 @@ struct
   = fun fmt s -> Mem.pp_summary fmt (get_input s)
 
   let pp_return : F.formatter -> t -> unit
-  = fun fmt s -> F.fprintf fmt "Return value: %a" Val.pp_summary (get_result s)
+  = fun fmt s -> F.fprintf fmt "Return value: %a" Val.pp_summary (get_return s)
 
   let pp_summary : F.formatter -> t -> unit
   = fun fmt s ->

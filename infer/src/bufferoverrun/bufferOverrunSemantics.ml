@@ -165,8 +165,7 @@ struct
                if Itv.is_bot (Val.get_itv v) then Itv.bot else
                  Val.get_itv Val.zero
              in
-             let v' = (itv_v, Val.get_pow_loc v, Val.get_array_blk v)
-             in
+             let v' = Val.modify_itv itv_v v in
              Mem.update_mem (PowLoc.singleton lv) v' mem
          | None -> mem)
     | _ -> mem
