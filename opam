@@ -28,6 +28,7 @@ ocaml-version: [ >= "4.02.1" ]
 depends: [
   "atdgen" {>="1.6.0"}
   "core" {>="113.33.03"}
+  "xmlm" {>="1.2.0"}
   "conf-autoconf"
   "ctypes" {>="0.9.2"}
   "ctypes-foreign" {>="0.4.0"}
