@@ -298,21 +298,7 @@ let init_work_dir, is_originator =
   | Some dir ->
       (dir, false)
   | None ->
-      let cwd =
-        (* Use PWD if it denotes the same inode as ., to try to avoid paths with symlinks resolved *)
-        (* Approach is borrowed from llvm implementation of *)
-        (* llvm::sys::fs::current_path (implemented in Path.inc file) *)
-        match Sys.getenv "PWD" with
-        | Some pwd ->
-            let pwd_stat = Unix.stat pwd in
-            let dot_stat = Unix.stat "." in
-            if pwd_stat.st_dev = dot_stat.st_dev && pwd_stat.st_ino = dot_stat.st_ino then
-              pwd
-            else
-              Sys.getcwd ()
-        | None ->
-            Sys.getcwd () in
-      let real_cwd = Utils.realpath cwd in
+      let real_cwd = Utils.realpath (Sys.getcwd ()) in
       Unix.putenv ~key:"INFER_CWD" ~data:real_cwd;
       (real_cwd, true)
 
