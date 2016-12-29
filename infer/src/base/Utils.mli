@@ -30,7 +30,7 @@ val copy_file : string -> string -> int option
 val read_file : string -> string list option
 
 (** Convert a filename to an absolute one if it is relative, and normalize "." and ".." *)
-val filename_to_absolute : string -> string
+val filename_to_absolute : root:string -> string -> string
 
 (** Convert an absolute filename to one relative to a root directory *)
 val filename_to_relative : string -> string -> string

@@ -263,8 +263,9 @@ let models_jar =
   lib_dir ^/ "java" ^/ "models.jar"
 
 let models_src_dir =
+  let root = Unix.getcwd () in
   let dir = bin_dir ^/ Filename.parent_dir_name ^/ "models" in
-  Utils.filename_to_absolute dir (* Normalize the path *)
+  Utils.filename_to_absolute ~root dir (* Normalize the path *)
 
 let relative_cpp_extra_include_dir = "cpp" ^/ "include"
 
@@ -304,7 +305,7 @@ let init_work_dir, is_originator =
 
 (** Resolve relative paths passed as command line options, i.e., with respect to the working
     directory of the initial invocation of infer. *)
-let resolve = Utils.filename_to_absolute
+let resolve = Utils.filename_to_absolute ~root:init_work_dir
 
 
 (** Command Line options *)

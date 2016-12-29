@@ -77,7 +77,8 @@ let split_classpath cp = Str.split (Str.regexp JFile.sep) cp
 
 let append_path classpath path =
   if Sys.file_exists path = `Yes then
-    let full_path = Utils.filename_to_absolute path in
+    let root = Unix.getcwd () in
+    let full_path = Utils.filename_to_absolute ~root path in
     if String.length classpath = 0 then
       full_path
     else

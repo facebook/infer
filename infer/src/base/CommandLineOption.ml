@@ -362,7 +362,8 @@ let mk_path_helper ~setter ~default_to_string
          that [!arg_being_parsed] points at the option name position in [!args_to_parse], as is the
          case e.g. when calling
          [Arg.parse_argv_dynamic ~current:arg_being_parsed !args_to_parse ...]. *)
-      let abs_path = Utils.filename_to_absolute str in
+      let root = Unix.getcwd () in
+      let abs_path = Utils.filename_to_absolute ~root str in
       (!args_to_parse).(!arg_being_parsed + 1) <- abs_path;
       abs_path
     ) else

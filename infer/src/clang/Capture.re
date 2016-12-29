@@ -152,9 +152,10 @@ let run_plugin_and_frontend source_path frontend clang_args => {
 
 let cc1_capture clang_cmd => {
   let source_path = {
+    let root = Unix.getcwd ();
     let orig_argv = ClangCommand.get_orig_argv clang_cmd;
     /* the source file is always the last argument of the original -cc1 clang command */
-    Utils.filename_to_absolute orig_argv.(Array.length orig_argv - 1)
+    Utils.filename_to_absolute root::root orig_argv.(Array.length orig_argv - 1)
   };
   Logging.out "@\n*** Beginning capture of file %s ***@\n" source_path;
   if (Config.analyzer == Config.Compile || CLocation.is_file_blacklisted source_path) {

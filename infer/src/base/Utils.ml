@@ -105,7 +105,7 @@ let close_outf outf =
 
 
 (** Convert a filename to an absolute one if it is relative, and normalize "." and ".." *)
-let filename_to_absolute fname =
+let filename_to_absolute ~root fname =
   let add_entry rev_done entry =
     match entry, rev_done with
     | ".", [] -> entry :: rev_done                  (* id on . *)
@@ -115,11 +115,11 @@ let filename_to_absolute fname =
     | "..", _ :: rev_done_parent -> rev_done_parent (* path/dir/.. --> path *)
     | _ -> entry :: rev_done
   in
-  let abs_fname = if Filename.is_absolute fname then fname else (Unix.getcwd ()) ^/ fname in
+  let abs_fname = if Filename.is_absolute fname then fname else root ^/ fname in
   Filename.of_parts (List.rev (List.fold_left ~f:add_entry ~init:[] (Filename.parts abs_fname)))
 
 
-(** Convert an absolute filename to one relative to the current directory. *)
+(** Convert an absolute filename to one relative to the given directory. *)
 let filename_to_relative root fname =
   let rec relativize_if_under origin target =
     match origin, target with

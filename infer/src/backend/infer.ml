@@ -144,7 +144,8 @@ let check_xcpretty () =
       exit 1
 
 let capture_with_compilation_database db_files =
-  Config.clang_compilation_db_files := IList.map Utils.filename_to_absolute db_files;
+  let root = Unix.getcwd () in
+  Config.clang_compilation_db_files := IList.map (Utils.filename_to_absolute ~root) db_files;
   let compilation_database = CompilationDatabase.from_json_files db_files in
   CaptureCompilationDatabase.capture_files_in_database compilation_database
 
