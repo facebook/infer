@@ -138,23 +138,18 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
             raise Exception('No javac command detected')
 
     def start(self):
-        start_time = time.time()
-
         self._compile()
         if self.args.analyzer == config.ANALYZER_COMPILE:
             return os.EX_OK
 
         self._run_infer_frontend()
-        self.timing['capture'] = utils.elapsed_time(start_time)
         if self.args.analyzer == config.ANALYZER_CAPTURE:
             return os.EX_OK
 
         self.analyze_and_report()
         self._close()
-        self.timing['total'] = utils.elapsed_time(start_time)
-        self.save_stats()
 
-        return self.stats
+        return os.EX_OK
 
     def _run_infer_frontend(self):
         infer_cmd = [utils.get_cmd_in_bin_dir('InferJava')]

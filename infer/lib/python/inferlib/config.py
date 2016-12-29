@@ -38,9 +38,6 @@ WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'wrappers')
 XCODE_WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'xcode_wrappers')
 
 DEFAULT_INFER_OUT = os.path.join(os.getcwd().decode(CODESET), 'infer-out')
-CSV_PERF_FILENAME = 'performances.csv'
-STATS_FILENAME = 'stats.json'
-PROC_STATS_FILENAME = 'proc_stats.json'
 
 JSON_REPORT_FILENAME = 'report.json'
 INFER_BUCK_DEPS_FILENAME = 'infer-deps.txt'

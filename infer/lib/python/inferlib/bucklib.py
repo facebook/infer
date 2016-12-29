@@ -39,7 +39,6 @@ DEFAULT_BUCK_OUT_GEN = os.path.join(DEFAULT_BUCK_OUT, 'gen')
 
 INFER_JSON_REPORT = os.path.join(config.BUCK_INFER_OUT,
                                  config.JSON_REPORT_FILENAME)
-INFER_STATS = os.path.join(config.BUCK_INFER_OUT, config.STATS_FILENAME)
 
 INFER_SCRIPT = """\
 #!/usr/bin/env {python_executable}
@@ -138,134 +137,8 @@ def get_normalized_targets(targets):
         raise e
 
 
-def init_stats(args, start_time):
-    """Returns dictionary with target independent statistics.
-    """
-    return {
-        'float': {},
-        'int': {
-            'cores': multiprocessing.cpu_count(),
-            'time': int(time.time()),
-            'start_time': int(round(start_time)),
-        },
-        'normal': {
-            'debug': str(args.debug),
-            'analyzer': args.analyzer,
-            'machine': platform.machine(),
-            'node': platform.node(),
-            'project': utils.decode(os.path.basename(os.getcwd())),
-            'revision': utils.vcs_revision(),
-            'branch': utils.vcs_branch(),
-            'system': platform.system(),
-            'infer_version': utils.infer_version(),
-            'infer_branch': utils.infer_branch(),
-        }
-    }
-
-
-def store_performances_csv(infer_out, stats):
-    """Stores the statistics about perfromances into a CSV file to be exported
-        to a database"""
-    perf_filename = os.path.join(infer_out, config.CSV_PERF_FILENAME)
-    with open(perf_filename, 'w') as csv_file_out:
-        csv_writer = csv.writer(csv_file_out)
-        keys = ['infer_version', 'project', 'revision', 'files', 'lines',
-                'cores', 'system', 'machine', 'node', 'total_time',
-                'capture_time', 'analysis_time', 'reporting_time', 'time']
-        int_stats = list(stats['int'].items())
-        normal_stats = list(stats['normal'].items())
-        flat_stats = dict(int_stats + normal_stats)
-        values = []
-        for key in keys:
-            if key in flat_stats:
-                values.append(flat_stats[key])
-        csv_writer.writerow(keys)
-        csv_writer.writerow(values)
-        csv_file_out.flush()
-
-
-def get_harness_code():
-    all_harness_code = '\nGenerated harness code:\n'
-    for filename in os.listdir(DEFAULT_BUCK_OUT_GEN):
-        if 'InferGeneratedHarness' in filename:
-            all_harness_code += '\n' + filename + ':\n'
-            with open(os.path.join(DEFAULT_BUCK_OUT_GEN,
-                                   filename), 'r') as file_in:
-                all_harness_code += file_in.read()
-    return all_harness_code + '\n'
-
-
-def get_basic_stats(stats):
-    files_analyzed = '{0} files ({1} lines) analyzed in {2}s\n\n'.format(
-        stats['int'].get('files', 0),
-        stats['int'].get('lines', 0),
-        stats['int']['total_time'],
-    )
-    phase_times = 'Capture time: {0}s\nAnalysis time: {1}s\n\n'.format(
-        stats['int'].get('capture_time', 0),
-        stats['int'].get('analysis_time', 0),
-    )
-
-    to_skip = {
-        'files',
-        'procedures',
-        'lines',
-        'cores',
-        'time',
-        'start_time',
-        'capture_time',
-        'analysis_time',
-        'reporting_time',
-        'total_time',
-        'makefile_generation_time'
-    }
-    bugs_found = 'Errors found:\n\n'
-    for key, value in sorted(stats['int'].items()):
-        if key not in to_skip:
-            bugs_found += '  {0:>8}  {1}\n'.format(value, key)
-
-    basic_stats_message = files_analyzed + phase_times + bugs_found + '\n'
-    return basic_stats_message
-
-
-def get_buck_stats():
-    trace_filename = os.path.join(
-        DEFAULT_BUCK_OUT,
-        'log',
-        'traces',
-        'build.trace'
-    )
-    ARGS = 'args'
-    SUCCESS_STATUS = 'success_type'
-    buck_stats = {}
-    try:
-        trace = utils.load_json_from_path(trace_filename)
-        for t in trace:
-            if SUCCESS_STATUS in t[ARGS]:
-                status = t[ARGS][SUCCESS_STATUS]
-                count = buck_stats.get(status, 0)
-                buck_stats[status] = count + 1
-
-        buck_stats_message = 'Buck build statistics:\n\n'
-        for key, value in sorted(buck_stats.items()):
-            buck_stats_message += '  {0:>8}  {1}\n'.format(value, key)
-
-        return buck_stats_message
-    except IOError as e:
-        logging.error('Caught %s: %s' % (e.__class__.__name__, str(e)))
-        logging.error(traceback.format_exc())
-        return ''
-
-
 class NotFoundInJar(Exception):
     pass
-
-
-def load_stats(opened_jar):
-    try:
-        return json.loads(opened_jar.read(INFER_STATS).decode())
-    except KeyError:
-        raise NotFoundInJar
 
 
 def load_json_report(opened_jar):
@@ -289,13 +162,7 @@ def collect_results(args, start_time, targets):
     """Walks through buck-gen, collects results for the different buck targets
     and stores them in in args.infer_out/results.csv.
     """
-    buck_stats = get_buck_stats()
-    logging.info(buck_stats)
-    with open(os.path.join(args.infer_out, ANALYSIS_SUMMARY_OUTPUT), 'w') as f:
-        f.write(buck_stats)
-
     all_json_rows = set()
-    stats = init_stats(args, start_time)
 
     accumulation_whitelist = list(map(re.compile, [
         '^cores$',
@@ -304,49 +171,18 @@ def collect_results(args, start_time, targets):
         '.*_pc',
     ]))
 
-    expected_analyzer = stats['normal']['analyzer']
-    expected_version = stats['normal']['infer_version']
-
     for path in get_output_jars(targets):
         try:
             with zipfile.ZipFile(path) as jar:
-                # Accumulate integers and float values
-                target_stats = load_stats(jar)
-
-                found_analyzer = target_stats['normal']['analyzer']
-                found_version = target_stats['normal']['infer_version']
-
-                if found_analyzer != expected_analyzer \
-                        or found_version != expected_version:
-                    continue
-                else:
-                    for type_k in ['int', 'float']:
-                        items = target_stats.get(type_k, {}).items()
-                        for key, value in items:
-                            if not any(map(lambda r: r.match(key),
-                                           accumulation_whitelist)):
-                                old_value = stats[type_k].get(key, 0)
-                                stats[type_k][key] = old_value + value
-
                 json_rows = load_json_report(jar)
                 for row in json_rows:
                     all_json_rows.add(json.dumps(row))
-
-                # Override normals
-                stats['normal'].update(target_stats.get('normal', {}))
         except NotFoundInJar:
             pass
         except zipfile.BadZipfile:
             logging.warn('Bad zip file %s', path)
 
     json_report = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
-
-    # Convert all float values to integer values
-    for key, value in stats.get('float', {}).items():
-        stats['int'][key] = int(round(value))
-
-    # Delete the float entries before exporting the results
-    del(stats['float'])
 
     with open(json_report, 'w') as report:
         json_string = '['
@@ -355,29 +191,10 @@ def collect_results(args, start_time, targets):
         report.write(json_string)
         report.flush()
 
-    print('\n')
-    json_report = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
     bugs_out = os.path.join(args.infer_out, config.BUGS_FILENAME)
     issues.print_and_save_errors(args.infer_out, args.project_root,
                                  json_report, bugs_out, args.pmd_xml)
-
-    stats['int']['total_time'] = int(round(utils.elapsed_time(start_time)))
-
-    store_performances_csv(args.infer_out, stats)
-
-    stats_filename = os.path.join(args.infer_out, config.STATS_FILENAME)
-    utils.dump_json_to_path(stats, stats_filename)
-
-    basic_stats = get_basic_stats(stats)
-
-    if args.print_harness:
-        harness_code = get_harness_code()
-        basic_stats += harness_code
-
-    logging.info(basic_stats)
-
-    with open(os.path.join(args.infer_out, ANALYSIS_SUMMARY_OUTPUT), 'a') as f:
-        f.write(basic_stats)
+    shutil.copy(bugs_out, os.path.join(args.infer_out, ANALYSIS_SUMMARY_OUTPUT))
 
 
 def cleanup(temp_files):

@@ -168,9 +168,6 @@ class AnalyzerWrapper(object):
             if not os.path.isdir(self.args.infer_out):
                 raise e
 
-        self.stats = {'int': {}}
-        self.timing = {}
-
     def clean_exit(self):
         if os.path.isdir(self.args.infer_out):
             utils.stdout('removing {}'.format(self.args.infer_out))
@@ -190,7 +187,6 @@ class AnalyzerWrapper(object):
             self.javac.original_arguments if self.javac is not None else []
 
         if self.args.multicore == 1:
-            analysis_start_time = time.time()
             analyze_cmd = infer_analyze
             exit_status = run_command(
                 analyze_cmd,
@@ -199,10 +195,6 @@ class AnalyzerWrapper(object):
                 'analysis',
                 self.args.analyzer
             )
-            elapsed = utils.elapsed_time(analysis_start_time)
-            self.timing['analysis'] = elapsed
-            self.timing['makefile_generation'] = 0
-
         else:
             multicore_dir = os.path.join(self.args.infer_out, 'multicore')
             pwd = os.getcwd()
@@ -211,7 +203,6 @@ class AnalyzerWrapper(object):
             os.mkdir(multicore_dir)
             os.chdir(multicore_dir)
             analyze_cmd = infer_analyze + ['-makefile', 'Makefile']
-            makefile_generation_start_time = time.time()
             makefile_status = run_command(
                 analyze_cmd,
                 self.args.debug,
@@ -219,8 +210,6 @@ class AnalyzerWrapper(object):
                 'create_makefile',
                 self.args.analyzer
             )
-            elapsed = utils.elapsed_time(makefile_generation_start_time)
-            self.timing['makefile_generation'] = elapsed
             exit_status += makefile_status
             if makefile_status == os.EX_OK:
                 make_cmd = ['make', '-k']
@@ -229,7 +218,6 @@ class AnalyzerWrapper(object):
                     make_cmd += ['-l', str(self.args.load_average)]
                 if not self.args.debug:
                     make_cmd += ['-s']
-                analysis_start_time = time.time()
                 make_status = run_command(
                     make_cmd,
                     self.args.debug,
@@ -237,8 +225,6 @@ class AnalyzerWrapper(object):
                     'run_makefile',
                     self.args.analyzer
                 )
-                elapsed = utils.elapsed_time(analysis_start_time)
-                self.timing['analysis'] = elapsed
                 os.chdir(pwd)
                 exit_status += make_status
 
@@ -246,14 +232,6 @@ class AnalyzerWrapper(object):
             clean(self.args.infer_out)
 
         return exit_status
-
-    def update_stats_with_warnings(self, json_report):
-        with open(json_report, 'r') as file_in:
-            entries = json.load(file_in)
-            for entry in entries:
-                key = entry[issues.JSON_INDEX_TYPE]
-                previous_value = self.stats['int'].get(key, 0)
-                self.stats['int'][key] = previous_value + 1
 
     def create_report(self):
         """Report statistics about the computation and create a CSV file
@@ -280,47 +258,11 @@ class AnalyzerWrapper(object):
             logging.error(
                 'Error with InferPrint with the command: {}'.format(
                     infer_print_cmd))
-        else:
-            self.update_stats_with_warnings(json_report)
 
         return exit_status
 
-    def read_proc_stats(self):
-        proc_stats_path = os.path.join(
-            self.args.infer_out,
-            config.PROC_STATS_FILENAME)
-
-        # capture and compile mode do not create proc_stats.json
-        if os.path.isfile(proc_stats_path):
-            proc_stats = utils.load_json_from_path(proc_stats_path)
-            self.stats['int'].update(proc_stats)
-
-    def save_stats(self):
-        """Print timing information to infer_out/stats.json"""
-        self.stats['float'] = {
-            'capture_time': self.timing.get('capture', 0.0),
-            'makefile_generation_time': self.timing.get(
-                'makefile_generation', 0.0),
-            'analysis_time': self.timing.get('analysis', 0.0),
-            'reporting_time': self.timing.get('reporting', 0.0),
-        }
-        self.stats['normal'] = {
-            'analyzer': self.args.analyzer,
-            'infer_version': utils.infer_version()
-        }
-
-        stats_path = os.path.join(self.args.infer_out, config.STATS_FILENAME)
-        utils.dump_json_to_path(self.stats, stats_path)
-
-    def report_proc_stats(self):
-        self.read_proc_stats()
-        self.print_analysis_stats()
-
     def report(self):
-        reporting_start_time = time.time()
         report_status = self.create_report()
-        elapsed = utils.elapsed_time(reporting_start_time)
-        self.timing['reporting'] = elapsed
         if report_status == os.EX_OK and not self.args.buck:
             infer_out = self.args.infer_out
             json_report = os.path.join(infer_out, config.JSON_REPORT_FILENAME)
@@ -335,10 +277,4 @@ class AnalyzerWrapper(object):
             if self.args.analyzer == config.ANALYZER_LINTERS:
                 self.report()
             elif self.analyze() == os.EX_OK:
-                self.report_proc_stats()
                 self.report()
-
-    def print_analysis_stats(self):
-        files_total = self.stats['int']['files']
-        files_str = utils.get_plural('file', files_total)
-        print('Analyzed {}'.format(files_str))
