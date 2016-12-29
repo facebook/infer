@@ -183,16 +183,14 @@ let filename_to_absolute fname =
 
 (** Convert an absolute filename to one relative to the current directory. *)
 let filename_to_relative root fname =
-  let string_strict_subtract s1 s2 =
-    let n1, n2 = String.length s1, String.length s2 in
-    if n1 < n2 && String.sub s2 ~pos:0 ~len:n1 = s1 then
-      String.sub s2 ~pos:(n1 + 1) ~len:(n2 - (n1 + 1))
-    else s2 in
-  let norm_root = (* norm_root is root without any trailing / *)
-    Filename.dirname root ^/ Filename.basename root in
-  let remainder = (* remove the path prefix to root including trailing / *)
-    string_strict_subtract norm_root fname in
-  remainder
+  let rec relativize_if_under origin target =
+    match origin, target with
+    | x :: xs, y :: ys when x = y -> relativize_if_under xs ys
+    | [], [] -> "."
+    | [], ys -> Filename.of_parts ys
+    | _ -> fname
+  in
+  relativize_if_under (Filename.parts root) (Filename.parts fname)
 
 
 let directory_fold f init path =
