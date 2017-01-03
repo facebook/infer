@@ -21,6 +21,7 @@ let mock_get_proc_desc _ = None
 let tests =
   let open OUnit2 in
   let open AnalyzerTester.StructuredSil in
+  let initial = BoundedCallTree.Domain.empty in
   let f_proc_name = Procname.from_string_c_fun "f" in
   let g_proc_name = Procname.from_string_c_fun "g" in
   let g_args = [((Exp.Const (Const.Cint (IntLit.one))), (Typ.Tint IInt))] in
@@ -66,37 +67,38 @@ let tests =
       make_call ~procname:f_proc_name None [];
       invariant "{ f }"
     ];
-  ] |> TestInterpreter.create_tests ~test_pname:caller_foo_name extras in
+  ] |> TestInterpreter.create_tests
+      ~test_pname:caller_foo_name
+      ~initial:BoundedCallTree.Domain.empty
+      extras in
   let test_list_from_bar = [
     "on_call_anywhere_on_stack_add_proc_name",
     [
       make_call ~procname:f_proc_name None []; (* means f() *)
       invariant "{ f }"
     ];
-  ] |> TestInterpreter.create_tests ~test_pname:caller_bar_name extras in
+  ] |> TestInterpreter.create_tests ~test_pname:caller_bar_name extras ~initial in
   let test_list_from_baz = [
     "ignore_procs_unrelated_to_trace",
     [
       make_call ~procname:f_proc_name None []; (* means f() *)
       invariant "{  }"
     ];
-  ] |> TestInterpreter.create_tests ~test_pname:caller_baz_name extras in
+  ] |> TestInterpreter.create_tests ~test_pname:caller_baz_name extras ~initial in
   let test_list_multiple_traces_from_foo = [
     "on_call_add_proc_name_in_any_stack_1",
     [
       make_call ~procname:f_proc_name None []; (* means f() *)
       invariant "{ f }"
     ];
-  ] |> TestInterpreter.create_tests
-      ~test_pname:caller_foo_name multi_trace_extras in
+  ] |> TestInterpreter.create_tests ~test_pname:caller_foo_name multi_trace_extras ~initial in
   let test_list_multiple_traces_from_bar = [
     "on_call_add_proc_name_in_any_stack_2",
     [
       make_call ~procname:f_proc_name None []; (* means f() *)
       invariant "{ f }"
     ];
-  ] |> TestInterpreter.create_tests
-      ~test_pname:caller_bar_name multi_trace_extras in
+  ] |> TestInterpreter.create_tests ~test_pname:caller_bar_name multi_trace_extras ~initial in
   let test_list = test_list_from_foo @
                   test_list_from_bar @
                   test_list_from_baz @

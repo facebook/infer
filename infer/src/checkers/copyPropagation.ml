@@ -16,8 +16,6 @@ module Domain = struct
   include Var.Map
   type astate = Var.t Var.Map.t
 
-  let initial = Var.Map.empty
-
   (* return true if the key-value bindings in [rhs] are a subset of the key-value bindings in
      [lhs] *)
   let (<=) ~lhs ~rhs =

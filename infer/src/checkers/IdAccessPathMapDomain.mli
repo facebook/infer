@@ -17,4 +17,4 @@ type astate = AccessPath.raw IdMap.t
 
 include (module type of IdMap)
 
-include AbstractDomain.S with type astate := astate
+include AbstractDomain.WithBottom with type astate := astate

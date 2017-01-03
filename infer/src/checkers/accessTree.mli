@@ -9,7 +9,7 @@
 
 (** tree of (trace, access path) associations organized by structure of access paths *)
 module type S = sig
-  module TraceDomain : AbstractDomain.S
+  module TraceDomain : AbstractDomain.WithBottom
   module AccessMap = AccessPath.AccessMap
   module BaseMap = AccessPath.BaseMap
 
@@ -30,9 +30,7 @@ module type S = sig
   *)
   type t = node BaseMap.t
 
-  include AbstractDomain.S with type astate = t
-
-  val empty : t
+  include AbstractDomain.WithBottom with type astate = t
 
   val empty_node : node
 
@@ -69,4 +67,4 @@ module type S = sig
   val pp_node : Format.formatter -> node -> unit
 end
 
-module Make (TraceDomain : AbstractDomain.S) : S with module TraceDomain = TraceDomain
+module Make (TraceDomain : AbstractDomain.WithBottom) : S with module TraceDomain = TraceDomain

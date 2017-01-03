@@ -13,7 +13,7 @@ module F = Format
 module L = Logging
 
 module type S = sig
-  module TraceDomain : AbstractDomain.S
+  module TraceDomain : AbstractDomain.WithBottom
   module AccessMap = AccessPath.AccessMap
   module BaseMap = AccessPath.BaseMap
 
@@ -24,9 +24,7 @@ module type S = sig
 
   type t = node BaseMap.t
 
-  include AbstractDomain.S with type astate = t
-
-  val empty : t
+  include AbstractDomain.WithBottom with type astate = t
 
   val empty_node : node
 
@@ -51,7 +49,7 @@ module type S = sig
   val pp_node : F.formatter -> node -> unit
 end
 
-module Make (TraceDomain : AbstractDomain.S) = struct
+module Make (TraceDomain : AbstractDomain.WithBottom) = struct
   module TraceDomain = TraceDomain
   module AccessMap = AccessPath.AccessMap
   module BaseMap = AccessPath.BaseMap
@@ -66,13 +64,11 @@ module Make (TraceDomain : AbstractDomain.S) = struct
 
   let empty = BaseMap.empty
 
-  let initial = empty
-
   let make_node trace subtree =
     trace, Subtree subtree
 
   let empty_node =
-    make_node TraceDomain.initial AccessMap.empty
+    make_node TraceDomain.empty AccessMap.empty
 
   let make_normal_leaf trace =
     make_node trace AccessMap.empty
@@ -217,7 +213,7 @@ module Make (TraceDomain : AbstractDomain.S) = struct
       | access :: accesses, (trace, Subtree subtree) ->
           let access_node =
             try AccessMap.find access subtree
-            with Not_found -> make_normal_leaf TraceDomain.initial in
+            with Not_found -> make_normal_leaf TraceDomain.empty in
           (* once we encounter a subtree rooted in an array access, we have to do weak updates in
              the entire subtree. the reason: if I do x[i].f.g = <interesting trace>, then
              x[j].f.g = <empty trace>, I don't want to overwrite <interesting trace>. instead, I
@@ -234,7 +230,7 @@ module Make (TraceDomain : AbstractDomain.S) = struct
     let is_exact = AccessPath.is_exact ap in
     let base_node =
       try BaseMap.find base tree
-      with Not_found -> make_normal_leaf TraceDomain.initial in
+      with Not_found -> make_normal_leaf TraceDomain.empty in
     let base_node' =
       access_tree_add_trace ~node_to_add ~seen_array_access:false ~is_exact accesses base_node in
     BaseMap.add base base_node' tree

@@ -18,8 +18,6 @@ include IdMap
 let pp fmt astate =
   IdMap.pp ~pp_value:AccessPath.pp_raw fmt astate
 
-let initial = IdMap.empty
-
 let (<=) ~lhs ~rhs =
   if phys_equal lhs rhs
   then true

@@ -76,12 +76,12 @@ type astate =
 (** same as astate, but without [id_map] (since it's local) *)
 type summary = LocksDomain.astate * PathDomain.astate * PathDomain.astate
 
-let initial =
-  let locks = LocksDomain.initial in
-  let reads = PathDomain.initial in
-  let writes = PathDomain.initial in
-  let id_map = IdAccessPathMapDomain.initial in
-  let owned = OwnershipDomain.initial in
+let empty =
+  let locks = false in
+  let reads = PathDomain.empty in
+  let writes = PathDomain.empty in
+  let id_map = IdAccessPathMapDomain.empty in
+  let owned = OwnershipDomain.empty in
   { locks; reads; writes; id_map; owned; }
 
 let (<=) ~lhs ~rhs =

@@ -186,5 +186,5 @@ let checker { Callbacks.proc_desc; tenv; get_proc_desc; } =
       SpecSummary.write_summary
         (Procdesc.get_proc_name proc_desc)
         (Some (stacktree_of_pdesc proc_desc "proc_start"));
-      ignore(Analyzer.exec_pdesc (ProcData.make proc_desc tenv extras))
+      ignore(Analyzer.exec_pdesc (ProcData.make proc_desc tenv extras) ~initial:Domain.empty)
     end

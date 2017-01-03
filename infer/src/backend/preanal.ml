@@ -198,13 +198,15 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
     if Procname.is_java (Procdesc.get_proc_name pdesc)
     then AddressTaken.Domain.empty (* can't take the address of a variable in Java *)
     else
-      match AddressTaken.Analyzer.compute_post (ProcData.make_default pdesc tenv) with
+      let initial = AddressTaken.Domain.empty in
+      match AddressTaken.Analyzer.compute_post (ProcData.make_default pdesc tenv) ~initial with
       | Some post -> post
       | None -> AddressTaken.Domain.empty in
 
   let nullify_proc_cfg = ProcCfg.Exceptional.from_pdesc pdesc in
   let nullify_proc_data = ProcData.make pdesc tenv liveness_inv_map in
-  let nullify_inv_map = NullifyAnalysis.exec_cfg nullify_proc_cfg nullify_proc_data in
+  let initial = VarDomain.empty, VarDomain.empty in
+  let nullify_inv_map = NullifyAnalysis.exec_cfg nullify_proc_cfg nullify_proc_data ~initial in
 
   (* only nullify pvars that are local; don't nullify those that can escape *)
   let is_local pvar =
@@ -258,7 +260,8 @@ module CopyProp =
 
 let do_copy_propagation pdesc tenv =
   let proc_cfg = ExceptionalOneInstrPerNodeCfg.from_pdesc pdesc in
-  let copy_prop_inv_map = CopyProp.exec_cfg proc_cfg (ProcData.make_default pdesc tenv) in
+  let initial = CopyPropagation.Domain.empty in
+  let copy_prop_inv_map = CopyProp.exec_cfg proc_cfg (ProcData.make_default pdesc tenv) ~initial in
   (* [var_map] represents a chain of variable. copies v_0 -> v_1 ... -> v_n. starting from some
      ident v_j, we want to walk backward through the chain to find the lowest v_i that is also an
      ident. *)
@@ -302,8 +305,9 @@ let do_copy_propagation pdesc tenv =
 
 let do_liveness pdesc tenv =
   let liveness_proc_cfg = BackwardCfg.from_pdesc pdesc in
+  let initial = Liveness.Domain.empty in
   let liveness_inv_map =
-    LivenessAnalysis.exec_cfg liveness_proc_cfg (ProcData.make_default pdesc tenv) in
+    LivenessAnalysis.exec_cfg liveness_proc_cfg (ProcData.make_default pdesc tenv) ~initial in
   if Config.copy_propagation then do_copy_propagation pdesc tenv;
   add_nullify_instrs pdesc tenv liveness_inv_map;
   Procdesc.signal_did_preanalysis pdesc

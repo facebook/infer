@@ -30,7 +30,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
       let read_from_payload payload =
         match payload.Specs.quandary with
-        | None -> Some (TaintSpecification.to_summary_access_tree TaintDomain.initial)
+        | None -> Some (TaintSpecification.to_summary_access_tree TaintDomain.empty)
         | summary_opt -> summary_opt
     end)
 
@@ -41,9 +41,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         id_map : IdMapDomain.astate; (* mapping of id's to access paths for normalization *)
       }
 
-    let initial =
-      let access_tree = TaintDomain.initial in
-      let id_map = IdMapDomain.initial in
+    let empty =
+      let access_tree = TaintDomain.empty in
+      let id_map = IdMapDomain.empty in
       { access_tree; id_map; }
 
     let (<=) ~lhs ~rhs =
@@ -126,7 +126,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     let access_path_get_trace access_path access_tree proc_data loc =
       match access_path_get_node access_path access_tree proc_data loc with
       | Some (trace, _) -> trace
-      | None -> TraceDomain.initial
+      | None -> TraceDomain.empty
 
     (* get the node associated with [exp] in [access_tree] *)
     let exp_get_node ?(abstracted=false) exp typ { Domain.access_tree; id_map; } proc_data loc =
@@ -172,9 +172,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             TaintDomain.fold
               (fun acc _ trace -> TraceDomain.join trace acc)
               (TaintSpecification.of_summary_access_tree summary)
-              TraceDomain.initial
+              TraceDomain.empty
         | None ->
-            TraceDomain.initial in
+            TraceDomain.empty in
 
       let pp_path_short fmt (_, sources_passthroughs, sinks_passthroughs) =
         let original_source = fst (IList.hd sources_passthroughs) in
@@ -394,7 +394,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               | None -> trace_acc in
             let propagate_to_access_path access_path actuals (astate : Domain.astate) =
               let trace_with_propagation =
-                IList.fold_left exp_join_traces TraceDomain.initial actuals in
+                IList.fold_left exp_join_traces TraceDomain.empty actuals in
               let access_tree =
                 TaintDomain.add_trace access_path trace_with_propagation astate.access_tree in
               { astate with access_tree; } in
@@ -473,7 +473,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 [called_pname]
               end in
           (* for each possible target of the call, apply the summary. join all results together *)
-          IList.fold_left analyze_call Domain.initial targets
+          IList.fold_left analyze_call Domain.empty targets
       | Sil.Call _ ->
           failwith "Unimp: non-pname call expressions"
       | Sil.Nullify (pvar, _) ->
@@ -507,7 +507,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                base in
            AccessPath.BaseMap.add base' node acc)
         access_tree
-        TaintDomain.initial in
+        TaintDomain.empty in
 
     TaintSpecification.to_summary_access_tree access_tree'
 
@@ -522,7 +522,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           Preanal.do_liveness proc_data.pdesc proc_data.tenv;
           Preanal.do_dynamic_dispatch proc_data.pdesc (Cg.create None) proc_data.tenv;
         end;
-      match Analyzer.compute_post proc_data with
+      match Analyzer.compute_post proc_data ~initial:Domain.empty with
       | Some { access_tree; } ->
           Some (make_summary proc_data.extras access_tree)
       | None ->

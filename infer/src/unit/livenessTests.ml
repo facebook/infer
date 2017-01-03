@@ -191,5 +191,5 @@ let tests =
       invariant "{ &b }";
       id_assign_var "a" "b"
     ];
-  ] |> TestInterpreter.create_tests ProcData.empty_extras in
+  ] |> TestInterpreter.create_tests ProcData.empty_extras ~initial:Liveness.Domain.empty in
   "liveness_test_suite">:::test_list

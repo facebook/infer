@@ -17,7 +17,7 @@ open! IStd
     call to [normalize]. however, [normalize] is quadratic in the size of the set, so it should be
     used sparingly (recommendation: only before computing a summary based on the access path set) *)
 module Set : sig
-  include AbstractDomain.S
+  include AbstractDomain.WithBottom
 
   val of_list : AccessPath.t list -> astate
 

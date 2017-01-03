@@ -24,7 +24,7 @@ module type S = sig
   include Spec
   type t
   type astate = t
-  include AbstractDomain.S with type astate := astate
+  include AbstractDomain.WithBottom with type astate := astate
 
   module Sources = Source.Set
   module Sinks = Sink.Set
@@ -34,6 +34,9 @@ module type S = sig
       of passthroughs are the ones in the "reporting" procedure that calls the first function in
       both the source and sink stack *)
   type path = Passthroughs.t * (Source.t * Passthroughs.t) list * (Sink.t * Passthroughs.t) list
+
+  (** the empty trace *)
+  val empty : t
 
   (** get the sources of the trace. *)
   val sources : t -> Sources.t

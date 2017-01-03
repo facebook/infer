@@ -245,10 +245,10 @@ module Make
     Procdesc.set_exit_node pdesc exit_node;
     pdesc, assert_map
 
-  let create_test test_program extras pp_opt test_pname _ =
+  let create_test test_program extras pp_opt ~initial test_pname _ =
     let pp_state = Option.value ~default:I.TransferFunctions.Domain.pp pp_opt in
     let pdesc, assert_map = structured_program_to_cfg test_program test_pname in
-    let inv_map = I.exec_pdesc (ProcData.make pdesc (Tenv.create ()) extras) in
+    let inv_map = I.exec_pdesc (ProcData.make pdesc (Tenv.create ()) extras) ~initial in
 
     let collect_invariant_mismatches node_id (inv_str, inv_label) error_msgs_acc =
       let post_str =
@@ -279,9 +279,9 @@ module Make
           |> F.flush_str_formatter in
         OUnit2.assert_failure assert_fail_message
 
-  let create_tests ?(test_pname=Procname.empty_block) ?pp_opt extras tests =
+  let create_tests ?(test_pname=Procname.empty_block) ~initial ?pp_opt extras tests =
     let open OUnit2 in
     IList.map (fun (name, test_program) ->
-        name>::create_test test_program extras pp_opt test_pname) tests
+        name>::create_test test_program extras ~initial pp_opt test_pname) tests
 
 end

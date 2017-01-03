@@ -162,5 +162,5 @@ let tests =
       var_assign_id "c" "b";
       invariant "{ &b -> a$0, &c -> b$0 }"
     ];
-  ] |> TestInterpreter.create_tests ProcData.empty_extras in
+  ] |> TestInterpreter.create_tests ProcData.empty_extras ~initial:CopyPropagation.Domain.empty in
   "copy_propagation_test_suite">:::test_list

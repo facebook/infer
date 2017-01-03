@@ -22,9 +22,9 @@ module Set = struct
       bool recording whether an abstracted access path has been introduced *)
   type astate = APSet.t
 
-  let initial = APSet.empty
-
   let pp = APSet.pp
+
+  let empty = APSet.empty
 
   let normalize aps =
     APSet.filter
@@ -65,6 +65,6 @@ module Set = struct
         | AccessPath.Exact exact_ap -> APSet.add (AccessPath.Abstracted exact_ap) aps
         | AccessPath.Abstracted _ -> APSet.add ap aps in
       let diff_aps = APSet.diff next prev in
-      APSet.fold abstract_access_path diff_aps initial
+      APSet.fold abstract_access_path diff_aps APSet.empty
       |> join prev
 end

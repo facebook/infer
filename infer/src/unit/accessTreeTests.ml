@@ -14,10 +14,10 @@ module F = Format
 (* string set domain we use to ensure we're getting the expected traces *)
 module MockTraceDomain = struct
   include AbstractDomain.FiniteSet
-    (PrettyPrintable.MakePPSet(struct
-       include String
-       let pp_element fmt s = Format.fprintf fmt "%s" s
-     end))
+      (PrettyPrintable.MakePPSet(struct
+         include String
+         let pp_element fmt s = Format.fprintf fmt "%s" s
+       end))
 
   let top_str = "T"
 
@@ -406,7 +406,7 @@ let tests =
       let x_y_star_base_tree =
         Domain.BaseMap.add
           y_base
-          (Domain.make_starred_leaf MockTraceDomain.initial)
+          (Domain.make_starred_leaf MockTraceDomain.empty)
           x_base_tree in
       assert_trees_equal (widen x_base_tree y_base_tree) x_y_star_base_tree;
 

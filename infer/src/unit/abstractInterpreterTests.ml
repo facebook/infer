@@ -69,6 +69,7 @@ module ExceptionalTestInterpreter = AnalyzerTester.Make
 let tests =
   let open OUnit2 in
   let open AnalyzerTester.StructuredSil in
+  let initial = PathCountDomain.initial in
   let normal_test_list = [
     "straightline",
     [
@@ -180,7 +181,7 @@ let tests =
       );
       invariant "1"
     ];
-  ] |> NormalTestInterpreter.create_tests ProcData.empty_extras in
+  ] |> NormalTestInterpreter.create_tests ProcData.empty_extras ~initial in
   let exceptional_test_list = [
     "try1",
     [
@@ -216,5 +217,5 @@ let tests =
       );
       invariant "3"
     ];
-  ] |> ExceptionalTestInterpreter.create_tests ProcData.empty_extras in
+  ] |> ExceptionalTestInterpreter.create_tests ProcData.empty_extras ~initial in
   "analyzer_tests_suite">:::(normal_test_list @ exceptional_test_list)

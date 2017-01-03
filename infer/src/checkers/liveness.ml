@@ -59,6 +59,3 @@ module Analyzer =
     (ProcCfg.Backward(ProcCfg.Exceptional))
     (Scheduler.ReversePostorder)
     (TransferFunctions)
-
-let checker { Callbacks.proc_desc; tenv; } =
-  ignore(Analyzer.exec_pdesc (ProcData.make_default proc_desc tenv))

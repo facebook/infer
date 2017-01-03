@@ -54,8 +54,6 @@ module Make (Spec : Spec) : S = struct
           end)
         )
 
-    let initial = singleton Spec.initial
-
     let widen ~prev ~next ~num_iters =
       let iters_befor_timeout = 1000 in
       (* failsafe for accidental non-finite height domains *)
@@ -103,6 +101,7 @@ module Make (Spec : Spec) : S = struct
           (fun astate ->
              Spec.report astate (ProcCfg.Exceptional.loc node) proc_name)
           astate_set in
-    let inv_map = Analyzer.exec_pdesc (ProcData.make_default proc_desc tenv) in
+    let inv_map =
+      Analyzer.exec_pdesc (ProcData.make_default proc_desc tenv) ~initial:Domain.empty in
     Analyzer.InvariantMap.iter do_reporting inv_map
 end

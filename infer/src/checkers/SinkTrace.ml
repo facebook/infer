@@ -46,7 +46,7 @@ module Make (TraceElem : TraceElem.S) = struct
 
   type sink_path = Passthroughs.t * (Sink.t * Passthroughs.t) list
 
-  let initial =
+  let empty =
     let dummy_source = () in
     of_source dummy_source
 
@@ -63,7 +63,7 @@ module Make (TraceElem : TraceElem.S) = struct
       (fun t_acc sink ->
          let callee_sink = Sink.with_callsite sink call_site in
          add_sink callee_sink t_acc)
-      initial
+      empty
       (Sinks.elements (sinks t))
 
   let pp fmt t =

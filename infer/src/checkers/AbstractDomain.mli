@@ -16,11 +16,22 @@ module F = Format
 module type S = sig
   type astate
 
-  val initial : astate
-  val (<=) : lhs:astate -> rhs:astate -> bool (* fst \sqsubseteq snd? *)
+  (** the partial order induced by join *)
+  val (<=) : lhs:astate -> rhs:astate -> bool
+
   val join : astate -> astate -> astate
+
   val widen : prev:astate -> next:astate -> num_iters:int -> astate
+
   val pp : F.formatter -> astate -> unit
+end
+
+(** A domain with an explicit bottom value *)
+module type WithBottom = sig
+  include S
+
+  (** The bottom value of the domain. *)
+  val empty : astate
 end
 
 (** Lift a pre-domain to a domain *)
@@ -39,7 +50,7 @@ module Pair (Domain1 : S) (Domain2 : S) : S with type astate = Domain1.astate * 
     a *finite* collection of possible values, since the widening operator here is just union. *)
 module FiniteSet (Set : PrettyPrintable.PPSet) : sig
   include PrettyPrintable.PPSet with type t = Set.t and type elt = Set.elt
-  include S with type astate = t
+  include WithBottom with type astate = t
 end
 
 (** Lift a set to a powerset domain ordered by superset, so the join operator is intersection *)
@@ -51,7 +62,7 @@ end
 (** Lift a map whose value type is an abstract domain to a domain. *)
 module Map (Map : PrettyPrintable.PPMap) (ValueDomain : S) : sig
   include PrettyPrintable.PPMap with type 'a t = 'a Map.t and type key = Map.key
-  include S with type astate = ValueDomain.astate Map.t
+  include WithBottom with type astate = ValueDomain.astate Map.t
 end
 
 (** Boolean domain ordered by p || ~q. Useful when you want a boolean that's true only when it's

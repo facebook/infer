@@ -268,7 +268,7 @@ let make_results_table get_proc_desc file_env =
       (* convert the abstract state to a summary by dropping the id map *)
       let compute_post ({ ProcData.pdesc; tenv; } as proc_data) =
         if not (Procdesc.did_preanalysis pdesc) then Preanal.do_liveness pdesc tenv;
-        match Analyzer.compute_post proc_data with
+        match Analyzer.compute_post proc_data ~initial:ThreadSafetyDomain.empty with
         | Some { locks; reads; writes; } -> Some (locks, reads, writes)
         | None -> None in
       let callback_arg =
@@ -281,9 +281,7 @@ let make_results_table get_proc_desc file_env =
           callback_arg with
       | Some post -> post
       | None ->
-          ThreadSafetyDomain.LocksDomain.initial,
-          ThreadSafetyDomain.PathDomain.initial,
-          ThreadSafetyDomain.PathDomain.initial
+          false, ThreadSafetyDomain.PathDomain.empty, ThreadSafetyDomain.PathDomain.empty
   in
   map_post_computation_over_procs compute_post_for_procedure file_env
 
@@ -314,7 +312,7 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) trace =
   let trace_of_pname callee_pname =
     match Summary.read_summary pdesc callee_pname with
     | Some (_, _, writes) -> writes
-    | _ -> PathDomain.initial in
+    | _ -> PathDomain.empty in
   let report_one_path ((_, sinks) as path) =
     let pp_accesses fmt sink =
       let _, accesses = PathDomain.Sink.kind sink in

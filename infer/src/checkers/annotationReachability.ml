@@ -37,15 +37,6 @@ module Domain = struct
   module TrackingDomain = AbstractDomain.Pair (CallsDomain) (TrackingVar)
   include AbstractDomain.BottomLifted (TrackingDomain)
 
-  let initial =
-    let init_map =
-      IList.fold_left
-        (fun astate_acc (_, snk_annot) -> CallsDomain.add snk_annot CallSiteSet.empty astate_acc)
-        CallsDomain.initial
-        (src_snk_pairs ()) in
-    NonBottom
-      (init_map, TrackingVar.empty)
-
   let add_call key call = function
     | Bottom -> Bottom
     | NonBottom (call_map, vars) as astate ->
@@ -403,8 +394,16 @@ module Interprocedural = struct
       if not (IList.length calls = 0)
       then IList.iter (report_src_snk_path calls) src_annot_list in
 
+    let initial =
+      let init_map =
+        IList.fold_left
+          (fun astate_acc (_, snk_annot) -> CallsDomain.add snk_annot CallSiteSet.empty astate_acc)
+          CallsDomain.empty
+          (src_snk_pairs ()) in
+      Domain.NonBottom
+        (init_map, Domain.TrackingVar.empty) in
     match compute_and_store_post
-            ~compute_post:Analyzer.compute_post
+            ~compute_post:(Analyzer.compute_post ~initial)
             ~make_extras:ProcData.make_empty_extras
             proc_data with
     | Some Domain.NonBottom (call_map, _) ->

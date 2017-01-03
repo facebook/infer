@@ -56,7 +56,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       astate
     else
       let trace = match astate with
-        | Domain.Bottom -> SiofTrace.initial
+        | Domain.Bottom -> SiofTrace.empty
         | Domain.NonBottom t -> t in
       let globals_trace =
         SiofTrace.add_sink (SiofTrace.make_access globals outer_loc) trace in
@@ -68,7 +68,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     |> add_globals astate (Procdesc.get_loc pdesc)
 
   let at_least_nonbottom =
-    Domain.join (Domain.NonBottom SiofTrace.initial)
+    Domain.join (Domain.NonBottom SiofTrace.empty)
 
   let exec_instr astate { ProcData.pdesc; } _ (instr : Sil.instr) =
     match instr with
@@ -127,7 +127,7 @@ let report_siof trace pdesc gname loc =
   let trace_of_pname pname =
     match Summary.read_summary pdesc pname with
     | Some (SiofDomain.NonBottom summary) -> summary
-    | _ -> SiofTrace.initial in
+    | _ -> SiofTrace.empty in
 
   let report_one_path (passthroughs, path) =
     let description, sink_path' = match path with
@@ -176,7 +176,7 @@ let siof_check pdesc gname = function
       ()
 
 let compute_post proc_data =
-  Analyzer.compute_post proc_data |> Option.map ~f:SiofDomain.normalize
+  Analyzer.compute_post proc_data ~initial:SiofDomain.Bottom |> Option.map ~f:SiofDomain.normalize
 
 let checker ({ Callbacks.proc_desc; } as callback) =
   let post =

@@ -14,11 +14,16 @@ module F = Format
 module type S = sig
   type astate
 
-  val initial : astate
   val (<=) : lhs:astate -> rhs:astate -> bool (* fst \sqsubseteq snd? *)
   val join : astate -> astate -> astate
   val widen : prev:astate -> next:astate -> num_iters:int -> astate
   val pp : F.formatter -> astate -> unit
+end
+
+module type WithBottom = sig
+  include S
+
+  val empty : astate
 end
 
 module BottomLifted (Domain : S) = struct
@@ -26,7 +31,7 @@ module BottomLifted (Domain : S) = struct
     | Bottom
     | NonBottom of Domain.astate
 
-  let initial = Bottom
+  let empty = Bottom
 
   let (<=) ~lhs ~rhs =
     if phys_equal lhs rhs
@@ -63,8 +68,6 @@ end
 module Pair (Domain1 : S) (Domain2 : S) = struct
   type astate = Domain1.astate * Domain2.astate
 
-  let initial = Domain1.initial, Domain2.initial
-
   let (<=) ~lhs ~rhs =
     if phys_equal lhs rhs
     then true
@@ -91,8 +94,6 @@ module FiniteSet (S : PrettyPrintable.PPSet) = struct
   include S
   type astate = t
 
-  let initial = empty
-
   let (<=) ~lhs ~rhs =
     if phys_equal lhs rhs
     then true
@@ -111,8 +112,6 @@ module InvertedSet (S : PrettyPrintable.PPSet) = struct
   include S
   type astate = t
 
-  let initial = empty
-
   let (<=) ~lhs ~rhs =
     if phys_equal lhs rhs
     then true
@@ -130,8 +129,6 @@ end
 module Map (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
   include M
   type astate = ValueDomain.astate M.t
-
-  let initial = M.empty
 
   (** true if all keys in [lhs] are in [rhs], and each lhs value <= corresponding rhs value *)
   let (<=) ~lhs ~rhs =
@@ -174,8 +171,6 @@ end
 
 module BooleanAnd = struct
   type astate = bool
-
-  let initial = false
 
   let (<=) ~lhs ~rhs = lhs || not rhs
 
