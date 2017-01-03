@@ -94,7 +94,6 @@ CAPTURE_LIB_DIR = $(PYTHON_LIB_DIR)/capture
 
 INFERANALYZE_BIN = $(BIN_DIR)/InferAnalyze
 INFERCLANG_BIN = $(BIN_DIR)/InferClang
-INFERJAVA_BIN = $(BIN_DIR)/InferJava
 INFERPRINT_BIN = $(BIN_DIR)/InferPrint
 INFERUNIT_BIN = $(BIN_DIR)/InferUnit
 INFER_BIN = $(BIN_DIR)/infer
@@ -107,10 +106,9 @@ endif
 
 JAVA_DEPS = $(addprefix $(PYTHON_LIB_DIR)/, \
               analyze.py bucklib.py config.py issues.py jwlib.py source.py utils.py) \
-            $(addprefix $(CAPTURE_LIB_DIR)/, javac.py util.py) \
+            $(addprefix $(CAPTURE_LIB_DIR)/, util.py) \
             $(INFER_BIN) \
             $(INFERANALYZE_BIN) \
-            $(INFERJAVA_BIN) \
             $(INFERPRINT_BIN)
 
 CLANG_DEPS = $(addprefix $(PYTHON_LIB_DIR)/, \

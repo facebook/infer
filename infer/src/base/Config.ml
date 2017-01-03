@@ -320,7 +320,7 @@ let inferconfig_home =
 and project_root =
   CLOpt.mk_path ~deprecated:["project_root"; "-project_root"] ~long:"project-root" ~short:"pr"
     ~default:init_work_dir
-    ~exes:CLOpt.[Analyze;Clang;Java;Print;Toplevel]
+    ~exes:CLOpt.[Analyze;Clang;Print;Toplevel]
     ~meta:"dir" "Specify the root directory of the project"
 
 (* Parse the phase 1 options, ignoring the rest *)
@@ -456,7 +456,6 @@ and analyzer =
 
 and android_harness =
   CLOpt.mk_bool ~deprecated:["harness"] ~long:"android-harness"
-    ~exes:CLOpt.[Java]
     "(Experimental) Create harness to detect issues involving the Android lifecycle"
 
 and angelic_execution =
@@ -482,7 +481,7 @@ and blacklist =
 
 and bootclasspath =
   CLOpt.mk_string_opt ~long:"bootclasspath"
-    ~exes:CLOpt.[Toplevel; Java]
+    ~exes:CLOpt.[Toplevel]
     "Specify the Java bootclasspath"
 
 (** Automatically set when running from within Buck *)
@@ -596,7 +595,6 @@ and clang_include_to_override =
 
 and classpath =
   CLOpt.mk_string_opt ~long:"classpath"
-    ~exes:CLOpt.[Java]
     "Specify the Java classpath"
 
 and cluster =
@@ -713,7 +711,6 @@ and (
   )
 and dependencies =
   CLOpt.mk_bool ~deprecated:["dependencies"] ~long:"dependencies"
-    ~exes:CLOpt.[Java]
     "Translate all the dependencies during the capture. The classes in the given jar file will be \
      translated. No sources needed."
 
@@ -830,7 +827,7 @@ and frontend_tests =
 
 and generated_classes =
   CLOpt.mk_path_opt ~long:"generated-classes"
-    ~exes:CLOpt.[Toplevel; Java]
+    ~exes:CLOpt.[Toplevel]
     "Specify where to load the generated class files"
 
 and headers =
@@ -860,7 +857,6 @@ and iterations =
 and java_jar_compiler =
   CLOpt.mk_path_opt
     ~long:"java-jar-compiler"
-    ~exes:CLOpt.[Java]
     ~meta:"path" "Specifify the Java compiler jar used to generate the bytecode"
 
 and jobs =
@@ -951,7 +947,6 @@ and patterns_modeled_expensive =
   let long = "modeled-expensive" in
   (long,
    CLOpt.mk_json ~deprecated:["modeled_expensive"] ~long
-     ~exes:CLOpt.[Java]
      "Matcher or list of matchers for methods that should be considered expensive by the \
       performance critical checker.")
 
@@ -959,14 +954,12 @@ and patterns_never_returning_null =
   let long = "never-returning-null" in
   (long,
    CLOpt.mk_json ~deprecated:["never_returning_null"] ~long
-     ~exes:CLOpt.[Java]
      "Matcher or list of matchers for functions that never return `null`.")
 
 and patterns_skip_translation =
   let long = "skip-translation" in
   (long,
    CLOpt.mk_json ~deprecated:["skip_translation"] ~long
-     ~exes:CLOpt.[Java]
      "Matcher or list of matchers for names of files that should not be analyzed at all.")
 
 and pmd_xml =
@@ -1042,7 +1035,7 @@ and report_hook =
 and results_dir =
   CLOpt.mk_path ~deprecated:["results_dir"; "-out"] ~long:"results-dir" ~short:"o"
     ~default:(init_work_dir ^/ "infer-out")
-    ~exes:CLOpt.[Toplevel;Analyze;Clang;Java;Print]
+    ~exes:CLOpt.[Toplevel;Analyze;Clang;Print]
     ~meta:"dir" "Write results and internal files in the specified directory"
 
 and save_results =
@@ -1055,7 +1048,7 @@ and seconds_per_iteration =
 
 and skip_analysis_in_path =
   CLOpt.mk_string_list ~long:"skip-analysis-in-path"
-    ~exes:CLOpt.[Clang;Java]
+    ~exes:CLOpt.[Clang]
     ~meta:"path prefix" "Ignore files whose path matches the given prefix"
 
 and skip_clang_analysis_in_path =
@@ -1070,12 +1063,10 @@ and skip_translation_headers =
 
 and sources =
   CLOpt.mk_string_list ~long:"sources"
-    ~exes:CLOpt.[Java]
     "Specify the list of source files"
 
 and sourcepath =
   CLOpt.mk_string_opt ~long:"sourcepath"
-    ~exes:CLOpt.[Java]
     "Specify the sourcepath"
 
 and spec_abs_level =
@@ -1185,13 +1176,13 @@ and verbose_out =
 and version =
   let var = ref `None in
   CLOpt.mk_set var `Full ~deprecated:["version"] ~long:"version"
-    ~exes:CLOpt.[Toplevel;Analyze;Clang;Java;Print]
+    ~exes:CLOpt.[Toplevel;Analyze;Clang;Print]
     "Print version information and exit" ;
   CLOpt.mk_set var `Json ~deprecated:["version_json"] ~long:"version-json"
-    ~exes:CLOpt.[Analyze;Clang;Java;Print]
+    ~exes:CLOpt.[Analyze;Clang;Print]
     "Print version information in json format and exit" ;
   CLOpt.mk_set var `Vcs ~long:"version-vcs"
-    ~exes:CLOpt.[Analyze;Clang;Java;Print]
+    ~exes:CLOpt.[Analyze;Clang;Print]
     "Print version control system commit and exit" ;
   var
 
@@ -1229,14 +1220,14 @@ and xml_specs =
   CLOpt.mk_bool ~deprecated:["xml"] ~long:"xml-specs"
     "Export specs into XML files file1.xml ... filen.xml"
 
-let javac_classes_out = ref None
+let javac_classes_out = ref init_work_dir
 
 (* The "rest" args must appear after "--" on the command line, and hence after other args, so they
    are allowed to refer to the other arg variables. *)
 let rest =
   let classes_out_spec =
     Arg.String (fun classes_out ->
-        javac_classes_out := Some classes_out ;
+        javac_classes_out := classes_out ;
         if !buck then (
           let classes_out_infer = resolve classes_out ^/ buck_results_dir_name in
           (* extend env var args to pass args to children that do not receive the rest args *)
@@ -1282,9 +1273,6 @@ let exe_usage (exe : CLOpt.exe) =
        You shouldn't need to call this directly."
   | Interactive ->
       "Usage: interactive ocaml toplevel. To pass infer config options use env variable"
-  | Java ->
-      "Usage: InferJava [options]\n\
-       Translate the given files using javac into infer internal representation for later analysis."
   | Print ->
       "Usage: InferPrint [options] name1.specs ... namen.specs\n\
        Read, convert, and print .specs files. \
@@ -1447,6 +1435,7 @@ and infer_cache = !infer_cache
 and iphoneos_target_sdk_version = !iphoneos_target_sdk_version
 and iterations = !iterations
 and java_jar_compiler = !java_jar_compiler
+and javac_classes_out = !javac_classes_out
 and javac_verbose_out = !verbose_out
 and jobs = !jobs
 and join_cond = !join_cond

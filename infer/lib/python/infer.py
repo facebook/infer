@@ -35,11 +35,8 @@ CMD_MARKER = '--'
 # All supported commands should be listed here
 MODULE_TO_COMMAND = {
     'ant': ['ant'],
-    'analyze': ['analyze'],
     'buck': ['buck'],
     'gradle': ['gradle', 'gradlew'],
-    'javac': ['javac'],
-    'java': ['java'],
     'make': make.SUPPORTED_COMMANDS,
     'xcodebuild': ['xcodebuild'],
     'mvn': ['mvn'],
@@ -143,18 +140,7 @@ def main():
 
     args = global_argparser.parse_args(to_parse)
 
-    remove_infer_out = (imported_module is not None and
-                        not args.reactive and
-                        capture_module_name != 'analyze' and
-                        not args.buck)
-    if remove_infer_out:
-        analyze.remove_infer_out(args.infer_out)
-
     if imported_module is not None:
-        analyze.create_results_dir(args.infer_out)
-        analyze.reset_start_file(args.infer_out,
-                                 touch_if_present=not args.continue_capture)
-
         utils.configure_logging(args)
         try:
             logging.info('output of locale.getdefaultlocale(): %s',

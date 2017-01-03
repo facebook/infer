@@ -26,7 +26,6 @@ def java_library(
         '--classpath', '$(classpath :{})'.format(compile_name),
         '--sourcepath', '$(location :{})'.format(export_srcs_name),
         '--generated-classes', '$(location :{})'.format(compile_name),
-        '--', 'genrule'
       ]),
       out = 'infer_out',
     )

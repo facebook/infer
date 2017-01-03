@@ -34,7 +34,6 @@ let log_dir_of_exe (exe : CLOpt.exe) =
   | Analyze -> "analyze"
   | Clang -> "clang"
   | Interactive -> "interactive"
-  | Java -> "java"
   | Print -> "print"
   | Toplevel -> "toplevel"
 

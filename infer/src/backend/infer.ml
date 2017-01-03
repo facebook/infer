@@ -14,6 +14,7 @@ open! IStd
 
 module CLOpt = CommandLineOption
 module L = Logging
+module F = Format
 
 
 let rec rmtree name =
@@ -38,15 +39,13 @@ let rec rmtree name =
 
 
 type build_mode =
-  | Analyze | Ant | Buck | Gradle | Java | Javac | Make | Mvn | Ndk
-  | Xcode | Genrule
+  | Analyze | Ant | Buck | Gradle | Java | Javac | Make | Mvn | Ndk | Xcode
 
 let build_mode_of_string path =
   match Filename.basename path with
   | "analyze" -> Analyze
   | "ant" -> Ant
   | "buck" -> Buck
-  | "genrule" -> Genrule
   | "gradle" | "gradlew" -> Gradle
   | "java" -> Java
   | "javac" -> Javac
@@ -60,7 +59,6 @@ let string_of_build_mode = function
   | Analyze -> "analyze"
   | Ant -> "ant"
   | Buck -> "buck"
-  | Genrule -> "genrule"
   | Gradle -> "gradle"
   | Java -> "java"
   | Javac -> "javac"
@@ -74,6 +72,7 @@ let remove_results_dir () =
   rmtree Config.results_dir
 
 let create_results_dir () =
+  Unix.mkdir_p (Config.results_dir ^/ Config.attributes_dir_name) ;
   Unix.mkdir_p (Config.results_dir ^/ Config.captured_dir_name) ;
   Unix.mkdir_p (Config.results_dir ^/ Config.specs_dir_name)
 
@@ -122,16 +121,56 @@ let touch_start_file () =
   with Unix.Unix_error (Unix.EEXIST, _, _) -> ()
 
 
-let run_command ~prog ~args after_wait =
-  let status = Unix.waitpid (Unix.fork_exec ~prog ~args:(prog :: args) ()) in
-  after_wait status ;
-  match status with
-  | Ok () -> ()
-  | Error _ ->
-      L.do_err "%s@\n%s@\n"
-        (String.concat ~sep:" " (prog :: args)) (Unix.Exit_or_signal.to_string_hum status) ;
-      exit 1
+let run_command ~prog ~args cleanup =
+  Unix.waitpid (Unix.fork_exec ~prog ~args:(prog :: args) ())
+  |> fun status
+  -> cleanup status
+   ; ok_exn (Unix.Exit_or_signal.or_error status)
 
+let run_javac build_mode build_cmd =
+  let build_prog, build_args =
+    match build_cmd with
+    | prog :: args -> (prog, args)
+    | [] -> invalid_arg "run_java: build command cannot be empty" in
+  let prog, prog_args =
+    match build_mode, Config.java_jar_compiler with
+    | _, None -> (build_prog, ["-J-Duser.language=en"])
+    | Java, Some jar -> (build_prog, ["-jar"; jar])
+    | _, Some jar -> (* fall back to java in PATH to avoid passing -jar to javac *)
+        ("java", ["-jar"; jar]) in
+  let cli_args, file_args =
+    let args =
+      "-verbose" :: "-g" ::
+      if List.exists build_args ~f:(function "-d" | "-classes_out" -> true | _ -> false)
+      then build_args
+      else "-d" :: Config.javac_classes_out :: build_args in
+    List.partition_tf args ~f:(fun arg ->
+        (* As mandated by javac, argument files must not contain certain arguments. *)
+        String.is_prefix ~prefix:"-J" arg || String.is_prefix ~prefix:"@" arg) in
+  (* Pass non-special args via a file to avoid exceeding the command line size limit. *)
+  let args_file =
+    let file = Filename.temp_file "args_" "" in
+    let quoted_file_args =
+      List.map file_args ~f:(fun arg ->
+          if String.contains arg '\'' then arg else F.sprintf "'%s'" arg) in
+    Out_channel.with_file file ~f:(fun oc -> Out_channel.output_lines oc quoted_file_args) ;
+    file in
+  let cli_file_args = cli_args @ ["@" ^ args_file] in
+  let args = prog_args @ cli_file_args in
+  let verbose_out_file = Filename.temp_file "javac_" ".out" in
+  Unix.with_file verbose_out_file ~mode:[Unix.O_WRONLY] ~f:(
+    fun verbose_out_fd ->
+      try
+        Unix_.fork_redirect_exec_wait ~prog ~args ~stderr:verbose_out_fd ()
+      with exn ->
+      try
+        Unix_.fork_redirect_exec_wait ~prog:"javac" ~args:cli_file_args ~stderr:verbose_out_fd ()
+      with _ ->
+        L.stderr "Failed to execute: %s %s@\nSee contents of %s.@\n"
+          prog (String.concat ~sep:" " args) verbose_out_file ;
+        raise exn
+  );
+  verbose_out_file
 
 let check_xcpretty () =
   match Unix.system "xcpretty --version" with
@@ -149,25 +188,30 @@ let capture_with_compilation_database db_files =
   let compilation_database = CompilationDatabase.from_json_files db_files in
   CaptureCompilationDatabase.capture_files_in_database compilation_database
 
-let capture build_cmd = function
-  | Analyze when not (List.is_empty !Config.clang_compilation_db_files) ->
+let capture build_cmd build_mode =
+  match build_mode, Config.generated_classes with
+  | _, Some path ->
+      L.stdout "Capturing for Buck genrule compatibility...@\n";
+      JMain.main (lazy (JClasspath.load_from_arguments path))
+  | Analyze, _ when not (List.is_empty !Config.clang_compilation_db_files) ->
       capture_with_compilation_database !Config.clang_compilation_db_files
-  | Analyze ->
+  | Analyze, _ ->
       ()
-  | Buck when Config.use_compilation_database <> None ->
+  | Buck, _ when Config.use_compilation_database <> None ->
       L.stdout "Capturing using Buck's compilation database...@\n";
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck () in
       capture_with_compilation_database json_cdb
-  | Genrule ->
-      L.stdout "Capturing for Buck genrule compatibility...@\n";
-      let infer_java = Config.bin_dir ^/ "InferJava" in
-      run_command ~prog:infer_java ~args:[] (fun _ -> ())
-  | Xcode when Config.xcpretty ->
+  | (Java | Javac), _ ->
+      let verbose_out_file = run_javac build_mode build_cmd in
+      if Config.analyzer <> Config.Compile then
+        JMain.main (lazy (JClasspath.load_from_verbose_output verbose_out_file)) ;
+      Unix.unlink verbose_out_file
+  | Xcode, _ when Config.xcpretty ->
       L.stdout "Capturing using xcpretty...@\n";
       check_xcpretty ();
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_xcodebuild () in
       capture_with_compilation_database json_cdb
-  | build_mode ->
+  | build_mode, _ ->
       L.stdout "Capturing in %s mode...@." (string_of_build_mode build_mode);
       let in_buck_mode = build_mode = Buck in
       let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
@@ -205,8 +249,6 @@ let capture build_cmd = function
           ["--project-root"; Config.project_root] @
           (if not Config.reactive_mode then [] else
              ["--reactive"]) @
-          (if not Config.continue_capture then [] else
-             ["--continue"]) @
           "--out" :: Config.results_dir ::
           (match Config.xcode_developer_dir with None -> [] | Some d ->
               ["--xcode-developer-dir"; d]) @
@@ -237,7 +279,7 @@ let run_parallel_analysis () =
   ) (fun _ -> ())
 
 let execute_analyze () =
-  if Config.jobs = 1 then
+  if Config.jobs = 1 || Config.cluster_cmdline <> None then
     InferAnalyze.main ""
   else
     run_parallel_analysis ()
@@ -269,10 +311,7 @@ let analyze = function
       (* In Buck mode when compilation db is not used, analysis is invoked either from capture or a
          separate Analyze invocation is necessary, depending on the buck flavor used. *)
       ()
-  | Java | Javac ->
-      (* In Java and Javac modes, analysis is invoked from capture. *)
-      ()
-  | Analyze | Ant | Buck | Gradle | Genrule | Make | Mvn | Ndk | Xcode ->
+  | _ ->
       if (Sys.file_exists Config.(results_dir ^/ captured_dir_name)) <> `Yes then (
         L.stderr "There was nothing to analyze, exiting" ;
         Config.print_usage_exit ()
@@ -299,7 +338,7 @@ let fail_on_issue_epilogue () =
 let () =
   let build_cmd = IList.rev Config.rest in
   let build_mode = match build_cmd with path :: _ -> build_mode_of_string path | [] -> Analyze in
-  if build_mode <> Analyze && not Config.buck && not Config.reactive_mode then
+  if not (build_mode = Analyze || Config.(buck || continue_capture || reactive_mode)) then
     remove_results_dir () ;
   create_results_dir () ;
   (* re-set log files, as default files were in results_dir removed above *)

@@ -317,7 +317,6 @@ ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	@for i in infer/lib/java/*.jar; do \
 	  $(INSTALL_DATA) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
 	done
-	$(INSTALL_PROGRAM) -C $(INFERJAVA_BIN) $(DESTDIR)$(libdir)/infer/infer/bin/
 	$(INSTALL_PROGRAM) -C      $(LIB_DIR)/wrappers/javac \
 	  $(DESTDIR)$(libdir)/infer/infer/lib/wrappers/
 endif

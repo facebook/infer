@@ -49,7 +49,7 @@ class MavenCapture:
             if options_next:
                 #  line has format [Debug] <space separated options>
                 javac_args = line.split(' ')[1:] + files_to_compile
-                capture = jwlib.create_infer_command(self.args, javac_args)
+                capture = jwlib.create_infer_command(javac_args)
                 calls.append(capture)
                 options_next = False
                 files_to_compile = []

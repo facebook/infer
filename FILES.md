@@ -10,8 +10,6 @@
 
 The rest of the commands in infer/bin/ are not meant to be called directly, but are used by the top-level commands above.
 
-*InferJava* : Binary containing the Java frontend.
-
 *InferClang* : Binary containing the clang frontend.
 
 *InferAnalyze* : Binary containing the backend of Infer that performs the analysis.

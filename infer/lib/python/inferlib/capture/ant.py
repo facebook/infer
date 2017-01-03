@@ -61,8 +61,7 @@ class AntCapture:
                 if argument_start_pattern in line:
                     collect = True
                     if javac_arguments != []:
-                        capture = jwlib.create_infer_command(self.args,
-                                                             javac_arguments)
+                        capture = jwlib.create_infer_command(javac_arguments)
                         calls.append(capture)
                         javac_arguments = []
                 if collect:
@@ -72,7 +71,7 @@ class AntCapture:
                         arg = self.remove_quotes(content)
                         javac_arguments.append(arg)
         if javac_arguments != []:
-            capture = jwlib.create_infer_command(self.args, javac_arguments)
+            capture = jwlib.create_infer_command(javac_arguments)
             calls.append(capture)
             javac_arguments = []
         return calls

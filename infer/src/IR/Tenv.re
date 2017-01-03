@@ -116,14 +116,16 @@ let get_overriden_method tenv pname_java => {
 /** Serializer for type environments */
 let tenv_serializer: Serialization.serializer t = Serialization.create_serializer Serialization.tenv_key;
 
-let global_tenv: Lazy.t (option t) =
-  lazy (Serialization.from_file tenv_serializer DB.global_tenv_fname);
+let global_tenv: ref (option t) = ref None;
 
 
 /** Load a type environment from a file */
 let load_from_file (filename: DB.filename) :option t =>
   if (filename == DB.global_tenv_fname) {
-    Lazy.force global_tenv
+    if (is_none !global_tenv) {
+      global_tenv := Serialization.from_file tenv_serializer DB.global_tenv_fname
+    };
+    !global_tenv
   } else {
     Serialization.from_file tenv_serializer filename
   };
@@ -131,6 +133,11 @@ let load_from_file (filename: DB.filename) :option t =>
 
 /** Save a type environment into a file */
 let store_to_file (filename: DB.filename) (tenv: t) => {
+  /* update in-memory global tenv for later uses by this process, e.g. in single-core mode the
+     frontend and backend run in the same process */
+  if (filename == DB.global_tenv_fname) {
+    global_tenv := Some tenv
+  };
   Serialization.to_file tenv_serializer filename tenv;
   if Config.debug_mode {
     let debug_filename = DB.filename_to_string (DB.filename_add_suffix filename ".debug");

@@ -11,7 +11,7 @@
 
 open! IStd
 
-type exe = Analyze | Clang | Interactive | Java | Print | Toplevel
+type exe = Analyze | Clang | Interactive | Print | Toplevel
 
 (** Association list of executable (base)names to their [exe]s. *)
 val exes : (string * exe) list

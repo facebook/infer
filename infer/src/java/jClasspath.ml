@@ -91,6 +91,9 @@ type file_entry =
   | Singleton of SourceFile.t
   | Duplicate of (string * SourceFile.t) list
 
+type t = string * file_entry String.Map.t * JBasics.ClassSet.t
+
+
 (* Open the source file and search for the package declaration.
    Only the case where the package is declared in a single line is supported *)
 let read_package_declaration source_file =
@@ -148,8 +151,8 @@ let add_root_path path roots =
   String.Set.add roots path
 
 
-let load_from_verbose_output () =
-  let file_in = open_in Config.javac_verbose_out in
+let load_from_verbose_output javac_verbose_out =
+  let file_in = open_in javac_verbose_out in
   let class_filename_re =
     Str.regexp
       "\\[wrote RegularFileObject\\[\\(.*\\)\\]\\]" in
@@ -262,11 +265,6 @@ let load_from_arguments classes_out_path =
     |> combine (split Config.bootclasspath) in
   (classpath, search_sources (), classes)
 
-
-let load_sources_and_classes () =
-  match Config.generated_classes with
-  | None -> load_from_verbose_output ()
-  | Some path -> load_from_arguments path
 
 type classmap = JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
 

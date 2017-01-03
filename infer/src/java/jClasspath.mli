@@ -32,9 +32,13 @@ type file_entry =
   | Singleton of SourceFile.t
   | Duplicate of (string * SourceFile.t) list
 
+type t = string * file_entry String.Map.t * JBasics.ClassSet.t
+
 (** load the list of source files and the list of classes from the javac verbose file *)
-val load_sources_and_classes : unit ->
-  string * file_entry String.Map.t * JBasics.ClassSet.t
+val load_from_verbose_output : string -> t
+
+(** load the list of source files and the list of classes from Config.generated_classes *)
+val load_from_arguments : string -> t
 
 type classmap = JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
 

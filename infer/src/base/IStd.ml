@@ -9,6 +9,39 @@
 
 include Core.Std
 
+module Unix_ = struct
+
+  let improve f make_arg_sexps =
+    try f () with
+    | Unix.Unix_error (e, s, _) ->
+        let buf = Buffer.create 100 in
+        let fmt = Format.formatter_of_buffer buf in
+        Format.pp_set_margin fmt 10000;
+        Sexp.pp_hum fmt (
+          Sexp.List (
+            List.map (make_arg_sexps ())
+              ~f:(fun (name, value) -> Sexp.List [Sexp.Atom name; value])));
+        Format.pp_print_flush fmt ();
+        let arg_str = Buffer.contents buf in
+        raise (Unix.Unix_error (e, s, arg_str))
+
+  let create_process_redirect
+      ~prog ~args ?(stdin = Unix.stdin) ?(stdout = Unix.stdout) ?(stderr = Unix.stderr) () =
+    improve
+      (fun () ->
+         let prog_args = Array.of_list (prog :: args) in
+         Caml.UnixLabels.create_process ~prog ~args:prog_args ~stdin ~stdout ~stderr
+         |> Pid.of_int)
+      (fun () ->
+         [("prog", Sexp.Atom prog);
+          ("args", Sexplib.Conv.sexp_of_list (fun a -> Sexp.Atom a) args)])
+
+  let fork_redirect_exec_wait ~prog ~args ?stdin ?stdout ?stderr () =
+    Unix.waitpid (create_process_redirect ~prog ~args ?stdin ?stdout ?stderr ())
+    |> Unix.Exit_or_signal.or_error |> ok_exn
+
+end
+
 let ( @ ) = Caml.List.append
 
 (* Use Caml.Set since they are serialized using Marshal, and Core.Std.Set includes the comparison

@@ -17,14 +17,13 @@ module YBU = Yojson.Basic.Util
 
 (** Each command line option may appear in the --help list of any executable, these tags are used to
     specify which executables for which an option will be documented. *)
-type exe = Analyze | Clang | Interactive | Java | Print | Toplevel
+type exe = Analyze | Clang | Interactive | Print | Toplevel
 
 
 (** Association list of executable (base)names to their [exe]s. *)
 let exes = [
   ("InferAnalyze", Analyze);
   ("InferClang", Clang);
-  ("InferJava", Java);
   ("InferPrint", Print);
   ("infer", Toplevel);
   ("interactive", Interactive);
@@ -35,7 +34,7 @@ let exe_name =
   fun exe -> IList.assoc (=) exe exe_to_name
 
 
-let frontend_exes = [Clang; Java]
+let frontend_exes = [Clang]
 
 type desc = {
   long: string; short: string; meta: string; doc: string; spec: Arg.spec;
@@ -633,7 +632,6 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
   if current_exe = Toplevel then (
     add_to_curr_speclist ~header:"Analysis (backend) options" Analyze;
     add_to_curr_speclist ~header:"Clang frontend options" Clang;
-    add_to_curr_speclist ~header:"Java frontend options" Java;
   )
   ;
   assert( check_no_duplicates !curr_speclist )
@@ -650,7 +648,7 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
   let exe_name = Sys.executable_name in
   let should_parse_cl_args = match current_exe with
     | Clang | Interactive -> false
-    | Analyze | Java | Print | Toplevel -> true in
+    | Analyze | Print | Toplevel -> true in
   let env_cl_args =
     if should_parse_cl_args then prepend_to_argv env_args
     else env_args in

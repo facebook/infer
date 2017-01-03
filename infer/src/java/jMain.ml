@@ -14,17 +14,6 @@ open Javalib_pack
 
 module L = Logging
 
-let () =
-  match Config.models_mode, Sys.file_exists Config.models_jar = `Yes with
-  | true, false ->
-      ()
-  | false, false ->
-      failwith "Java model file is required"
-  | true, true ->
-      failwith "Not expecting model file when analyzing the models"
-  | false, true ->
-      JClasspath.add_models Config.models_jar
-
 
 let register_perf_stats_report source_file =
   let stats_dir = Filename.concat Config.results_dir Config.frontend_stats_dir_name in
@@ -134,14 +123,14 @@ let do_all_files classpath sources classes =
       do_source_file linereader classes program tenv basename package_opt source_file in
   String.Map.iteri
     ~f:(fun ~key:basename ~data:file_entry ->
-       match file_entry with
-       | JClasspath.Singleton source_file ->
-           translate_source_file basename (None, source_file) source_file
-       | JClasspath.Duplicate source_files ->
-           IList.iter
-             (fun (package, source_file) ->
-                translate_source_file basename (Some package, source_file) source_file)
-             source_files)
+        match file_entry with
+        | JClasspath.Singleton source_file ->
+            translate_source_file basename (None, source_file) source_file
+        | JClasspath.Duplicate source_files ->
+            IList.iter
+              (fun (package, source_file) ->
+                 translate_source_file basename (Some package, source_file) source_file)
+              source_files)
     sources;
   if Config.dependency_mode then
     capture_libs linereader program tenv;
@@ -151,9 +140,19 @@ let do_all_files classpath sources classes =
 
 
 (* loads the source files and translates them *)
-let () =
+let main load_sources_and_classes =
+  (match Config.models_mode, Sys.file_exists Config.models_jar = `Yes with
+   | true, false ->
+       ()
+   | false, false ->
+       failwith "Java model file is required"
+   | true, true ->
+       failwith "Not expecting model file when analyzing the models"
+   | false, true ->
+       JClasspath.add_models Config.models_jar
+  );
   JBasics.set_permissive true;
-  let classpath, sources, classes = JClasspath.load_sources_and_classes () in
+  let classpath, sources, classes = Lazy.force load_sources_and_classes in
   if String.Map.is_empty sources then
     failwith "Failed to load any Java source code"
   else
