@@ -44,6 +44,7 @@ is required to be able to [use the
 release](http://fbinfer.com/docs/getting-started.html) (faster), or to
 compile everything from source (see the end of this document).
 
+- bsdtar
 - opam >= 1.2.0
 - Python 2.7
 - pkg-config
@@ -110,6 +111,7 @@ sudo apt-get upgrade
 sudo apt-get install -y \
   autoconf \
   automake \
+  bsdtar \
   build-essential \
   git \
   libffi-dev \
@@ -130,6 +132,7 @@ sudo apt-get install -y \
 sudo apt install -y \
   autoconf \
   automake \
+  bsdtar \
   build-essential \
   git \
   libffi-dev \
@@ -157,6 +160,7 @@ sudo apt-get upgrade
 sudo apt-get install -y \
   autoconf \
   automake \
+  bsdtar \
   build-essential \
   g++-4.8 \
   gcc-4.8 \
