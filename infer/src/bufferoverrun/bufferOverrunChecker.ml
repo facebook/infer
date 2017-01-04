@@ -410,9 +410,9 @@ struct
       in
       match alarm with
       | None -> ()
-      | Some confidence when Procname.equal pname caller_pname ->
+      | Some bucket when Procname.equal pname caller_pname ->
         let description = Dom.Condition.to_string cond in
-        let error_desc = Localise.desc_buffer_overrun confidence description in
+        let error_desc = Localise.desc_buffer_overrun bucket description in
         let exn = Exceptions.Checkers (Localise.to_string Localise.buffer_overrun, error_desc) in
         let trace = [Errlog.make_trace_element 0 loc description []] in
         Reporting.log_error pname ~loc ~ltr:trace exn

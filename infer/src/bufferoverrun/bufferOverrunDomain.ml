@@ -112,18 +112,18 @@ struct
           (Itv.Bound.gt (Itv.ub c.idx) (Itv.ub c.size))))
 
   (* check buffer overrun and return its confidence *)
-  let check : t -> int option
+  let check : t -> string option
   = fun c ->
     if Config.bo_debug <= 1 && (Itv.is_symbolic c.idx || Itv.is_symbolic c.size) 
     then None
-    else if filter1 c then Some 0
-    else if filter2 c then Some 1
+    else if filter1 c then Some Localise.BucketLevel.b5
+    else if filter2 c then Some Localise.BucketLevel.b3
     else
       let c = set_size_pos c in
       let not_overrun = Itv.lt_sem c.idx c.size in
       let not_underrun = Itv.le_sem Itv.zero c.idx in
       if (Itv.eq not_overrun Itv.one) && (Itv.eq not_underrun Itv.one) then None
-      else Some 2
+      else Some Localise.BucketLevel.b1
 
   let invalid : t -> bool
   = fun x -> Itv.invalid x.idx || Itv.invalid x.size
