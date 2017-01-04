@@ -207,11 +207,8 @@ struct
 
   type t = astate
 
-  let initial : t
-  = { itv = Itv.initial; powloc = PowLoc.initial; arrayblk = ArrayBlk.initial }
-
   let bot : t
-  = initial
+  = { itv = Itv.bot; powloc = PowLoc.bot; arrayblk = ArrayBlk.bot }
 
   let (<=) ~lhs ~rhs =
     if phys_equal lhs rhs then true
@@ -257,22 +254,22 @@ struct
   = fun x -> ArrayBlk.get_pow_loc x.arrayblk |> PowLoc.join x.powloc
 
   let top_itv : t
-  = { initial with itv = Itv.top }
+  = { bot with itv = Itv.top }
 
   let pos_itv : t
-  = { initial with itv = Itv.pos }
+  = { bot with itv = Itv.pos }
 
   let nat_itv : t
-  = { initial with itv = Itv.nat }
+  = { bot with itv = Itv.nat }
 
   let of_int : int -> t
-  = fun n -> { initial with itv = Itv.of_int n }
+  = fun n -> { bot with itv = Itv.of_int n }
 
   let of_pow_loc : PowLoc.t -> t
-  = fun x -> { initial with powloc = x }
+  = fun x -> { bot with powloc = x }
 
   let of_array_blk : ArrayBlk.astate -> t
-  = fun a -> { initial with arrayblk = a }
+  = fun a -> { bot with arrayblk = a }
 
   let zero : t
   = of_int 0
@@ -281,7 +278,7 @@ struct
   = fun i x -> { x with itv = i }
 
   let make_sym : Procname.t -> int -> t
-  = fun pname i -> { initial with itv = Itv.make_sym pname i }
+  = fun pname i -> { bot with itv = Itv.make_sym pname i }
 
   let unknown_bit : t -> t
   = fun x -> { x with itv = Itv.top }
@@ -293,7 +290,7 @@ struct
   = fun x -> { x with itv = Itv.lnot x.itv }
 
   let lift_itv : (Itv.t -> Itv.t -> Itv.t) -> t -> t -> t
-  = fun f x y -> { initial with itv = f x.itv y.itv } 
+  = fun f x y -> { bot with itv = f x.itv y.itv } 
 
   let plus : t -> t -> t
   = fun x y -> 
@@ -303,7 +300,7 @@ struct
   = fun x y -> 
     let n = Itv.join (Itv.minus x.itv y.itv) (ArrayBlk.diff x.arrayblk y.arrayblk) in
     let a = ArrayBlk.minus_offset x.arrayblk y.itv in
-    { initial with itv = n; arrayblk = a}
+    { bot with itv = n; arrayblk = a}
 
   let mult : t -> t -> t
   = lift_itv Itv.mult
@@ -367,15 +364,15 @@ struct
 
   let plus_pi : t -> t -> t
   = fun x y ->
-    { initial with arrayblk = ArrayBlk.plus_offset x.arrayblk y.itv }
+    { bot with arrayblk = ArrayBlk.plus_offset x.arrayblk y.itv }
 
   let minus_pi : t -> t -> t
   = fun x y -> 
-    { initial with arrayblk = ArrayBlk.minus_offset x.arrayblk y.itv }
+    { bot with arrayblk = ArrayBlk.minus_offset x.arrayblk y.itv }
 
   let minus_pp : t -> t -> t
   = fun x y ->
-    { initial with itv = ArrayBlk.diff x.arrayblk y.arrayblk }
+    { bot with itv = ArrayBlk.diff x.arrayblk y.arrayblk }
 
   let subst : t -> Itv.Bound.t Itv.SubstMap.t -> t
   = fun x subst_map ->
@@ -419,6 +416,8 @@ struct
   end
 
   include AbstractDomain.Map (PPMap) (Val)
+
+  let bot = empty
 
   let find : Loc.t -> astate -> Val.t
   = fun l m ->
@@ -472,6 +471,8 @@ struct
 
   include AbstractDomain.Map (PPMap) (Val)
 
+  let bot = empty 
+
   let find : Loc.t -> astate -> Val.t
   = fun l m ->
     try find l m with
@@ -515,7 +516,7 @@ struct
 
   type astate = t
 
-  let initial : t
+  let bot : t
   = M.empty
 
   let (<=) : lhs:t -> rhs:t -> bool
@@ -574,8 +575,8 @@ struct
   type astate = { stack : Stack.astate; heap : Heap.astate; alias : Alias.astate }
   type t = astate
 
-  let initial : t
-  = { stack = Stack.initial; heap = Heap.initial; alias = Alias.initial }
+  let bot : t
+  = { stack = Stack.bot; heap = Heap.bot; alias = Alias.bot }
 
   let (<=) ~lhs ~rhs =
     if phys_equal lhs rhs then true

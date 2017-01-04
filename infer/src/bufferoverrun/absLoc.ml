@@ -72,7 +72,7 @@ struct
         Format.fprintf fmt "}"
      end)
 
-  let bot = initial
+  let bot = empty
 
   let of_pvar pvar = singleton (Loc.of_pvar pvar)
   let of_id id = singleton (Loc.of_id id)

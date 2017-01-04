@@ -427,7 +427,7 @@ let compute_post
   let cfg = CFG.from_pdesc pdesc in
   let pdata = ProcData.make pdesc tenv get_pdesc in
   let pname = Procdesc.get_proc_name pdesc in
-  let inv_map = Analyzer.exec_pdesc pdata in
+  let inv_map = Analyzer.exec_pdesc ~initial:Dom.Mem.bot pdata in
   let entry_mem =
     let entry_id = CFG.id (CFG.start_node cfg) in
     Analyzer.extract_post entry_id inv_map

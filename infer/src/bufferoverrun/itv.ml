@@ -838,7 +838,7 @@ let compare : t -> t -> int
 let compare_astate = compare
 
 let bot : t
-= initial
+= Bottom
 
 let top : t
 = NonBottom ItvPure.top
