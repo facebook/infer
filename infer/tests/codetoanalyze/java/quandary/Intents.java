@@ -29,16 +29,7 @@ public class Intents {
 
   public void callAllActivitySinksBad(Activity activity, String uri) throws
     IOException, URISyntaxException, XmlPullParserException {
-    Intent intent = null;
-
-    switch (rand()) {
-    case 1:
-      intent = Intent.parseUri(null, 0);
-      break;
-    case 2:
-      intent = Intent.parseIntent(null, null, null);
-      break;
-    }
+    Intent intent = (Intent) InferTaint.inferSecretSource();
 
     activity.bindService(intent, null, 0);
     activity.sendBroadcast(intent);
@@ -54,13 +45,13 @@ public class Intents {
     activity.startActivityIfNeeded(intent, 0);
     activity.startActivityFromChild(null, intent, 0);
     activity.startActivityFromFragment(null, intent, 0);
-    activity.startService(intent); // 2 sinks * 15 sources = 30 expected reports
+    activity.startService(intent); // 15 sinks, 15 expected reports
   }
 
   public void callAllIntentSinksBad(Intent cleanIntent) throws
     IOException, URISyntaxException, XmlPullParserException {
     String taintedString = cleanIntent.getStringExtra("");
-    Intent taintedIntent = Intent.parseUri(null, 0);
+    Intent taintedIntent = (Intent) InferTaint.inferSecretSource();
     Resources taintedResources = (Resources) ((Object) taintedString);
     Uri taintedUri = taintedIntent.getData();
 

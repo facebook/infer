@@ -26,7 +26,7 @@ module SourceKind = struct
     | Procname.Java pname ->
         begin
           match Procname.java_get_class_name pname, Procname.java_get_method pname with
-          | "android.content.Intent", ("getStringExtra" | "parseUri" | "parseIntent") ->
+          | "android.content.Intent", "getStringExtra" ->
               Some Intent
           | "android.content.SharedPreferences", "getString" ->
               Some PrivateData
@@ -176,10 +176,9 @@ include
 
     let should_report source sink =
       match Source.kind source, Sink.kind sink with
-      | Other, Other
-      | PrivateData, Logging ->
-          true
-      | Intent, Intent ->
+      | PrivateData, Logging
+      | Intent, Intent
+      | Other, _ | _, Other ->
           true
       | _ ->
           false
