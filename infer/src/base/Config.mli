@@ -146,7 +146,6 @@ val ast_file : string option
 val blacklist : string option              
 val bootclasspath : string option
 val bo_debug : int
-val bo_filtering : int
 val buck : bool
 val buck_build_args : string list
 val buck_out : string option

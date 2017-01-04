@@ -393,27 +393,30 @@ struct
     | Some mem -> collect_instrs pdata node instrs mem cond_set
     | _ -> cond_set
 
-  let collect
-    : extras ProcData.t -> Analyzer.invariant_map -> Dom.ConditionSet.t
+  let collect : extras ProcData.t -> Analyzer.invariant_map -> Dom.ConditionSet.t
   = fun ({ pdesc } as pdata) inv_map ->
     let add_node1 acc node = collect_node pdata inv_map acc node in
     Procdesc.fold_nodes add_node1 Dom.ConditionSet.empty pdesc
 
-  let report_error : Tenv.t -> Procdesc.t -> Dom.ConditionSet.t -> unit
-  = fun tenv pdesc conds ->
+  let report_error : Procdesc.t -> Dom.ConditionSet.t -> unit
+  = fun pdesc conds ->
     let pname = Procdesc.get_proc_name pdesc in
     let report1 cond =
-      let safe = Dom.Condition.check cond in
+      let alarm = Dom.Condition.check cond in
       let (caller_pname, loc) =
         match Dom.Condition.get_trace cond with
         | Dom.Condition.Inter (caller_pname, _, loc) -> (caller_pname, loc)
         | Dom.Condition.Intra pname -> (pname, Dom.Condition.get_location cond)
       in
-      (* report symbol-related alarms only in debug mode *)
-      if not safe && Procname.equal pname caller_pname then
-        let bo_kind = "BUFFER-OVERRUN CHECKER" in
-        let cond_str = Dom.Condition.to_string cond in
-        Checkers.ST.report_error tenv pname pdesc bo_kind loc cond_str
+      match alarm with
+      | None -> ()
+      | Some confidence when Procname.equal pname caller_pname ->
+        let description = Dom.Condition.to_string cond in
+        let error_desc = Localise.desc_buffer_overrun confidence description in
+        let exn = Exceptions.Checkers (Localise.to_string Localise.buffer_overrun, error_desc) in
+        let trace = [Errlog.make_trace_element 0 loc description []] in
+        Reporting.log_error pname ~loc ~ltr:trace exn
+      | _ -> ()
     in
     Dom.ConditionSet.iter report1 conds
 end
@@ -434,13 +437,12 @@ let compute_post
     Analyzer.extract_post exit_id inv_map
   in
   let cond_set = Report.collect pdata inv_map in
-  Report.report_error tenv pdesc cond_set;
-  if Procname.get_method pname = "infer_print" then None else
-    match entry_mem, exit_mem with
-    | Some entry_mem, Some exit_mem ->
-        Summary.write_summary pname (entry_mem, exit_mem, cond_set);
-        Some (entry_mem, exit_mem, cond_set)
-    | _ -> None
+  Report.report_error pdesc cond_set;
+  match entry_mem, exit_mem with
+  | Some entry_mem, Some exit_mem ->
+      Summary.write_summary pname (entry_mem, exit_mem, cond_set);
+      Some (entry_mem, exit_mem, cond_set)
+  | _ -> None
 
 let print_summary : Procname.t -> Dom.Summary.t -> unit
 = fun proc_name s ->

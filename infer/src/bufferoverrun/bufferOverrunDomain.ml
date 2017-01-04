@@ -111,17 +111,19 @@ struct
          (Itv.Bound.is_not_infty (Itv.ub c.idx) &&            (* idx non-infty ub > size ub *)
           (Itv.Bound.gt (Itv.ub c.idx) (Itv.ub c.size))))
 
-  let check : t -> bool
+  (* check buffer overrun and return its confidence *)
+  let check : t -> int option
   = fun c ->
-    if Config.bo_debug <= 1 && (Itv.is_symbolic c.idx || Itv.is_symbolic c.size)
-    then true
-    else if Config.bo_filtering >= 1 && filter1 c then true
-    else if Config.bo_filtering >= 2 && filter2 c then true
+    if Config.bo_debug <= 1 && (Itv.is_symbolic c.idx || Itv.is_symbolic c.size) 
+    then None
+    else if filter1 c then Some 0
+    else if filter2 c then Some 1
     else
       let c = set_size_pos c in
       let not_overrun = Itv.lt_sem c.idx c.size in
       let not_underrun = Itv.le_sem Itv.zero c.idx in
-      (Itv.eq not_overrun Itv.one) && (Itv.eq not_underrun Itv.one)
+      if (Itv.eq not_overrun Itv.one) && (Itv.eq not_underrun Itv.one) then None
+      else Some 2
 
   let invalid : t -> bool
   = fun x -> Itv.invalid x.idx || Itv.invalid x.size

@@ -9,7 +9,7 @@ TESTS_DIR = ../../..
 
 ANALYZER = bufferoverrun
 CLANG_OPTIONS = -c
-INFER_OPTIONS = --bo-filtering 0 --project-root $(TESTS_DIR)
+INFER_OPTIONS = -nf --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \

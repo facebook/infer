@@ -501,10 +501,6 @@ and bo_debug =
   CLOpt.mk_int ~default:0 ~long:"bo-debug"
     ~exes:CLOpt.[Toplevel] "Debug mode for buffer-overrun checker"
 
-and bo_filtering =
-  CLOpt.mk_int ~default:2 ~long:"bo-filtering"
-    ~exes:CLOpt.[Toplevel] "Alarm filtering for buffer-overrun checker"
-
 (** Automatically set when running from within Buck *)
 and buck =
   CLOpt.mk_bool ~long:"buck"
@@ -1403,7 +1399,6 @@ and ast_file = !ast_file
 and blacklist = !blacklist
 and bootclasspath = !bootclasspath
 and bo_debug = !bo_debug
-and bo_filtering = !bo_filtering
 and buck = !buck
 and buck_build_args = !buck_build_args
 and buck_out = !buck_out
