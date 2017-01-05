@@ -97,11 +97,6 @@ exception Wrong_argument_number of L.ml_loc
 
 (** Turn an exception into a descriptive string, error description, location in ml source, and category *)
 let recognize_exception exn =
-  let filter_out_bucket desc =
-    Config.filter_buckets &&
-    match Localise.error_desc_get_bucket desc with
-    | None -> false
-    | Some bucket -> bucket <> Localise.BucketLevel.b1 in
   let err_name, desc, (ml_loc_opt : L.ml_loc option), visibility, severity, force_kind, eclass =
     match exn with (* all the names of Exn_user errors must be defined in Localise *)
     | Abduction_case_not_implemented ml_loc ->
@@ -308,11 +303,7 @@ let recognize_exception exn =
         let exn_name = Exn.to_string exn in
         (Localise.from_string exn_name,
          Localise.no_desc, None, Exn_developer, Low, None, Nocat) in
-  let visibility' =
-    if visibility = Exn_user && filter_out_bucket desc
-    then Exn_developer
-    else visibility in
-  (err_name, desc, ml_loc_opt, visibility', severity, force_kind, eclass)
+  (err_name, desc, ml_loc_opt, visibility, severity, force_kind, eclass)
 
 (** print a description of the exception to the html output *)
 let print_exception_html s exn =

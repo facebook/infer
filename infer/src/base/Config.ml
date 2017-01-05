@@ -104,10 +104,6 @@ let dotty_output = "icfg.dot"
 (** exit code to use for the --fail-on-issue option *)
 let fail_on_issue_exit_code = 2
 
-(** If true, filter out errors in low likelyhood buckets, and only show then in developer
-    mode *)
-let filter_buckets = false
-
 let frontend_stats_dir_name = "frontend_stats"
 
 let global_tenv_filename = "global.tenv"
