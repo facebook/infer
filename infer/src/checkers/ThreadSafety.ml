@@ -245,6 +245,16 @@ let is_initializer tenv proc_name =
   Procname.is_class_initializer proc_name ||
   FbThreadSafety.is_custom_init tenv proc_name
 
+(* Methods in @ThreadConfined classes are assumed to all run on the same thread.
+   For the moment we won't warn on accesses resulting from use of such methods at all.
+   In future we should account for races between these methods and methods from completely
+   different classes that don't necessarily run on the same thread as the confined object.
+*)
+let is_thread_confined_method tenv pname =
+  PatternMatch.check_current_class_attributes
+    Annotations.ia_is_thread_confined tenv pname
+
+
 (* we don't want to warn on methods that run on the UI thread because they should always be
    single-threaded *)
 let runs_on_ui_thread proc_desc =
@@ -268,7 +278,8 @@ let should_analyze_proc pdesc tenv =
   not (FbThreadSafety.is_logging_method pn) &&
   not (is_call_to_builder_class_method pn) &&
   not (is_call_to_immutable_collection_method tenv pn) &&
-  not (runs_on_ui_thread pdesc)
+  not (runs_on_ui_thread pdesc) &&
+  not (is_thread_confined_method tenv pn)
 
 (* return true if we should report on unprotected accesses during the procedure *)
 let should_report_on_proc (_, tenv, proc_name, proc_desc) =

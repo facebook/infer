@@ -11,6 +11,8 @@ package codetoanalyze.java.checkers;
 
 import android.support.annotation.UiThread;
 
+import com.facebook.infer.annotation.ThreadConfined;
+
 /** tests for classes and method annotations that are meaningful w.r.t thread-safety */
 
 @ThreadSafe
@@ -33,6 +35,21 @@ class Annotations {
   // we model onClick as running on the UI thread, should not warn
   public void onClick() {
     this.f = new Object();
+  }
+
+  Confined con;
+
+  public void confinedCaller(){
+    con.foo();
+  }
+
+  @ThreadConfined
+  class Confined {
+    Integer x;
+
+    void foo(){
+      x = 22;
+    }
   }
 
 }

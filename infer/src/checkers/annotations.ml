@@ -116,12 +116,11 @@ let guarded_by = "GuardedBy"
 let thread_safe = "ThreadSafe"
 let not_thread_safe = "NotThreadSafe"
 let ui_thread = "UiThread"
+let thread_confined = "ThreadConfined"
 
 let ia_is_not_thread_safe ia =
   ia_ends_with ia not_thread_safe
 
-(* we don't want it to just end with ThreadSafe, because this falls
-   foul of the @NotThreadSafe annotation *)
 let ia_is_thread_safe ia =
   ia_ends_with ia thread_safe
 
@@ -217,6 +216,9 @@ let ia_is_guarded_by ia =
 
 let ia_is_ui_thread ia =
   ia_ends_with ia ui_thread
+
+let ia_is_thread_confined ia =
+  ia_ends_with ia thread_confined
 
 type annotation =
   | Nullable
