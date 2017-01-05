@@ -1,6 +1,6 @@
+codetoanalyze/java/threadsafety/Annotations.java, void Annotations.mutateOffUiThreadBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.f]
 codetoanalyze/java/threadsafety/Builders.java, Builders$Obj Builders.buildThenMutateBad(Builders$Obj), 3, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Builders$Obj.g]
 codetoanalyze/java/threadsafety/Builders.java, Builders$Obj Builders.mutateBad(Builders$Obj), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Builders$Obj.g]
-codetoanalyze/java/threadsafety/Builders.java, void TopLevelBuilder.setG(String), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.TopLevelBuilder.g]
 codetoanalyze/java/threadsafety/Locks.java, void Locks.FP_unlockOneLock(), 4, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Locks.f]
 codetoanalyze/java/threadsafety/Locks.java, void Locks.afterReentrantLockUnlockBad(), 3, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Locks.f]
 codetoanalyze/java/threadsafety/Locks.java, void Locks.afterUnlockBad(), 3, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Locks.f]

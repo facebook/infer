@@ -23,38 +23,6 @@ module Summary = Summary.Make (struct
       payload.Specs.threadsafety
   end)
 
-(* we want to consider Builder classes and other safe immutablility-ensuring patterns as
-   thread-safe. we are overly friendly about this for now; any class whose name ends with `Builder`
-   is assumed to be thread-safe. in the future, we can ask for builder classes to be annotated with
-   @Builder and verify that annotated classes satisfy the expected invariants. *)
-let is_builder_class class_name =
-  String.is_suffix ~suffix:"Builder" class_name
-
-(* similarly, we assume that immutable classes safely encapsulate their state *)
-let is_immutable_collection_class class_name tenv =
-  let immutable_collections = [
-    "com.google.common.collect.ImmutableCollection";
-    "com.google.common.collect.ImmutableMap";
-    "com.google.common.collect.ImmutableTable";
-  ] in
-  PatternMatch.supertype_exists
-    tenv (fun typename _ -> IList.mem (=) (Typename.name typename) immutable_collections) class_name
-
-let is_call_to_builder_class_method = function
-  | Procname.Java java_pname -> is_builder_class (Procname.java_get_class_name java_pname)
-  | _ -> false
-
-let is_call_to_immutable_collection_method tenv = function
-  | Procname.Java java_pname ->
-      is_immutable_collection_class (Procname.java_get_class_type_name java_pname) tenv
-  | _ ->
-      false
-
-let is_initializer tenv proc_name =
-  Procname.is_constructor proc_name ||
-  Procname.is_class_initializer proc_name ||
-  FbThreadSafety.is_custom_init tenv proc_name
-
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = ThreadSafetyDomain
@@ -123,7 +91,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let exec_instr
       ({ ThreadSafetyDomain.locks; reads; writes; id_map; owned; } as astate)
-      { ProcData.pdesc; tenv; } _ =
+      { ProcData.pdesc; } _ =
 
     let is_allocation pn =
       Procname.equal pn BuiltinDecl.__new ||
@@ -157,11 +125,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     let astate' =
                       (* TODO (14842325): report on constructors that aren't threadsafe
                          (e.g., constructors that access static fields) *)
-                      if is_unprotected locks' &&
-                         not (is_initializer tenv pn) &&
-                         not (FbThreadSafety.is_logging_method pn) &&
-                         not (is_call_to_builder_class_method pn) &&
-                         not (is_call_to_immutable_collection_method tenv pn)
+                      if is_unprotected locks'
                       then
                         let call_site = CallSite.make pn loc in
                         let reads' =
@@ -249,12 +213,68 @@ module ResultsTableType = Caml.Map.Make (struct
     let compare (_, _, pn1, _) (_,_,pn2,_) =  Procname.compare pn1 pn2
   end)
 
-let should_report_on_proc (_,tenv,proc_name,proc_desc) =
+(* we want to consider Builder classes and other safe immutablility-ensuring patterns as
+   thread-safe. we are overly friendly about this for now; any class whose name ends with `Builder`
+   is assumed to be thread-safe. in the future, we can ask for builder classes to be annotated with
+   @Builder and verify that annotated classes satisfy the expected invariants. *)
+let is_builder_class class_name =
+  String.is_suffix ~suffix:"Builder" class_name
+
+(* similarly, we assume that immutable classes safely encapsulate their state *)
+let is_immutable_collection_class class_name tenv =
+  let immutable_collections = [
+    "com.google.common.collect.ImmutableCollection";
+    "com.google.common.collect.ImmutableMap";
+    "com.google.common.collect.ImmutableTable";
+  ] in
+  PatternMatch.supertype_exists
+    tenv (fun typename _ -> IList.mem (=) (Typename.name typename) immutable_collections) class_name
+
+let is_call_to_builder_class_method = function
+  | Procname.Java java_pname -> is_builder_class (Procname.java_get_class_name java_pname)
+  | _ -> false
+
+let is_call_to_immutable_collection_method tenv = function
+  | Procname.Java java_pname ->
+      is_immutable_collection_class (Procname.java_get_class_type_name java_pname) tenv
+  | _ ->
+      false
+
+let is_initializer tenv proc_name =
+  Procname.is_constructor proc_name ||
+  Procname.is_class_initializer proc_name ||
+  FbThreadSafety.is_custom_init tenv proc_name
+
+(* we don't want to warn on methods that run on the UI thread because they should always be
+   single-threaded *)
+let runs_on_ui_thread proc_desc =
+  (* assume that methods named onClick always run on the UI thread *)
+  let is_on_click pdesc = match Procdesc.get_proc_name pdesc with
+    | Procname.Java java_pname -> Procname.java_get_method java_pname = "onClick"
+    | _ -> false in
+  let is_annotated pdesc =
+    let annotated_signature = Annotations.get_annotated_signature (Procdesc.get_attributes pdesc) in
+    let ret_annotation, _ = annotated_signature.Annotations.ret in
+    Annotations.ia_is_ui_thread ret_annotation in
+  is_on_click proc_desc || is_annotated proc_desc
+
+(* return true if we should compute a summary for the procedure. if this returns false, we won't
+   analyze the procedure or report any warnings on it *)
+(* note: in the future, we will want to analyze the procedures in all of these cases in order to
+   find more bugs. this is just a temporary measure to avoid obvious false positives *)
+let should_analyze_proc pdesc tenv =
+  let pn = Procdesc.get_proc_name pdesc in
+  not (is_initializer tenv pn) &&
+  not (FbThreadSafety.is_logging_method pn) &&
+  not (is_call_to_builder_class_method pn) &&
+  not (is_call_to_immutable_collection_method tenv pn) &&
+  not (runs_on_ui_thread pdesc)
+
+(* return true if we should report on unprotected accesses during the procedure *)
+let should_report_on_proc (_, tenv, proc_name, proc_desc) =
   not (is_initializer tenv proc_name) &&
   not (Procname.java_is_autogen_method proc_name) &&
   Procdesc.get_access proc_desc <> PredSymb.Private
-
-let dummy_cg = Cg.create None
 
 (* creates a map from proc_envs to postconditions *)
 let make_results_table get_proc_desc file_env =
@@ -265,12 +285,19 @@ let make_results_table get_proc_desc file_env =
   in
   let compute_post_for_procedure = (* takes proc_env as arg *)
     fun (idenv, tenv, proc_name, proc_desc) ->
+      let empty = false, ThreadSafetyDomain.PathDomain.empty, ThreadSafetyDomain.PathDomain.empty in
       (* convert the abstract state to a summary by dropping the id map *)
       let compute_post ({ ProcData.pdesc; tenv; } as proc_data) =
-        if not (Procdesc.did_preanalysis pdesc) then Preanal.do_liveness pdesc tenv;
-        match Analyzer.compute_post proc_data ~initial:ThreadSafetyDomain.empty with
-        | Some { locks; reads; writes; } -> Some (locks, reads, writes)
-        | None -> None in
+        if should_analyze_proc pdesc tenv
+        then
+          begin
+            if not (Procdesc.did_preanalysis pdesc) then Preanal.do_liveness pdesc tenv;
+            match Analyzer.compute_post proc_data ~initial:ThreadSafetyDomain.empty with
+            | Some { locks; reads; writes; } -> Some (locks, reads, writes)
+            | None -> None
+          end
+        else
+          Some empty in
       let callback_arg =
         {Callbacks.get_proc_desc; get_procs_in_file = (fun _ -> []);
          idenv; tenv; proc_name; proc_desc} in
@@ -280,8 +307,7 @@ let make_results_table get_proc_desc file_env =
           ~make_extras:ProcData.make_empty_extras
           callback_arg with
       | Some post -> post
-      | None ->
-          false, ThreadSafetyDomain.PathDomain.empty, ThreadSafetyDomain.PathDomain.empty
+      | None -> empty
   in
   map_post_computation_over_procs compute_post_for_procedure file_env
 

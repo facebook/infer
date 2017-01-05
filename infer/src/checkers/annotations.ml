@@ -115,6 +115,7 @@ let integrity_sink = "IntegritySink"
 let guarded_by = "GuardedBy"
 let thread_safe = "ThreadSafe"
 let not_thread_safe = "NotThreadSafe"
+let ui_thread = "UiThread"
 
 let ia_is_not_thread_safe ia =
   ia_ends_with ia not_thread_safe
@@ -213,6 +214,9 @@ let ia_is_integrity_sink ia =
 
 let ia_is_guarded_by ia =
   ia_ends_with ia guarded_by
+
+let ia_is_ui_thread ia =
+  ia_ends_with ia ui_thread
 
 type annotation =
   | Nullable
