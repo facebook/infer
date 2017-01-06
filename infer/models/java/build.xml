@@ -8,7 +8,7 @@
         <mkdir dir="classes"/>
         <javac srcdir="src" destdir="classes" includeantruntime="false">
             <bootclasspath>
-                <pathelement location="android/android-19.jar"/>
+                <pathelement location="android/android-23.jar"/>
             </bootclasspath>
             <classpath>
                 <pathelement location="../../../dependencies/java/jackson/jackson-2.2.3.jar"/>

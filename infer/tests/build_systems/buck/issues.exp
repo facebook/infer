@@ -151,6 +151,7 @@ infer/tests/codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.obje
 infer/tests/codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.openHttpURLConnectionNotDisconnected(), 7, RESOURCE_LEAK, [start of procedure openHttpURLConnectionNotDisconnected()]
 infer/tests/codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.openHttpsURLConnectionNotDisconnected(), 3, RESOURCE_LEAK, [start of procedure openHttpsURLConnectionNotDisconnected()]
 infer/tests/codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.parseFromInputStreamAndLeak(JsonFactory), 5, RESOURCE_LEAK, [start of procedure parseFromInputStreamAndLeak(...)]
+infer/tests/codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.parseFromStringAndNotClose(JsonFactory), 4, RESOURCE_LEAK, [start of procedure parseFromStringAndNotClose(...)]
 infer/tests/codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.pipedInputStreamNotClosedAfterRead(PipedOutputStream), 6, RESOURCE_LEAK, [start of procedure pipedInputStreamNotClosedAfterRead(...),exception java.io.IOException]
 infer/tests/codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.pipedOutputStreamNotClosedAfterWrite(), 7, RESOURCE_LEAK, [start of procedure pipedOutputStreamNotClosedAfterWrite(),exception java.io.IOException]
 infer/tests/codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.scannerNotClosed(), 1, RESOURCE_LEAK, [start of procedure scannerNotClosed()]

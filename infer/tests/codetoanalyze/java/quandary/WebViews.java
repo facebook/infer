@@ -10,7 +10,12 @@
 package codetoanalyze.java.quandary;
 
 import android.content.Context;
+
+import android.content.Intent;
+import android.net.Uri;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
+import android.webkit.WebMessage;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebChromeClient;
@@ -27,6 +32,7 @@ public class WebViews {
     webview.loadData(stringSource, "", "");
     webview.loadDataWithBaseURL("", stringSource, "", "", "");
     webview.loadUrl(stringSource); // should have 5 reports
+    webview.postWebMessage(null, (Uri) InferTaint.inferSecretSource());
   }
 
   void callWebviewClientSinks(WebView webview, WebViewClient client) {

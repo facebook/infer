@@ -690,7 +690,7 @@ public class ResourceLeaks {
   public void parseFromStringAndNotClose(JsonFactory factory) throws IOException {
     UTF8StreamJsonParser parser = null;
     try {
-      parser = (UTF8StreamJsonParser) factory.createParser("[]");
+      parser = (UTF8StreamJsonParser) factory.createParser(new File("[]"));
       Object o = parser.readValueAs(Object.class);
       ignore(o);
     } catch (Exception e) {

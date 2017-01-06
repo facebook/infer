@@ -1,6 +1,6 @@
 prebuilt_jar(
     name = 'android',
-    binary_jar = 'android-19.jar',
+    binary_jar = 'android-23.jar',
     visibility = [
         'PUBLIC'
     ]

@@ -9,7 +9,6 @@
 
 package com.fasterxml.jackson.core;
 
-import com.android.internal.util.FileRotator.Reader;
 import com.fasterxml.jackson.core.json.PackageVersion;
 import com.fasterxml.jackson.core.json.UTF8StreamJsonParser;
 
@@ -17,11 +16,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.net.URL;
 
 public class JsonFactory
         implements Versioned, java.io.Serializable {
-
 
     @Override
     public Version version() {

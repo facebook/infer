@@ -8,10 +8,14 @@
         <mkdir dir="ant_out"/>
         <javac srcdir="src/infer" destdir="ant_out" includeantruntime="false">
             <classpath>
-              <pathelement location="../../../lib/java/android/android-19.jar"/>
-              <pathelement location="../../../../dependencies/java/jackson/jackson-2.2.3.jar"/>
+              <pathelement location="../../../lib/java/android/android-23.jar"/>
+              <pathelement location="../../../lib/java/android/support/v4/android-support-v4.jar"/>
               <pathelement location="../../../lib/java/models.jar"/>
-              <pathelement location="../../../annotations//annotations.jar"/>
+              <pathelement location="../../../../dependencies/java/guava/guava-10.0.1-fork.jar"/>
+              <pathelement location="../../../../dependencies/java/jackson/jackson-2.2.3.jar"/>
+              <pathelement location="../../../../dependencies/java/jsr-305/jsr305.jar"/>
+
+              <pathelement location="../../../annotations/annotations.jar"/>
             </classpath>
         </javac>
     </target>
