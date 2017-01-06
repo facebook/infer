@@ -270,6 +270,10 @@ let cpp_extra_include_dir = models_src_dir ^/ relative_cpp_extra_include_dir
 let relative_cpp_models_dir =
   relative_cpp_extra_include_dir ^/ "infer_model"
 
+let linters_def_dir = lib_dir ^/ "linter_rules"
+
+let linters_def_default_file = linters_def_dir ^/ "linters.al"
+
 let wrappers_dir =
   lib_dir ^/ "wrappers"
 
@@ -871,8 +875,9 @@ and latex =
     "Write a latex report of the analysis results to a file"
 
 and linters_def_file =
-  CLOpt.mk_path_opt ~long:"linters-def-file" ~exes:CLOpt.[Clang]
-    ~meta:"file" "Specify the file containing linters definition"
+  CLOpt.mk_path_list ~default: [linters_def_default_file]
+    ~long:"linters-def-file" ~exes:CLOpt.[Clang]
+    ~meta:"file" "Specify the file containing linters definition (e.g. 'linters.al')"
 
 and load_average =
   CLOpt.mk_float_opt ~long:"load-average" ~short:"l"

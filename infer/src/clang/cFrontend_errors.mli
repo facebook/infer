@@ -23,3 +23,6 @@ val run_translation_unit_checker :
   CLintersContext.context -> Clang_ast_t.decl -> unit
 
 val expand_checkers : Ctl_parser_types.ctl_checker list -> Ctl_parser_types.ctl_checker list
+
+val make_condition_issue_desc_pair :
+  Ctl_parser_types.ctl_checker list -> unit

@@ -17,14 +17,11 @@ let single_to_multi checker =
     (condition, Option.to_list issue_desc_opt)
 
 (* List of checkers on decls *that return 0 or 1 issue* *)
-let decl_single_checkers_list = [CFrontend_checkers.ctl_strong_delegate_warning;
-                                 CFrontend_checkers.ctl_assign_pointer_warning;
-                                 CFrontend_checkers.ctl_ns_notification_warning;
-                                 CFrontend_checkers.ctl_global_var_init_with_calls_warning;
-                                 ComponentKit.component_with_unconventional_superclass_advice;
-                                 ComponentKit.mutable_local_vars_advice;
-                                 ComponentKit.component_factory_function_advice;
-                                 ComponentKit.component_file_cyclomatic_complexity_info;]
+let decl_single_checkers_list =
+  [ComponentKit.component_with_unconventional_superclass_advice;
+   ComponentKit.mutable_local_vars_advice;
+   ComponentKit.component_factory_function_advice;
+   ComponentKit.component_file_cyclomatic_complexity_info;]
 
 (* List of checkers on decls *)
 let decl_checkers_list =
@@ -32,23 +29,25 @@ let decl_checkers_list =
   (IList.map single_to_multi decl_single_checkers_list)
 
 (* List of checkers on stmts *that return 0 or 1 issue* *)
-let stmt_single_checkers_list = [CFrontend_checkers.ctl_direct_atomic_property_access_warning;
-                                 CFrontend_checkers.ctl_captured_cxx_ref_in_objc_block_warning;
-                                 CFrontend_checkers.ctl_bad_pointer_comparison_warning;
-                                 ComponentKit.component_file_cyclomatic_complexity_info;
-                                 ComponentKit.component_initializer_with_side_effects_advice;
-                                 CFrontend_checkers.ctl_unavailable_api_in_supported_ios_sdk_error;]
+let stmt_single_checkers_list =
+  [ComponentKit.component_file_cyclomatic_complexity_info;
+   ComponentKit.component_initializer_with_side_effects_advice;
+   CFrontend_checkers.ctl_unavailable_api_in_supported_ios_sdk_error;]
 
 let stmt_checkers_list = IList.map single_to_multi stmt_single_checkers_list
 
 (* List of checkers on translation unit that potentially output multiple issues *)
 let translation_unit_checkers_list = [ComponentKit.component_file_line_count_info;]
 
+(* List of checkers that will be filled after parsing them from a file *)
+let checkers_decl_stmt = ref []
+
 let evaluate_place_holder ph an =
   match ph with
   | "%ivar_name%" -> CFrontend_checkers.ivar_name an
   | "%decl_name%" -> CFrontend_checkers.decl_name an
-  | "%var_name%" ->  CFrontend_checkers.var_name an
+  | "%cxx_ref_captured_in_block%" ->
+      CFrontend_checkers.cxx_ref_captured_in_block an
   | "%decl_ref_or_selector_name%" ->
       CFrontend_checkers.decl_ref_or_selector_name an
   | "%iphoneos_target_sdk_version%" ->
@@ -78,6 +77,57 @@ let rec expand_message_string message an =
     expand_message_string message' an
   with Not_found -> message
 
+let string_to_err_kind = function
+  | "WARNING" -> Exceptions.Kwarning
+  | "ERROR" -> Exceptions.Kerror
+  | "INFO" -> Exceptions.Kinfo
+  | "ADVICE" -> Exceptions.Kadvice
+  | s -> (Logging.err "\n[ERROR] Severity %s does not exist. Stop.\n" s;
+          assert false)
+
+let string_to_issue_mode m =
+  match m with
+  | "ON" -> CIssue.On
+  | "OFF" -> CIssue.Off
+  | s ->
+      (Logging.err "\n[ERROR] Mode %s does not exist. Please specify ON/OFF\n" s;
+       assert false)
+
+(** Convert a parsed checker in a pair (condition, issue_desc) *)
+let make_condition_issue_desc_pair checkers =
+  let open CIssue in
+  let open Ctl_parser_types in
+  Logging.out "\n Converting checkers in (condition, issue) pairs\n";
+  let do_one_checker c =
+    let dummy_issue = {
+      name = c.Ctl_parser_types.name;
+      description = "";
+      suggestion = None;
+      loc = Location.dummy;
+      severity = Exceptions.Kwarning;
+      mode = CIssue.On;
+    } in
+    let issue, condition = IList.fold_left (fun (issue', cond') d  ->
+        match d with
+        | CSet (s, phi) when String.equal s report_when_const ->
+            issue', phi
+        | CDesc (s, msg) when String.equal s message_const ->
+            {issue' with description = msg}, cond'
+        | CDesc (s, sugg) when String.equal s suggestion_const ->
+            {issue' with suggestion = Some sugg}, cond'
+        | CDesc (s, sev) when String.equal s severity_const ->
+            {issue' with severity = string_to_err_kind sev}, cond'
+        | CDesc (s, m) when String.equal s mode_const ->
+            {issue' with mode = string_to_issue_mode m }, cond'
+        | _ -> issue', cond') (dummy_issue, CTL.False) c.Ctl_parser_types.definitions in
+    if Config.debug_mode then (
+      Logging.out "\nMaking condition and issue desc for checker '%s'\n"
+        c.Ctl_parser_types.name;
+      Logging.out "\nCondition =\n     %a\n" CTL.Debug.pp_formula condition;
+      Logging.out "\nIssue_desc = %a\n" CIssue.pp_issue issue);
+    condition, issue in
+  checkers_decl_stmt := IList.map do_one_checker checkers
+
 
 (* expands use of let defined formula id in checkers with their definition *)
 let expand_checkers checkers =
@@ -91,9 +141,8 @@ let expand_checkers checkers =
         Logging.out "  -Expanding formula identifier '%s'\n" name;
         (match Core.Std.String.Map.find map name with
          | Some f1 -> expand f1 map
-         | None ->
-             Logging.out "[ERROR]: Formula identifier '%s' is undefined. Cannot expand." name;
-             assert false);
+         | None -> failwith
+                     ("[ERROR]: Formula identifier '" ^ name ^ "' is undefined. Cannot expand."));
     | Atomic _ -> acc
     | Not f1 -> Not (expand f1 map)
     | And (f1, f2) -> And (expand f1 map, expand f2 map)
@@ -148,7 +197,15 @@ let log_frontend_issue translation_unit_context method_decl_opt key issue_desc =
   Reporting.log_issue_from_errlog err_kind errlog exn ~loc ~ltr:trace
     ~node_id:(0, key)
 
-let invoke_set_of_checkers_an an context =
+let fill_issue_desc_info_and_log context an key issue_desc loc =
+  let desc = expand_message_string issue_desc.CIssue.description an in
+  let issue_desc' =
+    {issue_desc with CIssue.description = desc; CIssue.loc = loc } in
+  log_frontend_issue context.CLintersContext.translation_unit_context
+    context.CLintersContext.current_method key issue_desc'
+
+(* Calls the set of hard coded checkers (if any) *)
+let invoke_set_of_hard_coded_checkers_an an context =
   let checkers, key  = match an with
     | CTL.Decl dec -> decl_checkers_list, Ast_utils.generate_key_decl dec
     | CTL.Stmt st -> stmt_checkers_list, Ast_utils.generate_key_stmt st in
@@ -157,12 +214,27 @@ let invoke_set_of_checkers_an an context =
       if CTL.eval_formula condition an context then
         IList.iter (fun issue_desc ->
             if CIssue.should_run_check issue_desc.CIssue.mode then
-              let desc' = expand_message_string issue_desc.CIssue.description an in
-              let issue_desc' = {issue_desc with CIssue.description = desc'} in
-              log_frontend_issue context.CLintersContext.translation_unit_context
-                context.CLintersContext.current_method key issue_desc'
+              let loc = issue_desc.CIssue.loc in
+              fill_issue_desc_info_and_log context an key issue_desc loc
           ) issue_desc_list
     ) checkers
+
+(* Calls the set of checkers parsed from files (if any) *)
+let invoke_set_of_parsed_checkers_an an context =
+  let key = match an with
+    | CTL.Decl dec -> Ast_utils.generate_key_decl dec
+    | CTL.Stmt st -> Ast_utils.generate_key_stmt st in
+  IList.iter (fun (condition, issue_desc) ->
+      if CIssue.should_run_check issue_desc.CIssue.mode &&
+         CTL.eval_formula condition an context then
+        let loc = CFrontend_checkers.location_from_an context an in
+        fill_issue_desc_info_and_log context an key issue_desc loc
+    ) !checkers_decl_stmt
+
+(* We decouple the hardcoded checkers from the parsed ones *)
+let invoke_set_of_checkers_an an context =
+  invoke_set_of_parsed_checkers_an an context;
+  invoke_set_of_hard_coded_checkers_an an context
 
 
 let run_frontend_checkers_on_an (context: CLintersContext.context) an =

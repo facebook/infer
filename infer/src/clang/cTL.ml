@@ -265,16 +265,24 @@ let save_dotty_when_in_debug_mode source_file =
 
 (* Helper functions *)
 
-(* Sometimes we need to unwrap a node *)
-(* NOTE: when in the language it will be possible to define
-   sintactic sugar than we can remove this and define it a
-   transition from BlockExpr to  BlockDecl *)
-let unwrap_node an =
+let get_successor_nodes an =
+  (* get_decl_of_stmt get declarations that are directly embedded
+     as immediate children (i.e. distance 1) of an stmt (i.e., no transition).
+     TBD: check if a dual is needed for get_stmt_of_decl
+  *)
+  let get_decl_of_stmt st =
+    match st with
+    | Clang_ast_t.BlockExpr (_, _, _, d) -> [Decl d]
+    | _ -> [] in
   match an with
-  | Stmt BlockExpr(_, _, _, d) ->
-      (* From BlockExpr we jump directly to its BlockDecl *)
-      Decl d
-  | _ -> an
+  | Stmt st ->
+      let _, succs_st = Clang_ast_proj.get_stmt_tuple st in
+      let succs = IList.map (fun s -> Stmt s) succs_st in
+      succs @ (get_decl_of_stmt st)
+  | Decl dec ->
+      (match Clang_ast_proj.get_decl_context_tuple dec with
+       | Some (decl_list, _) -> IList.map (fun d -> Decl d) decl_list
+       | None -> [])
 
 let node_to_string an =
   match an with
@@ -367,87 +375,67 @@ let next_state_via_transition an trans =
 
 (* evaluate an atomic formula (i.e. a predicate) on a ast node an and a
    linter context lcxt. That is:  an, lcxt |= pred_name(params) *)
-let eval_Atomic pred_name args an lcxt =
+let rec eval_Atomic pred_name args an lcxt =
   match pred_name, args, an with
   | "call_method", [m], Stmt st -> Predicates.call_method m st
+  (* Note: I think it should be better to change all predicated to be
+     evaluated in a node an. The predicate itself should decide if it's a
+     stmt or decl predicate and return false for an unappropriate node *)
+  | "call_method", _, Decl _ -> false
   | "property_name_contains_word", [word], Decl d -> Predicates.property_name_contains_word word d
+  | "property_name_contains_word", _, Stmt _ -> false
   | "is_objc_extension", [], _ -> Predicates.is_objc_extension lcxt
   | "is_global_var", [], Decl d -> Predicates.is_syntactically_global_var d
+  | "is_global_var", _, Stmt _ -> false
   | "is_const_var", [], Decl d ->  Predicates.is_const_expr_var d
+  | "is_const_var", _, Stmt _ -> false
   | "call_function_named", args, Stmt st -> Predicates.call_function_named args st
+  | "call_function_named", _, Decl _ -> false
   | "is_strong_property", [], Decl d -> Predicates.is_strong_property d
+  | "is_strong_property", _, Stmt _ -> false
   | "is_assign_property", [], Decl d -> Predicates.is_assign_property d
+  | "is_assign_property", _, Stmt _ -> false
   | "is_property_pointer_type", [], Decl d -> Predicates.is_property_pointer_type d
+  | "is_property_pointer_type", _, Stmt _ -> false
   | "context_in_synchronized_block", [], _ -> Predicates.context_in_synchronized_block lcxt
   | "is_ivar_atomic", [], Stmt st -> Predicates.is_ivar_atomic st
+  | "is_ivar_atomic", _, Decl _ -> false
   | "is_method_property_accessor_of_ivar", [], Stmt st ->
       Predicates.is_method_property_accessor_of_ivar st lcxt
+  | "is_method_property_accessor_of_ivar", _, Decl _ -> false
   | "is_objc_constructor", [], _ -> Predicates.is_objc_constructor lcxt
   | "is_objc_dealloc", [], _ -> Predicates.is_objc_dealloc lcxt
   | "captures_cxx_references", [], Decl d -> Predicates.captures_cxx_references d
+  | "captures_cxx_references", _, Stmt _ -> false
   | "is_binop_with_kind", [str_kind], Stmt st -> Predicates.is_binop_with_kind str_kind st
+  | "is_binop_with_kind", _, Decl _ -> false
   | "is_unop_with_kind", [str_kind], Stmt st -> Predicates.is_unop_with_kind str_kind st
+  | "is_unop_with_kind", _, Decl _ -> false
   | "in_node", [nodename], Stmt st -> Predicates.is_stmt nodename st
   | "in_node", [nodename], Decl d -> Predicates.is_decl nodename d
   | "isa", [classname], Stmt st -> Predicates.isa classname st
+  | "isa", _, Decl _ -> false
   | "decl_unavailable_in_supported_ios_sdk", [], Decl decl ->
       Predicates.decl_unavailable_in_supported_ios_sdk decl
+  | "decl_unavailable_in_supported_ios_sdk", _, Stmt _ -> false
   | _ -> failwith ("ERROR: Undefined Predicate or wrong set of arguments: " ^ pred_name)
 
-(* st, lcxt |= EF phi  <=>
-   st, lcxt |= phi or exists st' in Successors(st): st', lcxt |= EF phi
+(* an, lcxt |= EF phi  <=>
+   an, lcxt |= phi or exists an' in Successors(st): an', lcxt |= EF phi
 
-   That is: a (st, lcxt) satifies EF phi if and only if
-   either (st,lcxt) satifies phi or there is a child st' of the node st
-   such that (st', lcxt) satifies EF phi
+   That is: a (an, lcxt) satifies EF phi if and only if
+   either (an,lcxt) satifies phi or there is a child an' of the node an
+   such that (an', lcxt) satifies EF phi
 *)
-let rec eval_EF_st phi st lcxt trans =
-  let _, succs = Clang_ast_proj.get_stmt_tuple st in
-  eval_formula phi (Stmt st) lcxt
-  || IList.exists (fun s -> eval_EF phi (Stmt s) lcxt trans) succs
-
-
-(* dec, lcxt |= EF phi  <=>
-    dec, lcxt |= phi or exists dec' in Successors(dec): dec', lcxt |= EF phi
-
-   This is as eval_EF_st but for decl.
-*)
-and eval_EF_decl phi dec lcxt trans =
-  eval_formula phi (Decl dec) lcxt ||
-  (match Clang_ast_proj.get_decl_context_tuple dec with
-   | Some (decl_list, _) ->
-       IList.exists (fun d -> eval_EF phi (Decl d) lcxt trans) decl_list
-   | None -> false)
-
-(* an, lcxt |= EF phi  evaluates on decl or stmt depending on an *)
 and eval_EF phi an lcxt trans =
   match trans, an with
   | Some _, _ ->
       (* Using equivalence EF[->trans] phi = phi OR EX[->trans](EF[->trans] phi)*)
       let phi' = Or (phi, EX (trans, EF (trans, phi))) in
       eval_formula phi' an lcxt
-  | None, Stmt st -> eval_EF_st phi st lcxt trans
-  | None, Decl dec -> eval_EF_decl phi dec lcxt trans
-
-(* st, lcxt |= EX phi  <=> exists st' in Successors(st): st', lcxt |= phi
-
-   That is: a (st, lcxt) satifies EX phi if and only if
-   there exists is a child st' of the node st
-   such that (st', lcxt) satifies phi
-*)
-and eval_EX_st phi st lcxt =
-  let _, succs = Clang_ast_proj.get_stmt_tuple st in
-  IList.exists (fun s -> eval_formula phi (Stmt s) lcxt) succs
-
-(* dec, lcxt |= EX phi  <=> exists dec' in Successors(dec): dec',lcxt|= phi
-
-   Same as eval_EX_st but for decl.
-*)
-and eval_EX_decl phi dec lcxt =
-  match Clang_ast_proj.get_decl_context_tuple dec with
-  | Some (decl_list, _) ->
-      IList.exists (fun d -> eval_formula phi (Decl d) lcxt) decl_list
-  | None -> false
+  | None, _ ->
+      eval_formula phi an lcxt
+      || IList.exists (fun an' -> eval_EF phi an' lcxt trans) (get_successor_nodes an)
 
 (* Evaluate phi on node an' such that an -l-> an'. False if an' does not exists *)
 and evaluate_on_transition phi an lcxt l =
@@ -455,13 +443,17 @@ and evaluate_on_transition phi an lcxt l =
   | Some succ -> eval_formula phi succ lcxt
   | None -> false
 
-(* an |= EX phi evaluates on decl/stmt depending on the ast_node an *)
+(* an, lcxt |= EX phi  <=> exists an' in Successors(st): an', lcxt |= phi
+
+   That is: a (an, lcxt) satifies EX phi if and only if
+   there exists is a child an' of the node an
+   such that (an', lcxt) satifies phi
+*)
 and eval_EX phi an lcxt trans =
   match trans, an with
   | Some _, _ -> evaluate_on_transition phi an lcxt trans
-  | None, Stmt st -> eval_EX_st phi st lcxt
-  | None, Decl decl -> eval_EX_decl phi decl lcxt
-
+  | None, _ ->
+      IList.exists (fun an' -> eval_formula phi an' lcxt) (get_successor_nodes an)
 
 (* an, lcxt |= E(phi1 U phi2) evaluated using the equivalence
    an, lcxt |= E(phi1 U phi2) <=> an, lcxt |= phi2 or (phi1 and EX(E(phi1 U phi2)))
@@ -547,8 +539,7 @@ and eval_formula f an lcxt =
     | Implies (f1, f2) ->
         not (eval_formula f1 an lcxt) || (eval_formula f2 an lcxt)
     | InNode (node_type_list, f1) ->
-        let an' = unwrap_node an in
-        in_node node_type_list f1 an' lcxt
+        in_node node_type_list f1 an lcxt
     | AU (f1, f2) -> eval_AU f1 f2 an lcxt
     | EU (trans, f1, f2) -> eval_EU f1 f2 an lcxt trans
     | EF (trans, f1) -> eval_EF f1 an lcxt trans

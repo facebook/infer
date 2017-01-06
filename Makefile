@@ -256,6 +256,8 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	  test -d      $(DESTDIR)$(libdir)/infer/$$i || \
 	    $(MKDIR_P) $(DESTDIR)$(libdir)/infer/$$i; \
 	done
+	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/ || \
+	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/lib/linter_rules
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/java/ || \
@@ -302,6 +304,8 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	@for i in $$(find infer/models/cpp/include/ -not -type d); do \
 		$(INSTALL_DATA) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
 	done
+	$(INSTALL_DATA) -C          infer/lib/linter_rules/linters.al \
+	  $(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/linters.al
 	$(INSTALL_PROGRAM) -C $(INFERCLANG_BIN) $(DESTDIR)$(libdir)/infer/infer/bin/
 	(cd $(DESTDIR)$(libdir)/infer/infer/bin/ && \
 	 $(LN_S) -f InferClang InferClang++)

@@ -213,7 +213,7 @@ val javac_verbose_out : string
 val jobs : int
 val join_cond : int
 val latex : string option
-val linters_def_file : string option
+val linters_def_file : string list
 val load_analysis_results : string option
 val makefile_cmdline : string
 val merge : bool

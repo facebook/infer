@@ -41,6 +41,10 @@ type ctl_checker = {
 let infer_prefix = "__infer_ctl_"
 let formula_id_const = infer_prefix ^ "formula_id__"
 let report_when_const = "report_when"
+let message_const = "message"
+let suggestion_const = "suggestion"
+let severity_const = "severity"
+let mode_const = "mode"
 
 let print_checker c =
   Logging.out "\n-------------------- \n";

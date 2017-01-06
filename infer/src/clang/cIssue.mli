@@ -20,4 +20,8 @@ type issue_desc = {
   loc : Location.t; (* location in the code *)
 }
 
+val string_of_mode : mode -> string
+
+val pp_issue : Format.formatter -> issue_desc -> unit
+
 val should_run_check : mode -> bool
