@@ -135,7 +135,11 @@ install_opam_deps
 
 echo "preparing build... "
 if [ ! -f .release ]; then
-  ./autogen.sh > /dev/null
+  if [ "$BUILD_CLANG" = "no" ]; then
+    SKIP_SUBMODULES=true ./autogen.sh > /dev/null
+  else
+    ./autogen.sh > /dev/null
+  fi
 fi
 
 if [ "$BUILD_CLANG" = "no" ]; then
