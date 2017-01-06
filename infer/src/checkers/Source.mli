@@ -23,7 +23,7 @@ module type Kind = sig
 
   (** return each formal of the function paired with either Some(kind) if the formal is a taint
       source, or None if the formal is not a taint source *)
-  val get_tainted_formals : Procdesc.t -> (Mangled.t * Typ.t * t option) list
+  val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
 end
 
 module type S = sig
@@ -43,7 +43,7 @@ module type S = sig
 
   (** return each formal of the function paired with either Some(source) if the formal is a taint
       source, or None if the formal is not a taint source *)
-  val get_tainted_formals : Procdesc.t -> (Mangled.t * Typ.t * t option) list
+  val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
 end
 
 module Make (Kind : Kind) : S with module Kind = Kind

@@ -428,7 +428,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           let analyze_call astate_acc callee_pname =
             let call_site = CallSite.make callee_pname callee_loc in
 
-            let sinks = TraceDomain.Sink.get call_site actuals in
+            let sinks = TraceDomain.Sink.get call_site actuals proc_data.ProcData.tenv in
             let astate_with_sink = match sinks with
               | [] -> astate
               | sinks -> add_sinks sinks actuals astate proc_data call_site in
@@ -513,7 +513,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
   module Interprocedural = AbstractInterpreter.Interprocedural(Summary)
 
-  let checker callback =
+  let checker ({ Callbacks.tenv } as callback) =
 
     let compute_post (proc_data : formal_map ProcData.t) =
       if not (Procdesc.did_preanalysis proc_data.pdesc)
@@ -537,7 +537,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           (fun index (name, typ, taint_opt) ->
              let pvar = Pvar.mk name pname in
              AccessPath.base_of_pvar pvar typ, index, taint_opt)
-          (TraceDomain.Source.get_tainted_formals pdesc) in
+          (TraceDomain.Source.get_tainted_formals pdesc tenv) in
       IList.fold_left
         (fun formal_map (base, index, taint_opt) ->
            AccessPath.BaseMap.add base (index, taint_opt) formal_map)

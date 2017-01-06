@@ -48,7 +48,7 @@ module SourceKind = struct
     | pname when BuiltinDecl.is_declared pname -> None
     | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
 
-  let get_tainted_formals pdesc =
+  let get_tainted_formals pdesc _ =
     let make_untainted (name, typ) =
       name, typ, None in
     let taint_formals_with_types type_strs kind formals =
@@ -69,10 +69,7 @@ module SourceKind = struct
         begin
           match Procname.java_get_class_name java_pname, Procname.java_get_method java_pname with
           | "codetoanalyze.java.quandary.TaintedFormals", "taintedContextBad" ->
-              taint_formals_with_types
-                ["java.lang.Integer"; "java.lang.String"]
-                Other
-                formals
+              taint_formals_with_types ["java.lang.Integer"; "java.lang.String"] Other formals
           | _ ->
               Source.all_formals_untainted pdesc
         end
@@ -93,11 +90,12 @@ module JavaSource = Source.Make(SourceKind)
 module SinkKind = struct
   type t =
     | Intent (** sink that trusts an Intent *)
+    | JavaScript (** sink that passes its arguments to untrusted JS code *)
     | Logging (** sink that logs one or more of its arguments *)
     | Other (** for testing or uncategorized sinks *)
   [@@deriving compare]
 
-  let get pname actuals =
+  let get pname actuals tenv =
     (* taint all the inputs of [pname]. for non-static procedures, taints the "this" parameter only
        if [taint_this] is true. *)
     let taint_all ?(taint_this=false) kind ~report_reachable =
@@ -155,14 +153,42 @@ module SinkKind = struct
               taint_all Logging ~report_reachable:true
           | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink" ->
               [Other, 0, false]
-          | _ ->
-              []
+          | class_name, method_name ->
+              let taint_matching_supertype typename _ =
+                match Typename.name typename, method_name with
+                | "android.webkit.WebChromeClient",
+                  ("onJsAlert" | "onJsBeforeUnload" | "onJsConfirm" | "onJsPrompt") ->
+                    Some (taint_all JavaScript ~report_reachable:true)
+                | "android.webkit.WebView",
+                  ("addJavascriptInterface" |
+                   "evaluateJavascript" |
+                   "loadData" |
+                   "loadDataWithBaseURL" |
+                   "loadUrl" |
+                   "postWebMessage") ->
+                    Some (taint_all JavaScript ~report_reachable:true)
+                | "android.webkit.WebViewClient",
+                  ("onLoadResource" | "shouldInterceptRequest" | "shouldOverrideUrlLoading") ->
+                    Some (taint_all JavaScript ~report_reachable:true)
+                | _ ->
+                    None in
+              begin
+                match
+                  PatternMatch.supertype_find_map_opt
+                    tenv
+                    taint_matching_supertype
+                    (Typename.Java.from_string class_name) with
+                | Some sinks -> sinks
+                | None -> []
+              end
+
         end
     | pname when BuiltinDecl.is_declared pname -> []
     | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
 
   let pp fmt = function
     | Intent -> F.fprintf fmt "Intent"
+    | JavaScript -> F.fprintf fmt "JavaScript"
     | Logging -> F.fprintf fmt "Logging"
     | Other -> F.fprintf fmt "Other"
 end
@@ -178,6 +204,7 @@ include
       match Source.kind source, Sink.kind sink with
       | PrivateData, Logging
       | Intent, Intent
+      | (Intent | PrivateData), JavaScript
       | Other, _ | _, Other ->
           true
       | _ ->

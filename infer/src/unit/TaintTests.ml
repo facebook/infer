@@ -23,14 +23,14 @@ module MockTrace = Trace.Make(struct
           then Some (CallSite.make pname Location.dummy)
           else None
 
-        let get_tainted_formals _ =
+        let get_tainted_formals _ _ =
           []
       end)
 
     module Sink = Sink.Make(struct
         include MockTraceElem
 
-        let get pname _ =
+        let get pname _ _ =
           if String.is_prefix ~prefix:"SINK" (Procname.to_string pname)
           then [CallSite.make pname Location.dummy, 0, false]
           else []

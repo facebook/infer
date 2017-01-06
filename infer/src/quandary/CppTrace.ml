@@ -42,7 +42,7 @@ module Kind = struct
     | pname ->
         failwithf "Non-C++ procname %a in C++ analysis@." Procname.pp pname
 
-  let get_tainted_formals pdesc =
+  let get_tainted_formals pdesc _ =
     Source.all_formals_untainted pdesc
 
   let pp fmt = function
@@ -60,7 +60,7 @@ module SinkKind = struct
     | Other (** for testing or uncategorized sinks *)
   [@@deriving compare]
 
-  let get pname actuals =
+  let get pname actuals _ =
     let taint_all actuals kind ~report_reachable =
       IList.mapi
         (fun actual_num _ -> kind, actual_num, report_reachable)

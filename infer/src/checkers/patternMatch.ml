@@ -43,6 +43,17 @@ let rec supertype_exists tenv pred name =
   | None ->
       false
 
+let rec supertype_find_map_opt tenv f name =
+  match Tenv.lookup tenv name with
+  | Some ({supers} as struct_typ) ->
+      begin
+        match f name struct_typ with
+        | None -> IList.find_map_opt (supertype_find_map_opt tenv f) supers
+        | result -> result
+      end
+  | None ->
+      None
+
 let is_immediate_subtype tenv this_type_name super_type_name =
   match Tenv.lookup tenv this_type_name with
   | Some {supers} -> IList.exists (Typename.equal super_type_name) supers

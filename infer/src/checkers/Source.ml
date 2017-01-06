@@ -23,9 +23,7 @@ module type Kind = sig
 
   val get : Procname.t -> t option
 
-  (** return each formal of the function paired with either Some(kind) if the formal is a taint
-      source, or None if the formal is not a taint source *)
-  val get_tainted_formals : Procdesc.t -> (Mangled.t * Typ.t * t option) list
+  val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
 end
 
 module type S = sig
@@ -39,7 +37,7 @@ module type S = sig
 
   val get : CallSite.t -> t option
 
-  val get_tainted_formals : Procdesc.t -> (Mangled.t * Typ.t * t option) list
+  val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
 end
 
 module Make (Kind : Kind) = struct
@@ -86,11 +84,11 @@ module Make (Kind : Kind) = struct
     | Some kind -> Some (make kind site)
     | None -> None
 
-  let get_tainted_formals pdesc =
+  let get_tainted_formals pdesc tenv =
     let site = CallSite.make (Procdesc.get_proc_name pdesc) (Procdesc.get_loc pdesc) in
     IList.map
       (fun (name, typ, kind_opt) -> name, typ, Option.map kind_opt ~f:(fun kind -> make kind site))
-      (Kind.get_tainted_formals pdesc)
+      (Kind.get_tainted_formals pdesc tenv)
 
   let with_callsite t callee_site =
     { t with site = callee_site; }
@@ -123,7 +121,7 @@ module Dummy = struct
 
   let get _ = None
 
-  let get_tainted_formals pdesc =
+  let get_tainted_formals pdesc _=
     IList.map (fun (name, typ) -> name, typ, None) (Procdesc.get_formals pdesc)
 
   module Kind = struct

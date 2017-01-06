@@ -16,7 +16,7 @@ module type Kind = sig
   include TraceElem.Kind
 
   (** return the parameter index and sink kind for the given call site with the given actuals *)
-  val get : Procname.t -> (Exp.t * Typ.t) list -> (t * int * bool) list
+  val get : Procname.t -> (Exp.t * Typ.t) list -> Tenv.t -> (t * int * bool) list
 end
 
 module type S = sig
@@ -34,7 +34,7 @@ module type S = sig
     }
 
   (** return the parameter index and sink kind for the given call site with the given actuals *)
-  val get : CallSite.t -> (Exp.t * Typ.t) list -> parameter list
+  val get : CallSite.t -> (Exp.t * Typ.t) list -> Tenv.t -> parameter list
 end
 
 module Make (Kind : Kind) = struct
@@ -72,11 +72,11 @@ module Make (Kind : Kind) = struct
   let make_sink_param sink index ~report_reachable =
     { sink; index; report_reachable; }
 
-  let get site actuals =
+  let get site actuals tenv =
     IList.map
       (fun (kind, index, report_reachable) ->
          make_sink_param (make kind site) index ~report_reachable)
-      (Kind.get (CallSite.pname site) actuals)
+      (Kind.get (CallSite.pname site) actuals tenv)
 
   let with_callsite t callee_site =
     { t with site = callee_site; }

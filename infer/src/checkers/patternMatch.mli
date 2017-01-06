@@ -62,6 +62,11 @@ val is_subtype_of_str : Tenv.t -> Typename.t -> string -> bool
 (** Holds iff the predicate holds on a supertype of the named type, including the type itself *)
 val supertype_exists : Tenv.t -> (Typename.t -> StructTyp.t -> bool) -> Typename.t -> bool
 
+(** Return the first non-None result found when applying the given function to supertypes of the
+    named type, including the type itself *)
+val supertype_find_map_opt :
+  Tenv.t -> (Typename.t -> StructTyp.t -> 'a option) -> Typename.t -> 'a option
+
 (** Get the name of the type of a constant *)
 val java_get_const_type_name : Const.t -> string
 
