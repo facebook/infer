@@ -47,7 +47,7 @@ $(UTF8_DIR):
 	$(MKDIR_P) $@
 
 $(CMAKE_DIR): $(CMAKE_SOURCES) $(UTF8_DIR)
-	rsync -aL $(CMAKE_SOURCES_DIR)/ $@/
+	rsync -aL --exclude='_build*' $(CMAKE_SOURCES_DIR)/ $@/
 	touch $@
 
 $(GRADLE_DIR): $(GRADLE_SOURCES) $(UTF8_DIR)
