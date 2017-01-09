@@ -21,7 +21,7 @@ all: $(ANNOTATIONS_JAR)
 
 $(ANNOTATIONS_JAR): $(ANNOT_SOURCES)
 	mkdir -p $(ANNOT_CLASSES)
-	javac -cp $(JSR_JAR) $(ANNOT_SOURCES) -d $(ANNOT_CLASSES)
+	javac -source 7 -target 7 -cp $(JSR_JAR) $(ANNOT_SOURCES) -d $(ANNOT_CLASSES)
 	cd $(ANNOT_CLASSES) && jar cvf $(ANNOTATIONS_JAR) com
 
 clean:
