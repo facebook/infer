@@ -52,7 +52,7 @@ all: infer
 .PHONY: src_build
 src_build:
 ifeq ($(IS_FACEBOOK_TREE),yes)
-	@$(MAKE) -C facebook
+	@$(MAKE) -C facebook setup
 endif
 	@$(MAKE) -C $(SRC_DIR) infer
 ifeq ($(BUILD_C_ANALYZERS),yes)
@@ -96,7 +96,7 @@ endif
 .PHONY: test_build
 test_build: clang_plugin
 ifeq ($(IS_FACEBOOK_TREE),yes)
-	@$(MAKE) -C facebook
+	@$(MAKE) -C facebook setup
 endif
 	@$(MAKE) -C $(SRC_DIR) test_build
 
@@ -209,9 +209,16 @@ inferScriptMode_test: test_build
 checkCopyright:
 	@$(MAKE) -C $(SRC_DIR) checkCopyright
 
+.PHONY: validate-skel
+validate-skel:
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	@$(MAKE) -C facebook validate
+endif
+
+
 .PHONY: test
 test: test_build ocaml_unit_test endtoend_test inferTraceBugs_test inferScriptMode_test \
-      checkCopyright
+      checkCopyright validate-skel
 	@$(MAKE) -C $(SRC_DIR) mod_dep.dot
 ifeq (,$(findstring s,$(MAKEFLAGS)))
 	@echo "ALL TESTS PASSED"
