@@ -22,14 +22,10 @@ module SourceKind = struct
 
   let unknown = Unknown
 
-  let get = function
+  let get pname tenv = match pname with
     | Procname.Java pname ->
         begin
           match Procname.java_get_class_name pname, Procname.java_get_method pname with
-          | "android.content.Intent", "getStringExtra" ->
-              Some Intent
-          | "android.content.SharedPreferences", "getString" ->
-              Some PrivateData
           | "android.location.Location",
             ("getAltitude" | "getBearing" | "getLatitude" | "getLongitude" | "getSpeed") ->
               Some PrivateData
@@ -42,8 +38,19 @@ module SourceKind = struct
               Some PrivateData
           | "com.facebook.infer.builtins.InferTaint", "inferSecretSource" ->
               Some Other
-          | _ ->
-              None
+          | class_name, method_name ->
+              let taint_matching_supertype typename _ =
+                match Typename.name typename, method_name with
+                | "android.content.Intent", "getStringExtra" ->
+                    Some Intent
+                | "android.content.SharedPreferences", "getString" ->
+                    Some PrivateData
+                | _ ->
+                    None in
+              PatternMatch.supertype_find_map_opt
+                tenv
+                taint_matching_supertype
+                (Typename.Java.from_string class_name)
         end
     | pname when BuiltinDecl.is_declared pname -> None
     | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
@@ -114,41 +121,6 @@ module SinkKind = struct
     | Procname.Java java_pname ->
         begin
           match Procname.java_get_class_name java_pname, Procname.java_get_method java_pname with
-          | ("android.app.Activity" | "android.content.ContextWrapper" | "android.content.Context"),
-            ("bindService" |
-             "sendBroadcast" |
-             "sendBroadcastAsUser" |
-             "sendOrderedBroadcast" |
-             "sendStickyBroadcast" |
-             "sendStickyBroadcastAsUser" |
-             "sendStickyOrderedBroadcast" |
-             "sendStickyOrderedBroadcastAsUser" |
-             "startActivities" |
-             "startActivity" |
-             "startActivityForResult" |
-             "startActivityIfNeeded" |
-             "startNextMatchingActivity" |
-             "startService") ->
-              taint_nth 0 Intent ~report_reachable:true
-          | "android.app.Activity", ("startActivityFromChild" | "startActivityFromFragment") ->
-              taint_nth 1 Intent ~report_reachable:true
-          | "android.content.Intent",
-            ("fillIn" |
-             "makeMainSelectorActivity" |
-             "parseIntent" |
-             "parseUri" |
-             "replaceExtras" |
-             "setAction" |
-             "setClassName" |
-             "setData" |
-             "setDataAndNormalize" |
-             "setDataAndType" |
-             "setDataAndTypeAndNormalize" |
-             "setPackage" |
-             "setSelector" |
-             "setType" |
-             "setTypeAndNormalize") ->
-              taint_all Intent ~report_reachable:true
           | "android.util.Log", ("e" | "println" | "w" | "wtf") ->
               taint_all Logging ~report_reachable:true
           | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink" ->
@@ -156,6 +128,42 @@ module SinkKind = struct
           | class_name, method_name ->
               let taint_matching_supertype typename _ =
                 match Typename.name typename, method_name with
+                | "android.app.Activity",
+                  ("startActivityFromChild" | "startActivityFromFragment") ->
+                    Some (taint_nth 1 Intent ~report_reachable:true)
+                | "android.content.Context",
+                  ("bindService" |
+                   "sendBroadcast" |
+                   "sendBroadcastAsUser" |
+                   "sendOrderedBroadcast" |
+                   "sendStickyBroadcast" |
+                   "sendStickyBroadcastAsUser" |
+                   "sendStickyOrderedBroadcast" |
+                   "sendStickyOrderedBroadcastAsUser" |
+                   "startActivities" |
+                   "startActivity" |
+                   "startActivityForResult" |
+                   "startActivityIfNeeded" |
+                   "startNextMatchingActivity" |
+                   "startService") ->
+                    Some (taint_nth 0 Intent ~report_reachable:true)
+                | "android.content.Intent",
+                  ("fillIn" |
+                   "makeMainSelectorActivity" |
+                   "parseIntent" |
+                   "parseUri" |
+                   "replaceExtras" |
+                   "setAction" |
+                   "setClassName" |
+                   "setData" |
+                   "setDataAndNormalize" |
+                   "setDataAndType" |
+                   "setDataAndTypeAndNormalize" |
+                   "setPackage" |
+                   "setSelector" |
+                   "setType" |
+                   "setTypeAndNormalize") ->
+                    Some (taint_all Intent ~report_reachable:true)
                 | "android.webkit.WebChromeClient",
                   ("onJsAlert" | "onJsBeforeUnload" | "onJsConfirm" | "onJsPrompt") ->
                     Some (taint_all JavaScript ~report_reachable:true)

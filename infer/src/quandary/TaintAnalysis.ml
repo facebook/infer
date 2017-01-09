@@ -433,7 +433,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               | [] -> astate
               | sinks -> add_sinks sinks actuals astate proc_data call_site in
 
-            let source = TraceDomain.Source.get call_site in
+            let source = TraceDomain.Source.get call_site proc_data.tenv in
             let astate_with_source =
               match source, ret with
               | Some source, Some (ret_id, ret_typ) ->

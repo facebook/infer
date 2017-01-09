@@ -21,7 +21,7 @@ module type Kind = sig
 
   val unknown : t
 
-  val get : Procname.t -> t option
+  val get : Procname.t -> Tenv.t -> t option
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
 end
@@ -35,7 +35,7 @@ module type S = sig
 
   val get_footprint_access_path: t -> AccessPath.t option
 
-  val get : CallSite.t -> t option
+  val get : CallSite.t -> Tenv.t -> t option
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
 end
@@ -80,7 +80,7 @@ module Make (Kind : Kind) = struct
     let kind = Footprint ap in
     { site; kind; }
 
-  let get site = match Kind.get (CallSite.pname site) with
+  let get site tenv = match Kind.get (CallSite.pname site) tenv with
     | Some kind -> Some (make kind site)
     | None -> None
 
@@ -119,7 +119,7 @@ module Dummy = struct
   let make_footprint _ _ = assert false
   let get_footprint_access_path _ = assert false
 
-  let get _ = None
+  let get _ _ = None
 
   let get_tainted_formals pdesc _=
     IList.map (fun (name, typ) -> name, typ, None) (Procdesc.get_formals pdesc)

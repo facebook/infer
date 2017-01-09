@@ -22,7 +22,7 @@ module Kind = struct
 
   let unknown = Unknown
 
-  let get = function
+  let get pname _ = match pname with
     | (Procname.ObjC_Cpp cpp_pname) as pname ->
         begin
           match Procname.objc_cpp_get_class_name cpp_pname, Procname.get_method pname with

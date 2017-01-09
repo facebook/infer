@@ -23,6 +23,12 @@ import com.facebook.infer.builtins.InferTaint;
 
 import org.xmlpull.v1.XmlPullParserException;
 
+class IntentSubclass extends Intent {
+}
+
+abstract class ContextSubclass extends Context {
+}
+
 public class Intents {
 
   private native int rand();
@@ -71,6 +77,13 @@ public class Intents {
     intent.setSelector(taintedIntent);
     intent.setType(taintedString);
     intent.setTypeAndNormalize(taintedString); // 15 sinks, 15 expected reports
+  }
+
+  // make sure the rules apply to subclasses of Intent and Context too
+  void subclassCallBad(IntentSubclass intent, ContextSubclass context) {
+    String taintedString = (String) InferTaint.inferSecretSource();
+    intent.setAction(taintedString);
+    context.startActivity(intent);
   }
 
 }
