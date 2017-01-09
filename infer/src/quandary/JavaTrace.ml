@@ -41,6 +41,8 @@ module SourceKind = struct
           | class_name, method_name ->
               let taint_matching_supertype typename _ =
                 match Typename.name typename, method_name with
+                | "android.app.Activity", "getIntent" ->
+                    Some Intent
                 | "android.content.Intent", "getStringExtra" ->
                     Some Intent
                 | "android.content.SharedPreferences", "getString" ->
@@ -136,6 +138,7 @@ module SinkKind = struct
                    "sendBroadcast" |
                    "sendBroadcastAsUser" |
                    "sendOrderedBroadcast" |
+                   "sendOrderedBroadcastAsUser" |
                    "sendStickyBroadcast" |
                    "sendStickyBroadcastAsUser" |
                    "sendStickyOrderedBroadcast" |
@@ -145,8 +148,11 @@ module SinkKind = struct
                    "startActivityForResult" |
                    "startActivityIfNeeded" |
                    "startNextMatchingActivity" |
-                   "startService") ->
+                   "startService" |
+                   "stopService") ->
                     Some (taint_nth 0 Intent ~report_reachable:true)
+                | "android.content.Context", "startIntentSender" ->
+                    Some (taint_nth 1 Intent ~report_reachable:true)
                 | "android.content.Intent",
                   ("fillIn" |
                    "makeMainSelectorActivity" |
