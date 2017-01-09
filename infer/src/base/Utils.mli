@@ -32,8 +32,9 @@ val read_file : string -> string list option
 (** Convert a filename to an absolute one if it is relative, and normalize "." and ".." *)
 val filename_to_absolute : root:string -> string -> string
 
-(** Convert an absolute filename to one relative to a root directory *)
-val filename_to_relative : string -> string -> string
+(** Convert an absolute filename to one relative to a root directory.  Returns [None] if filename is
+    not under root. *)
+val filename_to_relative : root:string -> string -> string option
 
 (** type for files used for printing *)
 type outfile =

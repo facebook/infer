@@ -33,13 +33,6 @@ module Map = Caml.Map.Make (OrderedSourceFile)
 
 module Set = Caml.Set.Make (OrderedSourceFile)
 
-let rel_path_from_abs_path root fname =
-  let relative_complemented_fname = Utils.filename_to_relative root fname in
-  if String.is_prefix ~prefix:root fname &&
-     Filename.is_relative relative_complemented_fname then
-    Some relative_complemented_fname
-  else None (* The project root is not a prefix of the file name *)
-
 let from_abs_path fname =
   if Filename.is_relative fname then
     (failwithf
@@ -49,10 +42,10 @@ let from_abs_path fname =
   let fname_real = try Utils.realpath fname with Unix.Unix_error _ -> fname in
   let project_root_real = Utils.realpath Config.project_root in
   let models_dir_real = Config.models_src_dir in
-  match rel_path_from_abs_path project_root_real fname_real with
+  match Utils.filename_to_relative ~root:project_root_real fname_real with
   | Some path -> RelativeProjectRoot path
   | None -> (
-      match rel_path_from_abs_path models_dir_real fname_real with
+      match Utils.filename_to_relative ~root:models_dir_real fname_real with
       | Some path -> RelativeInferModel path
       | None -> Absolute fname (* fname is absolute already *)
     )

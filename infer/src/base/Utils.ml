@@ -120,13 +120,13 @@ let filename_to_absolute ~root fname =
 
 
 (** Convert an absolute filename to one relative to the given directory. *)
-let filename_to_relative root fname =
+let filename_to_relative ~root fname =
   let rec relativize_if_under origin target =
     match origin, target with
     | x :: xs, y :: ys when x = y -> relativize_if_under xs ys
-    | [], [] -> "."
-    | [], ys -> Filename.of_parts ys
-    | _ -> fname
+    | [], [] -> Some "."
+    | [], ys -> Some (Filename.of_parts ys)
+    | _ -> None
   in
   relativize_if_under (Filename.parts root) (Filename.parts fname)
 
