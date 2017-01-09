@@ -62,27 +62,31 @@ let add_var_to_locals procdesc var_decl sil_typ pvar =
         Procdesc.append_locals procdesc [(Pvar.get_name pvar, sil_typ)]
   | _ -> assert false
 
-let rec compute_autorelease_pool_vars context stmts =
-  let procname = Procdesc.get_proc_name context.CContext.procdesc in
-  match stmts with
-  | [] -> []
-  | Clang_ast_t.DeclRefExpr (_, _, _, drei):: stmts' ->
-      (let res = compute_autorelease_pool_vars context stmts' in
-       match drei.Clang_ast_t.drti_decl_ref with
-       | Some decl_ref ->
-           (match decl_ref.Clang_ast_t.dr_type_ptr with
-            | Some type_ptr when decl_ref.Clang_ast_t.dr_kind = `Var ->
-                let typ = CType_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
-                let pvar = sil_var_of_decl_ref context decl_ref procname in
-                if Pvar.is_local pvar then
-                  General_utils.append_no_duplicateds [(Exp.Lvar pvar, typ)] res
-                else res
-            | _ -> res)
-       | _ -> res)
-  | s :: stmts' ->
-      let sl = snd (Clang_ast_proj.get_stmt_tuple s) in
-      compute_autorelease_pool_vars context (sl @ stmts')
-
+let compute_autorelease_pool_vars context stmts =
+  let rec do_stmts map = function
+    | [] ->
+        map
+    | Clang_ast_t.DeclRefExpr (_, _, _, drei):: stmts' ->
+        let map1 = match drei.Clang_ast_t.drti_decl_ref with
+          | Some decl_ref ->
+              (match decl_ref.Clang_ast_t.dr_type_ptr with
+               | Some type_ptr when decl_ref.Clang_ast_t.dr_kind = `Var ->
+                   let typ = CType_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
+                   let procname = Procdesc.get_proc_name context.CContext.procdesc in
+                   let pvar = sil_var_of_decl_ref context decl_ref procname in
+                   if Pvar.is_local pvar then
+                     Exp.Map.add (Exp.Lvar pvar) typ map
+                   else map
+               | _ ->
+                   map)
+          | None ->
+              map in
+        do_stmts map1 stmts'
+    | s :: stmts' ->
+        let sl = snd (Clang_ast_proj.get_stmt_tuple s) in
+        let map1 = do_stmts map sl in
+        do_stmts map1 stmts' in
+  Exp.Map.bindings (do_stmts Exp.Map.empty stmts)
 
 (* Returns a list of captured variables as sil variables. *)
 let captured_vars_from_block_info context cvl =

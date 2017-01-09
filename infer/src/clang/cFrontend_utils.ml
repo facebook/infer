@@ -537,11 +537,6 @@ struct
     let eq (m1, t1) (m2, t2) = (Mangled.equal m1 m2) && (Typ.equal t1 t2) in
     append_no_duplicates eq list1 list2
 
-  let append_no_duplicateds list1 list2 =
-    let eq (e1, t1) (e2, t2) = (Exp.equal e1 e2) && (Typ.equal t1 t2) in
-    append_no_duplicates eq list1 list2
-
-
   let append_no_duplicates_annotations list1 list2 =
     let eq (annot1, _) (annot2, _) = annot1.Annot.class_name = annot2.Annot.class_name in
     append_no_duplicates eq list1 list2

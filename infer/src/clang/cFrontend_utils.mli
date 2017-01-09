@@ -193,9 +193,6 @@ sig
   val append_no_duplicated_vars :
     (Mangled.t * Typ.t) list -> (Mangled.t * Typ.t) list -> (Mangled.t * Typ.t) list
 
-  val append_no_duplicateds :
-    (Exp.t * Typ.t) list -> (Exp.t * Typ.t) list -> (Exp.t * Typ.t) list
-
   val sort_fields :
     (Ident.fieldname * Typ.t * Annot.Item.t) list ->
     (Ident.fieldname * Typ.t * Annot.Item.t) list
