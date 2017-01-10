@@ -12,7 +12,7 @@ set -e
 # try to pull submodules if we are in a git repo
 # might fail if git is not installed (how did you even checkout the
 # repo in the first place?)
-if test -d '.git'; then
+if test -d '.git' && [ -z "$SKIP_SUBMODULES" ] ; then
   printf 'git repository detected, updating submodule... '
   git submodule update --init > /dev/null
   printf 'done\n'
