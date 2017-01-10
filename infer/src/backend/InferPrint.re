@@ -9,6 +9,8 @@
  */
 open! IStd;
 
+let module CLOpt = CommandLineOption;
+
 let module Hashtbl = Caml.Hashtbl;
 
 let module L = Logging;
@@ -1190,27 +1192,30 @@ let process_summary filters formats_by_report_kind linereader stats top_proc_set
 
 let module AnalysisResults = {
   type t = list (string, Specs.summary);
-  let spec_files_from_cmdline () => {
-    /* Find spec files specified by command-line arguments.  Not run at init time since the specs
-       files may be generated between init and report time. */
-    IList.iter
-      (
-        fun arg =>
-          if (not (Filename.check_suffix arg Config.specs_files_suffix) && arg != ".") {
-            print_usage_exit ("file " ^ arg ^ ": arguments must be .specs files")
-          }
-      )
-      Config.anon_args;
-    if Config.test_filtering {
-      Inferconfig.test ();
-      exit 0
-    };
-    if (Config.anon_args == []) {
-      load_specfiles ()
+  let spec_files_from_cmdline () =>
+    if (Config.current_exe == CLOpt.Print) {
+      /* Find spec files specified by command-line arguments.  Not run at init time since the specs
+         files may be generated between init and report time. */
+      IList.iter
+        (
+          fun arg =>
+            if (not (Filename.check_suffix arg Config.specs_files_suffix) && arg != ".") {
+              print_usage_exit ("file " ^ arg ^ ": arguments must be .specs files")
+            }
+        )
+        Config.anon_args;
+      if Config.test_filtering {
+        Inferconfig.test ();
+        exit 0
+      };
+      if (Config.anon_args == []) {
+        load_specfiles ()
+      } else {
+        List.rev Config.anon_args
+      }
     } else {
-      List.rev Config.anon_args
-    }
-  };
+      load_specfiles ()
+    };
 
   /** apply [f] to [arg] with the gc compaction disabled during the execution */
   let apply_without_gc f arg => {
