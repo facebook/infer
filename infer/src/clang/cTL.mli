@@ -30,7 +30,7 @@ type transitions =
 type t =
   | True
   | False
-  | Atomic of Predicates.t (** Atomic formula *)
+  | Atomic of CPredicates.t (** Atomic formula *)
   | Not of t
   | And of t * t
   | Or of t * t

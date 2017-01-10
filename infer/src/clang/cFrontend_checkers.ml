@@ -70,7 +70,7 @@ let iphoneos_target_sdk_version _ =
 let available_ios_sdk an =
   match CTL.next_state_via_transition an (Some CTL.PointerToDecl) with
   | Some CTL.Decl decl ->
-      (match Predicates.get_available_attr_ios_sdk decl with
+      (match CPredicates.get_available_attr_ios_sdk decl with
        | Some version -> version
        | None -> "")
   | _ -> failwith("available_ios_sdk must be called with a DeclRefExpr \
@@ -90,9 +90,9 @@ let ivar_name an =
 
 let cxx_ref_captured_in_block an =
   let capt_refs = match an with
-    | CTL.Decl d -> Predicates.captured_variables_cxx_ref d
+    | CTL.Decl d -> CPredicates.captured_variables_cxx_ref d
     | CTL.Stmt (Clang_ast_t.BlockExpr(_, _, _, d)) ->
-        Predicates.captured_variables_cxx_ref d
+        CPredicates.captured_variables_cxx_ref d
     | _ -> [] in
   let var_desc vars var_named_decl_info =
     vars ^ "'" ^ var_named_decl_info.Clang_ast_t.ni_name ^ "'" in

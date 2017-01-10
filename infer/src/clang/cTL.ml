@@ -30,7 +30,7 @@ type transitions =
 type t = (* A ctl formula *)
   | True
   | False (* not really necessary but it makes it evaluation faster *)
-  | Atomic of Predicates.t
+  | Atomic of CPredicates.t
   | Not of t
   | And of t * t
   | Or of t * t
@@ -72,7 +72,7 @@ module Debug = struct
     match phi with
     | True -> Format.fprintf fmt "True"
     | False -> Format.fprintf fmt "False"
-    | Atomic p -> Predicates.pp_predicate fmt p
+    | Atomic p -> CPredicates.pp_predicate fmt p
     | Not phi -> if full_print then Format.fprintf fmt "NOT(%a)" pp_formula phi
         else Format.fprintf fmt "NOT(...)"
     | And (phi1, phi2) -> if full_print then
@@ -375,46 +375,46 @@ let next_state_via_transition an trans =
    linter context lcxt. That is:  an, lcxt |= pred_name(params) *)
 let rec eval_Atomic pred_name args an lcxt =
   match pred_name, args, an with
-  | "call_method", [m], Stmt st -> Predicates.call_method m st
+  | "call_method", [m], Stmt st -> CPredicates.call_method m st
   (* Note: I think it should be better to change all predicated to be
      evaluated in a node an. The predicate itself should decide if it's a
      stmt or decl predicate and return false for an unappropriate node *)
   | "call_method", _, Decl _ -> false
-  | "property_name_contains_word", [word], Decl d -> Predicates.property_name_contains_word word d
+  | "property_name_contains_word", [word], Decl d -> CPredicates.property_name_contains_word word d
   | "property_name_contains_word", _, Stmt _ -> false
-  | "is_objc_extension", [], _ -> Predicates.is_objc_extension lcxt
-  | "is_global_var", [], Decl d -> Predicates.is_syntactically_global_var d
+  | "is_objc_extension", [], _ -> CPredicates.is_objc_extension lcxt
+  | "is_global_var", [], Decl d -> CPredicates.is_syntactically_global_var d
   | "is_global_var", _, Stmt _ -> false
-  | "is_const_var", [], Decl d ->  Predicates.is_const_expr_var d
+  | "is_const_var", [], Decl d ->  CPredicates.is_const_expr_var d
   | "is_const_var", _, Stmt _ -> false
-  | "call_function_named", args, Stmt st -> Predicates.call_function_named args st
+  | "call_function_named", args, Stmt st -> CPredicates.call_function_named args st
   | "call_function_named", _, Decl _ -> false
-  | "is_strong_property", [], Decl d -> Predicates.is_strong_property d
+  | "is_strong_property", [], Decl d -> CPredicates.is_strong_property d
   | "is_strong_property", _, Stmt _ -> false
-  | "is_assign_property", [], Decl d -> Predicates.is_assign_property d
+  | "is_assign_property", [], Decl d -> CPredicates.is_assign_property d
   | "is_assign_property", _, Stmt _ -> false
-  | "is_property_pointer_type", [], Decl d -> Predicates.is_property_pointer_type d
+  | "is_property_pointer_type", [], Decl d -> CPredicates.is_property_pointer_type d
   | "is_property_pointer_type", _, Stmt _ -> false
-  | "context_in_synchronized_block", [], _ -> Predicates.context_in_synchronized_block lcxt
-  | "is_ivar_atomic", [], Stmt st -> Predicates.is_ivar_atomic st
+  | "context_in_synchronized_block", [], _ -> CPredicates.context_in_synchronized_block lcxt
+  | "is_ivar_atomic", [], Stmt st -> CPredicates.is_ivar_atomic st
   | "is_ivar_atomic", _, Decl _ -> false
   | "is_method_property_accessor_of_ivar", [], Stmt st ->
-      Predicates.is_method_property_accessor_of_ivar st lcxt
+      CPredicates.is_method_property_accessor_of_ivar st lcxt
   | "is_method_property_accessor_of_ivar", _, Decl _ -> false
-  | "is_objc_constructor", [], _ -> Predicates.is_objc_constructor lcxt
-  | "is_objc_dealloc", [], _ -> Predicates.is_objc_dealloc lcxt
-  | "captures_cxx_references", [], Decl d -> Predicates.captures_cxx_references d
+  | "is_objc_constructor", [], _ -> CPredicates.is_objc_constructor lcxt
+  | "is_objc_dealloc", [], _ -> CPredicates.is_objc_dealloc lcxt
+  | "captures_cxx_references", [], Decl d -> CPredicates.captures_cxx_references d
   | "captures_cxx_references", _, Stmt _ -> false
-  | "is_binop_with_kind", [str_kind], Stmt st -> Predicates.is_binop_with_kind str_kind st
+  | "is_binop_with_kind", [str_kind], Stmt st -> CPredicates.is_binop_with_kind str_kind st
   | "is_binop_with_kind", _, Decl _ -> false
-  | "is_unop_with_kind", [str_kind], Stmt st -> Predicates.is_unop_with_kind str_kind st
+  | "is_unop_with_kind", [str_kind], Stmt st -> CPredicates.is_unop_with_kind str_kind st
   | "is_unop_with_kind", _, Decl _ -> false
-  | "in_node", [nodename], Stmt st -> Predicates.is_stmt nodename st
-  | "in_node", [nodename], Decl d -> Predicates.is_decl nodename d
-  | "isa", [classname], Stmt st -> Predicates.isa classname st
+  | "in_node", [nodename], Stmt st -> CPredicates.is_stmt nodename st
+  | "in_node", [nodename], Decl d -> CPredicates.is_decl nodename d
+  | "isa", [classname], Stmt st -> CPredicates.isa classname st
   | "isa", _, Decl _ -> false
   | "decl_unavailable_in_supported_ios_sdk", [], Decl decl ->
-      Predicates.decl_unavailable_in_supported_ios_sdk decl
+      CPredicates.decl_unavailable_in_supported_ios_sdk decl
   | "decl_unavailable_in_supported_ios_sdk", _, Stmt _ -> false
   | _ -> failwith ("ERROR: Undefined Predicate or wrong set of arguments: " ^ pred_name)
 
