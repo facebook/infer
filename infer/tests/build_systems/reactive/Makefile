@@ -22,7 +22,7 @@ include $(TESTS_DIR)/clang.make
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(HEADERS)
 	$(call silent_on_success,\
-	  $(INFER_BIN) $(INFER_OPTIONS) -a capture --reactive --continue -- \
+	  $(INFER_BIN) $(INFER_OPTIONS) -a capture -- \
 	    clang $(CLANG_OPTIONS) $(SOURCES1))
 	$(call silent_on_success,\
 	  $(INFER_BIN) $(INFER_OPTIONS) -a capture --reactive --continue -- \
