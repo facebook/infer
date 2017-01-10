@@ -12,8 +12,6 @@ open! IStd
 
 module L = Logging
 
-open CFrontend_utils
-
 module rec CTransImpl : CModule_type.CTranslation =
   CTrans.CTrans_funct(CFrontend_declImpl)
 and CFrontend_declImpl : CModule_type.CFrontend =
@@ -37,7 +35,7 @@ let compute_icfg trans_unit_ctx tenv ast =
 let init_global_state_capture () =
   Ident.NameGenerator.reset ();
   CFrontend_config.global_translation_unit_decls := [];
-  CFrontend_utils.General_utils.reset_block_counter ()
+  CGeneral_utils.reset_block_counter ()
 
 let do_source_file translation_unit_context ast =
   let tenv = Tenv.create () in
@@ -62,7 +60,7 @@ let do_source_file translation_unit_context ast =
   (*Logging.out "Tenv %a@." Sil.pp_tenv tenv;*)
   (* Printing.print_tenv tenv; *)
   (*Printing.print_procedures cfg; *)
-  General_utils.sort_fields_tenv tenv;
+  CGeneral_utils.sort_fields_tenv tenv;
   Tenv.store_to_file tenv_file tenv;
   if Config.stats_mode then Cfg.check_cfg_connectedness cfg;
   if Config.stats_mode

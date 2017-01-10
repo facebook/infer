@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-open CFrontend_utils
 
 (** Define the signature of a method consisting of its name, its arguments, *)
 (** return type, location and whether its an instance method.  *)
@@ -100,7 +99,7 @@ let replace_name_ms ms name =
 let ms_to_string ms =
   "Method " ^ (Procname.to_string ms.name) ^ " " ^
   IList.to_string
-    (fun (s1, s2) -> (Mangled.to_string s1) ^ ", " ^ (Ast_utils.string_of_qual_type s2))
+    (fun (s1, s2) -> (Mangled.to_string s1) ^ ", " ^ (CAst_utils.string_of_qual_type s2))
     ms.args
-  ^ "->" ^ (Ast_utils.string_of_type_ptr ms.ret_type) ^ " " ^
+  ^ "->" ^ (CAst_utils.string_of_type_ptr ms.ret_type) ^ " " ^
   Clang_ast_j.string_of_source_range ms.loc

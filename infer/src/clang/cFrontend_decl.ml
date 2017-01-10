@@ -13,8 +13,6 @@ open! IStd
 
 module L = Logging
 
-open CFrontend_utils
-
 module CFrontend_decl_funct(T: CModule_type.CTranslation) : CModule_type.CFrontend =
 struct
   let model_exists procname =
@@ -91,14 +89,14 @@ struct
 
   let process_property_implementation cfg trans_unit_ctx obj_c_property_impl_decl_info =
     let property_decl_opt = obj_c_property_impl_decl_info.Clang_ast_t.opidi_property_decl in
-    match Ast_utils.get_decl_opt_with_decl_ref property_decl_opt with
+    match CAst_utils.get_decl_opt_with_decl_ref property_decl_opt with
     | Some ObjCPropertyDecl (_, _, obj_c_property_decl_info) ->
         let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
-        (match Ast_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
+        (match CAst_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
          | Some ObjCIvarDecl (_, named_decl_info, _, _, _) ->
-             let field_name = General_utils.mk_class_field_name named_decl_info in
+             let field_name = CGeneral_utils.mk_class_field_name named_decl_info in
              let process_accessor pointer ~getter =
-               (match Ast_utils.get_decl_opt_with_decl_ref pointer with
+               (match CAst_utils.get_decl_opt_with_decl_ref pointer with
                 | Some (ObjCMethodDecl (decl_info, _, _) as d) ->
                     let source_range = decl_info.Clang_ast_t.di_source_range in
                     let loc =
@@ -108,7 +106,7 @@ struct
                         Some (ProcAttributes.Objc_getter field_name)
                       else
                         Some (ProcAttributes.Objc_setter field_name) in
-                    let procname = General_utils.procname_of_decl trans_unit_ctx d in
+                    let procname = CGeneral_utils.procname_of_decl trans_unit_ctx d in
                     let attrs = { (ProcAttributes.default procname Config.Clang) with
                                   loc = loc;
                                   objc_accessor = property_accessor; } in
@@ -132,7 +130,8 @@ struct
     | ObjCIvarDecl _ | ObjCPropertyDecl _ -> ()
     | _ ->
         Logging.out
-          "\nWARNING: found Method Declaration '%s' skipped. NEED TO BE FIXED\n\n" (Ast_utils.string_of_decl dec);
+          "\nWARNING: found Method Declaration '%s' skipped. NEED TO BE FIXED\n\n"
+          (CAst_utils.string_of_decl dec);
         ()
 
   let process_methods trans_unit_ctx tenv cg cfg curr_class decl_list =
@@ -221,26 +220,26 @@ struct
            function_decl trans_unit_ctx tenv cfg cg dec None
 
        | ObjCInterfaceDecl(_, name_info, decl_list, _, oi_decl_info) ->
-           let name = Ast_utils.get_qualified_name name_info in
+           let name = CAst_utils.get_qualified_name name_info in
            let curr_class = ObjcInterface_decl.get_curr_class name oi_decl_info in
            ignore
              (ObjcInterface_decl.interface_declaration CType_decl.type_ptr_to_sil_type tenv dec);
            process_methods trans_unit_ctx tenv cg cfg curr_class decl_list
 
        | ObjCProtocolDecl(_, name_info, decl_list, _, _) ->
-           let name = Ast_utils.get_qualified_name name_info in
+           let name = CAst_utils.get_qualified_name name_info in
            let curr_class = CContext.ContextProtocol name in
            ignore (ObjcProtocol_decl.protocol_decl CType_decl.type_ptr_to_sil_type tenv dec);
            process_methods trans_unit_ctx tenv cg cfg curr_class decl_list
 
        | ObjCCategoryDecl(_, name_info, decl_list, _, ocdi) ->
-           let name = Ast_utils.get_qualified_name name_info in
+           let name = CAst_utils.get_qualified_name name_info in
            let curr_class = ObjcCategory_decl.get_curr_class_from_category_decl name ocdi in
            ignore (ObjcCategory_decl.category_decl CType_decl.type_ptr_to_sil_type tenv dec);
            process_methods trans_unit_ctx tenv cg cfg curr_class decl_list
 
        | ObjCCategoryImplDecl(_, name_info, decl_list, _, ocidi) ->
-           let name = Ast_utils.get_qualified_name name_info in
+           let name = CAst_utils.get_qualified_name name_info in
            let curr_class = ObjcCategory_decl.get_curr_class_from_category_impl name ocidi in
            ignore (ObjcCategory_decl.category_impl_decl CType_decl.type_ptr_to_sil_type tenv dec);
            process_methods trans_unit_ctx tenv cg cfg curr_class decl_list;
@@ -259,14 +258,14 @@ struct
        | CXXDestructorDecl (decl_info, _, _, _, _) ->
            (* di_parent_pointer has pointer to lexical context such as class.*)
            let parent_ptr = Option.value_exn decl_info.Clang_ast_t.di_parent_pointer in
-           let class_decl = Ast_utils.get_decl parent_ptr in
+           let class_decl = CAst_utils.get_decl parent_ptr in
            (match class_decl with
             | Some (CXXRecordDecl _)
             | Some (ClassTemplateSpecializationDecl _) when Config.cxx ->
                 let curr_class = CContext.ContextClsDeclPtr parent_ptr in
                 process_methods trans_unit_ctx tenv cg cfg curr_class [dec]
             | Some dec ->
-                Logging.out "Methods of %s skipped\n" (Ast_utils.string_of_decl dec)
+                Logging.out "Methods of %s skipped\n" (CAst_utils.string_of_decl dec)
             | None -> ())
        | VarDecl (decl_info, named_decl_info, qt, ({ vdi_is_global; vdi_init_expr } as vdi))
          when vdi_is_global && Option.is_some vdi_init_expr ->
@@ -275,13 +274,13 @@ struct
            let procname =
              (* create the corresponding global variable to get the right pname for its
                 initializer *)
-             let global = General_utils.mk_sil_global_var trans_unit_ctx named_decl_info vdi qt in
+             let global = CGeneral_utils.mk_sil_global_var trans_unit_ctx named_decl_info vdi qt in
              (* safe to Option.get because it's a global *)
              Option.value_exn (Pvar.get_initializer_pname global) in
            let ms = CMethod_signature.make_ms procname [] Ast_expressions.create_void_type
                [] decl_info.Clang_ast_t.di_source_range false trans_unit_ctx.CFrontend_config.lang
                None None None in
-           let stmt_info = { si_pointer = Ast_utils.get_fresh_pointer ();
+           let stmt_info = { si_pointer = CAst_utils.get_fresh_pointer ();
                              si_source_range = decl_info.di_source_range } in
            let body = Clang_ast_t.DeclStmt (stmt_info, [], [dec]) in
            ignore (CMethod_trans.create_local_procdesc trans_unit_ctx cfg tenv ms [body] [] false);

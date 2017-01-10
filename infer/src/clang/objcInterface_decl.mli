@@ -11,12 +11,11 @@ open! IStd
 
 (** In this module an ObjC interface declaration is processed. The class is saved in the tenv as a
     struct with the corresponding fields, potential superclass and list of defined methods *)
-open CFrontend_utils
 
-val interface_declaration : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl ->
+val interface_declaration : CAst_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl ->
   Typ.t
 
-val interface_impl_declaration : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl ->
+val interface_impl_declaration : CAst_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl ->
   Typ.t
 
 val is_pointer_to_objc_class : Typ.t -> bool

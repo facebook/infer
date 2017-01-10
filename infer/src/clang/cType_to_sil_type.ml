@@ -9,8 +9,6 @@
 
 open! IStd
 
-open CFrontend_utils
-
 let get_builtin_objc_typename builtin_type =
   match builtin_type with
   | `ObjCId -> Typename.TN_csu (Csu.Struct, (Mangled.from_string CFrontend_config.objc_object))
@@ -69,7 +67,7 @@ let rec build_array_type translate_decl tenv type_ptr n_opt =
 and sil_type_of_attr_type translate_decl tenv type_info attr_info =
   match type_info.Clang_ast_t.ti_desugared_type with
   | Some type_ptr ->
-      (match Ast_utils.get_type type_ptr with
+      (match CAst_utils.get_type type_ptr with
        | Some Clang_ast_t.ObjCObjectPointerType (_, {Clang_ast_t.qt_type_ptr}) ->
            let typ = type_ptr_to_sil_type translate_decl tenv qt_type_ptr in
            Typ.Tptr (typ, pointer_attribute_of_objc_attribute attr_info)
@@ -132,7 +130,7 @@ and decl_ptr_to_sil_type translate_decl tenv decl_ptr =
   let typ = `DeclPtr decl_ptr in
   try Clang_ast_types.TypePointerMap.find typ !CFrontend_config.sil_types_map
   with Not_found ->
-  match Ast_utils.get_decl decl_ptr with
+  match CAst_utils.get_decl decl_ptr with
   | Some (CXXRecordDecl _ as d)
   | Some (RecordDecl _ as d)
   | Some (ClassTemplateSpecializationDecl _ as d)
@@ -155,10 +153,10 @@ and clang_type_ptr_to_sil_type translate_decl tenv type_ptr =
   try
     Clang_ast_types.TypePointerMap.find type_ptr !CFrontend_config.sil_types_map
   with Not_found ->
-    (match Ast_utils.get_type type_ptr with
+    (match CAst_utils.get_type type_ptr with
      | Some c_type ->
          let sil_type = sil_type_of_c_type translate_decl tenv c_type in
-         Ast_utils.update_sil_types_map type_ptr sil_type;
+         CAst_utils.update_sil_types_map type_ptr sil_type;
          sil_type
      | _ -> Typ.Tvoid)
 

@@ -11,8 +11,6 @@ open! IStd
 
 (** Utility module for translating unary and binary operations and compound assignments *)
 
-open CFrontend_utils
-
 (* Returns the translation of assignment when ARC mode is enabled in Obj-C *)
 (* For __weak and __unsafe_unretained the translation is the same as non-ARC *)
 (* (this is because, in these cases, there is no change in the reference counter *)
@@ -150,7 +148,7 @@ let unary_operation_instruction translation_unit_context uoi e typ loc =
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Load (id, e, typ, loc) in
       let e_plus_1 = Exp.BinOp(Binop.PlusA, Exp.Var id, Exp.Const(Const.Cint (IntLit.one))) in
-      let exp = if General_utils.is_cpp_translation translation_unit_context then
+      let exp = if CGeneral_utils.is_cpp_translation translation_unit_context then
           e
         else
           e_plus_1 in
@@ -164,7 +162,7 @@ let unary_operation_instruction translation_unit_context uoi e typ loc =
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Load (id, e, typ, loc) in
       let e_minus_1 = Exp.BinOp(Binop.MinusA, Exp.Var id, Exp.Const(Const.Cint (IntLit.one))) in
-      let exp = if General_utils.is_cpp_translation translation_unit_context then
+      let exp = if CGeneral_utils.is_cpp_translation translation_unit_context then
           e
         else
           e_minus_1 in

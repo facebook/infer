@@ -11,7 +11,6 @@ open! IStd
 
 (** Utility module for retrieving types *)
 
-open CFrontend_utils
 module L = Logging
 
 let add_pointer_to_typ typ =
@@ -43,7 +42,7 @@ let is_class typ =
 
 let rec return_type_of_function_type_ptr type_ptr =
   let open Clang_ast_t in
-  match Ast_utils.get_type type_ptr with
+  match CAst_utils.get_type type_ptr with
   | Some FunctionProtoType (_, function_type_info, _)
   | Some FunctionNoProtoType (_, function_type_info) ->
       function_type_info.Clang_ast_t.fti_return_type
@@ -63,12 +62,12 @@ let return_type_of_function_type tp =
 
 let is_block_type tp =
   let open Clang_ast_t in
-  match Ast_utils.get_desugared_type tp with
+  match CAst_utils.get_desugared_type tp with
   | Some BlockPointerType _ -> true
   | _ -> false
 
 let is_reference_type tp =
-  match Ast_utils.get_desugared_type tp with
+  match CAst_utils.get_desugared_type tp with
   | Some Clang_ast_t.LValueReferenceType _ -> true
   | Some Clang_ast_t.RValueReferenceType _ -> true
   | _ -> false

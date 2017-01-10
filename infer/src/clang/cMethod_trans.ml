@@ -12,8 +12,6 @@ open! IStd
 (** Methods for creating a procdesc from a method or function declaration
     and for resolving a method call and finding the right callee *)
 
-open CFrontend_utils
-
 module L = Logging
 
 exception Invalid_declaration
@@ -109,11 +107,11 @@ let get_parameters trans_unit_ctx tenv function_method_decl_info =
   let par_to_ms_par par =
     match par with
     | Clang_ast_t.ParmVarDecl (_, name_info, qt, var_decl_info) ->
-        let _, mangled = General_utils.get_var_name_mangled name_info var_decl_info in
+        let _, mangled = CGeneral_utils.get_var_name_mangled name_info var_decl_info in
         let param_typ = CType_decl.type_ptr_to_sil_type tenv qt.Clang_ast_t.qt_type_ptr in
         let qt_type_ptr =
           match param_typ with
-          | Typ.Tstruct _ when General_utils.is_cpp_translation trans_unit_ctx ->
+          | Typ.Tstruct _ when CGeneral_utils.is_cpp_translation trans_unit_ctx ->
               Ast_expressions.create_reference_type qt.Clang_ast_t.qt_type_ptr
           | _ -> qt.Clang_ast_t.qt_type_ptr in
         (mangled, {qt with qt_type_ptr})
@@ -146,7 +144,7 @@ let build_method_signature trans_unit_ctx tenv decl_info procname function_metho
 let get_assume_not_null_calls param_decls =
   let do_one_param decl = match decl with
     | Clang_ast_t.ParmVarDecl (decl_info, name, qt, _)
-      when CFrontend_utils.Ast_utils.is_type_nonnull qt.Clang_ast_t.qt_type_ptr ->
+      when CAst_utils.is_type_nonnull qt.Clang_ast_t.qt_type_ptr ->
         let assume_call = Ast_expressions.create_assume_not_null_call
             decl_info name qt.Clang_ast_t.qt_type_ptr in
         [(`ClangStmt assume_call)]
@@ -162,7 +160,7 @@ let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
   match meth_decl, block_data_opt with
   | FunctionDecl (decl_info, _, qt, fdi), _ ->
       let func_decl = Func_decl_info (fdi, qt.Clang_ast_t.qt_type_ptr) in
-      let procname = General_utils.procname_of_decl trans_unit_ctx meth_decl in
+      let procname = CGeneral_utils.procname_of_decl trans_unit_ctx meth_decl in
       let ms = build_method_signature trans_unit_ctx tenv decl_info procname func_decl None None in
       let extra_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
@@ -170,7 +168,7 @@ let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
   | CXXConstructorDecl (decl_info, _, qt, fdi, mdi), _
   | CXXConversionDecl (decl_info, _, qt, fdi, mdi), _
   | CXXDestructorDecl (decl_info, _, qt, fdi, mdi), _ ->
-      let procname = General_utils.procname_of_decl trans_unit_ctx meth_decl in
+      let procname = CGeneral_utils.procname_of_decl trans_unit_ctx meth_decl in
       let parent_ptr = Option.value_exn decl_info.di_parent_pointer in
       let method_decl = Cpp_Meth_decl_info (fdi, mdi, parent_ptr, qt.Clang_ast_t.qt_type_ptr)  in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
@@ -180,7 +178,7 @@ let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
       let init_list_instrs = get_init_list_instrs mdi in (* it will be empty for methods *)
       ms, fdi.Clang_ast_t.fdi_body, (init_list_instrs @ non_null_instrs)
   | ObjCMethodDecl (decl_info, _, mdi), _ ->
-      let procname = General_utils.procname_of_decl trans_unit_ctx meth_decl in
+      let procname = CGeneral_utils.procname_of_decl trans_unit_ctx meth_decl in
       let parent_ptr = Option.value_exn decl_info.di_parent_pointer in
       let method_decl = ObjC_Meth_decl_info (mdi, parent_ptr) in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
@@ -201,7 +199,7 @@ let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
 
 let method_signature_of_pointer trans_unit_ctx tenv pointer =
   try
-    match Ast_utils.get_decl pointer with
+    match CAst_utils.get_decl pointer with
     | Some meth_decl ->
         let ms, _, _ = method_signature_of_decl trans_unit_ctx tenv meth_decl None in
         Some ms
@@ -211,7 +209,7 @@ let method_signature_of_pointer trans_unit_ctx tenv pointer =
 let get_method_name_from_clang tenv ms_opt =
   match ms_opt with
   | Some ms ->
-      (match Ast_utils.get_decl_opt (CMethod_signature.ms_get_pointer_to_parent ms) with
+      (match CAst_utils.get_decl_opt (CMethod_signature.ms_get_pointer_to_parent ms) with
        | Some decl ->
            if ObjcProtocol_decl.is_protocol decl then None
            else
@@ -289,7 +287,7 @@ let get_objc_method_data obj_c_message_expr_info =
 let skip_property_accessor ms =
   let open Clang_ast_t in
   let pointer_to_property_opt = CMethod_signature.ms_get_pointer_to_property_opt ms in
-  match Ast_utils.get_decl_opt pointer_to_property_opt with
+  match CAst_utils.get_decl_opt pointer_to_property_opt with
   | Some (ObjCPropertyDecl _) -> true
   | _ -> false
 
@@ -344,7 +342,7 @@ let sil_method_annotation_of_args args : Annot.Method.t =
     annot, default_visibility in
   let arg_to_sil_annot (arg_mangled, {Clang_ast_t.qt_type_ptr}) acc  =
     let arg_name = Mangled.to_string arg_mangled in
-    if CFrontend_utils.Ast_utils.is_type_nullable qt_type_ptr then
+    if CAst_utils.is_type_nullable qt_type_ptr then
       [mk_annot arg_name Annotations.nullable] :: acc
     else Annot.Item.empty::acc in
   let param_annots = IList.fold_right arg_to_sil_annot args []  in
@@ -353,7 +351,7 @@ let sil_method_annotation_of_args args : Annot.Method.t =
   retval_annot, param_annots
 
 
-let is_pointer_to_const type_ptr = match Ast_utils.get_type type_ptr with
+let is_pointer_to_const type_ptr = match CAst_utils.get_type type_ptr with
   | Some PointerType (_, {Clang_ast_t.qt_is_const})
   | Some ObjCObjectPointerType (_, {Clang_ast_t.qt_is_const})
   | Some RValueReferenceType (_, {Clang_ast_t.qt_is_const})
@@ -464,9 +462,9 @@ let create_procdesc_with_pointer context pointer class_name_opt name =
       let callee_name =
         match class_name_opt with
         | Some class_name ->
-            General_utils.mk_procname_from_cpp_method class_name name None
+            CGeneral_utils.mk_procname_from_cpp_method class_name name None
         | None ->
-            General_utils.mk_procname_from_function context.translation_unit_context name None in
+            CGeneral_utils.mk_procname_from_function context.translation_unit_context name None in
       create_external_procdesc context.cfg callee_name false None;
       callee_name
 
@@ -482,7 +480,7 @@ let get_procname_from_cpp_lambda context dec =
   | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, cxx_rdi) ->
       (match cxx_rdi.xrdi_lambda_call_operator with
        | Some dr ->
-           let name_info, decl_ptr, _ = Ast_utils.get_info_from_decl_ref dr in
+           let name_info, decl_ptr, _ = CAst_utils.get_info_from_decl_ref dr in
            create_procdesc_with_pointer context decl_ptr None name_info.ni_name
        | _ -> assert false (* We should not get here *))
   | _ -> assert false (* We should not get here *)

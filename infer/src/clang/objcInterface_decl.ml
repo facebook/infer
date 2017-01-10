@@ -16,8 +16,6 @@ open! IStd
 (* ObjectiveC doesn't have a notion of static or class fields. *)
 (* So, in this module we translate a class into a sil srtuct with an empty list of static fields.*)
 
-open CFrontend_utils
-
 module L = Logging
 
 let is_pointer_to_objc_class typ =
@@ -27,13 +25,13 @@ let is_pointer_to_objc_class typ =
 
 let get_super_interface_decl otdi_super =
   match otdi_super with
-  | Some dr -> Ast_utils.name_opt_of_name_info_opt dr.Clang_ast_t.dr_name
+  | Some dr -> CAst_utils.name_opt_of_name_info_opt dr.Clang_ast_t.dr_name
   | _ -> None
 
 let get_protocols protocols =
   let protocol_names = IList.map (
       fun decl -> match decl.Clang_ast_t.dr_name with
-        | Some name_info -> Ast_utils.get_qualified_name name_info
+        | Some name_info -> CAst_utils.get_qualified_name name_info
         | None -> assert false
     ) protocols in
   protocol_names
@@ -47,30 +45,30 @@ let get_curr_class_impl oi =
   let open Clang_ast_t in
   match oi.Clang_ast_t.oidi_class_interface with
   | Some decl_ref ->
-      (match Ast_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
+      (match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
        | Some ObjCInterfaceDecl (_, name_info, _, _, obj_c_interface_decl_info) ->
-           let class_name = Ast_utils.get_qualified_name name_info in
+           let class_name = CAst_utils.get_qualified_name name_info in
            get_curr_class class_name obj_c_interface_decl_info
        | _ -> assert false)
   | _ -> assert false
 
 let add_class_decl type_ptr_to_sil_type tenv idi =
   let decl_ref_opt = idi.Clang_ast_t.oidi_class_interface in
-  Ast_utils.add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt true
+  CAst_utils.add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt true
 
 let add_super_class_decl type_ptr_to_sil_type tenv ocdi =
   let decl_ref_opt = ocdi.Clang_ast_t.otdi_super in
-  Ast_utils.add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt false
+  CAst_utils.add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt false
 
 let add_protocols_decl type_ptr_to_sil_type tenv protocols =
-  Ast_utils.add_type_from_decl_ref_list type_ptr_to_sil_type tenv protocols
+  CAst_utils.add_type_from_decl_ref_list type_ptr_to_sil_type tenv protocols
 
 let add_categories_decl type_ptr_to_sil_type tenv categories =
-  Ast_utils.add_type_from_decl_ref_list type_ptr_to_sil_type tenv categories
+  CAst_utils.add_type_from_decl_ref_list type_ptr_to_sil_type tenv categories
 
 let add_class_implementation type_ptr_to_sil_type tenv idi =
   let decl_ref_opt = idi.Clang_ast_t.otdi_implementation  in
-  Ast_utils.add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt false
+  CAst_utils.add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt false
 
 (*The superclass is the first element in the list of super classes of structs in the tenv, *)
 (* then come the protocols and categories. *)
@@ -95,11 +93,11 @@ let create_supers_fields type_ptr_to_sil_type tenv curr_class decl_list
 
 (* Adds pairs (interface name, interface_type_info) to the global environment. *)
 let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info decl_list ocidi =
-  let class_name = Ast_utils.get_qualified_name name_info in
+  let class_name = CAst_utils.get_qualified_name name_info in
   Logging.out_debug "ADDING: ObjCInterfaceDecl for '%s'\n" class_name;
   let interface_name = CType.mk_classname class_name Csu.Objc in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
-  Ast_utils.update_sil_types_map decl_key (Typ.Tstruct interface_name);
+  CAst_utils.update_sil_types_map decl_key (Typ.Tstruct interface_name);
   let supers, fields =
     create_supers_fields type_ptr_to_sil_type tenv curr_class decl_list
       ocidi.Clang_ast_t.otdi_super
@@ -113,14 +111,14 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
   let fields, (supers : Typename.t list), methods =
     match Tenv.lookup tenv interface_name with
     | Some ({ fields; supers; methods }) ->
-        General_utils.append_no_duplicates_fields fields fields,
-        General_utils.append_no_duplicates_csu supers supers,
-        General_utils.append_no_duplicates_methods methods methods
+        CGeneral_utils.append_no_duplicates_fields fields fields,
+        CGeneral_utils.append_no_duplicates_csu supers supers,
+        CGeneral_utils.append_no_duplicates_methods methods methods
     | _ -> fields, supers, methods in
-  let fields = General_utils.append_no_duplicates_fields fields fields_sc in
+  let fields = CGeneral_utils.append_no_duplicates_fields fields fields_sc in
   (* We add the special hidden counter_field for implementing reference counting *)
   let modelled_fields = StructTyp.objc_ref_counter_field :: CField_decl.modelled_field name_info in
-  let all_fields = General_utils.append_no_duplicates_fields modelled_fields fields in
+  let all_fields = CGeneral_utils.append_no_duplicates_fields modelled_fields fields in
   Logging.out_debug "Class %s field:\n" class_name;
   IList.iter (fun (fn, _, _) ->
       Logging.out_debug "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) all_fields;
@@ -140,11 +138,11 @@ let add_missing_methods tenv class_name ck decl_info decl_list curr_class =
   let decl_methods = ObjcProperty_decl.get_methods curr_class decl_list in
   let class_tn_name = Typename.TN_csu (Csu.Class ck, (Mangled.from_string class_name)) in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
-  Ast_utils.update_sil_types_map decl_key (Typ.Tstruct class_tn_name);
+  CAst_utils.update_sil_types_map decl_key (Typ.Tstruct class_tn_name);
   begin
     match class_tn_name, Tenv.lookup tenv class_tn_name with
     | TN_csu (Class _, _), Some ({ statics = []; methods; } as struct_typ) ->
-        let methods = General_utils.append_no_duplicates_methods methods decl_methods in
+        let methods = CGeneral_utils.append_no_duplicates_methods methods decl_methods in
         ignore( Tenv.mk_struct tenv ~default:struct_typ ~methods class_tn_name )
     | _ -> ()
   end;
@@ -155,7 +153,7 @@ let interface_declaration type_ptr_to_sil_type tenv decl =
   let open Clang_ast_t in
   match decl with
   | ObjCInterfaceDecl (decl_info, name_info, decl_list, _, ocidi) ->
-      let name = Ast_utils.get_qualified_name name_info in
+      let name = CAst_utils.get_qualified_name name_info in
       let curr_class = get_curr_class name ocidi in
       let typ = add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info
           decl_list ocidi in
@@ -172,7 +170,7 @@ let interface_impl_declaration type_ptr_to_sil_type tenv decl =
   let open Clang_ast_t in
   match decl with
   | ObjCImplementationDecl (decl_info, name_info, decl_list, _, idi) ->
-      let class_name = Ast_utils.get_qualified_name name_info in
+      let class_name = CAst_utils.get_qualified_name name_info in
       Logging.out_debug "ADDING: ObjCImplementationDecl for class '%s'\n" class_name;
       let _ = add_class_decl type_ptr_to_sil_type tenv idi in
       let curr_class = get_curr_class_impl idi in

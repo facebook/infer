@@ -9,8 +9,6 @@
 
 open! IStd
 
-open CFrontend_utils
-
 let single_to_multi checker =
   fun ctx an ->
     let condition, issue_desc_opt = checker ctx an in
@@ -178,7 +176,7 @@ let expand_checkers checkers =
 
 let get_err_log translation_unit_context method_decl_opt =
   let procname = match method_decl_opt with
-    | Some method_decl -> General_utils.procname_of_decl translation_unit_context method_decl
+    | Some method_decl -> CGeneral_utils.procname_of_decl translation_unit_context method_decl
     | None -> Procname.Linters_dummy_method in
   LintIssues.get_err_log procname
 
@@ -192,7 +190,7 @@ let log_frontend_issue translation_unit_context method_decl_opt key issue_desc =
   let exn = Exceptions.Frontend_warning (name, err_desc, __POS__) in
   let trace = [ Errlog.make_trace_element 0 issue_desc.CIssue.loc "" [] ] in
   let err_kind = issue_desc.CIssue.severity in
-  let method_name = Ast_utils.full_name_of_decl_opt method_decl_opt in
+  let method_name = CAst_utils.full_name_of_decl_opt method_decl_opt in
   let key = Hashtbl.hash (key ^ method_name) in
   Reporting.log_issue_from_errlog err_kind errlog exn ~loc ~ltr:trace
     ~node_id:(0, key)
@@ -207,8 +205,8 @@ let fill_issue_desc_info_and_log context an key issue_desc loc =
 (* Calls the set of hard coded checkers (if any) *)
 let invoke_set_of_hard_coded_checkers_an an context =
   let checkers, key  = match an with
-    | CTL.Decl dec -> decl_checkers_list, Ast_utils.generate_key_decl dec
-    | CTL.Stmt st -> stmt_checkers_list, Ast_utils.generate_key_stmt st in
+    | CTL.Decl dec -> decl_checkers_list, CAst_utils.generate_key_decl dec
+    | CTL.Stmt st -> stmt_checkers_list, CAst_utils.generate_key_stmt st in
   IList.iter (fun checker ->
       let condition, issue_desc_list = checker context an in
       if CTL.eval_formula condition an context then
@@ -222,8 +220,8 @@ let invoke_set_of_hard_coded_checkers_an an context =
 (* Calls the set of checkers parsed from files (if any) *)
 let invoke_set_of_parsed_checkers_an an context =
   let key = match an with
-    | CTL.Decl dec -> Ast_utils.generate_key_decl dec
-    | CTL.Stmt st -> Ast_utils.generate_key_stmt st in
+    | CTL.Decl dec -> CAst_utils.generate_key_decl dec
+    | CTL.Stmt st -> CAst_utils.generate_key_stmt st in
   IList.iter (fun (condition, issue_desc) ->
       if CIssue.should_run_check issue_desc.CIssue.mode &&
          CTL.eval_formula condition an context then
@@ -253,7 +251,7 @@ let run_translation_unit_checker (context: CLintersContext.context) dec =
       let issue_desc_list = checker context dec in
       IList.iter (fun issue_desc ->
           if (CIssue.should_run_check issue_desc.CIssue.mode) then
-            let key = Ast_utils.generate_key_decl dec in
+            let key = CAst_utils.generate_key_decl dec in
             log_frontend_issue context.CLintersContext.translation_unit_context
               context.CLintersContext.current_method key issue_desc
         ) issue_desc_list) translation_unit_checkers_list

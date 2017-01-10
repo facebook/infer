@@ -12,11 +12,9 @@ open! IStd
 (** In this module an ObjC category declaration or implementation is processed. The category    *)
 (** is saved in the tenv as a struct with the corresponding fields and methods , and the class it belongs to *)
 
-open CFrontend_utils
+val category_decl : CAst_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl -> Typ.t
 
-val category_decl : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl -> Typ.t
-
-val category_impl_decl : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl -> Typ.t
+val category_impl_decl : CAst_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl -> Typ.t
 
 val noname_category : string -> string
 

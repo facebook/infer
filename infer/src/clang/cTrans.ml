@@ -12,9 +12,8 @@ open! IStd
 (** Translates instructions: (statements and expressions) from the ast into sil *)
 
 open CTrans_utils
-open CFrontend_utils
-
 open CTrans_utils.Nodes
+
 module L = Logging
 
 module CTrans_funct(F: CModule_type.CFrontend) : CModule_type.CTranslation =
@@ -43,12 +42,12 @@ struct
       | None ->  (* fall back to our method resolution if clang's fails *)
           let class_name = CMethod_trans.get_class_name_method_call_from_receiver_kind context
               obj_c_message_expr_info act_params in
-          General_utils.mk_procname_from_objc_method class_name selector method_kind in
+          CGeneral_utils.mk_procname_from_objc_method class_name selector method_kind in
     let predefined_ms_opt = match proc_name with
       | Procname.ObjC_Cpp objc_cpp ->
           let class_name = Procname.objc_cpp_get_class_name objc_cpp in
           CTrans_models.get_predefined_model_method_signature class_name selector
-            General_utils.mk_procname_from_objc_method CFrontend_config.ObjC
+            CGeneral_utils.mk_procname_from_objc_method CFrontend_config.ObjC
       | _ ->
           None in
     match predefined_ms_opt, ms_opt with
@@ -108,8 +107,8 @@ struct
     let procname = Procdesc.get_proc_name procdesc in
     let mk_field_from_captured_var (var, typ) =
       let vname = Pvar.get_name var in
-      let qual_name = Ast_utils.make_qual_name_decl [block_name] (Mangled.to_string vname) in
-      let fname = General_utils.mk_class_field_name qual_name in
+      let qual_name = CAst_utils.make_qual_name_decl [block_name] (Mangled.to_string vname) in
+      let fname = CGeneral_utils.mk_class_field_name qual_name in
       let item_annot = Annot.Item.empty in
       fname, typ, item_annot in
     let fields = IList.map mk_field_from_captured_var captured_vars in
@@ -403,7 +402,7 @@ struct
     match unary_expr_or_type_trait_expr_info.Clang_ast_t.uttei_kind with
     | `SizeOf ->
         let tp =
-          Ast_utils.type_from_unary_expr_or_type_trait_expr_info
+          CAst_utils.type_from_unary_expr_or_type_trait_expr_info
             unary_expr_or_type_trait_expr_info in
         let sizeof_typ =
           match tp with
@@ -449,7 +448,7 @@ struct
     | _ when CTrans_models.is_retain_builtin name type_ptr ->
         Some BuiltinDecl.__objc_retain_cf
     | _ when name = CFrontend_config.malloc &&
-             General_utils.is_objc_extension trans_unit_ctx ->
+             CGeneral_utils.is_objc_extension trans_unit_ctx ->
         Some BuiltinDecl.malloc_no_fail
     | _ -> None
 
@@ -457,10 +456,10 @@ struct
   let function_deref_trans trans_state decl_ref =
     let open CContext in
     let context = trans_state.context in
-    let name_info, decl_ptr, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
-    let decl_opt = Ast_utils.get_function_decl_with_body decl_ptr in
+    let name_info, decl_ptr, type_ptr = CAst_utils.get_info_from_decl_ref decl_ref in
+    let decl_opt = CAst_utils.get_function_decl_with_body decl_ptr in
     Option.iter ~f:(call_translation context) decl_opt;
-    let name = Ast_utils.get_qualified_name name_info in
+    let name = CAst_utils.get_qualified_name name_info in
     let typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let pname =
       match get_builtin_pname_opt context.translation_unit_context name decl_opt type_ptr with
@@ -472,7 +471,7 @@ struct
     let open CContext in
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
-    let name_info, _, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
+    let name_info, _, type_ptr = CAst_utils.get_info_from_decl_ref decl_ref in
     Logging.out_debug "!!!!! Dealing with field '%s' @." name_info.Clang_ast_t.ni_name;
     let field_typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let (obj_sil, class_typ) = extract_exp_from_list pre_trans_result.exps
@@ -485,7 +484,7 @@ struct
       | Typ.Tptr (t, _) -> t
       | t -> t in
     Logging.out_debug "Type is  '%s' @." (Typ.to_string class_typ);
-    let field_name = General_utils.mk_class_field_name name_info in
+    let field_name = CGeneral_utils.mk_class_field_name name_info in
     let field_exp = Exp.Lfield (obj_sil, field_name, class_typ) in
     (* In certain cases, there is be no LValueToRValue cast, but backend needs dereference*)
     (* there either way:*)
@@ -509,11 +508,11 @@ struct
     let open CContext in
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
-    let name_info, decl_ptr, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
-    let decl_opt = Ast_utils.get_function_decl_with_body decl_ptr in
+    let name_info, decl_ptr, type_ptr = CAst_utils.get_info_from_decl_ref decl_ref in
+    let decl_opt = CAst_utils.get_function_decl_with_body decl_ptr in
     Option.iter ~f:(call_translation context) decl_opt;
-    let method_name = Ast_utils.get_unqualified_name name_info in
-    let class_name = Ast_utils.get_class_name_from_member name_info in
+    let method_name = CAst_utils.get_unqualified_name name_info in
+    let class_name = CAst_utils.get_class_name_from_member name_info in
     Logging.out_debug "!!!!! Dealing with method '%s' @." method_name;
     let method_typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let ms_opt = CMethod_trans.method_signature_of_pointer
@@ -548,7 +547,7 @@ struct
     (* unlike field access, for method calls there is no need to expand class type *)
 
     (* use qualified method name for builtin matching, but use unqualified name elsewhere *)
-    let qual_method_name = Ast_utils.get_qualified_name name_info in
+    let qual_method_name = CAst_utils.get_qualified_name name_info in
     let pname =
       match get_builtin_pname_opt context.translation_unit_context qual_method_name decl_opt
               type_ptr with
@@ -565,7 +564,7 @@ struct
 
   let destructor_deref_trans trans_state pvar_trans_result class_type_ptr si =
     let open Clang_ast_t in
-    let destruct_decl_ref_opt = match Ast_utils.get_decl_from_typ_ptr class_type_ptr with
+    let destruct_decl_ref_opt = match CAst_utils.get_decl_from_typ_ptr class_type_ptr with
       | Some CXXRecordDecl (_, _, _ , _, _, _, _, cxx_record_info)
       | Some ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _) ->
           cxx_record_info.xrdi_destructor
@@ -605,12 +604,12 @@ struct
 
   and var_deref_trans trans_state stmt_info (decl_ref : Clang_ast_t.decl_ref) =
     let context = trans_state.context in
-    let _, _, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
+    let _, _, type_ptr = CAst_utils.get_info_from_decl_ref decl_ref in
     let ast_typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let typ =
       match ast_typ with
       | Tstruct _ when decl_ref.dr_kind = `ParmVar ->
-          if General_utils.is_cpp_translation context.translation_unit_context then
+          if CGeneral_utils.is_cpp_translation context.translation_unit_context then
             Typ.Tptr (ast_typ, Pk_reference)
           else ast_typ
       | _ -> ast_typ in
@@ -625,11 +624,11 @@ struct
     (* place where it is used *)
     let trans_result' =
       let is_global_const, init_expr =
-        match Ast_utils.get_decl decl_ref.dr_decl_pointer with
+        match CAst_utils.get_decl decl_ref.dr_decl_pointer with
         | Some VarDecl (_, _, qual_type, vdi) -> (
             match ast_typ with
             | Tstruct _
-              when not (General_utils.is_cpp_translation context.translation_unit_context) ->
+              when not (CGeneral_utils.is_cpp_translation context.translation_unit_context) ->
                 (* Do not convert a global struct to a local because SIL
                    values do not include structs, they must all be heap-allocated  *)
                 (false, None)
@@ -688,7 +687,7 @@ struct
 
   (* evaluates an enum constant *)
   and enum_const_eval context enum_constant_pointer prev_enum_constant_opt zero =
-    match Ast_utils.get_decl enum_constant_pointer with
+    match CAst_utils.get_decl enum_constant_pointer with
     | Some Clang_ast_t.EnumConstantDecl (_, _, _, enum_constant_decl_info) ->
         (match enum_constant_decl_info.Clang_ast_t.ecdi_init_expr with
          | Some stmt ->
@@ -707,18 +706,18 @@ struct
     let zero = Exp.Const (Const.Cint IntLit.zero) in
     try
       let (prev_enum_constant_opt, sil_exp_opt) =
-        Ast_utils.get_enum_constant_exp enum_constant_pointer in
+        CAst_utils.get_enum_constant_exp enum_constant_pointer in
       match sil_exp_opt with
       | Some exp -> exp
       | None ->
           let exp = enum_const_eval context enum_constant_pointer prev_enum_constant_opt zero in
-          Ast_utils.update_enum_map enum_constant_pointer exp;
+          CAst_utils.update_enum_map enum_constant_pointer exp;
           exp
     with Not_found -> zero
 
   and enum_constant_trans trans_state decl_ref =
     let context = trans_state.context in
-    let _, _, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
+    let _, _, type_ptr = CAst_utils.get_info_from_decl_ref decl_ref in
     let typ = CType_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
     let const_exp = get_enum_constant_expr context decl_ref.Clang_ast_t.dr_decl_pointer in
     { empty_res_trans with exps = [(const_exp, typ)] }
@@ -807,7 +806,7 @@ struct
               if (is_binary_assign_op binary_operator_info)
               (* assignment operator result is lvalue in CPP, rvalue in C, *)
               (* hence the difference *)
-              && (not (General_utils.is_cpp_translation context.translation_unit_context))
+              && (not (CGeneral_utils.is_cpp_translation context.translation_unit_context))
               && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
                 (* We are in this case when an assignment is inside        *)
                 (* another operator that creates a node. Eg. another       *)
@@ -1104,7 +1103,7 @@ struct
   and block_enumeration_trans trans_state stmt_info stmt_list ei =
     Logging.out_debug "\n Call to a block enumeration function treated as special case...\n@.";
     let procname = Procdesc.get_proc_name trans_state.context.CContext.procdesc in
-    let pvar = CFrontend_utils.General_utils.get_next_block_pvar procname in
+    let pvar = CGeneral_utils.get_next_block_pvar procname in
     let transformed_stmt, _ =
       Ast_expressions.translate_block_enumerate (Pvar.to_string pvar) stmt_info stmt_list ei in
     instruction trans_state transformed_stmt
@@ -1834,7 +1833,7 @@ struct
     (* This gives the differnece among cast operations kind*)
     let is_objc_bridged_cast_expr _ stmt =
       match stmt with | Clang_ast_t.ObjCBridgedCastExpr _ -> true | _ -> false in
-    let is_objc_bridged = Ast_utils.exists_eventually_st is_objc_bridged_cast_expr () stmt in
+    let is_objc_bridged = CAst_utils.exists_eventually_st is_objc_bridged_cast_expr () stmt in
     let cast_inst, cast_exp =
       cast_operation trans_state cast_kind res_trans_stmt.exps typ sil_loc is_objc_bridged in
     { res_trans_stmt with
@@ -1983,7 +1982,7 @@ struct
     let dictionary_literal_s = Procname.get_method dictionary_literal_pname in
     let obj_c_message_expr_info =
       Ast_expressions.make_obj_c_message_expr_info_class dictionary_literal_s typ None in
-    let stmts = General_utils.swap_elements_list stmts in
+    let stmts = CGeneral_utils.swap_elements_list stmts in
     let stmts = stmts @ [Ast_expressions.create_nil stmt_info] in
     let message_stmt =
       Clang_ast_t.ObjCMessageExpr
@@ -2046,7 +2045,7 @@ struct
     | Clang_ast_t.BlockDecl (_, block_decl_info) ->
         let open CContext in
         let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
-        let block_pname = CFrontend_utils.General_utils.mk_fresh_block_procname procname in
+        let block_pname = CGeneral_utils.mk_fresh_block_procname procname in
         let typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
         (* We need to set the explicit dependency between the newly created block and the *)
         (* defining procedure. We add an edge in the call graph.*)
@@ -2093,7 +2092,7 @@ struct
         | _ ->
             let stmt_res_trans = if is_dyn_array then
                 let init_stmt_info = { stmt_info with
-                                       Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer () } in
+                                       Clang_ast_t.si_pointer = CAst_utils.get_fresh_pointer () } in
                 init_expr_trans trans_state' (var_exp_inside, typ_inside) init_stmt_info (Some stmt)
               else instruction trans_state' stmt in
             stmt_res_trans :: rest_stmts_res_trans
@@ -2121,7 +2120,7 @@ struct
     let is_dyn_array = cxx_new_expr_info.Clang_ast_t.xnei_is_array in
     let size_exp_opt, res_trans_size =
       if is_dyn_array then
-        match Ast_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_array_size_expr with
+        match CAst_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_array_size_expr with
         | Some stmt ->
             let trans_state_size = { trans_state_pri with succ_nodes = []; } in
             let res_trans_size = instruction trans_state_size stmt in
@@ -2131,7 +2130,7 @@ struct
         | None -> Some (Exp.Const (Const.Cint (IntLit.minus_one))), empty_res_trans
       else None, empty_res_trans in
     let res_trans_new = cpp_new_trans sil_loc typ size_exp_opt in
-    let stmt_opt = Ast_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_initializer_expr in
+    let stmt_opt = CAst_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_initializer_expr in
     let trans_state_init = { trans_state_pri with succ_nodes = []; } in
     let var_exp_typ = match res_trans_new.exps with
       | [var_exp, Typ.Tptr (t, _)] -> (var_exp, t)
@@ -2139,7 +2138,7 @@ struct
     (* Need a new stmt_info for the translation of the initializer, so that it can create nodes *)
     (* if it needs to, with the same stmt_info it doesn't work. *)
     let init_stmt_info = { stmt_info with
-                           Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer () } in
+                           Clang_ast_t.si_pointer = CAst_utils.get_fresh_pointer () } in
     let res_trans_init =
       if is_dyn_array && Typ.is_pointer_to_cpp_class typ then
         let rec create_stmts stmt_opt size_exp_opt =
@@ -2182,7 +2181,7 @@ struct
         let deleted_type = delete_expr_info.Clang_ast_t.xdei_destroyed_type in
         (* create stmt_info with new pointer so that destructor call doesn't create a node *)
         let destruct_stmt_info = { stmt_info with
-                                   Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer () } in
+                                   Clang_ast_t.si_pointer = CAst_utils.get_fresh_pointer () } in
         (* use empty_res_trans to avoid ending up with same instruction twice *)
         (* otherwise it would happen due to structutre of all_res_trans *)
         let this_res_trans_destruct = { empty_res_trans with exps = result_trans_param.exps } in
@@ -2290,8 +2289,8 @@ struct
     let sil_fun = Exp.Const (Const.Cfun fun_name) in
     let ret_id = Ident.create_fresh Ident.knormal in
     let type_info_objc = (Exp.Sizeof (typ, None, Subtype.exact), Typ.Tvoid) in
-    let field_name_decl = Ast_utils.make_qual_name_decl ["type_info"; "std"] "__type_name" in
-    let field_name = General_utils.mk_class_field_name field_name_decl in
+    let field_name_decl = CAst_utils.make_qual_name_decl ["type_info"; "std"] "__type_name" in
+    let field_name = CGeneral_utils.mk_class_field_name field_name_decl in
     let ret_exp = Exp.Var ret_id in
     let field_exp = Exp.Lfield (ret_exp, field_name, typ) in
     let args = [type_info_objc; (field_exp, Typ.Tvoid)] @ res_trans_subexpr.exps in
@@ -2572,7 +2571,7 @@ struct
     | CXXTryStmt (_, stmts) ->
         (Logging.out
            "\n!!!!WARNING: found statement %s. \nTranslation need to be improved.... \n"
-           (Ast_utils.string_of_stmt instr);
+           (CAst_utils.string_of_stmt instr);
          compoundStmt_trans trans_state stmts)
 
     | ObjCAtThrowStmt (stmt_info, stmts)
@@ -2652,7 +2651,7 @@ struct
     | s -> (Logging.out
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: \
                Translation need to be defined. Statement ignored.... \n"
-              (Ast_utils.string_of_stmt s);
+              (CAst_utils.string_of_stmt s);
             assert false)
 
   (* Function similar to instruction function, but it takes C++ constructor initializer as

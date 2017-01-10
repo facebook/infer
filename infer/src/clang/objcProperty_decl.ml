@@ -17,8 +17,6 @@ open! IStd
 (* - Second, in the class implementation, if synthetize is available, create the getters and setters, *)
 (* unless some of these methods has already been created before. *)
 
-open CFrontend_utils
-
 let is_strong_property obj_c_property_decl_info =
   let attrs = obj_c_property_decl_info.Clang_ast_t.opdi_property_attributes in
   IList.exists (fun a -> match a with
@@ -41,7 +39,8 @@ let get_methods curr_class decl_list =
         let method_kind = Procname.objc_method_kind_of_bool is_instance in
         let method_name = name_info.Clang_ast_t.ni_name in
         Logging.out_debug "  ...Adding Method '%s' \n" (class_name^"_"^method_name);
-        let meth_name = General_utils.mk_procname_from_objc_method class_name method_name method_kind in
+        let meth_name =
+          CGeneral_utils.mk_procname_from_objc_method class_name method_name method_kind in
         meth_name:: list_methods
     | _ -> list_methods in
   IList.fold_right get_method decl_list []

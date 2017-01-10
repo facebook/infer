@@ -9,7 +9,6 @@
 
 open! IStd
 
-open CFrontend_utils
 open Objc_models
 
 let is_cf_non_null_alloc pname =
@@ -70,9 +69,9 @@ let is_modeled_attribute attr_name =
   IList.mem String.equal attr_name CFrontend_config.modeled_function_attributes
 
 let get_first_param_typedef_string_opt type_ptr =
-  match Ast_utils.get_desugared_type type_ptr with
+  match CAst_utils.get_desugared_type type_ptr with
   | Some Clang_ast_t.FunctionProtoType (_, _, {pti_params_type = [param_ptr]}) ->
-      Ast_utils.name_opt_of_typedef_type_ptr param_ptr
+      CAst_utils.name_opt_of_typedef_type_ptr param_ptr
   | _ -> None
 
 let is_release_builtin funct fun_type =

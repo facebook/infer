@@ -9,7 +9,6 @@
 
 open! IStd
 
-open CFrontend_utils
 (* To create a new checker you should: *)
 (* 1. Define a checker function, say my_checker, in this module. *)
 (* my_checker should define: *)
@@ -83,7 +82,7 @@ let ivar_name an =
   | CTL.Stmt (ObjCIvarRefExpr (_, _, _, rei)) ->
       let dr_ref = rei.ovrei_decl_ref in
       let ivar_pointer = dr_ref.dr_decl_pointer in
-      (match Ast_utils.get_decl ivar_pointer with
+      (match CAst_utils.get_decl ivar_pointer with
        | Some (ObjCIvarDecl (_, named_decl_info, _, _, _)) ->
            named_decl_info.Clang_ast_t.ni_name
        | _ -> "")

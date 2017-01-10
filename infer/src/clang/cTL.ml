@@ -9,8 +9,6 @@
 
 open! IStd
 
-open CFrontend_utils
-
 (* This module defines a language to define checkers. These checkers
    are intepreted over the AST of the program. A checker is defined by a
    CTL formula which express a condition saying when the checker should
@@ -331,9 +329,9 @@ let transition_decl_to_stmt d trs =
   | _ -> None
 
 let transition_decl_to_decl_via_super d =
-  match Ast_utils.get_impl_decl_info d with
+  match CAst_utils.get_impl_decl_info d with
   | Some idi ->
-      (match Ast_utils.get_super_ObjCImplementationDecl idi with
+      (match CAst_utils.get_super_ObjCImplementationDecl idi with
        | Some d -> Some (Decl d)
        | _ -> None)
   | None -> None
@@ -351,11 +349,11 @@ let transition_stmt_to_decl_via_pointer stmt =
   let open Clang_ast_t in
   match stmt with
   | ObjCMessageExpr (_, _, _, obj_c_message_expr_info) ->
-      (match Ast_utils.get_decl_opt obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer with
+      (match CAst_utils.get_decl_opt obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer with
        | Some decl -> Some (Decl decl)
        | None -> None)
   | DeclRefExpr (_, _, _, decl_ref_expr_info) ->
-      (match Ast_utils.get_decl_opt_with_decl_ref decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
+      (match CAst_utils.get_decl_opt_with_decl_ref decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
        | Some decl -> Some (Decl decl)
        | None -> None)
   | _ -> None

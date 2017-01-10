@@ -9,8 +9,6 @@
 
 open! IStd
 
-open CFrontend_utils
-
 let get_available_attr_ios_sdk decl =
   let open Clang_ast_t in
   let decl_info = Clang_ast_proj.get_decl_tuple decl in
@@ -30,7 +28,7 @@ let get_ivar_attributes ivar_decl =
   let open Clang_ast_t in
   match ivar_decl with
   | ObjCIvarDecl (ivar_decl_info, _, _, _, _) ->
-      (match Ast_utils.get_property_of_ivar ivar_decl_info.Clang_ast_t.di_pointer with
+      (match CAst_utils.get_property_of_ivar ivar_decl_info.Clang_ast_t.di_pointer with
        | Some ObjCPropertyDecl (_, _, obj_c_property_decl_info) ->
            obj_c_property_decl_info.Clang_ast_t.opdi_property_attributes
        | _ -> [])
@@ -40,11 +38,11 @@ let get_ivar_attributes ivar_decl =
 let captured_variables_cxx_ref dec =
   let capture_var_is_cxx_ref reference_captured_vars captured_var =
     let decl_ref_opt = captured_var.Clang_ast_t.bcv_variable in
-    match Ast_utils.get_decl_opt_with_decl_ref decl_ref_opt with
+    match CAst_utils.get_decl_opt_with_decl_ref decl_ref_opt with
     | Some VarDecl (_, named_decl_info, qual_type, _)
     | Some ParmVarDecl (_, named_decl_info, qual_type, _)
     | Some ImplicitParamDecl (_, named_decl_info, qual_type, _) ->
-        (match Ast_utils.get_desugared_type qual_type.Clang_ast_t.qt_type_ptr with
+        (match CAst_utils.get_desugared_type qual_type.Clang_ast_t.qt_type_ptr with
          | Some RValueReferenceType _ | Some LValueReferenceType _ ->
              named_decl_info::reference_captured_vars
          | _ -> reference_captured_vars)
@@ -81,25 +79,25 @@ let property_name_contains_word word decl =
   | _ -> false
 
 let is_objc_extension lcxt =
-  General_utils.is_objc_extension lcxt.CLintersContext.translation_unit_context
+  CGeneral_utils.is_objc_extension lcxt.CLintersContext.translation_unit_context
 
 let is_syntactically_global_var decl =
-  Ast_utils.is_syntactically_global_var decl
+  CAst_utils.is_syntactically_global_var decl
 
 let is_const_expr_var decl =
-  Ast_utils.is_const_expr_var decl
+  CAst_utils.is_const_expr_var decl
 
 let decl_ref_is_in names st =
   match st with
   | Clang_ast_t.DeclRefExpr (_, _, _, drti) ->
       (match drti.drti_decl_ref with
-       | Some dr -> let ndi, _, _ = CFrontend_utils.Ast_utils.get_info_from_decl_ref dr in
+       | Some dr -> let ndi, _, _ = CAst_utils.get_info_from_decl_ref dr in
            IList.exists (fun n -> n = ndi.ni_name) names
        | _ -> false)
   | _ -> false
 
 let call_function_named names st =
-  Ast_utils.exists_eventually_st decl_ref_is_in names st
+  CAst_utils.exists_eventually_st decl_ref_is_in names st
 
 let is_strong_property decl =
   match decl with
@@ -117,12 +115,12 @@ let is_property_pointer_type decl =
   let open Clang_ast_t in
   match decl with
   | ObjCPropertyDecl (_, _, pdi) ->
-      (match Ast_utils.get_desugared_type pdi.opdi_type_ptr with
+      (match CAst_utils.get_desugared_type pdi.opdi_type_ptr with
        | Some MemberPointerType _
        | Some ObjCObjectPointerType _
        | Some BlockPointerType _ -> true
        | Some TypedefType (_, tti) ->
-           (Ast_utils.name_of_typedef_type_info tti) = CFrontend_config.id_cl
+           (CAst_utils.name_of_typedef_type_info tti) = CFrontend_config.id_cl
        | exception Not_found -> false
        | _ -> false)
   | _ -> false
@@ -136,10 +134,10 @@ let is_ivar_atomic stmt =
   | Clang_ast_t.ObjCIvarRefExpr (_, _, _, irei) ->
       let dr_ref = irei.Clang_ast_t.ovrei_decl_ref in
       let ivar_pointer = dr_ref.Clang_ast_t.dr_decl_pointer in
-      (match Ast_utils.get_decl ivar_pointer with
+      (match CAst_utils.get_decl ivar_pointer with
        | Some d ->
            let attributes = get_ivar_attributes d in
-           IList.exists (Ast_utils.equal_property_attribute `Atomic) attributes
+           IList.exists (CAst_utils.equal_property_attribute `Atomic) attributes
        | _ -> false)
   | _ -> false
 
@@ -153,7 +151,7 @@ let is_method_property_accessor_of_ivar stmt context =
        | Some ObjCMethodDecl (_, _, mdi) ->
            if mdi.omdi_is_property_accessor then
              let property_opt = mdi.omdi_property_decl in
-             match Ast_utils.get_decl_opt_with_decl_ref property_opt with
+             match CAst_utils.get_decl_opt_with_decl_ref property_opt with
              | Some ObjCPropertyDecl (_, _, pdi) ->
                  (match pdi.opdi_ivar_decl with
                   | Some decl_ref -> decl_ref.dr_decl_pointer = ivar_pointer
@@ -214,8 +212,8 @@ let is_decl nodename decl =
 let isa classname stmt =
   match Clang_ast_proj.get_expr_tuple stmt with
   | Some (_, _, expr_info) ->
-      let typ = CFrontend_utils.Ast_utils.get_desugared_type expr_info.ei_type_ptr in
-      CFrontend_utils.Ast_utils.is_ptr_to_objc_class typ classname
+      let typ = CAst_utils.get_desugared_type expr_info.ei_type_ptr in
+      CAst_utils.is_ptr_to_objc_class typ classname
   | _ -> false
 
 let decl_unavailable_in_supported_ios_sdk decl =

@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-open CFrontend_utils
 open Lexing
 open Ctl_lexer
 
@@ -54,7 +53,7 @@ let rec do_frontend_checks_stmt (context:CLintersContext.context) stmt =
          IList.iter (do_frontend_checks_decl context') [decl]
      | _ -> ());
     do_frontend_checks_stmt context' stmt in
-  let stmts = Ast_utils.get_stmts_from_stmt stmt in
+  let stmts = CAst_utils.get_stmts_from_stmt stmt in
   IList.iter (do_all_checks_on_stmts) stmts
 
 and do_frontend_checks_decl (context: CLintersContext.context) decl =
@@ -76,11 +75,11 @@ and do_frontend_checks_decl (context: CLintersContext.context) decl =
          let if_decl_opt =
            (match context.current_objc_impl with
             | Some ObjCImplementationDecl (_, _, _, _, impl_decl_info) ->
-                Ast_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface
+                CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface
             | _ -> None) in
          let is_factory_method =
            (match if_decl_opt with
-            | Some if_decl -> Ast_utils.is_objc_factory_method if_decl decl
+            | Some if_decl -> CAst_utils.is_objc_factory_method if_decl decl
             | _ -> false) in
          let context' = {context with
                          CLintersContext.current_method = Some decl;

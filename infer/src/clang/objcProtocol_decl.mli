@@ -12,8 +12,6 @@ open! IStd
 (** In this module an ObjC protocol declaration or implementation is processed. The protocol    *)
 (** is saved in the tenv as a struct with the corresponding methods  *)
 
-open CFrontend_utils
-
-val protocol_decl : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl -> Typ.t
+val protocol_decl : CAst_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl -> Typ.t
 
 val is_protocol : Clang_ast_t.decl -> bool

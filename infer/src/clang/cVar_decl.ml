@@ -12,8 +12,6 @@ open! IStd
 (** Process variable declarations by saving them as local or global variables.  *)
 (** Computes the local variables of a function or method to be added to the procdesc *)
 
-open CFrontend_utils
-
 module L = Logging
 
 let is_custom_var_pointer pointer =
@@ -29,11 +27,11 @@ let sil_var_of_decl context var_decl procname =
         not (is_custom_var_pointer decl_info.Clang_ast_t.di_pointer) in
       let var_decl_details = Some
           (decl_info, qual_type, var_decl_info, shoud_be_mangled) in
-      General_utils.mk_sil_var trans_unit_ctx name_info var_decl_details procname outer_procname
+      CGeneral_utils.mk_sil_var trans_unit_ctx name_info var_decl_details procname outer_procname
   | ParmVarDecl (decl_info, name_info, qual_type, var_decl_info) ->
       let var_decl_details = Some
           (decl_info, qual_type, var_decl_info, false) in
-      General_utils.mk_sil_var trans_unit_ctx name_info var_decl_details procname outer_procname
+      CGeneral_utils.mk_sil_var trans_unit_ctx name_info var_decl_details procname outer_procname
   | _ -> assert false
 
 let sil_var_of_decl_ref context decl_ref procname =
@@ -46,11 +44,11 @@ let sil_var_of_decl_ref context decl_ref procname =
   | `ImplicitParam ->
       let outer_procname = CContext.get_outer_procname context in
       let trans_unit_ctx = context.CContext.translation_unit_context in
-      General_utils.mk_sil_var trans_unit_ctx name None procname outer_procname
+      CGeneral_utils.mk_sil_var trans_unit_ctx name None procname outer_procname
   | _ ->
       if is_custom_var_pointer pointer then
         Pvar.mk (Mangled.from_string name.Clang_ast_t.ni_name) procname
-      else match Ast_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
+      else match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
         | Some var_decl -> sil_var_of_decl context var_decl procname
         | None -> assert false
 

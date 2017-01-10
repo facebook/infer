@@ -9,8 +9,6 @@
 
 open! IStd
 
-open CFrontend_utils
-
 module L = Logging
 
 (** In this module an ObjC category declaration or implementation is processed. The category    *)
@@ -22,7 +20,7 @@ let noname_category class_name =
 
 let cat_class_decl dr =
   match dr.Clang_ast_t.dr_name with
-  | Some n -> Ast_utils.get_qualified_name n
+  | Some n -> CAst_utils.get_qualified_name n
   | _ -> assert false
 
 let get_curr_class_from_category name decl_ref_opt =
@@ -40,15 +38,15 @@ let get_curr_class_from_category_impl name ocidi =
 
 let add_category_decl type_ptr_to_sil_type tenv category_impl_info =
   let decl_ref_opt = category_impl_info.Clang_ast_t.ocidi_category_decl in
-  Ast_utils.add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt true
+  CAst_utils.add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt true
 
 let add_class_decl type_ptr_to_sil_type tenv category_decl_info =
   let decl_ref_opt = category_decl_info.Clang_ast_t.odi_class_interface in
-  Ast_utils.add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt true
+  CAst_utils.add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt true
 
 let add_category_implementation type_ptr_to_sil_type tenv category_decl_info =
   let decl_ref_opt = category_decl_info.Clang_ast_t.odi_implementation in
-  Ast_utils.add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt false
+  CAst_utils.add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt false
 
 let get_base_class_name_from_category decl =
   let open Clang_ast_t in
@@ -61,9 +59,9 @@ let get_base_class_name_from_category decl =
     | _ -> None in
   match base_class_pointer_opt with
   | Some decl_ref ->
-      (match Ast_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
+      (match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
        | Some ObjCInterfaceDecl (_, name_info, _, _, _) ->
-           Some (Ast_utils.get_qualified_name name_info)
+           Some (CAst_utils.get_qualified_name name_info)
        | _ -> None)
   | None -> None
 
@@ -76,11 +74,11 @@ let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
   let mang_name = Mangled.from_string class_name in
   let class_tn_name = Typename.TN_csu (Csu.Class Csu.Objc, mang_name) in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
-  Ast_utils.update_sil_types_map decl_key (Typ.Tstruct class_tn_name);
+  CAst_utils.update_sil_types_map decl_key (Typ.Tstruct class_tn_name);
   (match Tenv.lookup tenv class_tn_name with
    | Some ({ fields; methods } as struct_typ) ->
-       let new_fields = General_utils.append_no_duplicates_fields decl_fields fields in
-       let new_methods = General_utils.append_no_duplicates_methods decl_methods methods in
+       let new_fields = CGeneral_utils.append_no_duplicates_fields decl_fields fields in
+       let new_methods = CGeneral_utils.append_no_duplicates_methods decl_methods methods in
        ignore(
          Tenv.mk_struct tenv
            ~default:struct_typ ~fields:new_fields ~statics:[] ~methods:new_methods class_tn_name );
@@ -92,7 +90,7 @@ let category_decl type_ptr_to_sil_type tenv decl =
   let open Clang_ast_t in
   match decl with
   | ObjCCategoryDecl (decl_info, name_info, decl_list, _, cdi) ->
-      let name = Ast_utils.get_qualified_name name_info in
+      let name = CAst_utils.get_qualified_name name_info in
       let curr_class = get_curr_class_from_category_decl name cdi in
       Logging.out_debug "ADDING: ObjCCategoryDecl for '%s'\n" name;
       let _ = add_class_decl type_ptr_to_sil_type tenv cdi in
@@ -105,11 +103,10 @@ let category_impl_decl type_ptr_to_sil_type tenv decl =
   let open Clang_ast_t in
   match decl with
   | ObjCCategoryImplDecl (decl_info, name_info, decl_list, _, cii) ->
-      let name = Ast_utils.get_qualified_name name_info in
+      let name = CAst_utils.get_qualified_name name_info in
       let curr_class = get_curr_class_from_category_impl name cii in
       Logging.out_debug "ADDING: ObjCCategoryImplDecl for '%s'\n" name;
       let _ = add_category_decl type_ptr_to_sil_type tenv cii in
       let typ = process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list in
       typ
   | _ -> assert false
-

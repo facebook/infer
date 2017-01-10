@@ -7,7 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open CFrontend_utils
 open! IStd
 
 let get_source_range an =
@@ -30,21 +29,21 @@ let is_in_main_file translation_unit_context an =
 let is_ck_context (context: CLintersContext.context) an =
   context.is_ck_translation_unit
   && is_in_main_file context.translation_unit_context an
-  && General_utils.is_objc_extension context.translation_unit_context
+  && CGeneral_utils.is_objc_extension context.translation_unit_context
 
 
 (** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl.
     (Returns false on decls other than that one.) *)
 let is_component_or_controller_if decl =
   let open CFrontend_config in
-  Ast_utils.is_objc_if_descendant decl [ckcomponent_cl; ckcomponentcontroller_cl]
+  CAst_utils.is_objc_if_descendant decl [ckcomponent_cl; ckcomponentcontroller_cl]
 
 (** True if it's an objc class impl that extends from CKComponent or
     CKComponentController, false otherwise *)
 let rec is_component_or_controller_descendant_impl decl =
   match decl with
   | Clang_ast_t.ObjCImplementationDecl _ ->
-      is_component_or_controller_if (Ast_utils.get_super_if (Some decl))
+      is_component_or_controller_if (CAst_utils.get_super_if (Some decl))
   | Clang_ast_t.LinkageSpecDecl (_, decl_list, _) ->
       contains_ck_impl decl_list
   | _ -> false
@@ -83,10 +82,10 @@ and contains_ck_impl decl_list =
     ``` *)
 let mutable_local_vars_advice context an =
   let rec get_referenced_type (qual_type: Clang_ast_t.qual_type) : Clang_ast_t.decl option =
-    let typ_opt = Ast_utils.get_desugared_type qual_type.qt_type_ptr in
+    let typ_opt = CAst_utils.get_desugared_type qual_type.qt_type_ptr in
     match (typ_opt : Clang_ast_t.c_type option) with
     | Some ObjCInterfaceType (_, decl_ptr)
-    | Some RecordType (_, decl_ptr) -> Ast_utils.get_decl decl_ptr
+    | Some RecordType (_, decl_ptr) -> CAst_utils.get_decl decl_ptr
     | Some PointerType (_, inner_qual_type)
     | Some ObjCObjectPointerType (_, inner_qual_type)
     | Some LValueReferenceType (_, inner_qual_type) -> get_referenced_type inner_qual_type
@@ -104,13 +103,13 @@ let mutable_local_vars_advice context an =
 
   match an with
   | CTL.Decl (Clang_ast_t.VarDecl(decl_info, named_decl_info, qual_type, _) as decl)->
-      let is_const_ref = match Ast_utils.get_type qual_type.qt_type_ptr with
+      let is_const_ref = match CAst_utils.get_type qual_type.qt_type_ptr with
         | Some LValueReferenceType (_, {Clang_ast_t.qt_is_const}) ->
             qt_is_const
         | _ -> false in
       let is_const = qual_type.qt_is_const || is_const_ref in
       let condition = is_ck_context context an
-                      && (not (Ast_utils.is_syntactically_global_var decl))
+                      && (not (CAst_utils.is_syntactically_global_var decl))
                       && (not is_const)
                       && not (is_of_whitelisted_type qual_type)
                       && not decl_info.di_is_implicit in
@@ -134,12 +133,12 @@ let mutable_local_vars_advice context an =
     Any static function that returns a subclass of CKComponent will be flagged. *)
 let component_factory_function_advice context an =
   let is_component_if decl =
-    Ast_utils.is_objc_if_descendant decl [CFrontend_config.ckcomponent_cl] in
+    CAst_utils.is_objc_if_descendant decl [CFrontend_config.ckcomponent_cl] in
 
   match an with
   | CTL.Decl (Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _)) ->
       let objc_interface =
-        Ast_utils.type_ptr_to_objc_interface qual_type.qt_type_ptr in
+        CAst_utils.type_ptr_to_objc_interface qual_type.qt_type_ptr in
       let condition =
         is_ck_context context an && is_component_if objc_interface in
       if condition then
@@ -165,7 +164,7 @@ let component_with_unconventional_superclass_advice context an =
     match if_decl with
     | Clang_ast_t.ObjCInterfaceDecl (_, _, _, _, _) ->
         if is_component_or_controller_if (Some if_decl) then
-          let superclass_name = match Ast_utils.get_super_if (Some if_decl) with
+          let superclass_name = match CAst_utils.get_super_if (Some if_decl) with
             | Some Clang_ast_t.ObjCInterfaceDecl (_, named_decl_info, _, _, _) ->
                 Some named_decl_info.ni_name
             | _ -> None in
@@ -203,7 +202,7 @@ let component_with_unconventional_superclass_advice context an =
   match an with
   | CTL.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
       let if_decl_opt =
-        Ast_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
+        CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
       if Option.is_some if_decl_opt && is_ck_context context an then
         check_interface (Option.value_exn if_decl_opt)
       else
@@ -233,7 +232,7 @@ let component_with_multiple_factory_methods_advice context an =
       | _ -> assert false in
     let unavailable_attrs = (IList.filter is_unavailable_attr attrs) in
     let is_available = IList.length unavailable_attrs = 0 in
-    (Ast_utils.is_objc_factory_method if_decl decl) && is_available in
+    (CAst_utils.is_objc_factory_method if_decl decl) && is_available in
 
   let check_interface if_decl =
     match if_decl with
@@ -253,7 +252,7 @@ let component_with_multiple_factory_methods_advice context an =
   match an with
   | CTL.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
       let if_decl_opt =
-        Ast_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
+        CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
       (match if_decl_opt with
        | Some d when is_ck_context context an -> check_interface d
        | _ -> CTL.False, [])
@@ -262,7 +261,7 @@ let component_with_multiple_factory_methods_advice context an =
 let in_ck_class (context: CLintersContext.context) =
   Option.value_map ~f:is_component_or_controller_descendant_impl ~default:false
     context.current_objc_impl
-  && General_utils.is_objc_extension context.translation_unit_context
+  && CGeneral_utils.is_objc_extension context.translation_unit_context
 
 (** Components shouldn't have side-effects in its initializer.
 
@@ -288,7 +287,7 @@ let rec _component_initializer_with_side_effects_advice
     | Clang_ast_t.DeclRefExpr (_, _, _, decl_ref_expr_info) ->
         let refs = [decl_ref_expr_info.drti_decl_ref;
                     decl_ref_expr_info.drti_found_decl_ref] in
-        (match IList.find_map_opt Ast_utils.name_of_decl_ref_opt refs with
+        (match IList.find_map_opt CAst_utils.name_of_decl_ref_opt refs with
          | Some "dispatch_after"
          | Some "dispatch_async"
          | Some "dispatch_sync" ->

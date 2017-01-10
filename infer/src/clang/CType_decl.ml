@@ -11,8 +11,6 @@ open! IStd
 
 (** Processes types and record declarations by adding them to the tenv *)
 
-open CFrontend_utils
-
 module L = Logging
 
 let add_predefined_objc_types tenv =
@@ -25,13 +23,13 @@ let add_predefined_basic_types () =
   let open Ast_expressions in
   let add_basic_type tp basic_type_kind =
     let sil_type = CType_to_sil_type.sil_type_of_builtin_type_kind basic_type_kind in
-    Ast_utils.update_sil_types_map tp sil_type in
+    CAst_utils.update_sil_types_map tp sil_type in
   let add_pointer_type tp sil_type =
     let pointer_type = CType.add_pointer_to_typ sil_type in
-    Ast_utils.update_sil_types_map tp pointer_type in
+    CAst_utils.update_sil_types_map tp pointer_type in
   let add_function_type tp return_type =
     (* We translate function types as the return type of the function *)
-    Ast_utils.update_sil_types_map tp return_type in
+    CAst_utils.update_sil_types_map tp return_type in
   let sil_void_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Void in
   let sil_char_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Char_S in
   let sil_nsarray_type = Typ.Tstruct (CType.mk_classname CFrontend_config.nsarray_cl Csu.Objc) in
@@ -75,7 +73,7 @@ let get_record_name_csu decl =
         (* types that have methods. And in C++ struct/class/union can have methods *)
         name_info, Csu.Class Csu.CPP
     | _-> assert false in
-  let name = Ast_utils.get_qualified_name name_info in
+  let name = CAst_utils.get_qualified_name name_info in
   csu, name
 
 let get_record_name decl = snd (get_record_name_csu decl)
@@ -88,9 +86,9 @@ let get_class_methods class_name decl_list =
     | Clang_ast_t.CXXDestructorDecl (_, name_info, _, fdi, mdi) ->
         let method_name = name_info.Clang_ast_t.ni_name in
         Logging.out_debug "  ...Declaring method '%s'.\n" method_name;
-        let mangled = General_utils.get_mangled_method_name fdi mdi in
+        let mangled = CGeneral_utils.get_mangled_method_name fdi mdi in
         let procname =
-          General_utils.mk_procname_from_cpp_method class_name method_name ~meth_decl mangled in
+          CGeneral_utils.mk_procname_from_cpp_method class_name method_name ~meth_decl mangled in
         Some procname
     | _ -> None in
   (* poor mans list_filter_map *)
@@ -103,7 +101,7 @@ let get_superclass_decls decl =
   | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_rec_info, _) ->
       (* there is no concept of virtual inheritance in the backend right now *)
       let base_ptr = cxx_rec_info.Clang_ast_t.xrdi_bases @ cxx_rec_info.Clang_ast_t.xrdi_vbases in
-      let get_decl_or_fail typ_ptr = match Ast_utils.get_decl_from_typ_ptr typ_ptr with
+      let get_decl_or_fail typ_ptr = match CAst_utils.get_decl_from_typ_ptr typ_ptr with
         | Some decl -> decl
         | None -> assert false in
       IList.map get_decl_or_fail base_ptr
@@ -120,9 +118,9 @@ let get_superclass_list_cpp decl =
 let get_translate_as_friend_decl decl_list =
   let is_translate_as_friend_name (_, name_info) =
     let translate_as_str = "infer_traits::TranslateAsType" in
-    String.is_substring ~substring:translate_as_str (Ast_utils.get_qualified_name name_info) in
+    String.is_substring ~substring:translate_as_str (CAst_utils.get_qualified_name name_info) in
   let get_friend_decl_opt (decl : Clang_ast_t.decl) = match decl with
-    | FriendDecl (_, `Type type_ptr) -> Ast_utils.get_decl_from_typ_ptr type_ptr
+    | FriendDecl (_, `Type type_ptr) -> CAst_utils.get_decl_from_typ_ptr type_ptr
     | _ -> None in
   let is_translate_as_friend_decl decl =
     match get_friend_decl_opt decl with
@@ -145,7 +143,7 @@ let rec get_struct_fields tenv decl =
     | _ -> [] in
   let do_one_decl decl = match decl with
     | FieldDecl (_, name_info, qt, _) ->
-        let id = General_utils.mk_class_field_name name_info in
+        let id = CGeneral_utils.mk_class_field_name name_info in
         let typ = type_ptr_to_sil_type tenv qt.Clang_ast_t.qt_type_ptr in
         let annotation_items = [] in (* For the moment we don't use them*)
         [(id, typ, annotation_items)]
@@ -185,15 +183,15 @@ and get_record_declaration_struct_type tenv decl =
         if csu = Csu.Class Csu.CPP then Annot.Class.cpp
         else Annot.Item.empty (* No annotations for structs *) in
       if is_complete_definition then (
-        Ast_utils.update_sil_types_map type_ptr (Typ.Tstruct sil_typename);
+        CAst_utils.update_sil_types_map type_ptr (Typ.Tstruct sil_typename);
         let non_statics = get_struct_fields tenv decl in
-        let fields = General_utils.append_no_duplicates_fields non_statics extra_fields in
+        let fields = CGeneral_utils.append_no_duplicates_fields non_statics extra_fields in
         let statics = [] in (* Note: We treat static field same as global variables *)
         let methods = get_class_methods name decl_list in (* C++ methods only *)
         let supers = get_superclass_list_cpp decl in
         ignore (Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots sil_typename);
         let sil_type = Typ.Tstruct sil_typename in
-        Ast_utils.update_sil_types_map type_ptr sil_type;
+        CAst_utils.update_sil_types_map type_ptr sil_type;
         sil_type
       ) else (
         match Tenv.lookup tenv sil_typename with
@@ -204,7 +202,7 @@ and get_record_declaration_struct_type tenv decl =
                updated with a new struct including the other fields. *)
             ignore (Tenv.mk_struct tenv ~fields:extra_fields sil_typename);
             let tvar_type = Typ.Tstruct sil_typename in
-            Ast_utils.update_sil_types_map type_ptr tvar_type;
+            CAst_utils.update_sil_types_map type_ptr tvar_type;
             tvar_type)
   | _ -> assert false
 

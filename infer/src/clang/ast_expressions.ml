@@ -9,8 +9,6 @@
 
 open! IStd
 
-open CFrontend_utils
-
 (** This module creates extra ast constructs that are needed for the translation *)
 
 let dummy_source_range () =
@@ -22,19 +20,19 @@ let dummy_source_range () =
   (dummy_source_loc, dummy_source_loc)
 
 let dummy_stmt_info () = {
-  Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer ();
+  Clang_ast_t.si_pointer = CAst_utils.get_fresh_pointer ();
   si_source_range = dummy_source_range ();
 }
 
 (* given a stmt_info return the same stmt_info with a fresh pointer *)
 let fresh_stmt_info stmt_info =
-  { stmt_info with Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer () }
+  { stmt_info with Clang_ast_t.si_pointer = CAst_utils.get_fresh_pointer () }
 
 let fresh_decl_info decl_info =
-  { decl_info with Clang_ast_t.di_pointer = Ast_utils.get_fresh_pointer () }
+  { decl_info with Clang_ast_t.di_pointer = CAst_utils.get_fresh_pointer () }
 
 let empty_decl_info = {
-  Clang_ast_t.di_pointer = Ast_utils.get_invalid_pointer ();
+  Clang_ast_t.di_pointer = CAst_utils.get_invalid_pointer ();
   di_parent_pointer = None;
   di_previous_decl = `None;
   di_source_range = dummy_source_range ();
@@ -61,7 +59,7 @@ let empty_var_decl_info = {
 }
 
 let stmt_info_with_fresh_pointer stmt_info = {
-  Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer ();
+  Clang_ast_t.si_pointer = CAst_utils.get_fresh_pointer ();
   si_source_range = stmt_info.Clang_ast_t.si_source_range;
 }
 
@@ -69,7 +67,7 @@ let create_qual_type ?(is_const=false) qt_type_ptr =
   { Clang_ast_t.qt_type_ptr; qt_is_const=is_const }
 
 let new_constant_type_ptr () =
-  let pointer = Ast_utils.get_fresh_pointer () in
+  let pointer = CAst_utils.get_fresh_pointer () in
   `Prebuilt pointer
 
 (* Whenever new type are added manually to the translation here, *)
@@ -172,7 +170,7 @@ let create_nil stmt_info =
   create_implicit_cast_expr stmt_info [paren_expr] create_id_type `NullToPointer
 
 let dummy_stmt () =
-  let pointer = Ast_utils.get_fresh_pointer () in
+  let pointer = CAst_utils.get_fresh_pointer () in
   let source_range = dummy_source_range () in
   Clang_ast_t.NullStmt({ Clang_ast_t.si_pointer = pointer; si_source_range = source_range } ,[])
 
@@ -192,7 +190,7 @@ let make_expr_info_with_objc_kind tp objc_kind =
 
 let make_decl_ref_exp stmt_info expr_info drei =
   let stmt_info = {
-    Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer ();
+    Clang_ast_t.si_pointer = CAst_utils.get_fresh_pointer ();
     si_source_range = stmt_info.Clang_ast_t.si_source_range
   } in
   Clang_ast_t.DeclRefExpr(stmt_info, [], expr_info, drei)
@@ -226,7 +224,7 @@ let make_decl_ref_no_tp k decl_ptr name is_hidden =
   make_decl_ref k decl_ptr name is_hidden None
 
 let make_decl_ref_invalid k name is_hidden tp =
-  make_decl_ref k (Ast_utils.get_invalid_pointer ()) name is_hidden (Some tp)
+  make_decl_ref k (CAst_utils.get_invalid_pointer ()) name is_hidden (Some tp)
 
 let make_decl_ref_expr_info decl_ref = {
   Clang_ast_t.drti_decl_ref = Some decl_ref;
@@ -341,7 +339,7 @@ let build_PseudoObjectExpr tp_m o_cast_decl_ref_exp mname =
   | Clang_ast_t.ImplicitCastExpr (si, _, ei, _) ->
       let ove = build_OpaqueValueExpr si o_cast_decl_ref_exp ei in
       let ei_opre = make_expr_info (pseudo_object_tp ()) in
-      let count_name = Ast_utils.make_name_decl CFrontend_config.count in
+      let count_name = CAst_utils.make_name_decl CFrontend_config.count in
       let pointer = si.Clang_ast_t.si_pointer in
       let obj_c_property_ref_expr_info = {
         Clang_ast_t.oprei_kind =
@@ -437,7 +435,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
              { Clang_ast_t.uttei_kind = `SizeOf; Clang_ast_t.uttei_type_ptr = type_opt}) in
         let pointer = di.Clang_ast_t.di_pointer in
         let stmt_info = fresh_stmt_info stmt_info in
-        let malloc_name = Ast_utils.make_name_decl CFrontend_config.malloc in
+        let malloc_name = CAst_utils.make_name_decl CFrontend_config.malloc in
         let malloc = create_call stmt_info pointer malloc_name tp_fun [parameter] in
         let tp = qt.Clang_ast_t.qt_type_ptr in
         let init_exp = create_implicit_cast_expr (fresh_stmt_info stmt_info) [malloc] tp `BitCast in
@@ -466,7 +464,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
         let tp_fun = create_void_void_type in
         let decl_ref = make_decl_ref_tp `Var di.Clang_ast_t.di_pointer name false tp in
         let cast = cast_expr decl_ref tp in
-        let free_name = Ast_utils.make_name_decl CFrontend_config.free in
+        let free_name = CAst_utils.make_name_decl CFrontend_config.free in
         let parameter =
           create_implicit_cast_expr (fresh_stmt_info stmt_info) [cast] create_void_star_type `BitCast in
         let pointer = di.Clang_ast_t.di_pointer in
@@ -516,12 +514,12 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
 
   (* NSArray *objects = a *)
   let objects_array_DeclStmt init =
-    let di = { empty_decl_info with Clang_ast_t.di_pointer = Ast_utils.get_fresh_pointer () } in
+    let di = { empty_decl_info with Clang_ast_t.di_pointer = CAst_utils.get_fresh_pointer () } in
     let tp = create_qual_type @@ create_pointer_type @@ create_class_type
         (CFrontend_config.nsarray_cl, `OBJC) in
     (* init should be ImplicitCastExpr of array a *)
     let vdi = { empty_var_decl_info with Clang_ast_t.vdi_init_expr = Some (init) } in
-    let objects_name = Ast_utils.make_name_decl CFrontend_config.objects in
+    let objects_name = CAst_utils.make_name_decl CFrontend_config.objects in
     let var_decl = Clang_ast_t.VarDecl (di, objects_name, tp, vdi) in
     Clang_ast_t.DeclStmt (fresh_stmt_info stmt_info, [init], [var_decl]), [(CFrontend_config.objects, di.Clang_ast_t.di_pointer, tp)] in
 
@@ -541,12 +539,12 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
         cast_expr decl_ref tp
     | _ -> assert false in
 
-  let qual_block_name = Ast_utils.make_name_decl block_name in
+  let qual_block_name = CAst_utils.make_name_decl block_name in
 
   let make_block_decl be =
     match be with
     | Clang_ast_t.BlockExpr (bsi, _, bei, _) ->
-        let di = { empty_decl_info with Clang_ast_t.di_pointer = Ast_utils.get_fresh_pointer () } in
+        let di = { empty_decl_info with di_pointer = CAst_utils.get_fresh_pointer () } in
         let vdi = { empty_var_decl_info with Clang_ast_t.vdi_init_expr = Some (be) } in
         let qt = create_qual_type bei.Clang_ast_t.ei_type_ptr in
         let var_decl = Clang_ast_t.VarDecl (di, qual_block_name, qt, vdi) in
@@ -615,7 +613,7 @@ let create_assume_not_null_call decl_info var_name var_type =
   let stmt_info_var = dummy_stmt_info () in
   let decl_ref_info = make_decl_ref_expr_info decl_ref in
   let var_decl_ref = Clang_ast_t.DeclRefExpr (stmt_info_var, [], (make_expr_info var_type), decl_ref_info) in
-  let var_decl_ptr = Ast_utils.get_invalid_pointer () in
+  let var_decl_ptr = CAst_utils.get_invalid_pointer () in
   let expr_info = {
     Clang_ast_t.ei_type_ptr = var_type;
     ei_value_kind = `RValue;
@@ -628,5 +626,5 @@ let create_assume_not_null_call decl_info var_name var_type =
   let bin_op = make_binary_stmt decl_ref_exp_cast null_expr stmt_info bin_op_expr_info boi in
   let parameters = [bin_op] in
   let procname = Procname.to_string BuiltinDecl.__infer_assume in
-  let qual_procname = Ast_utils.make_name_decl procname in
+  let qual_procname = CAst_utils.make_name_decl procname in
   create_call stmt_info var_decl_ptr qual_procname create_void_star_type parameters
