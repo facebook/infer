@@ -26,8 +26,7 @@ module Kind = struct
     | (Procname.ObjC_Cpp cpp_pname) as pname ->
         begin
           match Procname.objc_cpp_get_class_name cpp_pname, Procname.get_method pname with
-          (* placeholder for real sources *)
-          | "Namespace here", "method name here" -> None
+          | "InferTaint", "source" -> Some Other
           | _ -> None
         end
     | (Procname.C _) as pname ->
@@ -37,6 +36,8 @@ module Kind = struct
           | "__infer_taint_source" -> Some Other
           | _ -> None
         end
+    | Procname.Block _ ->
+        None
     | pname when BuiltinDecl.is_declared pname ->
         None
     | pname ->
@@ -66,6 +67,12 @@ module SinkKind = struct
         (fun actual_num _ -> kind, actual_num, report_reachable)
         actuals in
     match pname with
+    | (Procname.ObjC_Cpp cpp_pname) as pname ->
+        begin
+          match Procname.objc_cpp_get_class_name cpp_pname, Procname.get_method pname with
+          | "InferTaint", "sink:" -> taint_all actuals Other ~report_reachable:true
+          | _ -> []
+        end
     | Procname.C _ ->
         begin
           match Procname.to_string pname with
@@ -76,6 +83,8 @@ module SinkKind = struct
           | _ ->
               []
         end
+    | Procname.Block _ ->
+        []
     | pname when BuiltinDecl.is_declared pname ->
         []
     | pname ->

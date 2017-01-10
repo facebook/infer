@@ -15,12 +15,12 @@ open! IStd
 module F = Format
 
 module Java : module type of (AccessTree.Make(JavaTrace))
-module Cpp : module type of (AccessTree.Make(CppTrace))
+module Clang : module type of (AccessTree.Make(ClangTrace))
 
 module AccessTree : sig
   type t =
     | Java of Java.t
-    | Cpp of Cpp.t
+    | Clang of Clang.t
 end
 
 type t = AccessTree.t

@@ -1,0 +1,1 @@
+codetoanalyze/objc/quandary/basics.m, callSinkDirectBad, 2, QUANDARY_TAINT_ERROR, [return from InferTaint_source,call to InferTaint_sink:]

@@ -14,13 +14,13 @@ module L = Logging
 
 include
   TaintAnalysis.Make(struct
-    module Trace = CppTrace
+    module Trace = ClangTrace
     module AccessTree = AccessTree.Make(Trace)
 
-    let to_summary_access_tree tree = QuandarySummary.AccessTree.Cpp tree
+    let to_summary_access_tree tree = QuandarySummary.AccessTree.Clang tree
 
     let of_summary_access_tree = function
-      | QuandarySummary.AccessTree.Cpp tree -> tree
+      | QuandarySummary.AccessTree.Clang tree -> tree
       | _ -> assert false
 
     let handle_unknown_call _ _ =

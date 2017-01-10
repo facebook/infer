@@ -15,16 +15,16 @@ module F = Format
 module L = Logging
 
 module Java = AccessTree.Make(JavaTrace)
-module Cpp = AccessTree.Make(CppTrace)
+module Clang = AccessTree.Make(ClangTrace)
 
 module AccessTree = struct
   type t =
     | Java of Java.t
-    | Cpp of Cpp.t
+    | Clang of Clang.t
 
   let pp fmt = function
     | Java access_tree -> Java.pp fmt access_tree
-    | Cpp access_tree -> Cpp.pp fmt access_tree
+    | Clang access_tree -> Clang.pp fmt access_tree
 end
 
 type t = AccessTree.t
