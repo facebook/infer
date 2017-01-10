@@ -39,7 +39,7 @@ let rec rmtree name =
 
 
 type build_mode =
-  | Analyze | Ant | Buck | Gradle | Java | Javac | Make | Mvn | Ndk | Xcode
+  | Analyze | Ant | Buck | ClangCompilationDB | Gradle | Java | Javac | Make | Mvn | Ndk | Xcode
 
 let build_mode_of_string path =
   match Filename.basename path with
@@ -59,6 +59,7 @@ let string_of_build_mode = function
   | Analyze -> "analyze"
   | Ant -> "ant"
   | Buck -> "buck"
+  | ClangCompilationDB -> "clang compilation database"
   | Gradle -> "gradle"
   | Java -> "java"
   | Javac -> "javac"
@@ -193,14 +194,15 @@ let capture build_cmd build_mode =
   | _, Some path ->
       L.stdout "Capturing for Buck genrule compatibility...@\n";
       JMain.main (lazy (JClasspath.load_from_arguments path))
-  | Analyze, _ when not (List.is_empty !Config.clang_compilation_db_files) ->
-      capture_with_compilation_database !Config.clang_compilation_db_files
   | Analyze, _ ->
       ()
   | Buck, _ when Config.use_compilation_database <> None ->
       L.stdout "Capturing using Buck's compilation database...@\n";
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck () in
       capture_with_compilation_database json_cdb
+  | ClangCompilationDB, _ ->
+      L.stdout "Capturing using compilation database...@\n";
+      capture_with_compilation_database !Config.clang_compilation_db_files
   | (Java | Javac), _ ->
       let verbose_out_file = run_javac build_mode build_cmd in
       if Config.analyzer <> Config.Compile then
@@ -337,7 +339,14 @@ let fail_on_issue_epilogue () =
 
 let () =
   let build_cmd = IList.rev Config.rest in
-  let build_mode = match build_cmd with path :: _ -> build_mode_of_string path | [] -> Analyze in
+  let build_mode = match build_cmd with
+    | path :: _ ->
+        build_mode_of_string path
+    | [] ->
+        if not (List.is_empty !Config.clang_compilation_db_files) then
+          ClangCompilationDB
+        else
+          Analyze in
   if not (build_mode = Analyze || Config.(buck || continue_capture || reactive_mode)) then
     remove_results_dir () ;
   create_results_dir () ;
