@@ -91,14 +91,35 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let exec_instr
       ({ ThreadSafetyDomain.locks; reads; writes; id_map; owned; } as astate)
-      { ProcData.pdesc; } _ =
+      { ProcData.pdesc; tenv; } _ =
 
     let is_allocation pn =
       Procname.equal pn BuiltinDecl.__new ||
       Procname.equal pn BuiltinDecl.__new_array in
+    let is_container_write pn tenv = match pn with
+      | Procname.Java java_pname ->
+          let typename = Typename.Java.from_string (Procname.java_get_class_name java_pname) in
+          let is_container_write_ typename _ =
+            match Typename.name typename, Procname.java_get_method java_pname with
+            | "java.util.Map", ("clear" | "put" | "putAll" | "remove") -> true
+            | _ -> false in
+          let is_threadsafe_collection typename _ = match Typename.name typename with
+            | "java.util.concurrent.ConcurrentMap" -> true
+            | _ -> false in
+          PatternMatch.supertype_exists tenv is_container_write_ typename &&
+          not (PatternMatch.supertype_exists tenv is_threadsafe_collection typename)
+      | _ -> false in
+    let add_container_write pn loc exp typ (astate : ThreadSafetyDomain.astate) =
+      let dummy_fieldname =
+        Ident.create_fieldname (Mangled.from_string (Procname.get_method pn)) 0 in
+      let dummy_access_exp = Exp.Lfield (exp, dummy_fieldname, typ) in
+      let writes =
+        add_path_to_state dummy_access_exp typ loc astate.writes astate.id_map astate.owned in
+      { astate with writes; } in
     let is_unprotected is_locked =
       not is_locked && not (Procdesc.is_java_synchronized pdesc) in
     let f_resolve_id = resolve_id id_map in
+
     function
     | Sil.Call (Some (lhs_id, lhs_typ), Const (Cfun pn), _, _, _) when is_allocation pn ->
         begin
@@ -109,7 +130,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | None ->
               astate
         end
-    | Sil.Call (_, Const (Cfun pn), _, loc, _) ->
+    | Sil.Call (_, Const (Cfun pn), actuals, loc, _) ->
         begin
           (* assuming that modeled procedures do not have useful summaries *)
           match get_lock_model pn with
@@ -118,29 +139,39 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | Unlock ->
               { astate with locks = false; }
           | NoEffect ->
-              begin
-                match Summary.read_summary pdesc pn with
-                | Some (callee_locks, callee_reads, callee_writes) ->
-                    let locks' = callee_locks || locks in
-                    let astate' =
-                      (* TODO (14842325): report on constructors that aren't threadsafe
-                         (e.g., constructors that access static fields) *)
-                      if is_unprotected locks'
-                      then
-                        let call_site = CallSite.make pn loc in
-                        let reads' =
-                          ThreadSafetyDomain.PathDomain.with_callsite callee_reads call_site
-                          |> ThreadSafetyDomain.PathDomain.join reads in
-                        let writes' =
-                          ThreadSafetyDomain.PathDomain.with_callsite callee_writes call_site
-                          |> ThreadSafetyDomain.PathDomain.join writes in
-                        { astate with reads = reads'; writes = writes'; }
-                      else
-                        astate in
-                    { astate' with locks = locks'; }
-                | None ->
-                    astate
-              end
+              if is_unprotected locks && is_container_write pn tenv
+              then
+                match actuals with
+                | (receiver_exp, receiver_typ) :: _ ->
+                    add_container_write pn loc receiver_exp receiver_typ astate
+                | [] ->
+                    failwithf
+                      "Call to %a is marked as a container write, but has no receiver"
+                      Procname.pp pn
+              else
+                begin
+                  match Summary.read_summary pdesc pn with
+                  | Some (callee_locks, callee_reads, callee_writes) ->
+                      let locks' = callee_locks || locks in
+                      let astate' =
+                        (* TODO (14842325): report on constructors that aren't threadsafe
+                           (e.g., constructors that access static fields) *)
+                        if is_unprotected locks'
+                        then
+                          let call_site = CallSite.make pn loc in
+                          let reads' =
+                            ThreadSafetyDomain.PathDomain.with_callsite callee_reads call_site
+                            |> ThreadSafetyDomain.PathDomain.join reads in
+                          let writes' =
+                            ThreadSafetyDomain.PathDomain.with_callsite callee_writes call_site
+                            |> ThreadSafetyDomain.PathDomain.join writes in
+                          { astate with reads = reads'; writes = writes'; }
+                        else
+                          astate in
+                      { astate' with locks = locks'; }
+                  | None ->
+                      astate
+                end
         end
 
     | Sil.Store (Exp.Lvar lhs_pvar, lhs_typ, rhs_exp, _) when Pvar.is_frontend_tmp lhs_pvar ->
