@@ -116,6 +116,9 @@ let guarded_by = "GuardedBy"
 let thread_safe = "ThreadSafe"
 let not_thread_safe = "NotThreadSafe"
 let ui_thread = "UiThread"
+let any_thread = "AnyThread"
+let for_ui_thread = "ForUiThread"
+let for_non_ui_thread = "ForNonUiThread"
 let thread_confined = "ThreadConfined"
 
 let ia_is_not_thread_safe ia =

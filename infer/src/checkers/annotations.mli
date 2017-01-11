@@ -17,6 +17,10 @@ val expensive : string
 val performance_critical : string
 val no_allocation : string
 val on_bind : string
+val ui_thread : string
+val any_thread : string
+val for_ui_thread : string
+val for_non_ui_thread : string
 
 type annotation =
   | Nullable

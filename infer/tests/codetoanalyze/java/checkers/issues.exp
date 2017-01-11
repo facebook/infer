@@ -33,3 +33,7 @@ codetoanalyze/java/checkers/PrintfArgsChecker.java, void PrintfArgsChecker.strin
 codetoanalyze/java/checkers/PrintfArgsChecker.java, void PrintfArgsChecker.wrongNumberOfArguments(PrintStream), 1, CHECKERS_PRINTF_ARGS, [format string arguments don't mach provided arguments in printf(...) at line 44]
 codetoanalyze/java/checkers/TwoCheckersExample.java, List TwoCheckersExample.shouldRaiseImmutableCastError(), 0, CHECKERS_IMMUTABLE_CAST, [Method shouldRaiseImmutableCastError() returns class com.google.common.collect.ImmutableList but the return type is class java.util.List. Make sure that users of this method do not try to modify the collection.]
 codetoanalyze/java/checkers/TwoCheckersExample.java, List TwoCheckersExample.shouldRaisePerformanceCriticalError(), 1, CHECKERS_CALLS_EXPENSIVE_METHOD, []
+codetoanalyze/java/checkers/UiThreads.java, void UiThreads.callForNonUiThreadBad1(), 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, []
+codetoanalyze/java/checkers/UiThreads.java, void UiThreads.callForNonUiThreadBad2(), 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, []
+codetoanalyze/java/checkers/UiThreads.java, void UiThreads.callUiThreadBad1(), 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, []
+codetoanalyze/java/checkers/UiThreads.java, void UiThreads.callUiThreadBad2(), 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, []
