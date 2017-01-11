@@ -30,6 +30,21 @@ class IntentSubclass extends Intent {
 abstract class ContextSubclass extends Context {
 }
 
+class MyActivity extends Activity {
+
+  @Override
+  // intent is modeled as tainted
+  public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+    startService(intent);
+  }
+
+  @Override
+  // intent is modeled as tainted
+  public void onNewIntent(Intent intent) {
+    startService(intent);
+  }
+}
+
 public class Intents {
 
   private native int rand();

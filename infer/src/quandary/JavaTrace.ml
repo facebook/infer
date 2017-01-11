@@ -57,7 +57,7 @@ module SourceKind = struct
     | pname when BuiltinDecl.is_declared pname -> None
     | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
 
-  let get_tainted_formals pdesc _ =
+  let get_tainted_formals pdesc tenv =
     let make_untainted (name, typ) =
       name, typ, None in
     let taint_formals_with_types type_strs kind formals =
@@ -79,8 +79,22 @@ module SourceKind = struct
           match Procname.java_get_class_name java_pname, Procname.java_get_method java_pname with
           | "codetoanalyze.java.quandary.TaintedFormals", "taintedContextBad" ->
               taint_formals_with_types ["java.lang.Integer"; "java.lang.String"] Other formals
-          | _ ->
-              Source.all_formals_untainted pdesc
+          | class_name, method_name ->
+              let taint_matching_supertype typename _ =
+                match Typename.name typename, method_name with
+                | "android.app.Activity", ("onActivityResult" | "onNewIntent") ->
+                    Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
+                | _ ->
+                    None in
+              begin
+                match
+                  PatternMatch.supertype_find_map_opt
+                    tenv
+                    taint_matching_supertype
+                    (Typename.Java.from_string class_name) with
+                | Some tainted_formals -> tainted_formals
+                | None -> Source.all_formals_untainted pdesc
+              end
         end
     | procname ->
         failwithf
