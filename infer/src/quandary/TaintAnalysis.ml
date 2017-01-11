@@ -19,9 +19,6 @@ module Make (TaintSpecification : TaintSpec.S) = struct
   module TaintDomain = TaintSpecification.AccessTree
   module IdMapDomain = IdAccessPathMapDomain
 
-  (** a map from a formal to its position *)
-  type formal_map = int AccessPath.BaseMap.t
-
   module Summary = Summary.Make(struct
       type summary = QuandarySummary.t
 
@@ -88,14 +85,14 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     module CFG = CFG
     module Domain = Domain
 
-    type extras = formal_map
+    type extras = FormalMap.t
 
     let resolve_id id_map id =
       try Some (IdMapDomain.find id id_map)
       with Not_found -> None
 
     (* get the node associated with [access_path] in [access_tree] *)
-    let access_path_get_node access_path access_tree (proc_data : formal_map ProcData.t) loc =
+    let access_path_get_node access_path access_tree (proc_data : FormalMap.t ProcData.t) loc =
       match TaintDomain.get_node access_path access_tree with
       | Some _ as node_opt ->
           node_opt
@@ -108,13 +105,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 (TraceDomain.Source.make_footprint footprint_ap call_site) in
             Some (TaintDomain.make_normal_leaf trace) in
           let root, _ = AccessPath.extract access_path in
-          try
-            let formal_index = AccessPath.BaseMap.find root proc_data.extras in
-            make_footprint_trace (make_footprint_access_path formal_index access_path)
-          with Not_found ->
-            if is_global root
-            then make_footprint_trace access_path
-            else None
+          match FormalMap.get_formal_index root proc_data.extras with
+          | Some formal_index ->
+              make_footprint_trace (make_footprint_access_path formal_index access_path)
+          | None ->
+              if is_global root
+              then make_footprint_trace access_path
+              else None
 
     (* get the trace associated with [access_path] in [access_tree]. *)
     let access_path_get_trace access_path access_tree proc_data loc =
@@ -159,7 +156,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       TaintDomain.add_trace id_ap trace access_tree
 
     (** log any new reportable source-sink flows in [trace] *)
-    let report_trace trace cur_site (proc_data : formal_map ProcData.t) =
+    let report_trace trace cur_site (proc_data : FormalMap.t ProcData.t) =
       let trace_of_pname pname =
         match Summary.read_summary proc_data.pdesc pname with
         | Some summary ->
@@ -315,7 +312,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           caller_access_tree in
       { astate_in with access_tree; }
 
-    let exec_instr (astate : Domain.astate) (proc_data : formal_map ProcData.t) _ instr =
+    let exec_instr (astate : Domain.astate) (proc_data : FormalMap.t ProcData.t) _ instr =
       let f_resolve_id = resolve_id astate.id_map in
       match instr with
       | Sil.Load (lhs_id, rhs_exp, rhs_typ, _) ->
@@ -494,11 +491,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       AccessPath.BaseMap.fold
         (fun base node acc ->
            let base' =
-             try
-               let formal_index = AccessPath.BaseMap.find base formal_map in
-               make_footprint_var formal_index, snd base
-             with Not_found ->
-               base in
+             match FormalMap.get_formal_index base formal_map with
+             | Some formal_index -> make_footprint_var formal_index, snd base
+             | None -> base in
            AccessPath.BaseMap.add base' node acc)
         access_tree
         TaintDomain.empty in
@@ -526,7 +521,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       then Domain.empty
       else { Domain.empty with Domain.access_tree; } in
 
-    let compute_post (proc_data : formal_map ProcData.t) =
+    let compute_post (proc_data : FormalMap.t ProcData.t) =
       if not (Procdesc.did_preanalysis proc_data.pdesc)
       then
         begin
@@ -541,20 +536,6 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           if Procdesc.Node.get_succs (Procdesc.get_start_node proc_data.pdesc) <> []
           then failwith "Couldn't compute post"
           else None in
-
-    let make_extras pdesc =
-      let pname = Procdesc.get_proc_name pdesc in
-      let attrs = Procdesc.get_attributes pdesc in
-      let formals_with_nums =
-        IList.mapi
-          (fun index (name, typ) ->
-             let pvar = Pvar.mk name pname in
-             AccessPath.base_of_pvar pvar typ, index)
-          attrs.ProcAttributes.formals in
-      IList.fold_left
-        (fun formal_map (base, index) -> AccessPath.BaseMap.add base index formal_map)
-        AccessPath.BaseMap.empty
-        formals_with_nums in
-
+    let make_extras = FormalMap.make in
     ignore(Interprocedural.compute_and_store_post ~compute_post ~make_extras callback)
 end
