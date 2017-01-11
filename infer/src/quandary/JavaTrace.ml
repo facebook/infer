@@ -147,6 +147,10 @@ module SinkKind = struct
                 | "android.app.Activity",
                   ("startActivityFromChild" | "startActivityFromFragment") ->
                     Some (taint_nth 1 Intent ~report_reachable:true)
+                | "android.app.Activity", "startIntentSenderForResult"  ->
+                    Some (taint_nth 2 Intent ~report_reachable:true)
+                | "android.app.Activity", "startIntentSenderFromChild"  ->
+                    Some (taint_nth 3 Intent ~report_reachable:true)
                 | "android.content.Context",
                   ("bindService" |
                    "sendBroadcast" |

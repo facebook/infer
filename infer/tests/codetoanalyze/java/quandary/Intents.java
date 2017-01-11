@@ -69,8 +69,10 @@ public class Intents {
     activity.startActivityFromChild(null, intent, 0);
     activity.startActivityFromFragment(null, intent, 0);
     activity.startIntentSender(null, intent, 0, 0, 0);
+    activity.startIntentSenderForResult(null, 0, intent, 0, 0, 0);
+    activity.startIntentSenderFromChild(null, null, 0, intent, 0, 0, 0);
     activity.startService(intent);
-    activity.stopService(intent); // 18 sinks, 18 expected reports
+    activity.stopService(intent); // 20 sinks, 20 expected reports
   }
 
   public void callAllIntentSinksBad(Intent cleanIntent) throws
