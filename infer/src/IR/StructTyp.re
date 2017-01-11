@@ -18,7 +18,9 @@ let module L = Logging;
 
 let module F = Format;
 
-type fields = list (Ident.fieldname, Typ.t, Annot.Item.t);
+type field = (Ident.fieldname, Typ.t, Annot.Item.t) [@@deriving compare];
+
+type fields = list field;
 
 
 /** Type for a structured value. */
@@ -31,8 +33,6 @@ type t = {
 };
 
 type lookup = Typename.t => option t;
-
-let compare_fld_typ_ann = [%compare : (Ident.fieldname, Typ.t, Annot.Item.t)];
 
 let pp pe name f {fields, supers, methods, annots} =>
   if Config.debug_mode {

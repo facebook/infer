@@ -114,7 +114,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
                 let replace_typ_of_f (f', t', a') =
                   if Ident.equal_fieldname f f' then (f, res_t', a') else (f', t', a') in
                 let fields' =
-                  IList.sort StructTyp.compare_fld_typ_ann (IList.map replace_typ_of_f fields) in
+                  IList.sort StructTyp.compare_field (IList.map replace_typ_of_f fields) in
                 ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
                 (atoms', se, t)
             | exception Not_found ->
@@ -206,7 +206,6 @@ let rec _strexp_extend_values
   | (Off_fld (f, _)) :: off', Sil.Estruct (fsel, inst'), Tstruct name -> (
       match Tenv.lookup tenv name with
       | Some ({ fields; statics; } as struct_typ) -> (
-          let replace_fv new_v fv = if Ident.equal_fieldname (fst fv) f then (f, new_v) else fv in
           match IList.find (fun (f', _, _) -> Ident.equal_fieldname f f') (fields @ statics) with
           | _, typ', _ -> (
               match IList.find (fun (f', _) -> Ident.equal_fieldname f f') fsel with
@@ -215,14 +214,14 @@ let rec _strexp_extend_values
                     _strexp_extend_values
                       pname tenv orig_prop footprint_part kind max_stamp se' typ' off' inst in
                   let replace acc (res_atoms', res_se', res_typ') =
-                    let replace_fse = replace_fv res_se' in
+                    let replace_fse ((f1, _) as ft1) =
+                      if Ident.equal_fieldname f1 f then (f1, res_se') else ft1 in
                     let res_fsel' =
                       IList.sort [%compare: Ident.fieldname * Sil.strexp] (IList.map replace_fse fsel) in
-                    let replace_fta (f, t, a) =
-                      let f', t' = replace_fv res_typ' (f, t) in
-                      (f', t', a) in
+                    let replace_fta ((f1, _, a1) as fta1) =
+                      if Ident.equal_fieldname f f1 then (f1, res_typ', a1) else fta1 in
                     let fields' =
-                      IList.sort StructTyp.compare_fld_typ_ann (IList.map replace_fta fields) in
+                      IList.sort StructTyp.compare_field (IList.map replace_fta fields) in
                     ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
                     (res_atoms', Sil.Estruct (res_fsel', inst'), typ) :: acc in
                   IList.fold_left replace [] atoms_se_typ_list'
@@ -234,7 +233,7 @@ let rec _strexp_extend_values
                   let replace_fta (f', t', a') =
                     if Ident.equal_fieldname f' f then (f, res_typ', a') else (f', t', a') in
                   let fields' =
-                    IList.sort StructTyp.compare_fld_typ_ann (IList.map replace_fta fields) in
+                    IList.sort StructTyp.compare_field (IList.map replace_fta fields) in
                   ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
                   [(atoms', Sil.Estruct (res_fsel', inst'), typ)]
             )

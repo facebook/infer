@@ -16,7 +16,9 @@ open! IStd;
 /** The Smallfoot Intermediate Language: Struct Types */
 let module F = Format;
 
-type fields = list (Ident.fieldname, Typ.t, Annot.Item.t);
+type field = (Ident.fieldname, Typ.t, Annot.Item.t) [@@deriving compare];
+
+type fields = list field;
 
 
 /** Type for a structured value. */
@@ -29,11 +31,6 @@ type t = private {
 };
 
 type lookup = Typename.t => option t;
-
-
-/** Comparision for fieldnames * types * item annotations. */
-let compare_fld_typ_ann:
-  (Ident.fieldname, Typ.t, Annot.Item.t) => (Ident.fieldname, Typ.t, Annot.Item.t) => int;
 
 
 /** Pretty print a struct type. */
