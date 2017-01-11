@@ -19,8 +19,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
   module TaintDomain = TaintSpecification.AccessTree
   module IdMapDomain = IdAccessPathMapDomain
 
-  (** a map from a formal to its position and (optionally) whether we should treat it as a source *)
-  type formal_map = (int * TraceDomain.Source.t option) AccessPath.BaseMap.t
+  (** a map from a formal to its position *)
+  type formal_map = int AccessPath.BaseMap.t
 
   module Summary = Summary.Make(struct
       type summary = QuandarySummary.t
@@ -78,11 +78,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     | Var.ProgramVar pvar -> Pvar.is_global pvar
     | Var.LogicalVar _ -> false
 
-  let make_footprint_var formal_num =
-    Var.of_id (Ident.create_footprint Ident.name_spec formal_num)
+  let make_footprint_var formal_index =
+    Var.of_id (Ident.create_footprint Ident.name_spec formal_index)
 
-  let make_footprint_access_path formal_num access_path =
-    AccessPath.with_base_var (make_footprint_var formal_num) access_path
+  let make_footprint_access_path formal_index access_path =
+    AccessPath.with_base_var (make_footprint_var formal_index) access_path
 
   module TransferFunctions (CFG : ProcCfg.S) = struct
     module CFG = CFG
@@ -109,14 +109,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             Some (TaintDomain.make_normal_leaf trace) in
           let root, _ = AccessPath.extract access_path in
           try
-            let formal_num, taint_opt = AccessPath.BaseMap.find root proc_data.extras in
-            begin
-              match taint_opt with
-              | None ->
-                  make_footprint_trace (make_footprint_access_path formal_num access_path)
-              | Some source ->
-                  Some (TaintDomain.make_normal_leaf (TraceDomain.of_source source))
-            end
+            let formal_index = AccessPath.BaseMap.find root proc_data.extras in
+            make_footprint_trace (make_footprint_access_path formal_index access_path)
           with Not_found ->
             if is_global root
             then make_footprint_trace access_path
@@ -197,7 +191,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
     let add_sinks sinks actuals ({ Domain.access_tree; id_map; } as astate) proc_data callee_site =
       let f_resolve_id = resolve_id id_map in
-      (* add [sink] to the trace associated with the [formal_num]th actual *)
+      (* add [sink] to the trace associated with the [formal_index]th actual *)
       let add_sink_to_actual access_tree_acc (sink_param : TraceDomain.Sink.parameter) =
         let actual_exp, actual_typ = IList.nth actuals sink_param.index in
         match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
@@ -243,11 +237,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         let apply_return ret_ap = match ret_opt with
           | Some (ret_id, _) -> AccessPath.with_base_var (Var.of_id ret_id) ret_ap
           | None -> failwith "Have summary for retval, but no ret id to bind it to!" in
-        let get_actual_ap formal_num =
+        let get_actual_ap formal_index =
           let f_resolve_id = resolve_id astate_in.id_map in
           try
             let actual_exp, actual_typ =
-              IList.nth actuals formal_num in
+              IList.nth actuals formal_index in
             AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id
           with Failure _ ->
             None in
@@ -501,7 +495,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         (fun base node acc ->
            let base' =
              try
-               let formal_index, _ = AccessPath.BaseMap.find base formal_map in
+               let formal_index = AccessPath.BaseMap.find base formal_map in
                make_footprint_var formal_index, snd base
              with Not_found ->
                base in
@@ -515,6 +509,23 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
   let checker ({ Callbacks.tenv } as callback) =
 
+    (* bind parameters to a trace with a tainted source (if applicable) *)
+    let make_initial pdesc =
+      let pname = Procdesc.get_proc_name pdesc in
+      let access_tree =
+        IList.fold_left (fun acc (name, typ, taint_opt) ->
+            match taint_opt with
+            | Some source ->
+                let base_ap = AccessPath.Exact (AccessPath.of_pvar (Pvar.mk name pname) typ) in
+                TaintDomain.add_trace base_ap (TraceDomain.of_source source) acc
+            | None ->
+                acc)
+          TaintDomain.empty
+          (TraceDomain.Source.get_tainted_formals pdesc tenv) in
+      if TaintDomain.BaseMap.is_empty access_tree
+      then Domain.empty
+      else { Domain.empty with Domain.access_tree; } in
+
     let compute_post (proc_data : formal_map ProcData.t) =
       if not (Procdesc.did_preanalysis proc_data.pdesc)
       then
@@ -522,7 +533,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           Preanal.do_liveness proc_data.pdesc proc_data.tenv;
           Preanal.do_dynamic_dispatch proc_data.pdesc (Cg.create None) proc_data.tenv;
         end;
-      match Analyzer.compute_post proc_data ~initial:Domain.empty with
+      let initial = make_initial proc_data.pdesc in
+      match Analyzer.compute_post proc_data ~initial with
       | Some { access_tree; } ->
           Some (make_summary proc_data.extras access_tree)
       | None ->
@@ -532,15 +544,15 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
     let make_extras pdesc =
       let pname = Procdesc.get_proc_name pdesc in
+      let attrs = Procdesc.get_attributes pdesc in
       let formals_with_nums =
         IList.mapi
-          (fun index (name, typ, taint_opt) ->
+          (fun index (name, typ) ->
              let pvar = Pvar.mk name pname in
-             AccessPath.base_of_pvar pvar typ, index, taint_opt)
-          (TraceDomain.Source.get_tainted_formals pdesc tenv) in
+             AccessPath.base_of_pvar pvar typ, index)
+          attrs.ProcAttributes.formals in
       IList.fold_left
-        (fun formal_map (base, index, taint_opt) ->
-           AccessPath.BaseMap.add base (index, taint_opt) formal_map)
+        (fun formal_map (base, index) -> AccessPath.BaseMap.add base index formal_map)
         AccessPath.BaseMap.empty
         formals_with_nums in
 
