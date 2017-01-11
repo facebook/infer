@@ -319,19 +319,20 @@ let analyze = function
          separate Analyze invocation is necessary, depending on the buck flavor used. *)
       ()
   | _ ->
-      if (Sys.file_exists Config.(results_dir ^/ captured_dir_name)) <> `Yes then (
-        L.stderr "There was nothing to analyze, exiting" ;
-        Config.print_usage_exit ()
+      let should_analyze, should_report = match Config.analyzer with
+        | Infer | Eradicate | Checkers | Tracing | Crashcontext | Quandary | Threadsafety ->
+            true, true
+        | Linters ->
+            false, true
+        | Capture | Compile ->
+            false, false in
+      if (should_analyze || should_report)
+      && (Sys.file_exists Config.(results_dir ^/ captured_dir_name)) <> `Yes then (
+        L.stderr "There was nothing to analyze, exiting@." ;
+        exit 1
       );
-      (match Config.analyzer with
-       | Infer | Eradicate | Checkers | Tracing | Crashcontext | Quandary | Threadsafety ->
-           execute_analyze () ;
-           report ()
-       | Linters ->
-           report ()
-       | Capture | Compile ->
-           ()
-      )
+      if should_analyze then execute_analyze ();
+      if should_report then report ()
 
 (** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)
 let fail_on_issue_epilogue () =
