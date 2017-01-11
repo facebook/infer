@@ -1,46 +1,54 @@
 import os
 
+analyzers = ['infer', 'eradicate']
+
 original_java_library = java_library
 def java_library(
     name,
-    deps=[],
+    srcs=[],
     **kwargs
     ):
-  compile_name = name + '_compile'
-  top_deps = []
-
-  if 'GENERATE_INFER_GENRULES' in os.environ:
-    export_srcs_name = name + '_export_srcs'
-    genrule(
-      name = export_srcs_name,
-      srcs = kwargs.get('srcs', []),
-      cmd = 'mkdir -p $OUT && cp -R $SRCDIR/* $OUT/',
-      out = 'src_copy',
-    )
-    infer_name = name + '_infer'
-    genrule(
-      name = infer_name,
-      cmd = ' '.join([
-        os.getenv('INFER_BIN', 'infer'),
-        '--results-dir', '$OUT',
-        '--classpath', '$(classpath :{})'.format(compile_name),
-        '--sourcepath', '$(location :{})'.format(export_srcs_name),
-        '--generated-classes', '$(location :{})'.format(compile_name),
-      ]),
-      out = 'infer_out',
-    )
-    top_deps += [':' + infer_name, ':' + export_srcs_name]
 
   original_java_library(
     name=name,
-    exported_deps=[
-      ':' + compile_name,
-    ],
-    deps=top_deps,
-    visibility = kwargs.get('visibility', [])
-  )
-  original_java_library(
-    name=compile_name,
-    deps=deps,
+    srcs=srcs,
     **kwargs
   )
+
+  create_genrules(name, srcs)
+
+original_android_library = android_library
+def android_library(
+    name,
+    srcs=[],
+    **kwargs
+    ):
+
+  original_android_library(
+    name=name,
+    srcs=srcs,
+    **kwargs
+  )
+
+  create_genrules(name, srcs)
+
+def create_genrules(
+    name,
+    srcs
+    ):
+  if 'GENERATE_INFER_GENRULES' in os.environ and srcs:
+    for analyzer in analyzers:
+      analyzer_name = name + '_{}'.format(analyzer)
+      genrule(
+        name = analyzer_name,
+        srcs=srcs,
+        cmd = ' '.join([
+          os.getenv('INFER_BIN', 'infer'),
+          '-a', analyzer,
+          '--results-dir', '$OUT',
+          '--classpath', '$(classpath :{})'.format(name),
+          '--sourcepath', '$SRCDIR',
+          '--generated-classes', '$(location :{})'.format(name),
+        ]),
+        out = '{}_out'.format(analyzer),
+      )
