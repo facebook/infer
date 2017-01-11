@@ -18,8 +18,9 @@ module F = Format
 
 
 let rec rmtree name =
-  match Unix.opendir name with
-  | dir -> (
+  match Unix.((lstat name).st_kind) with
+  | S_DIR ->
+      let dir = Unix.opendir name in
       let rec rmdir dir =
         match Unix.readdir dir with
         | entry ->
@@ -31,8 +32,7 @@ let rec rmtree name =
             Unix.closedir dir ;
             Unix.rmdir name in
       rmdir dir
-    )
-  | exception Unix.Unix_error (Unix.ENOTDIR, _, _) ->
+  | _ ->
       Unix.unlink name
   | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
       ()
