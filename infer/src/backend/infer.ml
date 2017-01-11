@@ -161,14 +161,18 @@ let run_javac build_mode build_cmd =
   let verbose_out_file = Filename.temp_file "javac_" ".out" in
   Unix.with_file verbose_out_file ~mode:[Unix.O_WRONLY] ~f:(
     fun verbose_out_fd ->
+      L.out "Logging into %s@\n" verbose_out_file;
+      L.out "Current working directory: '%s'@." (Sys.getcwd ());
       try
+        L.out "Trying to execute: '%s' '%s'@." prog (String.concat ~sep:"' '" args);
         Unix_.fork_redirect_exec_wait ~prog ~args ~stderr:verbose_out_fd ()
       with exn ->
       try
+        L.out "*** Failed!@\nTrying to execute javac instead: '%s' '%s'@\nLogging into %s@."
+          "javac" (String.concat ~sep:"' '" cli_file_args) verbose_out_file;
         Unix_.fork_redirect_exec_wait ~prog:"javac" ~args:cli_file_args ~stderr:verbose_out_fd ()
       with _ ->
-        L.stderr "Failed to execute: %s %s@\nSee contents of %s.@\n"
-          prog (String.concat ~sep:" " args) verbose_out_file ;
+        L.stderr "Failed to execute: %s %s@." prog (String.concat ~sep:" " args);
         raise exn
   );
   verbose_out_file
@@ -204,10 +208,11 @@ let capture build_cmd build_mode =
       L.stdout "Capturing using compilation database...@\n";
       capture_with_compilation_database !Config.clang_compilation_db_files
   | (Java | Javac), _ ->
+      L.stdout "Capturing in javac mode...@.";
       let verbose_out_file = run_javac build_mode build_cmd in
       if Config.analyzer <> Config.Compile then
         JMain.main (lazy (JClasspath.load_from_verbose_output verbose_out_file)) ;
-      Unix.unlink verbose_out_file
+      if not (Config.debug_mode || Config.stats_mode) then Unix.unlink verbose_out_file;
   | Xcode, _ when Config.xcpretty ->
       L.stdout "Capturing using xcpretty...@\n";
       check_xcpretty ();
@@ -337,6 +342,23 @@ let fail_on_issue_epilogue () =
       if issues <> [] then exit Config.fail_on_issue_exit_code
   | None -> ()
 
+let log_build_cmd build_mode build_cmd =
+  if Config.debug_mode || Config.stats_mode then (
+    let log_arg arg =
+      L.out "Arg: %s@\n" arg;
+      if (build_mode = Java || build_mode = Javac) && (String.is_prefix arg ~prefix:"@") then (
+        let fname = String.slice arg 1 (String.length arg) in
+        match In_channel.input_lines (In_channel.create fname) with
+        | lines ->
+            L.out "-- Contents of '%s'@\n" fname;
+            L.out "%s@\n" (String.concat ~sep:"\n" lines);
+            L.out "-- /Contents of '%s'@\n" fname;
+        | exception exn ->
+            L.out "  Error reading file '%s':@\n  %a@." fname Exn.pp exn
+      ) in
+    List.iter ~f:log_arg build_cmd
+  )
+
 let () =
   let build_cmd = IList.rev Config.rest in
   let build_mode = match build_cmd with
@@ -358,6 +380,7 @@ let () =
      but cannot communicate with the parent make command. Since infer won't interfere with them
      anyway, pretend that we are not called from another make to prevent make falling back to a
      mono-threaded execution. *)
+  log_build_cmd build_mode build_cmd;
   Unix.unsetenv "MAKEFLAGS";
   register_perf_stats_report () ;
   touch_start_file () ;
