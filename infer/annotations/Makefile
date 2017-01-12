@@ -11,9 +11,7 @@ include $(ROOT_DIR)/Makefile.config
 CWD = $(shell pwd)
 JSR_JAR = $(DEPENDENCIES_DIR)/java/jsr-305/jsr305.jar
 ANNOT_SOURCES = $(shell find com/facebook/infer/annotation -name "*.java")
-PROCESSOR_SOURCES = $(shell find com/facebook/infer/annotprocess -name "*.java")
 ANNOT_CLASSES = 'annot_classes'
-PROCESSOR_CLASSES = 'processor_classes'
 
 ANNOTATIONS_JAR = $(CWD)/annotations.jar
 
@@ -27,4 +25,3 @@ $(ANNOTATIONS_JAR): $(ANNOT_SOURCES)
 clean:
 	@rm -rf $(ANNOT_CLASSES)
 	@rm -f $(ANNOTATIONS_JAR)
-	@rm -rf $(PROCESSOR_CLASSES)
