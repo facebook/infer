@@ -1226,6 +1226,8 @@ let javac_classes_out = ref init_work_dir
 (* The "rest" args must appear after "--" on the command line, and hence after other args, so they
    are allowed to refer to the other arg variables. *)
 let rest =
+  (* BUG: these arguments will not be detected if put inside @argfiles, as supported by javac. See
+     Infer.run_javac for a version that looks inside argfiles, and discussion in D4397716. *)
   let classes_out_spec =
     Arg.String (fun classes_out ->
         javac_classes_out := classes_out ;

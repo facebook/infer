@@ -140,11 +140,30 @@ let run_javac build_mode build_cmd =
     | _, Some jar -> (* fall back to java in PATH to avoid passing -jar to javac *)
         ("java", ["-jar"; jar]) in
   let cli_args, file_args =
+    let rec has_classes_out = function
+      | [] -> false
+      | ("-d" | "-classes_out")::_ -> true
+      | file_arg::tl when String.is_prefix file_arg ~prefix:"@" -> (
+          let fname = String.slice file_arg 1 (String.length file_arg) in
+          match In_channel.read_lines fname with
+          | lines ->
+              (* crude but we only care about simple cases that will not involve trickiness, eg
+                 unbalanced or escaped quotes such as "ending in\"" *)
+              let lines_without_quotes =
+                List.map ~f:(String.strip ~drop:(function '"' | '\'' -> true | _ -> false)) lines in
+              has_classes_out lines_without_quotes || has_classes_out tl
+          | exception _ ->
+              has_classes_out tl)
+      | _::tl ->
+          has_classes_out tl in
     let args =
       "-verbose" :: "-g" ::
-      if List.exists build_args ~f:(function "-d" | "-classes_out" -> true | _ -> false)
-      then build_args
-      else "-d" :: Config.javac_classes_out :: build_args in
+      (* Ensure that some form of "-d ..." is passed to javac. It's unclear whether this is strictly
+         needed but the tests break without this for now. See discussion in D4397716. *)
+      if has_classes_out build_args then
+        build_args
+      else
+        "-d" :: Config.javac_classes_out :: build_args in
     List.partition_tf args ~f:(fun arg ->
         (* As mandated by javac, argument files must not contain certain arguments. *)
         String.is_prefix ~prefix:"-J" arg || String.is_prefix ~prefix:"@" arg) in
