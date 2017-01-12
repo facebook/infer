@@ -363,21 +363,21 @@ let fail_on_issue_epilogue () =
   | None -> ()
 
 let log_build_cmd build_mode build_cmd =
-  if Config.debug_mode || Config.stats_mode then (
-    let log_arg arg =
-      L.out "Arg: %s@\n" arg;
-      if (build_mode = Java || build_mode = Javac) && (String.is_prefix arg ~prefix:"@") then (
-        let fname = String.slice arg 1 (String.length arg) in
-        match In_channel.input_lines (In_channel.create fname) with
-        | lines ->
-            L.out "-- Contents of '%s'@\n" fname;
-            L.out "%s@\n" (String.concat ~sep:"\n" lines);
-            L.out "-- /Contents of '%s'@\n" fname;
-        | exception exn ->
-            L.out "  Error reading file '%s':@\n  %a@." fname Exn.pp exn
-      ) in
-    List.iter ~f:log_arg build_cmd
-  )
+  L.out "INFER_ARGS=%s@." (Option.value (Sys.getenv CLOpt.args_env_var) ~default:"<not found>");
+  L.out "Project root = %s@." Config.project_root;
+  let log_arg arg =
+    L.out "Arg: %s@\n" arg;
+    if (build_mode = Java || build_mode = Javac) && (String.is_prefix arg ~prefix:"@") then (
+      let fname = String.slice arg 1 (String.length arg) in
+      match In_channel.input_lines (In_channel.create fname) with
+      | lines ->
+          L.out "-- Contents of '%s'@\n" fname;
+          L.out "%s@\n" (String.concat ~sep:"\n" lines);
+          L.out "-- /Contents of '%s'@\n" fname;
+      | exception exn ->
+          L.out "  Error reading file '%s':@\n  %a@." fname Exn.pp exn
+    ) in
+  List.iter ~f:log_arg build_cmd
 
 let () =
   let build_cmd = IList.rev Config.rest in
@@ -396,11 +396,11 @@ let () =
   L.set_log_file_identifier Config.current_exe None ;
   if Config.print_builtins then Builtin.print_and_exit () ;
   if Config.is_originator then L.do_out "%s@\n" Config.version_string ;
+  if Config.debug_mode || Config.stats_mode then log_build_cmd build_mode build_cmd;
   (* infer might be called from a Makefile and itself uses `make` to run the analysis in parallel,
      but cannot communicate with the parent make command. Since infer won't interfere with them
      anyway, pretend that we are not called from another make to prevent make falling back to a
      mono-threaded execution. *)
-  log_build_cmd build_mode build_cmd;
   Unix.unsetenv "MAKEFLAGS";
   register_perf_stats_report () ;
   touch_start_file () ;
