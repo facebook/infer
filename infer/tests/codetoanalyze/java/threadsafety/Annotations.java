@@ -9,11 +9,21 @@
 
 package codetoanalyze.java.checkers;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 import android.support.annotation.UiThread;
 
 import com.facebook.infer.annotation.ThreadConfined;
 
 /** tests for classes and method annotations that are meaningful w.r.t thread-safety */
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.CLASS)
+@interface OnEvent {
+}
 
 @ThreadSafe
 class Annotations {
@@ -32,7 +42,8 @@ class Annotations {
     this.f = new Object();
   }
 
-  // we model onClick as running on the UI thread, should not warn
+  // anything annotated with OnEvent is modeled as running on the UI thread, should not warn
+  @OnEvent
   public void onClick() {
     this.f = new Object();
   }

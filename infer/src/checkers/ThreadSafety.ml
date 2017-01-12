@@ -300,15 +300,13 @@ let is_thread_confined_method tenv pname =
 (* we don't want to warn on methods that run on the UI thread because they should always be
    single-threaded *)
 let runs_on_ui_thread proc_desc =
-  (* assume that methods named onClick always run on the UI thread *)
-  let is_on_click pdesc = match Procdesc.get_proc_name pdesc with
-    | Procname.Java java_pname -> Procname.java_get_method java_pname = "onClick"
-    | _ -> false in
+  (* assume that methods annotated with @UiThread or @OnEvent(SomeEvent.class) always run on the UI
+     thread *)
   let is_annotated pdesc =
     let annotated_signature = Annotations.get_annotated_signature (Procdesc.get_attributes pdesc) in
     let ret_annotation, _ = annotated_signature.Annotations.ret in
-    Annotations.ia_is_ui_thread ret_annotation in
-  is_on_click proc_desc || is_annotated proc_desc
+    Annotations.ia_is_ui_thread ret_annotation || Annotations.ia_is_on_event ret_annotation in
+  is_annotated proc_desc
 
 (* return true if we should compute a summary for the procedure. if this returns false, we won't
    analyze the procedure or report any warnings on it *)

@@ -102,6 +102,7 @@ let mutable_ = "Mutable"
 let nullable = "Nullable"
 let nonnull = "Nonnull"
 let on_bind = "OnBind"
+let on_event = "OnEvent"
 let camel_nonnull = "NonNull"
 let notnull = "NotNull"
 let present = "Present"
@@ -207,6 +208,9 @@ let ia_is_ignore_allocations ia =
 
 let ia_is_suppress_lint ia =
   ia_ends_with ia suppress_lint
+
+let ia_is_on_event ia =
+  ia_ends_with ia on_event
 
 let ia_is_privacy_source ia =
   ia_ends_with ia privacy_source
