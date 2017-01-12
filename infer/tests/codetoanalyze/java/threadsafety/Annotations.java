@@ -52,4 +52,22 @@ class Annotations {
     }
   }
 
+  static class Obj {
+    Object fld;
+  }
+
+  @ThreadConfined Obj encapsulatedField;
+
+  public void mutateConfinedFieldDirectlyOk() {
+    this.encapsulatedField = new Obj();
+  }
+
+  public static void mutateConfinedFieldIndirectlyOk(Annotations a) {
+    a.encapsulatedField = new Obj();
+  }
+
+  public void mutateSubfieldOfConfinedBad() {
+    this.encapsulatedField.fld = new Object();
+  }
+
 }

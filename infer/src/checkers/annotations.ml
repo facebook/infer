@@ -81,6 +81,12 @@ let ma_contains ma ann_names =
 let pdesc_has_annot pdesc annot =
   ma_contains (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation [annot]
 
+let field_has_annot fieldname (struct_typ : StructTyp.t) f =
+  let fld_has_taint_annot (fname, _, annot) =
+    Ident.equal_fieldname fieldname fname && f annot in
+  IList.exists fld_has_taint_annot struct_typ.fields ||
+  IList.exists fld_has_taint_annot struct_typ.statics
+
 let initializer_ = "Initializer"
 let inject = "Inject"
 let inject_view = "InjectView"

@@ -109,6 +109,8 @@ val ma_has_annotation_with : Annot.Method.t -> (Annot.t -> bool) -> bool
 
 val pdesc_has_annot : Procdesc.t -> string -> bool
 
+val field_has_annot : Ident.fieldname -> StructTyp.t -> (Annot.Item.t -> bool) -> bool
+
 (** Mark the return of the method_annotation with the given annotation. *)
 val method_annotation_mark_return :
   annotation -> Annot.Method.t -> Annot.Method.t

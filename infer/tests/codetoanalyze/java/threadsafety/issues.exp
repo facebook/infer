@@ -1,4 +1,5 @@
 codetoanalyze/java/threadsafety/Annotations.java, void Annotations.mutateOffUiThreadBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.f]
+codetoanalyze/java/threadsafety/Annotations.java, void Annotations.mutateSubfieldOfConfinedBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.encapsulatedField.codetoanalyze.java.checkers.Annotations$Obj.fld]
 codetoanalyze/java/threadsafety/Builders.java, Builders$Obj Builders.buildThenMutateBad(Builders$Obj), 3, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Builders$Obj.g]
 codetoanalyze/java/threadsafety/Builders.java, Builders$Obj Builders.mutateBad(Builders$Obj), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Builders$Obj.g]
 codetoanalyze/java/threadsafety/Containers.java, void Containers.mapClearBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Containers.mMap.clear]

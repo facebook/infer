@@ -64,18 +64,29 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     try Some (IdAccessPathMapDomain.find id id_map)
     with Not_found -> None
 
-  let add_path_to_state exp typ loc path_state id_map owned =
+  let add_path_to_state exp typ loc path_state id_map owned tenv =
     (* remove the last field of the access path, if it has any *)
     let truncate = function
       | base, []
       | base, _ :: [] -> base, []
       | base, accesses -> base, IList.rev (IList.tl (IList.rev accesses)) in
+    let is_thread_confined (_, accesses) = match IList.rev accesses with
+      | AccessPath.FieldAccess (fieldname, Typ.Tstruct typename) :: _ ->
+          begin
+            match Tenv.lookup tenv typename with
+            | Some struct_typ ->
+                Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_thread_confined
+            | None ->
+                false
+          end
+      | _ ->
+          false in
     let f_resolve_id = resolve_id id_map in
 
     IList.fold_left
       (fun acc rawpath ->
-         let base_path = truncate rawpath in
-         if not (ThreadSafetyDomain.OwnershipDomain.mem base_path owned)
+         if not (ThreadSafetyDomain.OwnershipDomain.mem (truncate rawpath) owned) &&
+            not (is_thread_confined rawpath)
          then
            ThreadSafetyDomain.PathDomain.add_sink (ThreadSafetyDomain.make_access rawpath loc) acc
          else
@@ -114,7 +125,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Ident.create_fieldname (Mangled.from_string (Procname.get_method pn)) 0 in
       let dummy_access_exp = Exp.Lfield (exp, dummy_fieldname, typ) in
       let writes =
-        add_path_to_state dummy_access_exp typ loc astate.writes astate.id_map astate.owned in
+        add_path_to_state dummy_access_exp typ loc astate.writes astate.id_map astate.owned tenv in
       { astate with writes; } in
     let is_unprotected is_locked =
       not is_locked && not (Procdesc.is_java_synchronized pdesc) in
@@ -182,7 +193,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let writes' =
           match lhs_exp with
           | Lfield ( _, _, typ) when is_unprotected locks -> (* abstracts no lock being held *)
-              add_path_to_state lhs_exp typ loc writes id_map owned
+              add_path_to_state lhs_exp typ loc writes id_map owned tenv
           | _ -> writes in
         (* if rhs is owned, propagate ownership to lhs. otherwise, remove lhs from ownerhsip set
            (since it may have previously held an owned memory loc and is now being reassigned *)
@@ -203,7 +214,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let reads' =
           match rhs_exp with
           | Lfield ( _, _, typ) when is_unprotected locks ->
-              add_path_to_state rhs_exp typ loc reads id_map owned
+              add_path_to_state rhs_exp typ loc reads id_map owned tenv
           | _ ->
               reads in
         (* if rhs is owned, propagate ownership to lhs *)
