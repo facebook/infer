@@ -13,7 +13,7 @@ CMAKE_ANALYZE_DIR = $(CMAKE_DIR)/_build_infer
 
 ANALYZER = infer
 CLEAN_EXTRA = $(CMAKE_BUILD_DIR) $(CMAKE_ANALYZE_DIR)
-INFER_OPTIONS = --project-root $(CMAKE_DIR)
+INFER_OPTIONS = --project-root $(TESTS_DIR)
 SOURCES = $(CMAKE_DIR)/hello.c
 OBJECTS = $(CMAKE_BUILD_DIR)/CMakeFiles/Hello.dir/hello.c.o
 INFERPRINT_OPTIONS = --issues-tests
@@ -39,4 +39,4 @@ infer-out/report.json: $(SOURCES) $(CMAKE_DIR)/CMakeLists.txt $(CLANG_DEPS)
 	$(call silent_on_success,\
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) -- $(MAKE) -C $(CMAKE_ANALYZE_DIR))
 #	cmake makes all paths absolute
-	@sed -i -e 's#$(abspath $(CMAKE_DIR))/##g' $@
+	@sed -i -e 's#$(abspath $(TESTS_DIR))/##g' $@

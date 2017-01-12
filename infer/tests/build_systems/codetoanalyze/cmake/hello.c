@@ -1,1 +1,1 @@
-../../../../../examples/hello.c
+../hello.c

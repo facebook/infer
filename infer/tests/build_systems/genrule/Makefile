@@ -30,6 +30,7 @@ genrule: $(ROOT_DIR)/buck-out/genruletest/gen/infer/tests/build_systems/genrule/
 $(ROOT_DIR)/buck-out/genruletest/gen/infer/tests/build_systems/genrule/module2/module2_infer/infer_out/report.json: \
   $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
 	cd $(ROOT_DIR) && \
+    $(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,\
 	INFER_BIN="$(INFER_BIN)" NO_BUCKD=1 GENERATE_INFER_GENRULES=1 \
 	buck build --config project.buck_out=buck-out/genruletest --no-cache //infer/tests/build_systems/genrule/module2:module2_infer)
@@ -38,4 +39,4 @@ $(ROOT_DIR)/buck-out/genruletest/gen/infer/tests/build_systems/genrule/module2/m
 infer-out/report.json: $(ROOT_DIR)/buck-out/genruletest/gen/infer/tests/build_systems/genrule/module2/module2_infer/infer_out/report.json
 	$(MKDIR_P) infer-out
 #	the report contains absolute paths
-	@sed -e 's#$(abspath $(ROOT_DIR))/##g' $< > $@
+	@sed -e 's#$(abspath $(TESTS_DIR))/##g' $< > $@

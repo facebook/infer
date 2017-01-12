@@ -47,7 +47,7 @@ let from_abs_path fname =
   | None -> (
       match Utils.filename_to_relative ~root:models_dir_real fname_real with
       | Some path -> RelativeInferModel path
-      | None -> Absolute fname (* fname is absolute already *)
+      | None -> Absolute fname_real (* fname_real is absolute already *)
     )
 
 let curr_encoding = `Enc_crc
