@@ -75,14 +75,8 @@ buck-out/
 .buckd/
 
 #other
-/infer/bin/InferAnalyze
-/infer/bin/InferClang
-/infer/bin/InferClang++
-/infer/bin/InferPrint
+/infer/bin
 
-/infer/bin/InferUnit
-/infer/bin/Typeprop
-/infer/bin/infer
 /infer/src/base/Version.ml
 /infer/models/java/models/
 /infer/models/java/models.jar

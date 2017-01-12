@@ -55,8 +55,17 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 	@$(MAKE) -C facebook setup
 endif
 	@$(MAKE) -C $(SRC_DIR) infer
+
+.PHONY: byte
+byte:
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	@$(MAKE) -C facebook setup
+endif
+	@$(MAKE) -C $(SRC_DIR) byte
+
 ifeq ($(BUILD_C_ANALYZERS),yes)
 src_build: clang_plugin
+byte: clang_plugin
 endif
 
 .PHONY: infer
