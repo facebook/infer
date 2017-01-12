@@ -36,6 +36,7 @@ depends: [
   "ounit" {="2.0.0"}
   "reason" {>="1.4.0"}
   "sawja" {>="1.5.2"}
+  "xmlm" {>="1.2.0"}
 ]
 depexts: [
   [ ["ubuntu"] ["python2.7-dev"] ]

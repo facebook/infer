@@ -21,6 +21,7 @@
     "@opam-alpha/javalib": "^ 2.3.3",
     "@opam-alpha/ounit": "2.0.0",
     "@opam-alpha/ocp-indent": "1.5.3",
+    "@opam-alpha/xmlm": "1.2.0",
     "reason-ide-toolkit": "^ 1.2.0",
     "reason": "1.4.0-source",
     "dependency-env": "https://github.com/npm-ml/dependency-env.git",

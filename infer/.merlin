@@ -10,6 +10,7 @@ PKG ptrees
 PKG sawja
 PKG str
 PKG unix
+PKG xmlm
 PKG yojson
 PKG zip
 FLG -principal -safe-string -short-paths -strict-formats -strict-sequence

@@ -111,10 +111,10 @@
     core_kernel-actual "git://github.com/npm-opam/core_kernel.git#113.33.03"
 
 "@opam-alpha/cppo@*", "@opam-alpha/cppo@>= 1.1.2", "@opam-alpha/cppo@>= 1.2.2":
-  version "1.4.0"
-  resolved "@opam-alpha-cppo-1.4.0.tgz#e9572a069d93fd9140122036dc7371d6581093f6"
+  version "1.4.1"
+  resolved "@opam-alpha-cppo-1.4.1.tgz#9f06bdedf148e6db8d16ec4043734593d0e8ee65"
   dependencies:
-    cppo-actual "git://github.com/npm-opam/cppo.git#1.4.0"
+    cppo-actual "git://github.com/npm-opam/cppo.git#1.4.1"
 
 "@opam-alpha/ctypes-foreign@*", "@opam-alpha/ctypes-foreign@0.4.0":
   version "0.4.0"
@@ -373,10 +373,10 @@
     ppx_variants_conv-actual "git://github.com/npm-opam/ppx_variants_conv.git#113.33.03"
 
 "@opam-alpha/re@*", "@opam-alpha/re@>= 1.5.0", "@opam-alpha/re@^ 1.5.0":
-  version "1.6.1"
-  resolved "@opam-alpha-re-1.6.1.tgz#e196b2566b10afb76011c71c44d7b0fbf5a70e6f"
+  version "1.7.1"
+  resolved "@opam-alpha-re-1.7.1.tgz#6d4542ca6cc3177d57176475f527060153dd690c"
   dependencies:
-    re-actual "git://github.com/npm-opam/re.git#1.6.1"
+    re-actual "git://github.com/npm-opam/re.git#1.7.1"
 
 "@opam-alpha/react@*", "@opam-alpha/react@>= 1.0.0":
   version "1.2.0"
@@ -426,11 +426,17 @@
   dependencies:
     variantslib-actual "git://github.com/npm-opam/variantslib.git#113.33.03"
 
-"@opam-alpha/yojson@*", "@opam-alpha/yojson@>= 1.2.1":
-  version "1.3.2"
-  resolved "@opam-alpha-yojson-1.3.2.tgz#5d2127c2f083ff49a2dc4c4cca29a155fa3ba785"
+"@opam-alpha/xmlm@1.2.0":
+  version "1.2.0"
+  resolved "@opam-alpha-xmlm-1.2.0.tgz#332c8f31109af6f762e22531e0e4fda536b50c59"
   dependencies:
-    yojson-actual "git://github.com/npm-opam/yojson.git#1.3.2"
+    xmlm-actual "git://github.com/npm-opam/xmlm.git#1.2.0"
+
+"@opam-alpha/yojson@*", "@opam-alpha/yojson@>= 1.2.1":
+  version "1.3.3"
+  resolved "@opam-alpha-yojson-1.3.3.tgz#3aead8805482520d31af234a4beb775f44ec37dc"
+  dependencies:
+    yojson-actual "git://github.com/npm-opam/yojson.git#1.3.3"
 
 "@opam-alpha/zed@>= 1.2.0":
   version "1.4.0"
@@ -440,24 +446,24 @@
 
 "ANSITerminal-actual@git://github.com/npm-opam/ANSITerminal.git#0.7.0":
   version "0.7.0"
-  resolved ANSITerminal.git-be5c05bcb988a0cabff7e751b44d4a2646a8e1f4#ef139673b3f2f74162daa774793ee04ad6c59add
+  resolved ANSITerminal.git-787c809f7b3e0d6445b803805f81a74a2af7b503#da69a5566a95751011cbb0cd4456287b19576424
   dependencies:
     "@opam-alpha/ocamlbuild" "*"
     "@opam-alpha/ocamlfind" ">= 1.5.0"
-    dependency-env "https://github.com/npm-ml/dependency-env.git"
-    nopam "https://github.com/yunxing/nopam.git"
+    dependency-env "*"
+    nopam "*"
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
 "BetterErrors-actual@git://github.com/npm-opam/BetterErrors.git#0.0.1":
   version "0.0.1"
-  resolved BetterErrors.git-5dce5110c71fcc1a12b4dcd6268347436831d198#d5b4c29f75f02db99be7442096a0b9a001db62ff
+  resolved BetterErrors.git-3a8c29bb67089b4b615ced135f3bd608be0e5aa0#117ab52737892a6c5a3e22ca99031c9419755961
   dependencies:
     "@opam-alpha/ANSITerminal" ">= 0.6.5"
     "@opam-alpha/ocamlfind" "*"
     "@opam-alpha/re" ">= 1.5.0"
-    dependency-env "https://github.com/npm-ml/dependency-env.git"
-    nopam "https://github.com/yunxing/nopam.git"
+    dependency-env "*"
+    nopam "*"
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
@@ -518,13 +524,13 @@
 
 "biniou-actual@git://github.com/npm-opam/biniou.git#1.0.12":
   version "1.0.12"
-  resolved biniou.git-7dd5e33eaf45d636b6fe97d24b01b26de8c49ac9#0ca61571dc04f0c7f84bc8c02fe64f4daf405d25
+  resolved biniou.git-198ece6041aa0853bc1637475796840b3daae5a9#8027e55d595ea67746f8aab404bf43d5862af1d9
   dependencies:
     "@opam-alpha/conf-which" "*"
     "@opam-alpha/easy-format" "*"
     "@opam-alpha/ocamlfind" "*"
-    dependency-env "https://github.com/npm-ml/dependency-env.git"
-    nopam "https://github.com/yunxing/nopam.git"
+    dependency-env "*"
+    nopam "*"
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
@@ -572,10 +578,10 @@
 
 "conf-m4-actual@git://github.com/npm-opam/conf-m4.git#4.1.0":
   version "4.1.0"
-  resolved conf-m4.git-e5eedfc61c8d2e529cf598584ba829f2fc722d87#ccaad11e529016d7a46849ece8481432d1190ae9
+  resolved conf-m4.git-75e353ae7ae97a988319ddb0e97ecfa25bce4739#412ad613b1850015ee396e9ff28994c06e182ec9
   dependencies:
-    dependency-env "https://github.com/npm-ml/dependency-env.git"
-    nopam "https://github.com/yunxing/nopam.git"
+    dependency-env "*"
+    nopam "*"
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
@@ -600,10 +606,10 @@
 
 "conf-which-actual@git://github.com/npm-opam/conf-which.git#1.0.0":
   version "1.0.0"
-  resolved conf-which.git-fdb919d8ed608aa090d0b95bbde5f3717192c068#03ef24339d749f817c328e42b8a992f92322d543
+  resolved conf-which.git-0b798e035ea41e43744ff28075b15d1a5dc9ac99#2a3b9e4e1f48bd2d3700eae1fcde2e22565fab03
   dependencies:
-    dependency-env "https://github.com/npm-ml/dependency-env.git"
-    nopam "https://github.com/yunxing/nopam.git"
+    dependency-env "*"
+    nopam "*"
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
@@ -655,14 +661,14 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"cppo-actual@git://github.com/npm-opam/cppo.git#1.4.0":
-  version "1.4.0"
-  resolved cppo.git-bae7485b77d4716ae4a9c3707fb74d471aa0eaa7#ce22772fc95f9bf01a221ff84500dbeaa4e48b30
+"cppo-actual@git://github.com/npm-opam/cppo.git#1.4.1":
+  version "1.4.1"
+  resolved cppo.git-f93baf17d8099c5866df939264ddddb6457aa7d2#04fea69a40f891adef887b88a58d4cf418e90691
   dependencies:
     "@opam-alpha/ocamlbuild" "*"
     "@opam-alpha/ocamlfind" "*"
-    dependency-env "https://github.com/npm-ml/dependency-env.git"
-    nopam "https://github.com/yunxing/nopam.git"
+    dependency-env "*"
+    nopam "*"
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
@@ -690,31 +696,19 @@
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"dependency-env@https://github.com/npm-ml/dependency-env.git":
-  version "0.0.0"
-  resolved dependency-env.git-20ccabcf9f4854fdcda3f965ce410487515d7dc7#fb1a38d19682e7f754e6154d276ce6fdfbade9f7
-  dependencies:
-    resolve "^1.1.7"
-
-"dependency-env@https://github.com/reasonml/dependency-env.git":
+dependency-env@*, "dependency-env@git+https://github.com/npm-ml/dependency-env.git", "dependency-env@git+https://github.com/reasonml/dependency-env.git", "dependency-env@https://github.com/npm-ml/dependency-env.git", "dependencyEnv@git+https://github.com/reasonml/dependency-env.git":
   version "0.1.1"
   resolved dependency-env.git-94c75aff3a71587afb570d89bcf2eef7996bb67f#a2d36a4ae7683c7c90d337c7626be3739316014a
   dependencies:
     resolve "^1.1.7"
 
-"dependencyEnv@https://github.com/reasonml/dependency-env":
-  version "0.1.1"
-  resolved dependency-env-94c75aff3a71587afb570d89bcf2eef7996bb67f#a2d36a4ae7683c7c90d337c7626be3739316014a
-  dependencies:
-    resolve "^1.1.7"
-
 "easy-format-actual@git://github.com/npm-opam/easy-format.git#1.2.0":
   version "1.2.0"
-  resolved easy-format.git-955d4b4cd1748832aa7fb756c4ba1092759355de#43c15ccebcdf3fdc1412219b080226a3c8b62a54
+  resolved easy-format.git-9a61ee2ca3cff40b50a36dc66dcb7761d096a451#78d499deeb5baec707e78f4f7253c2dc4ea92407
   dependencies:
     "@opam-alpha/ocamlfind" "*"
-    dependency-env "https://github.com/npm-ml/dependency-env.git"
-    nopam "https://github.com/yunxing/nopam.git"
+    dependency-env "*"
+    nopam "*"
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
@@ -805,57 +799,53 @@ libffi@*:
 
 "menhir-actual@git://github.com/npm-opam/menhir.git#20160825.0.0":
   version "20160825.0.0"
-  resolved menhir.git-429b785f5ebef9c0687c37d1d8b0caff7dc6e855#b90bea61e2e69fcc65e4065d286cfd63dedac80c
+  resolved menhir.git-8d6905e8eeb4bedcec501a14fdc7a7d950f85874#a5249c628d0e1a0805fd9978bbf323ca708ab97a
   dependencies:
     "@opam-alpha/ocamlbuild" "*"
     "@opam-alpha/ocamlfind" "*"
-    dependency-env "https://github.com/npm-ml/dependency-env.git"
-    nopam "https://github.com/yunxing/nopam.git"
+    dependency-env "*"
+    nopam "*"
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
 "merlin-actual@git://github.com/npm-opam/merlin.git#2.5.1":
   version "2.5.1"
-  resolved merlin.git-e244e67cfa460d2f256a48a9c3e0a30940f42908#5f5d730577b5f30e817e3e457780e9d8ece7291f
+  resolved merlin.git-5b236062b3cceff3e653ba47283159cf6895a93b#9b42608bc074434c736041debc4cfe2f6cc09b67
   dependencies:
     "@opam-alpha/ocamlfind" ">= 1.5.2"
     "@opam-alpha/yojson" "*"
-    dependency-env "https://github.com/npm-ml/dependency-env.git"
-    nopam "https://github.com/yunxing/nopam.git"
+    dependency-env "*"
+    nopam "*"
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
 "merlin-extend-actual@git://github.com/npm-opam/merlin-extend.git#0.3.0":
   version "0.3.0"
-  resolved merlin-extend.git-cf1fbdb73ca830bf1a1263b018ae6212bda27671#529fa736b172bc2116aa9d63ab408b45ffca8e59
+  resolved merlin-extend.git-8d01d124db27f46a27e04f25d0e1c54bab0d0f48#3e9869ce8dcabf35af4b01802f48597ace4fa73c
   dependencies:
     "@opam-alpha/cppo" "*"
     "@opam-alpha/ocamlfind" "*"
-    dependency-env "https://github.com/npm-ml/dependency-env.git"
-    nopam "https://github.com/yunxing/nopam.git"
+    dependency-env "*"
+    nopam "*"
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"nopam@https://github.com/reasonml/nopam.git":
+nopam@*, "nopam@git+https://github.com/reasonml/nopam.git", "nopam@git+https://github.com/yunxing/nopam.git", "nopam@https://github.com/yunxing/nopam.git":
   version "0.1.0"
   resolved nopam.git-7cd19f068ac9aaf75010cd6961f7c65c779a1d4a#1ceae15ec59530591b8d4697400e4ff8bdd59bcc
 
-"nopam@https://github.com/yunxing/nopam.git":
-  version "0.0.1"
-  resolved nopam.git-8584695c8e2615857d4f58a0dec7bae3a9059a54#49cd1b4ccc32d588cdd3a671d4cc6d773803396b
-
 "ocaml@git+https://github.com/npm-opam/ocaml.git#npm-4.02.3":
   version "4.2.3"
-  resolved ocaml.git-a7bae2718979ceb1b0df893c76ef93c986192205#f69ec99f81c25bb11fea9141c108d1cb16d2d4da
+  resolved ocaml.git-0bb98be8e5233a02282ed8de0c8965677ddbde33#ae0192fa2ff5f2f9afcdcafed495b44a282a34ea
 
 "ocamlfind-actual@git+https://github.com/npm-opam/ocamlfind.git#1.6.2":
   version "1.6.2"
-  resolved ocamlfind.git-3ee0b3d45e690bde9bfa923dfedd5c6643a6852a#fafbb42fd5a6b878242eab89e47a92ae06d4ef45
+  resolved ocamlfind.git-f6ea48c7628210d477ead863d32feba2357b9afe#68721fc1fd733cc07ea190409261f83d5b15f590
   dependencies:
     "@opam-alpha/conf-m4" "*"
     "@opam-alpha/ocaml" "4.2.3"
-    dependency-env "https://github.com/npm-ml/dependency-env.git"
-    nopam "https://github.com/yunxing/nopam.git"
+    dependency-env "*"
+    nopam "*"
 
 "ocp-build-actual@git://github.com/npm-opam/ocp-build.git#1.99.17":
   version "1.99.17"
@@ -879,7 +869,7 @@ libffi@*:
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"opam-installer-bin@https://github.com/yunxing/opam-installer-bin.git":
+"opam-installer-bin@git+https://github.com/yunxing/opam-installer-bin.git", "opam-installer-bin@https://github.com/yunxing/opam-installer-bin.git":
   version "0.0.0"
   resolved opam-installer-bin.git-689ede681217f76fb2f82a9f4528e192a5b543ba#b7704eda021a9fe18a9a37454868e1bbf102e0a0
   dependencies:
@@ -888,12 +878,12 @@ libffi@*:
 
 "ounit-actual@git://github.com/npm-opam/ounit.git#2.0.0":
   version "2.0.0"
-  resolved ounit.git-7efd6873bf35f08e6a9bb433fe898ee5e475becd#5bfb0efebc5e8542bc1a17343eb1da7cabfc020c
+  resolved ounit.git-1586a52f45a1d51a4df9bae22f77f3b97e269a3a#c075db580f8bf9953b47625fd3c9791f6186ee89
   dependencies:
     "@opam-alpha/ocamlbuild" "*"
     "@opam-alpha/ocamlfind" "*"
-    dependency-env "https://github.com/npm-ml/dependency-env.git"
-    nopam "https://github.com/yunxing/nopam.git"
+    dependency-env "*"
+    nopam "*"
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
@@ -1308,15 +1298,14 @@ libffi@*:
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"re-actual@git://github.com/npm-opam/re.git#1.6.1":
-  version "1.6.1"
-  resolved re.git-0cf78ce4db5572fbe5d870d1ddbbe6428e55c50f#35a00ade01e60945336ff3633039a738346b5694
+"re-actual@git://github.com/npm-opam/re.git#1.7.1":
+  version "1.7.1"
+  resolved re.git-9da39424a8a4a12a768f90b1e5cc4401102b6834#bd1bd7444b4b0cd577845e6b982436c735a6c75b
   dependencies:
     "@opam-alpha/ocamlbuild" "*"
     "@opam-alpha/ocamlfind" "*"
-    "@opam-alpha/ounit" "*"
-    dependency-env "https://github.com/npm-ml/dependency-env.git"
-    nopam "https://github.com/yunxing/nopam.git"
+    dependency-env "*"
+    nopam "*"
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
@@ -1358,8 +1347,8 @@ reason@1.4.0-source:
     substs "https://github.com/yunxing/substs.git"
 
 resolve@^1.1.7:
-  version "1.1.7"
-  resolved resolve-1.1.7.tgz#203114d82ad2c5ed9e8e0411b3932875e889e97b
+  version "1.2.0"
+  resolved resolve-1.2.0.tgz#9589c3f2f6149d1417a40becc1663db6ec6bc26c
 
 "result-actual@git://github.com/npm-opam/result.git#1.2.0":
   version "1.2.0"
@@ -1393,13 +1382,13 @@ resolve@^1.1.7:
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
-"substs@https://github.com/yunxing/substs.git":
+"substs@git+https://github.com/yunxing/substs.git", "substs@https://github.com/yunxing/substs.git":
   version "0.0.1"
   resolved substs.git-fd480dcdb4aed3fa9128fd819a546e3a7770040f#3a935dc6de26a5dfae899eca93a510bae55e57a4
 
-"tuareg@https://github.com/yunxing/tuareg":
+"tuareg@git+https://github.com/yunxing/tuareg.git":
   version "1.0.0"
-  resolved tuareg-a90c0a2f202529a641d369c3b18b0c785a4a7e99#416bf3b372022cb195bc715664d0746098badd8b
+  resolved tuareg.git-a90c0a2f202529a641d369c3b18b0c785a4a7e99#416bf3b372022cb195bc715664d0746098badd8b
 
 "typerep-actual@git://github.com/npm-opam/typerep.git#113.33.03":
   version "113.33.3"
@@ -1450,23 +1439,34 @@ resolve@^1.1.7:
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
+"xmlm-actual@git://github.com/npm-opam/xmlm.git#1.2.0":
+  version "1.2.0"
+  resolved xmlm.git-59d1489d52c1d39957fa8f2e9bc19676a120cbfc#ffff617ed704e5ff897f9bc5763a4dfea3f2a8d9
+  dependencies:
+    "@opam-alpha/ocamlbuild" "*"
+    "@opam-alpha/ocamlfind" "*"
+    dependency-env "*"
+    nopam "*"
+    opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
+    substs "https://github.com/yunxing/substs.git"
+
 yarn-pkg-config@*:
-  version "0.29.3"
-  resolved yarn-pkg-config-0.29.3.tgz#d71f04aabc743be557d5f2fa80e9e13049723107
+  version "0.29.5"
+  resolved yarn-pkg-config-0.29.5.tgz#e5695e932cfb8fcae9f8c08aabc08a5ba7996a37
   dependencies:
     dependency-env "https://github.com/npm-ml/dependency-env.git"
     nopam "https://github.com/yunxing/nopam.git"
 
-"yojson-actual@git://github.com/npm-opam/yojson.git#1.3.2":
-  version "1.3.2"
-  resolved yojson.git-dd81adbf47ff9d54f7614716c26bc97dffb7bcb1#6e4b7241179fbb7512bf15a82bd2731f195db48b
+"yojson-actual@git://github.com/npm-opam/yojson.git#1.3.3":
+  version "1.3.3"
+  resolved yojson.git-a72727dd8899c53153fd8a7cea06c626d0a71faf#3760f588e256e6c251777c44d097c30a0081e192
   dependencies:
     "@opam-alpha/biniou" ">= 1.0.6"
     "@opam-alpha/cppo" "*"
     "@opam-alpha/easy-format" "*"
     "@opam-alpha/ocamlfind" "*"
-    dependency-env "https://github.com/npm-ml/dependency-env.git"
-    nopam "https://github.com/yunxing/nopam.git"
+    dependency-env "*"
+    nopam "*"
     opam-installer-bin "https://github.com/yunxing/opam-installer-bin.git"
     substs "https://github.com/yunxing/substs.git"
 
