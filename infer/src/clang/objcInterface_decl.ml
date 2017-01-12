@@ -98,11 +98,11 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
   let interface_name = CType.mk_classname class_name Csu.Objc in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   CAst_utils.update_sil_types_map decl_key (Typ.Tstruct interface_name);
-  let supers, fields =
+  let decl_supers, decl_fields =
     create_supers_fields type_ptr_to_sil_type tenv curr_class decl_list
       ocidi.Clang_ast_t.otdi_super
       ocidi.Clang_ast_t.otdi_protocols in
-  let methods = ObjcProperty_decl.get_methods curr_class decl_list in
+  let decl_methods = ObjcProperty_decl.get_methods curr_class decl_list in
   let fields_sc = CField_decl.fields_superclass tenv ocidi Csu.Objc in
   IList.iter (fun (fn, ft, _) ->
       Logging.out_debug "----->SuperClass field: '%s' " (Ident.fieldname_to_string fn);
@@ -110,11 +110,12 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
   let fields, (supers : Typename.t list), methods =
     match Tenv.lookup tenv interface_name with
-    | Some ({ fields; supers; methods }) ->
-        CGeneral_utils.append_no_duplicates_fields fields fields,
-        CGeneral_utils.append_no_duplicates_csu supers supers,
-        CGeneral_utils.append_no_duplicates_methods methods methods
-    | _ -> fields, supers, methods in
+    | Some { fields; supers; methods } ->
+        CGeneral_utils.append_no_duplicates_fields decl_fields fields,
+        CGeneral_utils.append_no_duplicates_csu decl_supers supers,
+        CGeneral_utils.append_no_duplicates_methods decl_methods methods
+    | _ ->
+        decl_fields, decl_supers, decl_methods in
   let fields = CGeneral_utils.append_no_duplicates_fields fields fields_sc in
   (* We add the special hidden counter_field for implementing reference counting *)
   let modelled_fields = StructTyp.objc_ref_counter_field :: CField_decl.modelled_field name_info in
