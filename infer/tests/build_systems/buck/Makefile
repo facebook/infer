@@ -9,8 +9,11 @@ TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 
 ANALYZER = infer
-SOURCES = $(wildcard $(TESTS_DIR)/codetoanalyze/java/infer/*.java)
-OBJECTS = $(ROOT_DIR)/buck-out/gen/infer/tests/codetoanalyze/java/infer/lib__compile_compile__output/compile_compile.jar
+BUCK_TARGET = //infer/tests/codetoanalyze/java/infer:compile
+SOURCES = $(addprefix $(ROOT_DIR), $(shell buck audit input $(BUCK_TARGET)))
+TARGET_OUTPUT = $(word 2, $(shell buck targets --show-output $(BUCK_TARGET)))
+OBJECTS = $(ROOT_DIR)/$(TARGET_OUTPUT)
+
 INFERPRINT_OPTIONS = --project-root $(ROOT_DIR) --issues-tests
 CLEAN_EXTRA = $(ROOT_DIR)/buck-out
 
@@ -21,11 +24,11 @@ $(OBJECTS): $(JAVA_SOURCE_FILES)
 	cd $(ROOT_DIR) && \
 	$(call silent_on_success,\
 	INFER_BIN=$(INFER_BIN) NO_BUCKD=1 \
-	buck build --no-cache //infer/tests/codetoanalyze/java/infer:compile)
+	buck build --no-cache $(BUCK_TARGET))
 
 infer-out/report.json: $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
 	cd $(ROOT_DIR) && \
 	$(call silent_on_success,\
 	INFER_BIN=$(INFER_BIN) NO_BUCKD=1 \
 	$(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out -- \
-	  buck build --no-cache //infer/tests/codetoanalyze/java/infer:compile)
+	  buck build --no-cache $(BUCK_TARGET))
