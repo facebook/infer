@@ -240,7 +240,7 @@ let real_exe_name =
 let current_exe =
   if !Sys.interactive then CLOpt.Interactive
   else try IList.assoc String.equal (Filename.basename real_exe_name) CLOpt.exes
-    with Not_found -> CLOpt.Toplevel
+    with Not_found -> CLOpt.Driver
 
 let bin_dir =
   Filename.dirname real_exe_name
@@ -320,7 +320,7 @@ let inferconfig_home =
 and project_root =
   CLOpt.mk_path ~deprecated:["project_root"; "-project_root"] ~long:"project-root" ~short:"pr"
     ~default:init_work_dir
-    ~exes:CLOpt.[Analyze;Clang;Print;Toplevel]
+    ~exes:CLOpt.[Analyze;Clang;Driver;Print]
     ~meta:"dir" "Specify the root directory of the project"
 
 (* Parse the phase 1 options, ignoring the rest *)
@@ -405,7 +405,7 @@ and (
     ignore (
       let long = "<analyzer>-" ^ suffix in
       CLOpt.mk_string_list ~long ~meta ~f:(fun _ -> raise (Arg.Bad "invalid option"))
-        ~exes:CLOpt.[Toplevel;Print]
+        ~exes:CLOpt.[Driver;Print]
         help
     );
     IList.map (fun (name, analyzer) -> (analyzer, mk_option name)) string_to_analyzer in
@@ -445,7 +445,7 @@ and analyzer =
     | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters
     | Quandary | Threadsafety -> () in
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:"a"
-    ~exes:CLOpt.[Toplevel]
+    ~exes:CLOpt.[Driver]
     "Specify which analyzer to run (only one at a time is supported):\n\
      - infer, eradicate, checkers, quandary, threadsafety: run the specified analysis\n\
      - capture: run capture phase only (no analysis)\n\
@@ -475,13 +475,13 @@ and ast_file =
 
 and blacklist =
   CLOpt.mk_string_opt ~deprecated:["-blacklist-regex";"-blacklist"] ~long:"buck-blacklist"
-    ~exes:CLOpt.[Toplevel]
+    ~exes:CLOpt.[Driver]
     ~meta:"regex" "Skip analysis of files matched by the specified regular expression (Buck \
                    flavors only)"
 
 and bootclasspath =
   CLOpt.mk_string_opt ~long:"bootclasspath"
-    ~exes:CLOpt.[Toplevel]
+    ~exes:CLOpt.[Driver]
     "Specify the Java bootclasspath"
 
 (** Automatically set when running from within Buck *)
@@ -491,49 +491,49 @@ and buck =
 
 and buck_build_args =
   CLOpt.mk_string_list ~long:"Xbuck"
-    ~exes:CLOpt.[Toplevel]
+    ~exes:CLOpt.[Driver]
     "Pass values as command-line arguments to invocations of `buck build` (Buck flavors only)"
 
 and buck_out =
   CLOpt.mk_path_opt ~long:"buck-out"
-    ~exes:CLOpt.[Toplevel] ~meta:"dir" "Specify the root directory of buck-out"
+    ~exes:CLOpt.[Driver] ~meta:"dir" "Specify the root directory of buck-out"
 
 and bugs_csv =
   CLOpt.mk_path_opt ~deprecated:["bugs"] ~long:"issues-csv"
-    ~exes:CLOpt.[Toplevel;Print]
+    ~exes:CLOpt.[Driver;Print]
     ~meta:"file" "Write a list of issues in CSV format to a file"
 
 and bugs_json =
   CLOpt.mk_path_opt ~deprecated:["bugs_json"] ~long:"issues-json"
-    ~exes:CLOpt.[Toplevel;Print]
+    ~exes:CLOpt.[Driver;Print]
     ~meta:"file" "Write a list of issues in JSON format to a file"
 
 and bugs_tests =
   CLOpt.mk_path_opt ~long:"issues-tests"
-    ~exes:CLOpt.[Toplevel;Print]
+    ~exes:CLOpt.[Driver;Print]
     ~meta:"file"
     "Write a list of issues in a format suitable for tests to a file"
 
 and bugs_txt =
   CLOpt.mk_path_opt ~deprecated:["bugs_txt"] ~long:"issues-txt"
-    ~exes:CLOpt.[Toplevel;Print]
+    ~exes:CLOpt.[Driver;Print]
     ~meta:"file"
     "Write a list of issues in TXT format to a file"
 
 and bugs_xml =
   CLOpt.mk_path_opt ~deprecated:["bugs_xml"] ~long:"issues-xml"
-    ~exes:CLOpt.[Toplevel;Print]
+    ~exes:CLOpt.[Driver;Print]
     ~meta:"file"
     "Write a list of issues in XML format to a file"
 
 and calls_csv =
   CLOpt.mk_path_opt ~deprecated:["calls"] ~long:"calls-csv"
-    ~exes:CLOpt.[Toplevel;Print]
+    ~exes:CLOpt.[Driver;Print]
     ~meta:"file"
     "Write individual calls in CSV format to a file"
 
 and changed_files_index =
-  CLOpt.mk_path_opt ~long:"changed-files-index" ~exes:CLOpt.[Toplevel] ~meta:"file"
+  CLOpt.mk_path_opt ~long:"changed-files-index" ~exes:CLOpt.[Driver] ~meta:"file"
     "Specify the file containing the list of source files from which reactive analysis should \
      start. Source files should be specified relative to project root or be absolute"
 
@@ -604,7 +604,7 @@ and cluster =
 and compute_analytics =
   CLOpt.mk_bool ~long:"compute-analytics"
     ~default:false
-    ~exes:CLOpt.[Toplevel;Clang]
+    ~exes:CLOpt.[Clang;Driver]
     "Emit analytics as info-level issues, like component kit line count and \
      component kit file cyclomatic complexity"
 
@@ -612,7 +612,7 @@ and compute_analytics =
     If a procedure was changed beforehand, keep the changed marking. *)
 and continue =
   CLOpt.mk_bool ~deprecated:["continue"] ~long:"continue"
-    ~exes:CLOpt.[Toplevel]
+    ~exes:CLOpt.[Driver]
     "Continue the capture for the reactive analysis, increasing the changed files/procedures. (If \
      a procedure was changed beforehand, keep the changed marking.)"
 
@@ -646,7 +646,7 @@ and (
 
   and filtering =
     CLOpt.mk_bool ~long:"filtering" ~short:"f" ~default:true
-      ~exes:CLOpt.[Toplevel]
+      ~exes:CLOpt.[Driver]
       "Do not show the results from experimental checks (note: some of them may contain many false \
        alarms)"
 
@@ -716,7 +716,7 @@ and dependencies =
 
 and disable_checks =
   CLOpt.mk_string_list ~deprecated:["disable_checks"] ~long:"disable-checks" ~meta:"error name"
-    ~exes:CLOpt.[Toplevel;Print]
+    ~exes:CLOpt.[Driver;Print]
     "Do not show reports coming from this type of errors"
 
 and dotty_cfg_libs =
@@ -778,7 +778,7 @@ and err_file =
 
 and fail_on_bug =
   CLOpt.mk_bool ~deprecated:["-fail-on-bug"] ~long:"fail-on-issue" ~default:false
-    ~exes:CLOpt.[Toplevel]
+    ~exes:CLOpt.[Driver]
     (Printf.sprintf "Exit with error code %d if Infer found something to report"
        fail_on_issue_exit_code)
 
@@ -800,7 +800,7 @@ and filter_paths =
 
 and flavors =
   CLOpt.mk_bool ~deprecated:["-use-flavors"] ~long:"flavors"
-    ~exes:CLOpt.[Toplevel]
+    ~exes:CLOpt.[Driver]
     "Buck integration using Buck flavors (clang only), eg `infer --flavors -- buck build \
      //foo:bar#infer`"
 
@@ -827,7 +827,7 @@ and frontend_tests =
 
 and generated_classes =
   CLOpt.mk_path_opt ~long:"generated-classes"
-    ~exes:CLOpt.[Toplevel]
+    ~exes:CLOpt.[Driver]
     "Specify where to load the generated class files"
 
 and headers =
@@ -845,7 +845,7 @@ and infer_cache =
     ~meta:"dir" "Select a directory to contain the infer cache (Buck and Java only)"
 
 and iphoneos_target_sdk_version =
-  CLOpt.mk_string_opt ~long:"iphoneos-target-sdk-version" ~exes:CLOpt.[Toplevel;Clang]
+  CLOpt.mk_string_opt ~long:"iphoneos-target-sdk-version" ~exes:CLOpt.[Clang;Driver]
     "Specify the target SDK version to use for iphoneos"
 
 and iterations =
@@ -861,7 +861,7 @@ and java_jar_compiler =
 
 and jobs =
   CLOpt.mk_int ~deprecated:["-multicore"] ~long:"jobs" ~short:"j" ~default:ncpu
-    ~exes:CLOpt.[Toplevel] ~meta:"int" "Run the specified number of analysis jobs simultaneously"
+    ~exes:CLOpt.[Driver] ~meta:"int" "Run the specified number of analysis jobs simultaneously"
 
 and join_cond =
   CLOpt.mk_int ~deprecated:["join_cond"] ~long:"join-cond" ~default:1
@@ -881,7 +881,7 @@ and linters_def_file =
 
 and load_average =
   CLOpt.mk_float_opt ~long:"load-average" ~short:"l"
-    ~exes:CLOpt.[Toplevel] ~meta:"float"
+    ~exes:CLOpt.[Driver] ~meta:"float"
     "Do not start new parallel jobs if the load average is greater than that specified (Buck and \
      make only)"
 
@@ -901,7 +901,7 @@ and margin =
 
 and merge =
   CLOpt.mk_bool ~deprecated:["merge"] ~long:"merge"
-    ~exes:CLOpt.[Toplevel]
+    ~exes:CLOpt.[Driver]
     "Merge the captured results directories specified in the dependency file (Buck flavors only)"
 
 and ml_buckets =
@@ -965,7 +965,7 @@ and patterns_skip_translation =
 
 and pmd_xml =
   CLOpt.mk_bool ~long:"pmd-xml"
-    ~exes:CLOpt.[Toplevel]
+    ~exes:CLOpt.[Driver]
     "Output issues in (PMD) XML format"
 
 and precondition_stats =
@@ -973,7 +973,7 @@ and precondition_stats =
     "Print stats about preconditions to standard output"
 
 and print_logs =
-  CLOpt.mk_bool ~long:"print-logs" ~exes:CLOpt.[Toplevel]
+  CLOpt.mk_bool ~long:"print-logs" ~exes:CLOpt.[Driver]
     "Also log messages to stdout and stderr"
 
 and print_builtins =
@@ -1001,7 +1001,7 @@ and procs_xml =
 
 and progress_bar =
   CLOpt.mk_bool ~deprecated_no:["no_progress_bar"] ~long:"progress-bar" ~short:"pb" ~default:true
-    ~exes:CLOpt.[Toplevel]
+    ~exes:CLOpt.[Driver]
     "Show a progress bar"
 
 and quiet =
@@ -1036,7 +1036,7 @@ and report_hook =
 and results_dir =
   CLOpt.mk_path ~deprecated:["results_dir"; "-out"] ~long:"results-dir" ~short:"o"
     ~default:(init_work_dir ^/ "infer-out")
-    ~exes:CLOpt.[Toplevel;Analyze;Clang;Print]
+    ~exes:CLOpt.[Analyze;Clang;Driver;Print]
     ~meta:"dir" "Write results and internal files in the specified directory"
 
 and save_results =
@@ -1104,13 +1104,13 @@ and specs_library =
   specs_library
 
 and stacktrace =
-  CLOpt.mk_path_opt ~long:"stacktrace" ~short:"st" ~exes:CLOpt.[Toplevel]
+  CLOpt.mk_path_opt ~long:"stacktrace" ~short:"st" ~exes:CLOpt.[Driver]
     ~meta:"file" "File path containing a json-encoded Java crash stacktrace. Used to guide the \
                   analysis (only with '-a crashcontext').  See \
                   tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
 
 and stacktraces_dir =
-  CLOpt.mk_path_opt ~long:"stacktraces-dir" ~exes:CLOpt.[Toplevel]
+  CLOpt.mk_path_opt ~long:"stacktraces-dir" ~exes:CLOpt.[Driver]
     ~meta:"dir" "Directory path containing multiple json-encoded Java crash stacktraces. \
                  Used to guide the  analysis (only with '-a crashcontext').  See \
                  tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
@@ -1177,7 +1177,7 @@ and verbose_out =
 and version =
   let var = ref `None in
   CLOpt.mk_set var `Full ~deprecated:["version"] ~long:"version"
-    ~exes:CLOpt.[Toplevel;Analyze;Clang;Print]
+    ~exes:CLOpt.[Analyze;Clang;Driver;Print]
     "Print version information and exit" ;
   CLOpt.mk_set var `Json ~deprecated:["version_json"] ~long:"version-json"
     ~exes:CLOpt.[Analyze;Clang;Print]
@@ -1207,13 +1207,13 @@ and worklist_mode =
 
 and xcode_developer_dir =
   CLOpt.mk_path_opt ~long:"xcode-developer-dir"
-    ~exes:CLOpt.[Toplevel]
+    ~exes:CLOpt.[Driver]
     ~meta:"XCODE_DEVELOPER_DIR" "Specify the path to Xcode developer directory (Buck flavors only)"
 
 and xcpretty =
   CLOpt.mk_bool ~long:"xcpretty"
     ~default:true
-    ~exes:CLOpt.[Toplevel]
+    ~exes:CLOpt.[Driver]
     "Infer will use xcpretty together with xcodebuild to analyze an iOS app. xcpretty just needs \
      to be in the path, infer command is still just infer -- <xcodebuild command>. (Recommended)"
 
@@ -1249,7 +1249,7 @@ let rest =
       ) in
   let version_spec = Arg.Unit (fun () -> version := `Javac) in
   CLOpt.mk_subcommand
-    ~exes:CLOpt.[Toplevel]
+    ~exes:CLOpt.[Driver]
     "Stop argument processing, use remaining arguments as a build command"
     (fun build_exe ->
        match Filename.basename build_exe with
@@ -1282,7 +1282,7 @@ let exe_usage (exe : CLOpt.exe) =
        To process all the .specs in the current directory, pass . as only parameter \
        To process all the .specs in the results directory, use option --results-dir \
        Each spec is printed to standard output unless option -q is used."
-  | Toplevel ->
+  | Driver ->
       version_string
 
 let post_parsing_initialization () =

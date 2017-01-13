@@ -17,15 +17,15 @@ module YBU = Yojson.Basic.Util
 
 (** Each command line option may appear in the --help list of any executable, these tags are used to
     specify which executables for which an option will be documented. *)
-type exe = Analyze | Clang | Interactive | Print | Toplevel
+type exe = Analyze | Clang | Driver | Interactive | Print
 
 
 (** Association list of executable (base)names to their [exe]s. *)
 let exes = [
   ("InferAnalyze", Analyze);
   ("InferClang", Clang);
+  ("infer", Driver);
   ("InferPrint", Print);
-  ("infer", Toplevel);
   ("interactive", Interactive);
 ]
 
@@ -624,12 +624,12 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
      current exe *)
   (* reset the speclist between calls to this function *)
   curr_speclist := [];
-  if current_exe = Toplevel then
-    add_to_curr_speclist ~add_help:true ~header:"Toplevel options" current_exe
+  if current_exe = Driver then
+    add_to_curr_speclist ~add_help:true ~header:"Driver options" current_exe
   else
     add_to_curr_speclist ~add_help:true current_exe
   ;
-  if current_exe = Toplevel then (
+  if current_exe = Driver then (
     add_to_curr_speclist ~header:"Analysis (backend) options" Analyze;
     add_to_curr_speclist ~header:"Clang frontend options" Clang;
   )
@@ -648,7 +648,7 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
   let exe_name = Sys.executable_name in
   let should_parse_cl_args = match current_exe with
     | Clang | Interactive -> false
-    | Analyze | Print | Toplevel -> true in
+    | Analyze | Print | Driver -> true in
   let env_cl_args =
     if should_parse_cl_args then prepend_to_argv env_args
     else env_args in

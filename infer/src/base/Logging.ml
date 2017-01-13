@@ -33,9 +33,9 @@ let log_dir_of_exe (exe : CLOpt.exe) =
   match exe with
   | Analyze -> "analyze"
   | Clang -> "clang"
+  | Driver -> "driver"
   | Interactive -> "interactive"
   | Print -> "print"
-  | Toplevel -> "toplevel"
 
 let stdout_err_log_files =
   (((lazy F.std_formatter), (lazy Pervasives.stdout),
@@ -83,7 +83,7 @@ let create_log_file exe name_prefix outerr =
 let should_setup_log_files (exe : CLOpt.exe) = match exe with
   | Analyze
   | Clang -> Config.debug_mode || Config.stats_mode
-  | Toplevel -> true
+  | Driver -> true
   | _ -> false
 
 let create_outerr_log_files exe prefix_opt =
