@@ -89,6 +89,12 @@ let clang_cc1_cmd_sanitizer cmd => {
       "armv7"
       /* replace armv7k arch with armv7 */
     } else if (
+      String.is_suffix arg suffix::"dep.tmp"
+    ) {
+      /* compilation-database-buck integration produces path to `dep.tmp` file that doesn't exist. Create it */
+      Unix.mkdir_p (Filename.dirname arg);
+      arg
+    } else if (
       String.equal option "-isystem"
     ) {
       switch Config.clang_include_to_override {
