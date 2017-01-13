@@ -284,7 +284,7 @@ fi
 AC_CHECK_PYTHON_MODULE([$PYTHON27], [lxml])
 
 AC_CONFIG_FILES([
-  Makefile.config
+  Makefile.autoconf
 ])
 
 AC_MSG_NOTICE([saving configure flags to ./config.flags])

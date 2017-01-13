@@ -38,7 +38,7 @@ duplicates.txt
 /config.status
 /config.flags
 /configure
-/Makefile.config
+/Makefile.autoconf
 /.buckversion
 /*/.gitignore
 
