@@ -12,7 +12,7 @@ open! Core.Std
 module F = Format
 
 let copyright_modified_exit_code = 1
-let copyright_malformed_exit_code = 2
+let copyright_malformed_exit_code = 3 (* error code 2 is for OCaml uncaught exceptions *)
 
 type comment_style =
   | Line of string (** line comments, eg "#" for shell *)
@@ -202,12 +202,6 @@ let com_style_of_lang = [
 let file_should_have_copyright fname =
   List.Assoc.mem com_style_of_lang ~equal:Filename.check_suffix fname
 
-let get_filename_extension fname =
-  try
-    let len_without_ext = String.length (Filename.chop_extension fname) in
-    String.slice fname len_without_ext (String.length fname - len_without_ext)
-  with Not_found -> ""
-
 let output_diff fname lines_arr cstart n cend len mono fb_year com_style prefix =
   let range = cend - cstart in
   let lang = lang_of_com_style com_style in
@@ -228,7 +222,7 @@ let check_copyright fname =
       if file_should_have_copyright fname then
         begin
           let year = 1900 + (Unix.localtime (Unix.time ())).Unix.tm_year in
-          let ext = get_filename_extension fname in
+          let ext = "." ^ Option.value (snd (Filename.split_extension fname)) ~default:"" in
           let com_style = List.Assoc.find_exn com_style_of_lang ~equal:String.equal ext in
           let prefix = prefix_of_comment_style com_style in
           let start = default_start_line_of_com_style com_style in

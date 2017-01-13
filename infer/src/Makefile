@@ -309,9 +309,12 @@ toplevel: $(INFER_BUILD_DIR)/toplevel.cmo
 .PHONY: checkCopyright
 checkCopyright: $(CHECKCOPYRIGHT_BIN)
 
-$(CHECKCOPYRIGHT_BIN): $(BUILD_DIR) $(CHECKCOPYRIGHT_MAIN).ml
-	rebuild -quiet -r -j $(NCPU) -build-dir $(BUILD_DIR)/checkCopyright -pkgs core,str -tag thread -use-ocamlfind $(CHECKCOPYRIGHT_MAIN).native
-	$(INSTALL_PROGRAM) $(BUILD_DIR)/checkCopyright/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BIN)
+$(CHECKCOPYRIGHT_BIN): $(BUILD_DIR) $(CHECKCOPYRIGHT_MAIN).ml Makefile
+	rebuild -quiet -r -j $(NCPU) -build-dir $(BUILD_DIR)/checkCopyright \
+	  -cflags -g,-safe-string -lflags -g \
+	  -pkgs core,str -tag thread -use-ocamlfind $(CHECKCOPYRIGHT_MAIN).native
+	$(INSTALL_PROGRAM) \
+	  $(BUILD_DIR)/checkCopyright/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BIN)
 
 define gen_atdgen_rules
 # generate files using atdgen
