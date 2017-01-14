@@ -296,17 +296,19 @@ let is_thread_confined_method tenv pname =
   PatternMatch.check_current_class_attributes
     Annotations.ia_is_thread_confined tenv pname
 
+let is_annotated f_annot pdesc =
+  let annotated_signature = Annotations.get_annotated_signature (Procdesc.get_attributes pdesc) in
+  let ret_annotation, _ = annotated_signature.Annotations.ret in
+  f_annot ret_annotation
 
 (* we don't want to warn on methods that run on the UI thread because they should always be
    single-threaded *)
 let runs_on_ui_thread proc_desc =
   (* assume that methods annotated with @UiThread or @OnEvent(SomeEvent.class) always run on the UI
      thread *)
-  let is_annotated pdesc =
-    let annotated_signature = Annotations.get_annotated_signature (Procdesc.get_attributes pdesc) in
-    let ret_annotation, _ = annotated_signature.Annotations.ret in
-    Annotations.ia_is_ui_thread ret_annotation || Annotations.ia_is_on_event ret_annotation in
-  is_annotated proc_desc
+  is_annotated
+    (fun annot -> Annotations.ia_is_ui_thread annot || Annotations.ia_is_on_event annot)
+    proc_desc
 
 (* return true if we should compute a summary for the procedure. if this returns false, we won't
    analyze the procedure or report any warnings on it *)
@@ -421,17 +423,6 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) trace =
     report_one_path
     (PathDomain.get_reportable_sink_paths trace ~trace_of_pname)
 
-(* For now, just checks if there is one active element amongst the posts of the analyzed methods.
-   This indicates that the method races with itself. To be refined later. *)
-let process_results_table tab =
-  ResultsTableType.iter   (* report errors for each method *)
-    (fun proc_env (_, _, writes) ->
-       if should_report_on_proc proc_env then
-         report_thread_safety_violations proc_env writes
-       else ()
-    )
-    tab
-
 (* Currently we analyze if there is an @ThreadSafe annotation on at least one of
    the classes in a file. This might be tightened in future or even broadened in future
    based on other criteria *)
@@ -450,21 +441,21 @@ let should_report_on_file file_env =
   not (IList.exists current_class_marked_not_threadsafe file_env) &&
   IList.exists current_class_or_super_marked_threadsafe file_env
 
+(* For now, just checks if there is one active element amongst the posts of the analyzed methods.
+   This indicates that the method races with itself. To be refined later. *)
+let process_results_table file_env tab =
+  let should_report_on_all_procs = should_report_on_file file_env in
+  let should_report ((_, _, _, pdesc) as proc_env) =
+    (should_report_on_all_procs || is_annotated Annotations.ia_is_thread_safe_method pdesc)
+    && should_report_on_proc proc_env in
+  ResultsTableType.iter (* report errors for each method *)
+    (fun proc_env (_, _, writes) ->
+       if should_report proc_env then report_thread_safety_violations proc_env writes)
+    tab
+
 (*This is a "cluster checker" *)
 (*Gathers results by analyzing all the methods in a file, then post-processes
   the results to check (approximation of) thread safety *)
 (* file_env: (Idenv.t * Tenv.t * Procname.t * Procdesc.t) list *)
 let file_analysis _ _ get_procdesc file_env =
-  let tab = make_results_table get_procdesc file_env in
-  if should_report_on_file file_env then
-    process_results_table tab
-  else ()
-
-      (*
-    Todo:
-    0. Refactor abstract domain to use records rather than tuples
-    1. Track line numbers of accesses
-    2. Track protected writes and reads, too; if we have a write and a read where
-    one is non-protected then we have potential race (including protected write, unprotected read
-    3. Lotsa other stuff
-      *)
+  process_results_table file_env (make_results_table get_procdesc file_env)

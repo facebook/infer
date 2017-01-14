@@ -9,6 +9,8 @@
 
 package codetoanalyze.java.checkers;
 
+import com.facebook.infer.annotation.ThreadSafeMethod;
+
 @ThreadSafe
 public class ThreadSafeExample{
 
@@ -128,6 +130,17 @@ class YesThreadSafeExtendsNotThreadSafeExample extends NotThreadSafeExtendsThrea
 /* We do want to warn on this */
   public void subsubmethodBad() {
      subsubfield = 22;
+  }
+
+}
+
+class NonThreadSafeClass {
+
+  Object field;
+
+  @ThreadSafeMethod
+  public void threadSafeMethod() {
+    this.field = new Object(); // should warn
   }
 
 }

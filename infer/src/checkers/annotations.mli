@@ -101,6 +101,7 @@ val ia_is_integrity_sink : Annot.Item.t -> bool
 val ia_is_guarded_by : Annot.Item.t -> bool
 val ia_is_not_thread_safe : Annot.Item.t -> bool
 val ia_is_thread_safe : Annot.Item.t -> bool
+val ia_is_thread_safe_method : Annot.Item.t -> bool
 val ia_is_ui_thread : Annot.Item.t -> bool
 val ia_is_thread_confined : Annot.Item.t -> bool
 

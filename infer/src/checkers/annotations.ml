@@ -121,6 +121,7 @@ let integrity_source = "IntegritySource"
 let integrity_sink = "IntegritySink"
 let guarded_by = "GuardedBy"
 let thread_safe = "ThreadSafe"
+let thread_safe_method = "ThreadSafeMethod"
 let not_thread_safe = "NotThreadSafe"
 let ui_thread = "UiThread"
 let any_thread = "AnyThread"
@@ -133,6 +134,9 @@ let ia_is_not_thread_safe ia =
 
 let ia_is_thread_safe ia =
   ia_ends_with ia thread_safe
+
+let ia_is_thread_safe_method ia =
+  ia_ends_with ia thread_safe_method
 
 let ia_is_nullable ia =
   ia_ends_with ia nullable
