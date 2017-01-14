@@ -25,7 +25,7 @@ let src_snk_pairs () =
   let specs =
     [
       ([Annotations.performance_critical], Annotations.expensive);
-      ([Annotations.no_allocation; Annotations.on_bind], dummy_constructor_annot);
+      ([Annotations.no_allocation], dummy_constructor_annot);
       ([Annotations.any_thread; Annotations.for_non_ui_thread], Annotations.ui_thread);
       ([Annotations.ui_thread; Annotations.for_ui_thread], Annotations.for_non_ui_thread);
     ] in
