@@ -100,10 +100,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Some rhs_access_path -> IdAccessPathMapDomain.add lhs_id rhs_access_path id_map
     | None -> id_map
 
-  let exec_instr
-      ({ ThreadSafetyDomain.locks; reads; writes; id_map; owned; } as astate)
-      { ProcData.pdesc; tenv; } _ =
-
+  let exec_instr (astate : Domain.astate) { ProcData.pdesc; tenv; } _ =
     let is_allocation pn =
       Procname.equal pn BuiltinDecl.__new ||
       Procname.equal pn BuiltinDecl.__new_array in
@@ -124,20 +121,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       let dummy_fieldname =
         Ident.create_fieldname (Mangled.from_string (Procname.get_method pn)) 0 in
       let dummy_access_exp = Exp.Lfield (exp, dummy_fieldname, typ) in
-      let writes =
-        add_path_to_state dummy_access_exp typ loc astate.writes astate.id_map astate.owned tenv in
-      { astate with writes; } in
+      let unconditional_writes =
+        add_path_to_state
+          dummy_access_exp typ loc astate.unconditional_writes astate.id_map astate.owned tenv in
+      { astate with unconditional_writes; } in
     let is_unprotected is_locked =
       not is_locked && not (Procdesc.is_java_synchronized pdesc) in
-    let f_resolve_id = resolve_id id_map in
+    let f_resolve_id = resolve_id astate.id_map in
 
     function
     | Sil.Call (Some (lhs_id, lhs_typ), Const (Cfun pn), _, _, _) when is_allocation pn ->
         begin
           match AccessPath.of_lhs_exp (Exp.Var lhs_id) lhs_typ ~f_resolve_id with
           | Some lhs_access_path ->
-              let owned' = ThreadSafetyDomain.OwnershipDomain.add lhs_access_path owned in
-              { astate with owned = owned'; }
+              let owned = ThreadSafetyDomain.OwnershipDomain.add lhs_access_path astate.owned in
+              { astate with owned; }
           | None ->
               astate
         end
@@ -150,7 +148,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | Unlock ->
               { astate with locks = false; }
           | NoEffect ->
-              if is_unprotected locks && is_container_write pn tenv
+              if is_unprotected astate.locks && is_container_write pn tenv
               then
                 match actuals with
                 | (receiver_exp, receiver_typ) :: _ ->
@@ -162,21 +160,23 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               else
                 begin
                   match Summary.read_summary pdesc pn with
-                  | Some (callee_locks, callee_reads, callee_writes) ->
-                      let locks' = callee_locks || locks in
+                  | Some (callee_locks, callee_reads, _, callee_unconditional_writes) ->
+                      let locks' = callee_locks || astate.locks in
                       let astate' =
                         (* TODO (14842325): report on constructors that aren't threadsafe
                            (e.g., constructors that access static fields) *)
                         if is_unprotected locks'
                         then
                           let call_site = CallSite.make pn loc in
-                          let reads' =
+                          let reads =
                             ThreadSafetyDomain.PathDomain.with_callsite callee_reads call_site
-                            |> ThreadSafetyDomain.PathDomain.join reads in
-                          let writes' =
-                            ThreadSafetyDomain.PathDomain.with_callsite callee_writes call_site
-                            |> ThreadSafetyDomain.PathDomain.join writes in
-                          { astate with reads = reads'; writes = writes'; }
+                            |> ThreadSafetyDomain.PathDomain.join astate.reads in
+                          let unconditional_writes =
+                            ThreadSafetyDomain.PathDomain.with_callsite
+                              callee_unconditional_writes
+                              call_site
+                            |> ThreadSafetyDomain.PathDomain.join astate.unconditional_writes in
+                          { astate with reads; unconditional_writes; }
                         else
                           astate in
                       { astate' with locks = locks'; }
@@ -190,50 +190,54 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         { astate with id_map = id_map'; }
 
     | Sil.Store (lhs_exp, lhs_typ, rhs_exp, loc) ->
-        let writes' =
+        let unconditional_writes =
           match lhs_exp with
-          | Lfield ( _, _, typ) when is_unprotected locks -> (* abstracts no lock being held *)
-              add_path_to_state lhs_exp typ loc writes id_map owned tenv
-          | _ -> writes in
+          | Lfield ( _, _, typ)
+            when is_unprotected astate.locks -> (* abstracts no lock being held *)
+              add_path_to_state
+                lhs_exp typ loc astate.unconditional_writes astate.id_map astate.owned tenv
+          | _ ->
+              astate.unconditional_writes in
         (* if rhs is owned, propagate ownership to lhs. otherwise, remove lhs from ownerhsip set
            (since it may have previously held an owned memory loc and is now being reassigned *)
-        let owned' =
+        let owned =
           match AccessPath.of_lhs_exp lhs_exp lhs_typ ~f_resolve_id,
                 AccessPath.of_lhs_exp rhs_exp lhs_typ ~f_resolve_id with
           | Some lhs_access_path, Some rhs_access_path ->
-              if ThreadSafetyDomain.OwnershipDomain.mem rhs_access_path owned
-              then ThreadSafetyDomain.OwnershipDomain.add lhs_access_path owned
-              else ThreadSafetyDomain.OwnershipDomain.remove lhs_access_path owned
+              if ThreadSafetyDomain.OwnershipDomain.mem rhs_access_path astate.owned
+              then ThreadSafetyDomain.OwnershipDomain.add lhs_access_path astate.owned
+              else ThreadSafetyDomain.OwnershipDomain.remove lhs_access_path astate.owned
           | Some lhs_access_path, None ->
-              ThreadSafetyDomain.OwnershipDomain.remove lhs_access_path owned
-          | _ -> owned in
-        { astate with writes = writes'; owned = owned'; }
+              ThreadSafetyDomain.OwnershipDomain.remove lhs_access_path astate.owned
+          | _ ->
+              astate.owned in
+        { astate with unconditional_writes; owned; }
 
     | Sil.Load (lhs_id, rhs_exp, rhs_typ, loc) ->
-        let id_map' = analyze_id_assignment (Var.of_id lhs_id) rhs_exp rhs_typ astate in
-        let reads' =
+        let id_map = analyze_id_assignment (Var.of_id lhs_id) rhs_exp rhs_typ astate in
+        let reads =
           match rhs_exp with
-          | Lfield ( _, _, typ) when is_unprotected locks ->
-              add_path_to_state rhs_exp typ loc reads id_map owned tenv
+          | Lfield ( _, _, typ) when is_unprotected astate.locks ->
+              add_path_to_state rhs_exp typ loc astate.reads astate.id_map astate.owned tenv
           | _ ->
-              reads in
+              astate.reads in
         (* if rhs is owned, propagate ownership to lhs *)
-        let owned' =
+        let owned =
           match AccessPath.of_lhs_exp rhs_exp rhs_typ ~f_resolve_id with
           | Some rhs_access_path
-            when ThreadSafetyDomain.OwnershipDomain.mem rhs_access_path owned ->
-              ThreadSafetyDomain.OwnershipDomain.add (AccessPath.of_id lhs_id rhs_typ) owned
+            when ThreadSafetyDomain.OwnershipDomain.mem rhs_access_path astate.owned ->
+              ThreadSafetyDomain.OwnershipDomain.add (AccessPath.of_id lhs_id rhs_typ) astate.owned
           | _ ->
-              owned in
-        { astate with Domain.reads = reads'; id_map = id_map'; owned = owned'; }
+              astate.owned in
+        { astate with Domain.reads; id_map; owned; }
 
     | Sil.Remove_temps (ids, _) ->
-        let id_map' =
+        let id_map =
           IList.fold_left
             (fun acc id -> IdAccessPathMapDomain.remove (Var.of_id id) acc)
             astate.id_map
             ids in
-        { astate with id_map = id_map'; }
+        { astate with id_map; }
 
     |  _  ->
         astate
@@ -338,7 +342,11 @@ let make_results_table get_proc_desc file_env =
   in
   let compute_post_for_procedure = (* takes proc_env as arg *)
     fun (idenv, tenv, proc_name, proc_desc) ->
-      let empty = false, ThreadSafetyDomain.PathDomain.empty, ThreadSafetyDomain.PathDomain.empty in
+      let empty =
+        false,
+        ThreadSafetyDomain.PathDomain.empty,
+        ThreadSafetyDomain.ConditionalWritesDomain.empty,
+        ThreadSafetyDomain.PathDomain.empty in
       (* convert the abstract state to a summary by dropping the id map *)
       let compute_post ({ ProcData.pdesc; tenv; } as proc_data) =
         if should_analyze_proc pdesc tenv
@@ -346,8 +354,10 @@ let make_results_table get_proc_desc file_env =
           begin
             if not (Procdesc.did_preanalysis pdesc) then Preanal.do_liveness pdesc tenv;
             match Analyzer.compute_post proc_data ~initial:ThreadSafetyDomain.empty with
-            | Some { locks; reads; writes; } -> Some (locks, reads, writes)
-            | None -> None
+            | Some { locks; reads; conditional_writes; unconditional_writes; } ->
+                Some (locks, reads, conditional_writes, unconditional_writes)
+            | None ->
+                None
           end
         else
           Some empty in
@@ -390,7 +400,7 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) trace =
   let open ThreadSafetyDomain in
   let trace_of_pname callee_pname =
     match Summary.read_summary pdesc callee_pname with
-    | Some (_, _, writes) -> writes
+    | Some (_, _, _, unconditional_writes) -> unconditional_writes
     | _ -> PathDomain.empty in
   let report_one_path ((_, sinks) as path) =
     let pp_accesses fmt sink =
@@ -449,8 +459,8 @@ let process_results_table file_env tab =
     (should_report_on_all_procs || is_annotated Annotations.ia_is_thread_safe_method pdesc)
     && should_report_on_proc proc_env in
   ResultsTableType.iter (* report errors for each method *)
-    (fun proc_env (_, _, writes) ->
-       if should_report proc_env then report_thread_safety_violations proc_env writes)
+    (fun proc_env (_, _, _, unconditional_writes) ->
+       if should_report proc_env then report_thread_safety_violations proc_env unconditional_writes)
     tab
 
 (*This is a "cluster checker" *)
