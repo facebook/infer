@@ -252,7 +252,7 @@ rei:
 %.rei : %.mli
 	refmt -assume-explicit-arity -heuristics-file unary.txt -parse ml -print re $< > $*.rei
 
-roots:=Infer InferAnalyzeExe InferClang JMain InferPrintExe StatsAggregator
+roots:=Infer InferAnalyzeExe InferClang InferPrintExe StatsAggregator
 clusters:=base clang java IR
 
 ml_src_files:=$(shell find $(DEPENDENCIES) -regex '.*\.ml\(i\)*' -not -path facebook/scripts/eradicate_stats.ml)
