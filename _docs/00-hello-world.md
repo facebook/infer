@@ -69,7 +69,7 @@ found`.
 
 Here is a simple Objective-C example to illustrate Infer at work.
 
-```Objective-C
+```objc
 // Hello.m
 #import <Foundation/Foundation.h>
 
@@ -102,15 +102,14 @@ Hello.m:10 NULL_DEREFERENCE
 
 Now edit the file to use the getter instead of accessing the instance variable:
 
-```Objective-C
+```objc
 NSString* m() {
     Hello* hello = nil;
     return hello.s;
 }
 ```
 
-Run Infer again. This time we get no error: Infer reports ```No issues
-found```.
+Run Infer again. This time we get no error: Infer reports `No issues found`.
 
 
 ## Hello world C
@@ -153,8 +152,7 @@ void test() {
 }
 ```
 
-Run Infer again. This time we get no error: Infer reports ```No issues
-found```.
+Run Infer again. This time we get no error: Infer reports `No issues found`.
 
 When analyzing C files, Infer captures the gcc command and runs clang
 instead to parse them. Thus you may get compiler errors and warnings

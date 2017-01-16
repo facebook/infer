@@ -9,7 +9,7 @@ permalink: /docs/adding-models.html
 
 When analyzing projects with call dependencies between functions, Infer follows the call graph to decide in which order analyze these functions. The main goal is to use the analysis summary of a function wherever this function is called. On the following example:
 
-```C
+```c
 int foo(int x) {
   if (x < 42) {
     return x;
@@ -31,7 +31,7 @@ Infer starts with the analysis on `foo` and detect that this function either ret
 
 Now, it may happen that the code of some function is not available during the analysis. For example, this happens when a project uses pre-compiled libraries. The most typical case is the use of the standard library like in the following example:
 
-```C
+```c
 #include <stdlib.h>
 
 int* create() {
@@ -57,7 +57,7 @@ At this point, it is important to note that missing source code and missing mode
 
 Consider the case of a function `lib_exit` having the same semantics as `exit` but defined in an pre-compiled library not part of the project being analyzed:
 
-```C
+```c
 void lib_exit(int);
 
 int* create() {
@@ -71,7 +71,7 @@ In this case, Infer will not be able to know that the return statement is only p
 
 Similarly, considering a function `lib_alloc` equivalent to `malloc`, and the function `create` now defined as:
 
-```C
+```c
 int* lib_alloc(int);
 
 int* create() {
@@ -88,7 +88,7 @@ Then Infer will not report any null dereference in `my_function`.
 
 Adding new models is easy. The models for C can be found in [`infer/models/c/src/`](https://github.com/facebook/infer/tree/master/infer/models/c/src). The file [`libc_basic.c`](https://github.com/facebook/infer/blob/master/infer/models/c/src/libc_basic.c) contains models for some of the most commonly encountered functions from the C standard library. For example, the function `xmalloc`, which is essentially the same function as `create` defined above, is modeled by:
 
-```C
+```c
 void *xmalloc(size_t size) {
   void *ret = malloc(size);
   INFER_EXCLUDE_CONDITION(ret == NULL);
@@ -100,7 +100,7 @@ The function `xmalloc` is modeled using `malloc` to create an allocated object a
 
 For a slightly more complex example, `realloc` is modeled as:
 
-```C
+```c
 void *realloc(void *ptr, size_t size) {
   if(ptr==0) { // if ptr in NULL, behave as malloc
     return malloc(size);
@@ -150,7 +150,7 @@ and just rely on these two methods:
 
 Let's look at a toy example in Java. As explained above, models for C, Objective-C and Java are all following the same approach.
 
-```Java
+```java
 import lib.Server;
 
 public class Test {
@@ -182,7 +182,7 @@ public class Test {
 
 Assuming that the class `lib.Server` is part of a pre-compiled library, Infer will report a null pointer exception in `statusName`. This happens whenever `s.getStatus()` returns a value greater that `3`, in which case the default branch of the switch statement is taken and `convertStatus` returns `null`. However, we know from the documentation that the method `lib.Server.getStatus` can only return `0`, `1`, or `2`. A possible approach would be to use an assertion like the Guava `Preconditions.checkState` to inform Infer about the invariant:
 
-```Java
+```java
 Status convertStatus(Server s) {
   int serverStatus = s.getStatus();
   Preconditions.checkState(serverStatus >= 0 && serverStatus < 3);
@@ -198,7 +198,7 @@ To create a model for `getStatus()`, we need to add a class with the name and th
 
 - create a file `infer/models/java/src/infer/models/Server.java` with the following content:
 
-```Java
+```java
 package infer.models;
 
 import com.facebook.infer.models.InferBuiltins;

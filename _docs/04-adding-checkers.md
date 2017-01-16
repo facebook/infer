@@ -9,7 +9,7 @@ permalink: /docs/adding-checkers.html
 
 Infer Checkers provide a framework to perform intra-procedural static analyses.
 Since this is an open source project, everyone is welcome to contribute with new great checkers.
-In this page, we will create a very basic checker - a detector for every time the output method ```java.io.PrintStream.println``` is called.
+In this page, we will create a very basic checker - a detector for every time the output method `java.io.PrintStream.println` is called.
 This should be enough to get you started.
 
 ## Before you start
@@ -44,9 +44,9 @@ Take your time to review the [basics](https://ocaml.org/learn/tutorials/basics.h
 
 ## Let's go
 
-Directory ```infer/src/checkers``` has all the source code related with Infer:Checkers.
+The directory `infer/src/checkers` has all the source code related with Infer:Checkers.
 
-Looking into ```checkers.ml``` we can find some simple checkers.
+Looking into `checkers.ml` we can find some simple checkers.
 They share this basic structure:
 
 ```ocaml
@@ -64,7 +64,7 @@ let callback_my_simple_checker { Callbacks.proc_desc; proc_name } =
 
 ```
 
-Checkers implement a function that detects a given pattern for our specific checker and then calls ```Cfg.Procdesc.iter_instrs``` to iterate over all the nodes of the CFG.
+Checkers implement a function that detects a given pattern for our specific checker and then calls `Cfg.Procdesc.iter_instrs` to iterate over all the nodes of the CFG.
 
 So now we need to know how to create our pattern.
 As an example, consider the following:
@@ -91,7 +91,7 @@ let callback_my_simple_checker { Callbacks.proc_desc; proc_name } =
 ```
 The `checkers/PatternMatch.ml` module contains the `java_proc_name_with_class_method` function which we can use for matching the required pattern.
 
-Each node is represented using the type ```instr``` from the Smallfoot Intermediate Language (SIL). Take a look at ```IR/Sil.rei``` to get familiar with all the types. All source code languages supported by Infer are converted to this representation.
+Each node is represented using the type `instr` from the Smallfoot Intermediate Language (SIL). Take a look at `IR/Sil.rei` to get familiar with all the types. All source code languages supported by Infer are converted to this representation.
 
 In this particular example, `Sil.Call` has the following information:
 
@@ -105,9 +105,9 @@ Sil.Call (
 )
 ```
 
-I hope this looks straight forward. Argument ```call_flags``` holds information about the function, such as whether it is virtual or not. Again, this is specified in the file ```Sil.rei```.
+I hope this looks straight forward. Argument `call_flags` holds information about the function, such as whether it is virtual or not. Again, this is specified in the file `Sil.rei`.
 
-The Checker we have written so far is able to detect every single function call. Now, we have to detect whether a specific function call is actually calling ```java.io.PrintStream.println```.
+The Checker we have written so far is able to detect every single function call. Now, we have to detect whether a specific function call is actually calling `java.io.PrintStream.println`.
 
 Let's try this:
 
@@ -134,19 +134,19 @@ let callback_my_simple_checker { Callbacks.proc_desc; proc_name } =
 
 ```
 
-Can you spot the difference? A new restriction was added to our pattern -- ```is_println``` expression helps us to check whether the current method is a ```java.io.PrintStream.println``` method or not.
+Can you spot the difference? A new restriction was added to our pattern -- `is_println` expression helps us to check whether the current method is a `java.io.PrintStream.println` method or not.
 
 So our implementation is done.
 Now we have to register it as an enabled Checker.
 
-First we have to make ```callback_my_simple_checker``` available outside module ```Checkers``` by adding its signature to ```checkers.mli```:
+First we have to make `callback_my_simple_checker` available outside module `Checkers` by adding its signature to `checkers.mli`:
 
 ```ocaml
 (**checkers.mli**)
 val callback_my_simple_checker : Callbacks.proc_callback_t
 ```
 
-And in the file ```registerCheckers.mli``` register our Checker as a _java\_checker_:
+And in the file `registerCheckers.mli` register our Checker as a _java\_checker_:
 
 ```ocaml
   let java_checkers =
@@ -160,7 +160,7 @@ And in the file ```registerCheckers.mli``` register our Checker as a _java\_chec
 
 ```
 
-Build Infer with ```./build-infer.sh``` and your first Checker is ready!
+Build Infer with `./build-infer.sh` and your first Checker is ready!
 
 If you want you can try with this java example:
 
@@ -180,7 +180,7 @@ class Hello {
 }
 ```
 
-Notice that only ```System.out.println``` is being detected.
+Notice that only `System.out.println` is being detected.
 
 All set! You are ready to create your own Checkers!
 Infer is an open source project and you are more than welcome to contribute. Take a look at the  [Github](https://github.com/facebook/infer/) page and feel free to fork or even open an issue if you're facing any trouble.
