@@ -51,7 +51,7 @@ The files `.cfg`, `.cg` and `.tenv` contain the intermediate representation of t
 With the debug option enabled `infer --debug -- <build command>`, Infer outputs debug information. When using `make` or `clang`, one needs an extra debug argument for the frontend:
 
 ```bash
-infer --frontend_debug --debug -- make example.c
+infer --frontend-debug --debug -- make example.c
 ```
 
 In each captured folder, we obtain the file `icfg.dot`, which is the graphical representation of the file `.cfg` and the file
@@ -115,13 +115,13 @@ which expresses the fact that `this` needs to be allocated at the beginning of t
 Moreover, you can print all the specs in the results directory with the command:
 
 ```bash
-InferPrint -results_dir infer-out
+InferPrint
 ```
 
 
 ## Run internal tests
 
-There are many tests in the Infer code base that check that Infer behaves correctly on small program examples. The tests use [Buck](http://buckbuild.com/), another Facebook's open source tool for building projects, so running the tests requires buck to be in your PATH. This is how you'd typically run the tests; you can adapt the figure `8` depending on the number of cores available on your machine:
+There are many tests in the Infer code base that check that Infer behaves correctly on small program examples. This is how you'd typically run the tests; you can adapt the figure `8` depending on the number of cores available on your machine:
 
 ```bash
 make -j8 test
