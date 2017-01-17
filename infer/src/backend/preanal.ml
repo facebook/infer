@@ -124,7 +124,7 @@ module NullifyTransferFunctions = struct
         (reaching_defs', to_nullify)
     | None -> astate
 
-  let cache_node = ref (Procdesc.Node.dummy ())
+  let cache_node = ref (Procdesc.Node.dummy None)
   let cache_instr = ref Sil.skip_instr
 
   let last_instr_in_node node =

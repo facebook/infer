@@ -763,10 +763,6 @@ and eradicate_debug =
   CLOpt.mk_bool ~long:"eradicate-debug"
     "Print debug info when errors are found"
 
-and eradicate_trace =
-  CLOpt.mk_bool ~long:"eradicate-trace"
-    "Print step-by-step tracing information"
-
 and eradicate_verbose =
   CLOpt.mk_bool ~long:"eradicate-verbose"
     "Print initial and final typestates"
@@ -1419,7 +1415,6 @@ and eradicate_optional_present = !eradicate_optional_present
 and eradicate_propagate_return_nullable = !eradicate_propagate_return_nullable
 and eradicate_return_over_annotated = !eradicate_return_over_annotated
 and eradicate_debug = !eradicate_debug
-and eradicate_trace = !eradicate_trace
 and eradicate_verbose = !eradicate_verbose
 and err_file_cmdline = !err_file
 and fail_on_bug = !fail_on_bug

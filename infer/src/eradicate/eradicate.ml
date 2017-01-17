@@ -115,18 +115,24 @@ struct
         let equal = TypeState.equal
         let join = TypeState.join Extension.ext
         let do_node tenv node typestate =
+          NodePrinter.start_session node;
           State.set_node node;
           let typestates_succ, typestates_exn =
             TypeCheck.typecheck_node
               tenv Extension.ext calls_this checks idenv get_proc_desc curr_pname curr_pdesc
               find_canonical_duplicate annotated_signature typestate node linereader in
-          if Config.eradicate_trace then
-            IList.iter (fun typestate_succ ->
-                L.stdout
-                  "Typestate After Node %a@\n%a@."
-                  Procdesc.Node.pp node
-                  (TypeState.pp Extension.ext) typestate_succ)
-              typestates_succ;
+
+          if Config.write_html then
+            begin
+              let d_typestate ts =
+                L.d_strln (F.asprintf "%a" (TypeState.pp Extension.ext) ts) in
+              L.d_strln "before:";
+              d_typestate typestate;
+              L.d_strln "after:";
+              IList.iter d_typestate typestates_succ
+            end;
+
+          NodePrinter.finish_session node;
           typestates_succ, typestates_exn
         let proc_throws _ = DontKnow
       end) in

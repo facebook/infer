@@ -47,20 +47,20 @@ let module Node = {
     /** predecessor nodes in the cfg */
     mutable preds: list t,
     /** name of the procedure the node belongs to */
-    pname: option Procname.t,
+    pname_opt: option Procname.t,
     /** successor nodes in the cfg */
     mutable succs: list t
   };
   let exn_handler_kind = Stmt_node "exception handler";
   let exn_sink_kind = Stmt_node "exceptions sink";
   let throw_kind = Stmt_node "throw";
-  let dummy () => {
+  let dummy pname_opt => {
     id: 0,
     dist_exit: None,
     instrs: [],
     kind: Skip_node "dummy",
     loc: Location.dummy,
-    pname: None,
+    pname_opt,
     succs: [],
     preds: [],
     exn: []
@@ -120,7 +120,7 @@ let module Node = {
 
   /** Get the name of the procedure the node belongs to */
   let get_proc_name node =>
-    switch node.pname {
+    switch node.pname_opt {
     | None =>
       L.out "get_proc_name: at node %d@\n" node.id;
       assert false
@@ -308,7 +308,10 @@ let from_proc_attributes called_from_cfg::called_from_cfg attributes => {
   if (not called_from_cfg) {
     assert false
   };
-  {attributes, nodes: [], nodes_num: 0, start_node: Node.dummy (), exit_node: Node.dummy ()}
+  let pname_opt = Some attributes.ProcAttributes.proc_name;
+  let start_node = Node.dummy pname_opt;
+  let exit_node = Node.dummy pname_opt;
+  {attributes, nodes: [], nodes_num: 0, start_node, exit_node}
 };
 
 
@@ -498,7 +501,7 @@ let create_node pdesc loc kind instrs => {
     kind,
     loc,
     preds: [],
-    pname: Some pdesc.attributes.proc_name,
+    pname_opt: Some pdesc.attributes.proc_name,
     succs: [],
     exn: []
   };

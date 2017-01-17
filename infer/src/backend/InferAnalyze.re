@@ -23,7 +23,8 @@ let analyze_exe_env exe_env => {
   if Config.checkers {
     /* run the checkers only */
     let call_graph = Exe_env.get_cg exe_env;
-    Callbacks.iterate_callbacks Checkers.ST.store_summary call_graph exe_env
+    Callbacks.iterate_callbacks Checkers.ST.store_summary call_graph exe_env;
+    Printer.write_all_html_files exe_env
   } else {
     /* run the full analysis */
     Interproc.do_analysis exe_env;

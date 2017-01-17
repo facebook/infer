@@ -185,7 +185,6 @@ val eradicate_optional_present : bool
 val eradicate_propagate_return_nullable : bool
 val eradicate_return_over_annotated : bool
 val eradicate_debug : bool
-val eradicate_trace : bool
 val eradicate_verbose : bool
 val err_file_cmdline : string
 val fail_on_bug : bool

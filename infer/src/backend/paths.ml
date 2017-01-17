@@ -343,7 +343,7 @@ end = struct
       | None ->
           () in
     iter_shortest_sequence (fun _ p _ _ -> add_node (curr_node p)) None path;
-    let max_rep_node = ref (Procdesc.Node.dummy ()) in
+    let max_rep_node = ref (Procdesc.Node.dummy None) in
     let max_rep_num = ref 0 in
     Procdesc.NodeMap.iter
       (fun node num -> if num > !max_rep_num then (max_rep_node := node; max_rep_num := num))

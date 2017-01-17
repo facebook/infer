@@ -333,12 +333,11 @@ let reset_prop_metrics () =
 
 exception RE_EXE_ERROR
 
-let do_before_node pname source session node =
-  let loc = Procdesc.Node.get_loc node in
+let do_before_node source session node =
   State.set_node node;
   State.set_session session;
   L.reset_delayed_prints ();
-  Printer.node_start_session node loc pname (session :> int) source
+  Printer.node_start_session node (session :> int) source
 
 let do_after_node source node =
   Printer.node_finish_session node source
@@ -605,7 +604,7 @@ let forward_tabulate tenv pdesc wl source =
     let session =
       incr summary.Specs.sessions;
       !(summary.Specs.sessions) in
-    do_before_node pname source session curr_node;
+    do_before_node source session curr_node;
     do_node_and_handle curr_node session
   done;
   L.d_strln ".... Work list empty. Stop ...."; L.d_ln ()
@@ -908,7 +907,7 @@ let initial_prop_from_pre tenv curr_f pre =
 let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Specs.Jprop.t) source
   : Prop.normal Specs.spec option =
   let pname = Procdesc.get_proc_name pdesc in
-  do_before_node pname source 0 init_node;
+  do_before_node source 0 init_node;
   L.d_strln ("#### Start: RE-execution for " ^ Procname.to_string pname ^ " ####");
   L.d_indent 1;
   L.d_strln "Precond:"; Specs.Jprop.d_shallow precondition;
@@ -925,7 +924,7 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
     Worklist.add wl init_node;
     ignore (path_set_put_todo wl init_node init_edgeset);
     forward_tabulate tenv pdesc wl source;
-    do_before_node pname source 0 init_node;
+    do_before_node source 0 init_node;
     L.d_strln_color Green
       ("#### Finished: RE-execution for " ^ Procname.to_string pname ^ " ####");
     L.d_increase_indent 1;
@@ -948,7 +947,7 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
     do_after_node source init_node;
     Some spec
   with RE_EXE_ERROR ->
-    do_before_node pname source 0 init_node;
+    do_before_node source 0 init_node;
     Printer.force_delayed_prints ();
     L.d_strln_color Red ("#### [FUNCTION " ^ Procname.to_string pname ^ "] ...ERROR");
     L.d_increase_indent 1;
@@ -1379,7 +1378,7 @@ let perform_transition exe_env tenv proc_name source =
               f start_node
           | None -> ()
         with exn when SymOp.exn_not_failure exn -> () in
-      apply_start_node (do_before_node proc_name source 0);
+      apply_start_node (do_before_node source 0);
       try
         Config.allow_leak := true;
         let res = collect_preconditions tenv proc_name in
@@ -1521,7 +1520,7 @@ let visited_and_total_nodes ~filter cfg =
       if filter_node pdesc n then
         begin
           set := Procdesc.NodeSet.add n !set;
-          if snd (Printer.node_is_visited (Procdesc.get_proc_name pdesc) n)
+          if snd (Printer.node_is_visited n)
           then set_visited_re := Procdesc.NodeSet.add n !set_visited_re
         end in
     Cfg.iter_all_nodes add cfg;

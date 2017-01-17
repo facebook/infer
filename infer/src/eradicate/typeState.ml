@@ -122,7 +122,7 @@ let map_join m1 m2 =
   )
 
 let join ext t1 t2 =
-  if Config.eradicate_trace
+  if Config.eradicate_debug
   then L.stderr "@.@.**********join@.-------@.%a@.------@.%a@.********@.@."
       (pp ext) t1
       (pp ext) t2;

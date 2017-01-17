@@ -51,7 +51,7 @@ let module Node: {
   let d_instrs: sub_instrs::bool => option Sil.instr => t => unit;
 
   /** Create a dummy node */
-  let dummy: unit => t;
+  let dummy: option Procname.t => t;
 
   /** Check if two nodes are equal */
   let equal: t => t => bool;

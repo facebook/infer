@@ -40,17 +40,14 @@ val force_delayed_prints : unit -> unit
 val node_finish_session : Procdesc.Node.t -> SourceFile.t -> unit
 
 (** Return true if the node was visited during footprint and during re-execution *)
-val node_is_visited : Procname.t -> Procdesc.Node.t -> bool * bool
+val node_is_visited : Procdesc.Node.t -> bool * bool
 
 (** Start a session, and create a new html fine for the node if it does not exist yet *)
-val node_start_session :
-  Procdesc.Node.t -> Location.t -> Procname.t -> int -> SourceFile.t -> unit
+val node_start_session : Procdesc.Node.t -> int -> SourceFile.t -> unit
 
 (** Write html file for the procedure.
     The boolean indicates whether to print whole seconds only. *)
 val write_proc_html : SourceFile.t -> bool -> Procdesc.t -> unit
-
-val write_html_file : LineReader.t -> SourceFile.t -> Procdesc.t list -> unit
 
 (** Create filename.ext.html for each file in the exe_env. *)
 val write_all_html_files : Exe_env.t -> unit
