@@ -9,6 +9,8 @@
 
 package codetoanalyze.java.checkers;
 
+import javax.annotation.concurrent.ThreadSafe;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MyImmutableList;
 import com.google.common.collect.ImmutableList.Builder;

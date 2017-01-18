@@ -9,6 +9,9 @@
 
 package codetoanalyze.java.checkers;
 
+import javax.annotation.concurrent.NotThreadSafe;
+import javax.annotation.concurrent.ThreadSafe;
+
 import com.facebook.infer.annotation.ThreadSafeMethod;
 
 @ThreadSafe

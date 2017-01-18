@@ -9,6 +9,8 @@
 
 package codetoanalyze.java.checkers;
 
+import javax.annotation.concurrent.ThreadSafe;
+
 class Obj {
   Object f;
   Obj g;

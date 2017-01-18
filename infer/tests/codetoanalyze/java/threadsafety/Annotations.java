@@ -14,6 +14,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import javax.annotation.concurrent.ThreadSafe;
+
 import android.support.annotation.UiThread;
 
 import com.facebook.infer.annotation.ThreadConfined;

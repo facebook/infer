@@ -9,6 +9,8 @@
 
 package codetoanalyze.java.checkers;
 
+import javax.annotation.concurrent.ThreadSafe;
+
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;

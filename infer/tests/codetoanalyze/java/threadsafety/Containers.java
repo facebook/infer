@@ -9,6 +9,8 @@
 
 package codetoanalyze.java.checkers;
 
+import javax.annotation.concurrent.ThreadSafe;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;

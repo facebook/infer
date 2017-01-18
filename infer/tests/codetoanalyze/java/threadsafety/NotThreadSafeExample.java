@@ -9,17 +9,7 @@
 
 package codetoanalyze.java.checkers;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Documented
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.CLASS)
-@interface NotThreadSafe {
-}
+import javax.annotation.concurrent.NotThreadSafe;
 
 @NotThreadSafe
 public class NotThreadSafeExample{
