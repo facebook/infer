@@ -1369,30 +1369,30 @@ struct
         let merge_into_cases stmt_list = (* returns list_of_cases * before_any_case_instrs *)
           let rec aux rev_stmt_list acc cases =
             (match rev_stmt_list with
-             | CaseStmt (info, a :: b :: (CaseStmt x) :: c) :: rest -> (* case x: case y: ... *)
+             | CaseStmt (info, a :: b :: CaseStmt x :: c) :: rest -> (* case x: case y: ... *)
                  if c <> []
                  (* empty case with nested case, then followed by some instructions *)
                  then assert false;
-                 let rest' = [CaseStmt(info, a :: b :: [])] @ rest in
+                 let rest' = CaseStmt (info, a :: b :: []) :: rest in
                  let rev_stmt_list' = (CaseStmt x) :: rest' in
                  aux rev_stmt_list' acc cases
-             | CaseStmt (info, a :: b :: (DefaultStmt x) :: c) :: rest ->
+             | CaseStmt (info, a :: b :: DefaultStmt x :: c) :: rest ->
                  (* case x: default: ... *)
                  if c <> []
                  (* empty case with nested case, then followed by some instructions *)
                  then assert false;
-                 let rest' = [CaseStmt(info, a :: b :: [])] @ rest in
-                 let rev_stmt_list' = (DefaultStmt x) :: rest' in
+                 let rest' = CaseStmt(info, a :: b :: []) :: rest in
+                 let rev_stmt_list' = DefaultStmt x :: rest' in
                  aux rev_stmt_list' acc cases
-             | DefaultStmt (info, (CaseStmt x) :: c) :: rest -> (* default: case x: ... *)
+             | DefaultStmt (info, CaseStmt x :: c) :: rest -> (* default: case x: ... *)
                  if c <> []
                  (* empty case with nested case, then followed by some instructions *)
                  then assert false;
-                 let rest' = [DefaultStmt(info, [])] @ rest in
-                 let rev_stmt_list' = (CaseStmt x) :: rest' in
+                 let rest' = DefaultStmt (info, []) :: rest in
+                 let rev_stmt_list' = CaseStmt x :: rest' in
                  aux rev_stmt_list' acc cases
              | CaseStmt (info, a :: b :: c) :: rest ->
-                 aux rest [] (CaseStmt(info, a :: b :: c @ acc) :: cases)
+                 aux rest [] (CaseStmt (info, a :: b :: c @ acc) :: cases)
              | DefaultStmt (info, c) :: rest -> (* default is always the last in the list *)
                  aux rest [] (DefaultStmt(info, c @ acc) :: cases)
              | x :: rest ->
@@ -2293,7 +2293,7 @@ struct
     let field_name = CGeneral_utils.mk_class_field_name field_name_decl in
     let ret_exp = Exp.Var ret_id in
     let field_exp = Exp.Lfield (ret_exp, field_name, typ) in
-    let args = [type_info_objc; (field_exp, Typ.Tvoid)] @ res_trans_subexpr.exps in
+    let args = type_info_objc :: (field_exp, Typ.Tvoid) :: res_trans_subexpr.exps in
     let call_instr = Sil.Call (Some (ret_id, typ), sil_fun, args, sil_loc, CallFlags.default) in
     let res_trans_call = { empty_res_trans with
                            instrs = [call_instr];
