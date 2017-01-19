@@ -42,5 +42,6 @@ def main():
     issues.print_and_save_errors(args.results_dir, args.project_root,
                                  args.issues_json, bugs_out, args.pmd_xml)
 
+
 if __name__ == '__main__':
     main()

@@ -31,6 +31,7 @@ CLANGPLUSPLUS_WRAPPER = os.path.join(config.XCODE_WRAPPERS_DIRECTORY,
 def gen_instance(*args):
     return XcodebuildCapture(*args)
 
+
 create_argparser = util.base_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 
 

@@ -83,7 +83,6 @@ def build_source_context(source_name, mode, report_line):
             line_number += 1
     excerpt = colorize.syntax_highlighting(source_name, mode, excerpt)
 
-
     # number lines and add caret at the right position
     n_length = len(str(last_line))
     s = ''

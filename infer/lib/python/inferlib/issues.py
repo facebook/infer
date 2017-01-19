@@ -149,7 +149,6 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
              'see %s or run `inferTraceBugs` for the remaining issues.')
             % (limit, bugs_txt_path), colorize.HEADER, formatter)
 
-
     issues_found = 'Found {n_issues}'.format(
         n_issues=utils.get_plural('issue', n_issues),
     )

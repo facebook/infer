@@ -12,16 +12,11 @@ from __future__ import unicode_literals
 
 import argparse
 import csv
-import json
-import logging
 import multiprocessing
-import os
-import shutil
-import subprocess
 import sys
-import time
 
-from . import config, issues, utils
+
+from . import config, utils
 
 # Increase the limit of the CSV parser to sys.maxlimit
 csv.field_size_limit(sys.maxsize)

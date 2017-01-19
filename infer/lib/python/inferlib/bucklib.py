@@ -13,20 +13,15 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse
-import csv
 import json
 import logging
-import multiprocessing
 import os
-import platform
-import re
 import shutil
 import stat
 import subprocess
 import sys
 import tempfile
 import time
-import traceback
 import zipfile
 
 from inferlib import config, issues, utils
@@ -55,25 +50,13 @@ def prepare_build(args):
     configuration that tells buck to use that script.
     """
 
-    infer_options = [
-        '--buck',
-        '--analyzer', args.analyzer,
-    ]
+    infer_options = ['--buck']
 
     if args.java_jar_compiler is not None:
         infer_options += [
             '--java-jar-compiler',
             args.java_jar_compiler,
         ]
-
-    if args.debug:
-        infer_options.append('--debug')
-
-    if args.no_filtering:
-        infer_options.append('--no-filtering')
-
-    if args.debug_exceptions:
-        infer_options += ['--debug-exceptions', '--no-filtering']
 
     # Create a temporary directory as a cache for jar files.
     infer_cache_dir = os.path.join(args.infer_out, 'cache')
@@ -91,10 +74,6 @@ def prepare_build(args):
     # make sure INFER_ANALYSIS is set when buck is called
     logging.info('Setup Infer analysis mode for Buck: export INFER_ANALYSIS=1')
     os.environ['INFER_ANALYSIS'] = '1'
-
-    # Export the Infer command as environment variables
-    os.environ['INFER_JAVA_BUCK_OPTIONS'] = json.dumps(infer_command)
-    os.environ['INFER_RULE_KEY'] = utils.infer_key(args.analyzer)
 
     # Create a script to be called by buck
     infer_script = None
@@ -164,13 +143,6 @@ def collect_results(args, start_time, targets):
     """
     all_json_rows = set()
 
-    accumulation_whitelist = list(map(re.compile, [
-        '^cores$',
-        '^time$',
-        '^start_time$',
-        '.*_pc',
-    ]))
-
     for path in get_output_jars(targets):
         try:
             with zipfile.ZipFile(path) as jar:
@@ -194,7 +166,8 @@ def collect_results(args, start_time, targets):
     bugs_out = os.path.join(args.infer_out, config.BUGS_FILENAME)
     issues.print_and_save_errors(args.infer_out, args.project_root,
                                  json_report, bugs_out, args.pmd_xml)
-    shutil.copy(bugs_out, os.path.join(args.infer_out, ANALYSIS_SUMMARY_OUTPUT))
+    shutil.copy(bugs_out, os.path.join(args.infer_out,
+                                       ANALYSIS_SUMMARY_OUTPUT))
 
 
 def cleanup(temp_files):
