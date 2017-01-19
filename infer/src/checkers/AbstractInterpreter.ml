@@ -81,7 +81,19 @@ module MakeNoCFG
       let instr_ids = match CFG.instr_ids node with
         | [] -> [Sil.skip_instr, None]
         | l -> l in
+      let underlying_node = CFG.underlying_node node in
+      NodePrinter.start_session underlying_node;
       let astate_post, inv_map_post = IList.fold_left compute_post (pre, inv_map) instr_ids in
+      if Config.write_html
+      then
+        begin
+          let str =
+            let instrs = IList.map fst instr_ids in
+            Format.asprintf "PRE: %a@.INSTRS: %aPOST: %a@."
+              Domain.pp pre (Sil.pp_instr_list Pp.text) instrs Domain.pp astate_post in
+          L.d_strln str
+        end;
+      NodePrinter.finish_session underlying_node;
       let inv_map'' =
         InvariantMap.add node_id { pre; post=astate_post; visit_count; } inv_map_post in
       inv_map'', Scheduler.schedule_succs work_queue node in
