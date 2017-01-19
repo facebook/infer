@@ -677,12 +677,6 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
   full_speclist := add_or_suppress_help (normalize !full_desc_list)
   ;
   let env_args = decode_env_to_argv (Option.value (Sys.getenv args_env_var) ~default:"") in
-  (* begin transitional support for INFERCLANG_ARGS *)
-  let c_args =
-    Str.split (Str.regexp_string (String.make 1 ':'))
-      (Option.value (Sys.getenv "INFERCLANG_ARGS") ~default:"") in
-  let env_args = c_args @ env_args in
-  (* end transitional support for INFERCLANG_ARGS *)
   let exe_name = Sys.executable_name in
   let should_parse_cl_args = match current_exe with
     | Clang | Interactive -> false
