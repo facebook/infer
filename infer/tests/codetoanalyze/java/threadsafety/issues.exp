@@ -13,8 +13,6 @@ codetoanalyze/java/threadsafety/Locks.java, void Locks.afterUnlockBad(), 3, THRE
 codetoanalyze/java/threadsafety/Locks.java, void Locks.afterWriteLockUnlockBad(), 3, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Locks.f]
 codetoanalyze/java/threadsafety/Locks.java, void Locks.lockInOneBranchBad(boolean), 4, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Locks.f]
 codetoanalyze/java/threadsafety/Ownership.java, void Ownership.FP_ownershipNotInterproceduralOk(), 2, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Obj.f]
-codetoanalyze/java/threadsafety/Ownership.java, void Ownership.FP_writeToOwnedInCalleeIndirectOk1(), 2, THREAD_SAFETY_VIOLATION, [call to void Ownership.callWriteToFormal(Obj),call to void Ownership.writeToFormal(Obj),access to codetoanalyze.java.checkers.Obj.f]
-codetoanalyze/java/threadsafety/Ownership.java, void Ownership.FP_writeToOwnedInCalleeIndirectOk2(), 3, THREAD_SAFETY_VIOLATION, [call to void Ownership.callWriteToFormal(Obj),call to void Ownership.writeToFormal(Obj),access to codetoanalyze.java.checkers.Obj.f]
 codetoanalyze/java/threadsafety/Ownership.java, void Ownership.cantOwnThisBad(), 1, THREAD_SAFETY_VIOLATION, [call to void Ownership.setField(Obj),access to codetoanalyze.java.checkers.Ownership.field]
 codetoanalyze/java/threadsafety/Ownership.java, void Ownership.ownInOneBranchBad(Obj,boolean), 5, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Obj.f]
 codetoanalyze/java/threadsafety/Ownership.java, void Ownership.reassignToFormalBad(Obj), 2, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Obj.g]

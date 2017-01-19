@@ -198,9 +198,32 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                                          safe *)
                                       acc
                                     else
-                                      cond_writes,
-                                      ThreadSafetyDomain.PathDomain.join
-                                        uncond_writes callee_cond_writes_for_index'
+                                      let base = fst actual_access_path in
+                                      begin
+                                        match FormalMap.get_formal_index base extras with
+                                        | Some formal_index ->
+                                            (* the actual passed to the current callee is rooted in
+                                               a formal. add to conditional writes *)
+                                            let conditional_writes' =
+                                              try
+                                                ThreadSafetyDomain.ConditionalWritesDomain.find
+                                                  formal_index
+                                                  cond_writes
+                                                |> ThreadSafetyDomain.PathDomain.join
+                                                  callee_cond_writes_for_index'
+                                              with Not_found ->
+                                                callee_cond_writes_for_index' in
+                                            let cond_writes' =
+                                              ThreadSafetyDomain.ConditionalWritesDomain.add
+                                                formal_index conditional_writes' cond_writes in
+                                            cond_writes', uncond_writes
+                                        | None ->
+                                            (* access path not owned and not rooted in a formal. add
+                                               to unconditional writes *)
+                                            cond_writes,
+                                            ThreadSafetyDomain.PathDomain.join
+                                              uncond_writes callee_cond_writes_for_index'
+                                      end
                                 | _ ->
                                     cond_writes,
                                     ThreadSafetyDomain.PathDomain.join

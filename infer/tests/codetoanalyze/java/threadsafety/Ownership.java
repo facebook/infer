@@ -142,12 +142,12 @@ public class Ownership {
     writeToFormal(this.field);
   }
 
-  public void FP_writeToOwnedInCalleeIndirectOk1() {
+  public void writeToOwnedInCalleeIndirectOk1() {
     Obj o = new Obj();
     callWriteToFormal(o);
   }
 
-  public void FP_writeToOwnedInCalleeIndirectOk2() {
+  public void writeToOwnedInCalleeIndirectOk2() {
     Obj o = new Obj();
     o.g = new Obj();
     callWriteToFormal(o.g);
