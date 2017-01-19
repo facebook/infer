@@ -308,9 +308,11 @@ let from_proc_attributes called_from_cfg::called_from_cfg attributes => {
   if (not called_from_cfg) {
     assert false
   };
-  {attributes, nodes: [], nodes_num: 0, start_node: Node.dummy (), exit_node: Node.dummy (), loop_heads: None }
+  let pname_opt = Some attributes.ProcAttributes.proc_name;
+  let start_node = Node.dummy pname_opt;
+  let exit_node = Node.dummy pname_opt;
+  {attributes, nodes: [], nodes_num: 0, start_node, exit_node, loop_heads : None}
 };
-
 
 /** Compute the distance of each node to the exit node, if not computed already */
 let compute_distance_to_exit_node pdesc => {

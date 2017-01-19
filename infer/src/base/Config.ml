@@ -499,7 +499,7 @@ and bootclasspath =
 
 and bo_debug =
   CLOpt.mk_int ~default:0 ~long:"bo-debug"
-    ~exes:CLOpt.[Toplevel] "Debug mode for buffer-overrun checker"
+    ~exes:CLOpt.[Driver] "Debug mode for buffer-overrun checker"
 
 (** Automatically set when running from within Buck *)
 and buck =
