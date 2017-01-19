@@ -115,7 +115,7 @@ module NullifyTransferFunctions = struct
   type extras = LivenessAnalysis.invariant_map
 
   let postprocess ((reaching_defs, _) as astate) node { ProcData.extras; } =
-    let node_id =  (CFG.underlying_id node), ProcCfg.Node_index in
+    let node_id = Procdesc.Node.get_id (CFG.underlying_node node), ProcCfg.Node_index in
     match LivenessAnalysis.extract_state node_id extras with
     (* note: because the analysis is backward, post and pre are reversed *)
     | Some { AbstractInterpreter.post = live_before; pre = live_after; } ->

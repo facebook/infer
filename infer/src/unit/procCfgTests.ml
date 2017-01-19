@@ -95,8 +95,8 @@ let tests =
         | _ -> assert_failure "Expected exactly two instructions with correct indices"
       end;
       assert_bool
-        "underlying_id should return id of underlying CFG type"
-        (BackwardInstrCfg.underlying_id n1 = BackwardCfg.id n1) in
+        "underlying_node should return node of underlying CFG type"
+        (Procdesc.Node.get_id (BackwardInstrCfg.underlying_node n1) = BackwardCfg.id n1) in
     "instr_test">::instr_test_ in
 
   let graph_tests = [

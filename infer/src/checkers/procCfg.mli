@@ -22,7 +22,7 @@ module type Node = sig
   val kind : t -> Procdesc.Node.nodekind
   val id : t -> id
   val loc : t -> Location.t
-  val underlying_id : t -> Procdesc.Node.id
+  val underlying_node : t -> Procdesc.Node.t
   val compare_id : id -> id -> int
   val pp_id : Format.formatter -> id -> unit
 end

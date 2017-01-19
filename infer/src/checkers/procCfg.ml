@@ -24,7 +24,7 @@ module type Node = sig
   val kind : t -> Procdesc.Node.nodekind
   val id : t -> id
   val loc : t -> Location.t
-  val underlying_id : t -> Procdesc.Node.id
+  val underlying_node : t -> Procdesc.Node.t
   val compare_id : id -> id -> int
   val pp_id : F.formatter -> id -> unit
 end
@@ -36,7 +36,7 @@ module DefaultNode = struct
   let kind = Procdesc.Node.get_kind
   let id = Procdesc.Node.get_id
   let loc = Procdesc.Node.get_loc
-  let underlying_id = id
+  let underlying_node t = t
   let compare_id = Procdesc.Node.compare_id
   let pp_id = Procdesc.Node.pp_id
 end
@@ -47,9 +47,9 @@ module InstrNode = struct
 
   let kind = Procdesc.Node.get_kind
 
-  let underlying_id t = Procdesc.Node.get_id t
+  let underlying_node t = t
 
-  let id t = underlying_id t, Node_index
+  let id t = Procdesc.Node.get_id (underlying_node t), Node_index
 
   let loc t = Procdesc.Node.get_loc t
 
