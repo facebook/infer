@@ -83,4 +83,9 @@ class Annotations {
     this.encapsulatedField.fld = new Object();
   }
 
+  @ThreadConfined
+  public void threadConfinedMethodOk() {
+    this.f = new Object();
+  }
+
 }
