@@ -1,11 +1,7 @@
 (*
  * Copyright (c) 2016 - present
- * Kihong Heo (http://ropas.snu.ac.kr/~khheo)
- * Sungkeun Cho (http://ropas.snu.ac.kr/~skcho)
- * Kwangkeun Yi (http://ropas.snu.ac.kr/~kwang)
  *
- * ROSAEC(Research On Software Analysis for Error-free Computing) Center
- * Programming Research Laboratory
+ * Programming Research Laboratory (ROPAS)
  * Seoul National University, Korea
  * All rights reserved.
  *
