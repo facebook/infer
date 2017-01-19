@@ -96,6 +96,63 @@ public class Ownership {
     alias.f = new Object();
   }
 
+  private void writeToFormal(Obj formal) {
+    formal.f = new Object();
+  }
+
+  private void callWriteToFormal(Obj formal) {
+    writeToFormal(formal);
+  }
+
+  private void setField(Obj o) {
+    this.field = o;
+  }
+
+  native Obj getMaybeUnownedObj();
+
+  // warn here even though this this is safe if `o` is owned at all call sites. because it's a
+  // public method, it's possible to use it in an unsafe way
+  public void writeToNotOwnedInCalleeBad1(Obj o) {
+    writeToFormal(o);
+  }
+
+  public void writeToNotOwnedInCalleeBad2() {
+    Obj o = getMaybeUnownedObj();
+    writeToFormal(o);
+  }
+
+  public void writeToNotOwnedInCalleeBad3(Obj o) {
+    callWriteToFormal(o);
+  }
+
+  // assuming that we can't own the `this` object
+  public void cantOwnThisBad() {
+    setField(new Obj());
+  }
+
+  public void writeToOwnedInCalleeOk1() {
+    Obj o = new Obj();
+    writeToFormal(o);
+  }
+
+  public void writeToOwnedInCalleeOk2() {
+    synchronized (this) {
+      this.field = new Obj();
+    }
+    writeToFormal(this.field);
+  }
+
+  public void FP_writeToOwnedInCalleeIndirectOk1() {
+    Obj o = new Obj();
+    callWriteToFormal(o);
+  }
+
+  public void FP_writeToOwnedInCalleeIndirectOk2() {
+    Obj o = new Obj();
+    o.g = new Obj();
+    callWriteToFormal(o.g);
+  }
+
   // we don't understand that ownership has been transferred from returnOwnedLocalOk to the current
   // procedure
   public void FP_ownershipNotInterproceduralOk() {

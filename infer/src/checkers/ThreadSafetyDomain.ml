@@ -84,6 +84,22 @@ type astate =
     (** access paths that must be owned by the current function *)
   }
 
+(** the primary role of this domain is tracking *conditional* and *unconditional* writes.
+    conditional writes are writes that are rooted in a formal of the current procedure, and they
+    are safe only if the actual bound to that formal is owned at the call site (as in the foo
+    example below). Unconditional writes are rooted in a local, and they are only safe if a lock is
+    held in the caller.
+    To demonstrate what conditional writes buy us, consider the following example:
+
+    foo() {
+      Object local = new Object();
+      iWriteToAField(local);
+    }
+
+    We don't want to warn on this example because the object pointed to by local is owned by the
+    caller foo, then ownership is transferred to the callee iWriteToAField.
+*)
+
 (** same as astate, but without [id_map]/[owned] (since they are local) *)
 type summary =
   LocksDomain.astate * PathDomain.astate * ConditionalWritesDomain.astate *PathDomain.astate
