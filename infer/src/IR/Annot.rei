@@ -25,6 +25,10 @@ type t = {
 [@@deriving compare];
 
 
+/** annotation for fields/methods marked with the "volatile" keyword */
+let volatile: t;
+
+
 /** Pretty print an annotation. */
 let pp: F.formatter => t => unit;
 

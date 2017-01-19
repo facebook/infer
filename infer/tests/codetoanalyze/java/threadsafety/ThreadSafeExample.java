@@ -94,6 +94,13 @@ public class ThreadSafeExample{
     returnConstructorOk();
   }
 
+  volatile Object volatileField;
+
+  // we don't warn on unsafe writes to volatile fields
+  public void unsafeVolatileWriteOk() {
+    this.volatileField = new Object();
+  }
+
 }
 
 class ExtendsThreadSafeExample extends ThreadSafeExample{

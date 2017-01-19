@@ -26,6 +26,8 @@ type t = {
 }
 [@@deriving compare];
 
+let volatile = {class_name: "volatile", parameters: []};
+
 
 /** Pretty print an annotation. */
 let pp fmt annotation => F.fprintf fmt "@@%s" annotation.class_name;

@@ -105,6 +105,7 @@ val ia_is_thread_safe_method : Annot.Item.t -> bool
 val ia_is_assume_thread_safe : Annot.Item.t -> bool
 val ia_is_ui_thread : Annot.Item.t -> bool
 val ia_is_thread_confined : Annot.Item.t -> bool
+val ia_is_volatile : Annot.Item.t -> bool
 
 val ia_iter : (Annot.t -> unit) -> Annot.Item.t -> unit
 

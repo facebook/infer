@@ -70,12 +70,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | base, []
       | base, _ :: [] -> base, []
       | base, accesses -> base, IList.rev (IList.tl (IList.rev accesses)) in
-    let is_thread_confined (_, accesses) = match IList.rev accesses with
+    (* we don't want to warn on writes to the field if it is (a) thread-confined, or (b) volatile *)
+    let is_safe_write (_, accesses) = match IList.rev accesses with
       | AccessPath.FieldAccess (fieldname, Typ.Tstruct typename) :: _ ->
           begin
             match Tenv.lookup tenv typename with
             | Some struct_typ ->
-                Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_thread_confined
+                Annotations.field_has_annot
+                  fieldname struct_typ Annotations.ia_is_thread_confined ||
+                Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_volatile
             | None ->
                 false
           end
@@ -86,7 +89,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     IList.fold_left
       (fun acc rawpath ->
          if not (ThreadSafetyDomain.OwnershipDomain.mem (truncate rawpath) owned) &&
-            not (is_thread_confined rawpath)
+            not (is_safe_write rawpath)
          then
            ThreadSafetyDomain.PathDomain.add_sink (ThreadSafetyDomain.make_access rawpath loc) acc
          else

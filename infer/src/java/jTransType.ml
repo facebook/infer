@@ -215,7 +215,12 @@ let create_sil_class_field cn cf =
   let fs = cf.Javalib.cf_signature in
   let field_name = create_fieldname cn fs
   and field_type = get_named_type (JBasics.fs_type fs)
-  and annotation = JAnnotation.translate_item cf.Javalib.cf_annotations in
+  and annotation =
+    let real_annotations = JAnnotation.translate_item cf.Javalib.cf_annotations in
+    (* translate modifers like "volatile" as annotations *)
+    match cf.Javalib.cf_kind with
+    | Javalib.Volatile -> (Annot.volatile, true) :: real_annotations
+    | Javalib.NotFinal | Final -> real_annotations in
   (field_name, field_type, annotation)
 
 

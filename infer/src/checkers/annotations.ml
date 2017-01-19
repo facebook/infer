@@ -109,6 +109,7 @@ let present = "Present"
 let strict = "com.facebook.infer.annotation.Strict"
 let true_on_null = "TrueOnNull"
 let verify_annotation = "com.facebook.infer.annotation.Verify"
+let volatile = "volatile"
 let expensive = "Expensive"
 let performance_critical = "PerformanceCritical"
 let no_allocation = "NoAllocation"
@@ -161,6 +162,9 @@ let ia_is_true_on_null ia =
 
 let ia_is_initializer ia =
   ia_ends_with ia initializer_
+
+let ia_is_volatile ia =
+  ia_contains ia volatile
 
 let field_injector_readwrite_list =
   [
