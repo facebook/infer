@@ -85,3 +85,7 @@ val suppress_stderr2 : ('a -> 'b -> 'c) -> 'a -> 'b -> 'c
     -1 if v1 is older than v2 and 0 if they are the same version.
     The versions are strings of the shape "n.m.t", the order is lexicographic. *)
 val compare_versions : string -> string -> int
+
+(** Register a function to run when the program exits or is interrupted. Registered functions are
+    run in the reverse order in which they were registered. *)
+val register_epilogue : (unit -> unit) -> unit

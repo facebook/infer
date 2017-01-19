@@ -77,7 +77,7 @@ let create_log_file exe name_prefix outerr =
     dup_formatter file_fmt outerr_fmt
   );
   (* flush files on exit *)
-  Pervasives.at_exit (fun () -> close_log_file (lazy file_fmt) (lazy chan) (lazy file));
+  Utils.register_epilogue (fun () -> close_log_file (lazy file_fmt) (lazy chan) (lazy file));
   (file_fmt, chan, file)
 
 let should_setup_log_files (exe : CLOpt.exe) = match exe with

@@ -141,7 +141,7 @@ let stats () =
   }
 
 let register_report_at_exit file =
-  Pervasives.at_exit (fun () ->
+  Utils.register_epilogue (fun () ->
       try
         let json_stats = to_json (stats ()) in
         try

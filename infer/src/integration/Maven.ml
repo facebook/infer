@@ -132,10 +132,10 @@ let add_profile_to_pom_in_directory dir =
   let infer_pom_path = dir ^/ "pom.xml.infer" in
   add_infer_profile maven_pom_path infer_pom_path;
   Unix.rename ~src:maven_pom_path ~dst:saved_pom_path;
-  Pervasives.at_exit (fun () -> Unix.rename ~src:saved_pom_path ~dst:maven_pom_path);
+  Utils.register_epilogue (fun () -> Unix.rename ~src:saved_pom_path ~dst:maven_pom_path);
   Unix.rename ~src:infer_pom_path ~dst:maven_pom_path;
   if Config.debug_mode || Config.stats_mode then
-    Pervasives.at_exit (fun () -> Unix.rename ~src:maven_pom_path ~dst:infer_pom_path)
+    Utils.register_epilogue (fun () -> Unix.rename ~src:maven_pom_path ~dst:infer_pom_path)
 
 let capture ~prog ~args =
   while not (List.is_empty !pom_worklist); do
