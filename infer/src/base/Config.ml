@@ -1006,7 +1006,7 @@ and quiet =
     "Do not print specs on standard output"
 
 and reactive =
-  CLOpt.mk_bool ~deprecated:["reactive"] ~long:"reactive"
+  CLOpt.mk_bool ~deprecated:["reactive"] ~long:"reactive" ~short:"r"
     "Reactive mode: the analysis starts from the files captured since the `infer` command started"
 
 and reactive_capture =
@@ -1161,7 +1161,7 @@ and unsafe_malloc =
     "Assume that malloc(3) never returns null."
 
 and use_compilation_database =
-  CLOpt.mk_symbol_opt ~long:"use-compilation-database"
+  CLOpt.mk_symbol_opt ~long:"compilation-database" ~deprecated:["-use-compilation-database"]
     "Buck integration using the compilation database, with or without dependencies."
     ~symbols:[("deps", `Deps); ("no-deps", `NoDeps)]
 
@@ -1346,7 +1346,7 @@ let post_parsing_initialization () =
 
 let parse_args_and_return_usage_exit =
   let usage_exit =
-    CLOpt.parse ~accept_unknown:true ~config_file:inferconfig_path current_exe exe_usage in
+    CLOpt.parse ~config_file:inferconfig_path current_exe exe_usage in
   post_parsing_initialization () ;
   usage_exit
 
