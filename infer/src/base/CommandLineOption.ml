@@ -14,6 +14,20 @@ open! IStd
 module F = Format
 module YBU = Yojson.Basic.Util
 
+(** This is the subset of Arg.spec that we actually use. What's important is that all these specs
+    call back functions. We use this to mark deprecated arguments. What's not important is that, eg,
+    Arg.Float is missing. *)
+type spec =
+  | Unit of (unit -> unit)
+  | String of (string -> unit)
+  | Symbol of string list * (string -> unit)
+  | Rest of (string -> unit)
+
+let to_arg_spec = function
+  | Unit f -> Arg.Unit f
+  | String f -> Arg.String f
+  | Symbol (symbols, f) -> Arg.Symbol (symbols, f)
+  | Rest f -> Arg.Rest f
 
 (** Each command line option may appear in the --help list of any executable, these tags are used to
     specify which executables for which an option will be documented. *)
@@ -37,7 +51,7 @@ let exe_name =
 let frontend_exes = [Clang]
 
 type desc = {
-  long: string; short: string; meta: string; doc: string; spec: Arg.spec;
+  long: string; short: string; meta: string; doc: string; spec: spec;
   (** how to go from an option in the json config file to a list of command-line options *)
   decode_json: Yojson.Basic.json -> string list ;
 }
@@ -51,7 +65,7 @@ let short_meta {short; meta; spec} =
   String.concat ~sep:" "
     ((if short = "" then [] else ["| -" ^ short]) @
      (match spec with
-      | Arg.Symbol (symbols, _) ->
+      | Symbol (symbols, _) ->
           ["{ " ^ (String.concat ~sep:" | " symbols) ^ " }" ^ meta]
       | _ ->
           if meta = "" then [] else ["<" ^ meta ^ ">"]))
@@ -62,7 +76,7 @@ let left_length long short_meta =
 let max_left_length limit current ({long; spec} as desc) =
   let short_meta =
     match spec with
-    | Arg.Symbol _ -> short_meta {desc with spec = Arg.Unit (fun () -> ())}
+    | Symbol _ -> short_meta {desc with spec = Unit (fun () -> ())}
     | _ -> short_meta desc in
   let length = left_length long short_meta in
   if length > limit then current else max current length
@@ -78,8 +92,8 @@ let xdesc {long; short; spec; doc} =
   let xspec long spec =
     match spec with
     (* translate Symbol to String for better formatting of --help messages *)
-    | Arg.Symbol (symbols, action) ->
-        Arg.String (fun arg ->
+    | Symbol (symbols, action) ->
+        String (fun arg ->
             if IList.mem ( = ) arg symbols then
               action arg
             else
@@ -247,7 +261,7 @@ let mk_set var value ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
       ~default_to_string:(fun () -> "")
       ~decode_json:(string_json_decoder ~long)
       ~mk_setter:(fun _ _ -> setter ())
-      ~mk_spec:(fun _ -> Arg.Unit setter) )
+      ~mk_spec:(fun _ -> Unit setter) )
 
 let mk_option ?(default=None) ?(default_to_string=fun _ -> "") ~f
     ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
@@ -255,7 +269,7 @@ let mk_option ?(default=None) ?(default_to_string=fun _ -> "") ~f
     ~default_to_string
     ~decode_json:(string_json_decoder ~long)
     ~mk_setter:(fun var str -> var := f str)
-    ~mk_spec:(fun set -> Arg.String set)
+    ~mk_spec:(fun set -> String set)
 
 let mk_bool ?(deprecated_no=[]) ?(default=false) ?(f=fun b -> b)
     ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
@@ -285,7 +299,7 @@ let mk_bool ?(deprecated_no=[]) ?(default=false) ?(f=fun b -> b)
     else
       ("", "Deactivates: " ^ doc long) in
   let default_to_string _ = "" in
-  let mk_spec set = Arg.Unit (fun () -> set "") in
+  let mk_spec set = Unit (fun () -> set "") in
   let var =
     mk ~long ?short ~deprecated ~default ?exes
       ~meta doc ~default_to_string ~mk_setter:(fun var _ -> var := f true)
@@ -314,7 +328,7 @@ let mk_int ~default ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
     ~default_to_string:string_of_int
     ~mk_setter:(fun var str -> var := (int_of_string str))
     ~decode_json:(string_json_decoder ~long)
-    ~mk_spec:(fun set -> Arg.String set)
+    ~mk_spec:(fun set -> String set)
 
 let mk_int_opt ?default ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let default_to_string = function Some f -> string_of_int f | None -> "" in
@@ -326,7 +340,7 @@ let mk_float ~default ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
     ~default_to_string:string_of_float
     ~mk_setter:(fun var str -> var := (float_of_string str))
     ~decode_json:(string_json_decoder ~long)
-    ~mk_spec:(fun set -> Arg.String set)
+    ~mk_spec:(fun set -> String set)
 
 let mk_float_opt ?default ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let default_to_string = function Some f -> string_of_float f | None -> "" in
@@ -338,7 +352,7 @@ let mk_string ~default ?(f=fun s -> s) ?(deprecated=[]) ~long ?short ?exes ?(met
     ~default_to_string:(fun s -> s)
     ~mk_setter:(fun var str -> var := f str)
     ~decode_json:(string_json_decoder ~long)
-    ~mk_spec:(fun set -> Arg.String set)
+    ~mk_spec:(fun set -> String set)
 
 let mk_string_opt ?default ?(f=fun s -> s) ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let default_to_string = function Some s -> s | None -> "" in
@@ -351,7 +365,7 @@ let mk_string_list ?(default=[]) ?(f=fun s -> s)
     ~default_to_string:(String.concat ~sep:", ")
     ~mk_setter:(fun var str -> var := (f str) :: !var)
     ~decode_json:(list_json_decoder (string_json_decoder ~long))
-    ~mk_spec:(fun set -> Arg.String set)
+    ~mk_spec:(fun set -> String set)
 
 let mk_path_helper ~setter ~default_to_string
     ~default ~deprecated ~long ~short ~exes ~meta ~decode_json doc =
@@ -372,7 +386,7 @@ let mk_path_helper ~setter ~default_to_string
     ~mk_setter:(fun var str ->
         let abs_path = normalize_path_in_args_being_parsed str in
         setter var abs_path)
-    ~mk_spec:(fun set -> Arg.String set)
+    ~mk_spec:(fun set -> String set)
 
 let mk_path ~default ?(deprecated=[]) ~long ?short ?exes ?(meta="path") =
   mk_path_helper
@@ -404,7 +418,7 @@ let mk_symbol ~default ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") d
     ~default_to_string:(fun s -> to_string s)
     ~mk_setter:(fun var str -> var := of_string str)
     ~decode_json:(string_json_decoder ~long)
-    ~mk_spec:(fun set -> Arg.Symbol (strings, set))
+    ~mk_spec:(fun set -> Symbol (strings, set))
 
 let mk_symbol_opt ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let strings = IList.map fst symbols in
@@ -413,7 +427,7 @@ let mk_symbol_opt ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
     ~default_to_string:(fun _ -> "")
     ~mk_setter:(fun var str -> var := Some (of_string str))
     ~decode_json:(string_json_decoder ~long)
-    ~mk_spec:(fun set -> Arg.Symbol (strings, set))
+    ~mk_spec:(fun set -> Symbol (strings, set))
 
 let mk_symbol_seq ?(default=[]) ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let sym_to_str = IList.map (fun (x,y) -> (y,x)) symbols in
@@ -426,7 +440,7 @@ let mk_symbol_seq ?(default=[]) ~symbols ?(deprecated=[]) ~long ?short ?exes ?(m
     ~decode_json:(fun json ->
         [dashdash long;
          String.concat ~sep:"," (YBU.convert_each YBU.to_string json)])
-    ~mk_spec:(fun set -> Arg.String set)
+    ~mk_spec:(fun set -> String set)
 
 let mk_set_from_json ~default ~default_to_string ~f
     ?(deprecated=[]) ~long ?short ?exes ?(meta="json") doc =
@@ -434,14 +448,14 @@ let mk_set_from_json ~default ~default_to_string ~f
     ~default ~default_to_string
     ~mk_setter:(fun var json -> var := f (Yojson.Basic.from_string json))
     ~decode_json:(fun json -> [dashdash long; Yojson.Basic.to_string json])
-    ~mk_spec:(fun set -> Arg.String set)
+    ~mk_spec:(fun set -> String set)
 
 let mk_json ?(deprecated=[]) ~long ?short ?exes ?(meta="json") doc =
   mk ~deprecated ~long ?short ?exes ~meta doc
     ~default:(`List []) ~default_to_string:Yojson.Basic.to_string
     ~mk_setter:(fun var json -> var := Yojson.Basic.from_string json)
     ~decode_json:(fun json -> [dashdash long; Yojson.Basic.to_string json])
-    ~mk_spec:(fun set -> Arg.String set)
+    ~mk_spec:(fun set -> String set)
 
 (** A ref to a function used during argument parsing to process anonymous arguments. By default,
     anonymous arguments are rejected. *)
@@ -456,7 +470,7 @@ let mk_anon () =
 
 let mk_rest ?(exes=[]) doc =
   let rest = ref [] in
-  let spec = Arg.Rest (fun arg -> rest := arg :: !rest) in
+  let spec = Rest (fun arg -> rest := arg :: !rest) in
   add exes {long = "--"; short = ""; meta = ""; doc; spec; decode_json = fun _ -> []} ;
   rest
 
@@ -465,7 +479,7 @@ let accept_unknown_args = ref false
 let mk_subcommand ?(exes=[]) doc command_to_speclist =
   let rest = ref [] in
   let spec =
-    Arg.String (fun arg ->
+    String (fun arg ->
         rest := List.rev (Array.to_list (Array.slice !args_to_parse (!arg_being_parsed + 1) 0)) ;
         accept_unknown_args := true ;
         anon_fun := (fun _ -> ()) ;
@@ -546,19 +560,21 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
   in
   let usage_msg = exe_usage current_exe
   in
+  let convert_spec_triple (x, spec, y) = (x, to_arg_spec spec, y) in
+  let convert_speclist = List.map ~f:convert_spec_triple in
   let curr_usage status =
     prerr_endline (String.concat_array ~sep:" " !args_to_parse) ;
     Arg.usage !curr_speclist usage_msg ;
     exit status
   and full_usage status =
-    Arg.usage !full_speclist usage_msg ;
+    Arg.usage (convert_speclist !full_speclist) usage_msg ;
     exit status
   in
   (* "-help" and "--help" are automatically recognized by Arg.parse, so we have to give them special
      treatment *)
   let add_or_suppress_help (speclist, (doc_width,left_width)) =
     let unknown opt =
-      (opt, Arg.Unit (fun () -> raise (Arg.Bad ("unknown option '" ^ opt ^ "'"))), "") in
+      (opt, Unit (fun () -> raise (Arg.Bad ("unknown option '" ^ opt ^ "'"))), "") in
     let mk_spec ~long ?(short="") spec doc =
       pad_and_xform doc_width left_width { long; short; meta=""; spec; doc;
                                            decode_json=fun _ -> raise (Arg.Bad long)} in
@@ -570,10 +586,10 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
     else
       speclist @ [
         mk_spec ~long:"help" ~short:"h"
-          (Arg.Unit (fun () -> curr_usage 0))
+          (Unit (fun () -> curr_usage 0))
           "Display this list of options";
         mk_spec ~long:"help-full"
-          (Arg.Unit (fun () -> full_usage 0))
+          (Unit (fun () -> full_usage 0))
           "Display the full list of options, including internal and experimental options";
         (unknown "-help")
       ]
@@ -600,12 +616,13 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
   in
   let add_to_curr_speclist ?(add_help=false) ?header exe =
     let mk_header_spec heading =
-      ("", Arg.Unit (fun () -> ()), "\n  " ^ heading ^ "\n") in
+      ("", Unit (fun () -> ()), "\n  " ^ heading ^ "\n") in
     let exe_descs = IList.assoc ( = ) exe exe_desc_lists in
     let (exe_speclist, widths) = normalize !exe_descs in
     let exe_speclist = if add_help
       then add_or_suppress_help (exe_speclist, widths)
       else exe_speclist in
+    let exe_speclist = convert_speclist exe_speclist in
     (* Return false if the same option appears in [speclist], unless [doc] is non-empty and the
        documentation in [speclist] is empty. The goal is to keep only one instance of each option,
        and that instance is the one that has a non-empty docstring if there is one. *)
@@ -616,7 +633,7 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
     let unique_exe_speclist = IList.filter (is_not_dup_with_doc !curr_speclist) exe_speclist in
     curr_speclist := IList.filter (is_not_dup_with_doc unique_exe_speclist) !curr_speclist @
                      (match header with
-                      | Some s -> mk_header_spec s:: unique_exe_speclist
+                      | Some s -> (convert_spec_triple (mk_header_spec s)):: unique_exe_speclist
                       | None -> unique_exe_speclist)
   in
   (* speclist includes args for current exe with docs, and all other args without docs, so
