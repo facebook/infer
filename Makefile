@@ -26,6 +26,9 @@ endif
 ifneq ($(CMAKE),no)
 BUILD_SYSTEMS_TESTS += clang_compilation_db cmake
 endif
+ifneq ($(MVN),no)
+BUILD_SYSTEMS_TESTS += mvn
+endif
 ifneq ($(NDKBUILD),no)
 BUILD_SYSTEMS_TESTS += ndk_build
 endif

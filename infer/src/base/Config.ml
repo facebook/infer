@@ -307,8 +307,20 @@ let init_work_dir, is_originator =
     directory of the initial invocation of infer. *)
 let resolve = Utils.filename_to_absolute ~root:init_work_dir
 
+let infer_inside_maven_env_var = "INFER_INSIDE_MAVEN"
+
+let maven = CLOpt.is_env_var_set infer_inside_maven_env_var
+
+let env_inside_maven = `Extend [infer_inside_maven_env_var, "1"]
+
 
 (** Command Line options *)
+
+let should_parse_cl_args =
+  (match current_exe with
+   | Clang | Interactive -> false
+   | Analyze | Driver | Print -> true) &&
+  not maven
 
 (* Declare the phase 1 options *)
 
@@ -325,7 +337,7 @@ and project_root =
 
 (* Parse the phase 1 options, ignoring the rest *)
 
-let _ = CLOpt.parse ~incomplete:true current_exe (fun _ -> "")
+let _ : int -> 'a = CLOpt.parse ~incomplete:true current_exe (fun _ -> "") ~should_parse_cl_args
 
 (* Define the values that depend on phase 1 options *)
 
@@ -1346,7 +1358,7 @@ let post_parsing_initialization () =
 
 let parse_args_and_return_usage_exit =
   let usage_exit =
-    CLOpt.parse ~config_file:inferconfig_path current_exe exe_usage in
+    CLOpt.parse ~config_file:inferconfig_path current_exe exe_usage ~should_parse_cl_args in
   post_parsing_initialization () ;
   usage_exit
 

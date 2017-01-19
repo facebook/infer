@@ -576,7 +576,8 @@ let extra_env_args = ref []
 let extend_env_args args =
   extra_env_args := List.rev_append args !extra_env_args
 
-let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe exe_usage =
+let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe exe_usage
+    ~should_parse_cl_args =
   let full_speclist = ref []
   in
   let usage_msg = exe_usage current_exe
@@ -678,9 +679,6 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
   ;
   let env_args = decode_env_to_argv (Option.value (Sys.getenv args_env_var) ~default:"") in
   let exe_name = Sys.executable_name in
-  let should_parse_cl_args = match current_exe with
-    | Clang | Interactive -> false
-    | Analyze | Print | Driver -> true in
   let env_cl_args =
     if should_parse_cl_args then prepend_to_argv env_args
     else env_args in

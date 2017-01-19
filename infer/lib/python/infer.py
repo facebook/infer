@@ -39,7 +39,6 @@ MODULE_TO_COMMAND = {
     'gradle': ['gradle', 'gradlew'],
     'make': make.SUPPORTED_COMMANDS,
     'xcodebuild': ['xcodebuild'],
-    'mvn': ['mvn'],
     'ndk-build': ['ndk-build'],
 }
 

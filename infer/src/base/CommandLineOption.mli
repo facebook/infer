@@ -152,4 +152,7 @@ val extend_env_args : string list -> unit
     and [env_var] is not set.  If [accept_unknown] is set, unknown options are treated the same as
     anonymous arguments. *)
 val parse : ?incomplete:bool -> ?accept_unknown:bool -> ?config_file:string ->
-  exe -> (exe -> Arg.usage_msg) -> (int -> 'a)
+  exe -> (exe -> Arg.usage_msg) -> should_parse_cl_args:bool -> (int -> 'a)
+
+(** [is_env_var_set var] is true if $[var]=1 *)
+val is_env_var_set : string -> bool

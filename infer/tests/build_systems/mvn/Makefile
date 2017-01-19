@@ -1,0 +1,55 @@
+# Copyright (c) 2016 - present Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+TESTS_DIR = ../..
+
+ANALYZER = infer
+INFERPRINT_OPTIONS = --issues-tests
+
+MVN_DIRS = app_with_submodules  simple_app  app_with_infer_profile  app_with_profiles
+
+CLEAN_EXTRA = \
+  $(MVN_DIRS:%=../codetoanalyze/mvn/%/target) \
+  $(MVN_DIRS:%=../codetoanalyze/mvn/%/com) \
+  $(MVN_DIRS:%=infer-out-%) \
+  $(MVN_DIRS:%=issues-%.exp.test)
+
+include $(TESTS_DIR)/java.make
+include $(TESTS_DIR)/base.make
+
+infer-out/report.json:
+	$(MKDIR_P) $(@D)
+	touch $@
+
+infer-out-%/report.json: $(JAVA_DEPS) $(SOURCES)
+	cd ../codetoanalyze/mvn/$* && \
+	$(call silent_on_success,\
+	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/$(@D) \
+	    --project-root $(CURDIR)/$(TESTS_DIR) -- \
+	    $(MVN) clean compile)
+
+infer-out-app_with_submodules/report.json: infer-out-simple_app/report.json
+
+infer-out-simple_app/report.json: infer-out-app_with_infer_profile/report.json
+
+infer-out-app_with_infer_profile/report.json: infer-out-app_with_profiles/report.json
+
+issues-%.exp.test: infer-out-%/report.json
+	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@ --from-json-report $<
+
+issues.exp.test: $(foreach mvndir,$(MVN_DIRS),issues-$(mvndir).exp.test)
+#	erase the contents of the file
+	: > $@
+#	remember the file name so it's easier to know which bug is from where
+	for mvndir in $(MVN_DIRS); do \
+	  echo "-- $$mvndir" >> $@; \
+	  cat issues-$$mvndir.exp.test >> $@; \
+	done
+
+prout:
+	@echo "prout: $(MVN_DIRS)"
+	@echo "clean extra: $(CLEAN_EXTRA)"

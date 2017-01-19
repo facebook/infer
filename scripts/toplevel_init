@@ -6,6 +6,7 @@
 #require "ctypes.foreign";;
 #require "sawja";;
 #require "atdgen";;
+#require "xmlm";;
 
 (* load infer code *)
 #load_rec "toplevel.cmo";;

@@ -51,7 +51,7 @@ let build_system_exe_assoc = [
      printing *)
   BMake, "make/cc"; BMake, "cc"; BMake, "clang"; BMake, "clang++"; BMake, "cmake";
   BMake, "configure"; BMake, "g++"; BMake, "gcc"; BMake, "make"; BMake, "waf";
-  BMvn, "mvn"; BNdk, "ndk-build"; BXcode, "xcodebuild";
+  BMvn, "mvn"; BMvn, "mvnw"; BNdk, "ndk-build"; BXcode, "xcodebuild";
 ]
 
 let build_system_of_exe_name name =
@@ -70,6 +70,7 @@ type driver_mode =
   | BuckCompilationDB
   | ClangCompilationDB of string list
   | Javac of Javac.compiler * string * string list
+  | Maven of string * string list
   | PythonCapture of build_system * string list
   | XcodeXcpretty
 
@@ -98,6 +99,9 @@ let pp_driver_mode fmt driver_mode =
            the fact, so log them now. *)
         Option.iter ~f:log_argfile_arg in
       List.iter ~f:log_arg args
+  | Maven (prog, args) ->
+      F.fprintf fmt "Maven driver mode:@\nprog = %s@\n" prog;
+      List.iter ~f:(F.fprintf fmt "Arg: %s@\n") args
 
 let remove_results_dir () =
   rmtree Config.results_dir
@@ -190,6 +194,9 @@ let capture = function
   | Javac (compiler, prog, args) ->
       L.stdout "Capturing in javac mode...@.";
       Javac.capture compiler ~prog ~args
+  | Maven (prog, args) ->
+      L.stdout "Capturing in maven mode...@.";
+      Maven.capture ~prog ~args
   | PythonCapture (build_system, build_cmd) ->
       L.stdout "Capturing in %s mode...@." (string_of_build_system build_system);
       let in_buck_mode = build_system = BBuck in
@@ -296,6 +303,9 @@ let analyze driver_mode =
         (* In Buck mode when compilation db is not used, analysis is invoked either from capture or
            a separate Analyze invocation is necessary, depending on the buck flavor used. *)
         false, false
+    | _ when Config.maven ->
+        (* Called from Maven, only do capture. *)
+        false, false
     | _, (Capture | Compile) ->
         false, false
     | _, (Infer | Eradicate | Checkers | Tracing | Crashcontext | Quandary | Threadsafety) ->
@@ -344,13 +354,21 @@ let driver_mode_of_build_cmd build_cmd =
           Javac (Javac.Java, prog, args)
       | BJavac ->
           Javac (Javac.Javac, prog, args)
+      | BMvn ->
+          Maven (prog, args)
       | BXcode when Config.xcpretty ->
           XcodeXcpretty
-      | BAnt | BBuck | BGradle | BMake | BMvn | BNdk | BXcode as build_system ->
+      | BAnt | BBuck | BGradle | BMake | BNdk | BXcode as build_system ->
           PythonCapture (build_system, build_cmd)
 
 let get_driver_mode () =
   match Config.generated_classes with
+  | _ when Config.maven ->
+      (* infer is pretending to be javac in the Maven integration *)
+      let build_args = match Array.to_list Sys.argv with
+        | _::args -> args
+        | [] -> [] in
+      Javac (Javac.Javac, "javac", build_args)
   | Some path ->
       BuckGenrule path
   | None ->
@@ -358,7 +376,7 @@ let get_driver_mode () =
 
 let () =
   let driver_mode = get_driver_mode () in
-  if not (driver_mode = Analyze || Config.(buck || continue_capture || reactive_mode)) then
+  if not (driver_mode = Analyze || Config.(buck || continue_capture || maven || reactive_mode)) then
     remove_results_dir () ;
   create_results_dir () ;
   (* re-set log files, as default files were in results_dir removed above *)

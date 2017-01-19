@@ -42,6 +42,8 @@ type dynamic_dispatch_policy = [
   | `Lazy
 ]
 
+val env_inside_maven : Unix.env
+
 (** Constant configuration values *)
 
 val allow_missing_index_in_proc_call : bool
@@ -215,6 +217,7 @@ val latex : string option
 val linters_def_file : string list
 val load_analysis_results : string option
 val makefile_cmdline : string
+val maven : bool
 val merge : bool
 val ml_buckets :
   [ `MLeak_all | `MLeak_arc | `MLeak_cf | `MLeak_cpp | `MLeak_no_arc | `MLeak_unknown ] list

@@ -273,6 +273,10 @@ if test ! -z "$SANDCASTLE"; then
 else
   AC_CHECK_TOOL([BUCK], [buck], [no])
 fi
+AC_ARG_VAR([MVN], [command to execute Maven when running tests])
+AS_IF([test "x$MVN" = "x"], [
+  AC_CHECK_TOOL([MVN], [mvn], [no])
+])
 AC_CHECK_TOOL([NDKBUILD], [ndk-build], [no])
 if test x"$NDKBUILD" = x"no"; then
 # ndk-build not in $PATH, look into potential android NDK install paths and record the absolute path
