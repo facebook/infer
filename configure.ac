@@ -283,6 +283,31 @@ fi
 
 AC_CHECK_PYTHON_MODULE([$PYTHON27], [lxml])
 
+BREW=no
+if which brew > /dev/null; then
+  BREW="$(which brew)"
+fi
+
+# warn about broken pkg-config version for brew users
+if test "$BREW" != "no"; then
+  if "$BREW" info pkg-config > /dev/null && \
+     test x"$(which pkg-config)" = x"/usr/local/bin/pkg-config"; then
+    AC_MSG_NOTICE([pkg-config seems to have been installed from Homebrew])
+    AC_MSG_CHECKING([for bad version of pkg-config brew package])
+    if readlink $(which pkg-config) | grep -q -e '/0.29.1_1/'; then
+      AC_MSG_RESULT([found 0.29.1_1])
+      AC_MSG_WARN([])
+      AC_MSG_WARN([This version of pkg-config is known to cause issues with compiling infer.])
+      AC_MSG_WARN([Consider running the following command to get a working version:])
+      AC_MSG_WARN([])
+      AC_MSG_WARN([  brew remove pkg-config && brew update && brew install pkg-config])
+      AC_MSG_WARN([])
+    else
+      AC_MSG_RESULT([no bad version found])
+    fi
+  fi
+fi
+
 AC_CONFIG_FILES([
   Makefile.autoconf
 ])
