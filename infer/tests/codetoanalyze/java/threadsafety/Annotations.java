@@ -18,6 +18,7 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import android.support.annotation.UiThread;
 
+import com.facebook.infer.annotation.AssumeThreadSafe;
 import com.facebook.infer.annotation.ThreadConfined;
 
 /** tests for classes and method annotations that are meaningful w.r.t thread-safety */
@@ -85,6 +86,11 @@ class Annotations {
 
   @ThreadConfined
   public void threadConfinedMethodOk() {
+    this.f = new Object();
+  }
+
+  @AssumeThreadSafe
+  public void assumeThreadSafeOk() {
     this.f = new Object();
   }
 

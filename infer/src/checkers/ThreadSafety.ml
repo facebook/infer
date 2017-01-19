@@ -315,6 +315,9 @@ let runs_on_ui_thread proc_desc =
     (fun annot -> Annotations.ia_is_ui_thread annot || Annotations.ia_is_on_event annot)
     proc_desc
 
+let is_assumed_thread_safe pdesc =
+  is_annotated Annotations.ia_is_assume_thread_safe pdesc
+
 (* return true if we should compute a summary for the procedure. if this returns false, we won't
    analyze the procedure or report any warnings on it *)
 (* note: in the future, we will want to analyze the procedures in all of these cases in order to
@@ -326,7 +329,8 @@ let should_analyze_proc pdesc tenv =
   not (is_call_to_builder_class_method pn) &&
   not (is_call_to_immutable_collection_method tenv pn) &&
   not (runs_on_ui_thread pdesc) &&
-  not (is_thread_confined_method tenv pdesc)
+  not (is_thread_confined_method tenv pdesc) &&
+  not (is_assumed_thread_safe pdesc)
 
 (* return true if we should report on unprotected accesses during the procedure *)
 let should_report_on_proc (_, tenv, proc_name, proc_desc) =

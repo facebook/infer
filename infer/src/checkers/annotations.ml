@@ -123,6 +123,7 @@ let guarded_by = "GuardedBy"
 let thread_safe = "ThreadSafe"
 let thread_safe_method = "ThreadSafeMethod"
 let not_thread_safe = "NotThreadSafe"
+let assume_thread_safe = "AssumeThreadSafe"
 let ui_thread = "UiThread"
 let any_thread = "AnyThread"
 let for_ui_thread = "ForUiThread"
@@ -137,6 +138,9 @@ let ia_is_thread_safe ia =
 
 let ia_is_thread_safe_method ia =
   ia_ends_with ia thread_safe_method
+
+let ia_is_assume_thread_safe ia =
+  ia_ends_with ia assume_thread_safe
 
 let ia_is_nullable ia =
   ia_ends_with ia nullable
