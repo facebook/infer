@@ -111,7 +111,7 @@ def dump_json_to_path(
 def infer_version():
     version = json.loads(subprocess.check_output([
         get_cmd_in_bin_dir('InferAnalyze'),
-        '-version_json',
+        '--version-json',
     ]).decode())
     return version['commit']
 
@@ -119,7 +119,7 @@ def infer_version():
 def infer_branch():
     version = json.loads(subprocess.check_output([
         get_cmd_in_bin_dir('InferAnalyze'),
-        '-version_json',
+        '--version-json',
     ]).decode())
     return version['branch']
 

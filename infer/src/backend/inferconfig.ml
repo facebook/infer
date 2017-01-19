@@ -280,7 +280,7 @@ let patterns_of_json_with_key (json_key, json) =
         error in
 
   let warn_user msg =
-    F.eprintf "WARNING: in file %s: error parsing option %s@\n%s"
+    F.eprintf "WARNING: in file %s: error parsing option %s@\n%s@."
       Config.inferconfig_file json_key msg in
 
   (* Translate all the JSON entries into matching patterns *)

@@ -1,5 +1,5 @@
 {
-  "never_returning_null": [
+  "never-returning-null": [
     {
       "language": "Java",
       "source_contains": "_AUTOMATICALLY_GENERATED_"
@@ -13,16 +13,16 @@
   "infer-blacklist-files-containing": [
     "@generated"
   ],
-  "enable_checks": [
+  "enable-checks": [
       "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"
     ],
-  "skip_translation": [
+  "skip-translation": [
     {
       "language": "Java",
       "source_contains": "_SHOULD_BE_SKIPPED_"
     }
   ],
-  "modeled_expensive": [
+  "modeled-expensive": [
     {
       "language": "Java",
       "class": "android.app.Activity",

@@ -1,5 +1,5 @@
 {
-  "modeled_expensive": [
+  "modeled-expensive": [
     {
       "language": "Java",
       "class": "android.app.Activity",

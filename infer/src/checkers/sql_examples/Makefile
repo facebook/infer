@@ -1,5 +1,5 @@
 all:
-	InferAnalyze -results_dir out -checkers
+	InferAnalyze --results-dir out -checkers
 
 .PHONY: capture
 capture:

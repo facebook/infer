@@ -1,5 +1,5 @@
 {
-  "never_returning_null": [
+  "never-returning-null": [
     {
       "language": "Java",
       "source_contains": "_AUTOMATICALLY_GENERATED_"
@@ -13,7 +13,7 @@
   "infer-blacklist-files-containing": [
     "@generated"
   ],
-  "skip_translation": [
+  "skip-translation": [
     {
       "language": "Java",
       "source_contains": "_SHOULD_BE_SKIPPED_"

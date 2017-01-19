@@ -29,6 +29,11 @@ let to_arg_spec = function
   | Symbol (symbols, f) -> Arg.Symbol (symbols, f)
   | Rest f -> Arg.Rest f
 
+let is_env_var_set v =
+  Option.value (Option.map (Sys.getenv v) ~f:((=) "1")) ~default:false
+
+let warnf = if is_env_var_set "INFER_STRICT_MODE" then failwithf else F.eprintf
+
 (** Each command line option may appear in the --help list of any executable, these tags are used to
     specify which executables for which an option will be documented. *)
 type exe = Analyze | Clang | Driver | Interactive | Print
@@ -210,6 +215,22 @@ let add exes desc =
       desc_list := desc :: !desc_list
     ) exe_desc_lists
 
+let deprecate_desc ~long ~short ~deprecated desc =
+  let warn () =
+    warnf "WARNING: '-%s' is deprecated. Use '--%s'%s instead.@."
+      deprecated long (if short = "" then "" else Printf.sprintf " or '-%s'" short) in
+  let warn_then_f f x = warn (); f x in
+  let deprecated_spec = match desc.spec with
+    | Unit f -> Unit (warn_then_f f)
+    | String f -> String (warn_then_f f)
+    | Symbol (symbols, f) -> Symbol (symbols, warn_then_f f)
+    | Rest _ as spec -> spec in
+  let deprecated_decode_json j =
+    F.eprintf "WARNING: in .inferconfig: '%s' is deprecated. Use '%s' instead.@." deprecated long;
+    desc.decode_json j in
+  { long = ""; short = deprecated; meta = ""; doc = "";
+    spec = deprecated_spec; decode_json = deprecated_decode_json }
+
 let mk ?(deprecated=[]) ?(exes=[])
     ~long ?(short="") ~default ~meta doc ~default_to_string ~decode_json ~mk_setter ~mk_spec =
   let variable = ref default in
@@ -231,9 +252,9 @@ let mk ?(deprecated=[]) ?(exes=[])
   if short <> "" then
     add [] {desc with long = ""; meta = ""; doc = ""} ;
   (* add desc for deprecated options only for parsing, without documentation *)
-  IList.iter (fun deprecated ->
-      add [] {desc with long = ""; short = deprecated; meta = ""; doc = ""}
-    ) deprecated ;
+  List.iter deprecated ~f:(fun deprecated ->
+      deprecate_desc ~long ~short ~deprecated desc
+      |> add []) ;
   variable
 
 (* arguments passed to Arg.parse_argv_dynamic, susceptible to be modified on the fly when parsing *)
