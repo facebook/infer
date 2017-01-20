@@ -11,6 +11,9 @@ package codetoanalyze.java.quandary;
 
 import com.facebook.infer.builtins.InferTaint;
 
+import android.content.Intent;
+import android.os.Parcel;
+
 /** testing how the analysis handles missing/unknown code */
 
 public abstract class UnknownCode {
@@ -41,6 +44,13 @@ public abstract class UnknownCode {
     Object launderedSource2 = abstractMethod(launderedSource1);
     Object launderedSource3 = i.interfaceMethod(launderedSource2);
     InferTaint.inferSensitiveSink(launderedSource3);
+  }
+
+  void callUnknownSetterBad(Intent i) {
+    Object source = InferTaint.inferSecretSource();
+    // we don't analyze the source code for Android, so this will be unknown
+    i.writeToParcel((Parcel) source, 0);
+    InferTaint.inferSensitiveSink(i);
   }
 
   static void FN_propagateViaInterfaceCodeBad(Interface i) {

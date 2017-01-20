@@ -36,9 +36,12 @@ include
               Some _
               when not (Procname.java_is_static pname) ->
                 [TaintSpec.Propagate_to_receiver; TaintSpec.Propagate_to_return]
+            | _, _, (Some Typ.Tvoid | None) when not (Procname.java_is_static pname) ->
+                (* for instance methods with no return value, propagate the taint to the receiver *)
+                [TaintSpec.Propagate_to_receiver]
             | _, _, Some _ ->
                 [TaintSpec.Propagate_to_return]
-            | _ ->
+            | _, _, None ->
                 []
           end
       | pname when BuiltinDecl.is_declared pname ->
