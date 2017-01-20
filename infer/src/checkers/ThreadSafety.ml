@@ -67,31 +67,46 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_owned access_path owned_set =
     ThreadSafetyDomain.OwnershipDomain.mem access_path owned_set
 
-  let add_path_to_state exp typ loc path_state id_map owned tenv =
+  let is_initializer tenv proc_name =
+    Procname.is_constructor proc_name ||
+    FbThreadSafety.is_custom_init tenv proc_name
+
+  let add_path_to_state exp typ loc path_state id_map owned pname tenv =
     (* remove the last field of the access path, if it has any *)
     let truncate = function
       | base, []
       | base, _ :: [] -> base, []
       | base, accesses -> base, IList.rev (IList.tl (IList.rev accesses)) in
+
     (* we don't want to warn on writes to the field if it is (a) thread-confined, or (b) volatile *)
-    let is_safe_write (_, accesses) = match IList.rev accesses with
-      | AccessPath.FieldAccess (fieldname, Typ.Tstruct typename) :: _ ->
-          begin
-            match Tenv.lookup tenv typename with
-            | Some struct_typ ->
-                Annotations.field_has_annot
-                  fieldname struct_typ Annotations.ia_is_thread_confined ||
-                Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_volatile
-            | None ->
-                false
-          end
-      | _ ->
-          false in
+    let is_safe_write access_path pname tenv =
+      (* writes to vars rooted in [this] in an intializer method are safe, but writes to other vars
+         (e.g., static vars, vars rooted in formals) need not be *)
+      let is_safe_initializer_write (base, _) pname tenv =
+        is_initializer tenv pname &&
+        match base with
+        | Var.ProgramVar pvar -> Pvar.is_this pvar
+        | Var.LogicalVar _ -> false in
+      let is_thread_safe_write accesses tenv = match IList.rev accesses with
+        | AccessPath.FieldAccess (fieldname, Typ.Tstruct typename) :: _ ->
+            begin
+              match Tenv.lookup tenv typename with
+              | Some struct_typ ->
+                  Annotations.field_has_annot
+                    fieldname struct_typ Annotations.ia_is_thread_confined ||
+                  Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_volatile
+              | None ->
+                  false
+            end
+        | _ ->
+            false in
+      is_safe_initializer_write (fst access_path) pname tenv ||
+      is_thread_safe_write (snd access_path) tenv in
     let f_resolve_id = resolve_id id_map in
 
     IList.fold_left
       (fun acc rawpath ->
-         if not (is_owned (truncate rawpath) owned) && not (is_safe_write rawpath)
+         if not (is_owned (truncate rawpath) owned) && not (is_safe_write rawpath pname tenv)
          then
            ThreadSafetyDomain.PathDomain.add_sink (ThreadSafetyDomain.make_access rawpath loc) acc
          else
@@ -106,6 +121,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | None -> id_map
 
   let exec_instr (astate : Domain.astate) { ProcData.pdesc; tenv; extras; } _ =
+    let pname = Procdesc.get_proc_name pdesc in
     let is_allocation pn =
       Procname.equal pn BuiltinDecl.__new ||
       Procname.equal pn BuiltinDecl.__new_array in
@@ -128,7 +144,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       let dummy_access_exp = Exp.Lfield (exp, dummy_fieldname, typ) in
       let unconditional_writes =
         add_path_to_state
-          dummy_access_exp typ loc astate.unconditional_writes astate.id_map astate.owned tenv in
+          dummy_access_exp
+          typ
+          loc
+          astate.unconditional_writes
+          astate.id_map
+          astate.owned
+          pname
+          tenv in
       { astate with unconditional_writes; } in
     let is_unprotected is_locked =
       not is_locked && not (Procdesc.is_java_synchronized pdesc) in
@@ -276,15 +299,28 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         ThreadSafetyDomain.PathDomain.empty in
                     let conditional_writes_for_index' =
                       add_path_to_state
-                        lhs_exp typ loc conditional_writes_for_index astate.id_map astate.owned tenv
-                    in
+                        lhs_exp
+                        typ
+                        loc
+                        conditional_writes_for_index
+                        astate.id_map
+                        astate.owned
+                        pname
+                        tenv in
                     ThreadSafetyDomain.ConditionalWritesDomain.add
                       formal_index conditional_writes_for_index' astate.conditional_writes,
                     astate.unconditional_writes
                 | None ->
                     astate.conditional_writes,
                     add_path_to_state
-                      lhs_exp typ loc astate.unconditional_writes astate.id_map astate.owned tenv
+                      lhs_exp
+                      typ
+                      loc
+                      astate.unconditional_writes
+                      astate.id_map
+                      astate.owned
+                      pname
+                      tenv
               end
           | _ ->
               astate.conditional_writes, astate.unconditional_writes in
@@ -308,7 +344,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let reads =
           match rhs_exp with
           | Lfield ( _, _, typ) when is_unprotected astate.locks ->
-              add_path_to_state rhs_exp typ loc astate.reads astate.id_map astate.owned tenv
+              add_path_to_state rhs_exp typ loc astate.reads astate.id_map astate.owned pname tenv
           | _ ->
               astate.reads in
         (* if rhs is owned, propagate ownership to lhs *)
@@ -376,11 +412,6 @@ let is_call_to_immutable_collection_method tenv = function
   | _ ->
       false
 
-let is_initializer tenv proc_name =
-  Procname.is_constructor proc_name ||
-  Procname.is_class_initializer proc_name ||
-  FbThreadSafety.is_custom_init tenv proc_name
-
 let is_annotated f_annot pdesc =
   let annotated_signature = Annotations.get_annotated_signature (Procdesc.get_attributes pdesc) in
   let ret_annotation, _ = annotated_signature.Annotations.ret in
@@ -414,7 +445,7 @@ let is_assumed_thread_safe pdesc =
    find more bugs. this is just a temporary measure to avoid obvious false positives *)
 let should_analyze_proc pdesc tenv =
   let pn = Procdesc.get_proc_name pdesc in
-  not (is_initializer tenv pn) &&
+  not (Procname.is_class_initializer pn) &&
   not (FbThreadSafety.is_logging_method pn) &&
   not (is_call_to_builder_class_method pn) &&
   not (is_call_to_immutable_collection_method tenv pn) &&
@@ -423,8 +454,7 @@ let should_analyze_proc pdesc tenv =
   not (is_assumed_thread_safe pdesc)
 
 (* return true if we should report on unprotected accesses during the procedure *)
-let should_report_on_proc (_, tenv, proc_name, proc_desc) =
-  not (is_initializer tenv proc_name) &&
+let should_report_on_proc (_, _, proc_name, proc_desc) =
   not (Procname.java_is_autogen_method proc_name) &&
   Procdesc.get_access proc_desc <> PredSymb.Private
 
