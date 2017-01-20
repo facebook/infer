@@ -20,4 +20,5 @@ import java.lang.annotation.Target;
 @Target({ ElementType.METHOD })
 @Retention(RetentionPolicy.CLASS)
 public @interface AssumeThreadSafe {
+  String because(); /** describe why the thread-safety assumption is reasonable */
 }

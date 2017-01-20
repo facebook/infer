@@ -89,7 +89,7 @@ class Annotations {
     this.f = new Object();
   }
 
-  @AssumeThreadSafe
+  @AssumeThreadSafe(because = "it's a test")
   public void assumeThreadSafeOk() {
     this.f = new Object();
   }
