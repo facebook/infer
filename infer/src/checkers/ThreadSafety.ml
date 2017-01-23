@@ -589,8 +589,27 @@ let should_report_on_file file_env =
    This indicates that the method races with itself. To be refined later. *)
 let process_results_table file_env tab =
   let should_report_on_all_procs = should_report_on_file file_env in
-  let should_report ((_, _, _, pdesc) as proc_env) =
-    (should_report_on_all_procs || is_annotated Annotations.ia_is_thread_safe_method pdesc)
+  (* TODO (t15588153): clean this up *)
+  let is_thread_safe_method pdesc tenv =
+    let overrides_thread_safe_method pname tenv =
+      let check_method_attributes check pname =
+        match Specs.proc_resolve_attributes pname with
+        | None -> false
+        | Some attributes ->
+            let annotated_signature = Annotations.get_annotated_signature attributes in
+            let ret_annotation, _ = annotated_signature.Annotations.ret in
+            check ret_annotation in
+      let found = ref false in
+      PatternMatch.proc_iter_overridden_methods
+        (fun pn ->
+           found := !found || check_method_attributes Annotations.ia_is_thread_safe_method pn)
+        tenv
+        pname;
+      !found in
+    is_annotated Annotations.ia_is_thread_safe_method pdesc||
+    overrides_thread_safe_method (Procdesc.get_proc_name pdesc) tenv in
+  let should_report ((_, tenv, _, pdesc) as proc_env) =
+    (should_report_on_all_procs || is_thread_safe_method pdesc tenv)
     && should_report_on_proc proc_env in
   ResultsTableType.iter (* report errors for each method *)
     (fun proc_env (_, _, conditional_writes, unconditional_writes) ->
