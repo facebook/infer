@@ -91,18 +91,19 @@ let check_cfg_connectedness cfg => {
     let succs = Procdesc.Node.get_succs n;
     let preds = Procdesc.Node.get_preds n;
     switch (Procdesc.Node.get_kind n) {
-    | Procdesc.Node.Start_node _ => IList.length succs == 0 || IList.length preds > 0
-    | Procdesc.Node.Exit_node _ => IList.length succs > 0 || IList.length preds == 0
+    | Procdesc.Node.Start_node _ => Int.equal (IList.length succs) 0 || IList.length preds > 0
+    | Procdesc.Node.Exit_node _ => IList.length succs > 0 || Int.equal (IList.length preds) 0
     | Procdesc.Node.Stmt_node _
     | Procdesc.Node.Prune_node _
-    | Procdesc.Node.Skip_node _ => IList.length succs == 0 || IList.length preds == 0
+    | Procdesc.Node.Skip_node _ =>
+      Int.equal (IList.length succs) 0 || Int.equal (IList.length preds) 0
     | Procdesc.Node.Join_node =>
       /* Join node has the exception that it may be without predecessors
          and pointing to an exit node */
       /* if the if brances end with a return */
       switch succs {
       | [n'] when is_exit_node n' => false
-      | _ => IList.length preds == 0
+      | _ => Int.equal (IList.length preds) 0
       }
     }
   };
@@ -183,11 +184,15 @@ let inline_synthetic_method ret_id etl pdesc loc_call :option Sil.instr => {
       let instr' = Sil.Store (Exp.Lfield (Exp.Lvar pvar) fn ft) bt e1 loc_call;
       found instr instr'
     | (Sil.Call ret_id' (Exp.Const (Const.Cfun pn)) etl' _ cf, _, _)
-        when ret_id == None == (ret_id' == None) && IList.length etl' == IList.length etl =>
+        when
+          Bool.equal (is_none ret_id) (is_none ret_id') &&
+          Int.equal (IList.length etl') (IList.length etl) =>
       let instr' = Sil.Call ret_id (Exp.Const (Const.Cfun pn)) etl loc_call cf;
       found instr instr'
     | (Sil.Call ret_id' (Exp.Const (Const.Cfun pn)) etl' _ cf, _, _)
-        when ret_id == None == (ret_id' == None) && IList.length etl' + 1 == IList.length etl =>
+        when
+          Bool.equal (is_none ret_id) (is_none ret_id') &&
+          Int.equal (IList.length etl' + 1) (IList.length etl) =>
       let etl1 =
         switch (IList.rev etl) {
         /* remove last element */
@@ -286,7 +291,7 @@ let mark_unchanged_pdescs cfg_new cfg_old => {
             )
             instrs1
             instrs2;
-        compare_id n1 n2 == 0 &&
+        Int.equal (compare_id n1 n2) 0 &&
         IList.equal Procdesc.Node.compare (Procdesc.Node.get_succs n1) (Procdesc.Node.get_succs n2) &&
         IList.equal Procdesc.Node.compare (Procdesc.Node.get_preds n1) (Procdesc.Node.get_preds n2) &&
         instrs_eq (Procdesc.Node.get_instrs n1) (Procdesc.Node.get_instrs n2)
@@ -297,7 +302,7 @@ let mark_unchanged_pdescs cfg_new cfg_old => {
     };
     let att1 = Procdesc.get_attributes pd1
     and att2 = Procdesc.get_attributes pd2;
-    att1.is_defined == att2.is_defined &&
+    Bool.equal att1.is_defined att2.is_defined &&
     Typ.equal att1.ret_type att2.ret_type &&
     formals_eq att1.formals att2.formals &&
     nodes_eq (Procdesc.get_nodes pd1) (Procdesc.get_nodes pd2)

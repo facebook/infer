@@ -8,6 +8,8 @@
  */
 open! IStd;
 
+open! PVariant;
+
 let aggregated_stats_filename = "aggregated_stats.json";
 
 let aggregated_stats_by_target_filename = "aggregated_stats_by_target.json";
@@ -25,7 +27,7 @@ let find_json_files_in_dir dir => {
     let s = Unix.lstat path;
     let json_regex = Str.regexp_case_fold ".*\\.json$";
     not (Str.string_match json_files_to_ignore_regex path 0) &&
-    Str.string_match json_regex path 0 && s.st_kind == Unix.S_REG
+    Str.string_match json_regex path 0 && Polymorphic_compare.(==) s.st_kind Unix.S_REG
   };
   dir_exists dir ?
     {

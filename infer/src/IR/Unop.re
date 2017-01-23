@@ -26,7 +26,7 @@ type t =
   | LNot /** Logical Not (!) */
 [@@deriving compare];
 
-let equal o1 o2 => compare o1 o2 == 0;
+let equal = [%compare.equal : t];
 
 
 /** String representation of unary operator. */

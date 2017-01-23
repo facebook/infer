@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 (** This module handles buckets of memory leaks in Objective-C/C++ *)
 
@@ -22,29 +23,23 @@ let bucket_to_message bucket =
   | `MLeak_cpp -> "[CPP]"
   | `MLeak_unknown -> "[UNKNOWN ORIGIN]"
 
-let compare_mleak_bucket =
-  [%compare: [ `MLeak_all | `MLeak_arc | `MLeak_cf | `MLeak_cpp | `MLeak_no_arc | `MLeak_unknown ]]
-
-let mleak_bucket_eq b1 b2 =
-  compare_mleak_bucket b1 b2 = 0
-
 let contains_all =
-  IList.mem mleak_bucket_eq `MLeak_all Config.ml_buckets
+  IList.mem PVariant.(=) `MLeak_all Config.ml_buckets
 
 let contains_cf =
-  IList.mem mleak_bucket_eq `MLeak_cf Config.ml_buckets
+  IList.mem PVariant.(=) `MLeak_cf Config.ml_buckets
 
 let contains_arc =
-  IList.mem mleak_bucket_eq `MLeak_arc Config.ml_buckets
+  IList.mem PVariant.(=) `MLeak_arc Config.ml_buckets
 
 let contains_narc =
-  IList.mem mleak_bucket_eq `MLeak_no_arc Config.ml_buckets
+  IList.mem PVariant.(=) `MLeak_no_arc Config.ml_buckets
 
 let contains_cpp =
-  IList.mem mleak_bucket_eq `MLeak_cpp Config.ml_buckets
+  IList.mem PVariant.(=) `MLeak_cpp Config.ml_buckets
 
 let contains_unknown_origin =
-  IList.mem mleak_bucket_eq `MLeak_unknown Config.ml_buckets
+  IList.mem PVariant.(=) `MLeak_unknown Config.ml_buckets
 
 let should_raise_leak_cf typ =
   if contains_cf then
@@ -79,7 +74,7 @@ let should_raise_cpp_leak =
 (* If arc is passed, check leaks from code that compiles with arc*)
 (* If no arc is passed check the leaks from code that compiles without arc *)
 let should_raise_objc_leak typ =
-  if Config.ml_buckets = [] || contains_all then Some ""
+  if List.is_empty Config.ml_buckets || contains_all then Some ""
   else if should_raise_leak_cf typ then Some (bucket_to_message `MLeak_cf)
   else if should_raise_leak_arc () then Some (bucket_to_message `MLeak_arc)
   else if should_raise_leak_no_arc () then Some (bucket_to_message `MLeak_no_arc)

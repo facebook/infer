@@ -19,7 +19,7 @@ let module L = Logging;
 let module F = Format;
 
 let list_to_string list =>
-  if (List.length list == 0) {
+  if (Int.equal (List.length list) 0) {
     "( sub )"
   } else {
     "- {" ^ String.concat sep::", " (List.map f::Typename.name list) ^ "}"
@@ -30,7 +30,7 @@ type t' =
   | Subtypes (list Typename.t)
 [@@deriving compare];
 
-let equal_modulo_flag (st1, _) (st2, _) => compare_t' st1 st2 == 0;
+let equal_modulo_flag (st1, _) (st2, _) => [%compare.equal : t'] st1 st2;
 
 
 /** denotes the current type and a list of types that are not their subtypes  */
@@ -40,6 +40,8 @@ type kind =
   | NORMAL
 [@@deriving compare];
 
+let equal_kind = [%compare.equal : kind];
+
 type t = (t', kind) [@@deriving compare];
 
 type result =
@@ -47,6 +49,8 @@ type result =
   | Unknown
   | Yes
 [@@deriving compare];
+
+let equal_result = [%compare.equal : result];
 
 let max_result res1 res2 =>
   if (compare_result res1 res2 <= 0) {
@@ -75,7 +79,7 @@ let check_subclass_tenv tenv c1 c2 :result => {
   let rec loop best_result classnames :result =>
     /* Check if the name c2 is found in the list of super types and
        keep the best results according to Yes > Unknown > No */
-    if (best_result == Yes) {
+    if (equal_result best_result Yes) {
       Yes
     } else {
       switch classnames {
@@ -117,9 +121,9 @@ let check_subtype = {
   )
 };
 
-let is_known_subtype tenv c1 c2 :bool => check_subtype tenv c1 c2 == Yes;
+let is_known_subtype tenv c1 c2 :bool => equal_result (check_subtype tenv c1 c2) Yes;
 
-let is_known_not_subtype tenv c1 c2 :bool => check_subtype tenv c1 c2 == No;
+let is_known_not_subtype tenv c1 c2 :bool => equal_result (check_subtype tenv c1 c2) No;
 
 let flag_to_string flag =>
   switch flag {
@@ -146,9 +150,9 @@ let subtypes_cast = (all_subtypes, CAST);
 
 let subtypes_instof = (all_subtypes, INSTOF);
 
-let is_cast t => snd t == CAST;
+let is_cast t => equal_kind (snd t) CAST;
 
-let is_instof t => snd t == INSTOF;
+let is_instof t => equal_kind (snd t) INSTOF;
 
 let list_intersect equal l1 l2 => {
   let in_l2 a => IList.mem equal a l2;

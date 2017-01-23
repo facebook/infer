@@ -57,7 +57,7 @@ and t =
       the [dynamic_length] is that of the final extensible array, if any. */
   | Sizeof Typ.t dynamic_length Subtype.t;
 
-let equal e1 e2 => compare e1 e2 == 0;
+let equal = [%compare.equal : t];
 
 let hash = Hashtbl.hash;
 

@@ -43,7 +43,7 @@ let check_nested_loop path pos_opt =
   let f level p _ _ = match Paths.Path.curr_node p  with
     | Some node ->
         do_any_node level node;
-        if level = 0 then do_node_caller node
+        if Int.equal level 0 then do_node_caller node
     | None ->
         () in
   Paths.Path.iter_shortest_sequence f pos_opt path;
@@ -67,7 +67,7 @@ let check_access access_opt de_opt =
       let process_formal_letref = function
         | Sil.Load (id, Exp.Lvar pvar, _, _) ->
             let is_java_this =
-              !Config.curr_language = Config.Java && Pvar.is_this pvar in
+              Config.curr_language_is Config.Java && Pvar.is_this pvar in
             if not is_java_this && is_formal pvar then formal_ids := id :: !formal_ids
         | _ -> () in
       IList.iter process_formal_letref node_instrs;
@@ -100,7 +100,8 @@ let check_access access_opt de_opt =
       IList.exists filter (Procdesc.Node.get_instrs node) in
     let local_access_found = ref false in
     let do_node node =
-      if (Procdesc.Node.get_loc node).Location.line = line_number && has_call_or_sets_null node then
+      if Int.equal (Procdesc.Node.get_loc node).Location.line line_number &&
+         has_call_or_sets_null node then
         begin
           local_access_found := true
         end in

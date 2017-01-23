@@ -82,7 +82,7 @@ let remove_abduced_retvars tenv p => {
           }
         | _ => (reach, exps);
       let (reach', exps') = IList.fold_left add_hpred_if_reachable (reach, exps) sigma;
-      if (Sil.HpredSet.cardinal reach == Sil.HpredSet.cardinal reach') {
+      if (Int.equal (Sil.HpredSet.cardinal reach) (Sil.HpredSet.cardinal reach')) {
         (reach, exps)
       } else {
         compute_reachable_hpreds_rec sigma (reach', exps')

@@ -17,10 +17,14 @@ module F = Format
 type simple_kind = SIM_DEFAULT | SIM_WITH_TYP
 
 (** Kind of printing *)
-type printkind = TEXT | LATEX | HTML
+type print_kind = TEXT | LATEX | HTML [@@deriving compare]
 
-(** Colors supported in printing *)
-type color = Black | Blue | Green | Orange | Red
+let equal_print_kind = [%compare.equal : print_kind];
+
+  (** Colors supported in printing *)
+type color = Black | Blue | Green | Orange | Red [@@deriving compare]
+
+let equal_color = [%compare.equal : color]
 
 (** map subexpressions (as Obj.t element compared by physical equality) to colors *)
 type colormap = Obj.t -> color
@@ -28,7 +32,7 @@ type colormap = Obj.t -> color
 (** Print environment threaded through all the printing functions *)
 type env = {
   opt : simple_kind; (** Current option for simple printing *)
-  kind : printkind; (** Current kind of printing *)
+  kind : print_kind; (** Current kind of printing *)
   cmap_norm : colormap; (** Current colormap for the normal part *)
   cmap_foot : colormap; (** Current colormap for the footprint part *)
   color : color; (** Current color *)

@@ -135,7 +135,7 @@ type t =
   | Tarray t static_length /** array type with statically fixed length */
 [@@deriving compare];
 
-let equal t1 t2 => compare t1 t2 == 0;
+let equal = [%compare.equal : t];
 
 
 /** type comparison that treats T* [] and T** as the same type. Needed for C/C++ */
@@ -238,7 +238,7 @@ let array_elem default_opt =>
 
 let is_class_of_kind typ ck =>
   switch typ {
-  | Tstruct (TN_csu (Class ck') _) => ck == ck'
+  | Tstruct (TN_csu (Class ck') _) => Csu.equal_class_kind ck ck'
   | _ => false
   };
 

@@ -31,8 +31,8 @@ let type_is_object typ =
 
 let java_proc_name_with_class_method pn_java class_with_path method_name =
   (try
-     Procname.java_get_class_name pn_java = class_with_path &&
-     Procname.java_get_method pn_java = method_name
+     String.equal (Procname.java_get_class_name pn_java) class_with_path &&
+     String.equal (Procname.java_get_method pn_java) method_name
    with _ -> false)
 
 (** Holds iff the predicate holds on a supertype of the named type, including the type itself *)
@@ -207,8 +207,8 @@ let get_vararg_type_names tenv
 
 let has_formal_proc_argument_type_names proc_desc argument_type_names =
   let formals = Procdesc.get_formals proc_desc in
-  let equal_formal_arg (_, typ) arg_type_name = get_type_name typ = arg_type_name in
-  IList.length formals = IList.length argument_type_names
+  let equal_formal_arg (_, typ) arg_type_name = String.equal (get_type_name typ) arg_type_name in
+  Int.equal (IList.length formals) (IList.length argument_type_names)
   && IList.for_all2 equal_formal_arg formals argument_type_names
 
 let has_formal_method_argument_type_names cfg pname_java argument_type_names =

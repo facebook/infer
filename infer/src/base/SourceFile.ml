@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 let count_newlines (path: string): int =
   let f file = In_channel.fold_lines file ~init:0 ~f:(fun i _ -> i + 1) in
@@ -19,8 +20,7 @@ type t =
   | RelativeInferModel of string (* relative to infer models *)
 [@@deriving compare]
 
-let equal sf1 sf2 =
-  compare sf1 sf2 = 0
+let equal = [%compare.equal : t]
 
 module OrderedSourceFile =
 struct

@@ -17,6 +17,8 @@ open! IStd
 (** generic file name *)
 type filename [@@deriving compare]
 
+val equal_filename : filename -> filename -> bool
+
 module FilenameSet : Caml.Set.S with type elt = filename
 module FilenameMap : Caml.Map.S with type key = filename
 

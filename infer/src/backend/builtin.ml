@@ -34,9 +34,8 @@ let builtin_functions = Procname.Hash.create 4
 
 let check_register_populated () =
   (* check if BuiltinDefn were loaded before accessing register *)
-  if Procname.Hash.length builtin_functions = 0 then
+  if Int.equal (Procname.Hash.length builtin_functions) 0 then
     failwith "Builtins were not initialized"
-  else ()
 
 (** check if the function is a builtin *)
 let is_registered name =

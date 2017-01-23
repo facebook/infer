@@ -171,7 +171,7 @@ let summary_values top_proc_set summary => {
     F.asprintf "%t" pp
   };
   let node_coverage =
-    if (nodes_nr == 0) {
+    if (Int.equal nodes_nr 0) {
       0.0
     } else {
       float_of_int nr_nodes_visited /. float_of_int nodes_nr
@@ -195,7 +195,12 @@ let summary_values top_proc_set summary => {
     vto: Option.value_map f::pp_failure default::"NONE" stats.Specs.stats_failure,
     vsymop: stats.Specs.symops,
     verr:
-      Errlog.size (fun ekind in_footprint => ekind == Exceptions.Kerror && in_footprint) err_log,
+      Errlog.size
+        (
+          fun ekind in_footprint =>
+            Exceptions.equal_err_kind ekind Exceptions.Kerror && in_footprint
+        )
+        err_log,
     vflags: attributes.ProcAttributes.proc_flags,
     vfile: SourceFile.to_string attributes.ProcAttributes.loc.Location.file,
     vline: attributes.ProcAttributes.loc.Location.line,
@@ -303,7 +308,7 @@ let module ProcsXml = {
 };
 
 let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass =>
-  if (not Config.filtering || eclass == Exceptions.Linters) {
+  if (not Config.filtering || Exceptions.equal_err_class eclass Exceptions.Linters) {
     true
   } else {
     let analyzer_is_whitelisted =
@@ -501,7 +506,7 @@ let module IssuesJson = {
             Some Jsonbug_j.{file, lnum, cnum, enum}
           | _ => None
           };
-        let visibility = Exceptions.string_of_exception_visibility visibility;
+        let visibility = Exceptions.string_of_visibility visibility;
         let bug = {
           Jsonbug_j.bug_class: Exceptions.err_class_string eclass,
           kind,
@@ -989,7 +994,7 @@ let module PreconditionStats = {
 
 let error_filter filters proc_name file error_desc error_name => {
   let always_report () =>
-    Localise.error_desc_extract_tag_value error_desc "always_report" == "true";
+    String.equal (Localise.error_desc_extract_tag_value error_desc "always_report") "true";
   (Config.write_html || not (Localise.equal error_name Localise.skip_function)) &&
   (filters.Inferconfig.path_filter file || always_report ()) &&
   filters.Inferconfig.error_filter error_name && filters.Inferconfig.proc_filter proc_name
@@ -1000,7 +1005,8 @@ type report_kind =
   | Procs
   | Stats
   | Calls
-  | Summary;
+  | Summary
+[@@deriving compare];
 
 type bug_format_kind =
   | Json
@@ -1008,7 +1014,8 @@ type bug_format_kind =
   | Tests
   | Text
   | Xml
-  | Latex;
+  | Latex
+[@@deriving compare];
 
 let pp_issues_in_format (format_kind, outf: Utils.outfile) =>
   switch format_kind {
@@ -1193,7 +1200,7 @@ let process_summary filters formats_by_report_kind linereader stats top_proc_set
 let module AnalysisResults = {
   type t = list (string, Specs.summary);
   let spec_files_from_cmdline () =>
-    if (Config.current_exe == CLOpt.Print) {
+    if (CLOpt.equal_exe Config.current_exe CLOpt.Print) {
       /* Find spec files specified by command-line arguments.  Not run at init time since the specs
          files may be generated between init and report time. */
       IList.iter
@@ -1208,7 +1215,7 @@ let module AnalysisResults = {
         Inferconfig.test ();
         exit 0
       };
-      if (Config.anon_args == []) {
+      if (List.is_empty Config.anon_args) {
         load_specfiles ()
       } else {
         List.rev Config.anon_args
@@ -1377,7 +1384,11 @@ let finalize_and_close_files format_list_by_kind stats pdflatex => {
       | (Csv | Latex | Tests | Text | Xml | Json, _) => ()
       };
       Utils.close_outf outfile;
-      if ((format_kind, report_kind) == (Latex, Summary)) {
+      /* bug_format_kind report_kind */
+      if (
+        [%compare.equal : (bug_format_kind, report_kind)]
+          (format_kind, report_kind) (Latex, Summary)
+      ) {
         pdflatex outfile.fname;
         let pdf_name = Filename.chop_extension outfile.fname ^ ".pdf";
         ignore (Sys.command ("open " ^ pdf_name))

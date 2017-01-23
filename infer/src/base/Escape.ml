@@ -54,7 +54,7 @@ let escape_dotty s =
 let escape_path s =
   let map = function
     | c ->
-        if Char.escaped c = Filename.dir_sep
+        if String.equal (Char.escaped c) Filename.dir_sep
         then Some "_"
         else None in
   escape_map map s

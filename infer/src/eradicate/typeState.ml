@@ -55,7 +55,7 @@ type 'a t =
 (* Ignore the extension field, which is a pure instrumentation *)
 let compare t1 t2 = compare_t (fun _ _ -> 0) t1 t2
 
-let equal t1 t2 = 0 = compare t1 t2
+let equal t1 t2 = Int.equal (compare t1 t2) 0
 
 let empty ext =
   {

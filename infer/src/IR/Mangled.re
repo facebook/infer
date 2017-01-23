@@ -18,7 +18,7 @@ let module F = Format;
 
 type t = {plain: string, mangled: option string} [@@deriving compare];
 
-let equal pn1 pn2 => compare pn1 pn2 == 0;
+let equal = [%compare.equal : t];
 
 
 /** Convert a string to a mangled name */
@@ -54,7 +54,7 @@ let get_mangled pn =>
 
 /** Create a mangled type name from a package name and a class name */
 let from_package_class package_name class_name =>
-  if (package_name == "") {
+  if (String.equal package_name "") {
     from_string class_name
   } else {
     from_string (package_name ^ "." ^ class_name)

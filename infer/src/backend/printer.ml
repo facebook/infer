@@ -34,7 +34,7 @@ struct
         let line_raw = input_line cin in
         let line =
           let len = String.length line_raw in
-          if len > 0 && String.get line_raw (len -1) = '\013' then
+          if len > 0 && Char.equal (String.get line_raw (len -1)) '\013' then
             String.sub line_raw ~pos:0 ~len:(len -1)
           else line_raw in
         lines := line :: !lines
@@ -401,7 +401,7 @@ let node_start_session node session source =
 
 (** Finish a session, and perform delayed print actions if required *)
 let node_finish_session node source =
-  if Config.test = false then force_delayed_prints ()
+  if not Config.test then force_delayed_prints ()
   else L.reset_delayed_prints ();
   if Config.write_html then begin
     F.fprintf !curr_html_formatter "</LISTING>%a"

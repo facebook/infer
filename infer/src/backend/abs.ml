@@ -85,8 +85,8 @@ let create_condition_ls ids_private id_base p_leftover (inst: Sil.subst) =
   L.out "@[<4>  public ids : %a@\n@." pp_exp_list insts_of_public_ids;
   *)
   (* (not (IList.intersect compare fav_inst_of_base fav_in_pvars)) && *)
-  (fpv_inst_of_base = []) &&
-  (fpv_insts_of_private_ids = []) &&
+  (List.is_empty fpv_inst_of_base) &&
+  (List.is_empty fpv_insts_of_private_ids) &&
   (not (IList.exists Ident.is_normal fav_insts_of_private_ids)) &&
   (not (IList.intersect Ident.compare fav_insts_of_private_ids fav_p_leftover)) &&
   (not (IList.intersect Ident.compare fav_insts_of_private_ids fav_insts_of_public_ids))
@@ -617,7 +617,7 @@ let eqs_solve ids_in eqs_in =
     | ((Exp.Var id1 as e1), (Exp.Var id2 as e2)) :: eqs_rest ->
         let n = Ident.compare id1 id2 in
         begin
-          if n = 0 then solve sub eqs_rest
+          if Int.equal n 0 then solve sub eqs_rest
           else if n > 0 then solve sub ((e2, e1):: eqs_rest)
           else do_default id1 e2 eqs_rest
         end
@@ -988,7 +988,7 @@ let get_var_retain_cycle prop_ =
         let cycle = get_cycle hp prop_ in
         L.d_strln "Filtering pvar in cycle ";
         let cycle' = IList.flatten (IList.map find_or_block cycle) in
-        if cycle' = [] then do_sigma sigma'
+        if List.is_empty cycle' then do_sigma sigma'
         else cycle' in
   do_sigma sigma
 
@@ -1016,11 +1016,13 @@ let cycle_has_weak_or_unretained_or_assign_field tenv cycle =
   let rec has_weak_or_unretained_or_assign params =
     match params with
     | [] -> false
-    | att:: _ when Config.unsafe_unret = att || Config.weak = att || Config.assign = att -> true
+    | att:: _ when String.equal Config.unsafe_unret att ||
+                   String.equal Config.weak att ||
+                   String.equal Config.assign att -> true
     | _:: params' -> has_weak_or_unretained_or_assign params' in
   let do_annotation ((a: Annot.t), _) =
-    ((a.class_name = Config.property_attributes) ||
-     (a.class_name = Config.ivar_attributes))
+    ((String.equal a.class_name Config.property_attributes) ||
+     (String.equal a.class_name Config.ivar_attributes))
     && has_weak_or_unretained_or_assign a.parameters in
   let rec do_cycle c =
     match c with
@@ -1123,7 +1125,7 @@ let check_junk ?original_prop pname tenv prop =
                 match resource with
                 | PredSymb.Rmemory PredSymb.Mobjc -> should_raise_objc_leak hpred
                 | PredSymb.Rmemory PredSymb.Mnew | PredSymb.Rmemory PredSymb.Mnew_array
-                  when !Config.curr_language = Config.Clang ->
+                  when Config.curr_language_is Config.Clang ->
                     Mleak_buckets.should_raise_cpp_leak
                 | _ -> None in
               let exn_retain_cycle cycle =
@@ -1144,14 +1146,14 @@ let check_junk ?original_prop pname tenv prop =
                         Otherwise we report a retain cycle. *)
                      let cycle = get_var_retain_cycle (remove_opt original_prop) in
                      let ignore_cycle =
-                       (IList.length cycle = 0) ||
+                       (Int.equal (IList.length cycle) 0) ||
                        (cycle_has_weak_or_unretained_or_assign_field tenv cycle) in
                      ignore_cycle, exn_retain_cycle cycle
                  | Some _, Rmemory Mobjc
                  | Some _, Rmemory Mnew
-                 | Some _, Rmemory Mnew_array when !Config.curr_language = Config.Clang ->
-                     ml_bucket_opt = None, exn_leak
-                 | Some _, Rmemory _ -> !Config.curr_language = Config.Java, exn_leak
+                 | Some _, Rmemory Mnew_array when Config.curr_language_is Config.Clang ->
+                     is_none ml_bucket_opt, exn_leak
+                 | Some _, Rmemory _ -> Config.curr_language_is Config.Java, exn_leak
                  | Some _, Rignore -> true, exn_leak
                  | Some _, Rfile -> false, exn_leak
                  | Some _, Rlock -> false, exn_leak
@@ -1160,21 +1162,21 @@ let check_junk ?original_prop pname tenv prop =
                         we have a retain cycle. Objc object may not have the
                         Mobjc qualifier when added in footprint doing abduction *)
                      let cycle = get_var_retain_cycle (remove_opt original_prop) in
-                     IList.length cycle = 0, exn_retain_cycle cycle
-                 | _ -> !Config.curr_language = Config.Java, exn_leak) in
+                     Int.equal (IList.length cycle) 0, exn_retain_cycle cycle
+                 | _ -> Config.curr_language_is Config.Java, exn_leak) in
               let already_reported () =
                 let attr_opt_equal ao1 ao2 = match ao1, ao2 with
                   | None, None -> true
                   | Some a1, Some a2 -> PredSymb.equal a1 a2
                   | Some _, None
                   | None, Some _ -> false in
-                (alloc_attribute = None && !leaks_reported <> []) ||
+                (is_none alloc_attribute && !leaks_reported <> []) ||
                 (* None attribute only reported if it's the first one *)
                 IList.mem attr_opt_equal alloc_attribute !leaks_reported in
               let ignore_leak =
                 !Config.allow_leak || ignore_resource || is_undefined || already_reported () in
               let report_and_continue =
-                !Config.curr_language = Config.Java || !Config.footprint in
+                Config.curr_language_is Config.Java || !Config.footprint in
               let report_leak () =
                 if not report_and_continue then raise exn
                 else
@@ -1190,7 +1192,7 @@ let check_junk ?original_prop pname tenv prop =
     remove_junk_recursive [] sigma in
   let rec remove_junk fp_part fav_root sigma = (* call remove_junk_once until sigma stops shrinking *)
     let sigma' = remove_junk_once fp_part fav_root sigma in
-    if IList.length sigma' = IList.length sigma then sigma'
+    if Int.equal (IList.length sigma') (IList.length sigma) then sigma'
     else remove_junk fp_part fav_root sigma' in
   let sigma_new = remove_junk false fav_sub_sigmafp prop.Prop.sigma in
   let sigma_fp_new = remove_junk true (Sil.fav_new ()) prop.Prop.sigma_fp in

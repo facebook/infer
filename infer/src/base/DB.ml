@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 (** Database of analysis results *)
 
@@ -56,6 +57,8 @@ let find_source_dirs () =
 (** {2 Filename} *)
 
 type filename = string [@@deriving compare]
+
+let equal_filename = [%compare.equal : filename]
 
 let filename_concat = Filename.concat
 
@@ -118,7 +121,7 @@ let update_file_with_lock dir fname update =
   reset_file fd;
   let str = update buf in
   let i = Unix.write fd ~buf:str ~pos:0 ~len:(String.length str) in
-  if (i = String.length str) then (
+  if Int.equal i (String.length str) then (
     Unix.lockf fd ~mode:Unix.F_ULOCK ~len:0L;
     Unix.close fd
   ) else (
@@ -241,10 +244,10 @@ let fold_paths_matching ~dir ~p ~init ~f =
   let rec paths path_list dir =
     Array.fold
       ~f:(fun acc file ->
-         let path = dir ^/ file in
-         if Sys.is_directory path = `Yes then (paths acc path)
-         else if p path then f path acc
-         else acc)
+          let path = dir ^/ file in
+          if Sys.is_directory path = `Yes then (paths acc path)
+          else if p path then f path acc
+          else acc)
       ~init:path_list
       (Sys.readdir dir) in
   paths init dir

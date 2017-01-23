@@ -121,7 +121,7 @@ val explain_tainted_value_reaching_sensitive_function :
     If there is an alloc attribute, print the function call and line number. *)
 val explain_leak :
   Tenv.t -> Sil.hpred -> 'a Prop.t -> PredSymb.t option -> string option ->
-  Exceptions.exception_visibility * Localise.error_desc
+  Exceptions.visibility * Localise.error_desc
 
 (** Produce a description of the memory access performed in the current instruction, if any. *)
 val explain_memory_access : Tenv.t -> Localise.deref_str -> 'a Prop.t -> Location.t -> Localise.error_desc

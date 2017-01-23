@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+open! PVariant
 module Hashtbl = Caml.Hashtbl
 
 (** Specifications and spec table *)
@@ -36,7 +37,7 @@ module Jprop = struct
 
   (** Return true if the two join_prop's are equal *)
   let equal jp1 jp2 =
-    compare jp1 jp2 = 0
+    Int.equal (compare jp1 jp2) 0
 
   let to_prop = function
     | Prop (_, p) -> p
@@ -303,9 +304,13 @@ type stats =
     call_stats : call_stats;
   }
 
-type status = ACTIVE | INACTIVE | STALE
+type status = ACTIVE | INACTIVE | STALE [@@deriving compare]
 
-type phase = FOOTPRINT | RE_EXECUTION
+let equal_status = [%compare.equal : status]
+
+type phase = FOOTPRINT | RE_EXECUTION [@@deriving compare]
+
+let equal_phase = [%compare.equal : phase]
 
 type dependency_map_t = int Procname.Map.t
 
@@ -412,10 +417,10 @@ let describe_timestamp summary =
   ("Timestamp", Printf.sprintf "%d" summary.timestamp)
 
 let describe_status summary =
-  ("Status", if summary.status = ACTIVE then "ACTIVE" else "INACTIVE")
+  ("Status", if equal_status summary.status ACTIVE then "ACTIVE" else "INACTIVE")
 
 let describe_phase summary =
-  ("Phase", if summary.phase = FOOTPRINT then "FOOTPRINT" else "RE_EXECUTION")
+  ("Phase", if equal_phase summary.phase FOOTPRINT then "FOOTPRINT" else "RE_EXECUTION")
 
 (** Return the signature of a procedure declaration as a string *)
 let get_signature summary =
@@ -424,7 +429,7 @@ let get_signature summary =
     (fun (p, typ) ->
        let pp f = F.fprintf f "%a %a" (Typ.pp_full Pp.text) typ Mangled.pp p in
        let decl = F.asprintf "%t" pp in
-       s := if !s = "" then decl else !s ^ ", " ^ decl)
+       s := if String.equal !s "" then decl else !s ^ ", " ^ decl)
     summary.attributes.ProcAttributes.formals;
   let pp f =
     F.fprintf
@@ -669,7 +674,7 @@ let get_status summary =
   summary.status
 
 let is_active summary =
-  get_status summary = ACTIVE
+  equal_status (get_status summary) ACTIVE
 
 let get_timestamp summary =
   summary.timestamp

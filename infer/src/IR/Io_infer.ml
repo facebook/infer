@@ -190,7 +190,7 @@ struct
   (** Print an html link to the given node. *)
   let pp_node_link path_to_root pname ~description ~preds ~succs ~exn ~isvisited ~isproof fmt id =
     let display_name =
-      (if description = "" then "N" else String.sub description ~pos:0 ~len:1)
+      (if String.equal description "" then "N" else String.sub description ~pos:0 ~len:1)
       ^ "_"
       ^ (string_of_int id) in
     let node_fname = node_filename pname id in
@@ -313,8 +313,8 @@ struct
   (** print an xml node *)
   let rec pp_node newline indent fmt = function
     | Tree { name = name; attributes = attributes; forest = forest } ->
-        let indent' = if newline = "" then "" else indent ^ "  " in
-        let space = if attributes = [] then "" else " " in
+        let indent' = if String.equal newline "" then "" else indent ^ "  " in
+        let space = if List.is_empty attributes then "" else " " in
         let pp_inside fmt () = match forest with
           | [] ->
               ()

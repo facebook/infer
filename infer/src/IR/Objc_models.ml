@@ -232,15 +232,15 @@ struct
     (String.is_substring ~substring:cf_type typ)
 
   let is_core_lib_retain typ funct =
-    function_arg_is_cftype typ && funct = cf_retain
+    function_arg_is_cftype typ && String.equal funct cf_retain
 
   let is_core_lib_release typ funct =
-    function_arg_is_cftype typ && funct = cf_release
+    function_arg_is_cftype typ && String.equal funct cf_release
 
   let is_core_graphics_release typ funct =
     try
       let cg_typ = IList.find
-          (fun lib -> (funct = (lib^upper_release))) core_graphics_types in
+          (fun lib -> (String.equal funct (lib^upper_release))) core_graphics_types in
       (String.is_substring ~substring:(cg_typ^ref) typ)
     with Not_found -> false
 

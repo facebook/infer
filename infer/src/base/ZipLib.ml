@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 module L = Logging
 
@@ -80,7 +81,7 @@ let zip_libraries =
         IList.fold_left add_zip [] Config.specs_library in
     if Config.checkers then
       zip_libs
-    else if Sys.file_exists Config.models_jar = `Yes then
+    else if (Sys.file_exists Config.models_jar) = `Yes then
       (mk_zip_lib true Config.models_jar) :: zip_libs
     else
       zip_libs

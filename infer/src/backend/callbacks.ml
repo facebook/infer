@@ -50,9 +50,9 @@ let get_procedure_definition exe_env proc_name =
   let tenv = Exe_env.get_tenv exe_env proc_name in
   Option.map
     ~f:(fun proc_desc ->
-       let idenv = Idenv.create proc_desc
-       and language = (Procdesc.get_attributes proc_desc).ProcAttributes.language in
-       (idenv, tenv, proc_name, proc_desc, language))
+        let idenv = Idenv.create proc_desc
+        and language = (Procdesc.get_attributes proc_desc).ProcAttributes.language in
+        (idenv, tenv, proc_name, proc_desc, language))
     (Exe_env.get_proc_desc exe_env proc_name)
 
 let get_language proc_name = if Procname.is_java proc_name then Config.Java else Config.Clang
@@ -83,27 +83,27 @@ let iterate_procedure_callbacks exe_env caller_pname =
 
   Option.iter
     ~f:(fun (idenv, tenv, proc_name, proc_desc, _) ->
-       IList.iter
-         (fun (language_opt, proc_callback) ->
-            let language_matches = match language_opt with
-              | Some language -> language = procedure_language
-              | None -> true in
-            if language_matches then
-              begin
-                let init_time = Unix.gettimeofday () in
-                proc_callback
-                  {
-                    get_proc_desc;
-                    get_procs_in_file;
-                    idenv;
-                    tenv;
-                    proc_name;
-                    proc_desc;
-                  };
-                let elapsed = Unix.gettimeofday () -. init_time in
-                update_time proc_name elapsed
-              end)
-         !procedure_callbacks)
+        IList.iter
+          (fun (language_opt, proc_callback) ->
+             let language_matches = match language_opt with
+               | Some language -> Config.equal_language language procedure_language
+               | None -> true in
+             if language_matches then
+               begin
+                 let init_time = Unix.gettimeofday () in
+                 proc_callback
+                   {
+                     get_proc_desc;
+                     get_procs_in_file;
+                     idenv;
+                     tenv;
+                     proc_name;
+                     proc_desc;
+                   };
+                 let elapsed = Unix.gettimeofday () -. init_time in
+                 update_time proc_name elapsed
+               end)
+          !procedure_callbacks)
     (get_procedure_definition exe_env caller_pname)
 
 (** Invoke all registered cluster callbacks on a cluster of procedures. *)
@@ -122,7 +122,7 @@ let iterate_cluster_callbacks all_procs exe_env proc_names =
   (* Procedures matching the given language or all if no language is specified. *)
   let relevant_procedures language_opt =
     Option.value_map
-      ~f:(fun l -> IList.filter (fun p -> l = get_language p) proc_names)
+      ~f:(fun l -> IList.filter (fun p -> Config.equal_language l (get_language p)) proc_names)
       ~default:proc_names
       language_opt in
 
@@ -163,7 +163,7 @@ let iterate_callbacks store_summary call_graph exe_env =
     let attributes_opt =
       Specs.proc_resolve_attributes proc_name in
     let should_reset =
-      Specs.get_summary proc_name = None in
+      is_none (Specs.get_summary proc_name) in
     if should_reset
     then Specs.reset_summary call_graph proc_name attributes_opt None in
 

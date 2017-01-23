@@ -30,7 +30,7 @@ type loc_trace = loc_trace_elem list
 (** Data associated to a specific error *)
 type err_data =
   (int * int) * int * Location.t * L.ml_loc option * loc_trace *
-  Exceptions.err_class * Exceptions.exception_visibility
+  Exceptions.err_class * Exceptions.visibility
 
 let compare_err_data
     (_, _, loc1, _, _, _, _)
@@ -50,13 +50,16 @@ module ErrLogHash = struct
     type t = Exceptions.err_kind * bool * Localise.t * Localise.error_desc * string
     [@@deriving compare]
 
+    (* NOTE: changing the hash function can change the order in which issues are reported. *)
     let hash (ekind, in_footprint, err_name, desc, _) =
       Hashtbl.hash (ekind, in_footprint, err_name, Localise.error_desc_hash desc)
 
     let equal
         (ekind1, in_footprint1, err_name1, desc1, _)
         (ekind2, in_footprint2, err_name2, desc2, _) =
-      (ekind1, in_footprint1, err_name1) = (ekind2, in_footprint2, err_name2) &&
+      [%compare.equal : Exceptions.err_kind * bool * Localise.t]
+        (ekind1, in_footprint1, err_name1)
+        (ekind2, in_footprint2, err_name2) &&
       Localise.error_desc_equal desc1 desc2
 
   end
@@ -85,7 +88,7 @@ type iter_fun =
   Localise.t -> Localise.error_desc -> string ->
   loc_trace ->
   Exceptions.err_class ->
-  Exceptions.exception_visibility ->
+  Exceptions.visibility ->
   unit
 
 (** Apply f to nodes and error names *)
@@ -109,14 +112,14 @@ let size filter (err_log: t) =
 (** Print errors from error log *)
 let pp_errors fmt (errlog : t) =
   let f (ekind, _, ename, _, _) _ =
-    if ekind = Exceptions.Kerror then
+    if Exceptions.equal_err_kind ekind Exceptions.Kerror then
       F.fprintf fmt "%a@ " Localise.pp ename in
   ErrLogHash.iter f errlog
 
 (** Print warnings from error log *)
 let pp_warnings fmt (errlog : t) =
   let f (ekind, _, ename, desc, _) _ =
-    if ekind = Exceptions.Kwarning then
+    if Exceptions.equal_err_kind ekind Exceptions.Kwarning then
       F.fprintf fmt "%a %a@ " Localise.pp ename Localise.pp_error_desc desc in
   ErrLogHash.iter f errlog
 
@@ -128,7 +131,7 @@ let pp_html source path_to_root fmt (errlog: t) =
       Io_infer.Html.pp_session_link source path_to_root fmt (nodeid, session, loc.Location.line) in
     ErrDataSet.iter (pp_nodeid_session_loc fmt) eds in
   let f do_fp ek (ekind, infp, err_name, desc, _) eds =
-    if ekind = ek && do_fp = infp
+    if Exceptions.equal_err_kind ekind ek && Bool.equal do_fp infp
     then
       F.fprintf fmt "<br>%a %a %a"
         Localise.pp err_name
@@ -186,17 +189,18 @@ let log_issue _ekind err_log loc node_id_key session ltr exn =
     | Some ekind -> ekind
     | _ -> _ekind in
   let hide_java_loc_zero = (* hide java errors at location zero unless in -developer_mode *)
-    Config.developer_mode = false &&
-    !Config.curr_language = Config.Java &&
-    loc.Location.line = 0 in
+    not Config.developer_mode &&
+    Config.curr_language_is Config.Java &&
+    Int.equal loc.Location.line 0 in
   let hide_memory_error =
     match Localise.error_desc_get_bucket desc with
-    | Some bucket when bucket = Mleak_buckets.ml_bucket_unknown_origin ->
+    | Some bucket when String.equal bucket Mleak_buckets.ml_bucket_unknown_origin ->
         not Mleak_buckets.should_raise_leak_unknown_origin
     | _ -> false in
   let log_it =
-    visibility = Exceptions.Exn_user ||
-    (Config.developer_mode && visibility = Exceptions.Exn_developer) in
+    Exceptions.equal_visibility visibility Exceptions.Exn_user ||
+    (Config.developer_mode &&
+     Exceptions.equal_visibility visibility Exceptions.Exn_developer) in
   if log_it && not hide_java_loc_zero && not hide_memory_error then begin
     let added =
       add_issue err_log
@@ -246,7 +250,8 @@ module Err_table = struct
       let count = try String.Map.find_exn !err_name_map err_string with Not_found -> 0 in
       err_name_map := String.Map.add ~key:err_string ~data:(count + n) !err_name_map in
     let count (ekind', in_footprint, err_name, _, _) eds =
-      if ekind = ekind' && in_footprint then count_err err_name (ErrDataSet.cardinal eds) in
+      if Exceptions.equal_err_kind ekind ekind' && in_footprint
+      then count_err err_name (ErrDataSet.cardinal eds) in
     ErrLogHash.iter count err_table;
     let pp ~key:err_string ~data:count = F.fprintf fmt " %s:%d" err_string count in
     String.Map.iteri ~f:pp !err_name_map
@@ -309,7 +314,7 @@ let extend_table err_table err_log =
 
 (** Size of the global per-file error table for the footprint phase *)
 let err_table_size_footprint ekind =
-  let filter ekind' in_footprint = ekind = ekind' && in_footprint in
+  let filter ekind' in_footprint = Exceptions.equal_err_kind ekind ekind' && in_footprint in
   Err_table.table_size filter
 
 (** Print stats for the global per-file error table *)

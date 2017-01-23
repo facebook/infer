@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 open Javalib_pack
 
@@ -79,7 +80,7 @@ let append_path classpath path =
   if Sys.file_exists path = `Yes then
     let root = Unix.getcwd () in
     let full_path = Utils.filename_to_absolute ~root path in
-    if String.length classpath = 0 then
+    if Int.equal (String.length classpath) 0 then
       full_path
     else
       classpath^JFile.sep^full_path
@@ -107,7 +108,7 @@ let read_package_declaration source_file =
       let line = remove_trailing_semicolon (input_line file_in) in
       match Str.split (Str.regexp "[ \t]+") line with
       | [] -> loop ()
-      | hd::package::[] when hd = "package" -> package
+      | hd::package::[] when String.equal hd "package" -> package
       | _ -> loop ()
     with End_of_file ->
       In_channel.close file_in;
@@ -168,7 +169,7 @@ let load_from_verbose_output javac_verbose_out =
       if Str.string_match class_filename_re line 0 then
         let path = Str.matched_group 1 line in
         let cn, root_info = Javalib.extract_class_name_from_file path in
-        let root_dir = if root_info = "" then Filename.current_dir_name else root_info in
+        let root_dir = if String.equal root_info "" then Filename.current_dir_name else root_info in
         loop paths (add_root_path root_dir roots) sources (JBasics.ClassSet.add cn classes)
       else if Str.string_match source_filename_re line 0 then
         let path = Str.matched_group 1 line in
@@ -327,7 +328,7 @@ let collect_classes start_classmap jar_filename =
 let load_program classpath classes =
   L.out_debug "loading program ... %!";
   let models =
-    if !models_jar = "" then JBasics.ClassMap.empty
+    if String.equal !models_jar "" then JBasics.ClassMap.empty
     else collect_classes JBasics.ClassMap.empty !models_jar in
   let program = {
     classpath = Javalib.class_path classpath;

@@ -18,8 +18,7 @@ type t =
   }
 [@@deriving compare]
 
-let equal t1 t2 =
-  compare t1 t2 = 0
+let equal = [%compare.equal : t]
 
 let pname t =
   t.pname

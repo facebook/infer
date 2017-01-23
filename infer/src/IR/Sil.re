@@ -63,6 +63,8 @@ type instr =
   | Declare_locals (list (Pvar.t, Typ.t)) Location.t /** declare local variables */
 [@@deriving compare];
 
+let equal_instr = [%compare.equal : instr];
+
 let skip_instr = Remove_temps [] Location.dummy;
 
 
@@ -95,7 +97,7 @@ type atom =
   | Anpred PredSymb.t (list Exp.t) /** negated predicate symbol applied to exps */
 [@@deriving compare];
 
-let equal_atom x y => compare_atom x y == 0;
+let equal_atom = [%compare.equal : atom];
 
 
 /** kind of lseg or dllseg predicates */
@@ -104,7 +106,7 @@ type lseg_kind =
   | Lseg_PE /** possibly empty (possibly circular) listseg */
 [@@deriving compare];
 
-let equal_lseg_kind k1 k2 => compare_lseg_kind k1 k2 == 0;
+let equal_lseg_kind = [%compare.equal : lseg_kind];
 
 
 /** The boolean is true when the pointer was dereferenced without testing for zero. */
@@ -131,6 +133,8 @@ type inst =
   | Ireturn_from_call int
 [@@deriving compare];
 
+let equal_inst = [%compare.equal : inst];
+
 
 /** structured expressions represent a value of structured type, such as an array or a struct. */
 type strexp0 'inst =
@@ -151,7 +155,7 @@ type strexp = strexp0 inst;
 let compare_strexp inst::inst=false se1 se2 =>
   compare_strexp0 (inst ? compare_inst : (fun _ _ => 0)) se1 se2;
 
-let equal_strexp inst::inst=false se1 se2 => compare_strexp inst::inst se1 se2 == 0;
+let equal_strexp inst::inst=false se1 se2 => Int.equal (compare_strexp inst::inst se1 se2) 0;
 
 
 /** an atomic heap predicate */
@@ -201,19 +205,20 @@ type hpred = hpred0 inst;
 let compare_hpred inst::inst=false hpred1 hpred2 =>
   compare_hpred0 (inst ? compare_inst : (fun _ _ => 0)) hpred1 hpred2;
 
-let equal_hpred inst::inst=false hpred1 hpred2 => compare_hpred inst::inst hpred1 hpred2 == 0;
+let equal_hpred inst::inst=false hpred1 hpred2 =>
+  Int.equal (compare_hpred inst::inst hpred1 hpred2) 0;
 
 type hpara = hpara0 inst;
 
 let compare_hpara = compare_hpara0 (fun _ _ => 0);
 
-let equal_hpara hpara1 hpara2 => compare_hpara hpara1 hpara2 == 0;
+let equal_hpara = [%compare.equal : hpara];
 
 type hpara_dll = hpara_dll0 inst;
 
 let compare_hpara_dll = compare_hpara_dll0 (fun _ _ => 0);
 
-let equal_hpara_dll hpara1 hpara2 => compare_hpara_dll hpara1 hpara2 == 0;
+let equal_hpara_dll = [%compare.equal : hpara_dll];
 
 
 /** Return the lhs expression of a hpred */
@@ -285,14 +290,14 @@ let color_pre_wrapper pe f x =>
     let color = pe.Pp.cmap_norm (Obj.repr x);
     if (color != pe.Pp.color) {
       (
-        if (pe.Pp.kind == Pp.HTML) {
+        if (Pp.equal_print_kind pe.Pp.kind Pp.HTML) {
           Io_infer.Html.pp_start_color
         } else {
           Latex.pp_color
         }
       )
         f color;
-      if (color == Pp.Red) {
+      if (Pp.equal_color color Pp.Red) {
         (
           Pp.{
             /** All subexpressiona red */
@@ -316,7 +321,7 @@ let color_pre_wrapper pe f x =>
 /** Close color annotation if changed */
 let color_post_wrapper changed pe f =>
   if changed {
-    if (pe.Pp.kind == Pp.HTML) {
+    if (Pp.equal_print_kind pe.Pp.kind Pp.HTML) {
       Io_infer.Html.pp_end_color f ()
     } else {
       Latex.pp_color f pe.Pp.color
@@ -630,7 +635,7 @@ let module Predicates: {
   };
 
   /** return true if the environment is empty */
-  let is_empty env => env.num == 0;
+  let is_empty env => Int.equal env.num 0;
 
   /** return the id of the hpara */
   let get_hpara_id env hpara => fst (HparaHash.find env.hash hpara);
@@ -791,7 +796,7 @@ let inst_partial_join inst1 inst2 => {
     L.d_strln ("inst_partial_join failed on " ^ inst_to_string inst1 ^ " " ^ inst_to_string inst2);
     raise IList.Fail
   };
-  if (inst1 == inst2) {
+  if (equal_inst inst1 inst2) {
     inst1
   } else {
     switch (inst1, inst2) {
@@ -811,7 +816,7 @@ let inst_partial_join inst1 inst2 => {
 
 /** meet of instrumentations */
 let inst_partial_meet inst1 inst2 =>
-  if (inst1 == inst2) {
+  if (equal_inst inst1 inst2) {
     inst1
   } else {
     inst_none
@@ -886,7 +891,7 @@ let update_inst inst_old inst_new => {
 /** describe an instrumentation with a string */
 let pp_inst pe f inst => {
   let str = inst_to_string inst;
-  if (pe.Pp.kind == Pp.HTML) {
+  if (Pp.equal_print_kind pe.Pp.kind Pp.HTML) {
     F.fprintf f " %a%s%a" Io_infer.Html.pp_start_color Pp.Orange str Io_infer.Html.pp_end_color ()
   } else {
     F.fprintf f "%s%s%s" (Binop.str pe Lt) str (Binop.str pe Gt)
@@ -1403,7 +1408,7 @@ let rec ident_sorted_list_subset l1 l2 =>
   | ([_, ..._], []) => false
   | ([id1, ...l1], [id2, ...l2]) =>
     let n = Ident.compare id1 id2;
-    if (n == 0) {
+    if (Int.equal n 0) {
       ident_sorted_list_subset l1 [id2, ...l2]
     } else if (n > 0) {
       ident_sorted_list_subset [id1, ...l1] l2
@@ -1634,13 +1639,13 @@ let rec sorted_list_check_consecutives f =>
 /** substitution */
 type ident_exp = (Ident.t, Exp.t) [@@deriving compare];
 
-let equal_ident_exp ide1 ide2 => compare_ident_exp ide1 ide2 == 0;
+let equal_ident_exp = [%compare.equal : ident_exp];
 
 type subst = list ident_exp [@@deriving compare];
 
 
 /** Equality for substitutions. */
-let equal_subst sub1 sub2 => compare_subst sub1 sub2 == 0;
+let equal_subst = [%compare.equal : subst];
 
 let sub_check_duplicated_ids sub => {
   let f (id1, _) (id2, _) => Ident.equal id1 id2;
@@ -1712,9 +1717,11 @@ let sub_symmetric_difference sub1_in sub2_in => {
       (sub_common, sub1_only', sub2_only')
     | ([id_e1, ...sub1'], [id_e2, ...sub2']) =>
       let n = compare_ident_exp id_e1 id_e2;
-      if (n == 0) {
+      if (Int.equal n 0) {
         diff [id_e1, ...sub_common] sub1_only sub2_only sub1' sub2'
-      } else if (n < 0) {
+      } else if (
+        n < 0
+      ) {
         diff sub_common [id_e1, ...sub1_only] sub2_only sub1' sub2
       } else {
         diff sub_common sub1_only [id_e2, ...sub2_only] sub1 sub2'

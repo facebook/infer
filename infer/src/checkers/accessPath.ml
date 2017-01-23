@@ -17,29 +17,25 @@ let compare__array_sensitive_typ = Typ.array_sensitive_compare
 
 type base = Var.t * _array_sensitive_typ [@@deriving compare]
 
-let equal_base base1 base2 =
-  compare_base base1 base2 = 0
+let equal_base = [%compare.equal : base]
 
 type access =
   | ArrayAccess of Typ.t
   | FieldAccess of Ident.fieldname * Typ.t
 [@@deriving compare]
 
-let equal_access access1 access2 =
-  compare_access access1 access2 = 0
+let equal_access = [%compare.equal : access]
 
 type raw = base * access list [@@deriving compare]
 
-let equal_raw ap1 ap2 =
-  compare_raw ap1 ap2 = 0
+let equal_raw = [%compare.equal : raw]
 
 type t =
   | Abstracted of raw
   | Exact of raw
 [@@deriving compare]
 
-let equal ap1 ap2 =
-  compare ap1 ap2 = 0
+let equal = [%compare.equal : t]
 
 let base_of_pvar pvar typ =
   Var.of_pvar pvar, typ

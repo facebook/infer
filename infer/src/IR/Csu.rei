@@ -18,6 +18,8 @@ type class_kind =
   | Objc
 [@@deriving compare];
 
+let equal_class_kind: class_kind => class_kind => bool;
+
 type t =
   | Class class_kind
   | Struct

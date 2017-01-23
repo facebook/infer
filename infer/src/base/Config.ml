@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 (** Configuration values: either constant, determined at compile time, or set at startup
     time by system calls, environment variables, or command line options *)
@@ -18,7 +19,9 @@ module F = Format
 
 
 type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
-              | Crashcontext | Linters | Quandary | Threadsafety
+              | Crashcontext | Linters | Quandary | Threadsafety [@@deriving compare]
+
+let equal_analyzer = [%compare.equal : analyzer]
 
 let string_to_analyzer =
   [("capture", Capture); ("compile", Compile);
@@ -27,7 +30,7 @@ let string_to_analyzer =
    ("quandary", Quandary); ("threadsafety", Threadsafety)]
 
 let string_of_analyzer a =
-  IList.find (fun (_, a') -> a = a') string_to_analyzer |> fst
+  IList.find (fun (_, a') -> equal_analyzer a a') string_to_analyzer |> fst
 
 let clang_frontend_action_symbols = [
   ("lint", `Lint);
@@ -36,6 +39,8 @@ let clang_frontend_action_symbols = [
 ]
 
 type language = Clang | Java [@@deriving compare]
+
+let equal_language = [%compare.equal : language]
 
 let string_of_language = function
   | Java -> "Java"
@@ -642,7 +647,7 @@ and (
 ) =
   let developer_mode =
     CLOpt.mk_bool ~long:"developer-mode"
-      ~default:CLOpt.(current_exe = Print)
+      ~default:CLOpt.(equal_exe current_exe Print)
       "Show internal exceptions"
 
   and filtering =
@@ -657,7 +662,7 @@ and (
 
   and print_types =
     CLOpt.mk_bool ~long:"print-types"
-      ~default:(current_exe = CLOpt.Clang)
+      ~default:CLOpt.(equal_exe current_exe Clang)
       "Print types in symbolic heaps"
 
   and reports_include_ml_loc =
@@ -910,7 +915,7 @@ and ml_buckets =
      - 'arc' from code compiled in ARC mode,\n\
      - 'narc' from code not compiled in ARC mode,\n\
      - 'cpp' from C++ code"
-    ~symbols:ml_bucket_symbols
+    ~symbols:ml_bucket_symbols ~eq:PVariant.(=)
 
 and models_mode =
   CLOpt.mk_bool ~deprecated:["models_mode"; "-models_mode"] ~long:"models-mode"
@@ -1296,7 +1301,7 @@ let post_parsing_initialization () =
          Unix.close_process_full chans |> ignore;
          err in
        let analyzer_name =
-         IList.assoc (=)
+         IList.assoc equal_analyzer
            (match !analyzer with Some a -> a | None -> Infer)
            (IList.map (fun (n,a) -> (a,n)) string_to_analyzer) in
        let infer_version = Version.commit in
@@ -1332,8 +1337,8 @@ let post_parsing_initialization () =
     else
       (Some default_symops_timeout, Some default_seconds_timeout)
   in
-  if !symops_per_iteration = None then symops_per_iteration := symops_timeout ;
-  if !seconds_per_iteration = None then seconds_per_iteration := seconds_timeout ;
+  if is_none !symops_per_iteration then symops_per_iteration := symops_timeout ;
+  if is_none !seconds_per_iteration then seconds_per_iteration := seconds_timeout ;
 
   match !analyzer with
   | Some Checkers -> checkers := true
@@ -1518,13 +1523,13 @@ and xml_specs = !xml_specs
 (** Configuration values derived from command-line options *)
 
 let analysis_path_regex_whitelist analyzer =
-  IList.assoc (=) analyzer analysis_path_regex_whitelist_options
+  IList.assoc equal_analyzer analyzer analysis_path_regex_whitelist_options
 and analysis_path_regex_blacklist analyzer =
-  IList.assoc (=) analyzer analysis_path_regex_blacklist_options
+  IList.assoc equal_analyzer analyzer analysis_path_regex_blacklist_options
 and analysis_blacklist_files_containing analyzer =
-  IList.assoc (=) analyzer analysis_blacklist_files_containing_options
+  IList.assoc equal_analyzer analyzer analysis_blacklist_files_containing_options
 and analysis_suppress_errors analyzer =
-  IList.assoc (=) analyzer analysis_suppress_errors_options
+  IList.assoc equal_analyzer analyzer analysis_suppress_errors_options
 
 let checkers_enabled = not (eradicate || crashcontext || quandary || threadsafety)
 
@@ -1604,6 +1609,9 @@ let arc_mode = ref false
 
 (** Current language *)
 let curr_language = ref Clang
+
+let curr_language_is lang =
+  equal_language !curr_language lang
 
 (** Flag for footprint discovery mode *)
 let footprint = ref true

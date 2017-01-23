@@ -74,7 +74,7 @@ end = struct
 
   type t = Exp.t * Exp.t * IntLit.t [@@deriving compare]
 
-  let equal entry1 entry2 = compare entry1 entry2 = 0
+  let equal = [%compare.equal : t]
 
   let to_leq (e1, e2, n) =
     Exp.BinOp(Binop.MinusA, e1, e2), Exp.int n
@@ -124,7 +124,7 @@ end = struct
 
   let sort_then_remove_redundancy constraints =
     let constraints_sorted = IList.sort compare constraints in
-    let have_same_key (e1, e2, _) (f1, f2, _) = [%compare: Exp.t * Exp.t] (e1, e2) (f1, f2) = 0 in
+    let have_same_key (e1, e2, _) (f1, f2, _) = [%compare.equal: Exp.t * Exp.t] (e1, e2) (f1, f2) in
     remove_redundancy have_same_key [] constraints_sorted
 
   let remove_redundancy constraints =
@@ -140,9 +140,9 @@ end = struct
         let e1, e2, n = constr in
         let f1, f2, m = constr' in
         let c1 = [%compare: Exp.t * Exp.t] (e1, e2) (f1, f2) in
-        if c1 = 0 && IntLit.lt n m then
+        if Int.equal c1 0 && IntLit.lt n m then
           combine acc_todos acc_seen constraints_new rest'
-        else if c1 = 0 then
+        else if Int.equal c1 0 then
           combine acc_todos acc_seen rest constraints_old
         else if c1 < 0 then
           combine (constr:: acc_todos) (constr:: acc_seen) rest constraints_old
@@ -484,7 +484,7 @@ end = struct
           IList.map (function
               | _, Exp.Const (Const.Cint n) -> n
               | _ -> assert false) e_upper_list in
-        if upper_list = [] then None
+        if List.is_empty upper_list then None
         else Some (compute_min_from_nonempty_int_list upper_list)
 
   (** Find a IntLit.t n such that [t |- n < e] if possible. *)
@@ -501,7 +501,7 @@ end = struct
           IList.map (function
               | Exp.Const (Const.Cint n), _ -> n
               | _ -> assert false) e_lower_list in
-        if lower_list = [] then None
+        if List.is_empty lower_list then None
         else Some (compute_max_from_nonempty_int_list lower_list)
 
   (** Return [true] if a simple inconsistency is detected *)
@@ -651,7 +651,7 @@ let check_disequal tenv prop e1 e2 =
                let sigma_irrelevant' = hpred :: sigma_irrelevant
                in f sigma_irrelevant' e sigma_rest
            | Some _ ->
-               if (k = Sil.Lseg_NE || check_pi_implies_disequal e1 e2) then
+               if (Sil.equal_lseg_kind k Sil.Lseg_NE || check_pi_implies_disequal e1 e2) then
                  let sigma_irrelevant' = (IList.rev sigma_irrelevant) @ sigma_rest
                  in Some (true, sigma_irrelevant')
                else if (Exp.equal e2 Exp.zero) then
@@ -782,13 +782,18 @@ let check_allocatedness tenv prop e =
     | Sil.Hpointsto (base, _, _) ->
         is_root tenv prop base n_e <> None
     | Sil.Hlseg (k, _, e1, e2, _) ->
-        if k = Sil.Lseg_NE || check_disequal tenv prop e1 e2 then
+        if Sil.equal_lseg_kind k Sil.Lseg_NE || check_disequal tenv prop e1 e2 then
           is_root tenv prop e1 n_e <> None
-        else false
+        else
+          false
     | Sil.Hdllseg (k, _, iF, oB, oF, iB, _) ->
-        if k = Sil.Lseg_NE || check_disequal tenv prop iF oF || check_disequal tenv prop iB oB then
+        if Sil.equal_lseg_kind k Sil.Lseg_NE ||
+           check_disequal tenv prop iF oF ||
+           check_disequal tenv prop iB oB
+        then
           is_root tenv prop iF n_e <> None || is_root tenv prop iB n_e <> None
-        else false
+        else
+          false
   in IList.exists f spatial_part
 
 (** Compute an upper bound of an expression *)
@@ -861,13 +866,14 @@ let check_inconsistency_base tenv prop =
         let procedure_attr =
           Procdesc.get_attributes pdesc in
         let is_java_this pvar =
-          procedure_attr.ProcAttributes.language = Config.Java && Pvar.is_this pvar in
+          Config.equal_language procedure_attr.ProcAttributes.language Config.Java &&
+          Pvar.is_this pvar in
         let is_objc_instance_self pvar =
-          procedure_attr.ProcAttributes.language = Config.Clang &&
-          Pvar.get_name pvar = Mangled.from_string "self" &&
+          Config.equal_language procedure_attr.ProcAttributes.language Config.Clang &&
+          Mangled.equal (Pvar.get_name pvar) (Mangled.from_string "self") &&
           procedure_attr.ProcAttributes.is_objc_instance_method in
         let is_cpp_this pvar =
-          procedure_attr.ProcAttributes.language = Config.Clang &&
+          Config.equal_language procedure_attr.ProcAttributes.language Config.Clang &&
           Pvar.is_this pvar &&
           procedure_attr.ProcAttributes.is_cpp_instance_method in
         let do_hpred = function
@@ -885,7 +891,7 @@ let check_inconsistency_base tenv prop =
     | Sil.Aneq (e1, e2) ->
         (match e1, e2 with
          | Exp.Const c1, Exp.Const c2 -> Const.equal c1 c2
-         | _ -> (Exp.compare e1 e2 = 0))
+         | _ -> Exp.equal e1 e2)
     | Sil.Apred _ | Anpred _ -> false in
   let inconsistent_inequalities () =
     let ineq = Inequalities.from_prop tenv prop in
@@ -1202,7 +1208,7 @@ let exp_imply tenv calc_missing subs e1_in e2_in : subst2 =
         raise (IMPL_EXC ("pointer+index cannot evaluate to a constant", subs, (EXC_FALSE_EXPS (e1, e2))))
     | Exp.Const (Const.Cint n1), Exp.BinOp (Binop.PlusA, f1, Exp.Const (Const.Cint n2)) ->
         do_imply subs (Exp.int (n1 -- n2)) f1
-    | Exp.BinOp(op1, e1, f1), Exp.BinOp(op2, e2, f2) when op1 = op2 ->
+    | Exp.BinOp(op1, e1, f1), Exp.BinOp(op2, e2, f2) when Binop.equal op1 op2 ->
         do_imply (do_imply subs e1 e2) f1 f2
     | Exp.BinOp (Binop.PlusA, Exp.Var v1, e1), e2 ->
         do_imply subs (Exp.Var v1) (Exp.BinOp (Binop.MinusA, e2, e1))
@@ -1846,7 +1852,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                raise (Exceptions.Abduction_case_not_implemented __POS__))
         | _ -> ()
       in
-      if Exp.equal e2 f2 && k = Sil.Lseg_PE then (subs, prop1)
+      if Exp.equal e2 f2 && Sil.equal_lseg_kind k Sil.Lseg_PE then (subs, prop1)
       else
         (match Prop.prop_iter_create prop1 with
          | None -> raise (IMPL_EXC ("lhs is empty", subs, EXC_FALSE))
@@ -2218,7 +2224,7 @@ let is_cover tenv cases =
   let cnt = ref 0 in (* counter for timeout checks, as this function can take exponential time *)
   let check () =
     incr cnt;
-    if (!cnt mod 100 = 0) then SymOp.check_wallclock_alarm () in
+    if Int.equal (!cnt mod 100) 0 then SymOp.check_wallclock_alarm () in
   let rec _is_cover acc_pi cases =
     check ();
     match cases with

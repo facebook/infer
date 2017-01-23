@@ -24,7 +24,9 @@ let rec rmtree name =
       let rec rmdir dir =
         match Unix.readdir dir with
         | entry ->
-            if not (entry = Filename.current_dir_name || entry = Filename.parent_dir_name) then (
+            if not (String.equal entry Filename.current_dir_name ||
+                    String.equal entry Filename.parent_dir_name)
+            then (
               rmtree (name ^/ entry)
             );
             rmdir dir
@@ -40,6 +42,9 @@ let rec rmtree name =
 
 type build_system =
   | BAnalyze | BAnt | BBuck | BGradle | BJava | BJavac | BMake | BMvn | BNdk | BXcode
+[@@deriving compare]
+
+let equal_build_system = [%compare.equal : build_system]
 
 (* List of ([build system], [executable name]). Several executables may map to the same build
    system. In that case, the first one in the list will be used for printing, eg, in which mode
@@ -73,6 +78,9 @@ type driver_mode =
   | Maven of string * string list
   | PythonCapture of build_system * string list
   | XcodeXcpretty
+[@@deriving compare]
+
+let equal_driver_mode = [%compare.equal : driver_mode]
 
 let pp_driver_mode fmt driver_mode =
   let log_argfile_arg fname =
@@ -122,8 +130,8 @@ let clean_results_dir () =
           | entry ->
               if (IList.exists (String.equal entry) dirs) then (
                 rmtree (name ^/ entry)
-              ) else if not (entry = Filename.current_dir_name
-                             || entry = Filename.parent_dir_name) then (
+              ) else if not (String.equal entry Filename.current_dir_name
+                             || String.equal entry Filename.parent_dir_name) then (
                 clean (name ^/ entry)
               );
               cleandir dir
@@ -199,12 +207,12 @@ let capture = function
       Maven.capture ~prog ~args
   | PythonCapture (build_system, build_cmd) ->
       L.stdout "Capturing in %s mode...@." (string_of_build_system build_system);
-      let in_buck_mode = build_system = BBuck in
+      let in_buck_mode = equal_build_system build_system BBuck in
       let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
       let args =
         List.rev_append Config.anon_args (
           ["--analyzer";
-           IList.assoc (=) Config.analyzer
+           IList.assoc Config.equal_analyzer Config.analyzer
              (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)] @
           (match Config.blacklist with
            | Some s when in_buck_mode -> ["--blacklist-regex"; s]
@@ -244,10 +252,13 @@ let capture = function
           else build_cmd
         ) in
       run_command ~prog:infer_py ~args
-        (fun status ->
-           if status = Result.Error (`Exit_non_zero Config.infer_py_argparse_error_exit_code) then
-             (* swallow infer.py argument parsing error *)
-             Config.print_usage_exit ()
+        (function
+          | Result.Error (`Exit_non_zero exit_code) ->
+              if Int.equal exit_code Config.infer_py_argparse_error_exit_code then
+                (* swallow infer.py argument parsing error *)
+                Config.print_usage_exit ()
+          | _ ->
+              ()
         )
   | XcodeXcpretty ->
       L.stdout "Capturing using xcpretty...@\n";
@@ -270,7 +281,7 @@ let run_parallel_analysis () =
   ) (fun _ -> ())
 
 let execute_analyze () =
-  if Config.jobs = 1 || Config.cluster_cmdline <> None then
+  if Int.equal Config.jobs 1 || Config.cluster_cmdline <> None then
     InferAnalyze.main ""
   else
     run_parallel_analysis ()
@@ -376,7 +387,8 @@ let get_driver_mode () =
 
 let () =
   let driver_mode = get_driver_mode () in
-  if not (driver_mode = Analyze || Config.(buck || continue_capture || maven || reactive_mode)) then
+  if not (equal_driver_mode driver_mode Analyze ||
+          Config.(buck || continue_capture || maven || reactive_mode)) then
     remove_results_dir () ;
   create_results_dir () ;
   (* re-set log files, as default files were in results_dir removed above *)
@@ -396,7 +408,7 @@ let () =
   if CLOpt.is_originator then (
     StatsAggregator.generate_files () ;
     let in_buck_mode = match driver_mode with | PythonCapture (BBuck, _) -> true | _ -> false in
-    if Config.analyzer = Config.Crashcontext then
+    if Config.equal_analyzer Config.analyzer Config.Crashcontext then
       Crashcontext.crashcontext_epilogue ~in_buck_mode;
     if in_buck_mode then
       clean_results_dir () ;

@@ -63,6 +63,8 @@ type instr =
   | Declare_locals (list (Pvar.t, Typ.t)) Location.t /** declare local variables */
 [@@deriving compare];
 
+let equal_instr: instr => instr => bool;
+
 
 /** compare instructions from different procedures without considering loc's, ident's, and pvar's.
     the [exp_map] param gives a mapping of names used in the procedure of [instr1] to identifiers
@@ -127,6 +129,8 @@ type inst =
   | Iupdate zero_flag null_case_flag int PredSymb.path_pos
   | Ireturn_from_call int
 [@@deriving compare];
+
+let equal_inst: inst => inst => bool;
 
 let inst_abstraction: inst;
 

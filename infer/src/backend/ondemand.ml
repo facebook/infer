@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 (** Module for on-demand analysis. *)
 
@@ -63,7 +64,7 @@ let should_be_analyzed proc_name proc_attributes =
 
 let procedure_should_be_analyzed proc_name =
   match AttributesTable.load_attributes proc_name with
-  | Some proc_attributes when Config.reactive_capture && proc_attributes.is_defined = false ->
+  | Some proc_attributes when Config.reactive_capture && not proc_attributes.is_defined ->
       (* try to capture procedure first *)
       let defined_proc_attributes = OndemandCapture.try_capture proc_attributes in
       Option.value_map ~f:(should_be_analyzed proc_name) ~default:false defined_proc_attributes

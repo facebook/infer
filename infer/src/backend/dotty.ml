@@ -37,13 +37,14 @@ type kind_of_links =
   | LinkToSSL
   | LinkToDLL
   | LinkRetainCycle
+[@@deriving compare]
 
 (* coordinate identifies a node using two dimension: id is an numerical identifier of the node,*)
 (* lambda identifies in which hpred parameter id lays in*)
 type coordinate = {
   id: int;
   lambda: int;
-}
+} [@@deriving compare]
 
 (* define a link between two nodes. src_fld/trg_fld define the label of the src/trg field. It is*)
 (* useful for having nodes from within a struct and/or to inside a struct *)
@@ -53,7 +54,9 @@ type link = {
   src_fld: string;
   trg: coordinate;
   trg_fld: string;
-}
+} [@@deriving compare]
+
+let equal_link = [%compare.equal : link]
 
 (* type of the visualized boxes/nodes in the graph*)
 type dotty_node =
@@ -202,7 +205,7 @@ let rec look_up_for_back_pointer e dotnodes lambda =
   match dotnodes with
   | [] -> []
   | Dotdllseg(coo, _, _, _, e4, _, _, _):: dotnodes' ->
-      if Exp.equal e e4 && lambda = coo.lambda then [coo.id + 1]
+      if Exp.equal e e4 && Int.equal lambda coo.lambda then [coo.id + 1]
       else look_up_for_back_pointer e dotnodes' lambda
   | _:: dotnodes' -> look_up_for_back_pointer e dotnodes' lambda
 
@@ -212,7 +215,7 @@ let rec select_nodes_exp_lambda dotnodes e lambda =
   | [] -> []
   | node:: l' ->
       let (coo, e') = get_coordinate_and_exp node in
-      if (Exp.equal e e') && lambda = coo.lambda
+      if (Exp.equal e e') && Int.equal lambda coo.lambda
       then node:: select_nodes_exp_lambda l' e lambda
       else select_nodes_exp_lambda l' e lambda
 
@@ -237,7 +240,7 @@ let color_to_str (c : Pp.color) =
 
 let make_dangling_boxes pe allocated_nodes (sigma_lambda: (Sil.hpred * int) list) =
   let exp_color hpred (exp : Exp.t) =
-    if pe.Pp.cmap_norm (Obj.repr hpred) = Pp.Red then Pp.Red
+    if Pp.equal_color (pe.Pp.cmap_norm (Obj.repr hpred)) Pp.Red then Pp.Red
     else pe.Pp.cmap_norm (Obj.repr exp) in
   let get_rhs_predicate (hpred, lambda) =
     let n = !dotty_state_count in
@@ -322,7 +325,7 @@ let rec dotty_mk_node pe sigma =
   | [] -> []
   | (hpred, lambda) :: sigma' ->
       let exp_color (exp : Exp.t) =
-        if pe.Pp.cmap_norm (Obj.repr hpred) = Pp.Red then Pp.Red
+        if Pp.equal_color (pe.Pp.cmap_norm (Obj.repr hpred)) Pp.Red then Pp.Red
         else pe.Pp.cmap_norm (Obj.repr exp) in
       do_hpred_lambda exp_color (hpred, lambda) @ dotty_mk_node pe sigma'
 
@@ -629,7 +632,10 @@ let dotty_pp_link f link =
 let filter_useless_spec_dollar_box (nodes: dotty_node list) (links: link list) =
   let tmp_nodes = ref nodes in
   let tmp_links = ref links in
-  let remove_links_from ln = IList.filter (fun n' -> not (IList.mem Pervasives.(=) n' ln)) !tmp_links in
+  let remove_links_from ln =
+    IList.filter
+      (fun n' -> not (IList.mem equal_link n' ln))
+      !tmp_links in
   let remove_node n ns =
     IList.filter (fun n' -> match n' with
         | Dotpointsto _ -> (get_coordinate_id n') <> (get_coordinate_id n)
@@ -639,7 +645,7 @@ let filter_useless_spec_dollar_box (nodes: dotty_node list) (links: link list) =
     match lns with
     | [] -> []
     | l:: ln' -> let n_id = get_coordinate_id n in
-        if l.src.id = n_id && l.src_fld ="" then (
+        if Int.equal l.src.id n_id && String.equal l.src_fld "" then (
           (*L.out "@\n Found link (%i,%i)" l.src.id l.trg.id;*)
           l:: boxes_pointed_by n ln'
         )
@@ -648,7 +654,7 @@ let filter_useless_spec_dollar_box (nodes: dotty_node list) (links: link list) =
     match lns with
     | [] -> []
     | l:: ln' -> let n_id = get_coordinate_id n in
-        if l.trg.id = n_id && l.trg_fld ="" then (
+        if Int.equal l.trg.id n_id && String.equal l.trg_fld "" then (
           (*L.out "@\n Found link (%i,%i)" l.src.id l.trg.id;*)
           l:: boxes_pointing_at n ln' )
         else boxes_pointing_at n ln' in
@@ -665,7 +671,7 @@ let filter_useless_spec_dollar_box (nodes: dotty_node list) (links: link list) =
           let links_from_node = boxes_pointed_by node links in
           let links_to_node = boxes_pointing_at node links in
           (* L.out "@\n Size of links_from=%i links_to=%i @.@." (IList.length links_from_node) (IList.length links_to_node); *)
-          if links_to_node =[] then begin
+          if List.is_empty links_to_node then begin
             tmp_links:= remove_links_from links_from_node ;
             tmp_nodes:= remove_node node !tmp_nodes;
           end
@@ -993,7 +999,7 @@ let pp_cfgnode pdesc fmt (n: Procdesc.Node.t) =
     let color = if is_exn then "[color=\"red\" ]" else "" in
     match Procdesc.Node.get_kind n2 with
     | Procdesc.Node.Exit_node _
-      when is_exn = true -> (* don't print exception edges to the exit node *)
+      when is_exn -> (* don't print exception edges to the exit node *)
         ()
     | _ ->
         F.fprintf fmt "\n\t %a -> %a %s;"
@@ -1033,7 +1039,7 @@ let print_icfg_dotty source cfg =
   let fname =
     match Config.icfg_dotty_outfile with
     | Some file -> file
-    | None when Config.frontend_tests = true ->
+    | None when Config.frontend_tests ->
         (SourceFile.to_abs_path source) ^ ".test.dot"
     | None ->
         DB.filename_to_string

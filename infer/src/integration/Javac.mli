@@ -9,6 +9,6 @@
 
 open! IStd
 
-type compiler = Java | Javac
+type compiler = Java | Javac [@@deriving compare]
 
 val capture : compiler -> prog:string -> args:string list -> unit

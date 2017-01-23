@@ -40,7 +40,7 @@ let module Name = {
     | Footprint => footprint
     | Spec => spec
     | FromString s => s;
-  let equal n1 n2 => compare n1 n2 == 0;
+  let equal = [%compare.equal : t];
 };
 
 type name = Name.t [@@deriving compare];
@@ -49,11 +49,11 @@ let name_spec = Name.Spec;
 
 let name_primed = Name.Primed;
 
-let equal_name x y => 0 == compare_name x y;
+let equal_name = [%compare.equal : name];
 
 type fieldname = {fpos: int, fname: Mangled.t} [@@deriving compare];
 
-let equal_fieldname x y => 0 == compare_fieldname x y;
+let equal_fieldname = [%compare.equal : fieldname];
 
 type kind =
   | KNone
@@ -70,7 +70,7 @@ let knormal = KNormal;
 
 let kprimed = KPrimed;
 
-let equal_kind x y => 0 == compare_kind x y;
+let equal_kind = [%compare.equal : kind];
 
 /* timestamp for a path identifier */
 let path_ident_stamp = (-3);
@@ -78,7 +78,8 @@ let path_ident_stamp = (-3);
 type t = {kind: kind, name: Name.t, stamp: int} [@@deriving compare];
 
 /* most unlikely first */
-let equal i1 i2 => i1.stamp == i2.stamp && i1.kind == i2.kind && equal_name i1.name i2.name;
+let equal i1 i2 =>
+  Int.equal i1.stamp i2.stamp && equal_kind i1.kind i2.kind && equal_name i1.name i2.name;
 
 
 /** {2 Set for identifiers} */
@@ -254,9 +255,11 @@ let name_return = Mangled.from_string "return";
 
 /** Return the standard name for the given kind */
 let standard_name kind =>
-  if (kind == KNormal || kind == KNone) {
+  if (equal_kind kind KNormal || equal_kind kind KNone) {
     Name.Normal
-  } else if (kind == KFootprint) {
+  } else if (
+    equal_kind kind KFootprint
+  ) {
     Name.Footprint
   } else {
     Name.Primed
@@ -297,20 +300,22 @@ let create_footprint name stamp => create_with_stamp KFootprint name stamp;
 /** Get a name of an identifier */
 let get_name id => id.name;
 
-let is_primed (id: t) => id.kind == KPrimed;
+let has_kind id kind => equal_kind id.kind kind;
 
-let is_normal (id: t) => id.kind == KNormal || id.kind == KNone;
+let is_primed (id: t) => has_kind id KPrimed;
 
-let is_footprint (id: t) => id.kind == KFootprint;
+let is_normal (id: t) => has_kind id KNormal || has_kind id KNone;
 
-let is_none (id: t) => id.kind == KNone;
+let is_footprint (id: t) => has_kind id KFootprint;
 
-let is_path (id: t) => id.kind == KNormal && id.stamp == path_ident_stamp;
+let is_none (id: t) => has_kind id KNone;
+
+let is_path (id: t) => has_kind id KNormal && Int.equal id.stamp path_ident_stamp;
 
 let make_unprimed id =>
-  if (id.kind != KPrimed) {
+  if (not (has_kind id KPrimed)) {
     assert false
-  } else if (id.kind == KNone) {
+  } else if (has_kind id KNone) {
     {...id, kind: KNone}
   } else {
     {...id, kind: KNormal}
@@ -333,14 +338,14 @@ let create_path pathstring =>
 
 /** Convert an identifier to a string. */
 let to_string id =>
-  if (id.kind == KNone) {
+  if (has_kind id KNone) {
     "_"
   } else {
     let base_name = name_to_string id.name;
     let prefix =
-      if (id.kind == KFootprint) {
+      if (has_kind id KFootprint) {
         "@"
-      } else if (id.kind == KNormal) {
+      } else if (has_kind id KNormal) {
         ""
       } else {
         "_"
@@ -372,9 +377,9 @@ let pp pe f id =>
   | LATEX =>
     let base_name = name_to_string id.name;
     let style =
-      if (id.kind == KFootprint) {
+      if (has_kind id KFootprint) {
         Latex.Boldface
-      } else if (id.kind == KNormal) {
+      } else if (has_kind id KNormal) {
         Latex.Roman
       } else {
         Latex.Roman

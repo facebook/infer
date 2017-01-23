@@ -45,6 +45,7 @@ let module Item = {
   /* type nonrec t = list (t, bool) [@@deriving compare]; */
   type _t = list (t, bool) [@@deriving compare];
   type t = _t [@@deriving compare];
+  let equal = [%compare.equal : t];
 
   /** Pretty print an item annotation. */
   let pp fmt ann => {
@@ -60,7 +61,7 @@ let module Item = {
   let empty = [];
 
   /** Check if the item annodation is empty. */
-  let is_empty ia => ia == [];
+  let is_empty ia => List.is_empty ia;
 };
 
 let module Class = {

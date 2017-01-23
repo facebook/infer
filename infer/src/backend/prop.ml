@@ -33,11 +33,9 @@ type exposed (** kind for exposed props *)
 type pi = Sil.atom list [@@deriving compare]
 type sigma = Sil.hpred list [@@deriving compare]
 
-let equal_pi pi1 pi2 =
-  compare_pi pi1 pi2 = 0
+let equal_pi = [%compare.equal : pi]
 
-let equal_sigma sigma1 sigma2 =
-  compare_sigma sigma1 sigma2 = 0
+let equal_sigma = [%compare.equal : sigma]
 
 
 module Core : sig
@@ -116,7 +114,7 @@ let compare_prop p1 p2 =
 
 (** Check the equality of two propositions *)
 let equal_prop p1 p2 =
-  compare_prop p1 p2 = 0
+  Int.equal (compare_prop p1 p2) 0
 
 (** {1 Functions for Pretty Printing} *)
 
@@ -305,7 +303,7 @@ let prop_pred_env prop =
 (** Pretty print a proposition. *)
 let pp_prop pe0 f prop =
   let pe = prop_update_obj_sub pe0 prop in
-  let latex = pe.Pp.kind = Pp.LATEX in
+  let latex = Pp.equal_print_kind pe.Pp.kind Pp.LATEX in
   let do_print f () =
     let subl = Sil.sub_to_list prop.sub in
     (* since prop diff is based on physical equality, we need to extract the sub verbatim *)
@@ -465,7 +463,8 @@ let rec create_strexp_of_type tenv struct_init_mode (typ : Typ.t) len inst : Sil
       let fresh_id =
         (Ident.create_fresh (if !Config.footprint then Ident.kfootprint else Ident.kprimed)) in
       Exp.Var fresh_id in
-    if !Config.curr_language = Config.Java && inst = Sil.Ialloc
+    if Config.curr_language_is Config.Java &&
+       Sil.equal_inst inst Sil.Ialloc
     then
       match typ with
       | Tfloat _ -> Exp.Const (Cfloat 0.0)
@@ -619,7 +618,7 @@ let compute_reachable_hpreds sigma exps =
           (reach', Exp.Set.union exps reach_exps)
       | _ -> reach, exps in
     let reach', exps' = IList.fold_left add_hpred_if_reachable (reach, exps) sigma in
-    if (Sil.HpredSet.cardinal reach) = (Sil.HpredSet.cardinal reach') then (reach, exps)
+    if Int.equal (Sil.HpredSet.cardinal reach) (Sil.HpredSet.cardinal reach') then (reach, exps)
     else compute_reachable_hpreds_rec sigma (reach', exps') in
   compute_reachable_hpreds_rec sigma (Sil.HpredSet.empty, exps)
 
@@ -705,10 +704,10 @@ module Normalize = struct
       | Const _ ->
           e
       | Sizeof (Tarray (Tint ik, _), Some l, _)
-        when Typ.ikind_is_char ik && !Config.curr_language = Config.Clang ->
+        when Typ.ikind_is_char ik && Config.curr_language_is Config.Clang ->
           eval l
       | Sizeof (Tarray (Tint ik, Some l), _, _)
-        when Typ.ikind_is_char ik && !Config.curr_language = Config.Clang ->
+        when Typ.ikind_is_char ik && Config.curr_language_is Config.Clang ->
           Const (Cint l)
       | Sizeof _ ->
           e
@@ -789,7 +788,7 @@ module Normalize = struct
             | Const (Cint n), Const (Cint m) ->
                 Exp.bool (IntLit.eq n m)
             | Const (Cfloat v), Const (Cfloat w) ->
-                Exp.bool (v = w)
+                Exp.bool (Float.equal v w)
             | e1', e2' ->
                 Exp.eq e1' e2'
           end
@@ -847,7 +846,7 @@ module Normalize = struct
       | BinOp (PlusPI as oplus, e1, e2) ->
           let e1' = eval e1 in
           let e2' = eval e2 in
-          let isPlusA = oplus = Binop.PlusA in
+          let isPlusA = Binop.equal oplus Binop.PlusA in
           let ominus = if isPlusA then Binop.MinusA else Binop.MinusPI in
           let (+++) (x : Exp.t) (y : Exp.t) : Exp.t = match x, y with
             | _, Const (Cint i) when IntLit.iszero i -> x
@@ -910,7 +909,7 @@ module Normalize = struct
       | BinOp (MinusPI as ominus, e1, e2) ->
           let e1' = eval e1 in
           let e2' = eval e2 in
-          let isMinusA = ominus = Binop.MinusA in
+          let isMinusA = Binop.equal ominus Binop.MinusA in
           let oplus = if isMinusA then Binop.PlusA else Binop.PlusPI in
           let (+++) x y : Exp.t = BinOp (oplus, x, y) in
           let (---) x y : Exp.t = BinOp (ominus, x, y) in
@@ -1575,7 +1574,7 @@ module Normalize = struct
               unsafe_cast_to_normal
                 (set p ~sub:nsub' ~pi:npi' ~sigma:nsigma'') in
             IList.fold_left (prop_atom_and tenv ~footprint) p' eqs_zero
-        | Aeq (e1, e2) when (Exp.compare e1 e2 = 0) ->
+        | Aeq (e1, e2) when Exp.equal e1 e2 ->
             p
         | Aneq (e1, e2) ->
             let sigma' = sigma_intro_nonemptylseg e1 e2 p.sigma in
@@ -2117,7 +2116,7 @@ let prop_ren_sub tenv (ren_sub: Sil.subst) (prop: normal t) : normal t =
 let exist_quantify tenv fav (prop : normal t) : normal t =
   let ids = Sil.fav_to_list fav in
   if IList.exists Ident.is_primed ids then assert false; (* sanity check *)
-  if ids = [] then prop else
+  if List.is_empty ids then prop else
     let gen_fresh_id_sub id = (id, Exp.Var (Ident.create_fresh Ident.kprimed)) in
     let ren_sub = Sil.sub_of_list (IList.map gen_fresh_id_sub ids) in
     let prop' =
@@ -2441,7 +2440,7 @@ let hpred_gc_fields (fav: Sil.fav) (hpred : Sil.hpred) : Sil.hpred = match hpred
       (match strexp_gc_fields fav se with
        | None -> hpred
        | Some se' ->
-           if Sil.compare_strexp se se' = 0 then hpred
+           if Sil.equal_strexp se se' then hpred
            else Hpointsto (e, se', te))
   | Hlseg _ | Hdllseg _ ->
       hpred
@@ -2565,7 +2564,7 @@ module CategorizePreconditions = struct
           false in
     let check_pre hpred_filter pre =
       let check_pi pi =
-        pi = [] in
+        List.is_empty pi in
       let check_sigma sigma =
         IList.for_all hpred_filter sigma in
       check_pi pre.pi && check_sigma pre.sigma in

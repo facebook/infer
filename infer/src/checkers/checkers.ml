@@ -23,7 +23,7 @@ module PP = struct
   let pp_loc_range linereader nbefore nafter fmt loc =
     let printline n =
       match Printer.LineReader.from_loc linereader { loc with Location.line = n } with
-      | Some s -> F.fprintf fmt "%s%s@\n" (if n = loc.Location.line then "-->" else "   ") s
+      | Some s -> F.fprintf fmt "%s%s@\n" (if Int.equal n loc.Location.line then "-->" else "   ") s
       | _ -> () in
     F.fprintf fmt "%a:%d@\n" SourceFile.pp loc.Location.file loc.Location.line;
     for n = loc.Location.line - nbefore to loc.Location.line + nafter do printline n done
@@ -58,10 +58,10 @@ module ST = struct
   let store_summary proc_name =
     Option.iter
       ~f:(fun summary ->
-         let summary' =
-           { summary with
-             Specs.timestamp = summary.Specs.timestamp + 1 } in
-         try Specs.store_summary proc_name summary' with Sys_error s -> L.err "%s@." s)
+          let summary' =
+            { summary with
+              Specs.timestamp = summary.Specs.timestamp + 1 } in
+          try Specs.store_summary proc_name summary' with Sys_error s -> L.err "%s@." s)
       (Specs.get_summary proc_name)
 
   let report_error tenv
@@ -200,7 +200,7 @@ let callback_check_write_to_parcel_java
 
   let is_write_to_parcel this_expr this_type =
     let method_match () =
-      Procname.java_get_method pname_java = "writeToParcel" in
+      String.equal (Procname.java_get_method pname_java) "writeToParcel" in
     let expr_match () = Exp.is_this this_expr in
     let type_match () =
       let class_name =
@@ -234,10 +234,10 @@ let callback_check_write_to_parcel_java
           let class_name = Procname.java_get_class_name pname_java in
           let method_name = Procname.java_get_method pname_java in
           (try
-             class_name = "android.os.Parcel" &&
-             (String.sub method_name ~pos:0 ~len:5 = "write"
+             String.equal class_name "android.os.Parcel" &&
+             (String.equal (String.sub method_name ~pos:0 ~len:5) "write"
               ||
-              String.sub method_name ~pos:0 ~len:4 = "read")
+              String.equal (String.sub method_name ~pos:0 ~len:4) "read")
            with Invalid_argument _ -> false)
       | _ -> assert false in
 
@@ -247,8 +247,9 @@ let callback_check_write_to_parcel_java
           let wn = Procname.java_get_method wc in
           let postfix_length = String.length wn - 5 in (* covers writeList <-> readArrayList etc. *)
           (try
-             String.sub rn ~pos:(String.length rn - postfix_length) ~len:postfix_length =
-             String.sub wn ~pos:5 ~len:postfix_length
+             String.equal
+               (String.sub rn ~pos:(String.length rn - postfix_length) ~len:postfix_length)
+               (String.sub wn ~pos:5 ~len:postfix_length)
            with Invalid_argument _ -> false)
       | _ ->
           false in
@@ -326,7 +327,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
     let class_formals =
       let is_class_type (p, typ) =
         match typ with
-        | Typ.Tptr _ when Mangled.to_string p = "this" ->
+        | Typ.Tptr _ when String.equal (Mangled.to_string p) "this" ->
             false (* no need to null check 'this' *)
         | Typ.Tstruct _ -> true
         | Typ.Tptr (Typ.Tstruct _, _) -> true

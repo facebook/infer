@@ -233,7 +233,8 @@ let find_arithmetic_problem tenv proc_node_session prop exp =
         uminus_unsigned := (e, typ) :: !uminus_unsigned
     | Exp.UnOp(_, e, _) -> walk e
     | Exp.BinOp(op, e1, e2) ->
-        if op = Binop.Div || op = Binop.Mod then exps_divided := e2 :: !exps_divided;
+        if Binop.equal op Binop.Div || Binop.equal op Binop.Mod
+        then exps_divided := e2 :: !exps_divided;
         walk e1; walk e2
     | Exp.Exn _ -> ()
     | Exp.Closure _ -> ()

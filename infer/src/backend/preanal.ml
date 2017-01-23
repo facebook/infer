@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 (** mutate the cfg/cg to add dynamic dispatch handling *)
 let add_dispatch_calls pdesc cg tenv =
@@ -28,7 +29,7 @@ let add_dispatch_calls pdesc cg tenv =
                   (((_, receiver_typ) :: _) as args), loc, call_flags) as instr
         when call_flags_is_dispatch call_flags ->
           (* the frontend should not populate the list of targets *)
-          assert (call_flags.CallFlags.cf_targets = []);
+          assert (List.is_empty call_flags.CallFlags.cf_targets);
           let receiver_typ_no_ptr = match receiver_typ with
             | Typ.Tptr (typ', _) ->
                 typ'

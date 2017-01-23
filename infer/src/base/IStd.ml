@@ -52,7 +52,12 @@ module IntSet = Caml.Set.Make(Int)
 (* Compare police: generic compare mostly disabled. *)
 let compare = No_polymorphic_compare.compare
 let equal = No_polymorphic_compare.equal
+(* let (=) = equal *)
 
+module PVariant = struct
+  (* Equality for polymorphic variants *)
+  let (=) (v1 : [> ]) (v2 : [> ]) = Polymorphic_compare.(=) v1 v2
+end
 
 let failwithf fmt =
   Format.kfprintf (fun _ -> failwith (Format.flush_str_formatter ()))

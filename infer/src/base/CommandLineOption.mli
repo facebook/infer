@@ -11,7 +11,9 @@
 
 open! IStd
 
-type exe = Analyze | Clang | Driver | Interactive | Print
+type exe = Analyze | Clang | Driver | Interactive | Print [@@ deriving compare]
+
+val equal_exe : exe -> exe -> bool
 
 (** Association list of executable (base)names to their [exe]s. *)
 val exes : (string * exe) list
@@ -96,7 +98,7 @@ val mk_path_list : ?default:string list -> string list ref t
 
 (** [mk_symbol long symbols] defines a command line flag [--long <symbol>] where [(<symbol>,_)] is
     an element of [symbols]. *)
-val mk_symbol : default:'a -> symbols:(string * 'a) list -> 'a ref t
+val mk_symbol : default:'a -> symbols:(string * 'a) list -> eq:('a -> 'a -> bool) -> 'a ref t
 
 (** [mk_symbol_opt] is similar to [mk_symbol] but defaults to [None]. *)
 val mk_symbol_opt : symbols:(string * 'a) list -> 'a option ref t
@@ -104,7 +106,8 @@ val mk_symbol_opt : symbols:(string * 'a) list -> 'a option ref t
 (** [mk_symbol_seq long symbols] defines a command line flag [--long <symbol sequence>] where
     [<symbol sequence>] is a comma-separated sequence of [<symbol>]s such that [(<symbol>,_)] is an
     element of [symbols]. *)
-val mk_symbol_seq : ?default:'a list -> symbols:(string * 'a) list -> 'a list ref t
+val mk_symbol_seq :
+  ?default:'a list -> symbols:(string * 'a) list -> eq:('a -> 'a -> bool) -> 'a list ref t
 
 val mk_set_from_json : default:'a -> default_to_string:('a -> string)
   -> f:(Yojson.Basic.json -> 'a) -> 'a ref t

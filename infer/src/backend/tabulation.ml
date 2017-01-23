@@ -123,7 +123,7 @@ let spec_find_rename trace_call (proc_name : Procname.t)
     let f spec =
       incr count; (!count, spec_rename_vars proc_name spec) in
     let specs, formals = Specs.get_specs_formals proc_name in
-    if specs = [] then
+    if List.is_empty specs then
       begin
         trace_call Specs.CallStats.CR_not_found;
         raise (Exceptions.Precondition_not_found
@@ -166,7 +166,7 @@ let process_splitting
     let fav_sub2 = (* vars which represent expansions of fields *)
       let fav = Sil.fav_new () in
       IList.iter (Sil.exp_fav_add fav) (Sil.sub_range sub2);
-      let filter id = Ident.get_stamp id = - 1 in
+      let filter id = Int.equal (Ident.get_stamp id) (-1) in
       Sil.fav_filter_ident fav filter;
       fav in
     let fav_pre = Prop.prop_fav actual_pre in
@@ -267,12 +267,12 @@ let rec find_dereference_without_null_check_in_sexp = function
   | Sil.Eexp (_, inst) -> find_dereference_without_null_check_in_inst inst
   | Sil.Estruct (fsel, inst) ->
       let res = find_dereference_without_null_check_in_inst inst in
-      if res = None then
+      if is_none res then
         find_dereference_without_null_check_in_sexp_list (IList.map snd fsel)
       else res
   | Sil.Earray (_, esel, inst) ->
       let res = find_dereference_without_null_check_in_inst inst in
-      if res = None then
+      if is_none res then
         find_dereference_without_null_check_in_sexp_list (IList.map snd esel)
       else res
 and find_dereference_without_null_check_in_sexp_list = function
@@ -386,7 +386,8 @@ let post_process_post tenv
     | _ -> false in
   let atom_update_alloc_attribute = function
     | Sil.Apred (Aresource ra, [e])
-      when not (ra.ra_kind = PredSymb.Rrelease && actual_pre_has_freed_attribute e) ->
+      when not (PredSymb.equal_res_act_kind ra.ra_kind PredSymb.Rrelease &&
+                actual_pre_has_freed_attribute e) ->
         (* unless it was already freed before the call *)
         let vpath, _ = Errdesc.vpath_find tenv post e in
         let ra' = { ra with ra_pname = callee_pname; ra_loc = loc; ra_vpath = vpath } in
@@ -467,7 +468,8 @@ let texp_star tenv texp1 texp2 =
           | _ -> ftal_sub ftal1 ftal2' end in
   let typ_star (t1: Typ.t) (t2: Typ.t) =
     match t1, t2 with
-    | Tstruct (TN_csu (csu1, _) as name1), Tstruct (TN_csu (csu2, _) as name2) when csu1 = csu2 -> (
+    | Tstruct (TN_csu (csu1, _) as name1), Tstruct (TN_csu (csu2, _) as name2)
+      when Csu.equal csu1 csu2 -> (
         match Tenv.lookup tenv name1, Tenv.lookup tenv name2 with
         | Some { fields = fields1 }, Some { fields = fields2 } when ftal_sub fields1 fields2 ->
             t2
@@ -678,7 +680,7 @@ let combine tenv
   let caller_pname = Procdesc.get_proc_name caller_pdesc in
   let instantiated_post =
     let posts' =
-      if !Config.footprint && posts = []
+      if !Config.footprint && List.is_empty posts
       then (* in case of divergence, produce a prop *)
         (* with updated footprint and inconsistent current *)
         [(Prop.set Prop.prop_emp ~pi:[Sil.Aneq (Exp.zero, Exp.zero)], path_pre)]
@@ -761,7 +763,7 @@ let combine tenv
                   let p = Prop.prop_iter_remove_curr_then_to_prop tenv iter' in
                   Prop.conjoin_eq tenv e' (Exp.Var id) p
               | Sil.Hpointsto (_, Sil.Estruct (ftl, _), _), _
-                when IList.length ftl = (if ret_id = None then 0 else 1) ->
+                when Int.equal (IList.length ftl) (if is_none ret_id then 0 else 1) ->
                   (* TODO(jjb): Is this case dead? *)
                   let rec do_ftl_ids p = function
                     | [], None -> p
@@ -787,7 +789,7 @@ let combine tenv
       else Some post_p3 in
     post_p4 in
   let _results = IList.map (fun (p, path) -> (compute_result p, path)) instantiated_post in
-  if IList.exists (fun (x, _) -> x = None) _results then (* at least one combine failed *)
+  if IList.exists (fun (x, _) -> is_none x) _results then (* at least one combine failed *)
     None
   else
     let results =
@@ -827,7 +829,7 @@ let report_taint_error e taint_info callee_pname caller_pname calling_prop =
 
 let check_taint_on_variadic_function tenv callee_pname caller_pname actual_params calling_prop =
   let rec n_tail lst n = (* return the tail of a list from element n *)
-    if n = 1 then lst
+    if Int.equal n 1 then lst
     else match lst with
       | [] -> []
       | _::lst' -> n_tail lst' (n-1) in
@@ -916,7 +918,7 @@ let mk_posts tenv ret_id prop callee_pname callee_attrs posts =
             IList.map taint_retval posts
         | None -> posts in
       let posts' =
-        if Config.idempotent_getters && !Config.curr_language = Config.Java
+        if Config.idempotent_getters && Config.curr_language_is Config.Java
         then mk_getter_idempotent posts
         else posts in
       if Config.taint_analysis then mk_retval_tainted posts' else posts'
@@ -1080,12 +1082,12 @@ let exe_spec
             (* missing fields minus hidden fields *)
             let missing_fld_nohidden =
               IList.filter (fun hp -> not (hpred_missing_hidden hp)) missing_fld in
-            if !Config.footprint = false && split.missing_sigma <> [] then
+            if not !Config.footprint && split.missing_sigma <> [] then
               begin
                 L.d_strln "Implication error: missing_sigma not empty in re-execution";
                 Invalid_res Missing_sigma_not_empty
               end
-            else if !Config.footprint = false && missing_fld_nohidden <> [] then
+            else if not !Config.footprint && missing_fld_nohidden <> [] then
               begin
                 L.d_strln "Implication error: missing_fld not empty in re-execution";
                 Invalid_res Missing_fld_not_empty
@@ -1119,7 +1121,7 @@ let prop_pure_to_footprint tenv (p: 'a Prop.t) : Prop.normal Prop.t =
     Sil.fav_for_all a_fav Ident.is_footprint in
   let pure = Prop.get_pure p in
   let new_footprint_atoms = IList.filter is_footprint_atom_not_attribute pure in
-  if new_footprint_atoms = []
+  if List.is_empty new_footprint_atoms
   then p
   else (* add pure fact to footprint *)
     Prop.normalize tenv (Prop.set p ~pi_fp:(p.Prop.pi_fp @ new_footprint_atoms))
@@ -1146,7 +1148,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
   let res_with_path_idents =
     if !Config.footprint then
       begin
-        if valid_res_cons_pre_missing = [] then
+        if List.is_empty valid_res_cons_pre_missing then
           (* no valid results where actual pre and missing are consistent *)
           begin
             if deref_errors <> [] then (* dereference error detected *)
@@ -1211,7 +1213,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
         else (* combine the valid results, and store diverging states *)
           let process_valid_res vr =
             let save_diverging_states () =
-              if not vr.incons_pre_missing && vr.vr_cons_res = []
+              if not vr.incons_pre_missing && List.is_empty vr.vr_cons_res
               then (* no consistent results on one spec: divergence *)
                 let incons_res =
                   IList.map
@@ -1226,7 +1228,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
       end
     else if valid_res_no_miss_pi <> [] then
       IList.flatten (IList.map (fun vr -> vr.vr_cons_res) valid_res_no_miss_pi)
-    else if valid_res_miss_pi = [] then
+    else if List.is_empty valid_res_miss_pi then
       raise (Exceptions.Precondition_not_met (call_desc None, __POS__))
     else
       begin
@@ -1253,11 +1255,11 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
   let should_add_ret_attr _ =
     let is_likely_getter = function
       | Procname.Java pn_java ->
-          IList.length (Procname.java_get_parameters pn_java) = 0
+          Int.equal (IList.length (Procname.java_get_parameters pn_java)) 0
       | _ ->
           false in
     (Config.idempotent_getters &&
-     !Config.curr_language = Config.Java &&
+     Config.curr_language_is Config.Java &&
      is_likely_getter callee_pname)
     || returns_nullable ret_annot in
   match ret_id with

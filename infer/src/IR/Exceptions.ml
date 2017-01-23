@@ -14,28 +14,35 @@ module L = Logging
 module F = Format
 
 (** visibility of the exception *)
-type exception_visibility =
+type visibility =
   | Exn_user (** always add to error log *)
   | Exn_developer (** only add to error log in developer mode *)
   | Exn_system (** never add to error log *)
+[@@deriving compare]
 
-let string_of_exception_visibility vis =
+let equal_visibility = [%compare.equal : visibility]
+
+let string_of_visibility vis =
   match vis with
   | Exn_user -> "user"
   | Exn_developer -> "developer"
   | Exn_system  -> "system"
 
 (** severity of bugs *)
-type exception_severity =
+type severity =
   | High (* high severity bug *)
   | Medium (* medium severity bug *)
   | Low (* low severity bug *)
 
-(** class of error *)
-type err_class = Checker | Prover | Nocat | Linters
+(** class of error/warning *)
+type err_class = Checker | Prover | Nocat | Linters [@@deriving compare]
+
+let equal_err_class = [%compare.equal : err_class]
 
 (** kind of error/warning *)
 type err_kind = Kwarning | Kerror | Kinfo | Kadvice [@@deriving compare]
+
+let equal_err_kind = [%compare.equal : err_kind]
 
 exception Abduction_case_not_implemented of L.ml_loc
 exception Analysis_stops of Localise.error_desc * L.ml_loc option
@@ -67,7 +74,7 @@ exception Inherently_dangerous_function of Localise.error_desc
 exception Internal_error of Localise.error_desc
 exception Java_runtime_exception of Typename.t * string * Localise.error_desc
 exception Leak of
-    bool * Sil.hpred * (exception_visibility * Localise.error_desc)
+    bool * Sil.hpred * (visibility * Localise.error_desc)
     * bool * PredSymb.resource * L.ml_loc
 exception Missing_fld of Ident.fieldname * L.ml_loc
 exception Premature_nil_termination of Localise.error_desc * L.ml_loc
@@ -333,7 +340,7 @@ let print_key = false
 
 (** pretty print an error given its (id,key), location, kind, name, description, and optional ml location *)
 let pp_err (_, node_key) loc ekind ex_name desc ml_loc_opt fmt () =
-  let kind = err_kind_string (if ekind = Kinfo then Kwarning else ekind) (* eclipse does not know about infos: treat as warning *) in
+  let kind = err_kind_string (if equal_err_kind ekind Kinfo then Kwarning else ekind) in
   let pp_key fmt k = if print_key then F.fprintf fmt " key: %d " k else () in
   F.fprintf fmt "%a:%d: %s: %a %a%a%a@\n"
     SourceFile.pp loc.Location.file
@@ -347,4 +354,5 @@ let pp_err (_, node_key) loc ekind ex_name desc ml_loc_opt fmt () =
 (** Return true if the exception is not serious and should be handled in timeout mode *)
 let handle_exception exn =
   let _, _, _, visibility, _, _, _ = recognize_exception exn in
-  visibility = Exn_user || visibility = Exn_developer
+  equal_visibility visibility Exn_user ||
+  equal_visibility visibility Exn_developer

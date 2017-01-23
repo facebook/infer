@@ -8,6 +8,8 @@
  */
 open! IStd;
 
+open! PVariant;
+
 let module F = Format;
 
 let module L = Logging;

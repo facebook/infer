@@ -352,7 +352,7 @@ let generic_strexp_abstract tenv
     with
     | Not_found -> (p0, false) in
   let rec find_then_abstract bound p0 =
-    if bound = 0 then p0
+    if Int.equal bound 0 then p0
     else begin
       if Config.trace_absarray then
         (L.d_strln ("Applying " ^ abstraction_name ^ " to"); Prop.d_prop p0; L.d_ln (); L.d_ln ());
@@ -441,7 +441,7 @@ let keep_only_indices tenv
       | Sil.Earray (len, esel, inst) ->
           let esel', esel_leftover' =
             IList.partition (fun (e, _) -> IList.exists (Exp.equal e) indices) esel in
-          if esel_leftover' = [] then (sigma, false)
+          if List.is_empty esel_leftover' then (sigma, false)
           else begin
             let se' = Sil.Earray (len, esel', inst) in
             let sigma' = StrexpMatch.replace_strexp tenv footprint_part matched se' in
@@ -479,7 +479,7 @@ let strexp_do_abstract tenv
       if Config.trace_absarray then (L.d_str "keep "; d_keys keep_keys; L.d_ln ());
       keep p path keep_keys in
     let p3, changed3 =
-      if blur_keys = [] then (p2, false)
+      if List.is_empty blur_keys then (p2, false)
       else begin
         if Config.trace_absarray then (L.d_str "blur "; d_keys blur_keys; L.d_ln ());
         blur p2 path blur_keys
@@ -493,7 +493,7 @@ let strexp_do_abstract tenv
     let keep_ksel, remove_ksel = IList.partition should_keep ksel in
     let keep_keys, _, _ =
       IList.map fst keep_ksel, IList.map fst remove_ksel, IList.map fst ksel in
-    let keep_keys' = if keep_keys = [] then default_keys else keep_keys in
+    let keep_keys' = if List.is_empty keep_keys then default_keys else keep_keys in
     abstract keep_keys' keep_keys' in
   let do_array_footprint esel =
     (* array case footprint: keep only the last index, and blur it *)
@@ -512,7 +512,7 @@ let strexp_do_abstract tenv
   let filter_abstract d_keys should_keep abstract ksel default_keys =
     let keep_ksel = IList.filter should_keep ksel in
     let keep_keys = IList.map fst keep_ksel in
-    let keep_keys' = if keep_keys = [] then default_keys else keep_keys in
+    let keep_keys' = if List.is_empty keep_keys then default_keys else keep_keys in
     if Config.trace_absarray then (L.d_str "keep "; d_keys keep_keys'; L.d_ln ());
     abstract keep_keys' [] in
   let do_array_reexecution esel =
@@ -608,7 +608,7 @@ let remove_redundant_elements tenv prop =
     | Exp.Const (Const.Cint i), Sil.Eexp (Exp.Var id, _)
       when (not fp_part || IntLit.iszero i) && not (Ident.is_normal id) && occurs_at_most_once id ->
         remove () (* unknown value can be removed in re-execution mode or if the index is zero *)
-    | Exp.Var id, Sil.Eexp _ when Ident.is_normal id = false && occurs_at_most_once id ->
+    | Exp.Var id, Sil.Eexp _ when not (Ident.is_normal id) && occurs_at_most_once id ->
         remove () (* index unknown can be removed *)
     | _ -> true in
   let remove_redundant_se fp_part = function

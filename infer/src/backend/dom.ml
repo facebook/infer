@@ -1121,7 +1121,7 @@ let rec strexp_partial_meet (strexp1: Sil.strexp) (strexp2: Sil.strexp) : Sil.st
   let construct side rev_list ref_list =
     let construct_offset_se (off, se) = (off, strexp_construct_fresh side se) in
     let acc = IList.map construct_offset_se ref_list in
-    IList.rev_with_acc acc rev_list in
+    IList.rev_append rev_list acc in
 
   let rec f_fld_se_list inst acc fld_se_list1 fld_se_list2 =
     match fld_se_list1, fld_se_list2 with

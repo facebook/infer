@@ -60,6 +60,8 @@ type res_act_kind =
   | Rrelease
 [@@deriving compare];
 
+let equal_res_act_kind: res_act_kind => res_act_kind => bool;
+
 
 /** kind of dangling pointers */
 type dangling_kind =

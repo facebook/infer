@@ -49,7 +49,7 @@ let is_matching patterns =
     IList.exists
       (fun pattern ->
          try
-           (Str.search_forward pattern path 0) = 0
+           Int.equal (Str.search_forward pattern path 0) 0
          with Not_found -> false)
       patterns
 
@@ -57,8 +57,8 @@ let is_matching patterns =
 (** Check if a proc name is matching the name given as string. *)
 let match_method language proc_name method_name =
   not (BuiltinDecl.is_declared proc_name) &&
-  Procname.get_language proc_name = language &&
-  Procname.get_method proc_name = method_name
+  Config.equal_language (Procname.get_language proc_name) language &&
+  String.equal (Procname.get_method proc_name) method_name
 
 (* Module to create matcher based on strings present in the source file *)
 module FileContainsStringMatcher = struct
@@ -76,7 +76,7 @@ module FileContainsStringMatcher = struct
     loop ()
 
   let create_matcher s_patterns =
-    if s_patterns = [] then
+    if List.is_empty s_patterns then
       default_matcher
     else
       let source_map = ref SourceFile.Map.empty in
@@ -114,7 +114,7 @@ module FileOrProcMatcher = struct
     fun _ _ -> false
 
   let create_method_matcher m_patterns =
-    if m_patterns = [] then
+    if List.is_empty m_patterns then
       default_matcher
     else
       let pattern_map =
@@ -256,19 +256,19 @@ let patterns_of_json_with_key (json_key, json) =
       IList.rev (IList.fold_left collect [] l) in
     let create_method_pattern assoc =
       let loop mp = function
-        | (key, `String s) when key = "class" ->
+        | (key, `String s) when String.equal key "class" ->
             { mp with class_name = s }
-        | (key, `String s) when key = "method" ->
+        | (key, `String s) when String.equal key "method" ->
             { mp with method_name = Some s }
-        | (key, `List l) when key = "parameters" ->
+        | (key, `List l) when String.equal key "parameters" ->
             { mp with parameters = Some (collect_params l) }
-        | (key, _) when key = "language" -> mp
+        | (key, _) when String.equal key "language" -> mp
         | _ -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc)) in
       IList.fold_left loop default_method_pattern assoc
     and create_string_contains assoc =
       let loop sc = function
-        | (key, `String pattern) when key = "source_contains" -> pattern
-        | (key, _) when key = "language" -> sc
+        | (key, `String pattern) when String.equal key "source_contains" -> pattern
+        | (key, _) when String.equal key "language" -> sc
         | _ -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc)) in
       IList.fold_left loop default_source_contains assoc in
     match detect_pattern assoc with
@@ -321,7 +321,7 @@ let load_filters analyzer =
 let filters_from_inferconfig inferconfig : filters =
   let path_filter =
     let whitelist_filter : path_filter =
-      if inferconfig.whitelist = [] then default_path_filter
+      if List.is_empty inferconfig.whitelist then default_path_filter
       else is_matching (IList.map Str.regexp inferconfig.whitelist) in
     let blacklist_filter : path_filter =
       is_matching (IList.map Str.regexp inferconfig.blacklist) in
@@ -349,10 +349,10 @@ let create_filters analyzer =
 (* Decide whether a checker or error type is enabled or disabled based on*)
 (* white/black listing in .inferconfig and the default value *)
 let is_checker_enabled checker_name =
-  match IList.mem (=) checker_name Config.disable_checks,
-        IList.mem (=) checker_name Config.enable_checks with
+  match IList.mem String.(=) checker_name Config.disable_checks,
+        IList.mem String.(=) checker_name Config.enable_checks with
   | false, false -> (* if it's not amond white/black listed then we use default value *)
-      not (IList.mem (=) checker_name Config.checks_disabled_by_default)
+      not (IList.mem String.(=) checker_name Config.checks_disabled_by_default)
   | true, false -> (* if it's blacklisted and not whitelisted then it should be disabled *)
       false
   | false, true -> (* if it is not blacklisted and it is whitelisted then it should be enabled *)

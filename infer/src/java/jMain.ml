@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 open Javalib_pack
 

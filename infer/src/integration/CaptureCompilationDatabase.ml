@@ -13,7 +13,7 @@ module CLOpt = CommandLineOption
 module F = Format
 
 let capture_text =
-  if Config.analyzer = Config.Linters then "linting"
+  if Config.equal_analyzer Config.analyzer Config.Linters then "linting"
   else "translating"
 
 (** Read the files to compile from the changed files index. *)

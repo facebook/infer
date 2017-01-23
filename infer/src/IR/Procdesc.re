@@ -67,7 +67,7 @@ let module Node = {
   };
   let compare node1 node2 => Int.compare node1.id node2.id;
   let hash node => Hashtbl.hash node.id;
-  let equal node1 node2 => compare node1 node2 == 0;
+  let equal = [%compare.equal : t];
 
   /** Get the unique id of the node */
   let get_id node => node.id;
@@ -394,7 +394,7 @@ let get_slope pdesc => Node.get_generated_slope (get_start_node pdesc) Node.get_
 /** Return [true] iff the procedure is defined, and not just declared */
 let is_defined pdesc => pdesc.attributes.is_defined;
 
-let is_body_empty pdesc => Node.get_succs (get_start_node pdesc) == [];
+let is_body_empty pdesc => List.is_empty (Node.get_succs (get_start_node pdesc));
 
 let is_java_synchronized pdesc => pdesc.attributes.is_java_synchronized_method;
 

@@ -17,8 +17,7 @@ module F = Format
 (** type of string used for localisation *)
 type t = string [@@deriving compare]
 
-let equal s1 s2 =
-  compare s1 s2 = 0
+let equal = [%compare.equal : t]
 
 (** pretty print a localised string *)
 let pp fmt s = Format.fprintf fmt "%s" s
@@ -144,7 +143,7 @@ module Tags = struct
     (tag, value) :: tags'
   let get tags tag =
     try
-      let (_, v) = IList.find (fun (t, _) -> t = tag) tags in
+      let (_, v) = IList.find (fun (t, _) -> String.equal t tag) tags in
       Some v
     with Not_found -> None
 end
@@ -162,7 +161,7 @@ end
 let error_desc_extract_tag_value err_desc tag_to_extract =
   let find_value tag v =
     match v with
-    | (t, _) when t = tag -> true
+    | (t, _) when String.equal t tag -> true
     | _ -> false in
   try
     let _, s = IList.find (find_value tag_to_extract) err_desc.tags in
@@ -186,15 +185,15 @@ let error_desc_set_bucket err_desc bucket show_in_message =
   let tags' = Tags.update err_desc.tags Tags.bucket bucket in
   let l = err_desc.descriptions in
   let l' =
-    if show_in_message = false then l
+    if not show_in_message then l
     else ("[" ^ bucket ^ "]") :: l in
   { err_desc with descriptions = l'; tags = tags' }
 
 (** get the value tag, if any *)
 let get_value_line_tag tags =
   try
-    let value = snd (IList.find (fun (_tag, _) -> _tag = Tags.value) tags) in
-    let line = snd (IList.find (fun (_tag, _) -> _tag = Tags.line) tags) in
+    let value = snd (IList.find (fun (tag, _) -> String.equal tag Tags.value) tags) in
+    let line = snd (IList.find (fun (tag, _) -> String.equal tag Tags.line) tags) in
     Some [value; line]
   with Not_found -> None
 
@@ -209,7 +208,10 @@ let error_desc_hash desc =
   Hashtbl.hash (desc_get_comparable desc)
 
 (** equality for error_desc *)
-let error_desc_equal desc1 desc2 = (desc_get_comparable desc1) = (desc_get_comparable desc2)
+let error_desc_equal desc1 desc2 =
+  [%compare.equal : string list]
+    (desc_get_comparable desc1)
+    (desc_get_comparable desc2)
 
 let _line_tag tags tag loc =
   let line_str = string_of_int loc.Location.line in
@@ -244,7 +246,7 @@ let by_call_to_ra tags ra =
   "by " ^ call_to_at_line tags ra.PredSymb.ra_pname ra.PredSymb.ra_loc
 
 let rec format_typ = function
-  | Typ.Tptr (typ, _) when !Config.curr_language = Config.Java ->
+  | Typ.Tptr (typ, _) when Config.curr_language_is Config.Java ->
       format_typ typ
   | Typ.Tstruct name ->
       Typename.name name
@@ -252,7 +254,7 @@ let rec format_typ = function
       Typ.to_string typ
 
 let format_field f =
-  if !Config.curr_language = Config.Java
+  if Config.curr_language_is Config.Java
   then Ident.java_fieldname_get_field f
   else Ident.fieldname_to_string f
 
@@ -276,7 +278,7 @@ type deref_str =
     problem_str: string; (** description of the problem *) }
 
 let pointer_or_object () =
-  if !Config.curr_language = Config.Java then "object" else "pointer"
+  if Config.curr_language_is Config.Java then "object" else "pointer"
 
 let _deref_str_null proc_name_opt _problem_str tags =
   let problem_str = match proc_name_opt with
@@ -424,7 +426,7 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
   let context_str = Typ.to_string context_typ in
   let path_str =
     let path_prefix =
-      if leak_path = [] then "Leaked "
+      if List.is_empty leak_path then "Leaked "
       else (IList.fold_left leak_path_entry_to_str "" leak_path) ^ " Leaked " in
     path_prefix ^ context_str in
   let preamble =
@@ -506,14 +508,18 @@ let dereference_string deref_str value_str access_opt loc =
     | Some Initialized_automatically ->
         ["initialized automatically"] in
   let problem_desc =
-    let nullable_text = if !Config.curr_language = Config.Java then "@Nullable" else "__nullable" in
+    let nullable_text =
+      if Config.curr_language_is Config.Java
+      then "@Nullable"
+      else "__nullable" in
     let problem_str =
       match Tags.get !tags Tags.nullable_src, Tags.get !tags Tags.weak_captured_var_src with
       | Some nullable_src, _ ->
-          if nullable_src = value_str then "is annotated with " ^ nullable_text ^ " and is dereferenced without a null check"
+          if String.equal nullable_src value_str
+          then "is annotated with " ^ nullable_text ^ " and is dereferenced without a null check"
           else "is indirectly marked " ^ nullable_text ^ " (source: " ^ nullable_src ^ ") and is dereferenced without a null check"
       | None, Some weak_var_str ->
-          if weak_var_str = value_str then
+          if String.equal weak_var_str value_str then
             "is a weak pointer captured in the block and is dereferenced without a null check"
           else "is equal to the variable " ^ weak_var_str ^
                ", a weak pointer captured in the block, and is dereferenced without a null check"
@@ -545,7 +551,7 @@ let parameter_field_not_null_checked_desc (desc : error_desc) exp =
   | _ -> desc
 
 let has_tag (desc : error_desc) tag =
-  IList.exists (fun (tag', _) -> tag = tag') desc.tags
+  IList.exists (fun (tag', _) -> String.equal tag tag') desc.tags
 
 let is_parameter_not_null_checked_desc desc = has_tag desc Tags.parameter_not_null_checked
 
@@ -594,7 +600,7 @@ let desc_condition_always_true_false i cond_str_opt loc =
   Tags.add tags Tags.value value;
   let description = Format.sprintf
       "Boolean condition %s is always %s %s"
-      (if value = "" then "" else " " ^ value)
+      (if String.equal value "" then "" else " " ^ value)
       tt_ff
       (at_line tags loc) in
   { no_desc with descriptions = [description]; tags = !tags }
@@ -692,8 +698,8 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
       | Some PredSymb.Rfile -> "resource" ^ typ_str ^ "acquired" ^ _to ^ value_str
       | Some PredSymb.Rlock -> lock_acquired ^ _on ^ value_str
       | Some PredSymb.Rignore
-      | None -> if value_str_opt = None then "memory" else value_str in
-    if desc_str = "" then [] else [desc_str] in
+      | None -> if is_none value_str_opt then "memory" else value_str in
+    if String.equal desc_str "" then [] else [desc_str] in
   let by_call_to = match resource_action_opt with
     | Some ra -> [(by_call_to_ra tags ra)]
     | None -> [] in

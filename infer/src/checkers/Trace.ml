@@ -106,7 +106,7 @@ module Expander (TraceElem : TraceElem.S) = struct
       let matching_elems =
         IList.filter
           (fun callee_elem ->
-             TraceElem.Kind.compare (TraceElem.kind callee_elem) elem_kind = 0 &&
+             [%compare.equal : TraceElem.Kind.t] (TraceElem.kind callee_elem) elem_kind &&
              not (is_recursive callee_elem seen_acc'))
           elems in
       (* arbitrarily pick one elem and explore it further *)
@@ -139,12 +139,11 @@ module Make (Spec : Spec) = struct
       passthroughs : Passthrough.Set.t; (** calls that occurred between source and sink *)
     } [@@deriving compare]
 
+  let equal = [%compare.equal : t]
+
   type astate = t
 
   type path = Passthroughs.t * (Source.t * Passthroughs.t) list * (Sink.t * Passthroughs.t) list
-
-  let equal t1 t2 =
-    compare t1 t2 = 0
 
   let pp fmt t =
     F.fprintf

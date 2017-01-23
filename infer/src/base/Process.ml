@@ -88,7 +88,7 @@ let run_jobs_in_parallel jobs_stack gen_prog prog_to_string =
           |> never_returns
       | `In_the_parent pid_child ->
           jobs_map := PidMap.add pid_child (prog_to_string job_prog) !jobs_map;
-          if Stack.length jobs_stack = 0 || !current_jobs_count >= Config.jobs then
+          if Int.equal (Stack.length jobs_stack) 0 || !current_jobs_count >= Config.jobs then
             wait_for_child (pid_to_program !jobs_map) current_jobs_count jobs_map
     done in
   run_job ();

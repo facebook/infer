@@ -81,9 +81,6 @@ val drop_first : int -> 'a list -> 'a list
 (* Drops the last n elements from a list. *)
 val drop_last : int -> 'a list -> 'a list
 
-(** Returns (reverse input_list)[@]acc *)
-val rev_with_acc : 'a list -> 'a list -> 'a list
-
 (** Remove consecutive equal elements from a list (according to the given comparison functions) *)
 val remove_duplicates : ('a -> 'a -> int) -> 'a list -> 'a list
 

@@ -25,7 +25,7 @@ let convert_string s =
     let cnt = ref 0 in
     let s' = ref "" in
     let f c =
-      if c = '_' then s' := !s' ^ "\\_"
+      if Char.equal c '_' then s' := !s' ^ "\\_"
       else s' := !s' ^ Char.escaped (String.get s !cnt);
       incr cnt in
     String.iter ~f s;

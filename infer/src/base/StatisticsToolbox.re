@@ -53,7 +53,7 @@ let compute_statistics values => {
   Array.sort
     cmp::(
       fun a b =>
-        if (a == b) {
+        if (Float.equal a b) {
           0
         } else if (a -. b < 0.0) {
           (-1)

@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 (** Symbolic Execution *)
 
@@ -108,7 +109,7 @@ let rec apply_offlist
             (* we are in a lookup of an uninitialized value *)
             lookup_inst := Some inst_curr;
             let alloc_attribute_opt =
-              if inst_curr = Sil.Iinitial then None
+              if Sil.equal_inst inst_curr Sil.Iinitial then None
               else Attribute.get_undef tenv p root_lexp in
             let deref_str = Localise.deref_str_uninitialized alloc_attribute_opt in
             let err_desc = Errdesc.explain_memory_access tenv deref_str p (State.get_loc ()) in
@@ -381,7 +382,7 @@ let call_should_be_skipped callee_summary =
   (* skip abstract methods *)
   || callee_summary.Specs.attributes.ProcAttributes.is_abstract
   (* treat calls with no specs as skip functions in angelic mode *)
-  || (Config.angelic_execution && Specs.get_specs_from_payload callee_summary = [])
+  || (Config.angelic_execution && List.is_empty (Specs.get_specs_from_payload callee_summary))
 
 (** In case of constant string dereference, return the result immediately *)
 let check_constant_string_dereference lexp =
@@ -472,7 +473,7 @@ let check_deallocate_static_memory prop_after =
   prop_after
 
 let method_exists right_proc_name methods =
-  if !Config.curr_language = Config.Java then
+  if Config.curr_language_is Config.Java then
     IList.exists (fun meth_name -> Procname.equal right_proc_name meth_name) methods
   else (* ObjC/C++ case : The attribute map will only exist when we have code for the method or
           the method has been called directly somewhere. It can still be that this is not the
@@ -681,11 +682,11 @@ let call_constructor_url_update_args pname actual_params =
          let parts = Str.split (Str.regexp_string "://") s in
          (match parts with
           | frst:: _ ->
-              if frst = "http" ||
-                 frst = "ftp" ||
-                 frst = "https" ||
-                 frst = "mailto" ||
-                 frst = "jar"
+              if String.equal frst "http" ||
+                 String.equal frst "ftp" ||
+                 String.equal frst "https" ||
+                 String.equal frst "mailto" ||
+                 String.equal frst "jar"
               then
                 [this; (Exp.Const (Const.Cstr frst), atype)]
               else actual_params
@@ -770,7 +771,7 @@ let normalize_params tenv pdesc prop actual_params =
 
 let do_error_checks tenv node_opt instr pname pdesc = match node_opt with
   | Some node ->
-      if !Config.curr_language = Config.Java then
+      if Config.curr_language_is Config.Java then
         PrintfArgs.check_printf_args_ok tenv node instr pname pdesc
   | None ->
       ()
@@ -932,7 +933,7 @@ let execute_load ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ loc
           Rearrange.rearrange ~report_deref_errors pdesc tenv n_rhs_exp' typ prop' loc in
         IList.rev (IList.fold_left (execute_load_ pdesc tenv id loc) [] iter_list)
   with Rearrange.ARRAY_ACCESS ->
-    if (Config.array_level = 0) then assert false
+    if Int.equal Config.array_level 0 then assert false
     else
       let undef = Exp.get_undefined false in
       [Prop.conjoin_eq tenv (Exp.Var id) undef prop_]
@@ -971,7 +972,7 @@ let execute_store ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_e
     let iter_list = Rearrange.rearrange ~report_deref_errors pdesc tenv n_lhs_exp' typ prop loc in
     IList.rev (IList.fold_left (execute_store_ pdesc tenv n_rhs_exp) [] iter_list)
   with Rearrange.ARRAY_ACCESS ->
-    if (Config.array_level = 0) then assert false
+    if Int.equal Config.array_level 0 then assert false
     else [prop_]
 
 (** Execute [instr] with a symbolic heap [prop].*)
@@ -1116,7 +1117,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
               let callee_pdesc_opt = Ondemand.get_proc_desc resolved_pname in
               let ret_typ_opt = Option.map ~f:Procdesc.get_ret_type callee_pdesc_opt in
               let sentinel_result =
-                if !Config.curr_language = Config.Clang then
+                if Config.curr_language_is Config.Clang then
                   check_variadic_sentinel_if_present
                     (call_args prop_r callee_pname actual_params ret_id loc)
                 else [(prop_r, path)] in
@@ -1391,7 +1392,8 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
           let check_taint_if_nums_match (prop_acc, param_num) (actual_exp, _actual_typ) =
             let prop_acc' =
               try
-                let _, taint_kind = IList.find (fun (num, _) -> num = param_num) param_nums in
+                let _, taint_kind =
+                  IList.find (fun (num, _) -> Int.equal num param_num) param_nums in
                 check_untainted tenv actual_exp taint_kind caller_pname callee_pname prop_acc
               with Not_found -> prop_acc in
             prop_acc', param_num + 1 in
@@ -1535,7 +1537,7 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actu
       | _, None -> true
       | _, Some (id, _) -> Errdesc.id_is_assigned_then_dead (State.get_node ()) id in
     if is_ignored
-    && Specs.get_flag summary ProcAttributes.proc_flag_ignore_return = None then
+    && is_none (Specs.get_flag summary ProcAttributes.proc_flag_ignore_return) then
       let err_desc = Localise.desc_return_value_ignored callee_pname loc in
       let exn = (Exceptions.Return_value_ignored (err_desc, __POS__)) in
       Reporting.log_warning caller_pname exn in
@@ -1598,7 +1600,7 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
     let fav_normal = Sil.fav_from_list (IList.map snd ids_primed_normal) in
     p', fav_normal in
   let prop_normal_to_primed fav_normal p = (* rename given normal vars to fresh primed *)
-    if Sil.fav_to_list fav_normal = [] then p
+    if List.is_empty (Sil.fav_to_list fav_normal) then p
     else Prop.exist_quantify tenv fav_normal p in
   try
     let pre_process_prop p =

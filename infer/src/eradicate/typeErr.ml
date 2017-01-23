@@ -34,7 +34,7 @@ end (* InstrRefT *)
 module InstrRef : InstrRefT =
 struct
   type t = Procdesc.Node.t * int [@@deriving compare]
-  let equal x y = 0 = compare x y
+  let equal = [%compare.equal : t]
   type generator = Procdesc.Node.t * int ref
   let hash (n, i) = Hashtbl.hash (Procdesc.Node.hash n, i)
   let get_node (n, _) = n
@@ -84,7 +84,7 @@ type err_instance =
 module H = Hashtbl.Make(struct
     type t = err_instance * InstrRef.t option [@@deriving compare]
 
-    let equal x y = 0 = compare x y
+    let equal = [%compare.equal : t]
 
     let err_instance_hash x =
       let string_hash s = Hashtbl.hash s in
@@ -189,7 +189,7 @@ module Strict = struct
 
   let this_type_get_strict tenv signature =
     match signature.Annotations.params with
-    | (p, _, this_type):: _ when Mangled.to_string p = "this" ->
+    | (p, _, this_type):: _ when String.equal (Mangled.to_string p) "this" ->
         begin
           match PatternMatch.type_get_annotation tenv this_type with
           | Some ia -> Annotations.ia_get_strict ia

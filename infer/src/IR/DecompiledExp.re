@@ -40,7 +40,7 @@ type t =
     each expression represents a path, with Dpvar being the simplest one */
 type vpath = option t;
 
-let java () => !Config.curr_language == Config.Java;
+let java () => Config.equal_language !Config.curr_language Config.Java;
 
 let eradicate_java () => Config.eradicate && java ();
 
@@ -145,7 +145,7 @@ let pp_vpath pe fmt vpath => {
     fun
     | Some de => pp fmt de
     | None => ();
-  if (pe.Pp.kind == Pp.HTML) {
+  if (Pp.equal_print_kind pe.Pp.kind Pp.HTML) {
     F.fprintf
       fmt
       " %a{vpath: %a}%a"

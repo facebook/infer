@@ -150,7 +150,7 @@ end = struct
   module Invariant = struct
     (** check whether a stats is the dummy stats *)
     let stats_is_dummy stats =
-      stats.max_length = - 1
+      Int.equal stats.max_length (-1)
 
     (** return the stats of the path, assumes that the stats are computed *)
     let get_stats = function
@@ -473,7 +473,7 @@ end = struct
                   | None -> "", []
                   | Some exn_name ->
                       let exn_str = Typename.name exn_name in
-                      if exn_str = ""
+                      if String.equal exn_str ""
                       then "exception", [(Io_infer.Xml.tag_kind,"exception")]
                       else
                         "exception " ^ exn_str,

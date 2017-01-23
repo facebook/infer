@@ -88,11 +88,6 @@ let rec drop_first n = function
 let drop_last n list =
   rev (drop_first n (rev list))
 
-(** Returns (reverse input_list) *)
-let rec rev_with_acc acc = function
-  | [] -> acc
-  | x :: xs -> rev_with_acc (x:: acc) xs
-
 (** tail-recursive variant of List.append *)
 let append l1 l2 =
   rev_append (rev l1) l2
@@ -166,9 +161,9 @@ let remove_irrelevant_duplicates compare relevant l =
 let rec merge_sorted_nodup compare res xs1 xs2 =
   match xs1, xs2 with
   | [], _ ->
-      rev_with_acc xs2 res
+      rev_append res xs2
   | _, [] ->
-      rev_with_acc xs1 res
+      rev_append res xs1
   | x1 :: xs1', x2 :: xs2' ->
       let n = compare x1 x2 in
       if n = 0 then

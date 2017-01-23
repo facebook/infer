@@ -53,7 +53,7 @@ let log_issue
     ?ltr
     exn =
   let should_suppress_lint summary =
-    !Config.curr_language = Config.Java &&
+    Config.curr_language_is Config.Java &&
     let annotated_signature =
       Annotations.get_annotated_signature summary.Specs.attributes in
     let ret_annotation, _ = annotated_signature.Annotations.ret in

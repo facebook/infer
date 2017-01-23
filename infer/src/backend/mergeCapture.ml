@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 module L = Logging
 module F = Format
@@ -114,8 +115,8 @@ let rec slink ~stats ~skiplevels src dst =
       let items = Sys.readdir src in
       Array.iter
         ~f:(fun item ->
-           slink ~stats ~skiplevels:(skiplevels - 1)
-             (Filename.concat src item) (Filename.concat dst item))
+            slink ~stats ~skiplevels:(skiplevels - 1)
+              (Filename.concat src item) (Filename.concat dst item))
         items
     end
   else if skiplevels > 0 then ()
@@ -154,7 +155,8 @@ let should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst =
   let was_copied () =
     let captured_src = Filename.concat infer_out_src Config.captured_dir_name in
     let captured_dst = Filename.concat infer_out_dst Config.captured_dir_name in
-    if Sys.file_exists captured_src = `Yes && Sys.is_directory captured_src = `Yes
+    if Sys.file_exists captured_src = `Yes &&
+       Sys.is_directory captured_src = `Yes
     then
       begin
         let captured_files = Array.to_list (Sys.readdir captured_src) in

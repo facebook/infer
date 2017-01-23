@@ -40,7 +40,7 @@ let mk_empty_array_rearranged len =
   Sil.Earray (len, [], Sil.inst_rearrange true (State.get_loc ()) (State.get_path_pos ()))
 
 let extract_array_type typ =
-  if (!Config.curr_language = Config.Java) then
+  if (Config.curr_language_is Config.Java) then
     match typ with
     | Typ.Tptr (Typ.Tarray _ as arr, _) -> Some arr
     | _ -> None
@@ -243,7 +243,7 @@ let execute___instanceof_cast ~instof
       (* In Java, we throw an exception, in C++ we return 0 in case of a cast to a pointer, *)
       (* and throw an exception in case of a cast to a reference. *)
       let should_throw_exception =
-        !Config.curr_language = Config.Java || is_cast_to_reference in
+        Config.curr_language_is Config.Java || is_cast_to_reference in
       let deal_with_failed_cast val1 texp1 texp2 =
         raise
           (Tabulation.create_cast_exception

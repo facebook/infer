@@ -8,6 +8,8 @@
  */
 open! IStd;
 
+open! PVariant;
+
 let module Hashtbl = Caml.Hashtbl;
 
 let module F = Format;
@@ -49,7 +51,7 @@ let load_attr defined_only::defined_only proc_name => {
     res_dir_attr_filename defined::defined proc_name
   );
   let attr = Serialization.from_file serializer (attributes_file defined::true proc_name);
-  if (attr == None && defined_only == false) {
+  if (is_none attr && not defined_only) {
     Serialization.from_file serializer (attributes_file defined::false proc_name)
   } else {
     attr
@@ -101,7 +103,7 @@ let load_attributes proc_name =>
     switch proc_attributes {
     | Some attrs =>
       Procname.Hash.add attr_tbl proc_name proc_attributes;
-      if (attrs.is_defined == true) {
+      if attrs.is_defined {
         Procname.Hash.add defined_attr_tbl proc_name proc_attributes
       }
     | None => ()

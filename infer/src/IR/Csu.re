@@ -18,6 +18,8 @@ type class_kind =
   | Objc
 [@@deriving compare];
 
+let equal_class_kind = [%compare.equal : class_kind];
+
 type t =
   | Class class_kind
   | Struct
@@ -32,4 +34,4 @@ let name =
   | Union => "union"
   | Protocol => "protocol";
 
-let equal tn1 tn2 => compare tn1 tn2 == 0;
+let equal = [%compare.equal : t];

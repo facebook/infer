@@ -21,7 +21,7 @@ type t = {
 }
 [@@deriving compare];
 
-let equal loc1 loc2 => compare loc1 loc2 == 0;
+let equal = [%compare.equal : t];
 
 
 /** Dump a location */

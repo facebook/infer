@@ -34,7 +34,7 @@ type t =
   | Undef
 [@@deriving compare]
 
-let equal o1 o2 = 0 = compare o1 o2
+let equal = [%compare.equal : t]
 
 let to_string = function
   | Const _ -> "Const"

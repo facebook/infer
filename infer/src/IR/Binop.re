@@ -45,7 +45,7 @@ type t =
   | PtrFld /** field offset via pointer to field: takes the address of a Csu.t and a Cptr_to_fld constant to form an Lfield expression (see prop.ml) */
 [@@deriving compare];
 
-let equal o1 o2 => compare o1 o2 == 0;
+let equal = [%compare.equal : t];
 
 
 /** This function returns true if the operation is injective

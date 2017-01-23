@@ -268,7 +268,7 @@ let rec _strexp_extend_values
           let replace acc (res_atoms', res_se', res_typ') =
             let replace_ise ise = if Exp.equal e (fst ise) then (e, res_se') else ise in
             let res_esel' = IList.map replace_ise esel in
-            if (Typ.equal res_typ' typ') || (IList.length res_esel' = 1) then
+            if (Typ.equal res_typ' typ') || Int.equal (IList.length res_esel') 1 then
               ( res_atoms'
               , Sil.Earray (len, res_esel', inst_arr)
               , Typ.Tarray (res_typ', len_for_typ') )
@@ -293,7 +293,7 @@ and array_case_analysis_index pname tenv orig_prop
     index off inst_arr inst
   =
   let check_sound t' =
-    if not (Typ.equal typ_cont t' || array_cont = [])
+    if not (Typ.equal typ_cont t' || List.is_empty array_cont)
     then raise (Exceptions.Bad_footprint __POS__) in
   let index_in_array =
     IList.exists (fun (i, _) -> Prover.check_equal tenv Prop.prop_emp index i) array_cont in
@@ -620,7 +620,9 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     (* don't warn on @GuardedBy("ui_thread") in any form *)
     let is_ui_thread str =
       let lowercase_str = String.lowercase str in
-      lowercase_str = "ui_thread" || lowercase_str = "ui-thread" || lowercase_str = "uithread" in
+      String.equal lowercase_str "ui_thread" ||
+      String.equal lowercase_str "ui-thread" ||
+      String.equal lowercase_str "uithread" in
     is_invalid_exp_str str || is_ui_thread str in
   let guarded_by_str_is_this guarded_by_str =
     String.is_suffix ~suffix:"this" guarded_by_str in
@@ -699,8 +701,8 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     let is_guarded_by_fld guarded_by_str fld _ =
       (* this comparison needs to be somewhat fuzzy, since programmers are free to write
          @GuardedBy("mLock"), @GuardedBy("MyClass.mLock"), or use other conventions *)
-      Ident.fieldname_to_flat_string fld = guarded_by_str ||
-      Ident.fieldname_to_string fld = guarded_by_str in
+      String.equal (Ident.fieldname_to_flat_string fld) guarded_by_str ||
+      String.equal (Ident.fieldname_to_string fld) guarded_by_str in
 
     let get_fld_strexp_and_typ typ f flds =
       let match_one (fld, strexp) =
@@ -779,7 +781,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       match extract_guarded_by_str proc_annot with
       | Some proc_guarded_by_str ->
           (* the lock is not held, but the procedure is annotated with @GuardedBy *)
-          proc_guarded_by_str = guarded_by_str
+          String.equal proc_guarded_by_str guarded_by_str
       | None -> false in
     let is_synchronized_on_class guarded_by_str =
       guarded_by_str_is_current_class guarded_by_str pname &&
@@ -820,7 +822,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       let proc_annot, _ = proc_signature.Annotations.ret in
       match extract_suppress_warnings_str proc_annot with
       | Some suppression_str->
-          suppression_str = "InvalidAccessToGuardedField"
+          String.equal suppression_str "InvalidAccessToGuardedField"
       | None -> false in
     let should_warn pdesc =
       (* adding this check implements "by reference" semantics for guarded-by rather than "by value"
@@ -1137,7 +1139,8 @@ let check_type_size tenv pname prop texp off typ_from_instr =
   match type_at_offset tenv texp off with
   | Some typ_of_object ->
       L.d_str "typ_o: "; Typ.d_full typ_of_object; L.d_ln ();
-      if Prover.type_size_comparable typ_from_instr typ_of_object && Prover.check_type_size_leq typ_from_instr typ_of_object = false
+      if Prover.type_size_comparable typ_from_instr typ_of_object &&
+         not (Prover.check_type_size_leq typ_from_instr typ_of_object)
       then begin
         let deref_str = Localise.deref_str_pointer_size_mismatch typ_from_instr typ_of_object in
         let loc = State.get_loc () in
@@ -1419,7 +1422,7 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
         Some (Exp.Lfield(e'', fn, t)), true (* the block dereferences is a field of an object*)
     | Some (_, e) -> Some e, false
     | _ -> None, false in
-  if (!Config.curr_language = Config.Clang) &&
+  if Config.curr_language_is Config.Clang &&
      fun_exp_may_be_null () &&
      not (is_fun_exp_captured_var ()) then
     begin

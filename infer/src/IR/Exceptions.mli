@@ -13,15 +13,18 @@ open! IStd
 (** Functions for logging and printing exceptions *)
 
 (** visibility of the exception *)
-type exception_visibility =
+type visibility =
   | Exn_user (** always add to error log *)
   | Exn_developer (** only add to error log in developer mode *)
   | Exn_system (** never add to error log *)
+[@@deriving compare]
 
-val string_of_exception_visibility : exception_visibility -> string
+val equal_visibility : visibility -> visibility -> bool
+
+val string_of_visibility : visibility -> string
 
 (** severity of bugs *)
-type exception_severity =
+type severity =
   | High (** high severity bug *)
   | Medium (** medium severity bug *)
   | Low (** low severity bug *)
@@ -29,8 +32,12 @@ type exception_severity =
 (** kind of error/warning *)
 type err_kind = Kwarning | Kerror | Kinfo | Kadvice [@@deriving compare]
 
+val equal_err_kind : err_kind -> err_kind -> bool
+
 (** class of error *)
 type err_class = Checker | Prover | Nocat | Linters
+
+val equal_err_class : err_class -> err_class -> bool
 
 exception Abduction_case_not_implemented of Logging.ml_loc
 exception Analysis_stops of Localise.error_desc * Logging.ml_loc option
@@ -62,7 +69,7 @@ exception Inherently_dangerous_function of Localise.error_desc
 exception Internal_error of Localise.error_desc
 exception Java_runtime_exception of Typename.t * string * Localise.error_desc
 exception Leak of
-    bool * Sil.hpred * (exception_visibility * Localise.error_desc)
+    bool * Sil.hpred * (visibility * Localise.error_desc)
     * bool * PredSymb.resource * Logging.ml_loc
 exception Missing_fld of Ident.fieldname * Logging.ml_loc
 exception Premature_nil_termination of Localise.error_desc * Logging.ml_loc
@@ -109,5 +116,5 @@ val pp_err : int * int -> Location.t -> err_kind -> Localise.t -> Localise.error
 (** Turn an exception into an error name, error description,
     location in ml source, and category *)
 val recognize_exception : exn ->
-  (Localise.t * Localise.error_desc * (Logging.ml_loc option) * exception_visibility *
-   exception_severity * err_kind option * err_class)
+  (Localise.t * Localise.error_desc * (Logging.ml_loc option) * visibility *
+   severity * err_kind option * err_class)

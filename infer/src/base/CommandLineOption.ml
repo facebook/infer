@@ -14,6 +14,8 @@ open! IStd
 module F = Format
 module YBU = Yojson.Basic.Util
 
+let (=) = String.equal
+
 (** This is the subset of Arg.spec that we actually use. What's important is that all these specs
     call back functions. We use this to mark deprecated arguments. What's not important is that, eg,
     Arg.Float is missing. *)
@@ -34,8 +36,10 @@ let is_env_var_set v =
 
 (** Each command line option may appear in the --help list of any executable, these tags are used to
     specify which executables for which an option will be documented. *)
-type exe = Analyze | Clang | Driver | Interactive | Print
 
+type exe = Analyze | Clang | Driver | Interactive | Print [@@deriving compare]
+
+let equal_exe = [%compare.equal : exe]
 
 (** Association list of executable (base)names to their [exe]s. *)
 let exes = [
@@ -48,7 +52,7 @@ let exes = [
 
 let exe_name =
   let exe_to_name = IList.map (fun (n,a) -> (a,n)) exes in
-  fun exe -> IList.assoc (=) exe exe_to_name
+  fun exe -> IList.assoc equal_exe exe exe_to_name
 
 
 let frontend_exes = [Clang]
@@ -113,7 +117,7 @@ let xdesc {long; short; spec; doc} =
     (* translate Symbol to String for better formatting of --help messages *)
     | Symbol (symbols, action) ->
         String (fun arg ->
-            if IList.mem ( = ) arg symbols then
+            if IList.mem String.equal arg symbols then
               action arg
             else
               raise (Arg.Bad (F.sprintf "wrong argument '%s'; option '%s' expects one of: %s"
@@ -135,7 +139,7 @@ let wrap_line indent_string wrap_length line =
     if new_length > wrap_length && non_empty then
       (line::rev_lines, true, indent_string ^ word, indent_length + word_length)
     else
-      let sep = if line_length = indent_length then "" else word_sep in
+      let sep = if Int.equal line_length indent_length then "" else word_sep in
       let new_line = line ^ sep ^ word in
       if new_length > wrap_length && new_non_empty then
         (new_line::rev_lines, false, indent_string, indent_length)
@@ -222,7 +226,7 @@ let add exes desc =
   full_desc_list := desc :: !full_desc_list ;
   IList.iter (fun (exe, desc_list) ->
       let desc =
-        if IList.mem ( = ) exe exes then
+        if IList.mem equal_exe exe exes then
           desc
         else
           {desc with meta = ""; doc = ""} in
@@ -444,11 +448,11 @@ let mk_path_list ?(default=[]) ?(deprecated=[]) ~long ?short ?exes ?(meta="path"
     ~default_to_string:(String.concat ~sep:", ")
     ~default ~deprecated ~long ~short ~exes ~meta
 
-let mk_symbol ~default ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
+let mk_symbol ~default ~symbols ~eq ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let strings = IList.map fst symbols in
   let sym_to_str = IList.map (fun (x,y) -> (y,x)) symbols in
   let of_string str = IList.assoc String.equal str symbols in
-  let to_string sym = IList.assoc ( = ) sym sym_to_str in
+  let to_string sym = IList.assoc eq sym sym_to_str in
   mk ~deprecated ~long ?short ~default ?exes ~meta doc
     ~default_to_string:(fun s -> to_string s)
     ~mk_setter:(fun var str -> var := of_string str)
@@ -464,10 +468,10 @@ let mk_symbol_opt ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
     ~decode_json:(string_json_decoder ~long)
     ~mk_spec:(fun set -> Symbol (strings, set))
 
-let mk_symbol_seq ?(default=[]) ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
+let mk_symbol_seq ?(default=[]) ~symbols ~eq ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
   let sym_to_str = IList.map (fun (x,y) -> (y,x)) symbols in
   let of_string str = IList.assoc String.equal str symbols in
-  let to_string sym = IList.assoc ( = ) sym sym_to_str in
+  let to_string sym = IList.assoc eq sym sym_to_str in
   mk ~deprecated ~long ?short ~default ?exes ~meta:(",-separated sequence" ^ meta) doc
     ~default_to_string:(fun syms -> String.concat ~sep:" " (IList.map to_string syms))
     ~mk_setter:(fun var str_seq ->
@@ -531,7 +535,7 @@ let decode_inferconfig_to_argv current_exe path =
     | Error msg ->
         F.eprintf "WARNING: Could not read or parse Infer config in %s:@\n%s@." path msg ;
         `Assoc [] in
-  let desc_list = !(IList.assoc ( = ) current_exe exe_desc_lists) in
+  let desc_list = !(IList.assoc equal_exe current_exe exe_desc_lists) in
   let json_config = YBU.to_assoc json in
   let one_config_item result (key, json_val) =
     try
@@ -653,7 +657,7 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
   let add_to_curr_speclist ?(add_help=false) ?header exe =
     let mk_header_spec heading =
       ("", Unit (fun () -> ()), "\n  " ^ heading ^ "\n") in
-    let exe_descs = IList.assoc ( = ) exe exe_desc_lists in
+    let exe_descs = IList.assoc equal_exe exe exe_desc_lists in
     let (exe_speclist, widths) = normalize !exe_descs in
     let exe_speclist = if add_help
       then add_or_suppress_help (exe_speclist, widths)
@@ -677,7 +681,7 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
      current exe *)
   (* reset the speclist between calls to this function *)
   curr_speclist := [];
-  if current_exe = Driver then (
+  if equal_exe current_exe Driver then (
     add_to_curr_speclist ~add_help:true ~header:"Driver options" current_exe;
     add_to_curr_speclist ~header:"Analysis (backend) options" Analyze;
     add_to_curr_speclist ~header:"Clang frontend options" Clang

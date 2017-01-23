@@ -16,7 +16,9 @@ open! IStd
 
 (** Various kind of analyzers *)
 type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
-              | Crashcontext | Linters | Quandary | Threadsafety
+              | Crashcontext | Linters | Quandary | Threadsafety [@@deriving compare]
+
+val equal_analyzer : analyzer -> analyzer -> bool
 
 (** Association list of analyzers and their names *)
 val string_to_analyzer : (string * analyzer) list
@@ -24,6 +26,8 @@ val string_to_analyzer : (string * analyzer) list
 val string_of_analyzer : analyzer -> string
 
 type language = Clang | Java [@@deriving compare]
+
+val equal_language : language -> language -> bool
 
 val string_of_language : language -> string
 
@@ -290,6 +294,8 @@ val set_reference_and_call_function : 'a ref -> 'a -> ('b -> 'c) -> 'b -> 'c
 val arc_mode : bool ref
 
 val curr_language : language ref
+
+val curr_language_is : language -> bool
 
 val footprint : bool ref
 

@@ -16,8 +16,7 @@ type t =
   | ProgramVar of Pvar.t
 [@@deriving compare]
 
-let equal v1 v2 =
-  compare v1 v2 = 0
+let equal = [%compare.equal : t]
 
 let of_id id =
   LogicalVar id

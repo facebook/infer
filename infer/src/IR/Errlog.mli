@@ -41,7 +41,7 @@ type iter_fun =
   Localise.t -> Localise.error_desc -> string ->
   loc_trace ->
   Exceptions.err_class ->
-  Exceptions.exception_visibility ->
+  Exceptions.visibility ->
   unit
 
 (** Apply f to nodes and error names *)

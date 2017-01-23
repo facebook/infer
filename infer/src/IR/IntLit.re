@@ -28,7 +28,7 @@ let area u i =>
   };
 
 let to_signed (unsigned, i, ptr) =>
-  if (area unsigned i == 3) {
+  if (Int.equal (area unsigned i) 3) {
     None
   } else {
     Some
@@ -42,7 +42,7 @@ let compare (unsigned1, i1, _) (unsigned2, i2, _) =>
 let compare_value (unsigned1, i1, _) (unsigned2, i2, _) =>
   [%compare : (int, Int64.t)] (area unsigned1 i1, i1) (area unsigned2 i2, i2);
 
-let eq i1 i2 => compare_value i1 i2 == 0;
+let eq i1 i2 => Int.equal (compare_value i1 i2) 0;
 
 let neq i1 i2 => compare_value i1 i2 != 0;
 
@@ -74,13 +74,13 @@ let two = of_int 2;
 
 let minus_one = of_int (-1);
 
-let isone (_, i, _) => i == 1L;
+let isone (_, i, _) => Int64.equal i 1L;
 
-let iszero (_, i, _) => i == 0L;
+let iszero (_, i, _) => Int64.equal i 0L;
 
-let isnull (_, i, ptr) => i == 0L && ptr;
+let isnull (_, i, ptr) => Int64.equal i 0L && ptr;
 
-let isminusone (unsigned, i, _) => not unsigned && i == (-1L);
+let isminusone (unsigned, i, _) => not unsigned && Int64.equal i (-1L);
 
 let isnegative (unsigned, i, _) => not unsigned && i < 0L;
 
@@ -113,7 +113,7 @@ let lognot i => lift1 Int64.bit_not i;
 let sub i1 i2 => add i1 (neg i2);
 
 let pp f (unsigned, n, ptr) =>
-  if (ptr && n == 0L) {
+  if (ptr && Int64.equal n 0L) {
     F.fprintf f "null"
   } else if unsigned {
     F.fprintf f "%Lu" n

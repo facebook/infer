@@ -38,6 +38,7 @@ let module Item: {
 
   /** Annotation for one item: a list of annotations with visibility. */
   type nonrec t = list (t, bool) [@@deriving compare];
+  let equal: t => t => bool;
 
   /** Pretty print an item annotation. */
   let pp: F.formatter => t => unit;

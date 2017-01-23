@@ -147,4 +147,4 @@ let objc_ref_counter_annot = [({Annot.class_name: "ref_counter", parameters: []}
 let objc_ref_counter_field = (Ident.fieldname_hidden, Typ.Tint IInt, objc_ref_counter_annot);
 
 let is_objc_ref_counter_field (fld, _, a) =>
-  Ident.fieldname_is_hidden fld && Annot.Item.compare a objc_ref_counter_annot == 0;
+  Ident.fieldname_is_hidden fld && Annot.Item.equal a objc_ref_counter_annot;

@@ -47,7 +47,7 @@ let frame_matches_location frame_obj loc =
   let matches_file = String.is_suffix ~suffix:frame_obj.file_str lfname in
   let matches_line = match frame_obj.line_num with
     | None -> false
-    | Some line -> line = loc.Location.line in
+    | Some line -> Int.equal line loc.Location.line in
   matches_file && matches_line
 
 let parse_stack_frame frame_str =

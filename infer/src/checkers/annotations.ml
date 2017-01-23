@@ -63,12 +63,12 @@ let ia_ends_with ia ann_name =
 
 let ia_contains ia ann_name =
   let found = ref false in
-  ia_iter (fun a -> if ann_name = a.Annot.class_name then found := true) ia;
+  ia_iter (fun a -> if String.equal ann_name a.Annot.class_name then found := true) ia;
   !found
 
 let ia_get ia ann_name =
   let found = ref None in
-  ia_iter (fun a -> if ann_name = a.Annot.class_name then found := Some a) ia;
+  ia_iter (fun a -> if String.equal ann_name a.Annot.class_name then found := Some a) ia;
   !found
 
 let ma_contains ma ann_names =
@@ -286,7 +286,7 @@ let annotated_signature_is_anonymous_inner_class_wrapper ann_sig proc_name =
     let name_str = Mangled.to_string name in
     let len = String.length name_str in
     len >= 2 &&
-    String.sub name_str ~pos:0 ~len:1 = "x" &&
+    String.equal (String.sub name_str ~pos:0 ~len:1) "x" &&
     let s = String.sub name_str ~pos:1 ~len:(len - 1) in
     let is_int =
       try
@@ -296,7 +296,7 @@ let annotated_signature_is_anonymous_inner_class_wrapper ann_sig proc_name =
       with Failure _ -> false in
     is_int in
   let check_param (name, ia, t) =
-    if Mangled.to_string name = "this" then true
+    if String.equal (Mangled.to_string name) "this" then true
     else
       name_is_x_number name &&
       Annot.Item.is_empty ia &&
@@ -356,7 +356,7 @@ let annotated_signature_mark proc_name ann asig (b, bs) =
       L.stdout "  ANNOTATED SIGNATURE: %a@." (pp_annotated_signature proc_name) asig;
       assert false in
     let rec combine l1 l2 = match l1, l2 with
-      | (p, ia, t):: l1', l2' when Mangled.to_string p = "this" ->
+      | (p, ia, t):: l1', l2' when String.equal (Mangled.to_string p) "this" ->
           (p, ia, t) :: combine l1' l2'
       | (s, ia, t):: l1', x:: l2' ->
           mark_param (s, ia, t) x :: combine l1' l2'

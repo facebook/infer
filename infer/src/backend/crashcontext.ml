@@ -60,7 +60,7 @@ let stitch_summaries stacktrace_file summary_files out_file =
   let expand_stack_frame frame =
     (* TODO: Implement k > 1 case *)
     let frame_id = frame_id_of_stackframe frame in
-    if String.Map.existsi ~f:(fun ~key ~data:_ -> key = frame_id) summary_map then
+    if String.Map.existsi ~f:(fun ~key ~data:_ -> String.equal key frame_id) summary_map then
       String.Map.find_exn summary_map frame_id
     else
       stracktree_of_frame frame in

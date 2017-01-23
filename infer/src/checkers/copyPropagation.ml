@@ -102,7 +102,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | (Exp.Lvar pvar, Typ.Tptr _) -> Domain.kill_copies_with_var (Var.of_pvar pvar) astate_acc
           | _ -> astate_acc in
         let astate' = Option.value_map ~f:kill_ret_id ~default:astate ret_id in
-        if !Config.curr_language = Config.Java
+        if Config.curr_language_is Config.Java
         then astate' (* Java doesn't have pass-by-reference *)
         else IList.fold_left kill_actuals_by_ref astate' actuals
     | Sil.Store _ | Prune _ | Nullify _ | Abstract _ | Remove_temps _ | Declare_locals _ ->

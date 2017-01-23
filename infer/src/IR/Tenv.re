@@ -93,7 +93,8 @@ let add tenv name struct_typ => TypenameHash.replace tenv name struct_typ;
 /** Get method that is being overriden by java_pname (if any) **/
 let get_overriden_method tenv pname_java => {
   let struct_typ_get_method_by_name (struct_typ: StructTyp.t) method_name =>
-    IList.find (fun meth => method_name == Procname.get_method meth) struct_typ.methods;
+    IList.find
+      (fun meth => String.equal method_name (Procname.get_method meth)) struct_typ.methods;
   let rec get_overriden_method_in_supers pname_java supers =>
     switch supers {
     | [superclass, ...supers_tail] =>
@@ -121,7 +122,7 @@ let global_tenv: ref (option t) = ref None;
 
 /** Load a type environment from a file */
 let load_from_file (filename: DB.filename) :option t =>
-  if (filename == DB.global_tenv_fname) {
+  if (DB.equal_filename filename DB.global_tenv_fname) {
     if (is_none !global_tenv) {
       global_tenv := Serialization.from_file tenv_serializer DB.global_tenv_fname
     };
@@ -135,7 +136,7 @@ let load_from_file (filename: DB.filename) :option t =>
 let store_to_file (filename: DB.filename) (tenv: t) => {
   /* update in-memory global tenv for later uses by this process, e.g. in single-core mode the
      frontend and backend run in the same process */
-  if (filename == DB.global_tenv_fname) {
+  if (DB.equal_filename filename DB.global_tenv_fname) {
     global_tenv := Some tenv
   };
   Serialization.to_file tenv_serializer filename tenv;

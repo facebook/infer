@@ -16,7 +16,7 @@ type t =
   | TN_csu Csu.t Mangled.t
 [@@deriving compare];
 
-let equal tn1 tn2 => compare tn1 tn2 == 0;
+let equal = [%compare.equal : t];
 
 let to_string =
   fun

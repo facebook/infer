@@ -361,7 +361,7 @@ let has_taint_annotation fieldname (struct_typ: StructTyp.t) =
 (* add tainting attributes to a list of paramenters *)
 let get_params_to_taint tainted_param_nums formal_params =
   let get_taint_kind index =
-    try Some (IList.find (fun (taint_index, _) -> index = taint_index) tainted_param_nums)
+    try Some (IList.find (fun (taint_index, _) -> Int.equal index taint_index) tainted_param_nums)
     with Not_found -> None in
   let collect_params_to_taint params_to_taint_acc (index, param) =
     match get_taint_kind index with

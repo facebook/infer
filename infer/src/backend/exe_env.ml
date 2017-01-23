@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+open! PVariant
 module Hashtbl = Caml.Hashtbl
 
 (** Support for Execution environments *)
@@ -35,7 +36,7 @@ let tenv_filename file_base =
 module FilenameHash = Hashtbl.Make(
   struct
     type t = DB.filename
-    let equal file1 file2 = DB.compare_filename file1 file2 = 0
+    let equal file1 file2 = DB.equal_filename file1 file2
     let hash = Hashtbl.hash
   end)
 
@@ -148,12 +149,12 @@ let get_source exe_env pname =
     (get_file_data exe_env pname)
 
 let file_data_to_tenv file_data =
-  if file_data.tenv = None
+  if is_none file_data.tenv
   then file_data.tenv <- Tenv.load_from_file file_data.tenv_file;
   file_data.tenv
 
 let file_data_to_cfg file_data =
-  if file_data.cfg = None
+  if is_none file_data.cfg
   then file_data.cfg <- Cfg.load_cfg_from_file file_data.cfg_file;
   file_data.cfg
 

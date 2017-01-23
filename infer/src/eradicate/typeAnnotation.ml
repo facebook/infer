@@ -26,7 +26,7 @@ type t = {
   origin : TypeOrigin.t;
 } [@@deriving compare]
 
-let equal ta1 ta2 = 0 = compare ta1 ta2
+let equal = [%compare.equal : t]
 
 let get_value ann ta =
   try
@@ -34,7 +34,7 @@ let get_value ann ta =
   with Not_found -> false
 
 let set_value ann b ta =
-  if get_value ann ta = b then ta
+  if Bool.equal (get_value ann ta) b then ta
   else
     { ta with
       map = AnnotationsMap.add ann b ta.map; }
@@ -70,7 +70,7 @@ let join ta1 ta2 =
     set_present present
       { ta_chosen with
         origin; } in
-  if ta' = ta1 then None else Some ta'
+  if equal ta' ta1 then None else Some ta'
 
 let get_origin ta = ta.origin
 

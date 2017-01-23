@@ -430,7 +430,7 @@ let check_assignement_guard pdesc node =
     let check_guard n =
       IList.for_all check_instr (Procdesc.Node.get_instrs n) in
     IList.for_all check_guard succs in
-  if !Config.curr_language = Config.Clang &&
+  if Config.curr_language_is Config.Clang &&
      succs_are_all_prune_nodes () &&
      succs_same_loc_as_node () &&
      succs_have_simple_guards () then
@@ -755,8 +755,8 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
       let prop'' = Abs.abstract pname tenv prop' in
       let pre, post = Prop.extract_spec prop'' in
       let pre' = Prop.normalize tenv (Prop.prop_sub sub pre) in
-      if !Config.curr_language =
-         Config.Java && Procdesc.get_access pdesc <> PredSymb.Private then
+      if Config.curr_language_is Config.Java &&
+         Procdesc.get_access pdesc <> PredSymb.Private then
         report_context_leaks pname post.Prop.sigma tenv;
       let post' =
         if Prover.check_inconsistency_base tenv prop then None
@@ -1141,7 +1141,7 @@ let custom_error_preconditions summary =
 let remove_this_not_null tenv prop =
   let collect_hpred (var_option, hpreds) = function
     | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (Exp.Var var, _), _)
-      when !Config.curr_language = Config.Java && Pvar.is_this pvar ->
+      when Config.curr_language_is Config.Java && Pvar.is_this pvar ->
         (Some var, hpreds)
     | hpred -> (var_option, hpred:: hpreds) in
   let collect_atom var atoms = function
@@ -1325,9 +1325,9 @@ let analyze_proc source exe_env proc_desc : Specs.summary =
   let prev_summary = Specs.get_summary_unsafe "analyze_proc" proc_name in
   let updated_summary =
     update_summary tenv prev_summary specs phase proc_name elapsed res in
-  if !Config.curr_language = Config.Clang && Config.report_custom_error then
+  if Config.curr_language_is Config.Clang && Config.report_custom_error then
     report_custom_errors tenv updated_summary;
-  if !Config.curr_language = Config.Java && Config.report_runtime_exceptions then
+  if Config.curr_language_is Config.Java && Config.report_runtime_exceptions then
     report_runtime_exceptions tenv proc_desc updated_summary;
   updated_summary
 

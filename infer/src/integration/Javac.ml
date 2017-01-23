@@ -12,7 +12,7 @@ open! IStd
 module L = Logging
 module F = Format
 
-type compiler = Java | Javac
+type compiler = Java | Javac [@@ deriving compare]
 
 let compile compiler build_prog build_args =
   let prog, prog_args =

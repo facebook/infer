@@ -29,7 +29,7 @@ module ConstantMap = Exp.Map
 module ConstantFlow = Dataflow.MakeDF(struct
     type t = (Const.t option) ConstantMap.t [@@deriving compare]
 
-    let equal m n = compare m n = 0
+    let equal = [%compare.equal : t]
 
     let pp fmt constants =
       let pp_key fmt = Exp.pp fmt in
@@ -56,12 +56,12 @@ module ConstantFlow = Dataflow.MakeDF(struct
 
           let has_class pn name = match pn with
             | Procname.Java pn_java ->
-                Procname.java_get_class_name pn_java = name
+                String.equal (Procname.java_get_class_name pn_java) name
             | _ ->
                 false in
           let has_method pn name = match pn with
             | Procname.Java pn_java ->
-                Procname.java_get_method pn_java = name
+                String.equal (Procname.java_get_method pn_java) name
             | _ ->
                 false in
 
