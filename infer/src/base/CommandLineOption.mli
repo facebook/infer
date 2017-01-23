@@ -20,6 +20,10 @@ val exe_name : exe -> string
 
 val frontend_exes: exe list
 
+val is_originator : bool
+
+val init_work_dir : string
+
 (** The [mk_*] functions declare command line options, while [parse] parses then according to the
     declared options.
 

@@ -292,20 +292,9 @@ let os_type = match Sys.os_type with
   | _ -> Unix
 
 
-(** The working directory of the initial invocation of infer, to which paths passed as command line
-    options are relative. *)
-let init_work_dir, is_originator =
-  match Sys.getenv "INFER_CWD" with
-  | Some dir ->
-      (dir, false)
-  | None ->
-      let real_cwd = Utils.realpath (Sys.getcwd ()) in
-      Unix.putenv ~key:"INFER_CWD" ~data:real_cwd;
-      (real_cwd, true)
-
 (** Resolve relative paths passed as command line options, i.e., with respect to the working
     directory of the initial invocation of infer. *)
-let resolve = Utils.filename_to_absolute ~root:init_work_dir
+let resolve = Utils.filename_to_absolute ~root:CLOpt.init_work_dir
 
 let infer_inside_maven_env_var = "INFER_INSIDE_MAVEN"
 
@@ -331,7 +320,7 @@ let inferconfig_home =
 
 and project_root =
   CLOpt.mk_path ~deprecated:["project_root"; "-project_root"] ~long:"project-root" ~short:"pr"
-    ~default:init_work_dir
+    ~default:CLOpt.init_work_dir
     ~exes:CLOpt.[Analyze;Clang;Driver;Print]
     ~meta:"dir" "Specify the root directory of the project"
 
@@ -1043,7 +1032,7 @@ and report_hook =
 
 and results_dir =
   CLOpt.mk_path ~deprecated:["results_dir"; "-out"] ~long:"results-dir" ~short:"o"
-    ~default:(init_work_dir ^/ "infer-out")
+    ~default:(CLOpt.init_work_dir ^/ "infer-out")
     ~exes:CLOpt.[Analyze;Clang;Driver;Print]
     ~meta:"dir" "Write results and internal files in the specified directory"
 
@@ -1229,7 +1218,7 @@ and xml_specs =
   CLOpt.mk_bool ~deprecated:["xml"] ~long:"xml-specs"
     "Export specs into XML files file1.xml ... filen.xml"
 
-let javac_classes_out = ref init_work_dir
+let javac_classes_out = ref CLOpt.init_work_dir
 
 (* The "rest" args must appear after "--" on the command line, and hence after other args, so they
    are allowed to refer to the other arg variables. *)

@@ -32,8 +32,6 @@ let to_arg_spec = function
 let is_env_var_set v =
   Option.value (Option.map (Sys.getenv v) ~f:((=) "1")) ~default:false
 
-let warnf = if is_env_var_set "INFER_STRICT_MODE" then failwithf else F.eprintf
-
 (** Each command line option may appear in the --help list of any executable, these tags are used to
     specify which executables for which an option will be documented. *)
 type exe = Analyze | Clang | Driver | Interactive | Print
@@ -54,6 +52,22 @@ let exe_name =
 
 
 let frontend_exes = [Clang]
+
+(** The working directory of the initial invocation of infer, to which paths passed as command line
+    options are relative. *)
+let init_work_dir, is_originator =
+  match Sys.getenv "INFER_CWD" with
+  | Some dir ->
+      (dir, false)
+  | None ->
+      let real_cwd = Utils.realpath (Sys.getcwd ()) in
+      Unix.putenv ~key:"INFER_CWD" ~data:real_cwd;
+      (real_cwd, true)
+
+let warnf =
+  if is_env_var_set "INFER_STRICT_MODE" then failwithf
+  else if not is_originator then fun fmt -> F.ifprintf F.err_formatter fmt
+  else F.eprintf
 
 type desc = {
   long: string; short: string; meta: string; doc: string; spec: spec;
@@ -226,7 +240,7 @@ let deprecate_desc ~long ~short ~deprecated desc =
     | Symbol (symbols, f) -> Symbol (symbols, warn_then_f f)
     | Rest _ as spec -> spec in
   let deprecated_decode_json j =
-    F.eprintf "WARNING: in .inferconfig: '%s' is deprecated. Use '%s' instead.@." deprecated long;
+    warnf "WARNING: in .inferconfig: '%s' is deprecated. Use '%s' instead.@." deprecated long;
     desc.decode_json j in
   { long = ""; short = deprecated; meta = ""; doc = "";
     spec = deprecated_spec; decode_json = deprecated_decode_json }
@@ -663,15 +677,12 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
      current exe *)
   (* reset the speclist between calls to this function *)
   curr_speclist := [];
-  if current_exe = Driver then
-    add_to_curr_speclist ~add_help:true ~header:"Driver options" current_exe
-  else
-    add_to_curr_speclist ~add_help:true current_exe
-  ;
   if current_exe = Driver then (
+    add_to_curr_speclist ~add_help:true ~header:"Driver options" current_exe;
     add_to_curr_speclist ~header:"Analysis (backend) options" Analyze;
-    add_to_curr_speclist ~header:"Clang frontend options" Clang;
-  )
+    add_to_curr_speclist ~header:"Clang frontend options" Clang
+  ) else
+    add_to_curr_speclist ~add_help:true current_exe
   ;
   assert( check_no_duplicates !curr_speclist )
   ;

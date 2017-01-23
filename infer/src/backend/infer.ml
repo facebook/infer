@@ -382,7 +382,7 @@ let () =
   (* re-set log files, as default files were in results_dir removed above *)
   L.set_log_file_identifier Config.current_exe None ;
   if Config.print_builtins then Builtin.print_and_exit () ;
-  if Config.is_originator then L.do_out "%s@\n" Config.version_string ;
+  if CLOpt.is_originator then L.do_out "%s@\n" Config.version_string ;
   if Config.debug_mode || Config.stats_mode then log_infer_args driver_mode ;
   (* infer might be called from a Makefile and itself uses `make` to run the analysis in parallel,
      but cannot communicate with the parent make command. Since infer won't interfere with them
@@ -393,7 +393,7 @@ let () =
   touch_start_file () ;
   capture driver_mode ;
   analyze driver_mode ;
-  if Config.is_originator then (
+  if CLOpt.is_originator then (
     StatsAggregator.generate_files () ;
     let in_buck_mode = match driver_mode with | PythonCapture (BBuck, _) -> true | _ -> false in
     if Config.analyzer = Config.Crashcontext then

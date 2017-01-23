@@ -35,7 +35,7 @@ let infer_profile = lazy
 \n    </profile>\
   " infer_profile_name (Config.(bin_dir ^/ string_of_analyzer Infer)))
 
-let pom_worklist = ref [Config.init_work_dir]
+let pom_worklist = ref [CLOpt.init_work_dir]
 
 let add_infer_profile_to_xml maven_xml infer_xml =
   let copy xml_in xml_out = Xmlm.output xml_out (Xmlm.input xml_in) in
@@ -90,7 +90,7 @@ let add_infer_profile_to_xml maven_xml infer_xml =
              L.do_out "Found infer profile, not adding one@.";
              found_infer_profile := true
          | "module"::"modules"::_ ->
-             let abs_data = Config.init_work_dir ^/ data in
+             let abs_data = CLOpt.init_work_dir ^/ data in
              L.do_out "Adding maven module %s@." abs_data;
              pom_worklist := abs_data::!pom_worklist
          | _ -> ()
