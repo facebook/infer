@@ -117,7 +117,7 @@ buck-out/
 
 /infer/annotations/annot_classes/
 /infer/annotations/annotations.jar
-/infer/annotations/processor_classes/
+/infer/annotations/annotations-src.jar
 infer/src/.project
 /dependencies/ocamldot/ocamldot
 /dependencies/ocamldot/ocamldot.ml
