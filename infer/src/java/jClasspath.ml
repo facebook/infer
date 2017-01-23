@@ -203,10 +203,10 @@ let extract_classnames classnames jar_filename =
   let file_in = Zip.open_in jar_filename in
   let collect classes entry =
     let class_filename = entry.Zip.filename in
-    try
-      let () = ignore (Str.search_forward (Str.regexp "class") class_filename 0) in
-      (classname_of_class_filename (Filename.chop_extension class_filename) :: classes)
-    with Not_found -> classes in
+    match Filename.split_extension class_filename with
+    | basename, Some "class" ->
+        (classname_of_class_filename basename) :: classes
+    | _ -> classes in
   let classnames_after = IList.fold_left collect classnames (Zip.entries file_in) in
   Zip.close_in file_in;
   classnames_after
