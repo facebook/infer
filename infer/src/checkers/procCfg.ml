@@ -23,6 +23,7 @@ module type Node = sig
 
   val kind : t -> Procdesc.Node.nodekind
   val id : t -> id
+  val hash : t -> int
   val loc : t -> Location.t
   val underlying_node : t -> Procdesc.Node.t
   val compare_id : id -> id -> int
@@ -35,6 +36,7 @@ module DefaultNode = struct
 
   let kind = Procdesc.Node.get_kind
   let id = Procdesc.Node.get_id
+  let hash = Procdesc.Node.hash
   let loc = Procdesc.Node.get_loc
   let underlying_node t = t
   let compare_id = Procdesc.Node.compare_id
@@ -50,6 +52,8 @@ module InstrNode = struct
   let underlying_node t = t
 
   let id t = Procdesc.Node.get_id (underlying_node t), Node_index
+
+  let hash node = Hashtbl.hash (id node)
 
   let loc t = Procdesc.Node.get_loc t
 
@@ -105,6 +109,8 @@ module type S = sig
   val nodes : t -> node list
 
   val from_pdesc : Procdesc.t -> t
+
+  val is_loop_head : Procdesc.t -> node -> bool
 end
 
 (** Forward CFG with no exceptional control-flow *)
@@ -127,6 +133,7 @@ module Normal = struct
   let proc_desc t = t
   let nodes = Procdesc.get_nodes
   let from_pdesc pdesc = pdesc
+  let is_loop_head = Procdesc.is_loop_head
 end
 
 (** Forward CFG with exceptional control-flow *)
@@ -195,6 +202,7 @@ module Exceptional = struct
   let proc_desc (pdesc, _) = pdesc
   let start_node (pdesc, _) = Procdesc.get_start_node pdesc
   let exit_node (pdesc, _) = Procdesc.get_exit_node pdesc
+  let is_loop_head = Procdesc.is_loop_head
 end
 
 (** Wrapper that reverses the direction of the CFG *)

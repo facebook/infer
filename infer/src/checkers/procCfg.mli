@@ -21,6 +21,7 @@ module type Node = sig
 
   val kind : t -> Procdesc.Node.nodekind
   val id : t -> id
+  val hash : t -> int
   val loc : t -> Location.t
   val underlying_node : t -> Procdesc.Node.t
   val compare_id : id -> id -> int
@@ -67,6 +68,8 @@ module type S = sig
   val nodes : t -> node list
 
   val from_pdesc : Procdesc.t -> t
+
+  val is_loop_head : Procdesc.t -> node -> bool
 end
 
 module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.Node.id

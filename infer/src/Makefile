@@ -121,7 +121,7 @@ else
 EXTRA_DEPS = opensource
 endif
 
-DEPENDENCIES = IR backend base checkers eradicate harness integration tp/fts quandary $(EXTRA_DEPS)
+DEPENDENCIES = IR backend base checkers eradicate harness integration tp/fts quandary bufferoverrun $(EXTRA_DEPS)
 
 # ocamlbuild command with options common to all build targets
 OCAMLBUILD_BASE = rebuild $(OCAMLBUILD_OPTIONS) -j $(NCPU) $(addprefix -I , $(DEPENDENCIES))

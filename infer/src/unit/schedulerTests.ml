@@ -20,6 +20,7 @@ module MockNode = struct
 
   let instrs _ = []
   let instr_ids _ = []
+  let hash = Hashtbl.hash
   let to_instr_nodes _ = assert false
   let id n = n
   let loc _ = assert false
@@ -68,6 +69,7 @@ module MockProcCfg = struct
   let exit_node _ = assert false
   let proc_desc _ = assert false
   let from_pdesc _ = assert false
+  let is_loop_head _ = assert false
 end
 
 module S = Scheduler.ReversePostorder (MockProcCfg)
