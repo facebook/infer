@@ -259,10 +259,20 @@ let check_constructor_initialization tenv
                   list in
 
               let may_be_assigned_in_final_typestate =
+                let origin_is_initialized = function
+                  | TypeOrigin.Undef ->
+                      false
+                  | TypeOrigin.Field (f, _) ->
+                      (* field initialized with another field needing initialization *)
+                      let circular =
+                        IList.exists (fun (f', _, _) -> Ident.equal_fieldname f f') fields in
+                      not circular
+                  | _ ->
+                      true in
                 final_type_annotation_with
                   false
                   (Lazy.force final_initializer_typestates)
-                  (fun ta -> TypeAnnotation.get_origin ta <> TypeOrigin.Undef) in
+                  (fun ta -> origin_is_initialized (TypeAnnotation.get_origin ta)) in
 
               let may_be_nullable_in_final_typestate () =
                 final_type_annotation_with

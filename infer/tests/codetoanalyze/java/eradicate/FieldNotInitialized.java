@@ -44,4 +44,56 @@ public class FieldNotInitialized {
     f = null; // OK  the framework could write null into the field
     g = null; // OK  the framework could write null into the field
   }
+
+
+  class OnlyRead {
+    Object o;
+
+    OnlyRead() {
+      Object x = o; // not initialized
+    }
+  }
+
+  class WriteItself {
+    Object o;
+
+    WriteItself() {
+      o = o; // not initialized
+    }
+  }
+
+  class Swap {
+    Object o1;
+    Object o2;
+
+    Swap() {
+      o1 = o2; // not initialized
+      o2 = new Object();
+    }
+  }
+
+  class SwapOK {
+    Object o1;
+    Object o2;
+
+    SwapOK() {
+      o1 = new Object();
+      o2 = o1;
+    }
+  }
+
+
+  class OnlyReadIndirect {
+    Object o1;
+    Object o2;
+
+    private void indirect() {
+      Object x = o1; // not initialized
+      o2 = new Object();
+    }
+
+    OnlyReadIndirect() {
+      indirect();
+    }
+  }
 }
