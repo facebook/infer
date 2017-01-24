@@ -65,7 +65,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     with Not_found -> None
 
   let is_owned access_path owned_set =
-    ThreadSafetyDomain.OwnershipDomain.mem access_path owned_set
+    Domain.OwnershipDomain.mem access_path owned_set
 
   let is_initializer tenv proc_name =
     Procname.is_constructor proc_name ||
@@ -107,14 +107,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     IList.fold_left
       (fun acc rawpath ->
          if not (is_owned (truncate rawpath) owned) && not (is_safe_write rawpath pname tenv)
-         then
-           ThreadSafetyDomain.PathDomain.add_sink (ThreadSafetyDomain.make_access rawpath loc) acc
-         else
-           acc)
+         then Domain.PathDomain.add_sink (Domain.make_access rawpath loc) acc
+         else acc)
       path_state
       (AccessPath.of_exp exp typ ~f_resolve_id)
 
-  let analyze_id_assignment lhs_id rhs_exp rhs_typ { ThreadSafetyDomain.id_map; } =
+  let analyze_id_assignment lhs_id rhs_exp rhs_typ { Domain.id_map; } =
     let f_resolve_id = resolve_id id_map in
     match AccessPath.of_lhs_exp rhs_exp rhs_typ ~f_resolve_id with
     | Some rhs_access_path -> IdAccessPathMapDomain.add lhs_id rhs_access_path id_map
@@ -138,7 +136,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           PatternMatch.supertype_exists tenv is_container_write_ typename &&
           not (PatternMatch.supertype_exists tenv is_threadsafe_collection typename)
       | _ -> false in
-    let add_container_write pn loc exp typ (astate : ThreadSafetyDomain.astate) =
+    let add_container_write pn loc exp typ (astate : Domain.astate) =
       let dummy_fieldname =
         Ident.create_fieldname (Mangled.from_string (Procname.get_method pn)) 0 in
       let dummy_access_exp = Exp.Lfield (exp, dummy_fieldname, typ) in
@@ -157,12 +155,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       not is_locked && not (Procdesc.is_java_synchronized pdesc) in
     let f_resolve_id = resolve_id astate.id_map in
 
+    let open Domain in
     function
     | Sil.Call (Some (lhs_id, lhs_typ), Const (Cfun pn), _, _, _) when is_allocation pn ->
         begin
           match AccessPath.of_lhs_exp (Exp.Var lhs_id) lhs_typ ~f_resolve_id with
           | Some lhs_access_path ->
-              let owned = ThreadSafetyDomain.OwnershipDomain.add lhs_access_path astate.owned in
+              let owned = OwnershipDomain.add lhs_access_path astate.owned in
               { astate with owned; }
           | None ->
               astate
@@ -206,11 +205,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                             try
                               let callee_cond_writes_for_index' =
                                 let callee_cond_writes_for_index =
-                                  ThreadSafetyDomain.ConditionalWritesDomain.find
-                                    index callee_conditional_writes in
-                                ThreadSafetyDomain.PathDomain.with_callsite
-                                  callee_cond_writes_for_index
-                                  call_site in
+                                  ConditionalWritesDomain.find index callee_conditional_writes in
+                                PathDomain.with_callsite callee_cond_writes_for_index call_site in
                               begin
                                 match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
                                 | Some actual_access_path ->
@@ -229,44 +225,39 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                                                a formal. add to conditional writes *)
                                             let conditional_writes' =
                                               try
-                                                ThreadSafetyDomain.ConditionalWritesDomain.find
-                                                  formal_index
-                                                  cond_writes
-                                                |> ThreadSafetyDomain.PathDomain.join
-                                                  callee_cond_writes_for_index'
+                                                ConditionalWritesDomain.find
+                                                  formal_index cond_writes
+                                                |> PathDomain.join callee_cond_writes_for_index'
                                               with Not_found ->
                                                 callee_cond_writes_for_index' in
                                             let cond_writes' =
-                                              ThreadSafetyDomain.ConditionalWritesDomain.add
+                                              ConditionalWritesDomain.add
                                                 formal_index conditional_writes' cond_writes in
                                             cond_writes', uncond_writes
                                         | None ->
                                             (* access path not owned and not rooted in a formal. add
                                                to unconditional writes *)
                                             cond_writes,
-                                            ThreadSafetyDomain.PathDomain.join
+                                            PathDomain.join
                                               uncond_writes callee_cond_writes_for_index'
                                       end
                                 | _ ->
                                     cond_writes,
-                                    ThreadSafetyDomain.PathDomain.join
-                                      uncond_writes callee_cond_writes_for_index'
+                                    PathDomain.join uncond_writes callee_cond_writes_for_index'
                               end
                             with Not_found ->
                               acc in
                           let conditional_writes, unconditional_writes =
                             let combined_unconditional_writes =
-                              ThreadSafetyDomain.PathDomain.with_callsite
-                                callee_unconditional_writes
-                                call_site
-                              |> ThreadSafetyDomain.PathDomain.join astate.unconditional_writes in
+                              PathDomain.with_callsite callee_unconditional_writes call_site
+                              |> PathDomain.join astate.unconditional_writes in
                             IList.fold_lefti
                               add_conditional_writes
                               (astate.conditional_writes, combined_unconditional_writes)
                               actuals in
                           let reads =
-                            ThreadSafetyDomain.PathDomain.with_callsite callee_reads call_site
-                            |> ThreadSafetyDomain.PathDomain.join astate.reads in
+                            PathDomain.with_callsite callee_reads call_site
+                            |> PathDomain.join astate.reads in
                           { astate with reads; conditional_writes; unconditional_writes; }
                         else
                           astate in
@@ -292,11 +283,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 match get_formal_index base_exp typ with
                 | Some formal_index ->
                     let conditional_writes_for_index =
-                      try
-                        ThreadSafetyDomain.ConditionalWritesDomain.find
-                          formal_index astate.conditional_writes
-                      with Not_found ->
-                        ThreadSafetyDomain.PathDomain.empty in
+                      try ConditionalWritesDomain.find formal_index astate.conditional_writes
+                      with Not_found -> PathDomain.empty in
                     let conditional_writes_for_index' =
                       add_path_to_state
                         lhs_exp
@@ -307,7 +295,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         astate.owned
                         pname
                         tenv in
-                    ThreadSafetyDomain.ConditionalWritesDomain.add
+                    ConditionalWritesDomain.add
                       formal_index conditional_writes_for_index' astate.conditional_writes,
                     astate.unconditional_writes
                 | None ->
@@ -330,11 +318,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           match AccessPath.of_lhs_exp lhs_exp lhs_typ ~f_resolve_id,
                 AccessPath.of_lhs_exp rhs_exp lhs_typ ~f_resolve_id with
           | Some lhs_access_path, Some rhs_access_path ->
-              if ThreadSafetyDomain.OwnershipDomain.mem rhs_access_path astate.owned
-              then ThreadSafetyDomain.OwnershipDomain.add lhs_access_path astate.owned
-              else ThreadSafetyDomain.OwnershipDomain.remove lhs_access_path astate.owned
+              if OwnershipDomain.mem rhs_access_path astate.owned
+              then OwnershipDomain.add lhs_access_path astate.owned
+              else OwnershipDomain.remove lhs_access_path astate.owned
           | Some lhs_access_path, None ->
-              ThreadSafetyDomain.OwnershipDomain.remove lhs_access_path astate.owned
+              OwnershipDomain.remove lhs_access_path astate.owned
           | _ ->
               astate.owned in
         { astate with conditional_writes; unconditional_writes; owned; }
@@ -351,8 +339,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let owned =
           match AccessPath.of_lhs_exp rhs_exp rhs_typ ~f_resolve_id with
           | Some rhs_access_path
-            when ThreadSafetyDomain.OwnershipDomain.mem rhs_access_path astate.owned ->
-              ThreadSafetyDomain.OwnershipDomain.add (AccessPath.of_id lhs_id rhs_typ) astate.owned
+            when OwnershipDomain.mem rhs_access_path astate.owned ->
+              OwnershipDomain.add (AccessPath.of_id lhs_id rhs_typ) astate.owned
           | _ ->
               astate.owned in
         { astate with Domain.reads; id_map; owned; }
@@ -467,11 +455,8 @@ let make_results_table get_proc_desc file_env =
   in
   let compute_post_for_procedure = (* takes proc_env as arg *)
     fun (idenv, tenv, proc_name, proc_desc) ->
-      let empty =
-        false,
-        ThreadSafetyDomain.PathDomain.empty,
-        ThreadSafetyDomain.ConditionalWritesDomain.empty,
-        ThreadSafetyDomain.PathDomain.empty in
+      let open ThreadSafetyDomain in
+      let empty = false, PathDomain.empty, ConditionalWritesDomain.empty, PathDomain.empty in
       (* convert the abstract state to a summary by dropping the id map *)
       let compute_post ({ ProcData.pdesc; tenv; } as proc_data) =
         if should_analyze_proc pdesc tenv
@@ -487,8 +472,8 @@ let make_results_table get_proc_desc file_env =
         else
           Some empty in
       let callback_arg =
-        {Callbacks.get_proc_desc; get_procs_in_file = (fun _ -> []);
-         idenv; tenv; proc_name; proc_desc} in
+        let get_procs_in_file _ = [] in
+        { Callbacks.get_proc_desc; get_procs_in_file; idenv; tenv; proc_name; proc_desc } in
       match
         Interprocedural.compute_and_store_post
           ~compute_post
@@ -522,11 +507,11 @@ let calculate_addendum_message tenv pname =
   | _ -> ""
 
 let combine_conditional_unconditional_writes conditional_writes unconditional_writes =
-  ThreadSafetyDomain.ConditionalWritesDomain.fold
-    (fun _ writes acc -> ThreadSafetyDomain.PathDomain.join writes acc)
+  let open ThreadSafetyDomain in
+  ConditionalWritesDomain.fold
+    (fun _ writes acc -> PathDomain.join writes acc)
     conditional_writes
     unconditional_writes
-
 
 let report_thread_safety_violations ( _, tenv, pname, pdesc) trace =
   let open ThreadSafetyDomain in
