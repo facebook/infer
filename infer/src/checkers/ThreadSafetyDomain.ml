@@ -18,7 +18,9 @@ module RawAccessPath = struct
   let pp_element = pp
 end
 
-module OwnershipDomain = AbstractDomain.InvertedSet(PrettyPrintable.MakePPSet(RawAccessPath))
+module RawAccessPathSet = PrettyPrintable.MakePPSet(RawAccessPath)
+
+module OwnershipDomain = AbstractDomain.InvertedSet(RawAccessPathSet)
 
 module TraceElem = struct
   module Kind = RawAccessPath
@@ -50,11 +52,6 @@ let make_access kind loc =
   let site = CallSite.make Procname.empty_block loc in
   TraceElem.make kind site
 
-(** A bool that is true if a lock is definitely held. Note that this is unsound because it assumes
-    the existence of one global lock. In the case that a lock is held on the access to a variable,
-    but the lock held is the wrong one, we will erroneously say that the access is thread-safe.
-    However, this coarse abstraction saves us from the complexity of tracking which locks are held
-    and which memory locations correspond to the same lock. *)
 module LocksDomain = AbstractDomain.BooleanAnd
 
 module PathDomain = SinkTrace.Make(TraceElem)
@@ -70,37 +67,13 @@ module ConditionalWritesDomain = AbstractDomain.Map (IntMap) (PathDomain)
 type astate =
   {
     locks : LocksDomain.astate;
-    (** boolean that is true if a lock must currently be held *)
     reads : PathDomain.astate;
-    (** access paths read outside of synchronization *)
     conditional_writes : ConditionalWritesDomain.astate;
-    (** map of (formal index) -> set of access paths rooted in the formal index that are read
-        outside of synrchonization if the formal is not owned by the caller *)
     unconditional_writes : PathDomain.astate;
-    (** access paths written outside of synchronization *)
     id_map : IdAccessPathMapDomain.astate;
-    (** map used to decompile temporary variables into access paths *)
     owned : OwnershipDomain.astate;
-    (** access paths that must be owned by the current function *)
   }
 
-(** the primary role of this domain is tracking *conditional* and *unconditional* writes.
-    conditional writes are writes that are rooted in a formal of the current procedure, and they
-    are safe only if the actual bound to that formal is owned at the call site (as in the foo
-    example below). Unconditional writes are rooted in a local, and they are only safe if a lock is
-    held in the caller.
-    To demonstrate what conditional writes buy us, consider the following example:
-
-    foo() {
-      Object local = new Object();
-      iWriteToAField(local);
-    }
-
-    We don't want to warn on this example because the object pointed to by local is owned by the
-    caller foo, then ownership is transferred to the callee iWriteToAField.
-*)
-
-(** same as astate, but without [id_map]/[owned] (since they are local) *)
 type summary =
   LocksDomain.astate * PathDomain.astate * ConditionalWritesDomain.astate *PathDomain.astate
 
