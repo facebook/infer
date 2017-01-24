@@ -594,8 +594,7 @@ let extra_env_args = ref []
 let extend_env_args args =
   extra_env_args := List.rev_append args !extra_env_args
 
-let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe exe_usage
-    ~should_parse_cl_args =
+let parse ?(incomplete=false) ?config_file current_exe exe_usage ~should_parse_cl_args =
   let full_speclist = ref []
   in
   let usage_msg = exe_usage current_exe
@@ -707,7 +706,7 @@ let parse ?(incomplete=false) ?(accept_unknown=false) ?config_file current_exe e
   arg_being_parsed := 0;
   (* tests if msg indicates an unknown option, as opposed to a known option with bad argument *)
   let is_unknown msg = String.is_substring msg ~substring:": unknown option" in
-  accept_unknown_args := accept_unknown ;
+  accept_unknown_args := false ;
   let rec parse_loop () =
     try
       Arg.parse_argv_dynamic ~current:arg_being_parsed !args_to_parse curr_speclist

@@ -147,18 +147,23 @@ val env_var_sep : char
 (** [extend_env_args args] appends [args] to those passed via [args_env_var] *)
 val extend_env_args : string list -> unit
 
-(** [parse env_var exe_usage exe] parses command line arguments as specified by preceding calls to
-    the [mk_*] functions, and returns a function that prints the usage message and help text then
-    exits. [exe] is used to construct the help message appropriate for that executable. The decoded
-    values of the inferconfig file [config_file], if provided, and of the environment variable
-    [env_var] are prepended to [Sys.argv] before parsing.  Therefore arguments passed on the command
-    line supersede those specified in the environment variable, which themselves supersede those
-    passed via the config file.  WARNING: An argument will be interpreted as many times as it
-    appears in all of the config file, the environment variable, and the command line. The [env_var]
-    is set to the full set of options parsed.  If [incomplete] is set, unknown options are ignored,
-    and [env_var] is not set.  If [accept_unknown] is set, unknown options are treated the same as
-    anonymous arguments. *)
-val parse : ?incomplete:bool -> ?accept_unknown:bool -> ?config_file:string ->
+(** [parse exe exe_usage exe] parses command line arguments as specified by preceding calls to the
+    [mk_*] functions, and returns a function that prints the usage message and help text then exits.
+
+    [exe] is used to construct the help message appropriate for that executable.
+
+    The decoded values of the inferconfig file [config_file], if provided, are parsed, followed by
+    the decoded values of the environment variable [args_env_var], followed by [Sys.argv] if
+    [should_parse_cl_args] is true. Therefore arguments passed on the command line supersede those
+    specified in the environment variable, which themselves supersede those passed via the config
+    file.
+
+    If [incomplete] is set, unknown options are ignored, and [args_env_var] is not set.
+
+    WARNING: An argument will be interpreted as many times as it appears in all of the config file,
+    the environment variable, and the command line. The [args_env_var] is set to the full set of
+    options parsed. *)
+val parse : ?incomplete:bool -> ?config_file:string ->
   exe -> (exe -> Arg.usage_msg) -> should_parse_cl_args:bool -> (int -> 'a)
 
 (** [is_env_var_set var] is true if $[var]=1 *)
