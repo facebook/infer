@@ -533,7 +533,7 @@ let decode_inferconfig_to_argv current_exe path =
     | Ok json ->
         json
     | Error msg ->
-        F.eprintf "WARNING: Could not read or parse Infer config in %s:@\n%s@." path msg ;
+        warnf "WARNING: Could not read or parse Infer config in %s:@\n%s@." path msg ;
         `Assoc [] in
   let desc_list = !(IList.assoc equal_exe current_exe exe_desc_lists) in
   let json_config = YBU.to_assoc json in
@@ -548,10 +548,10 @@ let decode_inferconfig_to_argv current_exe path =
       decode_json json_val @ result
     with
     | Not_found ->
-        F.eprintf "WARNING: while reading config file %s:@\nUnknown option %s@." path key ;
+        warnf "WARNING: while reading config file %s:@\nUnknown option %s@." path key ;
         result
     | YBU.Type_error (msg, json) ->
-        F.eprintf "WARNING: while reading config file %s:@\nIll-formed value %s for option %s: %s@."
+        warnf "WARNING: while reading config file %s:@\nIll-formed value %s for option %s: %s@."
           path (Yojson.Basic.to_string json) key msg ;
         result in
   IList.fold_left one_config_item [] json_config
@@ -565,7 +565,7 @@ let encode_argv_to_env argv =
     (IList.filter (fun arg ->
          not (String.contains arg env_var_sep)
          || (
-           F.eprintf "Ignoring unsupported option containing '%c' character: %s@\n"
+           warnf "Ignoring unsupported option containing '%c' character: %s@\n"
              env_var_sep arg ;
            false
          )
