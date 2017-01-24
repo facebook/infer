@@ -11,18 +11,9 @@ open! IStd
 
 module F = Format
 
-module RawAccessPath : sig
-  type t = AccessPath.raw
-  val compare : t -> t -> int
-  val pp : Format.formatter -> t -> unit
-  val pp_element : Format.formatter -> t -> unit
-end
+module OwnershipDomain : module type of AbstractDomain.InvertedSet (AccessPath.RawSet)
 
-module RawAccessPathSet : PrettyPrintable.PPSet with type elt = RawAccessPath.t
-
-module OwnershipDomain : module type of AbstractDomain.InvertedSet (RawAccessPathSet)
-
-module TraceElem : TraceElem.S with module Kind = RawAccessPath
+module TraceElem : TraceElem.S with module Kind = AccessPath.Raw
 
 (** A bool that is true if a lock is definitely held. Note that this is unsound because it assumes
     the existence of one global lock. In the case that a lock is held on the access to a variable,
@@ -74,6 +65,6 @@ type summary =
 
 include AbstractDomain.WithBottom with type astate := astate
 
-val make_access : RawAccessPath.t -> Location.t -> TraceElem.t
+val make_access : AccessPath.Raw.t -> Location.t -> TraceElem.t
 
 val pp_summary : F.formatter -> summary -> unit

@@ -11,19 +11,10 @@ open! IStd
 
 module F = Format
 
-module RawAccessPath = struct
-  type t = AccessPath.raw
-  let compare = AccessPath.compare_raw
-  let pp = AccessPath.pp_raw
-  let pp_element = pp
-end
-
-module RawAccessPathSet = PrettyPrintable.MakePPSet(RawAccessPath)
-
-module OwnershipDomain = AbstractDomain.InvertedSet(RawAccessPathSet)
+module OwnershipDomain = AbstractDomain.InvertedSet(AccessPath.RawSet)
 
 module TraceElem = struct
-  module Kind = RawAccessPath
+  module Kind = AccessPath.Raw
 
   type t = {
     site : CallSite.t;

@@ -11,12 +11,12 @@ open! IStd
 
 module IdMap = Var.Map
 
-type astate = AccessPath.raw IdMap.t
+type astate = AccessPath.Raw.t IdMap.t
 
 include IdMap
 
 let pp fmt astate =
-  IdMap.pp ~pp_value:AccessPath.pp_raw fmt astate
+  IdMap.pp ~pp_value:AccessPath.Raw.pp fmt astate
 
 let (<=) ~lhs ~rhs =
   if phys_equal lhs rhs
@@ -26,13 +26,13 @@ let (<=) ~lhs ~rhs =
       IdMap.for_all
         (fun id lhs_ap ->
            let rhs_ap = IdMap.find id rhs in
-           let eq = AccessPath.equal_raw lhs_ap rhs_ap in
+           let eq = AccessPath.Raw.equal lhs_ap rhs_ap in
            if not eq && Config.debug_exceptions
            then
              failwithf "Id %a maps to both %a and %a@."
                Var.pp id
-               AccessPath.pp_raw lhs_ap
-               AccessPath.pp_raw rhs_ap;
+               AccessPath.Raw.pp lhs_ap
+               AccessPath.Raw.pp rhs_ap;
            eq)
         lhs
     with Not_found -> false
@@ -45,12 +45,12 @@ let check_invariant ap1 ap2 = function
       (* TODO: fix (13370224) *)
       ()
   | id ->
-      if not (AccessPath.equal_raw ap1 ap2)
+      if not (AccessPath.Raw.equal ap1 ap2)
       then
         failwithf "Id %a maps to both %a and %a@."
           Var.pp id
-          AccessPath.pp_raw ap1
-          AccessPath.pp_raw ap2
+          AccessPath.Raw.pp ap1
+          AccessPath.Raw.pp ap2
 
 let join astate1 astate2 =
   if phys_equal astate1 astate2

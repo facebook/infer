@@ -18,20 +18,23 @@ type access =
   | FieldAccess of Ident.fieldname * Typ.t (* field name * field type *)
 [@@deriving compare]
 
-(** root var, and a list of accesses. closest to the root var is first that is, x.f.g is represented
-    as (x, [f; g]) *)
-type raw = base * access list [@@deriving compare]
+module Raw : sig
+  (** root var, and a list of accesses. closest to the root var is first that is, x.f.g is
+      representedas (x, [f; g]) *)
+  type t = base * access list [@@deriving compare]
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+end
 
 type t =
-  | Abstracted of raw (** abstraction of heap reachable from an access path, e.g. x.f* *)
-  | Exact of raw (** precise representation of an access path, e.g. x.f.g *)
+  | Abstracted of Raw.t (** abstraction of heap reachable from an access path, e.g. x.f* *)
+  | Exact of Raw.t (** precise representation of an access path, e.g. x.f.g *)
 [@@deriving compare]
 
 val equal_base : base -> base -> bool
 
 val equal_access : access -> access -> bool
-
-val equal_raw : raw -> raw -> bool
 
 val equal : t -> t -> bool
 
@@ -42,36 +45,34 @@ val base_of_pvar : Pvar.t -> Typ.t -> base
 val base_of_id : Ident.t -> Typ.t -> base
 
 (** create an access path from a pvar *)
-val of_pvar : Pvar.t -> Typ.t -> raw
+val of_pvar : Pvar.t -> Typ.t -> Raw.t
 
 (** create an access path from an ident *)
-val of_id : Ident.t -> Typ.t -> raw
+val of_id : Ident.t -> Typ.t -> Raw.t
 
 (** extract the raw access paths that occur in [exp], resolving identifiers using [f_resolve_id] *)
-val of_exp : Exp.t -> Typ.t -> f_resolve_id:(Var.t -> raw option) -> raw list
+val of_exp : Exp.t -> Typ.t -> f_resolve_id:(Var.t -> Raw.t option) -> Raw.t list
 
 (** convert [lhs_exp] to a raw access path, resolving identifiers using [f_resolve_id] *)
-val of_lhs_exp : Exp.t -> Typ.t -> f_resolve_id:(Var.t -> raw option) -> raw option
+val of_lhs_exp : Exp.t -> Typ.t -> f_resolve_id:(Var.t -> Raw.t option) -> Raw.t option
 
 (** append new accesses to an existing access path; e.g., `append_access x.f [g, h]` produces
     `x.f.g.h` *)
-val append : raw -> access list -> raw
+val append : Raw.t -> access list -> Raw.t
 
 (** swap base of existing access path for [base_var] (e.g., `with_base_bvar x y.f.g` produces
     `x.f.g` *)
 val with_base_var : Var.t -> t -> t
 
 (** return true if [ap1] is a prefix of [ap2]. returns true for equal access paths *)
-val is_prefix : raw -> raw -> bool
+val is_prefix : Raw.t -> Raw.t -> bool
 
 val pp_access : Format.formatter -> access -> unit
 
 val pp_access_list : Format.formatter -> access list -> unit
 
-val pp_raw : Format.formatter -> raw -> unit
-
 (** extract a raw access path from its wrapper *)
-val extract : t -> raw
+val extract : t -> Raw.t
 
 (** return true if [t] is an exact representation of an access path, false if it's an abstraction *)
 val is_exact : t -> bool
@@ -86,3 +87,5 @@ val pp : Format.formatter -> t -> unit
 module BaseMap : PrettyPrintable.PPMap with type key = base
 
 module AccessMap : PrettyPrintable.PPMap with type key = access
+
+module RawSet : PrettyPrintable.PPSet with type elt = Raw.t

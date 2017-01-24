@@ -26,13 +26,29 @@ type access =
 
 let equal_access = [%compare.equal : access]
 
-type raw = base * access list [@@deriving compare]
+let pp_base fmt (pvar, _) =
+  Var.pp fmt pvar
 
-let equal_raw = [%compare.equal : raw]
+let pp_access fmt = function
+  | FieldAccess (field_name, _) -> Ident.pp_fieldname fmt field_name
+  | ArrayAccess _ -> F.fprintf fmt "[_]"
+
+let pp_access_list fmt accesses =
+  let pp_sep _ _ = F.fprintf fmt "." in
+  F.pp_print_list ~pp_sep pp_access fmt accesses
+
+module Raw = struct
+  type t = base * access list [@@deriving compare]
+  let equal = [%compare.equal : t]
+
+  let pp fmt = function
+    | base, [] ->  pp_base fmt base
+    | base, accesses ->  F.fprintf fmt "%a.%a" pp_base base pp_access_list accesses
+end
 
 type t =
-  | Abstracted of raw
-  | Exact of raw
+  | Abstracted of Raw.t
+  | Exact of Raw.t
 [@@deriving compare]
 
 let equal = [%compare.equal : t]
@@ -49,7 +65,7 @@ let of_pvar pvar typ =
 let of_id id typ =
   base_of_id id typ, []
 
-let of_exp exp0 typ0 ~(f_resolve_id : Var.t -> raw option) =
+let of_exp exp0 typ0 ~(f_resolve_id : Var.t -> Raw.t option) =
   (* [typ] is the type of the last element of the access path (e.g., typeof(g) for x.f.g) *)
   let rec of_exp_ exp typ accesses acc =
     match exp with
@@ -88,7 +104,7 @@ let of_exp exp0 typ0 ~(f_resolve_id : Var.t -> raw option) =
         acc in
   of_exp_ exp0 typ0 [] []
 
-let of_lhs_exp lhs_exp typ ~(f_resolve_id : Var.t -> raw option) =
+let of_lhs_exp lhs_exp typ ~(f_resolve_id : Var.t -> Raw.t option) =
   match of_exp lhs_exp typ ~f_resolve_id with
   | [lhs_ap] -> Some lhs_ap
   | _ -> None
@@ -125,27 +141,12 @@ let is_exact = function
 let (<=) ~lhs ~rhs =
   match lhs, rhs with
   | Abstracted _, Exact _ -> false
-  | Exact lhs_ap, Exact rhs_ap -> equal_raw lhs_ap rhs_ap
+  | Exact lhs_ap, Exact rhs_ap -> Raw.equal lhs_ap rhs_ap
   | (Exact lhs_ap | Abstracted lhs_ap), Abstracted rhs_ap -> is_prefix rhs_ap lhs_ap
 
-let pp_base fmt (pvar, _) =
-  Var.pp fmt pvar
-
-let pp_access fmt = function
-  | FieldAccess (field_name, _) -> Ident.pp_fieldname fmt field_name
-  | ArrayAccess _ -> F.fprintf fmt "[_]"
-
-let pp_access_list fmt accesses =
-  let pp_sep _ _ = F.fprintf fmt "." in
-  F.pp_print_list ~pp_sep pp_access fmt accesses
-
-let pp_raw fmt = function
-  | base, [] ->  pp_base fmt base
-  | base, accesses ->  F.fprintf fmt "%a.%a" pp_base base pp_access_list accesses
-
 let pp fmt = function
-  | Exact access_path -> pp_raw fmt access_path
-  | Abstracted access_path -> F.fprintf fmt "%a*" pp_raw access_path
+  | Exact access_path -> Raw.pp fmt access_path
+  | Abstracted access_path -> F.fprintf fmt "%a*" Raw.pp access_path
 
 module BaseMap = PrettyPrintable.MakePPMap(struct
     type t = base
@@ -157,4 +158,10 @@ module AccessMap = PrettyPrintable.MakePPMap(struct
     type t = access
     let compare = compare_access
     let pp_key = pp_access
+  end)
+
+module RawSet = PrettyPrintable.MakePPSet(struct
+    type t = Raw.t
+    let compare = Raw.compare
+    let pp_element = Raw.pp
   end)
