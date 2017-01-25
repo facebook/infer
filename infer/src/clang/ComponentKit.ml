@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 let get_source_range an =
   match an with
@@ -231,7 +232,7 @@ let component_with_multiple_factory_methods_advice context an =
       | ObjCMethodDecl (decl_info, _, _) -> decl_info.Clang_ast_t.di_attributes
       | _ -> assert false in
     let unavailable_attrs = (IList.filter is_unavailable_attr attrs) in
-    let is_available = IList.length unavailable_attrs = 0 in
+    let is_available = Int.equal (IList.length unavailable_attrs) 0 in
     (CAst_utils.is_objc_factory_method if_decl decl) && is_available in
 
   let check_interface if_decl =

@@ -44,7 +44,7 @@ let append_no_duplicates_methods list1 list2 =
   append_no_duplicates Procname.equal list1 list2
 
 let append_no_duplicates_annotations list1 list2 =
-  let eq (annot1, _) (annot2, _) = annot1.Annot.class_name = annot2.Annot.class_name in
+  let eq (annot1, _) (annot2, _) = String.equal annot1.Annot.class_name annot2.Annot.class_name in
   append_no_duplicates eq list1 list2
 
 let add_no_duplicates_fields field_tuple l =
@@ -86,7 +86,7 @@ let rec collect_list_tuples l (a, a1, b, c, d) =
 
 let is_static_var var_decl_info =
   match var_decl_info.Clang_ast_t.vdi_storage_class with
-  | Some sc -> sc = CFrontend_config.static
+  | Some sc -> String.equal sc CFrontend_config.static
   | _ -> false
 
 let block_procname_with_index defining_proc i =
@@ -139,11 +139,13 @@ let mk_class_field_name field_qual_name =
 
 let is_cpp_translation translation_unit_context =
   let lang = translation_unit_context.CFrontend_config.lang in
-  lang = CFrontend_config.CPP || lang = CFrontend_config.ObjCPP
+  CFrontend_config.equal_clang_lang lang CFrontend_config.CPP ||
+  CFrontend_config.equal_clang_lang lang CFrontend_config.ObjCPP
 
 let is_objc_extension translation_unit_context =
   let lang = translation_unit_context.CFrontend_config.lang in
-  lang = CFrontend_config.ObjC || lang = CFrontend_config.ObjCPP
+  CFrontend_config.equal_clang_lang lang CFrontend_config.ObjC ||
+  CFrontend_config.equal_clang_lang lang CFrontend_config.ObjCPP
 
 let rec get_mangled_method_name function_decl_info method_decl_info =
   (* For virtual methods return mangled name of the method from most base class
@@ -183,7 +185,7 @@ let mk_procname_from_function translation_unit_context name function_decl_info_o
     | Some m when is_cpp_translation translation_unit_context -> m
     | _ -> "" in
   let mangled = (Utils.string_crc_hex32 file) ^ mangled_name in
-  if String.length file = 0 && String.length mangled_name = 0 then
+  if String.is_empty file && String.is_empty mangled_name then
     Procname.from_string_c_fun name
   else
     Procname.C (Procname.c name mangled)

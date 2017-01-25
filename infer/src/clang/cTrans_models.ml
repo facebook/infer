@@ -12,10 +12,10 @@ open! IStd
 open Objc_models
 
 let is_cf_non_null_alloc pname =
-  Procname.to_string pname = CFrontend_config.cf_non_null_alloc
+  String.equal (Procname.to_string pname) CFrontend_config.cf_non_null_alloc
 
 let is_alloc pname =
-  Procname.to_string pname = CFrontend_config.cf_alloc
+  String.equal (Procname.to_string pname) CFrontend_config.cf_alloc
 
 let is_alloc_model typ pname =
   if Specs.summary_exists pname then false
@@ -27,13 +27,13 @@ let is_alloc_model typ pname =
     Core_foundation_model.is_core_lib_create typ funct
 
 let is_builtin_expect pname =
-  Procname.to_string pname = CFrontend_config.builtin_expect
+  String.equal (Procname.to_string pname) CFrontend_config.builtin_expect
 
 let is_builtin_object_size pname =
-  (Procname.to_string pname) = CFrontend_config.builtin_object_size
+  String.equal (Procname.to_string pname) CFrontend_config.builtin_object_size
 
 let is_replace_with_deref_first_arg pname =
-  (Procname.to_string pname) = CFrontend_config.replace_with_deref_first_arg_attr
+  String.equal (Procname.to_string pname) CFrontend_config.replace_with_deref_first_arg_attr
 
 let is_retain_predefined_model typ pname =
   let funct = Procname.to_string pname in
@@ -45,13 +45,13 @@ let is_release_predefined_model typ pname =
   Core_foundation_model.is_core_graphics_release typ funct
 
 let is_retain_method funct =
-  funct = CFrontend_config.retain
+  String.equal funct CFrontend_config.retain
 
 let is_release_method funct =
-  funct = CFrontend_config.release
+  String.equal funct CFrontend_config.release
 
 let is_autorelease_method funct =
-  funct = CFrontend_config.autorelease
+  String.equal funct CFrontend_config.autorelease
 
 let get_builtinname method_name =
   if is_retain_method method_name then
@@ -63,7 +63,7 @@ let get_builtinname method_name =
   else None
 
 let is_modeled_builtin funct =
-  funct = CFrontend_config.builtin_memset_chk
+  String.equal funct CFrontend_config.builtin_memset_chk
 
 let is_modeled_attribute attr_name =
   IList.mem String.equal attr_name CFrontend_config.modeled_function_attributes
@@ -89,17 +89,17 @@ let is_retain_builtin funct fun_type =
     | _ -> false
 
 let is_assert_log_s funct =
-  funct = CFrontend_config.assert_rtn ||
-  funct = CFrontend_config.assert_fail ||
-  funct = CFrontend_config.fbAssertWithSignalAndLogFunctionHelper ||
+  String.equal funct CFrontend_config.assert_rtn ||
+  String.equal funct CFrontend_config.assert_fail ||
+  String.equal funct CFrontend_config.fbAssertWithSignalAndLogFunctionHelper ||
   String.is_substring ~substring:CFrontend_config.google_MakeCheckOpString funct
 
 let is_assert_log_method m =
-  m = CFrontend_config.google_LogMessageFatal
+  String.equal m CFrontend_config.google_LogMessageFatal
 
 let is_handleFailureInMethod funct =
-  funct = CFrontend_config.handleFailureInMethod ||
-  funct = CFrontend_config.handleFailureInFunction
+  String.equal funct CFrontend_config.handleFailureInMethod ||
+  String.equal funct CFrontend_config.handleFailureInFunction
 
 let is_retain_or_release funct =
   is_retain_method funct ||
@@ -108,10 +108,10 @@ let is_retain_or_release funct =
 
 let is_toll_free_bridging pn =
   let funct = (Procname.to_string pn) in
-  funct = CFrontend_config.cf_bridging_release ||
-  funct = CFrontend_config.cf_bridging_retain ||
-  funct = CFrontend_config.cf_autorelease ||
-  funct = CFrontend_config.ns_make_collectable
+  String.equal funct CFrontend_config.cf_bridging_release ||
+  String.equal funct CFrontend_config.cf_bridging_retain ||
+  String.equal funct CFrontend_config.cf_autorelease ||
+  String.equal funct CFrontend_config.ns_make_collectable
 
 let is_cf_retain_release pn =
   Procname.equal pn BuiltinDecl.__objc_retain_cf
@@ -143,8 +143,8 @@ let get_predefined_ms_method condition class_name method_name method_kind mk_pro
 
 let get_predefined_ms_stringWithUTF8String class_name method_name mk_procname lang =
   let condition =
-    class_name = CFrontend_config.nsstring_cl
-    && method_name = CFrontend_config.string_with_utf8_m in
+    String.equal class_name CFrontend_config.nsstring_cl &&
+    String.equal method_name CFrontend_config.string_with_utf8_m in
   let id_type = Ast_expressions.create_id_type in
   let args = [(Mangled.from_string "x",
                Ast_expressions.create_char_star_qual_type ~is_const:true)] in
@@ -164,8 +164,8 @@ let get_predefined_ms_retain_release method_name mk_procname lang =
 
 let get_predefined_ms_autoreleasepool_init class_name method_name mk_procname lang =
   let condition =
-    method_name = CFrontend_config.init
-    && class_name = CFrontend_config.nsautorelease_pool_cl in
+    String.equal method_name CFrontend_config.init &&
+    String.equal class_name CFrontend_config.nsautorelease_pool_cl in
   let class_type = Ast_expressions.create_class_qual_type (class_name, `OBJC) in
   get_predefined_ms_method condition class_name method_name Procname.ObjCInstanceMethod
     mk_procname lang [(Mangled.from_string CFrontend_config.self, class_type)]
@@ -173,8 +173,10 @@ let get_predefined_ms_autoreleasepool_init class_name method_name mk_procname la
 
 let get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procname lang =
   let condition =
-    (method_name = CFrontend_config.release || method_name = CFrontend_config.drain)
-    && class_name = CFrontend_config.nsautorelease_pool_cl in
+    (String.equal method_name CFrontend_config.release ||
+     String.equal method_name CFrontend_config.drain)
+    &&
+    String.equal class_name CFrontend_config.nsautorelease_pool_cl in
   let class_type = Ast_expressions.create_class_qual_type (class_name, `OBJC) in
   let args = [(Mangled.from_string CFrontend_config.self, class_type)] in
   get_predefined_ms_method condition class_name method_name Procname.ObjCInstanceMethod
@@ -182,7 +184,7 @@ let get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procna
     [] (Some BuiltinDecl.__objc_release_autorelease_pool)
 
 let get_predefined_ms_is_kind_of_class class_name method_name mk_procname lang =
-  let condition = method_name = CFrontend_config.is_kind_of_class in
+  let condition = String.equal method_name CFrontend_config.is_kind_of_class in
   let class_type = Ast_expressions.create_class_qual_type (class_name, `OBJC) in
   let args = [(Mangled.from_string CFrontend_config.self, class_type)] in
   get_predefined_ms_method condition class_name method_name Procname.ObjCInstanceMethod
@@ -214,7 +216,8 @@ let is_dispatch_function_name function_name =
   let rec is_dispatch functions =
     match functions with
     | [] -> None
-    | (el, block_arg_pos):: rest -> if (el = function_name) then
-          Some (el, block_arg_pos)
+    | (el, block_arg_pos):: rest ->
+        if (String.equal el function_name)
+        then Some (el, block_arg_pos)
         else is_dispatch rest in
   is_dispatch dispatch_functions

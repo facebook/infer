@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 open Javalib_pack
 open Sawja_pack
@@ -20,7 +21,7 @@ let add_edges
     (context : JContext.t) start_node exn_node exit_nodes method_body_nodes impl super_call =
   let pc_nb = Array.length method_body_nodes in
   let last_pc = pc_nb - 1 in
-  let is_last pc = (pc = last_pc) in
+  let is_last pc = Int.equal pc last_pc in
   let rec get_body_nodes pc =
     let current_nodes = method_body_nodes.(pc) in
     match current_nodes with
@@ -37,7 +38,7 @@ let add_edges
       match JContext.get_goto_jump context pc with
       | JContext.Next -> get_body_nodes (pc + 1)
       | JContext.Jump goto_pc ->
-          if pc = goto_pc then [] (* loop in goto *)
+          if Int.equal pc goto_pc then [] (* loop in goto *)
           else get_body_nodes goto_pc
       | JContext.Exit -> exit_nodes in
   let get_succ_nodes node pc =
@@ -105,8 +106,8 @@ let cache_classname cn =
   let splitted_root_dir =
     let rec split l p =
       match p with
-      | p when p = Filename.current_dir_name -> l
-      | p when p = Filename.dir_sep -> l
+      | p when String.equal p Filename.current_dir_name -> l
+      | p when String.equal p Filename.dir_sep -> l
       | p -> split ((Filename.basename p):: l) (Filename.dirname p) in
     split [] (Filename.dirname path) in
   let rec mkdir l p =
@@ -163,8 +164,8 @@ let should_capture classes package_opt source_basename node =
   let classname = Javalib.get_name node in
   let match_package pkg cn =
     match JTransType.package_to_string (JBasics.cn_package cn) with
-    | None -> pkg = ""
-    | Some found_pkg -> found_pkg = pkg in
+    | None -> String.equal pkg ""
+    | Some found_pkg -> String.equal found_pkg pkg in
   if JBasics.ClassSet.mem classname classes then
     begin
       match Javalib.get_sourcefile node with
@@ -172,10 +173,10 @@ let should_capture classes package_opt source_basename node =
       | Some found_basename ->
           begin
             match package_opt with
-            | None -> found_basename = source_basename
+            | None -> String.equal found_basename source_basename
             | Some pkg ->
                 match_package pkg classname
-                && found_basename = source_basename
+                && String.equal found_basename source_basename
           end
     end
   else false

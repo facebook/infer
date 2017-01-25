@@ -14,6 +14,9 @@ open! IStd
 type mode =
   | Pre
   | Post
+[@@deriving compare]
+
+let equal_mode = [%compare.equal : mode]
 
 (** set to true when we are doing join of footprints *)
 let footprint = ref false

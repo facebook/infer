@@ -47,13 +47,13 @@ module APIs = struct
   let method_match pn pkgname cname mname =
     match pn with
     | Procname.Java pn_java ->
-        Procname.java_get_method pn_java = mname
+        String.equal (Procname.java_get_method pn_java) mname
         &&
         (match pkgname with
          | "" ->
-             Procname.java_get_simple_class_name pn_java = cname
+             String.equal (Procname.java_get_simple_class_name pn_java) cname
          | _ ->
-             Procname.java_get_class_name pn_java = pkgname ^ "." ^ cname)
+             String.equal (Procname.java_get_class_name pn_java) (pkgname ^ "." ^ cname))
     | _ ->
         false
   let is_begin pn =
@@ -113,11 +113,11 @@ module State = struct
 
   (** State is balanced. *)
   let is_balanced s =
-    ElemSet.for_all (fun elem -> Elem.get_int elem = 0) s
+    ElemSet.for_all (fun elem -> Int.equal (Elem.get_int elem) 0) s
 
   let equal = ElemSet.equal
 
-  let has_zero s = ElemSet.exists (fun elem -> Elem.get_int elem = 0) s
+  let has_zero s = ElemSet.exists (fun elem -> Int.equal (Elem.get_int elem) 0) s
 
   (** Map a function to the elements of the set, and filter out inconsistencies. *)
   let map2 (f : Elem.t -> Elem.t list) (s : t) : t =

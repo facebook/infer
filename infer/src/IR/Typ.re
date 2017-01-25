@@ -108,6 +108,8 @@ type ptr_kind =
   | Pk_objc_autoreleasing /** Obj-C __autoreleasing pointer */
 [@@deriving compare];
 
+let equal_ptr_kind = [%compare.equal : ptr_kind];
+
 let ptr_kind_string =
   fun
   | Pk_reference => "&"

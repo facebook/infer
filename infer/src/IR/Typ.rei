@@ -63,6 +63,8 @@ type ptr_kind =
   | Pk_objc_autoreleasing /** Obj-C __autoreleasing pointer */
 [@@deriving compare];
 
+let equal_ptr_kind: ptr_kind => ptr_kind => bool;
+
 
 /** statically determined length of an array type, if any */
 type static_length = option IntLit.t [@@deriving compare];

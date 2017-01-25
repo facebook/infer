@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 (** Module for function to retrieve the location (file, line, etc) of instructions *)
 

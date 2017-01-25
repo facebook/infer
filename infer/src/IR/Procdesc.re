@@ -17,7 +17,8 @@ let module F = Format;
 
 /* =============== START of module Node =============== */
 let module Node = {
-  type id = int;
+  type id = int [@@deriving compare];
+  let equal_id = [%compare.equal : id];
   type nodekind =
     | Start_node Procname.t
     | Exit_node Procname.t
@@ -26,6 +27,7 @@ let module Node = {
     | Prune_node bool Sil.if_kind string /** (true/false branch, if_kind, comment) */
     | Skip_node string
   [@@deriving compare];
+  let equal_nodekind = [%compare.equal : nodekind];
 
   /** a node */
   type t = {
@@ -68,9 +70,6 @@ let module Node = {
 
   /** Get the unique id of the node */
   let get_id node => node.id;
-
-  /** compare node ids */
-  let compare_id = Int.compare;
   let get_succs node => node.succs;
   type node = t;
   let module NodeSet = Caml.Set.Make {

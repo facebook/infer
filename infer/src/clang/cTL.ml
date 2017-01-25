@@ -53,6 +53,8 @@ type ast_node =
   | Stmt of Clang_ast_t.stmt
   | Decl of Clang_ast_t.decl
 
+let equal_ast_node = Poly.(=)
+
 module Debug = struct
   let pp_transition fmt trans_opt =
     let pp_aux fmt trans = match trans with
@@ -175,7 +177,7 @@ module Debug = struct
             let root_node = get_root tree in
             let children = get_children tree in
             let edge child_node =
-              if root_node.content.ast_node = child_node.content.ast_node then
+              if equal_ast_node root_node.content.ast_node child_node.content.ast_node then
                 Printf.sprintf "%d -> %d [style=dotted]" root_node.id child_node.id
               else
                 Printf.sprintf "%d -> %d [style=bold]" root_node.id child_node.id in
@@ -196,9 +198,9 @@ module Debug = struct
               let smart_string_of_formula phi =
                 let num_children = IList.length children in
                 match phi with
-                | And _ when num_children = 2 -> "(...) AND (...)"
-                | Or _ when num_children = 2 -> "(...) OR (...)"
-                | Implies _ when num_children = 2 -> "(...) ==> (...)"
+                | And _ when Int.equal num_children 2 -> "(...) AND (...)"
+                | Or _ when Int.equal num_children 2 -> "(...) OR (...)"
+                | Implies _ when Int.equal num_children 2 -> "(...) ==> (...)"
                 | Not _ -> "NOT(...)"
                 | _ -> Format.asprintf "%a" pp_formula phi in
               Format.sprintf "(%d)\\n%s\\n%s\\n%s"

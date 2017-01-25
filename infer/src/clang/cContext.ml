@@ -32,8 +32,7 @@ type curr_class =
   | ContextNoCls
 [@@deriving compare]
 
-let equal_curr_class curr_class1 curr_class2 =
-  compare_curr_class curr_class1 curr_class2 = 0
+let equal_curr_class = [%compare.equal : curr_class]
 
 type str_node_map = (string, Procdesc.Node.t) Hashtbl.t
 

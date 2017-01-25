@@ -189,6 +189,8 @@ struct
     let module Initializers = struct
       type init = Procname.t * Procdesc.t
 
+      let equal_class_opt = [%compare.equal : string option]
+
       let final_typestates initializers_current_class =
         (* Get the private methods, from the same class, directly called by the initializers. *)
         let get_private_called (initializers : init list) : init list =
@@ -196,14 +198,14 @@ struct
           let do_proc (init_pn, init_pd) =
             let filter callee_pn callee_attributes =
               let is_private =
-                callee_attributes.ProcAttributes.access = PredSymb.Private in
+                PredSymb.equal_access callee_attributes.ProcAttributes.access PredSymb.Private in
               let same_class =
                 let get_class_opt pn = match pn with
                   | Procname.Java pn_java ->
                       Some (Procname.java_get_class_name pn_java)
                   | _ ->
                       None in
-                get_class_opt init_pn = get_class_opt callee_pn in
+                equal_class_opt (get_class_opt init_pn) (get_class_opt callee_pn) in
               is_private && same_class in
             let private_called = PatternMatch.proc_calls
                 Specs.proc_resolve_attributes init_pd filter in
@@ -280,7 +282,7 @@ struct
             pname_and_pdescs_with
               (function (pname, proc_attributes) ->
                  is_initializer proc_attributes &&
-                 get_class pname = get_class curr_pname) in
+                 equal_class_opt (get_class pname) (get_class curr_pname)) in
           final_typestates
             ((curr_pname, curr_pdesc) :: initializers_current_class)
         end
@@ -292,7 +294,7 @@ struct
             pname_and_pdescs_with
               (fun (pname, _) ->
                  Procname.is_constructor pname &&
-                 get_class pname = get_class curr_pname) in
+                 equal_class_opt (get_class pname) (get_class curr_pname)) in
           final_typestates constructors_current_class
         end
 

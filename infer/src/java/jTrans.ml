@@ -81,7 +81,7 @@ let get_undefined_method_call ovt =
               match ot with
               | JBasics.TArray _ -> assert false
               | JBasics.TClass cn ->
-                  if JBasics.cn_name cn = JConfig.string_cl then
+                  if String.equal (JBasics.cn_name cn) JConfig.string_cl then
                     "string_undefined"
                   else
                   if JBasics.cn_equal cn JBasics.java_lang_object then
@@ -97,7 +97,7 @@ let get_undefined_method_call ovt =
 let retrieve_fieldname fieldname =
   try
     let subs = Str.split (Str.regexp (Str.quote ".")) (Ident.fieldname_to_string fieldname) in
-    if IList.length subs = 0 then
+    if Int.equal (IList.length subs) 0 then
       assert false
     else
       IList.hd (IList.rev subs)
@@ -108,7 +108,7 @@ let get_field_name program static tenv cn fs =
   let { StructTyp.fields; statics; } = JTransType.get_class_struct_typ program tenv cn in
   match
     IList.find
-      (fun (fieldname, _, _) -> retrieve_fieldname fieldname = JBasics.fs_name fs)
+      (fun (fieldname, _, _) -> String.equal (retrieve_fieldname fieldname) (JBasics.fs_name fs))
       (if static then statics else fields)
   with
   | fieldname, _, _ ->
@@ -226,10 +226,10 @@ let get_test_operator op =
   | `Ne -> Binop.Ne
 
 let is_java_native cm =
-  (cm.Javalib.cm_implementation = Javalib.Native)
+  Poly.(=) cm.Javalib.cm_implementation Javalib.Native
 
 let is_clone ms =
-  JBasics.ms_name ms = JConfig.clone_name
+  String.equal (JBasics.ms_name ms) JConfig.clone_name
 
 let get_implementation cm =
   match cm.Javalib.cm_implementation with
@@ -258,7 +258,7 @@ let get_implementation cm =
       (hacked_bytecode, jbir_code)
 
 let update_constr_loc cn ms loc_start =
-  if (JBasics.ms_name ms) = JConfig.constructor_name then
+  if String.equal (JBasics.ms_name ms) JConfig.constructor_name then
     try ignore(JBasics.ClassMap.find cn !constr_loc_map)
     with Not_found -> constr_loc_map := (JBasics.ClassMap.add cn loc_start !constr_loc_map)
 
@@ -411,7 +411,7 @@ let rec expression (context : JContext.t) pc expr =
   | JBir.Const c ->
       begin
         match c with (* We use the constant <field> internally to mean a variable. *)
-        | `String s when (JBasics.jstr_pp s) = JConfig.field_cst ->
+        | `String s when String.equal (JBasics.jstr_pp s) JConfig.field_cst ->
             let varname = JConfig.field_st in
             let procname = (Procdesc.get_proc_name context.procdesc) in
             let pvar = Pvar.mk varname procname in
@@ -639,9 +639,9 @@ let detect_loop entry_pc impl =
       begin
         let visited_updated = Int.Set.add visited pc in
         match code.(pc) with
-        | JBir.Goto goto_pc when goto_pc = entry_pc -> (true, empty)
+        | JBir.Goto goto_pc when Int.equal goto_pc entry_pc -> (true, empty)
         | JBir.Goto goto_pc -> loop visited_updated goto_pc
-        | JBir.Ifd (_, if_pc) when if_pc = entry_pc -> (true, empty)
+        | JBir.Ifd (_, if_pc) when Int.equal if_pc entry_pc -> (true, empty)
         | JBir.Ifd (_, if_pc) ->
             let (loop_detected, visited_after) = loop visited_updated (pc + 1) in
             if loop_detected then
@@ -649,7 +649,7 @@ let detect_loop entry_pc impl =
             else
               loop visited_after if_pc
         | _ ->
-            if (pc + 1) = entry_pc then
+            if Int.equal (pc + 1) entry_pc then
               (true, empty)
             else
               loop visited_updated (pc + 1)
@@ -680,7 +680,7 @@ let is_this expr =
       begin
         match JBir.var_name_debug var with
         | None -> false
-        | Some name_opt -> Mangled.to_string JConfig.this = name_opt
+        | Some name_opt -> String.equal (Mangled.to_string JConfig.this) name_opt
       end
   | _ -> false
 

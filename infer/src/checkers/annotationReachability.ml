@@ -194,7 +194,7 @@ let report_allocation_stack
   Reporting.log_error pname ~loc:fst_call_loc ~ltr:final_trace exn
 
 let report_annotation_stack src_annot snk_annot src_pname loc trace stack_str snk_pname call_loc =
-  if snk_annot = dummy_constructor_annot
+  if String.equal snk_annot dummy_constructor_annot
   then report_allocation_stack src_annot src_pname loc trace stack_str snk_pname call_loc
   else
     let final_trace = IList.rev (update_trace call_loc trace) in
@@ -209,7 +209,7 @@ let report_annotation_stack src_annot snk_annot src_pname loc trace stack_str sn
         exp_pname_str
         snk_annot in
     let msg =
-      if src_annot = Annotations.performance_critical
+      if String.equal src_annot Annotations.performance_critical
       then calls_expensive_method
       else annotation_reachability_error in
     let exn =
@@ -259,7 +259,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_unlikely pname =
     match pname with
     | Procname.Java java_pname ->
-        (Procname.java_get_method java_pname) = "unlikely"
+        String.equal (Procname.java_get_method java_pname) "unlikely"
     | _ -> false
 
   let is_tracking_exp astate = function
@@ -283,7 +283,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   (* TODO: generalize this to allow sanitizers for other annotation types, store it in [extras] so
      we can compute it just once *)
   let method_is_sanitizer annot tenv pname =
-    if annot.Annot.class_name = dummy_constructor_annot
+    if String.equal annot.Annot.class_name dummy_constructor_annot
     then method_has_ignore_allocation_annot tenv pname
     else false
 
@@ -393,7 +393,7 @@ module Interprocedural = struct
             (CallSite.make proc_name loc)
             calls in
       let calls = extract_calls_with_annot snk_annot call_map in
-      if not (IList.length calls = 0)
+      if not (Int.equal (IList.length calls) 0)
       then IList.iter (report_src_snk_path calls) src_annot_list in
 
     let initial =

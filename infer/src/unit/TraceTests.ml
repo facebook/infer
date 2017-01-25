@@ -58,7 +58,7 @@ module MockSource = struct
        let get_tainted_formals _ = assert false
      end))
 
-  let equal source1 source2 = compare source1 source2 = 0
+  let equal = [%compare.equal : t]
 end
 
 module MockSink = struct
@@ -67,7 +67,7 @@ module MockSink = struct
 
   let get _ = assert false
 
-  let equal sink1 sink2 = compare sink1 sink2 = 0
+  let equal = [%compare.equal : t]
 end
 
 
@@ -76,7 +76,7 @@ module MockTrace = Trace.Make(struct
     module Sink = MockSink
 
     let should_report source sink =
-      Source.kind source = Sink.kind sink
+      [%compare.equal : MockTraceElem.t] (Source.kind source) (Sink.kind sink)
   end)
 
 let tests =

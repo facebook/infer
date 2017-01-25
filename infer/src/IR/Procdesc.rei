@@ -18,6 +18,7 @@ let module Node: {
 
   /** node id */
   type id = private int [@@deriving compare];
+  let equal_id: id => id => bool;
 
   /** kind of cfg node */
   type nodekind =
@@ -28,6 +29,7 @@ let module Node: {
     | Prune_node bool Sil.if_kind string /** (true/false branch, if_kind, comment) */
     | Skip_node string
   [@@deriving compare];
+  let equal_nodekind: nodekind => nodekind => bool;
 
   /** kind of Stmt_node for an exception handler. */
   let exn_handler_kind: nodekind;

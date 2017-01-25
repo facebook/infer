@@ -699,7 +699,7 @@ let _execute_free_nonzero mk pdesc tenv instr prop lexp typ loc =
           IList.rev prop_list
     end
   with Rearrange.ARRAY_ACCESS ->
-    if (Config.array_level = 0) then assert false
+    if (Int.equal Config.array_level 0) then assert false
     else begin
       L.d_strln ".... Array containing allocated heap cells ....";
       L.d_str "  Instr: "; Sil.d_instr instr; L.d_ln ();
@@ -929,8 +929,8 @@ let execute___infer_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
 let execute___assert_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
   : Builtin.ret_typ =
   let error_str =
-    match args with
-    | l when IList.length l = 4 ->
+    match IList.length args with
+    | 4 ->
         Config.default_failure_name
     | _ ->
         raise (Exceptions.Wrong_argument_number __POS__) in

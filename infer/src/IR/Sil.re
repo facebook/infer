@@ -2094,7 +2094,7 @@ let compare_structural_instr instr1 instr2 exp_map => {
     }
   };
   let id_list_compare_structural ids1 ids2 exp_map => {
-    let n = Pervasives.compare (IList.length ids1) (IList.length ids2);
+    let n = Int.compare (IList.length ids1) (IList.length ids2);
     if (n != 0) {
       (n, exp_map)
     } else {
@@ -2150,14 +2150,14 @@ let compare_structural_instr instr1 instr2 exp_map => {
         if (n != 0) {
           n
         } else {
-          Pervasives.compare ik1 ik2
+          compare_if_kind ik1 ik2
         }
       },
       exp_map
     )
   | (Call ret_id1 e1 arg_ts1 _ cf1, Call ret_id2 e2 arg_ts2 _ cf2) =>
     let args_compare_structural args1 args2 exp_map => {
-      let n = Pervasives.compare (IList.length args1) (IList.length args2);
+      let n = Int.compare (IList.length args1) (IList.length args2);
       if (n != 0) {
         (n, exp_map)
       } else {
@@ -2199,7 +2199,7 @@ let compare_structural_instr instr1 instr2 exp_map => {
   | (Remove_temps temps1 _, Remove_temps temps2 _) =>
     id_list_compare_structural temps1 temps2 exp_map
   | (Declare_locals ptl1 _, Declare_locals ptl2 _) =>
-    let n = Pervasives.compare (IList.length ptl1) (IList.length ptl2);
+    let n = Int.compare (IList.length ptl1) (IList.length ptl2);
     if (n != 0) {
       (n, exp_map)
     } else {

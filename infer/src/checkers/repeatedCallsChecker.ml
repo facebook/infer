@@ -56,6 +56,9 @@ struct
   type paths =
     | AllPaths (** Check on all paths *)
     | SomePath (** Check if some path exists *)
+  [@@deriving compare]
+
+  let equal_paths = [%compare.equal : paths]
 
   (** Check if the procedure performs an allocation operation.
       If [paths] is AllPaths, check if an allocation happens on all paths.
@@ -77,21 +80,21 @@ struct
 
     let module DFAllocCheck = Dataflow.MakeDF(struct
         type t = Location.t option [@@deriving compare]
-        let equal x y = compare x y = 0
-        let _join _paths l1o l2o = (* join with left priority *)
+        let equal = [%compare.equal : t]
+        let join_ paths_ l1o l2o = (* join with left priority *)
           match l1o, l2o with
           | None, None ->
               None
           | Some loc, None
           | None, Some loc ->
-              if _paths = AllPaths then None else Some loc
+              if equal_paths paths_ AllPaths then None else Some loc
           | Some loc1, Some _ ->
               Some loc1 (* left priority *)
-        let join = _join paths
+        let join = join_ paths
         let do_node _ node lo1 =
           let lo2 = node_allocates node in
           let lo' = (* use left priority join to implement transfer function *)
-            _join SomePath lo1 lo2 in
+            join_ SomePath lo1 lo2 in
           [lo'], [lo']
         let proc_throws _ = Dataflow.DontKnow
       end) in

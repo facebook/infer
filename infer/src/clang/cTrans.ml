@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 (** Translates instructions: (statements and expressions) from the ast into sil *)
 
@@ -447,7 +448,7 @@ struct
         Some BuiltinDecl.__objc_release_cf
     | _ when CTrans_models.is_retain_builtin name type_ptr ->
         Some BuiltinDecl.__objc_retain_cf
-    | _ when name = CFrontend_config.malloc &&
+    | _ when String.equal name CFrontend_config.malloc &&
              CGeneral_utils.is_objc_extension trans_unit_ctx ->
         Some BuiltinDecl.malloc_no_fail
     | _ -> None
@@ -874,7 +875,7 @@ struct
             ~f:CTrans_models.is_cf_retain_release ~default:false callee_pname_opt in
         let act_params =
           let params = IList.tl (collect_exprs result_trans_subexprs) in
-          if IList.length params = IList.length params_stmt then
+          if Int.equal (IList.length params) (IList.length params_stmt) then
             params
           else (Logging.err_debug
                   "WARNING: stmt_list and res_trans_par.exps must have same size. \
@@ -913,7 +914,7 @@ struct
     let procname = Procdesc.get_proc_name context.procdesc in
     let sil_loc = CLocation.get_sil_location si context in
     (* first for method address, second for 'this' expression *)
-    assert ((IList.length result_trans_callee.exps) = 2);
+    assert (Int.equal (IList.length result_trans_callee.exps) 2);
     let (sil_method, _) = IList.hd result_trans_callee.exps in
     let callee_pname =
       match sil_method with
@@ -1012,12 +1013,13 @@ struct
     let receiver_kind = obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind in
     let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
     (* class method *)
-    if selector = CFrontend_config.class_method && CType.is_class method_type then
+    if String.equal selector CFrontend_config.class_method && CType.is_class method_type then
       let class_name = CMethod_trans.get_class_name_method_call_from_receiver_kind context
           obj_c_message_expr_info act_params in
       raise (Self.SelfClassException class_name)
       (* alloc or new *)
-    else if (selector = CFrontend_config.alloc) || (selector = CFrontend_config.new_str) then
+    else if String.equal selector CFrontend_config.alloc ||
+            String.equal selector CFrontend_config.new_str then
       match receiver_kind with
       | `Class type_ptr ->
           let class_opt =
@@ -1075,7 +1077,8 @@ struct
             obj_c_message_expr_info in
         let res_trans_subexpr_list = res_trans_add_self :: res_trans_subexpr_list in
         let subexpr_exprs = collect_exprs res_trans_subexpr_list in
-        let is_virtual = method_call_type = CMethod_trans.MCVirtual in
+        let is_virtual =
+          CMethod_trans.equal_method_call_type method_call_type CMethod_trans.MCVirtual in
         Cg.add_edge context.CContext.cg procname callee_name;
 
         let param_exps, instr_block_param =
@@ -1217,7 +1220,7 @@ struct
       IList.iter
         (fun n' -> Procdesc.node_set_succs_exn context.procdesc n' [prune_t; prune_f] [])
         res_trans_cond.leaf_nodes;
-      let rnodes = if (IList.length res_trans_cond.root_nodes) = 0 then
+      let rnodes = if Int.equal (IList.length res_trans_cond.root_nodes) 0 then
           [prune_t; prune_f]
         else res_trans_cond.root_nodes in
       { empty_res_trans with
@@ -1251,7 +1254,7 @@ struct
         (fun n -> Procdesc.node_set_succs_exn context.procdesc n res_trans_s2.root_nodes [])
         prune_to_s2;
       let root_nodes_to_parent =
-        if (IList.length res_trans_s1.root_nodes) = 0
+        if Int.equal (IList.length res_trans_s1.root_nodes) 0
         then res_trans_s1.leaf_nodes
         else res_trans_s1.root_nodes in
       let (exp1, typ1) = extract_exp res_trans_s1.exps in
@@ -1630,7 +1633,7 @@ struct
     let res_trans_subexpr_list =
       initListExpr_initializers_trans trans_state var_exp 0 stmts typ false stmt_info in
     let rh_exps = collect_exprs res_trans_subexpr_list in
-    if IList.length rh_exps = 0 then
+    if Int.equal (IList.length rh_exps) 0 then
       let exps =
         match Sil.zero_value_of_numerical_type_option var_type with
         | Some zero_exp -> [(zero_exp, typ)]
@@ -1644,7 +1647,7 @@ struct
           let i = IList.length lh - IList.length rh_exps in
           IList.drop_last i lh
         else lh in
-      if IList.length rh_exps = IList.length lh then
+      if Int.equal (IList.length rh_exps) (IList.length lh) then
         (* Creating new instructions by assigning right hand side to left hand side expressions *)
         let assign_instr (lh_exp, lh_t) (rh_exp, _) = Sil.Store (lh_exp, lh_t, rh_exp, sil_loc) in
         let assign_instrs =

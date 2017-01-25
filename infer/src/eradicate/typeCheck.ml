@@ -385,7 +385,9 @@ let typecheck_instr
   let constructor_check_calls_this calls_this pn =
     match curr_pname, pn with
     | Procname.Java curr_pname_java, Procname.Java pn_java ->
-        if Procname.java_get_class_name curr_pname_java = Procname.java_get_class_name pn_java
+        if String.equal
+            (Procname.java_get_class_name curr_pname_java)
+            (Procname.java_get_class_name pn_java)
         then calls_this := true
     | _ ->
         () in
@@ -402,7 +404,7 @@ let typecheck_instr
             (* Drop reference parameters to this and outer objects. *)
             let is_hidden_parameter (n, _) =
               let n_str = Mangled.to_string n in
-              n_str = "this" ||
+              String.equal n_str "this" ||
               Str.string_match (Str.regexp "$bcvar[0-9]+") n_str 0 in
             let rec drop_n_args ntl = match ntl with
               | fp:: tail when is_hidden_parameter fp -> 1 + drop_n_args tail
@@ -573,7 +575,7 @@ let typecheck_instr
               IList.mapi
                 (fun i (_, typ) ->
                    let arg =
-                     if i = 0 &&
+                     if Int.equal i 0 &&
                         not (Procname.java_is_static callee_pname)
                      then "this"
                      else Printf.sprintf "arg%d" i in
@@ -634,7 +636,7 @@ let typecheck_instr
           | Some (t, ta, _) ->
               let should_report =
                 Config.eradicate_condition_redundant &&
-                TypeAnnotation.get_value Annotations.Nullable ta = false &&
+                not (TypeAnnotation.get_value Annotations.Nullable ta) &&
                 not (TypeAnnotation.origin_is_fun_library ta) in
               if checks.eradicate && should_report then
                 begin
@@ -824,7 +826,7 @@ let typecheck_instr
               else typestate1 in
             let has_method pn name = match pn with
               | Procname.Java pn_java ->
-                  Procname.java_get_method pn_java = name
+                  String.equal (Procname.java_get_method pn_java) name
               | _ ->
                   false in
             if Models.is_check_not_null callee_pname then
@@ -997,7 +999,7 @@ let typecheck_instr
             begin
               match from_call with
               | EradicateChecks.From_optional_isPresent ->
-                  if TypeAnnotation.get_value Annotations.Present ta = false
+                  if not (TypeAnnotation.get_value Annotations.Present ta)
                   then set_flag e' Annotations.Present true typestate2
                   else typestate2
               | EradicateChecks.From_is_true_on_null ->
@@ -1084,7 +1086,7 @@ let typecheck_node
           typestates_exn := typestate :: !typestates_exn
     | Sil.Store (Exp.Lvar pv, _, _, _) when
         Pvar.is_return pv &&
-        Procdesc.Node.get_kind node = Procdesc.Node.throw_kind ->
+        Procdesc.Node.equal_nodekind (Procdesc.Node.get_kind node) Procdesc.Node.throw_kind ->
         (* throw instruction *)
         typestates_exn := typestate :: !typestates_exn
     | _ -> () in
@@ -1107,7 +1109,9 @@ let typecheck_node
 
   let typestate_succ = IList.fold_left (do_instruction ext) typestate instrs in
   let dont_propagate =
-    Procdesc.Node.get_kind node = Procdesc.Node.exn_sink_kind (* don't propagate exceptions *)
+    Procdesc.Node.equal_nodekind
+      (Procdesc.Node.get_kind node)
+      Procdesc.Node.exn_sink_kind (* don't propagate exceptions *)
     ||
     !noreturn in
   if dont_propagate

@@ -28,6 +28,8 @@ type access =
   | Protected
 [@@deriving compare];
 
+let equal_access = [%compare.equal : access];
+
 
 /** Return the value of the FA_sentinel attribute in [attr_list] if it is found */
 let get_sentinel_func_attribute_value attr_list =>

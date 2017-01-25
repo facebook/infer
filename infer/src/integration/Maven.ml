@@ -56,7 +56,7 @@ let add_infer_profile_to_xml maven_xml infer_xml =
     | `El_start tag ->
         Xmlm.output xml_out elt_in;
         let tag_name = snd (fst tag) in
-        if tag_name = "profiles" then (
+        if String.equal tag_name "profiles" then (
           found_profiles_tag := true
         );
         process xml_in xml_out (tag_name::tag_stack)
@@ -86,7 +86,7 @@ let add_infer_profile_to_xml maven_xml infer_xml =
     | `Data data ->
         Xmlm.output xml_out elt_in;
         (match tag_stack with
-         | "id"::"profile"::"profiles"::_ when data = infer_profile_name ->
+         | "id"::"profile"::"profiles"::_ when String.equal data infer_profile_name ->
              L.do_out "Found infer profile, not adding one@.";
              found_infer_profile := true
          | "module"::"modules"::_ ->

@@ -288,7 +288,7 @@ module Make (Spec : Spec) = struct
           (fun passthrough1 passthrough2 ->
              let loc1 = CallSite.loc (Passthrough.site passthrough1) in
              let loc2 = CallSite.loc (Passthrough.site passthrough2) in
-             Pervasives.compare loc1.Location.line loc2.Location.line)
+             Int.compare loc1.Location.line loc2.Location.line)
           (Passthroughs.elements passthroughs) in
       IList.fold_right trace_elem_of_passthrough sorted_passthroughs acc0 in
 

@@ -124,7 +124,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | Procname.C _ -> true (* Needed for test code. *)
             | Procname.Block _ | Procname.Linters_dummy_method ->
                 failwith "Proc type not supported by crashcontext: block" in
-          frame.Stacktrace.method_str = (Procname.get_method caller) &&
+          String.equal frame.Stacktrace.method_str (Procname.get_method caller) &&
           matches_class caller in
         let all_frames = IList.flatten
             (IList.map (fun trace -> trace.Stacktrace.frames) traces) in

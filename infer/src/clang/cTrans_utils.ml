@@ -231,7 +231,7 @@ struct
 
   let own_priority_node pri stmt_info =
     match pri with
-    | Busy p when p = stmt_info.Clang_ast_t.si_pointer -> true
+    | Busy p when Int.equal p stmt_info.Clang_ast_t.si_pointer -> true
     | _ -> false
 
   (* Used by translation functions to handle potenatial cfg nodes. *)
@@ -356,9 +356,9 @@ let new_or_alloc_trans trans_state loc stmt_info type_ptr class_name_opt selecto
     match class_name_opt with
     | Some class_name -> class_name
     | None -> CType.classname_of_type function_type in
-  if selector = CFrontend_config.alloc then
+  if String.equal selector CFrontend_config.alloc then
     alloc_trans trans_state loc stmt_info function_type true None
-  else if selector = CFrontend_config.new_str then
+  else if String.equal selector CFrontend_config.new_str then
     objc_new_trans trans_state loc stmt_info class_name function_type
   else assert false
 
@@ -596,7 +596,7 @@ struct
     else empty_res_trans
 
   let is_var_self pvar is_objc_method =
-    let is_self = Mangled.to_string (Pvar.get_name pvar) = CFrontend_config.self in
+    let is_self = String.equal (Mangled.to_string (Pvar.get_name pvar)) CFrontend_config.self in
     is_self && is_objc_method
 
 end
@@ -612,7 +612,7 @@ let is_owning_name n =
     else (
       let prefix = Str.string_before s' (String.length fam) in
       let suffix = Str.string_after s' (String.length fam) in
-      prefix = fam && not (Str.string_match (Str.regexp "[a-z]") suffix 0)
+      String.equal prefix fam && not (Str.string_match (Str.regexp "[a-z]") suffix 0)
     ) in
   match Str.split (Str.regexp_string ":") n with
   | fst:: _ ->
@@ -706,7 +706,7 @@ let is_dispatch_function stmt_list =
   | _ -> None
 
 let is_block_enumerate_function mei =
-  mei.Clang_ast_t.omei_selector = CFrontend_config.enumerateObjectsUsingBlock
+  String.equal mei.Clang_ast_t.omei_selector CFrontend_config.enumerateObjectsUsingBlock
 
 (* This takes a variable of type struct or array and returns a list of expressions *)
 (* for each of its fields (also recursively, such that each field access is of a basic type) *)

@@ -105,8 +105,8 @@ let exe prog::prog args::args => {
     | None => (clang_xx, false)
     };
   IList.iter exec_action_item commands;
-  if (commands == [] || should_run_original_command) {
-    if (commands == []) {
+  if (List.is_empty commands || should_run_original_command) {
+    if (List.is_empty commands) {
       /* No command to execute after -###, let's execute the original command
          instead.
 

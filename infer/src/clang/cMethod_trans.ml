@@ -23,7 +23,9 @@ exception Invalid_declaration
 type method_call_type =
   | MCVirtual
   | MCNoVirtual
-  | MCStatic
+  | MCStatic [@@deriving compare]
+
+let equal_method_call_type = [%compare.equal : method_call_type]
 
 type function_method_decl_info =
   | Func_decl_info of Clang_ast_t.function_decl_info * Clang_ast_t.type_ptr
@@ -297,10 +299,14 @@ let get_formal_parameters tenv ms =
     | [] -> []
     | (mangled, {Clang_ast_t.qt_type_ptr}):: pl' ->
         let should_add_pointer name ms =
-          let is_objc_self = name = CFrontend_config.self &&
-                             CMethod_signature.ms_get_lang ms = CFrontend_config.ObjC in
-          let is_cxx_this = name = CFrontend_config.this &&
-                            CMethod_signature.ms_get_lang ms = CFrontend_config.CPP in
+          let is_objc_self =
+            String.equal name CFrontend_config.self &&
+            CFrontend_config.equal_clang_lang
+              (CMethod_signature.ms_get_lang ms) CFrontend_config.ObjC in
+          let is_cxx_this =
+            String.equal name CFrontend_config.this &&
+            CFrontend_config.equal_clang_lang
+              (CMethod_signature.ms_get_lang ms) CFrontend_config.CPP in
           (is_objc_self && CMethod_signature.ms_is_instance ms) || is_cxx_this in
         let tp = if should_add_pointer (Mangled.to_string mangled) ms then
             (Ast_expressions.create_pointer_type qt_type_ptr)
@@ -377,14 +383,15 @@ let get_const_args_indices ~shift args =
 
 (** Creates a procedure description. *)
 let create_local_procdesc trans_unit_ctx cfg tenv ms fbody captured is_objc_inst_method =
-  let defined = not ((IList.length fbody) = 0) in
+  let defined = not (Int.equal (IList.length fbody) 0) in
   let proc_name = CMethod_signature.ms_get_name ms in
   let pname = Procname.to_string proc_name in
   let attributes = sil_func_attributes_of_attributes (CMethod_signature.ms_get_attributes ms) in
   let method_annotation =
     sil_method_annotation_of_args (CMethod_signature.ms_get_args ms) in
-  let is_cpp_inst_method = CMethod_signature.ms_is_instance ms
-                           && CMethod_signature.ms_get_lang ms = CFrontend_config.CPP in
+  let is_cpp_inst_method =
+    CMethod_signature.ms_is_instance ms &&
+    CFrontend_config.equal_clang_lang (CMethod_signature.ms_get_lang ms) CFrontend_config.CPP in
   let create_new_procdesc () =
     let formals = get_formal_parameters tenv ms in
     let captured_mangled = IList.map (fun (var, t) -> (Pvar.get_name var), t) captured in

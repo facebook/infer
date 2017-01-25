@@ -61,12 +61,12 @@ let pp_predicate fmt (name, arglist) =
   Format.fprintf fmt "%s(%a)" name (Pp.comma_seq Format.pp_print_string) arglist
 
 let is_declaration_kind decl s =
-  Clang_ast_proj.get_decl_kind_string decl = s
+  String.equal (Clang_ast_proj.get_decl_kind_string decl) s
 
 (* st |= call_method(m) *)
 let call_method m st =
   match st with
-  | Clang_ast_t.ObjCMessageExpr (_, _, _, omei) -> omei.omei_selector = m
+  | Clang_ast_t.ObjCMessageExpr (_, _, _, omei) -> String.equal omei.omei_selector m
   | _ -> false
 
 let property_name_contains_word word decl =
@@ -92,7 +92,7 @@ let decl_ref_is_in names st =
   | Clang_ast_t.DeclRefExpr (_, _, _, drti) ->
       (match drti.drti_decl_ref with
        | Some dr -> let ndi, _, _ = CAst_utils.get_info_from_decl_ref dr in
-           IList.exists (fun n -> n = ndi.ni_name) names
+           IList.exists (String.equal ndi.ni_name) names
        | _ -> false)
   | _ -> false
 
@@ -120,7 +120,7 @@ let is_property_pointer_type decl =
        | Some ObjCObjectPointerType _
        | Some BlockPointerType _ -> true
        | Some TypedefType (_, tti) ->
-           (CAst_utils.name_of_typedef_type_info tti) = CFrontend_config.id_cl
+           String.equal (CAst_utils.name_of_typedef_type_info tti) CFrontend_config.id_cl
        | exception Not_found -> false
        | _ -> false)
   | _ -> false
@@ -137,7 +137,7 @@ let is_ivar_atomic stmt =
       (match CAst_utils.get_decl ivar_pointer with
        | Some d ->
            let attributes = get_ivar_attributes d in
-           IList.exists (CAst_utils.equal_property_attribute `Atomic) attributes
+           IList.exists (PVariant.(=) `Atomic) attributes
        | _ -> false)
   | _ -> false
 
@@ -154,7 +154,7 @@ let is_method_property_accessor_of_ivar stmt context =
              match CAst_utils.get_decl_opt_with_decl_ref property_opt with
              | Some ObjCPropertyDecl (_, _, pdi) ->
                  (match pdi.opdi_ivar_decl with
-                  | Some decl_ref -> decl_ref.dr_decl_pointer = ivar_pointer
+                  | Some decl_ref -> Int.equal decl_ref.dr_decl_pointer ivar_pointer
                   | None -> false)
              | _ -> false
            else false
@@ -188,7 +188,7 @@ let is_binop_with_kind str_kind stmt =
     failwith ("Binary operator kind " ^ str_kind ^ " is not valid");
   match stmt with
   | Clang_ast_t.BinaryOperator (_, _, _, boi) ->
-      Clang_ast_proj.string_of_binop_kind boi.boi_kind = str_kind
+      String.equal (Clang_ast_proj.string_of_binop_kind boi.boi_kind) str_kind
   | _ -> false
 
 let is_unop_with_kind str_kind stmt =
@@ -196,18 +196,18 @@ let is_unop_with_kind str_kind stmt =
     failwith ("Unary operator kind " ^ str_kind ^ " is not valid");
   match stmt with
   | Clang_ast_t.UnaryOperator (_, _, _, uoi) ->
-      Clang_ast_proj.string_of_unop_kind uoi.uoi_kind = str_kind
+      String.equal (Clang_ast_proj.string_of_unop_kind uoi.uoi_kind) str_kind
   | _ -> false
 
 let is_stmt nodename stmt =
   if not (Clang_ast_proj.is_valid_astnode_kind nodename) then
     failwith ("Statement " ^ nodename ^ " is not a valid statement");
-  nodename = Clang_ast_proj.get_stmt_kind_string stmt
+  String.equal nodename (Clang_ast_proj.get_stmt_kind_string stmt)
 
 let is_decl nodename decl =
   if not (Clang_ast_proj.is_valid_astnode_kind nodename) then
     failwith ("Declaration " ^ nodename ^ " is not a valid declaration");
-  nodename = Clang_ast_proj.get_decl_kind_string decl
+  String.equal nodename (Clang_ast_proj.get_decl_kind_string decl)
 
 let isa classname stmt =
   match Clang_ast_proj.get_expr_tuple stmt with
@@ -220,5 +220,5 @@ let decl_unavailable_in_supported_ios_sdk decl =
   let available_attr_ios_sdk = get_available_attr_ios_sdk decl in
   match available_attr_ios_sdk, Config.iphoneos_target_sdk_version with
   | Some available_attr_ios_sdk, Some iphoneos_target_sdk_version ->
-      Utils.compare_versions available_attr_ios_sdk iphoneos_target_sdk_version = 1
+      Int.equal (Utils.compare_versions available_attr_ios_sdk iphoneos_target_sdk_version) 1
   | _ -> false

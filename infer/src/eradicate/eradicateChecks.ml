@@ -56,14 +56,14 @@ let classify_procedure proc_attributes =
 
 
 let is_virtual = function
-  | (p, _, _):: _ when Mangled.to_string p = "this" -> true
+  | (p, _, _):: _ when String.equal (Mangled.to_string p) "this" -> true
   | _ -> false
 
 
 (** Check an access (read or write) to a field. *)
 let check_field_access tenv
     find_canonical_duplicate curr_pname node instr_ref exp fname ta loc : unit =
-  if TypeAnnotation.get_value Annotations.Nullable ta = true then
+  if TypeAnnotation.get_value Annotations.Nullable ta then
     let origin_descr = TypeAnnotation.descr_origin tenv ta in
     report_error tenv
       find_canonical_duplicate
@@ -82,7 +82,7 @@ let check_array_access tenv
     ta
     loc
     indexed =
-  if TypeAnnotation.get_value Annotations.Nullable ta = true then
+  if TypeAnnotation.get_value Annotations.Nullable ta then
     let origin_descr = TypeAnnotation.descr_origin tenv ta in
     report_error tenv
       find_canonical_duplicate
@@ -99,6 +99,9 @@ type from_call =
   | From_is_true_on_null (** returns true on null *)
   | From_optional_isPresent (** x.isPresent *)
   | From_containsKey (** x.containsKey *)
+[@@ deriving compare]
+
+let equal_from_call = [%compare.equal : from_call]
 
 (** Check the normalized "is zero" or "is not zero" condition of a prune instruction. *)
 let check_condition tenv case_zero find_canonical_duplicate curr_pdesc
@@ -141,13 +144,13 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc
   let is_temp = Idenv.exp_is_temp idenv e in
   let nonnull = is_fun_nonnull ta in
   let should_report =
-    TypeAnnotation.get_value Annotations.Nullable ta = false &&
+    not (TypeAnnotation.get_value Annotations.Nullable ta) &&
     (Config.eradicate_condition_redundant || nonnull) &&
     true_branch &&
     (not is_temp || nonnull) &&
     PatternMatch.type_is_class typ &&
     not (from_try_with_resources ()) &&
-    from_call = From_condition &&
+    equal_from_call from_call From_condition &&
     not (TypeAnnotation.origin_is_fun_library ta) in
   let is_always_true = not case_zero in
   let nonnull = is_fun_nonnull ta in
@@ -181,15 +184,15 @@ let check_field_assignment tenv
           Annotations.ia_is_field_injector_readwrite ia
       | _ ->
           false in
-    TypeAnnotation.get_value Annotations.Nullable ta_lhs = false &&
-    TypeAnnotation.get_value Annotations.Nullable ta_rhs = true &&
+    not (TypeAnnotation.get_value Annotations.Nullable ta_lhs) &&
+    TypeAnnotation.get_value Annotations.Nullable ta_rhs &&
     PatternMatch.type_is_class t_lhs &&
     not (Ident.java_fieldname_is_outer_instance fname) &&
     not (field_is_field_injector_readwrite ()) in
   let should_report_absent =
     Config.eradicate_optional_present &&
-    TypeAnnotation.get_value Annotations.Present ta_lhs = true &&
-    TypeAnnotation.get_value Annotations.Present ta_rhs = false &&
+    TypeAnnotation.get_value Annotations.Present ta_lhs &&
+    not (TypeAnnotation.get_value Annotations.Present ta_rhs) &&
     not (Ident.java_fieldname_is_outer_instance fname) in
   let should_report_mutable =
     let field_is_mutable () = match t_ia_opt with
@@ -278,7 +281,7 @@ let check_constructor_initialization tenv
                 final_type_annotation_with
                   true
                   (Lazy.force final_constructor_typestates)
-                  (fun ta -> TypeAnnotation.get_value Annotations.Nullable ta = true) in
+                  (fun ta -> TypeAnnotation.get_value Annotations.Nullable ta) in
 
               let should_check_field_initialization =
                 let in_current_class =
@@ -442,7 +445,7 @@ let check_call_parameters tenv
   let tot_param_num = IList.length sig_params - (if has_this then 1 else 0) in
   let rec check sparams cparams = match sparams, cparams with
     | (s1, ia1, t1) :: sparams', ((orig_e2, e2), t2) :: cparams' ->
-        let param_is_this = Mangled.to_string s1 = "this" in
+        let param_is_this = String.equal (Mangled.to_string s1) "this" in
         let formal_is_nullable = Annotations.ia_is_nullable ia1 in
         let formal_is_present = Annotations.ia_is_present ia1 in
         let (_, ta2, _) =
@@ -539,7 +542,7 @@ let check_overridden_annotations
     let current_params = annotated_signature.Annotations.params
     and overridden_params = overriden_signature.Annotations.params in
     let initial_pos = if is_virtual current_params then 0 else 1 in
-    if (IList.length current_params) = (IList.length overridden_params) then
+    if Int.equal (IList.length current_params) (IList.length overridden_params) then
       ignore (IList.fold_left2 compare initial_pos current_params overridden_params) in
 
   let check overriden_proc_name =

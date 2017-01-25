@@ -34,6 +34,8 @@ type access =
   | Protected
 [@@deriving compare];
 
+let equal_access: access => access => bool;
+
 type mem_kind =
   | Mmalloc /** memory allocated with malloc */
   | Mnew /** memory allocated with new */

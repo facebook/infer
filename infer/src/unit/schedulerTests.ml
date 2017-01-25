@@ -35,13 +35,13 @@ module MockProcCfg = struct
   include (MockNode : module type of MockNode with type t := node)
   type t = (node * node list) list
 
-  let compare_id = Int.compare
+  let equal_id = Int.equal
 
   let succs t n =
     try
       let node_id = id n in
       IList.find
-        (fun (node, _) -> compare_id (id node) node_id = 0)
+        (fun (node, _) -> equal_id (id node) node_id)
         t
       |> snd
     with Not_found -> []
@@ -51,7 +51,7 @@ module MockProcCfg = struct
       let node_id = id n in
       IList.filter
         (fun (_, succs) ->
-           IList.exists (fun node -> compare_id (id node) node_id = 0) succs)
+           IList.exists (fun node -> equal_id (id node) node_id) succs)
         t
       |> IList.map fst
     with Not_found -> []

@@ -49,7 +49,7 @@ module PathDomain = SinkTrace.Make(TraceElem)
 
 module IntMap = PrettyPrintable.MakePPMap(struct
     type t = int
-    let compare = Pervasives.compare
+    let compare = Int.compare
     let pp_key fmt = F.fprintf fmt "%d"
   end)
 

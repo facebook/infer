@@ -119,6 +119,8 @@ type status = ACTIVE | INACTIVE | STALE
 
 type phase = FOOTPRINT | RE_EXECUTION
 
+val equal_phase : phase -> phase -> bool
+
 type dependency_map_t = int Procname.Map.t
 
 type call_summary = CallSite.Set.t Annot.Map.t

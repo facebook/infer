@@ -19,7 +19,9 @@ open! IStd
 type method_call_type =
   | MCVirtual
   | MCNoVirtual
-  | MCStatic
+  | MCStatic [@@deriving compare]
+
+val equal_method_call_type : method_call_type -> method_call_type -> bool
 
 val should_add_return_param : Typ.t -> is_objc_method:bool -> bool
 

@@ -388,7 +388,9 @@ let is_immutable_collection_class class_name tenv =
     "com.google.common.collect.ImmutableTable";
   ] in
   PatternMatch.supertype_exists
-    tenv (fun typename _ -> IList.mem (=) (Typename.name typename) immutable_collections) class_name
+    tenv
+    (fun typename _ -> IList.mem String.equal (Typename.name typename) immutable_collections)
+    class_name
 
 let is_call_to_builder_class_method = function
   | Procname.Java java_pname -> is_builder_class (Procname.java_get_class_name java_pname)
@@ -560,7 +562,7 @@ let should_report_on_file file_env =
     fun (_, tenv, pname, _) ->
       match get_current_class_and_threadsafe_superclasses tenv pname with
       | Some (_, thread_safe_annotated_classes) ->
-          not (thread_safe_annotated_classes = [])
+          not (List.is_empty thread_safe_annotated_classes)
       | _ -> false
   in
   let current_class_marked_not_threadsafe =

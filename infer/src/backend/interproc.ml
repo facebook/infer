@@ -9,6 +9,8 @@
  *)
 
 open! IStd
+open! PVariant
+
 module Hashtbl = Caml.Hashtbl
 
 (** Interprocedural Analysis *)
@@ -529,7 +531,7 @@ let forward_tabulate tenv pdesc wl source =
     let log_string proc_name =
       let summary = Specs.get_summary_unsafe "forward_tabulate" proc_name in
       let phase_string =
-        if Specs.get_phase summary = Specs.FOOTPRINT then "FP" else "RE" in
+        if Specs.equal_phase (Specs.get_phase summary) Specs.FOOTPRINT then "FP" else "RE" in
       let timestamp = Specs.get_timestamp summary in
       F.sprintf "[%s:%d] %s" phase_string timestamp (Procname.to_string proc_name) in
     L.d_strln ("**** " ^ (log_string pname) ^ " " ^
@@ -1174,14 +1176,14 @@ let is_unavoidable tenv pre =
 let report_runtime_exceptions tenv pdesc summary =
   let pname = Specs.get_proc_name summary in
   let is_public_method =
-    (Specs.get_attributes summary).ProcAttributes.access = PredSymb.Public in
+    PredSymb.equal_access (Specs.get_attributes summary).access PredSymb.Public in
   let is_main =
     is_public_method
     &&
     (match pname with
      | Procname.Java pname_java ->
          Procname.java_is_static pname
-         && (Procname.java_get_method pname_java) = "main"
+         && String.equal (Procname.java_get_method pname_java) "main"
      | _ ->
          false) in
   let is_annotated =
@@ -1235,7 +1237,7 @@ let update_specs tenv proc_name phase (new_specs : Specs.NormSpec.t list)
               (Paths.PathSet.from_renamed_list spec.Specs.posts, spec.Specs.visited) map)
          SpecMap.empty old_specs) in
   let re_exe_filter old_spec = (* filter out pres which failed re-exe *)
-    if phase = Specs.RE_EXECUTION &&
+    if Specs.equal_phase phase Specs.RE_EXECUTION &&
        not (IList.exists
               (fun new_spec -> Specs.Jprop.equal new_spec.Specs.pre old_spec.Specs.pre)
               new_specs)
@@ -1395,7 +1397,7 @@ let perform_transition exe_env tenv proc_name source =
         [] in
     transition_footprint_re_exe tenv proc_name joined_pres in
   match Specs.get_summary proc_name with
-  | Some summary when Specs.get_phase summary = Specs.FOOTPRINT ->
+  | Some summary when Specs.equal_phase (Specs.get_phase summary) Specs.FOOTPRINT ->
       transition ()
   | _ -> ()
 
@@ -1404,7 +1406,7 @@ let interprocedural_algorithm exe_env : unit =
   let call_graph = Exe_env.get_cg exe_env in
   let filter_initial proc_name =
     let summary = Specs.get_summary_unsafe "main_algorithm" proc_name in
-    Specs.get_timestamp summary = 0 in
+    Int.equal (Specs.get_timestamp summary) 0 in
   let procs_to_analyze =
     IList.filter filter_initial (Cg.get_defined_nodes call_graph) in
   let to_analyze proc_name =
@@ -1461,7 +1463,7 @@ let do_analysis exe_env =
     (fun ((pn, _) as x) ->
        let should_init () =
          Config.models_mode ||
-         Specs.get_summary pn = None in
+         is_none (Specs.get_summary pn) in
        if should_init ()
        then init_proc x)
     procs_and_defined_children;
@@ -1547,7 +1549,7 @@ let print_stats_cfg proc_shadowed source cfg =
   let compute_stats_proc proc_desc =
     let proc_name = Procdesc.get_proc_name proc_desc in
     if proc_shadowed proc_desc ||
-       Specs.get_summary proc_name = None then
+       is_none (Specs.get_summary proc_name) then
       L.out "print_stats: ignoring function %a which is also defined in another file@."
         Procname.pp proc_name
     else
@@ -1560,7 +1562,8 @@ let print_stats_cfg proc_shadowed source cfg =
       let () =
         match specs,
               Errlog.size
-                (fun ekind in_footprint -> ekind = Exceptions.Kerror && in_footprint)
+                (fun ekind in_footprint ->
+                   Exceptions.equal_err_kind ekind Exceptions.Kerror && in_footprint)
                 err_log with
         | [], 0 -> incr num_nospec_noerror_proc
         | _, 0 -> incr num_spec_noerror_proc

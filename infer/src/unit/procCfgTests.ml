@@ -96,7 +96,9 @@ let tests =
       end;
       assert_bool
         "underlying_node should return node of underlying CFG type"
-        (Procdesc.Node.get_id (BackwardInstrCfg.underlying_node n1) = BackwardCfg.id n1) in
+        (Procdesc.Node.equal_id
+           (Procdesc.Node.get_id (BackwardInstrCfg.underlying_node n1))
+           (BackwardCfg.id n1)) in
     "instr_test">::instr_test_ in
 
   let graph_tests = [

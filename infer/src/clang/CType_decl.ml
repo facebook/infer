@@ -180,7 +180,7 @@ and get_record_declaration_struct_type tenv decl =
           [StructTyp.objc_ref_counter_field]
         else [] in
       let annots =
-        if csu = Csu.Class Csu.CPP then Annot.Class.cpp
+        if Csu.equal csu (Csu.Class Csu.CPP) then Annot.Class.cpp
         else Annot.Item.empty (* No annotations for structs *) in
       if is_complete_definition then (
         CAst_utils.update_sil_types_map type_ptr (Typ.Tstruct sil_typename);

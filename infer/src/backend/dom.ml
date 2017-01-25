@@ -251,7 +251,7 @@ module CheckJoinPre : InfoLossCheckerSig = struct
     | Exp.Lvar _ -> false
     | Exp.Var id when Ident.is_normal id -> IList.length es >= 1
     | Exp.Var _ ->
-        if Config.join_cond = 0 then
+        if Int.equal Config.join_cond 0 then
           IList.exists (Exp.equal Exp.zero) es
         else if Dangling.check side e then
           begin
@@ -989,7 +989,7 @@ and dynamic_length_partial_join l1 l2 =
   option_partial_join (fun len1 len2 -> Some (length_partial_join len1 len2)) l1 l2
 
 and typ_partial_join t1 t2 = match t1, t2 with
-  | Typ.Tptr (t1, pk1), Typ.Tptr (t2, pk2) when Typ.compare_ptr_kind pk1 pk2 = 0 ->
+  | Typ.Tptr (t1, pk1), Typ.Tptr (t2, pk2) when Typ.equal_ptr_kind pk1 pk2 ->
       Typ.Tptr (typ_partial_join t1 t2, pk1)
   | Typ.Tarray (typ1, len1), Typ.Tarray (typ2, len2) ->
       let t = typ_partial_join typ1 typ2 in
@@ -1069,7 +1069,7 @@ let rec strexp_partial_join mode (strexp1: Sil.strexp) (strexp2: Sil.strexp) : S
         end
     | (fld1, se1):: fld_se_list1', (fld2, se2):: fld_se_list2' ->
         let comparison = Ident.compare_fieldname fld1 fld2 in
-        if comparison = 0 then
+        if Int.equal comparison 0 then
           let strexp' = strexp_partial_join mode se1 se2 in
           let fld_se_list_new = (fld1, strexp') :: acc in
           f_fld_se_list inst mode fld_se_list_new fld_se_list1' fld_se_list2'
@@ -1633,7 +1633,7 @@ let pi_partial_join tenv mode
     match Rename.get_other_atoms tenv side a with
     | None -> None
     | Some (a_res, a_op) ->
-        if mode = JoinState.Pre then join_atom_check_pre p_op a_op;
+        if JoinState.equal_mode mode JoinState.Pre then join_atom_check_pre p_op a_op;
         if Attribute.is_pred a then join_atom_check_attribute p_op a_op;
         if not (Prover.check_atom tenv p_op a_op) then None
         else begin
@@ -1756,7 +1756,7 @@ let eprop_partial_join' tenv mode (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed 
   let es1 = sigma_get_start_lexps_sort sigma1 in
   let es2 = sigma_get_start_lexps_sort sigma2 in
 
-  let simple_check = IList.length es1 = IList.length es2 in
+  let simple_check = Int.equal (IList.length es1) (IList.length es2) in
   let rec expensive_check es1' es2' =
     match (es1', es2') with
     | [], [] -> true
@@ -2017,7 +2017,7 @@ let proplist_meet_generate tenv plist =
 
 let propset_meet_generate_pre tenv pset =
   let plist = Propset.to_proplist pset in
-  if Config.meet_level = 0 then plist
+  if Int.equal Config.meet_level 0 then plist
   else
     let pset1 = proplist_meet_generate tenv plist in
     let pset_new = Propset.diff pset1 pset in

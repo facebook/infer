@@ -92,7 +92,7 @@ let modelled_fields_in_classes =
 
 let modelled_field class_name_info =
   let modelled_field_in_class res (class_name, field_name, typ) =
-    if class_name = class_name_info.Clang_ast_t.ni_name then
+    if String.equal class_name class_name_info.Clang_ast_t.ni_name then
       let class_name_qualified = class_name_info.Clang_ast_t.ni_qual_name in
       let field_name_qualified = CAst_utils.make_qual_name_decl class_name_qualified field_name in
       let name = CGeneral_utils.mk_class_field_name field_name_qualified in

@@ -11,7 +11,9 @@ open! IStd
 
 (** Module that contains constants and global state used in the frontend *)
 
-type clang_lang = C | CPP | ObjC | ObjCPP
+type clang_lang = C | CPP | ObjC | ObjCPP [@@deriving compare]
+
+val equal_clang_lang : clang_lang -> clang_lang -> bool
 
 type translation_unit_context = {
   lang : clang_lang;

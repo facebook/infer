@@ -94,7 +94,7 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
           create_node loc node_kind_false instrs_false in
         Procdesc.node_set_succs_exn procdesc node_true catch_nodes exit_nodes;
         Procdesc.node_set_succs_exn procdesc node_false succ_nodes exit_nodes;
-        let is_finally = handler.JBir.e_catch_type = None in
+        let is_finally = is_none handler.JBir.e_catch_type in
         if is_finally
         then [node_true] (* TODO (#4759480): clean up the translation so prune nodes are not created at all *)
         else [node_true; node_false] in

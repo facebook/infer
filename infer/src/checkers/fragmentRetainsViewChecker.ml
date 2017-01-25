@@ -24,7 +24,7 @@ let callback_fragment_retains_view_java
     pname_java { Callbacks.proc_desc; tenv } =
   (* TODO: complain if onDestroyView is not defined, yet the Fragment has View fields *)
   (* TODO: handle fields nullified in callees in the same file *)
-  let is_on_destroy_view = Procname.java_get_method pname_java = "onDestroyView" in
+  let is_on_destroy_view = String.equal (Procname.java_get_method pname_java) "onDestroyView" in
   let fld_typ_is_view = function
     | Typ.Tptr (Tstruct tname, _) -> AndroidFramework.is_view tenv tname
     | _ -> false in

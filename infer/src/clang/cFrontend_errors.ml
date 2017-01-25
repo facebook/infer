@@ -135,7 +135,7 @@ let expand_checkers checkers =
     match acc with
     | True
     | False -> acc
-    | Atomic (name, [p]) when formula_id_const = p ->
+    | Atomic (name, [p]) when String.equal formula_id_const p ->
         Logging.out "  -Expanding formula identifier '%s'\n" name;
         (match Core.Std.String.Map.find map name with
          | Some f1 -> expand f1 map

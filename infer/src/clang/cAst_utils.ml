@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 (** Functions for transformations of ast nodes *)
 
@@ -104,15 +105,6 @@ let generated_ivar_name property_name =
         ni_qual_name = [ivar_name; class_name]
       }
   | _ -> make_name_decl property_name.Clang_ast_t.ni_name
-
-let compare_property_attribute =
-  [%compare: [
-    `Readonly | `Assign | `Readwrite | `Retain | `Copy | `Nonatomic | `Atomic
-    | `Weak | `Strong | `Unsafe_unretained | `ExplicitGetter | `ExplicitSetter
-  ]]
-
-let equal_property_attribute att1 att2 =
-  compare_property_attribute att1 att2 = 0
 
 let get_memory_management_attributes () =
   [`Assign; `Retain; `Copy; `Weak; `Strong; `Unsafe_unretained]
@@ -235,8 +227,10 @@ let get_decl_from_typ_ptr typ_ptr =
 let is_type_nonnull type_ptr =
   let open Clang_ast_t in
   match get_type type_ptr with
-  | Some AttributedType (_, attr_info) -> attr_info.ati_attr_kind = `Nonnull
-  | _ -> false
+  | Some AttributedType (_, attr_info) ->
+      attr_info.ati_attr_kind = `Nonnull
+  | _ ->
+      false
 
 let is_type_nullable type_ptr =
   let open Clang_ast_t in
@@ -283,7 +277,7 @@ let get_function_decl_with_body decl_ptr =
     | Some (CXXDestructorDecl (_, _, _, fdecl_info, _)) ->
         fdecl_info.Clang_ast_t.fdi_decl_ptr_with_body
     | _ -> Some decl_ptr in
-  if decl_ptr' = (Some decl_ptr) then decl_opt
+  if [%compare.equal : int option] decl_ptr' (Some decl_ptr) then decl_opt
   else get_decl_opt decl_ptr'
 
 let get_info_from_decl_ref decl_ref =
@@ -317,7 +311,7 @@ let is_ptr_to_objc_class typ class_name =
        | Some ObjCInterfaceType (_, ptr) ->
            (match get_decl ptr with
             | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
-                String.compare ndi.ni_name class_name = 0
+                String.equal ndi.ni_name class_name
             | _ -> false)
        | _ -> false)
   | _ -> false
@@ -442,7 +436,7 @@ let if_decl_to_di_pointer_opt if_decl =
 
 let is_instance_type type_ptr =
   match name_opt_of_typedef_type_ptr type_ptr with
-  | Some name -> name = "instancetype"
+  | Some name -> String.equal name "instancetype"
   | None -> false
 
 let return_type_matches_class_type rtp type_decl_pointer =
@@ -452,7 +446,7 @@ let return_type_matches_class_type rtp type_decl_pointer =
     let return_type_decl_opt = type_ptr_to_objc_interface rtp in
     let return_type_decl_pointer_opt =
       Option.map ~f:if_decl_to_di_pointer_opt return_type_decl_opt in
-    (Some type_decl_pointer) = return_type_decl_pointer_opt
+    [%compare.equal : int option option] (Some type_decl_pointer) return_type_decl_pointer_opt
 
 let is_objc_factory_method if_decl meth_decl =
   let if_type_decl_pointer = if_decl_to_di_pointer_opt if_decl in

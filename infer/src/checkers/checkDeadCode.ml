@@ -83,7 +83,7 @@ let check_final_state tenv proc_name proc_desc final_s =
         let description = Format.sprintf "Node not visited: %d" (Procdesc.Node.get_id n :> int) in
         let report = match Procdesc.Node.get_kind n with
           | Procdesc.Node.Join_node -> false
-          | k when k = Procdesc.Node.exn_sink_kind -> false
+          | k when Procdesc.Node.equal_nodekind k Procdesc.Node.exn_sink_kind -> false
           | _ -> true in
         if report
         then report_error tenv description proc_name proc_desc loc in

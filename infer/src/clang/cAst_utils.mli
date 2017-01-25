@@ -23,14 +23,8 @@ val name_opt_of_name_info_opt : Clang_ast_t.named_decl_info option -> string opt
 
 val property_name : Clang_ast_t.obj_c_property_impl_decl_info -> Clang_ast_t.named_decl_info
 
-val compare_property_attribute :
-  Clang_ast_t.property_attribute -> Clang_ast_t.property_attribute -> int
-
 val generated_ivar_name :
   Clang_ast_t.named_decl_info -> Clang_ast_t.named_decl_info
-
-val equal_property_attribute :
-  Clang_ast_t.property_attribute -> Clang_ast_t.property_attribute -> bool
 
 val get_memory_management_attributes : unit -> Clang_ast_t.property_attribute list
 

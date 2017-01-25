@@ -61,7 +61,7 @@ let create_fresh_local_name () =
   "dummy_local" ^ string_of_int !local_name_cntr
 
 (** more forgiving variation of IList.tl that won't raise an exception on the empty list *)
-let tl_or_empty l = if l = [] then l else IList.tl l
+let tl_or_empty l = if List.is_empty l then l else IList.tl l
 
 let get_non_receiver_formals formals = tl_or_empty formals
 
@@ -173,7 +173,7 @@ and inhabit_constructor tenv constr_name (allocated_obj, obj_type) cfg env =
 let inhabit_call_with_args procname procdesc args env =
   let retval =
     let ret_typ = Procdesc.get_ret_type procdesc in
-    let is_void = ret_typ = Typ.Tvoid in
+    let is_void = Typ.equal ret_typ Typ.Tvoid in
     if is_void then None else Some (Ident.create_fresh Ident.knormal, ret_typ) in
   let call_instr =
     let fun_exp = fun_exp_from_name procname in
