@@ -347,7 +347,7 @@ $(foreach atd_type,b j t v,\
 
 define mirror_fcp_file
 $(CLANG_SOURCES)/$(notdir $(1)): $(1)
-	$(INSTALL_DATA) -C $$< $$@
+	$(INSTALL_DATA) $$< $$@
 endef
 
 $(foreach file, $(FCP_FILES_TO_MIRROR), $(eval $(call mirror_fcp_file,$(file))))
