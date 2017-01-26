@@ -1335,7 +1335,7 @@ let post_parsing_initialization () =
   set_minor_heap_size 8 ;
 
   let symops_timeout, seconds_timeout =
-    let default_symops_timeout = 333 in
+    let default_symops_timeout = 1100 in
     let default_seconds_timeout = 10.0 in
     if !models_mode then
       (* disable timeouts when analyzing models *)
