@@ -111,11 +111,9 @@ val ia_is_ui_thread : Annot.Item.t -> bool
 val ia_is_thread_confined : Annot.Item.t -> bool
 val ia_is_volatile : Annot.Item.t -> bool
 
-val ia_iter : (Annot.t -> unit) -> Annot.Item.t -> unit
+val pdesc_has_annot : Procdesc.t -> string -> bool
 
 val ma_has_annotation_with : Annot.Method.t -> (Annot.t -> bool) -> bool
-
-val pdesc_has_annot : Procdesc.t -> string -> bool
 
 val field_has_annot : Ident.fieldname -> StructTyp.t -> (Annot.Item.t -> bool) -> bool
 

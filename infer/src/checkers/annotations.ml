@@ -67,30 +67,12 @@ type annotated_signature = {
   params: (Mangled.t * Annot.Item.t * Typ.t) list (** Annotated parameters. *)
 } [@@deriving compare]
 
-let ia_iter f =
-  let ann_iter (a, _) = f a in
-  IList.iter ann_iter
+let ia_has_annotation_with (ia: Annot.Item.t) (predicate: Annot.t -> bool): bool =
+  IList.exists (fun (a, _) -> predicate a) ia
 
-let ma_iter f ((ia, ial) : Annot.Method.t) =
-  IList.iter (ia_iter f) (ia:: ial)
-
-let ma_has_annotation_with
-    (ma: Annot.Method.t)
-    (predicate: Annot.t -> bool): bool =
-  let found = ref false in
-  ma_iter
-    (fun a -> if predicate a then found := true)
-    ma;
-  !found
-
-let ia_has_annotation_with
-    (ia: Annot.Item.t)
-    (predicate: Annot.t -> bool): bool =
-  let found = ref false in
-  ia_iter
-    (fun a -> if predicate a then found := true)
-    ia;
-  !found
+let ma_has_annotation_with ((ia, ial) : Annot.Method.t) (predicate: Annot.t -> bool): bool =
+  let has_annot a = ia_has_annotation_with a predicate in
+  has_annot ia || IList.exists has_annot ial
 
 (** [annot_ends_with annot ann_name] returns true if the class name of [annot], without the package,
     is equal to [ann_name] *)
@@ -99,31 +81,22 @@ let annot_ends_with annot ann_name =
   | None -> String.equal annot.Annot.class_name ann_name
   | Some (_, annot_class_name) -> String.equal annot_class_name ann_name
 
-(** Check if there is an annotation in [ia] which ends with the given name *)
+let class_name_matches s ((annot : Annot.t), _) =
+  String.equal s annot.class_name
+
 let ia_ends_with ia ann_name =
-  let found = ref false in
-  ia_iter (fun a -> if annot_ends_with a ann_name then found := true) ia;
-  !found
+  IList.exists (fun (a, _) -> annot_ends_with a ann_name) ia
 
 let ia_contains ia ann_name =
-  let found = ref false in
-  ia_iter (fun a -> if String.equal ann_name a.Annot.class_name then found := true) ia;
-  !found
+  IList.exists (class_name_matches ann_name) ia
 
 let ia_get ia ann_name =
-  let found = ref None in
-  ia_iter (fun a -> if String.equal ann_name a.Annot.class_name then found := Some a) ia;
-  !found
-
-let ma_contains ma ann_names =
-  let found = ref false in
-  ma_iter (fun a ->
-      if IList.exists (String.equal a.Annot.class_name) ann_names then found := true
-    ) ma;
-  !found
+  try Some (fst (IList.find (class_name_matches ann_name) ia))
+  with Not_found -> None
 
 let pdesc_has_annot pdesc annot =
-  ma_contains (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation [annot]
+  let f (a : Annot.t) = String.equal a.class_name annot in
+  ma_has_annotation_with (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation f
 
 let field_has_annot fieldname (struct_typ : StructTyp.t) f =
   let fld_has_taint_annot (fname, _, annot) =
