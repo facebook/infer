@@ -889,7 +889,7 @@ and load_average =
 
 and load_results =
   CLOpt.mk_path_opt ~deprecated:["load_results"] ~long:"load-results"
-    ~exes:CLOpt.[Print]
+    ~exes:CLOpt.[Analyze]
     ~meta:"file.iar" "Load analysis results from Infer Analysis Results file file.iar"
 
 (** name of the makefile to create with clusters and dependencies *)
@@ -1005,6 +1005,9 @@ and progress_bar =
   CLOpt.mk_bool ~deprecated_no:["no_progress_bar"] ~long:"progress-bar" ~short:"pb" ~default:true
     ~exes:CLOpt.[Driver]
     "Show a progress bar"
+
+and quandary_sources =
+  CLOpt.mk_json ~long:"quandary-sources" "Specify custom sources for Quandary"
 
 and quiet =
   CLOpt.mk_bool ~long:"quiet" ~short:"q" ~default:(current_exe <> CLOpt.Print)
@@ -1475,6 +1478,7 @@ and print_using_diff = !print_using_diff
 and procs_csv = !procs_csv
 and procs_xml = !procs_xml
 and quandary = !quandary
+and quandary_sources = !quandary_sources
 and quiet = !quiet
 and reactive_mode = !reactive
 and reactive_capture = !reactive_capture

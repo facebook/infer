@@ -242,6 +242,7 @@ val procs_csv : string option
 val procs_xml : string option
 val project_root : string
 val quandary : bool
+val quandary_sources : Yojson.Basic.json
 val quiet : bool
 val reactive_mode : bool
 val reactive_capture : bool

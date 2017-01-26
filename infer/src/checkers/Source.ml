@@ -46,7 +46,7 @@ module Make (Kind : Kind) = struct
   type kind =
     | Normal of Kind.t (** known source returned directly or transitively from a callee *)
     | Footprint of AccessPath.t (** unknown source read from the environment *)
-  [@@ deriving compare]
+  [@@deriving compare]
 
   let pp_kind fmt = function
     | Normal kind -> Kind.pp fmt kind

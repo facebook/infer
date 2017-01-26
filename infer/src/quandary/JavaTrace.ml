@@ -22,6 +22,13 @@ module SourceKind = struct
 
   let unknown = Unknown
 
+  let of_string = function
+    | "PrivateData" -> PrivateData
+    | "Intent" -> Intent
+    | _ -> Other
+
+  let external_sources = QuandaryConfig.Source.of_json Config.quandary_sources
+
   let get pname tenv = match pname with
     | Procname.Java pname ->
         begin
@@ -49,10 +56,24 @@ module SourceKind = struct
                     Some PrivateData
                 | _ ->
                     None in
-              PatternMatch.supertype_find_map_opt
-                tenv
-                taint_matching_supertype
-                (Typename.Java.from_string class_name)
+              let kind_opt =
+                PatternMatch.supertype_find_map_opt
+                  tenv
+                  taint_matching_supertype
+                  (Typename.Java.from_string class_name) in
+              begin
+                match kind_opt with
+                | Some _ -> kind_opt
+                | None ->
+                    (* check the list of externally specified sources *)
+                    let procedure = class_name ^ "." ^ method_name in
+                    IList.find_map_opt
+                      (fun (source_spec : QuandaryConfig.Source.t) ->
+                         if String.equal source_spec.procedure procedure
+                         then Some (of_string source_spec.kind)
+                         else None)
+                      external_sources
+              end
         end
     | pname when BuiltinDecl.is_declared pname -> None
     | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
