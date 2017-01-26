@@ -25,7 +25,27 @@ import com.facebook.infer.annotation.ThreadConfined;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
+@interface OnBind {
+}
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.CLASS)
 @interface OnEvent {
+}
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.CLASS)
+@interface OnMount {
+}
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.CLASS)
+@interface OnUnbind {
+}
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.CLASS)
+@interface OnUnmount {
 }
 
 @ThreadSafe
@@ -86,6 +106,26 @@ class Annotations {
 
   @ThreadConfined
   public void threadConfinedMethodOk() {
+    this.f = new Object();
+  }
+
+  @OnBind
+  public void onBindMethodOk() {
+    this.f = new Object();
+  }
+
+  @OnMount
+  public void onMountMethodOk() {
+    this.f = new Object();
+  }
+
+  @OnUnmount
+  public void onUnmountMethodOk() {
+    this.f = new Object();
+  }
+
+  @OnUnbind
+  public void onUnbindMethodOk() {
     this.f = new Object();
   }
 

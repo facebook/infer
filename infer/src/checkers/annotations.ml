@@ -103,6 +103,9 @@ let nullable = "Nullable"
 let nonnull = "Nonnull"
 let on_bind = "OnBind"
 let on_event = "OnEvent"
+let on_mount = "OnMount"
+let on_unbind = "OnUnbind"
+let on_unmount = "OnUnmount"
 let camel_nonnull = "NonNull"
 let notnull = "NotNull"
 let present = "Present"
@@ -223,6 +226,18 @@ let ia_is_suppress_lint ia =
 
 let ia_is_on_event ia =
   ia_ends_with ia on_event
+
+let ia_is_on_bind ia =
+  ia_ends_with ia on_bind
+
+let ia_is_on_mount ia =
+  ia_ends_with ia on_mount
+
+let ia_is_on_unbind ia =
+  ia_ends_with ia on_unbind
+
+let ia_is_on_unmount ia =
+  ia_ends_with ia on_unmount
 
 let ia_is_privacy_source ia =
   ia_ends_with ia privacy_source

@@ -94,6 +94,10 @@ val ia_is_no_allocation : Annot.Item.t -> bool
 val ia_is_ignore_allocations : Annot.Item.t -> bool
 val ia_is_suppress_lint : Annot.Item.t -> bool
 val ia_is_on_event : Annot.Item.t -> bool
+val ia_is_on_bind : Annot.Item.t -> bool
+val ia_is_on_mount : Annot.Item.t -> bool
+val ia_is_on_unbind : Annot.Item.t -> bool
+val ia_is_on_unmount : Annot.Item.t -> bool
 val ia_is_privacy_source : Annot.Item.t -> bool
 val ia_is_privacy_sink : Annot.Item.t -> bool
 val ia_is_integrity_source : Annot.Item.t -> bool

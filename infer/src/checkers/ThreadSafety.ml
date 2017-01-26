@@ -426,10 +426,16 @@ let is_thread_confined_method tenv pdesc =
 (* we don't want to warn on methods that run on the UI thread because they should always be
    single-threaded *)
 let runs_on_ui_thread proc_desc =
-  (* assume that methods annotated with @UiThread or @OnEvent(SomeEvent.class) always run on the UI
-     thread *)
+  (* assume that methods annotated with @UiThread, @OnEvent, @OnBind, @OnMount, @OnUnbind,
+     @OnUnmount always run on the UI thread *)
   is_annotated
-    (fun annot -> Annotations.ia_is_ui_thread annot || Annotations.ia_is_on_event annot)
+    (fun annot -> Annotations.ia_is_ui_thread annot ||
+                  Annotations.ia_is_on_bind annot ||
+                  Annotations.ia_is_on_event annot ||
+                  Annotations.ia_is_on_mount annot ||
+                  Annotations.ia_is_on_unbind annot ||
+                  Annotations.ia_is_on_unmount annot)
+
     proc_desc
 
 let is_assumed_thread_safe pdesc =
