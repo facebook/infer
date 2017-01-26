@@ -14,14 +14,58 @@ module L = Logging
 
 (** Annotations. *)
 
+let any_thread = "AnyThread"
+let assume_thread_safe = "AssumeThreadSafe"
+let bind = "Bind"
+let bind_view = "BindView"
+let bind_array = "BindArray"
+let bind_bitmap = "BindBitmap"
+let bind_drawable = "BindDrawable"
+let bind_string = "BindString"
+let camel_nonnull = "NonNull"
+let expensive = "Expensive"
+let false_on_null = "FalseOnNull"
+let for_ui_thread = "ForUiThread"
+let for_non_ui_thread = "ForNonUiThread"
+let guarded_by = "GuardedBy"
+let ignore_allocations = "IgnoreAllocations"
+let initializer_ = "Initializer"
+let inject = "Inject"
+let inject_view = "InjectView"
+let integrity_source = "IntegritySource"
+let integrity_sink = "IntegritySink"
+let mutable_ = "Mutable"
+let nonnull = "Nonnull"
+let no_allocation = "NoAllocation"
+let nullable = "Nullable"
+let on_bind = "OnBind"
+let on_event = "OnEvent"
+let on_mount = "OnMount"
+let on_unbind = "OnUnbind"
+let on_unmount = "OnUnmount"
+let notnull = "NotNull"
+let not_thread_safe = "NotThreadSafe"
+let performance_critical = "PerformanceCritical"
+let present = "Present"
+let privacy_source = "PrivacySource"
+let privacy_sink = "PrivacySink"
+let strict = "com.facebook.infer.annotation.Strict"
+let suppress_lint = "SuppressLint"
+let suppress_view_nullability = "SuppressViewNullability"
+let thread_confined = "ThreadConfined"
+let thread_safe = "ThreadSafe"
+let thread_safe_method = "ThreadSafeMethod"
+let true_on_null = "TrueOnNull"
+let ui_thread = "UiThread"
+let verify_annotation = "com.facebook.infer.annotation.Verify"
+let visibleForTesting = "com.google.common.annotations.VisibleForTesting"
+let volatile = "volatile"
+
 (** Method signature with annotations. *)
 type annotated_signature = {
   ret : Annot.Item.t * Typ.t; (** Annotated return type. *)
   params: (Mangled.t * Annot.Item.t * Typ.t) list (** Annotated parameters. *)
 } [@@deriving compare]
-
-let visibleForTesting = "com.google.common.annotations.VisibleForTesting"
-let suppressLint = "android.annotation.SuppressLint"
 
 let ia_iter f =
   let ann_iter (a, _) = f a in
@@ -86,53 +130,6 @@ let field_has_annot fieldname (struct_typ : StructTyp.t) f =
     Ident.equal_fieldname fieldname fname && f annot in
   IList.exists fld_has_taint_annot struct_typ.fields ||
   IList.exists fld_has_taint_annot struct_typ.statics
-
-let initializer_ = "Initializer"
-let inject = "Inject"
-let inject_view = "InjectView"
-let bind = "Bind"
-let bind_view = "BindView"
-let bind_array = "BindArray"
-let bind_bitmap = "BindBitmap"
-let bind_drawable = "BindDrawable"
-let bind_string = "BindString"
-let suppress_view_nullability = "SuppressViewNullability"
-let false_on_null = "FalseOnNull"
-let mutable_ = "Mutable"
-let nullable = "Nullable"
-let nonnull = "Nonnull"
-let on_bind = "OnBind"
-let on_event = "OnEvent"
-let on_mount = "OnMount"
-let on_unbind = "OnUnbind"
-let on_unmount = "OnUnmount"
-let camel_nonnull = "NonNull"
-let notnull = "NotNull"
-let present = "Present"
-let strict = "com.facebook.infer.annotation.Strict"
-let true_on_null = "TrueOnNull"
-let verify_annotation = "com.facebook.infer.annotation.Verify"
-let volatile = "volatile"
-let expensive = "Expensive"
-let performance_critical = "PerformanceCritical"
-let no_allocation = "NoAllocation"
-let ignore_allocations = "IgnoreAllocations"
-
-let suppress_lint = "SuppressLint"
-let privacy_source = "PrivacySource"
-let privacy_sink = "PrivacySink"
-let integrity_source = "IntegritySource"
-let integrity_sink = "IntegritySink"
-let guarded_by = "GuardedBy"
-let thread_safe = "ThreadSafe"
-let thread_safe_method = "ThreadSafeMethod"
-let not_thread_safe = "NotThreadSafe"
-let assume_thread_safe = "AssumeThreadSafe"
-let ui_thread = "UiThread"
-let any_thread = "AnyThread"
-let for_ui_thread = "ForUiThread"
-let for_non_ui_thread = "ForNonUiThread"
-let thread_confined = "ThreadConfined"
 
 let ia_is_not_thread_safe ia =
   ia_ends_with ia not_thread_safe

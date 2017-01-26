@@ -11,16 +11,18 @@ open! IStd
 
 (** Annotations. *)
 
-val suppressLint : string
-
-val expensive : string
-val performance_critical : string
-val no_allocation : string
-val on_bind : string
-val ui_thread : string
 val any_thread : string
-val for_ui_thread : string
+val expensive : string
+val no_allocation : string
+val nullable : string
+val on_bind : string
+val performance_critical : string
 val for_non_ui_thread : string
+val for_ui_thread : string
+val guarded_by : string
+val suppress_lint : string
+val ui_thread : string
+val visibleForTesting : string
 
 type annotation =
   | Nullable
@@ -55,8 +57,6 @@ val annotated_signature_mark_return_strict :
 
 (** Get a method signature with annotations from a proc_attributes. *)
 val get_annotated_signature : ProcAttributes.t -> annotated_signature
-
-val nullable : string
 
 (** [annot_ends_with annot ann_name] returns true if the class name of [annot], without the package,
     is equal to [ann_name] *)
@@ -127,7 +127,3 @@ val method_annotation_mark_return :
 val mk_ia : annotation -> Annot.Item.t -> Annot.Item.t
 
 val pp_annotated_signature : Procname.t -> Format.formatter -> annotated_signature -> unit
-
-val visibleForTesting : string
-val guarded_by : string
-val suppress_lint : string

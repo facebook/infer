@@ -98,7 +98,7 @@ module ST = struct
           String.equal (normalize s1) (normalize s2) in
 
         let is_parameter_suppressed =
-          IList.mem String.equal a.class_name [Annotations.suppressLint] &&
+          String.is_suffix a.class_name ~suffix:Annotations.suppress_lint &&
           IList.mem normalized_equal kind a.parameters in
         let is_annotation_suppressed =
           String.is_suffix ~suffix:(normalize (drop_prefix kind)) (normalize a.class_name) in
