@@ -166,7 +166,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | None ->
               astate
         end
-    | Sil.Call (_, Const (Cfun pn), actuals, loc, _) ->
+    | Sil.Call (ret_opt, Const (Cfun pn), actuals, loc, _) ->
         begin
           (* assuming that modeled procedures do not have useful summaries *)
           match get_lock_model pn with
@@ -190,7 +190,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   | Some (callee_locks,
                           callee_reads,
                           callee_conditional_writes,
-                          callee_unconditional_writes) ->
+                          callee_unconditional_writes,
+                          is_retval_owned) ->
                       let locks' = callee_locks || astate.locks in
                       let astate' =
                         (* TODO (14842325): report on constructors that aren't threadsafe
@@ -261,7 +262,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                           { astate with reads; conditional_writes; unconditional_writes; }
                         else
                           astate in
-                      { astate' with locks = locks'; }
+                      let owned = match ret_opt with
+                        | Some (ret_id, ret_typ) when is_retval_owned ->
+                            OwnershipDomain.add (AccessPath.of_id ret_id ret_typ) astate'.owned
+                        | _ ->
+                            astate'.owned in
+                      { astate' with locks = locks'; owned; }
                   | None ->
                       astate
                 end
@@ -458,7 +464,10 @@ let make_results_table get_proc_desc file_env =
   let compute_post_for_procedure = (* takes proc_env as arg *)
     fun (idenv, tenv, proc_name, proc_desc) ->
       let open ThreadSafetyDomain in
-      let empty = false, PathDomain.empty, ConditionalWritesDomain.empty, PathDomain.empty in
+      let has_lock = false in
+      let ret_is_owned = false in
+      let empty =
+        has_lock, PathDomain.empty, ConditionalWritesDomain.empty, PathDomain.empty, ret_is_owned in
       (* convert the abstract state to a summary by dropping the id map *)
       let compute_post ({ ProcData.pdesc; tenv; } as proc_data) =
         if should_analyze_proc pdesc tenv
@@ -466,8 +475,13 @@ let make_results_table get_proc_desc file_env =
           begin
             if not (Procdesc.did_preanalysis pdesc) then Preanal.do_liveness pdesc tenv;
             match Analyzer.compute_post proc_data ~initial:ThreadSafetyDomain.empty with
-            | Some { locks; reads; conditional_writes; unconditional_writes; } ->
-                Some (locks, reads, conditional_writes, unconditional_writes)
+            | Some { locks; reads; conditional_writes; unconditional_writes; owned; } ->
+                let return_var_ap =
+                  AccessPath.of_pvar
+                    (Pvar.get_ret_pvar (Procdesc.get_proc_name pdesc))
+                    (Procdesc.get_ret_type pdesc) in
+                let return_is_owned = OwnershipDomain.mem return_var_ap owned in
+                Some (locks, reads, conditional_writes, unconditional_writes, return_is_owned)
             | None ->
                 None
           end
@@ -519,7 +533,7 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) trace =
   let open ThreadSafetyDomain in
   let trace_of_pname callee_pname =
     match Summary.read_summary pdesc callee_pname with
-    | Some (_, _, conditional_writes, unconditional_writes) ->
+    | Some (_, _, conditional_writes, unconditional_writes, _) ->
         combine_conditional_unconditional_writes conditional_writes unconditional_writes
     | _ ->
         PathDomain.empty in
@@ -599,7 +613,7 @@ let process_results_table file_env tab =
     (should_report_on_all_procs || is_thread_safe_method pdesc tenv)
     && should_report_on_proc proc_env in
   ResultsTableType.iter (* report errors for each method *)
-    (fun proc_env (_, _, conditional_writes, unconditional_writes) ->
+    (fun proc_env (_, _, conditional_writes, unconditional_writes, _) ->
        if should_report proc_env then
          combine_conditional_unconditional_writes conditional_writes unconditional_writes
          |> report_thread_safety_violations proc_env)

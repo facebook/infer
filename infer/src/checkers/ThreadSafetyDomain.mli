@@ -59,9 +59,10 @@ type astate =
     (** access paths that must be owned by the current function *)
   }
 
-(** same as astate, but without [id_map]/[owned] (since they are local) *)
+(** same as astate, but without [id_map]/[owned] (since they are local) and with the addition of a
+    boolean that is true if the return value is owned *)
 type summary =
-  LocksDomain.astate * PathDomain.astate * ConditionalWritesDomain.astate * PathDomain.astate
+  LocksDomain.astate * PathDomain.astate * ConditionalWritesDomain.astate * PathDomain.astate * bool
 
 include AbstractDomain.WithBottom with type astate := astate
 

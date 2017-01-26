@@ -153,11 +153,26 @@ public class Ownership {
     callWriteToFormal(o.g);
   }
 
-  // we don't understand that ownership has been transferred from returnOwnedLocalOk to the current
-  // procedure
-  public void FP_ownershipNotInterproceduralOk() {
+  public Obj ownershipCanBeInterproceduralOk() {
     Obj local = returnOwnedLocalOk();
     local.f = new Object();
+    return local;
+  }
+
+  public void mutateDoubleReturnOwnedOk() {
+    Obj owned = ownershipCanBeInterproceduralOk();
+    owned.g = new Obj();
+  }
+
+  Obj id(Obj param) {
+    return param;
+  }
+
+  // need to be able to propagate ownership rather than just return it for this to work
+  public void FP_passOwnershipInIdFunctionOk() {
+    Obj owned = new Obj();
+    Obj shouldBeOwned = id(owned); // we'll lose ownership here, but ideally we wouldn't
+    shouldBeOwned.f = new Object();
   }
 
   // we angelically assume that callees don't leak their arguments to another thread for now, so
@@ -168,4 +183,15 @@ public class Ownership {
     local.f = new Object();
   }
 
+  private Obj leakThenReturn() {
+    Obj local = new Obj();
+    leakToAnotherThread(local);
+    return local;
+  }
+
+  // the summary for leakThenReturn should not say that the caller owns the return value
+  public void FN_mutateReturnedBad() {
+    Obj notOwned = leakThenReturn();
+    notOwned.f = new Object(); // should warn here
+  }
 }

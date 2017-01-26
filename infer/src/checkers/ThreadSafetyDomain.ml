@@ -65,8 +65,9 @@ type astate =
     owned : OwnershipDomain.astate;
   }
 
+
 type summary =
-  LocksDomain.astate * PathDomain.astate * ConditionalWritesDomain.astate *PathDomain.astate
+  LocksDomain.astate * PathDomain.astate * ConditionalWritesDomain.astate * PathDomain.astate * bool
 
 let empty =
   let locks = false in
@@ -119,19 +120,23 @@ let widen ~prev ~next ~num_iters =
     let owned = OwnershipDomain.widen ~prev:prev.owned ~next:next.owned ~num_iters in
     { locks; reads; conditional_writes; unconditional_writes; id_map; owned; }
 
-let pp_summary fmt (locks, reads, conditional_writes, unconditional_writes) =
+let pp_summary fmt (locks, reads, conditional_writes, unconditional_writes, retval_owned) =
   F.fprintf
     fmt
-    "Locks: %a Reads: %a Conditional Writes: %a Unconditional Writes: %a"
+    "Locks: %a Reads: %a Conditional Writes: %a Unconditional Writes: %a Retval owned: %b"
     LocksDomain.pp locks
     PathDomain.pp reads
     ConditionalWritesDomain.pp conditional_writes
     PathDomain.pp unconditional_writes
+    retval_owned
 
 let pp fmt { locks; reads; conditional_writes; unconditional_writes; id_map; owned; } =
   F.fprintf
     fmt
-    "%a Id Map: %a Owned: %a"
-    pp_summary (locks, reads, conditional_writes, unconditional_writes)
+    "Locks: %a Reads: %a Conditional Writes: %a Unconditional Writes: %a Id Map: %a Owned: %a"
+    LocksDomain.pp locks
+    PathDomain.pp reads
+    ConditionalWritesDomain.pp conditional_writes
+    PathDomain.pp unconditional_writes
     IdAccessPathMapDomain.pp id_map
     OwnershipDomain.pp owned
