@@ -34,4 +34,37 @@ public class ExternalSpecs {
     activity.startActivity((Intent) privateDataSource());
   }
 
+  // we specify that index 1 is an external sink with type Logging in .inferconfig
+  public static void loggingSink1(Object notASink, Object sink) {}
+
+  public static void callExternalSinkBad() {
+    loggingSink1(null, privateDataSource());
+  }
+
+  // passing to non-tainted param
+  public static void callExternalSinkOk1() {
+    loggingSink1(privateDataSource(), null);
+  }
+
+  // passing intent source to logging sink is fine
+  public static void callExternalSinkOk2(Activity activity) {
+    loggingSink1(null, activity.getIntent());
+  }
+
+  // we specify that all the indices are tainted with type Logging in .inferconfig
+  public static void loggingSink2(Object sink1, Object sink2) {}
+
+  public static void callExternalSink2Bad1() {
+    loggingSink2(privateDataSource(), null);
+  }
+
+  public static void callExternalSink2Bad2() {
+    loggingSink2(null, privateDataSource());
+  }
+
+  // passing intent sources to logging sink is fine
+  public static void callExternalSink2Ok(Activity activity) {
+    loggingSink2(activity.getIntent(), activity.getIntent());
+  }
+
 }

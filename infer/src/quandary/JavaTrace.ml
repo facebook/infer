@@ -139,6 +139,14 @@ module SinkKind = struct
     | Other (** for testing or uncategorized sinks *)
   [@@deriving compare]
 
+  let of_string = function
+    | "Intent" -> Intent
+    | "JavaScript" -> JavaScript
+    | "Logging" -> Logging
+    | _ -> Other
+
+  let external_sinks = QuandaryConfig.Sink.of_json Config.quandary_sinks
+
   let get pname actuals tenv =
     (* taint all the inputs of [pname]. for non-static procedures, taints the "this" parameter only
        if [taint_this] is true. *)
@@ -223,8 +231,23 @@ module SinkKind = struct
                 | "android.webkit.WebViewClient",
                   ("onLoadResource" | "shouldInterceptRequest" | "shouldOverrideUrlLoading") ->
                     Some (taint_all JavaScript ~report_reachable:true)
-                | _ ->
-                    None in
+                | class_name, method_name ->
+                    (* check the list of externally specified sinks *)
+                    let procedure = class_name ^ "." ^ method_name in
+                    IList.find_map_opt
+                      (fun (sink_spec : QuandaryConfig.Sink.t) ->
+                         if String.equal sink_spec.procedure procedure
+                         then
+                           let kind = of_string sink_spec.kind in
+                           try
+                             let n = int_of_string sink_spec.index in
+                             Some (taint_nth n kind ~report_reachable:true)
+                           with Failure _ ->
+                             (* couldn't parse the index, just taint everything *)
+                             Some (taint_all kind ~report_reachable:true)
+                         else
+                           None)
+                      external_sinks in
               begin
                 match
                   PatternMatch.supertype_find_map_opt

@@ -1009,6 +1009,9 @@ and progress_bar =
 and quandary_sources =
   CLOpt.mk_json ~long:"quandary-sources" "Specify custom sources for Quandary"
 
+and quandary_sinks =
+  CLOpt.mk_json ~long:"quandary-sinks" "Specify custom sinks for Quandary"
+
 and quiet =
   CLOpt.mk_bool ~long:"quiet" ~short:"q" ~default:(current_exe <> CLOpt.Print)
     ~exes:CLOpt.[Print]
@@ -1479,6 +1482,7 @@ and procs_csv = !procs_csv
 and procs_xml = !procs_xml
 and quandary = !quandary
 and quandary_sources = !quandary_sources
+and quandary_sinks = !quandary_sinks
 and quiet = !quiet
 and reactive_mode = !reactive
 and reactive_capture = !reactive_capture

@@ -11,7 +11,7 @@ open! IStd
 
 module F = Format
 
-(** utilities for importing JSON specifications of sources/sinks into Quandary*)
+(** utilities for importing JSON specifications of sources/sinks into Quandary *)
 
 module Source = struct
   type t = { procedure : string; kind : string; }
@@ -29,4 +29,23 @@ module Source = struct
 
   let pp fmt { procedure; kind; } =
     F.fprintf fmt "Procedure: %s Kind: %s" procedure kind
+end
+
+module Sink = struct
+  type t = { procedure : string; kind : string; index : string}
+
+  let of_json = function
+    | `List sinks ->
+        let parse_sink json =
+          let open Yojson.Basic.Util in
+          let procedure = json |> member "procedure" |> to_string in
+          let kind = json |> member "kind" |> to_string in
+          let index = json |> member "index" |> to_string in
+          { procedure; kind; index; } in
+        IList.map parse_sink sinks
+    | _ ->
+        []
+
+  let pp fmt { procedure; kind; index; } =
+    F.fprintf fmt "Procedure: %s Kind: %s Index %s" procedure kind index
 end

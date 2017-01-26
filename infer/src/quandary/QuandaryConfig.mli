@@ -18,3 +18,11 @@ module Source : sig
 
   val pp : Format.formatter -> t -> unit
 end
+
+module Sink : sig
+  type t = { procedure : string; kind : string; index : string; }
+
+  val of_json : [> `List of Yojson.Basic.json list ] -> t list
+
+  val pp : Format.formatter -> t -> unit
+end
