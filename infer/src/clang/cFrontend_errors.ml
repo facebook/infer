@@ -24,7 +24,8 @@ let decl_single_checkers_list =
 (* List of checkers on decls *)
 let decl_checkers_list =
   ComponentKit.component_with_multiple_factory_methods_advice::
-  (IList.map single_to_multi decl_single_checkers_list)
+  (ComponentKit.component_file_line_count_info::
+   (IList.map single_to_multi decl_single_checkers_list))
 
 (* List of checkers on stmts *that return 0 or 1 issue* *)
 let stmt_single_checkers_list =
@@ -33,9 +34,6 @@ let stmt_single_checkers_list =
    CFrontend_checkers.ctl_unavailable_api_in_supported_ios_sdk_error;]
 
 let stmt_checkers_list = IList.map single_to_multi stmt_single_checkers_list
-
-(* List of checkers on translation unit that potentially output multiple issues *)
-let translation_unit_checkers_list = [ComponentKit.component_file_line_count_info;]
 
 (* List of checkers that will be filled after parsing them from a file *)
 let checkers_decl_stmt = ref []
@@ -195,15 +193,26 @@ let log_frontend_issue translation_unit_context method_decl_opt key issue_desc =
   Reporting.log_issue_from_errlog err_kind errlog exn ~loc ~ltr:trace
     ~node_id:(0, key)
 
+let get_current_method context an =
+  match an with
+  | CTL.Decl (FunctionDecl _ as d)
+  | CTL.Decl (CXXMethodDecl _ as d)
+  | CTL.Decl (CXXConstructorDecl _ as d)
+  | CTL.Decl (CXXConversionDecl _ as d)
+  | CTL.Decl (CXXDestructorDecl _ as d)
+  | CTL.Decl (ObjCMethodDecl _ as d)
+  | CTL.Decl (BlockDecl _ as d) -> Some d
+  | _ -> context.CLintersContext.current_method
+
 let fill_issue_desc_info_and_log context an key issue_desc loc =
   let desc = expand_message_string issue_desc.CIssue.description an in
   let issue_desc' =
     {issue_desc with CIssue.description = desc; CIssue.loc = loc } in
   log_frontend_issue context.CLintersContext.translation_unit_context
-    context.CLintersContext.current_method key issue_desc'
+    (get_current_method context an) key issue_desc'
 
 (* Calls the set of hard coded checkers (if any) *)
-let invoke_set_of_hard_coded_checkers_an an context =
+let invoke_set_of_hard_coded_checkers_an context an =
   let checkers, key  = match an with
     | CTL.Decl dec -> decl_checkers_list, CAst_utils.generate_key_decl dec
     | CTL.Stmt st -> stmt_checkers_list, CAst_utils.generate_key_stmt st in
@@ -218,7 +227,7 @@ let invoke_set_of_hard_coded_checkers_an an context =
     ) checkers
 
 (* Calls the set of checkers parsed from files (if any) *)
-let invoke_set_of_parsed_checkers_an an context =
+let invoke_set_of_parsed_checkers_an context an =
   let key = match an with
     | CTL.Decl dec -> CAst_utils.generate_key_decl dec
     | CTL.Stmt st -> CAst_utils.generate_key_stmt st in
@@ -230,28 +239,6 @@ let invoke_set_of_parsed_checkers_an an context =
     ) !checkers_decl_stmt
 
 (* We decouple the hardcoded checkers from the parsed ones *)
-let invoke_set_of_checkers_an an context =
-  invoke_set_of_parsed_checkers_an an context;
-  invoke_set_of_hard_coded_checkers_an an context
-
-
-let run_frontend_checkers_on_an (context: CLintersContext.context) an =
-  let open Clang_ast_t in
-  let context' = match an with
-    | CTL.Decl (ObjCImplementationDecl _ as dec) ->
-        {context with current_objc_impl = Some dec}
-    | CTL.Stmt (ObjCAtSynchronizedStmt _ )->
-        { context with CLintersContext.in_synchronized_block = true }
-    | _ -> context in
-  invoke_set_of_checkers_an an context';
-  context'
-
-let run_translation_unit_checker (context: CLintersContext.context) dec =
-  IList.iter (fun checker ->
-      let issue_desc_list = checker context dec in
-      IList.iter (fun issue_desc ->
-          if (CIssue.should_run_check issue_desc.CIssue.mode) then
-            let key = CAst_utils.generate_key_decl dec in
-            log_frontend_issue context.CLintersContext.translation_unit_context
-              context.CLintersContext.current_method key issue_desc
-        ) issue_desc_list) translation_unit_checkers_list
+let invoke_set_of_checkers_on_node context an =
+  invoke_set_of_parsed_checkers_an context an;
+  invoke_set_of_hard_coded_checkers_an context an

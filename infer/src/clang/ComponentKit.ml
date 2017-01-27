@@ -322,11 +322,11 @@ let component_initializer_with_side_effects_advice
 let component_file_line_count_info (context: CLintersContext.context) dec =
   let condition = Config.compute_analytics && context.is_ck_translation_unit in
   match dec with
-  | Clang_ast_t.TranslationUnitDecl _ when condition ->
+  | CTL.Decl Clang_ast_t.TranslationUnitDecl _ when condition ->
       let source_file =
         context.translation_unit_context.CFrontend_config.source_file in
       let line_count = SourceFile.line_count source_file in
-      IList.map (fun i -> {
+      CTL.True, IList.map (fun i -> {
             CIssue.name = "COMPONENT_FILE_LINE_COUNT";
             severity = Exceptions.Kinfo;
             mode = CIssue.Off;
@@ -339,7 +339,7 @@ let component_file_line_count_info (context: CLintersContext.context) dec =
             }
           }
         ) (IList.range 1 line_count)
-  | _ -> []
+  | _ -> CTL.False, []
 
 (** Computes a component file's cyclomatic complexity.
 
