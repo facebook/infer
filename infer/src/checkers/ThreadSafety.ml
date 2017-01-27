@@ -408,18 +408,13 @@ let is_call_to_immutable_collection_method tenv = function
   | _ ->
       false
 
-let is_annotated f_annot pdesc =
-  let annotated_signature = Annotations.get_annotated_signature (Procdesc.get_attributes pdesc) in
-  let ret_annotation, _ = annotated_signature.Annotations.ret in
-  f_annot ret_annotation
-
 (* Methods in @ThreadConfined classes and methods annotated with @ThreadConfied are assumed to all
    run on the same thread. For the moment we won't warn on accesses resulting from use of such
    methods at all. In future we should account for races between these methods and methods from
    completely different classes that don't necessarily run on the same thread as the confined
    object. *)
 let is_thread_confined_method tenv pdesc =
-  is_annotated Annotations.ia_is_thread_confined pdesc ||
+  Annotations.pdesc_return_annot_ends_with pdesc Annotations.thread_confined ||
   PatternMatch.check_current_class_attributes
     Annotations.ia_is_thread_confined tenv (Procdesc.get_proc_name pdesc)
 
@@ -428,7 +423,8 @@ let is_thread_confined_method tenv pdesc =
 let runs_on_ui_thread proc_desc =
   (* assume that methods annotated with @UiThread, @OnEvent, @OnBind, @OnMount, @OnUnbind,
      @OnUnmount always run on the UI thread *)
-  is_annotated
+  Annotations.pdesc_has_return_annot
+    proc_desc
     (fun annot -> Annotations.ia_is_ui_thread annot ||
                   Annotations.ia_is_on_bind annot ||
                   Annotations.ia_is_on_event annot ||
@@ -436,10 +432,8 @@ let runs_on_ui_thread proc_desc =
                   Annotations.ia_is_on_unbind annot ||
                   Annotations.ia_is_on_unmount annot)
 
-    proc_desc
-
 let is_assumed_thread_safe pdesc =
-  is_annotated Annotations.ia_is_assume_thread_safe pdesc
+  Annotations.pdesc_return_annot_ends_with pdesc Annotations.assume_thread_safe
 
 (* return true if we should compute a summary for the procedure. if this returns false, we won't
    analyze the procedure or report any warnings on it *)
@@ -613,7 +607,7 @@ let process_results_table file_env tab =
         tenv
         pname;
       !found in
-    is_annotated Annotations.ia_is_thread_safe_method pdesc||
+    Annotations.pdesc_return_annot_ends_with pdesc Annotations.thread_safe_method ||
     overrides_thread_safe_method (Procdesc.get_proc_name pdesc) tenv in
   let should_report ((_, tenv, _, pdesc) as proc_env) =
     (should_report_on_all_procs || is_thread_safe_method pdesc tenv)

@@ -1186,15 +1186,12 @@ let report_runtime_exceptions tenv pdesc summary =
          && String.equal (Procname.java_get_method pname_java) "main"
      | _ ->
          false) in
-  let is_annotated =
-    let proc_attributes = Specs.pdesc_resolve_attributes pdesc in
-    let annotated_signature = Annotations.get_annotated_signature proc_attributes in
-    let ret_annotation, _ = annotated_signature.Annotations.ret in
-    Annotations.ia_is_verify ret_annotation in
+  let is_annotated pdesc =
+    Annotations.pdesc_has_return_annot pdesc Annotations.ia_is_verify in
   let (exn_preconditions, all_post_exn) =
     exception_preconditions tenv pname summary in
   let should_report pre =
-    all_post_exn || is_main || is_annotated || is_unavoidable tenv pre in
+    all_post_exn || is_main || is_annotated pdesc || is_unavoidable tenv pre in
   let report (pre, runtime_exception) =
     if should_report pre then
       let pre_str =

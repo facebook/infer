@@ -12,6 +12,7 @@ open! IStd
 (** Annotations. *)
 
 val any_thread : string
+val assume_thread_safe : string
 val expensive : string
 val no_allocation : string
 val nullable : string
@@ -21,6 +22,9 @@ val for_non_ui_thread : string
 val for_ui_thread : string
 val guarded_by : string
 val suppress_lint : string
+val thread_confined : string
+val thread_safe : string
+val thread_safe_method : string
 val ui_thread : string
 val visibleForTesting : string
 
