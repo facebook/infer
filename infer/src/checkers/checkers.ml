@@ -404,7 +404,7 @@ let callback_test_state { Callbacks.proc_name } =
 
 (** Check the uses of VisibleForTesting *)
 let callback_checkVisibleForTesting { Callbacks.proc_desc } =
-  if Annotations.pdesc_has_annot proc_desc Annotations.visibleForTesting then
+  if Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting then
     begin
       let loc = Procdesc.get_loc proc_desc in
       let linereader = Printer.LineReader.create () in

@@ -111,7 +111,16 @@ val ia_is_ui_thread : Annot.Item.t -> bool
 val ia_is_thread_confined : Annot.Item.t -> bool
 val ia_is_volatile : Annot.Item.t -> bool
 
-val pdesc_has_annot : Procdesc.t -> string -> bool
+(** return true if the given predicate evaluates to true on an annotation of one of [pdesc]'s
+    parameters *)
+val pdesc_has_parameter_annot : Procdesc.t -> (Annot.Item.t -> bool) -> bool
+
+(** return true if the given predicate evaluates to true on the annotation of [pdesc]'s return
+    value *)
+val pdesc_has_return_annot : Procdesc.t -> (Annot.Item.t -> bool) -> bool
+
+(** return true if [pdesc]'s return value is annotated with a value ending with the given string *)
+val pdesc_return_annot_ends_with : Procdesc.t -> string -> bool
 
 val ma_has_annotation_with : Annot.Method.t -> (Annot.t -> bool) -> bool
 

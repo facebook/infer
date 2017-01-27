@@ -845,7 +845,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
             | _ -> false)
           prop.Prop.sigma in
       Procdesc.get_access pdesc <> PredSymb.Private &&
-      not (Annotations.pdesc_has_annot pdesc Annotations.visibleForTesting) &&
+      not (Annotations.pdesc_return_annot_ends_with pdesc Annotations.visibleForTesting) &&
       not (Procname.java_is_access_method (Procdesc.get_proc_name pdesc)) &&
       not (is_accessible_through_local_ref lexp) &&
       not guardedby_is_self_referential &&

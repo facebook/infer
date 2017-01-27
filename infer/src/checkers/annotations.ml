@@ -58,7 +58,7 @@ let thread_safe_method = "ThreadSafeMethod"
 let true_on_null = "TrueOnNull"
 let ui_thread = "UiThread"
 let verify_annotation = "com.facebook.infer.annotation.Verify"
-let visibleForTesting = "com.google.common.annotations.VisibleForTesting"
+let visibleForTesting = "VisibleForTesting"
 let volatile = "volatile"
 
 (** Method signature with annotations. *)
@@ -94,13 +94,20 @@ let ia_get ia ann_name =
   try Some (fst (IList.find (class_name_matches ann_name) ia))
   with Not_found -> None
 
-let pdesc_has_annot pdesc annot =
-  let f (a : Annot.t) = String.equal a.class_name annot in
-  ma_has_annotation_with (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation f
+let pdesc_has_parameter_annot pdesc predicate =
+  let _, param_annotations = (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation in
+  IList.exists predicate param_annotations
 
-let field_has_annot fieldname (struct_typ : StructTyp.t) f =
+let pdesc_has_return_annot pdesc predicate =
+  let return_annotation, _ = (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation in
+  predicate return_annotation
+
+let pdesc_return_annot_ends_with pdesc annot =
+  pdesc_has_return_annot pdesc (fun ia -> ia_ends_with ia annot)
+
+let field_has_annot fieldname (struct_typ : StructTyp.t) predicate =
   let fld_has_taint_annot (fname, _, annot) =
-    Ident.equal_fieldname fieldname fname && f annot in
+    Ident.equal_fieldname fieldname fname && predicate annot in
   IList.exists fld_has_taint_annot struct_typ.fields ||
   IList.exists fld_has_taint_annot struct_typ.statics
 
