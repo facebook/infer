@@ -6,17 +6,37 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 
-.PHONY: arc.clean noarc.clean
-%.clean:
-	@$(MAKE) -C $% clean
+.PHONY: arc.clean
+arc.clean:
+	@$(MAKE) -C arc clean
 
-.PHONY: arc.print noarc.print
-%.print:
-	@$(MAKE) -C $% print
+.PHONY: noarc.clean
+noarc.clean:
+	@$(MAKE) -C noarc clean
 
-.PHONY: arc.test noarc.test
-%.test:
-	@$(MAKE) -C $% test
+.PHONY: arc.print
+arc.print:
+	@$(MAKE) -C arc print
+
+.PHONY: noarc.print
+noarc.print:
+	@$(MAKE) -C noarc print
+
+.PHONY: arc.test
+arc.test:
+	@$(MAKE) -C arc test
+
+.PHONY: noarc.test
+noarc.test:
+	@$(MAKE) -C noarc test
+
+.PHONY: arc.replace
+arc.replace:
+	@$(MAKE) -C arc replace
+
+.PHONY: noarc.replace
+noarc.replace:
+	@$(MAKE) -C noarc replace
 
 .PHONY: clean
 clean: arc.clean noarc.clean
@@ -26,3 +46,6 @@ print: arc.print noarc.print
 
 .PHONY: test
 test: arc.test noarc.test
+
+.PHONY: replace
+replace: arc.replace noarc.replace

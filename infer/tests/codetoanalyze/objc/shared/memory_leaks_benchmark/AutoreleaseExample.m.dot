@@ -26,7 +26,7 @@ digraph iCFG {
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_3" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_2" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" [label="4:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool(&s1:class Auto*,&s2:class Auto*,&s3:class Auto*) [line 38]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" [label="4:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool(&s3:class Auto*,&s1:class Auto*,&s2:class Auto*) [line 38]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_3" ;
@@ -69,7 +69,7 @@ digraph iCFG {
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_3" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_2" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" [label="4:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool(&s1:class Auto*,&s3:class Auto*,&s2:class Auto*) [line 51]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" [label="4:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool(&s2:class Auto*,&s3:class Auto*,&s1:class Auto*) [line 51]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_3" ;
