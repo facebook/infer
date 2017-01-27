@@ -3,8 +3,8 @@ digraph iCFG {
 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_1" [label="1: Start dereference_ifthenelse\nFormals:  p:int*\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int* y:int 0$?%__sil_tmpSIL_temp_conditional___n$5:int* 0$?%__sil_tmpSIL_temp_conditional___n$10:int* x:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&y,&0$?%__sil_tmpSIL_temp_conditional___n$5,&0$?%__sil_tmpSIL_temp_conditional___n$10,&x); [line 10]\n " color=yellow style=filled]
 	
 
-	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_1" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_16" ;
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_1" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_17" ;
+	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_1" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_18" ;
 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_2" [label="2: Exit dereference_ifthenelse \n  " color=yellow style=filled]
 	
 
@@ -31,55 +31,59 @@ digraph iCFG {
 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_8" [label="8:  UnaryOperator \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int* [line 16]\n " shape="box"]
 	
 
-	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_8" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_2" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_9" [label="9: + \n  " ]
+	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_8" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_9" ;
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_9" [label="9:  Fallback node \n   n$4=*n$3:int [line 16]\n " shape="box"]
 	
 
-	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_9" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_14" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_10" [label="10: Prune (true branch) \n   PRUNE((1 != 0), true); [line 14]\n " shape="invhouse"]
+	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_9" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_2" ;
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_10" [label="10: + \n  " ]
 	
 
-	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_10" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_12" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_11" [label="11: Prune (false branch) \n   PRUNE((1 == 0), false); [line 14]\n " shape="invhouse"]
+	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_10" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_15" ;
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_11" [label="11: Prune (true branch) \n   PRUNE((1 != 0), true); [line 14]\n " shape="invhouse"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_11" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_13" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_12" [label="12:  ConditinalStmt Branch \n   n$6=*&p:int* [line 14]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$5:int*=n$6 [line 14]\n " shape="box"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_12" [label="12: Prune (false branch) \n   PRUNE((1 == 0), false); [line 14]\n " shape="invhouse"]
 	
 
-	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_12" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_9" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_13" [label="13:  ConditinalStmt Branch \n   n$7=*&p:int* [line 14]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$5:int*=n$7 [line 14]\n " shape="box"]
+	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_12" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_14" ;
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_13" [label="13:  ConditinalStmt Branch \n   n$6=*&p:int* [line 14]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$5:int*=n$6 [line 14]\n " shape="box"]
 	
 
-	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_13" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_9" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_14" [label="14:  DeclStmt \n   n$8=*&0$?%__sil_tmpSIL_temp_conditional___n$5:int* [line 14]\n  n$9=*n$8:int [line 14]\n  *&y:int=n$9 [line 14]\n " shape="box"]
+	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_13" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_10" ;
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_14" [label="14:  ConditinalStmt Branch \n   n$7=*&p:int* [line 14]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$5:int*=n$7 [line 14]\n " shape="box"]
 	
 
-	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_14" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_4" ;
-	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_14" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_5" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_15" [label="15: + \n  " ]
+	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_14" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_10" ;
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_15" [label="15:  DeclStmt \n   n$8=*&0$?%__sil_tmpSIL_temp_conditional___n$5:int* [line 14]\n  n$9=*n$8:int [line 14]\n  *&y:int=n$9 [line 14]\n " shape="box"]
 	
 
-	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_15" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_20" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_16" [label="16: Prune (true branch) \n   PRUNE((1 != 0), true); [line 12]\n " shape="invhouse"]
+	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_15" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_4" ;
+	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_15" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_5" ;
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_16" [label="16: + \n  " ]
 	
 
-	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_16" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_18" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_17" [label="17: Prune (false branch) \n   PRUNE((1 == 0), false); [line 12]\n " shape="invhouse"]
+	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_16" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_21" ;
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_17" [label="17: Prune (true branch) \n   PRUNE((1 != 0), true); [line 12]\n " shape="invhouse"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_17" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_19" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_18" [label="18:  ConditinalStmt Branch \n   n$11=*&p:int* [line 12]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$10:int*=n$11 [line 12]\n " shape="box"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_18" [label="18: Prune (false branch) \n   PRUNE((1 == 0), false); [line 12]\n " shape="invhouse"]
 	
 
-	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_18" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_15" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_19" [label="19:  ConditinalStmt Branch \n   n$12=*&p:int* [line 12]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$10:int*=n$12 [line 12]\n " shape="box"]
+	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_18" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_20" ;
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_19" [label="19:  ConditinalStmt Branch \n   n$11=*&p:int* [line 12]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$10:int*=n$11 [line 12]\n " shape="box"]
 	
 
-	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_19" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_15" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_20" [label="20:  BinaryOperatorStmt: Assign \n   n$13=*&0$?%__sil_tmpSIL_temp_conditional___n$10:int* [line 12]\n  n$14=*n$13:int [line 12]\n  *&x:int=n$14 [line 12]\n " shape="box"]
+	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_19" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_16" ;
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_20" [label="20:  ConditinalStmt Branch \n   n$12=*&p:int* [line 12]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$10:int*=n$12 [line 12]\n " shape="box"]
 	
 
-	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_20" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_10" ;
-	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_20" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_11" ;
+	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_20" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_16" ;
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_21" [label="21:  BinaryOperatorStmt: Assign \n   n$13=*&0$?%__sil_tmpSIL_temp_conditional___n$10:int* [line 12]\n  n$14=*n$13:int [line 12]\n  *&x:int=n$14 [line 12]\n " shape="box"]
+	
+
+	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_21" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_11" ;
+	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_21" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_12" ;
 }

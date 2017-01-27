@@ -184,6 +184,20 @@ struct
       f { trans_state with priority = Free } e)
     else f trans_state e
 
+  let exec_with_node_creation f trans_state stmt =
+    let res_trans = f trans_state stmt in
+    if res_trans.instrs <> [] then
+      let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
+      let stmt_info' = { stmt_info with
+                         Clang_ast_t.si_pointer = CAst_utils.get_fresh_pointer () } in
+      let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info' in
+      let sil_loc = CLocation.get_sil_location stmt_info' trans_state.context in
+      let to_parent = PriorityNode.compute_results_to_parent
+          trans_state_pri sil_loc "Fallback node" stmt_info' [res_trans] in
+      { to_parent with exps = res_trans.exps }
+    else
+      res_trans
+
   (* This is the standard way of dealing with self:Class or a call [a class]. We translate it as
      sizeof(<type pf a>) The only time when we want to translate those expressions differently is
      when they are the first argument of method calls. In that case they are not translated as
@@ -2711,7 +2725,8 @@ struct
           } in
     exec_trans_instrs_no_rev trans_state (IList.rev trans_stmt_fun_list)
 
-  and get_clang_stmt_trans stmt = fun trans_state -> instruction trans_state stmt
+  and get_clang_stmt_trans stmt =
+    fun trans_state -> exec_with_node_creation instruction trans_state stmt
 
   (* TODO write translate function for cxx constructor exprs *)
   and get_custom_stmt_trans stmt = match stmt with
