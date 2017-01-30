@@ -1759,7 +1759,7 @@ struct
         { empty_res_trans with
           root_nodes = res_trans_tmp.root_nodes; leaf_nodes = [];
           instrs = res_trans_tmp.instrs @ res_trans_vd.instrs;
-          exps = res_trans_tmp.exps @ res_trans_vd.exps;
+          exps = [];
           initd_exps = res_trans_tmp.initd_exps @ res_trans_vd.initd_exps;
         }
     | CXXRecordDecl _ :: var_decls' (*C++/C record decl treated in the same way *)
