@@ -27,6 +27,7 @@ let expensive = "Expensive"
 let false_on_null = "FalseOnNull"
 let for_ui_thread = "ForUiThread"
 let for_non_ui_thread = "ForNonUiThread"
+let functional = "Functional"
 let guarded_by = "GuardedBy"
 let ignore_allocations = "IgnoreAllocations"
 let initializer_ = "Initializer"
@@ -197,6 +198,9 @@ let ia_is_verify ia =
 
 let ia_is_expensive ia =
   ia_ends_with ia expensive
+
+let ia_is_functional ia =
+  ia_ends_with ia functional
 
 let ia_is_performance_critical ia =
   ia_ends_with ia performance_critical

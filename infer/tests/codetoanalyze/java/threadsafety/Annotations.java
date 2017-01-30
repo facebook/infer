@@ -19,6 +19,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import android.support.annotation.UiThread;
 
 import com.facebook.infer.annotation.AssumeThreadSafe;
+import com.facebook.infer.annotation.Functional;
 import com.facebook.infer.annotation.ThreadConfined;
 
 /** tests for classes and method annotations that are meaningful w.r.t thread-safety */
@@ -48,8 +49,13 @@ import com.facebook.infer.annotation.ThreadConfined;
 @interface OnUnmount {
 }
 
+interface FunctionalInterface {
+
+  @Functional Object method();
+}
+
 @ThreadSafe
-class Annotations {
+class Annotations implements FunctionalInterface {
   Object f;
 
   @UiThread
@@ -132,6 +138,56 @@ class Annotations {
   @AssumeThreadSafe(because = "it's a test")
   public void assumeThreadSafeOk() {
     this.f = new Object();
+  }
+
+  @Functional native Object returnFunctional1();
+  @Functional Object returnFunctional2() { return null; }
+  // marked @Functional in interface
+  @Override public Object method() { return null; }
+
+  Object mAssignToFunctional;
+
+  public Object functionalOk1() {
+    if (mAssignToFunctional == null) {
+      mAssignToFunctional = returnFunctional1();
+    }
+    return mAssignToFunctional;
+  }
+
+  public Object functionalOk2() {
+    if (mAssignToFunctional == null) {
+      mAssignToFunctional = returnFunctional2();
+    }
+    return mAssignToFunctional;
+  }
+
+  public Object functionalOk3() {
+    if (mAssignToFunctional == null) {
+      mAssignToFunctional = method();
+    }
+    return mAssignToFunctional;
+  }
+
+  @Functional native double returnDouble();
+  @Functional native long returnLong();
+
+  double mDouble;
+  long mLong;
+
+  // writes to doubles are not atomic on all platforms, so this is not a benign race
+  public double functionalDoubleBad() {
+    if (mDouble == 0.0) {
+      mDouble = returnDouble();
+    }
+    return mDouble;
+  }
+
+  // writes to longs are not atomic on all platforms, so this is not a benign race
+  public long functionaLongBad() {
+    if (mLong == 0L) {
+      mLong = returnLong();
+    }
+    return mLong;
   }
 
 }

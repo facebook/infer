@@ -65,7 +65,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     with Not_found -> None
 
   let is_owned access_path owned_set =
-    Domain.OwnershipDomain.mem access_path owned_set
+    Domain.AccessPathSetDomain.mem access_path owned_set
 
   let is_initializer tenv proc_name =
     Procname.is_constructor proc_name ||
@@ -118,6 +118,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Some rhs_access_path -> IdAccessPathMapDomain.add lhs_id rhs_access_path id_map
     | None -> id_map
 
+  (* like PatternMatch.override_exists, but also applies [predicate] to [pname] *)
+  let proc_or_override_is_annotated pname tenv predicate =
+    let has_return_annot pn =
+      Annotations.pname_has_return_annot
+        pn
+        ~attrs_of_pname:Specs.proc_resolve_attributes
+        predicate in
+    has_return_annot pname || PatternMatch.override_exists has_return_annot tenv pname
+
   let exec_instr (astate : Domain.astate) { ProcData.pdesc; tenv; extras; } _ =
     let pname = Procdesc.get_proc_name pdesc in
     let is_allocation pn =
@@ -164,116 +173,128 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         begin
           match AccessPath.of_lhs_exp (Exp.Var lhs_id) lhs_typ ~f_resolve_id with
           | Some lhs_access_path ->
-              let owned = OwnershipDomain.add lhs_access_path astate.owned in
+              let owned = AccessPathSetDomain.add lhs_access_path astate.owned in
               { astate with owned; }
           | None ->
               astate
         end
-    | Sil.Call (ret_opt, Const (Cfun pn), actuals, loc, _) ->
-        begin
+    | Sil.Call (ret_opt, Const (Cfun callee_pname), actuals, loc, _) ->
+        let astate_callee =
           (* assuming that modeled procedures do not have useful summaries *)
-          match get_lock_model pn with
+          match get_lock_model callee_pname with
           | Lock ->
               { astate with locks = true; }
           | Unlock ->
               { astate with locks = false; }
           | NoEffect ->
-              if is_unprotected astate.locks && is_container_write pn tenv
+              if is_unprotected astate.locks && is_container_write callee_pname tenv
               then
                 match actuals with
                 | (receiver_exp, receiver_typ) :: _ ->
-                    add_container_write pn loc receiver_exp receiver_typ astate
+                    add_container_write callee_pname loc receiver_exp receiver_typ astate
                 | [] ->
                     failwithf
                       "Call to %a is marked as a container write, but has no receiver"
-                      Procname.pp pn
+                      Procname.pp callee_pname
               else
-                begin
-                  match Summary.read_summary pdesc pn with
-                  | Some (callee_locks,
-                          callee_reads,
-                          callee_conditional_writes,
-                          callee_unconditional_writes,
-                          is_retval_owned) ->
-                      let locks' = callee_locks || astate.locks in
-                      let astate' =
-                        (* TODO (14842325): report on constructors that aren't threadsafe
-                           (e.g., constructors that access static fields) *)
-                        if is_unprotected locks'
-                        then
-                          let call_site = CallSite.make pn loc in
-                          (* add the conditional writes rooted in the callee formal at [index] to
-                             the current state *)
-                          let add_conditional_writes
-                              ((cond_writes, uncond_writes) as acc) index (actual_exp, actual_typ) =
-                            try
-                              let callee_cond_writes_for_index' =
-                                let callee_cond_writes_for_index =
-                                  ConditionalWritesDomain.find index callee_conditional_writes in
-                                PathDomain.with_callsite callee_cond_writes_for_index call_site in
-                              begin
-                                match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
-                                | Some actual_access_path ->
-                                    if is_owned actual_access_path astate.owned
-                                    then
-                                      (* the actual passed to the current callee is owned. drop all
-                                         the conditional writes for that actual, since they're all
-                                         safe *)
-                                      acc
-                                    else
-                                      let base = fst actual_access_path in
-                                      begin
-                                        match FormalMap.get_formal_index base extras with
-                                        | Some formal_index ->
-                                            (* the actual passed to the current callee is rooted in
-                                               a formal. add to conditional writes *)
-                                            let conditional_writes' =
-                                              try
-                                                ConditionalWritesDomain.find
-                                                  formal_index cond_writes
-                                                |> PathDomain.join callee_cond_writes_for_index'
-                                              with Not_found ->
-                                                callee_cond_writes_for_index' in
-                                            let cond_writes' =
-                                              ConditionalWritesDomain.add
-                                                formal_index conditional_writes' cond_writes in
-                                            cond_writes', uncond_writes
-                                        | None ->
-                                            (* access path not owned and not rooted in a formal. add
-                                               to unconditional writes *)
-                                            cond_writes,
-                                            PathDomain.join
-                                              uncond_writes callee_cond_writes_for_index'
-                                      end
-                                | _ ->
-                                    cond_writes,
-                                    PathDomain.join uncond_writes callee_cond_writes_for_index'
-                              end
-                            with Not_found ->
-                              acc in
-                          let conditional_writes, unconditional_writes =
-                            let combined_unconditional_writes =
-                              PathDomain.with_callsite callee_unconditional_writes call_site
-                              |> PathDomain.join astate.unconditional_writes in
-                            IList.fold_lefti
-                              add_conditional_writes
-                              (astate.conditional_writes, combined_unconditional_writes)
-                              actuals in
-                          let reads =
-                            PathDomain.with_callsite callee_reads call_site
-                            |> PathDomain.join astate.reads in
-                          { astate with reads; conditional_writes; unconditional_writes; }
-                        else
-                          astate in
-                      let owned = match ret_opt with
-                        | Some (ret_id, ret_typ) when is_retval_owned ->
-                            OwnershipDomain.add (AccessPath.of_id ret_id ret_typ) astate'.owned
-                        | _ ->
-                            astate'.owned in
-                      { astate' with locks = locks'; owned; }
-                  | None ->
-                      astate
-                end
+                match Summary.read_summary pdesc callee_pname with
+                | Some (callee_locks,
+                        callee_reads,
+                        callee_conditional_writes,
+                        callee_unconditional_writes,
+                        is_retval_owned) ->
+                    let locks' = callee_locks || astate.locks in
+                    let astate' =
+                      (* TODO (14842325): report on constructors that aren't threadsafe
+                         (e.g., constructors that access static fields) *)
+                      if is_unprotected locks'
+                      then
+                        let call_site = CallSite.make callee_pname loc in
+                        (* add the conditional writes rooted in the callee formal at [index] to
+                           the current state *)
+                        let add_conditional_writes
+                            ((cond_writes, uncond_writes) as acc) index (actual_exp, actual_typ) =
+                          try
+                            let callee_cond_writes_for_index' =
+                              let callee_cond_writes_for_index =
+                                ConditionalWritesDomain.find index callee_conditional_writes in
+                              PathDomain.with_callsite callee_cond_writes_for_index call_site in
+                            begin
+                              match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
+                              | Some actual_access_path ->
+                                  if is_owned actual_access_path astate.owned
+                                  then
+                                    (* the actual passed to the current callee is owned. drop all
+                                       the conditional writes for that actual, since they're all
+                                       safe *)
+                                    acc
+                                  else
+                                    let base = fst actual_access_path in
+                                    begin
+                                      match FormalMap.get_formal_index base extras with
+                                      | Some formal_index ->
+                                          (* the actual passed to the current callee is rooted in
+                                             a formal. add to conditional writes *)
+                                          let conditional_writes' =
+                                            try
+                                              ConditionalWritesDomain.find
+                                                formal_index cond_writes
+                                              |> PathDomain.join callee_cond_writes_for_index'
+                                            with Not_found ->
+                                              callee_cond_writes_for_index' in
+                                          let cond_writes' =
+                                            ConditionalWritesDomain.add
+                                              formal_index conditional_writes' cond_writes in
+                                          cond_writes', uncond_writes
+                                      | None ->
+                                          (* access path not owned and not rooted in a formal. add
+                                             to unconditional writes *)
+                                          cond_writes,
+                                          PathDomain.join
+                                            uncond_writes callee_cond_writes_for_index'
+                                    end
+                              | _ ->
+                                  cond_writes,
+                                  PathDomain.join uncond_writes callee_cond_writes_for_index'
+                            end
+                          with Not_found ->
+                            acc in
+                        let conditional_writes, unconditional_writes =
+                          let combined_unconditional_writes =
+                            PathDomain.with_callsite callee_unconditional_writes call_site
+                            |> PathDomain.join astate.unconditional_writes in
+                          IList.fold_lefti
+                            add_conditional_writes
+                            (astate.conditional_writes, combined_unconditional_writes)
+                            actuals in
+                        let reads =
+                          PathDomain.with_callsite callee_reads call_site
+                          |> PathDomain.join astate.reads in
+                        { astate with reads; conditional_writes; unconditional_writes; }
+                      else
+                        astate in
+                    let owned = match ret_opt with
+                      | Some (ret_id, ret_typ) when is_retval_owned ->
+                          AccessPathSetDomain.add (AccessPath.of_id ret_id ret_typ) astate'.owned
+                      | _ ->
+                          astate'.owned in
+                    { astate' with locks = locks'; owned; }
+                | None ->
+                    astate in
+        begin
+          match ret_opt with
+          | Some (_, (Typ.Tint ILong | Tfloat FDouble)) ->
+              (* writes to longs and doubles are not guaranteed to be atomic in Java, so don't
+                 bother tracking whether a returned long or float value is functional *)
+              astate_callee
+          | Some (ret_id, ret_typ) when
+              proc_or_override_is_annotated callee_pname tenv Annotations.ia_is_functional ->
+              let functional =
+                AccessPathSetDomain.add
+                  (AccessPath.of_id ret_id ret_typ) astate_callee.functional in
+              { astate_callee with functional; }
+          | _ ->
+              astate_callee
         end
 
     | Sil.Store (Exp.Lvar lhs_pvar, lhs_typ, rhs_exp, _) when Pvar.is_frontend_tmp lhs_pvar ->
@@ -284,10 +305,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let get_formal_index exp typ = match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
           | Some (base, _) -> FormalMap.get_formal_index base extras
           | None -> None in
+        let is_marked_functional exp typ functional_set =
+          match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
+          | Some access_path -> AccessPathSetDomain.mem access_path functional_set
+          | None -> false in
         let conditional_writes, unconditional_writes =
           match lhs_exp with
           | Lfield (base_exp, _, typ)
-            when is_unprotected astate.locks -> (* abstracts no lock being held *)
+            when is_unprotected astate.locks (* abstracts no lock being held *) &&
+                 not (is_marked_functional rhs_exp lhs_typ astate.functional) ->
               begin
                 match get_formal_index base_exp typ with
                 | Some formal_index ->
@@ -321,20 +347,25 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               end
           | _ ->
               astate.conditional_writes, astate.unconditional_writes in
-        (* if rhs is owned, propagate ownership to lhs. otherwise, remove lhs from ownership set
-           (since it may have previously held an owned memory loc and is now being reassigned *)
-        let owned =
-          match AccessPath.of_lhs_exp lhs_exp lhs_typ ~f_resolve_id,
-                AccessPath.of_lhs_exp rhs_exp lhs_typ ~f_resolve_id with
+
+        (* if rhs is owned/functional, propagate to lhs. otherwise, remove lhs from
+           ownership/functional set (since it may have previously held an owned/functional memory
+           loc and is now being reassigned *)
+        let lhs_access_path_opt = AccessPath.of_lhs_exp lhs_exp lhs_typ ~f_resolve_id in
+        let rhs_access_path_opt = AccessPath.of_lhs_exp rhs_exp lhs_typ ~f_resolve_id in
+        let update_access_path_set access_path_set =
+          match lhs_access_path_opt, rhs_access_path_opt with
           | Some lhs_access_path, Some rhs_access_path ->
-              if OwnershipDomain.mem rhs_access_path astate.owned
-              then OwnershipDomain.add lhs_access_path astate.owned
-              else OwnershipDomain.remove lhs_access_path astate.owned
+              if AccessPathSetDomain.mem rhs_access_path access_path_set
+              then AccessPathSetDomain.add lhs_access_path access_path_set
+              else AccessPathSetDomain.remove lhs_access_path access_path_set
           | Some lhs_access_path, None ->
-              OwnershipDomain.remove lhs_access_path astate.owned
+              AccessPathSetDomain.remove lhs_access_path access_path_set
           | _ ->
-              astate.owned in
-        { astate with conditional_writes; unconditional_writes; owned; }
+              access_path_set in
+        let owned = update_access_path_set astate.owned in
+        let functional = update_access_path_set astate.functional in
+        { astate with conditional_writes; unconditional_writes; owned; functional; }
 
     | Sil.Load (lhs_id, rhs_exp, rhs_typ, loc) ->
         let id_map = analyze_id_assignment (Var.of_id lhs_id) rhs_exp rhs_typ astate in
@@ -344,15 +375,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               add_path_to_state rhs_exp typ loc astate.reads astate.id_map astate.owned pname tenv
           | _ ->
               astate.reads in
-        (* if rhs is owned, propagate ownership to lhs *)
-        let owned =
+
+        (* if rhs is owned/functional, propagate to lhs *)
+        let owned, functional =
           match AccessPath.of_lhs_exp rhs_exp rhs_typ ~f_resolve_id with
-          | Some rhs_access_path
-            when OwnershipDomain.mem rhs_access_path astate.owned ->
-              OwnershipDomain.add (AccessPath.of_id lhs_id rhs_typ) astate.owned
+          | Some rhs_access_path ->
+              let propagate_to_lhs access_path_set =
+                if AccessPathSetDomain.mem rhs_access_path access_path_set
+                then AccessPathSetDomain.add (AccessPath.of_id lhs_id rhs_typ) access_path_set
+                else access_path_set in
+              propagate_to_lhs astate.owned, propagate_to_lhs astate.functional
           | _ ->
-              astate.owned in
-        { astate with Domain.reads; id_map; owned; }
+              astate.owned, astate.functional in
+        { astate with Domain.reads; id_map; owned; functional; }
 
     | Sil.Remove_temps (ids, _) ->
         let id_map =
@@ -484,7 +519,7 @@ let make_results_table get_proc_desc file_env =
                   AccessPath.of_pvar
                     (Pvar.get_ret_pvar (Procdesc.get_proc_name pdesc))
                     (Procdesc.get_ret_type pdesc) in
-                let return_is_owned = OwnershipDomain.mem return_var_ap owned in
+                let return_is_owned = AccessPathSetDomain.mem return_var_ap owned in
                 Some (locks, reads, conditional_writes, unconditional_writes, return_is_owned)
             | None ->
                 None

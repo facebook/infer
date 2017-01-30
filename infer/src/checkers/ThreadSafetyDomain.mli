@@ -11,7 +11,7 @@ open! IStd
 
 module F = Format
 
-module OwnershipDomain : module type of AbstractDomain.InvertedSet (AccessPath.RawSet)
+module AccessPathSetDomain : module type of AbstractDomain.InvertedSet (AccessPath.RawSet)
 
 module TraceElem : TraceElem.S with module Kind = AccessPath.Raw
 
@@ -55,8 +55,10 @@ type astate =
     (** access paths written outside of synchronization *)
     id_map : IdAccessPathMapDomain.astate;
     (** map used to decompile temporary variables into access paths *)
-    owned : OwnershipDomain.astate;
+    owned : AccessPathSetDomain.astate;
     (** access paths that must be owned by the current function *)
+    functional : AccessPathSetDomain.astate;
+    (** access paths holding values returned from a call marked with @Functional *)
   }
 
 (** same as astate, but without [id_map]/[owned] (since they are local) and with the addition of a
