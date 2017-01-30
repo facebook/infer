@@ -128,11 +128,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           let typename = Typename.Java.from_string (Procname.java_get_class_name java_pname) in
           let is_container_write_ typename _ =
             match Typename.name typename, Procname.java_get_method java_pname with
+            | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set") -> true
             | "java.util.Map", ("clear" | "put" | "putAll" | "remove") -> true
             | _ -> false in
           let is_threadsafe_collection typename _ = match Typename.name typename with
-            | "java.util.concurrent.ConcurrentMap" -> true
-            | _ -> false in
+            | "java.util.concurrent.ConcurrentMap" | "java.util.concurrent.CopyOnWriteArrayList" ->
+                true
+            | _ ->
+                false in
           PatternMatch.supertype_exists tenv is_container_write_ typename &&
           not (PatternMatch.supertype_exists tenv is_threadsafe_collection typename)
       | _ -> false in

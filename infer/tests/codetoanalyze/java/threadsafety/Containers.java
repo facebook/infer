@@ -9,18 +9,72 @@
 
 package codetoanalyze.java.checkers;
 
-import javax.annotation.concurrent.ThreadSafe;
-
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import javax.annotation.concurrent.ThreadSafe;
 
 @ThreadSafe
 class Containers {
 
+  List<String> mList;
   Map<String,String> mMap;
 
+  // lists
+  void listAddBad1(String s) {
+    mList.add(s);
+  }
+
+  void listAddBad2(int index, String s) {
+    mList.add(index, s);
+  }
+
+  void listAddAllBad(Collection<String> c) {
+    mList.addAll(c);
+  }
+
+  void listClearBad() {
+    mList.clear();
+  }
+
+  void listRemoveBad1(int index) {
+    mList.remove(index);
+  }
+
+  void listRemoveBad2(String s) {
+    mList.remove(s);
+  }
+
+  void listRemoveAllBad(Collection<String> c) {
+    mList.removeAll(c);
+  }
+
+  void listSetBad(int index, String s) {
+    mList.set(index, s);
+  }
+
+  void listSubclassWriteBad(ArrayList<String> list, int index) {
+    list.remove(index);
+  }
+
+  void listReadOk(int index, String s) {
+    mList.contains(s);
+    mList.get(index);
+    mList.isEmpty();
+    mList.size();
+  }
+
+  void accessSafeListOk(CopyOnWriteArrayList list, int index) {
+    list.remove(index);
+  }
+
+  // maps
   void mapPutBad(String key, String value) {
     mMap.put(key, value);
   }
@@ -52,7 +106,6 @@ class Containers {
   void mapSubclassWriteBad(HashMap<String,String> m, String key) {
     m.remove(key);
   }
-
 
   synchronized void synchronizedWriteOk1(String key) {
     mMap.remove(key);
