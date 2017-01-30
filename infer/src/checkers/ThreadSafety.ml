@@ -455,7 +455,8 @@ let should_analyze_proc pdesc tenv =
 (* return true if we should report on unprotected accesses during the procedure *)
 let should_report_on_proc (_, _, proc_name, proc_desc) =
   not (Procname.java_is_autogen_method proc_name) &&
-  Procdesc.get_access proc_desc <> PredSymb.Private
+  Procdesc.get_access proc_desc <> PredSymb.Private &&
+  not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting)
 
 (* creates a map from proc_envs to postconditions *)
 let make_results_table get_proc_desc file_env =

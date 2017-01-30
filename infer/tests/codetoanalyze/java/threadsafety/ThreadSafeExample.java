@@ -12,6 +12,8 @@ package codetoanalyze.java.checkers;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import com.facebook.infer.annotation.ThreadSafeMethod;
 
 @ThreadSafe
@@ -99,6 +101,17 @@ public class ThreadSafeExample{
   // we don't warn on unsafe writes to volatile fields
   public void unsafeVolatileWriteOk() {
     this.volatileField = new Object();
+  }
+
+  // don't count the method as public if it's marked VisibleForTesting
+  @VisibleForTesting
+  public void visibleForTestingNotPublicOk() {
+    this.f = 47;
+  }
+
+  // but do complain if a VisibleForTesting method is called from a public method
+  public void callVisibleForTestingBad() {
+    visibleForTestingNotPublicOk();
   }
 
 }
