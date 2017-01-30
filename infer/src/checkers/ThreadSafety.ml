@@ -596,10 +596,7 @@ let process_results_table file_env tab =
       let check_method_attributes check pname =
         match Specs.proc_resolve_attributes pname with
         | None -> false
-        | Some attributes ->
-            let annotated_signature = Annotations.get_annotated_signature attributes in
-            let ret_annotation, _ = annotated_signature.Annotations.ret in
-            check ret_annotation in
+        | Some attributes -> check (fst attributes.ProcAttributes.method_annotation) in
       let found = ref false in
       PatternMatch.proc_iter_overridden_methods
         (fun pn ->

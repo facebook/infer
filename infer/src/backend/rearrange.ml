@@ -775,10 +775,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
   let enforce_guarded_access_ accessed_fld guarded_by_str prop =
     (* return true if [pdesc] has an annotation that matches [guarded_by_str] *)
     let proc_has_matching_annot pdesc guarded_by_str =
-      let proc_signature =
-        Annotations.get_annotated_signature (Procdesc.get_attributes pdesc) in
-      let proc_annot, _ = proc_signature.Annotations.ret in
-      match extract_guarded_by_str proc_annot with
+      match extract_guarded_by_str (Annotations.pdesc_get_return_annot pdesc) with
       | Some proc_guarded_by_str ->
           (* the lock is not held, but the procedure is annotated with @GuardedBy *)
           String.equal proc_guarded_by_str guarded_by_str
@@ -817,10 +814,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       String.equal "itself" (String.lowercase guarded_by_str) ||
       String.is_suffix ~suffix:guarded_by_str (Ident.fieldname_to_string accessed_fld) in
     let proc_has_suppress_guarded_by_annot pdesc =
-      let proc_signature =
-        Annotations.get_annotated_signature (Procdesc.get_attributes pdesc) in
-      let proc_annot, _ = proc_signature.Annotations.ret in
-      match extract_suppress_warnings_str proc_annot with
+      match extract_suppress_warnings_str (Annotations.pdesc_get_return_annot pdesc) with
       | Some suppression_str->
           String.equal suppression_str "InvalidAccessToGuardedField"
       | None -> false in

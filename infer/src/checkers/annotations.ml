@@ -98,9 +98,11 @@ let pdesc_has_parameter_annot pdesc predicate =
   let _, param_annotations = (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation in
   IList.exists predicate param_annotations
 
+let pdesc_get_return_annot pdesc =
+  fst (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation
+
 let pdesc_has_return_annot pdesc predicate =
-  let return_annotation, _ = (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation in
-  predicate return_annotation
+  predicate (pdesc_get_return_annot pdesc)
 
 let pdesc_return_annot_ends_with pdesc annot =
   pdesc_has_return_annot pdesc (fun ia -> ia_ends_with ia annot)

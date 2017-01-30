@@ -130,10 +130,7 @@ let check_attributes check tenv pname =
   let check_method_attributes check pname =
     match Specs.proc_resolve_attributes pname with
     | None -> false
-    | Some attributes ->
-        let annotated_signature = Annotations.get_annotated_signature attributes in
-        let ret_annotation, _ = annotated_signature.Annotations.ret in
-        check ret_annotation in
+    | Some attributes -> check (fst attributes.ProcAttributes.method_annotation) in
   PatternMatch.check_class_attributes check tenv pname || check_method_attributes check pname
 
 let method_overrides is_annotated tenv pname =

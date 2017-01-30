@@ -119,6 +119,9 @@ val ia_is_volatile : Annot.Item.t -> bool
     parameters *)
 val pdesc_has_parameter_annot : Procdesc.t -> (Annot.Item.t -> bool) -> bool
 
+(** get the list of annotations on the return value of [pdesc] *)
+val pdesc_get_return_annot : Procdesc.t -> Annot.Item.t
+
 (** return true if the given predicate evaluates to true on the annotation of [pdesc]'s return
     value *)
 val pdesc_has_return_annot : Procdesc.t -> (Annot.Item.t -> bool) -> bool
