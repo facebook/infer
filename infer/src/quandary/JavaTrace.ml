@@ -69,7 +69,7 @@ module SourceKind = struct
                     let procedure = class_name ^ "." ^ method_name in
                     IList.find_map_opt
                       (fun (source_spec : QuandaryConfig.Source.t) ->
-                         if String.equal source_spec.procedure procedure
+                         if Str.string_match source_spec.procedure procedure 0
                          then Some (of_string source_spec.kind)
                          else None)
                       external_sources
@@ -236,7 +236,7 @@ module SinkKind = struct
                     let procedure = class_name ^ "." ^ method_name in
                     IList.find_map_opt
                       (fun (sink_spec : QuandaryConfig.Sink.t) ->
-                         if String.equal sink_spec.procedure procedure
+                         if Str.string_match sink_spec.procedure procedure 0
                          then
                            let kind = of_string sink_spec.kind in
                            try

@@ -1,7 +1,7 @@
 {
   "quandary-sources": [
     {
-      "procedure": "codetoanalyze.java.quandary.ExternalSpecs.privateDataSource",
+      "procedure": "codetoanalyze.java.quandary.ExternalSpecs.privateData*",
       "kind": "PrivateData"
     }
   ],
