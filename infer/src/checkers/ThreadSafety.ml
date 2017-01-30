@@ -596,14 +596,15 @@ let process_results_table file_env tab =
   (* TODO (t15588153): clean this up *)
   let is_thread_safe_method pdesc tenv =
     let overrides_thread_safe_method pname tenv =
-      let check_method_attributes check pname =
-        match Specs.proc_resolve_attributes pname with
-        | None -> false
-        | Some attributes -> check (fst attributes.ProcAttributes.method_annotation) in
       let found = ref false in
       PatternMatch.proc_iter_overridden_methods
         (fun pn ->
-           found := !found || check_method_attributes Annotations.ia_is_thread_safe_method pn)
+           found :=
+             !found ||
+             Annotations.pname_has_return_annot
+               pn
+               ~attrs_of_pname:Specs.proc_resolve_attributes
+               Annotations.ia_is_thread_safe_method)
         tenv
         pname;
       !found in

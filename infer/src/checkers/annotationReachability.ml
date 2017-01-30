@@ -127,11 +127,8 @@ let is_allocator tenv pname =
       false
 
 let check_attributes check tenv pname =
-  let check_method_attributes check pname =
-    match Specs.proc_resolve_attributes pname with
-    | None -> false
-    | Some attributes -> check (fst attributes.ProcAttributes.method_annotation) in
-  PatternMatch.check_class_attributes check tenv pname || check_method_attributes check pname
+  PatternMatch.check_class_attributes check tenv pname ||
+  Annotations.pname_has_return_annot pname ~attrs_of_pname:Specs.proc_resolve_attributes check
 
 let method_overrides is_annotated tenv pname =
   let overrides () =

@@ -107,6 +107,13 @@ let pdesc_has_return_annot pdesc predicate =
 let pdesc_return_annot_ends_with pdesc annot =
   pdesc_has_return_annot pdesc (fun ia -> ia_ends_with ia annot)
 
+(* note: we would use Specs.proc_resolve_attributes directly instead of requiring [attrs_of_pname],
+   but doing so creates a circular dependency *)
+let pname_has_return_annot pname ~attrs_of_pname predicate =
+  match attrs_of_pname pname with
+  | Some attributes -> predicate (fst attributes.ProcAttributes.method_annotation)
+  | None -> false
+
 let field_has_annot fieldname (struct_typ : StructTyp.t) predicate =
   let fld_has_taint_annot (fname, _, annot) =
     Ident.equal_fieldname fieldname fname && predicate annot in
