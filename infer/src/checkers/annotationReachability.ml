@@ -131,14 +131,8 @@ let check_attributes check tenv pname =
   Annotations.pname_has_return_annot pname ~attrs_of_pname:Specs.proc_resolve_attributes check
 
 let method_overrides is_annotated tenv pname =
-  let overrides () =
-    let found = ref false in
-    PatternMatch.proc_iter_overridden_methods
-      (fun pn -> found := is_annotated tenv pn)
-      tenv pname;
-    !found in
   is_annotated tenv pname ||
-  overrides ()
+  PatternMatch.override_exists (fun pn -> is_annotated tenv pn) tenv pname
 
 let method_has_annot annot tenv pname =
   let has_annot ia = Annotations.ia_ends_with ia annot.Annot.class_name in
@@ -366,8 +360,7 @@ module Interprocedural = struct
         Reporting.log_error proc_name ~loc exn in
 
     if expensive then
-      PatternMatch.proc_iter_overridden_methods
-        check_expensive_subtyping_rules tenv proc_name;
+      PatternMatch.override_iter check_expensive_subtyping_rules tenv proc_name;
 
     let report_src_snk_paths call_map (src_annot_list, (snk_annot: Annot.t)) =
       let extract_calls_with_annot annot call_map =

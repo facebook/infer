@@ -554,4 +554,4 @@ let check_overridden_annotations
     | None ->
         () in
 
-  PatternMatch.proc_iter_overridden_methods check tenv proc_name
+  PatternMatch.override_iter check tenv proc_name

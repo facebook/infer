@@ -327,33 +327,28 @@ let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t)
   IList.iter do_node nodes;
   IList.rev !res
 
-
-(** Iterate over all the methods overridden by the procedure.
-    Only Java supported at the moment. *)
-let proc_iter_overridden_methods f tenv proc_name =
-  let do_super_type tenv super_class_name =
+let override_exists f tenv proc_name =
+  let super_type_exists tenv super_class_name =
     let super_proc_name =
       Procname.replace_class proc_name (Typename.name super_class_name) in
     match Tenv.lookup tenv super_class_name with
     | Some ({ methods }) ->
         let is_override pname =
-          Procname.equal pname super_proc_name &&
-          not (Procname.is_constructor pname) in
-        IList.iter
-          (fun pname ->
-             if is_override pname
-             then f pname)
-          methods
-    | _ -> () in
-
+          Procname.equal pname super_proc_name && not (Procname.is_constructor pname) in
+        IList.exists (fun pname -> is_override pname && f pname) methods
+    | _ ->
+        false in
   match proc_name with
   | Procname.Java proc_name_java ->
       let type_name = Typename.Java.from_string (Procname.java_get_class_name proc_name_java) in
-      IList.iter
-        (do_super_type tenv)
+      IList.exists
+        (super_type_exists tenv)
         (type_get_direct_supertypes tenv (Typ.Tstruct type_name))
   | _ ->
-      () (* Only java supported at the moment *)
+      false (* Only java supported at the moment *)
+
+let override_iter f tenv proc_name =
+  ignore(override_exists (fun pname -> f pname; false) tenv proc_name)
 
 (** return the set of instance fields that are assigned to a null literal in [procdesc] *)
 let get_fields_nullified procdesc =
