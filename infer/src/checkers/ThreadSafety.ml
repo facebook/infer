@@ -92,6 +92,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             begin
               match Tenv.lookup tenv typename with
               | Some struct_typ ->
+                  Annotations.struct_typ_has_annot struct_typ Annotations.ia_is_thread_confined ||
                   Annotations.field_has_annot
                     fieldname struct_typ Annotations.ia_is_thread_confined ||
                   Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_volatile

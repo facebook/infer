@@ -79,8 +79,12 @@ class Annotations implements FunctionalInterface {
 
   Confined con;
 
-  public void confinedCaller(){
+  public void confinedCallerOk(){
     con.foo();
+  }
+
+  public void writeFieldOfConfinedClassOk() {
+    con.x = 7;
   }
 
   @ThreadConfined

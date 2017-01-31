@@ -121,6 +121,9 @@ let field_has_annot fieldname (struct_typ : StructTyp.t) predicate =
   IList.exists fld_has_taint_annot struct_typ.fields ||
   IList.exists fld_has_taint_annot struct_typ.statics
 
+let struct_typ_has_annot (struct_typ : StructTyp.t) predicate =
+  predicate struct_typ.annots
+
 let ia_is_not_thread_safe ia =
   ia_ends_with ia not_thread_safe
 
