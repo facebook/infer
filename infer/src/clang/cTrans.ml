@@ -668,7 +668,7 @@ struct
     match typ with
     | Tptr (_, Pk_reference) ->
         (* dereference pvar due to the behavior of reference types in clang's AST *)
-        dereference_value_from_result sil_loc res_trans ~strip_pointer:true
+        dereference_value_from_result sil_loc res_trans ~strip_pointer:false
     | _ -> res_trans
 
   and decl_ref_trans trans_state pre_trans_result stmt_info decl_ref ~is_constructor_init =

@@ -399,9 +399,9 @@ let dereference_var_sil (exp, typ) sil_loc =
     assigned to it *)
 let dereference_value_from_result sil_loc trans_result ~strip_pointer =
   let (obj_sil, class_typ) = extract_exp_from_list trans_result.exps "" in
-  let cast_inst, cast_exp = dereference_var_sil (obj_sil, class_typ) sil_loc in
   let typ_no_ptr = match class_typ with | Typ.Tptr (typ, _) -> typ | _ -> assert false in
   let cast_typ = if strip_pointer then typ_no_ptr else class_typ in
+  let cast_inst, cast_exp = dereference_var_sil (obj_sil, cast_typ) sil_loc in
   { trans_result with
     instrs = trans_result.instrs @ cast_inst;
     exps = [(cast_exp, cast_typ)]
@@ -433,7 +433,7 @@ let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
   | `LValueToRValue ->
       (* Takes an LValue and allow it to use it as RValue. *)
       (* So we assign the LValue to a temp and we pass it to the parent.*)
-      let instrs, deref_exp = dereference_var_sil (exp, typ) sil_loc in
+      let instrs, deref_exp = dereference_var_sil (exp, cast_typ) sil_loc in
       instrs, (deref_exp, cast_typ)
   | _ ->
       Logging.err_debug
