@@ -210,7 +210,10 @@ def parse_buck_command(args):
         parsed_args = parser.parse_args(buck_args)
         base_cmd_without_targets = [p for p in buck_args
                                     if p not in parsed_args.targets]
-        base_cmd = ['buck', build_keyword] + base_cmd_without_targets
+        buck_build_command = ['buck', build_keyword]
+        if not parsed_args.deep:
+            buck_build_command.append('--deep')
+        base_cmd = buck_build_command + base_cmd_without_targets
         return base_cmd, parsed_args
 
     else:
