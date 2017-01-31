@@ -431,8 +431,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                   let access_tree = add_source source ret_id ret_typ astate_with_sink.access_tree in
                   { astate_with_sink with access_tree; }
               | Some _, None ->
-                  failwithf
-                    "%a is marked as a source, but has no return value" Procname.pp callee_pname
+                  L.err
+                    "Warning: %a is marked as a source, but has no return value"
+                    Procname.pp callee_pname;
+                  astate_with_sink
               | None, _ ->
                   astate_with_sink in
 
