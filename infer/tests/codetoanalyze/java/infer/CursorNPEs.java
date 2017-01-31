@@ -20,7 +20,7 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.os.RemoteException;
 import android.provider.MediaStore;
 
-public class CursorLeaks {
+public class CursorNPEs {
 
   public int cursorNPEfromQuery(SQLiteDatabase sqLiteDatabase) {
     Cursor cursor = sqLiteDatabase.query(
@@ -67,7 +67,6 @@ public class CursorLeaks {
     Cursor cursor = MediaStore.Images.Media.query(
         mContentResolver, null, null, null, null, null);
     cursor.close();
-    }
   }
 
   private void cursorFromSQLiteQueryBuilderNPE() {
@@ -83,7 +82,6 @@ public class CursorLeaks {
     try {
       cursor = downloadManager.query(query);
       return cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
-      }
     } finally {
       if (cursor != null) cursor.close();
     }
