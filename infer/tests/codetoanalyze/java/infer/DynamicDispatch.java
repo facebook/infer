@@ -67,10 +67,48 @@ public class DynamicDispatch {
     o.bar().toString();
   }
 
-  // TODO: this test currently fails, but will pass with handling of dynamic dispatch
-  static void dynamicDispatchShouldNotCauseFalseNegativeHardTODO(Supertype o) {
-    // should report a warning because Subtype's implementation of foo() can return null;
+  static void dynamicDispatchShouldNotReportWhenCallingSupertype(Supertype o) {
+    // should not report a warning because the Supertype implementation
+    // of foo() does not return null
     o.foo().toString();
+  }
+
+  static void dynamicDispatchShouldReportWhenCalledWithSubtypeParameter(Subtype o) {
+    // should report a warning because the Subtype implementation
+    // of foo() returns null
+    dynamicDispatchShouldNotReportWhenCallingSupertype(o);
+  }
+
+  static Object dynamicDispatchWrapperFoo(Supertype o) {
+    return o.foo();
+  }
+
+  static Object dynamicDispatchWrapperBar(Supertype o) {
+    return o.bar();
+  }
+
+  static void dynamicDispatchCallsWrapperWithSupertypeOkay() {
+    // Should not report because Supertype.foo() does not return null
+    Supertype o = new Supertype();
+    dynamicDispatchWrapperFoo(o).toString();
+  }
+
+  static void dynamicDispatchCallsWrapperWithSupertypeBad() {
+    // Should report because Supertype.bar() returns null
+    Supertype o = new Supertype();
+    dynamicDispatchWrapperBar(o).toString();
+  }
+
+  static void dynamicDispatchCallsWrapperWithSubtypeBad() {
+    // Should report because Subtype.foo() returns null
+    Supertype o = new Subtype();
+    dynamicDispatchWrapperFoo(o).toString();
+  }
+
+  static void dynamicDispatchCallsWrapperWithSubtypeOkay() {
+    // Should not report because Subtype.bar() does not returns null
+    Supertype o = new Subtype();
+    dynamicDispatchWrapperBar(o).toString();
   }
 
 }
