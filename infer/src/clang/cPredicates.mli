@@ -58,3 +58,5 @@ val pp_predicate : Format.formatter -> t -> unit
 val decl_unavailable_in_supported_ios_sdk : Clang_ast_t.decl -> bool
 
 val get_available_attr_ios_sdk : Clang_ast_t.decl -> string option
+
+val within_responds_to_selector_block : CLintersContext.context -> Clang_ast_t.decl -> bool

@@ -417,6 +417,8 @@ let rec eval_Atomic pred_name args an lcxt =
   | "isa", _, Decl _ -> false
   | "decl_unavailable_in_supported_ios_sdk", [], Decl decl ->
       CPredicates.decl_unavailable_in_supported_ios_sdk decl
+  | "within_responds_to_selector_block", [], Decl decl ->
+      CPredicates.within_responds_to_selector_block lcxt decl
   | "decl_unavailable_in_supported_ios_sdk", _, Stmt _ -> false
   | _ -> failwith ("ERROR: Undefined Predicate or wrong set of arguments: " ^ pred_name)
 

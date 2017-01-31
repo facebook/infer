@@ -104,7 +104,10 @@ let ctl_unavailable_api_in_supported_ios_sdk_error lctx an =
   let open CTL in
   let condition =
     InNode(["DeclRefExpr"; "ObjCMessageExpr"],
-           EX (Some PointerToDecl, (Atomic ("decl_unavailable_in_supported_ios_sdk", [])))) in
+           EX (Some PointerToDecl, (
+               And
+                 (Atomic ("decl_unavailable_in_supported_ios_sdk", []),
+                  Not (Atomic ("within_responds_to_selector_block", [])))))) in
   let issue_desc =
     { CIssue.name = "UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK";
       severity = Exceptions.Kerror;

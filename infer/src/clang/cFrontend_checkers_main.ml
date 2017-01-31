@@ -41,8 +41,28 @@ let parse_ctl_file linters_files =
        | None -> Logging.out "No linters found.\n");
       In_channel.close inx) linters_files
 
-let compute_if_context _ _ =
-  None (* to be extended *)
+
+let rec get_responds_to_selector stmt =
+  let open Clang_ast_t in
+  match stmt with
+  | ObjCMessageExpr (_, [_; ObjCSelectorExpr (_, _, _, method_name)], _, mdi)
+    when  String.equal mdi.Clang_ast_t.omei_selector "respondsToSelector:" ->
+      [method_name]
+  | BinaryOperator (_, [stmt1;stmt2], _, bo_info)
+    when PVariant.(=) bo_info.Clang_ast_t.boi_kind `LAnd ->
+      List.append (get_responds_to_selector stmt1) (get_responds_to_selector stmt2)
+  | ImplicitCastExpr (_, [stmt], _, _) ->
+      get_responds_to_selector stmt
+  | _ -> []
+
+let compute_if_context (context:CLintersContext.context) stmt =
+  let prev_responds_to_selector =
+    match context.if_context with
+    | Some if_context -> if_context.within_responds_to_selector_block
+    | None -> [] in
+  let within_responds_to_selector_block =
+    List.append (get_responds_to_selector stmt) (prev_responds_to_selector) in
+  Some ({within_responds_to_selector_block} : CLintersContext.if_context)
 
 let is_factory_method (context: CLintersContext.context) decl =
   let interface_decl_opt =

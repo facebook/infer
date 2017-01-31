@@ -222,3 +222,14 @@ let decl_unavailable_in_supported_ios_sdk decl =
   | Some available_attr_ios_sdk, Some iphoneos_target_sdk_version ->
       Int.equal (Utils.compare_versions available_attr_ios_sdk iphoneos_target_sdk_version) 1
   | _ -> false
+
+let within_responds_to_selector_block (cxt:CLintersContext.context) decl =
+  let open Clang_ast_t in
+  match decl with
+  | ObjCMethodDecl (_, named_decl_info, _) ->
+      (match cxt.if_context with
+       | Some if_context ->
+           let in_selector_block = if_context.within_responds_to_selector_block in
+           List.mem ~equal:String.equal in_selector_block named_decl_info.Clang_ast_t.ni_name
+       | None -> false)
+  | _ -> false

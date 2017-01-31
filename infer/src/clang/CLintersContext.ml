@@ -10,7 +10,7 @@
 open! IStd
 
 type if_context = {
-  in_responds_to_selector_block : string list;
+  within_responds_to_selector_block : string list;
 }
 
 type context = {

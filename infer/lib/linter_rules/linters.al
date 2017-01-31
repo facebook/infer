@@ -208,7 +208,8 @@ DEFINE-CHECKER CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK = {
 //	DEFINE-CHECKER ctl_unavailable_api_in_supported_ios_sdk_error = {
 //		  SET report_when =
 //			     WHEN
-//					    WITH-TRANSITION PointerToDecl decl_unavailable_in_supported_ios_sdk
+//					    WITH-TRANSITION PointerToDecl
+//                (decl_unavailable_in_supported_ios_sdk AND NOT within_responds_to_selector_block)
 //	         HOLDS-IN-NODE DeclRefExpr, ObjCMessageExpr;
 //
 //		  SET message =

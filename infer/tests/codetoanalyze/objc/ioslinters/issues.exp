@@ -1,2 +1,4 @@
+codetoanalyze/objc/ioslinters/unavailable_api_allowed_cases.m, Unavailable_api_allowed_cases_with_responds_to_selector_in_else:, 52, UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK, []
+codetoanalyze/objc/ioslinters/unavailable_api_allowed_cases.m, Unavailable_api_allowed_cases_without_responds_to_selector:, 45, UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK, []
 codetoanalyze/objc/ioslinters/unavailable_api_in_supported_ios_sdk.m, OpenURLOptionsFromSourceApplication, 18, UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK, []
 codetoanalyze/objc/ioslinters/unavailable_api_in_supported_ios_sdk.m, Unavailable_api_in_supported_ios_sdk_test:and:, 11, UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK, []
