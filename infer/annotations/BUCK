@@ -1,7 +1,10 @@
-prebuilt_jar(
-  name = 'annotations',
-  binary_jar = 'annotations.jar',
-  visibility = [
-    'PUBLIC',
-  ]
+java_library(
+    name = 'annotations',
+    srcs = glob(['**/*.java']),
+    deps = [
+        '//dependencies/java/jsr-305:jsr-305',
+    ],
+    visibility = [
+        'PUBLIC'
+    ]
 )

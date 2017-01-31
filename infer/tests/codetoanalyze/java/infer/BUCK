@@ -1,7 +1,3 @@
-# TODO: this file exists only to support buck integration in infer/tests/build_systems/build_integration_tests.py
-
-import os
-
 java_library(
     name = 'compile',
     srcs = glob(['**/*.java']),
@@ -13,7 +9,7 @@ java_library(
         '//infer/lib/java/android:android',
         '//infer/models/java:builtins',
     ],
-     visibility = [
+    visibility = [
         'PUBLIC'
     ]
 )
