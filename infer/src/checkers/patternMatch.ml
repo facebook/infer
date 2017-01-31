@@ -258,6 +258,7 @@ let initializer_classes =
       "android.app.Fragment";
       "android.app.Service";
       "android.support.v4.app.Fragment";
+      "junit.framework.TestCase";
     ]
 
 let initializer_methods = [
@@ -265,6 +266,7 @@ let initializer_methods = [
   "onAttach";
   "onCreate";
   "onCreateView";
+  "setUp";
 ]
 
 (** Check if the type has in its supertypes from the initializer_classes list. *)
