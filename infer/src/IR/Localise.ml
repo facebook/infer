@@ -32,6 +32,7 @@ let analysis_stops = "ANALYSIS_STOPS"
 let array_out_of_bounds_l1 = "ARRAY_OUT_OF_BOUNDS_L1"
 let array_out_of_bounds_l2 = "ARRAY_OUT_OF_BOUNDS_L2"
 let array_out_of_bounds_l3 = "ARRAY_OUT_OF_BOUNDS_L3"
+let buffer_overrun = "BUFFER_OVERRUN"
 let class_cast_exception = "CLASS_CAST_EXCEPTION"
 let comparing_floats_for_equality = "COMPARING_FLOAT_FOR_EQUALITY"
 let condition_is_assignment = "CONDITION_IS_ASSIGNMENT"
@@ -717,6 +718,10 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
     | _ -> "" in
   { no_desc with descriptions = bucket_str :: xxx_allocated_to @ by_call_to @ is_not_rxxx_after;
                  tags = !tags }
+
+let desc_buffer_overrun bucket desc =
+  let err_desc = { no_desc with descriptions = [desc]; } in
+  error_desc_set_bucket err_desc bucket Config.show_buckets
 
 (** kind of precondition not met *)
 type pnm_kind =

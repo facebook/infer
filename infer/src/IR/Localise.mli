@@ -30,6 +30,7 @@ val analysis_stops : t
 val array_out_of_bounds_l1 : t
 val array_out_of_bounds_l2 : t
 val array_out_of_bounds_l3 : t
+val buffer_overrun : t
 val class_cast_exception : t
 val comparing_floats_for_equality : t
 val condition_is_assignment : t
@@ -213,6 +214,8 @@ val desc_frontend_warning : string -> string option -> Location.t -> error_desc
 val desc_leak :
   Exp.t option -> string option -> PredSymb.resource option -> PredSymb.res_action option ->
   Location.t -> string option -> error_desc
+
+val desc_buffer_overrun : string -> string -> error_desc
 
 val desc_null_test_after_dereference : string -> int -> Location.t -> error_desc
 

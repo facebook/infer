@@ -44,7 +44,7 @@ let add_flavor_to_target target =
         Some "infer-capture-all"
     | Checkers | Infer ->
         Some "infer"
-    | Eradicate | Tracing | Crashcontext | Quandary | Threadsafety ->
+    | Eradicate | Tracing | Crashcontext | Quandary | Threadsafety | Bufferoverrun ->
         failwithf "Unsupported infer analyzer with Buck flavors: %s"
           (Config.string_of_analyzer Config.analyzer) in
   if List.exists ~f:(String.is_prefix ~prefix:"infer") target.flavors then

@@ -15,8 +15,9 @@ open! IStd
 
 
 (** Various kind of analyzers *)
-type analyzer = Capture | Compile | Infer | Eradicate | Checkers | Tracing
-              | Crashcontext | Linters | Quandary | Threadsafety [@@deriving compare]
+type analyzer =
+    Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters | Quandary
+  | Threadsafety | Bufferoverrun [@@deriving compare]
 
 val equal_analyzer : analyzer -> analyzer -> bool
 
@@ -149,9 +150,11 @@ val array_level : int
 val ast_file : string option
 val blacklist : string option
 val bootclasspath : string option
+val bo_debug : int
 val buck : bool
 val buck_build_args : string list
 val buck_out : string option
+val bufferoverrun : bool
 val bugs_csv : string option
 val bugs_json : string option
 val bugs_tests : string option

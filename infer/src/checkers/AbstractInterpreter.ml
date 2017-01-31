@@ -69,7 +69,7 @@ module MakeNoCFG
     | Some state -> Some state.pre
     | None -> None
 
-  let exec_node node astate_pre work_queue inv_map proc_data =
+  let exec_node node astate_pre work_queue inv_map ({ ProcData.pdesc; } as proc_data) =
     let node_id = CFG.id node in
     let update_inv_map pre visit_count =
       let compute_post (pre, inv_map) (instr, id_opt) =
@@ -101,7 +101,10 @@ module MakeNoCFG
     then
       let old_state = InvariantMap.find node_id inv_map in
       let widened_pre =
-        Domain.widen ~prev:old_state.pre ~next:astate_pre ~num_iters:old_state.visit_count in
+        if CFG.is_loop_head pdesc node
+        then Domain.widen ~prev:old_state.pre ~next:astate_pre ~num_iters:old_state.visit_count
+        else astate_pre
+      in
       if Domain.(<=) ~lhs:widened_pre ~rhs:old_state.pre
       then inv_map, work_queue
       else update_inv_map widened_pre (old_state.visit_count + 1)

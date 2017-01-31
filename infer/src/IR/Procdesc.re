@@ -294,7 +294,8 @@ type t = {
   mutable nodes: list Node.t, /** list of nodes of this procedure */
   mutable nodes_num: int, /** number of nodes */
   mutable start_node: Node.t, /** start node of this procedure */
-  mutable exit_node: Node.t /** exit node of ths procedure */
+  mutable exit_node: Node.t, /** exit node of ths procedure */
+  mutable loop_heads: option NodeSet.t /** loop head nodes of this procedure */
 }
 [@@deriving compare];
 
@@ -307,7 +308,7 @@ let from_proc_attributes called_from_cfg::called_from_cfg attributes => {
   let pname_opt = Some attributes.ProcAttributes.proc_name;
   let start_node = Node.dummy pname_opt;
   let exit_node = Node.dummy pname_opt;
-  {attributes, nodes: [], nodes_num: 0, start_node, exit_node}
+  {attributes, nodes: [], nodes_num: 0, start_node, exit_node, loop_heads: None}
 };
 
 
@@ -518,3 +519,41 @@ let node_set_succs_exn pdesc (node: Node.t) succs exn =>
     set_succs_exn_base node' [exit_node] exn
   | _ => set_succs_exn_base node succs exn
   };
+
+
+/** Get loop heads for widening.
+    It collects all target nodes of back-edges in a depth-first
+    traversal.
+    */
+let get_loop_heads pdesc => {
+  let rec set_loop_head_rec visited heads wl =>
+    switch wl {
+    | [] => heads
+    | [(n, ancester), ...wl'] =>
+      if (NodeSet.mem n visited) {
+        if (NodeSet.mem n ancester) {
+          set_loop_head_rec visited (NodeSet.add n heads) wl'
+        } else {
+          set_loop_head_rec visited heads wl'
+        }
+      } else {
+        let ancester = NodeSet.add n ancester;
+        let succs = IList.append (Node.get_succs n) (Node.get_exn n);
+        let works = IList.map (fun m => (m, ancester)) succs;
+        set_loop_head_rec (NodeSet.add n visited) heads (IList.append works wl')
+      }
+    };
+  let start_wl = [(get_start_node pdesc, NodeSet.empty)];
+  let lh = set_loop_head_rec NodeSet.empty NodeSet.empty start_wl;
+  pdesc.loop_heads = Some lh;
+  lh
+};
+
+let is_loop_head pdesc (node: Node.t) => {
+  let lh =
+    switch pdesc.loop_heads {
+    | Some lh => lh
+    | None => get_loop_heads pdesc
+    };
+  NodeSet.mem node lh
+};

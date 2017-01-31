@@ -316,6 +316,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
       | Checkers
       | Eradicate
       | Tracing => true
+      | Bufferoverrun
       | Capture
       | Compile
       | Crashcontext
@@ -347,7 +348,8 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
             ];
           IList.mem Localise.equal issue_type null_deref_issue_types
         };
-        if issue_type_is_null_deref {
+        let issue_type_is_buffer_overrun = Localise.equal issue_type Localise.buffer_overrun;
+        if (issue_type_is_null_deref || issue_type_is_buffer_overrun) {
           let issue_bucket_is_high = {
             let issue_bucket = Localise.error_desc_get_bucket error_desc;
             let high_buckets = Localise.BucketLevel.[b1, b2];
