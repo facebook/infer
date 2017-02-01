@@ -148,14 +148,14 @@ let translate_formals program tenv cn impl =
 let translate_locals program tenv formals bytecode jbir_code =
   let formal_set =
     IList.fold_left
-      (fun set (var, _) -> Mangled.MangledSet.add var set)
-      Mangled.MangledSet.empty
+      (fun set (var, _) -> Mangled.Set.add var set)
+      Mangled.Set.empty
       formals in
   let collect (seen_vars, l) (var, typ) =
-    if Mangled.MangledSet.mem var seen_vars then
+    if Mangled.Set.mem var seen_vars then
       (seen_vars, l)
     else
-      (Mangled.MangledSet.add var seen_vars, (var, typ) :: l) in
+      (Mangled.Set.add var seen_vars, (var, typ) :: l) in
   let with_bytecode_vars =
     (* Do not consider parameters as local variables *)
     let init = (formal_set, []) in

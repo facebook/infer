@@ -61,7 +61,12 @@ let from_package_class package_name class_name =>
 /** Pretty print a mangled name */
 let pp f pn => F.fprintf f "%s" (to_string pn);
 
-let module MangledSet = Caml.Set.Make {
+let module Set = Caml.Set.Make {
+  type nonrec t = t;
+  let compare = compare;
+};
+
+let module Map = Caml.Map.Make {
   type nonrec t = t;
   let compare = compare;
 };
