@@ -38,11 +38,15 @@ let create_process_and_wait ~prog ~args =
 (** Given a process id and a function that describes the command that the process id
     represents, prints a message explaining the command and its status, if in debug or stats mode.
     It also prints a dot to show progress of jobs being finished.  *)
-let print_status f pid status =
+let print_status ~fail_on_failed_job f pid status =
   L.err "%a%s@."
     (fun fmt pid -> F.pp_print_string fmt (f pid)) pid
     (Unix.Exit_or_signal.to_string_hum status) ;
-  L.stdout ".%!"
+  L.stdout ".%!";
+  match status with
+  | Error err when fail_on_failed_job ->
+      exit (match err with `Exit_non_zero i -> i | `Signal _ -> 1)
+  | _ -> ()
 
 let start_current_jobs_count () = ref 0
 
@@ -53,14 +57,14 @@ module PidMap = Caml.Map.Make (Pid)
 (** [wait_for_son pid_child f jobs_count] wait for pid_child
     and all the other children and update the current jobs count.
     Use f to print the job status *)
-let rec wait_for_child f current_jobs_count jobs_map =
+let rec wait_for_child ~fail_on_failed_job f current_jobs_count jobs_map =
   let pid, status = Unix.wait `Any in
   Pervasives.decr current_jobs_count;
   Pervasives.incr waited_for_jobs;
-  print_status f pid status;
+  print_status ~fail_on_failed_job f pid status;
   jobs_map := PidMap.remove pid !jobs_map;
   if not (PidMap.is_empty !jobs_map) then
-    wait_for_child f current_jobs_count jobs_map
+    wait_for_child ~fail_on_failed_job f current_jobs_count jobs_map
 
 let pid_to_program jobsMap pid =
   try
@@ -72,7 +76,7 @@ let pid_to_program jobsMap pid =
     and starts a new batch and so on. [gen_prog] should return a tuple [(dir_opt, command, args,
     env)] where [dir_opt] is an optional directory to chdir to before executing [command] with
     [args] in [env]. [prog_to_string] is used for printing information about the job's status. *)
-let run_jobs_in_parallel jobs_stack gen_prog prog_to_string =
+let run_jobs_in_parallel ?(fail_on_failed_job=false) jobs_stack gen_prog prog_to_string =
   let run_job () =
     let jobs_map = ref PidMap.empty in
     let current_jobs_count = start_current_jobs_count () in
@@ -89,7 +93,8 @@ let run_jobs_in_parallel jobs_stack gen_prog prog_to_string =
       | `In_the_parent pid_child ->
           jobs_map := PidMap.add pid_child (prog_to_string job_prog) !jobs_map;
           if Int.equal (Stack.length jobs_stack) 0 || !current_jobs_count >= Config.jobs then
-            wait_for_child (pid_to_program !jobs_map) current_jobs_count jobs_map
+            wait_for_child ~fail_on_failed_job (pid_to_program !jobs_map) current_jobs_count
+              jobs_map
     done in
   run_job ();
   L.stdout ".@.";

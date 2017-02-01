@@ -95,6 +95,11 @@ let clang_cc1_cmd_sanitizer cmd => {
       Unix.mkdir_p (Filename.dirname arg);
       arg
     } else if (
+      String.equal option "-dependency-file" && Option.is_some Config.use_compilation_database
+      /* In compilation database mode, dependency files are not assumed to exist */
+    ) {
+      "/dev/null"
+    } else if (
       String.equal option "-isystem"
     ) {
       switch Config.clang_include_to_override {

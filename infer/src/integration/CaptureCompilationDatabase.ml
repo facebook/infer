@@ -86,7 +86,14 @@ let run_compilation_database compilation_database should_capture_file =
   let capture_text_upper = String.capitalize capture_text in
   let job_to_string =
     fun file -> Format.asprintf "%s %a" capture_text_upper SourceFile.pp file in
-  Process.run_jobs_in_parallel jobs_stack (run_compilation_file compilation_database) job_to_string
+  let fail_on_failed_job =
+    if Config.linters_ignore_clang_failures then false
+    else
+      match Config.use_compilation_database with
+      | Some `NoDeps -> Config.clang_frontend_do_lint
+      | _ -> false in
+  Process.run_jobs_in_parallel ~fail_on_failed_job jobs_stack
+    (run_compilation_file compilation_database) job_to_string
 
 (** Computes the compilation database files. *)
 let get_compilation_database_files_buck () =

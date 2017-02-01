@@ -25,8 +25,8 @@ val print_error_and_exit :
     env)] where [dir_opt] is an optional directory to chdir to before executing [command] with
     [args] in [env]. [prog_to_string] is used for printing information about the job's status. *)
 val run_jobs_in_parallel :
-  'a Stack.t -> ('a -> (string option * string * string list * Unix.env)) -> ('a -> string)
-  -> unit
+  ?fail_on_failed_job:bool -> 'a Stack.t ->
+  ('a -> (string option * string * string list * Unix.env)) -> ('a -> string) -> unit
 
 (** Pipeline producer program into consumer program *)
 val pipeline :

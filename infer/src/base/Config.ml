@@ -600,7 +600,7 @@ and clang_compilation_db_files =
 
 and clang_frontend_action =
   CLOpt.mk_symbol_opt ~long:"clang-frontend-action"
-    ~exes:CLOpt.[Clang]
+    ~exes:CLOpt.[Clang;Driver]
     "Specify whether the clang frontend should capture or lint or both."
     ~symbols:clang_frontend_action_symbols
 
@@ -632,6 +632,12 @@ and continue =
     ~exes:CLOpt.[Driver]
     "Continue the capture for the reactive analysis, increasing the changed files/procedures. (If \
      a procedure was changed beforehand, keep the changed marking.)"
+
+and linters_ignore_clang_failures =
+  CLOpt.mk_bool ~long:"linters-ignore-clang-failures"
+    ~exes:CLOpt.[Driver]
+    ~default:false
+    "Continue linting files even if some compilation fails."
 
 and copy_propagation =
   CLOpt.mk_bool ~deprecated:["copy-propagation"] ~long:"copy-propagation"
@@ -1422,6 +1428,7 @@ and classpath = !classpath
 and cluster_cmdline = !cluster
 and compute_analytics = !compute_analytics
 and continue_capture = !continue
+and linters_ignore_clang_failures = !linters_ignore_clang_failures
 and copy_propagation = !copy_propagation
 and crashcontext = !crashcontext
 and create_harness = !android_harness
