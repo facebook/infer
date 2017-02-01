@@ -35,4 +35,18 @@ public interface ExpensiveInterfaceExample {
   @Expensive
   public void m5();
 
+  interface I2 extends I {
+    @PerformanceCritical void m3();
+  }
+
+
+  abstract class ImplementsInterface implements I2 {
+
+    @Expensive void expensive() {}
+
+    @Override public void m1() {
+      expensive();
+    }
+  }
+
 }

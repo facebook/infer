@@ -330,14 +330,15 @@ let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t)
   IList.rev !res
 
 let override_exists f tenv proc_name =
-  let super_type_exists tenv super_class_name =
+  let rec super_type_exists tenv super_class_name =
     let super_proc_name =
       Procname.replace_class proc_name (Typename.name super_class_name) in
     match Tenv.lookup tenv super_class_name with
-    | Some ({ methods }) ->
+    | Some ({ methods; supers; }) ->
         let is_override pname =
           Procname.equal pname super_proc_name && not (Procname.is_constructor pname) in
-        IList.exists (fun pname -> is_override pname && f pname) methods
+        IList.exists (fun pname -> is_override pname && f pname) methods ||
+        IList.exists (super_type_exists tenv) supers
     | _ ->
         false in
   match proc_name with
