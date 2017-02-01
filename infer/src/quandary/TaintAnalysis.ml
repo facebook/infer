@@ -399,21 +399,19 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               | TaintSpec.Propagate_to_receiver,
                 (receiver_exp, receiver_typ) :: (_ :: _ as other_actuals),
                 _ ->
-                  let receiver_ap =
+                  begin
                     match AccessPath.of_lhs_exp receiver_exp receiver_typ ~f_resolve_id with
                     | Some ap ->
-                        AccessPath.Exact ap
+                        propagate_to_access_path (AccessPath.Exact ap) other_actuals astate_acc
                     | None ->
-                        failwithf
-                          "Receiver for called procedure %a does not have an access path"
-                          Procname.pp
-                          callee_pname in
-                  propagate_to_access_path receiver_ap other_actuals astate_acc
+                        (* this can happen when (for example) the receiver is a string literal *)
+                        astate_acc
+                  end
               | _ ->
                   astate_acc in
 
             let propagations =
-              TaintSpecification.handle_unknown_call callee_pname (Option.map ~f:snd ret) in
+              TaintSpecification.handle_unknown_call callee_pname (Option.map ~f:snd ret) actuals in
             IList.fold_left handle_unknown_call_ astate propagations in
 
           let analyze_call astate_acc callee_pname =

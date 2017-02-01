@@ -23,25 +23,36 @@ include
       | QuandarySummary.AccessTree.Java access_tree -> access_tree
       | _ -> assert false
 
-    let handle_unknown_call pname ret_typ_opt =
+    let handle_unknown_call pname ret_typ_opt actuals =
+      let types_match typ class_string = match typ with
+        | Typ.Tptr (Tstruct typename, _) -> String.equal (Typename.name typename) class_string
+        | _ -> false in
       match pname with
       | (Procname.Java java_pname) as pname ->
+          let is_static = Procname.java_is_static pname in
           begin
             match Procname.java_get_class_name java_pname,
                   Procname.java_get_method java_pname,
                   ret_typ_opt with
             | _ when Procname.is_constructor pname ->
                 [TaintSpec.Propagate_to_receiver]
-            | ("java.lang.StringBuffer" | "java.lang.StringBuilder" | "java.util.Formatter"), _,
-              Some _
-              when not (Procname.java_is_static pname) ->
-                [TaintSpec.Propagate_to_receiver; TaintSpec.Propagate_to_return]
-            | _, _, (Some Typ.Tvoid | None) when not (Procname.java_is_static pname) ->
+            | _, _, (Some Typ.Tvoid | None) when not is_static ->
                 (* for instance methods with no return value, propagate the taint to the receiver *)
                 [TaintSpec.Propagate_to_receiver]
-            | _, _, Some _ ->
-                [TaintSpec.Propagate_to_return]
-            | _, _, None ->
+            | classname, _, Some (Typ.Tptr _ | Tstruct _) ->
+                begin
+                  match actuals with
+                  | (_, receiver_typ) :: _
+                    when not is_static && types_match receiver_typ classname ->
+                      (* if the receiver and return type are the same, propagate to both. we're
+                         assuming the call is one of the common "builder-style" methods that both
+                         updates and returns the receiver *)
+                      [TaintSpec.Propagate_to_receiver; TaintSpec.Propagate_to_return]
+                  | _ ->
+                      (* receiver doesn't match return type; just propagate to the return type *)
+                      [TaintSpec.Propagate_to_return]
+                end
+            | _ ->
                 []
           end
       | pname when BuiltinDecl.is_declared pname ->
