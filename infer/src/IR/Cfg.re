@@ -340,42 +340,38 @@ let store_cfg_to_file source_file::source_file (filename: DB.filename) (cfg: cfg
 
 /** clone a procedure description and apply the type substitutions where
     the parameters are used */
-let specialize_types_proc callee_pdesc resolved_pdesc resolved_formals => {
+let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
   let resolved_pname = Procdesc.get_proc_name resolved_pdesc
   and callee_start_node = Procdesc.get_start_node callee_pdesc
   and callee_exit_node = Procdesc.get_exit_node callee_pdesc;
   let convert_pvar pvar => Pvar.mk (Pvar.get_name pvar) resolved_pname;
+  let mk_ptr_typ typename =>
+    /* Only consider pointers from Java objects for now */
+    Typ.Tptr (Typ.Tstruct typename) Typ.Pk_pointer;
   let convert_exp =
     fun
     | Exp.Lvar origin_pvar => Exp.Lvar (convert_pvar origin_pvar)
     | exp => exp;
-  let extract_class_name =
-    fun
-    | Typ.Tptr (Tstruct name) _ => Typename.name name
-    | _ => failwith "Expecting classname for Java types";
   let subst_map = ref Ident.IdentMap.empty;
-  let redirected_class_name origin_id =>
+  let redirect_typename origin_id =>
     try (Some (Ident.IdentMap.find origin_id !subst_map)) {
     | Not_found => None
     };
   let convert_instr instrs =>
     fun
-    | Sil.Load id (Exp.Lvar origin_pvar as origin_exp) origin_typ loc => {
-        let (_, specialized_typ) = {
-          let pvar_name = Pvar.get_name origin_pvar;
-          try (IList.find (fun (n, _) => Mangled.equal n pvar_name) resolved_formals) {
-          | Not_found => (pvar_name, origin_typ)
-          }
-        };
-        subst_map := Ident.IdentMap.add id specialized_typ !subst_map;
-        [Sil.Load id (convert_exp origin_exp) specialized_typ loc, ...instrs]
+    | Sil.Load
+        id (Exp.Lvar origin_pvar as origin_exp) (Typ.Tptr (Typ.Tstruct origin_typename) _) loc => {
+        let specialized_typname =
+          try (Mangled.Map.find (Pvar.get_name origin_pvar) substitutions) {
+          | Not_found => origin_typename
+          };
+        subst_map := Ident.IdentMap.add id specialized_typname !subst_map;
+        [Sil.Load id (convert_exp origin_exp) (mk_ptr_typ specialized_typname) loc, ...instrs]
       }
     | Sil.Load id (Exp.Var origin_id as origin_exp) origin_typ loc => {
         let updated_typ =
-          switch (Ident.IdentMap.find origin_id !subst_map) {
-          | Typ.Tptr typ _ => typ
-          | _ => failwith "Expecting a pointer type"
-          | exception Not_found => origin_typ
+          try (mk_ptr_typ (Ident.IdentMap.find origin_id !subst_map)) {
+          | Not_found => origin_typ
           };
         [Sil.Load id (convert_exp origin_exp) updated_typ loc, ...instrs]
       }
@@ -394,12 +390,13 @@ let specialize_types_proc callee_pdesc resolved_pdesc resolved_formals => {
         [(Exp.Var id, _), ...origin_args]
         loc
         call_flags
-        when call_flags.CallFlags.cf_virtual && redirected_class_name id != None => {
-        let redirected_typ = Option.value_exn (redirected_class_name id);
+        when call_flags.CallFlags.cf_virtual && redirect_typename id != None => {
+        let redirected_typename = Option.value_exn (redirect_typename id);
+        let redirected_typ = mk_ptr_typ redirected_typename;
         let redirected_pname =
           Procname.replace_class
-            (Procname.Java callee_pname_java) (extract_class_name redirected_typ)
-        and args = {
+            (Procname.Java callee_pname_java) (Typename.name redirected_typename);
+        let args = {
           let other_args = IList.map (fun (exp, typ) => (convert_exp exp, typ)) origin_args;
           [(Exp.Var id, redirected_typ), ...other_args]
         };
@@ -471,22 +468,23 @@ let specialize_types_proc callee_pdesc resolved_pdesc resolved_formals => {
     The virtual calls are also replaced to match the parameter types */
 let specialize_types callee_pdesc resolved_pname args => {
   let callee_attributes = Procdesc.get_attributes callee_pdesc;
-  let resolved_formals =
-    IList.map2
+  let (resolved_params, substitutions) =
+    IList.fold_left2
       (
-        fun (param_name, param_typ) (_, arg_typ) =>
+        fun (params, subts) (param_name, param_typ) (_, arg_typ) =>
           switch arg_typ {
-          | Typ.Tptr (Tstruct _) _ =>
+          | Typ.Tptr (Tstruct typename) Pk_pointer =>
             /* Replace the type of the parameter by the type of the argument */
-            (param_name, arg_typ)
-          | _ => (param_name, param_typ)
+            ([(param_name, arg_typ), ...params], Mangled.Map.add param_name typename subts)
+          | _ => ([(param_name, param_typ), ...params], subts)
           }
       )
+      ([], Mangled.Map.empty)
       callee_attributes.formals
       args;
   let resolved_attributes = {
     ...callee_attributes,
-    formals: resolved_formals,
+    formals: IList.rev resolved_params,
     proc_name: resolved_pname
   };
   AttributesTable.store_attributes resolved_attributes;
@@ -494,5 +492,5 @@ let specialize_types callee_pdesc resolved_pname args => {
     let tmp_cfg = create_cfg ();
     create_proc_desc tmp_cfg resolved_attributes
   };
-  specialize_types_proc callee_pdesc resolved_pdesc resolved_formals
+  specialize_types_proc callee_pdesc resolved_pdesc substitutions
 };
