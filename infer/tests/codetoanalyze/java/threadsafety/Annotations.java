@@ -194,4 +194,51 @@ class Annotations implements FunctionalInterface {
     return mLong;
   }
 
+  Boolean mBoxedBool;
+
+  @Functional native boolean returnBool();
+
+  public boolean functionalAcrossBoxingOk() {
+    if (mBoxedBool != null) {
+      mBoxedBool = returnBool();
+    }
+    return mBoxedBool;
+  }
+
+  boolean mBool;
+
+  @Functional native Boolean returnBoxedBool();
+
+  public boolean FP_functionalAcrossUnboxingOk() {
+    if (!mBool) {
+      mBool = returnBoxedBool();
+    }
+    return mBool;
+  }
+
+  Long mBoxedLong;
+
+  @Functional native Long returnBoxedLong();
+
+  public Long functionalBoxedLongOk() {
+    if (mBoxedLong == null) {
+      mBoxedLong = returnBoxedLong();
+    }
+    return mBoxedLong;
+  }
+
+  public long functionalAcrossUnboxingLongBad() {
+    if (mLong != 0L) {
+      mLong = returnBoxedLong();
+    }
+    return mLong;
+  }
+
+  public long FP_functionalAcrossBoxingLongOk() {
+    if (mBoxedLong != null) {
+      mBoxedLong = returnLong();
+    }
+    return mBoxedLong;
+  }
+
 }

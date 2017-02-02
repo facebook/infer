@@ -1,5 +1,8 @@
+codetoanalyze/java/threadsafety/Annotations.java, boolean Annotations.FP_functionalAcrossUnboxingOk(), 2, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.mBool]
 codetoanalyze/java/threadsafety/Annotations.java, double Annotations.functionalDoubleBad(), 2, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.mDouble]
+codetoanalyze/java/threadsafety/Annotations.java, long Annotations.FP_functionalAcrossBoxingLongOk(), 2, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.mBoxedLong]
 codetoanalyze/java/threadsafety/Annotations.java, long Annotations.functionaLongBad(), 2, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.mLong]
+codetoanalyze/java/threadsafety/Annotations.java, long Annotations.functionalAcrossUnboxingLongBad(), 2, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.mLong]
 codetoanalyze/java/threadsafety/Annotations.java, void Annotations.mutateOffUiThreadBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.f]
 codetoanalyze/java/threadsafety/Annotations.java, void Annotations.mutateSubfieldOfConfinedBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.encapsulatedField.codetoanalyze.java.checkers.Annotations$Obj.fld]
 codetoanalyze/java/threadsafety/Builders.java, Builders$Obj Builders.buildThenMutateBad(Builders$Obj), 3, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Builders$Obj.g]

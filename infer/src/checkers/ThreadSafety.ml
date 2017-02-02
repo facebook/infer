@@ -174,6 +174,24 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       { astate with unconditional_writes; } in
     let is_unprotected is_locked =
       not is_locked && not (Procdesc.is_java_synchronized pdesc) in
+    (* return true if the given procname boxes a primitive type into a reference type *)
+    let is_box = function
+      | Procname.Java java_pname ->
+          begin
+            match Procname.java_get_class_name java_pname, Procname.java_get_method java_pname with
+            | ("java.lang.Boolean" |
+               "java.lang.Byte" |
+               "java.lang.Char" |
+               "java.lang.Double" |
+               "java.lang.Float" |
+               "java.lang.Integer" |
+               "java.lang.Long" |
+               "java.lang.Short"),
+              "valueOf" -> true
+            | _ -> false
+          end
+      | _ ->
+          false in
     let f_resolve_id = resolve_id astate.id_map in
 
     let open Domain in
@@ -293,7 +311,24 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                           astate'.owned in
                     { astate' with locks = locks'; owned; }
                 | None ->
-                    astate in
+                    if is_box callee_pname
+                    then
+                      match ret_opt, actuals with
+                      | Some (ret_id, ret_typ), (actual_exp, actual_typ) :: _ ->
+                          begin
+                            match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
+                            | Some ap when AccessPathSetDomain.mem ap astate.functional ->
+                                let functional =
+                                  AccessPathSetDomain.add
+                                    (AccessPath.of_id ret_id ret_typ) astate.functional in
+                                { astate with functional; }
+                            | _ ->
+                                astate
+                          end
+                      | _ ->
+                          astate
+                    else
+                      astate in
         begin
           match ret_opt with
           | Some (_, (Typ.Tint ILong | Tfloat FDouble)) ->
