@@ -20,7 +20,7 @@ type proc_origin =
   {
     pname : Procname.t;
     loc: Location.t;
-    annotated_signature : Annotations.annotated_signature;
+    annotated_signature : AnnotatedSignature.t;
     is_library : bool;
   } [@@deriving compare]
 

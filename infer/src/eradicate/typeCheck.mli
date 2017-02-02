@@ -30,5 +30,5 @@ val typecheck_node :
   Tenv.t -> 'a TypeState.ext ->
   bool ref -> checks -> Idenv.t ->
   get_proc_desc -> Procname.t -> Procdesc.t ->
-  find_canonical_duplicate -> Annotations.annotated_signature -> 'a TypeState.t ->
+  find_canonical_duplicate -> AnnotatedSignature.t -> 'a TypeState.t ->
   Procdesc.Node.t -> Printer.LineReader.t -> 'a TypeState.t list * 'a TypeState.t list

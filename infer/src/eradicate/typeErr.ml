@@ -50,13 +50,13 @@ end (* InstrRef *)
 type origin_descr =
   string *
   Location.t option *
-  Annotations.annotated_signature option  (* callee signature *)
+  AnnotatedSignature.t option  (* callee signature *)
 
 (* ignore origin descr *)
 let compare_origin_descr _ _ = 0
 
 type parameter_not_nullable =
-  Annotations.annotation *
+  AnnotatedSignature.annotation *
   string * (* description *)
   int * (* parameter number *)
   Procname.t *
@@ -71,13 +71,13 @@ type err_instance =
   | Inconsistent_subclass_parameter_annotation of string * int * Procname.t * Procname.t
   | Field_not_initialized of Ident.fieldname * Procname.t
   | Field_not_mutable of Ident.fieldname * origin_descr
-  | Field_annotation_inconsistent of Annotations.annotation * Ident.fieldname * origin_descr
+  | Field_annotation_inconsistent of AnnotatedSignature.annotation * Ident.fieldname * origin_descr
   | Field_over_annotated of Ident.fieldname * Procname.t
   | Null_field_access of string option * Ident.fieldname * origin_descr * bool
   | Call_receiver_annotation_inconsistent
-    of Annotations.annotation * string option * Procname.t * origin_descr
+    of AnnotatedSignature.annotation * string option * Procname.t * origin_descr
   | Parameter_annotation_inconsistent of parameter_not_nullable
-  | Return_annotation_inconsistent of Annotations.annotation * Procname.t * origin_descr
+  | Return_annotation_inconsistent of AnnotatedSignature.annotation * Procname.t * origin_descr
   | Return_over_annotated of Procname.t
 [@@deriving compare]
 
@@ -183,12 +183,12 @@ let add_err find_canonical_duplicate err_instance instr_ref_opt loc =
   end
 
 module Strict = struct
-  let method_get_strict signature =
-    let (ia, _) = signature.Annotations.ret in
+  let method_get_strict (signature : AnnotatedSignature.t) =
+    let (ia, _) = signature.ret in
     Annotations.ia_get_strict ia
 
-  let this_type_get_strict tenv signature =
-    match signature.Annotations.params with
+  let this_type_get_strict tenv (signature : AnnotatedSignature.t) =
+    match signature.params with
     | (p, _, this_type):: _ when String.equal (Mangled.to_string p) "this" ->
         begin
           match PatternMatch.type_get_annotation tenv this_type with
@@ -215,10 +215,10 @@ module Strict = struct
   (* with parameters. A method is Strict if it or its class are annotated @Strict. *)
   let err_instance_get_strict tenv err_instance : Annot.t option =
     match err_instance with
-    | Call_receiver_annotation_inconsistent (Annotations.Nullable, _, _, origin_descr)
+    | Call_receiver_annotation_inconsistent (AnnotatedSignature.Nullable, _, _, origin_descr)
     | Null_field_access (_, _, origin_descr, _) ->
         origin_descr_get_strict tenv origin_descr
-    | Parameter_annotation_inconsistent (Annotations.Nullable, _, _, _, _, origin_descr)
+    | Parameter_annotation_inconsistent (AnnotatedSignature.Nullable, _, _, _, _, origin_descr)
       when report_on_method_arguments ->
         origin_descr_get_strict tenv origin_descr
     | _ -> None
@@ -296,13 +296,13 @@ let report_error_now tenv
         origin_loc
     | Field_annotation_inconsistent (ann, fn, (origin_description, origin_loc, _)) ->
         let kind_s, description = match ann with
-          | Annotations.Nullable ->
+          | AnnotatedSignature.Nullable ->
               "ERADICATE_FIELD_NOT_NULLABLE",
               P.sprintf
                 "Field `%s` can be null but is not declared `@Nullable`. %s"
                 (Ident.fieldname_to_simplified_string fn)
                 origin_description
-          | Annotations.Present ->
+          | AnnotatedSignature.Present ->
               "ERADICATE_FIELD_VALUE_ABSENT",
               P.sprintf
                 "Field `%s` is assigned a possibly absent value but is declared `@Present`. %s"
@@ -348,14 +348,14 @@ let report_error_now tenv
         origin_loc
     | Call_receiver_annotation_inconsistent (ann, s_opt, pn, (origin_description, origin_loc, _)) ->
         let kind_s, description = match ann with
-          | Annotations.Nullable ->
+          | AnnotatedSignature.Nullable ->
               "ERADICATE_NULL_METHOD_CALL",
               P.sprintf
                 "The value of `%s` in the call to `%s` could be null. %s"
                 (Option.value s_opt ~default:"")
                 (Procname.to_simplified_string pn)
                 origin_description
-          | Annotations.Present ->
+          | AnnotatedSignature.Present ->
               "ERADICATE_VALUE_NOT_PRESENT",
               P.sprintf
                 "The value of `%s` in the call to `%s` is not @Present. %s"
@@ -370,7 +370,7 @@ let report_error_now tenv
         origin_loc
     | Parameter_annotation_inconsistent (ann, s, n, pn, _, (origin_desc, origin_loc, _)) ->
         let kind_s, description = match ann with
-          | Annotations.Nullable ->
+          | AnnotatedSignature.Nullable ->
               "ERADICATE_PARAMETER_NOT_NULLABLE",
               P.sprintf
                 "`%s` needs a non-null value in parameter %d but argument `%s` can be null. %s"
@@ -378,7 +378,7 @@ let report_error_now tenv
                 n
                 s
                 origin_desc
-          | Annotations.Present ->
+          | AnnotatedSignature.Present ->
               "ERADICATE_PARAMETER_VALUE_ABSENT",
               P.sprintf
                 "`%s` needs a present value in parameter %d but argument `%s` can be absent. %s"
@@ -394,13 +394,13 @@ let report_error_now tenv
         origin_loc
     | Return_annotation_inconsistent (ann, pn, (origin_description, origin_loc, _)) ->
         let kind_s, description = match ann with
-          | Annotations.Nullable ->
+          | AnnotatedSignature.Nullable ->
               "ERADICATE_RETURN_NOT_NULLABLE",
               P.sprintf
                 "Method `%s` may return null but it is not annotated with `@Nullable`. %s"
                 (Procname.to_simplified_string pn)
                 origin_description
-          | Annotations.Present ->
+          | AnnotatedSignature.Present ->
               "ERADICATE_RETURN_VALUE_NOT_PRESENT",
               P.sprintf
                 "Method `%s` may return an absent value but it is annotated with `@Present`. %s"

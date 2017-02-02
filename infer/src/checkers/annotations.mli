@@ -18,49 +18,17 @@ val no_allocation : string
 val nullable : string
 val on_bind : string
 val performance_critical : string
+val present : string
 val for_non_ui_thread : string
 val for_ui_thread : string
 val guarded_by : string
+val strict : string
 val suppress_lint : string
 val thread_confined : string
 val thread_safe : string
 val thread_safe_method : string
 val ui_thread : string
 val visibleForTesting : string
-
-type annotation =
-  | Nullable
-  | Present
-[@@deriving compare]
-
-(** Method signature with annotations. *)
-type annotated_signature = {
-  ret : Annot.Item.t * Typ.t; (** Annotated return type. *)
-  params: (Mangled.t * Annot.Item.t * Typ.t) list (** Annotated parameters. *)
-} [@@deriving compare]
-
-(** Check if the annotated signature is for a wrapper of an anonymous inner class method.
-    These wrappers have the same name as the original method, every type is Object, and the parameters
-    are called x0, x1, x2. *)
-val annotated_signature_is_anonymous_inner_class_wrapper : annotated_signature -> Procname.t -> bool
-
-(** Check if the given parameter has a Nullable annotation in the given signature *)
-val param_is_nullable : Pvar.t -> annotated_signature -> bool
-
-(** Mark the annotated signature with the given annotation map. *)
-val annotated_signature_mark :
-  Procname.t -> annotation -> annotated_signature -> bool * bool list -> annotated_signature
-
-(** Mark the return of the annotated signature with the given annotation. *)
-val annotated_signature_mark_return :
-  annotation -> annotated_signature -> annotated_signature
-
-(** Mark the return of the annotated signature @Strict. *)
-val annotated_signature_mark_return_strict :
-  annotated_signature -> annotated_signature
-
-(** Get a method signature with annotations from a proc_attributes. *)
-val get_annotated_signature : ProcAttributes.t -> annotated_signature
 
 (** [annot_ends_with annot ann_name] returns true if the class name of [annot], without the package,
     is equal to [ann_name] *)
@@ -145,12 +113,3 @@ val field_has_annot : Ident.fieldname -> StructTyp.t -> (Annot.Item.t -> bool) -
 
 (** return true if the given predicate evaluates to true on some annotation of [struct_typ] *)
 val struct_typ_has_annot : StructTyp.t -> (Annot.Item.t -> bool) -> bool
-
-(** Mark the return of the method_annotation with the given annotation. *)
-val method_annotation_mark_return :
-  annotation -> Annot.Method.t -> Annot.Method.t
-
-(** Add the annotation to the item_annotation. *)
-val mk_ia : annotation -> Annot.Item.t -> Annot.Item.t
-
-val pp_annotated_signature : Procname.t -> Format.formatter -> annotated_signature -> unit

@@ -1285,7 +1285,7 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
            when Exp.equal exp deref_exp ->
              let is_weak_captured_var = is_weak_captured_var pdesc pvar in
              let is_nullable =
-               if Annotations.param_is_nullable pvar ann_sig || is_weak_captured_var
+               if AnnotatedSignature.param_is_nullable pvar ann_sig || is_weak_captured_var
                then
                  begin
                    nullable_obj_str := Some (Pvar.to_string pvar);

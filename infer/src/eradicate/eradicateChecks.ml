@@ -30,7 +30,7 @@ let get_field_annotation tenv fn typ =
         (* outside of Eradicate in some other way *)
         if (Models.Inference.enabled || not Config.eradicate)
         && Models.Inference.field_is_marked fn
-        then Annotations.mk_ia Annotations.Nullable ia
+        then AnnotatedSignature.mk_ia AnnotatedSignature.Nullable ia
         else ia in
       Some (t, ia')
 
@@ -63,7 +63,7 @@ let is_virtual = function
 (** Check an access (read or write) to a field. *)
 let check_field_access tenv
     find_canonical_duplicate curr_pname node instr_ref exp fname ta loc : unit =
-  if TypeAnnotation.get_value Annotations.Nullable ta then
+  if TypeAnnotation.get_value AnnotatedSignature.Nullable ta then
     let origin_descr = TypeAnnotation.descr_origin tenv ta in
     report_error tenv
       find_canonical_duplicate
@@ -82,7 +82,7 @@ let check_array_access tenv
     ta
     loc
     indexed =
-  if TypeAnnotation.get_value Annotations.Nullable ta then
+  if TypeAnnotation.get_value AnnotatedSignature.Nullable ta then
     let origin_descr = TypeAnnotation.descr_origin tenv ta in
     report_error tenv
       find_canonical_duplicate
@@ -108,7 +108,7 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc
     node e typ ta true_branch from_call idenv linereader loc instr_ref : unit =
   let is_fun_nonnull ta = match TypeAnnotation.get_origin ta with
     | TypeOrigin.Proc proc_origin ->
-        let (ia, _) = proc_origin.TypeOrigin.annotated_signature.Annotations.ret in
+        let (ia, _) = proc_origin.TypeOrigin.annotated_signature.AnnotatedSignature.ret in
         Annotations.ia_is_nonnull ia
     | _ -> false in
 
@@ -144,7 +144,7 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc
   let is_temp = Idenv.exp_is_temp idenv e in
   let nonnull = is_fun_nonnull ta in
   let should_report =
-    not (TypeAnnotation.get_value Annotations.Nullable ta) &&
+    not (TypeAnnotation.get_value AnnotatedSignature.Nullable ta) &&
     (Config.eradicate_condition_redundant || nonnull) &&
     true_branch &&
     (not is_temp || nonnull) &&
@@ -174,25 +174,25 @@ let check_field_assignment tenv
   let curr_pname = Procdesc.get_proc_name curr_pdesc in
   let (t_lhs, ta_lhs, _) =
     typecheck_expr node instr_ref curr_pdesc typestate exp_lhs
-      (typ, TypeAnnotation.const Annotations.Nullable false TypeOrigin.ONone, [loc]) loc in
+      (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, [loc]) loc in
   let (_, ta_rhs, _) =
     typecheck_expr node instr_ref curr_pdesc typestate exp_rhs
-      (typ, TypeAnnotation.const Annotations.Nullable false TypeOrigin.ONone, [loc]) loc in
+      (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, [loc]) loc in
   let should_report_nullable =
     let field_is_field_injector_readwrite () = match t_ia_opt with
       | Some (_, ia) ->
           Annotations.ia_is_field_injector_readwrite ia
       | _ ->
           false in
-    not (TypeAnnotation.get_value Annotations.Nullable ta_lhs) &&
-    TypeAnnotation.get_value Annotations.Nullable ta_rhs &&
+    not (TypeAnnotation.get_value AnnotatedSignature.Nullable ta_lhs) &&
+    TypeAnnotation.get_value AnnotatedSignature.Nullable ta_rhs &&
     PatternMatch.type_is_class t_lhs &&
     not (Ident.java_fieldname_is_outer_instance fname) &&
     not (field_is_field_injector_readwrite ()) in
   let should_report_absent =
     Config.eradicate_optional_present &&
-    TypeAnnotation.get_value Annotations.Present ta_lhs &&
-    not (TypeAnnotation.get_value Annotations.Present ta_rhs) &&
+    TypeAnnotation.get_value AnnotatedSignature.Present ta_lhs &&
+    not (TypeAnnotation.get_value AnnotatedSignature.Present ta_rhs) &&
     not (Ident.java_fieldname_is_outer_instance fname) in
   let should_report_mutable =
     let field_is_mutable () = match t_ia_opt with
@@ -204,7 +204,10 @@ let check_field_assignment tenv
     not (field_is_mutable ()) in
   if should_report_nullable || should_report_absent then
     begin
-      let ann = if should_report_nullable then Annotations.Nullable else Annotations.Present in
+      let ann =
+        if should_report_nullable
+        then AnnotatedSignature.Nullable
+        else AnnotatedSignature.Present in
       if Models.Inference.enabled then Models.Inference.field_add_nullable_annotation fname;
       let origin_descr = TypeAnnotation.descr_origin tenv ta_rhs in
       report_error tenv
@@ -281,7 +284,7 @@ let check_constructor_initialization tenv
                 final_type_annotation_with
                   true
                   (Lazy.force final_constructor_typestates)
-                  (fun ta -> TypeAnnotation.get_value Annotations.Nullable ta) in
+                  (fun ta -> TypeAnnotation.get_value AnnotatedSignature.Nullable ta) in
 
               let should_check_field_initialization =
                 let in_current_class =
@@ -330,8 +333,8 @@ let spec_make_return_nullable curr_pname =
   | Some summary ->
       let proc_attributes = Specs.get_attributes summary in
       let method_annotation = proc_attributes.ProcAttributes.method_annotation in
-      let method_annotation' = Annotations.method_annotation_mark_return
-          Annotations.Nullable method_annotation in
+      let method_annotation' = AnnotatedSignature.method_annotation_mark_return
+          AnnotatedSignature.Nullable method_annotation in
       let proc_attributes' =
         { proc_attributes with
           ProcAttributes.method_annotation = method_annotation' } in
@@ -351,8 +354,8 @@ let check_return_annotation tenv
   let ret_annotated_nonnull = Annotations.ia_is_nonnull ret_ia in
   match ret_range with
   | Some (_, final_ta, _) ->
-      let final_nullable = TypeAnnotation.get_value Annotations.Nullable final_ta in
-      let final_present = TypeAnnotation.get_value Annotations.Present final_ta in
+      let final_nullable = TypeAnnotation.get_value AnnotatedSignature.Nullable final_ta in
+      let final_present = TypeAnnotation.get_value AnnotatedSignature.Present final_ta in
       let origin_descr = TypeAnnotation.descr_origin tenv final_ta in
       let return_not_nullable =
         final_nullable &&
@@ -379,9 +382,9 @@ let check_return_annotation tenv
       if return_not_nullable || return_value_not_present then
         begin
           let ann =
-            if return_not_nullable then Annotations.Nullable else Annotations.Present in
-
-
+            if return_not_nullable
+            then AnnotatedSignature.Nullable
+            else AnnotatedSignature.Present in
           report_error tenv
             find_canonical_duplicate
             (TypeErr.Return_annotation_inconsistent (ann, curr_pname, origin_descr))
@@ -416,15 +419,18 @@ let check_call_receiver tenv
   | ((original_this_e, this_e), typ) :: _ ->
       let (_, this_ta, _) =
         typecheck_expr tenv node instr_ref curr_pdesc typestate this_e
-          (typ, TypeAnnotation.const Annotations.Nullable false TypeOrigin.ONone, []) loc in
-      let null_method_call = TypeAnnotation.get_value Annotations.Nullable this_ta in
+          (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, []) loc in
+      let null_method_call = TypeAnnotation.get_value AnnotatedSignature.Nullable this_ta in
       let optional_get_on_absent =
         Config.eradicate_optional_present &&
         Models.is_optional_get callee_pname &&
-        not (TypeAnnotation.get_value Annotations.Present this_ta) in
+        not (TypeAnnotation.get_value AnnotatedSignature.Present this_ta) in
       if null_method_call || optional_get_on_absent then
         begin
-          let ann = if null_method_call then Annotations.Nullable else Annotations.Present in
+          let ann =
+            if null_method_call
+            then AnnotatedSignature.Nullable
+            else AnnotatedSignature.Present in
           let descr = explain_expr tenv node original_this_e in
           let origin_descr = TypeAnnotation.descr_origin tenv this_ta in
           report_error tenv
@@ -450,24 +456,24 @@ let check_call_parameters tenv
         let formal_is_present = Annotations.ia_is_present ia1 in
         let (_, ta2, _) =
           typecheck_expr node instr_ref curr_pdesc typestate e2
-            (t2, TypeAnnotation.const Annotations.Nullable false TypeOrigin.ONone, []) loc in
+            (t2, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, []) loc in
         let parameter_not_nullable =
           not param_is_this &&
           PatternMatch.type_is_class t1 &&
           not formal_is_nullable &&
-          TypeAnnotation.get_value Annotations.Nullable ta2 in
+          TypeAnnotation.get_value AnnotatedSignature.Nullable ta2 in
         let parameter_absent =
           Config.eradicate_optional_present &&
           not param_is_this &&
           PatternMatch.type_is_class t1 &&
           formal_is_present &&
-          not (TypeAnnotation.get_value Annotations.Present ta2) in
+          not (TypeAnnotation.get_value AnnotatedSignature.Present ta2) in
         if parameter_not_nullable || parameter_absent then
           begin
             let ann =
               if parameter_not_nullable
-              then Annotations.Nullable
-              else Annotations.Present in
+              then AnnotatedSignature.Nullable
+              else AnnotatedSignature.Present in
             let description =
               match explain_expr tenv node orig_e2 with
               | Some descr -> descr
@@ -511,10 +517,10 @@ let check_overridden_annotations
 
   let check_return overriden_proc_name overriden_signature =
     let ret_is_nullable =
-      let ia, _ = annotated_signature.Annotations.ret in
+      let ia, _ = annotated_signature.AnnotatedSignature.ret in
       Annotations.ia_is_nullable ia
     and ret_overridden_nullable =
-      let overriden_ia, _ = overriden_signature.Annotations.ret in
+      let overriden_ia, _ = overriden_signature.AnnotatedSignature.ret in
       Annotations.ia_is_nullable overriden_ia in
     if ret_is_nullable && not ret_overridden_nullable then
       report_error tenv
@@ -539,8 +545,8 @@ let check_overridden_annotations
       (pos + 1) in
 
     (* TODO (#5280249): investigate why argument lists can be of different length *)
-    let current_params = annotated_signature.Annotations.params
-    and overridden_params = overriden_signature.Annotations.params in
+    let current_params = annotated_signature.AnnotatedSignature.params
+    and overridden_params = overriden_signature.AnnotatedSignature.params in
     let initial_pos = if is_virtual current_params then 0 else 1 in
     if Int.equal (IList.length current_params) (IList.length overridden_params) then
       ignore (IList.fold_left2 compare initial_pos current_params overridden_params) in

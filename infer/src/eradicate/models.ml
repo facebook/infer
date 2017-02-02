@@ -103,7 +103,7 @@ let table_has_procedure table proc_name =
 (** Return the annotated signature of the procedure, taking into account models. *)
 let get_modelled_annotated_signature proc_attributes =
   let proc_name = proc_attributes.ProcAttributes.proc_name in
-  let annotated_signature = Annotations.get_annotated_signature proc_attributes in
+  let annotated_signature = AnnotatedSignature.get proc_attributes in
   let proc_id = Procname.to_unique_id proc_name in
   let infer_parameters ann_sig =
     let mark_par =
@@ -113,19 +113,19 @@ let get_modelled_annotated_signature proc_attributes =
     | None -> ann_sig
     | Some bs ->
         let mark = (false, bs) in
-        Annotations.annotated_signature_mark proc_name Annotations.Nullable ann_sig mark in
+        AnnotatedSignature.mark proc_name AnnotatedSignature.Nullable ann_sig mark in
   let infer_return ann_sig =
     let mark_r =
       Inference.enabled &&
       Inference.proc_return_is_marked proc_name in
     if mark_r
-    then Annotations.annotated_signature_mark_return Annotations.Nullable ann_sig
+    then AnnotatedSignature.mark_return AnnotatedSignature.Nullable ann_sig
     else ann_sig in
   let lookup_models_nullable ann_sig =
     if use_models then
       try
         let mark = Hashtbl.find annotated_table_nullable proc_id in
-        Annotations.annotated_signature_mark proc_name Annotations.Nullable ann_sig mark
+        AnnotatedSignature.mark proc_name AnnotatedSignature.Nullable ann_sig mark
       with Not_found ->
         ann_sig
     else ann_sig in
@@ -133,7 +133,7 @@ let get_modelled_annotated_signature proc_attributes =
     if use_models then
       try
         let mark = Hashtbl.find annotated_table_present proc_id in
-        Annotations.annotated_signature_mark proc_name Annotations.Present ann_sig mark
+        AnnotatedSignature.mark proc_name AnnotatedSignature.Present ann_sig mark
       with Not_found ->
         ann_sig
     else ann_sig in
@@ -141,7 +141,7 @@ let get_modelled_annotated_signature proc_attributes =
     if use_models
     && Hashtbl.mem annotated_table_strict proc_id
     then
-      Annotations.annotated_signature_mark_return_strict ann_sig
+      AnnotatedSignature.mark_return_strict ann_sig
     else
       ann_sig in
 

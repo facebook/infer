@@ -30,17 +30,17 @@ module InstrRef : InstrRefT
 module Strict :
 sig
   val signature_get_strict :
-    Tenv.t -> Annotations.annotated_signature -> Annot.t option
+    Tenv.t -> AnnotatedSignature.t -> Annot.t option
 end (* Strict *)
 
 
 type origin_descr =
   string *
   Location.t option *
-  Annotations.annotated_signature option  (* callee signature *)
+  AnnotatedSignature.t option  (* callee signature *)
 
 type parameter_not_nullable =
-  Annotations.annotation *
+  AnnotatedSignature.annotation *
   string * (* description *)
   int * (* parameter number *)
   Procname.t *
@@ -54,13 +54,13 @@ type err_instance =
   | Inconsistent_subclass_parameter_annotation of string * int * Procname.t * Procname.t
   | Field_not_initialized of Ident.fieldname * Procname.t
   | Field_not_mutable of Ident.fieldname * origin_descr
-  | Field_annotation_inconsistent of Annotations.annotation * Ident.fieldname * origin_descr
+  | Field_annotation_inconsistent of AnnotatedSignature.annotation * Ident.fieldname * origin_descr
   | Field_over_annotated of Ident.fieldname * Procname.t
   | Null_field_access of string option * Ident.fieldname * origin_descr * bool
   | Call_receiver_annotation_inconsistent
-    of Annotations.annotation * string option * Procname.t * origin_descr
+    of AnnotatedSignature.annotation * string option * Procname.t * origin_descr
   | Parameter_annotation_inconsistent of parameter_not_nullable
-  | Return_annotation_inconsistent of Annotations.annotation * Procname.t * origin_descr
+  | Return_annotation_inconsistent of AnnotatedSignature.annotation * Procname.t * origin_descr
   | Return_over_annotated of Procname.t
 
 

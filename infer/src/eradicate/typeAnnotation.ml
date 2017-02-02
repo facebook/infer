@@ -15,10 +15,10 @@ module P = Printf
 
 (** Module to represent annotations on types. *)
 
+
 module AnnotationsMap = Caml.Map.Make (
   struct
-    open Annotations
-    type t = annotation [@@deriving compare]
+    type t = AnnotatedSignature.annotation [@@deriving compare]
   end)
 
 type t = {
@@ -40,16 +40,22 @@ let set_value ann b ta =
       map = AnnotationsMap.add ann b ta.map; }
 
 let get_nullable =
-  get_value Annotations.Nullable
+  get_value AnnotatedSignature.Nullable
 
 let get_present =
-  get_value Annotations.Present
+  get_value Present
 
 let set_nullable b =
-  set_value Annotations.Nullable b
+  set_value Nullable b
 
 let set_present b =
-  set_value Annotations.Present b
+  set_value Present b
+
+let descr_origin tenv ta =
+  let descr_opt = TypeOrigin.get_description tenv ta.origin in
+  match descr_opt with
+  | None -> ("", None, None)
+  | Some (str, loc_opt, sig_opt) -> ("(Origin: " ^ str ^ ")", loc_opt, sig_opt)
 
 let to_string ta =
   let nullable_s = if get_nullable ta then " @Nullable" else "" in
@@ -79,16 +85,10 @@ let origin_is_fun_library ta = match get_origin ta with
       proc_origin.TypeOrigin.is_library
   | _ -> false
 
-let descr_origin tenv ta : TypeErr.origin_descr =
-  let descr_opt = TypeOrigin.get_description tenv ta.origin in
-  match descr_opt with
-  | None -> ("", None, None)
-  | Some (str, loc_opt, sig_opt) -> ("(Origin: " ^ str ^ ")", loc_opt, sig_opt)
-
 let const annotation b origin =
   let nullable, present = match annotation with
-    | Annotations.Nullable -> b, false
-    | Annotations.Present -> false, b in
+    | AnnotatedSignature.Nullable -> b, false
+    | AnnotatedSignature.Present -> false, b in
   let ta =
     { origin;
       map = AnnotationsMap.empty;
@@ -99,5 +99,5 @@ let with_origin ta o =
   { ta with origin = o }
 
 let from_item_annotation ia origin =
-  let ta = const Annotations.Nullable (Annotations.ia_is_nullable ia) origin in
-  set_value Annotations.Present (Annotations.ia_is_present ia) ta
+  let ta = const Nullable (Annotations.ia_is_nullable ia) origin in
+  set_value Present (Annotations.ia_is_present ia) ta

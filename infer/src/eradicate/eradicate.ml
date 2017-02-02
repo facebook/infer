@@ -78,7 +78,7 @@ struct
       TypeState.add pvar (typ, ta, []) typestate in
     let get_initial_typestate () =
       let typestate_empty = TypeState.empty Extension.ext in
-      IList.fold_left add_formal typestate_empty annotated_signature.Annotations.params in
+      IList.fold_left add_formal typestate_empty annotated_signature.AnnotatedSignature.params in
 
     (* Check the nullable flag computed for the return value and report inconsistencies. *)
     let check_return find_canonical_duplicate exit_node final_typestate ret_ia ret_type loc : unit =
@@ -107,7 +107,7 @@ struct
 
     let do_after_dataflow find_canonical_duplicate final_typestate =
       let exit_node = Procdesc.get_exit_node curr_pdesc in
-      let ia, ret_type = annotated_signature.Annotations.ret in
+      let ia, ret_type = annotated_signature.AnnotatedSignature.ret in
       check_return find_canonical_duplicate exit_node final_typestate ia ret_type proc_loc in
 
     let module DFTypeCheck = MakeDF(struct
@@ -276,7 +276,7 @@ struct
           let is_initializer proc_attributes =
             PatternMatch.method_is_initializer tenv proc_attributes ||
             let ia, _ =
-              (Models.get_modelled_annotated_signature proc_attributes).Annotations.ret in
+              (Models.get_modelled_annotated_signature proc_attributes).AnnotatedSignature.ret in
             Annotations.ia_is_initializer ia in
           let initializers_current_class =
             pname_and_pdescs_with
@@ -357,9 +357,7 @@ struct
         let loc = Procdesc.get_loc proc_desc in
         let linereader = Printer.LineReader.create () in
         if Config.eradicate_verbose then
-          L.stdout "%a@."
-            (Annotations.pp_annotated_signature proc_name)
-            annotated_signature;
+          L.stdout "%a@." (AnnotatedSignature.pp proc_name) annotated_signature;
 
         callback2
           calls_this checks callback_args annotated_signature linereader loc
