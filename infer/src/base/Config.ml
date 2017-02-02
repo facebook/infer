@@ -247,7 +247,7 @@ let real_exe_name =
 let current_exe =
   if !Sys.interactive then CLOpt.Interactive
   else try IList.assoc String.equal (Filename.basename real_exe_name) CLOpt.exes
-    with Not_found -> CLOpt.Driver
+    with Not_found -> ((CLOpt.Driver) : CLOpt.exe)
 
 let bin_dir =
   Filename.dirname real_exe_name
@@ -309,31 +309,56 @@ let maven = CLOpt.is_env_var_set infer_inside_maven_env_var
 
 let env_inside_maven = `Extend [infer_inside_maven_env_var, "1"]
 
+let infer_is_javac = maven
+
+let startup_action =
+  let open CLOpt in
+  if infer_is_javac then Javac
+  else match current_exe with
+    | Analyze -> Infer Analysis
+    | Clang -> NoParse
+    | Driver -> Infer Driver
+    | Interactive -> NoParse
+    | Print -> Infer Print
+
+
+let exe_usage = match (current_exe : CLOpt.exe) with
+  | Analyze ->
+      version_string ^ "\n" ^
+      "Usage: InferAnalyze [options]\n\
+       Analyze the files captured in the project results directory, which can be specified with \
+       the --results-dir option."
+  | Clang ->
+      "Usage: internal script to capture compilation commands from clang and clang++. \n\
+       You shouldn't need to call this directly."
+  | Interactive ->
+      "Usage: interactive ocaml toplevel. To pass infer config options use env variable"
+  | Print ->
+      "Usage: InferPrint [options] name1.specs ... namen.specs\n\
+       Read, convert, and print .specs files. \
+       To process all the .specs in the current directory, pass . as only parameter \
+       To process all the .specs in the results directory, use option --results-dir \
+       Each spec is printed to standard output unless option -q is used."
+  | Driver ->
+      version_string
 
 (** Command Line options *)
-
-let should_parse_cl_args =
-  (match current_exe with
-   | Clang | Interactive -> false
-   | Analyze | Driver | Print -> true) &&
-  not maven
 
 (* Declare the phase 1 options *)
 
 let inferconfig_home =
-  let all_exes = IList.map snd CLOpt.exes in
   CLOpt.mk_path_opt ~long:"inferconfig-home"
-    ~exes:all_exes ~meta:"dir" "Path to the .inferconfig file"
+    ~parse_mode:CLOpt.(Infer all_sections) ~meta:"dir" "Path to the .inferconfig file"
 
 and project_root =
   CLOpt.mk_path ~deprecated:["project_root"; "-project_root"] ~long:"project-root" ~short:"pr"
     ~default:CLOpt.init_work_dir
-    ~exes:CLOpt.[Analyze;Clang;Driver;Print]
+    ~parse_mode:CLOpt.(Infer [Analysis;Clang;Driver;Print])
     ~meta:"dir" "Specify the root directory of the project"
 
 (* Parse the phase 1 options, ignoring the rest *)
 
-let _ : int -> 'a = CLOpt.parse ~incomplete:true current_exe (fun _ -> "") ~should_parse_cl_args
+let _ : int -> 'a = CLOpt.parse ~incomplete:true startup_action ~usage:""
 
 (* Define the values that depend on phase 1 options *)
 
@@ -373,8 +398,7 @@ let inferconfig_path =
    can be defined together sharing a reference. See debug and specs_library below for two
    different examples. *)
 
-let anon_args =
-  CLOpt.mk_anon ()
+let anon_args = CLOpt.mk_anon ()
 
 and abs_struct =
   CLOpt.mk_int ~deprecated:["absstruct"] ~long:"abs-struct" ~default:1
@@ -413,7 +437,7 @@ and (
     ignore (
       let long = "<analyzer>-" ^ suffix in
       CLOpt.mk_string_list ~long ~meta ~f:(fun _ -> raise (Arg.Bad "invalid option"))
-        ~exes:CLOpt.[Driver;Print]
+        ~parse_mode:CLOpt.(Infer [Driver;Print])
         help
     );
     IList.map (fun (name, analyzer) -> (analyzer, mk_option name)) string_to_analyzer in
@@ -453,7 +477,7 @@ and analyzer =
     | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters
     | Quandary | Threadsafety | Bufferoverrun -> () in
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:"a"
-    ~exes:CLOpt.[Driver]
+    ~parse_mode:CLOpt.(Infer [Driver])
     "Specify which analyzer to run (only one at a time is supported):\n\
      - infer, eradicate, checkers, quandary, threadsafety, bufferoverrun: run the specified analysis\n\
      - capture: run capture phase only (no analysis)\n\
@@ -483,18 +507,18 @@ and ast_file =
 
 and blacklist =
   CLOpt.mk_string_opt ~deprecated:["-blacklist-regex";"-blacklist"] ~long:"buck-blacklist"
-    ~exes:CLOpt.[Driver]
+    ~parse_mode:CLOpt.(Infer [Driver])
     ~meta:"regex" "Skip analysis of files matched by the specified regular expression (Buck \
                    flavors only)"
 
 and bootclasspath =
   CLOpt.mk_string_opt ~long:"bootclasspath"
-    ~exes:CLOpt.[Driver]
+    ~parse_mode:CLOpt.(Infer [Driver])
     "Specify the Java bootclasspath"
 
 and bo_debug =
   CLOpt.mk_int ~default:0 ~long:"bo-debug"
-    ~exes:CLOpt.[Driver] "Debug mode for buffer-overrun checker"
+    ~parse_mode:CLOpt.(Infer [Driver]) "Debug mode for buffer-overrun checker"
 
 (** Automatically set when running from within Buck *)
 and buck =
@@ -503,55 +527,55 @@ and buck =
 
 and buck_build_args =
   CLOpt.mk_string_list ~long:"Xbuck"
-    ~exes:CLOpt.[Driver]
+    ~parse_mode:CLOpt.(Infer [Driver])
     "Pass values as command-line arguments to invocations of `buck build` (Buck flavors only)"
 
 and buck_out =
   CLOpt.mk_path_opt ~long:"buck-out"
-    ~exes:CLOpt.[Driver] ~meta:"dir" "Specify the root directory of buck-out"
+    ~parse_mode:CLOpt.(Infer [Driver]) ~meta:"dir" "Specify the root directory of buck-out"
 
 and bugs_csv =
   CLOpt.mk_path_opt ~deprecated:["bugs"] ~long:"issues-csv"
-    ~exes:CLOpt.[Driver;Print]
+    ~parse_mode:CLOpt.(Infer [Driver;Print])
     ~meta:"file" "Write a list of issues in CSV format to a file"
 
 and bugs_json =
   CLOpt.mk_path_opt ~deprecated:["bugs_json"] ~long:"issues-json"
-    ~exes:CLOpt.[Driver;Print]
+    ~parse_mode:CLOpt.(Infer [Driver;Print])
     ~meta:"file" "Write a list of issues in JSON format to a file"
 
 and bugs_tests =
   CLOpt.mk_path_opt ~long:"issues-tests"
-    ~exes:CLOpt.[Driver;Print]
+    ~parse_mode:CLOpt.(Infer [Driver;Print])
     ~meta:"file"
     "Write a list of issues in a format suitable for tests to a file"
 
 and bugs_txt =
   CLOpt.mk_path_opt ~deprecated:["bugs_txt"] ~long:"issues-txt"
-    ~exes:CLOpt.[Driver;Print]
+    ~parse_mode:CLOpt.(Infer [Driver;Print])
     ~meta:"file"
     "Write a list of issues in TXT format to a file"
 
 and bugs_xml =
   CLOpt.mk_path_opt ~deprecated:["bugs_xml"] ~long:"issues-xml"
-    ~exes:CLOpt.[Driver;Print]
+    ~parse_mode:CLOpt.(Infer [Driver;Print])
     ~meta:"file"
     "Write a list of issues in XML format to a file"
 
 and calls_csv =
   CLOpt.mk_path_opt ~deprecated:["calls"] ~long:"calls-csv"
-    ~exes:CLOpt.[Driver;Print]
+    ~parse_mode:CLOpt.(Infer [Driver;Print])
     ~meta:"file"
     "Write individual calls in CSV format to a file"
 
 and changed_files_index =
-  CLOpt.mk_path_opt ~long:"changed-files-index" ~exes:CLOpt.[Driver] ~meta:"file"
+  CLOpt.mk_path_opt ~long:"changed-files-index" ~parse_mode:CLOpt.(Infer [Driver]) ~meta:"file"
     "Specify the file containing the list of source files from which reactive analysis should \
      start. Source files should be specified relative to project root or be absolute"
 
 and check_duplicate_symbols =
   CLOpt.mk_bool ~long:"check-duplicate-symbols"
-    ~exes:CLOpt.[Analyze]
+    ~parse_mode:CLOpt.(Infer [Analysis])
     "Check if a symbol with the same name is defined in more than one file."
 
 and checkers, crashcontext, eradicate, quandary, threadsafety, bufferoverrun =
@@ -591,7 +615,7 @@ and checkers_repeated_calls =
     "Check for repeated calls"
 
 and clang_biniou_file =
-  CLOpt.mk_path_opt ~long:"clang-biniou-file" ~exes:CLOpt.[Clang] ~meta:"file"
+  CLOpt.mk_path_opt ~long:"clang-biniou-file" ~parse_mode:CLOpt.(Infer [Clang]) ~meta:"file"
     "Specify a file containing the AST of the program, in biniou format"
 
 and clang_compilation_db_files =
@@ -600,7 +624,7 @@ and clang_compilation_db_files =
 
 and clang_frontend_action =
   CLOpt.mk_symbol_opt ~long:"clang-frontend-action"
-    ~exes:CLOpt.[Clang;Driver]
+    ~parse_mode:CLOpt.(Infer [Clang;Driver])
     "Specify whether the clang frontend should capture or lint or both."
     ~symbols:clang_frontend_action_symbols
 
@@ -621,7 +645,7 @@ and cluster =
 and compute_analytics =
   CLOpt.mk_bool ~long:"compute-analytics"
     ~default:false
-    ~exes:CLOpt.[Clang;Driver]
+    ~parse_mode:CLOpt.(Infer [Clang;Driver])
     "Emit analytics as info-level issues, like component kit line count and \
      component kit file cyclomatic complexity"
 
@@ -629,13 +653,13 @@ and compute_analytics =
     If a procedure was changed beforehand, keep the changed marking. *)
 and continue =
   CLOpt.mk_bool ~deprecated:["continue"] ~long:"continue"
-    ~exes:CLOpt.[Driver]
+    ~parse_mode:CLOpt.(Infer [Driver])
     "Continue the capture for the reactive analysis, increasing the changed files/procedures. (If \
      a procedure was changed beforehand, keep the changed marking.)"
 
 and linters_ignore_clang_failures =
   CLOpt.mk_bool ~long:"linters-ignore-clang-failures"
-    ~exes:CLOpt.[Driver]
+    ~parse_mode:CLOpt.(Infer [Driver])
     ~default:false
     "Continue linting files even if some compilation fails."
 
@@ -646,7 +670,7 @@ and copy_propagation =
 and cxx =
   CLOpt.mk_bool ~deprecated:["cxx-experimental"] ~long:"cxx"
     ~default:true
-    ~exes:CLOpt.[Clang]
+    ~parse_mode:CLOpt.(Infer [Clang])
     "Analyze C++ methods"
 
 and (
@@ -669,7 +693,7 @@ and (
 
   and filtering =
     CLOpt.mk_bool ~long:"filtering" ~short:"f" ~default:true
-      ~exes:CLOpt.[Driver]
+      ~parse_mode:CLOpt.(Infer [Driver])
       "Do not show the results from experimental checks (note: some of them may contain many false \
        alarms)"
 
@@ -705,7 +729,7 @@ and (
   in
   let debug =
     CLOpt.mk_bool_group ~deprecated:["debug"] ~long:"debug" ~short:"g"
-      ~exes:CLOpt.[Analyze]
+      ~parse_mode:CLOpt.(Infer [Analysis])
       "Debug mode (also sets --developer-mode, --no-filtering, --print-buckets, --print-types, \
        --reports-include-ml-loc, --no-test, --trace-error, --write-dotty, --write-html)"
       [developer_mode; print_buckets; print_types; reports_include_ml_loc; trace_error; write_html;
@@ -739,7 +763,7 @@ and dependencies =
 
 and disable_checks =
   CLOpt.mk_string_list ~deprecated:["disable_checks"] ~long:"disable-checks" ~meta:"error name"
-    ~exes:CLOpt.[Driver;Print]
+    ~parse_mode:CLOpt.(Infer [Driver;Print])
     "Do not show reports coming from this type of errors"
 
 and dotty_cfg_libs =
@@ -797,7 +821,7 @@ and err_file =
 
 and fail_on_bug =
   CLOpt.mk_bool ~deprecated:["-fail-on-bug"] ~long:"fail-on-issue" ~default:false
-    ~exes:CLOpt.[Driver]
+    ~parse_mode:CLOpt.(Infer [Driver])
     (Printf.sprintf "Exit with error code %d if Infer found something to report"
        fail_on_issue_exit_code)
 
@@ -819,13 +843,13 @@ and filter_paths =
 
 and flavors =
   CLOpt.mk_bool ~deprecated:["-use-flavors"] ~long:"flavors"
-    ~exes:CLOpt.[Driver]
+    ~parse_mode:CLOpt.(Infer [Driver])
     "Buck integration using Buck flavors (clang only), eg `infer --flavors -- buck build \
      //foo:bar#infer`"
 
 and from_json_report =
   CLOpt.mk_path_opt ~long:"from-json-report"
-    ~exes:CLOpt.[Print]
+    ~parse_mode:CLOpt.(Infer [Print])
     ~meta:"report.json"
     "Load analysis results from a report file (default is to load the results from the specs \
      files generated by the analysis)."
@@ -841,17 +865,17 @@ and frontend_stats =
 
 and frontend_tests =
   CLOpt.mk_bool ~long:"frontend-tests"
-    ~exes:CLOpt.frontend_exes
+    ~parse_mode:CLOpt.(Infer [Clang])
     "Save filename.ext.test.dot with the cfg in dotty format for frontend tests"
 
 and generated_classes =
   CLOpt.mk_path_opt ~long:"generated-classes"
-    ~exes:CLOpt.[Driver]
+    ~parse_mode:CLOpt.(Infer [Driver])
     "Specify where to load the generated class files"
 
 and headers =
   CLOpt.mk_bool ~deprecated:["headers"] ~deprecated_no:["no_headers"] ~long:"headers" ~short:"hd"
-    ~exes:CLOpt.[Clang]
+    ~parse_mode:CLOpt.(Infer [Clang])
     "Analyze code in header files"
 
 and icfg_dotty_outfile =
@@ -864,7 +888,7 @@ and infer_cache =
     ~meta:"dir" "Select a directory to contain the infer cache (Buck and Java only)"
 
 and iphoneos_target_sdk_version =
-  CLOpt.mk_string_opt ~long:"iphoneos-target-sdk-version" ~exes:CLOpt.[Clang;Driver]
+  CLOpt.mk_string_opt ~long:"iphoneos-target-sdk-version" ~parse_mode:CLOpt.(Infer [Clang;Driver])
     "Specify the target SDK version to use for iphoneos"
 
 and iterations =
@@ -880,7 +904,8 @@ and java_jar_compiler =
 
 and jobs =
   CLOpt.mk_int ~deprecated:["-multicore"] ~long:"jobs" ~short:"j" ~default:ncpu
-    ~exes:CLOpt.[Driver] ~meta:"int" "Run the specified number of analysis jobs simultaneously"
+    ~parse_mode:CLOpt.(Infer [Driver])
+    ~meta:"int" "Run the specified number of analysis jobs simultaneously"
 
 and join_cond =
   CLOpt.mk_int ~deprecated:["join_cond"] ~long:"join-cond" ~default:1
@@ -894,19 +919,19 @@ and latex =
     "Write a latex report of the analysis results to a file"
 
 and linters_def_file =
-  CLOpt.mk_path_list ~default: [linters_def_default_file]
-    ~long:"linters-def-file" ~exes:CLOpt.[Clang]
+  CLOpt.mk_path_list ~default:[linters_def_default_file]
+    ~long:"linters-def-file" ~parse_mode:CLOpt.(Infer [Clang])
     ~meta:"file" "Specify the file containing linters definition (e.g. 'linters.al')"
 
 and load_average =
   CLOpt.mk_float_opt ~long:"load-average" ~short:"l"
-    ~exes:CLOpt.[Driver] ~meta:"float"
+    ~parse_mode:CLOpt.(Infer [Driver]) ~meta:"float"
     "Do not start new parallel jobs if the load average is greater than that specified (Buck and \
      make only)"
 
 and load_results =
   CLOpt.mk_path_opt ~deprecated:["load_results"] ~long:"load-results"
-    ~exes:CLOpt.[Analyze]
+    ~parse_mode:CLOpt.(Infer [Analysis])
     ~meta:"file.iar" "Load analysis results from Infer Analysis Results file file.iar"
 
 (** name of the makefile to create with clusters and dependencies *)
@@ -920,13 +945,13 @@ and margin =
 
 and merge =
   CLOpt.mk_bool ~deprecated:["merge"] ~long:"merge"
-    ~exes:CLOpt.[Driver]
+    ~parse_mode:CLOpt.(Infer [Driver])
     "Merge the captured results directories specified in the dependency file (Buck flavors only)"
 
 and ml_buckets =
   CLOpt.mk_symbol_seq ~deprecated:["ml_buckets"; "-ml_buckets"] ~long:"ml-buckets"
     ~default:[`MLeak_cf]
-    ~exes:CLOpt.[Clang]
+    ~parse_mode:CLOpt.(Infer [Clang])
     "Specify the memory leak buckets to be checked in Objective-C/C++:\n\
      - 'cf' checks leaks from Core Foundation,\n\
      - 'arc' from code compiled in ARC mode,\n\
@@ -984,7 +1009,7 @@ and patterns_skip_translation =
 
 and pmd_xml =
   CLOpt.mk_bool ~long:"pmd-xml"
-    ~exes:CLOpt.[Driver]
+    ~parse_mode:CLOpt.(Infer [Driver])
     "Output issues in (PMD) XML format"
 
 and precondition_stats =
@@ -992,7 +1017,7 @@ and precondition_stats =
     "Print stats about preconditions to standard output"
 
 and print_logs =
-  CLOpt.mk_bool ~long:"print-logs" ~exes:CLOpt.[Driver]
+  CLOpt.mk_bool ~long:"print-logs" ~parse_mode:CLOpt.(Infer [Driver])
     "Also log messages to stdout and stderr"
 
 and print_builtins =
@@ -1001,7 +1026,7 @@ and print_builtins =
 
 and print_traces_in_tests =
   CLOpt.mk_bool ~long:"print-traces-in-tests" ~default:true
-    ~exes:CLOpt.[Print]
+    ~parse_mode:CLOpt.(Infer [Print])
     "Include symbolic traces summaries in the output of --issues-tests"
 
 and print_using_diff =
@@ -1020,7 +1045,7 @@ and procs_xml =
 
 and progress_bar =
   CLOpt.mk_bool ~deprecated_no:["no_progress_bar"] ~long:"progress-bar" ~short:"pb" ~default:true
-    ~exes:CLOpt.[Driver]
+    ~parse_mode:CLOpt.(Infer [Driver])
     "Show a progress bar"
 
 and quandary_sources =
@@ -1030,8 +1055,8 @@ and quandary_sinks =
   CLOpt.mk_json ~long:"quandary-sinks" "Specify custom sinks for Quandary"
 
 and quiet =
-  CLOpt.mk_bool ~long:"quiet" ~short:"q" ~default:(current_exe <> CLOpt.Print)
-    ~exes:CLOpt.[Print]
+  CLOpt.mk_bool ~long:"quiet" ~short:"q" ~default:(current_exe <> (CLOpt.Print : CLOpt.exe))
+    ~parse_mode:CLOpt.(Infer [Print])
     "Do not print specs on standard output"
 
 and reactive =
@@ -1058,10 +1083,21 @@ and report_hook =
      passed --issues-csv, --issues-json, --issues-txt, --issues-xml, --project-root, and \
      --results-dir."
 
+and rest =
+  CLOpt.mk_rest_actions
+    ~parse_mode:CLOpt.(Infer [Driver])
+    "Stop argument processing, use remaining arguments as a build command"
+    ~usage:exe_usage
+    (fun build_exe ->
+       match Filename.basename build_exe with
+       | "java" | "javac" -> CLOpt.Javac
+       | _ -> CLOpt.NoParse
+    )
+
 and results_dir =
   CLOpt.mk_path ~deprecated:["results_dir"; "-out"] ~long:"results-dir" ~short:"o"
     ~default:(CLOpt.init_work_dir ^/ "infer-out")
-    ~exes:CLOpt.[Analyze;Clang;Driver;Print]
+    ~parse_mode:CLOpt.(Infer [Analysis;Clang;Driver;Print])
     ~meta:"dir" "Write results and internal files in the specified directory"
 
 and save_results =
@@ -1074,17 +1110,17 @@ and seconds_per_iteration =
 
 and skip_analysis_in_path =
   CLOpt.mk_string_list ~long:"skip-analysis-in-path"
-    ~exes:CLOpt.[Clang]
+    ~parse_mode:CLOpt.(Infer [Clang])
     ~meta:"path prefix" "Ignore files whose path matches the given prefix"
 
 and skip_clang_analysis_in_path =
   CLOpt.mk_string_list ~long:"skip-clang-analysis-in-path"
-    ~exes:CLOpt.[Clang]
+    ~parse_mode:CLOpt.(Infer [Clang])
     ~meta:"path prefix" "Ignore files whose path matches the given prefix"
 
 and skip_translation_headers =
   CLOpt.mk_string_list ~deprecated:["skip_translation_headers"] ~long:"skip-translation-headers"
-    ~exes:CLOpt.[Clang]
+    ~parse_mode:CLOpt.(Infer [Clang])
     ~meta:"path prefix" "Ignore headers whose path matches the given prefix"
 
 and sources =
@@ -1124,18 +1160,18 @@ and specs_library =
       ~long:"specs-library-index"
       ~default:""
       ~f:(fun file -> specs_library := (read_specs_dir_list_file file) @ !specs_library; "")
-      ~exes:CLOpt.[Analyze] ~meta:"file"
+      ~parse_mode:CLOpt.(Infer [Analysis]) ~meta:"file"
       "" in
   specs_library
 
 and stacktrace =
-  CLOpt.mk_path_opt ~long:"stacktrace" ~short:"st" ~exes:CLOpt.[Driver]
+  CLOpt.mk_path_opt ~long:"stacktrace" ~short:"st" ~parse_mode:CLOpt.(Infer [Driver])
     ~meta:"file" "File path containing a json-encoded Java crash stacktrace. Used to guide the \
                   analysis (only with '-a crashcontext').  See \
                   tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
 
 and stacktraces_dir =
-  CLOpt.mk_path_opt ~long:"stacktraces-dir" ~exes:CLOpt.[Driver]
+  CLOpt.mk_path_opt ~long:"stacktraces-dir" ~parse_mode:CLOpt.(Infer [Driver])
     ~meta:"dir" "Directory path containing multiple json-encoded Java crash stacktraces. \
                  Used to guide the  analysis (only with '-a crashcontext').  See \
                  tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
@@ -1186,7 +1222,7 @@ and type_size =
 
 and unsafe_malloc =
   CLOpt.mk_bool ~long:"unsafe-malloc"
-    ~exes:CLOpt.[Analyze]
+    ~parse_mode:CLOpt.(Infer [Analysis])
     "Assume that malloc(3) never returns null."
 
 and use_compilation_database =
@@ -1202,13 +1238,13 @@ and verbose_out =
 and version =
   let var = ref `None in
   CLOpt.mk_set var `Full ~deprecated:["version"] ~long:"version"
-    ~exes:CLOpt.[Analyze;Clang;Driver;Print]
+    ~parse_mode:CLOpt.(Infer [Analysis;Clang;Driver;Print])
     "Print version information and exit" ;
   CLOpt.mk_set var `Json ~deprecated:["version_json"] ~long:"version-json"
-    ~exes:CLOpt.[Analyze;Clang;Print]
+    ~parse_mode:CLOpt.(Infer [Analysis;Clang;Print])
     "Print version information in json format and exit" ;
   CLOpt.mk_set var `Vcs ~long:"version-vcs"
-    ~exes:CLOpt.[Analyze;Clang;Print]
+    ~parse_mode:CLOpt.(Infer [Analysis;Clang;Print])
     "Print version control system commit and exit" ;
   var
 
@@ -1232,13 +1268,13 @@ and worklist_mode =
 
 and xcode_developer_dir =
   CLOpt.mk_path_opt ~long:"xcode-developer-dir"
-    ~exes:CLOpt.[Driver]
+    ~parse_mode:CLOpt.(Infer [Driver])
     ~meta:"XCODE_DEVELOPER_DIR" "Specify the path to Xcode developer directory (Buck flavors only)"
 
 and xcpretty =
   CLOpt.mk_bool ~long:"xcpretty"
     ~default:true
-    ~exes:CLOpt.[Driver]
+    ~parse_mode:CLOpt.(Infer [Driver])
     "Infer will use xcpretty together with xcodebuild to analyze an iOS app. xcpretty just needs \
      to be in the path, infer command is still just infer -- <xcodebuild command>. (Recommended)"
 
@@ -1246,69 +1282,44 @@ and xml_specs =
   CLOpt.mk_bool ~deprecated:["xml"] ~long:"xml-specs"
     "Export specs into XML files file1.xml ... filen.xml"
 
-let javac_classes_out = ref CLOpt.init_work_dir
-
 (* The "rest" args must appear after "--" on the command line, and hence after other args, so they
    are allowed to refer to the other arg variables. *)
-let rest =
-  (* BUG: these arguments will not be detected if put inside @argfiles, as supported by javac. See
-     Infer.run_javac for a version that looks inside argfiles, and discussion in D4397716. *)
-  let classes_out_spec =
-    Arg.String (fun classes_out ->
-        javac_classes_out := classes_out ;
+
+(* BUG: these arguments will not be detected if put inside @argfiles, as supported by javac. See
+   Infer.run_javac for a version that looks inside argfiles, and discussion in D4397716. *)
+let javac_classes_out =
+  CLOpt.mk_string ~parse_mode:CLOpt.Javac
+    ~deprecated:["classes_out"] ~short:"d" ~long:"" ~default:CLOpt.init_work_dir
+    ~f:(fun classes_out ->
         if !buck then (
           let classes_out_infer = resolve classes_out ^/ buck_results_dir_name in
           (* extend env var args to pass args to children that do not receive the rest args *)
           CLOpt.extend_env_args ["--results-dir"; classes_out_infer] ;
-          results_dir := classes_out_infer
-        )
-      ) in
-  let classpath_spec =
-    Arg.String (fun classpath ->
+          results_dir := classes_out_infer;
+        );
+        classes_out)
+    ""
+
+and java_classpath =
+  CLOpt.mk_string_opt ~parse_mode:CLOpt.Javac
+    ~deprecated:["classpath"] ~short:"cp" ~long:""
+    ~f:(fun classpath ->
         if !buck then (
           let paths = String.split classpath ~on:':' in
           let files = List.filter paths ~f:(fun path -> Sys.is_file path = `Yes) in
           CLOpt.extend_env_args (List.concat_map files ~f:(fun file -> ["--specs-library"; file])) ;
           specs_library := List.rev_append files !specs_library
-        )
-      ) in
-  let version_spec = Arg.Unit (fun () -> version := `Javac) in
-  CLOpt.mk_subcommand
-    ~exes:CLOpt.[Driver]
-    "Stop argument processing, use remaining arguments as a build command"
-    (fun build_exe ->
-       match Filename.basename build_exe with
-       | "java" | "javac" -> [
-           ("-classes_out", classes_out_spec, ""); ("-d", classes_out_spec, "");
-           ("-classpath", classpath_spec, ""); ("-cp", classpath_spec, "");
-           ("-version", version_spec, "")
-         ]
-       | _ -> []
-    )
+        );
+        classpath)
+    ""
 
+
+and () =
+  CLOpt.mk_set ~parse_mode:CLOpt.Javac version
+    ~deprecated:["version"] ~long:"" `Javac
+    ""
 
 (** Parse Command Line Args *)
-
-let exe_usage (exe : CLOpt.exe) =
-  match exe with
-  | Analyze ->
-      version_string ^ "\n" ^
-      "Usage: InferAnalyze [options]\n\
-       Analyze the files captured in the project results directory, which can be specified with \
-       the --results-dir option."
-  | Clang ->
-      "Usage: internal script to capture compilation commands from clang and clang++. \n\
-       You shouldn't need to call this directly."
-  | Interactive ->
-      "Usage: interactive ocaml toplevel. To pass infer config options use env variable"
-  | Print ->
-      "Usage: InferPrint [options] name1.specs ... namen.specs\n\
-       Read, convert, and print .specs files. \
-       To process all the .specs in the current directory, pass . as only parameter \
-       To process all the .specs in the results directory, use option --results-dir \
-       Each spec is printed to standard output unless option -q is used."
-  | Driver ->
-      version_string
 
 let post_parsing_initialization () =
   (match !version with
@@ -1318,8 +1329,15 @@ let post_parsing_initialization () =
    | `Javac when !buck ->
        (* print buck key *)
        let javac_version =
+         let javac_args =
+           if infer_is_javac then
+             match Array.to_list Sys.argv with
+             | [] -> []
+             | _::args -> "javac"::args
+           else
+             List.rev !rest in
          (* stderr contents of build command *)
-         let chans = Unix.open_process_full (String.concat ~sep:" " (List.rev !rest)) ~env:[||] in
+         let chans = Unix.open_process_full (String.concat ~sep:" " javac_args) ~env:[||] in
          let err = String.strip (In_channel.input_all chans.stderr) in
          Unix.close_process_full chans |> ignore;
          err in
@@ -1376,7 +1394,7 @@ let post_parsing_initialization () =
 
 let parse_args_and_return_usage_exit =
   let usage_exit =
-    CLOpt.parse ~config_file:inferconfig_path current_exe exe_usage ~should_parse_cl_args in
+    CLOpt.parse ~config_file:inferconfig_path ~usage:exe_usage startup_action in
   post_parsing_initialization () ;
   usage_exit
 
