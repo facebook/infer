@@ -776,7 +776,8 @@ let parse ?(incomplete=false) ?config_file ~usage action =
       args_to_export := arg_string in
   (* read .inferconfig first, then env vars, then command-line options *)
   parse_args ~incomplete ~usage (Infer Driver) inferconfig_args |> ignore;
-  if not incomplete then add_parsed_args_to_args_to_export ();
+  (* NOTE: do not add the contents of .inferconfig to INFER_ARGS. This helps avoid hitting the
+     command line size limit. *)
   parse_args ~incomplete ~usage (Infer Driver) env_args |> ignore;
   if not incomplete then add_parsed_args_to_args_to_export ();
   let curr_usage =
