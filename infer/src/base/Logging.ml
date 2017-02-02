@@ -76,8 +76,9 @@ let create_log_file exe name_prefix outerr =
       | `Err -> Format.err_formatter in
     dup_formatter file_fmt outerr_fmt
   );
-  (* flush files on exit *)
-  Utils.register_epilogue (fun () -> close_log_file (lazy file_fmt) (lazy chan) (lazy file));
+  Utils.register_epilogue
+    (fun () -> close_log_file (lazy file_fmt) (lazy chan) (lazy file))
+    "log files flushing";
   (file_fmt, chan, file)
 
 let should_setup_log_files (exe : CLOpt.exe) = match exe with

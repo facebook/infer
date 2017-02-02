@@ -302,8 +302,12 @@ let activate_run_epilogues_on_signal = lazy (
   Signal.Expert.handle Signal.int run_epilogues_on_signal
 )
 
-let register_epilogue f =
+let register_epilogue f desc =
+  let f_no_exn () =
+    try f ()
+    with exn ->
+      F.eprintf "Error while running epilogue %s:@ %a.@ Powering through...@." desc Exn.pp exn in
   (* We call `exit` in a bunch of places, so register the epilogues with [at_exit]. *)
-  Pervasives.at_exit f;
+  Pervasives.at_exit f_no_exn;
   (* Register signal masking. *)
   Lazy.force activate_run_epilogues_on_signal

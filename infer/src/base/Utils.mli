@@ -88,4 +88,4 @@ val compare_versions : string -> string -> int
 
 (** Register a function to run when the program exits or is interrupted. Registered functions are
     run in the reverse order in which they were registered. *)
-val register_epilogue : (unit -> unit) -> unit
+val register_epilogue : (unit -> unit) -> string -> unit
