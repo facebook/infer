@@ -53,6 +53,26 @@ public abstract class UnknownCode {
     InferTaint.inferSensitiveSink(i);
   }
 
+  void propagateEmptyBad() {
+    String source = (String) InferTaint.inferSecretSource();
+    StringBuffer buffer = new StringBuffer();
+    buffer.append(source); // buffer is now tainted
+    // even though "" is not tainted, buffer and alias should still be tainted
+    StringBuffer alias = buffer.append("");
+    InferTaint.inferSensitiveSink(buffer); // should report
+    InferTaint.inferSensitiveSink(alias); // should report
+  }
+
+  void propagateFootprint(String param) {
+    StringBuffer buffer = new StringBuffer();
+    buffer.append(param);
+    InferTaint.inferSensitiveSink(buffer);
+  }
+
+  void callPropagateFootprintBad() {
+    propagateFootprint((String) InferTaint.inferSecretSource());
+  }
+
   static void FN_propagateViaInterfaceCodeBad(Interface i) {
     Object source = InferTaint.inferSecretSource();
     Object launderedSource = i.interfaceMethod(source);

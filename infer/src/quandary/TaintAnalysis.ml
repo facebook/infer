@@ -384,8 +384,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               | Some (trace, _) -> TraceDomain.join trace trace_acc
               | None -> trace_acc in
             let propagate_to_access_path access_path actuals (astate : Domain.astate) =
+              let initial_trace =
+                access_path_get_trace access_path astate.access_tree proc_data callee_loc in
               let trace_with_propagation =
-                IList.fold_left exp_join_traces TraceDomain.empty actuals in
+                IList.fold_left exp_join_traces initial_trace actuals in
               let access_tree =
                 TaintDomain.add_trace access_path trace_with_propagation astate.access_tree in
               { astate with access_tree; } in
