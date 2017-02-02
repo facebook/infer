@@ -83,10 +83,12 @@ module SourceKind = struct
       name, typ, None in
     let taint_formals_with_types type_strs kind formals =
       let taint_formal_with_types ((formal_name, formal_typ) as formal) =
-        let matches_classname typ typ_str = match typ with
-          | Typ.Tptr (Tstruct typename, _) -> String.equal (Typename.name typename) typ_str
-          | _ -> false in
-        if IList.mem matches_classname formal_typ type_strs
+        let matches_classname = match formal_typ with
+          | Typ.Tptr (Tstruct typename, _) ->
+              List.mem ~equal:String.equal type_strs (Typename.name typename)
+          | _ ->
+              false in
+        if matches_classname
         then
           formal_name, formal_typ, Some kind
         else

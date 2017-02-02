@@ -69,11 +69,11 @@ type annotated_signature = {
 } [@@deriving compare]
 
 let ia_has_annotation_with (ia: Annot.Item.t) (predicate: Annot.t -> bool): bool =
-  IList.exists (fun (a, _) -> predicate a) ia
+  List.exists ~f:(fun (a, _) -> predicate a) ia
 
 let ma_has_annotation_with ((ia, ial) : Annot.Method.t) (predicate: Annot.t -> bool): bool =
   let has_annot a = ia_has_annotation_with a predicate in
-  has_annot ia || IList.exists has_annot ial
+  has_annot ia || List.exists ~f:has_annot ial
 
 (** [annot_ends_with annot ann_name] returns true if the class name of [annot], without the package,
     is equal to [ann_name] *)
@@ -86,10 +86,10 @@ let class_name_matches s ((annot : Annot.t), _) =
   String.equal s annot.class_name
 
 let ia_ends_with ia ann_name =
-  IList.exists (fun (a, _) -> annot_ends_with a ann_name) ia
+  List.exists ~f:(fun (a, _) -> annot_ends_with a ann_name) ia
 
 let ia_contains ia ann_name =
-  IList.exists (class_name_matches ann_name) ia
+  List.exists ~f:(class_name_matches ann_name) ia
 
 let ia_get ia ann_name =
   try Some (fst (IList.find (class_name_matches ann_name) ia))
@@ -97,7 +97,7 @@ let ia_get ia ann_name =
 
 let pdesc_has_parameter_annot pdesc predicate =
   let _, param_annotations = (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation in
-  IList.exists predicate param_annotations
+  List.exists ~f:predicate param_annotations
 
 let pdesc_get_return_annot pdesc =
   fst (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation
@@ -118,8 +118,8 @@ let pname_has_return_annot pname ~attrs_of_pname predicate =
 let field_has_annot fieldname (struct_typ : StructTyp.t) predicate =
   let fld_has_taint_annot (fname, _, annot) =
     Ident.equal_fieldname fieldname fname && predicate annot in
-  IList.exists fld_has_taint_annot struct_typ.fields ||
-  IList.exists fld_has_taint_annot struct_typ.statics
+  List.exists ~f:fld_has_taint_annot struct_typ.fields ||
+  List.exists ~f:fld_has_taint_annot struct_typ.statics
 
 let struct_typ_has_annot (struct_typ : StructTyp.t) predicate =
   predicate struct_typ.annots
@@ -143,8 +143,8 @@ let ia_is_present ia =
   ia_ends_with ia present
 
 let ia_is_nonnull ia =
-  IList.exists
-    (ia_ends_with ia)
+  List.exists
+    ~f:(ia_ends_with ia)
     [nonnull; notnull; camel_nonnull]
 
 let ia_is_false_on_null ia =
@@ -179,15 +179,15 @@ let field_injector_readonly_list =
 (** Annotations for readonly injectors.
     The injector framework initializes the field but does not write null into it. *)
 let ia_is_field_injector_readonly ia =
-  IList.exists
-    (ia_ends_with ia)
+  List.exists
+    ~f:(ia_ends_with ia)
     field_injector_readonly_list
 
 (** Annotations for read-write injectors.
     The injector framework initializes the field and can write null into it. *)
 let ia_is_field_injector_readwrite ia =
-  IList.exists
-    (ia_ends_with ia)
+  List.exists
+    ~f:(ia_ends_with ia)
     field_injector_readwrite_list
 
 let ia_is_mutable ia =
@@ -316,8 +316,8 @@ let annotated_signature_is_anonymous_inner_class_wrapper ann_sig proc_name =
 
 (** Check if the given parameter has a Nullable annotation in the given signature *)
 let param_is_nullable pvar ann_sig =
-  IList.exists
-    (fun (param, annot, _) ->
+  List.exists
+    ~f:(fun (param, annot, _) ->
        Mangled.equal param (Pvar.get_name pvar) && ia_is_nullable annot)
     ann_sig.params
 

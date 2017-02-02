@@ -107,7 +107,7 @@ let remove_abduced_retvars tenv p => {
           | Sil.Aeq lhs rhs
           | Sil.Aneq lhs rhs => exp_contains lhs || exp_contains rhs
           | Sil.Apred _ es
-          | Sil.Anpred _ es => IList.exists exp_contains es
+          | Sil.Anpred _ es => List.exists f::exp_contains es
         )
         pi
     };

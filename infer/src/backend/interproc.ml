@@ -369,7 +369,7 @@ let check_assignement_guard pdesc node =
     let is_call = function
       | Sil.Call _ -> true
       | _ -> false in
-    IList.exists is_call instrs in
+    List.exists ~f:is_call instrs in
   let is_set_instr i =
     match i with
     | Sil.Store _ -> true
@@ -626,7 +626,7 @@ let get_fld_typ_path_opt src_exps sink_exp_ reachable_hpreds_ =
            (lhs, (Some fld, typ) :: path, reachable_hpreds')
          with Not_found -> (sink_exp, path, reachable_hpreds))
     | Sil.Hpointsto (lhs, Sil.Earray (_, elems, _), Exp.Sizeof (typ, _, _)) ->
-        if IList.exists (fun pair -> strexp_matches sink_exp pair) elems
+        if List.exists ~f:(fun pair -> strexp_matches sink_exp pair) elems
         then
           let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
           (* None means "no field name" ~=~ nameless array index *)
@@ -1235,8 +1235,8 @@ let update_specs tenv proc_name phase (new_specs : Specs.NormSpec.t list)
          SpecMap.empty old_specs) in
   let re_exe_filter old_spec = (* filter out pres which failed re-exe *)
     if Specs.equal_phase phase Specs.RE_EXECUTION &&
-       not (IList.exists
-              (fun new_spec -> Specs.Jprop.equal new_spec.Specs.pre old_spec.Specs.pre)
+       not (List.exists
+              ~f:(fun new_spec -> Specs.Jprop.equal new_spec.Specs.pre old_spec.Specs.pre)
               new_specs)
     then begin
       changed:= true;

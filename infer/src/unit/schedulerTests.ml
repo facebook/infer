@@ -52,7 +52,7 @@ module MockProcCfg = struct
       let node_id = id n in
       IList.filter
         (fun (_, succs) ->
-           IList.exists (fun node -> equal_id (id node) node_id) succs)
+           List.exists ~f:(fun node -> equal_id (id node) node_id) succs)
         t
       |> IList.map fst
     with Not_found -> []

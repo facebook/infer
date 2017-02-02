@@ -9,9 +9,6 @@
 
 type 'a t = 'a list [@@deriving compare]
 
-let equal cmp l1 l2 =
-  compare cmp l1 l2 = 0
-
 let exists = List.exists
 let filter = List.filter
 let find = List.find
@@ -48,27 +45,6 @@ let fold_lefti (f : 'a -> int -> 'b -> 'a) a l =
   fold_left (fun (i, acc) e -> i +1, f acc i e) (0, a) l
   |> snd
 
-(** tail-recursive variant of List.combine *)
-let combine =
-  let rec combine acc l1 l2 = match l1, l2 with
-    | [], [] -> acc
-    | x1:: l1, x2:: l2 -> combine ((x1, x2):: acc) l1 l2
-    | [], _:: _
-    | _:: _, [] -> raise (Invalid_argument "IList.combine") in
-  fun l1 l2 -> rev (combine [] l1 l2)
-
-(** tail-recursive variant of List.split *)
-let split =
-  let rec split acc1 acc2 = function
-    | [] -> (acc1, acc2)
-    | (x, y):: l -> split (x:: acc1) (y:: acc2) l in
-  fun l ->
-    let acc1, acc2 = split [] [] l in
-    rev acc1, rev acc2
-
-(** Like List.mem but without builtin equality *)
-let mem equal x l = exists (equal x) l
-
 (** tail-recursive variant of List.flatten *)
 let flatten =
   let rec flatten acc l = match l with
@@ -87,10 +63,6 @@ let rec drop_first n = function
 
 let drop_last n list =
   rev (drop_first n (rev list))
-
-(** tail-recursive variant of List.append *)
-let append l1 l2 =
-  rev_append (rev l1) l2
 
 (** tail-recursive variant of List.map *)
 let map f l =

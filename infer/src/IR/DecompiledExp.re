@@ -169,7 +169,7 @@ let rec has_tmp_var =
   | Darray dexp1 dexp2
   | Dbinop _ dexp1 dexp2 => has_tmp_var dexp1 || has_tmp_var dexp2
   | Dretcall dexp dexp_list _ _
-  | Dfcall dexp dexp_list _ _ => has_tmp_var dexp || IList.exists has_tmp_var dexp_list
+  | Dfcall dexp dexp_list _ _ => has_tmp_var dexp || List.exists f::has_tmp_var dexp_list
   | Dconst _
   | Dunknown
   | Dsizeof _ None _ => false;

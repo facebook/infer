@@ -1285,13 +1285,13 @@ module Normalize = struct
       when IntLit.isone i ->
         let lower = Exp.int (n -- IntLit.one) in
         let a_lower : Sil.atom = Aeq (BinOp (Lt, lower, Var id), Exp.one) in
-        if not (IList.mem Sil.equal_atom a_lower p.pi) then a'
+        if not (List.mem ~equal:Sil.equal_atom p.pi a_lower) then a'
         else Aeq (Var id, Exp.int n)
     | Aeq (BinOp (Lt, Const (Cint n), Var id), Const (Cint i))
       when IntLit.isone i ->
         let upper = Exp.int (n ++ IntLit.one) in
         let a_upper : Sil.atom = Aeq (BinOp (Le, Var id, upper), Exp.one) in
-        if not (IList.mem Sil.equal_atom a_upper p.pi) then a'
+        if not (List.mem ~equal:Sil.equal_atom p.pi a_upper) then a'
         else Aeq (Var id, upper)
     | Aeq (BinOp (Ne, e1, e2), Const (Cint i)) when IntLit.isone i ->
         Aneq (e1, e2)
@@ -1427,7 +1427,7 @@ module Normalize = struct
         | _ -> acc in
       IList.fold_left get_disequality_info [] nonineq_list in
     let is_neq e n =
-      IList.exists (fun (e', n') -> Exp.equal e e' && IntLit.eq n n') diseq_list in
+      List.exists ~f:(fun (e', n') -> Exp.equal e e' && IntLit.eq n n') diseq_list in
     let le_list_tightened =
       let get_le_inequality_info acc a =
         match atom_exp_le_const a with
@@ -1469,11 +1469,11 @@ module Normalize = struct
         (fun (a : Sil.atom) -> match a with
            | Aneq (Const (Cint n), e)
            | Aneq (e, Const (Cint n)) ->
-               (not (IList.exists
-                       (fun (e', n') -> Exp.equal e e' && IntLit.lt n' n)
+               (not (List.exists
+                       ~f:(fun (e', n') -> Exp.equal e e' && IntLit.lt n' n)
                        le_list_tightened)) &&
-               (not (IList.exists
-                       (fun (n', e') -> Exp.equal e e' && IntLit.leq n n')
+               (not (List.exists
+                       ~f:(fun (n', e') -> Exp.equal e e' && IntLit.leq n n')
                        lt_list_tightened))
            | _ -> true)
         nonineq_list in
@@ -1503,7 +1503,7 @@ module Normalize = struct
       let unsigned_exps = lazy (sigma_get_unsigned_exps sigma) in
       function
       | Aneq ((Var _) as e, Const (Cint n)) when IntLit.isnegative n ->
-          not (IList.exists (Exp.equal e) (Lazy.force unsigned_exps))
+          not (List.exists ~f:(Exp.equal e) (Lazy.force unsigned_exps))
       | Aneq (e1, e2) ->
           not (syntactically_different (e1, e2))
       | Aeq (Const c1, Const c2) ->
@@ -1556,7 +1556,7 @@ module Normalize = struct
   (** Conjoin a pure atomic predicate by normal conjunction. *)
   let rec prop_atom_and tenv ?(footprint=false) (p : normal t) a : normal t =
     let a' = normalize_and_strengthen_atom tenv p a in
-    if IList.mem Sil.equal_atom a' p.pi then p
+    if List.mem ~equal:Sil.equal_atom p.pi a' then p
     else begin
       let p' =
         match a' with
@@ -1896,7 +1896,7 @@ let apply_reindexing tenv subst prop =
   let npi = Normalize.pi_normalize tenv subst nsigma prop.pi in
   let nsub, atoms =
     let dom_subst = IList.map fst (Sil.sub_to_list subst) in
-    let in_dom_subst id = IList.exists (Ident.equal id) dom_subst in
+    let in_dom_subst id = List.exists ~f:(Ident.equal id) dom_subst in
     let sub' = Sil.sub_filter (fun id -> not (in_dom_subst id)) prop.sub in
     let contains_substituted_id e = Sil.fav_exists (Sil.exp_fav e) in_dom_subst in
     let sub_eqs, sub_keep = Sil.sub_range_partition contains_substituted_id sub' in
@@ -2115,13 +2115,13 @@ let prop_ren_sub tenv (ren_sub: Sil.subst) (prop: normal t) : normal t =
     [fav] should not contain any primed variables. *)
 let exist_quantify tenv fav (prop : normal t) : normal t =
   let ids = Sil.fav_to_list fav in
-  if IList.exists Ident.is_primed ids then assert false; (* sanity check *)
+  if List.exists ~f:Ident.is_primed ids then assert false; (* sanity check *)
   if List.is_empty ids then prop else
     let gen_fresh_id_sub id = (id, Exp.Var (Ident.create_fresh Ident.kprimed)) in
     let ren_sub = Sil.sub_of_list (IList.map gen_fresh_id_sub ids) in
     let prop' =
       (* throw away x=E if x becomes _x *)
-      let mem_idlist i = IList.exists (fun id -> Ident.equal i id) in
+      let mem_idlist i = List.exists ~f:(fun id -> Ident.equal i id) in
       let sub = Sil.sub_filter (fun i -> not (mem_idlist i ids)) prop.sub in
       if Sil.equal_subst sub prop.sub then prop
       else unsafe_cast_to_normal (set prop ~sub) in
@@ -2182,12 +2182,11 @@ let prop_rename_fav_with_existentials tenv (p : normal t) : normal t =
 
 (** Removes seeds variables from a prop corresponding to captured variables in an objc block *)
 let remove_seed_captured_vars_block tenv captured_vars prop =
-  let is_captured pname vn = Mangled.equal pname vn in
   let hpred_seed_captured =
     function
     | Sil.Hpointsto (Exp.Lvar pv, _, _) ->
         let pname = Pvar.get_name pv in
-        (Pvar.is_seed pv) && (IList.mem is_captured pname captured_vars)
+        (Pvar.is_seed pv) && (List.mem ~equal:Mangled.equal captured_vars pname)
     | _ -> false in
   let sigma = prop.sigma in
   let sigma' =

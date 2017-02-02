@@ -624,7 +624,7 @@ let prop_is_exn pname prop =
     | Sil.Hpointsto (e1, Sil.Eexp(e2, _), _) when Exp.equal e1 ret_pvar ->
         exp_is_exn e2
     | _ -> false in
-  IList.exists is_exn prop.Prop.sigma
+  List.exists ~f:is_exn prop.Prop.sigma
 
 (** when prop is an exception, return the exception name *)
 let prop_get_exn_name pname prop =
@@ -728,7 +728,7 @@ let combine tenv
           | Sil.Aeq (Exp.Var id', Exp.Const (Const.Cint i)) ->
               Ident.equal id id' && IntLit.isnull i
           | _ -> false in
-        IList.exists filter split.missing_pi in
+        List.exists ~f:filter split.missing_pi in
       let f (e, inst_opt) = match e, inst_opt with
         | Exp.Var id, Some inst when id_assigned_to_null id ->
             let inst' = Sil.inst_set_null_case_flag inst in
@@ -789,7 +789,7 @@ let combine tenv
       else Some post_p3 in
     post_p4 in
   let _results = IList.map (fun (p, path) -> (compute_result p, path)) instantiated_post in
-  if IList.exists (fun (x, _) -> is_none x) _results then (* at least one combine failed *)
+  if List.exists ~f:(fun (x, _) -> is_none x) _results then (* at least one combine failed *)
     None
   else
     let results =
@@ -889,19 +889,19 @@ let mk_posts tenv ret_id prop callee_pname callee_attrs posts =
            nullness. meant to eliminate false NPE warnings from the common
            "if (get() != null) get().something()" pattern *)
         let last_call_ret_non_null =
-          IList.exists
-            (function
-              | Sil.Apred (Aretval (pname, _), [exp]) when Procname.equal callee_pname pname ->
-                  Prover.check_disequal tenv prop exp Exp.zero
-              | _ -> false)
+          List.exists
+            ~f:(function
+                | Sil.Apred (Aretval (pname, _), [exp]) when Procname.equal callee_pname pname ->
+                    Prover.check_disequal tenv prop exp Exp.zero
+                | _ -> false)
             (Attribute.get_all prop) in
         if last_call_ret_non_null then
           let returns_null prop =
-            IList.exists
-              (function
-                | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (e, _), _) when Pvar.is_return pvar ->
-                    Prover.check_equal tenv (Prop.normalize tenv prop) e Exp.zero
-                | _ -> false)
+            List.exists
+              ~f:(function
+                  | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (e, _), _) when Pvar.is_return pvar ->
+                      Prover.check_equal tenv (Prop.normalize tenv prop) e Exp.zero
+                  | _ -> false)
               prop.Prop.sigma in
           IList.filter (fun (prop, _) -> not (returns_null prop)) posts
         else posts in
@@ -977,8 +977,8 @@ let do_taint_check tenv caller_pname callee_pname calling_prop missing_pi sub ac
   let not_untaint_atom atom = not
       (Exp.Map.exists
          (fun _ (_, untaint_atoms) ->
-            IList.exists
-              (fun a -> Sil.equal_atom atom a)
+            List.exists
+              ~f:(fun a -> Sil.equal_atom atom a)
               untaint_atoms)
          taint_untaint_exp_map) in
   check_taint_on_variadic_function tenv callee_pname caller_pname actual_params calling_prop;
@@ -1197,9 +1197,9 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
                   assert false
             else (* no dereference error detected *)
               let desc =
-                if IList.exists (function Cannot_combine -> true | _ -> false) invalid_res then
+                if List.exists ~f:(function Cannot_combine -> true | _ -> false) invalid_res then
                   call_desc (Some Localise.Pnm_dangling)
-                else if IList.exists (function
+                else if List.exists ~f:(function
                     | Prover_checks (check :: _) ->
                         trace_call Specs.CallStats.CR_not_met;
                         let exn = get_check_exn tenv check callee_pname loc __POS__ in
@@ -1307,27 +1307,3 @@ let exe_function_call
       formal_params in
   let results = IList.map exe_one_spec spec_list in
   exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc results
-
-(*
-let check_splitting_precondition sub1 sub2 =
-  let dom1 = Sil.sub_domain sub1 in
-  let rng1 = Sil.sub_range sub1 in
-  let dom2 = Sil.sub_domain sub2 in
-  let rng2 = Sil.sub_range sub2 in
-  let overlap = IList.exists (fun id -> IList.exists (Ident.equal id) dom1) dom2 in
-  if overlap then begin
-    L.d_str "Dom(Sub1): "; Sil.d_exp_list (IList.map (fun id -> Exp.Var id) dom1); L.d_ln ();
-    L.d_str "Ran(Sub1): "; Sil.d_exp_list rng1; L.d_ln ();
-    L.d_str "Dom(Sub2): "; Sil.d_exp_list (IList.map (fun id -> Exp.Var id) dom2); L.d_ln ();
-    L.d_str "Ran(Sub2): "; Sil.d_exp_list rng2; L.d_ln ();
-    assert false
-  end
-
-(** check whether 0|->- occurs in sigma *)
-let sigma_has_null_pointer sigma =
-  let hpred_null_pointer = function
-    | Sil.Hpointsto (e, _, _) ->
-        Exp.equal e Exp.zero
-    | _ -> false in
-  IList.exists hpred_null_pointer sigma
-*)

@@ -301,7 +301,7 @@ let node_to_unique_string_id an =
 (* true iff an ast node is a node of type among the list tl *)
 let node_has_type tl an =
   let an_str = node_to_string an in
-  IList.mem String.equal an_str tl
+  List.mem ~equal:String.equal tl an_str
 
 (* given a decl returns a stmt such that decl--->stmt via label trs *)
 let transition_decl_to_stmt d trs =
@@ -437,7 +437,7 @@ and eval_EF phi an lcxt trans =
       eval_formula phi' an lcxt
   | None, _ ->
       eval_formula phi an lcxt
-      || IList.exists (fun an' -> eval_EF phi an' lcxt trans) (get_successor_nodes an)
+      || List.exists ~f:(fun an' -> eval_EF phi an' lcxt trans) (get_successor_nodes an)
 
 (* Evaluate phi on node an' such that an -l-> an'. False if an' does not exists *)
 and evaluate_on_transition phi an lcxt l =
@@ -455,7 +455,7 @@ and eval_EX phi an lcxt trans =
   match trans, an with
   | Some _, _ -> evaluate_on_transition phi an lcxt trans
   | None, _ ->
-      IList.exists (fun an' -> eval_formula phi an' lcxt) (get_successor_nodes an)
+      List.exists ~f:(fun an' -> eval_formula phi an' lcxt) (get_successor_nodes an)
 
 (* an, lcxt |= E(phi1 U phi2) evaluated using the equivalence
    an, lcxt |= E(phi1 U phi2) <=> an, lcxt |= phi2 or (phi1 and EX(E(phi1 U phi2)))
@@ -486,7 +486,7 @@ and in_node node_type_list phi an lctx =
         (String.equal id (node_to_unique_string_id an)) && (eval_formula phi an lctx)
     | None ->
         (node_has_type [n] an) && (eval_formula phi an lctx) in
-  IList.exists holds_for_one_node node_type_list
+  List.exists ~f:holds_for_one_node node_type_list
 
 
 (* Intuitive meaning: (an,lcxt) satifies EH[Classes] phi

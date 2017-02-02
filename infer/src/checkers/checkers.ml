@@ -99,7 +99,7 @@ module ST = struct
 
         let is_parameter_suppressed =
           String.is_suffix a.class_name ~suffix:Annotations.suppress_lint &&
-          IList.mem normalized_equal kind a.parameters in
+          List.mem ~equal:normalized_equal a.parameters kind in
         let is_annotation_suppressed =
           String.is_suffix ~suffix:(normalize (drop_prefix kind)) (normalize a.class_name) in
 
@@ -341,7 +341,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
     | _ -> false in
 
   let is_formal_param exp =
-    IList.exists (equal_formal_param exp) (Lazy.force class_formal_names) in
+    List.exists ~f:(equal_formal_param exp) (Lazy.force class_formal_names) in
 
   let is_nullcheck pn = match pn with
     | Procname.Java pn_java ->

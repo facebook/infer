@@ -387,7 +387,7 @@ let execute___get_hidden_field { Builtin.tenv; pdesc; prop_; path; ret_id; args;
         | None -> p in
       let foot_var = lazy (Exp.Var (Ident.create_fresh Ident.kfootprint)) in
       let filter_fld_hidden (f, _ ) = Ident.fieldname_is_hidden f in
-      let has_fld_hidden fsel = IList.exists filter_fld_hidden fsel in
+      let has_fld_hidden fsel = List.exists ~f:filter_fld_hidden fsel in
       let do_hpred in_foot hpred = match hpred with
         | Sil.Hpointsto(e, Sil.Estruct (fsel, inst), texp)
           when Exp.equal e n_lexp && (not (has_fld_hidden fsel)) ->
@@ -423,7 +423,7 @@ let execute___set_hidden_field { Builtin.tenv; pdesc; prop_; path; args; }
       let n_lexp2, prop = check_arith_norm_exp tenv pname lexp2 prop__ in
       let foot_var = lazy (Exp.Var (Ident.create_fresh Ident.kfootprint)) in
       let filter_fld_hidden (f, _ ) = Ident.fieldname_is_hidden f in
-      let has_fld_hidden fsel = IList.exists filter_fld_hidden fsel in
+      let has_fld_hidden fsel = List.exists ~f:filter_fld_hidden fsel in
       let do_hpred in_foot hpred = match hpred with
         | Sil.Hpointsto(e, Sil.Estruct (fsel, inst), texp)
           when Exp.equal e n_lexp1 && not in_foot ->

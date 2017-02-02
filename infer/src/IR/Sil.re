@@ -232,7 +232,7 @@ let has_objc_ref_counter tenv hpred =>
   switch hpred {
   | Hpointsto _ _ (Sizeof (Tstruct name) _ _) =>
     switch (Tenv.lookup tenv name) {
-    | Some {fields} => IList.exists StructTyp.is_objc_ref_counter_field fields
+    | Some {fields} => List.exists f::StructTyp.is_objc_ref_counter_field fields
     | _ => false
     }
   | _ => false
@@ -1327,7 +1327,7 @@ let fav_for_all fav predicate => IList.for_all predicate !fav;
 
 
 /** Check whether a predicate holds for some elements. */
-let fav_exists fav predicate => IList.exists predicate !fav;
+let fav_exists fav predicate => List.exists f::predicate !fav;
 
 
 /** flag to indicate whether fav's are stored in duplicate form.
@@ -1337,7 +1337,7 @@ let fav_duplicates = ref false;
 
 /** extend [fav] with a [id] */
 let (++) fav id =>
-  if (!fav_duplicates || not (IList.exists (Ident.equal id) !fav)) {
+  if (!fav_duplicates || not (List.exists f::(Ident.equal id) !fav)) {
     fav := [id, ...!fav]
   };
 
@@ -1419,7 +1419,7 @@ let rec ident_sorted_list_subset l1 l2 =>
     is in [fav2].*/
 let fav_subset_ident fav1 fav2 => ident_sorted_list_subset (fav_to_list fav1) (fav_to_list fav2);
 
-let fav_mem fav id => IList.exists (Ident.equal id) !fav;
+let fav_mem fav id => List.exists f::(Ident.equal id) !fav;
 
 let rec exp_fav_add fav e =>
   switch (e: Exp.t) {
@@ -1769,7 +1769,7 @@ let sub_range_map f sub => sub_of_list (IList.map (fun (i, e) => (i, f e)) sub);
     of [sub] and the substitution [g] to the expressions in the range of [sub]. */
 let sub_map f g sub => sub_of_list (IList.map (fun (i, e) => (f i, g e)) sub);
 
-let mem_sub id sub => IList.exists (fun (id1, _) => Ident.equal id id1) sub;
+let mem_sub id sub => List.exists f::(fun (id1, _) => Ident.equal id id1) sub;
 
 
 /** Extend substitution and return [None] if not possible. */

@@ -152,7 +152,7 @@ let is_cast t => equal_kind (snd t) CAST;
 let is_instof t => equal_kind (snd t) INSTOF;
 
 let list_intersect equal l1 l2 => {
-  let in_l2 a => IList.mem equal a l2;
+  let in_l2 a => List.mem equal::equal l2 a;
   IList.filter in_l2 l1
 };
 
@@ -218,7 +218,7 @@ let subtypes_to_string t =>
   };
 
 /* c is a subtype when it does not appear in the list l of no-subtypes */
-let no_subtype_in_list tenv c l => not (IList.exists (is_known_subtype tenv c) l);
+let no_subtype_in_list tenv c l => not (List.exists f::(is_known_subtype tenv c) l);
 
 let is_strict_subtype tenv c1 c2 => is_known_subtype tenv c1 c2 && not (Typename.equal c1 c2);
 

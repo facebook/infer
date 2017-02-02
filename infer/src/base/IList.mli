@@ -9,16 +9,6 @@
 
 type 'a t = 'a list [@@deriving compare]
 
-(** Generic equality of lists given a compare function for the elements of the list *)
-val equal : ('a -> 'a -> int) -> 'a list -> 'a list -> bool
-
-(** tail-recursive variant of List.append *)
-val append : 'a list -> 'a list -> 'a list
-
-(** tail-recursive variant of List.combine *)
-val combine : 'a list -> 'b list -> ('a * 'b) list
-
-val exists : ('a -> bool) -> 'a list -> bool
 val filter : ('a -> bool) -> 'a list -> 'a list
 
 (** tail-recursive variant of List.flatten *)
@@ -56,18 +46,12 @@ val filter_changed : ('a -> bool) -> 'a list -> 'a list
 (** tail-recursive variant of List.mapi *)
 val mapi : (int -> 'a -> 'b) -> 'a list -> 'b list
 
-(** Like List.mem but without builtin equality *)
-val mem : ('a -> 'b -> bool) -> 'a -> 'b list -> bool
-
 val nth : 'a list -> int -> 'a
 val partition : ('a -> bool) -> 'a list -> 'a list * 'a list
 val rev : 'a list -> 'a list
 val rev_append : 'a list -> 'a list -> 'a list
 val rev_map : ('a -> 'b) -> 'a list -> 'b list
 val sort : ('a -> 'a -> int) -> 'a list -> 'a list
-
-(** tail-recursive variant of List.split *)
-val split : ('a * 'b) list -> 'a list * 'b list
 
 val stable_sort : ('a -> 'a -> int) -> 'a list -> 'a list
 val tl : 'a list -> 'a list

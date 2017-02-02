@@ -11,7 +11,6 @@
  *)
 
 open! IStd
-open Core_kernel.Fn
 open AbsLoc
 
 module F = Format
@@ -69,7 +68,7 @@ struct
       | Exp.Lfield (e, fn, _) ->
           eval e mem loc
           |> Val.get_all_locs
-          |> flip PowLoc.append_field fn
+          |> Fn.flip PowLoc.append_field fn
           |> Val.of_pow_loc
       | Exp.Lindex (e1, _) ->
           let arr = eval e1 mem loc in (* must have array blk *)
@@ -342,7 +341,7 @@ struct
         let new_matching =
           get_matching_pairs tenv formal actual typ caller_mem callee_entry_mem
         in
-        IList.append new_matching l
+        List.append new_matching l
       in
       let formals = get_formals callee_pdesc in
       let actuals = IList.map (fun (a, _) -> eval a caller_mem loc) params in

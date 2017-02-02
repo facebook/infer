@@ -151,8 +151,8 @@ let report_siof trace pdesc gname loc =
     Reporting.log_error caller_pname ~loc ~ltr exn in
 
   let has_foreign_sink (_, path) =
-    IList.exists
-      (fun (sink, _) ->
+    List.exists
+      ~f:(fun (sink, _) ->
          GlobalsAccesses.exists (is_foreign tu_opt)
            (SiofTrace.Sink.kind sink))
       path in

@@ -39,7 +39,7 @@ let callback_sql { Callbacks.proc_desc; proc_name; tenv } =
             let matches s r = Str.string_match r s 0 in
             match const_map node rvar1, const_map node rvar2 with
             | Some (Const.Cstr ""), Some (Const.Cstr s2) ->
-                if IList.exists (matches s2) sql_start then
+                if List.exists ~f:(matches s2) sql_start then
                   begin
                     L.stdout
                       "%s%s@."

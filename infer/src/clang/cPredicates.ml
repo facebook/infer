@@ -92,7 +92,7 @@ let decl_ref_is_in names st =
   | Clang_ast_t.DeclRefExpr (_, _, _, drti) ->
       (match drti.drti_decl_ref with
        | Some dr -> let ndi, _, _ = CAst_utils.get_info_from_decl_ref dr in
-           IList.exists (String.equal ndi.ni_name) names
+           List.exists ~f:(String.equal ndi.ni_name) names
        | _ -> false)
   | _ -> false
 
@@ -137,7 +137,7 @@ let is_ivar_atomic stmt =
       (match CAst_utils.get_decl ivar_pointer with
        | Some d ->
            let attributes = get_ivar_attributes d in
-           IList.exists (PVariant.(=) `Atomic) attributes
+           List.exists ~f:(PVariant.(=) `Atomic) attributes
        | _ -> false)
   | _ -> false
 

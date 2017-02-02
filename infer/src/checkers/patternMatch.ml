@@ -39,7 +39,7 @@ let java_proc_name_with_class_method pn_java class_with_path method_name =
 let rec supertype_exists tenv pred name =
   match Tenv.lookup tenv name with
   | Some ({supers} as struct_typ) ->
-      pred name struct_typ || IList.exists (fun name -> supertype_exists tenv pred name) supers
+      pred name struct_typ || List.exists ~f:(fun name -> supertype_exists tenv pred name) supers
   | None ->
       false
 
@@ -56,7 +56,7 @@ let rec supertype_find_map_opt tenv f name =
 
 let is_immediate_subtype tenv this_type_name super_type_name =
   match Tenv.lookup tenv this_type_name with
-  | Some {supers} -> IList.exists (Typename.equal super_type_name) supers
+  | Some {supers} -> List.exists ~f:(Typename.equal super_type_name) supers
   | None -> false
 
 (** return true if [typ0] <: [typ1] *)
@@ -99,7 +99,7 @@ let type_get_annotation tenv (typ: Typ.t): Annot.Item.t option =
   | _ -> None
 
 let type_has_direct_supertype tenv (typ : Typ.t) (class_name : Typename.t) =
-  IList.exists (fun cn -> Typename.equal cn class_name) (type_get_direct_supertypes tenv typ)
+  List.exists ~f:(fun cn -> Typename.equal cn class_name) (type_get_direct_supertypes tenv typ)
 
 let type_has_supertype
     (tenv: Tenv.t)
@@ -114,12 +114,12 @@ let type_has_supertype
         let match_name () = Typename.equal cn class_name in
         let has_indirect_supertype () = has_supertype (Typ.Tstruct cn) (Typ.Set.add typ visited) in
         (match_name () || has_indirect_supertype ()) in
-      IList.exists match_supertype supers in
+      List.exists ~f:match_supertype supers in
   has_supertype typ Typ.Set.empty
 
 let type_is_nested_in_direct_supertype tenv t n =
   let is_nested_in cn1 cn2 = String.is_prefix ~prefix:(Typename.name cn1 ^ "$") (Typename.name cn2) in
-  IList.exists (is_nested_in n) (type_get_direct_supertypes tenv t)
+  List.exists ~f:(is_nested_in n) (type_get_direct_supertypes tenv t)
 
 let rec get_type_name = function
   | Typ.Tstruct name ->
@@ -274,7 +274,7 @@ let type_has_initializer
     (tenv: Tenv.t)
     (t: Typ.t): bool =
   let check_candidate class_name = type_has_supertype tenv t class_name in
-  IList.exists check_candidate initializer_classes
+  List.exists ~f:check_candidate initializer_classes
 
 (** Check if the method is one of the known initializer methods. *)
 let method_is_initializer
@@ -286,7 +286,7 @@ let method_is_initializer
         match proc_attributes.ProcAttributes.proc_name with
         | Procname.Java pname_java ->
             let mname = Procname.java_get_method pname_java in
-            IList.exists (String.equal mname) initializer_methods
+            List.exists ~f:(String.equal mname) initializer_methods
         | _ ->
             false
       else
@@ -337,15 +337,15 @@ let override_exists f tenv proc_name =
     | Some ({ methods; supers; }) ->
         let is_override pname =
           Procname.equal pname super_proc_name && not (Procname.is_constructor pname) in
-        IList.exists (fun pname -> is_override pname && f pname) methods ||
-        IList.exists (super_type_exists tenv) supers
+        List.exists ~f:(fun pname -> is_override pname && f pname) methods ||
+        List.exists ~f:(super_type_exists tenv) supers
     | _ ->
         false in
   match proc_name with
   | Procname.Java proc_name_java ->
       let type_name = Typename.Java.from_string (Procname.java_get_class_name proc_name_java) in
-      IList.exists
-        (super_type_exists tenv)
+      List.exists
+        ~f:(super_type_exists tenv)
         (type_get_direct_supertypes tenv (Typ.Tstruct type_name))
   | _ ->
       false (* Only java supported at the moment *)

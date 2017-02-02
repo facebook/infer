@@ -117,7 +117,7 @@ let xdesc {long; short; spec; doc} =
     (* translate Symbol to String for better formatting of --help messages *)
     | Symbol (symbols, action) ->
         String (fun arg ->
-            if IList.mem String.equal arg symbols then
+            if List.mem ~equal:String.equal symbols arg then
               action arg
             else
               raise (Arg.Bad (F.sprintf "wrong argument '%s'; option '%s' expects one of: %s"
@@ -226,7 +226,7 @@ let add exes desc =
   full_desc_list := desc :: !full_desc_list ;
   IList.iter (fun (exe, desc_list) ->
       let desc =
-        if IList.mem equal_exe exe exes then
+        if List.mem ~equal:equal_exe exes exe then
           desc
         else
           {desc with meta = ""; doc = ""} in

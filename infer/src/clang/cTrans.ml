@@ -133,8 +133,8 @@ struct
     let create_field_exp (var, typ) =
       let id = Ident.create_fresh Ident.knormal in
       id, Sil.Load (id, Exp.Lvar var, typ, loc) in
-    let ids, captured_instrs = IList.split (IList.map create_field_exp captured_vars) in
-    let fields_ids = IList.combine fields ids in
+    let ids, captured_instrs = List.unzip (IList.map create_field_exp captured_vars) in
+    let fields_ids = List.zip_exn fields ids in
     let set_fields = IList.map (fun ((f, t, _), id) ->
         Sil.Store (Exp.Lfield (Exp.Var id_block, f, block_type), t, Exp.Var id, loc)) fields_ids in
     (declare_block_local :: trans_res.instrs) @
@@ -807,7 +807,7 @@ struct
         let (sil_e2, _) = extract_exp_from_list res_trans_e2.exps
             "\nWARNING: Missing RHS operand in BinOp. Returning -1. Fix needed...\n" in
         let binop_res_trans, exp_to_parent =
-          if IList.exists (Exp.equal var_exp) res_trans_e2.initd_exps then [], []
+          if List.exists ~f:(Exp.equal var_exp) res_trans_e2.initd_exps then [], []
           else
             let exp_op, instr_bin =
               CArithmetic_trans.binary_operation_instruction
@@ -1670,8 +1670,8 @@ struct
           (* by some constructor call, which we can tell by the fact that the index is returned *)
           (* in initd_exps, then we assume that all the indices were initialized and *)
           (* we don't need any assignments. *)
-          if IList.exists
-              ((fun arr index -> Exp.is_array_index_of index arr) var_exp)
+          if List.exists
+              ~f:((fun arr index -> Exp.is_array_index_of index arr) var_exp)
               initd_exps
           then []
           else IList.map2 assign_instr lh rh_exps in
@@ -1714,7 +1714,7 @@ struct
         let rhs_owning_method = CTrans_utils.is_owning_method ie in
         let _, instrs_assign =
           (* variable might be initialized already - do nothing in that case*)
-          if IList.exists (Exp.equal var_exp) res_trans_ie.initd_exps then ([], [])
+          if List.exists ~f:(Exp.equal var_exp) res_trans_ie.initd_exps then ([], [])
           else if !Config.arc_mode &&
                   (CTrans_utils.is_method_call ie ||
                    ObjcInterface_decl.is_pointer_to_objc_class ie_typ)
@@ -1938,7 +1938,7 @@ struct
             let (sil_expr, _) = extract_exp_from_list res_trans_stmt.exps
                 "WARNING: There should be only one return expression.\n" in
 
-            let ret_instrs = if IList.exists (Exp.equal ret_exp) res_trans_stmt.initd_exps
+            let ret_instrs = if List.exists ~f:(Exp.equal ret_exp) res_trans_stmt.initd_exps
               then []
               else [Sil.Store (ret_exp, ret_type, sil_expr, sil_loc)] in
             let autorelease_instrs =
@@ -2070,7 +2070,7 @@ struct
         let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
         let captureds = CVar_decl.captured_vars_from_block_info context captured_block_vars in
         let ids_instrs = IList.map assign_captured_var captureds in
-        let ids, instrs = IList.split ids_instrs in
+        let ids, instrs = List.unzip ids_instrs in
         let block_data = (context, type_ptr, block_pname, captureds) in
         F.function_decl context.translation_unit_context context.tenv context.cfg context.cg decl
           (Some block_data);

@@ -268,7 +268,7 @@ let make_dangling_boxes pe allocated_nodes (sigma_lambda: (Sil.hpred * int) list
   let is_allocated d =
     match d with
     | Dotdangling(_, e, _) ->
-        IList.exists (fun a -> match a with
+        List.exists ~f:(fun a -> match a with
             | Dotpointsto(_, e', _)
             | Dotarray(_, _, e', _, _, _)
             | Dotlseg(_, e', _, _, _, _)
@@ -280,7 +280,7 @@ let make_dangling_boxes pe allocated_nodes (sigma_lambda: (Sil.hpred * int) list
     match l with
     | [] -> []
     | Dotdangling(coo, e, color):: l' ->
-        if (IList.exists (Exp.equal e) seen_exp) then filter_duplicate l' seen_exp
+        if (List.exists ~f:(Exp.equal e) seen_exp) then filter_duplicate l' seen_exp
         else Dotdangling(coo, e, color):: filter_duplicate l' (e:: seen_exp)
     | box:: l' -> box:: filter_duplicate l' seen_exp (* this case cannot happen*) in
   let rec subtract_allocated candidate_dangling =
@@ -311,7 +311,7 @@ let rec dotty_mk_node pe sigma =
          Dotstruct((mk_coordinate (n + 1) lambda), e, l, e_color_str, te);]
     | (Sil.Hpointsto (e, _, _), lambda) ->
         let e_color_str = color_to_str (exp_color e) in
-        if IList.mem Exp.equal e !struct_exp_nodes then [] else
+        if List.mem ~equal:Exp.equal !struct_exp_nodes e then [] else
           [Dotpointsto((mk_coordinate n lambda), e, e_color_str)]
     | (Sil.Hlseg (k, hpara, e1, e2, _), lambda) ->
         incr dotty_state_count; (* increment once more n+1 is the box for last element of the list *)
@@ -357,8 +357,8 @@ let compute_fields_struct sigma =
   let rec do_strexp se in_struct =
     match se with
     | Sil.Eexp (e, _) -> if in_struct then fields_structs:= e ::!fields_structs else ()
-    | Sil.Estruct (l, _) -> IList.iter (fun e -> do_strexp e true) (snd (IList.split l))
-    | Sil.Earray (_, l, _) -> IList.iter (fun e -> do_strexp e false) (snd (IList.split l)) in
+    | Sil.Estruct (l, _) -> IList.iter (fun e -> do_strexp e true) (snd (List.unzip l))
+    | Sil.Earray (_, l, _) -> IList.iter (fun e -> do_strexp e false) (snd (List.unzip l)) in
   let rec fs s =
     match s with
     | [] -> ()
@@ -385,14 +385,16 @@ let is_nil e prop =
 let in_cycle cycle edge =
   match cycle with
   | Some cycle' ->
-      IList.mem (fun (fn, se) (_,fn',se') ->
-          Ident.equal_fieldname fn fn' && Sil.equal_strexp se se') edge cycle'
+      let (fn, se) = edge in
+      List.exists
+        ~f:(fun (_,fn',se') -> Ident.equal_fieldname fn fn' && Sil.equal_strexp se se')
+        cycle'
   | _ -> false
 
 let node_in_cycle cycle node =
   match cycle, node with
   | Some _, Dotstruct(_, _, l, _,_)  -> (* only struct nodes can be in cycle *)
-      IList.exists (in_cycle cycle) l
+      List.exists ~f:(in_cycle cycle) l
   | _ -> false
 
 
@@ -416,7 +418,7 @@ let rec compute_target_struct_fields dotnodes list_fld p f lambda cycle =
                )
            | [node] | [Dotpointsto _ ; node] | [node; Dotpointsto _] ->
                let n = get_coordinate_id node in
-               if IList.mem Exp.equal e !struct_exp_nodes then begin
+               if List.mem ~equal:Exp.equal !struct_exp_nodes e then begin
                  let e_no_special_char = strip_special_chars (Exp.to_string e) in
                  let link_kind = if (in_cycle cycle (fn, se)) && (not !print_full_prop) then
                      LinkRetainCycle
@@ -452,7 +454,7 @@ let rec compute_target_array_elements dotnodes list_elements p f lambda =
                )
            | [node] | [Dotpointsto _ ; node] | [node; Dotpointsto _] ->
                let n = get_coordinate_id node in
-               if IList.mem Exp.equal e !struct_exp_nodes then begin
+               if List.mem ~equal:Exp.equal !struct_exp_nodes e then begin
                  let e_no_special_char = strip_special_chars (Exp.to_string e) in
                  [(LinkArrayToStruct, Exp.to_string idx, n, e_no_special_char)]
                end else
@@ -634,7 +636,7 @@ let filter_useless_spec_dollar_box (nodes: dotty_node list) (links: link list) =
   let tmp_links = ref links in
   let remove_links_from ln =
     IList.filter
-      (fun n' -> not (IList.mem equal_link n' ln))
+      (fun n' -> not (List.mem ~equal:equal_link ln n'))
       !tmp_links in
   let remove_node n ns =
     IList.filter (fun n' -> match n' with
@@ -1188,7 +1190,7 @@ let make_set_dangling_nodes allocated_nodes (sigma: Sil.hpred list) =
      | _ -> [] (* arrays and struct do not give danglings. CHECK THIS!*)
     ) in
   let is_not_allocated e =
-    let allocated = IList.exists (fun a -> match a with
+    let allocated = List.exists ~f:(fun a -> match a with
         | VH_pointsto(_, e', _, _)
         | VH_lseg(_, e', _ , _)
         | VH_dllseg(_, e', _, _, _, _) -> Exp.equal e e'
@@ -1198,7 +1200,7 @@ let make_set_dangling_nodes allocated_nodes (sigma: Sil.hpred list) =
     match l with
     | [] -> []
     | e:: l' ->
-        if (IList.exists (Exp.equal e) seen_exp) then filter_duplicate l' seen_exp
+        if (List.exists ~f:(Exp.equal e) seen_exp) then filter_duplicate l' seen_exp
         else e:: filter_duplicate l' (e:: seen_exp) in
   let rhs_exp_list = IList.flatten (IList.map get_rhs_predicate sigma) in
   let candidate_dangling_exps = filter_duplicate rhs_exp_list [] in
@@ -1411,54 +1413,3 @@ let print_specs_xml signature specs loc fmt =
        ("line", string_of_int loc.Location.line)]
       [xml_signature; xml_specifications] in
   Io_infer.Xml.pp_document true fmt proc_summary
-
-(*
-let exp_is_neq_zero e =
-  IList.exists (fun e' -> Exp.equal e e') !exps_neq_zero
-
-let rec get_contents_range_single pe coo f range_se =
-  let (e1, e2), se = range_se in
-  let e1_no_special_char = strip_special_chars (Exp.to_string e1) in
-  F.fprintf f "{ <%s> [%a,%a] : %a }"
-    e1_no_special_char (Sil.pp_exp_printenv pe) e1 (Sil.pp_exp_printenv pe) e2 (get_contents_sexp pe coo) se
-
-and get_contents_range pe coo f = function
-  | [] -> ()
-  | [range_se] ->
-      F.fprintf f "%a" (get_contents_range_single pe coo) range_se
-  | range_se:: l ->
-      F.fprintf f "%a | %a"
-        (get_contents_range_single pe coo) range_se (get_contents_range pe coo) l
-
-let pp_nesting fmt nesting =
-  if nesting > 1 then F.fprintf fmt "%d" nesting
-
-let max_map f l =
-  let curr_max = ref 0 in
-  IList.iter (fun x -> curr_max := max !curr_max (f x)) l;
-  ! curr_max
-
-let rec sigma_nesting_level sigma =
-  max_map (function
-      | Sil.Hpointsto _ -> 0
-      | Sil.Hlseg (_, hpara, _, _, _) -> hpara_nesting_level hpara
-      | Sil.Hdllseg (_, hpara_dll, _, _, _, _, _) -> hpara_dll_nesting_level hpara_dll) sigma
-
-and hpara_nesting_level hpara =
-  1 + sigma_nesting_level hpara.Sil.body
-
-and hpara_dll_nesting_level hpara_dll =
-  1 + sigma_nesting_level hpara_dll.Sil.body_dll
-
-let rec get_color_exp dot_nodes e =
-  match dot_nodes with
-  | [] ->""
-  | Dotnil(_):: l' -> get_color_exp l' e
-  | Dotpointsto(_, e', c):: l'
-  | Dotdangling(_, e', c):: l'
-  | Dotarray(_, _, e', _, _, c):: l'
-  | Dotlseg(_, e', _, _, _, c):: l'
-  | Dotstruct(_, e', _, c, _):: l'
-  | Dotdllseg(_, e', _, _, _, _, _, c):: l' ->
-      if (Exp.equal e e') then c else get_color_exp l' e
-*)

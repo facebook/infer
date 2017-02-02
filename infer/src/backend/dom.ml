@@ -252,10 +252,10 @@ module CheckJoinPre : InfoLossCheckerSig = struct
     | Exp.Var id when Ident.is_normal id -> IList.length es >= 1
     | Exp.Var _ ->
         if Int.equal Config.join_cond 0 then
-          IList.exists (Exp.equal Exp.zero) es
+          List.exists ~f:(Exp.equal Exp.zero) es
         else if Dangling.check side e then
           begin
-            let r = IList.exists (fun e' -> not (Dangling.check side_op e')) es in
+            let r = List.exists ~f:(fun e' -> not (Dangling.check side_op e')) es in
             if r then begin
               L.d_str ".... Dangling Check (dang e:"; Sil.d_exp e;
               L.d_str ") (? es:"; Sil.d_exp_list es; L.d_strln ") ....";
@@ -265,7 +265,7 @@ module CheckJoinPre : InfoLossCheckerSig = struct
           end
         else
           begin
-            let r = IList.exists (Dangling.check side_op) es in
+            let r = List.exists ~f:(Dangling.check side_op) es in
             if r then begin
               L.d_str ".... Dangling Check (notdang e:"; Sil.d_exp e;
               L.d_str ") (? es:"; Sil.d_exp_list es; L.d_strln ") ....";
@@ -1641,11 +1641,17 @@ let pi_partial_join tenv mode
           | None ->
               begin
                 match Prop.atom_const_lt_exp a_op with
-                | None -> Some a_res
-                | Some (n, e) -> if IList.exists (is_stronger_lt n e) pi_op then (widening_atom a_res) else Some a_res
+                | None ->
+                    Some a_res
+                | Some (n, e) ->
+                    if List.exists ~f:(is_stronger_lt n e) pi_op
+                    then (widening_atom a_res)
+                    else Some a_res
               end
           | Some (e, n) ->
-              if IList.exists (is_stronger_le e n) pi_op then (widening_atom a_res) else Some a_res
+              if List.exists ~f:(is_stronger_le e n) pi_op
+              then (widening_atom a_res)
+              else Some a_res
         end in
   let handle_atom_with_widening len p_op pi_op atom_list a =
     (* find a join for the atom, if it fails apply widening heuristing and try again *)
@@ -1819,7 +1825,7 @@ let footprint_partial_join' tenv (p1: Prop.normal Prop.t) (p2: Prop.normal Prop.
     let sigma_fp =
       let sigma_fp0 = efp.Prop.sigma in
       let f a = Sil.fav_exists (Sil.hpred_fav a) (fun a -> not (Ident.is_footprint a)) in
-      if IList.exists f sigma_fp0 then (L.d_strln "failure reason 66"; raise IList.Fail);
+      if List.exists ~f sigma_fp0 then (L.d_strln "failure reason 66"; raise IList.Fail);
       sigma_fp0 in
     let ep1' = Prop.set p1 ~pi_fp ~sigma_fp in
     let ep2' = Prop.set p2 ~pi_fp ~sigma_fp in

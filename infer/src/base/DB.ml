@@ -217,8 +217,8 @@ let global_tenv_fname =
   filename_concat captured_dir basename
 
 let is_source_file path =
-  IList.exists
-    (fun ext -> Filename.check_suffix path ext)
+  List.exists
+    ~f:(fun ext -> Filename.check_suffix path ext)
     Config.source_file_extentions
 
 let infer_start_time = lazy

@@ -55,7 +55,7 @@ let rec is_component_or_controller_descendant_impl decl =
 
     Does not recurse into hierarchy. *)
 and contains_ck_impl decl_list =
-  IList.exists is_component_or_controller_descendant_impl decl_list
+  List.exists ~f:is_component_or_controller_descendant_impl decl_list
 
 (** An easy way to fix the component kit best practice
     http://componentkit.org/docs/avoid-local-variables.html
@@ -97,9 +97,9 @@ let mutable_local_vars_advice context an =
     let objc_whitelist = ["NSError"] in
     match get_referenced_type qual_type with
     | Some CXXRecordDecl (_, ndi, _, _, _, _, _, _) ->
-        IList.mem String.equal ndi.ni_name cpp_whitelist
+        List.mem ~equal:String.equal cpp_whitelist ndi.ni_name
     | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
-        IList.mem String.equal ndi.ni_name objc_whitelist
+        List.mem ~equal:String.equal objc_whitelist ndi.ni_name
     | _ -> false in
 
   match an with
@@ -172,14 +172,16 @@ let component_with_unconventional_superclass_advice context an =
           let has_conventional_superclass =
             let open CFrontend_config in
             match superclass_name with
-            | Some name when IList.mem String.equal name [
-                ckcomponent_cl;
-                ckcomponentcontroller_cl;
-                "CKCompositeComponent";
-                "CKStatefulViewComponent";
-                "CKStatefulViewComponentController";
-                "NTNativeTemplateComponent"
-              ] -> true
+            | Some name when List.mem ~equal:String.equal
+                  [
+                    ckcomponent_cl;
+                    ckcomponentcontroller_cl;
+                    "CKCompositeComponent";
+                    "CKStatefulViewComponent";
+                    "CKStatefulViewComponentController";
+                    "NTNativeTemplateComponent"
+                  ]
+                  name -> true
             | _ -> false in
           let condition =
             is_component_or_controller_if (Some if_decl)
@@ -359,7 +361,7 @@ let component_file_cyclomatic_complexity_info (context: CLintersContext.context)
     | Clang_ast_t.CXXCatchStmt _
     | Clang_ast_t.ConditionalOperator _ -> true
     | Clang_ast_t.BinaryOperator (_, _, _, boi) ->
-        IList.mem (=) boi.Clang_ast_t.boi_kind [`LAnd; `LOr]
+        List.mem ~equal:(=) [`LAnd; `LOr] boi.Clang_ast_t.boi_kind
     | _ -> false in
   let cyclo_loc_opt an = match an with
     | CTL.Stmt stmt when (Config.compute_analytics

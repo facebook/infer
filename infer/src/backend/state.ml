@@ -214,7 +214,7 @@ let mk_find_duplicate_nodes proc_desc : (Procdesc.Node.t -> Procdesc.NodeSet.t) 
         | _ -> raise Not_found in
       let duplicates =
         let equal_normalized_instrs (_, normalized_instrs') =
-          IList.equal Sil.compare_instr node_normalized_instrs normalized_instrs' in
+          List.equal ~equal:Sil.equal_instr node_normalized_instrs normalized_instrs' in
         IList.filter equal_normalized_instrs elements in
       IList.fold_left
         (fun nset (node', _) -> Procdesc.NodeSet.add node' nset)

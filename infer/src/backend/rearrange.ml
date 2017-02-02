@@ -296,7 +296,7 @@ and array_case_analysis_index pname tenv orig_prop
     if not (Typ.equal typ_cont t' || List.is_empty array_cont)
     then raise (Exceptions.Bad_footprint __POS__) in
   let index_in_array =
-    IList.exists (fun (i, _) -> Prover.check_equal tenv Prop.prop_emp index i) array_cont in
+    List.exists ~f:(fun (i, _) -> Prover.check_equal tenv Prop.prop_emp index i) array_cont in
   let array_is_full =
     match array_len with
     | Exp.Const (Const.Cint n') -> IntLit.geq (IntLit.of_int (IList.length array_cont)) n'
@@ -396,7 +396,7 @@ let strexp_extend_values
       pname tenv orig_prop footprint_part kind max_stamp se typ off' inst in
   let atoms_se_typ_list_filtered =
     let check_neg_atom atom = Prover.check_atom tenv Prop.prop_emp (Prover.atom_negate tenv atom) in
-    let check_not_inconsistent (atoms, _, _) = not (IList.exists check_neg_atom atoms) in
+    let check_not_inconsistent (atoms, _, _) = not (List.exists ~f:check_neg_atom atoms) in
     IList.filter check_not_inconsistent atoms_se_typ_list in
   if Config.trace_rearrange then L.d_strln "exiting strexp_extend_values";
   let len, st = match te with
@@ -805,10 +805,10 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       (guarded_by_str_is_current_class guarded_by_str pname &&
        Procdesc.is_java_synchronized pdesc && Procname.java_is_static pname) ||
       (* or the prop says we already have the lock *)
-      IList.exists
-        (function
-          | Sil.Apred (Alocked, _) -> true
-          | _ -> false)
+      List.exists
+        ~f:(function
+            | Sil.Apred (Alocked, _) -> true
+            | _ -> false)
         (Attribute.get_for_exp tenv prop guarded_by_exp) in
     let guardedby_is_self_referential =
       String.equal "itself" (String.lowercase guarded_by_str) ||
@@ -824,19 +824,19 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
          (where f is not the @GuardedBy field!), we will not warn.
       *)
       let is_accessible_through_local_ref exp =
-        IList.exists
-          (function
-            | Sil.Hpointsto (Lvar _, Eexp (rhs_exp, _), _) ->
-                Exp.equal exp rhs_exp
-            | Sil.Hpointsto (_, Estruct (flds, _), _) ->
-                IList.exists
-                  (fun (fld, strexp) -> match strexp with
-                     | Sil.Eexp (rhs_exp, _) ->
-                         Exp.equal exp rhs_exp && not (Ident.equal_fieldname fld accessed_fld)
-                     | _ ->
-                         false)
-                  flds
-            | _ -> false)
+        List.exists
+          ~f:(function
+              | Sil.Hpointsto (Lvar _, Eexp (rhs_exp, _), _) ->
+                  Exp.equal exp rhs_exp
+              | Sil.Hpointsto (_, Estruct (flds, _), _) ->
+                  List.exists
+                    ~f:(fun (fld, strexp) -> match strexp with
+                        | Sil.Eexp (rhs_exp, _) ->
+                            Exp.equal exp rhs_exp && not (Ident.equal_fieldname fld accessed_fld)
+                        | _ ->
+                            false)
+                    flds
+              | _ -> false)
           prop.Prop.sigma in
       Procdesc.get_access pdesc <> PredSymb.Private &&
       not (Annotations.pdesc_return_annot_ends_with pdesc Annotations.visibleForTesting) &&
@@ -1266,7 +1266,7 @@ let is_weak_captured_var pdesc pvar =
         | Typ.Tptr (_, Pk_objc_weak) ->
             Mangled.equal (Pvar.get_name pvar) var
         | _ -> false in
-      IList.exists is_weak_captured (Procdesc.get_captured pdesc)
+      List.exists ~f:is_weak_captured (Procdesc.get_captured pdesc)
   | _ -> false
 
 
@@ -1299,7 +1299,7 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
                        nullable_obj_str := Some (Procname.to_string pname);
                        true
                    | _ -> false in
-                 IList.exists is_nullable_attr (Attribute.get_for_exp tenv prop exp) in
+                 List.exists ~f:is_nullable_attr (Attribute.get_for_exp tenv prop exp) in
              (* it's ok for a non-nullable local to point to deref_exp *)
              is_nullable || Pvar.is_local pvar
          | Sil.Hpointsto (_, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
@@ -1407,7 +1407,7 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
     match get_exp_called () with
     | Some (_, Exp.Lvar pvar) -> (* pvar is the block *)
         let name = Pvar.get_name pvar in
-        IList.exists (fun (cn, _) -> (Mangled.equal name cn)) (Procdesc.get_captured pdesc)
+        List.exists ~f:(fun (cn, _) -> (Mangled.equal name cn)) (Procdesc.get_captured pdesc)
     | _ -> false in
   let is_field_deref () = (*Called expression is a field *)
     match get_exp_called () with

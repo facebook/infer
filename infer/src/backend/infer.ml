@@ -128,7 +128,7 @@ let clean_results_dir () =
         let rec cleandir dir =
           match Unix.readdir dir with
           | entry ->
-              if (IList.exists (String.equal entry) dirs) then (
+              if (List.exists ~f:(String.equal entry) dirs) then (
                 rmtree (name ^/ entry)
               ) else if not (String.equal entry Filename.current_dir_name
                              || String.equal entry Filename.parent_dir_name) then (
@@ -140,7 +140,7 @@ let clean_results_dir () =
         cleandir dir
       )
     | exception Unix.Unix_error (Unix.ENOTDIR, _, _) ->
-        if IList.exists (Filename.check_suffix name) suffixes then
+        if List.exists ~f:(Filename.check_suffix name) suffixes then
           Unix.unlink name
     | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
         () in

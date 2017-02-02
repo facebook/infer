@@ -46,11 +46,11 @@ type filter_config =
 let is_matching patterns =
   fun source_file ->
     let path = SourceFile.to_rel_path source_file in
-    IList.exists
-      (fun pattern ->
-         try
-           Int.equal (Str.search_forward pattern path 0) 0
-         with Not_found -> false)
+    List.exists
+      ~f:(fun pattern ->
+          try
+            Int.equal (Str.search_forward pattern path 0) 0
+          with Not_found -> false)
       patterns
 
 
@@ -132,11 +132,11 @@ module FileOrProcMatcher = struct
         and method_name = Procname.java_get_method pname_java in
         try
           let class_patterns = String.Map.find_exn pattern_map class_name in
-          IList.exists
-            (fun p ->
-               match p.method_name with
-               | None -> true
-               | Some m -> String.equal m method_name)
+          List.exists
+            ~f:(fun p ->
+                match p.method_name with
+                | None -> true
+                | Some m -> String.equal m method_name)
             class_patterns
         with Not_found -> false in
 
@@ -200,7 +200,7 @@ module OverridesMatcher = struct
             is_subtype mp.class_name
             && (Option.value_map ~f:(match_method language proc_name) ~default:false mp.method_name)
         | _ -> failwith "Expecting method pattern" in
-      IList.exists is_matching patterns
+      List.exists ~f:is_matching patterns
 
 end
 
@@ -233,8 +233,8 @@ let patterns_of_json_with_key (json_key, json) =
   let detect_pattern assoc =
     match detect_language assoc with
     | Ok language ->
-        let is_method_pattern key = IList.exists (String.equal key) ["class"; "method"]
-        and is_source_contains key = IList.exists (String.equal key) ["source_contains"] in
+        let is_method_pattern key = List.exists ~f:(String.equal key) ["class"; "method"]
+        and is_source_contains key = List.exists ~f:(String.equal key) ["source_contains"] in
         let rec loop = function
           | [] ->
               Error ("Unknown pattern for " ^ json_key ^ " in " ^ Config.inferconfig_file)
@@ -334,7 +334,7 @@ let filters_from_inferconfig inferconfig : filters =
   let error_filter =
     function error_name ->
       let error_str = Localise.to_string error_name in
-      not (IList.exists (String.equal error_str) inferconfig.suppress_errors) in
+      not (List.exists ~f:(String.equal error_str) inferconfig.suppress_errors) in
   {
     path_filter = path_filter;
     error_filter = error_filter;
@@ -349,10 +349,10 @@ let create_filters analyzer =
 (* Decide whether a checker or error type is enabled or disabled based on*)
 (* white/black listing in .inferconfig and the default value *)
 let is_checker_enabled checker_name =
-  match IList.mem String.(=) checker_name Config.disable_checks,
-        IList.mem String.(=) checker_name Config.enable_checks with
+  match List.mem ~equal:String.(=) Config.disable_checks checker_name,
+        List.mem ~equal:String.(=) Config.enable_checks checker_name with
   | false, false -> (* if it's not amond white/black listed then we use default value *)
-      not (IList.mem String.(=) checker_name Config.checks_disabled_by_default)
+      not (List.mem ~equal:String.(=) Config.checks_disabled_by_default checker_name)
   | true, false -> (* if it's blacklisted and not whitelisted then it should be disabled *)
       false
   | false, true -> (* if it is not blacklisted and it is whitelisted then it should be enabled *)

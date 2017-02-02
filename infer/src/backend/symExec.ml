@@ -59,7 +59,7 @@ let check_block_retain_cycle tenv caller_pname prop block_nullified =
   let block_captured =
     match AttributesTable.load_attributes block_pname with
     | Some attributes ->
-        fst (IList.split attributes.ProcAttributes.captured)
+        fst (List.unzip attributes.ProcAttributes.captured)
     | None ->
         [] in
   let prop' = Prop.remove_seed_captured_vars_block tenv block_captured prop in
@@ -370,7 +370,7 @@ let dangerous_functions =
   ref ((IList.map Procname.from_string_c_fun) dangerous_list)
 
 let check_inherently_dangerous_function caller_pname callee_pname =
-  if IList.exists (Procname.equal callee_pname) !dangerous_functions then
+  if List.exists ~f:(Procname.equal callee_pname) !dangerous_functions then
     let exn =
       Exceptions.Inherently_dangerous_function
         (Localise.desc_inherently_dangerous_function callee_pname) in
@@ -474,7 +474,7 @@ let check_deallocate_static_memory prop_after =
 
 let method_exists right_proc_name methods =
   if Config.curr_language_is Config.Java then
-    IList.exists (fun meth_name -> Procname.equal right_proc_name meth_name) methods
+    List.exists ~f:(fun meth_name -> Procname.equal right_proc_name meth_name) methods
   else (* ObjC/C++ case : The attribute map will only exist when we have code for the method or
           the method has been called directly somewhere. It can still be that this is not the
           case but we have a model for the method. *)
@@ -570,7 +570,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
         let resolved_pname = do_resolve callee_pname receiver_exp actual_receiver_typ in
         let feasible_targets = IList.filter may_dispatch_to targets in
         (* make sure [resolved_pname] is not a duplicate *)
-        if IList.mem Procname.equal resolved_pname feasible_targets
+        if List.mem ~equal:Procname.equal feasible_targets resolved_pname
         then feasible_targets
         else resolved_pname :: feasible_targets
       else
@@ -806,10 +806,10 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nullable_annot typ ca
     let is_rec_call pname = (* TODO: (t7147096) extend this to detect mutual recursion *)
       Procname.equal pname (Procdesc.get_proc_name pdesc) in
     let already_has_abduced_retval p abduced_ret_pv =
-      IList.exists
-        (fun hpred -> match hpred with
-           | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abduced_ret_pv
-           | _ -> false)
+      List.exists
+        ~f:(fun hpred -> match hpred with
+            | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abduced_ret_pv
+            | _ -> false)
         p.Prop.sigma_fp in
     (* find an hpred [abduced] |-> A in [prop] and add [exp] = A to prop *)
     let bind_exp_to_abduced_val exp_to_bind abduced prop =
@@ -1264,10 +1264,10 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
         let abduced_ref_pv =
           Pvar.mk_abduced_ref_param callee_pname actual_pv callee_loc in
         let already_has_abduced_retval p =
-          IList.exists
-            (fun hpred -> match hpred with
-               | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abduced_ref_pv
-               | _ -> false)
+          List.exists
+            ~f:(fun hpred -> match hpred with
+                | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abduced_ref_pv
+                | _ -> false)
             p.Prop.sigma_fp in
         (* prevent introducing multiple abduced retvals for a single call site in a loop *)
         if already_has_abduced_retval prop then prop
@@ -1332,7 +1332,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
     let is_not_const (e, _, i) =
       match AttributesTable.load_attributes callee_pname with
       | Some attrs ->
-          let is_const = IList.mem Int.equal i attrs.ProcAttributes.const_formals in
+          let is_const = List.mem ~equal:Int.equal attrs.ProcAttributes.const_formals i in
           if is_const then (
             L.d_str (Printf.sprintf "Not havocing const argument number %d: " i);
             Sil.d_exp e;
@@ -1621,7 +1621,7 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
         let instr_is_abstraction = function
           | Sil.Abstract _ -> true
           | _ -> false in
-        IList.exists instr_is_abstraction (Procdesc.Node.get_instrs node) in
+        List.exists ~f:instr_is_abstraction (Procdesc.Node.get_instrs node) in
       let curr_node = State.get_node () in
       match Procdesc.Node.get_kind curr_node with
       | Procdesc.Node.Prune_node _ when not (node_has_abstraction curr_node) ->

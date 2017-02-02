@@ -98,13 +98,15 @@ let tests =
       assert_equal (IList.length reports) 2;
       assert_bool
         "Reports should contain source1 -> sink1"
-        (IList.exists
-           (fun (source, sink, _) -> MockSource.equal source source1 && MockSink.equal sink sink1)
+        (List.exists
+           ~f:(fun (source, sink, _) ->
+               MockSource.equal source source1 && MockSink.equal sink sink1)
            reports);
       assert_bool
         "Reports should contain source2 -> sink2"
-        (IList.exists
-           (fun (source, sink, _) -> MockSource.equal source source2 && MockSink.equal sink sink2)
+        (List.exists
+           ~f:(fun (source, sink, _) ->
+               MockSource.equal source source2 && MockSink.equal sink sink2)
            reports) in
     "get_reports">::get_reports_ in
 

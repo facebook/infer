@@ -807,7 +807,7 @@ struct
 
   let get_symbols : t -> Symbol.t list
     = fun (l, u) ->
-      IList.append (Bound.get_symbols l) (Bound.get_symbols u)
+      List.append (Bound.get_symbols l) (Bound.get_symbols u)
 
   let normalize : t -> t option
     = fun (l, u) ->

@@ -291,7 +291,7 @@ let rec exists_eventually_st atomic_pred param  st =
   if atomic_pred param st then true
   else
     let _, st_list = Clang_ast_proj.get_stmt_tuple st in
-    IList.exists (exists_eventually_st atomic_pred param) st_list
+    List.exists ~f:(exists_eventually_st atomic_pred param) st_list
 
 let is_syntactically_global_var decl =
   match decl with
@@ -410,7 +410,7 @@ let rec is_objc_if_descendant ?(blacklist = default_blacklist) if_decl ancestors
     match if_decl with
     | Some Clang_ast_t.ObjCInterfaceDecl (_, ndi, _, _, _) ->
         let in_list some_list =
-          IList.mem String.equal ndi.Clang_ast_t.ni_name some_list in
+          List.mem ~equal:String.equal some_list ndi.Clang_ast_t.ni_name in
         not (in_list blacklist)
         && (in_list ancestors
             || is_objc_if_descendant ~blacklist:blacklist (get_super_if if_decl) ancestors)

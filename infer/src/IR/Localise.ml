@@ -552,7 +552,7 @@ let parameter_field_not_null_checked_desc (desc : error_desc) exp =
   | _ -> desc
 
 let has_tag (desc : error_desc) tag =
-  IList.exists (fun (tag', _) -> String.equal tag tag') desc.tags
+  List.exists ~f:(fun (tag', _) -> String.equal tag tag') desc.tags
 
 let is_parameter_not_null_checked_desc desc = has_tag desc Tags.parameter_not_null_checked
 

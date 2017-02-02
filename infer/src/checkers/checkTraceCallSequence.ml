@@ -58,10 +58,10 @@ module APIs = struct
         false
   let is_begin pn =
     let filter (pkgname, cname, begin_name, _) = method_match pn pkgname cname begin_name in
-    IList.exists filter tracing_methods
+    List.exists ~f:filter tracing_methods
   let is_end pn =
     let filter (pkgname, cname, _, end_name) = method_match pn pkgname cname end_name in
-    IList.exists filter tracing_methods
+    List.exists ~f:filter tracing_methods
   let is_begin_or_end pn =
     is_begin pn || is_end pn
 end
@@ -228,7 +228,7 @@ module BooleanVars = struct
   let exp_boolean_var exp = match exp with
     | Exp.Lvar pvar when Pvar.is_local pvar ->
         let name = Mangled.to_string (Pvar.get_name pvar) in
-        if IList.mem String.equal name boolean_variables
+        if List.mem ~equal:String.equal boolean_variables name
         then Some name
         else None
     | _ -> None

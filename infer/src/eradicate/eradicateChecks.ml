@@ -253,12 +253,12 @@ let check_constructor_initialization tenv
                 let filter_range_opt = function
                   | Some (_, ta, _) -> f ta
                   | None -> unknown in
-                IList.exists
-                  (function pname, typestate ->
-                     let pvar = Pvar.mk
-                         (Mangled.from_string (Ident.fieldname_to_string fn))
-                         pname in
-                     filter_range_opt (TypeState.lookup_pvar pvar typestate))
+                List.exists
+                  ~f:(function pname, typestate ->
+                      let pvar = Pvar.mk
+                          (Mangled.from_string (Ident.fieldname_to_string fn))
+                          pname in
+                      filter_range_opt (TypeState.lookup_pvar pvar typestate))
                   list in
 
               let may_be_assigned_in_final_typestate =
@@ -268,7 +268,7 @@ let check_constructor_initialization tenv
                   | TypeOrigin.Field (f, _) ->
                       (* field initialized with another field needing initialization *)
                       let circular =
-                        IList.exists (fun (f', _, _) -> Ident.equal_fieldname f f') fields in
+                        List.exists ~f:(fun (f', _, _) -> Ident.equal_fieldname f f') fields in
                       not circular
                   | _ ->
                       true in

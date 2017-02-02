@@ -538,9 +538,9 @@ let get_loop_heads pdesc => {
         }
       } else {
         let ancester = NodeSet.add n ancester;
-        let succs = IList.append (Node.get_succs n) (Node.get_exn n);
+        let succs = List.append (Node.get_succs n) (Node.get_exn n);
         let works = IList.map (fun m => (m, ancester)) succs;
-        set_loop_head_rec (NodeSet.add n visited) heads (IList.append works wl')
+        set_loop_head_rec (NodeSet.add n visited) heads (List.append works wl')
       }
     };
   let start_wl = [(get_start_node pdesc, NodeSet.empty)];

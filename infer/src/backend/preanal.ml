@@ -23,7 +23,7 @@ let add_dispatch_calls pdesc cg tenv =
       | Sil.Call (_, _, _, _, call_flags) -> call_flags_is_dispatch call_flags
       | _ -> false in
     let has_dispatch_call instrs =
-      IList.exists instr_is_dispatch_call instrs in
+      List.exists ~f:instr_is_dispatch_call instrs in
     let replace_dispatch_calls = function
       | Sil.Call (ret_id, (Exp.Const (Const.Cfun callee_pname) as call_exp),
                   (((_, receiver_typ) :: _) as args), loc, call_flags) as instr
@@ -71,7 +71,7 @@ let add_abstraction_instructions pdesc =
       | Node.Exit_node _ -> true
       | _ -> false in
     let succ_nodes = Node.get_succs node in
-    if IList.exists is_exit succ_nodes then true
+    if List.exists ~f:is_exit succ_nodes then true
     else match succ_nodes with
       | [] -> false
       | [h] -> IList.length (Node.get_preds h) > 1

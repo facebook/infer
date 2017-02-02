@@ -346,19 +346,15 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
               parameter_not_null_checked,
               premature_nil_termination
             ];
-          IList.mem Localise.equal issue_type null_deref_issue_types
+          List.mem equal::Localise.equal null_deref_issue_types issue_type
         };
         let issue_type_is_buffer_overrun = Localise.equal issue_type Localise.buffer_overrun;
         if (issue_type_is_null_deref || issue_type_is_buffer_overrun) {
           let issue_bucket_is_high = {
             let issue_bucket = Localise.error_desc_get_bucket error_desc;
             let high_buckets = Localise.BucketLevel.[b1, b2];
-            let eq o y =>
-              switch (o, y) {
-              | (None, _) => false
-              | (Some x, y) => String.equal x y
-              };
-            IList.mem eq issue_bucket high_buckets
+            Option.value_map
+              issue_bucket default::false f::(fun b => List.mem equal::String.equal high_buckets b)
           };
           issue_bucket_is_high
         } else {
@@ -377,7 +373,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
                 thread_safety_violation,
                 unsafe_guarded_by_access
               ];
-            IList.mem Localise.equal issue_type reportable_issue_types
+            List.mem equal::Localise.equal reportable_issue_types issue_type
           };
           issue_type_is_reportable
         }

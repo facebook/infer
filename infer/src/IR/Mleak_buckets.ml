@@ -24,22 +24,22 @@ let bucket_to_message bucket =
   | `MLeak_unknown -> "[UNKNOWN ORIGIN]"
 
 let contains_all =
-  IList.mem PVariant.(=) `MLeak_all Config.ml_buckets
+  List.mem ~equal:PVariant.(=) Config.ml_buckets `MLeak_all
 
 let contains_cf =
-  IList.mem PVariant.(=) `MLeak_cf Config.ml_buckets
+  List.mem ~equal:PVariant.(=) Config.ml_buckets `MLeak_cf
 
 let contains_arc =
-  IList.mem PVariant.(=) `MLeak_arc Config.ml_buckets
+  List.mem ~equal:PVariant.(=) Config.ml_buckets `MLeak_arc
 
 let contains_narc =
-  IList.mem PVariant.(=) `MLeak_no_arc Config.ml_buckets
+  List.mem ~equal:PVariant.(=) Config.ml_buckets `MLeak_no_arc
 
 let contains_cpp =
-  IList.mem PVariant.(=) `MLeak_cpp Config.ml_buckets
+  List.mem ~equal:PVariant.(=) Config.ml_buckets `MLeak_cpp
 
 let contains_unknown_origin =
-  IList.mem PVariant.(=) `MLeak_unknown Config.ml_buckets
+  List.mem ~equal:PVariant.(=) Config.ml_buckets `MLeak_unknown
 
 let should_raise_leak_cf typ =
   if contains_cf then

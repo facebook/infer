@@ -24,7 +24,7 @@ let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt l
             "java.util.Set", "com.google.common.collect.ImmutableSet"
           ] in
         let in_casts expected given =
-          IList.exists (fun (x, y) ->
+          List.exists ~f:(fun (x, y) ->
               String.equal (Typename.name expected) x
               && String.equal (Typename.name given) y
             ) casts in

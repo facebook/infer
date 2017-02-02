@@ -69,15 +69,15 @@ let format_type_matches_given_type
     (given_type: string): bool =
   match format_type with
   | "d" | "i" | "u" | "x" | "X" | "o" ->
-      IList.mem
-        String.equal
-        given_type
+      List.mem
+        ~equal:String.equal
         ["java.lang.Integer"; "java.lang.Long"; "java.lang.Short"; "java.lang.Byte"]
-  | "a" | "A" | "f" | "F" | "g" | "G" | "e" | "E" ->
-      IList.mem
-        String.equal
         given_type
+  | "a" | "A" | "f" | "F" | "g" | "G" | "e" | "E" ->
+      List.mem
+        ~equal:String.equal
         ["java.lang.Double"; "java.lang.Float"]
+        given_type
   | "c" -> String.equal given_type "java.lang.Character"
   | "b" | "h" | "H" | "s" -> true  (* accepts pretty much anything, even null *)
   | _ -> false

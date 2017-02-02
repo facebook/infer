@@ -19,7 +19,7 @@ module DExp = DecompiledExp
 let vector_class = ["std"; "vector"]
 
 let is_one_of_classes class_name classes =
-  IList.exists (fun wrapper_class ->
+  List.exists ~f:(fun wrapper_class ->
       IList.for_all (fun wrapper_class_substring ->
           String.is_substring ~substring:wrapper_class_substring class_name) wrapper_class)
     classes
@@ -100,7 +100,7 @@ let find_nullify_after_instr node instr pvar : bool =
     | instr_ ->
         if Sil.equal_instr instr instr_ then found_instr := true;
         false in
-  IList.exists find_nullify node_instrs
+  List.exists ~f:find_nullify node_instrs
 
 (** Find the other prune node of a conditional
     (e.g. the false branch given the true branch of a conditional) *)
@@ -198,7 +198,7 @@ let rec find_boolean_assignment node pvar true_branch : Procdesc.Node.t option =
       | Sil.Store (Exp.Lvar _pvar, _, Exp.Const (Const.Cint i), _) when Pvar.equal pvar _pvar ->
           IntLit.iszero i <> true_branch
       | _ -> false in
-    IList.exists filter (Procdesc.Node.get_instrs n) in
+    List.exists ~f:filter (Procdesc.Node.get_instrs n) in
   match Procdesc.Node.get_preds node with
   | [pred_node] -> find_boolean_assignment pred_node pvar true_branch
   | [n1; n2] ->
@@ -235,7 +235,7 @@ let rec _find_normal_variable_load tenv (seen : Exp.Set.t) node id : DExp.t opti
         let fun_dexp = DExp.Dconst (Const.Cfun pname) in
         let args_dexp =
           let args_dexpo = IList.map (fun (e, _) -> _exp_rv_dexp tenv seen node e) args in
-          if IList.exists is_none args_dexpo
+          if List.exists ~f:is_none args_dexpo
           then []
           else
             let unNone = function Some x -> x | None -> assert false in
@@ -300,7 +300,7 @@ and _exp_lv_dexp tenv (_seen : Exp.Set.t) node e : DExp.t option =
                   | Some (fun_exp, eargs, loc, call_flags) ->
                       let fun_dexpo = _exp_rv_dexp tenv seen node' fun_exp in
                       let blame_args = IList.map (_exp_rv_dexp tenv seen node') eargs in
-                      if IList.exists is_none (fun_dexpo:: blame_args) then None
+                      if List.exists ~f:is_none (fun_dexpo:: blame_args) then None
                       else
                         let unNone = function Some x -> x | None -> assert false in
                         let args = IList.map unNone blame_args in
@@ -631,7 +631,7 @@ let vpath_find tenv prop _exp : DExp.t option * Typ.t option =
         let filter = function
           | (ni, Exp.Var id') -> Ident.is_normal ni && Ident.equal id' id
           | _ -> false in
-        IList.exists filter (Sil.sub_to_list prop.Prop.sub) in
+        List.exists ~f:filter (Sil.sub_to_list prop.Prop.sub) in
       function
       | Sil.Hpointsto (Exp.Lvar pv, sexp, texp)
         when (Pvar.is_local pv || Pvar.is_global pv || Pvar.is_seed pv) ->

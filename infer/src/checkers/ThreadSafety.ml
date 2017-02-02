@@ -434,7 +434,8 @@ let is_immutable_collection_class class_name tenv =
   ] in
   PatternMatch.supertype_exists
     tenv
-    (fun typename _ -> IList.mem String.equal (Typename.name typename) immutable_collections)
+    (fun typename _ ->
+       List.mem ~equal:String.equal immutable_collections (Typename.name typename))
     class_name
 
 let is_call_to_builder_class_method = function
@@ -555,7 +556,7 @@ let get_current_class_and_threadsafe_superclasses tenv pname =
 let calculate_addendum_message tenv pname =
   match get_current_class_and_threadsafe_superclasses tenv pname with
   | Some (current_class,thread_safe_annotated_classes) ->
-      if not (IList.mem Typename.equal current_class thread_safe_annotated_classes) then
+      if not (List.mem ~equal:Typename.equal thread_safe_annotated_classes current_class) then
         match thread_safe_annotated_classes with
         | hd::_ -> F.asprintf "\n Note: Superclass %a is marked @ThreadSafe." Typename.pp hd
         | [] -> ""
@@ -623,8 +624,8 @@ let should_report_on_file file_env =
     fun (_, tenv, pname, _) ->
       PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname
   in
-  not (IList.exists current_class_marked_not_threadsafe file_env) &&
-  IList.exists current_class_or_super_marked_threadsafe file_env
+  not (List.exists ~f:current_class_marked_not_threadsafe file_env) &&
+  List.exists ~f:current_class_or_super_marked_threadsafe file_env
 
 (* For now, just checks if there is one active element amongst the posts of the analyzed methods.
    This indicates that the method races with itself. To be refined later. *)

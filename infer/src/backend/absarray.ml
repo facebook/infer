@@ -227,7 +227,7 @@ end = struct
       match se', se_in with
       | Sil.Earray (len, esel, _), Sil.Earray (_, esel_in, inst2) ->
           let orig_indices = IList.map fst esel in
-          let index_is_not_new idx = IList.exists (Exp.equal idx) orig_indices in
+          let index_is_not_new idx = List.exists ~f:(Exp.equal idx) orig_indices in
           let process_index idx =
             if index_is_not_new idx then idx else (Sil.array_clean_new_index footprint_part idx) in
           let esel_in' = IList.map (fun (idx, se) -> process_index idx, se) esel_in in
@@ -378,9 +378,9 @@ let index_is_pointed_to tenv (p: Prop.normal Prop.t) (path: StrexpMatch.path) (i
     fun i -> IList.map (add_index i) elist_path in
   let pointers = IList.flatten (IList.map add_index_to_paths indices) in
   let filter = function
-    | Sil.Hpointsto (_, Sil.Eexp (e, _), _) -> IList.exists (Exp.equal e) pointers
+    | Sil.Hpointsto (_, Sil.Eexp (e, _), _) -> List.exists ~f:(Exp.equal e) pointers
     | _ -> false in
-  IList.exists filter p.Prop.sigma
+  List.exists ~f:filter p.Prop.sigma
 
 
 (** Given [p] containing an array at [path], blur [index] in it *)
@@ -440,7 +440,7 @@ let keep_only_indices tenv
       match se with
       | Sil.Earray (len, esel, inst) ->
           let esel', esel_leftover' =
-            IList.partition (fun (e, _) -> IList.exists (Exp.equal e) indices) esel in
+            IList.partition (fun (e, _) -> List.exists ~f:(Exp.equal e) indices) esel in
           if List.is_empty esel_leftover' then (sigma, false)
           else begin
             let se' = Sil.Earray (len, esel', inst) in

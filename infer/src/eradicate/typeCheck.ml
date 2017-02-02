@@ -345,7 +345,7 @@ let typecheck_instr
         let is_parameter_field pvar = (* parameter.field *)
           let name = Pvar.get_name pvar in
           let filter (s, _, _) = Mangled.equal s name in
-          IList.exists filter annotated_signature.Annotations.params in
+          List.exists ~f:filter annotated_signature.Annotations.params in
 
         let is_static_field pvar = (* static field *)
           Pvar.is_global pvar in

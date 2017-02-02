@@ -193,7 +193,7 @@ let compute_diff default_color oldgraph newgraph : diff =
             () in
     IList.iter build_changed newedges;
     let colormap (o: Obj.t) =
-      if IList.exists (fun x -> phys_equal x o) !changed then Pp.Red
+      if List.exists ~f:(fun x -> phys_equal x o) !changed then Pp.Red
       else default_color in
     !changed, colormap in
   let changed_norm, colormap_norm = compute_changed false in

@@ -36,9 +36,10 @@ let attributes_in_same_category attr1 attr2 =
 let add_or_replace_check_changed tenv check_attribute_change prop atom0 =
   match atom0 with
   | Sil.Apred (att0, ((_ :: _) as exps0)) | Anpred (att0, ((_ :: _) as exps0)) ->
-      let nexps = IList.map (fun e -> Prop.exp_normalize_prop tenv prop e) exps0 in
-      let nexp = IList.hd nexps in (* len nexps = len exps0 > 0 by match *)
-      let natom = Sil.atom_replace_exp (IList.combine exps0 nexps) atom0 in
+      let pairs =
+        IList.map (fun e -> (e, Prop.exp_normalize_prop tenv prop e)) exps0 in
+      let _, nexp = IList.hd pairs in (* len exps0 > 0 by match *)
+      let natom = Sil.atom_replace_exp pairs atom0 in
       let atom_map = function
         | Sil.Apred (att, exp :: _) | Anpred (att, exp :: _)
           when Exp.equal nexp exp && attributes_in_same_category att att0 ->
@@ -78,7 +79,8 @@ let get_for_exp tenv (prop: 'a Prop.t) exp =
   let nexp = Prop.exp_normalize_prop tenv prop exp in
   let atom_get_attr attributes atom =
     match atom with
-    | Sil.Apred (_, es) | Anpred (_, es) when IList.mem Exp.equal nexp es -> atom :: attributes
+    | Sil.Apred (_, es) | Anpred (_, es)
+      when List.mem ~equal:Exp.equal es nexp -> atom :: attributes
     | _ -> attributes in
   IList.fold_left atom_get_attr [] prop.pi
 
@@ -119,7 +121,7 @@ let get_retval tenv prop exp =
 
 let has_dangling_uninit tenv prop exp =
   let la = get_for_exp tenv prop exp in
-  IList.exists (function
+  List.exists ~f:(function
       | Sil.Apred (a, _) -> PredSymb.equal a (Adangling DAuninit)
       | _ -> false
     ) la
@@ -257,7 +259,7 @@ let find_arithmetic_problem tenv proc_node_session prop exp =
 let deallocate_stack_vars tenv (p: 'a Prop.t) pvars =
   let filter = function
     | Sil.Hpointsto (Exp.Lvar v, _, _) ->
-        IList.exists (Pvar.equal v) pvars
+        List.exists ~f:(Pvar.equal v) pvars
     | _ -> false in
   let sigma_stack, sigma_other = IList.partition filter p.sigma in
   let fresh_address_vars = ref [] in (* fresh vars substituted for the address of stack vars *)
@@ -296,7 +298,7 @@ let find_equal_formal_path tenv e prop =
   let rec find_in_sigma e seen_hpreds =
     IList.fold_right (
       fun hpred res ->
-        if IList.mem Sil.equal_hpred hpred seen_hpreds then None
+        if List.mem ~equal:Sil.equal_hpred seen_hpreds hpred then None
         else
           let seen_hpreds = hpred :: seen_hpreds in
           match res with

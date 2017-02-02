@@ -107,7 +107,7 @@ let check_cfg_connectedness cfg => {
   let do_pdesc pd => {
     let pname = Procname.to_string (Procdesc.get_proc_name pd);
     let nodes = Procdesc.get_nodes pd;
-    let broken = IList.exists broken_node nodes;
+    let broken = List.exists f::broken_node nodes;
     if broken {
       L.out "\n ***BROKEN CFG: '%s'\n" pname
     } else {
@@ -262,7 +262,7 @@ let mark_unchanged_pdescs cfg_new cfg_old => {
     let node_map = ref Procdesc.NodeMap.empty;
     /* formals are the same if their types are the same */
     let formals_eq formals1 formals2 =>
-      IList.equal (fun (_, typ1) (_, typ2) => Typ.compare typ1 typ2) formals1 formals2;
+      List.equal equal::(fun (_, typ1) (_, typ2) => Typ.equal typ1 typ2) formals1 formals2;
     let nodes_eq n1s n2s => {
       /* nodes are the same if they have the same id, instructions, and succs/preds up to renaming
          with [exp_map] and [id_map] */
@@ -278,19 +278,21 @@ let mark_unchanged_pdescs cfg_new cfg_old => {
             0
           };
         let instrs_eq instrs1 instrs2 =>
-          IList.equal
-            (
+          List.equal
+            equal::(
               fun i1 i2 => {
                 let (n, exp_map') = Sil.compare_structural_instr i1 i2 !exp_map;
                 exp_map := exp_map';
-                n
+                Int.equal n 0
               }
             )
             instrs1
             instrs2;
         Int.equal (compare_id n1 n2) 0 &&
-        IList.equal Procdesc.Node.compare (Procdesc.Node.get_succs n1) (Procdesc.Node.get_succs n2) &&
-        IList.equal Procdesc.Node.compare (Procdesc.Node.get_preds n1) (Procdesc.Node.get_preds n2) &&
+        List.equal
+          equal::Procdesc.Node.equal (Procdesc.Node.get_succs n1) (Procdesc.Node.get_succs n2) &&
+        List.equal
+          equal::Procdesc.Node.equal (Procdesc.Node.get_preds n1) (Procdesc.Node.get_preds n2) &&
         instrs_eq (Procdesc.Node.get_instrs n1) (Procdesc.Node.get_instrs n2)
       };
       try (IList.for_all2 node_eq n1s n2s) {

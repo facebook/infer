@@ -151,7 +151,7 @@ module Exceptional = struct
         let existing_exn_preds =
           try Procdesc.IdMap.find exn_succ_node_id exn_preds_acc
           with Not_found -> [] in
-        if not (IList.mem Procdesc.Node.equal n existing_exn_preds)
+        if not (List.mem ~equal:Procdesc.Node.equal existing_exn_preds n)
         then (* don't add duplicates *)
           Procdesc.IdMap.add exn_succ_node_id (n :: existing_exn_preds) exn_preds_acc
         else

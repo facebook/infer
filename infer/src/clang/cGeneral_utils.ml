@@ -32,7 +32,7 @@ let rec string_from_list l =
 let rec append_no_duplicates eq list1 list2 =
   match list2 with
   | el:: rest2 ->
-      if (IList.mem eq el list1) then
+      if (List.mem ~equal:eq list1 el) then
         (append_no_duplicates eq list1 rest2)
       else (append_no_duplicates eq list1 rest2)@[el]
   | [] -> list1

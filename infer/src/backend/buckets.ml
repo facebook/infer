@@ -62,7 +62,7 @@ let check_access access_opt de_opt =
       let formal_names = IList.map fst formals in
       let is_formal pvar =
         let name = Pvar.get_name pvar in
-        IList.exists (Mangled.equal name) formal_names in
+        List.exists ~f:(Mangled.equal name) formal_names in
       let formal_ids = ref [] in
       let process_formal_letref = function
         | Sil.Load (id, Exp.Lvar pvar, _, _) ->
@@ -90,14 +90,14 @@ let check_access access_opt de_opt =
         | Sil.Call (_, _, etl, _, _) ->
             let formal_ids = find_formal_ids node in
             let arg_is_formal_param (e, _) = match e with
-              | Exp.Var id -> IList.exists (Ident.equal id) formal_ids
+              | Exp.Var id -> List.exists ~f:(Ident.equal id) formal_ids
               | _ -> false in
-            if IList.exists arg_is_formal_param etl then formal_param_used_in_call := true;
+            if List.exists ~f:arg_is_formal_param etl then formal_param_used_in_call := true;
             true
         | Sil.Store (_, _, e, _) ->
             exp_is_null e
         | _ -> false in
-      IList.exists filter (Procdesc.Node.get_instrs node) in
+      List.exists ~f:filter (Procdesc.Node.get_instrs node) in
     let local_access_found = ref false in
     let do_node node =
       if Int.equal (Procdesc.Node.get_loc node).Location.line line_number &&

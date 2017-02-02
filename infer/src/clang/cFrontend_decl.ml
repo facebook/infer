@@ -176,7 +176,7 @@ struct
           List.hd qual_name |> Option.value_map ~default:false ~f:is_std_qual
           && List.is_prefix (List.rev qual_name) ~prefix:(List.rev rest) ~equal:qual_equal
       | _ -> List.equal ~equal:qual_equal whitelisted_method qual_name in
-    IList.exists method_matches whitelist
+    List.exists ~f:method_matches whitelist
 
   (** Given REVERSED list of method qualifiers (method_name::class_name::rest_quals), return
       whether method should be translated based on method and class whitelists *)

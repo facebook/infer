@@ -377,7 +377,7 @@ struct
 
   let get_symbols : t -> Itv.Symbol.t list
     = fun x ->
-      IList.append (Itv.get_symbols x.itv) (ArrayBlk.get_symbols x.arrayblk)
+      List.append (Itv.get_symbols x.itv) (ArrayBlk.get_symbols x.arrayblk)
 
   let normalize : t -> t
     = fun x ->

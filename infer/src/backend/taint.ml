@@ -355,8 +355,8 @@ let has_taint_annotation fieldname (struct_typ: StructTyp.t) =
   let fld_has_taint_annot (fname, _, annot) =
     Ident.equal_fieldname fieldname fname &&
     (Annotations.ia_is_privacy_source annot || Annotations.ia_is_integrity_source annot) in
-  IList.exists fld_has_taint_annot struct_typ.fields ||
-  IList.exists fld_has_taint_annot struct_typ.statics
+  List.exists ~f:fld_has_taint_annot struct_typ.fields ||
+  List.exists ~f:fld_has_taint_annot struct_typ.statics
 
 (* add tainting attributes to a list of paramenters *)
 let get_params_to_taint tainted_param_nums formal_params =
