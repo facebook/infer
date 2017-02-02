@@ -33,7 +33,13 @@ public class MainActivity extends ActionBarActivity {
     private String getDay() {
         if (Calendar.getInstance().get(Calendar.DAY_OF_WEEK) == Calendar.WEDNESDAY) {
             return "Wednesday";
-        } else return null;
+        } else {
+            return otherOutput();
+        }
+    }
+
+    private String otherOutput() {
+        return null;
     }
 
     private void writeToFile() {
