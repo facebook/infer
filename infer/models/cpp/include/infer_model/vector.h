@@ -19,6 +19,7 @@
 #include <cassert>
 
 #include <infer_model/common.h>
+#include <infer_model/infer_traits.h>
 
 #ifdef INFER_USE_LIBCPP
 // libc++ vector header includes it, but it breaks
@@ -53,6 +54,9 @@ struct vector_ref<bool> {
 template <class T>
 T* __infer_skip__get_nondet_val() {}
 
+template <class T>
+void __infer_deref_first_arg(T* ptr) INFER_MODEL_AS_DEREF_FIRST_ARG;
+
 // WARNING: do not add any new fields to std::vector model. sizeof(std::vector)
 // = 24 !!
 template <class _Tp, class _Allocator = allocator<_Tp>>
@@ -82,7 +86,14 @@ class vector {
   value_type* endPtr = nullptr;
   value_type* __ignore;
 
-  value_type* get() const { return beginPtr; }
+  value_type* get() const {
+    // we have to resort to that hack so that infer can truly dereference
+    // beginPtr.
+    // Another way to model that would be 'auto tmp = *beginPtr' but that will
+    // trigger copy constructor that may not exist for value_type
+    __infer_deref_first_arg(beginPtr);
+    return beginPtr;
+  }
 
   void allocate(size_type size) {
     // assume that allocation will produce non-empty vector regardless of the
@@ -98,11 +109,16 @@ class vector {
 
   template <class Iter>
   void allocate_iter(Iter begin, Iter end) {
-    if (begin != end) {
+    // very simplified implementation to avoid false positives
+    allocate(1);
+    // infer doesn't understand iterators well which leads to skip functions
+    // they in effect lead to false positives in situations when empty vector
+    // is impossible. Implemenatation should look like this:
+    /*if (begin != end) {
       allocate(1);
     } else {
       deallocate();
-    }
+    }*/
   }
 
   /* std::vector implementation */

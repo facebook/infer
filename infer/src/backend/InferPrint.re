@@ -344,7 +344,8 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
               field_not_null_checked,
               null_dereference,
               parameter_not_null_checked,
-              premature_nil_termination
+              premature_nil_termination,
+              empty_vector_access
             ];
           List.mem equal::Localise.equal null_deref_issue_types issue_type
         };
