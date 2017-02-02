@@ -405,7 +405,7 @@ class enable_shared_from_this : public std__enable_shared_from_this<T> {
 
 template <class T, class... Args>
 shared_ptr<T> make_shared(Args&&... args) {
-  return shared_ptr<T>(new T(std::forward<Args>(args)...));
+  return shared_ptr<T>(::new T(std::forward<Args>(args)...));
 }
 
 #undef __cast_to_infer_ptr
