@@ -168,6 +168,34 @@ public class Ownership {
     return param;
   }
 
+  Obj returnOwnedOrNull(boolean b) {
+    if (b) {
+      return null;
+    }
+    return new Obj();
+  }
+
+  public void mutateAfterNullCheckOK(boolean b) {
+    Obj o = returnOwnedOrNull(b);
+    if (o != null) {
+      o.f = new Object();
+    }
+  }
+
+  private void mutateIfNotNull(Obj o) {
+    if (o != null) {
+      o.f = new Object();
+    }
+  }
+
+  public void ownInCalleeViaNullOk() {
+    mutateIfNotNull(null);
+  }
+
+  public void notOwnedInCalleeBad(Obj o) {
+    mutateIfNotNull(o);
+  }
+
   // need to be able to propagate ownership rather than just return it for this to work
   public void FP_passOwnershipInIdFunctionOk() {
     Obj owned = new Obj();
