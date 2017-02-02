@@ -28,7 +28,7 @@ let register_perf_stats_report () => {
 
 let () = {
   Logging.set_log_file_identifier
-    CommandLineOption.Analyze (Option.map f::Filename.basename Config.cluster_cmdline);
+    CommandLineOption.(Infer Analysis) (Option.map f::Filename.basename Config.cluster_cmdline);
   if Config.print_builtins {
     Builtin.print_and_exit ()
   };

@@ -37,29 +37,6 @@ let to_arg_speclist = List.map ~f:to_arg_spec_triple
 let is_env_var_set v =
   Option.value (Option.map (Sys.getenv v) ~f:((=) "1")) ~default:false
 
-(** Each command line option may appear in the --help list of any executable, these tags are used to
-    specify which executables for which an option will be documented. *)
-
-type exe = Analyze | Clang | Driver | Interactive | Print [@@deriving compare]
-
-let equal_exe = [%compare.equal : exe]
-
-(** Association list of executable (base)names to their [exe]s. *)
-let exes = [
-  ("InferAnalyze", Analyze);
-  ("InferClang", Clang);
-  ("infer", Driver);
-  ("InferPrint", Print);
-  ("interactive", Interactive);
-]
-
-let exe_name =
-  let exe_to_name = IList.map (fun (n,a) -> (a,n)) exes in
-  fun exe -> IList.assoc equal_exe exe exe_to_name
-
-
-let frontend_exes = [Clang]
-
 (** The working directory of the initial invocation of infer, to which paths passed as command line
     options are relative. *)
 let init_work_dir, is_originator =
@@ -334,6 +311,9 @@ let anon_fun arg = match !unknown_args_action with
       rev_anon_args := arg::!rev_anon_args
   | `Reject ->
       raise (Arg.Bad ("unexpected anonymous argument: " ^ arg))
+
+(* keep track of the final parse action to drive the remainder of the program *)
+let final_parse_action = ref (Infer Driver)
 
 (* end parsing state *)
 
@@ -674,6 +654,7 @@ let set_curr_speclist_for_parse_action ~incomplete ~usage parse_action =
 let select_parse_action ~incomplete ~usage action =
   let usage = set_curr_speclist_for_parse_action ~incomplete ~usage action in
   unknown_args_action := if accept_unknown_args action then `Add else `Reject;
+  final_parse_action := action;
   usage
 
 let mk_rest_actions ?(parse_mode=Infer []) doc ~usage decode_action =
@@ -804,4 +785,4 @@ let parse ?(incomplete=false) ?config_file ~usage action =
     if not incomplete then add_parsed_args_to_args_to_export ();
     curr_usage in
   if not incomplete then Unix.putenv ~key:args_env_var ~data:!args_to_export;
-  curr_usage
+  !final_parse_action, curr_usage

@@ -13,6 +13,9 @@ open! IStd
 (** Configuration values: either constant, determined at compile time, or set at startup
     time by system calls, environment variables, or command line options *)
 
+type exe = Analyze | Clang | Driver | Print [@@deriving compare]
+
+val exe_name : exe -> string
 
 (** Various kind of analyzers *)
 type analyzer =
@@ -68,7 +71,6 @@ val classpath : string option
 val cpp_extra_include_dir : string
 val relative_cpp_models_dir : string
 val csl_analysis : bool
-val current_exe : CommandLineOption.exe
 val default_failure_name : string
 val default_in_zip_results_dir : string
 val dotty_output : string
@@ -235,6 +237,7 @@ val no_translate_libs : bool
 val objc_memory_model_on : bool
 val only_footprint : bool
 val out_file_cmdline : string
+val parse_action : CommandLineOption.parse_action
 val pmd_xml : bool
 val precondition_stats : bool
 val print_logs : bool

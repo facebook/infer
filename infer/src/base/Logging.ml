@@ -29,13 +29,14 @@ let dup_formatter fmt1 fmt2 =
   Format.pp_set_formatter_output_functions fmt1 out_string flush
 
 (** Name of dir for logging the output in the specific executable *)
-let log_dir_of_exe (exe : CLOpt.exe) =
-  match exe with
-  | Analyze -> "analyze"
-  | Clang -> "clang"
-  | Driver -> "driver"
-  | Interactive -> "interactive"
-  | Print -> "print"
+let log_dir_of_action (action : CLOpt.parse_action) = match action with
+  | Infer Analysis -> "analyze"
+  | Infer Driver -> "driver"
+  | Infer Clang
+  | Infer Java
+  | NoParse
+  | Javac -> "capture"
+  | Infer Print -> "print"
 
 let stdout_err_log_files =
   (((lazy F.std_formatter), (lazy Pervasives.stdout),
@@ -52,8 +53,8 @@ let close_log_file fmt chan file =
       Out_channel.close c
   )
 
-let create_log_file exe name_prefix outerr =
-  let log_dir = Config.results_dir ^/ Config.log_dir_name ^/ log_dir_of_exe exe in
+let create_log_file action name_prefix outerr =
+  let log_dir = Config.results_dir ^/ Config.log_dir_name ^/ log_dir_of_action action in
   let config_name = match outerr with
     | `Out -> Config.out_file_cmdline
     | `Err -> Config.err_file_cmdline in
@@ -81,10 +82,10 @@ let create_log_file exe name_prefix outerr =
     "log files flushing";
   (file_fmt, chan, file)
 
-let should_setup_log_files (exe : CLOpt.exe) = match exe with
-  | Analyze
-  | Clang -> Config.debug_mode || Config.stats_mode
-  | Driver -> true
+let should_setup_log_files (action : CLOpt.parse_action) = match action with
+  | Infer Analysis
+  | Infer Clang -> Config.debug_mode || Config.stats_mode
+  | Infer Driver -> true
   | _ -> false
 
 let create_outerr_log_files exe prefix_opt =
@@ -103,7 +104,7 @@ let create_outerr_log_files exe prefix_opt =
 let ((out_formatter, out_chan, out_file),
      (err_formatter, err_chan, err_file)) =
   let (o_fmt, o_c, o_f), (e_fmt, e_c, e_f) =
-    create_outerr_log_files Config.current_exe None in
+    create_outerr_log_files Config.parse_action None in
   ((ref o_fmt, ref o_c, ref o_f),
    (ref e_fmt, ref e_c, ref e_f))
 

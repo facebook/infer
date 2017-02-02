@@ -17,6 +17,23 @@ open! PVariant
 module CLOpt = CommandLineOption
 module F = Format
 
+type exe = Analyze | Clang | Driver | Print [@@deriving compare]
+
+let equal_exe = [%compare.equal : exe]
+
+(** Association list of executable (base)names to their [exe]s. *)
+let exes = [
+  ("InferAnalyze", Analyze);
+  ("InferClang", Clang);
+  ("infer", Driver);
+  ("InferPrint", Print);
+]
+
+let exe_name =
+  let exe_to_name = IList.map (fun (n,a) -> (a,n)) exes in
+  fun exe -> IList.assoc equal_exe exe exe_to_name
+
+let frontend_parse_modes = CLOpt.(Infer [Clang])
 
 type analyzer =
     Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters | Quandary
@@ -245,9 +262,8 @@ let real_exe_name =
   Utils.realpath Sys.executable_name
 
 let current_exe =
-  if !Sys.interactive then CLOpt.Interactive
-  else try IList.assoc String.equal (Filename.basename real_exe_name) CLOpt.exes
-    with Not_found -> ((CLOpt.Driver) : CLOpt.exe)
+  try IList.assoc String.equal (Filename.basename real_exe_name) exes
+  with Not_found -> Driver
 
 let bin_dir =
   Filename.dirname real_exe_name
@@ -314,15 +330,15 @@ let infer_is_javac = maven
 let startup_action =
   let open CLOpt in
   if infer_is_javac then Javac
+  else if !Sys.interactive then NoParse
   else match current_exe with
     | Analyze -> Infer Analysis
     | Clang -> NoParse
     | Driver -> Infer Driver
-    | Interactive -> NoParse
     | Print -> Infer Print
 
 
-let exe_usage = match (current_exe : CLOpt.exe) with
+let exe_usage = match current_exe with
   | Analyze ->
       version_string ^ "\n" ^
       "Usage: InferAnalyze [options]\n\
@@ -331,8 +347,6 @@ let exe_usage = match (current_exe : CLOpt.exe) with
   | Clang ->
       "Usage: internal script to capture compilation commands from clang and clang++. \n\
        You shouldn't need to call this directly."
-  | Interactive ->
-      "Usage: interactive ocaml toplevel. To pass infer config options use env variable"
   | Print ->
       "Usage: InferPrint [options] name1.specs ... namen.specs\n\
        Read, convert, and print .specs files. \
@@ -358,7 +372,7 @@ and project_root =
 
 (* Parse the phase 1 options, ignoring the rest *)
 
-let _ : int -> 'a = CLOpt.parse ~incomplete:true startup_action ~usage:""
+let _ : CLOpt.parse_action * (int -> 'a) = CLOpt.parse ~incomplete:true startup_action ~usage:""
 
 (* Define the values that depend on phase 1 options *)
 
@@ -688,7 +702,7 @@ and (
 ) =
   let developer_mode =
     CLOpt.mk_bool ~long:"developer-mode"
-      ~default:CLOpt.(equal_exe current_exe Print)
+      ~default:(equal_exe current_exe Print)
       "Show internal exceptions"
 
   and filtering =
@@ -703,7 +717,7 @@ and (
 
   and print_types =
     CLOpt.mk_bool ~long:"print-types"
-      ~default:CLOpt.(equal_exe current_exe Clang)
+      ~default:(equal_exe current_exe Clang)
       "Print types in symbolic heaps"
 
   and reports_include_ml_loc =
@@ -1055,7 +1069,7 @@ and quandary_sinks =
   CLOpt.mk_json ~long:"quandary-sinks" "Specify custom sinks for Quandary"
 
 and quiet =
-  CLOpt.mk_bool ~long:"quiet" ~short:"q" ~default:(current_exe <> (CLOpt.Print : CLOpt.exe))
+  CLOpt.mk_bool ~long:"quiet" ~short:"q" ~default:(current_exe <> Print)
     ~parse_mode:CLOpt.(Infer [Print])
     "Do not print specs on standard output"
 
@@ -1392,11 +1406,11 @@ let post_parsing_initialization () =
   | Some (Capture | Compile | Infer | Linters) | None -> ()
 
 
-let parse_args_and_return_usage_exit =
-  let usage_exit =
+let parse_action, parse_args_and_return_usage_exit =
+  let parse_action, usage_exit =
     CLOpt.parse ~config_file:inferconfig_path ~usage:exe_usage startup_action in
   post_parsing_initialization () ;
-  usage_exit
+  parse_action, usage_exit
 
 let print_usage_exit () =
   parse_args_and_return_usage_exit 1

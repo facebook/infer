@@ -392,7 +392,7 @@ let () =
     remove_results_dir () ;
   create_results_dir () ;
   (* re-set log files, as default files were in results_dir removed above *)
-  L.set_log_file_identifier Config.current_exe None ;
+  L.set_log_file_identifier CLOpt.(Infer Driver) None ;
   if Config.print_builtins then Builtin.print_and_exit () ;
   if CLOpt.is_originator then L.do_out "%s@\n" Config.version_string ;
   if Config.debug_mode || Config.stats_mode then log_infer_args driver_mode ;

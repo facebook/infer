@@ -11,17 +11,6 @@
 
 open! IStd
 
-type exe = Analyze | Clang | Driver | Interactive | Print [@@ deriving compare]
-
-val equal_exe : exe -> exe -> bool
-
-(** Association list of executable (base)names to their [exe]s. *)
-val exes : (string * exe) list
-
-val exe_name : exe -> string
-
-val frontend_exes: exe list
-
 (** a section is a part of infer that can be affected by an infer option *)
 type section = Analysis | Clang | Driver | Java | Print [@@deriving compare]
 
@@ -174,7 +163,7 @@ val extend_env_args : string list -> unit
     the environment variable, and the command line. The [args_env_var] is set to the set of options
     parsed in [args_env_var] and on the command line. *)
 val parse : ?incomplete:bool -> ?config_file:string ->
-  usage:Arg.usage_msg -> parse_action -> (int -> 'a)
+  usage:Arg.usage_msg -> parse_action -> parse_action * (int -> 'a)
 
 (** [is_env_var_set var] is true if $[var]=1 *)
 val is_env_var_set : string -> bool

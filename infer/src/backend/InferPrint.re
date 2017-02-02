@@ -1199,7 +1199,7 @@ let process_summary filters formats_by_report_kind linereader stats top_proc_set
 let module AnalysisResults = {
   type t = list (string, Specs.summary);
   let spec_files_from_cmdline () =>
-    if (CLOpt.equal_exe Config.current_exe CLOpt.Print) {
+    if CLOpt.is_originator {
       /* Find spec files specified by command-line arguments.  Not run at init time since the specs
          files may be generated between init and report time. */
       IList.iter
