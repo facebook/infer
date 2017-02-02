@@ -23,6 +23,7 @@ compile everything from source (see the end of this document).
 - pkg-config
 - libffi >= 3.0
 - Java (only needed for the Java analysis)
+- cmake (only needed for the C/Objective-C analysis)
 - clang in Xcode command line tools. You can install them with the command
   `xcode-select --install` (only needed for the C/Objective-C analysis)
 - Xcode >= 6.1 (only needed for the C/Objective-C analysis)
@@ -32,8 +33,9 @@ You can install some of these dependencies using
 [Homebrew](http://brew.sh/):
 
 ```sh
-brew install autoconf automake opam caskroom/cask/brew-cask && \
-brew cask install java7
+brew install autoconf automake cmake libffi opam pkg-config
+brew install caskroom/cask/brew-cask
+brew cask install java
 ```
 
 
