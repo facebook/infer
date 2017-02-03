@@ -55,6 +55,11 @@ public abstract class Process {
         } catch (IOException e) {}*/
     }
 
+    public Process destroyForcibly() {
+      destroy();
+      return this;
+    }
+
     private static class ProcessInputStream extends FileInputStream {
 
         private FileDescriptor fd;

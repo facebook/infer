@@ -884,6 +884,15 @@ public class ResourceLeaks {
     }
   }
 
+  void processForciblyDestroyed() throws IOException {
+    Process process = null;
+    try {
+      process = Runtime.getRuntime().exec("");
+    } finally {
+      ignore(process.destroyForcibly());
+    }
+  }
+
   class Container {
     FileInputStream inputStream;
   }
