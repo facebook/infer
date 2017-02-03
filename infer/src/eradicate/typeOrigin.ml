@@ -84,5 +84,10 @@ let get_description tenv origin =
 
 let join o1 o2 = match o1, o2 with (* left priority *)
   | Undef, _
-  | _, Undef -> Undef
-  | _ -> o1
+  | _, Undef ->
+      Undef
+  | Field _, (Const _ | Formal _ | Proc _ | New) ->
+      (* low priority to Field, to support field initialization patterns *)
+      o2
+  | _ ->
+      o1

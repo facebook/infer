@@ -87,9 +87,13 @@ let range_add_locs (typ, ta, locs1) locs2 =
   let locs' = locs_join locs1 locs2 in
   (typ, ta, locs')
 
-(** Join m2 to m1 if there are no inconsistencies, otherwise return m1. *)
+(** Only keep variables if they are present on both sides of the join. *)
+let only_keep_intersection = true
+
+(** Join two maps.
+    If only_keep_intersection is true, keep only variables present on both sides. *)
 let map_join m1 m2 =
-  let tjoined = ref m1 in
+  let tjoined = ref (if only_keep_intersection then M.empty else m1) in
   let range_join (typ1, ta1, locs1) (typ2, ta2, locs2) =
     match TypeAnnotation.join ta1 ta2 with
     | None -> None
@@ -101,10 +105,11 @@ let map_join m1 m2 =
     try
       let range1 = M.find exp2 m1 in
       (match range_join range1 range2 with
-       | None -> ()
+       | None ->
+           if only_keep_intersection then tjoined := M.add exp2 range1 !tjoined
        | Some range' -> tjoined := M.add exp2 range' !tjoined)
     with Not_found ->
-      tjoined := M.add exp2 range2 !tjoined in
+      if not only_keep_intersection then tjoined := M.add exp2 range2 !tjoined in
   let missing_rhs exp1 range1 = (* handle elements missing in the rhs *)
     try
       ignore (M.find exp1 m2)
@@ -113,7 +118,7 @@ let map_join m1 m2 =
       let range1' =
         let ta1' = TypeAnnotation.with_origin ta1 TypeOrigin.Undef in
         (t1, ta1', locs1) in
-      tjoined := M.add exp1 range1' !tjoined in
+      if not only_keep_intersection then tjoined := M.add exp1 range1' !tjoined in
   if phys_equal m1 m2 then m1
   else (
     M.iter extend_lhs m2;
@@ -122,14 +127,20 @@ let map_join m1 m2 =
   )
 
 let join ext t1 t2 =
-  if Config.eradicate_debug
-  then L.stderr "@.@.**********join@.-------@.%a@.------@.%a@.********@.@."
-      (pp ext) t1
-      (pp ext) t2;
-  {
-    map = map_join t1.map t2.map;
-    extension = ext.join t1.extension t2.extension;
-  }
+  let tjoin =
+    {
+      map = map_join t1.map t2.map;
+      extension = ext.join t1.extension t2.extension;
+    } in
+  if Config.write_html then
+    begin
+      let s = F.asprintf "State 1:@.%a@.State 2:@.%a@.After Join:@.%a@."
+          (pp ext) t1
+          (pp ext) t2
+          (pp ext) tjoin in
+      L.d_strln s;
+    end;
+  tjoin
 
 let lookup_id id typestate =
   try Some (M.find (Exp.Var id) typestate.map)

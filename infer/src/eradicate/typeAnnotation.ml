@@ -63,7 +63,8 @@ let to_string ta =
   nullable_s ^ present_s
 
 let join ta1 ta2 =
-  let choose_left = match get_nullable ta1, get_nullable ta2 with
+  let nul1, nul2 = get_nullable ta1, get_nullable ta2 in
+  let choose_left = match nul1, nul2 with
     | false, true ->
         false
     | _ ->
@@ -71,7 +72,10 @@ let join ta1 ta2 =
   let ta_chosen, ta_other =
     if choose_left then ta1, ta2 else ta2, ta1 in
   let present = get_present ta1 && get_present ta2 in
-  let origin = TypeOrigin.join ta_chosen.origin ta_other.origin in
+  let origin =
+    if Bool.equal nul1 nul2
+    then TypeOrigin.join ta_chosen.origin ta_other.origin
+    else ta_chosen.origin in
   let ta' =
     set_present present
       { ta_chosen with

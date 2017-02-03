@@ -96,4 +96,46 @@ public class FieldNotInitialized {
       indirect();
     }
   }
+
+  class ConditionalFieldInit {
+    Object o1;
+    @Nullable Object o2 = null;
+    public ConditionalFieldInit() {
+        if (o2 != null) {
+            o1 = new Object(); // Not always initialized
+        }
+    }
+  }
+
+  class InitIfNull {
+    Object o;
+
+    public InitIfNull() {
+      if (o == null)
+        o = new Object();
+    }
+  }
+
+  class InitIfNull2 {
+    Object o;
+
+    public InitIfNull2(Object x) {
+      if (o == null)
+        o = x;
+    }
+  }
+
+  class InitIfNull3 {
+    Object o;
+
+    Object getNotNull() {
+      return new Object();
+    }
+
+    public InitIfNull3() {
+      if (o == null)
+        o = getNotNull();
+    }
+  }
+
 }

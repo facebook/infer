@@ -136,4 +136,14 @@ public class ReturnNotNullable {
     definitelyDoesNotReturnNull().toString();
   }
 
+  static class ConditionalAssignment {
+    @Nullable Object f1;
+    static Object test(boolean b) {
+        ConditionalAssignment x = new ConditionalAssignment();
+        if (b) {
+            x.f1 = new Object();
+        }
+        return x.f1; // can be null
+    }
+  }
 }
