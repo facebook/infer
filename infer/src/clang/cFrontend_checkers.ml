@@ -97,25 +97,3 @@ let cxx_ref_captured_in_block an =
   let var_desc vars var_named_decl_info =
     vars ^ "'" ^ var_named_decl_info.Clang_ast_t.ni_name ^ "'" in
   IList.fold_left var_desc "" capt_refs
-
-(** If the declaration has avilability attributes, check that it's compatible with
-    the iphoneos_target_sdk_version *)
-let ctl_unavailable_api_in_supported_ios_sdk_error lctx an =
-  let open CTL in
-  let condition =
-    InNode(["DeclRefExpr"; "ObjCMessageExpr"],
-           EX (Some PointerToDecl, (
-               And
-                 (Atomic ("decl_unavailable_in_supported_ios_sdk", []),
-                  Not (Atomic ("within_responds_to_selector_block", [])))))) in
-  let issue_desc =
-    { CIssue.name = "UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK";
-      severity = Exceptions.Kerror;
-      mode = CIssue.On;
-      description =
-        "%decl_ref_or_selector_name% is not available in the required iOS SDK version \
-         %iphoneos_target_sdk_version% (only available from version %available_ios_sdk%)";
-      suggestion = Some "This could cause a crash.";
-      loc = location_from_an lctx an
-    } in
-  condition, Some issue_desc

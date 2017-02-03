@@ -9,9 +9,6 @@
 
 open! IStd
 
-val ctl_unavailable_api_in_supported_ios_sdk_error :
-  CLintersContext.context -> CTL.ast_node -> CTL.t * CIssue.issue_desc option
-
 val location_from_stmt :
   CLintersContext.context -> Clang_ast_t.stmt -> Location.t
 
