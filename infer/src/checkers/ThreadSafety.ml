@@ -71,11 +71,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_owned access_path owned_set =
     Domain.AccessPathSetDomain.mem access_path owned_set
 
-  let is_initializer tenv proc_name =
-    Procname.is_constructor proc_name ||
-    FbThreadSafety.is_custom_init tenv proc_name
-
-  let add_path_to_state exp typ loc path_state id_map owned pname tenv =
+  let add_path_to_state exp typ loc path_state id_map owned tenv =
     (* remove the last field of the access path, if it has any *)
     let truncate = function
       | base, []
@@ -83,14 +79,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | base, accesses -> base, IList.rev (IList.tl (IList.rev accesses)) in
 
     (* we don't want to warn on writes to the field if it is (a) thread-confined, or (b) volatile *)
-    let is_safe_write access_path pname tenv =
-      (* writes to vars rooted in [this] in an intializer method are safe, but writes to other vars
-         (e.g., static vars, vars rooted in formals) need not be *)
-      let is_safe_initializer_write (base, _) pname tenv =
-        is_initializer tenv pname &&
-        match base with
-        | Var.ProgramVar pvar -> Pvar.is_this pvar
-        | Var.LogicalVar _ -> false in
+    let is_safe_write access_path tenv =
       let is_thread_safe_write accesses tenv = match IList.rev accesses with
         | AccessPath.FieldAccess (fieldname, Typ.Tstruct typename) :: _ ->
             begin
@@ -105,7 +94,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             end
         | _ ->
             false in
-      is_safe_initializer_write (fst access_path) pname tenv ||
       is_thread_safe_write (snd access_path) tenv in
     let f_resolve_id = resolve_id id_map in
 
@@ -115,7 +103,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else
       IList.fold_left
         (fun acc rawpath ->
-           if not (is_owned (truncate rawpath) owned) && not (is_safe_write rawpath pname tenv)
+           if not (is_owned (truncate rawpath) owned) && not (is_safe_write rawpath tenv)
            then Domain.PathDomain.add_sink (Domain.make_access rawpath loc) acc
            else acc)
         path_state
@@ -137,7 +125,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     has_return_annot pname || PatternMatch.override_exists has_return_annot tenv pname
 
   let exec_instr (astate : Domain.astate) { ProcData.pdesc; tenv; extras; } _ =
-    let pname = Procdesc.get_proc_name pdesc in
     let is_allocation pn =
       Procname.equal pn BuiltinDecl.__new ||
       Procname.equal pn BuiltinDecl.__new_array in
@@ -169,7 +156,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           astate.unconditional_writes
           astate.id_map
           astate.owned
-          pname
           tenv in
       { astate with unconditional_writes; } in
     let is_unprotected is_locked =
@@ -376,7 +362,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         conditional_writes_for_index
                         astate.id_map
                         astate.owned
-                        pname
                         tenv in
                     ConditionalWritesDomain.add
                       formal_index conditional_writes_for_index' astate.conditional_writes,
@@ -390,7 +375,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       astate.unconditional_writes
                       astate.id_map
                       astate.owned
-                      pname
                       tenv
               end
           | _ ->
@@ -422,7 +406,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let reads =
           match rhs_exp with
           | Lfield ( _, _, typ) when is_unprotected astate.locks ->
-              add_path_to_state rhs_exp typ loc astate.reads astate.id_map astate.owned pname tenv
+              add_path_to_state rhs_exp typ loc astate.reads astate.id_map astate.owned tenv
           | _ ->
               astate.reads in
 
@@ -556,6 +540,8 @@ let make_results_table get_proc_desc file_env =
     IList.fold_left (fun m p -> ResultsTableType.add p (f p) m
                     ) ResultsTableType.empty l
   in
+  let is_initializer tenv proc_name =
+    Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name in
   let compute_post_for_procedure = (* takes proc_env as arg *)
     fun (idenv, tenv, proc_name, proc_desc) ->
       let open ThreadSafetyDomain in
@@ -564,12 +550,23 @@ let make_results_table get_proc_desc file_env =
       let empty =
         has_lock, PathDomain.empty, ConditionalWritesDomain.empty, PathDomain.empty, ret_is_owned in
       (* convert the abstract state to a summary by dropping the id map *)
-      let compute_post ({ ProcData.pdesc; tenv; } as proc_data) =
+      let compute_post ({ ProcData.pdesc; tenv; extras; } as proc_data) =
         if should_analyze_proc pdesc tenv
         then
           begin
             if not (Procdesc.did_preanalysis pdesc) then Preanal.do_liveness pdesc tenv;
-            match Analyzer.compute_post proc_data ~initial:ThreadSafetyDomain.empty with
+            let initial =
+              if is_initializer tenv (Procdesc.get_proc_name pdesc)
+              then
+                (* express that the constructor owns [this] *)
+                match FormalMap.get_formal_base 0 extras with
+                | Some base ->
+                    let owned = ThreadSafetyDomain.AccessPathSetDomain.singleton (base, []) in
+                    { ThreadSafetyDomain.empty with owned; }
+                | None -> ThreadSafetyDomain.empty
+              else
+                ThreadSafetyDomain.empty in
+            match Analyzer.compute_post proc_data ~initial with
             | Some { locks; reads; conditional_writes; unconditional_writes; owned; } ->
                 let return_var_ap =
                   AccessPath.of_pvar

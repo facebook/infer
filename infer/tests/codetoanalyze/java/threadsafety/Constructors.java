@@ -30,6 +30,14 @@ public class Constructors {
     o.field = 42; // not ok
   }
 
+  public Constructors(String s) {
+    calledFromConstructorOk(); // ok
+  }
+
+  private void calledFromConstructorOk() {
+    this.field = 7;
+  }
+
   public static synchronized Constructors singletonOk() {
     // ok because lock is held during write to static field in constructor
     return new Constructors(new Object());
