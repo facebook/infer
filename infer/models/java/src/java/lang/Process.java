@@ -18,13 +18,13 @@ public abstract class Process {
   protected final int pid;
   protected final InputStream inputStream;
   protected final OutputStream outputStream;
-  //protected final InputStream errorStream;
+  protected final InputStream errorStream;
 
   public Process(int pid, FileDescriptor in, FileDescriptor out, FileDescriptor err) {
         this.pid = pid;
         this.inputStream = new ProcessInputStream(in);
         this.outputStream = new ProcessOutputStream(out);
-        //this.errorStream = new ProcessInputStream(err); // causes too many case splits for now
+        this.errorStream = new ProcessInputStream(err);
     }
     public int exitValue() {
         return InferUndefined.int_undefined();
@@ -49,10 +49,9 @@ public abstract class Process {
         try {
             outputStream.close();
         } catch (IOException e) {}
-        // causes too many case splits for now
-        /*try {
+        try {
             errorStream.close();
-        } catch (IOException e) {}*/
+        } catch (IOException e) {}
     }
 
     public Process destroyForcibly() {
