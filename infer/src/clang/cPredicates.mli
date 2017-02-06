@@ -11,52 +11,50 @@ open! IStd
 
 type t = string * string list (* (name, [param1,...,paramK]) *)
 
-val captured_variables_cxx_ref : Clang_ast_t.decl -> Clang_ast_t.named_decl_info list
+val captured_variables_cxx_ref : Ctl_parser_types.ast_node -> Clang_ast_t.named_decl_info list
 
-val call_method : string -> Clang_ast_t.stmt -> bool
+val call_method : string -> Ctl_parser_types.ast_node -> bool
 
-val property_name_contains_word : string -> Clang_ast_t.decl -> bool
+val property_name_contains_word : string -> Ctl_parser_types.ast_node -> bool
 
 val is_objc_extension : CLintersContext.context -> bool
 
-val is_syntactically_global_var : Clang_ast_t.decl -> bool
+val is_syntactically_global_var : Ctl_parser_types.ast_node -> bool
 
-val is_const_expr_var : Clang_ast_t.decl -> bool
+val is_const_expr_var : Ctl_parser_types.ast_node -> bool
 
-val call_function_named : string list -> Clang_ast_t.stmt -> bool
+val call_function_named : string list -> Ctl_parser_types.ast_node -> bool
 
-val is_strong_property : Clang_ast_t.decl -> bool
+val is_strong_property : Ctl_parser_types.ast_node -> bool
 
-val is_assign_property : Clang_ast_t.decl -> bool
+val is_assign_property : Ctl_parser_types.ast_node -> bool
 
-val is_property_pointer_type : Clang_ast_t.decl -> bool
+val is_property_pointer_type : Ctl_parser_types.ast_node -> bool
 
 val context_in_synchronized_block : CLintersContext.context -> bool
 
-val is_ivar_atomic : Clang_ast_t.stmt -> bool
+val is_ivar_atomic : Ctl_parser_types.ast_node -> bool
 
-val is_method_property_accessor_of_ivar : Clang_ast_t.stmt -> CLintersContext.context -> bool
+val is_method_property_accessor_of_ivar : Ctl_parser_types.ast_node -> CLintersContext.context -> bool
 
 val is_objc_constructor : CLintersContext.context -> bool
 
 val is_objc_dealloc : CLintersContext.context -> bool
 
-val captures_cxx_references : Clang_ast_t.decl -> bool
+val captures_cxx_references : Ctl_parser_types.ast_node -> bool
 
-val is_binop_with_kind : string -> Clang_ast_t.stmt -> bool
+val is_binop_with_kind : string -> Ctl_parser_types.ast_node -> bool
 
-val is_unop_with_kind : string -> Clang_ast_t.stmt -> bool
+val is_unop_with_kind : string -> Ctl_parser_types.ast_node -> bool
 
-val isa : string -> Clang_ast_t.stmt -> bool
+val isa : string -> Ctl_parser_types.ast_node -> bool
 
-val is_stmt : string -> Clang_ast_t.stmt -> bool
-
-val is_decl : string -> Clang_ast_t.decl -> bool
+val is_node : string -> Ctl_parser_types.ast_node -> bool
 
 val pp_predicate : Format.formatter -> t -> unit
 
-val decl_unavailable_in_supported_ios_sdk : Clang_ast_t.decl -> bool
+val decl_unavailable_in_supported_ios_sdk : Ctl_parser_types.ast_node -> bool
 
-val get_available_attr_ios_sdk : Clang_ast_t.decl -> string option
+val get_available_attr_ios_sdk : Ctl_parser_types.ast_node -> string option
 
-val within_responds_to_selector_block : CLintersContext.context -> Clang_ast_t.decl -> bool
+val within_responds_to_selector_block : CLintersContext.context -> Ctl_parser_types.ast_node -> bool

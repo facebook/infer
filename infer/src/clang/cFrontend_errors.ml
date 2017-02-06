@@ -91,11 +91,12 @@ let string_to_issue_mode m =
 (** Convert a parsed checker in a pair (condition, issue_desc) *)
 let make_condition_issue_desc_pair checkers =
   let open CIssue in
+  let open CTL in
   let open Ctl_parser_types in
   Logging.out "\n Converting checkers in (condition, issue) pairs\n";
   let do_one_checker c =
     let dummy_issue = {
-      name = c.Ctl_parser_types.name;
+      name = c.name;
       description = "";
       suggestion = None;
       loc = Location.dummy;
@@ -114,10 +115,10 @@ let make_condition_issue_desc_pair checkers =
             {issue' with severity = string_to_err_kind sev}, cond'
         | CDesc (s, m) when String.equal s mode_const ->
             {issue' with mode = string_to_issue_mode m }, cond'
-        | _ -> issue', cond') (dummy_issue, CTL.False) c.Ctl_parser_types.definitions in
+        | _ -> issue', cond') (dummy_issue, CTL.False) c.definitions in
     if Config.debug_mode then (
       Logging.out "\nMaking condition and issue desc for checker '%s'\n"
-        c.Ctl_parser_types.name;
+        c.name;
       Logging.out "\nCondition =\n     %a\n" CTL.Debug.pp_formula condition;
       Logging.out "\nIssue_desc = %a\n" CIssue.pp_issue issue);
     condition, issue in
@@ -160,7 +161,7 @@ let expand_checkers checkers =
     let map : CTL.t Core.Std.String.Map.t = Core.Std.String.Map.empty in
     let map = IList.fold_left (fun map' d -> match d with
         | CLet (k,formula) -> Core.Std.Map.add map' ~key:k ~data:formula
-        | _ -> map') map c.Ctl_parser_types.definitions in
+        | _ -> map') map c.definitions in
     let exp_defs = IList.fold_left (fun defs clause ->
         match clause with
         | CSet (report_when_const, phi) ->
@@ -192,15 +193,15 @@ let log_frontend_issue translation_unit_context method_decl_opt key issue_desc =
   Reporting.log_issue_from_errlog err_kind errlog exn ~loc ~ltr:trace
     ~node_id:(0, key)
 
-let get_current_method context an =
+let get_current_method context (an : Ctl_parser_types.ast_node) =
   match an with
-  | CTL.Decl (FunctionDecl _ as d)
-  | CTL.Decl (CXXMethodDecl _ as d)
-  | CTL.Decl (CXXConstructorDecl _ as d)
-  | CTL.Decl (CXXConversionDecl _ as d)
-  | CTL.Decl (CXXDestructorDecl _ as d)
-  | CTL.Decl (ObjCMethodDecl _ as d)
-  | CTL.Decl (BlockDecl _ as d) -> Some d
+  | Decl (FunctionDecl _ as d)
+  | Decl (CXXMethodDecl _ as d)
+  | Decl (CXXConstructorDecl _ as d)
+  | Decl (CXXConversionDecl _ as d)
+  | Decl (CXXDestructorDecl _ as d)
+  | Decl (ObjCMethodDecl _ as d)
+  | Decl (BlockDecl _ as d) -> Some d
   | _ -> context.CLintersContext.current_method
 
 let fill_issue_desc_info_and_log context an key issue_desc loc =
@@ -211,10 +212,10 @@ let fill_issue_desc_info_and_log context an key issue_desc loc =
     (get_current_method context an) key issue_desc'
 
 (* Calls the set of hard coded checkers (if any) *)
-let invoke_set_of_hard_coded_checkers_an context an =
+let invoke_set_of_hard_coded_checkers_an context (an : Ctl_parser_types.ast_node) =
   let checkers, key  = match an with
-    | CTL.Decl dec -> decl_checkers_list, CAst_utils.generate_key_decl dec
-    | CTL.Stmt st -> stmt_checkers_list, CAst_utils.generate_key_stmt st in
+    | Decl dec -> decl_checkers_list, CAst_utils.generate_key_decl dec
+    | Stmt st -> stmt_checkers_list, CAst_utils.generate_key_stmt st in
   IList.iter (fun checker ->
       let condition, issue_desc_list = checker context an in
       if CTL.eval_formula condition an context then
@@ -226,10 +227,10 @@ let invoke_set_of_hard_coded_checkers_an context an =
     ) checkers
 
 (* Calls the set of checkers parsed from files (if any) *)
-let invoke_set_of_parsed_checkers_an context an =
+let invoke_set_of_parsed_checkers_an context (an : Ctl_parser_types.ast_node) =
   let key = match an with
-    | CTL.Decl dec -> CAst_utils.generate_key_decl dec
-    | CTL.Stmt st -> CAst_utils.generate_key_stmt st in
+    | Decl dec -> CAst_utils.generate_key_decl dec
+    | Stmt st -> CAst_utils.generate_key_stmt st in
   IList.iter (fun (condition, issue_desc) ->
       if CIssue.should_run_check issue_desc.CIssue.mode &&
          CTL.eval_formula condition an context then

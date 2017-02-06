@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+open Ctl_parser_types
 
 (* This module defines a language to define checkers. These checkers
    are intepreted over the AST of the program. A checker is defined by a
@@ -57,10 +58,34 @@ type t =
                                                                there exists a descentant an of the current node such that an is of type in set T
                                                                making a transition to a node an' via label l, such that in an phi holds. *)
 
-(** the kind of AST nodes where formulas are evaluated *)
-type ast_node =
-  | Stmt of Clang_ast_t.stmt
-  | Decl of Clang_ast_t.decl
+(* "set" clauses are used for defining mandatory variables that will be used
+   by when reporting issues: eg for defining the condition.
+
+   "desc" clauses are used for defining the error message,
+   the suggestion, the severity.
+
+   "let" clauses are used to define temporary formulas which are then
+   used to abbreviate the another formula. For example
+
+   let f = a And B
+
+   set formula  = f OR f
+
+   set message = "bla"
+
+*)
+
+type clause =
+  | CLet  of string * t (* Let clause: let id = definifion;  *)
+  | CSet of string * t (* Set clause: set id = definition *)
+  | CDesc of string * string (* Description clause eg: set message = "..." *)
+
+type ctl_checker = {
+  name : string; (* Checker's name *)
+  definitions : clause list (* A list of let/set definitions *)
+}
+
+val print_checker : ctl_checker -> unit
 
 val eval_formula : t -> ast_node -> CLintersContext.context -> bool
 

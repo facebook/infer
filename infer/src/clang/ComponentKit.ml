@@ -12,10 +12,10 @@ open! PVariant
 
 let get_source_range an =
   match an with
-  | CTL.Decl decl ->
+  | Ctl_parser_types.Decl decl ->
       let decl_info = Clang_ast_proj.get_decl_tuple decl in
       decl_info.Clang_ast_t.di_source_range
-  | CTL.Stmt stmt ->
+  | Ctl_parser_types.Stmt stmt ->
       let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
       stmt_info.Clang_ast_t.si_source_range
 
@@ -103,7 +103,7 @@ let mutable_local_vars_advice context an =
     | _ -> false in
 
   match an with
-  | CTL.Decl (Clang_ast_t.VarDecl(decl_info, named_decl_info, qual_type, _) as decl)->
+  | Ctl_parser_types.Decl (Clang_ast_t.VarDecl(decl_info, named_decl_info, qual_type, _) as decl)->
       let is_const_ref = match CAst_utils.get_type qual_type.qt_type_ptr with
         | Some LValueReferenceType (_, {Clang_ast_t.qt_is_const}) ->
             qt_is_const
@@ -137,7 +137,7 @@ let component_factory_function_advice context an =
     CAst_utils.is_objc_if_descendant decl [CFrontend_config.ckcomponent_cl] in
 
   match an with
-  | CTL.Decl (Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _)) ->
+  | Ctl_parser_types.Decl (Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _)) ->
       let objc_interface =
         CAst_utils.type_ptr_to_objc_interface qual_type.qt_type_ptr in
       let condition =
@@ -203,7 +203,7 @@ let component_with_unconventional_superclass_advice context an =
           CTL.False, None
     | _ -> assert false in
   match an with
-  | CTL.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
       let if_decl_opt =
         CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
       if Option.is_some if_decl_opt && is_ck_context context an then
@@ -253,7 +253,7 @@ let component_with_multiple_factory_methods_advice context an =
             }) (IList.drop_first 1 factory_methods)
     | _ -> assert false in
   match an with
-  | CTL.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
       let if_decl_opt =
         CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
       (match if_decl_opt with
@@ -281,7 +281,7 @@ let rec _component_initializer_with_side_effects_advice
     in_ck_class context
     && context.in_objc_static_factory_method
     && (match context.current_objc_impl with
-        | Some d -> is_in_main_file context.translation_unit_context (CTL.Decl d)
+        | Some d -> is_in_main_file context.translation_unit_context (Ctl_parser_types.Decl d)
         | None -> false) in
   if condition then
     match call_stmt with
@@ -313,7 +313,7 @@ let rec _component_initializer_with_side_effects_advice
 let component_initializer_with_side_effects_advice
     (context: CLintersContext.context) an =
   match an with
-  | CTL.Stmt (CallExpr (_, called_func_stmt :: _, _))  ->
+  | Ctl_parser_types.Stmt (CallExpr (_, called_func_stmt :: _, _))  ->
       _component_initializer_with_side_effects_advice context called_func_stmt
   | _ -> CTL.False, None (* only to be called in CallExpr *)
 
@@ -324,7 +324,7 @@ let component_initializer_with_side_effects_advice
 let component_file_line_count_info (context: CLintersContext.context) dec =
   let condition = Config.compute_analytics && context.is_ck_translation_unit in
   match dec with
-  | CTL.Decl Clang_ast_t.TranslationUnitDecl _ when condition ->
+  | Ctl_parser_types.Decl Clang_ast_t.TranslationUnitDecl _ when condition ->
       let source_file =
         context.translation_unit_context.CFrontend_config.source_file in
       let line_count = SourceFile.line_count source_file in
@@ -364,11 +364,11 @@ let component_file_cyclomatic_complexity_info (context: CLintersContext.context)
         List.mem ~equal:(=) [`LAnd; `LOr] boi.Clang_ast_t.boi_kind
     | _ -> false in
   let cyclo_loc_opt an = match an with
-    | CTL.Stmt stmt when (Config.compute_analytics
-                          && is_cyclo_stmt stmt
-                          && is_ck_context context an) ->
+    | Ctl_parser_types.Stmt stmt when (Config.compute_analytics
+                                       && is_cyclo_stmt stmt
+                                       && is_ck_context context an) ->
         Some (CFrontend_checkers.location_from_stmt context stmt)
-    | CTL.Decl (Clang_ast_t.TranslationUnitDecl _ as d)
+    | Ctl_parser_types.Decl (Clang_ast_t.TranslationUnitDecl _ as d)
       when Config.compute_analytics && context.is_ck_translation_unit ->
         Some (CFrontend_checkers.location_from_decl context d)
     | _ -> None in

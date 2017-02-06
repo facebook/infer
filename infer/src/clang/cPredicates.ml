@@ -9,20 +9,23 @@
 
 open! IStd
 
-let get_available_attr_ios_sdk decl =
+let get_available_attr_ios_sdk an =
   let open Clang_ast_t in
-  let decl_info = Clang_ast_proj.get_decl_tuple decl in
   let rec get_available_attr attrs =
     match attrs with
     | [] -> None
     | AvailabilityAttr attr_info :: _ ->
-        (match attr_info.Clang_ast_t.ai_parameters with
+        (match attr_info.ai_parameters with
          | "ios" :: version :: _ ->
              Some (String.Search_pattern.replace_all
                      (String.Search_pattern.create "_") ~in_:version ~with_:".")
          | _ -> None)
     | _ :: rest -> get_available_attr rest in
-  get_available_attr decl_info.Clang_ast_t.di_attributes
+  match an with
+  | Ctl_parser_types.Decl decl ->
+      let decl_info = Clang_ast_proj.get_decl_tuple decl in
+      get_available_attr decl_info.di_attributes
+  | _ -> None
 
 let get_ivar_attributes ivar_decl =
   let open Clang_ast_t in
@@ -35,7 +38,8 @@ let get_ivar_attributes ivar_decl =
   | _ -> []
 
 (* list of cxx references captured by decl *)
-let captured_variables_cxx_ref dec =
+let captured_variables_cxx_ref an =
+  let open Clang_ast_t in
   let capture_var_is_cxx_ref reference_captured_vars captured_var =
     let decl_ref_opt = captured_var.Clang_ast_t.bcv_variable in
     match CAst_utils.get_decl_opt_with_decl_ref decl_ref_opt with
@@ -47,11 +51,11 @@ let captured_variables_cxx_ref dec =
              named_decl_info::reference_captured_vars
          | _ -> reference_captured_vars)
     | _ -> reference_captured_vars in
-  let captured_vars = match dec with
-    | Clang_ast_t.BlockDecl (_, bdi) ->
-        bdi.Clang_ast_t.bdi_captured_variables
-    | _ -> [] in
-  IList.fold_left capture_var_is_cxx_ref [] captured_vars
+  match an with
+  | Ctl_parser_types.Decl (BlockDecl (_, bdi)) ->
+      IList.fold_left capture_var_is_cxx_ref [] bdi.bdi_captured_variables
+  | _ -> []
+
 
 
 
@@ -64,28 +68,36 @@ let is_declaration_kind decl s =
   String.equal (Clang_ast_proj.get_decl_kind_string decl) s
 
 (* st |= call_method(m) *)
-let call_method m st =
-  match st with
-  | Clang_ast_t.ObjCMessageExpr (_, _, _, omei) -> String.equal omei.omei_selector m
+let call_method m an =
+  match an with
+  | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, _, _, omei)) ->
+      String.equal omei.omei_selector m
   | _ -> false
 
-let property_name_contains_word word decl =
-  match Clang_ast_proj.get_named_decl_tuple decl with
-  | Some (_, n) -> let pname = n.Clang_ast_t.ni_name in
-      let rexp = Str.regexp_string_case_fold word in
-      (try
-         Str.search_forward rexp pname 0 >= 0
-       with Not_found -> false)
+let property_name_contains_word word an =
+  match an with
+  | Ctl_parser_types.Decl decl ->
+      (match Clang_ast_proj.get_named_decl_tuple decl with
+       | Some (_, n) -> let pname = n.Clang_ast_t.ni_name in
+           let rexp = Str.regexp_string_case_fold word in
+           (try
+              Str.search_forward rexp pname 0 >= 0
+            with Not_found -> false)
+       | _ -> false)
   | _ -> false
 
 let is_objc_extension lcxt =
   CGeneral_utils.is_objc_extension lcxt.CLintersContext.translation_unit_context
 
-let is_syntactically_global_var decl =
-  CAst_utils.is_syntactically_global_var decl
+let is_syntactically_global_var an =
+  match an with
+  | Ctl_parser_types.Decl d -> CAst_utils.is_syntactically_global_var d
+  | _ -> false
 
-let is_const_expr_var decl =
-  CAst_utils.is_const_expr_var decl
+let is_const_expr_var an =
+  match an with
+  | Ctl_parser_types.Decl d -> CAst_utils.is_const_expr_var d
+  | _ -> false
 
 let decl_ref_is_in names st =
   match st with
@@ -96,25 +108,28 @@ let decl_ref_is_in names st =
        | _ -> false)
   | _ -> false
 
-let call_function_named names st =
-  CAst_utils.exists_eventually_st decl_ref_is_in names st
+let call_function_named names an =
+  match an with
+  | Ctl_parser_types.Stmt st ->
+      CAst_utils.exists_eventually_st decl_ref_is_in names st
+  | _ -> false
 
-let is_strong_property decl =
-  match decl with
-  | Clang_ast_t.ObjCPropertyDecl (_, _, pdi) ->
+let is_strong_property an =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCPropertyDecl (_, _, pdi)) ->
       ObjcProperty_decl.is_strong_property pdi
   | _ -> false
 
-let is_assign_property decl =
-  match decl with
-  | Clang_ast_t.ObjCPropertyDecl (_, _, pdi) ->
+let is_assign_property an =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCPropertyDecl (_, _, pdi)) ->
       ObjcProperty_decl.is_assign_property pdi
   | _ -> false
 
-let is_property_pointer_type decl =
+let is_property_pointer_type an =
   let open Clang_ast_t in
-  match decl with
-  | ObjCPropertyDecl (_, _, pdi) ->
+  match an with
+  | Ctl_parser_types.Decl (ObjCPropertyDecl (_, _, pdi)) ->
       (match CAst_utils.get_desugared_type pdi.opdi_type_ptr with
        | Some MemberPointerType _
        | Some ObjCObjectPointerType _
@@ -129,9 +144,9 @@ let context_in_synchronized_block context =
   context.CLintersContext.in_synchronized_block
 
 (* checks if ivar is defined among a set of fields and if it is atomic *)
-let is_ivar_atomic stmt =
-  match stmt with
-  | Clang_ast_t.ObjCIvarRefExpr (_, _, _, irei) ->
+let is_ivar_atomic an =
+  match an with
+  | Ctl_parser_types.Stmt (Clang_ast_t.ObjCIvarRefExpr (_, _, _, irei)) ->
       let dr_ref = irei.Clang_ast_t.ovrei_decl_ref in
       let ivar_pointer = dr_ref.Clang_ast_t.dr_decl_pointer in
       (match CAst_utils.get_decl ivar_pointer with
@@ -141,10 +156,10 @@ let is_ivar_atomic stmt =
        | _ -> false)
   | _ -> false
 
-let is_method_property_accessor_of_ivar stmt context =
+let is_method_property_accessor_of_ivar an context =
   let open Clang_ast_t in
-  match stmt with
-  | ObjCIvarRefExpr (_, _, _, irei) ->
+  match an with
+  | Ctl_parser_types.Stmt (ObjCIvarRefExpr (_, _, _, irei)) ->
       let dr_ref = irei.Clang_ast_t.ovrei_decl_ref in
       let ivar_pointer = dr_ref.Clang_ast_t.dr_decl_pointer in
       (match context.CLintersContext.current_method with
@@ -180,56 +195,58 @@ let is_objc_dealloc context =
       Procname.is_objc_dealloc method_name
   | _ -> false
 
-let captures_cxx_references decl =
-  IList.length (captured_variables_cxx_ref decl) > 0
+let captures_cxx_references an =
+  IList.length (captured_variables_cxx_ref an) > 0
 
-let is_binop_with_kind str_kind stmt =
+let is_binop_with_kind str_kind an =
   if not (Clang_ast_proj.is_valid_binop_kind_name str_kind) then
     failwith ("Binary operator kind " ^ str_kind ^ " is not valid");
-  match stmt with
-  | Clang_ast_t.BinaryOperator (_, _, _, boi) ->
+  match an with
+  | Ctl_parser_types.Stmt (Clang_ast_t.BinaryOperator (_, _, _, boi)) ->
       String.equal (Clang_ast_proj.string_of_binop_kind boi.boi_kind) str_kind
   | _ -> false
 
-let is_unop_with_kind str_kind stmt =
+let is_unop_with_kind str_kind an =
   if not (Clang_ast_proj.is_valid_unop_kind_name str_kind) then
     failwith ("Unary operator kind " ^ str_kind ^ " is not valid");
-  match stmt with
-  | Clang_ast_t.UnaryOperator (_, _, _, uoi) ->
+  match an with
+  | Ctl_parser_types.Stmt (Clang_ast_t.UnaryOperator (_, _, _, uoi)) ->
       String.equal (Clang_ast_proj.string_of_unop_kind uoi.uoi_kind) str_kind
   | _ -> false
 
-let is_stmt nodename stmt =
+let is_node nodename an =
   if not (Clang_ast_proj.is_valid_astnode_kind nodename) then
-    failwith ("Statement " ^ nodename ^ " is not a valid statement");
-  String.equal nodename (Clang_ast_proj.get_stmt_kind_string stmt)
+    failwith ("Node " ^ nodename ^ " is not a valid AST node");
+  let an_str = match an with
+    | Ctl_parser_types.Stmt s -> Clang_ast_proj.get_stmt_kind_string s
+    | Ctl_parser_types.Decl d -> Clang_ast_proj.get_decl_kind_string d in
+  String.equal nodename an_str
 
-let is_decl nodename decl =
-  if not (Clang_ast_proj.is_valid_astnode_kind nodename) then
-    failwith ("Declaration " ^ nodename ^ " is not a valid declaration");
-  String.equal nodename (Clang_ast_proj.get_decl_kind_string decl)
-
-let isa classname stmt =
-  match Clang_ast_proj.get_expr_tuple stmt with
-  | Some (_, _, expr_info) ->
-      let typ = CAst_utils.get_desugared_type expr_info.ei_type_ptr in
-      CAst_utils.is_ptr_to_objc_class typ classname
+let isa classname an =
+  match an with
+  | Ctl_parser_types.Stmt stmt ->
+      (match Clang_ast_proj.get_expr_tuple stmt with
+       | Some (_, _, expr_info) ->
+           let typ = CAst_utils.get_desugared_type expr_info.ei_type_ptr in
+           CAst_utils.is_ptr_to_objc_class typ classname
+       | _ -> false)
   | _ -> false
 
-let decl_unavailable_in_supported_ios_sdk decl =
-  let available_attr_ios_sdk = get_available_attr_ios_sdk decl in
+let decl_unavailable_in_supported_ios_sdk an =
+  let available_attr_ios_sdk = get_available_attr_ios_sdk an in
   match available_attr_ios_sdk, Config.iphoneos_target_sdk_version with
   | Some available_attr_ios_sdk, Some iphoneos_target_sdk_version ->
       Int.equal (Utils.compare_versions available_attr_ios_sdk iphoneos_target_sdk_version) 1
   | _ -> false
 
-let within_responds_to_selector_block (cxt:CLintersContext.context) decl =
+
+let within_responds_to_selector_block (cxt:CLintersContext.context) an =
   let open Clang_ast_t in
-  match decl with
-  | ObjCMethodDecl (_, named_decl_info, _) ->
+  match an with
+  | Ctl_parser_types.Decl (ObjCMethodDecl (_, named_decl_info, _)) ->
       (match cxt.if_context with
        | Some if_context ->
            let in_selector_block = if_context.within_responds_to_selector_block in
-           List.mem ~equal:String.equal in_selector_block named_decl_info.Clang_ast_t.ni_name
+           List.mem ~equal:String.equal in_selector_block named_decl_info.ni_name
        | None -> false)
   | _ -> false

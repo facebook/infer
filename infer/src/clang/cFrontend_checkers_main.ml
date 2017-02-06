@@ -36,7 +36,7 @@ let parse_ctl_file linters_files =
            Logging.out "#### Start Expanding checkers #####\n";
            let exp_checkers = CFrontend_errors.expand_checkers parsed_checkers in
            Logging.out "#### Checkers Expanded #####\n";
-           if Config.debug_mode then IList.iter Ctl_parser_types.print_checker exp_checkers;
+           if Config.debug_mode then IList.iter CTL.print_checker exp_checkers;
            CFrontend_errors.make_condition_issue_desc_pair exp_checkers;
        | None -> Logging.out "No linters found.\n");
       In_channel.close inx) linters_files
@@ -84,7 +84,7 @@ let rec do_frontend_checks_stmt (context:CLintersContext.context) stmt =
          IList.iter (do_frontend_checks_decl context) [decl]
      | _ -> ());
     do_frontend_checks_stmt context stmt in
-  CFrontend_errors.invoke_set_of_checkers_on_node context (CTL.Stmt stmt);
+  CFrontend_errors.invoke_set_of_checkers_on_node context (Ctl_parser_types.Stmt stmt);
   match stmt with
   | ObjCAtSynchronizedStmt (_, stmt_list) ->
       let stmt_context = { context with CLintersContext.in_synchronized_block = true } in
@@ -104,7 +104,7 @@ let rec do_frontend_checks_stmt (context:CLintersContext.context) stmt =
 
 and do_frontend_checks_decl (context: CLintersContext.context) decl =
   let open Clang_ast_t in
-  CFrontend_errors.invoke_set_of_checkers_on_node context (CTL.Decl decl);
+  CFrontend_errors.invoke_set_of_checkers_on_node context (Ctl_parser_types.Decl decl);
   match decl with
   | FunctionDecl(_, _, _, fdi)
   | CXXMethodDecl (_, _, _, fdi, _)
@@ -166,7 +166,7 @@ let do_frontend_checks trans_unit_ctx ast =
           CLocation.should_do_frontend_check trans_unit_ctx decl_info.Clang_ast_t.di_source_range in
         let allowed_decls = IList.filter is_decl_allowed decl_list in
         (* We analyze the top level and then all the allowed declarations *)
-        CFrontend_errors.invoke_set_of_checkers_on_node context (CTL.Decl ast);
+        CFrontend_errors.invoke_set_of_checkers_on_node context (Ctl_parser_types.Decl ast);
         IList.iter (do_frontend_checks_decl context) allowed_decls;
         if (LintIssues.exists_issues ()) then
           store_issues source_file;

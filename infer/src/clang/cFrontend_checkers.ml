@@ -37,12 +37,12 @@ let location_from_decl lctx dec =
 
 let location_from_an lcxt an =
   match an with
-  | CTL.Stmt st -> location_from_stmt lcxt st
-  | CTL.Decl d -> location_from_decl lcxt d
+  | Ctl_parser_types.Stmt st -> location_from_stmt lcxt st
+  | Ctl_parser_types.Decl d -> location_from_decl lcxt d
 
 let decl_name an =
   match an with
-  | CTL.Decl dec ->
+  | Ctl_parser_types.Decl dec ->
       (match Clang_ast_proj.get_named_decl_tuple dec with
        | Some (_, n) -> n.Clang_ast_t.ni_name
        | None -> "")
@@ -50,14 +50,14 @@ let decl_name an =
 
 let tag_name_of_node an =
   match an with
-  | CTL.Stmt stmt -> Clang_ast_proj.get_stmt_kind_string stmt
-  | CTL.Decl decl -> Clang_ast_proj.get_decl_kind_string decl
+  | Ctl_parser_types.Stmt stmt -> Clang_ast_proj.get_stmt_kind_string stmt
+  | Ctl_parser_types.Decl decl -> Clang_ast_proj.get_decl_kind_string decl
 
 let decl_ref_or_selector_name an =
   match CTL.next_state_via_transition an (Some CTL.PointerToDecl) with
-  | Some (CTL.Decl ObjCMethodDecl _ as decl_an) ->
+  | Some (Ctl_parser_types.Decl ObjCMethodDecl _ as decl_an) ->
       "The selector " ^ (decl_name decl_an)
-  | Some (CTL.Decl _ as decl_an) ->
+  | Some (Ctl_parser_types.Decl _ as decl_an) ->
       "The reference " ^ (decl_name decl_an)
   | _ -> failwith("decl_ref_or_selector_name must be called with a DeclRefExpr \
                    or an ObjCMessageExpr, but got " ^ (tag_name_of_node an))
@@ -68,9 +68,10 @@ let iphoneos_target_sdk_version _ =
   | None -> "0"
 
 let available_ios_sdk an =
+  let open Ctl_parser_types in
   match CTL.next_state_via_transition an (Some CTL.PointerToDecl) with
-  | Some CTL.Decl decl ->
-      (match CPredicates.get_available_attr_ios_sdk decl with
+  | Some Decl decl ->
+      (match CPredicates.get_available_attr_ios_sdk (Decl decl) with
        | Some version -> version
        | None -> "")
   | _ -> failwith("available_ios_sdk must be called with a DeclRefExpr \
@@ -79,7 +80,7 @@ let available_ios_sdk an =
 let ivar_name an =
   let open Clang_ast_t in
   match an with
-  | CTL.Stmt (ObjCIvarRefExpr (_, _, _, rei)) ->
+  | Ctl_parser_types.Stmt (ObjCIvarRefExpr (_, _, _, rei)) ->
       let dr_ref = rei.ovrei_decl_ref in
       let ivar_pointer = dr_ref.dr_decl_pointer in
       (match CAst_utils.get_decl ivar_pointer with
@@ -89,11 +90,13 @@ let ivar_name an =
   | _ -> ""
 
 let cxx_ref_captured_in_block an =
+  let open Ctl_parser_types in
+  let open Clang_ast_t in
   let capt_refs = match an with
-    | CTL.Decl d -> CPredicates.captured_variables_cxx_ref d
-    | CTL.Stmt (Clang_ast_t.BlockExpr(_, _, _, d)) ->
-        CPredicates.captured_variables_cxx_ref d
+    | Decl _ -> CPredicates.captured_variables_cxx_ref an
+    | Stmt (BlockExpr(_, _, _, d)) ->
+        CPredicates.captured_variables_cxx_ref (Decl d)
     | _ -> [] in
   let var_desc vars var_named_decl_info =
-    vars ^ "'" ^ var_named_decl_info.Clang_ast_t.ni_name ^ "'" in
+    vars ^ "'" ^ var_named_decl_info.ni_name ^ "'" in
   IList.fold_left var_desc "" capt_refs

@@ -53,7 +53,7 @@
 %left AU, EU
 %right NOT, AX, EX, AF, EF, EG, AG, EH
 
-%start <Ctl_parser_types.ctl_checker list> checkers_list
+%start <CTL.ctl_checker list> checkers_list
 
 %%
 checkers_list:
@@ -65,8 +65,8 @@ checker:
  DEFINE_CHECKER identifier ASSIGNMENT LEFT_BRACE clause_list RIGHT_BRACE
   {
     Logging.out "\nParsed checker definition";
-    let c = { name = $2; definitions = $5 } in
-    print_checker c;
+    let c = { CTL.name = $2; CTL.definitions = $5 } in
+    CTL.print_checker c;
     c
   }
 ;
@@ -78,11 +78,11 @@ clause_list:
 
 clause:
   | SET identifier ASSIGNMENT formula
-    { Logging.out "\tParsed set clause\n"; CSet ($2, $4) }
+    { Logging.out "\tParsed set clause\n"; CTL.CSet ($2, $4) }
   | SET identifier ASSIGNMENT STRING
-    { Logging.out "\tParsed desc clause\n"; CDesc ($2, $4) }
+    { Logging.out "\tParsed desc clause\n"; CTL.CDesc ($2, $4) }
   | LET identifier ASSIGNMENT formula
-    { Logging.out "\tParsed let clause\n"; CLet ($2, $4) }
+    { Logging.out "\tParsed let clause\n"; CTL.CLet ($2, $4) }
 ;
 
 atomic_formula:

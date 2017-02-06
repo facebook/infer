@@ -8,12 +8,12 @@
  *)
 
 open! IStd
+open Ctl_parser_types
 
 (* This module defines a language to define checkers. These checkers
    are intepreted over the AST of the program. A checker is defined by a
    CTL formula which express a condition saying when the checker should
     report a problem *)
-
 
 (* Transition labels used for example to switch from decl to stmt *)
 type transitions =
@@ -48,10 +48,31 @@ type t = (* A ctl formula *)
   | ET of string list * transitions option * t
   | ETX of string list * transitions option * t
 
-(* the kind of AST nodes where formulas are evaluated *)
-type ast_node =
-  | Stmt of Clang_ast_t.stmt
-  | Decl of Clang_ast_t.decl
+(* "set" clauses are used for defining mandatory variables that will be used
+   by when reporting issues: eg for defining the condition.
+
+   "desc" clauses are used for defining the error message,
+   the suggestion, the severity.
+
+   "let" clauses are used to define temporary formulas which are then
+   used to abbreviate the another formula. For example
+
+   let f = a And B
+
+   set formula  = f OR f
+
+   set message = "bla"
+
+*)
+type clause =
+  | CLet  of string * t (* Let clause: let id = definifion;  *)
+  | CSet of string * t (* Set clause: set id = definition *)
+  | CDesc of string * string (* Description clause eg: set message = "..." *)
+
+type ctl_checker = {
+  name : string; (* Checker's name *)
+  definitions : clause list (* A list of let/set definitions *)
+}
 
 let equal_ast_node = Poly.(=)
 
@@ -231,6 +252,20 @@ module Debug = struct
   end
 end
 
+let print_checker c =
+  Logging.out "\n-------------------- \n";
+  Logging.out "\nChecker name: %s\n" c.name;
+  IList.iter (fun d -> (match d with
+      | CSet (clause_name, phi)
+      | CLet (clause_name, phi) ->
+          Logging.out "    %s=  \n    %a\n\n"
+            clause_name Debug.pp_formula phi
+      | CDesc (clause_name, s) ->
+          Logging.out "    %s=  \n    %s\n\n" clause_name s)
+    ) c.definitions;
+  Logging.out "\n-------------------- \n"
+
+
 let ctl_evaluation_tracker = match Config.debug_mode with
   | true -> Some (ref (Debug.EvaluationTracker.create ()))
   | false -> None
@@ -377,49 +412,30 @@ let next_state_via_transition an trans =
    linter context lcxt. That is:  an, lcxt |= pred_name(params) *)
 let rec eval_Atomic pred_name args an lcxt =
   match pred_name, args, an with
-  | "call_method", [m], Stmt st -> CPredicates.call_method m st
-  (* Note: I think it should be better to change all predicated to be
-     evaluated in a node an. The predicate itself should decide if it's a
-     stmt or decl predicate and return false for an unappropriate node *)
-  | "call_method", _, Decl _ -> false
-  | "property_name_contains_word", [word], Decl d -> CPredicates.property_name_contains_word word d
-  | "property_name_contains_word", _, Stmt _ -> false
+  | "call_method", [m], an -> CPredicates.call_method m an
+  | "property_name_contains_word", [word], an -> CPredicates.property_name_contains_word word an
   | "is_objc_extension", [], _ -> CPredicates.is_objc_extension lcxt
-  | "is_global_var", [], Decl d -> CPredicates.is_syntactically_global_var d
-  | "is_global_var", _, Stmt _ -> false
-  | "is_const_var", [], Decl d ->  CPredicates.is_const_expr_var d
-  | "is_const_var", _, Stmt _ -> false
-  | "call_function_named", args, Stmt st -> CPredicates.call_function_named args st
-  | "call_function_named", _, Decl _ -> false
-  | "is_strong_property", [], Decl d -> CPredicates.is_strong_property d
-  | "is_strong_property", _, Stmt _ -> false
-  | "is_assign_property", [], Decl d -> CPredicates.is_assign_property d
-  | "is_assign_property", _, Stmt _ -> false
-  | "is_property_pointer_type", [], Decl d -> CPredicates.is_property_pointer_type d
-  | "is_property_pointer_type", _, Stmt _ -> false
+  | "is_global_var", [], an -> CPredicates.is_syntactically_global_var an
+  | "is_const_var", [], an ->  CPredicates.is_const_expr_var an
+  | "call_function_named", args, an -> CPredicates.call_function_named args an
+  | "is_strong_property", [], an -> CPredicates.is_strong_property an
+  | "is_assign_property", [], an -> CPredicates.is_assign_property an
+  | "is_property_pointer_type", [], an -> CPredicates.is_property_pointer_type an
   | "context_in_synchronized_block", [], _ -> CPredicates.context_in_synchronized_block lcxt
-  | "is_ivar_atomic", [], Stmt st -> CPredicates.is_ivar_atomic st
-  | "is_ivar_atomic", _, Decl _ -> false
-  | "is_method_property_accessor_of_ivar", [], Stmt st ->
-      CPredicates.is_method_property_accessor_of_ivar st lcxt
-  | "is_method_property_accessor_of_ivar", _, Decl _ -> false
+  | "is_ivar_atomic", [], an -> CPredicates.is_ivar_atomic an
+  | "is_method_property_accessor_of_ivar", [], an ->
+      CPredicates.is_method_property_accessor_of_ivar an lcxt
   | "is_objc_constructor", [], _ -> CPredicates.is_objc_constructor lcxt
   | "is_objc_dealloc", [], _ -> CPredicates.is_objc_dealloc lcxt
-  | "captures_cxx_references", [], Decl d -> CPredicates.captures_cxx_references d
-  | "captures_cxx_references", _, Stmt _ -> false
-  | "is_binop_with_kind", [str_kind], Stmt st -> CPredicates.is_binop_with_kind str_kind st
-  | "is_binop_with_kind", _, Decl _ -> false
-  | "is_unop_with_kind", [str_kind], Stmt st -> CPredicates.is_unop_with_kind str_kind st
-  | "is_unop_with_kind", _, Decl _ -> false
-  | "in_node", [nodename], Stmt st -> CPredicates.is_stmt nodename st
-  | "in_node", [nodename], Decl d -> CPredicates.is_decl nodename d
-  | "isa", [classname], Stmt st -> CPredicates.isa classname st
-  | "isa", _, Decl _ -> false
-  | "decl_unavailable_in_supported_ios_sdk", [], Decl decl ->
-      CPredicates.decl_unavailable_in_supported_ios_sdk decl
-  | "within_responds_to_selector_block", [], Decl decl ->
-      CPredicates.within_responds_to_selector_block lcxt decl
-  | "decl_unavailable_in_supported_ios_sdk", _, Stmt _ -> false
+  | "captures_cxx_references", [], _ -> CPredicates.captures_cxx_references an
+  | "is_binop_with_kind", [str_kind], an -> CPredicates.is_binop_with_kind str_kind an
+  | "is_unop_with_kind", [str_kind], an -> CPredicates.is_unop_with_kind str_kind an
+  | "in_node", [nodename], an -> CPredicates.is_node nodename an
+  | "isa", [classname], an -> CPredicates.isa classname an
+  | "decl_unavailable_in_supported_ios_sdk", [], an ->
+      CPredicates.decl_unavailable_in_supported_ios_sdk an
+  | "within_responds_to_selector_block", [], an ->
+      CPredicates.within_responds_to_selector_block lcxt an
   | _ -> failwith ("ERROR: Undefined Predicate or wrong set of arguments: " ^ pred_name)
 
 (* an, lcxt |= EF phi  <=>
