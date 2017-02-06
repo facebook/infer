@@ -483,10 +483,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           astate
   end
 
-  module Analyzer = AbstractInterpreter.Make
-      (ProcCfg.Exceptional)
-      (Scheduler.ReversePostorder)
-      (TransferFunctions)
+  module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)
 
   let make_summary formal_map access_tree =
     let access_tree' =

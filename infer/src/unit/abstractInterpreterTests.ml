@@ -58,12 +58,10 @@ end
 
 module NormalTestInterpreter = AnalyzerTester.Make
     (ProcCfg.Normal)
-    (Scheduler.ReversePostorder)
     (PathCountTransferFunctions)
 
 module ExceptionalTestInterpreter = AnalyzerTester.Make
     (ProcCfg.Exceptional)
-    (Scheduler.ReversePostorder)
     (PathCountTransferFunctions)
 
 let tests =

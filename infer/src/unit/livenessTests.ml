@@ -11,10 +11,8 @@ open! IStd
 
 module F = Format
 
-module TestInterpreter = AnalyzerTester.Make
-    (ProcCfg.Backward(ProcCfg.Normal))
-    (Scheduler.ReversePostorder)
-    (Liveness.TransferFunctions)
+module TestInterpreter =
+  AnalyzerTester.Make (ProcCfg.Backward(ProcCfg.Normal)) (Liveness.TransferFunctions)
 
 let tests =
   let open OUnit2 in

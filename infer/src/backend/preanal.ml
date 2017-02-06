@@ -93,11 +93,7 @@ let add_abstraction_instructions pdesc =
 
 module BackwardCfg = ProcCfg.OneInstrPerNode(ProcCfg.Backward(ProcCfg.Exceptional))
 
-module LivenessAnalysis =
-  AbstractInterpreter.Make
-    (BackwardCfg)
-    (Scheduler.ReversePostorder)
-    (Liveness.TransferFunctions)
+module LivenessAnalysis = AbstractInterpreter.Make (BackwardCfg) (Liveness.TransferFunctions)
 
 module VarDomain = AbstractDomain.FiniteSet(Var.Set)
 
@@ -254,10 +250,7 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
 module ExceptionalOneInstrPerNodeCfg = ProcCfg.OneInstrPerNode(ProcCfg.Exceptional)
 
 module CopyProp =
-  AbstractInterpreter.Make
-    (ExceptionalOneInstrPerNodeCfg)
-    (Scheduler.ReversePostorder)
-    (CopyPropagation.TransferFunctions)
+  AbstractInterpreter.Make (ExceptionalOneInstrPerNodeCfg) (CopyPropagation.TransferFunctions)
 
 let do_copy_propagation pdesc tenv =
   let proc_cfg = ExceptionalOneInstrPerNodeCfg.from_pdesc pdesc in

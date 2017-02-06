@@ -57,7 +57,6 @@ module MakeNoCFG
     transfer functions from a CFG *)
 module Make
     (CFG : ProcCfg.S)
-    (MakeScheduler : Scheduler.Make)
     (MakeTransferFunctions : TransferFunctions.Make) :
   S with module TransferFunctions = MakeTransferFunctions(CFG)
 

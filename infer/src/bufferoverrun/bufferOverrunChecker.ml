@@ -271,11 +271,7 @@ struct
       output_mem
 end
 
-module Analyzer =
-  AbstractInterpreter.Make
-    (ProcCfg.Normal)
-    (Scheduler.ReversePostorder)
-    (TransferFunctions)
+module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
 
 module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
 module CFG = Analyzer.TransferFunctions.CFG

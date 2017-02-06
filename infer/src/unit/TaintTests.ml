@@ -48,10 +48,7 @@ module MockTaintAnalysis = TaintAnalysis.Make(struct
     let handle_unknown_call _ _ _ = []
   end)
 
-module TestInterpreter = AnalyzerTester.Make
-    (ProcCfg.Normal)
-    (Scheduler.ReversePostorder)
-    (MockTaintAnalysis.TransferFunctions)
+module TestInterpreter = AnalyzerTester.Make (ProcCfg.Normal) (MockTaintAnalysis.TransferFunctions)
 
 let tests =
   let open OUnit2 in

@@ -184,6 +184,8 @@ module Interprocedural (Summ : Summary.S) = struct
       Summ.read_summary proc_desc proc_name
 end
 
-
-module Make (C : ProcCfg.S) (S : Scheduler.Make) (T : TransferFunctions.Make) =
+module MakeWithScheduler (C : ProcCfg.S) (S : Scheduler.Make) (T : TransferFunctions.Make) =
   MakeNoCFG (S (C)) (T (C))
+
+module Make (C : ProcCfg.S) (T : TransferFunctions.Make) =
+  MakeWithScheduler (C) (Scheduler.ReversePostorder) (T)

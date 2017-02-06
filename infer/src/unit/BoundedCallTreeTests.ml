@@ -11,9 +11,9 @@ open! IStd
 
 module F = Format
 
-module TestInterpreter = AnalyzerTester.Make
+module TestInterpreter =
+  AnalyzerTester.Make
     (ProcCfg.Exceptional)
-    (Scheduler.ReversePostorder)
     (BoundedCallTree.TransferFunctions)
 
 let mock_get_proc_desc _ = None

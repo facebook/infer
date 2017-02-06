@@ -155,14 +155,11 @@ module StructuredSil = struct
     call_unknown None arg_strs
 end
 
-module Make
-    (CFG : ProcCfg.S with type node = Procdesc.Node.t)
-    (S : Scheduler.Make)
-    (T : TransferFunctions.Make) = struct
+module Make (CFG : ProcCfg.S with type node = Procdesc.Node.t) (T : TransferFunctions.Make) = struct
 
   open StructuredSil
 
-  module I = AbstractInterpreter.Make (CFG) (S) (T)
+  module I = AbstractInterpreter.Make (CFG) (T)
   module M = I.InvariantMap
 
   type assert_map = string M.t

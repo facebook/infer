@@ -327,11 +327,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
 end
 
-module Analyzer =
-  AbstractInterpreter.Make
-    (ProcCfg.Exceptional)
-    (Scheduler.ReversePostorder)
-    (TransferFunctions)
+module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)
 
 module Interprocedural = struct
   include AbstractInterpreter.Interprocedural(Summary)

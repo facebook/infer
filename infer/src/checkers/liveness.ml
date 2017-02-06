@@ -55,7 +55,4 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 end
 
 module Analyzer =
-  AbstractInterpreter.Make
-    (ProcCfg.Backward(ProcCfg.Exceptional))
-    (Scheduler.ReversePostorder)
-    (TransferFunctions)
+  AbstractInterpreter.Make (ProcCfg.Backward(ProcCfg.Exceptional)) (TransferFunctions)

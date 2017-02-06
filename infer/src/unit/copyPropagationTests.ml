@@ -11,10 +11,8 @@ open! IStd
 
 module F = Format
 
-module TestInterpreter = AnalyzerTester.Make
-    (ProcCfg.Exceptional)
-    (Scheduler.ReversePostorder)
-    (CopyPropagation.TransferFunctions)
+module TestInterpreter =
+  AnalyzerTester.Make (ProcCfg.Exceptional) (CopyPropagation.TransferFunctions)
 
 let tests =
   let open OUnit2 in
