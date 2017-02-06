@@ -114,7 +114,9 @@ let mapPut_list =
 (** Models for @Strict annotations *)
 let annotated_list_strict =
   [
-    (n, [o]), "android.content.Context.getSystemService(java.lang.String):java.lang.Object";
+    (* TODO: Investigate further if this method needs to
+      be considered as Nullable *)
+    (* (n, [o]), "android.content.Context.getSystemService(java.lang.String):java.lang.Object"; *)
   ]
 
 (** Models for @Nullable annotations *)
