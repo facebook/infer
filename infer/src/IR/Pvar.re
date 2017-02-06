@@ -364,5 +364,5 @@ let module Set = PrettyPrintable.MakePPCompareSet {
   type nonrec t = t;
   let compare = compare;
   let compare_pp = compare_alpha;
-  let pp_element = pp Pp.text;
+  let pp = pp Pp.text;
 };

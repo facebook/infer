@@ -32,7 +32,7 @@ let pp fmt annotation => F.fprintf fmt "@@%s" annotation.class_name;
 let module Map = PrettyPrintable.MakePPMap {
   type nonrec t = t;
   let compare = compare;
-  let pp_key = pp;
+  let pp = pp;
 };
 
 let module Item = {

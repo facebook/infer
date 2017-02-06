@@ -65,9 +65,6 @@ let pp : F.formatter -> t -> unit
             Itv.pp c.idx Itv.pp c.size pp_location c pname (string_of_location loc)
       | Intra _ -> F.fprintf fmt "%a < %a at %a" Itv.pp c.idx Itv.pp c.size pp_location c
 
-let pp_element : F.formatter -> t -> unit
-  = pp
-
 let get_location : t -> Location.t
   = fun c -> c.loc
 
@@ -391,8 +388,7 @@ module Stack =
 struct
   module PPMap =
   struct
-    module Ord = struct include Loc let pp_key = pp end
-    include PrettyPrintable.MakePPMap (Ord)
+    include PrettyPrintable.MakePPMap (Loc)
 
     let pp_collection
       : pp_item:(F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
@@ -404,7 +400,7 @@ struct
       : pp_value:(F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
       = fun ~pp_value fmt m ->
         let pp_item fmt (k, v) =
-          F.fprintf fmt "%a -> %a" Ord.pp_key k pp_value v
+          F.fprintf fmt "%a -> %a" Loc.pp k pp_value v
         in
         F.fprintf fmt "@[<v 2>{ ";
         pp_collection ~pp_item fmt (bindings m);
@@ -446,8 +442,7 @@ module Heap =
 struct
   module PPMap =
   struct
-    module Ord = struct include Loc let pp_key = pp end
-    include PrettyPrintable.MakePPMap (Ord)
+    include PrettyPrintable.MakePPMap (Loc)
 
     let pp_collection
       : pp_item:(F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
@@ -458,7 +453,7 @@ struct
     let pp : pp_value:(F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
       = fun ~pp_value fmt m ->
         let pp_item fmt (k, v) =
-          F.fprintf fmt "%a -> %a" Ord.pp_key k pp_value v
+          F.fprintf fmt "%a -> %a" Loc.pp k pp_value v
         in
         F.fprintf fmt "@[<v 2>{ ";
         pp_collection ~pp_item fmt (bindings m);

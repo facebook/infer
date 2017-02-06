@@ -15,16 +15,10 @@ module F = Format
 
 val pp_collection : pp_item:(F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
 
-module type SetOrderedType = sig
-  type t
-  val compare : t -> t -> int
-  val pp_element : F.formatter -> t -> unit
-end
+module type PrintableOrderedType = sig
+  include Caml.Set.OrderedType
 
-module type MapOrderedType = sig
-  type t
-  val compare : t -> t -> int
-  val pp_key : F.formatter -> t -> unit
+  val pp : F.formatter -> t -> unit
 end
 
 module type PPSet = sig
@@ -39,14 +33,14 @@ module type PPMap = sig
   val pp : pp_value:(F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
 end
 
-module MakePPSet (Ord : SetOrderedType) : (PPSet with type elt = Ord.t)
+module MakePPSet (Ord : PrintableOrderedType) : (PPSet with type elt = Ord.t)
 
 (** Use a comparison function to determine the order of the elements printed *)
 module MakePPCompareSet
     (Ord : sig
-       include SetOrderedType
+       include PrintableOrderedType
        val compare_pp : t -> t -> int
      end)
   : (PPSet with type elt = Ord.t)
 
-module MakePPMap (Ord : MapOrderedType) : (PPMap with type key = Ord.t)
+module MakePPMap (Ord : PrintableOrderedType) : (PPMap with type key = Ord.t)

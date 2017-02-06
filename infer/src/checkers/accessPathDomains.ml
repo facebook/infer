@@ -12,11 +12,7 @@ open! IStd
 module F = Format
 
 module Set = struct
-  module APSet = PrettyPrintable.MakePPSet (struct
-      type t = AccessPath.t
-      let compare = AccessPath.compare
-      let pp_element = AccessPath.pp
-    end)
+  module APSet = PrettyPrintable.MakePPSet (AccessPath)
 
   (** TODO (12086310): best-case behavior of some operations can be improved by adding "abstracted"
       bool recording whether an abstracted access path has been introduced *)

@@ -99,7 +99,7 @@ module Make (Kind : Kind) = struct
   module Set = PrettyPrintable.MakePPSet(struct
       type nonrec t = t
       let compare = compare
-      let pp_element = pp
+      let pp = pp
     end)
 end
 
@@ -133,7 +133,7 @@ module Dummy = struct
   module Set = PrettyPrintable.MakePPSet(struct
       type nonrec t = t
       let compare = compare
-      let pp_element = pp
+      let pp = pp
     end)
 
   let with_callsite t _ = t

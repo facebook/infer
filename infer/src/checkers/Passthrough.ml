@@ -31,5 +31,5 @@ let pp fmt s =
 module Set = PrettyPrintable.MakePPSet(struct
     type nonrec t = t
     let compare = compare
-    let pp_element = pp
+    let pp = pp
   end)

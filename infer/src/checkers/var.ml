@@ -39,12 +39,12 @@ let pp fmt = function
 module Map = PrettyPrintable.MakePPMap(struct
     type nonrec t = t
     let compare = compare
-    let pp_key = pp
+    let pp = pp
   end)
 
 module Set = PrettyPrintable.MakePPCompareSet(struct
     type nonrec t = t
     let compare = compare
     let compare_pp = compare_alpha
-    let pp_element = pp
+    let pp = pp
   end)

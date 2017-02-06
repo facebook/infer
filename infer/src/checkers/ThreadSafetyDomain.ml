@@ -35,7 +35,7 @@ module TraceElem = struct
   module Set = PrettyPrintable.MakePPSet (struct
       type nonrec t = t
       let compare = compare
-      let pp_element = pp
+      let pp = pp
     end)
 end
 
@@ -47,11 +47,7 @@ module LocksDomain = AbstractDomain.BooleanAnd
 
 module PathDomain = SinkTrace.Make(TraceElem)
 
-module IntMap = PrettyPrintable.MakePPMap(struct
-    type t = int
-    let compare = Int.compare
-    let pp_key fmt = F.fprintf fmt "%d"
-  end)
+module IntMap = PrettyPrintable.MakePPMap(Int)
 
 module ConditionalWritesDomain = AbstractDomain.Map (IntMap) (PathDomain)
 

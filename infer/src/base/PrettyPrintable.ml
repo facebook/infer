@@ -13,16 +13,10 @@ module F = Format
 
 (** Wrappers for making pretty-printable modules *)
 
-module type SetOrderedType = sig
+module type PrintableOrderedType = sig
   include Caml.Set.OrderedType
 
-  val pp_element : F.formatter -> t -> unit
-end
-
-module type MapOrderedType = sig
-  include Caml.Map.OrderedType
-
-  val pp_key : F.formatter -> t -> unit
+  val pp : F.formatter -> t -> unit
 end
 
 module type PPSet = sig
@@ -45,32 +39,32 @@ let pp_collection ~pp_item fmt c =
     F.pp_print_list ~pp_sep pp_item fmt c in
   F.fprintf fmt "{ %a }" pp_collection c
 
-module MakePPSet (Ord : SetOrderedType) = struct
+module MakePPSet (Ord : PrintableOrderedType) = struct
   include Caml.Set.Make(Ord)
 
-  let pp_element = Ord.pp_element
+  let pp_element = Ord.pp
 
   let pp fmt s =
     pp_collection ~pp_item:pp_element fmt (elements s)
 end
 
 module MakePPCompareSet
-    (Ord : sig include SetOrderedType val compare_pp : t -> t -> int end) = struct
+    (Ord : sig include PrintableOrderedType val compare_pp : t -> t -> int end) = struct
   include Caml.Set.Make(Ord)
 
-  let pp_element = Ord.pp_element
+  let pp_element = Ord.pp
 
   let pp fmt s =
     let elements_alpha = IList.sort Ord.compare_pp (elements s) in
     pp_collection ~pp_item:pp_element fmt elements_alpha
 end
 
-module MakePPMap (Ord : MapOrderedType) = struct
+module MakePPMap (Ord : PrintableOrderedType) = struct
   include Caml.Map.Make(Ord)
 
-  let pp_key = Ord.pp_key
+  let pp_key = Ord.pp
 
   let pp ~pp_value fmt m =
-    let pp_item fmt (k, v) = F.fprintf fmt "%a -> %a" Ord.pp_key k pp_value v in
+    let pp_item fmt (k, v) = F.fprintf fmt "%a -> %a" Ord.pp k pp_value v in
     pp_collection ~pp_item fmt (bindings m)
 end

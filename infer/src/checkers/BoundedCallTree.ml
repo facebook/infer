@@ -14,11 +14,7 @@ module L = Logging
 
 (** find transitive procedure calls for each procedure *)
 
-module ProcnameSet = PrettyPrintable.MakePPSet(struct
-    type t = Procname.t
-    let compare = Procname.compare
-    let pp_element = Procname.pp
-  end)
+module ProcnameSet = PrettyPrintable.MakePPSet(Procname)
 
 module Domain = AbstractDomain.FiniteSet(ProcnameSet)
 

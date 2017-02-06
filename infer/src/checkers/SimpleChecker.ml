@@ -50,7 +50,7 @@ module Make (Spec : Spec) : S = struct
           struct
             type t = Spec.astate
             let compare = Spec.compare
-            let pp_element _ _ = ()
+            let pp _ _ = ()
           end)
         )
 

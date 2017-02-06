@@ -151,17 +151,13 @@ let pp fmt = function
 module BaseMap = PrettyPrintable.MakePPMap(struct
     type t = base
     let compare = compare_base
-    let pp_key = pp_base
+    let pp = pp_base
   end)
 
 module AccessMap = PrettyPrintable.MakePPMap(struct
     type t = access
     let compare = compare_access
-    let pp_key = pp_access
+    let pp = pp_access
   end)
 
-module RawSet = PrettyPrintable.MakePPSet(struct
-    type t = Raw.t
-    let compare = Raw.compare
-    let pp_element = Raw.pp
-  end)
+module RawSet = PrettyPrintable.MakePPSet(Raw)
