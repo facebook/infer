@@ -27,16 +27,6 @@ public class SQLiteCursor implements Cursor {
         InferBuiltins.__set_file_attribute(this);
     }
 
-
-    public int getCount() {
-        return InferUndefined.int_undefined();
-    }
-
-
-    public String[] getColumnNames() {
-        return new String[0];
-    }
-
     public void close() {
         InferBuiltins.__set_mem_attribute(this);
     }
