@@ -138,8 +138,3 @@ let mark_return ann asig =
   let ia, t = asig.ret in
   let ret' = mark_ia ann ia true, t in
   { asig with ret = ret'}
-
-let mark_return_strict asig =
-  let ia, t = asig.ret in
-  let ret' = mark_ia_strict ia true, t in
-  { asig with ret = ret'}

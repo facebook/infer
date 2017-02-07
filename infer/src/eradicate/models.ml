@@ -137,18 +137,10 @@ let get_modelled_annotated_signature proc_attributes =
       with Not_found ->
         ann_sig
     else ann_sig in
-  let lookup_models_strict ann_sig =
-    if use_models
-    && Hashtbl.mem annotated_table_strict proc_id
-    then
-      AnnotatedSignature.mark_return_strict ann_sig
-    else
-      ann_sig in
 
   annotated_signature
   |> lookup_models_nullable
   |> lookup_models_present
-  |> lookup_models_strict
   |> infer_return
   |> infer_parameters
 

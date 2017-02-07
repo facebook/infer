@@ -111,18 +111,9 @@ let mapPut_list =
     cp, "java.util.Map.put(java.lang.Object,java.lang.Object):java.lang.Object";
   ]
 
-(** Models for @Strict annotations *)
-let annotated_list_strict =
-  [
-    (* TODO: Investigate further if this method needs to
-      be considered as Nullable *)
-    (* (n, [o]), "android.content.Context.getSystemService(java.lang.String):java.lang.Object"; *)
-  ]
-
 (** Models for @Nullable annotations *)
 let annotated_list_nullable =
   check_not_null_list @ check_state_list @ check_argument_list @
-  annotated_list_strict @
   [
     n1, "android.os.Parcel.writeList(java.util.List):void";
     n2, "android.os.Parcel.writeParcelable(android.os.Parcelable,int):void";
@@ -248,7 +239,6 @@ let this_file = __FILE__
 
 let annotated_table_nullable = mk_table annotated_list_nullable
 let annotated_table_present = mk_table annotated_list_present
-let annotated_table_strict = mk_table annotated_list_strict
 let check_not_null_table, check_not_null_parameter_table =
   mk_table check_not_null_list, mk_table check_not_null_parameter_list
 let check_state_table = mk_table check_state_list

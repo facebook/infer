@@ -37,9 +37,6 @@ val mark : Procname.t -> annotation -> t -> bool * bool list -> t
 (** Mark the return of the annotated signature with the given annotation. *)
 val mark_return : annotation -> t -> t
 
-(** Mark the return of the annotated signature @Strict. *)
-val mark_return_strict : t -> t
-
 (** Get a method signature with annotations from a proc_attributes. *)
 val get : ProcAttributes.t -> t
 
