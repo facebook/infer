@@ -362,7 +362,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
   let convert_instr instrs =>
     fun
     | Sil.Load
-        id (Exp.Lvar origin_pvar as origin_exp) (Typ.Tptr (Typ.Tstruct origin_typename) _) loc => {
+        id (Exp.Lvar origin_pvar as origin_exp) (Typ.Tptr (Tstruct origin_typename) Pk_pointer) loc => {
         let specialized_typname =
           try (Mangled.Map.find (Pvar.get_name origin_pvar) substitutions) {
           | Not_found => origin_typename
@@ -370,9 +370,9 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
         subst_map := Ident.IdentMap.add id specialized_typname !subst_map;
         [Sil.Load id (convert_exp origin_exp) (mk_ptr_typ specialized_typname) loc, ...instrs]
       }
-    | Sil.Load id (Exp.Var origin_id as origin_exp) origin_typ loc => {
+    | Sil.Load id (Exp.Var origin_id as origin_exp) (Typ.Tstruct _ as origin_typ) loc => {
         let updated_typ =
-          try (mk_ptr_typ (Ident.IdentMap.find origin_id !subst_map)) {
+          try (Typ.Tstruct (Ident.IdentMap.find origin_id !subst_map)) {
           | Not_found => origin_typ
           };
         [Sil.Load id (convert_exp origin_exp) updated_typ loc, ...instrs]
