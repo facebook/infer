@@ -111,4 +111,26 @@ public class DynamicDispatch {
     dynamicDispatchWrapperBar(o).toString();
   }
 
+  static class WithField {
+
+    Supertype mField;
+
+    WithField(Supertype t) {
+      mField = t;
+    }
+
+    static void dispatchOnFieldGood() {
+      Supertype subtype = new Subtype();
+      WithField object = new WithField(subtype);
+      object.mField.bar().toString();
+    }
+
+    static void dispatchOnFieldBad() {
+      Supertype subtype = new Subtype();
+      WithField object = new WithField(subtype);
+      object.mField.foo().toString();
+    }
+
+  }
+
 }
