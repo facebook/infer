@@ -68,10 +68,27 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Exp.Const _ -> true
     | _ -> false
 
-  let is_owned access_path owned_set =
-    Domain.AccessPathSetDomain.mem access_path owned_set
+  let propagate_attributes lhs_access_path_opt rhs_access_path_opt rhs_exp attribute_map =
+    match lhs_access_path_opt, rhs_access_path_opt with
+    | Some lhs_access_path, Some rhs_access_path ->
+        let rhs_attributes =
+          try Domain.AttributeMapDomain.find rhs_access_path attribute_map
+          with Not_found -> Domain.AttributeSetDomain.empty in
+        Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
+    | Some lhs_access_path, None ->
+        let rhs_attributes =
+          if is_constant rhs_exp
+          then
+            (* constants are both owned and functional *)
+            Domain.AttributeSetDomain.of_list
+              [Domain.Attribute.Owned; Domain.Attribute.Functional]
+          else
+            Domain.AttributeSetDomain.empty in
+        Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
+    | _ ->
+        attribute_map
 
-  let add_path_to_state exp typ loc path_state id_map owned tenv =
+  let add_path_to_state exp typ loc path_state id_map attribute_map tenv =
     (* remove the last field of the access path, if it has any *)
     let truncate = function
       | base, []
@@ -103,7 +120,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else
       IList.fold_left
         (fun acc rawpath ->
-           if not (is_owned (truncate rawpath) owned) && not (is_safe_write rawpath tenv)
+           if not (Domain.AttributeMapDomain.has_attribute
+                     (truncate rawpath) Domain.Attribute.Owned attribute_map) &&
+              not (is_safe_write rawpath tenv)
            then Domain.PathDomain.add_sink (Domain.make_access rawpath loc) acc
            else acc)
         path_state
@@ -155,7 +174,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           loc
           astate.unconditional_writes
           astate.id_map
-          astate.owned
+          astate.attribute_map
           tenv in
       { astate with unconditional_writes; } in
     let is_unprotected is_locked =
@@ -186,8 +205,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         begin
           match AccessPath.of_lhs_exp (Exp.Var lhs_id) lhs_typ ~f_resolve_id with
           | Some lhs_access_path ->
-              let owned = AccessPathSetDomain.add lhs_access_path astate.owned in
-              { astate with owned; }
+              let attribute_map =
+                AttributeMapDomain.add_attribute lhs_access_path Owned astate.attribute_map in
+              { astate with attribute_map; }
           | None ->
               astate
         end
@@ -239,7 +259,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                               begin
                                 match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
                                 | Some actual_access_path ->
-                                    if is_owned actual_access_path astate.owned
+                                    if AttributeMapDomain.has_attribute
+                                        actual_access_path Owned astate.attribute_map
                                     then
                                       (* the actual passed to the current callee is owned. drop all
                                          the conditional writes for that actual, since they're all
@@ -290,12 +311,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         { astate with reads; conditional_writes; unconditional_writes; }
                       else
                         astate in
-                    let owned = match ret_opt with
+                    let attribute_map = match ret_opt with
                       | Some (ret_id, ret_typ) when is_retval_owned ->
-                          AccessPathSetDomain.add (AccessPath.of_id ret_id ret_typ) astate'.owned
+                          AttributeMapDomain.add_attribute
+                            (AccessPath.of_id ret_id ret_typ) Owned astate'.attribute_map
                       | _ ->
-                          astate'.owned in
-                    { astate' with locks = locks'; owned; }
+                          astate'.attribute_map in
+                    { astate' with locks = locks'; attribute_map; }
                 | None ->
                     if is_box callee_pname
                     then
@@ -303,11 +325,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       | Some (ret_id, ret_typ), (actual_exp, actual_typ) :: _ ->
                           begin
                             match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
-                            | Some ap when AccessPathSetDomain.mem ap astate.functional ->
-                                let functional =
-                                  AccessPathSetDomain.add
-                                    (AccessPath.of_id ret_id ret_typ) astate.functional in
-                                { astate with functional; }
+                            | Some ap
+                              when AttributeMapDomain.has_attribute
+                                  ap Functional astate.attribute_map ->
+                                let attribute_map =
+                                  AttributeMapDomain.add_attribute
+                                    (AccessPath.of_id ret_id ret_typ)
+                                    Functional
+                                    astate.attribute_map in
+                                { astate with attribute_map; }
                             | _ ->
                                 astate
                           end
@@ -323,10 +349,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               astate_callee
           | Some (ret_id, ret_typ) when
               proc_or_override_is_annotated callee_pname tenv Annotations.ia_is_functional ->
-              let functional =
-                AccessPathSetDomain.add
-                  (AccessPath.of_id ret_id ret_typ) astate_callee.functional in
-              { astate_callee with functional; }
+              let attribute_map =
+                AttributeMapDomain.add_attribute
+                  (AccessPath.of_id ret_id ret_typ) Functional astate.attribute_map in
+              { astate_callee with attribute_map; }
           | _ ->
               astate_callee
         end
@@ -339,15 +365,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let get_formal_index exp typ = match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
           | Some (base, _) -> FormalMap.get_formal_index base extras
           | None -> None in
-        let is_marked_functional exp typ functional_set =
+        let is_marked_functional exp typ attribute_map =
           match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
-          | Some access_path -> AccessPathSetDomain.mem access_path functional_set
-          | None -> false in
+          | Some access_path ->
+              AttributeMapDomain.has_attribute access_path Functional attribute_map
+          | None ->
+              false in
         let conditional_writes, unconditional_writes =
           match lhs_exp with
           | Lfield (base_exp, _, typ)
             when is_unprotected astate.locks (* abstracts no lock being held *) &&
-                 not (is_marked_functional rhs_exp lhs_typ astate.functional) ->
+                 not (is_marked_functional rhs_exp lhs_typ astate.attribute_map) ->
               begin
                 match get_formal_index base_exp typ with
                 | Some formal_index ->
@@ -361,7 +389,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         loc
                         conditional_writes_for_index
                         astate.id_map
-                        astate.owned
+                        astate.attribute_map
                         tenv in
                     ConditionalWritesDomain.add
                       formal_index conditional_writes_for_index' astate.conditional_writes,
@@ -374,7 +402,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       loc
                       astate.unconditional_writes
                       astate.id_map
-                      astate.owned
+                      astate.attribute_map
                       tenv
               end
           | _ ->
@@ -385,48 +413,26 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            loc and is now being reassigned *)
         let lhs_access_path_opt = AccessPath.of_lhs_exp lhs_exp lhs_typ ~f_resolve_id in
         let rhs_access_path_opt = AccessPath.of_lhs_exp rhs_exp lhs_typ ~f_resolve_id in
-        let update_access_path_set access_path_set =
-          match lhs_access_path_opt, rhs_access_path_opt with
-          | Some lhs_access_path, Some rhs_access_path ->
-              if AccessPathSetDomain.mem rhs_access_path access_path_set
-              then AccessPathSetDomain.add lhs_access_path access_path_set
-              else AccessPathSetDomain.remove lhs_access_path access_path_set
-          | Some lhs_access_path, None ->
-              if is_constant rhs_exp
-              then AccessPathSetDomain.add lhs_access_path access_path_set
-              else AccessPathSetDomain.remove lhs_access_path access_path_set
-          | _ ->
-              access_path_set in
-        let owned = update_access_path_set astate.owned in
-        let functional = update_access_path_set astate.functional in
-        { astate with conditional_writes; unconditional_writes; owned; functional; }
+        let attribute_map =
+          propagate_attributes
+            lhs_access_path_opt rhs_access_path_opt rhs_exp astate.attribute_map in
+        { astate with conditional_writes; unconditional_writes; attribute_map; }
 
     | Sil.Load (lhs_id, rhs_exp, rhs_typ, loc) ->
         let id_map = analyze_id_assignment (Var.of_id lhs_id) rhs_exp rhs_typ astate in
         let reads =
           match rhs_exp with
           | Lfield ( _, _, typ) when is_unprotected astate.locks ->
-              add_path_to_state rhs_exp typ loc astate.reads astate.id_map astate.owned tenv
+              add_path_to_state rhs_exp typ loc astate.reads astate.id_map astate.attribute_map tenv
           | _ ->
               astate.reads in
-
         (* if rhs is owned/functional, propagate to lhs *)
-        let owned, functional =
-          match AccessPath.of_lhs_exp rhs_exp rhs_typ ~f_resolve_id with
-          | Some rhs_access_path ->
-              let propagate_to_lhs access_path_set =
-                if AccessPathSetDomain.mem rhs_access_path access_path_set
-                then AccessPathSetDomain.add (AccessPath.of_id lhs_id rhs_typ) access_path_set
-                else access_path_set in
-              propagate_to_lhs astate.owned, propagate_to_lhs astate.functional
-          | _ ->
-              if is_constant rhs_exp
-              then
-                AccessPathSetDomain.add (AccessPath.of_id lhs_id rhs_typ) astate.owned,
-                astate.functional
-              else
-                astate.owned, astate.functional in
-        { astate with Domain.reads; id_map; owned; functional; }
+        let lhs_access_path_opt = Some (AccessPath.of_id lhs_id rhs_typ) in
+        let rhs_access_path_opt = AccessPath.of_lhs_exp rhs_exp rhs_typ ~f_resolve_id in
+        let attribute_map =
+          propagate_attributes
+            lhs_access_path_opt rhs_access_path_opt rhs_exp astate.attribute_map in
+        { astate with Domain.reads; id_map; attribute_map; }
 
     | Sil.Remove_temps (ids, _) ->
         let id_map =
@@ -557,18 +563,23 @@ let make_results_table get_proc_desc file_env =
                 (* express that the constructor owns [this] *)
                 match FormalMap.get_formal_base 0 extras with
                 | Some base ->
-                    let owned = ThreadSafetyDomain.AccessPathSetDomain.singleton (base, []) in
-                    { ThreadSafetyDomain.empty with owned; }
+                    let attribute_map =
+                      AttributeMapDomain.add_attribute
+                        (base, [])
+                        Owned
+                        ThreadSafetyDomain.empty.attribute_map in
+                    { ThreadSafetyDomain.empty with attribute_map; }
                 | None -> ThreadSafetyDomain.empty
               else
                 ThreadSafetyDomain.empty in
             match Analyzer.compute_post proc_data ~initial with
-            | Some { locks; reads; conditional_writes; unconditional_writes; owned; } ->
+            | Some { locks; reads; conditional_writes; unconditional_writes; attribute_map; } ->
                 let return_var_ap =
                   AccessPath.of_pvar
                     (Pvar.get_ret_pvar (Procdesc.get_proc_name pdesc))
                     (Procdesc.get_ret_type pdesc) in
-                let return_is_owned = AccessPathSetDomain.mem return_var_ap owned in
+                let return_is_owned =
+                  AttributeMapDomain.has_attribute return_var_ap Owned attribute_map in
                 Some (locks, reads, conditional_writes, unconditional_writes, return_is_owned)
             | None ->
                 None

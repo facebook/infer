@@ -161,3 +161,5 @@ module AccessMap = PrettyPrintable.MakePPMap(struct
   end)
 
 module RawSet = PrettyPrintable.MakePPSet(Raw)
+
+module RawMap = PrettyPrintable.MakePPMap(Raw)

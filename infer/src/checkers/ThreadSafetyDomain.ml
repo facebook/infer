@@ -51,6 +51,43 @@ module IntMap = PrettyPrintable.MakePPMap(Int)
 
 module ConditionalWritesDomain = AbstractDomain.Map (IntMap) (PathDomain)
 
+module Attribute = struct
+  type t =
+    | Owned
+    | Functional
+  [@@deriving compare]
+
+  let pp fmt = function
+    | Owned -> F.fprintf fmt "Owned"
+    | Functional -> F.fprintf fmt "Functional"
+
+  module Set = PrettyPrintable.MakePPSet(struct
+      type nonrec t = t
+      let compare = compare
+      let pp = pp
+    end)
+end
+
+module AttributeSetDomain = AbstractDomain.InvertedSet (Attribute.Set)
+
+module AttributeMapDomain = struct
+  include AbstractDomain.InvertedMap (AccessPath.RawMap) (AttributeSetDomain)
+
+  let has_attribute access_path attribute t =
+    try
+      find access_path t
+      |> AttributeSetDomain.mem attribute
+    with Not_found ->
+      false
+
+  let add_attribute access_path attribute t =
+    let attribute_set =
+      (try find access_path t
+       with Not_found -> AttributeSetDomain.empty)
+      |> AttributeSetDomain.add attribute in
+    add access_path attribute_set t
+end
+
 type astate =
   {
     locks : LocksDomain.astate;
@@ -58,10 +95,8 @@ type astate =
     conditional_writes : ConditionalWritesDomain.astate;
     unconditional_writes : PathDomain.astate;
     id_map : IdAccessPathMapDomain.astate;
-    owned : AccessPathSetDomain.astate;
-    functional : AccessPathSetDomain.astate;
+    attribute_map : AttributeMapDomain.astate;
   }
-
 
 type summary =
   LocksDomain.astate * PathDomain.astate * ConditionalWritesDomain.astate * PathDomain.astate * bool
@@ -72,9 +107,8 @@ let empty =
   let conditional_writes = ConditionalWritesDomain.empty in
   let unconditional_writes = PathDomain.empty in
   let id_map = IdAccessPathMapDomain.empty in
-  let owned = AccessPathSetDomain.empty in
-  let functional = AccessPathSetDomain.empty in
-  { locks; reads; conditional_writes; unconditional_writes; id_map; owned; functional; }
+  let attribute_map = AccessPath.RawMap.empty in
+  { locks; reads; conditional_writes; unconditional_writes; id_map; attribute_map; }
 
 let (<=) ~lhs ~rhs =
   if phys_equal lhs rhs
@@ -85,7 +119,7 @@ let (<=) ~lhs ~rhs =
     ConditionalWritesDomain.(<=) ~lhs:lhs.conditional_writes ~rhs:rhs.conditional_writes &&
     PathDomain.(<=) ~lhs:lhs.unconditional_writes ~rhs:rhs.unconditional_writes &&
     IdAccessPathMapDomain.(<=) ~lhs:lhs.id_map ~rhs:rhs.id_map &&
-    AccessPathSetDomain.(<=) ~lhs:lhs.owned ~rhs:rhs.owned
+    AttributeMapDomain.(<=) ~lhs:lhs.attribute_map ~rhs:rhs.attribute_map
 
 let join astate1 astate2 =
   if phys_equal astate1 astate2
@@ -99,9 +133,8 @@ let join astate1 astate2 =
     let unconditional_writes =
       PathDomain.join astate1.unconditional_writes astate2.unconditional_writes in
     let id_map = IdAccessPathMapDomain.join astate1.id_map astate2.id_map in
-    let owned = AccessPathSetDomain.join astate1.owned astate2.owned in
-    let functional = AccessPathSetDomain.join astate1.functional astate2.functional in
-    { locks; reads; conditional_writes; unconditional_writes; id_map; owned; functional; }
+    let attribute_map = AttributeMapDomain.join astate1.attribute_map astate2.attribute_map in
+    { locks; reads; conditional_writes; unconditional_writes; id_map; attribute_map; }
 
 let widen ~prev ~next ~num_iters =
   if phys_equal prev next
@@ -116,10 +149,9 @@ let widen ~prev ~next ~num_iters =
     let unconditional_writes =
       PathDomain.widen ~prev:prev.unconditional_writes ~next:next.unconditional_writes ~num_iters in
     let id_map = IdAccessPathMapDomain.widen ~prev:prev.id_map ~next:next.id_map ~num_iters in
-    let owned = AccessPathSetDomain.widen ~prev:prev.owned ~next:next.owned ~num_iters in
-    let functional =
-      AccessPathSetDomain.widen ~prev:prev.functional ~next:next.functional ~num_iters in
-    { locks; reads; conditional_writes; unconditional_writes; id_map; owned; functional; }
+    let attribute_map =
+      AttributeMapDomain.widen ~prev:prev.attribute_map ~next:next.attribute_map ~num_iters in
+    { locks; reads; conditional_writes; unconditional_writes; id_map; attribute_map; }
 
 let pp_summary fmt (locks, reads, conditional_writes, unconditional_writes, retval_owned) =
   F.fprintf
@@ -131,15 +163,14 @@ let pp_summary fmt (locks, reads, conditional_writes, unconditional_writes, retv
     PathDomain.pp unconditional_writes
     retval_owned
 
-let pp fmt { locks; reads; conditional_writes; unconditional_writes; id_map; owned; functional; } =
+let pp fmt { locks; reads; conditional_writes; unconditional_writes; id_map; attribute_map; } =
   F.fprintf
     fmt
-    "Locks: %a Reads: %a Conditional Writes: %a Unconditional Writes: %a Id Map: %a Owned: %a\
-     Functional: %a"
+    "Locks: %a Reads: %a Conditional Writes: %a Unconditional Writes: %a Id Map: %a Attribute Map:\
+     %a"
     LocksDomain.pp locks
     PathDomain.pp reads
     ConditionalWritesDomain.pp conditional_writes
     PathDomain.pp unconditional_writes
     IdAccessPathMapDomain.pp id_map
-    AccessPathSetDomain.pp owned
-    AccessPathSetDomain.pp functional
+    AttributeMapDomain.pp attribute_map

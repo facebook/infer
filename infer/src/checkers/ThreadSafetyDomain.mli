@@ -28,6 +28,27 @@ module IntMap : PrettyPrintable.PPMap with type key = int
 
 module ConditionalWritesDomain : module type of (AbstractDomain.Map (IntMap) (PathDomain))
 
+module Attribute : sig
+  type t =
+    | Owned
+    | Functional
+  [@@deriving compare]
+
+  val pp : F.formatter -> t -> unit
+
+  module Set : PrettyPrintable.PPSet with type elt = t
+end
+
+module AttributeSetDomain : module type of AbstractDomain.InvertedSet (Attribute.Set)
+
+module AttributeMapDomain : sig
+  include module type of AbstractDomain.InvertedMap (AccessPath.RawMap) (AttributeSetDomain)
+
+  val has_attribute : AccessPath.Raw.t -> Attribute.t -> astate -> bool
+
+  val add_attribute : AccessPath.Raw.t -> Attribute.t -> astate -> astate
+end
+
 (** the primary role of this domain is tracking *conditional* and *unconditional* writes.
     conditional writes are writes that are rooted in a formal of the current procedure, and they
     are safe only if the actual bound to that formal is owned at the call site (as in the foo
@@ -55,10 +76,8 @@ type astate =
     (** access paths written outside of synchronization *)
     id_map : IdAccessPathMapDomain.astate;
     (** map used to decompile temporary variables into access paths *)
-    owned : AccessPathSetDomain.astate;
-    (** access paths that must be owned by the current function *)
-    functional : AccessPathSetDomain.astate;
-    (** access paths holding values returned from a call marked with @Functional *)
+    attribute_map : AttributeMapDomain.astate;
+    (** map of access paths to attributes such as owned, functional, ... *)
   }
 
 (** same as astate, but without [id_map]/[owned] (since they are local) and with the addition of a
