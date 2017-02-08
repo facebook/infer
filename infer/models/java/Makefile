@@ -19,9 +19,6 @@ INFER_RESULTS_DIR = $(MODELS_OUT)/infer
 INFER_REPORT = $(INFER_RESULTS_DIR)/report.json
 MODELS_JAR = models.jar
 
-JAVA_BUILTINS_SOURCES = $(shell find builtins -name "*.java")
-JAVA_MODELS_SOURCES = $(shell find src -name "*.java")
-
 JAVA_SOURCES = $(JAVA_BUILTINS_SOURCES) $(JAVA_MODELS_SOURCES)
 
 MODELS_CLASSPATH = $(ANDROID_JAR):$(GUAVA_JAR):$(JACKSON_JAR):$(JSR_305_JAR):$(INFER_ANNOTATIONS_JAR)
@@ -32,6 +29,9 @@ clean:
 	@rm -fr $(MODELS_OUT)
 	@rm -f $(MODELS_JAR)
 	@rm -f $(JAVA_MODELS_JAR)
+
+compile:
+	javac -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(MODELS_CLASSPATH) $(JAVA_SOURCES)
 
 $(INFER_REPORT): $(ANDROID_JAR) $(GUAVA_JAR) $(JACKSON_JAR) $(JSR_305_JAR) $(INFER_ANNOTATIONS_JAR) $(JAVA_DEPS) $(JAVA_SOURCES)
 	@rm -fr $(MODELS_OUT)
