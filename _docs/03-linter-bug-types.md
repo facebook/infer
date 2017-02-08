@@ -95,8 +95,8 @@ if ([UIFont respondsToSelector:@selector(systemFontOfSize:weight:)]) {
   font = [UIFont systemFontOfSize:size weight:0];
 }
 ```
-
 or 
+
 ```objc
 if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_9_0) {
   font = [UIFont systemFontOfSize:size weight:0];
