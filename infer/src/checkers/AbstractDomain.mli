@@ -59,10 +59,20 @@ module InvertedSet (Set : PrettyPrintable.PPSet) : sig
   include S with type astate = t
 end
 
-(** Lift a map whose value type is an abstract domain to a domain. *)
+(** Map domain ordered by union over the set of bindings, so the bottom element is the empty map.
+    Every element implicitly maps to bottom unless it is explicitly bound to something else *)
 module Map (Map : PrettyPrintable.PPMap) (ValueDomain : S) : sig
   include PrettyPrintable.PPMap with type 'a t = 'a Map.t and type key = Map.key
   include WithBottom with type astate = ValueDomain.astate Map.t
+end
+
+(** Map domain ordered by intersection over the set of bindings, so the top element is the empty
+    map. Every element implictly maps to top unless it is explicitly bound to something else *)
+module InvertedMap (Map : PrettyPrintable.PPMap) (ValueDomain : S) : sig
+  include PrettyPrintable.PPMap with type 'a t = 'a Map.t and type key = Map.key
+  include S with type astate = ValueDomain.astate Map.t
+
+  val empty : [`This_domain_is_not_pointed] (** this domain doesn't have a natural bottom element *)
 end
 
 (** Boolean domain ordered by p || ~q. Useful when you want a boolean that's true only when it's

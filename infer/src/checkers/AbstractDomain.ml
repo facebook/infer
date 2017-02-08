@@ -162,11 +162,51 @@ module Map (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
            | Some v1, Some v2 -> Some (ValueDomain.widen ~prev:v1 ~next:v2 ~num_iters)
            | Some v, _ | _, Some v -> Some v
            | None, None -> None)
-      prev
-      next
+        prev
+        next
 
   let pp fmt astate =
     M.pp ~pp_value:ValueDomain.pp fmt astate
+end
+
+module InvertedMap (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
+  include M
+  type astate = ValueDomain.astate M.t
+
+  let (<=) ~lhs ~rhs =
+    if phys_equal lhs rhs
+    then true
+    else
+      try M.for_all (fun k rhs_v -> ValueDomain.(<=) ~lhs:(M.find k lhs) ~rhs:rhs_v) rhs
+      with Not_found -> false
+
+  let join astate1 astate2 =
+    if phys_equal astate1 astate2
+    then astate1
+    else
+      M.merge
+        (fun _ v1_opt v2_opt -> match v1_opt, v2_opt with
+           | Some v1, Some v2 -> Some (ValueDomain.join v1 v2)
+           | _ -> None)
+        astate1
+        astate2
+
+  let widen ~prev ~next ~num_iters =
+    if phys_equal prev next
+    then prev
+    else
+      M.merge
+        (fun _ v1_opt v2_opt -> match v1_opt, v2_opt with
+           | Some v1, Some v2 -> Some (ValueDomain.widen ~prev:v1 ~next:v2 ~num_iters)
+           | _ -> None)
+        prev
+        next
+
+  let pp fmt astate =
+    M.pp ~pp_value:ValueDomain.pp fmt astate
+
+  (* hide empty so we don't accidentally satisfy the WithBottom signature *)
+  let empty = `This_domain_is_not_pointed
 end
 
 module BooleanAnd = struct
