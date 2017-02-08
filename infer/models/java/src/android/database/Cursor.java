@@ -12,7 +12,4 @@ package android.database;
 
 import java.io.Closeable;
 
-public interface Cursor extends Closeable {
-
-  public void close();
-}
+public interface Cursor extends Closeable {}

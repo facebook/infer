@@ -12,6 +12,8 @@ package android.database;
 import com.facebook.infer.builtins.InferUndefined;
 import com.facebook.infer.builtins.InferBuiltins;
 
+import java.io.IOException;
+
 public class CursorWrapper implements Cursor {
   protected final Cursor mCursor;
 
@@ -20,7 +22,9 @@ public class CursorWrapper implements Cursor {
   }
 
   public void close() {
-    mCursor.close();
+    try {
+      mCursor.close();
+    } catch (IOException e) {}
   }
 
 }
